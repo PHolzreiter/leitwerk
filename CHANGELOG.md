@@ -1,5 +1,9 @@
 # Änderungen
 
+## 0.4.1
+- Beim ersten Start der Simulation erscheint „Einsatzcodes importieren“, falls noch keine Liste geladen ist
+- Die Liste kann jederzeit unter Daten → Einsatzcodes importiert, bearbeitet und gelöscht werden
+
 ## 0.4.0
 - Programm-Updates direkt in der App („Neue Version verfügbar“)
 - Karten als Pakete: kleines Programm, Grundpaket beim ersten Start, Detailkarten und Gelände zum Nachladen (Einstellungen → Kartenpakete)

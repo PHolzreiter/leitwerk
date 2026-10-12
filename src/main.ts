@@ -11,6 +11,7 @@ import { openEditor } from "./ui/editForm";
 import { createOpsView } from "./ui/opsView";
 import { createSettingsView } from "./ui/settingsView";
 import { checkOnStart, ensureGrundpaket } from "./ui/packsView";
+import { ensureCodes } from "./ui/codesPrompt";
 import { appVersion, onPacksChanged } from "./updates";
 
 type View = "map" | "data" | "settings";
@@ -56,7 +57,10 @@ function setupSimBar(): void {
     weather.classList.toggle("bad", flugverbot(w));
     weather.title = flugverbot(w) ? "Kein Flugbetrieb für NAH" : "Flugbetrieb möglich";
   };
-  play.addEventListener("click", () => (sim.state.laeuft ? sim.pause() : sim.start()));
+  play.addEventListener("click", () => {
+    if (sim.state.laeuft) return sim.pause();
+    if (ensureCodes(() => sim.start())) sim.start();
+  });
   tempoBtns.forEach((b) => b.addEventListener("click", () => sim.setTempo(Number(b.dataset.tempo))));
   sim.onChange(render);
   render();

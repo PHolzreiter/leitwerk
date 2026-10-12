@@ -7,6 +7,7 @@ import { sim, type Einsatz, type Ort, type SimFahrzeug } from "../sim/engine";
 import { distanceM, searchAddress, type AddressHit } from "../sim/geo";
 import { KATEGORIE_LABEL, type StatusKey } from "../sim/settings";
 import { openDialog } from "./dialog";
+import { ensureCodes } from "./codesPrompt";
 import { el, esc, toast } from "./dom";
 
 export interface OpsDeps {
@@ -176,7 +177,7 @@ export function createOpsView(left: HTMLElement, right: HTMLElement, deps: OpsDe
     renderLists();
   });
   left.querySelector<HTMLButtonElement>("[data-act=gen]")!.addEventListener("click", async () => {
-    if (!hasCodes()) return toast("Noch keine Einsatzcodes – bitte unter Daten → Einsatzcodes eine Liste importieren", "error");
+    if (!ensureCodes()) return;
     const e = await sim.generiere();
     if (e) select(e.id);
     else toast("Kein Einsatz erzeugt – Adressen noch nicht geladen?", "error");

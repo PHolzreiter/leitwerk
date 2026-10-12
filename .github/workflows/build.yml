@@ -90,7 +90,17 @@ jobs:
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-        run: npx tauri build --bundles ${{ matrix.bundles }}
+        shell: bash
+        run: |
+          set +e
+          if [ -z "$TAURI_SIGNING_PRIVATE_KEY" ]; then echo "::error::Secret TAURI_SIGNING_PRIVATE_KEY fehlt in diesem Repo"; fi
+          npx tauri build --bundles ${{ matrix.bundles }} 2>&1 | tee build.log
+          status=${PIPESTATUS[0]}
+          if [ $status -ne 0 ]; then
+            # letzte Zeilen als Anmerkung, damit der Fehler ohne Log-Download lesbar ist
+            grep -iE "error|failed|panicked|invalid|password|key" build.log | tail -25 | while IFS= read -r l; do echo "::error::${l:0:300}"; done
+          fi
+          exit $status
 
       - uses: actions/upload-artifact@v4
         with:
