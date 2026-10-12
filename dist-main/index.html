@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LeitWerk</title>
+    <script type="module" crossorigin src="/assets/index-Cc8NRW3c.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-DuyWckhE.css">
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span class="brand-name">LeitWerk</span>
+      </div>
+      <nav class="tabs" role="tablist">
+        <button class="tab active" data-view="map" role="tab">Leitstelle</button>
+        <button class="tab" data-view="data" role="tab">Daten</button>
+        <button class="tab" data-view="settings" role="tab">Einstellungen</button>
+      </nav>
+      <div class="simbar">
+        <span id="weather" class="weather" title="Wetter">–</span>
+        <button id="sim-play" class="btn small" type="button">▶ Start</button>
+        <div class="tempo" role="group" aria-label="Zeitraffer">
+          <button class="btn small" data-tempo="1">1×</button>
+          <button class="btn small" data-tempo="2">2×</button>
+          <button class="btn small" data-tempo="5">5×</button>
+          <button class="btn small" data-tempo="10">10×</button>
+        </div>
+        <time id="clock" class="clock" title="Simulationszeit">--:--:--</time>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <section id="view-map" class="view ops">
+        <aside class="ops-left"></aside>
+        <div class="ops-center">
+          <div id="map" class="map" aria-label="Karte"></div>
+          <div class="map-panel">
+            <div class="map-panel-title">Ebenen</div>
+            <label class="chk"><input type="checkbox" data-group="stations" checked /><span class="dot" style="background:#1d6fd8"></span>Dienststellen</label>
+            <label class="chk"><input type="checkbox" data-group="hospitals" checked /><span class="dot hosp"></span>Krankenhäuser</label>
+            <label class="chk"><input type="checkbox" data-group="pois" checked /><span class="dot" style="background:#2a9d8f"></span>POIs</label>
+            <button id="btn-sat" class="btn small block" type="button">Satellit</button>
+            <button id="btn-3d" class="btn small block" type="button">3D-Ansicht</button>
+          </div>
+          <div id="map-message" class="map-message" hidden></div>
+        </div>
+        <aside class="ops-right"></aside>
+      </section>
+      <section id="view-data" class="view" hidden></section>
+      <section id="view-settings" class="view scroll" hidden></section>
+    </main>
+
+    <footer class="statusbar">
+      <span id="cursor-pos">Position: –</span>
+      <span id="zoom-level">Zoom: –</span>
+      <span id="geo-status" class="muted"></span>
+      <span class="statusbar-spacer"></span>
+      <span class="muted">Rechtsklick auf die Karte: Eintrag anlegen · Rechtsklick auf ein Fahrzeug in der Liste: Status setzen</span>
+      <span id="app-version">v0.4.0</span>
+    </footer>
+
+  </body>
+</html>
