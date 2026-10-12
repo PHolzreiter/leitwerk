@@ -1,0 +1,252 @@
+@type;@id;@lat;@lon;name;healthcare:speciality;emergency;operator;addr:city
+node;115160761;48.1955792;16.3984155;Herz-Jesu-Krankenhaus;;;;Wien
+node;252364812;48.2050873;16.3860573;Franziskus Spital Landstraße;;;;Wien
+node;252365711;48.1923503;16.3454714;Krankenhaus der Barmherzigen Schwestern;urology;oncology;gastroenterology;no;Vinzenz Gruppe;Wien
+node;278296607;47.0695939;15.4308625;Altkatholische Christophoruskirche;;;;Graz
+node;295952591;47.8384514;16.9224556;Krankenhaus der Barmherzigen Brüder;;;;Frauenkirchen
+node;300391203;47.6020478;13.0231660;Christophorusschule;;;;
+node;324693828;48.1651808;16.2721231;St. Christophorus-Apotheke;;;;Wien
+node;335689997;47.1701010;14.6443275;St.-Christophorus-Weg;;;;
+node;710894546;47.4250476;14.7605355;"Unfallkrankenhaus Steiermark, Standort Kalwang";trauma;yes;Allgemeine Unfallversicherungsanstalt;Kalwang
+node;851880668;48.8871431;15.3964590;Christophorus Bildstock;;;;
+node;1345084873;48.2039658;15.6468013;Christophorus-Apotheke;;;;St. Pölten-Wagram
+node;1411886567;48.1480052;13.8675535;Christophorus Platzl;;;;
+node;1459987338;47.2705099;15.3296533;Heiliger Christophorus;;;;
+node;1681752180;48.1733865;15.8870781;Hl. Christophorus;;;;
+node;1772479344;48.0429157;16.6038408;Christophorus;;;;
+node;1849736412;48.5992227;13.1387284;St. Christophorus Kindergarten;;;;Vilshofen an der Donau
+node;1963429724;48.3258490;16.3696366;Christophorus-Marterl;;;;
+node;2297076973;47.6020126;13.0231625;Christophorusschule;;;;
+node;2348156487;48.0634420;16.7396830;Christophorus;;;;
+node;2561341642;48.3191700;16.2385349;Christophorusdenkmal;;;;
+node;3466299249;47.5949570;17.0242171;Városi kórház;;;;
+node;3521396555;47.9249589;16.5591820;Christophorus - Säule;;;;
+node;3655907257;48.5715099;16.0829287;TST Hollabrunn Christophorusstraße;;;EVN;
+node;3890547496;48.9016405;13.3178328;Dorfkapelle St. Christophorus;;;;
+node;4111129890;46.8178654;15.2222783;Christophorus-Apotheke;;;Mag. pharm. Christoph Gölles;Deutschlandsberg
+node;4607430941;48.2434317;14.2356787;Christophorus Apotheke;;;;
+node;4687284589;49.0112007;17.1261563;Dětská Nemocnice;;;;
+node;4715584190;48.1216946;16.5602430;Medizinische Ambulanz;;;;
+node;4831533954;48.6880522;15.7483671;Christophorus-Siedlung;;;;
+node;5882318071;47.2615651;15.3220721;Heiliger Christophorus;;;;
+node;5996501695;48.8126079;15.2852107;Landesklinikum Waidhofen/Thaya;psychiatry;child_psychiatry;;NÖ Landesgesundheitsagentur;Waidhofen an der Thaya
+node;6205119111;47.1314243;13.1331709;Haus Christophorus;;;;
+node;6553157969;47.6335071;15.8285214;Christophorus;;;;Semmering
+node;7124782469;46.8601653;15.1068208;Heiliger Christophorus;;;;
+node;7773868369;47.3055283;16.1838587;ÖAMTC Oberwart Christophorus 16;;landing_site;ÖAMTC;
+node;7773948258;47.3936570;13.2216904;Martin Luftrettungstation Sankt Johann im Pongau - Martin 1;;air_rescue_service;"Heli Austria GmbH, Martin Flugrettung";Sankt Johann im Pongau
+node;8538144226;47.1701439;14.6440206;St.-Christophorus-Weg;;;;
+node;9493739512;48.6037387;15.1643531;Christophorus-Marterl;;;;
+node;9568895083;47.2802818;15.9701838;Psychotherapie Hartberg;psychotherapist;no;"Mag.(FH) Philipp Schwab, MSc.";Hartberg
+node;9893559167;48.3219081;16.0649306;Universitätsklinikum Tulln;psychiatry;child_psychiatry;;NÖ Landesgesundheitsagentur;Tulln an der Donau
+node;10143072636;47.1545081;13.7117720;Apartment Hotel Garni - Haus Christophorus;;;;Mariapfarr
+node;10785386024;47.2471235;13.5606790;Appartementhaus Christophorus;;;;Tweng
+node;10971852773;47.4797652;14.0096935;Christophorus 14;;air_rescue_service;Christophorus Flugrettungsverein;Niederöblarn
+node;10971852774;47.4797730;14.0099784;Christophorus 99;;air_rescue_service;Christophorus Flugrettungsverein;Niederöblarn
+node;10971899524;47.8453833;16.2514248;Christophorus 3;;air_rescue_service;Christophorus Flugrettungsverein;Wiener Neustadt
+node;10971899525;47.8453500;16.2517893;Christophorus 33 / ITH;;air_rescue_service;Christophorus Flugrettungsverein;Wiener Neustadt
+node;10979555288;47.3937370;13.2219539;Martin Luftrettungsstation Sankt Johann im Pongau - Martin 10;;air_rescue_service;"Heli Austria GmbH, Martin Flugrettung";Sankt Johann im Pongau
+node;11602566320;48.7559592;13.0199899;Kita St. Christophorus Thundorf;;;;Osterhofen
+node;12168838533;48.3362079;13.7725616;St. Christophorus;;;;
+node;12425584054;49.1553346;16.6802004;Kryštof 04;;air_rescue_service;;
+node;12425584066;48.9441457;14.4450477;Kryštof 13;;air_rescue_service;;
+node;12426006425;48.1694893;17.2056380;Krištof 01;;air_rescue_service;;
+node;12723576483;47.0230271;15.4726589;Heiliger Christophorus;;;;
+node;12840723312;48.1551676;17.1553002;AGEL Chronicare;intensive;;"AGEL, a.s.";
+node;13309088085;48.2175585;16.3469367;Kinderwunschzentrum;;;;
+node;13309089328;48.2175841;16.3467643;Wiener Radiologie;;;;
+node;13340702247;48.1939130;16.2626634;St. Josef Krankenhaus;;;;
+node;14074431634;48.2123021;16.3579354;WUNSCHKIND Klinik Dr. Brunbauer;gynaecology;reproduktionsmedizin;ivf;icsi;unfruchtbarkeit;insemination;;Dr. Mathias Brunbauer;WIen
+node;14270467742;47.5593183;15.5947255;Christophorus-Kapelle;;;;
+way;9703333;48.3435090;16.3369715;Landesklinikum Korneuburg;emergency;;Niederösterreichische Landeskliniken-Holding;Korneuburg
+way;10158372;48.1511364;17.1167314;Univerzitná nemocnica Bratislava - Nemocnica Staré Mesto;;;Univerzitná nemocnica Bratislava;Bratislava
+way;13868047;47.7519966;13.0815837;Christophorusstraße;;;;
+way;14365013;48.5713020;16.0835242;Christophorusstraße;;;;
+way;15258576;48.0636064;16.7395881;Christophorusweg;;;;
+way;17358662;48.3078057;16.3237238;Landesklinikum Klosterneuburg;emergency;;Niederösterreichische Landeskliniken-Holding;Klosterneuburg
+way;23073953;48.3864959;16.2050471;Landesklinikum Stockerau;emergency;yes;;Stockerau
+way;23304539;48.1727477;16.3440504;Unfallkrankenhaus Meidling;;;;Wien
+way;23396743;48.5628057;16.0908426;Landesklinikum Hollabrunn;emergency;yes;Niederösterreichische Landeskliniken-Holding;
+way;23682686;48.2935993;16.4196196;Heeresspital;;yes;;Wien
+way;23963145;48.1718238;17.0894766;Národný onkologický ústav;oncology;;;Bratislava
+way;24812949;47.0428076;15.4072801;Christophorusgrund;;;;
+way;24812950;47.0426883;15.4069378;Christophorusgrund;;;;
+way;24812951;47.0427078;15.4069514;Christophorusgrund;;;;
+way;24992542;47.7500242;13.0839507;Christophorusstraße;;;;
+way;25843785;48.5675598;16.5815791;Landesklinikum Mistelbach-Gänserndorf;emergency;;Niederösterreichische Landeskliniken-Holding;Mistelbach
+way;26128150;48.1735489;16.3510213;Klinik Favoriten;emergency;yes;Wiener Gesundheitsverbund;Wien
+way;26277142;49.1024853;16.3728196;Nemocnice Ivančice;;yes;;Ivančice
+way;26708257;48.4120096;15.6156832;Universitätsklinikum Krems;emergency;yes;NÖ Landesgesundheitsagentur;Krems an der Donau
+way;27787585;47.7220758;16.0974808;Christophorusgasse;;;;
+way;29301902;48.2144679;15.6271026;Universitätsklinikum St. Pölten;general;gynaecology;paediatrics;dermatology;orthopaedics;internal;trauma;radiology;urology;surgery;cardiology;neurology;otorhinolaryngology;emergency;yes;Niederösterreichische Landeskliniken-Holding;St. Pölten
+way;29365407;48.8128984;15.2855576;Landesklinikum Waidhofen/Thaya;emergency;yes;;Waidhofen an der Thaya
+way;29427389;48.6685975;15.6613308;Landesklinikum Horn;emergency;yes;Niederösterreichische Landeskliniken-Holding;Horn
+way;30357483;47.8466756;16.8192875;Sankt-Christophorus-Siedlung;;;;
+way;30380446;47.1692680;14.6439165;St.-Christophorus-Weg;;;;
+way;35090185;47.3803169;15.0849985;Landeskrankenhaus Hochsteiermark - Standort Leoben;emergency;yes;Steiermärkische Krankenanstaltengesellschaft m.b.H.;Leoben
+way;37174194;48.2805058;14.2969815;Kepler Universitätsklinikum - Neuromed Campus;emergency;;;
+way;39172655;48.0429016;14.3075152;Krankenhaus Sierning;;no;Kreuzschwestern Sierning GmbH;Sierning
+way;59295173;48.0914834;16.2578920;Landesklinikum Mödling - Standort Hinterbrühl;child_psychiatry;;Niederösterreichische Landeskliniken-Holding;Hinterbrühl
+way;72146708;48.3037505;14.3043412;Kepler Universitätsklinikum - Med Campus III;trauma;cardiology;emergency;intensive;internal;urology;anaesthetics;surgery;yes;;
+way;72146709;48.3042773;14.3091722;Unfallkrankenhaus Linz;trauma;emergency;orthopaedics;intensive;anaesthetics;internal;physiatry;clinical_pathology;radiology;community;diagnostic_radiology;yes;Allgemeine Unfallversicherungsanstalt;Linz
+way;85826118;47.3052597;16.1835114;Christophorus 16;;;;
+way;86111062;48.2108626;16.3004639;Klinik Ottakring;emergency;yes;Wiener Gesundheitsverbund;Wien
+way;86116045;48.1995663;16.2918894;Hanusch-Krankenhaus;emergency;;;Wien
+way;87758929;48.0093694;15.5803204;Landesklinikum Lilienfeld;emergency;;NÖ Landeskliniken-Holding;Lilienfeld
+way;88489017;47.2517634;17.0836764;Markusovszky Egyetemi Oktatókórház;;no;;Mesteri
+way;88844723;47.1166544;13.1346219;Christophoruskirche;;;;Bad Gastein
+way;90045663;47.9528279;14.7884331;Landesklinikum Waidhofen/Ybbs;emergency;yes;Niederösterreichische Landeskliniken-Holding;Waidhofen an der Ybbs
+way;93553199;48.7525190;16.8792676;Nemocnice Břeclav;;;;
+way;94001148;47.4231146;15.2676566;Landeskrankenhaus Hochsteiermark - Standort Bruck an der Mur;emergency;yes;Steiermärkische Krankenanstaltengesellschaft m.b.H.;Bruck an der Mur
+way;94664981;48.2558174;15.6382141;Christophorus Straße;;;;
+way;96971623;47.0792448;15.4712584;Sankt Christophorus Seniorenhaus;;;St. Christophorus Seniorenhaus GmbH;Graz
+way;98798315;48.2069362;16.2717122;Standort Penzing der Klinik Ottakring;orthopaedics;pulmonology;psychiatry;no;;Wien
+way;108803078;48.3018507;14.3060068;Kepler Universitätsklinikum - Med Campus IV;;;;
+way;115804752;48.8120905;14.3255627;Nemocnice Český Krumlov;general;yes;;Český Krumlov
+way;115834786;48.3045044;14.3015782;Klinik Diakonissen Linz;orthopaedics;ophthalmology;angiology;internal;radiology;surgery;gynaecology;otolaryngology;pulmonology;nuclear;plastic_surgery;urology;stomatology;dental_oral_maxillo_facial_surgery;intensive;no;;Linz
+way;125910934;48.0447000;14.3931338;Pyhrn-Eisenwurzen Klinikum Steyr;emergency;;Oberösterreichische Gesundheitsholding;Steyr
+way;128266205;47.2705421;15.3241752;Klinikum Theresienhof;;no;;Frohnleiten
+way;147537551;47.8574893;16.9363968;Christophorusweg;;;;
+way;159139261;47.6709927;15.7865524;Gesundheitsresort Raxblick;;;;Reichenau an der Rax
+way;161907223;47.8151150;16.2484737;Universitätsklinikum Wiener Neustadt;cardiology;emergency;dermatovenereology;gynaecology;intensive;internal;nephrology;dialysis;nuclear;neurosurgery;paediatrics;radiotherapy;surgery;trauma;urology;yes;NÖ Landesgesundheitsagentur;
+way;162292992;47.5252873;14.3671184;LKH Rottenmann;general;yes;;Rottenmann
+way;162299384;47.5247349;14.3685137;"Landeskrankenhaus Rottenmann-Bad Aussee, Standort Rottenmann";emergency;yes;Steiermärkische Krankenanstaltengesellschaft m.b.H.;Rottenmann
+way;163205385;47.7577364;13.0808545;Christophorusstraße;;;;
+way;163205386;47.7589666;13.0801612;Christophorusstraße;;;;
+way;168040557;47.4390820;16.2163460;Christophorus Kapelle;;;;
+way;168289760;48.1722435;16.2756988;Klinik Hietzing;emergency;general;yes;Wiener Gesundheitsverbund;Wien
+way;169137501;48.2436640;16.3468951;Rudolfinerhaus;;;;Wien
+way;170240334;46.9189714;13.8740235;Christophorus Bergkirche;;;;
+way;172225929;48.1548869;14.8147271;Christophorusstraße;;;;
+way;176612782;49.0086352;17.1123591;Nemocnice Kyjov;;yes;;
+way;176995823;48.1611325;14.7124307;Christophorusgasse;;;;
+way;176995824;48.1610028;14.7131777;Christophorusstraße;;;;
+way;176995827;48.1614625;14.7129866;Christophorusweg;;;;
+way;177229918;49.0759184;15.4307814;Nemocnice Dačice;;;;
+way;177549552;49.0633774;17.0245088;;;;;
+way;179409676;47.2557099;17.1575027;Markusovszky Egyetemi Oktatókórház;;;;
+way;181021631;46.9849664;15.4465141;Christophorus 12;;;;
+way;197613681;48.5711252;16.3675550;St. Christophorus;;;;
+way;199997757;47.2729241;15.9663019;"Landeskrankenhaus Oststeiermark, Standort Hartberg";emergency;yes;Steiermärkische Krankenanstaltengesellschaft m.b.H.;Hartberg
+way;199997772;47.6000265;15.6684948;Landeskrankenhaus Hochsteiermark - Standort Mürzzuschlag;emergency;yes;Steiermärkische Krankenanstaltengesellschaft m.b.H.;Mürzzuschlag
+way;220603100;47.6016255;13.0230876;CJD Christophorusschule Berchtesgaden;;;;
+way;220634414;48.2240127;16.3461862;Evangelisches Krankenhaus Wien;;no;;Wien
+way;225974230;48.0647626;16.7392420;Christophorusweg;;;;
+way;235352787;48.3499750;13.3151739;Katholischer Pfarrkindergarten und Kinderhort St. Christophorus;;;Kath. Pfarrei Bad Füssing;Bad Füssing
+way;236814894;48.1021344;17.1100059;Medissimo;;;ProCare;
+way;236814895;48.1022873;17.1182968;Univerzitná nemocnica Bratislava - Nemocnica sv. Cyrila a Metoda;;yes;Univerzitná nemocnica Bratislava;Bratislava
+way;242585799;46.9855072;15.4475890;Christophorusweg;;;;
+way;242585800;46.9859011;15.4483906;Christophorusweg;;;;
+way;253114479;48.1249286;17.2082355;Univerzitná nemocnica Bratislava – Špecializovaná geriatrická nemocnica;;;Univerzitná nemocnica Bratislava;Bratislava
+way;255530400;46.9692354;13.7291996;Gästehaus Christophorus;;;Josef Brugger;Kremsbrücke
+way;261701932;48.0920043;14.8056383;Landesklinikum Mauer;psychiatry;;Landeskliniken-Holding;Mauer bei Amstetten
+way;261921616;48.2670899;16.4065830;Klinik Floridsdorf;psychiatry;intensive;orthopaedics;emergency;gynaecology;surgery;cardiology;maternity;traumatology;yes;Wiener Gesundheitsverbund;Wien
+way;265635839;48.0893583;16.2972291;Landesklinikum Mödling;emergency;orthopaedics;yes;Niederösterreichische Landeskliniken-Holding;Mödling
+way;270240190;48.1463582;17.1181298;"Univerzitná nemocnica - Nemocnica svätého Michala, a.s.,";;;;Bratislava
+way;294570182;47.8160527;13.7220369;Christophorushütte;;;;Ebensee
+way;296359042;48.8456579;13.1395282;Kindertagesstätte St. Christophorus;;;;
+way;301627289;48.1564738;16.3049251;St. Christophorus;;;;
+way;302694267;47.6316427;13.0631061;Christophorusschule Buchenhöhe - Mittelschule;;;;
+way;312919458;48.7435015;16.7596273;Nemocnice Valtice;;;;
+way;322766720;48.1661122;17.0861615;Univerzitná nemocnica Bratislava - Nemocnica akademika L. Dérera - Kramáre;;;Univerzitná nemocnica Bratislava;
+way;327744394;48.6161838;13.5444812;Christophoruskirche;;;;Thyrnau
+way;330222835;48.4114171;13.1292391;Christophorus Kapelle;;;;
+way;330575866;48.1459662;17.1110814;Univerzitná nemocnica s poliklinikou Milosrdní bratia;;;Hospitalská rehoľa sv.Jána z Boha - Milosrdní bratia;Bratislava
+way;334326126;47.8363435;13.3952339;Christophoruskapelle;;;;
+way;338878854;48.9600095;14.4669285;Nemocnice České Budějovice;;yes;Nemocnice České Budějovice a.s.;
+way;340308386;48.6874565;15.7469809;Pfarrkirche hl. Christophorus;;;;
+way;344046401;47.9339393;14.8980828;Christophorus-Kapelle;;;;
+way;344476330;47.9692399;14.9396745;ÖAMTC Luftrettungstation Ybbsitz;;air_rescue_service;Christophorus Flugrettungsverein;Ybbsitz
+way;344476331;47.9691101;14.9394103;ÖAMTC Christophorus 15;;;ÖAMTC Flugrettungsverein;
+way;354393704;48.1548236;17.1517175;Univerzitná nemocnica Bratislava – Nemocnica Ružinov;;;Univerzitná nemocnica Bratislava;
+way;365980828;48.4402774;17.0337553;Nemocnica Malacky;;;Nemocničná a.s.;
+way;369024092;48.1609356;16.2844387;Neurologisches Zentrum Rosenhügel;;;Krankenanstaltenverbund Wien (KAV);Wien
+way;369024093;48.1636413;16.2820922;Orthopädisches Spital Speising;;;Orthopädisches Spital Speising GmbH;Wien
+way;369817631;48.2179385;16.4636846;Klinik Donaustadt;emergency;general;yes;Wiener Gesundheitsverbund;Wien
+way;378561750;48.1466452;17.1130925;"Onkologický ústav sv. Alžbety, s.r.o.";;;;Bratislava
+way;397475168;48.3221401;16.0655082;Universitätsklinikum Tulln;emergency;;Niederösterreichische Landeskliniken-Holding;Tulln
+way;406541319;47.8574169;14.6830704;Sonderkrankenanstalt Rehabilitationszentrum Weyer;;;PVA - Pensionsversicherungsanstalt;Weyer
+way;411111799;48.1745722;15.8863822;Pfarrkirche Heiliger Christophorus;;;;
+way;420910893;47.6104011;17.2463836;Margit Kórház;;;;Csorna
+way;457896425;47.6770138;16.5992159;Soproni Erzsébet Oktató Kórház;;;;Sopron
+way;472467872;47.7263083;16.0866846;Universitätsklinikum Neunkirchen;emergency;gynaecology;internal;intensive;orthopaedics;physiatry;psychiatry;;Niederösterreichische Landesgesundheitsagentur;Neunkirchen
+way;476088079;48.9449625;16.7298630;Nemocnice Hustopeče p.o.;;;;
+way;490630782;48.2266457;15.3400892;Landesklinikum Melk;emergency;;Niederösterreichische Landeskliniken-Holding;
+way;490986421;48.6876300;15.7483111;Christophorus-Siedlung;;;;
+way;490986422;48.6882089;15.7477231;Christophorus-Siedlung;;;;
+way;490986424;48.6894535;15.7471808;Christophorus-Siedlung;;;;
+way;531039883;48.5998067;15.1622189;Landesklinikum Zwettl;emergency;;Niederösterreichische Landeskliniken-Holding;Zwettl
+way;549576373;48.7611866;14.9752155;Landesklinikum Gmünd;emergency;yes;Landeskliniken-Holding;Gmünd
+way;564131117;46.9450292;14.4302303;Christophorusweg;;;;
+way;572316622;47.9693050;14.9398747;ÖAMTC Christophorus 15;;;;Ybbsitz
+way;590973760;46.8801293;14.5053917;Christophorusweg;;;;
+way;590973763;46.8802205;14.5060448;Christophorusweg;;;;
+way;590973766;46.8800656;14.5057377;Christophorusweg;;;;
+way;607819442;48.1893488;16.4124750;ÖAMTC Luftrettungstation Wien-Erdberg;;air_rescue_service;Christophorus Flugrettungsverein;Wien
+way;617855670;48.4464576;15.6285275;Christophorus 2;;landing_site;Christophorus Flugrettungsverein;
+way;662662405;48.2081862;17.0314380;Nemocnica Bory;;;Svet Zdravia Development;
+way;680586049;48.1666836;17.0907623;Národný ústav detských chorôb;;;;
+way;768799145;48.7012486;15.3283298;Landesklinikum Allentsteig;;;Niederösterreichische Landeskliniken-Holding;Allentsteig
+way;775327111;48.8435085;17.2283092;Fakultná nemocnica Agel Skalica;general;yes;Fakultná nemocnica Agel Skalica;
+way;778564760;48.3159308;17.2523591;Psychiatrická nemocnica Philippa Pinela Pezinok;;;;
+way;780288994;48.1537806;17.1299833;"Špecializovaná nemocnica pre ortopedickú protetiku Bratislava, n. o.";orthopaedics;;;Bratislava
+way;825130450;48.8641942;17.1456228;Nemocnice Tomáše Garrigue Masaryka Hodonín;;yes;;
+way;846973769;47.9902936;15.0799712;St. Christophorus;;;;
+way;872925813;48.1433719;16.9578668;Landesklinikum Hainburg;emergency;;Niederösterreichische Landeskliniken-Holding;Hainburg an der Donau
+way;889570982;48.1275608;14.8811972;Landesklinikum Amstetten;emergency;yes;Niederösterreichische Landeskliniken-Holding;Amstetten
+way;919288216;47.1701641;14.6442892;St.-Christophorus-Weg;;;;
+way;919288217;47.1701800;14.6442527;Christophorusweg;;;;
+way;919288218;47.1700592;14.6439942;Christophorusweg;;;;
+way;919288219;47.1700841;14.6439972;St.-Christophorus-Weg;;;;
+way;986592354;48.1814258;15.0796263;Therapiezentrum Ybbs;psychiatry;;Wiener Gesundheitsverbund;Ybbs an der Donau
+way;994837472;48.0121150;15.1632956;Landesklinikum Scheibbs;surgery;internal;gynaecology;palliative;physiatry;general;emergency;radiology;yes;;
+way;1002813523;48.1547016;14.8150803;Christophorusstraße;;;;
+way;1097971718;47.3360976;15.0015967;NAH Christophorus 17;;;;
+way;1125152516;48.3017296;14.3047145;Kepler Universitätsklinikum - Med Campus V;;;;
+way;1125152518;48.3027666;14.3048771;Kepler Universitätsklinikum - Med Campus II;blood_check;blut;;Kepler Universitätsklinikum;Linz
+way;1125799855;47.6692384;16.5776989;Soproni Rehabilitációs Gyógyintézet;;;Soproni Gyógyközpont;Sopron
+way;1155844024;48.4009882;13.4495019;ÖAMTC/ADAC Luftrettungstation Suben;;air_rescue_service;"Christophorus Flugrettungsverein, ADAC Luftrettung";Suben
+way;1157463869;48.2390934;14.1865143;ÖAMTC Luftrettungstation Hörsching-Linz;;air_rescue_service;Christophorus Flugrettungsverein;Hörsching
+way;1157464881;47.8992811;13.9394763;Martin Luftrettungstation Scharnstein;;air_rescue_service;"Heli Austria GmbH, Martin Flugrettung";Mühldorf
+way;1180676625;47.3053892;16.1836694;ÖAMTC Luftrettungstation Oberwart;;air_rescue_service;Christophorus Flugrettungsverein;Oberwart
+way;1180678617;48.4463291;15.6284533;ÖAMTC Luftrettungstation Krems;;air_rescue_service;Christophorus Flugrettungsverein;Gneixendorf
+way;1181455657;46.9849670;15.4466360;ÖAMTC Luftrettungstation Feldkirchen bei Graz;;air_rescue_service;Christophorus Flugrettungsverein;Feldkirchen bei Graz
+way;1181458304;47.4797814;14.0097401;ÖAMTC Luftrettungstation Niederöblarn;;air_rescue_service;Christophorus Flugrettungsverein;Niederöblarn
+way;1181460038;47.3361032;15.0014968;ÖAMTC Luftrettungstation St. Michael in der Obersteiermark;;air_rescue_service;Christophorus Flugrettungsverein;St. Michael in der Obersteiermark
+way;1182463487;47.0432801;15.4071430;Christophorusgrund;;;;
+way;1184185997;46.8191854;13.8568069;ÖAMTC Luftrettungstation Patergassen;;air_rescue_service;Christophorus Flugrettungsverein;Patergassen
+way;1204928188;48.0003076;16.2549826;Landesklinikum Baden;psychiatry;internal;surgery;trauma;urology;emergency;yes;NÖ Landesgesundheitsagentur;Baden
+way;1211892462;48.6877884;15.7486743;Christophorus-Siedlung;;;;
+way;1231737430;48.0017936;16.6072656;Christophoruskapelle;;;;
+way;1248895804;48.2282146;16.3040927;Krankenhaus Göttlicher Heiland;;;;Wien
+way;1331396781;47.8570821;16.9389095;Flugrettungsstützpunkt Christophorus 18;;air_rescue_service;Christophorus Flugrettungsverein;Frauenkirchen
+way;1331398825;47.8575528;16.9384052;Christophorusweg;;;;
+way;1350623982;47.8571034;16.9388870;Christophorus 18;;landing_site;Christophorus Flugrettungsverein;
+way;1384139212;49.1395801;15.0050762;Nemocnice Jindřichův Hradec;;yes;;
+way;1388708089;48.1697649;17.0806567;Nemocnica AGEL;;;AGEL Clinic s.r.o.;Bratislava
+way;1421827481;48.6886804;15.7465403;Christophorus-Siedlung;;;;
+way;1454691838;48.1940856;16.2628288;St. Josef Krankenhaus;;no;;
+way;1546702991;48.3050914;14.3081177;;;;;
+way;1546702992;48.3052995;14.3067687;Mein Zahngesundheitszentrum Linz;;;;
+way;1552482272;47.6165615;16.0865190;Universitätsklinikum Hochegg;;;Niederösterreichische Landesgesundheitsagentur;Grimmenstein
+way;1552789461;47.8467543;16.5137906;Krankenhaus der Barmherzigen Brüder Eisenstadt;emergency;internal;gynaecology;neurology;psychiatry;otolaryngology;orthopaedics;trauma;general;palliative;anaesthetics;intensive;;Krankenhaus der Barmherzigen Brüder Eisenstadt GmbH;Eisenstadt
+way;1552919263;48.0928268;17.0656566;Klinik Kittsee;emergency;yes;Burgenländische Krankenanstalten-Gesellschaft m. b. H.;Kittsee
+way;1552936341;47.5069529;16.5095453;Klinik Oberpullendorf;emergency;yes;Burgenländische Krankenanstalten-Gesellschaft m. b. H.;Oberpullendorf/Felsőpulya
+way;1553132533;47.2792781;16.2044880;Klinik Oberwart;emergency;;Burgenländische Krankenanstalten Ges.m.b.H;Oberwart
+relation;271563;48.4922426;14.4979369;Klinikum Freistadt;emergency;yes;OÖG Oberösterreichische Gesundheitsholding;Freistadt
+relation;412222;48.5998252;15.1621057;Landesklinikum Zwettl;;yes;Niederösterreichische Landeskliniken-Holding;Zwettl
+relation;1320961;47.4049073;15.8818195;Marienkrankenhaus Vorau;emergency;yes;Vorauer Marienschwestern von der Unbefleckten Empfängnis;Vorau
+relation;1659758;48.2163125;16.3443813;St. Anna Kinderspital;;children;;Wien
+relation;2147557;48.2151407;16.3816643;Krankenhaus der Barmherzigen Brüder Wien;emergency;yes;Konvent der Barmherzigen Brüder Wien;Wien
+relation;2438288;48.1883316;16.3622570;Franziskus Spital Margareten GmbH;;;;
+relation;2685006;47.4901418;15.3769048;LKH Hochsteiermark;;;Steiermärkische Krankenanstaltengesellschaft m.b.H.;
+relation;2685007;47.5247349;14.3685137;Landeskrankenhaus Rottenmann-Bad Aussee;;;Steiermärkische Krankenanstaltengesellschaft m.b.H.;
+relation;2764083;48.2199536;16.3476573;AKH Wien;emergency;general;yes;Wiener Gesundheitsverbund;Wien
+relation;6158328;48.8694012;16.0514252;Nemocnice Znojmo;;yes;;
+relation;8845544;48.1701248;17.0861557;Národný ústav srdcových a cievnych chorôb;cardiology;;;
+relation;9139838;47.2493782;16.9434817;Sárvár Kórház;;;;
+relation;9532336;48.8318833;15.1957480;Christophorusweg 650;;;;
+relation;10279569;48.1569226;13.8519602;Offenhausener Christophorusweg;;;Marktgemeinde Offenhausen;
+relation;10340633;47.6511455;16.6626907;Balfi Gyógyfürdőkórház;;;;Sopron
+relation;11203514;47.0792573;15.4712360;Sankt Christophorus Seniorenhaus;;;St. Christophorus Seniorenhaus GmbH;Graz
+relation;15517290;48.1959017;16.3911837;Klinik Landstraße;emergency;general;yes;Wiener Gesundheitsverbund;Wien

@@ -1,0 +1,270 @@
+@type;@id;@lat;@lon;name;healthcare:speciality;emergency;operator;addr:city
+node;298274837;48.0974514;15.5086625;Rotes Kreuz Ortsstelle Hofstetten-Grünau;;ambulance_station;Rotes Kreuz;Hofstetten-Grünau
+node;332406060;48.6440343;16.7200771;Rotes Kreuz Ortsstelle Großkrut;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Großkrut
+node;421411946;48.2316741;16.3232869;Johanniter-Unfall-Hilfe Wien Herbeckstraße;;ambulance_station;Johanniter-Unfall-Hilfe;Wien
+node;528735256;48.1384618;15.1370550;Rotes Kreuz Dienststelle Wieselburg;;ambulance_station;Österreichisches Rotes Kreuz;Wieselburg
+node;574304122;47.9441330;16.2576050;Samariterbund Steinfelden-Schönau-Leobersdorf;;ambulance_station;Arbeiter-Samariter-Bund Österreichs;Günselsdorf
+node;915963622;48.1813824;16.3774800;Rotes Kreuz Bezirksstelle Van Swieten;;ambulance_station;Wiener Rotes Kreuz;Wien
+node;1344348694;47.6653031;14.7163882;Rotes Kreuz Ortsstelle Großreifling;;ambulance_station;Österreichisches Rotes Kreuz;Altenmarkt bei St. Gallen
+node;1366108377;48.5159980;15.4901577;Rotes Kreuz Ortsstelle Gföhl;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Gföhl
+node;1424395795;48.8681170;15.1238480;Rotes Kreuz Ortsstelle Heidenreichstein;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Heidenreichstein
+node;1614235461;48.2740889;14.4469246;Rotes Kreuz Ortsstelle St. Georgen an der Gusen;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Oberösterreich";St. Georgen an der Gusen
+node;1674372424;48.3500685;14.6697687;Rotes Kreuz Ortsstelle Bad Zell;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Oberösterreich";Bad Zell
+node;1725884677;48.1929356;16.3391508;Wiener Berufsrettung Rettungsstation Mariahilf;;ambulance_station;Wiener Berufsrettung;Wien
+node;1756793618;48.2140354;16.3785170;Rotes Kreuz Bezirksstelle Bertha von Suttner;;ambulance_station;Österreichisches Rotes Kreuz;Wien
+node;2242646287;47.8721384;15.3760555;Rotes Kreuz Dienststelle Annaberg;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Annaberg
+node;2434602731;48.1964343;16.2959146;Samariterbund Rudolfsheim-Fünfhaus;;ambulance_station;Arbeiter-Samariter-Bund Österreichs;Wien
+node;2467876179;48.7620823;16.8455422;;;ambulance_station;MUDr. Olga Lukesová;
+node;2544514862;48.7557727;16.8870696;;;ambulance_station;;
+node;2677444142;47.4057825;15.8791099;Rotes Kreuz Ortstelle Vorau;;ambulance_station;Österreichisches Rotes Kreuz;Vorau
+node;3195902571;48.0491693;15.3248778;Rotes Kreuz Ortsstelle Texing;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Texing
+node;3349612404;48.2331654;16.3715163;Samariterbund Brigittenau;;ambulance_station;Arbeiter-Samariter-Bund Österreichs;Wien
+node;3695859367;48.4944305;14.9556677;Rotes Kreuz Ortsstelle Arbesbach;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Arbesbach
+node;3781813744;48.3750260;15.1544824;Rotes Kreuz Ortsstelle Martinsberg;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Martinsberg
+node;3922413143;47.6783384;16.6001157;Mentőállomás;;ambulance_station;Országos Mentőszolgálat;Sopron
+node;4156895048;48.2581172;15.7553972;Rotes Kreuz Dienststelle Kapelln;;ambulance_station;Österreichisches Rotes Kreuz;Kapelln
+node;4380581742;48.6659602;16.6306170;Rotes Kreuz Ortsstelle Poysdorf;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Poysdorf
+node;4669670107;49.0448991;15.8008413;ZZS Moravské Budějovice;;ambulance_station;Kraj Vysočina;
+node;5322076812;48.2010840;15.5117296;Rotes Kreuz Ortsstelle Prinzersdorf;;ambulance_station;Rotes Kreuz;Prinzersdorf
+node;5518531248;48.6678170;15.6605171;Rotes Kreuz Bezirksstelle Horn;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Horn
+node;7199429566;47.6628303;14.9870734;Rotes Kreuz Ortsstelle Wildalpen;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Steiermark";Wildalpen
+node;7676990280;48.4066086;14.8362018;Rotes Kreuz Ortsstelle Königswiesen;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Oberösterreich";Königswiesen
+node;7677048271;48.4926727;14.4976541;Rotes Kreuz Notarztdienst Freistadt;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Oberösterreich";Freistadt
+node;7787275630;47.5731153;14.4572649;Freiwillige Feuerwehr Admont Abteilung Rettungsdienst;;ambulance_station;Freiwillige Feuerwehr Admont;Admont
+node;7787616928;47.5917359;17.0331427;Kapuvár Mentőállomás;;ambulance_station;;Kapuvár
+node;7820280785;48.8385004;14.6360650;ZZS Jihočeského kraje - výjezdová základna Trhové Sviny;;ambulance_station;;
+node;7820280786;48.9663848;14.4703497;ZZS Jihočeského kraje - výjezdová základna České Budějovice;;ambulance_station;;
+node;7820280787;48.9916179;14.4503762;ZZS Jihočeského kraje - výjezdová základna České Budějovice - Vltava;;ambulance_station;;
+node;7820466144;48.9990172;14.4811152;ZZS Jihočeského kraje - výjezdová základna České Budějovice - Pražská;;ambulance_station;;
+node;7924035939;48.2216980;16.5060301;Wiener Berufsrettung Rettungsstation Seestadt;;ambulance_station;Wiener Berufsrettung;
+node;8458909745;47.5811793;16.4262124;Samariterbund Weppersdorf;;ambulance_station;Arbeiter-Samariter-Bund Österreichs;Weppersdorf
+node;8458925337;48.1846054;16.3257912;Samariterbund Zentrale Wien;;ambulance_station;Arbeiter-Samariter-Bund Österreichs;Wien
+node;8459071351;48.0557396;16.2072016;Samariterbund Gaaden-Wienerwald;;ambulance_station;Arbeiter-Samariter-Bund Österreichs;Gaaden
+node;8460332190;48.0414412;15.6087711;Samariterbund Traisen;;ambulance_station;Arbeiter-Samariter-Bund Österreichs;Traisen
+node;8460412540;47.9805050;15.3223368;Samariterbund Frankenfels - Schwarzenbach;;ambulance_station;Arbeiter-Samariter-Bund Österreichs;Frankenfels
+node;8460443947;48.2044551;15.3893411;Samariterbund Loosdorf;;ambulance_station;Arbeiter-Samariter-Bund Österreichs;Loosdorf
+node;8474829171;47.5680425;15.6200687;Samariterbund Mürzzuschlag;;ambulance_station;Arbeiter-Samariter-Bund Österreichs;Langenwang
+node;8588879441;47.5023083;16.7775330;Lövő Mentőállomás;;ambulance_station;Országos Mentőszolgálat;Lövő
+node;8849976354;48.1828984;16.8803649;Rotes Kreuz Dienststelle Engelhartstetten;;ambulance_station;Rotes Kreuz Bezirksstelle Gänserndorf-Marchegg;Engelhartstetten
+node;9103164233;48.1724519;16.3430496;Parkgarage Traumazentrum;;;;
+node;9331737062;48.2586378;15.5644941;Rotes Kreuz Ortsstelle Karlstetten-Neidling;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Karlstetten
+node;10002691734;48.3511749;15.7448824;Samariterbund Traismauer;;ambulance_station;Arbeiter-Samariter-Bund Österreichs;Traismauer
+node;10589400302;47.4223983;17.0176182;Répcelak Mentőállomás;;ambulance_station;Országos Mentőszolgálat;Répcelak
+node;11020529069;47.7704728;15.3224992;Rotes Kreuz Notarztstützpunkt Mariazell;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Steiermark";Mariazell
+node;11020911938;48.2140841;16.3676816;Malteser Austria Bereich Wien;;ambulance_station;Malteser Hospitaldienst Austria;Wien
+node;11020911945;48.2452779;16.3503116;Samariterbund Döbling;;ambulance_station;Arbeiter-Samariter-Bund Österreichs;Wien
+node;11026572982;47.8463951;16.5136684;Rotes Kreuz Notarztdienst Eisenstadt;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Burgenland";Eisenstadt
+node;11098048659;48.3201619;15.5915701;Rotes Kreuz Ortsstelle Oberwölbling;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Oberwölbling
+node;11099076008;47.8953114;15.7360405;Rotes Kreuz Ortsstelle Rohr im Gebirge;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Rohr im Gebirge
+node;11101225424;48.0900037;16.2978682;Rotes Kreuz Notarztstützpunkt Mödling;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";
+node;11101232755;48.8533505;15.4860454;Rotes Kreuz Notarztstützpunkt Raabs;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Raabs an der Thaya
+node;11101303870;48.1731096;16.3443018;Wiener Berufsrettung Notarztstützpunkt Traumazentrum Meidling;;ambulance_station;Wiener Berufsrettung;
+node;11101315890;48.2190749;16.4639524;Wiener Berufsrettung Notarztstützpunkt Donaustadt;;ambulance_station;Wiener Berufsrettung;Wien
+node;11101340276;48.2212729;16.3456761;Wiener Berufsrettung Notarztstützpunkt AKH Wien;;ambulance_station;Wiener Berufsrettung;Wien
+node;11101356661;48.1727065;16.2750992;Wiener Berufsrettung Notarztstützpunkt Hietzing;;ambulance_station;Wiener Berufsrettung;Wien
+node;11101397047;48.2104142;16.3006995;Wiener Berufsrettung Notarztstützpunkt Wilhelminenspital Klinik Ottakring;;ambulance_station;Wiener Berufsrettung;
+node;11101969125;47.9301713;15.4905613;Rotes Kreuz Ortsstelle Türnitz;;ambulance_station;Rotes Kreuz;Türnitz
+node;11101980459;48.2260605;16.8226480;Rotes Kreuz Dienststelle Lassee;;ambulance_station;Rotes Kreuz Bezirksstelle Gänserndorf-Marchegg;Lassee
+node;11102023013;47.9388674;16.4769292;Rotes Kreuz Dienststelle Deutsch Brodersdorf;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Deutsch Brodersdorf
+node;11291229437;48.3037218;15.4735450;Samariterbund Dunkelsteinerwald;;ambulance_station;Arbeiter-Samariter-Bund Österreichs;Gansbach
+node;11691727120;48.2688243;16.4054580;Wiener Berufsrettung Rettungsstation Floridsdorf;;ambulance_station;Wiener Berufsrettung;Wien
+node;11724481791;48.6065580;16.9049876;Rotes Kreuz Ortsstelle Hohenau an der March;;ambulance_station;Rotes Kreuz Landesverband Niederösterreich;Hohenau an der March
+node;12151485748;48.7546199;15.9514805;Rotes Kreuz Bezirksstelle Retz;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Retz
+node;12483894052;48.7993928;15.6696100;Rotes Kreuz Ortsstelle Geras;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Geras
+node;12492214988;47.4304872;16.0597131;Rotes Kreuz Ortsstelle Friedberg;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Steiermark";Friedberg
+node;12498252850;48.7580363;16.6502273;Rotes Kreuz Ortsstelle Drasenhofen;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Drasenhofen
+node;12500606042;48.0140492;16.9824346;Rotes Kreuz Ortsstelle Gattendorf;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Burgenland";Gattendorf
+node;13058478179;47.5893964;16.2604174;Rotes Kreuz Ortsstelle Hollenthon-Lichtenegg;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Hollenthon
+node;13120731558;48.1894215;16.4128341;Notarzthubschrauber C9;;ambulance_station;ÖAMTC & Wiener Berufsrettung;
+node;13120736280;48.1350612;16.3506445;Wiener Rotes Kreuz Standort Süd;;ambulance_station;Wiener Rotes Kreuz;Wien
+node;13415287210;48.2532368;16.0146709;Rotes Kreuz Ortsstelle Sieghartskirchen;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Sieghartskirchen
+node;13537230137;48.2778674;15.6959398;Rotes Kreuz Bezirksstelle Herzogenburg;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Herzogenburg
+node;13584983448;48.5978332;15.6650974;Rotes Kreuz Ortsstelle Gars am Kamp;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Gars am Kamp
+node;13833342182;48.4275293;15.9038298;Rotes Kreuz Ortsstelle Kirchberg am Wagram;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Kirchberg am Wagram
+way;19869923;48.2913698;16.4696512;Rotes Kreuz Dienststelle Gerasdorf;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Gerasdorf bei Wien
+way;23049009;48.3388855;16.3362030;Rotes Kreuz Bezirksstelle Ortsstelle Korneuburg;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Korneuburg
+way;26299560;48.2066977;16.1827480;Samariterbund Purkersdorf;;ambulance_station;Arbeiter-Samariter-Bund Österreichs;Purkersdorf
+way;26299582;48.2011285;16.1695731;Rotes Kreuz Bezirksstelle Purkersdorf-Gablitz;;ambulance_station;Rotes Kreuz Purkersdorf;Purkersdorf
+way;26806369;48.1436665;16.9600128;Rotes Kreuz Bezirksstelle Hainburg;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Hainburg an der Donau
+way;27090722;48.3081326;16.3248118;Rotes Kreuz Bezirksstelle Klosterneuburg;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Klosterneuburg
+way;29216693;48.1182593;16.2691870;Rotes Kreuz Ortsstelle Perchtoldsdorf;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Pertoldsdorf
+way;29278798;48.2363122;16.4074020;Samariterbund Floridsdorf-Donaustadt;;ambulance_station;Arbeiter-Samariter-Bund Österreichs;Wien
+way;29306031;48.1901010;15.8998235;Rotes Kreuz Bezirksstelle Neulengbach;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Neulengbach
+way;29474058;48.6003879;15.1636450;Rotes Kreuz Bezirksstelle Zwettl;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Zwettl-Niederösterreich
+way;30164441;48.4806209;16.4794915;Rotes Kreuz Ortsstelle Kreuzstetten;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Kreuzstetten
+way;30337747;47.5061667;16.5097334;Rotes Kreuz Dienststelle Oberpullendorf;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Burgenland";Oberpullendorf
+way;30343956;47.8370187;16.5238025;Rotes Kreuz Bezirksstelle Eisenstadt;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Burgenland";Eisenstadt
+way;30364838;47.5451160;15.5672744;Rotes Kreuz Ortstelle Krieglach;;ambulance_station;Österreichisches Rotes Kreuz;Krieglach
+way;30512121;47.8980351;15.9565784;Rotes Kreuz Bezirksstelle Pernitz;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Pernitz
+way;30557227;48.0299873;16.7821325;Rotes Kreuz Bezirksstelle Bruck an der Leitha;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Bruck an der Leitha
+way;30652964;48.3858133;16.2048355;Rotes Kreuz Ortsstelle Stockerau;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Stockerau
+way;31022047;48.2715570;16.4032048;Johanniter Center Nord;;ambulance_station;Die Johanniter;Wien
+way;31990166;48.1766686;16.3943417;Wiener Berufsrettung Rettungsstation Arsenal;;ambulance_station;Wiener Berufsrettung;Wien
+way;35553411;48.1112018;16.2863227;Rotes Kreuz Bezirksstelle Brunn am Gebirge;;ambulance_station;Rotes Kreuz;Brunn am Gebirge
+way;35683540;48.0014671;16.2538943;Rotes Kreuz Bezirksstelle Baden;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Baden
+way;35691584;48.0206105;16.2984329;Samariterbund Traiskirchen-Trumau;;ambulance_station;Arbeiter-Samariter-Bund Österreichs;Traiskirchen
+way;38093853;48.2121935;15.6350584;Samariterbund St. Pölten;;ambulance_station;Arbeiter-Samariter-Bund Österreichs;St. Pölten
+way;38424205;48.3168488;16.0645466;Rotes Kreuz Bezirksstelle Tulln;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Tulln an der Donau
+way;40877863;48.2641310;16.4299816;Wiener Berufsrettung Rettungsstation Leopoldau;;ambulance_station;Wiener Berufsrettung;Wien
+way;50313660;48.8628558;16.0389262;Zdravotnická záchranná služba;;ambulance_station;;
+way;71590279;48.4805469;15.6844769;Rotes Kreuz Bezirksstelle Langenlois;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Langenlois
+way;81847673;47.4234314;15.2645083;Rotes Kreuz Bezirksstelle Ortsstelle Bruck-Mürzzuschlag;;ambulance_station;Österreichisches Rotes Kreuz;Bruck an der Mur
+way;88047695;48.8119877;15.2843613;Rotes Kreuz Bezirksstelle Waidhofen/Thaya;;ambulance_station;Österreichisches Rotes Kreuz;Waidhofen an der Thaya
+way;88814473;48.4129783;15.6134826;Rotes Kreuz Bezirksstelle Krems;;ambulance_station;Österreichisches Rotes Kreuz;Krems an der Donau
+way;90045647;47.9499619;14.7892976;Österreichisches Rotes Kreuz Bezirksstelle Waidhofen/Ybbs;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Waidhofen an der Ybbs
+way;90391089;48.2218202;16.4504300;Samariterbund Stadlau;;ambulance_station;Arbeiter-Samariter-Bund Österreichs;Wien
+way;90991378;48.1636529;16.3746667;Wiener Berufsrettung Rettungsstation Favoriten;;ambulance_station;Wiener Berufsrettung;Wien
+way;101647581;47.6927401;15.8589787;Rotes Kreuz Dienststelle Payerbach Reichenau;;ambulance_station;Rotes Kreuz;Payerbach
+way;102299364;47.4375590;15.2889147;Rotes Kreuz Ortstelle Kapfenberg;;ambulance_station;Österreichisches Rotes Kreuz;Kapfenberg
+way;104169704;48.4719635;15.9811802;Rotes Kreuz Bezirksstelle Großweikersdorf;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Großweikersdorf
+way;106189665;48.2363831;16.3827042;Traumazentrum Brigittenau;;;;
+way;113620111;47.8542360;15.5625287;Rotes Kreuz Ortsstelle St. Aegyd am Walde;;ambulance_station;Österreichisches Rotes Kreuz;St.Aegyd am Neuwalde
+way;115623426;49.0048966;14.7614162;Výjezdová základna Třeboň;;ambulance_station;;
+way;119772236;48.1317400;15.6201849;Samariterbund St. Pölten - St. Georgen;;ambulance_station;Arbeiter-Samariter-Bund Österreichs;St. Georgen am Steinfelde
+way;120115913;48.3000000;15.8927549;Rotes Kreuz Bezirksstelle Atzenbrugg-Heiligeneich;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Heiligeneich
+way;120874562;48.5490645;16.7533884;Rotes Kreuz Bezirksstelle Zistersdorf;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Zistersdorf
+way;122402557;48.2135394;15.6289222;Rotes Kreuz Samariterbund Notarztstützpunkt St. Pölten;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich, Arbeiter Samariterbund Österreichs";
+way;124352976;48.2715652;14.9516170;Rotes Kreuz Ortsstelle Waldhausen;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Oberösterreich";Waldhausen im Strudengau
+way;125822505;47.9393901;16.1397191;Rotes Kreuz Bezirksstelle Triestingtal;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Sankt Veit an der Triesting
+way;129037155;48.1900025;15.0953958;Samariterbund Persenbeug;;ambulance_station;Arbeiter-Samariter-Bund Österreichs;Persenbeug-Gottsdorf
+way;129902910;48.1655188;15.0861626;Rotes Kreuz Bezirksstelle Ybbs an der Donau;;ambulance_station;Österreichisches Rotes Kreuz;Ybbs an der Donau
+way;134870838;47.7977463;14.7712826;Rotes Kreuz Ortsstelle Ortsstelle Hollenstein/Ybbs;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Hollenstein an der Ybbs
+way;134962509;48.2695722;15.0386787;Rotes Kreuz Ortsstelle St. Oswald;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";St. Oswald
+way;135302467;48.7178334;16.3964850;Rotes Kreuz Bezirksstelle Laa an der Thaya;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Laa an der Thaya
+way;141392512;48.2115386;16.3864322;Wiener Berufsrettung Rettungszentrale;;ambulance_station;Wiener Berufsrettung;Wien
+way;142505963;48.0238514;15.8979193;Rotes Kreuz Ortsstelle Kaumberg;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Kaumberg
+way;142883232;48.3452034;16.7280739;Rotes Kreuz Bezirksstelle Gänserndorf Marchegg;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Gänserndorf
+way;143373053;47.8183169;16.2482797;Rotes Kreuz Bezirksstelle Wiener Neustadt;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Wiener Neustadt
+way;144931140;48.3792280;16.5203922;Rotes Kreuz Ortsstelle Wolkersdorf;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Wolkersdorf im Weinviertel
+way;145208659;48.1009126;15.5993223;Samariterbund Wilhelmsburg;;ambulance_station;Arbeiter-Samariter-Bund Österreichs;Wilhelmsburg
+way;148972655;48.3511808;14.4121648;Rotes Kreuz Ortsstelle Gallneukirchen;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Oberösterreich";Gallneukirchen
+way;150308151;48.1399699;16.4869200;Rotes Kreuz Bezirksstelle Schwechat;;ambulance_station;Rotes Kreuz Niederösterreich;Schwechat
+way;154725266;47.5108611;15.4520896;Rotes Kreuz Ortsstelle Kindberg;;ambulance_station;Österreichisches Rotes Kreuz;Kindberg
+way;155846620;48.2957718;16.5591606;Rotes Kreuz Ortsstelle Deutsch-Wagram;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Deutsch-Wagram
+way;156175529;47.9623965;16.4010880;Samariterbund Ebreichsdorf;;ambulance_station;Arbeiter-Samariter-Bund Österreichs;Ebreichsdorf
+way;158045025;48.0267241;15.4322170;Rotes Kreuz Ortsstelle Kirchberg an der Pielach;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Kirchberg an der Pielach
+way;158204801;48.2180843;16.4866687;Wiener Berufsrettung Rettungsstation Aspern;;ambulance_station;Wiener Berufsrettung;Wien
+way;158665736;48.2277524;15.3468449;Rotes Kreuz Bezirksstelle Melk;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Melk
+way;159312843;48.1479529;15.5438181;Rotes Kreuz Ortsstelle Ober-Grafendorf;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Ober-Grafendorf
+way;166614744;48.1769047;14.5267613;Rotes Kreuz Bezirksstelle Sankt Valentin;;ambulance_station;Österreichisches Rotes Kreuz;Sankt Valentin
+way;167609176;47.7336129;16.2112802;Rotes Kreuz Ortsstelle Bad Erlach;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Bad Erlach
+way;169323881;47.6629841;15.9222423;Rotes Kreuz Bezirksstelle Ortsstelle Gloggnitz;;ambulance_station;Österreichisches Rotes Kreuz;Gloggnitz
+way;173933298;48.2310883;16.3636262;Wiener Berufsrettung Rettungsstation Brigittenau;;ambulance_station;Wiener Berufsrettung;
+way;179340895;48.6968946;15.3298566;Rotes Kreuz Bezirksstelle Allentsteig;;ambulance_station;Österreichisches Rotes Kreuz;Allentsteig
+way;184211548;48.0086857;15.1606289;Österreichisches Rotes Kreuz Bezirksstelle Scheibbs;;ambulance_station;Österreichisches Rotes Kreuz;Scheibbs
+way;184596475;48.2059235;16.5486585;Rotes Kreuz Bezirksstelle Marchfeld;;ambulance_station;Österreichisches Rotes Kreuz;Groß-Enzersdorf
+way;187839550;48.2668667;16.4019536;Rotes Kreuz Bezirksstelle Wien-Nord;;ambulance_station;Wiener Rotes Kreuz;Wien
+way;197391830;48.7540268;16.8778566;;;ambulance_station;SZD Luďka Šímy s.r.o.;
+way;197667243;48.3585900;14.8953261;Rotes Kreuz Ortsstelle St. Georgen am Walde;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Oberösterreich";St. Georgen am Walde
+way;202274841;48.0712379;15.0480254;Rotes Kreuz Ortsstelle Steinakirchen;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Steinakirchen am Forst
+way;203262289;48.2451490;14.6359585;Rotes Kreuz Ortsstelle Perg;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Oberösterreich";Perg
+way;206877885;48.0833676;16.3423720;Rotes Kreuz Ortsstelle Biedermannsdorf;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Biedermannsdorf
+way;207717716;48.4393830;14.7830509;Rotes Kreuz Ortsstelle Unterweißenbach;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Oberösterreich";Unterweißenbach
+way;214323136;48.0612325;15.4634617;Samariterbund Rabenstein;;ambulance_station;Arbeiter-Samariter-Bund Österreichs;Rabenstein an der Pielach
+way;214634655;48.0464735;16.3170169;Rotes Kreuz Ortsstelle Guntramsdorf;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Guntramsdorf
+way;218561892;48.1903267;16.4114831;Wiener Rotes Kreuz - Bezirksstelle DDr. Lauda;;ambulance_station;Österreichisches Rotes Kreuz;Wien
+way;223609483;48.7023589;14.8972166;Rotes Kreuz Bezirksstelle Weitra;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Weitra
+way;224492278;48.1984182;15.7587073;Rotes Kreuz Ortsstelle Böheimkirchen;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Böheimkirchen
+way;230120487;47.8390277;16.9218854;Österreichisches Rotes Kreuz - Rettungsstelle Frauenkirchen;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Burgenland";Frauenkirchen
+way;233220983;48.1527629;15.9311375;Samariterbund Altlengbach;;ambulance_station;Arbeiter-Samariter-Bund Österreichs;Altlengbach
+way;235319903;48.7667803;14.9773433;Rotes Kreuz Bezirksstelle Gmünd;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";
+way;235394561;48.1936419;16.2855663;Wiener Berufsrettung Rettungsstation Penzing;;ambulance_station;Wiener Berufsrettung;Wien
+way;235394562;48.2006473;16.3085795;Rotes Kreuz Bezirksstelle Wien-West;;ambulance_station;Wiener Rotes Kreuz;Wien
+way;238053127;48.1264838;14.9799110;Rotes Kreuz Ortsstelle Blindenmarkt;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Blindenmarkt
+way;238948907;47.5916627;17.0330881;Kapuvár Mentőállomás;;ambulance_station;Országos Mentőszolgálat;Kapuvár
+way;239829785;47.7884001;15.9111585;Rotes Kreuz Ortsstelle Puchberg;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Puchberg am Schneeberg
+way;253442995;47.5567543;15.3392343;Rotes Kreuz Ortstelle Turnau;;ambulance_station;Rotes Kreuz;Turnau
+way;263355775;48.0144875;15.5982278;Rotes Kreuz Bezirksstelle Lilienfeld - St. Aegyd;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Lilienfeld
+way;264665247;48.0321782;15.7744782;Rotes Kreuz Bezirksstelle Hainfeld;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Hainfeld
+way;268319830;48.3160067;15.1987399;Rotes Kreuz Bezirksstelle Ortsstelle Pöggstall;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Pöggstall
+way;269145928;47.8874552;16.2501983;Rotes Kreuz Bezirksstelle Sollenau-Felixdorf;;ambulance_station;Österreichisches Rotes Kreuz;Sollenau
+way;273139855;48.5064130;14.5047448;Rotes Kreuz Bezirksstelle Freistadt;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Oberösterreich";Freistadt
+way;294406371;48.1756722;15.9904475;Samariterbund Eichgraben;;ambulance_station;Arbeiter-Samariter-Bund Österreichs;Eichgraben
+way;294593756;47.9816189;15.7386767;Rotes Kreuz Dienststelle Kleinzell;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich, Bezirksstelle Hainfeld";Kleinzell
+way;297700145;47.4928094;16.2784720;Rotes Kreuz Bezirksstelle Ortsstelle Kirchschlag;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Kirchschlag in der Buckligen Welt
+way;300941644;48.2174399;14.4741911;Rotes Kreuz Ortsstelle Enns;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Oberösterreich";Enns
+way;301243211;48.3290833;14.6218797;Rotes Kreuz Ortsstelle Tragwein;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Oberösterreich";Tragwein
+way;306795959;48.1109026;16.3981769;Rotes Kreuz Dienststelle Leopoldsdorf;;ambulance_station;Österreichisches Rotes Kreuz;Leopoldsdorf
+way;321166428;48.0917834;17.0688373;Rotes Kreuz Dienststelle Kittsee;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Burgenland";Kittsee
+way;321548458;47.9690579;16.8366950;Rotes Kreuz Bezirksstelle Neusiedl am See;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Burgenland";Neusiedl am See
+way;332652442;48.1991729;15.6189233;Rotes Kreuz Bezirksstelle Sankt Pölten;;ambulance_station;Österreichisches Rotes Kreuz;St. Pölten
+way;332658678;48.5278859;16.3670971;Rotes Kreuz Ortsstelle Ernstbrunn;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Ernstbrunn
+way;338055144;47.9816667;16.0409686;Rotes Kreuz Ortsstelle Weissenbach;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Weissenbach an der Triesting
+way;339318194;47.9001397;16.3962292;Rotes Kreuz Dienststelle Landegg;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Landegg
+way;342965224;48.1397370;16.2872663;Sozialmedizinischer Dienst Österreich - SMD Rettungsdienst;;ambulance_station;Sozialmedizinischer Dienst Österreich GmbH;Wien
+way;343777564;48.1378280;15.2852723;Rotes Kreuz Ortsstelle St. Leonhard / Ruprechtshofen;emergency;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";St. Leonhard am Forst
+way;355020511;47.4888196;14.4859645;Rotes Kreuz Ortstelle Trieben;;ambulance_station;Österreichisches Rotes Kreuz;Trieben
+way;356324214;48.1653838;16.4330224;Wiener Berufsrettung Rettungsstation Simmering;;ambulance_station;Wiener Berufsrettung;Wien
+way;366028345;48.2803737;16.9095155;Rotes Kreuz Bezirksstelle Gänserndorf-Marchegg;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Marchegg
+way;374470260;48.2569382;14.4268966;Grünes Kreuz Luftenberg;;ambulance_station;Grünes Kreuz;Luftenberg an der Donau
+way;375953569;48.7060399;16.0807826;Rotes Kreuz Ortsstelle Haugsdorf;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Haugsdorf
+way;394379729;47.4274624;15.0098103;Rotes Kreuz Ortsstelle Trofaiach;;ambulance_station;Österreichisches Rotes Kreuz;Trofaiach
+way;399156976;47.5236875;15.2332352;Rotes Kreuz Ortstelle Thörl;;ambulance_station;Rotes Kreuz;Thörl
+way;406476883;47.6032384;15.6684935;Rotes Kreuz Bezirksstelle Mürzzuschlag;;ambulance_station;Österreichisches Rotes Kreuz;Mürzzuschlag
+way;406577178;47.8628108;14.6680895;Rotes Kreuz Ortsstelle Weyer;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Oberösterreich";Weyer
+way;406605869;48.1579830;15.6858970;Rotes Kreuz Ortsstelle Pyhra;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Pyhra
+way;415087733;47.4849378;15.7213424;Rotes Kreuz Ortsstelle Ratten;;ambulance_station;Österreichisches Rotes Kreuz;Ratten
+way;417917544;48.1441136;16.7024733;Johanniter-Unfall-Hilfe Dienststelle Orth an der Donau;;ambulance_station;Johanniter-Unfall-Hilfe;Orth an der Donau
+way;423578186;48.2659220;15.1335497;Rotes Kreuz Ortsstelle Münichreith;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";
+way;426579015;47.8743712;16.4324663;Samariterbund Hornstein;;ambulance_station;Arbeiter-Samariter-Bund Österreichs;Hornstein
+way;436677047;47.9809428;16.3185901;Rotes Kreuz Ortsstelle Oberwaltersdorf;;ambulance_station;Österreichisches Rotes Kreuz;Oberwaltersdorf
+way;445621182;48.7924609;15.0611614;Rotes Kreuz Ortsstelle Schrems;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Schrems
+way;460955612;47.5253744;16.1889429;Rotes Kreuz Ortsstelle Krumbach;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Krumbach
+way;463230454;47.6000358;16.6084969;Rotes Kreuz Dienststelle Deutschkreutz;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Burgenland";Deutschkreutz
+way;466387055;47.5583703;16.0914861;Rotes Kreuz Ortsstelle Aspang;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Aspang-Markt
+way;475957537;48.0843488;16.4375534;Rotes Kreuz;;ambulance_station;"Rotes Kreuz Niederösterreich, Bezirksstelle Schwechat";Himberg
+way;514604510;48.2849409;15.0673939;Rotes Kreuz Ortsstelle Yspertal;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Yspertal
+way;541686569;47.5664627;16.0983662;Sozialmedizinischer Dienst Österreich - SMD Dienststelle Mönichkirchen/Aspang;;ambulance_station;Sozialmedizinischer Dienst Österreich GmbH;Aspang-Markt
+way;574214591;48.2050757;15.1883267;Samariterbund Pöchlarn - Neuda;;ambulance_station;Arbeiter-Samariter-Bund Österreichs;Golling an der Erlauf
+way;591992316;48.1274582;14.8828182;Rotes Kreuz Bezirksstelle Amstetten;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Amstetten
+way;621328687;47.9289078;16.2102068;Acute Community Nurse - Standort Leobersdorf;;ambulance_station;Notruf NÖ;Leobersdorf
+way;627333473;47.6663183;16.1359063;Rotes Kreuz Ortsstelle Pittental;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Scheiblingkirchen-Thernberg
+way;633425355;48.0127373;16.5801375;Rotes Kreuz Dienststelle Götzendorf;;ambulance_station;"Rotes Kreuz Niederösterreich, Bezirksstelle Schwechat";Götzendorf an der Leitha
+way;636074300;48.1351810;16.1946238;Rotes Kreuz Rettungsstelle Breitenfurt;;ambulance_station;Rotes Kreuz Brunn am Gebirge;Breitenfurt bei Wien
+way;637982095;48.1021803;15.4070828;Rotes Kreuz Ortsstelle Kilb;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Kilb
+way;665073179;48.5330862;14.8047421;Rotes Kreuz Ortsstelle Liebenau;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Oberösterreich";Liebenau
+way;667768355;47.7768483;17.0410402;Samariterbund Stützpunkt Andau;;ambulance_station;Arbeiter-Samariter-Bund Österreichs;Andau
+way;701147434;47.7348779;16.4128252;Rotes Kreuz Bezirksstelle Mattersburg;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Burgenland";Mattersburg
+way;705436843;47.8741984;16.3744912;Rotes Kreuz Ortsstelle Ebenfurth;;ambulance_station;Rotes Kreuz;Ebenfurth
+way;752839708;47.6782446;16.6001938;Mentőállomás;;ambulance_station;Országos Mentőszolgálat;Sopron
+way;754373081;47.9807687;17.0061720;Samariterbund Stützpunkt Zurndorf;;ambulance_station;Arbeiter-Samariter-Bund Österreichs;Zurndorf
+way;759526151;48.5635649;16.0931166;Rotes Kreuz Bezirksstelle Hollabrunn;;ambulance_station;Rotes Kreuz;Hollabrunn
+way;769415688;48.0321497;14.7728293;Österreichisches Rotes Kreuz Dienststelle Kematen/Ybbs;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Kematen an der Ybbs
+way;769615713;48.0412216;14.6173764;Rotes Kreuz Bezirksstelle St.Peter/Au;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";St. Peter in der Au
+way;772742443;48.6460642;15.8210766;Rotes Kreuz Ortsstelle Eggenburg;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Eggenburg
+way;840585110;48.0813338;16.2842677;Rotes Kreuz Bezirksstelle Mödling;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Mödling
+way;889408875;47.7071961;16.0189805;Samariterbund Ternitz-Pottschach;;ambulance_station;Arbeiter-Samariter-Bund Österreichs;Ternitz
+way;925461591;47.5023255;16.7775028;Lövő Mentőállomás;;ambulance_station;Országos Mentőszolgálat;Lövő
+way;961085969;47.9277186;15.0910372;Rotes Kreuz Dienststelle Gaming;;ambulance_station;Österreichisches Rotes Kreuz;Gaming
+way;999006737;47.9540730;16.2207948;Rotes Kreuz Bezirksstelle Kottingbrunn;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Kottingbrunn
+way;999736815;47.8131524;15.7041051;Rotes Kreuz Ortsstelle Schwarzau im Gebirge;;ambulance_station;Rotes Kreuz NÖ;Schwarzau im Gebirge
+way;1009309996;48.1356228;16.2881078;Wiener Berufsrettung Rettungsstation Liesing;;ambulance_station;Wiener Berufsrettung;Wien
+way;1078216093;47.4225735;17.0178724;Répcelak Mentőállomás;;ambulance_station;;Répcelak
+way;1186538354;47.5426075;14.8873001;Rotes Kreuz Ortsstelle Eisenerz;;ambulance_station;Österreichisches Rotes Kreuz;Eisenerz
+way;1186538356;47.4730627;15.3646898;Rotes Kreuz Ortsstelle St. Marein / St. Lorenzen;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Steiermark";Sankt Marein im Mürztal
+way;1186541470;47.7890097;15.3049270;Rotes Kreuz Ortsstelle Mariazellerland;;ambulance_station;Österreichisches Rotes Kreuz;Mariazell
+way;1196072373;48.3308241;16.2083625;Rotes Kreuz Dienststelle St. Andrä-Wördern;;ambulance_station;Rotes Kreuz;St. Andrä-Wördern
+way;1196072375;48.1202615;16.3430141;Rotes Kreuz Ortsstelle Vösendorf;;ambulance_station;Rotes Kreuz;Vösendorf
+way;1196072377;48.0461555;15.6608064;Samariterbund St.Veit an der Gölsen;;ambulance_station;Arbeiter-Samariter-Bund Österreichs;St. Veit an der Gölsen
+way;1196072381;48.5655623;14.9553779;Samariterbund Groß Gerungs;;ambulance_station;Arbeiter-Samariter-Bund Österreichs;Groß Gerungs
+way;1196072383;48.5283972;15.9331302;Rotes Kreuz Bezirksstelle Ziersdorf;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Ziersdorf
+way;1196072384;48.3602402;15.4008934;Rotes Kreuz Ortsstelle Spitz;;ambulance_station;Österreichisches Rotes Kreuz;Spitz
+way;1196072386;47.6139182;16.2878388;Rotes Kreuz Ortsstelle Wiesmath;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Wiesmath
+way;1196072387;47.8187773;16.0551151;Rotes Kreuz Ortsstelle Maiersdorf;;ambulance_station;Rotes Kreuz;Hohe Wand
+way;1196072388;47.8193015;16.2484267;Samariterbund LV Wiener Neustadt;;ambulance_station;Arbeiter-Samariter-Bund Österreichs;Wiener Neustadt
+way;1196072389;48.5742948;14.8866138;Rotes Kreuz Ortsstelle Langschlag;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Langschlag
+way;1196072390;48.0461465;15.7414307;Rotes Kreuz Ortsstelle Rohrbach an der Gölsen;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Rohrbach an der Gölsen
+way;1196783471;47.7250514;16.0950093;Rotes Kreuz Bezirksstelle Neunkirchen;;ambulance_station;Österreichisches Rotes Kreuz;Neunkirchen
+way;1229993073;47.7240886;14.6504383;Rotes Kreuz Ortsstelle Altenmarkt-Großreifling Standort Altenmarkt;;ambulance_station;Österreichisches Rotes Kreuz;Altenmarkt bei Sankt Gallen
+way;1255375947;48.3493801;14.5277503;Rotes Kreuz Ortsstelle Pregarten;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Oberösterreich";Pregarten
+way;1272968477;48.5665420;16.5807706;Rotes Kreuz Bezirksstelle Ortsstelle Mistelbach;;ambulance_station;Rotes Kreuz;Mistelbach
+way;1290445789;48.2286727;14.8473868;Rotes Kreuz Ortstelle Grein;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Oberösterreich";Grein
+way;1299947976;48.1123281;14.5752061;Rotes Kreuz Bezirksstelle Haag;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Haag
+way;1309294656;48.2788235;16.4356536;Samariterbund Wien Floridsdorf;;ambulance_station;Arbeiter-Samariter-Bund Österreichs;Wien
+way;1315746339;48.2241296;16.3193925;Wiener Berufsrettung Rettungsstation Hernals;;ambulance_station;Wiener Berufsrettung;Wien
+way;1336863273;48.8027960;16.6268163;Zdravotnická záchranná služba Jihomoravského kraje;;ambulance_station;;
+way;1560087043;48.0620861;16.0711761;Rotes Kreuz Dienststelle Alland;;ambulance_station;Rotes Kreuz;Alland
+relation;1363852;48.0381251;14.4124765;Rotes Kreuz Bezirksstelle Steyr-Stadt;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Oberösterreich";Steyr
+relation;2656877;48.2368999;16.3834449;AUVA-Traumazentrum Wien Standort Lorenz Böhler;emergency;yes;AUVA;Wien
+relation;6310071;48.9476796;15.0482802;Rotes Kreuz Bezirksstelle Litschau;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Niederösterreich";Litschau
+relation;9312386;48.2683268;14.5747134;Rotes Kreuz Ortsstelle Schwertberg;;ambulance_station;"Österreichisches Rotes Kreuz, Landesverband Oberösterreich";Schwertberg

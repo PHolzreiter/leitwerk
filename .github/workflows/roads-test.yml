@@ -1,0 +1,32 @@
+name: Straßennetz-Test
+
+# Hilfswerkzeug: baut Straßengraph und Adressen und legt Größen + Stichprobe im Branch "lookups" ab.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  roads:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Bauen
+        run: |
+          sudo apt-get update -q && sudo apt-get install -yq osmium-tool
+          pip install --quiet osmium numpy
+          curl -fsSL -o austria.osm.pbf https://download.geofabrik.de/europe/austria-latest.osm.pbf
+          osmium extract -b 13.70,46.90,17.80,49.50 austria.osm.pbf -o ring.osm.pbf --overwrite
+          ls -lh *.pbf
+          /usr/bin/time -v python3 tools/build_roads.py ring.osm.pbf out 2>&1 | tee report.txt
+          zcat out/addresses.tsv.gz | grep -i "krems" | head -40 >> report.txt
+          zcat out/addresses.tsv.gz | awk -F'\t' '$1=="o"' | head -20 >> report.txt
+      - name: Ablegen
+        run: |
+          git init -q store && cd store
+          git config user.name "github-actions" && git config user.email "actions@github.com"
+          git remote add origin "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}"
+          if git fetch -q --depth 1 origin lookups; then git checkout -q -b lookups FETCH_HEAD; else git checkout -q --orphan lookups; fi
+          cp ../report.txt roads_report.txt
+          git add -A && git commit -qm "Straßennetz-Test" && git push -q origin HEAD:lookups

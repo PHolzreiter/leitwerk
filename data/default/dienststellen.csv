@@ -1,0 +1,169 @@
+﻿id;name;organisation;typ;ort;bezirk;adresse;breitengrad;laengengrad;hinweis
+air-c10;ÖAMTC Christophorus 10 Hörsching-Linz;ÖAMTC;Luftrettung;Hörsching;;;48.239093;14.186514;Quelle: OpenStreetMap
+p1528091;ÖAMTC Christophorus 15;ÖAMTC;Luftrettung;;;;47.969106;14.939405;Quelle: Paul (Nord-NÖ)
+air-c16;ÖAMTC Christophorus 16 Oberwart;ÖAMTC;Luftrettung;Oberwart;;;47.305389;16.183669;Quelle: OpenStreetMap
+air-c17;ÖAMTC Christophorus 17 St. Michael;ÖAMTC;Luftrettung;St. Michael in der Obersteiermark;;;47.336103;15.001497;Quelle: OpenStreetMap
+air-c18;ÖAMTC Christophorus 18 Frauenkirchen;ÖAMTC;Luftrettung;Frauenkirchen;;;47.857082;16.938910;Quelle: OpenStreetMap
+p1496919;ÖAMTC Christophorus 2;ÖAMTC;Luftrettung;;;;48.446458;15.628510;Quelle: Paul (Nord-NÖ)
+p1528090;ÖAMTC Christophorus 9;ÖAMTC;Luftrettung;;;;48.189241;16.412182;Quelle: Paul (Nord-NÖ)
+p1528092;ÖAMTC Christophorus Luftrettungszentrum Ost;ÖAMTC;Luftrettung;;;;47.845146;16.251590;Quelle: Paul (Nord-NÖ)
+osm621328687;Acute Community Nurse - Standort Leobersdorf;Notruf NÖ;Sonstige;Leobersdorf;;;47.928908;16.210207;Quelle: OpenStreetMap
+p1533829;Arbeiter Samariterbund St. Pölten;Arbeiter-Samariter-Bund;Rettungsdienst;St. Pölten;;;48.212141;15.635157;Quelle: Paul (Nord-NÖ)
+p1528824;Arbeiter-Samariter-Bund Bezirksstelle Purkersdorf;Arbeiter-Samariter-Bund;Rettungsdienst;Purkersdorf;;;48.206591;16.182279;Quelle: Paul (Nord-NÖ)
+p1538360;Arbeiter-Samariter-Bund Traismauer;Arbeiter-Samariter-Bund;Rettungsdienst;Traismauer;;;48.351157;15.744858;Quelle: Paul (Nord-NÖ)
+p1538387;Johanniter-Krankentransport Spillern;Johanniter;Rettungsdienst;;;;48.373910;16.274636;Quelle: Paul (Nord-NÖ)
+p1538382;Johanniter-Krankentransport St. Pölten;Johanniter;Rettungsdienst;;;;48.174895;15.623680;Quelle: Paul (Nord-NÖ)
+osm417917544;Johanniter-Unfall-Hilfe Dienststelle Orth an der Donau;Johanniter;Rettungsdienst;Orth an der Donau;;;48.144114;16.702473;Quelle: OpenStreetMap
+p1533837;Notruf Niederösterreich St. Pölten;Notruf NÖ;Leitstelle;;;;48.198274;15.631756;Quelle: Paul (Nord-NÖ)
+p1533832;Notruf Niederösterreich Stockerau;Notruf NÖ;Leitstelle;;;;48.386384;16.235101;Quelle: Paul (Nord-NÖ)
+p1533830;RK/ASB Notarztstützpunkt St. Pölten;Rotes Kreuz / ASB;Notarztstützpunkt;;;;48.213518;15.628966;Quelle: Paul (Nord-NÖ)
+osm475957537;Rotes Kreuz;Rotes Kreuz;Rettungsdienst;Himberg;;;48.084349;16.437553;Quelle: OpenStreetMap
+osm179340895;Rotes Kreuz Bezirksstelle Allentsteig;Rotes Kreuz;Rettungsdienst;Allentsteig;;;48.696895;15.329857;Quelle: OpenStreetMap
+osm591992316;Rotes Kreuz Bezirksstelle Amstetten;Rotes Kreuz;Rettungsdienst;Amstetten;;;48.127458;14.882818;Quelle: OpenStreetMap
+p1502429;Rotes Kreuz Bezirksstelle Atzenbrugg-Heiligeneich;Rotes Kreuz;Rettungsdienst;Heiligeneich;;;48.299950;15.892779;Quelle: Paul (Nord-NÖ)
+osm35683540;Rotes Kreuz Bezirksstelle Baden;Rotes Kreuz;Rettungsdienst;Baden;;;48.001467;16.253894;Quelle: OpenStreetMap
+osm30557227;Rotes Kreuz Bezirksstelle Bruck an der Leitha;Rotes Kreuz;Rettungsdienst;Bruck an der Leitha;;;48.029987;16.782132;Quelle: OpenStreetMap
+osm35553411;Rotes Kreuz Bezirksstelle Brunn am Gebirge;Rotes Kreuz;Rettungsdienst;Brunn am Gebirge;;;48.111202;16.286323;Quelle: OpenStreetMap
+p1502430;Rotes Kreuz Bezirksstelle Großweikersdorf;Rotes Kreuz;Rettungsdienst;Großweikersdorf;;;48.471958;15.980938;Quelle: Paul (Nord-NÖ)
+osm142883232;Rotes Kreuz Bezirksstelle Gänserndorf Marchegg;Rotes Kreuz;Rettungsdienst;Gänserndorf;;;48.345203;16.728074;Quelle: OpenStreetMap
+osm1299947976;Rotes Kreuz Bezirksstelle Haag;Rotes Kreuz;Rettungsdienst;Haag;;;48.112328;14.575206;Quelle: OpenStreetMap
+osm26806369;Rotes Kreuz Bezirksstelle Hainburg;Rotes Kreuz;Rettungsdienst;Hainburg an der Donau;;;48.143667;16.960013;Quelle: OpenStreetMap
+osm264665247;Rotes Kreuz Bezirksstelle Hainfeld;Rotes Kreuz;Rettungsdienst;Hainfeld;;;48.032178;15.774478;Quelle: OpenStreetMap
+p1538369;Rotes Kreuz Bezirksstelle Herzogenburg;Rotes Kreuz;Rettungsdienst;Herzogenburg;;;48.277896;15.695922;Quelle: Paul (Nord-NÖ)
+p1528061;Rotes Kreuz Bezirksstelle Hollabrunn;Rotes Kreuz;Rettungsdienst;Hollabrunn;;;48.563708;16.092758;Quelle: Paul (Nord-NÖ)
+p1528794;Rotes Kreuz Bezirksstelle Horn;Rotes Kreuz;Rettungsdienst;Horn;;;48.668196;15.660638;Quelle: Paul (Nord-NÖ)
+p1528094;Rotes Kreuz Bezirksstelle Klosterneuburg;Rotes Kreuz;Rettungsdienst;Klosterneuburg;;;48.308062;16.324718;Quelle: Paul (Nord-NÖ)
+p1528806;Rotes Kreuz Bezirksstelle Korneuburg;Rotes Kreuz;Rettungsdienst;Korneuburg;;;48.339008;16.336002;Quelle: Paul (Nord-NÖ)
+osm999006737;Rotes Kreuz Bezirksstelle Kottingbrunn;Rotes Kreuz;Rettungsdienst;Kottingbrunn;;;47.954073;16.220795;Quelle: OpenStreetMap
+p1496914;Rotes Kreuz Bezirksstelle Krems;Rotes Kreuz;Rettungsdienst;Krems an der Donau;;;48.412775;15.613574;Quelle: Paul (Nord-NÖ)
+osm135302467;Rotes Kreuz Bezirksstelle Laa an der Thaya;Rotes Kreuz;Rettungsdienst;Laa an der Thaya;;;48.717833;16.396485;Quelle: OpenStreetMap
+p1497833;Rotes Kreuz Bezirksstelle Langenlois;Rotes Kreuz;Rettungsdienst;Langenlois;;;48.480433;15.684488;Quelle: Paul (Nord-NÖ)
+osm263355775;Rotes Kreuz Bezirksstelle Lilienfeld - St. Aegyd;Rotes Kreuz;Rettungsdienst;Lilienfeld;;;48.014488;15.598228;Quelle: OpenStreetMap
+osm6310071;Rotes Kreuz Bezirksstelle Litschau;Rotes Kreuz;Rettungsdienst;Litschau;;;48.947680;15.048280;Quelle: OpenStreetMap
+osm184596475;Rotes Kreuz Bezirksstelle Marchfeld;Rotes Kreuz;Rettungsdienst;Groß-Enzersdorf;;;48.205923;16.548658;Quelle: OpenStreetMap
+p1528790;Rotes Kreuz Bezirksstelle Melk;Rotes Kreuz;Rettungsdienst;Melk;;;48.227717;15.347009;Quelle: Paul (Nord-NÖ)
+p1528807;Rotes Kreuz Bezirksstelle Mistelbach;Rotes Kreuz;Rettungsdienst;Mistelbach;;;48.566542;16.580771;"Quelle: Paul (Nord-NÖ); Koordinaten aus OSM korrigiert"
+osm840585110;Rotes Kreuz Bezirksstelle Mödling;Rotes Kreuz;Rettungsdienst;Mödling;;;48.081334;16.284268;Quelle: OpenStreetMap
+p1528810;Rotes Kreuz Bezirksstelle Neulengbach;Rotes Kreuz;Rettungsdienst;Neulengbach;;;48.190101;15.899860;Quelle: Paul (Nord-NÖ)
+osm1196783471;Rotes Kreuz Bezirksstelle Neunkirchen;Rotes Kreuz;Rettungsdienst;Neunkirchen;;;47.725051;16.095009;Quelle: OpenStreetMap
+osm169323881;Rotes Kreuz Bezirksstelle Ortsstelle Gloggnitz;Rotes Kreuz;Rettungsdienst;Gloggnitz;;;47.662984;15.922242;Quelle: OpenStreetMap
+osm297700145;Rotes Kreuz Bezirksstelle Ortsstelle Kirchschlag;Rotes Kreuz;Rettungsdienst;Kirchschlag in der Buckligen Welt;;;47.492809;16.278472;Quelle: OpenStreetMap
+osm268319830;Rotes Kreuz Bezirksstelle Ortsstelle Pöggstall;Rotes Kreuz;Rettungsdienst;Pöggstall;;;48.316007;15.198740;Quelle: OpenStreetMap
+osm30512121;Rotes Kreuz Bezirksstelle Pernitz;Rotes Kreuz;Rettungsdienst;Pernitz;;;47.898035;15.956578;Quelle: OpenStreetMap
+osm26299582;Rotes Kreuz Bezirksstelle Purkersdorf-Gablitz;Rotes Kreuz;Rettungsdienst;Purkersdorf;;;48.201129;16.169573;Quelle: OpenStreetMap
+p1528062;Rotes Kreuz Bezirksstelle Retz;Rotes Kreuz;Rettungsdienst;Retz;;;48.754931;15.951569;Quelle: Paul (Nord-NÖ)
+osm166614744;Rotes Kreuz Bezirksstelle Sankt Valentin;Rotes Kreuz;Rettungsdienst;Sankt Valentin;;;48.176905;14.526761;Quelle: OpenStreetMap
+osm150308151;Rotes Kreuz Bezirksstelle Schwechat;Rotes Kreuz;Rettungsdienst;Schwechat;;;48.139970;16.486920;Quelle: OpenStreetMap
+osm269145928;Rotes Kreuz Bezirksstelle Sollenau-Felixdorf;Rotes Kreuz;Rettungsdienst;Sollenau;;;47.887455;16.250198;Quelle: OpenStreetMap
+p1533827;Rotes Kreuz Bezirksstelle St. Pölten;Rotes Kreuz;Rettungsdienst;St. Pölten;;;48.199139;15.618922;Quelle: Paul (Nord-NÖ)
+osm769615713;Rotes Kreuz Bezirksstelle St.Peter/Au;Rotes Kreuz;Rettungsdienst;St. Peter in der Au;;;48.041222;14.617376;Quelle: OpenStreetMap
+osm125822505;Rotes Kreuz Bezirksstelle Triestingtal;Rotes Kreuz;Rettungsdienst;Sankt Veit an der Triesting;;;47.939390;16.139719;Quelle: OpenStreetMap
+p1497840;Rotes Kreuz Bezirksstelle Tulln;Rotes Kreuz;Rettungsdienst;Tulln an der Donau;;;48.316588;16.064541;Quelle: Paul (Nord-NÖ)
+osm223609483;Rotes Kreuz Bezirksstelle Weitra;Rotes Kreuz;Rettungsdienst;Weitra;;;48.702359;14.897217;Quelle: OpenStreetMap
+osm143373053;Rotes Kreuz Bezirksstelle Wiener Neustadt;Rotes Kreuz;Rettungsdienst;Wiener Neustadt;;;47.818317;16.248280;Quelle: OpenStreetMap
+osm129902910;Rotes Kreuz Bezirksstelle Ybbs an der Donau;Rotes Kreuz;Rettungsdienst;Ybbs an der Donau;;;48.165519;15.086163;Quelle: OpenStreetMap
+p1528064;Rotes Kreuz Bezirksstelle Ziersdorf;Rotes Kreuz;Rettungsdienst;Ziersdorf;;;48.528415;15.933115;Quelle: Paul (Nord-NÖ)
+osm120874562;Rotes Kreuz Bezirksstelle Zistersdorf;Rotes Kreuz;Rettungsdienst;Zistersdorf;;;48.549065;16.753388;Quelle: OpenStreetMap
+p1528801;Rotes Kreuz Bezirksstelle Zwettl;Rotes Kreuz;Rettungsdienst;Zwettl-Niederösterreich;;;48.600388;15.163680;Quelle: Paul (Nord-NÖ)
+osm1560087043;Rotes Kreuz Dienststelle Alland;Rotes Kreuz;Rettungsdienst;Alland;;;48.062086;16.071176;Quelle: OpenStreetMap
+osm2242646287;Rotes Kreuz Dienststelle Annaberg;Rotes Kreuz;Rettungsdienst;Annaberg;;;47.872138;15.376055;Quelle: OpenStreetMap
+osm11102023013;Rotes Kreuz Dienststelle Deutsch Brodersdorf;Rotes Kreuz;Rettungsdienst;Deutsch Brodersdorf;;;47.938867;16.476929;Quelle: OpenStreetMap
+osm8849976354;Rotes Kreuz Dienststelle Engelhartstetten;Rotes Kreuz;Rettungsdienst;Engelhartstetten;;;48.182898;16.880365;Quelle: OpenStreetMap
+osm961085969;Rotes Kreuz Dienststelle Gaming;Rotes Kreuz;Rettungsdienst;Gaming;;;47.927719;15.091037;Quelle: OpenStreetMap
+osm19869923;Rotes Kreuz Dienststelle Gerasdorf;Rotes Kreuz;Rettungsdienst;Gerasdorf bei Wien;;;48.291370;16.469651;Quelle: OpenStreetMap
+osm633425355;Rotes Kreuz Dienststelle Götzendorf;Rotes Kreuz;Rettungsdienst;Götzendorf an der Leitha;;;48.012737;16.580137;Quelle: OpenStreetMap
+osm4156895048;Rotes Kreuz Dienststelle Kapelln;Rotes Kreuz;Rettungsdienst;Kapelln;;;48.258117;15.755397;Quelle: OpenStreetMap
+osm294593756;Rotes Kreuz Dienststelle Kleinzell;Rotes Kreuz;Rettungsdienst;Kleinzell;;;47.981619;15.738677;Quelle: OpenStreetMap
+osm339318194;Rotes Kreuz Dienststelle Landegg;Rotes Kreuz;Rettungsdienst;Landegg;;;47.900140;16.396229;Quelle: OpenStreetMap
+osm11101980459;Rotes Kreuz Dienststelle Lassee;Rotes Kreuz;Rettungsdienst;Lassee;;;48.226061;16.822648;Quelle: OpenStreetMap
+osm306795959;Rotes Kreuz Dienststelle Leopoldsdorf;Rotes Kreuz;Rettungsdienst;Leopoldsdorf;;;48.110903;16.398177;Quelle: OpenStreetMap
+osm101647581;Rotes Kreuz Dienststelle Payerbach Reichenau;Rotes Kreuz;Rettungsdienst;Payerbach;;;47.692740;15.858979;Quelle: OpenStreetMap
+osm528735256;Rotes Kreuz Dienststelle Wieselburg;Rotes Kreuz;Rettungsdienst;Wieselburg;;;48.138462;15.137055;Quelle: OpenStreetMap
+osm11101232755;Rotes Kreuz Notarztstützpunkt Raabs;Rotes Kreuz;Notarztstützpunkt;Raabs an der Thaya;;;48.853350;15.486045;Quelle: OpenStreetMap
+osm1229993073;Rotes Kreuz Ortsstelle Altenmarkt-Großreifling Standort Altenmarkt;Rotes Kreuz;Rettungsdienst;Altenmarkt bei Sankt Gallen;;;47.724089;14.650438;Quelle: OpenStreetMap
+osm3695859367;Rotes Kreuz Ortsstelle Arbesbach;Rotes Kreuz;Rettungsdienst;Arbesbach;;;48.494430;14.955668;Quelle: OpenStreetMap
+osm466387055;Rotes Kreuz Ortsstelle Aspang;Rotes Kreuz;Rettungsdienst;Aspang-Markt;;;47.558370;16.091486;Quelle: OpenStreetMap
+osm167609176;Rotes Kreuz Ortsstelle Bad Erlach;Rotes Kreuz;Rettungsdienst;Bad Erlach;;;47.733613;16.211280;Quelle: OpenStreetMap
+osm206877885;Rotes Kreuz Ortsstelle Biedermannsdorf;Rotes Kreuz;Rettungsdienst;Biedermannsdorf;;;48.083368;16.342372;Quelle: OpenStreetMap
+osm238053127;Rotes Kreuz Ortsstelle Blindenmarkt;Rotes Kreuz;Rettungsdienst;Blindenmarkt;;;48.126484;14.979911;Quelle: OpenStreetMap
+osm224492278;Rotes Kreuz Ortsstelle Böheimkirchen;Rotes Kreuz;Rettungsdienst;Böheimkirchen;;;48.198418;15.758707;Quelle: OpenStreetMap
+osm155846620;Rotes Kreuz Ortsstelle Deutsch-Wagram;Rotes Kreuz;Rettungsdienst;Deutsch-Wagram;;;48.295772;16.559161;Quelle: OpenStreetMap
+osm12498252850;Rotes Kreuz Ortsstelle Drasenhofen;Rotes Kreuz;Rettungsdienst;Drasenhofen;;;48.758036;16.650227;Quelle: OpenStreetMap
+osm705436843;Rotes Kreuz Ortsstelle Ebenfurth;Rotes Kreuz;Rettungsdienst;Ebenfurth;;;47.874198;16.374491;Quelle: OpenStreetMap
+osm772742443;Rotes Kreuz Ortsstelle Eggenburg;Rotes Kreuz;Rettungsdienst;Eggenburg;;;48.646064;15.821077;Quelle: OpenStreetMap
+osm332658678;Rotes Kreuz Ortsstelle Ernstbrunn;Rotes Kreuz;Rettungsdienst;Ernstbrunn;;;48.527886;16.367097;Quelle: OpenStreetMap
+osm13584983448;Rotes Kreuz Ortsstelle Gars am Kamp;Rotes Kreuz;Rettungsdienst;Gars am Kamp;;;48.597833;15.665097;Quelle: OpenStreetMap
+osm12483894052;Rotes Kreuz Ortsstelle Geras;Rotes Kreuz;Rettungsdienst;Geras;;;48.799393;15.669610;Quelle: OpenStreetMap
+p1496917;Rotes Kreuz Ortsstelle Gföhl;Rotes Kreuz;Rettungsdienst;Gföhl;;;48.515617;15.489835;Quelle: Paul (Nord-NÖ)
+osm332406060;Rotes Kreuz Ortsstelle Großkrut;Rotes Kreuz;Rettungsdienst;Großkrut;;;48.644034;16.720077;Quelle: OpenStreetMap
+osm1344348694;Rotes Kreuz Ortsstelle Großreifling;Rotes Kreuz;Rettungsdienst;Altenmarkt bei St. Gallen;;;47.665303;14.716388;Quelle: OpenStreetMap
+osm214634655;Rotes Kreuz Ortsstelle Guntramsdorf;Rotes Kreuz;Rettungsdienst;Guntramsdorf;;;48.046473;16.317017;Quelle: OpenStreetMap
+p1528063;Rotes Kreuz Ortsstelle Haugsdorf;Rotes Kreuz;Rettungsdienst;Haugsdorf;;;48.705977;16.080709;Quelle: Paul (Nord-NÖ)
+osm1424395795;Rotes Kreuz Ortsstelle Heidenreichstein;Rotes Kreuz;Rettungsdienst;Heidenreichstein;;;48.868117;15.123848;Quelle: OpenStreetMap
+osm298274837;Rotes Kreuz Ortsstelle Hofstetten-Grünau;Rotes Kreuz;Rettungsdienst;Hofstetten-Grünau;;;48.097451;15.508662;Quelle: OpenStreetMap
+osm11724481791;Rotes Kreuz Ortsstelle Hohenau an der March;Rotes Kreuz;Rettungsdienst;Hohenau an der March;;;48.606558;16.904988;Quelle: OpenStreetMap
+osm134870838;Rotes Kreuz Ortsstelle Hollenstein/Ybbs;Rotes Kreuz;Rettungsdienst;Hollenstein an der Ybbs;;;47.797746;14.771283;Quelle: OpenStreetMap
+osm13058478179;Rotes Kreuz Ortsstelle Hollenthon-Lichtenegg;Rotes Kreuz;Rettungsdienst;Hollenthon;;;47.589396;16.260417;Quelle: OpenStreetMap
+osm9331737062;Rotes Kreuz Ortsstelle Karlstetten-Neidling;Rotes Kreuz;Rettungsdienst;Karlstetten;;;48.258638;15.564494;Quelle: OpenStreetMap
+osm142505963;Rotes Kreuz Ortsstelle Kaumberg;Rotes Kreuz;Rettungsdienst;Kaumberg;;;48.023851;15.897919;Quelle: OpenStreetMap
+osm637982095;Rotes Kreuz Ortsstelle Kilb;Rotes Kreuz;Rettungsdienst;Kilb;;;48.102180;15.407083;Quelle: OpenStreetMap
+p1500606;Rotes Kreuz Ortsstelle Kirchberg am Wagram;Rotes Kreuz;Rettungsdienst;Kirchberg am Wagram;;;48.427624;15.903673;Quelle: Paul (Nord-NÖ)
+osm158045025;Rotes Kreuz Ortsstelle Kirchberg an der Pielach;Rotes Kreuz;Rettungsdienst;Kirchberg an der Pielach;;;48.026724;15.432217;Quelle: OpenStreetMap
+osm30164441;Rotes Kreuz Ortsstelle Kreuzstetten;Rotes Kreuz;Rettungsdienst;Kreuzstetten;;;48.480621;16.479492;Quelle: OpenStreetMap
+osm460955612;Rotes Kreuz Ortsstelle Krumbach;Rotes Kreuz;Rettungsdienst;Krumbach;;;47.525374;16.188943;Quelle: OpenStreetMap
+osm1196072389;Rotes Kreuz Ortsstelle Langschlag;Rotes Kreuz;Rettungsdienst;Langschlag;;;48.574295;14.886614;Quelle: OpenStreetMap
+osm1196072387;Rotes Kreuz Ortsstelle Maiersdorf;Rotes Kreuz;Rettungsdienst;Hohe Wand;;;47.818777;16.055115;Quelle: OpenStreetMap
+osm3781813744;Rotes Kreuz Ortsstelle Martinsberg;Rotes Kreuz;Rettungsdienst;Martinsberg;;;48.375026;15.154482;Quelle: OpenStreetMap
+osm159312843;Rotes Kreuz Ortsstelle Ober-Grafendorf;Rotes Kreuz;Rettungsdienst;Ober-Grafendorf;;;48.147953;15.543818;Quelle: OpenStreetMap
+osm436677047;Rotes Kreuz Ortsstelle Oberwaltersdorf;Rotes Kreuz;Rettungsdienst;Oberwaltersdorf;;;47.980943;16.318590;Quelle: OpenStreetMap
+osm11098048659;Rotes Kreuz Ortsstelle Oberwölbling;Rotes Kreuz;Rettungsdienst;Oberwölbling;;;48.320162;15.591570;Quelle: OpenStreetMap
+osm29216693;Rotes Kreuz Ortsstelle Perchtoldsdorf;Rotes Kreuz;Rettungsdienst;Pertoldsdorf;;;48.118259;16.269187;Quelle: OpenStreetMap
+osm627333473;Rotes Kreuz Ortsstelle Pittental;Rotes Kreuz;Rettungsdienst;Scheiblingkirchen-Thernberg;;;47.666318;16.135906;Quelle: OpenStreetMap
+osm4380581742;Rotes Kreuz Ortsstelle Poysdorf;Rotes Kreuz;Rettungsdienst;Poysdorf;;;48.665960;16.630617;Quelle: OpenStreetMap
+osm5322076812;Rotes Kreuz Ortsstelle Prinzersdorf;Rotes Kreuz;Rettungsdienst;Prinzersdorf;;;48.201084;15.511730;Quelle: OpenStreetMap
+osm239829785;Rotes Kreuz Ortsstelle Puchberg;Rotes Kreuz;Rettungsdienst;Puchberg am Schneeberg;;;47.788400;15.911159;Quelle: OpenStreetMap
+osm406605869;Rotes Kreuz Ortsstelle Pyhra;Rotes Kreuz;Rettungsdienst;Pyhra;;;48.157983;15.685897;Quelle: OpenStreetMap
+osm11099076008;Rotes Kreuz Ortsstelle Rohr im Gebirge;Rotes Kreuz;Rettungsdienst;Rohr im Gebirge;;;47.895311;15.736040;Quelle: OpenStreetMap
+osm1196072390;Rotes Kreuz Ortsstelle Rohrbach an der Gölsen;Rotes Kreuz;Rettungsdienst;Rohrbach an der Gölsen;;;48.046146;15.741431;Quelle: OpenStreetMap
+osm445621182;Rotes Kreuz Ortsstelle Schrems;Rotes Kreuz;Rettungsdienst;Schrems;;;48.792461;15.061161;Quelle: OpenStreetMap
+osm999736815;Rotes Kreuz Ortsstelle Schwarzau im Gebirge;Rotes Kreuz;Rettungsdienst;Schwarzau im Gebirge;;;47.813152;15.704105;Quelle: OpenStreetMap
+p1500607;Rotes Kreuz Ortsstelle Sieghartskirchen;Rotes Kreuz;Rettungsdienst;Sieghartskirchen;;;48.253306;16.014244;Quelle: Paul (Nord-NÖ)
+p1496918;Rotes Kreuz Ortsstelle Spitz;Rotes Kreuz;Rettungsdienst;Spitz;;;48.360134;15.400973;Quelle: Paul (Nord-NÖ)
+osm113620111;Rotes Kreuz Ortsstelle St. Aegyd am Walde;Rotes Kreuz;Rettungsdienst;St.Aegyd am Neuwalde;;;47.854236;15.562529;Quelle: OpenStreetMap
+p1500610;Rotes Kreuz Ortsstelle St. Andrä-Wördern;Rotes Kreuz;Rettungsdienst;St. Andrä-Wördern;;;48.330621;16.208619;Quelle: Paul (Nord-NÖ)
+osm343777564;Rotes Kreuz Ortsstelle St. Leonhard / Ruprechtshofen;Rotes Kreuz;Rettungsdienst;St. Leonhard am Forst;;;48.137828;15.285272;Quelle: OpenStreetMap
+osm134962509;Rotes Kreuz Ortsstelle St. Oswald;Rotes Kreuz;Rettungsdienst;St. Oswald;;;48.269572;15.038679;Quelle: OpenStreetMap
+osm202274841;Rotes Kreuz Ortsstelle Steinakirchen;Rotes Kreuz;Rettungsdienst;Steinakirchen am Forst;;;48.071238;15.048025;Quelle: OpenStreetMap
+osm30652964;Rotes Kreuz Ortsstelle Stockerau;Rotes Kreuz;Rettungsdienst;Stockerau;;;48.385813;16.204836;Quelle: OpenStreetMap
+osm3195902571;Rotes Kreuz Ortsstelle Texing;Rotes Kreuz;Rettungsdienst;Texing;;;48.049169;15.324878;Quelle: OpenStreetMap
+osm11101969125;Rotes Kreuz Ortsstelle Türnitz;Rotes Kreuz;Rettungsdienst;Türnitz;;;47.930171;15.490561;Quelle: OpenStreetMap
+osm1196072375;Rotes Kreuz Ortsstelle Vösendorf;Rotes Kreuz;Rettungsdienst;Vösendorf;;;48.120261;16.343014;Quelle: OpenStreetMap
+osm338055144;Rotes Kreuz Ortsstelle Weissenbach;Rotes Kreuz;Rettungsdienst;Weissenbach an der Triesting;;;47.981667;16.040969;Quelle: OpenStreetMap
+osm1196072386;Rotes Kreuz Ortsstelle Wiesmath;Rotes Kreuz;Rettungsdienst;Wiesmath;;;47.613918;16.287839;Quelle: OpenStreetMap
+osm144931140;Rotes Kreuz Ortsstelle Wolkersdorf;Rotes Kreuz;Rettungsdienst;Wolkersdorf im Weinviertel;;;48.379228;16.520392;Quelle: OpenStreetMap
+osm514604510;Rotes Kreuz Ortsstelle Yspertal;Rotes Kreuz;Rettungsdienst;Yspertal;;;48.284941;15.067394;Quelle: OpenStreetMap
+osm636074300;Rotes Kreuz Rettungsstelle Breitenfurt;Rotes Kreuz;Rettungsdienst;Breitenfurt bei Wien;;;48.135181;16.194624;Quelle: OpenStreetMap
+p1533839;Rotes Kreuz Waidhofen;Rotes Kreuz;Rettungsdienst;Waidhofen an der Thaya;;;48.812365;15.284692;Quelle: Paul (Nord-NÖ)
+osm233220983;Samariterbund Altlengbach;Arbeiter-Samariter-Bund;Rettungsdienst;Altlengbach;;;48.152763;15.931138;Quelle: OpenStreetMap
+osm11291229437;Samariterbund Dunkelsteinerwald;Arbeiter-Samariter-Bund;Rettungsdienst;Gansbach;;;48.303722;15.473545;Quelle: OpenStreetMap
+osm156175529;Samariterbund Ebreichsdorf;Arbeiter-Samariter-Bund;Rettungsdienst;Ebreichsdorf;;;47.962396;16.401088;Quelle: OpenStreetMap
+osm294406371;Samariterbund Eichgraben;Arbeiter-Samariter-Bund;Rettungsdienst;Eichgraben;;;48.175672;15.990448;Quelle: OpenStreetMap
+osm8460412540;Samariterbund Frankenfels - Schwarzenbach;Arbeiter-Samariter-Bund;Rettungsdienst;Frankenfels;;;47.980505;15.322337;Quelle: OpenStreetMap
+osm8459071351;Samariterbund Gaaden-Wienerwald;Arbeiter-Samariter-Bund;Rettungsdienst;Gaaden;;;48.055740;16.207202;Quelle: OpenStreetMap
+osm1196072381;Samariterbund Groß Gerungs;Arbeiter-Samariter-Bund;Rettungsdienst;Groß Gerungs;;;48.565562;14.955378;Quelle: OpenStreetMap
+osm8460443947;Samariterbund Loosdorf;Arbeiter-Samariter-Bund;Rettungsdienst;Loosdorf;;;48.204455;15.389341;Quelle: OpenStreetMap
+osm129037155;Samariterbund Persenbeug;Arbeiter-Samariter-Bund;Rettungsdienst;Persenbeug-Gottsdorf;;;48.190002;15.095396;Quelle: OpenStreetMap
+osm574214591;Samariterbund Pöchlarn - Neuda;Arbeiter-Samariter-Bund;Rettungsdienst;Golling an der Erlauf;;;48.205076;15.188327;Quelle: OpenStreetMap
+osm214323136;Samariterbund Rabenstein;Arbeiter-Samariter-Bund;Rettungsdienst;Rabenstein an der Pielach;;;48.061233;15.463462;Quelle: OpenStreetMap
+osm119772236;Samariterbund St. Pölten - St. Georgen;Arbeiter-Samariter-Bund;Rettungsdienst;St. Georgen am Steinfelde;;;48.131740;15.620185;Quelle: OpenStreetMap
+osm1196072377;Samariterbund St.Veit an der Gölsen;Arbeiter-Samariter-Bund;Rettungsdienst;St. Veit an der Gölsen;;;48.046155;15.660806;Quelle: OpenStreetMap
+osm574304122;Samariterbund Steinfelden-Schönau-Leobersdorf;Arbeiter-Samariter-Bund;Rettungsdienst;Günselsdorf;;;47.944133;16.257605;Quelle: OpenStreetMap
+osm889408875;Samariterbund Ternitz-Pottschach;Arbeiter-Samariter-Bund;Rettungsdienst;Ternitz;;;47.707196;16.018981;Quelle: OpenStreetMap
+osm8460332190;Samariterbund Traisen;Arbeiter-Samariter-Bund;Rettungsdienst;Traisen;;;48.041441;15.608771;Quelle: OpenStreetMap
+osm35691584;Samariterbund Traiskirchen-Trumau;Arbeiter-Samariter-Bund;Rettungsdienst;Traiskirchen;;;48.020610;16.298433;Quelle: OpenStreetMap
+osm145208659;Samariterbund Wilhelmsburg;Arbeiter-Samariter-Bund;Rettungsdienst;Wilhelmsburg;;;48.100913;15.599322;Quelle: OpenStreetMap
+p1537993;ÖBB Leitstelle Krems;ÖBB;Leitstelle;;;;48.409298;15.605046;Quelle: Paul (Nord-NÖ)
+p1537990;ÖBB Leitstelle Tulln;ÖBB;Leitstelle;;;;48.327241;16.064350;Quelle: Paul (Nord-NÖ)
+osm184211548;Österreichisches Rotes Kreuz Bezirksstelle Scheibbs;Rotes Kreuz;Rettungsdienst;Scheibbs;;;48.008686;15.160629;Quelle: OpenStreetMap
+osm90045647;Österreichisches Rotes Kreuz Bezirksstelle Waidhofen/Ybbs;Rotes Kreuz;Rettungsdienst;Waidhofen an der Ybbs;;;47.949962;14.789298;Quelle: OpenStreetMap
+osm769415688;Österreichisches Rotes Kreuz Dienststelle Kematen/Ybbs;Rotes Kreuz;Rettungsdienst;Kematen an der Ybbs;;;48.032150;14.772829;Quelle: OpenStreetMap

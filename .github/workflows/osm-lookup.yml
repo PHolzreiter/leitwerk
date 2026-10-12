@@ -1,0 +1,40 @@
+name: OSM-Abfrage
+
+# Hilfswerkzeug: fragt OpenStreetMap (Overpass) ab und legt das Ergebnis
+# im Branch "lookups" als Datei ab. Wird zum Erstellen der Standarddaten benutzt.
+on:
+  workflow_dispatch:
+    inputs:
+      name:
+        description: "Dateiname ohne Endung"
+        required: true
+      query:
+        description: "Overpass-QL (ohne [out:...]-Kopf)"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  query:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Abfrage
+        env:
+          Q: ${{ inputs.query }}
+        run: |
+          printf '[out:csv(::type,::id,::lat,::lon,name,"healthcare:speciality",emergency,operator,"addr:city";true;";")][timeout:120];\n%s\n' "$Q" > q.txt
+          curl -fsS --retry 3 -A "LeitWerk-privat/0.1 (github.com/PHolzreiter)" \
+            --data-urlencode data@q.txt https://overpass-api.de/api/interpreter -o out.csv
+          wc -l out.csv
+
+      - name: Ablegen im Branch lookups
+        env:
+          NAME: ${{ inputs.name }}
+        run: |
+          git init -q store && cd store
+          git config user.name "github-actions" && git config user.email "actions@github.com"
+          git remote add origin "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}"
+          if git fetch -q --depth 1 origin lookups; then git checkout -q -b lookups FETCH_HEAD; else git checkout -q --orphan lookups; fi
+          cp ../out.csv "$NAME.csv" && cp ../q.txt "$NAME.query.txt"
+          git add -A && git commit -qm "Abfrage $NAME" && git push -q origin HEAD:lookups

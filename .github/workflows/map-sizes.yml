@@ -1,0 +1,50 @@
+name: Kartengrößen
+
+# Hilfswerkzeug: schätzt die Größe von Kartenausschnitten (pmtiles extract --dry-run)
+# und legt das Ergebnis im Branch "lookups" ab.
+on:
+  workflow_dispatch:
+    inputs:
+      variants:
+        description: "Zeilen 'name bbox maxzoom' getrennt durch |"
+        required: true
+      urls:
+        description: "Zusätzlich zu prüfende URLs (Leerzeichen-getrennt)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  sizes:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Schätzen
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VARIANTS: ${{ inputs.variants }}
+        run: |
+          gh release download --repo protomaps/go-pmtiles --pattern 'go-pmtiles_*_Linux_x86_64.tar.gz'
+          tar -xzf go-pmtiles_*_Linux_x86_64.tar.gz pmtiles
+          BUILD="$(curl -fsSL https://build-metadata.protomaps.dev/builds.json | jq -r '[.[].key] | sort | last')"
+          echo "build $BUILD" > sizes.txt
+          IFS='|' read -ra V <<< "$VARIANTS"
+          for v in "${V[@]}"; do
+            read -r name bbox mz <<< "$v"
+            echo "== $name $bbox z$mz" >> sizes.txt
+            ./pmtiles extract "https://build.protomaps.com/$BUILD" /tmp/x.pmtiles --bbox="$bbox" --maxzoom="$mz" --dry-run >> sizes.txt 2>&1 || echo "fehler" >> sizes.txt
+          done
+          for u in ${{ inputs.urls }}; do
+            echo "url $(curl -s -o /tmp/u -w '%{http_code} %{content_type}' "$u") $(stat -c %s /tmp/u 2>/dev/null) $u" >> sizes.txt
+            curl -sI "$u" | grep -i -E "cache-control|expires|access-control" >> sizes.txt || true
+          done
+          cat sizes.txt
+      - name: Ablegen
+        run: |
+          git init -q store && cd store
+          git config user.name "github-actions" && git config user.email "actions@github.com"
+          git remote add origin "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}"
+          if git fetch -q --depth 1 origin lookups; then git checkout -q -b lookups FETCH_HEAD; else git checkout -q --orphan lookups; fi
+          cp ../sizes.txt map_sizes.txt
+          git add -A && git commit -qm "Kartengrößen" && git push -q origin HEAD:lookups

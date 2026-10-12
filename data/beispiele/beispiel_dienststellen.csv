@@ -1,0 +1,3 @@
+﻿id;name;organisation;typ;ort;bezirk;adresse;breitengrad;laengengrad;hinweis
+ws-01;Rotes Kreuz Musterstadt;Rotes Kreuz;Rettungsdienst;Musterstadt;Musterbezirk;Hauptplatz 1;48.200000;15.600000;Beispielzeile
+ws-02;Notarztstützpunkt Musterstadt;Rotes Kreuz;Notarztstützpunkt;Musterstadt;Musterbezirk;Spitalgasse 5;48.205000;15.610000;

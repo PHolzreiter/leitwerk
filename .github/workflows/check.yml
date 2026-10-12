@@ -1,0 +1,55 @@
+name: Prüfen
+
+# Schnelle Prüfung bei jedem Push: TypeScript, Oberfläche bauen, Rust kompilieren.
+# (Ohne Kartendaten, daher deutlich schneller als der volle Build.)
+# Die Ausgaben landen zusätzlich im Branch "ci-logs" (check-<branch>.log).
+on:
+  push:
+    branches-ignore: [lookups, ci-logs]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: "./src-tauri -> target"
+      - name: Systempakete
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -yq libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+      - name: Prüfen
+        run: |
+          set -o pipefail
+          LOG="$GITHUB_WORKSPACE/check.log"; : > "$LOG"
+          run() { echo "### $*" | tee -a "$LOG"; "$@" 2>&1 | tee -a "$LOG"; }
+          status=0
+          run npm install || status=1
+          run npm run build || status=1
+          run npx tauri icon app-icon.png || status=1
+          (cd src-tauri && run cargo check) || status=1
+          run python3 tools/build_default_data.py || status=1
+          run python3 tools/build_stufen.py || status=1
+          run git diff --stat --exit-code data/ || status=1
+          echo "### Ergebnis: $status" | tee -a "$LOG"
+          exit $status
+      - name: Protokoll ablegen
+        if: always()
+        run: |
+          BR="${GITHUB_REF_NAME//\//_}"
+          git init -q store && cd store
+          git config user.name "github-actions" && git config user.email "actions@github.com"
+          git remote add origin "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}"
+          if git fetch -q --depth 1 origin ci-logs; then git checkout -q -b ci-logs FETCH_HEAD; else git checkout -q --orphan ci-logs; fi
+          cp ../check.log "check-$BR.log" 2>/dev/null || echo "kein Protokoll" > "check-$BR.log"
+          rm -rf "dist-$BR" && cp -R ../dist "dist-$BR" 2>/dev/null || true
+          git add -A && git commit -qm "check $BR ${GITHUB_SHA::7}" && git push -q origin HEAD:ci-logs

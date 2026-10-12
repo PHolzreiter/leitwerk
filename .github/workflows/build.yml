@@ -1,0 +1,150 @@
+name: Build
+
+# Baut das Programm für macOS und Windows. Ist die Version (tauri.conf.json) neu,
+# wird sie in diesem (öffentlichen) Repo als Release veröffentlicht; die installierten
+# Programme bieten sie dann über „Neue Version verfügbar“ an.
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "**.md"
+      - ".github/workflows/osm-lookup.yml"
+      - ".github/workflows/check.yml"
+      - ".github/workflows/map-sizes.yml"
+      - ".github/workflows/roads-test.yml"
+      - ".github/workflows/maps.yml"
+      - "scripts/build-packs.sh"
+      - "tools/build_packs_manifest.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOWNLOAD_REPO: ${{ github.repository }}
+
+jobs:
+  fonts:
+    name: Schriften
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Cache
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: fonts-out
+          key: fonts-v1-${{ hashFiles('scripts/fetch-fonts.sh') }}
+      - name: Laden
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: bash scripts/fetch-fonts.sh fonts-out
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fonts
+          path: fonts-out
+          retention-days: 3
+
+  build:
+    name: Programm (${{ matrix.name }})
+    needs: fonts
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macos
+            runner: macos-latest
+            bundles: app,dmg
+          - name: windows
+            runner: windows-latest
+            bundles: nsis
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: fonts
+          path: public
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: "./src-tauri -> target"
+
+      - name: Abhängigkeiten
+        run: npm install
+
+      - name: Programmsymbole erzeugen
+        run: npx tauri icon app-icon.png
+
+      - name: Bauen
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: npx tauri build --bundles ${{ matrix.bundles }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: LeitWerk-${{ matrix.name }}
+          path: |
+            src-tauri/target/release/bundle/dmg/*.dmg
+            src-tauri/target/release/bundle/macos/*.app.tar.gz
+            src-tauri/target/release/bundle/macos/*.app.tar.gz.sig
+            src-tauri/target/release/bundle/nsis/*.exe
+            src-tauri/target/release/bundle/nsis/*.exe.sig
+          if-no-files-found: error
+          retention-days: 14
+
+  release:
+    name: Veröffentlichen
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: LeitWerk-*
+          path: out
+          merge-multiple: true
+
+      - name: Veröffentlichen, falls neue Version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="$(jq -r .version src-tauri/tauri.conf.json)"
+          TAG="v$VERSION"
+          if gh release view "$TAG" --repo "$DOWNLOAD_REPO" >/dev/null 2>&1; then
+            echo "Version $VERSION ist schon veröffentlicht – nichts zu tun."
+            exit 0
+          fi
+          find out -type f | sort
+          python3 tools/release_notes.py "$VERSION" > notes.md
+          MAC="$(find out -name '*.app.tar.gz' | head -1)"
+          WIN="$(find out -name '*-setup.exe' | head -1)"
+          DMG="$(find out -name '*.dmg' | head -1)"
+          # Dateinamen ohne Leerzeichen (GitHub ersetzt sie sonst)
+          url() { echo "https://github.com/$DOWNLOAD_REPO/releases/download/$TAG/$(basename "$1")"; }
+          jq -n --arg v "$VERSION" --rawfile notes notes.md \
+            --arg macsig "$(cat "$MAC.sig")" --arg macurl "$(url "$MAC")" \
+            --arg winsig "$(cat "$WIN.sig")" --arg winurl "$(url "$WIN")" \
+            --arg date "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            '{version: $v, notes: $notes, pub_date: $date, platforms: {
+               "darwin-aarch64": {signature: $macsig, url: $macurl},
+               "windows-x86_64": {signature: $winsig, url: $winurl}}}' > latest.json
+          cat latest.json
+          gh release create "$TAG" --repo "$DOWNLOAD_REPO" --title "LeitWerk $VERSION" \
+            --notes-file notes.md --latest \
+            "$MAC" "$WIN" "$DMG" latest.json

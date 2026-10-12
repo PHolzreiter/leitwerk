@@ -1,0 +1,40 @@
+name: Kartenpakete
+
+# Baut die Kartenpakete neu (aktuelle OpenStreetMap-Daten) und legt sie im
+# öffentlichen Repo ab (Release „karten“). Die Programme zeigen danach
+# „Update verfügbar“ bei den Paketen, deren Inhalt sich geändert hat.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  DOWNLOAD_REPO: ${{ github.repository }}
+
+jobs:
+  packs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Bauen
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          sudo apt-get update -q && sudo apt-get install -yq osmium-tool
+          pip install --quiet osmium numpy
+          bash scripts/build-packs.sh packs-out
+
+      - name: Hochladen
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ! gh release view karten --repo "$DOWNLOAD_REPO" >/dev/null 2>&1; then
+            gh release create karten --repo "$DOWNLOAD_REPO" --prerelease --title "Kartenpakete" \
+              --notes "Kartenpakete für LeitWerk. Werden vom Programm automatisch geladen. Karten © OpenStreetMap-Mitwirkende (ODbL), Protomaps; Höhendaten Mapzen/AWS Terrain Tiles."
+          fi
+          # Erst die Dateien, zuletzt das Verzeichnis – so zeigt es nie auf fehlende Dateien
+          find packs-out -type f ! -name packs.json -print0 | xargs -0 gh release upload karten --repo "$DOWNLOAD_REPO" --clobber
+          gh release upload karten packs-out/packs.json --repo "$DOWNLOAD_REPO" --clobber
+          cat packs-out/packs.json

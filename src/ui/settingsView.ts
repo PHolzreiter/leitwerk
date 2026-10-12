@@ -1,0 +1,226 @@
+/** Reiter „Einstellungen“: Statusmodell, Einsatzaufkommen, Stufen-Zuordnung, Fahrzeiten, Flugrettung. */
+import { store } from "../data/store";
+import { sim } from "../sim/engine";
+import { geoStatus } from "../sim/geo";
+import { GEBIETE, KATEGORIEN, KATEGORIE_LABEL, NOTARZT_LABEL, defaultStufeFuer, type Kategorie, type NotarztRegel, type Settings } from "../sim/settings";
+import { codeKategorien } from "../sim/codes";
+import { WETTER_LABEL, type WetterLage } from "../sim/weather";
+import { confirmDialog } from "./dialog";
+import { buildAppSection, buildPacksSection } from "./packsView";
+import { el, esc, toast } from "./dom";
+
+const STATUS_BEDEUTUNG: Record<string, string> = {
+  freiWache: "frei auf der Wache",
+  zumBO: "Anfahrt zum Einsatzort",
+  amBO: "am Einsatzort",
+  zumZO: "Transport zum Zielort",
+  amZO: "am Zielort / Übergabe",
+  freiFunk: "frei, unterwegs",
+  dienstfahrt: "Dienstfahrt (alarmierbar)",
+  bereitschaft: "Bereitschaft (alarmierbar)",
+  alarmiert: "alarmiert, rückt aus",
+  abgemeldet: "nicht im Dienst",
+};
+
+export function createSettingsView(container: HTMLElement): { refresh(): void } {
+  let draft: Settings = structuredClone(store.settings);
+
+  const num = (v: number, step = "1", min = "0") => {
+    const i = el("input", { type: "number", step, min });
+    i.value = String(v);
+    return i;
+  };
+
+  function render() {
+    draft = structuredClone(store.settings);
+    container.innerHTML = "";
+    const page = el("div", { class: "settings" });
+    container.appendChild(page);
+
+    const section = (title: string, hint?: string) => {
+      const s = el("section", { class: "set-sec" });
+      s.appendChild(el("h3", {}, title));
+      if (hint) s.appendChild(el("p", { class: "muted" }, hint));
+      page.appendChild(s);
+      return s;
+    };
+
+    // Status
+    const sSec = section("Statusmodell", "Nummer, Bezeichnung und Farbe der Status. Die Bedeutung ist fest, damit die Simulation weiß, was passiert.");
+    const sTab = el("table", { class: "set-table" });
+    sTab.innerHTML = `<tr><th>Bedeutung</th><th>Nummer</th><th>Bezeichnung</th><th>Farbe</th><th>alarmierbar</th></tr>`;
+    for (const st of draft.status) {
+      const tr = el("tr");
+      tr.appendChild(el("td", {}, STATUS_BEDEUTUNG[st.key] ?? st.key));
+      const n = el("input", { type: "text", class: "w-num" });
+      n.value = st.nummer;
+      n.addEventListener("change", () => (st.nummer = n.value.trim()));
+      const name = el("input", { type: "text" });
+      name.value = st.name;
+      name.addEventListener("change", () => (st.name = name.value.trim()));
+      const col = el("input", { type: "color" });
+      col.value = st.farbe;
+      col.addEventListener("input", () => (st.farbe = col.value));
+      const av = el("input", { type: "checkbox" });
+      av.checked = st.verfuegbar;
+      av.addEventListener("change", () => (st.verfuegbar = av.checked));
+      for (const c of [n, name, col, av]) {
+        const td = el("td");
+        td.appendChild(c);
+        tr.appendChild(td);
+      }
+      sTab.appendChild(tr);
+    }
+    sSec.appendChild(sTab);
+
+    // Aufkommen
+    const aSec = section("Einsatzaufkommen", "Einsätze pro Stunde je Kategorie (Simulationszeit). Die Kategorie ergibt sich aus der Stufe des AMPDS-Codes.");
+    const aGrid = el("div", { class: "set-grid" });
+    for (const k of KATEGORIEN) {
+      const i = num(draft.aufkommen[k], "0.5");
+      i.addEventListener("change", () => (draft.aufkommen[k as Kategorie] = Number(i.value) || 0));
+      aGrid.append(el("label", {}, `${KATEGORIE_LABEL[k]} / h`), i);
+    }
+    const gen = el("input", { type: "checkbox" });
+    gen.checked = draft.generatorAktiv;
+    gen.addEventListener("change", () => (draft.generatorAktiv = gen.checked));
+    aGrid.append(el("label", {}, "Einsätze automatisch erzeugen"), gen);
+    const src = el("select");
+    src.append(el("option", { value: "zufall" }, "zufällig (Adressen im Gebiet)"), el("option", { value: "vorlagen" }, "aus Einsatzvorlagen (Reiter Daten)"));
+    src.value = draft.generatorQuelle;
+    src.addEventListener("change", () => (draft.generatorQuelle = src.value as Settings["generatorQuelle"]));
+    aGrid.append(el("label", {}, "Quelle"), src);
+    const geb = el("select");
+    for (const g of GEBIETE) geb.appendChild(el("option", { value: g.name }, g.name));
+    geb.value = draft.gebiet.name;
+    geb.addEventListener("change", () => (draft.gebiet = GEBIETE.find((g) => g.name === geb.value) ?? GEBIETE[0]));
+    aGrid.append(el("label", {}, "Einsatzgebiet"), geb);
+    const fa = num(draft.falscheAdresseProzent);
+    fa.addEventListener("change", () => (draft.falscheAdresseProzent = Number(fa.value) || 0));
+    aGrid.append(el("label", {}, "Anrufer mit falscher Adresse (%)"), fa);
+    aSec.appendChild(aGrid);
+
+    // Stufen
+    const stSec = section(
+      "Stufen-Zuordnung",
+      "Je Kategorie der Einsatzcodes (neue Kategorien aus einem Import erscheinen hier automatisch mit Standardwerten). Rettungsmittel nach Rangfolge: „>“ trennt die Ränge, „/“ heißt gleichwertig (z. B. KTW>RTW>RTW-C oder RTW/RTW-C). Ein schlechter passendes Rettungsmittel wird nur vorgeschlagen, wenn das besser passende mehr als die Toleranz länger braucht. NFS: ohne Notfallsanitäter an Bord kommt ein NEF dazu. Notarzt „NEF bevorzugt“: ein NAH nur, wenn er mehr als die Toleranz schneller ist.",
+    );
+    // Kategorien aus der importierten Codeliste, die noch keine Zuordnung haben
+    for (const k of codeKategorien()) {
+      if (!draft.stufen.some((x) => x.stufe === k)) draft.stufen.push(defaultStufeFuer(k));
+    }
+    const stTab = el("table", { class: "set-table" });
+    stTab.innerHTML = `<tr><th>Stufe</th><th>Rettungsmittel (Rangfolge)</th><th>NFS</th><th>Notarzt</th><th>Sondersignal</th><th>Kategorie</th><th>Transport %</th></tr>`;
+    for (const s of draft.stufen) {
+      const tr = el("tr");
+      tr.appendChild(el("td", {}, s.stufe));
+      const fz = el("input", { type: "text", class: "rm-input", placeholder: "z. B. RTW>KTW>RTW-C" });
+      fz.value = s.rettungsmittel;
+      fz.addEventListener("change", () => (s.rettungsmittel = fz.value.toUpperCase().replace(/\s+/g, "")));
+      const nfs = el("input", { type: "checkbox" });
+      nfs.checked = s.nfsErforderlich;
+      nfs.addEventListener("change", () => (s.nfsErforderlich = nfs.checked));
+      const na = el("select");
+      for (const k of Object.keys(NOTARZT_LABEL) as NotarztRegel[]) na.appendChild(el("option", { value: k }, NOTARZT_LABEL[k]));
+      na.value = s.notarzt;
+      na.addEventListener("change", () => (s.notarzt = na.value as NotarztRegel));
+      const sos = el("input", { type: "checkbox" });
+      sos.checked = s.sondersignal;
+      sos.addEventListener("change", () => (s.sondersignal = sos.checked));
+      const kat = el("select");
+      for (const k of KATEGORIEN) kat.appendChild(el("option", { value: k }, KATEGORIE_LABEL[k]));
+      kat.value = s.kategorie;
+      kat.addEventListener("change", () => (s.kategorie = kat.value as Kategorie));
+      const tp = num(s.transportProzent);
+      tp.addEventListener("change", () => (s.transportProzent = Number(tp.value) || 0));
+      for (const c of [fz, nfs, na, sos, kat, tp]) {
+        const td = el("td");
+        td.appendChild(c);
+        tr.appendChild(td);
+      }
+      stTab.appendChild(tr);
+    }
+    const tGrid = el("div", { class: "set-grid" });
+    const tol = num(draft.toleranzMin, "1", "0");
+    tol.addEventListener("change", () => (draft.toleranzMin = Math.max(0, Number(tol.value) || 0)));
+    tGrid.append(el("label", {}, "Toleranz für besser passende Rettungsmittel (min)"), tol);
+    stSec.appendChild(tGrid);
+    stSec.appendChild(stTab);
+
+    // Fahrzeiten
+    const fSec = section("Fahrzeiten und Verortung");
+    const fGrid = el("div", { class: "set-grid" });
+    const sf = num(draft.sondersignalFaktor, "0.05", "0.3");
+    sf.addEventListener("change", () => (draft.sondersignalFaktor = Number(sf.value) || 1));
+    fGrid.append(el("label", {}, "Sondersignal: Fahrzeit × Faktor"), sf);
+    const vr = num(draft.verortungRadius, "10", "20");
+    vr.addEventListener("change", () => (draft.verortungRadius = Number(vr.value) || 250));
+    fGrid.append(el("label", {}, "Verortung richtig bis (Meter)"), vr);
+    fSec.appendChild(fGrid);
+
+    // Flugrettung
+    const nSec = section("Flugrettung und Wetter", "Bei Nebel und Gewitter fliegt kein NAH. Nachts nur Hubschrauber mit „Nachtflugtauglich“ (Reiter Daten → Fahrzeuge).");
+    const nGrid = el("div", { class: "set-grid" });
+    const wa = el("input", { type: "checkbox" });
+    wa.checked = draft.wetterAktiv;
+    wa.addEventListener("change", () => (draft.wetterAktiv = wa.checked));
+    nGrid.append(el("label", {}, "Wetter simulieren"), wa);
+    const ns = num(draft.nahGeschwindigkeit, "10", "100");
+    ns.addEventListener("change", () => (draft.nahGeschwindigkeit = Number(ns.value) || 220));
+    nGrid.append(el("label", {}, "NAH Reisegeschwindigkeit (km/h)"), ns);
+    const nst = num(draft.nahStartzeitSek, "10");
+    nst.addEventListener("change", () => (draft.nahStartzeitSek = Number(nst.value) || 180));
+    nGrid.append(el("label", {}, "NAH Startzeit (Sekunden)"), nst);
+    const wSel = el("select");
+    for (const [k, v] of Object.entries(WETTER_LABEL)) wSel.appendChild(el("option", { value: k }, v));
+    wSel.value = sim.state.wetter.lage;
+    const wBtn = el("button", { class: "btn small" }, "jetzt setzen");
+    wBtn.addEventListener("click", () => {
+      sim.state.wetter = { lage: wSel.value as WetterLage, bis: sim.state.zeit + 90 * 60_000 };
+      toast(`Wetter: ${WETTER_LABEL[sim.state.wetter.lage]}`);
+    });
+    const wWrap = el("div", { class: "row-btns" });
+    wWrap.append(wSel, wBtn);
+    nGrid.append(el("label", {}, "Wetter zum Testen setzen"), wWrap);
+    nSec.appendChild(nGrid);
+
+    // Kartenpakete und Programm
+    buildPacksSection(
+      section(
+        "Kartenpakete",
+        "Das Grundpaket ist immer installiert. Detailkarten und Gelände für die 3D-Ansicht kannst du bei Bedarf dazuladen oder wieder löschen. Das Satellitenbild wird online geladen und braucht kein Paket.",
+      ),
+    );
+    buildAppSection(section("Programm"));
+
+    // Status von Straßennetz/Adressen
+    const gSec = section("Straßennetz und Adressen");
+    const gInfo = el("div", { class: "muted" }, "wird geprüft …");
+    gSec.appendChild(gInfo);
+    void geoStatus().then((g) => {
+      gInfo.innerHTML = `Straßennetz: <b>${esc(g.roads)}</b>${g.roads_nodes ? ` (${g.roads_nodes.toLocaleString("de-AT")} Knoten)` : ""} · Adressen: <b>${esc(g.addresses)}</b>${g.address_count ? ` (${g.address_count.toLocaleString("de-AT")})` : ""}`;
+    });
+
+    // Aktionen
+    const act = el("div", { class: "set-actions" });
+    const save = el("button", { class: "btn primary" }, "Speichern");
+    save.addEventListener("click", () => {
+      store.setSettings(draft);
+      sim.neuPlanen();
+      toast("Einstellungen gespeichert");
+    });
+    const reset = el("button", { class: "btn" }, "Standard wiederherstellen");
+    reset.addEventListener("click", async () => {
+      if (await confirmDialog("Standard wiederherstellen", "Alle Einstellungen auf die Standardwerte zurücksetzen?", "Zurücksetzen", true)) {
+        store.resetSettings();
+        sim.neuPlanen();
+        render();
+      }
+    });
+    act.append(save, reset);
+    page.appendChild(act);
+  }
+
+  render();
+  return { refresh: render };
+}

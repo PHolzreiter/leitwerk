@@ -1,0 +1,13 @@
+﻿stufe;rettungsmittel;nfs_erforderlich;notarzt;sondersignal;kategorie;transport_prozent
+ALS rot;RTW-C>RTW>KTW;nein;schnellster;ja;kritisch;85
+ALS orange;RTW-C>RTW>KTW;nein;nef;ja;kritisch;85
+ALS gelb;RTW-C>RTW>KTW;ja;nein;ja;dringend;80
+ALS grün;RTW>RTW-C>KTW;ja;nein;nein;dringend;75
+BLS rot;RTW>RTW-C>KTW;nein;nein;ja;dringend;75
+BLS gelb;RTW>KTW>RTW-C;nein;nein;ja;dringend;70
+BLS grün;KTW>RTW>RTW-C;nein;nein;nein;stabil;65
+BLS/ALS aufwertbar;RTW/RTW-C;nein;nein;ja;dringend;75
+Akuttransport grün;KTW>RTW>RTW-C;nein;nein;nein;stabil;100
+Telemedizin;KTW>RTW>RTW-C;nein;nein;nein;stabil;30
+Weitergabe;;nein;nein;nein;stabil;0
+Großunfall;RTW-C>RTW>KTW;nein;schnellster;ja;kritisch;90
