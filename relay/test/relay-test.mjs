@@ -83,12 +83,23 @@ check(!!(await c1b.next((m) => m.t === "you-are-host")), "Mitspieler übernimmt 
 const alt = connect({ role: "host", pid: "h1", name: "Paul", token: "geheim1" });
 await alt.opened;
 const ae = await alt.next((m) => m.t === "error");
-check(!!ae, "Alter Host wird nach Übernahme nicht mehr Host");
+check(!!ae && /übernommen/.test(ae.reason), "Alter Host wird nach Übernahme nicht mehr Host: " + (ae && ae.reason));
 
 const unbekannt = new WebSocket(`${BASE}/room/000001?role=client&pid=z&name=Z`);
 const ue = await new Promise((r) => unbekannt.addEventListener("message", (e) => r(JSON.parse(e.data))));
 check(ue.t === "error", "Unbekannter Code wird abgelehnt");
 
-for (const w of [c1.ws, c1b.ws, fremd.ws, alt.ws, unbekannt]) try { w.close(); } catch {}
+// Übergabe ohne Trennung: neuer Host c1b übergibt an c2
+const c2 = connect({ role: "client", pid: "c2", name: "Eva" });
+await c2.opened;
+await c2.next((m) => m.t === "welcome");
+c1b.ws.send(JSON.stringify({ relay: "handover", pid: "c2", token: "tok3" }));
+const yh = await c2.next((m) => m.t === "you-are-host");
+check(yh && yh.token === "tok3", "Host-Übergabe ohne Trennung");
+check(!!(await c1b.next((m) => m.t === "host-changed" && m.pid === "c2")), "Alter Host erfährt die Übergabe");
+c1b.ws.send(JSON.stringify({ t: "cmd", name: "x" }));
+check(!!(await c2.next((m) => m.t === "from" && m.pid === "c1")), "Alter Host ist jetzt Mitspieler");
+
+for (const w of [c2.ws, c1.ws, c1b.ws, fremd.ws, alt.ws, unbekannt]) try { w.close(); } catch {}
 console.log(fails ? `${fails} Fehler` : "Alles in Ordnung");
 process.exit(fails ? 1 : 0);

@@ -98,8 +98,20 @@ export function oeffneSpielDialog(): void {
           busy(fort, async () => {
             if (!name.value.trim()) throw new Error("Bitte einen Namen eingeben");
             await spielstand.autosaveLaden();
-            await mp.hostFortsetzen(c, name.value);
-            toast(`Spiel ${c} fortgesetzt`);
+            try {
+              await mp.hostFortsetzen(c, name.value);
+              toast(`Spiel ${c} fortgesetzt`);
+            } catch (e) {
+              const msg = fehlerText(e);
+              if (!/übernommen/.test(msg)) throw e;
+              // Inzwischen hat jemand anderer übernommen: als Mitspieler dazu
+              spielstand.schliessen();
+              const ok = await confirmDialog("Host bereits übernommen", `${msg}. Möchtest du dem Spiel als Mitspieler beitreten?`, "Als Mitspieler beitreten");
+              if (ok) {
+                await mp.beitreten(c, name.value);
+                toast(`Spiel ${c} als Mitspieler beigetreten`);
+              }
+            }
           }),
         );
         s.appendChild(fort);
@@ -123,7 +135,7 @@ export function oeffneSpielDialog(): void {
 
       // Spielerliste
       const tab = el("table", { class: "set-table spieler-tab" });
-      tab.innerHTML = `<tr><th>Spieler</th><th></th>${RECHTE.map((x) => `<th>${RECHTE_LABEL[x]}</th>`).join("")}</tr>`;
+      tab.innerHTML = `<tr><th>Spieler</th><th>Verbindung</th>${RECHTE.map((x) => `<th>${RECHTE_LABEL[x]}</th>`).join("")}<th></th></tr>`;
       for (const sp of mp.spieler) tab.appendChild(spielerZeile(sp, r === "host"));
       s.appendChild(tab);
       if (r === "host") s.appendChild(el("p", { class: "muted small" }, "Rechte gelten sofort. Standard: alle dürfen disponieren und die Simulation steuern, Einstellungen und Daten ändert nur der Host."));
@@ -148,6 +160,13 @@ export function oeffneSpielDialog(): void {
         const ueb = el("button", { class: "btn primary" }, "Als Host übernehmen");
         ueb.addEventListener("click", () => mp.hostUebernehmen());
         reihe.prepend(ueb);
+      } else if (r === "client") {
+        const anf = el("button", { class: "btn" }, "Host-Rolle anfragen");
+        anf.addEventListener("click", () => {
+          mp.hostAnfragen();
+          toast("Anfrage an den Host geschickt");
+        });
+        reihe.prepend(anf);
       }
       s.appendChild(reihe);
     }
@@ -206,7 +225,12 @@ export function oeffneSpielDialog(): void {
 
   function spielerZeile(sp: Spieler, binHost: boolean): HTMLTableRowElement {
     const tr = el("tr");
-    tr.innerHTML = `<td><span class="online-dot ${sp.online ? "on" : ""}"></span> <b>${esc(sp.name)}</b>${sp.pid === mp.ich.pid ? " <span class=\"muted\">(du)</span>" : ""}</td><td>${sp.host ? `<span class="badge">Host</span>` : sp.online ? "" : `<span class="muted">offline</span>`}</td>`;
+    const verbindung = !sp.online
+      ? `<span class="alert-text">getrennt${sp.offlineSeit ? ` seit ${new Date(sp.offlineSeit).toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" })}` : ""}</span>`
+      : typeof sp.ping === "number"
+        ? `<span class="${sp.ping > 400 ? "alert-text" : sp.ping > 150 ? "warn-text" : "ok-text"}">${sp.ping} ms</span>`
+        : `<span class="muted">verbunden</span>`;
+    tr.innerHTML = `<td><span class="online-dot ${sp.online ? "on" : ""}"></span> <b>${esc(sp.name)}</b>${sp.pid === mp.ich.pid ? " <span class=\"muted\">(du)</span>" : ""}${sp.host ? ` <span class="badge">Host</span>` : ""}</td><td>${verbindung}</td>`;
     for (const rr of RECHTE) {
       const td = el("td");
       const cb = el("input", { type: "checkbox" });
@@ -216,6 +240,16 @@ export function oeffneSpielDialog(): void {
       td.appendChild(cb);
       tr.appendChild(td);
     }
+    const act = el("td");
+    if (binHost && !sp.host && sp.online) {
+      const b = el("button", { class: "btn small" }, "Zum Host machen");
+      b.addEventListener("click", async () => {
+        const ok = await confirmDialog("Host übergeben", `${sp.name} wird Host, du spielst als Mitspieler weiter. Niemand verliert die Verbindung.`, "Übergeben");
+        if (ok) mp.hostUebergeben(sp.pid);
+      });
+      act.appendChild(b);
+    }
+    tr.appendChild(act);
     return tr;
   }
 

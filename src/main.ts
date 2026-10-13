@@ -1,12 +1,13 @@
 import "./style.css";
 import { store } from "./data/store";
 import { availableMaps, createMap, type MapHandle } from "./map";
-import { addDataLayers, addSimLayers, pickLocation, setGroupVisible, setSelectedIncident } from "./mapLayers";
+import { ORG_FARBEN, addDataLayers, addSimLayers, pickLocation, setGroupVisible, setSelectedIncident } from "./mapLayers";
 import { sim } from "./sim/engine";
 import { geoStatus } from "./sim/geo";
 import { flugverbot, WETTER_LABEL, WETTER_SYMBOL } from "./sim/weather";
 import { createDataView, type DataViewDeps } from "./ui/dataView";
 import { toast } from "./ui/dom";
+import { confirmDialog } from "./ui/dialog";
 import { openEditor } from "./ui/editForm";
 import { createOpsView } from "./ui/opsView";
 import { createSettingsView } from "./ui/settingsView";
@@ -103,6 +104,11 @@ async function init(): Promise<void> {
   sim.ich = mp.ich;
   setupSimBar();
   setupSpielStatus();
+  mp.onMeldung((t) => toast(t));
+  mp.onHostAnfrage(async (pid, name) => {
+    const ok = await confirmDialog("Host-Rolle angefragt", `${name} möchte Host werden. Du spielst danach als Mitspieler weiter.`, "Übergeben");
+    if (ok) mp.hostUebergeben(pid);
+  });
   autosaveStarten();
   void watchGeo();
 
@@ -164,41 +170,83 @@ async function init(): Promise<void> {
     });
   });
 
-  // Ebenen ein-/ausblenden
+  // Ebenen ein-/ausblenden (Liste einklappbar)
   document.querySelectorAll<HTMLInputElement>(".map-panel input[data-group]").forEach((cb) => {
     cb.addEventListener("change", () => {
       setGroupVisible(map, cb.dataset.group as "stations" | "hospitals" | "pois", cb.checked);
     });
   });
+  const ebenenBtn = document.getElementById("ebenen-toggle") as HTMLButtonElement;
+  const ebenen = document.getElementById("ebenen")!;
+  ebenenBtn.addEventListener("click", () => {
+    ebenen.hidden = !ebenen.hidden;
+    ebenenBtn.setAttribute("aria-expanded", String(!ebenen.hidden));
+    ebenenBtn.querySelector("span")!.textContent = ebenen.hidden ? "▸" : "▾";
+  });
+  document.getElementById("legende")!.innerHTML = Object.entries(ORG_FARBEN)
+    .map(([name, farbe]) => `<span><span class="dot" style="background:${farbe}"></span>${name}</span>`)
+    .join("");
 
-  // 2D / 3D und Satellit (Satellit nur in 2D)
-  const btn3d = document.getElementById("btn-3d") as HTMLButtonElement;
-  const btnSat = document.getElementById("btn-sat") as HTMLButtonElement;
+  // 2D / 3D und Karte / Satellit (Satellit nur in 2D); angezeigt wird immer, was aktiv ist
   let is3d = false;
   let isSat = false;
+  const dimBtns = document.querySelectorAll<HTMLButtonElement>("[data-dim]");
+  const baseBtns = document.querySelectorAll<HTMLButtonElement>("[data-base]");
+  const hint3d = document.getElementById("hint-3d")!;
+  let hintTimer: number | undefined;
   const renderModeButtons = () => {
-    btn3d.textContent = is3d ? "2D-Ansicht" : "3D-Ansicht";
-    btn3d.classList.toggle("primary", is3d);
-    btnSat.textContent = isSat ? "Straßenkarte" : "Satellit";
-    btnSat.classList.toggle("primary", isSat);
+    dimBtns.forEach((b) => {
+      b.classList.toggle("active", (b.dataset.dim === "3d") === is3d);
+      if (b.dataset.dim === "3d") {
+        b.classList.toggle("disabled", !h.hasTerrain());
+        b.title = h.hasTerrain() ? "3D-Ansicht mit Gelände" : "Paket „Gelände (3D)“ fehlt – Einstellungen → Kartenpakete";
+      }
+    });
+    baseBtns.forEach((b) => b.classList.toggle("active", (b.dataset.base === "sat") === isSat));
   };
-  btn3d.addEventListener("click", () => {
-    is3d = !is3d;
-    if (is3d) isSat = false;
-    h.setMode3d(is3d);
-    renderModeButtons();
+  dimBtns.forEach((b) =>
+    b.addEventListener("click", () => {
+      const ziel = b.dataset.dim === "3d";
+      if (ziel && !h.hasTerrain()) {
+        hint3d.hidden = false;
+        window.clearTimeout(hintTimer);
+        hintTimer = window.setTimeout(() => (hint3d.hidden = true), 8000);
+        return;
+      }
+      if (ziel === is3d) return;
+      is3d = ziel;
+      if (is3d) isSat = false;
+      h.setMode3d(is3d);
+      renderModeButtons();
+    }),
+  );
+  baseBtns.forEach((b) =>
+    b.addEventListener("click", () => {
+      const ziel = b.dataset.base === "sat";
+      if (ziel === isSat) return;
+      isSat = ziel;
+      if (isSat) is3d = false;
+      h.setSatellite(isSat);
+      renderModeButtons();
+    }),
+  );
+  document.getElementById("hint-3d-go")!.addEventListener("click", () => {
+    hint3d.hidden = true;
+    showView("settings");
+    requestAnimationFrame(() => document.querySelector(".packs")?.scrollIntoView({ behavior: "smooth", block: "center" }));
   });
-  btnSat.addEventListener("click", () => {
-    isSat = !isSat;
-    if (isSat) is3d = false;
-    h.setSatellite(isSat);
-    renderModeButtons();
-  });
+  renderModeButtons();
+  map.once("idle", renderModeButtons);
 
   // Kartenpakete installiert oder gelöscht: Ebenen neu aufbauen
   onPacksChanged(async () => {
     try {
       h.refresh(await availableMaps());
+      if (!h.hasTerrain() && is3d) {
+        is3d = false;
+        h.setMode3d(false);
+      }
+      setTimeout(renderModeButtons, 300);
     } catch (e) {
       console.error(e);
     }

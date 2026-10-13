@@ -36,12 +36,25 @@
         <div class="ops-center">
           <div id="map" class="map" aria-label="Karte"></div>
           <div class="map-panel">
-            <div class="map-panel-title">Ebenen</div>
-            <label class="chk"><input type="checkbox" data-group="stations" checked /><span class="dot" style="background:#1d6fd8"></span>Dienststellen</label>
-            <label class="chk"><input type="checkbox" data-group="hospitals" checked /><span class="dot hosp"></span>Krankenhäuser</label>
-            <label class="chk"><input type="checkbox" data-group="pois" checked /><span class="dot" style="background:#2a9d8f"></span>POIs</label>
-            <button id="btn-sat" class="btn small block" type="button">Satellit</button>
-            <button id="btn-3d" class="btn small block" type="button">3D-Ansicht</button>
+            <div class="seg" role="group" aria-label="Ansicht">
+              <button type="button" data-dim="2d" class="active">2D</button>
+              <button type="button" data-dim="3d">3D</button>
+            </div>
+            <div class="seg" role="group" aria-label="Kartenart">
+              <button type="button" data-base="karte" class="active">Karte</button>
+              <button type="button" data-base="sat">Satellit</button>
+            </div>
+            <div id="hint-3d" class="map-hint" hidden>
+              Für 3D fehlt das Paket <b>„Gelände (3D)“</b>.
+              <button type="button" class="btn small" id="hint-3d-go">Zu den Kartenpaketen</button>
+            </div>
+            <button type="button" id="ebenen-toggle" class="ebenen-toggle" aria-expanded="false">Ebenen <span>▸</span></button>
+            <div id="ebenen" class="ebenen" hidden>
+              <label class="chk"><input type="checkbox" data-group="stations" checked /><span class="dot" style="background:#c62828"></span>Dienststellen</label>
+              <label class="chk"><input type="checkbox" data-group="hospitals" checked /><span class="dot hosp"></span>Krankenhäuser</label>
+              <label class="chk"><input type="checkbox" data-group="pois" checked /><span class="dot" style="background:#2a9d8f"></span>POIs</label>
+              <div class="legende" id="legende"></div>
+            </div>
           </div>
           <div id="map-message" class="map-message" hidden></div>
         </div>
@@ -57,7 +70,7 @@
       <span id="geo-status" class="muted"></span>
       <span class="statusbar-spacer"></span>
       <span class="muted">Rechtsklick auf die Karte: Eintrag anlegen · Rechtsklick auf ein Fahrzeug in der Liste: Status setzen</span>
-      <span id="app-version">v0.5.0</span>
+      <span id="app-version">v0.5.1</span>
     </footer>
 
     <script type="module" src="/src/main.ts"></script>

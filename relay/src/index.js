@@ -97,13 +97,15 @@ export class Room extends DurableObject {
         const frei = !stored || own || (!host && now - (stored.lastHost || 0) > ROOM_EXPIRY_MS);
         if (!frei) return reject("Code belegt");
       } else if (!own) {
+        // Code gehört inzwischen einem anderen Host (übernommen oder übergeben)
+        if (stored) return reject(`${stored.name || "Ein anderer Spieler"} hat bereits den Host übernommen`);
         return reject("Kein Zugriff auf dieses Spiel als Host");
       }
       if (host && host.a.pid !== pid) {
         // Ein anderer Host ist verbunden (z. B. übernommen) – dieser kommt als Mitspieler zurück
-        return reject("Ein anderer Spieler ist inzwischen Host");
+        return reject(`${host.a.name} hat bereits den Host übernommen`);
       }
-      await this.ctx.storage.put("room", { token, lastHost: now });
+      await this.ctx.storage.put("room", { token, lastHost: now, name });
     } else {
       if (!stored) return reject("Spiel nicht gefunden – Code prüfen");
       if (!host && now - (stored.lastHost || 0) > ROOM_EXPIRY_MS) return reject("Spiel nicht gefunden – Code prüfen");
@@ -147,6 +149,20 @@ export class Room extends DurableObject {
       return;
     }
     if (a.role === "host") {
+      if (msg.relay === "handover") {
+        // Host übergibt an einen Mitspieler, ohne die Verbindung zu trennen
+        const ziel = this.sockets().find((s) => s.a.pid === msg.pid && s.a.role === "client");
+        if (!ziel) return this.send(ws, { t: "error", reason: "Spieler nicht verbunden" });
+        a.role = "client";
+        ws.serializeAttachment(a);
+        ziel.a.role = "host";
+        ziel.ws.serializeAttachment(ziel.a);
+        await this.ctx.storage.put("room", { token: String(msg.token || ""), lastHost: Date.now(), name: ziel.a.name });
+        const players = this.players();
+        this.send(ziel.ws, { t: "you-are-host", players, token: String(msg.token || ""), von: a.name });
+        this.toClients({ t: "host-changed", pid: ziel.a.pid, name: ziel.a.name, players });
+        return;
+      }
       const text = JSON.stringify(msg.d);
       if (msg.to) {
         for (const s of this.sockets()) if (s.a.pid === msg.to) this.send(s.ws, text);
@@ -159,7 +175,7 @@ export class Room extends DurableObject {
       if (this.hostSocket()) return this.send(ws, { t: "error", reason: "Es ist bereits ein Host verbunden" });
       a.role = "host";
       ws.serializeAttachment(a);
-      await this.ctx.storage.put("room", { token: String(msg.token || ""), lastHost: Date.now() });
+      await this.ctx.storage.put("room", { token: String(msg.token || ""), lastHost: Date.now(), name: a.name });
       const players = this.players();
       this.send(ws, { t: "you-are-host", players });
       this.toClients({ t: "host-changed", pid: a.pid, name: a.name, players });

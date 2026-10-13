@@ -574,12 +574,13 @@ export function createOpsView(left: HTMLElement, right: HTMLElement, deps: OpsDe
     let empfohlen = new Set<string>();
     let gruende: string[] = [];
 
+    const vorschlagKey = () => `${e.adresse?.lat},${e.adresse?.lon},${e.code},${e.fahrzeuge.join("+")}`;
     async function refreshSuggestions() {
       if (!e.adresse) {
         sugg.innerHTML = `<div class="muted">Für Vorschläge zuerst den Einsatzort eingeben.</div>`;
         return;
       }
-      const key = `${e.adresse.lat},${e.adresse.lon},${e.code}`;
+      const key = vorschlagKey();
       suggestFor = key;
       sugg.innerHTML = `<div class="muted">Fahrzeiten werden berechnet …</div>`;
       const res = await sim.vorschlaege(e.id);
@@ -640,6 +641,8 @@ export function createOpsView(left: HTMLElement, right: HTMLElement, deps: OpsDe
           showCode();
         }
         if (e.adresse) feld(adr.input, e.adresse.label);
+        // Adresse, Code oder Fahrzeuge von einem anderen Spieler geändert: Vorschläge neu berechnen
+        if (e.adresse && vorschlagKey() !== suggestFor) void refreshSuggestions();
         feld(zusatz, e.zusatz);
         feld(infoRtw, e.infoRtw);
         feld(infoIntern, e.infoIntern);

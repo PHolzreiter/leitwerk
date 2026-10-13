@@ -1658,3 +1658,106 @@ input[type="color"] {
 .chat-form input {
   flex: 1;
 }
+
+.warn-text {
+  color: var(--warn);
+}
+
+/* Kartenpanel: Umschalter und einklappbare Ebenen (v0.5.1) */
+.map-panel {
+  min-width: 170px;
+  padding: 8px;
+}
+
+.seg {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.seg button {
+  background: transparent;
+  color: var(--text-dim);
+  border: 0;
+  padding: 5px 8px;
+  font: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.seg button + button {
+  border-left: 1px solid var(--line);
+}
+
+.seg button.active {
+  background: var(--blue);
+  color: #fff;
+  font-weight: 600;
+}
+
+.seg button.disabled {
+  opacity: 0.4;
+  cursor: help;
+}
+
+.map-hint {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text);
+  background: var(--panel-2);
+  border: 1px solid var(--warn);
+  border-radius: 6px;
+  padding: 6px 8px;
+  max-width: 190px;
+}
+
+.map-hint .btn {
+  margin-top: 6px;
+}
+
+.ebenen-toggle {
+  background: transparent;
+  border: 0;
+  color: var(--text-dim);
+  font: inherit;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  text-align: left;
+  padding: 2px 0;
+  cursor: pointer;
+}
+
+.ebenen {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ebenen[hidden] {
+  display: none;
+}
+
+.legende {
+  border-top: 1px solid var(--line);
+  padding-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 11.5px;
+  color: var(--text-dim);
+}
+
+.lw-popup .veh-st {
+  display: inline-block;
+  min-width: 16px;
+  text-align: center;
+  border-radius: 3px;
+  color: #fff;
+  font-weight: 700;
+  font-size: 10.5px;
+  margin-right: 3px;
+}

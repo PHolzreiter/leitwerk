@@ -195,12 +195,34 @@ export function createMap(container: string, initial: string[]): MapHandle {
   };
 
   /** Sichtbarkeit nach Modus: Satellit blendet Flächen und Linien aus, Beschriftungen bleiben. */
+  /** Ursprüngliche Schriftfarben der Kartenbeschriftungen (für die Rückkehr vom Satellitenbild) */
+  const textFarben = new Map<string, [unknown, unknown, unknown]>();
   const applyVisibility = () => {
     for (const l of map.getStyle().layers) {
       const isSet = VECTOR_MAPS.some((m) => l.id.startsWith(`${m}-`));
       if (!isSet) continue;
       const vis = satellite && l.type !== "symbol" ? "none" : "visible";
       map.setLayoutProperty(l.id, "visibility", vis);
+      if (l.type !== "symbol") continue;
+      // Auf dem Luftbild: helle Schrift mit dunklem Rand, damit Orts- und Straßennamen lesbar bleiben
+      if (satellite) {
+        if (!textFarben.has(l.id)) {
+          textFarben.set(l.id, [
+            map.getPaintProperty(l.id, "text-color"),
+            map.getPaintProperty(l.id, "text-halo-color"),
+            map.getPaintProperty(l.id, "text-halo-width"),
+          ]);
+        }
+        map.setPaintProperty(l.id, "text-color", "#ffffff");
+        map.setPaintProperty(l.id, "text-halo-color", "rgba(0,0,0,0.85)");
+        map.setPaintProperty(l.id, "text-halo-width", 1.6);
+      } else if (textFarben.has(l.id)) {
+        const [c, h, w] = textFarben.get(l.id)!;
+        map.setPaintProperty(l.id, "text-color", c as string);
+        map.setPaintProperty(l.id, "text-halo-color", h as string);
+        map.setPaintProperty(l.id, "text-halo-width", w as number);
+        textFarben.delete(l.id);
+      }
     }
     map.setLayoutProperty("lw-sat-eox", "visibility", satellite ? "visible" : "none");
     map.setLayoutProperty("lw-sat-at", "visibility", satellite ? "visible" : "none");
@@ -219,6 +241,7 @@ export function createMap(container: string, initial: string[]): MapHandle {
       map.removeSource("terrain");
     }
     for (const name of shown) removeSet(name);
+    textFarben.clear();
     // Dateien (neu) öffnen – nach einem Kartenupdate liest PMTiles sonst den alten Stand
     for (const name of list) protocol.add(new PMTiles(inTauri() ? new TauriMapSource(name) : new DevMapSource(name)));
 

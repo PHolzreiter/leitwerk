@@ -19,13 +19,28 @@ import { el, esc } from "./ui/dom";
 
 const FONT = ["Noto Sans Medium"];
 
-export const STATION_COLORS: Record<string, string> = {
-  Rettungsdienst: "#1d6fd8",
-  Notarztstützpunkt: "#e63946",
-  Luftrettung: "#f08c00",
-  Leitstelle: "#7b61ff",
-  Sonstige: "#6c7a89",
+/** Farbe des Punkts je Organisation (Legende im Ebenen-Fenster) */
+export const ORG_FARBEN: Record<string, string> = {
+  "Rotes Kreuz": "#c62828",
+  "Arbeiter-Samariter-Bund": "#ef6c00",
+  Johanniter: "#7b1fa2",
+  Malteser: "#5d4037",
+  "ÖAMTC (Flugrettung)": "#f9a825",
+  "Notruf NÖ / Leitstelle": "#1565c0",
+  Sonstige: "#607d8b",
 };
+
+export function orgFarbe(s: Pick<Station, "organisation" | "typ">): string {
+  const o = s.organisation.toLowerCase();
+  if (o.includes("rotes kreuz")) return ORG_FARBEN["Rotes Kreuz"];
+  if (o.includes("samariter") || o === "asb") return ORG_FARBEN["Arbeiter-Samariter-Bund"];
+  if (o.includes("johanniter")) return ORG_FARBEN.Johanniter;
+  if (o.includes("malteser")) return ORG_FARBEN.Malteser;
+  if (o.includes("öamtc") || o.includes("oeamtc") || s.typ === "Luftrettung") return ORG_FARBEN["ÖAMTC (Flugrettung)"];
+  if (o.includes("notruf") || s.typ === "Leitstelle") return ORG_FARBEN["Notruf NÖ / Leitstelle"];
+  return ORG_FARBEN.Sonstige;
+}
+
 
 type Feature = GFeature<Point, Record<string, string | number>>;
 
@@ -42,7 +57,7 @@ function stationFeatures(): FeatureCollection<Point> {
     store.list("stations").map((s) =>
       pointFeature(s.id, s.lon, s.lat, {
         name: s.name,
-        color: STATION_COLORS[s.typ] ?? STATION_COLORS.Sonstige,
+        color: orgFarbe(s),
       }),
     ),
   );
@@ -154,7 +169,7 @@ export function addDataLayers(map: maplibregl.Map, cb: DataLayerCallbacks): void
     id: "lw-stations-label",
     type: "symbol",
     source: "lw-stations",
-    minzoom: 11,
+    minzoom: 10,
     layout: {
       "text-field": ["get", "name"],
       "text-font": FONT,
@@ -219,10 +234,12 @@ function showDetails(map: maplibregl.Map, kind: Kind, id: string, at: maplibregl
       <div class="lw-popup-list">${
         vehicles.length
           ? vehicles
-              .map(
-                (v) =>
-                  `<span class="veh ${v.aktiv ? "" : "inactive"}" title="${esc(v.typ)}">${esc(v.funkrufname)} <small>${esc(v.kategorie)}</small></span>`,
-              )
+              .map((v) => {
+                const fz = sim.state.fahrzeuge[v.id];
+                const st = fz ? sim.statusDef(fz.status) : null;
+                const chip = st ? `<span class="veh-st" style="background:${st.farbe}" title="${esc(st.name)}">${esc(st.nummer)}</span>` : "";
+                return `<span class="veh ${v.aktiv ? "" : "inactive"}" title="${esc(st ? `${v.typ} · ${st.name}` : v.typ)}">${chip}${esc(v.funkrufname)} <small>${esc(fz?.rmTyp ?? v.kategorie)}</small></span>`;
+              })
               .join("")
           : "<em>keine Fahrzeuge</em>"
       }</div>
@@ -336,9 +353,15 @@ export function setGroupVisible(map: maplibregl.Map, group: keyof typeof LAYER_G
 
 let selectedIncident: string | null = null;
 
+/** Fahrzeuge, die frei auf ihrer Wache stehen, zeigt die Karte nicht (die Wache zeigt sie beim Anklicken) */
+function daheim(fz: (typeof sim.state.fahrzeuge)[string]): boolean {
+  if (fz.einsatzId || fz.phase !== "frei") return false;
+  return Math.abs(fz.lat - fz.heim.lat) < 0.0005 && Math.abs(fz.lon - fz.heim.lon) < 0.0005;
+}
+
 function vehicleFeatures(): FeatureCollection<Point> {
   return collection(
-    Object.values(sim.state.fahrzeuge).map((fz) =>
+    Object.values(sim.state.fahrzeuge).filter((fz) => !daheim(fz)).map((fz) =>
       pointFeature(fz.id, fz.lon, fz.lat, {
         name: fz.funkrufname,
         color: sim.statusDef(fz.status).farbe,
@@ -443,7 +466,7 @@ export function addSimLayers(
     id: "lw-vehicles-label",
     type: "symbol",
     source: "lw-vehicles",
-    minzoom: 9.5,
+    minzoom: 8,
     layout: {
       "text-field": ["get", "name"],
       "text-font": FONT,

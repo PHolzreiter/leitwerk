@@ -38,6 +38,10 @@ export interface Spieler {
   online: boolean;
   host: boolean;
   rechte: Rechte;
+  /** Antwortzeit in ms (vom Host gemessen bzw. gemeldet) */
+  ping?: number | null;
+  /** seit wann nicht verbunden */
+  offlineSeit?: number | null;
 }
 
 export type Rolle = "aus" | "host" | "client";
@@ -106,6 +110,11 @@ class Mehrspieler {
   private deltaTimer: number | undefined;
   private warLaufend = false;
   private listeners = new Set<() => void>();
+  private meldungListeners = new Set<(text: string) => void>();
+  private anfrageListeners = new Set<(pid: string, name: string) => void>();
+  private rtt: number | null = null;
+  private pingGesendet = 0;
+  private sessionZaehler = 0;
   private offen = new Map<string, { resolve(v: unknown): void; reject(e: Error): void; timer: number }>();
   private chunks = new Map<string, string[]>();
   private cache = {
@@ -144,6 +153,20 @@ class Mehrspieler {
 
   private emit(): void {
     for (const fn of this.listeners) fn();
+  }
+
+  /** Kurze Meldungen für alle (z. B. „Max hat die Verbindung verloren“) */
+  onMeldung(fn: (text: string) => void): void {
+    this.meldungListeners.add(fn);
+  }
+
+  private melden(text: string): void {
+    for (const fn of this.meldungListeners) fn(text);
+  }
+
+  /** Host: ein Mitspieler möchte Host werden */
+  onHostAnfrage(fn: (pid: string, name: string) => void): void {
+    this.anfrageListeners.add(fn);
   }
 
   get aktiv(): boolean {
@@ -232,6 +255,45 @@ class Mehrspieler {
   }
 
   /** Mitspieler übernimmt die Host-Rolle (wenn der Host weg ist). */
+  /** Mitspieler bittet den (anwesenden) Host um die Host-Rolle */
+  hostAnfragen(): void {
+    if (this.status.rolle !== "client" || !this.status.hostDa) return;
+    this.sendeRoh({ t: "host-anfrage" });
+  }
+
+  /** Host gibt die Host-Rolle an einen Mitspieler ab, ohne dass jemand die Verbindung verliert */
+  hostUebergeben(pid: string): void {
+    if (this.status.rolle !== "host") return;
+    const ziel = this.spieler.find((s) => s.pid === pid && s.online && !s.host);
+    if (!ziel) return;
+    // Letzten Stand noch an alle, dann übergeben
+    this.deltaSenden();
+    void sim.call("chat", `${this.ich.name} übergibt die Host-Rolle an ${ziel.name}`);
+    this.deltaSenden();
+    this.sendeRoh({ relay: "handover", pid, token: zufallsId() });
+    this.alsMitspieler();
+    this.melden(`${ziel.name} ist jetzt Host – du spielst als Mitspieler weiter`);
+  }
+
+  /** In den Mitspieler-Modus wechseln (eigene Daten bleiben geschützt) */
+  private alsMitspieler(): void {
+    window.clearInterval(this.deltaTimer);
+    sim.pause();
+    if (!store.inSession) store.enterSession(store.snapshot());
+    this.status = { ...this.status, rolle: "client", hostDa: true, hostVerlassen: false };
+    this.clientModus();
+    this.emit();
+  }
+
+  private clientModus(): void {
+    sim.mode = "client";
+    sim.istOnline = null;
+    sim.remote = (name, args) => this.anfrage({ t: "cmd", name, args });
+    store.remote = (name: StoreBefehl, args) => {
+      void this.anfrage({ t: "scmd", name, args }).catch((e) => this.fehler(String(e.message ?? e)));
+    };
+  }
+
   hostUebernehmen(): void {
     if (this.status.rolle !== "client" || !this.ws) return;
     this.token = zufallsId();
@@ -256,11 +318,25 @@ class Mehrspieler {
         return;
       }
       let begruesst = false;
+      // Lebenszeichen und Messung der Antwortzeit alle 5 s
       const ping = window.setInterval(() => {
-        if (ws.readyState === WebSocket.OPEN) ws.send("ping");
-      }, 20_000);
+        if (ws.readyState !== WebSocket.OPEN) return;
+        if (this.status.rolle === "client" && this.status.hostDa) {
+          ws.send(JSON.stringify({ t: "ping", ts: Date.now(), rtt: this.rtt }));
+        } else {
+          this.pingGesendet = Date.now();
+          ws.send("ping");
+        }
+      }, 5_000);
       ws.onmessage = (ev) => {
-        if (ev.data === "pong") return;
+        if (ev.data === "pong") {
+          // Host: Antwortzeit zum Server
+          if (this.pingGesendet && this.status.rolle === "host") {
+            const ich = this.spieler.find((x) => x.pid === this.ich.pid);
+            if (ich) ich.ping = Date.now() - this.pingGesendet;
+          }
+          return;
+        }
         let m: Nachricht;
         try {
           m = JSON.parse(String(ev.data)) as Nachricht;
@@ -310,11 +386,7 @@ class Mehrspieler {
       this.alsHost(m.players as { pid: string; name: string; role: string }[]);
       if (vorher === "host" && this.warLaufend) sim.call("start");
     } else {
-      sim.mode = "client";
-      sim.remote = (name, args) => this.anfrage({ t: "cmd", name, args });
-      store.remote = (name: StoreBefehl, args) => {
-        void this.anfrage({ t: "scmd", name, args }).catch((e) => this.fehler(String(e.message ?? e)));
-      };
+      this.clientModus();
     }
     this.emit();
   }
@@ -336,11 +408,13 @@ class Mehrspieler {
       if (r === "aus") return;
       this.verbinden(r, this.status.code, false).catch((e) => {
         const msg = String((e as Error).message ?? e);
-        if (/anderer Spieler ist inzwischen Host/.test(msg)) {
+        if (/Host übernommen/.test(msg)) {
           // Während wir weg waren, hat jemand übernommen: als Mitspieler zurück
-          this.status = { ...this.status, rolle: "client" };
-          sim.mode = "client";
+          this.alsMitspieler();
+          this.status = { ...this.status, verbunden: false };
+          this.melden(`${msg} – du spielst als Mitspieler weiter`);
           this.absichtlichZu = false;
+          this.retry = 0;
           this.verbindungWeg();
           return;
         }
@@ -422,8 +496,13 @@ class Mehrspieler {
       case "host-gone":
         return this.relayEreignis(m);
       case "you-are-host":
+        if (m.token) this.token = String(m.token);
         this.alsHost(m.players as { pid: string; name: string; role: string }[], true);
+        if (m.von) this.melden(`${String(m.von)} hat dir die Host-Rolle übergeben`);
         this.emit();
+        return;
+      case "pong":
+        this.rtt = Date.now() - Number(m.ts);
         return;
       case "error":
         this.fehler(String(m.reason));
@@ -445,10 +524,19 @@ class Mehrspieler {
       case "store":
         store.enterSession(m.data as Persisted);
         return;
-      case "session":
-        this.spieler = m.spieler as Spieler[];
+      case "session": {
+        const neu = m.spieler as Spieler[];
+        for (const s of neu) {
+          const alt = this.spieler.find((x) => x.pid === s.pid);
+          if (s.pid === this.ich.pid) continue;
+          if (alt?.online && !s.online) this.melden(`${s.name} hat die Verbindung verloren`);
+          if (alt && !alt.online && s.online) this.melden(`${s.name} ist wieder verbunden`);
+          if (!alt && s.online) this.melden(`${s.name} ist beigetreten`);
+        }
+        this.spieler = neu;
         this.emit();
         return;
+      }
       case "bye":
         this.status = { ...this.status, hostDa: false, hostVerlassen: true };
         this.emit();
@@ -472,8 +560,13 @@ class Mehrspieler {
   private relayEreignis(m: Nachricht): void {
     const players = (m.players as { pid: string; name: string; role: string }[]) ?? [];
     if (this.status.rolle === "host") {
+      const vorher = new Map(this.spieler.map((s) => [s.pid, s.online]));
       this.spielerAbgleichen(players);
-      if (m.t === "join") this.voll(String(m.pid));
+      if (m.t === "join") {
+        this.voll(String(m.pid));
+        this.melden(vorher.has(String(m.pid)) ? `${String(m.name)} ist wieder verbunden` : `${String(m.name)} ist beigetreten`);
+      }
+      if (m.t === "leave" && vorher.get(String(m.pid))) this.melden(`${String(m.name)} hat die Verbindung verloren`);
       this.anAlle({ t: "session", spieler: this.spieler });
     } else {
       if (m.t === "host-gone") this.status = { ...this.status, hostDa: false };
@@ -510,12 +603,21 @@ class Mehrspieler {
     const alt = new Map(this.spieler.map((s) => [s.pid, s]));
     const online = new Map(players.map((p) => [p.pid, p]));
     const neu: Spieler[] = [];
-    const ichHost: Spieler = { pid: this.ich.pid, name: this.ich.name, online: true, host: true, rechte: { disponieren: true, steuern: true, einstellungen: true } };
+    const altIch = this.spieler.find((x) => x.pid === this.ich.pid);
+    const ichHost: Spieler = {
+      pid: this.ich.pid,
+      name: this.ich.name,
+      online: true,
+      host: true,
+      rechte: { disponieren: true, steuern: true, einstellungen: true },
+      ping: altIch?.ping ?? null,
+    };
     neu.push(ichHost);
     for (const s of this.spieler) {
       if (s.pid === this.ich.pid) continue;
       const p = online.get(s.pid);
-      neu.push({ ...s, host: false, online: !!p, name: p?.name ?? s.name });
+      const offlineSeit = p ? null : s.online ? Date.now() : (s.offlineSeit ?? Date.now());
+      neu.push({ ...s, host: false, online: !!p, name: p?.name ?? s.name, offlineSeit, ping: p ? s.ping : null });
     }
     for (const p of players) {
       if (p.pid === this.ich.pid || neu.some((s) => s.pid === p.pid)) continue;
@@ -628,6 +730,11 @@ class Mehrspieler {
   private deltaSenden(): void {
     if (!this.ws || !this.spieler.some((s) => !s.host && s.online)) return;
     this.anAlle(this.deltaBauen());
+    // alle 10 s die Spielerliste mit Antwortzeiten
+    if (++this.sessionZaehler % 20 === 0) {
+      this.anAlle({ t: "session", spieler: this.spieler });
+      this.emit();
+    }
   }
 
   private deltaAnwenden(d: Nachricht): void {
@@ -692,6 +799,15 @@ class Mehrspieler {
       this.anAlle({ t: "result", id: m.id as string, ok, value, error }, pid);
     const s = this.spieler.find((x) => x.pid === pid);
     const rechte = s?.rechte ?? STANDARD_RECHTE;
+    if (m.t === "ping") {
+      if (s) s.ping = typeof m.rtt === "number" ? m.rtt : null;
+      this.anAlle({ t: "pong", ts: m.ts }, pid);
+      return;
+    }
+    if (m.t === "host-anfrage") {
+      for (const fn of this.anfrageListeners) fn(pid, s?.name ?? name);
+      return;
+    }
     try {
       if (m.t === "cmd") {
         const befehl = String(m.name) as Befehl;
