@@ -117,6 +117,10 @@ export const BEREICHE_STATION: Record<string, string> = {
   GER: "Akutgeriatrie/Remobilisation",
   PAL: "Palliativ",
   ITS: "Intensivstation",
+  NEO: "Neonatologie",
+  PIC: "Kinderintensivstation",
+  HCH: "Herzchirurgie",
+  VER: "Verbrennungszentrum",
 };
 export const BEREICHE_AMBULANZ: Record<string, string> = {
   ZNA: "Zentrale Notaufnahme",
@@ -127,6 +131,7 @@ export const BEREICHE_AMBULANZ: Record<string, string> = {
   RAD: "Radiologie (CT/MRT)",
   NUK: "Nuklearmedizin",
   HKL: "Herzkatheterlabor",
+  THR: "Neurointervention (Thrombektomie)",
   END: "Endoskopie",
   PHY: "Physikalische Medizin",
   WUN: "Wundambulanz",
@@ -142,6 +147,8 @@ export function bereicheVon(h: Hospital): string[] {
   if (a.notfallambulanz) b.push("ZNA");
   if (a.unfallambulanz) b.push("UNF", "ORT");
   if (a.intensiv_anaesthesie) b.push("ITS", "KAR", "GAS");
+  if (a.neonatologie) b.push("NEO");
+  if (a.kinderintensiv) b.push("PIC");
   if (a.neurologie) b.push("NEU");
   if (a.urologie) b.push("URO");
   if (a.gyn_geburtshilfe) b.push("GYN");

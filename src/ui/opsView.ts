@@ -10,7 +10,7 @@ import { KATEGORIE_LABEL, type StatusKey } from "../sim/settings";
 import { openDialog } from "./dialog";
 import { ensureCodes } from "./codesPrompt";
 import { anrufPanel } from "./anrufPanel";
-import { ktAnnehmen, ktListe, ktMaske } from "./ktView";
+import { ktAnnehmen, ktFilter, ktListe, ktMaske } from "./ktView";
 import { funkPiepAktualisieren, klingeltonAktualisieren } from "./klingelton";
 import { createFunkView } from "./funkView";
 import { el, esc, toast } from "./dom";
@@ -186,7 +186,8 @@ export function createOpsView(left: HTMLElement, right: HTMLElement, deps: OpsDe
       <div class="ops-head">
         <span class="ltabs"><button class="ltab active" data-l="rd">Einsätze</button><button class="ltab" data-l="kt">KT <span class="kt-badge" hidden></span></button></span>
         <label class="chk small"><input type="checkbox" class="inc-closed" />erledigte</label>
-        <button class="btn small" data-act="gen">+ Test</button>
+        <button class="btn small" data-act="neu" hidden title="Neuen Krankentransport, eine Überstellung oder Dienstfahrt von Hand anlegen">+ Neu</button>
+        <button class="btn small" data-act="gen" title="Zufälligen Test-Einsatz bzw. -Auftrag erzeugen">+ Test</button>
       </div>
       <div class="ops-list inc-list"></div>
       <div class="ops-list kt-list" hidden></div>
@@ -206,9 +207,16 @@ export function createOpsView(left: HTMLElement, right: HTMLElement, deps: OpsDe
       left.querySelectorAll(".ltab").forEach((x) => x.classList.toggle("active", x === b));
       incList.hidden = linksTab !== "rd";
       ktList.hidden = linksTab !== "kt";
+      btnNeu.hidden = linksTab !== "kt";
       renderLists();
     }),
   );
+  const btnNeu = left.querySelector<HTMLButtonElement>("[data-act=neu]")!;
+  btnNeu.addEventListener("click", async () => {
+    const id = await sim.call("ktNeuManuell").catch((err) => (toast(String(err.message ?? err), "error"), null));
+    for (let i = 0; id && !sim.ktAuftrag(id) && i < 20; i++) await new Promise((r) => setTimeout(r, 100));
+    if (id) selectKt(id);
+  });
   const vehList = left.querySelector<HTMLElement>(".veh-list")!;
   const vehFilter = left.querySelector<HTMLInputElement>(".veh-filter")!;
   left.querySelector<HTMLInputElement>(".inc-closed")!.addEventListener("change", (e) => {
@@ -217,7 +225,9 @@ export function createOpsView(left: HTMLElement, right: HTMLElement, deps: OpsDe
   });
   left.querySelector<HTMLButtonElement>("[data-act=gen]")!.addEventListener("click", async () => {
     if (linksTab === "kt") {
-      const k = await sim.call("generiereKt").catch((err) => (toast(String(err.message ?? err), "error"), null));
+      const f = ktFilter();
+      const sek = f === "sek" || (f === "alle" && Math.random() < 0.35);
+      const k = await (sek ? sim.call("generiereSek") : sim.call("generiereKt")).catch((err) => (toast(String(err.message ?? err), "error"), null));
       for (let i = 0; k && !sim.ktAuftrag(k.id) && i < 20; i++) await new Promise((r) => setTimeout(r, 100));
       if (k) selectKt(k.id);
       else toast("Kein Krankentransport erzeugt – sind Krankenhäuser mit Stationen vorhanden?", "error");
@@ -303,7 +313,11 @@ export function createOpsView(left: HTMLElement, right: HTMLElement, deps: OpsDe
       for (const fz of fzs.sort((a, b) => a.funkrufname.localeCompare(b.funkrufname))) {
         const e = fz.einsatzId ? sim.einsatz(fz.einsatzId) : undefined;
         const row = el("div", { class: "veh-row" });
-        const ktHinweis = fz.kt ? `<span class="kt-fz${fz.kt.aktiv ? " aktiv" : ""}" title="${fz.kt.aktiv ? "fährt Krankentransport" : "für Krankentransport vorgemerkt"}">KT${fz.kt.fahrten.flat().length > 1 ? `×${fz.kt.fahrten.flat().length}` : ""}</span>` : "";
+        const ktIds = fz.kt?.fahrten.flat() ?? [];
+        const ktSek = ktIds.some((id) => sim.ktAuftrag(id)?.d.sek);
+        const ktHinweis = fz.kt
+          ? `<span class="kt-fz${fz.kt.aktiv ? " aktiv" : ""}${ktSek ? " sek" : ""}" title="${fz.kt.aktiv ? (ktSek ? "fährt Überstellung" : "fährt Krankentransport") : "für Krankentransport vorgemerkt"}">${ktSek ? "SEK" : "KT"}${ktIds.length > 1 ? `×${ktIds.length}` : ""}</span>`
+          : "";
         row.innerHTML = `${statusChip(fz)}<b>${esc(fz.funkrufname)}</b><span class="muted">${esc(fz.rmTyp)}${fz.kurzname ? " · " + esc(fz.kurzname) : ""}</span>${crewHtml(fz)}${ktHinweis}<span class="spacer"></span><span class="muted">${esc(e?.nummer ?? "")}</span>`;
         row.addEventListener("click", () => {
           deps.flyTo(fz.lat, fz.lon, 13);
@@ -731,6 +745,7 @@ export function createOpsView(left: HTMLElement, right: HTMLElement, deps: OpsDe
         const info = el("span", { class: "sugg-info" });
         info.innerHTML = `${statusChip(s.fz)} <b>${esc(s.fz.funkrufname)}</b> <span class="muted">${esc(s.fz.rmTyp)} · ${esc(s.fz.stationName)}</span> ${crewHtml(s.fz)}`;
         row.appendChild(info);
+        if (s.kt) info.insertAdjacentHTML("beforeend", ` <span class="kt-fz aktiv" title="fährt Krankentransport ohne Patient – wird beim Alarmieren abgezogen, die Transporte sind dann wieder offen">KT – abziehen</span>`);
         row.appendChild(el("span", { class: "sugg-eta" }, s.hinweis ? s.hinweis : minuten(s.sekunden)));
         sugg.appendChild(row);
       }

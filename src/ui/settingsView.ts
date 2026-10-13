@@ -111,7 +111,8 @@ export function createSettingsView(container: HTMLElement): { refresh(): void } 
 
     // Aufkommen je Stunde (Notfälle und Krankentransporte)
     const tab = el("table", { class: "set-table stunden" });
-    tab.innerHTML = `<tr><th>Stunde</th><th>Notfälle / h</th><th>Krankentransporte / h</th><th></th><th>Stunde</th><th>Notfälle / h</th><th>Krankentransporte / h</th></tr>`;
+    const kopf = `<th>Stunde</th><th>Notfälle / h</th><th>KT / h</th><th>Überstellungen / h</th>`;
+    tab.innerHTML = `<tr>${kopf}<th></th>${kopf}</tr>`;
     for (let h = 0; h < 12; h++) {
       const tr = el("tr");
       for (const st of [h, h + 12]) {
@@ -120,6 +121,8 @@ export function createSettingsView(container: HTMLElement): { refresh(): void } 
         rd.addEventListener("change", () => (z.rd = Math.max(0, Number(rd.value) || 0)));
         const kt = num(z.kt, "0.5");
         kt.addEventListener("change", () => (z.kt = Math.max(0, Number(kt.value) || 0)));
+        const sek = num(z.sek ?? 0, "0.1");
+        sek.addEventListener("change", () => (z.sek = Math.max(0, Number(sek.value) || 0)));
         const td = (x: HTMLElement | string) => {
           const c = el("td");
           if (typeof x === "string") c.textContent = x;
@@ -129,6 +132,7 @@ export function createSettingsView(container: HTMLElement): { refresh(): void } 
         td(`${String(st).padStart(2, "0")}–${String(st + 1).padStart(2, "0")} Uhr`);
         td(rd);
         td(kt);
+        td(sek);
         if (st === h) td("");
       }
       tab.appendChild(tr);
@@ -141,6 +145,9 @@ export function createSettingsView(container: HTMLElement): { refresh(): void } 
     const str = num(draft.dauerStrahlJeKh, "1");
     str.addEventListener("change", () => (draft.dauerStrahlJeKh = Math.max(0, Number(str.value) || 0)));
     dGrid.append(el("label", {}, "Bestrahlungs-Patienten je Krankenhaus mit Strahlentherapie"), str);
+    const che = num(draft.dauerChemoJeKh ?? 1, "1");
+    che.addEventListener("change", () => (draft.dauerChemoJeKh = Math.max(0, Number(che.value) || 0)));
+    dGrid.append(el("label", {}, "Chemotherapie-Patienten mit fixem Termin je Krankenhaus mit onkologischer Tagesklinik"), che);
     aSec.appendChild(dGrid);
 
     // Stufen

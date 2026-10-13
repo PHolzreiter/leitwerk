@@ -278,6 +278,20 @@ HOSPITALS = [
     ("Klinik Kittsee", "Kittsee", "Kittsee", "Klinik Kittsee", "10001000000", WISSEN),
     ("Kepler Universitätsklinikum Linz, Med Campus III", "KUK Linz", "Linz", "Kepler Universitätsklinikum - Med Campus III", "11111111111", WISSEN),
     ("AUVA-Unfallkrankenhaus Linz", "UKH Linz", "Linz", "Unfallkrankenhaus Linz", "01101000000", WISSEN),
+    # ab 0.11 (Überstellungen): weitere Ziele innerhalb des Straßennetzes
+    ("Landesklinikum Mauer", "LK Mauer", "Mauer bei Amstetten", (48.0920043, 14.8056383), "00001000000", WISSEN + "; Psychiatrie"),
+    ("Landesklinikum Allentsteig", "LK Allentsteig", "Allentsteig", (48.7012486, 15.3283298), "00000000000", WISSEN + "; Psychiatrie, Remobilisation"),
+    ("Universitätsklinikum Hochegg", "UK Hochegg", "Grimmenstein", (47.6165615, 16.0865190), "00001000000", WISSEN + "; Lungenheilkunde"),
+    ("Hanusch-Krankenhaus", "Hanusch", "Wien", (48.1995663, 16.2918894), "11001100111", WISSEN),
+    ("Klinik Penzing", "Penzing", "Wien", (48.2069362, 16.2717122), "00001000000", WISSEN + "; Lungenheilkunde, Psychiatrie"),
+    ("Orthopädisches Spital Speising", "Speising", "Wien", (48.1636413, 16.2820922), "00000000000", WISSEN + "; Orthopädie"),
+    ("Krankenhaus Göttlicher Heiland", "Göttl. Heiland", "Wien", (48.2282146, 16.3040927), "10001000000", WISSEN),
+    ("Kepler Universitätsklinikum Linz, Neuromed Campus", "KUK Neuromed", "Linz", (48.2805058, 14.2969815), "11001100000", WISSEN + "; Neurologie, Neurochirurgie, Psychiatrie"),
+    ("Kepler Universitätsklinikum Linz, Med Campus IV", "KUK Kinder", "Linz", (48.3018507, 14.3060068), "10011011001", WISSEN + "; Kinder- und Frauenklinik"),
+    ("Ordensklinikum Linz Barmherzige Schwestern", "BHS Linz", "Linz", (48.2991078, 14.2885608), "10001000110", WISSEN),
+    ("Ordensklinikum Linz Elisabethinen", "Elisabethinen Linz", "Linz", (48.3048576, 14.2941354), "10001000000", WISSEN),
+    ("Pyhrn-Eisenwurzen Klinikum Steyr", "PEK Steyr", "Steyr", (48.0447000, 14.3931338), "11111101111", WISSEN),
+    ("Klinikum Freistadt", "KH Freistadt", "Freistadt", (48.4922426, 14.4979369), "11101000001", WISSEN),
 ]
 
 
@@ -324,7 +338,33 @@ BEREICHE = {
     "Klinik Oberwart": "INT KAR CHI ORT NEU URO GYN KIN PSY ITS ZNA UNF DIA RAD END PHY",
     "Klinik Kittsee": "INT GER ZNA RAD END",
     "Kepler Universitätsklinikum Linz, Med Campus III": _GROSS + " NCH NUK HKL",
-    "AUVA-Unfallkrankenhaus Linz": "ORT ITS UNF RAD PHY",
+    "AUVA-Unfallkrankenhaus Linz": "ORT ITS UNF RAD PHY VER",
+    "Landesklinikum Mauer": "PSY GER INT",
+    "Landesklinikum Allentsteig": "PSY GER",
+    "Universitätsklinikum Hochegg": "PUL INT GER",
+    "Hanusch-Krankenhaus": "INT KAR GAS ONK CHI ORT NEU URO HNO GYN DER GER ITS ZNA UNF DIA CHE RAD END PHY WUN",
+    "Klinik Penzing": "PUL PSY INT GER",
+    "Orthopädisches Spital Speising": "ORT PHY RAD",
+    "Krankenhaus Göttlicher Heiland": "INT CHI GER PAL ZNA RAD END",
+    "Kepler Universitätsklinikum Linz, Neuromed Campus": "NEU NCH PSY ITS ZNA RAD THR",
+    "Kepler Universitätsklinikum Linz, Med Campus IV": "KIN GYN ZNA RAD",
+    "Ordensklinikum Linz Barmherzige Schwestern": "INT KAR GAS ONK CHI URO HNO ITS ZNA DIA STR CHE RAD NUK HKL END",
+    "Ordensklinikum Linz Elisabethinen": "INT NEP GAS ONK CHI ITS ZNA DIA STR CHE RAD NUK END",
+    "Pyhrn-Eisenwurzen Klinikum Steyr": "INT KAR GAS ONK CHI ORT NEU URO GYN KIN HNO PSY GER ITS ZNA UNF DIA CHE RAD HKL END PHY",
+    "Klinikum Freistadt": "INT CHI ORT GYN GER ITS ZNA UNF RAD END PHY",
+}
+
+# Spezialbereiche für Überstellungen (Allgemeinwissen, bitte prüfen): Thrombektomie (THR), Herzchirurgie (HCH),
+# Verbrennung (VER); Neonatologie (NEO) und Kinderintensiv (PIC) kommen aus den Abteilungen.
+SPEZIAL = {
+    "Universitätsklinikum St. Pölten": "THR HCH",
+    "Universitätsklinikum Wiener Neustadt": "THR",
+    "AKH Wien": "THR HCH VER",
+    "Klinik Donaustadt": "THR",
+    "Klinik Landstraße": "THR",
+    "Klinik Hietzing": "HCH",
+    "Klinik Floridsdorf": "HCH",
+    "Kepler Universitätsklinikum Linz, Med Campus III": "HCH",
 }
 
 
@@ -344,10 +384,16 @@ def build_hospitals() -> list[dict]:
             lat, lon = float(r["@lat"]), float(r["@lon"])
         row = {"id": f"kh{i:03d}", "name": name, "kurzname": kurz, "ort": ort,
                "breitengrad": f"{lat:.6f}", "laengengrad": f"{lon:.6f}", "hinweis": hinweis,
-               "bereiche": ", ".join(BEREICHE[name].split())}
+               "bereiche": ""}
         assert len(flags) == len(HOSPITAL_FLAGS), name
         for f, v in zip(HOSPITAL_FLAGS, flags):
             row[f] = Y if v == "1" else N
+        b = BEREICHE[name].split() + SPEZIAL.get(name, "").split()
+        if row["neonatologie"] == Y:
+            b.append("NEO")
+        if row["kinderintensiv"] == Y:
+            b.append("PIC")
+        row["bereiche"] = ", ".join(dict.fromkeys(b))
         out.append(row)
     return out
 

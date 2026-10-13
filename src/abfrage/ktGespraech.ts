@@ -8,8 +8,10 @@ import { bereichName, hhmm, KT_LAGE_LABEL, type KtAuftrag, type KtDaten } from "
 import { kiBereit, kiChat, kiPrefs, kiStatus, type KiNachricht } from "./ki";
 
 export interface KtFrage {
-  id: keyof KtDaten | "wer" | "patient";
+  id: keyof KtDaten | "wer" | "patient" | "arzt" | "monitoring" | "stabil" | "inkubator" | "zusage";
   text: string;
+  /** nur bei Überstellungen */
+  sek?: boolean;
 }
 
 /** Feste Abfrage der KT-Hotline */
@@ -27,6 +29,13 @@ export const KT_FRAGEN: KtFrage[] = [
   { id: "infektion", text: "Gibt es eine Infektion oder Isolation?" },
   { id: "art", text: "Haben Sie einen Wunsch, mit wem Sie fahren – Rotes Kreuz oder Samariterbund?" },
   { id: "telefon", text: "Unter welcher Nummer erreichen wir Sie?" },
+  // Überstellungen
+  { id: "sofort", text: "Wie dringend ist die Überstellung – geplant oder sofort?", sek: true },
+  { id: "arzt", text: "Braucht der Patient eine Notarztbegleitung?", sek: true },
+  { id: "monitoring", text: "Braucht er Monitoring, ist er beatmet?", sek: true },
+  { id: "stabil", text: "Ist der Patient stabil, oder muss während der Fahrt laufend an ihm gearbeitet werden?", sek: true },
+  { id: "inkubator", text: "Ist es ein Kind oder ein Neugeborenes – braucht es einen Inkubator?", sek: true },
+  { id: "zusage", text: "Ist die Übernahme im Zielkrankenhaus zugesagt?", sek: true },
 ];
 
 function ort(o: KtDaten["von"]): string {
@@ -39,10 +48,15 @@ export function ktAntwortOhneKi(k: KtAuftrag, f: KtFrage): string {
   const w = k.wahr.d;
   const zuHause = !w.von?.khId;
   switch (f.id) {
-    case "wer":
-      return k.wahr.anrufer.rolle.startsWith("Pflegekraft")
-        ? `Grüß Gott, ${k.wahr.anrufer.name}, ${k.wahr.anrufer.rolle}.`
-        : `Grüß Gott, ${k.wahr.anrufer.name}, ich bin ${k.wahr.anrufer.rolle === "Patient selbst" ? "selbst der Patient" : k.wahr.anrufer.rolle}.`;
+    case "wer": {
+      const a = k.wahr.anrufer;
+      const anliegen = w.sek ? ` Ich bräuchte eine Überstellung${w.sofort ? ", dringend" : ""}.` : w.sofort && !w.von?.khId ? " Wir bräuchten einen Transport für eine Einweisung." : "";
+      return (
+        (a.rolle.startsWith("Pflegekraft") || a.rolle.startsWith("Ärzt") || a.rolle.startsWith("Arzt")
+          ? `Grüß Gott, ${a.name}, ${a.rolle}.`
+          : `Grüß Gott, ${a.name}, ich bin ${a.rolle === "Patient selbst" ? "selbst der Patient" : a.rolle}.`) + anliegen
+      );
+    }
     case "patient":
       return `${w.patient.name}, ${w.patient.alter} Jahre.`;
     case "von":
@@ -72,6 +86,23 @@ export function ktAntwortOhneKi(k: KtAuftrag, f: KtFrage): string {
       return w.art === "KTR" ? "Am liebsten mit dem Roten Kreuz." : w.art === "KTA" ? "Wenn's geht, mit dem Samariterbund." : "Das ist egal.";
     case "telefon":
       return w.telefon;
+    case "sofort":
+      if (!w.sek) return w.sofort ? "So bald wie möglich bitte, der Hausarzt hat eine Einweisung geschrieben." : "Zum Termin, das reicht.";
+      return w.sofort ? "Sofort bitte, das ist dringend." : "Geplant, das hat ein bisschen Zeit.";
+    case "arzt":
+      return w.sek?.arzt || w.sek?.beatmet ? "Ja, das muss notarztbegleitet sein." : "Nein, ein Arzt ist nicht nötig.";
+    case "monitoring":
+      return w.sek?.beatmet
+        ? "Er ist intubiert und beatmet, braucht natürlich Monitoring."
+        : w.sek?.monitoring
+          ? "Ja, Monitoring braucht er, beatmet ist er nicht."
+          : "Nein, kein Monitoring nötig.";
+    case "stabil":
+      return w.sek?.instabil ? "Nein, er ist kreislaufinstabil, wir sind laufend am Nachjustieren." : "Ja, derzeit stabil.";
+    case "inkubator":
+      return w.sek?.inkubator ? ((w.patient.alter ?? 1) < 1 ? "Ja, ein Neugeborenes, es braucht einen Inkubator." : `Ja, ein Kind, ${w.patient.alter} Jahre.`) : "Nein, ein Erwachsener.";
+    case "zusage":
+      return w.sek?.zusage ? `Ja, ${w.sek.zusage.replace(/^Übernahme zugesagt von /, "zugesagt hat ")}.` : "Das kläre ich gerade noch ab, ich melde mich.";
     default:
       return "Das weiß ich nicht.";
   }
@@ -92,6 +123,15 @@ function fakten(k: KtAuftrag): string {
     `Infektion/Isolation: ${w.infektion ? "ja (MRSA)" : "nein"}`,
     `Wunsch Organisation: ${w.art === "KTR" ? "Rotes Kreuz" : w.art === "KTA" ? "Samariterbund" : "egal"}`,
     `Rückrufnummer: ${w.telefon}`,
+    ...(w.sek
+      ? [
+          `Es ist eine Überstellung in ein anderes Krankenhaus. Dringlichkeit: ${w.sofort ? "sofort" : "geplant"}`,
+          `Notarztbegleitung: ${w.sek.arzt || w.sek.beatmet ? "ja" : "nein"}; Monitoring: ${w.sek.monitoring ? "ja" : "nein"}; beatmet: ${w.sek.beatmet ? "ja" : "nein"}; stabil: ${w.sek.instabil ? "nein, kreislaufinstabil" : "ja"}`,
+          `Inkubator/Kind: ${w.sek.inkubator ? "ja" : "nein"}; Übernahme: ${w.sek.zusage || "noch nicht zugesagt"}`,
+        ]
+      : w.sofort
+        ? ["Der Hausarzt hat eine Einweisung geschrieben, der Transport soll sofort sein."]
+        : []),
   ].join("\n");
 }
 
@@ -161,6 +201,12 @@ function einfach(k: KtAuftrag, text: string): string {
     [/infekt|isol|mrsa/, "infektion"],
     [/rotes kreuz|samariter|asb|wunsch/, "art"],
     [/nummer|erreich|telefon/, "telefon"],
+    [/dringend|sofort|eilig/, "sofort"],
+    [/arzt|notarzt/, "arzt"],
+    [/monitor|beatm/, "monitoring"],
+    [/stabil|kreislauf/, "stabil"],
+    [/inkubator|kind|neugeboren/, "inkubator"],
+    [/zugesagt|übernahme|bett/, "zusage"],
   ];
   const id = passend.find(([re]) => re.test(t))?.[1];
   const f = KT_FRAGEN.find((x) => x.id === id);

@@ -19,12 +19,15 @@ import {
   hotlineAnrufer,
   neueDaten,
   passt,
+  sekLeer,
   zufallsDaten,
   type KtAuftrag,
   type KtDaten,
   type KtOrt,
   type KtPlan,
 } from "./kt";
+import { codeInfo, codeVorschlag, istUeberstellung } from "./ktCodes";
+import { sekZufall } from "./sek";
 import { bedarf, istStillstand, lageErzeugen, lagemeldungText, patientText, type Lage } from "./lage";
 
 const MIN = 60_000;
@@ -87,7 +90,20 @@ export interface SimFahrzeug {
   /** Blaulicht an (Fahrt mit Sondersignal; bleibt am Einsatzort an, wenn mit Blaulicht angefahren) */
   blaulicht?: boolean;
   /** Krankentransport-Plan (vorgemerkte bzw. laufende Fahrten) */
-  kt?: (KtPlan & { reinigen?: boolean; wartetAuf?: string | null; wartetKt?: string | null }) | null;
+  kt?: (KtPlan & { reinigen?: boolean; wartetAuf?: string | null; wartetKt?: string | null; wartetSeit?: number | null }) | null;
+}
+
+/** Fahrzeugvorschlag für einen Krankentransport oder eine Überstellung */
+export interface KtVorschlag {
+  fz: SimFahrzeug;
+  /** mitfahrendes NEF (Notarzt-Überstellung mit RTW/SRTW) */
+  begleit: SimFahrzeug | null;
+  sekunden: number | null;
+  hinweis: string | null;
+  losSpaetestens: number | null;
+  /** nur Ersatz (Regelrettungsdienst), wenn nichts Passendes frei ist */
+  ersatz: boolean;
+  rang: number;
 }
 
 export interface Vorschlag {
@@ -95,6 +111,8 @@ export interface Vorschlag {
   /** Zeit bis zum Eintreffen inkl. Ausrücken (s), null = nicht erreichbar */
   sekunden: number | null;
   hinweis: string | null;
+  /** fährt gerade einen Krankentransport ohne Patient (wird beim Alarmieren abgezogen) */
+  kt?: boolean;
 }
 
 export interface Protokoll {
@@ -332,8 +350,9 @@ export const BEFEHLE = {
     "funkEnde",
     "storno",
   ],
-  steuern: ["start", "pause", "setTempo", "generiere", "setWetter", "neuPlanen", "reset", "generiereKt"],
+  steuern: ["start", "pause", "setTempo", "generiere", "setWetter", "neuPlanen", "reset", "generiereKt", "generiereSek"],
   kt: [
+    "ktNeuManuell",
     "ktAnrufAnnehmen",
     "ktAnrufNachricht",
     "ktAnrufBeenden",
@@ -1199,7 +1218,8 @@ export class Simulation {
     for (const fid of fahrzeugIds) {
       const fz = this.state.fahrzeuge[fid];
       if (!fz) continue;
-      if (!this.verfuegbar(fz)) {
+      const abziehen = this.ktAbziehbar(fz);
+      if (!this.verfuegbar(fz) && !abziehen) {
         hinweise.push(`${fz.funkrufname} ist nicht verfügbar`);
         continue;
       }
@@ -1211,6 +1231,11 @@ export class Simulation {
       }
       // Vorgemerkte Krankentransporte gehen zurück in „nicht disponiert“
       if (fz.kt && !fz.kt.aktiv) this.ktPlanLoesen(fz, `${fz.funkrufname} für Notfall ${e.nummer} alarmiert`);
+      // Fahrzeug fährt KT ohne Patient: wird abgezogen, die Transporte sind wieder offen
+      if (abziehen) {
+        this.ktPlanLoesen(fz, `${fz.funkrufname} für Notfall ${e.nummer} abgezogen`, false);
+        this.funk(fz.funkrufname, e.id, "Krankentransport abgebrochen – übernehmen Notfall", "info");
+      }
       fz.einsatzId = e.id;
       if (!e.fahrzeuge.includes(fz.id)) e.fahrzeuge.push(fz.id);
       const sek = this.ausrueckSek(fz, false);
@@ -1293,18 +1318,19 @@ export class Simulation {
     const e = this.einsatz(id);
     if (!e?.adresse) return [];
     const ziel = e.adresse;
-    const frei = Object.values(this.state.fahrzeuge).filter((f) => this.verfuegbar(f));
+    const frei = Object.values(this.state.fahrzeuge).filter((f) => this.verfuegbar(f) || this.ktAbziehbar(f));
     const boden = frei.filter((f) => !fliegt(f));
     const zeiten = await travelTimes(ziel, boden.map((f) => ({ lat: f.lat, lon: f.lon })));
     const faktor = this.faktor(e);
     const out = boden.map((fz, i) => {
       const z = zeiten[i];
       const ausr = this.ausrueckSek(fz, true);
-      return { fz, sekunden: z === null ? null : z * faktor + ausr, hinweis: null as string | null };
+      // KT-Fahrzeug ohne Patient: nur auf ausdrückliche Wahl (nicht in der Empfehlung)
+      return { fz, sekunden: z === null ? null : z * faktor + ausr, hinweis: null as string | null, kt: !!fz.kt?.aktiv };
     });
     for (const fz of frei.filter((f) => fliegt(f))) {
       const flug = distanceM(fz, ziel) / (this.settings.nahGeschwindigkeit / 3.6) + this.ausrueckSek(fz, true) + 90;
-      out.push({ fz, sekunden: flug, hinweis: this.flugHindernis(fz) });
+      out.push({ fz, sekunden: flug, hinweis: this.flugHindernis(fz), kt: !!fz.kt?.aktiv });
     }
     return out.sort((a, b) => (a.sekunden ?? 1e9) - (b.sekunden ?? 1e9));
   }
@@ -1325,7 +1351,7 @@ export class Simulation {
     const ids: string[] = [];
     const gruende: string[] = [];
     const min = (s: number) => `${Math.round(s / 60)} min`;
-    const nutzbar = liste.filter((v) => v.sekunden !== null && !v.hinweis);
+    const nutzbar = liste.filter((v) => v.sekunden !== null && !v.hinweis && !v.kt);
 
     const imEinsatz = e.fahrzeuge.map((fid) => this.state.fahrzeuge[fid]).filter((f) => f && f.einsatzId === e.id);
     let rm: SimFahrzeug | undefined = imEinsatz.find((f) => this.transportfaehig(f));
@@ -2100,17 +2126,54 @@ export class Simulation {
         d: structuredClone(d),
         anrufer: hotlineAnrufer(d),
         verzoegerungMin: (vonHeim ? rnd(0, 8) : rnd(0, 4)) + (Math.random() < 0.1 ? rnd(8, 20) : 0),
-        nichtDa: Math.random() < 0.03,
-        verschlechterung: Math.random() < 0.02,
+        nichtDa: !d.sek && Math.random() < 0.03,
+        verschlechterung: !d.sek && Math.random() < 0.02,
       },
       fz: null,
       anruf: hotline ? this.ktNeuerAnruf(null) : null,
       protokoll: [],
       serie,
     };
-    this.ktLog(k, hotline ? "Anruf an der KT-Hotline" : quelle === "online" ? "Online-Anmeldung eingegangen" : "Dauerauftrag");
+    k.wahr.d.code ??= this.ktCodeFuer(k.wahr.d);
+    if (!hotline) k.d.code ??= k.wahr.d.code;
+    this.ktLog(
+      k,
+      hotline ? "Anruf an der KT-Hotline" : quelle === "online" ? "Online-Anmeldung eingegangen" : quelle === "manuell" ? "Auftrag von Hand angelegt" : "Dauerauftrag",
+    );
     (this.state.kt ??= []).unshift(k);
     if (this.state.kt.length > 400) this.state.kt = this.state.kt.filter((x, i) => i < 300 || (x.status !== "erledigt" && x.status !== "storniert"));
+    return k;
+  }
+
+  /** Code-Vorschlag zu den Angaben (Hubschrauber nur bei weiter Strecke) */
+  ktCodeFuer(d: KtDaten): string | null {
+    const km = d.von && d.nach ? distanceM(d.von, d.nach) / 1000 : 0;
+    return codeVorschlag(d, km);
+  }
+
+  /** Leeren Auftrag anlegen (z. B. Anruf direkt beim Disponenten, Dienstfahrt) */
+  ktNeuManuell(): string {
+    const k = this.ktNeu(neueDaten(), "manuell");
+    k.status = "aufnahme";
+    k.d = neueDaten();
+    k.wahr.d = neueDaten();
+    this.emit();
+    return k.id;
+  }
+
+  /** Neue zufällige Überstellung zwischen Krankenhäusern (dringend: immer Anruf) */
+  async generiereSek(quelle?: "online" | "hotline"): Promise<KtAuftrag | null> {
+    const bb = this.settings.gebiet.bbox;
+    const mitte = { lat: (bb[1] + bb[3]) / 2, lon: (bb[0] + bb[2]) / 2 };
+    // nur Häuser im Straßennetz (NÖ, Wien, nördl. Burgenland, Raum Linz)
+    const khs = store.list("hospitals").filter((h) => h.lon >= 14.25 && h.lon <= 17.25 && h.lat >= 47.3 && h.lat <= 49.15);
+    const ds = sekZufall({ mitte, khs, jetzt: this.state.zeit });
+    if (!ds) return null;
+    const q = quelle ?? (ds[0].sofort || Math.random() < 0.3 ? "hotline" : "online");
+    const serie = ds.length > 1 ? `SEK-${Date.now().toString(36)}` : undefined;
+    const k = this.ktNeu(ds[0], q, serie);
+    if (ds[1]) this.ktNeu(ds[1], "online", serie);
+    this.emit();
     return k;
   }
 
@@ -2157,7 +2220,11 @@ export class Simulation {
       const imGebiet = (h: { lat: number; lon: number }) => h.lon >= bb[0] && h.lon <= bb[2] && h.lat >= bb[1] && h.lat <= bb[3];
       const mitte = { lat: (bb[1] + bb[3]) / 2, lon: (bb[0] + bb[2]) / 2 };
       const alle = store.list("hospitals");
-      for (const [bereich, jeKh] of [["DIA", this.settings.dauerDialyseJeKh ?? 6], ["STR", this.settings.dauerStrahlJeKh ?? 3]] as const) {
+      for (const [bereich, jeKh] of [
+        ["DIA", this.settings.dauerDialyseJeKh ?? 6],
+        ["STR", this.settings.dauerStrahlJeKh ?? 3],
+        ["CHE", this.settings.dauerChemoJeKh ?? 1],
+      ] as const) {
         const moeglich = alle.filter((h) => bereicheVon(h).includes(bereich));
         // KH im Gebiet; gibt es dort keines, das nächstgelegene (bis 70 km)
         let mit = moeglich.filter(imGebiet);
@@ -2198,6 +2265,8 @@ export class Simulation {
     if (this.settings.generatorAktiv) {
       const rate = this.settings.stunden?.[d.getHours()]?.kt ?? 0;
       if (Math.random() < (rate * dt) / 3_600_000) void this.generiereKt();
+      const sekRate = this.settings.stunden?.[d.getHours()]?.sek ?? 0;
+      if (Math.random() < (sekRate * dt) / 3_600_000) void this.generiereSek();
     }
     for (const k of this.state.kt ?? []) {
       const a = k.anruf;
@@ -2285,6 +2354,11 @@ export class Simulation {
     if (!k) return;
     if (k.status === "anBord" || k.status === "erledigt" || k.status === "storniert") throw new Error("Der Auftrag kann nicht mehr geändert werden");
     k.d = { ...k.d, ...patch, patient: { ...k.d.patient, ...(patch.patient ?? {}) } };
+    if (patch.sek) k.d.sek = { ...patch.sek };
+    // Krankenhaus → Krankenhaus: Überstellung mit Zusatzangaben
+    if (k.d.von?.khId && k.d.nach?.khId && !k.d.sek && !k.d.code?.startsWith("DF-")) k.d.sek = sekLeer();
+    if ("code" in patch) k.d.codeManuell = !!patch.code;
+    if (!k.d.codeManuell) k.d.code = this.ktCodeFuer(k.d);
     this.emit();
   }
 
@@ -2292,8 +2366,15 @@ export class Simulation {
   ktAnlegen(id: string): void {
     const k = this.ktAuftrag(id);
     if (!k || k.status !== "aufnahme") return;
-    const fehlt = [!k.d.patient.name && "Name", !k.d.von && "Abholort", !k.d.nach && "Ziel", !k.d.termin && "Termin", !k.d.lage && "sitzend/liegend"].filter(Boolean);
+    const df = k.d.code?.startsWith("DF-");
+    const fehlt = (
+      df
+        ? [!k.d.nach && "Ziel", !k.d.termin && "Termin"]
+        : [!k.d.patient.name && "Name", !k.d.von && "Abholort", !k.d.nach && "Ziel", !k.d.termin && "Termin", !k.d.lage && "Transportart (gehfähig/Tragstuhl/liegend)", !k.d.code && "Code"]
+    ).filter(Boolean);
     if (fehlt.length) throw new Error(`Bitte noch eintragen: ${fehlt.join(", ")}`);
+    // Dienstfahrt ohne Startort: direkt zum Ziel
+    if (df && !k.d.von && k.d.nach) k.d.von = { ...k.d.nach };
     k.status = "offen";
     this.ktLog(k, "Auftrag angelegt");
     this.emit();
@@ -2305,6 +2386,7 @@ export class Simulation {
     if (!k) return;
     if (k.status === "anBord") throw new Error("Patient ist schon an Bord");
     if (k.fz) this.ktAusPlan(k);
+    else this.ktBegleitLoesen(k);
     k.status = "storniert";
     this.ktLog(k, `Storniert: ${grund}`);
     this.emit();
@@ -2312,42 +2394,122 @@ export class Simulation {
 
   // ---------------- Disposition
 
-  /** Fahrzeuge für einen Transport: KTW zuerst, RTW nur wenn nötig (SKTW nie) */
-  async ktVorschlaege(id: string): Promise<{ fz: SimFahrzeug; sekunden: number | null; hinweis: string | null; losSpaetestens: number | null }[]> {
+  /** Fahrzeugvorschläge für einen Auftrag: zuerst die passenden, darunter Ersatz (Regelrettungsdienst) */
+  async ktVorschlaege(id: string): Promise<KtVorschlag[]> {
     const k = this.ktAuftrag(id);
     const von = k?.d.von;
     if (!k || !von) return [];
-    const kandidaten = Object.values(this.state.fahrzeuge).filter(
-      (f) => (f.rmTyp === "KTW" || f.rmTyp === "RTW" || f.rmTyp === "RTW-C") && (this.verfuegbar(f) || (f.kt && !f.einsatzId)),
-    );
-    const zeiten = await travelTimes(von, kandidaten.map((f) => ({ lat: f.lat, lon: f.lon })));
+    const info = codeInfo(k.d.code);
+    const alle = Object.values(this.state.fahrzeuge).filter((f) => !f.einsatzId && (this.verfuegbar(f) || f.kt));
+    // Fahrzeit vom Abholort zum Ziel (für „los spätestens“ und die Hubschrauber-Frage)
     let fahrzeit = 0;
     if (k.d.nach) fahrzeit = (await travelTimes(k.d.nach, [von]))[0] ?? 0;
     const soll = k.d.abholung ?? (k.d.termin ? k.d.termin - fahrzeit * 1000 - 15 * MIN : null);
-    return kandidaten
-      .map((fz, i) => {
-        const z = zeiten[i];
-        const sek = z === null ? null : z + this.ausrueckSek(fz, true);
-        const hinweise: string[] = [];
-        if (fz.rmTyp !== "KTW") hinweise.push("RTW – nur wenn nötig");
-        if (fz.kt?.aktiv) hinweise.push(`fährt KT, ${fz.kt.fahrten.length} Fahrt(en) geplant`);
-        else if (fz.kt) hinweise.push(`vorgemerkt (${fz.kt.fahrten.flat().length} KT)`);
-        return { fz, sekunden: sek, hinweis: hinweise.join(" · ") || null, losSpaetestens: soll && sek !== null ? soll - sek * 1000 : null };
-      })
-      .sort((a, b) => (a.fz.rmTyp === "KTW" ? 0 : 1) - (b.fz.rmTyp === "KTW" ? 0 : 1) || (a.sekunden ?? 1e9) - (b.sekunden ?? 1e9));
+
+    // Welche Typen passen (Vorschlag), welche nur als Ersatz; Paare = mit NEF
+    type Wahl = { typen: RmTyp[]; nef?: boolean; ersatz: boolean; hinweis?: string };
+    const w: Wahl[] = [];
+    const flugSinnvoll = fahrzeit > 30 * 60 && !k.d.sek?.instabil;
+    if (info.gruppe === "DF") {
+      w.push({ typen: ["KTW", "RTW", "RTW-C", "SKTW", "SRTW", "SNAW", "NEF", "BIT", "BEL"], ersatz: false });
+    } else if (info.gruppe === "KT") {
+      w.push({ typen: ["KTW"], ersatz: false });
+      w.push({ typen: ["RTW", "RTW-C"], ersatz: true, hinweis: "RTW – nur wenn nötig" });
+    } else {
+      const code = k.d.code ?? "";
+      const z = Number(code.match(/^SEK-96[KBD](\d)/)?.[1] ?? 3);
+      const heli: Wahl = { typen: ["ITH", "NAH"], ersatz: false, hinweis: "Hubschrauber" };
+      const mitNef: Wahl = { typen: ["SRTW", "RTW", "RTW-C"], nef: true, ersatz: true, hinweis: "mit NEF" };
+      if (z <= 3) {
+        w.push({ typen: ["SKTW"], ersatz: false });
+        w.push({ typen: ["KTW", "SRTW", "RTW", "RTW-C"], ersatz: true, hinweis: "kein SKTW frei" });
+      } else if (z === 6 && info.fahrzeug === "SRTW") {
+        w.push({ typen: ["SRTW"], ersatz: false });
+        w.push({ typen: ["RTW", "RTW-C"], ersatz: true, hinweis: "kein SRTW frei" });
+      } else if (z === 6) {
+        if (!info.fahrzeug && flugSinnvoll) w.push(heli);
+        w.push({ typen: ["SNAW"], ersatz: false });
+        w.push(mitNef);
+        if (info.fahrzeug && flugSinnvoll) w.push({ ...heli, ersatz: true });
+      } else if (z === 7) {
+        w.push(heli);
+        w.push({ typen: ["SNAW"], ersatz: true, hinweis: "kein Hubschrauber" });
+        w.push(mitNef);
+      } else if (code.endsWith("-RTW")) {
+        w.push({ typen: ["RTW", "RTW-C"], ersatz: false, hinweis: "Inkubator vom Krankenhaus" });
+        w.push({ typen: ["SRTW", "SNAW"], ersatz: true });
+      } else {
+        // Inkubator-/Kinderüberstellung: ITH oder SNAW
+        if (info.fahrzeug === "SNAW") w.push({ typen: ["SNAW"], ersatz: false }, { ...heli, typen: ["ITH"], ersatz: true });
+        else if (info.fahrzeug === "ITH") w.push({ ...heli, typen: ["ITH", "NAH"] }, { typen: ["SNAW"], ersatz: true });
+        else w.push({ ...heli, typen: ["ITH"] }, { typen: ["SNAW"], ersatz: false });
+        w.push({ ...mitNef, hinweis: "mit NEF, Inkubator vom Krankenhaus" });
+      }
+    }
+
+    const typVon = new Map<string, Wahl>();
+    for (const x of w) for (const t of x.typen) if (!typVon.has(t)) typVon.set(t, x);
+    const kandidaten = alle.filter((f) => typVon.has(f.rmTyp) && (info.gruppe !== "KT" || f.rmTyp !== "SKTW"));
+    const boden = kandidaten.filter((f) => !fliegt(f));
+    const zeiten = await travelTimes(von, boden.map((f) => ({ lat: f.lat, lon: f.lon })));
+    const faktor = info.sondersignal ? this.settings.sondersignalFaktor : 1;
+    const eta = new Map<string, number | null>();
+    boden.forEach((f, i) => eta.set(f.id, zeiten[i] === null ? null : zeiten[i]! * faktor + this.ausrueckSek(f, true)));
+    for (const f of kandidaten.filter((x) => fliegt(x))) {
+      eta.set(f.id, distanceM(f, von) / (this.settings.nahGeschwindigkeit / 3.6) + this.ausrueckSek(f, true) + 90);
+    }
+    // bestes freies NEF für Paare
+    let nef: { fz: SimFahrzeug; sek: number } | null = null;
+    if (w.some((x) => x.nef)) {
+      const nefs = Object.values(this.state.fahrzeuge).filter((f) => f.rmTyp === "NEF" && this.verfuegbar(f) && !f.kt);
+      const nz = await travelTimes(von, nefs.map((f) => ({ lat: f.lat, lon: f.lon })));
+      nefs.forEach((f, i) => {
+        const s = nz[i] === null ? null : nz[i]! * faktor + this.ausrueckSek(f, true);
+        if (s !== null && (!nef || s < nef.sek)) nef = { fz: f, sek: s };
+      });
+    }
+    const out: KtVorschlag[] = [];
+    for (const fz of kandidaten) {
+      const wahl = typVon.get(fz.rmTyp)!;
+      const hinweise: string[] = [];
+      if (wahl.hinweis) hinweise.push(wahl.hinweis);
+      const hindernis = this.flugHindernis(fz);
+      if (hindernis) continue;
+      let sek = eta.get(fz.id) ?? null;
+      let begleit: SimFahrzeug | null = null;
+      if (wahl.nef) {
+        const n = nef as { fz: SimFahrzeug; sek: number } | null;
+        if (!n) hinweise.push("kein NEF frei");
+        else {
+          begleit = n.fz;
+          if (sek !== null) sek = Math.max(sek, n.sek);
+        }
+      }
+      if (fz.kt?.aktiv) hinweise.push(`fährt KT, ${fz.kt.fahrten.length} Fahrt(en) geplant`);
+      else if (fz.kt) hinweise.push(`vorgemerkt (${fz.kt.fahrten.flat().length})`);
+      out.push({ fz, begleit, sekunden: sek, hinweis: hinweise.join(" · ") || null, losSpaetestens: soll && sek !== null ? soll - sek * 1000 : null, ersatz: wahl.ersatz, rang: w.indexOf(wahl) });
+    }
+    return out.sort((a, b) => Number(a.ersatz) - Number(b.ersatz) || (a.ersatz ? 0 : a.rang - b.rang) || (a.sekunden ?? 1e9) - (b.sekunden ?? 1e9));
   }
 
   /**
    * Transport einem Fahrzeug zuteilen.
    * modus: „neu“ = eigene Fahrt (hinten anhängen), „sammel“ = zur letzten noch nicht begonnenen Fahrt dazu
    * (Sammelfahrt; auch zur laufenden, solange noch kein Patient an Bord ist).
+   * begleitId: NEF, das mitfährt (Notarzt-Überstellung mit RTW/SRTW)
    */
-  ktVormerken(id: string, fzId: string, modus: "neu" | "sammel" = "neu"): void {
+  ktVormerken(id: string, fzId: string, modus: "neu" | "sammel" = "neu", begleitId?: string | null): void {
     const k = this.ktAuftrag(id);
     const fz = this.state.fahrzeuge[fzId];
     if (!k || !fz) throw new Error("Nicht gefunden");
     if (!["offen", "vorgemerkt"].includes(k.status)) throw new Error("Der Auftrag ist nicht offen");
-    if (fz.rmTyp === "SKTW") throw new Error("SKTW fahren nur Verlegungen zwischen Krankenhäusern");
+    const info = codeInfo(k.d.code);
+    if (fz.rmTyp === "SKTW" && info.gruppe === "KT") throw new Error("SKTW fahren nur Überstellungen zwischen Krankenhäusern");
+    if (fz.einsatzId) throw new Error(`${fz.funkrufname} ist in einem Notfalleinsatz`);
+    const hindernis = this.flugHindernis(fz);
+    if (hindernis) throw new Error(`${fz.funkrufname}: ${hindernis}`);
+    const nef = begleitId ? this.state.fahrzeuge[begleitId] : undefined;
+    if (begleitId && (!nef || nef.einsatzId || nef.kt)) throw new Error("Das NEF ist nicht mehr frei");
     if (k.fz) this.ktAusPlan(k);
     const plan = (fz.kt ??= { fahrten: [], aktiv: false, halte: [], halt: 0 });
     let ziel: string[] | null = null;
@@ -2356,22 +2518,30 @@ export class Simulation {
       const laufend = plan.aktiv && plan.fahrten.length === 1;
       const schonAnBord = laufend && letzte.some((x) => this.ktAuftrag(x)?.status === "anBord");
       if (schonAnBord) throw new Error("Es ist schon ein Patient an Bord – bitte als eigene Fahrt anhängen");
+      if (letzte.some((x) => this.ktAuftrag(x)?.begleit)) throw new Error("Notarzt-Überstellung: keine Sammelfahrt");
       ziel = letzte;
     }
     const gruppe = ziel ? [...ziel, k.id] : [k.id];
     const grund = passt(gruppe.map((x) => (x === k.id ? k.d : this.ktAuftrag(x)?.d)).filter((x): x is KtDaten => !!x));
-    if (grund) throw new Error(grund);
+    if (grund) {
+      if (!plan.fahrten.length && !plan.aktiv) fz.kt = null;
+      throw new Error(grund);
+    }
     if (ziel) ziel.push(k.id);
     else plan.fahrten.push([k.id]);
     k.fz = fz.id;
+    if (nef) {
+      nef.kt = { fahrten: [[k.id]], aktiv: false, halte: [], halt: 0 };
+      k.begleit = nef.id;
+    }
     const sofort = plan.aktiv && plan.fahrten[0].includes(k.id);
     k.status = sofort ? "unterwegs" : "vorgemerkt";
-    this.ktLog(k, `${fz.funkrufname} ${sofort ? "zugeteilt (Sammelfahrt)" : "vorgemerkt"}`);
+    this.ktLog(k, `${fz.funkrufname}${nef ? ` + ${nef.funkrufname}` : ""} ${sofort ? "zugeteilt (Sammelfahrt)" : "vorgemerkt"}`);
     if (sofort) this.ktHalteNeu(fz);
     this.emit();
   }
 
-  /** Vorgemerktes Fahrzeug losschicken */
+  /** Vorgemerktes Fahrzeug losschicken (ein begleitendes NEF fährt mit los) */
   ktSchicken(fzId: string): void {
     const fz = this.state.fahrzeuge[fzId];
     const plan = fz?.kt;
@@ -2379,6 +2549,8 @@ export class Simulation {
     if (plan.aktiv) return;
     if (fz.einsatzId) throw new Error(`${fz.funkrufname} ist in einem Notfalleinsatz`);
     if (!this.statusDef(fz.status).verfuegbar) throw new Error(`${fz.funkrufname} ist nicht verfügbar`);
+    const hindernis = this.flugHindernis(fz);
+    if (hindernis) throw new Error(`${fz.funkrufname}: ${hindernis}`);
     plan.aktiv = true;
     this.ktFahrtStarten(fz, true);
     this.emit();
@@ -2401,41 +2573,77 @@ export class Simulation {
     const fz = this.state.fahrzeuge[fzId];
     const plan = fz?.kt;
     if (!fz || !plan) return;
-    const anBord = plan.fahrten[0]?.some((x) => this.ktAuftrag(x)?.status === "anBord");
-    if (plan.aktiv && anBord) throw new Error("Es ist ein Patient an Bord – Storno nicht möglich");
-    if (plan.aktiv) {
-      // Funkspruch wie beim Notfall-Storno
-      const g = this.neuesGespraech(fz, null, "offen");
-      const wer = this.calltaker().name;
-      this.spruch(g, "LEO", `${fz.funkrufname} von LEO kommen`, wer);
-      this.spruch(g, fz.funkrufname, `Hier ${fz.funkrufname} kommen`);
-      this.spruch(g, "LEO", "Hier LEO, Storno für eure Krankentransporte, kommen", wer);
-      this.spruch(g, fz.funkrufname, `Hier ${fz.funkrufname}, Storno verstanden, kommen`);
-      this.spruch(g, "LEO", "Hier LEO ENDE", wer);
-      g.status = "ende";
-    }
+    if (plan.aktiv && this.ktPatientAnBord(fz)) throw new Error("Es ist ein Patient an Bord – Storno nicht möglich");
+    if (plan.aktiv) this.ktFunkSpruch(fz, "Storno für eure Krankentransporte");
     this.ktPlanLoesen(fz, plan.aktiv ? "Storno über Funk" : "Vormerkung aufgehoben");
     this.emit();
   }
 
+  private ktFunkSpruch(fz: SimFahrzeug, text: string): void {
+    const g = this.neuesGespraech(fz, null, "offen");
+    const wer = this.calltaker().name;
+    this.spruch(g, "LEO", `${fz.funkrufname} von LEO kommen`, wer);
+    this.spruch(g, fz.funkrufname, `Hier ${fz.funkrufname} kommen`);
+    this.spruch(g, "LEO", `Hier LEO, ${text}, kommen`, wer);
+    this.spruch(g, fz.funkrufname, `Hier ${fz.funkrufname}, verstanden, kommen`);
+    this.spruch(g, "LEO", "Hier LEO ENDE", wer);
+    g.status = "ende";
+  }
+
+  /** Hat das Fahrzeug einen eigenen Patienten an Bord? (Begleit-NEF zählt nicht) */
+  ktPatientAnBord(fz: SimFahrzeug): boolean {
+    return !!fz.kt?.aktiv && (fz.kt.fahrten[0] ?? []).some((x) => {
+      const k = this.ktAuftrag(x);
+      return k?.status === "anBord" && k.fz === fz.id;
+    });
+  }
+
+  /** Fahrzeug fährt KT ohne Patient an Bord: kann für einen Notfall abgezogen werden */
+  ktAbziehbar(fz: SimFahrzeug): boolean {
+    return !!fz.kt?.aktiv && !fz.einsatzId && !this.ktPatientAnBord(fz) && fz.phase !== "ktReinigung";
+  }
+
   /** Alle Transporte eines Fahrzeugs zurück in „nicht disponiert“ */
-  private ktPlanLoesen(fz: SimFahrzeug, grund: string): void {
+  private ktPlanLoesen(fz: SimFahrzeug, grund: string, frei = true): void {
     const plan = fz.kt;
     if (!plan) return;
     const warAktiv = plan.aktiv;
     for (const id of plan.fahrten.flat()) {
       const k = this.ktAuftrag(id);
-      if (!k || k.status === "anBord" || k.status === "erledigt" || k.status === "storniert") continue;
+      if (!k || k.status === "erledigt" || k.status === "storniert") continue;
+      if (k.begleit === fz.id && k.fz !== fz.id) {
+        // nur Begleitung (NEF): der Transport bleibt, der Notarzt fehlt
+        k.begleit = null;
+        this.ktLog(k, `${grund}: ${fz.funkrufname} begleitet nicht mehr – Notarzt fehlt`);
+        continue;
+      }
+      if (k.status === "anBord") continue;
+      this.ktBegleitLoesen(k);
       k.status = "offen";
       k.fz = null;
       this.ktLog(k, `${grund} – neu disponieren`);
     }
     fz.kt = null;
-    if (warAktiv && !fz.einsatzId) this.freigeben(fz);
+    fz.blaulicht = false;
+    if (warAktiv && !fz.einsatzId && frei) this.freigeben(fz);
+  }
+
+  /** Begleitendes NEF eines Transports freigeben */
+  private ktBegleitLoesen(k: KtAuftrag): void {
+    const nef = k.begleit ? this.state.fahrzeuge[k.begleit] : undefined;
+    k.begleit = null;
+    if (!nef?.kt) return;
+    const warAktiv = nef.kt.aktiv;
+    nef.kt.fahrten = nef.kt.fahrten.map((f) => f.filter((x) => x !== k.id)).filter((f) => f.length);
+    if (!nef.kt.fahrten.length) {
+      nef.kt = null;
+      if (warAktiv && !nef.einsatzId) this.freigeben(nef);
+    }
   }
 
   /** Transport aus dem Plan seines Fahrzeugs entfernen */
   private ktAusPlan(k: KtAuftrag): void {
+    this.ktBegleitLoesen(k);
     const fz = k.fz ? this.state.fahrzeuge[k.fz] : undefined;
     k.fz = null;
     const plan = fz?.kt;
@@ -2468,12 +2676,20 @@ export class Simulation {
     const plan = fz.kt!;
     for (const id of plan.fahrten[0] ?? []) {
       const k = this.ktAuftrag(id);
-      if (k && k.status === "vorgemerkt") {
+      if (k && k.status === "vorgemerkt" && k.fz === fz.id) {
         k.status = "unterwegs";
         this.ktLog(k, `${fz.funkrufname} unterwegs`);
       }
+      // begleitendes NEF fährt mit los
+      const nef = k?.begleit && k.fz === fz.id ? this.state.fahrzeuge[k.begleit] : undefined;
+      if (nef?.kt && !nef.kt.aktiv && nef.kt.fahrten[0]?.includes(id) && !nef.einsatzId) {
+        nef.kt.aktiv = true;
+        this.ktLog(k!, `${nef.funkrufname} unterwegs (Begleitung)`);
+        this.ktFahrtStarten(nef, true);
+      }
     }
     plan.halte = [];
+    plan.wartetSeit = null;
     this.ktHalteNeu(fz);
     this.setStatus(fz, "alarmiert");
     fz.fahrt = null;
@@ -2481,15 +2697,22 @@ export class Simulation {
     fz.phaseEnde = this.state.zeit + (ausruecken ? this.ausrueckSek(fz, false) : rnd(5, 15)) * 1000;
   }
 
+  /** Ist der Halt für dieses Fahrzeug (noch) anzufahren? */
+  private ktHaltGilt(fz: SimFahrzeug, h: { kt: string; art: "ab" | "an" }): boolean {
+    const k = this.ktAuftrag(h.kt);
+    if (!k || k.status === "erledigt" || k.status === "storniert") return false;
+    if (k.fz !== fz.id) {
+      // Begleitung: zum Abholort, solange der Patient noch nicht weg ist; dann zum Ziel
+      if (k.begleit !== fz.id) return false;
+      return h.art === "ab" ? k.status === "unterwegs" || k.status === "vorgemerkt" : true;
+    }
+    return h.art === "ab" ? k.status === "unterwegs" : k.status === "anBord";
+  }
+
   private ktNaechsterHalt(fz: SimFahrzeug): void {
     const plan = fz.kt!;
     // Halte von stornierten oder übergebenen Transporten überspringen
-    while (plan.halt < plan.halte.length) {
-      const h = plan.halte[plan.halt];
-      const k = this.ktAuftrag(h.kt);
-      if (k && (h.art === "ab" ? k.status === "unterwegs" : k.status === "anBord")) break;
-      plan.halt++;
-    }
+    while (plan.halt < plan.halte.length && !this.ktHaltGilt(fz, plan.halte[plan.halt])) plan.halt++;
     if (plan.halt >= plan.halte.length) return this.ktFahrtFertig(fz, false);
     const h = plan.halte[plan.halt];
     const k = this.ktAuftrag(h.kt)!;
@@ -2497,7 +2720,9 @@ export class Simulation {
     if (!ziel) return this.ktFahrtFertig(fz, false);
     // Status: zum BO, bis der letzte Abholort erreicht ist; dann zum ZO
     this.setStatus(fz, h.art === "ab" ? "zumBO" : "zumZO");
-    this.fahre(fz, ziel, "ktFahrt", false);
+    const blau = (plan.fahrten[0] ?? []).some((x) => codeInfo(this.ktAuftrag(x)?.d.code).sondersignal);
+    plan.wartetSeit = null;
+    this.fahre(fz, ziel, "ktFahrt", blau);
   }
 
   private ktUpdate(fz: SimFahrzeug, t: number): void {
@@ -2512,14 +2737,24 @@ export class Simulation {
         const k = h && this.ktAuftrag(h.kt);
         if (!h || !k) return this.ktNaechsterHalt(fz);
         fz.phase = "ktHalt";
+        const sek = istUeberstellung(k.d);
+        const s = k.d.sek;
         if (h.art === "ab") {
           this.setStatus(fz, "amBO");
           const heim = !k.d.von?.khId;
-          const min = k.wahr.nichtDa ? rnd(6, 10) : (heim ? rnd(5, 12) : rnd(6, 18)) + k.wahr.verzoegerungMin;
+          const min = sek
+            ? s?.arzt || s?.beatmet || s?.inkubator
+              ? rnd(15, 30)
+              : s?.monitoring
+                ? rnd(10, 20)
+                : rnd(8, 16)
+            : k.wahr.nichtDa
+              ? rnd(6, 10)
+              : (heim ? rnd(5, 12) : rnd(6, 18)) + k.wahr.verzoegerungMin;
           fz.phaseEnde = t + min * MIN;
         } else {
           this.setStatus(fz, "amZO");
-          fz.phaseEnde = t + (k.d.lage === "liegend" ? rnd(8, 15) : rnd(4, 10)) * MIN;
+          fz.phaseEnde = t + (sek && (s?.arzt || s?.monitoring) ? rnd(10, 20) : k.d.lage === "liegend" ? rnd(8, 15) : rnd(4, 10)) * MIN;
         }
         break;
       }
@@ -2532,12 +2767,31 @@ export class Simulation {
         }
         const h = plan.halte[plan.halt];
         const k = h && this.ktAuftrag(h.kt);
-        if (h && k) {
+        if (h && k && k.fz !== fz.id) {
+          // Begleitung (NEF): am Abholort warten, bis der Patient im Fahrzeug ist
+          if (h.art === "ab" && (k.status === "unterwegs" || k.status === "vorgemerkt")) {
+            plan.wartetSeit ??= t;
+            if (t - plan.wartetSeit < 45 * MIN) {
+              fz.phaseEnde = t + MIN;
+              return;
+            }
+          }
+        } else if (h && k) {
           if (h.art === "ab") {
+            // Notarzt-Überstellung: ohne das begleitende NEF fährt der Patient nicht ab
+            const nef = k.begleit ? this.state.fahrzeuge[k.begleit] : undefined;
+            if (nef && nef.status !== "amBO") {
+              plan.wartetSeit ??= t;
+              if (t - plan.wartetSeit < 30 * MIN) {
+                fz.phaseEnde = t + MIN;
+                return;
+              }
+            }
             if (k.wahr.nichtDa) {
               k.status = "storniert";
               this.ktLog(k, `${fz.funkrufname}: Patient nicht angetroffen`);
               this.fzRuft(fz, null, "info", `Patient ${k.d.patient.name} am Abholort nicht angetroffen, ${k.nummer} wird storniert`);
+              this.ktBegleitLoesen(k);
             } else {
               k.status = "anBord";
               this.ktLog(k, `${fz.funkrufname}: Patient an Bord`);
@@ -2573,6 +2827,7 @@ export class Simulation {
       plan.fahrten.shift();
       plan.halte = [];
       plan.halt = 0;
+      fz.blaulicht = false;
       if (plan.reinigen) {
         plan.reinigen = false;
         this.setStatus(fz, "bereitschaft");

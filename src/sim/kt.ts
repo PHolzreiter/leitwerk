@@ -8,7 +8,7 @@ import type { Anruf, Bearbeiter, Protokoll } from "./engine";
 
 export type KtArt = "KTR" | "KTA" | "KTx";
 export type KtLage = "sitzend" | "liegend" | "gehend" | "rollstuhl";
-export const KT_LAGE_LABEL: Record<KtLage, string> = { sitzend: "sitzend", liegend: "liegend", gehend: "gehend", rollstuhl: "eigener Rollstuhl" };
+export const KT_LAGE_LABEL: Record<KtLage, string> = { gehend: "gehfähig", sitzend: "Tragstuhl (sitzend)", liegend: "liegend", rollstuhl: "eigener Rollstuhl" };
 export const KT_ART_LABEL: Record<KtArt, string> = { KTR: "KTR – Rotes Kreuz gewünscht", KTA: "KTA – ASB gewünscht", KTx: "KTx – egal" };
 
 export interface KtOrt {
@@ -20,8 +20,35 @@ export interface KtOrt {
   bereich?: string;
 }
 
+/** Zusatzangaben bei Überstellungen (SEK) */
+export interface SekDaten {
+  /** Notarztbegleitung nötig */
+  arzt: boolean;
+  /** Monitoring nötig (Überwachung) */
+  monitoring: boolean;
+  /** beatmet */
+  beatmet: boolean;
+  /** Inkubator / Kind */
+  inkubator: boolean;
+  /** instabil – während des Transports wird laufend am Patienten gearbeitet (kein Flug) */
+  instabil: boolean;
+  /** Bett im Zielkrankenhaus zugesagt (von wem) */
+  zusage: string;
+}
+export function sekLeer(): SekDaten {
+  return { arzt: false, monitoring: false, beatmet: false, inkubator: false, instabil: false, zusage: "" };
+}
+
 export interface KtDaten {
   art: KtArt;
+  /** Code (KTA-90K1, SEK-96D6 …) */
+  code: string | null;
+  /** Code von Hand gewählt (sonst folgt er dem Vorschlag) */
+  codeManuell?: boolean;
+  /** SOFORT (Einweisung, dringende Überstellung) */
+  sofort: boolean;
+  /** Überstellung zwischen Krankenhäusern: Zusatzangaben */
+  sek: SekDaten | null;
   patient: { name: string; alter: number | null; geschlecht: "m" | "w" | null; info: string };
   von: KtOrt | null;
   nach: KtOrt | null;
@@ -52,7 +79,7 @@ export const KT_STATUS_LABEL: Record<KtStatus, string> = {
 export interface KtAuftrag {
   id: string;
   nummer: string;
-  quelle: "hotline" | "online" | "dauer";
+  quelle: "hotline" | "online" | "dauer" | "manuell";
   eingang: number;
   status: KtStatus;
   /** eingetragene Daten (bei Hotline erst nach der Aufnahme vollständig) */
@@ -68,6 +95,8 @@ export interface KtAuftrag {
   };
   /** zugeteiltes Fahrzeug (vorgemerkt oder unterwegs) */
   fz: string | null;
+  /** begleitendes Fahrzeug (NEF bei Notarzt-Überstellung mit RTW/SRTW) */
+  begleit?: string | null;
   anruf: Anruf | null;
   /** „Wo bleibt der Transport?“ schon angerufen */
   nachfrage?: boolean;
@@ -92,6 +121,9 @@ export interface KtPlan {
 
 /** Plätze im KTW: 2 Sitzplätze und 1 Liegeplatz (auf dem auch jemand sitzen kann) */
 export function passt(auftraege: KtDaten[]): string | null {
+  if (auftraege.length > 1 && auftraege.some((d) => d.code?.startsWith("SEK-") || (d.sek && d.von?.khId && d.nach?.khId)))
+    return "Überstellung: nur ein Patient im Fahrzeug";
+  if (auftraege.length > 1 && auftraege.some((d) => d.code?.startsWith("DF-"))) return "Dienstfahrt: keine Sammelfahrt";
   if (auftraege.length > 1 && auftraege.some((d) => d.infektion)) return "Infektionstransport: nur ein Patient im Fahrzeug";
   let liegend = 0;
   let sitz = 0;
@@ -152,9 +184,21 @@ const GRUENDE: Record<string, string[]> = {
   ITS: ["Verlegung nach Intensivaufenthalt"],
 };
 
+/** Einweisungen durch den Hausarzt */
+const EINWEISUNG = [
+  "Verdacht auf Pneumonie – stationäre Aufnahme",
+  "Exsikkose, Allgemeinzustand reduziert",
+  "Harnwegsinfekt mit Verwirrtheit",
+  "Dekompensierte Herzinsuffizienz",
+  "Sturz – Abklärung, nicht mehr mobil",
+  "Erysipel Unterschenkel – i.v. Therapie",
+  "Entgleister Diabetes",
+  "Akute Verwirrtheit – Abklärung",
+];
+
 const INFOS: Record<KtLage, string[]> = {
-  gehend: ["gehfähig", "geht mit Rollator", ""],
-  sitzend: ["bis zum Fahrzeug gehfähig", "braucht Hilfe beim Aufstehen", "Tragsessel nötig", ""],
+  gehend: ["bis zum Fahrzeug gehfähig", "geht mit Rollator", ""],
+  sitzend: ["braucht Hilfe beim Aufstehen", "Tragsessel nötig", "kann nicht gehen, aber sitzen", ""],
   liegend: ["bettlägerig", "nicht gehfähig", "Dekubitus – vorsichtig lagern", ""],
   rollstuhl: ["im eigenen Rollstuhl", "Rollstuhl wird mitgenommen", ""],
 };
@@ -209,6 +253,9 @@ function gewichtet<T>(l: [T, number][]): T {
 export function neueDaten(): KtDaten {
   return {
     art: "KTx",
+    code: null,
+    sofort: false,
+    sek: null,
     patient: { name: "", alter: null, geschlecht: null, info: "" },
     von: null,
     nach: null,
@@ -231,7 +278,7 @@ export function zufallsDaten(o: ZufallsOrte, jetzt: number): KtDaten | null {
   const geschlecht: "m" | "w" = Math.random() < 0.5 ? "w" : "m";
   const alter = Math.round(Math.min(98, Math.max(18, rnd(45, 95) + (Math.random() < 0.15 ? -25 : 0))));
   const art: KtArt = gewichtet([["KTx", 6], ["KTR", 3], ["KTA", 1]]);
-  const typ = gewichtet<"ambulanz" | "heim" | "entlassung">([["ambulanz", 4], ["heim", 3], ["entlassung", 3]]);
+  const typ = gewichtet<"ambulanz" | "heim" | "entlassung" | "einweisung">([["ambulanz", 4], ["heim", 3], ["entlassung", 3], ["einweisung", 0.8]]);
   // Vorlauf: sofort, 1–3 h oder später am Tag
   const vorlaufMin = gewichtet<() => number>([[() => rnd(25, 60), 4], [() => rnd(60, 180), 4], [() => rnd(180, 480), 2]])();
   const termin = jetzt + vorlaufMin * 60_000;
@@ -239,7 +286,14 @@ export function zufallsDaten(o: ZufallsOrte, jetzt: number): KtDaten | null {
   let kh: Hospital | undefined;
   let von: KtOrt;
   let nach: KtOrt;
-  if (typ === "entlassung") {
+  if (typ === "einweisung") {
+    // Einweisung durch den Hausarzt: sofort ins nächste Krankenhaus
+    bereich = pick(["ZNA", "ZNA", "INT", "INT", "CHI", "NEU", "GER"]);
+    kh = o.khMit(bereich)[0];
+    if (!kh) return null;
+    von = o.heim;
+    nach = khOrt(kh, bereich);
+  } else if (typ === "entlassung") {
     bereich = pick(STATIONEN_ENTLASSUNG);
     kh = o.khMit(bereich)[0];
     if (!kh) return null;
@@ -259,12 +313,23 @@ export function zufallsDaten(o: ZufallsOrte, jetzt: number): KtDaten | null {
     }
   }
   const lage = lageFuer(alter, bereich);
-  const grund = pick(GRUENDE[bereich] ?? ["Kontrolle"]);
+  const grund = typ === "einweisung" ? pick(EINWEISUNG) : pick(GRUENDE[bereich] ?? ["Kontrolle"]);
+  const sofort = typ === "einweisung";
   // Abholzeit: bei Fahrten zur Ambulanz vor dem Termin (mit etwas mehr Puffer als nötig)
-  const abholung =
-    typ === "ambulanz" ? (Math.random() < 0.6 ? termin - rnd(45, 75) * 60_000 : null) : Math.random() < 0.5 ? termin : null;
+  const abholung = sofort
+    ? jetzt + rnd(5, 20) * 60_000
+    : typ === "ambulanz"
+      ? Math.random() < 0.6
+        ? termin - rnd(45, 75) * 60_000
+        : null
+      : Math.random() < 0.5
+        ? termin
+        : null;
   return {
     art,
+    code: null,
+    sofort,
+    sek: null,
     patient: { name: zufallsName(geschlecht), alter, geschlecht, info: pick(INFOS[lage]) },
     von,
     nach,
@@ -273,7 +338,7 @@ export function zufallsDaten(o: ZufallsOrte, jetzt: number): KtDaten | null {
     begleitung: Math.random() < (alter > 85 ? 0.25 : 0.08),
     sauerstoff: Math.random() < (["PUL", "KAR", "PAL"].includes(bereich) ? 0.35 : 0.05),
     infektion: Math.random() < 0.06,
-    termin,
+    termin: sofort ? jetzt + rnd(40, 70) * 60_000 : termin,
     abholung: abholung && abholung > jetzt ? abholung : null,
     telefon: zufallsNummer(),
   };
@@ -287,7 +352,7 @@ export const DIALYSE_SCHICHTEN: [number, number, number][] = [
 ];
 
 /** Daueraufträge eines Patienten an einem Tag (Dialyse oder Bestrahlung): Hin- und Rückfahrt */
-export function dauerDaten(heim: KtOrt, kh: Hospital, bereich: "DIA" | "STR", tag0: number): [KtDaten, KtDaten] {
+export function dauerDaten(heim: KtOrt, kh: Hospital, bereich: "DIA" | "STR" | "CHE", tag0: number): [KtDaten, KtDaten] {
   const geschlecht: "m" | "w" = Math.random() < 0.5 ? "w" : "m";
   const alter = Math.round(rnd(50, 90));
   let hin: number;
@@ -296,6 +361,10 @@ export function dauerDaten(heim: KtOrt, kh: Hospital, bereich: "DIA" | "STR", ta
     const s = gewichtet(DIALYSE_SCHICHTEN.map((x) => [x, x[2]] as [[number, number, number], number]));
     hin = tag0 + s[0] * 3_600_000 + rnd(-15, 15) * 60_000;
     heimZeit = tag0 + s[1] * 3_600_000 + rnd(-20, 20) * 60_000;
+  } else if (bereich === "CHE") {
+    // Chemotherapie: Infusion dauert einige Stunden
+    hin = tag0 + rnd(7.5, 11) * 3_600_000;
+    heimZeit = hin + rnd(2, 5) * 3_600_000;
   } else {
     hin = tag0 + rnd(8, 15) * 3_600_000;
     heimZeit = hin + rnd(40, 70) * 60_000;
@@ -303,6 +372,9 @@ export function dauerDaten(heim: KtOrt, kh: Hospital, bereich: "DIA" | "STR", ta
   const lage: KtLage = Math.random() < 0.2 ? "liegend" : Math.random() < 0.1 ? "rollstuhl" : "sitzend";
   const basis = {
     art: gewichtet<KtArt>([["KTx", 6], ["KTR", 3], ["KTA", 1]]),
+    code: null,
+    sofort: false,
+    sek: null,
     patient: { name: zufallsName(geschlecht), alter, geschlecht, info: pick(INFOS[lage]) },
     grund: pick(GRUENDE[bereich]),
     lage,
@@ -322,6 +394,13 @@ export function dauerDaten(heim: KtOrt, kh: Hospital, bereich: "DIA" | "STR", ta
 export function hotlineAnrufer(d: KtDaten): { rolle: string; name: string } {
   const vonKh = !!d.von?.khId;
   const g: "m" | "w" = Math.random() < 0.7 ? "w" : "m";
+  if (d.sek && vonKh) {
+    const arzt = d.sek.arzt || d.sek.beatmet || d.sek.inkubator || d.sofort || Math.random() < 0.4;
+    return arzt
+      ? { rolle: `${g === "w" ? "Ärztin" : "Arzt"} der Station ${d.von!.label}`, name: `Dr. ${zufallsName(g)}` }
+      : { rolle: `Pflegekraft der Station ${d.von!.label}`, name: zufallsName(g) };
+  }
+  if (d.sofort && !vonKh) return { rolle: "Ordinationsassistentin des Hausarztes", name: zufallsName("w") };
   if (vonKh) return { rolle: `Pflegekraft der Station ${d.von!.label}`, name: zufallsName(g) };
   const r = gewichtet<string>([
     ["Patient selbst", 3],
