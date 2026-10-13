@@ -349,20 +349,20 @@ const KAPITEL_LAIE: Record<string, string> = {
   "8": "hat irgendwas eingeatmet, Rauch oder Gas",
   "9": "rührt sich nicht mehr",
   "10": "hat starke Schmerzen in der Brust",
-  "11": "hat sich verschluckt und kriegt keine Luft",
+  "11": "hat sich verschluckt",
   "12": "hat einen Krampfanfall gehabt",
-  "13": "ist ganz komisch, Zucker ist wahrscheinlich nicht in Ordnung",
+  "13": "ist ganz komisch, mit dem Zucker stimmt wahrscheinlich was nicht",
   "14": "war im Wasser, wir haben ihn rausgeholt",
   "15": "hat einen Stromschlag bekommen",
   "16": "hat was mit dem Auge",
   "17": "ist gestürzt",
   "18": "hat ganz starke Kopfschmerzen",
   "19": "hat Herzrasen bzw. Probleme mit dem Herz",
-  "20": "hat zu lange in der Hitze/Kälte verbracht und ist ganz schwach",
+  "20": "war zu lange in der Hitze oder Kälte und ist ganz schwach",
   "21": "blutet stark",
   "22": "ist eingeklemmt",
   "23": "hat Tabletten oder etwas anderes geschluckt",
-  "24": "ist schwanger und es geht ihr nicht gut / die Geburt geht los",
+  "24": "ist schwanger und es geht ihr nicht gut",
   "25": "ist psychisch völlig durch den Wind",
   "26": "fühlt sich krank und schwach",
   "27": "ist verletzt worden, mit einem Messer oder ähnlichem",
@@ -409,7 +409,16 @@ export function schilderung(k: AnrufKontext): string {
     const pt: Record<string, string> = { brust: "hat Brustschmerzen", geburt: "bekommt gerade ein Kind", krampf: "hat einen Krampfanfall gehabt", schlaganfall: "hat Anzeichen für einen Schlaganfall", psych: "ist in einem psychischen Ausnahmezustand", lebensbedrohlich: "ist schwer krank", gering: "hat leichte Beschwerden" };
     was = pt[p] ?? "hat ein medizinisches Problem";
   }
-  if (wer === "ich") was = was.replace(/^hat /, "hab ").replace(/^ist /, "bin ").replace(/^kriegt /, "krieg ").replace(/^kann /, "kann ").replace(/^fühlt sich /, "fühl mich ").replace(/^blutet /, "blute ");
+  if (wer === "ich")
+    was = was
+      .replace(/\bes geht ihr nicht gut\b/g, "mir geht's nicht gut")
+      .replace(/\bhat\b/g, "hab")
+      .replace(/\bist\b/g, "bin")
+      .replace(/\bkriegt\b/g, "krieg")
+      .replace(/\bfühlt\b/g, "fühl")
+      .replace(/\bblutet\b/g, "blute")
+      .replace(/\bsich\b/g, "mich")
+      .replace(/\bwar\b/g, "war");
   const zusatz: string[] = [];
   if (k.wahrheit.bw === "nein") zusatz.push("reagiert nicht");
   else if (k.wahrheit.bw === "getruebt") zusatz.push("ist ganz benommen");
