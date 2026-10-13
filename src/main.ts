@@ -1,6 +1,7 @@
 import "./style.css";
 import { store } from "./data/store";
 import { availableMaps, createMap, type MapHandle } from "./map";
+import { addFahrzeug3D, type Fahrzeug3D } from "./fz3d";
 import { ORG_FARBEN, addDataLayers, addSimLayers, pickLocation, setGroupVisible, setSelectedIncident } from "./mapLayers";
 import { sim } from "./sim/engine";
 import { geoStatus } from "./sim/geo";
@@ -160,6 +161,8 @@ async function init(): Promise<void> {
     },
   );
 
+  let fz3d: Fahrzeug3D | null = null;
+  const chkModelle = document.getElementById("chk-modelle") as HTMLInputElement;
   map.on("load", () => {
     addDataLayers(map, {
       onEdit: (kind, id) => openEditor(kind, id, deps),
@@ -173,7 +176,11 @@ async function init(): Promise<void> {
         else if (fz) toast(`${fz.funkrufname}: ${sim.statusDef(fz.status).name}`);
       },
     });
+    fz3d = addFahrzeug3D(map);
+    fz3d.setMode3d(is3d);
+    chkModelle.checked = fz3d.aktiv();
   });
+  chkModelle.addEventListener("change", () => fz3d?.setAktiv(chkModelle.checked));
 
   // Ebenen ein-/ausblenden (Liste einklappbar)
   document.querySelectorAll<HTMLInputElement>(".map-panel input[data-group]").forEach((cb) => {
@@ -222,6 +229,7 @@ async function init(): Promise<void> {
       is3d = ziel;
       if (is3d) isSat = false;
       h.setMode3d(is3d);
+      fz3d?.setMode3d(is3d);
       renderModeButtons();
     }),
   );
@@ -232,6 +240,7 @@ async function init(): Promise<void> {
       isSat = ziel;
       if (isSat) is3d = false;
       h.setSatellite(isSat);
+      fz3d?.setMode3d(is3d);
       renderModeButtons();
     }),
   );
@@ -250,6 +259,7 @@ async function init(): Promise<void> {
       if (!h.hasTerrain() && is3d) {
         is3d = false;
         h.setMode3d(false);
+        fz3d?.setMode3d(false);
       }
       setTimeout(renderModeButtons, 300);
     } catch (e) {

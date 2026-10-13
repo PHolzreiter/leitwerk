@@ -164,6 +164,41 @@ export function createSettingsView(container: HTMLElement): { refresh(): void } 
     fGrid.append(el("label", {}, "Verortung richtig bis (Meter)"), vr);
     fSec.appendChild(fGrid);
 
+    // Ausrückzeiten
+    const rSec = section(
+      "Ausrückzeiten",
+      "Zeit vom Alarm bis zur Abfahrt, zufällig zwischen Minimum und Maximum (Minuten). Gilt auf der Wache; frei unterwegs (Status Funk) geht es nach wenigen Sekunden los, aus der Bereitschaft dauert es länger.",
+    );
+    const rGrid = el("div", { class: "set-grid" });
+    const a = draft.ausrueck;
+    const bereich = (label: string, wert: [number, number]) => {
+      const lo = num(Math.round((wert[0] / 60) * 10) / 10, "0.5");
+      const hi = num(Math.round((wert[1] / 60) * 10) / 10, "0.5");
+      lo.addEventListener("change", () => (wert[0] = Math.max(0, Number(lo.value) || 0) * 60));
+      hi.addEventListener("change", () => (wert[1] = Math.max(wert[0] / 60, Number(hi.value) || 0) * 60));
+      const w = el("div", { class: "row-btns" });
+      w.append(lo, el("span", { class: "muted" }, "bis"), hi, el("span", { class: "muted" }, "min"));
+      rGrid.append(el("label", {}, label), w);
+    };
+    const tv = num(a.tagVon, "1");
+    const tb = num(a.tagBis, "1");
+    tv.addEventListener("change", () => (a.tagVon = Math.min(23, Math.max(0, Number(tv.value) || 0))));
+    tb.addEventListener("change", () => (a.tagBis = Math.min(24, Math.max(0, Number(tb.value) || 0))));
+    const tw = el("div", { class: "row-btns" });
+    tw.append(tv, el("span", { class: "muted" }, "bis"), tb, el("span", { class: "muted" }, "Uhr"));
+    rGrid.append(el("label", {}, "Tag (sonst Nacht)"), tw);
+    bereich("Bodengebunden – Tag", a.bodenTag);
+    bereich("Bodengebunden – Nacht", a.bodenNacht);
+    bereich("Hubschrauber – Tag", a.nahTag);
+    bereich("Hubschrauber – Nacht", a.nahNacht);
+    const uw = num(a.unterwegs, "1");
+    uw.addEventListener("change", () => (a.unterwegs = Math.max(0, Number(uw.value) || 10)));
+    rGrid.append(el("label", {}, "Frei unterwegs (Sekunden)"), uw);
+    const bp = num(a.bereitschaftPlusMin, "1");
+    bp.addEventListener("change", () => (a.bereitschaftPlusMin = Math.max(0, Number(bp.value) || 0)));
+    rGrid.append(el("label", {}, "Bereitschaft: zusätzlich (Minuten)"), bp);
+    rSec.appendChild(rGrid);
+
     // Flugrettung
     const nSec = section("Flugrettung und Wetter", "Bei Nebel und Gewitter fliegt kein NAH. Nachts nur Hubschrauber mit „Nachtflugtauglich“ (Reiter Daten → Fahrzeuge).");
     const nGrid = el("div", { class: "set-grid" });
@@ -174,9 +209,7 @@ export function createSettingsView(container: HTMLElement): { refresh(): void } 
     const ns = num(draft.nahGeschwindigkeit, "10", "100");
     ns.addEventListener("change", () => (draft.nahGeschwindigkeit = Number(ns.value) || 220));
     nGrid.append(el("label", {}, "NAH Reisegeschwindigkeit (km/h)"), ns);
-    const nst = num(draft.nahStartzeitSek, "10");
-    nst.addEventListener("change", () => (draft.nahStartzeitSek = Number(nst.value) || 180));
-    nGrid.append(el("label", {}, "NAH Startzeit (Sekunden)"), nst);
+
     const wSel = el("select");
     for (const [k, v] of Object.entries(WETTER_LABEL)) wSel.appendChild(el("option", { value: k }, v));
     wSel.value = sim.state.wetter.lage;

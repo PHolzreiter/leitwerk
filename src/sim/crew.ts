@@ -12,7 +12,7 @@ export type Quali = (typeof QUALIS)[number] | "NA" | "Pilot";
 export const ALLE_QUALIS: Quali[] = [...QUALIS, "NA", "Pilot"];
 
 /** Rettungsmitteltyp für Vorschlag und Besetzung */
-export type RmTyp = "RTW-C" | "RTW" | "KTW" | "NEF" | "NAH" | "Sonstige";
+export type RmTyp = "RTW-C" | "RTW" | "KTW" | "NEF" | "NAH" | "SKTW" | "SRTW" | "SNAW" | "BEL" | "Sonstige";
 
 export interface Platz {
   rolle: string;
@@ -22,7 +22,7 @@ export interface Platz {
 export function rmTypVon(v: Pick<Vehicle, "kategorie" | "typ">): RmTyp {
   const t = (v.typ ?? "").toUpperCase().replace(/\s+/g, "");
   if (v.kategorie === "RTW") return t.includes("RTW-C") || t === "RTWC" ? "RTW-C" : "RTW";
-  if (v.kategorie === "KTW" || v.kategorie === "NEF" || v.kategorie === "NAH") return v.kategorie;
+  if (["KTW", "NEF", "NAH", "SKTW", "SRTW", "SNAW", "BEL"].includes(v.kategorie)) return v.kategorie as RmTyp;
   return "Sonstige";
 }
 
@@ -94,6 +94,22 @@ export const REGELN: Record<RmTyp, PlatzRegel[]> = {
     { rolle: "Notarzt", gewichte: { NA: 1 } },
     { rolle: "Flugretter", gewichte: { "NFS-NKV": 40, "NFS-NKI": 60 } },
   ],
+  // Sekundärfahrzeuge (Vorgabe Paul): SKTW 2× RS, SRTW RS + NFS bis NKV, SNAW RS + NA + NKV/NKI
+  SKTW: [
+    { rolle: "Fahrer", gewichte: { RS: 1 } },
+    { rolle: "SK1", gewichte: { RS: 1 } },
+  ],
+  SRTW: [
+    { rolle: "Fahrer", gewichte: { RS: 1 } },
+    { rolle: "SR1", gewichte: { NFS: 35, "NFS-NKA": 30, "NFS-NKV": 35 } },
+  ],
+  SNAW: [
+    { rolle: "Fahrer", gewichte: { RS: 1 } },
+    { rolle: "Notarzt", gewichte: { NA: 1 } },
+    { rolle: "SR1", gewichte: { "NFS-NKV": 50, "NFS-NKI": 50 } },
+  ],
+  // Bezirkseinsatzleiter: versorgt keine Patienten, koordiniert vor Ort
+  BEL: [{ rolle: "Einsatzleiter", gewichte: { NFS: 20, "NFS-NKA": 25, "NFS-NKV": 30, "NFS-NKI": 25 } }],
   Sonstige: [],
 };
 

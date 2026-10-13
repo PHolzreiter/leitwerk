@@ -1,6 +1,7 @@
 /** Eigene Kartenebenen: Dienststellen, Krankenhäuser, POIs. Dazu Kontextmenü und Positionswahl. */
 import maplibregl from "maplibre-gl";
 import type { Feature as GFeature, FeatureCollection, LineString, Point } from "geojson";
+import { flughoehe } from "./sim/bewegung";
 import { sim } from "./sim/engine";
 import { findCode } from "./sim/codes";
 import { stufeFarbe } from "./ui/opsView";
@@ -368,6 +369,7 @@ function vehicleFeatures(): FeatureCollection<Point> {
         nr: sim.statusDef(fz.status).nummer,
         nah: fz.kategorie === "NAH" ? 1 : 0,
         ein: fz.einsatzId ? 1 : 0,
+        flug: flughoehe(fz, sim.state.zeit) > 5 ? 1 : 0,
       }),
     ),
   );
@@ -443,6 +445,20 @@ export function addSimLayers(
     },
     paint: { "text-color": "#7a1010", "text-halo-color": "#ffffff", "text-halo-width": 1.5 },
   });
+  // Schatten unter fliegenden Hubschraubern (zeigt: er ist in der Luft)
+  map.addLayer({
+    id: "lw-vehicles-shadow",
+    type: "circle",
+    source: "lw-vehicles",
+    filter: ["==", ["get", "flug"], 1],
+    paint: {
+      "circle-radius": ["interpolate", ["linear"], ["zoom"], 7, 5, 13, 9],
+      "circle-color": "#000000",
+      "circle-opacity": 0.35,
+      "circle-blur": 0.7,
+      "circle-translate": [6, 9],
+    },
+  });
   map.addLayer({
     id: "lw-vehicles",
     type: "circle",
@@ -451,7 +467,7 @@ export function addSimLayers(
       "circle-radius": ["interpolate", ["linear"], ["zoom"], 7, ["case", ["==", ["get", "ein"], 1], 6, 3], 13, 10],
       "circle-color": ["get", "color"],
       "circle-stroke-color": ["case", ["==", ["get", "nah"], 1], "#111827", "#ffffff"],
-      "circle-stroke-width": 2,
+      "circle-stroke-width": ["case", ["==", ["get", "flug"], 1], 3, 2],
     },
   });
   map.addLayer({

@@ -100,6 +100,17 @@ export class Store {
           }
           this.data.version = 2;
         }
+        if (this.data.version < 3) {
+          // ab v0.9: Sekundärfahrzeuge (SKTW, SRTW, SNAW) und BEL fahren mit
+          for (const v of this.data.eigene.vehicles) {
+            const t = v.typ.trim().toUpperCase();
+            if (["SKTW", "SRTW", "SNAW", "BEL"].includes(t) && v.kategorie === "Sonstige") {
+              v.kategorie = t as typeof v.kategorie;
+              v.aktiv = true;
+            }
+          }
+          this.data.version = 3;
+        }
       }
     } catch (e) {
       this.lastError = `Gespeicherte Leitstelle konnte nicht gelesen werden: ${String(e)}`;

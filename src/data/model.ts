@@ -37,9 +37,11 @@ export interface Station extends Base {
 }
 
 /** Fahrzeugkategorien. RTW umfasst RTW und RTW-C (Unterscheidung über den Typ). */
-export const VEHICLE_CATEGORIES = ["RTW", "NEF", "NAH", "KTW", "Sonstige"] as const;
+export const VEHICLE_CATEGORIES = ["RTW", "NEF", "NAH", "KTW", "SKTW", "SRTW", "SNAW", "BEL", "Sonstige"] as const;
 export type VehicleCategory = (typeof VEHICLE_CATEGORIES)[number];
-export const ACTIVE_CATEGORIES: readonly VehicleCategory[] = ["RTW", "NEF", "NAH", "KTW"];
+export const ACTIVE_CATEGORIES: readonly VehicleCategory[] = ["RTW", "NEF", "NAH", "KTW", "SKTW", "SRTW", "SNAW", "BEL"];
+/** Sekundärfahrzeuge: nur vorgeschlagen, wenn kein passendes Primärfahrzeug verfügbar ist */
+export const SEKUNDAER: readonly VehicleCategory[] = ["SKTW", "SRTW", "SNAW"];
 
 export interface Vehicle extends Base {
   funkrufname: string;
@@ -171,7 +173,7 @@ export function emptyRecords(): Records {
 
 /** Was gespeichert wird: nur eigene Daten, die Standarddaten kommen mit dem Programm. */
 export interface Persisted {
-  /** 1 = bis v0.3.0, 2 = ab v0.3.1 (KTW eingesetzt, AMB/Sekundär nicht) */
+  /** 1 = bis v0.3.0, 2 = ab v0.3.1 (KTW eingesetzt, AMB/Sekundär nicht), 3 = ab v0.9 (Sekundär + BEL eingesetzt) */
   version: number;
   standardAktiv: boolean;
   /** IDs von Standard-Datensätzen, die gelöscht (ausgeblendet) wurden */
@@ -184,5 +186,5 @@ export interface Persisted {
 }
 
 export function emptyPersisted(): Persisted {
-  return { version: 2, standardAktiv: true, ausgeblendet: [], eigene: emptyRecords() };
+  return { version: 3, standardAktiv: true, ausgeblendet: [], eigene: emptyRecords() };
 }

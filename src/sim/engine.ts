@@ -5,7 +5,7 @@
  * vom Host an die Mitspieler übertragen werden kann. Alle Eingriffe des Spielers
  * laufen über die öffentlichen Methoden (alarmieren, Adresse setzen, …).
  */
-import { HOSPITAL_FLAG_LABEL, type Hospital, type HospitalFlag, type Vehicle } from "../data/model";
+import { ACTIVE_CATEGORIES, HOSPITAL_FLAG_LABEL, type Hospital, type HospitalFlag, type Vehicle } from "../data/model";
 import { store } from "../data/store";
 import { abteilungFuer, allCodes, findCode, hasCodes, type Einsatzcode } from "./codes";
 import { distanceM, flightRoute, randomAddresses, route, searchAddress, travelTimes, type LatLon, type Route } from "./geo";
@@ -23,11 +23,16 @@ export interface Ort extends LatLon {
 }
 
 /** Fahrt entlang einer Route; times sind bereits auf Sondersignal umgerechnet. */
-interface Fahrt {
+export interface Fahrt {
   coords: [number, number][];
   times: number[];
   start: number;
   dauer: number;
+  /** Hubschrauber: Sekunde, ab der er über dem Einsatzort kreist, und ab der er landet */
+  kreisAb?: number;
+  landungAb?: number;
+  /** mit Sondersignal (Blaulicht) */
+  blau?: boolean;
 }
 
 export type Phase =
@@ -65,6 +70,8 @@ export interface SimFahrzeug {
   begleitet: boolean;
   /** Leitstelle hat eine Lagemeldung beim Eintreffen angefordert */
   lagemeldungAngefordert?: boolean;
+  /** Blaulicht an (Fahrt mit Sondersignal; bleibt am Einsatzort an, wenn mit Blaulicht angefahren) */
+  blaulicht?: boolean;
 }
 
 export interface Vorschlag {
@@ -320,6 +327,44 @@ function rnd(min: number, max: number): number {
   return min + Math.random() * (max - min);
 }
 
+/**
+ * Flugroute mit Platzrunden: gerade bis an den Kreis (Radius 350 m), n Runden mit ca. 120 km/h,
+ * dann Landeanflug zur Mitte.
+ */
+function platzrunden(r: Route, ziel: LatLon, n: number): Route & { kreisAb: number; landungAb: number } {
+  const R = 350;
+  const [sx, sy] = r.coords[0];
+  const mLat = 111_320;
+  const mLon = 111_320 * Math.cos((ziel.lat * Math.PI) / 180);
+  // Einflugpunkt: auf dem Kreis, Richtung Startpunkt
+  let dx = (sx - ziel.lon) * mLon;
+  let dy = (sy - ziel.lat) * mLat;
+  const d = Math.hypot(dx, dy);
+  if (d < R * 1.5) return { ...r, kreisAb: r.duration, landungAb: r.duration };
+  dx /= d;
+  dy /= d;
+  const a0 = Math.atan2(dy, dx);
+  const ein: [number, number] = [ziel.lon + (dx * R) / mLon, ziel.lat + (dy * R) / mLat];
+  const geradeS = r.duration * ((d - R) / d);
+  const coords: [number, number][] = [r.coords[0], ein];
+  const times = [0, geradeS];
+  const v = 120 / 3.6;
+  const schritte = 24;
+  const dt = (2 * Math.PI * R) / v / schritte;
+  let t = geradeS;
+  for (let i = 1; i <= n * schritte; i++) {
+    const a = a0 + (i / schritte) * 2 * Math.PI;
+    t += dt;
+    coords.push([ziel.lon + (Math.cos(a) * R) / mLon, ziel.lat + (Math.sin(a) * R) / mLat]);
+    times.push(t);
+  }
+  const landungAb = t;
+  t += 35;
+  coords.push([ziel.lon, ziel.lat]);
+  times.push(t);
+  return { coords, times, duration: t, distance: r.distance + n * 2 * Math.PI * R + R, kreisAb: geradeS, landungAb };
+}
+
 /** Freitext aus der Info an den RTW (ohne den automatischen Teil vorne) */
 export function infoFreitext(info: string, auto: string): string {
   if (!auto) return info.trim();
@@ -564,7 +609,7 @@ export class Simulation {
     const stations = store.stationsById();
     const wanted = store
       .list("vehicles")
-      .filter((v) => v.aktiv && ["RTW", "KTW", "NEF", "NAH"].includes(v.kategorie) && stations.has(v.dienststelleId));
+      .filter((v) => v.aktiv && ACTIVE_CATEGORIES.includes(v.kategorie) && stations.has(v.dienststelleId));
     const ids = new Set(wanted.map((v) => v.id));
     for (const id of Object.keys(this.state.fahrzeuge)) {
       const fz = this.state.fahrzeuge[id];
@@ -621,9 +666,19 @@ export class Simulation {
     this.emit();
   }
 
-  /** Kann Patienten transportieren (RTW, RTW-C, KTW) */
+  /** Kann Patienten transportieren (RTW, RTW-C, KTW, Sekundärfahrzeuge) */
   transportfaehig(fz: SimFahrzeug): boolean {
-    return fz.rmTyp === "RTW" || fz.rmTyp === "RTW-C" || fz.rmTyp === "KTW";
+    return ["RTW", "RTW-C", "KTW", "SKTW", "SRTW", "SNAW"].includes(fz.rmTyp);
+  }
+
+  /** Hat einen Notarzt an Bord (NEF, NAH, SNAW) */
+  mitNotarzt(fz: SimFahrzeug): boolean {
+    return fz.rmTyp === "NEF" || fz.rmTyp === "NAH" || fz.rmTyp === "SNAW";
+  }
+
+  /** Wer spricht am Funk für den Einsatz? Der BEL vor Ort ist Ansprechpartner Nr. 1. */
+  private sprecher(e: Einsatz, sonst: SimFahrzeug): SimFahrzeug {
+    return this.einsatzFz(e).find((x) => x.rmTyp === "BEL" && x.phase === "vorOrt") ?? sonst;
   }
 
   verfuegbar(fz: SimFahrzeug): boolean {
@@ -697,17 +752,30 @@ export class Simulation {
   private fahre(fz: SimFahrzeug, ziel: LatLon, phase: Phase, sondersignal: boolean): void {
     this.routingBusy.add(fz.id);
     fz.phase = "routing";
+    fz.blaulicht = sondersignal && fz.kategorie !== "NAH";
     const von = { lat: fz.lat, lon: fz.lon };
     const p: Promise<Route> =
       fz.kategorie === "NAH" ? Promise.resolve(flightRoute(von, ziel, this.settings.nahGeschwindigkeit)) : route(von, ziel);
     void p.then((r) => {
       this.routingBusy.delete(fz.id);
       const f = sondersignal && fz.kategorie !== "NAH" ? this.settings.sondersignalFaktor : 1;
-      fz.fahrt = { coords: r.coords, times: r.times.map((x) => x * f), start: this.state.zeit, dauer: r.duration * f };
+      // Hubschrauber kreist 1–3 Mal über Einsatzorten (nicht über Krankenhäusern und Landeplätzen)
+      const kreis = fz.kategorie === "NAH" && phase === "anfahrt" && !this.istLandeplatz(ziel) ? platzrunden(r, ziel, 1 + Math.floor(Math.random() * 3)) : null;
+      const rr = kreis ?? r;
+      fz.fahrt = { coords: rr.coords, times: rr.times.map((x) => x * f), start: this.state.zeit, dauer: rr.duration * f, blau: sondersignal };
+      if (kreis) Object.assign(fz.fahrt, { kreisAb: kreis.kreisAb, landungAb: kreis.landungAb });
       fz.phase = phase;
       fz.phaseEnde = this.state.zeit + fz.fahrt.dauer * 1000;
       this.emit();
     });
+  }
+
+  /** Krankenhaus, Hubschrauberstützpunkt oder Landeplatz in der Nähe (≤ 300 m)? */
+  private istLandeplatz(p: LatLon): boolean {
+    const nah = (x: LatLon) => distanceM(p, x) < 300;
+    if (store.list("hospitals").some(nah)) return true;
+    if (store.list("pois").some((x) => /lande|heli|hubschrauber/i.test(`${x.typ} ${x.name}`) && nah(x))) return true;
+    return Object.values(this.state.fahrzeuge).some((f) => f.kategorie === "NAH" && nah(f.heim));
   }
 
   private updateVehicle(fz: SimFahrzeug, t: number): void {
@@ -755,6 +823,7 @@ export class Simulation {
         break;
       case "transport": {
         fz.fahrt = null;
+        fz.blaulicht = false;
         this.setStatus(fz, "amZO");
         fz.phase = "uebergabe";
         fz.phaseEnde = t + rnd(8, 18) * MIN;
@@ -870,6 +939,7 @@ export class Simulation {
     const e = fz.einsatzId ? this.einsatz(fz.einsatzId) : undefined;
     fz.einsatzId = null;
     fz.begleitet = false;
+    fz.blaulicht = false;
     this.setStatus(fz, "freiFunk");
     if (distanceM(fz, fz.heim) < 80) {
       fz.phase = "frei";
@@ -1094,22 +1164,40 @@ export class Simulation {
       }
       fz.einsatzId = e.id;
       if (!e.fahrzeuge.includes(fz.id)) e.fahrzeuge.push(fz.id);
-      const vonWache = fz.status === "freiWache";
+      const sek = this.ausrueckSek(fz, false);
       this.setStatus(fz, "alarmiert");
       fz.fahrt = null;
       fz.phase = "ausruecken";
-      const sek =
-        fz.kategorie === "NAH"
-          ? this.settings.nahStartzeitSek * rnd(0.8, 1.2)
-          : vonWache
-            ? rnd(60, 120) * (istNacht(this.state.zeit, fz.lat, fz.lon) ? 1.6 : 1)
-            : rnd(10, 25);
       fz.phaseEnde = this.state.zeit + sek * 1000;
       this.log(e, `${fz.funkrufname} alarmiert`);
     }
     if (e.fahrzeuge.length > 0) e.zustand = "laufend";
     this.emit();
     return hinweise;
+  }
+
+  /** Tagsüber laut Einstellung (Standard 5–22 Uhr)? */
+  istTag(t = this.state.zeit): boolean {
+    const a = this.settings.ausrueck;
+    const h = new Date(t).getHours() + new Date(t).getMinutes() / 60;
+    return a.tagVon <= a.tagBis ? h >= a.tagVon && h < a.tagBis : h >= a.tagVon || h < a.tagBis;
+  }
+
+  /**
+   * Ausrückzeit in Sekunden: auf der Wache nach Tag/Nacht und Fahrzeugart (zufällig im Bereich,
+   * bei schaetzung der Mittelwert), frei unterwegs wenige Sekunden, Bereitschaft + Zuschlag.
+   */
+  ausrueckSek(fz: SimFahrzeug, schaetzung: boolean): number {
+    const a = this.settings.ausrueck;
+    const z = (r: [number, number]) => (schaetzung ? (r[0] + r[1]) / 2 : rnd(r[0], r[1]));
+    const wache = () => {
+      const tag = this.istTag();
+      if (fz.kategorie === "NAH") return z(tag ? a.nahTag : a.nahNacht);
+      return z(tag ? a.bodenTag : a.bodenNacht);
+    };
+    if (fz.status === "freiWache") return wache();
+    if (fz.status === "bereitschaft") return wache() + a.bereitschaftPlusMin * 60;
+    return schaetzung ? a.unterwegs : a.unterwegs * rnd(0.7, 1.5);
   }
 
   /** Disponent bucht ein Krankenhaus. */
@@ -1162,11 +1250,11 @@ export class Simulation {
     const faktor = this.faktor(e);
     const out = boden.map((fz, i) => {
       const z = zeiten[i];
-      const ausr = fz.status === "freiWache" ? 90 : 15;
+      const ausr = this.ausrueckSek(fz, true);
       return { fz, sekunden: z === null ? null : z * faktor + ausr, hinweis: null as string | null };
     });
     for (const fz of frei.filter((f) => f.kategorie === "NAH")) {
-      const flug = distanceM(fz, ziel) / (this.settings.nahGeschwindigkeit / 3.6) + this.settings.nahStartzeitSek;
+      const flug = distanceM(fz, ziel) / (this.settings.nahGeschwindigkeit / 3.6) + this.ausrueckSek(fz, true) + 90;
       out.push({ fz, sekunden: flug, hinweis: this.flugHindernis(fz) });
     }
     return out.sort((a, b) => (a.sekunden ?? 1e9) - (b.sekunden ?? 1e9));
@@ -1210,10 +1298,19 @@ export class Simulation {
         const text = `${rm.funkrufname} (${rm.rmTyp}, ${min(best.v.sekunden!)})`;
         gruende.push(best.rang === 0 ? `${text}: passendes Rettungsmittel` : `${text}: besser passende sind deutlich weiter weg`);
       } else {
-        gruende.push(`Kein passendes Rettungsmittel (${stufe.rettungsmittel}) verfügbar`);
+        // Kein Primärfahrzeug: Sekundärfahrzeug, das mindestens gleichwertig ausgestattet ist
+        const typen = rangListe.flat();
+        const erlaubt = typen.includes("RTW-C") ? ["SNAW", "SRTW"] : typen.includes("RTW") ? ["SRTW", "SNAW"] : ["SKTW", "SRTW", "SNAW"];
+        const sek = nutzbar.find((v) => erlaubt.includes(v.fz.rmTyp));
+        if (sek) {
+          rm = sek.fz;
+          ids.push(rm.id);
+          gruende.push(`${rm.funkrufname} (${rm.rmTyp}, ${min(sek.sekunden!)}): kein Primärfahrzeug verfügbar – Sekundärfahrzeug`);
+        } else gruende.push(`Kein passendes Rettungsmittel (${stufe.rettungsmittel}) verfügbar`);
       }
     }
 
+    if (!arzt && rm && this.mitNotarzt(rm)) arzt = rm;
     const nfsFehlt = stufe.nfsErforderlich && rm !== undefined && !hatNFS(rm.besetzung);
     const regel = stufe.notarzt !== "nein" ? stufe.notarzt : nfsFehlt ? "nef" : "nein";
     if (!arzt && regel !== "nein") {
@@ -1230,6 +1327,20 @@ export class Simulation {
         gruende.push(`${arzt.funkrufname} (${arzt.rmTyp}, ${min(wahl.sekunden!)}): ${grund}`);
       } else {
         gruende.push("Kein Notarztmittel (NEF/NAH) verfügbar");
+      }
+    }
+    // BEL bei Großeinsätzen: mehrere Rettungsmittel oder Großaufgebot (Feuerwehr/Polizei)
+    if (!imEinsatz.some((f) => f.rmTyp === "BEL")) {
+      const transport = imEinsatz.filter((f) => this.transportfaehig(f)).length + (rm && !imEinsatz.includes(rm) ? 1 : 0);
+      const offen = (e.nachforderungen ?? []).filter((n) => !n.erledigt && n.art === "RTW").reduce((a, n) => a + n.anzahl, 0);
+      const kap = e.wahr.abfrage?.kapitel ?? "";
+      const gross = stufe.kategorie === "kritisch" && ["29", "22", "7", "8", "34", "42"].includes(kap);
+      if (transport + offen >= 3 || gross) {
+        const bel = nutzbar.find((v) => v.fz.rmTyp === "BEL");
+        if (bel) {
+          ids.push(bel.fz.id);
+          gruende.push(`${bel.fz.funkrufname} (BEL, ${min(bel.sekunden!)}): Großeinsatz – Einsatzleitung vor Ort`);
+        }
       }
     }
     return { ids, gruende };
@@ -1545,7 +1656,7 @@ export class Simulation {
       const fehlt = this.fehlendeKraefte(e);
       this.nachfordern(e, fz, fehlt);
       const zusatz = fehlt.na ? ", benötigen Notarzt" : "";
-      this.fzRuft(fz, e, fehlt.na ? "nachforderung" : "lage", `${text}${zusatz}`);
+      this.fzRuft(this.sprecher(e, fz), e, fehlt.na ? "nachforderung" : "lage", `${text}${zusatz}`);
       if (istStillstand(p0) && fz.phaseEnde !== null) fz.phaseEnde = Math.max(fz.phaseEnde, t + rnd(30, 40) * MIN);
       return;
     }
@@ -1601,7 +1712,7 @@ export class Simulation {
     if ((erstes && (abweichung || fehlt.na > 0 || fehlt.rtw > 0 || naStorno)) || angefordert) {
       const text = lagemeldungText(l, kap, fehlt, naStorno);
       this.nachfordern(e, fz, fehlt);
-      this.fzRuft(fz, e, fehlt.na || fehlt.rtw ? "nachforderung" : naStorno ? "storno" : "lage", `Lagemeldung: ${text}`);
+      this.fzRuft(this.sprecher(e, fz), e, fehlt.na || fehlt.rtw ? "nachforderung" : naStorno ? "storno" : "lage", `Lagemeldung: ${text}`);
       l.verlauf.push({ zeit: this.state.zeit, text: `${fz.funkrufname}: ${text}` });
     }
   }
@@ -1617,7 +1728,7 @@ export class Simulation {
     if (!l) return { na: 0, rtw: 0 };
     const b = bedarf(l);
     const fz = this.einsatzFz(e);
-    const na = fz.filter((x) => x.kategorie === "NEF" || x.kategorie === "NAH").length;
+    const na = fz.filter((x) => this.mitNotarzt(x)).length;
     const tr = fz.filter((x) => this.transportfaehig(x)).length;
     return { na: Math.max(0, b.na - na), rtw: Math.max(0, b.transport - tr) };
   }

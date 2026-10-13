@@ -7,6 +7,7 @@ import {
   HOSPITAL_FLAGS,
   KIND_LABEL,
   VEHICLE_CATEGORIES,
+  ACTIVE_CATEGORIES,
   type Einsatzcode,
   type Einsatzvorlage,
   type Hospital,
@@ -185,7 +186,8 @@ export function categoryFromType(typ: string, funkrufname = ""): VehicleCategory
   if (t === "RTW" || t === "RTW-C") return "RTW";
   if (["PHYSICIAN", "NEF", "NAW", "NOTARZT"].includes(t)) return "NEF";
   if (t.startsWith("KTW")) return "KTW";
-  // AMB Type I/II: nicht verwendet; SKTW, SRTW, SNAW: Sekundärtransport (späteres Update)
+  if (t === "SKTW" || t === "SRTW" || t === "SNAW" || t === "BEL") return t;
+  // AMB Type I/II, BIT, AIR ICU-AMB, EL ÖBB: nicht verwendet
   return "Sonstige";
 }
 
@@ -305,7 +307,7 @@ export function importCsv<K extends Kind>(kind: K, text: string, ctx: ImportCont
         const typ = get("typ");
         const kategorie = parseCategory(get("kategorie"), typ, funk, warn, derived);
         const aktivRaw = get("aktiv");
-        const aktiv = aktivRaw === "" ? ["RTW", "NEF", "NAH", "KTW"].includes(kategorie) : parseBool(aktivRaw, "aktiv");
+        const aktiv = aktivRaw === "" ? ACTIVE_CATEGORIES.includes(kategorie) : parseBool(aktivRaw, "aktiv");
         id = id || `fz-${slug(funk)}`;
         const v: Vehicle = {
           ...base,

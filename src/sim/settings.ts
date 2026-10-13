@@ -131,7 +131,25 @@ export interface Settings {
   falscheAdresseProzent: number;
   wetterAktiv: boolean;
   nahGeschwindigkeit: number;
+  /** veraltet (bis v0.8), ersetzt durch ausrueck */
   nahStartzeitSek: number;
+  /** Ausrückzeiten in Sekunden [min, max]; Tag = tagVon bis tagBis Uhr */
+  ausrueck: {
+    tagVon: number;
+    tagBis: number;
+    bodenTag: [number, number];
+    bodenNacht: [number, number];
+    nahTag: [number, number];
+    nahNacht: [number, number];
+    /** frei unterwegs (Status Funk): Sekunden bis zur Abfahrt */
+    unterwegs: number;
+    /** Bereitschaft: zusätzliche Minuten zur Ausrückzeit der Wache */
+    bereitschaftPlusMin: number;
+  };
+}
+
+export function defaultAusrueck(): Settings["ausrueck"] {
+  return { tagVon: 5, tagBis: 22, bodenTag: [30, 120], bodenNacht: [120, 600], nahTag: [120, 300], nahNacht: [300, 600], unterwegs: 10, bereitschaftPlusMin: 5 };
 }
 
 export function defaultSettings(): Settings {
@@ -151,6 +169,7 @@ export function defaultSettings(): Settings {
     wetterAktiv: true,
     nahGeschwindigkeit: 220,
     nahStartzeitSek: 180,
+    ausrueck: defaultAusrueck(),
   };
 }
 
@@ -163,5 +182,5 @@ export function mergeSettings(saved: Partial<Settings> | undefined): Settings {
   const savedStufen = (saved.stufen ?? []).filter((s) => typeof (s as Partial<StufeDef>).rettungsmittel === "string");
   const stufen = d.stufen.map((def) => ({ ...def, ...(savedStufen.find((s) => s.stufe === def.stufe) ?? {}) }));
   for (const s of savedStufen) if (!stufen.some((x) => x.stufe === s.stufe)) stufen.push(s);
-  return { ...d, ...saved, status, stufen, aufkommen: { ...d.aufkommen, ...(saved.aufkommen ?? {}) } };
+  return { ...d, ...saved, status, stufen, aufkommen: { ...d.aufkommen, ...(saved.aufkommen ?? {}) }, ausrueck: { ...d.ausrueck, ...(saved.ausrueck ?? {}) } };
 }
