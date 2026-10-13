@@ -395,7 +395,7 @@ export function ktMaske(k: KtAuftrag, deps: { flyTo(lat: number, lon: number, z?
     if (fkTermin) zeiten.appendChild(fkTermin);
     zeiten.append(termin);
     deaktiv.push(ab, termin);
-    zeile("Abholung", "abholung", zeiten);
+    zeile("Zeiten", "abholung", zeiten);
     if (art === "kt") {
       const l = el("label", { class: "chk" });
       const c = el("input", { type: "checkbox" });
@@ -568,7 +568,7 @@ export function ktMaske(k: KtAuftrag, deps: { flyTo(lat: number, lon: number, z?
 
   function refresh(): void {
     const c = ktCode(k.d.code);
-    kopf.innerHTML = `${codeChip(k.d.code, true)}<div><div class="mask-nr">${esc(k.nummer)}${c ? ` <span class="muted">· ${esc(c.name)}</span>` : ""}</div><div class="muted">${QUELLE[k.quelle]} · Eingang ${hhmm(k.eingang)} · <b>${esc(KT_STATUS_LABEL[k.status])}</b></div></div>`;
+    kopf.innerHTML = `${codeChip(k.d.code, true)}<div><div class="mask-nr">${esc(k.nummer)}</div>${c ? `<div class="kt-codename">${esc(c.name)}</div>` : ""}<div class="muted">${QUELLE[k.quelle]} · Eingang ${hhmm(k.eingang)} · <b>${esc(KT_STATUS_LABEL[k.status])}</b></div></div>`;
     // Anruf
     const a = k.anruf;
     anrufBox.hidden = !a;

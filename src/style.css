@@ -2464,3 +2464,53 @@ input[type="color"] {
 .small {
   font-size: 12px;
 }
+/* Maske passt in die schmale rechte Spalte */
+.kt-mask .kt-grid {
+  grid-template-columns: 96px minmax(0, 1fr);
+}
+.kt-mask .kt-grid > * {
+  min-width: 0;
+}
+.kt-mask .kt-grid input[type="text"],
+.kt-mask .kt-grid select {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+.kt-mask .kt-grid .row-btns {
+  flex-wrap: wrap;
+  min-width: 0;
+}
+.kt-mask .kt-grid .row-btns input[type="text"] {
+  flex: 1 1 140px;
+  width: auto;
+}
+.kt-mask .kt-grid .row-btns select,
+.kt-mask .kt-grid .row-btns input.zahl {
+  width: auto;
+  flex: 0 0 auto;
+}
+.kt-mask .kt-grid input.zahl {
+  width: 64px;
+}
+.kt-mask .kt-ort select {
+  flex: 1 1 150px;
+  width: auto;
+}
+.kt-mask .kt-codezeile select {
+  flex: 1 1 180px;
+  width: auto;
+}
+.kt-mask .kt-grid input[type="time"] {
+  width: auto;
+}
+.kt-mask .kt-seg {
+  flex-wrap: wrap;
+}
+.kt-mask .kt-opts .chk {
+  white-space: nowrap;
+}
+.kt-codename {
+  font-size: 13px;
+  font-weight: 600;
+}
