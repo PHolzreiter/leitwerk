@@ -548,8 +548,17 @@ export function ktMaske(k: KtAuftrag, deps: { flyTo(lat: number, lon: number, z?
       r.appendChild(btns);
       return r;
     };
-    const passend = vs.filter((v) => !v.ersatz).slice(0, 8);
-    const ersatz = vs.filter((v) => v.ersatz).slice(0, 6);
+    // je Fahrzeugtyp höchstens drei, damit z. B. viele Hubschrauber den SNAW nicht verdrängen
+    const begrenzt = (l: KtVorschlag[], max: number) => {
+      const n = new Map<string, number>();
+      return l.filter((v) => {
+        const c = (n.get(v.fz.rmTyp) ?? 0) + 1;
+        n.set(v.fz.rmTyp, c);
+        return c <= 3;
+      }).slice(0, max);
+    };
+    const passend = begrenzt(vs.filter((v) => !v.ersatz), 8);
+    const ersatz = begrenzt(vs.filter((v) => v.ersatz), 8);
     if (passend.length) {
       liste.appendChild(el("div", { class: "kt-vs-titel" }, sek ? `Vorschlag (${ktCode(k.d.code)?.name ?? k.d.code})` : "Vorschlag"));
       for (const v of passend) liste.appendChild(reihe(v));

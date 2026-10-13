@@ -2418,7 +2418,8 @@ export class Simulation {
     } else {
       const code = k.d.code ?? "";
       const z = Number(code.match(/^SEK-96[KBD](\d)/)?.[1] ?? 3);
-      const heli: Wahl = { typen: ["ITH", "NAH"], ersatz: false, hinweis: "Hubschrauber" };
+      const ith: Wahl = { typen: ["ITH"], ersatz: false, hinweis: "Intensivtransporthubschrauber" };
+      const nah: Wahl = { typen: ["NAH"], ersatz: false, hinweis: "Hubschrauber" };
       const mitNef: Wahl = { typen: ["SRTW", "RTW", "RTW-C"], nef: true, ersatz: true, hinweis: "mit NEF" };
       if (z <= 3) {
         w.push({ typen: ["SKTW"], ersatz: false });
@@ -2427,12 +2428,12 @@ export class Simulation {
         w.push({ typen: ["SRTW"], ersatz: false });
         w.push({ typen: ["RTW", "RTW-C"], ersatz: true, hinweis: "kein SRTW frei" });
       } else if (z === 6) {
-        if (!info.fahrzeug && flugSinnvoll) w.push(heli);
+        if (!info.fahrzeug && flugSinnvoll) w.push(ith, nah);
         w.push({ typen: ["SNAW"], ersatz: false });
         w.push(mitNef);
-        if (info.fahrzeug && flugSinnvoll) w.push({ ...heli, ersatz: true });
+        if (info.fahrzeug && flugSinnvoll) w.push({ ...ith, ersatz: true }, { ...nah, ersatz: true });
       } else if (z === 7) {
-        w.push(heli);
+        w.push(ith, nah);
         w.push({ typen: ["SNAW"], ersatz: true, hinweis: "kein Hubschrauber" });
         w.push(mitNef);
       } else if (code.endsWith("-RTW")) {
@@ -2440,9 +2441,9 @@ export class Simulation {
         w.push({ typen: ["SRTW", "SNAW"], ersatz: true });
       } else {
         // Inkubator-/Kinderüberstellung: ITH oder SNAW
-        if (info.fahrzeug === "SNAW") w.push({ typen: ["SNAW"], ersatz: false }, { ...heli, typen: ["ITH"], ersatz: true });
-        else if (info.fahrzeug === "ITH") w.push({ ...heli, typen: ["ITH", "NAH"] }, { typen: ["SNAW"], ersatz: true });
-        else w.push({ ...heli, typen: ["ITH"] }, { typen: ["SNAW"], ersatz: false });
+        if (info.fahrzeug === "SNAW") w.push({ typen: ["SNAW"], ersatz: false }, { ...ith, ersatz: true });
+        else if (info.fahrzeug === "ITH") w.push(ith, nah, { typen: ["SNAW"], ersatz: true });
+        else w.push(ith, { typen: ["SNAW"], ersatz: false });
         w.push({ ...mitNef, hinweis: "mit NEF, Inkubator vom Krankenhaus" });
       }
     }
