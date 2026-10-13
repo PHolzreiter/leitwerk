@@ -112,7 +112,7 @@ export function codeInfo(code: string | null | undefined): CodeInfo {
   if (m) {
     const [, buchstabe, ziffer, ausruf, zusatz] = m;
     const z = Number(ziffer);
-    const fahrzeug = (zusatz as SFahrzeug | undefined) ?? (z <= 3 ? "SKTW" : z === 6 ? "SNAW" : null);
+    const fahrzeug = (zusatz as SFahrzeug | undefined) ?? (z <= 3 ? "SKTW" : null);
     return {
       gruppe: "SEK",
       sofort: ausruf === "!" || buchstabe !== "K",

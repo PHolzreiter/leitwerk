@@ -558,7 +558,13 @@ export function ktMaske(k: KtAuftrag, deps: { flyTo(lat: number, lon: number, z?
     }
     if (ersatz.length) {
       const det = el("details", { class: "kt-ersatz" });
-      if (!passend.length) det.open = true;
+      // Ersatz gleich zeigen, wenn nichts Passendes rechtzeitig kommt
+      const best = passend[0];
+      const zuSpaet = (v: KtVorschlag) => v.losSpaetestens !== null && v.losSpaetestens < sim.state.zeit;
+      const weit = !!best && k.d.sofort && (best.sekunden ?? 1e9) > 30 * 60;
+      if (!passend.length || passend.every(zuSpaet) || weit) det.open = true;
+      if (passend.length && (passend.every(zuSpaet) || weit))
+        liste.appendChild(el("div", { class: "kt-vs-titel warn" }, "Das passende Fahrzeug ist weit weg – Ersatz prüfen"));
       det.appendChild(el("summary", {}, sek ? "Ersatz aus dem Regelrettungsdienst (nur wenn nötig)" : "Ersatz: RTW (nur wenn nötig)"));
       for (const v of ersatz) det.appendChild(reihe(v));
       liste.appendChild(det);

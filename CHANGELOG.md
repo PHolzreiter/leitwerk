@@ -1,5 +1,20 @@
 # Änderungen
 
+## 0.11.0 – Überstellungen
+- Überstellungen zwischen Krankenhäusern mit den SEK-96-Codes: geplant (SEK-96K1–K3), SOFORT (!), mit SRTW (K6/B6), notarztbegleitet (D6, mit SNAW), mit Hubschrauber (K7/D7-ITH) und Inkubator-/Kinderüberstellungen (D8, K8)
+- Medizinisch stimmige Fälle: das abgebende Haus hat etwas nicht (Herzkatheter, Thrombektomie, Neurochirurgie, Herzchirurgie, Verbrennung, Neonatologie, Kinderintensiv, Psychiatrie, Geriatrie …), hat kein Bett frei, oder der Patient kommt zurück ins Heimatkrankenhaus; dazu Untersuchungen in einem anderen Haus mit Rückfahrt
+- Fahrzeugvorschlag nach Code: SKTW ohne Sondersignal, SRTW mit Sondersignal oder Monitoring, SNAW wenn ein Notarzt nötig ist, ITH oder SNAW bei Inkubator/Kind; bei langen Strecken (über ca. 30 min) der Hubschrauber, außer der Patient ist instabil. Der normale Rettungsdienst steht darunter als Ersatz, wenn nichts Passendes frei ist – bei Notarzt-Überstellungen RTW/SRTW mit einem NEF, das mitfährt
+- Dringliche Überstellungen kommen immer als Anruf (meist vom Arzt der Station) über die KT-Hotline, geplante meist als Online-Anmeldung; neue Fragen: Dringlichkeit, Notarzt, Monitoring/beatmet, stabil, Inkubator/Kind, Übernahme zugesagt
+- Alle Krankentransport-Codes (KTA, KTR, KTx: 90 Krankentransport/Einweisung SOFORT, 93 Therapie, 95 Heimtransport, 96 Überstellung) und Dienstfahrten (DF-99): der Code wird aus den Angaben vorgeschlagen und kann geändert werden („↺ Vorschlag“ stellt wieder auf automatisch)
+- Neu: Einweisungen durch den Hausarzt (SOFORT), Chemotherapie-Fahrten (normale Termine und einige fixe)
+- KT-Liste: Filter „Alle / Krankentransporte / Überstellungen“, Codes farbig (rot = Notarzt mit Sondersignal, orange = Sondersignal, gelb = SOFORT, violett = Überstellung), dringende Überstellungen oben
+- „+ Neu“ im KT-Reiter: Auftrag von Hand anlegen (Krankentransport, Überstellung oder Dienstfahrt)
+- KTW, die einen Krankentransport ohne Patient fahren, stehen beim Notfall in der Liste („KT – abziehen“) und können alarmiert werden; ihre Transporte sind dann wieder offen
+- Krankenhäuser: neue Bereiche Neonatologie, Kinderintensiv, Herzchirurgie, Verbrennungszentrum, Neurointervention (Thrombektomie); neue Häuser LK Mauer, LK Allentsteig, UK Hochegg, Hanusch, Klinik Penzing, Speising, Göttlicher Heiland, KUK Linz (Neuromed, Kinder), Ordensklinikum Linz (BHS, Elisabethinen), Steyr, Freistadt
+- Einstellungen: Überstellungen je Stunde (Standard ca. 10 am Tag im Gebiet), Chemotherapie-Patienten mit fixem Termin
+- Behoben: SKTW, SRTW, SNAW, BIT, ITH (C33), BEL und EL ÖBB waren in den Standarddaten nicht aktiv; Christophorus 2 und 9 fliegen nachts
+- KT-Maske passt in die schmale rechte Spalte
+
 ## 0.10.0 – „Wollen Sie sitzen oder liegen?“ – Krankentransporte
 - Neuer Reiter „KT“ links neben „Einsätze“: alle Krankentransporte mit Termin, Abholzeit, Patient, Wunsch (KTR/KTA/KTx) und Status (nicht disponiert, vorgemerkt, unterwegs, an Bord, erledigt)
 - Aufträge kommen auf drei Wegen: Anruf an der KT-Hotline (eigener Klingelton, feste Abfrage – Patient, Abholort, Ziel, Termin, Grund, sitzend/liegend/gehend/Rollstuhl, Begleitperson, Sauerstoff, Infektion …), fertige Online-Anmeldung, Daueraufträge (Dialyse in drei Schichten, Strahlentherapie) – die sind schon bei Spielbeginn da, ab 16 Uhr auch für den nächsten Tag
