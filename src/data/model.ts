@@ -37,11 +37,11 @@ export interface Station extends Base {
 }
 
 /** Fahrzeugkategorien. RTW umfasst RTW und RTW-C (Unterscheidung über den Typ). */
-export const VEHICLE_CATEGORIES = ["RTW", "NEF", "NAH", "KTW", "SKTW", "SRTW", "SNAW", "BEL", "Sonstige"] as const;
+export const VEHICLE_CATEGORIES = ["RTW", "NEF", "NAH", "KTW", "SKTW", "SRTW", "SNAW", "BIT", "ITH", "BEL", "EL ÖBB", "Sonstige"] as const;
 export type VehicleCategory = (typeof VEHICLE_CATEGORIES)[number];
-export const ACTIVE_CATEGORIES: readonly VehicleCategory[] = ["RTW", "NEF", "NAH", "KTW", "SKTW", "SRTW", "SNAW", "BEL"];
+export const ACTIVE_CATEGORIES: readonly VehicleCategory[] = ["RTW", "NEF", "NAH", "KTW", "SKTW", "SRTW", "SNAW", "BIT", "ITH", "BEL", "EL ÖBB"];
 /** Sekundärfahrzeuge: nur vorgeschlagen, wenn kein passendes Primärfahrzeug verfügbar ist */
-export const SEKUNDAER: readonly VehicleCategory[] = ["SKTW", "SRTW", "SNAW"];
+export const SEKUNDAER: readonly VehicleCategory[] = ["SKTW", "SRTW", "SNAW", "BIT", "ITH"];
 
 export interface Vehicle extends Base {
   funkrufname: string;

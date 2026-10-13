@@ -6,6 +6,7 @@
  * Ein eigener Datensatz mit derselben ID wie ein Standard-Datensatz ersetzt diesen
  * (so werden bearbeitete Standarddaten gespeichert).
  */
+import { categoryFromType } from "./schema";
 import { loadStore, saveStore } from "../platform";
 import {
   emptyPersisted,
@@ -101,11 +102,11 @@ export class Store {
           this.data.version = 2;
         }
         if (this.data.version < 3) {
-          // ab v0.9: Sekundärfahrzeuge (SKTW, SRTW, SNAW) und BEL fahren mit
+          // ab v0.9: Sekundärfahrzeuge (SKTW, SRTW, SNAW, BIT, ITH), BEL und EL ÖBB fahren mit
           for (const v of this.data.eigene.vehicles) {
-            const t = v.typ.trim().toUpperCase();
-            if (["SKTW", "SRTW", "SNAW", "BEL"].includes(t) && v.kategorie === "Sonstige") {
-              v.kategorie = t as typeof v.kategorie;
+            const neu = categoryFromType(v.typ, v.funkrufname);
+            if (v.kategorie === "Sonstige" && ["SKTW", "SRTW", "SNAW", "BIT", "ITH", "BEL", "EL ÖBB"].includes(neu)) {
+              v.kategorie = neu;
               v.aktiv = true;
             }
           }

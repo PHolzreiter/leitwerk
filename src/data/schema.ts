@@ -186,8 +186,10 @@ export function categoryFromType(typ: string, funkrufname = ""): VehicleCategory
   if (t === "RTW" || t === "RTW-C") return "RTW";
   if (["PHYSICIAN", "NEF", "NAW", "NOTARZT"].includes(t)) return "NEF";
   if (t.startsWith("KTW")) return "KTW";
-  if (t === "SKTW" || t === "SRTW" || t === "SNAW" || t === "BEL") return t;
-  // AMB Type I/II, BIT, AIR ICU-AMB, EL ÖBB: nicht verwendet
+  if (t === "SKTW" || t === "SRTW" || t === "SNAW" || t === "BEL" || t === "BIT") return t;
+  if (t === "ITH" || t === "AIR ICU-AMB" || t === "AIR ICU AMB") return "ITH";
+  if (t === "EL ÖBB" || t === "EL OEBB" || t === "EL OBB") return "EL ÖBB";
+  // AMB Type I/II: nicht verwendet
   return "Sonstige";
 }
 

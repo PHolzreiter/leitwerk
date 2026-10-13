@@ -365,6 +365,11 @@ function platzrunden(r: Route, ziel: LatLon, n: number): Route & { kreisAb: numb
   return { coords, times, duration: t, distance: r.distance + n * 2 * Math.PI * R + R, kreisAb: geradeS, landungAb };
 }
 
+/** Hubschrauber (NAH, ITH) */
+export function fliegt(fz: Pick<SimFahrzeug, "kategorie">): boolean {
+  return fz.kategorie === "NAH" || fz.kategorie === "ITH";
+}
+
 /** Freitext aus der Info an den RTW (ohne den automatischen Teil vorne) */
 export function infoFreitext(info: string, auto: string): string {
   if (!auto) return info.trim();
@@ -668,12 +673,12 @@ export class Simulation {
 
   /** Kann Patienten transportieren (RTW, RTW-C, KTW, Sekundärfahrzeuge) */
   transportfaehig(fz: SimFahrzeug): boolean {
-    return ["RTW", "RTW-C", "KTW", "SKTW", "SRTW", "SNAW"].includes(fz.rmTyp);
+    return ["RTW", "RTW-C", "KTW", "SKTW", "SRTW", "SNAW", "BIT"].includes(fz.rmTyp);
   }
 
   /** Hat einen Notarzt an Bord (NEF, NAH, SNAW) */
   mitNotarzt(fz: SimFahrzeug): boolean {
-    return fz.rmTyp === "NEF" || fz.rmTyp === "NAH" || fz.rmTyp === "SNAW";
+    return ["NEF", "NAH", "ITH", "SNAW"].includes(fz.rmTyp);
   }
 
   /** Wer spricht am Funk für den Einsatz? Der BEL vor Ort ist Ansprechpartner Nr. 1. */
@@ -687,7 +692,7 @@ export class Simulation {
 
   /** Kann der Hubschrauber gerade fliegen? Gibt den Grund zurück, wenn nicht. */
   flugHindernis(fz: SimFahrzeug): string | null {
-    if (fz.kategorie !== "NAH") return null;
+    if (!fliegt(fz)) return null;
     if (this.settings.wetterAktiv && flugverbot(this.state.wetter.lage)) {
       return `Flug wetterbedingt nicht möglich (${WETTER_LABEL[this.state.wetter.lage]})`;
     }
@@ -752,15 +757,15 @@ export class Simulation {
   private fahre(fz: SimFahrzeug, ziel: LatLon, phase: Phase, sondersignal: boolean): void {
     this.routingBusy.add(fz.id);
     fz.phase = "routing";
-    fz.blaulicht = sondersignal && fz.kategorie !== "NAH";
+    fz.blaulicht = sondersignal && !fliegt(fz);
     const von = { lat: fz.lat, lon: fz.lon };
     const p: Promise<Route> =
-      fz.kategorie === "NAH" ? Promise.resolve(flightRoute(von, ziel, this.settings.nahGeschwindigkeit)) : route(von, ziel);
+      fliegt(fz) ? Promise.resolve(flightRoute(von, ziel, this.settings.nahGeschwindigkeit)) : route(von, ziel);
     void p.then((r) => {
       this.routingBusy.delete(fz.id);
-      const f = sondersignal && fz.kategorie !== "NAH" ? this.settings.sondersignalFaktor : 1;
+      const f = sondersignal && !fliegt(fz) ? this.settings.sondersignalFaktor : 1;
       // Hubschrauber kreist 1–3 Mal über Einsatzorten (nicht über Krankenhäusern und Landeplätzen)
-      const kreis = fz.kategorie === "NAH" && phase === "anfahrt" && !this.istLandeplatz(ziel) ? platzrunden(r, ziel, 1 + Math.floor(Math.random() * 3)) : null;
+      const kreis = fliegt(fz) && phase === "anfahrt" && !this.istLandeplatz(ziel) ? platzrunden(r, ziel, 1 + Math.floor(Math.random() * 3)) : null;
       const rr = kreis ?? r;
       fz.fahrt = { coords: rr.coords, times: rr.times.map((x) => x * f), start: this.state.zeit, dauer: rr.duration * f, blau: sondersignal };
       if (kreis) Object.assign(fz.fahrt, { kreisAb: kreis.kreisAb, landungAb: kreis.landungAb });
@@ -775,7 +780,7 @@ export class Simulation {
     const nah = (x: LatLon) => distanceM(p, x) < 300;
     if (store.list("hospitals").some(nah)) return true;
     if (store.list("pois").some((x) => /lande|heli|hubschrauber/i.test(`${x.typ} ${x.name}`) && nah(x))) return true;
-    return Object.values(this.state.fahrzeuge).some((f) => f.kategorie === "NAH" && nah(f.heim));
+    return Object.values(this.state.fahrzeuge).some((f) => fliegt(f) && nah(f.heim));
   }
 
   private updateVehicle(fz: SimFahrzeug, t: number): void {
@@ -864,7 +869,7 @@ export class Simulation {
       if (rtwMitTransport && this.kritisch(e) && fz.kategorie === "NEF") {
         fz.begleitet = true;
         this.log(e, `${fz.funkrufname}: Notarzt begleitet den Transport`);
-      } else if (rtwMitTransport && this.kritisch(e) && fz.kategorie === "NAH") {
+      } else if (rtwMitTransport && this.kritisch(e) && fliegt(fz)) {
         this.log(e, `${fz.funkrufname}: Patient wird mit dem NAH transportiert`);
         fz.begleitet = true;
       } else {
@@ -1192,7 +1197,7 @@ export class Simulation {
     const z = (r: [number, number]) => (schaetzung ? (r[0] + r[1]) / 2 : rnd(r[0], r[1]));
     const wache = () => {
       const tag = this.istTag();
-      if (fz.kategorie === "NAH") return z(tag ? a.nahTag : a.nahNacht);
+      if (fliegt(fz)) return z(tag ? a.nahTag : a.nahNacht);
       return z(tag ? a.bodenTag : a.bodenNacht);
     };
     if (fz.status === "freiWache") return wache();
@@ -1245,7 +1250,7 @@ export class Simulation {
     if (!e?.adresse) return [];
     const ziel = e.adresse;
     const frei = Object.values(this.state.fahrzeuge).filter((f) => this.verfuegbar(f));
-    const boden = frei.filter((f) => f.kategorie !== "NAH");
+    const boden = frei.filter((f) => !fliegt(f));
     const zeiten = await travelTimes(ziel, boden.map((f) => ({ lat: f.lat, lon: f.lon })));
     const faktor = this.faktor(e);
     const out = boden.map((fz, i) => {
@@ -1253,7 +1258,7 @@ export class Simulation {
       const ausr = this.ausrueckSek(fz, true);
       return { fz, sekunden: z === null ? null : z * faktor + ausr, hinweis: null as string | null };
     });
-    for (const fz of frei.filter((f) => f.kategorie === "NAH")) {
+    for (const fz of frei.filter((f) => fliegt(f))) {
       const flug = distanceM(fz, ziel) / (this.settings.nahGeschwindigkeit / 3.6) + this.ausrueckSek(fz, true) + 90;
       out.push({ fz, sekunden: flug, hinweis: this.flugHindernis(fz) });
     }
@@ -1280,7 +1285,7 @@ export class Simulation {
 
     const imEinsatz = e.fahrzeuge.map((fid) => this.state.fahrzeuge[fid]).filter((f) => f && f.einsatzId === e.id);
     let rm: SimFahrzeug | undefined = imEinsatz.find((f) => this.transportfaehig(f));
-    let arzt: SimFahrzeug | undefined = imEinsatz.find((f) => f.rmTyp === "NEF" || f.rmTyp === "NAH");
+    let arzt: SimFahrzeug | undefined = imEinsatz.find((f) => this.mitNotarzt(f));
 
     const rangListe = raenge(stufe);
     if (!rm && rangListe.length) {
@@ -1300,6 +1305,7 @@ export class Simulation {
       } else {
         // Kein Primärfahrzeug: Sekundärfahrzeug, das mindestens gleichwertig ausgestattet ist
         const typen = rangListe.flat();
+        // BIT und ITH nur über Nachforderung bzw. von Hand
         const erlaubt = typen.includes("RTW-C") ? ["SNAW", "SRTW"] : typen.includes("RTW") ? ["SRTW", "SNAW"] : ["SKTW", "SRTW", "SNAW"];
         const sek = nutzbar.find((v) => erlaubt.includes(v.fz.rmTyp));
         if (sek) {
@@ -1315,7 +1321,7 @@ export class Simulation {
     const regel = stufe.notarzt !== "nein" ? stufe.notarzt : nfsFehlt ? "nef" : "nein";
     if (!arzt && regel !== "nein") {
       const nef = nutzbar.find((v) => v.fz.rmTyp === "NEF");
-      const nah = nutzbar.find((v) => v.fz.rmTyp === "NAH");
+      const nah = nutzbar.find((v) => v.fz.rmTyp === "NAH") ?? (nef ? undefined : nutzbar.find((v) => v.fz.rmTyp === "ITH"));
       let wahl: Vorschlag | undefined;
       if (regel === "schnellster") wahl = [nef, nah].filter((x): x is Vorschlag => !!x).sort((a, b) => a.sekunden! - b.sekunden!)[0];
       else if (nef && nah) wahl = nah.sekunden! + tol < nef.sekunden! ? nah : nef;
@@ -1341,6 +1347,15 @@ export class Simulation {
           ids.push(bel.fz.id);
           gruende.push(`${bel.fz.funkrufname} (BEL, ${min(bel.sekunden!)}): Großeinsatz – Einsatzleitung vor Ort`);
         }
+      }
+    }
+    // EL ÖBB bei Unfällen auf oder an Bahngleisen
+    const bahnText = `${findCode(e.code ?? undefined)?.beschreibung ?? ""} ${e.wahr.abfrage?.lage ?? ""} ${e.infoRtw} ${e.infoIntern} ${e.adresse?.label ?? ""}`;
+    if (/bahn|gleis|zug|schiene|öbb/i.test(bahnText) && !imEinsatz.some((f) => f.rmTyp === "EL ÖBB")) {
+      const el = nutzbar.find((v) => v.fz.rmTyp === "EL ÖBB");
+      if (el) {
+        ids.push(el.fz.id);
+        gruende.push(`${el.fz.funkrufname} (EL ÖBB, ${min(el.sekunden!)}): Unfall an Bahngleisen – Koordination mit der ÖBB`);
       }
     }
     return { ids, gruende };
@@ -1705,7 +1720,7 @@ export class Simulation {
     const p0 = l.patienten[0];
     const fehlt = this.fehlendeKraefte(e);
     // NEF/NAH unterwegs, aber kein Notarzt nötig → Storno empfehlen (nur das erste transportfähige Fahrzeug)
-    const naUnterwegs = this.einsatzFz(e).some((x) => (x.kategorie === "NEF" || x.kategorie === "NAH") && x.phase !== "vorOrt");
+    const naUnterwegs = this.einsatzFz(e).some((x) => (x.kategorie === "NEF" || fliegt(x)) && x.phase !== "vorOrt");
     const naStorno = erstes && this.transportfaehig(fz) && naUnterwegs && bedarf(l).na === 0;
     const abweichung = l.irrtum !== null || angenommenRea !== istStillstand(p0) || l.patienten.length > 1 || ["29", "34", "22", "7", "8"].includes(kap);
     if (erstes) l.verlauf.push({ zeit: this.state.zeit, text: `${fz.funkrufname} als erstes Fahrzeug vor Ort` });

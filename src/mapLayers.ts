@@ -28,6 +28,7 @@ export const ORG_FARBEN: Record<string, string> = {
   Malteser: "#5d4037",
   "ÖAMTC (Flugrettung)": "#f9a825",
   "Notruf NÖ / Leitstelle": "#1565c0",
+  ÖBB: "#37474f",
   Sonstige: "#607d8b",
 };
 
@@ -37,7 +38,8 @@ export function orgFarbe(s: Pick<Station, "organisation" | "typ">): string {
   if (o.includes("samariter") || o === "asb") return ORG_FARBEN["Arbeiter-Samariter-Bund"];
   if (o.includes("johanniter")) return ORG_FARBEN.Johanniter;
   if (o.includes("malteser")) return ORG_FARBEN.Malteser;
-  if (o.includes("öamtc") || o.includes("oeamtc") || s.typ === "Luftrettung") return ORG_FARBEN["ÖAMTC (Flugrettung)"];
+  if (o.includes("öamtc") || o.includes("oeamtc") || o.includes("öatmc") || s.typ === "Luftrettung") return ORG_FARBEN["ÖAMTC (Flugrettung)"];
+  if (o.includes("öbb") || o.includes("oebb")) return ORG_FARBEN["ÖBB"];
   if (o.includes("notruf") || s.typ === "Leitstelle") return ORG_FARBEN["Notruf NÖ / Leitstelle"];
   return ORG_FARBEN.Sonstige;
 }
@@ -367,7 +369,7 @@ function vehicleFeatures(): FeatureCollection<Point> {
         name: fz.funkrufname,
         color: sim.statusDef(fz.status).farbe,
         nr: sim.statusDef(fz.status).nummer,
-        nah: fz.kategorie === "NAH" ? 1 : 0,
+        nah: fz.kategorie === "NAH" || fz.kategorie === "ITH" ? 1 : 0,
         ein: fz.einsatzId ? 1 : 0,
         flug: flughoehe(fz, sim.state.zeit) > 5 ? 1 : 0,
       }),

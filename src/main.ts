@@ -131,6 +131,7 @@ async function init(): Promise<void> {
   const h = createMap("map", maps);
   handle = h;
   const map = h.map;
+  if (location.search.includes("debug")) Object.assign(window, { __lw: { sim, store, map } });
 
   const pickOnMap = async (hint: string) => {
     const prev = currentView;

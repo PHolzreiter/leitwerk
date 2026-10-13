@@ -96,10 +96,26 @@ const EC135: Quader[] = [
   q(0, 0.6, 2.55, 10.2, 0.28, 0.05, "rotor", true),
 ];
 
+/** BIT: kleiner Koffer-LKW */
+const LKW: Quader[] = [
+  q(0, 2.45, 1.3, 2.1, 1.5, 1.9, "karosserie"),
+  q(0, 3.22, 1.75, 1.95, 0.06, 0.8, "glas"),
+  q(0, -1.15, 1.85, 2.3, 5.4, 2.6, "karosserie"),
+  q(0, 0.5, 0.5, 1.4, 6.0, 0.35, "dunkel"),
+  q(-0.6, 3.0, 2.33, 0.4, 0.25, 0.15, "blau"),
+  q(0.6, 3.0, 2.33, 0.4, 0.25, 0.15, "blau"),
+  ...raeder(1.0, 2.4, -2.3, 0.45),
+];
+
 function formFuer(fz: SimFahrzeug): Quader[] {
   switch (fz.rmTyp) {
     case "NAH":
+    case "ITH":
       return EC135;
+    case "BIT":
+      return LKW;
+    case "EL ÖBB":
+      return PASSAT;
     case "RTW-C":
     case "SRTW":
     case "SNAW":

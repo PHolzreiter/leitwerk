@@ -2,7 +2,7 @@
  * Bewegung für die Darstellung: Position, Fahrtrichtung und Flughöhe zu einem beliebigen
  * Zeitpunkt (aus der Fahrt berechnet, damit 3D-Modelle flüssig fahren – auch im Multiplayer).
  */
-import type { SimFahrzeug } from "./engine";
+import { fliegt, type SimFahrzeug } from "./engine";
 
 const FLUGHOEHE = 300;
 const STEIGEN_S = 45;
@@ -45,7 +45,7 @@ export function richtungBei(fz: SimFahrzeug, t: number): number | null {
 
 /** Flughöhe des Hubschraubers über Grund in Metern (0 = am Boden) */
 export function flughoehe(fz: SimFahrzeug, t: number): number {
-  if (fz.kategorie !== "NAH") return 0;
+  if (!fliegt(fz)) return 0;
   const f = fz.fahrt;
   if (!f) return 0;
   const el = (t - f.start) / 1000;
@@ -65,6 +65,6 @@ export function flughoehe(fz: SimFahrzeug, t: number): number {
 
 /** Läuft der Rotor? (beim Ausrücken, in der Luft) */
 export function rotorLaeuft(fz: SimFahrzeug, t: number): boolean {
-  if (fz.kategorie !== "NAH") return false;
+  if (!fliegt(fz)) return false;
   return fz.phase === "ausruecken" || flughoehe(fz, t) > 0 || fz.phase === "routing";
 }

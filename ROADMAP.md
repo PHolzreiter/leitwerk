@@ -29,7 +29,11 @@ Gesammelte Wünsche, die noch nicht eingeplant sind (Reihenfolge noch offen).
   - SKTW: 2× RS
   - SRTW: 1× RS + 1× NFS bis NKV
   - SNAW: 1× RS + 1× NA + 1× NKV oder NKI
+  - BIT (Betten-Intensivtransporter, kleiner LKW für adipöse Patienten): 1× RS–NFS Fahrer, 1× NKV–NKI, 1× RS–NFS; nur Verlegung oder Nachforderung
+  - ITH (Intensivtransporthubschrauber, „AIR ICU-AMB“): besetzt wie NAH, für Interhospitaltransporte
+  - EL ÖBB: Einsatzleiter der ÖBB, bei Unfällen auf/an Bahngleisen, Koordination ÖBB–Einsatzdienste
   - Aufträge dafür kommen später mit den Projekten „Krankentransporte“ und „Sekundärtransporte“
+  - später: Nachforderung BIT durch RTW/KTW bei adipösen Patienten
 
 ## 3D-Ansicht
 - **Fahrzeugmodelle im Low-Poly-Stil**, nur in 3D sichtbar: Fahrzeuge fahren auf der Straße, Hubschrauber fliegen über dem Boden

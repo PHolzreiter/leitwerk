@@ -12,7 +12,7 @@ export type Quali = (typeof QUALIS)[number] | "NA" | "Pilot";
 export const ALLE_QUALIS: Quali[] = [...QUALIS, "NA", "Pilot"];
 
 /** Rettungsmitteltyp für Vorschlag und Besetzung */
-export type RmTyp = "RTW-C" | "RTW" | "KTW" | "NEF" | "NAH" | "SKTW" | "SRTW" | "SNAW" | "BEL" | "Sonstige";
+export type RmTyp = "RTW-C" | "RTW" | "KTW" | "NEF" | "NAH" | "SKTW" | "SRTW" | "SNAW" | "BIT" | "ITH" | "BEL" | "EL ÖBB" | "Sonstige";
 
 export interface Platz {
   rolle: string;
@@ -22,7 +22,7 @@ export interface Platz {
 export function rmTypVon(v: Pick<Vehicle, "kategorie" | "typ">): RmTyp {
   const t = (v.typ ?? "").toUpperCase().replace(/\s+/g, "");
   if (v.kategorie === "RTW") return t.includes("RTW-C") || t === "RTWC" ? "RTW-C" : "RTW";
-  if (["KTW", "NEF", "NAH", "SKTW", "SRTW", "SNAW", "BEL"].includes(v.kategorie)) return v.kategorie as RmTyp;
+  if (["KTW", "NEF", "NAH", "SKTW", "SRTW", "SNAW", "BIT", "ITH", "BEL", "EL ÖBB"].includes(v.kategorie)) return v.kategorie as RmTyp;
   return "Sonstige";
 }
 
@@ -108,6 +108,20 @@ export const REGELN: Record<RmTyp, PlatzRegel[]> = {
     { rolle: "Notarzt", gewichte: { NA: 1 } },
     { rolle: "SR1", gewichte: { "NFS-NKV": 50, "NFS-NKI": 50 } },
   ],
+  // Betten-Intensivtransporter (adipöse Patienten; Verlegung oder Nachforderung)
+  BIT: [
+    { rolle: "Fahrer", gewichte: { RS: 60, NFS: 40 } },
+    { rolle: "SR1", gewichte: { "NFS-NKV": 50, "NFS-NKI": 50 } },
+    { rolle: "SR2", gewichte: { RS: 60, NFS: 40 } },
+  ],
+  // Intensivtransporthubschrauber: besetzt wie ein NAH
+  ITH: [
+    { rolle: "Pilot", gewichte: { Pilot: 1 } },
+    { rolle: "Notarzt", gewichte: { NA: 1 } },
+    { rolle: "Flugretter", gewichte: { "NFS-NKV": 40, "NFS-NKI": 60 } },
+  ],
+  // Einsatzleiter der ÖBB (kein Rettungsdienstpersonal)
+  "EL ÖBB": [],
   // Bezirkseinsatzleiter: versorgt keine Patienten, koordiniert vor Ort
   BEL: [{ rolle: "Einsatzleiter", gewichte: { NFS: 20, "NFS-NKA": 25, "NFS-NKV": 30, "NFS-NKI": 25 } }],
   Sonstige: [],
