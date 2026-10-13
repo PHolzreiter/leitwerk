@@ -181,7 +181,11 @@ def category_of(typ: str, funkruf: str, station_typ: str) -> str:
         return "Sonstige" if station_typ == "Luftrettung" else "NEF"
     if t.startswith("KTW"):
         return "KTW"
-    # AMB Type I/II: nicht verwendet; SKTW, SRTW, SNAW: Sekundärtransport (späteres Update)
+    # ab 0.9/0.11: Sekundärfahrzeuge, ITH, BEL, EL ÖBB; AMB Type I/II werden nicht verwendet
+    if t in {"SKTW", "SRTW", "SNAW", "BIT", "BEL", "EL ÖBB"}:
+        return t
+    if t == "AIR ICU-AMB":
+        return "ITH"
     return "Sonstige"
 
 
@@ -216,8 +220,9 @@ def build_vehicles(stations: list[dict], name_to_id: dict[str, str]) -> list[dic
         vehicles.append({
             "id": f"p{r['Unit-ID']}", "funkrufname": funk, "kurzname": kurz if kurz != funk else "",
             "kategorie": kat, "typ": typ, "dienststelle": st_id,
-            "aktiv": "ja" if kat in {"RTW", "NEF", "NAH", "KTW"} else "nein",
-            "nachtflug": "nein",
+            "aktiv": "nein" if kat == "Sonstige" else "ja",
+            # Nachts fliegen nur Christophorus 2 und 9
+            "nachtflug": "ja" if funk in {"99/002", "99/009"} else "nein",
             "hinweis": "Quelle: Paul (Nord-NÖ)" + ("; Nachtflugtauglichkeit bitte prüfen" if kat == "NAH" else ""),
         })
     for kurz, (funk, st_name) in NAH.items():
@@ -225,7 +230,7 @@ def build_vehicles(stations: list[dict], name_to_id: dict[str, str]) -> list[dic
             continue
         vehicles.append({
             "id": "nah-" + funk.replace("/", ""), "funkrufname": funk, "kurzname": kurz, "kategorie": "NAH",
-            "typ": "NAH", "dienststelle": name_to_id[norm(st_name)], "aktiv": "ja", "nachtflug": "nein",
+            "typ": "NAH", "dienststelle": name_to_id[norm(st_name)], "aktiv": "ja", "nachtflug": "ja" if funk in {"99/002", "99/009"} else "nein",
             "hinweis": "Ergänzt (Recherche OpenStreetMap); Nachtflugtauglichkeit bitte prüfen",
         })
     vehicles.sort(key=lambda v: (v["dienststelle"], v["funkrufname"]))
