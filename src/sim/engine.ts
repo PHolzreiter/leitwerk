@@ -14,6 +14,17 @@ import { defaultStufeFuer, raenge, type Kategorie, type Settings, type StatusKey
 import { flugverbot, istNacht, nextWetter, type Wetter, WETTER_LABEL } from "./weather";
 import { bestimmeCode, fallZiehen, kapitelVonCode, wahrheitFuer, type Antworten, type Schema } from "../abfrage/schema";
 import { anruferWaehlen, veraenderungText, type Anrufer } from "../abfrage/anrufer";
+import {
+  dauerDaten,
+  hotlineAnrufer,
+  neueDaten,
+  passt,
+  zufallsDaten,
+  type KtAuftrag,
+  type KtDaten,
+  type KtOrt,
+  type KtPlan,
+} from "./kt";
 import { bedarf, istStillstand, lageErzeugen, lagemeldungText, patientText, type Lage } from "./lage";
 
 const MIN = 60_000;
@@ -45,7 +56,10 @@ export type Phase =
   | "transport"
   | "uebergabe"
   | "rueckfahrt"
-  | "routing";
+  | "routing"
+  | "ktFahrt"
+  | "ktHalt"
+  | "ktReinigung";
 
 export interface SimFahrzeug {
   id: string;
@@ -72,6 +86,8 @@ export interface SimFahrzeug {
   lagemeldungAngefordert?: boolean;
   /** Blaulicht an (Fahrt mit Sondersignal; bleibt am Einsatzort an, wenn mit Blaulicht angefahren) */
   blaulicht?: boolean;
+  /** Krankentransport-Plan (vorgemerkte bzw. laufende Fahrten) */
+  kt?: (KtPlan & { reinigen?: boolean; wartetAuf?: string | null; wartetKt?: string | null }) | null;
 }
 
 export interface Vorschlag {
@@ -282,6 +298,11 @@ export interface SimState {
   chat?: ChatNachricht[];
   funkGespraeche?: FunkGespraech[];
   funkGZaehler?: number;
+  /** Krankentransporte */
+  kt?: KtAuftrag[];
+  ktZaehler?: number;
+  /** Tag, für den die Daueraufträge schon angelegt sind (yyyy-mm-dd) */
+  ktDauerTag?: string;
 }
 
 /** Befehle, die Spieler auslösen können (im Multiplayer laufen sie beim Host). */
@@ -311,15 +332,28 @@ export const BEFEHLE = {
     "funkEnde",
     "storno",
   ],
-  steuern: ["start", "pause", "setTempo", "generiere", "setWetter", "neuPlanen", "reset"],
+  steuern: ["start", "pause", "setTempo", "generiere", "setWetter", "neuPlanen", "reset", "generiereKt"],
+  kt: [
+    "ktAnrufAnnehmen",
+    "ktAnrufNachricht",
+    "ktAnrufBeenden",
+    "ktSetze",
+    "ktAnlegen",
+    "ktVormerken",
+    "ktSchicken",
+    "ktLoesen",
+    "ktStorno",
+    "ktFunkStorno",
+  ],
   immer: ["chat"],
 } as const;
 export type Befehl = (typeof BEFEHLE)[keyof typeof BEFEHLE][number];
-export type Berechtigung = "disponieren" | "steuern" | "einstellungen";
+export type Berechtigung = "disponieren" | "steuern" | "einstellungen" | "kt";
 
 export function berechtigungFuer(b: Befehl): Berechtigung | null {
   if ((BEFEHLE.disponieren as readonly string[]).includes(b)) return "disponieren";
   if ((BEFEHLE.steuern as readonly string[]).includes(b)) return "steuern";
+  if ((BEFEHLE.kt as readonly string[]).includes(b)) return "kt";
   return null;
 }
 
@@ -460,6 +494,8 @@ export class Simulation {
       chat: [],
       funkGespraeche: [],
       funkGZaehler: 0,
+      kt: [],
+      ktZaehler: 0,
     };
   }
 
@@ -597,7 +633,8 @@ export class Simulation {
         this.funk("Wetterdienst", null, `Wetter: ${WETTER_LABEL[this.state.wetter.lage]}`, flugverbot(this.state.wetter.lage) ? "warnung" : "info");
       }
     }
-    this.runGenerator();
+    this.runGenerator(dt);
+    this.ktTick(t, dt);
     for (const fz of Object.values(this.state.fahrzeuge)) this.updateVehicle(fz, t);
     this.checkKhAnfragen(t);
     this.anrufeTick(t);
@@ -687,7 +724,7 @@ export class Simulation {
   }
 
   verfuegbar(fz: SimFahrzeug): boolean {
-    return this.statusDef(fz.status).verfuegbar && !fz.einsatzId;
+    return this.statusDef(fz.status).verfuegbar && !fz.einsatzId && !fz.kt?.aktiv;
   }
 
   /** Kann der Hubschrauber gerade fliegen? Gibt den Grund zurück, wenn nicht. */
@@ -786,6 +823,10 @@ export class Simulation {
   private updateVehicle(fz: SimFahrzeug, t: number): void {
     if (fz.phase === "routing") return;
     this.position(fz, t);
+    if (fz.kt?.aktiv && !fz.einsatzId) {
+      if (fz.phaseEnde !== null && t >= fz.phaseEnde) this.ktUpdate(fz, t);
+      return;
+    }
     if (fz.phaseEnde === null || t < fz.phaseEnde) return;
     const e = fz.einsatzId ? this.einsatz(fz.einsatzId) : undefined;
 
@@ -814,6 +855,7 @@ export class Simulation {
           fz.phase = "vorOrt";
           fz.phaseEnde = t + rnd(10, 22) * MIN;
           this.eintreffenLage(fz, e);
+          this.ktHilfeDa(e);
           const p0 = e.wahr.lage?.patienten[0];
           if (p0 && istStillstand(p0)) fz.phaseEnde = t + rnd(30, 45) * MIN;
         }
@@ -1167,6 +1209,8 @@ export class Simulation {
         this.funk(fz.funkrufname, e.id, hindernis, "warnung");
         continue;
       }
+      // Vorgemerkte Krankentransporte gehen zurück in „nicht disponiert“
+      if (fz.kt && !fz.kt.aktiv) this.ktPlanLoesen(fz, `${fz.funkrufname} für Notfall ${e.nummer} alarmiert`);
       fz.einsatzId = e.id;
       if (!e.fahrzeuge.includes(fz.id)) e.fahrzeuge.push(fz.id);
       const sek = this.ausrueckSek(fz, false);
@@ -1386,13 +1430,16 @@ export class Simulation {
     this.emit();
   }
 
-  private runGenerator(): void {
+  /** Neue Notfälle nach dem Aufkommen der aktuellen Stunde (Einstellungen → Aufkommen) */
+  private runGenerator(dt: number): void {
     if (!this.settings.generatorAktiv) return;
+    const h = new Date(this.state.zeit).getHours();
+    const proStunde = this.settings.stunden?.[h]?.rd ?? 6;
+    const anteile = this.settings.aufkommen;
+    const summe = (["stabil", "dringend", "kritisch"] as Kategorie[]).reduce((a, k) => a + Math.max(0, anteile[k] ?? 0), 0) || 1;
     for (const k of ["stabil", "dringend", "kritisch"] as Kategorie[]) {
-      if (this.state.zeit >= this.state.naechster[k]) {
-        this.planNaechsten(k);
-        void this.generiere(k);
-      }
+      const rate = (proStunde * Math.max(0, anteile[k] ?? 0)) / summe;
+      if (Math.random() < (rate * dt) / 3_600_000) void this.generiere(k);
     }
   }
 
@@ -2013,10 +2060,573 @@ export class Simulation {
     this.log(e, `Ortung: ${o.art} ±${radius} m`);
   }
 
+  // ------------------------------------------------------------------ Krankentransporte
+
+  ktAuftrag(id: string): KtAuftrag | undefined {
+    return this.state.kt?.find((k) => k.id === id);
+  }
+
+  private ktLog(k: KtAuftrag, text: string): void {
+    const p: Protokoll = { zeit: this.state.zeit, text };
+    if (this.actor && this.mode !== "solo") p.von = this.actor.name;
+    k.protokoll.push(p);
+  }
+
+  private ktNummer(): string {
+    const d = new Date(this.state.zeit);
+    this.state.ktZaehler = (this.state.ktZaehler ?? 0) + 1;
+    return `KT-${pad(d.getMonth() + 1, 2)}${pad(d.getDate(), 2)}-${pad(this.state.ktZaehler, 3)}`;
+  }
+
+  /** Krankenhäuser mit dieser Station/Ambulanz, nach Entfernung (bis 70 km) */
+  private khMit(bereich: string, nahe: LatLon) {
+    return store
+      .list("hospitals")
+      .filter((h) => h.bereiche?.includes(bereich) && distanceM(h, nahe) < 70_000)
+      .sort((a, b) => distanceM(a, nahe) - distanceM(b, nahe));
+  }
+
+  private ktNeu(d: KtDaten, quelle: KtAuftrag["quelle"], serie?: string): KtAuftrag {
+    const hotline = quelle === "hotline";
+    const vonHeim = !d.von?.khId;
+    const k: KtAuftrag = {
+      id: `kt${Date.now().toString(36)}${Math.floor(Math.random() * 1e6).toString(36)}`,
+      nummer: this.ktNummer(),
+      quelle,
+      eingang: this.state.zeit,
+      status: hotline ? "aufnahme" : "offen",
+      d: hotline ? neueDaten() : structuredClone(d),
+      wahr: {
+        d: structuredClone(d),
+        anrufer: hotlineAnrufer(d),
+        verzoegerungMin: (vonHeim ? rnd(0, 8) : rnd(0, 4)) + (Math.random() < 0.1 ? rnd(8, 20) : 0),
+        nichtDa: Math.random() < 0.03,
+        verschlechterung: Math.random() < 0.02,
+      },
+      fz: null,
+      anruf: hotline ? this.ktNeuerAnruf(null) : null,
+      protokoll: [],
+      serie,
+    };
+    this.ktLog(k, hotline ? "Anruf an der KT-Hotline" : quelle === "online" ? "Online-Anmeldung eingegangen" : "Dauerauftrag");
+    (this.state.kt ??= []).unshift(k);
+    if (this.state.kt.length > 400) this.state.kt = this.state.kt.filter((x, i) => i < 300 || (x.status !== "erledigt" && x.status !== "storniert"));
+    return k;
+  }
+
+  private ktNeuerAnruf(folge: string | null): Anruf {
+    return {
+      status: "klingelt",
+      seit: this.state.zeit,
+      klingelBis: this.state.zeit + rnd(50, 80) * 1000,
+      rueckrufUm: null,
+      versuche: 1,
+      rueckruf: false,
+      angenommenVon: null,
+      gespraech: [],
+      antworten: {},
+      kapitel: null,
+      extra: { aufwertung: null, zusatz: null, polizei: false },
+      ergebnis: null,
+      folge,
+    };
+  }
+
+  /** Neuer zufälliger Krankentransport (online angemeldet oder über die Hotline) */
+  async generiereKt(quelle?: "online" | "hotline"): Promise<KtAuftrag | null> {
+    const [adr] = await randomAddresses(this.settings.gebiet.bbox, 1);
+    if (!adr) return null;
+    const heim: KtOrt = { lat: adr.lat, lon: adr.lon, label: adr.label };
+    const d = zufallsDaten({ heim, khMit: (b) => this.khMit(b, heim) }, this.state.zeit);
+    if (!d) return null;
+    const k = this.ktNeu(d, quelle ?? (Math.random() < 0.45 ? "hotline" : "online"));
+    this.emit();
+    return k;
+  }
+
+  /** Daueraufträge (Dialyse, Bestrahlung) für einen Tag anlegen – nur, was noch bevorsteht */
+  private ktDauerLaeuft = false;
+  private async ktDauer(tag0: number): Promise<void> {
+    if (this.ktDauerLaeuft) return;
+    this.ktDauerLaeuft = true;
+    try {
+      const bb = this.settings.gebiet.bbox;
+      const imGebiet = (h: { lat: number; lon: number }) => h.lon >= bb[0] && h.lon <= bb[2] && h.lat >= bb[1] && h.lat <= bb[3];
+      const khs = store.list("hospitals").filter(imGebiet);
+      for (const [bereich, jeKh] of [["DIA", this.settings.dauerDialyseJeKh ?? 6], ["STR", this.settings.dauerStrahlJeKh ?? 3]] as const) {
+        const mit = khs.filter((h) => h.bereiche?.includes(bereich));
+        const n = Math.round(mit.length * jeKh);
+        if (!n) continue;
+        const adressen = await randomAddresses(bb, n);
+        for (const a of adressen) {
+          const heim: KtOrt = { lat: a.lat, lon: a.lon, label: a.label };
+          const kh = mit.slice().sort((x, y) => distanceM(x, heim) - distanceM(y, heim))[0];
+          const [hin, zurueck] = dauerDaten(heim, kh, bereich, tag0);
+          const serie = `${bereich}-${a.lat.toFixed(4)}`;
+          if (hin.termin! > this.state.zeit) this.ktNeu(hin, "dauer", serie);
+          if (zurueck.termin! > this.state.zeit) this.ktNeu(zurueck, "dauer", serie);
+        }
+      }
+      this.emit();
+    } finally {
+      this.ktDauerLaeuft = false;
+    }
+  }
+
+  private ktTick(t: number, dt: number): void {
+    // Daueraufträge für den aktuellen Tag
+    const d = new Date(t);
+    const tag = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+    if (this.state.ktDauerTag !== tag && this.mode !== "client") {
+      this.state.ktDauerTag = tag;
+      const tag0 = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+      void this.ktDauer(tag0);
+    }
+    // Neue Aufträge nach Aufkommen der Stunde
+    if (this.settings.generatorAktiv) {
+      const rate = this.settings.stunden?.[d.getHours()]?.kt ?? 0;
+      if (Math.random() < (rate * dt) / 3_600_000) void this.generiereKt();
+    }
+    for (const k of this.state.kt ?? []) {
+      const a = k.anruf;
+      // Anrufe: nicht angenommen → aufgelegt, später neuer Versuch
+      if (a && a.status === "klingelt" && t >= a.klingelBis) {
+        a.status = "verpasst";
+        a.seit = t;
+        a.rueckrufUm = t + rnd(2, 4) * MIN;
+        this.ktLog(k, "Anruf an der KT-Hotline nicht angenommen");
+      } else if (a && a.status === "verpasst" && a.rueckrufUm !== null && t >= a.rueckrufUm) {
+        a.status = "klingelt";
+        a.seit = t;
+        a.versuche++;
+        a.klingelBis = t + rnd(50, 80) * 1000;
+        a.rueckrufUm = null;
+      }
+      // „Wo bleibt der Transport?“ – wenn das Fahrzeug deutlich zu spät ist
+      if (!k.nachfrage && ["offen", "vorgemerkt", "unterwegs"].includes(k.status) && k.d.termin) {
+        const soll = k.d.abholung ?? k.d.termin - 30 * MIN;
+        if (t > soll + 15 * MIN) {
+          k.nachfrage = true;
+          const freundlich = Math.random() < 0.6;
+          const wer = k.wahr.anrufer.rolle.startsWith("Pflegekraft") ? `Station ${k.d.von?.label ?? ""}` : k.wahr.anrufer.name;
+          const text = freundlich
+            ? `Grüß Gott, ${wer} hier. Wir warten auf den Transport für ${k.d.patient.name || "unseren Patienten"} – wissen Sie, wann der Wagen kommt?`
+            : `Hallo?! ${wer}. Wir warten jetzt schon ewig auf den Transport für ${k.d.patient.name || "den Patienten"}! Wo bleibt der denn?`;
+          if (!k.anruf || k.anruf.status === "beendet") k.anruf = this.ktNeuerAnruf(text);
+          else k.anruf.folge = text;
+          this.ktLog(k, "Nachfrage: Wo bleibt der Transport?");
+        }
+      }
+    }
+  }
+
+  // ---------------- Hotline-Gespräch
+
+  ktAnrufAnnehmen(id: string): void {
+    const k = this.ktAuftrag(id);
+    const a = k?.anruf;
+    if (!k || !a) throw new Error("Kein Anruf");
+    const ich = this.calltaker();
+    if (a.status === "aktiv") {
+      if (a.angenommenVon && a.angenommenVon.pid !== ich.pid && (this.istOnline?.(a.angenommenVon.pid) ?? true)) {
+        throw new Error(`Das Gespräch führt bereits ${a.angenommenVon.name}`);
+      }
+      a.angenommenVon = { ...ich };
+    } else if (a.status === "klingelt" || a.status === "verpasst") {
+      a.rueckruf = a.status === "verpasst";
+      a.status = "aktiv";
+      a.seit = this.state.zeit;
+      a.rueckrufUm = null;
+      a.angenommenVon = { ...ich };
+      a.gespraech.push({ zeit: this.state.zeit, von: "system", text: `${a.rueckruf ? "Rückruf durch" : "Angenommen von"} ${ich.name}` });
+      if (a.folge) {
+        a.gespraech.push({ zeit: this.state.zeit, von: "anrufer", text: a.folge });
+        a.folge = null;
+      }
+    } else throw new Error("Das Gespräch ist beendet");
+    k.bearbeiter = { ...ich };
+    this.emit();
+  }
+
+  ktAnrufNachricht(id: string, von: "leitstelle" | "anrufer", text: string): void {
+    const a = this.ktAuftrag(id)?.anruf;
+    if (!a || a.status !== "aktiv") return;
+    const t = text.trim().slice(0, 1500);
+    if (!t) return;
+    a.gespraech.push({ zeit: this.state.zeit, von, text: t, wer: von === "leitstelle" ? this.calltaker().name : undefined });
+    this.emit();
+  }
+
+  ktAnrufBeenden(id: string): void {
+    const k = this.ktAuftrag(id);
+    const a = k?.anruf;
+    if (!k || !a || a.status !== "aktiv") return;
+    a.status = "beendet";
+    a.gespraech.push({ zeit: this.state.zeit, von: "system", text: "Gespräch beendet" });
+    this.emit();
+  }
+
+  // ---------------- Auftrag bearbeiten
+
+  ktSetze(id: string, patch: Partial<KtDaten>): void {
+    const k = this.ktAuftrag(id);
+    if (!k) return;
+    if (k.status === "anBord" || k.status === "erledigt" || k.status === "storniert") throw new Error("Der Auftrag kann nicht mehr geändert werden");
+    k.d = { ...k.d, ...patch, patient: { ...k.d.patient, ...(patch.patient ?? {}) } };
+    this.emit();
+  }
+
+  /** Telefonisch aufgenommenen Auftrag anlegen (Pflichtfelder prüfen) */
+  ktAnlegen(id: string): void {
+    const k = this.ktAuftrag(id);
+    if (!k || k.status !== "aufnahme") return;
+    const fehlt = [!k.d.patient.name && "Name", !k.d.von && "Abholort", !k.d.nach && "Ziel", !k.d.termin && "Termin", !k.d.lage && "sitzend/liegend"].filter(Boolean);
+    if (fehlt.length) throw new Error(`Bitte noch eintragen: ${fehlt.join(", ")}`);
+    k.status = "offen";
+    this.ktLog(k, "Auftrag angelegt");
+    this.emit();
+  }
+
+  /** Auftrag stornieren (z. B. Termin abgesagt) */
+  ktStorno(id: string, grund = "storniert"): void {
+    const k = this.ktAuftrag(id);
+    if (!k) return;
+    if (k.status === "anBord") throw new Error("Patient ist schon an Bord");
+    if (k.fz) this.ktAusPlan(k);
+    k.status = "storniert";
+    this.ktLog(k, `Storniert: ${grund}`);
+    this.emit();
+  }
+
+  // ---------------- Disposition
+
+  /** Fahrzeuge für einen Transport: KTW zuerst, RTW nur wenn nötig (SKTW nie) */
+  async ktVorschlaege(id: string): Promise<{ fz: SimFahrzeug; sekunden: number | null; hinweis: string | null; losSpaetestens: number | null }[]> {
+    const k = this.ktAuftrag(id);
+    const von = k?.d.von;
+    if (!k || !von) return [];
+    const kandidaten = Object.values(this.state.fahrzeuge).filter(
+      (f) => (f.rmTyp === "KTW" || f.rmTyp === "RTW" || f.rmTyp === "RTW-C") && (this.verfuegbar(f) || (f.kt && !f.einsatzId)),
+    );
+    const zeiten = await travelTimes(von, kandidaten.map((f) => ({ lat: f.lat, lon: f.lon })));
+    let fahrzeit = 0;
+    if (k.d.nach) fahrzeit = (await travelTimes(k.d.nach, [von]))[0] ?? 0;
+    const soll = k.d.abholung ?? (k.d.termin ? k.d.termin - fahrzeit * 1000 - 15 * MIN : null);
+    return kandidaten
+      .map((fz, i) => {
+        const z = zeiten[i];
+        const sek = z === null ? null : z + this.ausrueckSek(fz, true);
+        const hinweise: string[] = [];
+        if (fz.rmTyp !== "KTW") hinweise.push("RTW – nur wenn nötig");
+        if (fz.kt?.aktiv) hinweise.push(`fährt KT, ${fz.kt.fahrten.length} Fahrt(en) geplant`);
+        else if (fz.kt) hinweise.push(`vorgemerkt (${fz.kt.fahrten.flat().length} KT)`);
+        return { fz, sekunden: sek, hinweis: hinweise.join(" · ") || null, losSpaetestens: soll && sek !== null ? soll - sek * 1000 : null };
+      })
+      .sort((a, b) => (a.fz.rmTyp === "KTW" ? 0 : 1) - (b.fz.rmTyp === "KTW" ? 0 : 1) || (a.sekunden ?? 1e9) - (b.sekunden ?? 1e9));
+  }
+
+  /**
+   * Transport einem Fahrzeug zuteilen.
+   * modus: „neu“ = eigene Fahrt (hinten anhängen), „sammel“ = zur letzten noch nicht begonnenen Fahrt dazu
+   * (Sammelfahrt; auch zur laufenden, solange noch kein Patient an Bord ist).
+   */
+  ktVormerken(id: string, fzId: string, modus: "neu" | "sammel" = "neu"): void {
+    const k = this.ktAuftrag(id);
+    const fz = this.state.fahrzeuge[fzId];
+    if (!k || !fz) throw new Error("Nicht gefunden");
+    if (!["offen", "vorgemerkt"].includes(k.status)) throw new Error("Der Auftrag ist nicht offen");
+    if (fz.rmTyp === "SKTW") throw new Error("SKTW fahren nur Verlegungen zwischen Krankenhäusern");
+    if (k.fz) this.ktAusPlan(k);
+    const plan = (fz.kt ??= { fahrten: [], aktiv: false, halte: [], halt: 0 });
+    let ziel: string[] | null = null;
+    if (modus === "sammel" && plan.fahrten.length) {
+      const letzte = plan.fahrten[plan.fahrten.length - 1];
+      const laufend = plan.aktiv && plan.fahrten.length === 1;
+      const schonAnBord = laufend && letzte.some((x) => this.ktAuftrag(x)?.status === "anBord");
+      if (schonAnBord) throw new Error("Es ist schon ein Patient an Bord – bitte als eigene Fahrt anhängen");
+      ziel = letzte;
+    }
+    const gruppe = ziel ? [...ziel, k.id] : [k.id];
+    const grund = passt(gruppe.map((x) => (x === k.id ? k.d : this.ktAuftrag(x)?.d)).filter((x): x is KtDaten => !!x));
+    if (grund) throw new Error(grund);
+    if (ziel) ziel.push(k.id);
+    else plan.fahrten.push([k.id]);
+    k.fz = fz.id;
+    const sofort = plan.aktiv && plan.fahrten[0].includes(k.id);
+    k.status = sofort ? "unterwegs" : "vorgemerkt";
+    this.ktLog(k, `${fz.funkrufname} ${sofort ? "zugeteilt (Sammelfahrt)" : "vorgemerkt"}`);
+    if (sofort) this.ktHalteNeu(fz);
+    this.emit();
+  }
+
+  /** Vorgemerktes Fahrzeug losschicken */
+  ktSchicken(fzId: string): void {
+    const fz = this.state.fahrzeuge[fzId];
+    const plan = fz?.kt;
+    if (!fz || !plan || !plan.fahrten.length) throw new Error("Nichts vorgemerkt");
+    if (plan.aktiv) return;
+    if (fz.einsatzId) throw new Error(`${fz.funkrufname} ist in einem Notfalleinsatz`);
+    if (!this.statusDef(fz.status).verfuegbar) throw new Error(`${fz.funkrufname} ist nicht verfügbar`);
+    plan.aktiv = true;
+    this.ktFahrtStarten(fz, true);
+    this.emit();
+  }
+
+  /** Vormerkung eines Transports lösen (Fahrzeug steht noch) */
+  ktLoesen(id: string): void {
+    const k = this.ktAuftrag(id);
+    if (!k?.fz) return;
+    const fz = this.state.fahrzeuge[k.fz];
+    if (fz?.kt?.aktiv && fz.kt.fahrten[0]?.includes(k.id)) throw new Error("Das Fahrzeug ist schon unterwegs – Storno über Funk");
+    this.ktAusPlan(k);
+    k.status = "offen";
+    this.ktLog(k, "Vormerkung gelöst");
+    this.emit();
+  }
+
+  /** Storno über Funk: Fahrzeug ohne Patient an Bord bricht die Fahrten ab */
+  ktFunkStorno(fzId: string): void {
+    const fz = this.state.fahrzeuge[fzId];
+    const plan = fz?.kt;
+    if (!fz || !plan) return;
+    const anBord = plan.fahrten[0]?.some((x) => this.ktAuftrag(x)?.status === "anBord");
+    if (plan.aktiv && anBord) throw new Error("Es ist ein Patient an Bord – Storno nicht möglich");
+    if (plan.aktiv) {
+      // Funkspruch wie beim Notfall-Storno
+      const g = this.neuesGespraech(fz, null, "offen");
+      const wer = this.calltaker().name;
+      this.spruch(g, "LEO", `${fz.funkrufname} von LEO kommen`, wer);
+      this.spruch(g, fz.funkrufname, `Hier ${fz.funkrufname} kommen`);
+      this.spruch(g, "LEO", "Hier LEO, Storno für eure Krankentransporte, kommen", wer);
+      this.spruch(g, fz.funkrufname, `Hier ${fz.funkrufname}, Storno verstanden, kommen`);
+      this.spruch(g, "LEO", "Hier LEO ENDE", wer);
+      g.status = "ende";
+    }
+    this.ktPlanLoesen(fz, plan.aktiv ? "Storno über Funk" : "Vormerkung aufgehoben");
+    this.emit();
+  }
+
+  /** Alle Transporte eines Fahrzeugs zurück in „nicht disponiert“ */
+  private ktPlanLoesen(fz: SimFahrzeug, grund: string): void {
+    const plan = fz.kt;
+    if (!plan) return;
+    const warAktiv = plan.aktiv;
+    for (const id of plan.fahrten.flat()) {
+      const k = this.ktAuftrag(id);
+      if (!k || k.status === "anBord" || k.status === "erledigt" || k.status === "storniert") continue;
+      k.status = "offen";
+      k.fz = null;
+      this.ktLog(k, `${grund} – neu disponieren`);
+    }
+    fz.kt = null;
+    if (warAktiv && !fz.einsatzId) this.freigeben(fz);
+  }
+
+  /** Transport aus dem Plan seines Fahrzeugs entfernen */
+  private ktAusPlan(k: KtAuftrag): void {
+    const fz = k.fz ? this.state.fahrzeuge[k.fz] : undefined;
+    k.fz = null;
+    const plan = fz?.kt;
+    if (!fz || !plan) return;
+    const lief = plan.aktiv && plan.fahrten[0]?.includes(k.id);
+    plan.fahrten = plan.fahrten.map((f) => f.filter((x) => x !== k.id)).filter((f) => f.length);
+    if (lief) {
+      if (!plan.fahrten.length || !plan.fahrten[0].some((x) => ["unterwegs", "anBord"].includes(this.ktAuftrag(x)?.status ?? ""))) {
+        // laufende Fahrt ist leer: nächste Fahrt oder Ende
+        this.ktFahrtFertig(fz, false);
+      } else this.ktHalteNeu(fz);
+    } else if (!plan.fahrten.length && !plan.aktiv) fz.kt = null;
+  }
+
+  /** Halte der laufenden Fahrt (neu) berechnen: erst abholen (nach Abholzeit), dann abliefern (nach Termin) */
+  private ktHalteNeu(fz: SimFahrzeug): void {
+    const plan = fz.kt!;
+    const ids = plan.fahrten[0] ?? [];
+    const ks = ids.map((x) => this.ktAuftrag(x)).filter((x): x is KtAuftrag => !!x);
+    const zeitAb = (k: KtAuftrag) => k.d.abholung ?? (k.d.termin ?? 0) - 45 * MIN;
+    const ab = ks.filter((k) => k.status === "unterwegs" || k.status === "vorgemerkt").sort((a, b) => zeitAb(a) - zeitAb(b));
+    const an = ks.filter((k) => k.status !== "erledigt" && k.status !== "storniert").sort((a, b) => (a.d.termin ?? 0) - (b.d.termin ?? 0));
+    plan.halte = [...ab.map((k) => ({ kt: k.id, art: "ab" as const })), ...an.map((k) => ({ kt: k.id, art: "an" as const }))];
+    plan.halt = 0;
+    // fährt gerade: zum (neuen) ersten Halt umleiten
+    if (plan.aktiv && (fz.phase === "ktFahrt" || fz.phase === "routing") && plan.halte.length) this.ktNaechsterHalt(fz);
+  }
+
+  private ktFahrtStarten(fz: SimFahrzeug, ausruecken: boolean): void {
+    const plan = fz.kt!;
+    for (const id of plan.fahrten[0] ?? []) {
+      const k = this.ktAuftrag(id);
+      if (k && k.status === "vorgemerkt") {
+        k.status = "unterwegs";
+        this.ktLog(k, `${fz.funkrufname} unterwegs`);
+      }
+    }
+    plan.halte = [];
+    this.ktHalteNeu(fz);
+    this.setStatus(fz, "alarmiert");
+    fz.fahrt = null;
+    fz.phase = "ausruecken";
+    fz.phaseEnde = this.state.zeit + (ausruecken ? this.ausrueckSek(fz, false) : rnd(5, 15)) * 1000;
+  }
+
+  private ktNaechsterHalt(fz: SimFahrzeug): void {
+    const plan = fz.kt!;
+    // Halte von stornierten oder übergebenen Transporten überspringen
+    while (plan.halt < plan.halte.length) {
+      const h = plan.halte[plan.halt];
+      const k = this.ktAuftrag(h.kt);
+      if (k && (h.art === "ab" ? k.status === "unterwegs" : k.status === "anBord")) break;
+      plan.halt++;
+    }
+    if (plan.halt >= plan.halte.length) return this.ktFahrtFertig(fz, false);
+    const h = plan.halte[plan.halt];
+    const k = this.ktAuftrag(h.kt)!;
+    const ziel = h.art === "ab" ? k.d.von : k.d.nach;
+    if (!ziel) return this.ktFahrtFertig(fz, false);
+    // Status: zum BO, bis der letzte Abholort erreicht ist; dann zum ZO
+    this.setStatus(fz, h.art === "ab" ? "zumBO" : "zumZO");
+    this.fahre(fz, ziel, "ktFahrt", false);
+  }
+
+  private ktUpdate(fz: SimFahrzeug, t: number): void {
+    const plan = fz.kt!;
+    switch (fz.phase) {
+      case "ausruecken":
+        this.ktNaechsterHalt(fz);
+        break;
+      case "ktFahrt": {
+        fz.fahrt = null;
+        const h = plan.halte[plan.halt];
+        const k = h && this.ktAuftrag(h.kt);
+        if (!h || !k) return this.ktNaechsterHalt(fz);
+        fz.phase = "ktHalt";
+        if (h.art === "ab") {
+          this.setStatus(fz, "amBO");
+          const heim = !k.d.von?.khId;
+          const min = k.wahr.nichtDa ? rnd(6, 10) : (heim ? rnd(5, 12) : rnd(6, 18)) + k.wahr.verzoegerungMin;
+          fz.phaseEnde = t + min * MIN;
+        } else {
+          this.setStatus(fz, "amZO");
+          fz.phaseEnde = t + (k.d.lage === "liegend" ? rnd(8, 15) : rnd(4, 10)) * MIN;
+        }
+        break;
+      }
+      case "ktHalt": {
+        if (plan.wartetKt) {
+          // Warten auf Nachforderung vorbei (Hilfe da oder Zeit abgelaufen): weiter mit dem nächsten Halt
+          plan.wartetAuf = null;
+          plan.wartetKt = null;
+          return this.ktNaechsterHalt(fz);
+        }
+        const h = plan.halte[plan.halt];
+        const k = h && this.ktAuftrag(h.kt);
+        if (h && k) {
+          if (h.art === "ab") {
+            if (k.wahr.nichtDa) {
+              k.status = "storniert";
+              this.ktLog(k, `${fz.funkrufname}: Patient nicht angetroffen`);
+              this.fzRuft(fz, null, "info", `Patient ${k.d.patient.name} am Abholort nicht angetroffen, ${k.nummer} wird storniert`);
+            } else {
+              k.status = "anBord";
+              this.ktLog(k, `${fz.funkrufname}: Patient an Bord`);
+              if (k.wahr.verschlechterung) {
+                k.wahr.verschlechterung = false;
+                plan.halt++;
+                return this.ktHilfeAnfordern(fz, k);
+              }
+            }
+          } else {
+            k.status = "erledigt";
+            this.ktLog(k, `${fz.funkrufname}: am Ziel übergeben`);
+            if (k.d.infektion) plan.reinigen = true;
+          }
+        }
+        plan.halt++;
+        this.ktNaechsterHalt(fz);
+        break;
+      }
+      case "ktReinigung":
+        this.ktFahrtFertig(fz, true);
+        break;
+      default:
+        break;
+    }
+  }
+
+  /** Fahrt abgeschlossen: Desinfektion nach Infektionstransport, dann nächste Fahrt oder frei */
+  private ktFahrtFertig(fz: SimFahrzeug, nachReinigung: boolean): void {
+    const plan = fz.kt;
+    if (!plan) return;
+    if (!nachReinigung) {
+      plan.fahrten.shift();
+      plan.halte = [];
+      plan.halt = 0;
+      if (plan.reinigen) {
+        plan.reinigen = false;
+        this.setStatus(fz, "bereitschaft");
+        fz.fahrt = null;
+        fz.phase = "ktReinigung";
+        fz.phaseEnde = this.state.zeit + rnd(5, 10) * MIN;
+        this.funk(fz.funkrufname, null, "Fahrzeug wird nach Infektionstransport desinfiziert", "info");
+        return;
+      }
+    }
+    if (plan.fahrten.length) {
+      // Folgeauftrag (Mehrfachauftrag): direkt weiter
+      this.ktFahrtStarten(fz, false);
+      return;
+    }
+    fz.kt = null;
+    this.freigeben(fz);
+  }
+
+  /** Patient verschlechtert sich im KTW: Nachforderung als Notfall an der Position des KTW */
+  private ktHilfeAnfordern(fz: SimFahrzeug, k: KtAuftrag): void {
+    const codes = allCodes().filter((c) => this.stufeDef(c.stufe)?.kategorie === "dringend");
+    const code = codes.length ? pick(codes) : allCodes()[0];
+    const label = `KTW ${fz.funkrufname} – Position ${fz.lat.toFixed(5)}, ${fz.lon.toFixed(5)}`;
+    if (!code) {
+      this.ktFahrtWeiter(fz);
+      return;
+    }
+    const e = this.erstelleEinsatz({ lat: fz.lat, lon: fz.lon, adresse: label, code, meldung: `Nachforderung ${fz.funkrufname}: Patient ${k.d.patient.name} verschlechtert sich während des Krankentransports (${k.d.grund}).` });
+    e.adresse = { lat: fz.lat, lon: fz.lon, label };
+    e.zustand = "offen";
+    this.log(e, `Nachforderung durch ${fz.funkrufname} (Krankentransport ${k.nummer})`);
+    this.ktLog(k, `Patient verschlechtert sich – Nachforderung ${e.nummer}`);
+    fz.kt!.wartetAuf = e.id;
+    fz.kt!.wartetKt = k.id;
+    // KTW bleibt stehen, bis die Nachforderung da ist (spätestens 40 min, dann fährt er selbst weiter)
+    fz.phase = "ktHalt";
+    fz.phaseEnde = this.state.zeit + 40 * MIN;
+    this.fzRuft(fz, e, "nachforderung", `Patient verschlechtert sich, benötigen RTW mit Notarzt, Position ${label.split("Position ")[1]}`);
+  }
+
+  /** Ein Fahrzeug der Nachforderung ist da: KTW übergibt den Patienten und fährt weiter */
+  private ktHilfeDa(e: Einsatz): void {
+    for (const fz of Object.values(this.state.fahrzeuge)) {
+      if (fz.kt?.wartetAuf !== e.id) continue;
+      const plan = fz.kt;
+      plan.wartetAuf = null;
+      const k = plan.wartetKt ? this.ktAuftrag(plan.wartetKt) : undefined;
+      if (k && k.status === "anBord") {
+        k.status = "erledigt";
+        this.ktLog(k, `Patient an ${e.nummer} übergeben`);
+      }
+      fz.phaseEnde = this.state.zeit + rnd(3, 8) * MIN;
+    }
+  }
+
+  private ktFahrtWeiter(fz: SimFahrzeug): void {
+    fz.phaseEnde = this.state.zeit;
+  }
+
   /** Alle Einsätze und Fahrzeugzustände zurücksetzen. */
   reset(): void {
     this.state.einsaetze = [];
     this.state.funk = [];
+    this.state.kt = [];
+    this.state.ktDauerTag = undefined;
     for (const fz of Object.values(this.state.fahrzeuge)) {
       Object.assign(fz, {
         lat: fz.heim.lat,
@@ -2027,6 +2637,7 @@ export class Simulation {
         einsatzId: null,
         fahrt: null,
         begleitet: false,
+        kt: null,
       });
     }
     this.planGenerator(true);

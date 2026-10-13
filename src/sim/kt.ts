@@ -1,0 +1,345 @@
+/**
+ * Krankentransporte („Wollen Sie sitzen oder liegen?“): Aufträge, Plätze im Fahrzeug,
+ * Zufallsaufträge (Patient, Diagnose, Orte, Zeiten) und Daueraufträge (Dialyse, Bestrahlung).
+ */
+import { BEREICHE, type Hospital } from "../data/model";
+import { zufallsName, zufallsNummer } from "../abfrage/anrufer";
+import type { Anruf, Bearbeiter, Protokoll } from "./engine";
+
+export type KtArt = "KTR" | "KTA" | "KTx";
+export type KtLage = "sitzend" | "liegend" | "gehend" | "rollstuhl";
+export const KT_LAGE_LABEL: Record<KtLage, string> = { sitzend: "sitzend", liegend: "liegend", gehend: "gehend", rollstuhl: "eigener Rollstuhl" };
+export const KT_ART_LABEL: Record<KtArt, string> = { KTR: "KTR – Rotes Kreuz gewünscht", KTA: "KTA – ASB gewünscht", KTx: "KTx – egal" };
+
+export interface KtOrt {
+  lat: number;
+  lon: number;
+  label: string;
+  /** Krankenhaus und Station/Ambulanz (Kürzel aus BEREICHE) */
+  khId?: string;
+  bereich?: string;
+}
+
+export interface KtDaten {
+  art: KtArt;
+  patient: { name: string; alter: number | null; geschlecht: "m" | "w" | null; info: string };
+  von: KtOrt | null;
+  nach: KtOrt | null;
+  grund: string;
+  lage: KtLage | null;
+  begleitung: boolean;
+  sauerstoff: boolean;
+  infektion: boolean;
+  /** Termin am Ziel (Simulationszeit) */
+  termin: number | null;
+  /** gewünschte Abholzeit */
+  abholung: number | null;
+  /** Rückruf beim Auftraggeber */
+  telefon: string;
+}
+
+export type KtStatus = "aufnahme" | "offen" | "vorgemerkt" | "unterwegs" | "anBord" | "erledigt" | "storniert";
+export const KT_STATUS_LABEL: Record<KtStatus, string> = {
+  aufnahme: "Anruf / Aufnahme",
+  offen: "nicht disponiert",
+  vorgemerkt: "vorgemerkt",
+  unterwegs: "unterwegs",
+  anBord: "Patient an Bord",
+  erledigt: "erledigt",
+  storniert: "storniert",
+};
+
+export interface KtAuftrag {
+  id: string;
+  nummer: string;
+  quelle: "hotline" | "online" | "dauer";
+  eingang: number;
+  status: KtStatus;
+  /** eingetragene Daten (bei Hotline erst nach der Aufnahme vollständig) */
+  d: KtDaten;
+  /** Wahrheit (was der Anrufer weiß) und versteckte Ereignisse */
+  wahr: {
+    d: KtDaten;
+    /** Wer ruft an (Hotline) */
+    anrufer: { rolle: string; name: string };
+    verzoegerungMin: number;
+    nichtDa: boolean;
+    verschlechterung: boolean;
+  };
+  /** zugeteiltes Fahrzeug (vorgemerkt oder unterwegs) */
+  fz: string | null;
+  anruf: Anruf | null;
+  /** „Wo bleibt der Transport?“ schon angerufen */
+  nachfrage?: boolean;
+  bearbeiter?: Bearbeiter | null;
+  protokoll: Protokoll[];
+  /** zu welcher Dauerserie (z. B. Dialyse) der Auftrag gehört */
+  serie?: string;
+}
+
+/** Fahrplan eines Fahrzeugs: Fahrten nacheinander, jede Fahrt kann mehrere Patienten haben (Sammelfahrt) */
+export interface KtPlan {
+  fahrten: string[][];
+  /** läuft gerade (losgeschickt) */
+  aktiv: boolean;
+  /** Halte der laufenden Fahrt (Abholen der Reihe nach, dann Abliefern) */
+  halte: { kt: string; art: "ab" | "an" }[];
+  /** aktueller Halt (Index in halte) */
+  halt: number;
+}
+
+// ---------------------------------------------------------------- Plätze
+
+/** Plätze im KTW: 2 Sitzplätze und 1 Liegeplatz (auf dem auch jemand sitzen kann) */
+export function passt(auftraege: KtDaten[]): string | null {
+  if (auftraege.length > 1 && auftraege.some((d) => d.infektion)) return "Infektionstransport: nur ein Patient im Fahrzeug";
+  let liegend = 0;
+  let sitz = 0;
+  for (const d of auftraege) {
+    if (d.lage === "liegend") liegend++;
+    else if (d.lage === "sitzend" || d.lage === "gehend") sitz++;
+    // eigener Rollstuhl belegt keinen Platz
+    if (d.begleitung) sitz++;
+  }
+  if (liegend > 1) return "Nur ein Liegeplatz";
+  // Sitzplätze: 2 + Liegeplatz, wenn er frei ist
+  if (sitz > 2 + (liegend === 0 ? 1 : 0)) return "Nicht genug Sitzplätze (2 Sitz + 1 Liege)";
+  return null;
+}
+
+// ---------------------------------------------------------------- Zufallsaufträge
+
+function pick<T>(a: T[]): T {
+  return a[Math.floor(Math.random() * a.length)];
+}
+function rnd(a: number, b: number): number {
+  return a + Math.random() * (b - a);
+}
+
+/** Diagnosen bzw. Gründe je Station/Ambulanz */
+const GRUENDE: Record<string, string[]> = {
+  DIA: ["Terminale Niereninsuffizienz – Hämodialyse", "Chronische Niereninsuffizienz Stadium 5 – Dialyse"],
+  STR: ["Mammakarzinom – Strahlentherapie", "Prostatakarzinom – Bestrahlung", "Bronchialkarzinom – Strahlentherapie", "Rektumkarzinom – Bestrahlung"],
+  CHE: ["Kolonkarzinom – Chemotherapie", "Lymphom – Chemotherapie", "Mammakarzinom – Chemotherapie"],
+  RAD: ["CT Thorax zur Abklärung", "MRT LWS bei Rückenschmerzen", "CT Abdomen – Kontrolle"],
+  NUK: ["Skelettszintigrafie", "Schilddrüsenszintigrafie"],
+  HKL: ["Koronarangiografie geplant", "Z. n. Myokardinfarkt – Kontrolle Herzkatheter"],
+  END: ["Gastroskopie", "Koloskopie bei Anämie", "ERCP geplant"],
+  PHY: ["Physiotherapie nach Hüft-TEP", "Physikalische Therapie bei Lumbalgie"],
+  WUN: ["Chronische Wunde Unterschenkel – Verbandswechsel", "Dekubitus sakral – Wundkontrolle", "Diabetischer Fuß – Wundversorgung"],
+  SCH: ["Chronische Schmerzen – Schmerztherapie"],
+  UNF: ["Kontrolle nach Radiusfraktur", "Gipskontrolle", "Nahtentfernung"],
+  ZNA: ["Abklärung Synkope", "Abklärung Bauchschmerzen"],
+  INT: ["Pneumonie", "Exsikkose", "Dekompensierte Herzinsuffizienz", "Harnwegsinfekt mit Verwirrtheit"],
+  KAR: ["Vorhofflimmern", "Herzinsuffizienz NYHA III", "Z. n. NSTEMI"],
+  GAS: ["Gastrointestinale Blutung – Kontrolle", "Leberzirrhose"],
+  PUL: ["COPD-Exazerbation", "Pneumonie"],
+  NEP: ["Akutes Nierenversagen"],
+  ONK: ["Metastasiertes Karzinom – Schmerztherapie", "Leukämie"],
+  CHI: ["Z. n. Cholezystektomie", "Z. n. Hernienoperation", "Ileus – postoperativ"],
+  ORT: ["Schenkelhalsfraktur – Z. n. OP", "Z. n. Knie-TEP", "Wirbelkörperfraktur"],
+  NEU: ["Z. n. Schlaganfall – Rehabilitation", "Morbus Parkinson", "Epilepsie – Einstellung"],
+  NCH: ["Z. n. Bandscheiben-OP"],
+  URO: ["Harnverhalt – Katheterwechsel", "Z. n. TURP"],
+  GYN: ["Z. n. Sectio", "Z. n. Hysterektomie"],
+  KIN: ["Bronchiolitis", "Gastroenteritis"],
+  HNO: ["Z. n. Tonsillektomie"],
+  AUG: ["Kataraktoperation", "Kontrolle nach Augenoperation"],
+  DER: ["Erysipel", "Ulcus cruris"],
+  PSY: ["Depression", "Delir – Abklärung", "Demenz mit Verhaltensauffälligkeiten"],
+  GER: ["Remobilisation nach Sturz", "Gangunsicherheit – Remobilisation"],
+  PAL: ["Palliative Betreuung bei Karzinom"],
+  ITS: ["Verlegung nach Intensivaufenthalt"],
+};
+
+const INFOS: Record<KtLage, string[]> = {
+  gehend: ["gehfähig", "geht mit Rollator", ""],
+  sitzend: ["bis zum Fahrzeug gehfähig", "braucht Hilfe beim Aufstehen", "sitzend, Tragsessel nötig", ""],
+  liegend: ["bettlägerig", "nicht gehfähig", "Dekubitus – vorsichtig lagern", ""],
+  rollstuhl: ["im eigenen Rollstuhl", "Rollstuhl wird mitgenommen", ""],
+};
+
+function lageFuer(alter: number, bereich: string): KtLage {
+  const liegendAnteil = ["ITS", "PAL", "ORT", "NEU", "GER"].includes(bereich) ? 0.45 : alter > 80 ? 0.35 : 0.15;
+  const r = Math.random();
+  if (r < liegendAnteil) return "liegend";
+  if (r < liegendAnteil + 0.08) return "rollstuhl";
+  if (r < liegendAnteil + 0.2 && alter < 75) return "gehend";
+  return "sitzend";
+}
+
+export function bereichName(kurz: string | undefined): string {
+  return kurz ? (BEREICHE[kurz] ?? kurz) : "";
+}
+
+export function khOrt(h: Hospital, bereich: string): KtOrt {
+  return { lat: h.lat, lon: h.lon, label: `${h.kurzname || h.name}, ${bereichName(bereich)}`, khId: h.id, bereich };
+}
+
+export interface ZufallsOrte {
+  /** Wohnadresse des Patienten */
+  heim: KtOrt;
+  /** passende Krankenhäuser (in der Nähe, nach Entfernung) */
+  khMit(bereich: string): Hospital[];
+}
+
+/** Ambulanzen, zu denen Patienten von zu Hause gebracht werden, mit Gewicht */
+const AMBULANZ_ZIELE: [string, number][] = [
+  ["RAD", 3],
+  ["END", 2],
+  ["UNF", 2],
+  ["CHE", 1.5],
+  ["STR", 1],
+  ["HKL", 0.6],
+  ["NUK", 0.6],
+  ["PHY", 1.5],
+  ["WUN", 1.5],
+  ["SCH", 0.5],
+  ["AUG", 0.6],
+];
+/** Stationen, von denen entlassen wird */
+const STATIONEN_ENTLASSUNG = ["INT", "INT", "CHI", "ORT", "ORT", "NEU", "GER", "GER", "URO", "KAR", "PUL", "GAS", "PSY", "DER"];
+
+function gewichtet<T>(l: [T, number][]): T {
+  let r = Math.random() * l.reduce((s, [, w]) => s + w, 0);
+  for (const [v, w] of l) if ((r -= w) <= 0) return v;
+  return l[l.length - 1][0];
+}
+
+export function neueDaten(): KtDaten {
+  return {
+    art: "KTx",
+    patient: { name: "", alter: null, geschlecht: null, info: "" },
+    von: null,
+    nach: null,
+    grund: "",
+    lage: null,
+    begleitung: false,
+    sauerstoff: false,
+    infektion: false,
+    termin: null,
+    abholung: null,
+    telefon: "",
+  };
+}
+
+/**
+ * Zufälliger Krankentransport (einfache Fahrt): zur Ambulanz, nach Hause oder Entlassung.
+ * jetzt = aktuelle Simulationszeit.
+ */
+export function zufallsDaten(o: ZufallsOrte, jetzt: number): KtDaten | null {
+  const geschlecht: "m" | "w" = Math.random() < 0.5 ? "w" : "m";
+  const alter = Math.round(Math.min(98, Math.max(18, rnd(45, 95) + (Math.random() < 0.15 ? -25 : 0))));
+  const art: KtArt = gewichtet([["KTx", 6], ["KTR", 3], ["KTA", 1]]);
+  const typ = gewichtet<"ambulanz" | "heim" | "entlassung">([["ambulanz", 4], ["heim", 3], ["entlassung", 3]]);
+  // Vorlauf: sofort, 1–3 h oder später am Tag
+  const vorlaufMin = gewichtet<() => number>([[() => rnd(25, 60), 4], [() => rnd(60, 180), 4], [() => rnd(180, 480), 2]])();
+  const termin = jetzt + vorlaufMin * 60_000;
+  let bereich: string;
+  let kh: Hospital | undefined;
+  let von: KtOrt;
+  let nach: KtOrt;
+  if (typ === "entlassung") {
+    bereich = pick(STATIONEN_ENTLASSUNG);
+    kh = o.khMit(bereich)[0];
+    if (!kh) return null;
+    von = khOrt(kh, bereich);
+    nach = o.heim;
+  } else {
+    bereich = gewichtet(AMBULANZ_ZIELE);
+    const auswahl = o.khMit(bereich).slice(0, 3);
+    kh = auswahl.length ? pick(auswahl) : undefined;
+    if (!kh) return null;
+    if (typ === "ambulanz") {
+      von = o.heim;
+      nach = khOrt(kh, bereich);
+    } else {
+      von = khOrt(kh, bereich);
+      nach = o.heim;
+    }
+  }
+  const lage = lageFuer(alter, bereich);
+  const grund = pick(GRUENDE[bereich] ?? ["Kontrolle"]);
+  // Abholzeit: bei Fahrten zur Ambulanz vor dem Termin (mit etwas mehr Puffer als nötig)
+  const abholung =
+    typ === "ambulanz" ? (Math.random() < 0.6 ? termin - rnd(45, 75) * 60_000 : null) : Math.random() < 0.5 ? termin : null;
+  return {
+    art,
+    patient: { name: zufallsName(geschlecht), alter, geschlecht, info: pick(INFOS[lage]) },
+    von,
+    nach,
+    grund,
+    lage,
+    begleitung: Math.random() < (alter > 85 ? 0.25 : 0.08),
+    sauerstoff: Math.random() < (["PUL", "KAR", "PAL"].includes(bereich) ? 0.35 : 0.05),
+    infektion: Math.random() < 0.06,
+    termin,
+    abholung: abholung && abholung > jetzt ? abholung : null,
+    telefon: zufallsNummer(),
+  };
+}
+
+/** Dialyse-Schichten: [Hinfahrt-Termin (h), Heimfahrt-Termin (h), Anteil] */
+export const DIALYSE_SCHICHTEN: [number, number, number][] = [
+  [6.75, 11.25, 0.5],
+  [12.25, 18.0, 0.35],
+  [18.25, 24.0, 0.15],
+];
+
+/** Daueraufträge eines Patienten an einem Tag (Dialyse oder Bestrahlung): Hin- und Rückfahrt */
+export function dauerDaten(heim: KtOrt, kh: Hospital, bereich: "DIA" | "STR", tag0: number): [KtDaten, KtDaten] {
+  const geschlecht: "m" | "w" = Math.random() < 0.5 ? "w" : "m";
+  const alter = Math.round(rnd(50, 90));
+  let hin: number;
+  let heimZeit: number;
+  if (bereich === "DIA") {
+    const s = gewichtet(DIALYSE_SCHICHTEN.map((x) => [x, x[2]] as [[number, number, number], number]));
+    hin = tag0 + s[0] * 3_600_000 + rnd(-15, 15) * 60_000;
+    heimZeit = tag0 + s[1] * 3_600_000 + rnd(-20, 20) * 60_000;
+  } else {
+    hin = tag0 + rnd(8, 15) * 3_600_000;
+    heimZeit = hin + rnd(40, 70) * 60_000;
+  }
+  const lage: KtLage = Math.random() < 0.2 ? "liegend" : Math.random() < 0.1 ? "rollstuhl" : "sitzend";
+  const basis = {
+    art: gewichtet<KtArt>([["KTx", 6], ["KTR", 3], ["KTA", 1]]),
+    patient: { name: zufallsName(geschlecht), alter, geschlecht, info: pick(INFOS[lage]) },
+    grund: pick(GRUENDE[bereich]),
+    lage,
+    begleitung: false,
+    sauerstoff: Math.random() < 0.05,
+    infektion: Math.random() < 0.04,
+    telefon: zufallsNummer(),
+  };
+  const ziel = khOrt(kh, bereich);
+  return [
+    { ...basis, patient: { ...basis.patient }, von: heim, nach: ziel, termin: hin, abholung: hin - rnd(30, 50) * 60_000 },
+    { ...basis, patient: { ...basis.patient }, von: ziel, nach: heim, termin: heimZeit, abholung: heimZeit },
+  ];
+}
+
+/** Wer ruft bei der KT-Hotline an */
+export function hotlineAnrufer(d: KtDaten): { rolle: string; name: string } {
+  const vonKh = !!d.von?.khId;
+  const g: "m" | "w" = Math.random() < 0.7 ? "w" : "m";
+  if (vonKh) return { rolle: `Pflegekraft der Station ${d.von!.label}`, name: zufallsName(g) };
+  const r = gewichtet<string>([
+    ["Patient selbst", 3],
+    [d.patient.geschlecht === "w" ? "Tochter der Patientin" : "Tochter des Patienten", 2],
+    ["Ordinationsassistentin des Hausarztes", 2],
+    ["Pflegekraft der Hauskrankenpflege", 1],
+  ]);
+  return { rolle: r, name: r === "Patient selbst" ? d.patient.name : zufallsName(g) };
+}
+
+/** Uhrzeit hh:mm */
+export function hhmm(t: number | null | undefined): string {
+  if (!t) return "–";
+  return new Date(t).toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" });
+}
+
+/** Kurztext eines Auftrags für Listen und Funk */
+export function ktKurz(d: KtDaten): string {
+  const l = d.lage ? { sitzend: "S", liegend: "L", gehend: "G", rollstuhl: "R" }[d.lage] : "?";
+  return `${d.patient.name || "?"} (${l}${d.begleitung ? "+B" : ""}${d.infektion ? " INF" : ""}${d.sauerstoff ? " O₂" : ""})`;
+}

@@ -75,12 +75,15 @@ export function createSettingsView(container: HTMLElement): { refresh(): void } 
     sSec.appendChild(sTab);
 
     // Aufkommen
-    const aSec = section("Einsatzaufkommen", "Einsätze pro Stunde je Kategorie (Simulationszeit). Die Kategorie ergibt sich aus der Stufe des AMPDS-Codes.");
+    const aSec = section(
+      "Einsatzaufkommen",
+      "Wie viele Notfälle und Krankentransporte pro Stunde kommen, steht in der Tabelle darunter. Hier stellst du ein, wie sich die Notfälle auf die Kategorien verteilen (Anteile).",
+    );
     const aGrid = el("div", { class: "set-grid" });
     for (const k of KATEGORIEN) {
       const i = num(draft.aufkommen[k], "0.5");
       i.addEventListener("change", () => (draft.aufkommen[k as Kategorie] = Number(i.value) || 0));
-      aGrid.append(el("label", {}, `${KATEGORIE_LABEL[k]} / h`), i);
+      aGrid.append(el("label", {}, `Anteil ${KATEGORIE_LABEL[k]}`), i);
     }
     const gen = el("input", { type: "checkbox" });
     gen.checked = draft.generatorAktiv;
@@ -105,6 +108,40 @@ export function createSettingsView(container: HTMLElement): { refresh(): void } 
     kSel.addEventListener("change", () => (draft.komplikationen = kSel.value as Settings["komplikationen"]));
     aGrid.append(el("label", {}, "Komplikationen (Verschlechterung, Irrtum des Anrufers, mehr Betroffene)"), kSel);
     aSec.appendChild(aGrid);
+
+    // Aufkommen je Stunde (Notfälle und Krankentransporte)
+    const tab = el("table", { class: "set-table stunden" });
+    tab.innerHTML = `<tr><th>Stunde</th><th>Notfälle / h</th><th>Krankentransporte / h</th><th></th><th>Stunde</th><th>Notfälle / h</th><th>Krankentransporte / h</th></tr>`;
+    for (let h = 0; h < 12; h++) {
+      const tr = el("tr");
+      for (const st of [h, h + 12]) {
+        const z = draft.stunden[st];
+        const rd = num(z.rd, "0.5");
+        rd.addEventListener("change", () => (z.rd = Math.max(0, Number(rd.value) || 0)));
+        const kt = num(z.kt, "0.5");
+        kt.addEventListener("change", () => (z.kt = Math.max(0, Number(kt.value) || 0)));
+        const td = (x: HTMLElement | string) => {
+          const c = el("td");
+          if (typeof x === "string") c.textContent = x;
+          else c.appendChild(x);
+          tr.appendChild(c);
+        };
+        td(`${String(st).padStart(2, "0")}–${String(st + 1).padStart(2, "0")} Uhr`);
+        td(rd);
+        td(kt);
+        if (st === h) td("");
+      }
+      tab.appendChild(tr);
+    }
+    aSec.appendChild(tab);
+    const dGrid = el("div", { class: "set-grid" });
+    const dia = num(draft.dauerDialyseJeKh, "1");
+    dia.addEventListener("change", () => (draft.dauerDialyseJeKh = Math.max(0, Number(dia.value) || 0)));
+    dGrid.append(el("label", {}, "Dialyse-Patienten je Krankenhaus mit Dialyse (Daueraufträge pro Tag)"), dia);
+    const str = num(draft.dauerStrahlJeKh, "1");
+    str.addEventListener("change", () => (draft.dauerStrahlJeKh = Math.max(0, Number(str.value) || 0)));
+    dGrid.append(el("label", {}, "Bestrahlungs-Patienten je Krankenhaus mit Strahlentherapie"), str);
+    aSec.appendChild(dGrid);
 
     // Stufen
     const stSec = section(

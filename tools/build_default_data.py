@@ -28,7 +28,7 @@ HOSPITAL_FLAGS = [
     "notfallambulanz", "schockraum", "unfallambulanz", "kinderambulanz", "intensiv_anaesthesie",
     "neurologie", "kinderintensiv", "neonatologie", "hno", "urologie", "gyn_geburtshilfe",
 ]
-HOSPITAL_COLS = ["id", "name", "kurzname", "ort", "breitengrad", "laengengrad", *HOSPITAL_FLAGS, "hinweis"]
+HOSPITAL_COLS = ["id", "name", "kurzname", "ort", "breitengrad", "laengengrad", *HOSPITAL_FLAGS, "bereiche", "hinweis"]
 POI_COLS = ["id", "name", "typ", "ort", "breitengrad", "laengengrad", "hinweis"]
 TEMPLATE_COLS = ["id", "code", "adresse", "breitengrad", "laengengrad", "meldung", "patient_alter", "transport", "hinweis"]
 
@@ -281,6 +281,53 @@ HOSPITALS = [
 ]
 
 
+# Stationen und Ambulanzen je Krankenhaus (für Krankentransporte).
+# Quellen: NÖ Landtag Gegenstand 18-313 (Herzkatheter-Standorte St. Pölten, Wiener Neustadt, Krems,
+# Waidhofen/Ybbs, Mödling), Bericht „onkologische Zentren“ (Strahlentherapie in St. Pölten, Krems,
+# Wiener Neustadt), sonst Allgemeinwissen – in LeitWerk unter Daten → Krankenhäuser änderbar.
+_GROSS = "INT KAR GAS PUL NEP ONK CHI ORT NEU URO GYN KIN HNO AUG DER PSY GER PAL ITS ZNA UNF DIA CHE RAD END PHY WUN SCH"
+BEREICHE = {
+    "Universitätsklinikum St. Pölten": _GROSS + " NCH STR NUK HKL",
+    "Universitätsklinikum Krems": "INT KAR GAS PUL NEP ONK CHI ORT NEU URO GYN KIN HNO PAL GER ITS ZNA UNF DIA STR CHE RAD NUK HKL END PHY WUN SCH",
+    "Universitätsklinikum Tulln": "INT GAS CHI ORT NEU URO GYN KIN PSY GER ITS ZNA UNF DIA RAD END PHY WUN",
+    "Universitätsklinikum Wiener Neustadt": _GROSS + " NCH STR NUK HKL",
+    "Landesklinikum Mistelbach-Gänserndorf": "INT KAR GAS ONK CHI ORT NEU URO GYN KIN HNO PSY GER PAL ITS ZNA UNF DIA CHE RAD END PHY WUN",
+    "Landesklinikum Amstetten": "INT GAS CHI ORT NEU GYN KIN PSY GER ITS ZNA UNF DIA RAD END PHY",
+    "Landesklinikum Horn": "INT ONK CHI ORT NEU GYN GER PAL ITS ZNA UNF DIA CHE RAD END PHY",
+    "Landesklinikum Baden": "INT CHI ORT URO HNO GER ITS ZNA UNF DIA RAD END PHY",
+    "Landesklinikum Mödling": "INT KAR GAS ORT NEU GYN KIN ITS ZNA UNF DIA RAD HKL END PHY",
+    "Universitätsklinikum Neunkirchen": "INT CHI ORT GYN PSY GER PAL ITS ZNA UNF DIA RAD END PHY",
+    "Landesklinikum Korneuburg": "INT CHI ORT URO HNO GYN GER ITS ZNA UNF RAD END PHY",
+    "Landesklinikum Stockerau": "INT GER PAL ZNA RAD END",
+    "Landesklinikum Hollabrunn": "INT CHI GYN PSY GER ITS ZNA DIA RAD END PHY",
+    "Landesklinikum Hainburg": "INT CHI ORT GYN GER ITS ZNA UNF DIA RAD END PHY",
+    "Landesklinikum Klosterneuburg": "INT CHI GYN GER ZNA RAD END PHY",
+    "Landesklinikum Lilienfeld": "INT CHI ORT GER PAL ITS ZNA UNF RAD END PHY",
+    "Landesklinikum Melk": "INT CHI NEU GYN GER ITS ZNA DIA RAD END PHY",
+    "Landesklinikum Scheibbs": "INT CHI ORT GYN GER ITS ZNA UNF RAD END PHY",
+    "Landesklinikum Waidhofen/Ybbs": "INT KAR CHI ORT URO HNO GYN ITS ZNA UNF DIA RAD HKL END PHY",
+    "Landesklinikum Zwettl": "INT CHI ORT GYN KIN GER ITS ZNA UNF DIA RAD END PHY",
+    "Landesklinikum Gmünd": "INT CHI ORT GER ZNA UNF DIA RAD END",
+    "Landesklinikum Waidhofen/Thaya": "INT CHI URO GER ITS ZNA RAD END",
+    "AKH Wien": _GROSS + " NCH STR NUK HKL",
+    "Klinik Floridsdorf": _GROSS + " NUK HKL",
+    "Klinik Donaustadt": _GROSS + " NCH STR NUK HKL",
+    "Klinik Ottakring": _GROSS + " STR NUK HKL",
+    "Klinik Favoriten": _GROSS + " HKL",
+    "Klinik Hietzing": "INT KAR ONK CHI ORT NEU GYN PSY GER PAL ITS ZNA UNF DIA CHE RAD NUK END PHY",
+    "Klinik Landstraße": "INT KAR GAS ONK CHI URO HNO AUG ITS ZNA DIA CHE RAD END",
+    "AUVA-Traumazentrum Wien, Standort Meidling": "ORT ITS UNF RAD PHY",
+    "AUVA-Traumazentrum Wien, Standort Brigittenau": "ORT ITS UNF RAD PHY",
+    "Krankenhaus der Barmherzigen Brüder Wien": "INT CHI URO HNO AUG DER ITS ZNA RAD END",
+    "St. Anna Kinderspital": "KIN ONK CHE RAD",
+    "Krankenhaus der Barmherzigen Brüder Eisenstadt": "INT KAR CHI ORT URO GYN KIN ITS ZNA UNF DIA RAD HKL END PHY",
+    "Klinik Oberwart": "INT KAR CHI ORT NEU URO GYN KIN PSY ITS ZNA UNF DIA RAD END PHY",
+    "Klinik Kittsee": "INT GER ZNA RAD END",
+    "Kepler Universitätsklinikum Linz, Med Campus III": _GROSS + " NCH NUK HKL",
+    "AUVA-Unfallkrankenhaus Linz": "ORT ITS UNF RAD PHY",
+}
+
+
 def build_hospitals() -> list[dict]:
     osm = read_csv(SRC / "osm_krankenhaeuser_luftrettung.csv")
     by_name: dict[str, dict] = {}
@@ -296,7 +343,8 @@ def build_hospitals() -> list[dict]:
             r = by_key[loc] if isinstance(loc, tuple) else by_name[loc]
             lat, lon = float(r["@lat"]), float(r["@lon"])
         row = {"id": f"kh{i:03d}", "name": name, "kurzname": kurz, "ort": ort,
-               "breitengrad": f"{lat:.6f}", "laengengrad": f"{lon:.6f}", "hinweis": hinweis}
+               "breitengrad": f"{lat:.6f}", "laengengrad": f"{lon:.6f}", "hinweis": hinweis,
+               "bereiche": ", ".join(BEREICHE[name].split())}
         assert len(flags) == len(HOSPITAL_FLAGS), name
         for f, v in zip(HOSPITAL_FLAGS, flags):
             row[f] = Y if v == "1" else N
@@ -325,7 +373,7 @@ def build_examples() -> None:
     write_csv(EX / "beispiel_krankenhaeuser.csv", HOSPITAL_COLS, [
         {"id": "kh-x1", "name": "Klinikum Musterstadt", "kurzname": "KL Musterstadt", "ort": "Musterstadt",
          "breitengrad": "48.210000", "laengengrad": "15.620000", **{f: (Y if f in {"notfallambulanz", "intensiv_anaesthesie", "gyn_geburtshilfe"} else N) for f in HOSPITAL_FLAGS},
-         "hinweis": "Werte: ja / nein"},
+         "bereiche": "INT, CHI, GYN, ZNA, RAD, DIA", "hinweis": "Werte: ja / nein; Bereiche als Kürzel mit Komma"},
     ])
     write_csv(EX / "beispiel_pois.csv", POI_COLS, [
         {"id": "poi-1", "name": "Badesee Musterstadt", "typ": "Freizeit", "ort": "Musterstadt", "breitengrad": "48.215000", "laengengrad": "15.630000"},

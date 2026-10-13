@@ -1,2 +1,2 @@
-﻿id;name;kurzname;ort;breitengrad;laengengrad;notfallambulanz;schockraum;unfallambulanz;kinderambulanz;intensiv_anaesthesie;neurologie;kinderintensiv;neonatologie;hno;urologie;gyn_geburtshilfe;hinweis
-kh-x1;Klinikum Musterstadt;KL Musterstadt;Musterstadt;48.210000;15.620000;ja;nein;nein;nein;ja;nein;nein;nein;nein;nein;ja;Werte: ja / nein
+﻿id;name;kurzname;ort;breitengrad;laengengrad;notfallambulanz;schockraum;unfallambulanz;kinderambulanz;intensiv_anaesthesie;neurologie;kinderintensiv;neonatologie;hno;urologie;gyn_geburtshilfe;bereiche;hinweis
+kh-x1;Klinikum Musterstadt;KL Musterstadt;Musterstadt;48.210000;15.620000;ja;nein;nein;nein;ja;nein;nein;nein;nein;nein;ja;INT, CHI, GYN, ZNA, RAD, DIA;"Werte: ja / nein; Bereiche als Kürzel mit Komma"

@@ -35,6 +35,16 @@ const VORNAMEN_M = ["Josef", "Johann", "Franz", "Michael", "Thomas", "Andreas", 
 const NACHNAMEN = ["Gruber", "Huber", "Bauer", "Wagner", "Müller", "Pichler", "Steiner", "Moser", "Mayer", "Hofer", "Leitner", "Berger", "Fuchs", "Eder", "Schmid", "Winkler", "Weber", "Schwarz", "Maier", "Schneider"];
 const HERKUNFT = ["Türkei", "Serbien", "Rumänien", "Syrien", "Afghanistan", "Ungarn", "Polen", "Bosnien", "Ukraine", "Slowakei"];
 
+/** Zufälliger Vor- und Nachname */
+export function zufallsName(g: "m" | "w", rnd: () => number = Math.random): string {
+  return `${pick(g === "w" ? VORNAMEN_W : VORNAMEN_M, rnd)} ${pick(NACHNAMEN, rnd)}`;
+}
+
+/** Zufällige Telefonnummer (österreichisch) */
+export function zufallsNummer(rnd: () => number = Math.random): string {
+  return telefonnummer(rnd);
+}
+
 function pick<T>(a: T[], rnd: () => number): T {
   return a[Math.floor(rnd() * a.length)];
 }

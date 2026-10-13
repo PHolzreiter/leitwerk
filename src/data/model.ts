@@ -91,7 +91,48 @@ export interface Hospital extends Base {
   lat: number;
   lon: number;
   abteilungen: Record<HospitalFlag, boolean>;
+  /** Stationen und Ambulanzen (für Krankentransporte), Kürzel aus BEREICHE */
+  bereiche?: string[];
 }
+
+/** Stationen und Ambulanzen/Bereiche eines Krankenhauses (Kürzel → Name) */
+export const BEREICHE_STATION: Record<string, string> = {
+  INT: "Innere Medizin",
+  KAR: "Kardiologie",
+  GAS: "Gastroenterologie",
+  PUL: "Pulmologie",
+  NEP: "Nephrologie",
+  ONK: "Onkologie/Hämatologie",
+  CHI: "Chirurgie",
+  ORT: "Orthopädie und Traumatologie",
+  NEU: "Neurologie",
+  NCH: "Neurochirurgie",
+  URO: "Urologie",
+  GYN: "Gynäkologie/Geburtshilfe",
+  KIN: "Kinder- und Jugendheilkunde",
+  HNO: "HNO",
+  AUG: "Augen",
+  DER: "Dermatologie",
+  PSY: "Psychiatrie",
+  GER: "Akutgeriatrie/Remobilisation",
+  PAL: "Palliativ",
+  ITS: "Intensivstation",
+};
+export const BEREICHE_AMBULANZ: Record<string, string> = {
+  ZNA: "Zentrale Notaufnahme",
+  UNF: "Unfallambulanz",
+  DIA: "Dialyse",
+  STR: "Strahlentherapie",
+  CHE: "Onkologische Tagesklinik",
+  RAD: "Radiologie (CT/MRT)",
+  NUK: "Nuklearmedizin",
+  HKL: "Herzkatheterlabor",
+  END: "Endoskopie",
+  PHY: "Physikalische Medizin",
+  WUN: "Wundambulanz",
+  SCH: "Schmerzambulanz",
+};
+export const BEREICHE: Record<string, string> = { ...BEREICHE_STATION, ...BEREICHE_AMBULANZ };
 
 export interface Poi extends Base {
   name: string;

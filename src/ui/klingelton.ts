@@ -1,10 +1,11 @@
-/** Telefon-Klingeln für eingehende Notrufe (Web Audio, keine Tondatei nötig). */
+/** Telefon-Klingeln (Web Audio, keine Tondatei nötig): Notruf und KT-Hotline klingen verschieden. */
 import { kiPrefs } from "../abfrage/ki";
 
 let ctx: AudioContext | null = null;
-let timer: number | undefined;
+let timerNotruf: number | undefined;
+let timerKt: number | undefined;
 
-function ring(): void {
+function ton(freqs: number[], stoesse: number[], dauer: number, laut: number): void {
   try {
     ctx ??= new AudioContext();
     if (ctx.state === "suspended") void ctx.resume();
@@ -12,38 +13,50 @@ function ring(): void {
     const gain = ctx.createGain();
     gain.gain.value = 0;
     gain.connect(ctx.destination);
-    // zwei kurze Klingelstöße (wie ein Bürotelefon)
-    for (const start of [0, 0.5]) {
-      for (const f of [440, 480]) {
+    for (const start of stoesse) {
+      for (const f of freqs) {
         const o = ctx.createOscillator();
         o.type = "sine";
         o.frequency.value = f;
         o.connect(gain);
         o.start(t0 + start);
-        o.stop(t0 + start + 0.38);
+        o.stop(t0 + start + dauer);
       }
       gain.gain.setValueAtTime(0, t0 + start);
-      gain.gain.linearRampToValueAtTime(0.12, t0 + start + 0.02);
-      gain.gain.setValueAtTime(0.12, t0 + start + 0.34);
-      gain.gain.linearRampToValueAtTime(0, t0 + start + 0.38);
+      gain.gain.linearRampToValueAtTime(laut, t0 + start + 0.02);
+      gain.gain.setValueAtTime(laut, t0 + start + dauer - 0.04);
+      gain.gain.linearRampToValueAtTime(0, t0 + start + dauer);
     }
   } catch {
     /* kein Ton möglich – egal */
   }
 }
 
+/** Notruf: zwei kurze Stöße (Bürotelefon) */
+const notruf = () => ton([440, 480], [0, 0.5], 0.38, 0.12);
+/** KT-Hotline: ein längerer, tieferer Ton */
+const kt = () => ton([350, 420], [0], 0.9, 0.09);
+
 /** Klingeln an/aus – wird regelmäßig mit dem aktuellen Zustand aufgerufen */
-export function klingeltonAktualisieren(anrufKlingelt: boolean): void {
-  const an = anrufKlingelt && kiPrefs().klingelton;
-  if (an && timer === undefined) {
-    ring();
-    timer = window.setInterval(ring, 3000);
-  } else if (!an && timer !== undefined) {
-    window.clearInterval(timer);
-    timer = undefined;
+export function klingeltonAktualisieren(notrufKlingelt: boolean, ktKlingelt = false): void {
+  const p = kiPrefs().klingelton;
+  const an1 = notrufKlingelt && p;
+  const an2 = ktKlingelt && p;
+  if (an1 && timerNotruf === undefined) {
+    notruf();
+    timerNotruf = window.setInterval(notruf, 3000);
+  } else if (!an1 && timerNotruf !== undefined) {
+    window.clearInterval(timerNotruf);
+    timerNotruf = undefined;
+  }
+  if (an2 && timerKt === undefined) {
+    window.setTimeout(kt, 1500);
+    timerKt = window.setInterval(kt, 4000);
+  } else if (!an2 && timerKt !== undefined) {
+    window.clearInterval(timerKt);
+    timerKt = undefined;
   }
 }
-
 let funkTimer: number | undefined;
 
 function piep(): void {

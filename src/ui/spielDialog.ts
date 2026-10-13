@@ -1,12 +1,12 @@
 /** Fenster „Spiel“: Spielstand speichern/laden, Multiplayer hosten/beitreten, Spieler und Rechte. */
-import { RECHTE_LABEL, meinName, mp, type Spieler } from "../net/mehrspieler";
+import { RECHTE_LABEL, STANDARD_RECHTE, meinName, mp, type Spieler } from "../net/mehrspieler";
 import * as spielstand from "../net/spielstand";
 import { store } from "../data/store";
 import type { Berechtigung } from "../sim/engine";
 import { confirmDialog, openDialog, type DialogHandle } from "./dialog";
 import { el, esc, toast } from "./dom";
 
-const RECHTE: Berechtigung[] = ["disponieren", "steuern", "einstellungen"];
+const RECHTE: Berechtigung[] = ["disponieren", "kt", "steuern", "einstellungen"];
 
 function fehlerText(e: unknown): string {
   return e instanceof Error ? e.message : String(e);
@@ -234,7 +234,7 @@ export function oeffneSpielDialog(): void {
     for (const rr of RECHTE) {
       const td = el("td");
       const cb = el("input", { type: "checkbox" });
-      cb.checked = sp.host || sp.rechte[rr];
+      cb.checked = sp.host || (sp.rechte[rr] ?? STANDARD_RECHTE[rr]);
       cb.disabled = !binHost || sp.host;
       cb.addEventListener("change", () => mp.setRechte(sp.pid, rr, cb.checked));
       td.appendChild(cb);

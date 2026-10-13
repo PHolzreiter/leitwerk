@@ -5,6 +5,7 @@
 import { parseCsv, toCsv } from "./csv";
 import {
   HOSPITAL_FLAGS,
+  BEREICHE,
   KIND_LABEL,
   VEHICLE_CATEGORIES,
   ACTIVE_CATEGORIES,
@@ -25,7 +26,7 @@ import {
 export const COLUMNS: Record<Kind, string[]> = {
   stations: ["id", "name", "organisation", "typ", "ort", "bezirk", "adresse", "breitengrad", "laengengrad", "hinweis"],
   vehicles: ["id", "funkrufname", "kurzname", "kategorie", "typ", "dienststelle", "aktiv", "nachtflug", "hinweis"],
-  hospitals: ["id", "name", "kurzname", "ort", "breitengrad", "laengengrad", ...HOSPITAL_FLAGS, "hinweis"],
+  hospitals: ["id", "name", "kurzname", "ort", "breitengrad", "laengengrad", ...HOSPITAL_FLAGS, "bereiche", "hinweis"],
   pois: ["id", "name", "typ", "ort", "breitengrad", "laengengrad", "hinweis"],
   templates: ["id", "code", "adresse", "breitengrad", "laengengrad", "meldung", "patient_alter", "transport", "hinweis"],
   codes: ["id", "code", "name", "kategorie", "kapitel", "hinweis"],
@@ -379,7 +380,11 @@ export function importCsv<K extends Kind>(kind: K, text: string, ctx: ImportCont
           for (const f of HOSPITAL_FLAGS) {
             abteilungen[f] = mapped.includes(f) ? parseBool(get(f), f) : false;
           }
-          const h: Hospital = { ...base, id, name, kurzname: get("kurzname"), ort: get("ort"), lat, lon, abteilungen };
+          const bereiche = get("bereiche")
+            .split(/[,\s]+/)
+            .map((x) => x.trim().toUpperCase())
+            .filter((x) => x in BEREICHE);
+          const h: Hospital = { ...base, id, name, kurzname: get("kurzname"), ort: get("ort"), lat, lon, abteilungen, bereiche };
           record = h;
         } else {
           id = id || `poi-${slug(name)}`;
@@ -471,6 +476,7 @@ export function exportCsv<K extends Kind>(kind: K, records: KindMap[K][], statio
         const h = rec as Hospital;
         Object.assign(v, { kurzname: h.kurzname, ort: h.ort });
         for (const f of HOSPITAL_FLAGS) v[f] = h.abteilungen[f] ? "ja" : "nein";
+        v.bereiche = (h.bereiche ?? []).join(", ");
       } else {
         const p = rec as Poi;
         Object.assign(v, { typ: p.typ, ort: p.ort });

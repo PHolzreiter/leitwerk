@@ -10,6 +10,7 @@ import { KATEGORIE_LABEL, type StatusKey } from "../sim/settings";
 import { openDialog } from "./dialog";
 import { ensureCodes } from "./codesPrompt";
 import { anrufPanel } from "./anrufPanel";
+import { ktAnnehmen, ktListe, ktMaske } from "./ktView";
 import { funkPiepAktualisieren, klingeltonAktualisieren } from "./klingelton";
 import { createFunkView } from "./funkView";
 import { el, esc, toast } from "./dom";
@@ -126,7 +127,7 @@ function statusChip(fz: SimFahrzeug): string {
 }
 
 /** Adress-Eingabe mit Vorschlägen. */
-function addressInput(placeholder: string, onPick: (o: Ort) => void): { root: HTMLElement; input: HTMLInputElement } {
+export function addressInput(placeholder: string, onPick: (o: Ort) => void): { root: HTMLElement; input: HTMLInputElement } {
   const root = el("div", { class: "addr" });
   const input = el("input", { type: "text", placeholder });
   const list = el("div", { class: "addr-list", hidden: "" });
@@ -183,17 +184,31 @@ export function createOpsView(left: HTMLElement, right: HTMLElement, deps: OpsDe
   left.innerHTML = `
     <section class="ops-sec ops-inc">
       <div class="ops-head">
-        <span>Einsätze</span>
-        <label class="chk small"><input type="checkbox" class="inc-closed" />abgeschlossene</label>
-        <button class="btn small" data-act="gen">+ Testeinsatz</button>
+        <span class="ltabs"><button class="ltab active" data-l="rd">Einsätze</button><button class="ltab" data-l="kt">KT <span class="kt-badge" hidden></span></button></span>
+        <label class="chk small"><input type="checkbox" class="inc-closed" />erledigte</label>
+        <button class="btn small" data-act="gen">+ Test</button>
       </div>
       <div class="ops-list inc-list"></div>
+      <div class="ops-list kt-list" hidden></div>
     </section>
     <section class="ops-sec ops-veh">
       <div class="ops-head"><span>Fahrzeuge</span><input class="veh-filter" type="search" placeholder="Filter …" /></div>
       <div class="ops-list veh-list"></div>
     </section>`;
   const incList = left.querySelector<HTMLElement>(".inc-list")!;
+  const ktList = left.querySelector<HTMLElement>(".kt-list")!;
+  const ktBadge = left.querySelector<HTMLElement>(".kt-badge")!;
+  let linksTab: "rd" | "kt" = "rd";
+  let selectedKt: string | null = null;
+  left.querySelectorAll<HTMLButtonElement>(".ltab").forEach((b) =>
+    b.addEventListener("click", () => {
+      linksTab = b.dataset.l as "rd" | "kt";
+      left.querySelectorAll(".ltab").forEach((x) => x.classList.toggle("active", x === b));
+      incList.hidden = linksTab !== "rd";
+      ktList.hidden = linksTab !== "kt";
+      renderLists();
+    }),
+  );
   const vehList = left.querySelector<HTMLElement>(".veh-list")!;
   const vehFilter = left.querySelector<HTMLInputElement>(".veh-filter")!;
   left.querySelector<HTMLInputElement>(".inc-closed")!.addEventListener("change", (e) => {
@@ -201,6 +216,13 @@ export function createOpsView(left: HTMLElement, right: HTMLElement, deps: OpsDe
     renderLists();
   });
   left.querySelector<HTMLButtonElement>("[data-act=gen]")!.addEventListener("click", async () => {
+    if (linksTab === "kt") {
+      const k = await sim.call("generiereKt").catch((err) => (toast(String(err.message ?? err), "error"), null));
+      for (let i = 0; k && !sim.ktAuftrag(k.id) && i < 20; i++) await new Promise((r) => setTimeout(r, 100));
+      if (k) selectKt(k.id);
+      else toast("Kein Krankentransport erzeugt – sind Krankenhäuser mit Stationen vorhanden?", "error");
+      return;
+    }
     if (!ensureCodes()) return;
     const e = await sim.call("generiere").catch((err) => (toast(String(err.message ?? err), "error"), null));
     // Als Mitspieler kommt der neue Einsatz erst mit dem nächsten Abgleich
@@ -211,6 +233,15 @@ export function createOpsView(left: HTMLElement, right: HTMLElement, deps: OpsDe
   vehFilter.addEventListener("input", () => renderLists());
 
   function renderLists() {
+    // Krankentransporte
+    const ktOffen = (sim.state.kt ?? []).filter((k) => k.status === "aufnahme" || k.status === "offen" || k.anruf?.status === "klingelt").length;
+    ktBadge.hidden = ktOffen === 0;
+    ktBadge.textContent = String(ktOffen);
+    ktBadge.classList.toggle("klingelt", (sim.state.kt ?? []).some((k) => k.anruf?.status === "klingelt"));
+    if (linksTab === "kt") ktListe(ktList, { selected: () => selectedKt, select: (id) => selectKt(id), annehmen: (id) => {
+      selectKt(id);
+      void ktAnnehmen(id).catch((e) => toast(String(e.message ?? e), "error"));
+    } }, showClosed);
     // Einsätze
     const list = sim.state.einsaetze.filter((e) => showClosed || e.zustand !== "abgeschlossen");
     const order = { neu: 0, offen: 1, laufend: 2, abgeschlossen: 3 };
@@ -272,7 +303,8 @@ export function createOpsView(left: HTMLElement, right: HTMLElement, deps: OpsDe
       for (const fz of fzs.sort((a, b) => a.funkrufname.localeCompare(b.funkrufname))) {
         const e = fz.einsatzId ? sim.einsatz(fz.einsatzId) : undefined;
         const row = el("div", { class: "veh-row" });
-        row.innerHTML = `${statusChip(fz)}<b>${esc(fz.funkrufname)}</b><span class="muted">${esc(fz.rmTyp)}${fz.kurzname ? " · " + esc(fz.kurzname) : ""}</span>${crewHtml(fz)}<span class="spacer"></span><span class="muted">${esc(e?.nummer ?? "")}</span>`;
+        const ktHinweis = fz.kt ? `<span class="kt-fz${fz.kt.aktiv ? " aktiv" : ""}" title="${fz.kt.aktiv ? "fährt Krankentransport" : "für Krankentransport vorgemerkt"}">KT${fz.kt.fahrten.flat().length > 1 ? `×${fz.kt.fahrten.flat().length}` : ""}</span>` : "";
+        row.innerHTML = `${statusChip(fz)}<b>${esc(fz.funkrufname)}</b><span class="muted">${esc(fz.rmTyp)}${fz.kurzname ? " · " + esc(fz.kurzname) : ""}</span>${crewHtml(fz)}${ktHinweis}<span class="spacer"></span><span class="muted">${esc(e?.nummer ?? "")}</span>`;
         row.addEventListener("click", () => {
           deps.flyTo(fz.lat, fz.lon, 13);
           if (e) select(e.id);
@@ -789,9 +821,27 @@ export function createOpsView(left: HTMLElement, right: HTMLElement, deps: OpsDe
     void refreshSuggestions();
   }
 
+  /** Krankentransport öffnen (Maske rechts) */
+  function selectKt(id: string) {
+    const k = sim.ktAuftrag(id);
+    if (!k) return;
+    selectedKt = id;
+    selected = null;
+    deps.onSelectIncident(null);
+    maskFor = `kt:${id}`;
+    rbEinsatz.innerHTML = "";
+    const m = ktMaske(k, { flyTo: deps.flyTo });
+    rbEinsatz.appendChild(m.root);
+    dyn = { refresh: m.refresh };
+    setTab("einsatz");
+    if (linksTab !== "kt") left.querySelector<HTMLButtonElement>(".ltab[data-l=kt]")?.click();
+    renderLists();
+  }
+
   function select(id: string | null, zurMaske = true) {
     if (id && id !== selected && sim.mode !== "solo") void sim.call("oeffne", id).catch(() => undefined);
     selected = id;
+    if (id) selectedKt = null;
     deps.onSelectIncident(id);
     const e = id ? sim.einsatz(id) : undefined;
     if (!e) {
@@ -817,7 +867,10 @@ export function createOpsView(left: HTMLElement, right: HTMLElement, deps: OpsDe
       renderFunk();
       renderChat();
       dyn?.refresh();
-      klingeltonAktualisieren(sim.state.einsaetze.some((x) => x.anruf?.status === "klingelt" && x.zustand !== "abgeschlossen") && sim.state.laeuft);
+      klingeltonAktualisieren(
+        sim.state.einsaetze.some((x) => x.anruf?.status === "klingelt" && x.zustand !== "abgeschlossen") && sim.state.laeuft,
+        (sim.state.kt ?? []).some((x) => x.anruf?.status === "klingelt") && sim.state.laeuft,
+      );
     }, 400);
   });
 

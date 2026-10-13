@@ -1,6 +1,8 @@
 /** Formular zum Anlegen und Bearbeiten von Dienststellen, Fahrzeugen, Krankenhäusern und POIs. */
 import {
   HOSPITAL_FLAGS,
+  BEREICHE_AMBULANZ,
+  BEREICHE_STATION,
   HOSPITAL_FLAG_LABEL,
   KIND_SINGULAR,
   ORIGIN_LABEL,
@@ -88,6 +90,8 @@ export function openEditor(
   };
 
   let flagInputs: Partial<Record<HospitalFlag, HTMLInputElement>> = {};
+
+  let bereichInputs: Record<string, HTMLInputElement> = {};
   let aktivInput: HTMLInputElement | null = null;
   let nachtInput: HTMLInputElement | null = null;
 
@@ -199,6 +203,18 @@ export function openEditor(
         box.appendChild(wrap);
       }
       form.appendChild(box);
+      // Stationen und Ambulanzen (für Krankentransporte)
+      bereichInputs = {};
+      for (const [titel, liste] of [["Stationen", BEREICHE_STATION], ["Ambulanzen und Bereiche", BEREICHE_AMBULANZ]] as const) {
+        const b = el("div", { class: "flag-grid wide" });
+        b.appendChild(el("div", { class: "fld-label" }, `${titel} (für Krankentransporte)`));
+        for (const [k, name] of Object.entries(liste)) {
+          const [wrap, input] = checkbox(name, h?.bereiche?.includes(k) ?? false);
+          bereichInputs[k] = input;
+          b.appendChild(wrap);
+        }
+        form.appendChild(b);
+      }
     }
   }
   add("hinweis", "Hinweis", textInput(g("hinweis")), undefined, true);
@@ -287,7 +303,8 @@ export function openEditor(
       } else if (kind === "hospitals") {
         const abteilungen = {} as Record<HospitalFlag, boolean>;
         for (const f of HOSPITAL_FLAGS) abteilungen[f] = flagInputs[f]?.checked ?? false;
-        const h: Hospital = { ...geo, kurzname: val("kurzname"), ort: val("ort"), abteilungen };
+        const bereiche = Object.entries(bereichInputs).filter(([, i]) => i.checked).map(([k]) => k);
+        const h: Hospital = { ...geo, kurzname: val("kurzname"), ort: val("ort"), abteilungen, bereiche };
         store.upsert("hospitals", [h]);
       } else {
         const p: Poi = { ...geo, typ: val("typ"), ort: val("ort") };

@@ -112,8 +112,13 @@ export const GEBIETE: Gebiet[] = [
 export interface Settings {
   status: StatusDef[];
   stufen: StufeDef[];
-  /** Einsätze pro Stunde je Kategorie */
+  /** Anteil der Kategorien an den Notfällen (relativ; früher: Einsätze pro Stunde) */
   aufkommen: Record<Kategorie, number>;
+  /** Aufkommen je Stunde (0–23): Notfälle (rd) und Krankentransporte (kt) pro Stunde */
+  stunden: { rd: number; kt: number }[];
+  /** Daueraufträge (Dialyse/Bestrahlung) je Krankenhaus mit Dialyse/Strahlentherapie im Gebiet */
+  dauerDialyseJeKh: number;
+  dauerStrahlJeKh: number;
   generatorAktiv: boolean;
   generatorQuelle: "zufall" | "vorlagen";
   /** Neue Einsätze kommen als Anruf mit Notrufabfrage (wenn ein Abfrageschema importiert ist) */
@@ -148,6 +153,13 @@ export interface Settings {
   };
 }
 
+/** Standard-Tagesverlauf: nachts wenig, Spitzen am Vormittag; Krankentransporte vor allem tagsüber */
+export function defaultStunden(): Settings["stunden"] {
+  const rd = [3, 2.5, 2, 2, 2, 2.5, 4, 5.5, 6.5, 7, 7, 7, 7, 6.5, 6.5, 6.5, 6.5, 6.5, 6, 5.5, 5, 4.5, 4, 3.5];
+  const kt = [0.3, 0.2, 0.2, 0.2, 0.3, 0.8, 3, 5, 6, 6, 5.5, 5, 5, 4.5, 4, 3.5, 3, 2, 1.5, 1, 0.7, 0.5, 0.4, 0.3];
+  return rd.map((r, i) => ({ rd: r, kt: kt[i] }));
+}
+
 export function defaultAusrueck(): Settings["ausrueck"] {
   return { tagVon: 5, tagBis: 22, bodenTag: [30, 120], bodenNacht: [120, 600], nahTag: [120, 300], nahNacht: [300, 600], unterwegs: 10, bereitschaftPlusMin: 5 };
 }
@@ -157,6 +169,9 @@ export function defaultSettings(): Settings {
     status: DEFAULT_STATUS.map((s) => ({ ...s })),
     stufen: defaultStufen(),
     aufkommen: { stabil: 2, dringend: 3, kritisch: 1 },
+    stunden: defaultStunden(),
+    dauerDialyseJeKh: 6,
+    dauerStrahlJeKh: 3,
     generatorAktiv: true,
     generatorQuelle: "zufall",
     anrufe: true,
@@ -182,5 +197,5 @@ export function mergeSettings(saved: Partial<Settings> | undefined): Settings {
   const savedStufen = (saved.stufen ?? []).filter((s) => typeof (s as Partial<StufeDef>).rettungsmittel === "string");
   const stufen = d.stufen.map((def) => ({ ...def, ...(savedStufen.find((s) => s.stufe === def.stufe) ?? {}) }));
   for (const s of savedStufen) if (!stufen.some((x) => x.stufe === s.stufe)) stufen.push(s);
-  return { ...d, ...saved, status, stufen, aufkommen: { ...d.aufkommen, ...(saved.aufkommen ?? {}) }, ausrueck: { ...d.ausrueck, ...(saved.ausrueck ?? {}) } };
+  return { ...d, ...saved, status, stufen, aufkommen: { ...d.aufkommen, ...(saved.aufkommen ?? {}) }, ausrueck: { ...d.ausrueck, ...(saved.ausrueck ?? {}) }, stunden: saved.stunden?.length === 24 ? saved.stunden : d.stunden };
 }

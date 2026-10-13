@@ -2101,3 +2101,168 @@ input[type="color"] {
   font-weight: 600;
   animation: klingeln 1.2s ease-in-out infinite;
 }
+
+/* ---------------------------------------------------------------- Krankentransporte */
+.ltabs {
+  display: inline-flex;
+  gap: 2px;
+}
+.ltab {
+  background: none;
+  border: 1px solid transparent;
+  color: var(--text-dim);
+  font: inherit;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.ltab.active {
+  color: var(--text);
+  border-color: var(--line);
+  background: var(--panel-2);
+}
+.kt-badge {
+  background: var(--blue);
+  color: #fff;
+  border-radius: 8px;
+  padding: 0 6px;
+  font-size: 11px;
+}
+.kt-badge.klingelt {
+  background: var(--accent);
+  animation: klingeln 1s ease-in-out infinite;
+}
+.kt-row {
+  display: grid;
+  grid-template-columns: 52px 1fr auto;
+  gap: 8px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+  font-size: 13px;
+}
+.kt-row:hover {
+  background: var(--panel-2);
+}
+.kt-row.sel {
+  background: rgba(47, 128, 237, 0.18);
+}
+.kt-row.st-erledigt,
+.kt-row.st-storniert {
+  opacity: 0.55;
+}
+.kt-zeit {
+  display: flex;
+  flex-direction: column;
+  font-size: 12px;
+}
+.kt-main {
+  min-width: 0;
+}
+.kt-main .muted {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.kt-st {
+  text-align: right;
+  font-size: 12px;
+}
+.kt-status {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  white-space: nowrap;
+}
+.kt-status.aufnahme,
+.kt-status.offen {
+  border-color: var(--warn);
+  color: var(--warn);
+}
+.kt-status.spaet {
+  border-color: var(--accent);
+  color: #ffb4b4;
+}
+.kt-status.vorgemerkt {
+  border-color: var(--blue);
+}
+.kt-status.unterwegs,
+.kt-status.anBord {
+  border-color: var(--ok);
+  color: var(--ok);
+}
+.kt-art {
+  font-size: 11px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 0 4px;
+}
+.kt-art.big {
+  font-size: 15px;
+  font-weight: 700;
+  padding: 4px 8px;
+  background: var(--panel-2);
+}
+.kt-lage {
+  color: var(--text-dim);
+  font-size: 12px;
+}
+.kt-fz {
+  font-size: 10px;
+  border: 1px solid var(--blue);
+  color: var(--blue);
+  border-radius: 4px;
+  padding: 0 3px;
+  margin-left: 4px;
+}
+.kt-fz.aktiv {
+  background: var(--blue);
+  color: #fff;
+}
+.kt-grid {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 6px 8px;
+  align-items: center;
+}
+.kt-lbl {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.kt-ort {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.kt-ort select {
+  max-width: 100%;
+}
+.kt-ort .addr {
+  flex: 1;
+  min-width: 180px;
+}
+.kt-opts {
+  flex-wrap: wrap;
+}
+.kt-vorschlaege {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.kt-vs {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 4px 6px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 12px;
+}
+.set-table.stunden input {
+  width: 70px;
+}

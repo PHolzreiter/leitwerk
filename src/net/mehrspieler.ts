@@ -25,11 +25,12 @@ const CHUNK = 400_000;
 const ANTWORT_TIMEOUT_MS = 15_000;
 
 export type Rechte = Record<Berechtigung, boolean>;
-export const STANDARD_RECHTE: Rechte = { disponieren: true, steuern: true, einstellungen: false };
+export const STANDARD_RECHTE: Rechte = { disponieren: true, steuern: true, einstellungen: false, kt: true };
 export const RECHTE_LABEL: Record<Berechtigung, string> = {
   disponieren: "Disponieren",
   steuern: "Simulation steuern",
   einstellungen: "Einstellungen & Daten",
+  kt: "KT disponieren",
 };
 
 export interface Spieler {
@@ -127,6 +128,8 @@ class Mehrspieler {
     funk: "",
     chat: 0,
     funkG: "",
+    kt: new Map<string, string>(),
+    ktIds: "",
   };
   private storeTimer: number | undefined;
 
@@ -610,7 +613,7 @@ class Mehrspieler {
       name: this.ich.name,
       online: true,
       host: true,
-      rechte: { disponieren: true, steuern: true, einstellungen: true },
+      rechte: { disponieren: true, steuern: true, einstellungen: true, kt: true },
       ping: altIch?.ping ?? null,
     };
     neu.push(ichHost);
@@ -650,7 +653,7 @@ class Mehrspieler {
   }
 
   private cacheLeeren(): void {
-    this.cache = { fz: new Map(), fahrt: new Map(), pos: new Map(), ein: new Map(), einIds: "", fzIds: "", funk: "", chat: 0, funkG: "" };
+    this.cache = { fz: new Map(), fahrt: new Map(), pos: new Map(), ein: new Map(), einIds: "", fzIds: "", funk: "", chat: 0, funkG: "", kt: new Map(), ktIds: "" };
   }
 
   private fzSchluessel(fz: SimFahrzeug): string {
@@ -727,6 +730,22 @@ class Mehrspieler {
       d.funkGZaehler = st.funkGZaehler;
       c.funkG = gKey;
     }
+    // Krankentransporte: geänderte Aufträge und die Reihenfolge
+    const kt: unknown[] = [];
+    for (const k of st.kt ?? []) {
+      const key = JSON.stringify(k);
+      if (c.kt.get(k.id) !== key) {
+        kt.push(k);
+        c.kt.set(k.id, key);
+      }
+    }
+    if (kt.length) d.kt = kt;
+    const ktIds = (st.kt ?? []).map((k) => k.id).join(",");
+    if (ktIds !== c.ktIds) {
+      d.ktIds = (st.kt ?? []).map((k) => k.id);
+      c.ktIds = ktIds;
+    }
+    d.ktZaehler = st.ktZaehler;
     const chatN = st.chat?.length ?? 0;
     if (chatN !== c.chat) {
       d.chat = st.chat;
@@ -799,6 +818,18 @@ class Mehrspieler {
       ].slice(0, 150);
       st.funkGZaehler = d.funkGZaehler as number;
     }
+    if (d.kt || d.ktIds) {
+      const liste = st.kt ?? [];
+      const nachId = new Map(liste.map((k) => [k.id, k]));
+      for (const k of (d.kt as NonNullable<SimState["kt"]> | undefined) ?? []) {
+        const alt = nachId.get(k.id);
+        if (alt) Object.assign(alt, k);
+        else nachId.set(k.id, k);
+      }
+      const ids = (d.ktIds as string[] | undefined) ?? liste.map((k) => k.id);
+      st.kt = ids.map((id) => nachId.get(id)).filter((k): k is NonNullable<typeof k> => !!k);
+    }
+    if (typeof d.ktZaehler === "number") st.ktZaehler = d.ktZaehler;
     if (d.chat) st.chat = d.chat as SimState["chat"];
     sim.notify();
   }
@@ -831,7 +862,7 @@ class Mehrspieler {
       if (m.t === "cmd") {
         const befehl = String(m.name) as Befehl;
         const r = berechtigungFuer(befehl);
-        if (r && !rechte[r]) return antwort(false, undefined, `Keine Berechtigung (${RECHTE_LABEL[r]})`);
+        if (r && !(rechte[r] ?? STANDARD_RECHTE[r])) return antwort(false, undefined, `Keine Berechtigung (${RECHTE_LABEL[r]})`);
         const value = await sim.ausfuehren(befehl, (m.args as unknown[]) ?? [], { pid, name: s?.name ?? name });
         antwort(true, value ?? null);
       } else if (m.t === "scmd") {
