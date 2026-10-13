@@ -225,7 +225,7 @@ export function createOpsView(left: HTMLElement, right: HTMLElement, deps: OpsDe
           ? a.status === "klingelt"
             ? `<div class="inc-anruf klingelt">📞 klingelt${a.versuche > 1 ? ` (${a.versuche}. Versuch)` : ""}</div>`
             : a.status === "verpasst"
-              ? `<div class="inc-anruf verpasst">📵 verpasster Anruf</div>`
+              ? `<div class="inc-anruf verpasst">📵 verpasster Anruf${a.versuche > 1 ? ` (${a.versuche}×)` : ""}</div>`
               : a.status === "aktiv"
                 ? `<div class="inc-anruf aktiv">📞 im Gespräch${a.angenommenVon && mp.aktiv ? ` · ${esc(a.angenommenVon.pid === mp.ich.pid ? "du" : a.angenommenVon.name)}` : ""}</div>`
                 : ""

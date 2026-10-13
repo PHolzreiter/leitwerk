@@ -17,7 +17,7 @@ export function buildKiSection(sec: HTMLElement, draft: Settings): void {
   const an = el("input", { type: "checkbox" });
   an.checked = draft.anrufe;
   an.addEventListener("change", () => (draft.anrufe = an.checked));
-  grid.append(el("label", {}, "Einsätze kommen als Notruf (braucht ein Abfrageschema)"), an);
+  grid.append(el("label", {}, "Einsätze kommen als Notruf (braucht ein Abfrageschema; mit „Speichern“ unten übernehmen)"), an);
   sec.appendChild(grid);
 
   // Rechner-Einstellungen (nur dieser Rechner, sofort gültig)
