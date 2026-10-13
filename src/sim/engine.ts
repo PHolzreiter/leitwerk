@@ -917,7 +917,7 @@ export class Simulation {
     };
     if (p.fall && store.schema) {
       const schema = store.schema;
-      const anrufer = anruferWaehlen(p.fall.kapitel, p.fall.antworten);
+      const anrufer = anruferWaehlen(p.fall.kapitel, p.fall.antworten, Math.random, gemeldet);
       e.wahr.abfrage = {
         kapitel: p.fall.kapitel,
         antworten: p.fall.antworten,

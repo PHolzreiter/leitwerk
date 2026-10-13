@@ -3,7 +3,8 @@
  * Nur wer den Anruf angenommen hat, führt Gespräch und Abfrage; alle anderen sehen mit.
  */
 import { store } from "../data/store";
-import { fragen, eroeffnen, antwortetGerade } from "../abfrage/gespraech";
+import { fragen, eroeffnen, antwortetGerade, kontext } from "../abfrage/gespraech";
+import { schilderung } from "../abfrage/anrufer";
 import { kiBereit } from "../abfrage/ki";
 import { antwortLabel, bestimmeCode, fragenImAblauf, stufeVonCode, type Frage, type Schema, type Wert } from "../abfrage/schema";
 import { mp } from "../net/mehrspieler";
@@ -152,7 +153,7 @@ export function anrufPanel(e: Einsatz): { root: HTMLElement; abfrageBox: HTMLEle
     }
 
     // Abfrage nur neu aufbauen, wenn sich etwas geändert hat (sonst geht der Fokus verloren)
-    const schluessel = JSON.stringify([a.status, a.kapitel, a.antworten, a.extra, darf, a.angenommenVon?.pid]);
+    const schluessel = JSON.stringify([a.status, a.kapitel, a.antworten, a.extra, darf, a.angenommenVon?.pid, a.kapitel === "42" ? e.code : null]);
     const tippt = document.activeElement instanceof HTMLInputElement || document.activeElement instanceof HTMLSelectElement;
     if (schluessel !== letzterSchluessel && !(tippt && abfrage.contains(document.activeElement))) {
       letzterSchluessel = schluessel;
@@ -258,6 +259,21 @@ export function anrufPanel(e: Einsatz): { root: HTMLElement; abfrageBox: HTMLEle
     }
 
     if (!a.kapitel) return;
+    // Andere Leitstelle: keine Abfrage, nur den passenden Code wählen
+    if (a.kapitel === "42") {
+      const sec = abschnitt("4 · Code wählen (keine Abfrage bei Anforderung durch andere Leitstelle)");
+      const opts = el("div", { class: "kapitel-liste" });
+      for (const [code, c] of Object.entries(schema.codes)) {
+        if (!c.kapitel.startsWith("42 ") && !c.kapitel.startsWith("42-")) continue;
+        const b = el("button", { class: `kapitel-opt${e.code === code ? " gewaehlt" : ""}` });
+        b.innerHTML = `<b>${esc(code)}</b> ${esc(c.name)} <span class="muted">· ${esc(c.kategorie)}</span>`;
+        b.disabled = !darf;
+        b.addEventListener("click", () => fehler(sim.call("aktualisiere", e.id, { code })));
+        opts.appendChild(b);
+      }
+      sec.appendChild(opts);
+      return;
+    }
     // Primärabfrage + Kapitelfragen (inkl. Kapitelwechsel)
     let phase = "";
     let sec: HTMLElement | null = null;
@@ -364,7 +380,14 @@ function aufloesungHtml(e: Einsatz): string {
   const wc = schema.codes[w.code];
   const zeilen: string[] = [];
   const ok = (b: boolean) => (b ? `<span class="ok">✔</span>` : `<span class="alert-text">✘</span>`);
-  zeilen.push(`<div>${ok(a.kapitel === w.kapitel)} Kapitel: <b>${esc(w.kapitel)} ${esc(K?.titel ?? "")}</b>${a.kapitel && a.kapitel !== w.kapitel ? ` <span class="muted">(gewählt: ${esc(a.kapitel)})</span>` : ""}</div>`);
+  const k = kontext(e);
+  const p = w.antworten;
+  const pat = [p.geschlecht === "m" ? "Mann" : p.geschlecht === "w" ? "Frau" : "", typeof p.alter === "number" ? `ca. ${p.alter} J.` : "", typeof p.bw === "string" ? { ja: "wach", getruebt: "benommen", nein: "bewusstlos" }[p.bw] ?? "" : "", typeof p.at === "string" ? { normal: "atmet normal", abnorm: "atmet schwer", agonal: "Schnappatmung", keine: "atmet nicht" }[p.at] ?? "" : ""].filter(Boolean).join(", ");
+  const lage = w.anrufer.meldung ?? (k ? schilderung(k) : "");
+  zeilen.push(`<div class="aufl-lage"><b>Lage:</b> ${esc(w.anrufer.stelle ?? w.anrufer.rolle.split(";")[0])}${lage ? ` – „${esc(lage)}“` : ""}${pat ? `<br><b>Patient:</b> ${esc(pat)}` : ""}</div>`);
+  // Kapitel zählt auch als richtig, wenn das gewählte Kapitel (z. B. über einen Kapitelwechsel) zum richtigen Code führt
+  const kapitelOk = a.kapitel === w.kapitel || e.code === w.code || (!!a.kapitel && bestimmeCode(schema, a.kapitel, w.antworten)?.code === w.code);
+  zeilen.push(`<div>${ok(kapitelOk)} Kapitel: <b>${esc(w.kapitel)} ${esc(K?.titel ?? "")}</b>${a.kapitel && a.kapitel !== w.kapitel ? ` <span class="muted">(gewählt: ${esc(a.kapitel)})</span>` : ""}</div>`);
   zeilen.push(`<div>${ok(e.code === w.code)} Code: <b>${esc(w.code)}</b> ${esc(wc?.name ?? "")} <span class="muted">${esc(wc?.kategorie ?? "")}${e.code && e.code !== w.code ? ` · eingetragen: ${esc(e.code)}` : ""}</span></div>`);
   zeilen.push(`<div class="muted">Anrufer: ${esc(w.anrufer.name)}, ${esc(w.anrufer.rolle)} · ${esc(w.anrufer.emotion)} · ${esc(w.anrufer.sprache)}${w.ortUnbekannt ? " · wusste den Ort nicht genau" : ""}</div>`);
   const tab: string[] = [];

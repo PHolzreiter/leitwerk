@@ -76,6 +76,18 @@ async function anruferAntwort(
   schemaFrage: Frage | undefined,
   onToken?: (t: string) => void,
 ): Promise<string> {
+  // Andere Leitstelle und eCall: die erste Meldung kommt fix vom Programm
+  const x = k.anrufer;
+  const ersteAntwort = !(e.anruf?.gespraech ?? []).some((m) => m.von === "anrufer");
+  const pause = () => new Promise((r) => setTimeout(r, 700));
+  if (ersteAntwort && frage === ERÖFFNUNG && (x.art === "ecall" || x.art === "leitstelle")) {
+    await pause();
+    return ersterSatzOhneKi(k);
+  }
+  if (x.art === "ecall" && !x.sprachkontakt) {
+    await pause();
+    return "(keine Antwort – im Hintergrund nur Geräusche aus dem Fahrzeug)";
+  }
   // Ollama evtl. erst nach dem Programmstart gestartet: Status neu holen
   if (!kiBereit() && inTauri() && kiPrefs().aktiv) await kiStatus().catch(() => null);
   if (!kiBereit()) {

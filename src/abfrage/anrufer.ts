@@ -20,6 +20,14 @@ export interface Anrufer {
   nummer: string;
   /** Patient ist der Anrufer selbst */
   selbst: boolean;
+  /** Sonderfälle: Polizei, Einrichtung, andere Leitstelle, eCall */
+  art?: "privat" | "polizei" | "einrichtung" | "leitstelle" | "ecall";
+  /** Name der Dienststelle/Einrichtung, z. B. „Landesleitzentrale der Polizei“ */
+  stelle?: string;
+  /** fertige Meldung (andere Leitstelle, eCall-Ansage), vom Programm erzeugt */
+  meldung?: string;
+  /** eCall: ob jemand im Fahrzeug antwortet */
+  sprachkontakt?: boolean;
 }
 
 const VORNAMEN_W = ["Maria", "Anna", "Elisabeth", "Sabine", "Andrea", "Claudia", "Julia", "Lisa", "Sandra", "Karin", "Monika", "Theresa", "Sophie", "Katharina", "Birgit", "Ingrid"];
@@ -54,7 +62,9 @@ type Situation = { ort: string; rolle: string; anruferWert: string; geschlecht?:
  * Wählt einen passenden Anrufer. Die Lage (Alter, Bewusstsein, Kapitel) beeinflusst
  * die Wahrscheinlichkeiten, legt aber nichts fest – so bleibt es abwechslungsreich.
  */
-export function anruferWaehlen(kapitel: string, a: Antworten, rnd: () => number = Math.random): Anrufer {
+export function anruferWaehlen(kapitel: string, a: Antworten, rnd: () => number = Math.random, adresse = ""): Anrufer {
+  const sonder = sonderAnrufer(kapitel, a, rnd, adresse);
+  if (sonder) return sonder;
   const alter = typeof a.alter === "number" ? a.alter : 50;
   const patientW = a.geschlecht === "w";
   const kannSelbst = a.bw === "ja" && (a.at === "normal" || a.at === "abnorm") && alter >= 14;
@@ -111,6 +121,122 @@ export function anruferWaehlen(kapitel: string, a: Antworten, rnd: () => number 
     nummer: telefonnummer(rnd),
     selbst: !!s.selbst,
   };
+}
+
+// ------------------------------------------------------------------ Sonderfälle (Kapitel gibt den Anrufer vor)
+
+function ortVon(adresse: string): string {
+  const m = adresse.match(/\d{4}\s+([^,]+)/) ?? adresse.match(/,\s*([^,]+)$/);
+  return (m?.[1] ?? adresse).trim();
+}
+
+const FAHRZEUGE = ["BMW X5", "VW Golf", "Skoda Octavia", "Audi A4", "VW Passat", "Mercedes C-Klasse", "Ford Focus", "Toyota Yaris", "Seat Leon", "Dacia Duster", "VW Transporter", "Renault Clio"];
+const FARBEN = ["schwarz", "weiß", "silber", "grau", "blau", "rot", "dunkelgrün"];
+
+function sonderAnrufer(kapitel: string, a: Antworten, rnd: () => number, adresse: string): Anrufer | null {
+  const ort = ortVon(adresse) || "dem Ort";
+  const basis = (p: Partial<Anrufer> & Pick<Anrufer, "rolle" | "anruferWert">): Anrufer => {
+    const geschlecht = p.geschlecht ?? (rnd() < 0.5 ? "w" : "m");
+    return {
+      name: `${pick(geschlecht === "w" ? VORNAMEN_W : VORNAMEN_M, rnd)} ${pick(NACHNAMEN, rnd)}`,
+      geschlecht,
+      ort: "Dienststelle",
+      emotion: "ruhig",
+      sprache: "hochdeutsch",
+      schwerhoerig: false,
+      nummer: telefonnummer(rnd),
+      selbst: false,
+      ...p,
+    };
+  };
+  if (kapitel === "38") {
+    const streife = `${ort} ${1 + Math.floor(rnd() * 3)}`;
+    return basis({
+      art: "polizei",
+      rolle: `Beamtin/Beamter der Landesleitzentrale der Polizei; die Streife „${streife}“ ist beim Patienten und hat den Rettungsdienst angefordert`,
+      anruferWert: "polizei",
+      stelle: "Landesleitzentrale der Polizei",
+      ort: "Landesleitzentrale (die Streife ist vor Ort)",
+      emotion: "ruhig",
+      nummer: "059133",
+    });
+  }
+  if (kapitel === "33") {
+    const anf = String(a.anforderer ?? "normal");
+    const heim = pick([`Pflegeheim ${ort}`, `Landespflegeheim ${ort}`, `Seniorenzentrum ${ort}`, `Pflege- und Betreuungszentrum ${ort}`], rnd);
+    const station = `Station ${1 + Math.floor(rnd() * 4)}`;
+    const varianten: Record<string, [string, string, string]> = {
+      normal: [rnd() < 0.7 ? `diplomierte Pflegekraft im ${heim}, ${station}` : `Hausärztin/Hausarzt in ${ort}`, rnd() < 0.7 ? heim : `Ordination in ${ort}`, rnd() < 0.7 ? `${heim}, ${station}` : `Ordination`],
+      telemed: ["Ärztin/Arzt der telefonischen Gesundheitsberatung (Telemedizin)", "Telemedizin", "Telemedizin-Zentrale (der Patient ist zu Hause)"],
+      "141": ["Ärztin/Arzt vom Ärztefunkdienst 141", "Ärztefunkdienst 141", "141-Callcenter (der Patient ist zu Hause)"],
+      ecn: ["Mitarbeiter/in der Gesundheitshotline 1450", "Gesundheitshotline 1450", "1450-Callcenter"],
+      schi: ["Pistenretter/in am Schigebiet", "Pistenrettung", "Piste"],
+    };
+    const [rolle, stelle, wo] = varianten[anf] ?? varianten.normal;
+    return basis({ art: "einrichtung", rolle, anruferWert: "einrichtung", stelle, ort: wo, emotion: "ruhig" });
+  }
+  if (kapitel === "42") {
+    const org = gewichtet<[string, string, string]>(
+      [
+        [["Bezirksalarmzentrale der Feuerwehr", "Feuerwehr", "feuerwehr"], 5],
+        [["Einsatzleitstelle der Bergrettung", "Bergrettung", "berg"], 2],
+        [["Einsatzleitstelle der Wasserrettung", "Wasserrettung", "wasser"], 1.5],
+        [["Rettungsleitstelle des Nachbarbundeslandes", "Nachbarleitstelle", "ls"], 1],
+      ],
+      rnd,
+    );
+    const mittel = String(a.mittel ?? "rtw");
+    return basis({
+      art: "leitstelle",
+      rolle: `Disponent/in der ${org[0]}`,
+      anruferWert: "ls",
+      stelle: org[0],
+      ort: "Leitstelle",
+      emotion: "ruhig",
+      meldung: lagebild42(org[2], mittel, adresse, rnd),
+    });
+  }
+  if (kapitel === "34") {
+    const kontakt = a.sprachkontakt === "ja";
+    const insassen = 1 + Math.floor(rnd() * 3);
+    const richtung = pick(["Nord", "Süd", "Ost", "West", "Nordost", "Südwest"], rnd);
+    const fz = `${pick(FAHRZEUGE, rnd)}, ${pick(FARBEN, rnd)}`;
+    return basis({
+      art: "ecall",
+      rolle: kontakt ? `Insasse des verunfallten Fahrzeugs (${fz})` : "automatische Unfallmeldung",
+      anruferWert: "system",
+      stelle: "eCall",
+      ort: "im verunfallten Fahrzeug",
+      emotion: kontakt ? pick(["gefasst", "aufgeregt"] as const, rnd) : "ruhig",
+      sprachkontakt: kontakt,
+      meldung: `Automatische Unfallmeldung. Auslösung: ${pick(["Airbag", "Airbag", "Aufprallsensor", "manuell (SOS-Taste)"], rnd)}. Fahrzeug: ${fz}. Fahrtrichtung: ${richtung}. Insassen laut Gurtsensor: ${insassen}. Position: ${adresse}. ${kontakt ? "Sprachverbindung wird hergestellt." : "Sprachverbindung: keine Antwort."}`,
+    });
+  }
+  return null;
+}
+
+/** Kurz-Lagebild einer anderen Leitstelle (ohne Abfrage) */
+function lagebild42(org: string, mittel: string, adresse: string, rnd: () => number): string {
+  const schwer = mittel === "na" || mittel === "nah";
+  const lagen: Record<string, [string[], string[]]> = {
+    feuerwehr: [
+      ["PKW gegen PKW, zwei Personen leicht verletzt, beide gehfähig", "Brand in einem Wohnhaus, eine Person mit Rauchgasverdacht", "PKW von der Fahrbahn abgekommen, Lenker leicht verletzt"],
+      ["PKW gegen Baum, eine Person eingeklemmt, ansprechbar", "PKW gegen PKW, unbekannte Anzahl an Betroffenen, ein Fahrzeug im Vollbrand", "Wohnungsbrand, eine Person bewusstlos aus der Wohnung gerettet", "LKW gegen PKW, Lenker eingeklemmt, schwer verletzt"],
+    ],
+    berg: [
+      ["Wanderer mit Knöchelverletzung, nicht mehr gehfähig, wird von der Bergrettung zur Forststraße gebracht", "Mountainbiker gestürzt, Handgelenk verletzt"],
+      ["Wanderer abgestürzt, ca. 20 Meter, ansprechbar, starke Schmerzen", "Kletterer abgestürzt, Bewusstsein getrübt", "Paragleiter abgestürzt, Rückenverletzung"],
+    ],
+    wasser: [
+      ["Badegast mit Schnittverletzung am Fuß", "Kind aus dem Wasser geholt, wach, hat Wasser geschluckt"],
+      ["Person aus dem Wasser gezogen, bewusstlos, Reanimation durch Wasserrettung läuft", "Badeunfall nach Kopfsprung, kann Beine nicht bewegen"],
+    ],
+    ls: [["Patient für Transport ins Krankenhaus, Grenzgebiet", "verletzte Person nach Sturz, Grenzgebiet"], ["Verkehrsunfall im Grenzgebiet, eine Person schwer verletzt", "Reanimation im Grenzgebiet, unsere Kräfte sind länger unterwegs"]],
+  };
+  const [leicht, ernst] = lagen[org] ?? lagen.feuerwehr;
+  const lage = pick(schwer ? ernst : leicht, rnd);
+  const bedarf: Record<string, string> = { ktw: "einen Transport", rtw: "einen RTW", na: "einen Notarzt und einen RTW", nah: "den Notarzthubschrauber" };
+  return `Einsatzort: ${adresse}. Lage: ${lage}. Wir brauchen ${bedarf[mittel] ?? "den Rettungsdienst"}.`;
 }
 
 // ------------------------------------------------------------------ Anweisung für das Sprachmodell
@@ -188,38 +314,152 @@ function faktenText(k: AnrufKontext): string {
   return zeilen.join("\n");
 }
 
+/** Was ein Laie über die Hauptbeschwerde sagt (je Kapitel) */
+const KAPITEL_LAIE: Record<string, string> = {
+  "1": "hat starke Bauchschmerzen",
+  "2": "hat eine allergische Reaktion, Ausschlag und Schwellung",
+  "3": "ist von einem Tier gebissen worden",
+  "4": "ist angegriffen worden",
+  "5": "hat starke Rückenschmerzen",
+  "6": "kriegt ganz schlecht Luft",
+  "7": "hat sich verbrannt",
+  "8": "hat irgendwas eingeatmet, Rauch oder Gas",
+  "9": "rührt sich nicht mehr",
+  "10": "hat starke Schmerzen in der Brust",
+  "11": "hat sich verschluckt und kriegt keine Luft",
+  "12": "hat einen Krampfanfall gehabt",
+  "13": "ist ganz komisch, Zucker ist wahrscheinlich nicht in Ordnung",
+  "14": "war im Wasser, wir haben ihn rausgeholt",
+  "15": "hat einen Stromschlag bekommen",
+  "16": "hat was mit dem Auge",
+  "17": "ist gestürzt",
+  "18": "hat ganz starke Kopfschmerzen",
+  "19": "hat Herzrasen bzw. Probleme mit dem Herz",
+  "20": "hat zu lange in der Hitze/Kälte verbracht und ist ganz schwach",
+  "21": "blutet stark",
+  "22": "ist eingeklemmt",
+  "23": "hat Tabletten oder etwas anderes geschluckt",
+  "24": "ist schwanger und es geht ihr nicht gut / die Geburt geht los",
+  "25": "ist psychisch völlig durch den Wind",
+  "26": "fühlt sich krank und schwach",
+  "27": "ist verletzt worden, mit einem Messer oder ähnlichem",
+  "28": "kann auf einmal nicht mehr richtig reden, eine Seite ist schwach",
+  "29": "ist in einen Unfall verwickelt",
+  "30": "hat sich verletzt",
+  "31": "ist umgekippt",
+  "32": "da stimmt was nicht, ich weiß nicht genau was",
+  "36": "hat hohes Fieber und Husten",
+  ALP: "hat sich am Berg verletzt",
+};
+
+/** Wie der Anrufer den Patienten nennt */
+function bezug(k: AnrufKontext): string {
+  const x = k.anrufer;
+  const w = k.wahrheit.geschlecht === "w";
+  const r = x.rolle.toLowerCase();
+  if (x.selbst) return "ich";
+  if (/ehemann|ehefrau|lebensgef/.test(r)) return w ? "meine Frau" : "mein Mann";
+  if (/^mutter|^vater/.test(r)) return w ? "meine Tochter" : "mein Sohn";
+  if (/tochter|sohn/.test(r)) return w ? "meine Mutter" : "mein Vater";
+  if (/pflege/.test(r)) return w ? "eine Bewohnerin" : "ein Bewohner";
+  if (/arzt|ärzt/.test(r)) return w ? "eine Patientin" : "ein Patient";
+  if (/lehrer/.test(r)) return w ? "eine Schülerin" : "ein Schüler";
+  if (/kolleg/.test(r)) return w ? "eine Kollegin" : "ein Kollege";
+  return w ? "eine Frau" : "ein Mann";
+}
+
+/** Vom Programm geschriebene Kernaussage auf „Was ist passiert?“ (passt immer zu den Fakten) */
+export function schilderung(k: AnrufKontext): string {
+  const wer = bezug(k);
+  let was = KAPITEL_LAIE[k.kapitel] ?? "dem geht's gar nicht gut";
+  if (k.kapitel === "38") {
+    const p = String(k.wahrheit.problem ?? "");
+    const pt: Record<string, string> = { brust: "hat Brustschmerzen", geburt: "die Geburt geht los", krampf: "hat einen Krampfanfall gehabt", schlaganfall: "hat Anzeichen für einen Schlaganfall", psych: "ist in einem psychischen Ausnahmezustand", lebensbedrohlich: "ist schwer krank", gering: "hat leichte Beschwerden" };
+    was = pt[p] ?? "hat ein medizinisches Problem";
+  }
+  if (wer === "ich") was = was.replace(/^hat /, "hab ").replace(/^ist /, "bin ").replace(/^kriegt /, "krieg ").replace(/^kann /, "kann ").replace(/^fühlt sich /, "fühl mich ").replace(/^blutet /, "blute ");
+  const zusatz: string[] = [];
+  if (k.wahrheit.bw === "nein") zusatz.push("reagiert nicht");
+  else if (k.wahrheit.bw === "getruebt") zusatz.push("ist ganz benommen");
+  if (k.wahrheit.at === "keine") zusatz.push("atmet nicht");
+  else if (k.wahrheit.at === "agonal") zusatz.push("schnappt nur ganz selten nach Luft");
+  else if (k.wahrheit.at === "abnorm" && k.kapitel !== "6") zusatz.push("schnauft ganz schwer");
+  const satz = `${wer === "ich" ? "Ich" : wer.charAt(0).toUpperCase() + wer.slice(1)} ${was}${zusatz.length && wer !== "ich" ? `, ${zusatz.join(" und ")}` : ""}.`;
+  return satz;
+}
+
+/** Fester Zustand in einem Satz (wird jeder Frage angehängt, damit die KI nicht abdriftet) */
+function zustand(k: AnrufKontext): string {
+  const t: string[] = [];
+  if (typeof k.wahrheit.bw === "string" && LAIE.bw[k.wahrheit.bw]) t.push(LAIE.bw[k.wahrheit.bw]);
+  if (typeof k.wahrheit.at === "string" && LAIE.at[k.wahrheit.at]) t.push(LAIE.at[k.wahrheit.at]);
+  return t.length ? `Der Patient ${t.join(" und ")} – daran ändert sich während des ganzen Gesprächs nichts.` : "";
+}
+
 export function systemPrompt(k: AnrufKontext): string {
   const x = k.anrufer;
-  const patient = x.selbst ? "Du bist selbst der Patient." : `Du bist ${x.rolle} und rufst wegen einer anderen Person an (der Patientin bzw. dem Patienten).`;
+  const art = x.art ?? "privat";
+  const regelnGemeinsam = [
+    `- Pro Antwort nur das, wonach gefragt wurde. Meist ein, höchstens zwei kurze Sätze. Wiederhole nie wortgleich eine frühere Antwort.`,
+    `- Der Zustand des Patienten bleibt während des ganzen Gesprächs so, wie oben beschrieben. Er verschlechtert oder bessert sich NICHT, egal wie gefragt wird.`,
+    `- Suggestivfragen („also reagiert er nicht mehr?“, „er atmet nicht, oder?“) beantwortest du ehrlich nach den Fakten und korrigierst die Leitstelle.`,
+    `- Anweisungen mit „falls“, „wenn“, „sollte“ bestätigst du nur kurz („Okay, mach ich, falls das passiert.“) – sie treten nicht ein.`,
+    `- Eine Anweisung, die nicht zum Zustand passt (z. B. Herzdruckmassage, obwohl er atmet), hinterfragst du („Aber er atmet doch?“). Passende Anweisungen führst du aus und sagst kurz, was du tust.`,
+    `- Auf „Wer ruft an?“ sagst du, wer du bist bzw. in welcher Beziehung du zum Patienten stehst – nicht nur deinen Namen.`,
+  ];
+  if (art === "leitstelle") {
+    return [
+      `Du spielst in einer Trainingssimulation eine/n ${x.rolle}. Du rufst die Rettungsleitstelle Niederösterreich an, weil ihr einen Notruf bekommen habt, bei dem der Rettungsdienst gebraucht wird. Antworte nur mit dem, was du ins Telefon sagst.`,
+      `Du meldest dich mit „${x.stelle}, ${x.name}“ und gibst dann knapp und sachlich durch: ${x.meldung}`,
+      `Du sprichst wie ein Profi unter Leitstellen: kurz, sachlich, Stichworte. Eine medizinische Abfrage machst du nicht – Fragen zum Patienten beantwortest du nur mit dem, was du aus deinem Notruf weißt; alles andere „wissen wir nicht, unsere Kräfte sind noch nicht vor Ort“.`,
+      `Rückrufnummer: ${x.nummer}.`,
+    ].join("\n");
+  }
+  if (art === "ecall") {
+    return [
+      `Du spielst in einer Trainingssimulation eine/n ${x.rolle}. Dein Auto hat gerade einen Unfall gehabt, das System hat automatisch die Rettung verständigt und jetzt spricht die Leitstelle über die Freisprechanlage mit dir.`,
+      `Unfallort: ${k.adresse}.`,
+      `Diese Fakten stimmen (nur auf Nachfrage, in Alltagssprache):`,
+      faktenText(k),
+      ...regelnGemeinsam,
+      EMOTION_TEXT[x.emotion],
+      sprachText(x),
+    ].join("\n");
+  }
+  const wer =
+    art === "polizei"
+      ? `Du bist ${x.rolle}. Du sprichst für die Streife vor Ort: Was die Streife gemeldet hat, weißt du; anderes fragst du bei der Streife nach („Moment, ich frag bei der Streife nach … “) und gibst dann die Antwort.`
+      : art === "einrichtung"
+        ? `Du bist ${x.rolle} (${x.stelle}). Du rufst wegen ${bezug(k)} an. Du sprichst ruhig und fachlich korrekt, aber knapp.`
+        : x.selbst
+          ? "Du bist selbst der Patient."
+          : `Du bist ${x.rolle} und rufst wegen ${bezug(k).replace(/^mein /, "deinem ").replace(/^meine /, "deiner ").replace(/^ein /, "einem ").replace(/^eine /, "einer ")} an.`;
   const ort = k.ortUnbekannt
     ? `Du weißt NICHT genau, wo du bist. Wenn nach dem Ort gefragt wird, beschreibst du nur grob, was du weißt und siehst: „${k.adresse}“. Eine Straße mit Hausnummer kennst du nicht.`
     : `Die Adresse, die du nennst: ${k.adresse}. Stockwerk, Tür oder Zufahrt sagst du nur, wenn extra danach gefragt wird.`;
+  const laie = art === "privat";
   return [
-    `Du spielst in einer Trainingssimulation eine echte Person, die beim Rettungsnotruf 144 in Niederösterreich anruft. Du bist KEIN Sanitäter und kein Arzt. Antworte nur mit dem, was diese Person ins Telefon sagt: Ich-Form, Deutsch, keine Regieanweisungen, keine Sternchen, keine Aufzählungen.`,
-    `Wer du bist: ${x.name}. ${patient} Du bist gerade hier: ${x.ort}. Deine Telefonnummer: ${x.nummer}.`,
+    `Du spielst in einer Trainingssimulation eine echte Person, die beim Rettungsnotruf 144 in Niederösterreich anruft.${laie ? " Du bist KEIN Sanitäter und kein Arzt." : ""} Antworte nur mit dem, was diese Person ins Telefon sagt: Ich-Form, Deutsch, keine Regieanweisungen, keine Sternchen, keine Aufzählungen.`,
+    `Wer du bist: ${x.name}. ${wer} Ort: ${x.ort}. Rückrufnummer: ${x.nummer}.`,
     ort,
-    `Was wirklich los ist (GEHEIM, nur damit du die Lage verstehst – sprich diese Fachwörter NIE aus): ${k.lage}.`,
-    `Diese Fakten stimmen. Du sagst sie aber NUR, wenn die Leitstelle genau danach fragt – jeweils nur den einen Punkt, in Alltagssprache:`,
+    art === "polizei" ? `Du meldest dich mit „Landesleitzentrale der Polizei, ${x.name}“.` : "",
+    `Auf „Was ist passiert?“ sagst du sinngemäß nur das: „${schilderung(k)}“ – in deinen eigenen Worten, nicht mehr.`,
+    `Hintergrund (GEHEIM, nur damit du die Lage verstehst – sprich diese Fachwörter NIE aus): ${k.lage}.`,
+    `Diese Fakten stimmen. Du sagst sie NUR, wenn die Leitstelle genau danach fragt – jeweils nur den einen Punkt${laie ? ", in Alltagssprache" : ""}:`,
     faktenText(k),
     `So redest du:`,
-    `- Pro Antwort nur das, wonach gefragt wurde. Meist ein, höchstens zwei kurze Sätze.`,
+    ...regelnGemeinsam,
     `- Von dir aus nennst du NIE Alter, Geschlecht, Bewusstsein, Atmung, Vorerkrankungen oder Medikamente. Die Leitstelle muss das einzeln erfragen.`,
-    `- Keine Fachbegriffe und keine Checklisten („wach, ansprechbar, Atmung normal“ ist verboten). Du beschreibst, was du siehst und hörst: „Er redet so komisch“, „sie schnauft ganz schwer“, „er ist auf einmal umgekippt“.`,
-    `- Auf „Wo ist der Notfallort?“ kommt die Adresse – sonst nichts. Wenn du panisch bist, darf vorher ein Ausruf kommen wie „Kommen Sie schnell, er atmet nicht mehr!“.`,
-    `- Auf „Was ist passiert?“ erzählst du in ein, zwei Alltagssätzen, was du erlebt hast – keine Zahlen, keine Liste.`,
-    x.selbst ? `- Du bist selbst betroffen: Was während einer Ohnmacht war, weißt du nicht; du erzählst nur, wie es dir ging und geht („Mir is auf einmal schwarz vor Augen worden“).` : "",
+    laie ? `- Keine Fachbegriffe und keine Checklisten („wach, ansprechbar, Atmung normal“ ist verboten). Du beschreibst, was du siehst und hörst: „Er redet so komisch“, „sie schnauft ganz schwer“.` : "",
+    `- Auf „Wo ist der Notfallort?“ kommt die Adresse – sonst nichts.${laie ? " Wenn du panisch bist, darf vorher ein Ausruf kommen wie „Kommen Sie schnell!“." : ""}`,
+    x.selbst ? `- Du bist selbst betroffen: Was während einer Ohnmacht war, weißt du nicht; du erzählst nur, wie es dir ging und geht.` : "",
     `- Wenn du etwas nicht weißt, sag das ehrlich. Wenn etwas gefragt wird, das oben nicht steht, antworte passend zur Lage, ohne den Fakten zu widersprechen.`,
-    `- Anweisungen der Leitstelle (z. B. Herzdruckmassage, Patient hinlegen) befolgst du und sagst kurz, was du tust.`,
     EMOTION_TEXT[x.emotion],
     sprachText(x),
     x.schwerhoerig ? "Du hörst schlecht und fragst ab und zu nach („Wie bitte?“)." : "",
     k.versuche > 1 ? `Du hast vorhin schon angerufen und niemand hat abgehoben – das sagst du gleich am Anfang vorwurfsvoll oder verzweifelt.` : "",
     k.rueckrufDurchLeitstelle ? "Die Leitstelle ruft dich zurück, weil dein Anruf vorhin nicht angenommen wurde." : "",
-    `Beispiele, wie es klingen soll:`,
-    `Leitstelle: Wo genau ist der Notfallort? → „Hauptstraße 12 in Gföhl.“`,
-    `Leitstelle: Was ist passiert? → „Mein Mann is beim Frühstück auf einmal zusammengesackt und redet nur mehr komisch.“`,
-    `Leitstelle: Ist er wach? → „Ja … also er schaut mich an, aber er sagt nix Gscheites.“`,
-    `FALSCH wäre: „Patient männlich, 67 Jahre, wach, ansprechbar, Atmung normal, Hautfarbe blass.“`,
+    laie ? `Beispiele, wie es klingen soll:\nLeitstelle: Wo genau ist der Notfallort? → „Hauptstraße 12 in Gföhl.“\nLeitstelle: Ist er wach? → „Ja … also er schaut mich an, aber er sagt nix Gscheites.“\nLeitstelle: Also reagiert er nicht mehr? (obwohl er wach ist) → „Doch, doch, er schaut mich eh an.“\nFALSCH wäre: „Patient männlich, 67 Jahre, wach, ansprechbar, Atmung normal.“` : "",
   ]
     .filter(Boolean)
     .join("\n");
@@ -227,9 +467,15 @@ export function systemPrompt(k: AnrufKontext): string {
 
 /** Kurzer Hinweis, der jeder Frage angehängt wird (hält kleine Modelle auf Kurs) */
 export function erinnerung(k: AnrufKontext, schemaFrage?: Frage): string {
-  const teile = ["Antworte nur auf diese eine Frage, kurz und in Alltagssprache, ohne weitere Details von dir aus."];
+  const teile = ["Antworte nur auf diese eine Frage, kurz, ohne weitere Details von dir aus, ohne dich zu wiederholen."];
+  const z = zustand(k);
+  if (z && k.anrufer.art !== "leitstelle") teile.push(z);
   if (schemaFrage) {
-    const t = schemaFrage.id === "ort_adresse" ? (k.ortUnbekannt ? `du weißt es nicht genau: ${k.adresse}` : k.adresse) : wahrheitText(k, schemaFrage);
+    let t: string | null;
+    if (schemaFrage.id === "ort_adresse") t = k.ortUnbekannt ? `du weißt es nicht genau: ${k.adresse}` : k.adresse;
+    else if (schemaFrage.id === "schilderung") t = schilderung(k);
+    else if (schemaFrage.id === "anrufer") t = k.anrufer.selbst ? "du bist selbst der Patient" : `du bist ${k.anrufer.rolle.split(";")[0]}`;
+    else t = wahrheitText(k, schemaFrage);
     if (t) teile.push(`Die ehrliche Antwort darauf ist: ${t}.`);
   }
   return `[Hinweis nur für dich, nicht aussprechen: ${teile.join(" ")}]`;
@@ -238,6 +484,10 @@ export function erinnerung(k: AnrufKontext, schemaFrage?: Frage): string {
 /** Antwort ohne KI auf die Eröffnung „Wo genau ist der Notfallort?“ */
 export function ersterSatzOhneKi(k: AnrufKontext): string {
   const x = k.anrufer;
+  if (x.art === "leitstelle") return `${x.stelle}, ${x.name}. ${x.meldung}`;
+  if (x.art === "ecall") return x.meldung ?? "Automatische Unfallmeldung.";
+  if (x.art === "polizei") return `Landesleitzentrale der Polizei, ${x.name}. Eine Streife braucht die Rettung: ${k.adresse}.`;
+  if (x.art === "einrichtung") return `${x.stelle}, ${x.name}. Wir bräuchten die Rettung: ${k.adresse}.`;
   const vorher = k.versuche > 1 ? "Ich hab vorhin schon angerufen! " : "";
   const dringend = x.emotion === "panisch" ? "Schnell, bitte kommen Sie! " : "";
   const ort = k.ortUnbekannt ? `Ich weiß nicht genau … ${k.adresse}.` : `${k.adresse}.`;
@@ -245,17 +495,13 @@ export function ersterSatzOhneKi(k: AnrufKontext): string {
   return `${vorher}${dringend}${ort}`;
 }
 
-function kurzLage(k: AnrufKontext): string {
-  const titel = k.schema.kapitel[k.kapitel]?.titel ?? "einen Notfall";
-  return `${titel.replace(/\s*\([^)]*\)?/g, "").split("/")[0].split(",")[0].trim()}.`;
-}
 
 /** Antwort ohne KI auf eine Schemafrage: die wahre Antwort in einfacher Form */
 export function antwortOhneKi(k: AnrufKontext, frage: Frage): string {
   if (frage.id === "ort_adresse") return k.ortUnbekannt ? `Ich weiß nicht genau … ${k.adresse}.` : k.adresse;
   if (frage.id === "rueckrufnummer") return k.anrufer.nummer;
-  if (frage.id === "anrufer") return k.anrufer.selbst ? "Ich bin selbst der Patient." : `Ich bin ${k.anrufer.rolle.toLowerCase()}.`;
-  if (frage.id === "schilderung") return k.anrufer.selbst ? `Mir geht's nicht gut … ${kurzLage(k)}` : `Es ist wegen … ${kurzLage(k)}`;
+  if (frage.id === "schilderung") return schilderung(k);
+  if (frage.id === "anrufer") return k.anrufer.selbst ? "Ich bin selbst der Patient." : `Ich bin ${k.anrufer.rolle.split(";")[0]}.`;
   if (LAIE[frage.id] && typeof k.wahrheit[frage.id] === "string") {
     const t = wahrheitText(k, frage);
     if (t) return `${t.charAt(0).toUpperCase()}${t.slice(1)}.`;
