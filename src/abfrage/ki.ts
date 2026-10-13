@@ -98,7 +98,7 @@ export async function kiChat(messages: KiNachricht[], onToken?: (t: string) => v
   const ch = new Channel<string>();
   ch.onmessage = (t) => onToken?.(t);
   const text = await invoke<string>("ki_chat", { model: kiPrefs().modell, messages, onToken: ch });
-  return bereinigen(text);
+  return satzEnde(bereinigen(text));
 }
 
 /** Denk-Abschnitte, Regieanweisungen und Anführungszeichen entfernen */
@@ -107,8 +107,17 @@ export function bereinigen(t: string): string {
     .replace(/<think>[\s\S]*?<\/think>/g, "")
     .replace(/^\s*(Anrufer(in)?|Ich|Caller)\s*:\s*/i, "")
     .replace(/\*[^*]{1,80}\*/g, "")
+    .replace(/\[Hinweis[^\]]*\]?/g, "")
+    .replace(/^\s*Leitstelle:.*$/gm, "")
     .replace(/^["„“]+|["„“]+$/g, "")
     .trim();
+}
+
+/** Lange Antwort, die an der Längengrenze abgeschnitten wurde: beim letzten Satzende aufhören */
+function satzEnde(t: string): string {
+  if (t.length < 250 || /[.!?…]$/.test(t)) return t;
+  const m = t.match(/^([\s\S]*[.!?…])\s/);
+  return m ? m[1] : t;
 }
 
 /** Beim Programmstart: Einstellung übernehmen und Ollama bei Bedarf still starten */

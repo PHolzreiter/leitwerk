@@ -25,7 +25,7 @@ export function istGespraechsfuehrer(e: Einsatz): boolean {
   return sim.mode === "solo" || a.angenommenVon.pid === (sim.ich?.pid ?? mp.ich.pid);
 }
 
-export function anrufPanel(e: Einsatz): { root: HTMLElement; refresh(): void } {
+export function anrufPanel(e: Einsatz): { root: HTMLElement; abfrageBox: HTMLElement; refresh(): void } {
   const root = el("div", { class: "mask-box anruf" });
   const kopf = el("div", { class: "anruf-kopf" });
   const verlauf = el("div", { class: "anruf-verlauf" });
@@ -36,7 +36,11 @@ export function anrufPanel(e: Einsatz): { root: HTMLElement; refresh(): void } {
   form.append(eingabe, senden);
   const codeZeile = el("div", { class: "anruf-code" });
   const abfrage = el("div", { class: "abfrage" });
-  root.append(kopf, verlauf, form, codeZeile, abfrage);
+  const aufloesung = el("div", { class: "aufloesung" });
+  root.append(kopf, verlauf, form, codeZeile, aufloesung);
+  // Die Abfrage steht als eigener Kasten weiter unten in der Maske (nach Einsatzort und Code)
+  const abfrageBox = el("div", { class: "mask-box abfrage-box" });
+  abfrageBox.append(el("div", { class: "box-title" }, "Abfrage"), abfrage);
 
   let liveText = "";
   const onToken = (t: string) => {
@@ -71,10 +75,11 @@ export function anrufPanel(e: Einsatz): { root: HTMLElement; refresh(): void } {
   function refresh() {
     const a = e.anruf;
     if (!a) {
-      root.hidden = true;
+      root.hidden = abfrageBox.hidden = true;
       return;
     }
     root.hidden = false;
+    abfrageBox.hidden = a.status !== "aktiv" && a.status !== "beendet";
     const ich = istGespraechsfuehrer(e);
     const fuehrerOnline = !a.angenommenVon || sim.mode === "solo" || mp.spieler.some((s) => s.pid === a.angenommenVon!.pid && s.online);
 
@@ -117,11 +122,34 @@ export function anrufPanel(e: Einsatz): { root: HTMLElement; refresh(): void } {
     // Vorläufiger Code
     const erg = a.ergebnis;
     const c = erg ? store.schema?.codes[erg.code] : null;
-    codeZeile.innerHTML = erg
-      ? `${erg.reanimation ? `<div class="reanimation">⚠ Reanimation anleiten! Herzdruckmassage, 100–120/min</div>` : ""}<div>Vorläufiger Code: <b>${esc(erg.code)}</b> ${esc(c?.name ?? "")} <span class="stufe-badge">${esc(c?.kategorie ?? "")}</span></div>`
-      : a.status === "aktiv" || a.status === "beendet"
-        ? `<span class="muted">Code ergibt sich aus der Abfrage (zuerst das Kapitel wählen).</span>`
-        : "";
+    const eigener = erg && e.codeQuelle === "dispo" && e.code !== erg.code;
+    const codeSchluessel = JSON.stringify([erg, e.code, e.codeQuelle, a.status]);
+    if (codeZeile.dataset.k !== codeSchluessel) {
+      codeZeile.dataset.k = codeSchluessel;
+      codeZeile.innerHTML = erg
+        ? `${erg.reanimation ? `<div class="reanimation">⚠ Reanimation anleiten! Herzdruckmassage, 100–120/min</div>` : ""}<div>${eigener ? "Abfrage ergibt" : "Vorläufiger Code"}: <b>${esc(erg.code)}</b> ${esc(c?.name ?? "")} <span class="stufe-badge">${esc(c?.kategorie ?? "")}</span></div>`
+        : a.status === "aktiv" || a.status === "beendet"
+          ? `<span class="muted">Code ergibt sich aus der Abfrage (Kapitel wählen) – oder unten bei „AMPDS-Code“ selbst suchen.</span>`
+          : "";
+      if (eigener) {
+        const zeile = el("div", { class: "muted" }, `Du hast selbst ${e.code} gewählt. `);
+        const b = el("button", { class: "btn small" }, "Code aus der Abfrage übernehmen");
+        b.addEventListener("click", () => fehler(sim.call("abfrageCode", e.id)));
+        zeile.appendChild(b);
+        codeZeile.appendChild(zeile);
+      }
+    }
+
+    // Auflösung nach dem Gespräch
+    const zeigbar = a.status === "beendet" || e.zustand === "abgeschlossen";
+    if (!zeigbar) aufloesung.innerHTML = "";
+    else if (!aufloesung.childElementCount) {
+      const b = el("button", { class: "btn small" }, "Auflösung zeigen");
+      b.addEventListener("click", () => {
+        aufloesung.innerHTML = aufloesungHtml(e);
+      });
+      aufloesung.appendChild(b);
+    }
 
     // Abfrage nur neu aufbauen, wenn sich etwas geändert hat (sonst geht der Fokus verloren)
     const schluessel = JSON.stringify([a.status, a.kapitel, a.antworten, a.extra, darf, a.angenommenVon?.pid]);
@@ -323,7 +351,37 @@ export function anrufPanel(e: Einsatz): { root: HTMLElement; refresh(): void } {
   }
 
   refresh();
-  return { root, refresh };
+  return { root, abfrageBox, refresh };
+}
+
+/** Vergleich: was wirklich war und was eingetragen wurde */
+function aufloesungHtml(e: Einsatz): string {
+  const schema = store.schema;
+  const w = e.wahr.abfrage;
+  const a = e.anruf;
+  if (!schema || !w || !a) return `<span class="muted">Keine Auflösung verfügbar.</span>`;
+  const K = schema.kapitel[w.kapitel];
+  const wc = schema.codes[w.code];
+  const zeilen: string[] = [];
+  const ok = (b: boolean) => (b ? `<span class="ok">✔</span>` : `<span class="alert-text">✘</span>`);
+  zeilen.push(`<div>${ok(a.kapitel === w.kapitel)} Kapitel: <b>${esc(w.kapitel)} ${esc(K?.titel ?? "")}</b>${a.kapitel && a.kapitel !== w.kapitel ? ` <span class="muted">(gewählt: ${esc(a.kapitel)})</span>` : ""}</div>`);
+  zeilen.push(`<div>${ok(e.code === w.code)} Code: <b>${esc(w.code)}</b> ${esc(wc?.name ?? "")} <span class="muted">${esc(wc?.kategorie ?? "")}${e.code && e.code !== w.code ? ` · eingetragen: ${esc(e.code)}` : ""}</span></div>`);
+  zeilen.push(`<div class="muted">Anrufer: ${esc(w.anrufer.name)}, ${esc(w.anrufer.rolle)} · ${esc(w.anrufer.emotion)} · ${esc(w.anrufer.sprache)}${w.ortUnbekannt ? " · wusste den Ort nicht genau" : ""}</div>`);
+  const tab: string[] = [];
+  for (const { frage } of fragenImAblauf(schema, w.kapitel, w.antworten)) {
+    const wahr = w.antworten[frage.id];
+    if (wahr === undefined || wahr === null) continue;
+    const ein = a.antworten[frage.id];
+    const gleich =
+      ein !== undefined &&
+      ein !== null &&
+      (String(ein) === String(wahr) || (typeof ein === "number" && typeof wahr === "number" && Math.abs(ein - wahr) <= 5));
+    tab.push(
+      `<tr><td>${ein === undefined ? `<span class="muted">–</span>` : ok(gleich)}</td><td>${esc(frage.text)}</td><td><b>${esc(antwortLabel(frage, wahr))}</b></td><td class="muted">${ein === undefined || ein === null ? "nicht gefragt" : esc(antwortLabel(frage, ein))}</td></tr>`,
+    );
+  }
+  if (tab.length) zeilen.push(`<table class="aufl-tab"><tr><th></th><th>Frage</th><th>Wahrheit</th><th>eingetragen</th></tr>${tab.join("")}</table>`);
+  return zeilen.join("");
 }
 
 /** Klartext aller Antworten (für Protokoll/Anzeige) */

@@ -1971,3 +1971,32 @@ input[type="color"] {
   margin-top: 8px;
   white-space: pre-wrap;
 }
+.ortung {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.ortung:empty {
+  display: none;
+}
+.aufloesung {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.aufloesung .ok {
+  color: var(--ok);
+}
+.aufl-tab {
+  border-collapse: collapse;
+  font-size: 12px;
+  margin-top: 4px;
+}
+.aufl-tab th,
+.aufl-tab td {
+  text-align: left;
+  padding: 2px 6px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}

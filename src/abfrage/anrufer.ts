@@ -141,52 +141,108 @@ export interface AnrufKontext {
   /** wie oft schon angerufen wurde (Rückruf nach verpasstem Anruf) */
   versuche: number;
   rueckrufDurchLeitstelle: boolean;
+  /** Anrufer weiß nicht genau, wo er ist (Ortung nötig) */
+  ortUnbekannt: boolean;
 }
 
-/** Fakten in Klartext: jede Schemafrage mit der wahren Antwort */
+/** Bewusstsein und Atmung in Laiensprache (so beschreibt es ein Anrufer) */
+const LAIE: Record<string, Record<string, string>> = {
+  bw: {
+    ja: "ist wach und redet normal",
+    getruebt: "ist benommen, redet verwirrt oder undeutlich, reagiert nur langsam",
+    nein: "reagiert überhaupt nicht, auch nicht auf Rütteln oder lautes Ansprechen",
+    unbekannt: "das weißt du nicht genau",
+  },
+  at: {
+    normal: "atmet ganz normal",
+    abnorm: "schnauft schwer, ringt nach Luft oder atmet sehr schnell",
+    agonal: "macht nur ganz selten so komische schnappende Atemzüge",
+    keine: "atmet nicht",
+    unbekannt: "das weißt du nicht",
+  },
+};
+
+/** Wahrheit zu einer Frage in Worten (für die KI) */
+export function wahrheitText(k: AnrufKontext, f: Frage): string | null {
+  const wert = k.wahrheit[f.id];
+  if (wert === undefined || wert === null) return null;
+  if (LAIE[f.id]?.[String(wert)]) {
+    const t = LAIE[f.id][String(wert)];
+    return k.anrufer.selbst && f.id === "bw" ? "du bist wach, aber dir geht es nicht gut" : t;
+  }
+  const label = antwortLabel(f, wert);
+  if (label === "–") return null;
+  return label === "Unbekannt" || label === "unbekannt" ? "das weißt du nicht" : label;
+}
+
+/** Fakten: jede Schemafrage mit der wahren Antwort (nur auf Nachfrage verraten) */
 function faktenText(k: AnrufKontext): string {
   const idx = frageIndex(k.schema);
   const zeilen: string[] = [];
-  for (const [id, wert] of Object.entries(k.wahrheit)) {
+  for (const id of Object.keys(k.wahrheit)) {
     const f: Frage | undefined = idx.get(id);
-    if (!f || f.typ === "text" || f.typ === "kapitelwahl" || id === "anrufer") continue;
-    const label = antwortLabel(f, wert);
-    if (label === "–") continue;
-    zeilen.push(`- ${f.text} → ${label === "Unbekannt" || label === "unbekannt" ? "weißt du nicht" : label}`);
+    if (!f || f.typ === "text" || f.typ === "kapitelwahl" || id === "anrufer" || id === "anzahl_patienten") continue;
+    const t = wahrheitText(k, f);
+    if (t) zeilen.push(`- ${f.text} → ${t}`);
   }
   return zeilen.join("\n");
 }
 
 export function systemPrompt(k: AnrufKontext): string {
   const x = k.anrufer;
-  const wer = x.selbst ? "Du bist selbst der Patient." : `Du bist ${x.rolle} des Patienten bzw. der Patientin.`;
+  const patient = x.selbst ? "Du bist selbst der Patient." : `Du bist ${x.rolle} und rufst wegen einer anderen Person an (der Patientin bzw. dem Patienten).`;
+  const ort = k.ortUnbekannt
+    ? `Du weißt NICHT genau, wo du bist. Wenn nach dem Ort gefragt wird, beschreibst du nur grob, was du weißt und siehst: „${k.adresse}“. Eine Straße mit Hausnummer kennst du nicht.`
+    : `Die Adresse, die du nennst: ${k.adresse}. Stockwerk, Tür oder Zufahrt sagst du nur, wenn extra danach gefragt wird.`;
   return [
-    `Du spielst in einer Trainingssimulation eine Person, die beim Rettungsnotruf 144 in Niederösterreich anruft. Antworte immer nur als diese Person, auf Deutsch, in der Ich-Form, ohne Regieanweisungen, ohne Erzählertext, ohne Sternchen.`,
-    `Wer du bist: ${x.name}. ${wer} Ort der Situation: ${x.ort}. Deine Rückrufnummer: ${x.nummer}.`,
-    `Adresse, die du nennst, wenn gefragt: ${k.adresse}.`,
-    `Was passiert ist (Hintergrund, NICHT wörtlich vorlesen, keine Fachbegriffe): ${k.lage}.${k.patientAlter ? ` Patient/in ca. ${k.patientAlter} Jahre.` : ""}`,
-    `Diese Fakten stimmen. Gib sie nur preis, wenn danach gefragt wird, und in eigenen, laienhaften Worten (eine Pflegekraft oder Ärztin darf fachlicher sprechen):`,
+    `Du spielst in einer Trainingssimulation eine echte Person, die beim Rettungsnotruf 144 in Niederösterreich anruft. Du bist KEIN Sanitäter und kein Arzt. Antworte nur mit dem, was diese Person ins Telefon sagt: Ich-Form, Deutsch, keine Regieanweisungen, keine Sternchen, keine Aufzählungen.`,
+    `Wer du bist: ${x.name}. ${patient} Du bist gerade hier: ${x.ort}. Deine Telefonnummer: ${x.nummer}.`,
+    ort,
+    `Was wirklich los ist (GEHEIM, nur damit du die Lage verstehst – sprich diese Fachwörter NIE aus): ${k.lage}.`,
+    `Diese Fakten stimmen. Du sagst sie aber NUR, wenn die Leitstelle genau danach fragt – jeweils nur den einen Punkt, in Alltagssprache:`,
     faktenText(k),
-    `Wenn nach etwas gefragt wird, das oben nicht steht, antworte plausibel und passend zur Lage, aber widersprich den Fakten nie. Wenn du etwas nicht weißt, sag das.`,
+    `So redest du:`,
+    `- Pro Antwort nur das, wonach gefragt wurde. Meist ein, höchstens zwei kurze Sätze.`,
+    `- Von dir aus nennst du NIE Alter, Geschlecht, Bewusstsein, Atmung, Vorerkrankungen oder Medikamente. Die Leitstelle muss das einzeln erfragen.`,
+    `- Keine Fachbegriffe und keine Checklisten („wach, ansprechbar, Atmung normal“ ist verboten). Du beschreibst, was du siehst und hörst: „Er redet so komisch“, „sie schnauft ganz schwer“, „er ist auf einmal umgekippt“.`,
+    `- Auf „Wo ist der Notfallort?“ kommt die Adresse – sonst nichts. Wenn du panisch bist, darf vorher ein Ausruf kommen wie „Kommen Sie schnell, er atmet nicht mehr!“.`,
+    `- Auf „Was ist passiert?“ erzählst du in ein, zwei Alltagssätzen, was du erlebt hast – keine Zahlen, keine Liste.`,
+    x.selbst ? `- Du bist selbst betroffen: Was während einer Ohnmacht war, weißt du nicht; du erzählst nur, wie es dir ging und geht („Mir is auf einmal schwarz vor Augen worden“).` : "",
+    `- Wenn du etwas nicht weißt, sag das ehrlich. Wenn etwas gefragt wird, das oben nicht steht, antworte passend zur Lage, ohne den Fakten zu widersprechen.`,
+    `- Anweisungen der Leitstelle (z. B. Herzdruckmassage, Patient hinlegen) befolgst du und sagst kurz, was du tust.`,
     EMOTION_TEXT[x.emotion],
     sprachText(x),
     x.schwerhoerig ? "Du hörst schlecht und fragst ab und zu nach („Wie bitte?“)." : "",
-    k.versuche > 1 ? `Du hast vorhin schon angerufen und niemand hat abgehoben – erwähne das gleich am Anfang vorwurfsvoll oder verzweifelt.` : "",
-    k.rueckrufDurchLeitstelle ? "Die Leitstelle ruft dich zurück, weil dein Anruf vorhin nicht angenommen werden konnte." : "",
-    `Halte dich kurz: meist 1–2 Sätze. Erzähle nicht alles auf einmal, sondern beantworte, was gefragt wird. Wenn die Leitstelle Anweisungen gibt (z. B. Herzdruckmassage, Kopf überstrecken), befolge sie und beschreibe, was du tust.`,
+    k.versuche > 1 ? `Du hast vorhin schon angerufen und niemand hat abgehoben – das sagst du gleich am Anfang vorwurfsvoll oder verzweifelt.` : "",
+    k.rueckrufDurchLeitstelle ? "Die Leitstelle ruft dich zurück, weil dein Anruf vorhin nicht angenommen wurde." : "",
+    `Beispiele, wie es klingen soll:`,
+    `Leitstelle: Wo genau ist der Notfallort? → „Hauptstraße 12 in Gföhl.“`,
+    `Leitstelle: Was ist passiert? → „Mein Mann is beim Frühstück auf einmal zusammengesackt und redet nur mehr komisch.“`,
+    `Leitstelle: Ist er wach? → „Ja … also er schaut mich an, aber er sagt nix Gscheites.“`,
+    `FALSCH wäre: „Patient männlich, 67 Jahre, wach, ansprechbar, Atmung normal, Hautfarbe blass.“`,
   ]
     .filter(Boolean)
     .join("\n");
 }
 
-/** Erster Satz ohne KI (Platzhalter, bis die KI antwortet, oder wenn keine KI da ist) */
+/** Kurzer Hinweis, der jeder Frage angehängt wird (hält kleine Modelle auf Kurs) */
+export function erinnerung(k: AnrufKontext, schemaFrage?: Frage): string {
+  const teile = ["Antworte nur auf diese eine Frage, kurz und in Alltagssprache, ohne weitere Details von dir aus."];
+  if (schemaFrage) {
+    const t = schemaFrage.id === "ort_adresse" ? (k.ortUnbekannt ? `du weißt es nicht genau: ${k.adresse}` : k.adresse) : wahrheitText(k, schemaFrage);
+    if (t) teile.push(`Die ehrliche Antwort darauf ist: ${t}.`);
+  }
+  return `[Hinweis nur für dich, nicht aussprechen: ${teile.join(" ")}]`;
+}
+
+/** Antwort ohne KI auf die Eröffnung „Wo genau ist der Notfallort?“ */
 export function ersterSatzOhneKi(k: AnrufKontext): string {
   const x = k.anrufer;
   const vorher = k.versuche > 1 ? "Ich hab vorhin schon angerufen! " : "";
-  const dringend = x.emotion === "panisch" ? "Schnell, bitte! " : x.emotion === "aufgeregt" ? "Bitte kommen Sie! " : "";
-  if (k.rueckrufDurchLeitstelle) return `Ja, hallo? Ach, die Rettung … ja, ich hab angerufen. ${dringend}`.trim();
-  if (x.selbst) return `${vorher}Hallo, ich bräuchte die Rettung. ${dringend}Mir geht's nicht gut.`;
-  return `${vorher}Hallo, Rettung? ${dringend}Es geht um ${x.selbst ? "mich" : "einen Patienten"}: ${kurzLage(k)}`;
+  const dringend = x.emotion === "panisch" ? "Schnell, bitte kommen Sie! " : "";
+  const ort = k.ortUnbekannt ? `Ich weiß nicht genau … ${k.adresse}.` : `${k.adresse}.`;
+  if (k.rueckrufDurchLeitstelle) return `Ja, hallo? Ach, die Rettung … ja, ich hab angerufen. ${dringend}${ort}`;
+  return `${vorher}${dringend}${ort}`;
 }
 
 function kurzLage(k: AnrufKontext): string {
@@ -196,10 +252,14 @@ function kurzLage(k: AnrufKontext): string {
 
 /** Antwort ohne KI auf eine Schemafrage: die wahre Antwort in einfacher Form */
 export function antwortOhneKi(k: AnrufKontext, frage: Frage): string {
-  if (frage.id === "ort_adresse") return k.adresse;
+  if (frage.id === "ort_adresse") return k.ortUnbekannt ? `Ich weiß nicht genau … ${k.adresse}.` : k.adresse;
   if (frage.id === "rueckrufnummer") return k.anrufer.nummer;
   if (frage.id === "anrufer") return k.anrufer.selbst ? "Ich bin selbst der Patient." : `Ich bin ${k.anrufer.rolle.toLowerCase()}.`;
-  if (frage.id === "schilderung") return `${kurzLage(k)}`;
+  if (frage.id === "schilderung") return k.anrufer.selbst ? `Mir geht's nicht gut … ${kurzLage(k)}` : `Es ist wegen … ${kurzLage(k)}`;
+  if (LAIE[frage.id] && typeof k.wahrheit[frage.id] === "string") {
+    const t = wahrheitText(k, frage);
+    if (t) return `${t.charAt(0).toUpperCase()}${t.slice(1)}.`;
+  }
   const w = k.wahrheit[frage.id];
   if (w === undefined || w === null) return "Das weiß ich nicht.";
   const label = antwortLabel(frage, w);

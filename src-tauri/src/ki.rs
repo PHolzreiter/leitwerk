@@ -304,7 +304,7 @@ pub async fn ki_chat(model: String, messages: Vec<ChatNachricht>, on_token: Chan
         "messages": messages,
         "stream": true,
         "keep_alive": "15m",
-        "options": { "temperature": 0.8, "num_ctx": 6144 }
+        "options": { "temperature": 0.75, "num_ctx": 6144, "num_predict": 110, "repeat_penalty": 1.1 }
     });
     // Modelle mit „Denkmodus“: für schnelle Antworten abschalten
     if model.starts_with("qwen3") || model.starts_with("deepseek-r1") {

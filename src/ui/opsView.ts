@@ -3,7 +3,7 @@ import { HOSPITAL_FLAGS, HOSPITAL_FLAG_LABEL, type HospitalFlag } from "../data/
 import { store } from "../data/store";
 import { findCode, hasCodes, searchCodes, type Einsatzcode } from "../sim/codes";
 import { ALLE_QUALIS, REGELN, besetzungKurz, generiereBesetzung, hatNFS, pruefeBesetzung, type Platz, type Quali } from "../sim/crew";
-import { sim, type Einsatz, type Ort, type SimFahrzeug } from "../sim/engine";
+import { infoFreitext, sim, type Einsatz, type Ort, type SimFahrzeug } from "../sim/engine";
 import { mp } from "../net/mehrspieler";
 import { distanceM, searchAddress, type AddressHit } from "../sim/geo";
 import { KATEGORIE_LABEL, type StatusKey } from "../sim/settings";
@@ -512,11 +512,58 @@ export function createOpsView(left: HTMLElement, right: HTMLElement, deps: OpsDe
       void refreshSuggestions();
     });
     adrRow.appendChild(btnPick);
+    // Bei Notrufen: genannte Adresse übernehmen und Handy-Ortung
+    const btnGenannt = el("button", { class: "btn small" }, "Genannte Adresse übernehmen");
+    btnGenannt.addEventListener("click", () => {
+      adr.input.value = e.meldung.adresse;
+      adr.input.dispatchEvent(new Event("input"));
+      adr.input.focus();
+    });
+    const btnOrtung = el("button", { class: "btn small" }, "📡 Ortung");
+    btnOrtung.addEventListener("click", () => void fehlerZeigen(sim.call("ortung", e.id)));
+    adrRow.append(btnGenannt, btnOrtung);
+    const ortungOut = el("div", { class: "ortung" });
+    let ortungKey = "";
+    const zeigeOrtung = () => {
+      const a = e.anruf;
+      btnGenannt.hidden = btnOrtung.hidden = !a;
+      if (!a) return;
+      btnGenannt.disabled = !a.gespraech.some((m) => m.von === "anrufer");
+      btnGenannt.title = btnGenannt.disabled ? "Erst wenn der Anrufer etwas gesagt hat" : `„${e.meldung.adresse}“ suchen`;
+      const o = a.ortung;
+      btnOrtung.disabled = a.status === "klingelt" || o?.status === "laeuft";
+      const key = JSON.stringify(o ?? null);
+      if (key === ortungKey) return;
+      ortungKey = key;
+      ortungOut.innerHTML = "";
+      if (!o) return;
+      if (o.status === "laeuft") {
+        ortungOut.innerHTML = `<span class="muted">📡 Ortung läuft …</span>`;
+        return;
+      }
+      const lat = o.lat!;
+      const lon = o.lon!;
+      ortungOut.innerHTML = `📡 <b>${esc(o.art ?? "")}</b> ±${o.radius} m <span class="muted">${lat.toFixed(5)}, ${lon.toFixed(5)}</span> `;
+      const zeigen = el("button", { class: "btn small" }, "Karte");
+      zeigen.addEventListener("click", () => deps.flyTo(lat, lon, o.radius! > 500 ? 13 : 16));
+      const nehmen = el("button", { class: "btn small primary" }, "Als Einsatzort übernehmen");
+      nehmen.addEventListener("click", () => {
+        const label = `Ortung ±${o.radius} m (${lat.toFixed(5)}, ${lon.toFixed(5)})`;
+        adr.input.value = label;
+        void fehlerZeigen(sim.call("aktualisiere", e.id, { adresse: { lat, lon, label } }));
+        deps.flyTo(lat, lon, o.radius! > 500 ? 13 : 16);
+        void refreshSuggestions();
+      });
+      ortungOut.append(zeigen, nehmen);
+    };
     const zusatz = el("input", { type: "text", placeholder: "Zusatz (Stiege, Stock, Tür, Zufahrt …)" });
     zusatz.value = e.zusatz;
     zusatz.addEventListener("change", () => void fehlerZeigen(sim.call("aktualisiere", e.id, { zusatz: zusatz.value })));
-    adrBox.append(adr.root, adrRow, zusatz);
+    adrBox.append(adr.root, adrRow, ortungOut, zusatz);
     root.appendChild(adrBox);
+    zeigeOrtung();
+    // Abfrage nach Code und Einsatzort
+    root.appendChild(anruf.abfrageBox);
 
     btnUse.addEventListener("click", () => {
       adr.input.value = e.meldung.adresse;
@@ -534,7 +581,24 @@ export function createOpsView(left: HTMLElement, right: HTMLElement, deps: OpsDe
     infoBox.innerHTML = `<div class="box-title">Informationen</div>`;
     const infoRtw = el("textarea", { rows: "2", placeholder: "Info an die Fahrzeuge (z. B. Zufahrt über Hof, Hund im Haus)" });
     infoRtw.value = e.infoRtw;
-    infoRtw.addEventListener("change", () => void fehlerZeigen(sim.call("aktualisiere", e.id, { infoRtw: infoRtw.value })));
+    // Vorne steht automatisch „m 67J B~ A+“ aus der Abfrage; eigener Text kommt hinter „//“
+    infoRtw.addEventListener("input", () => {
+      const auto = e.infoAuto ?? "";
+      if (!auto || !infoRtw.value.startsWith(auto)) return;
+      const rest = infoRtw.value.slice(auto.length);
+      if (rest.trim() && !/^\s*\/\//.test(rest)) {
+        infoRtw.value = `${auto} // ${rest.trimStart()}`;
+        infoRtw.selectionStart = infoRtw.selectionEnd = infoRtw.value.length;
+      }
+    });
+    infoRtw.addEventListener("change", () => {
+      const auto = e.infoAuto ?? "";
+      // nur „//“ ohne Text dahinter wieder entfernen
+      const frei = infoFreitext(infoRtw.value, auto);
+      const wert = auto && infoRtw.value.startsWith(auto) ? (frei ? `${auto} // ${frei}` : auto) : infoRtw.value;
+      infoRtw.value = wert;
+      void fehlerZeigen(sim.call("aktualisiere", e.id, { infoRtw: wert }));
+    });
     const infoIntern = el("textarea", { rows: "2", placeholder: "Interne Info für die Leitstelle" });
     infoIntern.value = e.infoIntern;
     infoIntern.addEventListener("change", () => void fehlerZeigen(sim.call("aktualisiere", e.id, { infoIntern: infoIntern.value })));
@@ -667,6 +731,7 @@ export function createOpsView(left: HTMLElement, right: HTMLElement, deps: OpsDe
       refresh() {
         anruf.refresh();
         meld.hidden = !!e.anruf;
+        zeigeOrtung();
         if (e.code !== letzterCode) {
           letzterCode = e.code;
           showCode();

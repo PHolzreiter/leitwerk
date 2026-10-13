@@ -5,7 +5,7 @@
  */
 import { store } from "../data/store";
 import { sim, type Einsatz } from "../sim/engine";
-import { antwortOhneKi, ersterSatzOhneKi, systemPrompt, type AnrufKontext } from "./anrufer";
+import { antwortOhneKi, erinnerung, ersterSatzOhneKi, systemPrompt, type AnrufKontext } from "./anrufer";
 import { kiBereit, kiChat, kiPrefs, kiStatus, type KiNachricht } from "./ki";
 import { inTauri } from "../platform";
 import type { Frage } from "./schema";
@@ -26,6 +26,7 @@ export function kontext(e: Einsatz): AnrufKontext | null {
     patientAlter: e.wahr.patientAlter,
     versuche: e.anruf.versuche,
     rueckrufDurchLeitstelle: e.anruf.rueckruf,
+    ortUnbekannt: !!w.ortUnbekannt,
   };
 }
 
@@ -40,7 +41,7 @@ function einfacheAntwort(k: AnrufKontext, frage: string, schemaFrage?: Frage): s
   const f = frage.toLowerCase();
   if (/notfallort|adresse|wo\b|wohin/.test(f)) return k.adresse;
   if (/nummer|erreichbar/.test(f)) return k.anrufer.nummer;
-  if (/passiert|was ist|was los/.test(f)) return ersterSatzOhneKi({ ...k, versuche: 1 }).replace(/^.*?– /, "");
+  if (/passiert|was ist|was los/.test(f)) return antwortOhneKi(k, { id: "schilderung", typ: "text", text: frage } as Frage);
   if (/alt\b|alter|jahre/.test(f)) return k.patientAlter ? `So um die ${k.patientAlter}.` : "Das weiß ich nicht genau.";
   if (/name/.test(f)) return k.anrufer.name;
   return "Das weiß ich nicht genau.";
@@ -81,7 +82,7 @@ async function anruferAntwort(
     // Ohne KI: kurze Pause wie beim Sprechen, dann die passende Antwort
     await new Promise((r) => setTimeout(r, 600));
     const erste = (e.anruf?.gespraech ?? []).filter((m) => m.von === "anrufer").length === 0;
-    if (erste && frage === ERÖFFNUNG) return `${ersterSatzOhneKi(k)} Die Adresse ist ${k.adresse}.`;
+    if (erste && frage === ERÖFFNUNG) return ersterSatzOhneKi(k);
     return einfacheAntwort(k, frage, schemaFrage);
   }
   const verlauf: KiNachricht[] = [{ role: "system", content: systemPrompt(k) }];
@@ -93,6 +94,12 @@ async function anruferAntwort(
   const letzte = verlauf[verlauf.length - 1];
   if (frage && !(letzte.role === "user" && letzte.content === `Leitstelle: ${frage}`)) {
     verlauf.push({ role: "user", content: `Leitstelle: ${frage}` });
+  }
+  // Kurzer Hinweis an die letzte Frage hängen (wird nicht im Verlauf gespeichert)
+  const zuletzt = verlauf[verlauf.length - 1];
+  if (zuletzt.role === "user") {
+    const sf = schemaFrage ?? (frage === ERÖFFNUNG ? ({ id: "ort_adresse", typ: "text", text: frage } as Frage) : undefined);
+    verlauf[verlauf.length - 1] = { role: "user", content: `${zuletzt.content}\n${erinnerung(k, sf)}` };
   }
   try {
     return await kiChat(verlauf, onToken);

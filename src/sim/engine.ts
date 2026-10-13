@@ -134,6 +134,8 @@ export interface Anruf {
   extra: { aufwertung: string | null; zusatz: string | null; polizei: boolean };
   /** vorläufiger Code und Reanimationshinweis aus der Abfrage */
   ergebnis: { code: string; reanimation: boolean } | null;
+  /** Handy-Ortung (AML/GPS oder Funkzelle) */
+  ortung?: { status: "laeuft" | "fertig"; fertigUm: number; lat?: number; lon?: number; radius?: number; art?: string } | null;
 }
 
 /** Wer einen Einsatz gerade bearbeitet (Multiplayer) */
@@ -158,7 +160,7 @@ export interface Einsatz {
     abteilung: HospitalFlag;
     rtwBuchtSelbst: boolean;
     /** Wahrheit für den Anrufer (Abfrageschema) */
-    abfrage?: { kapitel: string; antworten: Antworten; code: string; anrufer: Anrufer; lage: string };
+    abfrage?: { kapitel: string; antworten: Antworten; code: string; anrufer: Anrufer; lage: string; ortUnbekannt?: boolean };
   };
   /** Was gemeldet wurde (später: Ergebnis der Notrufabfrage) */
   meldung: { text: string; adresse: string; adresseFalsch: boolean };
@@ -166,10 +168,13 @@ export interface Einsatz {
   abfrage: Record<string, string> | null;
   /** Eingaben des Disponenten */
   code: string | null;
+  /** dispo = vom Disponenten gewählt (die Abfrage überschreibt ihn dann nicht mehr) */
   codeQuelle: "dispo" | "abfrage" | null;
   adresse: Ort | null;
   zusatz: string;
   infoRtw: string;
+  /** automatisch aus der Abfrage (Geschlecht, Alter, B, A) – steht vorne in infoRtw */
+  infoAuto?: string;
   infoIntern: string;
   bo: Ort | null;
   zo: Ort | null;
@@ -225,6 +230,8 @@ export const BEFEHLE = {
     "anrufBeenden",
     "abfrageSetze",
     "abfrageExtra",
+    "abfrageCode",
+    "ortung",
   ],
   steuern: ["start", "pause", "setTempo", "generiere", "setWetter", "neuPlanen", "reset"],
   immer: ["chat"],
@@ -240,6 +247,37 @@ export function berechtigungFuer(b: Befehl): Berechtigung | null {
 
 function rnd(min: number, max: number): number {
   return min + Math.random() * (max - min);
+}
+
+/** Freitext aus der Info an den RTW (ohne den automatischen Teil vorne) */
+export function infoFreitext(info: string, auto: string): string {
+  if (!auto) return info.trim();
+  if (info.startsWith(auto)) return info.slice(auto.length).replace(/^\s*\/\/\s*/, "").trim();
+  return info.trim();
+}
+
+/** Punkt in gegebener Entfernung (m) und Richtung (Grad) */
+function versetzt(lat: number, lon: number, meter: number, grad: number): { lat: number; lon: number } {
+  const r = (grad * Math.PI) / 180;
+  const dLat = (meter * Math.cos(r)) / 111_320;
+  const dLon = (meter * Math.sin(r)) / (111_320 * Math.cos((lat * Math.PI) / 180));
+  return { lat: lat + dLat, lon: lon + dLon };
+}
+
+/** Wahrscheinlichkeit je Kapitel, dass der Anrufer draußen ist und den Ort nicht genau kennt */
+const ORT_UNBEKANNT: Record<string, number> = { ALP: 0.8, "14": 0.4, "29": 0.2, "17": 0.12, "30": 0.12, "20": 0.15, "22": 0.15, "3": 0.15, "2": 0.08 };
+
+/** Grobe Ortsbeschreibung, wie ein Anrufer ohne Adresse sie gibt (oder null = Adresse bekannt) */
+function ortUnbekanntBeschreibung(kapitel: string, ort: string): string | null {
+  if (Math.random() >= (ORT_UNBEKANNT[kapitel] ?? 0)) return null;
+  const bei = ort.replace(/^.*,\s*/, "").replace(/^\d{4}\s+/, "") || "dem Ort";
+  const varianten: Record<string, string[]> = {
+    ALP: [`am Berg oberhalb von ${bei}, irgendwo am Wanderweg`, `im Wald über ${bei}, auf einem Steig, ich seh nur Bäume`, `auf einer Forststraße bei ${bei}, wir sind schon ewig gegangen`],
+    "14": [`am Wasser bei ${bei}, beim Ufer, da ist so ein Badeplatz`, `an der Donau bei ${bei}, irgendwo am Radweg`],
+    "29": [`auf der Landstraße bei ${bei}, kurz nach dem Ortsende`, `auf der Straße zwischen ${bei} und dem nächsten Ort, bei einer Kurve`],
+  };
+  const allgemein = [`auf einem Feldweg bei ${bei}`, `im Wald bei ${bei}, beim Weg`, `am Radweg bei ${bei}, zwischen den Feldern`];
+  return pick(varianten[kapitel] ?? allgemein);
 }
 
 function pick<T>(arr: T[]): T {
@@ -1210,6 +1248,14 @@ export class Simulation {
       if (andere.length) gemeldet = pick(andere).label;
     }
     const alter = typeof fall?.antworten.alter === "number" ? fall.antworten.alter : null;
+    // Notruf aus der Natur: Anrufer weiß nicht genau, wo er ist (Ortung nötig)
+    const draussen = fall ? ortUnbekanntBeschreibung(fall.kapitel, adr.city || adr.label) : null;
+    if (fall && draussen) {
+      const p = versetzt(adr.lat, adr.lon, rnd(400, 1800), rnd(0, 360));
+      const e = this.erstelleEinsatz({ lat: p.lat, lon: p.lon, adresse: `Koordinate ${p.lat.toFixed(5)}, ${p.lon.toFixed(5)} (${draussen})`, code, gemeldeteAdresse: draussen, fall, patientAlter: alter });
+      if (e.wahr.abfrage) e.wahr.abfrage.ortUnbekannt = true;
+      return e;
+    }
     return this.erstelleEinsatz({ lat: adr.lat, lon: adr.lon, adresse: adr.label, code, gemeldeteAdresse: gemeldet, fall, patientAlter: alter });
   }
 
@@ -1225,6 +1271,7 @@ export class Simulation {
     for (const e of this.state.einsaetze) {
       const a = e.anruf;
       if (!a || e.zustand === "abgeschlossen") continue;
+      if (a.ortung?.status === "laeuft" && t >= a.ortung.fertigUm) this.ortungFertig(e);
       if (a.status === "klingelt" && t >= a.klingelBis) {
         a.status = "verpasst";
         a.seit = t;
@@ -1334,12 +1381,15 @@ export class Simulation {
   private abfrageAuswerten(e: Einsatz): void {
     const a = e.anruf;
     const schema = store.schema;
+    if (a) this.infoAusAbfrage(e, a.antworten);
     if (!a || !schema || !a.kapitel) {
       if (a) a.ergebnis = null;
       return;
     }
     const erg = bestimmeCode(schema, a.kapitel, a.antworten, a.extra);
     a.ergebnis = erg ? { code: erg.code, reanimation: erg.reanimation } : null;
+    // Selbst gewählter Code bleibt; die Abfrage zeigt ihren Vorschlag nur an
+    if (e.codeQuelle === "dispo") return;
     if (erg && erg.code !== e.code && findCode(erg.code)) {
       const vorher = e.code;
       e.code = erg.code;
@@ -1349,6 +1399,55 @@ export class Simulation {
     }
   }
 
+
+  /** „m 67J B~ A+“ aus der Abfrage vorne in die Info an den RTW schreiben, Freitext bleibt hinter „//“ */
+  private infoAusAbfrage(e: Einsatz, a: Antworten): void {
+    const teile: string[] = [];
+    if (a.geschlecht === "m" || a.geschlecht === "w") teile.push(a.geschlecht);
+    if (typeof a.alter === "number") teile.push(`${a.alter}J`);
+    const b: Record<string, string> = { ja: "B+", getruebt: "B~", nein: "B-" };
+    const at: Record<string, string> = { normal: "A+", abnorm: "A~", agonal: "A-", keine: "A-" };
+    if (typeof a.bw === "string" && b[a.bw]) teile.push(b[a.bw]);
+    if (typeof a.at === "string" && at[a.at]) teile.push(at[a.at]);
+    const neu = teile.join(" ");
+    const alt = e.infoAuto ?? "";
+    if (neu === alt) return;
+    const frei = infoFreitext(e.infoRtw, alt);
+    e.infoAuto = neu;
+    e.infoRtw = neu && frei ? `${neu} // ${frei}` : neu || frei;
+  }
+
+  /** Den Code aus der Abfrage übernehmen (nachdem der Disponent selbst einen gewählt hatte) */
+  abfrageCode(id: string): void {
+    const e = this.einsatz(id);
+    if (!e?.anruf) return;
+    e.codeQuelle = "abfrage";
+    this.abfrageAuswerten(e);
+    this.emit();
+  }
+
+  /** Handy-Ortung anstoßen; das Ergebnis kommt nach einigen Sekunden (Simulationszeit) */
+  ortung(id: string): void {
+    const e = this.einsatz(id);
+    const a = e?.anruf;
+    if (!e || !a) throw new Error("Ortung gibt es nur bei Notrufen");
+    if (a.status === "klingelt") throw new Error("Bitte zuerst den Anruf annehmen");
+    if (a.ortung?.status === "laeuft") return;
+    a.ortung = { status: "laeuft", fertigUm: this.state.zeit + rnd(12, 40) * 1000 };
+    this.log(e, "Ortung angefordert");
+    this.emit();
+  }
+
+  private ortungFertig(e: Einsatz): void {
+    const o = e.anruf?.ortung;
+    if (!o) return;
+    const draussen = !!e.wahr.abfrage?.ortUnbekannt;
+    const gps = Math.random() < (draussen ? 0.75 : 0.65);
+    const radius = Math.round(gps ? rnd(8, 60) : rnd(300, 2500) / 50) * (gps ? 1 : 50);
+    const p = versetzt(e.wahr.lat, e.wahr.lon, Math.random() * radius * 0.6, rnd(0, 360));
+    Object.assign(o, { status: "fertig", lat: p.lat, lon: p.lon, radius, art: gps ? "GPS (AML)" : "Funkzelle" });
+    this.log(e, `Ortung: ${o.art} ±${radius} m`);
+  }
 
   /** Alle Einsätze und Fahrzeugzustände zurücksetzen. */
   reset(): void {
