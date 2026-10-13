@@ -24,7 +24,7 @@ computing gzip size...
 [2mdist/[22m[32mindex.html                 [39m[1m[2m    3.10 kB[22m[1m[22m[2m │ gzip:   1.07 kB[22m
 [2mdist/[22m[2massets/[22m[35mindex-DuyWckhE.css  [39m[1m[2m   86.67 kB[22m[1m[22m[2m │ gzip:  13.95 kB[22m
 [2mdist/[22m[2massets/[22m[36mindex-BdjhfpAE.js   [39m[1m[2m1,272.92 kB[22m[1m[22m[2m │ gzip: 349.62 kB[22m
-[32m✓ built in 3.91s[39m
+[32m✓ built in 3.20s[39m
 ### npx tauri icon app-icon.png
         Appx Creating StoreLogo.png
         Appx Creating Square30x30Logo.png
@@ -90,8 +90,8 @@ computing gzip size...
 [1m[92m  Downloaded[0m deranged v0.5.9
 [1m[92m   Compiling[0m deranged v0.5.9
 [1m[92m    Checking[0m time v0.3.55
-[1m[92m    Checking[0m cookie v0.18.2
 [1m[92m    Checking[0m plist v1.10.1
+[1m[92m    Checking[0m cookie v0.18.2
 [1m[92m    Checking[0m wry v0.57.0
 [1m[92m    Checking[0m tauri-utils v2.10.1
 [1m[92m    Checking[0m tauri-runtime v2.12.1
@@ -102,10 +102,10 @@ computing gzip size...
 [1m[92m   Compiling[0m tauri v2.12.3
 [1m[92m   Compiling[0m tauri-plugin-fs v2.7.0
 [1m[92m   Compiling[0m tauri-macros v2.7.2
-[1m[92m   Compiling[0m tauri-plugin-dialog v2.8.2
 [1m[92m   Compiling[0m tauri-plugin-updater v2.13.3
+[1m[92m   Compiling[0m tauri-plugin-dialog v2.8.2
 [1m[92m   Compiling[0m leitwerk v0.4.2 (/home/runner/work/leitwerk/leitwerk/src-tauri)
-[1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 18.84s
+[1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 23.76s
 ### python3 tools/build_default_data.py
 data/default/dienststellen.csv: 168 Zeilen
 data/default/fahrzeuge.csv: 135 Zeilen
