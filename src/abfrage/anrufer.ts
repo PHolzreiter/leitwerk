@@ -109,7 +109,7 @@ export function anruferWaehlen(kapitel: string, a: Antworten, rnd: () => number 
   const sprache: Anrufer["sprache"] = s.profi ? (rnd() < 0.1 ? "dialekt" : "hochdeutsch") : gewichtet([["hochdeutsch", 6], ["dialekt", 3], ["gebrochen", 1.5]], rnd);
   const vorname = pick(geschlecht === "w" ? VORNAMEN_W : VORNAMEN_M, rnd);
   return {
-    rolle: s.rolle,
+    rolle: gendern(s.rolle, geschlecht),
     anruferWert: s.anruferWert,
     name: `${vorname} ${pick(NACHNAMEN, rnd)}`,
     geschlecht,
@@ -121,6 +121,28 @@ export function anruferWaehlen(kapitel: string, a: Antworten, rnd: () => number 
     nummer: telefonnummer(rnd),
     selbst: !!s.selbst,
   };
+}
+
+/** „Ärztin/Arzt“ → passende Form zum Geschlecht */
+function gendern(t: string, g: "m" | "w"): string {
+  return t
+    .replace(/Beamtin\/Beamter/g, g === "w" ? "Beamtin" : "Beamter")
+    .replace(/Hausärztin\/Hausarzt/g, g === "w" ? "Hausärztin" : "Hausarzt")
+    .replace(/Ärztin\/Arzt/g, g === "w" ? "Ärztin" : "Arzt")
+    .replace(/Disponent\/in/g, g === "w" ? "Disponentin" : "Disponent")
+    .replace(/Mitarbeiter\/in/g, g === "w" ? "Mitarbeiterin" : "Mitarbeiter")
+    .replace(/Pistenretter\/in/g, g === "w" ? "Pistenretterin" : "Pistenretter")
+    .replace(/eine\/n /g, g === "w" ? "eine " : "einen ");
+}
+
+/** „Ich bin …“ für die Frage „Wer ruft an?“ */
+export function werText(x: Anrufer): string {
+  if (x.selbst) return "Ich bin selbst der Patient.";
+  const r = x.rolle.split(";")[0].split("(")[0].trim();
+  if (x.art === "ecall") return x.sprachkontakt ? `Ich sitz im Auto, ich bin ${x.geschlecht === "w" ? "die Fahrerin" : "der Fahrer"}.` : "(keine Antwort)";
+  if (x.art && x.art !== "privat") return `${x.stelle ? `${x.stelle}, ` : ""}${x.name}${x.art === "polizei" ? " – ich rufe für unsere Streife vor Ort an" : ""}.`;
+  const art = /^(Pflegekraft|Mitarbeiterin|Lehrerin|Nachbarin|Ehefrau|Lebensgefährtin|Mutter|Tochter|Arbeitskollegin|Ordinationsassistentin)/.test(r) ? "die" : /^(Hausärztin|Hausarzt)/.test(r) ? (x.geschlecht === "w" ? "die" : "der") : "der";
+  return `Ich bin ${art} ${r}.`;
 }
 
 // ------------------------------------------------------------------ Sonderfälle (Kapitel gibt den Anrufer vor)
@@ -137,6 +159,7 @@ function sonderAnrufer(kapitel: string, a: Antworten, rnd: () => number, adresse
   const ort = ortVon(adresse) || "dem Ort";
   const basis = (p: Partial<Anrufer> & Pick<Anrufer, "rolle" | "anruferWert">): Anrufer => {
     const geschlecht = p.geschlecht ?? (rnd() < 0.5 ? "w" : "m");
+    p = { ...p, rolle: gendern(p.rolle, geschlecht) };
     return {
       name: `${pick(geschlecht === "w" ? VORNAMEN_W : VORNAMEN_M, rnd)} ${pick(NACHNAMEN, rnd)}`,
       geschlecht,
@@ -343,7 +366,7 @@ const KAPITEL_LAIE: Record<string, string> = {
   "25": "ist psychisch völlig durch den Wind",
   "26": "fühlt sich krank und schwach",
   "27": "ist verletzt worden, mit einem Messer oder ähnlichem",
-  "28": "kann auf einmal nicht mehr richtig reden, eine Seite ist schwach",
+  "28": "ist auf einmal ganz komisch, ich glaub, das ist ein Schlaganfall",
   "29": "ist in einen Unfall verwickelt",
   "30": "hat sich verletzt",
   "31": "ist umgekippt",
@@ -371,10 +394,19 @@ function bezug(k: AnrufKontext): string {
 /** Vom Programm geschriebene Kernaussage auf „Was ist passiert?“ (passt immer zu den Fakten) */
 export function schilderung(k: AnrufKontext): string {
   const wer = bezug(k);
-  let was = KAPITEL_LAIE[k.kapitel] ?? "dem geht's gar nicht gut";
+  let was = KAPITEL_LAIE[k.kapitel] ?? "fühlt sich gar nicht gut";
+  if (k.kapitel === "33") {
+    const g: Record<string, string> = { transport: "muss ins Krankenhaus, ist aber stabil", na: "braucht einen Notarzt", nah: "braucht den Hubschrauber", reanimiert: "ist gerade wiederbelebt worden", bewusstsein: "ist akut eingetrübt", atmung: "atmet akut schlecht", blutung: "blutet stark", herz: "hat Herzbeschwerden" };
+    was = g[String(k.wahrheit.grund ?? "")] ?? "muss ins Krankenhaus";
+  }
+  if (k.kapitel === "34") {
+    const v: Record<string, string> = { keine: "Wir hatten einen Unfall, aber ich glaub, es ist keiner verletzt.", leicht: "Wir hatten einen Unfall, es tut nur ein bissl weh.", eine: "Wir hatten einen Unfall, und eine Person ist verletzt.", mehrere_1: "Wir hatten einen Unfall, zwei von uns sind verletzt.", mehrere_n: "Wir hatten einen schweren Unfall, mehrere sind verletzt.", unbekannt: "Wir hatten einen Unfall, ich weiß nicht, wie's den anderen geht." };
+    return v[String(k.wahrheit.verletzte ?? "unbekannt")] ?? v.unbekannt;
+  }
+  if (k.anrufer.art === "leitstelle") return k.anrufer.meldung ?? "";
   if (k.kapitel === "38") {
     const p = String(k.wahrheit.problem ?? "");
-    const pt: Record<string, string> = { brust: "hat Brustschmerzen", geburt: "die Geburt geht los", krampf: "hat einen Krampfanfall gehabt", schlaganfall: "hat Anzeichen für einen Schlaganfall", psych: "ist in einem psychischen Ausnahmezustand", lebensbedrohlich: "ist schwer krank", gering: "hat leichte Beschwerden" };
+    const pt: Record<string, string> = { brust: "hat Brustschmerzen", geburt: "bekommt gerade ein Kind", krampf: "hat einen Krampfanfall gehabt", schlaganfall: "hat Anzeichen für einen Schlaganfall", psych: "ist in einem psychischen Ausnahmezustand", lebensbedrohlich: "ist schwer krank", gering: "hat leichte Beschwerden" };
     was = pt[p] ?? "hat ein medizinisches Problem";
   }
   if (wer === "ich") was = was.replace(/^hat /, "hab ").replace(/^ist /, "bin ").replace(/^kriegt /, "krieg ").replace(/^kann /, "kann ").replace(/^fühlt sich /, "fühl mich ").replace(/^blutet /, "blute ");
@@ -385,7 +417,7 @@ export function schilderung(k: AnrufKontext): string {
   else if (k.wahrheit.at === "agonal") zusatz.push("schnappt nur ganz selten nach Luft");
   else if (k.wahrheit.at === "abnorm" && k.kapitel !== "6") zusatz.push("schnauft ganz schwer");
   const satz = `${wer === "ich" ? "Ich" : wer.charAt(0).toUpperCase() + wer.slice(1)} ${was}${zusatz.length && wer !== "ich" ? `, ${zusatz.join(" und ")}` : ""}.`;
-  return satz;
+  return k.anrufer.art === "polizei" ? `Die Streife meldet: ${satz.charAt(0).toLowerCase()}${satz.slice(1)}` : satz;
 }
 
 /** Fester Zustand in einem Satz (wird jeder Frage angehängt, damit die KI nicht abdriftet) */
@@ -474,7 +506,7 @@ export function erinnerung(k: AnrufKontext, schemaFrage?: Frage): string {
     let t: string | null;
     if (schemaFrage.id === "ort_adresse") t = k.ortUnbekannt ? `du weißt es nicht genau: ${k.adresse}` : k.adresse;
     else if (schemaFrage.id === "schilderung") t = schilderung(k);
-    else if (schemaFrage.id === "anrufer") t = k.anrufer.selbst ? "du bist selbst der Patient" : `du bist ${k.anrufer.rolle.split(";")[0]}`;
+    else if (schemaFrage.id === "anrufer") t = werText(k.anrufer);
     else t = wahrheitText(k, schemaFrage);
     if (t) teile.push(`Die ehrliche Antwort darauf ist: ${t}.`);
   }
@@ -501,7 +533,7 @@ export function antwortOhneKi(k: AnrufKontext, frage: Frage): string {
   if (frage.id === "ort_adresse") return k.ortUnbekannt ? `Ich weiß nicht genau … ${k.adresse}.` : k.adresse;
   if (frage.id === "rueckrufnummer") return k.anrufer.nummer;
   if (frage.id === "schilderung") return schilderung(k);
-  if (frage.id === "anrufer") return k.anrufer.selbst ? "Ich bin selbst der Patient." : `Ich bin ${k.anrufer.rolle.split(";")[0]}.`;
+  if (frage.id === "anrufer") return werText(k.anrufer);
   if (LAIE[frage.id] && typeof k.wahrheit[frage.id] === "string") {
     const t = wahrheitText(k, frage);
     if (t) return `${t.charAt(0).toUpperCase()}${t.slice(1)}.`;
