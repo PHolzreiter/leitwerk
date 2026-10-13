@@ -1,6 +1,6 @@
 ### npm install
 
-added 48 packages, and audited 49 packages in 10s
+added 48 packages, and audited 49 packages in 7s
 
 9 packages are looking for funding
   run `npm fund` for details
@@ -23,8 +23,8 @@ rendering chunks...
 computing gzip size...
 [2mdist/[22m[32mindex.html                 [39m[1m[2m    3.21 kB[22m[1m[22m[2m │ gzip:   1.10 kB[22m
 [2mdist/[22m[2massets/[22m[35mindex-CUzFaJ3Q.css  [39m[1m[2m   88.69 kB[22m[1m[22m[2m │ gzip:  14.34 kB[22m
-[2mdist/[22m[2massets/[22m[36mindex-DnL0DfMF.js   [39m[1m[2m1,300.06 kB[22m[1m[22m[2m │ gzip: 358.21 kB[22m
-[32m✓ built in 3.30s[39m
+[2mdist/[22m[2massets/[22m[36mindex-CISKUpMO.js   [39m[1m[2m1,300.42 kB[22m[1m[22m[2m │ gzip: 358.39 kB[22m
+[32m✓ built in 2.99s[39m
 ### npx tauri icon app-icon.png
         Appx Creating StoreLogo.png
         Appx Creating Square30x30Logo.png
@@ -105,7 +105,7 @@ computing gzip size...
 [1m[92m   Compiling[0m tauri-plugin-dialog v2.8.2
 [1m[92m   Compiling[0m tauri-plugin-updater v2.13.3
 [1m[92m   Compiling[0m leitwerk v0.4.2 (/home/runner/work/leitwerk/leitwerk/src-tauri)
-[1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 18.89s
+[1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 15.36s
 ### python3 tools/build_default_data.py
 data/default/dienststellen.csv: 168 Zeilen
 data/default/fahrzeuge.csv: 135 Zeilen
