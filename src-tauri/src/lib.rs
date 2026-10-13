@@ -134,6 +134,24 @@ fn store_save(app: tauri::AppHandle, json: String) -> Result<(), String> {
     fs::rename(&tmp, &path).map_err(|e| format!("Speichern fehlgeschlagen: {e}"))
 }
 
+/// Automatische Sicherung des laufenden Spiels (Spielstand).
+#[tauri::command]
+fn autosave_write(app: tauri::AppHandle, json: String) -> Result<(), String> {
+    let path = store_path(&app)?.with_file_name("spielstand-autosave.json");
+    let tmp = path.with_extension("json.tmp");
+    fs::write(&tmp, json).map_err(|e| format!("Sicherung fehlgeschlagen: {e}"))?;
+    fs::rename(&tmp, &path).map_err(|e| format!("Sicherung fehlgeschlagen: {e}"))
+}
+
+#[tauri::command]
+fn autosave_read(app: tauri::AppHandle) -> Result<Option<String>, String> {
+    let path = store_path(&app)?.with_file_name("spielstand-autosave.json");
+    if !path.is_file() {
+        return Ok(None);
+    }
+    fs::read_to_string(&path).map(Some).map_err(|e| e.to_string())
+}
+
 /// Ort der gespeicherten Leitstelle (zur Anzeige).
 #[tauri::command]
 fn store_location(app: tauri::AppHandle) -> Result<String, String> {
@@ -427,6 +445,8 @@ pub fn run() {
             store_load,
             store_save,
             store_location,
+            autosave_write,
+            autosave_read,
             write_text_file,
             geo_status,
             route,

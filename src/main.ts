@@ -12,6 +12,9 @@ import { createOpsView } from "./ui/opsView";
 import { createSettingsView } from "./ui/settingsView";
 import { checkOnStart, ensureGrundpaket } from "./ui/packsView";
 import { ensureCodes } from "./ui/codesPrompt";
+import { setupSpielStatus } from "./ui/spielDialog";
+import { autosaveStarten } from "./net/spielstand";
+import { mp } from "./net/mehrspieler";
 import { appVersion, onPacksChanged } from "./updates";
 
 type View = "map" | "data" | "settings";
@@ -58,10 +61,13 @@ function setupSimBar(): void {
     weather.title = flugverbot(w) ? "Kein Flugbetrieb für NAH" : "Flugbetrieb möglich";
   };
   play.addEventListener("click", () => {
-    if (sim.state.laeuft) return sim.pause();
-    if (ensureCodes(() => sim.start())) sim.start();
+    const fehler = (e: Error) => toast(String(e.message ?? e), "error");
+    if (sim.state.laeuft) return void sim.call("pause").catch(fehler);
+    if (ensureCodes(() => void sim.call("start").catch(fehler))) void sim.call("start").catch(fehler);
   });
-  tempoBtns.forEach((b) => b.addEventListener("click", () => sim.setTempo(Number(b.dataset.tempo))));
+  tempoBtns.forEach((b) =>
+    b.addEventListener("click", () => void sim.call("setTempo", Number(b.dataset.tempo)).catch((e) => toast(String(e.message ?? e), "error"))),
+  );
   sim.onChange(render);
   render();
 }
@@ -94,7 +100,10 @@ async function init(): Promise<void> {
     if (el && v !== "Browser") el.textContent = `v${v}`;
   });
   await ensureGrundpaket();
+  sim.ich = mp.ich;
   setupSimBar();
+  setupSpielStatus();
+  autosaveStarten();
   void watchGeo();
 
   let maps: string[] = [];

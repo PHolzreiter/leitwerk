@@ -1473,3 +1473,188 @@ input[type="color"] {
 .muted.small {
   font-size: 11.5px;
 }
+
+/* Multiplayer (v0.5.0) */
+.btn.warn {
+  background: var(--warn);
+  border-color: var(--warn);
+  color: #111;
+}
+
+.spiel {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: min(640px, 80vw);
+}
+
+.spiel-sec h3 {
+  margin: 0 0 6px;
+}
+
+.spiel-sec p {
+  margin: 0 0 8px;
+}
+
+.spiel-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.spiel .fld {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 320px;
+}
+
+.code-input {
+  width: 110px;
+  font-size: 18px;
+  letter-spacing: 0.15em;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.spiel-code {
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  font-variant-numeric: tabular-nums;
+}
+
+.ok-text {
+  color: var(--ok);
+}
+
+.online-dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--text-dim);
+  opacity: 0.5;
+}
+
+.online-dot.on {
+  background: var(--ok);
+  opacity: 1;
+}
+
+.spieler-tab td,
+.spieler-tab th {
+  text-align: left;
+}
+
+.badge {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+}
+
+.host-weg {
+  position: fixed;
+  inset: 0;
+  z-index: 1500;
+  display: grid;
+  place-items: center;
+  background: rgba(5, 12, 22, 0.72);
+  padding: 16px;
+}
+
+.host-weg-box {
+  width: min(520px, 100%);
+  background: var(--panel);
+  border: 1px solid var(--warn);
+  border-radius: 10px;
+  padding: 22px;
+}
+
+.host-weg-box h2 {
+  margin: 0 0 8px;
+}
+
+.host-weg-box p {
+  margin: 0;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+.verbindung-banner {
+  position: fixed;
+  top: 52px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1400;
+  background: var(--warn);
+  color: #111;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.bearbeiter {
+  font-size: 11.5px;
+  color: var(--blue);
+}
+
+.bearbeiter.ich {
+  color: var(--ok);
+}
+
+.bearbeiter.entwurf {
+  color: var(--warn);
+}
+
+.prot-von {
+  font-size: 11px;
+  color: var(--blue);
+}
+
+.rb-chat {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.rb-chat[hidden] {
+  display: none;
+}
+
+.chat-list {
+  flex: 1;
+  overflow: auto;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.chat-row {
+  font-size: 13px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: var(--panel-2);
+}
+
+.chat-row.ich {
+  border-left: 3px solid var(--ok);
+}
+
+.chat-form {
+  display: flex;
+  gap: 6px;
+  padding: 8px;
+  border-top: 1px solid var(--line);
+}
+
+.chat-form input {
+  flex: 1;
+}

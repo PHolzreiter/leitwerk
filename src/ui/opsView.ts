@@ -4,6 +4,7 @@ import { store } from "../data/store";
 import { findCode, hasCodes, searchCodes, type Einsatzcode } from "../sim/codes";
 import { ALLE_QUALIS, REGELN, besetzungKurz, generiereBesetzung, hatNFS, pruefeBesetzung, type Platz, type Quali } from "../sim/crew";
 import { sim, type Einsatz, type Ort, type SimFahrzeug } from "../sim/engine";
+import { mp } from "../net/mehrspieler";
 import { distanceM, searchAddress, type AddressHit } from "../sim/geo";
 import { KATEGORIE_LABEL, type StatusKey } from "../sim/settings";
 import { openDialog } from "./dialog";
@@ -90,12 +91,30 @@ function besetzungDialog(fz: SimFahrzeug): void {
         label: "Übernehmen",
         kind: "primary",
         onClick: () => {
-          sim.setzeBesetzung(fz.id, lese());
+          void sim.call("setzeBesetzung", fz.id, lese()).catch((e) => toast(String(e.message ?? e), "error"));
           toast(`Besetzung ${fz.funkrufname} geändert`);
         },
       },
     ],
   });
+}
+
+/** Fehler eines Befehls (z. B. keine Berechtigung im Multiplayer) als Meldung zeigen */
+async function fehlerZeigen(p: Promise<unknown>): Promise<void> {
+  try {
+    await p;
+  } catch (e) {
+    toast(String((e as Error).message ?? e), "error");
+  }
+}
+
+/** Multiplayer: wer arbeitet an dem Einsatz (offline = Entwurf, den andere übernehmen können) */
+function bearbeiterHtml(e: Einsatz): string {
+  if (!mp.aktiv || !e.bearbeiter || e.zustand === "abgeschlossen") return "";
+  const sp = mp.spieler.find((s) => s.pid === e.bearbeiter!.pid);
+  const ich = e.bearbeiter.pid === mp.ich.pid;
+  if (sp && !sp.online) return `<div class="bearbeiter entwurf">Entwurf von ${esc(e.bearbeiter.name)} (offline) – kann übernommen werden</div>`;
+  return `<div class="bearbeiter${ich ? " ich" : ""}">👤 ${ich ? "du" : esc(e.bearbeiter.name)}</div>`;
 }
 
 function statusChip(fz: SimFahrzeug): string {
@@ -150,10 +169,12 @@ function addressInput(placeholder: string, onPick: (o: Ort) => void): { root: HT
   return { root, input };
 }
 
+type Tab = "einsatz" | "funk" | "chat";
+
 export function createOpsView(left: HTMLElement, right: HTMLElement, deps: OpsDeps): { select(id: string | null): void } {
   let selected: string | null = null;
   let showClosed = false;
-  let rightTab: "einsatz" | "funk" = "funk";
+  let rightTab: Tab = "funk";
 
   // ------------------------------------------------------------ linke Seite
   left.innerHTML = `
@@ -178,7 +199,9 @@ export function createOpsView(left: HTMLElement, right: HTMLElement, deps: OpsDe
   });
   left.querySelector<HTMLButtonElement>("[data-act=gen]")!.addEventListener("click", async () => {
     if (!ensureCodes()) return;
-    const e = await sim.generiere();
+    const e = await sim.call("generiere").catch((err) => (toast(String(err.message ?? err), "error"), null));
+    // Als Mitspieler kommt der neue Einsatz erst mit dem nächsten Abgleich
+    for (let i = 0; e && !sim.einsatz(e.id) && i < 20; i++) await new Promise((r) => setTimeout(r, 100));
     if (e) select(e.id);
     else toast("Kein Einsatz erzeugt – Adressen noch nicht geladen?", "error");
   });
@@ -200,6 +223,7 @@ export function createOpsView(left: HTMLElement, right: HTMLElement, deps: OpsDe
           <div><b>${esc(e.nummer)}</b> · ${uhr(e.erstellt)} ${warn}</div>
           <div class="muted">${esc(c ? `${c.code} ${c.beschreibung}` : "Code fehlt")}</div>
           <div class="muted">${esc(e.adresse?.label ?? "Adresse fehlt")}</div>
+          ${bearbeiterHtml(e)}
         </div>
         <span class="inc-state">${{ neu: "NEU", offen: "offen", laufend: `${e.fahrzeuge.length} Fz`, abgeschlossen: "erl." }[e.zustand]}</span>`;
       row.addEventListener("click", () => select(e.id));
@@ -247,9 +271,9 @@ export function createOpsView(left: HTMLElement, right: HTMLElement, deps: OpsDe
     for (const key of ["freiWache", "freiFunk", "bereitschaft", "dienstfahrt", "abgemeldet"] as StatusKey[]) {
       const d = sim.statusDef(key);
       const b = el("button", {}, `${d.nummer} – ${d.name}`);
-      b.addEventListener("click", () => {
+      b.addEventListener("click", async () => {
         m.remove();
-        const err = sim.manualStatus(fz.id, key);
+        const err = await sim.call("manualStatus", fz.id, key).catch((x) => String(x.message ?? x));
         if (err) toast(err, "error");
       });
       m.appendChild(b);
@@ -266,7 +290,7 @@ export function createOpsView(left: HTMLElement, right: HTMLElement, deps: OpsDe
       const b = el("button", {}, "Aus dem Einsatz freigeben");
       b.addEventListener("click", () => {
         m.remove();
-        sim.entlasse(fz.id);
+        void fehlerZeigen(sim.call("entlasse", fz.id));
       });
       m.appendChild(b);
     }
@@ -284,22 +308,66 @@ export function createOpsView(left: HTMLElement, right: HTMLElement, deps: OpsDe
     <div class="rtabs">
       <button class="rtab" data-tab="einsatz">Einsatz</button>
       <button class="rtab" data-tab="funk">Funk <span class="funk-badge" hidden></span></button>
+      <button class="rtab" data-tab="chat" hidden>Chat <span class="funk-badge chat-badge" hidden></span></button>
     </div>
     <div class="rbody rb-einsatz"></div>
-    <div class="rbody rb-funk"></div>`;
+    <div class="rbody rb-funk"></div>
+    <div class="rbody rb-chat"><div class="chat-list"></div><form class="chat-form"><input type="text" maxlength="500" placeholder="Nachricht an alle Disponenten …" /><button class="btn small primary">Senden</button></form></div>`;
   const rbEinsatz = right.querySelector<HTMLElement>(".rb-einsatz")!;
   const rbFunk = right.querySelector<HTMLElement>(".rb-funk")!;
   const funkBadge = right.querySelector<HTMLElement>(".funk-badge")!;
+  const rbChat = right.querySelector<HTMLElement>(".rb-chat")!;
+  const chatTab = right.querySelector<HTMLButtonElement>(".rtab[data-tab=chat]")!;
+  const chatBadge = right.querySelector<HTMLElement>(".chat-badge")!;
+  const chatList = rbChat.querySelector<HTMLElement>(".chat-list")!;
+  const chatForm = rbChat.querySelector<HTMLFormElement>(".chat-form")!;
+  const chatInput = chatForm.querySelector<HTMLInputElement>("input")!;
   right.querySelectorAll<HTMLButtonElement>(".rtab").forEach((b) =>
-    b.addEventListener("click", () => setTab(b.dataset.tab as "einsatz" | "funk")),
+    b.addEventListener("click", () => setTab(b.dataset.tab as Tab)),
   );
+  chatForm.addEventListener("submit", (ev) => {
+    ev.preventDefault();
+    const t = chatInput.value.trim();
+    if (!t) return;
+    chatInput.value = "";
+    void fehlerZeigen(sim.call("chat", t));
+  });
 
-  function setTab(t: "einsatz" | "funk") {
+  function setTab(t: Tab) {
     rightTab = t;
     right.querySelectorAll<HTMLButtonElement>(".rtab").forEach((b) => b.classList.toggle("active", b.dataset.tab === t));
     rbEinsatz.hidden = t !== "einsatz";
     rbFunk.hidden = t !== "funk";
+    rbChat.hidden = t !== "chat";
+    if (t === "chat") {
+      mp.ungeleseneChats = 0;
+      renderChat();
+      chatInput.focus();
+    }
   }
+
+  let chatGezeigt = -1;
+  function renderChat() {
+    chatTab.hidden = !mp.aktiv;
+    if (!mp.aktiv && rightTab === "chat") setTab("funk");
+    const n = mp.ungeleseneChats;
+    chatBadge.hidden = n === 0 || rightTab === "chat";
+    chatBadge.textContent = String(n);
+    if (rightTab === "chat") mp.ungeleseneChats = 0;
+    const msgs = sim.state.chat ?? [];
+    if (msgs.length === chatGezeigt) return;
+    chatGezeigt = msgs.length;
+    chatList.innerHTML = msgs.length
+      ? msgs
+          .map(
+            (m) =>
+              `<div class="chat-row${m.von === mp.ich.name ? " ich" : ""}"><span class="muted">${new Date(m.zeit).toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" })}</span> <b>${esc(m.von)}</b><div>${esc(m.text)}</div></div>`,
+          )
+          .join("")
+      : `<div class="muted pad">Noch keine Nachrichten. Hier schreiben sich die Disponenten untereinander.</div>`;
+    chatList.scrollTop = chatList.scrollHeight;
+  }
+  mp.onChange(() => renderChat());
 
   function renderFunk() {
     const offen = sim.state.funk.filter((f) => !f.quittiert).length;
@@ -311,7 +379,7 @@ export function createOpsView(left: HTMLElement, right: HTMLElement, deps: OpsDe
       const e = f.einsatzId ? sim.einsatz(f.einsatzId) : undefined;
       row.innerHTML = `<span class="muted">${uhr(f.zeit)}</span> <b>${esc(f.von)}</b>${e ? ` <span class="muted">${esc(e.nummer)}</span>` : ""}<div>${esc(f.text)}</div>`;
       row.addEventListener("click", () => {
-        if (!f.quittiert) sim.quittiere(f.id);
+        if (!f.quittiert) void fehlerZeigen(sim.call("quittiere", f.id));
         if (e) select(e.id);
       });
       rbFunk.appendChild(row);
@@ -386,7 +454,7 @@ export function createOpsView(left: HTMLElement, right: HTMLElement, deps: OpsDe
     const pickCode = (c: Einsatzcode) => {
       codeInput.value = "";
       codeList.hidden = true;
-      sim.aktualisiere(e.id, { code: c.code });
+      void fehlerZeigen(sim.call("aktualisiere", e.id, { code: c.code }));
       showCode();
       void refreshSuggestions();
     };
@@ -396,7 +464,7 @@ export function createOpsView(left: HTMLElement, right: HTMLElement, deps: OpsDe
     const adrBox = el("div", { class: "mask-box" });
     adrBox.innerHTML = `<div class="box-title">Einsatzort (Berufungsort)</div>`;
     const adr = addressInput("Straße Hausnummer Ort …", (o) => {
-      sim.aktualisiere(e.id, { adresse: o });
+      void fehlerZeigen(sim.call("aktualisiere", e.id, { adresse: o }));
       deps.flyTo(o.lat, o.lon, 15);
       void refreshSuggestions();
     });
@@ -408,13 +476,13 @@ export function createOpsView(left: HTMLElement, right: HTMLElement, deps: OpsDe
       if (!p) return;
       const label = `Koordinate ${p.lat.toFixed(5)}, ${p.lon.toFixed(5)}`;
       adr.input.value = label;
-      sim.aktualisiere(e.id, { adresse: { ...p, label } });
+      void fehlerZeigen(sim.call("aktualisiere", e.id, { adresse: { ...p, label } }));
       void refreshSuggestions();
     });
     adrRow.appendChild(btnPick);
     const zusatz = el("input", { type: "text", placeholder: "Zusatz (Stiege, Stock, Tür, Zufahrt …)" });
     zusatz.value = e.zusatz;
-    zusatz.addEventListener("change", () => sim.aktualisiere(e.id, { zusatz: zusatz.value }));
+    zusatz.addEventListener("change", () => void fehlerZeigen(sim.call("aktualisiere", e.id, { zusatz: zusatz.value })));
     adrBox.append(adr.root, adrRow, zusatz);
     root.appendChild(adrBox);
 
@@ -423,8 +491,8 @@ export function createOpsView(left: HTMLElement, right: HTMLElement, deps: OpsDe
       adr.input.dispatchEvent(new Event("input"));
       adr.input.focus();
     });
-    btnRueck.addEventListener("click", () => {
-      const a = sim.rueckruf(e.id);
+    btnRueck.addEventListener("click", async () => {
+      const a = await sim.call("rueckruf", e.id).catch((x) => (toast(String(x.message ?? x), "error"), null));
       rueckOut.innerHTML = `Anrufer bestätigt: <b>${esc(a ?? "")}</b>`;
     });
     if (e.rueckrufGemacht) rueckOut.innerHTML = `Anrufer bestätigt: <b>${esc(e.wahr.adresse)}</b>`;
@@ -434,10 +502,10 @@ export function createOpsView(left: HTMLElement, right: HTMLElement, deps: OpsDe
     infoBox.innerHTML = `<div class="box-title">Informationen</div>`;
     const infoRtw = el("textarea", { rows: "2", placeholder: "Info an die Fahrzeuge (z. B. Zufahrt über Hof, Hund im Haus)" });
     infoRtw.value = e.infoRtw;
-    infoRtw.addEventListener("change", () => sim.aktualisiere(e.id, { infoRtw: infoRtw.value }));
+    infoRtw.addEventListener("change", () => void fehlerZeigen(sim.call("aktualisiere", e.id, { infoRtw: infoRtw.value })));
     const infoIntern = el("textarea", { rows: "2", placeholder: "Interne Info für die Leitstelle" });
     infoIntern.value = e.infoIntern;
-    infoIntern.addEventListener("change", () => sim.aktualisiere(e.id, { infoIntern: infoIntern.value }));
+    infoIntern.addEventListener("change", () => void fehlerZeigen(sim.call("aktualisiere", e.id, { infoIntern: infoIntern.value })));
     infoBox.append(el("div", { class: "fld-label" }, "Info an RTW"), infoRtw, el("div", { class: "fld-label" }, "Interne Info"), infoIntern);
     root.appendChild(infoBox);
 
@@ -464,7 +532,7 @@ export function createOpsView(left: HTMLElement, right: HTMLElement, deps: OpsDe
     const khRow = el("div", { class: "kh-row" });
     khRow.append(grundSel, khSel, btnBook);
     const boZo = el("div", { class: "muted bozo" });
-    const zo = addressInput("Zielort (frei, z. B. für Krankentransport)", (o) => sim.aktualisiere(e.id, { zo: o }));
+    const zo = addressInput("Zielort (frei, z. B. für Krankentransport)", (o) => void fehlerZeigen(sim.call("aktualisiere", e.id, { zo: o })));
     khBox.append(khInfo, khRow, boZo, el("div", { class: "fld-label" }, "Zielort manuell"), zo.root);
     root.appendChild(khBox);
 
@@ -483,7 +551,7 @@ export function createOpsView(left: HTMLElement, right: HTMLElement, deps: OpsDe
     grundSel.addEventListener("change", fillKh);
     btnBook.addEventListener("click", () => {
       if (!khSel.value) return;
-      sim.bucheKh(e.id, khSel.value, grundSel.value as HospitalFlag);
+      void fehlerZeigen(sim.call("bucheKh", e.id, khSel.value, grundSel.value as HospitalFlag));
       toast("Krankenhaus gebucht");
     });
     if (e.khAnfrage) grundSel.value = e.khAnfrage.abteilung;
@@ -547,14 +615,14 @@ export function createOpsView(left: HTMLElement, right: HTMLElement, deps: OpsDe
       if (shown.length === 0) sugg.appendChild(el("div", { class: "muted" }, "Keine freien Fahrzeuge."));
     }
 
-    btnAlarm.addEventListener("click", () => {
+    btnAlarm.addEventListener("click", async () => {
       if (chosen.size === 0) return toast("Bitte Fahrzeuge auswählen", "error");
-      const hinweise = sim.alarmiere(e.id, [...chosen]);
+      const hinweise = await sim.call("alarmiere", e.id, [...chosen]).catch((x) => [String(x.message ?? x)]);
       for (const h of hinweise) toast(h, "error");
       void refreshSuggestions();
     });
     btnClose.addEventListener("click", () => {
-      sim.schliesse(e.id, e.fahrzeuge.length ? "durch Leitstelle" : "ohne Fahrzeug (z. B. Telemedizin, Beratung)");
+      void fehlerZeigen(sim.call("schliesse", e.id, e.fahrzeuge.length ? "durch Leitstelle" : "ohne Fahrzeug (z. B. Telemedizin, Beratung)"));
     });
 
     dyn = {
@@ -573,7 +641,7 @@ export function createOpsView(left: HTMLElement, right: HTMLElement, deps: OpsDe
           row.innerHTML = `${statusChip(fz)} <b>${esc(fz.funkrufname)}</b> <span class="muted">${esc(fz.rmTyp)} · ${esc(sim.statusDef(fz.status).name)}${imEinsatz ? "" : " (frei)"}</span> ${crewHtml(fz)}`;
           if (imEinsatz) {
             const b = el("button", { class: "btn small" }, "freigeben");
-            b.addEventListener("click", () => sim.entlasse(fz.id));
+            b.addEventListener("click", () => void fehlerZeigen(sim.call("entlasse", fz.id)));
             row.appendChild(b);
           }
           assigned.appendChild(row);
@@ -591,7 +659,7 @@ export function createOpsView(left: HTMLElement, right: HTMLElement, deps: OpsDe
         prot.innerHTML = e.protokoll
           .slice()
           .reverse()
-          .map((p) => `<div><span class="muted">${uhr(p.zeit)}</span> ${esc(p.text)}</div>`)
+          .map((p) => `<div><span class="muted">${uhr(p.zeit)}</span> ${esc(p.text)}${p.von ? ` <span class="prot-von">${esc(p.von)}</span>` : ""}</div>`)
           .join("");
         btnAlarm.disabled = e.zustand === "abgeschlossen";
       },
@@ -601,6 +669,7 @@ export function createOpsView(left: HTMLElement, right: HTMLElement, deps: OpsDe
   }
 
   function select(id: string | null) {
+    if (id && id !== selected && sim.mode !== "solo") void sim.call("oeffne", id).catch(() => undefined);
     selected = id;
     deps.onSelectIncident(id);
     const e = id ? sim.einsatz(id) : undefined;
@@ -625,6 +694,7 @@ export function createOpsView(left: HTMLElement, right: HTMLElement, deps: OpsDe
       pending = false;
       renderLists();
       renderFunk();
+      renderChat();
       dyn?.refresh();
     }, 400);
   });

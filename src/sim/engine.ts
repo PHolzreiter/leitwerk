@@ -72,6 +72,20 @@ export interface Vorschlag {
 export interface Protokoll {
   zeit: number;
   text: string;
+  /** Spieler, der es ausgelöst hat (Multiplayer) */
+  von?: string;
+}
+
+export interface ChatNachricht {
+  zeit: number;
+  von: string;
+  text: string;
+}
+
+/** Wer einen Einsatz gerade bearbeitet (Multiplayer) */
+export interface Bearbeiter {
+  pid: string;
+  name: string;
 }
 
 export interface Einsatz {
@@ -109,6 +123,7 @@ export interface Einsatz {
   adressePruefen: boolean;
   fahrzeuge: string[];
   protokoll: Protokoll[];
+  bearbeiter?: Bearbeiter | null;
 }
 
 export interface Funkmeldung {
@@ -132,6 +147,33 @@ export interface SimState {
   naechster: Record<Kategorie, number>;
   zaehler: number;
   funkZaehler: number;
+  chat?: ChatNachricht[];
+}
+
+/** Befehle, die Spieler auslösen können (im Multiplayer laufen sie beim Host). */
+export const BEFEHLE = {
+  disponieren: [
+    "alarmiere",
+    "aktualisiere",
+    "bucheKh",
+    "entlasse",
+    "schliesse",
+    "rueckruf",
+    "quittiere",
+    "manualStatus",
+    "setzeBesetzung",
+    "oeffne",
+  ],
+  steuern: ["start", "pause", "setTempo", "generiere", "setWetter", "neuPlanen", "reset"],
+  immer: ["chat"],
+} as const;
+export type Befehl = (typeof BEFEHLE)[keyof typeof BEFEHLE][number];
+export type Berechtigung = "disponieren" | "steuern" | "einstellungen";
+
+export function berechtigungFuer(b: Befehl): Berechtigung | null {
+  if ((BEFEHLE.disponieren as readonly string[]).includes(b)) return "disponieren";
+  if ((BEFEHLE.steuern as readonly string[]).includes(b)) return "steuern";
+  return null;
 }
 
 function rnd(min: number, max: number): number {
@@ -159,14 +201,29 @@ type Listener = () => void;
 
 export class Simulation {
   state: SimState;
+  /** solo = allein, host = Simulation läuft hier, client = Spiegel des Hosts */
+  mode: "solo" | "host" | "client" = "solo";
+  /** Im Client-Modus: schickt Befehle an den Host */
+  remote: ((name: Befehl, args: unknown[]) => Promise<unknown>) | null = null;
+  /** Wer den gerade laufenden Befehl ausgelöst hat */
+  actor: Bearbeiter | null = null;
+  /** Ich selbst (Name im Multiplayer) */
+  ich: Bearbeiter | null = null;
   private listeners = new Set<Listener>();
   private routingBusy = new Set<string>();
   private lastReal = 0;
   private timer: number | undefined;
 
   constructor() {
+    this.state = Simulation.leererZustand();
+    this.syncVehicles();
+    this.planGenerator(true);
+    store.onChange(() => this.syncVehicles());
+  }
+
+  static leererZustand(): SimState {
     const now = Date.now();
-    this.state = {
+    return {
       zeit: now,
       tempo: 1,
       laeuft: false,
@@ -177,10 +234,17 @@ export class Simulation {
       naechster: { stabil: 0, dringend: 0, kritisch: 0 },
       zaehler: 0,
       funkZaehler: 0,
+      chat: [],
     };
+  }
+
+  /** Neue, leere Leitstelle (z. B. nach dem Verlassen eines Spiels). */
+  neu(): void {
+    this.pause();
+    this.state = Simulation.leererZustand();
     this.syncVehicles();
     this.planGenerator(true);
-    store.onChange(() => this.syncVehicles());
+    this.emit();
   }
 
   get settings(): Settings {
@@ -194,6 +258,78 @@ export class Simulation {
 
   private emit(): void {
     for (const fn of this.listeners) fn();
+  }
+
+  /** Benachrichtigt die Oberfläche (z. B. nach Daten vom Host). */
+  notify(): void {
+    this.emit();
+  }
+
+  /**
+   * Führt einen Befehl aus – allein oder als Host sofort, als Mitspieler beim Host.
+   * Die Oberfläche ruft Änderungen immer hierüber auf.
+   */
+  async call<K extends Befehl>(name: K, ...args: Parameters<Simulation[K]>): Promise<Awaited<ReturnType<Simulation[K]>>> {
+    if (this.remote) return (await this.remote(name, args)) as Awaited<ReturnType<Simulation[K]>>;
+    if (this.mode === "host" && this.ich) return (await this.ausfuehren(name, args, this.ich)) as Awaited<ReturnType<Simulation[K]>>;
+    return (await (this[name] as (...a: unknown[]) => unknown)(...args)) as Awaited<ReturnType<Simulation[K]>>;
+  }
+
+  /** Beim Host: Befehl eines Mitspielers ausführen (Berechtigung ist schon geprüft). */
+  async ausfuehren(name: Befehl, args: unknown[], von: Bearbeiter): Promise<unknown> {
+    const vorher = this.actor;
+    this.actor = von;
+    try {
+      const fn = this[name] as (...a: unknown[]) => unknown;
+      if (typeof fn !== "function") throw new Error(`Unbekannter Befehl ${name}`);
+      // Wer an einem Einsatz arbeitet, wird als Bearbeiter vermerkt
+      const eid = typeof args[0] === "string" ? this.einsatz(args[0]) : undefined;
+      if (eid && name !== "schliesse" && (BEFEHLE.disponieren as readonly string[]).includes(name)) eid.bearbeiter = { ...von };
+      return await fn.apply(this, args);
+    } finally {
+      this.actor = vorher;
+    }
+  }
+
+  /** Ersetzt den ganzen Zustand (Spielstand laden, Daten vom Host). */
+  ladeZustand(st: SimState): void {
+    this.pause();
+    st.chat ??= [];
+    for (const fz of Object.values(st.fahrzeuge)) {
+      // Routenberechnung lief beim Speichern gerade: Fahrzeug fährt zur Wache
+      if (fz.phase === "routing") {
+        fz.phase = "rueckfahrt";
+        fz.fahrt = null;
+        fz.phaseEnde = st.zeit;
+      }
+    }
+    this.state = st;
+    this.state.laeuft = false;
+    this.emit();
+  }
+
+  /** Spieler öffnet einen Einsatz (Multiplayer: andere sehen, wer daran arbeitet). */
+  oeffne(id: string): void {
+    const e = this.einsatz(id);
+    if (e && this.actor && e.zustand !== "abgeschlossen") {
+      e.bearbeiter = { ...this.actor };
+      this.emit();
+    }
+  }
+
+  chat(text: string): void {
+    const t = text.trim().slice(0, 500);
+    if (!t) return;
+    this.state.chat ??= [];
+    this.state.chat.push({ zeit: Date.now(), von: this.actor?.name ?? "Leitstelle", text: t });
+    if (this.state.chat.length > 200) this.state.chat.splice(0, this.state.chat.length - 200);
+    this.emit();
+  }
+
+  setWetter(lage: Wetter["lage"]): void {
+    this.state.wetter = { lage, bis: this.state.zeit + 90 * 60_000 };
+    this.funk("Wetterdienst", null, `Wetter: ${WETTER_LABEL[lage]}`, flugverbot(lage) ? "warnung" : "info");
+    this.emit();
   }
 
   // ------------------------------------------------------------------ Uhr
@@ -242,6 +378,7 @@ export class Simulation {
 
   /** Übernimmt aktive RTW/KTW/NEF/NAH aus den Stammdaten (neue kommen dazu, gelöschte gehen). */
   private syncVehicles(): void {
+    if (this.mode === "client") return;
     const stations = store.stationsById();
     const wanted = store
       .list("vehicles")
@@ -587,7 +724,9 @@ export class Simulation {
   }
 
   log(e: Einsatz, text: string): void {
-    e.protokoll.push({ zeit: this.state.zeit, text });
+    const p: Protokoll = { zeit: this.state.zeit, text };
+    if (this.actor && this.mode !== "solo") p.von = this.actor.name;
+    e.protokoll.push(p);
   }
 
   funk(von: string, einsatzId: string | null, text: string, art: Funkmeldung["art"]): void {
@@ -793,6 +932,7 @@ export class Simulation {
     }
     e.zustand = "abgeschlossen";
     e.khAnfrage = null;
+    e.bearbeiter = null;
     this.log(e, `Einsatz geschlossen: ${grund}`);
     this.emit();
   }

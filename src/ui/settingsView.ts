@@ -176,8 +176,10 @@ export function createSettingsView(container: HTMLElement): { refresh(): void } 
     wSel.value = sim.state.wetter.lage;
     const wBtn = el("button", { class: "btn small" }, "jetzt setzen");
     wBtn.addEventListener("click", () => {
-      sim.state.wetter = { lage: wSel.value as WetterLage, bis: sim.state.zeit + 90 * 60_000 };
-      toast(`Wetter: ${WETTER_LABEL[sim.state.wetter.lage]}`);
+      void sim
+        .call("setWetter", wSel.value as WetterLage)
+        .then(() => toast(`Wetter: ${WETTER_LABEL[wSel.value as WetterLage]}`))
+        .catch((e) => toast(String(e.message ?? e), "error"));
     });
     const wWrap = el("div", { class: "row-btns" });
     wWrap.append(wSel, wBtn);
@@ -206,14 +208,14 @@ export function createSettingsView(container: HTMLElement): { refresh(): void } 
     const save = el("button", { class: "btn primary" }, "Speichern");
     save.addEventListener("click", () => {
       store.setSettings(draft);
-      sim.neuPlanen();
+      void sim.call("neuPlanen").catch(() => undefined);
       toast("Einstellungen gespeichert");
     });
     const reset = el("button", { class: "btn" }, "Standard wiederherstellen");
     reset.addEventListener("click", async () => {
       if (await confirmDialog("Standard wiederherstellen", "Alle Einstellungen auf die Standardwerte zurücksetzen?", "Zurücksetzen", true)) {
         store.resetSettings();
-        sim.neuPlanen();
+        void sim.call("neuPlanen").catch(() => undefined);
         render();
       }
     });

@@ -38,9 +38,13 @@ export async function storeLocation(): Promise<string> {
  * Speichert Text in eine Datei, deren Ort der Benutzer wählt.
  * Gibt den Pfad zurück oder null, wenn abgebrochen wurde.
  */
-export async function saveTextFile(defaultName: string, content: string): Promise<string | null> {
+export async function saveTextFile(
+  defaultName: string,
+  content: string,
+  filter: { name: string; extensions: string[] } = { name: "CSV-Datei", extensions: ["csv"] },
+): Promise<string | null> {
   if (!inTauri()) {
-    const blob = new Blob([content], { type: "text/csv;charset=utf-8" });
+    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
     a.download = defaultName;
@@ -50,7 +54,7 @@ export async function saveTextFile(defaultName: string, content: string): Promis
   }
   const path = await save({
     defaultPath: defaultName,
-    filters: [{ name: "CSV-Datei", extensions: ["csv"] }],
+    filters: [filter],
   });
   if (!path) return null;
   await invoke("write_text_file", { path, content });
@@ -87,4 +91,30 @@ function decodeText(buf: ArrayBuffer): string {
   } catch {
     return new TextDecoder("windows-1252").decode(buf);
   }
+}
+
+const AUTOSAVE_KEY = "leitwerk.autosave";
+
+/** Automatische Sicherung des laufenden Spiels (eine Datei im Datenordner). */
+export async function autosaveWrite(json: string): Promise<void> {
+  if (!inTauri()) {
+    try {
+      localStorage.setItem(AUTOSAVE_KEY, json);
+    } catch {
+      /* zu groß oder kein Speicher */
+    }
+    return;
+  }
+  await invoke("autosave_write", { json });
+}
+
+export async function autosaveRead(): Promise<string | null> {
+  if (!inTauri()) {
+    try {
+      return localStorage.getItem(AUTOSAVE_KEY);
+    } catch {
+      return null;
+    }
+  }
+  return invoke<string | null>("autosave_read");
 }

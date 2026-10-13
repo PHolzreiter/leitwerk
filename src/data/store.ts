@@ -21,12 +21,53 @@ import { mergeSettings, type Settings } from "../sim/settings";
 
 type Listener = () => void;
 
+/** Änderungen an den Daten, die im Multiplayer beim Host ausgeführt werden. */
+export type StoreBefehl =
+  | "setSettings"
+  | "resetSettings"
+  | "setStandardAktiv"
+  | "upsert"
+  | "remove"
+  | "clearOwn"
+  | "restoreHidden";
+
 export class Store {
   private data: Persisted = emptyPersisted();
   private listeners = new Set<Listener>();
   private saveTimer: number | undefined;
   private effectiveCache: Records | null = null;
   lastError: string | null = null;
+  /** Im Multiplayer als Mitspieler: Änderungen gehen an den Host */
+  remote: ((name: StoreBefehl, args: unknown[]) => void) | null = null;
+  /** Eigene Daten, solange Daten einer Sitzung (Host/Spielstand) verwendet werden */
+  private eigeneSicherung: Persisted | null = null;
+
+  /** Daten, wie sie gespeichert bzw. an Mitspieler geschickt werden. */
+  snapshot(): Persisted {
+    return structuredClone(this.data);
+  }
+
+  /** Verwendet Daten einer Sitzung (vom Host oder aus einem Spielstand) – ohne die eigenen zu überschreiben. */
+  enterSession(data: Persisted): void {
+    if (!this.eigeneSicherung) this.eigeneSicherung = this.data;
+    this.data = structuredClone(data);
+    this.settingsCache = null;
+    this.changed(false);
+  }
+
+  get inSession(): boolean {
+    return this.eigeneSicherung !== null;
+  }
+
+  /** Zurück zu den eigenen Daten. */
+  leaveSession(): void {
+    if (!this.eigeneSicherung) return;
+    this.data = this.eigeneSicherung;
+    this.eigeneSicherung = null;
+    this.remote = null;
+    this.settingsCache = null;
+    this.changed(false);
+  }
 
   async load(): Promise<void> {
     try {
@@ -71,7 +112,7 @@ export class Store {
 
   private changed(persist = true): void {
     this.effectiveCache = null;
-    if (persist) this.scheduleSave();
+    if (persist && !this.eigeneSicherung) this.scheduleSave();
     for (const fn of this.listeners) fn();
   }
 
@@ -94,12 +135,14 @@ export class Store {
   }
 
   setSettings(s: Settings): void {
+    if (this.remote) return this.remote("setSettings", [s]);
     this.data.einstellungen = s;
     this.settingsCache = null;
     this.changed();
   }
 
   resetSettings(): void {
+    if (this.remote) return this.remote("resetSettings", []);
     this.data.einstellungen = undefined;
     this.settingsCache = null;
     this.changed();
@@ -110,6 +153,7 @@ export class Store {
   }
 
   setStandardAktiv(on: boolean): void {
+    if (this.remote) return this.remote("setStandardAktiv", [on]);
     this.data.standardAktiv = on;
     this.changed();
   }
@@ -156,6 +200,7 @@ export class Store {
 
   /** Fügt Datensätze hinzu oder ersetzt solche mit gleicher ID. */
   upsert<K extends Kind>(kind: K, records: KindMap[K][], replaceOwn = false): void {
+    if (this.remote) return this.remote("upsert", [kind, records, replaceOwn]);
     const own = this.data.eigene[kind] as KindMap[K][];
     const next = replaceOwn ? [] : own.slice();
     const index = new Map(next.map((r, i) => [r.id, i]));
@@ -176,6 +221,7 @@ export class Store {
 
   /** Löscht einen Datensatz. Standard-Datensätze werden ausgeblendet. */
   remove(kind: Kind, id: string): void {
+    if (this.remote) return this.remote("remove", [kind, id]);
     const own = this.data.eigene[kind] as KindMap[Kind][];
     (this.data.eigene as Record<Kind, KindMap[Kind][]>)[kind] = own.filter((r) => r.id !== id);
     if (standardRecords()[kind].some((r) => r.id === id) && !this.data.ausgeblendet.includes(id)) {
@@ -192,12 +238,14 @@ export class Store {
 
   /** Entfernt alle eigenen Daten einer Art. */
   clearOwn(kind: Kind): void {
+    if (this.remote) return this.remote("clearOwn", [kind]);
     (this.data.eigene as Record<Kind, KindMap[Kind][]>)[kind] = [];
     this.changed();
   }
 
   /** Blendet gelöschte Standard-Datensätze wieder ein. */
   restoreHidden(): void {
+    if (this.remote) return this.remote("restoreHidden", []);
     this.data.ausgeblendet = [];
     this.changed();
   }
