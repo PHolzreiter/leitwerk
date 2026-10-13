@@ -1,7 +1,7 @@
 /**
  * Krankentransporte: Liste (linke Seite) und Auftragsmaske mit Hotline-Gespräch und Disposition.
  */
-import { BEREICHE } from "../data/model";
+import { BEREICHE, bereicheVon } from "../data/model";
 import { store } from "../data/store";
 import { KT_FRAGEN, ktAntwortetGerade, ktFragen, type KtFrage } from "../abfrage/ktGespraech";
 import { kiBereit } from "../abfrage/ki";
@@ -95,7 +95,7 @@ function ortWahl(wert: KtOrt | null, darf: boolean, onSet: (o: KtOrt) => void): 
     const h = khs.find((x) => x.id === khSel.value);
     beSel.innerHTML = "";
     beSel.appendChild(el("option", { value: "" }, "– Station/Ambulanz –"));
-    for (const b of h?.bereiche ?? Object.keys(BEREICHE)) beSel.appendChild(el("option", { value: b }, bereichName(b)));
+    for (const b of h ? bereicheVon(h) : Object.keys(BEREICHE)) beSel.appendChild(el("option", { value: b }, bereichName(b)));
   };
   const adr = addressInput("Straße Hausnummer Ort …", (o) => onSet({ lat: o.lat, lon: o.lon, label: o.label }));
   if (wert?.khId) khSel.value = wert.khId;

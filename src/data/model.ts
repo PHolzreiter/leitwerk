@@ -134,6 +134,22 @@ export const BEREICHE_AMBULANZ: Record<string, string> = {
 };
 export const BEREICHE: Record<string, string> = { ...BEREICHE_STATION, ...BEREICHE_AMBULANZ };
 
+/** Stationen/Ambulanzen eines KH; ohne Eintrag grob aus den Abteilungen abgeleitet (ältere eigene Daten) */
+export function bereicheVon(h: Hospital): string[] {
+  if (h.bereiche?.length) return h.bereiche;
+  const a = h.abteilungen ?? ({} as Hospital["abteilungen"]);
+  const b = ["INT", "CHI", "RAD", "PHY", "WUN"];
+  if (a.notfallambulanz) b.push("ZNA");
+  if (a.unfallambulanz) b.push("UNF", "ORT");
+  if (a.intensiv_anaesthesie) b.push("ITS", "KAR", "GAS");
+  if (a.neurologie) b.push("NEU");
+  if (a.urologie) b.push("URO");
+  if (a.gyn_geburtshilfe) b.push("GYN");
+  if (a.kinderambulanz) b.push("KIN");
+  if (a.hno) b.push("HNO");
+  return b;
+}
+
 export interface Poi extends Base {
   name: string;
   typ: string;

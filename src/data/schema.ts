@@ -76,6 +76,7 @@ const ALIASES: Record<string, string[]> = {
   neonatologie: ["neonatologie", "neo", "nicu"],
   hno: ["hno"],
   urologie: ["urologie", "uro"],
+  bereiche: ["bereiche", "stationen", "ambulanzen", "stationenambulanzen"],
   gyn_geburtshilfe: ["gyngeburtshilfe", "gyn", "geburtshilfe", "gynaekologie", "gynaekologieundgeburtshilfe"],
 };
 

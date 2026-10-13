@@ -5,7 +5,7 @@
  * vom Host an die Mitspieler übertragen werden kann. Alle Eingriffe des Spielers
  * laufen über die öffentlichen Methoden (alarmieren, Adresse setzen, …).
  */
-import { ACTIVE_CATEGORIES, HOSPITAL_FLAG_LABEL, type Hospital, type HospitalFlag, type Vehicle } from "../data/model";
+import { ACTIVE_CATEGORIES, bereicheVon, HOSPITAL_FLAG_LABEL, type Hospital, type HospitalFlag, type Vehicle } from "../data/model";
 import { store } from "../data/store";
 import { abteilungFuer, allCodes, findCode, hasCodes, type Einsatzcode } from "./codes";
 import { distanceM, flightRoute, randomAddresses, route, searchAddress, travelTimes, type LatLon, type Route } from "./geo";
@@ -2082,7 +2082,7 @@ export class Simulation {
   private khMit(bereich: string, nahe: LatLon) {
     return store
       .list("hospitals")
-      .filter((h) => h.bereiche?.includes(bereich) && distanceM(h, nahe) < 70_000)
+      .filter((h) => bereicheVon(h).includes(bereich) && distanceM(h, nahe) < 70_000)
       .sort((a, b) => distanceM(a, nahe) - distanceM(b, nahe));
   }
 
@@ -2134,10 +2134,13 @@ export class Simulation {
 
   /** Neuer zufälliger Krankentransport (online angemeldet oder über die Hotline) */
   async generiereKt(quelle?: "online" | "hotline"): Promise<KtAuftrag | null> {
-    const [adr] = await randomAddresses(this.settings.gebiet.bbox, 1);
-    if (!adr) return null;
-    const heim: KtOrt = { lat: adr.lat, lon: adr.lon, label: adr.label };
-    const d = zufallsDaten({ heim, khMit: (b) => this.khMit(b, heim) }, this.state.zeit);
+    let d: KtDaten | null = null;
+    for (let i = 0; i < 4 && !d; i++) {
+      const [adr] = await randomAddresses(this.settings.gebiet.bbox, 1);
+      if (!adr) continue;
+      const heim: KtOrt = { lat: adr.lat, lon: adr.lon, label: adr.label };
+      d = zufallsDaten({ heim, khMit: (b) => this.khMit(b, heim) }, this.state.zeit);
+    }
     if (!d) return null;
     const k = this.ktNeu(d, quelle ?? (Math.random() < 0.45 ? "hotline" : "online"));
     this.emit();
@@ -2154,7 +2157,7 @@ export class Simulation {
       const imGebiet = (h: { lat: number; lon: number }) => h.lon >= bb[0] && h.lon <= bb[2] && h.lat >= bb[1] && h.lat <= bb[3];
       const khs = store.list("hospitals").filter(imGebiet);
       for (const [bereich, jeKh] of [["DIA", this.settings.dauerDialyseJeKh ?? 6], ["STR", this.settings.dauerStrahlJeKh ?? 3]] as const) {
-        const mit = khs.filter((h) => h.bereiche?.includes(bereich));
+        const mit = khs.filter((h) => bereicheVon(h).includes(bereich));
         const n = Math.round(mit.length * jeKh);
         if (!n) continue;
         const adressen = await randomAddresses(bb, n);
