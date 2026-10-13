@@ -58,7 +58,7 @@ jobs:
       matrix:
         include:
           - name: macos
-            runner: macos-latest
+            runner: macos-14
             bundles: app,dmg
           - name: windows
             runner: windows-latest
