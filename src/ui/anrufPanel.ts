@@ -5,6 +5,7 @@
 import { store } from "../data/store";
 import { fragen, eroeffnen, antwortetGerade, kontext } from "../abfrage/gespraech";
 import { schilderung } from "../abfrage/anrufer";
+import { patientText } from "../sim/lage";
 import { kiBereit } from "../abfrage/ki";
 import { antwortLabel, bestimmeCode, fragenImAblauf, stufeVonCode, type Frage, type Schema, type Wert } from "../abfrage/schema";
 import { mp } from "../net/mehrspieler";
@@ -88,7 +89,7 @@ export function anrufPanel(e: Einsatz): { root: HTMLElement; abfrageBox: HTMLEle
     kopf.innerHTML = "";
     const t = sim.state.zeit;
     let text = "";
-    if (a.status === "klingelt") text = `<span class="klingelt">📞 Anruf klingelt</span> <span class="muted">${mmss(t - a.seit)}${a.versuche > 1 ? ` · ${a.versuche}. Versuch` : ""}</span>`;
+    if (a.status === "klingelt") text = `<span class="klingelt">📞 ${a.folge ? "Folgeanruf" : "Anruf"} klingelt</span> <span class="muted">${mmss(t - a.seit)}${a.versuche > 1 ? ` · ${a.versuche}. Versuch` : ""}</span>`;
     else if (a.status === "verpasst") text = `<span class="verpasst">Verpasster Anruf</span> <span class="muted">${a.versuche}× · ruft in ca. ${mmss((a.rueckrufUm ?? t) - t)} wieder an</span>`;
     else if (a.status === "aktiv") text = `📞 Gespräch: <b>${esc(ich ? "du" : (a.angenommenVon?.name ?? "?"))}</b>${fuehrerOnline ? "" : ` <span class="alert-text">(getrennt – Gespräch pausiert)</span>`} <span class="muted">${kiBereit() ? "KI" : "ohne KI"}</span>`;
     else text = `<span class="muted">Notrufgespräch beendet</span>`;
@@ -166,7 +167,9 @@ export function anrufPanel(e: Einsatz): { root: HTMLElement; abfrageBox: HTMLEle
       try {
         await sim.call("anrufAnnehmen", e.id);
         refresh();
-        if (!e.anruf?.gespraech.some((m) => m.von === "anrufer") || e.anruf.rueckruf) await eroeffnenSicher();
+        // Der Anrufer meldet sich – außer er hat (Folgeanruf) schon etwas gesagt
+        const letzte = e.anruf?.gespraech[e.anruf.gespraech.length - 1];
+        if (!letzte || letzte.von !== "anrufer") await eroeffnenSicher();
       } catch (err) {
         toast(String((err as Error).message ?? err), "error");
       }
@@ -385,6 +388,15 @@ function aufloesungHtml(e: Einsatz): string {
   const pat = [p.geschlecht === "m" ? "Mann" : p.geschlecht === "w" ? "Frau" : "", typeof p.alter === "number" ? `ca. ${p.alter} J.` : "", typeof p.bw === "string" ? { ja: "wach", getruebt: "benommen", nein: "bewusstlos" }[p.bw] ?? "" : "", typeof p.at === "string" ? { normal: "atmet normal", abnorm: "atmet schwer", agonal: "Schnappatmung", keine: "atmet nicht" }[p.at] ?? "" : ""].filter(Boolean).join(", ");
   const lage = w.anrufer.meldung ?? (k ? schilderung(k) : "");
   zeilen.push(`<div class="aufl-lage"><b>Lage:</b> ${esc(w.anrufer.stelle ?? w.anrufer.rolle.split(";")[0])}${lage ? ` – „${esc(lage)}“` : ""}${pat ? `<br><b>Patient:</b> ${esc(pat)}` : ""}</div>`);
+  const l = e.wahr.lage;
+  if (l) {
+    const irrtum = l.irrtum === "keineRea" ? " – der Anrufer hielt es für einen Kreislaufstillstand, war es aber nicht" : l.irrtum === "mehrPatienten" ? ` – gemeldet waren ${l.gemeldet}, tatsächlich ${l.patienten.length} Betroffene` : "";
+    zeilen.push(`<div><b>Tatsächlich vor Ort${esc(irrtum)}:</b><br>${l.patienten.map((p) => `${p.nr}. ${esc(patientText(p))}`).join("<br>")}</div>`);
+    if (l.verlauf.length) {
+      const uhr = (t: number) => new Date(t).toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" });
+      zeilen.push(`<div><b>Verlauf:</b><br>${l.verlauf.map((v) => `<span class="muted">${uhr(v.zeit)}</span> ${esc(v.text)}`).join("<br>")}</div>`);
+    }
+  }
   // Kapitel zählt auch als richtig, wenn das gewählte Kapitel (z. B. über einen Kapitelwechsel) zum richtigen Code führt
   const kapitelOk = a.kapitel === w.kapitel || e.code === w.code || (!!a.kapitel && bestimmeCode(schema, a.kapitel, w.antworten)?.code === w.code);
   zeilen.push(`<div>${ok(kapitelOk)} Kapitel: <b>${esc(w.kapitel)} ${esc(K?.titel ?? "")}</b>${a.kapitel && a.kapitel !== w.kapitel ? ` <span class="muted">(gewählt: ${esc(a.kapitel)})</span>` : ""}</div>`);

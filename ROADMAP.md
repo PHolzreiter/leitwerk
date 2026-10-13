@@ -2,14 +2,14 @@
 
 Gesammelte Wünsche, die noch nicht eingeplant sind (Reihenfolge noch offen).
 
-## Phase 6 – „Die Lage lebt“ (als Nächstes)
+## Phase 6 – „Die Lage lebt“ (umgesetzt in 0.7.0)
 - Jeder Einsatz hat eine verborgene Lage: ein oder mehrere Patienten (B/A, Sichtung rot/gelb/grün, Notarzt nötig, Transport)
 - Verlauf über die Zeit, passend zum Code: Verschlechterung, Besserung, „doch keine Reanimation“, mehr Betroffene als gemeldet
 - Vor dem Eintreffen weiß nur der Anrufer davon: meldet es im laufenden Gespräch oder ruft erneut an (Folgeanruf zum selben Einsatz)
 - Das Programm entscheidet, was passiert; die KI formuliert nur
 - Einstellung „Komplikationen“: ruhig / normal / fordernd (normal ≈ jeder 10. Einsatz verändert sich, jede 5. Rea-Meldung ist keine)
 
-## Phase 7 – Funkverkehr mit den Fahrzeugen
+## Phase 7 – Funkverkehr mit den Fahrzeugen (als Nächstes)
 - Funkkanal je Fahrzeug, Besatzung wird von der KI gespielt (ohne KI: feste Sätze)
 - Funkablauf NÖ: Leitstelle heißt am Funk „LEO“; kein Sprechwunsch-Status, es wird direkt gerufen
   - „LEO von 75/001 kommen“ → „Hier LEO kommen“ → Meldung … „kommen“ → „Hier LEO, verstanden, ENDE“

@@ -118,6 +118,8 @@ export interface Settings {
   generatorQuelle: "zufall" | "vorlagen";
   /** Neue Einsätze kommen als Anruf mit Notrufabfrage (wenn ein Abfrageschema importiert ist) */
   anrufe: boolean;
+  /** Wie oft sich Lagen verändern (Verschlechterung, Irrtum des Anrufers, mehr Betroffene) */
+  komplikationen: "ruhig" | "normal" | "fordernd";
   gebiet: Gebiet;
   /** Fahrzeit mit Sondersignal = Fahrzeit × Faktor */
   sondersignalFaktor: number;
@@ -140,6 +142,7 @@ export function defaultSettings(): Settings {
     generatorAktiv: true,
     generatorQuelle: "zufall",
     anrufe: true,
+    komplikationen: "normal",
     gebiet: GEBIETE[0],
     sondersignalFaktor: 0.8,
     toleranzMin: 10,

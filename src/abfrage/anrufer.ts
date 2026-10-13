@@ -145,6 +145,29 @@ export function werText(x: Anrufer): string {
   return `Ich bin ${art} ${r}.`;
 }
 
+/**
+ * Was der Anrufer sagt, wenn sich der Zustand verändert hat – im laufenden Gespräch
+ * oder als Folgeanruf. null = Anrufer kann nichts mehr sagen bzw. weiß nichts davon.
+ */
+export function veraenderungText(x: Anrufer, patientW: boolean, neu: { bw: string; at: string }, besserung: boolean, folge: boolean): string | null {
+  if (x.art === "leitstelle" || (x.art === "ecall" && !x.sprachkontakt)) return null;
+  const Er = patientW ? "Sie" : "Er";
+  let was: string;
+  if (x.selbst) {
+    if (neu.bw === "nein" || neu.at === "keine" || neu.at === "agonal") return null;
+    was = besserung ? "Mir geht's jetzt wieder ein bissl besser." : "Mir wird ganz schwindlig … ich kann bald nimmer …";
+  } else if (besserung) was = `${Er} ist wieder zu sich gekommen und redet wieder.`;
+  else if (neu.at === "keine" || neu.at === "agonal") was = `${Er} atmet nicht mehr! ${Er} rührt sich nicht mehr!`;
+  else if (neu.bw === "nein") was = `${Er} reagiert überhaupt nicht mehr!${neu.at === "abnorm" ? ` Und ${Er.toLowerCase()} schnauft ganz komisch.` : ""}`;
+  else if (neu.bw === "getruebt") was = `${Er} ist jetzt ganz benommen und redet nur mehr wirres Zeug.`;
+  else was = `${Er} schnauft jetzt ganz schwer.`;
+  const wer = bezugVon(x, patientW);
+  if (x.art === "polizei") return `${folge ? "Landesleitzentrale der Polizei nochmal – " : ""}die Streife meldet: ${was}`;
+  if (x.art === "einrichtung") return `${folge ? `${x.stelle} nochmal, ${x.name}. ` : ""}Der Zustand hat sich verändert: ${was}`;
+  if (!folge) return besserung ? was : `Moment … ${was}`;
+  return `Ich hab vorhin schon angerufen wegen ${wer === "ich" ? "mir" : dativ(wer)}! ${was}${besserung ? "" : " Wo bleibt die Rettung?"}`;
+}
+
 // ------------------------------------------------------------------ Sonderfälle (Kapitel gibt den Anrufer vor)
 
 function ortVon(adresse: string): string {
@@ -330,7 +353,7 @@ function faktenText(k: AnrufKontext): string {
   const zeilen: string[] = [];
   for (const id of Object.keys(k.wahrheit)) {
     const f: Frage | undefined = idx.get(id);
-    if (!f || f.typ === "text" || f.typ === "kapitelwahl" || id === "anrufer" || id === "anzahl_patienten") continue;
+    if (!f || f.typ === "text" || f.typ === "kapitelwahl" || id === "anrufer") continue;
     const t = wahrheitText(k, f);
     if (t) zeilen.push(`- ${f.text} → ${t}`);
   }
@@ -377,8 +400,21 @@ const KAPITEL_LAIE: Record<string, string> = {
 
 /** Wie der Anrufer den Patienten nennt */
 function bezug(k: AnrufKontext): string {
-  const x = k.anrufer;
-  const w = k.wahrheit.geschlecht === "w";
+  return bezugVon(k.anrufer, k.wahrheit.geschlecht === "w");
+}
+
+/** „mein Mann“ → „meinem Mann“, „ein Patient“ → „einem Patienten“ */
+function dativ(b: string): string {
+  return b
+    .replace(/^mein /, "meinem ")
+    .replace(/^meine /, "meiner ")
+    .replace(/^ein Patient$/, "einem Patienten")
+    .replace(/^ein Kollege$/, "einem Kollegen")
+    .replace(/^ein /, "einem ")
+    .replace(/^eine /, "einer ");
+}
+
+function bezugVon(x: Anrufer, w: boolean): string {
   const r = x.rolle.toLowerCase();
   if (x.selbst) return "ich";
   if (/ehemann|ehefrau|lebensgef/.test(r)) return w ? "meine Frau" : "mein Mann";
@@ -471,10 +507,10 @@ export function systemPrompt(k: AnrufKontext): string {
     art === "polizei"
       ? `Du bist ${x.rolle}. Du sprichst für die Streife vor Ort: Was die Streife gemeldet hat, weißt du; anderes fragst du bei der Streife nach („Moment, ich frag bei der Streife nach … “) und gibst dann die Antwort.`
       : art === "einrichtung"
-        ? `Du bist ${x.rolle} (${x.stelle}). Du rufst wegen ${bezug(k)} an. Du sprichst ruhig und fachlich korrekt, aber knapp.`
+        ? `Du bist ${x.rolle} (${x.stelle}). Du rufst wegen ${dativ(bezug(k))} an. Du sprichst ruhig und fachlich korrekt, aber knapp.`
         : x.selbst
           ? "Du bist selbst der Patient."
-          : `Du bist ${x.rolle} und rufst wegen ${bezug(k).replace(/^mein /, "deinem ").replace(/^meine /, "deiner ").replace(/^ein /, "einem ").replace(/^eine /, "einer ")} an.`;
+          : `Du bist ${x.rolle} und rufst wegen ${dativ(bezug(k)).replace(/^meinem /, "deinem ").replace(/^meiner /, "deiner ")} an.`;
   const ort = k.ortUnbekannt
     ? `Du weißt NICHT genau, wo du bist. Wenn nach dem Ort gefragt wird, beschreibst du nur grob, was du weißt und siehst: „${k.adresse}“. Eine Straße mit Hausnummer kennst du nicht.`
     : `Die Adresse, die du nennst: ${k.adresse}. Stockwerk, Tür oder Zufahrt sagst du nur, wenn extra danach gefragt wird.`;

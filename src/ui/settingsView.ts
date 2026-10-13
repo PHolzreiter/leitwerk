@@ -99,6 +99,11 @@ export function createSettingsView(container: HTMLElement): { refresh(): void } 
     const fa = num(draft.falscheAdresseProzent);
     fa.addEventListener("change", () => (draft.falscheAdresseProzent = Number(fa.value) || 0));
     aGrid.append(el("label", {}, "Anrufer mit falscher Adresse (%)"), fa);
+    const kSel = el("select");
+    for (const [v, l] of [["ruhig", "ruhig – selten Überraschungen"], ["normal", "normal – etwa jeder 10. Einsatz verändert sich"], ["fordernd", "fordernd – oft Verschlechterungen und Irrtümer"]]) kSel.appendChild(el("option", { value: v }, l));
+    kSel.value = draft.komplikationen ?? "normal";
+    kSel.addEventListener("change", () => (draft.komplikationen = kSel.value as Settings["komplikationen"]));
+    aGrid.append(el("label", {}, "Komplikationen (Verschlechterung, Irrtum des Anrufers, mehr Betroffene)"), kSel);
     aSec.appendChild(aGrid);
 
     // Stufen

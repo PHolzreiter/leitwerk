@@ -16,6 +16,9 @@ import { ensureCodes } from "./ui/codesPrompt";
 import { setupSpielStatus } from "./ui/spielDialog";
 import { autosaveStarten } from "./net/spielstand";
 import { kiBeimStart } from "./abfrage/ki";
+
+// Für automatische Tests im Browser (…/?debug): Zugriff auf Simulation und Daten
+if (location.search.includes("debug")) Object.assign(window, { __lw: { sim, store } });
 import { mp } from "./net/mehrspieler";
 import { appVersion, onPacksChanged } from "./updates";
 

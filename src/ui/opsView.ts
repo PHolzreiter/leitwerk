@@ -223,7 +223,7 @@ export function createOpsView(left: HTMLElement, right: HTMLElement, deps: OpsDe
       const tel =
         a && e.zustand !== "abgeschlossen"
           ? a.status === "klingelt"
-            ? `<div class="inc-anruf klingelt">📞 klingelt${a.versuche > 1 ? ` (${a.versuche}. Versuch)` : ""}</div>`
+            ? `<div class="inc-anruf klingelt">📞 ${a.folge ? "Folgeanruf" : "klingelt"}${a.versuche > 1 ? ` (${a.versuche}. Versuch)` : ""}</div>`
             : a.status === "verpasst"
               ? `<div class="inc-anruf verpasst">📵 verpasster Anruf${a.versuche > 1 ? ` (${a.versuche}×)` : ""}</div>`
               : a.status === "aktiv"

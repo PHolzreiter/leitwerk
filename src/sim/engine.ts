@@ -13,7 +13,8 @@ import { generiereBesetzung, hatNFS, rmTypVon, type Platz, type RmTyp } from "./
 import { defaultStufeFuer, raenge, type Kategorie, type Settings, type StatusKey, type StufeDef } from "./settings";
 import { flugverbot, istNacht, nextWetter, type Wetter, WETTER_LABEL } from "./weather";
 import { bestimmeCode, fallZiehen, kapitelVonCode, wahrheitFuer, type Antworten, type Schema } from "../abfrage/schema";
-import { anruferWaehlen, type Anrufer } from "../abfrage/anrufer";
+import { anruferWaehlen, veraenderungText, type Anrufer } from "../abfrage/anrufer";
+import { istStillstand, lageErzeugen, lagemeldungBeimEintreffen, patientText, type Lage } from "./lage";
 
 const MIN = 60_000;
 
@@ -85,6 +86,20 @@ export interface Fall {
   code: string;
 }
 
+/** Medizinisch plausibel? (z. B. keine Geburt mit 60, keine Schwangerschaft beim Mann) */
+export function plausibel(kapitel: string, a: Antworten, codeName: string): boolean {
+  const alter = typeof a.alter === "number" ? a.alter : null;
+  const schwanger =
+    kapitel === "24" ||
+    a.problem === "geburt" ||
+    (a.schwanger !== undefined && a.schwanger !== "nein" && a.schwanger !== "unbekannt") ||
+    /schwanger|geburt|eklampsie|wehen|fruchtwasser|postpartal|entbind/i.test(codeName);
+  if (schwanger && (a.geschlecht === "m" || (alter !== null && (alter < 14 || alter > 46)))) return false;
+  if (/\bMann\b|Hoden|Prostata/.test(codeName) && a.geschlecht === "w") return false;
+  if (/\bFrau(en)?\b/.test(codeName) && a.geschlecht === "m") return false;
+  return true;
+}
+
 /** Kapitel für einen neuen Fall – häufige Notrufe öfter, Alpinunfälle selten */
 const KAPITEL_GEWICHT: Record<string, number> = {
   "17": 3, "26": 3, "10": 2.5, "6": 2.5, "28": 2, "31": 2, "29": 2, "12": 1.5, "21": 1.5, "1": 1.5, "18": 1.5, "9": 1.2, ALP: 0.15, "42": 0.3, "34": 0.3,
@@ -134,6 +149,8 @@ export interface Anruf {
   extra: { aufwertung: string | null; zusatz: string | null; polizei: boolean };
   /** vorläufiger Code und Reanimationshinweis aus der Abfrage */
   ergebnis: { code: string; reanimation: boolean } | null;
+  /** Folgeanruf: das sagt der Anrufer, sobald angenommen wird */
+  folge?: string | null;
   /** Handy-Ortung (AML/GPS oder Funkzelle) */
   ortung?: { status: "laeuft" | "fertig"; fertigUm: number; lat?: number; lon?: number; radius?: number; art?: string } | null;
 }
@@ -161,6 +178,8 @@ export interface Einsatz {
     rtwBuchtSelbst: boolean;
     /** Wahrheit für den Anrufer (Abfrageschema) */
     abfrage?: { kapitel: string; antworten: Antworten; code: string; anrufer: Anrufer; lage: string; ortUnbekannt?: boolean };
+    /** Verborgene Lage: Patienten und ihr Verlauf */
+    lage?: Lage;
   };
   /** Was gemeldet wurde (später: Ergebnis der Notrufabfrage) */
   meldung: { text: string; adresse: string; adresseFalsch: boolean };
@@ -478,6 +497,7 @@ export class Simulation {
     for (const fz of Object.values(this.state.fahrzeuge)) this.updateVehicle(fz, t);
     this.checkKhAnfragen(t);
     this.anrufeTick(t);
+    this.lageTick(t);
     this.emit();
   }
 
@@ -665,6 +685,9 @@ export class Simulation {
         } else {
           fz.phase = "vorOrt";
           fz.phaseEnde = t + rnd(10, 22) * MIN;
+          this.eintreffenLage(fz, e);
+          const p0 = e.wahr.lage?.patienten[0];
+          if (p0 && istStillstand(p0)) fz.phaseEnde = t + rnd(30, 45) * MIN;
         }
         break;
       }
@@ -926,6 +949,7 @@ export class Simulation {
         lage: `${schema.codes[p.fall.code]?.name ?? p.code.beschreibung} (${schema.kapitel[p.fall.kapitel]?.titel ?? ""})`,
       };
       e.meldung.text = "";
+      e.wahr.lage = lageErzeugen(p.fall.kapitel, p.fall.antworten, this.state.zeit, kritisch, this.settings.komplikationen ?? "normal");
       e.anruf = {
         status: "klingelt",
         seit: this.state.zeit,
@@ -1226,7 +1250,7 @@ export class Simulation {
       for (let i = 0; i < 400 && !fall; i++) {
         const f = fallZiehen(schema, kapitelZiehen(schema));
         const c = f ? findCode(f.ergebnis.code) : undefined;
-        if (f && c && passt(c.stufe)) {
+        if (f && c && passt(c.stufe) && plausibel(f.ergebnis.pfad[0], f.antworten, `${c.beschreibung} ${schema.codes[c.code]?.name ?? ""}`)) {
           code = c;
           fall = { kapitel: f.ergebnis.pfad[0], antworten: f.antworten, code: c.code };
         }
@@ -1326,6 +1350,10 @@ export class Simulation {
       a.angenommenVon = { ...ich };
       a.gespraech.push({ zeit: this.state.zeit, von: "system", text: a.rueckruf ? `Rückruf durch ${ich.name}` : `Anruf angenommen von ${ich.name}` });
       this.log(e, a.rueckruf ? "Leitstelle ruft zurück" : "Anruf angenommen");
+      if (a.folge) {
+        a.gespraech.push({ zeit: this.state.zeit, von: "anrufer", text: a.folge });
+        a.folge = null;
+      }
     } else {
       throw new Error("Das Gespräch ist bereits beendet");
     }
@@ -1424,6 +1452,82 @@ export class Simulation {
     e.codeQuelle = "abfrage";
     this.abfrageAuswerten(e);
     this.emit();
+  }
+
+  // ------------------------------------------------------------------ Lage (Verlauf)
+
+  /** Geplante Veränderungen eintreten lassen und melden (Anrufer bzw. Besatzung) */
+  private lageTick(t: number): void {
+    for (const e of this.state.einsaetze) {
+      const l = e.wahr.lage;
+      if (!l || e.zustand === "abgeschlossen") continue;
+      for (const ev of l.ereignisse) {
+        if (ev.eingetreten || t < ev.um) continue;
+        ev.eingetreten = true;
+        const p = l.patienten[ev.patient - 1];
+        if (!p) continue;
+        p.bw = ev.bw;
+        p.at = ev.at;
+        if (ev.art === "verschlechterung") p.sichtung = "rot";
+        l.verlauf.push({ zeit: t, text: `${ev.art === "verschlechterung" ? "Verschlechterung" : "Besserung"}: ${patientText(p)}` });
+        this.lageMelden(e, ev.art === "besserung", t);
+      }
+    }
+  }
+
+  private lageMelden(e: Einsatz, besserung: boolean, t: number): void {
+    const l = e.wahr.lage!;
+    const p0 = l.patienten[0];
+    if (l.aufgedeckt) {
+      // Besatzung vor Ort meldet sich
+      const fz = e.fahrzeuge.map((id) => this.state.fahrzeuge[id]).find((f) => f && f.einsatzId === e.id && f.phase === "vorOrt");
+      if (!fz) return;
+      const text = besserung ? `Patient hat sich gebessert: ${patientText(p0)}` : istStillstand(p0) ? "Patient jetzt reanimationspflichtig, wir reanimieren." : `Patient verschlechtert sich: ${patientText(p0)}`;
+      this.funk(fz.funkrufname, e.id, text, "sprechwunsch");
+      this.log(e, `${fz.funkrufname}: ${text}`);
+      if (istStillstand(p0) && fz.phaseEnde !== null) fz.phaseEnde = Math.max(fz.phaseEnde, t + rnd(30, 40) * MIN);
+      return;
+    }
+    // Vor dem Eintreffen weiß es nur der Anrufer
+    const w = e.wahr.abfrage;
+    const a = e.anruf;
+    if (!w || !a) return;
+    const text = veraenderungText(w.anrufer, p0.geschlecht === "w", p0, besserung, a.status === "beendet");
+    if (!text) {
+      if (a.status === "aktiv" && w.anrufer.selbst) {
+        a.gespraech.push({ zeit: t, von: "system", text: "Der Anrufer antwortet nicht mehr – man hört nur noch Geräusche." });
+      }
+      return;
+    }
+    // Was der Anrufer jetzt weiß (für die KI und die Abfrage-Antworten)
+    w.antworten = { ...w.antworten, bw: p0.bw, at: p0.at };
+    if (a.status === "aktiv") {
+      a.gespraech.push({ zeit: t, von: "anrufer", text });
+      this.log(e, "Anrufer meldet eine Veränderung");
+    } else if (a.status === "beendet") {
+      a.status = "klingelt";
+      a.seit = t;
+      a.klingelBis = t + rnd(45, 75) * 1000;
+      a.rueckruf = false;
+      a.folge = text;
+      a.gespraech.push({ zeit: t, von: "system", text: "Folgeanruf" });
+      this.log(e, "Folgeanruf vom Anrufer");
+      this.funk("Notruf", e.id, `Folgeanruf ${e.nummer}`, "warnung");
+    }
+  }
+
+  /** Erstes Fahrzeug vor Ort: Besatzung sieht die ganze Lage und meldet Abweichungen */
+  private eintreffenLage(fz: SimFahrzeug, e: Einsatz): void {
+    const l = e.wahr.lage;
+    if (!l || l.aufgedeckt) return;
+    l.aufgedeckt = true;
+    const ant = e.wahr.abfrage?.antworten ?? {};
+    const angenommenRea = ant.at === "keine" || ant.at === "agonal";
+    const text = lagemeldungBeimEintreffen(l, angenommenRea);
+    l.verlauf.push({ zeit: this.state.zeit, text: `${fz.funkrufname} vor Ort${text ? `: ${text}` : ""}` });
+    if (!text) return;
+    this.funk(fz.funkrufname, e.id, text, "sprechwunsch");
+    this.log(e, `${fz.funkrufname}: ${text}`);
   }
 
   /** Handy-Ortung anstoßen; das Ergebnis kommt nach einigen Sekunden (Simulationszeit) */
