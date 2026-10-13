@@ -1,5 +1,8 @@
 # Änderungen
 
+## 0.4.2
+- Test der Update-Funktion: Wenn du das hier liest, hat das Update aus der App heraus funktioniert 🎉
+
 ## 0.4.1
 - Beim ersten Start der Simulation erscheint „Einsatzcodes importieren“, falls noch keine Liste geladen ist
 - Die Liste kann jederzeit unter Daten → Einsatzcodes importiert, bearbeitet und gelöscht werden
