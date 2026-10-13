@@ -33,7 +33,13 @@ Gesammelte Wünsche, die noch nicht eingeplant sind (Reihenfolge noch offen).
 
 ## 3D-Ansicht
 - **Fahrzeugmodelle im Low-Poly-Stil**, nur in 3D sichtbar: Fahrzeuge fahren auf der Straße, Hubschrauber fliegen über dem Boden
-  - Aussehen nach Pauls Vorlagebildern je Typ (RTW, NEF, KTW, NAH …) – so einfach wie möglich, aber erkennbar; Leistung geht vor
+  - Formen nach Pauls Vorlagebildern (Kopie der Bilder liegt nur lokal, nicht im Repo):
+    - VW T6 Hochdach: KTW, RTW, SKTW
+    - VW Crafter Hochdach (länger, höher): RTW-C, SRTW, SNAW
+    - VW Passat Kombi mit Lichtbalken: BEL (und NEF, falls nicht anders gewünscht)
+    - EC135: NAH (Rumpf, Heckausleger, Kufen, Rotor)
+  - keine Lackierung/Streifen: einheitlich in der Farbe der Organisation (wie auf der Karte), dazu Fenster, Räder, Blaulicht
+  - so einfach wie möglich, aber erkennbar; Leistung geht vor
   - RTW/NEF mit Sondersignal: Blaulicht blinkt auch in 3D
   - in den Einstellungen abschaltbar
 
