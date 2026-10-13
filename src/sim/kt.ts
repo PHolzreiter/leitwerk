@@ -154,7 +154,7 @@ const GRUENDE: Record<string, string[]> = {
 
 const INFOS: Record<KtLage, string[]> = {
   gehend: ["gehfähig", "geht mit Rollator", ""],
-  sitzend: ["bis zum Fahrzeug gehfähig", "braucht Hilfe beim Aufstehen", "sitzend, Tragsessel nötig", ""],
+  sitzend: ["bis zum Fahrzeug gehfähig", "braucht Hilfe beim Aufstehen", "Tragsessel nötig", ""],
   liegend: ["bettlägerig", "nicht gehfähig", "Dekubitus – vorsichtig lagern", ""],
   rollstuhl: ["im eigenen Rollstuhl", "Rollstuhl wird mitgenommen", ""],
 };

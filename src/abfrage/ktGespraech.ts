@@ -56,13 +56,12 @@ export function ktAntwortOhneKi(k: KtAuftrag, f: KtFrage): string {
     case "grund":
       return `${w.grund}.`;
     case "lage":
-      return w.lage === "liegend"
-        ? "Liegend, bitte."
-        : w.lage === "rollstuhl"
-          ? "Im eigenen Rollstuhl."
-          : w.lage === "gehend"
-            ? "Gehend, das geht schon."
-            : `Sitzend.${w.patient.info ? ` ${w.patient.info}.` : ""}`;
+    {
+      const basis =
+        w.lage === "liegend" ? "Liegend, bitte." : w.lage === "rollstuhl" ? "Im eigenen Rollstuhl." : w.lage === "gehend" ? "Gehend, das geht schon." : "Sitzend.";
+      const info = w.patient.info && !/rollstuhl/i.test(w.patient.info) ? ` ${w.patient.info[0].toUpperCase()}${w.patient.info.slice(1)}.` : "";
+      return basis + info;
+    }
     case "begleitung":
       return w.begleitung ? "Ja, eine Begleitperson fährt mit." : "Nein.";
     case "sauerstoff":

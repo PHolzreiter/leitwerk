@@ -1,5 +1,17 @@
 # Änderungen
 
+## 0.10.0 – „Wollen Sie sitzen oder liegen?“ – Krankentransporte
+- Neuer Reiter „KT“ links neben „Einsätze“: alle Krankentransporte mit Termin, Abholzeit, Patient, Wunsch (KTR/KTA/KTx) und Status (nicht disponiert, vorgemerkt, unterwegs, an Bord, erledigt)
+- Aufträge kommen auf drei Wegen: Anruf an der KT-Hotline (eigener Klingelton, feste Abfrage – Patient, Abholort, Ziel, Termin, Grund, sitzend/liegend/gehend/Rollstuhl, Begleitperson, Sauerstoff, Infektion …), fertige Online-Anmeldung, Daueraufträge (Dialyse in drei Schichten, Strahlentherapie) – die sind schon bei Spielbeginn da, ab 16 Uhr auch für den nächsten Tag
+- Hin- und Rückfahrt sind eigene Aufträge; Abholort und Ziel: Krankenhaus mit Station/Ambulanz oder eine Adresse
+- Disponieren: Fahrzeugvorschläge (zuerst KTW, wenn nötig RTW/RTW-C, nie SKTW) mit „los spätestens“-Zeit; vormerken, als nächste Fahrt anhängen, Sammelfahrt (Platz wird geprüft: 2 Sitze + 1 Liege, Begleitperson braucht einen Sitz, Rollstuhl keinen, Infektion fährt allein) oder sofort schicken
+- Status beim KTW: zum Berufungsort bis zum letzten Patienten, dann zum Zielort; nach Infektionstransport 5–10 min Desinfektion
+- Ein KTW ohne Patient an Bord kann für einen Notfall abgezogen werden – seine Transporte sind dann wieder offen; Storno: vorgemerkt einfach, unterwegs über Funk
+- Was passieren kann: Abholung dauert länger (vor allem zu Hause), Patient fährt doch nicht mit, Patient verschlechtert sich und der KTW fordert über Funk Hilfe an; kommt der Transport zu spät, ruft jemand an „Wo bleibt der Transport?“
+- Krankenhäuser haben jetzt Stationen und Ambulanzen (Daten → Krankenhäuser, änderbar)
+- Einstellungen: Aufkommen je Stunde für Notfälle und Krankentransporte (24-Stunden-Tabelle), Zahl der Dialyse-/Bestrahlungspatienten je Krankenhaus
+- Mehrspieler: neues Recht „KT disponieren“; alle sehen die KT-Liste
+
 ## 0.9.0 – Fahrzeuge realistischer, 3D-Modelle
 - Ausrückzeiten (Einstellungen → Ausrückzeiten): bodengebunden tagsüber 0,5–2 min, nachts 2–10 min; Hubschrauber tagsüber 2–5 min, nachts 5–10 min; Tag = 5–22 Uhr; frei unterwegs (Status Funk) nach ca. 10 Sekunden; Bereitschaft + 5 min
 - Hubschrauber fliegen: steigen nach dem Start, sinken vor der Landung, kreisen 1–3 Mal über Einsatzorten (nicht über Krankenhäusern und Landeplätzen); in 2D zeigt ein Schatten, dass er in der Luft ist

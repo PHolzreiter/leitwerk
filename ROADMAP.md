@@ -19,6 +19,11 @@ Gesammelte Wünsche, die noch nicht eingeplant sind (Reihenfolge noch offen).
 - Multiplayer: wer zuerst antwortet, führt den Funk mit diesem Fahrzeug (Rechte evtl. feiner aufteilen)
 - Multiplayer: ALLE Spieler hören (lesen) den Funk aller Fahrzeuge mit – den Funk zwischen den Disponenten gibt es über Discord
 
+## Krankentransporte (umgesetzt in 0.10.0)
+- KT-Hotline mit fester Abfrage, Online-Anmeldungen, Daueraufträge (Dialyse, Strahlentherapie)
+- KTW primär, RTW/RTW-C wenn nötig, SKTW nie für normale KT; Sammelfahrten mit Platzprüfung
+- später: Sekundärtransporte (Verlegungen KH–KH mit SKTW/SRTW/SNAW/BIT/ITH); BIT-Nachforderung bei adipösen Patienten
+
 ## Simulation
 - **Ausrückzeiten** (einstellbar, Standard):
   - alle bodengebundenen Fahrzeuge: tagsüber bis zu 2 min, nachts bis zu 3 min
