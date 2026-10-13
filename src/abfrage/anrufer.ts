@@ -186,12 +186,12 @@ export function ersterSatzOhneKi(k: AnrufKontext): string {
   const dringend = x.emotion === "panisch" ? "Schnell, bitte! " : x.emotion === "aufgeregt" ? "Bitte kommen Sie! " : "";
   if (k.rueckrufDurchLeitstelle) return `Ja, hallo? Ach, die Rettung … ja, ich hab angerufen. ${dringend}`.trim();
   if (x.selbst) return `${vorher}Hallo, ich bräuchte die Rettung. ${dringend}Mir geht's nicht gut.`;
-  return `${vorher}Hallo, Rettung? ${dringend}Es geht um ${x.selbst ? "mich" : "einen Patienten"} – ${kurzLage(k)}`;
+  return `${vorher}Hallo, Rettung? ${dringend}Es geht um ${x.selbst ? "mich" : "einen Patienten"}: ${kurzLage(k)}`;
 }
 
 function kurzLage(k: AnrufKontext): string {
   const titel = k.schema.kapitel[k.kapitel]?.titel ?? "einen Notfall";
-  return `${titel.split("/")[0].trim().toLowerCase()}.`;
+  return `${titel.split("/")[0].split(",")[0].trim()}.`;
 }
 
 /** Antwort ohne KI auf eine Schemafrage: die wahre Antwort in einfacher Form */

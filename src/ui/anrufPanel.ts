@@ -66,6 +66,8 @@ export function anrufPanel(e: Einsatz): { root: HTMLElement; refresh(): void } {
   });
 
   let letzterSchluessel = "";
+  // Nach dem Verlassen eines Eingabefelds aufgeschobene Änderungen nachziehen
+  abfrage.addEventListener("focusout", () => setTimeout(refresh, 0));
   function refresh() {
     const a = e.anruf;
     if (!a) {
@@ -123,7 +125,8 @@ export function anrufPanel(e: Einsatz): { root: HTMLElement; refresh(): void } {
 
     // Abfrage nur neu aufbauen, wenn sich etwas geändert hat (sonst geht der Fokus verloren)
     const schluessel = JSON.stringify([a.status, a.kapitel, a.antworten, a.extra, darf, a.angenommenVon?.pid]);
-    if (schluessel !== letzterSchluessel && !abfrage.contains(document.activeElement)) {
+    const tippt = document.activeElement instanceof HTMLInputElement || document.activeElement instanceof HTMLSelectElement;
+    if (schluessel !== letzterSchluessel && !(tippt && abfrage.contains(document.activeElement))) {
       letzterSchluessel = schluessel;
       abfrageBauen(darf);
     }

@@ -182,6 +182,7 @@ pub struct KiFortschritt {
     total: u64,
 }
 
+#[cfg_attr(not(any(target_os = "macos", windows)), allow(dead_code))]
 async fn herunterladen(url: &str, ziel: &PathBuf, ch: &Channel<KiFortschritt>) -> Result<(), String> {
     use std::io::Write;
     let r = client(None)?.get(url).send().await.map_err(|e| format!("Download fehlgeschlagen: {e}"))?;
