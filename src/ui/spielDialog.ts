@@ -80,6 +80,7 @@ export function oeffneSpielDialog(): void {
           toast("Beigetreten");
         }),
       );
+      code.value = mp.letztesSpiel().code ?? "";
       code.addEventListener("keydown", (e) => {
         if (e.key === "Enter") join.click();
       });
@@ -88,6 +89,21 @@ export function oeffneSpielDialog(): void {
       s.appendChild(
         el("p", { class: "muted small" }, "Beim Hosten wird dein aktueller Stand geteilt: Leitstelle, Einsatzcodes, Einstellungen und laufende Einsätze."),
       );
+      // Nach einem Absturz als Host: Spiel mit gleichem Code fortsetzen
+      void spielstand.autosaveInfo().then((i) => {
+        const c = i?.code;
+        if (!c || !mp.letztesSpiel().hostCode(c)) return;
+        const fort = el("button", { class: "btn" }, `Spiel ${c} als Host fortsetzen (Sicherung vom ${uhrzeit(i!.gespeichert)})`);
+        fort.addEventListener("click", () =>
+          busy(fort, async () => {
+            if (!name.value.trim()) throw new Error("Bitte einen Namen eingeben");
+            await spielstand.autosaveLaden();
+            await mp.hostFortsetzen(c, name.value);
+            toast(`Spiel ${c} fortgesetzt`);
+          }),
+        );
+        s.appendChild(fort);
+      });
     } else {
       const s = sec(r === "host" ? "Du bist Host" : "Du spielst mit");
       const kopf = el("div", { class: "spiel-row" });

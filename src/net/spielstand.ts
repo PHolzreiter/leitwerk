@@ -73,12 +73,12 @@ export async function laden(): Promise<Spielstand | null> {
 }
 
 /** Infos zur letzten automatischen Sicherung */
-export async function autosaveInfo(): Promise<{ gespeichert: number; einsaetze: number } | null> {
+export async function autosaveInfo(): Promise<{ gespeichert: number; einsaetze: number; code: string | null } | null> {
   try {
     const t = await autosaveRead();
     if (!t) return null;
     const d = pruefen(t);
-    return { gespeichert: d.gespeichert, einsaetze: d.state.einsaetze.length };
+    return { gespeichert: d.gespeichert, einsaetze: d.state.einsaetze.length, code: d.multiplayer?.code ?? null };
   } catch {
     return null;
   }

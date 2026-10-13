@@ -181,6 +181,20 @@ class Mehrspieler {
     throw new Error("Kein freier Code gefunden – bitte nochmal versuchen");
   }
 
+  /** Nach einem Absturz: dasselbe Spiel (gleicher Code) wieder als Host aufnehmen. */
+  async hostFortsetzen(code: string, name: string): Promise<void> {
+    const t = lsGet(`leitwerk.host.${code}`);
+    if (!t) throw new Error("Für dieses Spiel ist kein Host-Schlüssel gespeichert");
+    this.setName(name);
+    this.token = t;
+    await this.verbinden("host", code, false);
+  }
+
+  /** Code des letzten Spiels (als Mitspieler) und ob man es als Host fortsetzen kann */
+  letztesSpiel(): { code: string | null; hostCode: (c: string) => boolean } {
+    return { code: lsGet("leitwerk.letztesSpiel"), hostCode: (c) => !!lsGet(`leitwerk.host.${c}`) };
+  }
+
   /** Tritt einem Spiel bei. */
   async beitreten(code: string, name: string): Promise<void> {
     const c = code.replace(/\D/g, "");

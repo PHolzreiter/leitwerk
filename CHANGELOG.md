@@ -1,5 +1,15 @@
 # Änderungen
 
+## 0.5.0 – Multiplayer
+- Knopf „Spiel“ oben: Spiel hosten oder mit 6-stelligem Code beitreten (bis zu 6 Spieler)
+- Der Host teilt Leitstelle, Einsatzcodes und Einstellungen automatisch mit allen
+- Rechte je Spieler: Disponieren, Simulation steuern, Einstellungen & Daten (Standard: alles außer Einstellungen)
+- Chat zwischen den Disponenten (Reiter „Chat“ rechts)
+- Wer an einem Einsatz arbeitet, steht in der Liste; nach Verbindungsabbruch als „Entwurf“, den andere übernehmen können
+- Verbindungsabbruch: automatisch neu verbinden; ist der Host weg, pausiert das Spiel für alle
+- Host verlässt das Spiel: Mitspieler können speichern oder „Als Host übernehmen“
+- Spielstand speichern und laden (für alle), automatische Sicherung jede Minute
+
 ## 0.4.2
 - Test der Update-Funktion: Wenn du das hier liest, hat das Update aus der App heraus funktioniert 🎉
 
