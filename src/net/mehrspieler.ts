@@ -477,6 +477,7 @@ class Mehrspieler {
     this.status = { ...this.status, rolle: "host", hostDa: true, verbunden: true, hostVerlassen: false };
     sim.mode = "host";
     sim.remote = null;
+    sim.istOnline = (pid) => this.spieler.some((x) => x.pid === pid && x.online);
     sim.ich = this.ich;
     store.remote = null;
     // Nach einer Übernahme bleiben die Daten der Sitzung im Speicher (die eigenen Daten bleiben unberührt)

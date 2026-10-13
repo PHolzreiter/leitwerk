@@ -367,7 +367,10 @@ export function createOpsView(left: HTMLElement, right: HTMLElement, deps: OpsDe
       : `<div class="muted pad">Noch keine Nachrichten. Hier schreiben sich die Disponenten untereinander.</div>`;
     chatList.scrollTop = chatList.scrollHeight;
   }
-  mp.onChange(() => renderChat());
+  mp.onChange(() => {
+    renderChat();
+    renderLists();
+  });
 
   function renderFunk() {
     const offen = sim.state.funk.filter((f) => !f.quittiert).length;
@@ -625,8 +628,22 @@ export function createOpsView(left: HTMLElement, right: HTMLElement, deps: OpsDe
       void fehlerZeigen(sim.call("schliesse", e.id, e.fahrzeuge.length ? "durch Leitstelle" : "ohne Fahrzeug (z. B. Telemedizin, Beratung)"));
     });
 
+    // Änderungen anderer Spieler übernehmen (Felder, in denen gerade getippt wird, bleiben)
+    let letzterCode = e.code;
+    const feld = (i: HTMLInputElement | HTMLTextAreaElement, wert: string) => {
+      if (document.activeElement !== i && i.value !== wert) i.value = wert;
+    };
     dyn = {
       refresh() {
+        if (e.code !== letzterCode) {
+          letzterCode = e.code;
+          showCode();
+        }
+        if (e.adresse) feld(adr.input, e.adresse.label);
+        feld(zusatz, e.zusatz);
+        feld(infoRtw, e.infoRtw);
+        feld(infoIntern, e.infoIntern);
+        if (e.zo) feld(zo.input, e.zo.label);
         const c = findCode(e.code ?? undefined);
         head.innerHTML = `<span class="stufe-badge big" style="background:${stufeFarbe(c?.stufe)}">${esc(c?.stufe ?? "ohne Code")}</span>
           <div><div class="mask-nr">${esc(e.nummer)}</div><div class="muted">Eingang ${uhr(e.erstellt)} · ${Math.round((sim.state.zeit - e.erstellt) / 60000)} min · ${{ neu: "neu", offen: "in Bearbeitung", laufend: "laufend", abgeschlossen: "abgeschlossen" }[e.zustand]}</div></div>`;

@@ -207,6 +207,8 @@ export class Simulation {
   remote: ((name: Befehl, args: unknown[]) => Promise<unknown>) | null = null;
   /** Wer den gerade laufenden Befehl ausgelöst hat */
   actor: Bearbeiter | null = null;
+  /** Multiplayer: ist ein Spieler gerade verbunden? */
+  istOnline: ((pid: string) => boolean) | null = null;
   /** Ich selbst (Name im Multiplayer) */
   ich: Bearbeiter | null = null;
   private listeners = new Set<Listener>();
@@ -284,7 +286,9 @@ export class Simulation {
       if (typeof fn !== "function") throw new Error(`Unbekannter Befehl ${name}`);
       // Wer an einem Einsatz arbeitet, wird als Bearbeiter vermerkt
       const eid = typeof args[0] === "string" ? this.einsatz(args[0]) : undefined;
-      if (eid && name !== "schliesse" && (BEFEHLE.disponieren as readonly string[]).includes(name)) eid.bearbeiter = { ...von };
+      if (eid && name !== "schliesse" && name !== "oeffne" && (BEFEHLE.disponieren as readonly string[]).includes(name)) {
+        eid.bearbeiter = { ...von };
+      }
       return await fn.apply(this, args);
     } finally {
       this.actor = vorher;
@@ -311,7 +315,9 @@ export class Simulation {
   /** Spieler öffnet einen Einsatz (Multiplayer: andere sehen, wer daran arbeitet). */
   oeffne(id: string): void {
     const e = this.einsatz(id);
-    if (e && this.actor && e.zustand !== "abgeschlossen") {
+    if (!e || !this.actor || e.zustand === "abgeschlossen") return;
+    // Nur ansehen nimmt den Einsatz niemandem weg (auch keinen Entwurf) – erst eine Eingabe übernimmt ihn
+    if (!e.bearbeiter) {
       e.bearbeiter = { ...this.actor };
       this.emit();
     }
