@@ -302,7 +302,7 @@ export interface SimState {
   kt?: KtAuftrag[];
   ktZaehler?: number;
   /** Tag, für den die Daueraufträge schon angelegt sind (yyyy-mm-dd) */
-  ktDauerTag?: string;
+  ktDauerTag?: number;
 }
 
 /** Befehle, die Spieler auslösen können (im Multiplayer laufen sie beim Host). */
@@ -2155,9 +2155,13 @@ export class Simulation {
     try {
       const bb = this.settings.gebiet.bbox;
       const imGebiet = (h: { lat: number; lon: number }) => h.lon >= bb[0] && h.lon <= bb[2] && h.lat >= bb[1] && h.lat <= bb[3];
-      const khs = store.list("hospitals").filter(imGebiet);
+      const mitte = { lat: (bb[1] + bb[3]) / 2, lon: (bb[0] + bb[2]) / 2 };
+      const alle = store.list("hospitals");
       for (const [bereich, jeKh] of [["DIA", this.settings.dauerDialyseJeKh ?? 6], ["STR", this.settings.dauerStrahlJeKh ?? 3]] as const) {
-        const mit = khs.filter((h) => bereicheVon(h).includes(bereich));
+        const moeglich = alle.filter((h) => bereicheVon(h).includes(bereich));
+        // KH im Gebiet; gibt es dort keines, das nächstgelegene (bis 70 km)
+        let mit = moeglich.filter(imGebiet);
+        if (!mit.length) mit = moeglich.filter((h) => distanceM(h, mitte) < 70_000).sort((x, y) => distanceM(x, mitte) - distanceM(y, mitte)).slice(0, 1);
         const n = Math.round(mit.length * jeKh);
         if (!n) continue;
         const adressen = await randomAddresses(bb, n);
@@ -2179,11 +2183,16 @@ export class Simulation {
   private ktTick(t: number, dt: number): void {
     // Daueraufträge für den aktuellen Tag
     const d = new Date(t);
-    const tag = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-    if (this.state.ktDauerTag !== tag && this.mode !== "client") {
-      this.state.ktDauerTag = tag;
-      const tag0 = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
-      void this.ktDauer(tag0);
+    // ab dem Nachmittag sind auch die Fahrten des nächsten Tages schon bestellt
+    if (this.mode !== "client" && !this.ktDauerLaeuft) {
+      const heute0 = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+      const bis = d.getHours() >= 16 ? new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1).getTime() : heute0;
+      const geplant = typeof this.state.ktDauerTag === "number" ? this.state.ktDauerTag : -Infinity;
+      if (geplant < bis) {
+        const tag0 = geplant < heute0 ? heute0 : bis;
+        this.state.ktDauerTag = tag0;
+        void this.ktDauer(tag0);
+      }
     }
     // Neue Aufträge nach Aufkommen der Stunde
     if (this.settings.generatorAktiv) {
