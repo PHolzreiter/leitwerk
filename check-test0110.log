@@ -23,8 +23,8 @@ rendering chunks...
 computing gzip size...
 [2mdist/[22m[32mindex.html                 [39m[1m[2m    4.10 kB[22m[1m[22m[2m │ gzip:   1.35 kB[22m
 [2mdist/[22m[2massets/[22m[35mindex-zNHdpVo3.css  [39m[1m[2m  100.00 kB[22m[1m[22m[2m │ gzip:  16.40 kB[22m
-[2mdist/[22m[2massets/[22m[36mindex-e25YE-ZW.js   [39m[1m[2m1,496.88 kB[22m[1m[22m[2m │ gzip: 423.98 kB[22m
-[32m✓ built in 2.75s[39m
+[2mdist/[22m[2massets/[22m[36mindex-8md1wWgA.js   [39m[1m[2m1,497.04 kB[22m[1m[22m[2m │ gzip: 424.04 kB[22m
+[32m✓ built in 3.42s[39m
 ### npx tauri icon app-icon.png
         Appx Creating StoreLogo.png
         Appx Creating Square30x30Logo.png
@@ -103,7 +103,7 @@ computing gzip size...
 [1m[92m    Checking[0m tauri-plugin-fs v2.7.0
 [1m[92m    Checking[0m tauri-plugin-updater v2.13.3
 [1m[92m    Checking[0m tauri-plugin-dialog v2.8.2
-[1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 6.79s
+[1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 8.54s
 ### python3 tools/build_default_data.py
 data/default/dienststellen.csv: 168 Zeilen
 data/default/fahrzeuge.csv: 135 Zeilen
