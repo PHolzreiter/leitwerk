@@ -87,7 +87,7 @@ export interface Fall {
 
 /** Kapitel für einen neuen Fall – häufige Notrufe öfter, Alpinunfälle selten */
 const KAPITEL_GEWICHT: Record<string, number> = {
-  "17": 3, "26": 3, "10": 2.5, "6": 2.5, "28": 2, "31": 2, "29": 2, "12": 1.5, "21": 1.5, "1": 1.5, "18": 1.5, "9": 1.2, ALP: 0.15, "42": 0.3,
+  "17": 3, "26": 3, "10": 2.5, "6": 2.5, "28": 2, "31": 2, "29": 2, "12": 1.5, "21": 1.5, "1": 1.5, "18": 1.5, "9": 1.2, ALP: 0.15, "42": 0.3, "34": 0.3,
 };
 function kapitelZiehen(schema: Schema): string {
   const kaps = Object.keys(schema.kapitel);

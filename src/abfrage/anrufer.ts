@@ -191,7 +191,7 @@ export function ersterSatzOhneKi(k: AnrufKontext): string {
 
 function kurzLage(k: AnrufKontext): string {
   const titel = k.schema.kapitel[k.kapitel]?.titel ?? "einen Notfall";
-  return `${titel.split("/")[0].split(",")[0].trim()}.`;
+  return `${titel.replace(/\s*\([^)]*\)?/g, "").split("/")[0].split(",")[0].trim()}.`;
 }
 
 /** Antwort ohne KI auf eine Schemafrage: die wahre Antwort in einfacher Form */

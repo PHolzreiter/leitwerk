@@ -12,4 +12,5 @@ Gesammelte Wünsche, die noch nicht eingeplant sind (Reihenfolge noch offen).
 - **Fahrzeugmodelle im Low-Poly-Stil**, nur in 3D sichtbar: Fahrzeuge fahren auf der Straße, Hubschrauber fliegen über dem Boden
 
 ## KI-Anrufer
-- Notrufabfrage per Text, später per Sprache (lokal auf jedem Rechner)
+- ~~Notrufabfrage per Text~~ (0.6.0); später per Sprache (lokal auf jedem Rechner)
+- Optional: KI direkt in LeitWerk eingebaut statt Ollama als eigenes Programm
