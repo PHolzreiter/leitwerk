@@ -23,8 +23,8 @@ rendering chunks...
 computing gzip size...
 [2mdist/[22m[32mindex.html                 [39m[1m[2m    4.10 kB[22m[1m[22m[2m │ gzip:   1.35 kB[22m
 [2mdist/[22m[2massets/[22m[35mindex-C2mMnC5O.css  [39m[1m[2m   94.42 kB[22m[1m[22m[2m │ gzip:  15.36 kB[22m
-[2mdist/[22m[2massets/[22m[36mindex-Ba5aCXdF.js   [39m[1m[2m1,410.92 kB[22m[1m[22m[2m │ gzip: 397.13 kB[22m
-[32m✓ built in 4.11s[39m
+[2mdist/[22m[2massets/[22m[36mindex-DRpdVlOE.js   [39m[1m[2m1,410.92 kB[22m[1m[22m[2m │ gzip: 397.13 kB[22m
+[32m✓ built in 3.73s[39m
 ### npx tauri icon app-icon.png
         Appx Creating StoreLogo.png
         Appx Creating Square30x30Logo.png
@@ -87,7 +87,7 @@ computing gzip size...
 [1m[92m      Adding[0m toml_datetime v0.6.3 [1m[33m(available: v0.6.11)[0m
 [1m[92m      Adding[0m toml_edit v0.20.2 [1m[33m(available: v0.20.7)[0m
 [1m[92m   Compiling[0m leitwerk v0.9.0 (/home/runner/work/leitwerk/leitwerk/src-tauri)
-[1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 4.39s
+[1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 9.73s
 ### python3 tools/build_default_data.py
 data/default/dienststellen.csv: 168 Zeilen
 data/default/fahrzeuge.csv: 135 Zeilen
