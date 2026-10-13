@@ -12,6 +12,8 @@ import { distanceM, flightRoute, randomAddresses, route, searchAddress, travelTi
 import { generiereBesetzung, hatNFS, rmTypVon, type Platz, type RmTyp } from "./crew";
 import { defaultStufeFuer, raenge, type Kategorie, type Settings, type StatusKey, type StufeDef } from "./settings";
 import { flugverbot, istNacht, nextWetter, type Wetter, WETTER_LABEL } from "./weather";
+import { bestimmeCode, fallZiehen, kapitelVonCode, wahrheitFuer, type Antworten, type Schema } from "../abfrage/schema";
+import { anruferWaehlen, type Anrufer } from "../abfrage/anrufer";
 
 const MIN = 60_000;
 
@@ -76,10 +78,62 @@ export interface Protokoll {
   von?: string;
 }
 
+/** Fall aus dem Abfrageschema (Kapitel, wahre Antworten, Code) */
+export interface Fall {
+  kapitel: string;
+  antworten: Antworten;
+  code: string;
+}
+
+/** Kapitel für einen neuen Fall – häufige Notrufe öfter, Alpinunfälle selten */
+const KAPITEL_GEWICHT: Record<string, number> = {
+  "17": 3, "26": 3, "10": 2.5, "6": 2.5, "28": 2, "31": 2, "29": 2, "12": 1.5, "21": 1.5, "1": 1.5, "18": 1.5, "9": 1.2, ALP: 0.15, "42": 0.3,
+};
+function kapitelZiehen(schema: Schema): string {
+  const kaps = Object.keys(schema.kapitel);
+  const sum = kaps.reduce((s, k) => s + (KAPITEL_GEWICHT[k] ?? 1), 0);
+  let r = Math.random() * sum;
+  for (const k of kaps) {
+    r -= KAPITEL_GEWICHT[k] ?? 1;
+    if (r <= 0) return k;
+  }
+  return kaps[0];
+}
+
 export interface ChatNachricht {
   zeit: number;
   von: string;
   text: string;
+}
+
+export interface AnrufNachricht {
+  zeit: number;
+  von: "leitstelle" | "anrufer" | "system";
+  text: string;
+  /** Name des Disponenten (bei „leitstelle“) */
+  wer?: string;
+}
+
+/** Notruf als Anruf mit Abfrage (nur mit importiertem Abfrageschema) */
+export interface Anruf {
+  status: "klingelt" | "aktiv" | "verpasst" | "beendet";
+  /** Simulationszeit des letzten Statuswechsels */
+  seit: number;
+  /** klingelt bis (danach legt der Anrufer auf) */
+  klingelBis: number;
+  /** verpasst: ruft um diese Zeit wieder an */
+  rueckrufUm: number | null;
+  versuche: number;
+  /** Leitstelle hat zurückgerufen */
+  rueckruf: boolean;
+  angenommenVon: Bearbeiter | null;
+  gespraech: AnrufNachricht[];
+  /** Antworten der Abfrage (vom Calltaker angeklickt) */
+  antworten: Antworten;
+  kapitel: string | null;
+  extra: { aufwertung: string | null; zusatz: string | null; polizei: boolean };
+  /** vorläufiger Code und Reanimationshinweis aus der Abfrage */
+  ergebnis: { code: string; reanimation: boolean } | null;
 }
 
 /** Wer einen Einsatz gerade bearbeitet (Multiplayer) */
@@ -103,6 +157,8 @@ export interface Einsatz {
     transport: boolean;
     abteilung: HospitalFlag;
     rtwBuchtSelbst: boolean;
+    /** Wahrheit für den Anrufer (Abfrageschema) */
+    abfrage?: { kapitel: string; antworten: Antworten; code: string; anrufer: Anrufer; lage: string };
   };
   /** Was gemeldet wurde (später: Ergebnis der Notrufabfrage) */
   meldung: { text: string; adresse: string; adresseFalsch: boolean };
@@ -124,6 +180,7 @@ export interface Einsatz {
   fahrzeuge: string[];
   protokoll: Protokoll[];
   bearbeiter?: Bearbeiter | null;
+  anruf?: Anruf | null;
 }
 
 export interface Funkmeldung {
@@ -163,6 +220,11 @@ export const BEFEHLE = {
     "manualStatus",
     "setzeBesetzung",
     "oeffne",
+    "anrufAnnehmen",
+    "anrufNachricht",
+    "anrufBeenden",
+    "abfrageSetze",
+    "abfrageExtra",
   ],
   steuern: ["start", "pause", "setTempo", "generiere", "setWetter", "neuPlanen", "reset"],
   immer: ["chat"],
@@ -377,6 +439,7 @@ export class Simulation {
     this.runGenerator();
     for (const fz of Object.values(this.state.fahrzeuge)) this.updateVehicle(fz, t);
     this.checkKhAnfragen(t);
+    this.anrufeTick(t);
     this.emit();
   }
 
@@ -770,6 +833,8 @@ export class Simulation {
     gemeldeteAdresse?: string;
     patientAlter?: number | null;
     transport?: boolean | null;
+    /** Fall aus dem Abfrageschema: Einsatz kommt als Anruf */
+    fall?: Fall | null;
   }): Einsatz {
     const stufe = this.stufeDef(p.code.stufe);
     const alter = p.patientAlter ?? alterFuer(p.code);
@@ -812,7 +877,33 @@ export class Simulation {
       fahrzeuge: [],
       protokoll: [],
     };
-    this.log(e, "Notruf eingegangen");
+    if (p.fall && store.schema) {
+      const schema = store.schema;
+      const anrufer = anruferWaehlen(p.fall.kapitel, p.fall.antworten);
+      e.wahr.abfrage = {
+        kapitel: p.fall.kapitel,
+        antworten: p.fall.antworten,
+        code: p.fall.code,
+        anrufer,
+        lage: `${schema.codes[p.fall.code]?.name ?? p.code.beschreibung} (${schema.kapitel[p.fall.kapitel]?.titel ?? ""})`,
+      };
+      e.meldung.text = "";
+      e.anruf = {
+        status: "klingelt",
+        seit: this.state.zeit,
+        klingelBis: this.state.zeit + rnd(45, 75) * 1000,
+        rueckrufUm: null,
+        versuche: 1,
+        rueckruf: false,
+        angenommenVon: null,
+        gespraech: [],
+        antworten: {},
+        kapitel: null,
+        extra: { aufwertung: null, zusatz: null, polizei: false },
+        ergebnis: null,
+      };
+    }
+    this.log(e, e.anruf ? "Notruf klingelt" : "Notruf eingegangen");
     this.state.einsaetze.unshift(e);
     this.funk("Notruf", e.id, `Neuer Einsatz ${e.nummer}`, "info");
     this.emit();
@@ -1066,30 +1157,48 @@ export class Simulation {
   async generiere(k?: Kategorie): Promise<Einsatz | null> {
     const s = this.settings;
     if (!hasCodes()) return null;
+    const schema = s.anrufe ? store.schema : null;
     if (s.generatorQuelle === "vorlagen") {
       const vorlagen = store.list("templates");
       if (vorlagen.length) {
         const v = pick(vorlagen);
         const code = findCode(v.code) ?? pick(allCodes());
+        const fall = schema ? this.fallFuerCode(schema, code.code) : null;
         return this.erstelleEinsatz({
           lat: v.lat,
           lon: v.lon,
           adresse: v.adresse || "Adresse lt. Vorlage",
           code,
           meldung: v.meldung,
-          patientAlter: v.patientAlter,
+          patientAlter: v.patientAlter ?? (typeof fall?.antworten.alter === "number" ? fall.antworten.alter : null),
           transport: v.transport,
+          fall,
         });
       }
     }
-    const kat: Kategorie =
-      k ?? (pick(["stabil", "dringend", "dringend", "kritisch"] as Kategorie[]));
-    const codes = allCodes().filter((c) => {
-      const st = this.stufeDef(c.stufe);
-      return st && st.kategorie === kat && raenge(st).length > 0 && !/Aufwertung/i.test(c.beschreibung);
-    });
-    if (codes.length === 0) return null;
-    const code = pick(codes);
+    const kat: Kategorie = k ?? pick(["stabil", "dringend", "dringend", "kritisch"] as Kategorie[]);
+    const passt = (stufe: string) => {
+      const st = this.stufeDef(stufe);
+      return !!st && st.kategorie === kat && raenge(st).length > 0;
+    };
+    let code: Einsatzcode | undefined;
+    let fall: Fall | null = null;
+    if (schema) {
+      // Fall aus dem Abfrageschema ziehen: Antworten und Code passen garantiert zusammen
+      for (let i = 0; i < 400 && !fall; i++) {
+        const f = fallZiehen(schema, kapitelZiehen(schema));
+        const c = f ? findCode(f.ergebnis.code) : undefined;
+        if (f && c && passt(c.stufe)) {
+          code = c;
+          fall = { kapitel: f.ergebnis.pfad[0], antworten: f.antworten, code: c.code };
+        }
+      }
+    }
+    if (!code) {
+      const codes = allCodes().filter((c) => passt(c.stufe) && !/Aufwertung/i.test(c.beschreibung));
+      if (codes.length === 0) return null;
+      code = pick(codes);
+    }
     const [adr] = await randomAddresses(s.gebiet.bbox, 1);
     if (!adr) return null;
     let gemeldet = adr.label;
@@ -1100,8 +1209,146 @@ export class Simulation {
       );
       if (andere.length) gemeldet = pick(andere).label;
     }
-    return this.erstelleEinsatz({ lat: adr.lat, lon: adr.lon, adresse: adr.label, code, gemeldeteAdresse: gemeldet });
+    const alter = typeof fall?.antworten.alter === "number" ? fall.antworten.alter : null;
+    return this.erstelleEinsatz({ lat: adr.lat, lon: adr.lon, adresse: adr.label, code, gemeldeteAdresse: gemeldet, fall, patientAlter: alter });
   }
+
+  private fallFuerCode(schema: Schema, code: string): Fall | null {
+    const kap = kapitelVonCode(schema, code);
+    const a = wahrheitFuer(schema, code);
+    return kap && a ? { kapitel: kap, antworten: a, code } : null;
+  }
+
+  // ------------------------------------------------------------------ Anrufe
+
+  private anrufeTick(t: number): void {
+    for (const e of this.state.einsaetze) {
+      const a = e.anruf;
+      if (!a || e.zustand === "abgeschlossen") continue;
+      if (a.status === "klingelt" && t >= a.klingelBis) {
+        a.status = "verpasst";
+        a.seit = t;
+        a.rueckrufUm = t + rnd(2, 3) * MIN;
+        this.log(e, `Anruf nicht angenommen – Anrufer hat aufgelegt (${a.versuche}. Versuch)`);
+        this.funk("Notruf", e.id, `Verpasster Anruf ${e.nummer}`, "warnung");
+      } else if (a.status === "verpasst" && a.rueckrufUm !== null && t >= a.rueckrufUm) {
+        a.status = "klingelt";
+        a.seit = t;
+        a.versuche++;
+        a.klingelBis = t + rnd(45, 75) * 1000;
+        a.rueckrufUm = null;
+        this.log(e, `Anrufer ruft erneut an (${a.versuche}. Versuch)`);
+        this.funk("Notruf", e.id, `Erneuter Anruf ${e.nummer}`, "warnung");
+      }
+    }
+  }
+
+  private calltaker(): Bearbeiter {
+    return this.actor ?? this.ich ?? { pid: "solo", name: "Leitstelle" };
+  }
+
+  private nurCalltaker(e: Einsatz): Anruf {
+    const a = e.anruf;
+    if (!a) throw new Error("Kein Anruf zu diesem Einsatz");
+    const ich = this.calltaker();
+    if (a.status === "klingelt" || a.status === "verpasst") throw new Error("Bitte zuerst den Anruf annehmen");
+    if (a.angenommenVon && a.angenommenVon.pid !== ich.pid && this.mode !== "solo") {
+      throw new Error(`Das Gespräch führt ${a.angenommenVon.name}`);
+    }
+    return a;
+  }
+
+  /** Anruf annehmen (klingelt), zurückrufen (verpasst) oder übernehmen (Gesprächsführer getrennt) */
+  anrufAnnehmen(id: string): void {
+    const e = this.einsatz(id);
+    const a = e?.anruf;
+    if (!e || !a) throw new Error("Kein Anruf zu diesem Einsatz");
+    const ich = this.calltaker();
+    if (a.status === "aktiv") {
+      const fuehrer = a.angenommenVon;
+      if (fuehrer && fuehrer.pid !== ich.pid && (this.istOnline?.(fuehrer.pid) ?? true)) {
+        throw new Error(`Das Gespräch führt bereits ${fuehrer.name}`);
+      }
+      a.angenommenVon = { ...ich };
+      a.gespraech.push({ zeit: this.state.zeit, von: "system", text: `${ich.name} übernimmt das Gespräch` });
+    } else if (a.status === "klingelt" || a.status === "verpasst") {
+      a.rueckruf = a.status === "verpasst";
+      a.status = "aktiv";
+      a.seit = this.state.zeit;
+      a.rueckrufUm = null;
+      a.angenommenVon = { ...ich };
+      a.gespraech.push({ zeit: this.state.zeit, von: "system", text: a.rueckruf ? `Rückruf durch ${ich.name}` : `Anruf angenommen von ${ich.name}` });
+      this.log(e, a.rueckruf ? "Leitstelle ruft zurück" : "Anruf angenommen");
+    } else {
+      throw new Error("Das Gespräch ist bereits beendet");
+    }
+    e.bearbeiter = { ...ich };
+    if (e.zustand === "neu") e.zustand = "offen";
+    this.emit();
+  }
+
+  anrufNachricht(id: string, von: "leitstelle" | "anrufer", text: string): void {
+    const e = this.einsatz(id);
+    if (!e) return;
+    const a = this.nurCalltaker(e);
+    const t = text.trim().slice(0, 1500);
+    if (!t) return;
+    a.gespraech.push({ zeit: this.state.zeit, von, text: t, wer: von === "leitstelle" ? this.calltaker().name : undefined });
+    if (a.gespraech.length > 200) a.gespraech.splice(1, a.gespraech.length - 200);
+    this.emit();
+  }
+
+  anrufBeenden(id: string): void {
+    const e = this.einsatz(id);
+    if (!e) return;
+    const a = this.nurCalltaker(e);
+    a.status = "beendet";
+    a.seit = this.state.zeit;
+    a.gespraech.push({ zeit: this.state.zeit, von: "system", text: "Gespräch beendet" });
+    this.log(e, "Notrufgespräch beendet");
+    this.emit();
+  }
+
+  /** Antwort in der Abfrage setzen (wert null = zurücknehmen); „kapitel“ wählt das Kapitel */
+  abfrageSetze(id: string, frage: string, wert: string | number | null): void {
+    const e = this.einsatz(id);
+    if (!e) return;
+    const a = this.nurCalltaker(e);
+    if (frage === "kapitel") a.kapitel = wert === null ? null : String(wert);
+    else if (wert === null) delete a.antworten[frage];
+    else a.antworten[frage] = wert;
+    this.abfrageAuswerten(e);
+    this.emit();
+  }
+
+  abfrageExtra(id: string, extra: Partial<Anruf["extra"]>): void {
+    const e = this.einsatz(id);
+    if (!e) return;
+    const a = this.nurCalltaker(e);
+    a.extra = { ...a.extra, ...extra };
+    this.abfrageAuswerten(e);
+    this.emit();
+  }
+
+  /** Vorläufigen Code aus der Abfrage berechnen und in den Einsatz übernehmen */
+  private abfrageAuswerten(e: Einsatz): void {
+    const a = e.anruf;
+    const schema = store.schema;
+    if (!a || !schema || !a.kapitel) {
+      if (a) a.ergebnis = null;
+      return;
+    }
+    const erg = bestimmeCode(schema, a.kapitel, a.antworten, a.extra);
+    a.ergebnis = erg ? { code: erg.code, reanimation: erg.reanimation } : null;
+    if (erg && erg.code !== e.code && findCode(erg.code)) {
+      const vorher = e.code;
+      e.code = erg.code;
+      e.codeQuelle = "abfrage";
+      if (e.zustand === "neu") e.zustand = "offen";
+      this.log(e, `${vorher ? "Code geändert" : "Code"} (Abfrage): ${erg.code}`);
+    }
+  }
+
 
   /** Alle Einsätze und Fahrzeugzustände zurücksetzen. */
   reset(): void {

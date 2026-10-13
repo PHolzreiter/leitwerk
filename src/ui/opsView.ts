@@ -9,6 +9,8 @@ import { distanceM, searchAddress, type AddressHit } from "../sim/geo";
 import { KATEGORIE_LABEL, type StatusKey } from "../sim/settings";
 import { openDialog } from "./dialog";
 import { ensureCodes } from "./codesPrompt";
+import { anrufPanel } from "./anrufPanel";
+import { klingeltonAktualisieren } from "./klingelton";
 import { el, esc, toast } from "./dom";
 
 export interface OpsDeps {
@@ -217,16 +219,38 @@ export function createOpsView(left: HTMLElement, right: HTMLElement, deps: OpsDe
       const c = findCode(e.code ?? undefined);
       const row = el("div", { class: `inc-row z-${e.zustand}${e.id === selected ? " sel" : ""}` });
       const warn = e.adressePruefen || e.khAnfrage ? `<span class="warn-dot" title="Rückfrage offen">!</span>` : "";
+      const a = e.anruf;
+      const tel =
+        a && e.zustand !== "abgeschlossen"
+          ? a.status === "klingelt"
+            ? `<div class="inc-anruf klingelt">📞 klingelt${a.versuche > 1 ? ` (${a.versuche}. Versuch)` : ""}</div>`
+            : a.status === "verpasst"
+              ? `<div class="inc-anruf verpasst">📵 verpasster Anruf</div>`
+              : a.status === "aktiv"
+                ? `<div class="inc-anruf aktiv">📞 im Gespräch${a.angenommenVon && mp.aktiv ? ` · ${esc(a.angenommenVon.pid === mp.ich.pid ? "du" : a.angenommenVon.name)}` : ""}</div>`
+                : ""
+          : "";
       row.innerHTML = `
         <span class="inc-stufe" style="background:${stufeFarbe(c?.stufe)}"></span>
         <div class="inc-main">
           <div><b>${esc(e.nummer)}</b> · ${uhr(e.erstellt)} ${warn}</div>
-          <div class="muted">${esc(c ? `${c.code} ${c.beschreibung}` : "Code fehlt")}</div>
+          ${tel}
+          <div class="muted">${esc(c ? `${c.code} ${c.beschreibung}` : a ? "Abfrage läuft" : "Code fehlt")}</div>
           <div class="muted">${esc(e.adresse?.label ?? "Adresse fehlt")}</div>
           ${bearbeiterHtml(e)}
         </div>
         <span class="inc-state">${{ neu: "NEU", offen: "offen", laufend: `${e.fahrzeuge.length} Fz`, abgeschlossen: "erl." }[e.zustand]}</span>`;
       row.addEventListener("click", () => select(e.id));
+      if (a && (a.status === "klingelt" || a.status === "verpasst") && e.zustand !== "abgeschlossen") {
+        const b = el("button", { class: "btn small primary inc-annehmen" }, a.status === "klingelt" ? "Annehmen" : "Zurückrufen");
+        b.addEventListener("click", (ev) => {
+          ev.stopPropagation();
+          select(e.id);
+          // Das Panel in der Maske übernimmt Annehmen + Gesprächseröffnung
+          (rbEinsatz.querySelector<HTMLButtonElement>(".anruf-kopf .btn.primary"))?.click();
+        });
+        row.querySelector(".inc-main")!.appendChild(b);
+      }
       incList.appendChild(row);
     }
     if (list.length === 0) incList.innerHTML = `<div class="muted pad">Keine offenen Einsätze. Die Simulation erzeugt Einsätze, wenn die Uhr läuft.</div>`;
@@ -403,6 +427,10 @@ export function createOpsView(left: HTMLElement, right: HTMLElement, deps: OpsDe
     const head = el("div", { class: "mask-head" });
     root.appendChild(head);
 
+    // Notrufgespräch + Abfrage (nur bei Einsätzen, die als Anruf kommen)
+    const anruf = anrufPanel(e);
+    root.appendChild(anruf.root);
+
     // Meldung
     const meld = el("div", { class: "mask-box meldung" });
     meld.innerHTML = `<div class="box-title">Meldung</div><div class="meld-text">${esc(e.meldung.text)}</div>
@@ -415,6 +443,7 @@ export function createOpsView(left: HTMLElement, right: HTMLElement, deps: OpsDe
     const rueckOut = el("div", { class: "rueck muted" });
     meld.appendChild(rueckOut);
     root.appendChild(meld);
+    meld.hidden = !!e.anruf;
 
     // Code
     const codeBox = el("div", { class: "mask-box" });
@@ -636,6 +665,8 @@ export function createOpsView(left: HTMLElement, right: HTMLElement, deps: OpsDe
     };
     dyn = {
       refresh() {
+        anruf.refresh();
+        meld.hidden = !!e.anruf;
         if (e.code !== letzterCode) {
           letzterCode = e.code;
           showCode();
@@ -716,6 +747,7 @@ export function createOpsView(left: HTMLElement, right: HTMLElement, deps: OpsDe
       renderFunk();
       renderChat();
       dyn?.refresh();
+      klingeltonAktualisieren(sim.state.einsaetze.some((x) => x.anruf?.status === "klingelt" && x.zustand !== "abgeschlossen") && sim.state.laeuft);
     }, 400);
   });
 

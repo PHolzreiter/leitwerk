@@ -1761,3 +1761,213 @@ input[type="color"] {
   font-size: 10.5px;
   margin-right: 3px;
 }
+
+/* ---------------------------------------------------------------- Notruf / Abfrage */
+.inc-anruf {
+  font-size: 12px;
+  font-weight: 600;
+}
+.inc-anruf.klingelt {
+  color: #ffb4b4;
+  animation: klingeln 1s ease-in-out infinite;
+}
+.inc-anruf.verpasst {
+  color: var(--warn);
+}
+.inc-anruf.aktiv {
+  color: var(--ok);
+}
+.inc-annehmen {
+  margin-top: 4px;
+  align-self: flex-start;
+}
+@keyframes klingeln {
+  50% {
+    opacity: 0.45;
+  }
+}
+.anruf-kopf {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.anruf-kopf > div {
+  flex: 1;
+}
+.anruf-kopf .klingelt {
+  color: #ffb4b4;
+  font-weight: 700;
+  animation: klingeln 1s ease-in-out infinite;
+}
+.anruf-kopf .verpasst {
+  color: var(--warn);
+  font-weight: 700;
+}
+.anruf-verlauf {
+  max-height: 220px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 4px;
+  background: var(--panel);
+  border-radius: 6px;
+}
+.anruf-msg {
+  padding: 4px 8px;
+  border-radius: 6px;
+  line-height: 1.35;
+}
+.anruf-msg.leitstelle {
+  background: rgba(47, 128, 237, 0.18);
+  align-self: flex-end;
+  max-width: 88%;
+}
+.anruf-msg.anrufer {
+  background: var(--panel-2);
+  align-self: flex-start;
+  max-width: 88%;
+}
+.anruf-msg.system {
+  color: var(--text-dim);
+  font-size: 12px;
+  align-self: center;
+}
+.anruf-msg.live {
+  opacity: 0.8;
+}
+.anruf-form {
+  display: flex;
+  gap: 6px;
+}
+.anruf-form input {
+  flex: 1;
+}
+.anruf-code .reanimation {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 700;
+  padding: 6px 8px;
+  border-radius: 6px;
+  margin-bottom: 4px;
+  animation: klingeln 1.2s ease-in-out infinite;
+}
+.abfrage {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.abfrage-abschnitt {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-top: 1px solid var(--line);
+  padding-top: 6px;
+}
+.abfrage-titel {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
+}
+.frage-text {
+  font-weight: 600;
+}
+.frage-hinweis {
+  font-size: 12px;
+  color: var(--warn);
+}
+.frag-knopf {
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  color: var(--text);
+  cursor: pointer;
+  margin-right: 6px;
+  padding: 0 4px;
+}
+.frag-knopf:hover {
+  background: var(--panel-2);
+}
+.optionen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 3px;
+}
+.opt {
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  color: var(--text);
+  border-radius: 4px;
+  padding: 2px 8px;
+  cursor: pointer;
+  font-size: 12px;
+}
+.opt.gewaehlt {
+  background: var(--blue);
+  border-color: var(--blue);
+}
+.opt:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+.opt.gewaehlt:disabled {
+  opacity: 1;
+}
+.optionen input.zahl {
+  width: 70px;
+}
+.kapitel-liste {
+  display: flex;
+  flex-direction: column;
+  max-height: 200px;
+  overflow-y: auto;
+  gap: 2px;
+  margin-top: 4px;
+}
+.kapitel-opt {
+  text-align: left;
+  background: var(--panel-2);
+  border: 1px solid transparent;
+  color: var(--text);
+  border-radius: 4px;
+  padding: 3px 6px;
+  cursor: pointer;
+}
+.kapitel-opt:hover:not(:disabled) {
+  border-color: var(--blue);
+}
+.kapitel-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.abfrage-extra {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.schema-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+}
+.ki-status {
+  margin: 8px 0;
+}
+.ki-status .ok {
+  color: var(--ok);
+}
+.ki-test {
+  margin-top: 8px;
+  white-space: pre-wrap;
+}

@@ -1,4 +1,5 @@
 mod addresses;
+mod ki;
 mod packs;
 mod routing;
 mod updater;
@@ -459,10 +460,24 @@ pub fn run() {
             pack_remove,
             updater::update_check,
             updater::update_install,
+            ki::ki_status,
+            ki::ki_starten,
+            ki::ki_beenden,
+            ki::ki_beim_beenden,
+            ki::ki_installieren,
+            ki::ki_modell_laden,
+            ki::ki_chat,
             app_version
         ])
-        .run(tauri::generate_context!())
-        .expect("LeitWerk konnte nicht gestartet werden");
+        .build(tauri::generate_context!())
+        .expect("LeitWerk konnte nicht gestartet werden")
+        .run(|_app, event| {
+            if let tauri::RunEvent::Exit = event {
+                if ki::BEIM_BEENDEN_STOPPEN.load(Ordering::SeqCst) {
+                    ki::ollama_beenden();
+                }
+            }
+        });
 }
 
 /// Programmversion (für die Anzeige).

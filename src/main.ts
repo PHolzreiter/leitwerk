@@ -15,6 +15,7 @@ import { checkOnStart, ensureGrundpaket } from "./ui/packsView";
 import { ensureCodes } from "./ui/codesPrompt";
 import { setupSpielStatus } from "./ui/spielDialog";
 import { autosaveStarten } from "./net/spielstand";
+import { kiBeimStart } from "./abfrage/ki";
 import { mp } from "./net/mehrspieler";
 import { appVersion, onPacksChanged } from "./updates";
 
@@ -110,6 +111,7 @@ async function init(): Promise<void> {
     if (ok) mp.hostUebergeben(pid);
   });
   autosaveStarten();
+  void kiBeimStart().catch((e) => console.warn("KI-Start", e));
   void watchGeo();
 
   let maps: string[] = [];

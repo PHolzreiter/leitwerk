@@ -116,6 +116,8 @@ export interface Settings {
   aufkommen: Record<Kategorie, number>;
   generatorAktiv: boolean;
   generatorQuelle: "zufall" | "vorlagen";
+  /** Neue Einsätze kommen als Anruf mit Notrufabfrage (wenn ein Abfrageschema importiert ist) */
+  anrufe: boolean;
   gebiet: Gebiet;
   /** Fahrzeit mit Sondersignal = Fahrzeit × Faktor */
   sondersignalFaktor: number;
@@ -137,6 +139,7 @@ export function defaultSettings(): Settings {
     aufkommen: { stabil: 2, dringend: 3, kritisch: 1 },
     generatorAktiv: true,
     generatorQuelle: "zufall",
+    anrufe: true,
     gebiet: GEBIETE[0],
     sondersignalFaktor: 0.8,
     toleranzMin: 10,

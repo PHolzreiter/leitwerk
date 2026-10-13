@@ -7,6 +7,7 @@ import { codeKategorien } from "../sim/codes";
 import { WETTER_LABEL, type WetterLage } from "../sim/weather";
 import { confirmDialog } from "./dialog";
 import { buildAppSection, buildPacksSection } from "./packsView";
+import { buildKiSection } from "./kiView";
 import { el, esc, toast } from "./dom";
 
 const STATUS_BEDEUTUNG: Record<string, string> = {
@@ -185,6 +186,15 @@ export function createSettingsView(container: HTMLElement): { refresh(): void } 
     wWrap.append(wSel, wBtn);
     nGrid.append(el("label", {}, "Wetter zum Testen setzen"), wWrap);
     nSec.appendChild(nGrid);
+
+    // KI-Anrufer
+    buildKiSection(
+      section(
+        "Notrufe und KI-Anrufer",
+        "Mit einem Abfrageschema (Daten → Einsatzcodes) kommen Einsätze als Anruf. Den Anrufer spielt eine KI (Ollama), die auf deinem Rechner läuft – ohne Internet und kostenlos. Ohne KI antwortet der Anrufer mit einfachen Sätzen.",
+      ),
+      draft,
+    );
 
     // Kartenpakete und Programm
     buildPacksSection(

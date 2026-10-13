@@ -179,6 +179,8 @@ export interface Persisted {
   eigene: Records;
   /** Simulations-Einstellungen (siehe sim/settings.ts) */
   einstellungen?: unknown;
+  /** Importiertes Abfrageschema (Notrufabfrage), siehe abfrage/schema.ts */
+  abfrageschema?: unknown;
 }
 
 export function emptyPersisted(): Persisted {

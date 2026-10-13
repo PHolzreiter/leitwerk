@@ -23,7 +23,7 @@ import { el, esc, toast } from "./dom";
 let manifestCache: Pack[] | null = null;
 let busy: string | null = null;
 
-function progressBar(): { root: HTMLElement; set(p: Progress | null, text?: string): void } {
+export function progressBar(): { root: HTMLElement; set(p: Progress | null, text?: string): void } {
   const root = el("div", { class: "progress" });
   const bar = el("div", { class: "progress-bar" });
   const label = el("div", { class: "progress-label muted" });

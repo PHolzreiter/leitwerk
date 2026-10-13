@@ -18,6 +18,7 @@ import {
 } from "./model";
 import { standardRecords } from "./standard";
 import { mergeSettings, type Settings } from "../sim/settings";
+import { istSchema, type Schema } from "../abfrage/schema";
 
 type Listener = () => void;
 
@@ -29,7 +30,8 @@ export type StoreBefehl =
   | "upsert"
   | "remove"
   | "clearOwn"
-  | "restoreHidden";
+  | "restoreHidden"
+  | "setSchema";
 
 export class Store {
   private data: Persisted = emptyPersisted();
@@ -81,6 +83,7 @@ export class Store {
           ausgeblendet: parsed.ausgeblendet ?? [],
           eigene: { ...base.eigene, ...(parsed.eigene ?? {}) },
           einstellungen: parsed.einstellungen,
+          abfrageschema: parsed.abfrageschema,
         };
         // ältere Speicherstände: neue Felder ergänzen
         for (const v of this.data.eigene.vehicles) v.nachtflug ??= false;
@@ -145,6 +148,17 @@ export class Store {
     if (this.remote) return this.remote("resetSettings", []);
     this.data.einstellungen = undefined;
     this.settingsCache = null;
+    this.changed();
+  }
+
+  /** Importiertes Abfrageschema (oder null) */
+  get schema(): Schema | null {
+    return istSchema(this.data.abfrageschema) ? this.data.abfrageschema : null;
+  }
+
+  setSchema(s: Schema | null): void {
+    if (this.remote) return this.remote("setSchema", [s]);
+    this.data.abfrageschema = s ?? undefined;
     this.changed();
   }
 

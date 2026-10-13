@@ -12,7 +12,8 @@ export function ensureCodes(onImported?: () => void): boolean {
   if (hasCodes()) return true;
   const body = el("div", { class: "update-box" });
   body.innerHTML = `<p>Für die Simulation braucht LeitWerk eine Liste mit <b>Einsatzcodes</b>. Sie ist nicht im Programm enthalten,
-    du importierst sie einmalig als CSV-Datei.</p>
+    du importierst sie einmalig als CSV-Datei – oder du lädst gleich dein <b>Abfrageschema</b> (JSON-Datei),
+    dann kommen Einsätze als Notruf, den du abfragst, und die Codes werden mit übernommen.</p>
     <p class="muted">Nötig ist die Spalte „Code“, dazu Name, Kategorie (z. B. „ALS rot“) und Kapitel.
     Später findest du die Liste unter <b>Daten → Einsatzcodes</b>, dort kannst du sie bearbeiten, ergänzen oder neu importieren.</p>`;
   openDialog({

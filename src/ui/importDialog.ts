@@ -3,14 +3,17 @@ import { KIND_LABEL, KINDS, type Kind } from "../data/model";
 import { detectKind, importCsv, type ImportResult } from "../data/schema";
 import { store } from "../data/store";
 import { pickTextFile } from "../platform";
+import { istSchema, type Schema } from "../abfrage/schema";
+import type { Einsatzcode } from "../data/model";
 import { openDialog } from "./dialog";
 import { el, esc, toast } from "./dom";
 
 const MAX_LIST = 200;
 
 export async function startImport(defaultKind: Kind, onDone: (kind: Kind) => void): Promise<void> {
-  const file = await pickTextFile();
+  const file = await pickTextFile(".csv,.txt,.json");
   if (!file) return;
+  if (file.text.trimStart().startsWith("{")) return schemaImport(file, onDone);
 
   let kind: Kind = detectKind(file.text) ?? defaultKind;
   let result: ImportResult<Kind>;
@@ -97,4 +100,38 @@ export async function startImport(defaultKind: Kind, onDone: (kind: Kind) => voi
     ],
   });
   render();
+}
+
+/** Abfrageschema (JSON) übernehmen – die Codes darin werden in die Codeliste übernommen. */
+function schemaImport(file: { name: string; text: string }, onDone: (kind: Kind) => void): void {
+  let schema: unknown;
+  try {
+    schema = JSON.parse(file.text);
+  } catch (e) {
+    toast(`Die Datei ist kein gültiges JSON: ${String((e as Error).message ?? e)}`, "error");
+    return;
+  }
+  if (!istSchema(schema)) {
+    toast("Die Datei ist kein Abfrageschema (es fehlen „kapitel“, „globale_fragen“ oder „codes“).", "error");
+    return;
+  }
+  schemaUebernehmen(schema as Schema, file.name);
+  onDone("codes");
+}
+
+export function schemaUebernehmen(schema: Schema, dateiname: string): void {
+  const vorhanden = new Map(store.list("codes").map((c) => [c.code.toUpperCase(), c.id]));
+  const codes: Einsatzcode[] = Object.entries(schema.codes).map(([code, c]) => ({
+    id: vorhanden.get(code.toUpperCase()) ?? code,
+    code,
+    name: c.name,
+    kategorie: c.kategorie,
+    kapitel: c.kapitel,
+    hinweis: "",
+    herkunft: "import",
+    herkunftDetail: dateiname,
+  }));
+  store.setSchema(schema);
+  store.upsert("codes", codes);
+  toast(`Abfrageschema geladen: ${Object.keys(schema.kapitel).length} Kapitel, ${codes.length} Codes`);
 }

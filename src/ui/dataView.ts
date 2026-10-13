@@ -52,6 +52,7 @@ export function createDataView(container: HTMLElement, deps: DataViewDeps): { re
       <nav class="data-nav"></nav>
       <section class="data-main">
         <div class="sources-panel"></div>
+        <div class="schema-bar" hidden></div>
         <div class="toolbar">
           <h2 class="tb-title"></h2>
           <input class="tb-search" type="search" placeholder="Suchen …" />
@@ -75,6 +76,35 @@ export function createDataView(container: HTMLElement, deps: DataViewDeps): { re
   const thead = container.querySelector<HTMLElement>("thead")!;
   const tbody = container.querySelector<HTMLElement>("tbody")!;
   const foot = container.querySelector<HTMLElement>(".table-foot")!;
+  const schemaBar = container.querySelector<HTMLElement>(".schema-bar")!;
+
+  /** Abfrageschema (nur bei Einsatzcodes): Status, laden, entfernen */
+  function renderSchemaBar() {
+    schemaBar.hidden = current !== "codes";
+    if (schemaBar.hidden) return;
+    const sch = store.schema;
+    schemaBar.innerHTML = sch
+      ? `<div><b>Abfrageschema geladen</b> <span class="muted">· ${Object.keys(sch.kapitel).length} Kapitel · ${Object.keys(sch.codes).length} Codes${sch.version ? ` · Version ${esc(String(sch.version))}` : ""}</span>
+         <div class="muted small">Neue Einsätze kommen als Notruf, den du annimmst und abfragst. Der Code ergibt sich aus der Abfrage.</div></div>`
+      : `<div><b>Kein Abfrageschema</b>
+         <div class="muted small">Mit einem Abfrageschema (JSON-Datei) kommen Einsätze als Anruf, den du abfragst. Die Codes darin werden mit übernommen.</div></div>`;
+    const btns = el("div", { class: "row-btns" });
+    const laden = el("button", { class: "btn small primary" }, sch ? "Ersetzen …" : "Abfrageschema laden …");
+    laden.addEventListener("click", () => void startImport("codes", (k) => select(k)));
+    btns.appendChild(laden);
+    if (sch) {
+      const weg = el("button", { class: "btn small danger-text" }, "Entfernen");
+      weg.addEventListener("click", async () => {
+        const ok = await confirmDialog("Abfrageschema entfernen", "Das Abfrageschema wird entfernt. Die Codeliste bleibt. Neue Einsätze kommen dann wieder ohne Anruf.", "Entfernen", true);
+        if (!ok) return;
+        store.setSchema(null);
+        toast("Abfrageschema entfernt");
+        render();
+      });
+      btns.appendChild(weg);
+    }
+    schemaBar.appendChild(btns);
+  }
 
   let location = "";
   void storeLocation().then((l) => {
@@ -289,7 +319,7 @@ export function createDataView(container: HTMLElement, deps: DataViewDeps): { re
       (filtered.length > MAX_ROWS ? ` – angezeigt werden die ersten ${MAX_ROWS}, bitte suchen` : "") +
       ` · Klick auf eine Zeile zum Bearbeiten`;
     if (all.length === 0 && current === "codes") {
-      tbody.innerHTML = `<tr><td colspan="${cols.length + 2}" class="empty">Noch keine Einsatzcodes. LeitWerk bringt keine Codeliste mit – bitte deine Liste mit „CSV importieren …“ laden. Nötig ist nur die Spalte „Code“; dazu Name, Kategorie (Stufe, z. B. „ALS rot“) und Kapitel (z. B. „10 - Brustschmerz“).</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="${cols.length + 2}" class="empty">Noch keine Einsatzcodes. LeitWerk bringt keine Codeliste mit – bitte deine Liste mit „CSV importieren …“ oder ein Abfrageschema (JSON) laden. Nötig ist nur die Spalte „Code“; dazu Name, Kategorie (Stufe, z. B. „ALS rot“) und Kapitel (z. B. „10 - Brustschmerz“).</td></tr>`;
     } else if (all.length === 0) {
       tbody.innerHTML = `<tr><td colspan="${cols.length + 2}" class="empty">Noch keine ${KIND_LABEL[current]}. Mit „Neu“ anlegen oder eine CSV-Datei importieren (Vorlage und Beispiel helfen beim Aufbau der Datei).</td></tr>`;
     }
@@ -298,6 +328,7 @@ export function createDataView(container: HTMLElement, deps: DataViewDeps): { re
   function render() {
     renderNav();
     renderSources();
+    renderSchemaBar();
     renderTable();
   }
 
