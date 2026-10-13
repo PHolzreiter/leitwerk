@@ -10,7 +10,8 @@ import { KATEGORIE_LABEL, type StatusKey } from "../sim/settings";
 import { openDialog } from "./dialog";
 import { ensureCodes } from "./codesPrompt";
 import { anrufPanel } from "./anrufPanel";
-import { klingeltonAktualisieren } from "./klingelton";
+import { funkPiepAktualisieren, klingeltonAktualisieren } from "./klingelton";
+import { createFunkView } from "./funkView";
 import { el, esc, toast } from "./dom";
 
 export interface OpsDeps {
@@ -218,7 +219,7 @@ export function createOpsView(left: HTMLElement, right: HTMLElement, deps: OpsDe
     for (const e of list) {
       const c = findCode(e.code ?? undefined);
       const row = el("div", { class: `inc-row z-${e.zustand}${e.id === selected ? " sel" : ""}` });
-      const warn = e.adressePruefen || e.khAnfrage ? `<span class="warn-dot" title="Rückfrage offen">!</span>` : "";
+      const warn = e.adressePruefen || e.khAnfrage || e.nachforderungen?.some((n) => !n.erledigt) ? `<span class="warn-dot" title="Rückfrage oder Nachforderung offen">!</span>` : "";
       const a = e.anruf;
       const tel =
         a && e.zustand !== "abgeschlossen"
@@ -396,22 +397,13 @@ export function createOpsView(left: HTMLElement, right: HTMLElement, deps: OpsDe
     renderLists();
   });
 
+  const funkView = createFunkView(rbFunk, { select: (id) => select(id) });
   function renderFunk() {
-    const offen = sim.state.funk.filter((f) => !f.quittiert).length;
+    funkView.refresh();
+    const offen = funkView.offen();
     funkBadge.hidden = offen === 0;
     funkBadge.textContent = String(offen);
-    rbFunk.innerHTML = "";
-    for (const f of sim.state.funk.slice(0, 120)) {
-      const row = el("div", { class: `funk-row art-${f.art}${f.quittiert ? "" : " offen"}` });
-      const e = f.einsatzId ? sim.einsatz(f.einsatzId) : undefined;
-      row.innerHTML = `<span class="muted">${uhr(f.zeit)}</span> <b>${esc(f.von)}</b>${e ? ` <span class="muted">${esc(e.nummer)}</span>` : ""}<div>${esc(f.text)}</div>`;
-      row.addEventListener("click", () => {
-        if (!f.quittiert) void fehlerZeigen(sim.call("quittiere", f.id));
-        if (e) select(e.id);
-      });
-      rbFunk.appendChild(row);
-    }
-    if (sim.state.funk.length === 0) rbFunk.innerHTML = `<div class="muted pad">Noch keine Funkmeldungen.</div>`;
+    funkPiepAktualisieren(offen > 0);
   }
 
   // ------------------------------------------------------------ Einsatzmaske
@@ -747,8 +739,12 @@ export function createOpsView(left: HTMLElement, right: HTMLElement, deps: OpsDe
         head.innerHTML = `<span class="stufe-badge big" style="background:${stufeFarbe(c?.stufe)}">${esc(c?.stufe ?? "ohne Code")}</span>
           <div><div class="mask-nr">${esc(e.nummer)}</div><div class="muted">Eingang ${uhr(e.erstellt)} · ${Math.round((sim.state.zeit - e.erstellt) / 60000)} min · ${{ neu: "neu", offen: "in Bearbeitung", laufend: "laufend", abgeschlossen: "abgeschlossen" }[e.zustand]}</div></div>`;
         meld.classList.toggle("alert", e.adressePruefen);
-        // zugeordnete Fahrzeuge
+        // zugeordnete Fahrzeuge + offene Nachforderungen
         assigned.innerHTML = "";
+        for (const n of e.nachforderungen ?? []) {
+          if (n.erledigt) continue;
+          assigned.appendChild(el("div", { class: "nachforderung" }, `⚠ Nachforderung von ${n.von}: ${n.art === "NA" ? (n.anzahl > 1 ? `${n.anzahl} Notärzte` : "Notarzt") : `${n.anzahl} weitere${n.anzahl > 1 ? "" : "s"} Rettungsmittel`}`));
+        }
         for (const id of e.fahrzeuge) {
           const fz = sim.state.fahrzeuge[id];
           if (!fz) continue;
@@ -756,8 +752,16 @@ export function createOpsView(left: HTMLElement, right: HTMLElement, deps: OpsDe
           const imEinsatz = fz.einsatzId === e.id;
           row.innerHTML = `${statusChip(fz)} <b>${esc(fz.funkrufname)}</b> <span class="muted">${esc(fz.rmTyp)} · ${esc(sim.statusDef(fz.status).name)}${imEinsatz ? "" : " (frei)"}</span> ${crewHtml(fz)}`;
           if (imEinsatz) {
-            const b = el("button", { class: "btn small" }, "freigeben");
-            b.addEventListener("click", () => void fehlerZeigen(sim.call("entlasse", fz.id)));
+            const r = el("button", { class: "btn small", title: `${fz.funkrufname} über Funk rufen` }, "📻");
+            r.addEventListener("click", () => {
+              funkView.rufen(fz.id);
+              setTab("funk");
+            });
+            row.appendChild(r);
+            const unterwegs = fz.phase === "ausruecken" || fz.phase === "anfahrt" || fz.phase === "routing";
+            const b = el("button", { class: "btn small" }, unterwegs ? "Storno" : "freigeben");
+            b.title = unterwegs ? "Storno über Funk – Fahrzeug rückt ein" : "Fahrzeug aus dem Einsatz freigeben";
+            b.addEventListener("click", () => void fehlerZeigen(sim.call(unterwegs ? "storno" : "entlasse", fz.id)));
             row.appendChild(b);
           }
           assigned.appendChild(row);

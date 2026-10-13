@@ -43,3 +43,38 @@ export function klingeltonAktualisieren(anrufKlingelt: boolean): void {
     timer = undefined;
   }
 }
+
+let funkTimer: number | undefined;
+
+function piep(): void {
+  try {
+    ctx ??= new AudioContext();
+    if (ctx.state === "suspended") void ctx.resume();
+    const t0 = ctx.currentTime;
+    for (const [start, f] of [[0, 1200], [0.15, 900]] as const) {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = "square";
+      o.frequency.value = f;
+      g.gain.value = 0.04;
+      o.connect(g);
+      g.connect(ctx.destination);
+      o.start(t0 + start);
+      o.stop(t0 + start + 0.12);
+    }
+  } catch {
+    /* egal */
+  }
+}
+
+/** Kurzer Funk-Piep, solange ein Fahrzeug LEO ruft */
+export function funkPiepAktualisieren(ruft: boolean): void {
+  const an = ruft && kiPrefs().klingelton;
+  if (an && funkTimer === undefined) {
+    piep();
+    funkTimer = window.setInterval(piep, 6000);
+  } else if (!an && funkTimer !== undefined) {
+    window.clearInterval(funkTimer);
+    funkTimer = undefined;
+  }
+}

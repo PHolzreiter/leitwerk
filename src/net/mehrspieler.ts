@@ -126,6 +126,7 @@ class Mehrspieler {
     fzIds: "",
     funk: "",
     chat: 0,
+    funkG: "",
   };
   private storeTimer: number | undefined;
 
@@ -649,7 +650,7 @@ class Mehrspieler {
   }
 
   private cacheLeeren(): void {
-    this.cache = { fz: new Map(), fahrt: new Map(), pos: new Map(), ein: new Map(), einIds: "", fzIds: "", funk: "", chat: 0 };
+    this.cache = { fz: new Map(), fahrt: new Map(), pos: new Map(), ein: new Map(), einIds: "", fzIds: "", funk: "", chat: 0, funkG: "" };
   }
 
   private fzSchluessel(fz: SimFahrzeug): string {
@@ -719,6 +720,13 @@ class Mehrspieler {
       d.funk = funkTop;
       c.funk = funkKey;
     }
+    const gTop = (st.funkGespraeche ?? []).slice(0, 40);
+    const gKey = JSON.stringify(gTop);
+    if (gKey !== c.funkG) {
+      d.funkG = gTop;
+      d.funkGZaehler = st.funkGZaehler;
+      c.funkG = gKey;
+    }
     const chatN = st.chat?.length ?? 0;
     if (chatN !== c.chat) {
       d.chat = st.chat;
@@ -779,6 +787,17 @@ class Mehrspieler {
       const neu = d.funk as SimState["funk"];
       const ids = new Set(neu.map((f) => f.id));
       st.funk = [...neu, ...st.funk.filter((f) => !ids.has(f.id) && f.id < (neu[neu.length - 1]?.id ?? 0))].slice(0, 300);
+    }
+    if (d.funkG) {
+      // Funkgespräche: die neuesten kommen vom Host (Objekte behalten), ältere bleiben erhalten
+      const neu = d.funkG as NonNullable<SimState["funkGespraeche"]>;
+      const alt = new Map((st.funkGespraeche ?? []).map((g) => [g.id, g]));
+      const min = neu[neu.length - 1]?.id ?? 0;
+      st.funkGespraeche = [
+        ...neu.map((g) => (alt.has(g.id) ? Object.assign(alt.get(g.id)!, g) : g)),
+        ...(st.funkGespraeche ?? []).filter((g) => g.id < min),
+      ].slice(0, 150);
+      st.funkGZaehler = d.funkGZaehler as number;
     }
     if (d.chat) st.chat = d.chat as SimState["chat"];
     sim.notify();

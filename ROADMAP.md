@@ -9,7 +9,7 @@ Gesammelte Wünsche, die noch nicht eingeplant sind (Reihenfolge noch offen).
 - Das Programm entscheidet, was passiert; die KI formuliert nur
 - Einstellung „Komplikationen“: ruhig / normal / fordernd (normal ≈ jeder 10. Einsatz verändert sich, jede 5. Rea-Meldung ist keine)
 
-## Phase 7 – Funkverkehr mit den Fahrzeugen (als Nächstes)
+## Phase 7 – Funkverkehr mit den Fahrzeugen (umgesetzt in 0.8.0)
 - Funkkanal je Fahrzeug, Besatzung wird von der KI gespielt (ohne KI: feste Sätze)
 - Funkablauf NÖ: Leitstelle heißt am Funk „LEO“; kein Sprechwunsch-Status, es wird direkt gerufen
   - „LEO von 75/001 kommen“ → „Hier LEO kommen“ → Meldung … „kommen“ → „Hier LEO, verstanden, ENDE“

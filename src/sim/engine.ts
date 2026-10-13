@@ -14,7 +14,7 @@ import { defaultStufeFuer, raenge, type Kategorie, type Settings, type StatusKey
 import { flugverbot, istNacht, nextWetter, type Wetter, WETTER_LABEL } from "./weather";
 import { bestimmeCode, fallZiehen, kapitelVonCode, wahrheitFuer, type Antworten, type Schema } from "../abfrage/schema";
 import { anruferWaehlen, veraenderungText, type Anrufer } from "../abfrage/anrufer";
-import { istStillstand, lageErzeugen, lagemeldungBeimEintreffen, patientText, type Lage } from "./lage";
+import { bedarf, istStillstand, lageErzeugen, lagemeldungText, patientText, type Lage } from "./lage";
 
 const MIN = 60_000;
 
@@ -63,6 +63,8 @@ export interface SimFahrzeug {
   nachtflug: boolean;
   /** begleitet den Transport (NEF/NAH bei kritischen Einsätzen) */
   begleitet: boolean;
+  /** Leitstelle hat eine Lagemeldung beim Eintreffen angefordert */
+  lagemeldungAngefordert?: boolean;
 }
 
 export interface Vorschlag {
@@ -113,6 +115,46 @@ function kapitelZiehen(schema: Schema): string {
     if (r <= 0) return k;
   }
   return kaps[0];
+}
+
+/** Ein Funkspruch („Hier LEO …“, „LEO von 75/001 kommen“) */
+export interface FunkSpruch {
+  zeit: number;
+  /** Funkrufname des Fahrzeugs oder „LEO“ */
+  von: string;
+  text: string;
+  /** Disponent, der für LEO gesprochen hat */
+  wer?: string;
+}
+
+export type FunkAnliegen = "lage" | "nachforderung" | "storno" | "kh" | "adresse" | "info";
+
+/** Funkgespräch zwischen LEO und einem Fahrzeug */
+export interface FunkGespraech {
+  id: number;
+  fzId: string;
+  funkname: string;
+  einsatzId: string | null;
+  /** ruft = Fahrzeug ruft LEO; leoRuft = LEO ruft das Fahrzeug; offen = verbunden */
+  status: "ruft" | "leoRuft" | "offen" | "ende";
+  seit: number;
+  /** ruft: nächster Wiederholungsruf; leoRuft: Fahrzeug meldet sich */
+  naechster: number | null;
+  rufe: number;
+  anliegen: { art: FunkAnliegen; text: string } | null;
+  fuehrer: Bearbeiter | null;
+  sprueche: FunkSpruch[];
+  /** freie Frage der Leitstelle – Antwort kommt von der KI des Gesprächsführers */
+  wartetAufKi?: boolean;
+}
+
+export interface Nachforderung {
+  art: "NA" | "RTW";
+  anzahl: number;
+  seit: number;
+  von: string;
+  erinnert: number;
+  erledigt: boolean;
 }
 
 export interface ChatNachricht {
@@ -205,6 +247,8 @@ export interface Einsatz {
   protokoll: Protokoll[];
   bearbeiter?: Bearbeiter | null;
   anruf?: Anruf | null;
+  /** offene Nachforderungen der Besatzung (Notarzt, weitere RTW) */
+  nachforderungen?: Nachforderung[];
 }
 
 export interface Funkmeldung {
@@ -229,6 +273,8 @@ export interface SimState {
   zaehler: number;
   funkZaehler: number;
   chat?: ChatNachricht[];
+  funkGespraeche?: FunkGespraech[];
+  funkGZaehler?: number;
 }
 
 /** Befehle, die Spieler auslösen können (im Multiplayer laufen sie beim Host). */
@@ -251,6 +297,12 @@ export const BEFEHLE = {
     "abfrageExtra",
     "abfrageCode",
     "ortung",
+    "funkAntworten",
+    "funkRufen",
+    "funkSenden",
+    "funkFzAntwort",
+    "funkEnde",
+    "storno",
   ],
   steuern: ["start", "pause", "setTempo", "generiere", "setWetter", "neuPlanen", "reset"],
   immer: ["chat"],
@@ -356,6 +408,8 @@ export class Simulation {
       zaehler: 0,
       funkZaehler: 0,
       chat: [],
+      funkGespraeche: [],
+      funkGZaehler: 0,
     };
   }
 
@@ -498,6 +552,7 @@ export class Simulation {
     this.checkKhAnfragen(t);
     this.anrufeTick(t);
     this.lageTick(t);
+    this.funkTick(t);
     this.emit();
   }
 
@@ -680,7 +735,7 @@ export class Simulation {
           if (!e.adressePruefen) {
             e.adressePruefen = true;
             this.log(e, `${fz.funkrufname}: kein Patient an der angegebenen Adresse`);
-            this.funk(fz.funkrufname, e.id, "Kein Patient an der angegebenen Adresse – bitte Adresse prüfen (Rückruf)", "sprechwunsch");
+            this.fzRuft(fz, e, "adresse", "kein Patient an der angegebenen Adresse, bitte Adresse prüfen");
           }
         } else {
           fz.phase = "vorOrt";
@@ -765,7 +820,7 @@ export class Simulation {
       return;
     }
     e.khAnfrage = { abteilung: e.wahr.abteilung, seit: t, von: fz.funkrufname };
-    this.funk(fz.funkrufname, e.id, `Erbitte KH-Buchung: ${HOSPITAL_FLAG_LABEL[e.wahr.abteilung]}`, "sprechwunsch");
+    this.fzRuft(fz, e, "kh", `erbitte KH-Buchung, ${HOSPITAL_FLAG_LABEL[e.wahr.abteilung]}`);
     this.log(e, `${fz.funkrufname} erbittet KH-Buchung (${HOSPITAL_FLAG_LABEL[e.wahr.abteilung]})`);
   }
 
@@ -1482,9 +1537,15 @@ export class Simulation {
       // Besatzung vor Ort meldet sich
       const fz = e.fahrzeuge.map((id) => this.state.fahrzeuge[id]).find((f) => f && f.einsatzId === e.id && f.phase === "vorOrt");
       if (!fz) return;
-      const text = besserung ? `Patient hat sich gebessert: ${patientText(p0)}` : istStillstand(p0) ? "Patient jetzt reanimationspflichtig, wir reanimieren." : `Patient verschlechtert sich: ${patientText(p0)}`;
-      this.funk(fz.funkrufname, e.id, text, "sprechwunsch");
-      this.log(e, `${fz.funkrufname}: ${text}`);
+      const text = besserung
+        ? `Patient hat sich gebessert, ${patientText(p0).replace(/ \(.*\)$/, "")}`
+        : istStillstand(p0)
+          ? "Patient jetzt reanimationspflichtig, Reanimation läuft"
+          : `Patient verschlechtert sich, ${patientText(p0).replace(/ \(.*\)$/, "")}`;
+      const fehlt = this.fehlendeKraefte(e);
+      this.nachfordern(e, fz, fehlt);
+      const zusatz = fehlt.na ? ", benötigen Notarzt" : "";
+      this.fzRuft(fz, e, fehlt.na ? "nachforderung" : "lage", `${text}${zusatz}`);
       if (istStillstand(p0) && fz.phaseEnde !== null) fz.phaseEnde = Math.max(fz.phaseEnde, t + rnd(30, 40) * MIN);
       return;
     }
@@ -1516,18 +1577,291 @@ export class Simulation {
     }
   }
 
-  /** Erstes Fahrzeug vor Ort: Besatzung sieht die ganze Lage und meldet Abweichungen */
+  /** Fahrzeug trifft ein: erstes Fahrzeug sieht die ganze Lage und meldet sich, wenn nötig */
   private eintreffenLage(fz: SimFahrzeug, e: Einsatz): void {
     const l = e.wahr.lage;
-    if (!l || l.aufgedeckt) return;
+    const angefordert = !!fz.lagemeldungAngefordert;
+    fz.lagemeldungAngefordert = false;
+    if (!l) {
+      if (angefordert) this.fzRuft(fz, e, "lage", "vor Ort, Lage entspricht der Meldung");
+      return;
+    }
+    const erstes = !l.aufgedeckt;
     l.aufgedeckt = true;
+    const kap = e.wahr.abfrage?.kapitel ?? "";
     const ant = e.wahr.abfrage?.antworten ?? {};
     const angenommenRea = ant.at === "keine" || ant.at === "agonal";
-    const text = lagemeldungBeimEintreffen(l, angenommenRea);
-    l.verlauf.push({ zeit: this.state.zeit, text: `${fz.funkrufname} vor Ort${text ? `: ${text}` : ""}` });
-    if (!text) return;
-    this.funk(fz.funkrufname, e.id, text, "sprechwunsch");
-    this.log(e, `${fz.funkrufname}: ${text}`);
+    const p0 = l.patienten[0];
+    const fehlt = this.fehlendeKraefte(e);
+    // NEF/NAH unterwegs, aber kein Notarzt nötig → Storno empfehlen (nur das erste transportfähige Fahrzeug)
+    const naUnterwegs = this.einsatzFz(e).some((x) => (x.kategorie === "NEF" || x.kategorie === "NAH") && x.phase !== "vorOrt");
+    const naStorno = erstes && this.transportfaehig(fz) && naUnterwegs && bedarf(l).na === 0;
+    const abweichung = l.irrtum !== null || angenommenRea !== istStillstand(p0) || l.patienten.length > 1 || ["29", "34", "22", "7", "8"].includes(kap);
+    if (erstes) l.verlauf.push({ zeit: this.state.zeit, text: `${fz.funkrufname} als erstes Fahrzeug vor Ort` });
+    if ((erstes && (abweichung || fehlt.na > 0 || fehlt.rtw > 0 || naStorno)) || angefordert) {
+      const text = lagemeldungText(l, kap, fehlt, naStorno);
+      this.nachfordern(e, fz, fehlt);
+      this.fzRuft(fz, e, fehlt.na || fehlt.rtw ? "nachforderung" : naStorno ? "storno" : "lage", `Lagemeldung: ${text}`);
+      l.verlauf.push({ zeit: this.state.zeit, text: `${fz.funkrufname}: ${text}` });
+    }
+  }
+
+  /** Fahrzeuge, die gerade für den Einsatz unterwegs oder vor Ort sind */
+  private einsatzFz(e: Einsatz): SimFahrzeug[] {
+    return e.fahrzeuge.map((id) => this.state.fahrzeuge[id]).filter((x): x is SimFahrzeug => !!x && x.einsatzId === e.id);
+  }
+
+  /** Wie viele Notärzte / transportfähige Fahrzeuge fehlen laut Lage? */
+  fehlendeKraefte(e: Einsatz): { na: number; rtw: number } {
+    const l = e.wahr.lage;
+    if (!l) return { na: 0, rtw: 0 };
+    const b = bedarf(l);
+    const fz = this.einsatzFz(e);
+    const na = fz.filter((x) => x.kategorie === "NEF" || x.kategorie === "NAH").length;
+    const tr = fz.filter((x) => this.transportfaehig(x)).length;
+    return { na: Math.max(0, b.na - na), rtw: Math.max(0, b.transport - tr) };
+  }
+
+  private nachfordern(e: Einsatz, fz: SimFahrzeug, fehlt: { na: number; rtw: number }): void {
+    e.nachforderungen ??= [];
+    const t = this.state.zeit;
+    for (const art of ["NA", "RTW"] as const) {
+      const n = art === "NA" ? fehlt.na : fehlt.rtw;
+      if (n <= 0) continue;
+      const offen = e.nachforderungen.find((x) => x.art === art && !x.erledigt);
+      if (offen) offen.anzahl = Math.max(offen.anzahl, n);
+      else e.nachforderungen.push({ art, anzahl: n, seit: t, von: fz.funkrufname, erinnert: t, erledigt: false });
+      this.log(e, `${fz.funkrufname} fordert nach: ${n}× ${art === "NA" ? "Notarzt" : "Rettungsmittel"}`);
+    }
+  }
+
+  // ------------------------------------------------------------------ Funk
+
+  private neuesGespraech(fz: SimFahrzeug, e: Einsatz | null, status: FunkGespraech["status"]): FunkGespraech {
+    this.state.funkGespraeche ??= [];
+    const g: FunkGespraech = {
+      id: (this.state.funkGZaehler = (this.state.funkGZaehler ?? 0) + 1),
+      fzId: fz.id,
+      funkname: fz.funkrufname,
+      einsatzId: e?.id ?? null,
+      status,
+      seit: this.state.zeit,
+      naechster: null,
+      rufe: 0,
+      anliegen: null,
+      fuehrer: null,
+      sprueche: [],
+    };
+    this.state.funkGespraeche.unshift(g);
+    if (this.state.funkGespraeche.length > 150) this.state.funkGespraeche.length = 150;
+    return g;
+  }
+
+  private spruch(g: FunkGespraech, von: string, text: string, wer?: string): void {
+    g.sprueche.push({ zeit: this.state.zeit, von, text, wer });
+  }
+
+  /** Fahrzeug ruft LEO („LEO von 75/001 kommen“) und wartet auf Antwort */
+  fzRuft(fz: SimFahrzeug, e: Einsatz | null, art: FunkAnliegen, text: string): void {
+    const offen = this.state.funkGespraeche?.find((g) => g.fzId === fz.id && g.status !== "ende");
+    if (offen && offen.status === "offen") {
+      // schon verbunden: gleich durchgeben
+      this.spruch(offen, fz.funkrufname, `${text}, kommen`);
+      offen.anliegen = { art, text };
+      return;
+    }
+    if (offen && offen.status === "ruft" && offen.anliegen) {
+      offen.anliegen.text += `; ${text}`;
+      return;
+    }
+    const g = offen ?? this.neuesGespraech(fz, e, "ruft");
+    g.status = "ruft";
+    g.anliegen = { art, text };
+    g.rufe = 1;
+    g.naechster = this.state.zeit + rnd(50, 70) * 1000;
+    this.spruch(g, fz.funkrufname, `LEO von ${fz.funkrufname} kommen`);
+    if (e) this.log(e, `${fz.funkrufname} ruft LEO`);
+  }
+
+  private funkTick(t: number): void {
+    for (const g of this.state.funkGespraeche ?? []) {
+      if (g.status === "ruft" && g.naechster !== null && t >= g.naechster) {
+        g.rufe++;
+        g.naechster = t + rnd(60, 90) * 1000;
+        this.spruch(g, g.funkname, `LEO von ${g.funkname} kommen`);
+      } else if (g.status === "leoRuft" && g.naechster !== null && t >= g.naechster) {
+        g.status = "offen";
+        g.naechster = null;
+        this.spruch(g, g.funkname, `Hier ${g.funkname} kommen`);
+      }
+    }
+    // Nachforderungen: erledigt, sobald genug alarmiert ist; sonst nach 5 Minuten erinnern
+    for (const e of this.state.einsaetze) {
+      if (!e.nachforderungen?.length || e.zustand === "abgeschlossen") continue;
+      const fehlt = this.fehlendeKraefte(e);
+      for (const n of e.nachforderungen) {
+        if (n.erledigt) continue;
+        if ((n.art === "NA" ? fehlt.na : fehlt.rtw) === 0) {
+          n.erledigt = true;
+          this.log(e, `Nachforderung ${n.art === "NA" ? "Notarzt" : "Rettungsmittel"} erledigt`);
+        } else if (t - n.erinnert > 5 * MIN) {
+          n.erinnert = t;
+          const fz = this.einsatzFz(e).find((x) => x.funkrufname === n.von) ?? this.einsatzFz(e)[0];
+          if (fz) this.fzRuft(fz, e, "nachforderung", `Nachforderung ${n.art === "NA" ? "Notarzt" : `${n.anzahl}× Rettungsmittel`} noch offen, wann können wir damit rechnen`);
+        }
+      }
+    }
+  }
+
+  private gespraech(id: number): FunkGespraech {
+    const g = this.state.funkGespraeche?.find((x) => x.id === id);
+    if (!g) throw new Error("Funkgespräch nicht gefunden");
+    return g;
+  }
+
+  private nurFunkfuehrer(g: FunkGespraech): void {
+    const ich = this.calltaker();
+    if (this.mode !== "solo" && g.fuehrer && g.fuehrer.pid !== ich.pid && (this.istOnline?.(g.fuehrer.pid) ?? true)) {
+      throw new Error(`Den Funk mit ${g.funkname} führt ${g.fuehrer.name}`);
+    }
+    g.fuehrer = { ...ich };
+  }
+
+  /** LEO antwortet auf einen Ruf; das Fahrzeug gibt sein Anliegen durch */
+  funkAntworten(id: number): void {
+    const g = this.gespraech(id);
+    if (g.status !== "ruft") return;
+    this.nurFunkfuehrer(g);
+    this.spruch(g, "LEO", "Hier LEO kommen", this.calltaker().name);
+    g.status = "offen";
+    g.naechster = null;
+    if (g.anliegen) this.spruch(g, g.funkname, `Hier ${g.funkname}, ${g.anliegen.text}, kommen`);
+    this.emit();
+  }
+
+  /** LEO ruft ein Fahrzeug („75/001 von LEO kommen“) */
+  funkRufen(fzId: string): number {
+    const fz = this.state.fahrzeuge[fzId];
+    if (!fz) throw new Error("Fahrzeug nicht gefunden");
+    const offen = this.state.funkGespraeche?.find((g) => g.fzId === fz.id && g.status !== "ende");
+    if (offen) {
+      if (offen.status === "ruft") this.funkAntworten(offen.id);
+      return offen.id;
+    }
+    const e = fz.einsatzId ? (this.einsatz(fz.einsatzId) ?? null) : null;
+    const g = this.neuesGespraech(fz, e, "leoRuft");
+    g.fuehrer = { ...this.calltaker() };
+    this.spruch(g, "LEO", `${fz.funkrufname} von LEO kommen`, g.fuehrer.name);
+    g.naechster = this.state.zeit + rnd(3, 9) * 1000;
+    this.emit();
+    return g.id;
+  }
+
+  /** LEO spricht im offenen Gespräch; bekannte Anliegen beantwortet die Besatzung sofort */
+  funkSenden(id: number, text: string): void {
+    const g = this.gespraech(id);
+    const t = text.trim().slice(0, 500);
+    if (!t) return;
+    if (g.status === "ende") throw new Error("Das Funkgespräch ist beendet");
+    if (g.status !== "offen") throw new Error("Das Fahrzeug hat sich noch nicht gemeldet");
+    this.nurFunkfuehrer(g);
+    this.spruch(g, "LEO", t, this.calltaker().name);
+    const antwort = this.funkVerstehen(g, t);
+    if (antwort) this.spruch(g, g.funkname, antwort);
+    else if (antwort === null) g.wartetAufKi = true;
+    this.emit();
+  }
+
+  /** Antwort der Besatzung auf eine freie Frage (kommt von der KI bzw. dem Rückfalltext) */
+  funkFzAntwort(id: number, text: string): void {
+    const g = this.gespraech(id);
+    if (!g.wartetAufKi) return;
+    g.wartetAufKi = false;
+    this.spruch(g, g.funkname, text.trim().slice(0, 500));
+    this.emit();
+  }
+
+  funkEnde(id: number): void {
+    const g = this.gespraech(id);
+    if (g.status === "ende") return;
+    if (g.status === "ruft") throw new Error("Bitte zuerst antworten");
+    this.nurFunkfuehrer(g);
+    this.spruch(g, "LEO", "Hier LEO, verstanden, ENDE", this.calltaker().name);
+    g.status = "ende";
+    g.wartetAufKi = false;
+    this.emit();
+  }
+
+  /** Storno an ein Fahrzeug (über Funk) – es rückt ein */
+  storno(fzId: string): void {
+    const fz = this.state.fahrzeuge[fzId];
+    if (!fz?.einsatzId) return;
+    const e = this.einsatz(fz.einsatzId) ?? null;
+    const offen = this.state.funkGespraeche?.find((g) => g.fzId === fz.id && g.status !== "ende");
+    const g = offen ?? this.neuesGespraech(fz, e, "offen");
+    const wer = this.calltaker().name;
+    if (!offen || offen.status !== "offen") {
+      this.spruch(g, "LEO", `${fz.funkrufname} von LEO kommen`, wer);
+      this.spruch(g, fz.funkrufname, `Hier ${fz.funkrufname} kommen`);
+    }
+    this.spruch(g, "LEO", `Hier LEO, Storno für euren Einsatz${e ? ` ${e.nummer}` : ""}, kommen`, wer);
+    this.spruch(g, fz.funkrufname, `Hier ${fz.funkrufname}, Storno verstanden, rücken ein, kommen`);
+    this.spruch(g, "LEO", "Hier LEO ENDE", wer);
+    g.status = "ende";
+    if (e) this.log(e, `Storno an ${fz.funkrufname}`);
+    this.freigeben(fz);
+    this.emit();
+  }
+
+  /** Bekannte Anliegen der Leitstelle erkennen und passend antworten (null = freie Frage) */
+  private funkVerstehen(g: FunkGespraech, text: string): string | null {
+    const fz = this.state.fahrzeuge[g.fzId];
+    if (!fz) return null;
+    const t = text.toLowerCase();
+    const e = fz.einsatzId ? this.einsatz(fz.einsatzId) : undefined;
+    const hier = `Hier ${fz.funkrufname}`;
+    const vorOrt = fz.phase === "vorOrt" || fz.phase === "warteKH" || fz.phase === "suche";
+    if (/\bende\b/.test(t) && t.length < 30) {
+      g.status = "ende";
+      return "";
+    }
+    if (/lagemeldung/.test(t)) {
+      if (vorOrt && e) {
+        const l = e.wahr.lage;
+        const fehlt = this.fehlendeKraefte(e);
+        if (l) this.nachfordern(e, fz, fehlt);
+        return `${hier}, Lagemeldung: ${l ? lagemeldungText(l, e.wahr.abfrage?.kapitel ?? "", fehlt, false) : "Lage entspricht der Meldung"}, kommen`;
+      }
+      fz.lagemeldungAngefordert = true;
+      return `${hier}, so verstanden, wir geben eine Lagemeldung, wenn wir vor Ort sind, kommen`;
+    }
+    if (/storno|abbrech|einrück|nicht mehr benötigt/.test(t)) {
+      if (fz.einsatzId) {
+        const ev = this.einsatz(fz.einsatzId);
+        if (ev) this.log(ev, `Storno an ${fz.funkrufname} (Funk)`);
+        this.freigeben(fz);
+      }
+      return `${hier}, Storno verstanden, rücken ein, kommen`;
+    }
+    if (/status|wo seid|wo bist|eintreff|wie lange|wann seid|wann seit|position|fahrzeit/.test(t)) {
+      const min = fz.phaseEnde ? Math.max(1, Math.round((fz.phaseEnde - this.state.zeit) / MIN)) : null;
+      if (fz.phase === "anfahrt" || fz.phase === "ausruecken") return `${hier}, sind auf Anfahrt, Eintreffen in ca. ${min ?? "?"} Minuten, kommen`;
+      if (vorOrt) return `${hier}, sind vor Ort beim Patienten, kommen`;
+      if (fz.phase === "transport") return `${hier}, sind mit Patient auf dem Weg ins Krankenhaus, ca. ${min ?? "?"} Minuten, kommen`;
+      if (fz.phase === "uebergabe") return `${hier}, sind bei der Übergabe im Krankenhaus, kommen`;
+      if (fz.phase === "rueckfahrt") return `${hier}, sind frei und auf dem Rückweg zur Dienststelle, kommen`;
+      return `${hier}, sind frei, kommen`;
+    }
+    if (/patient|zustand|wie geht|reanim|braucht ihr|benötigt ihr|nachforder/.test(t)) {
+      if (!vorOrt || !e) return `${hier}, sind noch nicht vor Ort, kommen`;
+      const l = e.wahr.lage;
+      if (!l) return `${hier}, Patient wird versorgt, Zustand stabil, kommen`;
+      const fehlt = this.fehlendeKraefte(e);
+      const bedarfText = fehlt.na || fehlt.rtw ? `, ${[fehlt.na && "benötigen Notarzt", fehlt.rtw && `benötigen ${fehlt.rtw} weitere Rettungsmittel`].filter(Boolean).join(", ")}` : ", keine weiteren Kräfte erforderlich";
+      return `${hier}, ${l.patienten.length > 1 ? `${l.patienten.length} Patienten, ` : ""}${patientText(l.patienten[0]).replace(/ \(.*\)$/, "")}${bedarfText}, kommen`;
+    }
+    if (/verstanden|danke|passt/.test(t) && t.length < 40) return "";
+    return null;
   }
 
   /** Handy-Ortung anstoßen; das Ergebnis kommt nach einigen Sekunden (Simulationszeit) */

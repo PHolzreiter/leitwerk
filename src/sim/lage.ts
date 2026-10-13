@@ -149,3 +149,38 @@ export function lagemeldungBeimEintreffen(l: Lage, angenommenRea: boolean): stri
   }
   return null;
 }
+
+/** Braucht dieser Patient einen Notarzt? */
+export function naNoetig(p: { bw: string; at: string }): boolean {
+  return istStillstand(p) || p.bw === "nein" || (p.bw === "getruebt" && p.at !== "normal");
+}
+
+/** Bedarf an Notärzten und transportfähigen Fahrzeugen für die ganze Lage */
+export function bedarf(l: Lage): { na: number; transport: number } {
+  const na = Math.min(3, l.patienten.filter(naNoetig).length);
+  const rg = l.patienten.filter((p) => p.sichtung !== "gruen").length;
+  const gruen = l.patienten.length - rg;
+  return { na, transport: Math.max(1, rg + Math.ceil(gruen / 3)) };
+}
+
+/** Lagemeldung der Besatzung (Funkstil, ohne „Hier …“/„kommen“) */
+export function lagemeldungText(l: Lage, kapitel: string, fehlt: { na: number; rtw: number }, naStorno: boolean): string {
+  const teile: string[] = [];
+  const p0 = l.patienten[0];
+  if (l.patienten.length > 1) {
+    const z = { rot: 0, gelb: 0, gruen: 0 };
+    for (const p of l.patienten) z[p.sichtung]++;
+    const s = [z.rot && `${z.rot}× rot`, z.gelb && `${z.gelb}× gelb`, z.gruen && `${z.gruen}× grün`].filter(Boolean).join(", ");
+    teile.push(`${["29", "34"].includes(kapitel) ? "Verkehrsunfall, " : ""}${l.patienten.length} Betroffene, davon ${s}`);
+  } else if (istStillstand(p0)) teile.push("Patient reanimationspflichtig, Reanimation läuft");
+  else {
+    const bw = { ja: "wach", getruebt: "eingetrübt", nein: "bewusstlos" }[p0.bw];
+    const at = { normal: "Atmung suffizient", abnorm: "Atmung insuffizient", agonal: "Schnappatmung", keine: "keine Atmung" }[p0.at];
+    teile.push(`${l.irrtum === "keineRea" ? "keine Reanimation, " : ""}Patient ${bw}, ${at}`);
+  }
+  if (["29", "22", "7"].includes(kapitel) && Math.random() < 0.6) teile.push("Feuerwehr vor Ort");
+  if (fehlt.na > 0) teile.push(fehlt.na === 1 ? "benötigen Notarzt" : `benötigen ${fehlt.na} Notärzte`);
+  if (fehlt.rtw > 0) teile.push(fehlt.rtw === 1 ? "benötigen ein weiteres Rettungsmittel" : `benötigen ${fehlt.rtw} weitere Rettungsmittel`);
+  if (naStorno) teile.push("Notarzt nicht erforderlich, kann storniert werden");
+  return teile.join(", ");
+}
