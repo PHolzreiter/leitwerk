@@ -1,0 +1,2 @@
+[out:csv(::type,::id,::lat,::lon,name,"healthcare:speciality",emergency,operator,"addr:city";true;";")][timeout:120];
+nwr["amenity"="hospital"](47.35,14.2,49.1,17.2); out center;

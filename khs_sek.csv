@@ -1,0 +1,120 @@
+@type;@id;@lat;@lon;name;healthcare:speciality;emergency;operator;addr:city
+node;115160761;48.1955792;16.3984155;Herz-Jesu-Krankenhaus;;;;Wien
+node;252364812;48.2050873;16.3860573;Franziskus Spital Landstraße;;;;Wien
+node;252365711;48.1923503;16.3454714;Krankenhaus der Barmherzigen Schwestern;urology;oncology;gastroenterology;no;Vinzenz Gruppe;Wien
+node;295952591;47.8384514;16.9224556;Krankenhaus der Barmherzigen Brüder;;;;Frauenkirchen
+node;710894546;47.4250476;14.7605355;"Unfallkrankenhaus Steiermark, Standort Kalwang";trauma;yes;Allgemeine Unfallversicherungsanstalt;Kalwang
+node;3466299249;47.5949570;17.0242171;Városi kórház;;;;
+node;4687284589;49.0112007;17.1261563;Dětská Nemocnice;;;;
+node;4715584190;48.1216946;16.5602430;Medizinische Ambulanz;;;;
+node;5996501695;48.8126079;15.2852107;Landesklinikum Waidhofen/Thaya;psychiatry;child_psychiatry;;NÖ Landesgesundheitsagentur;Waidhofen an der Thaya
+node;9893559167;48.3219081;16.0649306;Universitätsklinikum Tulln;psychiatry;child_psychiatry;;NÖ Landesgesundheitsagentur;Tulln an der Donau
+node;12840723312;48.1551676;17.1553002;AGEL Chronicare;intensive;;"AGEL, a.s.";
+node;13309088085;48.2175585;16.3469367;Kinderwunschzentrum;;;;
+node;13309089328;48.2175841;16.3467643;Wiener Radiologie;;;;
+node;13340702247;48.1939130;16.2626634;St. Josef Krankenhaus;;;;
+way;9703333;48.3435090;16.3369715;Landesklinikum Korneuburg;emergency;;Niederösterreichische Landeskliniken-Holding;Korneuburg
+way;10158372;48.1511364;17.1167314;Univerzitná nemocnica Bratislava - Nemocnica Staré Mesto;;;Univerzitná nemocnica Bratislava;Bratislava
+way;13963031;48.3000103;14.2884471;Krankenhaus der Barmherzigen Brüder Linz;emergency;;;
+way;17358662;48.3078057;16.3237238;Landesklinikum Klosterneuburg;emergency;;Niederösterreichische Landeskliniken-Holding;Klosterneuburg
+way;23073953;48.3864959;16.2050471;Landesklinikum Stockerau;emergency;yes;;Stockerau
+way;23304539;48.1727477;16.3440504;Unfallkrankenhaus Meidling;;;;Wien
+way;23396743;48.5628057;16.0908426;Landesklinikum Hollabrunn;emergency;yes;Niederösterreichische Landeskliniken-Holding;
+way;23682686;48.2935993;16.4196196;Heeresspital;;yes;;Wien
+way;23963145;48.1718238;17.0894766;Národný onkologický ústav;oncology;;;Bratislava
+way;25843785;48.5675598;16.5815791;Landesklinikum Mistelbach-Gänserndorf;emergency;;Niederösterreichische Landeskliniken-Holding;Mistelbach
+way;26128150;48.1735489;16.3510213;Klinik Favoriten;emergency;yes;Wiener Gesundheitsverbund;Wien
+way;26708257;48.4120096;15.6156832;Universitätsklinikum Krems;emergency;yes;NÖ Landesgesundheitsagentur;Krems an der Donau
+way;29301902;48.2144679;15.6271026;Universitätsklinikum St. Pölten;general;gynaecology;paediatrics;dermatology;orthopaedics;internal;trauma;radiology;urology;surgery;cardiology;neurology;otorhinolaryngology;emergency;yes;Niederösterreichische Landeskliniken-Holding;St. Pölten
+way;29365407;48.8128984;15.2855576;Landesklinikum Waidhofen/Thaya;emergency;yes;;Waidhofen an der Thaya
+way;29427389;48.6685975;15.6613308;Landesklinikum Horn;emergency;yes;Niederösterreichische Landeskliniken-Holding;Horn
+way;35090185;47.3803169;15.0849985;Landeskrankenhaus Hochsteiermark - Standort Leoben;emergency;yes;Steiermärkische Krankenanstaltengesellschaft m.b.H.;Leoben
+way;37174194;48.2805058;14.2969815;Kepler Universitätsklinikum - Neuromed Campus;emergency;;;
+way;39172655;48.0429016;14.3075152;Krankenhaus Sierning;;no;Kreuzschwestern Sierning GmbH;Sierning
+way;59295173;48.0914834;16.2578920;Landesklinikum Mödling - Standort Hinterbrühl;child_psychiatry;;Niederösterreichische Landeskliniken-Holding;Hinterbrühl
+way;72140610;48.3048576;14.2941354;Krankenhaus der Elisabethinen Linz;emergency;;Ordensklinikum Linz GmbH;
+way;72146708;48.3037505;14.3043412;Kepler Universitätsklinikum - Med Campus III;trauma;cardiology;emergency;intensive;internal;urology;anaesthetics;surgery;yes;;
+way;72146709;48.3042773;14.3091722;Unfallkrankenhaus Linz;trauma;emergency;orthopaedics;intensive;anaesthetics;internal;physiatry;clinical_pathology;radiology;community;diagnostic_radiology;yes;Allgemeine Unfallversicherungsanstalt;Linz
+way;72147365;48.2991078;14.2885608;Krankenhaus der Barmherzigen Schwestern Linz;emergency;;;
+way;86111062;48.2108626;16.3004639;Klinik Ottakring;emergency;yes;Wiener Gesundheitsverbund;Wien
+way;86116045;48.1995663;16.2918894;Hanusch-Krankenhaus;emergency;;;Wien
+way;87758929;48.0093694;15.5803204;Landesklinikum Lilienfeld;emergency;;NÖ Landeskliniken-Holding;Lilienfeld
+way;90045663;47.9528279;14.7884331;Landesklinikum Waidhofen/Ybbs;emergency;yes;Niederösterreichische Landeskliniken-Holding;Waidhofen an der Ybbs
+way;93553199;48.7525190;16.8792676;Nemocnice Břeclav;;;;
+way;94001148;47.4231146;15.2676566;Landeskrankenhaus Hochsteiermark - Standort Bruck an der Mur;emergency;yes;Steiermärkische Krankenanstaltengesellschaft m.b.H.;Bruck an der Mur
+way;98798315;48.2069362;16.2717122;Standort Penzing der Klinik Ottakring;orthopaedics;pulmonology;psychiatry;no;;Wien
+way;108803078;48.3018507;14.3060068;Kepler Universitätsklinikum - Med Campus IV;;;;
+way;115804752;48.8120905;14.3255627;Nemocnice Český Krumlov;general;yes;;Český Krumlov
+way;115834786;48.3045044;14.3015782;Klinik Diakonissen Linz;orthopaedics;ophthalmology;angiology;internal;radiology;surgery;gynaecology;otolaryngology;pulmonology;nuclear;plastic_surgery;urology;stomatology;dental_oral_maxillo_facial_surgery;intensive;no;;Linz
+way;125910934;48.0447000;14.3931338;Pyhrn-Eisenwurzen Klinikum Steyr;emergency;;Oberösterreichische Gesundheitsholding;Steyr
+way;159139261;47.6709927;15.7865524;Gesundheitsresort Raxblick;;;;Reichenau an der Rax
+way;161907223;47.8151150;16.2484737;Universitätsklinikum Wiener Neustadt;cardiology;emergency;dermatovenereology;gynaecology;intensive;internal;nephrology;dialysis;nuclear;neurosurgery;paediatrics;radiotherapy;surgery;trauma;urology;yes;NÖ Landesgesundheitsagentur;
+way;162292992;47.5252873;14.3671184;LKH Rottenmann;general;yes;;Rottenmann
+way;162299384;47.5247349;14.3685137;"Landeskrankenhaus Rottenmann-Bad Aussee, Standort Rottenmann";emergency;yes;Steiermärkische Krankenanstaltengesellschaft m.b.H.;Rottenmann
+way;168289760;48.1722435;16.2756988;Klinik Hietzing;emergency;general;yes;Wiener Gesundheitsverbund;Wien
+way;169137501;48.2436640;16.3468951;Rudolfinerhaus;;;;Wien
+way;176612782;49.0086352;17.1123591;Nemocnice Kyjov;;yes;;
+way;177229918;49.0759184;15.4307814;Nemocnice Dačice;;;;
+way;177549552;49.0633774;17.0245088;;;;;
+way;199997772;47.6000265;15.6684948;Landeskrankenhaus Hochsteiermark - Standort Mürzzuschlag;emergency;yes;Steiermärkische Krankenanstaltengesellschaft m.b.H.;Mürzzuschlag
+way;220634414;48.2240127;16.3461862;Evangelisches Krankenhaus Wien;;no;;Wien
+way;236814894;48.1021344;17.1100059;Medissimo;;;ProCare;
+way;236814895;48.1022873;17.1182968;Univerzitná nemocnica Bratislava - Nemocnica sv. Cyrila a Metoda;;yes;Univerzitná nemocnica Bratislava;Bratislava
+way;261701932;48.0920043;14.8056383;Landesklinikum Mauer;psychiatry;;Landeskliniken-Holding;Mauer bei Amstetten
+way;261921616;48.2670899;16.4065830;Klinik Floridsdorf;psychiatry;intensive;orthopaedics;emergency;gynaecology;surgery;cardiology;maternity;traumatology;yes;Wiener Gesundheitsverbund;Wien
+way;265635839;48.0893583;16.2972291;Landesklinikum Mödling;emergency;orthopaedics;yes;Niederösterreichische Landeskliniken-Holding;Mödling
+way;270240190;48.1463582;17.1181298;"Univerzitná nemocnica - Nemocnica svätého Michala, a.s.,";;;;Bratislava
+way;312919458;48.7435015;16.7596273;Nemocnice Valtice;;;;
+way;322766720;48.1661122;17.0861615;Univerzitná nemocnica Bratislava - Nemocnica akademika L. Dérera - Kramáre;;;Univerzitná nemocnica Bratislava;
+way;330575866;48.1459662;17.1110814;Univerzitná nemocnica s poliklinikou Milosrdní bratia;;;Hospitalská rehoľa sv.Jána z Boha - Milosrdní bratia;Bratislava
+way;338878854;48.9600095;14.4669285;Nemocnice České Budějovice;;yes;Nemocnice České Budějovice a.s.;
+way;354393704;48.1548236;17.1517175;Univerzitná nemocnica Bratislava – Nemocnica Ružinov;;;Univerzitná nemocnica Bratislava;
+way;365980828;48.4402774;17.0337553;Nemocnica Malacky;;;Nemocničná a.s.;
+way;369024092;48.1609356;16.2844387;Neurologisches Zentrum Rosenhügel;;;Krankenanstaltenverbund Wien (KAV);Wien
+way;369024093;48.1636413;16.2820922;Orthopädisches Spital Speising;;;Orthopädisches Spital Speising GmbH;Wien
+way;369817631;48.2179385;16.4636846;Klinik Donaustadt;emergency;general;yes;Wiener Gesundheitsverbund;Wien
+way;378561750;48.1466452;17.1130925;"Onkologický ústav sv. Alžbety, s.r.o.";;;;Bratislava
+way;397475168;48.3221401;16.0655082;Universitätsklinikum Tulln;emergency;;Niederösterreichische Landeskliniken-Holding;Tulln
+way;406541319;47.8574169;14.6830704;Sonderkrankenanstalt Rehabilitationszentrum Weyer;;;PVA - Pensionsversicherungsanstalt;Weyer
+way;457896425;47.6770138;16.5992159;Soproni Erzsébet Oktató Kórház;;;;Sopron
+way;472467872;47.7263083;16.0866846;Universitätsklinikum Neunkirchen;emergency;gynaecology;internal;intensive;orthopaedics;physiatry;psychiatry;;Niederösterreichische Landesgesundheitsagentur;Neunkirchen
+way;476088079;48.9449625;16.7298630;Nemocnice Hustopeče p.o.;;;;
+way;490630782;48.2266457;15.3400892;Landesklinikum Melk;emergency;;Niederösterreichische Landeskliniken-Holding;
+way;531039883;48.5998067;15.1622189;Landesklinikum Zwettl;emergency;;Niederösterreichische Landeskliniken-Holding;Zwettl
+way;549576373;48.7611866;14.9752155;Landesklinikum Gmünd;emergency;yes;Landeskliniken-Holding;Gmünd
+way;662662405;48.2081862;17.0314380;Nemocnica Bory;;;Svet Zdravia Development;
+way;680586049;48.1666836;17.0907623;Národný ústav detských chorôb;;;;
+way;691742214;48.8463300;14.2299573;Psychiatrická léčebna Červený Dvůr;psychiatry;;;
+way;768799145;48.7012486;15.3283298;Landesklinikum Allentsteig;;;Niederösterreichische Landeskliniken-Holding;Allentsteig
+way;780288994;48.1537806;17.1299833;"Špecializovaná nemocnica pre ortopedickú protetiku Bratislava, n. o.";orthopaedics;;;Bratislava
+way;825130450;48.8641942;17.1456228;Nemocnice Tomáše Garrigue Masaryka Hodonín;;yes;;
+way;872925813;48.1433719;16.9578668;Landesklinikum Hainburg;emergency;;Niederösterreichische Landeskliniken-Holding;Hainburg an der Donau
+way;889570982;48.1275608;14.8811972;Landesklinikum Amstetten;emergency;yes;Niederösterreichische Landeskliniken-Holding;Amstetten
+way;986592354;48.1814258;15.0796263;Therapiezentrum Ybbs;psychiatry;;Wiener Gesundheitsverbund;Ybbs an der Donau
+way;994837472;48.0121150;15.1632956;Landesklinikum Scheibbs;surgery;internal;gynaecology;palliative;physiatry;general;emergency;radiology;yes;;
+way;1125152516;48.3017296;14.3047145;Kepler Universitätsklinikum - Med Campus V;;;;
+way;1125152518;48.3027666;14.3048771;Kepler Universitätsklinikum - Med Campus II;blood_check;blut;;Kepler Universitätsklinikum;Linz
+way;1125799855;47.6692384;16.5776989;Soproni Rehabilitációs Gyógyintézet;;;Soproni Gyógyközpont;Sopron
+way;1204928188;48.0003076;16.2549826;Landesklinikum Baden;psychiatry;internal;surgery;trauma;urology;emergency;yes;NÖ Landesgesundheitsagentur;Baden
+way;1248895804;48.2282146;16.3040927;Krankenhaus Göttlicher Heiland;;;;Wien
+way;1388708089;48.1697649;17.0806567;Nemocnica AGEL;;;AGEL Clinic s.r.o.;Bratislava
+way;1454691838;48.1940856;16.2628288;St. Josef Krankenhaus;;no;;
+way;1546702991;48.3050914;14.3081177;;;;;
+way;1546702992;48.3052995;14.3067687;Mein Zahngesundheitszentrum Linz;;;;
+way;1552482272;47.6165615;16.0865190;Universitätsklinikum Hochegg;;;Niederösterreichische Landesgesundheitsagentur;Grimmenstein
+way;1552789461;47.8467543;16.5137906;Krankenhaus der Barmherzigen Brüder Eisenstadt;emergency;internal;gynaecology;neurology;psychiatry;otolaryngology;orthopaedics;trauma;general;palliative;anaesthetics;intensive;;Krankenhaus der Barmherzigen Brüder Eisenstadt GmbH;Eisenstadt
+way;1552919263;48.0928268;17.0656566;Klinik Kittsee;emergency;yes;Burgenländische Krankenanstalten-Gesellschaft m. b. H.;Kittsee
+way;1552936341;47.5069529;16.5095453;Klinik Oberpullendorf;emergency;yes;Burgenländische Krankenanstalten-Gesellschaft m. b. H.;Oberpullendorf/Felsőpulya
+relation;271563;48.4922426;14.4979369;Klinikum Freistadt;emergency;yes;OÖG Oberösterreichische Gesundheitsholding;Freistadt
+relation;412222;48.5998252;15.1621057;Landesklinikum Zwettl;;yes;Niederösterreichische Landeskliniken-Holding;Zwettl
+relation;1320961;47.4049073;15.8818195;Marienkrankenhaus Vorau;emergency;yes;Vorauer Marienschwestern von der Unbefleckten Empfängnis;Vorau
+relation;1659758;48.2163125;16.3443813;St. Anna Kinderspital;;children;;Wien
+relation;2147557;48.2151407;16.3816643;Krankenhaus der Barmherzigen Brüder Wien;emergency;yes;Konvent der Barmherzigen Brüder Wien;Wien
+relation;2438288;48.1883316;16.3622570;Franziskus Spital Margareten GmbH;;;;
+relation;2685006;47.4901418;15.3769048;LKH Hochsteiermark;;;Steiermärkische Krankenanstaltengesellschaft m.b.H.;
+relation;2685007;47.5247349;14.3685137;Landeskrankenhaus Rottenmann-Bad Aussee;;;Steiermärkische Krankenanstaltengesellschaft m.b.H.;
+relation;2764083;48.2199536;16.3476573;AKH Wien;emergency;general;yes;Wiener Gesundheitsverbund;Wien
+relation;6158328;48.8694012;16.0514252;Nemocnice Znojmo;;yes;;
+relation;8845544;48.1701248;17.0861557;Národný ústav srdcových a cievnych chorôb;cardiology;;;
+relation;10340633;47.6511455;16.6626907;Balfi Gyógyfürdőkórház;;;;Sopron
+relation;15517290;48.1959017;16.3911837;Klinik Landstraße;emergency;general;yes;Wiener Gesundheitsverbund;Wien
