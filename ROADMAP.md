@@ -17,16 +17,28 @@ Gesammelte Wünsche, die noch nicht eingeplant sind (Reihenfolge noch offen).
 - Ab Eintreffen kennt die Besatzung die ganze Lage und meldet: Lagemeldung (bei VU/unklarer Lage oder auf Anforderung), Nachforderung (Notarzt, weitere RTW), Storno (NEF/NA nicht mehr nötig), „keine Reanimation“ oder umgekehrt, KH-Anfrage
 - Offene Nachforderungen bleiben beim Einsatz sichtbar, bis etwas geschickt wurde; Besatzung erinnert
 - Multiplayer: wer zuerst antwortet, führt den Funk mit diesem Fahrzeug (Rechte evtl. feiner aufteilen)
+- Multiplayer: ALLE Spieler hören (lesen) den Funk aller Fahrzeuge mit – den Funk zwischen den Disponenten gibt es über Discord
 
 ## Simulation
-- **Ausrückzeiten** je Fahrzeugtyp, Tag/Nacht und Status (Wache, Funk, Bereitschaft) einstellbar
-- **Hubschrauber:** eigene Ausrückzeiten; am Einsatzort 1–3 Platzrunden kreisen, dann landen
+- **Ausrückzeiten** (einstellbar, Standard):
+  - alle bodengebundenen Fahrzeuge: tagsüber bis zu 2 min, nachts bis zu 3 min
+  - NAH: tagsüber bis zu 5 min, nachts bis zu 10 min
+- **Hubschrauber:** am Einsatzort 1–3 Platzrunden kreisen, dann landen; das NAH-Symbol fliegt immer (auch ohne 3D-Modelle nicht am Boden entlang)
 - Mehrfachaufträge pro Fahrzeug
-- Sekundärtransporte (SKTW, SRTW, SNAW)
+- **Sekundärfahrzeuge (Grundgerüst):** für Verlegungen zwischen Kliniken, nach nötiger medizinischer Versorgung
+  - SKTW: 2× RS
+  - SRTW: 1× RS + 1× NFS bis NKV
+  - SNAW: 1× RS + 1× NA + 1× NKV oder NKI
+  - Aufträge dafür kommen später mit den Projekten „Krankentransporte“ und „Sekundärtransporte“
 
 ## 3D-Ansicht
 - **Fahrzeugmodelle im Low-Poly-Stil**, nur in 3D sichtbar: Fahrzeuge fahren auf der Straße, Hubschrauber fliegen über dem Boden
+  - Aussehen nach Pauls Vorlagebildern je Typ (RTW, NEF, KTW, NAH …) – so einfach wie möglich, aber erkennbar; Leistung geht vor
+  - RTW/NEF mit Sondersignal: Blaulicht blinkt auch in 3D
+  - in den Einstellungen abschaltbar
 
 ## KI-Anrufer
 - ~~Notrufabfrage per Text~~ (0.6.0); später per Sprache (lokal auf jedem Rechner)
+  - Gesprochen UND mitgeschrieben (Verlauf zum Nachlesen bleibt)
+  - Audio-Menü: Mikrofon (Eingabegerät) und Lautsprecher/Headset (Ausgabegerät) wählen, dazu Lautstärke, Empfindlichkeit, Sprechtaste usw.
 - Optional: KI direkt in LeitWerk eingebaut statt Ollama als eigenes Programm
