@@ -397,7 +397,8 @@ export function createOpsView(left: HTMLElement, right: HTMLElement, deps: OpsDe
     renderLists();
   });
 
-  const funkView = createFunkView(rbFunk, { select: (id) => select(id) });
+  // Aus dem Funk heraus: Einsatz markieren, aber im Funk-Reiter bleiben (sonst sieht man die Antwort nicht)
+  const funkView = createFunkView(rbFunk, { select: (id) => select(id, false) });
   function renderFunk() {
     funkView.refresh();
     const offen = funkView.offen();
@@ -788,7 +789,7 @@ export function createOpsView(left: HTMLElement, right: HTMLElement, deps: OpsDe
     void refreshSuggestions();
   }
 
-  function select(id: string | null) {
+  function select(id: string | null, zurMaske = true) {
     if (id && id !== selected && sim.mode !== "solo") void sim.call("oeffne", id).catch(() => undefined);
     selected = id;
     deps.onSelectIncident(id);
@@ -800,7 +801,7 @@ export function createOpsView(left: HTMLElement, right: HTMLElement, deps: OpsDe
     } else {
       if (maskFor !== e.id) buildMask(e);
       if (e.adresse) deps.flyTo(e.adresse.lat, e.adresse.lon);
-      setTab("einsatz");
+      if (zurMaske) setTab("einsatz");
     }
     renderLists();
   }
