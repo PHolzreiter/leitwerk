@@ -12,7 +12,9 @@ import { sim, type SimFahrzeug } from "./sim/engine";
 import { orgFarbe } from "./mapLayers";
 
 /** Ab dieser Zoomstufe Modelle statt Punkte */
-export const ZOOM_MODELLE = 14.5;
+export const ZOOM_MODELLE = 16;
+/** Unterhalb dieser Zoomstufe werden die Modelle etwas vergrößert, damit man sie erkennt */
+const ZOOM_ECHT = 18;
 
 type Teil = "karosserie" | "glas" | "rad" | "blau" | "rotor" | "dunkel";
 /** Quader: Mitte (x quer, y längs nach vorne, z hoch) und Maße in Metern */
@@ -340,7 +342,9 @@ export function addFahrzeug3D(map: maplibregl.Map): Fahrzeug3D {
         const boden = map.queryTerrainElevation([lon, lat]) ?? 0;
         const hoehe = flughoehe(fz, t);
         const mc = maplibregl.MercatorCoordinate.fromLngLat([lon, lat], boden + hoehe);
-        const s = mc.meterInMercatorCoordinateUnits();
+        // knapp über der Grenze vergrößert (bis 2,5×), ganz nah in echter Größe
+        const gross = Math.min(2.5, Math.max(1, Math.pow(2, (ZOOM_ECHT - map.getZoom()) * 0.66)));
+        const s = mc.meterInMercatorCoordinateUnits() * gross;
         // Modell: Meter → Mercator (y zeigt dort nach Süden), gedreht nach Fahrtrichtung
         const welt = mul(mul(trans(mc.x, mc.y, mc.z), skal(s, -s, s)), rotZ((-heading * Math.PI) / 180));
         const basis = mul(matrix, welt);

@@ -163,7 +163,7 @@ export function createMap(container: string, initial: string[]): MapHandle {
     center: START_CENTER,
     zoom: 8,
     minZoom: 5,
-    maxZoom: 18,
+    maxZoom: 19.5,
     maxPitch: 75,
     maxBounds: MAX_BOUNDS,
     attributionControl: { compact: true },
