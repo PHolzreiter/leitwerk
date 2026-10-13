@@ -1468,7 +1468,7 @@ export class Simulation {
         if (!p) continue;
         p.bw = ev.bw;
         p.at = ev.at;
-        if (ev.art === "verschlechterung") p.sichtung = "rot";
+        p.sichtung = ev.art === "verschlechterung" ? "rot" : p.sichtung === "rot" ? "gelb" : p.sichtung;
         l.verlauf.push({ zeit: t, text: `${ev.art === "verschlechterung" ? "Verschlechterung" : "Besserung"}: ${patientText(p)}` });
         this.lageMelden(e, ev.art === "besserung", t);
       }
