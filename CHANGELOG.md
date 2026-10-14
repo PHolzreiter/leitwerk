@@ -1,5 +1,11 @@
 # Änderungen
 
+## 0.13.4 – Gespräch exportieren, stimmigere Anrufer
+- „⤓ Gespräch exportieren“ im Abfrage-Fenster und in Einsatz- und KT-Maske: speichert eine Textdatei mit dem ganzen Gespräch (Spielzeit und echte Uhrzeit, ob KI oder feste Antwort), der Abfrage (eingegeben und Wahrheit nebeneinander, Abweichungen markiert), dem Code, dem Ort, der Anweisung an die KI und dem Protokoll – für Notfälle, Krankentransporte und Überstellungen. Ausblenden unter Einstellungen → Persönlich
+- Wird eine Frage wiederholt, sagt der Anrufer „Wie gesagt, …“ statt dieselbe Antwort noch einmal
+- Eigene Fragen und Zusammenfassungen („Das heißt …, korrekt?“): die KI geht darauf ein, bestätigt oder korrigiert und wiederholt nicht ihre letzte Antwort; ohne KI wird die passendste Frage der Abfrage beantwortet
+- Anrufer widersprechen sich nicht mehr: z. B. keine „Verletzten“ und trotzdem starke Blutung, Gefahrgut ohne Gefahr, oder „eine Person“, obwohl der Anrufer selbst verletzt ist
+
 ## 0.13.3 – Kreislaufstillstand, Wetterprognose, kompakte Einsatzliste
 - Kreislaufstillstand richtig codiert: bewusstlos + atmet nicht → eigener Stillstand-Code des Kapitels (z. B. 6E1, 17D2, 23D1), sonst 9er-Code. Neue Frage „Haben Sie gesehen, wie der Patient zusammengebrochen ist?“: nicht beobachtet (aufgefunden) → 9D1, beobachtet → 9E1, beobachtet aber Atmung unsicher → 9E2; Erhängen/Strangulation/Ersticken → 9E3–9E5
 - Bewusstlos + Schnappatmung ist kein Stillstand mehr, sondern 31D1 (ineffektive Atmung) bzw. der eigene Code des Kapitels (z. B. 2E1, 6E1, 15E1); erschwerte Atmung → 31D2

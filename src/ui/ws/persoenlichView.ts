@@ -114,6 +114,12 @@ export function persoenlichView(container: HTMLElement): { refresh(): void } {
     laut.append(lautS, lautW);
     zeile(t, "Lautstärke", laut);
     zeile(t, "Funk-Piep, wenn ein Fahrzeug ruft", schalter(p.funkTon, (v) => setzePers({ funkTon: v })));
+    zeile(
+      t,
+      "Knopf „Gespräch exportieren“",
+      schalter(p.exportKnopf, (v) => setzePers({ exportKnopf: v })),
+      "Speichert Gespräch, Abfrage, Anweisung an die KI und Protokoll als Datei – bei Notfällen, Krankentransporten und Überstellungen.",
+    );
 
     // ---- Kurzbefehle
     const k = section("Tastenkürzel", "Auf ein Kürzel klicken und dann die gewünschte Taste drücken.");

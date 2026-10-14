@@ -52,6 +52,8 @@ export interface Persoenlich {
   statusFarben: Record<string, string>;
   /** Hinweise zum Arbeitsbereich schon gesehen */
   einfuehrung: boolean;
+  /** Knopf „Gespräch exportieren“ anzeigen */
+  exportKnopf: boolean;
 }
 
 const LS = "leitwerk.persoenlich";
@@ -68,6 +70,7 @@ export const STANDARD: Persoenlich = {
   kuerzel: { ...KUERZEL_STANDARD },
   statusFarben: {},
   einfuehrung: false,
+  exportKnopf: true,
 };
 
 function lesen(): Persoenlich {

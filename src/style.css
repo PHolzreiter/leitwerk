@@ -2471,3 +2471,12 @@ input[type="color"] {
   color: var(--green, #1a7f37);
   border-color: currentColor;
 }
+.mask-export {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 2px 6px;
+}
+.abf-links .export-knopf {
+  align-self: flex-start;
+  margin-top: 6px;
+}

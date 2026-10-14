@@ -11,6 +11,7 @@ import { infoFreitext, sim, type Anruf, type Einsatz } from "../../sim/engine";
 import { bereichName, type KtAuftrag } from "../../sim/kt";
 import { istUeberstellung } from "../../sim/ktCodes";
 import { el, esc, toast } from "../dom";
+import { exportKnopf } from "../gespraechExport";
 import { codeChip, ktFormular, ktFrageStellen } from "../ktView";
 import { panelZeigen, registriere, type PanelKontext } from "../ws/arbeitsplatz";
 import { auswahl, karteZeigen, onAuswahl, waehle } from "../ws/auswahl";
@@ -203,7 +204,7 @@ function anrufSpalte(o: {
     nrB.title = hat ? "Rückrufnummer ist aufgenommen" : "Angezeigte Rufnummer als Rückrufnummer in den Auftrag übernehmen";
   };
   nrZeigen();
-  spalte.append(karte, nrB, w, daten, ...o.extra, maskeB, zusatz);
+  spalte.append(karte, nrB, w, daten, ...o.extra, maskeB, zusatz, exportKnopf(o.art, () => o.id));
 
   // Fußleiste: Beenden, Halten, Stumm … Zur Maske
   const fuss = el("div", { class: "abf-fuss" });

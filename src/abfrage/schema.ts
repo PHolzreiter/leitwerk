@@ -352,6 +352,47 @@ function zufallsAlter(rnd: () => number): number {
   return Math.floor(50 + rnd() * 46);
 }
 
+/**
+ * Zufällig gezogene Antworten widerspruchsfrei machen (jede Frage wird einzeln gewürfelt –
+ * ohne diese Regeln gäbe es z. B. „keine Verletzten“ und gleichzeitig „starke Blutung“).
+ */
+export function stimmigMachen(kap: string, a: Antworten): void {
+  const setze = (id: string, v: Wert) => {
+    if (a[id] !== undefined) a[id] = v;
+  };
+  const ja = (id: string) => a[id] === "ja";
+  // Anzahl der Betroffenen: Primärabfrage und Kapitelfrage gleich
+  if (a.anzahl !== undefined && a.anzahl_patienten !== undefined) a.anzahl = a.anzahl_patienten;
+  if (kap === "29" || kap === "30" || kap === "17") {
+    const schwer = ja("blutung_stark") || ja("eingeklemmt") || (a.bw !== undefined && a.bw !== "ja") || (a.at !== undefined && a.at !== "normal");
+    if (schwer) setze("verletzte", "ja");
+    if (a.verletzte === "nein_sicher" || a.verletzte === "nein_unsicher") {
+      setze("blutung_stark", "nein");
+      setze("eingeklemmt", "nein");
+      setze("anrufer_selbst", "nein");
+    }
+    if (ja("gering")) {
+      setze("hohe_geschw", "nein");
+      setze("eingeklemmt", "nein");
+      setze("grossunfall", "nein");
+      setze("gefahrgut", "nein");
+    }
+    if (ja("hohe_geschw")) setze("gering", "nein");
+    if (ja("gefahrgut")) setze("andere_gefahren", "ja");
+    if (a.grossunfall !== undefined && a.grossunfall !== "nein") {
+      setze("gering", "nein");
+      setze("anzahl_patienten", "n");
+      setze("anzahl", "n");
+    }
+    // Anrufer selbst (leicht) verletzt und ein weiterer Patient → mehrere Betroffene
+    if (ja("anrufer_selbst")) {
+      setze("anzahl_patienten", "n");
+      setze("anzahl", "n");
+      setze("verletzte", "ja");
+    }
+  }
+}
+
 /** Ein zufälliger, in sich stimmiger Fall in einem Kapitel: Antworten + daraus folgender Code */
 export function fallZiehen(
   schema: Schema,
@@ -373,6 +414,7 @@ export function fallZiehen(
   }
   // Fragen (inkl. Kapitelwechsel) beantworten, bis keine neuen mehr auftauchen
   for (let runde = 0; runde < 5; runde++) {
+    stimmigMachen(kap, a);
     const erg = bestimmeCode(schema, kap, a);
     for (const [k, v] of Object.entries(erg?.antworten ?? {})) if (a[k] === undefined) a[k] = v;
     let neu = false;
@@ -388,6 +430,7 @@ export function fallZiehen(
     if (!neu) break;
   }
   if (a.alter === undefined) a.alter = alter;
+  stimmigMachen(kap, a);
   const ergebnis = bestimmeCode(schema, kap, a);
   return ergebnis ? { antworten: ergebnis.antworten, ergebnis } : null;
 }

@@ -3,6 +3,7 @@
  * Sie zeigen, was in der Einsatzliste (oder auf der Karte) ausgewählt ist.
  */
 import { nummerAus } from "../../sim/rufnummer";
+import { exportKnopf } from "../gespraechExport";
 import { HOSPITAL_FLAGS, HOSPITAL_FLAG_LABEL, type HospitalFlag } from "../../data/model";
 import { store } from "../../data/store";
 import { findCode, hasCodes, searchCodes, type Einsatzcode } from "../../sim/codes";
@@ -268,6 +269,11 @@ export function einsatzMaske(e: Einsatz): { root: HTMLElement; refresh(): void }
   const prot = el("div", { class: "prot" });
   protBox.appendChild(prot);
   root.appendChild(protBox);
+  // Gespräch exportieren (nur bei Einsätzen mit Anruf)
+  const exportZeile = el("div", { class: "mask-export" });
+  exportZeile.appendChild(exportKnopf("rd", () => e.id));
+  exportZeile.hidden = !e.anruf;
+  root.appendChild(exportZeile);
 
   // ---------- dynamische Teile
   let suggestions: Awaited<ReturnType<typeof sim.vorschlaege>> = [];

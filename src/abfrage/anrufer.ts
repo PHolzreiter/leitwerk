@@ -553,8 +553,15 @@ export function systemPrompt(k: AnrufKontext): string {
 }
 
 /** Kurzer Hinweis, der jeder Frage angehängt wird (hält kleine Modelle auf Kurs) */
-export function erinnerung(k: AnrufKontext, schemaFrage?: Frage): string {
+export function erinnerung(k: AnrufKontext, schemaFrage?: Frage, opt: { wiederholt?: boolean; letzteAntwort?: string } = {}): string {
   const teile = ["Antworte nur auf diese eine Frage, kurz, ohne weitere Details von dir aus, ohne dich zu wiederholen."];
+  if (opt.wiederholt) teile.push("Diese Frage hat die Leitstelle schon einmal gestellt: antworte kurz mit „Wie gesagt, …“ und denselben Fakten, aber in anderen Worten.");
+  if (!schemaFrage) {
+    teile.push(
+      "Das ist eine eigene Frage der Leitstelle: Geh genau auf DIESE Frage ein. Fasst die Leitstelle etwas zusammen („das heißt …, korrekt?“), bestätige, was stimmt, und korrigiere, was nicht stimmt – nach den Fakten oben.",
+    );
+    if (opt.letzteAntwort) teile.push(`Deine letzte Antwort war „${opt.letzteAntwort}“ – sag das nicht noch einmal.`);
+  }
   const z = zustand(k);
   if (z && k.anrufer.art !== "leitstelle") teile.push(z);
   if (schemaFrage) {

@@ -8,7 +8,25 @@ import { sim, type Einsatz } from "../sim/engine";
 import { antwortOhneKi, erinnerung, ersterSatzOhneKi, systemPrompt, type AnrufKontext } from "./anrufer";
 import { kiBereit, kiChat, kiPrefs, kiStatus, type KiNachricht } from "./ki";
 import { inTauri } from "../platform";
-import type { Frage } from "./schema";
+import { fragenImAblauf, type Frage } from "./schema";
+
+/** für Vergleiche: klein, ohne Satzzeichen */
+function normFrage(t: string): string {
+  return t.toLowerCase().replace(/\(.*?\)/g, "").replace(/[^a-zäöüß0-9 ]/g, " ").replace(/\s+/g, " ").trim();
+}
+
+/** Wurde diese Frage schon gestellt (und beantwortet)? */
+export function schonGefragt(gespraech: { von: string; text: string }[], frage: string): boolean {
+  const n = normFrage(frage);
+  if (!n) return false;
+  // die gerade gestellte Frage steht evtl. schon als letzte Nachricht im Verlauf
+  const bis = gespraech.length && gespraech[gespraech.length - 1].von === "leitstelle" && normFrage(gespraech[gespraech.length - 1].text) === n ? gespraech.length - 1 : gespraech.length;
+  for (let i = 0; i < bis; i++) {
+    const m = gespraech[i];
+    if (m.von === "leitstelle" && (normFrage(m.text) === n || normFrage(m.text).startsWith(n) || n.startsWith(normFrage(m.text))) && gespraech.slice(i + 1, bis).some((x) => x.von === "anrufer")) return true;
+  }
+  return false;
+}
 
 export const ERÖFFNUNG = "Notruf 144, Rettungsdienst. Wo genau ist der Notfallort?";
 
@@ -38,6 +56,18 @@ export function antwortetGerade(id: string): boolean {
 
 function einfacheAntwort(k: AnrufKontext, frage: string, schemaFrage?: Frage): string {
   if (schemaFrage) return antwortOhneKi(k, schemaFrage);
+  // freie Frage: passendste Frage der Abfrage suchen (gemeinsame Wörter)
+  const woerter = new Set(normFrage(frage).split(" ").filter((w) => w.length > 3));
+  let beste: Frage | null = null;
+  let punkte = 1;
+  for (const { frage: sf } of fragenImAblauf(k.schema, k.kapitel, k.wahrheit)) {
+    const p = normFrage(sf.text).split(" ").filter((w) => w.length > 3 && woerter.has(w)).length;
+    if (p > punkte) {
+      punkte = p;
+      beste = sf;
+    }
+  }
+  if (beste) return antwortOhneKi(k, beste);
   const f = frage.toLowerCase();
   if (/notfallort|adresse|wo\b|wohin/.test(f)) return k.adresse;
   if (/nummer|erreichbar/.test(f)) return k.anrufer.nummer;
@@ -57,8 +87,9 @@ export async function fragen(e: Einsatz, text: string, schemaFrage?: Frage, onTo
   laufend.add(e.id);
   try {
     if (text) await sim.call("anrufNachricht", e.id, "leitstelle", text);
-    const antwort = await anruferAntwort(e, k, text, schemaFrage, onToken);
-    if (antwort) await sim.call("anrufNachricht", e.id, "anrufer", antwort);
+    const quelle = { wert: "ki" as "ki" | "fest" };
+    const antwort = await anruferAntwort(e, k, text, schemaFrage, onToken, quelle);
+    if (antwort) await sim.call("anrufNachricht", e.id, "anrufer", antwort, quelle.wert);
   } finally {
     laufend.delete(e.id);
   }
@@ -75,7 +106,9 @@ async function anruferAntwort(
   frage: string,
   schemaFrage: Frage | undefined,
   onToken?: (t: string) => void,
+  quelle: { wert: "ki" | "fest" } = { wert: "ki" },
 ): Promise<string> {
+  quelle.wert = "fest";
   // Andere Leitstelle und eCall: die erste Meldung kommt fix vom Programm
   const x = k.anrufer;
   const ersteAntwort = !(e.anruf?.gespraech ?? []).some((m) => m.von === "anrufer");
@@ -95,7 +128,8 @@ async function anruferAntwort(
     await new Promise((r) => setTimeout(r, 600));
     const erste = (e.anruf?.gespraech ?? []).filter((m) => m.von === "anrufer").length === 0;
     if (erste && frage === ERÖFFNUNG) return ersterSatzOhneKi(k);
-    return einfacheAntwort(k, frage, schemaFrage);
+    const a = einfacheAntwort(k, frage, schemaFrage);
+    return schonGefragt(e.anruf?.gespraech ?? [], frage) ? `Wie gesagt: ${a.charAt(0).toLowerCase()}${a.slice(1)}` : a;
   }
   const verlauf: KiNachricht[] = [{ role: "system", content: systemPrompt(k) }];
   for (const m of e.anruf?.gespraech ?? []) {
@@ -111,10 +145,14 @@ async function anruferAntwort(
   const zuletzt = verlauf[verlauf.length - 1];
   if (zuletzt.role === "user") {
     const sf = schemaFrage ?? (frage === ERÖFFNUNG ? ({ id: "ort_adresse", typ: "text", text: frage } as Frage) : undefined);
-    verlauf[verlauf.length - 1] = { role: "user", content: `${zuletzt.content}\n${erinnerung(k, sf)}` };
+    const g = e.anruf?.gespraech ?? [];
+    const letzteAntwort = [...g].reverse().find((m) => m.von === "anrufer")?.text;
+    verlauf[verlauf.length - 1] = { role: "user", content: `${zuletzt.content}\n${erinnerung(k, sf, { wiederholt: schonGefragt(g, frage), letzteAntwort })}` };
   }
   try {
-    return await kiChat(verlauf, onToken);
+    const t = await kiChat(verlauf, onToken);
+    quelle.wert = "ki";
+    return t;
   } catch (err) {
     console.warn("KI-Antwort", err);
     return einfacheAntwort(k, frage, schemaFrage);

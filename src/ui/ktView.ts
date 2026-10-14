@@ -3,6 +3,7 @@
  * Das Hotline-Gespräch selbst steht im Abfrage-Fenster.
  */
 import { nummerAus } from "../sim/rufnummer";
+import { exportKnopf } from "./gespraechExport";
 import { bereicheVon } from "../data/model";
 import { store } from "../data/store";
 import { KT_FRAGEN, ktFragen, type KtFrage } from "../abfrage/ktGespraech";
@@ -459,7 +460,10 @@ export function ktMaske(k: KtAuftrag, deps: { flyTo(lat: number, lon: number, z?
   const dispoBox = el("div", { class: "mask-box" });
   const protBox = el("div", { class: "mask-box" });
   const anrufHinweis = el("div", { class: "mask-anruf-hinweis" });
-  root.append(kopf, anrufHinweis, datenBox, dispoBox, protBox);
+  const exportZeile = el("div", { class: "mask-export" });
+  exportZeile.appendChild(exportKnopf("kt", () => k.id));
+  exportZeile.hidden = !k.anruf;
+  root.append(kopf, anrufHinweis, datenBox, dispoBox, protBox, exportZeile);
 
   // Aufnahme-Daten: kompakte Zusammenfassung, zum Ändern aufklappen (die Aufnahme selbst läuft im Abfrage-Fenster)
   const form = ktFormular(k, (text, f) => ktFrageStellen(k, text, f).then(() => refresh()));

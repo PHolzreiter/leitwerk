@@ -5,6 +5,7 @@
 import { inTauri } from "../platform";
 import { sim } from "../sim/engine";
 import { bereichName, hhmm, KT_LAGE_LABEL, type KtAuftrag, type KtDaten } from "../sim/kt";
+import { schonGefragt } from "./gespraech";
 import { kiBereit, kiChat, kiPrefs, kiStatus, type KiNachricht } from "./ki";
 
 export interface KtFrage {
@@ -167,7 +168,7 @@ function fakten(k: KtAuftrag): string {
   ].join("\n");
 }
 
-function prompt(k: KtAuftrag): string {
+export function ktPrompt(k: KtAuftrag): string {
   const a = k.wahr.anrufer;
   return [
     `Du spielst in einer Trainingssimulation eine Person, die bei der Krankentransport-Hotline in Niederösterreich anruft, um einen Krankentransport zu bestellen (kein Notfall). Antworte nur mit dem, was diese Person ins Telefon sagt: Ich-Form, Deutsch, kurz, freundlich, keine Aufzählungen, keine Regieanweisungen.`,
@@ -191,16 +192,28 @@ export async function ktFragen(k: KtAuftrag, text: string, frage?: KtFrage, onTo
   try {
     await sim.call("ktAnrufNachricht", k.id, "leitstelle", text);
     let antwort = "";
+    let quelle: "ki" | "fest" = "ki";
     if (!kiBereit() && inTauri() && kiPrefs().aktiv) await kiStatus().catch(() => null);
     if (kiBereit()) {
-      const verlauf: KiNachricht[] = [{ role: "system", content: prompt(k) }];
+      const verlauf: KiNachricht[] = [{ role: "system", content: ktPrompt(k) }];
       for (const m of k.anruf?.gespraech ?? []) {
         if (m.von === "leitstelle") verlauf.push({ role: "user", content: `Leitstelle: ${m.text}` });
         else if (m.von === "anrufer") verlauf.push({ role: "assistant", content: m.text });
       }
       const letzte = verlauf[verlauf.length - 1];
       if (!(letzte.role === "user" && letzte.content === `Leitstelle: ${text}`)) verlauf.push({ role: "user", content: `Leitstelle: ${text}` });
-      if (frage) verlauf[verlauf.length - 1].content += `\n[Hinweis nur für dich, nicht aussprechen: Die richtige Antwort ist: ${ktAntwortOhneKi(k, frage)}]`;
+      const g = k.anruf?.gespraech ?? [];
+      const wiederholt = schonGefragt(g, text);
+      const vorher = [...g].reverse().find((m) => m.von === "anrufer")?.text;
+      const hinweise: string[] = [];
+      if (frage) hinweise.push(`Die richtige Antwort ist: ${ktAntwortOhneKi(k, frage)}`);
+      else
+        hinweise.push(
+          "Geh genau auf DIESE Frage ein. Fasst die Leitstelle etwas zusammen („das heißt …, korrekt?“), bestätige, was stimmt, und korrigiere, was nicht stimmt.",
+        );
+      if (wiederholt) hinweise.push("Die Frage wurde schon gestellt: antworte kurz mit „Wie gesagt, …“ in anderen Worten.");
+      else if (vorher && !frage) hinweise.push(`Deine letzte Antwort war „${vorher}“ – sag das nicht noch einmal.`);
+      verlauf[verlauf.length - 1].content += `\n[Hinweis nur für dich, nicht aussprechen: ${hinweise.join(" ")}]`;
       try {
         antwort = await kiChat(verlauf, onToken);
       } catch (e) {
@@ -210,8 +223,10 @@ export async function ktFragen(k: KtAuftrag, text: string, frage?: KtFrage, onTo
     if (!antwort) {
       await new Promise((r) => setTimeout(r, 600));
       antwort = frage ? ktAntwortOhneKi(k, frage) : einfach(k, text);
+      if (schonGefragt(k.anruf?.gespraech ?? [], text)) antwort = `Wie gesagt: ${antwort.charAt(0).toLowerCase()}${antwort.slice(1)}`;
+      quelle = "fest";
     }
-    await sim.call("ktAnrufNachricht", k.id, "anrufer", antwort);
+    await sim.call("ktAnrufNachricht", k.id, "anrufer", antwort, quelle);
   } finally {
     laufend.delete(k.id);
   }
