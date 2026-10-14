@@ -84,7 +84,7 @@ class Innen(osmium.SimpleHandler):
 
     def way(self, w) -> None:
         t = w.tags
-        if "addr:housenumber" in t and self.innen is None:
+        if "addr:housenumber" in t:
             pts = [(nd.location.lat, nd.location.lon) for nd in w.nodes if nd.location.valid()]
             if pts:
                 add_address(self.addresses, t, sum(p[0] for p in pts) / len(pts), sum(p[1] for p in pts) / len(pts))
@@ -140,7 +140,7 @@ class Handler(osmium.SimpleHandler):
 
     def way(self, w) -> None:
         t = w.tags
-        if "addr:housenumber" in t:
+        if "addr:housenumber" in t and self.innen is None:
             pts = [(nd.location.lat, nd.location.lon) for nd in w.nodes if nd.location.valid()]
             if pts:
                 self.add_address(t, sum(p[0] for p in pts) / len(pts), sum(p[1] for p in pts) / len(pts))
