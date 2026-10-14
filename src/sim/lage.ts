@@ -183,7 +183,6 @@ export function lagemeldungText(l: Lage, kapitel: string, fehlt: { na: number; r
     const at = { normal: "Atmung suffizient", abnorm: "Atmung insuffizient", agonal: "Schnappatmung", keine: "keine Atmung" }[p0.at];
     teile.push(`${l.irrtum === "keineRea" ? "keine Reanimation, " : ""}Patient ${bw}, ${at}`);
   }
-  if (["29", "22", "7"].includes(kapitel) && Math.random() < 0.6) teile.push("Feuerwehr vor Ort");
   if (fehlt.na > 0) teile.push(fehlt.na === 1 ? "benötigen Notarzt" : `benötigen ${fehlt.na} Notärzte`);
   if (fehlt.rtw > 0) teile.push(fehlt.rtw === 1 ? "benötigen ein weiteres Rettungsmittel" : `benötigen ${fehlt.rtw} weitere Rettungsmittel`);
   if (fehlt.bit) teile.push(`Patient ca. ${150 + Math.round(Math.random() * 8) * 10} kg, mit unserer Trage nicht transportierbar, benötigen BIT`);

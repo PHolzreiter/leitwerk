@@ -95,3 +95,35 @@ export function confirmDialog(title: string, text: string, okLabel = "OK", dange
     obs.observe(document.body, { childList: true });
   });
 }
+
+/** Mehrzeiliger Text; null = abgebrochen. */
+export function textDialog(title: string, hinweis: string, vorgabe = "", okLabel = "Speichern"): Promise<string | null> {
+  return new Promise((resolve) => {
+    let result: string | null = null;
+    const body = el("div", { class: "text-dialog" });
+    const ta = el("textarea", { rows: "5", style: "width:100%;min-width:min(480px,80vw)" });
+    ta.value = vorgabe;
+    body.append(el("p", { class: "muted" }, hinweis), ta);
+    const d = openDialog({
+      title,
+      body,
+      actions: [
+        { label: "Abbrechen" },
+        {
+          label: okLabel,
+          kind: "primary",
+          onClick: () => {
+            result = ta.value.trim();
+          },
+        },
+      ],
+    });
+    const obs = new MutationObserver(() => {
+      if (!document.body.contains(d.root)) {
+        obs.disconnect();
+        resolve(result);
+      }
+    });
+    obs.observe(document.body, { childList: true });
+  });
+}

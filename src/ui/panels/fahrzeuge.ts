@@ -58,17 +58,20 @@ function eta(fz: SimFahrzeug): string {
   return rest > 0 ? `${Math.max(1, Math.round(rest))} min` : "";
 }
 
-function klickVerhalten(row: HTMLElement, fz: SimFahrzeug): void {
+function klickVerhalten(row: HTMLElement, fz0: SimFahrzeug): void {
+  // aktuelles Objekt holen (Zeilen werden wiederverwendet, im Multiplayer wird der Zustand ersetzt)
+  const akt = () => sim.state.fahrzeuge[fz0.id] ?? fz0;
   row.addEventListener("click", () => {
+    const fz = akt();
     karteZeigen(fz.lat, fz.lon, 13.5);
     fahrzeugZeigen(fz.id);
     if (fz.einsatzId) waehle("einsatz", fz.einsatzId, { karte: false });
     else if (fz.kt?.fahrten[0]?.[0]) waehle("kt", fz.kt.fahrten[0][0], { karte: false });
   });
-  row.addEventListener("dblclick", () => fahrzeugZeigen(fz.id, true));
+  row.addEventListener("dblclick", () => fahrzeugZeigen(fz0.id, true));
   row.addEventListener("contextmenu", (ev) => {
     ev.preventDefault();
-    statusMenu(fz, ev.clientX, ev.clientY);
+    statusMenu(akt(), ev.clientX, ev.clientY);
   });
   row.title = "Klick: auf der Karte zeigen · Doppelklick: Kamera folgt · Rechtsklick: Status setzen";
 }
@@ -129,26 +132,58 @@ function fahrzeugListe(ctx: PanelKontext, nurAktive: boolean) {
     }
   }
 
+  // Zeilen wiederverwenden: nur geänderte neu bauen, DOM nur bei Änderungen anfassen
+  let cache = new Map<string, { html: string; el: HTMLElement }>();
+  let neuCache = new Map<string, { html: string; el: HTMLElement }>();
+  let ausgabe: HTMLElement[] = [];
+  const zeileAus = (key: string, cls: string, html: string, binden: (r: HTMLElement) => void): HTMLElement => {
+    const k = cls + html;
+    const alt = cache.get(key);
+    let r: HTMLElement;
+    if (alt && alt.html === k) r = alt.el;
+    else {
+      r = el("div", { class: cls });
+      r.innerHTML = html;
+      binden(r);
+    }
+    neuCache.set(key, { html: k, el: r });
+    return r;
+  };
+  const ausgeben = () => {
+    cache = neuCache;
+    neuCache = new Map();
+    const gleich = ausgabe.length === liste.children.length && ausgabe.every((x, i) => liste.children[i] === x);
+    if (!gleich) liste.replaceChildren(...ausgabe);
+    ausgabe = [];
+  };
+  let veraltet = false;
+
   function render(): void {
     const q = suche.value.trim().toLowerCase();
     let alle = Object.values(sim.state.fahrzeuge);
     if (nurAktive) alle = alle.filter((f) => f.status !== "freiWache" || !!f.einsatzId || !!f.kt || f.phase !== "frei");
+    if (!ctx.sichtbar()) {
+      if (nurAktive) ctx.setzeBadge(alle.length || null);
+      veraltet = true;
+      return;
+    }
+    veraltet = false;
     chipsBauen(alle);
     const sichtbar = alle.filter((f) => passt(f, q));
-    liste.innerHTML = "";
+    ausgabe = [];
+    const liste = { appendChild: (x: HTMLElement) => void ausgabe.push(x) };
     if (nurAktive) {
       // nach Status, dann nach Name
       const ord = ["alarmiert", "zumBO", "amBO", "zumZO", "amZO", "freiFunk", "dienstfahrt", "bereitschaft", "abgemeldet", "freiWache"];
       sichtbar.sort((a, b) => ord.indexOf(a.status) - ord.indexOf(b.status) || a.funkrufname.localeCompare(b.funkrufname));
       for (const fz of sichtbar) {
-        const row = el("div", { class: "fz-row aktiv" });
         const ph = PHASE_TEXT[fz.phase] ?? "";
-        row.innerHTML = `${statusChip(fz)}<div class="fz-main"><div><b>${esc(fz.funkrufname)}</b> <span class="muted">${esc(fz.rmTyp)} · ${esc(fz.stationName)}</span> ${crewHtml(fz)}</div><div class="fz-auftrag">${auftrag(fz) || `<span class="muted">${esc(sim.statusDef(fz.status).name)}</span>`}</div></div><div class="fz-rechts"><div>${esc(ph)}</div><div class="muted">${eta(fz)}</div></div>`;
-        klickVerhalten(row, fz);
-        liste.appendChild(row);
+        const html = `${statusChip(fz)}<div class="fz-main"><div><b>${esc(fz.funkrufname)}</b> <span class="muted">${esc(fz.rmTyp)} · ${esc(fz.stationName)}</span> ${crewHtml(fz)}</div><div class="fz-auftrag">${auftrag(fz) || `<span class="muted">${esc(sim.statusDef(fz.status).name)}</span>`}</div></div><div class="fz-rechts"><div>${esc(ph)}</div><div class="muted">${eta(fz)}</div></div>`;
+        liste.appendChild(zeileAus(fz.id, "fz-row aktiv", html, (r) => klickVerhalten(r, fz)));
       }
       if (!sichtbar.length) liste.appendChild(el("div", { class: "muted pad" }, alle.length ? "Nichts passt zum Filter." : "Alle Fahrzeuge sind frei auf der Wache."));
       ctx.setzeBadge(alle.length || null);
+      ausgeben();
       return;
     }
     // nach Dienststelle
@@ -164,29 +199,32 @@ function fahrzeugListe(ctx: PanelKontext, nurAktive: boolean) {
     for (const [name, fzs] of [...gruppen.entries()].sort((a, b) => (a[0] === HELI ? -1 : b[0] === HELI ? 1 : a[0].localeCompare(b[0], "de")))) {
       const offen = !zu.has(name) || !!q;
       const frei = fzs.filter((f) => f.status === "freiWache" || f.status === "freiFunk").length;
-      const head = el("div", { class: `fz-gruppe${offen ? "" : " zu"}` });
-      head.innerHTML = `<span class="pfeil">${offen ? "▾" : "▸"}</span><b>${esc(name)}</b><span class="muted">${frei}/${fzs.length} frei</span>`;
-      head.addEventListener("click", () => {
-        if (zu.has(name)) zu.delete(name);
-        else zu.add(name);
-        ctx.setzeParams({ zu: [...zu] });
-        render();
-      });
+      const head = zeileAus(
+        `g:${name}`,
+        `fz-gruppe${offen ? "" : " zu"}`,
+        `<span class="pfeil">${offen ? "▾" : "▸"}</span><b>${esc(name)}</b><span class="muted">${frei}/${fzs.length} frei</span>`,
+        (r) =>
+          r.addEventListener("click", () => {
+            if (zu.has(name)) zu.delete(name);
+            else zu.add(name);
+            ctx.setzeParams({ zu: [...zu] });
+            render();
+          }),
+      );
       liste.appendChild(head);
       if (!offen) continue;
       for (const fz of fzs.sort((a, b) => a.funkrufname.localeCompare(b.funkrufname))) {
-        const row = el("div", { class: "fz-row" });
         const ktIds = fz.kt?.fahrten.flat() ?? [];
         const ktSek = ktIds.some((id) => sim.ktAuftrag(id)?.d.sek);
         const kt = fz.kt ? `<span class="kt-fz${fz.kt.aktiv ? " aktiv" : ""}${ktSek ? " sek" : ""}">${ktSek ? "SEK" : "KT"}${ktIds.length > 1 ? `×${ktIds.length}` : ""}</span>` : "";
         const e = fz.einsatzId ? sim.einsatz(fz.einsatzId) : undefined;
         const zusatz = name === HELI ? ` · ${esc(fz.stationName)}${fz.nachtflug ? " · 🌙 Nachtflug" : ""}` : fz.kurzname ? " · " + esc(fz.kurzname) : "";
-        row.innerHTML = `${statusChip(fz)}<b>${esc(fz.funkrufname)}</b><span class="muted">${esc(fz.rmTyp)}${zusatz}</span>${crewHtml(fz)}${kt}<span class="spacer"></span><span class="muted">${esc(e?.nummer ?? "")}</span>`;
-        klickVerhalten(row, fz);
-        liste.appendChild(row);
+        const html = `${statusChip(fz)}<b>${esc(fz.funkrufname)}</b><span class="muted">${esc(fz.rmTyp)}${zusatz}</span>${crewHtml(fz)}${kt}<span class="spacer"></span><span class="muted">${esc(e?.nummer ?? "")}</span>`;
+        liste.appendChild(zeileAus(fz.id, "fz-row", html, (r) => klickVerhalten(r, fz)));
       }
     }
     if (!sichtbar.length) liste.appendChild(el("div", { class: "muted pad" }, "Keine Fahrzeuge – unter Daten → Fahrzeuge anlegen oder Filter ändern."));
+    ausgeben();
   }
 
   let wartet = false;
@@ -201,7 +239,13 @@ function fahrzeugListe(ctx: PanelKontext, nurAktive: boolean) {
     }),
   ];
   render();
-  return { el: root, dispose: () => aus.forEach((f) => f()) };
+  return {
+    el: root,
+    dispose: () => aus.forEach((f) => f()),
+    sichtbar: (an: boolean) => {
+      if (an && veraltet) render();
+    },
+  };
 }
 
 registriere({

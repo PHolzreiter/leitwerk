@@ -2480,3 +2480,40 @@ input[type="color"] {
   align-self: flex-start;
   margin-top: 6px;
 }
+.partner-zeile {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.partner-b {
+  font-size: 12px;
+  padding: 2px 8px;
+}
+.partner-b.noetig {
+  background: color-mix(in srgb, var(--noe-gelb, #f2b600) 28%, transparent);
+  border-color: color-mix(in srgb, var(--noe-gelb, #f2b600) 70%, transparent);
+  font-weight: 600;
+}
+.partner-b.da {
+  color: var(--ok, #2e9d4a);
+  border-color: currentColor;
+  opacity: 1;
+}
+.partner-b.da:disabled {
+  cursor: default;
+  opacity: 0.9;
+}
+.funk-ruf.dringend {
+  border-left: 3px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+.funk-dringend {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--alert-text);
+  margin-left: 4px;
+}
+.funk-schnell {
+  flex-wrap: wrap;
+}

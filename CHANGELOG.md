@@ -1,5 +1,14 @@
 # Änderungen
 
+## 0.14.0 – Partner-Organisationen, mehr Funk, Abfrage mit Tastatur
+- Partner-Organisationen (einfache Version): in der Einsatzmaske 🚒 Feuerwehr, 🚓 Polizei, ⛰ Bergrettung, 🌊 Wasserrettung – angefordert heißt sofort vor Ort. Ist eine Organisation nötig (z. B. Verkehrsunfall, Brand, Eingeklemmte, Gefahrgut → Feuerwehr; Gewalt, Schuss/Stich, Suizid/UBG, VU mit Verletzten, Todesfall → Polizei; Alpinunfall → Bergrettung; Person im Wasser → Wasserrettung), ist der Knopf gelb markiert. Fehlt sie, meldet die Besatzung das per Funk und kann bis dahin nicht weiterarbeiten; bei Gewalt wartet sie zum Eigenschutz in sicherem Abstand
+- Lagemeldung kommt erst nach 2–5 Minuten vor Ort (Verkehrsunfall nach etwa 1 Minute), Reanimation sofort
+- Funk umfangreicher: dringende Rufe (Nachforderung, Verschlechterung, Eigenschutz) stehen oben und sind rot markiert; neue Meldungen der Besatzung (Transport mit Voranmeldung, Zwischenmeldung bei langer Versorgung, schwierige Zufahrt, selten ein technischer Defekt); neue Schnellknöpfe für LEO (Einsatzauftrag, Zielkrankenhaus, Zusatzinfo, Funkcheck); passendere Antworten ohne KI; alle Funksprüche stehen auch im Einsatzprotokoll
+- Abfrage mit der Tastatur: die aktuelle Frage ist markiert, Tasten 1–9 wählen die Antwort, Enter/↓ springt zur nächsten offenen Frage, ↑ zurück, F stellt die Frage
+- Einsatzliste: Sortierung wählbar (Zustand, Dringlichkeit, Eingang, Abholung/Termin, Code/Stufe); verspätete Krankentransporte sind ganz leicht rot hinterlegt
+- 🐞 Fehler melden (oben rechts): speichert eine Datei mit Version, letzten Fehlermeldungen, Einstellungen und Spielzustand
+- Schneller: Listen bauen nur geänderte Zeilen neu und verdeckte Reiter gar nicht; im Multiplayer werden abgeschlossene Einsätze nicht mehr ständig neu verglichen
+
 ## 0.13.4 – Gespräch exportieren, stimmigere Anrufer
 - „⤓ Gespräch exportieren“ im Abfrage-Fenster und in Einsatz- und KT-Maske: speichert eine Textdatei mit dem ganzen Gespräch (Spielzeit und echte Uhrzeit, ob KI oder feste Antwort), der Abfrage (eingegeben und Wahrheit nebeneinander, Abweichungen markiert), dem Code, dem Ort, der Anweisung an die KI und dem Protokoll – für Notfälle, Krankentransporte und Überstellungen. Ausblenden unter Einstellungen → Persönlich
 - Wird eine Frage wiederholt, sagt der Anrufer „Wie gesagt, …“ statt dieselbe Antwort noch einmal

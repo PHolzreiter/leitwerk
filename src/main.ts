@@ -1,3 +1,5 @@
+import { fehlerLogStarten } from "./fehlerLog";
+fehlerLogStarten();
 import "./style.css";
 import "./ui/ws/dockview.css";
 import "./ui/ws/arbeitsplatz.css";

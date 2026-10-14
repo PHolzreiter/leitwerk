@@ -1845,3 +1845,38 @@ button.weather.offen {
 .wetter-fuss {
   padding: 6px 10px 0;
 }
+
+/* Abfrage mit der Tastatur: markierte Frage */
+.abfrage .frage.fokus {
+  outline: 2px solid color-mix(in srgb, var(--blue) 55%, transparent);
+  outline-offset: 2px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--blue) 6%, transparent);
+}
+.abfrage .opt .opt-nr {
+  display: inline-block;
+  min-width: 14px;
+  margin-right: 5px;
+  padding: 0 3px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 14px;
+  text-align: center;
+  background: color-mix(in srgb, currentColor 14%, transparent);
+}
+
+/* verspäteter KT: nur ein leichter roter Hauch */
+.el-row.spaet {
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+}
+.el-row.spaet:hover {
+  background: color-mix(in srgb, var(--accent) 11%, transparent);
+}
+.pl-sort {
+  font-size: 12px;
+  max-width: 190px;
+}
+.el-row.spaet.sel {
+  background: var(--sel);
+}

@@ -130,7 +130,96 @@ export function notrufTeile(e: Einsatz): NotrufTeile {
     for (let x = abfrage.parentElement; x && !x.classList.contains("lw-panel"); x = x.parentElement) if (x.scrollTop) scroller.push([x, x.scrollTop]);
     abfrageBauenInnen(darf);
     for (const [x, top] of scroller) x.scrollTop = top;
+    fokusZeigen(false);
   }
+
+  // ---- Tastatur: 1–9 wählt die Antwort der markierten Frage, Enter/↓ nächste offene Frage, ↑ zurück, F stellt die Frage
+  let fokusId: string | null = null;
+  const zeilen = () => [...abfrage.querySelectorAll<HTMLElement>(".frage[data-id]")].filter((r) => r.dataset.typ === "single" || r.dataset.typ === "zahl");
+  const beantwortet = (r: HTMLElement) =>
+    r.dataset.typ === "single" ? !!r.querySelector(".opt.gewaehlt") : !!r.querySelector<HTMLInputElement>("input.zahl")?.value || !!r.querySelector(".opt.gewaehlt");
+  function fokusZeigen(scrollen: boolean): void {
+    const rs = zeilen();
+    let r = rs.find((x) => x.dataset.id === fokusId) ?? null;
+    if (!r) {
+      r = rs.find((x) => !beantwortet(x)) ?? null;
+      fokusId = r?.dataset.id ?? null;
+    }
+    for (const x of rs) {
+      const an = x === r;
+      x.classList.toggle("fokus", an);
+      x.querySelectorAll(".opt-nr").forEach((n) => n.remove());
+      if (an && x.dataset.typ === "single")
+        x.querySelectorAll<HTMLButtonElement>(".opt").forEach((b, i) => {
+          if (i < 9) b.prepend(el("span", { class: "opt-nr" }, String(i + 1)));
+        });
+    }
+    if (r && scrollen) r.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }
+  function fokusWeiter(richtung: 1 | -1, nurOffene: boolean): void {
+    const rs = zeilen();
+    const i = rs.findIndex((x) => x.dataset.id === fokusId);
+    let j = i;
+    for (let n = 0; n < rs.length; n++) {
+      j += richtung;
+      if (j < 0 || j >= rs.length) break;
+      if (!nurOffene || !beantwortet(rs[j])) break;
+    }
+    if (j >= 0 && j < rs.length) fokusId = rs[j].dataset.id ?? null;
+    else if (richtung === 1 && nurOffene) {
+      const offen = rs.find((x) => !beantwortet(x));
+      if (offen) fokusId = offen.dataset.id ?? null;
+    }
+    fokusZeigen(true);
+  }
+  const taste = (ev: KeyboardEvent) => {
+    if (ev.ctrlKey || ev.metaKey || ev.altKey || !abfrage.isConnected || !abfrage.offsetParent) return;
+    const t = ev.target as HTMLElement | null;
+    if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) {
+      // in der Altersangabe: Enter übernimmt und geht weiter
+      if (ev.key === "Enter" && t.classList.contains("zahl") && abfrage.contains(t)) {
+        (t as HTMLInputElement).blur();
+        setTimeout(() => fokusWeiter(1, true), 50);
+      }
+      return;
+    }
+    const r = zeilen().find((x) => x.dataset.id === fokusId);
+    if (!r) return;
+    if (/^[1-9]$/.test(ev.key)) {
+      const opts = [...r.querySelectorAll<HTMLButtonElement>(".opt")];
+      const b = opts[Number(ev.key) - 1];
+      if (!b || b.disabled) return;
+      ev.preventDefault();
+      if (r.dataset.typ === "zahl") return;
+      if (!b.classList.contains("gewaehlt")) {
+        b.click();
+        // nach dem Neuaufbau zur nächsten offenen Frage
+        setTimeout(() => fokusWeiter(1, true), 150);
+      }
+    } else if (ev.key === "Enter" || ev.key === "ArrowDown") {
+      ev.preventDefault();
+      if (r.dataset.typ === "zahl" && ev.key === "Enter") return void r.querySelector<HTMLInputElement>("input.zahl")?.focus();
+      fokusWeiter(1, ev.key === "Enter");
+    } else if (ev.key === "ArrowUp") {
+      ev.preventDefault();
+      fokusWeiter(-1, false);
+    } else if (ev.key === "f" || ev.key === "F") {
+      const q = r.querySelector<HTMLButtonElement>(".frag-knopf");
+      if (q && !q.disabled) {
+        ev.preventDefault();
+        q.click();
+      }
+    }
+  };
+  document.addEventListener("keydown", taste);
+  // Klick auf eine Frage markiert sie
+  abfrage.addEventListener("mousedown", (ev) => {
+    const r = (ev.target as HTMLElement).closest<HTMLElement>(".frage[data-id]");
+    if (r && (r.dataset.typ === "single" || r.dataset.typ === "zahl")) {
+      fokusId = r.dataset.id ?? null;
+      fokusZeigen(false);
+    }
+  });
 
   function abfrageBauenInnen(darf: boolean) {
     abfrage.innerHTML = "";
@@ -141,6 +230,8 @@ export function notrufTeile(e: Einsatz): NotrufTeile {
     const setze = (id: string, wert: Wert) => fehler(sim.call("abfrageSetze", e.id, id, wert));
     const frageZeile = (f: Frage) => {
       const row = el("div", { class: "frage" });
+      row.dataset.id = f.id;
+      row.dataset.typ = f.typ;
       const kopfz = el("div", { class: "frage-text" });
       kopfz.textContent = f.text;
       if (darf && a.status === "aktiv") {
@@ -356,7 +447,18 @@ export function notrufTeile(e: Einsatz): NotrufTeile {
   }
 
   refresh();
-  return { verlauf, form, codeZeile, aufloesung, abfrage, refresh, dispose: ausLive };
+  return {
+    verlauf,
+    form,
+    codeZeile,
+    aufloesung,
+    abfrage,
+    refresh,
+    dispose: () => {
+      ausLive();
+      document.removeEventListener("keydown", taste);
+    },
+  };
 }
 
 /** Vergleich: was wirklich war und was eingetragen wurde */

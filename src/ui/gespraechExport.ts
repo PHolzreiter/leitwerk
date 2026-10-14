@@ -101,6 +101,7 @@ export function rdExportText(e: Einsatz): string {
     `- Info an RTW: ${e.infoRtw || "–"}`,
     `- Interne Info: ${e.infoIntern || "–"}`,
     `- Fahrzeuge: ${e.fahrzeuge.map((id) => sim.state.fahrzeuge[id]?.funkrufname ?? id).join(", ") || "–"}`,
+    `- Partner angefordert: ${Object.keys(e.partner ?? {}).join(", ") || "–"} · noch gebraucht: ${sim.partnerFehlt(e).map((x) => `${x.art} (${x.grund})`).join(", ") || "–"}`,
     "",
   );
   if (w) {

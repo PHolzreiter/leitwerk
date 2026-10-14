@@ -5,6 +5,7 @@
 import { store } from "../../data/store";
 import { mp } from "../../net/mehrspieler";
 import { sim } from "../../sim/engine";
+import { fehlerMelden } from "../fehlerMelden";
 import { flugverbot, JAHRESZEIT_LABEL, jahreszeitVon, WETTER_LABEL, WETTER_SYMBOL } from "../../sim/weather";
 import { ensureCodes } from "../codesPrompt";
 import { createDataView } from "../dataView";
@@ -308,6 +309,7 @@ export function steuerleisteBauen(kopf: HTMLElement): void {
       <button type="button" class="btn small" data-act="daten">Daten</button>
       <button type="button" class="btn small" data-act="einstellungen">Einstellungen</button>
       <button id="btn-spiel" class="btn small" type="button" title="Spielstand und Multiplayer">Spiel</button>
+      <button type="button" class="btn small icon" data-act="fehler" title="Fehler melden – speichert eine Datei mit den letzten Fehlermeldungen für den Entwickler">🐞</button>
     </div>`;
 
   // Uhr, Start/Pause, Tempo, Wetter
@@ -368,6 +370,7 @@ export function steuerleisteBauen(kopf: HTMLElement): void {
   });
   kopf.querySelector("[data-act=daten]")!.addEventListener("click", () => datenOeffnen());
   kopf.querySelector("[data-act=einstellungen]")!.addEventListener("click", () => einstellungenOeffnen());
+  kopf.querySelector("[data-act=fehler]")!.addEventListener("click", () => void fehlerMelden());
 
   // Hinweise im Spiel (z. B. Rechte) aktuell halten
   mp.onChange(render);

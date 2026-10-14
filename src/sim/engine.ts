@@ -29,6 +29,7 @@ import {
   type KtPlan,
 } from "./kt";
 import { codeInfo, codeVorschlag, istUeberstellung } from "./ktCodes";
+import { PARTNER, partnerNoetig, partnerSchonDa, type PartnerArt } from "./partner";
 import { sekZufall } from "./sek";
 import { bedarf, istStillstand, lageErzeugen, lagemeldungText, patientText, type Lage } from "./lage";
 
@@ -92,6 +93,13 @@ export interface SimFahrzeug {
   begleitet: boolean;
   /** Leitstelle hat eine Lagemeldung beim Eintreffen angefordert */
   lagemeldungAngefordert?: boolean;
+  /** seit wann vor Ort (für die Zwischenmeldung) */
+  vorOrtSeit?: number | null;
+  zwischenGemeldet?: boolean;
+  /** Transport per Funk angekündigt */
+  transportGemeldet?: boolean;
+  /** technischer Defekt: nicht einsatzbereit bis */
+  defektBis?: number | null;
   /** Blaulicht an (Fahrt mit Sondersignal; bleibt am Einsatzort an, wenn mit Blaulicht angefahren) */
   blaulicht?: boolean;
   /** Krankentransport-Plan (vorgemerkte bzw. laufende Fahrten) */
@@ -236,6 +244,8 @@ export interface FunkGespraech {
   sprueche: FunkSpruch[];
   /** freie Frage der Leitstelle – Antwort kommt von der KI des Gesprächsführers */
   wartetAufKi?: boolean;
+  /** dringender Ruf (Nachforderung, Verschlechterung, Eigenschutz) – steht oben */
+  dringend?: boolean;
 }
 
 export interface Nachforderung {
@@ -351,6 +361,12 @@ export interface Einsatz {
   bitVerzicht?: boolean;
   /** zuletzt ins Protokoll geschriebene Abfrage (Erstaufnahme, Änderungen) */
   abfrageStand?: { antworten: Antworten; kapitel: string | null; code: string | null } | null;
+  /** angeforderte Partner-Organisationen (Zeitpunkt; sofort vor Ort) */
+  partner?: Partial<Record<PartnerArt, number>>;
+  /** Lagemeldung kommt ein paar Minuten nach dem Eintreffen */
+  lageGeplant?: { um: number; fzId: string; angefordert: boolean; erstes: boolean } | null;
+  /** zuletzt an fehlende Partner erinnert */
+  partnerErinnert?: number;
 }
 
 export interface Funkmeldung {
@@ -411,6 +427,7 @@ export const BEFEHLE = {
     "funkFzAntwort",
     "funkEnde",
     "storno",
+    "partnerAnfordern",
   ],
   steuern: ["start", "pause", "setTempo", "generiere", "setWetter", "neuPlanen", "reset", "generiereKt", "generiereSek"],
   kt: [
@@ -929,6 +946,15 @@ export class Simulation {
     switch (fz.phase) {
       case "ausruecken": {
         if (!e || !e.adresse) return this.freigeben(fz);
+        // selten: technischer Defekt beim Ausrücken
+        if (Math.random() < 0.004 && !fliegt(fz)) {
+          this.log(e, `${fz.funkrufname}: technischer Defekt, nicht einsatzbereit`);
+          this.fzRuft(fz, e, "nachforderung", "technischer Defekt am Fahrzeug, sind nicht einsatzbereit, bitte anderes Rettungsmittel alarmieren");
+          this.freigeben(fz);
+          fz.defektBis = t + rnd(30, 60) * MIN;
+          this.setStatus(fz, "abgemeldet");
+          return;
+        }
         this.setStatus(fz, "zumBO");
         this.fahre(fz, e.adresse, "anfahrt", this.faktor(e) < 1);
         break;
@@ -950,6 +976,14 @@ export class Simulation {
         } else {
           fz.phase = "vorOrt";
           fz.phaseEnde = t + rnd(10, 22) * MIN;
+          fz.vorOrtSeit = t;
+          fz.zwischenGemeldet = false;
+          // manchmal: schwierige Zufahrt / Hausnummer schlecht auffindbar
+          if (Math.random() < 0.06 && this.transportfaehig(fz)) {
+            const plus = rnd(2, 4);
+            fz.phaseEnde += plus * MIN;
+            this.fzRuft(fz, e, "info", `Zufahrt schwierig, Hausnummer schlecht auffindbar, Patientenkontakt verzögert sich um ca. ${Math.round(plus)} Minuten`);
+          }
           if (fz.rmTyp === "BIT") fz.phaseEnde = t + rnd(20, 35) * MIN; // Schwerlast: Umlagern dauert
           this.eintreffenLage(fz, e);
           this.ktHilfeDa(e);
@@ -960,6 +994,17 @@ export class Simulation {
       }
       case "vorOrt": {
         if (!e) return this.freigeben(fz);
+        // ohne Feuerwehr/Polizei/Berg-/Wasserrettung geht es nicht weiter (Befreiung, Eigenschutz)
+        const fehlen = this.partnerFehlt(e);
+        if (fehlen.length) {
+          fz.phaseEnde = t + 2 * MIN;
+          if (!e.partnerErinnert || t - e.partnerErinnert > 6 * MIN) {
+            e.partnerErinnert = t;
+            this.log(e, `${fz.funkrufname} wartet auf ${fehlen.map((x) => PARTNER[x.art].name).join(", ")}`);
+            this.fzRuft(this.sprecher(e, fz), e, "nachforderung", `benötigen weiterhin ${fehlen.map((x) => `${PARTNER[x.art].name} (${x.grund})`).join(" und ")}, ohne können wir nicht weiterarbeiten`);
+          }
+          break;
+        }
         this.entscheideTransport(fz, e, t);
         break;
       }
@@ -984,7 +1029,8 @@ export class Simulation {
         fz.phaseEnde = null;
         fz.lat = fz.heim.lat;
         fz.lon = fz.heim.lon;
-        this.setStatus(fz, "freiWache", true);
+        if (fz.defektBis && t < fz.defektBis) this.setStatus(fz, "abgemeldet", true);
+        else this.setStatus(fz, "freiWache", true);
         break;
       }
       default:
@@ -1107,6 +1153,8 @@ export class Simulation {
     fz.einsatzId = null;
     fz.begleitet = false;
     fz.blaulicht = false;
+    fz.vorOrtSeit = null;
+    fz.transportGemeldet = false;
     this.setStatus(fz, "freiFunk");
     if (distanceM(fz, fz.heim) < 80) {
       fz.phase = "frei";
@@ -1230,6 +1278,7 @@ export class Simulation {
       fahrzeuge: [],
       protokoll: [],
     };
+    for (const art of partnerSchonDa(p.fall?.kapitel)) (e.partner ??= {})[art] = this.state.zeit;
     if (p.fall && store.schema) {
       const schema = store.schema;
       const anrufer = anruferWaehlen(p.fall.kapitel, p.fall.antworten, Math.random, gemeldet);
@@ -1937,6 +1986,7 @@ export class Simulation {
   /** Geplante Veränderungen eintreten lassen und melden (Anrufer bzw. Besatzung) */
   private lageTick(t: number): void {
     for (const e of this.state.einsaetze) {
+      if (e.lageGeplant && t >= e.lageGeplant.um && e.zustand !== "abgeschlossen") this.lageMeldungJetzt(e);
       const l = e.wahr.lage;
       if (!l || e.zustand === "abgeschlossen") continue;
       for (const ev of l.ereignisse) {
@@ -2002,17 +2052,48 @@ export class Simulation {
     }
   }
 
-  /** Fahrzeug trifft ein: erstes Fahrzeug sieht die ganze Lage und meldet sich, wenn nötig */
+  /**
+   * Fahrzeug trifft ein: das erste Fahrzeug sieht die Lage. Die Lagemeldung kommt erst nach ein paar
+   * Minuten (Patient angeschaut), beim Verkehrsunfall nach etwa einer Minute; Reanimation sofort.
+   */
   private eintreffenLage(fz: SimFahrzeug, e: Einsatz): void {
     const l = e.wahr.lage;
     const angefordert = !!fz.lagemeldungAngefordert;
     fz.lagemeldungAngefordert = false;
+    const t = this.state.zeit;
+    const kap = e.wahr.abfrage?.kapitel ?? "";
+    const erstes = !!l && !l.aufgedeckt;
+    if (l) {
+      l.aufgedeckt = true;
+      if (erstes) l.verlauf.push({ zeit: t, text: `${fz.funkrufname} als erstes Fahrzeug vor Ort` });
+    }
+    // fehlende Partner: Eigenschutz bei Gewalt – die Besatzung wartet und meldet sich gleich
+    const fehlen = this.partnerFehlt(e);
+    if (erstes && fehlen.some((x) => x.art === "pol" && /Gewalt|Schuss|aggressiv/.test(x.grund))) {
+      this.log(e, `${fz.funkrufname} wartet zum Eigenschutz in sicherem Abstand auf die Polizei`);
+      this.fzRuft(this.sprecher(e, fz), e, "nachforderung", "vor Ort, warten zum Eigenschutz in sicherem Abstand, benötigen Polizei");
+      e.partnerErinnert = t;
+    }
+    if (!erstes && !angefordert) return;
+    const sofort = !!l && istStillstand(l.patienten[0]);
+    const vu = kap === "29" || kap === "34";
+    const um = sofort ? t : t + (vu ? rnd(0.8, 1.3) : rnd(2, 5)) * MIN;
+    e.lageGeplant = { um, fzId: fz.id, angefordert, erstes };
+    if (sofort) this.lageMeldungJetzt(e);
+  }
+
+  /** Geplante Lagemeldung senden (aus lageTick oder sofort) */
+  private lageMeldungJetzt(e: Einsatz): void {
+    const plan = e.lageGeplant;
+    e.lageGeplant = null;
+    if (!plan) return;
+    const fz = this.state.fahrzeuge[plan.fzId];
+    if (!fz || fz.einsatzId !== e.id) return;
+    const l = e.wahr.lage;
     if (!l) {
-      if (angefordert) this.fzRuft(fz, e, "lage", "vor Ort, Lage entspricht der Meldung");
+      if (plan.angefordert) this.fzRuft(fz, e, "lage", "vor Ort, Lage entspricht der Meldung");
       return;
     }
-    const erstes = !l.aufgedeckt;
-    l.aufgedeckt = true;
     const kap = e.wahr.abfrage?.kapitel ?? "";
     const ant = e.wahr.abfrage?.antworten ?? {};
     const angenommenRea = ant.at === "keine" || ant.at === "agonal";
@@ -2020,15 +2101,46 @@ export class Simulation {
     const fehlt = this.fehlendeKraefte(e);
     // NEF/NAH unterwegs, aber kein Notarzt nötig → Storno empfehlen (nur das erste transportfähige Fahrzeug)
     const naUnterwegs = this.einsatzFz(e).some((x) => (x.kategorie === "NEF" || fliegt(x)) && x.phase !== "vorOrt");
-    const naStorno = erstes && this.transportfaehig(fz) && naUnterwegs && bedarf(l).na === 0;
+    const naStorno = plan.erstes && this.transportfaehig(fz) && naUnterwegs && bedarf(l).na === 0;
+    const partner = this.partnerFehlt(e);
     const abweichung = l.irrtum !== null || angenommenRea !== istStillstand(p0) || l.patienten.length > 1 || ["29", "34", "22", "7", "8"].includes(kap);
-    if (erstes) l.verlauf.push({ zeit: this.state.zeit, text: `${fz.funkrufname} als erstes Fahrzeug vor Ort` });
-    if ((erstes && (abweichung || fehlt.na > 0 || fehlt.rtw > 0 || fehlt.bit > 0 || naStorno)) || angefordert) {
-      const text = lagemeldungText(l, kap, fehlt, naStorno);
+    if ((plan.erstes && (abweichung || fehlt.na > 0 || fehlt.rtw > 0 || fehlt.bit > 0 || naStorno || partner.length > 0)) || plan.angefordert) {
+      let text = lagemeldungText(l, kap, fehlt, naStorno);
+      const da = (Object.keys(e.partner ?? {}) as PartnerArt[]).map((a) => PARTNER[a].name);
+      if (da.length) text += `, ${da.join(" und ")} vor Ort`;
+      if (partner.length) {
+        text += `, benötigen ${partner.map((x) => `${PARTNER[x.art].name} (${x.grund})`).join(" und ")}`;
+        e.partnerErinnert = this.state.zeit;
+      }
       this.nachfordern(e, fz, fehlt);
-      this.fzRuft(this.sprecher(e, fz), e, fehlt.na || fehlt.rtw || fehlt.bit ? "nachforderung" : naStorno ? "storno" : "lage", `Lagemeldung: ${text}`);
+      const art: FunkAnliegen = fehlt.na || fehlt.rtw || fehlt.bit || partner.length ? "nachforderung" : naStorno ? "storno" : "lage";
+      this.fzRuft(this.sprecher(e, fz), e, art, `Lagemeldung: ${text}`);
       l.verlauf.push({ zeit: this.state.zeit, text: `${fz.funkrufname}: ${text}` });
     }
+  }
+
+  /** Partner, die laut Lage gebraucht werden, aber noch nicht angefordert sind */
+  partnerFehlt(e: Einsatz): { art: PartnerArt; grund: string }[] {
+    const w = e.wahr.abfrage;
+    const name = `${findCode(e.wahr.code)?.beschreibung ?? ""} ${store.schema?.codes[w?.code ?? e.wahr.code]?.name ?? ""}`;
+    return partnerNoetig(w?.kapitel, w?.antworten ?? {}, name).filter((x) => !e.partner?.[x.art]);
+  }
+
+  /** Partner-Organisation anfordern: ist sofort vor Ort */
+  partnerAnfordern(id: string, art: PartnerArt): void {
+    const e = this.einsatz(id);
+    if (!e) return;
+    e.partner ??= {};
+    if (e.partner[art]) return;
+    const t = this.state.zeit;
+    e.partner[art] = t;
+    this.log(e, `${PARTNER[art].name} angefordert – vor Ort`);
+    this.funk(PARTNER[art].name, e.id, `${PARTNER[art].name} vor Ort (${e.nummer})`, "info");
+    // wartende Besatzungen können jetzt arbeiten
+    if (!this.partnerFehlt(e).length) {
+      for (const fz of this.einsatzFz(e)) if (fz.phase === "vorOrt" && fz.phaseEnde !== null && fz.phaseEnde < t + 5 * MIN) fz.phaseEnde = t + rnd(5, 10) * MIN;
+    }
+    this.emit();
   }
 
   /** Fahrzeuge, die gerade für den Einsatz unterwegs oder vor Ort sind */
@@ -2085,6 +2197,10 @@ export class Simulation {
 
   private spruch(g: FunkGespraech, von: string, text: string, wer?: string): void {
     g.sprueche.push({ zeit: this.state.zeit, von, text, wer });
+    // Inhaltliche Funksprüche stehen auch im Einsatzprotokoll (nicht das reine Rufen)
+    const e = g.einsatzId ? this.einsatz(g.einsatzId) : undefined;
+    if (e && text && !/^(LEO von \S+ kommen|Hier \S+ kommen|\S+ von LEO kommen|Hier LEO kommen|Hier LEO,? verstanden,? ENDE|Hier LEO ENDE)$/i.test(text.trim()))
+      this.log(e, `📻 ${von}: ${text}`);
   }
 
   /** Fahrzeug ruft LEO („LEO von 75/001 kommen“) und wartet auf Antwort */
@@ -2098,11 +2214,13 @@ export class Simulation {
     }
     if (offen && offen.status === "ruft" && offen.anliegen) {
       offen.anliegen.text += `; ${text}`;
+      if (art === "nachforderung") offen.dringend = true;
       return;
     }
     const g = offen ?? this.neuesGespraech(fz, e, "ruft");
     g.status = "ruft";
     g.anliegen = { art, text };
+    g.dringend = art === "nachforderung" || /Reanimation|reanimationspflichtig|verschlechtert|Eigenschutz|Defekt/i.test(text);
     g.rufe = 1;
     g.naechster = this.state.zeit + rnd(50, 70) * 1000;
     this.spruch(g, fz.funkrufname, `LEO von ${fz.funkrufname} kommen`);
@@ -2110,6 +2228,34 @@ export class Simulation {
   }
 
   private funkTick(t: number): void {
+    for (const fz of Object.values(this.state.fahrzeuge)) {
+      const e = fz.einsatzId ? this.einsatz(fz.einsatzId) : undefined;
+      // Zwischenmeldung bei langer Versorgung
+      if (e && fz.phase === "vorOrt" && fz.vorOrtSeit && !fz.zwischenGemeldet && t - fz.vorOrtSeit > 20 * MIN && fz.phaseEnde && fz.phaseEnde - t > 5 * MIN && this.transportfaehig(fz)) {
+        fz.zwischenGemeldet = true;
+        this.fzRuft(fz, e, "info", `Zwischenmeldung: Versorgung dauert noch an, voraussichtlich ${Math.round((fz.phaseEnde - t) / MIN)} Minuten`);
+      }
+      // Transport: Ankündigung mit Voranmeldung (kritisch immer, sonst manchmal)
+      if (e && fz.phase === "transport" && !fz.transportGemeldet && fz.phaseEnde && this.transportfaehig(fz)) {
+        fz.transportGemeldet = true;
+        const krit = this.kritisch(e);
+        if (krit || Math.random() < 0.3) {
+          const h = e.kh ? store.get("hospitals", e.kh.hospitalId) : undefined;
+          const min = Math.max(1, Math.round((fz.phaseEnde - t) / MIN));
+          const p0 = e.wahr.lage?.patienten[0];
+          const vor = krit ? `, Voranmeldung ${e.kh?.grund === "schockraum" || /Schockraum/i.test(HOSPITAL_FLAG_LABEL[e.kh?.grund ?? e.wahr.abteilung] ?? "") ? "Schockraum" : "Notaufnahme"}${p0 ? `: ${patientText(p0).replace(/ \(.*\)$/, "")}` : ""}` : "";
+          this.fzRuft(fz, e, "info", `Patient übernommen, Transport ${h ? `ins ${h.kurzname || h.name}` : "ins Krankenhaus"}, Eintreffen in ca. ${min} Minuten${vor}`);
+        }
+      }
+      // nach einem Defekt wieder einsatzbereit
+      if (fz.defektBis && t >= fz.defektBis) {
+        fz.defektBis = null;
+        if (fz.status === "abgemeldet") {
+          this.setStatus(fz, fz.phase === "frei" ? "freiWache" : "freiFunk");
+          this.funk(fz.funkrufname, null, "Defekt behoben, wieder einsatzbereit", "info");
+        }
+      }
+    }
     for (const g of this.state.funkGespraeche ?? []) {
       if (g.status === "ruft" && g.naechster !== null && t >= g.naechster) {
         g.rufe++;
@@ -2285,6 +2431,13 @@ export class Simulation {
       const fehlt = this.fehlendeKraefte(e);
       const bedarfText = fehlt.na || fehlt.rtw ? `, ${[fehlt.na && "benötigen Notarzt", fehlt.rtw && `benötigen ${fehlt.rtw} weitere Rettungsmittel`].filter(Boolean).join(", ")}` : ", keine weiteren Kräfte erforderlich";
       return `${hier}, ${l.patienten.length > 1 ? `${l.patienten.length} Patienten, ` : ""}${patientText(l.patienten[0]).replace(/ \(.*\)$/, "")}${bedarfText}, kommen`;
+    }
+    if (/funkcheck|wie hört ihr|wie hören sie|verständigung/.test(t)) return `${hier}, höre euch laut und klar, kommen`;
+    if (/(feuerwehr|polizei|bergrettung|wasserrettung).*(vor ort|kommt|unterwegs|alarmiert|angefordert)/.test(t)) return `${hier}, verstanden, kommen`;
+    if (/zielkrankenhaus|zielklinik|fahrt ins|bringt (ihn|sie|den patienten)/.test(t)) return `${hier}, Zielkrankenhaus verstanden, kommen`;
+    if (/zusatzinfo|zur info|beachtet|achtung|hinweis/.test(t)) return `${hier}, Information verstanden, kommen`;
+    if (/einsatz .*(code|adresse|einsatzort)|neuer einsatz|einsatzauftrag|übernehmt/.test(t)) {
+      return fz.einsatzId ? `${hier}, Einsatz verstanden, kommen` : `${hier}, Einsatz verstanden, rücken aus, kommen`;
     }
     if (/verstanden|danke|passt/.test(t) && t.length < 40) return "";
     return null;

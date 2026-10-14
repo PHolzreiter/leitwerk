@@ -4,6 +4,9 @@
  */
 import { funkKiAntwort } from "../abfrage/funkKi";
 import { mp } from "../net/mehrspieler";
+import { HOSPITAL_FLAG_LABEL } from "../data/model";
+import { store } from "../data/store";
+import { findCode } from "../sim/codes";
 import { sim, type FunkGespraech } from "../sim/engine";
 import { el, esc, toast } from "./dom";
 
@@ -19,10 +22,30 @@ function ichFuehre(g: FunkGespraech): boolean {
   return !g.fuehrer || sim.mode === "solo" || g.fuehrer.pid === (sim.ich?.pid ?? mp.ich.pid);
 }
 
-const SCHNELL: [string, (g: FunkGespraech) => string][] = [
-  ["Lagemeldung anfordern", () => "Hier LEO, bitte gebt mir eine Lagemeldung, wenn ihr vor Ort seid, kommen"],
-  ["Status / Eintreffen?", () => "Hier LEO, wie ist euer Status, wann seid ihr vor Ort, kommen"],
+/** Einsatz des Gesprächs als Funkauftrag („Einsatz …, Code …, Adresse …, Info …“) */
+function einsatzAuftrag(g: FunkGespraech): string {
+  const e = g.einsatzId ? sim.einsatz(g.einsatzId) : undefined;
+  if (!e) return "Hier LEO, habt ihr noch einen Auftrag offen, kommen";
+  const c = findCode(e.code ?? undefined);
+  const teile = [`Einsatz ${e.nummer}`, c ? `${c.code} ${c.beschreibung}` : "", e.adresse ? `Einsatzort ${e.adresse.label}${e.zusatz ? `, ${e.zusatz}` : ""}` : "", e.infoRtw ? `Info: ${e.infoRtw}` : ""].filter(Boolean);
+  return `Hier LEO, ${teile.join(", ")}, kommen`;
+}
+
+function zielKh(g: FunkGespraech): string {
+  const e = g.einsatzId ? sim.einsatz(g.einsatzId) : undefined;
+  const h = e?.kh ? store.get("hospitals", e.kh.hospitalId) : undefined;
+  return h ? `Hier LEO, Zielkrankenhaus ${h.kurzname || h.name}, ${HOSPITAL_FLAG_LABEL[e!.kh!.grund]}, kommen` : "Hier LEO, Zielkrankenhaus: ";
+}
+
+/** Schnellknöpfe: Text wird gesendet; „…“-Knöpfe füllen nur das Eingabefeld */
+const SCHNELL: [string, (g: FunkGespraech) => string, boolean?][] = [
+  ["Einsatzauftrag", einsatzAuftrag],
+  ["Lagemeldung?", () => "Hier LEO, bitte gebt mir eine Lagemeldung, wenn ihr vor Ort seid, kommen"],
+  ["Status / ETA?", () => "Hier LEO, wie ist euer Status, wann seid ihr vor Ort, kommen"],
   ["Zustand Patient?", () => "Hier LEO, wie ist der Zustand des Patienten, braucht ihr weitere Kräfte, kommen"],
+  ["Zielkrankenhaus", zielKh],
+  ["Zusatzinfo …", () => "Hier LEO, Zusatzinfo zu eurem Einsatz: ", true],
+  ["Funkcheck", () => "Hier LEO, Funkcheck, wie hört ihr mich, kommen"],
 ];
 
 export function createFunkView(root: HTMLElement, deps: { select(einsatzId: string): void }): { refresh(): void; rufen(fzId: string): void; offen(): number } {
@@ -45,13 +68,24 @@ export function createFunkView(root: HTMLElement, deps: { select(einsatzId: stri
   const statusTitel = el("details", { class: "funk-status" });
   const statusListe = el("div");
   statusTitel.append(el("summary", {}, "Statusmeldungen"), statusListe);
+  statusTitel.addEventListener("toggle", () => refresh());
   root.append(rufe, aktiv, rufenZeile, el("div", { class: "funk-titel" }, "Funkverkehr"), verlauf, statusTitel);
 
   let aktivId: number | null = null;
 
-  for (const [label, text] of SCHNELL) {
+  for (const [label, text, nurVorlage] of SCHNELL) {
     const b = el("button", { class: "btn small", type: "button" }, label);
-    b.addEventListener("click", () => aktivId !== null && fehler(sim.call("funkSenden", aktivId, text(gespraech(aktivId)!))));
+    b.addEventListener("click", () => {
+      if (aktivId === null) return;
+      const t = text(gespraech(aktivId)!);
+      if (nurVorlage || t.endsWith(": ")) {
+        eingabe.value = t;
+        eingabe.focus();
+        eingabe.setSelectionRange(t.length, t.length);
+        return;
+      }
+      fehler(sim.call("funkSenden", aktivId, t));
+    });
     schnell.appendChild(b);
   }
   const stornoB = el("button", { class: "btn small danger-text", type: "button" }, "Storno");
@@ -100,16 +134,20 @@ export function createFunkView(root: HTMLElement, deps: { select(einsatzId: stri
       .join("") + (g.wartetAufKi ? `<div class="funk-spruch fz muted">… ${esc(g.funkname)} antwortet</div>` : "");
 
   let letzterVerlauf = "";
+  let letzteRufe = "";
   let fzListe = "";
   function refresh(): void {
     const alle = sim.state.funkGespraeche ?? [];
-    // Rufende Fahrzeuge
-    const rufend = alle.filter((g) => g.status === "ruft");
+    // Rufende Fahrzeuge – dringende zuerst; nur neu zeichnen, wenn sich etwas geändert hat
+    const rufend = alle.filter((g) => g.status === "ruft").sort((a, b) => Number(!!b.dringend) - Number(!!a.dringend) || a.seit - b.seit);
+    const rufKey = JSON.stringify(rufend.map((g) => [g.id, g.rufe, g.dringend]));
+    if (rufKey !== letzteRufe) {
+    letzteRufe = rufKey;
     rufe.innerHTML = "";
     for (const g of rufend) {
-      const z = el("div", { class: "funk-ruf" });
+      const z = el("div", { class: `funk-ruf${g.dringend ? " dringend" : ""}` });
       const e = g.einsatzId ? sim.einsatz(g.einsatzId) : undefined;
-      z.innerHTML = `<span class="funk-ruf-text">📻 <b>${esc(g.funkname)}</b> ruft LEO${g.rufe > 1 ? ` (${g.rufe}×)` : ""}${e ? ` <span class="muted">· ${esc(e.nummer)}</span>` : ""}</span>`;
+      z.innerHTML = `<span class="funk-ruf-text">${g.dringend ? "❗" : "📻"} <b>${esc(g.funkname)}</b> ruft LEO${g.rufe > 1 ? ` (${g.rufe}×)` : ""}${e ? ` <span class="muted">· ${esc(e.nummer)}</span>` : ""}${g.dringend ? ` <span class="funk-dringend">dringend</span>` : ""}</span>`;
       const b = el("button", { class: "btn small primary" }, "Antworten");
       b.addEventListener("click", () => {
         aktivId = g.id;
@@ -118,6 +156,7 @@ export function createFunkView(root: HTMLElement, deps: { select(einsatzId: stri
       });
       z.appendChild(b);
       rufe.appendChild(z);
+    }
     }
     // Aktives Gespräch: zuletzt gewähltes, sonst das neueste offene, das ich führe
     let g = aktivId !== null ? gespraech(aktivId) : undefined;
@@ -163,9 +202,13 @@ export function createFunkView(root: HTMLElement, deps: { select(einsatzId: stri
     }
     // Statusmeldungen (wie bisher)
     const st = sim.state.funk.slice(0, 80);
-    statusListe.innerHTML = st
+    const stKey = `${sim.state.funkZaehler}|${st.length}|${st[0]?.zeit}`;
+    if (statusTitel.open && statusListe.dataset.k !== stKey) {
+      statusListe.dataset.k = stKey;
+      statusListe.innerHTML = st
       .map((f) => `<div class="funk-row art-${f.art}"><span class="muted">${uhr(f.zeit)}</span> <b>${esc(f.von)}</b> ${esc(f.text)}</div>`)
       .join("");
+    }
     // Liste zum Rufen
     const names = Object.values(sim.state.fahrzeuge).map((f) => f.funkrufname).sort().join("|");
     if (names !== fzListe) {

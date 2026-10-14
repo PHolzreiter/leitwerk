@@ -3,6 +3,7 @@
  * Sie zeigen, was in der Einsatzliste (oder auf der Karte) ausgewählt ist.
  */
 import { nummerAus } from "../../sim/rufnummer";
+import { PARTNER, PARTNER_ARTEN, partnerNoetig } from "../../sim/partner";
 import { exportKnopf } from "../gespraechExport";
 import { HOSPITAL_FLAGS, HOSPITAL_FLAG_LABEL, type HospitalFlag } from "../../data/model";
 import { store } from "../../data/store";
@@ -212,6 +213,34 @@ export function einsatzMaske(e: Einsatz): { root: HTMLElement; refresh(): void }
     void fehlerZeigen(sim.call("aktualisiere", e.id, { telefon: telIn.value }));
   });
   aufZeile("Rückruf", telIn, telB);
+  // Partner-Organisationen (sofort vor Ort, sobald angefordert)
+  const partnerZeile = el("div", { class: "partner-zeile" });
+  let partnerKey = "";
+  const partnerZeigen = () => {
+    const a = e.anruf;
+    const name = `${findCode(e.code ?? undefined)?.beschreibung ?? ""} ${store.schema?.codes[e.code ?? ""]?.name ?? ""}`;
+    const noetig = partnerNoetig(a?.kapitel, a?.antworten ?? {}, name);
+    const key = JSON.stringify([e.partner ?? {}, noetig]);
+    if (key === partnerKey) return;
+    partnerKey = key;
+    partnerZeile.innerHTML = "";
+    for (const art of PARTNER_ARTEN) {
+      const p = PARTNER[art];
+      const da = e.partner?.[art];
+      const n = noetig.find((x) => x.art === art);
+      const b = el("button", { class: `btn small partner-b${da ? " da" : n ? " noetig" : ""}`, type: "button" }, `${da ? "✓ " : ""}${p.symbol} ${p.name}`);
+      b.title = da
+        ? `${p.name} vor Ort seit ${new Date(da).toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" })}`
+        : n
+          ? `${p.name} erforderlich: ${n.grund} – klicken zum Anfordern`
+          : `${p.name} anfordern (ist sofort vor Ort)`;
+      b.disabled = !!da;
+      b.addEventListener("click", () => void fehlerZeigen(sim.call("partnerAnfordern", e.id, art)));
+      partnerZeile.appendChild(b);
+    }
+  };
+  partnerZeigen();
+  aufZeile("Partner", partnerZeile);
   aufZeile("Info RTW", infoRtw);
   aufZeile("Intern", infoIntern);
 
@@ -370,6 +399,7 @@ export function einsatzMaske(e: Einsatz): { root: HTMLElement; refresh(): void }
       if (e.adresse && vorschlagKey() !== suggestFor) void refreshSuggestions();
       feld(zusatz, e.zusatz);
       feld(telIn, e.telefon ?? "");
+      partnerZeigen();
       feld(infoRtw, e.infoRtw);
       feld(infoIntern, e.infoIntern);
       if (e.zo) feld(zo.input, e.zo.label);

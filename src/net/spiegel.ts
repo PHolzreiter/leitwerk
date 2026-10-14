@@ -17,6 +17,8 @@ function leer() {
     fahrt: new Map<string, unknown>(),
     pos: new Map<string, string>(),
     ein: new Map<string, string>(),
+    einFp: new Map<string, string>(),
+    ktFp: new Map<string, string>(),
     einIds: "",
     fzIds: "",
     funk: "",
@@ -64,6 +66,12 @@ export class DeltaBauer {
     const fzIds = Object.keys(st.fahrzeuge).join(",");
     const ein: Einsatz[] = [];
     for (const e of st.einsaetze) {
+      // abgeschlossene Einsätze ändern sich kaum: erst einen billigen Fingerabdruck prüfen
+      if (e.zustand === "abgeschlossen") {
+        const fp = `${e.protokoll.length}|${e.anruf?.gespraech.length}|${e.anruf?.status}|${e.code}|${e.infoRtw}|${e.infoIntern}|${e.adresse?.label}|${e.telefon}|${JSON.stringify(e.partner ?? null)}`;
+        if (c.einFp.get(e.id) === fp && c.ein.has(e.id)) continue;
+        c.einFp.set(e.id, fp);
+      }
       const k = JSON.stringify(e);
       if (c.ein.get(e.id) !== k) {
         ein.push(e);
@@ -108,6 +116,11 @@ export class DeltaBauer {
     // Krankentransporte: geänderte Aufträge und die Reihenfolge
     const kt: unknown[] = [];
     for (const k of st.kt ?? []) {
+      if (k.status === "erledigt" || k.status === "storniert") {
+        const fp = `${k.status}|${k.protokoll.length}|${k.anruf?.gespraech.length}|${k.anruf?.status}`;
+        if (c.ktFp.get(k.id) === fp && c.kt.has(k.id)) continue;
+        c.ktFp.set(k.id, fp);
+      }
       const key = JSON.stringify(k);
       if (c.kt.get(k.id) !== key) {
         kt.push(k);

@@ -52,6 +52,42 @@ const ART_LABEL: [Art, string][] = [
   ["sek", "Überstellung"],
 ];
 
+type Sortierung = "zustand" | "dringlichkeit" | "eingang" | "termin" | "code";
+const SORT_LABEL: [Sortierung, string][] = [
+  ["zustand", "Sortieren: Zustand"],
+  ["dringlichkeit", "Sortieren: Dringlichkeit"],
+  ["eingang", "Sortieren: Eingang (neueste)"],
+  ["termin", "Sortieren: Abholung/Termin"],
+  ["code", "Sortieren: Code/Stufe"],
+];
+
+/** Wie dringend ist ein Eintrag? (kleiner = dringender) */
+function dringlichkeit(z: Zeile): number {
+  const lage = { anruf: 0, dispo: 10, unterwegs: 40, vorort: 50, erledigt: 90 }[z.lage];
+  if (z.e) {
+    const c = findCode(z.e.code ?? undefined);
+    const st = c ? sim.stufeVon(z.e) : null;
+    const kat = st?.kategorie === "kritisch" ? 0 : st?.kategorie === "dringend" ? 3 : st ? 6 : 2;
+    return lage + kat;
+  }
+  const k = z.k!;
+  const spaet = ktSpaet(k) ? -5 : 0;
+  return lage + (k.d.sofort || codeInfo(k.d.code).sondersignal ? 2 : 8) + spaet;
+}
+
+/** Rang des Codes (E/D zuerst) */
+function codeRang(z: Zeile): string {
+  const code = z.e ? (z.e.code ?? "") : (z.k!.d.code ?? "");
+  const st = code.match(/^[A-Z]+-\d+([OABCDEK])/)?.[1] ?? "Z";
+  return `${"EDCBKAOZ".indexOf(st)}${code}`;
+}
+
+/** KT/Überstellung, die schon losfahren müsste, aber noch nicht unterwegs ist */
+function ktSpaet(k: KtAuftrag): boolean {
+  const ab = k.d.abholung ?? (k.d.termin ? k.d.termin - 45 * 60_000 : null);
+  return ab !== null && ["offen", "vorgemerkt"].includes(k.status) && ab < sim.state.zeit;
+}
+
 interface Zeile {
   art: "rd" | "kt" | "sek";
   id: string;
@@ -75,12 +111,21 @@ function erstellen(ctx: PanelKontext) {
   erledigt.append(erledigtCb, el("span", {}, "erledigte"));
   const neu = el("button", { class: "btn small", title: "Krankentransport oder Überstellung von Hand anlegen" }, "+ Neu");
   const test = el("button", { class: "btn small", title: "Zufälligen Test-Einsatz erzeugen" }, "+ Test");
-  werkzeug.append(suche, zuTun, erledigt, neu, test);
+  const sortSel = el("select", { class: "pl-sort", title: "Sortierung der Liste" });
+  for (const [v, l] of SORT_LABEL) sortSel.appendChild(el("option", { value: v }, l));
+  werkzeug.append(suche, sortSel, zuTun, erledigt, neu, test);
   kopf.append(chips, werkzeug);
   const liste = el("div", { class: "pl-body el-liste" });
   root.append(kopf, liste);
 
   let art = (ctx.params.art as Art) ?? "alle";
+  let sortierung = (ctx.params.sort as Sortierung) ?? "zustand";
+  sortSel.value = sortierung;
+  sortSel.addEventListener("change", () => {
+    sortierung = sortSel.value as Sortierung;
+    ctx.setzeParams({ sort: sortierung });
+    render();
+  });
   zuTunCb.checked = !!ctx.params.zuTun;
   erledigtCb.checked = !!ctx.params.erledigt;
   zuTunCb.addEventListener("change", () => {
@@ -125,6 +170,8 @@ function erstellen(ctx: PanelKontext) {
     return text.toLowerCase().includes(q);
   }
 
+  let zeilenCache = new Map<string, { html: string; el: HTMLElement }>();
+  let veraltet = false;
   function render(): void {
     const q = suche.value.trim().toLowerCase();
     const alle = zeilen();
@@ -142,11 +189,39 @@ function erstellen(ctx: PanelKontext) {
       });
       chips.appendChild(b);
     }
+    // verdeckter Reiter: nur die Zahl im Reiter aktualisieren, Zeilen erst beim Anzeigen bauen
+    if (!ctx.sichtbar()) {
+      ctx.setzeBadge(alle.filter((z) => z.lage === "dispo").length, "warn");
+      veraltet = true;
+      return;
+    }
+    veraltet = false;
     const sichtbar = alle.filter((z) => passt(z, q));
-    sichtbar.sort((a, b) => LAGE_ORDNUNG[a.lage] - LAGE_ORDNUNG[b.lage] || (a.art === "rd" && b.art === "rd" ? b.zeit - a.zeit : a.zeit - b.zeit));
+    const eingang = (z: Zeile) => (z.e ? z.e.erstellt : z.k!.eingang);
+    const standard = (a: Zeile, b: Zeile) => LAGE_ORDNUNG[a.lage] - LAGE_ORDNUNG[b.lage] || (a.art === "rd" && b.art === "rd" ? b.zeit - a.zeit : a.zeit - b.zeit);
+    const vergleich: Record<Sortierung, (a: Zeile, b: Zeile) => number> = {
+      zustand: standard,
+      dringlichkeit: (a, b) => dringlichkeit(a) - dringlichkeit(b) || a.zeit - b.zeit,
+      eingang: (a, b) => eingang(b) - eingang(a),
+      termin: (a, b) => a.zeit - b.zeit,
+      code: (a, b) => codeRang(a).localeCompare(codeRang(b)) || standard(a, b),
+    };
+    sichtbar.sort(vergleich[sortierung] ?? standard);
     const sel = auswahl();
-    liste.innerHTML = "";
-    for (const z of sichtbar) liste.appendChild(z.e ? rdZeile(z.e, z.lage, sel.id === z.id) : ktZeile(z.k!, z.art === "sek" ? "sek" : "kt", z.lage, sel.id === z.id));
+    // nur geänderte Zeilen austauschen (weniger Arbeit für den Browser, kein Flackern)
+    const neueZeilen: HTMLElement[] = [];
+    const neuCache = new Map<string, { html: string; el: HTMLElement }>();
+    for (const z of sichtbar) {
+      const r = z.e ? rdZeile(z.e, z.lage, sel.id === z.id) : ktZeile(z.k!, z.art === "sek" ? "sek" : "kt", z.lage, sel.id === z.id);
+      const html = r.className + r.innerHTML + r.title;
+      const alt = zeilenCache.get(z.id);
+      const elx = alt && alt.html === html ? alt.el : r;
+      neuCache.set(z.id, { html, el: elx });
+      neueZeilen.push(elx);
+    }
+    zeilenCache = neuCache;
+    const gleich = neueZeilen.length === liste.children.length && neueZeilen.every((x, i) => liste.children[i] === x);
+    if (!gleich) liste.replaceChildren(...neueZeilen);
     if (!sichtbar.length) {
       liste.appendChild(
         el(
@@ -196,8 +271,8 @@ function erstellen(ctx: PanelKontext) {
     const fz = k.fz ? sim.state.fahrzeuge[k.fz] : undefined;
     const nef = k.begleit ? sim.state.fahrzeuge[k.begleit] : undefined;
     const a = k.anruf;
-    const ab = k.d.abholung ?? (k.d.termin ? k.d.termin - 45 * 60_000 : null);
-    const spaet = ab !== null && ["offen", "vorgemerkt"].includes(k.status) && ab < sim.state.zeit;
+    const spaet = ktSpaet(k);
+    if (spaet) row.classList.add("spaet");
     const dringend = codeInfo(k.d.code).sondersignal || k.d.sofort;
     const tel =
       a && ["klingelt", "aktiv", "gehalten", "verpasst"].includes(a.status)
@@ -232,6 +307,9 @@ function erstellen(ctx: PanelKontext) {
   return {
     el: root,
     dispose: () => aus.forEach((f) => f()),
+    sichtbar: (an: boolean) => {
+      if (an && veraltet) render();
+    },
   };
 }
 
