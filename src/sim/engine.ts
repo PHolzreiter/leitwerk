@@ -961,7 +961,8 @@ export class Simulation {
       }
       const nf = e.nachforderungen?.find((n) => n.art === "BIT");
       const seit = nf?.seit ?? t;
-      if (t - seit < BIT_WARTEN) {
+      // BIT ist unterwegs: auf ihn warten; sonst nur begrenzt
+      if (bit || t - seit < BIT_WARTEN) {
         fz.phaseEnde = t + 2 * MIN;
         return;
       }
@@ -1374,7 +1375,14 @@ export class Simulation {
   empfehlung(id: string, liste: Vorschlag[]): { ids: string[]; gruende: string[] } {
     const e = this.einsatz(id);
     const stufe = e ? this.stufeVon(e) : undefined;
-    if (!e || !stufe) return { ids: [], gruende: [] };
+    if (!e) return { ids: [], gruende: [] };
+    if (!stufe) {
+      // ohne Code: nur offene Nachforderungen (BIT)
+      const ids: string[] = [];
+      const gruende: string[] = [];
+      this.bitEmpfehlung(e, liste.filter((v) => v.sekunden !== null && !v.hinweis && !v.kt), ids, gruende);
+      return { ids, gruende };
+    }
     const tol = this.settings.toleranzMin * 60;
     const ids: string[] = [];
     const gruende: string[] = [];
@@ -1447,14 +1455,7 @@ export class Simulation {
         }
       }
     }
-    // BIT nachgefordert (Patient zu schwer für die normale Trage)
-    if ((e.nachforderungen ?? []).some((n) => n.art === "BIT" && !n.erledigt) && !imEinsatz.some((f) => f.rmTyp === "BIT")) {
-      const bit = nutzbar.find((v) => v.fz.rmTyp === "BIT");
-      if (bit) {
-        ids.push(bit.fz.id);
-        gruende.push(`${bit.fz.funkrufname} (BIT, ${min(bit.sekunden!)}): Nachforderung Schwerlasttransport`);
-      } else gruende.push("Kein BIT verfügbar – die Besatzung transportiert nach Wartezeit selbst");
-    }
+    this.bitEmpfehlung(e, nutzbar, ids, gruende);
     // EL ÖBB bei Unfällen auf oder an Bahngleisen
     const bahnText = `${findCode(e.code ?? undefined)?.beschreibung ?? ""} ${e.wahr.abfrage?.lage ?? ""} ${e.infoRtw} ${e.infoIntern} ${e.adresse?.label ?? ""}`;
     if (/bahn|gleis|zug|schiene|öbb/i.test(bahnText) && !imEinsatz.some((f) => f.rmTyp === "EL ÖBB")) {
@@ -1465,6 +1466,17 @@ export class Simulation {
       }
     }
     return { ids, gruende };
+  }
+
+  /** BIT nachgefordert (Patient zu schwer für die normale Trage): BIT vorschlagen */
+  private bitEmpfehlung(e: Einsatz, nutzbar: Vorschlag[], ids: string[], gruende: string[]): void {
+    const imEinsatz = this.einsatzFz(e);
+    if (!(e.nachforderungen ?? []).some((n) => n.art === "BIT" && !n.erledigt) || imEinsatz.some((f) => f.rmTyp === "BIT")) return;
+    const bit = nutzbar.find((v) => v.fz.rmTyp === "BIT");
+    if (bit) {
+      ids.push(bit.fz.id);
+      gruende.push(`${bit.fz.funkrufname} (BIT, ${Math.round(bit.sekunden! / 60)} min): Nachforderung Schwerlasttransport`);
+    } else gruende.push("Kein BIT verfügbar – die Besatzung transportiert nach Wartezeit selbst");
   }
 
   // ------------------------------------------------------------------ Generator
