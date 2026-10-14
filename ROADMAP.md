@@ -23,8 +23,10 @@ Gesammelte Wünsche, die noch nicht eingeplant sind (Reihenfolge noch offen).
 - KT-Hotline mit fester Abfrage, Online-Anmeldungen, Daueraufträge (Dialyse, Strahlentherapie)
 - KTW primär, RTW/RTW-C wenn nötig, SKTW nie für normale KT; Sammelfahrten mit Platzprüfung
 - ~~Sekundärtransporte (Überstellungen KH–KH mit SKTW/SRTW/SNAW/ITH)~~ (0.11.0)
-- später: BIT-Nachforderung bei adipösen Patienten
-- später: Straßennetz größer (Graz, Wels, Oberwart liegen außerhalb – deshalb noch keine Überstellungen dorthin)
+- ~~BIT-Nachforderung bei adipösen Patienten~~ (0.12.0)
+- ~~Straßennetz größer: je Bundesland (NÖ, W, B, OÖ, Stmk)~~ (0.12.0)
+- später: Privatkliniken und Reha-Zentren als Ziele für Krankentransporte (Add-on)
+- als Nächstes: neue Oberfläche (Fenster frei anordnen, mehrere Monitore, Hell/Dunkel/System)
 
 ## Simulation
 - **Ausrückzeiten** (einstellbar, Standard):

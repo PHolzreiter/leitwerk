@@ -1,5 +1,14 @@
 # Änderungen
 
+## 0.12.0 – Straßen und Spitäler für ganz Ostösterreich
+- Straßennetz je Bundesland als eigenes Kartenpaket: Niederösterreich (immer dabei), Wien, Burgenland, Oberösterreich, Steiermark – einzeln herunterladen, ein- und ausschalten (Einstellungen → Kartenpakete); die Netze passen an den Landesgrenzen nahtlos zusammen
+- Ohne Straßenpaket eines Bundeslands gibt es keine Krankentransporte und Überstellungen dorthin; im Mehrspieler müssen alle dieselben Straßenpakete eingeschaltet haben (sonst Hinweis beim Beitreten)
+- Detailkarte „Umland“ und Gelände (3D) reichen jetzt über ganz Oberösterreich, Steiermark und Burgenland
+- Alle Akutspitäler in Oberösterreich, Steiermark und Burgenland, dazu weitere in Wien (insgesamt 96 Häuser) mit Stationen und Ambulanzen – änderbar unter Daten → Krankenhäuser
+- Fahrzeiten: Fahrzeuge bleiben nicht mehr in Einbahn-Zufahrten (z. B. auf Spitalsgeländen) hängen – vorher fuhren sie dort manchmal in gerader Linie quer über die Karte
+- BIT: Selten ist ein Patient zu schwer für die normale Trage (ca. 150 kg und mehr). Die Besatzung meldet das beim Eintreffen über Funk und fordert den BIT nach; der BIT transportiert, das erste Fahrzeug wird frei, ein nötiger Notarzt fährt mit dem NEF mit. Kommt kein BIT, transportiert die Besatzung nach einer Wartezeit selbst
+- Überstellungen können ebenfalls einen BIT brauchen (Vermerk bei der Online-Anmeldung, der Anrufer sagt es dazu, Häkchen „BIT nötig“); dann wird der BIT vorgeschlagen
+
 ## 0.11.1 – Fahrzeuge im Blick
 - Fahrzeug anklicken: kleines Fenster mit Status, Auftrag (Einsatz oder Krankentransport) und Ankunftszeit, die restliche Route wird orange gezeichnet; die Auftragsmaske öffnet sich rechts, die Karte bleibt beim Fahrzeug
 - Fahrzeug doppelt anklicken (oder „🎥 Kamera folgen“): Die Karte zoomt heran und die Kamera folgt dem Fahrzeug – in 2D von oben, in 3D schräg von der Seite. Karte verschieben, ✕ oder Esc beendet das Folgen; zoomen geht weiter mit dem Mausrad
