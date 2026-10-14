@@ -1,6 +1,6 @@
 ### npm install
 
-added 48 packages, and audited 49 packages in 7s
+added 48 packages, and audited 49 packages in 6s
 
 9 packages are looking for funding
   run `npm fund` for details
@@ -24,7 +24,7 @@ computing gzip size...
 [2mdist/[22m[32mindex.html                 [39m[1m[2m    4.10 kB[22m[1m[22m[2m │ gzip:   1.34 kB[22m
 [2mdist/[22m[2massets/[22m[35mindex-CouxfxDs.css  [39m[1m[2m  101.51 kB[22m[1m[22m[2m │ gzip:  16.66 kB[22m
 [2mdist/[22m[2massets/[22m[36mindex-Bibhh5-A.js   [39m[1m[2m1,518.70 kB[22m[1m[22m[2m │ gzip: 430.06 kB[22m
-[32m✓ built in 4.01s[39m
+[32m✓ built in 2.98s[39m
 ### npx tauri icon app-icon.png
         Appx Creating StoreLogo.png
         Appx Creating Square30x30Logo.png
@@ -91,35 +91,36 @@ computing gzip size...
 [1m[92m  Downloaded[0m tokio v1.53.3
 [1m[92m   Compiling[0m equivalent v1.0.3
 [1m[92m    Checking[0m tokio v1.53.3
-[1m[92m    Checking[0m indexmap v2.14.2
-[1m[92m    Checking[0m plist v1.10.1
+[1m[92m   Compiling[0m indexmap v2.14.2
 [1m[92m   Compiling[0m toml_edit v0.20.2
+[1m[92m   Compiling[0m plist v1.10.1
 [1m[92m   Compiling[0m toml_edit v0.19.15
 [1m[92m   Compiling[0m tauri-utils v2.10.1
 [1m[92m   Compiling[0m toml v0.8.2
-[1m[92m   Compiling[0m system-deps v6.2.2
 [1m[92m   Compiling[0m proc-macro-crate v2.0.2
+[1m[92m   Compiling[0m system-deps v6.2.2
 [1m[92m   Compiling[0m proc-macro-crate v1.3.1
-[1m[92m   Compiling[0m gtk3-macros v0.18.2
 [1m[92m   Compiling[0m glib-macros v0.18.5
+[1m[92m   Compiling[0m gtk3-macros v0.18.2
 [1m[92m   Compiling[0m glib-sys v0.18.1
 [1m[92m   Compiling[0m gobject-sys v0.18.0
 [1m[92m   Compiling[0m gio-sys v0.18.1
 [1m[92m   Compiling[0m gdk-sys v0.18.2
-[1m[92m   Compiling[0m atk-sys v0.18.2
-[1m[92m   Compiling[0m cairo-sys-rs v0.18.2
 [1m[92m   Compiling[0m pango-sys v0.18.0
 [1m[92m   Compiling[0m gdk-pixbuf-sys v0.18.0
+[1m[92m   Compiling[0m atk-sys v0.18.2
+[1m[92m   Compiling[0m cairo-sys-rs v0.18.2
 [1m[92m   Compiling[0m gtk-sys v0.18.2
-[1m[92m   Compiling[0m soup3-sys v0.5.0
 [1m[92m   Compiling[0m javascriptcore-rs-sys v1.1.1
 [1m[92m    Checking[0m glib v0.18.5
+[1m[92m   Compiling[0m soup3-sys v0.5.0
 [1m[92m   Compiling[0m gtk v0.18.2
 [1m[92m   Compiling[0m webkit2gtk-sys v2.0.2
 [1m[92m   Compiling[0m gdkx11-sys v0.18.2
 [1m[92m   Compiling[0m wry v0.57.0
 [1m[92m    Checking[0m gdkwayland-sys v0.18.2
 [1m[92m    Checking[0m hyper v1.12.0
+[1m[92m    Checking[0m hyper-util v0.1.21
 [1m[92m   Compiling[0m tauri-build v2.7.2
 [1m[92m   Compiling[0m tauri-plugin v2.7.1
 [1m[92m   Compiling[0m tauri-codegen v2.7.2
@@ -127,7 +128,6 @@ computing gzip size...
 [1m[92m    Checking[0m cairo-rs v0.18.5
 [1m[92m    Checking[0m atk v0.18.2
 [1m[92m    Checking[0m javascriptcore-rs v1.1.2
-[1m[92m    Checking[0m hyper-util v0.1.21
 [1m[92m    Checking[0m tower v0.5.3
 [1m[92m    Checking[0m tokio-rustls v0.26.6
 [1m[92m    Checking[0m tower-http v0.6.11
@@ -139,11 +139,11 @@ computing gzip size...
 [1m[92m   Compiling[0m tauri v2.12.3
 [1m[92m   Compiling[0m tauri-plugin-fs v2.7.0
 [1m[92m   Compiling[0m tauri-macros v2.7.2
-[1m[92m   Compiling[0m tauri-plugin-updater v2.13.3
 [1m[92m   Compiling[0m tauri-plugin-dialog v2.8.2
+[1m[92m   Compiling[0m tauri-plugin-updater v2.13.3
 [1m[92m   Compiling[0m leitwerk v0.11.1 (/home/runner/work/leitwerk/leitwerk/src-tauri)
-[1m[92m    Checking[0m pango v0.18.3
 [1m[92m    Checking[0m gdk-pixbuf v0.18.5
+[1m[92m    Checking[0m pango v0.18.3
 [1m[92m    Checking[0m soup3 v0.5.0
 [1m[92m    Checking[0m gdk v0.18.2
 [1m[92m    Checking[0m gdkx11 v0.18.2
@@ -152,7 +152,7 @@ computing gzip size...
 [1m[92m    Checking[0m muda v0.20.0
 [1m[92m    Checking[0m tauri-runtime v2.12.1
 [1m[92m    Checking[0m tauri-runtime-wry v2.12.1
-[1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 43.85s
+[1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 28.87s
 ### python3 tools/build_default_data.py
 data/default/dienststellen.csv: 168 Zeilen
 data/default/fahrzeuge.csv: 135 Zeilen
