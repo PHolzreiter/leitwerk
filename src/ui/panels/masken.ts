@@ -2,6 +2,7 @@
  * Einsatzmaske (Notfall) und KT-Maske (Krankentransport/Überstellung) als eigene Fenster.
  * Sie zeigen, was in der Einsatzliste (oder auf der Karte) ausgewählt ist.
  */
+import { nummerAus } from "../../sim/rufnummer";
 import { HOSPITAL_FLAGS, HOSPITAL_FLAG_LABEL, type HospitalFlag } from "../../data/model";
 import { store } from "../../data/store";
 import { findCode, hasCodes, searchCodes, type Einsatzcode } from "../../sim/codes";
@@ -200,6 +201,16 @@ export function einsatzMaske(e: Einsatz): { root: HTMLElement; refresh(): void }
   const infoIntern = el("textarea", { rows: "1", class: "auf-info", placeholder: "Interne Info für die Leitstelle" });
   infoIntern.value = e.infoIntern;
   infoIntern.addEventListener("change", () => void fehlerZeigen(sim.call("aktualisiere", e.id, { infoIntern: infoIntern.value })));
+  // Rückrufnummer (Anrufernummer übernehmen)
+  const telIn = el("input", { type: "tel", class: "auf-tel", placeholder: "Rückrufnummer" });
+  telIn.value = e.telefon ?? "";
+  telIn.addEventListener("change", () => void fehlerZeigen(sim.call("aktualisiere", e.id, { telefon: telIn.value.trim() })));
+  const telB = el("button", { class: "btn small icon", title: "Rufnummer des Anrufers übernehmen" }, "📞");
+  telB.addEventListener("click", () => {
+    telIn.value = nummerAus(e.id, true);
+    void fehlerZeigen(sim.call("aktualisiere", e.id, { telefon: telIn.value }));
+  });
+  aufZeile("Rückruf", telIn, telB);
   aufZeile("Info RTW", infoRtw);
   aufZeile("Intern", infoIntern);
 
@@ -352,6 +363,7 @@ export function einsatzMaske(e: Einsatz): { root: HTMLElement; refresh(): void }
       // Adresse, Code oder Fahrzeuge von einem anderen Spieler geändert: Vorschläge neu berechnen
       if (e.adresse && vorschlagKey() !== suggestFor) void refreshSuggestions();
       feld(zusatz, e.zusatz);
+      feld(telIn, e.telefon ?? "");
       feld(infoRtw, e.infoRtw);
       feld(infoIntern, e.infoIntern);
       if (e.zo) feld(zo.input, e.zo.label);

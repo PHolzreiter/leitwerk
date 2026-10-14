@@ -137,6 +137,14 @@ export interface Settings {
   /** Anteil der Anrufer, die eine falsche/ungenaue Adresse nennen (%) */
   falscheAdresseProzent: number;
   wetterAktiv: boolean;
+  /** Wetter: realistisch, wechselhaft oder immer gleich (festes Wetter/Temperatur) */
+  wetterModus?: "realistisch" | "wechselhaft" | "fest";
+  /** Jahreszeit fürs Wetter: auto = nach Spieldatum */
+  jahreszeit?: "auto" | "fruehling" | "sommer" | "herbst" | "winter";
+  wetterFestLage?: "klar" | "bewoelkt" | "regen" | "nebel" | "gewitter" | "schnee";
+  wetterFestTemp?: number;
+  /** Rückruf nur möglich, wenn die Rückrufnummer aufgenommen wurde */
+  rueckrufNurMitNummer?: boolean;
   nahGeschwindigkeit: number;
   /** veraltet (bis v0.8), ersetzt durch ausrueck */
   nahStartzeitSek: number;
@@ -187,6 +195,11 @@ export function defaultSettings(): Settings {
     verortungRadius: 250,
     falscheAdresseProzent: 15,
     wetterAktiv: true,
+    rueckrufNurMitNummer: false,
+    wetterModus: "realistisch",
+    jahreszeit: "auto",
+    wetterFestLage: "klar",
+    wetterFestTemp: 18,
     nahGeschwindigkeit: 220,
     nahStartzeitSek: 180,
     ausrueck: defaultAusrueck(),

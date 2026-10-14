@@ -19,7 +19,7 @@ import {
 } from "./model";
 import { standardRecords } from "./standard";
 import { mergeSettings, type Settings } from "../sim/settings";
-import { istSchema, type Schema } from "../abfrage/schema";
+import { ergaenzeSchema, istSchema, type Schema } from "../abfrage/schema";
 
 type Listener = () => void;
 
@@ -165,7 +165,7 @@ export class Store {
 
   /** Importiertes Abfrageschema (oder null) */
   get schema(): Schema | null {
-    return istSchema(this.data.abfrageschema) ? this.data.abfrageschema : null;
+    return istSchema(this.data.abfrageschema) ? ergaenzeSchema(this.data.abfrageschema) : null;
   }
 
   setSchema(s: Schema | null): void {

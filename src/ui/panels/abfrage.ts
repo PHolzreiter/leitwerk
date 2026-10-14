@@ -14,7 +14,7 @@ import { el, esc, toast } from "../dom";
 import { codeChip, ktFormular, ktFrageStellen } from "../ktView";
 import { panelZeigen, registriere, type PanelKontext } from "../ws/arbeitsplatz";
 import { auswahl, karteZeigen, onAuswahl, waehle } from "../ws/auswahl";
-import { liveText, onLive } from "./live";
+import { onLive, verlaufNachziehen, liveZeigen } from "./live";
 import { notrufTeile, type NotrufTeile } from "./notrufAbfrage";
 import { alleAnrufe, anrufAnnehmen, anrufAuflegen, anrufHalten, istMeins, meinGespraech } from "./telefon";
 
@@ -171,6 +171,8 @@ function anrufSpalte(o: {
   /** Abschnitte unter den Anrufdaten */
   extra: HTMLElement[];
   maske: () => void;
+  /** aufgenommene Rückrufnummer lesen / übernehmen */
+  rueckruf: { wert: () => string; setze: (nr: string) => Promise<unknown> };
 }): Spalte {
   const spalte = el("div", { class: "abf-links" });
   const karte = el("div", { class: `abf-karte typ-${o.typ}` });
@@ -188,10 +190,20 @@ function anrufSpalte(o: {
     <tr><td>Sprache</td><td>${esc(o.sprache ?? "Deutsch")}</td></tr>
     <tr><td>Rufnummer</td><td>${esc(o.telefon)}</td></tr>
     <tr><td>Netzbetreiber</td><td>${esc(netz)}</td></tr>
-    <tr><td>Rückruf möglich</td><td>Ja</td></tr></table>`;
+    </table>`;
   const maskeB = el("button", { class: "btn primary abf-maske" }, `${o.art === "rd" ? "Einsatzmaske" : "KT-Maske"} öffnen →`);
   maskeB.addEventListener("click", o.maske);
-  spalte.append(karte, w, daten, ...o.extra, maskeB, zusatz);
+  // Rufnummer als Rückrufnummer übernehmen
+  const nrB = el("button", { class: "btn small abf-nummer", type: "button" });
+  nrB.addEventListener("click", () => fehler(o.rueckruf.setze(o.telefon)));
+  const nrZeigen = () => {
+    const hat = o.rueckruf.wert();
+    nrB.textContent = hat ? `✓ Rückruf: ${hat}` : "📞 Nummer übernehmen";
+    nrB.classList.toggle("ok", !!hat);
+    nrB.title = hat ? "Rückrufnummer ist aufgenommen" : "Angezeigte Rufnummer als Rückrufnummer in den Auftrag übernehmen";
+  };
+  nrZeigen();
+  spalte.append(karte, nrB, w, daten, ...o.extra, maskeB, zusatz);
 
   // Fußleiste: Beenden, Halten, Stumm … Zur Maske
   const fuss = el("div", { class: "abf-fuss" });
@@ -202,6 +214,7 @@ function anrufSpalte(o: {
   let knopfKey = "";
   const refresh = () => {
     const x = o.anruf();
+    nrZeigen();
     if (!x) return;
     const t = sim.state.zeit;
     const meins = istMeins(x);
@@ -319,6 +332,7 @@ function notrufAnsicht(root: HTMLElement, e: Einsatz): { refresh(): void; dispos
     art: "rd",
     id: e.id,
     sprache: e.wahr.abfrage?.anrufer.sprache,
+    rueckruf: { wert: () => e.telefon ?? "", setze: (nr) => sim.call("aktualisiere", e.id, { telefon: nr }) },
     extra: [el("div", { class: "abf-titel" }, "Standort (aus Netz)"), ortung, el("div", { class: "abf-titel" }, "Vorläufiges Ergebnis"), t.codeZeile, t.aufloesung],
     maske: zurMaske,
   });
@@ -392,11 +406,7 @@ function ktAnsicht(root: HTMLElement, k: KtAuftrag): { refresh(): void; dispose(
   const form = el("form", { class: "anruf-form" });
   const eingabe = el("input", { type: "text", placeholder: "Frage an den Anrufer … (Enter)" });
   form.append(eingabe, el("button", { class: "btn small primary", type: "submit" }, "Fragen"));
-  const zeigeLive = (text: string | null) => {
-    live.hidden = !text;
-    live.textContent = text ?? "";
-    if (text) verlauf.scrollTop = verlauf.scrollHeight;
-  };
+  const zeigeLive = (text: string | null) => liveZeigen(verlauf, live, k.id, text);
   const ausLive = onLive((id, text) => id === k.id && zeigeLive(text));
   const stelle = (text: string) => ktFrageStellen(k, text).then(() => refresh());
   form.addEventListener("submit", (ev) => {
@@ -412,6 +422,7 @@ function ktAnsicht(root: HTMLElement, k: KtAuftrag): { refresh(): void; dispose(
     typ: sek ? "sek" : "kt",
     nummer: k.nummer,
     telefon,
+    rueckruf: { wert: () => k.d.telefon, setze: (nr) => sim.call("ktSetze", k.id, { telefon: nr }) },
     anruf: () => k.anruf,
     art: "kt",
     id: k.id,
@@ -447,17 +458,7 @@ function ktAnsicht(root: HTMLElement, k: KtAuftrag): { refresh(): void; dispose(
   const refresh = () => {
     links.refresh();
     const a = k.anruf;
-    if (a && verlauf.childElementCount - 1 !== a.gespraech.length) {
-      verlauf.innerHTML = "";
-      for (const m of a.gespraech) {
-        const d = el("div", { class: `anruf-msg ${m.von}` });
-        d.innerHTML = m.von === "system" ? `<em>${esc(m.text)}</em>` : `<b>${m.von === "anrufer" ? "Anrufer" : esc(m.wer ?? "Leitstelle")}:</b> ${esc(m.text)}`;
-        verlauf.appendChild(d);
-      }
-      verlauf.appendChild(live);
-      zeigeLive(liveText(k.id));
-      verlauf.scrollTop = verlauf.scrollHeight;
-    }
+    if (a) verlaufNachziehen(verlauf, live, a.gespraech, k.id);
     zeitenNachtragen(verlauf, a);
     form.hidden = !(a?.status === "aktiv" && ich());
     eingabe.disabled = ktAntwortetGerade(k.id);

@@ -11,7 +11,7 @@ import { abteilungFuer, allCodes, findCode, hasCodes, type Einsatzcode } from ".
 import { distanceM, erreichbar, flightRoute, geoStatus, randomAddresses, route, searchAddress, travelTimes, type LatLon, type Route } from "./geo";
 import { generiereBesetzung, hatNFS, rmTypVon, type Platz, type RmTyp } from "./crew";
 import { defaultStufeFuer, raenge, type Kategorie, type Settings, type StatusKey, type StufeDef } from "./settings";
-import { flugverbot, istNacht, nextWetter, type Wetter, WETTER_LABEL } from "./weather";
+import { flugverbot, istNacht, type WetterLage, nextWetter, prognose, temperatur, wetterFortschreiben, wetterSetzen, type PrognoseStunde, type Wetter, type WetterOpt, WETTER_LABEL } from "./weather";
 import { bestimmeCode, fallZiehen, kapitelVonCode, wahrheitFuer, type Antworten, type Schema } from "../abfrage/schema";
 import { anruferWaehlen, veraenderungText, type Anrufer } from "../abfrage/anrufer";
 import { abfrageBlock, abfrageSaetze } from "../abfrage/protokollText";
@@ -152,15 +152,59 @@ export function plausibel(kapitel: string, a: Antworten, codeName: string): bool
 const KAPITEL_GEWICHT: Record<string, number> = {
   "17": 3, "26": 3, "10": 2.5, "6": 2.5, "28": 2, "31": 2, "29": 2, "12": 1.5, "21": 1.5, "1": 1.5, "18": 1.5, "9": 1.2, ALP: 0.15, "42": 0.3, "34": 0.3,
 };
-function kapitelZiehen(schema: Schema): string {
+/** Wetter macht manche Notrufe häufiger: Hitze → Hitzenotfälle, Badeunfälle; Kälte → Unterkühlung, Infekte; Glätte → Stürze, Unfälle */
+export function wetterFaktor(kap: string, temp: number, lage: WetterLage): number {
+  const glatt = lage === "schnee" || (temp < 1 && (lage === "regen" || lage === "nebel"));
+  switch (kap) {
+    case "20":
+      return temp >= 30 ? 6 : temp >= 26 ? 3 : temp <= -5 ? 5 : temp <= 0 ? 3 : temp <= 5 ? 1.2 : 0.15;
+    case "14":
+      return temp >= 28 ? 3.5 : temp >= 23 ? 2 : temp < 12 ? 0.3 : 1;
+    case "2":
+      return temp >= 20 ? 1.6 : temp < 5 ? 0.6 : 1;
+    case "3":
+      return temp >= 18 ? 1.3 : temp < 3 ? 0.7 : 1;
+    case "8":
+      return temp <= 0 ? 2.2 : temp <= 6 ? 1.5 : 0.8;
+    case "6":
+      return temp <= 0 ? 1.5 : temp >= 30 ? 1.3 : 1;
+    case "36":
+      return temp <= 5 ? 2.2 : temp >= 22 ? 0.4 : 1;
+    case "26":
+    case "31":
+      return temp >= 30 ? 1.5 : temp >= 27 ? 1.2 : 1;
+    case "17":
+      return glatt ? 1.8 : 1;
+    case "29":
+      return glatt ? 2 : lage === "nebel" ? 1.5 : lage === "regen" || lage === "gewitter" ? 1.3 : 1;
+    case "15":
+      return lage === "gewitter" ? 6 : 1;
+    default:
+      return 1;
+  }
+}
+
+function kapitelZiehen(schema: Schema, faktor: (kap: string) => number = () => 1): string {
   const kaps = Object.keys(schema.kapitel);
-  const sum = kaps.reduce((s, k) => s + (KAPITEL_GEWICHT[k] ?? 1), 0);
+  const g = (k: string) => (KAPITEL_GEWICHT[k] ?? 1) * faktor(k);
+  const sum = kaps.reduce((s, k) => s + g(k), 0);
   let r = Math.random() * sum;
   for (const k of kaps) {
-    r -= KAPITEL_GEWICHT[k] ?? 1;
+    r -= g(k);
     if (r <= 0) return k;
   }
   return kaps[0];
+}
+
+/** Passt der gezogene Fall zum Wetter? (Hitze-/Kältenotfall, Blitzschlag) */
+function passtZumWetter(kap: string, a: Antworten, codeName: string, temp: number, lage: WetterLage): boolean {
+  if (kap === "20" || /Hitze|Kälte|Unterkühl|Erfrier|Sonnenstich/i.test(codeName)) {
+    const kalt = a.art === "kaelte" || /Kälte|Unterkühl|Erfrier/i.test(codeName);
+    if (kalt && temp > 12) return Math.random() < 0.05;
+    if (!kalt && temp < 18) return Math.random() < 0.05;
+  }
+  if (/Blitz/i.test(codeName) && lage !== "gewitter") return Math.random() < 0.1;
+  return true;
 }
 
 /** Ein Funkspruch („Hier LEO …“, „LEO von 75/001 kommen“) */
@@ -290,6 +334,8 @@ export interface Einsatz {
   kh: { hospitalId: string; grund: HospitalFlag; durch: "dispo" | "rtw"; zeit: number } | null;
   khAnfrage: { abteilung: HospitalFlag; seit: number; von: string } | null;
   rueckrufGemacht: boolean;
+  /** vom Calltaker aufgenommene Rückrufnummer */
+  telefon?: string;
   adressePruefen: boolean;
   fahrzeuge: string[];
   protokoll: Protokoll[];
@@ -623,8 +669,24 @@ export class Simulation {
     this.emit();
   }
 
+  /** Wetter-Einstellungen */
+  wetterOpt(): WetterOpt {
+    const s = this.settings;
+    return { modus: s.wetterModus ?? "realistisch", jahreszeit: s.jahreszeit ?? "auto", festLage: s.wetterFestLage ?? "klar", festTemp: s.wetterFestTemp ?? 18 };
+  }
+
+  /** aktuelle Temperatur (°C) */
+  temperatur(): number {
+    return temperatur(this.state.zeit, this.state.wetter.lage, this.wetterOpt());
+  }
+
+  /** stündliche Wetterprognose */
+  wetterPrognose(stunden = 8): PrognoseStunde[] {
+    return prognose(this.state.wetter, this.state.zeit, this.wetterOpt(), stunden);
+  }
+
   setWetter(lage: Wetter["lage"]): void {
-    this.state.wetter = { lage, bis: this.state.zeit + 90 * 60_000 };
+    this.state.wetter = wetterSetzen(lage, this.state.zeit, this.wetterOpt());
     this.funk("Wetterdienst", null, `Wetter: ${WETTER_LABEL[lage]}`, flugverbot(lage) ? "warnung" : "info");
     this.emit();
   }
@@ -658,10 +720,8 @@ export class Simulation {
     this.state.zeit += dt;
     const t = this.state.zeit;
 
-    if (this.settings.wetterAktiv && t >= this.state.wetter.bis) {
-      const alt = this.state.wetter.lage;
-      this.state.wetter = nextWetter(t, alt);
-      if (this.state.wetter.lage !== alt) {
+    if (this.settings.wetterAktiv && (t >= this.state.wetter.bis || !this.state.wetter.plan?.length || (this.wetterOpt().modus === "fest" && this.state.wetter.lage !== this.wetterOpt().festLage))) {
+      if (wetterFortschreiben(this.state.wetter, t, this.wetterOpt())) {
         this.funk("Wetterdienst", null, `Wetter: ${WETTER_LABEL[this.state.wetter.lage]}`, flugverbot(this.state.wetter.lage) ? "warnung" : "info");
       }
     }
@@ -1203,7 +1263,7 @@ export class Simulation {
   /** Disponent setzt Code, Adresse und Texte. */
   aktualisiere(
     id: string,
-    patch: Partial<Pick<Einsatz, "code" | "adresse" | "zusatz" | "infoRtw" | "infoIntern" | "bo" | "zo">>,
+    patch: Partial<Pick<Einsatz, "code" | "adresse" | "zusatz" | "infoRtw" | "infoIntern" | "bo" | "zo" | "telefon">>,
   ): void {
     const e = this.einsatz(id);
     if (!e) return;
@@ -1219,6 +1279,7 @@ export class Simulation {
       }
     }
     if (patch.code) this.log(e, `Code: ${patch.code}`);
+    if (patch.telefon) this.log(e, `Rückrufnummer: ${patch.telefon}`);
     this.emit();
   }
 
@@ -1240,6 +1301,7 @@ export class Simulation {
   rueckruf(id: string): string | null {
     const e = this.einsatz(id);
     if (!e) return null;
+    if (this.settings.rueckrufNurMitNummer && !e.telefon) throw new Error("Keine Rückrufnummer aufgenommen – Rückruf nicht möglich");
     e.rueckrufGemacht = true;
     this.log(e, `Rückruf beim Anrufer: Adresse ${e.wahr.adresse}`);
     this.emit();
@@ -1558,17 +1620,31 @@ export class Simulation {
     let fall: Fall | null = null;
     if (schema) {
       // Fall aus dem Abfrageschema ziehen: Antworten und Code passen garantiert zusammen
+      const temp = this.temperatur();
+      const lage = this.state.wetter.lage;
+      const wetter = this.settings.wetterAktiv;
       for (let i = 0; i < 400 && !fall; i++) {
-        const f = fallZiehen(schema, kapitelZiehen(schema));
+        const f = fallZiehen(schema, kapitelZiehen(schema, wetter ? (kp) => wetterFaktor(kp, temp, lage) : undefined));
         const c = f ? findCode(f.ergebnis.code) : undefined;
-        if (f && c && passt(c.stufe) && plausibel(f.ergebnis.pfad[0], f.antworten, `${c.beschreibung} ${schema.codes[c.code]?.name ?? ""}`)) {
+        const name = `${c?.beschreibung ?? ""} ${c ? (schema.codes[c.code]?.name ?? "") : ""}`;
+        if (
+          f &&
+          c &&
+          passt(c.stufe) &&
+          plausibel(f.ergebnis.pfad[0], f.antworten, name) &&
+          (!wetter || passtZumWetter(f.ergebnis.pfad[0], f.antworten, name, temp, lage))
+        ) {
           code = c;
           fall = { kapitel: f.ergebnis.pfad[0], antworten: f.antworten, code: c.code };
         }
       }
     }
     if (!code) {
-      const codes = allCodes().filter((c) => passt(c.stufe) && !/Aufwertung/i.test(c.beschreibung));
+      const temp = this.temperatur();
+      const lage = this.state.wetter.lage;
+      const codes = allCodes().filter(
+        (c) => passt(c.stufe) && !/Aufwertung/i.test(c.beschreibung) && (!s.wetterAktiv || passtZumWetter("", {}, c.beschreibung, temp, lage)),
+      );
       if (codes.length === 0) return null;
       code = pick(codes);
     }
@@ -1653,6 +1729,7 @@ export class Simulation {
     const e = this.einsatz(id);
     const a = e?.anruf;
     if (!e || !a) throw new Error("Kein Anruf zu diesem Einsatz");
+    if (a.status === "verpasst" && this.settings.rueckrufNurMitNummer && !e.telefon) throw new Error("Keine Rückrufnummer aufgenommen – Rückruf nicht möglich");
     const ich = this.calltaker();
     if (a.status === "gehalten") {
       // Gehaltene Anrufe kann jeder Disponent aufgreifen
@@ -2497,6 +2574,7 @@ export class Simulation {
     const k = this.ktAuftrag(id);
     const a = k?.anruf;
     if (!k || !a) throw new Error("Kein Anruf");
+    if (a.status === "verpasst" && this.settings.rueckrufNurMitNummer && !k.d.telefon) throw new Error("Keine Rückrufnummer aufgenommen – Rückruf nicht möglich");
     const ich = this.calltaker();
     if (a.status === "gehalten") {
       // Gehaltene Anrufe kann jeder Disponent aufgreifen

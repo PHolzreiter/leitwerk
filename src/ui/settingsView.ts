@@ -117,6 +117,10 @@ export function createSettingsView(container: HTMLElement, teil: "simulation" | 
     const fa = num(draft.falscheAdresseProzent);
     fa.addEventListener("change", () => (draft.falscheAdresseProzent = Number(fa.value) || 0));
     aGrid.append(el("label", {}, "Anrufer mit falscher Adresse (%)"), fa);
+    const rn = el("input", { type: "checkbox" });
+    rn.checked = !!draft.rueckrufNurMitNummer;
+    rn.addEventListener("change", () => (draft.rueckrufNurMitNummer = rn.checked));
+    aGrid.append(el("label", { title: "Ohne aufgenommene Rückrufnummer kann die Leitstelle den Anrufer nicht zurückrufen" }, "Rückruf nur mit aufgenommener Nummer"), rn);
     const kSel = el("select");
     for (const [v, l] of [["ruhig", "ruhig – selten Überraschungen"], ["normal", "normal – etwa jeder 10. Einsatz verändert sich"], ["fordernd", "fordernd – oft Verschlechterungen und Irrtümer"]]) kSel.appendChild(el("option", { value: v }, l));
     kSel.value = draft.komplikationen ?? "normal";
@@ -259,12 +263,54 @@ export function createSettingsView(container: HTMLElement, teil: "simulation" | 
     rSec.appendChild(rGrid);
 
     // Flugrettung
-    const nSec = section("Flugrettung und Wetter", "Bei Nebel und Gewitter fliegt kein NAH. Nachts nur Hubschrauber mit „Nachtflugtauglich“ (Reiter Daten → Fahrzeuge).");
+    const nSec = section(
+      "Flugrettung und Wetter",
+      "Bei Nebel und Gewitter fliegt kein NAH. Nachts nur Hubschrauber mit „Nachtflugtauglich“ (Reiter Daten → Fahrzeuge). Das Wetter beeinflusst auch die Notrufe: Hitze bringt mehr Hitzenotfälle und Badeunfälle, Kälte mehr Unterkühlung und Infekte, Glätte mehr Stürze und Unfälle.",
+    );
     const nGrid = el("div", { class: "set-grid" });
     const wa = el("input", { type: "checkbox" });
     wa.checked = draft.wetterAktiv;
     wa.addEventListener("change", () => (draft.wetterAktiv = wa.checked));
     nGrid.append(el("label", {}, "Wetter simulieren"), wa);
+    const wm = el("select");
+    for (const [v, l] of [
+      ["realistisch", "realistisch – ändert sich langsam, passend zur Jahreszeit"],
+      ["wechselhaft", "wechselhaft – öfter Wechsel, mehr Extreme"],
+      ["fest", "immer gleich – gewähltes Wetter"],
+    ])
+      wm.appendChild(el("option", { value: v }, l));
+    wm.value = draft.wetterModus ?? "realistisch";
+    nGrid.append(el("label", {}, "Wetter"), wm);
+    const festWrap = el("div", { class: "row-btns" });
+    const fl = el("select");
+    for (const [k, v] of Object.entries(WETTER_LABEL)) fl.appendChild(el("option", { value: k }, v));
+    fl.value = draft.wetterFestLage ?? "klar";
+    fl.addEventListener("change", () => (draft.wetterFestLage = fl.value as WetterLage));
+    const ft = num(draft.wetterFestTemp ?? 18, "1");
+    ft.min = "-25";
+    ft.max = "40";
+    ft.addEventListener("change", () => (draft.wetterFestTemp = Math.max(-25, Math.min(40, Number(ft.value) || 0))));
+    festWrap.append(fl, ft, el("span", { class: "muted" }, "°C"));
+    const festLbl = el("label", {}, "Festes Wetter");
+    nGrid.append(festLbl, festWrap);
+    const festZeigen = () => (festLbl.hidden = festWrap.hidden = wm.value !== "fest");
+    wm.addEventListener("change", () => {
+      draft.wetterModus = wm.value as Settings["wetterModus"];
+      festZeigen();
+    });
+    festZeigen();
+    const jz = el("select");
+    for (const [v, l] of [
+      ["auto", "nach Spieldatum"],
+      ["fruehling", "Frühling"],
+      ["sommer", "Sommer"],
+      ["herbst", "Herbst"],
+      ["winter", "Winter"],
+    ])
+      jz.appendChild(el("option", { value: v }, l));
+    jz.value = draft.jahreszeit ?? "auto";
+    jz.addEventListener("change", () => (draft.jahreszeit = jz.value as Settings["jahreszeit"]));
+    nGrid.append(el("label", { title: "Bestimmt Temperatur und Wetter – und damit, welche Notfälle häufiger sind (Hitze, Kälte, Glätte)" }, "Jahreszeit"), jz);
     const ns = num(draft.nahGeschwindigkeit, "10", "100");
     ns.addEventListener("change", () => (draft.nahGeschwindigkeit = Number(ns.value) || 220));
     nGrid.append(el("label", {}, "NAH Reisegeschwindigkeit (km/h)"), ns);

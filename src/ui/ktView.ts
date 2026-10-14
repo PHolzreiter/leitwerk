@@ -2,7 +2,8 @@
  * Krankentransporte und Überstellungen: Auftragsmaske (Aufnahme und Disposition).
  * Das Hotline-Gespräch selbst steht im Abfrage-Fenster.
  */
-import { BEREICHE, bereicheVon } from "../data/model";
+import { nummerAus } from "../sim/rufnummer";
+import { bereicheVon } from "../data/model";
 import { store } from "../data/store";
 import { KT_FRAGEN, ktFragen, type KtFrage } from "../abfrage/ktGespraech";
 import { mp } from "../net/mehrspieler";
@@ -81,48 +82,102 @@ export function sekTags(d: KtDaten): string {
 
 // ---------------------------------------------------------------- Ortswahl (Krankenhaus + Station oder Adresse)
 
-function ortWahl(wert: KtOrt | null, darf: boolean, nurKh: boolean, onSet: (o: KtOrt) => void): HTMLElement {
+/** Normalisiert für die Suche (klein, ohne Akzente, ß→ss) */
+function norm(t: string): string {
+  return t
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/ß/g, "ss");
+}
+
+/**
+ * Ort wählen: Krankenhaus (mit Station) über ein Suchfeld – z. B. „st. pölten endo“ – oder eine Adresse.
+ * `genannt` liefert die Adresse, die der Anrufer genannt hat (für 📍 übernehmen).
+ */
+function ortWahl(wert: KtOrt | null, darf: boolean, nurKh: boolean, onSet: (o: KtOrt) => void, genannt?: () => string | null): HTMLElement {
   const root = el("div", { class: "kt-ort" });
-  const modus = el("select");
+  const modus = el("select", { class: "kt-ort-modus" });
   modus.append(el("option", { value: "kh" }, "Krankenhaus"), el("option", { value: "adr" }, "Adresse"));
   modus.value = wert && !wert.khId && !nurKh ? "adr" : "kh";
-  const khSel = el("select");
-  const beSel = el("select");
-  const khs = store.list("hospitals").slice().sort((a, b) => (a.kurzname || a.name).localeCompare(b.kurzname || b.name, "de"));
-  khSel.appendChild(el("option", { value: "" }, "– Krankenhaus –"));
-  for (const h of khs) khSel.appendChild(el("option", { value: h.id }, `${h.kurzname || h.name}${h.ort && !(h.kurzname || h.name).includes(h.ort) ? ` (${h.ort})` : ""}`));
-  const fuelleBereiche = () => {
-    const h = khs.find((x) => x.id === khSel.value);
-    beSel.innerHTML = "";
-    beSel.appendChild(el("option", { value: "" }, "– Station/Ambulanz –"));
-    for (const b of h ? bereicheVon(h) : Object.keys(BEREICHE)) beSel.appendChild(el("option", { value: b }, bereichName(b)));
+
+  // Krankenhaus + Station suchen
+  const khs = store.list("hospitals");
+  type Treffer = { h: (typeof khs)[number]; b?: string; label: string; such: string };
+  const eintraege: Treffer[] = [];
+  for (const h of khs) {
+    const name = h.kurzname || h.name;
+    const ortTxt = h.ort && !name.includes(h.ort) ? ` (${h.ort})` : "";
+    const basis = norm(`${name} ${h.name} ${h.ort ?? ""}`);
+    eintraege.push({ h, label: `${name}${ortTxt}`, such: basis });
+    for (const b of bereicheVon(h)) eintraege.push({ h, b, label: `${name}${ortTxt}, ${bereichName(b)}`, such: `${basis} ${norm(bereichName(b))} ${norm(b)}` });
+  }
+  const khWrap = el("div", { class: "addr kt-kh-suche" });
+  const khInput = el("input", { type: "text", placeholder: "🔍 Krankenhaus, Station – z. B. „St. Pölten Endo“" });
+  const khListe = el("div", { class: "addr-list", hidden: "" });
+  khWrap.append(khInput, khListe);
+  if (wert?.khId) khInput.value = wert.label;
+  let treffer: Treffer[] = [];
+  const waehleKh = (t: Treffer) => {
+    khInput.value = t.label;
+    khListe.hidden = true;
+    onSet({ lat: t.h.lat, lon: t.h.lon, label: `${t.h.kurzname || t.h.name}${t.b ? `, ${bereichName(t.b)}` : ""}`, khId: t.h.id, bereich: t.b });
   };
-  const adr = addressInput("Straße Hausnummer Ort …", (o) => onSet({ lat: o.lat, lon: o.lon, label: o.label }));
-  if (wert?.khId) khSel.value = wert.khId;
-  fuelleBereiche();
-  if (wert?.bereich) beSel.value = wert.bereich;
-  if (wert && !wert.khId) adr.input.value = wert.label;
-  const setzeKh = () => {
-    const h = khs.find((x) => x.id === khSel.value);
-    if (!h) return;
-    const b = beSel.value;
-    onSet({ lat: h.lat, lon: h.lon, label: `${h.kurzname || h.name}${b ? `, ${bereichName(b)}` : ""}`, khId: h.id, bereich: b || undefined });
+  const sucheKh = () => {
+    const w = norm(khInput.value).split(/[\s,]+/).filter(Boolean);
+    treffer = w.length ? eintraege.filter((e) => w.every((x) => e.such.includes(x))).slice(0, 40) : [];
+    khListe.innerHTML = "";
+    for (const t of treffer) {
+      const it = el("div", { class: `addr-item${t.b ? "" : " place"}` }, t.label);
+      it.addEventListener("mousedown", (ev) => {
+        ev.preventDefault();
+        waehleKh(t);
+      });
+      khListe.appendChild(it);
+    }
+    khListe.hidden = treffer.length === 0;
   };
-  khSel.addEventListener("change", () => {
-    fuelleBereiche();
-    setzeKh();
+  khInput.addEventListener("input", sucheKh);
+  khInput.addEventListener("focus", () => khInput.select());
+  khInput.addEventListener("keydown", (ev) => {
+    if (ev.key === "Enter" && treffer[0]) {
+      ev.preventDefault();
+      waehleKh(treffer[0]);
+    }
   });
-  beSel.addEventListener("change", setzeKh);
+  khInput.addEventListener("blur", () =>
+    setTimeout(() => {
+      khListe.hidden = true;
+      if (wert?.khId && khInput.value !== wert.label && !treffer.some((t) => t.label === khInput.value)) khInput.value = wert.label;
+    }, 150),
+  );
+
+  // Adresse (mit 📍 „Genannte Adresse übernehmen“)
+  const adr = addressInput("Straße Hausnummer Ort …", (o) => onSet({ lat: o.lat, lon: o.lon, label: o.label }));
+  if (wert && !wert.khId) adr.input.value = wert.label;
+  const adrZeile = el("div", { class: "kt-adr-zeile" });
+  const btnGenannt = el("button", { class: "btn small icon", type: "button" }, "📍");
+  const g = genannt?.() ?? null;
+  btnGenannt.disabled = !darf || !g;
+  btnGenannt.title = g ? `Genannte Adresse übernehmen: „${g}“` : "Genannte Adresse – erst wenn der Anrufer sie gesagt hat";
+  btnGenannt.addEventListener("click", () => {
+    if (!g) return;
+    adr.input.value = g;
+    adr.input.dispatchEvent(new Event("input"));
+    adr.input.focus();
+  });
+  adrZeile.append(adr.root, btnGenannt);
+
   const zeigen = () => {
     const kh = modus.value === "kh";
-    khSel.hidden = beSel.hidden = !kh;
-    adr.root.hidden = kh;
+    khWrap.hidden = !kh;
+    adrZeile.hidden = kh;
   };
   modus.addEventListener("change", zeigen);
   zeigen();
-  for (const x of [modus, khSel, beSel, adr.input]) x.disabled = !darf;
+  for (const x of [modus, khInput, adr.input]) x.disabled = !darf;
   modus.hidden = nurKh;
-  root.append(modus, khSel, beSel, adr.root);
+  root.append(modus, khWrap, adrZeile);
   return root;
 }
 
@@ -133,6 +188,17 @@ export async function ktFrageStellen(k: KtAuftrag, text: string, f?: KtFrage): P
   const l = liveSammler(k.id);
   await ktFragen(k, text, f, l.onToken).catch((e) => toast(String(e.message ?? e), "error"));
   l.fertig();
+}
+
+/** Adresse (kein Krankenhaus), die der Anrufer im Gespräch schon genannt hat */
+function genannteAdresse(k: KtAuftrag, wo: "von" | "nach"): string | null {
+  const o = k.wahr?.d?.[wo];
+  if (!o || o.khId) return null;
+  const strasse = norm(o.label.split(",")[0].replace(/\s*\d.*$/, "").trim());
+  if (!strasse) return null;
+  const gesagt = (k.anruf?.gespraech ?? []).some((m) => m.von === "anrufer" && norm(m.text).includes(strasse));
+  // Aufträge ohne Gespräch (Fax/Online) stehen schon im Auftrag
+  return gesagt || (!k.anruf && k.quelle !== "hotline") ? o.label : null;
 }
 
 /** Kurzfassung des Auftrags für die KT-Maske */
@@ -223,7 +289,13 @@ export function ktFormular(k: KtAuftrag, stelle: (text: string, f?: KtFrage) => 
       "wer",
       el("div", { class: "muted" }, k.quelle === "hotline" ? (k.anruf?.gespraech.some((m) => m.von === "anrufer") ? "siehe Gespräch" : "–") : QUELLE[k.quelle]),
     );
-    zeile("Rückruf", "telefon", text(k.d.telefon, "Telefonnummer", (v) => setze({ telefon: v })));
+    const rueck = el("div", { class: "row-btns kt-tel" });
+    const telB = el("button", { class: "btn small icon", type: "button", title: "Rufnummer des Anrufers übernehmen" }, "📞");
+    telB.addEventListener("click", () => setze({ telefon: k.wahr?.d?.telefon || nummerAus(k.id, false) }));
+    deaktiv.push(telB);
+    telB.hidden = !k.anruf;
+    rueck.append(text(k.d.telefon, "Telefonnummer", (v) => setze({ telefon: v })), telB);
+    zeile("Rückruf", "telefon", rueck);
 
     // ---- Patient
     abschnitt("Patient");
@@ -244,9 +316,10 @@ export function ktFormular(k: KtAuftrag, stelle: (text: string, f?: KtFrage) => 
 
     // ---- Fahrt
     abschnitt("Fahrt");
-    zeile("Abholort", "von", ortWahl(k.d.von, darf, false, (o) => setze({ von: o })));
-    zeile("Ziel", "nach", ortWahl(k.d.nach, darf, false, (o) => setze({ nach: o })));
-    // nur eine Zeit eingeben – die andere rechnet das Spiel aus (Fahrzeit + Ein-/Ausladen)
+    zeile("Abholort", "von", ortWahl(k.d.von, darf, false, (o) => setze({ von: o }), () => genannteAdresse(k, "von")));
+    zeile("Ziel", "nach", ortWahl(k.d.nach, darf, false, (o) => setze({ nach: o }), () => genannteAdresse(k, "nach")));
+    // Abholzeit (Heimtransport) ODER Termin (Hinfahrt) – die andere Zeit rechnet das Spiel aus (Fahrzeit + Ein-/Ausladen)
+    const terminName = art === "sek" ? "Ankunft" : "Termin";
     const zeitFeld = (wer: "abholung" | "termin") => {
       const box = el("div", { class: "row-btns kt-zeiten" });
       const i = el("input", { type: "time" });
@@ -254,13 +327,18 @@ export function ktFormular(k: KtAuftrag, stelle: (text: string, f?: KtFrage) => 
       i.addEventListener("change", () => setze({ [wer]: i.value ? zeitAus(i.value) : null }));
       deaktiv.push(i);
       box.appendChild(i);
-      if (k.d.zeitVorgabe && k.d.zeitVorgabe !== wer && k.d[wer])
-        box.appendChild(el("span", { class: "kt-berechnet", title: "aus der anderen Zeit und der Fahrzeit berechnet" }, "berechnet"));
-      else if (!k.d.abholung && !k.d.termin && wer === "termin") box.appendChild(el("span", { class: "muted small" }, "eine Zeit genügt"));
+      const andere = wer === "abholung" ? "termin" : "abholung";
+      if (k.d.zeitVorgabe === wer && k.d[andere])
+        box.appendChild(
+          el("span", { class: "kt-berechnet", title: "aus dieser Zeit und der Fahrzeit berechnet" }, `→ ${andere === "termin" ? terminName : "Abholung"} ${hhmm(k.d[andere]!)} (berechnet)`),
+        );
+      else if (!k.d.zeitVorgabe && !k.d.abholung && !k.d.termin)
+        box.appendChild(el("span", { class: "muted small" }, wer === "abholung" ? "Heimtransport" : "Hinfahrt – eine Zeit genügt"));
       return box;
     };
-    zeile("Abholung", "abholung", zeitFeld("abholung"));
-    zeile(art === "sek" ? "Ankunft" : "Termin", "termin", zeitFeld("termin"));
+    const v = k.d.zeitVorgabe;
+    if (v !== "termin") zeile("Abholung", "abholung", zeitFeld("abholung"));
+    if (v !== "abholung") zeile(terminName, "termin", zeitFeld("termin"));
     zeile(
       "Dringlichkeit",
       "sofort",
@@ -285,24 +363,24 @@ export function ktFormular(k: KtAuftrag, stelle: (text: string, f?: KtFrage) => 
     zeile("Sitzen/Liegen", "lage", knopfleiste<KtLage>(lagen, k.d.lage, (v) => setze({ lage: v })));
     const opts = el("div", { class: "kt-opts" });
     opts.append(
-      haken("Begleitperson", k.d.begleitung, (v) => setze({ begleitung: v }), "begleitung"),
-      haken("Sauerstoff", k.d.sauerstoff, (v) => setze({ sauerstoff: v }), "sauerstoff"),
-      haken("Infektion/Isolation", k.d.infektion, (v) => setze({ infektion: v }), "infektion"),
+      haken("Begleitperson", k.d.begleitung, (v) => setze({ begleitung: v })),
+      haken("Sauerstoff", k.d.sauerstoff, (v) => setze({ sauerstoff: v })),
+      haken("Infektion/Isolation", k.d.infektion, (v) => setze({ infektion: v })),
     );
-    zeile("Zusätzlich", null, opts);
+    zeile("Zusätzlich", "zusatz", opts);
     if (art === "sek") {
       const s: SekDaten = k.d.sek ?? sekLeer();
       const setzeSek = (p: Partial<SekDaten>) => setze({ sek: { ...s, ...p } });
       const bedarf = el("div", { class: "kt-opts" });
       bedarf.append(
-        haken("Notarzt", s.arzt, (v) => setzeSek({ arzt: v }), "arzt", "Notarztbegleitete Überstellung"),
-        haken("Monitoring", s.monitoring, (v) => setzeSek({ monitoring: v }), "monitoring", "Überwachung am Monitor nötig"),
+        haken("Notarzt", s.arzt, (v) => setzeSek({ arzt: v }), undefined, "Notarztbegleitete Überstellung"),
+        haken("Monitoring", s.monitoring, (v) => setzeSek({ monitoring: v }), undefined, "Überwachung am Monitor nötig"),
         haken("beatmet", s.beatmet, (v) => setzeSek({ beatmet: v })),
-        haken("instabil", s.instabil, (v) => setzeSek({ instabil: v }), "stabil", "Während der Fahrt muss laufend am Patienten gearbeitet werden – kein Hubschrauber"),
-        haken("Inkubator / Kind", s.inkubator, (v) => setzeSek({ inkubator: v }), "inkubator"),
-        haken("BIT nötig", !!s.bit, (v) => setzeSek({ bit: v }), "gewicht", "Sehr schwerer Patient – Betten-Intensivtransporter (Schwerlast)"),
+        haken("instabil", s.instabil, (v) => setzeSek({ instabil: v }), undefined, "Während der Fahrt muss laufend am Patienten gearbeitet werden – kein Hubschrauber"),
+        haken("Inkubator / Kind", s.inkubator, (v) => setzeSek({ inkubator: v })),
+        haken("BIT nötig", !!s.bit, (v) => setzeSek({ bit: v }), undefined, "Sehr schwerer Patient – Betten-Intensivtransporter (Schwerlast)"),
       );
-      zeile("Medizinisch", null, bedarf);
+      zeile("Medizinisch", "zustand", bedarf);
       zeile("Übernahme", "zusage", text(s.zusage, "z. B. zugesagt von OA Dr. …", (v) => setzeSek({ zusage: v })));
     }
 
@@ -367,6 +445,8 @@ export function ktFormular(k: KtAuftrag, stelle: (text: string, f?: KtFrage) => 
       for (const [x, top] of scroller) x.scrollTop = top;
     }
   }
+  // nach dem Verlassen eines Felds aufgeschobene Änderungen nachziehen
+  datenBox.addEventListener("focusout", () => setTimeout(refresh, 0));
   refresh();
   return { el: datenBox, refresh };
 }

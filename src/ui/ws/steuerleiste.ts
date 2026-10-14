@@ -5,7 +5,7 @@
 import { store } from "../../data/store";
 import { mp } from "../../net/mehrspieler";
 import { sim } from "../../sim/engine";
-import { flugverbot, WETTER_LABEL, WETTER_SYMBOL } from "../../sim/weather";
+import { flugverbot, JAHRESZEIT_LABEL, jahreszeitVon, WETTER_LABEL, WETTER_SYMBOL } from "../../sim/weather";
 import { ensureCodes } from "../codesPrompt";
 import { createDataView } from "../dataView";
 import { openDialog } from "../dialog";
@@ -43,6 +43,28 @@ function menuSchliessen(): void {
   m.classList.add("zu");
   setTimeout(() => m.remove(), 120);
   offenesMenu = null;
+}
+
+/** Wetterprognose für die nächsten Spielstunden */
+function wetterMenu(m: HTMLElement): void {
+  m.classList.add("wetter-menu");
+  const opt = sim.wetterOpt();
+  const p = sim.wetterPrognose(8);
+  const uhr = (t: number) => new Date(t).toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" });
+  const jz = JAHRESZEIT_LABEL[jahreszeitVon(sim.state.zeit, opt)];
+  const modus = { realistisch: "realistisch", wechselhaft: "wechselhaft", fest: "immer gleich" }[opt.modus];
+  const temps = p.map((x) => x.temp);
+  const zeilen = p
+    .map(
+      (x, i) =>
+        `<tr class="${i === 0 ? "jetzt" : ""}${flugverbot(x.lage) ? " bad" : ""}"><td>${i === 0 ? "jetzt" : uhr(x.zeit)}</td><td class="w-sym">${WETTER_SYMBOL[x.lage]}</td><td>${WETTER_LABEL[x.lage]}</td><td class="w-temp">${Math.round(x.temp)}°</td><td class="muted">${flugverbot(x.lage) ? "kein Flug" : ""}</td></tr>`,
+    )
+    .join("");
+  m.innerHTML = `<div class="lw-menu-titel">Wetterprognose</div>
+    <table class="wetter-tab">${zeilen}</table>
+    <div class="muted small wetter-fuss">${jz} · ${modus} · ${Math.round(Math.min(...temps))}° bis ${Math.round(Math.max(...temps))}°${
+      sim.settings.wetterAktiv ? "" : " · Wetter ist ausgeschaltet"
+    }</div>`;
 }
 
 function menu(knopf: HTMLElement, bauen: (m: HTMLElement) => void): void {
@@ -271,7 +293,7 @@ export function steuerleisteBauen(kopf: HTMLElement): void {
         <button type="button" data-tempo="1">1×</button><button type="button" data-tempo="2">2×</button><button type="button" data-tempo="5">5×</button><button type="button" data-tempo="10">10×</button>
       </div>
       <time id="clock" class="clock" title="Simulationszeit">--:--:--</time>
-      <span id="weather" class="weather" title="Wetter">–</span>
+      <button id="weather" class="weather" type="button" title="Wetter – klicken für die Prognose">–</button>
     </div>
     <div class="sl-gruppe sl-annahme" title="Welche Anrufe nimmst du an? (Klingeln und automatisches Öffnen)">
       <button type="button" class="sl-toggle" data-annahme="notrufe">📞 Notrufe</button>
@@ -300,10 +322,12 @@ export function steuerleisteBauen(kopf: HTMLElement): void {
     play.classList.toggle("primary", !sim.state.laeuft);
     tempoBtns.forEach((b) => b.classList.toggle("active", Number(b.dataset.tempo) === sim.state.tempo));
     const w = sim.state.wetter.lage;
-    weather.textContent = `${WETTER_SYMBOL[w]} ${WETTER_LABEL[w]}`;
+    const txt = `${WETTER_SYMBOL[w]} ${WETTER_LABEL[w]} ${Math.round(sim.temperatur())}°`;
+    if (weather.textContent !== txt) weather.textContent = txt;
     weather.classList.toggle("bad", flugverbot(w));
-    weather.title = flugverbot(w) ? "Kein Flugbetrieb für NAH" : "Flugbetrieb möglich";
+    weather.title = `${flugverbot(w) ? "Kein Flugbetrieb für NAH" : "Flugbetrieb möglich"} – klicken für die Prognose`;
   };
+  weather.addEventListener("click", () => menu(weather, wetterMenu));
   const fehler = (e: Error) => toast(String(e.message ?? e), "error");
   play.addEventListener("click", () => {
     if (sim.state.laeuft) return void sim.call("pause").catch(fehler);

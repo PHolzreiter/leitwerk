@@ -2427,3 +2427,47 @@ input[type="color"] {
   white-space: pre-wrap;
   resize: vertical;
 }
+.kt-formular .kt-ort {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+.kt-formular .kt-ort-modus {
+  flex: 0 0 auto;
+  width: auto !important;
+}
+.kt-formular .kt-kh-suche,
+.kt-formular .kt-adr-zeile {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+.kt-formular .kt-kh-suche input {
+  width: 100%;
+}
+.kt-formular .kt-adr-zeile {
+  display: flex;
+  gap: 4px;
+}
+.kt-formular .kt-adr-zeile .addr {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.kt-formular .kt-adr-zeile .addr input {
+  width: 100%;
+}
+.mask-auf .auf-tel {
+  flex: 0 1 180px;
+  min-width: 0;
+}
+.kt-formular .kt-tel input {
+  flex: 1 1 auto;
+}
+.abf-nummer {
+  align-self: stretch;
+  margin: -4px 0 4px;
+}
+.abf-nummer.ok {
+  color: var(--green, #1a7f37);
+  border-color: currentColor;
+}

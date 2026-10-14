@@ -173,15 +173,20 @@ function erstellen(ctx: PanelKontext) {
           }</span>`
         : "";
     const fz = e.fahrzeuge.map((id) => sim.state.fahrzeuge[id]).filter((f) => f && f.einsatzId === e.id);
+    // kompakt: Zeile 1 Code + Stichwort, Zeile 2 Ort; rechts Uhrzeit, Zustand, Fahrzeuge
+    row.title = `${e.nummer}${c ? ` · ${c.code} ${c.beschreibung}` : ""}`;
     row.innerHTML = `
       <span class="el-bar"></span>
       <div class="el-main">
-        <div class="el-z1"><span class="el-typ rd">Notfall</span><b>${esc(e.nummer)}</b><span class="muted">${uhr(e.erstellt)}</span>${warn ? `<span class="warn-dot" title="Rückfrage oder Nachforderung offen">!</span>` : ""}${tel}</div>
-        <div class="el-z2">${c ? `<span class="stufe-dot" style="background:${stufeFarbe(c.stufe)}"></span><b>${esc(c.code)}</b> ${esc(c.beschreibung)}` : `<span class="muted">${a ? "Abfrage läuft" : "Code fehlt"}</span>`}</div>
-        <div class="el-z3 muted">${esc(e.adresse?.label ?? (e.meldung.adresse ? `gemeldet: ${e.meldung.adresse}` : "Adresse fehlt"))}</div>
+        <div class="el-z1">${
+          c
+            ? `<span class="el-typ rd el-code"><span class="stufe-dot" style="background:${stufeFarbe(c.stufe)}"></span>${esc(c.code)}</span><span class="el-text">${esc(c.beschreibung)}</span>`
+            : `<span class="el-typ rd el-code leer">${a ? "Abfrage" : "ohne Code"}</span>`
+        }${warn ? `<span class="warn-dot" title="Rückfrage oder Nachforderung offen">!</span>` : ""}${tel}</div>
+        <div class="el-z2 muted">${esc(e.adresse?.label ?? (e.meldung.adresse ? `gemeldet: ${e.meldung.adresse}` : "Adresse fehlt"))}</div>
         ${bearbeiterHtml(e)}
       </div>
-      <div class="el-rechts"><span class="el-lage">${esc(LAGE_LABEL[lage])}</span>${fz.length ? `<div class="el-fz">${fz.map((f) => esc(f!.funkrufname)).join(", ")}</div>` : ""}</div>`;
+      <div class="el-rechts"><span class="el-zeit">${uhr(e.erstellt)}</span><span class="el-lage">${esc(LAGE_LABEL[lage])}</span>${fz.length ? `<div class="el-fz">${fz.map((f) => esc(f!.funkrufname)).join(", ")}</div>` : ""}</div>`;
     row.addEventListener("click", () => waehle("einsatz", e.id));
     return row;
   }
@@ -199,14 +204,15 @@ function erstellen(ctx: PanelKontext) {
         ? `<span class="el-anruf ${a.status}">${a.status === "klingelt" ? "📞 Hotline klingelt" : a.status === "verpasst" ? "📵 verpasst" : a.status === "gehalten" ? "⏸ gehalten" : "📞 im Gespräch"}</span>`
         : "";
     const zeit = k.d.abholung ? hhmm(k.d.abholung) : k.d.termin ? hhmm(k.d.termin) : hhmm(k.eingang);
+    const zeitArt = k.d.abholung ? "Abh." : k.d.termin ? (typ === "sek" ? "Ank." : "Termin") : "Eing.";
+    row.title = `${k.nummer} · ${typ === "sek" ? "Überstellung" : "Krankentransport"}`;
     row.innerHTML = `
       <span class="el-bar"></span>
       <div class="el-main">
-        <div class="el-z1"><span class="el-typ ${typ}">${typ === "sek" ? "Überstellung" : "KT"}</span><b>${esc(k.nummer)}</b><span class="muted">${zeit}${k.d.abholung ? " Abholung" : k.d.termin ? " Termin" : ""}</span>${dringend ? `<span class="el-sofort">SOFORT</span>` : ""}${tel}</div>
-        <div class="el-z2">${codeChip(k.d.code)} <b>${esc(k.d.patient.name || "(Aufnahme)")}</b> ${sekTags(k.d)} <span class="muted">${esc(ktCode(k.d.code)?.name ?? "")}</span></div>
-        <div class="el-z3 muted">${esc(k.d.von?.label ?? "?")} → ${esc(k.d.nach?.label ?? "?")}</div>
+        <div class="el-z1"><span class="el-typ ${typ} el-codewrap">${codeChip(k.d.code)}</span><b class="el-name">${esc(k.d.patient.name || "(Aufnahme)")}</b>${sekTags(k.d)}<span class="el-text muted">${esc(ktCode(k.d.code)?.name ?? "")}</span>${dringend ? `<span class="el-sofort">SOFORT</span>` : ""}${tel}</div>
+        <div class="el-z2 muted">${esc(k.d.von?.label ?? "?")} → ${esc(k.d.nach?.label ?? "?")}</div>
       </div>
-      <div class="el-rechts"><span class="el-lage${spaet ? " spaet" : ""}">${esc(spaet ? "zu spät dran" : KT_STATUS_LABEL[k.status])}</span>${fz ? `<div class="el-fz">${esc(fz.funkrufname)}${nef ? ` + ${esc(nef.funkrufname)}` : ""}</div>` : ""}</div>`;
+      <div class="el-rechts"><span class="el-zeit"><span class="muted">${zeitArt}</span> ${zeit}</span><span class="el-lage${spaet ? " spaet" : ""}">${esc(spaet ? "zu spät dran" : KT_STATUS_LABEL[k.status])}</span>${fz ? `<div class="el-fz">${esc(fz.funkrufname)}${nef ? ` + ${esc(nef.funkrufname)}` : ""}</div>` : ""}</div>`;
     row.addEventListener("click", () => waehle("kt", k.id));
     return row;
   }

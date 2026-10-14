@@ -1,5 +1,17 @@
 # Änderungen
 
+## 0.13.3 – Kreislaufstillstand, Wetterprognose, kompakte Einsatzliste
+- Kreislaufstillstand richtig codiert: bewusstlos + atmet nicht → eigener Stillstand-Code des Kapitels (z. B. 6E1, 17D2, 23D1), sonst 9er-Code. Neue Frage „Haben Sie gesehen, wie der Patient zusammengebrochen ist?“: nicht beobachtet (aufgefunden) → 9D1, beobachtet → 9E1, beobachtet aber Atmung unsicher → 9E2; Erhängen/Strangulation/Ersticken → 9E3–9E5
+- Bewusstlos + Schnappatmung ist kein Stillstand mehr, sondern 31D1 (ineffektive Atmung) bzw. der eigene Code des Kapitels (z. B. 2E1, 6E1, 15E1); erschwerte Atmung → 31D2
+- KT/Überstellung: Krankenhaus und Station über ein Suchfeld finden (z. B. „St. Pölten Endo“); bei Adressen übernimmt 📍 die Adresse, die der Anrufer genannt hat
+- Abholzeit oder Termin: sobald eines eingetragen ist, verschwindet das andere Feld; die berechnete Zeit steht klein daneben
+- Rufnummer übernehmen: im Abfrage-Fenster „📞 Nummer übernehmen“, in Einsatz- und KT-Maske 📞 neben dem Rückruf-Feld. Neue Einstellung „Rückruf nur mit aufgenommener Nummer“ – ohne Nummer kann man verpasste Anrufer nicht zurückrufen
+- Gesprächsverlauf flackert und springt nicht mehr: neue Nachrichten werden nur angehängt, die Antwort ersetzt die Live-Zeile ohne Aufblitzen
+- KT/Überstellung: Zusatzfragen gebündelt – ein 🗨 für „Zusätzlich“ (Begleitung, Sauerstoff, Infektion) und einer für den Zustand bei Überstellungen; auf offene Fragen wie „Gibt es sonst etwas zu beachten?“ nennt der Anrufer alles Zutreffende
+- Wetter: oben mit Temperatur, Klick zeigt die Prognose für die nächsten Stunden. Einstellungen: realistisch, wechselhaft oder immer gleich (festes Wetter und Temperatur) und die Jahreszeit (nach Spieldatum oder fix). Temperatur nach Jahreszeit und Tageszeit
+- Wetter wirkt auf die Notrufe: Hitze bringt mehr Hitzenotfälle, Badeunfälle und Kreislaufprobleme, Kälte mehr Unterkühlung, Kohlenmonoxid und Infekte, Glätte mehr Stürze und Verkehrsunfälle, Gewitter auch Blitzschläge
+- Einsatzliste kompakter: zwei Zeilen pro Einsatz (Code und Stichwort bzw. Patient, darunter der Ort); die Art erkennt man an der Farbe des Codes, Uhrzeit und Zustand stehen rechts
+
 ## 0.13.2 – KT-Aufnahme im Abfrage-Fenster, kompakte Masken
 - Bewusstlose Patienten: Wird in der Abfrage „bewusstlos“ angeklickt, wechselt der Code auf Bewusstlosigkeit (31D1 agonal/keine Atmung, 31D2 abnorme Atmung, 31D3 normale Atmung, 31D4 Atmung unklar) – außer das Kapitel hat selbst einen Bewusstlos-Code (z. B. 23D2, 17D3). Codes mit „Bewusstseinstrübung“ gelten nur noch für getrübte Patienten
 - Krankentransport und Überstellung: Der Calltaker trägt alles direkt im Abfrage-Fenster ein (Anrufer, Patient, Abholort, Ziel, Zeiten, Transportart, Code) – mit den 🗨-Knöpfen stellt er die passende Frage. „Auftrag anlegen“ gibt es dort auch

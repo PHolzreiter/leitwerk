@@ -6,6 +6,7 @@ import { eroeffnen } from "../../abfrage/gespraech";
 import { KT_FRAGEN, ktFragen } from "../../abfrage/ktGespraech";
 import { mp } from "../../net/mehrspieler";
 import { sim, type Anruf } from "../../sim/engine";
+import { nummerAus } from "../../sim/rufnummer";
 import { istUeberstellung } from "../../sim/ktCodes";
 import { el, esc, toast } from "../dom";
 import { funkPiepAktualisieren, klingeltonAktualisieren } from "../klingelton";
@@ -33,12 +34,9 @@ function fehler(p: Promise<unknown>): void {
   p.catch((e) => toast(String((e as Error).message ?? e), "error"));
 }
 
-/** gleichbleibende Rufnummer aus der Kennung (der Anrufer „hat“ eine Nummer) */
-function nummerAus(id: string, mobil: boolean): string {
-  let h = 0;
-  for (const c of id) h = (h * 31 + c.charCodeAt(0)) >>> 0;
-  const s = String(h).padStart(10, "0");
-  return mobil ? `0${["664", "676", "699", "650", "660"][h % 5]} ${s.slice(0, 3)} ${s.slice(3, 7)}` : `0${2700 + (h % 90)} ${s.slice(0, 3)} ${s.slice(3, 6)}`;
+/** Aufgenommene Rückrufnummer (aus der Maske) */
+export function rueckrufNummer(x: { art: "rd" | "kt"; id: string }): string {
+  return x.art === "rd" ? (sim.einsatz(x.id)?.telefon ?? "") : (sim.ktAuftrag(x.id)?.d.telefon ?? "");
 }
 
 export function istMeins(a: Anruf): boolean {
@@ -64,7 +62,7 @@ export function alleAnrufe(mitBeendeten = false): AnrufEintrag[] {
       id: k.id,
       nummer: k.nummer,
       anruf: a,
-      telefon: k.d.telefon || nummerAus(k.id, false),
+      telefon: k.wahr?.d?.telefon || nummerAus(k.id, false),
       titel: k.d.patient.name || (sek ? "Überstellung" : "Krankentransport"),
     });
   }
@@ -182,9 +180,17 @@ function erstellen(ctx: PanelKontext) {
         fn();
       });
       knoepfe.appendChild(b);
+      return b;
     };
     if (a.status === "klingelt") knopf("Annehmen", "primary", () => void anrufAnnehmen(x.art, x.id), "Anruf annehmen (laufendes Gespräch wird gehalten)");
-    if (a.status === "verpasst") knopf("Zurückrufen", "primary", () => void anrufAnnehmen(x.art, x.id));
+    if (a.status === "verpasst") {
+      const ohne = !rueckrufNummer(x);
+      const b = knopf("Zurückrufen", "primary", () => void anrufAnnehmen(x.art, x.id));
+      if (ohne && sim.settings.rueckrufNurMitNummer) {
+        b.disabled = true;
+        b.title = "Keine Rückrufnummer aufgenommen – Rückruf nicht möglich";
+      }
+    }
     if (a.status === "aktiv" && meins) {
       knopf("Halten", "", () => anrufHalten(x.art, x.id), "Anrufer in die Warteschleife – bei zu langem Warten legt er auf");
       knopf("Auflegen", "danger-text", () => anrufAuflegen(x.art, x.id));

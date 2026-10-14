@@ -8,7 +8,7 @@ import { bereichName, hhmm, KT_LAGE_LABEL, type KtAuftrag, type KtDaten } from "
 import { kiBereit, kiChat, kiPrefs, kiStatus, type KiNachricht } from "./ki";
 
 export interface KtFrage {
-  id: keyof KtDaten | "wer" | "patient" | "arzt" | "monitoring" | "stabil" | "inkubator" | "zusage" | "gewicht";
+  id: keyof KtDaten | "wer" | "patient" | "arzt" | "monitoring" | "stabil" | "inkubator" | "zusage" | "gewicht" | "zusatz" | "zustand";
   text: string;
   /** nur bei Überstellungen */
   sek?: boolean;
@@ -27,6 +27,7 @@ export const KT_FRAGEN: KtFrage[] = [
   { id: "begleitung", text: "Fährt eine Begleitperson mit?" },
   { id: "sauerstoff", text: "Braucht der Patient Sauerstoff?" },
   { id: "infektion", text: "Gibt es eine Infektion oder Isolation?" },
+  { id: "zusatz", text: "Gibt es sonst etwas zu beachten – fährt jemand mit, braucht der Patient Sauerstoff, gibt es eine Infektion?" },
   { id: "art", text: "Haben Sie einen Wunsch, mit wem Sie fahren – Rotes Kreuz oder Samariterbund?" },
   { id: "telefon", text: "Unter welcher Nummer erreichen wir Sie?" },
   // Überstellungen
@@ -36,6 +37,11 @@ export const KT_FRAGEN: KtFrage[] = [
   { id: "stabil", text: "Ist der Patient stabil, oder muss während der Fahrt laufend an ihm gearbeitet werden?", sek: true },
   { id: "inkubator", text: "Ist es ein Kind oder ein Neugeborenes – braucht es einen Inkubator?", sek: true },
   { id: "zusage", text: "Ist die Übernahme im Zielkrankenhaus zugesagt?", sek: true },
+  {
+    id: "zustand",
+    text: "Wie geht es dem Patienten – braucht er Notarzt oder Monitoring, ist er beatmet, ist er stabil? Ist er besonders schwer oder ein Kind?",
+    sek: true,
+  },
   { id: "gewicht", text: "Wie schwer ist der Patient ungefähr – passt er auf eine normale Trage?", sek: true },
 ];
 
@@ -106,9 +112,31 @@ export function ktAntwortOhneKi(k: KtAuftrag, f: KtFrage): string {
       return w.sek?.bit ? "Er ist sehr schwer, deutlich über 150 Kilo – da braucht es den BIT." : "Normalgewichtig, das passt auf eine normale Trage.";
     case "zusage":
       return w.sek?.zusage ? `Ja, ${w.sek.zusage.replace(/^Übernahme zugesagt von /, "zugesagt hat ")}.` : "Das kläre ich gerade noch ab, ich melde mich.";
+    case "zusatz": {
+      const ja = [w.begleitung && "eine Begleitperson fährt mit", w.sauerstoff && "Sauerstoff braucht er/sie", w.infektion && "Isolation wegen MRSA"].filter(Boolean) as string[];
+      const nein = [!w.begleitung && "keine Begleitung", !w.sauerstoff && "kein Sauerstoff", !w.infektion && "keine Infektion"].filter(Boolean) as string[];
+      if (!ja.length) return "Nein, nichts Besonderes – keine Begleitung, kein Sauerstoff, keine Infektion.";
+      return `${satz(ja.join(", "))}${nein.length ? ` Sonst nichts, ${nein.join(", ")}.` : ""}`;
+    }
+    case "zustand": {
+      const z = w.sek;
+      if (!z) return "Dem geht's den Umständen entsprechend gut.";
+      const teile: string[] = [];
+      teile.push(z.beatmet ? "Er ist intubiert und beatmet, braucht Monitoring" : z.monitoring ? "Monitoring braucht er, beatmet ist er nicht" : "Monitoring ist nicht nötig");
+      teile.push(z.arzt || z.beatmet ? "es muss notarztbegleitet sein" : "ein Arzt muss nicht mit");
+      teile.push(z.instabil ? "er ist kreislaufinstabil, wir justieren laufend nach" : "derzeit ist er stabil");
+      if (z.inkubator) teile.push((w.patient.alter ?? 1) < 1 ? "es ist ein Neugeborenes, wir brauchen einen Inkubator" : `es ist ein Kind, ${w.patient.alter} Jahre`);
+      if (z.bit) teile.push("und er ist sehr schwer, über 150 Kilo – da braucht es den BIT");
+      return satz(teile.join(", "));
+    }
     default:
       return "Das weiß ich nicht.";
   }
+}
+
+function satz(t: string): string {
+  const s = t.trim();
+  return s ? `${s[0].toUpperCase()}${s.slice(1)}${/[.!?]$/.test(s) ? "" : "."}` : s;
 }
 
 function fakten(k: KtAuftrag): string {
@@ -146,6 +174,7 @@ function prompt(k: KtAuftrag): string {
     `Wer du bist: ${a.name}, ${a.rolle}.`,
     `Diese Angaben stimmen. Nenne jeweils nur das, wonach gefragt wird:`,
     fakten(k),
+    `Bei allgemeinen Fragen (z. B. „Gibt es sonst etwas zu beachten?“ oder „Wie geht es dem Patienten?“) nenne alle zutreffenden Besonderheiten auf einmal in ein, zwei Sätzen.`,
     `Wenn nach etwas gefragt wird, das oben nicht steht, antworte passend und knapp oder sag, dass du es nicht weißt. Wiederhole dich nicht.`,
   ].join("\n");
 }
@@ -213,7 +242,21 @@ function einfach(k: KtAuftrag, text: string): string {
     [/zugesagt|übernahme|bett/, "zusage"],
     [/schwer|gewicht|kilo|trage|bit/, "gewicht"],
   ];
-  const id = passend.find(([re]) => re.test(t))?.[1];
-  const f = KT_FRAGEN.find((x) => x.id === id);
-  return f ? ktAntwortOhneKi(k, f) : "Wie bitte? Das weiß ich leider nicht.";
+  const sek = !!k.wahr.d.sek;
+  // allgemeine Fragen: alles Zutreffende auf einmal
+  const allgemein: [RegExp, KtFrage["id"]][] = [
+    [/(sonst|noch).*(beacht|wissen|besonder)|besonderheit|zu beachten|was.*mitnehmen/, "zusatz"],
+    [/wie geht|zustand|wie ist .*patient|was braucht .*(fahrt|transport)/, "zustand"],
+  ];
+  const ids: KtFrage["id"][] = [];
+  for (const [re, id] of allgemein) if (re.test(t) && (id !== "zustand" || sek)) ids.push(id);
+  for (const [re, id] of passend) if (re.test(t) && !ids.includes(id)) ids.push(id);
+  // Einzelfragen, die in einer allgemeinen schon stecken, nicht doppelt
+  const inZusatz = ["begleitung", "sauerstoff", "infektion"];
+  const inZustand = ["arzt", "monitoring", "stabil", "inkubator", "gewicht"];
+  const auswahl = ids
+    .filter((id) => !(ids.includes("zusatz") && inZusatz.includes(id)) && !(ids.includes("zustand") && inZustand.includes(id)))
+    .slice(0, 4);
+  const antworten = auswahl.map((id) => KT_FRAGEN.find((x) => x.id === id)).filter((f): f is KtFrage => !!f).map((f) => ktAntwortOhneKi(k, f));
+  return antworten.length ? antworten.join(" ") : "Wie bitte? Das weiß ich leider nicht.";
 }

@@ -10,7 +10,7 @@ import { antwortLabel, bestimmeCode, fragenImAblauf, stufeVonCode, type Frage, t
 import { mp } from "../../net/mehrspieler";
 import { sim, type Einsatz } from "../../sim/engine";
 import { el, esc, toast } from "../dom";
-import { liveSammler, liveText, onLive } from "./live";
+import { liveSammler, onLive, verlaufNachziehen, liveZeigen } from "./live";
 import { karteWaehlen, karteZeigen } from "../ws/auswahl";
 import { addressInput } from "./teile";
 
@@ -47,11 +47,7 @@ export function notrufTeile(e: Einsatz): NotrufTeile {
   const abfrage = el("div", { class: "abfrage" });
   const aufloesung = el("div", { class: "aufloesung" });
 
-  const zeigeLive = (text: string | null) => {
-    live.hidden = !text;
-    live.textContent = text ?? "";
-    if (text) verlauf.scrollTop = verlauf.scrollHeight;
-  };
+  const zeigeLive = (text: string | null) => liveZeigen(verlauf, live, e.id, text);
   const ausLive = onLive((id, text) => id === e.id && zeigeLive(text));
   const stelle = async (text: string, f?: Frage) => {
     const l = liveSammler(e.id);
@@ -81,17 +77,7 @@ export function notrufTeile(e: Einsatz): NotrufTeile {
     const ich = istGespraechsfuehrer(e);
     // Gesprächsverlauf
     const msgs = a.gespraech;
-    if (verlauf.childElementCount - 1 !== msgs.length) {
-      verlauf.innerHTML = "";
-      for (const m of msgs) {
-        const d = el("div", { class: `anruf-msg ${m.von}` });
-        d.innerHTML = m.von === "system" ? `<em>${esc(m.text)}</em>` : `<b>${m.von === "anrufer" ? "Anrufer" : esc(m.wer ?? "Leitstelle")}:</b> ${esc(m.text)}`;
-        verlauf.appendChild(d);
-      }
-      verlauf.appendChild(live);
-      zeigeLive(liveText(e.id));
-      verlauf.scrollTop = verlauf.scrollHeight;
-    }
+    verlaufNachziehen(verlauf, live, msgs, e.id);
     const darf = ich && (a.status === "aktiv" || a.status === "gehalten" || a.status === "beendet");
     form.hidden = !(ich && a.status === "aktiv");
     if (!ich && a.status === "aktiv") form.title = "Das Gespräch führt jemand anderer";

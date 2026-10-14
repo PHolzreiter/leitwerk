@@ -107,6 +107,8 @@ export function antwortSatz(f: Frage, wert: Wert, a: Antworten): string | null {
       return wert === "m" ? "Der Patient ist männlich." : wert === "w" ? "Die Patientin ist weiblich." : "Geschlecht unbekannt.";
     case "anrufer":
       return `Anrufer: ${label}.`;
+    case "beobachtet":
+      return wert === "ja" ? "Der Zusammenbruch wurde beobachtet." : wert === "nein" ? `${pron} wurde so aufgefunden.` : "Unbekannt, ob der Zusammenbruch beobachtet wurde.";
     case "anzahl_patienten":
       return wert === "1" ? "Eine Person ist betroffen." : wert === "n" ? "MEHRERE Personen sind betroffen." : "Anzahl der Betroffenen unbekannt.";
   }

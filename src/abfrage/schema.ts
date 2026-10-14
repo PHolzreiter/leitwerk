@@ -99,8 +99,68 @@ export function sichtbareFragen(k: Kapitel, a: Antworten): Frage[] {
   return k.fragen.filter((q) => pruefe(q.anzeigen_wenn, a));
 }
 
+/** Kreislaufstillstand: bewusstlos und atmet nicht (Schnappatmung ist „ineffektive Atmung“, kein Stillstand) */
 export function istKreislaufstillstand(a: Antworten): boolean {
-  return a.bw === "nein" && (a.at === "keine" || a.at === "agonal");
+  return a.bw === "nein" && a.at === "keine";
+}
+
+/** Eigener Stillstand-/Ineffektiv-Code eines Kapitels (z. B. 6E1, 17D2, 23D1) – dann kein allgemeiner 9er */
+const EIGENER_KS = /Kreislaufstillstand|Atemstillstand|Ineffektive Atmung|Agonale/i;
+
+function ersterRegelCode(K: Kapitel, a: Antworten): string | null {
+  for (const r of K.regeln) {
+    if (!pruefe(r.wenn, a)) continue;
+    if (r.code) return r.code;
+    if (r.wechsel_zu_kapitel) return null;
+    const m = r.code_nach_antwort;
+    if (m) {
+      const key = m.frage ? String(a[m.frage]) : (m.fragen ?? []).map((f) => String(a[f])).join("|");
+      if (key in m.zuordnung) return m.zuordnung[key];
+    }
+  }
+  return null;
+}
+
+/**
+ * Ergänzungen zum importierten Schema (das Schema selbst bleibt unverändert):
+ * Kapitel 9 fragt, ob der Zusammenbruch beobachtet wurde – 9D… nicht beobachtet (aufgefunden),
+ * 9E1 beobachtet und atmet nicht, 9E2 beobachtet, Atmung unsicher/nicht prüfbar. 9E3–9E5 (Erhängen, Strangulation, Ersticken) unabhängig davon.
+ */
+const ergaenzt = new WeakMap<Schema, Schema>();
+export function ergaenzeSchema(s: Schema): Schema {
+  const fertig = ergaenzt.get(s);
+  if (fertig) return fertig;
+  const p: Schema = structuredClone(s);
+  const K = p.kapitel["9"];
+  if (K && !K.fragen.some((f) => f.id === "beobachtet")) {
+    const i = K.fragen.findIndex((f) => f.id === "ursache_9");
+    K.fragen.splice(i < 0 ? K.fragen.length : i + 1, 0, {
+      id: "beobachtet",
+      text: "Haben Sie oder jemand anderer gesehen, wie der Patient zusammengebrochen ist?",
+      typ: "single",
+      optionen: [
+        { wert: "ja", label: "Ja – Zusammenbruch beobachtet" },
+        { wert: "nein", label: "Nein – so aufgefunden" },
+        { wert: "unbekannt", label: "Unbekannt" },
+      ],
+      anzeigen_wenn: { all: [{ q: "tod", in: ["nein"] }, { not: { q: "ursache_9", in: ["erhaengen", "strangulation", "ersticken"] } }] },
+    });
+    const istAtemRegel = (r: Regel) => ["RD-9E1", "RD-9E2", "RD-9D1"].includes(r.code ?? "") && !!r.wenn && "q" in r.wenn && r.wenn.q === "at";
+    const pos = K.regeln.findIndex(istAtemRegel);
+    if (pos >= 0) {
+      K.regeln = K.regeln.filter((r) => !istAtemRegel(r));
+      K.regeln.splice(
+        pos,
+        0,
+        { code: "RD-9D1", wenn: { all: [{ q: "beobachtet", in: ["nein"] }, { q: "at", in: ["keine", "agonal", "unbekannt"] }] } },
+        { code: "RD-9E1", wenn: { q: "at", in: ["keine"] } },
+        { code: "RD-9E2", wenn: { q: "at", in: ["agonal", "unbekannt"] } },
+        { code: "RD-9D1", wenn: { q: "at", in: ["abnorm"] } },
+      );
+    }
+  }
+  ergaenzt.set(s, p);
+  return p;
 }
 
 export interface Ergebnis {
@@ -137,10 +197,17 @@ export function bestimmeCode(
     let wechsel: { ziel: string; vorbelegung?: Antworten } | null = null;
     const ks = K.kreislaufstillstand;
     if (K.primaerabfrage && ks && istKreislaufstillstand(a)) {
+      const eigen = ersterRegelCode(K, a);
       if (ks.code) {
         det = ks.code;
         ksSchnell = true;
+      } else if (eigen && EIGENER_KS.test(schema.codes[eigen]?.name ?? "")) {
+        // Kapitel hat einen eigenen Stillstand-Code (z. B. 6E1 Atembeschwerden) – über die Regeln
       } else if (ks.wechsel_zu_kapitel) wechsel = { ziel: ks.wechsel_zu_kapitel, vorbelegung: ks.vorbelegung };
+    } else if (K.primaerabfrage && ks?.code && a.bw === "nein" && a.at === "agonal" && /Ineffektive Atmung/i.test(schema.codes[ks.code]?.name ?? "")) {
+      // Schnappatmung: Kapitel-Code für ineffektive Atmung (z. B. 15E1, 34D3)
+      det = ks.code;
+      ksSchnell = true;
     }
     if (!det && !wechsel) {
       for (const r of K.regeln) {
@@ -182,7 +249,10 @@ export function bestimmeCode(
       code = pk[det] ?? pk[stufeVonCode(det)] ?? pk["*"] ?? code;
     }
     if (extra.zusatz && (K.zusatzkennungen?.[det] ?? []).includes(extra.zusatz)) code = extra.zusatz;
-    const reanimation = istKreislaufstillstand(a) && (ksSchnell || kap === "9");
+    const name = schema.codes[code]?.name ?? "";
+    const reanimation =
+      (istKreislaufstillstand(a) && (EIGENER_KS.test(name) || ksSchnell || kap === "9") && !/Tote Person|Tod/.test(name)) ||
+      code === "RD-9E2";
     // Bewusstlos: Codes ohne eigene Bewusstlos-Variante werden zum Bewusstlosigkeits-Code (Kapitel 31) nach der Atmung
     const bl = reanimation ? null : bewusstlosCode(schema, kap, code, a);
     if (bl) return { kapitel: "31", pfad, determinante: bl, code: bl, reanimation, antworten: a };
@@ -195,9 +265,13 @@ export function bestimmeCode(
 function bewusstlosCode(schema: Schema, kap: string, code: string, a: Antworten): string | null {
   if (a.bw !== "nein" || kap === "31" || kap === "9") return null;
   const name = schema.codes[code]?.name ?? "";
-  // eigene Bewusstlos-Variante (z. B. Vergiftung-Bewusstlos, Sturz-Bewusstlos) bleibt; „Bewusstseinstrübung“ ist für getrübte Patienten
-  if (/bewusstlos/i.test(name)) return null;
+  // eigene Bewusstlos-Variante (z. B. Vergiftung-Bewusstlos, Sturz-Bewusstlos) bzw. eigener Stillstand-/Ineffektiv-Code bleibt;
+  // „Bewusstseinstrübung“ ist für getrübte Patienten
+  if (/bewusstlos|Ineffektive Atmung|Agonale/i.test(name)) return null;
+  // Stillstand-Codes nur, wenn wirklich keine Atmung – Schnappatmung ist kein Stillstand
+  if (/Kreislaufstillstand|Atemstillstand/i.test(name) && a.at === "keine") return null;
   const pre = code.match(/^([A-Z]+)-/)?.[1] ?? "RD";
+  // Schnappatmung = ineffektiv (D1), Atemnot/erschwert = abnorm (D2), normal = effektiv (D3)
   const nr = a.at === "agonal" || a.at === "keine" ? "D1" : a.at === "abnorm" ? "D2" : a.at === "normal" ? "D3" : "D4";
   const ziel = `${pre}-31${nr}`;
   return schema.codes[ziel] ? ziel : null;
