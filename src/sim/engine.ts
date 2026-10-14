@@ -31,6 +31,9 @@ import { sekZufall } from "./sek";
 import { bedarf, istStillstand, lageErzeugen, lagemeldungText, patientText, type Lage } from "./lage";
 
 const MIN = 60_000;
+const NF_NAME = { NA: "Notarzt", RTW: "Rettungsmittel", BIT: "BIT (Schwerlasttransport)" } as const;
+/** So lange wartet die Besatzung auf den BIT, dann transportiert sie selbst */
+const BIT_WARTEN = 35 * MIN;
 
 export interface Ort extends LatLon {
   label: string;
@@ -190,7 +193,7 @@ export interface FunkGespraech {
 }
 
 export interface Nachforderung {
-  art: "NA" | "RTW";
+  art: "NA" | "RTW" | "BIT";
   anzahl: number;
   seit: number;
   von: string;
@@ -290,6 +293,8 @@ export interface Einsatz {
   anruf?: Anruf | null;
   /** offene Nachforderungen der Besatzung (Notarzt, weitere RTW) */
   nachforderungen?: Nachforderung[];
+  /** BIT kam nicht: Besatzung transportiert selbst */
+  bitVerzicht?: boolean;
 }
 
 export interface Funkmeldung {
@@ -873,6 +878,7 @@ export class Simulation {
         } else {
           fz.phase = "vorOrt";
           fz.phaseEnde = t + rnd(10, 22) * MIN;
+          if (fz.rmTyp === "BIT") fz.phaseEnde = t + rnd(20, 35) * MIN; // Schwerlast: Umlagern dauert
           this.eintreffenLage(fz, e);
           this.ktHilfeDa(e);
           const p0 = e.wahr.lage?.patienten[0];
@@ -927,7 +933,9 @@ export class Simulation {
           const x = this.state.fahrzeuge[id];
           return x && x.einsatzId === e.id && this.transportfaehig(x);
         });
-      if (rtwMitTransport && this.kritisch(e) && fz.kategorie === "NEF") {
+      // Notarzt fährt mit: kritischer Einsatz oder (beim BIT-Transport) Notarzt nötig
+      const naMit = this.kritisch(e) || (!!e.wahr.lage?.bit && bedarf(e.wahr.lage).na > 0);
+      if (rtwMitTransport && naMit && fz.kategorie === "NEF") {
         fz.begleitet = true;
         this.log(e, `${fz.funkrufname}: Notarzt begleitet den Transport`);
       } else if (rtwMitTransport && this.kritisch(e) && fliegt(fz)) {
@@ -941,6 +949,26 @@ export class Simulation {
       fz.phaseEnde = null;
       if (e.kh) this.startTransport(e);
       return;
+    }
+    // Schwerer Patient: der BIT transportiert; bis er da ist, wartet die Besatzung
+    const l = e.wahr.lage;
+    if (l?.bit && e.wahr.transport && !e.bitVerzicht && fz.rmTyp !== "BIT") {
+      const bit = this.einsatzFz(e).find((x) => x.rmTyp === "BIT");
+      if (bit && (bit.phase === "vorOrt" || bit.phase === "warteKH")) {
+        this.log(e, `${fz.funkrufname}: Patient wird vom BIT ${bit.funkrufname} transportiert`);
+        this.funk(fz.funkrufname, e.id, `Patient an BIT ${bit.funkrufname} übergeben`, "info");
+        return this.freigeben(fz);
+      }
+      const nf = e.nachforderungen?.find((n) => n.art === "BIT");
+      const seit = nf?.seit ?? t;
+      if (t - seit < BIT_WARTEN) {
+        fz.phaseEnde = t + 2 * MIN;
+        return;
+      }
+      e.bitVerzicht = true;
+      if (nf) nf.erledigt = true;
+      this.log(e, `${fz.funkrufname}: kein BIT verfügbar – Transport mit eigenem Fahrzeug`);
+      this.fzRuft(fz, e, "info", "kein BIT gekommen, wir transportieren mit eigenem Fahrzeug, mit zusätzlicher Tragehilfe");
     }
     if (!e.wahr.transport) {
       this.log(e, `${fz.funkrufname}: kein Transport erforderlich`);
@@ -1419,6 +1447,14 @@ export class Simulation {
         }
       }
     }
+    // BIT nachgefordert (Patient zu schwer für die normale Trage)
+    if ((e.nachforderungen ?? []).some((n) => n.art === "BIT" && !n.erledigt) && !imEinsatz.some((f) => f.rmTyp === "BIT")) {
+      const bit = nutzbar.find((v) => v.fz.rmTyp === "BIT");
+      if (bit) {
+        ids.push(bit.fz.id);
+        gruende.push(`${bit.fz.funkrufname} (BIT, ${min(bit.sekunden!)}): Nachforderung Schwerlasttransport`);
+      } else gruende.push("Kein BIT verfügbar – die Besatzung transportiert nach Wartezeit selbst");
+    }
     // EL ÖBB bei Unfällen auf oder an Bahngleisen
     const bahnText = `${findCode(e.code ?? undefined)?.beschreibung ?? ""} ${e.wahr.abfrage?.lage ?? ""} ${e.infoRtw} ${e.infoIntern} ${e.adresse?.label ?? ""}`;
     if (/bahn|gleis|zug|schiene|öbb/i.test(bahnText) && !imEinsatz.some((f) => f.rmTyp === "EL ÖBB")) {
@@ -1797,10 +1833,10 @@ export class Simulation {
     const naStorno = erstes && this.transportfaehig(fz) && naUnterwegs && bedarf(l).na === 0;
     const abweichung = l.irrtum !== null || angenommenRea !== istStillstand(p0) || l.patienten.length > 1 || ["29", "34", "22", "7", "8"].includes(kap);
     if (erstes) l.verlauf.push({ zeit: this.state.zeit, text: `${fz.funkrufname} als erstes Fahrzeug vor Ort` });
-    if ((erstes && (abweichung || fehlt.na > 0 || fehlt.rtw > 0 || naStorno)) || angefordert) {
+    if ((erstes && (abweichung || fehlt.na > 0 || fehlt.rtw > 0 || fehlt.bit > 0 || naStorno)) || angefordert) {
       const text = lagemeldungText(l, kap, fehlt, naStorno);
       this.nachfordern(e, fz, fehlt);
-      this.fzRuft(this.sprecher(e, fz), e, fehlt.na || fehlt.rtw ? "nachforderung" : naStorno ? "storno" : "lage", `Lagemeldung: ${text}`);
+      this.fzRuft(this.sprecher(e, fz), e, fehlt.na || fehlt.rtw || fehlt.bit ? "nachforderung" : naStorno ? "storno" : "lage", `Lagemeldung: ${text}`);
       l.verlauf.push({ zeit: this.state.zeit, text: `${fz.funkrufname}: ${text}` });
     }
   }
@@ -1811,26 +1847,27 @@ export class Simulation {
   }
 
   /** Wie viele Notärzte / transportfähige Fahrzeuge fehlen laut Lage? */
-  fehlendeKraefte(e: Einsatz): { na: number; rtw: number } {
+  fehlendeKraefte(e: Einsatz): { na: number; rtw: number; bit: number } {
     const l = e.wahr.lage;
-    if (!l) return { na: 0, rtw: 0 };
+    if (!l) return { na: 0, rtw: 0, bit: 0 };
     const b = bedarf(l);
     const fz = this.einsatzFz(e);
     const na = fz.filter((x) => this.mitNotarzt(x)).length;
     const tr = fz.filter((x) => this.transportfaehig(x)).length;
-    return { na: Math.max(0, b.na - na), rtw: Math.max(0, b.transport - tr) };
+    const bit = l.bit && !e.bitVerzicht && !fz.some((x) => x.rmTyp === "BIT") ? 1 : 0;
+    return { na: Math.max(0, b.na - na), rtw: Math.max(0, b.transport - tr), bit };
   }
 
-  private nachfordern(e: Einsatz, fz: SimFahrzeug, fehlt: { na: number; rtw: number }): void {
+  private nachfordern(e: Einsatz, fz: SimFahrzeug, fehlt: { na: number; rtw: number; bit: number }): void {
     e.nachforderungen ??= [];
     const t = this.state.zeit;
-    for (const art of ["NA", "RTW"] as const) {
-      const n = art === "NA" ? fehlt.na : fehlt.rtw;
+    for (const art of ["NA", "RTW", "BIT"] as const) {
+      const n = art === "NA" ? fehlt.na : art === "RTW" ? fehlt.rtw : fehlt.bit;
       if (n <= 0) continue;
       const offen = e.nachforderungen.find((x) => x.art === art && !x.erledigt);
       if (offen) offen.anzahl = Math.max(offen.anzahl, n);
       else e.nachforderungen.push({ art, anzahl: n, seit: t, von: fz.funkrufname, erinnert: t, erledigt: false });
-      this.log(e, `${fz.funkrufname} fordert nach: ${n}× ${art === "NA" ? "Notarzt" : "Rettungsmittel"}`);
+      this.log(e, `${fz.funkrufname} fordert nach: ${n}× ${NF_NAME[art]}`);
     }
   }
 
@@ -1900,13 +1937,13 @@ export class Simulation {
       const fehlt = this.fehlendeKraefte(e);
       for (const n of e.nachforderungen) {
         if (n.erledigt) continue;
-        if ((n.art === "NA" ? fehlt.na : fehlt.rtw) === 0) {
+        if ((n.art === "NA" ? fehlt.na : n.art === "RTW" ? fehlt.rtw : fehlt.bit) === 0) {
           n.erledigt = true;
-          this.log(e, `Nachforderung ${n.art === "NA" ? "Notarzt" : "Rettungsmittel"} erledigt`);
+          this.log(e, `Nachforderung ${NF_NAME[n.art]} erledigt`);
         } else if (t - n.erinnert > 5 * MIN) {
           n.erinnert = t;
           const fz = this.einsatzFz(e).find((x) => x.funkrufname === n.von) ?? this.einsatzFz(e)[0];
-          if (fz) this.fzRuft(fz, e, "nachforderung", `Nachforderung ${n.art === "NA" ? "Notarzt" : `${n.anzahl}× Rettungsmittel`} noch offen, wann können wir damit rechnen`);
+          if (fz) this.fzRuft(fz, e, "nachforderung", `Nachforderung ${n.art === "RTW" ? `${n.anzahl}× Rettungsmittel` : NF_NAME[n.art]} noch offen, wann können wir damit rechnen`);
         }
       }
     }
@@ -2449,6 +2486,8 @@ export class Simulation {
       }
     }
 
+    // Überstellung eines sehr schweren Patienten: BIT zuerst (mit NEF, wenn ein Arzt nötig ist)
+    if (info.gruppe === "SEK" && k.d.sek?.bit) w.unshift({ typen: ["BIT"], nef: info.arzt, ersatz: false, hinweis: info.arzt ? "Schwerlast, mit NEF" : "Schwerlast" });
     const typVon = new Map<string, Wahl>();
     for (const x of w) for (const t of x.typen) if (!typVon.has(t)) typVon.set(t, x);
     const kandidaten = alle.filter((f) => typVon.has(f.rmTyp) && (info.gruppe !== "KT" || f.rmTyp !== "SKTW"));

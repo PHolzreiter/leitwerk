@@ -37,6 +37,8 @@ export interface Lage {
   /** erstes Fahrzeug vor Ort: ab jetzt kennt die Besatzung die ganze Lage */
   aufgedeckt: boolean;
   verlauf: { zeit: number; text: string }[];
+  /** Patient zu schwer für die normale Trage (ca. 150 kg und mehr): BIT nötig */
+  bit?: boolean;
 }
 
 export type Komplikationen = "ruhig" | "normal" | "fordernd";
@@ -115,6 +117,9 @@ export function lageErzeugen(kapitel: string, a: Antworten, jetzt: number, kriti
     weitere(1 + Math.floor(Math.random() * 3));
   }
 
+  // selten: Patient zu schwer für die normale Trage – BIT wird nachgefordert
+  if (lage.patienten.length === 1 && p0.alter >= 25 && !istStillstand(p0) && Math.random() < 0.003 * Math.max(0.5, f)) lage.bit = true;
+
   // Verlauf: Verschlechterung bzw. Besserung im Lauf des Einsatzes
   if (!istStillstand(p0) && Math.random() < 0.1 * f) {
     const stillstand = Math.random() < (kritisch ? 0.4 : 0.15);
@@ -164,7 +169,7 @@ export function bedarf(l: Lage): { na: number; transport: number } {
 }
 
 /** Lagemeldung der Besatzung (Funkstil, ohne „Hier …“/„kommen“) */
-export function lagemeldungText(l: Lage, kapitel: string, fehlt: { na: number; rtw: number }, naStorno: boolean): string {
+export function lagemeldungText(l: Lage, kapitel: string, fehlt: { na: number; rtw: number; bit?: number }, naStorno: boolean): string {
   const teile: string[] = [];
   const p0 = l.patienten[0];
   if (l.patienten.length > 1) {
@@ -181,6 +186,7 @@ export function lagemeldungText(l: Lage, kapitel: string, fehlt: { na: number; r
   if (["29", "22", "7"].includes(kapitel) && Math.random() < 0.6) teile.push("Feuerwehr vor Ort");
   if (fehlt.na > 0) teile.push(fehlt.na === 1 ? "benötigen Notarzt" : `benötigen ${fehlt.na} Notärzte`);
   if (fehlt.rtw > 0) teile.push(fehlt.rtw === 1 ? "benötigen ein weiteres Rettungsmittel" : `benötigen ${fehlt.rtw} weitere Rettungsmittel`);
+  if (fehlt.bit) teile.push(`Patient ca. ${150 + Math.round(Math.random() * 8) * 10} kg, mit unserer Trage nicht transportierbar, benötigen BIT`);
   if (naStorno) teile.push("Notarzt nicht erforderlich, kann storniert werden");
   return teile.join(", ");
 }

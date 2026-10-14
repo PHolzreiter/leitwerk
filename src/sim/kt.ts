@@ -34,9 +34,11 @@ export interface SekDaten {
   instabil: boolean;
   /** Bett im Zielkrankenhaus zugesagt (von wem) */
   zusage: string;
+  /** sehr schwerer Patient: BIT (Betten-Intensivtransporter) nötig */
+  bit?: boolean;
 }
 export function sekLeer(): SekDaten {
-  return { arzt: false, monitoring: false, beatmet: false, inkubator: false, instabil: false, zusage: "" };
+  return { arzt: false, monitoring: false, beatmet: false, inkubator: false, instabil: false, zusage: "", bit: false };
 }
 
 export interface KtDaten {

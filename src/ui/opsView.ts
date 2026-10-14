@@ -791,7 +791,7 @@ export function createOpsView(left: HTMLElement, right: HTMLElement, deps: OpsDe
         assigned.innerHTML = "";
         for (const n of e.nachforderungen ?? []) {
           if (n.erledigt) continue;
-          assigned.appendChild(el("div", { class: "nachforderung" }, `⚠ Nachforderung von ${n.von}: ${n.art === "NA" ? (n.anzahl > 1 ? `${n.anzahl} Notärzte` : "Notarzt") : `${n.anzahl} weitere${n.anzahl > 1 ? "" : "s"} Rettungsmittel`}`));
+          assigned.appendChild(el("div", { class: "nachforderung" }, `⚠ Nachforderung von ${n.von}: ${n.art === "NA" ? (n.anzahl > 1 ? `${n.anzahl} Notärzte` : "Notarzt") : n.art === "BIT" ? "BIT (Patient zu schwer für die Trage)" : `${n.anzahl} weitere${n.anzahl > 1 ? "" : "s"} Rettungsmittel`}`));
         }
         for (const id of e.fahrzeuge) {
           const fz = sim.state.fahrzeuge[id];

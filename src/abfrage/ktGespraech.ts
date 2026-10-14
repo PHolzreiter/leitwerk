@@ -8,7 +8,7 @@ import { bereichName, hhmm, KT_LAGE_LABEL, type KtAuftrag, type KtDaten } from "
 import { kiBereit, kiChat, kiPrefs, kiStatus, type KiNachricht } from "./ki";
 
 export interface KtFrage {
-  id: keyof KtDaten | "wer" | "patient" | "arzt" | "monitoring" | "stabil" | "inkubator" | "zusage";
+  id: keyof KtDaten | "wer" | "patient" | "arzt" | "monitoring" | "stabil" | "inkubator" | "zusage" | "gewicht";
   text: string;
   /** nur bei Überstellungen */
   sek?: boolean;
@@ -36,6 +36,7 @@ export const KT_FRAGEN: KtFrage[] = [
   { id: "stabil", text: "Ist der Patient stabil, oder muss während der Fahrt laufend an ihm gearbeitet werden?", sek: true },
   { id: "inkubator", text: "Ist es ein Kind oder ein Neugeborenes – braucht es einen Inkubator?", sek: true },
   { id: "zusage", text: "Ist die Übernahme im Zielkrankenhaus zugesagt?", sek: true },
+  { id: "gewicht", text: "Wie schwer ist der Patient ungefähr – passt er auf eine normale Trage?", sek: true },
 ];
 
 function ort(o: KtDaten["von"]): string {
@@ -50,7 +51,7 @@ export function ktAntwortOhneKi(k: KtAuftrag, f: KtFrage): string {
   switch (f.id) {
     case "wer": {
       const a = k.wahr.anrufer;
-      const anliegen = w.sek ? ` Ich bräuchte eine Überstellung${w.sofort ? ", dringend" : ""}.` : w.sofort && !w.von?.khId ? " Wir bräuchten einen Transport für eine Einweisung." : "";
+      const anliegen = w.sek ? ` Ich bräuchte eine Überstellung${w.sofort ? ", dringend" : ""}${w.sek.bit ? " – der Patient ist sehr schwer, wir brauchen den BIT" : ""}.` : w.sofort && !w.von?.khId ? " Wir bräuchten einen Transport für eine Einweisung." : "";
       return (
         (a.rolle.startsWith("Pflegekraft") || a.rolle.startsWith("Ärzt") || a.rolle.startsWith("Arzt")
           ? `Grüß Gott, ${a.name}, ${a.rolle}.`
@@ -101,6 +102,8 @@ export function ktAntwortOhneKi(k: KtAuftrag, f: KtFrage): string {
       return w.sek?.instabil ? "Nein, er ist kreislaufinstabil, wir sind laufend am Nachjustieren." : "Ja, derzeit stabil.";
     case "inkubator":
       return w.sek?.inkubator ? ((w.patient.alter ?? 1) < 1 ? "Ja, ein Neugeborenes, es braucht einen Inkubator." : `Ja, ein Kind, ${w.patient.alter} Jahre.`) : "Nein, ein Erwachsener.";
+    case "gewicht":
+      return w.sek?.bit ? "Er ist sehr schwer, deutlich über 150 Kilo – da braucht es den BIT." : "Normalgewichtig, das passt auf eine normale Trage.";
     case "zusage":
       return w.sek?.zusage ? `Ja, ${w.sek.zusage.replace(/^Übernahme zugesagt von /, "zugesagt hat ")}.` : "Das kläre ich gerade noch ab, ich melde mich.";
     default:
@@ -128,6 +131,7 @@ function fakten(k: KtAuftrag): string {
           `Es ist eine Überstellung in ein anderes Krankenhaus. Dringlichkeit: ${w.sofort ? "sofort" : "geplant"}`,
           `Notarztbegleitung: ${w.sek.arzt || w.sek.beatmet ? "ja" : "nein"}; Monitoring: ${w.sek.monitoring ? "ja" : "nein"}; beatmet: ${w.sek.beatmet ? "ja" : "nein"}; stabil: ${w.sek.instabil ? "nein, kreislaufinstabil" : "ja"}`,
           `Inkubator/Kind: ${w.sek.inkubator ? "ja" : "nein"}; Übernahme: ${w.sek.zusage || "noch nicht zugesagt"}`,
+          `Gewicht: ${w.sek.bit ? "sehr schwer, über 150 kg – BIT (Schwerlast-Transporter) nötig" : "normal"}`,
         ]
       : w.sofort
         ? ["Der Hausarzt hat eine Einweisung geschrieben, der Transport soll sofort sein."]
@@ -207,6 +211,7 @@ function einfach(k: KtAuftrag, text: string): string {
     [/stabil|kreislauf/, "stabil"],
     [/inkubator|kind|neugeboren/, "inkubator"],
     [/zugesagt|übernahme|bett/, "zusage"],
+    [/schwer|gewicht|kilo|trage|bit/, "gewicht"],
   ];
   const id = passend.find(([re]) => re.test(t))?.[1];
   const f = KT_FRAGEN.find((x) => x.id === id);

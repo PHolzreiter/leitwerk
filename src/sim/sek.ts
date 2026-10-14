@@ -160,9 +160,12 @@ function sekAus(f: SekFall, u: SekUmfeld): KtDaten[] | null {
   sek.inkubator = !!f.inkubator;
   sek.instabil = sek.arzt && Math.random() < f.instabil;
   const sofort = Math.random() < f.sofort;
+  // selten: Patient zu schwer für die normale Trage
+  sek.bit = !sek.inkubator && alter >= 25 && Math.random() < 0.015;
   sek.zusage = Math.random() < 0.85 ? `Übernahme zugesagt von ${Math.random() < 0.5 ? "OA" : "OÄ"} Dr. ${zufallsName(Math.random() < 0.5 ? "m" : "w").split(" ").pop()}` : "";
   const lage: KtLage = sek.monitoring || (sek.inkubator && alter < 1) ? "liegend" : gewichtet(f.lage);
   const info = [
+    sek.bit ? `ca. ${160 + Math.round(Math.random() * 6) * 10} kg – BIT benötigt` : "",
     sek.beatmet ? "intubiert und beatmet" : "",
     sek.instabil ? "kreislaufinstabil, Katecholamine" : sek.arzt && !sek.beatmet ? "Monitor, Perfusor" : "",
     !sek.arzt && sek.monitoring ? "Monitorüberwachung nötig" : "",

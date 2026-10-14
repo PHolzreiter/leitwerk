@@ -75,6 +75,7 @@ function sekTags(d: KtDaten): string {
   else if (s.arzt) t.push("Notarzt");
   else if (s.monitoring) t.push("Monitor");
   if (s.inkubator) t.push((d.patient.alter ?? 1) < 1 ? "Inkubator" : "Kind");
+  if (s.bit) t.push("BIT");
   if (codeInfo(d.code).flug) t.push("✈");
   return t.map((x) => `<span class="kt-tag">${esc(x)}</span>`).join("");
 }
@@ -386,6 +387,7 @@ export function ktMaske(k: KtAuftrag, deps: { flyTo(lat: number, lon: number, z?
         haken("beatmet", s.beatmet, (v) => setzeSek({ beatmet: v })),
         haken("instabil", s.instabil, (v) => setzeSek({ instabil: v }), "stabil", "Während der Fahrt muss laufend am Patienten gearbeitet werden – kein Hubschrauber"),
         haken("Inkubator / Kind", s.inkubator, (v) => setzeSek({ inkubator: v }), "inkubator"),
+        haken("BIT nötig", !!s.bit, (v) => setzeSek({ bit: v }), "gewicht", "Sehr schwerer Patient – Betten-Intensivtransporter (Schwerlast)"),
       );
       zeile("Medizinisch", null, bedarf);
       zeile("Übernahme", "zusage", text(s.zusage, "z. B. zugesagt von OA Dr. …", (v) => setzeSek({ zusage: v })));
