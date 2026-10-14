@@ -25,8 +25,52 @@ const MAX_READ: u64 = 64 * 1024 * 1024;
 /// overview = Europa grob, basis = NÖ/Wien mittlere Detailtiefe (Grundpaket),
 /// ring = Umland mittel, core = NÖ/Wien volle Detailtiefe, terrain = Höhendaten.
 const MAP_FILES: [&str; 5] = ["overview", "basis", "ring", "core", "terrain"];
+/// altes Gesamtnetz (bis 0.11; wird verwendet, wenn noch kein Bundesland-Paket installiert ist)
 const ROADS_FILE: &str = "roads.lwrg.gz";
 const ADDR_FILE: &str = "addresses.tsv.gz";
+/// Straßennetz und Adressen je Bundesland: roads-<kürzel>.lwrg.gz, addresses-<kürzel>.tsv.gz
+const REGIONEN: [&str; 5] = ["noe", "wien", "bgld", "ooe", "stmk"];
+/// Datei mit den ausgeschalteten Bundesländern
+const REGIONEN_DATEI: &str = "regionen.json";
+
+#[derive(serde::Serialize, serde::Deserialize, Default)]
+struct RegionenEinstellung {
+    #[serde(default)]
+    aus: Vec<String>,
+}
+
+fn regionen_lesen(dir: &std::path::Path) -> RegionenEinstellung {
+    fs::read_to_string(dir.join(REGIONEN_DATEI)).ok().and_then(|s| serde_json::from_str(&s).ok()).unwrap_or_default()
+}
+
+/// Welche Netze geladen werden: (Straßen, Adressen, Kürzel)
+fn geo_dateien(dirs: &DataDirs) -> (Vec<PathBuf>, Vec<PathBuf>, Vec<String>) {
+    let aus = regionen_lesen(&dirs.packs).aus;
+    let (mut r, mut a, mut k) = (Vec::new(), Vec::new(), Vec::new());
+    for reg in REGIONEN {
+        let rp = dirs.packs.join(format!("roads-{reg}.lwrg.gz"));
+        if !rp.is_file() || aus.iter().any(|x| x == reg) {
+            continue;
+        }
+        r.push(rp);
+        let ap = dirs.packs.join(format!("addresses-{reg}.tsv.gz"));
+        if ap.is_file() {
+            a.push(ap);
+        }
+        k.push(reg.to_string());
+    }
+    if r.is_empty() {
+        // ältere Installation: Gesamtnetz aus dem Grundpaket
+        if let Some(p) = dirs.resolve(ROADS_FILE) {
+            r.push(p);
+            k.push("alt".into());
+        }
+        if let Some(p) = dirs.resolve(ADDR_FILE) {
+            a.push(p);
+        }
+    }
+    (r, a, k)
+}
 
 /// Orte, an denen Daten gesucht werden: zuerst die heruntergeladenen Pakete,
 /// dann (für Entwicklung und ältere Installationen) die Programmressourcen.
@@ -171,6 +215,8 @@ enum Slot<T> {
 struct Geo {
     graph: RwLock<Slot<Graph>>,
     addresses: RwLock<Slot<Addresses>>,
+    /// geladene Bundesländer (Kürzel)
+    regionen: RwLock<Vec<String>>,
 }
 
 type GeoState = Arc<Geo>;
@@ -194,27 +240,28 @@ fn addr(geo: &Geo) -> Result<Arc<Addresses>, String> {
 
 /// Lädt Straßennetz und Adressen neu (in eigenen Threads).
 fn load_geo(geo: &GeoState, dirs: &DataDirs) {
-    match dirs.resolve(ROADS_FILE) {
-        None => *geo.graph.write().unwrap() = Slot::Missing,
-        Some(p) => {
-            *geo.graph.write().unwrap() = Slot::Loading;
-            let g = geo.clone();
-            std::thread::spawn(move || {
-                let r = Graph::load(&p);
-                *g.graph.write().unwrap() = match r {
-                    Ok(v) => Slot::Ready(Arc::new(v)),
-                    Err(e) => Slot::Failed(e),
-                };
-            });
-        }
+    let (strassen, adressen, kuerzel) = geo_dateien(dirs);
+    *geo.regionen.write().unwrap() = kuerzel;
+    if strassen.is_empty() {
+        *geo.graph.write().unwrap() = Slot::Missing;
+    } else {
+        *geo.graph.write().unwrap() = Slot::Loading;
+        let g = geo.clone();
+        std::thread::spawn(move || {
+            let r = Graph::load_many(&strassen);
+            *g.graph.write().unwrap() = match r {
+                Ok(v) => Slot::Ready(Arc::new(v)),
+                Err(e) => Slot::Failed(e),
+            };
+        });
     }
-    match dirs.resolve(ADDR_FILE) {
+    match (!adressen.is_empty()).then_some(adressen) {
         None => *geo.addresses.write().unwrap() = Slot::Missing,
         Some(p) => {
             *geo.addresses.write().unwrap() = Slot::Loading;
             let g = geo.clone();
             std::thread::spawn(move || {
-                let r = Addresses::load(&p);
+                let r = Addresses::load_many(&p);
                 *g.addresses.write().unwrap() = match r {
                     Ok(v) => Slot::Ready(Arc::new(v)),
                     Err(e) => Slot::Failed(e),
@@ -230,6 +277,10 @@ struct GeoStatus {
     roads_nodes: usize,
     addresses: String,
     address_count: usize,
+    /// geladene Bundesländer (Kürzel; „alt“ = altes Gesamtnetz)
+    regionen: Vec<String>,
+    /// ausgeschaltete Bundesländer
+    regionen_aus: Vec<String>,
 }
 
 fn state_label<T>(slot: &RwLock<Slot<T>>) -> String {
@@ -242,13 +293,44 @@ fn state_label<T>(slot: &RwLock<Slot<T>>) -> String {
 }
 
 #[tauri::command]
-fn geo_status(geo: State<'_, GeoState>) -> GeoStatus {
+fn geo_status(geo: State<'_, GeoState>, maps: State<'_, Maps>) -> GeoStatus {
     GeoStatus {
         roads: state_label(&geo.graph),
         roads_nodes: graph(&geo).map_or(0, |g| g.node_count()),
         addresses: state_label(&geo.addresses),
         address_count: addr(&geo).map_or(0, |a| a.len()),
+        regionen: geo.regionen.read().unwrap().clone(),
+        regionen_aus: regionen_lesen(&maps.dirs.packs).aus,
     }
+}
+
+/// Bundesland ein- oder ausschalten (Straßennetz und Adressen werden neu geladen).
+#[tauri::command]
+fn region_setzen(geo: State<'_, GeoState>, maps: State<'_, Maps>, id: String, aktiv: bool) -> Result<(), String> {
+    if !REGIONEN.contains(&id.as_str()) {
+        return Err(format!("Unbekanntes Bundesland: {id}"));
+    }
+    if id == "noe" && !aktiv {
+        return Err("Niederösterreich ist das Einsatzgebiet und bleibt eingeschaltet".into());
+    }
+    let mut e = regionen_lesen(&maps.dirs.packs);
+    e.aus.retain(|x| x != &id);
+    if !aktiv {
+        e.aus.push(id);
+    }
+    fs::write(maps.dirs.packs.join(REGIONEN_DATEI), serde_json::to_string(&e).unwrap_or_default()).map_err(|e| e.to_string())?;
+    load_geo(&geo, &maps.dirs);
+    Ok(())
+}
+
+/// Liegen die Punkte im geladenen Straßennetz? (Straße höchstens max_m entfernt)
+#[tauri::command]
+async fn erreichbar(geo: State<'_, GeoState>, punkte: Vec<[f64; 2]>, max_m: Option<f64>) -> Result<Vec<bool>, String> {
+    let g = graph(&geo)?;
+    let m = max_m.unwrap_or(3000.0);
+    tauri::async_runtime::spawn_blocking(move || punkte.iter().map(|p| g.erreichbar(p[0], p[1], m)).collect())
+        .await
+        .map_err(|e| e.to_string())
 }
 
 /// Schnellste Route. Punkte als [Breitengrad, Längengrad].
@@ -300,7 +382,7 @@ async fn address_random(
 // ---------------------------------------------------------------- Kartenpakete
 
 /// Pakete, die nicht gelöscht werden dürfen.
-const PFLICHT_PAKETE: [&str; 1] = ["grund"];
+const PFLICHT_PAKETE: [&str; 2] = ["grund", "bl-noe"];
 
 static PACK_BUSY: AtomicBool = AtomicBool::new(false);
 
@@ -386,7 +468,7 @@ async fn pack_install(
         packs::InstalledPack { version: pack.version.clone(), files: pack.files.iter().map(|f| f.name.clone()).collect() },
     );
     packs::write_installed(&dir, &inst)?;
-    if pack.files.iter().any(|f| f.name == ROADS_FILE || f.name == ADDR_FILE) {
+    if pack.files.iter().any(|f| f.name.starts_with("roads") || f.name.starts_with("addresses")) {
         load_geo(&geo, &maps.dirs);
     }
     Ok(())
@@ -394,9 +476,9 @@ async fn pack_install(
 
 /// Löscht ein installiertes Paket (nicht das Grundpaket).
 #[tauri::command]
-fn pack_remove(maps: State<'_, Maps>, id: String) -> Result<(), String> {
+fn pack_remove(maps: State<'_, Maps>, geo: State<'_, GeoState>, id: String) -> Result<(), String> {
     if PFLICHT_PAKETE.contains(&id.as_str()) {
-        return Err("Das Grundpaket kann nicht gelöscht werden".into());
+        return Err("Dieses Paket wird immer gebraucht und kann nicht gelöscht werden".into());
     }
     if PACK_BUSY.load(Ordering::SeqCst) {
         return Err("Bitte warten, bis der laufende Download fertig ist".into());
@@ -406,7 +488,11 @@ fn pack_remove(maps: State<'_, Maps>, id: String) -> Result<(), String> {
     let Some(p) = inst.remove(&id) else { return Ok(()) };
     maps.close_all();
     packs::remove_files(&dir, &p.files);
-    packs::write_installed(&dir, &inst)
+    packs::write_installed(&dir, &inst)?;
+    if p.files.iter().any(|f| f.starts_with("roads") || f.starts_with("addresses")) {
+        load_geo(&geo, &maps.dirs);
+    }
+    Ok(())
 }
 
 /// Schreibt eine Textdatei an einen vom Benutzer gewählten Ort (CSV-Export).
@@ -433,7 +519,11 @@ pub fn run() {
                     }
                 }
             }
-            let geo: GeoState = Arc::new(Geo { graph: RwLock::new(Slot::Missing), addresses: RwLock::new(Slot::Missing) });
+            let geo: GeoState = Arc::new(Geo {
+                graph: RwLock::new(Slot::Missing),
+                addresses: RwLock::new(Slot::Missing),
+                regionen: RwLock::new(Vec::new()),
+            });
             load_geo(&geo, &dirs);
             app.manage(geo);
             app.manage(Maps { dirs, open: Mutex::new(HashMap::new()) });
@@ -450,6 +540,8 @@ pub fn run() {
             autosave_read,
             write_text_file,
             geo_status,
+            region_setzen,
+            erreichbar,
             route,
             travel_times,
             address_search,

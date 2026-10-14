@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Baut die Kartenpakete, die das Programm bei Bedarf herunterlädt:
-#   grund     overview (Europa grob, bis Zoom 8), basis (NÖ + Wien bis Zoom 12),
-#             Straßennetz für die Fahrzeiten, Adressverzeichnis
+#   grund     overview (Europa grob, bis Zoom 8), basis (NÖ + Wien bis Zoom 12)
+#   bl-*      Straßennetz für die Fahrzeiten und Adressen je Bundesland (NÖ, Wien, Bgld, OÖ, Stmk)
 #   noe       core (NÖ + Wien mit vollen Straßendetails, bis Zoom 14)
-#   umland    ring (Umland ca. 50 km, bis Zoom 12)
+#   umland    ring (OÖ, Steiermark, Burgenland und Grenzgebiete, bis Zoom 12)
 #   gelaende  terrain (Höhendaten für die 3D-Ansicht)
 #
 # Aufruf: scripts/build-packs.sh <Zielordner>
@@ -19,7 +19,7 @@ HERE="$(cd "$(dirname "$0")/.." && pwd)"
 
 # Ausschnitte: min_lon,min_lat,max_lon,max_lat
 CORE_BBOX="14.30,47.35,17.20,49.10"
-RING_BBOX="13.70,46.90,17.80,49.50"
+RING_BBOX="12.70,46.30,17.80,49.50"
 OVERVIEW_BBOX="8.50,45.40,19.50,50.60"
 
 mkdir -p "$OUT"
@@ -48,11 +48,10 @@ python3 "$HERE/tools/build_terrain.py" "$WORK/terrain.mbtiles" \
   "$OVERVIEW_BBOX:0-7" "$RING_BBOX:8-10" "$CORE_BBOX:11-11"
 "$PMTILES" convert "$WORK/terrain.mbtiles" "$OUT/terrain.pmtiles"
 
-echo "==> Straßennetz und Adressen (NÖ, Wien, nördl. Burgenland)"
+echo "==> Straßennetz und Adressen je Bundesland"
 curl -fsSL -o "$WORK/austria.osm.pbf" https://download.geofabrik.de/europe/austria-latest.osm.pbf
-osmium extract -b "$CORE_BBOX" "$WORK/austria.osm.pbf" -o "$WORK/core.osm.pbf" --overwrite
-python3 "$HERE/tools/build_roads.py" "$WORK/core.osm.pbf" "$OUT"
-rm -f "$WORK/austria.osm.pbf" "$WORK/core.osm.pbf"
+bash "$HERE/scripts/build-regionen.sh" "$WORK/austria.osm.pbf" "$OUT" noe wien bgld ooe stmk
+rm -f "$WORK/austria.osm.pbf"
 
 echo "==> Paketverzeichnis"
 python3 "$HERE/tools/build_packs_manifest.py" "$OUT" "$BUILD"

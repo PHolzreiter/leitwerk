@@ -8,7 +8,7 @@
 import { ACTIVE_CATEGORIES, bereicheVon, HOSPITAL_FLAG_LABEL, type Hospital, type HospitalFlag, type Vehicle } from "../data/model";
 import { store } from "../data/store";
 import { abteilungFuer, allCodes, findCode, hasCodes, type Einsatzcode } from "./codes";
-import { distanceM, flightRoute, randomAddresses, route, searchAddress, travelTimes, type LatLon, type Route } from "./geo";
+import { distanceM, erreichbar, flightRoute, geoStatus, randomAddresses, route, searchAddress, travelTimes, type LatLon, type Route } from "./geo";
 import { generiereBesetzung, hatNFS, rmTypVon, type Platz, type RmTyp } from "./crew";
 import { defaultStufeFuer, raenge, type Kategorie, type Settings, type StatusKey, type StufeDef } from "./settings";
 import { flugverbot, istNacht, nextWetter, type Wetter, WETTER_LABEL } from "./weather";
@@ -1000,7 +1000,7 @@ export class Simulation {
   }
 
   naechstesKh(pos: LatLon, abteilung: HospitalFlag): Hospital | undefined {
-    const all = store.list("hospitals");
+    const all = store.list("hospitals").filter((h) => this.khImNetz(h));
     const passend = all.filter((h) => h.abteilungen[abteilung]);
     const pool = passend.length ? passend : all.filter((h) => h.abteilungen.notfallambulanz);
     return pool.slice().sort((a, b) => distanceM(pos, a) - distanceM(pos, b))[0];
@@ -2141,11 +2141,39 @@ export class Simulation {
     return `KT-${pad(d.getMonth() + 1, 2)}${pad(d.getDate(), 2)}-${pad(this.state.ktZaehler, 3)}`;
   }
 
+  /** Krankenhäuser, die im geladenen Straßennetz liegen (null = alle; im Browser oder noch nicht geprüft) */
+  khErreichbar: Set<string> | null = null;
+  private abdeckungLaeuft = 0;
+
+  /** Prüft, welche Krankenhäuser mit den installierten Straßenpaketen erreichbar sind */
+  async abdeckungAktualisieren(): Promise<void> {
+    const lauf = ++this.abdeckungLaeuft;
+    // warten, bis das Straßennetz geladen ist
+    for (let i = 0; i < 120; i++) {
+      const g = await geoStatus().catch(() => null);
+      if (!g || g.roads !== "laden") break;
+      await new Promise((r) => setTimeout(r, 1000));
+    }
+    if (lauf !== this.abdeckungLaeuft) return;
+    const khs = store.list("hospitals");
+    try {
+      const ok = await erreichbar(khs);
+      this.khErreichbar = new Set(khs.filter((_, i) => ok[i]).map((h) => h.id));
+    } catch {
+      this.khErreichbar = null;
+    }
+  }
+
+  /** Krankenhaus im Straßennetz? */
+  khImNetz(h: { id: string }): boolean {
+    return !this.khErreichbar || this.khErreichbar.has(h.id);
+  }
+
   /** Krankenhäuser mit dieser Station/Ambulanz, nach Entfernung (bis 70 km) */
   private khMit(bereich: string, nahe: LatLon) {
     return store
       .list("hospitals")
-      .filter((h) => bereicheVon(h).includes(bereich) && distanceM(h, nahe) < 70_000)
+      .filter((h) => bereicheVon(h).includes(bereich) && distanceM(h, nahe) < 70_000 && this.khImNetz(h))
       .sort((a, b) => distanceM(a, nahe) - distanceM(b, nahe));
   }
 
@@ -2202,8 +2230,8 @@ export class Simulation {
   async generiereSek(quelle?: "online" | "hotline"): Promise<KtAuftrag | null> {
     const bb = this.settings.gebiet.bbox;
     const mitte = { lat: (bb[1] + bb[3]) / 2, lon: (bb[0] + bb[2]) / 2 };
-    // nur Häuser im Straßennetz (NÖ, Wien, nördl. Burgenland, Raum Linz)
-    const khs = store.list("hospitals").filter((h) => h.lon >= 14.25 && h.lon <= 17.25 && h.lat >= 47.3 && h.lat <= 49.15);
+    // nur Häuser, die mit den installierten Straßenpaketen erreichbar sind
+    const khs = store.list("hospitals").filter((h) => this.khImNetz(h));
     const ds = sekZufall({ mitte, khs, jetzt: this.state.zeit });
     if (!ds) return null;
     const q = quelle ?? (ds[0].sofort || Math.random() < 0.3 ? "hotline" : "online");
@@ -2256,7 +2284,7 @@ export class Simulation {
       const bb = this.settings.gebiet.bbox;
       const imGebiet = (h: { lat: number; lon: number }) => h.lon >= bb[0] && h.lon <= bb[2] && h.lat >= bb[1] && h.lat <= bb[3];
       const mitte = { lat: (bb[1] + bb[3]) / 2, lon: (bb[0] + bb[2]) / 2 };
-      const alle = store.list("hospitals");
+      const alle = store.list("hospitals").filter((h) => this.khImNetz(h));
       for (const [bereich, jeKh] of [
         ["DIA", this.settings.dauerDialyseJeKh ?? 6],
         ["STR", this.settings.dauerStrahlJeKh ?? 3],

@@ -13,9 +13,40 @@ PACKS = [
     {
         "id": "grund",
         "name": "Grundpaket",
-        "beschreibung": "Übersichtskarte, Niederösterreich und Wien in mittlerer Detailstufe, Straßennetz und Adressen",
+        "beschreibung": "Übersichtskarte, Niederösterreich und Wien in mittlerer Detailstufe",
         "pflicht": True,
-        "files": ["overview.pmtiles", "basis.pmtiles", "roads.lwrg.gz", "addresses.tsv.gz"],
+        "files": ["overview.pmtiles", "basis.pmtiles"],
+    },
+    {
+        "id": "bl-noe",
+        "name": "Straßen Niederösterreich",
+        "beschreibung": "Straßennetz für die Fahrzeiten und Adressen – das Einsatzgebiet, immer nötig",
+        "pflicht": True,
+        "files": ["roads-noe.lwrg.gz", "addresses-noe.tsv.gz"],
+    },
+    {
+        "id": "bl-wien",
+        "name": "Straßen Wien",
+        "beschreibung": "Straßennetz und Adressen – für Transporte und Überstellungen nach Wien",
+        "files": ["roads-wien.lwrg.gz", "addresses-wien.tsv.gz"],
+    },
+    {
+        "id": "bl-bgld",
+        "name": "Straßen Burgenland",
+        "beschreibung": "Straßennetz und Adressen – für Transporte und Überstellungen ins Burgenland",
+        "files": ["roads-bgld.lwrg.gz", "addresses-bgld.tsv.gz"],
+    },
+    {
+        "id": "bl-ooe",
+        "name": "Straßen Oberösterreich",
+        "beschreibung": "Straßennetz und Adressen – für Transporte und Überstellungen nach Oberösterreich",
+        "files": ["roads-ooe.lwrg.gz", "addresses-ooe.tsv.gz"],
+    },
+    {
+        "id": "bl-stmk",
+        "name": "Straßen Steiermark",
+        "beschreibung": "Straßennetz und Adressen – für Transporte und Überstellungen in die Steiermark",
+        "files": ["roads-stmk.lwrg.gz", "addresses-stmk.tsv.gz"],
     },
     {
         "id": "noe",

@@ -7,6 +7,7 @@
  * ausführt. Bricht eine Verbindung ab, wird automatisch neu verbunden.
  */
 import { store, type StoreBefehl } from "../data/store";
+import { aktiveRegionen, REGIONEN } from "../sim/geo";
 import type { Persisted } from "../data/model";
 import {
   berechtigungFuer,
@@ -512,7 +513,22 @@ class Mehrspieler {
         this.fehler(String(m.reason));
         return;
       // ---- Host → Mitspieler
-      case "full":
+      case "full": {
+        // Alle brauchen dieselben Straßenpakete, sonst stimmen Fahrzeiten und Vorschläge nicht überein
+        const hostReg = ((m.regionen as string[] | undefined) ?? []).filter((r) => r !== "alt");
+        const meine = aktiveRegionen().filter((r) => r !== "alt");
+        if (hostReg.length && meine.length) {
+          const fehlt = hostReg.filter((r) => !meine.includes(r));
+          const zuviel = meine.filter((r) => !hostReg.includes(r));
+          if (fehlt.length || zuviel.length) {
+            const name = (l: string[]) => l.map((r) => REGIONEN[r] ?? r).join(", ");
+            const text = `Andere Straßenpakete als der Host${fehlt.length ? ` – es fehlt: ${name(fehlt)}` : ""}${zuviel.length ? ` – bitte ausschalten: ${name(zuviel)}` : ""} (Einstellungen → Kartenpakete)`;
+            this.verlassen();
+            this.fehler(text);
+            return;
+          }
+        }
+      }
         store.enterSession(m.store as Persisted);
         sim.mode = "client";
         this.zustandUebernehmen(m.state as SimState);
@@ -648,7 +664,7 @@ class Mehrspieler {
 
   /** Vollständiger Stand an einen (oder alle) Mitspieler */
   private voll(to?: string): void {
-    this.anAlle({ t: "full", state: sim.state, store: store.snapshot(), spieler: this.spieler }, to);
+    this.anAlle({ t: "full", state: sim.state, store: store.snapshot(), spieler: this.spieler, regionen: aktiveRegionen() }, to);
     if (!to) this.cacheMerken();
   }
 

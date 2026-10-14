@@ -120,6 +120,7 @@ fn lese_teil(path: &Path) -> Result<Teil, String> {
 }
 
 impl Graph {
+    #[allow(dead_code)]
     pub fn load(path: &Path) -> Result<Graph, String> {
         Self::load_many(&[path.to_path_buf()])
     }

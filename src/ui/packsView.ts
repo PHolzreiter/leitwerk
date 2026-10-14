@@ -17,6 +17,7 @@ import {
   type Progress,
   type UpdateInfo,
 } from "../updates";
+import { geoStatus, regionSetzen } from "../sim/geo";
 import { confirmDialog, openDialog } from "./dialog";
 import { el, esc, toast } from "./dom";
 
@@ -49,14 +50,29 @@ export function progressBar(): { root: HTMLElement; set(p: Progress | null, text
 export async function ensureGrundpaket(): Promise<void> {
   if (!inTauri()) return;
   const local = await packsLocal();
-  if (local.installed[GRUNDPAKET]) return;
+  // Pflichtpakete: Grundpaket und Straßen Niederösterreich (das Einsatzgebiet)
+  if (local.installed[GRUNDPAKET] && local.installed[STRASSEN_NOE]) return;
+  if (local.installed[GRUNDPAKET]) {
+    // Update von einer älteren Version: fehlende Pflichtpakete still nachladen (mit Anzeige)
+    let fehlend: Pack[] = [];
+    try {
+      fehlend = (await packsManifest()).filter((p) => p.pflicht && !local.installed[p.id]);
+    } catch {
+      return; // offline: altes Straßennetz bleibt in Gebrauch
+    }
+    if (!fehlend.length) return;
+  }
 
   await new Promise<void>((resolve) => {
     const overlay = el("div", { class: "first-start" });
     const box = el("div", { class: "first-box" });
-    box.innerHTML = `<h2>Willkommen bei LeitWerk</h2>
-      <p>Beim ersten Start wird einmalig das <b>Grundpaket</b> geladen: Übersichtskarte, Karte von Niederösterreich und Wien,
-      Straßennetz für die Fahrzeiten und das Adressverzeichnis.</p>`;
+    box.innerHTML = local.installed[GRUNDPAKET]
+      ? `<h2>Neue Kartenpakete</h2>
+      <p>Das Straßennetz gibt es jetzt je Bundesland. Einmalig wird das Paket <b>Straßen Niederösterreich</b> geladen
+      (Straßennetz für die Fahrzeiten und Adressen). Weitere Bundesländer gibt es unter Einstellungen → Kartenpakete.</p>`
+      : `<h2>Willkommen bei LeitWerk</h2>
+      <p>Beim ersten Start werden einmalig das <b>Grundpaket</b> (Übersichtskarte, Karte von Niederösterreich und Wien)
+      und die <b>Straßen Niederösterreich</b> (Straßennetz für die Fahrzeiten, Adressen) geladen.</p>`;
     const pb = progressBar();
     const err = el("div", { class: "alert-text" });
     const retry = el("button", { class: "btn primary" }, "Erneut versuchen");
@@ -71,10 +87,14 @@ export async function ensureGrundpaket(): Promise<void> {
       pb.set(null, "Verbindung wird hergestellt …");
       try {
         const packs = await packsManifest();
-        const grund = packs.find((p) => p.id === GRUNDPAKET);
-        if (!grund) throw new Error("Grundpaket nicht im Paketverzeichnis");
-        pb.set({ done: 0, total: packSize(grund) });
-        await installPack(GRUNDPAKET, (p) => pb.set(p));
+        const jetzt = await packsLocal();
+        const laden = packs.filter((p) => (p.pflicht || p.id === GRUNDPAKET) && !jetzt.installed[p.id]);
+        if (!packs.some((p) => p.id === GRUNDPAKET)) throw new Error("Grundpaket nicht im Paketverzeichnis");
+        for (const p of laden) {
+          pb.set({ done: 0, total: packSize(p) }, `${p.name} wird geladen …`);
+          await installPack(p.id, (pr) => pb.set(pr));
+        }
+        if (laden.length) packsChanged();
         overlay.remove();
         resolve();
       } catch (e) {
@@ -90,6 +110,8 @@ export async function ensureGrundpaket(): Promise<void> {
 // ------------------------------------------------------------------ Einstellungen
 
 /** Baut den Bereich „Kartenpakete“ in den Einstellungen. */
+const STRASSEN_NOE = "bl-noe";
+
 export function buildPacksSection(sec: HTMLElement): void {
   const list = el("div", { class: "packs" });
   sec.appendChild(list);
@@ -99,6 +121,7 @@ export function buildPacksSection(sec: HTMLElement): void {
   }
   list.appendChild(el("div", { class: "muted" }, "Paketverzeichnis wird geladen …"));
 
+  let regionenAus: string[] = [];
   const render = (packs: Pack[] | null, local: PacksLocal, fehler?: string) => {
     list.innerHTML = "";
     if (fehler) list.appendChild(el("div", { class: "alert-text" }, `${fehler} – Download derzeit nicht möglich.`));
@@ -140,7 +163,27 @@ export function buildPacksSection(sec: HTMLElement): void {
         });
         btns.appendChild(b);
       }
-      if (inst && !(p?.pflicht ?? id === GRUNDPAKET)) {
+      // Straßenpaket eines Bundeslands: ein- und ausschalten (NÖ bleibt immer an)
+      const region = id.startsWith("bl-") ? id.slice(3) : null;
+      if (inst && region && region !== "noe") {
+        const lbl = el("label", { class: "chk", title: "Ausgeschaltet: keine Transporte, die diese Straßen brauchen" });
+        const cb = el("input", { type: "checkbox" });
+        cb.checked = !regionenAus.includes(region);
+        cb.disabled = busy !== null;
+        cb.addEventListener("change", async () => {
+          try {
+            await regionSetzen(region, cb.checked);
+            packsChanged();
+            toast(`${p?.name ?? id} ${cb.checked ? "eingeschaltet" : "ausgeschaltet"}`);
+          } catch (e) {
+            toast(e instanceof Error ? e.message : String(e), "error");
+          }
+          void reload();
+        });
+        lbl.append(cb, el("span", {}, "eingeschaltet"));
+        btns.appendChild(lbl);
+      }
+      if (inst && !(p?.pflicht ?? (id === GRUNDPAKET || id === STRASSEN_NOE))) {
         const b = el("button", { class: "btn small" }, "Löschen");
         b.disabled = busy !== null;
         b.addEventListener("click", async () => {
@@ -164,6 +207,7 @@ export function buildPacksSection(sec: HTMLElement): void {
 
   const reload = async () => {
     const local = await packsLocal();
+    regionenAus = (await geoStatus().catch(() => null))?.regionen_aus ?? [];
     if (manifestCache) render(manifestCache, local);
     try {
       manifestCache = await packsManifest();

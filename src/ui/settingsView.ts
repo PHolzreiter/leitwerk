@@ -1,7 +1,7 @@
 /** Reiter „Einstellungen“: Statusmodell, Einsatzaufkommen, Stufen-Zuordnung, Fahrzeiten, Flugrettung. */
 import { store } from "../data/store";
 import { sim } from "../sim/engine";
-import { geoStatus } from "../sim/geo";
+import { geoStatus, REGIONEN } from "../sim/geo";
 import { GEBIETE, KATEGORIEN, KATEGORIE_LABEL, NOTARZT_LABEL, defaultStufeFuer, type Kategorie, type NotarztRegel, type Settings } from "../sim/settings";
 import { codeKategorien } from "../sim/codes";
 import { WETTER_LABEL, type WetterLage } from "../sim/weather";
@@ -282,7 +282,7 @@ export function createSettingsView(container: HTMLElement): { refresh(): void } 
     buildPacksSection(
       section(
         "Kartenpakete",
-        "Das Grundpaket ist immer installiert. Detailkarten und Gelände für die 3D-Ansicht kannst du bei Bedarf dazuladen oder wieder löschen. Das Satellitenbild wird online geladen und braucht kein Paket.",
+        "Grundpaket und Straßen Niederösterreich sind immer installiert. Straßen weiterer Bundesländer, Detailkarten und Gelände für die 3D-Ansicht kannst du bei Bedarf dazuladen, ein- und ausschalten oder wieder löschen. Ohne Straßenpaket eines Bundeslands gibt es keine Transporte dorthin. Im Mehrspieler brauchen alle dieselben Straßenpakete. Das Satellitenbild wird online geladen und braucht kein Paket.",
       ),
     );
     buildAppSection(section("Programm"));
@@ -292,7 +292,8 @@ export function createSettingsView(container: HTMLElement): { refresh(): void } 
     const gInfo = el("div", { class: "muted" }, "wird geprüft …");
     gSec.appendChild(gInfo);
     void geoStatus().then((g) => {
-      gInfo.innerHTML = `Straßennetz: <b>${esc(g.roads)}</b>${g.roads_nodes ? ` (${g.roads_nodes.toLocaleString("de-AT")} Knoten)` : ""} · Adressen: <b>${esc(g.addresses)}</b>${g.address_count ? ` (${g.address_count.toLocaleString("de-AT")})` : ""}`;
+      const bl = (g.regionen ?? []).map((r) => (r === "alt" ? "älteres Gesamtnetz" : (REGIONEN[r] ?? r))).join(", ");
+      gInfo.innerHTML = `Straßennetz: <b>${esc(g.roads)}</b>${g.roads_nodes ? ` (${g.roads_nodes.toLocaleString("de-AT")} Knoten)` : ""} · Adressen: <b>${esc(g.addresses)}</b>${g.address_count ? ` (${g.address_count.toLocaleString("de-AT")})` : ""}${bl ? `<br>Bundesländer: ${esc(bl)}` : ""}`;
     });
 
     // Aktionen

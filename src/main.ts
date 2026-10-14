@@ -107,6 +107,17 @@ async function init(): Promise<void> {
     if (el && v !== "Browser") el.textContent = `v${v}`;
   });
   await ensureGrundpaket();
+  // Welche Krankenhäuser sind mit den installierten Straßenpaketen erreichbar?
+  void sim.abdeckungAktualisieren();
+  onPacksChanged(() => void sim.abdeckungAktualisieren());
+  let khZaehler = store.list("hospitals").length;
+  store.onChange(() => {
+    const n = store.list("hospitals").length;
+    if (n !== khZaehler) {
+      khZaehler = n;
+      void sim.abdeckungAktualisieren();
+    }
+  });
   sim.ich = mp.ich;
   setupSimBar();
   setupSpielStatus();

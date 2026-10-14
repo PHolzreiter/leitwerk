@@ -33,6 +33,30 @@ export interface GeoStatus {
   roads_nodes: number;
   addresses: string;
   address_count: number;
+  /** geladene Bundesländer (Kürzel; „alt“ = altes Gesamtnetz) */
+  regionen?: string[];
+  regionen_aus?: string[];
+}
+
+/** Bundesländer mit eigenem Straßenpaket */
+export const REGIONEN: Record<string, string> = { noe: "Niederösterreich", wien: "Wien", bgld: "Burgenland", ooe: "Oberösterreich", stmk: "Steiermark" };
+
+let regionenCache: string[] = [];
+/** zuletzt gemeldete geladene Bundesländer (für den Mehrspieler-Abgleich) */
+export function aktiveRegionen(): string[] {
+  return regionenCache;
+}
+
+/** Bundesland ein- oder ausschalten */
+export async function regionSetzen(id: string, aktiv: boolean): Promise<void> {
+  if (!inTauri()) return;
+  await invoke("region_setzen", { id, aktiv });
+}
+
+/** Liegen die Punkte im geladenen Straßennetz? (im Browser: immer) */
+export async function erreichbar(punkte: LatLon[]): Promise<boolean[]> {
+  if (!inTauri() || !punkte.length) return punkte.map(() => true);
+  return invoke<boolean[]>("erreichbar", { punkte: punkte.map((p) => [p.lat, p.lon]) });
 }
 
 export function distanceM(a: LatLon, b: LatLon): number {
@@ -60,8 +84,10 @@ export function flightRoute(from: LatLon, to: LatLon, speedKmh: number): Route {
 }
 
 export async function geoStatus(): Promise<GeoStatus> {
-  if (!inTauri()) return { roads: "Browser-Ersatz", roads_nodes: 0, addresses: "Browser-Ersatz", address_count: 0 };
-  return invoke<GeoStatus>("geo_status");
+  if (!inTauri()) return { roads: "Browser-Ersatz", roads_nodes: 0, addresses: "Browser-Ersatz", address_count: 0, regionen: [] };
+  const g = await invoke<GeoStatus>("geo_status");
+  regionenCache = g.regionen ?? [];
+  return g;
 }
 
 export async function route(from: LatLon, to: LatLon): Promise<Route> {
