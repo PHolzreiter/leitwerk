@@ -4,6 +4,8 @@ package-lock.json
 
 # Rust / Tauri
 src-tauri/target/
+tools/roadtest/target/
+tools/roadtest/Cargo.lock
 src-tauri/gen/
 src-tauri/icons/
 

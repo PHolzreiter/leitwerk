@@ -42,4 +42,12 @@ fn main() {
             None => println!("  zurück: keine Route"),
         }
     }
+    // Fahrzeiten vieler Punkte zu einem Ziel (wie die Fahrzeugvorschläge)
+    let quellen: Vec<(f64, f64)> = orte.iter().map(|o| (o.1, o.2)).collect();
+    let t = Instant::now();
+    let z = g.travel_times_to((orte[1].1, orte[1].2), &quellen, 3.0 * 3600.0);
+    println!("Fahrzeiten nach AKH Wien ({} ms):", t.elapsed().as_millis());
+    for (o, x) in orte.iter().zip(z) {
+        println!("  {}: {}", o.0, x.map_or("–".to_string(), |s| format!("{:.0} min", s / 60.0)));
+    }
 }
