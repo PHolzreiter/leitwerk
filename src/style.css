@@ -137,12 +137,6 @@ body {
   font-size: 13px;
 }
 
-.tabs {
-  display: flex;
-  gap: 4px;
-  margin-left: 12px;
-}
-
 .tab {
   background: transparent;
   border: 1px solid transparent;
@@ -151,24 +145,6 @@ body {
   border-radius: 6px;
   font: inherit;
   cursor: pointer;
-}
-
-.tab:hover {
-  color: var(--text);
-  background: var(--panel-2);
-}
-
-.tab.active {
-  color: var(--text);
-  background: var(--panel-2);
-  border-color: var(--line);
-}
-
-.topbar-right {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 14px;
 }
 
 .badge {
@@ -192,19 +168,8 @@ body {
   min-height: 0;
 }
 
-.view {
-  position: absolute;
-  inset: 0;
-}
-
 /* Höhere Spezifität als .maplibregl-map (setzt sonst position: relative,
    wodurch die Karte die Höhe 0 bekommt). */
-.workspace .map {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-}
 
 .map-message {
   position: absolute;
@@ -291,7 +256,7 @@ body {
 
 .ctx-menu {
   position: absolute;
-  z-index: 7;
+  z-index: 1200;
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -452,7 +417,7 @@ select:focus {
 .dlg-overlay {
   position: fixed;
   inset: 0;
-  z-index: 50;
+  z-index: 1000;
   background: rgba(10, 14, 20, 0.45);
   display: flex;
   align-items: center;
@@ -802,7 +767,7 @@ select:focus {
   position: fixed;
   right: 18px;
   bottom: 40px;
-  z-index: 100;
+  z-index: 2100;
   background: var(--panel);
   border: 1px solid var(--line);
   border-left: 4px solid var(--ok);
@@ -844,13 +809,6 @@ select:focus {
 
 /* ================= Phase 3: Leitstelle ================= */
 
-.simbar {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
 .tempo {
   display: flex;
   gap: 2px;
@@ -875,139 +833,20 @@ select:focus {
   border-color: #8a2d22;
 }
 
-.view.scroll {
-  overflow: auto;
-}
-
-.ops {
-  display: grid;
-  grid-template-columns: 340px 1fr 410px;
-  height: 100%;
-}
-
-.ops-center {
-  position: relative;
-  min-width: 0;
-}
-
-.ops-left,
-.ops-right {
-  background: var(--panel);
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.ops-left {
-  border-right: 1px solid var(--line);
-}
-
-.ops-right {
-  border-left: 1px solid var(--line);
-}
-
-.ops-sec {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-}
-
-.ops-inc {
-  flex: 1 1 50%;
-  border-bottom: 1px solid var(--line);
-}
-
-.ops-veh {
-  flex: 1 1 50%;
-}
-
-.ops-head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
-  font-weight: 700;
-  border-bottom: 1px solid var(--line);
-}
-
-.ops-head > span:first-child {
-  flex: 1;
-}
-
-.ops-head .veh-filter {
-  width: 140px;
-  padding: 3px 6px;
-  font-weight: 400;
-}
-
 .chk.small {
   font-size: 11px;
   font-weight: 400;
   color: var(--text-dim);
 }
 
-.ops-list {
-  overflow: auto;
-  flex: 1;
-  min-height: 0;
-}
-
 .pad {
   padding: 12px;
-}
-
-.inc-row {
-  display: flex;
-  gap: 8px;
-  padding: 7px 10px;
-  border-bottom: 1px solid var(--hover);
-  cursor: pointer;
-  font-size: 12.5px;
-}
-
-.inc-row:hover {
-  background: var(--panel-2);
-}
-
-.inc-row.sel {
-  background: var(--sel);
-}
-
-.inc-row.z-neu {
-  animation: blink 1.2s infinite;
-}
-
-.inc-row.z-abgeschlossen {
-  opacity: 0.55;
 }
 
 @keyframes blink {
   50% {
     background: var(--alert-bg);
   }
-}
-
-.inc-stufe {
-  width: 6px;
-  border-radius: 3px;
-  flex: none;
-}
-
-.inc-main {
-  flex: 1;
-  min-width: 0;
-}
-
-.inc-main > div {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.inc-state {
-  font-size: 11px;
-  color: var(--text-dim);
-  white-space: nowrap;
 }
 
 .warn-dot {
@@ -1023,27 +862,6 @@ select:focus {
   font-weight: 700;
 }
 
-.veh-group {
-  padding: 6px 10px 2px;
-  font-size: 11px;
-  color: var(--text-dim);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.veh-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 3px 10px;
-  font-size: 12.5px;
-  cursor: pointer;
-}
-
-.veh-row:hover {
-  background: var(--panel-2);
-}
-
 .st-chip {
   display: inline-block;
   min-width: 20px;
@@ -1054,42 +872,6 @@ select:focus {
   font-size: 12px;
   padding: 1px 4px;
   text-shadow: 0 0 2px rgba(0, 0, 0, 0.6);
-}
-
-.rtabs {
-  display: flex;
-  border-bottom: 1px solid var(--line);
-}
-
-.rtab {
-  flex: 1;
-  background: none;
-  border: none;
-  color: var(--text-dim);
-  padding: 9px;
-  font: inherit;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.rtab.active {
-  color: var(--text);
-  box-shadow: inset 0 -2px 0 var(--blue);
-}
-
-.funk-badge {
-  background: var(--accent);
-  color: #fff;
-  border-radius: 999px;
-  padding: 0 6px;
-  font-size: 11px;
-  margin-left: 4px;
-}
-
-.rbody {
-  overflow: auto;
-  flex: 1;
-  min-height: 0;
 }
 
 .funk-row {
@@ -1678,16 +1460,6 @@ input[type="color"] {
   color: var(--blue);
 }
 
-.rb-chat {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-}
-
-.rb-chat[hidden] {
-  display: none;
-}
-
 .chat-list {
   flex: 1;
   overflow: auto;
@@ -1823,47 +1595,13 @@ input[type="color"] {
 }
 
 /* ---------------------------------------------------------------- Notruf / Abfrage */
-.inc-anruf {
-  font-size: 12px;
-  font-weight: 600;
-}
-.inc-anruf.klingelt {
-  color: var(--alert-text);
-  animation: klingeln 1s ease-in-out infinite;
-}
-.inc-anruf.verpasst {
-  color: var(--warn);
-}
-.inc-anruf.aktiv {
-  color: var(--ok);
-}
-.inc-annehmen {
-  margin-top: 4px;
-  align-self: flex-start;
-}
+
 @keyframes klingeln {
   50% {
     opacity: 0.45;
   }
 }
-.anruf-kopf {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-.anruf-kopf > div {
-  flex: 1;
-}
-.anruf-kopf .klingelt {
-  color: var(--alert-text);
-  font-weight: 700;
-  animation: klingeln 1s ease-in-out infinite;
-}
-.anruf-kopf .verpasst {
-  color: var(--warn);
-  font-weight: 700;
-}
+
 .anruf-verlauf {
   max-height: 220px;
   overflow-y: auto;
@@ -2062,11 +1800,7 @@ input[type="color"] {
 }
 
 /* ---------------------------------------------------------------- Funkverkehr */
-.rb-funk {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
+
 .funk-rufe {
   display: flex;
   flex-direction: column;
@@ -2163,97 +1897,7 @@ input[type="color"] {
 }
 
 /* ---------------------------------------------------------------- Krankentransporte */
-.ltabs {
-  display: inline-flex;
-  gap: 2px;
-}
-.ltab {
-  background: none;
-  border: 1px solid transparent;
-  color: var(--text-dim);
-  font: inherit;
-  font-weight: 600;
-  padding: 2px 8px;
-  border-radius: 6px;
-  cursor: pointer;
-}
-.ltab.active {
-  color: var(--text);
-  border-color: var(--line);
-  background: var(--panel-2);
-}
-.kt-badge {
-  background: var(--blue);
-  color: #fff;
-  border-radius: 8px;
-  padding: 0 6px;
-  font-size: 11px;
-}
-.kt-badge.klingelt {
-  background: var(--accent);
-  animation: klingeln 1s ease-in-out infinite;
-}
-.kt-row {
-  display: grid;
-  grid-template-columns: 52px 1fr auto;
-  gap: 8px;
-  padding: 6px 10px;
-  border-bottom: 1px solid var(--line);
-  cursor: pointer;
-  font-size: 13px;
-}
-.kt-row:hover {
-  background: var(--panel-2);
-}
-.kt-row.sel {
-  background: var(--sel);
-}
-.kt-row.st-erledigt,
-.kt-row.st-storniert {
-  opacity: 0.55;
-}
-.kt-zeit {
-  display: flex;
-  flex-direction: column;
-  font-size: 12px;
-}
-.kt-main {
-  min-width: 0;
-}
-.kt-main .muted {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.kt-st {
-  text-align: right;
-  font-size: 12px;
-}
-.kt-status {
-  display: inline-block;
-  padding: 1px 6px;
-  border-radius: 6px;
-  background: var(--panel-2);
-  border: 1px solid var(--line);
-  white-space: nowrap;
-}
-.kt-status.aufnahme,
-.kt-status.offen {
-  border-color: var(--warn);
-  color: var(--warn);
-}
-.kt-status.spaet {
-  border-color: var(--accent);
-  color: var(--alert-text);
-}
-.kt-status.vorgemerkt {
-  border-color: var(--blue);
-}
-.kt-status.unterwegs,
-.kt-status.anBord {
-  border-color: var(--ok);
-  color: var(--ok);
-}
+
 .kt-art {
   font-size: 11px;
   border: 1px solid var(--line);
@@ -2328,44 +1972,7 @@ input[type="color"] {
 }
 
 /* ---- KT/Überstellungen (0.11) */
-.kt-filter {
-  display: flex;
-  gap: 4px;
-  padding: 6px 8px;
-  border-bottom: 1px solid var(--line);
-  position: sticky;
-  top: 0;
-  background: var(--panel);
-  z-index: 1;
-}
-.kt-chip {
-  border: 1px solid var(--line);
-  background: transparent;
-  color: var(--text-dim);
-  border-radius: 12px;
-  padding: 2px 9px;
-  font-size: 12px;
-  cursor: pointer;
-}
-.kt-chip:hover {
-  color: var(--text);
-}
-.kt-chip.active {
-  background: var(--panel-2);
-  color: var(--text);
-  border-color: var(--blue);
-}
-.kt-chip .n {
-  color: var(--text-dim);
-  font-size: 11px;
-  margin-left: 2px;
-}
-.kt-zeile1 {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px;
-}
+
 .kt-code {
   display: inline-block;
   font-size: 11px;
@@ -2478,6 +2085,7 @@ input[type="color"] {
   flex: 1;
   min-width: 200px;
 }
+
 .kt-zeiten {
   align-items: center;
 }

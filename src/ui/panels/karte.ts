@@ -106,7 +106,7 @@ function erstellen(ctx: PanelKontext) {
     const hh = h;
     if (location.search.includes("debug")) {
       const w = window as unknown as { __lw?: Record<string, unknown> };
-      if (w.__lw && !w.__lw.map) w.__lw.map = map;
+      if (w.__lw && (!w.__lw.map || (w.__lw.map as { _removed?: boolean })._removed)) w.__lw.map = map;
     }
 
     map.on("load", () => {
@@ -292,6 +292,8 @@ function erstellen(ctx: PanelKontext) {
       entfernt = true;
       aus.forEach((f) => f());
       try {
+        const w = window as unknown as { __lw?: Record<string, unknown> };
+        if (w.__lw?.map === h?.map) delete w.__lw!.map;
         h?.map.remove();
       } catch (e) {
         console.warn(e);

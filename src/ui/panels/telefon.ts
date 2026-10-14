@@ -148,7 +148,7 @@ function erstellen(ctx: PanelKontext) {
     const t = sim.state.zeit;
     const st =
       a.status === "klingelt"
-        ? `<span class="tel-st klingelt">klingelt</span>`
+        ? `<span class="tel-st klingelt">${a.folge ? "Folgeanruf" : a.versuche > 1 ? `ruft wieder an (${a.versuche}.)` : "klingelt"}</span>`
         : a.status === "aktiv"
           ? `<span class="tel-st aktiv">im Gespräch${wer}</span>`
           : a.status === "gehalten"

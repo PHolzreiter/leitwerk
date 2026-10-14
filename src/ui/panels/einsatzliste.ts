@@ -9,7 +9,7 @@ import { codeInfo, istUeberstellung, ktCode } from "../../sim/ktCodes";
 import { mp } from "../../net/mehrspieler";
 import { ensureCodes } from "../codesPrompt";
 import { el, esc, toast } from "../dom";
-import { codeChip } from "../ktView";
+import { codeChip, sekTags } from "../ktView";
 import { registriere, type PanelKontext } from "../ws/arbeitsplatz";
 import { auswahl, onAuswahl, waehle } from "../ws/auswahl";
 import { anrufAnnehmen } from "./telefon";
@@ -174,7 +174,7 @@ function erstellen(ctx: PanelKontext) {
     const tel =
       a && e.zustand !== "abgeschlossen" && ANRUF_LAEUFT.includes(a.status)
         ? `<span class="el-anruf ${a.status}">${
-            a.status === "klingelt" ? "📞 klingelt" : a.status === "verpasst" ? "📵 verpasst" : a.status === "gehalten" ? "⏸ gehalten" : `📞 im Gespräch${a.angenommenVon && mp.aktiv ? ` · ${esc(a.angenommenVon.pid === mp.ich.pid ? "du" : a.angenommenVon.name)}` : ""}`
+            a.status === "klingelt" ? (a.folge ? "📞 Folgeanruf" : "📞 klingelt") : a.status === "verpasst" ? "📵 verpasst" : a.status === "gehalten" ? "⏸ gehalten" : `📞 im Gespräch${a.angenommenVon && mp.aktiv ? ` · ${esc(a.angenommenVon.pid === mp.ich.pid ? "du" : a.angenommenVon.name)}` : ""}`
           }</span>`
         : "";
     const fz = e.fahrzeuge.map((id) => sim.state.fahrzeuge[id]).filter((f) => f && f.einsatzId === e.id);
@@ -211,7 +211,7 @@ function erstellen(ctx: PanelKontext) {
       <span class="el-bar"></span>
       <div class="el-main">
         <div class="el-z1"><span class="el-typ ${typ}">${typ === "sek" ? "Überstellung" : "KT"}</span><b>${esc(k.nummer)}</b><span class="muted">${zeit}${k.d.abholung ? " Abholung" : k.d.termin ? " Termin" : ""}</span>${dringend ? `<span class="el-sofort">SOFORT</span>` : ""}${tel}</div>
-        <div class="el-z2">${codeChip(k.d.code)} <b>${esc(k.d.patient.name || "(Aufnahme)")}</b> <span class="muted">${esc(ktCode(k.d.code)?.name ?? "")}</span></div>
+        <div class="el-z2">${codeChip(k.d.code)} <b>${esc(k.d.patient.name || "(Aufnahme)")}</b> ${sekTags(k.d)} <span class="muted">${esc(ktCode(k.d.code)?.name ?? "")}</span></div>
         <div class="el-z3 muted">${esc(k.d.von?.label ?? "?")} → ${esc(k.d.nach?.label ?? "?")}</div>
       </div>
       <div class="el-rechts"><span class="el-lage${spaet ? " spaet" : ""}">${esc(spaet ? "zu spät dran" : KT_STATUS_LABEL[k.status])}</span>${fz ? `<div class="el-fz">${esc(fz.funkrufname)}${nef ? ` + ${esc(nef.funkrufname)}` : ""}</div>` : ""}</div>`;

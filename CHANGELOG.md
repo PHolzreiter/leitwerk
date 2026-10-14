@@ -1,5 +1,20 @@
 # Änderungen
 
+## 0.13.0 – Neue Oberfläche
+- Fenster frei anordnen: Jeder Teil ist ein eigenes Fenster (Karte, Einsatzliste, Alle Fahrzeuge, Aktive Fahrzeuge, Telefon, Abfrage, Einsatzmaske, KT-Maske, Funk, Chat). Reiter ziehen und daneben, darunter oder als weiteren Reiter ablegen, Ränder ziehen ändert die Größe, ⤢ macht ein Fenster groß; auch schwebende Fenster sind möglich (Rechtsklick auf einen Reiter)
+- Zweiter Bildschirm: ⧉ schiebt Fenster in ein eigenes Programmfenster, das man auf einen anderen Bildschirm ziehen kann; ⇱ holt sie zurück. Auswahl, Eingaben und neue Einsätze gehen sofort zwischen den Fenstern hin und her
+- Geschlossene Fenster holt man oben über „Fenster ▾“ zurück; dort steht auch, in welchem Programmfenster etwas offen ist. Eine zweite Karte ist möglich
+- Die Anordnung wird gemerkt und beim nächsten Start wiederhergestellt (auch weitere Programmfenster). Vorlagen unter „Anordnung ▾“: Alles auf einem Bildschirm, Notruf-Disponent, KT-Disponent, Funk, Zwei Monitore; eigene Anordnungen unter einem Namen speichern, als Datei exportieren und importieren, zurücksetzen unter Einstellungen → Persönlich
+- Telefon: alle Anrufe in einer Liste, farbig nach Art (Notruf rot, KT-Hotline blau, Überstellung violett) mit Rufnummer und Dauer. Annehmen, Halten, Zurückwechseln, Auflegen; wer einen Anruf annimmt, legt das laufende Gespräch in die Warteschleife. Wartet ein Anrufer zu lange, legt er auf und ruft später wieder an
+- Abfrage-Fenster: links der Anruf (Nummer, Dauer, Ortung, Halten, Mikrofon/Stumm als Vorbereitung für Sprache, Beenden), in der Mitte das Gespräch, rechts der Leitfaden – beim Notruf die Abfrage, bei KT und Überstellungen die Fragen der Hotline mit den schon eingetragenen Antworten. Darunter „Info an RTW“ (vorne automatisch aus der Abfrage) bzw. „Hinweise für die Besatzung“. Schmale Fenster ordnen sich untereinander an
+- Einsatzliste: Notfälle, Krankentransporte und Überstellungen gemeinsam; Farbe nach Zustand (rot = disponieren, gelb = Anruf/Aufnahme, blau = unterwegs, grün = vor Ort/an Bord, grau = erledigt), Filter nach Art, „nur zu tun“, erledigte, Suche
+- Aktive Fahrzeuge: alle, die nicht frei auf der Wache sind, mit Status, Auftrag und Ankunftszeit; Alle Fahrzeuge nach Dienststelle (einklappbar) mit Filter und Suche. Klick zeigt das Fahrzeug auf der Karte, Doppelklick lässt die Kamera folgen, Rechtsklick setzt den Status
+- Oben in der Leiste: „📞 Notrufe“ und „🚑 KT-Hotline“ – nehme ich an oder nicht. Wer annimmt, bekommt Klingeln, und Telefon bzw. Abfrage gehen von selbst auf
+- Hell, Dunkel oder wie das System; Grundfarben weiß bzw. grau, Kontrast in den NÖ-Farben Blau und Gelb. Die Karte wird im dunklen Schema dunkel (oder bleibt auf Wunsch hell)
+- Einstellungen sind aufgeteilt: Persönlich (Aussehen, Größe der Oberfläche, Bewegungen, Anrufannahme, Klingelton und Lautstärke, Funk-Piep, Tastenkürzel, eigene Statusfarben, Anordnungen) gilt nur für dich; Leitstelle & Simulation kommt im Multiplayer immer vom Host; Programm & Karten (Kartenpakete, Updates)
+- Tastenkürzel (änderbar): F1 annehmen, Esc auflegen, F3 halten/zurückwechseln, Strg+F Fahrzeug suchen, F5 neuer Test-Einsatz, Strg+1/2/3 Einsatzliste/Karte/Funk
+- Daten und Einstellungen gehen als großes Pop-up über dem Arbeitsplatz auf
+
 ## 0.12.0 – Straßen und Spitäler für ganz Ostösterreich
 - Straßennetz je Bundesland als eigenes Kartenpaket: Niederösterreich (immer dabei), Wien, Burgenland, Oberösterreich, Steiermark – einzeln herunterladen, ein- und ausschalten (Einstellungen → Kartenpakete); die Netze passen an den Landesgrenzen nahtlos zusammen
 - Ohne Straßenpaket eines Bundeslands gibt es keine Krankentransporte und Überstellungen dorthin; im Mehrspieler müssen alle dieselben Straßenpakete eingeschaltet haben (sonst Hinweis beim Beitreten)

@@ -255,7 +255,27 @@ export function arbeitsplatzStarten(container: HTMLElement): DockviewApi {
   });
   if (location.search.includes("debug")) {
     const w = window as unknown as { __lw?: Record<string, unknown> };
-    w.__lw = { ...(w.__lw ?? {}), dock: api, vorlage: (i: number) => vorlageAnwenden(VORLAGEN[i]) };
+    w.__lw = {
+      ...(w.__lw ?? {}),
+      dock: api,
+      vorlage: (i: number) => vorlageAnwenden(VORLAGEN[i]),
+      zeige: (id: string) => panelZeigen(id),
+      // für automatische Tests: alle Fenster gleichzeitig sichtbar
+      testAnordnung: () => {
+        const a = api!;
+        a.clear();
+        add(a, "einsatzliste");
+        add(a, "einsatz", { ref: "einsatzliste", dir: "right" });
+        add(a, "kt", { ref: "einsatz", dir: "right" });
+        add(a, "abfrage", { ref: "kt", dir: "right" });
+        add(a, "telefon", { ref: "einsatzliste", dir: "below" });
+        add(a, "karte", { ref: "einsatz", dir: "below" });
+        add(a, "funk", { ref: "kt", dir: "below" });
+        add(a, "chat", { ref: "abfrage", dir: "below" });
+        add(a, "fahrzeuge", { ref: "telefon", dir: "below" });
+        add(a, "aktive", { ref: "chat", dir: "below" });
+      },
+    };
   }
   api.onDidLayoutChange(() => merken());
   api.onDidAddPanel(() => {

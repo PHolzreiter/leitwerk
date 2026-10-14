@@ -64,8 +64,8 @@ export function kuerzelStarten(): void {
       if (tippt(e) && !/^(Ctrl|Alt|F\d+)/.test(taste) && taste !== "Escape") return;
       // Esc in einem Feld: nur Feld verlassen
       if (taste === "Escape" && tippt(e)) return;
-      // offene Dialoge haben Vorrang
-      if (document.querySelector(".dlg-overlay:not([style*='none']), .gross-overlay:not([hidden])")) return;
+      // offene Dialoge, Menüs, Kamera-Folgen und Ort-Wählen haben Vorrang (vor allem bei Esc)
+      if (document.querySelector(".dlg-overlay:not([style*='none']), .gross-overlay:not([hidden]), .lw-menu, .ctx-menu, .fz-folgt:not([hidden]), .pick-banner")) return;
       const fn = aktionen.get(id);
       if (!fn) return;
       const r = fn();
@@ -74,5 +74,5 @@ export function kuerzelStarten(): void {
       e.stopPropagation();
       return;
     }
-  });
+  }, true);
 }

@@ -1,5 +1,6 @@
 /**
- * Krankentransporte und Überstellungen: Liste (linke Seite) und Auftragsmaske mit Hotline-Gespräch und Disposition.
+ * Krankentransporte und Überstellungen: Auftragsmaske (Aufnahme und Disposition).
+ * Das Hotline-Gespräch selbst steht im Abfrage-Fenster.
  */
 import { BEREICHE, bereicheVon } from "../data/model";
 import { store } from "../data/store";
@@ -11,7 +12,6 @@ import {
   hhmm,
   KT_ART_LABEL,
   KT_STATUS_LABEL,
-  ktKurz,
   sekLeer,
   type KtArt,
   type KtAuftrag,
@@ -29,7 +29,6 @@ function fehler(p: Promise<unknown>): void {
   p.catch((e) => toast(String((e as Error).message ?? e), "error"));
 }
 
-const STATUS_ORDNUNG: Record<string, number> = { aufnahme: 0, offen: 1, vorgemerkt: 2, unterwegs: 3, anBord: 4, erledigt: 5, storniert: 6 };
 const QUELLE: Record<KtAuftrag["quelle"], string> = { hotline: "KT-Hotline", online: "Online-Anmeldung", dauer: "Dauerauftrag", manuell: "von Hand" };
 
 function ichFuehre(k: KtAuftrag): boolean {
@@ -67,7 +66,7 @@ export function codeChip(code: string | null | undefined, gross = false): string
 }
 
 /** kleine Merkmale einer Überstellung (Notarzt, Monitoring …) */
-function sekTags(d: KtDaten): string {
+export function sekTags(d: KtDaten): string {
   const s = d.sek;
   if (!s) return "";
   const t: string[] = [];
@@ -78,83 +77,6 @@ function sekTags(d: KtDaten): string {
   if (s.bit) t.push("BIT");
   if (codeInfo(d.code).flug) t.push("✈");
   return t.map((x) => `<span class="kt-tag">${esc(x)}</span>`).join("");
-}
-
-// ---------------------------------------------------------------- Liste
-
-type Filter = "alle" | "kt" | "sek";
-let filter: Filter = "alle";
-export function ktFilter(): Filter {
-  return filter;
-}
-
-export function ktListe(container: HTMLElement, deps: { selected(): string | null; select(id: string): void; annehmen(id: string): void }, alle: boolean): void {
-  const sichtbar = (sim.state.kt ?? []).filter((k) => alle || (k.status !== "erledigt" && k.status !== "storniert"));
-  const zahl = (f: Filter) => sichtbar.filter((k) => f === "alle" || (f === "sek") === (artVon(k.d) === "sek")).length;
-  const liste = sichtbar.filter((k) => filter === "alle" || (filter === "sek") === (artVon(k.d) === "sek"));
-  liste.sort((a, b) => {
-    const ka = a.anruf?.status === "klingelt" ? -1 : STATUS_ORDNUNG[a.status];
-    const kb = b.anruf?.status === "klingelt" ? -1 : STATUS_ORDNUNG[b.status];
-    // dringende Überstellungen nach oben
-    const da = codeInfo(a.d.code).sondersignal && a.status === "offen" ? -0.5 : 0;
-    const db = codeInfo(b.d.code).sondersignal && b.status === "offen" ? -0.5 : 0;
-    return ka + da - (kb + db) || (a.d.abholung ?? a.d.termin ?? a.eingang) - (b.d.abholung ?? b.d.termin ?? b.eingang);
-  });
-  container.innerHTML = "";
-  // Filter: Alle / Krankentransporte / Überstellungen
-  const chips = el("div", { class: "kt-filter" });
-  for (const [f, label] of [
-    ["alle", "Alle"],
-    ["kt", "Krankentransporte"],
-    ["sek", "Überstellungen"],
-  ] as [Filter, string][]) {
-    const b = el("button", { class: `kt-chip${filter === f ? " active" : ""}` });
-    b.innerHTML = `${label} <span class="n">${zahl(f)}</span>`;
-    b.addEventListener("click", () => {
-      filter = f;
-      ktListe(container, deps, alle);
-    });
-    chips.appendChild(b);
-  }
-  container.appendChild(chips);
-  for (const k of liste) {
-    const row = el("div", { class: `kt-row st-${k.status}${k.id === deps.selected() ? " sel" : ""}` });
-    const fz = k.fz ? sim.state.fahrzeuge[k.fz] : undefined;
-    const nef = k.begleit ? sim.state.fahrzeuge[k.begleit] : undefined;
-    const a = k.anruf;
-    const tel =
-      a && (a.status === "klingelt" || a.status === "verpasst")
-        ? `<div class="inc-anruf ${a.status === "klingelt" ? "klingelt" : "verpasst"}">${a.status === "klingelt" ? "📞 KT-Hotline klingelt" : "📵 verpasst"}</div>`
-        : a?.status === "aktiv"
-          ? `<div class="inc-anruf aktiv">📞 im Gespräch</div>`
-          : "";
-    const ab = k.d.abholung ?? (k.d.termin ? k.d.termin - 45 * 60_000 : null);
-    const spaet = ab !== null && ["offen", "vorgemerkt"].includes(k.status) && ab < sim.state.zeit;
-    const lage = k.d.lage ? esc(ktKurz(k.d).replace(/^.*\(/, "(")) : "";
-    const name = esc(k.d.patient.name || "(Aufnahme)");
-    row.innerHTML = `
-      <div class="kt-zeit"><b>${k.d.abholung ? hhmm(k.d.abholung) : hhmm(k.d.termin)}</b><span class="muted">${k.d.abholung ? `an ${hhmm(k.d.termin)}` : k.d.termin ? "Termin" : ""}</span></div>
-      <div class="kt-main">
-        <div class="kt-zeile1">${codeChip(k.d.code)} <b>${name}</b> <span class="kt-lage">${lage}</span>${sekTags(k.d)}${k.quelle === "dauer" ? ` <span class="muted">· Dauer</span>` : k.quelle === "online" ? ` <span class="muted">· online</span>` : ""}</div>
-        <div class="muted">${esc(k.d.von?.label ?? "?")} → ${esc(k.d.nach?.label ?? "?")}</div>
-        ${tel}
-      </div>
-      <div class="kt-st"><span class="kt-status ${k.status}${spaet ? " spaet" : ""}">${esc(spaet ? "zu spät dran" : KT_STATUS_LABEL[k.status])}</span>${fz ? `<div class="muted">${esc(fz.funkrufname)}${nef ? ` + ${esc(nef.funkrufname)}` : ""}</div>` : ""}</div>`;
-    row.addEventListener("click", () => deps.select(k.id));
-    if (a && (a.status === "klingelt" || a.status === "verpasst")) {
-      const b = el("button", { class: "btn small primary inc-annehmen" }, a.status === "klingelt" ? "Annehmen" : "Zurückrufen");
-      b.addEventListener("click", (ev) => {
-        ev.stopPropagation();
-        deps.annehmen(k.id);
-      });
-      row.querySelector(".kt-main")!.appendChild(b);
-    }
-    container.appendChild(row);
-  }
-  if (!liste.length)
-    container.appendChild(
-      el("div", { class: "muted pad" }, filter === "sek" ? "Keine offenen Überstellungen." : filter === "kt" ? "Keine offenen Krankentransporte." : "Keine offenen Aufträge."),
-    );
 }
 
 // ---------------------------------------------------------------- Ortswahl (Krankenhaus + Station oder Adresse)
@@ -561,12 +483,4 @@ export function ktMaske(k: KtAuftrag, deps: { flyTo(lat: number, lon: number, z?
   refresh();
   if (k.d.von) deps.flyTo(k.d.von.lat, k.d.von.lon, 13);
   return { root, refresh };
-}
-
-/** Anruf annehmen und mit der ersten Frage eröffnen (aus der Liste heraus) */
-export async function ktAnnehmen(id: string): Promise<void> {
-  await sim.call("ktAnrufAnnehmen", id);
-  const k = sim.ktAuftrag(id);
-  const letzte = k?.anruf?.gespraech[k.anruf.gespraech.length - 1];
-  if (k && (!letzte || letzte.von !== "anrufer")) await ktFragen(k, KT_FRAGEN[0].text, KT_FRAGEN[0]);
 }

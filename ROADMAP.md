@@ -26,7 +26,8 @@ Gesammelte Wünsche, die noch nicht eingeplant sind (Reihenfolge noch offen).
 - ~~BIT-Nachforderung bei adipösen Patienten~~ (0.12.0)
 - ~~Straßennetz größer: je Bundesland (NÖ, W, B, OÖ, Stmk)~~ (0.12.0)
 - später: Privatkliniken und Reha-Zentren als Ziele für Krankentransporte (Add-on)
-- als Nächstes: neue Oberfläche (Fenster frei anordnen, mehrere Monitore, Hell/Dunkel/System)
+- ~~neue Oberfläche (Fenster frei anordnen, mehrere Monitore, Hell/Dunkel/System)~~ (0.13.0)
+- später: Notruf und Funk mit Sprache (Mikrofon, Audio-Menü), eingebaute KI
 
 ## Simulation
 - **Ausrückzeiten** (einstellbar, Standard):
