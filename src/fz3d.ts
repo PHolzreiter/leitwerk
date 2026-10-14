@@ -257,13 +257,14 @@ export function addFahrzeug3D(map: maplibregl.Map): Fahrzeug3D {
   // Zwischen zwei Simulationsschritten weiterrechnen (flüssige Bewegung)
   let simZeit = sim.state.zeit;
   let simReal = performance.now();
-  sim.onChange(() => {
+  const ausSim = sim.onChange(() => {
     if (sim.state.zeit !== simZeit) {
       simZeit = sim.state.zeit;
       simReal = performance.now();
     }
   });
   const jetzt = () => (sim.state.laeuft ? simZeit + Math.min(1500, performance.now() - simReal) * sim.state.tempo : simZeit);
+  map.once("remove", ausSim);
 
   const sichtbar = () => mode3d && gewuenscht && map.getZoom() >= ZOOM_FLUG;
   /** zuletzt gezeichnete Bildschirmpositionen (Pixel) */

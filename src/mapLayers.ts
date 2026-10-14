@@ -4,7 +4,7 @@ import type { Feature as GFeature, FeatureCollection, LineString, Point } from "
 import { flughoehe } from "./sim/bewegung";
 import { sim } from "./sim/engine";
 import { findCode } from "./sim/codes";
-import { stufeFarbe } from "./ui/opsView";
+import { stufeFarbe } from "./ui/panels/teile";
 
 import {
   HOSPITAL_FLAGS,
@@ -188,11 +188,12 @@ export function addDataLayers(map: maplibregl.Map, cb: DataLayerCallbacks): void
   // Krankenhäuser über den Dienststellen (Notarztstützpunkte liegen oft direkt am Spital)
   for (const id of LAYER_GROUPS.hospitals) map.moveLayer(id);
 
-  store.onChange(() => {
+  const ausStore = store.onChange(() => {
     (map.getSource("lw-stations") as maplibregl.GeoJSONSource | undefined)?.setData(stationFeatures());
     (map.getSource("lw-hospitals") as maplibregl.GeoJSONSource | undefined)?.setData(hospitalFeatures());
     (map.getSource("lw-pois") as maplibregl.GeoJSONSource | undefined)?.setData(poiFeatures());
   });
+  map.once("remove", ausStore);
 
   // Klick: Details anzeigen
   const clickable: [string, Kind][] = [
@@ -521,7 +522,7 @@ export function addSimLayers(
   }
 
   let last = 0;
-  sim.onChange(() => {
+  const ausSim = sim.onChange(() => {
     const now = performance.now();
     if (now - last < 300) return;
     last = now;
@@ -529,4 +530,5 @@ export function addSimLayers(
     (map.getSource("lw-incidents") as maplibregl.GeoJSONSource | undefined)?.setData(incidentFeatures());
     (map.getSource("lw-routes") as maplibregl.GeoJSONSource | undefined)?.setData(routeFeatures());
   });
+  map.once("remove", ausSim);
 }

@@ -1,6 +1,7 @@
 /** Reiter „Einstellungen“: Statusmodell, Einsatzaufkommen, Stufen-Zuordnung, Fahrzeiten, Flugrettung. */
 import { store } from "../data/store";
 import { sim } from "../sim/engine";
+import { mp } from "../net/mehrspieler";
 import { geoStatus, REGIONEN } from "../sim/geo";
 import { GEBIETE, KATEGORIEN, KATEGORIE_LABEL, NOTARZT_LABEL, defaultStufeFuer, type Kategorie, type NotarztRegel, type Settings } from "../sim/settings";
 import { codeKategorien } from "../sim/codes";
@@ -23,7 +24,7 @@ const STATUS_BEDEUTUNG: Record<string, string> = {
   abgemeldet: "nicht im Dienst",
 };
 
-export function createSettingsView(container: HTMLElement): { refresh(): void } {
+export function createSettingsView(container: HTMLElement, teil: "simulation" | "programm" = "simulation"): { refresh(): void } {
   let draft: Settings = structuredClone(store.settings);
 
   const num = (v: number, step = "1", min = "0") => {
@@ -45,6 +46,20 @@ export function createSettingsView(container: HTMLElement): { refresh(): void } 
       page.appendChild(s);
       return s;
     };
+
+    if (teil === "programm") {
+      programmTeil(section);
+      return;
+    }
+    page.appendChild(
+      el(
+        "div",
+        { class: "set-hinweis" },
+        mp.aktiv && mp.status.rolle === "client"
+          ? "Diese Einstellungen gelten für alle im Spiel und kommen vom Host – ändern kann sie nur, wer das Recht „Einstellungen & Daten“ hat."
+          : "Diese Einstellungen gelten für die ganze Leitstelle – im Multiplayer bekommen alle Mitspieler die Einstellungen des Hosts.",
+      ),
+    );
 
     // Status
     const sSec = section("Statusmodell", "Nummer, Bezeichnung und Farbe der Status. Die Bedeutung ist fest, damit die Simulation weiß, was passiert.");
@@ -278,24 +293,6 @@ export function createSettingsView(container: HTMLElement): { refresh(): void } 
       draft,
     );
 
-    // Kartenpakete und Programm
-    buildPacksSection(
-      section(
-        "Kartenpakete",
-        "Grundpaket und Straßen Niederösterreich sind immer installiert. Straßen weiterer Bundesländer, Detailkarten und Gelände für die 3D-Ansicht kannst du bei Bedarf dazuladen, ein- und ausschalten oder wieder löschen. Ohne Straßenpaket eines Bundeslands gibt es keine Transporte dorthin. Im Mehrspieler brauchen alle dieselben Straßenpakete. Das Satellitenbild wird online geladen und braucht kein Paket.",
-      ),
-    );
-    buildAppSection(section("Programm"));
-
-    // Status von Straßennetz/Adressen
-    const gSec = section("Straßennetz und Adressen");
-    const gInfo = el("div", { class: "muted" }, "wird geprüft …");
-    gSec.appendChild(gInfo);
-    void geoStatus().then((g) => {
-      const bl = (g.regionen ?? []).map((r) => (r === "alt" ? "älteres Gesamtnetz" : (REGIONEN[r] ?? r))).join(", ");
-      gInfo.innerHTML = `Straßennetz: <b>${esc(g.roads)}</b>${g.roads_nodes ? ` (${g.roads_nodes.toLocaleString("de-AT")} Knoten)` : ""} · Adressen: <b>${esc(g.addresses)}</b>${g.address_count ? ` (${g.address_count.toLocaleString("de-AT")})` : ""}${bl ? `<br>Bundesländer: ${esc(bl)}` : ""}`;
-    });
-
     // Aktionen
     const act = el("div", { class: "set-actions" });
     const save = el("button", { class: "btn primary" }, "Speichern");
@@ -314,6 +311,27 @@ export function createSettingsView(container: HTMLElement): { refresh(): void } 
     });
     act.append(save, reset);
     page.appendChild(act);
+  }
+
+  function programmTeil(section: (title: string, hint?: string) => HTMLElement): void {
+    // Kartenpakete und Programm
+    buildPacksSection(
+      section(
+        "Kartenpakete",
+        "Grundpaket und Straßen Niederösterreich sind immer installiert. Straßen weiterer Bundesländer, Detailkarten und Gelände für die 3D-Ansicht kannst du bei Bedarf dazuladen, ein- und ausschalten oder wieder löschen. Ohne Straßenpaket eines Bundeslands gibt es keine Transporte dorthin. Im Mehrspieler brauchen alle dieselben Straßenpakete. Das Satellitenbild wird online geladen und braucht kein Paket.",
+      ),
+    );
+    buildAppSection(section("Programm"));
+
+    // Status von Straßennetz/Adressen
+    const gSec = section("Straßennetz und Adressen");
+    const gInfo = el("div", { class: "muted" }, "wird geprüft …");
+    gSec.appendChild(gInfo);
+    void geoStatus().then((g) => {
+      const bl = (g.regionen ?? []).map((r) => (r === "alt" ? "älteres Gesamtnetz" : (REGIONEN[r] ?? r))).join(", ");
+      gInfo.innerHTML = `Straßennetz: <b>${esc(g.roads)}</b>${g.roads_nodes ? ` (${g.roads_nodes.toLocaleString("de-AT")} Knoten)` : ""} · Adressen: <b>${esc(g.addresses)}</b>${g.address_count ? ` (${g.address_count.toLocaleString("de-AT")})` : ""}${bl ? `<br>Bundesländer: ${esc(bl)}` : ""}`;
+    });
+
   }
 
   render();

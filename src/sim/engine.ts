@@ -217,9 +217,11 @@ export interface AnrufNachricht {
 
 /** Notruf als Anruf mit Abfrage (nur mit importiertem Abfrageschema) */
 export interface Anruf {
-  status: "klingelt" | "aktiv" | "verpasst" | "beendet";
+  status: "klingelt" | "aktiv" | "gehalten" | "verpasst" | "beendet";
   /** Simulationszeit des letzten Statuswechsels */
   seit: number;
+  /** gehalten: so lange wartet der Anrufer, dann legt er auf */
+  haltenBis?: number | null;
   /** klingelt bis (danach legt der Anrufer auf) */
   klingelBis: number;
   /** verpasst: ruft um diese Zeit wieder an */
@@ -344,6 +346,7 @@ export const BEFEHLE = {
     "anrufAnnehmen",
     "anrufNachricht",
     "anrufBeenden",
+    "anrufHalten",
     "abfrageSetze",
     "abfrageExtra",
     "abfrageCode",
@@ -361,6 +364,7 @@ export const BEFEHLE = {
     "ktAnrufAnnehmen",
     "ktAnrufNachricht",
     "ktAnrufBeenden",
+    "ktAnrufHalten",
     "ktSetze",
     "ktAnlegen",
     "ktVormerken",
@@ -1598,7 +1602,15 @@ export class Simulation {
       const a = e.anruf;
       if (!a || e.zustand === "abgeschlossen") continue;
       if (a.ortung?.status === "laeuft" && t >= a.ortung.fertigUm) this.ortungFertig(e);
-      if (a.status === "klingelt" && t >= a.klingelBis) {
+      if (a.status === "gehalten" && t >= (a.haltenBis ?? t)) {
+        a.status = "verpasst";
+        a.seit = t;
+        a.haltenBis = null;
+        a.rueckrufUm = t + rnd(1, 2) * MIN;
+        a.gespraech.push({ zeit: t, von: "system", text: "Der Anrufer hat aufgelegt – zu lange in der Warteschleife" });
+        this.log(e, "Anrufer hat in der Warteschleife aufgelegt");
+        this.funk("Notruf", e.id, `Anrufer ${e.nummer} hat in der Warteschleife aufgelegt`, "warnung");
+      } else if (a.status === "klingelt" && t >= a.klingelBis) {
         a.status = "verpasst";
         a.seit = t;
         a.rueckrufUm = t + rnd(2, 3) * MIN;
@@ -1637,6 +1649,24 @@ export class Simulation {
     const a = e?.anruf;
     if (!e || !a) throw new Error("Kein Anruf zu diesem Einsatz");
     const ich = this.calltaker();
+    if (a.status === "gehalten") {
+      if (a.angenommenVon && a.angenommenVon.pid !== ich.pid && (this.istOnline?.(a.angenommenVon.pid) ?? true) && this.mode !== "solo") {
+        throw new Error(`Das Gespräch führt ${a.angenommenVon.name}`);
+      }
+      this.andereHalten(ich, e.id);
+      a.status = "aktiv";
+      a.seit = this.state.zeit;
+      a.haltenBis = null;
+      a.angenommenVon = { ...ich };
+      a.gespraech.push({ zeit: this.state.zeit, von: "system", text: "Gespräch fortgesetzt" });
+      if (a.folge) {
+        a.gespraech.push({ zeit: this.state.zeit, von: "anrufer", text: a.folge });
+        a.folge = null;
+      }
+      e.bearbeiter = { ...ich };
+      this.emit();
+      return;
+    }
     if (a.status === "aktiv") {
       const fuehrer = a.angenommenVon;
       if (fuehrer && fuehrer.pid !== ich.pid && (this.istOnline?.(fuehrer.pid) ?? true)) {
@@ -1645,6 +1675,7 @@ export class Simulation {
       a.angenommenVon = { ...ich };
       a.gespraech.push({ zeit: this.state.zeit, von: "system", text: `${ich.name} übernimmt das Gespräch` });
     } else if (a.status === "klingelt" || a.status === "verpasst") {
+      this.andereHalten(ich, e.id);
       a.rueckruf = a.status === "verpasst";
       a.status = "aktiv";
       a.seit = this.state.zeit;
@@ -1684,6 +1715,36 @@ export class Simulation {
     a.gespraech.push({ zeit: this.state.zeit, von: "system", text: "Gespräch beendet" });
     this.log(e, "Notrufgespräch beendet");
     this.emit();
+  }
+
+  /** Anrufer in die Warteschleife legen (er legt auf, wenn es zu lange dauert) */
+  anrufHalten(id: string): void {
+    const e = this.einsatz(id);
+    if (!e) return;
+    const a = this.nurCalltaker(e);
+    if (a.status !== "aktiv") return;
+    this.halten(a);
+    this.log(e, "Anrufer wird gehalten");
+    this.emit();
+  }
+
+  private halten(a: Anruf): void {
+    a.status = "gehalten";
+    a.seit = this.state.zeit;
+    a.haltenBis = this.state.zeit + rnd(100, 160) * 1000;
+    a.gespraech.push({ zeit: this.state.zeit, von: "system", text: "Anrufer wird gehalten" });
+  }
+
+  /** Wer einen Anruf annimmt, legt sein laufendes Gespräch in die Warteschleife */
+  private andereHalten(ich: Bearbeiter, ausser: string): void {
+    const meins = (a: Anruf | null | undefined) => a?.status === "aktiv" && (!a.angenommenVon || a.angenommenVon.pid === ich.pid || this.mode === "solo");
+    for (const x of this.state.einsaetze) {
+      if (x.id !== ausser && x.zustand !== "abgeschlossen" && meins(x.anruf)) {
+        this.halten(x.anruf!);
+        this.log(x, "Anrufer wird gehalten");
+      }
+    }
+    for (const k of this.state.kt ?? []) if (k.id !== ausser && meins(k.anruf)) this.halten(k.anruf!);
   }
 
   /** Antwort in der Abfrage setzen (wert null = zurücknehmen); „kapitel“ wählt das Kapitel */
@@ -1812,6 +1873,8 @@ export class Simulation {
     if (a.status === "aktiv") {
       a.gespraech.push({ zeit: t, von: "anrufer", text });
       this.log(e, "Anrufer meldet eine Veränderung");
+    } else if (a.status === "gehalten") {
+      a.folge = text;
     } else if (a.status === "beendet") {
       a.status = "klingelt";
       a.seit = t;
@@ -2348,7 +2411,14 @@ export class Simulation {
     for (const k of this.state.kt ?? []) {
       const a = k.anruf;
       // Anrufe: nicht angenommen → aufgelegt, später neuer Versuch
-      if (a && a.status === "klingelt" && t >= a.klingelBis) {
+      if (a && a.status === "gehalten" && t >= (a.haltenBis ?? t)) {
+        a.status = "verpasst";
+        a.seit = t;
+        a.haltenBis = null;
+        a.rueckrufUm = t + rnd(2, 4) * MIN;
+        a.gespraech.push({ zeit: t, von: "system", text: "Der Anrufer hat aufgelegt – zu lange in der Warteschleife" });
+        this.ktLog(k, "Anrufer hat in der Warteschleife aufgelegt");
+      } else if (a && a.status === "klingelt" && t >= a.klingelBis) {
         a.status = "verpasst";
         a.seit = t;
         a.rueckrufUm = t + rnd(2, 4) * MIN;
@@ -2385,12 +2455,27 @@ export class Simulation {
     const a = k?.anruf;
     if (!k || !a) throw new Error("Kein Anruf");
     const ich = this.calltaker();
-    if (a.status === "aktiv") {
+    if (a.status === "gehalten") {
+      if (a.angenommenVon && a.angenommenVon.pid !== ich.pid && (this.istOnline?.(a.angenommenVon.pid) ?? true) && this.mode !== "solo") {
+        throw new Error(`Das Gespräch führt ${a.angenommenVon.name}`);
+      }
+      this.andereHalten(ich, k.id);
+      a.status = "aktiv";
+      a.seit = this.state.zeit;
+      a.haltenBis = null;
+      a.angenommenVon = { ...ich };
+      a.gespraech.push({ zeit: this.state.zeit, von: "system", text: "Gespräch fortgesetzt" });
+      if (a.folge) {
+        a.gespraech.push({ zeit: this.state.zeit, von: "anrufer", text: a.folge });
+        a.folge = null;
+      }
+    } else if (a.status === "aktiv") {
       if (a.angenommenVon && a.angenommenVon.pid !== ich.pid && (this.istOnline?.(a.angenommenVon.pid) ?? true)) {
         throw new Error(`Das Gespräch führt bereits ${a.angenommenVon.name}`);
       }
       a.angenommenVon = { ...ich };
     } else if (a.status === "klingelt" || a.status === "verpasst") {
+      this.andereHalten(ich, k.id);
       a.rueckruf = a.status === "verpasst";
       a.status = "aktiv";
       a.seit = this.state.zeit;
@@ -2415,10 +2500,19 @@ export class Simulation {
     this.emit();
   }
 
-  ktAnrufBeenden(id: string): void {
+  ktAnrufHalten(id: string): void {
     const k = this.ktAuftrag(id);
     const a = k?.anruf;
     if (!k || !a || a.status !== "aktiv") return;
+    this.halten(a);
+    this.ktLog(k, "Anrufer wird gehalten");
+    this.emit();
+  }
+
+  ktAnrufBeenden(id: string): void {
+    const k = this.ktAuftrag(id);
+    const a = k?.anruf;
+    if (!k || !a || (a.status !== "aktiv" && a.status !== "gehalten")) return;
     a.status = "beendet";
     a.gespraech.push({ zeit: this.state.zeit, von: "system", text: "Gespräch beendet" });
     this.emit();

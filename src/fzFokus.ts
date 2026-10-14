@@ -17,6 +17,8 @@ export interface FzFokus {
   /** Kamera folgt dem Fahrzeug, null = nicht mehr folgen */
   folge(id: string | null): void;
   gewaehlt(): string | null;
+  /** Kamera folgt gerade einem Fahrzeug */
+  folgt(): boolean;
 }
 
 export interface FzFokusDeps {
@@ -35,7 +37,7 @@ export function addFzFokus(map: maplibregl.Map, deps: FzFokusDeps): FzFokus {
   // Zwischen zwei Simulationsschritten weiterrechnen (flüssige Kamera)
   let simZeit = sim.state.zeit;
   let simReal = performance.now();
-  sim.onChange(() => {
+  const aus1 = sim.onChange(() => {
     if (sim.state.zeit !== simZeit) {
       simZeit = sim.state.zeit;
       simReal = performance.now();
@@ -239,12 +241,16 @@ export function addFzFokus(map: maplibregl.Map, deps: FzFokusDeps): FzFokus {
 
   // Wer die Karte selbst verschiebt, beendet das Folgen
   map.on("dragstart", () => folgt && folge(null));
-  window.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && folgt) folge(null);
-  });
+  const escTaste = (e: KeyboardEvent) => {
+    if (e.key === "Escape" && folgt) {
+      e.stopImmediatePropagation();
+      folge(null);
+    }
+  };
+  window.addEventListener("keydown", escTaste, true);
 
   let last = 0;
-  sim.onChange(() => {
+  const aus2 = sim.onChange(() => {
     if (!gewaehlt) return;
     const now = performance.now();
     if (now - last < 250) return;
@@ -254,5 +260,13 @@ export function addFzFokus(map: maplibregl.Map, deps: FzFokusDeps): FzFokus {
     popupAktualisieren(false);
   });
 
-  return { waehle, folge, gewaehlt: () => gewaehlt };
+  map.once("remove", () => {
+    aus1();
+    aus2();
+    cancelAnimationFrame(laeuft);
+    window.removeEventListener("keydown", escTaste, true);
+    popup.remove();
+  });
+
+  return { waehle, folge, gewaehlt: () => gewaehlt, folgt: () => folgt !== null };
 }

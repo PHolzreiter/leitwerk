@@ -1,5 +1,9 @@
 /** Telefon-Klingeln (Web Audio, keine Tondatei nötig): Notruf und KT-Hotline klingen verschieden. */
 import { kiPrefs } from "../abfrage/ki";
+import { pers } from "./ws/persoenlich";
+
+/** Lautstärke aus den persönlichen Einstellungen (70 % = wie früher) */
+const faktor = () => Math.max(0, Math.min(1.6, pers().lautstaerke / 70));
 
 let ctx: AudioContext | null = null;
 let timerNotruf: number | undefined;
@@ -23,8 +27,8 @@ function ton(freqs: number[], stoesse: number[], dauer: number, laut: number): v
         o.stop(t0 + start + dauer);
       }
       gain.gain.setValueAtTime(0, t0 + start);
-      gain.gain.linearRampToValueAtTime(laut, t0 + start + 0.02);
-      gain.gain.setValueAtTime(laut, t0 + start + dauer - 0.04);
+      gain.gain.linearRampToValueAtTime(laut * faktor(), t0 + start + 0.02);
+      gain.gain.setValueAtTime(laut * faktor(), t0 + start + dauer - 0.04);
       gain.gain.linearRampToValueAtTime(0, t0 + start + dauer);
     }
   } catch {
@@ -69,7 +73,7 @@ function piep(): void {
       const g = ctx.createGain();
       o.type = "square";
       o.frequency.value = f;
-      g.gain.value = 0.04;
+      g.gain.value = 0.04 * faktor();
       o.connect(g);
       g.connect(ctx.destination);
       o.start(t0 + start);

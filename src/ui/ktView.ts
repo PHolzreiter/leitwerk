@@ -3,8 +3,7 @@
  */
 import { BEREICHE, bereicheVon } from "../data/model";
 import { store } from "../data/store";
-import { KT_FRAGEN, ktAntwortetGerade, ktFragen, type KtFrage } from "../abfrage/ktGespraech";
-import { kiBereit } from "../abfrage/ki";
+import { KT_FRAGEN, ktFragen, type KtFrage } from "../abfrage/ktGespraech";
 import { mp } from "../net/mehrspieler";
 import { sim, type KtVorschlag, type SimFahrzeug } from "../sim/engine";
 import {
@@ -22,7 +21,8 @@ import {
   type SekDaten,
 } from "../sim/kt";
 import { codeInfo, istUeberstellung, ktCode, KT_CODES } from "../sim/ktCodes";
-import { addressInput } from "./opsView";
+import { addressInput } from "./panels/teile";
+import { liveSammler } from "./panels/live";
 import { el, esc, toast } from "./dom";
 
 function fehler(p: Promise<unknown>): void {
@@ -206,42 +206,23 @@ function ortWahl(wert: KtOrt | null, darf: boolean, nurKh: boolean, onSet: (o: K
 
 // ---------------------------------------------------------------- Maske
 
-export function ktMaske(k: KtAuftrag, deps: { flyTo(lat: number, lon: number, z?: number): void }): { root: HTMLElement; refresh(): void } {
+export function ktMaske(k: KtAuftrag, deps: { flyTo(lat: number, lon: number, z?: number): void; abfrage(id: string): void }): { root: HTMLElement; refresh(): void } {
+  const abfrageZeigen = deps.abfrage;
   const root = el("div", { class: "mask kt-mask" });
   const kopf = el("div", { class: "mask-head" });
-  const anrufBox = el("div", { class: "mask-box anruf" });
   const datenBox = el("div", { class: "mask-box" });
   const dispoBox = el("div", { class: "mask-box" });
   const protBox = el("div", { class: "mask-box" });
-  root.append(kopf, anrufBox, datenBox, dispoBox, protBox);
+  const anrufHinweis = el("div", { class: "mask-anruf-hinweis" });
+  root.append(kopf, anrufHinweis, datenBox, dispoBox, protBox);
 
-  // ---- Anruf
-  const anrufKopf = el("div", { class: "anruf-kopf" });
-  const verlauf = el("div", { class: "anruf-verlauf" });
-  const live = el("div", { class: "anruf-msg anrufer live", hidden: "" });
-  const form = el("form", { class: "anruf-form" });
-  const eingabe = el("input", { type: "text", placeholder: "Frage an den Anrufer … (Enter)" });
-  form.append(eingabe, el("button", { class: "btn small primary", type: "submit" }, "Fragen"));
-  anrufBox.append(anrufKopf, verlauf, form);
-  let liveText = "";
-  const onToken = (t: string) => {
-    liveText += t;
-    live.hidden = false;
-    live.textContent = liveText;
-  };
+  // Fragen an den Anrufer (Gespräch selbst steht im Abfrage-Fenster)
   const stelle = async (text: string, f?: KtFrage) => {
-    liveText = "";
-    await ktFragen(k, text, f, onToken).catch((e) => toast(String(e.message ?? e), "error"));
-    live.hidden = true;
+    const l = liveSammler(k.id);
+    await ktFragen(k, text, f, l.onToken).catch((e) => toast(String(e.message ?? e), "error"));
+    l.fertig();
     refresh();
   };
-  form.addEventListener("submit", (ev) => {
-    ev.preventDefault();
-    const t = eingabe.value.trim();
-    if (!t || !ichFuehre(k)) return;
-    eingabe.value = "";
-    void stelle(t);
-  });
 
   // ---- Daten (feste Abfrage)
   let datenKey = "";
@@ -546,44 +527,15 @@ export function ktMaske(k: KtAuftrag, deps: { flyTo(lat: number, lon: number, z?
   function refresh(): void {
     const c = ktCode(k.d.code);
     kopf.innerHTML = `${codeChip(k.d.code, true)}<div><div class="mask-nr">${esc(k.nummer)}</div>${c ? `<div class="kt-codename">${esc(c.name)}</div>` : ""}<div class="muted">${QUELLE[k.quelle]} · Eingang ${hhmm(k.eingang)} · <b>${esc(KT_STATUS_LABEL[k.status])}</b></div></div>`;
-    // Anruf
+    // Anruf: kurzer Hinweis, das Gespräch steht im Abfrage-Fenster
     const a = k.anruf;
-    anrufBox.hidden = !a;
-    if (a) {
-      const ich = ichFuehre(k);
-      anrufKopf.innerHTML = "";
-      const t =
-        a.status === "klingelt"
-          ? `<span class="klingelt">📞 KT-Hotline klingelt</span>`
-          : a.status === "verpasst"
-            ? `<span class="verpasst">Verpasster Anruf</span>`
-            : a.status === "aktiv"
-              ? `📞 Gespräch: <b>${esc(ich ? "du" : (a.angenommenVon?.name ?? "?"))}</b> <span class="muted">${kiBereit() ? "KI" : "ohne KI"}</span>`
-              : `<span class="muted">Gespräch beendet</span>`;
-      anrufKopf.insertAdjacentHTML("beforeend", `<div>${t}</div>`);
-      if (a.status === "klingelt" || a.status === "verpasst") {
-        const b = el("button", { class: "btn small primary" }, a.status === "klingelt" ? "Annehmen" : "Zurückrufen");
-        b.addEventListener("click", () => annehmen());
-        anrufKopf.appendChild(b);
-      }
-      if (a.status === "aktiv" && ich) {
-        const b = el("button", { class: "btn small danger-text" }, "Auflegen");
-        b.addEventListener("click", () => fehler(sim.call("ktAnrufBeenden", k.id)));
-        anrufKopf.appendChild(b);
-      }
-      if (verlauf.childElementCount - 1 !== a.gespraech.length) {
-        verlauf.innerHTML = "";
-        for (const m of a.gespraech) {
-          const d = el("div", { class: `anruf-msg ${m.von}` });
-          d.innerHTML = m.von === "system" ? `<em>${esc(m.text)}</em>` : `<b>${m.von === "anrufer" ? "Anrufer" : esc(m.wer ?? "Leitstelle")}:</b> ${esc(m.text)}`;
-          verlauf.appendChild(d);
-        }
-        verlauf.appendChild(live);
-        verlauf.scrollTop = verlauf.scrollHeight;
-      }
-      verlauf.hidden = !a.gespraech.length;
-      form.hidden = !(ich && a.status === "aktiv");
-      eingabe.disabled = ktAntwortetGerade(k.id);
+    anrufHinweis.hidden = !a || a.status === "beendet";
+    if (a && a.status !== "beendet") {
+      const t = { klingelt: "📞 KT-Hotline klingelt", aktiv: "📞 Gespräch läuft", gehalten: "⏸ Anrufer wird gehalten", verpasst: "📵 Verpasster Anruf", beendet: "" }[a.status];
+      anrufHinweis.innerHTML = `<span>${t}${a.angenommenVon && !ichFuehre(k) ? ` · ${esc(a.angenommenVon.name)}` : ""}</span>`;
+      const b = el("button", { class: "btn small" }, "Abfrage ›");
+      b.addEventListener("click", () => abfrageZeigen(k.id));
+      anrufHinweis.appendChild(b);
     }
     // Daten und Disposition nur neu aufbauen, wenn sich etwas geändert hat
     const dk = JSON.stringify([k.d, k.status, a?.status, a?.angenommenVon?.pid]);
@@ -605,19 +557,6 @@ export function ktMaske(k: KtAuftrag, deps: { flyTo(lat: number, lon: number, z?
       .map((p) => `<div><span class="muted">${hhmm(p.zeit)}</span> ${esc(p.text)}${p.von ? ` <span class="prot-von">${esc(p.von)}</span>` : ""}</div>`)
       .join("")}</div>`;
   }
-
-  const annehmen = () => {
-    void (async () => {
-      try {
-        await sim.call("ktAnrufAnnehmen", k.id);
-        refresh();
-        const letzte = k.anruf?.gespraech[k.anruf.gespraech.length - 1];
-        if (!letzte || letzte.von !== "anrufer") await stelle(KT_FRAGEN[0].text, KT_FRAGEN[0]);
-      } catch (e) {
-        toast(String((e as Error).message ?? e), "error");
-      }
-    })();
-  };
 
   refresh();
   if (k.d.von) deps.flyTo(k.d.von.lat, k.d.von.lon, 13);

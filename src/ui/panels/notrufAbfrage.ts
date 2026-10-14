@@ -1,25 +1,21 @@
 /**
- * Notrufgespräch und Abfrage in der Einsatzmaske.
+ * Notrufgespräch und strukturierte Abfrage (Leitfaden) für das Abfrage-Fenster.
  * Nur wer den Anruf angenommen hat, führt Gespräch und Abfrage; alle anderen sehen mit.
  */
-import { store } from "../data/store";
-import { fragen, eroeffnen, antwortetGerade, kontext } from "../abfrage/gespraech";
-import { schilderung } from "../abfrage/anrufer";
-import { patientText } from "../sim/lage";
-import { kiBereit } from "../abfrage/ki";
-import { antwortLabel, bestimmeCode, fragenImAblauf, stufeVonCode, type Frage, type Schema, type Wert } from "../abfrage/schema";
-import { mp } from "../net/mehrspieler";
-import { sim, type Einsatz } from "../sim/engine";
-import { el, esc, toast } from "./dom";
+import { store } from "../../data/store";
+import { fragen, antwortetGerade, kontext } from "../../abfrage/gespraech";
+import { schilderung } from "../../abfrage/anrufer";
+import { patientText } from "../../sim/lage";
+import { antwortLabel, bestimmeCode, fragenImAblauf, stufeVonCode, type Frage, type Schema, type Wert } from "../../abfrage/schema";
+import { mp } from "../../net/mehrspieler";
+import { sim, type Einsatz } from "../../sim/engine";
+import { el, esc, toast } from "../dom";
+import { liveSammler, liveText, onLive } from "./live";
 
 function fehler(p: Promise<unknown>): void {
   p.catch((e) => toast(String((e as Error).message ?? e), "error"));
 }
 
-function mmss(ms: number): string {
-  const s = Math.max(0, Math.round(ms / 1000));
-  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
-}
 
 export function istGespraechsfuehrer(e: Einsatz): boolean {
   const a = e.anruf;
@@ -27,9 +23,18 @@ export function istGespraechsfuehrer(e: Einsatz): boolean {
   return sim.mode === "solo" || a.angenommenVon.pid === (sim.ich?.pid ?? mp.ich.pid);
 }
 
-export function anrufPanel(e: Einsatz): { root: HTMLElement; abfrageBox: HTMLElement; refresh(): void } {
-  const root = el("div", { class: "mask-box anruf" });
-  const kopf = el("div", { class: "anruf-kopf" });
+export interface NotrufTeile {
+  verlauf: HTMLElement;
+  form: HTMLElement;
+  codeZeile: HTMLElement;
+  aufloesung: HTMLElement;
+  /** Leitfaden: die strukturierte Abfrage */
+  abfrage: HTMLElement;
+  refresh(): void;
+  dispose(): void;
+}
+
+export function notrufTeile(e: Einsatz): NotrufTeile {
   const verlauf = el("div", { class: "anruf-verlauf" });
   const live = el("div", { class: "anruf-msg anrufer live", hidden: "" });
   const form = el("form", { class: "anruf-form" });
@@ -39,27 +44,21 @@ export function anrufPanel(e: Einsatz): { root: HTMLElement; abfrageBox: HTMLEle
   const codeZeile = el("div", { class: "anruf-code" });
   const abfrage = el("div", { class: "abfrage" });
   const aufloesung = el("div", { class: "aufloesung" });
-  root.append(kopf, verlauf, form, codeZeile, aufloesung);
-  // Die Abfrage steht als eigener Kasten weiter unten in der Maske (nach Einsatzort und Code)
-  const abfrageBox = el("div", { class: "mask-box abfrage-box" });
-  abfrageBox.append(el("div", { class: "box-title" }, "Abfrage"), abfrage);
 
-  let liveText = "";
-  const onToken = (t: string) => {
-    liveText += t;
-    live.hidden = false;
-    live.textContent = liveText;
-    verlauf.scrollTop = verlauf.scrollHeight;
+  const zeigeLive = (text: string | null) => {
+    live.hidden = !text;
+    live.textContent = text ?? "";
+    if (text) verlauf.scrollTop = verlauf.scrollHeight;
   };
+  const ausLive = onLive((id, text) => id === e.id && zeigeLive(text));
   const stelle = async (text: string, f?: Frage) => {
-    liveText = "";
+    const l = liveSammler(e.id);
     try {
-      await fragen(e, text, f, onToken);
+      await fragen(e, text, f, l.onToken);
     } catch (err) {
       toast(String((err as Error).message ?? err), "error");
     }
-    live.hidden = true;
-    liveText = "";
+    l.fertig();
     refresh();
   };
 
@@ -76,34 +75,8 @@ export function anrufPanel(e: Einsatz): { root: HTMLElement; abfrageBox: HTMLEle
   abfrage.addEventListener("focusout", () => setTimeout(refresh, 0));
   function refresh() {
     const a = e.anruf;
-    if (!a) {
-      root.hidden = abfrageBox.hidden = true;
-      return;
-    }
-    root.hidden = false;
-    abfrageBox.hidden = a.status !== "aktiv" && a.status !== "beendet";
+    if (!a) return;
     const ich = istGespraechsfuehrer(e);
-    const fuehrerOnline = !a.angenommenVon || sim.mode === "solo" || mp.spieler.some((s) => s.pid === a.angenommenVon!.pid && s.online);
-
-    // Kopfzeile mit Status und Knöpfen
-    kopf.innerHTML = "";
-    const t = sim.state.zeit;
-    let text = "";
-    if (a.status === "klingelt") text = `<span class="klingelt">📞 ${a.folge ? "Folgeanruf" : "Anruf"} klingelt</span> <span class="muted">${mmss(t - a.seit)}${a.versuche > 1 ? ` · ${a.versuche}. Versuch` : ""}</span>`;
-    else if (a.status === "verpasst") text = `<span class="verpasst">Verpasster Anruf</span> <span class="muted">${a.versuche}× · ruft in ca. ${mmss((a.rueckrufUm ?? t) - t)} wieder an</span>`;
-    else if (a.status === "aktiv") text = `📞 Gespräch: <b>${esc(ich ? "du" : (a.angenommenVon?.name ?? "?"))}</b>${fuehrerOnline ? "" : ` <span class="alert-text">(getrennt – Gespräch pausiert)</span>`} <span class="muted">${kiBereit() ? "KI" : "ohne KI"}</span>`;
-    else text = `<span class="muted">Notrufgespräch beendet</span>`;
-    kopf.insertAdjacentHTML("beforeend", `<div>${text}</div>`);
-    const knopf = (label: string, cls: string, fn: () => void) => {
-      const b = el("button", { class: `btn small ${cls}` }, label);
-      b.addEventListener("click", fn);
-      kopf.appendChild(b);
-    };
-    if (a.status === "klingelt") knopf("Annehmen", "primary", () => annehmen());
-    if (a.status === "verpasst") knopf("Zurückrufen", "primary", () => annehmen());
-    if (a.status === "aktiv" && !ich && !fuehrerOnline) knopf("Gespräch übernehmen", "", () => annehmen());
-    if (a.status === "aktiv" && ich) knopf("Auflegen", "danger-text", () => fehler(sim.call("anrufBeenden", e.id)));
-
     // Gesprächsverlauf
     const msgs = a.gespraech;
     if (verlauf.childElementCount - 1 !== msgs.length) {
@@ -114,11 +87,12 @@ export function anrufPanel(e: Einsatz): { root: HTMLElement; abfrageBox: HTMLEle
         verlauf.appendChild(d);
       }
       verlauf.appendChild(live);
+      zeigeLive(liveText(e.id));
       verlauf.scrollTop = verlauf.scrollHeight;
     }
-    verlauf.hidden = msgs.length === 0;
-    const darf = ich && (a.status === "aktiv" || a.status === "beendet");
+    const darf = ich && (a.status === "aktiv" || a.status === "gehalten" || a.status === "beendet");
     form.hidden = !(ich && a.status === "aktiv");
+    if (!ich && a.status === "aktiv") form.title = "Das Gespräch führt jemand anderer";
     eingabe.disabled = senden.disabled = antwortetGerade(e.id);
 
     // Vorläufiger Code
@@ -130,8 +104,8 @@ export function anrufPanel(e: Einsatz): { root: HTMLElement; abfrageBox: HTMLEle
       codeZeile.dataset.k = codeSchluessel;
       codeZeile.innerHTML = erg
         ? `${erg.reanimation ? `<div class="reanimation">⚠ Reanimation anleiten! Herzdruckmassage, 100–120/min</div>` : ""}<div>${eigener ? "Abfrage ergibt" : "Vorläufiger Code"}: <b>${esc(erg.code)}</b> ${esc(c?.name ?? "")} <span class="stufe-badge">${esc(c?.kategorie ?? "")}</span></div>`
-        : a.status === "aktiv" || a.status === "beendet"
-          ? `<span class="muted">Code ergibt sich aus der Abfrage (Kapitel wählen) – oder unten bei „AMPDS-Code“ selbst suchen.</span>`
+        : a.status === "aktiv" || a.status === "gehalten" || a.status === "beendet"
+          ? `<span class="muted">Der Code ergibt sich aus der Abfrage (rechts das Kapitel wählen) – oder in der Einsatzmaske selbst suchen.</span>`
           : "";
       if (eigener) {
         const zeile = el("div", { class: "muted" }, `Du hast selbst ${e.code} gewählt. `);
@@ -162,31 +136,11 @@ export function anrufPanel(e: Einsatz): { root: HTMLElement; abfrageBox: HTMLEle
     }
   }
 
-  const annehmen = () => {
-    void (async () => {
-      try {
-        await sim.call("anrufAnnehmen", e.id);
-        refresh();
-        // Der Anrufer meldet sich – außer er hat (Folgeanruf) schon etwas gesagt
-        const letzte = e.anruf?.gespraech[e.anruf.gespraech.length - 1];
-        if (!letzte || letzte.von !== "anrufer") await eroeffnenSicher();
-      } catch (err) {
-        toast(String((err as Error).message ?? err), "error");
-      }
-    })();
-  };
-  const eroeffnenSicher = async () => {
-    liveText = "";
-    await eroeffnen(e, onToken).catch((err) => toast(String(err.message ?? err), "error"));
-    live.hidden = true;
-    refresh();
-  };
-
   function abfrageBauen(darf: boolean) {
     abfrage.innerHTML = "";
     const a = e.anruf;
     const schema = store.schema;
-    if (!a || !schema || (a.status !== "aktiv" && a.status !== "beendet")) return;
+    if (!a || !schema || (a.status !== "aktiv" && a.status !== "gehalten" && a.status !== "beendet")) return;
 
     const setze = (id: string, wert: Wert) => fehler(sim.call("abfrageSetze", e.id, id, wert));
     const frageZeile = (f: Frage) => {
@@ -243,7 +197,7 @@ export function anrufPanel(e: Einsatz): { root: HTMLElement; abfrageBox: HTMLEle
     for (const f of g.phase_1_einsatzort ?? []) {
       if (f.id === "ort_adresse") {
         const r = el("div", { class: "frage" });
-        const kt = el("div", { class: "frage-text" }, `${f.text} → unten bei „Einsatzort“ eintragen`);
+        const kt = el("div", { class: "frage-text" }, `${f.text} → in der Einsatzmaske bei „Einsatzort“ eintragen`);
         if (darf && a.status === "aktiv") {
           const q = el("button", { class: "frag-knopf" }, "🗨");
           q.addEventListener("click", () => void stelle(f.text, f));
@@ -370,7 +324,7 @@ export function anrufPanel(e: Einsatz): { root: HTMLElement; abfrageBox: HTMLEle
   }
 
   refresh();
-  return { root, abfrageBox, refresh };
+  return { verlauf, form, codeZeile, aufloesung, abfrage, refresh, dispose: ausLive };
 }
 
 /** Vergleich: was wirklich war und was eingetragen wurde */

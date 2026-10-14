@@ -82,8 +82,10 @@ function shownSets(available: Set<string>): VectorMap[] {
   });
 }
 
-function setLayers(name: VectorMap): maplibregl.LayerSpecification[] {
-  const set = layers(name, namedFlavor("light"), { lang: "de" }) as unknown as maplibregl.LayerSpecification[];
+type Flavor = "light" | "dark";
+
+function setLayers(name: VectorMap, flavor: Flavor): maplibregl.LayerSpecification[] {
+  const set = layers(name, namedFlavor(flavor), { lang: "de" }) as unknown as maplibregl.LayerSpecification[];
   // Hintergrund kommt einmal eigens ganz unten, sonst würde er die gröberen Karten verdecken
   return set
     .filter((l) => l.type !== "background")
@@ -114,13 +116,17 @@ const HILLSHADE: maplibregl.LayerSpecification = {
   paint: { "hillshade-exaggeration": 0.3, "hillshade-shadow-color": "#4a4a4a" },
 };
 
-function buildStyle(): maplibregl.StyleSpecification {
+function spriteUrl(f: Flavor): string {
+  return `${window.location.origin}/sprites/v4/${f}`;
+}
+
+function buildStyle(f: Flavor): maplibregl.StyleSpecification {
   const origin = window.location.origin;
-  const flavor = namedFlavor("light");
+  const flavor = namedFlavor(f);
   return {
     version: 8,
     glyphs: `${origin}/fonts/{fontstack}/{range}.pbf`,
-    sprite: `${origin}/sprites/v4/light`,
+    sprite: spriteUrl(f),
     sources: {
       "sat-eox": { type: "raster", tiles: [SAT_EOX.url], tileSize: 256, maxzoom: 14, attribution: SAT_EOX.attribution },
       "sat-at": {
@@ -147,11 +153,22 @@ export interface MapHandle {
   setSatellite(on: boolean): void;
   /** Nach Installation/Löschen von Kartenpaketen: Ebenen anpassen. */
   refresh(available: string[]): void;
+  /** Dunkle Karte an/aus */
+  setDunkel(on: boolean): void;
 }
 
-export function createMap(container: string, initial: string[]): MapHandle {
-  const protocol = new Protocol();
-  maplibregl.addProtocol("pmtiles", protocol.tilev4);
+/** Ein gemeinsames pmtiles-Protokoll für alle Karten (es kann mehrere Kartenfenster geben) */
+let protocol: Protocol | null = null;
+const geoeffnet = new Map<string, number>();
+let protokollStand = 0;
+
+export function createMap(container: string | HTMLElement, initial: string[], opts: { dunkel?: boolean } = {}): MapHandle {
+  if (!protocol) {
+    protocol = new Protocol();
+    maplibregl.addProtocol("pmtiles", protocol.tilev4);
+  }
+  const proto = protocol;
+  let flavor: Flavor = opts.dunkel ? "dark" : "light";
   let available = new Set<string>();
   let shown: VectorMap[] = [];
   let mode3d = false;
@@ -159,7 +176,7 @@ export function createMap(container: string, initial: string[]): MapHandle {
 
   const map = new maplibregl.Map({
     container,
-    style: buildStyle(),
+    style: buildStyle(flavor),
     center: START_CENTER,
     zoom: 8,
     minZoom: 5,
@@ -191,7 +208,7 @@ export function createMap(container: string, initial: string[]): MapHandle {
 
   const addSet = (name: VectorMap, before: string | undefined) => {
     map.addSource(name, { type: "vector", url: `pmtiles://${name}`, attribution: ATTRIBUTION });
-    for (const l of setLayers(name)) map.addLayer(l, before);
+    for (const l of setLayers(name, flavor)) map.addLayer(l, before);
   };
 
   /** Sichtbarkeit nach Modus: Satellit blendet Flächen und Linien aus, Beschriftungen bleiben. */
@@ -243,7 +260,12 @@ export function createMap(container: string, initial: string[]): MapHandle {
     for (const name of shown) removeSet(name);
     textFarben.clear();
     // Dateien (neu) öffnen – nach einem Kartenupdate liest PMTiles sonst den alten Stand
-    for (const name of list) protocol.add(new PMTiles(inTauri() ? new TauriMapSource(name) : new DevMapSource(name)));
+    // (nur einmal je Änderung, auch wenn mehrere Karten offen sind)
+    for (const name of list) {
+      if (geoeffnet.get(name) === protokollStand) continue;
+      geoeffnet.set(name, protokollStand);
+      proto.add(new PMTiles(inTauri() ? new TauriMapSource(name) : new DevMapSource(name)));
+    }
 
     const want = shownSets(next);
     const before = firstOwnLayer();
@@ -296,9 +318,23 @@ export function createMap(container: string, initial: string[]): MapHandle {
     setMode3d,
     setSatellite,
     refresh: (list) => {
+      protokollStand++;
       // nur nach geladenem Stil möglich
       if (map.isStyleLoaded()) sync(list);
       else map.once("idle", () => sync(list));
+    },
+    setDunkel: (on) => {
+      const f: Flavor = on ? "dark" : "light";
+      if (f === flavor) return;
+      flavor = f;
+      const anwenden = () => {
+        map.setSprite(spriteUrl(f));
+        map.setPaintProperty("lw-bg", "background-color", namedFlavor(f).background);
+        BUILDINGS.paint = { ...BUILDINGS.paint, "fill-extrusion-color": on ? "#3b4250" : "#d8d2c8" };
+        sync([...available]);
+      };
+      if (map.isStyleLoaded()) anwenden();
+      else map.once("idle", anwenden);
     },
   };
 }
