@@ -172,10 +172,11 @@ async function init(): Promise<void> {
       onCreateAt: (kind, lat, lon) => openEditor(kind, null, deps, { lat, lon }),
     });
     const auftragOeffnen = (fz: SimFahrzeug) => {
-      if (fz.einsatzId) ops.select(fz.einsatzId);
+      // Maske öffnen, die Karte bleibt beim Fahrzeug
+      if (fz.einsatzId) ops.select(fz.einsatzId, true, false);
       else if (fz.kt) {
         const kid = fz.kt.fahrten[0]?.[0];
-        if (kid) ops.selectKt(kid);
+        if (kid) ops.selectKt(kid, false);
       }
     };
     const fahrzeugKlick = (id: string) => {

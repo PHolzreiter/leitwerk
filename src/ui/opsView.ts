@@ -175,7 +175,7 @@ export function addressInput(placeholder: string, onPick: (o: Ort) => void): { r
 
 type Tab = "einsatz" | "funk" | "chat";
 
-export function createOpsView(left: HTMLElement, right: HTMLElement, deps: OpsDeps): { select(id: string | null): void; selectKt(id: string): void } {
+export function createOpsView(left: HTMLElement, right: HTMLElement, deps: OpsDeps): { select(id: string | null, zurMaske?: boolean, karte?: boolean): void; selectKt(id: string, karte?: boolean): void } {
   let selected: string | null = null;
   let showClosed = false;
   let rightTab: Tab = "funk";
@@ -837,7 +837,7 @@ export function createOpsView(left: HTMLElement, right: HTMLElement, deps: OpsDe
   }
 
   /** Krankentransport öffnen (Maske rechts) */
-  function selectKt(id: string) {
+  function selectKt(id: string, karte = true) {
     const k = sim.ktAuftrag(id);
     if (!k) return;
     selectedKt = id;
@@ -845,7 +845,7 @@ export function createOpsView(left: HTMLElement, right: HTMLElement, deps: OpsDe
     deps.onSelectIncident(null);
     maskFor = `kt:${id}`;
     rbEinsatz.innerHTML = "";
-    const m = ktMaske(k, { flyTo: deps.flyTo });
+    const m = ktMaske(k, { flyTo: karte ? deps.flyTo : () => undefined });
     rbEinsatz.appendChild(m.root);
     dyn = { refresh: m.refresh };
     setTab("einsatz");
@@ -853,7 +853,7 @@ export function createOpsView(left: HTMLElement, right: HTMLElement, deps: OpsDe
     renderLists();
   }
 
-  function select(id: string | null, zurMaske = true) {
+  function select(id: string | null, zurMaske = true, karte = true) {
     if (id && id !== selected && sim.mode !== "solo") void sim.call("oeffne", id).catch(() => undefined);
     selected = id;
     if (id) selectedKt = null;
@@ -865,7 +865,7 @@ export function createOpsView(left: HTMLElement, right: HTMLElement, deps: OpsDe
       rbEinsatz.innerHTML = `<div class="muted pad">Einsatz in der Liste links anklicken.</div>`;
     } else {
       if (maskFor !== e.id) buildMask(e);
-      if (e.adresse) deps.flyTo(e.adresse.lat, e.adresse.lon);
+      if (e.adresse && karte) deps.flyTo(e.adresse.lat, e.adresse.lon);
       if (zurMaske) setTab("einsatz");
     }
     renderLists();
