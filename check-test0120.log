@@ -21,10 +21,10 @@ transforming...
 [32m✓[39m 78 modules transformed.
 rendering chunks...
 computing gzip size...
-[2mdist/[22m[32mindex.html                 [39m[1m[2m    4.10 kB[22m[1m[22m[2m │ gzip:   1.34 kB[22m
+[2mdist/[22m[32mindex.html                 [39m[1m[2m    4.10 kB[22m[1m[22m[2m │ gzip:   1.35 kB[22m
 [2mdist/[22m[2massets/[22m[35mindex-CouxfxDs.css  [39m[1m[2m  101.51 kB[22m[1m[22m[2m │ gzip:  16.66 kB[22m
-[2mdist/[22m[2massets/[22m[36mindex-CKLNm-YG.js   [39m[1m[2m1,515.44 kB[22m[1m[22m[2m │ gzip: 428.88 kB[22m
-[32m✓ built in 4.30s[39m
+[2mdist/[22m[2massets/[22m[36mindex-B4E9m_mV.js   [39m[1m[2m1,518.48 kB[22m[1m[22m[2m │ gzip: 429.95 kB[22m
+[32m✓ built in 4.21s[39m
 ### npx tauri icon app-icon.png
         Appx Creating StoreLogo.png
         Appx Creating Square30x30Logo.png
@@ -100,16 +100,16 @@ computing gzip size...
 [1m[92m   Compiling[0m system-deps v6.2.2
 [1m[92m   Compiling[0m proc-macro-crate v2.0.2
 [1m[92m   Compiling[0m proc-macro-crate v1.3.1
-[1m[92m   Compiling[0m gtk3-macros v0.18.2
 [1m[92m   Compiling[0m glib-macros v0.18.5
+[1m[92m   Compiling[0m gtk3-macros v0.18.2
 [1m[92m   Compiling[0m glib-sys v0.18.1
 [1m[92m   Compiling[0m gobject-sys v0.18.0
 [1m[92m   Compiling[0m gio-sys v0.18.1
 [1m[92m   Compiling[0m gdk-sys v0.18.2
-[1m[92m   Compiling[0m atk-sys v0.18.2
-[1m[92m   Compiling[0m cairo-sys-rs v0.18.2
 [1m[92m   Compiling[0m pango-sys v0.18.0
 [1m[92m   Compiling[0m gdk-pixbuf-sys v0.18.0
+[1m[92m   Compiling[0m atk-sys v0.18.2
+[1m[92m   Compiling[0m cairo-sys-rs v0.18.2
 [1m[92m   Compiling[0m gtk-sys v0.18.2
 [1m[92m   Compiling[0m javascriptcore-rs-sys v1.1.1
 [1m[92m   Compiling[0m soup3-sys v0.5.0
@@ -152,32 +152,7 @@ computing gzip size...
 [1m[92m    Checking[0m muda v0.20.0
 [1m[92m    Checking[0m tauri-runtime v2.12.1
 [1m[92m    Checking[0m tauri-runtime-wry v2.12.1
-[1m[91merror[E0599][0m[1m: no associated function or constant named `load` found for struct `Addresses` in the current scope[0m
-   [1m[94m--> [0msrc/lib.rs:217:36
-    [1m[94m|[0m
-[1m[94m217[0m [1m[94m|[0m                 let r = Addresses::load(&p);
-    [1m[94m|[0m                                    [1m[91m^^^^[0m [1m[91massociated function or constant not found in `Addresses`[0m
-    [1m[94m|[0m
-   [1m[94m::: [0msrc/addresses.rs:10:1
-    [1m[94m|[0m
-[1m[94m 10[0m [1m[94m|[0m pub struct Addresses {
-    [1m[94m|[0m [1m[94m--------------------[0m [1m[94massociated function or constant `load` not found for this struct[0m
-    [1m[94m|[0m
-[1m[92mnote[0m: if you're trying to build a new `Addresses`, consider using `Addresses::load_many` which returns `Result<Addresses, std::string::String>`
-   [1m[94m--> [0msrc/addresses.rs:55:5
-    [1m[94m|[0m
-[1m[94m 55[0m [1m[94m|[0m     pub fn load_many(paths: &[PathBuf]) -> Result<Addresses, String> {
-    [1m[94m|[0m     [1m[92m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
-    [1m[94m= [0m[1mhelp[0m: items from traits can only be used if the trait is implemented and in scope
-    [1m[94m= [0m[1mnote[0m: the following traits define an item `load`, perhaps you need to implement one of them:
-            candidate #1: `dlopen2::symbor::api::SymBorApi`
-            candidate #2: `dlopen2::wrapper::api::WrapperApi`
-            candidate #3: `gio::auto::loadable_icon::LoadableIconExt`
-            candidate #4: `icu_provider::data_provider::DataProvider`
-            candidate #5: `soup::auto::cache::CacheExt`
-
-[1mFor more information about this error, try `rustc --explain E0599`.[0m
-[1m[91merror[0m: could not compile `leitwerk` (lib) due to 1 previous error
+[1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 42.12s
 ### python3 tools/build_default_data.py
 data/default/dienststellen.csv: 168 Zeilen
 data/default/fahrzeuge.csv: 135 Zeilen
@@ -197,4 +172,4 @@ data/beispiele/vorlage_einsatzvorlagen.csv: 0 Zeilen
 ### python3 tools/build_stufen.py
 einsatzstufen.csv: 12 Stufen
 ### git diff --stat --exit-code data/
-### Ergebnis: 1
+### Ergebnis: 0
