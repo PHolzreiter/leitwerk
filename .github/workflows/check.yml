@@ -52,4 +52,12 @@ jobs:
           if git fetch -q --depth 1 origin ci-logs; then git checkout -q -b ci-logs FETCH_HEAD; else git checkout -q --orphan ci-logs; fi
           cp ../check.log "check-$BR.log" 2>/dev/null || echo "kein Protokoll" > "check-$BR.log"
           rm -rf "dist-$BR" && cp -R ../dist "dist-$BR" 2>/dev/null || true
+          # Laufzeit-Pakete (ohne Build-Werkzeuge) für lokale Testbuilds, nur wenn sich package.json ändert
+          H=$(sha1sum ../package.json | cut -c1-10)
+          if [ ! -f "vendor-$H.tgz" ] && [ -d ../node_modules ]; then
+            rm -f vendor-*.tgz
+            tar -czf "vendor-$H.tgz" -C .. --exclude='node_modules/typescript' --exclude='node_modules/vite' --exclude='node_modules/rollup' \
+              --exclude='node_modules/@rollup' --exclude='node_modules/esbuild' --exclude='node_modules/@esbuild' --exclude='node_modules/@tauri-apps/cli*' \
+              --exclude='node_modules/.cache' node_modules
+          fi
           git add -A && git commit -qm "check $BR ${GITHUB_SHA::7}" && git push -q origin HEAD:ci-logs
