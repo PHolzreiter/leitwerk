@@ -297,29 +297,81 @@ impl Graph {
         best.map(|b| b.1)
     }
 
-    /// Schnellste Route zwischen zwei Punkten (A*).
+    /// Die nächsten Straßenknoten (bis `k`, höchstens `max_m` weiter als der nächste), nach Entfernung.
+    /// Mehrere Kandidaten, weil der allernächste Knoten in einer Einbahn-Sackgasse liegen kann
+    /// (z. B. Zufahrt auf ein Spitalsgelände).
+    pub fn nearest_k(&self, lat: f64, lon: f64, k: usize, max_m: f64) -> Vec<(f64, u32)> {
+        let Some(n0) = self.nearest(lat, lon) else { return Vec::new() };
+        let (a, b) = self.coord(n0);
+        let d0 = haversine(lat, lon, a, b);
+        let grenze = d0 + max_m;
+        let (la, lo) = ((lat * 1e6) as i32, (lon * 1e6) as i32);
+        let (cy, cx) = (la.div_euclid(CELL), lo.div_euclid(CELL));
+        let ringe = ((grenze / 200.0).ceil() as i32 + 1).min(14);
+        let mut alle: Vec<(f64, u32)> = Vec::new();
+        for dy in -ringe..=ringe {
+            for dx in -ringe..=ringe {
+                if let Some(cell) = self.grid.get(&(cy + dy, cx + dx)) {
+                    for &u in cell {
+                        let (ula, ulo) = self.coord(u);
+                        let d = haversine(lat, lon, ula, ulo);
+                        if d <= grenze {
+                            alle.push((d, u));
+                        }
+                    }
+                }
+            }
+        }
+        alle.sort_by(|x, y| x.0.partial_cmp(&y.0).unwrap_or(std::cmp::Ordering::Equal));
+        alle.truncate(k.max(1));
+        if alle.is_empty() {
+            alle.push((d0, n0));
+        }
+        alle
+    }
+
+    /// Schnellste Route zwischen zwei Punkten (A* mit mehreren Start- und Zielknoten in der Nähe).
     pub fn route(&self, from: (f64, f64), to: (f64, f64)) -> Option<RouteResult> {
-        let s = self.nearest(from.0, from.1)?;
-        let t = self.nearest(to.0, to.1)?;
+        let starts = self.nearest_k(from.0, from.1, 8, 300.0);
+        let ziele = self.nearest_k(to.0, to.1, 8, 300.0);
+        if starts.is_empty() || ziele.is_empty() {
+            return None;
+        }
         let n = self.node_count();
-        let (tla, tlo) = self.coord(t);
+        let t0 = ziele[0].1;
+        let (tla, tlo) = self.coord(t0);
         let h = |u: u32| -> u32 {
             let (la, lo) = self.coord(u);
             (haversine(la, lo, tla, tlo) / MAX_SPEED_MPS * 10.0) as u32
         };
+        // Zielknoten mit ihrem Fußweg zum Ziel
+        let ziel_rest: HashMap<u32, u32> = ziele.iter().map(|&(d, u)| (u, (d / OFFROAD_MPS * 10.0) as u32)).collect();
 
         let mut g = vec![u32::MAX; n];
         let mut prev = vec![u32::MAX; n];
         let mut heap = BinaryHeap::new();
-        g[s as usize] = 0;
-        heap.push(Reverse((h(s), s)));
-        let mut found = s == t;
-        while let Some(Reverse((_, u))) = heap.pop() {
-            if u == t {
-                found = true;
-                break;
+        for &(d, s) in &starts {
+            let g0 = (d / OFFROAD_MPS * 10.0) as u32;
+            if g0 < g[s as usize] {
+                g[s as usize] = g0;
+                heap.push(Reverse((g0.saturating_add(h(s)), s)));
+            }
+        }
+        // bester gefundener Zielknoten (Fahrzeit inkl. Fußweg)
+        let mut bestes: Option<(u32, u32)> = None;
+        while let Some(Reverse((f, u))) = heap.pop() {
+            if let Some((b, _)) = bestes {
+                if f >= b {
+                    break;
+                }
             }
             let gu = g[u as usize];
+            if let Some(&rest) = ziel_rest.get(&u) {
+                let gesamt = gu.saturating_add(rest);
+                if bestes.map_or(true, |(b, _)| gesamt < b) {
+                    bestes = Some((gesamt, u));
+                }
+            }
             for e in self.first[u as usize] as usize..self.first[u as usize + 1] as usize {
                 let v = self.target[e];
                 let nv = gu.saturating_add(self.time[e] as u32);
@@ -330,8 +382,12 @@ impl Graph {
                 }
             }
         }
-        if !found {
-            return None;
+        let (_, t) = bestes?;
+        let (tla, tlo) = self.coord(t);
+        // Startknoten = Anfang der Kette
+        let mut s = t;
+        while prev[s as usize] != u32::MAX {
+            s = prev[s as usize];
         }
 
         // Pfad rückwärts zusammensetzen
@@ -389,31 +445,34 @@ impl Graph {
     /// Ein einziger rückwärts laufender Dijkstra; bricht ab, wenn alle gefunden sind
     /// oder max_seconds überschritten ist.
     pub fn travel_times_to(&self, to: (f64, f64), sources: &[(f64, f64)], max_seconds: f64) -> Vec<Option<f64>> {
-        let Some(t) = self.nearest(to.0, to.1) else {
+        let ziele = self.nearest_k(to.0, to.1, 6, 300.0);
+        if ziele.is_empty() {
             return vec![None; sources.len()];
-        };
-        let (tla, tlo) = self.coord(t);
-        let tail = haversine(tla, tlo, to.0, to.1) / OFFROAD_MPS;
-
+        }
+        // je Startpunkt einige Knoten in der Nähe (Einbahn-Sackgassen umgehen)
         let mut wanted: HashMap<u32, Vec<(usize, f64)>> = HashMap::new();
         for (i, &(la, lo)) in sources.iter().enumerate() {
-            if let Some(s) = self.nearest(la, lo) {
-                let (sla, slo) = self.coord(s);
-                let head = haversine(la, lo, sla, slo) / OFFROAD_MPS;
-                wanted.entry(s).or_default().push((i, head));
+            for (d, s) in self.nearest_k(la, lo, 4, 250.0) {
+                wanted.entry(s).or_default().push((i, d / OFFROAD_MPS));
             }
         }
-        let mut out = vec![None; sources.len()];
-        let mut remaining = wanted.len();
-        if remaining == 0 {
+        let mut out: Vec<Option<f64>> = vec![None; sources.len()];
+        // fertig, sobald jeder Startpunkt eine Zeit hat (der erste gefundene Knoten ist fast immer der schnellste)
+        let mut offen: std::collections::HashSet<usize> = wanted.values().flatten().map(|&(i, _)| i).collect();
+        if offen.is_empty() {
             return out;
         }
 
         let limit = (max_seconds * 10.0) as u32;
         let mut g: HashMap<u32, u32> = HashMap::new();
         let mut heap = BinaryHeap::new();
-        g.insert(t, 0);
-        heap.push(Reverse((0u32, t)));
+        for &(d, t) in &ziele {
+            let t0 = (d / OFFROAD_MPS * 10.0) as u32;
+            if t0 < g.get(&t).copied().unwrap_or(u32::MAX) {
+                g.insert(t, t0);
+                heap.push(Reverse((t0, t)));
+            }
+        }
         while let Some(Reverse((d, u))) = heap.pop() {
             if g.get(&u).copied().unwrap_or(u32::MAX) < d {
                 continue;
@@ -421,12 +480,15 @@ impl Graph {
             if d > limit {
                 break;
             }
-            if let Some(list) = wanted.get(&u) {
-                for &(i, head) in list {
-                    out[i] = Some(d as f64 / 10.0 + head + tail);
+            if let Some(list) = wanted.remove(&u) {
+                for (i, head) in list {
+                    let v = d as f64 / 10.0 + head;
+                    if out[i].map_or(true, |x| v < x) {
+                        out[i] = Some(v);
+                    }
+                    offen.remove(&i);
                 }
-                remaining -= 1;
-                if remaining == 0 {
+                if offen.is_empty() {
                     break;
                 }
             }
