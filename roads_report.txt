@@ -56,33 +56,33 @@ Adressen nach Bereinigung: 395,141
   addresses-stmk.tsv.gz: 5.1 MB
   roads-stmk.lwrg.gz: 21.1 MB
 total 95M
--rw-r--r-- 1 runner runner 1.6M Oct 14 09:08 addresses-bgld.tsv.gz
--rw-r--r-- 1 runner runner 7.7M Oct 14 09:06 addresses-noe.tsv.gz
--rw-r--r-- 1 runner runner 5.1M Oct 14 09:10 addresses-ooe.tsv.gz
--rw-r--r-- 1 runner runner 4.9M Oct 14 09:12 addresses-stmk.tsv.gz
--rw-r--r-- 1 runner runner 1.7M Oct 14 09:07 addresses-wien.tsv.gz
--rw-r--r-- 1 runner runner 3.8M Oct 14 09:08 roads-bgld.lwrg.gz
--rw-r--r-- 1 runner runner  25M Oct 14 09:06 roads-noe.lwrg.gz
--rw-r--r-- 1 runner runner  24M Oct 14 09:10 roads-ooe.lwrg.gz
--rw-r--r-- 1 runner runner  21M Oct 14 09:12 roads-stmk.lwrg.gz
--rw-r--r-- 1 runner runner 2.3M Oct 14 09:07 roads-wien.lwrg.gz
+-rw-r--r-- 1 runner runner 1.6M Oct 14 09:19 addresses-bgld.tsv.gz
+-rw-r--r-- 1 runner runner 7.7M Oct 14 09:18 addresses-noe.tsv.gz
+-rw-r--r-- 1 runner runner 5.1M Oct 14 09:21 addresses-ooe.tsv.gz
+-rw-r--r-- 1 runner runner 4.9M Oct 14 09:23 addresses-stmk.tsv.gz
+-rw-r--r-- 1 runner runner 1.7M Oct 14 09:19 addresses-wien.tsv.gz
+-rw-r--r-- 1 runner runner 3.8M Oct 14 09:19 roads-bgld.lwrg.gz
+-rw-r--r-- 1 runner runner  25M Oct 14 09:18 roads-noe.lwrg.gz
+-rw-r--r-- 1 runner runner  24M Oct 14 09:21 roads-ooe.lwrg.gz
+-rw-r--r-- 1 runner runner  21M Oct 14 09:23 roads-stmk.lwrg.gz
+-rw-r--r-- 1 runner runner 2.3M Oct 14 09:19 roads-wien.lwrg.gz
 	Command being timed: "bash scripts/build-regionen.sh austria.osm.pbf out noe wien bgld ooe stmk"
-	User time (seconds): 829.29
-	System time (seconds): 21.14
-	Percent of CPU this job got: 160%
-	Elapsed (wall clock) time (h:mm:ss or m:ss): 8:50.32
+	User time (seconds): 825.53
+	System time (seconds): 20.88
+	Percent of CPU this job got: 159%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 8:49.24
 	Average shared text size (kbytes): 0
 	Average unshared data size (kbytes): 0
 	Average stack size (kbytes): 0
 	Average total size (kbytes): 0
-	Maximum resident set size (kbytes): 3775404
+	Maximum resident set size (kbytes): 3782412
 	Average resident set size (kbytes): 0
-	Major (requiring I/O) page faults: 2
-	Minor (reclaiming a frame) page faults: 5398071
-	Voluntary context switches: 826678
-	Involuntary context switches: 8637
+	Major (requiring I/O) page faults: 3
+	Minor (reclaiming a frame) page faults: 5667838
+	Voluntary context switches: 827596
+	Involuntary context switches: 7914
 	Swaps: 0
-	File system inputs: 53653184
+	File system inputs: 53653336
 	File system outputs: 2016840
 	Socket messages sent: 0
 	Socket messages received: 0
@@ -101,32 +101,43 @@ erreichbar LK Zwettl: true
 erreichbar BB Eisenstadt: true
 erreichbar Klinik Güssing: true
 erreichbar LK Neunkirchen: true
-UK Krems -> AKH Wien: 48 min, 75 km (59 ms)
-  zurück: keine Route
-UK St. Pölten -> LKH-Univ. Graz: 132 min, 227 km (498 ms)
+UK Krems -> AKH Wien: 47 min, 74 km (61 ms)
+  zurück: 47 min
+UK St. Pölten -> LKH-Univ. Graz: 132 min, 227 km (538 ms)
   zurück: 133 min
-UK Krems -> Klinikum Wels: 85 min, 173 km (128 ms)
+UK Krems -> Klinikum Wels: 85 min, 173 km (141 ms)
   zurück: 86 min
-AKH Wien -> Klinik Oberwart: keine Route
+AKH Wien -> Klinik Oberwart: 78 min, 133 km (130 ms)
   zurück: 77 min
-LK Zwettl -> AKH Wien: 81 min, 123 km (130 ms)
-  zurück: keine Route
-LKH-Univ. Graz -> Klinikum Wels: 116 min, 204 km (163 ms)
+LK Zwettl -> AKH Wien: 80 min, 122 km (138 ms)
+  zurück: 80 min
+LKH-Univ. Graz -> Klinikum Wels: 116 min, 204 km (177 ms)
   zurück: 117 min
-AKH Wien -> BB Eisenstadt: keine Route
+AKH Wien -> BB Eisenstadt: 40 min, 55 km (57 ms)
   zurück: 39 min
-BB Eisenstadt -> Klinik Oberwart: 62 min, 110 km (60 ms)
+BB Eisenstadt -> Klinik Oberwart: 62 min, 110 km (64 ms)
   zurück: 62 min
-Klinik Oberwart -> Klinik Güssing: 32 min, 37 km (17 ms)
+Klinik Oberwart -> Klinik Güssing: 32 min, 37 km (19 ms)
   zurück: 32 min
-LKH-Univ. Graz -> Klinik Oberwart: 56 min, 82 km (76 ms)
+LKH-Univ. Graz -> Klinik Oberwart: 56 min, 82 km (83 ms)
   zurück: 56 min
-LK Neunkirchen -> Klinik Oberwart: 44 min, 76 km (30 ms)
+LK Neunkirchen -> Klinik Oberwart: 44 min, 76 km (32 ms)
   zurück: 44 min
 LK Neunkirchen -> BB Eisenstadt: 28 min, 44 km (17 ms)
   zurück: 28 min
+Fahrzeiten nach AKH Wien (1231 ms):
+  UK Krems: 48 min
+  AKH Wien: 1 min
+  UK St. Pölten: 42 min
+  LKH-Univ. Graz: 115 min
+  Klinikum Wels: 102 min
+  Klinik Oberwart: 77 min
+  LK Zwettl: 80 min
+  BB Eisenstadt: 39 min
+  Klinik Güssing: 100 min
+  LK Neunkirchen: 44 min
 ### nur NÖ und Wien
-Geladen: 2 Dateien, 2323103 Knoten, 0.8 s
+Geladen: 2 Dateien, 2323103 Knoten, 0.7 s
 erreichbar UK Krems: true
 erreichbar AKH Wien: true
 erreichbar UK St. Pölten: true
@@ -137,16 +148,16 @@ erreichbar LK Zwettl: true
 erreichbar BB Eisenstadt: false
 erreichbar Klinik Güssing: false
 erreichbar LK Neunkirchen: true
-UK Krems -> AKH Wien: 48 min, 75 km (56 ms)
-  zurück: keine Route
+UK Krems -> AKH Wien: 47 min, 74 km (56 ms)
+  zurück: 47 min
 UK St. Pölten -> LKH-Univ. Graz: keine Route
   zurück: keine Route
 UK Krems -> Klinikum Wels: keine Route
   zurück: keine Route
 AKH Wien -> Klinik Oberwart: keine Route
   zurück: keine Route
-LK Zwettl -> AKH Wien: 81 min, 123 km (129 ms)
-  zurück: keine Route
+LK Zwettl -> AKH Wien: 80 min, 122 km (133 ms)
+  zurück: 80 min
 LKH-Univ. Graz -> Klinikum Wels: keine Route
   zurück: keine Route
 AKH Wien -> BB Eisenstadt: keine Route
@@ -161,6 +172,17 @@ LK Neunkirchen -> Klinik Oberwart: keine Route
   zurück: keine Route
 LK Neunkirchen -> BB Eisenstadt: keine Route
   zurück: keine Route
+Fahrzeiten nach AKH Wien (408 ms):
+  UK Krems: 48 min
+  AKH Wien: 1 min
+  UK St. Pölten: 42 min
+  LKH-Univ. Graz: –
+  Klinikum Wels: –
+  Klinik Oberwart: –
+  LK Zwettl: 80 min
+  BB Eisenstadt: –
+  Klinik Güssing: –
+  LK Neunkirchen: 44 min
 a	Hütteldorfer Straße	180	1140	Wien	48.196967	16.287668
 a	Hütteldorfer Straße	130B	1140	Wien	48.197763	16.298907
 a	Mantlergasse	34-36	1130	Wien	48.191434	16.281198
