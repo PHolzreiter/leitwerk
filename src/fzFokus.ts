@@ -31,7 +31,6 @@ export function addFzFokus(map: maplibregl.Map, deps: FzFokusDeps): FzFokus {
   let gewaehlt: string | null = null;
   let folgt: string | null = null;
   let laeuft = 0;
-  let bearing = map.getBearing();
 
   // Zwischen zwei Simulationsschritten weiterrechnen (flüssige Kamera)
   let simZeit = sim.state.zeit;
@@ -194,29 +193,37 @@ export function addFzFokus(map: maplibregl.Map, deps: FzFokusDeps): FzFokus {
     if (gewaehlt !== fz.id) waehle(fz.id);
     chip.innerHTML = `🎥 Kamera folgt <b>${esc(fz.funkrufname)}</b> <button type="button" title="Nicht mehr folgen (Esc)">✕</button>`;
     chip.querySelector("button")!.addEventListener("click", () => folge(null));
-    const t = jetzt();
-    const [lon, lat] = positionBei(fz, t);
-    const r = richtungBei(fz, t) ?? map.getBearing();
-    bearing = deps.is3d() ? r - 35 : 0;
-    map.easeTo({ center: [lon, lat], zoom: Math.max(map.getZoom(), zielZoom(fz)), pitch: deps.is3d() ? 62 : 0, bearing, duration: 1100 });
-    const start = performance.now();
+    // Kamera jedes Bild aufs Fahrzeug; Zoom, Neigung und Drehung gleiten zum Ziel
+    const t0 = jetzt();
+    const r0 = richtungBei(fz, t0) ?? map.getBearing();
+    let zielZ: number | null = Math.max(map.getZoom(), zielZoom(fz));
+    let zielPitch: number | null = deps.is3d() ? 62 : 0;
+    const zielB0 = deps.is3d() ? r0 - 35 : 0;
+    let b = map.getBearing();
+    const winkel = (soll: number, ist: number) => ((soll - ist + 540) % 360) - 180;
     const schritt = () => {
       if (folgt !== fz.id) return;
       const tt = jetzt();
       const [x, y] = positionBei(fz, tt);
-      // nach dem Heranfliegen jedes Bild nachführen
-      if (performance.now() - start > 1150) {
-        if (deps.is3d()) {
-          const rr = richtungBei(fz, tt);
-          if (rr !== null) {
-            // weich nachdrehen (kürzester Weg)
-            const soll = rr - 35;
-            const diff = ((soll - bearing + 540) % 360) - 180;
-            bearing += diff * 0.04;
-          }
-          map.jumpTo({ center: [x, y], bearing });
-        } else map.jumpTo({ center: [x, y] });
+      const opts: NonNullable<Parameters<maplibregl.Map["jumpTo"]>[0]> = { center: [x, y] };
+      if (zielZ !== null) {
+        const z = map.getZoom();
+        opts.zoom = z + (zielZ - z) * 0.12;
+        if (Math.abs(zielZ - z) < 0.03) zielZ = null; // danach darf man selbst zoomen
       }
+      if (zielPitch !== null) {
+        const pi = map.getPitch();
+        opts.pitch = pi + (zielPitch - pi) * 0.12;
+        if (Math.abs(zielPitch - pi) < 0.5) zielPitch = null;
+      }
+      if (deps.is3d()) {
+        // schräg von der Seite hinter dem Fahrzeug, weich nachdrehen
+        const rr = richtungBei(fz, tt);
+        const soll = rr !== null ? rr - 35 : zielB0;
+        b += winkel(soll, b) * 0.05;
+        opts.bearing = b;
+      } else if (Math.abs(winkel(0, map.getBearing())) > 0.5) opts.bearing = map.getBearing() + winkel(0, map.getBearing()) * 0.12;
+      map.jumpTo(opts);
       if (gewaehlt === fz.id) popup.setLngLat([x, y]);
       laeuft = requestAnimationFrame(schritt);
     };
