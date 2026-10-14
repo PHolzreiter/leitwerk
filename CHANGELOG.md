@@ -1,5 +1,13 @@
 # Änderungen
 
+## 0.11.1 – Fahrzeuge im Blick
+- Fahrzeug anklicken: kleines Fenster mit Status, Auftrag (Einsatz oder Krankentransport) und Ankunftszeit, die restliche Route wird orange gezeichnet; die Auftragsmaske öffnet sich rechts, die Karte bleibt beim Fahrzeug
+- Fahrzeug doppelt anklicken (oder „🎥 Kamera folgen“): Die Karte zoomt heran und die Kamera folgt dem Fahrzeug – in 2D von oben, in 3D schräg von der Seite. Karte verschieben, ✕ oder Esc beendet das Folgen; zoomen geht weiter mit dem Mausrad
+- 3D: Fliegende Hubschrauber sind schon beim Herauszoomen (ab Zoomstufe 12,5) als Modell zu sehen, vergrößert, statt nur als Punkt; 3D-Modelle lassen sich anklicken
+- Karte: Krankenhäuser, Dienststellen, POIs und Fahrzeuge werden beim Herauszoomen kleiner (Krankenhäuser als kleine rote Punkte, das „H“ erst beim Hineinzoomen)
+- KT-Maske einheitlich für Krankentransporte und Überstellungen: Anrufer → Patient → Fahrt → Transport → Code; ob es eine Überstellung ist, ergibt sich aus Abholort und Ziel (Krankenhaus → Krankenhaus); Sitzen/Liegen und Dringlichkeit als Knöpfe
+- Dienstfahrten entfernt
+
 ## 0.11.0 – Überstellungen
 - Überstellungen zwischen Krankenhäusern mit den SEK-96-Codes: geplant (SEK-96K1–K3), SOFORT (!), mit SRTW (K6/B6), notarztbegleitet (D6, mit SNAW), mit Hubschrauber (K7/D7-ITH) und Inkubator-/Kinderüberstellungen (D8, K8)
 - Medizinisch stimmige Fälle: das abgebende Haus hat etwas nicht (Herzkatheter, Thrombektomie, Neurochirurgie, Herzchirurgie, Verbrennung, Neonatologie, Kinderintensiv, Psychiatrie, Geriatrie …), hat kein Bett frei, oder der Patient kommt zurück ins Heimatkrankenhaus; dazu Untersuchungen in einem anderen Haus mit Rückfahrt

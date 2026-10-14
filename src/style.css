@@ -2485,10 +2485,13 @@ input[type="color"] {
   flex: 1 1 140px;
   width: auto;
 }
-.kt-mask .kt-grid .row-btns select,
-.kt-mask .kt-grid .row-btns input.zahl {
+.kt-mask .kt-grid .row-btns select {
   width: auto;
   flex: 0 0 auto;
+}
+.kt-mask .kt-grid .row-btns input.zahl {
+  width: 64px;
+  flex: 0 0 64px;
 }
 .kt-mask .kt-grid input.zahl {
   width: 64px;
