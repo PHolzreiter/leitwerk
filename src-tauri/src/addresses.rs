@@ -2,7 +2,7 @@
 
 use std::fs::File;
 use std::io::{BufRead, BufReader};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use flate2::read::GzDecoder;
 use serde::Serialize;
@@ -51,9 +51,8 @@ pub fn normalize(s: &str) -> String {
 }
 
 impl Addresses {
-    pub fn load(path: &Path) -> Result<Addresses, String> {
-        let file = File::open(path).map_err(|e| format!("Adressen nicht gefunden ({}): {e}", path.display()))?;
-        let reader = BufReader::new(GzDecoder::new(BufReader::new(file)));
+    /// Lädt mehrere Adressdateien (je Bundesland eine) in ein Verzeichnis.
+    pub fn load_many(paths: &[PathBuf]) -> Result<Addresses, String> {
         let mut a = Addresses {
             text: String::new(),
             norm: String::new(),
@@ -62,6 +61,16 @@ impl Addresses {
             lon: Vec::new(),
             is_place: Vec::new(),
         };
+        for p in paths {
+            a.add_file(p)?;
+        }
+        Ok(a)
+    }
+
+    fn add_file(&mut self, path: &Path) -> Result<(), String> {
+        let file = File::open(path).map_err(|e| format!("Adressen nicht gefunden ({}): {e}", path.display()))?;
+        let reader = BufReader::new(GzDecoder::new(BufReader::new(file)));
+        let a = self;
         for line in reader.lines() {
             let line = line.map_err(|e| format!("Adressen beschädigt: {e}"))?;
             let f: Vec<&str> = line.split('\t').collect();
@@ -83,7 +92,7 @@ impl Addresses {
             a.lon.push(lo);
             a.is_place.push(place);
         }
-        Ok(a)
+        Ok(())
     }
 
     pub fn len(&self) -> usize {

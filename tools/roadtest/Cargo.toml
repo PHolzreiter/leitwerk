@@ -1,0 +1,12 @@
+[package]
+name = "roadtest"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+# Prüft das Zusammenfügen der Straßennetze mehrerer Bundesländer (nutzt src-tauri/src/routing.rs).
+[dependencies]
+flate2 = "1"
+serde = { version = "1", features = ["derive"] }
+
+[workspace]

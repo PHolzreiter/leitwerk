@@ -81,24 +81,121 @@ fn find(parent: &mut [u32], mut x: u32) -> u32 {
     x
 }
 
+/// Rohdaten einer Graph-Datei (ein Bundesland oder das alte Gesamtnetz).
+struct Teil {
+    lat: Vec<i32>,
+    lon: Vec<i32>,
+    first: Vec<u32>,
+    target: Vec<u32>,
+    time: Vec<u16>,
+    dist: Vec<u16>,
+    /// Knoten an der Landesgrenze (kommen auch in der Datei des Nachbarlandes vor)
+    grenze: Vec<u32>,
+}
+
+fn lese_teil(path: &Path) -> Result<Teil, String> {
+    let file = File::open(path).map_err(|e| format!("Straßennetz nicht gefunden ({}): {e}", path.display()))?;
+    let mut r = BufReader::new(GzDecoder::new(BufReader::new(file)));
+    let err = |e: std::io::Error| format!("Straßennetz beschädigt: {e}");
+    let mut magic = [0u8; 4];
+    r.read_exact(&mut magic).map_err(err)?;
+    if &magic != b"LWRG" {
+        return Err("Straßennetz hat ein unbekanntes Format".into());
+    }
+    let head = read_u32s(&mut r, 3).map_err(err)?;
+    let (version, n, m) = (head[0], head[1] as usize, head[2] as usize);
+    let lat = read_i32s(&mut r, n).map_err(err)?;
+    let lon = read_i32s(&mut r, n).map_err(err)?;
+    let first = read_u32s(&mut r, n + 1).map_err(err)?;
+    let target = read_u32s(&mut r, m).map_err(err)?;
+    let time = read_u16s(&mut r, m).map_err(err)?;
+    let dist = read_u16s(&mut r, m).map_err(err)?;
+    let grenze = if version >= 2 {
+        let nb = read_u32s(&mut r, 1).map_err(err)?[0] as usize;
+        read_u32s(&mut r, nb).map_err(err)?
+    } else {
+        Vec::new()
+    };
+    Ok(Teil { lat, lon, first, target, time, dist, grenze })
+}
+
 impl Graph {
     pub fn load(path: &Path) -> Result<Graph, String> {
-        let file = File::open(path).map_err(|e| format!("Straßennetz nicht gefunden ({}): {e}", path.display()))?;
-        let mut r = BufReader::new(GzDecoder::new(BufReader::new(file)));
-        let err = |e: std::io::Error| format!("Straßennetz beschädigt: {e}");
-        let mut magic = [0u8; 4];
-        r.read_exact(&mut magic).map_err(err)?;
-        if &magic != b"LWRG" {
-            return Err("Straßennetz hat ein unbekanntes Format".into());
+        Self::load_many(&[path.to_path_buf()])
+    }
+
+    /// Lädt die Straßennetze mehrerer Bundesländer und fügt sie an den Grenzen zusammen
+    /// (Grenzknoten mit gleichen Koordinaten werden ein Knoten, doppelte Kanten entfallen).
+    pub fn load_many(paths: &[std::path::PathBuf]) -> Result<Graph, String> {
+        if paths.is_empty() {
+            return Err("Kein Straßennetz installiert".into());
         }
-        let head = read_u32s(&mut r, 3).map_err(err)?;
-        let (n, m) = (head[1] as usize, head[2] as usize);
-        let lat = read_i32s(&mut r, n).map_err(err)?;
-        let lon = read_i32s(&mut r, n).map_err(err)?;
-        let first = read_u32s(&mut r, n + 1).map_err(err)?;
-        let target = read_u32s(&mut r, m).map_err(err)?;
-        let time = read_u16s(&mut r, m).map_err(err)?;
-        let dist = read_u16s(&mut r, m).map_err(err)?;
+        let mut lat: Vec<i32> = Vec::new();
+        let mut lon: Vec<i32> = Vec::new();
+        // Kanten (von, nach, Zeit, Strecke)
+        let mut kanten: Vec<(u32, u32, u16, u16)> = Vec::new();
+        let mut grenz_knoten: HashMap<(i32, i32), u32> = HashMap::new();
+        let mut grenz_kanten: std::collections::HashSet<(u32, u32)> = std::collections::HashSet::new();
+        for p in paths {
+            let t = lese_teil(p)?;
+            let n = t.lat.len();
+            let mut ist_grenze = vec![false; n];
+            for &g in &t.grenze {
+                if (g as usize) < n {
+                    ist_grenze[g as usize] = true;
+                }
+            }
+            // lokale -> gemeinsame Knotennummer
+            let mut neu = vec![0u32; n];
+            for u in 0..n {
+                if ist_grenze[u] {
+                    let key = (t.lat[u], t.lon[u]);
+                    if let Some(&g) = grenz_knoten.get(&key) {
+                        neu[u] = g;
+                        continue;
+                    }
+                    let g = lat.len() as u32;
+                    grenz_knoten.insert(key, g);
+                    neu[u] = g;
+                } else {
+                    neu[u] = lat.len() as u32;
+                }
+                lat.push(t.lat[u]);
+                lon.push(t.lon[u]);
+            }
+            for u in 0..n {
+                for e in t.first[u] as usize..t.first[u + 1] as usize {
+                    let v = t.target[e] as usize;
+                    let (a, b) = (neu[u], neu[v]);
+                    // Kanten zwischen zwei Grenzknoten gibt es in beiden Ländern: nur einmal übernehmen
+                    if ist_grenze[u] && ist_grenze[v] && !grenz_kanten.insert((a, b)) {
+                        continue;
+                    }
+                    kanten.push((a, b, t.time[e], t.dist[e]));
+                }
+            }
+        }
+        drop(grenz_knoten);
+        drop(grenz_kanten);
+        kanten.sort_unstable_by_key(|k| k.0);
+        let n = lat.len();
+        let mut first = vec![0u32; n + 1];
+        for k in &kanten {
+            first[k.0 as usize + 1] += 1;
+        }
+        for i in 0..n {
+            first[i + 1] += first[i];
+        }
+        let target: Vec<u32> = kanten.iter().map(|k| k.1).collect();
+        let time: Vec<u16> = kanten.iter().map(|k| k.2).collect();
+        let dist: Vec<u16> = kanten.iter().map(|k| k.3).collect();
+        drop(kanten);
+        Ok(Self::aus_teilen(lat, lon, first, target, time, dist))
+    }
+
+    fn aus_teilen(lat: Vec<i32>, lon: Vec<i32>, first: Vec<u32>, target: Vec<u32>, time: Vec<u16>, dist: Vec<u16>) -> Graph {
+        let n = lat.len();
+        let m = target.len();
 
         // Umgekehrter Graph
         let mut rcount = vec![0u32; n + 1];
@@ -148,7 +245,15 @@ impl Graph {
             grid.entry((lat[u].div_euclid(CELL), lon[u].div_euclid(CELL))).or_default().push(u as u32);
         }
 
-        Ok(Graph { lat, lon, first, target, time, dist, rfirst, rsource, rtime, grid })
+        Graph { lat, lon, first, target, time, dist, rfirst, rsource, rtime, grid }
+    }
+
+    /// Liegt der Punkt im Straßennetz (Straße höchstens `max_m` Meter entfernt)?
+    pub fn erreichbar(&self, lat: f64, lon: f64, max_m: f64) -> bool {
+        self.nearest(lat, lon).is_some_and(|u| {
+            let (a, b) = self.coord(u);
+            haversine(lat, lon, a, b) <= max_m
+        })
     }
 
     pub fn node_count(&self) -> usize {
