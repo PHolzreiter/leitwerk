@@ -60,14 +60,19 @@ export function addFzFokus(map: maplibregl.Map, deps: FzFokusDeps): FzFokus {
     paint: { "circle-radius": 7, "circle-color": "#ff8c1a", "circle-stroke-color": "#ffffff", "circle-stroke-width": 2.5 },
   });
 
-  const popup = new maplibregl.Popup({ closeButton: true, closeOnClick: false, offset: 16, className: "fz-popup", maxWidth: "300px" });
-  popup.on("close", () => {
-    if (!schliesstSelbst) {
-      gewaehlt = null;
-      folge(null);
-      routeZeichnen();
-    }
-  });
+  /** Popup: in 3D unter dem Fahrzeug, damit der fliegende Hubschrauber darüber sichtbar bleibt */
+  const neuesPopup = () => {
+    const p = new maplibregl.Popup({ closeButton: true, closeOnClick: false, offset: 16, className: "fz-popup", maxWidth: "300px", anchor: deps.is3d() ? "top" : undefined });
+    p.on("close", () => {
+      if (!schliesstSelbst) {
+        gewaehlt = null;
+        folge(null);
+        routeZeichnen();
+      }
+    });
+    return p;
+  };
+  let popup = neuesPopup();
   let schliesstSelbst = false;
 
   // Hinweis „Kamera folgt …“
@@ -173,6 +178,7 @@ export function addFzFokus(map: maplibregl.Map, deps: FzFokusDeps): FzFokus {
     schliesstSelbst = true;
     popup.remove();
     schliesstSelbst = false;
+    popup = neuesPopup();
     if (id) popupAktualisieren(true);
     routeZeichnen();
   }
@@ -205,7 +211,7 @@ export function addFzFokus(map: maplibregl.Map, deps: FzFokusDeps): FzFokus {
       if (folgt !== fz.id) return;
       const tt = jetzt();
       const [x, y] = positionBei(fz, tt);
-      const opts: NonNullable<Parameters<maplibregl.Map["jumpTo"]>[0]> = { center: [x, y] };
+      const opts: { center: [number, number]; zoom?: number; pitch?: number; bearing?: number } = { center: [x, y] };
       if (zielZ !== null) {
         const z = map.getZoom();
         opts.zoom = z + (zielZ - z) * 0.12;
