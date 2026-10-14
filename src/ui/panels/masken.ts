@@ -41,15 +41,20 @@ export function einsatzMaske(e: Einsatz): { root: HTMLElement; refresh(): void }
   meld.hidden = !!e.anruf;
 
   // Code
-  const codeBox = el("div", { class: "mask-box" });
-  codeBox.innerHTML = `<div class="box-title">AMPDS-Code</div>`;
-  const codeInput = el("input", { type: "text", placeholder: "Code oder Stichwort suchen, z. B. „Brust“ oder „RD-10“" });
+  // Aufnahme (Code, Einsatzort, Informationen) kompakt in einem Kasten – das füllt der Calltaker
+  const aufBox = el("div", { class: "mask-box mask-auf" });
+  const aufZeile = (label: string, ...inhalt: HTMLElement[]) => {
+    const feld = el("div", { class: "auf-feld" });
+    feld.append(...inhalt);
+    aufBox.append(el("div", { class: "auf-lbl" }, label), feld);
+  };
+  const codeInput = el("input", { type: "text", class: "code-suche", placeholder: "🔍 Code / Stichwort" });
   const codeList = el("div", { class: "addr-list", hidden: "" });
   const codeInfo = el("div", { class: "code-info" });
   const codeWrap = el("div", { class: "addr" });
   codeWrap.append(codeInput, codeList);
-  codeBox.append(codeWrap, codeInfo);
-  root.appendChild(codeBox);
+  aufZeile("Code", codeInfo, codeWrap);
+  root.appendChild(aufBox);
   const showCode = () => {
     const c = findCode(e.code ?? undefined);
     if (!c) {
@@ -59,9 +64,11 @@ export function einsatzMaske(e: Einsatz): { root: HTMLElement; refresh(): void }
       return;
     }
     const st = sim.stufeVon(e);
+    const details = `${c.gruppenname} · ${st ? `${st.rettungsmittel.replace(/>/g, " › ") || "kein Fahrzeug"}${st.nfsErforderlich ? " · NFS" : ""}${st.notarzt !== "nein" ? " · Notarzt" : ""} · ${st.sondersignal ? "mit" : "ohne"} Sondersignal · ${KATEGORIE_LABEL[st.kategorie]}` : "Stufe nicht zugeordnet"}`;
+    codeInfo.title = `${c.code} ${c.beschreibung}\n${details}`;
     codeInfo.innerHTML = `<span class="stufe-badge" style="background:${stufeFarbe(c.stufe)}">${esc(c.stufe)}</span>
-      <b>${esc(c.code)}</b> ${esc(c.beschreibung)}
-      <div class="muted">${esc(c.gruppenname)} · ${st ? `${esc(st.rettungsmittel.replace(/>/g, " › ") || "kein Fahrzeug")}${st.nfsErforderlich ? " · NFS" : ""}${st.notarzt !== "nein" ? " · Notarzt" : ""} · ${st.sondersignal ? "mit" : "ohne"} Sondersignal · ${KATEGORIE_LABEL[st.kategorie]}` : "Stufe nicht zugeordnet"}</div>`;
+      <b>${esc(c.code)}</b> <span class="code-name">${esc(c.beschreibung)}</span>
+      <div class="muted code-details">${esc(details)}</div>`;
   };
   codeInput.addEventListener("input", () => {
     const hits = searchCodes(codeInput.value, 40);
@@ -88,8 +95,6 @@ export function einsatzMaske(e: Einsatz): { root: HTMLElement; refresh(): void }
   showCode();
 
   // Adresse
-  const adrBox = el("div", { class: "mask-box" });
-  adrBox.innerHTML = `<div class="box-title">Einsatzort (Berufungsort)</div>`;
   const adr = addressInput("Straße Hausnummer Ort …", (o) => {
     void fehlerZeigen(sim.call("aktualisiere", e.id, { adresse: o }));
     karteZeigen(o.lat, o.lon, 15);
@@ -97,7 +102,7 @@ export function einsatzMaske(e: Einsatz): { root: HTMLElement; refresh(): void }
   });
   if (e.adresse) adr.input.value = e.adresse.label;
   const adrRow = el("div", { class: "row-btns" });
-  const btnPick = el("button", { class: "btn small" }, "Auf der Karte wählen");
+  const btnPick = el("button", { class: "btn small icon", title: "Einsatzort auf der Karte wählen" }, "🗺");
   btnPick.addEventListener("click", async () => {
     const p = await karteWaehlen("Einsatzort anklicken");
     if (!p) return;
@@ -108,13 +113,13 @@ export function einsatzMaske(e: Einsatz): { root: HTMLElement; refresh(): void }
   });
   adrRow.appendChild(btnPick);
   // Bei Notrufen: genannte Adresse übernehmen und Handy-Ortung
-  const btnGenannt = el("button", { class: "btn small" }, "Genannte Adresse übernehmen");
+  const btnGenannt = el("button", { class: "btn small icon" }, "📍");
   btnGenannt.addEventListener("click", () => {
     adr.input.value = e.meldung.adresse;
     adr.input.dispatchEvent(new Event("input"));
     adr.input.focus();
   });
-  const btnOrtung = el("button", { class: "btn small" }, "📡 Ortung");
+  const btnOrtung = el("button", { class: "btn small icon", title: "Handy-Ortung anfordern" }, "📡");
   btnOrtung.addEventListener("click", () => void fehlerZeigen(sim.call("ortung", e.id)));
   adrRow.append(btnGenannt, btnOrtung);
   const ortungOut = el("div", { class: "ortung" });
@@ -124,7 +129,7 @@ export function einsatzMaske(e: Einsatz): { root: HTMLElement; refresh(): void }
     btnGenannt.hidden = btnOrtung.hidden = !a;
     if (!a) return;
     btnGenannt.disabled = !a.gespraech.some((m) => m.von === "anrufer");
-    btnGenannt.title = btnGenannt.disabled ? "Erst wenn der Anrufer etwas gesagt hat" : `„${e.meldung.adresse}“ suchen`;
+    btnGenannt.title = btnGenannt.disabled ? "Genannte Adresse – erst wenn der Anrufer etwas gesagt hat" : `Genannte Adresse übernehmen: „${e.meldung.adresse}“`;
     const o = a.ortung;
     btnOrtung.disabled = a.status === "klingelt" || o?.status === "laeuft";
     const key = JSON.stringify(o ?? null);
@@ -151,11 +156,13 @@ export function einsatzMaske(e: Einsatz): { root: HTMLElement; refresh(): void }
     });
     ortungOut.append(zeigen, nehmen);
   };
-  const zusatz = el("input", { type: "text", placeholder: "Zusatz (Stiege, Stock, Tür, Zufahrt …)" });
+  const zusatz = el("input", { type: "text", class: "adr-zusatz", placeholder: "Zusatz (Stiege, Stock, Tür …)" });
   zusatz.value = e.zusatz;
   zusatz.addEventListener("change", () => void fehlerZeigen(sim.call("aktualisiere", e.id, { zusatz: zusatz.value })));
-  adrBox.append(adr.root, adrRow, ortungOut, zusatz);
-  root.appendChild(adrBox);
+  adrRow.classList.add("adr-knoepfe");
+  const adrZeile = el("div", { class: "adr-zeile" });
+  adrZeile.append(adr.root, adrRow);
+  aufZeile("Ort", adrZeile, zusatz, ortungOut);
   zeigeOrtung();
 
   btnUse.addEventListener("click", () => {
@@ -170,9 +177,7 @@ export function einsatzMaske(e: Einsatz): { root: HTMLElement; refresh(): void }
   if (e.rueckrufGemacht) rueckOut.innerHTML = `Anrufer bestätigt: <b>${esc(e.wahr.adresse)}</b>`;
 
   // Infos
-  const infoBox = el("div", { class: "mask-box" });
-  infoBox.innerHTML = `<div class="box-title">Informationen</div>`;
-  const infoRtw = el("textarea", { rows: "2", placeholder: "Info an die Fahrzeuge (z. B. Zufahrt über Hof, Hund im Haus)" });
+  const infoRtw = el("textarea", { rows: "1", class: "auf-info", placeholder: "Info an die Fahrzeuge (Zufahrt, Hund …)" });
   infoRtw.value = e.infoRtw;
   // Vorne steht automatisch „m 67J B~ A+“ aus der Abfrage; eigener Text kommt hinter „//“
   infoRtw.addEventListener("input", () => {
@@ -192,11 +197,11 @@ export function einsatzMaske(e: Einsatz): { root: HTMLElement; refresh(): void }
     infoRtw.value = wert;
     void fehlerZeigen(sim.call("aktualisiere", e.id, { infoRtw: wert }));
   });
-  const infoIntern = el("textarea", { rows: "2", placeholder: "Interne Info für die Leitstelle" });
+  const infoIntern = el("textarea", { rows: "1", class: "auf-info", placeholder: "Interne Info für die Leitstelle" });
   infoIntern.value = e.infoIntern;
   infoIntern.addEventListener("change", () => void fehlerZeigen(sim.call("aktualisiere", e.id, { infoIntern: infoIntern.value })));
-  infoBox.append(el("div", { class: "fld-label" }, "Info an RTW"), infoRtw, el("div", { class: "fld-label" }, "Interne Info"), infoIntern);
-  root.appendChild(infoBox);
+  aufZeile("Info RTW", infoRtw);
+  aufZeile("Intern", infoIntern);
 
   // Alarmierung
   const alarmBox = el("div", { class: "mask-box" });

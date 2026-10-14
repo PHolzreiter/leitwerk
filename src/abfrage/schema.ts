@@ -182,9 +182,25 @@ export function bestimmeCode(
       code = pk[det] ?? pk[stufeVonCode(det)] ?? pk["*"] ?? code;
     }
     if (extra.zusatz && (K.zusatzkennungen?.[det] ?? []).includes(extra.zusatz)) code = extra.zusatz;
-    return { kapitel: kap, pfad, determinante: det, code, reanimation: istKreislaufstillstand(a) && (ksSchnell || kap === "9"), antworten: a };
+    const reanimation = istKreislaufstillstand(a) && (ksSchnell || kap === "9");
+    // Bewusstlos: Codes ohne eigene Bewusstlos-Variante werden zum Bewusstlosigkeits-Code (Kapitel 31) nach der Atmung
+    const bl = reanimation ? null : bewusstlosCode(schema, kap, code, a);
+    if (bl) return { kapitel: "31", pfad, determinante: bl, code: bl, reanimation, antworten: a };
+    return { kapitel: kap, pfad, determinante: det, code, reanimation, antworten: a };
   }
   return null;
+}
+
+/** Bewusstloser Patient: 31D1 (agonal/ineffektiv), 31D2 (abnorm), 31D3 (effektiv), 31D4 (unklar) – außer der Code kennt Bewusstlosigkeit schon */
+function bewusstlosCode(schema: Schema, kap: string, code: string, a: Antworten): string | null {
+  if (a.bw !== "nein" || kap === "31" || kap === "9") return null;
+  const name = schema.codes[code]?.name ?? "";
+  // eigene Bewusstlos-Variante (z. B. Vergiftung-Bewusstlos, Sturz-Bewusstlos) bleibt; „Bewusstseinstrübung“ ist für getrübte Patienten
+  if (/bewusstlos/i.test(name)) return null;
+  const pre = code.match(/^([A-Z]+)-/)?.[1] ?? "RD";
+  const nr = a.at === "agonal" || a.at === "keine" ? "D1" : a.at === "abnorm" ? "D2" : a.at === "normal" ? "D3" : "D4";
+  const ziel = `${pre}-31${nr}`;
+  return schema.codes[ziel] ? ziel : null;
 }
 
 function suffixVon(K: Kapitel, a: Antworten): string {

@@ -128,25 +128,33 @@ function ortWahl(wert: KtOrt | null, darf: boolean, nurKh: boolean, onSet: (o: K
 
 // ---------------------------------------------------------------- Maske
 
-export function ktMaske(k: KtAuftrag, deps: { flyTo(lat: number, lon: number, z?: number): void; abfrage(id: string): void }): { root: HTMLElement; refresh(): void } {
-  const abfrageZeigen = deps.abfrage;
-  const root = el("div", { class: "mask kt-mask" });
-  const kopf = el("div", { class: "mask-head" });
-  const datenBox = el("div", { class: "mask-box" });
-  const dispoBox = el("div", { class: "mask-box" });
-  const protBox = el("div", { class: "mask-box" });
-  const anrufHinweis = el("div", { class: "mask-anruf-hinweis" });
-  root.append(kopf, anrufHinweis, datenBox, dispoBox, protBox);
+/** Frage an den Anrufer stellen (Antwort erscheint im Abfrage-Fenster, auch in anderen Programmfenstern) */
+export async function ktFrageStellen(k: KtAuftrag, text: string, f?: KtFrage): Promise<void> {
+  const l = liveSammler(k.id);
+  await ktFragen(k, text, f, l.onToken).catch((e) => toast(String(e.message ?? e), "error"));
+  l.fertig();
+}
 
-  // Fragen an den Anrufer (Gespräch selbst steht im Abfrage-Fenster)
-  const stelle = async (text: string, f?: KtFrage) => {
-    const l = liveSammler(k.id);
-    await ktFragen(k, text, f, l.onToken).catch((e) => toast(String(e.message ?? e), "error"));
-    l.fertig();
-    refresh();
-  };
+/** Kurzfassung des Auftrags für die KT-Maske */
+export function ktZusammenfassung(k: KtAuftrag): string {
+  const d = k.d;
+  const art = artVon(d);
+  const lage = d.lage ? { gehend: "gehfähig", sitzend: "Tragstuhl", liegend: "liegend", rollstuhl: "eig. Rollstuhl" }[d.lage] : "Lage?";
+  const extra = [d.begleitung && "Begleitperson", d.sauerstoff && "O₂", d.infektion && "Infektion"].filter(Boolean).join(" · ");
+  const zeit = `${d.abholung ? `Abholung <b>${hhmm(d.abholung)}</b>` : ""}${d.abholung && d.termin ? " · " : ""}${d.termin ? `Termin <b>${hhmm(d.termin)}</b>` : ""}` || `<span class="alert-text">keine Zeit</span>`;
+  return `<div class="kt-z1"><span class="kt-art-chip ${art}">${art === "sek" ? "Überstellung" : "Krankentransport"}</span> <b>${esc(d.patient.name || "Patient?")}</b>${d.patient.alter !== null ? ` <span class="muted">${d.patient.alter} J.</span>` : ""} · ${esc(lage)}${d.sofort ? ` <span class="el-sofort">SOFORT</span>` : ""}${sekTags(d)}</div>
+    <div class="kt-z2">${esc(d.von?.label ?? "Abholort?")} → ${esc(d.nach?.label ?? "Ziel?")}</div>
+    <div class="kt-z3">${zeit}${extra ? ` <span class="muted">· ${esc(extra)}</span>` : ""}${d.grund ? ` <span class="muted">· ${esc(d.grund)}</span>` : ""}</div>${
+      d.patient.info ? `<div class="kt-z3 muted">Hinweis: ${esc(d.patient.info)}</div>` : ""
+    }`;
+}
 
-  // ---- Daten (feste Abfrage)
+/**
+ * Eingabe der Auftragsdaten (Anrufer, Patient, Fahrt, Transport, Code) – im Abfrage-Fenster für den Calltaker
+ * und aufgeklappt in der KT-Maske. 🗨 stellt die passende Frage an den Anrufer.
+ */
+export function ktFormular(k: KtAuftrag, stelle: (text: string, f?: KtFrage) => Promise<void>, opt: { info?: boolean } = {}): { el: HTMLElement; refresh(): void } {
+  const datenBox = el("div", { class: "kt-formular" });
   let datenKey = "";
   const setze = (patch: Partial<KtDaten>) => fehler(sim.call("ktSetze", k.id, patch));
   const frageKnopf = (id: KtFrage["id"]) => {
@@ -232,25 +240,27 @@ export function ktMaske(k: KtAuftrag, deps: { flyTo(lat: number, lon: number, z?
     pat.append(name, alter, g);
     zeile("Name, Alter", "patient", pat);
     zeile("Grund", "grund", text(k.d.grund, art === "sek" ? "Diagnose / Grund der Überstellung" : "Grund / Diagnose", (v) => setze({ grund: v })));
-    zeile("Info", null, text(k.d.patient.info, art === "sek" ? "z. B. intubiert, 2 Perfusoren" : "z. B. bis zum Fahrzeug gehfähig", (v) => setze({ patient: { ...k.d.patient, info: v } })));
+    if (opt.info !== false) zeile("Info", null, text(k.d.patient.info, art === "sek" ? "z. B. intubiert, 2 Perfusoren" : "z. B. bis zum Fahrzeug gehfähig", (v) => setze({ patient: { ...k.d.patient, info: v } })));
 
     // ---- Fahrt
     abschnitt("Fahrt");
     zeile("Abholort", "von", ortWahl(k.d.von, darf, false, (o) => setze({ von: o })));
     zeile("Ziel", "nach", ortWahl(k.d.nach, darf, false, (o) => setze({ nach: o })));
-    const zeiten = el("div", { class: "row-btns kt-zeiten" });
-    const ab = el("input", { type: "time" });
-    ab.value = hmFuer(k.d.abholung);
-    ab.addEventListener("change", () => setze({ abholung: ab.value ? zeitAus(ab.value) : null }));
-    const termin = el("input", { type: "time" });
-    termin.value = hmFuer(k.d.termin);
-    termin.addEventListener("change", () => setze({ termin: zeitAus(termin.value) }));
-    deaktiv.push(ab, termin);
-    const fkAb = frageKnopf("abholung");
-    zeiten.append(el("span", { class: "muted" }, "Abholung"), ab);
-    if (fkAb) zeiten.appendChild(fkAb);
-    zeiten.append(el("span", { class: "muted" }, art === "sek" ? "Ankunft" : "Termin"), termin);
-    zeile("Zeiten", "termin", zeiten);
+    // nur eine Zeit eingeben – die andere rechnet das Spiel aus (Fahrzeit + Ein-/Ausladen)
+    const zeitFeld = (wer: "abholung" | "termin") => {
+      const box = el("div", { class: "row-btns kt-zeiten" });
+      const i = el("input", { type: "time" });
+      i.value = hmFuer(k.d[wer]);
+      i.addEventListener("change", () => setze({ [wer]: i.value ? zeitAus(i.value) : null }));
+      deaktiv.push(i);
+      box.appendChild(i);
+      if (k.d.zeitVorgabe && k.d.zeitVorgabe !== wer && k.d[wer])
+        box.appendChild(el("span", { class: "kt-berechnet", title: "aus der anderen Zeit und der Fahrzeit berechnet" }, "berechnet"));
+      else if (!k.d.abholung && !k.d.termin && wer === "termin") box.appendChild(el("span", { class: "muted small" }, "eine Zeit genügt"));
+      return box;
+    };
+    zeile("Abholung", "abholung", zeitFeld("abholung"));
+    zeile(art === "sek" ? "Ankunft" : "Termin", "termin", zeitFeld("termin"));
     zeile(
       "Dringlichkeit",
       "sofort",
@@ -343,6 +353,55 @@ export function ktMaske(k: KtAuftrag, deps: { flyTo(lat: number, lon: number, z?
     }
   }
 
+
+  function refresh(): void {
+    const a = k.anruf;
+    const dk = JSON.stringify([k.d, k.status, a?.status, a?.angenommenVon?.pid]);
+    const tippt = document.activeElement instanceof HTMLInputElement || document.activeElement instanceof HTMLSelectElement;
+    if (dk !== datenKey && !(tippt && datenBox.contains(document.activeElement))) {
+      // Ansicht nicht nach oben springen lassen
+      const scroller: [HTMLElement, number][] = [];
+      for (let x = datenBox.parentElement; x && !x.classList.contains("lw-panel"); x = x.parentElement) if (x.scrollTop) scroller.push([x, x.scrollTop]);
+      datenKey = dk;
+      datenBauen();
+      for (const [x, top] of scroller) x.scrollTop = top;
+    }
+  }
+  refresh();
+  return { el: datenBox, refresh };
+}
+
+export function ktMaske(k: KtAuftrag, deps: { flyTo(lat: number, lon: number, z?: number): void; abfrage(id: string): void }): { root: HTMLElement; refresh(): void } {
+  const abfrageZeigen = deps.abfrage;
+  const root = el("div", { class: "mask kt-mask" });
+  const kopf = el("div", { class: "mask-head" });
+  const datenBox = el("div", { class: "mask-box kt-daten" });
+  const dispoBox = el("div", { class: "mask-box" });
+  const protBox = el("div", { class: "mask-box" });
+  const anrufHinweis = el("div", { class: "mask-anruf-hinweis" });
+  root.append(kopf, anrufHinweis, datenBox, dispoBox, protBox);
+
+  // Aufnahme-Daten: kompakte Zusammenfassung, zum Ändern aufklappen (die Aufnahme selbst läuft im Abfrage-Fenster)
+  const form = ktFormular(k, (text, f) => ktFrageStellen(k, text, f).then(() => refresh()));
+  const zusammen = el("div", { class: "kt-zusammen" });
+  const bearbeiten = el("button", { class: "btn small kt-bearbeiten", type: "button" }, "✎ Bearbeiten");
+  let offen = k.status === "aufnahme" && !k.anruf;
+  bearbeiten.addEventListener("click", () => {
+    offen = !offen;
+    zusammenZeigen();
+  });
+  let zKey = "";
+  const zusammenZeigen = () => {
+    form.el.hidden = !offen;
+    bearbeiten.textContent = offen ? "▴ Zuklappen" : "✎ Bearbeiten";
+    const html = ktZusammenfassung(k);
+    if (html === zKey) return;
+    zKey = html;
+    zusammen.innerHTML = html;
+    zusammen.appendChild(bearbeiten);
+  };
+  datenBox.append(zusammen, form.el);
+
   // ---- Disposition
   let dispoKey = "";
   let dispoLauf = 0;
@@ -363,7 +422,9 @@ export function ktMaske(k: KtAuftrag, deps: { flyTo(lat: number, lon: number, z?
       const fahrten = plan ? plan.fahrten.map((f) => f.map((id) => esc(sim.ktAuftrag(id)?.nummer ?? "?")).join(" + ")).join(" → ") : "";
       info.innerHTML = `<b>${esc(fz.funkrufname)}</b> <span class="muted">${esc(fz.rmTyp)} · ${esc(sim.statusDef(fz.status).name)}</span>${
         nef ? ` + <b>${esc(nef.funkrufname)}</b> <span class="muted">NEF · ${esc(sim.statusDef(nef.status).name)}</span>` : ""
-      }${plan && plan.fahrten.length > 1 ? `<div class="muted">${plan.fahrten.length} Fahrten: ${fahrten}</div>` : ""}`;
+      }${plan && plan.fahrten.length > 1 ? `<div class="muted">${plan.fahrten.length} Fahrten: ${fahrten}</div>` : ""}${
+        plan && !plan.aktiv && plan.losUm ? `<div class="kt-losum">rückt automatisch um <b>${hhmm(plan.losUm)}</b> aus</div>` : ""
+      }`;
       dispoBox.appendChild(info);
       if (k.status === "vorgemerkt") {
         if (plan && !plan.aktiv) zeile.appendChild(knopf("Jetzt losschicken", "primary", () => sim.call("ktSchicken", fz.id)));
@@ -460,15 +521,11 @@ export function ktMaske(k: KtAuftrag, deps: { flyTo(lat: number, lon: number, z?
       anrufHinweis.appendChild(b);
     }
     // Daten und Disposition nur neu aufbauen, wenn sich etwas geändert hat
-    const dk = JSON.stringify([k.d, k.status, a?.status, a?.angenommenVon?.pid]);
-    const tippt = document.activeElement instanceof HTMLInputElement || document.activeElement instanceof HTMLSelectElement;
-    if (dk !== datenKey && !(tippt && datenBox.contains(document.activeElement))) {
-      datenKey = dk;
-      datenBauen();
-    }
+    form.refresh();
+    zusammenZeigen();
     const fz: SimFahrzeug | undefined = k.fz ? sim.state.fahrzeuge[k.fz] : undefined;
     const nef = k.begleit ? sim.state.fahrzeuge[k.begleit] : undefined;
-    const pk = JSON.stringify([k.status, k.fz, k.begleit, k.d.von, k.d.nach, k.d.code, k.d.sek, fz?.status, fz?.kt?.fahrten, nef?.status]);
+    const pk = JSON.stringify([k.status, k.fz, k.begleit, k.d.von, k.d.nach, k.d.code, k.d.sek, fz?.status, fz?.kt?.fahrten, fz?.kt?.losUm, fz?.kt?.aktiv, nef?.status]);
     if (pk !== dispoKey) {
       dispoKey = pk;
       void dispoBauen();

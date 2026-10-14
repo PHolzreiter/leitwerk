@@ -17,6 +17,7 @@ import { anruferWaehlen, veraenderungText, type Anrufer } from "../abfrage/anruf
 import { abfrageBlock, abfrageSaetze } from "../abfrage/protokollText";
 import {
   dauerDaten,
+  hhmm,
   hotlineAnrufer,
   neueDaten,
   passt,
@@ -2294,7 +2295,7 @@ export class Simulation {
       quelle,
       eingang: this.state.zeit,
       status: hotline ? "aufnahme" : "offen",
-      d: hotline ? neueDaten() : structuredClone(d),
+      d: hotline ? { ...neueDaten(), sek: d.sek ? sekLeer() : null } : structuredClone(d),
       wahr: {
         d: structuredClone(d),
         anrufer: hotlineAnrufer(d),
@@ -2421,6 +2422,15 @@ export class Simulation {
   }
 
   private ktTick(t: number, dt: number): void {
+    // vorgemerkte Fahrzeuge fahren zur berechneten Zeit selbst los
+    for (const fz of Object.values(this.state.fahrzeuge)) {
+      const plan = fz.kt;
+      if (!plan || plan.aktiv || !plan.losUm || t < plan.losUm || fz.einsatzId) continue;
+      if (!this.statusDef(fz.status).verfuegbar || this.flugHindernis(fz)) continue;
+      plan.losUm = null;
+      plan.aktiv = true;
+      this.ktFahrtStarten(fz, true);
+    }
     // Daueraufträge für den aktuellen Tag
     const d = new Date(t);
     // ab dem Nachmittag sind auch die Fahrten des nächsten Tages schon bestellt
@@ -2565,6 +2575,27 @@ export class Simulation {
     if (!beideKh && k.d.sek && k.d.von && k.d.nach) k.d.sek = null;
     if ("code" in patch) k.d.codeManuell = !!patch.code;
     if (!k.d.codeManuell) k.d.code = this.ktCodeFuer(k.d);
+    // Entweder Abholzeit oder Termin: die andere Zeit rechnet das Spiel aus
+    if ("abholung" in patch) k.d.zeitVorgabe = patch.abholung ? "abholung" : k.d.termin && k.d.zeitVorgabe === "abholung" ? null : k.d.zeitVorgabe;
+    if ("termin" in patch) k.d.zeitVorgabe = patch.termin ? "termin" : k.d.abholung && k.d.zeitVorgabe === "termin" ? null : k.d.zeitVorgabe;
+    if ("abholung" in patch || "termin" in patch || "von" in patch || "nach" in patch || "lage" in patch) void this.ktZeitenRechnen(k.id);
+    this.emit();
+  }
+
+  /** Aus der vorgegebenen Zeit die andere berechnen: Fahrzeit Abholort → Ziel plus Einladen und Übergabe */
+  private async ktZeitenRechnen(id: string): Promise<void> {
+    const k = this.ktAuftrag(id);
+    if (!k || !k.d.zeitVorgabe || !k.d.von || !k.d.nach) return;
+    const sek = (await travelTimes(k.d.nach, [k.d.von]))[0];
+    const k2 = this.ktAuftrag(id);
+    if (!k2 || !k2.d.von || !k2.d.nach || sek === null || sek === undefined) return;
+    const laden = (k2.d.lage === "liegend" ? 15 : 10) * MIN + 10 * MIN;
+    const fuenf = 5 * MIN;
+    if (k2.d.zeitVorgabe === "termin" && k2.d.termin) {
+      k2.d.abholung = Math.floor((k2.d.termin - sek * 1000 - laden) / fuenf) * fuenf;
+    } else if (k2.d.zeitVorgabe === "abholung" && k2.d.abholung) {
+      k2.d.termin = Math.ceil((k2.d.abholung + sek * 1000 + laden) / fuenf) * fuenf;
+    } else return;
     this.emit();
   }
 
@@ -2576,7 +2607,7 @@ export class Simulation {
       !k.d.patient.name && "Name",
       !k.d.von && "Abholort",
       !k.d.nach && "Ziel",
-      !k.d.termin && "Termin",
+      !k.d.termin && !k.d.abholung && "Termin oder Abholzeit",
       !k.d.lage && "Transportart (gehfähig/Tragstuhl/liegend)",
       !k.d.code && "Code",
     ].filter(Boolean);
@@ -2705,7 +2736,7 @@ export class Simulation {
    * (Sammelfahrt; auch zur laufenden, solange noch kein Patient an Bord ist).
    * begleitId: NEF, das mitfährt (Notarzt-Überstellung mit RTW/SRTW)
    */
-  ktVormerken(id: string, fzId: string, modus: "neu" | "sammel" = "neu", begleitId?: string | null): void {
+  async ktVormerken(id: string, fzId: string, modus: "neu" | "sammel" = "neu", begleitId?: string | null): Promise<void> {
     const k = this.ktAuftrag(id);
     const fz = this.state.fahrzeuge[fzId];
     if (!k || !fz) throw new Error("Nicht gefunden");
@@ -2745,7 +2776,25 @@ export class Simulation {
     k.status = sofort ? "unterwegs" : "vorgemerkt";
     this.ktLog(k, `${fz.funkrufname}${nef ? ` + ${nef.funkrufname}` : ""} ${sofort ? "zugeteilt (Sammelfahrt)" : "vorgemerkt"}`);
     if (sofort) this.ktHalteNeu(fz);
+    else if (!plan.aktiv && plan.fahrten[0]?.includes(k.id)) await this.ktLosUmRechnen(fz);
     this.emit();
+  }
+
+  /**
+   * Ausrückzeitpunkt der ersten vorgemerkten Fahrt: früheste Abholzeit minus Anfahrt und Ausrücken.
+   * Zu diesem Zeitpunkt fährt das Fahrzeug selbst los.
+   */
+  private async ktLosUmRechnen(fz: SimFahrzeug): Promise<void> {
+    const plan = fz.kt;
+    if (!plan || plan.aktiv) return;
+    const ks = (plan.fahrten[0] ?? []).map((x) => this.ktAuftrag(x)).filter((x): x is KtAuftrag => !!x && !!x.d.von);
+    if (!ks.length) return;
+    const zeitAb = (k: KtAuftrag) => k.d.abholung ?? (k.d.termin ?? this.state.zeit) - 45 * MIN;
+    const erste = ks.sort((a, b) => zeitAb(a) - zeitAb(b))[0];
+    const sek = (await travelTimes(erste.d.von!, [{ lat: fz.lat, lon: fz.lon }]))[0] ?? 15 * 60;
+    if (fz.kt !== plan || plan.aktiv) return;
+    plan.losUm = Math.floor((zeitAb(erste) - sek * 1000 - 3 * MIN) / MIN) * MIN;
+    for (const k of ks) this.ktLog(k, `${fz.funkrufname} rückt um ${hhmm(Math.max(plan.losUm, this.state.zeit))} aus`);
   }
 
   /** Vorgemerktes Fahrzeug losschicken (ein begleitendes NEF fährt mit los) */
@@ -2863,6 +2912,10 @@ export class Simulation {
         this.ktFahrtFertig(fz, false);
       } else this.ktHalteNeu(fz);
     } else if (!plan.fahrten.length && !plan.aktiv) fz.kt = null;
+    else if (!plan.aktiv) {
+      plan.losUm = null;
+      void this.ktLosUmRechnen(fz).then(() => this.emit());
+    }
   }
 
   /** Halte der laufenden Fahrt (neu) berechnen: erst abholen (nach Abholzeit), dann abliefern (nach Termin) */

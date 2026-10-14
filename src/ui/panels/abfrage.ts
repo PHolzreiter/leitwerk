@@ -4,17 +4,17 @@
  * darunter die Info an die Besatzung.
  */
 import { kiBereit } from "../../abfrage/ki";
-import { KT_FRAGEN, ktAntwortetGerade, ktFragen, type KtFrage } from "../../abfrage/ktGespraech";
+import { ktAntwortetGerade } from "../../abfrage/ktGespraech";
 import { mp } from "../../net/mehrspieler";
 import { store } from "../../data/store";
 import { infoFreitext, sim, type Anruf, type Einsatz } from "../../sim/engine";
-import { bereichName, hhmm, type KtAuftrag } from "../../sim/kt";
+import { bereichName, type KtAuftrag } from "../../sim/kt";
 import { istUeberstellung } from "../../sim/ktCodes";
 import { el, esc, toast } from "../dom";
-import { codeChip } from "../ktView";
+import { codeChip, ktFormular, ktFrageStellen } from "../ktView";
 import { panelZeigen, registriere, type PanelKontext } from "../ws/arbeitsplatz";
 import { auswahl, karteZeigen, onAuswahl, waehle } from "../ws/auswahl";
-import { liveSammler, liveText, onLive } from "./live";
+import { liveText, onLive } from "./live";
 import { notrufTeile, type NotrufTeile } from "./notrufAbfrage";
 import { alleAnrufe, anrufAnnehmen, anrufAuflegen, anrufHalten, istMeins, meinGespraech } from "./telefon";
 
@@ -381,56 +381,6 @@ function notrufAnsicht(root: HTMLElement, e: Einsatz): { refresh(): void; dispos
 
 // ---------------------------------------------------------------- KT-Hotline / Überstellung
 
-function wertVon(k: KtAuftrag, f: KtFrage): string {
-  const d = k.d;
-  const s = d.sek;
-  const ja = (b: boolean | undefined) => (b ? "ja" : "");
-  switch (f.id) {
-    case "wer":
-      return k.anruf?.gespraech.some((m) => m.von === "anrufer") ? "✓" : "";
-    case "patient":
-      return [d.patient.name, d.patient.alter !== null ? `${d.patient.alter} J.` : ""].filter(Boolean).join(", ");
-    case "von":
-      return d.von?.label ?? "";
-    case "nach":
-      return d.nach?.label ?? "";
-    case "termin":
-      return d.termin ? hhmm(d.termin) : "";
-    case "abholung":
-      return d.abholung ? hhmm(d.abholung) : "";
-    case "grund":
-      return d.grund;
-    case "lage":
-      return d.lage ? { gehend: "gehfähig", sitzend: "Tragstuhl", liegend: "liegend", rollstuhl: "Rollstuhl" }[d.lage] : "";
-    case "begleitung":
-      return ja(d.begleitung);
-    case "sauerstoff":
-      return ja(d.sauerstoff);
-    case "infektion":
-      return ja(d.infektion);
-    case "art":
-      return d.art;
-    case "telefon":
-      return d.telefon;
-    case "sofort":
-      return d.sofort ? "SOFORT" : "";
-    case "arzt":
-      return ja(s?.arzt);
-    case "monitoring":
-      return [s?.monitoring ? "Monitor" : "", s?.beatmet ? "beatmet" : ""].filter(Boolean).join(", ");
-    case "stabil":
-      return s?.instabil ? "instabil" : "";
-    case "inkubator":
-      return ja(s?.inkubator);
-    case "zusage":
-      return s?.zusage ?? "";
-    case "gewicht":
-      return s?.bit ? "BIT" : "";
-    default:
-      return "";
-  }
-}
-
 function ktAnsicht(root: HTMLElement, k: KtAuftrag): { refresh(): void; dispose(): void } {
   const sek = istUeberstellung(k.d) || !!k.wahr?.d?.sek;
   const telefon = alleAnrufe(true).find((x) => x.id === k.id)?.telefon ?? k.d.telefon;
@@ -448,12 +398,7 @@ function ktAnsicht(root: HTMLElement, k: KtAuftrag): { refresh(): void; dispose(
     if (text) verlauf.scrollTop = verlauf.scrollHeight;
   };
   const ausLive = onLive((id, text) => id === k.id && zeigeLive(text));
-  const stelle = async (text: string, f?: KtFrage) => {
-    const l = liveSammler(k.id);
-    await ktFragen(k, text, f, l.onToken).catch((e) => toast(String(e.message ?? e), "error"));
-    l.fertig();
-    refresh();
-  };
+  const stelle = (text: string) => ktFrageStellen(k, text).then(() => refresh());
   form.addEventListener("submit", (ev) => {
     ev.preventDefault();
     const t = eingabe.value.trim();
@@ -489,35 +434,14 @@ function ktAnsicht(root: HTMLElement, k: KtAuftrag): { refresh(): void; dispose(
   info.append(el("div", { class: "abf-titel" }, "Hinweise für die Besatzung"), infoFeld);
   mitte.appendChild(info);
 
-  // Rechts: Leitfaden
+  // Rechts: Eingabe der Auftragsdaten (🗨 stellt die Frage an den Anrufer)
   const rechts = el("div", { class: "abf-rechts" });
-  const leitfaden = el("div", { class: "kt-leitfaden" });
-  rechts.append(el("div", { class: "abf-titel" }, sek ? "Leitfaden Überstellung" : "Leitfaden Krankentransport"), leitfaden, el("div", { class: "muted small" }, "Die Antworten trägst du in der Maske ein (auch über die 🗨-Knöpfe dort)."));
+  const formular = ktFormular(k, (text, f) => ktFrageStellen(k, text, f).then(() => refresh()), { info: false });
+  rechts.append(formular.el);
 
   const grid = el("div", { class: "abf-grid" });
   grid.append(links.el, mitte, rechts);
   root.append(grid, links.fuss);
-
-  let lfKey = "";
-  const leitfadenBauen = () => {
-    const a = k.anruf;
-    const darf = !!a && a.status === "aktiv" && ich() && !ktAntwortetGerade(k.id);
-    const key = JSON.stringify([k.d, darf]);
-    if (key === lfKey) return;
-    lfKey = key;
-    leitfaden.innerHTML = "";
-    for (const f of KT_FRAGEN.filter((x) => !x.sek || sek)) {
-      const w = wertVon(k, f);
-      const r = el("div", { class: `lf-frage${w ? " erledigt" : ""}` });
-      const b = el("button", { class: "frag-knopf", type: "button", title: "Diese Frage stellen" }, "🗨");
-      b.disabled = !darf;
-      b.addEventListener("click", () => void stelle(f.text, f));
-      const txt = el("div", { class: "lf-text" });
-      txt.innerHTML = `${esc(f.text)}${w ? `<div class="lf-wert">${esc(w)}</div>` : ""}`;
-      r.append(b, txt);
-      leitfaden.appendChild(r);
-    }
-  };
 
   let codeKey = "";
   const refresh = () => {
@@ -546,7 +470,7 @@ function ktAnsicht(root: HTMLElement, k: KtAuftrag): { refresh(): void; dispose(
       codeBox.innerHTML = `${codeChip(k.d.code)}<div class="muted small">${esc(k.d.von?.label ?? "?")} → ${esc(k.d.nach?.label ?? "?")}${esc(b && !k.d.nach?.label.includes(b.slice(2, -1)) ? b : "")}</div>`;
     }
     if (document.activeElement !== infoFeld && infoFeld.value !== k.d.patient.info) infoFeld.value = k.d.patient.info;
-    leitfadenBauen();
+    formular.refresh();
   };
   const ausWelle = onLive((id, text) => id === k.id && mk.welle.classList.toggle("spricht", !!text));
   refresh();

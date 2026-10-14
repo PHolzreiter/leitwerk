@@ -63,6 +63,8 @@ export interface KtDaten {
   termin: number | null;
   /** gewünschte Abholzeit */
   abholung: number | null;
+  /** was der Disponent vorgegeben hat – die andere Zeit rechnet das Spiel aus */
+  zeitVorgabe?: "abholung" | "termin" | null;
   /** Rückruf beim Auftraggeber */
   telefon: string;
 }
@@ -117,6 +119,8 @@ export interface KtPlan {
   halte: { kt: string; art: "ab" | "an" }[];
   /** aktueller Halt (Index in halte) */
   halt: number;
+  /** vorgemerkt: fährt um diese Zeit selbst los (aus Abholzeit und Anfahrt berechnet) */
+  losUm?: number | null;
 }
 
 // ---------------------------------------------------------------- Plätze

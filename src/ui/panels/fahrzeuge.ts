@@ -17,7 +17,7 @@ const GRUPPEN: [string, string, (fz: SimFahrzeug) => boolean][] = [
   ["rtw", "RTW", (f) => f.rmTyp === "RTW" || f.rmTyp === "RTW-C"],
   ["nef", "NEF", (f) => f.rmTyp === "NEF"],
   ["nah", "Hubschrauber", (f) => f.rmTyp === "NAH" || f.rmTyp === "ITH"],
-  ["s", "S-Fahrzeuge", (f) => ["SKTW", "SRTW", "SNAW", "BIT"].includes(f.rmTyp)],
+  ["s", "S-Fahrzeuge", (f) => ["SKTW", "SRTW", "SNAW", "BIT", "ITH"].includes(f.rmTyp)],
   ["kt", "KT", (f) => f.rmTyp === "KTW" || !!f.kt],
 ];
 
@@ -153,12 +153,15 @@ function fahrzeugListe(ctx: PanelKontext, nurAktive: boolean) {
     }
     // nach Dienststelle
     const gruppen = new Map<string, SimFahrzeug[]>();
+    const HELI = "Notarzthubschrauber";
     for (const fz of sichtbar) {
-      const g = gruppen.get(fz.stationName) ?? [];
+      // alle Hubschrauber (NAH, ITH) gemeinsam statt verstreut nach Stützpunkt
+      const name = fz.rmTyp === "NAH" || fz.rmTyp === "ITH" ? HELI : fz.stationName;
+      const g = gruppen.get(name) ?? [];
       g.push(fz);
-      gruppen.set(fz.stationName, g);
+      gruppen.set(name, g);
     }
-    for (const [name, fzs] of [...gruppen.entries()].sort((a, b) => a[0].localeCompare(b[0], "de"))) {
+    for (const [name, fzs] of [...gruppen.entries()].sort((a, b) => (a[0] === HELI ? -1 : b[0] === HELI ? 1 : a[0].localeCompare(b[0], "de")))) {
       const offen = !zu.has(name) || !!q;
       const frei = fzs.filter((f) => f.status === "freiWache" || f.status === "freiFunk").length;
       const head = el("div", { class: `fz-gruppe${offen ? "" : " zu"}` });
@@ -177,7 +180,8 @@ function fahrzeugListe(ctx: PanelKontext, nurAktive: boolean) {
         const ktSek = ktIds.some((id) => sim.ktAuftrag(id)?.d.sek);
         const kt = fz.kt ? `<span class="kt-fz${fz.kt.aktiv ? " aktiv" : ""}${ktSek ? " sek" : ""}">${ktSek ? "SEK" : "KT"}${ktIds.length > 1 ? `×${ktIds.length}` : ""}</span>` : "";
         const e = fz.einsatzId ? sim.einsatz(fz.einsatzId) : undefined;
-        row.innerHTML = `${statusChip(fz)}<b>${esc(fz.funkrufname)}</b><span class="muted">${esc(fz.rmTyp)}${fz.kurzname ? " · " + esc(fz.kurzname) : ""}</span>${crewHtml(fz)}${kt}<span class="spacer"></span><span class="muted">${esc(e?.nummer ?? "")}</span>`;
+        const zusatz = name === HELI ? ` · ${esc(fz.stationName)}${fz.nachtflug ? " · 🌙 Nachtflug" : ""}` : fz.kurzname ? " · " + esc(fz.kurzname) : "";
+        row.innerHTML = `${statusChip(fz)}<b>${esc(fz.funkrufname)}</b><span class="muted">${esc(fz.rmTyp)}${zusatz}</span>${crewHtml(fz)}${kt}<span class="spacer"></span><span class="muted">${esc(e?.nummer ?? "")}</span>`;
         klickVerhalten(row, fz);
         liste.appendChild(row);
       }

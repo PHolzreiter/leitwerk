@@ -1,5 +1,15 @@
 # Änderungen
 
+## 0.13.2 – KT-Aufnahme im Abfrage-Fenster, kompakte Masken
+- Bewusstlose Patienten: Wird in der Abfrage „bewusstlos“ angeklickt, wechselt der Code auf Bewusstlosigkeit (31D1 agonal/keine Atmung, 31D2 abnorme Atmung, 31D3 normale Atmung, 31D4 Atmung unklar) – außer das Kapitel hat selbst einen Bewusstlos-Code (z. B. 23D2, 17D3). Codes mit „Bewusstseinstrübung“ gelten nur noch für getrübte Patienten
+- Krankentransport und Überstellung: Der Calltaker trägt alles direkt im Abfrage-Fenster ein (Anrufer, Patient, Abholort, Ziel, Zeiten, Transportart, Code) – mit den 🗨-Knöpfen stellt er die passende Frage. „Auftrag anlegen“ gibt es dort auch
+- KT-Maske kompakt: oben eine Zusammenfassung (Patient, Abholort → Ziel, Zeiten), Ändern über „✎ Bearbeiten“; Disposition und Protokoll stehen im Vordergrund
+- Zeiten: Abholzeit ODER Termin eingeben – die andere Zeit rechnet das Spiel aus (Fahrzeit plus Ein- und Ausladen) und zeigt sie als „berechnet“
+- Vormerken: Die Ausrückzeit wird automatisch berechnet („rückt automatisch um 14:35 aus“), das Fahrzeug fährt dann von selbst los. „Jetzt losschicken“ geht weiterhin
+- Ein Anruf, der als Überstellung kommt, startet gleich als Überstellung mit den passenden Fragen
+- Einsatzmaske: Code, Einsatzort mit Zusatz und die Infos stehen kompakt in einem Kasten; Karte 🗺, genannte Adresse 📍 und Ortung 📡 als kleine Knöpfe, die Infofelder gehen beim Hineinklicken auf
+- Alle Fahrzeuge: eigene Gruppe „Notarzthubschrauber“ mit allen Hubschraubern (Standort, Nachtflug); der ITH zählt sowohl als NAH als auch als S-Fahrzeug
+
 ## 0.13.1 – Abfrage-Fenster neu
 - Abfrage-Fenster wie eine echte Notrufabfrage: links der Anruf (Rufnummer, Dauer, Tonspur, Anruferstatus, Standort aus dem Netz mit Ortung, vorläufiges Ergebnis, „Einsatzmaske öffnen“, Zusatzinformationen wie Quelle, Netzbetreiber, Sprache), in der Mitte das Gespräch mit Uhrzeiten und darunter die Info an den RTW, rechts die ganze Abfrage übersichtlich in Spalten; unten Anruf beenden, Halten, Stummschalten und „Zur Einsatzmaske“
 - Die Adresse und die Zusatzinfos zum Ort trägt man direkt in der Abfrage ein (mit Adresssuche, Karte und „Genannte“); sie landen in der Einsatzmaske
