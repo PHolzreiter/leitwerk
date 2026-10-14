@@ -21,50 +21,101 @@
 2145268 Bayern
 ==> Nur Straßen, Adressen und Orte
 ==> Niederösterreich (Relation 77189)
-Traceback (most recent call last):
-  File "/home/runner/work/leitwerk/leitwerk/tools/build_roads.py", line 252, in <module>
-    main()
-  File "/home/runner/work/leitwerk/leitwerk/tools/build_roads.py", line 206, in main
-    hi.apply_file(opt["--innen"], locations=True, idx="flex_mem")
-  File "/home/runner/.local/lib/python3.12/site-packages/osmium/simple_handler.py", line 61, in apply_file
-    self._apply_object(filename, locations, idx, filters)
-  File "/home/runner/.local/lib/python3.12/site-packages/osmium/simple_handler.py", line 96, in _apply_object
-    apply(rd, *handlers)
-  File "/home/runner/work/leitwerk/leitwerk/tools/build_roads.py", line 87, in way
-    if "addr:housenumber" in t and self.innen is None:
-                                   ^^^^^^^^^^
-AttributeError: 'Innen' object has no attribute 'innen'
-Command exited with non-zero status 1
+Innen: 4,484,465 Straßenpunkte, 651,503 Adressen/Orte
+Knoten 2,136,588, Kanten 4,295,924, Grenzknoten 7,263, Adressen/Orte 651,503
+Adressen nach Bereinigung: 624,765
+  addresses-noe.tsv.gz: 8.1 MB
+  roads-noe.lwrg.gz: 25.5 MB
+==> Wien (Relation 109166)
+Innen: 214,571 Straßenpunkte, 199,647 Adressen/Orte
+Knoten 188,635, Kanten 330,842, Grenzknoten 2,090, Adressen/Orte 199,647
+Adressen nach Bereinigung: 143,006
+  addresses-wien.tsv.gz: 1.8 MB
+  roads-wien.lwrg.gz: 2.3 MB
+==> Burgenland (Relation 76909)
+Innen: 566,330 Straßenpunkte, 140,966 Adressen/Orte
+Knoten 304,831, Kanten 614,117, Grenzknoten 3,530, Adressen/Orte 140,966
+Adressen nach Bereinigung: 136,828
+  addresses-bgld.tsv.gz: 1.7 MB
+  roads-bgld.lwrg.gz: 3.9 MB
+==> Oberösterreich (Relation 102303)
+Innen: 3,544,273 Straßenpunkte, 429,966 Adressen/Orte
+Knoten 2,090,546, Kanten 4,215,464, Grenzknoten 4,816, Adressen/Orte 429,966
+Adressen nach Bereinigung: 420,183
+  addresses-ooe.tsv.gz: 5.3 MB
+  roads-ooe.lwrg.gz: 24.3 MB
+==> Steiermark (Relation 35183)
+Innen: 3,972,893 Straßenpunkte, 413,933 Adressen/Orte
+Knoten 1,779,714, Kanten 3,564,432, Grenzknoten 5,958, Adressen/Orte 413,933
+Adressen nach Bereinigung: 395,141
+  addresses-stmk.tsv.gz: 5.1 MB
+  roads-stmk.lwrg.gz: 21.1 MB
+total 95M
+-rw-r--r-- 1 runner runner 1.6M Oct 14 08:44 addresses-bgld.tsv.gz
+-rw-r--r-- 1 runner runner 7.7M Oct 14 08:42 addresses-noe.tsv.gz
+-rw-r--r-- 1 runner runner 5.1M Oct 14 08:46 addresses-ooe.tsv.gz
+-rw-r--r-- 1 runner runner 4.9M Oct 14 08:48 addresses-stmk.tsv.gz
+-rw-r--r-- 1 runner runner 1.7M Oct 14 08:43 addresses-wien.tsv.gz
+-rw-r--r-- 1 runner runner 3.8M Oct 14 08:44 roads-bgld.lwrg.gz
+-rw-r--r-- 1 runner runner  25M Oct 14 08:42 roads-noe.lwrg.gz
+-rw-r--r-- 1 runner runner  24M Oct 14 08:46 roads-ooe.lwrg.gz
+-rw-r--r-- 1 runner runner  21M Oct 14 08:48 roads-stmk.lwrg.gz
+-rw-r--r-- 1 runner runner 2.3M Oct 14 08:43 roads-wien.lwrg.gz
 	Command being timed: "bash scripts/build-regionen.sh austria.osm.pbf out noe wien bgld ooe stmk"
-	User time (seconds): 245.42
-	System time (seconds): 7.05
-	Percent of CPU this job got: 202%
-	Elapsed (wall clock) time (h:mm:ss or m:ss): 2:04.44
+	User time (seconds): 840.67
+	System time (seconds): 30.48
+	Percent of CPU this job got: 161%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 9:00.97
 	Average shared text size (kbytes): 0
 	Average unshared data size (kbytes): 0
 	Average stack size (kbytes): 0
 	Average total size (kbytes): 0
-	Maximum resident set size (kbytes): 3770492
+	Maximum resident set size (kbytes): 3776276
 	Average resident set size (kbytes): 0
 	Major (requiring I/O) page faults: 2
-	Minor (reclaiming a frame) page faults: 1557755
-	Voluntary context switches: 314751
-	Involuntary context switches: 2218
+	Minor (reclaiming a frame) page faults: 5533518
+	Voluntary context switches: 838003
+	Involuntary context switches: 9915
 	Swaps: 0
-	File system inputs: 19000728
-	File system outputs: 1129808
+	File system inputs: 53650672
+	File system outputs: 2011256
 	Socket messages sent: 0
 	Socket messages received: 0
 	Signals delivered: 0
 	Page size (bytes): 4096
-	Exit status: 1
+	Exit status: 0
 ### alle Länder
-
-thread 'main' (3206) panicked at src/main.rs:13:47:
-laden: "Straßennetz nicht gefunden (../../out/roads-*.lwrg.gz): No such file or directory (os error 2)"
-note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+Geladen: 5 Dateien, 6491972 Knoten, 2.4 s
+erreichbar UK Krems: true
+erreichbar AKH Wien: true
+erreichbar UK St. Pölten: true
+erreichbar LKH-Univ. Graz: true
+erreichbar Klinikum Wels: true
+erreichbar Klinik Oberwart: true
+erreichbar LK Zwettl: true
+UK Krems -> AKH Wien: 48 min, 75 km (60 ms)
+UK St. Pölten -> LKH-Univ. Graz: 132 min, 227 km (481 ms)
+UK Krems -> Klinikum Wels: 86 min, 173 km (125 ms)
+AKH Wien -> Klinik Oberwart: keine Route
+LK Zwettl -> AKH Wien: 81 min, 123 km (125 ms)
+LKH-Univ. Graz -> Klinikum Wels: 117 min, 204 km (157 ms)
 ### nur NÖ und Wien
-
-thread 'main' (3211) panicked at src/main.rs:13:47:
-laden: "Straßennetz nicht gefunden (../../out/roads-noe.lwrg.gz): No such file or directory (os error 2)"
-note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+Geladen: 2 Dateien, 2323157 Knoten, 0.8 s
+erreichbar UK Krems: true
+erreichbar AKH Wien: true
+erreichbar UK St. Pölten: true
+erreichbar LKH-Univ. Graz: false
+erreichbar Klinikum Wels: false
+erreichbar Klinik Oberwart: false
+erreichbar LK Zwettl: true
+UK Krems -> AKH Wien: 48 min, 75 km (55 ms)
+UK St. Pölten -> LKH-Univ. Graz: keine Route
+UK Krems -> Klinikum Wels: keine Route
+AKH Wien -> Klinik Oberwart: keine Route
+LK Zwettl -> AKH Wien: 81 min, 123 km (125 ms)
+LKH-Univ. Graz -> Klinikum Wels: keine Route
+a	Hütteldorfer Straße	180	1140	Wien	48.196967	16.287668
+a	Hütteldorfer Straße	130B	1140	Wien	48.197763	16.298907
+a	Mantlergasse	34-36	1130	Wien	48.191434	16.281198
+a	Hackinger Straße	14-16	1140	Wien	48.192877	16.282760
+a	Hütteldorfer Straße	216b	1140	Wien	48.197911	16.279949
