@@ -1,0 +1,70 @@
+==> Landesgrenzen suchen
+35183 Steiermark
+43648 Veneto
+45757 Trentino-Alto Adige/Südtirol
+52343 Tirol
+52345 Kärnten
+62611 Baden-Württemberg
+74942 Vorarlberg
+76909 Burgenland
+77189 Niederösterreich
+86539 Salzburg
+102303 Oberösterreich
+109166 Wien
+179296 Friuli-Venezia Giulia
+388265 Bratislavský kraj
+388266 Trnavský kraj
+442311 Jihomoravský kraj
+442321 Jihočeský kraj
+1686631 Graubünden/Grischun/Grigioni
+1687006 St. Gallen
+2145268 Bayern
+==> Nur Straßen, Adressen und Orte
+==> Niederösterreich (Relation 77189)
+Traceback (most recent call last):
+  File "/home/runner/work/leitwerk/leitwerk/tools/build_roads.py", line 252, in <module>
+    main()
+  File "/home/runner/work/leitwerk/leitwerk/tools/build_roads.py", line 206, in main
+    hi.apply_file(opt["--innen"], locations=True, idx="flex_mem")
+  File "/home/runner/.local/lib/python3.12/site-packages/osmium/simple_handler.py", line 61, in apply_file
+    self._apply_object(filename, locations, idx, filters)
+  File "/home/runner/.local/lib/python3.12/site-packages/osmium/simple_handler.py", line 96, in _apply_object
+    apply(rd, *handlers)
+  File "/home/runner/work/leitwerk/leitwerk/tools/build_roads.py", line 87, in way
+    if "addr:housenumber" in t and self.innen is None:
+                                   ^^^^^^^^^^
+AttributeError: 'Innen' object has no attribute 'innen'
+Command exited with non-zero status 1
+	Command being timed: "bash scripts/build-regionen.sh austria.osm.pbf out noe wien bgld ooe stmk"
+	User time (seconds): 245.42
+	System time (seconds): 7.05
+	Percent of CPU this job got: 202%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 2:04.44
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 3770492
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 2
+	Minor (reclaiming a frame) page faults: 1557755
+	Voluntary context switches: 314751
+	Involuntary context switches: 2218
+	Swaps: 0
+	File system inputs: 19000728
+	File system outputs: 1129808
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 1
+### alle Länder
+
+thread 'main' (3206) panicked at src/main.rs:13:47:
+laden: "Straßennetz nicht gefunden (../../out/roads-*.lwrg.gz): No such file or directory (os error 2)"
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+### nur NÖ und Wien
+
+thread 'main' (3211) panicked at src/main.rs:13:47:
+laden: "Straßennetz nicht gefunden (../../out/roads-noe.lwrg.gz): No such file or directory (os error 2)"
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
