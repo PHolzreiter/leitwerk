@@ -11,6 +11,8 @@ import { mp } from "../../net/mehrspieler";
 import { sim, type Einsatz } from "../../sim/engine";
 import { el, esc, toast } from "../dom";
 import { liveSammler, liveText, onLive } from "./live";
+import { karteWaehlen, karteZeigen } from "../ws/auswahl";
+import { addressInput } from "./teile";
 
 function fehler(p: Promise<unknown>): void {
   p.catch((e) => toast(String((e as Error).message ?? e), "error"));
@@ -128,7 +130,7 @@ export function notrufTeile(e: Einsatz): NotrufTeile {
     }
 
     // Abfrage nur neu aufbauen, wenn sich etwas geändert hat (sonst geht der Fokus verloren)
-    const schluessel = JSON.stringify([a.status, a.kapitel, a.antworten, a.extra, darf, a.angenommenVon?.pid, a.kapitel === "42" ? e.code : null]);
+    const schluessel = JSON.stringify([a.status, a.kapitel, a.antworten, a.extra, darf, a.angenommenVon?.pid, a.kapitel === "42" ? e.code : null, e.adresse?.label, e.zusatz, a.gespraech.some((m) => m.von === "anrufer")]);
     const tippt = document.activeElement instanceof HTMLInputElement || document.activeElement instanceof HTMLSelectElement;
     if (schluessel !== letzterSchluessel && !(tippt && abfrage.contains(document.activeElement))) {
       letzterSchluessel = schluessel;
@@ -136,7 +138,15 @@ export function notrufTeile(e: Einsatz): NotrufTeile {
     }
   }
 
+  /** Neu aufbauen, ohne dass die Ansicht nach oben springt */
   function abfrageBauen(darf: boolean) {
+    const scroller: [HTMLElement, number][] = [];
+    for (let x = abfrage.parentElement; x && !x.classList.contains("lw-panel"); x = x.parentElement) if (x.scrollTop) scroller.push([x, x.scrollTop]);
+    abfrageBauenInnen(darf);
+    for (const [x, top] of scroller) x.scrollTop = top;
+  }
+
+  function abfrageBauenInnen(darf: boolean) {
     abfrage.innerHTML = "";
     const a = e.anruf;
     const schema = store.schema;
@@ -196,14 +206,50 @@ export function notrufTeile(e: Einsatz): NotrufTeile {
     const p1 = abschnitt("1 · Einsatzort");
     for (const f of g.phase_1_einsatzort ?? []) {
       if (f.id === "ort_adresse") {
-        const r = el("div", { class: "frage" });
-        const kt = el("div", { class: "frage-text" }, `${f.text} → in der Einsatzmaske bei „Einsatzort“ eintragen`);
+        const r = el("div", { class: "frage breit" });
+        const kt = el("div", { class: "frage-text" }, f.text);
         if (darf && a.status === "aktiv") {
           const q = el("button", { class: "frag-knopf" }, "🗨");
           q.addEventListener("click", () => void stelle(f.text, f));
           kt.prepend(q);
         }
         r.appendChild(kt);
+        // Adresse direkt hier eintragen (geht in die Einsatzmaske)
+        const zeile = el("div", { class: "adr-zeile" });
+        const adr = addressInput("Straße Hausnummer Ort …", (o) => {
+          fehler(sim.call("aktualisiere", e.id, { adresse: o }));
+          karteZeigen(o.lat, o.lon, 15);
+        });
+        if (e.adresse) adr.input.value = e.adresse.label;
+        const karteB = el("button", { class: "btn small", type: "button", title: "Auf der Karte wählen" }, "🗺");
+        karteB.addEventListener("click", async () => {
+          const pkt = await karteWaehlen("Einsatzort anklicken");
+          if (!pkt) return;
+          fehler(sim.call("aktualisiere", e.id, { adresse: { ...pkt, label: `Koordinate ${pkt.lat.toFixed(5)}, ${pkt.lon.toFixed(5)}` } }));
+        });
+        const genannt = el("button", { class: "btn small", type: "button", title: "Was der Anrufer gesagt hat, in die Suche übernehmen" }, "📍 Genannte");
+        genannt.disabled = !a.gespraech.some((m) => m.von === "anrufer");
+        genannt.addEventListener("click", () => {
+          adr.input.value = e.meldung.adresse;
+          adr.input.dispatchEvent(new Event("input"));
+          adr.input.focus();
+        });
+        zeile.append(adr.root, karteB, genannt);
+        r.appendChild(zeile);
+        p1.appendChild(r);
+      } else if (f.id === "ort_zusatz" || /zusatz/i.test(f.id)) {
+        // Zusatzinfos zum Ort = Zusatz der Einsatzmaske
+        const r = el("div", { class: "frage breit" });
+        const kt = el("div", { class: "frage-text" }, f.text);
+        if (darf && a.status === "aktiv") {
+          const q = el("button", { class: "frag-knopf" }, "🗨");
+          q.addEventListener("click", () => void stelle(f.text, f));
+          kt.prepend(q);
+        }
+        const inp = el("input", { type: "text", class: "text", placeholder: "Stiege, Stock, Tür, Zufahrt …" });
+        inp.value = e.zusatz;
+        inp.addEventListener("change", () => fehler(sim.call("aktualisiere", e.id, { zusatz: inp.value })));
+        r.append(kt, inp);
         p1.appendChild(r);
       } else p1.appendChild(frageZeile(f));
     }

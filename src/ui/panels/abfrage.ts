@@ -128,62 +128,141 @@ function erstellen(ctx: PanelKontext) {
   };
 }
 
-// ---------------------------------------------------------------- linke Spalte (gemeinsam)
+// ---------------------------------------------------------------- linke Spalte und Fußleiste (gemeinsam)
 
-function anrufSpalte(
-  typ: "notruf" | "kt" | "sek",
-  nummer: string,
-  telefon: string,
-  a: () => Anruf | null,
-  art: "rd" | "kt",
-  id: string,
-  extra: HTMLElement[],
-): { el: HTMLElement; refresh(): void } {
+const NETZ: [RegExp, string][] = [
+  [/^0664/, "A1"],
+  [/^0676|^0650/, "Magenta"],
+  [/^0699|^0660/, "Drei"],
+  [/^0680|^0681|^0688/, "Spusu / sonstige"],
+];
+
+function uhrzeit(t: number): string {
+  return new Date(t).toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+}
+
+/** Tonspur-Animation (Vorbereitung für Sprache): bewegt sich, solange gesprochen wird */
+export function welle(balken = 28): HTMLElement {
+  const w = el("div", { class: "abf-welle" });
+  for (let i = 0; i < balken; i++) {
+    const b = el("span");
+    b.style.animationDelay = `${(-(i * 137) % 900) / 1000}s`;
+    b.style.setProperty("--h", `${30 + ((i * 53) % 70)}%`);
+    w.appendChild(b);
+  }
+  return w;
+}
+
+interface Spalte {
+  el: HTMLElement;
+  fuss: HTMLElement;
+  refresh(): void;
+  dispose(): void;
+}
+
+function anrufSpalte(o: {
+  typ: "notruf" | "kt" | "sek";
+  nummer: string;
+  telefon: string;
+  anruf: () => Anruf | null;
+  art: "rd" | "kt";
+  id: string;
+  sprache?: string;
+  /** Abschnitte unter den Anrufdaten */
+  extra: HTMLElement[];
+  maske: () => void;
+}): Spalte {
   const spalte = el("div", { class: "abf-links" });
-  const kopf = el("div", { class: `abf-typ typ-${typ}` });
-  kopf.innerHTML = `<span>${typ === "notruf" ? "Notruf 144" : typ === "sek" ? "Überstellung" : "KT-Hotline"}</span><b>${esc(telefon)}</b><span class="muted">${esc(nummer)}</span>`;
-  const status = el("div", { class: "abf-status" });
-  const knoepfe = el("div", { class: "abf-knoepfe" });
-  spalte.append(kopf, status, knoepfe, ...extra);
+  const karte = el("div", { class: `abf-karte typ-${o.typ}` });
+  const titel = { notruf: "Notruf 144", kt: "KT-Hotline", sek: "Überstellung" }[o.typ];
+  karte.innerHTML = `<div class="abf-karte-icon">📞</div><div class="abf-karte-txt"><div class="abf-karte-titel">${titel}<span class="abf-dauer"></span></div><b>${esc(o.telefon)}</b><span class="muted">${esc(o.nummer)}</span></div><div class="abf-signal"><i></i><i></i><i></i><i></i></div>`;
+  const dauer = karte.querySelector<HTMLElement>(".abf-dauer")!;
+  const w = welle();
+  const daten = el("div", { class: "abf-daten" });
+  const mobil = /^06/.test(o.telefon);
+  const netz = mobil ? (NETZ.find(([r]) => r.test(o.telefon))?.[1] ?? "Mobilfunk") : "Festnetz";
+  const zusatz = el("details", { class: "abf-zusatz" });
+  zusatz.innerHTML = `<summary>Zusatzinformationen</summary><table>
+    <tr><td>Anrufart</td><td>${esc(titel)}</td></tr>
+    <tr><td>Quelle</td><td>${mobil ? "Mobiltelefon" : "Festnetz"}</td></tr>
+    <tr><td>Sprache</td><td>${esc(o.sprache ?? "Deutsch")}</td></tr>
+    <tr><td>Rufnummer</td><td>${esc(o.telefon)}</td></tr>
+    <tr><td>Netzbetreiber</td><td>${esc(netz)}</td></tr>
+    <tr><td>Rückruf möglich</td><td>Ja</td></tr></table>`;
+  const maskeB = el("button", { class: "btn primary abf-maske" }, `${o.art === "rd" ? "Einsatzmaske" : "KT-Maske"} öffnen →`);
+  maskeB.addEventListener("click", o.maske);
+  spalte.append(karte, w, daten, ...o.extra, maskeB, zusatz);
+
+  // Fußleiste: Beenden, Halten, Stumm … Zur Maske
+  const fuss = el("div", { class: "abf-fuss" });
+  const ausLive = onLive((id, text) => {
+    if (id === o.id) w.classList.toggle("spricht", !!text);
+  });
 
   let knopfKey = "";
   const refresh = () => {
-    const x = a();
+    const x = o.anruf();
     if (!x) return;
     const t = sim.state.zeit;
     const meins = istMeins(x);
-    const wer = x.angenommenVon && mp.aktiv ? (meins ? "du" : x.angenommenVon.name) : "";
-    status.innerHTML = `<span class="tel-st ${x.status}">${
-      { klingelt: "klingelt", aktiv: "im Gespräch", gehalten: "gehalten", verpasst: "verpasst", beendet: "beendet" }[x.status]
-    }</span> <span class="abf-dauer">${x.status === "beendet" ? "" : mmss(t - x.seit)}</span>${wer ? ` <span class="muted">· ${esc(wer)}</span>` : ""}${
-      x.status === "gehalten" && x.haltenBis ? `<div class="muted small">legt in ca. ${mmss(x.haltenBis - t)} auf</div>` : ""
-    }<div class="muted small">${kiBereit() ? "Anrufer mit KI" : "Anrufer ohne KI (feste Antworten)"}</div>`;
+    dauer.textContent = x.status === "beendet" ? "" : mmss(t - x.seit);
+    karte.classList.toggle("klingelt", x.status === "klingelt");
+    w.classList.toggle("an", x.status === "aktiv");
+    const wer = x.angenommenVon ? (meins && !mp.aktiv ? x.angenommenVon.name : meins ? "du" : x.angenommenVon.name) : "–";
+    const st = { klingelt: "klingelt", aktiv: "aktiv", gehalten: "gehalten", verpasst: "verpasst", beendet: "beendet" }[x.status];
+    daten.innerHTML = `<div><span>Anruferstatus</span><b class="abf-st ${x.status}">● ${st}</b></div>
+      <div><span>Angenommen von</span><b>${esc(wer)}</b></div>
+      <div><span>Anrufer</span><b>${kiBereit() ? "KI" : "feste Antworten"}</b></div>${
+        x.status === "gehalten" && x.haltenBis ? `<div><span>Legt auf in</span><b class="alert-text">ca. ${mmss(x.haltenBis - t)}</b></div>` : ""
+      }`;
     const key = `${x.status}|${meins}|${stumm}`;
     if (key === knopfKey) return;
     knopfKey = key;
-    knoepfe.innerHTML = "";
+    fuss.innerHTML = "";
     const knopf = (label: string, cls: string, fn: () => void, titel = "") => {
       const b = el("button", { class: `btn ${cls}`, title: titel }, label);
       b.addEventListener("click", fn);
-      knoepfe.appendChild(b);
+      fuss.appendChild(b);
       return b;
     };
-    if (x.status === "klingelt") knopf("📞 Annehmen", "primary", () => void anrufAnnehmen(art, id));
-    if (x.status === "verpasst") knopf("📞 Zurückrufen", "primary", () => void anrufAnnehmen(art, id));
-    if (x.status === "aktiv" && meins) knopf("⏸ Halten", "", () => anrufHalten(art, id), "Anrufer in die Warteschleife – bei zu langem Warten legt er auf");
-    if (x.status === "gehalten" && meins) knopf("▶ Zurückwechseln", "primary", () => void anrufAnnehmen(art, id));
+    if (x.status === "klingelt") knopf("📞 Annehmen", "primary breit", () => void anrufAnnehmen(o.art, o.id));
+    if (x.status === "verpasst") knopf("📞 Zurückrufen", "primary breit", () => void anrufAnnehmen(o.art, o.id));
+    if ((x.status === "aktiv" || x.status === "gehalten") && meins) knopf("✆ Anruf beenden", "danger breit", () => anrufAuflegen(o.art, o.id));
+    if (x.status === "aktiv" && meins) knopf("⏸ Halten", "", () => anrufHalten(o.art, o.id), "Anrufer in die Warteschleife – andere Disponenten können ihn dann übernehmen");
+    if (x.status === "gehalten") knopf(meins ? "▶ Zurückwechseln" : "▶ Übernehmen", "primary", () => void anrufAnnehmen(o.art, o.id));
     if ((x.status === "aktiv" || x.status === "gehalten") && meins) {
-      const s = knopf(stumm ? "🔇 Stumm" : "🎙 Mikrofon", stumm ? "warn" : "", () => {
+      const sb = knopf(stumm ? "🔇 Stumm" : "🎙 Stummschalten", stumm ? "aktiv" : "", () => {
         stumm = !stumm;
         knopfKey = "";
         refresh();
-      }, "Für das Sprechen per Mikrofon (kommt später) – stumm geschaltet hört der Anrufer nichts");
-      s.classList.toggle("aktiv", stumm);
-      knopf("Beenden", "danger", () => anrufAuflegen(art, id));
+      }, "Für das Sprechen per Mikrofon (kommt später)");
+      sb.classList.toggle("aktiv", stumm);
     }
+    fuss.appendChild(el("span", { class: "spacer" }));
+    const zur = knopf(`Zur ${o.art === "rd" ? "Einsatzmaske" : "KT-Maske"} →`, "ok", o.maske);
+    zur.classList.add("abf-zur");
   };
   refresh();
-  return { el: spalte, refresh };
+  return { el: spalte, fuss, refresh, dispose: ausLive };
+}
+
+/** Gesprächsverlauf mit Uhrzeiten (wird in den Verlauf der Teile eingehängt) */
+function zeitenNachtragen(verlauf: HTMLElement, a: Anruf | null | undefined): void {
+  if (!a) return;
+  const msgs = verlauf.querySelectorAll<HTMLElement>(".anruf-msg:not(.live)");
+  msgs.forEach((d, i) => {
+    const m = a.gespraech[i];
+    if (!m || d.querySelector(".msg-zeit")) return;
+    d.appendChild(el("span", { class: "msg-zeit" }, uhrzeit(m.zeit)));
+  });
+}
+
+function mitteKopf(): { kopf: HTMLElement; welle: HTMLElement; aufz: HTMLElement } {
+  const kopf = el("div", { class: "abf-mitte-kopf" });
+  const w = welle(36);
+  const aufz = el("span", { class: "abf-aufz" }, "● Gespräch läuft");
+  kopf.append(el("b", {}, "Gespräch"), w, aufz);
+  return { kopf, welle: w, aufz };
 }
 
 // ---------------------------------------------------------------- Notruf
@@ -192,56 +271,62 @@ function notrufAnsicht(root: HTMLElement, e: Einsatz): { refresh(): void; dispos
   const t: NotrufTeile = notrufTeile(e);
   const telefon = alleAnrufe(true).find((x) => x.id === e.id)?.telefon ?? "";
 
-  // Ortung
+  // Standort aus dem Netz (Ortung)
   const ortung = el("div", { class: "abf-ortung" });
   const ortKnopf = el("button", { class: "btn small" }, "📡 Ortung");
   ortKnopf.addEventListener("click", () => fehler(sim.call("ortung", e.id)));
   const ortErg = el("div", { class: "abf-ortung-erg" });
-  ortung.append(ortKnopf, ortErg);
+  ortung.append(ortErg, ortKnopf);
   let ortKey = "";
   const ortungZeigen = () => {
     const a = e.anruf;
     const o = a?.ortung;
     ortKnopf.disabled = !a || a.status === "klingelt" || o?.status === "laeuft";
-    const key = JSON.stringify(o ?? null);
+    const key = JSON.stringify([o ?? null, e.adresse?.label]);
     if (key === ortKey) return;
     ortKey = key;
     ortErg.innerHTML = "";
-    if (!o) return;
+    if (!o) {
+      ortErg.innerHTML = `<span class="muted">${e.adresse ? `📍 ${esc(e.adresse.label)}` : "Noch nicht geortet"}</span>`;
+      return;
+    }
     if (o.status === "laeuft") {
       ortErg.innerHTML = `<span class="muted">Ortung läuft …</span>`;
       return;
     }
     const lat = o.lat!;
     const lon = o.lon!;
-    ortErg.innerHTML = `<div><b>${esc(o.art ?? "")}</b> ±${o.radius} m</div>`;
+    ortErg.innerHTML = `<div>📍 <b>${esc(o.art ?? "")}</b> ±${o.radius} m</div>`;
+    const knoepfe = el("div", { class: "row-btns" });
     const zeigen = el("button", { class: "btn small" }, "Karte");
     zeigen.addEventListener("click", () => karteZeigen(lat, lon, o.radius! > 500 ? 13 : 16));
-    const nehmen = el("button", { class: "btn small primary" }, "Als Einsatzort");
+    const nehmen = el("button", { class: "btn small" }, "Als Einsatzort");
     nehmen.addEventListener("click", () => {
       const label = `Ortung ±${o.radius} m (${lat.toFixed(5)}, ${lon.toFixed(5)})`;
       fehler(sim.call("aktualisiere", e.id, { adresse: { lat, lon, label } }));
       karteZeigen(lat, lon, o.radius! > 500 ? 13 : 16);
     });
-    ortErg.append(zeigen, nehmen);
+    knoepfe.append(zeigen, nehmen);
+    ortErg.appendChild(knoepfe);
   };
 
-  const maske = el("button", { class: "btn small" }, "Einsatzmaske ›");
-  maske.addEventListener("click", () => waehle("einsatz", e.id));
-  const links = anrufSpalte("notruf", e.nummer, telefon, () => e.anruf ?? null, "rd", e.id, [
-    el("div", { class: "abf-titel" }, "Ortung"),
-    ortung,
-    el("div", { class: "abf-titel" }, "Ergebnis"),
-    t.codeZeile,
-    maske,
-    t.aufloesung,
-  ]);
+  const zurMaske = () => waehle("einsatz", e.id, { karte: true });
+  const links = anrufSpalte({
+    typ: "notruf",
+    nummer: e.nummer,
+    telefon,
+    anruf: () => e.anruf ?? null,
+    art: "rd",
+    id: e.id,
+    sprache: e.wahr.abfrage?.anrufer.sprache,
+    extra: [el("div", { class: "abf-titel" }, "Standort (aus Netz)"), ortung, el("div", { class: "abf-titel" }, "Vorläufiges Ergebnis"), t.codeZeile, t.aufloesung],
+    maske: zurMaske,
+  });
 
-  // Mitte: Gespräch
+  // Mitte: Gespräch, darunter Info an RTW
   const mitte = el("div", { class: "abf-mitte" });
-  mitte.append(el("div", { class: "abf-titel" }, "Gespräch"), t.verlauf, t.form);
-
-  // Info an RTW (vorne automatisch aus der Abfrage, dahinter eigener Text)
+  const mk = mitteKopf();
+  mitte.append(mk.kopf, t.verlauf, t.form);
   const info = el("div", { class: "abf-info" });
   const infoFeld = el("textarea", { rows: "2", placeholder: "Info an RTW – z. B. Zufahrt über den Hof, Hund im Haus" });
   infoFeld.value = e.infoRtw;
@@ -261,25 +346,37 @@ function notrufAnsicht(root: HTMLElement, e: Einsatz): { refresh(): void; dispos
     infoFeld.value = wert;
     fehler(sim.call("aktualisiere", e.id, { infoRtw: wert }));
   });
-  info.append(el("div", { class: "abf-titel" }, "Info an RTW"), infoFeld, el("div", { class: "muted small" }, "Vorne steht automatisch, was die Abfrage ergibt (z. B. „m 67J B~ A+“), eigener Text kommt dahinter."));
+  info.append(el("div", { class: "abf-titel" }, "Info an RTW (automatisch + Freitext)"), infoFeld, el("div", { class: "muted small" }, "Vorne steht, was die Abfrage ergibt (z. B. „m 67J B~ A+“), eigener Text kommt dahinter."));
   mitte.appendChild(info);
 
-  // Rechts: Leitfaden
+  // Rechts: Abfrage
   const rechts = el("div", { class: "abf-rechts" });
-  rechts.append(el("div", { class: "abf-titel" }, "Leitfaden"), store.schema ? t.abfrage : el("div", { class: "muted pad" }, "Kein Abfrageschema importiert (Daten → Einsatzcodes)."));
+  rechts.append(store.schema ? t.abfrage : el("div", { class: "muted pad" }, "Kein Abfrageschema importiert (Daten → Einsatzcodes)."));
 
   const grid = el("div", { class: "abf-grid" });
   grid.append(links.el, mitte, rechts);
-  root.appendChild(grid);
+  root.append(grid, links.fuss);
 
   const refresh = () => {
     links.refresh();
     t.refresh();
+    zeitenNachtragen(t.verlauf, e.anruf);
+    const aktiv = e.anruf?.status === "aktiv";
+    mk.welle.classList.toggle("an", aktiv);
+    mk.aufz.hidden = !aktiv;
     ortungZeigen();
     if (document.activeElement !== infoFeld && infoFeld.value !== e.infoRtw) infoFeld.value = e.infoRtw;
   };
+  const ausLive = onLive((id, text) => id === e.id && mk.welle.classList.toggle("spricht", !!text));
   refresh();
-  return { refresh, dispose: () => t.dispose() };
+  return {
+    refresh,
+    dispose: () => {
+      t.dispose();
+      links.dispose();
+      ausLive();
+    },
+  };
 }
 
 // ---------------------------------------------------------------- KT-Hotline / Überstellung
@@ -366,15 +463,23 @@ function ktAnsicht(root: HTMLElement, k: KtAuftrag): { refresh(): void; dispose(
   });
 
   const codeBox = el("div", { class: "abf-code" });
-  const maske = el("button", { class: "btn small" }, `${sek ? "Überstellung" : "KT-Maske"} ›`);
-  maske.addEventListener("click", () => {
-    waehle("kt", k.id);
-    panelZeigen("kt");
+  const links = anrufSpalte({
+    typ: sek ? "sek" : "kt",
+    nummer: k.nummer,
+    telefon,
+    anruf: () => k.anruf,
+    art: "kt",
+    id: k.id,
+    extra: [el("div", { class: "abf-titel" }, "Code"), codeBox],
+    maske: () => {
+      waehle("kt", k.id);
+      panelZeigen("kt");
+    },
   });
-  const links = anrufSpalte(sek ? "sek" : "kt", k.nummer, telefon, () => k.anruf, "kt", k.id, [el("div", { class: "abf-titel" }, "Code"), codeBox, maske]);
 
   const mitte = el("div", { class: "abf-mitte" });
-  mitte.append(el("div", { class: "abf-titel" }, "Gespräch"), verlauf, form);
+  const mk = mitteKopf();
+  mitte.append(mk.kopf, verlauf, form);
 
   // Hinweise für die Besatzung
   const info = el("div", { class: "abf-info" });
@@ -391,7 +496,7 @@ function ktAnsicht(root: HTMLElement, k: KtAuftrag): { refresh(): void; dispose(
 
   const grid = el("div", { class: "abf-grid" });
   grid.append(links.el, mitte, rechts);
-  root.appendChild(grid);
+  root.append(grid, links.fuss);
 
   let lfKey = "";
   const leitfadenBauen = () => {
@@ -429,8 +534,11 @@ function ktAnsicht(root: HTMLElement, k: KtAuftrag): { refresh(): void; dispose(
       zeigeLive(liveText(k.id));
       verlauf.scrollTop = verlauf.scrollHeight;
     }
+    zeitenNachtragen(verlauf, a);
     form.hidden = !(a?.status === "aktiv" && ich());
     eingabe.disabled = ktAntwortetGerade(k.id);
+    mk.welle.classList.toggle("an", a?.status === "aktiv");
+    mk.aufz.hidden = a?.status !== "aktiv";
     const ck = `${k.d.code}|${k.d.von?.label}|${k.d.nach?.label}`;
     if (ck !== codeKey) {
       codeKey = ck;
@@ -440,8 +548,16 @@ function ktAnsicht(root: HTMLElement, k: KtAuftrag): { refresh(): void; dispose(
     if (document.activeElement !== infoFeld && infoFeld.value !== k.d.patient.info) infoFeld.value = k.d.patient.info;
     leitfadenBauen();
   };
+  const ausWelle = onLive((id, text) => id === k.id && mk.welle.classList.toggle("spricht", !!text));
   refresh();
-  return { refresh, dispose: ausLive };
+  return {
+    refresh,
+    dispose: () => {
+      ausLive();
+      ausWelle();
+      links.dispose();
+    },
+  };
 }
 
 registriere({

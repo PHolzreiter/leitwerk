@@ -12,7 +12,6 @@ import { el, esc, toast } from "../dom";
 import { codeChip, sekTags } from "../ktView";
 import { registriere, type PanelKontext } from "../ws/arbeitsplatz";
 import { auswahl, onAuswahl, waehle } from "../ws/auswahl";
-import { anrufAnnehmen } from "./telefon";
 import { bearbeiterHtml, stufeFarbe, uhr } from "./teile";
 
 export type Lage = "anruf" | "dispo" | "unterwegs" | "vorort" | "erledigt";
@@ -103,8 +102,13 @@ function erstellen(ctx: PanelKontext) {
 
   function zeilen(): Zeile[] {
     const out: Zeile[] = [];
-    for (const e of sim.state.einsaetze) out.push({ art: "rd", id: e.id, lage: einsatzLage(e), zeit: e.erstellt, e });
+    // Anrufe, die noch niemand angenommen hat, stehen nur im Telefon
+    for (const e of sim.state.einsaetze) {
+      if (e.anruf && !e.anruf.angenommenVon && !e.fahrzeuge.length) continue;
+      out.push({ art: "rd", id: e.id, lage: einsatzLage(e), zeit: e.erstellt, e });
+    }
     for (const k of sim.state.kt ?? []) {
+      if (k.anruf && !k.anruf.angenommenVon && k.status === "aufnahme") continue;
       out.push({ art: istUeberstellung(k.d) ? "sek" : "kt", id: k.id, lage: ktLage(k), zeit: k.d.abholung ?? k.d.termin ?? k.eingang, k });
     }
     return out;
@@ -153,17 +157,8 @@ function erstellen(ctx: PanelKontext) {
       );
     }
     // Reiter: Zahl der Einträge, bei denen etwas zu tun ist
-    const tun = alle.filter((z) => z.lage === "dispo" || (z.lage === "anruf" && (z.e?.anruf?.status === "klingelt" || z.k?.anruf?.status === "klingelt"))).length;
-    ctx.setzeBadge(tun, alle.some((z) => z.e?.anruf?.status === "klingelt" || z.k?.anruf?.status === "klingelt") ? "klingelt" : "warn");
-  }
-
-  function annehmenKnopf(text: string, fn: () => void): HTMLElement {
-    const b = el("button", { class: "btn small primary el-annehmen" }, text);
-    b.addEventListener("click", (ev) => {
-      ev.stopPropagation();
-      fn();
-    });
-    return b;
+    const tun = alle.filter((z) => z.lage === "dispo").length;
+    ctx.setzeBadge(tun, "warn");
   }
 
   function rdZeile(e: Einsatz, lage: Lage, gewaehlt: boolean): HTMLElement {
@@ -188,9 +183,6 @@ function erstellen(ctx: PanelKontext) {
       </div>
       <div class="el-rechts"><span class="el-lage">${esc(LAGE_LABEL[lage])}</span>${fz.length ? `<div class="el-fz">${fz.map((f) => esc(f!.funkrufname)).join(", ")}</div>` : ""}</div>`;
     row.addEventListener("click", () => waehle("einsatz", e.id));
-    if (a && (a.status === "klingelt" || a.status === "verpasst") && e.zustand !== "abgeschlossen") {
-      row.querySelector(".el-main")!.appendChild(annehmenKnopf(a.status === "klingelt" ? "Annehmen" : "Zurückrufen", () => anrufAnnehmen("rd", e.id)));
-    }
     return row;
   }
 
@@ -216,9 +208,6 @@ function erstellen(ctx: PanelKontext) {
       </div>
       <div class="el-rechts"><span class="el-lage${spaet ? " spaet" : ""}">${esc(spaet ? "zu spät dran" : KT_STATUS_LABEL[k.status])}</span>${fz ? `<div class="el-fz">${esc(fz.funkrufname)}${nef ? ` + ${esc(nef.funkrufname)}` : ""}</div>` : ""}</div>`;
     row.addEventListener("click", () => waehle("kt", k.id));
-    if (a && (a.status === "klingelt" || a.status === "verpasst")) {
-      row.querySelector(".el-main")!.appendChild(annehmenKnopf(a.status === "klingelt" ? "Annehmen" : "Zurückrufen", () => anrufAnnehmen("kt", k.id)));
-    }
     return row;
   }
 

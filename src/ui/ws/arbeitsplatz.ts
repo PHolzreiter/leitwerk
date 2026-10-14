@@ -186,7 +186,8 @@ class KopfKnoepfe implements IHeaderActionsRenderer {
 // ---------------------------------------------------------------- Arbeitsplatz
 
 let api: DockviewApi | null = null;
-const LAYOUT_KEY = `leitwerk.layout.${FENSTER_ID}`;
+/** v2: Abfrage als eigenes Fenster neben der Karte (0.13.1) */
+const LAYOUT_KEY = `leitwerk.layout.v2.${FENSTER_ID}`;
 
 export function dock(): DockviewApi | null {
   return api;
@@ -529,16 +530,17 @@ export const VORLAGEN: Vorlage[] = [
       add(a, "telefon", { ref: "einsatzliste", dir: "above" });
       add(a, "aktive", { ref: "einsatzliste", dir: "below" });
       add(a, "fahrzeuge", { ref: "aktive", dir: "within" });
+      add(a, "abfrage", { ref: "karte", dir: "within" });
       add(a, "einsatz", { ref: "karte", dir: "right" });
-      add(a, "abfrage", { ref: "einsatz", dir: "within" });
       add(a, "kt", { ref: "einsatz", dir: "within" });
       add(a, "funk", { ref: "einsatz", dir: "below" });
       add(a, "chat", { ref: "funk", dir: "within" });
-      breite(a, "einsatzliste", 0.24);
-      breite(a, "einsatz", 0.3);
+      breite(a, "einsatzliste", 0.22);
+      breite(a, "einsatz", 0.27);
       hoehe(a, "telefon", 0.26);
       hoehe(a, "aktive", 0.3);
       hoehe(a, "funk", 0.3);
+      a.getPanel("karte")?.api.setActive();
       a.getPanel("einsatz")?.api.setActive();
       a.getPanel("aktive")?.api.setActive();
     },
@@ -569,8 +571,8 @@ export const VORLAGEN: Vorlage[] = [
       add(a, "karte");
       add(a, "einsatzliste", { ref: "karte", dir: "left" }, { art: "ktsek" });
       add(a, "telefon", { ref: "einsatzliste", dir: "above" });
+      add(a, "abfrage", { ref: "karte", dir: "within" });
       add(a, "kt", { ref: "karte", dir: "right" });
-      add(a, "abfrage", { ref: "kt", dir: "within" });
       add(a, "aktive", { ref: "karte", dir: "below" });
       add(a, "funk", { ref: "aktive", dir: "right" });
       breite(a, "einsatzliste", 0.27);
@@ -604,14 +606,15 @@ export const VORLAGEN: Vorlage[] = [
     bauen(a) {
       add(a, "einsatzliste");
       add(a, "telefon", { ref: "einsatzliste", dir: "above" });
-      add(a, "einsatz", { ref: "einsatzliste", dir: "right" });
-      add(a, "abfrage", { ref: "einsatz", dir: "within" });
+      add(a, "abfrage", { ref: "einsatzliste", dir: "right" });
+      add(a, "einsatz", { ref: "abfrage", dir: "right" });
       add(a, "kt", { ref: "einsatz", dir: "within" });
-      add(a, "funk", { ref: "einsatz", dir: "right" });
+      add(a, "funk", { ref: "einsatz", dir: "below" });
       add(a, "chat", { ref: "funk", dir: "within" });
-      add(a, "aktive", { ref: "funk", dir: "below" });
-      breite(a, "einsatzliste", 0.3);
-      breite(a, "funk", 0.28);
+      add(a, "aktive", { ref: "einsatzliste", dir: "below" });
+      breite(a, "einsatzliste", 0.24);
+      breite(a, "einsatz", 0.28);
+      hoehe(a, "funk", 0.35);
       hoehe(a, "telefon", 0.22);
       a.getPanel("einsatz")?.api.setActive();
       a.getPanel("funk")?.api.setActive();

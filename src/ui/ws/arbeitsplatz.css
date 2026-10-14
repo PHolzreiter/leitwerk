@@ -887,8 +887,9 @@ body {
 
 .abf-grid {
   display: grid;
-  grid-template-columns: minmax(190px, 230px) minmax(260px, 1fr) minmax(280px, 1.15fr);
-  height: 100%;
+  grid-template-columns: minmax(200px, 260px) minmax(240px, 1fr) minmax(320px, 1.45fr);
+  grid-template-rows: minmax(0, 1fr);
+  flex: 1;
   min-height: 0;
 }
 
@@ -917,20 +918,337 @@ body {
   flex: 1;
   max-height: none;
   min-height: 80px;
+  background: var(--panel-2);
+  padding: 8px;
+  gap: 6px;
 }
 
 .abf-rechts {
   border-left: 1px solid var(--line);
 }
 
-@container (max-width: 780px) {
+.abf-fuss {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 8px 12px;
+  border-top: 1px solid var(--line);
+  background: var(--panel-2);
+}
+
+.abf-fuss .btn {
+  padding: 7px 14px;
+}
+
+.abf-fuss .btn.breit {
+  min-width: 170px;
+  font-weight: 600;
+}
+
+.abf-fuss .btn.ok {
+  background: var(--ok);
+  border-color: var(--ok);
+  color: #fff;
+  font-weight: 600;
+}
+
+.abf-fuss .btn.aktiv {
+  background: var(--warn-bg);
+  color: var(--warn-text);
+}
+
+/* Anrufkarte links oben */
+.abf-karte {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px;
+  border-radius: 10px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.abf-karte-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  font-size: 20px;
+  background: var(--accent);
+  color: #fff;
+  flex: none;
+}
+
+.typ-kt .abf-karte-icon {
+  background: var(--blue);
+}
+.typ-sek .abf-karte-icon {
+  background: var(--violet);
+}
+
+.abf-karte.klingelt .abf-karte-icon {
+  animation: lw-wackeln 0.9s ease-in-out infinite;
+}
+
+.abf-karte-txt {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.abf-karte-titel {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--alert-text);
+}
+
+.typ-kt .abf-karte-titel {
+  color: var(--blue);
+}
+.typ-sek .abf-karte-titel {
+  color: var(--violet-text);
+}
+
+.abf-karte-txt b {
+  font-size: 17px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.abf-dauer {
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.abf-signal {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 16px;
+  align-self: flex-end;
+}
+
+.abf-signal i {
+  width: 3px;
+  background: var(--ok);
+  border-radius: 1px;
+}
+.abf-signal i:nth-child(1) {
+  height: 25%;
+}
+.abf-signal i:nth-child(2) {
+  height: 50%;
+}
+.abf-signal i:nth-child(3) {
+  height: 75%;
+}
+.abf-signal i:nth-child(4) {
+  height: 100%;
+}
+
+/* Tonspur */
+.abf-welle {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 30px;
+  padding: 0 2px;
+}
+
+.abf-welle span {
+  flex: 1;
+  min-width: 2px;
+  max-width: 4px;
+  height: 12%;
+  border-radius: 2px;
+  background: var(--line-2);
+  transition: height 0.3s var(--ease), background 0.3s;
+}
+
+.abf-welle.an span {
+  background: var(--blue);
+  height: 22%;
+  animation: lw-welle 1.6s ease-in-out infinite;
+}
+
+.abf-welle.an.spricht span {
+  animation-duration: 0.55s;
+  height: var(--h);
+}
+
+@keyframes lw-welle {
+  0%,
+  100% {
+    transform: scaleY(0.5);
+  }
+  50% {
+    transform: scaleY(1.4);
+  }
+}
+
+.abf-mitte-kopf {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.abf-mitte-kopf .abf-welle {
+  flex: 1;
+  height: 24px;
+}
+
+.abf-aufz {
+  font-size: 12px;
+  color: var(--accent);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.abf-daten {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  padding: 6px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.abf-daten > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.abf-daten span {
+  color: var(--text-dim);
+}
+
+.abf-st.aktiv {
+  color: var(--ok);
+}
+.abf-st.gehalten {
+  color: var(--warn-text);
+}
+.abf-st.klingelt,
+.abf-st.verpasst {
+  color: var(--alert-text);
+}
+
+.abf-maske {
+  width: 100%;
+}
+
+.abf-zusatz summary {
+  cursor: pointer;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
+  font-weight: 600;
+}
+
+.abf-zusatz table {
+  width: 100%;
+  font-size: 12px;
+  margin-top: 6px;
+  border-collapse: collapse;
+}
+
+.abf-zusatz td {
+  padding: 3px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.abf-zusatz td:first-child {
+  color: var(--text-dim);
+}
+
+.abf-links .anruf-code {
+  background: var(--warn-bg);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 13px;
+}
+
+.abf-links .anruf-code:empty {
+  display: none;
+}
+
+.msg-zeit {
+  display: block;
+  font-size: 10px;
+  color: var(--text-dim);
+  text-align: right;
+  margin-top: 1px;
+}
+
+/* Leitfaden (Abfrage) kompakt: Fragen in Spalten */
+.abf-rechts .abfrage {
+  gap: 10px;
+}
+
+.abf-rechts .abfrage-abschnitt {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 6px 18px;
+  align-items: start;
+}
+
+.abf-rechts .abfrage-titel {
+  grid-column: 1 / -1;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.abf-rechts .frage.breit,
+.abf-rechts .frage:has(.kapitel-liste),
+.abf-rechts .frage:has(.kapitel-chip),
+.abf-rechts .kapitel-liste {
+  grid-column: 1 / -1;
+}
+
+.abf-rechts .frage-text {
+  font-size: 13px;
+}
+
+.abf-rechts .frage input.text {
+  width: 100%;
+  margin-top: 3px;
+}
+
+.adr-zeile {
+  display: flex;
+  gap: 6px;
+  margin-top: 3px;
+}
+
+.adr-zeile .addr {
+  flex: 1;
+  position: relative;
+}
+
+.adr-zeile .addr input {
+  width: 100%;
+}
+
+@container (max-width: 740px) {
   .abf-grid {
-    grid-template-columns: minmax(180px, 220px) 1fr;
-    grid-template-rows: minmax(220px, 45%) minmax(0, 1fr);
-    overflow: hidden;
+    grid-template-columns: minmax(190px, 230px) 1fr;
+    grid-template-rows: minmax(220px, 42%) minmax(0, 1fr);
   }
   .abf-rechts {
     grid-column: 1 / -1;
+    grid-row: 2;
     border-left: none;
     border-top: 1px solid var(--line);
   }
@@ -958,59 +1276,6 @@ body {
   }
 }
 
-.abf-typ {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  padding: 8px 10px;
-  border-radius: 8px;
-  background: var(--panel);
-  border-left: 5px solid var(--accent);
-}
-
-.abf-typ.typ-kt {
-  border-left-color: var(--blue);
-}
-.abf-typ.typ-sek {
-  border-left-color: var(--violet);
-}
-
-.abf-typ > span:first-child {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--text-dim);
-}
-
-.abf-typ b {
-  font-size: 15px;
-  font-variant-numeric: tabular-nums;
-}
-
-.abf-status {
-  font-size: 13px;
-}
-
-.abf-dauer {
-  font-variant-numeric: tabular-nums;
-  font-weight: 600;
-}
-
-.abf-knoepfe {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.abf-knoepfe .btn {
-  flex: 1 1 auto;
-}
-
-.abf-knoepfe .btn.aktiv {
-  background: var(--warn-bg);
-  color: var(--warn-text);
-}
-
 .abf-titel {
   font-size: 11px;
   text-transform: uppercase;
@@ -1025,13 +1290,13 @@ body {
   flex-direction: column;
   gap: 4px;
   align-items: flex-start;
+  font-size: 12px;
 }
 
 .abf-ortung-erg {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 4px;
-  font-size: 12px;
 }
 
 .abf-info textarea {
@@ -1511,4 +1776,18 @@ body {
   .brand-name {
     display: none;
   }
+}
+
+/* Protokoll: Abfrage-Blöcke mehrzeilig */
+.prot > div {
+  white-space: pre-line;
+}
+
+.opt.gewaehlt {
+  color: #fff;
+}
+
+.abf-mitte .anruf-msg.anrufer {
+  background: var(--panel);
+  border: 1px solid var(--line);
 }

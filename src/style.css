@@ -1062,7 +1062,7 @@ select:focus {
 
 .prot {
   font-size: 12px;
-  max-height: 200px;
+  max-height: 360px;
   overflow: auto;
   display: flex;
   flex-direction: column;

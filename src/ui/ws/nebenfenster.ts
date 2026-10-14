@@ -16,7 +16,7 @@ import { anfrage, beantworten, bus, FENSTER_ID, IST_HAUPT } from "./bus";
 import { setzeFensterOeffner, type FensterBounds } from "./arbeitsplatz";
 
 const DELTA_MS = 250;
-const START_KEY = (id: string) => `leitwerk.layout.${id}`;
+const START_KEY = (id: string) => `leitwerk.layout.v2.${id}`;
 const OFFEN_KEY = "leitwerk.fenster";
 
 // ---------------------------------------------------------------- Hauptfenster

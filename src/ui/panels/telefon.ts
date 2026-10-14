@@ -9,7 +9,7 @@ import { sim, type Anruf } from "../../sim/engine";
 import { istUeberstellung } from "../../sim/ktCodes";
 import { el, esc, toast } from "../dom";
 import { funkPiepAktualisieren, klingeltonAktualisieren } from "../klingelton";
-import { panelZeigen, registriere, type PanelKontext } from "../ws/arbeitsplatz";
+import { dock, panelZeigen, registriere, type PanelKontext } from "../ws/arbeitsplatz";
 import { auswahl, onAuswahl, waehle } from "../ws/auswahl";
 import { onPers, pers, setzePers } from "../ws/persoenlich";
 import { liveSammler } from "./live";
@@ -87,7 +87,7 @@ export async function anrufAnnehmen(art: AnrufArt, id: string): Promise<void> {
       panelZeigen("abfrage");
       const e = sim.einsatz(id);
       const letzte = e?.anruf?.gespraech[e.anruf.gespraech.length - 1];
-      if (e && (!letzte || (letzte.von !== "anrufer" && !/fortgesetzt/.test(letzte.text)))) {
+      if (e && (!letzte || (letzte.von !== "anrufer" && !/fortgesetzt|übernimmt/.test(letzte.text)))) {
         const live = liveSammler(id);
         await eroeffnen(e, live.onToken).catch((err) => toast(String(err.message ?? err), "error"));
         live.fertig();
@@ -98,7 +98,7 @@ export async function anrufAnnehmen(art: AnrufArt, id: string): Promise<void> {
       panelZeigen("abfrage");
       const k = sim.ktAuftrag(id);
       const letzte = k?.anruf?.gespraech[k.anruf.gespraech.length - 1];
-      if (k && (!letzte || (letzte.von !== "anrufer" && !/fortgesetzt/.test(letzte.text)))) {
+      if (k && (!letzte || (letzte.von !== "anrufer" && !/fortgesetzt|übernimmt/.test(letzte.text)))) {
         const live = liveSammler(id);
         await ktFragen(k, KT_FRAGEN[0].text, KT_FRAGEN[0], live.onToken).catch((err) => toast(String(err.message ?? err), "error"));
         live.fertig();
@@ -114,7 +114,16 @@ export function anrufHalten(art: AnrufArt, id: string): void {
 }
 
 export function anrufAuflegen(art: AnrufArt, id: string): void {
-  fehler(sim.call(art === "rd" ? "anrufBeenden" : "ktAnrufBeenden", id));
+  fehler(
+    sim.call(art === "rd" ? "anrufBeenden" : "ktAnrufBeenden", id).then(() => {
+      // Nach dem Gespräch: Maske nach vorne; steckt die Abfrage bei der Karte, wieder die Karte zeigen
+      const d = dock();
+      const abf = d?.getPanel("abfrage");
+      const karte = d?.getPanel("karte");
+      if (abf && karte && abf.group === karte.group && !meinGespraech()) karte.api.setActive();
+      waehle(art === "rd" ? "einsatz" : "kt", id);
+    }),
+  );
 }
 
 function mmss(ms: number): string {
@@ -180,9 +189,10 @@ function erstellen(ctx: PanelKontext) {
       knopf("Halten", "", () => anrufHalten(x.art, x.id), "Anrufer in die Warteschleife – bei zu langem Warten legt er auf");
       knopf("Auflegen", "danger-text", () => anrufAuflegen(x.art, x.id));
     }
-    if (a.status === "gehalten" && meins) {
-      knopf("Zurückwechseln", "primary", () => void anrufAnnehmen(x.art, x.id), "Gespräch fortsetzen (das laufende wird gehalten)");
-      knopf("Auflegen", "danger-text", () => anrufAuflegen(x.art, x.id));
+    if (a.status === "gehalten") {
+      if (meins) knopf("Zurückwechseln", "primary", () => void anrufAnnehmen(x.art, x.id), "Gespräch fortsetzen (das laufende wird gehalten)");
+      else knopf("Übernehmen", "primary", () => void anrufAnnehmen(x.art, x.id), "Gehaltenen Anruf aufgreifen und weiterführen");
+      if (meins) knopf("Auflegen", "danger-text", () => anrufAuflegen(x.art, x.id));
     }
     if (knoepfe.childElementCount) r.appendChild(knoepfe);
     r.addEventListener("click", () => {

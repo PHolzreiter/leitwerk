@@ -1,5 +1,14 @@
 # Änderungen
 
+## 0.13.1 – Abfrage-Fenster neu
+- Abfrage-Fenster wie eine echte Notrufabfrage: links der Anruf (Rufnummer, Dauer, Tonspur, Anruferstatus, Standort aus dem Netz mit Ortung, vorläufiges Ergebnis, „Einsatzmaske öffnen“, Zusatzinformationen wie Quelle, Netzbetreiber, Sprache), in der Mitte das Gespräch mit Uhrzeiten und darunter die Info an den RTW, rechts die ganze Abfrage übersichtlich in Spalten; unten Anruf beenden, Halten, Stummschalten und „Zur Einsatzmaske“
+- Die Adresse und die Zusatzinfos zum Ort trägt man direkt in der Abfrage ein (mit Adresssuche, Karte und „Genannte“); sie landen in der Einsatzmaske
+- Antworten anklicken lässt die Abfrage dort, wo sie ist – kein Springen nach oben mehr
+- Die Abfrage ist ein eigenes Fenster, nicht mehr ein Reiter bei der Einsatzmaske; in der Standard-Anordnung liegt sie neben der Karte. Nach dem Auflegen kommen Karte und Einsatzmaske wieder nach vorne (gilt nach dem Update als neue Standard-Anordnung)
+- Ein klingelnder Anruf steht nur noch im Telefon; in der Einsatzliste erscheint der Einsatz erst, wenn der Anruf angenommen ist
+- Gehaltene Anrufe kann im Multiplayer jeder andere Disponent mit „Übernehmen“ aufgreifen und weiterführen
+- Einsatzprotokoll: Die ausgefüllte Abfrage steht als Text im Protokoll („*** Erstaufnahme: … ***“ mit nummerierten Sätzen wie „Er ist wach und reagiert normal.“), beim Alarmieren oder Auflegen. Ändert sich danach der Code durch die Abfrage, kommt „*** Änderung: … ***“ mit den geänderten Antworten dazu
+
 ## 0.13.0 – Neue Oberfläche
 - Fenster frei anordnen: Jeder Teil ist ein eigenes Fenster (Karte, Einsatzliste, Alle Fahrzeuge, Aktive Fahrzeuge, Telefon, Abfrage, Einsatzmaske, KT-Maske, Funk, Chat). Reiter ziehen und daneben, darunter oder als weiteren Reiter ablegen, Ränder ziehen ändert die Größe, ⤢ macht ein Fenster groß; auch schwebende Fenster sind möglich (Rechtsklick auf einen Reiter)
 - Zweiter Bildschirm: ⧉ schiebt Fenster in ein eigenes Programmfenster, das man auf einen anderen Bildschirm ziehen kann; ⇱ holt sie zurück. Auswahl, Eingaben und neue Einsätze gehen sofort zwischen den Fenstern hin und her

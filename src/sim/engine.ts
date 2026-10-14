@@ -14,6 +14,7 @@ import { defaultStufeFuer, raenge, type Kategorie, type Settings, type StatusKey
 import { flugverbot, istNacht, nextWetter, type Wetter, WETTER_LABEL } from "./weather";
 import { bestimmeCode, fallZiehen, kapitelVonCode, wahrheitFuer, type Antworten, type Schema } from "../abfrage/schema";
 import { anruferWaehlen, veraenderungText, type Anrufer } from "../abfrage/anrufer";
+import { abfrageBlock, abfrageSaetze } from "../abfrage/protokollText";
 import {
   dauerDaten,
   hotlineAnrufer,
@@ -297,6 +298,8 @@ export interface Einsatz {
   nachforderungen?: Nachforderung[];
   /** BIT kam nicht: Besatzung transportiert selbst */
   bitVerzicht?: boolean;
+  /** zuletzt ins Protokoll geschriebene Abfrage (Erstaufnahme, Änderungen) */
+  abfrageStand?: { antworten: Antworten; kapitel: string | null; code: string | null } | null;
 }
 
 export interface Funkmeldung {
@@ -1248,6 +1251,7 @@ export class Simulation {
     const hinweise: string[] = [];
     if (!e) return ["Einsatz nicht gefunden"];
     if (!e.adresse) return ["Bitte zuerst eine Adresse eingeben"];
+    if (fahrzeugIds.length) this.abfrageProtokoll(e);
     for (const fid of fahrzeugIds) {
       const fz = this.state.fahrzeuge[fid];
       if (!fz) continue;
@@ -1650,15 +1654,14 @@ export class Simulation {
     if (!e || !a) throw new Error("Kein Anruf zu diesem Einsatz");
     const ich = this.calltaker();
     if (a.status === "gehalten") {
-      if (a.angenommenVon && a.angenommenVon.pid !== ich.pid && (this.istOnline?.(a.angenommenVon.pid) ?? true) && this.mode !== "solo") {
-        throw new Error(`Das Gespräch führt ${a.angenommenVon.name}`);
-      }
+      // Gehaltene Anrufe kann jeder Disponent aufgreifen
+      const vorher = a.angenommenVon;
       this.andereHalten(ich, e.id);
       a.status = "aktiv";
       a.seit = this.state.zeit;
       a.haltenBis = null;
       a.angenommenVon = { ...ich };
-      a.gespraech.push({ zeit: this.state.zeit, von: "system", text: "Gespräch fortgesetzt" });
+      a.gespraech.push({ zeit: this.state.zeit, von: "system", text: vorher && vorher.pid !== ich.pid ? `${ich.name} übernimmt das Gespräch` : "Gespräch fortgesetzt" });
       if (a.folge) {
         a.gespraech.push({ zeit: this.state.zeit, von: "anrufer", text: a.folge });
         a.folge = null;
@@ -1714,6 +1717,7 @@ export class Simulation {
     a.seit = this.state.zeit;
     a.gespraech.push({ zeit: this.state.zeit, von: "system", text: "Gespräch beendet" });
     this.log(e, "Notrufgespräch beendet");
+    this.abfrageProtokoll(e);
     this.emit();
   }
 
@@ -1779,6 +1783,9 @@ export class Simulation {
     }
     const erg = bestimmeCode(schema, a.kapitel, a.antworten, a.extra);
     a.ergebnis = erg ? { code: erg.code, reanimation: erg.reanimation } : null;
+    // Nach der Erstaufnahme: ändert sich der Code, kommt die geänderte Abfrage ins Protokoll
+    const st = e.abfrageStand;
+    if (st && erg && erg.code !== st.code) this.abfrageProtokoll(e, true);
     // Selbst gewählter Code bleibt; die Abfrage zeigt ihren Vorschlag nur an
     if (e.codeQuelle === "dispo") return;
     if (erg && erg.code !== e.code && findCode(erg.code)) {
@@ -1790,6 +1797,32 @@ export class Simulation {
     }
   }
 
+
+  /** Ausgefüllte Abfrage als Text ins Protokoll: Erstaufnahme (beim Alarmieren oder Auflegen) bzw. Änderung */
+  private abfrageProtokoll(e: Einsatz, aenderung = false): void {
+    const a = e.anruf;
+    const schema = store.schema;
+    if (!a || !schema) return;
+    if (!aenderung && e.abfrageStand) return;
+    const alt = e.abfrageStand;
+    let nur: Set<string> | undefined;
+    if (aenderung && alt) {
+      nur = new Set<string>();
+      for (const id of new Set([...Object.keys(alt.antworten), ...Object.keys(a.antworten)])) {
+        if (JSON.stringify(alt.antworten[id] ?? null) !== JSON.stringify(a.antworten[id] ?? null)) nur.add(id);
+      }
+    }
+    const saetze = abfrageSaetze(schema, a.kapitel, a.antworten, nur);
+    const code = a.ergebnis?.code ?? null;
+    if (!saetze.length && !aenderung && !a.kapitel) return;
+    const K = a.kapitel ? schema.kapitel[a.kapitel] : undefined;
+    const kopf: string[] = [];
+    if (aenderung && alt && alt.kapitel !== a.kapitel && K) kopf.push(`Neue Hauptbeschwerde: ${a.kapitel} ${K.titel}`);
+    else if (!aenderung && K) kopf.push(`Hauptbeschwerde: ${a.kapitel} ${K.titel}`);
+    if (code) kopf.push(`${aenderung && alt?.code ? `Code geändert: ${alt.code} → ` : "Code: "}${code} ${schema.codes[code]?.name ?? ""}`.trim());
+    this.log(e, abfrageBlock(aenderung ? "Änderung" : "Erstaufnahme", this.state.zeit, saetze, kopf));
+    e.abfrageStand = { antworten: { ...a.antworten }, kapitel: a.kapitel, code };
+  }
 
   /** „m 67J B~ A+“ aus der Abfrage vorne in die Info an den RTW schreiben, Freitext bleibt hinter „//“ */
   private infoAusAbfrage(e: Einsatz, a: Antworten): void {
@@ -2456,9 +2489,8 @@ export class Simulation {
     if (!k || !a) throw new Error("Kein Anruf");
     const ich = this.calltaker();
     if (a.status === "gehalten") {
-      if (a.angenommenVon && a.angenommenVon.pid !== ich.pid && (this.istOnline?.(a.angenommenVon.pid) ?? true) && this.mode !== "solo") {
-        throw new Error(`Das Gespräch führt ${a.angenommenVon.name}`);
-      }
+      // Gehaltene Anrufe kann jeder Disponent aufgreifen
+      if (a.angenommenVon && a.angenommenVon.pid !== ich.pid) a.gespraech.push({ zeit: this.state.zeit, von: "system", text: `${ich.name} übernimmt das Gespräch` });
       this.andereHalten(ich, k.id);
       a.status = "aktiv";
       a.seit = this.state.zeit;
