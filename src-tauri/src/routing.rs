@@ -17,8 +17,6 @@ const CELL: i32 = 2000;
 const MAX_SPEED_MPS: f64 = 140.0 / 3.6;
 /// Geschwindigkeit für das Stück vom Punkt zur nächsten Straße (m/s).
 const OFFROAD_MPS: f64 = 15.0 / 3.6;
-/// Kleinste Zusammenhangskomponente, auf die eingerastet wird (vermeidet abgeschnittene Wege).
-const MIN_COMPONENT: u32 = 2000;
 
 pub struct Graph {
     lat: Vec<i32>,
@@ -71,15 +69,62 @@ fn haversine(lat1: f64, lon1: f64, lat2: f64, lon2: f64) -> f64 {
     2.0 * r * h.sqrt().asin()
 }
 
-/// Union-Find zur Bestimmung der Komponentengrößen.
-fn find(parent: &mut [u32], mut x: u32) -> u32 {
-    while parent[x as usize] != x {
-        let p = parent[x as usize];
-        parent[x as usize] = parent[p as usize];
-        x = p;
+/// Größte stark zusammenhängende Komponente (Kosaraju, ohne Rekursion).
+fn groesste_scc(n: usize, first: &[u32], target: &[u32], rfirst: &[u32], rsource: &[u32]) -> Vec<bool> {
+    // 1. Durchlauf: Knoten in der Reihenfolge, in der sie fertig werden
+    let mut besucht = vec![false; n];
+    let mut reihenfolge: Vec<u32> = Vec::with_capacity(n);
+    let mut stapel: Vec<(u32, u32)> = Vec::new();
+    for start in 0..n {
+        if besucht[start] {
+            continue;
+        }
+        besucht[start] = true;
+        stapel.push((start as u32, first[start]));
+        while let Some(&mut (u, ref mut e)) = stapel.last_mut() {
+            if *e < first[u as usize + 1] {
+                let v = target[*e as usize];
+                *e += 1;
+                if !besucht[v as usize] {
+                    besucht[v as usize] = true;
+                    stapel.push((v, first[v as usize]));
+                }
+            } else {
+                reihenfolge.push(u);
+                stapel.pop();
+            }
+        }
     }
-    x
+    // 2. Durchlauf auf dem umgekehrten Graphen, in umgekehrter Reihenfolge
+    let mut komp = vec![u32::MAX; n];
+    let mut groesse: Vec<u32> = Vec::new();
+    let mut st: Vec<u32> = Vec::new();
+    for &s in reihenfolge.iter().rev() {
+        if komp[s as usize] != u32::MAX {
+            continue;
+        }
+        let id = groesse.len() as u32;
+        let mut zahl = 0u32;
+        komp[s as usize] = id;
+        st.push(s);
+        while let Some(u) = st.pop() {
+            zahl += 1;
+            for e in rfirst[u as usize] as usize..rfirst[u as usize + 1] as usize {
+                let v = rsource[e];
+                if komp[v as usize] == u32::MAX {
+                    komp[v as usize] = id;
+                    st.push(v);
+                }
+            }
+        }
+        groesse.push(zahl);
+    }
+    let Some((beste, _)) = groesse.iter().enumerate().max_by_key(|(_, z)| **z) else {
+        return vec![false; n];
+    };
+    komp.iter().map(|&c| c == beste as u32).collect()
 }
+
 
 /// Rohdaten einer Graph-Datei (ein Bundesland oder das alte Gesamtnetz).
 struct Teil {
@@ -220,27 +265,13 @@ impl Graph {
             }
         }
 
-        // Komponenten (ungerichtet)
-        let mut parent: Vec<u32> = (0..n as u32).collect();
-        for u in 0..n {
-            for e in first[u] as usize..first[u + 1] as usize {
-                let (a, b) = (find(&mut parent, u as u32), find(&mut parent, target[e]));
-                if a != b {
-                    parent[a as usize] = b;
-                }
-            }
-        }
-        let mut size: HashMap<u32, u32> = HashMap::new();
-        let mut roots = vec![0u32; n];
-        for u in 0..n {
-            let root = find(&mut parent, u as u32);
-            roots[u] = root;
-            *size.entry(root).or_insert(0) += 1;
-        }
+        // Eingerastet wird nur im größten stark zusammenhängenden Netz: von jedem Knoten dort
+        // kommt man zu jedem anderen (keine Einbahn-Fallen wie Spitalszufahrten ohne Ausfahrt)
+        let im_netz = groesste_scc(n, &first, &target, &rfirst, &rsource);
 
         let mut grid: HashMap<(i32, i32), Vec<u32>> = HashMap::new();
         for u in 0..n {
-            if size[&roots[u]] < MIN_COMPONENT || first[u] == first[u + 1] {
+            if !im_netz[u] {
                 continue;
             }
             grid.entry((lat[u].div_euclid(CELL), lon[u].div_euclid(CELL))).or_default().push(u as u32);
