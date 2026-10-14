@@ -2514,3 +2514,115 @@ input[type="color"] {
   font-size: 13px;
   font-weight: 600;
 }
+
+/* Fahrzeug im Blick (Klick / Doppelklick) */
+.fz-popup .maplibregl-popup-content {
+  padding: 10px 12px;
+  min-width: 220px;
+}
+.fz-popup-typ {
+  font-size: 11px;
+  font-weight: 600;
+  color: #5b6b80;
+  margin-left: 4px;
+}
+.fz-st {
+  display: inline-block;
+  min-width: 18px;
+  text-align: center;
+  border-radius: 4px;
+  color: #fff;
+  font-weight: 700;
+  font-size: 11px;
+  padding: 0 4px;
+}
+.fz-popup-auftrag {
+  font-size: 12px;
+  line-height: 1.4;
+}
+.fz-popup-auftrag .muted {
+  color: #5b6b80;
+}
+.fz-popup-eta {
+  font-size: 12px;
+  margin-top: 6px;
+  color: #1b2533;
+}
+.fz-popup-btns {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+.fz-popup .btn.small {
+  background: #eef3f9;
+  color: #1b2533;
+  border: 1px solid #d5e0ee;
+}
+.fz-folgt {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(16, 34, 58, 0.92);
+  color: var(--text);
+  border: 1px solid var(--blue);
+  border-radius: 16px;
+  padding: 4px 6px 4px 12px;
+  font-size: 13px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.fz-folgt button {
+  background: transparent;
+  border: 0;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 14px;
+}
+.fz-folgt button:hover {
+  color: var(--text);
+}
+/* einheitliche Auftragsmaske */
+.kt-titel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.kt-art-chip {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 10px;
+  padding: 1px 8px;
+  border: 1px solid var(--line);
+  color: var(--text);
+}
+.kt-art-chip.sek {
+  border-color: #8b6cf0;
+  color: #c9b8ff;
+}
+.kt-mask .kt-lbl {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  justify-content: space-between;
+}
+.kt-mask .kt-opts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+.kt-mask .kt-opts .chk {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.kt-mask .kt-seg {
+  margin: 0;
+}
+.kt-mask .frag-knopf {
+  flex: 0 0 auto;
+}

@@ -2151,7 +2151,7 @@ export class Simulation {
     return codeVorschlag(d, km);
   }
 
-  /** Leeren Auftrag anlegen (z. B. Anruf direkt beim Disponenten, Dienstfahrt) */
+  /** Leeren Auftrag anlegen (z. B. Anruf direkt beim Disponenten) */
   ktNeuManuell(): string {
     const k = this.ktNeu(neueDaten(), "manuell");
     k.status = "aufnahme";
@@ -2356,7 +2356,10 @@ export class Simulation {
     k.d = { ...k.d, ...patch, patient: { ...k.d.patient, ...(patch.patient ?? {}) } };
     if (patch.sek) k.d.sek = { ...patch.sek };
     // Krankenhaus → Krankenhaus: Überstellung mit Zusatzangaben
-    if (k.d.von?.khId && k.d.nach?.khId && !k.d.sek && !k.d.code?.startsWith("DF-")) k.d.sek = sekLeer();
+    const beideKh = !!k.d.von?.khId && !!k.d.nach?.khId;
+    if (beideKh && !k.d.sek) k.d.sek = sekLeer();
+    // ein Ort ist eine Adresse: Krankentransport, keine Überstellung
+    if (!beideKh && k.d.sek && k.d.von && k.d.nach) k.d.sek = null;
     if ("code" in patch) k.d.codeManuell = !!patch.code;
     if (!k.d.codeManuell) k.d.code = this.ktCodeFuer(k.d);
     this.emit();
@@ -2366,15 +2369,15 @@ export class Simulation {
   ktAnlegen(id: string): void {
     const k = this.ktAuftrag(id);
     if (!k || k.status !== "aufnahme") return;
-    const df = k.d.code?.startsWith("DF-");
-    const fehlt = (
-      df
-        ? [!k.d.nach && "Ziel", !k.d.termin && "Termin"]
-        : [!k.d.patient.name && "Name", !k.d.von && "Abholort", !k.d.nach && "Ziel", !k.d.termin && "Termin", !k.d.lage && "Transportart (gehfähig/Tragstuhl/liegend)", !k.d.code && "Code"]
-    ).filter(Boolean);
+    const fehlt = [
+      !k.d.patient.name && "Name",
+      !k.d.von && "Abholort",
+      !k.d.nach && "Ziel",
+      !k.d.termin && "Termin",
+      !k.d.lage && "Transportart (gehfähig/Tragstuhl/liegend)",
+      !k.d.code && "Code",
+    ].filter(Boolean);
     if (fehlt.length) throw new Error(`Bitte noch eintragen: ${fehlt.join(", ")}`);
-    // Dienstfahrt ohne Startort: direkt zum Ziel
-    if (df && !k.d.von && k.d.nach) k.d.von = { ...k.d.nach };
     k.status = "offen";
     this.ktLog(k, "Auftrag angelegt");
     this.emit();
@@ -2410,9 +2413,7 @@ export class Simulation {
     type Wahl = { typen: RmTyp[]; nef?: boolean; ersatz: boolean; hinweis?: string };
     const w: Wahl[] = [];
     const flugSinnvoll = fahrzeit > 30 * 60 && !k.d.sek?.instabil;
-    if (info.gruppe === "DF") {
-      w.push({ typen: ["KTW", "RTW", "RTW-C", "SKTW", "SRTW", "SNAW", "NEF", "BIT", "BEL"], ersatz: false });
-    } else if (info.gruppe === "KT") {
+    if (info.gruppe === "KT") {
       w.push({ typen: ["KTW"], ersatz: false });
       w.push({ typen: ["RTW", "RTW-C"], ersatz: true, hinweis: "RTW – nur wenn nötig" });
     } else {

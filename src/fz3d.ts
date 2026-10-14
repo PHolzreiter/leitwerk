@@ -13,6 +13,8 @@ import { orgFarbe } from "./mapLayers";
 
 /** Ab dieser Zoomstufe Modelle statt Punkte */
 export const ZOOM_MODELLE = 16;
+/** Fliegende Hubschrauber schon ab dieser Zoomstufe als Modell (vergrößert) */
+export const ZOOM_FLUG = 12.5;
 /** Unterhalb dieser Zoomstufe werden die Modelle etwas vergrößert, damit man sie erkennt */
 const ZOOM_ECHT = 18.5;
 
@@ -231,6 +233,8 @@ export interface Fahrzeug3D {
   /** Modelle ein/aus (Einstellung) */
   setAktiv(on: boolean): void;
   aktiv(): boolean;
+  /** Fahrzeug unter dem Bildschirmpunkt (für Klicks auf Modelle) */
+  treffer(x: number, y: number): string | null;
 }
 
 const LS = "leitwerk.modelle3d";
@@ -261,14 +265,25 @@ export function addFahrzeug3D(map: maplibregl.Map): Fahrzeug3D {
   });
   const jetzt = () => (sim.state.laeuft ? simZeit + Math.min(1500, performance.now() - simReal) * sim.state.tempo : simZeit);
 
-  const sichtbar = () => mode3d && gewuenscht && map.getZoom() >= ZOOM_MODELLE;
+  const sichtbar = () => mode3d && gewuenscht && map.getZoom() >= ZOOM_FLUG;
+  /** zuletzt gezeichnete Bildschirmpositionen (Pixel) */
+  let bildpunkte: { id: string; x: number; y: number }[] = [];
 
   /** Punkte nur beim Herauszoomen; Beschriftung schwebt über dem Modell */
   const ebenenAnpassen = () => {
     const an = mode3d && gewuenscht;
     const max = an ? ZOOM_MODELLE : 24;
-    if (map.getLayer("lw-vehicles")) map.setLayerZoomRange("lw-vehicles", 0, max);
-    if (map.getLayer("lw-vehicles-nr")) map.setLayerZoomRange("lw-vehicles-nr", 10, max);
+    if (map.getLayer("lw-vehicles")) {
+      map.setLayerZoomRange("lw-vehicles", 0, max);
+      // fliegende Hubschrauber sind ab ZOOM_FLUG als Modell zu sehen: dort keinen Punkt
+      const op = an ? ["step", ["zoom"], 1, ZOOM_FLUG, ["case", ["==", ["get", "flug"], 1], 0, 1]] : 1;
+      map.setPaintProperty("lw-vehicles", "circle-opacity", op);
+      map.setPaintProperty("lw-vehicles", "circle-stroke-opacity", op);
+    }
+    if (map.getLayer("lw-vehicles-nr")) {
+      map.setLayerZoomRange("lw-vehicles-nr", 10, max);
+      map.setPaintProperty("lw-vehicles-nr", "text-opacity", an ? ["step", ["zoom"], 1, ZOOM_FLUG, ["case", ["==", ["get", "flug"], 1], 0, 1]] : 1);
+    }
     if (map.getLayer("lw-vehicles-shadow")) map.setLayerZoomRange("lw-vehicles-shadow", 0, max);
     if (map.getLayer("lw-vehicles-label")) {
       map.setLayoutProperty("lw-vehicles-label", "text-anchor", an ? ["step", ["zoom"], "top", ZOOM_MODELLE, "bottom"] : "top");
@@ -331,6 +346,10 @@ export function addFahrzeug3D(map: maplibregl.Map): Fahrzeug3D {
       // keine Rückseiten-Auslese: das Modell ist für Mercator (y nach Süden) gespiegelt
       gl.disable(gl.CULL_FACE);
       let laeuft = false;
+      const zoom = map.getZoom();
+      const breite = map.getCanvas().clientWidth;
+      const hoeheBild = map.getCanvas().clientHeight;
+      const punkte: { id: string; x: number; y: number }[] = [];
       for (const fz of Object.values(sim.state.fahrzeuge)) {
         // wie in 2D: frei auf der Wache stehende Fahrzeuge nicht zeigen
         if (!fz.einsatzId && fz.phase === "frei" && Math.abs(fz.lat - fz.heim.lat) < 0.0005 && Math.abs(fz.lon - fz.heim.lon) < 0.0005) continue;
@@ -341,13 +360,22 @@ export function addFahrzeug3D(map: maplibregl.Map): Fahrzeug3D {
         const heading = richtungMerk.get(fz.id) ?? 0;
         const boden = map.queryTerrainElevation([lon, lat]) ?? 0;
         const hoehe = flughoehe(fz, t);
+        const fliegend = hoehe > 5;
+        if (zoom < ZOOM_MODELLE && !fliegend) continue;
         const mc = maplibregl.MercatorCoordinate.fromLngLat([lon, lat], boden + hoehe);
-        // knapp über der Grenze vergrößert (bis 4×), ganz nah in echter Größe
-        const gross = Math.min(4, Math.max(1, Math.pow(2, (ZOOM_ECHT - map.getZoom()) * 0.9)));
+        // knapp über der Grenze vergrößert (bis 4×, fliegend bis 30×), ganz nah in echter Größe
+        const gross = Math.min(fliegend ? 30 : 4, Math.max(1, Math.pow(2, (ZOOM_ECHT - zoom) * 0.9)));
         const s = mc.meterInMercatorCoordinateUnits() * gross;
         // Modell: Meter → Mercator (y zeigt dort nach Süden), gedreht nach Fahrtrichtung
         const welt = mul(mul(trans(mc.x, mc.y, mc.z), skal(s, -s, s)), rotZ((-heading * Math.PI) / 180));
         const basis = mul(matrix, welt);
+        // Bildschirmpunkt (Mitte, ca. 1,5 m hoch) für Klicks
+        const cw = basis[11] * 1.5 + basis[15];
+        if (cw > 0) {
+          const cx = (basis[8] * 1.5 + basis[12]) / cw;
+          const cy = (basis[9] * 1.5 + basis[13]) / cw;
+          punkte.push({ id: fz.id, x: ((cx + 1) / 2) * breite, y: ((1 - cy) / 2) * hoeheBild });
+        }
         const rotor = rotorLaeuft(fz, t);
         if (rotor || fz.blaulicht) laeuft = true;
         const koerper = farbe(fz);
@@ -369,6 +397,7 @@ export function addFahrzeug3D(map: maplibregl.Map): Fahrzeug3D {
           gl.drawArrays(gl.TRIANGLES, 0, 36);
         }
       }
+      bildpunkte = punkte;
       // Fahrzeuge bewegen sich: weiterzeichnen (nur solange etwas zu sehen ist)
       if (laeuft || sim.state.laeuft) map.triggerRepaint();
     },
@@ -397,5 +426,14 @@ export function addFahrzeug3D(map: maplibregl.Map): Fahrzeug3D {
       ebenenAnpassen();
     },
     aktiv: () => gewuenscht,
+    treffer(x, y) {
+      if (!sichtbar()) return null;
+      let best: { id: string; d: number } | null = null;
+      for (const p of bildpunkte) {
+        const d = Math.hypot(p.x - x, p.y - y);
+        if (d < 28 && (!best || d < best.d)) best = { id: p.id, d };
+      }
+      return best?.id ?? null;
+    },
   };
 }

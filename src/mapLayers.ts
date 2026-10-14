@@ -97,10 +97,10 @@ export function addDataLayers(map: maplibregl.Map, cb: DataLayerCallbacks): void
     type: "circle",
     source: "lw-pois",
     paint: {
-      "circle-radius": ["interpolate", ["linear"], ["zoom"], 7, 3, 13, 6],
+      "circle-radius": ["interpolate", ["linear"], ["zoom"], 6, 1.5, 9, 3, 13, 6],
       "circle-color": "#2a9d8f",
       "circle-stroke-color": "#ffffff",
-      "circle-stroke-width": 1.5,
+      "circle-stroke-width": ["interpolate", ["linear"], ["zoom"], 6, 0.5, 10, 1.5],
     },
   });
   map.addLayer({
@@ -123,20 +123,21 @@ export function addDataLayers(map: maplibregl.Map, cb: DataLayerCallbacks): void
     type: "circle",
     source: "lw-hospitals",
     paint: {
-      "circle-radius": ["interpolate", ["linear"], ["zoom"], 6, 5, 13, 10],
-      "circle-color": "#ffffff",
+      "circle-radius": ["interpolate", ["linear"], ["zoom"], 6, 2.5, 8.5, 4, 11, 7, 13, 10],
+      "circle-color": ["step", ["zoom"], "#d62828", 8.5, "#ffffff"],
       "circle-stroke-color": "#d62828",
-      "circle-stroke-width": 2.5,
+      "circle-stroke-width": ["interpolate", ["linear"], ["zoom"], 6, 0.5, 8.5, 1.5, 11, 2.5],
     },
   });
   map.addLayer({
     id: "lw-hospitals-h",
     type: "symbol",
     source: "lw-hospitals",
+    minzoom: 8.5,
     layout: {
       "text-field": "H",
       "text-font": FONT,
-      "text-size": ["interpolate", ["linear"], ["zoom"], 6, 8, 13, 13],
+      "text-size": ["interpolate", ["linear"], ["zoom"], 8.5, 7, 13, 13],
       "text-allow-overlap": true,
       "text-ignore-placement": true,
     },
@@ -162,10 +163,10 @@ export function addDataLayers(map: maplibregl.Map, cb: DataLayerCallbacks): void
     type: "circle",
     source: "lw-stations",
     paint: {
-      "circle-radius": ["interpolate", ["linear"], ["zoom"], 6, 3, 13, 8],
+      "circle-radius": ["interpolate", ["linear"], ["zoom"], 6, 1.2, 9, 2.5, 11, 5, 13, 8],
       "circle-color": ["get", "color"],
       "circle-stroke-color": "#ffffff",
-      "circle-stroke-width": 1.5,
+      "circle-stroke-width": ["interpolate", ["linear"], ["zoom"], 6, 0.3, 9, 0.8, 11, 1.5],
     },
   });
   map.addLayer({
@@ -318,6 +319,10 @@ function openContextMenu(map: maplibregl.Map, at: maplibregl.LngLat, point: mapl
 }
 
 let pickActive = false;
+/** Wird gerade ein Ort auf der Karte gewählt? */
+export function pickLaeuft(): boolean {
+  return pickActive;
+}
 
 /** Lässt den Benutzer einen Punkt auf der Karte wählen. */
 export function pickLocation(map: maplibregl.Map, hint: string): Promise<{ lat: number; lon: number } | null> {
@@ -409,7 +414,7 @@ export function setSelectedIncident(map: maplibregl.Map, id: string | null): voi
 
 export function addSimLayers(
   map: maplibregl.Map,
-  cb: { onIncident(id: string): void; onVehicle(id: string): void },
+  cb: { onIncident(id: string): void; onVehicle(id: string): void; onVehicleDbl(id: string): void },
 ): void {
   map.addSource("lw-routes", { type: "geojson", data: routeFeatures() });
   map.addSource("lw-incidents", { type: "geojson", data: incidentFeatures() });
@@ -454,7 +459,7 @@ export function addSimLayers(
     source: "lw-vehicles",
     filter: ["==", ["get", "flug"], 1],
     paint: {
-      "circle-radius": ["interpolate", ["linear"], ["zoom"], 7, 5, 13, 9],
+      "circle-radius": ["interpolate", ["linear"], ["zoom"], 6, 3, 10, 6, 13, 9],
       "circle-color": "#000000",
       "circle-opacity": 0.35,
       "circle-blur": 0.7,
@@ -466,10 +471,10 @@ export function addSimLayers(
     type: "circle",
     source: "lw-vehicles",
     paint: {
-      "circle-radius": ["interpolate", ["linear"], ["zoom"], 7, ["case", ["==", ["get", "ein"], 1], 6, 3], 13, 10],
+      "circle-radius": ["interpolate", ["linear"], ["zoom"], 6, ["case", ["==", ["get", "ein"], 1], 4, 2], 10, ["case", ["==", ["get", "ein"], 1], 7, 5], 13, 10],
       "circle-color": ["get", "color"],
       "circle-stroke-color": ["case", ["==", ["get", "nah"], 1], "#111827", "#ffffff"],
-      "circle-stroke-width": ["case", ["==", ["get", "flug"], 1], 3, 2],
+      "circle-stroke-width": ["interpolate", ["linear"], ["zoom"], 6, ["case", ["==", ["get", "flug"], 1], 1.5, 1], 10, ["case", ["==", ["get", "flug"], 1], 3, 2]],
     },
   });
   map.addLayer({
@@ -502,6 +507,13 @@ export function addSimLayers(
   map.on("click", "lw-vehicles", (e) => {
     const id = e.features?.[0]?.properties?.lwid as string | undefined;
     if (id && !pickActive) cb.onVehicle(id);
+  });
+  // Doppelklick: heranzoomen und Kamera folgt (statt normalem Doppelklick-Zoom)
+  map.on("dblclick", "lw-vehicles", (e) => {
+    const id = e.features?.[0]?.properties?.lwid as string | undefined;
+    if (!id || pickActive) return;
+    e.preventDefault();
+    cb.onVehicleDbl(id);
   });
   for (const l of ["lw-incidents", "lw-vehicles"]) {
     map.on("mouseenter", l, () => (map.getCanvas().style.cursor = "pointer"));

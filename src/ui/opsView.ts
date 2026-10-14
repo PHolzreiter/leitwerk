@@ -175,7 +175,7 @@ export function addressInput(placeholder: string, onPick: (o: Ort) => void): { r
 
 type Tab = "einsatz" | "funk" | "chat";
 
-export function createOpsView(left: HTMLElement, right: HTMLElement, deps: OpsDeps): { select(id: string | null): void } {
+export function createOpsView(left: HTMLElement, right: HTMLElement, deps: OpsDeps): { select(id: string | null): void; selectKt(id: string): void } {
   let selected: string | null = null;
   let showClosed = false;
   let rightTab: Tab = "funk";
@@ -892,5 +892,5 @@ export function createOpsView(left: HTMLElement, right: HTMLElement, deps: OpsDe
   setTab(rightTab);
   select(null);
   renderFunk();
-  return { select };
+  return { select, selectKt };
 }

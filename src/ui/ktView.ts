@@ -11,7 +11,6 @@ import {
   bereichName,
   hhmm,
   KT_ART_LABEL,
-  KT_LAGE_LABEL,
   KT_STATUS_LABEL,
   ktKurz,
   sekLeer,
@@ -52,10 +51,9 @@ function hmFuer(t: number | null): string {
   return t ? hhmm(t) : "";
 }
 
-/** Art des Auftrags: Krankentransport, Überstellung (SEK) oder Dienstfahrt */
-type Art = "kt" | "sek" | "df";
+/** Art des Auftrags: Krankentransport oder Überstellung (SEK) */
+type Art = "kt" | "sek";
 function artVon(d: KtDaten): Art {
-  if (d.code?.startsWith("DF-")) return "df";
   return istUeberstellung(d) ? "sek" : "kt";
 }
 
@@ -63,7 +61,7 @@ function artVon(d: KtDaten): Art {
 export function codeChip(code: string | null | undefined, gross = false): string {
   if (!code) return `<span class="kt-code leer${gross ? " big" : ""}">kein Code</span>`;
   const i = codeInfo(code);
-  const cls = i.gruppe === "DF" ? "df" : i.arzt && i.sondersignal ? "sek-d" : i.sondersignal ? "sek-b" : i.sofort ? "sofort" : i.gruppe === "SEK" ? "sek" : "kt";
+  const cls = i.arzt && i.sondersignal ? "sek-d" : i.sondersignal ? "sek-b" : i.sofort ? "sofort" : i.gruppe === "SEK" ? "sek" : "kt";
   const name = ktCode(code)?.name ?? "";
   return `<span class="kt-code ${cls}${gross ? " big" : ""}" title="${esc(name)}">${esc(code)}</span>`;
 }
@@ -131,9 +129,8 @@ export function ktListe(container: HTMLElement, deps: { selected(): string | nul
           : "";
     const ab = k.d.abholung ?? (k.d.termin ? k.d.termin - 45 * 60_000 : null);
     const spaet = ab !== null && ["offen", "vorgemerkt"].includes(k.status) && ab < sim.state.zeit;
-    const art = artVon(k.d);
     const lage = k.d.lage ? esc(ktKurz(k.d).replace(/^.*\(/, "(")) : "";
-    const name = art === "df" ? esc(ktCode(k.d.code)?.name ?? "Dienstfahrt") : esc(k.d.patient.name || "(Aufnahme)");
+    const name = esc(k.d.patient.name || "(Aufnahme)");
     row.innerHTML = `
       <div class="kt-zeit"><b>${k.d.abholung ? hhmm(k.d.abholung) : hhmm(k.d.termin)}</b><span class="muted">${k.d.abholung ? `an ${hhmm(k.d.termin)}` : k.d.termin ? "Termin" : ""}</span></div>
       <div class="kt-main">
@@ -258,130 +255,85 @@ export function ktMaske(k: KtAuftrag, deps: { flyTo(lat: number, lon: number, z?
   function datenBauen(): void {
     const darf = ["aufnahme", "offen", "vorgemerkt"].includes(k.status) && (!k.anruf || k.anruf.status !== "aktiv" || ichFuehre(k));
     const art = artVon(k.d);
-    datenBox.innerHTML = `<div class="box-title">${art === "sek" ? "Überstellung" : art === "df" ? "Dienstfahrt" : "Transportauftrag"}</div>`;
-
-    // Art: Krankentransport / Überstellung / Dienstfahrt
-    const seg = el("div", { class: "kt-seg" });
-    for (const [a, label] of [
-      ["kt", "Krankentransport"],
-      ["sek", "Überstellung (SEK)"],
-      ["df", "Dienstfahrt"],
-    ] as [Art, string][]) {
-      const b = el("button", { class: `kt-seg-b${art === a ? " active" : ""}`, type: "button" }, label);
-      b.disabled = !darf;
-      b.addEventListener("click", () => {
-        if (a === art) return;
-        if (a === "sek") setze({ sek: k.d.sek ?? sekLeer(), code: null });
-        else if (a === "df") setze({ sek: null, code: "DF-99K1" });
-        else setze({ sek: null, code: null });
-      });
-      seg.appendChild(b);
-    }
-    datenBox.appendChild(seg);
-    if (art === "kt" && k.d.von?.khId && k.d.nach?.khId)
-      datenBox.appendChild(el("div", { class: "kt-hinweis" }, "Krankenhaus → Krankenhaus ist eine Überstellung (SEK-Code)."));
+    datenBox.innerHTML = "";
+    const titel = el("div", { class: "box-title kt-titel" });
+    titel.innerHTML = `Auftrag <span class="kt-art-chip ${art}">${art === "sek" ? "Überstellung" : "Krankentransport"}</span>`;
+    datenBox.appendChild(titel);
+    if (art === "kt" && !(k.d.von && k.d.nach))
+      datenBox.appendChild(el("div", { class: "kt-hinweis muted" }, "Krankenhaus → Krankenhaus wird automatisch eine Überstellung."));
 
     const grid = el("div", { class: "kt-grid" });
-    const zeile = (label: string, id: KtFrage["id"] | null, feld: HTMLElement, cls = "") => {
-      const l = el("div", { class: `kt-lbl ${cls}` });
+    const deaktiv: (HTMLInputElement | HTMLSelectElement | HTMLButtonElement)[] = [];
+    /** Zeile: Beschriftung (mit 🗨-Frage, wenn ein Gespräch läuft) und Feld */
+    const zeile = (label: string, id: KtFrage["id"] | null, feld: HTMLElement) => {
+      const l = el("div", { class: "kt-lbl" });
+      l.appendChild(el("span", {}, label));
       const fk = id ? frageKnopf(id) : null;
       if (fk) l.appendChild(fk);
-      l.appendChild(document.createTextNode(label));
       grid.append(l, feld);
     };
-    const abschnitt = (titel: string) => {
-      grid.appendChild(el("div", { class: "kt-abschnitt" }, titel));
-    };
-    const deaktiv: (HTMLInputElement | HTMLSelectElement)[] = [];
-
-    // Code
-    const codeZeile = el("div", { class: "kt-codezeile" });
-    const codeSel = el("select");
-    const passende = KT_CODES.filter((c) => (art === "df" ? c.gruppe === "DF" : art === "sek" ? c.gruppe === "SEK" : c.gruppe === "KT" && c.code.startsWith(`${k.d.art}-`)));
-    codeSel.appendChild(el("option", { value: "" }, "– Code –"));
-    const gruppen = new Map<string, HTMLOptGroupElement>();
-    for (const c of passende) {
-      let g = gruppen.get(c.kapitel);
-      if (!g) {
-        g = el("optgroup", { label: c.kapitel });
-        gruppen.set(c.kapitel, g);
-        codeSel.appendChild(g);
+    const abschnitt = (t: string) => grid.appendChild(el("div", { class: "kt-abschnitt" }, t));
+    /** Auswahl als Knopfleiste */
+    const knopfleiste = <T extends string | boolean>(werte: [T, string, string?][], aktuell: T | null, onSet: (v: T) => void) => {
+      const seg = el("div", { class: "kt-seg" });
+      for (const [v, label, cls] of werte) {
+        const b = el("button", { class: `kt-seg-b${aktuell === v ? " active" : ""}${cls ? ` ${cls}` : ""}`, type: "button" }, label);
+        b.addEventListener("click", () => aktuell !== v && onSet(v));
+        deaktiv.push(b);
+        seg.appendChild(b);
       }
-      g.appendChild(el("option", { value: c.code }, `${c.code} – ${c.name}`));
-    }
-    if (k.d.code && !passende.some((c) => c.code === k.d.code)) codeSel.appendChild(el("option", { value: k.d.code }, `${k.d.code} – ${ktCode(k.d.code)?.name ?? ""}`));
-    codeSel.value = k.d.code ?? "";
-    codeSel.addEventListener("change", () => setze({ code: codeSel.value || null }));
-    deaktiv.push(codeSel);
-    codeZeile.appendChild(codeSel);
-    if (k.d.codeManuell) {
-      const zurueck = el("button", { class: "btn small", type: "button", title: "Code wieder automatisch aus den Angaben bestimmen" }, "↺ Vorschlag");
-      zurueck.disabled = !darf;
-      zurueck.addEventListener("click", () => setze({ code: null }));
-      codeZeile.appendChild(zurueck);
-    } else if (art !== "df") codeZeile.appendChild(el("span", { class: "muted small" }, "folgt den Angaben"));
-    zeile("Code", null, codeZeile);
+      return seg;
+    };
+    /** Häkchen, optional mit eigener 🗨-Frage */
+    const haken = (label: string, wert: boolean, onSet: (v: boolean) => void, frage?: KtFrage["id"], titelText = "") => {
+      const l = el("label", { class: "chk", title: titelText });
+      const c = el("input", { type: "checkbox" });
+      c.checked = wert;
+      c.addEventListener("change", () => onSet(c.checked));
+      deaktiv.push(c);
+      l.append(c, el("span", {}, label));
+      const fk = frage ? frageKnopf(frage) : null;
+      if (fk) l.appendChild(fk);
+      return l;
+    };
+    const text = (wert: string, ph: string, onSet: (v: string) => void) => {
+      const i = el("input", { type: "text", placeholder: ph });
+      i.value = wert;
+      i.addEventListener("change", () => onSet(i.value.trim()));
+      deaktiv.push(i);
+      return i;
+    };
 
-    if (art !== "df") {
-      const wer = el(
-        "div",
-        { class: "muted" },
-        k.quelle === "hotline" ? (k.anruf?.gespraech.some((m) => m.von === "anrufer") ? "siehe Gespräch" : "–") : QUELLE[k.quelle],
-      );
-      zeile("Anrufer", "wer", wer);
-      abschnitt("Patient");
-      const pat = el("div", { class: "row-btns" });
-      const name = el("input", { type: "text", placeholder: "Name" });
-      name.value = k.d.patient.name;
-      const alter = el("input", { type: "number", min: "0", max: "120", class: "zahl", placeholder: "Alter" });
-      alter.value = k.d.patient.alter === null ? "" : String(k.d.patient.alter);
-      const g = el("select");
-      g.append(el("option", { value: "" }, "–"), el("option", { value: "w" }, "w"), el("option", { value: "m" }, "m"));
-      g.value = k.d.patient.geschlecht ?? "";
-      name.addEventListener("change", () => setze({ patient: { ...k.d.patient, name: name.value.trim() } }));
-      alter.addEventListener("change", () => setze({ patient: { ...k.d.patient, alter: alter.value === "" ? null : Number(alter.value) } }));
-      g.addEventListener("change", () => setze({ patient: { ...k.d.patient, geschlecht: (g.value || null) as "m" | "w" | null } }));
-      pat.append(name, alter, g);
-      deaktiv.push(name, alter, g);
-      zeile("Name, Alter", "patient", pat);
-      const info = el("input", { type: "text", placeholder: art === "sek" ? "z. B. intubiert, 2 Perfusoren" : "Kurzinfo, z. B. bis zum Fahrzeug gehfähig" });
-      info.value = k.d.patient.info;
-      info.addEventListener("change", () => setze({ patient: { ...k.d.patient, info: info.value } }));
-      deaktiv.push(info);
-      zeile("Info", null, info);
-      const grund = el("input", { type: "text", placeholder: art === "sek" ? "Diagnose / Grund der Überstellung" : "Grund / Diagnose" });
-      grund.value = k.d.grund;
-      grund.addEventListener("change", () => setze({ grund: grund.value }));
-      deaktiv.push(grund);
-      zeile("Grund", "grund", grund);
-      const lage = el("select");
-      lage.appendChild(el("option", { value: "" }, "– Wollen Sie sitzen oder liegen? –"));
-      for (const [v, l] of Object.entries(KT_LAGE_LABEL)) if (!(art === "sek" && v === "rollstuhl")) lage.appendChild(el("option", { value: v }, l));
-      lage.value = k.d.lage ?? "";
-      lage.addEventListener("change", () => setze({ lage: (lage.value || null) as KtLage | null }));
-      deaktiv.push(lage);
-      zeile("Transportart", "lage", lage);
-      const opts = el("div", { class: "row-btns kt-opts" });
-      const chk = (label: string, id: "begleitung" | "sauerstoff" | "infektion") => {
-        const l = el("label", { class: "chk" });
-        const fk = frageKnopf(id);
-        if (fk) l.appendChild(fk);
-        const c = el("input", { type: "checkbox" });
-        c.checked = k.d[id];
-        c.disabled = !darf;
-        c.addEventListener("change", () => setze({ [id]: c.checked } as Partial<KtDaten>));
-        l.append(c, el("span", {}, label));
-        opts.appendChild(l);
-      };
-      chk("Begleitperson", "begleitung");
-      chk("Sauerstoff", "sauerstoff");
-      chk("Infektion/Isolation", "infektion");
-      zeile("", null, opts);
-    }
+    // ---- Anrufer
+    abschnitt("Anrufer");
+    zeile(
+      "Wer",
+      "wer",
+      el("div", { class: "muted" }, k.quelle === "hotline" ? (k.anruf?.gespraech.some((m) => m.von === "anrufer") ? "siehe Gespräch" : "–") : QUELLE[k.quelle]),
+    );
+    zeile("Rückruf", "telefon", text(k.d.telefon, "Telefonnummer", (v) => setze({ telefon: v })));
 
-    abschnitt(art === "df" ? "Fahrt" : "Orte und Zeiten");
-    zeile(art === "df" ? "Von (optional)" : "Abholort", "von", ortWahl(k.d.von, darf, art === "sek", (o) => setze({ von: o })));
-    zeile("Ziel", "nach", ortWahl(k.d.nach, darf, art === "sek", (o) => setze({ nach: o })));
+    // ---- Patient
+    abschnitt("Patient");
+    const pat = el("div", { class: "row-btns" });
+    const name = text(k.d.patient.name, "Name", (v) => setze({ patient: { ...k.d.patient, name: v } }));
+    const alter = el("input", { type: "number", min: "0", max: "120", class: "zahl", placeholder: "Alter" });
+    alter.value = k.d.patient.alter === null ? "" : String(k.d.patient.alter);
+    alter.addEventListener("change", () => setze({ patient: { ...k.d.patient, alter: alter.value === "" ? null : Number(alter.value) } }));
+    const g = el("select");
+    g.append(el("option", { value: "" }, "–"), el("option", { value: "w" }, "w"), el("option", { value: "m" }, "m"));
+    g.value = k.d.patient.geschlecht ?? "";
+    g.addEventListener("change", () => setze({ patient: { ...k.d.patient, geschlecht: (g.value || null) as "m" | "w" | null } }));
+    deaktiv.push(alter, g);
+    pat.append(name, alter, g);
+    zeile("Name, Alter", "patient", pat);
+    zeile("Grund", "grund", text(k.d.grund, art === "sek" ? "Diagnose / Grund der Überstellung" : "Grund / Diagnose", (v) => setze({ grund: v })));
+    zeile("Info", null, text(k.d.patient.info, art === "sek" ? "z. B. intubiert, 2 Perfusoren" : "z. B. bis zum Fahrzeug gehfähig", (v) => setze({ patient: { ...k.d.patient, info: v } })));
+
+    // ---- Fahrt
+    abschnitt("Fahrt");
+    zeile("Abholort", "von", ortWahl(k.d.von, darf, false, (o) => setze({ von: o })));
+    zeile("Ziel", "nach", ortWahl(k.d.nach, darf, false, (o) => setze({ nach: o })));
     const zeiten = el("div", { class: "row-btns kt-zeiten" });
     const ab = el("input", { type: "time" });
     ab.value = hmFuer(k.d.abholung);
@@ -389,72 +341,58 @@ export function ktMaske(k: KtAuftrag, deps: { flyTo(lat: number, lon: number, z?
     const termin = el("input", { type: "time" });
     termin.value = hmFuer(k.d.termin);
     termin.addEventListener("change", () => setze({ termin: zeitAus(termin.value) }));
-    const fkTermin = frageKnopf("termin");
-    zeiten.append(el("span", { class: "muted" }, "Abholung"), ab);
-    zeiten.append(el("span", { class: "muted" }, art === "sek" ? "Ankunft" : "Termin"));
-    if (fkTermin) zeiten.appendChild(fkTermin);
-    zeiten.append(termin);
     deaktiv.push(ab, termin);
-    zeile("Zeiten", "abholung", zeiten);
-    if (art === "kt") {
-      const l = el("label", { class: "chk" });
-      const c = el("input", { type: "checkbox" });
-      c.checked = k.d.sofort;
-      c.disabled = !darf;
-      c.addEventListener("change", () => setze({ sofort: c.checked }));
-      l.append(c, el("span", {}, "SOFORT (Einweisung durch den Arzt)"));
-      zeile("", "sofort", l);
-    }
-    if (art === "df") {
-      const zweck = el("input", { type: "text", placeholder: "Zweck, z. B. Werkstatt, Übung" });
-      zweck.value = k.d.grund;
-      zweck.addEventListener("change", () => setze({ grund: zweck.value }));
-      deaktiv.push(zweck);
-      zeile("Zweck", null, zweck);
-    }
+    const fkAb = frageKnopf("abholung");
+    zeiten.append(el("span", { class: "muted" }, "Abholung"), ab);
+    if (fkAb) zeiten.appendChild(fkAb);
+    zeiten.append(el("span", { class: "muted" }, art === "sek" ? "Ankunft" : "Termin"), termin);
+    zeile("Zeiten", "termin", zeiten);
+    zeile(
+      "Dringlichkeit",
+      "sofort",
+      knopfleiste<boolean>(
+        [
+          [false, "geplant"],
+          [true, art === "sek" ? "SOFORT" : "SOFORT (Einweisung)", "sofort"],
+        ],
+        k.d.sofort,
+        (v) => setze({ sofort: v }),
+      ),
+    );
 
-    // Überstellung: Dringlichkeit, Notarzt, Monitoring …
+    // ---- Transport
+    abschnitt("Transport");
+    const lagen: [KtLage, string][] = [
+      ["gehend", "gehfähig"],
+      ["sitzend", "Tragstuhl"],
+      ["liegend", "liegend"],
+    ];
+    if (art === "kt") lagen.push(["rollstuhl", "eig. Rollstuhl"]);
+    zeile("Sitzen/Liegen", "lage", knopfleiste<KtLage>(lagen, k.d.lage, (v) => setze({ lage: v })));
+    const opts = el("div", { class: "kt-opts" });
+    opts.append(
+      haken("Begleitperson", k.d.begleitung, (v) => setze({ begleitung: v }), "begleitung"),
+      haken("Sauerstoff", k.d.sauerstoff, (v) => setze({ sauerstoff: v }), "sauerstoff"),
+      haken("Infektion/Isolation", k.d.infektion, (v) => setze({ infektion: v }), "infektion"),
+    );
+    zeile("Zusätzlich", null, opts);
     if (art === "sek") {
-      abschnitt("Überstellung");
       const s: SekDaten = k.d.sek ?? sekLeer();
       const setzeSek = (p: Partial<SekDaten>) => setze({ sek: { ...s, ...p } });
-      const dring = el("div", { class: "kt-seg klein" });
-      for (const [v, label] of [
-        [false, "geplant"],
-        [true, "SOFORT"],
-      ] as [boolean, string][]) {
-        const b = el("button", { class: `kt-seg-b${k.d.sofort === v ? " active" : ""}${v ? " sofort" : ""}`, type: "button" }, label);
-        b.disabled = !darf;
-        b.addEventListener("click", () => setze({ sofort: v }));
-        dring.appendChild(b);
-      }
-      zeile("Dringlichkeit", "sofort", dring);
-      const opts = el("div", { class: "row-btns kt-opts" });
-      const chk = (label: string, feld: keyof Omit<SekDaten, "zusage">, frage: KtFrage["id"], titel: string) => {
-        const l = el("label", { class: "chk", title: titel });
-        const fk = frageKnopf(frage);
-        if (fk) l.appendChild(fk);
-        const c = el("input", { type: "checkbox" });
-        c.checked = s[feld];
-        c.disabled = !darf;
-        c.addEventListener("change", () => setzeSek({ [feld]: c.checked }));
-        l.append(c, el("span", {}, label));
-        opts.appendChild(l);
-      };
-      chk("Notarzt", "arzt", "arzt", "Notarztbegleitete Überstellung");
-      chk("Monitoring", "monitoring", "monitoring", "Überwachung am Monitor nötig");
-      chk("beatmet", "beatmet", "monitoring", "Patient ist intubiert und beatmet (Notarzt nötig)");
-      chk("instabil", "instabil", "stabil", "Während der Fahrt muss laufend am Patienten gearbeitet werden – kein Hubschrauber");
-      chk("Inkubator / Kind", "inkubator", "inkubator", "Inkubator- oder Kinderüberstellung");
-      zeile("Bedarf", null, opts);
-      const zus = el("input", { type: "text", placeholder: "z. B. Übernahme zugesagt von OA Dr. …" });
-      zus.value = s.zusage;
-      zus.addEventListener("change", () => setzeSek({ zusage: zus.value }));
-      deaktiv.push(zus);
-      zeile("Übernahme", "zusage", zus);
+      const bedarf = el("div", { class: "kt-opts" });
+      bedarf.append(
+        haken("Notarzt", s.arzt, (v) => setzeSek({ arzt: v }), "arzt", "Notarztbegleitete Überstellung"),
+        haken("Monitoring", s.monitoring, (v) => setzeSek({ monitoring: v }), "monitoring", "Überwachung am Monitor nötig"),
+        haken("beatmet", s.beatmet, (v) => setzeSek({ beatmet: v })),
+        haken("instabil", s.instabil, (v) => setzeSek({ instabil: v }), "stabil", "Während der Fahrt muss laufend am Patienten gearbeitet werden – kein Hubschrauber"),
+        haken("Inkubator / Kind", s.inkubator, (v) => setzeSek({ inkubator: v }), "inkubator"),
+      );
+      zeile("Medizinisch", null, bedarf);
+      zeile("Übernahme", "zusage", text(s.zusage, "z. B. zugesagt von OA Dr. …", (v) => setzeSek({ zusage: v })));
     }
 
-    abschnitt("Auftraggeber");
+    // ---- Auftrag: Wunsch und Code
+    abschnitt("Code");
     if (art === "kt") {
       const wunsch = el("select");
       for (const [v, l] of Object.entries(KT_ART_LABEL)) wunsch.appendChild(el("option", { value: v }, l));
@@ -463,11 +401,33 @@ export function ktMaske(k: KtAuftrag, deps: { flyTo(lat: number, lon: number, z?
       deaktiv.push(wunsch);
       zeile("Wunsch", "art", wunsch);
     }
-    const tel = el("input", { type: "text", placeholder: "Rückrufnummer" });
-    tel.value = k.d.telefon;
-    tel.addEventListener("change", () => setze({ telefon: tel.value }));
-    deaktiv.push(tel);
-    zeile("Telefon", "telefon", tel);
+    const codeZeile = el("div", { class: "kt-codezeile" });
+    const codeSel = el("select");
+    const passende = KT_CODES.filter((c) => (art === "sek" ? c.gruppe === "SEK" : c.gruppe === "KT" && c.code.startsWith(`${k.d.art}-`)));
+    codeSel.appendChild(el("option", { value: "" }, "– Code –"));
+    const gruppen = new Map<string, HTMLOptGroupElement>();
+    for (const c of passende) {
+      let gr = gruppen.get(c.kapitel);
+      if (!gr) {
+        gr = el("optgroup", { label: c.kapitel });
+        gruppen.set(c.kapitel, gr);
+        codeSel.appendChild(gr);
+      }
+      gr.appendChild(el("option", { value: c.code }, `${c.code} – ${c.name}`));
+    }
+    if (k.d.code && !passende.some((c) => c.code === k.d.code)) codeSel.appendChild(el("option", { value: k.d.code }, `${k.d.code} – ${ktCode(k.d.code)?.name ?? ""}`));
+    codeSel.value = k.d.code ?? "";
+    codeSel.addEventListener("change", () => setze({ code: codeSel.value || null }));
+    deaktiv.push(codeSel);
+    codeZeile.appendChild(codeSel);
+    if (k.d.codeManuell) {
+      const zurueck = el("button", { class: "btn small", type: "button", title: "Code wieder automatisch aus den Angaben bestimmen" }, "↺ Vorschlag");
+      zurueck.addEventListener("click", () => setze({ code: null }));
+      deaktiv.push(zurueck);
+      codeZeile.appendChild(zurueck);
+    } else codeZeile.appendChild(el("span", { class: "muted small" }, k.d.code ? "aus den Angaben" : "ergibt sich aus den Angaben"));
+    zeile("Code", null, codeZeile);
+
     for (const x of deaktiv) x.disabled = !darf;
     datenBox.appendChild(grid);
     if (k.status === "aufnahme") {
@@ -509,7 +469,7 @@ export function ktMaske(k: KtAuftrag, deps: { flyTo(lat: number, lon: number, z?
     if (["offen", "vorgemerkt", "unterwegs", "aufnahme"].includes(k.status)) zeile.appendChild(knopf("Auftrag stornieren", "danger-text", () => sim.call("ktStorno", k.id, "durch Leitstelle")));
     if (zeile.childElementCount) dispoBox.appendChild(zeile);
     if (k.status !== "offen") return;
-    if (!k.d.von && artVon(k.d) !== "df") {
+    if (!k.d.von) {
       dispoBox.appendChild(el("div", { class: "muted" }, "Für Vorschläge zuerst den Abholort eintragen."));
       return;
     }

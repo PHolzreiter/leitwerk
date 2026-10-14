@@ -123,7 +123,6 @@ export interface KtPlan {
 export function passt(auftraege: KtDaten[]): string | null {
   if (auftraege.length > 1 && auftraege.some((d) => d.code?.startsWith("SEK-") || (d.sek && d.von?.khId && d.nach?.khId)))
     return "Überstellung: nur ein Patient im Fahrzeug";
-  if (auftraege.length > 1 && auftraege.some((d) => d.code?.startsWith("DF-"))) return "Dienstfahrt: keine Sammelfahrt";
   if (auftraege.length > 1 && auftraege.some((d) => d.infektion)) return "Infektionstransport: nur ein Patient im Fahrzeug";
   let liegend = 0;
   let sitz = 0;

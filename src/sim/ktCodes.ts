@@ -1,5 +1,5 @@
 /**
- * Codes für Krankentransporte (KTA/KTR/KTx), Überstellungen (SEK-96) und Dienstfahrten (DF-99):
+ * Codes für Krankentransporte (KTA/KTR/KTx) und Überstellungen (SEK-96):
  * feste Liste, was ein Code verlangt (Fahrzeug, Arzt, Sondersignal) und Code-Vorschlag aus den Auftragsdaten.
  */
 import { BEREICHE_AMBULANZ } from "../data/model";
@@ -9,7 +9,7 @@ export interface KtCode {
   code: string;
   name: string;
   kapitel: string;
-  gruppe: "KT" | "SEK" | "DF";
+  gruppe: "KT" | "SEK";
 }
 
 export const KT_KAPITEL: Record<string, string> = {
@@ -17,7 +17,6 @@ export const KT_KAPITEL: Record<string, string> = {
   "93": "93 – Fahrt zur Therapie",
   "95": "95 – Heimtransport",
   "96": "96 – Überstellung",
-  "99": "99 – Dienstfahrt",
 };
 
 const LAGE = ["gehfähig", "Tragstuhl", "liegend", "eigener Rollstuhl"];
@@ -74,9 +73,6 @@ export const KT_CODES: KtCode[] = [
   ...ktCodes("KTR"),
   ...ktCodes("KTx"),
   ...SEK.map(([code, name]) => ({ code, name, kapitel: KT_KAPITEL["96"], gruppe: "SEK" as const })),
-  { code: "DF-99K1", name: "Dienstfahrt", kapitel: KT_KAPITEL["99"], gruppe: "DF" },
-  { code: "DF-99K2", name: "Dienstfahrt-Übung", kapitel: KT_KAPITEL["99"], gruppe: "DF" },
-  { code: "DF-99K3", name: "Dienstfahrt-GSD", kapitel: KT_KAPITEL["99"], gruppe: "DF" },
 ];
 
 const NACH_CODE = new Map(KT_CODES.map((c) => [c.code, c]));
@@ -89,7 +85,7 @@ export function ktCode(code: string | null | undefined): KtCode | undefined {
 export type SFahrzeug = "SKTW" | "SRTW" | "SNAW" | "ITH" | "RTW";
 
 export interface CodeInfo {
-  gruppe: "KT" | "SEK" | "DF";
+  gruppe: "KT" | "SEK";
   /** SOFORT (!) */
   sofort: boolean;
   /** Fahrt mit Sondersignal (B, D) */
@@ -107,7 +103,6 @@ export interface CodeInfo {
 export function codeInfo(code: string | null | undefined): CodeInfo {
   const leer: CodeInfo = { gruppe: "KT", sofort: false, sondersignal: false, arzt: false, inkubator: false, flug: false, fahrzeug: null };
   if (!code) return leer;
-  if (code.startsWith("DF-")) return { ...leer, gruppe: "DF" };
   const m = code.match(/^SEK-96([KBD])(\d)(!?)(?:-(\w+))?$/);
   if (m) {
     const [, buchstabe, ziffer, ausruf, zusatz] = m;
@@ -133,7 +128,6 @@ const ZIFFER: Record<string, number> = { gehend: 1, sitzend: 2, liegend: 3, roll
 /** Überstellung: beide Orte sind Krankenhäuser (oder der Code sagt es) */
 export function istUeberstellung(d: KtDaten): boolean {
   if (d.code?.startsWith("SEK-")) return true;
-  if (d.code?.startsWith("DF-")) return false;
   return !!d.sek;
 }
 
@@ -142,7 +136,6 @@ export function istUeberstellung(d: KtDaten): boolean {
  * Gibt null zurück, wenn noch zu wenig bekannt ist.
  */
 export function codeVorschlag(d: KtDaten, luftKm: number): string | null {
-  if (d.code?.startsWith("DF-")) return d.code;
   if (!d.lage) return null;
   const n = ZIFFER[d.lage];
   if (istUeberstellung(d)) {

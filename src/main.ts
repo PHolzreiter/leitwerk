@@ -2,8 +2,9 @@ import "./style.css";
 import { store } from "./data/store";
 import { availableMaps, createMap, type MapHandle } from "./map";
 import { addFahrzeug3D, type Fahrzeug3D } from "./fz3d";
-import { ORG_FARBEN, addDataLayers, addSimLayers, pickLocation, setGroupVisible, setSelectedIncident } from "./mapLayers";
-import { sim } from "./sim/engine";
+import { addFzFokus, type FzFokus } from "./fzFokus";
+import { ORG_FARBEN, addDataLayers, addSimLayers, pickLaeuft, pickLocation, setGroupVisible, setSelectedIncident } from "./mapLayers";
+import { sim, type SimFahrzeug } from "./sim/engine";
 import { geoStatus } from "./sim/geo";
 import { flugverbot, WETTER_LABEL, WETTER_SYMBOL } from "./sim/weather";
 import { createDataView, type DataViewDeps } from "./ui/dataView";
@@ -163,19 +164,48 @@ async function init(): Promise<void> {
   );
 
   let fz3d: Fahrzeug3D | null = null;
+  let fokus: FzFokus | null = null;
   const chkModelle = document.getElementById("chk-modelle") as HTMLInputElement;
   map.on("load", () => {
     addDataLayers(map, {
       onEdit: (kind, id) => openEditor(kind, id, deps),
       onCreateAt: (kind, lat, lon) => openEditor(kind, null, deps, { lat, lon }),
     });
+    const auftragOeffnen = (fz: SimFahrzeug) => {
+      if (fz.einsatzId) ops.select(fz.einsatzId);
+      else if (fz.kt) {
+        const kid = fz.kt.fahrten[0]?.[0];
+        if (kid) ops.selectKt(kid);
+      }
+    };
+    const fahrzeugKlick = (id: string) => {
+      const fz = sim.state.fahrzeuge[id];
+      if (!fz) return;
+      fokus?.waehle(id);
+      auftragOeffnen(fz);
+    };
     addSimLayers(map, {
       onIncident: (id) => ops.select(id),
-      onVehicle: (id) => {
-        const fz = sim.state.fahrzeuge[id];
-        if (fz?.einsatzId) ops.select(fz.einsatzId);
-        else if (fz) toast(`${fz.funkrufname}: ${sim.statusDef(fz.status).name}`);
-      },
+      onVehicle: fahrzeugKlick,
+      onVehicleDbl: (id) => fokus?.folge(id),
+    });
+    fokus = addFzFokus(map, { is3d: () => is3d, oeffne: auftragOeffnen });
+    // Klick ins Leere: Fahrzeug abwählen; in 3D die Modelle treffen
+    const getroffen = (p: { x: number; y: number }) =>
+      map.queryRenderedFeatures([p.x, p.y], { layers: ["lw-vehicles", "lw-incidents", "lw-stations", "lw-hospitals", "lw-pois"].filter((l) => map.getLayer(l)) }).length > 0;
+    map.on("click", (e) => {
+      if (pickLaeuft() || getroffen(e.point)) return;
+      const id = fz3d?.treffer(e.point.x, e.point.y);
+      if (id) fahrzeugKlick(id);
+      else fokus?.waehle(null);
+    });
+    map.on("dblclick", (e) => {
+      if (pickLaeuft() || getroffen(e.point)) return;
+      const id = fz3d?.treffer(e.point.x, e.point.y);
+      if (id) {
+        e.preventDefault();
+        fokus?.folge(id);
+      }
     });
     fz3d = addFahrzeug3D(map);
     fz3d.setMode3d(is3d);
