@@ -20,7 +20,7 @@ jobs:
       - name: Bauen
         run: |
           sudo apt-get update -q && sudo apt-get install -yq osmium-tool
-          pip install --quiet osmium numpy
+          pip install --quiet osmium numpy shapely
           curl -fsSL -o austria.osm.pbf https://download.geofabrik.de/europe/austria-latest.osm.pbf
           /usr/bin/time -v bash scripts/build-regionen.sh austria.osm.pbf out ${{ inputs.regionen }} 2>&1 | tee report.txt
       - name: Zusammenfügen und Routen testen

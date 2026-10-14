@@ -2,10 +2,12 @@
 """Baut aus einem OpenStreetMap-Auszug (PBF) das Straßennetz für die Fahrzeitberechnung
 und das Adressverzeichnis für Suche und Einsatzorte.
 
-Aufruf: build_roads.py <eingabe.osm.pbf> <ausgabeordner> [--innen <innen.osm.pbf>] [--name <bundesland>]
+Aufruf: build_roads.py <eingabe.osm.pbf> <ausgabeordner> [--innen <innen.osm.pbf>] [--grenze <grenze.geojson>] [--name <bundesland>]
   eingabe  Auszug eines Bundeslands mit vollständigen Straßen über die Grenze hinaus (osmium „complete_ways“)
   innen    derselbe Auszug nur mit Punkten innerhalb der Grenze (osmium „simple“): daraus die Adressen
            und die Grenzknoten (Straßen über die Landesgrenze gibt es in beiden Ländern)
+  grenze   Landesgrenze als GeoJSON: Punkte bis ca. 40 m an der Grenze sind ebenfalls Grenzknoten
+           (Straßen, die genau an der Grenze geteilt sind, teilen sich dort einen Punkt)
 Ergebnis:
   roads[-<name>].lwrg.gz     Straßengraph (siehe Format unten)
   addresses[-<name>].tsv.gz  Adressen und Orte: typ, straße, hausnummer, plz, ort, breitengrad, längengrad
@@ -218,6 +220,24 @@ def main() -> None:
     first = np.zeros(n + 1, dtype=np.uint32)
     np.add.at(first, srcs[order] + 1, 1)
     first = np.cumsum(first, dtype=np.uint64).astype(np.uint32)
+    if "--grenze" in opt:
+        # Punkte nahe der Landesgrenze (Straßen, die an der Grenze enden und im Nachbarland weitergehen)
+        import json
+
+        import shapely
+        from shapely.geometry import shape
+
+        g = json.loads(Path(opt["--grenze"]).read_text(encoding="utf-8"))
+        feats = g.get("features", [g])
+        flaeche = shapely.union_all([shape(f["geometry"]) for f in feats if f.get("geometry")])
+        saum = flaeche.boundary.buffer(0.0005)
+        shapely.prepare(saum)
+        lat = np.frombuffer(h.lat, dtype=np.int32) / 1e6
+        lon = np.frombuffer(h.lon, dtype=np.int32) / 1e6
+        nah = np.nonzero(shapely.contains_xy(saum, lon, lat))[0]
+        vorher = len(h.grenze)
+        h.grenze.update(int(i) for i in nah)
+        print(f"Grenzknoten: {vorher:,} über Straßen über die Grenze, {len(h.grenze):,} mit Punkten nahe der Grenze")
     grenze = np.array(sorted(h.grenze), dtype="<u4")
 
     with gzip.open(out / f"roads{suffix}.lwrg.gz", "wb", compresslevel=6) as f:

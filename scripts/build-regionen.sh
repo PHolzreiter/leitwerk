@@ -36,7 +36,8 @@ for r in "${REGIONEN[@]}"; do
   osmium getid -r "$PBF" "r$id" -o "$WORK/grenze-$r.osm.pbf" --overwrite
   osmium extract -p "$WORK/grenze-$r.osm.pbf" -s complete_ways "$WORK/filter.osm.pbf" -o "$WORK/$r-voll.osm.pbf" --overwrite
   osmium extract -p "$WORK/grenze-$r.osm.pbf" -s simple "$WORK/filter.osm.pbf" -o "$WORK/$r-innen.osm.pbf" --overwrite
-  python3 "$HERE/tools/build_roads.py" "$WORK/$r-voll.osm.pbf" "$OUT" --innen "$WORK/$r-innen.osm.pbf" --name "$r"
+  osmium export "$WORK/grenze-$r.osm.pbf" -f geojson --geometry-types=polygon -o "$WORK/grenze-$r.geojson" --overwrite
+  python3 "$HERE/tools/build_roads.py" "$WORK/$r-voll.osm.pbf" "$OUT" --innen "$WORK/$r-innen.osm.pbf" --grenze "$WORK/grenze-$r.geojson" --name "$r"
   rm -f "$WORK/$r-voll.osm.pbf" "$WORK/$r-innen.osm.pbf"
 done
 ls -lh "$OUT"

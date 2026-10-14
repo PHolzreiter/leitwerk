@@ -20,11 +20,14 @@ fn main() {
         ("Klinikum Wels", 48.1737117, 14.0262798),
         ("Klinik Oberwart", 47.2792781, 16.204488),
         ("LK Zwettl", 48.599825, 15.162106),
+        ("BB Eisenstadt", 47.846754, 16.513791),
+        ("Klinik Güssing", 47.0499838, 16.3220562),
+        ("LK Neunkirchen", 47.726308, 16.086685),
     ];
     for (n, la, lo) in orte {
         println!("erreichbar {n}: {}", g.erreichbar(la, lo, 3000.0));
     }
-    let paare = [(0, 1), (2, 3), (0, 4), (1, 5), (6, 1), (3, 4)];
+    let paare = [(0, 1), (2, 3), (0, 4), (1, 5), (6, 1), (3, 4), (1, 7), (7, 5), (5, 8), (3, 5), (9, 5), (9, 7)];
     for (a, b) in paare {
         let (na, la, lo) = orte[a];
         let (nb, lb, lob) = orte[b];
@@ -32,6 +35,11 @@ fn main() {
         match g.route((la, lo), (lb, lob)) {
             Some(r) => println!("{na} -> {nb}: {:.0} min, {:.0} km ({} ms)", r.duration / 60.0, r.distance / 1000.0, t.elapsed().as_millis()),
             None => println!("{na} -> {nb}: keine Route"),
+        }
+        // Gegenrichtung
+        match g.route((lb, lob), (la, lo)) {
+            Some(r) => println!("  zurück: {:.0} min", r.duration / 60.0),
+            None => println!("  zurück: keine Route"),
         }
     }
 }

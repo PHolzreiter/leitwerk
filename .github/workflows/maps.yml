@@ -23,7 +23,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           sudo apt-get update -q && sudo apt-get install -yq osmium-tool
-          pip install --quiet osmium numpy
+          pip install --quiet osmium numpy shapely
           bash scripts/build-packs.sh packs-out
 
       - name: Hochladen
