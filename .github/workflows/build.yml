@@ -30,8 +30,30 @@ env:
   DOWNLOAD_REPO: ${{ github.repository }}
 
 jobs:
+  # Nur bauen, wenn die Version neu ist (spart Speicher für Zwischenkopien)
+  version:
+    name: Version prüfen
+    runs-on: ubuntu-latest
+    outputs:
+      neu: ${{ steps.v.outputs.neu }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: v
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="$(jq -r .version src-tauri/tauri.conf.json)"
+          if [ "${{ github.event_name }}" != "workflow_dispatch" ] && gh release view "v$VERSION" --repo "$DOWNLOAD_REPO" >/dev/null 2>&1; then
+            echo "Version $VERSION ist schon veröffentlicht – kein Bau nötig."
+            echo "neu=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "neu=true" >> "$GITHUB_OUTPUT"
+          fi
+
   fonts:
     name: Schriften
+    needs: version
+    if: needs.version.outputs.neu == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -48,7 +70,7 @@ jobs:
         with:
           name: fonts
           path: fonts-out
-          retention-days: 3
+          retention-days: 1
 
   build:
     name: Programm (${{ matrix.name }})
@@ -114,7 +136,7 @@ jobs:
             src-tauri/target/release/bundle/nsis/*.exe
             src-tauri/target/release/bundle/nsis/*.exe.sig
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 1
 
   release:
     name: Veröffentlichen
@@ -123,6 +145,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      actions: write
     steps:
       - uses: actions/checkout@v4
 
@@ -160,3 +183,16 @@ jobs:
           gh release create "$TAG" --repo "$DOWNLOAD_REPO" --title "LeitWerk $VERSION" \
             --notes-file notes.md --latest \
             "$MAC" "$WIN" "$DMG" latest.json
+
+      # Zwischenkopien älterer Läufe löschen (die Dateien liegen ja im Release);
+      # so bleibt der kostenlose Speicher für GitHub Actions frei
+      - name: Alte Zwischenkopien löschen
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api --paginate "repos/${{ github.repository }}/actions/artifacts?per_page=100" \
+            -q '.artifacts[] | select(.workflow_run.id != ${{ github.run_id }}) | .id' |
+          while read -r id; do
+            gh api -X DELETE "repos/${{ github.repository }}/actions/artifacts/$id" >/dev/null && echo "gelöscht: $id"
+          done
