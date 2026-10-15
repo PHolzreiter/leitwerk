@@ -15,6 +15,7 @@ import {
   fahrFaktor,
   flugverbot,
   istNacht,
+  jahreszeitVon,
   lageArt,
   lageVon,
   nextWetter,
@@ -32,7 +33,9 @@ import {
   type WetterWerte,
 } from "./weather";
 import { bestimmeCode, fallZiehen, kapitelVonCode, wahrheitFuer, type Antworten, type Schema } from "../abfrage/schema";
-import { anruferWaehlen, veraenderungText, type Anrufer } from "../abfrage/anrufer";
+import { anruferWaehlen, veraenderungText, zufallsName, type Anrufer } from "../abfrage/anrufer";
+import { bezugFuer, fuellen, szenarioBauen, vorlageFest, vorlageWaehlen, type OrtArt, type Szenario } from "../abfrage/szenario";
+import { SZENARIEN } from "../abfrage/szenarien";
 import { abfrageBlock, abfrageSaetze } from "../abfrage/protokollText";
 import {
   dauerDaten,
@@ -162,6 +165,36 @@ export interface Fall {
   kapitel: string;
   antworten: Antworten;
   code: string;
+  /** Fallgeschichte (Vorlage) und gewählter Ort */
+  vorlage?: string;
+  ortArt?: OrtArt;
+}
+
+/** So heißt der Ort beim Anrufer */
+const ORT_LABEL: Record<OrtArt, string> = {
+  wohnung: "Wohnung",
+  haus: "Einfamilienhaus",
+  garten: "Garten",
+  pflegeheim: "Pflegeheim",
+  strasse: "Straße / Gehsteig",
+  geschaeft: "Geschäft",
+  lokal: "Lokal",
+  arbeit: "Arbeitsplatz",
+  baustelle: "Baustelle",
+  schule: "Schule",
+  sport: "Sportplatz",
+  freizeit: "Freizeitanlage",
+  natur: "im Freien, abseits der Straße",
+  wasser: "am Wasser (Badeplatz)",
+  auto: "im Auto",
+  arzt: "Arztpraxis",
+  bahnhof: "Bahnhof",
+};
+
+/** Gemeinde aus einer Adresse („Hauptstraße 3, 3500 Krems“ → „Krems“) */
+function gemeindeVon(adresse: string): string {
+  const m = adresse.match(/\d{4}\s+([^,()]+)/) ?? adresse.match(/,\s*([^,()]+)\s*$/);
+  return (m?.[1] ?? "").trim() || "dem Ort";
 }
 
 /** Medizinisch plausibel? (z. B. keine Geburt mit 60, keine Schwangerschaft beim Mann) */
@@ -352,7 +385,7 @@ export interface Einsatz {
     abteilung: HospitalFlag;
     rtwBuchtSelbst: boolean;
     /** Wahrheit für den Anrufer (Abfrageschema) */
-    abfrage?: { kapitel: string; antworten: Antworten; code: string; anrufer: Anrufer; lage: string; ortUnbekannt?: boolean };
+    abfrage?: { kapitel: string; antworten: Antworten; code: string; anrufer: Anrufer; lage: string; ortUnbekannt?: boolean; szenario?: Szenario };
     /** Verborgene Lage: Patienten und ihr Verlauf */
     lage?: Lage;
   };
@@ -1374,13 +1407,33 @@ export class Simulation {
     for (const art of partnerSchonDa(p.fall?.kapitel)) (e.partner ??= {})[art] = this.state.zeit;
     if (p.fall && store.schema) {
       const schema = store.schema;
-      const anrufer = anruferWaehlen(p.fall.kapitel, p.fall.antworten, Math.random, gemeldet);
+      const vorlage = p.fall.vorlage ? SZENARIEN.find((v) => v.id === p.fall!.vorlage) : undefined;
+      const ortArt: OrtArt | undefined = p.fall.ortArt ?? vorlage?.orte[0];
+      const anrufer = anruferWaehlen(
+        p.fall.kapitel,
+        p.fall.antworten,
+        Math.random,
+        gemeldet,
+        vorlage && ortArt ? { typen: vorlage.anrufer, ort: ORT_LABEL[ortArt] } : undefined,
+      );
+      let szenario: Szenario | undefined;
+      if (vorlage) {
+        const a = p.fall.antworten;
+        const w = a.geschlecht === "w";
+        const alt = typeof a.alter === "number" ? a.alter : alter;
+        // Familie heißt gleich
+        const familie = /ehe|lebensgef|mutter|vater|tochter|sohn/i.test(anrufer.rolle);
+        const neu = zufallsName(w ? "w" : "m");
+        const pname = anrufer.selbst ? anrufer.name : familie ? `${neu.split(" ")[0]} ${anrufer.name.split(" ").slice(1).join(" ")}` : neu;
+        szenario = szenarioBauen(vorlage, a, { bezug: bezugFuer(anrufer.rolle, anrufer.selbst, w, alt), selbst: anrufer.selbst, ort: gemeindeVon(p.adresse.startsWith("Koordinate") ? gemeldet : p.adresse), name: pname, ortArt }, Math.random);
+      }
       e.wahr.abfrage = {
         kapitel: p.fall.kapitel,
         antworten: p.fall.antworten,
         code: p.fall.code,
         anrufer,
         lage: `${schema.codes[p.fall.code]?.name ?? p.code.beschreibung} (${schema.kapitel[p.fall.kapitel]?.titel ?? ""})`,
+        szenario,
       };
       e.meldung.text = "";
       e.wahr.lage = lageErzeugen(p.fall.kapitel, p.fall.antworten, this.state.zeit, kritisch, this.settings.komplikationen ?? "normal");
@@ -1780,8 +1833,13 @@ export class Simulation {
       const temp = this.temperatur();
       const lage = lageVon(this.state.wetter.lage);
       const wetter = this.settings.wetterAktiv;
+      const glatt = lage === "eisregen" || (temp < 1 && ["schnee", "regen", "nebel"].includes(lageArt(lage)));
+      const ctx = { jahreszeit: jahreszeitVon(this.state.zeit, this.wetterOpt()), stunde: new Date(this.state.zeit).getHours(), temp: wetter ? temp : 15, glatt: wetter && glatt };
       for (let i = 0; i < 400 && !fall; i++) {
-        const f = fallZiehen(schema, kapitelZiehen(schema, wetter ? (kp) => wetterFaktor(kp, temp, lage, this.state.wetter.wind ?? 0) : undefined));
+        const kap = kapitelZiehen(schema, wetter ? (kp) => wetterFaktor(kp, temp, lage, this.state.wetter.wind ?? 0) : undefined);
+        // Fallgeschichte zuerst: sie legt Ort, Hergang und die wichtigsten Antworten fest
+        const vorlage = vorlageWaehlen(SZENARIEN, kap, ctx, Math.random);
+        const f = fallZiehen(schema, kap, Math.random, 0.04, vorlage ? vorlageFest(vorlage, Math.random) : {});
         const c = f ? findCode(f.ergebnis.code) : undefined;
         const name = `${c?.beschreibung ?? ""} ${c ? (schema.codes[c.code]?.name ?? "") : ""}`;
         if (
@@ -1793,6 +1851,10 @@ export class Simulation {
         ) {
           code = c;
           fall = { kapitel: f.ergebnis.pfad[0], antworten: f.antworten, code: c.code };
+          if (vorlage) {
+            fall.vorlage = vorlage.id;
+            fall.ortArt = pick(vorlage.orte);
+          }
         }
       }
     }
@@ -1817,7 +1879,14 @@ export class Simulation {
     }
     const alter = typeof fall?.antworten.alter === "number" ? fall.antworten.alter : null;
     // Notruf aus der Natur: Anrufer weiß nicht genau, wo er ist (Ortung nötig)
-    const draussen = fall ? ortUnbekanntBeschreibung(fall.kapitel, adr.city || adr.label) : null;
+    const vorlage = fall?.vorlage ? SZENARIEN.find((v) => v.id === fall!.vorlage) : undefined;
+    let draussen: string | null = null;
+    if (vorlage) {
+      // Geschichte im Freien (Wald, Feldweg, Landstraße): Ort nur grob bekannt
+      if (vorlage.wo?.length && (fall!.ortArt === "natur" || (fall!.ortArt === "strasse" && Math.random() < 0.5))) {
+        draussen = fuellen(pick(vorlage.wo), { w: fall!.antworten.geschlecht === "w", bezug: "", ort: adr.city || gemeindeVon(adr.label), name: "" }, Math.random);
+      }
+    } else if (fall) draussen = ortUnbekanntBeschreibung(fall.kapitel, adr.city || adr.label);
     if (fall && draussen) {
       const p = versetzt(adr.lat, adr.lon, rnd(400, 1800), rnd(0, 360));
       const e = this.erstelleEinsatz({ lat: p.lat, lon: p.lon, adresse: `Koordinate ${p.lat.toFixed(5)}, ${p.lon.toFixed(5)} (${draussen})`, code, gemeldeteAdresse: draussen, fall, patientAlter: alter });

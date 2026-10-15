@@ -399,13 +399,20 @@ export function fallZiehen(
   kap: string,
   rnd: () => number = Math.random,
   pUnbekannt = 0.04,
+  /** feste Antworten aus einer Fallgeschichte (werden nicht gewürfelt und nicht überschrieben) */
+  fest: Antworten = {},
 ): { antworten: Antworten; ergebnis: Ergebnis } | null {
   const K = schema.kapitel[kap];
   if (!K) return null;
-  const a: Antworten = {};
-  const alter = zufallsAlter(rnd);
+  const a: Antworten = { ...fest };
+  const alter = typeof fest.alter === "number" ? fest.alter : zufallsAlter(rnd);
+  const stimmig = () => {
+    stimmigMachen(kap, a);
+    for (const [k, v] of Object.entries(fest)) a[k] = v;
+  };
   if (K.primaerabfrage) {
     for (const f of schema.globale_fragen.phase_4_primaerabfrage ?? []) {
+      if (a[f.id] !== undefined) continue;
       if (f.id === "anzahl_patienten") a[f.id] = rnd() < 0.92 ? "1" : "n";
       else if (f.id === "bw") a.bw = rnd() < 0.72 ? "ja" : rnd() < 0.6 ? "getruebt" : rnd() < 0.85 ? "nein" : "unbekannt";
       else if (f.id === "at") a.at = a.bw === "nein" ? zufall(["normal", "abnorm", "agonal", "keine"], rnd) : rnd() < 0.75 ? "normal" : rnd() < 0.9 ? "abnorm" : "unbekannt";
@@ -414,7 +421,7 @@ export function fallZiehen(
   }
   // Fragen (inkl. Kapitelwechsel) beantworten, bis keine neuen mehr auftauchen
   for (let runde = 0; runde < 5; runde++) {
-    stimmigMachen(kap, a);
+    stimmig();
     const erg = bestimmeCode(schema, kap, a);
     for (const [k, v] of Object.entries(erg?.antworten ?? {})) if (a[k] === undefined) a[k] = v;
     let neu = false;
@@ -430,7 +437,7 @@ export function fallZiehen(
     if (!neu) break;
   }
   if (a.alter === undefined) a.alter = alter;
-  stimmigMachen(kap, a);
+  stimmig();
   const ergebnis = bestimmeCode(schema, kap, a);
   return ergebnis ? { antworten: ergebnis.antworten, ergebnis } : null;
 }
@@ -456,10 +463,11 @@ export function antwortLabel(f: Frage, wert: Wert): string {
   return f.optionen?.find((o) => o.wert === String(wert))?.label ?? String(wert);
 }
 
-/** Alle Fragen des Schemas nach ID (für Klartexte) */
-export function frageIndex(schema: Schema): Map<string, Frage> {
+/** Alle Fragen des Schemas nach ID (für Klartexte). Mit Kapitel: dessen Fragen haben Vorrang (gleiche ID, andere Optionen) */
+export function frageIndex(schema: Schema, kapitel?: string): Map<string, Frage> {
   const m = new Map<string, Frage>();
-  for (const liste of Object.values(schema.globale_fragen)) for (const f of liste) m.set(f.id, f);
+  if (kapitel) for (const f of schema.kapitel[kapitel]?.fragen ?? []) m.set(f.id, f);
+  for (const liste of Object.values(schema.globale_fragen)) for (const f of liste) if (!m.has(f.id)) m.set(f.id, f);
   for (const k of Object.values(schema.kapitel)) for (const f of k.fragen) if (!m.has(f.id)) m.set(f.id, f);
   return m;
 }

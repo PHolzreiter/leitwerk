@@ -1,5 +1,13 @@
 # Änderungen
 
+## 0.19.0 – Echte Geschichten statt Fragebogen
+- Jeder Notruf hat jetzt eine **Fallgeschichte**: was genau passiert ist, wo, seit wann, was der Anrufer sieht, wer der Patient ist (Name, Alter, Vorerkrankungen, Medikamente, Hausarzt), Stockwerk, Lift, Hund … Über 70 Alltagsgeschichten – vom Sturz in der Nacht am Weg zum Klo über den Radfahrer beim Abbiegen bis zum Kind mit dem Legostein. Passend zu Jahreszeit, Uhrzeit und Wetter (Glatteis im Winter, Hitzekollaps im Sommer, Wespenstich im Garten)
+- Die KI kennt die ganze Geschichte und beantwortet damit **jede** Frage – egal welches Abfrageschema man verwendet und in welcher Reihenfolge gefragt wird. Alle Antworten aus dem Schema sind enthalten, dazu viele Kleinigkeiten
+- Anrufer reden wie Menschen: erzählen den Hergang in eigenen Worten, mit „äh“, „Moment, ich schau“, „Bitte kommen S' schnell“ – keine Checklisten-Sätze mehr, kein Nachplappern der Leitstelle, keine wortgleichen Wiederholungen
+- Wer anruft, passt zur Geschichte (beim Sturz im Supermarkt die Verkäuferin, beim Badeunfall der Bademeister, beim Fieber im Pflegeheim die Pflegerin) und der Patient heißt wie die Familie
+- Keine Widersprüche mehr: Zeitangaben, Verletzungen, Vorerkrankungen und Seite (rechts/links) passen zueinander; Schwangerschaft wird nur bei Frauen im passenden Alter erwähnt
+- Unbekannte Orte (Wanderweg, Landesstraße, Badesee) werden so beschrieben, wie es zur Geschichte passt
+
 ## 0.18.0 – Natürlichere Stimmen, Ausgabegerät, schnellere Spracherkennung
 - Vorlesen mit **Piper** (7 deutsche Stimmen, Männer und Frauen; „Thorsten emotional“ klingt bei aufgeregten Anrufern aufgeregt) oder **Supertonic 3** (10 Stimmen, am menschlichsten) – beide erzeugt LeitWerk selbst, ohne Internet. Einmal herunterladen unter Einstellungen → Persönlich → Sprache, dort auch Probehören. Jeder Anrufer bekommt eine eigene Stimme
 - Ausgabegerät wählbar: Stimmen (Piper/Supertonic) und Töne (Klingeln, Funk-Piep, Chat, Warnungen) getrennt, z. B. Gespräch im Headset und Klingeln über den Lautsprecher

@@ -39,13 +39,15 @@ export function kontext(e: Einsatz): AnrufKontext | null {
     schema,
     anrufer: w.anrufer,
     kapitel: w.kapitel,
-    wahrheit: w.antworten,
+    // Fallgeschichte: weitere Antworten (auch zu Fragen anderer Kapitel); die des Schemas haben Vorrang
+    wahrheit: { ...(w.szenario?.zusatz ?? {}), ...w.antworten },
     lage: w.lage,
     adresse: e.meldung.adresse,
     patientAlter: e.wahr.patientAlter,
     versuche: e.anruf.versuche,
     rueckrufDurchLeitstelle: e.anruf.rueckruf,
     ortUnbekannt: !!w.ortUnbekannt,
+    szenario: w.szenario,
   };
 }
 
