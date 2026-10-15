@@ -40,6 +40,10 @@ import {
   piperLoeschen,
   piperStatus,
   PIPER_STIMMEN,
+  SUPERTONIC_STIMMEN,
+  supertonicLaden,
+  supertonicLoeschen,
+  supertonicStatus,
   type SprachPrefs,
 } from "../sprache";
 
@@ -341,18 +345,19 @@ export function persoenlichView(container: HTMLElement): { refresh(): void } {
       zeile(
         spr,
         "Vorlesen mit",
-        seg<"system" | "piper">(
+        seg<"system" | "piper" | "supertonic">(
           [
-            ["system", "Stimmen des Computers"],
-            ["piper", "Piper (im Programm)"],
+            ["system", "Computer"],
+            ["piper", "Piper"],
+            ["supertonic", "Supertonic"],
           ],
           sp.stimmeArt,
           (v) => setzeSprache({ stimmeArt: v }),
         ),
-        "Piper: natürlichere Stimmen, die LeitWerk selbst erzeugt – mehrere Männer- und Frauenstimmen, Ausgabegerät wählbar. Unten einmal herunterladen.",
+        "Piper und Supertonic erzeugt LeitWerk selbst – natürlicher, mit mehreren Männer- und Frauenstimmen und wählbarem Ausgabegerät. Unten einmal herunterladen. Supertonic klingt am menschlichsten, braucht aber etwas mehr Rechenzeit.",
       );
     }
-    zeile(spr, sp.stimmeArt === "piper" && inTauri() ? "Stimmen des Computers (Ersatz)" : "Stimmen", stimmenBox, "Mehr und schönere Stimmen kannst du im Betriebssystem dazuladen (auf dem Mac z. B. „Premium“-Stimmen).");
+    zeile(spr, sp.stimmeArt !== "system" && inTauri() ? "Stimmen des Computers (Ersatz)" : "Stimmen", stimmenBox, "Mehr und schönere Stimmen kannst du im Betriebssystem dazuladen (auf dem Mac z. B. „Premium“-Stimmen).");
     if (inTauri()) {
       // Piper-Stimmen: herunterladen, probehören, löschen
       const pBox = el("div", { class: "sprach-modelle" });
@@ -397,6 +402,52 @@ export function persoenlichView(container: HTMLElement): { refresh(): void } {
       const pNeu = () => void piperStatus().then(pBauen);
       pNeu();
       zeile(spr, "Piper-Stimmen", pBox, "Je Stimme einmal herunterladen. Jeder Anrufer bekommt eine der geladenen Stimmen – je mehr, desto abwechslungsreicher. „Thorsten emotional“ klingt bei aufgeregten Anrufern aufgeregt.");
+      // Supertonic: ein Paket (Modell + 10 Stimmen + Laufzeit)
+      const stBox = el("div", { class: "sprach-modelle" });
+      const stBauen = (da: boolean) => {
+        stBox.innerHTML = "";
+        const r = el("div", { class: "ton-zeile", "data-supertonic": "1" });
+        const stand = el("span", { class: "muted small stand" }, ladeStand.supertonic ?? (da ? "geladen" : "ca. 400 MB"));
+        const knopf = el("button", { class: `btn small${da ? " danger-text" : ""}`, type: "button" }, da ? "Löschen" : "Herunterladen");
+        knopf.disabled = !!ladeStand.supertonic;
+        knopf.addEventListener("click", async () => {
+          if (da) {
+            await supertonicLoeschen().catch((e) => toast(String(e), "error"));
+            stNeu();
+            return;
+          }
+          knopf.disabled = true;
+          ladeStand.supertonic = "startet …";
+          try {
+            await supertonicLaden((text, d, t) => {
+              ladeStand.supertonic = `${text} ${t ? `${Math.round((d / t) * 100)} %` : `${Math.round(d / 1e6)} MB`}`;
+              const x = document.querySelector(`[data-supertonic] .stand`);
+              if (x) x.textContent = ladeStand.supertonic;
+            });
+            delete ladeStand.supertonic;
+            setzeSprache({ stimmeArt: "supertonic" });
+            toast("Supertonic ist bereit");
+          } catch (e) {
+            delete ladeStand.supertonic;
+            toast(String((e as Error).message ?? e), "error");
+          }
+          stNeu();
+        });
+        r.append(el("span", { class: "ton-label" }, "Supertonic 3 (5 Frauen, 5 Männer)"), stand, knopf);
+        stBox.appendChild(r);
+        if (da) {
+          const probeR = el("div", { class: "row-btns" });
+          for (const v of SUPERTONIC_STIMMEN) {
+            const b = el("button", { class: "btn small", type: "button", title: "Probehören" }, `▶ ${v.name}`);
+            b.addEventListener("click", () => probe(v.g, undefined, v.name));
+            probeR.appendChild(b);
+          }
+          stBox.appendChild(probeR);
+        }
+      };
+      const stNeu = () => void supertonicStatus().then(stBauen);
+      stNeu();
+      zeile(spr, "Supertonic-Stimmen", stBox, "Ein Paket mit 10 Stimmen. Läuft nur auf deinem Rechner. Modell: Supertone (OpenRAIL-M).");
       const gSel = el("select");
       gSel.appendChild(el("option", { value: "" }, "wie das System"));
       void ausgabeGeraete().then((gs) => {
@@ -404,7 +455,7 @@ export function persoenlichView(container: HTMLElement): { refresh(): void } {
         gSel.value = sprachPrefs().geraetStimmen;
       });
       gSel.addEventListener("change", () => setzeSprache({ geraetStimmen: gSel.value }));
-      zeile(spr, "Ausgabegerät für Stimmen", gSel, "Gilt für Piper. Die Stimmen des Computers spielen immer über das Standardgerät.");
+      zeile(spr, "Ausgabegerät für Stimmen", gSel, "Gilt für Piper und Supertonic. Die Stimmen des Computers spielen immer über das Standardgerät.");
     }
 
     zeile(spr, "Spracheingabe", schalter(sp.eingabe, (v) => setzeSprache({ eingabe: v })), "🎙 neben den Eingabefeldern gedrückt halten – oder die Sprechtaste.");

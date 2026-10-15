@@ -4,6 +4,7 @@ mod packs;
 mod routing;
 mod sprache;
 mod stimme;
+mod supertonic;
 mod ton;
 mod updater;
 
@@ -577,6 +578,10 @@ pub fn run() {
             stimme::stimme_laden,
             stimme::stimme_loeschen,
             stimme::stimme_erzeugen,
+            supertonic::supertonic_status,
+            supertonic::supertonic_laden,
+            supertonic::supertonic_loeschen,
+            supertonic::supertonic_erzeugen,
             app_version
         ])
         .build(tauri::generate_context!())

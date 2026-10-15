@@ -124,12 +124,17 @@ jobs:
             # Piper (sherpa-onnx) kommt unter Windows als DLL: vorher holen, damit sie mit installiert wird
             (cd src-tauri && cargo build --release -p sherpa-rs-sys) || echo "::error::sherpa-rs-sys konnte nicht gebaut werden"
             ls src-tauri/target/release/*.dll || echo "::error::keine DLLs von sherpa-onnx gefunden"
+            echo "::notice::DLLs: $(cd src-tauri/target/release && ls *.dll | tr '\n' ' ')"
           fi
           npx tauri build --bundles ${{ matrix.bundles }} 2>&1 | tee build.log
           status=${PIPESTATUS[0]}
           if [ $status -ne 0 ]; then
             # letzte Zeilen als Anmerkung, damit der Fehler ohne Log-Download lesbar ist
             grep -iE "error|failed|panicked|invalid|password|key" build.log | tail -25 | while IFS= read -r l; do echo "::error::${l:0:300}"; done
+          fi
+          if [ "$RUNNER_OS" = "Windows" ] && [ $status -eq 0 ]; then
+            exe=$(ls src-tauri/target/release/bundle/nsis/*.exe | head -1)
+            echo "::notice::Im Installer: $(7z l "$exe" 2>/dev/null | grep -io '[a-z0-9_.-]*\.dll' | sort -u | tr '\n' ' ')"
           fi
           exit $status
 

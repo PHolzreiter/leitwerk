@@ -32,8 +32,8 @@ export interface SprachPrefs {
   autoSenden: boolean;
   /** Mikrofon (deviceId), leer = Standard */
   mikro: string;
-  /** womit vorgelesen wird: Stimmen des Betriebssystems oder Piper (im Programm) */
-  stimmeArt: "system" | "piper";
+  /** womit vorgelesen wird: Stimmen des Betriebssystems, Piper oder Supertonic (beide im Programm) */
+  stimmeArt: "system" | "piper" | "supertonic";
   /** Ausgabegerät für Stimmen (nur Piper), leer = wie das System */
   geraetStimmen: string;
 }
@@ -242,12 +242,51 @@ let kette: Promise<void> = Promise.resolve();
 let generation = 0;
 let zaehler = 0;
 
+// ---- Supertonic (im Programm): 10 Stimmen, 5 Frauen, 5 Männer
+
+export const SUPERTONIC_STIMMEN: { name: string; g: "w" | "m" }[] = ["F1", "F2", "F3", "F4", "F5", "M1", "M2", "M3", "M4", "M5"].map((n) => ({ name: n, g: n.startsWith("F") ? "w" : "m" }));
+
+let supertonicDa = false;
+export async function supertonicStatus(): Promise<boolean> {
+  if (!inTauri()) return (supertonicDa = false);
+  supertonicDa = (await invoke<{ geladen: boolean }>("supertonic_status").catch(() => ({ geladen: false }))).geladen;
+  return supertonicDa;
+}
+if (inTauri()) void supertonicStatus();
+
+export async function supertonicLaden(fortschritt: (text: string, done: number, total: number) => void): Promise<void> {
+  const ch = new Channel<{ text: string; done: number; total: number }>();
+  ch.onmessage = (m) => fortschritt(m.text, m.done, m.total);
+  await invoke("supertonic_laden", { onProgress: ch });
+  await supertonicStatus();
+}
+
+export async function supertonicLoeschen(): Promise<void> {
+  await invoke("supertonic_loeschen");
+  await supertonicStatus();
+}
+
+function supertonicFuer(g: "w" | "m", schluessel: string): string {
+  const pool = SUPERTONIC_STIMMEN.filter((v) => v.g === g);
+  return pool[Math.floor(hash(schluessel + "st") * pool.length)].name;
+}
+
 /** Satz mit Piper erzeugen und nacheinander abspielen (der nächste Satz wird schon erzeugt, während einer läuft) */
 function piperSagen(text: string, v: { name: string; sid: number }, rate: number): void {
   const p = sprachPrefs();
+  imProgrammSagen(invoke<ArrayBuffer>("stimme_erzeugen", { name: v.name, text, sid: v.sid, tempo: Math.max(0.5, Math.min(2, rate * (p.tempo / 100))) }));
+}
+
+function supertonicSagen(text: string, stimme: string, rate: number): void {
+  const p = sprachPrefs();
+  imProgrammSagen(invoke<ArrayBuffer>("supertonic_erzeugen", { stimme, text, tempo: Math.max(0.5, Math.min(2, rate * (p.tempo / 100))) }));
+}
+
+/** erzeugtes Audio (4 Byte Rate + f32) der Reihe nach auf dem gewählten Gerät abspielen */
+function imProgrammSagen(audio: Promise<ArrayBuffer>): void {
+  const p = sprachPrefs();
   const gen = generation;
   const id = `stimme-${++zaehler}`;
-  const audio = invoke<ArrayBuffer>("stimme_erzeugen", { name: v.name, text, sid: v.sid, tempo: Math.max(0.5, Math.min(2, rate * (p.tempo / 100))) });
   spricht++;
   kette = kette
     .then(async () => {
@@ -267,7 +306,11 @@ function sagen(text: string, g: "w" | "m", schluessel: string, rate: number, emo
   const t = sprechText(text);
   if (!t) return;
   const p = sprachPrefs();
-  if (p.stimmeArt === "piper" && inTauri()) {
+  if (p.stimmeArt === "supertonic" && inTauri() && supertonicDa) {
+    supertonicSagen(t, supertonicFuer(g, schluessel), rate);
+    return;
+  }
+  if ((p.stimmeArt === "piper" || p.stimmeArt === "supertonic") && inTauri()) {
     const v = piperFuer(g, schluessel, emotion);
     if (v) {
       piperSagen(t, v, rate);
@@ -360,8 +403,12 @@ export function funkSagt(funkname: string, text: string): void {
 }
 
 /** Probehören in den Einstellungen */
-export function probe(g: "w" | "m", piperName?: string): void {
+export function probe(g: "w" | "m", piperName?: string, supertonic?: string): void {
   verstummen();
+  if (supertonic) {
+    supertonicSagen(g === "w" ? "Notruf? Bitte kommen Sie schnell, meine Mutter ist gestürzt und steht nicht mehr auf!" : "Hier 75 1, sind am Einsatzort eingetroffen, kommen.", supertonic, 1);
+    return;
+  }
   if (piperName) {
     piperSagen(g === "w" ? "Notruf? Bitte kommen Sie schnell, meine Mutter ist gestürzt und steht nicht mehr auf." : "Hier 75 1, sind am Einsatzort eingetroffen, kommen.", { name: piperName, sid: PIPER_STIMMEN.find((v) => v.name === piperName)?.sprecher?.neutral ?? 0 }, 1);
     return;
