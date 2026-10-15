@@ -69,7 +69,8 @@ export function createFunkView(root: HTMLElement, deps: { select(einsatzId: stri
   const statusListe = el("div");
   statusTitel.append(el("summary", {}, "Statusmeldungen"), statusListe);
   statusTitel.addEventListener("toggle", () => refresh());
-  root.append(rufe, aktiv, rufenZeile, el("div", { class: "funk-titel" }, "Funkverkehr"), verlauf, statusTitel);
+  const gruppe = el("div", { class: "funk-gruppe", title: "Gefunkt wird auf dieser TETRA-Gruppe – auch Fahrzeuge von außen wechseln für den Einsatz hierher" });
+  root.append(gruppe, rufe, aktiv, rufenZeile, el("div", { class: "funk-titel" }, "Funkverkehr"), verlauf, statusTitel);
 
   let aktivId: number | null = null;
 
@@ -137,6 +138,8 @@ export function createFunkView(root: HTMLElement, deps: { select(einsatzId: stri
   let letzteRufe = "";
   let fzListe = "";
   function refresh(): void {
+    const fg = `📻 TETRA ${sim.funkgruppe().id}`;
+    if (gruppe.textContent !== fg) gruppe.textContent = fg;
     const alle = sim.state.funkGespraeche ?? [];
     // Rufende Fahrzeuge – dringende zuerst; nur neu zeichnen, wenn sich etwas geändert hat
     const rufend = alle.filter((g) => g.status === "ruft").sort((a, b) => Number(!!b.dringend) - Number(!!a.dringend) || a.seit - b.seit);

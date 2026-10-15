@@ -267,7 +267,8 @@ export function anrufBeobachterStarten(): void {
     const klingeltNotruf = anrufe.some((x) => x.typ === "notruf" && x.anruf.status === "klingelt");
     const klingeltKt = anrufe.some((x) => x.typ !== "notruf" && x.anruf.status === "klingelt");
     klingeltonAktualisieren(klingeltNotruf && p.notrufe && sim.state.laeuft, klingeltKt && p.ktHotline && sim.state.laeuft);
-    funkPiepAktualisieren(p.funkTon && (sim.state.funkGespraeche ?? []).some((g) => g.status === "ruft"));
+    const rufe = (sim.state.funkGespraeche ?? []).filter((g) => g.status === "ruft");
+    funkPiepAktualisieren(p.funkTon && rufe.length > 0, rufe.some((g) => g.dringend));
     // Neuer Anruf klingelt: Telefon zeigen (wenn ich diese Anrufe annehme)
     for (const x of anrufe) {
       const key = `${x.id}:${x.anruf.versuche}:${x.anruf.status === "klingelt" ? x.anruf.seit : ""}`;

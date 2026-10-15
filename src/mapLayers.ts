@@ -16,6 +16,8 @@ import {
   type Station,
 } from "./data/model";
 import { store } from "./data/store";
+import { FUNK_FARBEN, FUNKGRUPPEN } from "./sim/funkgruppen";
+import { onPers, pers } from "./ui/ws/persoenlich";
 import { el, esc } from "./ui/dom";
 
 const FONT = ["Noto Sans Medium"];
@@ -87,7 +89,55 @@ export const LAYER_GROUPS: Record<"stations" | "hospitals" | "pois", string[]> =
   pois: ["lw-pois", "lw-pois-label"],
 };
 
+/** Grenzen der TETRA-Funkgruppen als feine Linien (Farbe und Sichtbarkeit persönlich) */
+function funkFeatures(): FeatureCollection {
+  const p = pers();
+  const eigene = sim.funkgruppe().id;
+  const feats: GFeature[] = [];
+  if (p.funkLinien === false) return { type: "FeatureCollection", features: feats };
+  for (const g of FUNKGRUPPEN) {
+    if (p.funkGruppen?.[g.id] === false) continue;
+    const farbe = p.funkFarben?.[g.id] ?? FUNK_FARBEN[g.id];
+    const eigen = g.id === eigene ? 1 : 0;
+    for (const r of g.ringe) feats.push({ type: "Feature", geometry: { type: "LineString", coordinates: r }, properties: { id: g.id, farbe, eigen } });
+    // Beschriftung ungefähr in der Mitte (Mittel aller Punkte)
+    const pts = g.ringe.flat();
+    const lon = pts.reduce((a, q) => a + q[0], 0) / pts.length;
+    const lat = pts.reduce((a, q) => a + q[1], 0) / pts.length;
+    feats.push({ type: "Feature", geometry: { type: "Point", coordinates: [lon, lat] }, properties: { id: g.id, farbe, eigen, label: g.id } });
+  }
+  return { type: "FeatureCollection", features: feats };
+}
+
 export function addDataLayers(map: maplibregl.Map, cb: DataLayerCallbacks): void {
+  map.addSource("lw-funkgruppen", { type: "geojson", data: funkFeatures() });
+  map.addLayer({
+    id: "lw-funk-linie",
+    type: "line",
+    source: "lw-funkgruppen",
+    filter: ["==", ["geometry-type"], "LineString"],
+    paint: {
+      "line-color": ["get", "farbe"],
+      "line-width": ["interpolate", ["linear"], ["zoom"], 6, ["case", ["==", ["get", "eigen"], 1], 1.6, 0.9], 11, ["case", ["==", ["get", "eigen"], 1], 2.6, 1.4]],
+      "line-opacity": ["case", ["==", ["get", "eigen"], 1], 0.75, 0.4],
+    },
+  });
+  map.addLayer({
+    id: "lw-funk-label",
+    type: "symbol",
+    source: "lw-funkgruppen",
+    filter: ["==", ["geometry-type"], "Point"],
+    maxzoom: 10.5,
+    layout: { "text-field": ["get", "label"], "text-size": 11, "text-font": FONT, "text-allow-overlap": false },
+    paint: { "text-color": ["get", "farbe"], "text-halo-color": "rgba(255,255,255,0.8)", "text-halo-width": 1.2, "text-opacity": ["case", ["==", ["get", "eigen"], 1], 0.85, 0.55] },
+  });
+  const funkNeu = () => (map.getSource("lw-funkgruppen") as maplibregl.GeoJSONSource | undefined)?.setData(funkFeatures());
+  const ausPers = onPers(funkNeu);
+  const ausStoreF = store.onChange(funkNeu);
+  map.once("remove", () => {
+    ausPers();
+    ausStoreF();
+  });
   map.addSource("lw-stations", { type: "geojson", data: stationFeatures() });
   map.addSource("lw-hospitals", { type: "geojson", data: hospitalFeatures() });
   map.addSource("lw-pois", { type: "geojson", data: poiFeatures() });

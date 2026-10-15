@@ -2517,3 +2517,119 @@ input[type="color"] {
 .funk-schnell {
   flex-wrap: wrap;
 }
+.funk-gruppe {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--text-dim);
+  padding: 4px 8px 2px;
+}
+.wetter-regler {
+  display: grid;
+  gap: 2px;
+  min-width: 260px;
+}
+.wetter-regler input[type="range"] {
+  width: 100%;
+}
+.wetter-regler-text {
+  font-size: 12px;
+  font-weight: 600;
+}
+.wetter-skala {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+}
+
+/* Persönlich: Farben und Töne */
+.farb-vorlagen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.farb-vorlage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  width: 118px;
+}
+.farb-vorlage.active {
+  border-color: var(--highlight);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--highlight) 40%, transparent);
+}
+.fv-muster {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 46px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
+}
+.fv-muster i {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 12px;
+}
+.fv-muster b {
+  position: absolute;
+  bottom: 7px;
+  width: 26px;
+  height: 14px;
+  border-radius: 4px;
+}
+.fv-muster b:nth-of-type(1) {
+  left: 8px;
+}
+.fv-muster b:nth-of-type(2) {
+  left: 40px;
+}
+.toene {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.ton-zeile {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) minmax(120px, 190px) 90px auto;
+  gap: 6px;
+  align-items: center;
+}
+.ton-label {
+  font-size: 12px;
+}
+.ton-regeln td,
+.ton-regeln th {
+  font-size: 12px;
+  text-align: left;
+  padding: 3px 6px;
+}
+.ton-dateien {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 6px;
+}
+.ton-datei {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.ton-datei input[type="text"] {
+  flex: 1 1 auto;
+  min-width: 0;
+}

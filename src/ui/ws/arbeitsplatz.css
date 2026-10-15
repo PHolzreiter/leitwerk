@@ -1880,3 +1880,353 @@ button.weather.offen {
 .el-row.spaet.sel {
   background: var(--sel);
 }
+
+/* ---------------- Wetter-Fenster ---------------- */
+.wx-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(10, 16, 24, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.wx {
+  width: min(880px, 100%);
+  max-height: calc(100vh - 32px);
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.wx-kopf {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px 8px;
+}
+.wx-titel-sym {
+  font-size: 34px;
+  line-height: 1;
+}
+.wx-titel {
+  font-size: 20px;
+  font-weight: 700;
+}
+.wx-zu {
+  margin-left: auto;
+  background: none;
+  border: 0;
+  font-size: 20px;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 4px 8px;
+}
+.wx-reiter {
+  display: flex;
+  gap: 6px;
+  padding: 0 16px 10px;
+  border-bottom: 1px solid var(--line);
+}
+.wx-tab {
+  border: 1px solid var(--line);
+  background: var(--panel-2, transparent);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 5px 14px;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.wx-tab.active {
+  background: var(--blue);
+  border-color: var(--blue);
+  color: #fff;
+}
+.wx-inhalt {
+  overflow: auto;
+  padding: 12px 16px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.wx-oben {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: 10px;
+}
+.wx-karte,
+.wx-werte,
+.wx-stunden,
+.wx-tage,
+.wx-warnbox {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--panel) 92%, var(--blue) 3%);
+}
+.wx-karte {
+  padding: 10px 12px;
+}
+.wx-ort {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+.wx-ort .muted {
+  margin-left: auto;
+  font-size: 12px;
+}
+.wx-jetzt {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-top: 8px;
+}
+.wx-gross {
+  font-size: 64px;
+  line-height: 1;
+}
+.wx-temp {
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+.wx-lage {
+  font-size: 16px;
+  font-weight: 600;
+}
+.wx-werte {
+  padding: 6px 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.wx-werte > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 3px 0;
+  font-size: 13px;
+  border-bottom: 1px dashed color-mix(in srgb, var(--line) 70%, transparent);
+}
+.wx-werte > div:last-child {
+  border-bottom: 0;
+}
+.wx-werte b {
+  text-align: right;
+}
+.wx-abschnitt {
+  font-size: 14px;
+}
+.wx-stunden {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(54px, 1fr));
+  overflow-x: auto;
+}
+.wx-std,
+.wx-tag {
+  text-align: center;
+  padding: 6px 2px;
+  font-size: 12px;
+}
+.wx-std + .wx-std {
+  border-left: 1px solid color-mix(in srgb, var(--line) 60%, transparent);
+}
+.wx-std b,
+.wx-tag b {
+  font-size: 15px;
+}
+.wx-sym {
+  font-size: 22px;
+  line-height: 1.4;
+}
+.wx-tropfen {
+  color: var(--blue);
+  font-size: 11px;
+}
+.wx-unten {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: 10px;
+}
+.wx-tage {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0;
+}
+.wx-tag + .wx-tag {
+  border-left: 1px solid color-mix(in srgb, var(--line) 60%, transparent);
+}
+.wx-tag.heute {
+  background: color-mix(in srgb, var(--blue) 10%, transparent);
+  border-radius: 10px 0 0 10px;
+}
+.wx-warnbox {
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.wx-keine {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  font-size: 13px;
+}
+.wx-haken {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--ok, #2b8a57);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+.wx-warn {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  font-size: 13px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border-left: 4px solid;
+}
+.wx-warn.st-gelb {
+  border-color: #e3b505;
+  background: color-mix(in srgb, #e3b505 12%, transparent);
+}
+.wx-warn.st-orange {
+  border-color: #ef7d22;
+  background: color-mix(in srgb, #ef7d22 14%, transparent);
+}
+.wx-warn.st-rot {
+  border-color: #d62828;
+  background: color-mix(in srgb, #d62828 14%, transparent);
+}
+.wx-stufe {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding-top: 2px;
+  min-width: 42px;
+}
+.wx-warnliste {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.wx-tabelle-wrap {
+  overflow-x: auto;
+}
+.wx-tabelle {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 12px;
+}
+.wx-tabelle th,
+.wx-tabelle td {
+  padding: 3px 6px;
+  text-align: left;
+  white-space: nowrap;
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent);
+}
+.wx-tabelle tr.jetzt {
+  font-weight: 600;
+  background: color-mix(in srgb, var(--blue) 8%, transparent);
+}
+.wx-rot {
+  color: var(--alert-text);
+  font-weight: 600;
+}
+.wx-gelb {
+  color: var(--warn-text);
+  font-weight: 600;
+}
+.wx-ok {
+  color: var(--ok);
+}
+.wx-fuss {
+  text-align: right;
+}
+@media (max-width: 720px) {
+  .wx-oben,
+  .wx-unten {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Wetter in der 3D-Ansicht */
+.wetter3d {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  overflow: hidden;
+}
+.wetter3d-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.wetter3d-dunst {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(205, 210, 216, 0.95) 0%, rgba(205, 210, 216, 0.55) 30%, rgba(205, 210, 216, 0.12) 65%, rgba(205, 210, 216, 0) 85%);
+  opacity: 0;
+  transition: opacity 2s ease;
+}
+.wetter3d-blitz {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 15%, rgba(235, 240, 255, 0.55), rgba(235, 240, 255, 0.15) 60%, rgba(235, 240, 255, 0) 100%);
+  opacity: 0;
+}
+.wetter3d-blitz.an {
+  animation: lw-blitz 0.28s ease-out;
+}
+@keyframes lw-blitz {
+  0% {
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.55;
+  }
+  30% {
+    opacity: 0.15;
+  }
+  45% {
+    opacity: 0.4;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* eigene Leistenfarbe (Einstellungen → Persönlich → Farben) */
+.leiste-eigen .topbar {
+  background: var(--leiste);
+  color: var(--leiste-text);
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--leiste) 70%, #000);
+}
+.leiste-eigen .topbar .btn:not(.primary),
+.leiste-eigen .topbar .sl-toggle:not(.an),
+.leiste-eigen .topbar .seg button:not(.active),
+.leiste-eigen .topbar .weather {
+  background: color-mix(in srgb, var(--leiste-text) 10%, transparent);
+  border-color: color-mix(in srgb, var(--leiste-text) 28%, transparent);
+  color: var(--leiste-text);
+}
+.leiste-eigen .topbar .clock,
+.leiste-eigen .topbar .brand-name {
+  color: var(--leiste-text);
+}

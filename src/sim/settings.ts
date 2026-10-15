@@ -137,12 +137,16 @@ export interface Settings {
   /** Anteil der Anrufer, die eine falsche/ungenaue Adresse nennen (%) */
   falscheAdresseProzent: number;
   wetterAktiv: boolean;
-  /** Wetter: realistisch, wechselhaft oder immer gleich (festes Wetter/Temperatur) */
+  /** veraltet (bis 0.14): realistisch/wechselhaft/fest – ersetzt durch wetterWechsel */
   wetterModus?: "realistisch" | "wechselhaft" | "fest";
+  /** Wetter: 0 = fix (festes Wetter) … 100 = sehr wechselhaft */
+  wetterWechsel?: number;
   /** Jahreszeit fürs Wetter: auto = nach Spieldatum */
   jahreszeit?: "auto" | "fruehling" | "sommer" | "herbst" | "winter";
-  wetterFestLage?: "klar" | "bewoelkt" | "regen" | "nebel" | "gewitter" | "schnee";
+  wetterFestLage?: string;
   wetterFestTemp?: number;
+  /** TETRA-Funkgruppe = Einsatzgebiet (z. B. „NÖ-03“) */
+  funkgruppe?: string;
   /** Rückruf nur möglich, wenn die Rückrufnummer aufgenommen wurde */
   rueckrufNurMitNummer?: boolean;
   nahGeschwindigkeit: number;
@@ -196,7 +200,8 @@ export function defaultSettings(): Settings {
     falscheAdresseProzent: 15,
     wetterAktiv: true,
     rueckrufNurMitNummer: false,
-    wetterModus: "realistisch",
+    funkgruppe: "NÖ-03",
+    wetterWechsel: 50,
     jahreszeit: "auto",
     wetterFestLage: "klar",
     wetterFestTemp: 18,

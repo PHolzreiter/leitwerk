@@ -3,9 +3,10 @@ import { store } from "../data/store";
 import { sim } from "../sim/engine";
 import { mp } from "../net/mehrspieler";
 import { geoStatus, REGIONEN } from "../sim/geo";
-import { GEBIETE, KATEGORIEN, KATEGORIE_LABEL, NOTARZT_LABEL, defaultStufeFuer, type Kategorie, type NotarztRegel, type Settings } from "../sim/settings";
+import { KATEGORIEN, KATEGORIE_LABEL, NOTARZT_LABEL, defaultStufeFuer, type Kategorie, type NotarztRegel, type Settings } from "../sim/settings";
 import { codeKategorien } from "../sim/codes";
-import { WETTER_LABEL, type WetterLage } from "../sim/weather";
+import { modusVon, WETTER_LABEL, type WetterLage } from "../sim/weather";
+import { FUNKGRUPPEN } from "../sim/funkgruppen";
 import { confirmDialog } from "./dialog";
 import { buildAppSection, buildPacksSection } from "./packsView";
 import { buildKiSection } from "./kiView";
@@ -110,10 +111,17 @@ export function createSettingsView(container: HTMLElement, teil: "simulation" | 
     src.addEventListener("change", () => (draft.generatorQuelle = src.value as Settings["generatorQuelle"]));
     aGrid.append(el("label", {}, "Quelle"), src);
     const geb = el("select");
-    for (const g of GEBIETE) geb.appendChild(el("option", { value: g.name }, g.name));
-    geb.value = draft.gebiet.name;
-    geb.addEventListener("change", () => (draft.gebiet = GEBIETE.find((g) => g.name === geb.value) ?? GEBIETE[0]));
-    aGrid.append(el("label", {}, "Einsatzgebiet"), geb);
+    for (const g of FUNKGRUPPEN) {
+      const o = el("option", { value: g.id }, `TETRA ${g.id} – ${g.bezirke}${g.verfuegbar ? "" : " (kommt später)"}`);
+      o.disabled = !g.verfuegbar;
+      geb.appendChild(o);
+    }
+    geb.value = draft.funkgruppe ?? "NÖ-03";
+    geb.addEventListener("change", () => (draft.funkgruppe = geb.value));
+    aGrid.append(
+      el("label", { title: "Einsätze entstehen nur in diesen Bezirken, gefunkt wird auf dieser Gruppe. Fahrzeuge von außen kann man trotzdem alarmieren." }, "Funkgruppe (TETRA)"),
+      geb,
+    );
     const fa = num(draft.falscheAdresseProzent);
     fa.addEventListener("change", () => (draft.falscheAdresseProzent = Number(fa.value) || 0));
     aGrid.append(el("label", {}, "Anrufer mit falscher Adresse (%)"), fa);
@@ -272,15 +280,17 @@ export function createSettingsView(container: HTMLElement, teil: "simulation" | 
     wa.checked = draft.wetterAktiv;
     wa.addEventListener("change", () => (draft.wetterAktiv = wa.checked));
     nGrid.append(el("label", {}, "Wetter simulieren"), wa);
-    const wm = el("select");
-    for (const [v, l] of [
-      ["realistisch", "realistisch – ändert sich langsam, passend zur Jahreszeit"],
-      ["wechselhaft", "wechselhaft – öfter Wechsel, mehr Extreme"],
-      ["fest", "immer gleich – gewähltes Wetter"],
-    ])
-      wm.appendChild(el("option", { value: v }, l));
-    wm.value = draft.wetterModus ?? "realistisch";
-    nGrid.append(el("label", {}, "Wetter"), wm);
+    // Wetter: Regler von „fix“ bis „sehr wechselhaft“
+    const alt = draft.wetterModus === "fest" ? 0 : draft.wetterModus === "wechselhaft" ? 80 : 50;
+    const wechselWert = draft.wetterWechsel ?? alt;
+    const reglerBox = el("div", { class: "wetter-regler" });
+    const wr = el("input", { type: "range", min: "0", max: "100", step: "1" });
+    wr.value = String(wechselWert);
+    const wrText = el("span", { class: "wetter-regler-text" });
+    const skala = el("div", { class: "wetter-skala muted small" });
+    skala.innerHTML = "<span>fix</span><span>beständig</span><span>normal</span><span>wechselhaft</span><span>sehr wechselhaft</span>";
+    reglerBox.append(wr, wrText, skala);
+    nGrid.append(el("label", { title: "Wie oft und wie heftig sich das Wetter ändert. Ganz links bleibt es immer gleich." }, "Wetter"), reglerBox);
     const festWrap = el("div", { class: "row-btns" });
     const fl = el("select");
     for (const [k, v] of Object.entries(WETTER_LABEL)) fl.appendChild(el("option", { value: k }, v));
@@ -293,12 +303,17 @@ export function createSettingsView(container: HTMLElement, teil: "simulation" | 
     festWrap.append(fl, ft, el("span", { class: "muted" }, "°C"));
     const festLbl = el("label", {}, "Festes Wetter");
     nGrid.append(festLbl, festWrap);
-    const festZeigen = () => (festLbl.hidden = festWrap.hidden = wm.value !== "fest");
-    wm.addEventListener("change", () => {
-      draft.wetterModus = wm.value as Settings["wetterModus"];
-      festZeigen();
+    const wrZeigen = () => {
+      const v = Number(wr.value);
+      wrText.textContent = `${modusVon(v)}${v > 0 ? ` – ändert sich etwa alle ${v >= 88 ? "1" : v >= 65 ? "1–2" : v >= 30 ? "2–4" : "4–8"} Stunden` : " – immer das gewählte Wetter"}`;
+      festLbl.hidden = festWrap.hidden = v > 0;
+    };
+    wr.addEventListener("input", () => {
+      draft.wetterWechsel = Number(wr.value);
+      draft.wetterModus = undefined;
+      wrZeigen();
     });
-    festZeigen();
+    wrZeigen();
     const jz = el("select");
     for (const [v, l] of [
       ["auto", "nach Spieldatum"],

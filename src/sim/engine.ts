@@ -11,7 +11,25 @@ import { abteilungFuer, allCodes, findCode, hasCodes, type Einsatzcode } from ".
 import { distanceM, erreichbar, flightRoute, geoStatus, randomAddresses, route, searchAddress, travelTimes, type LatLon, type Route } from "./geo";
 import { generiereBesetzung, hatNFS, rmTypVon, type Platz, type RmTyp } from "./crew";
 import { defaultStufeFuer, raenge, type Kategorie, type Settings, type StatusKey, type StufeDef } from "./settings";
-import { flugverbot, istNacht, type WetterLage, nextWetter, prognose, temperatur, wetterFortschreiben, wetterSetzen, type PrognoseStunde, type Wetter, type WetterOpt, WETTER_LABEL } from "./weather";
+import {
+  fahrFaktor,
+  flugverbot,
+  istNacht,
+  lageArt,
+  lageVon,
+  nextWetter,
+  prognose,
+  temperatur,
+  wetterFortschreiben,
+  wetterJetzt,
+  wetterSetzen,
+  WETTER_LABEL,
+  type PrognoseStunde,
+  type Wetter,
+  type WetterLage,
+  type WetterOpt,
+  type WetterWerte,
+} from "./weather";
 import { bestimmeCode, fallZiehen, kapitelVonCode, wahrheitFuer, type Antworten, type Schema } from "../abfrage/schema";
 import { anruferWaehlen, veraenderungText, type Anrufer } from "../abfrage/anrufer";
 import { abfrageBlock, abfrageSaetze } from "../abfrage/protokollText";
@@ -30,6 +48,7 @@ import {
 } from "./kt";
 import { codeInfo, codeVorschlag, istUeberstellung } from "./ktCodes";
 import { PARTNER, partnerNoetig, partnerSchonDa, type PartnerArt } from "./partner";
+import { funkgruppe, inFunkgruppe, mitteVon, type Funkgruppe } from "./funkgruppen";
 import { sekZufall } from "./sek";
 import { bedarf, istStillstand, lageErzeugen, lagemeldungText, patientText, type Lage } from "./lage";
 
@@ -161,8 +180,11 @@ const KAPITEL_GEWICHT: Record<string, number> = {
   "17": 3, "26": 3, "10": 2.5, "6": 2.5, "28": 2, "31": 2, "29": 2, "12": 1.5, "21": 1.5, "1": 1.5, "18": 1.5, "9": 1.2, ALP: 0.15, "42": 0.3, "34": 0.3,
 };
 /** Wetter macht manche Notrufe häufiger: Hitze → Hitzenotfälle, Badeunfälle; Kälte → Unterkühlung, Infekte; Glätte → Stürze, Unfälle */
-export function wetterFaktor(kap: string, temp: number, lage: WetterLage): number {
-  const glatt = lage === "schnee" || (temp < 1 && (lage === "regen" || lage === "nebel"));
+export function wetterFaktor(kap: string, temp: number, lage: WetterLage, wind = 0): number {
+  const art = lageArt(lage);
+  const glatt = lage === "eisregen" || (temp < 1 && (art === "schnee" || art === "regen" || art === "nebel"));
+  const sturm = wind >= 45 || lage === "unwetter";
+  const nass = art === "regen" || art === "gewitter";
   switch (kap) {
     case "20":
       return temp >= 30 ? 6 : temp >= 26 ? 3 : temp <= -5 ? 5 : temp <= 0 ? 3 : temp <= 5 ? 1.2 : 0.15;
@@ -175,18 +197,20 @@ export function wetterFaktor(kap: string, temp: number, lage: WetterLage): numbe
     case "8":
       return temp <= 0 ? 2.2 : temp <= 6 ? 1.5 : 0.8;
     case "6":
-      return temp <= 0 ? 1.5 : temp >= 30 ? 1.3 : 1;
+      return (temp <= 0 ? 1.5 : temp >= 30 ? 1.3 : 1) * (lage === "hochnebel" ? 1.3 : 1);
     case "36":
       return temp <= 5 ? 2.2 : temp >= 22 ? 0.4 : 1;
     case "26":
     case "31":
       return temp >= 30 ? 1.5 : temp >= 27 ? 1.2 : 1;
     case "17":
-      return glatt ? 1.8 : 1;
+      return (lage === "eisregen" ? 3 : glatt ? 1.8 : 1) * (sturm ? 1.3 : 1);
+    case "30":
+      return sturm ? 1.6 : glatt ? 1.3 : 1;
     case "29":
-      return glatt ? 2 : lage === "nebel" ? 1.5 : lage === "regen" || lage === "gewitter" ? 1.3 : 1;
+      return (lage === "eisregen" ? 2.6 : glatt ? 2 : lage === "nebel" ? 1.5 : lage === "starkregen" || lage === "unwetter" ? 1.5 : nass ? 1.3 : 1) * (sturm ? 1.3 : 1);
     case "15":
-      return lage === "gewitter" ? 6 : 1;
+      return art === "gewitter" ? 6 : 1;
     default:
       return 1;
   }
@@ -211,7 +235,7 @@ function passtZumWetter(kap: string, a: Antworten, codeName: string, temp: numbe
     if (kalt && temp > 12) return Math.random() < 0.05;
     if (!kalt && temp < 18) return Math.random() < 0.05;
   }
-  if (/Blitz/i.test(codeName) && lage !== "gewitter") return Math.random() < 0.1;
+  if (/Blitz/i.test(codeName) && lageArt(lage) !== "gewitter") return Math.random() < 0.1;
   return true;
 }
 
@@ -690,25 +714,58 @@ export class Simulation {
     this.emit();
   }
 
+  /** Gewählte Funkgruppe (= Einsatzgebiet) */
+  funkgruppe(): Funkgruppe {
+    return funkgruppe(this.settings.funkgruppe);
+  }
+
+  /** Zufällige Adresse innerhalb der Funkgruppe (Adressen kommen aus der Box, hier wird genau geprüft) */
+  private async adresseImGebiet(): Promise<Awaited<ReturnType<typeof randomAddresses>>[number] | null> {
+    const g = this.funkgruppe();
+    for (let i = 0; i < 6; i++) {
+      const hits = await randomAddresses(g.bbox, 8);
+      const drin = hits.find((h) => inFunkgruppe(g, h.lat, h.lon));
+      if (drin) return drin;
+    }
+    return null;
+  }
+
   /** Wetter-Einstellungen */
   wetterOpt(): WetterOpt {
     const s = this.settings;
-    return { modus: s.wetterModus ?? "realistisch", jahreszeit: s.jahreszeit ?? "auto", festLage: s.wetterFestLage ?? "klar", festTemp: s.wetterFestTemp ?? 18 };
+    const alt = s.wetterModus === "fest" ? 0 : s.wetterModus === "wechselhaft" ? 80 : 50;
+    return {
+      wechsel: Math.max(0, Math.min(100, s.wetterWechsel ?? alt)),
+      jahreszeit: s.jahreszeit ?? "auto",
+      festLage: lageVon(s.wetterFestLage ?? "klar"),
+      festTemp: s.wetterFestTemp ?? 18,
+    };
   }
 
   /** aktuelle Temperatur (°C) */
   temperatur(): number {
-    return temperatur(this.state.zeit, this.state.wetter.lage, this.wetterOpt());
+    const w = this.state.wetter;
+    return temperatur(this.state.zeit, lageVon(w.lage), this.wetterOpt(), { lage: w.vorher, seit: w.seit });
+  }
+
+  /** alle aktuellen Wetterwerte (Wind, Sicht …) */
+  wetterWerte(): WetterWerte {
+    return wetterJetzt(this.state.wetter, this.state.zeit, this.wetterOpt());
   }
 
   /** stündliche Wetterprognose */
-  wetterPrognose(stunden = 8): PrognoseStunde[] {
+  wetterPrognose(stunden = 12): PrognoseStunde[] {
     return prognose(this.state.wetter, this.state.zeit, this.wetterOpt(), stunden);
   }
 
+  /** Flugbetrieb wetterbedingt nicht möglich? */
+  flugverbotJetzt(): boolean {
+    return this.settings.wetterAktiv && flugverbot(this.state.wetter.lage, this.state.wetter.wind ?? 0);
+  }
+
   setWetter(lage: Wetter["lage"]): void {
-    this.state.wetter = wetterSetzen(lage, this.state.zeit, this.wetterOpt());
-    this.funk("Wetterdienst", null, `Wetter: ${WETTER_LABEL[lage]}`, flugverbot(lage) ? "warnung" : "info");
+    this.state.wetter = wetterSetzen(lageVon(lage), this.state.zeit, this.wetterOpt(), this.state.wetter);
+    this.funk("Wetterdienst", null, `Wetter: ${WETTER_LABEL[lageVon(lage)]}`, flugverbot(lageVon(lage)) ? "warnung" : "info");
     this.emit();
   }
 
@@ -741,9 +798,9 @@ export class Simulation {
     this.state.zeit += dt;
     const t = this.state.zeit;
 
-    if (this.settings.wetterAktiv && (t >= this.state.wetter.bis || !this.state.wetter.plan?.length || (this.wetterOpt().modus === "fest" && this.state.wetter.lage !== this.wetterOpt().festLage))) {
+    if (this.settings.wetterAktiv && (t >= this.state.wetter.bis || !this.state.wetter.plan?.length || (this.wetterOpt().wechsel <= 0 && this.state.wetter.lage !== this.wetterOpt().festLage))) {
       if (wetterFortschreiben(this.state.wetter, t, this.wetterOpt())) {
-        this.funk("Wetterdienst", null, `Wetter: ${WETTER_LABEL[this.state.wetter.lage]}`, flugverbot(this.state.wetter.lage) ? "warnung" : "info");
+        this.funk("Wetterdienst", null, `Wetter: ${WETTER_LABEL[this.state.wetter.lage]}`, flugverbot(this.state.wetter.lage, this.state.wetter.wind) ? "warnung" : "info");
       }
     }
     this.runGenerator(dt);
@@ -843,8 +900,9 @@ export class Simulation {
   /** Kann der Hubschrauber gerade fliegen? Gibt den Grund zurück, wenn nicht. */
   flugHindernis(fz: SimFahrzeug): string | null {
     if (!fliegt(fz)) return null;
-    if (this.settings.wetterAktiv && flugverbot(this.state.wetter.lage)) {
-      return `Flug wetterbedingt nicht möglich (${WETTER_LABEL[this.state.wetter.lage]})`;
+    if (this.flugverbotJetzt()) {
+      const w = this.state.wetter;
+      return `Flug wetterbedingt nicht möglich (${WETTER_LABEL[lageVon(w.lage)]}${(w.wind ?? 0) >= 50 ? ", Sturm" : ""})`;
     }
     if (istNacht(this.state.zeit, fz.heim.lat, fz.heim.lon) && !fz.nachtflug) {
       return "Kein Nachtflug möglich";
@@ -913,7 +971,8 @@ export class Simulation {
       fliegt(fz) ? Promise.resolve(flightRoute(von, ziel, this.settings.nahGeschwindigkeit)) : route(von, ziel);
     void p.then((r) => {
       this.routingBusy.delete(fz.id);
-      const f = sondersignal && !fliegt(fz) ? this.settings.sondersignalFaktor : 1;
+      const wf = !fliegt(fz) && this.settings.wetterAktiv ? fahrFaktor(this.state.wetter.lage, this.temperatur()) : 1;
+      const f = (sondersignal && !fliegt(fz) ? this.settings.sondersignalFaktor : 1) * wf;
       // Hubschrauber kreist 1–3 Mal über Einsatzorten (nicht über Krankenhäusern und Landeplätzen)
       const kreis = fliegt(fz) && phase === "anfahrt" && !this.istLandeplatz(ziel) ? platzrunden(r, ziel, 1 + Math.floor(Math.random() * 3)) : null;
       const rr = kreis ?? r;
@@ -1397,6 +1456,12 @@ export class Simulation {
       fz.phase = "ausruecken";
       fz.phaseEnde = this.state.zeit + sek * 1000;
       this.log(e, `${fz.funkrufname} alarmiert`);
+      // Fahrzeug von außerhalb der Funkgruppe: wechselt für den Einsatz auf unsere Gruppe
+      const fg = this.funkgruppe();
+      if (!inFunkgruppe(fg, fz.heim.lat, fz.heim.lon)) {
+        this.log(e, `${fz.funkrufname} wechselt auf TETRA ${fg.id}`);
+        this.funk(fz.funkrufname, e.id, `wechselt auf TETRA ${fg.id}`, "info");
+      }
     }
     if (e.fahrzeuge.length > 0) e.zustand = "laufend";
     this.emit();
@@ -1674,10 +1739,10 @@ export class Simulation {
     if (schema) {
       // Fall aus dem Abfrageschema ziehen: Antworten und Code passen garantiert zusammen
       const temp = this.temperatur();
-      const lage = this.state.wetter.lage;
+      const lage = lageVon(this.state.wetter.lage);
       const wetter = this.settings.wetterAktiv;
       for (let i = 0; i < 400 && !fall; i++) {
-        const f = fallZiehen(schema, kapitelZiehen(schema, wetter ? (kp) => wetterFaktor(kp, temp, lage) : undefined));
+        const f = fallZiehen(schema, kapitelZiehen(schema, wetter ? (kp) => wetterFaktor(kp, temp, lage, this.state.wetter.wind ?? 0) : undefined));
         const c = f ? findCode(f.ergebnis.code) : undefined;
         const name = `${c?.beschreibung ?? ""} ${c ? (schema.codes[c.code]?.name ?? "") : ""}`;
         if (
@@ -1694,14 +1759,14 @@ export class Simulation {
     }
     if (!code) {
       const temp = this.temperatur();
-      const lage = this.state.wetter.lage;
+      const lage = lageVon(this.state.wetter.lage);
       const codes = allCodes().filter(
         (c) => passt(c.stufe) && !/Aufwertung/i.test(c.beschreibung) && (!s.wetterAktiv || passtZumWetter("", {}, c.beschreibung, temp, lage)),
       );
       if (codes.length === 0) return null;
       code = pick(codes);
     }
-    const [adr] = await randomAddresses(s.gebiet.bbox, 1);
+    const adr = await this.adresseImGebiet();
     if (!adr) return null;
     let gemeldet = adr.label;
     // Manche Anrufer nennen eine falsche Adresse (andere Hausnummer derselben Straße)
@@ -2571,8 +2636,7 @@ export class Simulation {
 
   /** Neue zufällige Überstellung zwischen Krankenhäusern (dringend: immer Anruf) */
   async generiereSek(quelle?: "online" | "hotline"): Promise<KtAuftrag | null> {
-    const bb = this.settings.gebiet.bbox;
-    const mitte = { lat: (bb[1] + bb[3]) / 2, lon: (bb[0] + bb[2]) / 2 };
+    const mitte = mitteVon(this.funkgruppe());
     // nur Häuser, die mit den installierten Straßenpaketen erreichbar sind
     const khs = store.list("hospitals").filter((h) => this.khImNetz(h));
     const ds = sekZufall({ mitte, khs, jetzt: this.state.zeit });
@@ -2607,7 +2671,7 @@ export class Simulation {
   async generiereKt(quelle?: "online" | "hotline"): Promise<KtAuftrag | null> {
     let d: KtDaten | null = null;
     for (let i = 0; i < 4 && !d; i++) {
-      const [adr] = await randomAddresses(this.settings.gebiet.bbox, 1);
+      const adr = await this.adresseImGebiet();
       if (!adr) continue;
       const heim: KtOrt = { lat: adr.lat, lon: adr.lon, label: adr.label };
       d = zufallsDaten({ heim, khMit: (b) => this.khMit(b, heim) }, this.state.zeit);
@@ -2624,9 +2688,9 @@ export class Simulation {
     if (this.ktDauerLaeuft) return;
     this.ktDauerLaeuft = true;
     try {
-      const bb = this.settings.gebiet.bbox;
-      const imGebiet = (h: { lat: number; lon: number }) => h.lon >= bb[0] && h.lon <= bb[2] && h.lat >= bb[1] && h.lat <= bb[3];
-      const mitte = { lat: (bb[1] + bb[3]) / 2, lon: (bb[0] + bb[2]) / 2 };
+      const g = this.funkgruppe();
+      const imGebiet = (h: { lat: number; lon: number }) => inFunkgruppe(g, h.lat, h.lon);
+      const mitte = mitteVon(g);
       const alle = store.list("hospitals").filter((h) => this.khImNetz(h));
       for (const [bereich, jeKh] of [
         ["DIA", this.settings.dauerDialyseJeKh ?? 6],
@@ -2639,7 +2703,7 @@ export class Simulation {
         if (!mit.length) mit = moeglich.filter((h) => distanceM(h, mitte) < 70_000).sort((x, y) => distanceM(x, mitte) - distanceM(y, mitte)).slice(0, 1);
         const n = Math.round(mit.length * jeKh);
         if (!n) continue;
-        const adressen = await randomAddresses(bb, n);
+        const adressen = (await randomAddresses(g.bbox, n * 3)).filter((a) => inFunkgruppe(g, a.lat, a.lon)).slice(0, n);
         for (const a of adressen) {
           const heim: KtOrt = { lat: a.lat, lon: a.lon, label: a.label };
           const kh = mit.slice().sort((x, y) => distanceM(x, heim) - distanceM(y, heim))[0];

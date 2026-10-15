@@ -54,7 +54,22 @@ export interface Persoenlich {
   einfuehrung: boolean;
   /** Knopf „Gespräch exportieren“ anzeigen */
   exportKnopf: boolean;
+  /** Töne je Ereignis: Quelle („vorlage:…“, „datei:…“, „aus“) und Lautstärke 0–100 */
+  sounds: Record<string, { quelle: string; laut: number }>;
+  /** Farbvorlage und eigene Farben (je Hell/Dunkel) */
+  farbVorlage: string;
+  farben: { hell: Record<string, string>; dunkel: Record<string, string> };
+  /** Regen, Schnee, Nebel und Blitze in der 3D-Ansicht */
+  wetter3d: boolean;
+  /** Funkgruppen-Grenzen auf der Karte */
+  funkLinien: boolean;
+  /** einzelne Funkgruppen aus-/einblenden (fehlt = an) */
+  funkGruppen: Record<string, boolean>;
+  /** eigene Farben der Funkgruppen (fehlt = Standard) */
+  funkFarben: Record<string, string>;
 }
+
+import { farbenAnwenden } from "./farben";
 
 const LS = "leitwerk.persoenlich";
 
@@ -71,12 +86,28 @@ export const STANDARD: Persoenlich = {
   statusFarben: {},
   einfuehrung: false,
   exportKnopf: true,
+  sounds: {},
+  farbVorlage: "noe",
+  farben: { hell: {}, dunkel: {} },
+  wetter3d: true,
+  funkLinien: true,
+  funkGruppen: {},
+  funkFarben: {},
 };
 
 function lesen(): Persoenlich {
   try {
     const p = JSON.parse(localStorage.getItem(LS) ?? "{}") as Partial<Persoenlich>;
-    return { ...STANDARD, ...p, kuerzel: { ...KUERZEL_STANDARD, ...(p.kuerzel ?? {}) }, statusFarben: { ...(p.statusFarben ?? {}) } };
+    return {
+      ...STANDARD,
+      ...p,
+      kuerzel: { ...KUERZEL_STANDARD, ...(p.kuerzel ?? {}) },
+      statusFarben: { ...(p.statusFarben ?? {}) },
+      funkGruppen: { ...(p.funkGruppen ?? {}) },
+      funkFarben: { ...(p.funkFarben ?? {}) },
+      sounds: { ...(p.sounds ?? {}) },
+      farben: { hell: { ...(p.farben?.hell ?? {}) }, dunkel: { ...(p.farben?.dunkel ?? {}) } },
+    };
   } catch {
     return { ...STANDARD, kuerzel: { ...KUERZEL_STANDARD } };
   }
@@ -156,6 +187,7 @@ export function anwenden(): void {
   r.style.colorScheme = dunkel ? "dark" : "light";
   zoomSetzen(aktuell.skalierung / 100);
   r.classList.toggle("ohne-animation", !aktuell.animationen);
+  farbenAnwenden(aktuell.farbVorlage ?? "noe", aktuell.farben ?? { hell: {}, dunkel: {} }, dunkel);
   const key = `${dunkel}|${aktuell.karte}`;
   if (key !== letztesThema) {
     letztesThema = key;

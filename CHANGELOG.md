@@ -1,5 +1,16 @@
 # Änderungen
 
+## 0.15.0 – TETRA-Funkgruppen, neues Wetter, eigene Farben und Töne
+- TETRA-Funkgruppen statt Einsatzgebiet: gespielt wird NÖ-03 (Krems Stadt und Land, Hollabrunn, Tulln inkl. Klosterneuburg). Einsätze und Krankentransporte entstehen nur dort, gefunkt wird auf NÖ-03; Fahrzeuge von außerhalb melden „wechselt auf TETRA NÖ-03“. Die anderen Gruppen (NÖ-01 bis NÖ-06) folgen später
+- Grenzen der Funkgruppen als leichte Linien auf der Karte; Farben unter Einstellungen → Persönlich änderbar, Linien in der Karte abschaltbar (Gemeindegrenzen: Statistik Austria, CC BY 4.0)
+- Neues Wetter-Fenster (Klick auf das Wetter oben): Aktuell mit Temperatur, gefühlter Temperatur, Wind und Böen, Sicht und Regen, die nächsten 12 Stunden, 5-Tage-Vorschau und Warnungen (gelb/orange/rot); Reiter Prognose (24 Stunden) und Warnungen
+- Wetter-Regler von „fix“ (Wetter und Temperatur selbst wählen) bis „sehr wechselhaft“ (ändert sich etwa stündlich); Übergänge sind realistisch – nach Sonne kommt nicht sofort Gewitter
+- 20 feinere Wetterlagen, von klar über Dunst, Nebel und Hochnebel, Niesel, Regen und Starkregen bis Schneeregen, Schneefall, starker Schneefall, gefrierender Regen, Gewitter, Gewitter mit Hagel und Unwetter – dazu Wind mit Böen; alles passend zu Jahreszeit, Tageszeit und Temperatur (unter 0 °C wird es glatt)
+- Wetter wirkt mehr: Schnee, Glätte und Starkregen verlängern die Fahrzeit, Sturm bringt mehr Verletzungen und Unfälle; Hubschrauber fliegen bei Gewitter, Nebel, Hochnebel, starkem Schneefall und Böen ab 90 km/h nicht – Glatteis stört sie nicht
+- Wetter in der 3D-Ansicht: ganz leichter Regen, Schnee, Hagel, Dunst und Nebel, bei Gewitter kurze Blitze; unter Persönlich abschaltbar
+- Eigene Farben: Vorlagen (NÖ Blau-Gelb, Rotes Kreuz, Neutral Grau, Nachtschicht, Hoher Kontrast) und eigene Farben für Akzent, Menüleiste, Hintergrund, Fenster und Warnfarbe – getrennt für hell und dunkel; als Design-Datei speichern und laden
+- Eigene Töne: für Notruf, KT-Hotline, Funkruf, dringenden Funkruf, Chat und Warnungen je ein Ton mit eigener Lautstärke und ▶ zum Probehören; eigene MP3/WAV-Dateien hochladen (Klingelton bis 10 s und 1 MB, kurze Töne bis 2 s und 300 KB)
+
 ## 0.14.0 – Partner-Organisationen, mehr Funk, Abfrage mit Tastatur
 - Partner-Organisationen (einfache Version): in der Einsatzmaske 🚒 Feuerwehr, 🚓 Polizei, ⛰ Bergrettung, 🌊 Wasserrettung – angefordert heißt sofort vor Ort. Ist eine Organisation nötig (z. B. Verkehrsunfall, Brand, Eingeklemmte, Gefahrgut → Feuerwehr; Gewalt, Schuss/Stich, Suizid/UBG, VU mit Verletzten, Todesfall → Polizei; Alpinunfall → Bergrettung; Person im Wasser → Wasserrettung), ist der Knopf gelb markiert. Fehlt sie, meldet die Besatzung das per Funk und kann bis dahin nicht weiterarbeiten; bei Gewalt wartet sie zum Eigenschutz in sicherem Abstand
 - Lagemeldung kommt erst nach 2–5 Minuten vor Ort (Verkehrsunfall nach etwa 1 Minute), Reanimation sofort

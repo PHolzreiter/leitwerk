@@ -12,7 +12,8 @@ import { el, toast } from "../dom";
 import { openEditor, type EditorDeps } from "../editForm";
 import { registriere, type PanelKontext } from "../ws/arbeitsplatz";
 import { auswahl, karteWaehlen, onAuswahl, onFahrzeugZeigen, onKarteZeigen, setzeKartenWaehler, waehle } from "../ws/auswahl";
-import { karteDunkel, onThema } from "../ws/persoenlich";
+import { wetter3dAnbinden } from "../../wetter3d";
+import { karteDunkel, onPers, onThema, pers, setzePers } from "../ws/persoenlich";
 
 /** Editor-Abhängigkeiten (Ort auf der Karte wählen) – setzt das Hauptprogramm */
 let editorDeps: EditorDeps = { pickOnMap: (h) => karteWaehlen(h) };
@@ -52,6 +53,7 @@ function erstellen(ctx: PanelKontext) {
       <label class="chk"><input type="checkbox" data-group="stations" checked /><span class="dot" style="background:#c62828"></span>Dienststellen</label>
       <label class="chk"><input type="checkbox" data-group="hospitals" checked /><span class="dot hosp"></span>Krankenhäuser</label>
       <label class="chk"><input type="checkbox" data-group="pois" checked /><span class="dot" style="background:#2a9d8f"></span>POIs</label>
+      <label class="chk" title="Grenzen der TETRA-Funkgruppen (Farben unter Einstellungen → Persönlich)"><input type="checkbox" class="chk-funk" />Funkgruppen</label>
       <label class="chk" title="Nur in der 3D-Ansicht und nah herangezoomt"><input type="checkbox" class="chk-modelle" checked />3D-Fahrzeugmodelle</label>
       <label class="chk" title="Die Karte springt zum ausgewählten Einsatz"><input type="checkbox" class="chk-folgt" />folgt der Auswahl</label>
       <div class="legende"></div>
@@ -82,6 +84,7 @@ function erstellen(ctx: PanelKontext) {
   let fz3d: Fahrzeug3D | null = null;
   let fokus: FzFokus | null = null;
   let is3d = false;
+  let wetter3dNeu: () => void = () => {};
   let isSat = false;
   const aus: (() => void)[] = [];
   let entfernt = false;
@@ -147,13 +150,25 @@ function erstellen(ctx: PanelKontext) {
         }
       });
       fz3d = addFahrzeug3D(map);
+      let erzwungen = false;
+      const w3d = wetter3dAnbinden(mapEl, () => is3d || erzwungen);
+      aus.push(() => w3d.dispose());
+      wetter3dNeu = () => w3d.aktualisieren();
+      if (location.search.includes("debug")) {
+        const w = window as unknown as { __lw?: Record<string, unknown> };
+        if (w.__lw)
+          w.__lw.wetter3dTest = (an: boolean) => {
+            erzwungen = an;
+            w3d.aktualisieren();
+          };
+      }
       fz3d.setMode3d(is3d);
       chkModelle.checked = fz3d.aktiv();
       const a = auswahl();
       setSelectedIncident(map, a.art === "einsatz" ? a.id : null);
       if (ersteKarte) {
         ersteKarte = false;
-        const b = sim.settings.gebiet.bbox;
+        const b = sim.funkgruppe().bbox;
         map.fitBounds(
           [
             [b[0], b[1]],
@@ -162,12 +177,16 @@ function erstellen(ctx: PanelKontext) {
           { padding: 40, duration: 0 },
         );
       } else {
-        const b = sim.settings.gebiet.bbox;
+        const b = sim.funkgruppe().bbox;
         map.jumpTo({ center: [(b[0] + b[2]) / 2, (b[1] + b[3]) / 2], zoom: 9 });
       }
     });
 
     // Ebenen
+    const chkFunk = panel.querySelector<HTMLInputElement>(".chk-funk")!;
+    chkFunk.checked = pers().funkLinien !== false;
+    chkFunk.addEventListener("change", () => setzePers({ funkLinien: chkFunk.checked }));
+    onPers((p) => (chkFunk.checked = p.funkLinien !== false));
     panel.querySelectorAll<HTMLInputElement>("input[data-group]").forEach((cb) =>
       cb.addEventListener("change", () => setGroupVisible(map, cb.dataset.group as "stations" | "hospitals" | "pois", cb.checked)),
     );
@@ -201,6 +220,7 @@ function erstellen(ctx: PanelKontext) {
         if (is3d) isSat = false;
         hh.setMode3d(is3d);
         fz3d?.setMode3d(is3d);
+        wetter3dNeu();
         renderModeButtons();
       }),
     );
@@ -212,6 +232,7 @@ function erstellen(ctx: PanelKontext) {
         if (isSat) is3d = false;
         hh.setSatellite(isSat);
         fz3d?.setMode3d(is3d);
+        wetter3dNeu();
         renderModeButtons();
       }),
     );

@@ -3,6 +3,7 @@ import { kiPrefs, setKiPrefs } from "../../abfrage/ki";
 import { pickTextFile, saveTextFile } from "../../platform";
 import { sim } from "../../sim/engine";
 import type { StatusKey } from "../../sim/settings";
+import { FUNK_FARBEN, FUNK_QUELLE, FUNKGRUPPEN } from "../../sim/funkgruppen";
 import { confirmDialog } from "../dialog";
 import { el, esc, toast } from "../dom";
 import {
@@ -16,7 +17,22 @@ import {
 } from "./arbeitsplatz";
 import { IST_HAUPT } from "./bus";
 import { tasteAufnehmen, tasteText } from "./kuerzel";
-import { KUERZEL_LABEL, KUERZEL_STANDARD, onPers, pers, setzePers, type KuerzelId, type Thema } from "./persoenlich";
+import { istDunkel, KUERZEL_LABEL, KUERZEL_STANDARD, onPers, pers, setzePers, type KuerzelId, type Thema } from "./persoenlich";
+import { FELD_LABEL, VORLAGEN as FARB_VORLAGEN } from "./farben";
+import {
+  DATEI_REGELN,
+  dateiHinzufuegen,
+  dateiLoeschen,
+  dateiUmbenennen,
+  eigeneDateien,
+  EREIGNIS_LABEL,
+  IST_KLINGELTON,
+  spielen,
+  STANDARD_SOUND,
+  VORLAGEN as TON_VORLAGEN,
+  type EigeneDatei,
+  type SoundEreignis,
+} from "../sounds";
 
 const STATUS: StatusKey[] = ["freiWache", "freiFunk", "alarmiert", "zumBO", "amBO", "zumZO", "amZO", "dienstfahrt", "bereitschaft", "abgemeldet"];
 
@@ -99,6 +115,75 @@ export function persoenlichView(container: HTMLElement): { refresh(): void } {
     groesse.append(slider, wert, std);
     zeile(a, "Größe der Oberfläche", groesse, "Schrift, Knöpfe und Abstände – praktisch für große oder kleine Bildschirme.");
     zeile(a, "Bewegungen", schalter(p.animationen, (v) => setzePers({ animationen: v })), "Weiche Übergänge beim Öffnen und Wechseln.");
+    zeile(
+      a,
+      "Wetter in der 3D-Ansicht",
+      schalter(p.wetter3d !== false, (v) => setzePers({ wetter3d: v })),
+      "Leichter Regen, Schnee, Hagel, Dunst und Blitze. Ohne „Bewegungen“ steht der Regen still und es gibt keine Blitze.",
+    );
+
+    // ---- Farben
+    const fa = section("Farben", "Vorlage auswählen und bei Bedarf einzelne Farben ändern. Die Schrift passt sich automatisch an, damit sie lesbar bleibt.");
+    const vorl = el("div", { class: "farb-vorlagen" });
+    for (const [id, v] of Object.entries(FARB_VORLAGEN)) {
+      const satz = istDunkel() ? v.dunkel : v.hell;
+      const b = el("button", { type: "button", class: `farb-vorlage${(p.farbVorlage ?? "noe") === id ? " active" : ""}` });
+      const leiste = satz.leiste ?? (istDunkel() ? "#191c21" : "#ffffff");
+      const akzent = satz.akzent ?? (istDunkel() ? "#4d93e6" : "#0b55a8");
+      const hervor = satz.hervor ?? (istDunkel() ? "#ffcc00" : akzent);
+      const grund = satz.hintergrund ?? (istDunkel() ? "#0f1114" : "#e9edf2");
+      b.innerHTML = `<span class="fv-muster" style="background:${grund}"><i style="background:${leiste}"></i><b style="background:${akzent}"></b><b style="background:${hervor}"></b></span><span>${esc(v.name)}</span>`;
+      b.addEventListener("click", () => setzePers({ farbVorlage: id, farben: { hell: {}, dunkel: {} } }));
+      vorl.appendChild(b);
+    }
+    fa.appendChild(vorl);
+    const modus = istDunkel() ? "dunkel" : "hell";
+    fa.appendChild(el("div", { class: "muted small" }, `Eigene Farben für das ${modus === "dunkel" ? "dunkle" : "helle"} Farbschema (für das andere Schema oben umschalten):`));
+    const fGrid2 = el("div", { class: "status-farben" });
+    const basisSatz = (FARB_VORLAGEN[p.farbVorlage ?? "noe"] ?? FARB_VORLAGEN.noe)[modus];
+    const cssWert = (v: string) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+    const STANDARD_CSS: Record<string, string> = { akzent: "--blue", leiste: "--panel", hintergrund: "--bg", fenster: "--panel", warn: "--accent" };
+    for (const [feld, label] of Object.entries(FELD_LABEL)) {
+      const c = el("input", { type: "color" });
+      const eigen = p.farben[modus][feld];
+      const wert = eigen ?? basisSatz[feld as keyof typeof basisSatz] ?? cssWert(STANDARD_CSS[feld]);
+      c.value = /^#[0-9a-f]{6}$/i.test(wert) ? wert : "#888888";
+      c.addEventListener("change", () => setzePers({ farben: { ...pers().farben, [modus]: { ...pers().farben[modus], [feld]: c.value } } }));
+      const r = el("label", { class: "status-farbe" });
+      r.append(c, el("span", {}, label));
+      if (eigen) r.appendChild(el("span", { class: "muted small" }, "(eigene)"));
+      fGrid2.appendChild(r);
+    }
+    fa.appendChild(fGrid2);
+    const fKnoepfe = el("div", { class: "row-btns" });
+    const fZurueck = el("button", { class: "btn small" }, "Eigene Farben zurücksetzen");
+    fZurueck.addEventListener("click", () => setzePers({ farben: { hell: {}, dunkel: {} } }));
+    const fExport = el("button", { class: "btn small" }, "Design als Datei speichern …");
+    fExport.addEventListener("click", () => {
+      const x = pers();
+      const design = { leitwerkDesign: 1, farbVorlage: x.farbVorlage, farben: x.farben, statusFarben: x.statusFarben, funkFarben: x.funkFarben };
+      void saveTextFile("leitwerk-design.json", JSON.stringify(design, null, 1), { name: "Design", extensions: ["json"] });
+    });
+    const fImport = el("button", { class: "btn small" }, "Design laden …");
+    fImport.addEventListener("click", async () => {
+      const f = await pickTextFile(".json");
+      if (!f) return;
+      try {
+        const d = JSON.parse(f.text);
+        if (!d || d.leitwerkDesign !== 1) throw new Error("Das ist keine LeitWerk-Design-Datei");
+        setzePers({
+          farbVorlage: typeof d.farbVorlage === "string" ? d.farbVorlage : "noe",
+          farben: { hell: { ...(d.farben?.hell ?? {}) }, dunkel: { ...(d.farben?.dunkel ?? {}) } },
+          statusFarben: { ...(d.statusFarben ?? {}) },
+          funkFarben: { ...(d.funkFarben ?? {}) },
+        });
+        toast("Design übernommen");
+      } catch (e) {
+        toast(String((e as Error).message ?? e), "error");
+      }
+    });
+    fKnoepfe.append(fZurueck, fExport, fImport);
+    fa.appendChild(fKnoepfe);
 
     // ---- Anrufe und Töne
     const t = section("Anrufe und Töne", "Wer keine Notrufe annimmt, bekommt kein Klingeln und kein automatisch geöffnetes Telefon (z. B. als reiner Funk- oder KT-Disponent).");
@@ -114,12 +199,117 @@ export function persoenlichView(container: HTMLElement): { refresh(): void } {
     laut.append(lautS, lautW);
     zeile(t, "Lautstärke", laut);
     zeile(t, "Funk-Piep, wenn ein Fahrzeug ruft", schalter(p.funkTon, (v) => setzePers({ funkTon: v })));
+    // Töne je Ereignis
+    const toene = el("div", { class: "toene" });
+    const dateienListe: EigeneDatei[] = [];
+    const toeneBauen = () => {
+      toene.innerHTML = "";
+      for (const [ev, label] of Object.entries(EREIGNIS_LABEL) as [SoundEreignis, string][]) {
+        const r = el("div", { class: "ton-zeile" });
+        const sel = el("select");
+        const aktuell = p.sounds[ev]?.quelle ?? STANDARD_SOUND[ev];
+        const gv = el("optgroup", { label: "Mitgeliefert" });
+        for (const [id, v] of Object.entries(TON_VORLAGEN)) gv.appendChild(el("option", { value: `vorlage:${id}` }, v.name));
+        sel.appendChild(gv);
+        const passend = dateienListe.filter((d) => (IST_KLINGELTON[ev] ? d.sek <= DATEI_REGELN.klingel.maxSek : d.sek <= DATEI_REGELN.kurz.maxSek));
+        if (passend.length) {
+          const gd = el("optgroup", { label: "Eigene Dateien" });
+          for (const d of passend) gd.appendChild(el("option", { value: `datei:${d.id}` }, d.name));
+          sel.appendChild(gd);
+        }
+        sel.appendChild(el("option", { value: "aus" }, "– aus –"));
+        sel.value = aktuell;
+        if (sel.value !== aktuell) sel.value = STANDARD_SOUND[ev];
+        const laut = el("input", { type: "range", min: "0", max: "100", step: "5" });
+        laut.value = String(p.sounds[ev]?.laut ?? 70);
+        const speichern = () => setzePers({ sounds: { ...pers().sounds, [ev]: { quelle: sel.value, laut: Number(laut.value) } } });
+        sel.addEventListener("change", () => {
+          spielen(ev, sel.value, Number(laut.value));
+          speichern();
+        });
+        laut.addEventListener("change", speichern);
+        const probe = el("button", { class: "btn small", type: "button", title: "Probehören" }, "▶");
+        probe.addEventListener("click", () => spielen(ev, sel.value, Number(laut.value)));
+        r.append(el("span", { class: "ton-label" }, label), sel, laut, probe);
+        toene.appendChild(r);
+      }
+    };
+    zeile(t, "Töne", toene, "Für jedes Ereignis eigener Ton und eigene Lautstärke. Eigene Dateien lädst du weiter unten hoch.");
+    toeneBauen();
+    void eigeneDateien().then((ds) => {
+      dateienListe.push(...ds);
+      if (ds.length) toeneBauen();
+    });
     zeile(
       t,
       "Knopf „Gespräch exportieren“",
       schalter(p.exportKnopf, (v) => setzePers({ exportKnopf: v })),
       "Speichert Gespräch, Abfrage, Anweisung an die KI und Protokoll als Datei – bei Notfällen, Krankentransporten und Überstellungen.",
     );
+
+    // ---- Eigene Tondateien
+    const td = section("Eigene Tondateien", "Hier lädst du eigene Töne hoch; oben bei „Töne“ kannst du sie dann je Ereignis auswählen. Gespeichert wird nur auf diesem Rechner.");
+    const regeln = el("table", { class: "set-table ton-regeln" });
+    regeln.innerHTML = `<tr><th></th><th>Klingeltöne (Notruf, KT)</th><th>kurze Töne (Funk, Chat, Warnung)</th></tr>
+      <tr><td>Format</td><td>MP3 oder WAV</td><td>MP3 oder WAV</td></tr>
+      <tr><td>Länge</td><td>höchstens ${DATEI_REGELN.klingel.maxSek} Sekunden (wird wiederholt, solange es klingelt)</td><td>höchstens ${DATEI_REGELN.kurz.maxSek} Sekunden</td></tr>
+      <tr><td>Größe</td><td>höchstens ${DATEI_REGELN.klingel.maxBytes / 1_000_000} MB</td><td>höchstens ${DATEI_REGELN.kurz.maxBytes / 1000} KB</td></tr>`;
+    td.appendChild(regeln);
+    const hoch = el("div", { class: "row-btns" });
+    const datei = el("input", { type: "file", accept: ".mp3,.wav,audio/mpeg,audio/wav", hidden: "" });
+    const hochKlingel = el("button", { class: "btn small" }, "Klingelton hochladen …");
+    const hochKurz = el("button", { class: "btn small" }, "Kurzen Ton hochladen …");
+    let fuer: "klingel" | "kurz" = "klingel";
+    hochKlingel.addEventListener("click", () => {
+      fuer = "klingel";
+      datei.click();
+    });
+    hochKurz.addEventListener("click", () => {
+      fuer = "kurz";
+      datei.click();
+    });
+    datei.addEventListener("change", async () => {
+      const f = datei.files?.[0];
+      datei.value = "";
+      if (!f) return;
+      try {
+        const d = await dateiHinzufuegen(f, fuer);
+        toast(`„${d.name}“ gespeichert (${d.sek.toFixed(1)} s)`);
+        render();
+      } catch (e) {
+        toast(String((e as Error).message ?? e), "error");
+      }
+    });
+    hoch.append(hochKlingel, hochKurz, datei);
+    td.appendChild(hoch);
+    const dListe = el("div", { class: "ton-dateien" });
+    td.appendChild(dListe);
+    void eigeneDateien().then((ds) => {
+      if (!ds.length) {
+        dListe.appendChild(el("div", { class: "muted small" }, "Noch keine eigenen Dateien."));
+        return;
+      }
+      const summe = ds.reduce((a, d) => a + d.bytes, 0);
+      for (const d of ds) {
+        const r = el("div", { class: "ton-datei" });
+        const name = el("input", { type: "text" });
+        name.value = d.name;
+        name.addEventListener("change", () => void dateiUmbenennen(d.id, name.value.trim() || d.name).then(() => render()));
+        const play = el("button", { class: "btn small", type: "button" }, "▶");
+        play.addEventListener("click", () => spielen("chat", `datei:${d.id}`, 70));
+        const weg = el("button", { class: "btn small danger-text", type: "button" }, "Löschen");
+        weg.addEventListener("click", async () => {
+          if (!(await confirmDialog("Ton löschen", `„${d.name}“ löschen? Ereignisse, die ihn nutzen, bekommen wieder den Standardton.`, "Löschen", true))) return;
+          await dateiLoeschen(d.id);
+          const so = { ...pers().sounds };
+          for (const [k, v] of Object.entries(so)) if (v.quelle === `datei:${d.id}`) delete so[k];
+          setzePers({ sounds: so });
+        });
+        r.append(name, el("span", { class: "muted small" }, `${d.sek.toFixed(1)} s · ${Math.round(d.bytes / 1000)} KB`), play, weg);
+        dListe.appendChild(r);
+      }
+      dListe.appendChild(el("div", { class: "muted small" }, `Belegt: ${(summe / 1_000_000).toFixed(2)} MB`));
+    });
 
     // ---- Kurzbefehle
     const k = section("Tastenkürzel", "Auf ein Kürzel klicken und dann die gewünschte Taste drücken.");
@@ -159,6 +349,25 @@ export function persoenlichView(container: HTMLElement): { refresh(): void } {
     const sReset = el("button", { class: "btn small" }, "Farben der Leitstelle verwenden");
     sReset.addEventListener("click", () => setzePers({ statusFarben: {} }));
     s.append(sGrid, sReset);
+
+    // ---- Funkgruppen auf der Karte
+    const f = section("Funkgruppen auf der Karte", `Feine Linien an den Grenzen der TETRA-Funkgruppen. ${FUNK_QUELLE}`);
+    zeile(f, "Grenzen anzeigen", schalter(p.funkLinien !== false, (v) => setzePers({ funkLinien: v })));
+    const fGrid = el("div", { class: "status-farben" });
+    for (const g of FUNKGRUPPEN) {
+      const r = el("label", { class: "status-farbe", title: g.bezirke });
+      const an = el("input", { type: "checkbox" });
+      an.checked = p.funkGruppen[g.id] !== false;
+      an.addEventListener("change", () => setzePers({ funkGruppen: { ...pers().funkGruppen, [g.id]: an.checked } }));
+      const c = el("input", { type: "color" });
+      c.value = p.funkFarben[g.id] ?? FUNK_FARBEN[g.id];
+      c.addEventListener("change", () => setzePers({ funkFarben: { ...pers().funkFarben, [g.id]: c.value } }));
+      r.append(an, c, el("span", {}, `${g.id}${g.id === sim.funkgruppe().id ? " (deine)" : ""}`));
+      fGrid.appendChild(r);
+    }
+    const fReset = el("button", { class: "btn small" }, "Standardfarben");
+    fReset.addEventListener("click", () => setzePers({ funkFarben: {}, funkGruppen: {} }));
+    f.append(fGrid, fReset);
 
     // ---- Anordnungen
     const o = section("Arbeitsplatz", "Die Anordnung der Fenster wird automatisch gemerkt. Eigene Anordnungen kannst du oben unter „Anordnung“ speichern.");

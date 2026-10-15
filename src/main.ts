@@ -30,6 +30,7 @@ import { kuerzelAktion, kuerzelStarten } from "./ui/ws/kuerzel";
 import { hauptfensterStarten, nebenfensterVerbinden, nebenfensterWiederherstellen, startPanels } from "./ui/ws/nebenfenster";
 import { anwenden, pers, setzePers } from "./ui/ws/persoenlich";
 import { steuerleisteBauen } from "./ui/ws/steuerleiste";
+import { soundBeobachterStarten } from "./ui/sounds";
 
 // Für automatische Tests im Browser (…/?debug): Zugriff auf Simulation und Daten
 if (location.search.includes("debug")) Object.assign(window, { __lw: { sim, store } });
@@ -178,6 +179,7 @@ async function init(): Promise<void> {
   kuerzelStarten();
   if (IST_HAUPT) {
     anrufBeobachterStarten();
+    soundBeobachterStarten(sim, () => sim.ich?.name ?? mp.ich.name);
     void nebenfensterWiederherstellen();
     einfuehrung();
   }
