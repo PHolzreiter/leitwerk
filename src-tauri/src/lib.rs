@@ -3,6 +3,8 @@ mod ki;
 mod packs;
 mod routing;
 mod sprache;
+mod stimme;
+mod ton;
 mod updater;
 
 use std::collections::HashMap;
@@ -568,6 +570,13 @@ pub fn run() {
             sprache::sprache_aufnahme_start,
             sprache::sprache_pegel,
             sprache::sprache_aufnahme_stopp,
+            ton::ton_geraete,
+            ton::ton_spielen,
+            ton::ton_stopp,
+            stimme::stimmen_status,
+            stimme::stimme_laden,
+            stimme::stimme_loeschen,
+            stimme::stimme_erzeugen,
             app_version
         ])
         .build(tauri::generate_context!())

@@ -176,7 +176,7 @@ pub async fn sprache_erkennen(app: tauri::AppHandle, request: Request<'_>) -> Re
 }
 
 /// einfache %XX-Dekodierung (Kopfzeilen dürfen keine Umlaute enthalten)
-fn url_dekodieren(s: &str) -> String {
+pub fn url_dekodieren(s: &str) -> String {
     let b = s.as_bytes();
     let mut out = Vec::with_capacity(b.len());
     let mut i = 0;
