@@ -118,6 +118,8 @@ jobs:
         run: |
           set +e
           if [ -z "$TAURI_SIGNING_PRIVATE_KEY" ]; then echo "::error::Secret TAURI_SIGNING_PRIVATE_KEY fehlt in diesem Repo"; fi
+          # Spracherkennung (whisper.cpp): unter Windows nicht auf die CPU des Build-Servers optimieren
+          if [ "$RUNNER_OS" = "Windows" ]; then export CMAKE_PROJECT_INCLUDE_BEFORE="$(cygpath -m "$PWD/src-tauri/ggml-portabel.cmake")"; fi
           npx tauri build --bundles ${{ matrix.bundles }} 2>&1 | tee build.log
           status=${PIPESTATUS[0]}
           if [ $status -ne 0 ]; then
