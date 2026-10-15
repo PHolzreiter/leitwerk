@@ -1,6 +1,6 @@
 [package]
 name = "leitwerk"
-version = "0.15.1"
+version = "0.16.0"
 description = "LeitWerk – privater Leitstellensimulator"
 edition = "2021"
 

@@ -1,5 +1,13 @@
 # Änderungen
 
+## 0.16.0 – Sprache: Vorlesen und Spracheingabe
+- Anrufer werden vorgelesen (Notruf und KT-Hotline, nur beim Gesprächsführer): Frauen- oder Männerstimme passend zum Anrufer, aufgeregte Anrufer sprechen schneller. Regieanweisungen in Klammern werden nicht mitgelesen
+- Funk wird vorgelesen: was die Fahrzeuge in deinen Funkgesprächen sagen
+- Spracheingabe: 🎙 neben den Eingabefeldern (Notruf, KT-Hotline, Funkspruch, Fahrzeug rufen) gedrückt halten – oder die Sprechtaste (Mac: rechte ⌥, Windows: F2, änderbar). Loslassen → der Text steht im Feld und wird gleich abgeschickt (abschaltbar)
+- Die Erkennung (Whisper) läuft nur auf dem eigenen Rechner, ohne Internet; das Sprachmodell wird einmal unter Einstellungen → Persönlich → Sprache heruntergeladen (150–575 MB)
+- Einstellungen → Persönlich → Sprache: Vorlesen an/aus, Lautstärke, Tempo, Stimmen mit Probehören, Sprechtaste, Mikrofon, Ausprobieren
+- Die Abfrage selbst ändert sich nicht – gesprochen wird nur, was sonst geschrieben steht
+
 ## 0.15.1 – Alarm-Status
 - Neue Status beim Alarmieren: „A – Alarmiert auf Wache“ (Fahrzeug war auf der Wache) und „F – Alarmiert über Funk“ (Fahrzeug war unterwegs). Beide setzt nur die Leitstelle – das Fahrzeug funkt sie nicht und man kann sie nicht von Hand wählen
 - Rettungsdienst (RTW, NEF, NAH …) geht danach direkt auf Status 2; Krankentransporte, die auf der Wache alarmiert werden, quittieren nach etwa 20 Sekunden mit Status 9 („Alarmiert und quittiert“) und rücken dann aus
