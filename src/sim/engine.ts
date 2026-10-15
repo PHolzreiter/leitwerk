@@ -119,6 +119,8 @@ export interface SimFahrzeug {
   transportGemeldet?: boolean;
   /** technischer Defekt: nicht einsatzbereit bis */
   defektBis?: number | null;
+  /** KT auf der Wache alarmiert: quittiert um (Status „Alarmiert und quittiert“) */
+  quittUm?: number | null;
   /** Blaulicht an (Fahrt mit Sondersignal; bleibt am Einsatzort an, wenn mit Blaulicht angefahren) */
   blaulicht?: boolean;
   /** Krankentransport-Plan (vorgemerkte bzw. laufende Fahrten) */
@@ -915,7 +917,9 @@ export class Simulation {
     fz.status = s;
     const def = this.statusDef(s);
     const e = fz.einsatzId ? this.einsatz(fz.einsatzId) : undefined;
-    if (e) this.log(e, `${fz.funkrufname}: Status ${def.nummer} – ${def.name}`);
+    if (e) this.log(e, /^\d+$/.test(def.nummer) ? `${fz.funkrufname}: Status ${def.nummer} – ${def.name}` : `${fz.funkrufname}: ${def.name}`);
+    // „Alarmiert auf Wache/über Funk“ setzt die Leitstelle, nicht das Fahrzeug
+    if (s === "alarmWache" || s === "alarmFunk") return;
     if (!quiet) this.funk(fz.funkrufname, fz.einsatzId, `Status ${def.nummer} – ${def.name}`, "status");
   }
 
@@ -996,6 +1000,10 @@ export class Simulation {
     if (fz.phase === "routing") return;
     this.position(fz, t);
     if (fz.kt?.aktiv && !fz.einsatzId) {
+      if (fz.quittUm && t >= fz.quittUm) {
+        fz.quittUm = null;
+        if (fz.status === "alarmWache") this.setStatus(fz, "alarmiert");
+      }
       if (fz.phaseEnde !== null && t >= fz.phaseEnde) this.ktUpdate(fz, t);
       return;
     }
@@ -1451,7 +1459,9 @@ export class Simulation {
       fz.einsatzId = e.id;
       if (!e.fahrzeuge.includes(fz.id)) e.fahrzeuge.push(fz.id);
       const sek = this.ausrueckSek(fz, false);
-      this.setStatus(fz, "alarmiert");
+      const aufWache = fz.status === "freiWache" || fz.status === "bereitschaft";
+      fz.quittUm = null;
+      this.setStatus(fz, aufWache ? "alarmWache" : "alarmFunk");
       fz.fahrt = null;
       fz.phase = "ausruecken";
       fz.phaseEnde = this.state.zeit + sek * 1000;
@@ -3250,10 +3260,14 @@ export class Simulation {
     plan.halte = [];
     plan.wartetSeit = null;
     this.ktHalteNeu(fz);
-    this.setStatus(fz, "alarmiert");
+    const aufWache = ausruecken && (fz.status === "freiWache" || fz.status === "bereitschaft");
+    const sek = ausruecken ? this.ausrueckSek(fz, false) : rnd(5, 15);
+    this.setStatus(fz, aufWache ? "alarmWache" : "alarmFunk");
     fz.fahrt = null;
     fz.phase = "ausruecken";
-    fz.phaseEnde = this.state.zeit + (ausruecken ? this.ausrueckSek(fz, false) : rnd(5, 15)) * 1000;
+    // KT auf der Wache: nach ca. 20 s „Alarmiert und quittiert“, danach Ausrücken
+    fz.quittUm = aufWache ? this.state.zeit + rnd(15, 25) * 1000 : null;
+    fz.phaseEnde = Math.max(this.state.zeit + sek * 1000, fz.quittUm ? fz.quittUm + rnd(10, 30) * 1000 : 0);
   }
 
   /** Ist der Halt für dieses Fahrzeug (noch) anzufahren? */

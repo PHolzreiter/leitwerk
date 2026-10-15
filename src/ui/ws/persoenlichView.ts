@@ -34,7 +34,7 @@ import {
   type SoundEreignis,
 } from "../sounds";
 
-const STATUS: StatusKey[] = ["freiWache", "freiFunk", "alarmiert", "zumBO", "amBO", "zumZO", "amZO", "dienstfahrt", "bereitschaft", "abgemeldet"];
+const STATUS: StatusKey[] = ["freiWache", "freiFunk", "alarmWache", "alarmFunk", "alarmiert", "zumBO", "amBO", "zumZO", "amZO", "dienstfahrt", "bereitschaft", "abgemeldet"];
 
 export function persoenlichView(container: HTMLElement): { refresh(): void } {
   function render(): void {

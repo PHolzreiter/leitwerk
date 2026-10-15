@@ -12,6 +12,8 @@ export type StatusKey =
   | "freiFunk"
   | "dienstfahrt"
   | "bereitschaft"
+  | "alarmWache"
+  | "alarmFunk"
   | "alarmiert"
   | "abgemeldet";
 
@@ -33,6 +35,8 @@ export const DEFAULT_STATUS: StatusDef[] = [
   { key: "freiFunk", nummer: "6", name: "Frei Funk", farbe: "#7cc576", verfuegbar: true },
   { key: "dienstfahrt", nummer: "7", name: "Dienstfahrt", farbe: "#8d6e63", verfuegbar: true },
   { key: "bereitschaft", nummer: "8", name: "Bereitschaft", farbe: "#26a69a", verfuegbar: true },
+  { key: "alarmWache", nummer: "A", name: "Alarmiert auf Wache", farbe: "#c62828", verfuegbar: false },
+  { key: "alarmFunk", nummer: "F", name: "Alarmiert über Funk", farbe: "#f4511e", verfuegbar: false },
   { key: "alarmiert", nummer: "9", name: "Alarmiert und quittiert", farbe: "#e53935", verfuegbar: false },
   { key: "abgemeldet", nummer: "0", name: "Abgemeldet", farbe: "#6b7280", verfuegbar: false },
 ];

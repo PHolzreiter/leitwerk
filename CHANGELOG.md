@@ -1,5 +1,9 @@
 # Änderungen
 
+## 0.15.1 – Alarm-Status
+- Neue Status beim Alarmieren: „A – Alarmiert auf Wache“ (Fahrzeug war auf der Wache) und „F – Alarmiert über Funk“ (Fahrzeug war unterwegs). Beide setzt nur die Leitstelle – das Fahrzeug funkt sie nicht und man kann sie nicht von Hand wählen
+- Rettungsdienst (RTW, NEF, NAH …) geht danach direkt auf Status 2; Krankentransporte, die auf der Wache alarmiert werden, quittieren nach etwa 20 Sekunden mit Status 9 („Alarmiert und quittiert“) und rücken dann aus
+
 ## 0.15.0 – TETRA-Funkgruppen, neues Wetter, eigene Farben und Töne
 - TETRA-Funkgruppen statt Einsatzgebiet: gespielt wird NÖ-03 (Krems Stadt und Land, Hollabrunn, Tulln inkl. Klosterneuburg). Einsätze und Krankentransporte entstehen nur dort, gefunkt wird auf NÖ-03; Fahrzeuge von außerhalb melden „wechselt auf TETRA NÖ-03“. Die anderen Gruppen (NÖ-01 bis NÖ-06) folgen später
 - Grenzen der Funkgruppen als leichte Linien auf der Karte; Farben unter Einstellungen → Persönlich änderbar, Linien in der Karte abschaltbar (Gemeindegrenzen: Statistik Austria, CC BY 4.0)

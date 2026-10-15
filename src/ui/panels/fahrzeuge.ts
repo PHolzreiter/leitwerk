@@ -117,7 +117,7 @@ function fahrzeugListe(ctx: PanelKontext, nurAktive: boolean) {
       const sel = el("select", { class: "pl-select", title: "Nach Status filtern" });
       sel.appendChild(el("option", { value: "alle" }, "jeder Status"));
       const da = new Set(alle.map((f) => f.status));
-      for (const k of ["alarmiert", "zumBO", "amBO", "zumZO", "amZO", "freiFunk", "dienstfahrt", "bereitschaft", "abgemeldet"] as StatusKey[]) {
+      for (const k of ["alarmWache", "alarmFunk", "alarmiert", "zumBO", "amBO", "zumZO", "amZO", "freiFunk", "dienstfahrt", "bereitschaft", "abgemeldet"] as StatusKey[]) {
         if (!da.has(k)) continue;
         const d = sim.statusDef(k);
         sel.appendChild(el("option", { value: k }, `${d.nummer} – ${d.name}`));
@@ -174,7 +174,7 @@ function fahrzeugListe(ctx: PanelKontext, nurAktive: boolean) {
     const liste = { appendChild: (x: HTMLElement) => void ausgabe.push(x) };
     if (nurAktive) {
       // nach Status, dann nach Name
-      const ord = ["alarmiert", "zumBO", "amBO", "zumZO", "amZO", "freiFunk", "dienstfahrt", "bereitschaft", "abgemeldet", "freiWache"];
+      const ord = ["alarmWache", "alarmFunk", "alarmiert", "zumBO", "amBO", "zumZO", "amZO", "freiFunk", "dienstfahrt", "bereitschaft", "abgemeldet", "freiWache"];
       sichtbar.sort((a, b) => ord.indexOf(a.status) - ord.indexOf(b.status) || a.funkrufname.localeCompare(b.funkrufname));
       for (const fz of sichtbar) {
         const ph = PHASE_TEXT[fz.phase] ?? "";
