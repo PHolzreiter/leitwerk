@@ -23,7 +23,7 @@ OUT = ROOT / "data" / "default"
 EX = ROOT / "data" / "beispiele"
 
 STATION_COLS = ["id", "name", "organisation", "typ", "ort", "bezirk", "adresse", "breitengrad", "laengengrad", "hinweis"]
-VEHICLE_COLS = ["id", "funkrufname", "kurzname", "kategorie", "typ", "dienststelle", "aktiv", "nachtflug", "hinweis"]
+VEHICLE_COLS = ["id", "funkrufname", "kurzname", "kategorie", "typ", "aufbau", "dienststelle", "aktiv", "nachtflug", "dienstplan", "hinweis"]
 HOSPITAL_FLAGS = [
     "notfallambulanz", "schockraum", "unfallambulanz", "kinderambulanz", "intensiv_anaesthesie",
     "neurologie", "kinderintensiv", "neonatologie", "hno", "urologie", "gyn_geburtshilfe",
@@ -233,8 +233,135 @@ def build_vehicles(stations: list[dict], name_to_id: dict[str, str]) -> list[dic
             "typ": "NAH", "dienststelle": name_to_id[norm(st_name)], "aktiv": "ja", "nachtflug": "ja" if funk in {"99/002", "99/009"} else "nein",
             "hinweis": "Ergänzt (Recherche OpenStreetMap); Nachtflugtauglichkeit bitte prüfen",
         })
+    dienstplaene_einspielen(vehicles)
     vehicles.sort(key=lambda v: (v["dienststelle"], v["funkrufname"]))
     return vehicles
+
+
+# ---------------------------------------------------------------- Dienstpläne und Typen (paul_fahrzeuge_schichten.csv)
+
+TAGE = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
+TAG_NR = {t.lower(): i + 1 for i, t in enumerate(TAGE)}
+
+
+def norm_key(s: str) -> str:
+    """wie normKey in src/data/schema.ts"""
+    s = s.lower().replace("ä", "ae").replace("ö", "oe").replace("ü", "ue").replace("ß", "ss")
+    return re.sub(r"[^a-z0-9]", "", s)
+
+
+def streuung(text: str) -> float:
+    """fester Zufallswert 0–1 je Text – gleich wie streuung() in src/data/schema.ts (FNV-1a)"""
+    h = 2166136261
+    for c in norm_key(text):
+        h ^= ord(c)
+        h = (h * 16777619) & 0xFFFFFFFF
+    return (h % 10_000) / 10_000
+
+
+def tage_lesen(t: str) -> list[int]:
+    t = t.strip().lower().replace("–", "-").replace("—", "-")
+    if t in {"24/7", "täglich", "immer", ""}:
+        return list(range(1, 8))
+    tage: set[int] = set()
+    for teil in re.split(r"[,;/+\s]+", re.sub(r"\s*-\s*", "-", t)):
+        if not teil:
+            continue
+        if "-" in teil:
+            a, b = (TAG_NR[x] for x in teil.split("-"))
+            d = a
+            while True:
+                tage.add(d)
+                if d == b:
+                    break
+                d = d % 7 + 1
+        else:
+            tage.add(TAG_NR[teil])
+    return sorted(tage)
+
+
+def tage_text(tage: list[int]) -> str:
+    """wie tageText() in src/sim/dienst.ts"""
+    if len(tage) == 7:
+        return "täglich"
+    teile, i = [], 0
+    while i < len(tage):
+        j = i
+        while j + 1 < len(tage) and tage[j + 1] == tage[j] + 1:
+            j += 1
+        if j - i >= 2:
+            teile.append(f"{TAGE[tage[i] - 1]}–{TAGE[tage[j] - 1]}")
+        else:
+            teile.extend(TAGE[k - 1] for k in range(tage[i], tage[j] + 1))
+        i = j + 1
+    return ", ".join(teile)
+
+
+def zeit(t: str) -> str:
+    t = t.strip()
+    if t.lower() == "sonnenaufgang":
+        return "Sonnenaufgang"
+    if t.lower() == "sonnenuntergang":
+        return "Sonnenuntergang"
+    h, m = t.split(":")
+    return f"{int(h):02d}:{int(m):02d}"
+
+
+def typ_normal(t: str) -> str:
+    k = t.upper().replace(" ", "")
+    return {"RTWC": "RTW-C", "RTW-C": "RTW-C", "KTWB": "KTW-B", "KTW-B": "KTW-B"}.get(k, t.strip())
+
+
+def natur(s: str) -> list:
+    return [int(x) if x.isdigit() else x for x in re.split(r"(\d+)", s)]
+
+
+def dienstplaene_einspielen(vehicles: list[dict]) -> None:
+    """
+    Dienstzeiten und Typen aus Pauls Export (eine Zeile je Schicht) übernehmen:
+    - RTW = klein (VW T6), RTW-C = groß (Crafter); je Dienststelle nur EIN RTW-C, weitere werden große RTW
+    - KTW/KTW-B zufällig (fest je Funkrufname)
+    """
+    pfad = SRC / "paul_fahrzeuge_schichten.csv"
+    if not pfad.exists():
+        return
+    schichten: dict[str, list[str]] = {}
+    typen: dict[str, str] = {}
+    for r in read_csv(pfad):
+        funk = r["Funkrufname"].strip()
+        if funk in NAH:
+            funk = NAH[funk][0]
+        elif funk == "Christophorus 33":
+            funk = "99/033"
+        typen.setdefault(funk, typ_normal(r["Typ"]))
+        liste = schichten.setdefault(funk, [])
+        if r["Beginn"].strip() == "24/7":
+            continue
+        liste.append(f"{tage_text(tage_lesen(r['Wochentag(e)']))} {zeit(r['Beginn'])}–{zeit(r['Ende'])}")
+    for v in vehicles:
+        f = v["funkrufname"]
+        if f not in typen:
+            continue
+        typ = typen[f]
+        if typ in {"KTW", "KTW-B"}:
+            typ = "KTW" if streuung(f) < 0.5 else "KTW-B"
+        alt_kat = v["kategorie"]
+        v["typ"] = typ
+        v["kategorie"] = category_of(typ, f, "")
+        if v["kategorie"] != alt_kat:
+            v["aktiv"] = "nein" if v["kategorie"] == "Sonstige" else "ja"
+        v["aufbau"] = "groß" if typ == "RTW-C" else "klein" if typ == "RTW" else ""
+        v["dienstplan"] = "; ".join(schichten[f]) or "24/7"
+    # nur ein RTW-C je Dienststelle (kleinster Funkrufname bleibt)
+    pro_st: dict[str, list[dict]] = {}
+    for v in vehicles:
+        if v["typ"] == "RTW-C":
+            pro_st.setdefault(v["dienststelle"], []).append(v)
+    for liste in pro_st.values():
+        liste.sort(key=lambda v: natur(v["funkrufname"]))
+        for v in liste[1:]:
+            v["typ"] = "RTW"
+            v["aufbau"] = "groß"
 
 
 # ---------------------------------------------------------------- Krankenhäuser

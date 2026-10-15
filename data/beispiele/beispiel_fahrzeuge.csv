@@ -1,5 +1,5 @@
-﻿id;funkrufname;kurzname;kategorie;typ;dienststelle;aktiv;nachtflug;hinweis
-;75/001;;RTW;RTW-C;ws-01;ja;;
-;75/002;;RTW;RTW;Rotes Kreuz Musterstadt;ja;;Dienststelle darf auch per Name angegeben werden
-;75/099;NEF Musterstadt;NEF;NEF;ws-02;ja;;
-;99/002;Christophorus 2;NAH;NAH;ÖAMTC Christophorus 2;ja;nein;
+﻿id;funkrufname;kurzname;kategorie;typ;aufbau;dienststelle;aktiv;nachtflug;dienstplan;hinweis
+;75/001;;RTW;RTW-C;;ws-01;ja;;;
+;75/002;;RTW;RTW;;Rotes Kreuz Musterstadt;ja;;;Dienststelle darf auch per Name angegeben werden
+;75/099;NEF Musterstadt;NEF;NEF;;ws-02;ja;;;
+;99/002;Christophorus 2;NAH;NAH;;ÖAMTC Christophorus 2;ja;nein;;
