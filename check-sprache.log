@@ -1,6 +1,6 @@
 ### npm install
 
-added 49 packages, and audited 50 packages in 7s
+added 49 packages, and audited 50 packages in 9s
 
 9 packages are looking for funding
   run `npm fund` for details
@@ -13,7 +13,7 @@ To address all issues (including breaking changes), run:
 Run `npm audit` for details.
 ### npm run build
 
-> leitwerk@0.16.2 build
+> leitwerk@0.17.0 build
 > tsc && vite build
 
 [36mvite v6.4.4 [32mbuilding for production...[36m[39m
@@ -25,18 +25,18 @@ rendering chunks...
 [39m
 computing gzip size...
 [2mdist/[22m[32mindex.html                        [39m[1m[2m    1.03 kB[22m[1m[22m[2m │ gzip:   0.53 kB[22m
-[2mdist/[22m[2massets/[22m[35mindex-CfMgK3E_.css         [39m[1m[2m  267.18 kB[22m[1m[22m[2m │ gzip:  33.56 kB[22m
-[2mdist/[22m[2massets/[22m[36mevent-BKOM3xsw.js          [39m[1m[2m    1.38 kB[22m[1m[22m[2m │ gzip:   0.67 kB[22m
-[2mdist/[22m[2massets/[22m[36mwebviewWindow-Dwj9hX2b.js  [39m[1m[2m    1.82 kB[22m[1m[22m[2m │ gzip:   0.81 kB[22m
-[2mdist/[22m[2massets/[22m[36mwebview-oXWaclxZ.js        [39m[1m[2m    3.40 kB[22m[1m[22m[2m │ gzip:   1.16 kB[22m
-[2mdist/[22m[2massets/[22m[36mwindow-9Qh0s3HX.js         [39m[1m[2m   13.71 kB[22m[1m[22m[2m │ gzip:   3.41 kB[22m
-[2mdist/[22m[2massets/[22m[36mindex-DQsLLEVT.js          [39m[1m[33m2,209.07 kB[39m[22m[2m │ gzip: 629.02 kB[22m
+[2mdist/[22m[2massets/[22m[35mindex-s4ca1ISv.css         [39m[1m[2m  268.13 kB[22m[1m[22m[2m │ gzip:  33.76 kB[22m
+[2mdist/[22m[2massets/[22m[36mevent-L502ge6X.js          [39m[1m[2m    1.38 kB[22m[1m[22m[2m │ gzip:   0.67 kB[22m
+[2mdist/[22m[2massets/[22m[36mwebviewWindow-CtX6Z1vz.js  [39m[1m[2m    1.82 kB[22m[1m[22m[2m │ gzip:   0.81 kB[22m
+[2mdist/[22m[2massets/[22m[36mwebview-c6Fws1Ey.js        [39m[1m[2m    3.40 kB[22m[1m[22m[2m │ gzip:   1.16 kB[22m
+[2mdist/[22m[2massets/[22m[36mwindow-BDi0d9AF.js         [39m[1m[2m   13.71 kB[22m[1m[22m[2m │ gzip:   3.41 kB[22m
+[2mdist/[22m[2massets/[22m[36mindex-C3QiTY-E.js          [39m[1m[33m2,215.14 kB[39m[22m[2m │ gzip: 630.95 kB[22m
 [33m
 (!) Some chunks are larger than 2000 kB after minification. Consider:
 - Using dynamic import() to code-split the application
 - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
 - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.[39m
-[32m✓ built in 6.16s[39m
+[32m✓ built in 5.31s[39m
 ### npx tauri icon app-icon.png
         Appx Creating StoreLogo.png
         Appx Creating Square30x30Logo.png
@@ -90,8 +90,9 @@ computing gzip size...
      Android Creating mipmap-xxxhdpi/ic_launcher.png
 ### cargo check
 [1m[92m    Updating[0m crates.io index
-[1m[92m     Locking[0m 517 packages to highest compatible versions
+[1m[92m     Locking[0m 550 packages to highest compatible versions
 [1m[92m      Adding[0m brotli-decompressor v6.0.1 [1m[33m(available: v6.1.0)[0m
+[1m[92m      Adding[0m bzip2 v0.4.4 [1m[33m(available: v0.6.1)[0m
 [1m[92m      Adding[0m cpal v0.15.3 [1m[33m(available: v0.18.2)[0m
 [1m[92m      Adding[0m generic-array v0.14.7 [1m[33m(available: v0.14.9)[0m
 [1m[92m      Adding[0m reqwest v0.12.28 [1m[33m(available: v0.13.5)[0m
@@ -100,17 +101,112 @@ computing gzip size...
 [1m[92m      Adding[0m toml_datetime v0.6.3 [1m[33m(available: v0.6.11)[0m
 [1m[92m      Adding[0m toml_edit v0.20.2 [1m[33m(available: v0.20.7)[0m
 [1m[92m      Adding[0m whisper-rs v0.14.4 [1m[33m(available: v0.16.0)[0m
-[1m[92m   Compiling[0m leitwerk v0.16.2 (/home/runner/work/leitwerk/leitwerk/src-tauri)
-[1m[33mwarning[0m[1m: unused import: `cpal::Sample`[0m
-   [1m[94m--> [0msrc/sprache.rs:203:5
-    [1m[94m|[0m
-[1m[94m203[0m [1m[94m|[0m use cpal::Sample;
-    [1m[94m|[0m     [1m[33m^^^^^^^^^^^^[0m
-    [1m[94m|[0m
-    [1m[94m= [0m[1mnote[0m: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+[1m[92m Downloading[0m crates ...
+[1m[92m  Downloaded[0m bzip2 v0.4.4
+[1m[92m  Downloaded[0m dirs v5.0.1
+[1m[92m  Downloaded[0m dirs-sys v0.4.1
+[1m[92m  Downloaded[0m bindgen v0.69.5
+[1m[92m  Downloaded[0m eyre v0.6.14
+[1m[92m  Downloaded[0m bzip2-sys v0.1.13+1.0.8
+[1m[92m  Downloaded[0m home v0.5.12
+[1m[92m  Downloaded[0m hound v3.5.1
+[1m[92m  Downloaded[0m indenter v0.3.4
+[1m[92m  Downloaded[0m itertools v0.12.1
+[1m[92m  Downloaded[0m lazy_static v1.5.1
+[1m[92m  Downloaded[0m lazycell v1.3.0
+[1m[92m  Downloaded[0m linux-raw-sys v0.4.15
+[1m[92m  Downloaded[0m rustc-hash v1.1.0
+[1m[92m  Downloaded[0m rustix v0.38.44
+[1m[92m  Downloaded[0m sherpa-rs v0.6.8
+[1m[92m  Downloaded[0m socks v0.3.4
+[1m[92m  Downloaded[0m sherpa-rs-sys v0.6.8
+[1m[92m  Downloaded[0m tracing-attributes v0.1.31
+[1m[92m  Downloaded[0m ureq v2.12.1
+[1m[92m  Downloaded[0m which v4.4.2
+[1m[92m  Downloaded[0m webpki-roots v0.26.11
+[1m[92m   Compiling[0m bitflags v2.13.2
+[1m[92m   Compiling[0m either v1.19.0
+[1m[92m   Compiling[0m zeroize v1.9.1
+[1m[92m   Compiling[0m getrandom v0.2.17
+[1m[92m   Compiling[0m selectors v0.38.0
+[1m[92m   Compiling[0m rustls-pki-types v1.15.1
+[1m[92m   Compiling[0m rustix v0.38.44
+[1m[92m   Compiling[0m rustix v1.1.5
+[1m[92m   Compiling[0m untrusted v0.9.0
+[1m[92m   Compiling[0m ring v0.17.14
+[1m[92m   Compiling[0m dom_query v0.28.0
+[1m[92m   Compiling[0m tauri-utils v2.10.2
+[1m[92m   Compiling[0m bzip2-sys v0.1.13+1.0.8
+[1m[92m   Compiling[0m tracing-attributes v0.1.31
+[1m[92m   Compiling[0m linux-raw-sys v0.4.15
+[1m[92m   Compiling[0m rustls v0.23.46
+[1m[92m   Compiling[0m linux-raw-sys v0.12.1
+[1m[92m    Checking[0m tracing v0.1.44
+[1m[92m   Compiling[0m rustls-webpki v0.103.15
+[1m[92m   Compiling[0m webpki-roots v1.0.9
+[1m[92m   Compiling[0m png v0.18.1
+[1m[92m   Compiling[0m itertools v0.13.0
+[1m[92m   Compiling[0m home v0.5.12
+[1m[92m   Compiling[0m subtle v2.6.1
+[1m[92m   Compiling[0m bindgen v0.69.5
+[1m[92m   Compiling[0m bindgen v0.71.1
+[1m[92m   Compiling[0m tauri-build v2.7.3
+[1m[92m   Compiling[0m tauri-plugin v2.7.2
+[1m[92m   Compiling[0m tauri-codegen v2.7.3
+[1m[92m   Compiling[0m which v4.4.2
+[1m[92m   Compiling[0m webpki-roots v0.26.11
+[1m[92m   Compiling[0m xattr v1.6.1
+[1m[92m   Compiling[0m itertools v0.12.1
+[1m[92m   Compiling[0m socks v0.3.4
+[1m[92m   Compiling[0m dirs-sys v0.4.1
+[1m[92m   Compiling[0m filetime v0.2.29
+[1m[92m   Compiling[0m rustc-hash v1.1.0
+[1m[92m   Compiling[0m base64 v0.22.1
+[1m[92m   Compiling[0m lazy_static v1.5.1
+[1m[92m   Compiling[0m lazycell v1.3.0
+[1m[92m   Compiling[0m whisper-rs-sys v0.13.1
+[1m[92m   Compiling[0m ureq v2.12.1
+[1m[92m   Compiling[0m tauri v2.12.4
+[1m[92m   Compiling[0m tauri-plugin-fs v2.7.1
+[1m[92m   Compiling[0m bzip2 v0.4.4
+[1m[92m   Compiling[0m tauri-macros v2.7.3
+[1m[92m    Checking[0m hyper-util v0.1.21
+[1m[92m   Compiling[0m tar v0.4.46
+[1m[92m   Compiling[0m dirs v5.0.1
+[1m[92m    Checking[0m hyper-rustls v0.27.10
+[1m[92m   Compiling[0m tauri-plugin-updater v2.14.0
+[1m[92m   Compiling[0m tauri-plugin-dialog v2.8.3
+[1m[92m   Compiling[0m eyre v0.6.14
+[1m[92m    Checking[0m indenter v0.3.4
+[1m[92m    Checking[0m reqwest v0.13.5
+[1m[92m   Compiling[0m leitwerk v0.17.0 (/home/runner/work/leitwerk/leitwerk/src-tauri)
+[1m[92m    Checking[0m hound v3.5.1
+[1m[92m   Compiling[0m sherpa-rs-sys v0.6.8
+[1m[92m    Checking[0m reqwest v0.12.28
+[1m[91merror[0m: failed to run custom build command for `sherpa-rs-sys v0.6.8`
 
-[1m[33mwarning[0m: `leitwerk` (lib) generated 1 warning
-[1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 4.18s
+Caused by:
+  process didn't exit successfully: `/home/runner/work/leitwerk/leitwerk/src-tauri/target/debug/build/sherpa-rs-sys-100cf98d776690bf/build-script-build` (exit status: 101)
+  --- stdout
+  cargo:rerun-if-changed=wrapper.h
+  cargo:rerun-if-changed=dist.json
+  cargo:rerun-if-changed=checksum.txt
+  cargo:rerun-if-changed=./sherpa-onnx
+  cargo::rerun-if-env-changed=SHERPA_BUILD_SHARED_LIBS
+  cargo::rerun-if-env-changed=CMAKE_BUILD_PARALLEL_LEVEL
+  cargo::rerun-if-env-changed=CMAKE_VERBOSE
+  cargo::rerun-if-env-changed=SHERPA_LIB_PATH
+  cargo::rerun-if-env-changed=SHERPA_STATIC_CRT
+  cargo::rerun-if-env-changed=SHERPA_LIB_PROFILE
+  cargo::rerun-if-env-changed=BUILD_DEBUG
+  cargo::rerun-if-env-changed=UNSAFE_DISABLE_CHECKSUM_VALIDATION
+
+  --- stderr
+
+  thread 'main' (5471) panicked at /home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/sherpa-rs-sys-0.6.8/build.rs:260:13:
+  cargo:warning=Please enable the following environment variable when static feature enabled on Linux: RUSTFLAGS="-C relocation-model=dynamic-no-pic"
+  note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+[1m[33mwarning[0m: build failed, waiting for other jobs to finish...
 ### python3 tools/build_default_data.py
 data/default/dienststellen.csv: 168 Zeilen
 data/default/fahrzeuge.csv: 135 Zeilen
@@ -130,4 +226,4 @@ data/beispiele/vorlage_einsatzvorlagen.csv: 0 Zeilen
 ### python3 tools/build_stufen.py
 einsatzstufen.csv: 12 Stufen
 ### git diff --stat --exit-code data/
-### Ergebnis: 0
+### Ergebnis: 1
