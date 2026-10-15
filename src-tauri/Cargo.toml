@@ -36,8 +36,9 @@ tar = "0.4"
 whisper-rs = { version = "0.14", features = ["metal"] }
 sherpa-rs = { version = "0.6", default-features = false, features = ["tts", "download-binaries", "static"] }
 
+# Windows: das fertige statische Paket enthält keine Sprachausgabe – daher als DLL (wird mit installiert)
 [target.'cfg(windows)'.dependencies]
-sherpa-rs = { version = "0.6", default-features = false, features = ["tts", "download-binaries", "static"] }
+sherpa-rs = { version = "0.6", default-features = false, features = ["tts", "download-binaries"] }
 
 [target.'cfg(target_os = "linux")'.dependencies]
 sherpa-rs = { version = "0.6", default-features = false, features = ["tts", "download-binaries"] }
