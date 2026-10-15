@@ -125,15 +125,16 @@ jobs:
           # Piper (sherpa-onnx): Paket selbst holen (der Rust-Cache überspringt sonst den Download)
           SHERPA_TAG=v1.12.15
           if [ "$RUNNER_OS" = "Windows" ]; then SHERPA_PAKET="sherpa-onnx-$SHERPA_TAG-win-x64-shared"; else SHERPA_PAKET="sherpa-onnx-$SHERPA_TAG-osx-universal2-static"; fi
-          curl -sSL -o "$RUNNER_TEMP/sherpa.tar.bz2" "https://github.com/k2-fsa/sherpa-onnx/releases/download/$SHERPA_TAG/$SHERPA_PAKET.tar.bz2"
-          tar -xjf "$RUNNER_TEMP/sherpa.tar.bz2" -C "$RUNNER_TEMP"
-          export SHERPA_LIB_PATH="$RUNNER_TEMP/$SHERPA_PAKET"
+          # mit Python laden und entpacken (unter Windows versteht tar keine Laufwerksbuchstaben)
+          PY=$(command -v python3 || command -v python)
+          "$PY" -c "import sys,tarfile,urllib.request,tempfile,os; z=os.path.join(tempfile.gettempdir(),'sherpa.tar.bz2'); urllib.request.urlretrieve(sys.argv[1], z); tarfile.open(z,'r:bz2').extractall('sherpa-paket')" "https://github.com/k2-fsa/sherpa-onnx/releases/download/$SHERPA_TAG/$SHERPA_PAKET.tar.bz2" || echo "::error::sherpa-Paket konnte nicht geladen werden"
+          export SHERPA_LIB_PATH="$PWD/sherpa-paket/$SHERPA_PAKET"
           if [ "$RUNNER_OS" = "Windows" ]; then
             export SHERPA_LIB_PATH="$(cygpath -w "$SHERPA_LIB_PATH")"
             # die DLLs liegen neben dem Programm und werden mit installiert
             mkdir -p src-tauri/target/release
-            echo "::notice::Paket: $(cd "$RUNNER_TEMP/$SHERPA_PAKET" && find . -maxdepth 2 | head -40 | tr '\n' ' ')"
-            find "$RUNNER_TEMP/$SHERPA_PAKET" -iname '*.dll' -exec cp {} src-tauri/target/release/ \;
+            echo "::notice::Paket: $(cd "sherpa-paket/$SHERPA_PAKET" && find . -maxdepth 2 | head -40 | tr '\n' ' ')"
+            find "sherpa-paket/$SHERPA_PAKET" -iname '*.dll' -exec cp {} src-tauri/target/release/ \;
             echo "::notice::DLLs: $(cd src-tauri/target/release && ls *.dll | tr '\n' ' ')"
           fi
           npx tauri build --bundles ${{ matrix.bundles }} 2>&1 | tee build.log
