@@ -3,6 +3,7 @@
  * in der Mitte das Gespräch, rechts der Leitfaden (Fragen passend zur Anrufart),
  * darunter die Info an die Besatzung.
  */
+import { mikroAnbinden } from "../sprache";
 import { kiBereit } from "../../abfrage/ki";
 import { ktAntwortetGerade } from "../../abfrage/ktGespraech";
 import { mp } from "../../net/mehrspieler";
@@ -406,7 +407,17 @@ function ktAnsicht(root: HTMLElement, k: KtAuftrag): { refresh(): void; dispose(
   const live = el("div", { class: "anruf-msg anrufer live", hidden: "" });
   const form = el("form", { class: "anruf-form" });
   const eingabe = el("input", { type: "text", placeholder: "Frage an den Anrufer … (Enter)" });
-  form.append(eingabe, el("button", { class: "btn small primary", type: "submit" }, "Fragen"));
+  form.append(
+    eingabe,
+    mikroAnbinden({
+      input: eingabe,
+      rang: 2,
+      aktiv: () => ich() && k.anruf?.status === "aktiv",
+      senden: () => form.requestSubmit(),
+      hinweis: () => "Krankentransport, Überstellung. Abholung, Termin, Station, Liegend, Sitzend, Tragsessel, Krems, Tulln, Hollabrunn, Klosterneuburg.",
+    }),
+    el("button", { class: "btn small primary", type: "submit" }, "Fragen"),
+  );
   const zeigeLive = (text: string | null) => liveZeigen(verlauf, live, k.id, text);
   const ausLive = onLive((id, text) => id === k.id && zeigeLive(text));
   const stelle = (text: string) => ktFrageStellen(k, text).then(() => refresh());

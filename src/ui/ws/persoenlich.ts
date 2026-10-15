@@ -67,6 +67,8 @@ export interface Persoenlich {
   funkGruppen: Record<string, boolean>;
   /** eigene Farben der Funkgruppen (fehlt = Standard) */
   funkFarben: Record<string, string>;
+  /** Vorlesen und Spracheingabe (siehe ui/sprache.ts) */
+  sprache?: Partial<import("../sprache").SprachPrefs>;
 }
 
 import { farbenAnwenden } from "./farben";

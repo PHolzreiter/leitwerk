@@ -2,6 +2,7 @@
  * Notrufgespräch und strukturierte Abfrage (Leitfaden) für das Abfrage-Fenster.
  * Nur wer den Anruf angenommen hat, führt Gespräch und Abfrage; alle anderen sehen mit.
  */
+import { mikroAnbinden } from "../sprache";
 import { store } from "../../data/store";
 import { fragen, antwortetGerade, kontext } from "../../abfrage/gespraech";
 import { schilderung } from "../../abfrage/anrufer";
@@ -18,6 +19,8 @@ function fehler(p: Promise<unknown>): void {
   p.catch((e) => toast(String((e as Error).message ?? e), "error"));
 }
 
+
+const HINWEIS_NOTRUF = "Notruf 144, Rettungsdienst. Wo genau ist der Notfallort? Ist der Patient wach? Atmet er normal? Krems, Tulln, Hollabrunn, Klosterneuburg, Langenlois, Stockerau, Gföhl, Mautern, Herzogenburg, Ziersdorf, Retz. Bewusstlos, Atemnot, Brustschmerzen, Rettungswagen, Notarzt.";
 
 export function istGespraechsfuehrer(e: Einsatz): boolean {
   const a = e.anruf;
@@ -42,7 +45,17 @@ export function notrufTeile(e: Einsatz): NotrufTeile {
   const form = el("form", { class: "anruf-form" });
   const eingabe = el("input", { type: "text", placeholder: "Frage an den Anrufer … (Enter)" });
   const senden = el("button", { class: "btn small primary", type: "submit" }, "Fragen");
-  form.append(eingabe, senden);
+  form.append(
+    eingabe,
+    mikroAnbinden({
+      input: eingabe,
+      rang: 1,
+      aktiv: () => istGespraechsfuehrer(e) && (e.anruf?.status === "aktiv"),
+      senden: () => form.requestSubmit(),
+      hinweis: () => HINWEIS_NOTRUF,
+    }),
+    senden,
+  );
   const codeZeile = el("div", { class: "anruf-code" });
   const abfrage = el("div", { class: "abfrage" });
   const aufloesung = el("div", { class: "aufloesung" });

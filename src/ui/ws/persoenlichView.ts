@@ -1,6 +1,6 @@
 /** Einstellungen → Persönlich: Aussehen, Größe, Anrufe, Töne, Kurzbefehle, Statusfarben, Anordnungen. */
 import { kiPrefs, setKiPrefs } from "../../abfrage/ki";
-import { pickTextFile, saveTextFile } from "../../platform";
+import { inTauri, pickTextFile, saveTextFile } from "../../platform";
 import { sim } from "../../sim/engine";
 import type { StatusKey } from "../../sim/settings";
 import { FUNK_FARBEN, FUNK_QUELLE, FUNKGRUPPEN } from "../../sim/funkgruppen";
@@ -19,6 +19,27 @@ import { IST_HAUPT } from "./bus";
 import { tasteAufnehmen, tasteText } from "./kuerzel";
 import { istDunkel, KUERZEL_LABEL, KUERZEL_STANDARD, onPers, pers, setzePers, type KuerzelId, type Thema } from "./persoenlich";
 import { FELD_LABEL, VORLAGEN as FARB_VORLAGEN } from "./farben";
+import {
+  deutscheStimmen,
+  geschlechtVon,
+  mikrofone,
+  mikroAnbinden,
+  modellLaden,
+  modellLoeschen,
+  MODELLE as SPRACH_MODELLE,
+  onStimmen,
+  probe,
+  setzeSprache,
+  sprachPrefs,
+  sprachStatus,
+  TASTEN,
+  testZiel,
+  vorlesenMoeglich,
+  type SprachPrefs,
+} from "../sprache";
+
+/** laufende Downloads der Sprachmodelle (bleibt beim Neuzeichnen erhalten) */
+const ladeStand: Record<string, string> = {};
 import {
   DATEI_REGELN,
   dateiHinzufuegen,
@@ -246,6 +267,131 @@ export function persoenlichView(container: HTMLElement): { refresh(): void } {
       schalter(p.exportKnopf, (v) => setzePers({ exportKnopf: v })),
       "Speichert Gespräch, Abfrage, Anweisung an die KI und Protokoll als Datei – bei Notfällen, Krankentransporten und Überstellungen.",
     );
+
+    // ---- Sprache
+    const sp = sprachPrefs();
+    const spr = section(
+      "Sprache",
+      "Anrufer und Funk vorlesen lassen und Fragen sprechen statt tippen. Die Abfrage selbst ändert sich nicht: gesprochen wird nur, was sonst geschrieben steht.",
+    );
+    if (!vorlesenMoeglich()) spr.appendChild(el("p", { class: "muted small" }, "Vorlesen ist hier nicht verfügbar."));
+    zeile(spr, "Anrufer vorlesen", schalter(sp.vorlesen, (v) => setzeSprache({ vorlesen: v })), "Notruf und KT-Hotline – nur bei dem, der das Gespräch führt.");
+    zeile(spr, "Funk vorlesen", schalter(sp.funkVorlesen, (v) => setzeSprache({ funkVorlesen: v })), "Was die Fahrzeuge in deinen Funkgesprächen sagen.");
+    const regler = (wert: number, min: number, max: number, onSet: (v: number) => void, fmt = (v: number) => `${v} %`) => {
+      const box = el("div", { class: "pers-slider" });
+      const r = el("input", { type: "range", min: String(min), max: String(max), step: "5" });
+      r.value = String(wert);
+      const w = el("span", { class: "pers-wert" }, fmt(wert));
+      r.addEventListener("input", () => (w.textContent = fmt(Number(r.value))));
+      r.addEventListener("change", () => onSet(Number(r.value)));
+      box.append(r, w);
+      return box;
+    };
+    zeile(spr, "Lautstärke der Stimmen", regler(sp.laut, 0, 100, (v) => setzeSprache({ laut: v })));
+    zeile(spr, "Sprechtempo", regler(sp.tempo, 70, 140, (v) => setzeSprache({ tempo: v })));
+    const stimmenBox = el("div", { class: "stimmen" });
+    const stimmenBauen = () => {
+      stimmenBox.innerHTML = "";
+      const alle = deutscheStimmen();
+      for (const [g, label, key] of [
+        ["w", "Frauenstimme", "stimmeW"],
+        ["m", "Männerstimme", "stimmeM"],
+      ] as const) {
+        const r = el("div", { class: "ton-zeile" });
+        const sel = el("select");
+        sel.appendChild(el("option", { value: "" }, "automatisch (wechselt je Anrufer)"));
+        for (const v of alle) sel.appendChild(el("option", { value: v.name }, `${v.name} (${v.lang})${geschlechtVon(v) === "?" ? "" : geschlechtVon(v) === "w" ? " · weiblich" : " · männlich"}`));
+        sel.value = sprachPrefs()[key];
+        sel.addEventListener("change", () => {
+          setzeSprache({ [key]: sel.value } as Partial<SprachPrefs>);
+          probe(g);
+        });
+        const b = el("button", { class: "btn small", type: "button", title: "Probehören" }, "▶");
+        b.addEventListener("click", () => probe(g));
+        r.append(el("span", { class: "ton-label" }, label), sel, b);
+        stimmenBox.appendChild(r);
+      }
+      if (!alle.length)
+        stimmenBox.appendChild(
+          el(
+            "div",
+            { class: "muted small" },
+            "Keine deutsche Stimme gefunden. Windows: Einstellungen → Zeit und Sprache → Sprache → Deutsch → Sprachausgabe hinzufügen. Mac: Systemeinstellungen → Bedienungshilfen → Gesprochene Inhalte → Systemstimme → Stimmen verwalten (z. B. „Anna (Premium)“).",
+          ),
+        );
+    };
+    stimmenBauen();
+    const ausSt = onStimmen(() => (stimmenBox.isConnected ? stimmenBauen() : ausSt()));
+    zeile(spr, "Stimmen", stimmenBox, "Mehr und schönere Stimmen kannst du im Betriebssystem dazuladen (auf dem Mac z. B. „Premium“-Stimmen).");
+
+    zeile(spr, "Spracheingabe", schalter(sp.eingabe, (v) => setzeSprache({ eingabe: v })), "🎙 neben den Eingabefeldern gedrückt halten – oder die Sprechtaste.");
+    const tasteSel = el("select");
+    for (const [code, label] of TASTEN) tasteSel.appendChild(el("option", { value: code }, label));
+    tasteSel.value = sp.taste;
+    tasteSel.addEventListener("change", () => setzeSprache({ taste: tasteSel.value }));
+    zeile(spr, "Sprechtaste (gedrückt halten)", tasteSel, "Gesprochen wird ins gerade laufende Gespräch: Notruf vor KT-Hotline vor Funk.");
+    zeile(spr, "Erkannten Text gleich abschicken", schalter(sp.autoSenden, (v) => setzeSprache({ autoSenden: v })), "Aus: der Text steht im Feld und du schickst ihn selbst mit Enter.");
+    const mikroSel = el("select");
+    mikroSel.appendChild(el("option", { value: "" }, "Standard-Mikrofon"));
+    void mikrofone().then((ms) => {
+      for (const m of ms) if (m.deviceId && m.deviceId !== "default") mikroSel.appendChild(el("option", { value: m.deviceId }, m.label || "Mikrofon"));
+      mikroSel.value = sprachPrefs().mikro;
+    });
+    mikroSel.addEventListener("change", () => setzeSprache({ mikro: mikroSel.value }));
+    zeile(spr, "Mikrofon", mikroSel, "Die Namen erscheinen erst, nachdem du das Mikrofon einmal freigegeben hast.");
+
+    if (inTauri()) {
+      const modBox = el("div", { class: "sprach-modelle" });
+      const modBauen = (vorhanden: string[]) => {
+        modBox.innerHTML = "";
+        for (const m of SPRACH_MODELLE) {
+          const r = el("div", { class: "ton-zeile", "data-modell": m.name });
+          const da = vorhanden.includes(m.name);
+          const wahl = el("input", { type: "radio", name: "sprach-modell" });
+          wahl.checked = sprachPrefs().modell === m.name;
+          wahl.disabled = !da;
+          wahl.addEventListener("change", () => setzeSprache({ modell: m.name }));
+          const stand = el("span", { class: "muted small stand" }, ladeStand[m.name] ?? (da ? "geladen" : `${m.mb} MB`));
+          const knopf = el("button", { class: `btn small${da ? " danger-text" : ""}`, type: "button" }, da ? "Löschen" : "Herunterladen");
+          knopf.disabled = !!ladeStand[m.name];
+          knopf.addEventListener("click", async () => {
+            if (da) {
+              await modellLoeschen(m.name).catch((e) => toast(String(e), "error"));
+              modNeu();
+              return;
+            }
+            knopf.disabled = true;
+            ladeStand[m.name] = "startet …";
+            try {
+              await modellLaden(m.name, (d, t) => {
+                ladeStand[m.name] = t ? `${Math.round((d / t) * 100)} % von ${Math.round(t / 1e6)} MB` : `${Math.round(d / 1e6)} MB`;
+                const x = document.querySelector(`[data-modell="${m.name}"] .stand`);
+                if (x) x.textContent = ladeStand[m.name];
+              });
+              delete ladeStand[m.name];
+              setzeSprache({ modell: m.name });
+              toast(`Sprachmodell „${m.label}“ ist bereit`);
+            } catch (e) {
+              delete ladeStand[m.name];
+              toast(String((e as Error).message ?? e), "error");
+            }
+            modNeu();
+          });
+          const lab = el("label", { class: "chk" });
+          lab.append(wahl, el("span", {}, m.label));
+          r.append(lab, stand, knopf);
+          modBox.appendChild(r);
+        }
+      };
+      const modNeu = () => void sprachStatus().then((st) => modBauen(st.modelle)).catch(() => modBauen([]));
+      modNeu();
+      zeile(spr, "Erkennung (Whisper)", modBox, "Läuft nur auf deinem Rechner, ohne Internet. Einmal herunterladen; „Beste Erkennung“ braucht einen flotten Rechner.");
+    }
+    const testBox = el("div", { class: "row-btns" });
+    const testFeld = el("input", { type: "text", placeholder: "Hier erscheint, was erkannt wurde …", readonly: "" });
+    testFeld.style.flex = "1";
+    testBox.append(mikroAnbinden(testZiel(testFeld)), testFeld);
+    zeile(spr, "Ausprobieren", testBox, "🎙 gedrückt halten, etwas sagen, loslassen.");
 
     // ---- Eigene Tondateien
     const td = section("Eigene Tondateien", "Hier lädst du eigene Töne hoch; oben bei „Töne“ kannst du sie dann je Ereignis auswählen. Gespeichert wird nur auf diesem Rechner.");

@@ -2,6 +2,7 @@
  * Telefon: alle Anrufe (Notruf, KT-Hotline, Überstellung) mit Annehmen, Halten, Zurückwechseln, Auflegen.
  * Beim Annehmen geht das Abfrage-Fenster auf.
  */
+import { verstummen } from "../sprache";
 import { eroeffnen } from "../../abfrage/gespraech";
 import { KT_FRAGEN, ktFragen } from "../../abfrage/ktGespraech";
 import { mp } from "../../net/mehrspieler";
@@ -108,10 +109,12 @@ export async function anrufAnnehmen(art: AnrufArt, id: string): Promise<void> {
 }
 
 export function anrufHalten(art: AnrufArt, id: string): void {
+  verstummen();
   fehler(sim.call(art === "rd" ? "anrufHalten" : "ktAnrufHalten", id));
 }
 
 export function anrufAuflegen(art: AnrufArt, id: string): void {
+  verstummen();
   fehler(
     sim.call(art === "rd" ? "anrufBeenden" : "ktAnrufBeenden", id).then(() => {
       // Nach dem Gespräch: Maske nach vorne; steckt die Abfrage bei der Karte, wieder die Karte zeigen

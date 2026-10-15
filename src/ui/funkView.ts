@@ -2,6 +2,7 @@
  * Funk (rechter Reiter): rufende Fahrzeuge, laufendes Funkgespräch mit Schnellknöpfen,
  * Verlauf aller Funkgespräche (alle Spieler hören mit) und Statusmeldungen.
  */
+import { funkNamenGlaetten, mikroAnbinden } from "./sprache";
 import { funkKiAntwort } from "../abfrage/funkKi";
 import { mp } from "../net/mehrspieler";
 import { HOSPITAL_FLAG_LABEL } from "../data/model";
@@ -58,12 +59,36 @@ export function createFunkView(root: HTMLElement, deps: { select(einsatzId: stri
   const form = el("form", { class: "funk-form" });
   const eingabe = el("input", { type: "text", placeholder: "Funkspruch an das Fahrzeug … (Enter)" });
   const senden = el("button", { class: "btn small primary", type: "submit" }, "Senden");
-  form.append(eingabe, senden);
+  const funkHinweis = () => `Hier LEO, kommen. Verstanden, Ende. ${Object.values(sim.state.fahrzeuge).slice(0, 60).map((f) => f.funkrufname).join(", ")}`;
+  form.append(
+    eingabe,
+    mikroAnbinden({
+      input: eingabe,
+      rang: 3,
+      aktiv: () => aktivId !== null,
+      senden: () => form.requestSubmit(),
+      hinweis: funkHinweis,
+      nachher: funkNamenGlaetten,
+    }),
+    senden,
+  );
   aktiv.append(aktivKopf, aktivVerlauf, schnell, form);
   const rufenZeile = el("form", { class: "funk-rufen" });
   const rufenInput = el("input", { type: "text", placeholder: "Fahrzeug rufen, z. B. 75/001", list: "funk-fz-liste" });
   const liste = el("datalist", { id: "funk-fz-liste" });
-  rufenZeile.append(rufenInput, el("button", { class: "btn small", type: "submit" }, "📻 Rufen"), liste);
+  rufenZeile.append(
+    rufenInput,
+    mikroAnbinden({
+      input: rufenInput,
+      rang: 4,
+      aktiv: () => true,
+      senden: () => rufenZeile.requestSubmit(),
+      hinweis: funkHinweis,
+      nachher: (t) => funkNamenGlaetten(t).match(/\d{2,3}\/\d{3}/)?.[0] ?? funkNamenGlaetten(t),
+    }),
+    el("button", { class: "btn small", type: "submit" }, "📻 Rufen"),
+    liste,
+  );
   const verlauf = el("div", { class: "funk-alle" });
   const statusTitel = el("details", { class: "funk-status" });
   const statusListe = el("div");

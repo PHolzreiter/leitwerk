@@ -2633,3 +2633,60 @@ input[type="color"] {
   flex: 1 1 auto;
   min-width: 0;
 }
+
+/* ---- Sprache: Mikrofon-Knopf und Anzeige beim Sprechen */
+.mikro-knopf {
+  padding-inline: 8px;
+  touch-action: none;
+  user-select: none;
+}
+.mikro-knopf.an {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.sprech-anzeige {
+  position: fixed;
+  left: 50%;
+  top: 64px;
+  transform: translateX(-50%);
+  z-index: 9000;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
+  font-weight: 600;
+  pointer-events: none;
+}
+.sprech-anzeige.hoert .sprech-icon {
+  animation: lw-sprech 1s ease-in-out infinite;
+}
+.sprech-pegel {
+  width: 90px;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--panel-3);
+  overflow: hidden;
+}
+.sprech-pegel i {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: #2e9d4a;
+  transition: width 0.08s linear;
+}
+@keyframes lw-sprech {
+  50% {
+    opacity: 0.35;
+  }
+}
+.sprach-modelle .ton-zeile {
+  grid-template-columns: 1fr auto auto;
+}
+.stimmen .ton-zeile {
+  grid-template-columns: minmax(100px, auto) minmax(180px, 1fr) auto;
+}

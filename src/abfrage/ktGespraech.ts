@@ -7,6 +7,7 @@ import { sim } from "../sim/engine";
 import { bereichName, hhmm, KT_LAGE_LABEL, type KtAuftrag, type KtDaten } from "../sim/kt";
 import { schonGefragt } from "./gespraech";
 import { kiBereit, kiChat, kiPrefs, kiStatus, type KiNachricht } from "./ki";
+import { anruferSagt, geschlechtAusName } from "../ui/sprache";
 
 export interface KtFrage {
   id: keyof KtDaten | "wer" | "patient" | "arzt" | "monitoring" | "stabil" | "inkubator" | "zusage" | "gewicht" | "zusatz" | "zustand";
@@ -227,6 +228,8 @@ export async function ktFragen(k: KtAuftrag, text: string, frage?: KtFrage, onTo
       quelle = "fest";
     }
     await sim.call("ktAnrufNachricht", k.id, "anrufer", antwort, quelle);
+    const an = k.wahr?.anrufer;
+    anruferSagt(antwort, { geschlecht: geschlechtAusName(`${an?.rolle ?? ""} ${an?.name ?? ""}`), emotion: "ruhig", name: an?.name }, k.id);
   } finally {
     laufend.delete(k.id);
   }

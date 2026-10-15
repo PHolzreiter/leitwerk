@@ -2,6 +2,7 @@ mod addresses;
 mod ki;
 mod packs;
 mod routing;
+mod sprache;
 mod updater;
 
 use std::collections::HashMap;
@@ -559,6 +560,10 @@ pub fn run() {
             ki::ki_installieren,
             ki::ki_modell_laden,
             ki::ki_chat,
+            sprache::sprache_status,
+            sprache::sprache_modell_laden,
+            sprache::sprache_modell_loeschen,
+            sprache::sprache_erkennen,
             app_version
         ])
         .build(tauri::generate_context!())

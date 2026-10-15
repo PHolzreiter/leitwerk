@@ -31,9 +31,10 @@ import { hauptfensterStarten, nebenfensterVerbinden, nebenfensterWiederherstelle
 import { anwenden, pers, setzePers } from "./ui/ws/persoenlich";
 import { steuerleisteBauen } from "./ui/ws/steuerleiste";
 import { soundBeobachterStarten } from "./ui/sounds";
+import { funkVorlesenStarten, sprachTest } from "./ui/sprache";
 
 // Für automatische Tests im Browser (…/?debug): Zugriff auf Simulation und Daten
-if (location.search.includes("debug")) Object.assign(window, { __lw: { sim, store } });
+if (location.search.includes("debug")) Object.assign(window, { __lw: { sim, store, sprachTest } });
 
 async function watchGeo(): Promise<void> {
   const out = document.getElementById("geo-status");
@@ -180,6 +181,7 @@ async function init(): Promise<void> {
   if (IST_HAUPT) {
     anrufBeobachterStarten();
     soundBeobachterStarten(sim, () => sim.ich?.name ?? mp.ich.name);
+    funkVorlesenStarten(sim, (g) => !g.fuehrer || sim.mode === "solo" || g.fuehrer.pid === (sim.ich?.pid ?? mp.ich.pid));
     void nebenfensterWiederherstellen();
     einfuehrung();
   }
