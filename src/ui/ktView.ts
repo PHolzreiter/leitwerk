@@ -23,7 +23,7 @@ import {
   type SekDaten,
 } from "../sim/kt";
 import { codeInfo, istUeberstellung, ktCode, KT_CODES } from "../sim/ktCodes";
-import { addressInput } from "./panels/teile";
+import { addressInput, dienstHtml, typHtml } from "./panels/teile";
 import { liveSammler } from "./panels/live";
 import { el, esc, toast } from "./dom";
 
@@ -504,7 +504,7 @@ export function ktMaske(k: KtAuftrag, deps: { flyTo(lat: number, lon: number, z?
       const plan = fz.kt;
       const info = el("div", { class: "kt-zugeteilt" });
       const fahrten = plan ? plan.fahrten.map((f) => f.map((id) => esc(sim.ktAuftrag(id)?.nummer ?? "?")).join(" + ")).join(" → ") : "";
-      info.innerHTML = `<b>${esc(fz.funkrufname)}</b> <span class="muted">${esc(fz.rmTyp)} · ${esc(sim.statusDef(fz.status).name)}</span>${
+      info.innerHTML = `<b>${esc(fz.funkrufname)}</b> <span class="muted">${typHtml(fz)} · ${esc(sim.statusDef(fz.status).name)}</span>${dienstHtml(fz)}${
         nef ? ` + <b>${esc(nef.funkrufname)}</b> <span class="muted">NEF · ${esc(sim.statusDef(nef.status).name)}</span>` : ""
       }${plan && plan.fahrten.length > 1 ? `<div class="muted">${plan.fahrten.length} Fahrten: ${fahrten}</div>` : ""}${
         plan && !plan.aktiv && plan.losUm ? `<div class="kt-losum">rückt automatisch um <b>${hhmm(plan.losUm)}</b> aus</div>` : ""
@@ -538,7 +538,7 @@ export function ktMaske(k: KtAuftrag, deps: { flyTo(lat: number, lon: number, z?
       const r = el("div", { class: `kt-vs${v.ersatz ? " ersatz" : ""}` });
       const los = v.losSpaetestens ? `los spätestens ${hhmm(v.losSpaetestens)}` : "";
       const zuSpaet = v.losSpaetestens !== null && v.losSpaetestens < sim.state.zeit;
-      r.innerHTML = `<span class="kt-vs-info"><b>${esc(v.fz.funkrufname)}</b> <span class="muted">${esc(v.fz.rmTyp)}</span>${
+      r.innerHTML = `<span class="kt-vs-info"><b>${esc(v.fz.funkrufname)}</b> <span class="muted">${typHtml(v.fz)}</span>${dienstHtml(v.fz)}${
         v.begleit ? ` + <b>${esc(v.begleit.funkrufname)}</b> <span class="muted">NEF</span>` : ""
       } <span class="kt-eta">${v.sekunden === null ? "?" : `${Math.round(v.sekunden / 60)} min`}</span> <span class="${zuSpaet ? "alert-text" : "muted"}">${esc(los)}</span>${
         v.hinweis ? ` <span class="muted">· ${esc(v.hinweis)}</span>` : ""

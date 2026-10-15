@@ -15,7 +15,7 @@ export function ensureCodes(onImported?: () => void): boolean {
     du importierst sie einmalig als CSV-Datei – oder du lädst gleich dein <b>Abfrageschema</b> (JSON-Datei),
     dann kommen Einsätze als Notruf, den du abfragst, und die Codes werden mit übernommen.</p>
     <p class="muted">Nötig ist die Spalte „Code“, dazu Name, Kategorie (z. B. „ALS rot“) und Kapitel.
-    Später findest du die Liste unter <b>Daten → Einsatzcodes</b>, dort kannst du sie bearbeiten, ergänzen oder neu importieren.</p>`;
+    Später findest du die Liste unter <b>Einstellungen → Leitstelle → Einsatzcodes &amp; Abfrage</b>, dort kannst du sie bearbeiten, ergänzen oder neu importieren.</p>`;
   openDialog({
     title: "Einsatzcodes importieren",
     body,

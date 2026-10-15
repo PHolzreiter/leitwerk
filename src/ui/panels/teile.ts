@@ -131,6 +131,38 @@ export function vorgemerktHtml(fz: SimFahrzeug): string {
   return ` <span class="kt-fz vorgemerkt" title="Für ${n} Krankentransport${n > 1 ? "e" : ""} vorgemerkt – wird beim Alarmieren für einen Notfall gelöst">KT vorgemerkt${ab}</span>`;
 }
 
+/** Fahrzeugtyp zur Anzeige: „KTW-B“, „RTW“ (Großraum mit Hinweis), „RTW-C“ … */
+export function typText(fz: SimFahrzeug): string {
+  return fz.typ ?? fz.rmTyp;
+}
+
+/** Typ als HTML (mit Hinweis beim Draufzeigen) */
+export function typHtml(fz: SimFahrzeug): string {
+  const t = typText(fz);
+  const titel = fz.ohneBlaulicht ? "KTW-B – Zivildienst, fährt ohne Blaulicht" : fz.rmTyp === "RTW" && fz.gross ? "RTW (Großraum, VW Crafter)" : fz.rmTyp === "RTW" && fz.gross === false ? "RTW (VW T6 Hochdach)" : "";
+  return titel ? `<span title="${esc(titel)}">${esc(t)}</span>` : esc(t);
+}
+
+/**
+ * Hinweis vor Dienstende: eine Stunde vorher ein dezentes Uhr-Symbol, 30 Minuten vorher deutlicher.
+ * Außer Dienst: „außer Dienst bis …“.
+ */
+export function dienstHtml(fz: SimFahrzeug): string {
+  const t = sim.state.zeit;
+  const hhmm = (x: number) => new Date(x).toTimeString().slice(0, 5);
+  if (fz.ausserDienst) {
+    const b = fz.dienstBeginn;
+    const tag = b && new Date(b).toDateString() !== new Date(t).toDateString() ? `${["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"][new Date(b).getDay()]} ` : "";
+    return ` <span class="dienst-aus" title="Laut Dienstplan nicht im Dienst${b ? ` – Dienstbeginn ${tag}${hhmm(b)}` : ""}">außer Dienst${b ? ` bis ${tag}${hhmm(b)}` : ""}</span>`;
+  }
+  const e = fz.dienstEnde;
+  if (!e) return "";
+  const rest = (e - t) / 60_000;
+  if (rest > 60 || rest < -1) return "";
+  const stufe = rest <= 30 ? 2 : 1;
+  return ` <span class="dienst-ende st${stufe}" title="Dienstende ${hhmm(e)} (in ${Math.max(0, Math.round(rest))} min)">◷${stufe === 2 ? ` ${hhmm(e)}` : ""}</span>`;
+}
+
 export function statusChip(fz: SimFahrzeug): string {
   const d = sim.statusDef(fz.status);
   // alarmiert: gleich breites Kästchen ohne Nummer, damit die Namen untereinander bleiben

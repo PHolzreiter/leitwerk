@@ -2250,3 +2250,130 @@ button.weather.offen {
 .leiste-eigen .topbar .brand-name {
   color: var(--leiste-text);
 }
+
+/* Dienstende (eine Stunde vorher dezent, 30 Minuten vorher deutlicher) und außer Dienst */
+.dienst-ende {
+  display: inline-block;
+  font-size: 11px;
+  line-height: 14px;
+  padding: 0 4px;
+  border-radius: 7px;
+  white-space: nowrap;
+}
+.dienst-ende.st1 {
+  color: var(--text-dim);
+}
+.dienst-ende.st2 {
+  color: var(--warn-text);
+  background: var(--warn-bg);
+  font-weight: 600;
+}
+.dienst-aus {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-style: italic;
+  white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------- Einstellungen (ein Fenster, Navigation links) */
+.es .gross-kopf {
+  gap: 14px;
+}
+.es-suche {
+  width: min(420px, 40vw);
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--line-2);
+  background: var(--input-bg);
+  color: var(--text);
+}
+.es-koerper {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 230px 1fr;
+}
+.es-nav {
+  border-right: 1px solid var(--line);
+  background: var(--panel-2);
+  padding: 10px 8px 16px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.es-gruppe {
+  display: flex;
+  flex-direction: column;
+  padding: 12px 10px 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.es-gruppe:first-child {
+  padding-top: 2px;
+}
+.es-gruppe .small {
+  font-size: 10.5px;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.es-punkt {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  text-align: left;
+  padding: 7px 10px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  font-size: 13px;
+  cursor: pointer;
+}
+.es-punkt:hover {
+  background: var(--hover);
+}
+.es-punkt.aktiv {
+  background: var(--sel);
+  color: var(--blue);
+  font-weight: 600;
+}
+.es-punkt .es-label {
+  flex: 1;
+}
+.es-punkt .count {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+.es-nichts {
+  padding: 8px 10px;
+}
+.es-inhalt {
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+}
+.es-quelle {
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+}
+.es-quelle[hidden] {
+  display: none;
+}
+/* Daten: eigene Navigation ausblenden (die Navigation ist links im Fenster) */
+.es-q-daten > .data-layout {
+  height: 100%;
+  grid-template-columns: 1fr;
+}
+.es-q-daten .data-nav {
+  display: none;
+}
+.es-quelle .set-sec[hidden] {
+  display: none;
+}

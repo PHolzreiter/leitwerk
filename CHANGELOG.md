@@ -1,5 +1,27 @@
 # Änderungen
 
+## 0.21.0 – Dienstpläne, Fahrzeugtypen, neues Einstellungsfenster
+**Dienstpläne**
+- Jedes Fahrzeug hat einen Dienstplan aus Schichten: Wochentage (einzeln oder Mo–Fr / Sa / So / täglich), Beginn und Ende – auch „Sonnenaufgang bis Sonnenuntergang“ für Hubschrauber (je nach Datum). Ohne Dienstplan: rund um die Uhr mit zwei Teams (07–19 und 19–07)
+- Jede Schicht hat ein eigenes Team. Läuft beim Schichtwechsel noch ein Einsatz oder Transport, macht das alte Team ihn fertig; danach steht das neue Team frei auf der Wache bzw. das Fahrzeug meldet sich ab
+- Außer Dienst: nicht in den Vorschlägen, in den Listen „außer Dienst bis …“. Für Krankentransporte werden Fahrzeuge vorgeschlagen, die zur Abholzeit im Dienst sind – auch wenn sie jetzt noch nicht angefangen haben
+- Eine Stunde vor Dienstende ein dezentes ◷ am Fahrzeug, 30 Minuten vorher deutlicher mit Uhrzeit
+- Bearbeiten unter Einstellungen → Leitstelle → Fahrzeuge; Import mit Spalten „Wochentag(e) / Beginn / Ende“ (eine Zeile je Schicht, wie aus SIM Dispatcher) oder einer Spalte „Dienstplan“ („Mo–Fr 07:00–19:00; Sa 08:00–16:00“)
+- Die mitgelieferten Fahrzeuge haben die Dienstzeiten aus deiner Liste (aktualisiert, nichts doppelt)
+
+**Fahrzeugtypen**
+- RTW gibt es klein (VW T6 Hochdach) und groß (VW Crafter). Je Dienststelle nur ein RTW-C – weitere „RTW-C“ sind große RTW (z. B. 75/002, 73/003); Ortsstellen haben ihren eigenen RTW-C. In 3D passt das Fahrzeug
+- KTW und KTW-B werden beim Import zufällig verteilt. KTW-B (Zivildienst) fährt nie mit Blaulicht und kommt bei Blaulicht-Einsätzen in den Vorschlägen nach hinten; in der Rangfolge kann „KTW-B“ auch eigens stehen
+- Typ, Größe und Dienstplan im Fahrzeug-Dialog einstellbar; ein neuer RTW-C macht den bisherigen der Dienststelle zum großen RTW
+
+**Einstellungen**
+- Ein Fenster für alles statt „Daten“ und „Einstellungen“: links die Navigation – **Mein Platz** (Darstellung, Telefon & Töne, Sprache, KI-Anrufer, Bedienung), **Leitstelle** (Fahrzeuge, Dienststellen, Krankenhäuser, Orte, Einsatzcodes & Abfrage, Einsatzvorlagen, Rettungsmittel je Stufe, Statusmodell), **Simulation** (Einsatzaufkommen, Zeiten, Wetter & Flugrettung), **Programm** (Kartenpakete, Programm & Updates)
+- Suche oben findet die richtige Seite („Nachtflug“, „Dienstplan“, „Klingelton“ …)
+
+**Sonst**
+- Während du telefonierst, klingelt es nicht mehr dauernd: jeder neue Anruf gibt einen kurzen Anklopf-Ton (unter Telefon & Töne einstellbar)
+- KI-Modelle: realistische Angaben zum Arbeitsspeicher (Mittel ab 16 GB, Stark ab 32 GB) und eine Warnung, bevor ein zu großes Modell heruntergeladen wird
+
 ## 0.20.0 – Gespräche, die sich echt anfühlen; Modellwahl; Oberfläche
 **Gespräche (Notruf und KT-Hotline)**
 - Anrufer wiederholen sich nicht mehr: LeitWerk prüft jeden Satz, bevor er angezeigt und vorgelesen wird. Was schon gesagt wurde, fällt weg; ist gar nichts Neues dabei, wird die Antwort neu erzeugt

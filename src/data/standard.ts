@@ -27,7 +27,7 @@ let cache: Records | null = null;
 
 export function standardRecords(): Records {
   if (cache) return cache;
-  const ctx = { stations: [], herkunft: "standard" as const, herkunftDetail: "LeitWerk-Standarddaten" };
+  const ctx = { stations: [], herkunft: "standard" as const, herkunftDetail: "LeitWerk-Standarddaten", zufallKtw: false };
   const stations = importCsv("stations", stationsCsv, ctx);
   const vehicles = importCsv("vehicles", vehiclesCsv, { ...ctx, stations: stations.records });
   const hospitals = importCsv("hospitals", hospitalsCsv, ctx);

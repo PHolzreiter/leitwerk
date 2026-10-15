@@ -16,7 +16,7 @@ import { el, esc, toast } from "../dom";
 import { ktMaske } from "../ktView";
 import { panelZeigen, registriere, type PanelKontext } from "../ws/arbeitsplatz";
 import { auswahl, funkRufen, karteWaehlen, karteZeigen, onAuswahl, waehle } from "../ws/auswahl";
-import { addressInput, crewHtml, fehlerZeigen, fzKlassen, minuten, statusChip, stufeFarbe, uhr, vorgemerktHtml } from "./teile";
+import { addressInput, crewHtml, fehlerZeigen, fzKlassen, minuten, statusChip, stufeFarbe, uhr, vorgemerktHtml, typHtml, dienstHtml } from "./teile";
 
 /** Einsatzmaske für einen Einsatz bauen */
 export function einsatzMaske(e: Einsatz): { root: HTMLElement; refresh(): void } {
@@ -63,7 +63,7 @@ export function einsatzMaske(e: Einsatz): { root: HTMLElement; refresh(): void }
     if (!c) {
       codeInfo.innerHTML = hasCodes()
         ? `<span class="muted">Noch kein Code.</span>`
-        : `<span class="alert-text">Keine Einsatzcodes vorhanden – bitte unter Daten → Einsatzcodes importieren.</span>`;
+        : `<span class="alert-text">Keine Einsatzcodes vorhanden – bitte unter Einstellungen → Leitstelle → Einsatzcodes & Abfrage importieren.</span>`;
       return;
     }
     const st = sim.stufeVon(e);
@@ -349,7 +349,7 @@ export function einsatzMaske(e: Einsatz): { root: HTMLElement; refresh(): void }
       cb.addEventListener("change", () => (cb.checked ? chosen.add(s.fz.id) : chosen.delete(s.fz.id)));
       row.appendChild(cb);
       const info = el("span", { class: "sugg-info" });
-      info.innerHTML = `${statusChip(s.fz)} <b>${esc(s.fz.funkrufname)}</b> <span class="muted">${esc(s.fz.rmTyp)} · ${esc(s.fz.stationName)}</span> ${crewHtml(s.fz)}`;
+      info.innerHTML = `${statusChip(s.fz)} <b>${esc(s.fz.funkrufname)}</b> <span class="muted">${typHtml(s.fz)} · ${esc(s.fz.stationName)}</span> ${crewHtml(s.fz)}${dienstHtml(s.fz)}`;
       row.appendChild(info);
       info.insertAdjacentHTML("beforeend", vorgemerktHtml(s.fz));
       if (s.kt) info.insertAdjacentHTML("beforeend", ` <span class="kt-fz aktiv" title="fährt Krankentransport ohne Patient – wird beim Alarmieren abgezogen, die Transporte sind dann wieder offen">KT – abziehen</span>`);
@@ -420,7 +420,7 @@ export function einsatzMaske(e: Einsatz): { root: HTMLElement; refresh(): void }
         if (!fz) continue;
         const row = el("div", { class: `as-row${fzKlassen(fz)}` });
         const imEinsatz = fz.einsatzId === e.id;
-        row.innerHTML = `<span class="as-platz"></span>${statusChip(fz)} <b>${esc(fz.funkrufname)}</b> <span class="muted as-info" title="${esc(sim.statusDef(fz.status).name)}">${esc(fz.rmTyp)} · ${esc(sim.statusDef(fz.status).name)}${imEinsatz ? "" : " (frei)"}</span> ${crewHtml(fz)}`;
+        row.innerHTML = `<span class="as-platz"></span>${statusChip(fz)} <b>${esc(fz.funkrufname)}</b> <span class="muted as-info" title="${esc(sim.statusDef(fz.status).name)}">${typHtml(fz)} · ${esc(sim.statusDef(fz.status).name)}${imEinsatz ? "" : " (frei)"}</span> ${crewHtml(fz)}${dienstHtml(fz)}`;
         if (imEinsatz) {
           const r = el("button", { class: "btn small", title: `${fz.funkrufname} über Funk rufen` }, "📻");
           r.addEventListener("click", () => {

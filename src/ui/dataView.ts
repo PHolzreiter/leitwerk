@@ -15,6 +15,7 @@ import {
   type Einsatzcode,
 } from "../data/model";
 import { exportCsv } from "../data/schema";
+import { planKurz } from "../sim/dienst";
 import { BEISPIEL, STANDARD_INFO, VORLAGE } from "../data/standard";
 import { store } from "../data/store";
 import { saveTextFile, storeLocation } from "../platform";
@@ -41,9 +42,11 @@ const FLAG_SHORT: Record<string, string> = {
 
 export interface DataViewDeps extends EditorDeps {
   showOnMap(lat: number, lon: number): void;
+  /** gewählte Datenart hat gewechselt (z. B. nach einem Import) */
+  onArt?(k: Kind): void;
 }
 
-export function createDataView(container: HTMLElement, deps: DataViewDeps): { refresh(): void } {
+export function createDataView(container: HTMLElement, deps: DataViewDeps): { refresh(): void; zeigeArt(k: Kind): void } {
   let current: Kind = "stations";
   let query = "";
 
@@ -160,6 +163,7 @@ export function createDataView(container: HTMLElement, deps: DataViewDeps): { re
   }
 
   function select(kind: Kind) {
+    if (kind !== current) deps.onArt?.(kind);
     current = kind;
     query = "";
     search.value = "";
@@ -227,8 +231,9 @@ export function createDataView(container: HTMLElement, deps: DataViewDeps): { re
           ["Funkrufname", (r) => (r as Vehicle).funkrufname],
           ["Kurzname", (r) => (r as Vehicle).kurzname],
           ["Kategorie", (r) => (r as Vehicle).kategorie],
-          ["Typ", (r) => (r as Vehicle).typ],
+          ["Typ", (r) => `${(r as Vehicle).typ}${(r as Vehicle).aufbau === "gross" && (r as Vehicle).typ !== "RTW-C" ? " (groß)" : ""}`],
           ["Dienststelle", (r) => stationName.get((r as Vehicle).dienststelleId) ?? "⚠ fehlt"],
+          ["Dienstplan", (r) => planKurz((r as Vehicle).dienstplan)],
           ["Aktiv", (r) => ((r as Vehicle).aktiv ? "ja" : "nein")],
         ];
       case "hospitals":
@@ -334,6 +339,6 @@ export function createDataView(container: HTMLElement, deps: DataViewDeps): { re
 
   store.onChange(render);
   render();
-  return { refresh: render };
+  return { refresh: render, zeigeArt: (k: Kind) => (k === current ? render() : select(k)) };
 }
 

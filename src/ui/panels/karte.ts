@@ -53,7 +53,7 @@ function erstellen(ctx: PanelKontext) {
       <label class="chk"><input type="checkbox" data-group="stations" checked /><span class="dot" style="background:#c62828"></span>Dienststellen</label>
       <label class="chk"><input type="checkbox" data-group="hospitals" checked /><span class="dot hosp"></span>Krankenhäuser</label>
       <label class="chk"><input type="checkbox" data-group="pois" checked /><span class="dot" style="background:#2a9d8f"></span>POIs</label>
-      <label class="chk" title="Grenzen der TETRA-Funkgruppen (Farben unter Einstellungen → Persönlich)"><input type="checkbox" class="chk-funk" />Funkgruppen</label>
+      <label class="chk" title="Grenzen der TETRA-Funkgruppen (Farben unter Einstellungen → Darstellung)"><input type="checkbox" class="chk-funk" />Funkgruppen</label>
       <label class="chk" title="Nur in der 3D-Ansicht und nah herangezoomt"><input type="checkbox" class="chk-modelle" checked />3D-Fahrzeugmodelle</label>
       <label class="chk" title="Die Karte springt zum ausgewählten Einsatz"><input type="checkbox" class="chk-folgt" />folgt der Auswahl</label>
       <div class="legende"></div>

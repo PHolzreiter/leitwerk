@@ -1,4 +1,5 @@
 /** Datenmodell einer Leitstelle (Stammdaten). */
+import type { Schicht } from "../sim/dienst";
 
 /** Herkunft eines Datensatzes. */
 export type Origin = "standard" | "import" | "manuell";
@@ -53,7 +54,28 @@ export interface Vehicle extends Base {
   aktiv: boolean;
   /** nur für NAH: darf nachts fliegen */
   nachtflug: boolean;
+  /** Dienstplan (leer = rund um die Uhr, Teams 07–19 und 19–07) */
+  dienstplan?: Schicht[];
+  /** Fahrzeuggröße: „gross“ = Großraum (VW Crafter), „klein“ = Hochdach (VW T6) */
+  aufbau?: "klein" | "gross";
 }
+
+/** Fahrzeugtypen mit eigener Bedeutung in der Simulation (Typ-Feld) */
+export const FAHRZEUG_TYPEN: { typ: string; kategorie: VehicleCategory; label: string }[] = [
+  { typ: "RTW-C", kategorie: "RTW", label: "RTW-C (mit Notfallsanitäter-Kompetenz, Großraum)" },
+  { typ: "RTW", kategorie: "RTW", label: "RTW" },
+  { typ: "KTW", kategorie: "KTW", label: "KTW" },
+  { typ: "KTW-B", kategorie: "KTW", label: "KTW-B (Zivildienst – ohne Blaulicht)" },
+  { typ: "NEF", kategorie: "NEF", label: "NEF" },
+  { typ: "NAH", kategorie: "NAH", label: "NAH (Notarzthubschrauber)" },
+  { typ: "ITH", kategorie: "ITH", label: "ITH (Intensivtransport-Hubschrauber)" },
+  { typ: "SKTW", kategorie: "SKTW", label: "SKTW" },
+  { typ: "SRTW", kategorie: "SRTW", label: "SRTW" },
+  { typ: "SNAW", kategorie: "SNAW", label: "SNAW" },
+  { typ: "BIT", kategorie: "BIT", label: "BIT (Schwerlast)" },
+  { typ: "BEL", kategorie: "BEL", label: "BEL (Bezirkseinsatzleiter)" },
+  { typ: "EL ÖBB", kategorie: "EL ÖBB", label: "EL ÖBB" },
+];
 
 export const HOSPITAL_FLAGS = [
   "notfallambulanz",

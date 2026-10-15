@@ -2827,3 +2827,67 @@ input[type="color"] {
   flex-wrap: wrap;
   margin-top: 4px;
 }
+
+/* Dienstplan-Editor */
+.dp-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel-2);
+}
+.dp-zeile {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.dp-tage {
+  display: inline-flex;
+  gap: 2px;
+}
+.dp-tag {
+  min-width: 28px;
+  padding: 3px 4px;
+  font-size: 12px;
+  border: 1px solid var(--line-2);
+  border-radius: 4px;
+  background: var(--panel);
+  color: var(--text-dim);
+  cursor: pointer;
+}
+.dp-tag.an {
+  background: var(--blue);
+  border-color: var(--blue);
+  color: #fff;
+}
+.dp-zeit {
+  display: inline-flex;
+  gap: 4px;
+}
+.dp-editor select {
+  width: auto;
+  min-width: 0;
+  padding: 3px 4px;
+}
+.dp-zeit input[type="text"] {
+  width: 58px;
+  padding: 3px 6px;
+  text-align: center;
+}
+.dp-zeit input.ungueltig {
+  border-color: var(--alert-text);
+}
+.dp-unten {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.dp-vorlagen {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}

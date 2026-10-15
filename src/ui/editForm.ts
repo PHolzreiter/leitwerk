@@ -1,5 +1,6 @@
 /** Formular zum Anlegen und Bearbeiten von Dienststellen, Fahrzeugen, Krankenhäusern und POIs. */
 import {
+  FAHRZEUG_TYPEN,
   HOSPITAL_FLAGS,
   BEREICHE_AMBULANZ,
   BEREICHE_STATION,
@@ -24,6 +25,8 @@ import { store } from "../data/store";
 import { codeKategorien } from "../sim/codes";
 import { confirmDialog, openDialog } from "./dialog";
 import { el, toast } from "./dom";
+import { dienstplanEditor } from "./dienstplanEditor";
+import type { Schicht } from "../sim/dienst";
 
 export interface EditorDeps {
   /** Wechselt zur Karte, lässt einen Punkt wählen und kehrt zurück */
@@ -94,6 +97,7 @@ export function openEditor(
   let bereichInputs: Record<string, HTMLInputElement> = {};
   let aktivInput: HTMLInputElement | null = null;
   let nachtInput: HTMLInputElement | null = null;
+  let dienstplan: { wert(): Schicht[] } | null = null;
 
   const addPosition = (lat: number | undefined, lon: number | undefined, nameKey: string) => {
     add("lat", "Breitengrad *", textInput(lat !== undefined ? lat.toFixed(6) : "", "48.20000"));
@@ -121,9 +125,32 @@ export function openEditor(
       "kategorie",
       "Kategorie",
       selectInput(VEHICLE_CATEGORIES.map((c) => [c, c]), v?.kategorie ?? "RTW"),
-      "Zum Start fahren nur RTW, NEF und NAH Einsätze",
+      "wird beim Typ automatisch vorgeschlagen",
     );
-    add("typ", "Fahrzeugtyp", textInput(v?.typ ?? "", "z. B. RTW-C"));
+    const typFeld = textInput(v?.typ ?? "", "z. B. RTW-C");
+    const typListe = el("datalist", { id: "fz-typen-liste" });
+    for (const t of FAHRZEUG_TYPEN) typListe.appendChild(el("option", { value: t.typ }, t.label));
+    typFeld.setAttribute("list", "fz-typen-liste");
+    form.appendChild(typListe);
+    add("typ", "Fahrzeugtyp", typFeld, "RTW-C: nur einer je Dienststelle · KTW-B: Zivildienst, fährt ohne Blaulicht");
+    // Kategorie passend zum Typ vorschlagen
+    typFeld.addEventListener("change", () => {
+      const t = FAHRZEUG_TYPEN.find((x) => x.typ.toLowerCase() === typFeld.value.trim().toLowerCase());
+      if (t) (inputs.kategorie as HTMLSelectElement).value = t.kategorie;
+    });
+    add(
+      "aufbau",
+      "Fahrzeuggröße",
+      selectInput(
+        [
+          ["", "automatisch (RTW-C groß, sonst klein)"],
+          ["klein", "klein – VW T6 Hochdach"],
+          ["gross", "groß – VW Crafter (Großraum)"],
+        ],
+        v?.aufbau ?? "",
+      ),
+      "Wirkt auf die 3D-Ansicht",
+    );
     const stations = store
       .list("stations")
       .slice()
@@ -144,6 +171,12 @@ export function openEditor(
     const [wrapN, inputN] = checkbox("Nachtflugtauglich (nur NAH)", v?.nachtflug ?? false);
     nachtInput = inputN;
     form.appendChild(wrapN);
+    const dpWrap = el("div", { class: "fld wide" });
+    dpWrap.appendChild(el("label", {}, "Dienstplan (Schichten – jede Schicht hat ein eigenes Team)"));
+    const dpe = dienstplanEditor(v?.dienstplan);
+    dienstplan = dpe;
+    dpWrap.appendChild(dpe.root);
+    form.appendChild(dpWrap);
   } else if (kind === "codes") {
     const c = existing as Einsatzcode | undefined;
     add("code", "Code *", textInput(c?.code ?? "", "z. B. RD-10D1"));
@@ -263,8 +296,21 @@ export function openEditor(
         dienststelleId: val("dienststelle"),
         aktiv: aktivInput?.checked ?? true,
         nachtflug: nachtInput?.checked ?? false,
+        dienstplan: dienstplan?.wert() ?? [],
+        ...(val("aufbau") === "klein" || val("aufbau") === "gross" ? { aufbau: val("aufbau") as "klein" | "gross" } : {}),
       };
-      store.upsert("vehicles", [v]);
+      const geaendert: Vehicle[] = [v];
+      // Regel: nur ein RTW-C je Dienststelle – ein anderer wird zum großen RTW
+      if (v.typ.trim().toUpperCase() === "RTW-C") {
+        v.typ = "RTW-C";
+        for (const x of store.list("vehicles")) {
+          if (x.id !== v.id && x.dienststelleId === v.dienststelleId && x.typ.trim().toUpperCase() === "RTW-C") {
+            geaendert.push({ ...x, typ: "RTW", aufbau: "gross" });
+            toast(`${x.funkrufname} ist jetzt RTW (Großraum) – je Dienststelle gibt es nur einen RTW-C`);
+          }
+        }
+      }
+      store.upsert("vehicles", geaendert);
     } else if (kind === "templates") {
       if (!val("code")) return fail("Bitte einen AMPDS-Code eingeben.");
       const lat = parseNum(val("lat"));
@@ -346,7 +392,7 @@ export function openEditor(
     title: existing ? `${KIND_SINGULAR[kind]} bearbeiten` : `${KIND_SINGULAR[kind]} anlegen`,
     body: form,
     actions,
-    wide: kind === "hospitals",
+    wide: kind === "hospitals" || kind === "vehicles",
   });
 }
 

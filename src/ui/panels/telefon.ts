@@ -2,6 +2,8 @@
  * Telefon: alle Anrufe (Notruf, KT-Hotline, Überstellung) mit Annehmen, Halten, Zurückwechseln, Auflegen.
  * Beim Annehmen geht das Abfrage-Fenster auf.
  */
+import { spielen } from "../sounds";
+import { kiPrefs } from "../../abfrage/ki";
 import { nachKlick } from "../../klick";
 import { verstummen } from "../sprache";
 import { eroeffnen } from "../../abfrage/gespraech";
@@ -270,7 +272,9 @@ export function anrufBeobachterStarten(): void {
     const anrufe = alleAnrufe();
     const klingeltNotruf = anrufe.some((x) => x.typ === "notruf" && x.anruf.status === "klingelt");
     const klingeltKt = anrufe.some((x) => x.typ !== "notruf" && x.anruf.status === "klingelt");
-    klingeltonAktualisieren(klingeltNotruf && p.notrufe && sim.state.laeuft, klingeltKt && p.ktHotline && sim.state.laeuft);
+    // Während ich telefoniere: kein Dauerklingeln, nur ein kurzer Anklopf-Ton je neuem Anruf
+    const telefoniere = !!meinGespraech();
+    klingeltonAktualisieren(!telefoniere && klingeltNotruf && p.notrufe && sim.state.laeuft, !telefoniere && klingeltKt && p.ktHotline && sim.state.laeuft);
     const rufe = (sim.state.funkGespraeche ?? []).filter((g) => g.status === "ruft");
     funkPiepAktualisieren(p.funkTon && rufe.length > 0, rufe.some((g) => g.dringend));
     // Neuer Anruf klingelt: Telefon zeigen (wenn ich diese Anrufe annehme)
@@ -279,6 +283,8 @@ export function anrufBeobachterStarten(): void {
       if (x.anruf.status !== "klingelt" || bekannt.has(key)) continue;
       bekannt.add(key);
       if (erstes) continue;
+      const fuerMich = (x.typ === "notruf" && p.notrufe) || (x.typ !== "notruf" && p.ktHotline);
+      if (telefoniere && fuerMich && sim.state.laeuft && kiPrefs().klingelton) spielen("anklopfen");
       if ((x.typ === "notruf" && p.notrufe) || (x.typ !== "notruf" && p.ktHotline)) panelZeigen("telefon");
     }
     erstes = false;

@@ -368,7 +368,7 @@ function notrufAnsicht(root: HTMLElement, e: Einsatz): { refresh(): void; dispos
 
   // Rechts: Abfrage
   const rechts = el("div", { class: "abf-rechts" });
-  rechts.append(store.schema ? t.abfrage : el("div", { class: "muted pad" }, "Kein Abfrageschema importiert (Daten → Einsatzcodes)."));
+  rechts.append(store.schema ? t.abfrage : el("div", { class: "muted pad" }, "Kein Abfrageschema importiert (Einstellungen → Leitstelle → Einsatzcodes & Abfrage)."));
 
   const grid = el("div", { class: "abf-grid" });
   grid.append(links.el, mitte, rechts);

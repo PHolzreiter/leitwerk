@@ -2,6 +2,7 @@
  * Steuerleiste oben: Uhr, Start/Pause, Tempo, Wetter, Anrufannahme, Fenster- und Anordnungs-Menü,
  * Daten und Einstellungen (als großes Pop-up), Spiel/Multiplayer.
  */
+import { einstellungenFenster, type EinstellungenFenster } from "./einstellungen";
 import { store } from "../../data/store";
 import { mp } from "../../net/mehrspieler";
 import { sim } from "../../sim/engine";
@@ -9,10 +10,8 @@ import { fehlerMelden } from "../fehlerMelden";
 import { symbolFuer, WETTER_LABEL } from "../../sim/weather";
 import { wetterOeffnen } from "../wetterView";
 import { ensureCodes } from "../codesPrompt";
-import { createDataView } from "../dataView";
 import { openDialog } from "../dialog";
 import { el, esc, toast } from "../dom";
-import { createSettingsView } from "../settingsView";
 import { setzeEditorDeps } from "../panels/karte";
 import {
   andereFenster,
@@ -32,7 +31,6 @@ import { FENSTER_ID, IST_HAUPT } from "./bus";
 import { karteWaehlen, karteZeigen } from "./auswahl";
 import { fensterSchliessen } from "./nebenfenster";
 import { onPers, pers, setzePers } from "./persoenlich";
-import { persoenlichView } from "./persoenlichView";
 
 // ---------------------------------------------------------------- Menüs
 
@@ -125,7 +123,7 @@ function anordnungMenu(m: HTMLElement): void {
   }
   m.appendChild(el("div", { class: "lw-menu-trenner" }));
   punkt(m, "Jetzige Anordnung speichern …", "Unter einem Namen, inklusive weiterer Fenster", () => speichernDialog());
-  punkt(m, "Anordnungen verwalten …", "Exportieren, importieren, löschen, zurücksetzen", () => einstellungenOeffnen("persoenlich"));
+  punkt(m, "Anordnungen verwalten …", "Exportieren, importieren, löschen, zurücksetzen", () => einstellungenOeffnen("bedienung"));
 }
 
 function speichernDialog(): void {
@@ -151,114 +149,38 @@ function speichernDialog(): void {
   });
 }
 
-// ---------------------------------------------------------------- große Pop-ups (Daten, Einstellungen)
+// ---------------------------------------------------------------- Einstellungen (ein Fenster für alles)
 
-interface Gross {
-  overlay: HTMLElement;
-  zeigen(tab?: string): void;
-  verstecken(): void;
-}
+let fenster: EinstellungenFenster | null = null;
 
-function grossesFenster(titelText: string, tabs: { id: string; label: string; bauen(c: HTMLElement): { refresh(): void } }[]): Gross {
-  const overlay = el("div", { class: "gross-overlay", hidden: "" });
-  const box = el("div", { class: "gross", role: "dialog", "aria-modal": "true" });
-  const kopf = el("div", { class: "gross-kopf" });
-  kopf.appendChild(el("div", { class: "gross-titel" }, titelText));
-  const reiter = el("div", { class: "gross-tabs" });
-  kopf.appendChild(reiter);
-  const zu = el("button", { class: "gross-zu", type: "button", title: "Schließen (Esc)" }, "×");
-  kopf.appendChild(zu);
-  const inhalt = el("div", { class: "gross-inhalt" });
-  box.append(kopf, inhalt);
-  overlay.appendChild(box);
-  document.body.appendChild(overlay);
-  const gebaut = new Map<string, { c: HTMLElement; v: { refresh(): void } }>();
-  let aktiv = tabs[0].id;
-  const zeigeTab = (id: string) => {
-    aktiv = id;
-    reiter.querySelectorAll("button").forEach((b) => b.classList.toggle("active", b.dataset.tab === id));
-    for (const [tid, x] of gebaut) x.c.hidden = tid !== id;
-    let g = gebaut.get(id);
-    if (!g) {
-      const c = el("div", { class: "gross-seite" });
-      inhalt.appendChild(c);
-      const t = tabs.find((x) => x.id === id)!;
-      g = { c, v: t.bauen(c) };
-      gebaut.set(id, g);
-    } else g.v.refresh();
-  };
-  if (tabs.length > 1) {
-    for (const t of tabs) {
-      const b = el("button", { type: "button" }, t.label);
-      b.dataset.tab = t.id;
-      b.addEventListener("click", () => zeigeTab(t.id));
-      reiter.appendChild(b);
-    }
-  }
-  const verstecken = () => {
-    overlay.classList.add("zu");
-    setTimeout(() => {
-      overlay.hidden = true;
-      overlay.classList.remove("zu");
-    }, 140);
-  };
-  zu.addEventListener("click", verstecken);
-  overlay.addEventListener("mousedown", (e) => {
-    if (e.target === overlay) verstecken();
-  });
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && !overlay.hidden && !document.querySelector(".dlg-overlay")) {
-      e.stopPropagation();
-      verstecken();
-    }
-  });
-  return {
-    overlay,
-    zeigen: (tab) => {
-      overlay.hidden = false;
-      zeigeTab(tab ?? aktiv);
-    },
-    verstecken,
-  };
-}
-
-let daten: Gross | null = null;
-let einstellungen: Gross | null = null;
-
-/** Ort auf der Karte wählen, während Daten/Einstellungen offen sind (Pop-up kurz ausblenden) */
-async function waehlenAusPopup(hinweis: string) {
-  const offen = [daten, einstellungen].filter((g) => g && !g.overlay.hidden) as Gross[];
-  for (const g of offen) g.overlay.hidden = true;
+/** Ort auf der Karte wählen, während die Einstellungen offen sind (Pop-up kurz ausblenden) */
+async function waehlenAusPopup(hinweis: string): Promise<{ lat: number; lon: number } | null> {
+  const offen = fenster && !fenster.overlay.hidden ? fenster : null;
+  if (offen) offen.overlay.hidden = true;
   const r = await karteWaehlen(hinweis);
-  for (const g of offen) g.overlay.hidden = false;
+  if (offen) offen.overlay.hidden = false;
   return r;
 }
 
-export function datenOeffnen(): void {
-  daten ??= grossesFenster("Daten", [
-    {
-      id: "daten",
-      label: "Daten",
-      bauen: (c) =>
-        createDataView(c, {
-          pickOnMap: waehlenAusPopup,
-          showOnMap: (lat, lon) => {
-            daten?.verstecken();
-            karteZeigen(lat, lon, 14);
-          },
-        }),
+function fensterHolen(): EinstellungenFenster {
+  fenster ??= einstellungenFenster({
+    pickOnMap: waehlenAusPopup,
+    showOnMap: (lat, lon) => {
+      fenster?.verstecken();
+      karteZeigen(lat, lon, 14);
     },
-  ]);
-  daten.zeigen();
+  });
+  return fenster;
 }
 
-export function einstellungenOeffnen(tab?: "persoenlich" | "simulation" | "programm"): void {
-  einstellungen ??= grossesFenster("Einstellungen", [
-    { id: "persoenlich", label: "Persönlich", bauen: (c) => persoenlichView(c) },
-    { id: "simulation", label: "Leitstelle & Simulation", bauen: (c) => createSettingsView(c, "simulation") },
-    { id: "programm", label: "Programm & Karten", bauen: (c) => createSettingsView(c, "programm") },
-  ]);
-  einstellungen.zeigen(tab);
+/** Einstellungen bei den Daten öffnen (Fahrzeuge, Dienststellen …); seite z. B. „codes“ */
+export function datenOeffnen(seite = "fahrzeuge"): void {
+  fensterHolen().zeigen(seite);
+}
+
+/** Einstellungen öffnen – optional gleich auf einer Seite (z. B. „telefon“, „fahrzeuge“; alte Reiternamen gehen auch) */
+export function einstellungenOeffnen(seite?: string): void {
+  fensterHolen().zeigen(seite);
 }
 
 // ---------------------------------------------------------------- Leiste
@@ -285,7 +207,6 @@ export function steuerleisteBauen(kopf: HTMLElement): void {
       <button type="button" class="btn small sl-menu-knopf" data-menu="anordnung">Anordnung ▾</button>
     </div>
     <div class="sl-gruppe">
-      <button type="button" class="btn small" data-act="daten">Daten</button>
       <button type="button" class="btn small" data-act="einstellungen">Einstellungen</button>
       <button id="btn-spiel" class="btn small" type="button" title="Spielstand und Multiplayer">Spiel</button>
       <button type="button" class="btn small icon" data-act="fehler" title="Fehler melden – speichert eine Datei mit den letzten Fehlermeldungen für den Entwickler">🐞</button>
@@ -348,7 +269,6 @@ export function steuerleisteBauen(kopf: HTMLElement): void {
       menu(k, fensterMenu);
     }
   });
-  kopf.querySelector("[data-act=daten]")!.addEventListener("click", () => datenOeffnen());
   kopf.querySelector("[data-act=einstellungen]")!.addEventListener("click", () => einstellungenOeffnen());
   kopf.querySelector("[data-act=fehler]")!.addEventListener("click", () => void fehlerMelden());
 

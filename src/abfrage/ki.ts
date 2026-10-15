@@ -30,10 +30,10 @@ export interface ModellInfo {
 export const MODELLE: ModellInfo[] = [
   { name: "qwen3:4b", stufe: "leicht", label: "Qwen3 4B", gb: 2.6, ram: 8, info: "für ältere oder schwächere Rechner – schnell, aber einfachere Gespräche" },
   { name: "gemma3:4b", stufe: "leicht", label: "Gemma 3 4B", gb: 3.3, ram: 8, info: "klein und schnell, gutes Deutsch für die Größe" },
-  { name: "qwen3:8b", stufe: "standard", label: "Qwen3 8B", gb: 5.2, ram: 16, info: "bisheriger Standard" },
-  { name: "qwen3:14b", stufe: "mittel", label: "Qwen3 14B", gb: 9.3, ram: 24, info: "deutlich natürlichere Gespräche, wiederholt sich seltener" },
-  { name: "gemma3:12b", stufe: "mittel", label: "Gemma 3 12B", gb: 8.1, ram: 24, info: "sehr gutes Deutsch, etwas langsamer" },
-  { name: "qwen3:32b", stufe: "stark", label: "Qwen3 32B", gb: 20, ram: 48, info: "für starke Rechner (z. B. Mac mit viel Speicher) – am menschlichsten" },
+  { name: "qwen3:8b", stufe: "standard", label: "Qwen3 8B", gb: 5.2, ram: 12, info: "bisheriger Standard" },
+  { name: "qwen3:14b", stufe: "mittel", label: "Qwen3 14B", gb: 9.3, ram: 16, info: "deutlich natürlichere Gespräche, wiederholt sich seltener" },
+  { name: "gemma3:12b", stufe: "mittel", label: "Gemma 3 12B", gb: 8.1, ram: 16, info: "sehr gutes Deutsch, etwas langsamer" },
+  { name: "qwen3:32b", stufe: "stark", label: "Qwen3 32B", gb: 20, ram: 32, info: "für starke Rechner (z. B. Mac mit viel Speicher) – am menschlichsten" },
   { name: "gemma3:27b", stufe: "stark", label: "Gemma 3 27B", gb: 17, ram: 32, info: "für starke Rechner – sehr gutes Deutsch" },
 ];
 
@@ -48,9 +48,9 @@ export async function rechnerRam(): Promise<number> {
 /** Empfohlene Stufe für diesen Rechner */
 export function empfohleneStufe(ram: number): ModellInfo["stufe"] | null {
   if (!ram) return null;
-  if (ram >= 48) return "stark";
-  if (ram >= 24) return "mittel";
-  if (ram >= 16) return "standard";
+  if (ram >= 32) return "stark";
+  if (ram >= 16) return "mittel";
+  if (ram >= 12) return "standard";
   return "leicht";
 }
 

@@ -273,7 +273,7 @@ export function createSettingsView(container: HTMLElement, teil: "simulation" | 
     // Flugrettung
     const nSec = section(
       "Flugrettung und Wetter",
-      "Bei Nebel und Gewitter fliegt kein NAH. Nachts nur Hubschrauber mit „Nachtflugtauglich“ (Reiter Daten → Fahrzeuge). Das Wetter beeinflusst auch die Notrufe: Hitze bringt mehr Hitzenotfälle und Badeunfälle, Kälte mehr Unterkühlung und Infekte, Glätte mehr Stürze und Unfälle.",
+      "Bei Nebel und Gewitter fliegt kein NAH. Nachts nur Hubschrauber mit „Nachtflugtauglich“ (Einstellungen → Leitstelle → Fahrzeuge). Das Wetter beeinflusst auch die Notrufe: Hitze bringt mehr Hitzenotfälle und Badeunfälle, Kälte mehr Unterkühlung und Infekte, Glätte mehr Stürze und Unfälle.",
     );
     const nGrid = el("div", { class: "set-grid" });
     const wa = el("input", { type: "checkbox" });
@@ -403,7 +403,7 @@ export function createSettingsView(container: HTMLElement, teil: "simulation" | 
     buildKiSection(
       section(
         "Notrufe und KI-Anrufer",
-        "Mit einem Abfrageschema (Daten → Einsatzcodes) kommen Einsätze als Anruf. Den Anrufer spielt eine KI (Ollama), die auf deinem Rechner läuft – ohne Internet und kostenlos. Ohne KI antwortet der Anrufer mit einfachen Sätzen.",
+        "Mit einem Abfrageschema (Einstellungen → Leitstelle → Einsatzcodes & Abfrage) kommen Einsätze als Anruf. Den Anrufer spielt eine KI (Ollama), die auf deinem Rechner läuft – ohne Internet und kostenlos. Ohne KI antwortet der Anrufer mit einfachen Sätzen.",
       ),
       draft,
     );

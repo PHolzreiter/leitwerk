@@ -2,6 +2,7 @@
  * Spalten der CSV-Dateien, Erkennung fremder Spaltennamen und Umwandlung
  * zwischen CSV-Zeilen und Datensätzen.
  */
+import { planLesen, planText, schichtAusFeldern, type Schicht } from "../sim/dienst";
 import { parseCsv, toCsv } from "./csv";
 import {
   HOSPITAL_FLAGS,
@@ -25,7 +26,7 @@ import {
 /** Spalten in der Reihenfolge, in der LeitWerk sie schreibt. */
 export const COLUMNS: Record<Kind, string[]> = {
   stations: ["id", "name", "organisation", "typ", "ort", "bezirk", "adresse", "breitengrad", "laengengrad", "hinweis"],
-  vehicles: ["id", "funkrufname", "kurzname", "kategorie", "typ", "dienststelle", "aktiv", "nachtflug", "hinweis"],
+  vehicles: ["id", "funkrufname", "kurzname", "kategorie", "typ", "aufbau", "dienststelle", "aktiv", "nachtflug", "dienstplan", "hinweis"],
   hospitals: ["id", "name", "kurzname", "ort", "breitengrad", "laengengrad", ...HOSPITAL_FLAGS, "bereiche", "hinweis"],
   pois: ["id", "name", "typ", "ort", "breitengrad", "laengengrad", "hinweis"],
   templates: ["id", "code", "adresse", "breitengrad", "laengengrad", "meldung", "patient_alter", "transport", "hinweis"],
@@ -62,6 +63,11 @@ const ALIASES: Record<string, string[]> = {
   dienststelle_name: ["dienststellename"],
   aktiv: ["aktiv", "einsatzbereit"],
   nachtflug: ["nachtflug", "nachtflugtauglich", "nvg"],
+  dienstplan: ["dienstplan", "dienstzeit", "dienstzeiten", "schichten", "schichtplan"],
+  wochentage: ["wochentage", "wochentag", "tage"],
+  beginn: ["beginn", "dienstbeginn", "schichtbeginn", "start"],
+  ende: ["ende", "dienstende", "schichtende"],
+  aufbau: ["aufbau", "groesse", "fahrzeugmodell", "modell"],
   code: ["code", "ampds", "einsatzcode", "ampdscode"],
   meldung: ["meldung", "meldebild", "text"],
   patient_alter: ["patientalter", "alter"],
@@ -147,6 +153,8 @@ export interface ImportContext {
   existing?: { id: string; name?: string; funkrufname?: string; kurzname?: string; code?: string }[];
   herkunft: Origin;
   herkunftDetail?: string;
+  /** KTW zufällig auf KTW/KTW-B verteilen (Standard: ja; nicht bei den mitgelieferten Daten) */
+  zufallKtw?: boolean;
 }
 
 class RowError extends Error {}
@@ -229,6 +237,72 @@ function slug(s: string): string {
   return normKey(s).slice(0, 40) || "x";
 }
 
+/** Typ vereinheitlichen: „RTW C“, „RTWC“ → „RTW-C“; „KTW B“ → „KTW-B“ */
+export function typNormal(typ: string): string {
+  const t = typ.trim();
+  const k = t.toUpperCase().replace(/\s+/g, "");
+  if (k === "RTW-C" || k === "RTWC") return "RTW-C";
+  if (k === "RTW") return "RTW";
+  if (k === "KTW-B" || k === "KTWB") return "KTW-B";
+  if (k === "KTW") return "KTW";
+  return t;
+}
+
+/** fester Zufallswert 0–1 je Text (gleiches Ergebnis bei jedem Import) */
+export function streuung(text: string): number {
+  let h = 2166136261;
+  for (const c of normKey(text)) {
+    h ^= c.charCodeAt(0);
+    h = Math.imul(h, 16777619);
+  }
+  return ((h >>> 0) % 10_000) / 10_000;
+}
+
+function aufbauLesen(v: string): "klein" | "gross" | null {
+  const t = v.trim().toLowerCase();
+  if (!t) return null;
+  if (/gro(ß|ss)|crafter|sprinter/.test(t)) return "gross";
+  if (/klein|t6|hochdach|transporter/.test(t)) return "klein";
+  return null;
+}
+
+/**
+ * Regel: An einer Dienststelle gibt es nur EINEN RTW-C. Weitere „RTW-C“ derselben Dienststelle sind
+ * große RTW (gleiches Fahrzeug, aber kein C). Der mit dem kleinsten Funkrufnamen bleibt RTW-C.
+ */
+export function einRtwCJeDienststelle(fz: Vehicle[]): number {
+  const proSt = new Map<string, Vehicle[]>();
+  for (const v of fz) if (v.typ === "RTW-C") proSt.set(v.dienststelleId, [...(proSt.get(v.dienststelleId) ?? []), v]);
+  let n = 0;
+  for (const liste of proSt.values()) {
+    liste.sort((a, b) => a.funkrufname.localeCompare(b.funkrufname, "de", { numeric: true }));
+    for (const v of liste.slice(1)) {
+      v.typ = "RTW";
+      v.aufbau = "gross";
+      n++;
+    }
+  }
+  return n;
+}
+
+/** Beim Aktualisieren eines vorhandenen Fahrzeugs: was die Datei nicht enthält, bleibt wie es war */
+function uebernimmVorhandenes(v: Vehicle, alt: Partial<Vehicle> | undefined, spalten: (string | null)[]): void {
+  if (!alt) return;
+  const hat = (c: string) => spalten.includes(c);
+  // Hubschrauber: in der Datei „Christophorus 2“, bei uns „99/002“ mit Kurzname
+  if (alt.funkrufname && alt.kurzname && normKey(alt.kurzname) === normKey(v.funkrufname) && normKey(alt.funkrufname) !== normKey(v.funkrufname)) {
+    v.kurzname = v.funkrufname;
+    v.funkrufname = alt.funkrufname;
+  }
+  if (!hat("kurzname") && alt.kurzname && !v.kurzname) v.kurzname = alt.kurzname;
+  if (!hat("nachtflug") && alt.nachtflug !== undefined) v.nachtflug = alt.nachtflug;
+  // aktiv/inaktiv bleibt – außer die Kategorie hat sich geändert (z. B. „AMB Type II“ → KTW)
+  if (!hat("aktiv") && alt.aktiv !== undefined && alt.kategorie === v.kategorie) v.aktiv = alt.aktiv;
+  if (!hat("hinweis") && alt.hinweis) v.hinweis = alt.hinweis;
+  if (!hat("beginn") && !hat("ende") && !hat("dienstplan") && alt.dienstplan) v.dienstplan = alt.dienstplan;
+  if (!hat("aufbau") && alt.aufbau && v.typ === alt.typ) v.aufbau = alt.aufbau;
+}
+
 /** Liest eine CSV-Datei als Datensätze der gewünschten Art. */
 export function importCsv<K extends Kind>(kind: K, text: string, ctx: ImportContext): ImportResult<K> {
   const rows = parseCsv(text);
@@ -249,7 +323,7 @@ export function importCsv<K extends Kind>(kind: K, text: string, ctx: ImportCont
   const header = rows[0];
   const mapped = mapHeader(header);
   mapped.forEach((c, i) => {
-    if (c && COLUMNS[kind].concat(["dienststelle_name"]).includes(c)) result.spaltenErkannt.push(`${header[i]} → ${c}`);
+    if (c && COLUMNS[kind].concat(["dienststelle_name"], kind === "vehicles" ? ["wochentage", "beginn", "ende"] : []).includes(c)) result.spaltenErkannt.push(`${header[i]} → ${c}`);
     else result.spaltenIgnoriert.push(header[i]);
   });
   const missing = REQUIRED[kind].filter((c) => !mapped.includes(c));
@@ -279,6 +353,7 @@ export function importCsv<K extends Kind>(kind: K, text: string, ctx: ImportCont
   const existingByKey = new Map<string, string>();
   for (const e of ctx.existing ?? []) for (const k of keysOf(e)) if (!existingByKey.has(k)) existingByKey.set(k, e.id);
   let merged = 0;
+  const proFunk = new Map<string, Vehicle>();
 
   for (let r = 1; r < rows.length; r++) {
     const zeile = r + 1;
@@ -303,13 +378,33 @@ export function importCsv<K extends Kind>(kind: K, text: string, ctx: ImportCont
       } else if (kind === "vehicles") {
         const funk = get("funkrufname");
         if (!funk) throw new RowError("Funkrufname fehlt");
+        // Schicht aus dieser Zeile (Spalten Wochentage/Beginn/Ende oder Dienstplan)
+        let schichten: Schicht[] | undefined;
+        if (mapped.includes("beginn") || mapped.includes("ende")) {
+          const sch = schichtAusFeldern(get("wochentage"), get("beginn"), get("ende"));
+          if (sch.fehler) warn(`${funk}: ${sch.fehler} – Schicht übersprungen`);
+          schichten = sch.schicht ? [sch.schicht] : [];
+        } else if (mapped.includes("dienstplan")) {
+          const pl = planLesen(get("dienstplan"));
+          if (pl.fehler) warn(`${funk}: ${pl.fehler}`);
+          schichten = pl.plan;
+        }
+        // weitere Zeile desselben Fahrzeugs = weitere Schicht
+        const frueher = proFunk.get(normKey(funk));
+        if (frueher) {
+          if (schichten?.length) (frueher.dienstplan ??= []).push(...schichten);
+          continue;
+        }
         const ref = get("dienststelle") || get("dienststelle_name");
         const st = stationById.get(ref) ?? stationByName.get(normName(ref));
         if (!st) {
           throw new RowError(`Dienststelle „${ref}“ nicht gefunden – zuerst die Dienststellen importieren`);
         }
-        const typ = get("typ");
+        let typ = typNormal(get("typ"));
+        // KTW: zufällig KTW oder KTW-B (Zivildienst, ohne Blaulicht) – fest je Funkrufname
+        if ((typ === "KTW" || typ === "KTW-B") && ctx.zufallKtw !== false) typ = streuung(funk) < 0.5 ? "KTW" : "KTW-B";
         const kategorie = parseCategory(get("kategorie"), typ, funk, warn, derived);
+        const aufbau = aufbauLesen(get("aufbau")) ?? (typ === "RTW-C" ? "gross" : typ === "RTW" ? "klein" : undefined);
         const aktivRaw = get("aktiv");
         const aktiv = aktivRaw === "" ? ACTIVE_CATEGORIES.includes(kategorie) : parseBool(aktivRaw, "aktiv");
         id = id || `fz-${slug(funk)}`;
@@ -323,7 +418,10 @@ export function importCsv<K extends Kind>(kind: K, text: string, ctx: ImportCont
           dienststelleId: st.id,
           aktiv,
           nachtflug: get("nachtflug") === "" ? false : parseBool(get("nachtflug"), "nachtflug"),
+          ...(aufbau ? { aufbau } : {}),
+          ...(schichten !== undefined ? { dienstplan: schichten } : {}),
         };
+        proFunk.set(normKey(funk), v);
         record = v;
       } else if (kind === "templates") {
         const code = get("code");
@@ -402,6 +500,7 @@ export function importCsv<K extends Kind>(kind: K, text: string, ctx: ImportCont
         if (match && !usedIds.has(match)) {
           record.id = match;
           merged++;
+          if (kind === "vehicles") uebernimmVorhandenes(record as Vehicle, (ctx.existing ?? []).find((e) => e.id === match) as Partial<Vehicle> | undefined, mapped);
         }
       }
       if (usedIds.has(record.id)) {
@@ -416,6 +515,10 @@ export function importCsv<K extends Kind>(kind: K, text: string, ctx: ImportCont
       if (e instanceof RowError) result.fehler.push({ zeile, meldung: e.message });
       else throw e;
     }
+  }
+  if (kind === "vehicles") {
+    const n = einRtwCJeDienststelle(result.records as Vehicle[]);
+    if (n) result.warnungen.unshift({ zeile: 0, meldung: `Je Dienststelle gibt es nur einen RTW-C – ${n} weitere RTW-C sind jetzt „RTW (Großraum)“` });
   }
   if (derived.size > 0) {
     const parts = [...derived.entries()].map(([k, n]) => `${k} (${n}×)`);
@@ -454,6 +557,8 @@ export function exportCsv<K extends Kind>(kind: K, records: KindMap[K][], statio
         dienststelle: f.dienststelleId,
         aktiv: f.aktiv ? "ja" : "nein",
         nachtflug: f.nachtflug ? "ja" : "nein",
+        aufbau: f.aufbau === "gross" ? "groß" : f.aufbau === "klein" ? "klein" : "",
+        dienstplan: planText(f.dienstplan) || "24/7",
         dienststelle_name: stationName.get(f.dienststelleId) ?? "",
       });
     } else if (kind === "templates") {

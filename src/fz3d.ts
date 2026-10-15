@@ -112,6 +112,8 @@ const LKW: Quader[] = [
 ];
 
 function formFuer(fz: SimFahrzeug): Quader[] {
+  // Großraum-RTW (auch wenn er nicht der RTW-C der Dienststelle ist) = Crafter, kleiner RTW = T6 Hochdach
+  if (fz.rmTyp === "RTW" || fz.rmTyp === "RTW-C") return fz.gross === false ? T6_HOCHDACH : fz.gross || fz.rmTyp === "RTW-C" ? CRAFTER : T6_HOCHDACH;
   switch (fz.rmTyp) {
     case "NAH":
     case "ITH":
@@ -120,7 +122,6 @@ function formFuer(fz: SimFahrzeug): Quader[] {
       return LKW;
     case "EL ÖBB":
       return PASSAT;
-    case "RTW-C":
     case "SRTW":
     case "SNAW":
       return CRAFTER;

@@ -3,6 +3,7 @@ import { MODELLE, STUFE_LABEL, empfohleneStufe, kiBeenden, kiChat, kiInstalliere
 import { inTauri } from "../platform";
 import type { Settings } from "../sim/settings";
 import { el, esc, toast } from "./dom";
+import { confirmDialog } from "./dialog";
 import { progressBar } from "./packsView";
 
 let beschaeftigt = false;
@@ -164,6 +165,15 @@ export function buildKiSection(sec: HTMLElement, draft: Settings): void {
     } else {
       if (!hatModell(s, m)) {
         knopf(`Modell laden (${m})`, "primary", async () => {
+          const info = MODELLE.find((x) => x.name === m);
+          if (info && ram && ram < info.ram) {
+            const ok = await confirmDialog(
+              "Modell zu groß für diesen Rechner?",
+              `${info.label} braucht etwa ${info.ram} GB Arbeitsspeicher, dieser Rechner hat ${ram} GB. Es kann sein, dass Ollama das Modell gar nicht lädt oder die Antworten sehr langsam kommen (eher eine Minute als ein paar Sekunden). Kaputt geht nichts – du kannst es mit „löschen“ wieder entfernen. Trotzdem herunterladen (${info.gb.toLocaleString("de-AT")} GB)?`,
+              "Trotzdem laden",
+            );
+            if (!ok) return;
+          }
           pb.root.hidden = false;
           pb.set(null, "Download startet …");
           await kiModellLaden(m, (f) => pb.set(f.total ? f : null, f.total ? undefined : f.text));

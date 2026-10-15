@@ -6,11 +6,12 @@ import { invoke } from "@tauri-apps/api/core";
 import { inTauri } from "../platform";
 import { pers } from "./ws/persoenlich";
 
-export type SoundEreignis = "notruf" | "kt" | "funk" | "funkDringend" | "chat" | "warnung";
+export type SoundEreignis = "notruf" | "kt" | "anklopfen" | "funk" | "funkDringend" | "chat" | "warnung";
 
 export const EREIGNIS_LABEL: Record<SoundEreignis, string> = {
   notruf: "Notruf klingelt",
   kt: "KT-Hotline klingelt",
+  anklopfen: "Anklopfen (neuer Anruf, während du telefonierst)",
   funk: "Fahrzeug ruft (Funk)",
   funkDringend: "Dringender Funkruf",
   chat: "Neue Chat-Nachricht",
@@ -18,7 +19,7 @@ export const EREIGNIS_LABEL: Record<SoundEreignis, string> = {
 };
 
 /** Klingeltöne wiederholen sich, kurze Töne nicht */
-export const IST_KLINGELTON: Record<SoundEreignis, boolean> = { notruf: true, kt: true, funk: false, funkDringend: false, chat: false, warnung: false };
+export const IST_KLINGELTON: Record<SoundEreignis, boolean> = { notruf: true, kt: true, anklopfen: false, funk: false, funkDringend: false, chat: false, warnung: false };
 
 /** Anforderungen an eigene Dateien */
 export const DATEI_REGELN = {
@@ -48,6 +49,7 @@ export const VORLAGEN: Record<string, Synth> = {
   doppelpiep: { name: "Doppelpiep hoch", freqs: [1500], stoesse: [0, 0.16], dauer: 0.1, laut: 0.04, welle: "square" },
   klick: { name: "Kurzer Klick", freqs: [1800], stoesse: [0], dauer: 0.04, laut: 0.05, welle: "triangle" },
   pling: { name: "Pling", freqs: [1318, 1760], stoesse: [0], dauer: 0.35, laut: 0.06 },
+  anklopfen: { name: "Anklopfen (kurz, zweimal)", freqs: [425], stoesse: [0, 0.3], dauer: 0.16, laut: 0.07 },
   warnton: { name: "Warnton", freqs: [660, 520], stoesse: [0, 0.22], dauer: 0.2, laut: 0.07, welle: "sawtooth" },
 };
 
@@ -55,13 +57,14 @@ export const VORLAGEN: Record<string, Synth> = {
 export const STANDARD_SOUND: Record<SoundEreignis, string> = {
   notruf: "vorlage:buero",
   kt: "vorlage:tief",
+  anklopfen: "vorlage:anklopfen",
   funk: "vorlage:piep",
   funkDringend: "vorlage:doppelpiep",
   chat: "vorlage:pling",
   warnung: "vorlage:warnton",
 };
 
-const WIEDERHOLUNG: Record<SoundEreignis, number> = { notruf: 3000, kt: 4000, funk: 6000, funkDringend: 4000, chat: 0, warnung: 0 };
+const WIEDERHOLUNG: Record<SoundEreignis, number> = { notruf: 3000, kt: 4000, anklopfen: 0, funk: 6000, funkDringend: 4000, chat: 0, warnung: 0 };
 
 let ctx: AudioContext | null = null;
 function audio(): AudioContext {

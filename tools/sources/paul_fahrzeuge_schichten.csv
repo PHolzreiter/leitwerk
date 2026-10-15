@@ -1,0 +1,167 @@
+﻿Funkrufname;Dienststelle;Typ;Wochentag(e);Beginn;Ende
+56/006;Rotes Kreuz Bezirksstelle Klosterneuburg;RTW;24/7;24/7;24/7
+56/007;Rotes Kreuz Bezirksstelle Klosterneuburg;RTW-C;24/7;24/7;24/7
+56/008;Rotes Kreuz Bezirksstelle Klosterneuburg;RTW;Mo–Fr;06:00;16:00
+56/009;Rotes Kreuz Bezirksstelle Klosterneuburg;KTW-B;Mo–Fr;09:00;19:00
+56/010;Rotes Kreuz Bezirksstelle Klosterneuburg;KTW-B;Mo–Fr;08:00;18:00
+56/011;Rotes Kreuz Bezirksstelle Klosterneuburg;KTW-B;Mo, Mi, Fr;16:00;01:00
+56/012;Rotes Kreuz Bezirksstelle Klosterneuburg;KTW-B;Di, Do;16:00;01:00
+56/014;Rotes Kreuz Bezirksstelle Klosterneuburg;KTW-B;Mo–Fr;07:00;15:00
+56/015;Rotes Kreuz Bezirksstelle Klosterneuburg;KTW-B;Mo–Fr;06:00;14:00
+56/016;Rotes Kreuz Bezirksstelle Klosterneuburg;KTW-B;Mo–Fr;06:00;16:00
+56/017;Rotes Kreuz Bezirksstelle Klosterneuburg;KTW-B;Mo–Sa;05:30;15:30
+56/099;Rotes Kreuz Bezirksstelle Klosterneuburg;NEF;24/7;24/7;24/7
+57/001;Rotes Kreuz Bezirksstelle Hollabrunn;RTW;24/7;24/7;24/7
+57/002;Rotes Kreuz Bezirksstelle Hollabrunn;RTW-C;24/7;24/7;24/7
+57/020;Rotes Kreuz Bezirksstelle Hollabrunn;KTW-B;Mo–Fr;06:00;16:00
+57/020;Rotes Kreuz Bezirksstelle Hollabrunn;KTW-B;Sa, So;07:00;17:00
+57/021;Rotes Kreuz Bezirksstelle Hollabrunn;KTW-B;Mo–Fr;06:00;16:00
+57/021;Rotes Kreuz Bezirksstelle Hollabrunn;KTW-B;Sa;08:00;16:00
+57/022;Rotes Kreuz Bezirksstelle Hollabrunn;KTW-B;Mo–Fr;12:00;22:00
+57/023;Rotes Kreuz Bezirksstelle Hollabrunn;KTW-B;Mo, Do, Fr;06:00;14:00
+57/023;Rotes Kreuz Bezirksstelle Hollabrunn;KTW-B;Di;07:00;23:59
+57/023;Rotes Kreuz Bezirksstelle Hollabrunn;KTW-B;Mi;06:00;22:00
+57/024;Rotes Kreuz Bezirksstelle Hollabrunn;KTW-B;Mo–Fr;07:00;17:00
+57/025;Rotes Kreuz Bezirksstelle Hollabrunn;KTW-B;Mo–Fr;14:00;22:00
+57/025;Rotes Kreuz Bezirksstelle Hollabrunn;KTW-B;Sa, So;06:00;16:00
+57/026;Rotes Kreuz Bezirksstelle Hollabrunn;KTW-B;Mo–Fr;07:00;17:00
+57/027;Rotes Kreuz Bezirksstelle Hollabrunn;KTW;Mo–Fr;06:00;16:00
+57/041;Rotes Kreuz Ortsstelle Haugsdorf;RTW-C;24/7;24/7;24/7
+57/042;Rotes Kreuz Ortsstelle Haugsdorf;KTW-B;Di–Do;05:30;12:30
+57/099;Rotes Kreuz Bezirksstelle Hollabrunn;NEF;24/7;24/7;24/7
+57/201;Rotes Kreuz Bezirksstelle Ziersdorf;KTW-B;Mo–Fr;06:00;19:00
+57/201;Rotes Kreuz Bezirksstelle Ziersdorf;KTW-B;Sa;06:00;14:00
+57/203;Rotes Kreuz Bezirksstelle Ziersdorf;KTW;Mo–Fr;06:00;16:00
+57/204;Rotes Kreuz Bezirksstelle Ziersdorf;RTW-C;24/7;24/7;24/7
+57/205;Rotes Kreuz Bezirksstelle Ziersdorf;KTW-B;Mo–Fr;06:00;16:00
+57/401;Rotes Kreuz Bezirksstelle Retz;RTW-C;24/7;24/7;24/7
+57/402;Rotes Kreuz Bezirksstelle Retz;RTW;Mo–Fr;07:00;19:00
+57/411;Rotes Kreuz Bezirksstelle Retz;KTW-B;Mo, Mi, Fr;05:30;15:30
+57/411;Rotes Kreuz Bezirksstelle Retz;KTW-B;Mo, Mi, Fr;15:30;23:30
+57/411;Rotes Kreuz Bezirksstelle Retz;KTW-B;Di, Do;07:00;19:00
+57/411;Rotes Kreuz Bezirksstelle Retz;KTW-B;Di, Do;19:00;03:00
+57/411;Rotes Kreuz Bezirksstelle Retz;KTW-B;Sa;07:00;15:00
+57/411;Rotes Kreuz Bezirksstelle Retz;KTW-B;Sa;15:00;22:00
+57/412;Rotes Kreuz Bezirksstelle Retz;KTW-B;Mo, Mi, Fr;07:00;15:00
+57/412;Rotes Kreuz Bezirksstelle Retz;KTW-B;Di, Do;06:00;14:00
+57/413;Rotes Kreuz Bezirksstelle Retz;KTW-B;Mo–Fr;05:00;21:00
+57/414;Rotes Kreuz Bezirksstelle Retz;KTW-B;Mo, Mi, Fr;07:00;15:00
+57/414;Rotes Kreuz Bezirksstelle Retz;KTW-B;Di, Do, Sa;05:30;13:30
+57/499;Rotes Kreuz Bezirksstelle Retz;NEF;24/7;24/7;24/7
+58/001;Rotes Kreuz Bezirkstelle Horn;RTW-C;24/7;24/7;24/7
+58/002;Rotes Kreuz Bezirkstelle Horn;RTW;24/7;24/7;24/7
+58/099;Rotes Kreuz Bezirkstelle Horn;NEF;24/7;24/7;24/7
+59/001;Rotes Kreuz Bezirksstelle Korneuburg;RTW;24/7;24/7;24/7
+59/002;Rotes Kreuz Bezirksstelle Korneuburg;RTW-C;24/7;24/7;24/7
+59/099;Rotes Kreuz Bezirksstelle Korneuburg;NEF;24/7;24/7;24/7
+60/001;Rotes Kreuz Bezirksstelle Langenlois;RTW-C;24/7;24/7;24/7
+60/002;Rotes Kreuz Bezirksstelle Langenlois;KTW;Mo–Fr;07:00;19:00
+60/012;Rotes Kreuz Bezirksstelle Langenlois;KTW;Mo–Fr;07:00;15:00
+60/014;Rotes Kreuz Bezirksstelle Langenlois;KTW-B;Mo–Fr;06:00;16:00
+62/004;Rotes Kreuz Bezirksstelle Melk;RTW-C;24/7;24/7;24/7
+62/099;Rotes Kreuz Bezirksstelle Melk;NEF;24/7;24/7;24/7
+63/001;Rotes Kreuz Bezirksstelle Mistelbach;RTW-C;24/7;24/7;24/7
+63/099;Rotes Kreuz Bezirksstelle Mistelbach;NEF;24/7;24/7;24/7
+66/099;Arbeiter-Samariter-Bund Bezirksstelle Purkersdorf;NEF;24/7;24/7;24/7
+66/390;Arbeiter-Samariter-Bund Bezirksstelle Purkersdorf;RTW-C;24/7;24/7;24/7
+67/001;Rotes Kreuz Bezirksstelle Neulengbach;RTW-C;24/7;24/7;24/7
+67/099;Rotes Kreuz Bezirksstelle Neulengbach;NEF;24/7;24/7;24/7
+67/341;Arbeiter-Samariter-Bund Traismauer;RTW;Mo–Fr;06:00;18:00
+67/341;Arbeiter-Samariter-Bund Traismauer;RTW;Mo–Fr;18:00;06:00
+67/342;Arbeiter-Samariter-Bund Traismauer;RTW-C;24/7;24/7;24/7
+67/343;Arbeiter-Samariter-Bund Traismauer;KTW;Mo–Fr;06:00;18:00
+67/344;Arbeiter-Samariter-Bund Traismauer;KTW;Mo–Fr;06:00;18:00
+67/344;Arbeiter-Samariter-Bund Traismauer;KTW;Mo, Mi, Fr;18:00;06:00
+67/409;Rotes Kreuz Bezirksstelle Herzogenburg;RTW-C;24/7;24/7;24/7
+69/001;Rotes Kreuz Bezirksstelle Tulln;RTW-C;24/7;24/7;24/7
+69/002;Rotes Kreuz Bezirksstelle Tulln;RTW;Mo–Fr;06:00;22:00
+69/002;Rotes Kreuz Bezirksstelle Tulln;RTW;Sa, So;08:00;20:00
+69/010;Rotes Kreuz Bezirksstelle Tulln;KTW-B;Mo–Sa;05:00;15:00
+69/011;Rotes Kreuz Bezirksstelle Tulln;KTW-B;Mo–Fr;05:00;15:00
+69/014;Rotes Kreuz Bezirksstelle Tulln;KTW-B;Mo–Fr;06:00;22:00
+69/014;Rotes Kreuz Bezirksstelle Tulln;KTW-B;Sa;06:00;14:00
+69/014;Rotes Kreuz Bezirksstelle Tulln;KTW-B;So;10:00;20:00
+69/015;Rotes Kreuz Bezirksstelle Tulln;KTW-B;Mo–Fr;06:00;16:00
+69/015;Rotes Kreuz Bezirksstelle Tulln;KTW-B;Sa;10:00;20:00
+69/018;Rotes Kreuz Bezirksstelle Tulln;KTW-B;Mo–Fr;10:00;20:00
+69/018;Rotes Kreuz Bezirksstelle Tulln;KTW-B;Mo–Fr, So;20:00;06:00
+69/021;Rotes Kreuz Bezirksstelle Tulln;KTW;Mo–Fr;08:00;18:00
+69/021;Rotes Kreuz Bezirksstelle Tulln;KTW;Sa;10:00;20:00
+69/021;Rotes Kreuz Bezirksstelle Tulln;KTW;Sa;20:00;06:00
+69/051;Rotes Kreuz Ortsstelle Sieghartskirchen;RTW-C;24/7;24/7;24/7
+69/061;Rotes Kreuz Ortsstelle Kirchberg am Wagram;RTW-C;24/7;24/7;24/7
+69/062;Rotes Kreuz Ortsstelle Kirchberg am Wagram;KTW;Mo, Mi, Fr;07:00;16:00
+69/062;Rotes Kreuz Ortsstelle Kirchberg am Wagram;KTW;Di, Do;07:00;15:00
+69/071;Rotes Kreuz Ortsstelle St. Andrä-Wördern;RTW-C;Mo–Fr;06:00;22:00
+69/071;Rotes Kreuz Ortsstelle St. Andrä-Wördern;RTW-C;Sa, So;08:00;20:00
+69/099;Rotes Kreuz Bezirksstelle Tulln;NEF;24/7;24/7;24/7
+69/401;Rotes Kreuz Bezirksstelle Atzenbrugg-Heiligeneich;RTW-C;24/7;24/7;24/7
+69/411;Rotes Kreuz Bezirksstelle Atzenbrugg-Heiligeneich;KTW-B;Mo, Mi, Fr;06:00;14:00
+69/411;Rotes Kreuz Bezirksstelle Atzenbrugg-Heiligeneich;KTW-B;Di, Do;06:00;16:00
+69/414;Rotes Kreuz Bezirksstelle Atzenbrugg-Heiligeneich;KTW-B;Mo–Sa;06:00;16:00
+69/415;Rotes Kreuz Bezirksstelle Atzenbrugg-Heiligeneich;KTW;Mo–Fr;06:00;14:00
+69/601;Rotes Kreuz Bezirksstelle Großweikersdorf;KTW;Mo–Fr;06:00;14:00
+69/602;Rotes Kreuz Bezirksstelle Großweikersdorf;RTW-C;24/7;24/7;24/7
+69/611;Rotes Kreuz Bezirksstelle Großweikersdorf;KTW-B;Mo–Fr;06:00;16:00
+69/612;Rotes Kreuz Bezirksstelle Großweikersdorf;KTW-B;Di–Do;06:00;16:00
+72/098;Rotes Kreuz Bezirksstelle Zwettl;RTW-C;24/7;24/7;24/7
+72/099;Rotes Kreuz Bezirksstelle Zwettl;NEF;24/7;24/7;24/7
+73/002;Rotes Kreuz Bezirksstelle St. Pölten;RTW-C;24/7;24/7;24/7
+73/003;Rotes Kreuz Bezirksstelle St. Pölten;RTW-C;24/7;24/7;24/7
+73/099;RK/ASB Notarztstützpunkt St. Pölten;NEF;24/7;24/7;24/7
+73/342;Arbeiter Samariterbund St. Pölten;RTW-C;24/7;24/7;24/7
+73/343;Arbeiter Samariterbund St. Pölten;RTW;Mo–Fr;06:00;18:00
+75/001;Rotes Kreuz Bezirksstelle Krems;RTW-C;24/7;24/7;24/7
+75/002;Rotes Kreuz Bezirksstelle Krems;RTW-C;24/7;24/7;24/7
+75/003;Rotes Kreuz Bezirksstelle Krems;RTW;Mo–So;05:00;21:00
+75/004;Rotes Kreuz Bezirksstelle Krems;KTW;Mo–Fr;05:00;13:00
+75/004;Rotes Kreuz Bezirksstelle Krems;KTW;Sa;05:00;14:00
+75/005;Rotes Kreuz Bezirksstelle Krems;KTW;Mo–Fr;05:00;13:00
+75/005;Rotes Kreuz Bezirksstelle Krems;KTW;Sa;05:00;14:00
+75/006;Rotes Kreuz Bezirksstelle Krems;KTW-B;Mo–Sa;05:00;14:00
+75/007;Rotes Kreuz Bezirksstelle Krems;KTW-B;Mo–Fr;06:00;14:00
+75/007;Rotes Kreuz Bezirksstelle Krems;KTW-B;Sa;05:00;14:00
+75/008;Rotes Kreuz Bezirksstelle Krems;KTW;Mo–Fr;06:00;14:00
+75/008;Rotes Kreuz Bezirksstelle Krems;KTW;Sa;12:00;21:00
+75/009;Rotes Kreuz Bezirksstelle Krems;KTW;Mo–Fr;06:00;14:00
+75/010;Rotes Kreuz Bezirksstelle Krems;KTW;Mo–Fr;06:00;14:00
+75/010;Rotes Kreuz Bezirksstelle Krems;KTW;Sa;17:00;01:00
+75/011;Rotes Kreuz Bezirksstelle Krems;KTW;Mo–Fr;07:00;15:00
+75/011;Rotes Kreuz Bezirksstelle Krems;KTW;Mo–So;22:00;06:00
+75/012;Rotes Kreuz Bezirksstelle Krems;KTW-B;Mo–Fr;08:00;17:00
+75/012;Rotes Kreuz Bezirksstelle Krems;KTW-B;Sa;05:00;14:00
+75/012;Rotes Kreuz Bezirksstelle Krems;KTW-B;So;07:00;16:00
+75/013;Rotes Kreuz Bezirksstelle Krems;KTW;Mo–Fr;14:00;22:00
+75/014;Rotes Kreuz Bezirksstelle Krems;KTW-B;Mo–Fr;12:00;20:00
+75/014;Rotes Kreuz Bezirksstelle Krems;KTW-B;Sa;11:00;20:00
+75/015;Rotes Kreuz Bezirksstelle Krems;KTW;Mo–Fr;17:00;01:00
+75/015;Rotes Kreuz Bezirksstelle Krems;KTW;Sa;11:00;20:00
+75/051;Rotes Kreuz Ortsstelle Gföhl;RTW;24/7;24/7;24/7
+75/071;Rotes Kreuz Ortsstelle Spitz;RTW-C;24/7;24/7;24/7
+75/099;Rotes Kreuz Bezirksstelle Krems;NEF;24/7;24/7;24/7
+79/001;Johanniter-Krankentransport St. Pölten;SKTW;24/7;24/7;24/7
+79/002;Johanniter-Krankentransport St. Pölten;SKTW;24/7;24/7;24/7
+79/003;Johanniter-Krankentransport Spillern;SKTW;24/7;24/7;24/7
+79/004;Johanniter-Krankentransport Spillern;SKTW;24/7;24/7;24/7
+79/901;Johanniter-Krankentransport St. Pölten;SNAW;24/7;24/7;24/7
+79/902;Johanniter-Krankentransport St. Pölten;BIT;24/7;24/7;24/7
+79/903;Johanniter-Krankentransport St. Pölten;SRTW;24/7;24/7;24/7
+79/904;Johanniter-Krankentransport St. Pölten;SRTW;24/7;24/7;24/7
+79/905;Johanniter-Krankentransport Spillern;SRTW;24/7;24/7;24/7
+79/906;Johanniter-Krankentransport Spillern;SRTW;24/7;24/7;24/7
+80/003 ACN;Notruf Niederösterreich St. Pölten;NEF;24/7;24/7;24/7
+80/004 ACN;Rotes Kreuz Waidhofen;NEF;24/7;24/7;24/7
+80/006 ACN;Notruf Niederösterreich Stockerau;NEF;24/7;24/7;24/7
+99/902;ÖAMTC Christophorus 2;NEF;24/7;24/7;24/7
+67/915;Rotes Kreuz Bezirksstelle Herzogenburg;BEL;24/7;24/7;24/7
+58/119;Rotes Kreuz Bezirkstelle Horn;BEL;24/7;24/7;24/7
+56/119;Rotes Kreuz Bezirksstelle Klosterneuburg;BEL;24/7;24/7;24/7
+75/030;Rotes Kreuz Bezirksstelle Krems;BEL;24/7;24/7;24/7
+69/119;Rotes Kreuz Bezirksstelle Tulln;BEL;24/7;24/7;24/7
+Christophorus 15;ÖATMC Christophorus 15;NAH;Mo–So;Sonnenaufgang;Sonnenuntergang
+Christophorus 2;ÖAMTC Christophorus 2;NAH;24/7;24/7;24/7
+Christophorus 3;ÖAMTC Christophorus Luftrettungszentrum Ost;NAH;Mo–So;Sonnenaufgang;Sonnenuntergang
+Christophorus 33;ÖAMTC Christophorus Luftrettungszentrum Ost;ITH;Mo–So;Sonnenaufgang;Sonnenuntergang
+Christophorus 9;ÖATMC Christophorus 9;NAH;Mo–So;Sonnenaufgang;Sonnenuntergang
+EL ÖBB Krems;ÖBB Leitstelle Krems;EL ÖBB;24/7;24/7;24/7
+EL ÖBB Tulln;ÖBB Leitstelle Tulln;EL ÖBB;24/7;24/7;24/7

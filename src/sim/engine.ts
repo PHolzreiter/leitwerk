@@ -5,6 +5,7 @@
  * vom Host an die Mitspieler übertragen werden kann. Alle Eingriffe des Spielers
  * laufen über die öffentlichen Methoden (alarmieren, Adresse setzen, …).
  */
+import { aktuelleSchicht, dienstEnde, imDienst, naechsterBeginn, type Schicht } from "./dienst";
 import { nachKlick } from "../klick";
 import { ACTIVE_CATEGORIES, bereicheVon, HOSPITAL_FLAG_LABEL, type Hospital, type HospitalFlag, type Vehicle } from "../data/model";
 import { store } from "../data/store";
@@ -94,6 +95,14 @@ export type Phase =
   | "ktHalt"
   | "ktReinigung";
 
+/** Art des Fahrzeugs aus den Stammdaten: Anzeige-Typ, Großraum, ohne Blaulicht */
+function fzArt(v: Vehicle, rmTyp: RmTyp): { typ: string; gross: boolean; ohneBlaulicht: boolean } {
+  const typ = (v.typ || rmTyp).trim();
+  const istKtwB = /^KTW-?B$/i.test(typ.replace(/\s+/g, ""));
+  const gross = v.aufbau ? v.aufbau === "gross" : rmTyp === "RTW-C";
+  return { typ: istKtwB ? "KTW-B" : rmTyp === "RTW-C" ? "RTW-C" : rmTyp === "RTW" ? "RTW" : typ, gross, ohneBlaulicht: istKtwB };
+}
+
 export interface SimFahrzeug {
   id: string;
   funkrufname: string;
@@ -128,6 +137,20 @@ export interface SimFahrzeug {
   quittUm?: number | null;
   /** Blaulicht an (Fahrt mit Sondersignal; bleibt am Einsatzort an, wenn mit Blaulicht angefahren) */
   blaulicht?: boolean;
+  /** Typ zur Anzeige (z. B. „KTW-B“, „RTW“) */
+  typ?: string;
+  /** Großraum-Fahrzeug (VW Crafter) */
+  gross?: boolean;
+  /** KTW-B (Zivildienst): fährt ohne Blaulicht */
+  ohneBlaulicht?: boolean;
+  /** laufende Schicht (Kennung) – ändert sich beim Schichtwechsel */
+  schicht?: string | null;
+  /** laut Dienstplan nicht im Dienst */
+  ausserDienst?: boolean;
+  /** echtes Dienstende (für den Hinweis eine Stunde vorher) */
+  dienstEnde?: number | null;
+  /** außer Dienst: nächster Dienstbeginn */
+  dienstBeginn?: number | null;
   /** Krankentransport-Plan (vorgemerkte bzw. laufende Fahrten) */
   kt?: (KtPlan & { reinigen?: boolean; wartetAuf?: string | null; wartetKt?: string | null; wartetSeit?: number | null }) | null;
 }
@@ -872,6 +895,7 @@ export class Simulation {
     }
     this.runGenerator(dt);
     this.ktTick(t, dt);
+    this.dienstTick(t);
     for (const fz of Object.values(this.state.fahrzeuge)) this.updateVehicle(fz, t);
     this.checkKhAnfragen(t);
     this.anrufeTick(t);
@@ -907,6 +931,7 @@ export class Simulation {
           rmTyp,
           nachtflug: v.nachtflug,
           stationName: st.name,
+          ...fzArt(v, rmTyp),
         });
         continue;
       }
@@ -929,8 +954,76 @@ export class Simulation {
         fahrt: null,
         nachtflug: v.nachtflug,
         begleitet: false,
+        ...fzArt(v, rmTyp),
       };
     }
+    this.dienstplaene = new Map(wanted.map((v) => [v.id, v.dienstplan ?? []]));
+    this.dienstTick(this.state.zeit, true);
+  }
+
+  /** Dienstpläne der Fahrzeuge (aus den Stammdaten) */
+  private dienstplaene = new Map<string, Schicht[]>();
+  private letzterDienstTick = 0;
+
+  /** Dienstplan eines Fahrzeugs (leer = rund um die Uhr) */
+  dienstplanVon(id: string): Schicht[] {
+    return this.dienstplaene.get(id) ?? [];
+  }
+
+  /** Ist das Fahrzeug zum Zeitpunkt t laut Dienstplan im Dienst? */
+  imDienstUm(fz: SimFahrzeug, t: number): boolean {
+    return imDienst(this.dienstplanVon(fz.id), t, fz.heim);
+  }
+
+  /**
+   * Schichtwechsel und Dienstende: neue Schicht = neues Team. Läuft gerade ein Einsatz oder Transport,
+   * macht das alte Team ihn fertig; gewechselt (bzw. abgemeldet) wird danach.
+   */
+  private dienstTick(t: number, sofort = false): void {
+    if (!sofort && t - this.letzterDienstTick < 20_000 && t >= this.letzterDienstTick) return;
+    this.letzterDienstTick = t;
+    let geaendert = false;
+    for (const fz of Object.values(this.state.fahrzeuge)) {
+      const plan = this.dienstplaene.get(fz.id);
+      if (!plan) continue;
+      const w = aktuelleSchicht(plan, t, fz.heim);
+      fz.dienstEnde = w ? dienstEnde(plan, t, fz.heim) : null;
+      fz.dienstBeginn = w ? null : naechsterBeginn(plan, t, fz.heim);
+      const key = w?.key ?? null;
+      if (fz.schicht === undefined) {
+        // erster Blick (Programmstart): ohne Teamwechsel übernehmen
+        fz.schicht = key;
+        if (!key && this.dienstfrei(fz) && !(fz.kt?.fahrten.length ?? 0)) this.abmeldenDienst(fz);
+        geaendert = true;
+        continue;
+      }
+      if (key === fz.schicht) continue;
+      // alte Mannschaft macht laufende Arbeit fertig; abgemeldet wird erst, wenn auch nichts mehr vorgemerkt ist
+      if (!this.dienstfrei(fz) || (!key && (fz.kt?.fahrten.length ?? 0) > 0)) continue;
+      fz.schicht = key;
+      geaendert = true;
+      if (key) {
+        fz.besetzung = generiereBesetzung(fz.rmTyp);
+        if (fz.ausserDienst) {
+          fz.ausserDienst = false;
+          if (fz.status === "abgemeldet" && !(fz.defektBis && fz.defektBis > t)) fz.status = fz.phase === "frei" && distanceM(fz, fz.heim) < 80 ? "freiWache" : "freiFunk";
+        }
+      } else this.abmeldenDienst(fz);
+    }
+    if (geaendert && !sofort) this.emit();
+  }
+
+  /** Nichts zu tun (kein Einsatz, kein Transport, nichts vorgemerkt) – Wechsel/Dienstende möglich */
+  private dienstfrei(fz: SimFahrzeug): boolean {
+    if (fz.einsatzId || fz.kt?.aktiv) return false;
+    return fz.phase === "frei" || fz.phase === "rueckfahrt";
+  }
+
+  /** Dienstende: Fahrzeug meldet sich ab (fährt ggf. noch heim) */
+  private abmeldenDienst(fz: SimFahrzeug): void {
+    fz.ausserDienst = true;
+    fz.status = "abgemeldet";
+    if (fz.phase === "frei" && distanceM(fz, fz.heim) >= 80 && !this.routingBusy.has(fz.id)) this.fahre(fz, fz.heim, "rueckfahrt", false);
   }
 
   statusDef(key: StatusKey) {
@@ -961,7 +1054,7 @@ export class Simulation {
   }
 
   verfuegbar(fz: SimFahrzeug): boolean {
-    return this.statusDef(fz.status).verfuegbar && !fz.einsatzId && !fz.kt?.aktiv;
+    return this.statusDef(fz.status).verfuegbar && !fz.einsatzId && !fz.kt?.aktiv && !fz.ausserDienst;
   }
 
   /** Kann der Hubschrauber gerade fliegen? Gibt den Grund zurück, wenn nicht. */
@@ -993,6 +1086,8 @@ export class Simulation {
     const fz = this.state.fahrzeuge[id];
     if (!fz) return "Fahrzeug nicht gefunden";
     if (fz.einsatzId) return "Fahrzeug ist im Einsatz – zuerst freigeben";
+    // von Hand in Dienst genommen bzw. abgemeldet: gilt bis zum nächsten Schichtwechsel
+    if (s !== "abgemeldet" && this.statusDef(s).verfuegbar) fz.ausserDienst = false;
     this.setStatus(fz, s, true);
     if (s === "freiWache") {
       fz.lat = fz.heim.lat;
@@ -1034,6 +1129,8 @@ export class Simulation {
   private fahre(fz: SimFahrzeug, ziel: LatLon, phase: Phase, sondersignal: boolean): void {
     this.routingBusy.add(fz.id);
     fz.phase = "routing";
+    // KTW-B (Zivildienst) fährt nie mit Blaulicht
+    if (fz.ohneBlaulicht) sondersignal = false;
     fz.blaulicht = sondersignal && !fliegt(fz);
     const von = { lat: fz.lat, lon: fz.lon };
     const p: Promise<Route> =
@@ -1161,7 +1258,7 @@ export class Simulation {
         fz.phaseEnde = null;
         fz.lat = fz.heim.lat;
         fz.lon = fz.heim.lon;
-        if (fz.defektBis && t < fz.defektBis) this.setStatus(fz, "abgemeldet", true);
+        if ((fz.defektBis && t < fz.defektBis) || fz.ausserDienst) this.setStatus(fz, "abgemeldet", true);
         else this.setStatus(fz, "freiWache", true);
         break;
       }
@@ -1643,7 +1740,7 @@ export class Simulation {
       const z = zeiten[i];
       const ausr = this.ausrueckSek(fz, true);
       // KT-Fahrzeug ohne Patient: nur auf ausdrückliche Wahl (nicht in der Empfehlung)
-      return { fz, sekunden: z === null ? null : z * faktor + ausr, hinweis: null as string | null, kt: !!fz.kt?.aktiv };
+      return { fz, sekunden: z === null ? null : z * (fz.ohneBlaulicht ? 1 : faktor) + ausr, hinweis: null as string | null, kt: !!fz.kt?.aktiv };
     });
     for (const fz of frei.filter((f) => fliegt(f))) {
       const flug = distanceM(fz, ziel) / (this.settings.nahGeschwindigkeit / 3.6) + this.ausrueckSek(fz, true) + 90;
@@ -1687,16 +1784,21 @@ export class Simulation {
     if (!rm && rangListe.length) {
       let best: { v: Vorschlag; punkte: number; rang: number } | null = null;
       for (const v of nutzbar) {
-        const r = rangListe.findIndex((g) => g.includes(v.fz.rmTyp));
+        // „KTW-B“ kann in der Rangfolge eigens stehen, sonst zählt er als KTW
+        const eigen = v.fz.typ?.toUpperCase();
+        let r = eigen && eigen !== v.fz.rmTyp ? rangListe.findIndex((g) => g.includes(eigen)) : -1;
+        if (r < 0) r = rangListe.findIndex((g) => g.includes(v.fz.rmTyp));
         if (r < 0) continue;
         let punkte = v.sekunden! + r * tol;
         if (stufe.nfsErforderlich && !hatNFS(v.fz.besetzung)) punkte += tol;
+        // KTW-B fährt ohne Blaulicht: bei Blaulicht-Einsätzen nachrangig
+        if (v.fz.ohneBlaulicht && stufe.sondersignal) punkte += tol;
         if (!best || punkte < best.punkte) best = { v, punkte, rang: r };
       }
       if (best) {
         rm = best.v.fz;
         ids.push(rm.id);
-        const text = `${rm.funkrufname} (${rm.rmTyp}, ${min(best.v.sekunden!)})`;
+        const text = `${rm.funkrufname} (${rm.typ ?? rm.rmTyp}${rm.ohneBlaulicht && stufe.sondersignal ? ", ohne Blaulicht" : ""}, ${min(best.v.sekunden!)})`;
         gruende.push(best.rang === 0 ? `${text}: passendes Rettungsmittel` : `${text}: besser passende sind deutlich weiter weg`);
       } else {
         // Kein Primärfahrzeug: Sekundärfahrzeug, das mindestens gleichwertig ausgestattet ist
@@ -3055,11 +3157,16 @@ export class Simulation {
     const von = k?.d.von;
     if (!k || !von) return [];
     const info = codeInfo(k.d.code);
-    const alle = Object.values(this.state.fahrzeuge).filter((f) => !f.einsatzId && (this.verfuegbar(f) || f.kt));
+    let alle = Object.values(this.state.fahrzeuge).filter(
+      (f) => !f.einsatzId && (this.verfuegbar(f) || f.kt || (f.ausserDienst && f.phase === "frei" && !(f.defektBis && f.defektBis > this.state.zeit))),
+    );
     // Fahrzeit vom Abholort zum Ziel (für „los spätestens“ und die Hubschrauber-Frage)
     let fahrzeit = 0;
     if (k.d.nach) fahrzeit = (await travelTimes(k.d.nach, [von]))[0] ?? 0;
     const soll = k.d.abholung ?? (k.d.termin ? k.d.termin - fahrzeit * 1000 - 15 * MIN : null);
+    // nur Fahrzeuge, die zur Abholzeit laut Dienstplan im Dienst sind (auch solche, die erst später anfangen)
+    const um = Math.max(this.state.zeit, soll ?? this.state.zeit);
+    alle = alle.filter((f) => this.imDienstUm(f, um) && (!f.ausserDienst || um > this.state.zeit + 5 * MIN));
 
     // Welche Typen passen (Vorschlag), welche nur als Ersatz; Paare = mit NEF
     type Wahl = { typen: RmTyp[]; nef?: boolean; ersatz: boolean; hinweis?: string };
