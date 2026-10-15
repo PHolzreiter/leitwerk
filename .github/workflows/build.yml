@@ -132,7 +132,8 @@ jobs:
             export SHERPA_LIB_PATH="$(cygpath -w "$SHERPA_LIB_PATH")"
             # die DLLs liegen neben dem Programm und werden mit installiert
             mkdir -p src-tauri/target/release
-            cp "$RUNNER_TEMP/$SHERPA_PAKET"/lib/*.dll src-tauri/target/release/
+            echo "::notice::Paket: $(cd "$RUNNER_TEMP/$SHERPA_PAKET" && find . -maxdepth 2 | head -40 | tr '\n' ' ')"
+            find "$RUNNER_TEMP/$SHERPA_PAKET" -iname '*.dll' -exec cp {} src-tauri/target/release/ \;
             echo "::notice::DLLs: $(cd src-tauri/target/release && ls *.dll | tr '\n' ' ')"
           fi
           npx tauri build --bundles ${{ matrix.bundles }} 2>&1 | tee build.log
