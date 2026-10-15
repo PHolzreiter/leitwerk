@@ -121,9 +121,18 @@ jobs:
           # Spracherkennung (whisper.cpp): unter Windows nicht auf die CPU des Build-Servers optimieren
           if [ "$RUNNER_OS" = "Windows" ]; then
             export CMAKE_PROJECT_INCLUDE_BEFORE="$(cygpath -m "$PWD/src-tauri/ggml-portabel.cmake")"
-            # Piper (sherpa-onnx) kommt unter Windows als DLL: vorher holen, damit sie mit installiert wird
-            (cd src-tauri && cargo build --release -p sherpa-rs-sys) || echo "::error::sherpa-rs-sys konnte nicht gebaut werden"
-            ls src-tauri/target/release/*.dll || echo "::error::keine DLLs von sherpa-onnx gefunden"
+          fi
+          # Piper (sherpa-onnx): Paket selbst holen (der Rust-Cache überspringt sonst den Download)
+          SHERPA_TAG=v1.12.15
+          if [ "$RUNNER_OS" = "Windows" ]; then SHERPA_PAKET="sherpa-onnx-$SHERPA_TAG-win-x64-shared"; else SHERPA_PAKET="sherpa-onnx-$SHERPA_TAG-osx-universal2-static"; fi
+          curl -sSL -o "$RUNNER_TEMP/sherpa.tar.bz2" "https://github.com/k2-fsa/sherpa-onnx/releases/download/$SHERPA_TAG/$SHERPA_PAKET.tar.bz2"
+          tar -xjf "$RUNNER_TEMP/sherpa.tar.bz2" -C "$RUNNER_TEMP"
+          export SHERPA_LIB_PATH="$RUNNER_TEMP/$SHERPA_PAKET"
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            export SHERPA_LIB_PATH="$(cygpath -w "$SHERPA_LIB_PATH")"
+            # die DLLs liegen neben dem Programm und werden mit installiert
+            mkdir -p src-tauri/target/release
+            cp "$RUNNER_TEMP/$SHERPA_PAKET"/lib/*.dll src-tauri/target/release/
             echo "::notice::DLLs: $(cd src-tauri/target/release && ls *.dll | tr '\n' ' ')"
           fi
           npx tauri build --bundles ${{ matrix.bundles }} 2>&1 | tee build.log
