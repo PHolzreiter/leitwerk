@@ -1,6 +1,6 @@
 ### npm install
 
-added 49 packages, and audited 50 packages in 10s
+added 49 packages, and audited 50 packages in 8s
 
 9 packages are looking for funding
   run `npm fund` for details
@@ -36,7 +36,7 @@ computing gzip size...
 - Using dynamic import() to code-split the application
 - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
 - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.[39m
-[32m✓ built in 5.99s[39m
+[32m✓ built in 6.14s[39m
 ### npx tauri icon app-icon.png
         Appx Creating StoreLogo.png
         Appx Creating Square30x30Logo.png
@@ -115,7 +115,7 @@ computing gzip size...
     [1m[94m= [0m[1mnote[0m: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
 
 [1m[33mwarning[0m: `leitwerk` (lib) generated 1 warning
-[1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 10.85s
+[1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 38.47s
 ### python3 tools/build_default_data.py
 data/default/dienststellen.csv: 168 Zeilen
 data/default/fahrzeuge.csv: 135 Zeilen
