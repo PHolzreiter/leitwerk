@@ -125,9 +125,10 @@ jobs:
           # Piper (sherpa-onnx): Paket selbst holen (der Rust-Cache überspringt sonst den Download)
           SHERPA_TAG=v1.12.15
           if [ "$RUNNER_OS" = "Windows" ]; then SHERPA_PAKET="sherpa-onnx-$SHERPA_TAG-win-x64-shared"; else SHERPA_PAKET="sherpa-onnx-$SHERPA_TAG-osx-universal2-static"; fi
-          # mit Python laden und entpacken (unter Windows versteht tar keine Laufwerksbuchstaben)
-          PY=$(command -v python3 || command -v python)
-          "$PY" -c "import sys,tarfile,urllib.request,tempfile,os; z=os.path.join(tempfile.gettempdir(),'sherpa.tar.bz2'); urllib.request.urlretrieve(sys.argv[1], z); tarfile.open(z,'r:bz2').extractall('sherpa-paket')" "https://github.com/k2-fsa/sherpa-onnx/releases/download/$SHERPA_TAG/$SHERPA_PAKET.tar.bz2" || echo "::error::sherpa-Paket konnte nicht geladen werden"
+          # laden und entpacken (nur relative Pfade – unter Windows versteht tar keine Laufwerksbuchstaben)
+          mkdir -p sherpa-paket
+          fehler=$( { curl -fsSL -o sherpa.tar.bz2 "https://github.com/k2-fsa/sherpa-onnx/releases/download/$SHERPA_TAG/$SHERPA_PAKET.tar.bz2" && \
+            { tar -xjf sherpa.tar.bz2 -C sherpa-paket || { 7z x -y sherpa.tar.bz2 -so | 7z x -y -si -ttar -osherpa-paket; }; }; } 2>&1 ) || echo "::error::sherpa-Paket: ${fehler:0:400}"
           export SHERPA_LIB_PATH="$PWD/sherpa-paket/$SHERPA_PAKET"
           if [ "$RUNNER_OS" = "Windows" ]; then
             export SHERPA_LIB_PATH="$(cygpath -w "$SHERPA_LIB_PATH")"
