@@ -563,6 +563,8 @@ pub fn run() {
             ki::ki_installieren,
             ki::ki_modell_laden,
             ki::ki_chat,
+            ki::rechner_ram,
+            ki::ki_modell_loeschen,
             sprache::sprache_status,
             sprache::sprache_modell_laden,
             sprache::sprache_modell_loeschen,

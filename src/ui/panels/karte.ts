@@ -151,7 +151,7 @@ function erstellen(ctx: PanelKontext) {
       });
       fz3d = addFahrzeug3D(map);
       let erzwungen = false;
-      const w3d = wetter3dAnbinden(mapEl, () => is3d || erzwungen);
+      const w3d = wetter3dAnbinden(mapEl, () => is3d || erzwungen, map);
       aus.push(() => w3d.dispose());
       wetter3dNeu = () => w3d.aktualisieren();
       if (location.search.includes("debug")) {

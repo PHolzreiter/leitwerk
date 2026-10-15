@@ -227,6 +227,59 @@ export function onPanelsGeaendert(fn: () => void): () => void {
   return () => aenderungsHoerer.delete(fn);
 }
 
+// ---------------------------------------------------------------- Reiter zwischen Programmfenstern ziehen
+
+const REITER_TYP = "application/x-leitwerk-reiter";
+
+/**
+ * Reiter (z. B. „Telefon“) von einem Programmfenster in ein anderes ziehen: Das Ziel-Fenster
+ * öffnet das Fenster an der Ablagestelle, das Herkunfts-Fenster schließt es.
+ */
+function reiterZwischenFenstern(a: DockviewApi): void {
+  document.addEventListener(
+    "dragstart",
+    (e) => {
+      const tab = (e.target as HTMLElement | null)?.closest?.("[data-tab-panel-id]") as HTMLElement | null;
+      const id = tab?.dataset.tabPanelId;
+      if (id && e.dataTransfer) e.dataTransfer.setData(REITER_TYP, JSON.stringify({ id, von: FENSTER_ID }));
+    },
+    true,
+  );
+  const fremd = (e: DragEvent) => !!e.dataTransfer?.types.includes(REITER_TYP);
+  a.onUnhandledDragOver((e) => {
+    if (fremd(e.nativeEvent as DragEvent)) e.accept();
+  });
+  a.onDidDrop((e) => {
+    const roh = (e.nativeEvent as DragEvent).dataTransfer?.getData(REITER_TYP);
+    if (!roh) return;
+    let d: { id: string; von: string };
+    try {
+      d = JSON.parse(roh) as { id: string; von: string };
+    } catch {
+      return;
+    }
+    if (!d.id || d.von === FENSTER_ID) return;
+    const komponente = d.id.replace(/-\d+$/, "");
+    const def = DEFS.get(komponente);
+    if (!def) return;
+    if (!a.getPanel(d.id)) {
+      const richtung = ({ center: "within", top: "above", bottom: "below", left: "left", right: "right" } as const)[e.position as "center"] ?? "within";
+      const nr = d.id.match(/-(\d+)$/)?.[1];
+      a.addPanel({
+        id: d.id,
+        component: komponente,
+        title: nr ? `${def.titel} ${nr}` : def.titel,
+        params: {},
+        ...(e.group ? { position: { referenceGroup: e.group, direction: richtung } } : {}),
+      });
+    }
+    bus.senden({ t: "reiterWeg", id: d.id }, d.von);
+  });
+  bus.empfangen((m) => {
+    if (m.t === "reiterWeg") a.getPanel(String(m.id))?.api.close();
+  });
+}
+
 export function arbeitsplatzStarten(container: HTMLElement): DockviewApi {
   container.classList.add("dockview-theme-light");
   api = createDockview(container, {
@@ -244,16 +297,19 @@ export function arbeitsplatzStarten(container: HTMLElement): DockviewApi {
       return { element: w, init: () => undefined };
     },
     getTabContextMenuItems: (p) => [
-      "maximize",
-      "float",
+      p.panel.api.isMaximized()
+        ? { label: "Verkleinern", action: () => p.panel.api.exitMaximized() }
+        : { label: "Maximieren", action: () => p.panel.api.maximize(), disabled: p.panel.api.location.type !== "grid" },
+      { label: "Schwebend (frei verschiebbar)", action: () => api?.addFloatingGroup(p.panel), disabled: p.panel.api.location.type === "floating" },
       "separator",
       IST_HAUPT
         ? { label: "In eigenem Fenster öffnen", action: () => void inEigenesFenster([p.panel.id]) }
         : { label: "Zurück ins Hauptfenster", action: () => zurueckInsHauptfenster([p.panel.id]) },
       "separator",
-      "close",
+      { label: "Schließen", action: () => p.panel.api.close() },
     ],
   });
+  reiterZwischenFenstern(api);
   if (location.search.includes("debug")) {
     const w = window as unknown as { __lw?: Record<string, unknown> };
     w.__lw = {

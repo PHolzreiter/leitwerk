@@ -343,3 +343,47 @@ pub async fn ki_chat(model: String, messages: Vec<ChatNachricht>, on_token: Chan
     }
     Ok(ganz)
 }
+
+/// Arbeitsspeicher des Rechners in GB (für die Modell-Empfehlung); 0 = unbekannt
+#[tauri::command]
+pub fn rechner_ram() -> u64 {
+    let bytes: u64 = {
+        #[cfg(target_os = "macos")]
+        {
+            let mut c = Command::new("sysctl");
+            c.args(["-n", "hw.memsize"]);
+            c.output().ok().and_then(|o| String::from_utf8_lossy(&o.stdout).trim().parse().ok()).unwrap_or(0)
+        }
+        #[cfg(target_os = "windows")]
+        {
+            let mut c = Command::new("powershell");
+            c.args(["-NoProfile", "-Command", "(Get-CimInstance Win32_ComputerSystem).TotalPhysicalMemory"]);
+            versteckt(&mut c);
+            c.output().ok().and_then(|o| String::from_utf8_lossy(&o.stdout).trim().parse().ok()).unwrap_or(0)
+        }
+        #[cfg(not(any(target_os = "macos", target_os = "windows")))]
+        {
+            std::fs::read_to_string("/proc/meminfo")
+                .ok()
+                .and_then(|t| t.lines().find(|l| l.starts_with("MemTotal")).and_then(|l| l.split_whitespace().nth(1)).and_then(|k| k.parse::<u64>().ok()))
+                .map(|kb| kb * 1024)
+                .unwrap_or(0)
+        }
+    };
+    (bytes as f64 / 1_073_741_824.0).round() as u64
+}
+
+/// Sprachmodell von der Festplatte löschen (Platz sparen)
+#[tauri::command]
+pub async fn ki_modell_loeschen(name: String) -> Result<(), String> {
+    let r = client(Some(Duration::from_secs(60)))?
+        .delete(format!("{BASIS}/api/delete"))
+        .json(&serde_json::json!({ "model": name }))
+        .send()
+        .await
+        .map_err(|e| format!("KI nicht erreichbar: {e}"))?;
+    if !r.status().is_success() {
+        return Err(format!("Löschen hat nicht geklappt ({})", r.status()));
+    }
+    Ok(())
+}

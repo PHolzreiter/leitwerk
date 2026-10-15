@@ -71,6 +71,8 @@ async function oeffnen(panels: string[], layout?: unknown, bounds?: FensterBound
         minWidth: 480,
         minHeight: 360,
         focus: true,
+        // Reiter zwischen Fenstern ziehen (HTML-Ziehen; Windows braucht das ausgeschaltet)
+        dragDropEnabled: false,
       });
       await new Promise<void>((ok, fehler) => {
         void w.once("tauri://created", () => ok());

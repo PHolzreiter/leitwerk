@@ -1,5 +1,5 @@
 /** Einstellungen → „KI-Anrufer“: Ollama installieren/starten, Modell laden, Test. */
-import { MODELLE, kiBeenden, kiChat, kiInstallieren, kiModellLaden, kiPrefs, kiStarten, kiStatus, setKiPrefs, type KiStatus } from "../abfrage/ki";
+import { MODELLE, STUFE_LABEL, empfohleneStufe, kiBeenden, kiChat, kiInstallieren, kiModellLaden, kiModellLoeschen, kiPrefs, kiStarten, kiStatus, rechnerRam, setKiPrefs, type KiStatus } from "../abfrage/ki";
 import { inTauri } from "../platform";
 import type { Settings } from "../sim/settings";
 import { el, esc, toast } from "./dom";
@@ -36,16 +36,61 @@ export function buildKiSection(sec: HTMLElement, draft: Settings): void {
   chk("KI-Anrufer verwenden (sonst einfache Antworten)", p.aktiv, (v) => setKiPrefs({ aktiv: v }));
   chk("Klingelton bei Anrufen", p.klingelton, (v) => setKiPrefs({ klingelton: v }));
   chk("Ollama beim Beenden von LeitWerk schließen", p.beenden, (v) => setKiPrefs({ beenden: v }));
-  const modell = el("select");
-  for (const m of MODELLE) modell.appendChild(el("option", { value: m.name }, m.label));
-  if (!MODELLE.some((m) => m.name === p.modell)) modell.appendChild(el("option", { value: p.modell }, p.modell));
-  modell.value = p.modell;
-  modell.addEventListener("change", () => {
-    setKiPrefs({ modell: modell.value });
-    void zeigen();
-  });
-  lg.append(el("label", {}, "Sprachmodell"), modell);
   sec.appendChild(lg);
+
+  // Sprachmodell nach Rechner-Stärke
+  const modell = { value: p.modell };
+  const wahl = el("div", { class: "ki-modelle" });
+  const ramInfo = el("p", { class: "small muted" }, "Größere Modelle führen natürlichere Gespräche, brauchen aber mehr Arbeitsspeicher und antworten langsamer. Mit „Testanruf“ siehst du, wie schnell es auf diesem Rechner geht.");
+  sec.append(el("h4", {}, "Sprachmodell"), ramInfo, wahl);
+  let ram = 0;
+  const waehlen = (name: string) => {
+    modell.value = name;
+    setKiPrefs({ modell: name });
+    zeichneWahl();
+    void zeigen();
+  };
+  let geladen: string[] = [];
+  function zeichneWahl() {
+    wahl.innerHTML = "";
+    const empf = empfohleneStufe(ram);
+    for (const m of MODELLE) {
+      const r = el("label", { class: `ki-modell${m.name === modell.value ? " gewaehlt" : ""}` });
+      const radio = el("input", { type: "radio", name: "ki-modell" });
+      radio.checked = m.name === modell.value;
+      radio.addEventListener("change", () => waehlen(m.name));
+      const da = geladen.some((x) => x === m.name || x.startsWith(`${m.name}`));
+      const knapp = ram > 0 && ram < m.ram;
+      const txt = el("span");
+      txt.innerHTML =
+          `<b>${STUFE_LABEL[m.stufe]}: ${esc(m.label)}</b> <span class="muted small">${m.gb.toLocaleString("de-AT")} GB Download · ab ${m.ram} GB Arbeitsspeicher</span>` +
+            `${m.stufe === empf ? ' <span class="ki-tag ok">empfohlen</span>' : ""}${da ? ' <span class="ki-tag">geladen</span>' : ""}${knapp ? ' <span class="ki-tag warn">zu groß?</span>' : ""}` +
+            `<br><span class="small muted">${esc(m.info)}</span>`;
+      r.append(radio, txt);
+      wahl.appendChild(r);
+    }
+    // anderes Modell (Name aus der Ollama-Bibliothek, z. B. zum Ausprobieren neuer Modelle)
+    const eigen = !MODELLE.some((m) => m.name === modell.value);
+    const zeile = el("div", { class: `ki-modell${eigen ? " gewaehlt" : ""}` });
+    const feld = el("input", { type: "text", placeholder: "anderes Modell, z. B. gemma3:12b" }) as HTMLInputElement;
+    if (eigen) feld.value = modell.value;
+    const ok = el("button", { class: "btn small" }, "Übernehmen");
+    ok.addEventListener("click", () => {
+      const n = feld.value.trim();
+      if (n) waehlen(n);
+    });
+    feld.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") ok.click();
+    });
+    zeile.append(el("span", { class: "small" }, "Anderes Modell:"), feld, ok);
+    wahl.appendChild(zeile);
+  }
+  zeichneWahl();
+  void rechnerRam().then((g) => {
+    ram = g;
+    if (g) ramInfo.innerHTML = `Dieser Rechner hat <b>${g} GB</b> Arbeitsspeicher – empfohlen ist die Stufe <b>${STUFE_LABEL[empfohleneStufe(g)!]}</b>. Größere Modelle führen natürlichere Gespräche, antworten aber langsamer. Mit „Testanruf“ siehst du, wie schnell es hier geht.`;
+    zeichneWahl();
+  });
 
   const status = el("div", { class: "ki-status" });
   const knoepfe = el("div", { class: "row-btns" });
@@ -87,6 +132,8 @@ export function buildKiSection(sec: HTMLElement, draft: Settings): void {
       return;
     }
     const m = modell.value;
+    geladen = s.modelle;
+    zeichneWahl();
     const ok = (t: string) => `<span class="ok">✔ ${t}</span>`;
     const no = (t: string) => `<span class="alert-text">✘ ${t}</span>`;
     status.innerHTML = [
@@ -130,8 +177,10 @@ export function buildKiSection(sec: HTMLElement, draft: Settings): void {
           let txt = "";
           const antwort = await kiChat(
             [
-              { role: "system", content: "Du bist ein aufgeregter Anrufer beim Notruf 144 in Niederösterreich. Dein Vater ist im Garten gestürzt und blutet am Kopf. Antworte kurz in 1–2 Sätzen, umgangssprachlich österreichisch." },
+              { role: "system", content: "Du spielst eine echte Person, die beim Notruf 144 in Niederösterreich anruft: Dein Vater (78) ist im Garten von der Leiter gefallen und blutet am Kopf, er ist wach, aber ganz blass. Du bist aufgeregt. Sag nur, was du ins Telefon sprichst: kurz, umgangssprachlich österreichisch, keine Listen." },
               { role: "user", content: "Leitstelle: Notruf 144, Rettungsdienst. Wo genau ist der Notfallort?" },
+              { role: "assistant", content: "Gartengasse 4 in Gföhl, bitte schnell!" },
+              { role: "user", content: "Leitstelle: Was ist denn passiert?" },
             ],
             (tk) => {
               if (!erstes) erstes = performance.now();
@@ -141,7 +190,15 @@ export function buildKiSection(sec: HTMLElement, draft: Settings): void {
           );
           const s1 = ((erstes || performance.now()) - t0) / 1000;
           const s2 = (performance.now() - t0) / 1000;
-          test.innerHTML = `„${esc(antwort)}“<br><span class="small">Erste Wörter nach ${s1.toFixed(1)} s, fertig nach ${s2.toFixed(1)} s${s2 > 15 ? " – das ist langsam, ein kleineres Modell wäre flüssiger." : ""}</span>`;
+          const urteil = s2 <= 5 ? "flüssig – passt gut" : s2 <= 10 ? "brauchbar" : s2 <= 18 ? "eher langsam – eine Stufe kleiner wäre flüssiger" : "zu langsam für Gespräche – bitte eine kleinere Stufe wählen";
+          test.innerHTML = `„${esc(antwort)}“<br><span class="small">Erste Wörter nach ${s1.toFixed(1)} s, fertig nach ${s2.toFixed(1)} s: <b>${urteil}</b>. (Der erste Test nach dem Laden dauert länger.)</span>`;
+        });
+      }
+      // andere geladene Modelle löschen (Platz sparen)
+      for (const x of s.modelle.filter((n) => !(n === m || n.startsWith(`${m}`) || n.startsWith(`${m}:`)))) {
+        knopf(`${x} löschen`, "", async () => {
+          await kiModellLoeschen(x);
+          toast(`${x} gelöscht`);
         });
       }
       knopf("Ollama beenden", "", async () => {

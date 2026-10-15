@@ -1789,6 +1789,48 @@ input[type="color"] {
   border-radius: 8px;
   background: var(--panel);
 }
+.ki-modelle {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 6px 0 10px;
+}
+.ki-modell {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.ki-modell.gewaehlt {
+  border-color: var(--blue);
+  background: var(--sel);
+}
+.ki-modell input[type="text"] {
+  flex: 1;
+  min-width: 0;
+}
+.ki-modell > div,
+.ki-modell span {
+  line-height: 1.35;
+}
+.ki-tag {
+  display: inline-block;
+  font-size: 11px;
+  padding: 0 6px;
+  border-radius: 8px;
+  background: var(--panel-3);
+  margin-left: 4px;
+}
+.ki-tag.ok {
+  color: var(--ok);
+}
+.ki-tag.warn {
+  background: var(--warn-bg);
+  color: var(--warn-text);
+}
 .ki-status {
   margin: 8px 0;
 }
@@ -2758,4 +2800,30 @@ input[type="color"] {
 }
 .stimmen .ton-zeile {
   grid-template-columns: minmax(100px, auto) minmax(180px, 1fr) auto;
+}
+
+/* Rechtsklick-Menü der Reiter: deckend weiß (bzw. Panel-Farbe), nicht durchsichtig */
+.dv-context-menu {
+  background: var(--panel) !important;
+  color: var(--text) !important;
+  border: 1px solid var(--line-2) !important;
+  box-shadow: var(--shadow) !important;
+  backdrop-filter: none !important;
+  opacity: 1 !important;
+  min-width: 200px;
+}
+.dv-context-menu-item {
+  height: 30px;
+  font-size: 13px;
+}
+.dv-context-menu-item:hover {
+  background: var(--hover) !important;
+}
+
+.abf-ortung-zeile {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 4px;
 }

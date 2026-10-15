@@ -5,6 +5,7 @@
  * vom Host an die Mitspieler übertragen werden kann. Alle Eingriffe des Spielers
  * laufen über die öffentlichen Methoden (alarmieren, Adresse setzen, …).
  */
+import { nachKlick } from "../klick";
 import { ACTIVE_CATEGORIES, bereicheVon, HOSPITAL_FLAG_LABEL, type Hospital, type HospitalFlag, type Vehicle } from "../data/model";
 import { store } from "../data/store";
 import { abteilungFuer, allCodes, findCode, hasCodes, type Einsatzcode } from "./codes";
@@ -34,7 +35,7 @@ import {
 } from "./weather";
 import { bestimmeCode, fallZiehen, kapitelVonCode, wahrheitFuer, type Antworten, type Schema } from "../abfrage/schema";
 import { anruferWaehlen, veraenderungText, zufallsName, type Anrufer } from "../abfrage/anrufer";
-import { bezugFuer, fuellen, szenarioBauen, vorlageFest, vorlageWaehlen, type OrtArt, type Szenario } from "../abfrage/szenario";
+import { bezugFuer, fuellen, stimmungAusVerlauf, szenarioBauen, vorlageFest, vorlageWaehlen, type OrtArt, type Szenario } from "../abfrage/szenario";
 import { SZENARIEN } from "../abfrage/szenarien";
 import { abfrageBlock, abfrageSaetze } from "../abfrage/protokollText";
 import {
@@ -677,8 +678,13 @@ export class Simulation {
   }
 
   private emit(): void {
-    for (const fn of this.listeners) fn();
+    // nicht neu zeichnen, während ein Knopf gedrückt ist (sonst geht der Klick verloren)
+    nachKlick(this.emitJetzt);
   }
+
+  private readonly emitJetzt = (): void => {
+    for (const fn of this.listeners) fn();
+  };
 
   /** Benachrichtigt die Oberfläche (z. B. nach Daten vom Host). */
   notify(): void {
@@ -1358,6 +1364,8 @@ export class Simulation {
     code: Einsatzcode;
     meldung?: string;
     gemeldeteAdresse?: string;
+    /** echte Gemeinde (bei Orten ohne Adresse) */
+    gemeinde?: string;
     patientAlter?: number | null;
     transport?: boolean | null;
     /** Fall aus dem Abfrageschema: Einsatz kommt als Anruf */
@@ -1425,7 +1433,9 @@ export class Simulation {
         const familie = /ehe|lebensgef|mutter|vater|tochter|sohn/i.test(anrufer.rolle);
         const neu = zufallsName(w ? "w" : "m");
         const pname = anrufer.selbst ? anrufer.name : familie ? `${neu.split(" ")[0]} ${anrufer.name.split(" ").slice(1).join(" ")}` : neu;
-        szenario = szenarioBauen(vorlage, a, { bezug: bezugFuer(anrufer.rolle, anrufer.selbst, w, alt), selbst: anrufer.selbst, ort: gemeindeVon(p.adresse.startsWith("Koordinate") ? gemeldet : p.adresse), name: pname, ortArt }, Math.random);
+        szenario = szenarioBauen(vorlage, a, { bezug: bezugFuer(anrufer.rolle, anrufer.selbst, w, alt), selbst: anrufer.selbst, ort: p.gemeinde ?? gemeindeVon(p.adresse), name: pname, ortArt }, Math.random);
+        const st = stimmungAusVerlauf(szenario.verlauf);
+        if (st && (anrufer.art ?? "privat") === "privat") anrufer.emotion = st;
       }
       e.wahr.abfrage = {
         kapitel: p.fall.kapitel,
@@ -1889,7 +1899,7 @@ export class Simulation {
     } else if (fall) draussen = ortUnbekanntBeschreibung(fall.kapitel, adr.city || adr.label);
     if (fall && draussen) {
       const p = versetzt(adr.lat, adr.lon, rnd(400, 1800), rnd(0, 360));
-      const e = this.erstelleEinsatz({ lat: p.lat, lon: p.lon, adresse: `Koordinate ${p.lat.toFixed(5)}, ${p.lon.toFixed(5)} (${draussen})`, code, gemeldeteAdresse: draussen, fall, patientAlter: alter });
+      const e = this.erstelleEinsatz({ lat: p.lat, lon: p.lon, adresse: `Koordinate ${p.lat.toFixed(5)}, ${p.lon.toFixed(5)} (${draussen})`, code, gemeldeteAdresse: draussen, gemeinde: adr.city || gemeindeVon(adr.label), fall, patientAlter: alter });
       if (e.wahr.abfrage) e.wahr.abfrage.ortUnbekannt = true;
       return e;
     }
@@ -2886,7 +2896,7 @@ export class Simulation {
         if (t > soll + 15 * MIN) {
           k.nachfrage = true;
           const freundlich = Math.random() < 0.6;
-          const wer = k.wahr.anrufer.rolle.startsWith("Pflegekraft") ? `Station ${k.d.von?.label ?? ""}` : k.wahr.anrufer.name;
+          const wer = /^(Pflegekraft|Ärzt|Arzt) auf der/.test(k.wahr.anrufer.rolle) ? `${k.wahr.anrufer.name}, ${k.wahr.anrufer.rolle.replace(/^(Pflegekraft|Ärztin|Arzt) /, "")}` : k.wahr.anrufer.name;
           const text = freundlich
             ? `Grüß Gott, ${wer} hier. Wir warten auf den Transport für ${k.d.patient.name || "unseren Patienten"} – wissen Sie, wann der Wagen kommt?`
             : `Hallo?! ${wer}. Wir warten jetzt schon ewig auf den Transport für ${k.d.patient.name || "den Patienten"}! Wo bleibt der denn?`;

@@ -6,7 +6,8 @@ import { inTauri } from "../platform";
 import { sim } from "../sim/engine";
 import { bereichName, hhmm, KT_LAGE_LABEL, type KtAuftrag, type KtDaten } from "../sim/kt";
 import { schonGefragt } from "./gespraech";
-import { kiBereit, kiChat, kiPrefs, kiStatus, type KiNachricht } from "./ki";
+import { kiBereit, kiPrefs, kiStatus, type KiNachricht } from "./ki";
+import { hinweisZurArt, kiAntwortNeu, nachrichtArt } from "./runde";
 import { anruferSagt, geschlechtAusName, satzSprecher } from "../ui/sprache";
 
 export interface KtFrage {
@@ -169,16 +170,45 @@ function fakten(k: KtAuftrag): string {
   ].join("\n");
 }
 
+/** Uhrzeit der Simulation */
+function jetztText(): string {
+  return hhmm(sim.state.zeit);
+}
+
 export function ktPrompt(k: KtAuftrag): string {
   const a = k.wahr.anrufer;
+  const w = k.wahr.d;
+  const r = a.rolle.toLowerCase();
+  const profi = /pflege|ärzt|arzt|station|assistent|ordination|heim/.test(r);
+  const laie = !profi;
+  const nachfrage = !!k.nachfrage && ["offen", "vorgemerkt", "unterwegs"].includes(k.status);
+  const soll = w.abholung ?? (w.termin ? w.termin - 30 * 60_000 : null);
+  const wartet = soll ? Math.max(0, Math.round((sim.state.zeit - soll) / 60_000)) : 0;
+  const genervt = /ewig|wo bleibt/i.test(k.anruf?.gespraech.find((m) => m.von === "anrufer")?.text ?? "");
   return [
-    `Du spielst in einer Trainingssimulation eine Person, die bei der Krankentransport-Hotline in Niederösterreich anruft, um einen Krankentransport zu bestellen (kein Notfall). Antworte nur mit dem, was diese Person ins Telefon sagt: Ich-Form, Deutsch, kurz, freundlich, keine Aufzählungen, keine Regieanweisungen.`,
-    `Wer du bist: ${a.name}, ${a.rolle}.`,
-    `Diese Angaben stimmen. Nenne jeweils nur das, wonach gefragt wird:`,
+    `Du spielst in einer Trainingssimulation eine echte Person, die bei der Krankentransport-Hotline in Niederösterreich anruft (kein Notfall). Du sagst nur, was diese Person ins Telefon spricht: gesprochene Sprache, Ich-Form, Deutsch – keine Aufzählungen, keine Regieanweisungen.`,
+    `WER DU BIST: ${a.name}, ${a.rolle}.`,
+    `Es ist jetzt ${jetztText()} Uhr.`,
+    nachfrage
+      ? `WARUM DU ANRUFST: Der Transport ist noch nicht da. Ausgemacht war die Abholung um ${soll ? hhmm(soll) : "?"}, ihr wartet also schon ${wartet} Minuten${w.termin ? `, und um ${hhmm(w.termin)} ist der Termin` : ""}. Du willst wissen, wann der Wagen kommt${w.termin ? " und ob sich der Termin noch ausgeht" : ""}. ${genervt ? "Du bist verärgert, wirst aber freundlicher, wenn man dir eine klare Auskunft gibt." : "Du bist freundlich, aber ein bisschen besorgt."}`
+      : `WARUM DU ANRUFST: Du willst einen Krankentransport bestellen${w.sek ? " (eine Überstellung in ein anderes Krankenhaus)" : ""}.`,
+    `DIESE ANGABEN STIMMEN (nenne jeweils nur das, wonach gefragt wird):`,
     fakten(k),
-    `Bei allgemeinen Fragen (z. B. „Gibt es sonst etwas zu beachten?“ oder „Wie geht es dem Patienten?“) nenne alle zutreffenden Besonderheiten auf einmal in ein, zwei Sätzen.`,
-    `Wenn nach etwas gefragt wird, das oben nicht steht, antworte passend und knapp oder sag, dass du es nicht weißt. Wiederhole dich nicht.`,
-  ].join("\n");
+    `WIE DU REDEST:`,
+    profi
+      ? `- Du bist vom Fach und hast so einen Anruf schon oft gemacht: freundlich, knapp, sachlich – aber wie ein Mensch am Telefon, nicht wie ein Formular.`
+      : `- Du bist kein Profi: Du redest in Alltagssprache, manchmal etwas umständlich, ab und zu mit „äh“ oder „Moment, ich schau nach“.`,
+    `- Beantworte genau die Frage, die gestellt wird, in ein bis zwei kurzen Sätzen. Auf „Wohin?“ kommt nur das Ziel, auf „Wann?“ nur die Zeit.`,
+    `- Sag nichts, was du schon gesagt hast. Du fasst nie selbst zusammen und fragst nicht zurück, ob du etwas richtig verstanden hast – das macht die Leitstelle, nicht du.`,
+    `- Fasst die Leitstelle zusammen, bestätigst du kurz („Ja, passt.“) oder korrigierst, was nicht stimmt.`,
+    `- Teilt dir die Leitstelle etwas mit (eine Zeit, eine Verzögerung, dass alles erledigt ist), reagierst du kurz darauf: bedanken, kurz nachfragen${nachfrage ? ", ob sich der Termin noch ausgeht, oder sagen, dass du in der Dialyse/Ordination Bescheid gibst" : ""}.`,
+    `- Rechne keine Uhrzeiten selbst aus. Nennt die Leitstelle eine Dauer („in einer halben Stunde“), übernimmst du die Dauer so, ohne Uhrzeit.`,
+    `- Bei allgemeinen Fragen („Gibt es sonst etwas zu beachten?“, „Wie geht es dem Patienten?“) sagst du alle zutreffenden Besonderheiten in ein, zwei Sätzen.`,
+    `- Wird nach etwas gefragt, das oben nicht steht, antwortest du passend und knapp oder sagst ehrlich, dass du es nicht weißt.`,
+    laie ? `So ungefähr klingst du: „Ja, äh, sitzen kann sie schon, aber gehen geht schlecht.“ / „Moment, die Nummer hab ich da … 0664 …“` : `So ungefähr klingst du: „Ins LK Horn, auf die Neurologie.“ / „Liegend, sie hat noch einen Perfusor dran.“`,
+  ]
+    .filter(Boolean)
+    .join("\n");
 }
 
 const laufend = new Set<string>();
@@ -211,20 +241,26 @@ export async function ktFragen(k: KtAuftrag, text: string, frage?: KtFrage, onTo
       const g = k.anruf?.gespraech ?? [];
       const wiederholt = schonGefragt(g, text);
       const vorher = [...g].reverse().find((m) => m.von === "anrufer")?.text;
+      const art = frage ? "frage" : nachrichtArt(text);
+      const profi = /pflege|ärzt|arzt|station|assistent|ordination|heim/i.test(k.wahr.anrufer.rolle);
       const hinweise: string[] = [];
-      if (frage) hinweise.push(`Die richtige Antwort ist: ${ktAntwortOhneKi(k, frage)}`);
-      else
-        hinweise.push(
-          "Geh genau auf DIESE Frage ein. Fasst die Leitstelle etwas zusammen („das heißt …, korrekt?“), bestätige, was stimmt, und korrigiere, was nicht stimmt.",
-        );
+      if (frage) hinweise.push(`Die richtige Antwort ist: ${ktAntwortOhneKi(k, frage)} – sag es in deinen eigenen Worten.`);
+      else if (art === "frage") hinweise.push("Geh genau auf DIESE Frage ein und beantworte nur sie.");
+      else hinweise.push(hinweisZurArt(art, !profi));
       if (wiederholt) hinweise.push("Die Frage wurde schon gestellt: antworte kurz mit „Wie gesagt, …“ in anderen Worten.");
-      else if (vorher && !frage) hinweise.push(`Deine letzte Antwort war „${vorher}“ – sag das nicht noch einmal.`);
+      else if (vorher) hinweise.push(`Deine letzte Antwort war „${vorher}“ – sag nichts davon noch einmal.`);
       verlauf[verlauf.length - 1].content += `\n[Hinweis nur für dich, nicht aussprechen: ${hinweise.join(" ")}]`;
+      const frueher = g.filter((m) => m.von === "anrufer").map((m) => m.text);
       try {
-        antwort = await kiChat(verlauf, (t) => {
-          onToken?.(t);
-          sprecher.token(t);
-        });
+        antwort = await kiAntwortNeu(
+          verlauf,
+          frueher,
+          (t) => {
+            onToken?.(t);
+            sprecher.token(t);
+          },
+          { pruefen: !wiederholt },
+        );
       } catch (e) {
         console.warn("KT-KI", e);
       }

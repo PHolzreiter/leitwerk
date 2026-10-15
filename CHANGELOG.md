@@ -1,5 +1,25 @@
 # Änderungen
 
+## 0.20.0 – Gespräche, die sich echt anfühlen; Modellwahl; Oberfläche
+**Gespräche (Notruf und KT-Hotline)**
+- Anrufer wiederholen sich nicht mehr: LeitWerk prüft jeden Satz, bevor er angezeigt und vorgelesen wird. Was schon gesagt wurde, fällt weg; ist gar nichts Neues dabei, wird die Antwort neu erzeugt
+- Der Anrufer erkennt, was die Leitstelle gerade macht: **fragen**, **zusammenfassen** („Ja, genau“), **anweisen** (tut es und sagt, was er sieht), **mitteilen** („Die Rettung ist unterwegs“ → „Danke! Wie lang dauert's?“) oder **verabschieden**. Kein Aufsagen von „wach, redet normal, atmet normal“ mehr bei jeder Gelegenheit
+- KT-Hotline und Überstellungen: kein „Das heißt …, korrekt?“ mehr, Antworten passen genau zur Frage. Bei „Wo bleibt der Transport?“ kennt der Anrufer die aktuelle Uhrzeit und wie lange er schon wartet – und rechnet keine falschen Uhrzeiten mehr aus
+- Rückruf und zweiter Anruf: der Anrufer sagt gleich „Endlich, ich hab vorhin schon angerufen!“
+- Neue Geschichten für Anrufe vom **Pflegeheim, Hausarzt, von der Ordination, Telemedizin/141/1450, vom Palliativteam**, von der **Polizei** (Verkehrskontrolle, verwirrter Mann, Krampfanfall, Geburt am Pannenstreifen …) und für **Bergrettung/Alpin** (Vermisste, Klettersteig, Paragleiter im Baum, Lichtsignale, Hund in der Felswand). Keine Pistenrettung mehr im Oktober in Kirchberg am Wagram
+- Telemedizin-Ärzte wissen, dass sie nicht vor Ort sind; die Polizei fragt bei der Streife nach; Passanten kennen den Hausarzt eines Fremden nicht; wer nur ein Licht am Hang sieht, kennt keinen Patienten
+- Stimmung des Anrufers passt zur Geschichte; „Ist er gestürzt?“ wird beim Sturz nicht mehr verneint; kein Hausarzt „in wir sind ungefähr eine Stunde gegangen“ mehr; Stationsärzte melden sich mit „Ärztin auf der Neurochirurgie in der Klinik Donaustadt“
+- **Sprachmodell nach Rechner-Stärke wählen** (Einstellungen → KI-Anrufer): Leicht, Standard, Mittel, Stark – mit Größe, nötigem Arbeitsspeicher und Empfehlung für diesen Rechner. Dazu ein Feld für jedes andere Ollama-Modell, „Löschen“ für nicht mehr gebrauchte Modelle und ein Testanruf mit Urteil („flüssig“, „zu langsam“)
+
+**Oberfläche**
+- **Kein verlorener Klick mehr**: Während ein Knopf gedrückt ist, zeichnet LeitWerk nichts neu – vorher konnte z. B. die Telefonliste genau dann neu aufgebaut werden, und man musste zweimal drücken
+- Abfrage mit der Maus wie mit der Tastatur: ein Klick auf eine Antwort beantwortet und springt zur nächsten offenen Frage; größere Antwortknöpfe
+- **📡 Orten** direkt neben der Adresse in der Abfrage (bei Anrufern, die nicht wissen, wo sie sind, hervorgehoben), mit „Karte“ und „Als Einsatzort“
+- Reiter (z. B. Telefon) lassen sich **zwischen Programmfenstern ziehen** – vom Hauptfenster aufs Fenster am zweiten Bildschirm und zurück. Auf Windows funktioniert das Ziehen der Reiter jetzt überhaupt erst richtig
+- Rechtsklick-Menü der Reiter: weiß hinterlegt und auf Deutsch (Maximieren, Schwebend, In eigenem Fenster öffnen, Schließen)
+- Karte in **2D lässt sich nicht mehr kippen**; Kippen geht nur in 3D
+- **Nebel in 3D**: dichter grauer Schleier zum Horizont, mit Höhendaten verschwinden Gelände und Häuser in der Ferne; auch Dunst, Hochnebel, starker Regen/Schnee trüben die Sicht
+
 ## 0.19.0 – Echte Geschichten statt Fragebogen
 - Jeder Notruf hat jetzt eine **Fallgeschichte**: was genau passiert ist, wo, seit wann, was der Anrufer sieht, wer der Patient ist (Name, Alter, Vorerkrankungen, Medikamente, Hausarzt), Stockwerk, Lift, Hund … Über 70 Alltagsgeschichten – vom Sturz in der Nacht am Weg zum Klo über den Radfahrer beim Abbiegen bis zum Kind mit dem Legostein. Passend zu Jahreszeit, Uhrzeit und Wetter (Glatteis im Winter, Hitzekollaps im Sommer, Wespenstich im Garten)
 - Die KI kennt die ganze Geschichte und beantwortet damit **jede** Frage – egal welches Abfrageschema man verwendet und in welcher Reihenfolge gefragt wird. Alle Antworten aus dem Schema sind enthalten, dazu viele Kleinigkeiten

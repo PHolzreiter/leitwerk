@@ -3,6 +3,7 @@
  * bei Gewitter ab und zu ein kurzes Aufhellen. Liegt als dünne Schicht über der Karte (Klicks gehen durch),
  * zeichnet nur in 3D, nur wenn das Fenster sichtbar ist und höchstens ~30 Bilder pro Sekunde.
  */
+import type { Map as MlMap, SkySpecification } from "maplibre-gl";
 import { sim } from "./sim/engine";
 import { lageVon, type WetterLage } from "./sim/weather";
 import { onPers, pers } from "./ui/ws/persoenlich";
@@ -16,6 +17,31 @@ interface Teilchen {
 }
 
 type Art = "regen" | "schnee" | "hagel";
+
+/** Wie stark die Sicht in die Ferne verschwimmt (0 = klar, 1 = dichter Nebel) */
+function sichtTruebung(l: WetterLage): number {
+  switch (l) {
+    case "nebel":
+      return 1;
+    case "hochnebel":
+      return 0.45;
+    case "dunst":
+      return 0.35;
+    case "starker_schnee":
+      return 0.5;
+    case "schnee":
+      return 0.3;
+    case "starkregen":
+    case "unwetter":
+      return 0.35;
+    case "regen":
+    case "gewitter":
+    case "hagel":
+      return 0.2;
+    default:
+      return 0;
+  }
+}
 
 function stil(l: WetterLage): { art: Art | null; n: number; zweit?: { art: Art; n: number }; dunst: number; blitz: number } {
   switch (l) {
@@ -54,7 +80,7 @@ function stil(l: WetterLage): { art: Art | null; n: number; zweit?: { art: Art; 
   }
 }
 
-export function wetter3dAnbinden(container: HTMLElement, ist3d: () => boolean): { aktualisieren(): void; dispose(): void } {
+export function wetter3dAnbinden(container: HTMLElement, ist3d: () => boolean, map?: MlMap): { aktualisieren(): void; dispose(): void } {
   const schicht = document.createElement("div");
   schicht.className = "wetter3d";
   const dunst = document.createElement("div");
@@ -66,6 +92,36 @@ export function wetter3dAnbinden(container: HTMLElement, ist3d: () => boolean): 
   schicht.append(dunst, canvas, blitz);
   container.appendChild(schicht);
   const ctx = canvas.getContext("2d")!;
+  const schleier = document.createElement("div");
+  schleier.className = "wetter3d-schleier";
+  schicht.insertBefore(schleier, canvas);
+
+  // Nebel direkt in der Karte: Gelände und Häuser verschwinden in der Ferne (nur mit Höhendaten sichtbar)
+  let himmelGesetzt = false;
+  const himmel = (staerke: number) => {
+    if (!map) return;
+    try {
+      if (staerke <= 0) {
+        if (himmelGesetzt) map.setSky({} as SkySpecification);
+        himmelGesetzt = false;
+        return;
+      }
+      const grau = "#d3d8de";
+      map.setSky({
+        "sky-color": staerke > 0.6 ? "#cfd5dc" : "#b9c8d8",
+        "horizon-color": grau,
+        "fog-color": grau,
+        // 0 = Nebel beginnt schon in der Kartenmitte, 1 = nur ganz am Horizont
+        "fog-ground-blend": Math.max(0.05, 0.9 - staerke * 0.85),
+        "horizon-fog-blend": Math.min(1, 0.4 + staerke * 0.6),
+        "sky-horizon-blend": Math.min(1, 0.5 + staerke * 0.5),
+        "atmosphere-blend": 0,
+      } as SkySpecification);
+      himmelGesetzt = true;
+    } catch {
+      /* Karte noch nicht bereit */
+    }
+  };
 
   let teilchen: { art: Art; t: Teilchen[] }[] = [];
   let laeuft = 0;
@@ -154,8 +210,12 @@ export function wetter3dAnbinden(container: HTMLElement, ist3d: () => boolean): 
     const s = stil(l);
     const wind = sim.state.wetter.wind ?? 10;
     schraeg = Math.min(40, wind * 0.6) * ((sim.state.wetter.richtung ?? 270) > 180 ? 1 : -1);
-    schicht.hidden = !an || (s.n === 0 && s.dunst === 0);
+    const trueb = an ? sichtTruebung(l) : 0;
+    schicht.hidden = !an || (s.n === 0 && s.dunst === 0 && trueb === 0);
     dunst.style.opacity = an ? String(s.dunst) : "0";
+    // Schleier über das ganze Bild – zum Horizont dichter; bei Nebel deutlich sichtbar
+    schleier.style.opacity = String(trueb * 0.85);
+    himmel(trueb);
     const bewegt = pers().animationen !== false;
     if (l !== lage || !teilchen.length !== !s.art) {
       lage = l;
@@ -187,12 +247,19 @@ export function wetter3dAnbinden(container: HTMLElement, ist3d: () => boolean): 
     }
   });
   const ausPers = onPers(() => aktualisieren());
+  const stilNeu = () => {
+    himmelGesetzt = false;
+    aktualisieren();
+  };
+  map?.on("style.load", stilNeu);
   aktualisieren();
   return {
     aktualisieren,
     dispose: () => {
       ausSim();
       ausPers();
+      map?.off("style.load", stilNeu);
+      himmel(0);
       cancelAnimationFrame(laeuft);
       window.clearTimeout(blitzTimer);
       schicht.remove();

@@ -181,7 +181,8 @@ export function createMap(container: string | HTMLElement, initial: string[], op
     zoom: 8,
     minZoom: 5,
     maxZoom: 19.5,
-    maxPitch: 75,
+    // 2D: flach von oben, nicht kippbar (in 3D wird das Kippen freigegeben)
+    maxPitch: 0,
     maxBounds: MAX_BOUNDS,
     attributionControl: { compact: true },
     // Schriftordner liegen ohne Leerzeichen im Programm, damit die
@@ -297,12 +298,19 @@ export function createMap(container: string | HTMLElement, initial: string[], op
     mode3d = on;
     if (on) satellite = false;
     applyVisibility();
+    if (on) map.setMaxPitch(75);
     if (on && available.has("terrain")) {
       map.setTerrain({ source: "terrain", exaggeration: 1.4 });
       map.easeTo({ pitch: 60, duration: 800 });
+    } else if (on) {
+      /* ohne Höhendaten: nur Kippen freigeben */
     } else {
       map.setTerrain(null);
       map.easeTo({ pitch: 0, bearing: 0, duration: 800 });
+      // nach dem Zurückkippen sperren
+      map.once("moveend", () => {
+        if (!mode3d) map.setMaxPitch(0);
+      });
     }
   };
 

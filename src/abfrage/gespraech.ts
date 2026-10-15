@@ -6,7 +6,8 @@
 import { store } from "../data/store";
 import { sim, type Einsatz } from "../sim/engine";
 import { antwortOhneKi, erinnerung, ersterSatzOhneKi, systemPrompt, type AnrufKontext } from "./anrufer";
-import { kiBereit, kiChat, kiPrefs, kiStatus, type KiNachricht } from "./ki";
+import { kiBereit, kiPrefs, kiStatus, type KiNachricht } from "./ki";
+import { kiAntwortNeu, nachrichtArt } from "./runde";
 import { inTauri } from "../platform";
 import { fragenImAblauf, type Frage } from "./schema";
 import { anruferSagt, satzSprecher } from "../ui/sprache";
@@ -158,10 +159,15 @@ async function anruferAntwort(
     const sf = schemaFrage ?? (frage === ERÖFFNUNG ? ({ id: "ort_adresse", typ: "text", text: frage } as Frage) : undefined);
     const g = e.anruf?.gespraech ?? [];
     const letzteAntwort = [...g].reverse().find((m) => m.von === "anrufer")?.text;
-    verlauf[verlauf.length - 1] = { role: "user", content: `${zuletzt.content}\n${erinnerung(k, sf, { wiederholt: schonGefragt(g, frage), letzteAntwort })}` };
+    verlauf[verlauf.length - 1] = {
+      role: "user",
+      content: `${zuletzt.content}\n${erinnerung(k, sf, { wiederholt: schonGefragt(g, frage), letzteAntwort, art: sf ? "frage" : nachrichtArt(frage), text: frage, erste: ersteAntwort })}`,
+    };
   }
   try {
-    const t = await kiChat(verlauf, onToken);
+    const g = e.anruf?.gespraech ?? [];
+    const frueher = g.filter((m) => m.von === "anrufer").map((m) => m.text);
+    const t = await kiAntwortNeu(verlauf, frueher, (x) => onToken?.(x), { pruefen: !schonGefragt(g, frage) });
     quelle.wert = "ki";
     return t;
   } catch (err) {

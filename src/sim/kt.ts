@@ -395,6 +395,16 @@ export function dauerDaten(heim: KtOrt, kh: Hospital, bereich: "DIA" | "STR" | "
   ];
 }
 
+/** „UK Tulln, Dialyse“ → „auf der Dialyse im UK Tulln“ */
+function stationText(label: string): string {
+  const i = label.lastIndexOf(", ");
+  if (i < 0) return `im ${label}`;
+  const haus = label.slice(0, i);
+  const bereich = label.slice(i + 2);
+  const im = /^(LK|UK|KH|LKH|AKH|BBR|Klinik|Krankenhaus|Spital|Landesklinikum|Universitätsklinikum)\b/i.test(haus) ? `im ${haus}` : `in der Klinik ${haus}`;
+  return `auf der ${bereich} ${im}`;
+}
+
 /** Wer ruft bei der KT-Hotline an */
 export function hotlineAnrufer(d: KtDaten): { rolle: string; name: string } {
   const vonKh = !!d.von?.khId;
@@ -402,11 +412,11 @@ export function hotlineAnrufer(d: KtDaten): { rolle: string; name: string } {
   if (d.sek && vonKh) {
     const arzt = d.sek.arzt || d.sek.beatmet || d.sek.inkubator || d.sofort || Math.random() < 0.4;
     return arzt
-      ? { rolle: `${g === "w" ? "Ärztin" : "Arzt"} der Station ${d.von!.label}`, name: `Dr. ${zufallsName(g)}` }
-      : { rolle: `Pflegekraft der Station ${d.von!.label}`, name: zufallsName(g) };
+      ? { rolle: `${g === "w" ? "Ärztin" : "Arzt"} ${stationText(d.von!.label)}`, name: `Dr. ${zufallsName(g)}` }
+      : { rolle: `Pflegekraft ${stationText(d.von!.label)}`, name: zufallsName(g) };
   }
   if (d.sofort && !vonKh) return { rolle: "Ordinationsassistentin des Hausarztes", name: zufallsName("w") };
-  if (vonKh) return { rolle: `Pflegekraft der Station ${d.von!.label}`, name: zufallsName(g) };
+  if (vonKh) return { rolle: `Pflegekraft ${stationText(d.von!.label)}`, name: zufallsName(g) };
   const r = gewichtet<string>([
     ["Patient selbst", 3],
     [d.patient.geschlecht === "w" ? "Tochter der Patientin" : "Tochter des Patienten", 2],

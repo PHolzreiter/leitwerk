@@ -47,7 +47,10 @@ export type AnruferTyp =
   | "begleiter"
   | "trainer"
   | "bademeister"
-  | "wirt";
+  | "wirt"
+  | "telemed"
+  | "polizei"
+  | "bergrettung";
 
 export interface SzenarioVorlage {
   id: string;
@@ -81,6 +84,10 @@ export interface SzenarioVorlage {
   stunden?: [number, number];
   /** nur bei Hitze (≥ 25 °C) bzw. Kälte (≤ 3 °C) */
   wetter?: "hitze" | "kaelte" | "glatt";
+  /** weitere Antworten, die zur Geschichte gehören (auch Fragen anderer Kapitel), z. B. verwirrt: "ja" */
+  extra?: Record<string, Wert>;
+  /** kein (bekannter) Patient – z. B. Lichtsignale, Tier: so steht es statt der Patientenangaben in der Fallakte */
+  ohnePatient?: string;
 }
 
 // ------------------------------------------------------------------ fertige Fallgeschichte
@@ -91,6 +98,8 @@ export interface Szenario {
   ortArt: OrtArt;
   /** z. B. „im Badezimmer, Wohnung im 2. Stock“ */
   stelle: string;
+  /** kein bekannter Patient (Text für die Fallakte) */
+  ohnePatient?: string;
   /** Anrufer kennt den Ort nicht genau (Natur) – so beschreibt er ihn */
   wo?: string;
   hergang: string;
@@ -144,6 +153,10 @@ export function fuellen(t: string, v: { w: boolean; bezug: string; ort: string; 
     der: ["der", "die"],
     Der: ["Der", "Die"],
     den: ["den", "die"],
+    Unser: ["Unser", "Unsere"],
+    einem: ["einem", "einer"],
+    en: ["en", "in"],
+    unser: ["unser", "unsere"],
     in: ["", "in"],
   };
   let s = t.replace(/\{([^{}]*\|[^{}]*)\}/g, (_, x: string) => {
@@ -191,6 +204,8 @@ const KRANKHEITEN: Krankheit[] = [
   { name: "Schilddrüse", medikamente: ["Thyrex"], fakten: {}, ab: 30 },
   { name: "Nierenschwäche", medikamente: [], fakten: {}, ab: 65 },
   { name: "Krebs, ist in Behandlung", medikamente: ["Schmerzpflaster"], fakten: {}, ab: 55 },
+  // nur aus Geschichten (nie zufällig)
+  { name: "Krebs im Endstadium", medikamente: ["Morphin über eine Schmerzpumpe"], fakten: {}, ab: 999 },
 ];
 
 /** Vorerkrankungen passend zu Alter, Vorlage und bereits feststehenden Antworten */
@@ -226,9 +241,15 @@ function profil(alter: number, a: Antworten, vorlage: string[] | undefined, rnd:
     if (!med.some((m) => /Blutverd/.test(m))) med.push("Eliquis (Blutverdünner)");
   }
   if (a.lungenerkrankung === "andere") vor.push("eine Lungenerkrankung (Lungenfibrose)");
-  // passend zur Geschichte
-  if (vorlage?.length && rnd() < 0.7) {
-    const n = pick(vorlage, rnd);
+  // passend zur Geschichte: „!…“ kommt immer vor (die Geschichte erzählt davon), sonst eine mit 70 %
+  for (const n of (vorlage ?? []).filter((x) => x.startsWith("!")).map((x) => x.slice(1))) {
+    const k = KRANKHEITEN.find((x) => x.name === n);
+    if (k) nimm(k);
+    else if (!vor.includes(n)) vor.push(n);
+  }
+  const frei = (vorlage ?? []).filter((x) => !x.startsWith("!"));
+  if (frei.length && rnd() < 0.7) {
+    const n = pick(frei, rnd);
     const k = KRANKHEITEN.find((x) => x.name === n);
     if (k) nimm(k);
     else if (!vor.includes(n)) vor.push(n);
@@ -381,7 +402,7 @@ export function szenarioBauen(
   if (a.seit === "ueber") eng(280, 1500);
   const seitMin = zwischen(smin, smax, rnd);
   const pr = profil(alter, a, v.vorerkrankungen, rnd);
-  const zusatz: Antworten = { ...pr.fakten };
+  const zusatz: Antworten = { ...pr.fakten, ...(v.extra ?? {}) };
   const setze = (id: string, x: Wert) => {
     if (a[id] === undefined && zusatz[id] === undefined) zusatz[id] = x;
   };
@@ -441,6 +462,7 @@ export function szenarioBauen(
     umgebung: umgebung(ortArt, alter, rnd),
     verlauf: (v.verlauf ?? []).map(f),
     zusatz,
+    ohnePatient: v.ohnePatient ? f(v.ohnePatient) : undefined,
   };
 }
 
@@ -496,20 +518,41 @@ export function faktSaetze(z: Antworten, w: boolean): string[] {
 export const SELBSTVERSTAENDLICH = new Set(["diabetiker", "epilepsie", "herz_vg", "herzleiden", "blutverduenner", "vg_schlaganfall", "vg_tia", "psych_vorerkrankung", "aneurysma", "bluter", "kokain", "lungenerkrankung", "gewalt", "gewalttaetig", "aggressiv", "waffen"]);
 
 /** Fallakte für die KI (Geheimwissen der Anruferin/des Anrufers) */
-export function fallakte(sz: Szenario, opt: { selbst: boolean; bezug: string }): string {
+export function fallakte(sz: Szenario, opt: { selbst: boolean; bezug: string; quelle?: "vorort" | "polizei" | "telefon"; fremd?: boolean; hausarztIch?: boolean }): string {
   const p = sz.patient;
   const w = p.geschlecht === "w";
+  const q = opt.quelle ?? "vorort";
   const wer = opt.selbst ? "Du selbst" : `${opt.bezug.charAt(0).toUpperCase()}${opt.bezug.slice(1)} (${p.name})`;
   const z: string[] = [];
-  z.push(`WAS PASSIERT IST (das hast du erlebt): ${opt.selbst && sz.hergangIch ? sz.hergangIch : sz.hergang} Das war ${sz.seit}.`);
+  const erlebt = q === "polizei" ? "so hat es dir die Streife vor Ort gemeldet" : q === "telefon" ? "das hat dir der Patient bzw. die Angehörigen gerade am Telefon geschildert – du bist nicht vor Ort" : "das hast du erlebt";
+  z.push(`WAS PASSIERT IST (${erlebt}): ${opt.selbst && sz.hergangIch ? sz.hergangIch : sz.hergang} Das war ${sz.seit}.`);
   z.push(`WO: ${sz.stelle}${sz.umgebung.length ? ` (${sz.umgebung.join("; ")})` : ""}.`);
-  if (sz.details.length) z.push(`${opt.selbst ? "WAS DU SPÜRST UND WEISST (hier über dich in der dritten Person notiert – du sagst es natürlich in Ich-Form)" : "WAS DU SIEHST UND WEISST"} (erzählst du, wenn es passt oder gefragt wird): ${sz.details.join(" ")}`);
-  z.push(
-    `ÜBER ${opt.selbst ? "DICH" : "DEN PATIENTEN"}: ${wer}, ${p.alter} Jahre, ${w ? "weiblich" : "männlich"}, Gewicht ${p.gewicht}. ` +
-      `Vorerkrankungen: ${p.vorerkrankungen.length ? p.vorerkrankungen.join(", ") : "keine bekannt"}. ` +
-      `Medikamente: ${p.medikamente.length ? p.medikamente.join(", ") : "keine regelmäßigen"}. Allergien: ${p.allergien}. Hausarzt: ${p.hausarzt}.`,
-  );
+  const titel = opt.selbst
+    ? "WAS DU SPÜRST UND WEISST (hier über dich in der dritten Person notiert – du sagst es natürlich in Ich-Form)"
+    : q === "polizei"
+      ? "WAS DIE STREIFE SIEHT UND WEISS"
+      : q === "telefon"
+        ? "WAS DU AUS DEM TELEFONAT WEISST"
+        : "WAS DU SIEHST UND WEISST";
+  if (sz.details.length) z.push(`${titel} (erzählst du, wenn es passt oder gefragt wird): ${sz.details.join(" ")}`);
+  const vorErk = `Vorerkrankungen: ${p.vorerkrankungen.length ? p.vorerkrankungen.join(", ") : "keine bekannt"}. Medikamente: ${p.medikamente.length ? p.medikamente.join(", ") : "keine regelmäßigen"}. Allergien: ${p.allergien}.`;
+  if (sz.ohnePatient) z.push(`BETROFFENE: ${sz.ohnePatient}`);
+  else if (opt.fremd)
+    z.push(
+      `ÜBER DEN PATIENTEN (du kennst ${w ? "sie" : "ihn"} nicht; den Namen und das, was hier steht, weißt du nur, weil ${q === "polizei" ? "die Streife" : "du"} ${w ? "sie" : "ihn"} gefragt ${q === "polizei" ? "hat" : "hast"} – fragt die Leitstelle danach, ${q === "polizei" ? "gibst du es von der Streife weiter" : "fragst du kurz nach und sagst es dann"}): ${p.name}, ungefähr ${p.alter} Jahre, ${w ? "weiblich" : "männlich"}. ${vorErk} Den Hausarzt kennst du nicht.`,
+    );
+  else z.push(`ÜBER ${opt.selbst ? "DICH" : "DEN PATIENTEN"}: ${wer}, ${p.alter} Jahre, ${w ? "weiblich" : "männlich"}, Gewicht ${p.gewicht}. ${vorErk} Hausarzt: ${opt.hausarztIch ? "du selbst" : p.hausarzt}.`);
   void w;
   if (sz.verlauf.length) z.push(`STIMMUNG UND VERLAUF IM GESPRÄCH: ${sz.verlauf.join(" ")}`);
   return z.join("\n");
+}
+
+/** Stimmung des Anrufers aus der Geschichte („Du bist panisch …“) – damit Stimme, Beispiele und Verlauf zusammenpassen */
+export function stimmungAusVerlauf(verlauf: string[]): "ruhig" | "gefasst" | "aufgeregt" | "panisch" | null {
+  const t = verlauf.join(" ").toLowerCase();
+  if (/panisch|schreist|weinst|verängstigt/.test(t)) return "panisch";
+  if (/sehr aufgeregt|geschockt|aufgewühlt|aufgeregt/.test(t)) return "aufgeregt";
+  if (/nervös|besorgt|erschrocken|traurig/.test(t)) return "gefasst";
+  if (/ruhig|sachlich|routiniert/.test(t)) return "ruhig";
+  return null;
 }

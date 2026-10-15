@@ -2,6 +2,7 @@
  * Telefon: alle Anrufe (Notruf, KT-Hotline, Überstellung) mit Annehmen, Halten, Zurückwechseln, Auflegen.
  * Beim Annehmen geht das Abfrage-Fenster auf.
  */
+import { nachKlick } from "../../klick";
 import { verstummen } from "../sprache";
 import { eroeffnen } from "../../abfrage/gespraech";
 import { KT_FRAGEN, ktFragen } from "../../abfrage/ktGespraech";
@@ -238,7 +239,7 @@ function erstellen(ctx: PanelKontext) {
       render();
     }, 250);
   };
-  const uhr = window.setInterval(render, 1000);
+  const uhr = window.setInterval(() => nachKlick(render), 1000);
   const aus = [sim.onChange(spaeter), onAuswahl(() => render()), onPers(() => render()), mp.onChange(spaeter)];
   render();
   return {

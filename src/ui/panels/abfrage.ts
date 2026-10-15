@@ -3,6 +3,7 @@
  * in der Mitte das Gespräch, rechts der Leitfaden (Fragen passend zur Anrufart),
  * darunter die Info an die Besatzung.
  */
+import { nachKlick } from "../../klick";
 import { mikroAnbinden } from "../sprache";
 import { kiBereit } from "../../abfrage/ki";
 import { ktAntwortetGerade } from "../../abfrage/ktGespraech";
@@ -117,7 +118,7 @@ function erstellen(ctx: PanelKontext) {
       pruefen();
     }, 250);
   };
-  const uhr = window.setInterval(() => teil?.refresh(), 1000);
+  const uhr = window.setInterval(() => nachKlick(() => teil?.refresh()), 1000);
   const aus = [sim.onChange(spaeter), onAuswahl(() => pruefen()), mp.onChange(spaeter)];
   pruefen();
   return {

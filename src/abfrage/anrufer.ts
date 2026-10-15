@@ -2,6 +2,7 @@
  * KI-Anrufer: Wer ruft an (passend zur Lage, mit Zufall), was weiß er, wie spricht er.
  * Erzeugt die Anweisung für das Sprachmodell und einfache Antworten ohne KI.
  */
+import { fragtNachZustand, hinweisZurArt, type NachrichtArt } from "./runde";
 import { antwortLabel, frageIndex, type Antworten, type Frage, type Schema } from "./schema";
 import { bezugFuer, fallakte, faktSaetze, SELBSTVERSTAENDLICH, type AnruferTyp, type Szenario } from "./szenario";
 
@@ -81,7 +82,7 @@ export function anruferWaehlen(
   /** aus der Fallgeschichte: wer anrufen darf und wo es passiert */
   geschichte?: { typen: AnruferTyp[]; ort: string },
 ): Anrufer {
-  const sonder = sonderAnrufer(kapitel, a, rnd, adresse);
+  const sonder = sonderAnrufer(kapitel, a, rnd, adresse, geschichte);
   if (sonder) return sonder;
   const alter = typeof a.alter === "number" ? a.alter : 50;
   const patientW = a.geschlecht === "w";
@@ -134,6 +135,9 @@ export function anruferWaehlen(
       trainer: { ort: "", rolle: "Trainer im Sportverein", anruferWert: "2", geschlecht: "m", typ: "trainer" },
       bademeister: { ort: "", rolle: rnd() < 0.7 ? "Bademeister" : "Bademeisterin", anruferWert: "2", typ: "bademeister" },
       wirt: { ort: "", rolle: rnd() < 0.5 ? "Wirt" : "Kellnerin", anruferWert: "2", typ: "wirt" },
+      telemed: { ort: "", rolle: "Ärztin/Arzt der Telemedizin", anruferWert: "einrichtung", profi: true, typ: "telemed" },
+      polizei: { ort: "", rolle: rnd() < 0.5 ? "Polizist" : "Polizistin", anruferWert: "2", profi: true, typ: "polizei" },
+      bergrettung: { ort: "", rolle: "Einsatzleiter der Bergrettung", anruferWert: "einrichtung", geschlecht: "m", profi: true, typ: "bergrettung" },
     };
     // Selbst anrufen geht nur wach und mit ausreichender Atmung
     const typen = geschichte.typen.filter((t) => t !== "selbst" || kannSelbst);
@@ -228,7 +232,7 @@ function ortVon(adresse: string): string {
 const FAHRZEUGE = ["BMW X5", "VW Golf", "Skoda Octavia", "Audi A4", "VW Passat", "Mercedes C-Klasse", "Ford Focus", "Toyota Yaris", "Seat Leon", "Dacia Duster", "VW Transporter", "Renault Clio"];
 const FARBEN = ["schwarz", "weiß", "silber", "grau", "blau", "rot", "dunkelgrün"];
 
-function sonderAnrufer(kapitel: string, a: Antworten, rnd: () => number, adresse: string): Anrufer | null {
+function sonderAnrufer(kapitel: string, a: Antworten, rnd: () => number, adresse: string, geschichte?: { typen: AnruferTyp[]; ort: string }): Anrufer | null {
   const ort = ortVon(adresse) || "dem Ort";
   const basis = (p: Partial<Anrufer> & Pick<Anrufer, "rolle" | "anruferWert">): Anrufer => {
     const geschlecht = p.geschlecht ?? (rnd() < 0.5 ? "w" : "m");
@@ -268,8 +272,17 @@ function sonderAnrufer(kapitel: string, a: Antworten, rnd: () => number, adresse
       ecn: ["Mitarbeiter/in der Gesundheitshotline 1450", "Gesundheitshotline 1450", "1450-Callcenter"],
       schi: ["Pistenretter/in am Schigebiet", "Pistenrettung", "Piste"],
     };
+    // Fallgeschichte legt fest, wer anruft (Pflegeheim, Hausarzt, Ordination, Telemedizin)
+    if (geschichte?.typen.length && anf === "normal") {
+      const pool = geschichte.typen.filter((x) => ["pflege", "arzt", "ordi"].includes(x));
+      const t = pool.length ? pick(pool, rnd) : "pflege";
+      const hausbesuch = !/praxis|pflegeheim/i.test(geschichte.ort);
+      if (t === "pflege") varianten.normal = [`diplomierte Pflegekraft im ${heim}, ${station}`, heim, `${heim}, ${station}`];
+      else if (t === "arzt") varianten.normal = [`Hausärztin/Hausarzt in ${ort}`, `Ordination in ${ort}`, hausbesuch ? "beim Patienten zu Hause (Hausbesuch)" : "Ordination"];
+      else varianten.normal = [`Ordinationsassistentin der Hausarztpraxis in ${ort}`, `Ordination in ${ort}`, "Ordination"];
+    }
     const [rolle, stelle, wo] = varianten[anf] ?? varianten.normal;
-    return basis({ art: "einrichtung", rolle, anruferWert: "einrichtung", stelle, ort: wo, emotion: "ruhig" });
+    return basis({ art: "einrichtung", rolle, anruferWert: "einrichtung", stelle, ort: wo, emotion: "ruhig", ...(rolle.startsWith("Ordinationsassistentin") ? { geschlecht: "w" as const } : {}) });
   }
   if (kapitel === "42") {
     const org = gewichtet<[string, string, string]>(
@@ -459,6 +472,10 @@ function bezug(k: AnrufKontext): string {
 /** „mein Mann“ → „meinem Mann“, „ein Patient“ → „einem Patienten“ */
 function dativ(b: string): string {
   return b
+    .replace(/^eine ältere Frau$/, "einer älteren Frau")
+    .replace(/^ein älterer Herr$/, "einem älteren Herrn")
+    .replace(/^eine junge Frau$/, "einer jungen Frau")
+    .replace(/^ein junger Mann$/, "einem jungen Mann")
     .replace(/^mein /, "meinem ")
     .replace(/^meine /, "meiner ")
     .replace(/^ein Patient$/, "einem Patienten")
@@ -482,7 +499,7 @@ function bezugVon(x: Anrufer, w: boolean): string {
 
 /** Vom Programm geschriebene Kernaussage auf „Was ist passiert?“ (passt immer zu den Fakten) */
 export function schilderung(k: AnrufKontext): string {
-  if (k.szenario && (!k.anrufer.art || k.anrufer.art === "privat" || k.anrufer.art === "einrichtung")) {
+  if (k.szenario && (!k.anrufer.art || ["privat", "einrichtung", "polizei"].includes(k.anrufer.art))) {
     const t = k.anrufer.selbst && k.szenario.hergangIch ? k.szenario.hergangIch : k.szenario.hergang;
     // die ersten ein, zwei Sätze – so erzählt man es am Telefon
     const saetze = t.match(/[^.!?…]+[.!?…]+/g) ?? [t];
@@ -527,7 +544,8 @@ export function schilderung(k: AnrufKontext): string {
 /** Fester Zustand in einem Satz (wird jeder Frage angehängt, damit die KI nicht abdriftet) */
 function zustand(k: AnrufKontext): string {
   const t: string[] = [];
-  if (typeof k.wahrheit.bw === "string" && LAIE.bw[k.wahrheit.bw]) t.push(LAIE.bw[k.wahrheit.bw]);
+  if (k.wahrheit.bw === "ja" && k.wahrheit.verwirrt === "ja") t.push("ist wach und redet, aber durcheinander");
+  else if (typeof k.wahrheit.bw === "string" && LAIE.bw[k.wahrheit.bw]) t.push(LAIE.bw[k.wahrheit.bw]);
   if (typeof k.wahrheit.at === "string" && LAIE.at[k.wahrheit.at]) t.push(LAIE.at[k.wahrheit.at]);
   return t.length ? `Der Patient ${t.join(" und ")} – daran ändert sich während des ganzen Gesprächs nichts.` : "";
 }
@@ -540,11 +558,17 @@ function antwortSaetze(k: AnrufKontext): string {
   const nurFakt: Antworten = {};
   for (const [id, wert] of Object.entries(k.wahrheit)) {
     if (["anrufer", "schilderung", "ort_adresse", "ort_zusatz", "rueckrufnummer", "kapitel"].includes(id)) continue;
+    // kein bekannter Patient (Lichtsignale, Tier): nur die eigenen Fragen des Kapitels
+    if (k.szenario?.ohnePatient && (id in k.szenario.zusatz || ["alter", "geschlecht", "bw", "at", "anzahl_patienten"].includes(id))) continue;
     // aus der Geschichte ergänzte „nein“-Antworten stehen schon in den Vorerkrankungen
     if (k.szenario && id in k.szenario.zusatz && (wert === "nein" || wert === "0") && SELBSTVERSTAENDLICH.has(id)) continue;
     // Schwangerschaft nur bei Frauen im passenden Alter
     if (/schwanger|entbunden/.test(id) && (!w || (k.szenario && (k.szenario.patient.alter < 12 || k.szenario.patient.alter > 55)))) continue;
     const f = idx.get(id);
+    if (id === "bw" && wert === "ja" && k.wahrheit.verwirrt === "ja") {
+      zeilen.push(`- ${k.anrufer.selbst ? "Du" : "Der Patient"}: ist wach und redet, aber durcheinander`);
+      continue;
+    }
     if (LAIE[id]?.[String(wert)]) {
       zeilen.push(`- ${k.anrufer.selbst ? "Du" : "Der Patient"}: ${LAIE[id][String(wert)]}`);
       continue;
@@ -558,7 +582,7 @@ function antwortSaetze(k: AnrufKontext): string {
     if (t) zeilen.push(`- ${f.text} → ${t}`);
   }
   for (const s of faktSaetze(nurFakt, w)) zeilen.push(`- ${s}`);
-  if (k.szenario) zeilen.push("- Alles, was oben nicht als Vorerkrankung oder Medikament steht, hat bzw. nimmt der Patient nicht (soweit du weißt).");
+  if (k.szenario && !k.szenario.ohnePatient) zeilen.push("- Alles, was oben nicht als Vorerkrankung oder Medikament steht, hat bzw. nimmt der Patient nicht (soweit du weißt).");
   return [...new Set(zeilen)].join("\n");
 }
 
@@ -577,9 +601,17 @@ function promptGeschichte(k: AnrufKontext): string {
   const laie = art === "privat";
   const bz = bezug(k);
   const ich = x.selbst;
-  const wer = ich
+  const telefon = /telemed|141|1450|gesundheitshotline/i.test(`${x.rolle} ${x.stelle ?? ""}`);
+  const quelle: "vorort" | "polizei" | "telefon" = art === "polizei" ? "polizei" : telefon ? "telefon" : "vorort";
+  const wer = sz.ohnePatient
+    ? "Du rufst an, weil du etwas beobachtet hast bzw. weil dir etwas passiert ist (siehe Fallakte)."
+    : ich
     ? "Du bist selbst der Patient."
-    : art === "einrichtung"
+    : art === "polizei"
+      ? `Du bist ${x.rolle}. Du meldest dich mit „Landesleitzentrale der Polizei, ${x.name}“. Du sprichst für die Streife vor Ort: Was in der Fallakte steht, hat sie dir gemeldet. Weißt du etwas nicht, sagst du „Moment, ich frag bei der Streife nach …“ und gibst dann eine Antwort, die zur Fallakte passt. Du sprichst ruhig, sachlich und knapp, wie Polizei am Telefon.`
+      : telefon
+        ? `Du bist ${x.rolle}${x.stelle && !x.rolle.includes(x.stelle) ? ` (${x.stelle})` : ""}. Du bist NICHT beim Patienten, sondern hast gerade mit ${dativ(bz)} telefoniert und forderst jetzt die Rettung an. Du sprichst ruhig, fachlich und knapp; was du nicht weißt, sagst du ehrlich („Das hab ich nicht gefragt“).`
+        : art === "einrichtung"
       ? `Du bist ${x.rolle}${x.stelle ? ` (${x.stelle})` : ""} und rufst wegen ${dativ(bz)} an. Du sprichst ruhig und fachlich, aber knapp.`
       : `Du bist ${x.rolle} und rufst wegen ${dativ(bz).replace(/^meinem /, "deinem ").replace(/^meiner /, "deiner ")} an.`;
   const ort = k.ortUnbekannt
@@ -590,7 +622,7 @@ function promptGeschichte(k: AnrufKontext): string {
     `WER DU BIST: ${x.name}. ${wer} Rückrufnummer: ${x.nummer}.`,
     ort,
     `FALLAKTE – das ist wirklich passiert. Alles, was du sagst, muss dazu passen. Erfinde nichts, was dem widerspricht; was hier nicht steht, beantwortest du so, wie es zu dieser Geschichte passt, oder sagst ehrlich, dass du es nicht weißt.${ich ? " („Er/sie“ in der Fallakte meint dich selbst.)" : ""}`,
-    fallakte(sz, { selbst: ich, bezug: bz }),
+    fallakte(sz, { selbst: ich, bezug: bz, quelle, fremd: !ich && /passant|lenker|mitarbeiter|bademeister|wirt|kellner|polizei|beamt/i.test(x.rolle), hausarztIch: /^haus(arzt|ärztin)/i.test(x.rolle) }),
     `DAS STIMMT SICHER (nur wenn die Leitstelle danach fragt, in deinen eigenen Worten):`,
     antwortSaetze(k),
     `WIE DU REDEST:`,
@@ -600,8 +632,9 @@ function promptGeschichte(k: AnrufKontext): string {
     `- Von dir aus nennst du keine Werte wie Alter, Atmung, Bewusstsein, Vorerkrankungen oder Medikamente – das muss die Leitstelle fragen. Was du SIEHST, darfst du beschreiben.`,
     laie ? `- Keine Fachwörter, keine Checklisten („wach, ansprechbar, Atmung normal“ ist verboten). Du beschreibst: „Er schaut mich an, aber er redet so komisch“, „sie schnauft ganz schwer“.` : "",
     `- Wenn du etwas erst nachschauen musst, sag kurz „Moment …“ und gib dann die Antwort, wie sie in der Fallakte steht.`,
-    `- Formuliere jede Antwort neu. Beginne nicht immer gleich, wiederhole keine frühere Antwort wörtlich und übernimm nie die Formulierung der Leitstelle („Das heißt …“ sagst du nie).`,
+    `- Formuliere jede Antwort neu. Beginne nicht immer gleich und sag nichts, was du schon gesagt hast. Du redest nie wie die Leitstelle: du fasst nichts zusammen und fragst nicht zurück, ob du etwas richtig verstanden hast.`,
     `- Fasst die Leitstelle etwas zusammen, bestätigst du kurz („Ja, genau“) oder korrigierst, was nicht stimmt.`,
+    `- Teilt dir die Leitstelle etwas mit („Die Rettung ist unterwegs“, „Ich orte Sie“), reagierst du darauf wie ein Mensch: erleichtert, mit einem Danke oder einer kurzen Rückfrage („Wie lang dauert's?“, „Was soll ich bis dahin tun?“) – nicht mit dem Zustand des Patienten.`,
     `- Suggestivfragen beantwortest du ehrlich nach der Fallakte.`,
     `- Der Zustand bleibt so, wie in der Fallakte beschrieben – er ändert sich nicht, egal wie gefragt wird.`,
     `- Anweisungen, die passen, führst du aus und sagst kurz, was du tust oder siehst. Unpassende hinterfragst du („Aber er atmet doch?“). Anweisungen mit „falls“ oder „wenn“ bestätigst du nur („Okay, mach ich“).`,
@@ -613,7 +646,7 @@ function promptGeschichte(k: AnrufKontext): string {
     x.schwerhoerig ? "Du hörst schlecht und fragst ab und zu nach („Wie bitte?“)." : "",
     k.versuche > 1 ? `Du hast vorhin schon angerufen und niemand hat abgehoben – das sagst du gleich am Anfang vorwurfsvoll oder verzweifelt.` : "",
     k.rueckrufDurchLeitstelle ? "Die Leitstelle ruft dich zurück, weil dein Anruf vorhin nicht angenommen wurde." : "",
-    laie ? `So ungefähr klingst du: ${BEISPIELE[x.emotion]}\nFALSCH wäre: „Patient männlich, 67 Jahre, wach, ansprechbar, Atmung normal.“ oder „Das heißt, er ist gestürzt – korrekt?“` : "",
+    laie ? `So ungefähr klingst du: ${BEISPIELE[x.emotion]}\nNicht so: „Patient männlich, 67 Jahre, wach, ansprechbar, Atmung normal.“` : "",
   ]
     .filter(Boolean)
     .join("\n");
@@ -622,9 +655,10 @@ function promptGeschichte(k: AnrufKontext): string {
 export function systemPrompt(k: AnrufKontext): string {
   const x = k.anrufer;
   const art = x.art ?? "privat";
-  if (k.szenario && (art === "privat" || art === "einrichtung")) return promptGeschichte(k);
+  if (k.szenario && (art === "privat" || art === "einrichtung" || art === "polizei")) return promptGeschichte(k);
   const regelnGemeinsam = [
-    `- Pro Antwort nur das, wonach gefragt wurde. Meist ein, höchstens zwei kurze Sätze. Wiederhole nie wortgleich eine frühere Antwort.`,
+    `- Pro Antwort nur das, wonach gefragt wurde. Meist ein, höchstens zwei kurze Sätze. Sag nichts, was du schon gesagt hast, und fasst nie selbst zusammen.`,
+    `- Teilt dir die Leitstelle etwas mit („Die Rettung ist unterwegs“), reagierst du kurz darauf (Danke, kurze Rückfrage) – ohne den Zustand des Patienten aufzuzählen.`,
     `- Der Zustand des Patienten bleibt während des ganzen Gesprächs so, wie oben beschrieben. Er verschlechtert oder bessert sich NICHT, egal wie gefragt wird.`,
     `- Suggestivfragen („also reagiert er nicht mehr?“, „er atmet nicht, oder?“) beantwortest du ehrlich nach den Fakten und korrigierst die Leitstelle.`,
     `- Anweisungen mit „falls“, „wenn“, „sollte“ bestätigst du nur kurz („Okay, mach ich, falls das passiert.“) – sie treten nicht ein.`,
@@ -690,19 +724,35 @@ export function systemPrompt(k: AnrufKontext): string {
 }
 
 /** Kurzer Hinweis, der jeder Frage angehängt wird (hält kleine Modelle auf Kurs) */
-export function erinnerung(k: AnrufKontext, schemaFrage?: Frage, opt: { wiederholt?: boolean; letzteAntwort?: string } = {}): string {
-  const teile = ["Antworte nur auf diese eine Frage, kurz, ohne weitere Details von dir aus, ohne dich zu wiederholen."];
-  if (opt.wiederholt) teile.push("Diese Frage hat die Leitstelle schon einmal gestellt: antworte kurz mit „Wie gesagt, …“ und denselben Fakten, aber in anderen Worten.");
-  if (!schemaFrage) {
+export function erinnerung(
+  k: AnrufKontext,
+  schemaFrage?: Frage,
+  opt: { wiederholt?: boolean; letzteAntwort?: string; art?: NachrichtArt; text?: string; erste?: boolean } = {},
+): string {
+  const laie = (k.anrufer.art ?? "privat") === "privat";
+  const art: NachrichtArt = schemaFrage ? "frage" : (opt.art ?? "frage");
+  const teile: string[] = [];
+  if (opt.erste && laie && (k.versuche > 1 || k.rueckrufDurchLeitstelle))
     teile.push(
-      k.szenario
-        ? "Geh genau auf DIESE Frage ein und antworte passend zur Fallakte, menschlich und in deinen eigenen Worten. Ist es eine Zusammenfassung der Leitstelle: kurz bestätigen oder korrigieren. Übernimm nie die Formulierung der Leitstelle."
-        : "Das ist eine eigene Frage der Leitstelle: Geh genau auf DIESE Frage ein. Ist es eine Zusammenfassung der Leitstelle, bestätige kurz, was stimmt, und korrigiere, was nicht stimmt – nach den Fakten oben. Übernimm nie ihre Formulierung.",
+      k.rueckrufDurchLeitstelle
+        ? "Die Leitstelle ruft dich zurück, weil vorhin keiner abgehoben hat. Sag zuerst kurz etwas wie „Ja? … Ach, die Rettung – endlich! Ich hab vorhin schon angerufen!“ und dann, wo ihr seid."
+        : "Du hast vorhin schon angerufen und keiner hat abgehoben – sag das zuerst kurz (vorwurfsvoll oder verzweifelt), dann, wo ihr seid.",
     );
-    if (opt.letzteAntwort) teile.push(`Deine letzte Antwort war „${opt.letzteAntwort}“ – sag das nicht noch einmal.`);
-  }
+  if (art === "frage") {
+    teile.push("Antworte nur auf diese eine Frage, kurz, ohne weitere Details von dir aus.");
+    if (opt.wiederholt) teile.push("Diese Frage hat die Leitstelle schon einmal gestellt: antworte kurz mit „Wie gesagt, …“ und denselben Fakten, aber in anderen Worten.");
+    if (!schemaFrage)
+      teile.push(
+        k.szenario
+          ? "Geh genau auf DIESE Frage ein und antworte passend zur Fallakte, menschlich und in deinen eigenen Worten."
+          : "Das ist eine eigene Frage der Leitstelle: Geh genau auf DIESE Frage ein und antworte nach den Fakten oben.",
+      );
+  } else teile.push(hinweisZurArt(art, laie));
+  if (opt.letzteAntwort && !opt.wiederholt) teile.push(`Deine letzte Antwort war „${opt.letzteAntwort}“ – fang nicht wieder so an und sag nichts davon noch einmal.`);
+  // Zustand nur dazu, wenn es darum geht – sonst sagt die KI ihn bei jeder Gelegenheit auf
   const z = zustand(k);
-  if (z && k.anrufer.art !== "leitstelle") teile.push(z);
+  const umZustand = art === "anweisung" || (!!opt.text && fragtNachZustand(opt.text)) || (!!schemaFrage && ["bw", "at"].includes(schemaFrage.id));
+  if (z && k.anrufer.art !== "leitstelle" && (umZustand || (art === "frage" && !k.szenario))) teile.push(z);
   if (schemaFrage) {
     let t: string | null;
     if (schemaFrage.id === "ort_adresse") t = k.ortUnbekannt ? `du weißt es nicht genau: ${k.adresse}` : k.adresse;

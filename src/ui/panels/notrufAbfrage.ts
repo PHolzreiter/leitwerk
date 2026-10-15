@@ -129,7 +129,7 @@ export function notrufTeile(e: Einsatz): NotrufTeile {
     }
 
     // Abfrage nur neu aufbauen, wenn sich etwas geändert hat (sonst geht der Fokus verloren)
-    const schluessel = JSON.stringify([a.status, a.kapitel, a.antworten, a.extra, darf, a.angenommenVon?.pid, a.kapitel === "42" ? e.code : null, e.adresse?.label, e.zusatz, a.gespraech.some((m) => m.von === "anrufer")]);
+    const schluessel = JSON.stringify([a.status, a.kapitel, a.antworten, a.extra, darf, a.angenommenVon?.pid, a.kapitel === "42" ? e.code : null, e.adresse?.label, e.zusatz, a.gespraech.some((m) => m.von === "anrufer"), a.ortung?.status, a.ortung?.radius]);
     const tippt = document.activeElement instanceof HTMLInputElement || document.activeElement instanceof HTMLSelectElement;
     if (schluessel !== letzterSchluessel && !(tippt && abfrage.contains(document.activeElement))) {
       letzterSchluessel = schluessel;
@@ -204,11 +204,8 @@ export function notrufTeile(e: Einsatz): NotrufTeile {
       if (!b || b.disabled) return;
       ev.preventDefault();
       if (r.dataset.typ === "zahl") return;
-      if (!b.classList.contains("gewaehlt")) {
-        b.click();
-        // nach dem Neuaufbau zur nächsten offenen Frage
-        setTimeout(() => fokusWeiter(1, true), 150);
-      }
+      // weiter zur nächsten offenen Frage macht der Klick-Hörer unten (gleich wie mit der Maus)
+      if (!b.classList.contains("gewaehlt")) b.click();
     } else if (ev.key === "Enter" || ev.key === "ArrowDown") {
       ev.preventDefault();
       if (r.dataset.typ === "zahl" && ev.key === "Enter") return void r.querySelector<HTMLInputElement>("input.zahl")?.focus();
@@ -225,14 +222,22 @@ export function notrufTeile(e: Einsatz): NotrufTeile {
     }
   };
   document.addEventListener("keydown", taste);
-  // Klick auf eine Frage markiert sie
-  abfrage.addEventListener("mousedown", (ev) => {
-    const r = (ev.target as HTMLElement).closest<HTMLElement>(".frage[data-id]");
-    if (r && (r.dataset.typ === "single" || r.dataset.typ === "zahl")) {
+  // Maus wie Tastatur: Klick auf eine Antwort beantwortet und geht zur nächsten offenen Frage;
+  // Klick sonst auf eine Frage markiert sie. (Erst beim Klick, nicht beim Drücken – sonst verrutschen
+  // die Knöpfe unter der Maus und der Klick geht verloren.)
+  abfrage.addEventListener(
+    "click",
+    (ev) => {
+      const t = ev.target as HTMLElement;
+      const r = t.closest<HTMLElement>(".frage[data-id]");
+      if (!r || (r.dataset.typ !== "single" && r.dataset.typ !== "zahl")) return;
       fokusId = r.dataset.id ?? null;
-      fokusZeigen(false);
-    }
-  });
+      const opt = t.closest<HTMLButtonElement>(".opt");
+      if (opt && !opt.disabled && r.dataset.typ === "single" && !opt.classList.contains("gewaehlt")) setTimeout(() => fokusWeiter(1, true), 150);
+      else setTimeout(() => fokusZeigen(false), 0);
+    },
+    true,
+  );
 
   function abfrageBauenInnen(darf: boolean) {
     abfrage.innerHTML = "";
@@ -324,8 +329,31 @@ export function notrufTeile(e: Einsatz): NotrufTeile {
           adr.input.dispatchEvent(new Event("input"));
           adr.input.focus();
         });
-        zeile.append(adr.root, karteB, genannt);
+        // Handy-Ortung gleich hier, wo die Adresse eingetragen wird
+        const o = a.ortung;
+        const orten = el("button", { class: `btn small${e.wahr.abfrage?.ortUnbekannt && !o ? " primary" : ""}`, type: "button", title: "Handy-Ortung anfordern (Standort aus dem Netz)" }, "📡 Orten");
+        orten.disabled = a.status !== "aktiv" || o?.status === "laeuft";
+        orten.addEventListener("click", () => fehler(sim.call("ortung", e.id)));
+        zeile.append(adr.root, karteB, genannt, orten);
         r.appendChild(zeile);
+        if (o) {
+          const info = el("div", { class: "abf-ortung-zeile small" });
+          if (o.status === "laeuft") info.innerHTML = `<span class="muted">📡 Ortung läuft …</span>`;
+          else {
+            info.innerHTML = `📡 <b>${esc(o.art ?? "")}</b> ±${o.radius} m `;
+            const lat = o.lat!;
+            const lon = o.lon!;
+            const zeigen = el("button", { class: "btn small", type: "button" }, "Karte");
+            zeigen.addEventListener("click", () => karteZeigen(lat, lon, o.radius! > 500 ? 13 : 16));
+            const nehmen = el("button", { class: "btn small primary", type: "button" }, "Als Einsatzort");
+            nehmen.addEventListener("click", () => {
+              fehler(sim.call("aktualisiere", e.id, { adresse: { lat, lon, label: `Ortung ±${o.radius} m (${lat.toFixed(5)}, ${lon.toFixed(5)})` } }));
+              karteZeigen(lat, lon, o.radius! > 500 ? 13 : 16);
+            });
+            info.append(zeigen, nehmen);
+          }
+          r.appendChild(info);
+        }
         p1.appendChild(r);
       } else if (f.id === "ort_zusatz" || /zusatz/i.test(f.id)) {
         // Zusatzinfos zum Ort = Zusatz der Einsatzmaske

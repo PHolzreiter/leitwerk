@@ -1853,6 +1853,19 @@ button.weather.offen {
   border-radius: 6px;
   background: color-mix(in srgb, var(--blue) 6%, transparent);
 }
+/* Antworten gut mit der Maus treffbar */
+.abfrage .opt {
+  padding: 4px 10px;
+  font-size: 12.5px;
+  min-height: 26px;
+}
+.abfrage .opt:hover:not(:disabled):not(.gewaehlt) {
+  border-color: var(--blue-line);
+  background: var(--hover);
+}
+.abfrage .optionen {
+  gap: 5px;
+}
 .abfrage .opt .opt-nr {
   display: inline-block;
   min-width: 14px;
@@ -2184,6 +2197,13 @@ button.weather.offen {
   background: linear-gradient(to bottom, rgba(205, 210, 216, 0.95) 0%, rgba(205, 210, 216, 0.55) 30%, rgba(205, 210, 216, 0.12) 65%, rgba(205, 210, 216, 0) 85%);
   opacity: 0;
   transition: opacity 2s ease;
+}
+.wetter3d-schleier {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(214, 219, 225, 0.98) 0%, rgba(214, 219, 225, 0.9) 35%, rgba(214, 219, 225, 0.6) 65%, rgba(214, 219, 225, 0.35) 100%);
+  opacity: 0;
+  transition: opacity 3s ease;
 }
 .wetter3d-blitz {
   position: absolute;

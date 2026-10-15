@@ -15,12 +15,49 @@ export interface KiFortschritt {
   total: number;
 }
 
-export const MODELLE: { name: string; label: string }[] = [
-  { name: "qwen3:8b", label: "Qwen3 8B – Standard (ca. 5 GB, ab 16 GB RAM)" },
-  { name: "gemma3:12b", label: "Gemma 3 12B – bessere Sprache, langsamer (ca. 8 GB, ab 32 GB RAM)" },
-  { name: "gemma3:4b", label: "Gemma 3 4B – schnell, einfacher (ca. 3 GB)" },
-  { name: "llama3.1:8b", label: "Llama 3.1 8B (ca. 5 GB)" },
+export interface ModellInfo {
+  name: string;
+  stufe: "leicht" | "standard" | "mittel" | "stark";
+  label: string;
+  /** Download-Größe in GB */
+  gb: number;
+  /** empfohlener Arbeitsspeicher in GB */
+  ram: number;
+  info: string;
+}
+
+/** Auswahl nach Rechner-Stärke; jeder Spieler wählt für sich */
+export const MODELLE: ModellInfo[] = [
+  { name: "qwen3:4b", stufe: "leicht", label: "Qwen3 4B", gb: 2.6, ram: 8, info: "für ältere oder schwächere Rechner – schnell, aber einfachere Gespräche" },
+  { name: "gemma3:4b", stufe: "leicht", label: "Gemma 3 4B", gb: 3.3, ram: 8, info: "klein und schnell, gutes Deutsch für die Größe" },
+  { name: "qwen3:8b", stufe: "standard", label: "Qwen3 8B", gb: 5.2, ram: 16, info: "bisheriger Standard" },
+  { name: "qwen3:14b", stufe: "mittel", label: "Qwen3 14B", gb: 9.3, ram: 24, info: "deutlich natürlichere Gespräche, wiederholt sich seltener" },
+  { name: "gemma3:12b", stufe: "mittel", label: "Gemma 3 12B", gb: 8.1, ram: 24, info: "sehr gutes Deutsch, etwas langsamer" },
+  { name: "qwen3:32b", stufe: "stark", label: "Qwen3 32B", gb: 20, ram: 48, info: "für starke Rechner (z. B. Mac mit viel Speicher) – am menschlichsten" },
+  { name: "gemma3:27b", stufe: "stark", label: "Gemma 3 27B", gb: 17, ram: 32, info: "für starke Rechner – sehr gutes Deutsch" },
 ];
+
+export const STUFE_LABEL: Record<ModellInfo["stufe"], string> = { leicht: "Leicht", standard: "Standard", mittel: "Mittel", stark: "Stark" };
+
+/** Arbeitsspeicher des Rechners in GB (0 = unbekannt) */
+export async function rechnerRam(): Promise<number> {
+  if (!inTauri()) return 0;
+  return invoke<number>("rechner_ram").catch(() => 0);
+}
+
+/** Empfohlene Stufe für diesen Rechner */
+export function empfohleneStufe(ram: number): ModellInfo["stufe"] | null {
+  if (!ram) return null;
+  if (ram >= 48) return "stark";
+  if (ram >= 24) return "mittel";
+  if (ram >= 16) return "standard";
+  return "leicht";
+}
+
+export async function kiModellLoeschen(name: string): Promise<void> {
+  await invoke("ki_modell_loeschen", { name });
+  await kiStatus();
+}
 
 const LS = "leitwerk.ki";
 export interface KiPrefs {
@@ -114,7 +151,7 @@ export function bereinigen(t: string): string {
 }
 
 /** Lange Antwort, die an der Längengrenze abgeschnitten wurde: beim letzten Satzende aufhören */
-function satzEnde(t: string): string {
+export function satzEnde(t: string): string {
   if (t.length < 250 || /[.!?…]$/.test(t)) return t;
   const m = t.match(/^([\s\S]*[.!?…])\s/);
   return m ? m[1] : t;
