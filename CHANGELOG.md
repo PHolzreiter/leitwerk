@@ -1,5 +1,10 @@
 # Änderungen
 
+## 0.18.0 – Natürlichere Stimmen, Ausgabegerät, schnellere Spracherkennung
+- Vorlesen mit **Piper** (7 deutsche Stimmen, Männer und Frauen; „Thorsten emotional“ klingt bei aufgeregten Anrufern aufgeregt) oder **Supertonic 3** (10 Stimmen, am menschlichsten) – beide erzeugt LeitWerk selbst, ohne Internet. Einmal herunterladen unter Einstellungen → Persönlich → Sprache, dort auch Probehören. Jeder Anrufer bekommt eine eigene Stimme
+- Ausgabegerät wählbar: Stimmen (Piper/Supertonic) und Töne (Klingeln, Funk-Piep, Chat, Warnungen) getrennt, z. B. Gespräch im Headset und Klingeln über den Lautsprecher
+- Mac: Spracherkennung nutzt den Grafikchip – deutlich schneller
+
 ## 0.17.0 – Alarm-Anzeige, freies Funkfeld, wechselhafteres Wetter, schnelleres Vorlesen
 - Alarmierte Fahrzeuge („auf Wache“ und „über Funk“) haben kein „A“/„F“ mehr, sondern eine hellgelb hinterlegte Zeile; Fahrzeuge auf Funk (Frei Funk, über Funk alarmiert) stehen in roter Schrift. Farben und Rot an/aus unter Einstellungen → Persönlich → Eigene Statusfarben. Die Funkrufnamen stehen in der Einsatzmaske sauber untereinander
 - Für einen Krankentransport vorgemerkte Fahrzeuge sind in den Fahrzeugvorschlägen und in der Fahrzeugliste markiert („KT vorgemerkt ab 14:30“)
