@@ -122,21 +122,12 @@ jobs:
           if [ "$RUNNER_OS" = "Windows" ]; then
             export CMAKE_PROJECT_INCLUDE_BEFORE="$(cygpath -m "$PWD/src-tauri/ggml-portabel.cmake")"
           fi
-          # Piper (sherpa-onnx): Paket selbst holen (der Rust-Cache überspringt sonst den Download)
-          SHERPA_TAG=v1.12.15
-          if [ "$RUNNER_OS" = "Windows" ]; then SHERPA_PAKET="sherpa-onnx-$SHERPA_TAG-win-x64-shared"; else SHERPA_PAKET="sherpa-onnx-$SHERPA_TAG-osx-universal2-static"; fi
-          # laden und entpacken (nur relative Pfade – unter Windows versteht tar keine Laufwerksbuchstaben)
-          mkdir -p sherpa-paket
-          fehler=$( { curl -fsSL -o sherpa.tar.bz2 "https://github.com/k2-fsa/sherpa-onnx/releases/download/$SHERPA_TAG/$SHERPA_PAKET.tar.bz2" && \
-            { tar -xjf sherpa.tar.bz2 -C sherpa-paket || { 7z x -y sherpa.tar.bz2 -so | 7z x -y -si -ttar -osherpa-paket; }; }; } 2>&1 ) || echo "::error::sherpa-Paket: ${fehler:0:400}"
-          export SHERPA_LIB_PATH="$PWD/sherpa-paket/$SHERPA_PAKET"
+          # Piper (sherpa-onnx) unter Windows als DLL: vorher bauen (lädt das Paket und legt die DLLs neben das Programm),
+          # CMAKE_VERBOSE je Lauf neu, damit der Rust-Cache den Download-Schritt nicht überspringt
           if [ "$RUNNER_OS" = "Windows" ]; then
-            export SHERPA_LIB_PATH="$(cygpath -w "$SHERPA_LIB_PATH")"
-            # die DLLs liegen neben dem Programm und werden mit installiert
-            mkdir -p src-tauri/target/release
-            echo "::notice::Paket: $(cd "sherpa-paket/$SHERPA_PAKET" && find . -maxdepth 2 | head -40 | tr '\n' ' ')"
-            find "sherpa-paket/$SHERPA_PAKET" -iname '*.dll' -exec cp {} src-tauri/target/release/ \;
-            echo "::notice::DLLs: $(cd src-tauri/target/release && ls *.dll | tr '\n' ' ')"
+            export CMAKE_VERBOSE="lauf-$GITHUB_RUN_ID"
+            (cd src-tauri && cargo build --release -p sherpa-rs-sys 2>&1 | tail -5)
+            echo "::notice::DLLs: $(cd src-tauri/target/release 2>/dev/null && ls *.dll 2>/dev/null | tr '\n' ' ')"
           fi
           npx tauri build --bundles ${{ matrix.bundles }} 2>&1 | tee build.log
           status=${PIPESTATUS[0]}
