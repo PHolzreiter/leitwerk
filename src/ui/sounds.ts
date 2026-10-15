@@ -2,6 +2,8 @@
  * Töne: mitgelieferte (Web Audio, ohne Dateien) und eigene Dateien (MP3/WAV, im Browser-Speicher IndexedDB).
  * Jedes Ereignis hat eine eigene Auswahl und Lautstärke (Einstellungen → Persönlich).
  */
+import { invoke } from "@tauri-apps/api/core";
+import { inTauri } from "../platform";
 import { pers } from "./ws/persoenlich";
 
 export type SoundEreignis = "notruf" | "kt" | "funk" | "funkDringend" | "chat" | "warnung";
@@ -68,33 +70,69 @@ function audio(): AudioContext {
   return ctx;
 }
 
-function synth(s: Synth, laut: number): void {
-  try {
-    const c = audio();
-    const t0 = c.currentTime;
-    const gain = c.createGain();
-    gain.gain.value = 0;
-    gain.connect(c.destination);
-    // Funk-Piep: zweiter, tieferer Ton (wie bisher)
-    const folgen = s === VORLAGEN.piep ? [[0, 1200], [0.15, 900]] : null;
-    const ziel = s.laut * laut;
-    for (const start of folgen ? folgen.map((x) => x[0]) : s.stoesse) {
-      const freqs = folgen ? [folgen.find((x) => x[0] === start)![1]] : s.freqs;
-      for (const f of freqs) {
-        const o = c.createOscillator();
-        o.type = s.welle ?? "sine";
-        o.frequency.value = f;
-        o.connect(gain);
-        o.start(t0 + start);
-        o.stop(t0 + start + s.dauer);
-      }
-      gain.gain.setValueAtTime(0, t0 + start);
-      gain.gain.linearRampToValueAtTime(ziel, t0 + start + 0.015);
-      gain.gain.setValueAtTime(ziel, t0 + start + Math.max(0.02, s.dauer - 0.04));
-      gain.gain.linearRampToValueAtTime(0, t0 + start + s.dauer);
+/** Ton in einen Audio-Kontext zeichnen (live oder offline zum Rendern) */
+function synthIn(c: BaseAudioContext, s: Synth, laut: number): void {
+  const t0 = c.currentTime;
+  const gain = c.createGain();
+  gain.gain.value = 0;
+  gain.connect(c.destination);
+  // Funk-Piep: zweiter, tieferer Ton (wie bisher)
+  const folgen = s === VORLAGEN.piep ? [[0, 1200], [0.15, 900]] : null;
+  const ziel = s.laut * laut;
+  for (const start of folgen ? folgen.map((x) => x[0]) : s.stoesse) {
+    const freqs = folgen ? [folgen.find((x) => x[0] === start)![1]] : s.freqs;
+    for (const f of freqs) {
+      const o = c.createOscillator();
+      o.type = s.welle ?? "sine";
+      o.frequency.value = f;
+      o.connect(gain);
+      o.start(t0 + start);
+      o.stop(t0 + start + s.dauer);
     }
+    gain.gain.setValueAtTime(0, t0 + start);
+    gain.gain.linearRampToValueAtTime(ziel, t0 + start + 0.015);
+    gain.gain.setValueAtTime(ziel, t0 + start + Math.max(0.02, s.dauer - 0.04));
+    gain.gain.linearRampToValueAtTime(0, t0 + start + s.dauer);
+  }
+}
+
+function synth(s: Synth, laut: number): void {
+  if (nativGeraet() !== null) {
+    void synthNativ(s, laut);
+    return;
+  }
+  try {
+    synthIn(audio(), s, laut);
   } catch {
     /* kein Ton möglich – egal */
+  }
+}
+
+// ---------------------------------------------------------------- eigenes Ausgabegerät (Programm)
+
+/** gewähltes Ausgabegerät für Töne – null = wie bisher über das Fenster */
+function nativGeraet(): string | null {
+  const g = pers().tonGeraet;
+  return inTauri() && g ? g : null;
+}
+
+/** Mono-Audio über das Programm auf dem gewählten Gerät abspielen */
+export async function nativSpielen(daten: Float32Array, rate: number, geraet: string, laut: number, id = ""): Promise<void> {
+  const kopie = new Float32Array(daten);
+  await invoke("ton_spielen", new Uint8Array(kopie.buffer), {
+    headers: { "x-rate": String(Math.round(rate)), "x-geraet": encodeURIComponent(geraet), "x-laut": String(laut), "x-id": id },
+  });
+}
+
+async function synthNativ(s: Synth, laut: number): Promise<void> {
+  try {
+    const ende = Math.max(...(s === VORLAGEN.piep ? [0.15] : s.stoesse)) + s.dauer + 0.05;
+    const oc = new OfflineAudioContext(1, Math.ceil(ende * 44100), 44100);
+    synthIn(oc, s, 1);
+    const b = await oc.startRendering();
+    await nativSpielen(b.getChannelData(0), 44100, nativGeraet() ?? "", laut);
+  } catch (e) {
+    console.warn("Ton", e);
   }
 }
 
@@ -180,6 +218,17 @@ async function dateiSpielen(id: string, laut: number): Promise<void> {
       if (!d) return;
       b = await audio().decodeAudioData(await d.daten.arrayBuffer());
       puffer.set(id, b);
+    }
+    const geraet = nativGeraet();
+    if (geraet !== null) {
+      // auf Mono mischen und über das Programm abspielen
+      const mono = new Float32Array(b.length);
+      for (let k = 0; k < b.numberOfChannels; k++) {
+        const d = b.getChannelData(k);
+        for (let i = 0; i < d.length; i++) mono[i] += d[i] / b.numberOfChannels;
+      }
+      await nativSpielen(mono, b.sampleRate, geraet, Math.min(1.5, laut * 0.8));
+      return;
     }
     const c = audio();
     const src = c.createBufferSource();

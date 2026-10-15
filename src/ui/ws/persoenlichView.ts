@@ -35,6 +35,11 @@ import {
   TASTEN,
   testZiel,
   vorlesenMoeglich,
+  ausgabeGeraete,
+  piperLaden,
+  piperLoeschen,
+  piperStatus,
+  PIPER_STIMMEN,
   type SprachPrefs,
 } from "../sprache";
 
@@ -220,6 +225,16 @@ export function persoenlichView(container: HTMLElement): { refresh(): void } {
     laut.append(lautS, lautW);
     zeile(t, "Lautstärke", laut);
     zeile(t, "Funk-Piep, wenn ein Fahrzeug ruft", schalter(p.funkTon, (v) => setzePers({ funkTon: v })));
+    if (inTauri()) {
+      const tSel = el("select");
+      tSel.appendChild(el("option", { value: "" }, "wie das System"));
+      void ausgabeGeraete().then((gs) => {
+        for (const g of gs) tSel.appendChild(el("option", { value: g }, g));
+        tSel.value = pers().tonGeraet ?? "";
+      });
+      tSel.addEventListener("change", () => setzePers({ tonGeraet: tSel.value }));
+      zeile(t, "Ausgabegerät für Töne", tSel, "Z. B. Klingeln über den Lautsprecher, Stimmen im Headset (das Gerät für Stimmen stellst du unter „Sprache“ ein).");
+    }
     // Töne je Ereignis
     const toene = el("div", { class: "toene" });
     const dateienListe: EigeneDatei[] = [];
@@ -322,7 +337,75 @@ export function persoenlichView(container: HTMLElement): { refresh(): void } {
     };
     stimmenBauen();
     const ausSt = onStimmen(() => (stimmenBox.isConnected ? stimmenBauen() : ausSt()));
-    zeile(spr, "Stimmen", stimmenBox, "Mehr und schönere Stimmen kannst du im Betriebssystem dazuladen (auf dem Mac z. B. „Premium“-Stimmen).");
+    if (inTauri()) {
+      zeile(
+        spr,
+        "Vorlesen mit",
+        seg<"system" | "piper">(
+          [
+            ["system", "Stimmen des Computers"],
+            ["piper", "Piper (im Programm)"],
+          ],
+          sp.stimmeArt,
+          (v) => setzeSprache({ stimmeArt: v }),
+        ),
+        "Piper: natürlichere Stimmen, die LeitWerk selbst erzeugt – mehrere Männer- und Frauenstimmen, Ausgabegerät wählbar. Unten einmal herunterladen.",
+      );
+    }
+    zeile(spr, sp.stimmeArt === "piper" && inTauri() ? "Stimmen des Computers (Ersatz)" : "Stimmen", stimmenBox, "Mehr und schönere Stimmen kannst du im Betriebssystem dazuladen (auf dem Mac z. B. „Premium“-Stimmen).");
+    if (inTauri()) {
+      // Piper-Stimmen: herunterladen, probehören, löschen
+      const pBox = el("div", { class: "sprach-modelle" });
+      const pBauen = (da: string[]) => {
+        pBox.innerHTML = "";
+        for (const v of PIPER_STIMMEN) {
+          const r = el("div", { class: "ton-zeile", "data-piper": v.name });
+          const ist = da.includes(v.name);
+          const stand = el("span", { class: "muted small stand" }, ladeStand[v.name] ?? (ist ? "geladen" : `${v.mb} MB`));
+          const probeB = el("button", { class: "btn small", type: "button", title: "Probehören" }, "▶");
+          probeB.disabled = !ist;
+          probeB.addEventListener("click", () => probe(v.g, v.name));
+          const knopf = el("button", { class: `btn small${ist ? " danger-text" : ""}`, type: "button" }, ist ? "Löschen" : "Herunterladen");
+          knopf.disabled = !!ladeStand[v.name];
+          knopf.addEventListener("click", async () => {
+            if (ist) {
+              await piperLoeschen(v.name).catch((e) => toast(String(e), "error"));
+              pNeu();
+              return;
+            }
+            knopf.disabled = true;
+            ladeStand[v.name] = "startet …";
+            try {
+              await piperLaden(v.name, (d, t, entpacken) => {
+                ladeStand[v.name] = entpacken ? "wird entpackt …" : t ? `${Math.round((d / t) * 100)} % von ${Math.round(t / 1e6)} MB` : `${Math.round(d / 1e6)} MB`;
+                const x = document.querySelector(`[data-piper="${v.name}"] .stand`);
+                if (x) x.textContent = ladeStand[v.name];
+              });
+              delete ladeStand[v.name];
+              if (sprachPrefs().stimmeArt !== "piper") setzeSprache({ stimmeArt: "piper" });
+              toast(`Stimme „${v.label}“ ist bereit`);
+            } catch (e) {
+              delete ladeStand[v.name];
+              toast(String((e as Error).message ?? e), "error");
+            }
+            pNeu();
+          });
+          r.append(el("span", { class: "ton-label" }, v.label), stand, probeB, knopf);
+          pBox.appendChild(r);
+        }
+      };
+      const pNeu = () => void piperStatus().then(pBauen);
+      pNeu();
+      zeile(spr, "Piper-Stimmen", pBox, "Je Stimme einmal herunterladen. Jeder Anrufer bekommt eine der geladenen Stimmen – je mehr, desto abwechslungsreicher. „Thorsten emotional“ klingt bei aufgeregten Anrufern aufgeregt.");
+      const gSel = el("select");
+      gSel.appendChild(el("option", { value: "" }, "wie das System"));
+      void ausgabeGeraete().then((gs) => {
+        for (const g of gs) gSel.appendChild(el("option", { value: g }, g));
+        gSel.value = sprachPrefs().geraetStimmen;
+      });
+      gSel.addEventListener("change", () => setzeSprache({ geraetStimmen: gSel.value }));
+      zeile(spr, "Ausgabegerät für Stimmen", gSel, "Gilt für Piper. Die Stimmen des Computers spielen immer über das Standardgerät.");
+    }
 
     zeile(spr, "Spracheingabe", schalter(sp.eingabe, (v) => setzeSprache({ eingabe: v })), "🎙 neben den Eingabefeldern gedrückt halten – oder die Sprechtaste.");
     const tasteSel = el("select");

@@ -26,14 +26,21 @@ tokio = { version = "1", features = ["time"] }
 whisper-rs = "0.14"
 # Mikrofon und Tonausgabe direkt im Programm (Gerätewahl; das Fenster darf es auf dem Mac nicht)
 cpal = "0.15"
-# Piper-Stimmen (sherpa-onnx, fest eingebunden) und Entpacken der Stimmen-Pakete
-sherpa-rs = { version = "0.6", default-features = false, features = ["tts", "download-binaries", "static"] }
+# Entpacken der Stimmen-Pakete
 bzip2 = "0.4"
 tar = "0.4"
 
-# Mac: Spracherkennung auf dem Grafikchip (Metal) – deutlich schneller
+# Piper-Stimmen (sherpa-onnx): Mac und Windows fest eingebunden, Linux nur für die Prüfung
+# Mac zusätzlich: Spracherkennung auf dem Grafikchip (Metal) – deutlich schneller
 [target.'cfg(target_os = "macos")'.dependencies]
 whisper-rs = { version = "0.14", features = ["metal"] }
+sherpa-rs = { version = "0.6", default-features = false, features = ["tts", "download-binaries", "static"] }
+
+[target.'cfg(windows)'.dependencies]
+sherpa-rs = { version = "0.6", default-features = false, features = ["tts", "download-binaries", "static"] }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+sherpa-rs = { version = "0.6", default-features = false, features = ["tts", "download-binaries"] }
 
 # Spracherkennung schnell bauen (der Rest bleibt klein)
 [profile.release.package.whisper-rs-sys]

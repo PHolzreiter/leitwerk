@@ -32,6 +32,10 @@ export interface SprachPrefs {
   autoSenden: boolean;
   /** Mikrofon (deviceId), leer = Standard */
   mikro: string;
+  /** womit vorgelesen wird: Stimmen des Betriebssystems oder Piper (im Programm) */
+  stimmeArt: "system" | "piper";
+  /** Ausgabegerät für Stimmen (nur Piper), leer = wie das System */
+  geraetStimmen: string;
 }
 
 const istMac = /Mac/i.test(navigator.platform || navigator.userAgent);
@@ -48,6 +52,8 @@ export const SPRACH_STANDARD: SprachPrefs = {
   taste: istMac ? "AltRight" : "F2",
   autoSenden: true,
   mikro: "",
+  stimmeArt: "system",
+  geraetStimmen: "",
 };
 
 export function sprachPrefs(): SprachPrefs {
@@ -172,11 +178,103 @@ export function liestVor(): boolean {
   return spricht > 0 || !!synth?.speaking;
 }
 
-function sagen(text: string, g: "w" | "m", schluessel: string, rate: number): void {
-  if (!synth) return;
+// ---- Piper (im Programm): Stimmen, Sprecher und Wiedergabe
+
+export interface PiperStimme {
+  name: string;
+  label: string;
+  g: "w" | "m";
+  mb: number;
+  /** mehrere Sprecher/Emotionen im Modell */
+  sprecher?: Record<string, number>;
+}
+
+export const PIPER_STIMMEN: PiperStimme[] = [
+  { name: "de_DE-thorsten-medium", label: "Thorsten (Mann, beste Qualität)", g: "m", mb: 64 },
+  { name: "de_DE-thorsten_emotional-medium", label: "Thorsten emotional (Mann, ruhig/aufgeregt/flüsternd …)", g: "m", mb: 77, sprecher: { amused: 0, angry: 1, disgusted: 2, drunk: 3, neutral: 4, sleepy: 5, surprised: 6, whisper: 7 } },
+  { name: "de_DE-karlsson-low", label: "Karlsson (Mann)", g: "m", mb: 64 },
+  { name: "de_DE-pavoque-low", label: "Pavoque (Mann)", g: "m", mb: 64 },
+  { name: "de_DE-kerstin-low", label: "Kerstin (Frau)", g: "w", mb: 64 },
+  { name: "de_DE-ramona-low", label: "Ramona (Frau)", g: "w", mb: 64 },
+  { name: "de_DE-eva_k-x_low", label: "Eva (Frau, einfach)", g: "w", mb: 21 },
+];
+
+let piperDa: string[] = [];
+/** installierte Piper-Stimmen neu einlesen */
+export async function piperStatus(): Promise<string[]> {
+  if (!inTauri()) return (piperDa = []);
+  piperDa = (await invoke<{ stimmen: string[] }>("stimmen_status").catch(() => ({ stimmen: [] as string[] }))).stimmen;
+  return piperDa;
+}
+if (inTauri()) void piperStatus();
+
+export async function piperLaden(name: string, fortschritt: (done: number, total: number, entpacken: boolean) => void): Promise<void> {
+  const ch = new Channel<{ done: number; total: number; entpacken: boolean }>();
+  ch.onmessage = (m) => fortschritt(m.done, m.total, m.entpacken);
+  await invoke("stimme_laden", { name, onProgress: ch });
+  await piperStatus();
+}
+
+export async function piperLoeschen(name: string): Promise<void> {
+  await invoke("stimme_loeschen", { name });
+  await piperStatus();
+}
+
+/** Ausgabegeräte (Programm) */
+export async function ausgabeGeraete(): Promise<string[]> {
+  if (!inTauri()) return [];
+  return invoke<string[]>("ton_geraete").catch(() => [] as string[]);
+}
+
+const EMOTION_SPRECHER: Record<string, string> = { ruhig: "neutral", gefasst: "neutral", aufgeregt: "surprised", panisch: "surprised" };
+
+function piperFuer(g: "w" | "m", schluessel: string, emotion?: string): { name: string; sid: number } | null {
+  const da = PIPER_STIMMEN.filter((v) => piperDa.includes(v.name));
+  if (!da.length) return null;
+  const passend = da.filter((v) => v.g === g);
+  const pool = passend.length ? passend : da;
+  const v = pool[Math.floor(hash(schluessel + "piper") * pool.length)];
+  const sid = v.sprecher ? (v.sprecher[EMOTION_SPRECHER[emotion ?? ""] ?? "neutral"] ?? 0) : 0;
+  return { name: v.name, sid };
+}
+
+let kette: Promise<void> = Promise.resolve();
+let generation = 0;
+let zaehler = 0;
+
+/** Satz mit Piper erzeugen und nacheinander abspielen (der nächste Satz wird schon erzeugt, während einer läuft) */
+function piperSagen(text: string, v: { name: string; sid: number }, rate: number): void {
+  const p = sprachPrefs();
+  const gen = generation;
+  const id = `stimme-${++zaehler}`;
+  const audio = invoke<ArrayBuffer>("stimme_erzeugen", { name: v.name, text, sid: v.sid, tempo: Math.max(0.5, Math.min(2, rate * (p.tempo / 100))) });
+  spricht++;
+  kette = kette
+    .then(async () => {
+      if (gen !== generation) return;
+      const buf = await audio;
+      if (gen !== generation) return;
+      const rate = new DataView(buf).getUint32(0, true);
+      await invoke("ton_spielen", new Uint8Array(buf.slice(4)), {
+        headers: { "x-rate": String(rate), "x-geraet": encodeURIComponent(p.geraetStimmen), "x-laut": String(Math.max(0, p.laut / 100)), "x-id": id },
+      });
+    })
+    .catch((e) => console.warn("Piper", e))
+    .finally(() => (spricht = Math.max(0, spricht - 1)));
+}
+
+function sagen(text: string, g: "w" | "m", schluessel: string, rate: number, emotion?: string): void {
   const t = sprechText(text);
   if (!t) return;
   const p = sprachPrefs();
+  if (p.stimmeArt === "piper" && inTauri()) {
+    const v = piperFuer(g, schluessel, emotion);
+    if (v) {
+      piperSagen(t, v, rate);
+      return;
+    }
+  }
+  if (!synth) return;
   const u = new SpeechSynthesisUtterance(t);
   const { voice, pitch } = stimmeFuer(g, schluessel);
   if (voice) u.voice = voice;
@@ -194,7 +292,9 @@ function sagen(text: string, g: "w" | "m", schluessel: string, rate: number): vo
 /** Alles Vorlesen sofort beenden (Auflegen, Sprechtaste gedrückt) */
 export function verstummen(): void {
   spricht = 0;
+  generation++;
   synth?.cancel();
+  if (inTauri()) void invoke("ton_stopp", { id: "stimme-*" }).catch(() => undefined);
 }
 
 const EMOTION_TEMPO: Record<string, number> = { ruhig: 0.95, gefasst: 1, aufgeregt: 1.1, panisch: 1.2 };
@@ -205,7 +305,7 @@ export function anruferSagt(text: string, a: { geschlecht?: "m" | "w"; emotion?:
   if (!p.vorlesen || aufnahmeLaeuft) return;
   let rate = EMOTION_TEMPO[a?.emotion ?? "gefasst"] ?? 1;
   if (a?.sprache === "gebrochen") rate *= 0.9;
-  sagen(text, a?.geschlecht ?? (hash(id) < 0.5 ? "w" : "m"), `${id}|${a?.name ?? ""}`, rate);
+  sagen(text, a?.geschlecht ?? (hash(id) < 0.5 ? "w" : "m"), `${id}|${a?.name ?? ""}`, rate, a?.emotion);
 }
 
 /** Geschlecht aus Name/Rolle raten (KT-Anrufer haben nur Name und Rolle) */
@@ -260,9 +360,13 @@ export function funkSagt(funkname: string, text: string): void {
 }
 
 /** Probehören in den Einstellungen */
-export function probe(g: "w" | "m"): void {
+export function probe(g: "w" | "m", piperName?: string): void {
   verstummen();
-  sagen(g === "w" ? "Notruf? Bitte kommen Sie schnell, meine Mutter ist gestürzt und steht nicht mehr auf." : "Hier 57 001, sind am Einsatzort eingetroffen, kommen.", g, `probe-${g}`, 1);
+  if (piperName) {
+    piperSagen(g === "w" ? "Notruf? Bitte kommen Sie schnell, meine Mutter ist gestürzt und steht nicht mehr auf." : "Hier 75 1, sind am Einsatzort eingetroffen, kommen.", { name: piperName, sid: PIPER_STIMMEN.find((v) => v.name === piperName)?.sprecher?.neutral ?? 0 }, 1);
+    return;
+  }
+  sagen(g === "w" ? "Notruf? Bitte kommen Sie schnell, meine Mutter ist gestürzt und steht nicht mehr auf." : "Hier 75 1, sind am Einsatzort eingetroffen, kommen.", g, `probe-${g}`, 1);
 }
 
 /** Funk: neue Sprüche der Fahrzeuge in meinen Gesprächen vorlesen */

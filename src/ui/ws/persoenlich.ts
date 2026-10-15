@@ -72,6 +72,8 @@ export interface Persoenlich {
   /** Fahrzeuge auf Funk (Frei Funk, über Funk alarmiert) farbig */
   fzFunkRot?: boolean;
   fzFunkFarbe?: string;
+  /** Ausgabegerät für Töne (Klingeln, Funk-Piep …), leer = wie das System */
+  tonGeraet?: string;
   /** Vorlesen und Spracheingabe (siehe ui/sprache.ts) */
   sprache?: Partial<import("../sprache").SprachPrefs>;
 }

@@ -2749,7 +2749,12 @@ input[type="color"] {
   }
 }
 .sprach-modelle .ton-zeile {
-  grid-template-columns: 1fr auto auto;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.sprach-modelle .ton-zeile > :first-child {
+  flex: 1;
 }
 .stimmen .ton-zeile {
   grid-template-columns: minmax(100px, auto) minmax(180px, 1fr) auto;
