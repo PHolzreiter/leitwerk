@@ -564,6 +564,10 @@ pub fn run() {
             sprache::sprache_modell_laden,
             sprache::sprache_modell_loeschen,
             sprache::sprache_erkennen,
+            sprache::sprache_mikrofone,
+            sprache::sprache_aufnahme_start,
+            sprache::sprache_pegel,
+            sprache::sprache_aufnahme_stopp,
             app_version
         ])
         .build(tauri::generate_context!())

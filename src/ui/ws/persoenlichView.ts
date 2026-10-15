@@ -338,7 +338,7 @@ export function persoenlichView(container: HTMLElement): { refresh(): void } {
       mikroSel.value = sprachPrefs().mikro;
     });
     mikroSel.addEventListener("change", () => setzeSprache({ mikro: mikroSel.value }));
-    zeile(spr, "Mikrofon", mikroSel, "Die Namen erscheinen erst, nachdem du das Mikrofon einmal freigegeben hast.");
+    zeile(spr, "Mikrofon", mikroSel, inTauri() ? "Beim ersten Sprechen fragt der Computer, ob LeitWerk das Mikrofon benutzen darf." : "Die Namen erscheinen erst, nachdem du das Mikrofon einmal freigegeben hast.");
 
     if (inTauri()) {
       const modBox = el("div", { class: "sprach-modelle" });

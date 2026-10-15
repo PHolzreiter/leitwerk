@@ -1,5 +1,9 @@
 # Änderungen
 
+## 0.16.1 – Mikrofon direkt im Programm
+- Spracheingabe: das Programm nimmt jetzt selbst über das Mikrofon auf – auf dem Mac durfte das Fenster das Mikrofon nicht öffnen („The request is not allowed …“). Beim ersten Sprechen fragt der Computer einmal nach der Erlaubnis
+- Mikrofon-Auswahl zeigt die Namen der Mikrofone sofort
+
 ## 0.16.0 – Sprache: Vorlesen und Spracheingabe
 - Anrufer werden vorgelesen (Notruf und KT-Hotline, nur beim Gesprächsführer): Frauen- oder Männerstimme passend zum Anrufer, aufgeregte Anrufer sprechen schneller. Regieanweisungen in Klammern werden nicht mitgelesen
 - Funk wird vorgelesen: was die Fahrzeuge in deinen Funkgesprächen sagen

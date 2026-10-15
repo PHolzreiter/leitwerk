@@ -1,6 +1,6 @@
 [package]
 name = "leitwerk"
-version = "0.16.0"
+version = "0.16.1"
 description = "LeitWerk – privater Leitstellensimulator"
 edition = "2021"
 
@@ -24,6 +24,8 @@ sha2 = "0.10"
 tokio = { version = "1", features = ["time"] }
 # Spracherkennung (whisper.cpp, läuft lokal)
 whisper-rs = "0.14"
+# Mikrofon direkt im Programm (das Fenster darf es auf dem Mac nicht)
+cpal = "0.15"
 
 # Spracherkennung schnell bauen (der Rest bleibt klein)
 [profile.release.package.whisper-rs-sys]

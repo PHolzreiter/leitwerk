@@ -258,6 +258,10 @@ const ziele = new Set<SprachZiel>();
 /** nur für Tests: eigene Erkennung statt Whisper (Aufnahme läuft wie im Programm) */
 export const sprachTest: { erkenner: null | ((audio: Float32Array, hinweis: string) => Promise<string>) } = { erkenner: null };
 const programmWeg = () => inTauri() || !!sprachTest.erkenner;
+/** Programm nimmt selbst auf (das Fenster darf das Mikrofon auf dem Mac nicht öffnen) */
+const nativ = () => inTauri() && !sprachTest.erkenner;
+let nativStart: Promise<void> | null = null;
+let pegelTimer: ReturnType<typeof setInterval> | null = null;
 let aufnahmeLaeuft = false;
 
 function sichtbar(x: HTMLElement): boolean {
@@ -337,8 +341,12 @@ async function mikroOeffnen(): Promise<MediaStream> {
   return strom;
 }
 
-/** Mikrofone (Namen gibt es erst nach der ersten Freigabe) */
-export async function mikrofone(): Promise<MediaDeviceInfo[]> {
+/** Mikrofone (im Browser gibt es die Namen erst nach der ersten Freigabe) */
+export async function mikrofone(): Promise<{ deviceId: string; label: string }[]> {
+  if (inTauri()) {
+    const namen = await invoke<string[]>("sprache_mikrofone").catch(() => [] as string[]);
+    return namen.map((n) => ({ deviceId: n, label: n }));
+  }
   try {
     return (await navigator.mediaDevices.enumerateDevices()).filter((d) => d.kind === "audioinput");
   } catch {
@@ -391,6 +399,25 @@ async function start(z: SprachZiel | null, knopf?: HTMLElement): Promise<void> {
       knopf?.classList.remove("an");
       toast("Spracheingabe gibt es nur im Programm (nicht in diesem Browser).", "error");
     }
+    return;
+  }
+  if (nativ()) {
+    nativStart = invoke<void>("sprache_aufnahme_start", { mikro: p.mikro || null });
+    try {
+      await nativStart;
+    } catch (e) {
+      nativStart = null;
+      aufnahmeLaeuft = false;
+      anzeigeWeg();
+      knopf?.classList.remove("an");
+      toast(`Mikrofon nicht verfügbar: ${(e as Error).message ?? e}`, "error");
+      return;
+    }
+    pegelTimer = setInterval(() => {
+      void invoke<number>("sprache_pegel").then((v) => {
+        if (pegel) pegel.style.width = `${Math.min(100, Math.round(v * 400))}%`;
+      });
+    }, 100);
     return;
   }
   try {
@@ -446,7 +473,26 @@ async function stopp(): Promise<void> {
   zielJetzt = null;
   let text = "";
   try {
-    if (browserErk) {
+    if (nativStart) {
+      const st = nativStart;
+      nativStart = null;
+      if (pegelTimer) clearInterval(pegelTimer);
+      pegelTimer = null;
+      await st;
+      anzeigeZeigen("Erkenne …", "denkt");
+      const p = sprachPrefs();
+      const r = await invoke<{ text: string; sekunden: number; pegel: number }>("sprache_aufnahme_stopp", { modell: p.modell, hinweis: z?.hinweis?.() ?? "" });
+      if (r.sekunden < 0.3) {
+        anzeigeWeg();
+        return;
+      }
+      if (r.pegel < 0.003) {
+        anzeigeWeg();
+        toast("Nichts gehört – ist das richtige Mikrofon gewählt?", "error");
+        return;
+      }
+      text = r.text;
+    } else if (browserErk) {
       anzeigeZeigen("Erkenne …", "denkt");
       const b = browserErk;
       browserErk = null;

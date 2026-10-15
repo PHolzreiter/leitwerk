@@ -26,7 +26,7 @@ jobs:
       - name: Systempakete
         run: |
           sudo apt-get update -q
-          sudo apt-get install -yq libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+          sudo apt-get install -yq libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libasound2-dev
       - name: Prüfen
         run: |
           set -o pipefail
