@@ -1,5 +1,8 @@
 # Änderungen
 
+## 0.16.2 – Mikrofon auf dem Mac
+- Mac: LeitWerk darf jetzt das Mikrofon benutzen – vorher lieferte macOS nur Stille („Nichts gehört“), ohne nachzufragen. Beim ersten Sprechen fragt der Mac einmal nach der Erlaubnis
+
 ## 0.16.1 – Mikrofon direkt im Programm
 - Spracheingabe: das Programm nimmt jetzt selbst über das Mikrofon auf – auf dem Mac durfte das Fenster das Mikrofon nicht öffnen („The request is not allowed …“). Beim ersten Sprechen fragt der Computer einmal nach der Erlaubnis
 - Mikrofon-Auswahl zeigt die Namen der Mikrofone sofort
