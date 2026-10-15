@@ -101,11 +101,18 @@ function stimmenLaden(): void {
 synth?.addEventListener?.("voiceschanged", stimmenLaden);
 stimmenLaden();
 
+/** Name ohne Qualitätszusatz: „Anna (Premium)“ → „anna“ */
+function grundName(v: SpeechSynthesisVoice): string {
+  return v.name.replace(/\(.*?\)/g, "").replace(/microsoft|google|online|natural|desktop|-.*$/gi, "").trim().toLowerCase();
+}
+
 export function deutscheStimmen(): SpeechSynthesisVoice[] {
   if (!stimmenCache.length) stimmenLaden();
-  // Österreich zuerst, dann Premium/Neural
-  const gut = (v: SpeechSynthesisVoice) => (/AT/i.test(v.lang) ? 4 : 0) + (/premium|enhanced|neural|natural|online/i.test(v.name) ? 2 : 0);
-  return [...stimmenCache].sort((a, b) => gut(b) - gut(a) || a.name.localeCompare(b.name));
+  // Österreich zuerst, dann Premium/Neural; je Stimme nur die beste Qualität
+  const gut = (v: SpeechSynthesisVoice) => (/AT/i.test(v.lang) ? 4 : 0) + (/premium|neural|natural|online/i.test(v.name) ? 3 : /enhanced|erweitert/i.test(v.name) ? 2 : 0);
+  const beste = new Map<string, SpeechSynthesisVoice>();
+  for (const v of [...stimmenCache].sort((a, b) => gut(b) - gut(a))) if (!beste.has(grundName(v))) beste.set(grundName(v), v);
+  return [...beste.values()].sort((a, b) => gut(b) - gut(a) || a.name.localeCompare(b.name));
 }
 
 export function onStimmen(fn: () => void): () => void {
@@ -137,7 +144,9 @@ function stimmeFuer(g: "w" | "m", schluessel: string): { voice: SpeechSynthesisV
   const alle = deutscheStimmen();
   const gewaehlt = alle.find((v) => v.name === (g === "w" ? p.stimmeW : p.stimmeM));
   const passend = alle.filter((v) => geschlechtVon(v) === g);
-  const voice = gewaehlt ?? (passend.length ? passend[Math.floor(hash(schluessel) * passend.length)] : alle[0] ?? null);
+  // je Anrufer eine andere Stimme: zuerst passende (Mann/Frau), sonst irgendeine der installierten
+  const pool = passend.length ? passend : alle;
+  const voice = gewaehlt ?? (pool.length ? pool[Math.floor(hash(schluessel) * pool.length)] : null);
   // gleiche Stimme für Mann und Frau: Tonhöhe verschieben, damit man sie unterscheidet
   let pitch = 0.92 + hash(schluessel + "p") * 0.16;
   if (voice && geschlechtVon(voice) !== g) pitch += g === "w" ? 0.25 : -0.25;
@@ -151,7 +160,8 @@ export function sprechText(t: string): string {
     .replace(/\*[^*]*\*/g, " ")
     .replace(/\[[^\]]*\]/g, " ")
     .replace(/[„“"»«]/g, "")
-    .replace(/(\d{2,3})\/(\d{3})/g, "$1 $2")
+    // Funkrufnamen sprechen wie am Funk: „75/001“ → „75 1“ (Nullen stumm)
+    .replace(/\b(\d{2,3})\/0*(\d+)\b/g, "$1 $2")
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -203,6 +213,43 @@ export function geschlechtAusName(t: string): "w" | "m" | undefined {
   if (/\b(frau|schwester|pflegerin|ärztin|tochter|mutter|gattin|ehefrau|maria|anna|elisabeth|sabine|andrea|claudia|julia|lisa|sandra|karin|monika|theresa|sophie|katharina|birgit|ingrid|eva|petra|christina|barbara|susanne|martina|daniela|nicole|silvia|gabriele|renate|helga|brigitte)\b/i.test(t)) return "w";
   if (/\b(herr|pfleger|arzt|sohn|vater|gatte|ehemann|josef|johann|franz|michael|thomas|andreas|stefan|markus|lukas|florian|karl|gerhard|wolfgang|manfred|david|martin|peter|christian|alexander|robert|günther|helmut|walter)\b/i.test(t)) return "m";
   return undefined;
+}
+
+/**
+ * Vorlesen, während die KI noch schreibt: jeder fertige Satz wird sofort gesprochen,
+ * der Rest am Ende. Denk-Abschnitte (<think>) werden übersprungen.
+ */
+export function satzSprecher(sagen: (satz: string) => void): { token(t: string): void; ende(final: string): void } {
+  let roh = "";
+  let gesagt = 0;
+  let sicht = "";
+  const sichtbar = () => {
+    let x = roh.replace(/<think>[\s\S]*?<\/think>/g, "");
+    const offen = x.indexOf("<think>");
+    if (offen >= 0) x = x.slice(0, offen);
+    return x.replace(/^\s*(Anrufer(in)?|Ich|Caller)\s*:\s*/i, "");
+  };
+  return {
+    token(t) {
+      roh += t;
+      sicht = sichtbar();
+      for (;;) {
+        const rest = sicht.slice(gesagt);
+        const m = rest.match(/^[\s\S]*?[.!?…](?=\s)/);
+        if (!m) break;
+        if (m[0].trim()) sagen(m[0]);
+        gesagt += m[0].length;
+      }
+    },
+    ende(final) {
+      if (!gesagt) {
+        sagen(final);
+        return;
+      }
+      const rest = sicht.slice(gesagt).trim();
+      if (rest) sagen(rest);
+    },
+  };
 }
 
 /** Fahrzeug spricht am Funk */
@@ -614,7 +661,15 @@ export function testZiel(input: HTMLInputElement): SprachZiel {
   return { input, rang: 99, aktiv: () => true, senden: () => undefined, hinweis: () => "Notruf 144, Rettungsdienst." };
 }
 
-/** Funkrufnamen: „57 001“ / „57-001“ → „57/001“ */
-export function funkNamenGlaetten(t: string): string {
-  return t.replace(/\b(\d{2,3})[\s\-–,.]+(\d{3})\b/g, "$1/$2");
+/**
+ * Funkrufnamen aus gesprochenem Text: „75 1“, „75-001“, „75 Strich 1“ → „75/001“.
+ * Mit Namensliste nur, wenn es das Fahrzeug gibt; ohne Liste nur dreistellige Nummern.
+ */
+export function funkNamenGlaetten(t: string, namen?: string[]): string {
+  const set = namen ? new Set(namen.map((n) => n.toLowerCase())) : null;
+  return t.replace(/\b(\d{2,3})(?:\s*(?:schrägstrich|strich|\/|-|–|,|\.)\s*|\s+)(\d{1,3})\b/gi, (ganz, a: string, b: string) => {
+    const kand = `${a}/${b.padStart(3, "0")}`;
+    if (set) return set.has(kand.toLowerCase()) ? kand : ganz;
+    return b.length === 3 ? kand : ganz;
+  });
 }

@@ -7,7 +7,7 @@ import { sim } from "../sim/engine";
 import { bereichName, hhmm, KT_LAGE_LABEL, type KtAuftrag, type KtDaten } from "../sim/kt";
 import { schonGefragt } from "./gespraech";
 import { kiBereit, kiChat, kiPrefs, kiStatus, type KiNachricht } from "./ki";
-import { anruferSagt, geschlechtAusName } from "../ui/sprache";
+import { anruferSagt, geschlechtAusName, satzSprecher } from "../ui/sprache";
 
 export interface KtFrage {
   id: keyof KtDaten | "wer" | "patient" | "arzt" | "monitoring" | "stabil" | "inkubator" | "zusage" | "gewicht" | "zusatz" | "zustand";
@@ -192,6 +192,11 @@ export async function ktFragen(k: KtAuftrag, text: string, frage?: KtFrage, onTo
   laufend.add(k.id);
   try {
     await sim.call("ktAnrufNachricht", k.id, "leitstelle", text);
+    const an = k.wahr?.anrufer;
+    const stimme = { geschlecht: geschlechtAusName(`${an?.rolle ?? ""} ${an?.name ?? ""}`), emotion: "ruhig", name: an?.name };
+    // fertige Sätze schon vorlesen, während die KI noch schreibt (bei fester Antwort: neu, ganz)
+    let sprecher = satzSprecher((satz) => anruferSagt(satz, stimme, k.id));
+    const sprecherNeu = () => (sprecher = satzSprecher((satz) => anruferSagt(satz, stimme, k.id)));
     let antwort = "";
     let quelle: "ki" | "fest" = "ki";
     if (!kiBereit() && inTauri() && kiPrefs().aktiv) await kiStatus().catch(() => null);
@@ -216,7 +221,10 @@ export async function ktFragen(k: KtAuftrag, text: string, frage?: KtFrage, onTo
       else if (vorher && !frage) hinweise.push(`Deine letzte Antwort war „${vorher}“ – sag das nicht noch einmal.`);
       verlauf[verlauf.length - 1].content += `\n[Hinweis nur für dich, nicht aussprechen: ${hinweise.join(" ")}]`;
       try {
-        antwort = await kiChat(verlauf, onToken);
+        antwort = await kiChat(verlauf, (t) => {
+          onToken?.(t);
+          sprecher.token(t);
+        });
       } catch (e) {
         console.warn("KT-KI", e);
       }
@@ -228,8 +236,8 @@ export async function ktFragen(k: KtAuftrag, text: string, frage?: KtFrage, onTo
       quelle = "fest";
     }
     await sim.call("ktAnrufNachricht", k.id, "anrufer", antwort, quelle);
-    const an = k.wahr?.anrufer;
-    anruferSagt(antwort, { geschlecht: geschlechtAusName(`${an?.rolle ?? ""} ${an?.name ?? ""}`), emotion: "ruhig", name: an?.name }, k.id);
+    if (quelle === "fest") sprecherNeu();
+    sprecher.ende(antwort);
   } finally {
     laufend.delete(k.id);
   }

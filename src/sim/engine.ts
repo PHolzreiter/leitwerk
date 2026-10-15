@@ -18,6 +18,7 @@ import {
   lageArt,
   lageVon,
   nextWetter,
+  planAuffuellen,
   prognose,
   temperatur,
   wetterFortschreiben,
@@ -455,7 +456,7 @@ export const BEFEHLE = {
     "storno",
     "partnerAnfordern",
   ],
-  steuern: ["start", "pause", "setTempo", "generiere", "setWetter", "neuPlanen", "reset", "generiereKt", "generiereSek"],
+  steuern: ["start", "pause", "setTempo", "generiere", "setWetter", "wetterUebernehmen", "neuPlanen", "reset", "generiereKt", "generiereSek"],
   kt: [
     "ktNeuManuell",
     "ktAnrufAnnehmen",
@@ -763,6 +764,31 @@ export class Simulation {
   /** Flugbetrieb wetterbedingt nicht möglich? */
   flugverbotJetzt(): boolean {
     return this.settings.wetterAktiv && flugverbot(this.state.wetter.lage, this.state.wetter.wind ?? 0);
+  }
+
+  /**
+   * Geänderte Wetter-Einstellungen übernehmen.
+   * fliessend: das aktuelle Wetter bleibt, nur die Vorhersage wird nach den neuen Einstellungen neu gerechnet –
+   * das Wetter geht mit den nächsten Wechseln sanft in das neue Muster über.
+   * neu: Wetter und Vorhersage werden sofort komplett neu gesetzt.
+   */
+  wetterUebernehmen(art: "fliessend" | "neu"): void {
+    const o = this.wetterOpt();
+    const t = this.state.zeit;
+    const w = this.state.wetter;
+    if (art === "neu" || o.wechsel <= 0) {
+      const start = o.wechsel <= 0 ? o.festLage : nextWetter(t, null, o).lage;
+      this.state.wetter = wetterSetzen(lageVon(start), t, o, w);
+      this.state.wetter.vorher = null; // kein Übergang: sofort das neue Wetter
+    } else {
+      // nächster Wechsel spätestens nach dem neuen Takt, Vorhersage neu
+      w.plan = [];
+      const takt = nextWetter(t, w.lage, o, w.wind, w.richtung);
+      w.bis = Math.min(w.bis, t + Math.max(10 * 60_000, takt.bis - t));
+      planAuffuellen(w, o);
+    }
+    this.funk("Wetterdienst", null, `Wetter: ${WETTER_LABEL[lageVon(this.state.wetter.lage)]}`, "info");
+    this.emit();
   }
 
   setWetter(lage: Wetter["lage"]): void {
@@ -1571,7 +1597,8 @@ export class Simulation {
    * - Notarzt „nef“: NEF, NAH nur wenn mehr als die Toleranz schneller; „schnellster“: NEF oder NAH
    * Bereits alarmierte Fahrzeuge werden berücksichtigt.
    */
-  empfehlung(id: string, liste: Vorschlag[]): { ids: string[]; gruende: string[] } {
+  /** ids = vorausgewählt; oben = nur oben in der Liste zeigen (z. B. EL ÖBB, selbst alarmieren) */
+  empfehlung(id: string, liste: Vorschlag[]): { ids: string[]; gruende: string[]; oben?: string[] } {
     const e = this.einsatz(id);
     const stufe = e ? this.stufeVon(e) : undefined;
     if (!e) return { ids: [], gruende: [] };
@@ -1584,6 +1611,7 @@ export class Simulation {
     }
     const tol = this.settings.toleranzMin * 60;
     const ids: string[] = [];
+    const oben: string[] = [];
     const gruende: string[] = [];
     const min = (s: number) => `${Math.round(s / 60)} min`;
     const nutzbar = liste.filter((v) => v.sekunden !== null && !v.hinweis && !v.kt);
@@ -1658,13 +1686,14 @@ export class Simulation {
     // EL ÖBB bei Unfällen auf oder an Bahngleisen
     const bahnText = `${findCode(e.code ?? undefined)?.beschreibung ?? ""} ${e.wahr.abfrage?.lage ?? ""} ${e.infoRtw} ${e.infoIntern} ${e.adresse?.label ?? ""}`;
     if (/bahn|gleis|zug|schiene|öbb/i.test(bahnText) && !imEinsatz.some((f) => f.rmTyp === "EL ÖBB")) {
+      // nur Hinweis – den Einsatzleiter der ÖBB schickt der Disponent selbst
       const el = nutzbar.find((v) => v.fz.rmTyp === "EL ÖBB");
       if (el) {
-        ids.push(el.fz.id);
-        gruende.push(`${el.fz.funkrufname} (EL ÖBB, ${min(el.sekunden!)}): Unfall an Bahngleisen – Koordination mit der ÖBB`);
+        oben.push(el.fz.id);
+        gruende.push(`Hinweis: ${el.fz.funkrufname} (EL ÖBB, ${min(el.sekunden!)}) bei Unfall an Bahngleisen selbst dazu alarmieren`);
       }
     }
-    return { ids, gruende };
+    return { ids, gruende, oben };
   }
 
   /** BIT nachgefordert (Patient zu schwer für die normale Trage): BIT vorschlagen */
@@ -2387,7 +2416,8 @@ export class Simulation {
   }
 
   /** LEO ruft ein Fahrzeug („75/001 von LEO kommen“) */
-  funkRufen(fzId: string): number {
+  /** LEO ruft ein Fahrzeug; text = eigener Anruf (z. B. gesprochen „75/001 von LEO, kommen“) */
+  funkRufen(fzId: string, text?: string): number {
     const fz = this.state.fahrzeuge[fzId];
     if (!fz) throw new Error("Fahrzeug nicht gefunden");
     const offen = this.state.funkGespraeche?.find((g) => g.fzId === fz.id && g.status !== "ende");
@@ -2398,7 +2428,7 @@ export class Simulation {
     const e = fz.einsatzId ? (this.einsatz(fz.einsatzId) ?? null) : null;
     const g = this.neuesGespraech(fz, e, "leoRuft");
     g.fuehrer = { ...this.calltaker() };
-    this.spruch(g, "LEO", `${fz.funkrufname} von LEO kommen`, g.fuehrer.name);
+    this.spruch(g, "LEO", text?.trim().slice(0, 300) || `${fz.funkrufname} von LEO kommen`, g.fuehrer.name);
     g.naechster = this.state.zeit + rnd(3, 9) * 1000;
     this.emit();
     return g.id;

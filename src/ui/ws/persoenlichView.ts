@@ -488,13 +488,23 @@ export function persoenlichView(container: HTMLElement): { refresh(): void } {
       c.value = d.farbe.length === 7 ? d.farbe : "#888888";
       c.addEventListener("change", () => setzePers({ statusFarben: { ...pers().statusFarben, [key]: c.value } }));
       const r = el("label", { class: "status-farbe" });
-      r.append(c, el("span", {}, `${d.nummer} – ${d.name}`));
+      r.append(c, el("span", {}, /^\d+$/.test(d.nummer) ? `${d.nummer} – ${d.name}` : d.name));
       if (p.statusFarben[key]) r.appendChild(el("span", { class: "muted small" }, "(eigene)"));
       sGrid.appendChild(r);
     }
     const sReset = el("button", { class: "btn small" }, "Farben der Leitstelle verwenden");
     sReset.addEventListener("click", () => setzePers({ statusFarben: {} }));
     s.append(sGrid, sReset);
+    const farbFeld = (wert: string, onSet: (v: string) => void) => {
+      const c = el("input", { type: "color" });
+      c.value = wert;
+      c.addEventListener("change", () => onSet(c.value));
+      return c;
+    };
+    zeile(s, "Alarmierte Fahrzeuge hinterlegen", farbFeld(p.fzAlarmFarbe || "#fff3c4", (v) => setzePers({ fzAlarmFarbe: v })), "„Alarmiert auf Wache“ und „Alarmiert über Funk“ – Hintergrund der Zeile (im dunklen Schema abgeschwächt).");
+    const rotBox = el("div", { class: "row-btns" });
+    rotBox.append(schalter(p.fzFunkRot !== false, (v) => setzePers({ fzFunkRot: v })), farbFeld(p.fzFunkFarbe || "#d32f2f", (v) => setzePers({ fzFunkFarbe: v })));
+    zeile(s, "Fahrzeuge auf Funk in Farbe", rotBox, "„Frei Funk“ und „Alarmiert über Funk“: Funkrufname in dieser Farbe.");
 
     // ---- Funkgruppen auf der Karte
     const f = section("Funkgruppen auf der Karte", `Feine Linien an den Grenzen der TETRA-Funkgruppen. ${FUNK_QUELLE}`);

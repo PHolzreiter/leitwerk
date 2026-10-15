@@ -271,22 +271,28 @@ export function nextWetter(now: number, current: WetterLage | null, o: WetterOpt
   const tend = tagesTendenz(now, o);
   const v = Math.min(100, Math.max(1, o.wechsel)) / 100;
   const cur = current ? lageVon(current) : null;
-  let kandidaten: WetterLage[] = cur ? [cur, ...NACHBAR[cur]] : (Object.keys(LAGE) as WetterLage[]);
+  // Nachbarn; je wechselhafter, desto eher auch zwei Schritte weiter (Sonne → Schauer in einer Stunde)
+  const zweiter = new Map<WetterLage, number>();
+  if (cur && v > 0.55) {
+    for (const n of NACHBAR[cur]) for (const m of NACHBAR[n]) if (m !== cur && !NACHBAR[cur].includes(m)) zweiter.set(m, (v - 0.55) / 0.45);
+  }
+  let kandidaten: WetterLage[] = cur ? [cur, ...NACHBAR[cur], ...zweiter.keys()] : (Object.keys(LAGE) as WetterLage[]);
   kandidaten = kandidaten.filter((l) => erlaubt(l, temp, stunde, jz));
   if (!kandidaten.length) kandidaten = [ersatzLage(temp)];
   const morgen = stunde >= 3 && stunde <= 10;
   const gew: [WetterLage, number][] = kandidaten.map((l) => {
     const i = LAGE[l];
-    let w = 1;
-    // passend zum Charakter des Tages
-    w *= Math.exp(-((i.wolken - tend.wolken) ** 2) / 0.08);
+    let w = zweiter.has(l) ? 0.6 * zweiter.get(l)! : 1;
+    // passend zum Charakter des Tages – je wechselhafter, desto weniger zählt er
+    w *= Math.exp(-((i.wolken - tend.wolken) ** 2) / (0.08 + v * v * 0.6));
     const nass = i.art === "regen" || i.art === "schnee" || i.art === "eis" || i.art === "gewitter";
-    w *= nass ? 0.25 + tend.nass * 2 : 1.3 - tend.nass * 0.8;
+    const nf = nass ? 0.25 + tend.nass * 2 : 1.3 - tend.nass * 0.8;
+    w *= nf + (1 - nf) * v * v * 0.7;
     if (i.heftig) w *= 0.25 + v * 1.6;
     if (i.art === "nebel" && l !== "hochnebel") w *= (morgen ? 2 : 0.25) * (jz === "sommer" ? 0.35 : jz === "fruehling" ? 0.7 : 1);
     if (i.art === "gewitter") w *= stunde >= 13 && stunde <= 20 ? 1.4 : 0.4;
     if (l === "hagel" || l === "unwetter" || l === "eisregen") w *= 0.35;
-    if (l === cur) w *= (4.5 - v * 3.8) * (i.heftig ? 0.45 : 1); // bleibt eher, je beständiger; Heftiges hält nicht lange
+    if (l === cur) w *= Math.max(0.15, 4.5 - v * 4.3) * (i.heftig ? 0.45 : 1); // bleibt eher, je beständiger; Heftiges hält nicht lange
     return [l, Math.max(0.0001, w)];
   });
   const sum = gew.reduce((a, x) => a + x[1], 0);

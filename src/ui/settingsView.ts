@@ -287,31 +287,39 @@ export function createSettingsView(container: HTMLElement, teil: "simulation" | 
     const wr = el("input", { type: "range", min: "0", max: "100", step: "1" });
     wr.value = String(wechselWert);
     const wrText = el("span", { class: "wetter-regler-text" });
-    const skala = el("div", { class: "wetter-skala muted small" });
-    skala.innerHTML = "<span>fix</span><span>beständig</span><span>normal</span><span>wechselhaft</span><span>sehr wechselhaft</span>";
-    reglerBox.append(wr, wrText, skala);
+    const skala = el("div", { class: "wetter-skala" });
+    skala.append(el("span", {}, "fix"), el("span", {}, "sehr wechselhaft"));
+    reglerBox.append(wr, skala, wrText);
     nGrid.append(el("label", { title: "Wie oft und wie heftig sich das Wetter ändert. Ganz links bleibt es immer gleich." }, "Wetter"), reglerBox);
     const festWrap = el("div", { class: "row-btns" });
     const fl = el("select");
     for (const [k, v] of Object.entries(WETTER_LABEL)) fl.appendChild(el("option", { value: k }, v));
     fl.value = draft.wetterFestLage ?? "klar";
-    fl.addEventListener("change", () => (draft.wetterFestLage = fl.value as WetterLage));
+    fl.addEventListener("change", () => {
+      draft.wetterFestLage = fl.value as WetterLage;
+      geaendert();
+    });
     const ft = num(draft.wetterFestTemp ?? 18, "1");
     ft.min = "-25";
     ft.max = "40";
-    ft.addEventListener("change", () => (draft.wetterFestTemp = Math.max(-25, Math.min(40, Number(ft.value) || 0))));
+    ft.addEventListener("change", () => {
+      draft.wetterFestTemp = Math.max(-25, Math.min(40, Number(ft.value) || 0));
+      geaendert();
+    });
     festWrap.append(fl, ft, el("span", { class: "muted" }, "°C"));
     const festLbl = el("label", {}, "Festes Wetter");
     nGrid.append(festLbl, festWrap);
     const wrZeigen = () => {
       const v = Number(wr.value);
-      wrText.textContent = `${modusVon(v)}${v > 0 ? ` – ändert sich etwa alle ${v >= 88 ? "1" : v >= 65 ? "1–2" : v >= 30 ? "2–4" : "4–8"} Stunden` : " – immer das gewählte Wetter"}`;
+      const takt = v >= 88 ? "etwa jede Stunde, auch heftig" : v >= 65 ? "etwa alle 1–2 Stunden" : v >= 30 ? "etwa alle 2–4 Stunden" : "selten, etwa alle 4–8 Stunden";
+      wrText.textContent = v > 0 ? `${modusVon(v)} – ändert sich ${takt}` : "fix – immer das gewählte Wetter";
       festLbl.hidden = festWrap.hidden = v > 0;
     };
     wr.addEventListener("input", () => {
       draft.wetterWechsel = Number(wr.value);
       draft.wetterModus = undefined;
       wrZeigen();
+      geaendert();
     });
     wrZeigen();
     const jz = el("select");
@@ -324,7 +332,10 @@ export function createSettingsView(container: HTMLElement, teil: "simulation" | 
     ])
       jz.appendChild(el("option", { value: v }, l));
     jz.value = draft.jahreszeit ?? "auto";
-    jz.addEventListener("change", () => (draft.jahreszeit = jz.value as Settings["jahreszeit"]));
+    jz.addEventListener("change", () => {
+      draft.jahreszeit = jz.value as Settings["jahreszeit"];
+      geaendert();
+    });
     nGrid.append(el("label", { title: "Bestimmt Temperatur und Wetter – und damit, welche Notfälle häufiger sind (Hitze, Kälte, Glätte)" }, "Jahreszeit"), jz);
     const ns = num(draft.nahGeschwindigkeit, "10", "100");
     ns.addEventListener("change", () => (draft.nahGeschwindigkeit = Number(ns.value) || 220));
@@ -344,6 +355,49 @@ export function createSettingsView(container: HTMLElement, teil: "simulation" | 
     wWrap.append(wSel, wBtn);
     nGrid.append(el("label", {}, "Wetter zum Testen setzen"), wWrap);
     nSec.appendChild(nGrid);
+    // Wetter-Einstellungen geändert: ins laufende Spiel übernehmen (fließend) oder neu setzen
+    const uebernahme = el("div", { class: "wetter-uebernahme", hidden: "" });
+    const fliessend = el("button", { class: "btn small primary", type: "button" }, "Ins laufende Spiel übernehmen (fließend)");
+    const neu = el("button", { class: "btn small danger-text", type: "button" }, "Wetter komplett neu setzen …");
+    uebernahme.append(el("span", {}, "Wetter-Einstellungen geändert:"), fliessend, neu);
+    nSec.appendChild(uebernahme);
+    const wetterSpeichern = () => {
+      const s = structuredClone(store.settings);
+      Object.assign(s, { wetterWechsel: draft.wetterWechsel, wetterModus: draft.wetterModus, wetterFestLage: draft.wetterFestLage, wetterFestTemp: draft.wetterFestTemp, jahreszeit: draft.jahreszeit, wetterAktiv: draft.wetterAktiv });
+      store.setSettings(s);
+    };
+    fliessend.addEventListener("click", () => {
+      wetterSpeichern();
+      void sim
+        .call("wetterUebernehmen", "fliessend")
+        .then(() => {
+          uebernahme.hidden = true;
+          toast("Übernommen – das Wetter geht mit den nächsten Wechseln in das neue Muster über");
+        })
+        .catch((e) => toast(String(e.message ?? e), "error"));
+    });
+    neu.addEventListener("click", async () => {
+      const ok = await confirmDialog(
+        "Wetter komplett neu setzen",
+        "Das aktuelle Wetter und die Vorhersage werden verworfen und sofort neu gesetzt – ohne Übergang (z. B. von Sonne direkt auf Regen). Einsätze, Fahrzeuge und Uhrzeit bleiben, wie sie sind.",
+        "Neu setzen",
+        true,
+      );
+      if (!ok) return;
+      wetterSpeichern();
+      void sim
+        .call("wetterUebernehmen", "neu")
+        .then(() => {
+          uebernahme.hidden = true;
+          toast("Wetter neu gesetzt");
+        })
+        .catch((e) => toast(String(e.message ?? e), "error"));
+    });
+    function geaendert() {
+      const a = store.settings;
+      uebernahme.hidden =
+        (draft.wetterWechsel ?? -1) === (a.wetterWechsel ?? -1) && draft.wetterFestLage === a.wetterFestLage && draft.wetterFestTemp === a.wetterFestTemp && draft.jahreszeit === a.jahreszeit;
+    }
 
     // KI-Anrufer
     buildKiSection(
@@ -358,8 +412,14 @@ export function createSettingsView(container: HTMLElement, teil: "simulation" | 
     const act = el("div", { class: "set-actions" });
     const save = el("button", { class: "btn primary" }, "Speichern");
     save.addEventListener("click", () => {
+      const wetterNeu = !uebernahme.hidden;
       store.setSettings(draft);
       void sim.call("neuPlanen").catch(() => undefined);
+      // geänderte Wetter-Einstellungen beim Speichern fließend übernehmen
+      if (wetterNeu) {
+        uebernahme.hidden = true;
+        void sim.call("wetterUebernehmen", "fliessend").catch(() => undefined);
+      }
       toast("Einstellungen gespeichert");
     });
     const reset = el("button", { class: "btn" }, "Standard wiederherstellen");

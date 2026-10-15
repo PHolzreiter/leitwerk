@@ -107,9 +107,35 @@ export function bearbeiterHtml(e: Einsatz): string {
   return `<div class="bearbeiter${ich ? " ich" : ""}">👤 ${ich ? "du" : esc(e.bearbeiter.name)}</div>`;
 }
 
+/** Alarmiert, aber noch nicht ausgerückt (auf Wache / über Funk) – ohne Nummer, Zeile gelb */
+export function istAlarmiert(fz: SimFahrzeug): boolean {
+  return fz.status === "alarmWache" || fz.status === "alarmFunk";
+}
+
+/** Fahrzeug ist über Funk erreichbar (Frei Funk, über Funk alarmiert) – Name rot */
+export function istFunkStatus(fz: SimFahrzeug): boolean {
+  return fz.status === "freiFunk" || fz.status === "alarmFunk";
+}
+
+/** Zusatzklassen für eine Fahrzeugzeile */
+export function fzKlassen(fz: SimFahrzeug): string {
+  return `${istAlarmiert(fz) ? " fz-alarmiert" : ""}${istFunkStatus(fz) ? " fz-funk" : ""}`;
+}
+
+/** Fahrzeug für einen Krankentransport vorgemerkt (noch nicht unterwegs): kleines Schild mit Abfahrt */
+export function vorgemerktHtml(fz: SimFahrzeug): string {
+  const p = fz.kt;
+  if (!p || p.aktiv || !p.fahrten.length) return "";
+  const n = p.fahrten.flat().length;
+  const ab = p.losUm ? ` ab ${new Date(p.losUm).toTimeString().slice(0, 5)}` : "";
+  return ` <span class="kt-fz vorgemerkt" title="Für ${n} Krankentransport${n > 1 ? "e" : ""} vorgemerkt – wird beim Alarmieren für einen Notfall gelöst">KT vorgemerkt${ab}</span>`;
+}
+
 export function statusChip(fz: SimFahrzeug): string {
   const d = sim.statusDef(fz.status);
-  return `<span class="st-chip" style="background:${d.farbe}" title="${esc(d.name)}">${esc(d.nummer)}</span>`;
+  // alarmiert: gleich breites Kästchen ohne Nummer, damit die Namen untereinander bleiben
+  const nr = istAlarmiert(fz) ? "" : d.nummer;
+  return `<span class="st-chip" style="background:${d.farbe}" title="${esc(d.name)}">${esc(nr) || "&nbsp;"}</span>`;
 }
 
 /** Adress-Eingabe mit Vorschlägen. */

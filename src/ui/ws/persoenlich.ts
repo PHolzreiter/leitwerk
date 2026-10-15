@@ -67,6 +67,11 @@ export interface Persoenlich {
   funkGruppen: Record<string, boolean>;
   /** eigene Farben der Funkgruppen (fehlt = Standard) */
   funkFarben: Record<string, string>;
+  /** Hintergrund alarmierter Fahrzeuge (leer = Standard) */
+  fzAlarmFarbe?: string;
+  /** Fahrzeuge auf Funk (Frei Funk, über Funk alarmiert) farbig */
+  fzFunkRot?: boolean;
+  fzFunkFarbe?: string;
   /** Vorlesen und Spracheingabe (siehe ui/sprache.ts) */
   sprache?: Partial<import("../sprache").SprachPrefs>;
 }
@@ -189,6 +194,11 @@ export function anwenden(): void {
   r.style.colorScheme = dunkel ? "dark" : "light";
   zoomSetzen(aktuell.skalierung / 100);
   r.classList.toggle("ohne-animation", !aktuell.animationen);
+  r.classList.toggle("fz-funk-rot", aktuell.fzFunkRot !== false);
+  const setz = (k: string, v?: string) => (v ? r.style.setProperty(k, v) : r.style.removeProperty(k));
+  setz("--fz-funk-farbe", aktuell.fzFunkFarbe);
+  setz("--fz-alarm-bg", aktuell.fzAlarmFarbe);
+  setz("--fz-alarm-bg-dunkel", aktuell.fzAlarmFarbe ? `color-mix(in srgb, ${aktuell.fzAlarmFarbe} 22%, transparent)` : undefined);
   farbenAnwenden(aktuell.farbVorlage ?? "noe", aktuell.farben ?? { hell: {}, dunkel: {} }, dunkel);
   const key = `${dunkel}|${aktuell.karte}`;
   if (key !== letztesThema) {

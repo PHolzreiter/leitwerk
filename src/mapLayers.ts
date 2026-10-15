@@ -292,7 +292,7 @@ function showDetails(map: maplibregl.Map, kind: Kind, id: string, at: maplibregl
               .map((v) => {
                 const fz = sim.state.fahrzeuge[v.id];
                 const st = fz ? sim.statusDef(fz.status) : null;
-                const chip = st ? `<span class="veh-st" style="background:${st.farbe}" title="${esc(st.name)}">${esc(st.nummer)}</span>` : "";
+                const chip = st ? `<span class="veh-st" style="background:${st.farbe}" title="${esc(st.name)}">${fz && (fz.status === "alarmWache" || fz.status === "alarmFunk") ? "&nbsp;" : esc(st.nummer)}</span>` : "";
                 return `<span class="veh ${v.aktiv ? "" : "inactive"}" title="${esc(st ? `${v.typ} · ${st.name}` : v.typ)}">${chip}${esc(v.funkrufname)} <small>${esc(fz?.rmTyp ?? v.kategorie)}</small></span>`;
               })
               .join("")
@@ -424,7 +424,7 @@ function vehicleFeatures(): FeatureCollection<Point> {
       pointFeature(fz.id, fz.lon, fz.lat, {
         name: fz.funkrufname,
         color: sim.statusDef(fz.status).farbe,
-        nr: sim.statusDef(fz.status).nummer,
+        nr: fz.status === "alarmWache" || fz.status === "alarmFunk" ? "" : sim.statusDef(fz.status).nummer,
         nah: fz.kategorie === "NAH" || fz.kategorie === "ITH" ? 1 : 0,
         ein: fz.einsatzId ? 1 : 0,
         flug: flughoehe(fz, sim.state.zeit) > 5 ? 1 : 0,

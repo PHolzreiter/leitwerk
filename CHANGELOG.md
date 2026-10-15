@@ -1,5 +1,15 @@
 # Änderungen
 
+## 0.17.0 – Alarm-Anzeige, freies Funkfeld, wechselhafteres Wetter, schnelleres Vorlesen
+- Alarmierte Fahrzeuge („auf Wache“ und „über Funk“) haben kein „A“/„F“ mehr, sondern eine hellgelb hinterlegte Zeile; Fahrzeuge auf Funk (Frei Funk, über Funk alarmiert) stehen in roter Schrift. Farben und Rot an/aus unter Einstellungen → Persönlich → Eigene Statusfarben. Die Funkrufnamen stehen in der Einsatzmaske sauber untereinander
+- Für einen Krankentransport vorgemerkte Fahrzeuge sind in den Fahrzeugvorschlägen und in der Fahrzeugliste markiert („KT vorgemerkt ab 14:30“)
+- Einsatzleiter ÖBB wird bei Bahnunfällen nicht mehr automatisch angehakt – nur noch als Hinweis oben in der Liste, alarmiert wird er selbst
+- Funk: freies Feld „75/001 von LEO, kommen“ (tippen oder sprechen) – das Fahrzeug wird erkannt und gerufen; daneben weiter die Auswahl nur nach Funkrufname. Gesprochenes „75 1“ wird zu „75/001“, vorgelesen wird „75/001“ wie am Funk als „75 1“
+- Wetter: „sehr wechselhaft“ wechselt jetzt wirklich stark (auch mal von Sonne direkt zum Schauer), „normal“ bleibt in Bewegung; Beschriftung am Regler aufgeräumt
+- Wetter-Einstellungen geändert: „Ins laufende Spiel übernehmen (fließend)“ oder „Wetter komplett neu setzen“ (mit Warnung); Speichern übernimmt fließend
+- Vorlesen beginnt schon nach dem ersten fertigen Satz, während die KI noch schreibt
+- Jeder Anrufer bekommt eine andere der installierten Stimmen (je Stimme nur die beste Qualität, z. B. „Premium“)
+
 ## 0.16.2 – Mikrofon auf dem Mac
 - Mac: LeitWerk darf jetzt das Mikrofon benutzen – vorher lieferte macOS nur Stille („Nichts gehört“), ohne nachzufragen. Beim ersten Sprechen fragt der Mac einmal nach der Erlaubnis
 

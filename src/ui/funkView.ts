@@ -68,27 +68,40 @@ export function createFunkView(root: HTMLElement, deps: { select(einsatzId: stri
       aktiv: () => aktivId !== null,
       senden: () => form.requestSubmit(),
       hinweis: funkHinweis,
-      nachher: funkNamenGlaetten,
+      nachher: (t) => funkNamenGlaetten(t, Object.values(sim.state.fahrzeuge).map((f) => f.funkrufname)),
     }),
     senden,
   );
   aktiv.append(aktivKopf, aktivVerlauf, schnell, form);
+  // Freies Funkfeld: „75/001 von LEO, kommen“ (tippen oder sprechen) – daneben die Auswahl wie bisher
   const rufenZeile = el("form", { class: "funk-rufen" });
-  const rufenInput = el("input", { type: "text", placeholder: "Fahrzeug rufen, z. B. 75/001", list: "funk-fz-liste" });
+  const freiInput = el("input", { type: "text", placeholder: "Fahrzeug anfunken, z. B. „75/001 von LEO, kommen“" });
+  const rufenInput = el("input", { type: "text", class: "funk-wahl", placeholder: "75/001", list: "funk-fz-liste", title: "Fahrzeug auswählen und rufen" });
   const liste = el("datalist", { id: "funk-fz-liste" });
+  const namen = () => Object.values(sim.state.fahrzeuge).map((f) => f.funkrufname);
   rufenZeile.append(
-    rufenInput,
+    freiInput,
     mikroAnbinden({
-      input: rufenInput,
+      input: freiInput,
       rang: 4,
       aktiv: () => true,
       senden: () => rufenZeile.requestSubmit(),
       hinweis: funkHinweis,
-      nachher: (t) => funkNamenGlaetten(t).match(/\d{2,3}\/\d{3}/)?.[0] ?? funkNamenGlaetten(t),
+      nachher: (t) => funkNamenGlaetten(t, namen()),
     }),
-    el("button", { class: "btn small", type: "submit" }, "📻 Rufen"),
+    el("button", { class: "btn small primary", type: "submit" }, "📻 Rufen"),
     liste,
   );
+  const wahlZeile = el("div", { class: "funk-wahlzeile muted small" });
+  wahlZeile.append(el("span", {}, "oder nur auswählen:"), rufenInput);
+  rufenZeile.appendChild(wahlZeile);
+  rufenInput.addEventListener("change", () => {
+    if (!rufenInput.value.trim()) return;
+    const fz = fahrzeugIn(rufenInput.value);
+    if (!fz) return toast("Fahrzeug nicht gefunden", "error");
+    rufenInput.value = "";
+    rufen(fz.id);
+  });
   const verlauf = el("div", { class: "funk-alle" });
   const statusTitel = el("details", { class: "funk-status" });
   const statusListe = el("div");
@@ -130,22 +143,31 @@ export function createFunkView(root: HTMLElement, deps: { select(einsatzId: stri
     eingabe.value = "";
     fehler(sim.call("funkSenden", aktivId, t));
   });
+  /** Funkrufname im Text finden (längster Treffer zuerst, „75 1“ zählt als „75/001“) */
+  function fahrzeugIn(text: string) {
+    const t = funkNamenGlaetten(text, namen()).toLowerCase();
+    const alle = Object.values(sim.state.fahrzeuge).sort((a, b) => b.funkrufname.length - a.funkrufname.length);
+    return alle.find((f) => t === f.funkrufname.toLowerCase()) ?? alle.find((f) => t.includes(f.funkrufname.toLowerCase()));
+  }
   rufenZeile.addEventListener("submit", (ev) => {
     ev.preventDefault();
-    const q = rufenInput.value.trim().toLowerCase();
-    const fz = Object.values(sim.state.fahrzeuge).find((f) => f.funkrufname.toLowerCase() === q) ?? Object.values(sim.state.fahrzeuge).find((f) => f.funkrufname.toLowerCase().includes(q));
-    if (!fz) return toast("Fahrzeug nicht gefunden", "error");
-    rufenInput.value = "";
-    rufen(fz.id);
+    const roh = freiInput.value.trim();
+    if (!roh) return;
+    const text = funkNamenGlaetten(roh, namen());
+    const fz = fahrzeugIn(text);
+    if (!fz) return toast("Kein Fahrzeug erkannt – bitte mit Funkrufnamen, z. B. „75/001 von LEO, kommen“", "error");
+    freiInput.value = "";
+    // nur der Name? Dann der übliche Anruf
+    rufen(fz.id, text.toLowerCase() === fz.funkrufname.toLowerCase() ? undefined : text);
   });
 
   function gespraech(id: number): FunkGespraech | undefined {
     return sim.state.funkGespraeche?.find((g) => g.id === id);
   }
 
-  function rufen(fzId: string): void {
+  function rufen(fzId: string, text?: string): void {
     void sim
-      .call("funkRufen", fzId)
+      .call("funkRufen", fzId, text)
       .then((id) => {
         aktivId = id as number;
         refresh();

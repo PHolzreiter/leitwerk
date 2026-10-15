@@ -9,7 +9,7 @@ import { antwortOhneKi, erinnerung, ersterSatzOhneKi, systemPrompt, type AnrufKo
 import { kiBereit, kiChat, kiPrefs, kiStatus, type KiNachricht } from "./ki";
 import { inTauri } from "../platform";
 import { fragenImAblauf, type Frage } from "./schema";
-import { anruferSagt } from "../ui/sprache";
+import { anruferSagt, satzSprecher } from "../ui/sprache";
 
 /** für Vergleiche: klein, ohne Satzzeichen */
 function normFrage(t: string): string {
@@ -89,10 +89,15 @@ export async function fragen(e: Einsatz, text: string, schemaFrage?: Frage, onTo
   try {
     if (text) await sim.call("anrufNachricht", e.id, "leitstelle", text);
     const quelle = { wert: "ki" as "ki" | "fest" };
-    const antwort = await anruferAntwort(e, k, text, schemaFrage, onToken, quelle);
+    // fertige Sätze schon vorlesen, während die KI noch schreibt
+    const sprecher = satzSprecher((satz) => e.anruf?.status === "aktiv" && anruferSagt(satz, k.anrufer, e.id));
+    const antwort = await anruferAntwort(e, k, text, schemaFrage, (t) => {
+      onToken?.(t);
+      sprecher.token(t);
+    }, quelle);
     if (antwort) {
       await sim.call("anrufNachricht", e.id, "anrufer", antwort, quelle.wert);
-      if (e.anruf?.status === "aktiv") anruferSagt(antwort, k.anrufer, e.id);
+      sprecher.ende(antwort);
     }
   } finally {
     laufend.delete(e.id);

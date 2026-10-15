@@ -1047,11 +1047,41 @@ select:focus {
 .as-row {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+  padding: 3px 0;
 }
 
 .as-row .btn {
   margin-left: auto;
+}
+.as-row .btn + .btn {
+  margin-left: 0;
+}
+/* gleiche Breite wie das Häkchen in der Vorschlagsliste, damit die Namen untereinander stehen */
+.sugg-row input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  flex: none;
+}
+.as-platz {
+  width: 15px;
+  flex: none;
+}
+
+/* alarmiert (auf Wache / über Funk): Zeile hinterlegt; Funk-Status: Name in Rot */
+.fz-alarmiert {
+  background: var(--fz-alarm-bg, #fff3c4);
+  border-radius: 4px;
+}
+:root[data-theme="dunkel"] .fz-alarmiert {
+  background: var(--fz-alarm-bg-dunkel, rgba(255, 204, 0, 0.16));
+}
+.fz-funk-rot .fz-funk b {
+  color: var(--fz-funk-farbe, #d32f2f);
+}
+.kt-fz.vorgemerkt {
+  border-style: dashed;
 }
 
 .kh-row {
@@ -1854,6 +1884,27 @@ input[type="color"] {
 .funk-form input,
 .funk-rufen input {
   flex: 1;
+  min-width: 0;
+}
+.funk-rufen {
+  flex-wrap: wrap;
+  align-items: center;
+}
+.funk-wahlzeile {
+  flex: 1 0 100%;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.funk-rufen input.funk-wahl {
+  flex: 0 0 110px;
+}
+.as-info {
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .funk-schnell {
   flex-wrap: wrap;
@@ -2539,7 +2590,20 @@ input[type="color"] {
 .wetter-skala {
   display: flex;
   justify-content: space-between;
-  font-size: 10px;
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: -2px;
+}
+.wetter-uebernahme {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--blue) 10%, transparent);
+  border: 1px solid var(--blue-line, var(--line));
 }
 
 /* Persönlich: Farben und Töne */

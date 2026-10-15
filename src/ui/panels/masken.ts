@@ -16,7 +16,7 @@ import { el, esc, toast } from "../dom";
 import { ktMaske } from "../ktView";
 import { panelZeigen, registriere, type PanelKontext } from "../ws/arbeitsplatz";
 import { auswahl, funkRufen, karteWaehlen, karteZeigen, onAuswahl, waehle } from "../ws/auswahl";
-import { addressInput, crewHtml, fehlerZeigen, minuten, statusChip, stufeFarbe, uhr } from "./teile";
+import { addressInput, crewHtml, fehlerZeigen, fzKlassen, minuten, statusChip, stufeFarbe, uhr, vorgemerktHtml } from "./teile";
 
 /** Einsatzmaske für einen Einsatz bauen */
 export function einsatzMaske(e: Einsatz): { root: HTMLElement; refresh(): void } {
@@ -329,8 +329,9 @@ export function einsatzMaske(e: Einsatz): { root: HTMLElement; refresh(): void }
     for (const id of emp.ids) chosen.add(id);
     empfohlen = new Set(emp.ids);
     gruende = emp.gruende;
-    // Empfohlene zuerst, damit sie nicht aus der Liste fallen
-    suggestions = [...res.filter((r) => empfohlen.has(r.fz.id)), ...res.filter((r) => !empfohlen.has(r.fz.id))];
+    // Empfohlene (und Hinweise wie EL ÖBB) zuerst, damit sie nicht aus der Liste fallen
+    const vorne = new Set([...emp.ids, ...(emp.oben ?? [])]);
+    suggestions = [...res.filter((r) => vorne.has(r.fz.id)), ...res.filter((r) => !vorne.has(r.fz.id))];
     renderSuggestions();
   }
 
@@ -341,7 +342,7 @@ export function einsatzMaske(e: Einsatz): { root: HTMLElement; refresh(): void }
     }
     const shown = suggestions.slice(0, 14);
     for (const s of shown) {
-      const row = el("label", { class: `sugg-row${s.hinweis ? " blocked" : ""}${empfohlen.has(s.fz.id) ? " rec" : ""}` });
+      const row = el("label", { class: `sugg-row${s.hinweis ? " blocked" : ""}${empfohlen.has(s.fz.id) ? " rec" : ""}${fzKlassen(s.fz)}` });
       const cb = el("input", { type: "checkbox" });
       cb.checked = chosen.has(s.fz.id);
       cb.disabled = !!s.hinweis;
@@ -350,6 +351,7 @@ export function einsatzMaske(e: Einsatz): { root: HTMLElement; refresh(): void }
       const info = el("span", { class: "sugg-info" });
       info.innerHTML = `${statusChip(s.fz)} <b>${esc(s.fz.funkrufname)}</b> <span class="muted">${esc(s.fz.rmTyp)} · ${esc(s.fz.stationName)}</span> ${crewHtml(s.fz)}`;
       row.appendChild(info);
+      info.insertAdjacentHTML("beforeend", vorgemerktHtml(s.fz));
       if (s.kt) info.insertAdjacentHTML("beforeend", ` <span class="kt-fz aktiv" title="fährt Krankentransport ohne Patient – wird beim Alarmieren abgezogen, die Transporte sind dann wieder offen">KT – abziehen</span>`);
       row.appendChild(el("span", { class: "sugg-eta" }, s.hinweis ? s.hinweis : minuten(s.sekunden)));
       sugg.appendChild(row);
@@ -416,9 +418,9 @@ export function einsatzMaske(e: Einsatz): { root: HTMLElement; refresh(): void }
       for (const id of e.fahrzeuge) {
         const fz = sim.state.fahrzeuge[id];
         if (!fz) continue;
-        const row = el("div", { class: "as-row" });
+        const row = el("div", { class: `as-row${fzKlassen(fz)}` });
         const imEinsatz = fz.einsatzId === e.id;
-        row.innerHTML = `${statusChip(fz)} <b>${esc(fz.funkrufname)}</b> <span class="muted">${esc(fz.rmTyp)} · ${esc(sim.statusDef(fz.status).name)}${imEinsatz ? "" : " (frei)"}</span> ${crewHtml(fz)}`;
+        row.innerHTML = `<span class="as-platz"></span>${statusChip(fz)} <b>${esc(fz.funkrufname)}</b> <span class="muted as-info" title="${esc(sim.statusDef(fz.status).name)}">${esc(fz.rmTyp)} · ${esc(sim.statusDef(fz.status).name)}${imEinsatz ? "" : " (frei)"}</span> ${crewHtml(fz)}`;
         if (imEinsatz) {
           const r = el("button", { class: "btn small", title: `${fz.funkrufname} über Funk rufen` }, "📻");
           r.addEventListener("click", () => {

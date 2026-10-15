@@ -135,7 +135,7 @@ export function addFzFokus(map: maplibregl.Map, deps: FzFokusDeps): FzFokus {
     const hoehe = flughoehe(fz, t);
     d.innerHTML = `
       <div class="lw-popup-title">${esc(fz.funkrufname)} <span class="fz-popup-typ">${esc(fz.rmTyp)}</span></div>
-      <div class="lw-popup-sub"><span class="fz-st" style="background:${esc(st.farbe)}">${esc(String(st.nummer))}</span> ${esc(st.name)}${fz.blaulicht ? " · mit Sondersignal" : ""}${hoehe > 5 ? ` · in der Luft (${Math.round(hoehe)} m)` : ""}</div>
+      <div class="lw-popup-sub"><span class="fz-st" style="background:${esc(st.farbe)}">${fz.status === "alarmWache" || fz.status === "alarmFunk" ? "&nbsp;" : esc(String(st.nummer))}</span> ${esc(st.name)}${fz.blaulicht ? " · mit Sondersignal" : ""}${hoehe > 5 ? ` · in der Luft (${Math.round(hoehe)} m)` : ""}</div>
       <div class="fz-popup-auftrag">${auftragText(fz)}</div>
       ${rest !== null ? `<div class="fz-popup-eta">Ankunft ca. ${hhmm(t + rest * 60_000)} (in ${Math.max(1, Math.round(rest))} min)</div>` : ""}`;
     const knoepfe = document.createElement("div");
