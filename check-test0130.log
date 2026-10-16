@@ -1,6 +1,6 @@
 ### npm install
 
-added 49 packages, and audited 50 packages in 6s
+added 49 packages, and audited 50 packages in 7s
 
 9 packages are looking for funding
   run `npm fund` for details
@@ -36,7 +36,7 @@ computing gzip size...
 - Using dynamic import() to code-split the application
 - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
 - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.[39m
-[32m✓ built in 5.20s[39m
+[32m✓ built in 4.53s[39m
 ### npx tauri icon app-icon.png
         Appx Creating StoreLogo.png
         Appx Creating Square30x30Logo.png
@@ -111,7 +111,8 @@ computing gzip size...
   version 2.6.0 is yanked
   version 2.6.1 is yanked
 location searched: crates.io index
-required by package `leitwerk v0.22.0 (/home/runner/work/leitwerk/leitwerk/src-tauri)`
+required by package `tauri-plugin-updater v2.0.0`
+    ... which satisfies dependency `tauri-plugin-updater = "^2"` of package `leitwerk v0.22.0 (/home/runner/work/leitwerk/leitwerk/src-tauri)`
 ### python3 tools/build_default_data.py
 data/default/dienststellen.csv: 168 Zeilen
 data/default/fahrzeuge.csv: 142 Zeilen
