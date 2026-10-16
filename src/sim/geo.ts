@@ -118,7 +118,11 @@ export async function travelTimes(to: LatLon, sources: LatLon[]): Promise<(numbe
 export async function searchAddress(query: string, limit = 12): Promise<AddressHit[]> {
   if (query.trim().length < 2) return [];
   if (!inTauri()) return browserSearch(query, limit);
-  return invoke<AddressHit[]>("address_search", { query, limit });
+  const treffer = await invoke<AddressHit[]>("address_search", { query, limit });
+  // eigene Orte (POIs wie „Pflegeheim …“, „Volksschule …“) zuerst, wenn der Name passt
+  const q = query.trim().toLowerCase();
+  const orte = q.length >= 4 ? store.list("pois").filter((p) => p.name.toLowerCase().includes(q)).slice(0, 3) : [];
+  return [...orte.map((p) => ({ label: `${p.name}${p.ort ? `, ${p.ort}` : ""}`, street: p.name, number: "", postcode: "", city: p.ort, lat: p.lat, lon: p.lon, place: false })), ...treffer].slice(0, limit);
 }
 
 export async function randomAddresses(bbox: [number, number, number, number], count: number): Promise<AddressHit[]> {
@@ -136,7 +140,7 @@ export async function randomAddresses(bbox: [number, number, number, number], co
 /** Im Browser (Entwicklung): Suche über Namen von Dienststellen und Krankenhäusern. */
 function browserSearch(query: string, limit: number): AddressHit[] {
   const q = query.toLowerCase();
-  const pts = [...store.list("stations"), ...store.list("hospitals")];
+  const pts = [...store.list("stations"), ...store.list("hospitals"), ...store.list("pois")];
   return pts
     .filter((p) => p.name.toLowerCase().includes(q))
     .slice(0, limit)

@@ -26,7 +26,7 @@ import {
 /** Spalten in der Reihenfolge, in der LeitWerk sie schreibt. */
 export const COLUMNS: Record<Kind, string[]> = {
   stations: ["id", "name", "organisation", "typ", "ort", "bezirk", "adresse", "breitengrad", "laengengrad", "hinweis"],
-  vehicles: ["id", "funkrufname", "kurzname", "kategorie", "typ", "aufbau", "dienststelle", "aktiv", "nachtflug", "dienstplan", "hinweis"],
+  vehicles: ["id", "funkrufname", "kurzname", "kategorie", "typ", "aufbau", "dienststelle", "aktiv", "nachtflug", "dienstplan", "ersatz_fuer", "hinweis"],
   hospitals: ["id", "name", "kurzname", "ort", "breitengrad", "laengengrad", ...HOSPITAL_FLAGS, "bereiche", "hinweis"],
   pois: ["id", "name", "typ", "ort", "breitengrad", "laengengrad", "hinweis"],
   templates: ["id", "code", "adresse", "breitengrad", "laengengrad", "meldung", "patient_alter", "transport", "hinweis"],
@@ -57,7 +57,7 @@ const ALIASES: Record<string, string[]> = {
   hinweis: ["hinweis", "bemerkung", "notiz", "kommentar"],
   funkrufname: ["funkrufname", "rufname", "funkname", "callsign"],
   kurzname: ["kurzname", "kurzbezeichnung"],
-  kategorie: ["kategorie", "fahrzeugkategorie", "stufe", "einsatzstufe"],
+  kategorie: ["kategorie", "kategorien", "fahrzeugkategorie", "stufe", "einsatzstufe"],
   kapitel: ["kapitel", "gruppe", "gruppenname", "protokoll", "hauptgruppe"],
   dienststelle: ["dienststelle", "dienststelleid", "wache", "station", "standort"],
   dienststelle_name: ["dienststellename"],
@@ -68,6 +68,7 @@ const ALIASES: Record<string, string[]> = {
   beginn: ["beginn", "dienstbeginn", "schichtbeginn", "start"],
   ende: ["ende", "dienstende", "schichtende"],
   aufbau: ["aufbau", "groesse", "fahrzeugmodell", "modell"],
+  ersatz_fuer: ["ersatzfuer", "ersatzfuerhubschrauber", "ersatznef"],
   code: ["code", "ampds", "einsatzcode", "ampdscode"],
   meldung: ["meldung", "meldebild", "text"],
   patient_alter: ["patientalter", "alter"],
@@ -97,7 +98,13 @@ export function normKey(s: string): string {
 }
 
 export function normName(s: string): string {
-  return normKey(s.replace(/bezirkstelle/gi, "bezirksstelle").replace(/sankt/gi, "st").replace(/öatmc/gi, "öamtc"));
+  return (
+    normKey(s.replace(/bezirkstelle/gi, "bezirksstelle").replace(/sankt/gi, "st").replace(/öatmc/gi, "öamtc"))
+      // Luftrettung: „ÖAMTC Christophorus 2“ = „ÖAMTC Luftrettungszentrum Christophorus 2“,
+      // „ÖAMTC Christophorus Luftrettungszentrum Ost“ = „ÖAMTC Luftrettungszentrum Ost“
+      .replace(/luftrettungszentrum/g, "")
+      .replace(/christophorusost$/, "ost")
+  );
 }
 
 const ALIAS_LOOKUP = new Map<string, string>();
@@ -301,6 +308,7 @@ function uebernimmVorhandenes(v: Vehicle, alt: Partial<Vehicle> | undefined, spa
   if (!hat("hinweis") && alt.hinweis) v.hinweis = alt.hinweis;
   if (!hat("beginn") && !hat("ende") && !hat("dienstplan") && alt.dienstplan) v.dienstplan = alt.dienstplan;
   if (!hat("aufbau") && alt.aufbau && v.typ === alt.typ) v.aufbau = alt.aufbau;
+  if (!hat("ersatz_fuer") && alt.ersatzFuer) v.ersatzFuer = alt.ersatzFuer;
 }
 
 /** Liest eine CSV-Datei als Datensätze der gewünschten Art. */
@@ -419,6 +427,7 @@ export function importCsv<K extends Kind>(kind: K, text: string, ctx: ImportCont
           aktiv,
           nachtflug: get("nachtflug") === "" ? false : parseBool(get("nachtflug"), "nachtflug"),
           ...(aufbau ? { aufbau } : {}),
+          ...(get("ersatz_fuer") ? { ersatzFuer: get("ersatz_fuer") } : {}),
           ...(schichten !== undefined ? { dienstplan: schichten } : {}),
         };
         proFunk.set(normKey(funk), v);
@@ -487,7 +496,7 @@ export function importCsv<K extends Kind>(kind: K, text: string, ctx: ImportCont
           record = h;
         } else {
           id = id || `poi-${slug(name)}`;
-          const p: Poi = { ...base, id, name, typ: get("typ"), ort: get("ort"), lat, lon };
+          const p: Poi = { ...base, id, name, typ: [get("typ"), get("kategorie")].filter(Boolean).join(", "), ort: get("ort"), lat, lon };
           record = p;
         }
       }
@@ -559,6 +568,7 @@ export function exportCsv<K extends Kind>(kind: K, records: KindMap[K][], statio
         nachtflug: f.nachtflug ? "ja" : "nein",
         aufbau: f.aufbau === "gross" ? "groß" : f.aufbau === "klein" ? "klein" : "",
         dienstplan: planText(f.dienstplan) || "24/7",
+        ersatz_fuer: f.ersatzFuer ?? "",
         dienststelle_name: stationName.get(f.dienststelleId) ?? "",
       });
     } else if (kind === "templates") {

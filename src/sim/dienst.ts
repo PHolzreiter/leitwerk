@@ -252,6 +252,40 @@ export function planLesen(text: string): { plan: Schicht[]; fehler?: string } {
   return { plan };
 }
 
+/** Schicht-Termine einer Woche (Montag 00:00 … Sonntag 24:00), inkl. Nacht vom Sonntag davor – für die Wochenübersicht */
+export function wochenTermine(plan: Schicht[] | undefined | null, montag: Date, ort: { lat: number; lon: number }): (SchichtFenster & { nr: number })[] {
+  const p = planOderStandard(plan);
+  const out: (SchichtFenster & { nr: number })[] = [];
+  for (let d = -1; d < 7; d++) {
+    const tag = new Date(montag);
+    tag.setDate(montag.getDate() + d);
+    tag.setHours(0, 0, 0, 0);
+    for (const w of termineAm(p, tag, ort)) out.push({ ...w, nr: Number(w.key.split("#")[1]) });
+  }
+  return out;
+}
+
+/** Montag 00:00 der Woche von t */
+export function wochenBeginn(t: number): Date {
+  const d = tagBeginn(t);
+  d.setDate(d.getDate() - (wochentag(d) - 1));
+  return d;
+}
+
+/** Fertige Rund-um-die-Uhr-Modelle (Schichtwechsel-Zeiten) */
+export const MODELLE_24_7: { name: string; wechsel: string[] }[] = [
+  { name: "07–19 + 19–07", wechsel: ["07:00", "19:00"] },
+  { name: "06–18 + 18–06", wechsel: ["06:00", "18:00"] },
+  { name: "05–13 + 13–21 + 21–05", wechsel: ["05:00", "13:00", "21:00"] },
+];
+
+/** Rund um die Uhr mit diesen Wechselzeiten (z. B. ["06:00","14:00","22:00"]) – täglich */
+export function plan247(wechsel: string[]): Schicht[] {
+  const w = [...new Set(wechsel)].sort();
+  if (w.length < 2) return w.length === 1 ? [{ tage: [...ALLE_TAGE], von: w[0], bis: w[0] }] : [];
+  return w.map((von, i) => ({ tage: [...ALLE_TAGE], von, bis: w[(i + 1) % w.length] }));
+}
+
 /** Uhrzeit hh:mm */
 export function uhrzeit(t: number): string {
   const d = new Date(t);

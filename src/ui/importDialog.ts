@@ -4,6 +4,7 @@ import { detectKind, importCsv, type ImportResult } from "../data/schema";
 import { store } from "../data/store";
 import { pickTextFile } from "../platform";
 import { istSchema, type Schema } from "../abfrage/schema";
+import { pruefeCodesystem } from "../abfrage/codesystem";
 import type { Einsatzcode } from "../data/model";
 import { openDialog } from "./dialog";
 import { el, esc, toast } from "./dom";
@@ -102,7 +103,7 @@ export async function startImport(defaultKind: Kind, onDone: (kind: Kind) => voi
   render();
 }
 
-/** Abfrageschema (JSON) übernehmen – die Codes darin werden in die Codeliste übernommen. */
+/** Codesystem (JSON: Codes + Abfrage) übernehmen – die Codes darin werden in die Codeliste übernommen. */
 function schemaImport(file: { name: string; text: string }, onDone: (kind: Kind) => void): void {
   let schema: unknown;
   try {
@@ -112,11 +113,64 @@ function schemaImport(file: { name: string; text: string }, onDone: (kind: Kind)
     return;
   }
   if (!istSchema(schema)) {
-    toast("Die Datei ist kein Abfrageschema (es fehlen „kapitel“, „globale_fragen“ oder „codes“).", "error");
+    toast("Die Datei ist kein Codesystem (es fehlen „kapitel“, „globale_fragen“ oder „codes“).", "error");
     return;
   }
-  schemaUebernehmen(schema as Schema, file.name);
-  onDone("codes");
+  const s = schema as Schema;
+  const { fehler, hinweise } = pruefeCodesystem(s);
+  // Kategorien ohne Einsatzstufe (weder in den Einstellungen noch in der Datei)
+  const bekannt = new Set([...store.settings.stufen.map((x) => x.stufe), ...(s.einsatzstufen ?? []).map((x) => x.stufe)]);
+  const fehlt = [...new Set(Object.values(s.codes ?? {}).map((c) => c?.kategorie).filter((k): k is string => !!k && !bekannt.has(k)))];
+  if (fehlt.length) hinweise.push(`Diese Kategorien haben noch keine Einsatzstufe (Rettungsmittel je Stufe): ${fehlt.slice(0, 12).join(", ")}${fehlt.length > 12 ? " …" : ""}`);
+  const neu = new Set(Object.keys(s.codes ?? {}).map((c) => c.toUpperCase()));
+  const alt = store.list("codes").filter((c) => c.herkunft !== "standard" && !neu.has(c.code.toUpperCase()));
+  if (!fehler.length && !alt.length) {
+    schemaUebernehmen(s, file.name);
+    onDone("codes");
+    // Hinweise stören nicht beim Laden – nur kurz melden
+    if (hinweise.length) toast(`Hinweis zum Codesystem${hinweise.length > 1 ? ` (1 von ${hinweise.length})` : ""}: ${hinweise[0]}`, "error");
+    return;
+  }
+  const body = el("div", { class: "cs-pruefung" });
+  body.appendChild(
+    el("p", {}, `${s.name ? `„${s.name}“ · ` : ""}${Object.keys(s.kapitel).length} Kapitel · ${Object.keys(s.codes ?? {}).length} Codes`),
+  );
+  const liste = (titel: string, l: string[], cls: string) => {
+    if (!l.length) return;
+    body.appendChild(el("div", { class: `cs-titel ${cls}` }, titel));
+    const ul = el("ul", { class: "cs-liste" });
+    for (const x of l) ul.appendChild(el("li", {}, x));
+    body.appendChild(ul);
+  };
+  liste("Fehler – so kann die Datei nicht geladen werden:", fehler, "alert-text");
+  liste("Hinweise – die Datei läuft, ist aber unvollständig:", hinweise, "warn-text");
+  let weg: HTMLInputElement | null = null;
+  if (alt.length && !fehler.length) {
+    const lab = el("label", { class: "chk" });
+    weg = el("input", { type: "checkbox" }) as HTMLInputElement;
+    weg.checked = true;
+    lab.append(weg, ` ${alt.length} bisherige Codes, die nicht in dieser Datei stehen, entfernen (Wechsel des Codesystems)`);
+    body.appendChild(lab);
+  }
+  openDialog({
+    title: "Codesystem laden",
+    body,
+    wide: true,
+    actions: fehler.length
+      ? [{ label: "Schließen" }]
+      : [
+          { label: "Abbrechen" },
+          {
+            label: "Laden",
+            kind: "primary",
+            onClick: () => {
+              if (weg?.checked) store.removeMany("codes", alt.map((c) => c.id));
+              schemaUebernehmen(s, file.name);
+              onDone("codes");
+            },
+          },
+        ],
+  });
 }
 
 export function schemaUebernehmen(schema: Schema, dateiname: string): void {
@@ -133,5 +187,22 @@ export function schemaUebernehmen(schema: Schema, dateiname: string): void {
   }));
   store.setSchema(schema);
   store.upsert("codes", codes);
-  toast(`Abfrageschema geladen: ${Object.keys(schema.kapitel).length} Kapitel, ${codes.length} Codes`);
+  // Einsatzstufen aus der Datei, die es noch nicht gibt
+  const neu = (schema.einsatzstufen ?? []).filter((x) => x?.stufe && !store.settings.stufen.some((st) => st.stufe === x.stufe));
+  if (neu.length) {
+    const set = structuredClone(store.settings);
+    for (const x of neu)
+      set.stufen.push({
+        stufe: x.stufe,
+        rettungsmittel: x.rettungsmittel ?? "",
+        nfsErforderlich: !!x.nfs_erforderlich,
+        notarzt: x.notarzt === "nef" || x.notarzt === "schnellster" ? x.notarzt : "nein",
+        sondersignal: !!x.sondersignal,
+        kategorie: x.kategorie === "kritisch" || x.kategorie === "dringend" ? x.kategorie : "stabil",
+        transportProzent: Math.max(0, Math.min(100, Number(x.transport_prozent ?? 70))),
+      });
+    store.setSettings(set);
+    toast(`${neu.length} neue Einsatzstufen aus dem Codesystem angelegt (Einstellungen → Rettungsmittel je Stufe)`);
+  }
+  toast(`Codesystem geladen${schema.name ? ` („${schema.name}“)` : ""}: ${Object.keys(schema.kapitel).length} Kapitel, ${codes.length} Codes`);
 }

@@ -26,6 +26,7 @@ import { codeKategorien } from "../sim/codes";
 import { confirmDialog, openDialog } from "./dialog";
 import { el, toast } from "./dom";
 import { dienstplanEditor } from "./dienstplanEditor";
+import { ORT_KATEGORIEN, POI_KATEGORIEN, kategorienText, poiKategorien } from "../data/orte";
 import type { Schicht } from "../sim/dienst";
 
 export interface EditorDeps {
@@ -93,6 +94,7 @@ export function openEditor(
   };
 
   let flagInputs: Partial<Record<HospitalFlag, HTMLInputElement>> = {};
+  let katInputs: Record<string, HTMLInputElement> = {};
 
   let bereichInputs: Record<string, HTMLInputElement> = {};
   let aktivInput: HTMLInputElement | null = null;
@@ -171,9 +173,21 @@ export function openEditor(
     const [wrapN, inputN] = checkbox("Nachtflugtauglich (nur NAH)", v?.nachtflug ?? false);
     nachtInput = inputN;
     form.appendChild(wrapN);
+    const nahs = store
+      .list("vehicles")
+      .filter((x) => x.kategorie === "NAH")
+      .map((x) => x.funkrufname)
+      .sort();
+    add(
+      "ersatz_fuer",
+      "Ersatz für Hubschrauber",
+      selectInput([["", "– keiner –"], ...nahs.map((n) => [n, n] as [string, string])], v?.ersatzFuer ?? ""),
+      "Nur für NEF: wird nur angemeldet, wenn dieser Hubschrauber im Dienst ist, aber nicht fliegen kann (Wetter, Nacht). Dienstplan wird dann ignoriert.",
+    );
     const dpWrap = el("div", { class: "fld wide" });
     dpWrap.appendChild(el("label", {}, "Dienstplan (Schichten – jede Schicht hat ein eigenes Team)"));
-    const dpe = dienstplanEditor(v?.dienstplan);
+    const heimSt = v ? (store.get("stations", v.dienststelleId) as Station | undefined) : undefined;
+    const dpe = dienstplanEditor(v?.dienstplan, heimSt ? { lat: heimSt.lat, lon: heimSt.lon } : undefined);
     dienstplan = dpe;
     dpWrap.appendChild(dpe.root);
     form.appendChild(dpWrap);
@@ -219,8 +233,24 @@ export function openEditor(
       add("ort", "Ort", textInput(h?.ort ?? ""));
     } else {
       const p = existing as Poi | undefined;
-      add("typ", "Typ", textInput(p?.typ ?? "", "z. B. Freizeit, Verkehr, Schule"));
       add("ort", "Ort", textInput(p?.ort ?? ""));
+      // Kategorien (mehrere möglich): bestimmen, wofür der Ort im Spiel verwendet wird
+      const gesetzt = p ? poiKategorien(p) : [];
+      const eigenTeile = (p?.typ ?? "")
+        .split(/[,;/|]+/)
+        .map((x) => x.trim())
+        .filter((x) => x && !ORT_KATEGORIEN.some((k) => k.label.toLowerCase() === x.toLowerCase() || k.key === x.toLowerCase() || (!k.liste && k.key !== "sonstiges" && k.muster.test(x))));
+      const box = el("div", { class: "flag-grid wide" });
+      box.appendChild(el("div", { class: "fld-label" }, "Kategorien (mehrere möglich) – bestimmen, welche Notfälle hier passieren"));
+      katInputs = {};
+      for (const k of POI_KATEGORIEN.filter((x) => x.key !== "sonstiges")) {
+        const [wrap, input] = checkbox(k.label, gesetzt.includes(k.key));
+        wrap.title = k.wirkung;
+        katInputs[k.key] = input;
+        box.appendChild(wrap);
+      }
+      form.appendChild(box);
+      add("typ_eigen", "Sonstiges (eigene Bezeichnung)", textInput(eigenTeile.join(", "), "z. B. Kirche, Campingplatz"), "Krankenhäuser und Dienststellen sind eigene Listen und zählen automatisch als Orte", true);
     }
     const geo = existing as Station | Hospital | Poi | undefined;
     addPosition(preset.lat ?? geo?.lat, preset.lon ?? geo?.lon, "name");
@@ -297,6 +327,7 @@ export function openEditor(
         aktiv: aktivInput?.checked ?? true,
         nachtflug: nachtInput?.checked ?? false,
         dienstplan: dienstplan?.wert() ?? [],
+        ...(val("ersatz_fuer") ? { ersatzFuer: val("ersatz_fuer") } : {}),
         ...(val("aufbau") === "klein" || val("aufbau") === "gross" ? { aufbau: val("aufbau") as "klein" | "gross" } : {}),
       };
       const geaendert: Vehicle[] = [v];
@@ -353,7 +384,8 @@ export function openEditor(
         const h: Hospital = { ...geo, kurzname: val("kurzname"), ort: val("ort"), abteilungen, bereiche };
         store.upsert("hospitals", [h]);
       } else {
-        const p: Poi = { ...geo, typ: val("typ"), ort: val("ort") };
+        const keys = Object.entries(katInputs).filter(([, i]) => i.checked).map(([k]) => k);
+        const p: Poi = { ...geo, typ: kategorienText(keys, val("typ_eigen")), ort: val("ort") };
         store.upsert("pois", [p]);
       }
     }

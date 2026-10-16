@@ -44,7 +44,7 @@ const SEITEN: Seite[] = [
   { id: "fahrzeuge", gruppe: "leitstelle", label: "Fahrzeuge", info: "Typ, Dienststelle, Dienstplan, Größe", quelle: "daten", art: "vehicles" },
   { id: "dienststellen", gruppe: "leitstelle", label: "Dienststellen", info: "Wachen, Stützpunkte", quelle: "daten", art: "stations" },
   { id: "krankenhaeuser", gruppe: "leitstelle", label: "Krankenhäuser", info: "Abteilungen, Ambulanzen", quelle: "daten", art: "hospitals" },
-  { id: "pois", gruppe: "leitstelle", label: "Orte (POIs)", info: "markante Orte", quelle: "daten", art: "pois" },
+  { id: "pois", gruppe: "leitstelle", label: "Orte (POIs)", info: "Orte mit Kategorie: Schule, Pflegeheim, Bahnhof …", quelle: "daten", art: "pois" },
   { id: "codes", gruppe: "leitstelle", label: "Einsatzcodes & Abfrage", info: "Codeliste, Abfrageschema", quelle: "daten", art: "codes" },
   { id: "vorlagen", gruppe: "leitstelle", label: "Einsatzvorlagen", info: "feste Einsätze statt Zufall", quelle: "daten", art: "templates" },
   { id: "rettungsmittel", gruppe: "leitstelle", label: "Rettungsmittel je Stufe", info: "welches Fahrzeug bei welcher Kategorie", quelle: "simulation", abschnitte: ["Stufen-Zuordnung"] },

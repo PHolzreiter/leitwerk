@@ -48,6 +48,15 @@ export const KT_FRAGEN: KtFrage[] = [
   { id: "gewicht", text: "Wie schwer ist der Patient ungefähr – passt er auf eine normale Trage?", sek: true },
 ];
 
+/** „UK Tulln, Dialyse“ → „Ins UK Tulln, Dialyse“; „Floridsdorf, Herzkatheterlabor“ → „In die Klinik Floridsdorf, …“ */
+function zumKh(label: string): string {
+  const i = label.lastIndexOf(", ");
+  const haus = i < 0 ? label : label.slice(0, i);
+  const bereich = i < 0 ? "" : label.slice(i + 2);
+  const zu = /^(LK|UK|KH|LKH|AKH|BBR|Landesklinikum|Universitätsklinikum|Krankenhaus)\b/i.test(haus) ? `Ins ${haus}` : /^Klinik\b/i.test(haus) ? `In die ${haus}` : `In die Klinik ${haus}`;
+  return bereich ? `${zu}, ${bereich}` : zu;
+}
+
 function ort(o: KtDaten["von"]): string {
   if (!o) return "weiß ich nicht";
   return o.khId ? `${o.label}` : o.label;
@@ -72,7 +81,7 @@ export function ktAntwortOhneKi(k: KtAuftrag, f: KtFrage): string {
     case "von":
       return zuHause ? `Bei ${w.patient.geschlecht === "w" ? "ihr" : "ihm"} zu Hause: ${ort(w.von)}.` : `${ort(w.von)}.`;
     case "nach":
-      return w.nach?.khId ? `Ins ${w.nach.label}.` : `Nach Hause: ${ort(w.nach)}.`;
+      return w.nach?.khId ? `${zumKh(w.nach.label)}.` : `Nach Hause: ${ort(w.nach)}.`;
     case "termin":
       return w.termin ? `Um ${hhmm(w.termin)}.` : "Das weiß ich nicht genau.";
     case "abholung":

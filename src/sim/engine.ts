@@ -36,6 +36,7 @@ import {
 } from "./weather";
 import { bestimmeCode, fallZiehen, kapitelVonCode, wahrheitFuer, type Antworten, type Schema } from "../abfrage/schema";
 import { anruferWaehlen, veraenderungText, zufallsName, type Anrufer } from "../abfrage/anrufer";
+import { alleOrte, kategorienFuerOrtArt, poiKategorien } from "../data/orte";
 import { bezugFuer, fuellen, stimmungAusVerlauf, szenarioBauen, vorlageFest, vorlageWaehlen, type OrtArt, type Szenario } from "../abfrage/szenario";
 import { SZENARIEN } from "../abfrage/szenarien";
 import { abfrageBlock, abfrageSaetze } from "../abfrage/protokollText";
@@ -96,11 +97,11 @@ export type Phase =
   | "ktReinigung";
 
 /** Art des Fahrzeugs aus den Stammdaten: Anzeige-Typ, Großraum, ohne Blaulicht */
-function fzArt(v: Vehicle, rmTyp: RmTyp): { typ: string; gross: boolean; ohneBlaulicht: boolean } {
+function fzArt(v: Vehicle, rmTyp: RmTyp): { typ: string; gross: boolean; ohneBlaulicht: boolean; ersatzFuer?: string } {
   const typ = (v.typ || rmTyp).trim();
   const istKtwB = /^KTW-?B$/i.test(typ.replace(/\s+/g, ""));
   const gross = v.aufbau ? v.aufbau === "gross" : rmTyp === "RTW-C";
-  return { typ: istKtwB ? "KTW-B" : rmTyp === "RTW-C" ? "RTW-C" : rmTyp === "RTW" ? "RTW" : typ, gross, ohneBlaulicht: istKtwB };
+  return { typ: istKtwB ? "KTW-B" : rmTyp === "RTW-C" ? "RTW-C" : rmTyp === "RTW" ? "RTW" : typ, gross, ohneBlaulicht: istKtwB, ersatzFuer: v.ersatzFuer?.trim() || undefined };
 }
 
 export interface SimFahrzeug {
@@ -151,6 +152,8 @@ export interface SimFahrzeug {
   dienstEnde?: number | null;
   /** außer Dienst: nächster Dienstbeginn */
   dienstBeginn?: number | null;
+  /** Ersatz-NEF eines Hubschraubers (dessen Funkrufname): nur angemeldet, wenn der nicht fliegen kann */
+  ersatzFuer?: string;
   /** Krankentransport-Plan (vorgemerkte bzw. laufende Fahrten) */
   kt?: (KtPlan & { reinigen?: boolean; wartetAuf?: string | null; wartetKt?: string | null; wartetSeit?: number | null }) | null;
 }
@@ -219,6 +222,28 @@ const ORT_LABEL: Record<OrtArt, string> = {
 function gemeindeVon(adresse: string): string {
   const m = adresse.match(/\d{4}\s+([^,()]+)/) ?? adresse.match(/,\s*([^,()]+)\s*$/);
   return (m?.[1] ?? "").trim() || "dem Ort";
+}
+
+/**
+ * Fall eines anderen Kapitels als Anforderung durch Arzt/Pflege (Kapitel 33) ausdrücken:
+ * Hauptbeschwerde → „Grund der Anforderung“, Zustand und Patient bleiben gleich.
+ */
+function alsAnforderung33(schema: Schema, f: Fall): Fall | null {
+  if (!schema.kapitel["33"]) return null;
+  const a = f.antworten;
+  const GRUND: Record<string, string> = { "10": "herz", "19": "herz", "6": "atmung", "28": "neuro", "13": "bz", "21": "blutung", "17": "sturz" };
+  let grund = GRUND[f.kapitel] ?? "transport";
+  if (a.bw === "nein" || a.bw === "getruebt") grund = grund === "transport" ? "bewusstsein" : grund;
+  if (f.kapitel === "17" && a.umstand && !/boden/.test(String(a.umstand))) grund = "transport";
+  const fest: Antworten = { anforderer: "normal", grund };
+  for (const id of ["alter", "geschlecht", "bw", "at", "anzahl_patienten"]) if (a[id] !== undefined) fest[id] = a[id];
+  if (grund === "transport") {
+    fest.dringlichkeit = "sofort";
+    fest.transportart = a.bw === "ja" && a.at === "normal" ? "sitzend" : "liegend";
+  }
+  const z = fallZiehen(schema, "33", Math.random, 0, fest);
+  if (!z || z.ergebnis.pfad[0] !== "33") return null;
+  return { ...f, kapitel: "33", antworten: z.antworten, code: z.ergebnis.code };
 }
 
 /** Medizinisch plausibel? (z. B. keine Geburt mit 60, keine Schwangerschaft beim Mann) */
@@ -785,6 +810,41 @@ export class Simulation {
   }
 
   /** Zufällige Adresse innerhalb der Funkgruppe (Adressen kommen aus der Box, hier wird genau geprüft) */
+  /** POIs im eigenen Gebiet mit einer Kategorie, die zum Einsatzort passt */
+  private poisFuer(art: OrtArt, alter: number | null) {
+    const keys = kategorienFuerOrtArt(art, alter);
+    if (!keys.length) return [];
+    const g = this.funkgruppe();
+    return alleOrte().filter((o) => o.kind === "pois" && o.kategorien.some((k) => keys.includes(k)) && inFunkgruppe(g, o.lat, o.lon));
+  }
+
+  /** Einsatzort der Fallgeschichte: Orte, für die es echte POIs gibt, werden bevorzugt */
+  private ortArtWaehlen(orte: OrtArt[], alter: number | null): OrtArt {
+    const mitPoi = orte.filter((o) => this.poisFuer(o, alter).length > 0);
+    return mitPoi.length && Math.random() < 0.6 ? pick(mitPoi) : pick(orte);
+  }
+
+  /** Adresse eines passenden POI (meistens – manchmal passiert es trotzdem woanders) */
+  private async poiAdresse(art: OrtArt, alter: number | null): Promise<Awaited<ReturnType<typeof randomAddresses>>[number] | null> {
+    const kand = this.poisFuer(art, alter);
+    if (!kand.length || Math.random() > 0.8) return null;
+    const o = pick(kand);
+    const d = 0.002;
+    const hits = (await randomAddresses([o.lon - d, o.lat - d, o.lon + d, o.lat + d], 8)).filter((h) => !h.place);
+    hits.sort((a, b) => distanceM(a, o) - distanceM(b, o));
+    const h = hits[0] && distanceM(hits[0], o) < 250 ? hits[0] : null;
+    return {
+      label: h ? `${o.name}, ${h.label}` : `${o.name}${o.ort ? `, ${o.ort}` : ""}`,
+      street: h?.street ?? o.name,
+      number: h?.number ?? "",
+      postcode: h?.postcode ?? "",
+      city: h?.city || o.ort,
+      lat: o.lat,
+      lon: o.lon,
+      place: false,
+    };
+  }
+
   private async adresseImGebiet(): Promise<Awaited<ReturnType<typeof randomAddresses>>[number] | null> {
     const g = this.funkgruppe();
     for (let i = 0; i < 6; i++) {
@@ -972,6 +1032,7 @@ export class Simulation {
 
   /** Ist das Fahrzeug zum Zeitpunkt t laut Dienstplan im Dienst? */
   imDienstUm(fz: SimFahrzeug, t: number): boolean {
+    if (fz.ersatzFuer) return !fz.ausserDienst && t <= this.state.zeit + 30 * MIN; // hängt am Flugwetter, nicht am Plan
     return imDienst(this.dienstplanVon(fz.id), t, fz.heim);
   }
 
@@ -986,9 +1047,19 @@ export class Simulation {
     for (const fz of Object.values(this.state.fahrzeuge)) {
       const plan = this.dienstplaene.get(fz.id);
       if (!plan) continue;
-      const w = aktuelleSchicht(plan, t, fz.heim);
-      fz.dienstEnde = w ? dienstEnde(plan, t, fz.heim) : null;
-      fz.dienstBeginn = w ? null : naechsterBeginn(plan, t, fz.heim);
+      let w = aktuelleSchicht(plan, t, fz.heim);
+      let nah: SimFahrzeug | undefined;
+      if (fz.ersatzFuer) {
+        // Ersatz-NEF: angemeldet, solange „sein“ Hubschrauber im Dienst ist, aber nicht fliegen kann
+        nah = Object.values(this.state.fahrzeuge).find((x) => x.funkrufname === fz.ersatzFuer || x.kurzname === fz.ersatzFuer);
+        const nahW = nah ? aktuelleSchicht(this.dienstplanVon(nah.id), t, nah.heim) : null;
+        w = nah && nahW && this.flugHindernis(nah) ? { ...nahW, key: `${nahW.key}#boden` } : null;
+        fz.dienstEnde = null;
+        fz.dienstBeginn = null;
+      } else {
+        fz.dienstEnde = w ? dienstEnde(plan, t, fz.heim) : null;
+        fz.dienstBeginn = w ? null : naechsterBeginn(plan, t, fz.heim);
+      }
       const key = w?.key ?? null;
       if (fz.schicht === undefined) {
         // erster Blick (Programmstart): ohne Teamwechsel übernehmen
@@ -1003,7 +1074,9 @@ export class Simulation {
       fz.schicht = key;
       geaendert = true;
       if (key) {
-        fz.besetzung = generiereBesetzung(fz.rmTyp);
+        // Ersatz-NEF: dieselbe Besatzung wie am Hubschrauber (ohne Pilot)
+        const crew = nah?.besetzung.filter((x) => x.quali !== "Pilot");
+        fz.besetzung = crew?.length ? crew.map((x) => ({ ...x })) : generiereBesetzung(fz.rmTyp);
         if (fz.ausserDienst) {
           fz.ausserDienst = false;
           if (fz.status === "abgemeldet" && !(fz.defektBis && fz.defektBis > t)) fz.status = fz.phase === "frei" && distanceM(fz, fz.heim) < 80 ? "freiWache" : "freiFunk";
@@ -1154,7 +1227,7 @@ export class Simulation {
   private istLandeplatz(p: LatLon): boolean {
     const nah = (x: LatLon) => distanceM(p, x) < 300;
     if (store.list("hospitals").some(nah)) return true;
-    if (store.list("pois").some((x) => /lande|heli|hubschrauber/i.test(`${x.typ} ${x.name}`) && nah(x))) return true;
+    if (store.list("pois").some((x) => poiKategorien(x).includes("landeplatz") && nah(x))) return true;
     return Object.values(this.state.fahrzeuge).some((f) => fliegt(f) && nah(f.heim));
   }
 
@@ -1521,6 +1594,15 @@ export class Simulation {
         gemeldet,
         vorlage && ortArt ? { typen: vorlage.anrufer, ort: ORT_LABEL[ortArt] } : undefined,
       );
+      // Ruft Pflege, Arzt oder Ordination an, fragt man in Kapitel 33 ab (Anforderung durch Einrichtung) –
+      // dann muss auch die richtige Lösung dort liegen
+      if (anrufer.art === "einrichtung" && !["33", "38", "42", "34", "ALP"].includes(p.fall.kapitel)) {
+        const neu = alsAnforderung33(schema, p.fall);
+        if (neu) {
+          p.fall = neu;
+          e.wahr.code = neu.code;
+        }
+      }
       let szenario: Szenario | undefined;
       if (vorlage) {
         const a = p.fall.antworten;
@@ -1965,7 +2047,7 @@ export class Simulation {
           fall = { kapitel: f.ergebnis.pfad[0], antworten: f.antworten, code: c.code };
           if (vorlage) {
             fall.vorlage = vorlage.id;
-            fall.ortArt = pick(vorlage.orte);
+            fall.ortArt = this.ortArtWaehlen(vorlage.orte, typeof f.antworten.alter === "number" ? f.antworten.alter : null);
           }
         }
       }
@@ -1979,7 +2061,9 @@ export class Simulation {
       if (codes.length === 0) return null;
       code = pick(codes);
     }
-    const adr = await this.adresseImGebiet();
+    // passender echter Ort (Pflegeheim, Schule, Bahnhof …), wenn es einen im Gebiet gibt
+    const poiAdr = fall?.ortArt ? await this.poiAdresse(fall.ortArt, typeof fall.antworten.alter === "number" ? fall.antworten.alter : null) : null;
+    const adr = poiAdr ?? (await this.adresseImGebiet());
     if (!adr) return null;
     let gemeldet = adr.label;
     // Manche Anrufer nennen eine falsche Adresse (andere Hausnummer derselben Straße)

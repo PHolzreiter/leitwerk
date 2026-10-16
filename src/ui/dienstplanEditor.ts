@@ -2,10 +2,11 @@
  * Dienstplan bearbeiten: Schichten mit Wochentagen (einzeln oder Schnellwahl Mo–Fr / Sa / So / täglich),
  * Beginn und Ende (Uhrzeit oder Sonnenaufgang/-untergang). Ohne Schicht = rund um die Uhr.
  */
-import { ALLE_TAGE, TAG_KURZ, WERKTAGE, planKurz, zeitLesen, type Schicht } from "../sim/dienst";
+import { ALLE_TAGE, MODELLE_24_7, TAG_KURZ, WERKTAGE, plan247, planKurz, zeitLesen, type Schicht } from "../sim/dienst";
+import { wocheHtml } from "./dienstWoche";
 import { el } from "./dom";
 
-export function dienstplanEditor(start: Schicht[] | undefined): { root: HTMLElement; wert(): Schicht[] } {
+export function dienstplanEditor(start: Schicht[] | undefined, ort?: { lat: number; lon: number }): { root: HTMLElement; wert(): Schicht[] } {
   let plan: Schicht[] = structuredClone(start ?? []);
   const root = el("div", { class: "dp-editor" });
   const liste = el("div", { class: "dp-liste" });
@@ -13,24 +14,44 @@ export function dienstplanEditor(start: Schicht[] | undefined): { root: HTMLElem
   const neu = el("button", { class: "btn small", type: "button" }, "+ Schicht");
   const vorlagen = el("div", { class: "dp-vorlagen" });
   const unten = el("div", { class: "dp-unten" });
-  unten.append(neu, vorlagen);
-  root.append(liste, unten, zusammen);
+  const woche = el("div", { class: "dp-woche" });
+  unten.append(neu);
+  root.append(vorlagen, liste, unten, zusammen, woche);
 
   // häufige Dienstpläne mit einem Klick
+  vorlagen.appendChild(el("span", { class: "muted small" }, "24/7:"));
   const VORL: [string, Schicht[]][] = [
-    ["rund um die Uhr", []],
-    ["Tag Mo–Fr 07–19", [{ tage: [...WERKTAGE], von: "07:00", bis: "19:00" }]],
-    ["Tag + Nacht täglich", [{ tage: [...ALLE_TAGE], von: "07:00", bis: "19:00" }, { tage: [...ALLE_TAGE], von: "19:00", bis: "07:00" }]],
-    ["Hell (Sonnenauf- bis -untergang)", [{ tage: [...ALLE_TAGE], von: "SA", bis: "SU" }]],
+    ...MODELLE_24_7.map((m, i): [string, Schicht[]] => [m.name, i === 0 ? [] : plan247(m.wechsel)]),
   ];
-  for (const [label, p] of VORL) {
-    const b = el("button", { class: "btn small", type: "button" }, label);
+  const knopf = (label: string, p: Schicht[], titel: string) => {
+    const b = el("button", { class: "btn small", type: "button", title: titel }, label);
     b.addEventListener("click", () => {
       plan = structuredClone(p);
       zeichnen();
     });
     vorlagen.appendChild(b);
-  }
+  };
+  for (const [label, p] of VORL) knopf(label, p, "Rund um die Uhr, ein Team je Schicht");
+  // frei wählbare Wechselzeiten
+  const frei = el("button", { class: "btn small", type: "button", title: "Rund um die Uhr mit eigenen Wechselzeiten" }, "eigene Wechselzeiten …");
+  const freiFeld = el("input", { type: "text", class: "dp-frei", placeholder: "z. B. 06:00, 14:00, 22:00", hidden: "" }) as HTMLInputElement;
+  frei.addEventListener("click", () => {
+    freiFeld.hidden = false;
+    freiFeld.focus();
+  });
+  freiFeld.addEventListener("change", () => {
+    const z = freiFeld.value.split(/[,;+\s]+/).filter(Boolean).map(zeitLesen);
+    if (!z.length || z.some((x) => !x || x === "SA" || x === "SU")) {
+      freiFeld.classList.add("ungueltig");
+      return;
+    }
+    freiFeld.classList.remove("ungueltig");
+    plan = plan247(z as string[]);
+    zeichnen();
+  });
+  vorlagen.append(frei, freiFeld, el("span", { class: "muted small" }, " · sonst:"));
+  knopf("Tag Mo–Fr 07–19", [{ tage: [...WERKTAGE], von: "07:00", bis: "19:00" }], "nur werktags tagsüber");
+  knopf("Hell (Sonnenauf- bis -untergang)", [{ tage: [...ALLE_TAGE], von: "SA", bis: "SU" }], "z. B. Hubschrauber ohne Nachtflug");
   neu.addEventListener("click", () => {
     const letzte = plan[plan.length - 1];
     plan.push(letzte ? { tage: [...letzte.tage], von: letzte.bis === "SU" || letzte.bis === "SA" ? "07:00" : letzte.bis, bis: "19:00" } : { tage: [...WERKTAGE], von: "07:00", bis: "19:00" });
@@ -109,7 +130,9 @@ export function dienstplanEditor(start: Schicht[] | undefined): { root: HTMLElem
     info();
   }
   function info(): void {
-    zusammen.textContent = `Dienstplan: ${planKurz(plan.filter((s) => s.tage.length))}. Endet eine Schicht nach Mitternacht, zählt sie zum Tag, an dem sie beginnt.`;
+    const p = plan.filter((s) => s.tage.length);
+    zusammen.textContent = `Dienstplan: ${planKurz(p)}. Endet eine Schicht nach Mitternacht, zählt sie zum Tag, an dem sie beginnt.`;
+    woche.innerHTML = wocheHtml(p, ort);
   }
   zeichnen();
   return { root, wert: () => plan.filter((s) => s.tage.length).map((s) => ({ tage: [...s.tage], von: s.von, bis: s.bis })) };

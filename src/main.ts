@@ -32,6 +32,8 @@ import { anwenden, pers, setzePers } from "./ui/ws/persoenlich";
 import { steuerleisteBauen } from "./ui/ws/steuerleiste";
 import { soundBeobachterStarten } from "./ui/sounds";
 import { funkVorlesenStarten, sprachTest } from "./ui/sprache";
+import { dienstHoverEinrichten } from "./ui/dienstWoche";
+dienstHoverEinrichten();
 
 // Für automatische Tests im Browser (…/?debug): Zugriff auf Simulation und Daten
 if (location.search.includes("debug")) Object.assign(window, { __lw: { sim, store, sprachTest } });

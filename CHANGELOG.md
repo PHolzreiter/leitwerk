@@ -1,5 +1,36 @@
 # Änderungen
 
+## 0.22.0 – Ersatz-NEF, lesbare Dienstpläne, Filter, Orte mit Kategorien, Codesystem in einer Datei
+**Fahrzeuge und Dienststellen**
+- Jeder Notarzthubschrauber (nicht der ITH) hat ein **ÖAMTC-NEF** am selben Stützpunkt (99/002 → 99/902, 99/003 → 99/903 …). Es meldet sich nur an, wenn der Hubschrauber im Dienst ist, aber nicht fliegen kann (Wetter, Nacht ohne Nachtflug) – mit derselben Besatzung ohne Pilot. Kann wieder geflogen werden, meldet es sich nach dem laufenden Einsatz ab. Im Fahrzeug-Dialog unter „Ersatz für Hubschrauber“ einstellbar
+- Stützpunkte heißen jetzt „ÖAMTC Luftrettungszentrum Christophorus 2“ usw. (C3/C33: „ÖAMTC Luftrettungszentrum Ost“); eigene Listen mit den alten Namen passen weiterhin
+- In den Listen im Spiel steht beim Fahrzeug der ausgeschriebene Name (z. B. „Christophorus 2“) statt der Dienststelle
+- 99/033 ist der ITH; „Quelle: Paul (Nord-NÖ)“ ist aus den Daten verschwunden
+
+**Dienstpläne lesbar**
+- Wochenübersicht (Mo–So, je eine 24-Stunden-Leiste, jedes Team in eigener Farbe, rote Linie = jetzt): im Fahrzeug-Dialog, beim Darüberfahren mit der Maus über einen Funkrufnamen in Listen und Vorschlägen, in der Dienstplan-Spalte der Fahrzeugliste und im Karten-Fenster einer Dienststelle
+- Rund um die Uhr mit wählbarem Schichtmodell: 07–19 + 19–07, 06–18 + 18–06, 05–13 + 13–21 + 21–05 oder eigene Wechselzeiten (z. B. „06, 14, 22“)
+
+**Einstellungen: filtern und sortieren**
+- In allen Listen (Fahrzeuge, Dienststellen, Krankenhäuser, Orte, Einsatzcodes): Klick auf einen Spaltenkopf sortiert (nochmal = absteigend, dritter Klick = normal)
+- Filter je Liste, z. B. Fahrzeuge nach Kategorie, Typ, Dienststelle, Organisation, Gebiet (Funkgruppe), im Dienst / außer Dienst, aktiv; Orte nach Kategorie und Ort
+
+**Orte mit Kategorien**
+- POIs heißen jetzt „Orte“ und haben eine oder mehrere Kategorien: Kindergarten, Schule, Pflegeheim, Bahnhof, Einkauf, Sport, Bad, Lokal, Arztpraxis, Betrieb, Freizeit, Hubschrauber-Landeplatz, Feuerwehr, Polizei, Wasserrettung, Bergrettung, Sonstiges. Krankenhäuser und Dienststellen zählen automatisch als Orte (in der Orte-Liste mit „auch Krankenhäuser und Dienststellen“)
+- Die Kategorie wirkt im Spiel: passt eine Fallgeschichte (Sturz im Pflegeheim, Kind in der Schule, Notfall am Bahnhof …), passiert der Einsatz meist an einem echten Ort dieser Kategorie im Gebiet – Kleinkinder im Kindergarten, Schulkinder in der Schule. Orte sind in der Adresssuche zu finden
+- Dienststellen-Typen Feuerwehr, Polizei, Wasserrettung und Bergrettung (eigene Fahrzeuge folgen später)
+
+**Codesystem: Codes und Abfrage in einer Datei**
+- Ein Codesystem ist eine JSON-Datei mit Einsatzcodes, Abfrage und (neu) Einsatzstufen. Beim Laden prüft LeitWerk die Datei und zeigt verständliche Fehler und Hinweise; beim Wechsel auf ein anderes Codesystem werden die alten Codes auf Wunsch entfernt
+- „Als eine Datei speichern …“ schreibt das geladene Codesystem samt Codeliste in eine Datei
+- „Beispiel-Codesystem …“: kleines, frei erfundenes Beispiel mit einer ausführlichen Anleitung für eine KI – sie weiß damit ohne weiteren Zusammenhang, welche Fragen sie dem Ersteller stellen muss, und erzeugt eine gültige Datei
+- Eigene Dringlichkeitsstufen im Code (z. B. „02-S4-01“) für das Aufwerten
+
+**Abfrage und Einsätze**
+- Kapitel 33 (Anforderung Arzt/Pflege): der gewählte Grund (z. B. Herzbeschwerden) bestimmt den Code; Bewusstsein/Atmung zählen nur, wenn kein bestimmter Grund gewählt ist
+- Ruft ein Arzt, Pflegeheim oder eine Ordination an, ist der Fall auch in Wahrheit eine Anforderung (Kapitel 33)
+- Überstellungen STEMI/Akut-PCI und Thrombektomie immer mit Notarzt
+
 ## 0.21.0 – Dienstpläne, Fahrzeugtypen, neues Einstellungsfenster
 **Dienstpläne**
 - Jedes Fahrzeug hat einen Dienstplan aus Schichten: Wochentage (einzeln oder Mo–Fr / Sa / So / täglich), Beginn und Ende – auch „Sonnenaufgang bis Sonnenuntergang“ für Hubschrauber (je nach Datum). Ohne Dienstplan: rund um die Uhr mit zwei Teams (07–19 und 19–07)

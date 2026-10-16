@@ -7,7 +7,7 @@ import { store } from "../../data/store";
 import { fragen, antwortetGerade, kontext } from "../../abfrage/gespraech";
 import { schilderung } from "../../abfrage/anrufer";
 import { patientText } from "../../sim/lage";
-import { antwortLabel, bestimmeCode, fragenImAblauf, stufeVonCode, type Frage, type Schema, type Wert } from "../../abfrage/schema";
+import { antwortLabel, bestimmeCode, fragenImAblauf, stufeRang, stufeVonCode, type Frage, type Schema, type Wert } from "../../abfrage/schema";
 import { mp } from "../../net/mehrspieler";
 import { sim, type Einsatz } from "../../sim/engine";
 import { el, esc, toast } from "../dom";
@@ -414,9 +414,9 @@ export function notrufTeile(e: Einsatz): NotrufTeile {
     if (K?.aufwertung && Object.keys(K.aufwertung).length) {
       const sel = el("select");
       sel.appendChild(el("option", { value: "" }, "keine Aufwertung"));
-      const jetzt = erg ? stufeVonCode(erg.determinante) : "";
+      const jetzt = erg ? stufeVonCode(erg.determinante, schema) : "";
       for (const st of Object.keys(K.aufwertung)) {
-        if ("OABCDE".indexOf(st) <= "OABCDE".indexOf(jetzt)) continue;
+        if (stufeRang(st, schema) <= stufeRang(jetzt, schema)) continue;
         sel.appendChild(el("option", { value: st }, `Aufwerten auf ${st}`));
       }
       sel.value = a.extra.aufwertung ?? "";

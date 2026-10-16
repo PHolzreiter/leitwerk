@@ -3,6 +3,7 @@ import maplibregl from "maplibre-gl";
 import type { Feature as GFeature, FeatureCollection, LineString, Point } from "geojson";
 import { flughoehe } from "./sim/bewegung";
 import { sim } from "./sim/engine";
+import { kategorieLabel, poiKategorien } from "./data/orte";
 import { findCode } from "./sim/codes";
 import { stufeFarbe } from "./ui/panels/teile";
 
@@ -293,7 +294,7 @@ function showDetails(map: maplibregl.Map, kind: Kind, id: string, at: maplibregl
                 const fz = sim.state.fahrzeuge[v.id];
                 const st = fz ? sim.statusDef(fz.status) : null;
                 const chip = st ? `<span class="veh-st" style="background:${st.farbe}" title="${esc(st.name)}">${fz && (fz.status === "alarmWache" || fz.status === "alarmFunk") ? "&nbsp;" : esc(st.nummer)}</span>` : "";
-                return `<span class="veh ${v.aktiv ? "" : "inactive"}" title="${esc(st ? `${v.typ} · ${st.name}` : v.typ)}">${chip}${esc(v.funkrufname)} <small>${esc(fz?.rmTyp ?? v.kategorie)}</small></span>`;
+                return `<span class="veh ${v.aktiv ? "" : "inactive"}" data-dienstfz="${esc(v.id)}">${chip}${esc(v.funkrufname)} <small>${esc(fz?.rmTyp ?? v.kategorie)}</small></span>`;
               })
               .join("")
           : "<em>keine Fahrzeuge</em>"
@@ -313,7 +314,8 @@ function showDetails(map: maplibregl.Map, kind: Kind, id: string, at: maplibregl
     if (!p) return;
     body.innerHTML = `
       <div class="lw-popup-title">${esc(p.name)}</div>
-      <div class="lw-popup-sub">${esc([p.typ, p.ort].filter(Boolean).join(" · "))}</div>`;
+      <div class="lw-popup-sub">${esc(p.ort)}</div>
+      <div class="lw-popup-list">${poiKategorien(p).map((k) => `<span class="dep">${esc(kategorieLabel(k))}</span>`).join("")}</div>`;
   }
   const edit = el("button", { class: "btn small" }, "Bearbeiten");
   edit.addEventListener("click", () => {

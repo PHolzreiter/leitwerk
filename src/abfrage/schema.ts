@@ -48,7 +48,8 @@ export interface Kapitel {
   fragen: Frage[];
   regeln: Regel[];
   suffix: { regeln: { wenn: Bedingung; suffix: string }[]; standard: string };
-  aufloesung: Record<string, Record<string, string>>;
+  /** vorberechnete Auflösung Determinante + Suffix → Code; fehlt sie, gilt Determinante+Suffix (wenn es den Code gibt) */
+  aufloesung?: Record<string, Record<string, string>>;
   aufwertung?: Record<string, string>;
   zusatzkennungen?: Record<string, string[]>;
   polizei_kennung?: Record<string, string>;
@@ -57,7 +58,31 @@ export interface Kapitel {
 
 export interface Schema {
   version: number;
+  /** "leitwerk-codesystem": Codes und Abfrage in einer Datei */
+  format?: string;
+  /** Name des Codesystems (z. B. „Notruf NÖ – AMPDS“) */
+  name?: string;
   beschreibung?: string;
+  /** Anleitung für eine KI, die ein neues Codesystem erstellt (wird vom Spiel nicht ausgewertet) */
+  anleitung_fuer_ki?: string | string[];
+  /**
+   * Dringlichkeitsstufen im Code: muster = regulärer Ausdruck mit einer Klammer für die Stufe,
+   * reihenfolge = von niedrig nach hoch. Ohne Angabe: AMPDS-Art (RD-17D3 → D; O < A < B < C < D < E).
+   */
+  stufen?: { muster: string; reihenfolge: string[] };
+  /**
+   * Einsatzstufen (= „kategorie“ der Codes) mit Rettungsmitteln. Fehlt eine Stufe in den Einstellungen,
+   * wird sie beim Laden angelegt (vorhandene Einstellungen bleiben).
+   */
+  einsatzstufen?: {
+    stufe: string;
+    rettungsmittel: string;
+    nfs_erforderlich?: boolean;
+    notarzt?: "nein" | "nef" | "schnellster";
+    sondersignal?: boolean;
+    kategorie?: "stabil" | "dringend" | "kritisch";
+    transport_prozent?: number;
+  }[];
   globale_fragen: Record<string, Frage[]>;
   kapitel: Record<string, Kapitel>;
   codes: Record<string, { name: string; kategorie: string; kapitel: string }>;
@@ -159,6 +184,27 @@ export function ergaenzeSchema(s: Schema): Schema {
       );
     }
   }
+  // Kapitel mit „Grund der Anforderung“ (Anforderung durch Arzt/Einrichtung): der gewählte Grund bestimmt
+  // den Code. Bewusstsein/Atmung des Patienten zählen nur, wenn kein bestimmter Grund gewählt ist.
+  for (const kap of Object.values(p.kapitel)) {
+    if (!kap.fragen.some((f) => f.id === "grund")) continue;
+    const zurueck: Regel[] = [];
+    kap.regeln = kap.regeln.map((r) => {
+      const w = r.wenn;
+      if (!r.code || !w || !("any" in w)) return r;
+      const grund = w.any.filter((b) => "q" in b && b.q === "grund");
+      const sonst = w.any.filter((b) => !("q" in b && b.q === "grund"));
+      if (!grund.length || !sonst.length) return r;
+      zurueck.push({ code: r.code, wenn: sonst.length === 1 ? sonst[0] : { any: sonst } });
+      return { ...r, wenn: grund.length === 1 ? grund[0] : { any: grund } };
+    });
+    if (zurueck.length) {
+      // vor die Zuordnung nach Dringlichkeit/Transportart bzw. den Standardcode
+      let pos = kap.regeln.findIndex((r) => r.code_nach_antwort || !r.wenn);
+      if (pos < 0) pos = kap.regeln.length;
+      kap.regeln.splice(pos, 0, ...zurueck);
+    }
+  }
   ergaenzt.set(s, p);
   return p;
 }
@@ -238,15 +284,15 @@ export function bestimmeCode(
     }
     if (!det) return null;
     // Manuelle Aufwertung (nur auf eine höhere Stufe)
-    if (extra.aufwertung && K.aufwertung?.[extra.aufwertung] && stufeRang(extra.aufwertung) > stufeRang(stufeVonCode(det))) {
+    if (extra.aufwertung && K.aufwertung?.[extra.aufwertung] && stufeRang(extra.aufwertung, schema) > stufeRang(stufeVonCode(det, schema), schema)) {
       det = K.aufwertung[extra.aufwertung];
     }
     const s = ksSchnell ? "" : suffixVon(K, a);
-    const zeile = K.aufloesung[det];
-    let code = zeile ? (zeile[s || "_"] ?? zeile["_"] ?? det) : det;
+    const zeile = K.aufloesung?.[det];
+    let code = zeile ? (zeile[s || "_"] ?? zeile["_"] ?? det) : s && schema.codes[det + s] ? det + s : det;
     if (extra.polizei && K.polizei_kennung) {
       const pk = K.polizei_kennung;
-      code = pk[det] ?? pk[stufeVonCode(det)] ?? pk["*"] ?? code;
+      code = pk[det] ?? pk[stufeVonCode(det, schema)] ?? pk["*"] ?? code;
     }
     if (extra.zusatz && (K.zusatzkennungen?.[det] ?? []).includes(extra.zusatz)) code = extra.zusatz;
     const name = schema.codes[code]?.name ?? "";
@@ -282,15 +328,23 @@ function suffixVon(K: Kapitel, a: Antworten): string {
   return K.suffix?.standard ?? "";
 }
 
-/** Stufe eines Codes: Buchstabe nach der Kapitelnummer (RD-17D3 → D, ALP-46B1 → B) */
-export function stufeVonCode(code: string): string {
+/** Stufe eines Codes: Buchstabe nach der Kapitelnummer (RD-17D3 → D, ALP-46B1 → B) – oder nach dem Muster des Codesystems */
+export function stufeVonCode(code: string, schema?: Schema | null): string {
+  const st = schema?.stufen;
+  if (st?.muster) {
+    try {
+      return code.match(new RegExp(st.muster))?.[1] ?? "";
+    } catch {
+      return "";
+    }
+  }
   const m = code.match(/^[A-Z]+-\d+([OABCDE])/);
   return m ? m[1] : "";
 }
 
-const STUFEN = "OABCDE";
-function stufeRang(s: string): number {
-  return STUFEN.indexOf(s);
+/** Rang einer Stufe (höher = dringlicher), -1 = unbekannt */
+export function stufeRang(s: string, schema?: Schema | null): number {
+  return (schema?.stufen?.reihenfolge ?? [..."OABCDE"]).indexOf(s);
 }
 
 /** Kapitel eines Codes laut Codeliste des Schemas („17 - Sturz“ → „17“) */

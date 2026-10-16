@@ -23,7 +23,7 @@ OUT = ROOT / "data" / "default"
 EX = ROOT / "data" / "beispiele"
 
 STATION_COLS = ["id", "name", "organisation", "typ", "ort", "bezirk", "adresse", "breitengrad", "laengengrad", "hinweis"]
-VEHICLE_COLS = ["id", "funkrufname", "kurzname", "kategorie", "typ", "aufbau", "dienststelle", "aktiv", "nachtflug", "dienstplan", "hinweis"]
+VEHICLE_COLS = ["id", "funkrufname", "kurzname", "kategorie", "typ", "aufbau", "dienststelle", "aktiv", "nachtflug", "dienstplan", "ersatz_fuer", "hinweis"]
 HOSPITAL_FLAGS = [
     "notfallambulanz", "schockraum", "unfallambulanz", "kinderambulanz", "intensiv_anaesthesie",
     "neurologie", "kinderintensiv", "neonatologie", "hno", "urologie", "gyn_geburtshilfe",
@@ -58,7 +58,18 @@ def dist_m(a: tuple[float, float], b: tuple[float, float]) -> float:
 
 def norm(s: str) -> str:
     s = s.lower().replace("bezirkstelle", "bezirksstelle").replace("sankt", "st.").replace("öatmc", "öamtc")
+    # Luftrettung: alte und neue Schreibweise gleich behandeln
+    s = s.replace("luftrettungszentrum", " ").replace("christophorus luftrettungszentrum ost", "ost").replace("christophorus  ost", "ost")
+    s = re.sub(r"christophorus\s+ost", "ost", s)
     return re.sub(r"[^a-z0-9äöüß]+", " ", s).strip()
+
+
+def luft_name(name: str) -> str:
+    """„ÖAMTC Christophorus 2“ → „ÖAMTC Luftrettungszentrum Christophorus 2“, C3/C33-Basis → „ÖAMTC Luftrettungszentrum Ost“"""
+    if "Luftrettungszentrum Ost" in name:
+        return "ÖAMTC Luftrettungszentrum Ost"
+    m = re.match(r"ÖAMTC Christophorus (\d+)", name)
+    return f"ÖAMTC Luftrettungszentrum Christophorus {m.group(1)}" if m else name
 
 
 def organisation_of(name: str, operator: str = "") -> str:
@@ -95,10 +106,13 @@ def build_stations() -> tuple[list[dict], dict[str, str]]:
     for r in read_csv(SRC / "paul_dienststellen_nnoe.csv"):
         name = r["Name"].strip().replace("ÖATMC", "ÖAMTC").replace("Bezirkstelle", "Bezirksstelle")
         lat, lon = float(r["Breitengrad"]), float(r["Längengrad"])
-        hinweis = "Quelle: Paul (Nord-NÖ)"
+        hinweis = ""
         if "Ried im Innkreis" in name:
             continue  # liegt in Oberösterreich, in der Quelle vermutlich versehentlich
         typ = {"Luftrettung": "Luftrettung"}.get(r["Typ"], "Rettungsdienst")
+        if typ == "Luftrettung":
+            name_to_id[norm(name)] = f"p{r['POI-ID']}"
+            name = luft_name(name)
         if "Notruf Niederösterreich" in name or "Leitstelle" in name:
             typ = "Leitstelle"
         if "Notarztstützpunkt" in name:
@@ -106,7 +120,7 @@ def build_stations() -> tuple[list[dict], dict[str, str]]:
         if "Mistelbach" in name:
             # In der Quelle identisch mit Hollabrunn -> Koordinaten aus OpenStreetMap
             lat, lon = 48.5665420, 16.5807706
-            hinweis += "; Koordinaten aus OSM korrigiert"
+            hinweis = "Koordinaten aus OSM korrigiert"
         sid = f"p{r['POI-ID']}"
         stations.append({
             "id": sid, "name": name, "organisation": organisation_of(name), "typ": typ,
@@ -123,6 +137,8 @@ def build_stations() -> tuple[list[dict], dict[str, str]]:
         ("air-c17", "ÖAMTC Christophorus 17 St. Michael", 47.3361032, 15.0014968, "St. Michael in der Obersteiermark"),
     ]
     for sid, name, lat, lon, ort in extra_air:
+        name_to_id[norm(name)] = sid
+        name = luft_name(name)
         stations.append({
             "id": sid, "name": name, "organisation": "ÖAMTC", "typ": "Luftrettung", "ort": ort,
             "bezirk": "", "adresse": "", "breitengrad": f"{lat:.6f}", "laengengrad": f"{lon:.6f}",
@@ -184,7 +200,7 @@ def category_of(typ: str, funkruf: str, station_typ: str) -> str:
     # ab 0.9/0.11: Sekundärfahrzeuge, ITH, BEL, EL ÖBB; AMB Type I/II werden nicht verwendet
     if t in {"SKTW", "SRTW", "SNAW", "BIT", "BEL", "EL ÖBB"}:
         return t
-    if t == "AIR ICU-AMB":
+    if t in {"AIR ICU-AMB", "ITH"}:
         return "ITH"
     return "Sonstige"
 
@@ -223,7 +239,7 @@ def build_vehicles(stations: list[dict], name_to_id: dict[str, str]) -> list[dic
             "aktiv": "nein" if kat == "Sonstige" else "ja",
             # Nachts fliegen nur Christophorus 2 und 9
             "nachtflug": "ja" if funk in {"99/002", "99/009"} else "nein",
-            "hinweis": "Quelle: Paul (Nord-NÖ)" + ("; Nachtflugtauglichkeit bitte prüfen" if kat == "NAH" else ""),
+            "hinweis": "Nachtflugtauglichkeit bitte prüfen" if kat == "NAH" else "",
         })
     for kurz, (funk, st_name) in NAH.items():
         if kurz in seen_nah:
@@ -234,8 +250,34 @@ def build_vehicles(stations: list[dict], name_to_id: dict[str, str]) -> list[dic
             "hinweis": "Ergänzt (Recherche OpenStreetMap); Nachtflugtauglichkeit bitte prüfen",
         })
     dienstplaene_einspielen(vehicles)
+    ersatz_nef(vehicles)
     vehicles.sort(key=lambda v: (v["dienststelle"], v["funkrufname"]))
     return vehicles
+
+
+def ersatz_nef(vehicles: list[dict]) -> None:
+    """
+    Jeder Primär-Hubschrauber (NAH, nicht ITH) hat ein ÖAMTC-NEF am Stützpunkt: angemeldet nur, wenn der
+    Hubschrauber nicht fliegen kann (Wetter, Nacht ohne Nachtflug) – dieselbe Besatzung.
+    Funkrufname: 99/002 → 99/902. Vorhandene (z. B. 99/902 aus Pauls Liste) werden nur verknüpft.
+    """
+    nach_funk = {v["funkrufname"]: v for v in vehicles}
+    for nah in [v for v in vehicles if v["kategorie"] == "NAH"]:
+        m = re.match(r"99/0(\d\d)$", nah["funkrufname"])
+        if not m:
+            continue
+        funk = f"99/9{m.group(1)}"
+        nef = nach_funk.get(funk)
+        if nef is None:
+            nef = {
+                "id": "nef-" + funk.replace("/", ""), "funkrufname": funk, "kurzname": "", "kategorie": "NEF", "typ": "NEF",
+                "dienststelle": nah["dienststelle"], "aktiv": "ja", "nachtflug": "nein", "dienstplan": "24/7",
+                "hinweis": "ÖAMTC-NEF, nur angemeldet, wenn der Hubschrauber nicht fliegen kann",
+            }
+            vehicles.append(nef)
+        nef["ersatz_fuer"] = nah["funkrufname"]
+        if not nef.get("hinweis"):
+            nef["hinweis"] = "ÖAMTC-NEF, nur angemeldet, wenn der Hubschrauber nicht fliegen kann"
 
 
 # ---------------------------------------------------------------- Dienstpläne und Typen (paul_fahrzeuge_schichten.csv)
@@ -647,8 +689,10 @@ def build_examples() -> None:
          "bereiche": "INT, CHI, GYN, ZNA, RAD, DIA", "hinweis": "Werte: ja / nein; Bereiche als Kürzel mit Komma"},
     ])
     write_csv(EX / "beispiel_pois.csv", POI_COLS, [
-        {"id": "poi-1", "name": "Badesee Musterstadt", "typ": "Freizeit", "ort": "Musterstadt", "breitengrad": "48.215000", "laengengrad": "15.630000"},
-        {"id": "poi-2", "name": "Autobahnauffahrt Musterstadt Nord", "typ": "Verkehr", "ort": "Musterstadt", "breitengrad": "48.230000", "laengengrad": "15.640000"},
+        {"id": "poi-1", "name": "Badesee Musterstadt", "typ": "Bad / Badeplatz", "ort": "Musterstadt", "breitengrad": "48.215000", "laengengrad": "15.630000",
+         "hinweis": "Typ = Kategorie(n), mehrere mit Komma: Kindergarten, Schule, Pflegeheim, Bahnhof, Einkauf, Sport, Bad, Lokal, Arztpraxis, Betrieb, Freizeit, Landeplatz, Feuerwehr, Polizei, Wasserrettung, Bergrettung – sonst eigener Text"},
+        {"id": "poi-2", "name": "Pflegeheim Musterstadt", "typ": "Pflegeheim", "ort": "Musterstadt", "breitengrad": "48.230000", "laengengrad": "15.640000"},
+        {"id": "poi-3", "name": "Volksschule Musterstadt", "typ": "Schule, Sport", "ort": "Musterstadt", "breitengrad": "48.222000", "laengengrad": "15.628000"},
     ])
     write_csv(EX / "beispiel_einsatzvorlagen.csv", TEMPLATE_COLS, [
         {"id": "ev-1", "code": "RD-10D1", "adresse": "Obere Landstraße 10, 3500 Krems an der Donau", "breitengrad": "48.410900",

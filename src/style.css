@@ -2891,3 +2891,39 @@ input[type="color"] {
   gap: 4px;
   flex-wrap: wrap;
 }
+
+.dp-vorlagen { align-items: center; }
+.dp-frei { width: 170px; padding: 3px 6px; }
+.dp-frei.ungueltig { border-color: var(--alert-text); }
+.dp-woche { margin-top: 2px; }
+
+/* Wochenübersicht Dienstplan */
+.dw { display: flex; flex-direction: column; gap: 2px; font-size: 11px; min-width: 280px; }
+.dw-zeile { display: flex; align-items: center; gap: 6px; }
+.dw-tag { width: 20px; color: var(--text-dim); flex: none; }
+.dw-leiste {
+  position: relative; flex: 1; height: 11px; border-radius: 3px;
+  background: repeating-linear-gradient(90deg, transparent 0, transparent calc(25% - 1px), var(--line) calc(25% - 1px), var(--line) 25%), var(--panel-3);
+}
+.dw-seg { position: absolute; top: 1px; bottom: 1px; border-radius: 2px; opacity: 0.9; }
+.dw-jetzt { position: absolute; top: -2px; bottom: -2px; width: 2px; margin-left: -1px; background: var(--alert-text); }
+.dw-skala .dw-leiste { background: none; height: 12px; }
+.dw-skala .dw-leiste span { position: absolute; transform: translateX(-50%); color: var(--text-dim); font-size: 10px; }
+.dw-skala .dw-leiste span:first-child { transform: none; }
+.dw-skala .dw-leiste span:last-child { transform: translateX(-100%); }
+.dw-legende { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 3px; color: var(--text); }
+.dw-team { display: inline-flex; align-items: center; gap: 4px; }
+.dw-farbe { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+.dw-titel { margin-bottom: 4px; }
+.dw-tip {
+  position: fixed; z-index: 10000; max-width: 380px; padding: 8px 10px; border-radius: 6px;
+  background: var(--panel); color: var(--text); border: 1px solid var(--line-2); box-shadow: var(--shadow); pointer-events: none; font-size: 12px;
+}
+[data-dienstfz] { cursor: default; }
+.data-filter { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 0 0 6px; }
+.data-filter label { display: inline-flex; gap: 4px; align-items: center; font-size: 12px; color: var(--text-dim); }
+.data-filter select { width: auto; min-width: 0; padding: 2px 4px; font-size: 12px; max-width: 220px; }
+.data-table th.sortierbar { cursor: pointer; user-select: none; white-space: nowrap; }
+.data-table th.sortierbar:hover { color: var(--blue); }
+.data-table th .sort-pfeil { font-size: 10px; margin-left: 3px; color: var(--blue); }
+.data-table tr.fremd td { color: var(--text-dim); }

@@ -22,6 +22,10 @@ export const STATION_TYPES = [
   "Rettungsdienst",
   "Notarztstützpunkt",
   "Luftrettung",
+  "Feuerwehr",
+  "Polizei",
+  "Wasserrettung",
+  "Bergrettung",
   "Leitstelle",
   "Sonstige",
 ] as const;
@@ -58,6 +62,8 @@ export interface Vehicle extends Base {
   dienstplan?: Schicht[];
   /** Fahrzeuggröße: „gross“ = Großraum (VW Crafter), „klein“ = Hochdach (VW T6) */
   aufbau?: "klein" | "gross";
+  /** Ersatz-NEF eines Hubschraubers (Funkrufname des NAH): nur angemeldet, wenn dieser nicht fliegen kann */
+  ersatzFuer?: string;
 }
 
 /** Fahrzeugtypen mit eigener Bedeutung in der Simulation (Typ-Feld) */
@@ -227,7 +233,7 @@ export const KIND_LABEL: Record<Kind, string> = {
   stations: "Dienststellen",
   vehicles: "Fahrzeuge",
   hospitals: "Krankenhäuser",
-  pois: "POIs",
+  pois: "Orte (POIs)",
   templates: "Einsatzvorlagen",
   codes: "Einsatzcodes",
 };
@@ -236,7 +242,7 @@ export const KIND_SINGULAR: Record<Kind, string> = {
   stations: "Dienststelle",
   vehicles: "Fahrzeug",
   hospitals: "Krankenhaus",
-  pois: "POI",
+  pois: "Ort (POI)",
   templates: "Einsatzvorlage",
   codes: "Einsatzcode",
 };

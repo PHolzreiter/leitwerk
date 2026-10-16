@@ -15,7 +15,12 @@ import {
   type Einsatzcode,
 } from "../data/model";
 import { exportCsv } from "../data/schema";
+import { codesystemDatei } from "../abfrage/codesystem";
+import beispielCodesystem from "../../data/beispiele/beispiel_codesystem.json?raw";
 import { planKurz } from "../sim/dienst";
+import { sim } from "../sim/engine";
+import { FUNKGRUPPEN, inFunkgruppe } from "../sim/funkgruppen";
+import { alleOrte, kategorieLabel, poiKategorien, ORT_KATEGORIEN } from "../data/orte";
 import { BEISPIEL, STANDARD_INFO, VORLAGE } from "../data/standard";
 import { store } from "../data/store";
 import { saveTextFile, storeLocation } from "../platform";
@@ -25,6 +30,8 @@ import { displayName, openEditor, type EditorDeps } from "./editForm";
 import { startImport } from "./importDialog";
 
 const MAX_ROWS = 600;
+/** Funkgruppe je Position (Punkt-in-Fläche ist teuer) */
+const gebietCache = new Map<string, string>();
 
 const FLAG_SHORT: Record<string, string> = {
   notfallambulanz: "NFA",
@@ -49,6 +56,13 @@ export interface DataViewDeps extends EditorDeps {
 export function createDataView(container: HTMLElement, deps: DataViewDeps): { refresh(): void; zeigeArt(k: Kind): void } {
   let current: Kind = "stations";
   let query = "";
+  /** Sortierung: Spalte (Index) und Richtung; -1 = Standard (Name) */
+  let sortSp = -1;
+  let sortAb = false;
+  /** gewählte Filter je Datenart: Filtername → Wert ("" = alle) */
+  const filter: Partial<Record<Kind, Record<string, string>>> = {};
+  /** Orte: auch Krankenhäuser und Dienststellen zeigen */
+  let alleOrteZeigen = false;
 
   container.innerHTML = `
     <div class="data-layout">
@@ -67,6 +81,7 @@ export function createDataView(container: HTMLElement, deps: DataViewDeps): { re
           <button class="btn" data-act="example">Beispiel …</button>
           <button class="btn danger-text" data-act="clear">Eigene löschen</button>
         </div>
+        <div class="data-filter"></div>
         <div class="table-wrap"><table class="data-table"><thead></thead><tbody></tbody></table></div>
         <div class="table-foot muted"></div>
       </section>
@@ -80,6 +95,7 @@ export function createDataView(container: HTMLElement, deps: DataViewDeps): { re
   const tbody = container.querySelector<HTMLElement>("tbody")!;
   const foot = container.querySelector<HTMLElement>(".table-foot")!;
   const schemaBar = container.querySelector<HTMLElement>(".schema-bar")!;
+  const filterBar = container.querySelector<HTMLElement>(".data-filter")!;
 
   /** Abfrageschema (nur bei Einsatzcodes): Status, laden, entfernen */
   function renderSchemaBar() {
@@ -87,21 +103,38 @@ export function createDataView(container: HTMLElement, deps: DataViewDeps): { re
     if (schemaBar.hidden) return;
     const sch = store.schema;
     schemaBar.innerHTML = sch
-      ? `<div><b>Abfrageschema geladen</b> <span class="muted">· ${Object.keys(sch.kapitel).length} Kapitel · ${Object.keys(sch.codes).length} Codes${sch.version ? ` · Version ${esc(String(sch.version))}` : ""}</span>
-         <div class="muted small">Neue Einsätze kommen als Notruf, den du annimmst und abfragst. Der Code ergibt sich aus der Abfrage.</div></div>`
-      : `<div><b>Kein Abfrageschema</b>
-         <div class="muted small">Mit einem Abfrageschema (JSON-Datei) kommen Einsätze als Anruf, den du abfragst. Die Codes darin werden mit übernommen.</div></div>`;
+      ? `<div><b>Codesystem geladen${sch.name ? `: ${esc(sch.name)}` : ""}</b> <span class="muted">· ${Object.keys(sch.kapitel).length} Kapitel · ${Object.keys(sch.codes).length} Codes${sch.version ? ` · Version ${esc(String(sch.version))}` : ""}</span>
+         <div class="muted small">Codes und Abfrage kommen aus einer Datei. Neue Einsätze kommen als Notruf, den du annimmst und abfragst – der Code ergibt sich aus der Abfrage.</div></div>`
+      : `<div><b>Kein Codesystem geladen</b>
+         <div class="muted small">Ein Codesystem ist eine JSON-Datei mit Einsatzcodes und Abfrage. Damit kommen Einsätze als Anruf, den du abfragst. Das Beispiel enthält eine Anleitung, mit der eine KI ein eigenes Codesystem erstellen kann.</div></div>`;
     const btns = el("div", { class: "row-btns" });
-    const laden = el("button", { class: "btn small primary" }, sch ? "Ersetzen …" : "Abfrageschema laden …");
+    const laden = el("button", { class: "btn small primary" }, sch ? "Ersetzen …" : "Codesystem laden …");
     laden.addEventListener("click", () => void startImport("codes", (k) => select(k)));
     btns.appendChild(laden);
     if (sch) {
+      const roh = store.schemaRoh;
+      const sp = el("button", { class: "btn small", title: "Codes und Abfrage zusammen als eine JSON-Datei speichern" }, "Als eine Datei speichern …");
+      sp.addEventListener("click", async () => {
+        if (!roh) return;
+        const name = (roh.name || "codesystem").replace(/[^\wäöüÄÖÜß-]+/g, "_");
+        const p = await saveTextFile(`${name}.json`, codesystemDatei(roh, store.list("codes")));
+        if (p) toast("Codesystem gespeichert (Codes und Abfrage in einer Datei)");
+      });
+      btns.appendChild(sp);
+    }
+    const bsp = el("button", { class: "btn small", title: "Kleines Beispiel mit Anleitung für eine KI" }, "Beispiel-Codesystem …");
+    bsp.addEventListener("click", async () => {
+      const p = await saveTextFile("beispiel_codesystem.json", beispielCodesystem);
+      if (p) toast("Beispiel gespeichert – die Anleitung für eine KI steht in „anleitung_fuer_ki“");
+    });
+    btns.appendChild(bsp);
+    if (sch) {
       const weg = el("button", { class: "btn small danger-text" }, "Entfernen");
       weg.addEventListener("click", async () => {
-        const ok = await confirmDialog("Abfrageschema entfernen", "Das Abfrageschema wird entfernt. Die Codeliste bleibt. Neue Einsätze kommen dann wieder ohne Anruf.", "Entfernen", true);
+        const ok = await confirmDialog("Codesystem entfernen", "Die Abfrage wird entfernt. Die Codeliste bleibt. Neue Einsätze kommen dann wieder ohne Anruf.", "Entfernen", true);
         if (!ok) return;
         store.setSchema(null);
-        toast("Abfrageschema entfernt");
+        toast("Codesystem entfernt");
         render();
       });
       btns.appendChild(weg);
@@ -164,6 +197,10 @@ export function createDataView(container: HTMLElement, deps: DataViewDeps): { re
 
   function select(kind: Kind) {
     if (kind !== current) deps.onArt?.(kind);
+    if (kind !== current) {
+      sortSp = -1;
+      sortAb = false;
+    }
     current = kind;
     query = "";
     search.value = "";
@@ -224,6 +261,7 @@ export function createDataView(container: HTMLElement, deps: DataViewDeps): { re
           ["Typ", (r) => (r as Station).typ],
           ["Organisation", (r) => (r as Station).organisation],
           ["Ort", (r) => (r as Station).ort],
+          ["Bezirk", (r) => (r as Station).bezirk],
           ["Fahrzeuge", (r) => String(vehicleCount.get(r.id) ?? 0)],
         ];
       case "vehicles":
@@ -233,7 +271,7 @@ export function createDataView(container: HTMLElement, deps: DataViewDeps): { re
           ["Kategorie", (r) => (r as Vehicle).kategorie],
           ["Typ", (r) => `${(r as Vehicle).typ}${(r as Vehicle).aufbau === "gross" && (r as Vehicle).typ !== "RTW-C" ? " (groß)" : ""}`],
           ["Dienststelle", (r) => stationName.get((r as Vehicle).dienststelleId) ?? "⚠ fehlt"],
-          ["Dienstplan", (r) => planKurz((r as Vehicle).dienstplan)],
+          ["Dienstplan", (r) => ((r as Vehicle).ersatzFuer ? `nur bei Flugverbot (Ersatz für ${(r as Vehicle).ersatzFuer})` : planKurz((r as Vehicle).dienstplan))],
           ["Aktiv", (r) => ((r as Vehicle).aktiv ? "ja" : "nein")],
         ];
       case "hospitals":
@@ -251,7 +289,7 @@ export function createDataView(container: HTMLElement, deps: DataViewDeps): { re
       case "pois":
         return [
           ["Name", (r) => (r as Poi).name],
-          ["Typ", (r) => (r as Poi).typ],
+          ["Kategorien", (r) => poiKategorien(r as Poi).map(kategorieLabel).join(", ")],
           ["Ort", (r) => (r as Poi).ort],
         ];
       case "codes":
@@ -270,29 +308,185 @@ export function createDataView(container: HTMLElement, deps: DataViewDeps): { re
     }
   }
 
+  type Zeile = { kind: Kind; r: KindMap[Kind] };
+
+  /** Filter je Datenart: Name → Werte eines Eintrags */
+  function filterDefs(kind: Kind): [string, (z: Zeile) => string[]][] {
+    const st = new Map(store.list("stations").map((x) => [x.id, x]));
+    // Gebiet = Funkgruppe (Bezirke), aus der Position
+    const gebiet = (p: { lat: number; lon: number } | undefined): string[] => {
+      if (!p) return [""];
+      const k = `${p.lat},${p.lon}`;
+      let g = gebietCache.get(k);
+      if (g === undefined) {
+        const f = FUNKGRUPPEN.find((x) => inFunkgruppe(x, p.lat, p.lon));
+        g = f ? `${f.id} (${f.bezirke})` : "außerhalb NÖ";
+        gebietCache.set(k, g);
+      }
+      return [g];
+    };
+    const geb: [string, (z: Zeile) => string[]] = ["Gebiet", (z) => gebiet(z.kind === "vehicles" ? st.get((z.r as Vehicle).dienststelleId) : (z.r as Station))];
+    switch (kind) {
+      case "stations":
+        return [
+          ["Typ", (z) => [(z.r as Station).typ]],
+          ["Organisation", (z) => [(z.r as Station).organisation]],
+          ["Bezirk", (z) => [(z.r as Station).bezirk]],
+          geb,
+        ];
+      case "vehicles":
+        return [
+          ["Kategorie", (z) => [(z.r as Vehicle).kategorie]],
+          ["Typ", (z) => [(z.r as Vehicle).typ]],
+          ["Dienststelle", (z) => [st.get((z.r as Vehicle).dienststelleId)?.name ?? "⚠ fehlt"]],
+          ["Organisation", (z) => [st.get((z.r as Vehicle).dienststelleId)?.organisation ?? ""]],
+          ["Bezirk", (z) => [st.get((z.r as Vehicle).dienststelleId)?.bezirk ?? ""]],
+          geb,
+          [
+            "Im Dienst",
+            (z) => {
+              const v = z.r as Vehicle;
+              const fz = sim.state.fahrzeuge[v.id];
+              return [!v.aktiv || !fz ? "nicht aktiv" : fz.ausserDienst ? "außer Dienst" : "im Dienst"];
+            },
+          ],
+          ["Aktiv", (z) => [(z.r as Vehicle).aktiv ? "ja" : "nein"]],
+        ];
+      case "hospitals":
+        return [["Ort", (z) => [(z.r as Hospital).ort]], geb];
+      case "pois":
+        return [
+          ["Kategorie", (z) => (z.kind === "pois" ? poiKategorien(z.r as Poi) : z.kind === "hospitals" ? ["krankenhaus"] : alleOrte().find((o) => o.id === z.r.id)?.kategorien ?? []).map(kategorieLabel)],
+          ["Ort", (z) => [(z.r as Poi).ort]],
+          geb,
+        ];
+      case "codes":
+        return [
+          ["Kategorie", (z) => [(z.r as Einsatzcode).kategorie]],
+          ["Kapitel", (z) => [(z.r as Einsatzcode).kapitel]],
+        ];
+      case "templates":
+        return [];
+    }
+  }
+
+  function zeilen(): Zeile[] {
+    const eigene = (store.list(current) as KindMap[Kind][]).map((r) => ({ kind: current, r }));
+    if (current !== "pois" || !alleOrteZeigen) return eigene;
+    return [...eigene, ...store.list("hospitals").map((r) => ({ kind: "hospitals" as Kind, r })), ...store.list("stations").map((r) => ({ kind: "stations" as Kind, r }))];
+  }
+
+  function renderFilter(alle: Zeile[]) {
+    filterBar.innerHTML = "";
+    const defs = filterDefs(current);
+    const f = (filter[current] ??= {});
+    for (const [name, fn] of defs) {
+      const zahl = new Map<string, number>();
+      for (const z of alle) for (const v of fn(z)) zahl.set(v, (zahl.get(v) ?? 0) + 1);
+      if (zahl.size < 2 && !f[name]) continue;
+      const sel = el("select", { "data-filter": name }) as HTMLSelectElement;
+      sel.appendChild(el("option", { value: "" }, "alle"));
+      const werte = [...zahl.keys()].sort((a, b) => (name === "Kategorie" && current === "pois" ? ORT_KATEGORIEN.findIndex((k) => k.label === a) - ORT_KATEGORIEN.findIndex((k) => k.label === b) : a.localeCompare(b, "de", { numeric: true })));
+      for (const w of werte) sel.appendChild(el("option", { value: w }, `${w || "(leer)"} (${zahl.get(w)})`));
+      sel.value = f[name] ?? "";
+      if (sel.value !== (f[name] ?? "")) f[name] = "";
+      sel.addEventListener("change", () => {
+        f[name] = sel.value;
+        renderTable();
+      });
+      const lab = el("label", {}, `${name}:`);
+      lab.appendChild(sel);
+      filterBar.appendChild(lab);
+    }
+    if (current === "pois") {
+      const lab = el("label", { title: "Krankenhäuser und Dienststellen zählen auch als Orte" });
+      const c = el("input", { type: "checkbox" }) as HTMLInputElement;
+      c.checked = alleOrteZeigen;
+      c.addEventListener("change", () => {
+        alleOrteZeigen = c.checked;
+        renderTable();
+      });
+      lab.append(c, "auch Krankenhäuser und Dienststellen");
+      filterBar.appendChild(lab);
+    }
+    if (Object.values(f).some(Boolean)) {
+      const b = el("button", { class: "btn small", type: "button" }, "Filter zurücksetzen");
+      b.addEventListener("click", () => {
+        filter[current] = {};
+        renderTable();
+      });
+      filterBar.appendChild(b);
+    }
+    filterBar.hidden = !filterBar.childElementCount;
+  }
+
   function renderTable() {
     title.textContent = KIND_LABEL[current];
     const cols = columns(current);
-    thead.innerHTML = `<tr>${cols.map(([h]) => `<th>${esc(h)}</th>`).join("")}<th>Quelle</th><th></th></tr>`;
+    thead.innerHTML = `<tr>${cols
+      .map(([h], i) => `<th class="sortierbar" data-sp="${i}" title="Klicken zum Sortieren">${esc(h)}${sortSp === i ? `<span class="sort-pfeil">${sortAb ? "▼" : "▲"}</span>` : ""}</th>`)
+      .join("")}<th class="sortierbar" data-sp="${cols.length}">Quelle${sortSp === cols.length ? `<span class="sort-pfeil">${sortAb ? "▼" : "▲"}</span>` : ""}</th><th></th></tr>`;
+    thead.querySelectorAll<HTMLElement>("th[data-sp]").forEach((th) =>
+      th.addEventListener("click", () => {
+        const i = Number(th.dataset.sp);
+        if (sortSp === i) {
+          if (sortAb) {
+            sortSp = -1;
+            sortAb = false;
+          } else sortAb = true;
+        } else {
+          sortSp = i;
+          sortAb = false;
+        }
+        renderTable();
+      }),
+    );
 
-    const all = store.list(current) as KindMap[Kind][];
-    const filtered = query
-      ? all.filter((r) => cols.some(([, f]) => f(r).toLowerCase().includes(query)) || r.id.toLowerCase().includes(query))
-      : all;
-    const sorted = filtered
-      .slice()
-      .sort((a, b) => displayName(current, a).localeCompare(displayName(current, b), "de", { numeric: true }));
+    const all = zeilen();
+    renderFilter(all);
+    const f = filter[current] ?? {};
+    const defs = filterDefs(current).filter(([n]) => f[n]);
+    const wert = (z: Zeile, i: number): string => {
+      if (z.kind !== current) {
+        // Krankenhaus / Dienststelle in der Orte-Liste
+        const o = z.r as Station | Hospital;
+        return i === 0 ? o.name : i === 1 ? kategorieLabel(z.kind === "hospitals" ? "krankenhaus" : (alleOrte().find((x) => x.id === o.id)?.kategorien[0] ?? "sonstiges")) : i === 2 ? o.ort : "";
+      }
+      return cols[i] ? cols[i][1](z.r) : ORIGIN_LABEL[z.r.herkunft];
+    };
+    const filtered = all.filter(
+      (z) =>
+        defs.every(([n, fn]) => fn(z).includes(f[n])) &&
+        (!query || cols.some((_, i) => wert(z, i).toLowerCase().includes(query)) || z.r.id.toLowerCase().includes(query)),
+    );
+    const name = (z: Zeile) => (z.kind === current ? displayName(current, z.r) : (z.r as Station).name);
+    const sorted = filtered.slice().sort((a, b) => {
+      if (sortSp < 0) return name(a).localeCompare(name(b), "de", { numeric: true });
+      const x = wert(a, sortSp);
+      const y = wert(b, sortSp);
+      const nx = Number(x);
+      const ny = Number(y);
+      const c = x !== "" && y !== "" && Number.isFinite(nx) && Number.isFinite(ny) ? nx - ny : x.localeCompare(y, "de", { numeric: true });
+      return (sortAb ? -c : c) || name(a).localeCompare(name(b), "de", { numeric: true });
+    });
 
     const frag = document.createDocumentFragment();
-    for (const r of sorted.slice(0, MAX_ROWS)) {
+    for (const z of sorted.slice(0, MAX_ROWS)) {
+      const r = z.r;
       const tr = el("tr");
+      if (z.kind !== current) tr.classList.add("fremd");
       tr.innerHTML =
-        cols.map(([, f]) => `<td>${esc(f(r))}</td>`).join("") +
-        `<td><span class="badge src-${r.herkunft}" title="${esc(r.herkunftDetail ?? "")}">${ORIGIN_LABEL[r.herkunft]}</span></td>`;
+        cols
+          .map((c, i) => {
+            const t = esc(wert(z, i));
+            return current === "vehicles" && c[0] === "Dienstplan" ? `<td data-dienstfz="${esc(r.id)}">${t}</td>` : `<td>${t}</td>`;
+          })
+          .join("") +
+        `<td><span class="badge src-${r.herkunft}" title="${esc(r.herkunftDetail ?? "")}">${z.kind !== current ? esc(z.kind === "hospitals" ? "Krankenhaus" : "Dienststelle") : ORIGIN_LABEL[r.herkunft]}</span></td>`;
       const act = el("td", { class: "row-actions" });
-      if (current === "codes") {
+      if (z.kind === "codes") {
         // keine Position
-      } else if (current !== "vehicles") {
+      } else if (z.kind !== "vehicles") {
         const m = el("button", { class: "btn small", title: "Auf der Karte zeigen" }, "Karte");
         m.addEventListener("click", (e) => {
           e.stopPropagation();
@@ -312,7 +506,7 @@ export function createDataView(container: HTMLElement, deps: DataViewDeps): { re
         }
       }
       tr.appendChild(act);
-      tr.addEventListener("click", () => openEditor(current, r.id, deps));
+      tr.addEventListener("click", () => openEditor(z.kind, r.id, deps));
       frag.appendChild(tr);
     }
     tbody.innerHTML = "";
@@ -320,9 +514,9 @@ export function createDataView(container: HTMLElement, deps: DataViewDeps): { re
 
     const c = store.counts(current);
     foot.textContent =
-      `${filtered.length} von ${c.gesamt} ${KIND_LABEL[current]} (${c.standard} Standard, ${c.eigene} eigene)` +
-      (filtered.length > MAX_ROWS ? ` – angezeigt werden die ersten ${MAX_ROWS}, bitte suchen` : "") +
-      ` · Klick auf eine Zeile zum Bearbeiten`;
+      `${filtered.length} von ${all.length} ${KIND_LABEL[current]} (${c.standard} Standard, ${c.eigene} eigene)` +
+      (filtered.length > MAX_ROWS ? ` – angezeigt werden die ersten ${MAX_ROWS}, bitte suchen oder filtern` : "") +
+      ` · Spaltenkopf klicken zum Sortieren · Klick auf eine Zeile zum Bearbeiten`;
     if (all.length === 0 && current === "codes") {
       tbody.innerHTML = `<tr><td colspan="${cols.length + 2}" class="empty">Noch keine Einsatzcodes. LeitWerk bringt keine Codeliste mit – bitte deine Liste mit „CSV importieren …“ oder ein Abfrageschema (JSON) laden. Nötig ist nur die Spalte „Code“; dazu Name, Kategorie (Stufe, z. B. „ALS rot“) und Kapitel (z. B. „10 - Brustschmerz“).</td></tr>`;
     } else if (all.length === 0) {

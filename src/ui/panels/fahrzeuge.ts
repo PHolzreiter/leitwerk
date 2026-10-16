@@ -178,7 +178,7 @@ function fahrzeugListe(ctx: PanelKontext, nurAktive: boolean) {
       sichtbar.sort((a, b) => ord.indexOf(a.status) - ord.indexOf(b.status) || a.funkrufname.localeCompare(b.funkrufname));
       for (const fz of sichtbar) {
         const ph = PHASE_TEXT[fz.phase] ?? "";
-        const html = `${statusChip(fz)}<div class="fz-main"><div><b>${esc(fz.funkrufname)}</b> <span class="muted">${typHtml(fz)} · ${esc(fz.stationName)}</span> ${crewHtml(fz)}${dienstHtml(fz)}</div><div class="fz-auftrag">${auftrag(fz) || `<span class="muted">${esc(sim.statusDef(fz.status).name)}</span>`}</div></div><div class="fz-rechts"><div>${esc(ph)}</div><div class="muted">${eta(fz)}</div></div>`;
+        const html = `${statusChip(fz)}<div class="fz-main"><div><b data-dienstfz="${esc(fz.id)}">${esc(fz.funkrufname)}</b> <span class="muted">${typHtml(fz)} · ${esc(fz.kurzname || fz.stationName)}</span> ${crewHtml(fz)}${dienstHtml(fz)}</div><div class="fz-auftrag">${auftrag(fz) || `<span class="muted">${esc(sim.statusDef(fz.status).name)}</span>`}</div></div><div class="fz-rechts"><div>${esc(ph)}</div><div class="muted">${eta(fz)}</div></div>`;
         liste.appendChild(zeileAus(fz.id, `fz-row aktiv${fzKlassen(fz)}`, html, (r) => klickVerhalten(r, fz)));
       }
       if (!sichtbar.length) liste.appendChild(el("div", { class: "muted pad" }, alle.length ? "Nichts passt zum Filter." : "Alle Fahrzeuge sind frei auf der Wache."));
@@ -219,8 +219,9 @@ function fahrzeugListe(ctx: PanelKontext, nurAktive: boolean) {
         const ab = fz.kt && !fz.kt.aktiv && fz.kt.losUm ? ` vorgemerkt ab ${new Date(fz.kt.losUm).toTimeString().slice(0, 5)}` : fz.kt && !fz.kt.aktiv ? " vorgemerkt" : "";
         const kt = fz.kt ? `<span class="kt-fz${fz.kt.aktiv ? " aktiv" : " vorgemerkt"}${ktSek ? " sek" : ""}">${ktSek ? "SEK" : "KT"}${ktIds.length > 1 ? `×${ktIds.length}` : ""}${ab}</span>` : "";
         const e = fz.einsatzId ? sim.einsatz(fz.einsatzId) : undefined;
-        const zusatz = name === HELI ? ` · ${esc(fz.stationName)}${fz.nachtflug ? " · 🌙 Nachtflug" : ""}` : fz.kurzname ? " · " + esc(fz.kurzname) : "";
-        const html = `${statusChip(fz)}<b>${esc(fz.funkrufname)}</b><span class="muted">${typHtml(fz)}${zusatz}</span>${crewHtml(fz)}${dienstHtml(fz)}${kt}<span class="spacer"></span><span class="muted">${esc(e?.nummer ?? "")}</span>`;
+        // Hubschrauber: ausgeschriebener Name (Christophorus 2) statt Stützpunkt
+        const zusatz = name === HELI ? ` · ${esc(fz.kurzname || fz.stationName)}${fz.nachtflug ? " · 🌙 Nachtflug" : ""}` : fz.kurzname ? " · " + esc(fz.kurzname) : "";
+        const html = `${statusChip(fz)}<b data-dienstfz="${esc(fz.id)}">${esc(fz.funkrufname)}</b><span class="muted">${typHtml(fz)}${zusatz}</span>${crewHtml(fz)}${dienstHtml(fz)}${kt}<span class="spacer"></span><span class="muted">${esc(e?.nummer ?? "")}</span>`;
         liste.appendChild(zeileAus(fz.id, `fz-row${fzKlassen(fz)}`, html, (r) => klickVerhalten(r, fz)));
       }
     }

@@ -30,6 +30,7 @@ export type StoreBefehl =
   | "setStandardAktiv"
   | "upsert"
   | "remove"
+  | "removeMany"
   | "clearOwn"
   | "restoreHidden"
   | "setSchema";
@@ -164,6 +165,11 @@ export class Store {
   }
 
   /** Importiertes Abfrageschema (oder null) */
+  /** Codesystem so, wie es geladen wurde (ohne Ergänzungen des Spiels) */
+  get schemaRoh(): Schema | null {
+    return istSchema(this.data.abfrageschema) ? this.data.abfrageschema : null;
+  }
+
   get schema(): Schema | null {
     return istSchema(this.data.abfrageschema) ? ergaenzeSchema(this.data.abfrageschema) : null;
   }
@@ -259,6 +265,15 @@ export class Store {
         this.remove("vehicles", v.id);
       }
     }
+    this.changed();
+  }
+
+  /** Löscht mehrere eigene Datensätze auf einmal (Standard-Datensätze werden ausgeblendet). */
+  removeMany(kind: Kind, ids: string[]): void {
+    if (this.remote) return this.remote("removeMany", [kind, ids]);
+    const weg = new Set(ids);
+    (this.data.eigene as Record<Kind, KindMap[Kind][]>)[kind] = (this.data.eigene[kind] as KindMap[Kind][]).filter((r) => !weg.has(r.id));
+    for (const r of standardRecords()[kind]) if (weg.has(r.id) && !this.data.ausgeblendet.includes(r.id)) this.data.ausgeblendet.push(r.id);
     this.changed();
   }
 
