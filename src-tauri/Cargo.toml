@@ -29,7 +29,8 @@ cpal = "0.15"
 # Entpacken der Stimmen-Pakete
 bzip2 = "0.4"
 tar = "0.4"
-zip = { version = "2", default-features = false, features = ["deflate"] }
+# alle zip-2.x-Versionen wurden auf crates.io zurückgezogen – neuere Version erlauben (gleiche Schnittstelle)
+zip = { version = ">=2.6", default-features = false, features = ["deflate"] }
 # Supertonic: ONNX Runtime wird zur Laufzeit geladen (nicht fest eingebaut)
 ort = { version = "=2.0.0-rc.10", default-features = false, features = ["std", "load-dynamic"] }
 unicode-normalization = "0.1"
