@@ -2260,8 +2260,17 @@ button.weather.offen {
   border-radius: 7px;
   white-space: nowrap;
 }
-.dienst-ende.st1 {
+.dienst-schicht {
+  display: inline-block;
+  font-size: 11px;
+  line-height: 14px;
+  padding: 0 4px;
   color: var(--text-dim);
+  white-space: nowrap;
+  cursor: help;
+}
+.dienst-ende.st1 {
+  color: var(--warn-text);
 }
 .dienst-ende.st2 {
   color: var(--warn-text);

@@ -1,6 +1,7 @@
 /** Kleine Bausteine, die mehrere Fenster brauchen (Statusfarben, Besetzung, Adresssuche, Statusmenü). */
 import { ALLE_QUALIS, REGELN, besetzungKurz, generiereBesetzung, hatNFS, pruefeBesetzung, type Platz, type Quali } from "../../sim/crew";
 import { sim, type Einsatz, type Ort, type SimFahrzeug } from "../../sim/engine";
+import { aktuelleSchicht } from "../../sim/dienst";
 import { mp } from "../../net/mehrspieler";
 import { searchAddress, type AddressHit } from "../../sim/geo";
 import type { StatusKey } from "../../sim/settings";
@@ -157,12 +158,15 @@ export function dienstHtml(fz: SimFahrzeug): string {
     const tag = b && new Date(b).toDateString() !== new Date(t).toDateString() ? `${["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"][new Date(b).getDay()]} ` : "";
     return ` <span class="dienst-aus" title="Laut Dienstplan nicht im Dienst${b ? ` – Dienstbeginn ${tag}${hhmm(b)}` : ""}">außer Dienst${b ? ` bis ${tag}${hhmm(b)}` : ""}</span>`;
   }
+  // aktuelle Schicht immer sichtbar; kurz vor Dienstende hervorgehoben. Länger darüber: Wochenübersicht
+  const w = aktuelleSchicht(sim.dienstplanVon(fz.id), t, fz.heim);
+  const schicht = w ? `${hhmm(w.start).replace(/:00$/, "")}–${hhmm(w.ende).replace(/:00$/, "")}` : "";
   const e = fz.dienstEnde;
-  if (!e) return "";
-  const rest = (e - t) / 60_000;
-  if (rest > 60 || rest < -1) return "";
-  const stufe = rest <= 30 ? 2 : 1;
-  return ` <span class="dienst-ende st${stufe}" title="Dienstende ${hhmm(e)} (in ${Math.max(0, Math.round(rest))} min)">◷${stufe === 2 ? ` ${hhmm(e)}` : ""}</span>`;
+  const rest = e ? (e - t) / 60_000 : Infinity;
+  const stufe = rest <= 30 && rest >= -1 ? 2 : rest <= 60 && rest >= -1 ? 1 : 0;
+  if (!schicht) return "";
+  const titel = e ? `Schicht ${schicht} · Dienstende ${hhmm(e)}${stufe ? ` (in ${Math.max(0, Math.round(rest))} min)` : ""}` : `Schicht ${schicht} (rund um die Uhr)`;
+  return ` <span class="dienst-schicht${stufe ? ` dienst-ende st${stufe}` : ""}" data-dienstfz="${esc(fz.id)}" data-titel="${esc(titel)}">◷ ${schicht}</span>`;
 }
 
 export function statusChip(fz: SimFahrzeug): string {

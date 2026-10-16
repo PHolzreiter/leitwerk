@@ -98,6 +98,7 @@ export function openEditor(
 
   let bereichInputs: Record<string, HTMLInputElement> = {};
   let aktivInput: HTMLInputElement | null = null;
+  let ausweich: { chk: HTMLInputElement; sel: HTMLSelectElement } | null = null;
   let nachtInput: HTMLInputElement | null = null;
   let dienstplan: { wert(): Schicht[] } | null = null;
 
@@ -170,20 +171,28 @@ export function openEditor(
     const [wrap, input] = checkbox("Aktiv (wird in der Simulation eingesetzt)", v?.aktiv ?? true);
     aktivInput = input;
     form.appendChild(wrap);
-    const [wrapN, inputN] = checkbox("Nachtflugtauglich (nur NAH)", v?.nachtflug ?? false);
+    const [wrapN, inputN] = checkbox("Nachtflugtauglich", v?.nachtflug ?? false);
     nachtInput = inputN;
     form.appendChild(wrapN);
+    // Ausweichfahrzeug (NEF) für einen Hubschrauber
     const nahs = store
       .list("vehicles")
       .filter((x) => x.kategorie === "NAH")
-      .map((x) => x.funkrufname)
-      .sort();
-    add(
-      "ersatz_fuer",
-      "Ersatz für Hubschrauber",
-      selectInput([["", "– keiner –"], ...nahs.map((n) => [n, n] as [string, string])], v?.ersatzFuer ?? ""),
-      "Nur für NEF: wird nur angemeldet, wenn dieser Hubschrauber im Dienst ist, aber nicht fliegen kann (Wetter, Nacht). Dienstplan wird dann ignoriert.",
+      .sort((a, b) => a.funkrufname.localeCompare(b.funkrufname, "de", { numeric: true }));
+    const ausBox = el("div", { class: "fld wide ausweich-box" });
+    const [ausWrap, ausChk] = checkbox("Nur Ausweichfahrzeug für einen Hubschrauber", !!v?.ersatzFuer);
+    const ausSel = selectInput(
+      nahs.map((n) => [n.funkrufname, `${n.funkrufname}${n.kurzname ? ` · ${n.kurzname}` : ""}`] as [string, string]),
+      v?.ersatzFuer || nahs.find((n) => n.dienststelleId === (v?.dienststelleId ?? preset.dienststelleId))?.funkrufname || nahs[0]?.funkrufname || "",
     );
+    const ausInfo = el("div", { class: "fld-hint" });
+    ausBox.append(ausWrap, ausSel, ausInfo);
+    form.appendChild(ausBox);
+    ausweich = { chk: ausChk, sel: ausSel };
+    // beim Hubschrauber: welches NEF ihn vertritt
+    const vertreter = v ? store.list("vehicles").filter((x) => x.ersatzFuer && (x.ersatzFuer === v.funkrufname || x.ersatzFuer === v.kurzname)) : [];
+    const nahInfo = el("div", { class: "fld wide fld-hint" }, vertreter.length ? `Ausweich-NEF: ${vertreter.map((x) => x.funkrufname).join(", ")} – fährt mit dieser Besatzung, wenn der Hubschrauber nicht fliegen kann oder abgemeldet ist.` : "Kein Ausweich-NEF. Ein NEF wird zum Ausweichfahrzeug, wenn du bei ihm „Nur Ausweichfahrzeug“ wählst.");
+    form.appendChild(nahInfo);
     const dpWrap = el("div", { class: "fld wide" });
     dpWrap.appendChild(el("label", {}, "Dienstplan (Schichten – jede Schicht hat ein eigenes Team)"));
     const heimSt = v ? (store.get("stations", v.dienststelleId) as Station | undefined) : undefined;
@@ -191,6 +200,36 @@ export function openEditor(
     dienstplan = dpe;
     dpWrap.appendChild(dpe.root);
     form.appendChild(dpWrap);
+    const dpErsatz = el("div", { class: "fld wide fld-hint" });
+    form.appendChild(dpErsatz);
+    const katSel = inputs.kategorie as HTMLSelectElement;
+    const sichtbar = () => {
+      const kat = katSel.value;
+      wrapN.hidden = kat !== "NAH" && kat !== "ITH";
+      nahInfo.hidden = kat !== "NAH";
+      ausBox.hidden = kat !== "NEF";
+      const aus = kat === "NEF" && ausChk.checked;
+      ausSel.hidden = !aus;
+      ausInfo.textContent = aus
+        ? `Im Dienst nur, wenn ${ausSel.value} im Dienst ist, aber nicht fliegen kann (Wetter, Nacht ohne Nachtflug) oder abgemeldet ist. Besatzung wie am Hubschrauber (ohne Pilot). Fliegt er wieder, meldet sich das NEF nach dem laufenden Einsatz ab.`
+        : "Normales NEF mit eigenem Dienstplan.";
+      dpWrap.hidden = aus;
+      dpErsatz.hidden = !aus;
+      dpErsatz.textContent = `Dienstplan: wie ${ausSel.value} – nur bei Flugverbot oder wenn der Hubschrauber abgemeldet ist.`;
+    };
+    katSel.addEventListener("change", sichtbar);
+    ausChk.addEventListener("change", sichtbar);
+    ausSel.addEventListener("change", sichtbar);
+    sichtbar();
+    // kleiner RTW (VW T6) ist nie ein RTW-C
+    const aufbauSel = inputs.aufbau as HTMLSelectElement;
+    aufbauSel.addEventListener("change", () => {
+      const t = inputs.typ as HTMLInputElement;
+      if (aufbauSel.value === "klein" && /^RTW-?C$/i.test(t.value.trim())) {
+        t.value = "RTW";
+        toast("Ein kleiner RTW (VW T6) kann kein RTW-C sein – Typ ist jetzt RTW");
+      }
+    });
   } else if (kind === "codes") {
     const c = existing as Einsatzcode | undefined;
     add("code", "Code *", textInput(c?.code ?? "", "z. B. RD-10D1"));
@@ -327,9 +366,11 @@ export function openEditor(
         aktiv: aktivInput?.checked ?? true,
         nachtflug: nachtInput?.checked ?? false,
         dienstplan: dienstplan?.wert() ?? [],
-        ...(val("ersatz_fuer") ? { ersatzFuer: val("ersatz_fuer") } : {}),
+        // leer = bewusst kein Ausweichfahrzeug (Standard-Zuordnung wird dann nicht ergänzt)
+        ersatzFuer: val("kategorie") === "NEF" && ausweich?.chk.checked ? ausweich.sel.value : "",
         ...(val("aufbau") === "klein" || val("aufbau") === "gross" ? { aufbau: val("aufbau") as "klein" | "gross" } : {}),
       };
+      if (v.aufbau === "klein" && /^RTW-?C$/i.test(v.typ.trim())) v.typ = "RTW";
       const geaendert: Vehicle[] = [v];
       // Regel: nur ein RTW-C je Dienststelle – ein anderer wird zum großen RTW
       if (v.typ.trim().toUpperCase() === "RTW-C") {

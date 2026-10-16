@@ -62,7 +62,7 @@ export function createDataView(container: HTMLElement, deps: DataViewDeps): { re
   /** gewählte Filter je Datenart: Filtername → Wert ("" = alle) */
   const filter: Partial<Record<Kind, Record<string, string>>> = {};
   /** Orte: auch Krankenhäuser und Dienststellen zeigen */
-  let alleOrteZeigen = false;
+  let alleOrteZeigen = true;
 
   container.innerHTML = `
     <div class="data-layout">
@@ -212,7 +212,9 @@ export function createDataView(container: HTMLElement, deps: DataViewDeps): { re
     for (const k of KINDS) {
       const c = store.counts(k);
       const b = el("button", { class: `nav-item${k === current ? " active" : ""}` });
-      b.innerHTML = `<span>${KIND_LABEL[k]}</span><span class="count">${c.gesamt}</span>`;
+      // Orte: Krankenhäuser und Dienststellen zählen mit
+      const n = k === "pois" ? c.gesamt + store.counts("hospitals").gesamt + store.counts("stations").gesamt : c.gesamt;
+      b.innerHTML = `<span>${KIND_LABEL[k]}</span><span class="count">${n}</span>`;
       b.addEventListener("click", () => select(k));
       nav.appendChild(b);
     }

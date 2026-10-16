@@ -7,7 +7,9 @@ import { wocheHtml } from "./dienstWoche";
 import { el } from "./dom";
 
 export function dienstplanEditor(start: Schicht[] | undefined, ort?: { lat: number; lon: number }): { root: HTMLElement; wert(): Schicht[] } {
-  let plan: Schicht[] = structuredClone(start ?? []);
+  // „rund um die Uhr“ (leerer Plan) als zwei echte Schichten zeigen – so lassen sich auch dort Tage wählen
+  const STANDARD = plan247(["07:00", "19:00"]);
+  let plan: Schicht[] = start?.length ? structuredClone(start) : structuredClone(STANDARD);
   const root = el("div", { class: "dp-editor" });
   const liste = el("div", { class: "dp-liste" });
   const zusammen = el("div", { class: "dp-zusammen muted small" });
@@ -21,7 +23,7 @@ export function dienstplanEditor(start: Schicht[] | undefined, ort?: { lat: numb
   // häufige Dienstpläne mit einem Klick
   vorlagen.appendChild(el("span", { class: "muted small" }, "24/7:"));
   const VORL: [string, Schicht[]][] = [
-    ...MODELLE_24_7.map((m, i): [string, Schicht[]] => [m.name, i === 0 ? [] : plan247(m.wechsel)]),
+    ...MODELLE_24_7.map((m): [string, Schicht[]] => [m.name, plan247(m.wechsel)]),
   ];
   const knopf = (label: string, p: Schicht[], titel: string) => {
     const b = el("button", { class: "btn small", type: "button", title: titel }, label);
@@ -135,5 +137,12 @@ export function dienstplanEditor(start: Schicht[] | undefined, ort?: { lat: numb
     woche.innerHTML = wocheHtml(p, ort);
   }
   zeichnen();
-  return { root, wert: () => plan.filter((s) => s.tage.length).map((s) => ({ tage: [...s.tage], von: s.von, bis: s.bis })) };
+  return {
+    root,
+    wert: () => {
+      const p = plan.filter((s) => s.tage.length).map((s) => ({ tage: [...s.tage], von: s.von, bis: s.bis }));
+      // genau der Standard → leer speichern (= rund um die Uhr)
+      return JSON.stringify(p) === JSON.stringify(STANDARD) ? [] : p;
+    },
+  };
 }

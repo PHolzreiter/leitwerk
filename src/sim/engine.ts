@@ -154,6 +154,8 @@ export interface SimFahrzeug {
   dienstBeginn?: number | null;
   /** Ersatz-NEF eines Hubschraubers (dessen Funkrufname): nur angemeldet, wenn der nicht fliegen kann */
   ersatzFuer?: string;
+  /** Hubschrauber vom Spiel abgemeldet, weil er nicht fliegen kann (meldet sich bei Flugwetter wieder an) */
+  flugAbgemeldet?: boolean;
   /** Krankentransport-Plan (vorgemerkte bzw. laufende Fahrten) */
   kt?: (KtPlan & { reinigen?: boolean; wartetAuf?: string | null; wartetKt?: string | null; wartetSeit?: number | null }) | null;
 }
@@ -1044,6 +1046,20 @@ export class Simulation {
     if (!sofort && t - this.letzterDienstTick < 20_000 && t >= this.letzterDienstTick) return;
     this.letzterDienstTick = t;
     let geaendert = false;
+    // Hubschrauber: kann er nicht fliegen (Wetter, Nacht ohne Nachtflug), meldet er sich ab – und bei Flugwetter wieder an
+    for (const fz of Object.values(this.state.fahrzeuge)) {
+      if (!fliegt(fz) || fz.ausserDienst) continue;
+      const hindernis = this.flugHindernis(fz);
+      if (hindernis && !fz.flugAbgemeldet && fz.status !== "abgemeldet" && this.dienstfrei(fz) && !fz.kt) {
+        fz.flugAbgemeldet = true;
+        fz.status = "abgemeldet";
+        geaendert = true;
+      } else if (!hindernis && fz.flugAbgemeldet) {
+        fz.flugAbgemeldet = false;
+        if (fz.status === "abgemeldet" && !(fz.defektBis && fz.defektBis > t)) fz.status = fz.phase === "frei" && distanceM(fz, fz.heim) < 80 ? "freiWache" : "freiFunk";
+        geaendert = true;
+      }
+    }
     for (const fz of Object.values(this.state.fahrzeuge)) {
       const plan = this.dienstplaene.get(fz.id);
       if (!plan) continue;
@@ -1053,7 +1069,8 @@ export class Simulation {
         // Ersatz-NEF: angemeldet, solange „sein“ Hubschrauber im Dienst ist, aber nicht fliegen kann
         nah = Object.values(this.state.fahrzeuge).find((x) => x.funkrufname === fz.ersatzFuer || x.kurzname === fz.ersatzFuer);
         const nahW = nah ? aktuelleSchicht(this.dienstplanVon(nah.id), t, nah.heim) : null;
-        w = nah && nahW && this.flugHindernis(nah) ? { ...nahW, key: `${nahW.key}#boden` } : null;
+        // Hubschrauber im Dienst, aber kann nicht fliegen oder ist abgemeldet → Ausweich-NEF fährt
+        w = nah && nahW && !nah.ausserDienst && (this.flugHindernis(nah) || nah.status === "abgemeldet") ? { ...nahW, key: `${nahW.key}#boden` } : null;
         fz.dienstEnde = null;
         fz.dienstBeginn = null;
       } else {

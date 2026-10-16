@@ -1,5 +1,14 @@
 # Änderungen
 
+## 0.22.1 – Schicht in der Liste, Ausweich-NEF, Orte
+- In den Fahrzeuglisten steht jetzt immer die aktuelle Schicht (z. B. „◷ 07–19“); kurz vor Dienstende hervorgehoben. Länger mit der Maus darauf: kleine Wochenübersicht aller Schichten
+- „Rund um die Uhr“ zeigt im Dienstplan zwei echte Schichten (07–19 und 19–07) – Tage lassen sich jetzt auch dort wählen; ebenso bei allen anderen 24/7-Modellen
+- Hubschrauber, die nicht fliegen können (Wetter, Nacht ohne Nachtflug), melden sich selbst ab und bei Flugwetter wieder an. Ist ein Hubschrauber abgemeldet – vom Spiel oder von dir –, meldet sich sein Ausweich-NEF an (gleiche Besatzung ohne Pilot)
+- Im Fahrzeug-Dialog beim NEF: „Nur Ausweichfahrzeug für einen Hubschrauber“ mit Auswahl des Hubschraubers; der eigene Dienstplan entfällt dann. Beim Hubschrauber steht, welches NEF ihn vertritt
+- Eigene oder früher importierte Fahrzeuge (z. B. 99/902) bekommen die Ausweich-Zuordnung der Standarddaten, solange du nichts anderes eingestellt hast
+- Ein kleiner RTW (VW T6) ist nie ein RTW-C – egal, wer drauf sitzt
+- Orte: Krankenhäuser und Dienststellen werden in der Orte-Liste gleich mit angezeigt und mitgezählt
+
 ## 0.22.0 – Ersatz-NEF, lesbare Dienstpläne, Filter, Orte mit Kategorien, Codesystem in einer Datei
 **Fahrzeuge und Dienststellen**
 - Jeder Notarzthubschrauber (nicht der ITH) hat ein **ÖAMTC-NEF** am selben Stützpunkt (99/002 → 99/902, 99/003 → 99/903 …). Es meldet sich nur an, wenn der Hubschrauber im Dienst ist, aber nicht fliegen kann (Wetter, Nacht ohne Nachtflug) – mit derselben Besatzung ohne Pilot. Kann wieder geflogen werden, meldet es sich nach dem laufenden Einsatz ab. Im Fahrzeug-Dialog unter „Ersatz für Hubschrauber“ einstellbar

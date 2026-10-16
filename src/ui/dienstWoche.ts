@@ -93,7 +93,8 @@ export function dienstHoverEinrichten(): void {
     const x = (e as MouseEvent).clientX;
     const y = (e as MouseEvent).clientY;
     timer = window.setTimeout(() => {
-      const html = fahrzeugWocheHtml(id);
+      const titel = z?.dataset.titel;
+      const html = (titel ? `<div class="dw-titel">${esc(titel)}</div>` : "") + fahrzeugWocheHtml(id);
       if (!html || aktiv !== id) return;
       tip = document.createElement("div");
       tip.className = "dw-tip";
@@ -102,7 +103,7 @@ export function dienstHoverEinrichten(): void {
       const r = tip.getBoundingClientRect();
       tip.style.left = `${Math.max(8, Math.min(x + 14, innerWidth - r.width - 8))}px`;
       tip.style.top = `${y + 18 + r.height > innerHeight ? Math.max(8, y - r.height - 10) : y + 18}px`;
-    }, 450);
+    }, 700);
   });
   document.addEventListener("mousedown", weg, true);
   document.addEventListener("scroll", weg, true);

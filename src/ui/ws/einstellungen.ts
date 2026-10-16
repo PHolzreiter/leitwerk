@@ -208,7 +208,7 @@ export function einstellungenFenster(deps: DataViewDeps): EinstellungenFenster {
         treffer++;
         const b = el("button", { type: "button", class: `es-punkt${s.id === aktiv ? " aktiv" : ""}`, title: s.info });
         b.dataset.seite = s.id;
-        const n = s.art ? store.counts(s.art).gesamt : null;
+        const n = s.art ? store.counts(s.art).gesamt + (s.art === "pois" ? store.counts("hospitals").gesamt + store.counts("stations").gesamt : 0) : null;
         b.innerHTML = `<span class="es-label">${s.label}</span>${n !== null ? `<span class="count">${n}</span>` : ""}`;
         b.addEventListener("click", () => zeige(s.id));
         nav.appendChild(b);

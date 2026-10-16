@@ -19,9 +19,10 @@ export interface Platz {
   quali: Quali;
 }
 
-export function rmTypVon(v: Pick<Vehicle, "kategorie" | "typ">): RmTyp {
+export function rmTypVon(v: Pick<Vehicle, "kategorie" | "typ"> & { aufbau?: Vehicle["aufbau"] }): RmTyp {
   const t = (v.typ ?? "").toUpperCase().replace(/\s+/g, "");
-  if (v.kategorie === "RTW") return t.includes("RTW-C") || t === "RTWC" ? "RTW-C" : "RTW";
+  // RTW-C nur im großen Aufbau – ein kleiner RTW (VW T6) ist nie ein RTW-C, egal wer drauf sitzt
+  if (v.kategorie === "RTW") return (t.includes("RTW-C") || t === "RTWC") && v.aufbau !== "klein" ? "RTW-C" : "RTW";
   if (["KTW", "NEF", "NAH", "SKTW", "SRTW", "SNAW", "BIT", "ITH", "BEL", "EL ÖBB"].includes(v.kategorie)) return v.kategorie as RmTyp;
   return "Sonstige";
 }

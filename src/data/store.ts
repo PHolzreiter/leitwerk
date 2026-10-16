@@ -204,6 +204,9 @@ export class Store {
         : [];
       (out as Record<Kind, KindMap[Kind][]>)[kind] = [...base, ...own];
     }
+    // Ausweich-NEF: eigene Fahrzeuge ohne Angabe (z. B. älterer Import) übernehmen die Zuordnung der Standarddaten
+    const stdErsatz = new Map(std.vehicles.filter((v) => v.ersatzFuer).map((v) => [v.funkrufname, v.ersatzFuer!]));
+    if (stdErsatz.size) out.vehicles = out.vehicles.map((v) => (v.ersatzFuer === undefined && v.kategorie === "NEF" && stdErsatz.has(v.funkrufname) ? { ...v, ersatzFuer: stdErsatz.get(v.funkrufname) } : v));
     this.effectiveCache = out;
     return out;
   }
