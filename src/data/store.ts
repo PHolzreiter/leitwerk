@@ -7,6 +7,7 @@
  * (so werden bearbeitete Standarddaten gespeichert).
  */
 import { partnerArtVonTyp } from "../sim/partner";
+import { einrichtungenAusAlt } from "./klinik";
 import { categoryFromType, streuung } from "./schema";
 import { loadStore, saveStore } from "../platform";
 import {
@@ -121,6 +122,18 @@ export class Store {
             if (v.herkunft === "import" && v.kategorie === "KTW" && (v.typ === "KTW" || v.typ === "KTW-B")) v.typ = streuung(v.funkrufname) < 0.3 ? "KTW" : "KTW-B";
           }
           this.data.version = 4;
+        }
+        if (this.data.version < 5) {
+          // ab v0.26: Krankenhäuser mit Einrichtungen statt Abteilungs-Häkchen
+          const std = new Map(standardRecords().hospitals.map((h) => [h.id, h]));
+          for (const h of this.data.eigene.hospitals) {
+            if (h.einrichtungen?.length) continue;
+            const s = std.get(h.id);
+            h.einrichtungen = s?.einrichtungen?.length ? [...s.einrichtungen] : einrichtungenAusAlt(h.abteilungen, h.bereiche);
+            delete h.abteilungen;
+            delete h.bereiche;
+          }
+          this.data.version = 5;
         }
       }
     } catch (e) {

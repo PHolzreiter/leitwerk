@@ -22,12 +22,28 @@ import {
   type Vehicle,
   type VehicleCategory,
 } from "./model";
+import { akutAbteilung, EINRICHTUNGEN, einrichtungenAusAlt, einrichtungenOrdnen } from "./klinik";
+
+/** Einrichtungen aus einer CSV-Zelle: IDs oder Namen, mit Komma getrennt */
+function einrichtungenLesen(text: string): string[] {
+  const nachName = new Map(EINRICHTUNGEN.map((e) => [normKey(e.name), e.id]));
+  const ids = new Set(EINRICHTUNGEN.map((e) => e.id));
+  const out: string[] = [];
+  for (const t of text.split(",").map((x) => x.trim()).filter(Boolean)) {
+    if (ids.has(t)) out.push(t);
+    else {
+      const id = nachName.get(normKey(t));
+      if (id) out.push(id);
+    }
+  }
+  return einrichtungenOrdnen(out);
+}
 
 /** Spalten in der Reihenfolge, in der LeitWerk sie schreibt. */
 export const COLUMNS: Record<Kind, string[]> = {
   stations: ["id", "name", "organisation", "typ", "ort", "bezirk", "adresse", "breitengrad", "laengengrad", "hinweis"],
   vehicles: ["id", "funkrufname", "kurzname", "kategorie", "typ", "aufbau", "modell", "dienststelle", "aktiv", "nachtflug", "dienstplan", "ersatz_fuer", "hinweis"],
-  hospitals: ["id", "name", "kurzname", "ort", "breitengrad", "laengengrad", ...HOSPITAL_FLAGS, "bereiche", "hinweis"],
+  hospitals: ["id", "name", "kurzname", "ort", "breitengrad", "laengengrad", "einrichtungen", "akut_aus", "hinweis"],
   pois: ["id", "name", "typ", "ort", "breitengrad", "laengengrad", "hinweis"],
   templates: ["id", "code", "adresse", "breitengrad", "laengengrad", "meldung", "patient_alter", "transport", "hinweis"],
   codes: ["id", "code", "name", "kategorie", "kapitel", "hinweis"],
@@ -84,7 +100,9 @@ const ALIASES: Record<string, string[]> = {
   neonatologie: ["neonatologie", "neo", "nicu"],
   hno: ["hno"],
   urologie: ["urologie", "uro"],
-  bereiche: ["bereiche", "stationen", "ambulanzen", "stationenambulanzen"],
+  bereiche: ["bereiche", "stationenambulanzen"],
+  einrichtungen: ["einrichtungen", "stationen", "ambulanzen", "abteilungen"],
+  akut_aus: ["akutaus", "akutabgeschaltet", "keineakutaufnahme"],
   gyn_geburtshilfe: ["gyngeburtshilfe", "gyn", "geburtshilfe", "gynaekologie", "gynaekologieundgeburtshilfe"],
 };
 
@@ -126,7 +144,7 @@ export function detectKind(text: string): Kind | null {
   if (cols.has("funkrufname")) return "vehicles";
   if (cols.has("code") && !cols.has("breitengrad")) return "codes";
   if (cols.has("code") && cols.has("breitengrad")) return "templates";
-  if (HOSPITAL_FLAGS.some((f) => cols.has(f))) return "hospitals";
+  if (HOSPITAL_FLAGS.some((f) => cols.has(f)) || cols.has("einrichtungen")) return "hospitals";
   if (cols.has("name") && cols.has("breitengrad")) {
     const typIdx = mapHeader(rows[0]).indexOf("typ");
     if (cols.has("organisation") || cols.has("bezirk")) return "stations";
@@ -497,15 +515,22 @@ export function importCsv<K extends Kind>(kind: K, text: string, ctx: ImportCont
           record = s;
         } else if (kind === "hospitals") {
           id = id || `kh-${slug(name)}`;
-          const abteilungen = {} as Record<HospitalFlag, boolean>;
-          for (const f of HOSPITAL_FLAGS) {
-            abteilungen[f] = mapped.includes(f) ? parseBool(get(f), f) : false;
+          let einrichtungen = einrichtungenLesen(get("einrichtungen"));
+          // ältere Dateien: Abteilungs-Häkchen und Bereichskürzel
+          if (!mapped.includes("einrichtungen") || (!einrichtungen.length && get("einrichtungen").trim())) {
+            const abteilungen = {} as Record<HospitalFlag, boolean>;
+            for (const f of HOSPITAL_FLAGS) abteilungen[f] = mapped.includes(f) ? parseBool(get(f), f) : false;
+            const bereiche = (get("bereiche") || get("einrichtungen"))
+              .split(/[,\s]+/)
+              .map((x) => x.trim().toUpperCase())
+              .filter((x) => x in BEREICHE);
+            einrichtungen = einrichtungenAusAlt(abteilungen, bereiche);
           }
-          const bereiche = get("bereiche")
-            .split(/[,\s]+/)
-            .map((x) => x.trim().toUpperCase())
-            .filter((x) => x in BEREICHE);
-          const h: Hospital = { ...base, id, name, kurzname: get("kurzname"), ort: get("ort"), lat, lon, abteilungen, bereiche };
+          const akutAus = get("akut_aus")
+            .split(",")
+            .map((x) => x.trim())
+            .filter((x) => akutAbteilung(x));
+          const h: Hospital = { ...base, id, name, kurzname: get("kurzname"), ort: get("ort"), lat, lon, einrichtungen, akutAus };
           record = h;
         } else {
           id = id || `poi-${slug(name)}`;
@@ -605,8 +630,8 @@ export function exportCsv<K extends Kind>(kind: K, records: KindMap[K][], statio
       } else if (kind === "hospitals") {
         const h = rec as Hospital;
         Object.assign(v, { kurzname: h.kurzname, ort: h.ort });
-        for (const f of HOSPITAL_FLAGS) v[f] = h.abteilungen[f] ? "ja" : "nein";
-        v.bereiche = (h.bereiche ?? []).join(", ");
+        v.einrichtungen = (h.einrichtungen?.length ? h.einrichtungen : einrichtungenAusAlt(h.abteilungen, h.bereiche)).join(", ");
+        v.akut_aus = (h.akutAus ?? []).join(", ");
       } else {
         const p = rec as Poi;
         Object.assign(v, { typ: p.typ, ort: p.ort });

@@ -1,6 +1,5 @@
 /** Reiter „Daten“: Dienststellen, Fahrzeuge, Krankenhäuser und POIs verwalten, CSV-Import/-Export. */
 import {
-  HOSPITAL_FLAGS,
   KIND_FILE,
   KIND_LABEL,
   KINDS,
@@ -15,6 +14,7 @@ import {
   type Einsatzcode,
 } from "../data/model";
 import { exportCsv } from "../data/schema";
+import { akutVon } from "../data/klinik";
 import { codesystemDatei } from "../abfrage/codesystem";
 import beispielCodesystem from "../../data/beispiele/beispiel_codesystem.json?raw";
 import { STANDARD_CODESYSTEM_TEXT, standardCodesystem } from "../data/standard";
@@ -34,19 +34,17 @@ const MAX_ROWS = 600;
 /** Funkgruppe je Position (Punkt-in-Fläche ist teuer) */
 const gebietCache = new Map<string, string>();
 
-const FLAG_SHORT: Record<string, string> = {
-  notfallambulanz: "NFA",
-  schockraum: "Schock",
-  unfallambulanz: "Unfall",
-  kinderambulanz: "Kind",
-  intensiv_anaesthesie: "ICU",
-  neurologie: "Neuro",
-  kinderintensiv: "PICU",
-  neonatologie: "Neo",
-  hno: "HNO",
-  urologie: "Uro",
-  gyn_geburtshilfe: "Gyn",
-};
+/** Kurzbezeichnungen wichtiger Akut-Abteilungen für die Liste */
+const AKUT_KURZ: [string, string][] = [
+  ["ak_notaufnahme", "NA"],
+  ["ak_schockraum", "Schock"],
+  ["ak_unfallchirurgie", "Unfall"],
+  ["ak_herzkatheter", "PCI"],
+  ["ak_stroke_unit", "Stroke"],
+  ["ak_kreisssaal", "Geburt"],
+  ["ak_kinder_jugendheilkunde", "Kind"],
+  ["ak_neurochirurgie", "NCH"],
+];
 
 export interface DataViewDeps extends EditorDeps {
   showOnMap(lat: number, lon: number): void;
@@ -287,11 +285,12 @@ export function createDataView(container: HTMLElement, deps: DataViewDeps): { re
           ["Name", (r) => (r as Hospital).name],
           ["Ort", (r) => (r as Hospital).ort],
           [
-            "Abteilungen",
-            (r) =>
-              HOSPITAL_FLAGS.filter((f) => (r as Hospital).abteilungen[f])
-                .map((f) => FLAG_SHORT[f])
-                .join(" · "),
+            "Akut",
+            (r) => {
+              const a = akutVon(r as Hospital);
+              const k = AKUT_KURZ.filter(([id]) => a.has(id)).map(([, t]) => t);
+              return `${a.size} Akut-Abt.${k.length ? ` · ${k.join(" · ")}` : ""}`;
+            },
           ],
         ];
       case "pois":

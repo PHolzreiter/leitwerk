@@ -3,16 +3,11 @@ import { partnerArtVonTyp } from "../sim/partner";
 import {
   AUSFUEHRUNGEN,
   MODELL_WAHL,
-  HOSPITAL_FLAGS,
-  BEREICHE_AMBULANZ,
-  BEREICHE_STATION,
-  HOSPITAL_FLAG_LABEL,
   KIND_SINGULAR,
   ORIGIN_LABEL,
   STATION_TYPES,
   VEHICLE_CATEGORIES,
   type Hospital,
-  type HospitalFlag,
   type Kind,
   type KindMap,
   type Origin,
@@ -24,6 +19,7 @@ import {
   type Einsatzcode,
 } from "../data/model";
 import { store } from "../data/store";
+import { akutMoeglich, EINRICHTUNG_TYP_LABEL, EINRICHTUNGEN, einrichtungenAusAlt, type EinrichtungTyp } from "../data/klinik";
 import { codeKategorien } from "../sim/codes";
 import { confirmDialog, openDialog } from "./dialog";
 import { el, toast } from "./dom";
@@ -95,10 +91,10 @@ export function openEditor(
     form.appendChild(f);
   };
 
-  let flagInputs: Partial<Record<HospitalFlag, HTMLInputElement>> = {};
+  let einrInputs: Record<string, HTMLInputElement> = {};
+  let akutInputs: Record<string, HTMLInputElement> = {};
   let katInputs: Record<string, HTMLInputElement> = {};
 
-  let bereichInputs: Record<string, HTMLInputElement> = {};
   let aktivInput: HTMLInputElement | null = null;
   let ausweich: { chk: HTMLInputElement; sel: HTMLSelectElement } | null = null;
   let nachtInput: HTMLInputElement | null = null;
@@ -308,27 +304,44 @@ export function openEditor(
 
     if (kind === "hospitals") {
       const h = existing as Hospital | undefined;
-      const box = el("div", { class: "flag-grid wide" });
-      box.appendChild(el("div", { class: "fld-label" }, "Abteilungen"));
-      flagInputs = {};
-      for (const f of HOSPITAL_FLAGS) {
-        const [wrap, input] = checkbox(HOSPITAL_FLAG_LABEL[f], h?.abteilungen[f] ?? false);
-        flagInputs[f] = input;
-        box.appendChild(wrap);
-      }
-      form.appendChild(box);
-      // Stationen und Ambulanzen (für Krankentransporte)
-      bereichInputs = {};
-      for (const [titel, liste] of [["Stationen", BEREICHE_STATION], ["Ambulanzen und Bereiche", BEREICHE_AMBULANZ]] as const) {
-        const b = el("div", { class: "flag-grid wide" });
-        b.appendChild(el("div", { class: "fld-label" }, `${titel} (für Krankentransporte)`));
-        for (const [k, name] of Object.entries(liste)) {
-          const [wrap, input] = checkbox(name, h?.bereiche?.includes(k) ?? false);
-          bereichInputs[k] = input;
-          b.appendChild(wrap);
+      const vorher = new Set(h?.einrichtungen?.length ? h.einrichtungen : h ? einrichtungenAusAlt(h.abteilungen, h.bereiche) : []);
+      const aus = new Set(h?.akutAus ?? []);
+      einrInputs = {};
+      akutInputs = {};
+      // Akut-Abteilungen: ergeben sich aus den Einrichtungen, einzeln abschaltbar
+      const akutBox = el("div", { class: "flag-grid wide akut-grid" });
+      const akutZeigen = () => {
+        const an = Object.entries(einrInputs).filter(([, i]) => i.checked).map(([k]) => k);
+        for (const [k, i] of Object.entries(akutInputs)) if (!i.checked) aus.add(k);
+        for (const [k, i] of Object.entries(akutInputs)) if (i.checked) aus.delete(k);
+        akutBox.innerHTML = "";
+        akutBox.appendChild(el("div", { class: "fld-label" }, "Akut-Abteilungen (ergeben sich aus den Einrichtungen – Häkchen weg = nimmt nicht akut auf)"));
+        akutInputs = {};
+        const liste = akutMoeglich(an);
+        for (const a2 of liste) {
+          const [wrap, input] = checkbox(a2.name, !aus.has(a2.id));
+          akutInputs[a2.id] = input;
+          akutBox.appendChild(wrap);
         }
-        form.appendChild(b);
+        if (!liste.length) akutBox.appendChild(el("div", { class: "muted" }, "keine – erst Einrichtungen anhaken"));
+      };
+      for (const typ of Object.keys(EINRICHTUNG_TYP_LABEL) as EinrichtungTyp[]) {
+        const det = el("details", { class: "fld wide einr-gruppe" });
+        const liste = EINRICHTUNGEN.filter((x) => x.typ === typ);
+        const n = liste.filter((x) => vorher.has(x.id)).length;
+        det.appendChild(el("summary", {}, `${EINRICHTUNG_TYP_LABEL[typ]} (${n} von ${liste.length})`));
+        const grid = el("div", { class: "flag-grid wide" });
+        for (const x of liste) {
+          const [wrap, input] = checkbox(x.name, vorher.has(x.id));
+          einrInputs[x.id] = input;
+          input.addEventListener("change", akutZeigen);
+          grid.appendChild(wrap);
+        }
+        det.appendChild(grid);
+        form.appendChild(det);
       }
+      akutZeigen();
+      form.appendChild(akutBox);
     }
   }
   add("hinweis", "Hinweis", textInput(g("hinweis")), undefined, true);
@@ -432,10 +445,11 @@ export function openEditor(
         };
         store.upsert("stations", [s]);
       } else if (kind === "hospitals") {
-        const abteilungen = {} as Record<HospitalFlag, boolean>;
-        for (const f of HOSPITAL_FLAGS) abteilungen[f] = flagInputs[f]?.checked ?? false;
-        const bereiche = Object.entries(bereichInputs).filter(([, i]) => i.checked).map(([k]) => k);
-        const h: Hospital = { ...geo, kurzname: val("kurzname"), ort: val("ort"), abteilungen, bereiche };
+        const einrichtungen = EINRICHTUNGEN.map((x) => x.id).filter((id) => einrInputs[id]?.checked);
+        const akutAus = Object.entries(akutInputs).filter(([, i]) => !i.checked).map(([k]) => k);
+        const h: Hospital = { ...geo, kurzname: val("kurzname"), ort: val("ort"), einrichtungen, akutAus };
+        delete h.abteilungen;
+        delete h.bereiche;
         store.upsert("hospitals", [h]);
       } else {
         const keys = Object.entries(katInputs).filter(([, i]) => i.checked).map(([k]) => k);

@@ -5,7 +5,7 @@
 import { funkNamenGlaetten, mikroAnbinden } from "./sprache";
 import { funkKiAntwort } from "../abfrage/funkKi";
 import { mp } from "../net/mehrspieler";
-import { HOSPITAL_FLAG_LABEL } from "../data/model";
+import { buchungName } from "../data/klinik";
 import { store } from "../data/store";
 import { findCode } from "../sim/codes";
 import { sim, type FunkGespraech } from "../sim/engine";
@@ -35,7 +35,7 @@ function einsatzAuftrag(g: FunkGespraech): string {
 function zielKh(g: FunkGespraech): string {
   const e = g.einsatzId ? sim.einsatz(g.einsatzId) : undefined;
   const h = e?.kh ? store.get("hospitals", e.kh.hospitalId) : undefined;
-  return h ? `Hier LEO, Zielkrankenhaus ${h.kurzname || h.name}, ${HOSPITAL_FLAG_LABEL[e!.kh!.grund]}, kommen` : "Hier LEO, Zielkrankenhaus: ";
+  return h ? `Hier LEO, Zielkrankenhaus ${h.kurzname || h.name}, ${e!.kh!.grund ? `${buchungName(e!.kh!.grund)}, ` : ""}kommen` : "Hier LEO, Zielkrankenhaus: ";
 }
 
 /** Schnellknöpfe: Text wird gesendet; „…“-Knöpfe füllen nur das Eingabefeld */

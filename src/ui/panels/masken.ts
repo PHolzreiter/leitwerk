@@ -5,7 +5,7 @@
 import { nummerAus } from "../../sim/rufnummer";
 import { PARTNER, PARTNER_ARTEN } from "../../sim/partner";
 import { exportKnopf } from "../gespraechExport";
-import { HOSPITAL_FLAGS, HOSPITAL_FLAG_LABEL, type HospitalFlag } from "../../data/model";
+import { BUCHUNGEN, buchungName } from "../../data/klinik";
 import { store } from "../../data/store";
 import { findCode, hasCodes, searchCodes, type Einsatzcode } from "../../sim/codes";
 import { infoFreitext, PARTNER_PHASE_TEXT, sim, type Einsatz } from "../../sim/engine";
@@ -270,37 +270,73 @@ export function einsatzMaske(e: Einsatz): { root: HTMLElement; refresh(): void }
   const khBox = el("div", { class: "mask-box" });
   khBox.innerHTML = `<div class="box-title">Krankenhaus · Berufungs- und Zielort</div>`;
   const khInfo = el("div", { class: "kh-info" });
-  const grundSel = el("select");
-  for (const f of HOSPITAL_FLAGS) grundSel.appendChild(el("option", { value: f }, HOSPITAL_FLAG_LABEL[f]));
-  const khSel = el("select");
+  // Verdachtsdiagnose (Buchung), nach Bereichen gruppiert
+  const grundSel = el("select", { class: "kh-verdacht", title: "Verdachtsdiagnose" });
+  grundSel.appendChild(el("option", { value: "" }, "– Verdacht wählen –"));
+  for (const kat of [...new Set(BUCHUNGEN.map((b) => b.kategorie))]) {
+    const g = el("optgroup");
+    g.label = kat;
+    for (const b of BUCHUNGEN.filter((x) => x.kategorie === kat)) g.appendChild(el("option", { value: b.id }, `${b.name}${b.zeitkritisch ? " ⏱" : ""}`));
+    grundSel.appendChild(g);
+  }
+  const dringChip = el("span", { class: "kh-dring" });
+  const khSel = el("select", { class: "kh-sel" });
   const btnBook = el("button", { class: "btn small" }, "KH buchen");
   const khRow = el("div", { class: "kh-row" });
-  khRow.append(grundSel, khSel, btnBook);
+  khRow.append(dringChip, grundSel, khSel, btnBook);
   const boZo = el("div", { class: "muted bozo" });
   const zo = addressInput("Zielort (frei, z. B. für Krankentransport)", (o) => void fehlerZeigen(sim.call("aktualisiere", e.id, { zo: o })));
   khBox.append(khInfo, khRow, boZo, el("div", { class: "fld-label" }, "Zielort manuell"), zo.root);
   root.appendChild(khBox);
 
-  const fillKh = () => {
-    const grund = grundSel.value as HospitalFlag;
-    const pos = e.adresse ?? e.wahr;
-    const list = store
-      .list("hospitals")
-      .filter((h) => h.abteilungen[grund])
-      .map((h) => ({ h, d: distanceM(pos, h) }))
-      .sort((a, b) => a.d - b.d);
-    khSel.innerHTML = "";
-    for (const { h, d } of list) khSel.appendChild(el("option", { value: h.id }, `${h.kurzname || h.name} (${(d / 1000).toFixed(0)} km)`));
-    if (list.length === 0) khSel.appendChild(el("option", { value: "" }, "kein KH mit dieser Abteilung"));
+  /** Dringlichkeit, wie die Leitstelle sie kennt: nach dem Eintreffen aus der Lage, vorher aus der Einsatzstufe */
+  const dringlichkeit = (): "rot" | "gelb" | "gruen" => {
+    const l = e.wahr.lage;
+    if (l?.aufgedeckt && l.patienten[0]) return l.patienten[0].sichtung;
+    const k = sim.stufeVon(e)?.kategorie;
+    return k === "kritisch" ? "rot" : k === "dringend" ? "gelb" : "gruen";
   };
-  grundSel.addEventListener("change", fillKh);
+  const DRING_TEXT = { rot: "Patient rot", gelb: "Patient gelb", gruen: "Patient grün" };
+  let khKey = "";
+  const fillKh = (force = false) => {
+    const d = dringlichkeit();
+    const key = `${grundSel.value}|${d}|${e.adresse?.lat}`;
+    if (key === khKey && !force) return;
+    khKey = key;
+    dringChip.className = `kh-dring ${d}`;
+    dringChip.textContent = DRING_TEXT[d];
+    const pos = e.adresse ?? e.wahr;
+    const vorschlaege = sim.khFuer(pos, grundSel.value || null, d === "rot");
+    const gezeigt = new Set(vorschlaege.map((v) => v.h.id));
+    const alt = khSel.value;
+    khSel.innerHTML = "";
+    const MARKE = { passend: "passend", ausweich: "Ausweich", rueckfall: "Rückfall" } as const;
+    for (const v of vorschlaege) khSel.appendChild(el("option", { value: v.h.id, class: `kh-opt ${v.eignung}` }, `${v.h.kurzname || v.h.name} (${v.km.toFixed(0)} km) · ${MARKE[v.eignung]}`));
+    // alle anderen bleiben wählbar (grau), nach Entfernung
+    const rest = store
+      .list("hospitals")
+      .filter((h) => !gezeigt.has(h.id))
+      .map((h) => ({ h, km: distanceM(pos, h) / 1000 }))
+      .filter((x) => x.km < 150)
+      .sort((a, b) => a.km - b.km);
+    if (rest.length) {
+      const g = el("optgroup");
+      g.label = "passt nicht zur Diagnose";
+      for (const { h, km } of rest) g.appendChild(el("option", { value: h.id, class: "kh-opt nein" }, `${h.kurzname || h.name} (${km.toFixed(0)} km)`));
+      khSel.appendChild(g);
+    }
+    if (!khSel.options.length) khSel.appendChild(el("option", { value: "" }, "kein Krankenhaus gefunden"));
+    if (alt && [...khSel.options].some((o) => o.value === alt) && !force) khSel.value = alt;
+  };
+  grundSel.addEventListener("change", () => fillKh(true));
   btnBook.addEventListener("click", () => {
     if (!khSel.value) return;
-    void fehlerZeigen(sim.call("bucheKh", e.id, khSel.value, grundSel.value as HospitalFlag));
+    void fehlerZeigen(sim.call("bucheKh", e.id, khSel.value, grundSel.value));
     toast("Krankenhaus gebucht");
   });
-  if (e.khAnfrage) grundSel.value = e.khAnfrage.abteilung;
-  fillKh();
+  grundSel.value = e.khAnfrage?.verdacht ?? e.verdacht ?? e.kh?.grund ?? "";
+  let letzterVerdacht = grundSel.value;
+  fillKh(true);
 
   // Protokoll
   const protBox = el("div", { class: "mask-box" });
@@ -449,11 +485,17 @@ export function einsatzMaske(e: Einsatz): { root: HTMLElement; refresh(): void }
       // KH
       const h = e.kh ? store.get("hospitals", e.kh.hospitalId) : undefined;
       khInfo.innerHTML = e.kh
-        ? `<div>Gebucht: <b>${esc(h?.name ?? e.kh.hospitalId)}</b></div><div class="muted">Grund: ${esc(HOSPITAL_FLAG_LABEL[e.kh.grund])} · durch ${e.kh.durch === "rtw" ? "RTW" : "Leitstelle"} · ${uhr(e.kh.zeit)}</div>`
+        ? `<div>Gebucht: <b>${esc(h?.name ?? e.kh.hospitalId)}</b></div><div class="muted">${e.kh.grund ? `Verdacht: ${esc(buchungName(e.kh.grund))} · ` : ""}durch ${e.kh.durch === "rtw" ? "RTW" : "Leitstelle"} · ${uhr(e.kh.zeit)}</div>`
         : e.khAnfrage
-          ? `<div class="alert-text">${esc(e.khAnfrage.von)} erbittet KH-Buchung: <b>${esc(HOSPITAL_FLAG_LABEL[e.khAnfrage.abteilung])}</b></div>`
+          ? `<div class="alert-text">${esc(e.khAnfrage.von)} erbittet KH-Buchung: <b>Verdacht ${esc(buchungName(e.khAnfrage.verdacht))}</b></div>`
           : `<div class="muted">Noch kein Krankenhaus gebucht.</div>`;
       khBox.classList.toggle("alert", !!e.khAnfrage);
+      const v = e.khAnfrage?.verdacht ?? e.verdacht ?? "";
+      if (v && v !== letzterVerdacht) {
+        letzterVerdacht = v;
+        grundSel.value = v;
+      }
+      fillKh();
       boZo.innerHTML = `BO: ${esc(e.bo?.label ?? "–")}<br>ZO: ${esc(e.zo?.label ?? "–")}`;
       // Protokoll
       prot.innerHTML = e.protokoll

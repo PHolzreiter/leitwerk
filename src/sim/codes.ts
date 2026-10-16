@@ -3,7 +3,6 @@
  * LeitWerk liefert selbst keine Codeliste mit.
  */
 import { store } from "../data/store";
-import type { HospitalFlag } from "../data/model";
 import { normKey } from "../data/schema";
 
 export interface Einsatzcode {
@@ -74,14 +73,3 @@ export function searchCodes(query: string, limit = 30): Einsatzcode[] {
   return out;
 }
 
-/** Welche Abteilung ein Patient mit diesem Code im Krankenhaus braucht (Buchungsgrund). */
-export function abteilungFuer(code: Einsatzcode, kind: boolean, kritisch: boolean): HospitalFlag {
-  const g = code.gruppe;
-  if (g === 24) return "gyn_geburtshilfe";
-  if (kind) return kritisch ? "kinderintensiv" : "kinderambulanz";
-  if (g === 28) return "neurologie";
-  if ([9, 10, 19, 11].includes(g)) return "intensiv_anaesthesie";
-  if ([3, 4, 17, 21, 22, 27, 29, 30, 15, 14, 7].includes(g)) return kritisch ? "schockraum" : "unfallambulanz";
-  if (g === 16) return "notfallambulanz";
-  return "notfallambulanz";
-}

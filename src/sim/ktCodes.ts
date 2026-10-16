@@ -3,6 +3,7 @@
  * feste Liste, was ein Code verlangt (Fahrzeug, Arzt, Sondersignal) und Code-Vorschlag aus den Auftragsdaten.
  */
 import { BEREICHE_AMBULANZ } from "../data/model";
+import { einrichtung } from "../data/klinik";
 import type { KtDaten } from "./kt";
 
 export interface KtCode {
@@ -165,7 +166,8 @@ export function codeVorschlag(d: KtDaten, luftKm: number): string | null {
   if (vonKh && !nachKh) {
     const t = therapie(d.von?.bereich);
     if (t) return `${p}-95${t}${n}`;
-    const ambulant = !!d.von?.bereich && d.von.bereich in BEREICHE_AMBULANZ;
+    const t2 = d.von?.bereich ? einrichtung(d.von.bereich)?.typ : undefined;
+    const ambulant = !!d.von?.bereich && (d.von.bereich in BEREICHE_AMBULANZ || t2 === "ambulanz" || t2 === "funktionsbereich");
     return `${p}-95K${n}${ambulant ? "A" : ""}`;
   }
   if (vonKh && nachKh) return `SEK-96K${n === 1 ? 1 : n === 3 ? 3 : 2}${d.sofort ? "!" : ""}`;

@@ -1,5 +1,18 @@
 # Änderungen
 
+## 0.26.0 – Krankenhäuser mit Stationen und Ambulanzen, Buchung nach Verdachtsdiagnose
+**Krankenhäuser**
+- Für jedes Krankenhaus steht jetzt, welche Einrichtungen es hat: Stationen, Intensiv- und Überwachungsstationen, Ambulanzen, Funktionsbereiche (CT, Herzkatheter, Schockraum, Kreißsaal …) und Zentren. Recherchiert auf den offiziellen Websites aller 96 bisherigen Häuser (Stand Oktober 2026); was dort nicht belegt ist, ist nicht eingetragen
+- 11 Häuser neu, darunter die Privatkliniken in Graz und Linz, das Evangelische Krankenhaus Wien, Hinterbrühl und Rosenhügel (Kinder- und Jugendpsychiatrie)
+- Daraus ergeben sich automatisch die Akut-Abteilungen (z. B. Herzkatheter, Stroke Unit, Unfallchirurgie, Kreißsaal). Im Krankenhaus-Fenster hakst du die Einrichtungen an und kannst einzelne Akut-Abteilungen abschalten („nimmt nicht akut auf“). Privatkliniken und Häuser ohne Notaufnahme nehmen keine Rettung auf
+- Die Karte zeigt beim Krankenhaus seine Akut-Abteilungen; die Krankentransport-Ziele kommen ebenfalls aus den Einrichtungen
+
+**Buchen nach Verdachtsdiagnose**
+- Jeder Patient hat eine verborgene Verdachtsdiagnose (STEMI, Schlaganfall, Polytrauma, Augenverletzung, Exsikkose …), die sich erst beim Patienten ergibt
+- Die Besatzung bucht fast immer selbst das passende Haus. Nur bei Reanimation oder mehreren Patienten (selten auch sonst) bittet sie die Leitstelle und nennt den Verdacht
+- Zeitkritische Diagnosen und Fächer wie Auge, HNO, Gyn/Geburt, Urologie, Psychiatrie und Kinder gehen immer ins passende Haus. Nicht kritische internistische Patienten dürfen auch auf jede Notaufnahme, nicht kritische Unfälle auf jede Unfallchirurgie
+- In der Einsatzmaske wählst du den Verdacht; die Krankenhäuser stehen nach Entfernung mit „passend“, „Ausweich“ oder „Rückfall“, alle anderen bleiben (grau) wählbar. Die Farbe daneben zeigt die Dringlichkeit des Patienten. Deine Buchung gilt immer – die Besatzung fährt ohne Kommentar hin
+
 ## 0.25.0 – Feuerwehr, Polizei, Berg- und Wasserrettung mit eigenen Fahrzeugen
 **Dienststellen auf der Karte**
 - Neu in den Standarddaten (aus OpenStreetMap): 452 Feuerwehren (je Gemeinde die Hauptfeuerwehr, dazu die Bezirkskommanden), 197 Polizeiinspektionen, 30 Bergrettungs- und 4 Wasserrettungs-Stützpunkte. Sie erscheinen als kleine farbige Punkte erst beim Hineinzoomen (Feuerwehr rot, Polizei dunkelblau, Bergrettung grün, Wasserrettung türkis)

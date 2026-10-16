@@ -1,0 +1,1572 @@
+{
+ "version": 2,
+ "ebene1_einrichtungen": [
+  {
+   "id": "st_agr",
+   "typ": "station",
+   "name": "Akutgeriatrie / Remobilisation (AG/R)"
+  },
+  {
+   "id": "st_allgemeinchirurgie",
+   "typ": "station",
+   "name": "Allgemein- & Viszeralchirurgie"
+  },
+  {
+   "id": "st_angiologie",
+   "typ": "station",
+   "name": "Angiologie"
+  },
+  {
+   "id": "st_augenheilkunde",
+   "typ": "station",
+   "name": "Augenheilkunde"
+  },
+  {
+   "id": "st_dermatologie",
+   "typ": "station",
+   "name": "Dermatologie"
+  },
+  {
+   "id": "st_endokrinologie",
+   "typ": "station",
+   "name": "Endokrinologie & Diabetologie"
+  },
+  {
+   "id": "st_gastroenterologie",
+   "typ": "station",
+   "name": "Gastroenterologie & Hepatologie"
+  },
+  {
+   "id": "st_gefaesschirurgie",
+   "typ": "station",
+   "name": "Gefäßchirurgie"
+  },
+  {
+   "id": "st_geburtshilfe",
+   "typ": "station",
+   "name": "Geburtshilfe / Wochenbett"
+  },
+  {
+   "id": "st_gynaekologie",
+   "typ": "station",
+   "name": "Gynäkologie"
+  },
+  {
+   "id": "st_onkologie",
+   "typ": "station",
+   "name": "Hämatologie & Onkologie"
+  },
+  {
+   "id": "st_herzchirurgie",
+   "typ": "station",
+   "name": "Herzchirurgie"
+  },
+  {
+   "id": "st_hno",
+   "typ": "station",
+   "name": "HNO"
+  },
+  {
+   "id": "st_infektiologie",
+   "typ": "station",
+   "name": "Infektiologie / Isolierstation"
+  },
+  {
+   "id": "st_innere_medizin",
+   "typ": "station",
+   "name": "Innere Medizin"
+  },
+  {
+   "id": "st_kardiologie",
+   "typ": "station",
+   "name": "Kardiologie"
+  },
+  {
+   "id": "st_kinderchirurgie",
+   "typ": "station",
+   "name": "Kinder- & Jugendchirurgie"
+  },
+  {
+   "id": "st_kinder_jugendheilkunde",
+   "typ": "station",
+   "name": "Kinder- & Jugendheilkunde"
+  },
+  {
+   "id": "st_kinder_jugendpsychiatrie",
+   "typ": "station",
+   "name": "Kinder- & Jugendpsychiatrie"
+  },
+  {
+   "id": "st_mkg",
+   "typ": "station",
+   "name": "MKG"
+  },
+  {
+   "id": "st_nephrologie",
+   "typ": "station",
+   "name": "Nephrologie"
+  },
+  {
+   "id": "st_neurochirurgie",
+   "typ": "station",
+   "name": "Neurochirurgie"
+  },
+  {
+   "id": "st_neurologie",
+   "typ": "station",
+   "name": "Neurologie"
+  },
+  {
+   "id": "st_nuklearmedizin",
+   "typ": "station",
+   "name": "Nuklearmedizin (Therapiestation)"
+  },
+  {
+   "id": "st_orthopaedie_traumatologie",
+   "typ": "station",
+   "name": "Orthopädie & Traumatologie"
+  },
+  {
+   "id": "st_palliativstation",
+   "typ": "station",
+   "name": "Palliativstation"
+  },
+  {
+   "id": "st_physikalische_medizin",
+   "typ": "station",
+   "name": "Physikalische Medizin & Rehabilitation"
+  },
+  {
+   "id": "st_plastische_chirurgie",
+   "typ": "station",
+   "name": "Plastische Chirurgie"
+  },
+  {
+   "id": "st_psychiatrie",
+   "typ": "station",
+   "name": "Psychiatrie"
+  },
+  {
+   "id": "st_psychosomatik",
+   "typ": "station",
+   "name": "Psychosomatik"
+  },
+  {
+   "id": "st_pulmologie",
+   "typ": "station",
+   "name": "Pulmologie"
+  },
+  {
+   "id": "st_rns",
+   "typ": "station",
+   "name": "Remobilisation & Nachsorge (RNS)"
+  },
+  {
+   "id": "st_rheumatologie",
+   "typ": "station",
+   "name": "Rheumatologie"
+  },
+  {
+   "id": "st_strahlentherapie",
+   "typ": "station",
+   "name": "Strahlentherapie / Radioonkologie"
+  },
+  {
+   "id": "st_sucht_entzug",
+   "typ": "station",
+   "name": "Sucht & Entzug"
+  },
+  {
+   "id": "st_thoraxchirurgie",
+   "typ": "station",
+   "name": "Thoraxchirurgie"
+  },
+  {
+   "id": "st_urologie",
+   "typ": "station",
+   "name": "Urologie"
+  },
+  {
+   "id": "its_interdisziplinaer",
+   "typ": "intensiv",
+   "name": "Anästhesiologische / Interdisziplinäre Intensiv"
+  },
+  {
+   "id": "its_chirurgisch",
+   "typ": "intensiv",
+   "name": "Chirurgische Intensiv"
+  },
+  {
+   "id": "its_internistisch",
+   "typ": "intensiv",
+   "name": "Internistische Intensiv"
+  },
+  {
+   "id": "its_ccu",
+   "typ": "intensiv",
+   "name": "Kardiologische Intensiv (CCU)"
+  },
+  {
+   "id": "its_neuro",
+   "typ": "intensiv",
+   "name": "Neurologische / Neurochirurgische Intensiv"
+  },
+  {
+   "id": "its_verbrennung",
+   "typ": "intensiv",
+   "name": "Verbrennungsintensiv"
+  },
+  {
+   "id": "its_picu",
+   "typ": "intensiv",
+   "name": "Kinder-Intensiv (PICU)"
+  },
+  {
+   "id": "its_nicu",
+   "typ": "intensiv",
+   "name": "Neonatologische Intensiv (NICU)"
+  },
+  {
+   "id": "its_imcu",
+   "typ": "intensiv",
+   "name": "Intermediate Care (IMCU) / Überwachungsstation"
+  },
+  {
+   "id": "its_stroke_unit",
+   "typ": "intensiv",
+   "name": "Stroke Unit"
+  },
+  {
+   "id": "amb_notaufnahme",
+   "typ": "ambulanz",
+   "name": "Zentrale Notaufnahme / Erstversorgung"
+  },
+  {
+   "id": "amb_unfall",
+   "typ": "ambulanz",
+   "name": "Unfallambulanz"
+  },
+  {
+   "id": "amb_kindernotaufnahme",
+   "typ": "ambulanz",
+   "name": "Kindernotaufnahme"
+  },
+  {
+   "id": "amb_brust",
+   "typ": "ambulanz",
+   "name": "Brustambulanz"
+  },
+  {
+   "id": "amb_diabetes",
+   "typ": "ambulanz",
+   "name": "Diabetesambulanz"
+  },
+  {
+   "id": "amb_gerinnung",
+   "typ": "ambulanz",
+   "name": "Gerinnungsambulanz"
+  },
+  {
+   "id": "amb_gips",
+   "typ": "ambulanz",
+   "name": "Gipsambulanz"
+  },
+  {
+   "id": "amb_herzinsuffizienz",
+   "typ": "ambulanz",
+   "name": "Herzinsuffizienzambulanz"
+  },
+  {
+   "id": "amb_memory",
+   "typ": "ambulanz",
+   "name": "Memory-Ambulanz"
+  },
+  {
+   "id": "amb_praeoperativ",
+   "typ": "ambulanz",
+   "name": "Präoperative Ambulanz"
+  },
+  {
+   "id": "amb_psychiatrie_krise",
+   "typ": "ambulanz",
+   "name": "Psychiatrische Ambulanz / Krisenintervention"
+  },
+  {
+   "id": "amb_schmerz",
+   "typ": "ambulanz",
+   "name": "Schmerzambulanz"
+  },
+  {
+   "id": "amb_schrittmacher",
+   "typ": "ambulanz",
+   "name": "Schrittmacher- / ICD-Ambulanz"
+  },
+  {
+   "id": "amb_schwangere",
+   "typ": "ambulanz",
+   "name": "Schwangerenambulanz / Risikoschwangerschaft"
+  },
+  {
+   "id": "amb_stoma",
+   "typ": "ambulanz",
+   "name": "Stomaambulanz"
+  },
+  {
+   "id": "amb_transplantation",
+   "typ": "ambulanz",
+   "name": "Transplantationsambulanz"
+  },
+  {
+   "id": "amb_wunde",
+   "typ": "ambulanz",
+   "name": "Wundambulanz"
+  },
+  {
+   "id": "amb_onko_tagesklinik",
+   "typ": "ambulanz",
+   "name": "Onkologische Tagesklinik / Chemotherapie"
+  },
+  {
+   "id": "amb_tagesklinik",
+   "typ": "ambulanz",
+   "name": "Tagesklinik (allgemein)"
+  },
+  {
+   "id": "fb_roentgen",
+   "typ": "funktionsbereich",
+   "name": "Röntgen"
+  },
+  {
+   "id": "fb_ct",
+   "typ": "funktionsbereich",
+   "name": "CT"
+  },
+  {
+   "id": "fb_mrt",
+   "typ": "funktionsbereich",
+   "name": "MRT"
+  },
+  {
+   "id": "fb_angiographie",
+   "typ": "funktionsbereich",
+   "name": "Angiographie / Interventionelle Radiologie"
+  },
+  {
+   "id": "fb_nuklearmedizin",
+   "typ": "funktionsbereich",
+   "name": "Nuklearmedizin (Szintigraphie, PET-CT)"
+  },
+  {
+   "id": "fb_herzkatheter",
+   "typ": "funktionsbereich",
+   "name": "Herzkatheterlabor"
+  },
+  {
+   "id": "fb_echo",
+   "typ": "funktionsbereich",
+   "name": "Echokardiographie"
+  },
+  {
+   "id": "fb_endoskopie",
+   "typ": "funktionsbereich",
+   "name": "Endoskopie"
+  },
+  {
+   "id": "fb_lungenfunktion",
+   "typ": "funktionsbereich",
+   "name": "Lungenfunktion"
+  },
+  {
+   "id": "fb_eeg",
+   "typ": "funktionsbereich",
+   "name": "EEG / Neurophysiologie"
+  },
+  {
+   "id": "fb_schlaflabor",
+   "typ": "funktionsbereich",
+   "name": "Schlaflabor"
+  },
+  {
+   "id": "fb_dialyse",
+   "typ": "funktionsbereich",
+   "name": "Dialyse"
+  },
+  {
+   "id": "fb_strahlentherapie",
+   "typ": "funktionsbereich",
+   "name": "Strahlentherapie"
+  },
+  {
+   "id": "fb_physiotherapie",
+   "typ": "funktionsbereich",
+   "name": "Physiotherapie"
+  },
+  {
+   "id": "fb_druckkammer",
+   "typ": "funktionsbereich",
+   "name": "Druckkammer"
+  },
+  {
+   "id": "fb_op",
+   "typ": "funktionsbereich",
+   "name": "OP / Tageschirurgie"
+  },
+  {
+   "id": "fb_schockraum",
+   "typ": "funktionsbereich",
+   "name": "Schockraum"
+  },
+  {
+   "id": "fb_kreisssaal",
+   "typ": "funktionsbereich",
+   "name": "Kreißsaal"
+  },
+  {
+   "id": "z_cardiac_arrest_center",
+   "typ": "zentrum",
+   "name": "Cardiac Arrest Center / ECMO"
+  },
+  {
+   "id": "z_verbrennungszentrum",
+   "typ": "zentrum",
+   "name": "Verbrennungszentrum"
+  },
+  {
+   "id": "z_toxikologie",
+   "typ": "zentrum",
+   "name": "Toxikologisches Zentrum"
+  },
+  {
+   "id": "z_tropenmedizin",
+   "typ": "zentrum",
+   "name": "Tropenmedizin"
+  },
+  {
+   "id": "z_wirbelsaeule",
+   "typ": "zentrum",
+   "name": "Wirbelsäulenzentrum"
+  }
+ ],
+ "ebene1_ziele_ausserhalb_krankenhaus": [
+  "Dialysezentrum",
+  "Rehabilitationszentrum",
+  "Pflegeheim",
+  "Hospiz",
+  "Röntgen- / MRT-Institut",
+  "Arztpraxis",
+  "Wohnadresse"
+ ],
+ "ebene2_akut_abteilungen": [
+  {
+   "id": "ak_gastro_endoskopie",
+   "name": "Akut-Gastroenterologie & Endoskopie",
+   "voraussetzung": [
+    [
+     "st_gastroenterologie",
+     "fb_endoskopie"
+    ]
+   ]
+  },
+  {
+   "id": "ak_psychiatrie",
+   "name": "Akutpsychiatrie",
+   "voraussetzung": [
+    [
+     "st_psychiatrie"
+    ]
+   ]
+  },
+  {
+   "id": "ak_allgemeinchirurgie",
+   "name": "Allgemein- & Viszeralchirurgie",
+   "voraussetzung": [
+    [
+     "st_allgemeinchirurgie"
+    ]
+   ]
+  },
+  {
+   "id": "ak_angiographie",
+   "name": "Angiographie",
+   "voraussetzung": [
+    [
+     "fb_angiographie"
+    ]
+   ]
+  },
+  {
+   "id": "ak_augenheilkunde",
+   "name": "Augenheilkunde",
+   "voraussetzung": [
+    [
+     "st_augenheilkunde"
+    ]
+   ]
+  },
+  {
+   "id": "ak_ct",
+   "name": "CT",
+   "voraussetzung": [
+    [
+     "fb_ct"
+    ]
+   ]
+  },
+  {
+   "id": "ak_cardiac_arrest_center",
+   "name": "Cardiac Arrest Center / ECMO",
+   "voraussetzung": [
+    [
+     "z_cardiac_arrest_center"
+    ]
+   ]
+  },
+  {
+   "id": "ak_chirurgische_intensiv",
+   "name": "Chirurgische Intensiv",
+   "voraussetzung": [
+    [
+     "its_chirurgisch"
+    ],
+    [
+     "its_interdisziplinaer"
+    ]
+   ]
+  },
+  {
+   "id": "ak_dermatologie",
+   "name": "Dermatologie",
+   "voraussetzung": [
+    [
+     "st_dermatologie"
+    ]
+   ]
+  },
+  {
+   "id": "ak_dialyse",
+   "name": "Dialyse",
+   "voraussetzung": [
+    [
+     "fb_dialyse"
+    ]
+   ]
+  },
+  {
+   "id": "ak_druckkammer",
+   "name": "Druckkammer",
+   "voraussetzung": [
+    [
+     "fb_druckkammer"
+    ]
+   ]
+  },
+  {
+   "id": "ak_gefaesschirurgie",
+   "name": "Gefäßchirurgie",
+   "voraussetzung": [
+    [
+     "st_gefaesschirurgie"
+    ]
+   ]
+  },
+  {
+   "id": "ak_gynaekologie",
+   "name": "Gynäkologie",
+   "voraussetzung": [
+    [
+     "st_gynaekologie"
+    ]
+   ]
+  },
+  {
+   "id": "ak_hno",
+   "name": "HNO",
+   "voraussetzung": [
+    [
+     "st_hno"
+    ]
+   ]
+  },
+  {
+   "id": "ak_herzchirurgie",
+   "name": "Herzchirurgie",
+   "voraussetzung": [
+    [
+     "st_herzchirurgie"
+    ]
+   ]
+  },
+  {
+   "id": "ak_herzkatheter",
+   "name": "Herzkatheterlabor",
+   "voraussetzung": [
+    [
+     "fb_herzkatheter"
+    ]
+   ]
+  },
+  {
+   "id": "ak_innere_intensiv",
+   "name": "Innere Intensiv",
+   "voraussetzung": [
+    [
+     "its_internistisch"
+    ],
+    [
+     "its_interdisziplinaer"
+    ],
+    [
+     "its_ccu"
+    ]
+   ]
+  },
+  {
+   "id": "ak_innere_medizin",
+   "name": "Innere Medizin",
+   "voraussetzung": [
+    [
+     "st_innere_medizin"
+    ]
+   ]
+  },
+  {
+   "id": "ak_kardiologie",
+   "name": "Kardiologie",
+   "voraussetzung": [
+    [
+     "st_kardiologie"
+    ]
+   ]
+  },
+  {
+   "id": "ak_kinder_intensiv",
+   "name": "Kinder Intensiv",
+   "voraussetzung": [
+    [
+     "its_picu"
+    ]
+   ]
+  },
+  {
+   "id": "ak_kinder_jugend_psychiatrie",
+   "name": "Kinder- & Jugend-Akutpsychiatrie",
+   "voraussetzung": [
+    [
+     "st_kinder_jugendpsychiatrie"
+    ]
+   ]
+  },
+  {
+   "id": "ak_kinderchirurgie",
+   "name": "Kinder- & Jugendchirurgie",
+   "voraussetzung": [
+    [
+     "st_kinderchirurgie"
+    ]
+   ]
+  },
+  {
+   "id": "ak_kinder_jugendheilkunde",
+   "name": "Kinder- & Jugendheilkunde / Kinderstation / Kindernotfall",
+   "voraussetzung": [
+    [
+     "st_kinder_jugendheilkunde"
+    ]
+   ]
+  },
+  {
+   "id": "ak_kreisssaal",
+   "name": "Kreißsaal",
+   "voraussetzung": [
+    [
+     "fb_kreisssaal"
+    ],
+    [
+     "st_geburtshilfe"
+    ]
+   ]
+  },
+  {
+   "id": "ak_mkg",
+   "name": "MKG",
+   "voraussetzung": [
+    [
+     "st_mkg"
+    ]
+   ]
+  },
+  {
+   "id": "ak_mrt",
+   "name": "MRT",
+   "voraussetzung": [
+    [
+     "fb_mrt"
+    ]
+   ]
+  },
+  {
+   "id": "ak_neonatologie",
+   "name": "Neonatologie",
+   "voraussetzung": [
+    [
+     "its_nicu"
+    ]
+   ]
+  },
+  {
+   "id": "ak_neurochirurgie",
+   "name": "Neurochirurgie",
+   "voraussetzung": [
+    [
+     "st_neurochirurgie"
+    ]
+   ]
+  },
+  {
+   "id": "ak_neurologie",
+   "name": "Neurologie",
+   "voraussetzung": [
+    [
+     "st_neurologie"
+    ]
+   ]
+  },
+  {
+   "id": "ak_notaufnahme",
+   "name": "Notaufnahme",
+   "voraussetzung": [
+    [
+     "amb_notaufnahme"
+    ]
+   ]
+  },
+  {
+   "id": "ak_nuklearmedizin",
+   "name": "Nuklearmedizin",
+   "voraussetzung": [
+    [
+     "fb_nuklearmedizin"
+    ]
+   ]
+  },
+  {
+   "id": "ak_onkologie",
+   "name": "Onkologie",
+   "voraussetzung": [
+    [
+     "st_onkologie"
+    ]
+   ]
+  },
+  {
+   "id": "ak_plastische_chirurgie",
+   "name": "Plastische Chirurgie",
+   "voraussetzung": [
+    [
+     "st_plastische_chirurgie"
+    ]
+   ]
+  },
+  {
+   "id": "ak_schockraum",
+   "name": "Schockraum",
+   "voraussetzung": [
+    [
+     "fb_schockraum"
+    ]
+   ]
+  },
+  {
+   "id": "ak_stroke_unit",
+   "name": "Stroke Unit",
+   "voraussetzung": [
+    [
+     "its_stroke_unit"
+    ]
+   ]
+  },
+  {
+   "id": "ak_sucht_entzug",
+   "name": "Sucht- & Entzugsmedizin",
+   "voraussetzung": [
+    [
+     "st_sucht_entzug"
+    ]
+   ]
+  },
+  {
+   "id": "ak_thoraxchirurgie",
+   "name": "Thoraxchirurgie",
+   "voraussetzung": [
+    [
+     "st_thoraxchirurgie"
+    ]
+   ]
+  },
+  {
+   "id": "ak_thrombektomie",
+   "name": "Thrombektomie (Stroke Unit + Angiographie)",
+   "voraussetzung": [
+    [
+     "its_stroke_unit",
+     "fb_angiographie"
+    ]
+   ]
+  },
+  {
+   "id": "ak_toxikologie",
+   "name": "Toxikologie",
+   "voraussetzung": [
+    [
+     "z_toxikologie"
+    ]
+   ]
+  },
+  {
+   "id": "ak_tropenmedizin",
+   "name": "Tropenmedizin",
+   "voraussetzung": [
+    [
+     "z_tropenmedizin"
+    ]
+   ]
+  },
+  {
+   "id": "ak_unfallchirurgie",
+   "name": "Unfallchirurgie",
+   "voraussetzung": [
+    [
+     "st_orthopaedie_traumatologie",
+     "amb_unfall"
+    ]
+   ]
+  },
+  {
+   "id": "ak_urologie",
+   "name": "Urologie",
+   "voraussetzung": [
+    [
+     "st_urologie"
+    ]
+   ]
+  },
+  {
+   "id": "ak_verbrennungszentrum",
+   "name": "Verbrennungszentrum (Brandbett)",
+   "voraussetzung": [
+    [
+     "z_verbrennungszentrum"
+    ]
+   ]
+  },
+  {
+   "id": "ak_wirbelsaeulenchirurgie",
+   "name": "Wirbelsäulenchirurgie",
+   "voraussetzung": [
+    [
+     "z_wirbelsaeule"
+    ]
+   ]
+  }
+ ],
+ "ebene3_buchungen": [
+  {
+   "id": "bu_stemi",
+   "kategorie": "Herz & Kreislauf",
+   "name": "STEMI",
+   "optionen": [
+    [
+     "ak_herzkatheter",
+     "ak_kardiologie"
+    ]
+   ],
+   "zeitkritisch": true,
+   "ausweich": null
+  },
+  {
+   "id": "bu_acs_ohne_st_hebung_unklarer_thoraxschmer",
+   "kategorie": "Herz & Kreislauf",
+   "name": "ACS ohne ST-Hebung / unklarer Thoraxschmerz",
+   "optionen": [
+    [
+     "ak_kardiologie",
+     "ak_notaufnahme"
+    ]
+   ],
+   "zeitkritisch": false,
+   "ausweich": "intern"
+  },
+  {
+   "id": "bu_reanimation_mit_rosc",
+   "kategorie": "Herz & Kreislauf",
+   "name": "Reanimation mit ROSC",
+   "optionen": [
+    [
+     "ak_cardiac_arrest_center"
+    ],
+    [
+     "ak_herzkatheter",
+     "ak_innere_intensiv"
+    ]
+   ],
+   "zeitkritisch": true,
+   "ausweich": null
+  },
+  {
+   "id": "bu_laufende_reanimation_ecpr",
+   "kategorie": "Herz & Kreislauf",
+   "name": "Laufende Reanimation (eCPR)",
+   "optionen": [
+    [
+     "ak_cardiac_arrest_center"
+    ]
+   ],
+   "zeitkritisch": true,
+   "ausweich": null
+  },
+  {
+   "id": "bu_aortendissektion",
+   "kategorie": "Herz & Kreislauf",
+   "name": "Aortendissektion",
+   "optionen": [
+    [
+     "ak_herzchirurgie",
+     "ak_ct"
+    ]
+   ],
+   "zeitkritisch": true,
+   "ausweich": null
+  },
+  {
+   "id": "bu_rupturiertes_bauchaortenaneurysma",
+   "kategorie": "Herz & Kreislauf",
+   "name": "Rupturiertes Bauchaortenaneurysma",
+   "optionen": [
+    [
+     "ak_gefaesschirurgie",
+     "ak_schockraum",
+     "ak_ct"
+    ]
+   ],
+   "zeitkritisch": true,
+   "ausweich": null
+  },
+  {
+   "id": "bu_akuter_arterieller_extremitaetenverschlu",
+   "kategorie": "Herz & Kreislauf",
+   "name": "Akuter arterieller Extremitätenverschluss",
+   "optionen": [
+    [
+     "ak_gefaesschirurgie",
+     "ak_angiographie"
+    ]
+   ],
+   "zeitkritisch": true,
+   "ausweich": null
+  },
+  {
+   "id": "bu_instabile_rhythmusstoerung",
+   "kategorie": "Herz & Kreislauf",
+   "name": "Instabile Rhythmusstörung",
+   "optionen": [
+    [
+     "ak_kardiologie",
+     "ak_innere_intensiv"
+    ]
+   ],
+   "zeitkritisch": true,
+   "ausweich": null
+  },
+  {
+   "id": "bu_lungenembolie",
+   "kategorie": "Herz & Kreislauf",
+   "name": "Lungenembolie",
+   "optionen": [
+    [
+     "ak_ct",
+     "ak_innere_intensiv"
+    ]
+   ],
+   "zeitkritisch": true,
+   "ausweich": null
+  },
+  {
+   "id": "bu_hypertensiver_notfall",
+   "kategorie": "Herz & Kreislauf",
+   "name": "Hypertensiver Notfall",
+   "optionen": [
+    [
+     "ak_innere_medizin"
+    ],
+    [
+     "ak_notaufnahme"
+    ]
+   ],
+   "zeitkritisch": false,
+   "ausweich": "intern"
+  },
+  {
+   "id": "bu_schlaganfall",
+   "kategorie": "Neurologie",
+   "name": "Schlaganfall",
+   "optionen": [
+    [
+     "ak_stroke_unit",
+     "ak_ct"
+    ]
+   ],
+   "zeitkritisch": true,
+   "ausweich": null
+  },
+  {
+   "id": "bu_schlaganfall_mit_v_a_grossen_gefaessvers",
+   "kategorie": "Neurologie",
+   "name": "Schlaganfall mit V. a. großen Gefäßverschluss",
+   "optionen": [
+    [
+     "ak_thrombektomie"
+    ]
+   ],
+   "zeitkritisch": true,
+   "ausweich": null
+  },
+  {
+   "id": "bu_intrakranielle_blutung",
+   "kategorie": "Neurologie",
+   "name": "Intrakranielle Blutung",
+   "optionen": [
+    [
+     "ak_neurochirurgie",
+     "ak_ct"
+    ]
+   ],
+   "zeitkritisch": true,
+   "ausweich": null
+  },
+  {
+   "id": "bu_erstmaliger_krampfanfall",
+   "kategorie": "Neurologie",
+   "name": "Erstmaliger Krampfanfall",
+   "optionen": [
+    [
+     "ak_neurologie"
+    ]
+   ],
+   "zeitkritisch": false,
+   "ausweich": null
+  },
+  {
+   "id": "bu_status_epilepticus",
+   "kategorie": "Neurologie",
+   "name": "Status epilepticus",
+   "optionen": [
+    [
+     "ak_neurologie",
+     "ak_innere_intensiv"
+    ]
+   ],
+   "zeitkritisch": true,
+   "ausweich": null
+  },
+  {
+   "id": "bu_polytrauma",
+   "kategorie": "Trauma",
+   "name": "Polytrauma",
+   "optionen": [
+    [
+     "ak_schockraum",
+     "ak_unfallchirurgie",
+     "ak_ct",
+     "ak_chirurgische_intensiv"
+    ]
+   ],
+   "zeitkritisch": true,
+   "ausweich": null
+  },
+  {
+   "id": "bu_schweres_sht",
+   "kategorie": "Trauma",
+   "name": "Schweres SHT",
+   "optionen": [
+    [
+     "ak_schockraum",
+     "ak_neurochirurgie",
+     "ak_ct"
+    ]
+   ],
+   "zeitkritisch": true,
+   "ausweich": null
+  },
+  {
+   "id": "bu_wirbelsaeulenverletzung_mit_neurologisch",
+   "kategorie": "Trauma",
+   "name": "Wirbelsäulenverletzung mit neurologischen Ausfällen",
+   "optionen": [
+    [
+     "ak_wirbelsaeulenchirurgie",
+     "ak_mrt"
+    ]
+   ],
+   "zeitkritisch": true,
+   "ausweich": null
+  },
+  {
+   "id": "bu_schweres_thoraxtrauma",
+   "kategorie": "Trauma",
+   "name": "Schweres Thoraxtrauma",
+   "optionen": [
+    [
+     "ak_schockraum",
+     "ak_thoraxchirurgie"
+    ]
+   ],
+   "zeitkritisch": true,
+   "ausweich": null
+  },
+  {
+   "id": "bu_abdominaltrauma",
+   "kategorie": "Trauma",
+   "name": "Abdominaltrauma",
+   "optionen": [
+    [
+     "ak_schockraum",
+     "ak_allgemeinchirurgie",
+     "ak_ct"
+    ]
+   ],
+   "zeitkritisch": true,
+   "ausweich": null
+  },
+  {
+   "id": "bu_isolierte_extremitaetenverletzung",
+   "kategorie": "Trauma",
+   "name": "Isolierte Extremitätenverletzung",
+   "optionen": [
+    [
+     "ak_unfallchirurgie"
+    ]
+   ],
+   "zeitkritisch": false,
+   "ausweich": "trauma"
+  },
+  {
+   "id": "bu_amputationsverletzung",
+   "kategorie": "Trauma",
+   "name": "Amputationsverletzung",
+   "optionen": [
+    [
+     "ak_plastische_chirurgie",
+     "ak_unfallchirurgie"
+    ]
+   ],
+   "zeitkritisch": true,
+   "ausweich": null
+  },
+  {
+   "id": "bu_gesichtsschaedelverletzung",
+   "kategorie": "Trauma",
+   "name": "Gesichtsschädelverletzung",
+   "optionen": [
+    [
+     "ak_mkg"
+    ]
+   ],
+   "zeitkritisch": false,
+   "ausweich": "trauma"
+  },
+  {
+   "id": "bu_augenverletzung",
+   "kategorie": "Trauma",
+   "name": "Augenverletzung",
+   "optionen": [
+    [
+     "ak_augenheilkunde"
+    ]
+   ],
+   "zeitkritisch": false,
+   "ausweich": null
+  },
+  {
+   "id": "bu_schwere_verbrennung",
+   "kategorie": "Trauma",
+   "name": "Schwere Verbrennung",
+   "optionen": [
+    [
+     "ak_verbrennungszentrum"
+    ]
+   ],
+   "zeitkritisch": true,
+   "ausweich": null
+  },
+  {
+   "id": "bu_leichte_verbrennung",
+   "kategorie": "Trauma",
+   "name": "Leichte Verbrennung",
+   "optionen": [
+    [
+     "ak_plastische_chirurgie"
+    ],
+    [
+     "ak_unfallchirurgie"
+    ]
+   ],
+   "zeitkritisch": false,
+   "ausweich": "trauma"
+  },
+  {
+   "id": "bu_akutes_abdomen",
+   "kategorie": "Innere Medizin & Abdomen",
+   "name": "Akutes Abdomen",
+   "optionen": [
+    [
+     "ak_allgemeinchirurgie",
+     "ak_ct"
+    ]
+   ],
+   "zeitkritisch": false,
+   "ausweich": "intern"
+  },
+  {
+   "id": "bu_obere_gi_blutung",
+   "kategorie": "Innere Medizin & Abdomen",
+   "name": "Obere GI-Blutung",
+   "optionen": [
+    [
+     "ak_gastro_endoskopie",
+     "ak_innere_intensiv"
+    ]
+   ],
+   "zeitkritisch": true,
+   "ausweich": null
+  },
+  {
+   "id": "bu_sepsis",
+   "kategorie": "Innere Medizin & Abdomen",
+   "name": "Sepsis",
+   "optionen": [
+    [
+     "ak_innere_intensiv",
+     "ak_notaufnahme"
+    ]
+   ],
+   "zeitkritisch": true,
+   "ausweich": null
+  },
+  {
+   "id": "bu_pneumonie_atemnot_copd",
+   "kategorie": "Innere Medizin & Abdomen",
+   "name": "Pneumonie / Atemnot / COPD",
+   "optionen": [
+    [
+     "ak_innere_medizin"
+    ],
+    [
+     "ak_notaufnahme"
+    ]
+   ],
+   "zeitkritisch": false,
+   "ausweich": "intern"
+  },
+  {
+   "id": "bu_exsikkose_synkope_az_verschlechterung",
+   "kategorie": "Innere Medizin & Abdomen",
+   "name": "Exsikkose / Synkope / AZ-Verschlechterung",
+   "optionen": [
+    [
+     "ak_innere_medizin"
+    ],
+    [
+     "ak_notaufnahme"
+    ]
+   ],
+   "zeitkritisch": false,
+   "ausweich": "intern"
+  },
+  {
+   "id": "bu_blutzuckerentgleisung",
+   "kategorie": "Innere Medizin & Abdomen",
+   "name": "Blutzuckerentgleisung",
+   "optionen": [
+    [
+     "ak_innere_medizin"
+    ],
+    [
+     "ak_notaufnahme"
+    ]
+   ],
+   "zeitkritisch": false,
+   "ausweich": "intern"
+  },
+  {
+   "id": "bu_hyperkaliaemie_akutes_nierenversagen",
+   "kategorie": "Innere Medizin & Abdomen",
+   "name": "Hyperkaliämie / akutes Nierenversagen",
+   "optionen": [
+    [
+     "ak_dialyse",
+     "ak_innere_intensiv"
+    ]
+   ],
+   "zeitkritisch": true,
+   "ausweich": null
+  },
+  {
+   "id": "bu_anaphylaxie",
+   "kategorie": "Innere Medizin & Abdomen",
+   "name": "Anaphylaxie",
+   "optionen": [
+    [
+     "ak_notaufnahme"
+    ]
+   ],
+   "zeitkritisch": false,
+   "ausweich": "intern"
+  },
+  {
+   "id": "bu_onkologischer_notfall",
+   "kategorie": "Innere Medizin & Abdomen",
+   "name": "Onkologischer Notfall",
+   "optionen": [
+    [
+     "ak_onkologie"
+    ]
+   ],
+   "zeitkritisch": false,
+   "ausweich": "intern"
+  },
+  {
+   "id": "bu_intoxikation",
+   "kategorie": "Innere Medizin & Abdomen",
+   "name": "Intoxikation",
+   "optionen": [
+    [
+     "ak_toxikologie"
+    ],
+    [
+     "ak_innere_intensiv"
+    ]
+   ],
+   "zeitkritisch": false,
+   "ausweich": "intern"
+  },
+  {
+   "id": "bu_co_vergiftung_tauchunfall",
+   "kategorie": "Innere Medizin & Abdomen",
+   "name": "CO-Vergiftung / Tauchunfall",
+   "optionen": [
+    [
+     "ak_druckkammer"
+    ]
+   ],
+   "zeitkritisch": true,
+   "ausweich": null
+  },
+  {
+   "id": "bu_fieber_nach_tropenaufenthalt",
+   "kategorie": "Innere Medizin & Abdomen",
+   "name": "Fieber nach Tropenaufenthalt",
+   "optionen": [
+    [
+     "ak_tropenmedizin"
+    ]
+   ],
+   "zeitkritisch": false,
+   "ausweich": "intern"
+  },
+  {
+   "id": "bu_geburt_wehen",
+   "kategorie": "Gynäkologie, Geburt & Urologie",
+   "name": "Geburt / Wehen",
+   "optionen": [
+    [
+     "ak_kreisssaal"
+    ]
+   ],
+   "zeitkritisch": false,
+   "ausweich": null
+  },
+  {
+   "id": "bu_fruehgeburt",
+   "kategorie": "Gynäkologie, Geburt & Urologie",
+   "name": "Frühgeburt",
+   "optionen": [
+    [
+     "ak_kreisssaal",
+     "ak_neonatologie"
+    ]
+   ],
+   "zeitkritisch": true,
+   "ausweich": null
+  },
+  {
+   "id": "bu_gynaekologischer_notfall",
+   "kategorie": "Gynäkologie, Geburt & Urologie",
+   "name": "Gynäkologischer Notfall",
+   "optionen": [
+    [
+     "ak_gynaekologie"
+    ]
+   ],
+   "zeitkritisch": false,
+   "ausweich": null
+  },
+  {
+   "id": "bu_nierenkolik_harnverhalt_hodentorsion",
+   "kategorie": "Gynäkologie, Geburt & Urologie",
+   "name": "Nierenkolik / Harnverhalt / Hodentorsion",
+   "optionen": [
+    [
+     "ak_urologie"
+    ]
+   ],
+   "zeitkritisch": false,
+   "ausweich": null
+  },
+  {
+   "id": "bu_internistischer_kindernotfall",
+   "kategorie": "Kinder",
+   "name": "Internistischer Kindernotfall",
+   "optionen": [
+    [
+     "ak_kinder_jugendheilkunde"
+    ]
+   ],
+   "zeitkritisch": false,
+   "ausweich": null
+  },
+  {
+   "id": "bu_kritisch_krankes_kind",
+   "kategorie": "Kinder",
+   "name": "Kritisch krankes Kind",
+   "optionen": [
+    [
+     "ak_kinder_intensiv"
+    ]
+   ],
+   "zeitkritisch": true,
+   "ausweich": null
+  },
+  {
+   "id": "bu_kritisch_krankes_neugeborenes",
+   "kategorie": "Kinder",
+   "name": "Kritisch krankes Neugeborenes",
+   "optionen": [
+    [
+     "ak_neonatologie"
+    ]
+   ],
+   "zeitkritisch": true,
+   "ausweich": null
+  },
+  {
+   "id": "bu_verletztes_kind",
+   "kategorie": "Kinder",
+   "name": "Verletztes Kind",
+   "optionen": [
+    [
+     "ak_kinderchirurgie"
+    ],
+    [
+     "ak_unfallchirurgie",
+     "ak_kinder_jugendheilkunde"
+    ]
+   ],
+   "zeitkritisch": false,
+   "ausweich": null
+  },
+  {
+   "id": "bu_psychische_krise_kind_jugendlicher",
+   "kategorie": "Kinder",
+   "name": "Psychische Krise Kind / Jugendlicher",
+   "optionen": [
+    [
+     "ak_kinder_jugend_psychiatrie"
+    ]
+   ],
+   "zeitkritisch": false,
+   "ausweich": null
+  },
+  {
+   "id": "bu_starkes_nasenbluten_fremdkoerper_hno",
+   "kategorie": "Weitere",
+   "name": "Starkes Nasenbluten / Fremdkörper HNO",
+   "optionen": [
+    [
+     "ak_hno"
+    ]
+   ],
+   "zeitkritisch": false,
+   "ausweich": null
+  },
+  {
+   "id": "bu_schwere_hautreaktion",
+   "kategorie": "Weitere",
+   "name": "Schwere Hautreaktion",
+   "optionen": [
+    [
+     "ak_dermatologie"
+    ]
+   ],
+   "zeitkritisch": false,
+   "ausweich": null
+  },
+  {
+   "id": "bu_psychische_krise_suizidalitaet",
+   "kategorie": "Weitere",
+   "name": "Psychische Krise / Suizidalität",
+   "optionen": [
+    [
+     "ak_psychiatrie"
+    ]
+   ],
+   "zeitkritisch": false,
+   "ausweich": null
+  },
+  {
+   "id": "bu_entzugssyndrom_delir",
+   "kategorie": "Weitere",
+   "name": "Entzugssyndrom / Delir",
+   "optionen": [
+    [
+     "ak_sucht_entzug"
+    ]
+   ],
+   "zeitkritisch": false,
+   "ausweich": null
+  }
+ ],
+ "rueckfall": {
+  "Trauma": [
+   [
+    "ak_schockraum",
+    "ak_unfallchirurgie"
+   ],
+   [
+    "ak_unfallchirurgie"
+   ],
+   [
+    "ak_notaufnahme"
+   ]
+  ],
+  "sonst": [
+   [
+    "ak_notaufnahme"
+   ]
+  ]
+ },
+ "ausweich": {
+  "intern": [
+   [
+    "ak_innere_medizin"
+   ],
+   [
+    "ak_notaufnahme"
+   ]
+  ],
+  "trauma": [
+   [
+    "ak_unfallchirurgie"
+   ]
+  ]
+ }
+}

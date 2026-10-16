@@ -1,4 +1,5 @@
 /** Datenmodell einer Leitstelle (Stammdaten). */
+import { BEREICH_EINRICHTUNG, einrichtung, einrichtungenAusAlt } from "./klinik";
 import type { Schicht } from "../sim/dienst";
 
 /** Herkunft eines Datensatzes. */
@@ -154,8 +155,13 @@ export interface Hospital extends Base {
   ort: string;
   lat: number;
   lon: number;
-  abteilungen: Record<HospitalFlag, boolean>;
-  /** Stationen und Ambulanzen (für Krankentransporte), Kürzel aus BEREICHE */
+  /** Einrichtungen (Stationen, Intensiv, Ambulanzen, Funktionsbereiche, Zentren), IDs aus klinik.json */
+  einrichtungen?: string[];
+  /** abgeschaltete Akut-Abteilungen (Station vorhanden, aber keine Akutaufnahme) */
+  akutAus?: string[];
+  /** veraltet: frühere Abteilungs-Häkchen (nur noch zum Einlesen alter Daten) */
+  abteilungen?: Partial<Record<HospitalFlag, boolean>>;
+  /** veraltet: frühere Bereichskürzel (nur noch zum Einlesen alter Daten) */
   bereiche?: string[];
 }
 
@@ -203,22 +209,32 @@ export const BEREICHE_AMBULANZ: Record<string, string> = {
 };
 export const BEREICHE: Record<string, string> = { ...BEREICHE_STATION, ...BEREICHE_AMBULANZ };
 
-/** Stationen/Ambulanzen eines KH; ohne Eintrag grob aus den Abteilungen abgeleitet (ältere eigene Daten) */
+/**
+ * Ziele für Krankentransporte: Bereichskürzel (für die Auftragsarten) aus den Einrichtungen,
+ * dazu alle weiteren Stationen, Ambulanzen und Funktionsbereiche mit ihrer ID.
+ */
 export function bereicheVon(h: Hospital): string[] {
-  if (h.bereiche?.length) return h.bereiche;
-  const a = h.abteilungen ?? ({} as Hospital["abteilungen"]);
-  const b = ["INT", "CHI", "RAD", "PHY", "WUN"];
-  if (a.notfallambulanz) b.push("ZNA");
-  if (a.unfallambulanz) b.push("UNF", "ORT");
-  if (a.intensiv_anaesthesie) b.push("ITS", "KAR", "GAS");
-  if (a.neonatologie) b.push("NEO");
-  if (a.kinderintensiv) b.push("PIC");
-  if (a.neurologie) b.push("NEU");
-  if (a.urologie) b.push("URO");
-  if (a.gyn_geburtshilfe) b.push("GYN");
-  if (a.kinderambulanz) b.push("KIN");
-  if (a.hno) b.push("HNO");
-  return b;
+  const e = h.einrichtungen?.length ? h.einrichtungen : einrichtungenAusAlt(h.abteilungen, h.bereiche);
+  const s = new Set(e);
+  const out: string[] = [];
+  const gedeckt = new Set<string>();
+  for (const [k, ids] of Object.entries(BEREICH_EINRICHTUNG)) {
+    const ok = k === "THR" ? s.has("fb_angiographie") && s.has("its_stroke_unit") : ids.some((i) => s.has(i));
+    if (ok) {
+      out.push(k);
+      ids.forEach((i) => gedeckt.add(i));
+    }
+  }
+  for (const id of e) {
+    const x = einrichtung(id);
+    if (x && !gedeckt.has(id) && x.typ !== "zentrum") out.push(id);
+  }
+  return out;
+}
+
+/** Name eines Bereichs (Kürzel oder Einrichtungs-ID) */
+export function bereichName(k: string): string {
+  return BEREICHE[k] ?? einrichtung(k)?.name ?? k;
 }
 
 export interface Poi extends Base {
@@ -314,5 +330,5 @@ export interface Persisted {
 }
 
 export function emptyPersisted(): Persisted {
-  return { version: 4, standardAktiv: true, ausgeblendet: [], eigene: emptyRecords() };
+  return { version: 5, standardAktiv: true, ausgeblendet: [], eigene: emptyRecords() };
 }

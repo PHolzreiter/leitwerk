@@ -1086,8 +1086,42 @@ select:focus {
 
 .kh-row {
   display: grid;
-  grid-template-columns: 1fr 1fr auto;
+  grid-template-columns: auto minmax(0, 1fr) minmax(0, 1.3fr) auto;
   gap: 6px;
+  align-items: center;
+}
+.kh-row select {
+  min-width: 0;
+}
+/* Dringlichkeit des Patienten (Farbe) – Eignung des Hauses steht als Text in der Auswahl */
+.kh-dring {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 10px;
+  white-space: nowrap;
+  color: #fff;
+}
+.kh-dring.rot {
+  background: #d32f2f;
+}
+.kh-dring.gelb {
+  background: #f2b600;
+  color: #222;
+}
+.kh-dring.gruen {
+  background: #2e9d4a;
+}
+.kh-opt.nein {
+  color: #8a8f98;
+}
+.einr-gruppe summary {
+  cursor: pointer;
+  font-weight: 600;
+  padding: 4px 0;
+}
+.akut-grid .fld-label {
+  grid-column: 1 / -1;
 }
 
 .prot {

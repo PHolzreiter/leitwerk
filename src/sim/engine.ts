@@ -7,10 +7,12 @@
  */
 import { aktuelleSchicht, dienstEnde, imDienst, naechsterBeginn, type Schicht } from "./dienst";
 import { nachKlick } from "../klick";
-import { ACTIVE_CATEGORIES, bereicheVon, HOSPITAL_FLAG_LABEL, type Hospital, type HospitalFlag, type Vehicle } from "../data/model";
+import { ACTIVE_CATEGORIES, bereicheVon, type Hospital, type Vehicle } from "../data/model";
+import { buchung, buchungName, khVorschlaege } from "../data/klinik";
+import { verdachtFuer } from "./verdacht";
 import { store } from "../data/store";
 import { streuung } from "../data/schema";
-import { abteilungFuer, allCodes, findCode, hasCodes, type Einsatzcode } from "./codes";
+import { allCodes, findCode, hasCodes, type Einsatzcode } from "./codes";
 import { distanceM, erreichbar, flightRoute, geoStatus, randomAddresses, route, searchAddress, travelTimes, type LatLon, type Route } from "./geo";
 import { generiereBesetzung, hatNFS, rmTypVon, type Platz, type RmTyp } from "./crew";
 import { defaultStufeFuer, raenge, type Kategorie, type Settings, type StatusKey, type StufeDef } from "./settings";
@@ -479,7 +481,10 @@ export interface Einsatz {
     code: string;
     patientAlter: number;
     transport: boolean;
-    abteilung: HospitalFlag;
+    /** Verdachtsdiagnose (Buchungs-ID) – ergibt sich erst beim Patienten */
+    verdacht?: string;
+    /** veraltet (ältere Spielstände) */
+    abteilung?: string;
     rtwBuchtSelbst: boolean;
     /** Wahrheit für den Anrufer (Abfrageschema) */
     abfrage?: { kapitel: string; antworten: Antworten; code: string; anrufer: Anrufer; lage: string; ortUnbekannt?: boolean; szenario?: Szenario };
@@ -502,8 +507,12 @@ export interface Einsatz {
   infoIntern: string;
   bo: Ort | null;
   zo: Ort | null;
-  kh: { hospitalId: string; grund: HospitalFlag; durch: "dispo" | "rtw"; zeit: number } | null;
-  khAnfrage: { abteilung: HospitalFlag; seit: number; von: string } | null;
+  /** grund = Buchung (Verdachtsdiagnose, ID aus klinik.json) */
+  kh: { hospitalId: string; grund: string; durch: "dispo" | "rtw"; zeit: number } | null;
+  /** Besatzung bittet um Buchung und nennt die Verdachtsdiagnose */
+  khAnfrage: { verdacht: string; seit: number; von: string } | null;
+  /** von der Besatzung genannte Verdachtsdiagnose (sichtbar) */
+  verdacht?: string | null;
   rueckrufGemacht: boolean;
   /** vom Calltaker aufgenommene Rückrufnummer */
   telefon?: string;
@@ -889,6 +898,7 @@ export class Simulation {
     }
     // ältere Spielstände: Partner waren sofort vor Ort
     for (const e of st.einsaetze) {
+      if (e.khAnfrage && !e.khAnfrage.verdacht) e.khAnfrage.verdacht = "";
       if (e.partner && !e.partnerDa) {
         e.partnerDa = { ...e.partner };
         e.boSicher ??= e.partner.pol ?? null;
@@ -1582,33 +1592,69 @@ export class Simulation {
     }
     fz.phase = "warteKH";
     fz.phaseEnde = null;
+    const verdacht = this.verdacht(e);
     if (e.kh) return this.startTransport(e);
-    if (e.wahr.rtwBuchtSelbst) {
+    // Die Besatzung bucht fast immer selbst – nur bei Reanimation oder unübersichtlicher Lage fragt sie an
+    const p0 = l?.patienten[0];
+    const anfragen = (p0 && istStillstand(p0)) || (l?.patienten.length ?? 1) > 1 || Math.random() < 0.05;
+    if (e.wahr.rtwBuchtSelbst && !anfragen) {
       this.bucheKhAuto(e, fz.funkrufname);
       return;
     }
-    e.khAnfrage = { abteilung: e.wahr.abteilung, seit: t, von: fz.funkrufname };
-    this.fzRuft(fz, e, "kh", `erbitte KH-Buchung, ${HOSPITAL_FLAG_LABEL[e.wahr.abteilung]}`);
-    this.log(e, `${fz.funkrufname} erbittet KH-Buchung (${HOSPITAL_FLAG_LABEL[e.wahr.abteilung]})`);
+    e.verdacht = verdacht;
+    e.khAnfrage = { verdacht, seit: t, von: fz.funkrufname };
+    this.fzRuft(fz, e, "kh", `erbitte KH-Buchung, Verdacht ${buchungName(verdacht)}`);
+    this.log(e, `${fz.funkrufname} erbittet KH-Buchung (Verdacht ${buchungName(verdacht)})`);
+  }
+
+  /** Verdachtsdiagnose des Einsatzes (einmal festgelegt, sobald die Besatzung beim Patienten war) */
+  verdacht(e: Einsatz): string {
+    if (e.wahr.verdacht) return e.wahr.verdacht;
+    const w = e.wahr.abfrage;
+    const c = findCode(e.wahr.code);
+    const l = e.wahr.lage;
+    const p0 = l?.patienten[0];
+    const kap = w?.kapitel ?? (c?.gruppe ? String(c.gruppe) : "");
+    e.wahr.verdacht = verdachtFuer({
+      thema: thema(kap),
+      antworten: w ? (store.schema ? merkmaleAusSchema(store.schema, w.antworten) : w.antworten) : {},
+      name: `${c?.beschreibung ?? ""} ${store.schema?.codes[w?.code ?? e.wahr.code]?.name ?? ""}`,
+      alter: p0?.alter ?? e.wahr.patientAlter,
+      patient: p0,
+      rea: !!p0 && istStillstand(p0),
+    });
+    return e.wahr.verdacht;
+  }
+
+  /** Patient rot (für die Wahl des Krankenhauses)? */
+  patientRot(e: Einsatz): boolean {
+    const p0 = e.wahr.lage?.patienten[0];
+    return p0 ? p0.sichtung === "rot" : this.kritisch(e);
+  }
+
+  /** Krankenhäuser zur Verdachtsdiagnose, nach Eignung und Entfernung */
+  khFuer(pos: LatLon, verdacht: string | null | undefined, rot: boolean) {
+    const alle = store.list("hospitals").filter((h) => this.khImNetz(h));
+    return khVorschlaege(alle, buchung(verdacht), rot, (h) => distanceM(pos, h) / 1000);
   }
 
   /** Bucht automatisch das nächstgelegene passende Krankenhaus (RTW bucht selbst). */
   private bucheKhAuto(e: Einsatz, von: string): void {
-    const ziel = this.naechstesKh(e.wahr, e.wahr.abteilung);
+    const verdacht = this.verdacht(e);
+    const ziel = this.naechstesKh(e.wahr, verdacht, this.patientRot(e));
     if (!ziel) return;
-    e.kh = { hospitalId: ziel.id, grund: e.wahr.abteilung, durch: "rtw", zeit: this.state.zeit };
+    e.verdacht = verdacht;
+    e.kh = { hospitalId: ziel.id, grund: verdacht, durch: "rtw", zeit: this.state.zeit };
     e.zo = { lat: ziel.lat, lon: ziel.lon, label: ziel.name };
     e.khAnfrage = null;
-    this.log(e, `${von} bucht ${ziel.name} (${HOSPITAL_FLAG_LABEL[e.wahr.abteilung]})`);
-    this.funk(von, e.id, `KH gebucht: ${ziel.kurzname || ziel.name} – ${HOSPITAL_FLAG_LABEL[e.wahr.abteilung]}`, "info");
+    this.log(e, `${von} bucht ${ziel.name} (Verdacht ${buchungName(verdacht)})`);
+    this.funk(von, e.id, `KH gebucht: ${ziel.kurzname || ziel.name} – Verdacht ${buchungName(verdacht)}`, "info");
     this.startTransport(e);
   }
 
-  naechstesKh(pos: LatLon, abteilung: HospitalFlag): Hospital | undefined {
-    const all = store.list("hospitals").filter((h) => this.khImNetz(h));
-    const passend = all.filter((h) => h.abteilungen[abteilung]);
-    const pool = passend.length ? passend : all.filter((h) => h.abteilungen.notfallambulanz);
-    return pool.slice().sort((a, b) => distanceM(pos, a) - distanceM(pos, b))[0];
+  /** Bestes Krankenhaus zur Verdachtsdiagnose (passend vor Ausweichen, sonst Rückfall) */
+  naechstesKh(pos: LatLon, verdacht: string, rot: boolean): Hospital | undefined {
+    return this.khFuer(pos, verdacht, rot)[0]?.h;
   }
 
   private checkKhAnfragen(t: number): void {
@@ -1745,8 +1791,7 @@ export class Simulation {
         code: p.code.code,
         patientAlter: alter,
         transport,
-        abteilung: abteilungFuer(p.code, alter < 15, kritisch),
-        rtwBuchtSelbst: Math.random() < 0.5,
+        rtwBuchtSelbst: true,
       },
       meldung: {
         text: p.meldung || `${p.code.beschreibung}. Patient ca. ${alter} Jahre.`,
@@ -1964,14 +2009,15 @@ export class Simulation {
   }
 
   /** Disponent bucht ein Krankenhaus. */
-  bucheKh(id: string, hospitalId: string, grund: HospitalFlag): void {
+  bucheKh(id: string, hospitalId: string, grund: string): void {
     const e = this.einsatz(id);
     const h = store.get("hospitals", hospitalId);
     if (!e || !h) return;
     e.kh = { hospitalId, grund, durch: "dispo", zeit: this.state.zeit };
     e.zo = { lat: h.lat, lon: h.lon, label: h.name };
     e.khAnfrage = null;
-    this.log(e, `KH gebucht durch Leitstelle: ${h.name} (${HOSPITAL_FLAG_LABEL[grund]})`);
+    if (grund) e.verdacht ??= grund;
+    this.log(e, `KH gebucht durch Leitstelle: ${h.name}${grund ? ` (${buchungName(grund)})` : ""}`);
     // RTW wartet schon? Dann losfahren
     this.startTransport(e);
     this.emit();
@@ -3174,7 +3220,9 @@ export class Simulation {
           const h = e.kh ? store.get("hospitals", e.kh.hospitalId) : undefined;
           const min = Math.max(1, Math.round((fz.phaseEnde - t) / MIN));
           const p0 = e.wahr.lage?.patienten[0];
-          const vor = krit ? `, Voranmeldung ${e.kh?.grund === "schockraum" || /Schockraum/i.test(HOSPITAL_FLAG_LABEL[e.kh?.grund ?? e.wahr.abteilung] ?? "") ? "Schockraum" : "Notaufnahme"}${p0 ? `: ${patientText(p0).replace(/ \(.*\)$/, "")}` : ""}` : "";
+          const b = buchung(e.kh?.grund ?? e.wahr.verdacht);
+          const schock = b?.kategorie === "Trauma" && b.zeitkritisch;
+          const vor = krit ? `, Voranmeldung ${schock ? "Schockraum" : "Notaufnahme"}${p0 ? `: ${patientText(p0).replace(/ \(.*\)$/, "")}` : ""}` : "";
           this.fzRuft(fz, e, "info", `Patient übernommen, Transport ${h ? `ins ${h.kurzname || h.name}` : "ins Krankenhaus"}, Eintreffen in ca. ${min} Minuten${vor}`);
         }
       }

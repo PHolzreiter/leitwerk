@@ -1,2 +1,2 @@
-﻿id;name;kurzname;ort;breitengrad;laengengrad;notfallambulanz;schockraum;unfallambulanz;kinderambulanz;intensiv_anaesthesie;neurologie;kinderintensiv;neonatologie;hno;urologie;gyn_geburtshilfe;bereiche;hinweis
-kh-x1;Klinikum Musterstadt;KL Musterstadt;Musterstadt;48.210000;15.620000;ja;nein;nein;nein;ja;nein;nein;nein;nein;nein;ja;INT, CHI, GYN, ZNA, RAD, DIA;"Werte: ja / nein; Bereiche als Kürzel mit Komma"
+﻿id;name;kurzname;ort;breitengrad;laengengrad;einrichtungen;akut_aus;hinweis
+kh-x1;Klinikum Musterstadt;KL Musterstadt;Musterstadt;48.210000;15.620000;st_innere_medizin, st_allgemeinchirurgie, st_gynaekologie, st_geburtshilfe, amb_notaufnahme, its_interdisziplinaer, fb_roentgen, fb_ct, fb_kreisssaal, fb_dialyse;;"Einrichtungen als IDs oder Namen mit Komma (Liste im Spiel: Krankenhaus bearbeiten); akut_aus = Akut-Abteilungen, die trotzdem nicht aufnehmen"

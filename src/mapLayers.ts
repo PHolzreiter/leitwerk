@@ -3,14 +3,13 @@ import maplibregl from "maplibre-gl";
 import type { Feature as GFeature, FeatureCollection, LineString, Point } from "geojson";
 import { flughoehe } from "./sim/bewegung";
 import { PARTNER_PHASE_TEXT, sim } from "./sim/engine";
+import { akutAbteilung, akutVon } from "./data/klinik";
 import { PARTNER_ANZAHL, partnerArtVonTyp, type PartnerArt } from "./sim/partner";
 import { kategorieLabel, poiKategorien } from "./data/orte";
 import { findCode } from "./sim/codes";
 import { stufeFarbe } from "./ui/panels/teile";
 
 import {
-  HOSPITAL_FLAGS,
-  HOSPITAL_FLAG_LABEL,
   ORIGIN_LABEL,
   type Hospital,
   type Kind,
@@ -358,11 +357,12 @@ function showDetails(map: maplibregl.Map, kind: Kind, id: string, at: maplibregl
   } else if (kind === "hospitals") {
     const h = store.get("hospitals", id) as Hospital | undefined;
     if (!h) return;
-    const yes = HOSPITAL_FLAGS.filter((f) => h.abteilungen[f]).map((f) => HOSPITAL_FLAG_LABEL[f]);
+    const yes = [...akutVon(h)].map((a) => akutAbteilung(a)?.name ?? a);
     body.innerHTML = `
       <div class="lw-popup-title">${esc(h.name)}</div>
       <div class="lw-popup-sub">${esc(h.ort)}</div>
-      <div class="lw-popup-list">${yes.map((y) => `<span class="dep">${esc(y)}</span>`).join("") || "<em>keine Angaben</em>"}</div>
+      <div class="lw-popup-sub">Akut-Abteilungen (${yes.length})</div>
+      <div class="lw-popup-list">${yes.map((y) => `<span class="dep">${esc(y)}</span>`).join("") || "<em>keine Akutaufnahme</em>"}</div>
       ${h.hinweis ? `<div class="lw-popup-meta">${esc(h.hinweis)}</div>` : ""}`;
   } else {
     const p = store.get(kind, id) as Poi | undefined;

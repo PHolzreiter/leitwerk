@@ -13,6 +13,7 @@ Aufruf: python3 tools/build_default_data.py
 from __future__ import annotations
 
 import csv
+import json
 import math
 import re
 from pathlib import Path
@@ -28,7 +29,7 @@ HOSPITAL_FLAGS = [
     "notfallambulanz", "schockraum", "unfallambulanz", "kinderambulanz", "intensiv_anaesthesie",
     "neurologie", "kinderintensiv", "neonatologie", "hno", "urologie", "gyn_geburtshilfe",
 ]
-HOSPITAL_COLS = ["id", "name", "kurzname", "ort", "breitengrad", "laengengrad", *HOSPITAL_FLAGS, "bereiche", "hinweis"]
+HOSPITAL_COLS = ["id", "name", "kurzname", "ort", "breitengrad", "laengengrad", "einrichtungen", "akut_aus", "hinweis"]
 POI_COLS = ["id", "name", "typ", "ort", "breitengrad", "laengengrad", "hinweis"]
 TEMPLATE_COLS = ["id", "code", "adresse", "breitengrad", "laengengrad", "meldung", "patient_alter", "transport", "hinweis"]
 
@@ -648,32 +649,64 @@ SPEZIAL = {
 
 
 def build_hospitals() -> list[dict]:
+    """Krankenhäuser mit ihren Einrichtungen (Stationen, Intensiv, Ambulanzen …).
+    Die Einrichtungen stammen aus der Recherche auf den offiziellen Websites (tools/sources/kh_einrichtungen.json,
+    Stand Oktober 2026); neue Häuser (Schlüssel neuNN) stehen dort mit Koordinaten."""
     osm = read_csv(SRC / "osm_krankenhaeuser_luftrettung.csv")
     by_name: dict[str, dict] = {}
     by_key: dict[tuple[str, str], dict] = {}
     for r in osm:
         by_name.setdefault(r["name"], r)
         by_key[(r["@type"], r["@id"])] = r
+    einr = json.loads((SRC / "kh_einrichtungen.json").read_text(encoding="utf-8"))
+
+    def hinweis(d: dict) -> str:
+        teile = ["Einrichtungen laut Website (Stand 10/2026)"]
+        if d.get("website"):
+            teile.append(d["website"])
+        if d.get("unklar"):
+            teile.append("nicht belegt: " + ", ".join(d["unklar"]))
+        if d.get("notiz"):
+            teile.append(d["notiz"])
+        return " – ".join(teile)
+
+    klinik = json.loads((ROOT / "src" / "data" / "klinik.json").read_text(encoding="utf-8"))
+    NOTFALL = {"amb_notaufnahme", "amb_unfall", "amb_kindernotaufnahme", "amb_psychiatrie_krise", "fb_schockraum", "its_stroke_unit", "fb_kreisssaal"}
+
+    def akut_aus(d: dict) -> tuple[str, str]:
+        """Häuser ohne jede Notfall-Anlaufstelle (und Privatkliniken) nehmen keine Rettung auf: alle Akut-Abteilungen aus"""
+        haben = set(d["einrichtungen"])
+        if not d.get("privat") and (haben | set(d.get("unklar", []))) & NOTFALL:
+            return "", ""
+        ak = [a["id"] for a in klinik["ebene2_akut_abteilungen"] if any(all(x in haben for x in alt) for alt in a["voraussetzung"])]
+        grund = "Privatklinik – nimmt keine Rettung auf" if d.get("privat") else "keine Notaufnahme belegt – nimmt keine Rettung auf"
+        return ", ".join(ak), grund
+
     out = []
-    for i, (name, kurz, ort, loc, flags, hinweis) in enumerate(HOSPITALS, start=1):
+    for i, (name, kurz, ort, loc, _flags, _hinweis) in enumerate(HOSPITALS, start=1):
         if isinstance(loc, tuple) and isinstance(loc[0], float):
             lat, lon = loc
         else:
             r = by_key[loc] if isinstance(loc, tuple) else by_name[loc]
             lat, lon = float(r["@lat"]), float(r["@lon"])
-        row = {"id": f"kh{i:03d}", "name": name, "kurzname": kurz, "ort": ort,
-               "breitengrad": f"{lat:.6f}", "laengengrad": f"{lon:.6f}", "hinweis": hinweis,
-               "bereiche": ""}
-        assert len(flags) == len(HOSPITAL_FLAGS), name
-        for f, v in zip(HOSPITAL_FLAGS, flags):
-            row[f] = Y if v == "1" else N
-        b = BEREICHE[name].split() + SPEZIAL.get(name, "").split()
-        if row["neonatologie"] == Y:
-            b.append("NEO")
-        if row["kinderintensiv"] == Y:
-            b.append("PIC")
-        row["bereiche"] = ", ".join(dict.fromkeys(b))
-        out.append(row)
+        kid = f"kh{i:03d}"
+        d = einr[kid]
+        aus, grund = akut_aus(d)
+        out.append({"id": kid, "name": name, "kurzname": kurz, "ort": ort,
+                    "breitengrad": f"{lat:.6f}", "laengengrad": f"{lon:.6f}",
+                    "einrichtungen": ", ".join(d["einrichtungen"]), "akut_aus": aus,
+                    "hinweis": (f"{grund} – " if grund else "") + hinweis(d)})
+    # neu recherchierte Häuser (auch Privatkliniken außerhalb Wiens)
+    n = len(out)
+    for k in sorted(x for x in einr if x.startswith("neu")):
+        d = einr[k]
+        if d.get("lat") is None:
+            continue
+        n += 1
+        out.append({"id": f"kh{n:03d}", "name": d["name"], "kurzname": d.get("kurzname") or d["name"], "ort": d.get("ort", ""),
+                    "breitengrad": f"{float(d['lat']):.6f}", "laengengrad": f"{float(d['lon']):.6f}",
+                    "einrichtungen": ", ".join(d["einrichtungen"]), "akut_aus": akut_aus(d)[0],
+                    "hinweis": (f"{akut_aus(d)[1]} – " if akut_aus(d)[1] else "") + hinweis(d)})
     return out
 
 
@@ -697,8 +730,9 @@ def build_examples() -> None:
     ])
     write_csv(EX / "beispiel_krankenhaeuser.csv", HOSPITAL_COLS, [
         {"id": "kh-x1", "name": "Klinikum Musterstadt", "kurzname": "KL Musterstadt", "ort": "Musterstadt",
-         "breitengrad": "48.210000", "laengengrad": "15.620000", **{f: (Y if f in {"notfallambulanz", "intensiv_anaesthesie", "gyn_geburtshilfe"} else N) for f in HOSPITAL_FLAGS},
-         "bereiche": "INT, CHI, GYN, ZNA, RAD, DIA", "hinweis": "Werte: ja / nein; Bereiche als Kürzel mit Komma"},
+         "breitengrad": "48.210000", "laengengrad": "15.620000",
+         "einrichtungen": "st_innere_medizin, st_allgemeinchirurgie, st_gynaekologie, st_geburtshilfe, amb_notaufnahme, its_interdisziplinaer, fb_roentgen, fb_ct, fb_kreisssaal, fb_dialyse",
+         "akut_aus": "", "hinweis": "Einrichtungen als IDs oder Namen mit Komma (Liste im Spiel: Krankenhaus bearbeiten); akut_aus = Akut-Abteilungen, die trotzdem nicht aufnehmen"},
     ])
     write_csv(EX / "beispiel_pois.csv", POI_COLS, [
         {"id": "poi-1", "name": "Badesee Musterstadt", "typ": "Bad / Badeplatz", "ort": "Musterstadt", "breitengrad": "48.215000", "laengengrad": "15.630000",

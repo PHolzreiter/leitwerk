@@ -3,6 +3,7 @@
  * Zufallsaufträge (Patient, Diagnose, Orte, Zeiten) und Daueraufträge (Dialyse, Bestrahlung).
  */
 import { BEREICHE, type Hospital } from "../data/model";
+import { einrichtung } from "../data/klinik";
 import { zufallsName, zufallsNummer } from "../abfrage/anrufer";
 import type { Anruf, Bearbeiter, Protokoll } from "./engine";
 
@@ -218,7 +219,7 @@ function lageFuer(alter: number, bereich: string): KtLage {
 }
 
 export function bereichName(kurz: string | undefined): string {
-  return kurz ? (BEREICHE[kurz] ?? kurz) : "";
+  return kurz ? (BEREICHE[kurz] ?? einrichtung(kurz)?.name ?? kurz) : "";
 }
 
 export function khOrt(h: Hospital, bereich: string): KtOrt {
