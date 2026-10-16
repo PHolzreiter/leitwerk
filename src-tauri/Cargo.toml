@@ -29,8 +29,8 @@ cpal = "0.15"
 # Entpacken der Stimmen-Pakete
 bzip2 = "0.4"
 tar = "0.4"
-# alle zip-2.x-Versionen wurden auf crates.io zurückgezogen – neuere Version erlauben (gleiche Schnittstelle)
-zip = { version = ">=2.6", default-features = false, features = ["deflate"] }
+# zip: die Versionen 2.x und 4.x wurden auf crates.io zurückgezogen (Okt. 2026) – siehe [patch] unten
+zip = { version = "4", default-features = false, features = ["deflate"] }
 # Supertonic: ONNX Runtime wird zur Laufzeit geladen (nicht fest eingebaut)
 ort = { version = "=2.0.0-rc.10", default-features = false, features = ["std", "load-dynamic"] }
 unicode-normalization = "0.1"
@@ -57,3 +57,8 @@ codegen-units = 1
 lto = true
 opt-level = "s"
 strip = true
+
+# Der Updater braucht zip 4, das auf crates.io zurückgezogen wurde: direkt die Version 4.6.1 von GitHub verwenden.
+# Entfernen, sobald tauri-plugin-updater eine nicht zurückgezogene zip-Version verwendet.
+[patch.crates-io]
+zip = { git = "https://github.com/zip-rs/zip2", tag = "v4.6.1" }
