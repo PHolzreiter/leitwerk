@@ -1,4 +1,5 @@
 /** Formular zum Anlegen und Bearbeiten von Dienststellen, Fahrzeugen, Krankenhäusern und POIs. */
+import { partnerArtVonTyp } from "../sim/partner";
 import {
   AUSFUEHRUNGEN,
   MODELL_WAHL,
@@ -172,9 +173,10 @@ export function openEditor(
     (inputs.kategorie as HTMLSelectElement).addEventListener("change", artFelder);
     (inputs.ausfuehrung as HTMLSelectElement).addEventListener("change", artFelder);
     artFelder();
+    // Feuerwehr, Polizei, Berg- und Wasserrettung haben keine eigenen Fahrzeuge in der Liste
     const stations = store
       .list("stations")
-      .slice()
+      .filter((s) => !partnerArtVonTyp(s.typ) || s.id === (v?.dienststelleId ?? preset.dienststelleId))
       .sort((a, b) => a.name.localeCompare(b.name, "de"));
     add(
       "dienststelle",

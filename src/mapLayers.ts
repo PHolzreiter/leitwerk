@@ -2,7 +2,8 @@
 import maplibregl from "maplibre-gl";
 import type { Feature as GFeature, FeatureCollection, LineString, Point } from "geojson";
 import { flughoehe } from "./sim/bewegung";
-import { sim } from "./sim/engine";
+import { PARTNER_PHASE_TEXT, sim } from "./sim/engine";
+import { PARTNER_ANZAHL, partnerArtVonTyp, type PartnerArt } from "./sim/partner";
 import { kategorieLabel, poiKategorien } from "./data/orte";
 import { findCode } from "./sim/codes";
 import { stufeFarbe } from "./ui/panels/teile";
@@ -58,15 +59,28 @@ function collection(features: Feature[]): FeatureCollection<Point> {
   return { type: "FeatureCollection", features };
 }
 
+/** Farben der Partner-Organisationen (Dienststellen und Fahrzeuge) */
+export const PARTNER_FARBE: Record<PartnerArt, string> = { fw: "#e53935", pol: "#1e3a8a", berg: "#2e7d32", wasser: "#0097a7" };
+
 function stationFeatures(): FeatureCollection<Point> {
   return collection(
-    store.list("stations").map((s) =>
+    store.list("stations").filter((s) => !partnerArtVonTyp(s.typ)).map((s) =>
       pointFeature(s.id, s.lon, s.lat, {
         name: s.name,
         color: orgFarbe(s),
       }),
     ),
   );
+}
+
+/** Feuerwehr, Polizei, Berg- und Wasserrettung: eigene, kleine Ebene (erst beim Hineinzoomen) */
+function partnerStationFeatures(): FeatureCollection<Point> {
+  const out: Feature[] = [];
+  for (const s of store.list("stations")) {
+    const art = partnerArtVonTyp(s.typ);
+    if (art) out.push(pointFeature(s.id, s.lon, s.lat, { name: s.name, color: PARTNER_FARBE[art] }));
+  }
+  return collection(out);
 }
 
 function hospitalFeatures(): FeatureCollection<Point> {
@@ -85,7 +99,7 @@ export interface DataLayerCallbacks {
 }
 
 export const LAYER_GROUPS: Record<"stations" | "hospitals" | "pois", string[]> = {
-  stations: ["lw-stations", "lw-stations-label"],
+  stations: ["lw-partner-stations", "lw-partner-stations-label", "lw-stations", "lw-stations-label"],
   hospitals: ["lw-hospitals", "lw-hospitals-h", "lw-hospitals-label"],
   pois: ["lw-pois", "lw-pois-label"],
 };
@@ -140,6 +154,7 @@ export function addDataLayers(map: maplibregl.Map, cb: DataLayerCallbacks): void
     ausStoreF();
   });
   map.addSource("lw-stations", { type: "geojson", data: stationFeatures() });
+  map.addSource("lw-partner-stations", { type: "geojson", data: partnerStationFeatures() });
   map.addSource("lw-hospitals", { type: "geojson", data: hospitalFeatures() });
   map.addSource("lw-pois", { type: "geojson", data: poiFeatures() });
 
@@ -210,6 +225,34 @@ export function addDataLayers(map: maplibregl.Map, cb: DataLayerCallbacks): void
   });
 
   map.addLayer({
+    id: "lw-partner-stations",
+    type: "circle",
+    source: "lw-partner-stations",
+    minzoom: 10.5,
+    paint: {
+      "circle-radius": ["interpolate", ["linear"], ["zoom"], 10.5, 2, 13, 4, 15, 5.5],
+      "circle-color": ["get", "color"],
+      "circle-stroke-color": "#ffffff",
+      "circle-stroke-width": ["interpolate", ["linear"], ["zoom"], 10.5, 0.5, 13, 1],
+      "circle-opacity": 0.85,
+    },
+  });
+  map.addLayer({
+    id: "lw-partner-stations-label",
+    type: "symbol",
+    source: "lw-partner-stations",
+    minzoom: 13,
+    layout: {
+      "text-field": ["get", "name"],
+      "text-font": FONT,
+      "text-size": 10,
+      "text-offset": [0, 0.9],
+      "text-anchor": "top",
+      "text-max-width": 12,
+    },
+    paint: { "text-color": "#374151", "text-halo-color": "#ffffff", "text-halo-width": 1.3 },
+  });
+  map.addLayer({
     id: "lw-stations",
     type: "circle",
     source: "lw-stations",
@@ -241,6 +284,7 @@ export function addDataLayers(map: maplibregl.Map, cb: DataLayerCallbacks): void
 
   const ausStore = store.onChange(() => {
     (map.getSource("lw-stations") as maplibregl.GeoJSONSource | undefined)?.setData(stationFeatures());
+    (map.getSource("lw-partner-stations") as maplibregl.GeoJSONSource | undefined)?.setData(partnerStationFeatures());
     (map.getSource("lw-hospitals") as maplibregl.GeoJSONSource | undefined)?.setData(hospitalFeatures());
     (map.getSource("lw-pois") as maplibregl.GeoJSONSource | undefined)?.setData(poiFeatures());
   });
@@ -249,6 +293,7 @@ export function addDataLayers(map: maplibregl.Map, cb: DataLayerCallbacks): void
   // Klick: Details anzeigen
   const clickable: [string, Kind][] = [
     ["lw-stations", "stations"],
+    ["lw-partner-stations", "stations"],
     ["lw-hospitals", "hospitals"],
     ["lw-pois", "pois"],
   ];
@@ -284,7 +329,17 @@ function showDetails(map: maplibregl.Map, kind: Kind, id: string, at: maplibregl
       .list("vehicles")
       .filter((v) => v.dienststelleId === id)
       .sort((a, b) => a.funkrufname.localeCompare(b.funkrufname, "de"));
-    body.innerHTML = `
+    const pArt = partnerArtVonTyp(s.typ);
+    if (pArt && !vehicles.length) {
+      const unterwegs = (sim.state.partnerFz ?? []).filter((u) => u.station === s.name);
+      body.innerHTML = `
+      <div class="lw-popup-title">${esc(s.name)}</div>
+      <div class="lw-popup-sub">${esc([s.typ, s.ort].filter(Boolean).join(" · "))}</div>
+      <div class="lw-popup-list">${
+        unterwegs.length ? unterwegs.map((u) => `<span class="veh">${esc(u.name)} <small>${esc(PARTNER_PHASE_TEXT[u.phase])}</small></span>`).join("") : "<em>keine Fahrzeuge im Einsatz</em>"
+      }</div>
+      <div class="lw-popup-meta">Alarmierung über den Einsatz (${PARTNER_ANZAHL[pArt]} Fahrzeug${PARTNER_ANZAHL[pArt] > 1 ? "e" : ""}, rückt von der nächsten Dienststelle aus). Quelle: ${ORIGIN_LABEL[s.herkunft]}</div>`;
+    } else body.innerHTML = `
       <div class="lw-popup-title">${esc(s.name)}</div>
       <div class="lw-popup-sub">${esc([s.typ, s.organisation, s.ort].filter(Boolean).join(" · "))}</div>
       <div class="lw-popup-list">${
@@ -436,17 +491,26 @@ function vehicleFeatures(): FeatureCollection<Point> {
 }
 
 function incidentFeatures(): FeatureCollection<Point> {
-  return collection(
-    sim.state.einsaetze
-      .filter((e) => e.adresse && e.zustand !== "abgeschlossen")
-      .map((e) =>
-        pointFeature(e.id, e.adresse!.lon, e.adresse!.lat, {
-          name: e.nummer,
-          color: e.fremd ? "#9aa0a6" : stufeFarbe(findCode(e.code ?? undefined)?.stufe),
-          sel: e.id === selectedIncident ? 1 : 0,
-        }),
-      ),
-  );
+  const out: Feature[] = [];
+  for (const e of sim.state.einsaetze) {
+    if (!e.adresse || e.zustand === "abgeschlossen") continue;
+    out.push(
+      pointFeature(e.id, e.adresse.lon, e.adresse.lat, {
+        name: e.nummer,
+        color: e.fremd ? "#9aa0a6" : stufeFarbe(findCode(e.code ?? undefined)?.stufe),
+        sel: e.id === selectedIncident ? 1 : 0,
+        br: 0,
+      }),
+    );
+    // Bereitstellungsraum (bis die Polizei den Einsatzort freigibt)
+    if (e.br && !e.boSicher) out.push(pointFeature(e.id, e.br.lon, e.br.lat, { name: `BR ${e.nummer}`, color: "#6b7280", sel: 0, br: 1 }));
+  }
+  return collection(out);
+}
+
+/** Fahrzeuge von Feuerwehr, Polizei, Berg- und Wasserrettung */
+function partnerFzFeatures(): FeatureCollection<Point> {
+  return collection((sim.state.partnerFz ?? []).map((u) => pointFeature(u.id, u.lon, u.lat, { name: u.name, color: PARTNER_FARBE[u.art], einsatz: u.einsatzId })));
 }
 
 function routeFeatures(): FeatureCollection<LineString> {
@@ -472,6 +536,7 @@ export function addSimLayers(
   map.addSource("lw-routes", { type: "geojson", data: routeFeatures() });
   map.addSource("lw-incidents", { type: "geojson", data: incidentFeatures() });
   map.addSource("lw-vehicles", { type: "geojson", data: vehicleFeatures() });
+  map.addSource("lw-partner-fz", { type: "geojson", data: partnerFzFeatures() });
 
   map.addLayer({
     id: "lw-routes",
@@ -485,7 +550,7 @@ export function addSimLayers(
     type: "circle",
     source: "lw-incidents",
     paint: {
-      "circle-radius": ["case", ["==", ["get", "sel"], 1], 13, 9],
+      "circle-radius": ["case", ["==", ["get", "br"], 1], 6, ["==", ["get", "sel"], 1], 13, 9],
       "circle-color": ["get", "color"],
       "circle-stroke-color": ["case", ["==", ["get", "sel"], 1], "#111827", "#ffffff"],
       "circle-stroke-width": ["case", ["==", ["get", "sel"], 1], 3, 2],
@@ -504,6 +569,26 @@ export function addSimLayers(
       "text-allow-overlap": true,
     },
     paint: { "text-color": "#7a1010", "text-halo-color": "#ffffff", "text-halo-width": 1.5 },
+  });
+  // Partner-Fahrzeuge: klein, unter den eigenen Fahrzeugen
+  map.addLayer({
+    id: "lw-partner-fz",
+    type: "circle",
+    source: "lw-partner-fz",
+    paint: {
+      "circle-radius": ["interpolate", ["linear"], ["zoom"], 6, 1.5, 10, 3.5, 13, 6],
+      "circle-color": ["get", "color"],
+      "circle-stroke-color": "#ffffff",
+      "circle-stroke-width": ["interpolate", ["linear"], ["zoom"], 6, 0.5, 10, 1.2],
+    },
+  });
+  map.addLayer({
+    id: "lw-partner-fz-label",
+    type: "symbol",
+    source: "lw-partner-fz",
+    minzoom: 12,
+    layout: { "text-field": ["get", "name"], "text-font": FONT, "text-size": 10, "text-offset": [0, 1], "text-anchor": "top" },
+    paint: { "text-color": "#374151", "text-halo-color": "#ffffff", "text-halo-width": 1.3 },
   });
   // Schatten unter fliegenden Hubschraubern (zeigt: er ist in der Luft)
   map.addLayer({
@@ -553,6 +638,10 @@ export function addSimLayers(
     paint: { "text-color": "#0b1726", "text-halo-color": "#ffffff", "text-halo-width": 1.6 },
   });
 
+  map.on("click", "lw-partner-fz", (e) => {
+    const id = e.features?.[0]?.properties?.einsatz as string | undefined;
+    if (id && !pickActive) cb.onIncident(id);
+  });
   map.on("click", "lw-incidents", (e) => {
     const id = e.features?.[0]?.properties?.lwid as string | undefined;
     if (id && !pickActive) cb.onIncident(id);
@@ -579,6 +668,7 @@ export function addSimLayers(
     if (now - last < 300) return;
     last = now;
     (map.getSource("lw-vehicles") as maplibregl.GeoJSONSource | undefined)?.setData(vehicleFeatures());
+    (map.getSource("lw-partner-fz") as maplibregl.GeoJSONSource | undefined)?.setData(partnerFzFeatures());
     (map.getSource("lw-incidents") as maplibregl.GeoJSONSource | undefined)?.setData(incidentFeatures());
     (map.getSource("lw-routes") as maplibregl.GeoJSONSource | undefined)?.setData(routeFeatures());
   });

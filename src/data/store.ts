@@ -6,6 +6,7 @@
  * Ein eigener Datensatz mit derselben ID wie ein Standard-Datensatz ersetzt diesen
  * (so werden bearbeitete Standarddaten gespeichert).
  */
+import { partnerArtVonTyp } from "../sim/partner";
 import { categoryFromType, streuung } from "./schema";
 import { loadStore, saveStore } from "../platform";
 import {
@@ -222,7 +223,10 @@ export class Store {
             : std.codes.filter((r) => !hidden.has(r.id) && !ownIds.has(r.id))
           : this.data.standardAktiv
             ? (std[kind] as KindMap[Kind][]).filter((r) => !hidden.has(r.id) && !ownIds.has(r.id))
-            : [];
+            : kind === "stations"
+              ? // Feuerwehr, Polizei, Berg- und Wasserrettung gibt es auch mit eigenen Rettungsdienst-Daten
+                (std.stations as KindMap[Kind][]).filter((r) => partnerArtVonTyp((r as Station).typ) && !hidden.has(r.id) && !ownIds.has(r.id))
+              : [];
       (out as Record<Kind, KindMap[Kind][]>)[kind] = [...base, ...own];
     }
     // Ausweich-NEF: eigene Fahrzeuge ohne Angabe (z. B. älterer Import) übernehmen die Zuordnung der Standarddaten

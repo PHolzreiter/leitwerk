@@ -59,3 +59,4 @@ Alternativ im Terminal: `xattr -dr com.apple.quarantine /Applications/LeitWerk.a
 - Kartendaten © [OpenStreetMap](https://www.openstreetmap.org/copyright)-Mitwirkende (ODbL), aufbereitet von [Protomaps](https://protomaps.com).
 - Höhendaten: Mapzen / [AWS Terrain Tiles](https://registry.opendata.aws/terrain-tiles/).
 - Standarddaten: Dienststellen aus OpenStreetMap und eigener Liste (Nord-NÖ), Krankenhaus-Abteilungen nach den Regionalberichten der NÖ Landesgesundheitsagentur; Wien, Burgenland und Linz nach Allgemeinwissen (im Feld „Hinweis“ markiert, bitte prüfen). Erzeugt mit `tools/build_default_data.py`.
+- Feuerwehr (Hauptfeuerwehr je Gemeinde und Bezirkskommanden), Polizeiinspektionen, Berg- und Wasserrettung: © OpenStreetMap-Mitwirkende (ODbL), geholt mit `tools/osm_partner_holen.py`.

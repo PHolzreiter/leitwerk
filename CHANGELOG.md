@@ -1,5 +1,23 @@
 # Änderungen
 
+## 0.25.0 – Feuerwehr, Polizei, Berg- und Wasserrettung mit eigenen Fahrzeugen
+**Dienststellen auf der Karte**
+- Neu in den Standarddaten (aus OpenStreetMap): 452 Feuerwehren (je Gemeinde die Hauptfeuerwehr, dazu die Bezirkskommanden), 197 Polizeiinspektionen, 30 Bergrettungs- und 4 Wasserrettungs-Stützpunkte. Sie erscheinen als kleine farbige Punkte erst beim Hineinzoomen (Feuerwehr rot, Polizei dunkelblau, Bergrettung grün, Wasserrettung türkis)
+- Eigene Stützpunkte legst du wie bisher an (Dienststelle → Typ Feuerwehr/Polizei/Bergrettung/Wasserrettung). In den Fahrzeuglisten tauchen sie nicht auf
+
+**Alarmieren und Fahren**
+- Die Knöpfe im Einsatz alarmieren jetzt echte Fahrzeuge: Feuerwehr und Polizei mit 3, Berg- und Wasserrettung mit 1 Fahrzeug, immer von der nächsten Dienststelle, Ausrücken innerhalb von 2 Minuten. Sie fahren auf der Karte mit (klein, in ihrer Farbe) und stehen mit ihrem Status unter den Knöpfen
+- Knopf gelb = wird gebraucht (aus Abfrage und Code), ⏱ = unterwegs, ✓ = vor Ort. Niemand davon transportiert Patienten
+- Wann wer gebraucht wird: Feuerwehr bei Brand, austretenden Stoffen, eingeklemmten Personen, Verkehrsunfällen und Türöffnungen; Polizei bei Gewalt/Waffen, Unterbringung, Verkehrsunfällen, Unfällen im öffentlichen Raum, Arbeitsunfällen und wenn sie selbst anfordert (dann ist sie schon dort); Bergrettung, wenn jemand in der Natur nicht weiß, wo er ist (und beim Alpinunfall); Wasserrettung nur, solange die Person noch im Wasser ist
+- Wo ohne sie nichts geht (Befreiung, Brand, Suche, Person im Wasser), wartet die Besatzung, bis sie eingetroffen sind, und erinnert per Funk
+- Die Feuerwehr bleibt nach dem Rettungsdienst noch 10–20 Minuten, die anderen fahren mit ihm ab
+- Person im Wasser bzw. verirrt in der Natur kommt vor allem dort vor, wo es eine Wasser- bzw. Bergrettung gibt
+
+**Gewalt und Waffen**
+- Ist beim Alarmieren klar, dass Gewalt oder Waffen im Spiel sind, legt LeitWerk einen Bereitstellungsraum ca. 500 m vom Einsatzort fest (Einsatzmaske und Karte). Alle Fahrzeuge außer der Polizei fahren zuerst dorthin
+- Etwa 5–10 Minuten nach dem Eintreffen der Polizei meldet die Polizei-Leitstelle per Funk „Einsatzort gesichert“ – dann fährt der Rettungsdienst zu und es läuft ein normaler Einsatz
+- Ein Polizeifahrzeug begleitet den Transport ins Krankenhaus und fährt nach der Übergabe wieder
+
 ## 0.24.0 – Fahrzeugarten und -modelle, Reiter NEF ÖAMTC und EL, Einsätze in Nachbarzonen (Work in Progress)
 **Fahrzeuge**
 - Im Fahrzeug-Fenster wählst du zuerst die Fahrzeugart (RTW, KTW, NEF, EL …). Ein zweites Feld kommt nur, wo es etwas zu unterscheiden gibt: RTW / RTW groß (Crafter, kein C) / RTW-C, KTW / KTW-B, NEF / NEF ÖAMTC, BEL / EL ÖBB. Beim KTW und BEL zusätzlich das Fahrzeug (oder „zufällig“). Die Felder „Fahrzeugtyp“ und „Fahrzeuggröße“ sind weg

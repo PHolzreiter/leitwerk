@@ -2596,6 +2596,30 @@ input[type="color"] {
   cursor: default;
   opacity: 0.9;
 }
+.partner-b.unterwegs,
+.partner-b.unterwegs:disabled {
+  color: var(--accent, #1d6fd8);
+  border-color: currentColor;
+  opacity: 1;
+  cursor: default;
+}
+.partner-info {
+  font-size: 11px;
+  margin-top: 3px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.partner-info:empty {
+  display: none;
+}
+.partner-fz {
+  display: inline-block;
+  margin-right: 10px;
+}
+.partner-br {
+  color: var(--text, inherit);
+}
 .funk-ruf.dringend {
   border-left: 3px solid var(--accent);
   background: color-mix(in srgb, var(--accent) 8%, transparent);

@@ -26,6 +26,7 @@ function leer() {
     funkG: "",
     kt: new Map<string, string>(),
     ktIds: "",
+    partner: "",
   };
 }
 
@@ -68,7 +69,7 @@ export class DeltaBauer {
     for (const e of st.einsaetze) {
       // abgeschlossene Einsätze ändern sich kaum: erst einen billigen Fingerabdruck prüfen
       if (e.zustand === "abgeschlossen") {
-        const fp = `${e.protokoll.length}|${e.anruf?.gespraech.length}|${e.anruf?.status}|${e.code}|${e.infoRtw}|${e.infoIntern}|${e.adresse?.label}|${e.telefon}|${JSON.stringify(e.partner ?? null)}`;
+        const fp = `${e.protokoll.length}|${e.anruf?.gespraech.length}|${e.anruf?.status}|${e.code}|${e.infoRtw}|${e.infoIntern}|${e.adresse?.label}|${e.telefon}|${JSON.stringify(e.partner ?? null)}|${JSON.stringify(e.partnerDa ?? null)}`;
         if (c.einFp.get(e.id) === fp && c.ein.has(e.id)) continue;
         c.einFp.set(e.id, fp);
       }
@@ -134,6 +135,13 @@ export class DeltaBauer {
       c.ktIds = ktIds;
     }
     d.ktZaehler = st.ktZaehler;
+    // Partner-Fahrzeuge (wenige): ohne Route, nur Position und Phase
+    const pf = (st.partnerFz ?? []).map((u) => ({ ...u, fahrt: null }));
+    const pKey = JSON.stringify(pf);
+    if (pKey !== c.partner) {
+      d.partnerFz = pf;
+      c.partner = pKey;
+    }
     const chatN = st.chat?.length ?? 0;
     if (chatN !== c.chat) {
       d.chat = st.chat;
@@ -210,6 +218,7 @@ export function deltaAnwenden(d: Nachricht): void {
     st.kt = ids.map((id) => nachId.get(id)).filter((k): k is NonNullable<typeof k> => !!k);
   }
   if (typeof d.ktZaehler === "number") st.ktZaehler = d.ktZaehler;
+  if (d.partnerFz) st.partnerFz = d.partnerFz as SimState["partnerFz"];
   if (d.chat) st.chat = d.chat as SimState["chat"];
   sim.notify();
 }

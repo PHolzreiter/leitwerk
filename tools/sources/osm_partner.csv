@@ -1,0 +1,684 @@
+osm;name;typ;organisation;ort;lat;lon
+way/656228502;Berg Rettung Türnitz;Bergrettung;Bergrettung;Türnitz;47.926057;15.473975
+way/625729145;Bergrettung Annaberg;Bergrettung;Bergrettung;Annaberg;47.877297;15.365697
+node/7599095997;Bergrettung Ferdinand Bürkle Hütte;Bergrettung;Bergrettung;Puchberg am Schneeberg;47.779818;15.826418
+way/267672192;Bergrettung Gaflenz;Bergrettung;Bergrettung;Gaflenz;47.885134;14.769013
+node/8791397038;Bergrettung Göstling;Bergrettung;Bergrettung;Göstling an der Ybbs;47.810278;14.931950
+way/129260508;Bergrettung Göstling an der Ybbs;Bergrettung;Bergrettung;Göstling an der Ybbs;47.802180;15.041760
+node/7599095998;Bergrettung Heinrich Krempel Hütte;Bergrettung;Bergrettung;Naßwald;47.774796;15.789388
+way/219640208;Bergrettung Josef-Schöffel-Hütte;Bergrettung;Bergrettung;Sulz im Wienerwald;48.098306;16.169895
+way/160487756;Bergrettung Kirchberg an der Pielach;Bergrettung;Bergrettung;Kirchberg an der Pielach;48.017754;15.398349
+way/160042886;Bergrettung Lackenhof;Bergrettung;Bergrettung;Lackenhof;47.869865;15.153635
+way/1186309977;Bergrettung Lilienfeld;Bergrettung;Bergrettung;Lilienfeld;47.987511;15.592525
+node/9784089784;Bergrettung Lunz am See;Bergrettung;Bergrettung;Lunz am See;47.860425;15.024052
+way/232984896;Bergrettung Mitterbach;Bergrettung;Bergrettung;Mitterbach am Erlaufsee;47.809614;15.289029
+way/51878266;Bergrettung NÖ/Wien;Bergrettung;Bergrettung;St. Pölten;48.179110;15.614195
+way/608624886;Bergrettung OSt Semmering;Bergrettung;Bergrettung;Spital am Semmering;47.630780;15.828531
+node/7576113579;Bergrettung Puchberg am Schneeberg;Bergrettung;Bergrettung;Puchberg am Schneeberg;47.792029;15.916799
+way/236977570;Bergrettung Raxgmoahütte;Bergrettung;Bergrettung;Prein an der Rax;47.703518;15.717820
+node/7576113578;Bergrettung Reichenau;Bergrettung;Bergrettung;Reichenau an der Rax;47.695308;15.847377
+way/277706563;Bergrettung Sepp Steinwender Hütte;Bergrettung;Bergrettung;Höflein an der Hohen Wand;47.811622;16.014269
+way/151710969;Bergrettung Thal;Bergrettung;Bergrettung;Thal;47.934979;15.821858
+way/306413253;Bergrettung Türnitz;Bergrettung;Bergrettung;Türnitz;47.916435;15.454296
+node/3916592017;Bergrettung Wachau;Bergrettung;Bergrettung;Dürnstein;48.390923;15.533522
+node/7576130244;Bergrettung Wienerwald Süd;Bergrettung;Bergrettung;Maria Enzersdorf;48.095861;16.275947
+way/286918765;Bergrettung Österleinbrunnhütte;Bergrettung;Bergrettung;Türnitz;47.891271;15.437732
+node/3725149461;Bergrettungsdienst Hohe Wand;Bergrettung;Bergrettung;Hohe Wand;47.818425;16.053888
+way/197893009;Bergrettungsdienst Österreich Ortsstelle Amstetten;Bergrettung;Bergrettung;Amstetten;48.100410;14.816022
+way/117055495;Bergrettungshütte OSt. Triestingtal;Bergrettung;Bergrettung;Weissenbach an der Triesting;48.014772;16.050723
+way/444829909;Bergrettungszentrale;Bergrettung;Bergrettung;Pernitz;47.896101;15.955911
+way/267445752;Hütte Bergrettung Waidhofen/Ybbs;Bergrettung;Bergrettung;Wirts;47.945695;14.755017
+node/3630207108;Österreichischer Bergrettungsdienst St. Aegyd am Neuwalde;Bergrettung;Bergrettung;St. Aegyd am Neuwalde;47.854615;15.562825
+node/10106683414;Bezirksalarmzentrale Krems;Feuerwehr;Feuerwehr;Krems an der Donau;48.406125;15.611256
+node/11496657793;Bezirksfeuerwehrkommando Gänserndorf;Feuerwehr;Feuerwehr;;48.281044;16.912572
+node/12676061982;Bezirksfeuerwehrkommando Waidhofen/Thaya;Feuerwehr;Feuerwehr;;48.791270;15.406752
+way/163598677;F.F. Maria Enzersdorf;Feuerwehr;Feuerwehr;Maria Enzersdorf;48.092686;16.283160
+way/152247669;F.F.Biedermannsdorf;Feuerwehr;Feuerwehr;Biedermannsdorf;48.090464;16.355286
+way/119569163;F.F.Gießhübl;Feuerwehr;Feuerwehr;Gießhübl;48.094110;16.238798
+node/4932048672;FF  Wiesmath;Feuerwehr;Feuerwehr;Wiesmath;47.614656;16.287973
+way/704212284;FF Altenmarkt;Feuerwehr;Feuerwehr;Fallbach;48.674485;16.388678
+way/233214124;FF Altlengbach;Feuerwehr;Feuerwehr;Altlengbach;48.152831;15.912852
+way/275173904;FF Aspang;Feuerwehr;Feuerwehr;Aspang-Markt;47.557645;16.094925
+way/326064566;FF Asparn/Zaya;Feuerwehr;Feuerwehr;Asparn an der Zaya;48.585491;16.496207
+way/120022866;FF Atzenbrugg;Feuerwehr;Feuerwehr;Atzenbrugg;48.292348;15.907340
+way/88279644;FF Bad Pirawath;Feuerwehr;Feuerwehr;Bad Pirawarth;48.451720;16.601482
+way/488940082;FF Braunegg;Feuerwehr;Feuerwehr;Pölla;48.351183;15.236103
+way/238546543;FF Breitenstein;Feuerwehr;Feuerwehr;Breitenstein;47.658678;15.820371
+way/108536602;FF Bruck / Leitha;Feuerwehr;Feuerwehr;Bruck an der Leitha;48.031003;16.787728
+way/201624834;FF Brunn/Wild;Feuerwehr;Feuerwehr;Brunn an der Wild;48.693503;15.519437
+way/174742188;FF Ebenfurth;Feuerwehr;Feuerwehr;Ebenfurth;47.877081;16.374687
+way/169316463;FF Edlitz;Feuerwehr;Feuerwehr;Edlitz;47.598448;16.138811
+node/1364735277;FF Eisgarn;Feuerwehr;Feuerwehr;Eisgarn;48.916968;15.096466
+node/1932189296;FF Engelhartstetten;Feuerwehr;Feuerwehr;Engelhartstetten;48.182767;16.880488
+way/303002266;FF Ennsdorf;Feuerwehr;Feuerwehr;Ennsdorf;48.212502;14.491328
+node/10781936476;FF Enzersdorf an der Fischa;Feuerwehr;Feuerwehr;Enzersdorf an der Fischa;48.075190;16.609876
+way/352682395;FF Feistritz;Feuerwehr;Feuerwehr;Feistritz am Wechsel;47.599016;16.054925
+node/8748273781;FF Fischamend;Feuerwehr;Feuerwehr;Fischamend;48.117262;16.614369
+way/119039567;FF Frankenfels;Feuerwehr;Feuerwehr;Frankenfels;47.982661;15.326597
+node/4595121693;FF Furth bei Göttweig;Feuerwehr;Feuerwehr;Furth bei Göttweig;48.373046;15.613110
+node/2157534468;FF Gars am Kamp;Feuerwehr;Feuerwehr;Gars am Kamp;48.598718;15.663746
+node/4982680287;FF Gerersdorf;Feuerwehr;Feuerwehr;Gerersdorf;48.198822;15.551266
+way/508215156;FF Grimmenstein Markt;Feuerwehr;Feuerwehr;Grimmenstein;47.617598;16.127180
+way/535031747;FF Groß-Schweinbarth;Feuerwehr;Feuerwehr;Groß-Schweinbarth;48.415178;16.635432
+way/264553456;FF Großriedenthal;Feuerwehr;Feuerwehr;Großriedenthal;48.483759;15.867235
+way/237012431;FF Grünbach-Schrattenbach;Feuerwehr;Feuerwehr;Grünbach am Schneeberg;47.798202;15.986435
+way/501183714;FF Gumpoldskirchen;Feuerwehr;Feuerwehr;Gumpoldskirchen;48.038343;16.283774
+way/215989937;FF Guntramsdorf;Feuerwehr;Feuerwehr;Guntramsdorf;48.046680;16.318146
+way/159390223;FF Gutenstein;Feuerwehr;Feuerwehr;Gutenstein;47.874127;15.888399
+way/153930643;FF Götzendorf;Feuerwehr;Feuerwehr;Götzendorf an der Leitha;48.019060;16.583985
+way/318927459;FF Haringsee;Feuerwehr;Feuerwehr;Haringsee;48.193016;16.786295
+relation/20613766;FF Haugsdorf;Feuerwehr;Feuerwehr;Haugsdorf;48.703428;16.081747
+way/329423165;FF Hausbrunn;Feuerwehr;Feuerwehr;Hausbrunn;48.627423;16.825939
+node/7013704284;FF Hausheim-Noppendorf;Feuerwehr;Feuerwehr;Absdorf;48.299290;15.611331
+way/329936298;FF Heiligenblut;Feuerwehr;Feuerwehr;Raxendorf;48.326451;15.278261
+way/574149525;FF Höflein an der Hohen Wand;Feuerwehr;Feuerwehr;Höflein;47.800190;16.032348
+way/423931292;FF Jedenspeigen;Feuerwehr;Feuerwehr;Jedenspeigen;48.497867;16.872996
+way/206685713;FF Kaltenleutgeben;Feuerwehr;Feuerwehr;Kaltenleutgeben;48.117750;16.201093
+way/414653419;FF Kapelln;Feuerwehr;Feuerwehr;Kapelln;48.258853;15.757410
+way/47092163;FF Katzelsdorf;Feuerwehr;Feuerwehr;Katzelsdorf;48.284285;16.108621
+way/135585175;FF Kaumberg;Feuerwehr;Feuerwehr;Kaumberg;48.025217;15.903734
+way/412419381;FF Kirchberg am Walde;Feuerwehr;Feuerwehr;Kirchberg am Walde;48.728312;15.079311
+way/393053651;FF Kirchberg am Wechsel;Feuerwehr;Feuerwehr;Kirchberg am Wechsel;47.608983;15.991701
+node/7211627997;FF Klein Pöchlarn;Feuerwehr;Feuerwehr;Klein-Pöchlarn;48.218958;15.215101
+way/440284828;FF Kleinschönau;Feuerwehr;Feuerwehr;Hirschbach;48.731155;15.160129
+way/93495141;FF Königsberg;Feuerwehr;Feuerwehr;Thomasberg;47.574949;16.125761
+way/228238218;FF Laab im Walde;Feuerwehr;Feuerwehr;Laab im Walde;48.151737;16.183690
+node/3546742010;FF Langenrohr;Feuerwehr;Feuerwehr;Langenrohr;48.304917;16.009712
+node/7726627886;FF Lehen;Feuerwehr;Feuerwehr;Leiben;48.229507;15.263883
+node/1690578294;FF Lichtenegg;Feuerwehr;Feuerwehr;Lichtenegg;47.598513;16.198752
+way/636543877;FF Lichtenwörth;Feuerwehr;Feuerwehr;Lichtenwörth;47.836197;16.294118
+node/2267185808;FF Loimanns;Feuerwehr;Feuerwehr;Litschau;48.932347;15.069412
+way/98640695;FF Mannersdorf;Feuerwehr;Feuerwehr;Mannersdorf am Leithagebirge;47.974868;16.600704
+node/4462300933;FF Mannsdorf/Donau;Feuerwehr;Feuerwehr;Mannsdorf an der Donau;48.152161;16.667126
+way/29305925;FF Maria Anzbach;Feuerwehr;Feuerwehr;Maria Anzbach;48.189368;15.936307
+way/629590036;FF Markt Piesting;Feuerwehr;Feuerwehr;Markt Piesting;47.870169;16.130275
+way/523252373;FF Marktgemeinde Schwadorf;Feuerwehr;Feuerwehr;Schwadorf;48.068941;16.582956
+node/1742494970;FF Mauerbach;Feuerwehr;Feuerwehr;Mauerbach;48.247137;16.167639
+way/420115386;FF Michelhausen;Feuerwehr;Feuerwehr;Michelhausen;48.287768;15.940765
+way/159001629;FF Mühldorf;Feuerwehr;Feuerwehr;Mühldorf;48.372940;15.345216
+way/84051215;FF Münchendorf;Feuerwehr;Feuerwehr;Münchendorf;48.025874;16.376789
+way/29306028;FF Neulengbach-Stadt;Feuerwehr;Feuerwehr;Neulengbach;48.195794;15.911022
+way/137106876;FF Orth/Donau;Feuerwehr;Feuerwehr;Orth an der Donau;48.147570;16.702121
+node/1782582324;FF Otterthal;Feuerwehr;Feuerwehr;Trattenbach;47.622621;15.944669
+node/4807698831;FF Paudorf;Feuerwehr;Feuerwehr;Paudorf;48.351167;15.620434
+way/1173074711;FF Petzenkirchen-Bergland;Feuerwehr;Feuerwehr;Petzenkirchen;48.147395;15.155316
+way/122799668;FF Pitten;Feuerwehr;Feuerwehr;Pitten;47.713790;16.184136
+way/580988530;FF Prellenkirchen;Feuerwehr;Feuerwehr;Prellenkirchen;48.074680;16.953798
+way/294968740;FF Prigglitz;Feuerwehr;Feuerwehr;Prigglitz;47.703645;15.929379
+node/10570158588;FF Puchberg;Feuerwehr;Feuerwehr;Puchberg am Schneeberg;47.792356;15.914861
+way/26299552;FF Purkersdorf;Feuerwehr;Feuerwehr;Purkersdorf;48.206596;16.182305
+way/268320430;FF Pöggstall;Feuerwehr;Feuerwehr;Pöggstall;48.316096;15.198245
+way/131200785;FF Rabenstein;Feuerwehr;Feuerwehr;Rabenstein an der Pielach;48.062743;15.463709
+way/431638955;FF Rohrau;Feuerwehr;Feuerwehr;Rohrau;48.066587;16.857397
+way/334679928;FF Ruprechtshofen;Feuerwehr;Feuerwehr;Ruprechtshofen;48.133716;15.276171
+way/413702668;FF Scharndorf;Feuerwehr;Feuerwehr;Scharndorf;48.090544;16.798956
+way/88698623;FF Schwarzenau;Feuerwehr;Feuerwehr;Schwarzenau;48.741076;15.259664
+way/372014111;FF Schönberg am Kamp;Feuerwehr;Feuerwehr;Schönberg am Kamp;48.517404;15.696957
+way/182099866;FF Sollenau;Feuerwehr;Feuerwehr;Sollenau;47.898215;16.246739
+node/375961714;FF St. Veit/Gölsen;Feuerwehr;Feuerwehr;St. Veit an der Gölsen;48.042674;15.672880
+way/86662032;FF Stronsdorf;Feuerwehr;Feuerwehr;Stronsdorf;48.653014;16.296916
+node/1433168479;FF Ternitz-Pottschach;Feuerwehr;Feuerwehr;Ternitz;47.707093;16.019218
+way/165691904;FF Trautmansdorf;Feuerwehr;Feuerwehr;Trautmannsdorf an der Leitha;48.023659;16.643846
+node/12485177064;FF Unterstinkenbrunn;Feuerwehr;Feuerwehr;Unterstinkenbrunn;48.665552;16.346189
+way/37558159;FF Vösendorf;Feuerwehr;Feuerwehr;Vösendorf;48.120864;16.341161
+way/342059744;FF Warth;Feuerwehr;Feuerwehr;Warth;47.653625;16.127487
+node/936479074;FF Watzelsdorf;Feuerwehr;Feuerwehr;Pernersdorf;48.698195;15.984030
+way/142605625;FF Weikendorf;Feuerwehr;Feuerwehr;Weikendorf;48.346556;16.766421
+way/142385925;FF Weikersdorf;Feuerwehr;Feuerwehr;Weikersdorf am Steinfelde;47.806618;16.143799
+node/12481508316;FF Wildendürnbach;Feuerwehr;Feuerwehr;Wildendürnbach;48.756765;16.501340
+way/190241239;FF Wolfsgraben;Feuerwehr;Feuerwehr;Wolfsgraben;48.163763;16.121651
+node/2231323019;FF Wolfsthal;Feuerwehr;Feuerwehr;Wolfsthal;48.136070;17.007181
+way/254470899;FF Zellerndorf;Feuerwehr;Feuerwehr;Zellerndorf;48.694622;15.960910
+node/11469193926;FF Zillingdorf Markt;Feuerwehr;Feuerwehr;Zillingdorf;47.853310;16.327337
+node/5512179681;FF Zöbern;Feuerwehr;Feuerwehr;Zöbern;47.512593;16.130097
+node/6005441106;FF- Weinzierl am WAlde;Feuerwehr;Feuerwehr;Weinzierl am Walde;48.431549;15.433637
+way/246816789;FF-Bad Schönau;Feuerwehr;Feuerwehr;Bad Schönau;47.498854;16.234365
+node/2508105941;FF-Haus Raabs;Feuerwehr;Feuerwehr;Raabs an der Thaya;48.851643;15.487728
+node/1271988857;FF-Wullersdorf;Feuerwehr;Feuerwehr;Wullersdorf;48.629240;16.100524
+way/43867661;FFW Ottenthal;Feuerwehr;Feuerwehr;Ottenthal;48.466243;15.905481
+way/364648685;Feuerwehr;Feuerwehr;Feuerwehr;Schwarzenbach;47.635868;16.351004
+node/1913706482;Feuerwehr;Feuerwehr;Feuerwehr;Golling an der Erlauf;48.181243;15.183047
+way/84273837;Feuerwehr;Feuerwehr;Feuerwehr;Gaweinstal;48.477034;16.593788
+node/1632924378;Feuerwehr Aderklaa;Feuerwehr;Feuerwehr;Aderklaa;48.285774;16.534323
+way/508158091;Feuerwehr Altenmarkt;Feuerwehr;Feuerwehr;Yspertal;48.285178;15.066288
+node/2809129672;Feuerwehr Bad Erlach;Feuerwehr;Feuerwehr;Bad Erlach;47.727949;16.215018
+way/35553410;Feuerwehr Brunn am Gebirge;Feuerwehr;Feuerwehr;Brunn am Gebirge;48.111191;16.285664
+way/547823304;Feuerwehr Dorf - Haidershofen;Feuerwehr;Feuerwehr;Haidershofen;48.091177;14.479363
+way/371345787;Feuerwehr Droß;Feuerwehr;Feuerwehr;Droß;48.464741;15.573613
+way/311046038;Feuerwehr Eckartsau;Feuerwehr;Feuerwehr;Eckartsau;48.144425;16.796287
+way/552568034;Feuerwehr Ferschnitz;Feuerwehr;Feuerwehr;Ferschnitz;48.093960;14.982007
+way/336050278;Feuerwehr Gr. Gerungs;Feuerwehr;Feuerwehr;Groß Gerungs;48.575870;14.955749
+way/791295877;Feuerwehr Guntersdorf;Feuerwehr;Feuerwehr;Guntersdorf;48.647474;16.047917
+way/264665249;Feuerwehr Hainfeld;Feuerwehr;Feuerwehr;Hainfeld;48.031719;15.774340
+way/178582245;Feuerwehr Hennersdorf;Feuerwehr;Feuerwehr;Hennersdorf;48.111807;16.364104
+way/29299195;Feuerwehr Herzogenburg-Stadt;Feuerwehr;Feuerwehr;Herzogenburg;48.285859;15.696398
+way/475597938;Feuerwehr Himberg;Feuerwehr;Feuerwehr;Himberg;48.076876;16.444349
+way/140150457;Feuerwehr Hochwolkersdorf;Feuerwehr;Feuerwehr;Hochwolkersdorf;47.661530;16.281400
+node/10285597815;Feuerwehr Kasten;Feuerwehr;Feuerwehr;Kasten bei Böheimkirchen;48.152412;15.780180
+node/613091459;Feuerwehr Kirchstetten;Feuerwehr;Feuerwehr;Kirchstetten;48.185141;15.820612
+way/328630581;Feuerwehr Ladendorf;Feuerwehr;Feuerwehr;Ladendorf;48.533102;16.485513
+way/199485166;Feuerwehr Langschlag;Feuerwehr;Feuerwehr;Langschlag;48.574412;14.886359
+node/1647431803;Feuerwehr Markgrafneusiedl;Feuerwehr;Feuerwehr;Markgrafneusiedl;48.266179;16.632863
+way/243585123;Feuerwehr Neuhofen;Feuerwehr;Feuerwehr;Neuhofen an der Ybbs;48.059272;14.851428
+node/1632902691;Feuerwehr Parbasdorf;Feuerwehr;Feuerwehr;Parbasdorf;48.278490;16.587953
+way/218499953;Feuerwehr Pernitz;Feuerwehr;Feuerwehr;Pernitz;47.895924;15.956723
+node/5426726272;Feuerwehr Perschling;Feuerwehr;Feuerwehr;Perschling;48.260472;15.796488
+way/115081173;Feuerwehr Persenbeug;Feuerwehr;Feuerwehr;Hofamt Priel;48.190203;15.095644
+node/503263939;Feuerwehr Senftenberg;Feuerwehr;Feuerwehr;Senftenberg;48.449871;15.554280
+way/842486170;Feuerwehr Sitzendorf an der Schmida;Feuerwehr;Feuerwehr;Sitzendorf an der Schmida;48.603444;15.935754
+node/7425857648;Feuerwehr Spitz;Feuerwehr;Feuerwehr;Spitz;48.360142;15.400520
+way/30533949;Feuerwehr Tulln-Stadt;Feuerwehr;Feuerwehr;Tulln an der Donau;48.327973;16.059076
+way/157117038;Feuerwehr Viehdorf;Feuerwehr;Feuerwehr;Viehdorf;48.147694;14.891618
+way/216751242;Feuerwehr Vitis;Feuerwehr;Feuerwehr;Vitis;48.761542;15.179034
+way/37790677;Feuerwehr Wolkersdorf;Feuerwehr;Feuerwehr;Wolkersdorf im Weinviertel;48.375927;16.511019
+node/13130463622;Feuerwehr Wultschau;Feuerwehr;Feuerwehr;Moorbad Harbach;48.701808;14.831081
+way/235678063;Feuerwehrhaus FF Schweiggers;Feuerwehr;Feuerwehr;Schweiggers;48.666460;15.066935
+way/77004051;Feuerwehrhaus Grafenschlag;Feuerwehr;Feuerwehr;Grafenschlag;48.499453;15.170069
+way/448467019;Feuerwehrhaus Pfaffenschlag;Feuerwehr;Feuerwehr;Pfaffenschlag bei Waidhofen an der Thaya;48.842089;15.190812
+way/36996402;Feuerwehrhaus Raasdorf;Feuerwehr;Feuerwehr;Raasdorf;48.250240;16.561073
+way/362314957;Feuerwehrstadel;Feuerwehr;Feuerwehr;Bernhardsthal;48.692349;16.872934
+way/161107040;Freiwillige Feuerwehr;Feuerwehr;Feuerwehr;Gablitz;48.229147;16.151431
+way/470670109;Freiwillige Feuerwehr;Feuerwehr;Feuerwehr;Rappottenstein;48.521356;15.075941
+node/297749759;Freiwillige Feuerwehr;Feuerwehr;Feuerwehr;Albrechtsberg an der Großen Krems;48.462244;15.368507
+way/314843816;Freiwillige Feuerwehr;Feuerwehr;Feuerwehr;Hohenau an der March;48.606462;16.911261
+node/11922675530;Freiwillige Feuerwehr;Feuerwehr;Feuerwehr;Drösing;48.538150;16.898599
+way/260984779;Freiwillige Feuerwehr;Feuerwehr;Feuerwehr;Dürnkrut;48.474701;16.850088
+way/252787386;Freiwillige Feuerwehr;Feuerwehr;Feuerwehr;Sigmundsherberg;48.685866;15.723010
+way/514036484;Freiwillige Feuerwehr  Schwarzenbach an der Pielach;Feuerwehr;Feuerwehr;Schwarzenbach an der Pielach;47.953185;15.380187
+way/332855727;Freiwillige Feuerwehr Achau;Feuerwehr;Feuerwehr;Achau;48.082259;16.387609
+way/1222435073;Freiwillige Feuerwehr Alberndorf;Feuerwehr;Feuerwehr;Alberndorf im Pulkautal;48.700951;16.098938
+way/1341063322;Freiwillige Feuerwehr Alland;Feuerwehr;Feuerwehr;Alland;48.061949;16.071842
+way/188100717;Freiwillige Feuerwehr Allentsteig;Feuerwehr;Feuerwehr;Allentsteig;48.695187;15.326329
+node/412782813;Freiwillige Feuerwehr Allhartsberg;Feuerwehr;Feuerwehr;Allhartsberg;48.026849;14.795568
+node/513404774;Freiwillige Feuerwehr Altenburg;Feuerwehr;Feuerwehr;Altenburg;48.648431;15.594590
+way/235558451;Freiwillige Feuerwehr Altenmarkt;Feuerwehr;Feuerwehr;Altenmarkt an der Triesting;48.014890;15.991942
+node/5812104224;Freiwillige Feuerwehr Altlichtenwarth;Feuerwehr;Feuerwehr;Altlichtenwarth;48.645601;16.796851
+way/180727183;Freiwillige Feuerwehr Altmelon;Feuerwehr;Feuerwehr;Altmelon;48.460008;14.965871
+way/198116447;Freiwillige Feuerwehr Angern an der March;Feuerwehr;Feuerwehr;Angern an der March;48.378468;16.827936
+node/2467485889;Freiwillige Feuerwehr Annaberg;Feuerwehr;Feuerwehr;Annaberg;47.862577;15.360821
+way/1213255401;Freiwillige Feuerwehr Anstetten;Feuerwehr;Feuerwehr;Amstetten;48.119779;14.874412
+way/354490994;Freiwillige Feuerwehr Arbesbach;Feuerwehr;Feuerwehr;Arbesbach;48.490844;14.951144
+node/11001441419;Freiwillige Feuerwehr Aschbach Markt;Feuerwehr;Feuerwehr;Aschbach-Markt;48.076196;14.741125
+way/320168053;Freiwillige Feuerwehr Asperhofen;Feuerwehr;Feuerwehr;Asperhofen;48.246081;15.927478
+way/155491508;Freiwillige Feuerwehr Au am Leithaberge;Feuerwehr;Feuerwehr;Au am Leithaberge;47.922270;16.559927
+way/136910074;Freiwillige Feuerwehr Auersthal;Feuerwehr;Feuerwehr;Auersthal;48.372134;16.636882
+way/583918067;Freiwillige Feuerwehr Bad Deutsch-Altenburg;Feuerwehr;Feuerwehr;Bad Deutsch-Altenburg;48.125278;16.903287
+way/415288470;Freiwillige Feuerwehr Bad Traunstein;Feuerwehr;Feuerwehr;Bad Traunstein;48.432776;15.113393
+way/714594679;Freiwillige Feuerwehr Bad Vöslau;Feuerwehr;Feuerwehr;Bad Vöslau;47.967602;16.222072
+way/714480793;Freiwillige Feuerwehr Baden-Stadt;Feuerwehr;Feuerwehr;Baden;48.008056;16.235941
+node/1364071719;Freiwillige Feuerwehr Behamberg;Feuerwehr;Feuerwehr;Behamberg;48.034200;14.497747
+way/629590041;Freiwillige Feuerwehr Berndorf;Feuerwehr;Feuerwehr;Berndorf;47.946186;16.108428
+way/392297473;Freiwillige Feuerwehr Bisamberg;Feuerwehr;Feuerwehr;Bisamberg;48.331754;16.363075
+way/292580523;Freiwillige Feuerwehr Bischofstetten;Feuerwehr;Feuerwehr;Bischofstetten;48.123832;15.468883
+way/1214738848;Freiwillige Feuerwehr Blindenmarkt;Feuerwehr;Feuerwehr;Blindenmarkt;48.125798;14.987624
+node/4308790508;Freiwillige Feuerwehr Bockfließ;Feuerwehr;Feuerwehr;Bockfließ;48.358649;16.602331
+way/170958835;Freiwillige Feuerwehr Breitenau;Feuerwehr;Feuerwehr;Breitenau;47.740761;16.144001
+node/4944770709;Freiwillige Feuerwehr Bromberg;Feuerwehr;Feuerwehr;Bromberg;47.665116;16.211868
+way/201604340;Freiwillige Feuerwehr Böheimkirchen-Markt;Feuerwehr;Feuerwehr;Böheimkirchen;48.200153;15.759434
+node/332009826;Freiwillige Feuerwehr Deutsch-Wagram;Feuerwehr;Feuerwehr;Deutsch-Wagram;48.295292;16.558915
+node/4182735858;Freiwillige Feuerwehr Dobersberg;Feuerwehr;Feuerwehr;Dobersberg;48.915733;15.321968
+node/6200568843;Freiwillige Feuerwehr Drasenhofen;Feuerwehr;Feuerwehr;Drasenhofen;48.756682;16.645993
+node/1802582377;Freiwillige Feuerwehr Dürnstein;Feuerwehr;Feuerwehr;Dürnstein;48.390595;15.533396
+way/480099274;Freiwillige Feuerwehr Ebenthal;Feuerwehr;Feuerwehr;Ebenthal;48.437947;16.784861
+way/297554514;Freiwillige Feuerwehr Ebergassing;Feuerwehr;Feuerwehr;Ebergassing;48.043889;16.518247
+way/156087007;Freiwillige Feuerwehr Ebreichsdorf;Feuerwehr;Feuerwehr;Ebreichsdorf;47.968566;16.400405
+way/685275981;Freiwillige Feuerwehr Echsenbach;Feuerwehr;Feuerwehr;Echsenbach;48.716811;15.217444
+way/129529857;Freiwillige Feuerwehr Eggenburg;Feuerwehr;Feuerwehr;Eggenburg;48.641108;15.814362
+node/9676987366;Freiwillige Feuerwehr Eggendorf;Feuerwehr;Feuerwehr;Eggendorf;47.856779;16.319435
+way/395800698;Freiwillige Feuerwehr Eggern;Feuerwehr;Feuerwehr;Eggern;48.909463;15.152182
+way/345080664;Freiwillige Feuerwehr Eichgraben;Feuerwehr;Feuerwehr;Eichgraben;48.169646;15.981740
+node/7622336343;Freiwillige Feuerwehr Emmersdorf an der Donau;Feuerwehr;Feuerwehr;Emmersdorf an der Donau;48.246790;15.338452
+node/775352383;Freiwillige Feuerwehr Enzenreith;Feuerwehr;Feuerwehr;Enzenreith;47.668677;15.953719
+way/132835377;Freiwillige Feuerwehr Ernstbrunn;Feuerwehr;Feuerwehr;Ernstbrunn;48.523033;16.366611
+way/325259321;Freiwillige Feuerwehr Ernsthofen;Feuerwehr;Feuerwehr;Ernsthofen;48.129528;14.482442
+way/293854844;Freiwillige Feuerwehr Ertl;Feuerwehr;Feuerwehr;Ertl;47.977991;14.630286
+node/5894206172;Freiwillige Feuerwehr Eschenau;Feuerwehr;Feuerwehr;Traisen;48.048213;15.567070
+node/11407762662;Freiwillige Feuerwehr Euratsfeld;Feuerwehr;Feuerwehr;Euratsfeld;48.083938;14.929569
+node/4211127742;Freiwillige Feuerwehr Falkenstein;Feuerwehr;Feuerwehr;Falkenstein;48.720672;16.585545
+way/182099865;Freiwillige Feuerwehr Felixdorf;Feuerwehr;Feuerwehr;Felixdorf;47.884806;16.245946
+node/2107018891;Freiwillige Feuerwehr Feuersbrunn;Feuerwehr;Feuerwehr;Fels am Wagram;48.439625;15.785515
+node/9628239708;Freiwillige Feuerwehr Franzensdorf;Feuerwehr;Feuerwehr;Andlersdorf;48.190219;16.649336
+way/301967575;Freiwillige Feuerwehr Furth a.d. Triesting;Feuerwehr;Feuerwehr;Furth an der Triesting;47.972998;15.973900
+way/1000730834;Freiwillige Feuerwehr Gaming;Feuerwehr;Feuerwehr;Gaming;47.920527;15.089681
+way/338468412;Freiwillige Feuerwehr Gastern;Feuerwehr;Feuerwehr;Gastern;48.895785;15.219179
+way/309127147;Freiwillige Feuerwehr Gaubitsch;Feuerwehr;Feuerwehr;Gaubitsch;48.655784;16.380480
+way/310669477;Freiwillige Feuerwehr Gedersdorf;Feuerwehr;Feuerwehr;Gedersdorf;48.433698;15.686874
+node/271767665;Freiwillige Feuerwehr Geras;Feuerwehr;Feuerwehr;Geras;48.798734;15.677841
+way/36856393;Freiwillige Feuerwehr Gerasdorf;Feuerwehr;Feuerwehr;Gerasdorf bei Wien;48.299623;16.466935
+way/86248009;Freiwillige Feuerwehr Gföhl;Feuerwehr;Feuerwehr;Gföhl;48.520684;15.485250
+way/88593819;Freiwillige Feuerwehr Gloggnitz Stadt;Feuerwehr;Feuerwehr;Gloggnitz;47.673191;15.941314
+node/1073394098;Freiwillige Feuerwehr Gnadendorf;Feuerwehr;Feuerwehr;Gnadendorf;48.584857;16.429361
+way/222389271;Freiwillige Feuerwehr Gr. Pertenschlag;Feuerwehr;Feuerwehr;Bärnkopf;48.440659;14.994458
+node/1363369345;Freiwillige Feuerwehr Grafenwörth;Feuerwehr;Feuerwehr;Grafenwörth;48.406285;15.775502
+way/1392939117;Freiwillige Feuerwehr Gramatneusiedl;Feuerwehr;Feuerwehr;Gramatneusiedl;48.028744;16.481624
+way/365812868;Freiwillige Feuerwehr Gresten;Feuerwehr;Feuerwehr;Gresten;47.989148;15.022286
+way/30612866;Freiwillige Feuerwehr Groß-Enzersdorf;Feuerwehr;Feuerwehr;Groß-Enzersdorf;48.198867;16.551503
+node/4014457533;Freiwillige Feuerwehr Groß-Reipersdorf;Feuerwehr;Feuerwehr;Pulkau;48.699427;15.851976
+node/1562573804;Freiwillige Feuerwehr Groß-Siegharts-Stadt;Feuerwehr;Feuerwehr;Groß-Siegharts;48.788912;15.410832
+way/36901985;Freiwillige Feuerwehr Großebersdorf;Feuerwehr;Feuerwehr;Großebersdorf;48.363011;16.470961
+way/131255128;Freiwillige Feuerwehr Großengersdorf;Feuerwehr;Feuerwehr;Großengersdorf;48.357400;16.578961
+node/5890426475;Freiwillige Feuerwehr Großgöttfritz;Feuerwehr;Feuerwehr;Großgöttfritz;48.536366;15.190193
+node/4011559777;Freiwillige Feuerwehr Großharras;Feuerwehr;Feuerwehr;Großharras;48.663084;16.243747
+node/13361866061;Freiwillige Feuerwehr Großhofen;Feuerwehr;Feuerwehr;Glinzendorf;48.258715;16.620700
+way/421154653;Freiwillige Feuerwehr Großkrut;Feuerwehr;Feuerwehr;Großkrut;48.644080;16.719872
+way/1105451639;Freiwillige Feuerwehr Großmugl;Feuerwehr;Feuerwehr;Großmugl;48.492364;16.236082
+node/2372253825;Freiwillige Feuerwehr Großpertholz;Feuerwehr;Feuerwehr;Bad Großpertholz;48.629293;14.824453
+node/1710521127;Freiwillige Feuerwehr Großrußbach;Feuerwehr;Feuerwehr;Großrußbach;48.473450;16.415072
+node/1957229693;Freiwillige Feuerwehr Großschönau;Feuerwehr;Feuerwehr;Großschönau;48.653535;14.942480
+way/104169491;Freiwillige Feuerwehr Großweikersdorf;Feuerwehr;Feuerwehr;Großweikersdorf;48.472594;15.984220
+node/6278099059;Freiwillige Feuerwehr Gutenbrunn;Feuerwehr;Feuerwehr;Gutenbrunn;48.363457;15.117391
+way/96352941;Freiwillige Feuerwehr Gänserndorf;Feuerwehr;Feuerwehr;Gänserndorf;48.334352;16.716734
+node/288075644;Freiwillige Feuerwehr Göllersdorf;Feuerwehr;Feuerwehr;Göllersdorf;48.492354;16.112362
+way/193634236;Freiwillige Feuerwehr Göpfritz/Wild;Feuerwehr;Feuerwehr;Göpfritz an der Wild;48.725968;15.399414
+way/1000957866;Freiwillige Feuerwehr Göstling/Ybbs;Feuerwehr;Feuerwehr;Göstling an der Ybbs;47.810180;14.931956
+way/318839647;Freiwillige Feuerwehr Günselsdorf;Feuerwehr;Feuerwehr;Günselsdorf;47.945965;16.264219
+way/451113206;Freiwillige Feuerwehr Hadres;Feuerwehr;Feuerwehr;Hadres;48.711985;16.131194
+node/8554472531;Freiwillige Feuerwehr Hafnerbach Markt;Feuerwehr;Feuerwehr;Hafnerbach;48.214110;15.489128
+node/181387688;Freiwillige Feuerwehr Hagenbrunn;Feuerwehr;Feuerwehr;Hagenbrunn;48.333634;16.408698
+node/10151378620;Freiwillige Feuerwehr Hainburg;Feuerwehr;Feuerwehr;Hainburg an der Donau;48.145338;16.937621
+node/4991019585;Freiwillige Feuerwehr Harmannsdorf;Feuerwehr;Feuerwehr;Harmannsdorf;48.601110;15.740951
+node/2452779736;Freiwillige Feuerwehr Haugschlag;Feuerwehr;Feuerwehr;Haugschlag;48.995572;15.057789
+node/8749948877;Freiwillige Feuerwehr Haunoldstein;Feuerwehr;Feuerwehr;Haunoldstein;48.192896;15.458782
+way/217407165;Freiwillige Feuerwehr Hauskirchen;Feuerwehr;Feuerwehr;Hauskirchen;48.617349;16.754106
+node/2047737957;Freiwillige Feuerwehr Hausleiten;Feuerwehr;Feuerwehr;Hausleiten;48.394759;16.099739
+node/1363860171;Freiwillige Feuerwehr Heidenreichstein;Feuerwehr;Feuerwehr;Heidenreichstein;48.868234;15.123434
+way/345671354;Freiwillige Feuerwehr Heiligenkreuz;Feuerwehr;Feuerwehr;Heiligenkreuz;48.057173;16.130609
+way/835222043;Freiwillige Feuerwehr Hernstein;Feuerwehr;Feuerwehr;Hernstein;47.892452;16.107643
+way/223806367;Freiwillige Feuerwehr Herrnbaumgarten;Feuerwehr;Feuerwehr;Herrnbaumgarten;48.697001;16.679847
+way/79971032;Freiwillige Feuerwehr Hinterbrühl;Feuerwehr;Feuerwehr;Hinterbrühl;48.084169;16.242034
+node/9859780318;Freiwillige Feuerwehr Hirtenberg;Feuerwehr;Feuerwehr;Hirtenberg;47.931365;16.179104
+node/12364641753;Freiwillige Feuerwehr Hof am Leithaberge;Feuerwehr;Feuerwehr;Hof am Leithaberge;47.945191;16.569448
+way/293186055;Freiwillige Feuerwehr Hohenberg;Feuerwehr;Feuerwehr;Hohenberg;47.916781;15.615914
+node/4348535972;Freiwillige Feuerwehr Hoheneich;Feuerwehr;Feuerwehr;Hoheneich;48.771622;15.023673
+way/29435953;Freiwillige Feuerwehr Hohenruppersdorf;Feuerwehr;Feuerwehr;Hohenruppersdorf;48.472165;16.634194
+way/116023998;Freiwillige Feuerwehr Hollenstein/Ybbs;Feuerwehr;Feuerwehr;Hollenstein an der Ybbs;47.804839;14.771077
+node/13058478180;Freiwillige Feuerwehr Hollenthon;Feuerwehr;Feuerwehr;Hollenthon;47.589306;16.260414
+node/632233251;Freiwillige Feuerwehr Horn;Feuerwehr;Feuerwehr;Horn;48.668635;15.655672
+node/6741785938;Freiwillige Feuerwehr Hundsheim;Feuerwehr;Feuerwehr;Hundsheim;48.118596;16.939623
+way/489041001;Freiwillige Feuerwehr Hürm;Feuerwehr;Feuerwehr;Hürm;48.156902;15.411648
+way/126090910;Freiwillige Feuerwehr Jaidhof;Feuerwehr;Feuerwehr;Jaidhof;48.528804;15.484921
+way/430288303;Freiwillige Feuerwehr Japons;Feuerwehr;Feuerwehr;Japons;48.791114;15.567233
+way/113755606;Freiwillige Feuerwehr Karlstein;Feuerwehr;Feuerwehr;Karlstein an der Thaya;48.884587;15.405376
+node/9331737067;Freiwillige Feuerwehr Karlstetten;Feuerwehr;Feuerwehr;Karlstetten;48.258599;15.564272
+way/162617683;Freiwillige Feuerwehr Kautzen;Feuerwehr;Feuerwehr;Kautzen;48.930536;15.238398
+way/184745472;Freiwillige Feuerwehr Kematen an der Ybbs;Feuerwehr;Feuerwehr;Kematen an der Ybbs;48.026945;14.761734
+way/149874473;Freiwillige Feuerwehr Kernhof;Feuerwehr;Feuerwehr;St. Aegyd am Neuwalde;47.814858;15.544314
+node/10905580068;Freiwillige Feuerwehr Kettenreith;Feuerwehr;Feuerwehr;Mank;48.079180;15.380475
+way/1013048033;Freiwillige Feuerwehr Kilb;Feuerwehr;Feuerwehr;Kilb;48.102999;15.405273
+node/1119745135;Freiwillige Feuerwehr Kirchberg am Wagram;Feuerwehr;Feuerwehr;Kirchberg am Wagram;48.435894;15.896312
+way/135045197;Freiwillige Feuerwehr Kirchberg an der Pielach;Feuerwehr;Feuerwehr;Kirchberg an der Pielach;48.026983;15.427976
+node/6278102311;Freiwillige Feuerwehr Kirchschlag im Waldviertel;Feuerwehr;Feuerwehr;Kirchschlag;48.394164;15.222822
+node/1365334755;Freiwillige Feuerwehr Kirchschlag in der Buckligen Welt;Feuerwehr;Feuerwehr;Kirchschlag in der Buckligen Welt;47.493414;16.278521
+way/714713777;Freiwillige Feuerwehr Klausen-Leopoldsdorf;Feuerwehr;Feuerwehr;Klausen-Leopoldsdorf;48.087351;16.016034
+way/1025824591;Freiwillige Feuerwehr Kleinneusiedl;Feuerwehr;Feuerwehr;Klein-Neusiedl;48.093819;16.604728
+node/8666896246;Freiwillige Feuerwehr Kleinzell;Feuerwehr;Feuerwehr;Kleinzell;47.979622;15.734793
+node/1214872435;Freiwillige Feuerwehr Klosterneuburg;Feuerwehr;Feuerwehr;Klosterneuburg;48.302714;16.324555
+node/800353744;Freiwillige Feuerwehr Kottaun;Feuerwehr;Feuerwehr;Langau;48.823709;15.675277
+way/714713776;Freiwillige Feuerwehr Kottingbrunn;Feuerwehr;Feuerwehr;Kottingbrunn;47.949847;16.219667
+way/92219823;Freiwillige Feuerwehr Krumau am Kamp;Feuerwehr;Feuerwehr;Krumau am Kamp;48.589495;15.449848
+node/4971068704;Freiwillige Feuerwehr Krumnusbaum;Feuerwehr;Feuerwehr;Krummnußbaum;48.207990;15.161842
+way/561957557;Freiwillige Feuerwehr Königsbrunn am Wagram;Feuerwehr;Feuerwehr;Königsbrunn am Wagram;48.419545;15.939721
+way/41120798;Freiwillige Feuerwehr Königstetten;Feuerwehr;Feuerwehr;Königstetten;48.303173;16.151315
+way/278657388;Freiwillige Feuerwehr Laa an der Thaya;Feuerwehr;Feuerwehr;Laa an der Thaya;48.720505;16.400680
+way/71590318;Freiwillige Feuerwehr Langenlois;Feuerwehr;Feuerwehr;Langenlois;48.480683;15.684554
+node/473464525;Freiwillige Feuerwehr Langenzersdorf;Feuerwehr;Feuerwehr;Langenzersdorf;48.309170;16.356874
+way/321522636;Freiwillige Feuerwehr Lassee;Feuerwehr;Feuerwehr;Lassee;48.224541;16.822791
+way/312660280;Freiwillige Feuerwehr Laxenburg;Feuerwehr;Feuerwehr;Laxenburg;48.072410;16.354947
+node/388611738;Freiwillige Feuerwehr Lehenrotte;Feuerwehr;Feuerwehr;Türnitz;47.957921;15.547511
+way/547539520;Freiwillige Feuerwehr Leitzersdorf;Feuerwehr;Feuerwehr;Leitzersdorf;48.424117;16.250296
+node/11329537649;Freiwillige Feuerwehr Lengenfeld;Feuerwehr;Feuerwehr;Lengenfeld;48.470804;15.607303
+way/198024876;Freiwillige Feuerwehr Leobendorf;Feuerwehr;Feuerwehr;Leobendorf;48.377833;16.329137
+way/629590037;Freiwillige Feuerwehr Leobersdorf;Feuerwehr;Feuerwehr;Leobersdorf;47.929140;16.210469
+way/306795958;Freiwillige Feuerwehr Leopoldsdorf;Feuerwehr;Feuerwehr;Leopoldsdorf;48.111175;16.397868
+node/1741389439;Freiwillige Feuerwehr Leopoldsdorf im Marchfeld;Feuerwehr;Feuerwehr;Leopoldsdorf im Marchfeld;48.223844;16.691064
+node/785480369;Freiwillige Feuerwehr Lilienfeld;Feuerwehr;Feuerwehr;Lilienfeld;48.014425;15.597814
+way/203445080;Freiwillige Feuerwehr Loich;Feuerwehr;Feuerwehr;Loich;47.994718;15.401753
+node/8715066496;Freiwillige Feuerwehr Loosdorf;Feuerwehr;Feuerwehr;Loosdorf;48.201703;15.400185
+way/1000957865;Freiwillige Feuerwehr Lunz am See;Feuerwehr;Feuerwehr;Lunz am See;47.862437;15.031900
+node/7881083372;Freiwillige Feuerwehr Marbach;Feuerwehr;Feuerwehr;Marbach an der Donau;48.215077;15.156997
+node/13193493310;Freiwillige Feuerwehr Maria Laach;Feuerwehr;Feuerwehr;Maria Laach am Jauerling;48.305039;15.343181
+node/616709939;Freiwillige Feuerwehr Maria Lanzendorf;Feuerwehr;Feuerwehr;Maria-Lanzendorf;48.097519;16.418838
+node/7868938273;Freiwillige Feuerwehr Maria Taferl;Feuerwehr;Feuerwehr;Maria Taferl;48.226691;15.160464
+node/5858977738;Freiwillige Feuerwehr Markt-Seitenstetten;Feuerwehr;Feuerwehr;Seitenstetten;48.038151;14.659741
+node/6278127721;Freiwillige Feuerwehr Martinsberg;Feuerwehr;Feuerwehr;Martinsberg;48.376385;15.148221
+node/10542625935;Freiwillige Feuerwehr Mautern an der Donau;Feuerwehr;Feuerwehr;Mautern an der Donau;48.391298;15.583604
+way/34165609;Freiwillige Feuerwehr Mistelbach;Feuerwehr;Feuerwehr;Mistelbach;48.570712;16.570380
+way/216117212;Freiwillige Feuerwehr Mitterndorf;Feuerwehr;Feuerwehr;Mitterndorf an der Fischa;47.994660;16.468007
+way/153517517;Freiwillige Feuerwehr Moosbrunn;Feuerwehr;Feuerwehr;Moosbrunn;48.020260;16.460455
+way/291765835;Freiwillige Feuerwehr Muggendorf;Feuerwehr;Feuerwehr;Muggendorf;47.909862;15.938783
+way/30586811;Freiwillige Feuerwehr Mödling;Feuerwehr;Feuerwehr;Mödling;48.083748;16.304482
+way/648246386;Freiwillige Feuerwehr Mönichkirchen;Feuerwehr;Feuerwehr;Mönichkirchen;47.512632;16.041893
+node/8977568267;Freiwillige Feuerwehr Neidling;Feuerwehr;Feuerwehr;Neidling;48.237866;15.561452
+way/268255081;Freiwillige Feuerwehr Neudorf im Weinviertel;Feuerwehr;Feuerwehr;Neudorf im Weinviertel;48.721593;16.488265
+node/12981705804;Freiwillige Feuerwehr Neumarkt an der Ybbs;Feuerwehr;Feuerwehr;Neumarkt an der Ybbs;48.144111;15.052252
+way/286106629;Freiwillige Feuerwehr Neunkirchen-Stadt;Feuerwehr;Feuerwehr;Neunkirchen;47.724110;16.097651
+way/217424149;Freiwillige Feuerwehr Neusiedl/Zaya;Feuerwehr;Feuerwehr;Neusiedl an der Zaya;48.607116;16.787860
+way/417101247;Freiwillige Feuerwehr Neustadtl an der Donau;Feuerwehr;Feuerwehr;Neustadtl an der Donau;48.193537;14.902043
+way/130989077;Freiwillige Feuerwehr Niederhollabrunn;Feuerwehr;Feuerwehr;Niederhollabrunn;48.446738;16.312004
+node/13113079617;Freiwillige Feuerwehr Niederleis;Feuerwehr;Feuerwehr;Niederleis;48.551917;16.397635
+node/5995928231;Freiwillige Feuerwehr Nußdorf;Feuerwehr;Feuerwehr;Nußdorf ob der Traisen;48.352685;15.693453
+node/9914759849;Freiwillige Feuerwehr Nöchling;Feuerwehr;Feuerwehr;Nöchling;48.222385;14.984323
+node/1359733096;Freiwillige Feuerwehr Ober-Grafendorf;Feuerwehr;Feuerwehr;Ober-Grafendorf;48.142910;15.546350
+way/1120465774;Freiwillige Feuerwehr Oberndorf an der Melk;Feuerwehr;Feuerwehr;Oberndorf an der Melk;48.070929;15.216299
+way/164425630;Freiwillige Feuerwehr Obersiebenbrunn;Feuerwehr;Feuerwehr;Obersiebenbrunn;48.264995;16.706069
+way/196147751;Freiwillige Feuerwehr Oberwaltersdorf;Feuerwehr;Feuerwehr;Oberwaltersdorf;47.980682;16.318228
+way/1111030799;Freiwillige Feuerwehr Obritz;Feuerwehr;Feuerwehr;Mailberg;48.703149;16.151393
+way/297847613;Freiwillige Feuerwehr Opponitz;Feuerwehr;Feuerwehr;Opponitz;47.883143;14.822007
+node/6278131660;Freiwillige Feuerwehr Ottenschlag;Feuerwehr;Feuerwehr;Ottenschlag;48.422428;15.225065
+way/154502902;Freiwillige Feuerwehr Payerbach;Feuerwehr;Feuerwehr;Payerbach;47.691477;15.872916
+node/1766363913;Freiwillige Feuerwehr Penk-Altendorf;Feuerwehr;Feuerwehr;Altendorf;47.661627;16.023938
+way/1021748338;Freiwillige Feuerwehr Perchtoldsdorf;Feuerwehr;Feuerwehr;Perchtoldsdorf;48.120777;16.269001
+node/3071960204;Freiwillige Feuerwehr Pernegg;Feuerwehr;Feuerwehr;Pernegg;48.738093;15.626578
+way/29658568;Freiwillige Feuerwehr Petronell-Carnuntum;Feuerwehr;Feuerwehr;Petronell-Carnuntum;48.111363;16.863099
+way/151143640;Freiwillige Feuerwehr Pfaffstätten;Feuerwehr;Feuerwehr;Pfaffstätten;48.010540;16.265714
+node/414821352;Freiwillige Feuerwehr Pillichsdorf;Feuerwehr;Feuerwehr;Pillichsdorf;48.363004;16.534191
+way/30551013;Freiwillige Feuerwehr Pottendorf;Feuerwehr;Feuerwehr;Pottendorf;47.910757;16.389476
+node/821581956;Freiwillige Feuerwehr Pottenstein;Feuerwehr;Feuerwehr;Pottenstein;47.965246;16.088626
+way/241941645;Freiwillige Feuerwehr Poysdorf;Feuerwehr;Feuerwehr;Poysdorf;48.667881;16.631079
+node/10582930103;Freiwillige Feuerwehr Pressbaum;Feuerwehr;Feuerwehr;Pressbaum;48.177568;16.063331
+node/1392229356;Freiwillige Feuerwehr Prinzersdorf;Feuerwehr;Feuerwehr;Prinzersdorf;48.200958;15.511544
+way/30200478;Freiwillige Feuerwehr Prottes;Feuerwehr;Feuerwehr;Prottes;48.388178;16.744930
+way/1000957863;Freiwillige Feuerwehr Puchenstuben;Feuerwehr;Feuerwehr;Puchenstuben;47.925819;15.287061
+way/406605732;Freiwillige Feuerwehr Pyhra-Markt;Feuerwehr;Feuerwehr;Pyhra;48.158034;15.685073
+node/8237603899;Freiwillige Feuerwehr Pöchlarn;Feuerwehr;Feuerwehr;Pöchlarn;48.210745;15.202456
+way/405624809;Freiwillige Feuerwehr Raach;Feuerwehr;Feuerwehr;Raach am Hochgebirge;47.643151;15.929002
+node/1575198946;Freiwillige Feuerwehr Rabensburg;Feuerwehr;Feuerwehr;Rabensburg;48.644647;16.901276
+node/4380662141;Freiwillige Feuerwehr Rafings-Rafingsberg;Feuerwehr;Feuerwehr;Windigsteig;48.775160;15.299709
+way/1000728139;Freiwillige Feuerwehr Randegg;Feuerwehr;Feuerwehr;Randegg;48.010139;14.976797
+node/1307704036;Freiwillige Feuerwehr Rastenfeld;Feuerwehr;Feuerwehr;Rastenfeld;48.571120;15.340155
+way/1026133854;Freiwillige Feuerwehr Rauchenwarth;Feuerwehr;Feuerwehr;Rauchenwarth;48.084568;16.524351
+way/246826782;Freiwillige Feuerwehr Ravelsbach;Feuerwehr;Feuerwehr;Ravelsbach;48.552729;15.858675
+way/95467097;Freiwillige Feuerwehr Reichenau;Feuerwehr;Feuerwehr;Reichenau an der Rax;47.694983;15.843020
+way/1000957853;Freiwillige Feuerwehr Reinsberg;Feuerwehr;Feuerwehr;Reinsberg;47.984624;15.072966
+way/250823326;Freiwillige Feuerwehr Reisenberg;Feuerwehr;Feuerwehr;Reisenberg;47.995171;16.524085
+node/1292839065;Freiwillige Feuerwehr Rohr im Gebirge;Feuerwehr;Feuerwehr;Rohr im Gebirge;47.895356;15.735856
+node/409470606;Freiwillige Feuerwehr Rohrbach;Feuerwehr;Feuerwehr;Rohrbach an der Gölsen;48.046689;15.741029
+way/682059426;Freiwillige Feuerwehr Röschitz;Feuerwehr;Feuerwehr;Röschitz;48.665716;15.882034
+node/366972210;Freiwillige Feuerwehr Sallingberg;Feuerwehr;Feuerwehr;Sallingberg;48.464000;15.236668
+way/595485919;Freiwillige Feuerwehr Schandachen;Feuerwehr;Feuerwehr;Reingers;48.958434;15.091300
+way/963966965;Freiwillige Feuerwehr Scheibbs;Feuerwehr;Feuerwehr;Scheibbs;48.009452;15.160239
+node/11472500439;Freiwillige Feuerwehr Schollach;Feuerwehr;Feuerwehr;Sooß;48.193856;15.361099
+way/185759982;Freiwillige Feuerwehr Schottwien;Feuerwehr;Feuerwehr;Schottwien;47.653502;15.871225
+way/626489355;Freiwillige Feuerwehr Schrattenberg;Feuerwehr;Feuerwehr;Schrattenberg;48.725210;16.720926
+way/261374434;Freiwillige Feuerwehr Schrattenthal;Feuerwehr;Feuerwehr;Schrattenthal;48.714069;15.908544
+node/343668672;Freiwillige Feuerwehr Schrems;Feuerwehr;Feuerwehr;Schrems;48.793582;15.063550
+way/364222303;Freiwillige Feuerwehr Schwarzau am Steinfeld;Feuerwehr;Feuerwehr;Schwarzau am Steinfeld;47.727222;16.174679
+way/289249698;Freiwillige Feuerwehr Schwarzau im Gebirge;Feuerwehr;Feuerwehr;Schwarzau im Gebirge;47.812991;15.703899
+way/1178556250;Freiwillige Feuerwehr Schwechat-Rannersdorf;Feuerwehr;Feuerwehr;Schwechat;48.132792;16.466002
+node/6718132560;Freiwillige Feuerwehr Schönau a.d. Triesting;Feuerwehr;Feuerwehr;Schönau an der Triesting;47.934212;16.255160
+node/602167971;Freiwillige Feuerwehr Schönbach;Feuerwehr;Feuerwehr;Schönbach;48.452281;15.037967
+way/133355998;Freiwillige Feuerwehr Seebenstein;Feuerwehr;Feuerwehr;Seebenstein;47.698350;16.142804
+way/249454478;Freiwillige Feuerwehr Seibersdorf;Feuerwehr;Feuerwehr;Seibersdorf;47.959046;16.520887
+way/75781441;Freiwillige Feuerwehr Sieghartskirchen;Feuerwehr;Feuerwehr;Sieghartskirchen;48.251021;16.014666
+way/168829878;Freiwillige Feuerwehr Sierndorf;Feuerwehr;Feuerwehr;Sierndorf;48.431913;16.164595
+way/602000768;Freiwillige Feuerwehr Sommerein;Feuerwehr;Feuerwehr;Sommerein;47.990830;16.657046
+node/11595263138;Freiwillige Feuerwehr Spannberg;Feuerwehr;Feuerwehr;Spannberg;48.464714;16.740277
+way/223603502;Freiwillige Feuerwehr Spillern;Feuerwehr;Feuerwehr;Spillern;48.379377;16.257441
+node/3421824452;Freiwillige Feuerwehr St. Georgen/Reith;Feuerwehr;Feuerwehr;Berg;47.840537;14.882038
+way/1299947977;Freiwillige Feuerwehr Stadt Haag;Feuerwehr;Feuerwehr;Haag;48.112338;14.575674
+node/2377725987;Freiwillige Feuerwehr Statzendorf;Feuerwehr;Feuerwehr;Statzendorf;48.302761;15.643885
+way/982107736;Freiwillige Feuerwehr Steinakirchen am Forst;Feuerwehr;Feuerwehr;Wolfpassing;48.074449;15.047924
+way/521137752;Freiwillige Feuerwehr Stetteldorf am Wagram;Feuerwehr;Feuerwehr;Stetteldorf am Wagram;48.412588;16.021370
+way/36726152;Freiwillige Feuerwehr Stetten;Feuerwehr;Feuerwehr;Stetten;48.368632;16.382881
+way/23463877;Freiwillige Feuerwehr Stockerau;Feuerwehr;Feuerwehr;Stockerau;48.387758;16.218914
+way/1420727097;Freiwillige Feuerwehr Stollhof;Feuerwehr;Feuerwehr;Gaaden;47.828741;16.070969
+way/390972481;Freiwillige Feuerwehr Strasshof an der Nordbahn;Feuerwehr;Feuerwehr;Strasshof an der Nordbahn;48.317682;16.637685
+node/849944734;Freiwillige Feuerwehr Stratzing;Feuerwehr;Feuerwehr;Stratzing;48.450305;15.604759
+node/1656048749;Freiwillige Feuerwehr Straß im Straßertale;Feuerwehr;Feuerwehr;Straß im Straßertale;48.472144;15.732617
+node/13367710252;Freiwillige Feuerwehr Strengberg;Feuerwehr;Feuerwehr;Strengberg;48.144879;14.645516
+way/443737289;Freiwillige Feuerwehr Stössing;Feuerwehr;Feuerwehr;Stössing;48.127083;15.809969
+way/283454963;Freiwillige Feuerwehr Sulz;Feuerwehr;Feuerwehr;St. Martin;48.653597;14.867608
+way/166334457;Freiwillige Feuerwehr Tattendorf;Feuerwehr;Feuerwehr;Tattendorf;47.958437;16.309193
+node/12596215259;Freiwillige Feuerwehr Tautendorf bei Röhrenbach;Feuerwehr;Feuerwehr;Röhrenbach;48.657914;15.477057
+way/714713774;Freiwillige Feuerwehr Teesdorf;Feuerwehr;Feuerwehr;Teesdorf;47.940151;16.289140
+way/398907804;Freiwillige Feuerwehr Ternitz-Putzmannsdorf;Feuerwehr;Feuerwehr;Buchbach;47.692216;15.996375
+way/337343951;Freiwillige Feuerwehr Theresienfeld;Feuerwehr;Feuerwehr;Theresienfeld;47.863262;16.244020
+way/714713772;Freiwillige Feuerwehr Traiskirchen;Feuerwehr;Feuerwehr;Traiskirchen;48.016920;16.292892
+way/88492304;Freiwillige Feuerwehr Traismauer-Stadt;Feuerwehr;Feuerwehr;Traismauer;48.351671;15.743180
+way/714787516;Freiwillige Feuerwehr Trumau;Feuerwehr;Feuerwehr;Trumau;47.994353;16.333382
+node/1783262625;Freiwillige Feuerwehr Tulbing;Feuerwehr;Feuerwehr;Tulbing;48.291839;16.120827
+way/360853287;Freiwillige Feuerwehr Unserfrau;Feuerwehr;Feuerwehr;Unserfrau-Altweitra;48.723921;14.901404
+way/164425632;Freiwillige Feuerwehr Untersiebenbrunn;Feuerwehr;Feuerwehr;Untersiebenbrunn;48.257136;16.739612
+way/506107763;Freiwillige Feuerwehr Velm-Götzendorf;Feuerwehr;Feuerwehr;Velm-Götzendorf;48.468602;16.785543
+way/87799145;Freiwillige Feuerwehr Waidhofen/Thaya;Feuerwehr;Feuerwehr;Waidhofen an der Thaya;48.815703;15.279219
+way/484880935;Freiwillige Feuerwehr Waidmannsfeld Miesenbach;Feuerwehr;Feuerwehr;Miesenbach;47.869905;15.980953
+node/605485567;Freiwillige Feuerwehr Waldegg;Feuerwehr;Feuerwehr;Waldegg;47.873519;16.072503
+way/606837113;Freiwillige Feuerwehr Waldhausen;Feuerwehr;Feuerwehr;Waldhausen;48.522107;15.263488
+node/12337228378;Freiwillige Feuerwehr Waldkirchen an der Thaya;Feuerwehr;Feuerwehr;Waldkirchen an der Thaya;48.939570;15.351650
+way/453103685;Freiwillige Feuerwehr Walpersbach;Feuerwehr;Feuerwehr;Walpersbach;47.721294;16.232618
+way/1000729350;Freiwillige Feuerwehr Wang;Feuerwehr;Feuerwehr;Wang;48.046149;15.026988
+node/1373653266;Freiwillige Feuerwehr Wartmannstetten;Feuerwehr;Feuerwehr;Wartmannstetten;47.692249;16.076731
+node/2110819210;Freiwillige Feuerwehr Weinburg;Feuerwehr;Feuerwehr;Weinburg;48.114723;15.536051
+way/188494917;Freiwillige Feuerwehr Weissenbach;Feuerwehr;Feuerwehr;Weissenbach an der Triesting;47.981884;16.037449
+node/7486316527;Freiwillige Feuerwehr Weistrach;Feuerwehr;Feuerwehr;Weistrach;48.054372;14.581176
+way/361881833;Freiwillige Feuerwehr Weiten;Feuerwehr;Feuerwehr;Weiten;48.296653;15.258175
+way/123518319;Freiwillige Feuerwehr Weitersfeld;Feuerwehr;Feuerwehr;Weitersfeld;48.781531;15.811812
+node/989064420;Freiwillige Feuerwehr Weißenkirchen;Feuerwehr;Feuerwehr;Weißenkirchen in der Wachau;48.395215;15.468253
+way/165613234;Freiwillige Feuerwehr Wiener Neudorf;Feuerwehr;Feuerwehr;Wiener Neudorf;48.080458;16.321341
+way/973950873;Freiwillige Feuerwehr Wieselburg Stadt und Land;Feuerwehr;Feuerwehr;Wieselburg;48.117246;15.134456
+way/46966216;Freiwillige Feuerwehr Wilfersdorf;Feuerwehr;Feuerwehr;Wilfersdorf;48.278308;16.101434
+way/29301270;Freiwillige Feuerwehr Wilhelmsburg-Stadt;Feuerwehr;Feuerwehr;Wilhelmsburg;48.102190;15.603626
+way/293585979;Freiwillige Feuerwehr Willendorf;Feuerwehr;Feuerwehr;Willendorf;47.790563;16.052486
+way/517694041;Freiwillige Feuerwehr Wimpassing/Schwarzatale;Feuerwehr;Feuerwehr;Wimpassing im Schwarzatale;47.700302;16.024989
+way/859303916;Freiwillige Feuerwehr Winklarn;Feuerwehr;Feuerwehr;Winklarn;48.099539;14.851811
+way/311849440;Freiwillige Feuerwehr Wolfsbach;Feuerwehr;Feuerwehr;Wolfsbach;48.078845;14.667423
+way/430823615;Freiwillige Feuerwehr Würmla;Feuerwehr;Feuerwehr;Würmla;48.257215;15.860740
+way/1002534651;Freiwillige Feuerwehr Ybbs an der Donau;Feuerwehr;Feuerwehr;Ybbs an der Donau;48.172887;15.083465
+way/572287321;Freiwillige Feuerwehr Ybbsitz;Feuerwehr;Feuerwehr;Ybbsitz;47.947255;14.888523
+way/1300932318;Freiwillige Feuerwehr Zeillern;Feuerwehr;Feuerwehr;Zeillern;48.127060;14.800914
+way/122858136;Freiwillige Feuerwehr Ziersdorf;Feuerwehr;Feuerwehr;Ziersdorf;48.528782;15.933539
+way/89236229;Freiwillige Feuerwehr Zistersdorf;Feuerwehr;Feuerwehr;Zistersdorf;48.549239;16.752859
+node/3545316873;Freiwillige Feuerwehr Zwentendorf;Feuerwehr;Feuerwehr;Zwentendorf an der Donau;48.345564;15.907196
+way/440353768;Freiwillige Feuerwehr Zwölfaxing;Feuerwehr;Feuerwehr;Zwölfaxing;48.114518;16.468837
+way/213572367;Freiwillige Feuerwehr der Stadt Gmünd;Feuerwehr;Feuerwehr;Gmünd;48.757064;14.995064
+way/158649024;Freiwillige Feuerwehr der Stadt Hollabrunn;Feuerwehr;Feuerwehr;Hollabrunn;48.555784;16.073763
+way/366031202;Freiwillige Feuerwehr der Stadt Marchegg;Feuerwehr;Feuerwehr;Marchegg;48.278180;16.908669
+node/6021782839;Freiwillige Feuerwehr der Stadt Melk;Feuerwehr;Feuerwehr;Melk;48.218193;15.341085
+way/438281016;Freiwillige Feuerwehr der Stadt Retz;Feuerwehr;Feuerwehr;Retz;48.759746;15.961380
+way/184991903;Freiwillige Feuerwehr der Stadt Weitra;Feuerwehr;Feuerwehr;Weitra;48.700378;14.898908
+way/437414326;Gerätehaus FF Lanzenkirchen;Feuerwehr;Feuerwehr;Lanzenkirchen;47.744405;16.238149
+node/13970695218;Hardegg;Feuerwehr;Feuerwehr;Hardegg;48.852561;15.859551
+node/322653656;Thaya;Feuerwehr;Feuerwehr;Thaya;48.854731;15.285308
+node/2427052261;Wasserdienst FF Korneuburg;Feuerwehr;Feuerwehr;Korneuburg;48.337794;16.323220
+way/95399239;Zeughaus FF Maissau;Feuerwehr;Feuerwehr;Maissau;48.570029;15.825463
+way/289416489;Autobahnpolizeiinspektion Alland;Polizei;Polizei;Alland;48.067674;16.065475
+way/117568536;Autobahnpolizeiinspektion Altlengbach;Polizei;Polizei;Altlengbach;48.154642;15.906976
+relation/6267505;Autobahnpolizeiinspektion Amstetten;Polizei;Polizei;Zeillern;48.133736;14.830744
+way/83013447;Autobahnpolizeiinspektion Großkrut;Polizei;Polizei;Großkrut;48.650762;16.708228
+node/10538890150;Autobahnpolizeiinspektion Krems an der Donau;Polizei;Polizei;Krems an der Donau;48.410210;15.620849
+way/29763232;Autobahnpolizeiinspektion Melk;Polizei;Polizei;Melk;48.223644;15.351249
+node/1636922916;Autobahnpolizeiinspektion Schwechat;Polizei;Polizei;Wien-Flughafen;48.128215;16.550778
+way/342043081;Autobahnpolizeiinspektion Stockerau;Polizei;Polizei;Stockerau;48.383821;16.236315
+way/342333383;Autobahnpolizeiinspektion Warth;Polizei;Polizei;Petersbaumgarten;47.636169;16.130429
+way/102559403;Autobahnpolizeiinspektion​ Tribuswinkel;Polizei;Polizei;Traiskirchen;47.988030;16.286603
+node/6733316016;Polizei-Stützpunkt;Polizei;Polizei;Krems an der Donau;48.410737;15.599872
+node/10009123110;Polizeiinspektion Alland;Polizei;Polizei;Alland;48.058982;16.078168
+node/1712573793;Polizeiinspektion Allentsteig;Polizei;Polizei;Allentsteig;48.695672;15.328131
+way/383265378;Polizeiinspektion Altlengbach;Polizei;Polizei;Altlengbach;48.154192;15.922474
+way/25674891;Polizeiinspektion Amstetten;Polizei;Polizei;Amstetten;48.124552;14.883048
+way/581006211;Polizeiinspektion Angern an der March;Polizei;Polizei;Angern an der March;48.386242;16.833337
+node/2242646266;Polizeiinspektion Annaberg;Polizei;Polizei;Annaberg;47.872222;15.376412
+way/231375868;Polizeiinspektion Arbesbach;Polizei;Polizei;Arbesbach;48.494623;14.955603
+node/2796753253;Polizeiinspektion Aspang;Polizei;Polizei;Aspang-Markt;47.554113;16.090519
+way/500752888;Polizeiinspektion Atzenbrugg;Polizei;Polizei;Atzenbrugg;48.291593;15.904162
+node/9989051638;Polizeiinspektion Bad Deutsch Altenburg - FGP Stromdienst;Polizei;Polizei;Bad Deutsch-Altenburg;48.140704;16.903587
+way/167609175;Polizeiinspektion Bad Erlach;Polizei;Polizei;Bad Erlach;47.733383;16.212303
+node/13891641473;Polizeiinspektion Bad Fischau-Brunn;Polizei;Polizei;;47.828700;16.161051
+node/2368501810;Polizeiinspektion Bad Großpertholz;Polizei;Polizei;Bad Großpertholz;48.629750;14.826025
+node/452905412;Polizeiinspektion Bad Pirawarth;Polizei;Polizei;Bad Pirawarth;48.452754;16.600022
+way/279101090;Polizeiinspektion Bad Vöslau;Polizei;Polizei;Bad Vöslau;47.964538;16.210174
+node/9267545689;Polizeiinspektion Baden;Polizei;Polizei;Baden;48.004488;16.239678
+node/7434375858;Polizeiinspektion Bahnhof;Polizei;Polizei;St. Pölten;48.207767;15.626059
+node/749831645;Polizeiinspektion Berndorf;Polizei;Polizei;Berndorf;47.945965;16.109233
+node/249408429;Polizeiinspektion Bernhardsthal;Polizei;Polizei;Bernhardsthal;48.691654;16.869479
+node/6169099210;Polizeiinspektion Breitenfurt bei Wien;Polizei;Polizei;Breitenfurt bei Wien;48.136049;16.194700
+node/2525303091;Polizeiinspektion Bruck an der Leitha;Polizei;Polizei;Bruck an der Leitha;48.029074;16.778638
+way/35553409;Polizeiinspektion Brunn am Gebirge;Polizei;Polizei;Brunn am Gebirge;48.111289;16.284772
+way/201624452;Polizeiinspektion Brunn an der Wild;Polizei;Polizei;Brunn an der Wild;48.694277;15.518720
+node/958589005;Polizeiinspektion Burgplatz;Polizei;Polizei;Wiener Neustadt;47.810099;16.244360
+way/606464316;Polizeiinspektion Böheimkirchen;Polizei;Polizei;Böheimkirchen;48.198183;15.756856
+way/31536411;Polizeiinspektion Deutsch-Wagram;Polizei;Polizei;Deutsch-Wagram;48.302680;16.567518
+node/9283857346;Polizeiinspektion Dobersberg;Polizei;Polizei;Dobersberg;48.915790;15.321773
+way/156017615;Polizeiinspektion Ebreichsdorf;Polizei;Polizei;Ebreichsdorf;47.963722;16.410896
+way/428554726;Polizeiinspektion Eggenburg;Polizei;Polizei;Eggenburg;48.651550;15.821964
+way/447518385;Polizeiinspektion Eggendorf;Polizei;Polizei;Eggendorf;47.852024;16.311252
+node/10781943127;Polizeiinspektion Enzersdorf an der Fischa;Polizei;Polizei;Enzersdorf an der Fischa;48.075118;16.609241
+node/635951455;Polizeiinspektion Ernstbrunn;Polizei;Polizei;Ernstbrunn;48.526935;16.363590
+node/2636501965;Polizeiinspektion Expositur SCS;Polizei;Polizei;Vösendorf;48.108321;16.317480
+node/2319839551;Polizeiinspektion Fischamend;Polizei;Polizei;Fischamend;48.118367;16.611438
+node/4244157814;Polizeiinspektion Flugfeld;Polizei;Polizei;Wiener Neustadt;47.828163;16.229725
+node/3805689559;Polizeiinspektion Gablitz;Polizei;Polizei;Gablitz;48.227839;16.156769
+node/6169133902;Polizeiinspektion Gaming;Polizei;Polizei;Gaming;47.928613;15.087199
+way/134787775;Polizeiinspektion Gars am Kamp;Polizei;Polizei;Gars am Kamp;48.595893;15.659444
+way/1090577869;Polizeiinspektion Gaweinstal;Polizei;Polizei;Gaweinstal;48.477571;16.590411
+way/267126721;Polizeiinspektion Geras;Polizei;Polizei;Geras;48.797726;15.671882
+way/456241117;Polizeiinspektion Gerasdorf bei Wien;Polizei;Polizei;Gerasdorf;48.294516;16.468116
+node/1119993246;Polizeiinspektion Gföhl;Polizei;Polizei;Gföhl;48.517185;15.488650
+node/5314123848;Polizeiinspektion Gloggnitz;Polizei;Polizei;Gloggnitz;47.675263;15.939484
+node/6726329740;Polizeiinspektion Gmünd;Polizei;Polizei;Gmünd;48.767022;14.977767
+node/10002106772;Polizeiinspektion Gmünd - FGP;Polizei;Polizei;Gmünd;48.774778;14.981601
+node/1363368669;Polizeiinspektion Grafenwörth;Polizei;Polizei;Grafenwörth;48.407229;15.775630
+node/627840378;Polizeiinspektion Gramatneusiedl;Polizei;Polizei;Gramatneusiedl;48.029276;16.490106
+node/3839410347;Polizeiinspektion Gresten;Polizei;Polizei;Gresten;47.985811;15.027546
+way/508215158;Polizeiinspektion Grimmenstein;Polizei;Polizei;Grimmenstein;47.617480;16.127403
+way/509613613;Polizeiinspektion Groß-Enzersdorf;Polizei;Polizei;Groß-Enzersdorf;48.205714;16.549004
+node/582476605;Polizeiinspektion Groß-Gerungs;Polizei;Polizei;Groß Gerungs;48.573920;14.958983
+way/382660368;Polizeiinspektion Groß-Siegahrts;Polizei;Polizei;Groß-Siegharts;48.789951;15.404460
+node/307406025;Polizeiinspektion Großweikersdorf;Polizei;Polizei;Großweikersdorf;48.472562;15.982119
+node/300735883;Polizeiinspektion Gumpoldskirchen;Polizei;Polizei;Gumpoldskirchen;48.035992;16.289985
+node/9992363893;Polizeiinspektion Guntersdorf;Polizei;Polizei;Guntersdorf;48.647376;16.055498
+node/761834788;Polizeiinspektion Guntramsdorf;Polizei;Polizei;Guntramsdorf;48.049123;16.312935
+node/9988995290;Polizeiinspektion Gänserndorf;Polizei;Polizei;Gänserndorf;48.340490;16.729381
+node/2072173213;Polizeiinspektion Göllersdorf;Polizei;Polizei;Göllersdorf;48.493833;16.119870
+node/574303984;Polizeiinspektion Günselsdorf;Polizei;Polizei;Günselsdorf;47.944244;16.257875
+node/7022193475;Polizeiinspektion Haag;Polizei;Polizei;Haag;48.112226;14.567653
+way/84922107;Polizeiinspektion Hadersdorf am Kamp;Polizei;Polizei;Hadersdorf-Kammern;48.455195;15.721217
+node/1012473270;Polizeiinspektion Hagenbrunn;Polizei;Polizei;Hagenbrunn;48.333295;16.406972
+node/6665560123;Polizeiinspektion Haidershofen;Polizei;Polizei;;48.076713;14.459837
+way/29659325;Polizeiinspektion Hainburg/Donau;Polizei;Polizei;Hainburg an der Donau;48.139861;16.954405
+way/375951004;Polizeiinspektion Haugsdorf;Polizei;Polizei;Haugsdorf;48.708998;16.073609
+node/2047737955;Polizeiinspektion Hausleiten;Polizei;Polizei;Hausleiten;48.394350;16.099797
+node/1365534885;Polizeiinspektion Heidenreichstein;Polizei;Polizei;Heidenreichstein;48.865754;15.122365
+way/45194431;Polizeiinspektion Herzogenburg;Polizei;Polizei;Oberndorf in der Ebene;48.279476;15.690553
+way/228912246;Polizeiinspektion Himberg;Polizei;Polizei;Himberg;48.087171;16.434966
+way/332502962;Polizeiinspektion Hinterbrühl;Polizei;Polizei;Hinterbrühl;48.087101;16.239467
+node/749831825;Polizeiinspektion Hirtenberg;Polizei;Polizei;Hirtenberg;47.930896;16.176575
+node/7605500407;Polizeiinspektion Hohenau an der March;Polizei;Polizei;Hohenau an der March;48.606381;16.907055
+node/9992363891;Polizeiinspektion Hollabrunn;Polizei;Polizei;Hollabrunn;48.555290;16.073713
+node/9992363892;Polizeiinspektion Horn;Polizei;Polizei;Horn;48.663365;15.646160
+node/4305640421;Polizeiinspektion Josefstadt;Polizei;Polizei;Wiener Neustadt;47.827307;16.254554
+node/4503187503;Polizeiinspektion Kematen/Ybbs;Polizei;Polizei;Kematen an der Ybbs;48.028682;14.770676
+node/1119745134;Polizeiinspektion Kirchberg am Wagram;Polizei;Polizei;Kirchberg am Wagram;48.434393;15.898114
+node/1030598453;Polizeiinspektion Kirchberg am Wechsel;Polizei;Polizei;Kirchberg am Wechsel;47.608783;15.993972
+node/482763751;Polizeiinspektion Kirchschlag in der Buckligen Welt;Polizei;Polizei;Kirchschlag in der Buckligen Welt;47.502090;16.296691
+node/61722084;Polizeiinspektion Klosterneuburg;Polizei;Polizei;Klosterneuburg;48.302738;16.324797
+node/9988995287;Polizeiinspektion Korneuburg;Polizei;Polizei;Korneuburg;48.340799;16.325333
+node/5145631303;Polizeiinspektion Krems an der Donau;Polizei;Polizei;Krems an der Donau;48.410206;15.621125
+node/250699921;Polizeiinspektion Königstetten;Polizei;Polizei;Königstetten;48.301286;16.145784
+node/5782875365;Polizeiinspektion Laa an der Thaya;Polizei;Polizei;Laa an der Thaya;48.717975;16.382719
+node/5782926875;Polizeiinspektion Laa an der Thaya - FGP;Polizei;Polizei;Laa an der Thaya;48.725183;16.376158
+node/477785788;Polizeiinspektion Ladendorf;Polizei;Polizei;Ladendorf;48.535186;16.492596
+way/71590265;Polizeiinspektion Langenlois;Polizei;Polizei;Langenlois;48.480388;15.685031
+way/49369569;Polizeiinspektion Langenzersdorf;Polizei;Polizei;Langenzersdorf;48.307513;16.359063
+node/2149158491;Polizeiinspektion Lassee;Polizei;Polizei;Lassee;48.225707;16.822715
+way/260887170;Polizeiinspektion Laxenburg;Polizei;Polizei;Laxenburg;48.064897;16.352318
+way/32699487;Polizeiinspektion Leobersdorf;Polizei;Polizei;Leobersdorf;47.929350;16.210781
+way/306795960;Polizeiinspektion Leopoldsdorf;Polizei;Polizei;Leopoldsdorf;48.110722;16.398200
+way/162218606;Polizeiinspektion Leopoldsdorf im Marchfeld;Polizei;Polizei;Leopoldsdorf im Marchfeld;48.222590;16.689404
+node/6363680831;Polizeiinspektion Lilienfeld;Polizei;Polizei;Lilienfeld;48.015533;15.598139
+node/10002691737;Polizeiinspektion Linzer Straße;Polizei;Polizei;St. Pölten;48.200701;15.618820
+node/5829336056;Polizeiinspektion Litschau;Polizei;Polizei;Litschau;48.944017;15.045628
+node/5650279196;Polizeiinspektion Loosdorf;Polizei;Polizei;Loosdorf;48.191536;15.407987
+node/9275135880;Polizeiinspektion Lunz am See;Polizei;Polizei;Lunz am See;47.862436;15.031657
+way/680080647;Polizeiinspektion Mannersdorf am Leithagebirge;Polizei;Polizei;Mannersdorf am Leithagebirge;47.975205;16.600489
+way/366028346;Polizeiinspektion Marchegg FGP;Polizei;Polizei;Marchegg;48.279762;16.907321
+way/239754070;Polizeiinspektion Maria Enzersdorf;Polizei;Polizei;Maria Enzersdorf;48.099159;16.281034
+node/13298128789;Polizeiinspektion Matzen;Polizei;Polizei;Matzen;48.401429;16.694292
+node/384250404;Polizeiinspektion Mauerbach;Polizei;Polizei;Mauerbach;48.232835;16.192322
+node/12553365761;Polizeiinspektion Mautern;Polizei;Polizei;Mautern an der Donau;48.391421;15.583562
+node/5383895604;Polizeiinspektion Melk;Polizei;Polizei;Melk;48.227682;15.347517
+node/9267196877;Polizeiinspektion Mödling;Polizei;Polizei;Mödling;48.086429;16.287595
+way/29306057;Polizeiinspektion Neulengbach;Polizei;Polizei;Neulengbach;48.193796;15.904403
+node/12981705803;Polizeiinspektion Neumarkt an der Ybbs;Polizei;Polizei;Neumarkt an der Ybbs;48.144194;15.052581
+node/10173888940;Polizeiinspektion Neunkirchen;Polizei;Polizei;Neunkirchen;47.723096;16.078263
+way/121466661;Polizeiinspektion Ober-Grafendorf;Polizei;Polizei;Ober-Grafendorf;48.150215;15.544334
+node/4075586008;Polizeiinspektion Oed;Polizei;Polizei;Oed-Oehling;48.121698;14.742290
+way/417904850;Polizeiinspektion Orth an der Donau;Polizei;Polizei;Orth an der Donau;48.145499;16.699986
+way/258291401;Polizeiinspektion Ottenschlag;Polizei;Polizei;Ottenschlag;48.423986;15.219953
+node/9737551399;Polizeiinspektion Perchtoldsdorf;Polizei;Polizei;Perchtoldsdorf;48.117849;16.266381
+node/4530772390;Polizeiinspektion Pernitz;Polizei;Polizei;Pernitz;47.897362;15.961743
+node/10670137673;Polizeiinspektion Persenbeug;Polizei;Polizei;;48.188565;15.090364
+way/364808656;Polizeiinspektion Pottendorf;Polizei;Polizei;Pottendorf;47.910162;16.386518
+node/280498868;Polizeiinspektion Poysdorf;Polizei;Polizei;Poysdorf;48.667391;16.628439
+node/825446027;Polizeiinspektion Pressbaum;Polizei;Polizei;Pressbaum;48.179439;16.076963
+node/10981199315;Polizeiinspektion Pressbaum;Polizei;Polizei;Pressbaum;48.177446;16.057543
+node/1392059614;Polizeiinspektion Prinzersdorf;Polizei;Polizei;Prinzersdorf;48.201131;15.512001
+way/357846531;Polizeiinspektion Purgstall an der Erlauf;Polizei;Polizei;Purgstall an der Erlauf;48.063685;15.141590
+node/662302646;Polizeiinspektion Purkersdorf;Polizei;Polizei;Purkersdorf;48.208810;16.177759
+node/5565241945;Polizeiinspektion Pyhra;Polizei;Polizei;Pyhra;48.158119;15.685709
+node/9332148307;Polizeiinspektion Pöchlarn;Polizei;Polizei;Pöchlarn;48.211388;15.206109
+way/441159994;Polizeiinspektion Raabs an der Thaya;Polizei;Polizei;Raabs an der Thaya;48.847891;15.493020
+node/5331676501;Polizeiinspektion Rabenstein an der Pielach;Polizei;Polizei;Rabenstein an der Pielach;48.065249;15.465397
+node/6285447171;Polizeiinspektion Rastenfeld;Polizei;Polizei;Rastenfeld;48.574480;15.331049
+way/246826781;Polizeiinspektion Ravelsbach;Polizei;Polizei;Ravelsbach;48.553008;15.858820
+way/414197336;Polizeiinspektion Regelsbrunn;Polizei;Polizei;Regelsbrunn;48.108430;16.780485
+node/10002691736;Polizeiinspektion Regierungsviertel;Polizei;Polizei;St. Pölten;48.201958;15.632859
+node/824452974;Polizeiinspektion Reichenau an der Rax;Polizei;Polizei;Reichenau an der Rax;47.697266;15.839170
+node/8836910956;Polizeiinspektion Retz;Polizei;Polizei;Retz;48.757733;15.951788
+node/9641964181;Polizeiinspektion Scheibbs;Polizei;Polizei;;48.005311;15.165379
+node/4126352362;Polizeiinspektion Schrems;Polizei;Polizei;Schrems;48.793006;15.072023
+way/387666201;Polizeiinspektion Schwarzau am Steinfeld;Polizei;Polizei;Schwarzau am Steinfeld;47.732900;16.173711
+way/592404474;Polizeiinspektion Schwarzenau;Polizei;Polizei;Schwarzenau;48.743160;15.260537
+node/9988995291;Polizeiinspektion Schwechat Wiener Straße;Polizei;Polizei;Schwechat;48.142045;16.474186
+node/6163642823;Polizeiinspektion Semmering;Polizei;Polizei;Semmering;47.634897;15.829710
+way/162615242;Polizeiinspektion Sieghartskirchen;Polizei;Polizei;Sieghartskirchen;48.250427;16.013429
+node/2105314446;Polizeiinspektion Sollenau;Polizei;Polizei;Sollenau;47.892373;16.251883
+node/1363245776;Polizeiinspektion Spitz;Polizei;Polizei;Spitz;48.365288;15.415050
+way/381755904;Polizeiinspektion Spratzern;Polizei;Polizei;St. Pölten;48.179853;15.621739
+node/603759220;Polizeiinspektion St. Aegyd am Neuwalde;Polizei;Polizei;St.Aegyd am Neuwalde;47.853345;15.561892
+node/273074197;Polizeiinspektion St. Andrä-Wördern;Polizei;Polizei;St. Andrä-Wördern;48.322913;16.210289
+node/1717718913;Polizeiinspektion St. Peter in der Au;Polizei;Polizei;St. Peter in der Au;48.042207;14.622933
+node/1477585071;Polizeiinspektion St. Valentin;Polizei;Polizei;Sankt Valentin;48.178599;14.538955
+node/428751182;Polizeiinspektion St. Veit an der Gölsen;Polizei;Polizei;;48.044046;15.668079
+way/311849502;Polizeiinspektion Staatz;Polizei;Polizei;Staatz;48.676090;16.486014
+way/80444743;Polizeiinspektion Stockerau;Polizei;Polizei;Stockerau;48.383756;16.206603
+way/123669964;Polizeiinspektion Ternitz;Polizei;Polizei;Ternitz;47.706975;16.022150
+node/1792049032;Polizeiinspektion Traisen;Polizei;Polizei;Traisen;48.041925;15.609168
+node/10002691735;Polizeiinspektion Traisenpark;Polizei;Polizei;St. Pölten;48.222548;15.638885
+way/95348856;Polizeiinspektion Traiskirchen;Polizei;Polizei;Traiskirchen;48.014644;16.286677
+node/6757036123;Polizeiinspektion Traismauer;Polizei;Polizei;Traismauer;48.351209;15.744642
+node/1190801219;Polizeiinspektion Trumau;Polizei;Polizei;Trumau;47.996343;16.340963
+node/5001826984;Polizeiinspektion Tulln;Polizei;Polizei;Tulln;48.332669;16.050795
+node/374041218;Polizeiinspektion Türnitz;Polizei;Polizei;Türnitz;47.929859;15.495400
+way/203751064;Polizeiinspektion Ulmerfeld-Hausmening;Polizei;Polizei;Ulmerfeld;48.076232;14.825083
+way/216636918;Polizeiinspektion Untermarkersdorf - FGP;Polizei;Polizei;Untermarkersdorf;48.709462;16.111160
+node/1933419005;Polizeiinspektion Vitis;Polizei;Polizei;Vitis;48.759013;15.183993
+way/233081982;Polizeiinspektion Vösendorf;Polizei;Polizei;Vösendorf;48.125312;16.328777
+node/10002106770;Polizeiinspektion Waidhofen an der Thaya;Polizei;Polizei;Waidhofen/Thaya;48.814473;15.283000
+node/7563677153;Polizeiinspektion Waidhofen/Ybbs;Polizei;Polizei;Waidhofen an der Ybbs;47.957571;14.770846
+node/7074813320;Polizeiinspektion Waldhausen;Polizei;Polizei;Waldhausen;48.521992;15.260622
+way/187926607;Polizeiinspektion Weissenbach an der Triesting;Polizei;Polizei;Weissenbach an der Triesting;47.982608;16.038711
+node/465210564;Polizeiinspektion Weitra;Polizei;Polizei;Weitra;48.700920;14.895744
+node/989064273;Polizeiinspektion Weißenkirchen in der Wachau;Polizei;Polizei;Weißenkirchen in der Wachau;48.395033;15.468521
+node/1552156228;Polizeiinspektion Wiener Neudorf;Polizei;Polizei;Wiener Neudorf;48.084452;16.322830
+node/419869284;Polizeiinspektion Wieselburg;Polizei;Polizei;Wieselburg;48.129831;15.137908
+node/4095649187;Polizeiinspektion Wiesmath;Polizei;Polizei;Wiesmath;47.616602;16.287802
+node/5512264430;Polizeiinspektion Wilhelmsburg;Polizei;Polizei;Wilhelmsburg;48.103319;15.599657
+node/262854210;Polizeiinspektion Wolkersdorf;Polizei;Polizei;Wolkersdorf im Weinviertel;48.376575;16.506682
+node/4572125608;Polizeiinspektion Ybbs an der Donau;Polizei;Polizei;;48.174165;15.083835
+node/752706647;Polizeiinspektion Zellerndorf;Polizei;Polizei;Zellerndorf;48.694433;15.955149
+node/270505250;Polizeiinspektion Ziersdorf;Polizei;Polizei;Ziersdorf;48.527109;15.928705
+node/2897479001;Polizeiinspektion Zistersdorf;Polizei;Polizei;Zistersdorf;48.545908;16.761382
+node/476701461;Polizeiinspektion Zwettl;Polizei;Polizei;Zwettl;48.608795;15.163884
+node/9988995292;Polizeikommissariat Schwechat;Polizei;Polizei;Schwechat;48.141908;16.474316
+node/1089602185;Polizeiposten Wöllersdorf;Polizei;Polizei;Wöllersdorf-Steinabrückl;47.865849;16.171400
+node/11489407646;Polizeistation;Polizei;Polizei;;48.120886;16.560621
+node/1489839755;Stadtpolizei;Polizei;Polizei;Neunkirchen;47.720737;16.081596
+node/4921781726;Stadtpolizei;Polizei;Polizei;;48.122513;14.871209
+node/1100536082;Stadtpolizei;Polizei;Polizei;Baden;48.006530;16.238606
+node/10002691733;Strompolizeiinspektion Mautern;Polizei;Polizei;Krems an der Donau;48.404683;15.610639
+node/5066697053;Verkehrsinspektion Wr. Neustadt;Polizei;Polizei;Wiener Neustadt;47.810133;16.243729
+way/295279772;Wasserrettung Allentsteig;Wasserrettung;Wasserrettung;Allentsteig;48.695679;15.326077
+way/175979220;Wasserrettung Oberradlberg;Wasserrettung;Wasserrettung;Oberradlberg;48.224136;15.656615
+node/11665221157;Wasserrettung Pottendorf;Wasserrettung;Wasserrettung;Pottendorf;47.902866;16.353892
+way/340277133;Wasserrettung Tulln;Wasserrettung;Wasserrettung;Tulln an der Donau;48.332076;16.077284

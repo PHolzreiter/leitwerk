@@ -56,7 +56,7 @@ import {
   type KtPlan,
 } from "./kt";
 import { codeInfo, codeVorschlag, istUeberstellung } from "./ktCodes";
-import { PARTNER, partnerNoetig, partnerSchonDa, type PartnerArt } from "./partner";
+import { PARTNER, PARTNER_ANZAHL, partnerArtVonTyp, partnerNoetig, partnerSchonDa, type PartnerArt, type PartnerGrund } from "./partner";
 import { FUNKGRUPPEN, funkgruppe, inFunkgruppe, mitteVon, type Funkgruppe } from "./funkgruppen";
 import { sekZufall } from "./sek";
 import { bedarf, istStillstand, lageErzeugen, lagemeldungText, patientText, type Lage } from "./lage";
@@ -94,6 +94,9 @@ export type Phase =
   | "uebergabe"
   | "rueckfahrt"
   | "routing"
+  /** Gewalt/Waffen: Fahrt in den Bereitstellungsraum und Warten dort, bis die Polizei den Einsatzort sichert */
+  | "bereitstellung"
+  | "wartetBR"
   | "ktFahrt"
   | "ktHalt"
   | "ktReinigung";
@@ -517,8 +520,15 @@ export interface Einsatz {
   bitVerzicht?: boolean;
   /** zuletzt ins Protokoll geschriebene Abfrage (Erstaufnahme, Änderungen) */
   abfrageStand?: { antworten: Antworten; kapitel: string | null; code: string | null } | null;
-  /** angeforderte Partner-Organisationen (Zeitpunkt; sofort vor Ort) */
+  /** alarmierte Partner-Organisationen (Zeitpunkt der Alarmierung) */
   partner?: Partial<Record<PartnerArt, number>>;
+  /** erstes Fahrzeug der Organisation am Einsatzort (Zeitpunkt) */
+  partnerDa?: Partial<Record<PartnerArt, number>>;
+  /** Bereitstellungsraum (Gewalt/Waffen): Rettungsdienst wartet dort, bis die Polizei den Einsatzort sichert */
+  br?: Ort | null;
+  /** Polizei hat den Einsatzort gesichert (Zeitpunkt) bzw. meldet ihn gesichert um … */
+  boSicher?: number | null;
+  boSicherUm?: number | null;
   /** Lagemeldung kommt ein paar Minuten nach dem Eintreffen */
   lageGeplant?: { um: number; fzId: string; angefordert: boolean; erstes: boolean } | null;
   /** zuletzt an fehlende Partner erinnert */
@@ -554,7 +564,42 @@ export interface SimState {
   ktZaehler?: number;
   /** Tag, für den die Daueraufträge schon angelegt sind (yyyy-mm-dd) */
   ktDauerTag?: number;
+  /** Fahrzeuge von Feuerwehr, Polizei, Berg- und Wasserrettung im Einsatz */
+  partnerFz?: PartnerFz[];
+  partnerZaehler?: number;
 }
+
+/** Fahrzeug einer Partner-Organisation (nur im Einsatz vorhanden; transportiert nie Patienten) */
+export interface PartnerFz {
+  id: string;
+  art: PartnerArt;
+  name: string;
+  einsatzId: string;
+  station: string;
+  heim: LatLon;
+  lat: number;
+  lon: number;
+  fahrt: Fahrt | null;
+  blaulicht: boolean;
+  phase: "ausruecken" | "anfahrt" | "bereitstellung" | "wartetBR" | "vorOrt" | "begleitung" | "amKH" | "rueckfahrt" | "routing";
+  phaseEnde: number | null;
+  /** Feuerwehr bleibt nach dem Rettungsdienst noch eine Weile */
+  bleibtBis?: number | null;
+  /** Polizei begleitet dieses Rettungsmittel ins Krankenhaus */
+  begleitet?: string;
+}
+
+export const PARTNER_PHASE_TEXT: Record<PartnerFz["phase"], string> = {
+  ausruecken: "rückt aus",
+  routing: "Anfahrt",
+  anfahrt: "Anfahrt",
+  bereitstellung: "Anfahrt Bereitstellungsraum",
+  wartetBR: "im Bereitstellungsraum",
+  vorOrt: "am Einsatzort",
+  begleitung: "begleitet ins Krankenhaus",
+  amKH: "im Krankenhaus",
+  rueckfahrt: "rückt ein",
+};
 
 /** Befehle, die Spieler auslösen können (im Multiplayer laufen sie beim Host). */
 export const BEFEHLE = {
@@ -667,6 +712,21 @@ export function infoFreitext(info: string, auto: string): string {
 }
 
 /** Punkt in gegebener Entfernung (m) und Richtung (Grad) */
+/** Kurzer Funkname einer Partner-Dienststelle: „Freiwillige Feuerwehr Tulln“ → „FF Tulln“ */
+function kurzName(name: string, art: PartnerArt): string {
+  let n = name
+    .replace(/Freiwillige Feuerwehr|Feuerwehr/i, "FF")
+    .replace(/Bezirksfeuerwehrkommando/i, "BFKdo")
+    .replace(/Polizeiinspektion|Polizei-Inspektion|Polizei/i, "PI")
+    .replace(/Österreichische Wasserrettung|Wasserrettung/i, "WR")
+    .replace(/Österreichischer Bergrettungsdienst|Bergrettung/i, "BR")
+    .replace(/\s*-\s*Ortsstelle|\s*Ortsstelle|\s*Einsatzstelle/i, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!n) n = PARTNER[art].kurz;
+  return n;
+}
+
 function versetzt(lat: number, lon: number, meter: number, grad: number): { lat: number; lon: number } {
   const r = (grad * Math.PI) / 180;
   const dLat = (meter * Math.cos(r)) / 111_320;
@@ -827,6 +887,20 @@ export class Simulation {
         fz.phaseEnde = st.zeit;
       }
     }
+    // ältere Spielstände: Partner waren sofort vor Ort
+    for (const e of st.einsaetze) {
+      if (e.partner && !e.partnerDa) {
+        e.partnerDa = { ...e.partner };
+        e.boSicher ??= e.partner.pol ?? null;
+      }
+    }
+    for (const u of st.partnerFz ?? []) {
+      if (u.phase === "routing") {
+        u.phase = "rueckfahrt";
+        u.fahrt = null;
+        u.phaseEnde = st.zeit;
+      }
+    }
     this.state = st;
     this.state.laeuft = false;
     this.emit();
@@ -891,6 +965,20 @@ export class Simulation {
       lon: o.lon,
       place: false,
     };
+  }
+
+  /** Zufällige Adresse im Umkreis eines Punktes (in der bespielten Funkgruppe) */
+  private async adresseNahe(p: LatLon | undefined, radius: number): Promise<Awaited<ReturnType<typeof randomAddresses>>[number] | null> {
+    if (!p) return null;
+    const g = this.funkgruppe();
+    const dLat = radius / 111_320;
+    const dLon = radius / (111_320 * Math.cos((p.lat * Math.PI) / 180));
+    for (let i = 0; i < 4; i++) {
+      const hits = await randomAddresses([p.lon - dLon, p.lat - dLat, p.lon + dLon, p.lat + dLat], 8);
+      const drin = hits.find((h) => inFunkgruppe(g, h.lat, h.lon) && distanceM(h, p) <= radius);
+      if (drin) return drin;
+    }
+    return null;
   }
 
   private async adresseImGebiet(): Promise<Awaited<ReturnType<typeof randomAddresses>>[number] | null> {
@@ -1005,6 +1093,7 @@ export class Simulation {
     this.ktTick(t, dt);
     this.dienstTick(t);
     for (const fz of Object.values(this.state.fahrzeuge)) this.updateVehicle(fz, t);
+    this.partnerTick(t);
     this.checkKhAnfragen(t);
     this.anrufeTick(t);
     this.lageTick(t);
@@ -1235,7 +1324,7 @@ export class Simulation {
     return null;
   }
 
-  private position(fz: SimFahrzeug, t: number): void {
+  private position(fz: { fahrt: Fahrt | null; lat: number; lon: number }, t: number): void {
     const f = fz.fahrt;
     if (!f) return;
     const el = (t - f.start) / 1000;
@@ -1321,7 +1410,36 @@ export class Simulation {
           return;
         }
         this.setStatus(fz, "zumBO");
-        this.fahre(fz, e.adresse, "anfahrt", this.faktor(e) < 1);
+        // Gewalt/Waffen: zuerst in den Bereitstellungsraum, bis die Polizei den Einsatzort sichert
+        if (e.br && !e.boSicher) this.fahre(fz, e.br, "bereitstellung", this.faktor(e) < 1);
+        else this.fahre(fz, e.adresse, "anfahrt", this.faktor(e) < 1);
+        break;
+      }
+      case "bereitstellung": {
+        fz.fahrt = null;
+        if (!e) return this.freigeben(fz);
+        if (e.boSicher && e.adresse) {
+          this.fahre(fz, e.adresse, "anfahrt", this.faktor(e) < 1);
+          break;
+        }
+        this.log(e, `${fz.funkrufname} im Bereitstellungsraum`);
+        if (!this.einsatzFz(e).some((x) => x !== fz && x.phase === "wartetBR")) {
+          this.fzRuft(fz, e, "info", e.partner?.pol ? "im Bereitstellungsraum, warten auf Freigabe durch die Polizei" : "im Bereitstellungsraum, Polizei ist noch nicht alarmiert, bitte Polizei verständigen");
+        }
+        fz.phase = "wartetBR";
+        fz.phaseEnde = t + 6 * MIN;
+        break;
+      }
+      case "wartetBR": {
+        if (!e) return this.freigeben(fz);
+        if (e.boSicher && e.adresse) {
+          this.fahre(fz, e.adresse, "anfahrt", this.faktor(e) < 1);
+          break;
+        }
+        fz.phaseEnde = t + 6 * MIN;
+        // nur ein Fahrzeug erinnert
+        const erstes = this.einsatzFz(e).find((x) => x.phase === "wartetBR");
+        if (erstes === fz) this.fzRuft(fz, e, "nachforderung", e.partner?.pol ? "stehen weiterhin im Bereitstellungsraum, Einsatzort noch nicht freigegeben" : "stehen im Bereitstellungsraum, Polizei ist noch nicht alarmiert, bitte Polizei verständigen");
         break;
       }
       case "anfahrt": {
@@ -1359,14 +1477,17 @@ export class Simulation {
       }
       case "vorOrt": {
         if (!e) return this.freigeben(fz);
-        // ohne Feuerwehr/Polizei/Berg-/Wasserrettung geht es nicht weiter (Befreiung, Eigenschutz)
-        const fehlen = this.partnerFehlt(e);
-        if (fehlen.length) {
+        // ohne Feuerwehr/Polizei/Berg-/Wasserrettung geht es nicht weiter (Befreiung, Eigenschutz, Suche)
+        const warten = this.partnerBlockiert(e);
+        if (warten.length) {
           fz.phaseEnde = t + 2 * MIN;
+          const fehlen = warten.filter((x) => !e.partner?.[x.art]);
           if (!e.partnerErinnert || t - e.partnerErinnert > 6 * MIN) {
             e.partnerErinnert = t;
-            this.log(e, `${fz.funkrufname} wartet auf ${fehlen.map((x) => PARTNER[x.art].name).join(", ")}`);
-            this.fzRuft(this.sprecher(e, fz), e, "nachforderung", `benötigen weiterhin ${fehlen.map((x) => `${PARTNER[x.art].name} (${x.grund})`).join(" und ")}, ohne können wir nicht weiterarbeiten`);
+            if (fehlen.length) {
+              this.log(e, `${fz.funkrufname} wartet auf ${fehlen.map((x) => PARTNER[x.art].name).join(", ")}`);
+              this.fzRuft(this.sprecher(e, fz), e, "nachforderung", `benötigen weiterhin ${fehlen.map((x) => `${PARTNER[x.art].name} (${x.grund})`).join(" und ")}, ohne können wir nicht weiterarbeiten`);
+            } else this.log(e, `${fz.funkrufname} wartet auf ${warten.map((x) => PARTNER[x.art].name).join(", ")} (unterwegs)`);
           }
           break;
         }
@@ -1509,6 +1630,7 @@ export class Simulation {
       if (!fz || fz.phase !== "warteKH") continue;
       this.setStatus(fz, "zumZO");
       this.fahre(fz, h, "transport", this.kritisch(e));
+      if (this.transportfaehig(fz)) this.polizeiBegleitung(e, fz, h);
     }
   }
 
@@ -1647,7 +1769,12 @@ export class Simulation {
       fahrzeuge: [],
       protokoll: [],
     };
-    for (const art of partnerSchonDa(p.fall?.kapitel)) (e.partner ??= {})[art] = this.state.zeit;
+    // Polizei ist schon dort (Anforderung durch die Polizei): Einsatzort gilt als sicher
+    for (const art of partnerSchonDa(p.fall?.kapitel)) {
+      (e.partner ??= {})[art] = this.state.zeit;
+      (e.partnerDa ??= {})[art] = this.state.zeit;
+      if (art === "pol") e.boSicher = this.state.zeit;
+    }
     if (p.fall && store.schema) {
       const schema = store.schema;
       const vorlage = p.fall.vorlage ? SZENARIEN.find((v) => v.id === p.fall!.vorlage) : undefined;
@@ -1768,6 +1895,7 @@ export class Simulation {
     if (!e) return ["Einsatz nicht gefunden"];
     if (!e.adresse) return ["Bitte zuerst eine Adresse eingeben"];
     if (fahrzeugIds.length) this.abfrageProtokoll(e);
+    this.bereitstellungPruefen(e, fahrzeugIds);
     for (const fid of fahrzeugIds) {
       const fz = this.state.fahrzeuge[fid];
       if (!fz) continue;
@@ -1870,6 +1998,7 @@ export class Simulation {
     e.zustand = "abgeschlossen";
     e.khAnfrage = null;
     e.bearbeiter = null;
+    for (const u of this.partnerVon(e)) if (u.phase !== "rueckfahrt") this.partnerHeim(u);
     this.log(e, `Einsatz geschlossen: ${grund}`);
     this.emit();
   }
@@ -2132,7 +2261,11 @@ export class Simulation {
       e.zustand = "offen";
       e.wahr.rtwBuchtSelbst = true;
       // Partner (Feuerwehr, Polizei …) hat die Nachbarzone selbst alarmiert
-      for (const x of this.partnerFehlt(e)) (e.partner ??= {})[x.art] = this.state.zeit;
+      for (const x of this.partnerFehlt(e)) {
+        (e.partner ??= {})[x.art] = this.state.zeit;
+        (e.partnerDa ??= {})[x.art] = this.state.zeit;
+      }
+      e.boSicher = this.state.zeit;
       const { ids } = this.empfehlung(e.id, gefiltert);
       const meine = ids.filter((id) => {
         const f = this.state.fahrzeuge[id];
@@ -2219,7 +2352,9 @@ export class Simulation {
           c &&
           passt(c.stufe) &&
           plausibel(f.ergebnis.pfad[0], f.antworten, name) &&
-          (!wetter || passtZumWetter(f.ergebnis.pfad[0], f.antworten, name, temp, lage))
+          (!wetter || passtZumWetter(f.ergebnis.pfad[0], f.antworten, name, temp, lage)) &&
+          // Wasserrettung gibt es nur an manchen Gewässern: Person im Wasser nur, wo eine Ortsstelle ist
+          (!partnerNoetig(f.ergebnis.pfad[0], f.antworten, name).some((x) => x.art === "wasser") || this.partnerStationenImGebiet("wasser").length > 0)
         ) {
           code = c;
           fall = { kapitel: f.ergebnis.pfad[0], antworten: f.antworten, code: c.code };
@@ -2239,15 +2374,19 @@ export class Simulation {
       if (codes.length === 0) return null;
       code = pick(codes);
     }
+    // Person im Wasser: in der Nähe einer Wasserrettung (die liegen dort, wo so etwas passiert)
+    const cname = `${code.beschreibung} ${schema?.codes[code.code]?.name ?? ""}`;
+    const imWasser = !!fall && partnerNoetig(fall.kapitel, fall.antworten, cname).some((x) => x.art === "wasser");
+    const wasserAdr = imWasser ? await this.adresseNahe(pick(this.partnerStationenImGebiet("wasser")), 5000) : null;
     // passender echter Ort (Pflegeheim, Schule, Bahnhof …), wenn es einen im Gebiet gibt
-    const poiAdr = fall?.ortArt ? await this.poiAdresse(fall.ortArt, typeof fall.antworten.alter === "number" ? fall.antworten.alter : null) : null;
-    const adr = poiAdr ?? (await this.adresseImGebiet());
+    const poiAdr = !wasserAdr && fall?.ortArt ? await this.poiAdresse(fall.ortArt, typeof fall.antworten.alter === "number" ? fall.antworten.alter : null) : null;
+    let adr = wasserAdr ?? poiAdr ?? (await this.adresseImGebiet());
     if (!adr) return null;
     let gemeldet = adr.label;
     // Manche Anrufer nennen eine falsche Adresse (andere Hausnummer derselben Straße)
     if (Math.random() * 100 < s.falscheAdresseProzent) {
       const andere = (await searchAddress(`${adr.street} ${adr.city}`, 40)).filter(
-        (h) => !h.place && distanceM(h, adr) > s.verortungRadius * 1.5,
+        (h) => !h.place && distanceM(h, adr!) > s.verortungRadius * 1.5,
       );
       if (andere.length) gemeldet = pick(andere).label;
     }
@@ -2258,6 +2397,16 @@ export class Simulation {
     if (vorlage) {
       // Geschichte im Freien (Wald, Feldweg, Landstraße): Ort nur grob bekannt
       if (vorlage.wo?.length && (fall!.ortArt === "natur" || (fall!.ortArt === "strasse" && Math.random() < 0.5))) {
+        // Verirrt in der Natur (Bergrettung nötig): meist dort, wo es eine Bergrettung gibt
+        if (fall!.ortArt === "natur") {
+          const berg = this.partnerStationenImGebiet("berg");
+          const nah = berg.some((b) => distanceM(b, adr!) < 15000);
+          if (!nah && berg.length && Math.random() < 0.7) adr = (await this.adresseNahe(pick(berg), 8000)) ?? adr;
+          else if (!nah && !berg.length && Math.random() < 0.5) {
+            // keine Bergrettung im Gebiet: der Anrufer weiß meist, wo er ist
+            return this.erstelleEinsatz({ lat: adr.lat, lon: adr.lon, adresse: adr.label, code, gemeldeteAdresse: gemeldet, fall, patientAlter: alter });
+          }
+        }
         draussen = fuellen(pick(vorlage.wo), { w: fall!.antworten.geschlecht === "w", bezug: "", ort: adr.city || gemeindeVon(adr.label), name: "" }, Math.random);
       }
     } else if (fall) draussen = ortUnbekanntBeschreibung(fall.kapitel, adr.city || adr.label);
@@ -2615,10 +2764,10 @@ export class Simulation {
       if (erstes) l.verlauf.push({ zeit: t, text: `${fz.funkrufname} als erstes Fahrzeug vor Ort` });
     }
     // fehlende Partner: Eigenschutz bei Gewalt – die Besatzung wartet und meldet sich gleich
-    const fehlen = this.partnerFehlt(e);
-    if (erstes && fehlen.some((x) => x.art === "pol" && /Gewalt|Schuss|aggressiv/.test(x.grund))) {
+    const gefahr = this.partnerBlockiert(e).find((x) => x.eigenschutz);
+    if (erstes && gefahr) {
       this.log(e, `${fz.funkrufname} wartet zum Eigenschutz in sicherem Abstand auf die Polizei`);
-      this.fzRuft(this.sprecher(e, fz), e, "nachforderung", "vor Ort, warten zum Eigenschutz in sicherem Abstand, benötigen Polizei");
+      this.fzRuft(this.sprecher(e, fz), e, "nachforderung", e.partner?.pol ? "vor Ort, warten zum Eigenschutz in sicherem Abstand, bis die Polizei die Lage sichert" : "vor Ort, warten zum Eigenschutz in sicherem Abstand, benötigen Polizei");
       e.partnerErinnert = t;
     }
     if (!erstes && !angefordert) return;
@@ -2653,7 +2802,7 @@ export class Simulation {
     const abweichung = l.irrtum !== null || angenommenRea !== istStillstand(p0) || l.patienten.length > 1 || ist(kap, "verkehrsunfall", "ecall", "eingeklemmt", "brand", "gefahrstoff");
     if ((plan.erstes && (abweichung || fehlt.na > 0 || fehlt.rtw > 0 || fehlt.bit > 0 || naStorno || partner.length > 0)) || plan.angefordert) {
       let text = lagemeldungText(l, kap, fehlt, naStorno);
-      const da = (Object.keys(e.partner ?? {}) as PartnerArt[]).map((a) => PARTNER[a].name);
+      const da = (Object.keys(e.partnerDa ?? {}) as PartnerArt[]).map((a) => PARTNER[a].name);
       if (da.length) text += `, ${da.join(" und ")} vor Ort`;
       if (partner.length) {
         text += `, benötigen ${partner.map((x) => `${PARTNER[x.art].name} (${x.grund})`).join(" und ")}`;
@@ -2666,14 +2815,60 @@ export class Simulation {
     }
   }
 
-  /** Partner, die laut Lage gebraucht werden, aber noch nicht angefordert sind */
-  partnerFehlt(e: Einsatz): { art: PartnerArt; grund: string }[] {
+  // ------------------------------------------------------------------ Partner-Organisationen
+
+  /** Was der Einsatz laut Lage (Wahrheit) braucht */
+  partnerBedarf(e: Einsatz): PartnerGrund[] {
     const w = e.wahr.abfrage;
     const name = `${findCode(e.wahr.code)?.beschreibung ?? ""} ${store.schema?.codes[w?.code ?? e.wahr.code]?.name ?? ""}`;
-    return partnerNoetig(w?.kapitel, w?.antworten ?? {}, name).filter((x) => !e.partner?.[x.art]);
+    return partnerNoetig(w?.kapitel, w?.antworten ?? {}, name, { ortArt: w?.szenario?.ortArt, ortUnbekannt: w?.ortUnbekannt });
   }
 
-  /** Partner-Organisation anfordern: ist sofort vor Ort */
+  /** Was der Disponent aus Abfrage und Code erkennen kann (Knopf leuchtet, Bereitstellungsraum) */
+  partnerErkannt(e: Einsatz): PartnerGrund[] {
+    const a = e.anruf;
+    const name = `${findCode(e.code ?? undefined)?.beschreibung ?? ""} ${store.schema?.codes[e.code ?? ""]?.name ?? ""}`;
+    const w = e.wahr.abfrage;
+    return partnerNoetig(a?.kapitel, a?.antworten ?? {}, name, { ortArt: a?.antworten && Object.keys(a.antworten).length ? w?.szenario?.ortArt : undefined, ortUnbekannt: w?.ortUnbekannt });
+  }
+
+  /** Partner, die laut Lage gebraucht werden, aber noch nicht angefordert sind */
+  partnerFehlt(e: Einsatz): PartnerGrund[] {
+    return this.partnerBedarf(e).filter((x) => !e.partner?.[x.art]);
+  }
+
+  /** Ohne diese Partner kann der Rettungsdienst nicht arbeiten (noch nicht da bzw. Einsatzort nicht gesichert) */
+  partnerBlockiert(e: Einsatz): PartnerGrund[] {
+    return this.partnerBedarf(e).filter((x) => x.blockiert && (!e.partnerDa?.[x.art] || (x.eigenschutz && !e.boSicher)));
+  }
+
+  /** Fahrzeuge der Partner in diesem Einsatz */
+  partnerVon(e: Einsatz): PartnerFz[] {
+    return (this.state.partnerFz ?? []).filter((u) => u.einsatzId === e.id);
+  }
+
+  /** Nächste Dienststelle der Organisation */
+  private partnerStation(art: PartnerArt, ziel: LatLon): { id: string; name: string; lat: number; lon: number } | null {
+    let best: { id: string; name: string; lat: number; lon: number } | null = null;
+    let bd = Infinity;
+    for (const st of store.list("stations")) {
+      if (partnerArtVonTyp(st.typ) !== art) continue;
+      const d = distanceM(st, ziel);
+      if (d < bd) {
+        bd = d;
+        best = st;
+      }
+    }
+    return best;
+  }
+
+  /** Dienststellen einer Organisation in der bespielten Funkgruppe */
+  partnerStationenImGebiet(art: PartnerArt): { lat: number; lon: number }[] {
+    const g = this.funkgruppe();
+    return store.list("stations").filter((st) => partnerArtVonTyp(st.typ) === art && inFunkgruppe(g, st.lat, st.lon));
+  }
+
+  /** Partner-Organisation alarmieren: Fahrzeuge rücken von der nächsten Dienststelle aus */
   partnerAnfordern(id: string, art: PartnerArt): void {
     const e = this.einsatz(id);
     if (!e) return;
@@ -2681,13 +2876,198 @@ export class Simulation {
     if (e.partner[art]) return;
     const t = this.state.zeit;
     e.partner[art] = t;
-    this.log(e, `${PARTNER[art].name} angefordert – vor Ort`);
-    this.funk(PARTNER[art].name, e.id, `${PARTNER[art].name} vor Ort (${e.nummer})`, "info");
-    // wartende Besatzungen können jetzt arbeiten
-    if (!this.partnerFehlt(e).length) {
-      for (const fz of this.einsatzFz(e)) if (fz.phase === "vorOrt" && fz.phaseEnde !== null && fz.phaseEnde < t + 5 * MIN) fz.phaseEnde = t + rnd(5, 10) * MIN;
+    const ziel: LatLon = e.adresse ?? e.wahr;
+    const st = this.partnerStation(art, ziel);
+    const heim = st ? { lat: st.lat, lon: st.lon } : versetzt(ziel.lat, ziel.lon, rnd(6000, 12000), rnd(0, 360));
+    const kurz = st ? kurzName(st.name, art) : PARTNER[art].name;
+    const n = PARTNER_ANZAHL[art];
+    this.state.partnerFz ??= [];
+    for (let i = 0; i < n; i++) {
+      this.state.partnerZaehler = (this.state.partnerZaehler ?? 0) + 1;
+      this.state.partnerFz.push({
+        id: `p${this.state.partnerZaehler}`,
+        art,
+        name: n > 1 ? `${kurz} ${i + 1}` : kurz,
+        einsatzId: e.id,
+        station: st?.name ?? PARTNER[art].name,
+        heim,
+        lat: heim.lat,
+        lon: heim.lon,
+        fahrt: null,
+        blaulicht: false,
+        phase: "ausruecken",
+        // rücken innerhalb von 2 Minuten aus
+        phaseEnde: t + rnd(0.7, 2) * MIN + i * rnd(5, 20) * 1000,
+      });
     }
+    this.log(e, `${PARTNER[art].name} alarmiert${st ? ` (${st.name}, ${n} Fahrzeug${n > 1 ? "e" : ""})` : ""}`);
+    if (art === "pol") this.bereitstellungPruefen(e, []);
     this.emit();
+  }
+
+  /**
+   * Gewalt/Waffen bekannt: Bereitstellungsraum ca. 500 m vom Einsatzort festlegen (auf der Seite, von der die
+   * Fahrzeuge kommen). Alle Nicht-Polizei-Fahrzeuge fahren zuerst dorthin.
+   */
+  private bereitstellungPruefen(e: Einsatz, fahrzeugIds: string[]): void {
+    if (e.br || e.boSicher || !e.adresse || e.fremd) return;
+    if (!this.partnerErkannt(e).some((x) => x.eigenschutz)) return;
+    const pos = [...fahrzeugIds.map((id) => this.state.fahrzeuge[id]), ...this.einsatzFz(e)].filter((x): x is SimFahrzeug => !!x);
+    let grad = rnd(0, 360);
+    if (pos.length) {
+      const lat = pos.reduce((a, x) => a + x.lat, 0) / pos.length;
+      const lon = pos.reduce((a, x) => a + x.lon, 0) / pos.length;
+      if (distanceM({ lat, lon }, e.adresse) > 300) grad = (Math.atan2((lon - e.adresse.lon) * Math.cos((e.adresse.lat * Math.PI) / 180), lat - e.adresse.lat) * 180) / Math.PI;
+    }
+    const p = versetzt(e.adresse.lat, e.adresse.lon, rnd(450, 550), grad + rnd(-20, 20));
+    const richtung = ["nördlich", "nordöstlich", "östlich", "südöstlich", "südlich", "südwestlich", "westlich", "nordwestlich"][Math.round((((grad % 360) + 360) % 360) / 45) % 8];
+    e.br = { lat: p.lat, lon: p.lon, label: `Bereitstellungsraum ca. 500 m ${richtung} vom Einsatzort` };
+    this.log(e, `${e.br.label} – Rettungsdienst wartet dort auf Freigabe durch die Polizei`);
+  }
+
+  /** Partner-Fahrzeuge bewegen, eintreffen lassen und wieder heimschicken */
+  private partnerTick(t: number): void {
+    const liste = this.state.partnerFz;
+    if (!liste?.length) return;
+    // Polizei meldet den Einsatzort als sicher
+    for (const e of this.state.einsaetze) {
+      if (e.boSicherUm && t >= e.boSicherUm) {
+        e.boSicherUm = null;
+        e.boSicher = t;
+        this.log(e, "Polizei-Leitstelle: Einsatzort gesichert, Rettungsdienst kann zufahren");
+        this.funk("Polizei-Leitstelle", e.id, `${e.nummer}: Einsatzort ist gesichert, Rettungsdienst kann zufahren`, "warnung");
+        for (const fz of this.einsatzFz(e)) {
+          if (fz.phase === "wartetBR" && e.adresse) this.fahre(fz, e.adresse, "anfahrt", this.faktor(e) < 1);
+          else if (fz.phase === "vorOrt" && fz.phaseEnde !== null) fz.phaseEnde = Math.min(fz.phaseEnde, t + rnd(1, 3) * MIN);
+        }
+      }
+    }
+    for (const u of [...liste]) {
+      if (u.phase === "routing") continue;
+      this.position(u, t);
+      const e = this.einsatz(u.einsatzId);
+      const ziel: LatLon | null = e ? (e.adresse ?? e.wahr) : null;
+      if (!e || !ziel) {
+        if (u.phase !== "rueckfahrt") this.partnerHeim(u);
+        else if (u.phaseEnde !== null && t >= u.phaseEnde) this.state.partnerFz = this.state.partnerFz!.filter((x) => x !== u);
+        continue;
+      }
+      // Verbleib am Einsatzort: mit dem Rettungsdienst weg (Feuerwehr bleibt 10–20 Minuten länger)
+      if (u.phase === "vorOrt" || u.phase === "wartetBR" || u.phase === "ausruecken" || u.phase === "anfahrt" || u.phase === "bereitstellung") {
+        if (!this.rdNochDa(e, u, t)) {
+          if (u.art === "fw" && u.phase === "vorOrt") {
+            u.bleibtBis ??= t + rnd(10, 20) * MIN;
+            if (t < u.bleibtBis) continue;
+          }
+          this.partnerHeim(u);
+          continue;
+        }
+      }
+      if (u.phase === "wartetBR" && e.boSicher) {
+        this.partnerFahre(u, ziel, "anfahrt", true);
+        continue;
+      }
+      if (u.phase === "amKH") {
+        const fz = u.begleitet ? this.state.fahrzeuge[u.begleitet] : undefined;
+        if (!fz || fz.einsatzId !== e.id || (fz.phase !== "transport" && fz.phase !== "uebergabe" && fz.phase !== "routing")) this.partnerHeim(u);
+        continue;
+      }
+      if (u.phaseEnde === null || t < u.phaseEnde) continue;
+      switch (u.phase) {
+        case "ausruecken":
+          if (u.art !== "pol" && e.br && !e.boSicher) this.partnerFahre(u, e.br, "bereitstellung", true);
+          else this.partnerFahre(u, ziel, "anfahrt", true);
+          break;
+        case "bereitstellung":
+          u.fahrt = null;
+          u.blaulicht = false;
+          u.phase = "wartetBR";
+          u.phaseEnde = null;
+          break;
+        case "anfahrt":
+          u.fahrt = null;
+          u.blaulicht = false;
+          u.phase = "vorOrt";
+          u.phaseEnde = null;
+          this.partnerEingetroffen(e, u, t);
+          break;
+        case "begleitung":
+          u.fahrt = null;
+          u.blaulicht = false;
+          u.phase = "amKH";
+          u.phaseEnde = null;
+          break;
+        case "rueckfahrt":
+          this.state.partnerFz = this.state.partnerFz!.filter((x) => x !== u);
+          break;
+      }
+    }
+  }
+
+  /** Ist der Rettungsdienst noch am Einsatzort (oder auf dem Weg dorthin)? */
+  private rdNochDa(e: Einsatz, u: PartnerFz, t: number): boolean {
+    if (e.zustand === "abgeschlossen") return false;
+    const rd = this.einsatzFz(e);
+    if (!rd.length) {
+      // noch kein Rettungsdienst alarmiert: höchstens eine Stunde warten
+      const seit = e.partner?.[u.art] ?? t;
+      return e.fahrzeuge.length === 0 && t - seit < 60 * MIN;
+    }
+    return rd.some((x) =>
+      x.phase === "routing" ? x.status !== "zumZO" && x.status !== "freiFunk" : ["ausruecken", "anfahrt", "suche", "vorOrt", "warteKH", "bereitstellung", "wartetBR"].includes(x.phase),
+    );
+  }
+
+  /** Erstes Fahrzeug einer Organisation trifft ein */
+  private partnerEingetroffen(e: Einsatz, u: PartnerFz, t: number): void {
+    e.partnerDa ??= {};
+    if (e.partnerDa[u.art]) return;
+    e.partnerDa[u.art] = t;
+    this.log(e, `${PARTNER[u.art].name} am Einsatzort eingetroffen (${u.name})`);
+    // Polizei sichert den Einsatzort: nach 5–10 Minuten meldet die Polizei-Leitstelle „sicher“
+    if (u.art === "pol" && !e.boSicher && (e.br || this.partnerBedarf(e).some((x) => x.eigenschutz))) {
+      e.boSicherUm = t + rnd(5, 10) * MIN;
+      return;
+    }
+    if (u.art === "pol" && !e.boSicher) e.boSicher = t;
+    // wartende Besatzungen können jetzt arbeiten
+    if (!this.partnerBlockiert(e).length) {
+      for (const fz of this.einsatzFz(e)) if (fz.phase === "vorOrt" && fz.phaseEnde !== null && fz.phaseEnde > t + 3 * MIN) fz.phaseEnde = t + rnd(1, 3) * MIN;
+    }
+  }
+
+  /** Polizei begleitet bei Gewalt/Unterbringung den Transport ins Krankenhaus (ein Fahrzeug) */
+  private polizeiBegleitung(e: Einsatz, fz: SimFahrzeug, h: LatLon): void {
+    if (!this.partnerBedarf(e).some((x) => x.art === "pol" && x.begleitung)) return;
+    const u = this.partnerVon(e).find((x) => x.art === "pol" && x.phase === "vorOrt" && !x.begleitet);
+    if (!u) return;
+    u.begleitet = fz.id;
+    this.log(e, `${u.name} begleitet ${fz.funkrufname} ins Krankenhaus`);
+    this.partnerFahre(u, h, "begleitung", false);
+  }
+
+  /** Partner-Fahrzeug fährt zurück zur Dienststelle */
+  private partnerHeim(u: PartnerFz): void {
+    u.bleibtBis = null;
+    if (distanceM(u, u.heim) < 80) {
+      this.state.partnerFz = (this.state.partnerFz ?? []).filter((x) => x !== u);
+      return;
+    }
+    this.partnerFahre(u, u.heim, "rueckfahrt", false);
+  }
+
+  private partnerFahre(u: PartnerFz, ziel: LatLon, phase: PartnerFz["phase"], blau: boolean): void {
+    u.phase = "routing";
+    u.blaulicht = blau;
+    void route({ lat: u.lat, lon: u.lon }, ziel).then((r) => {
+      if (!this.state.partnerFz?.includes(u)) return;
+      const wf = this.settings.wetterAktiv ? fahrFaktor(this.state.wetter.lage, this.temperatur()) : 1;
+      const f = (blau ? this.settings.sondersignalFaktor : 1) * wf;
+      u.fahrt = { coords: r.coords, times: r.times.map((x) => x * f), start: this.state.zeit, dauer: r.duration * f, blau };
+      u.phase = phase;
+      u.phaseEnde = this.state.zeit + u.fahrt.dauer * 1000;
+      this.emit();
+    });
   }
 
   /** Fahrzeuge, die gerade für den Einsatz unterwegs oder vor Ort sind */
@@ -3946,6 +4326,7 @@ export class Simulation {
   /** Alle Einsätze und Fahrzeugzustände zurücksetzen. */
   reset(): void {
     this.state.einsaetze = [];
+    this.state.partnerFz = [];
     this.state.funk = [];
     this.state.kt = [];
     this.state.ktDauerTag = undefined;

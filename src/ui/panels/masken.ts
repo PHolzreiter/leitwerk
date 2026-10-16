@@ -3,12 +3,12 @@
  * Sie zeigen, was in der Einsatzliste (oder auf der Karte) ausgewählt ist.
  */
 import { nummerAus } from "../../sim/rufnummer";
-import { PARTNER, PARTNER_ARTEN, partnerNoetig } from "../../sim/partner";
+import { PARTNER, PARTNER_ARTEN } from "../../sim/partner";
 import { exportKnopf } from "../gespraechExport";
 import { HOSPITAL_FLAGS, HOSPITAL_FLAG_LABEL, type HospitalFlag } from "../../data/model";
 import { store } from "../../data/store";
 import { findCode, hasCodes, searchCodes, type Einsatzcode } from "../../sim/codes";
-import { infoFreitext, sim, type Einsatz } from "../../sim/engine";
+import { infoFreitext, PARTNER_PHASE_TEXT, sim, type Einsatz } from "../../sim/engine";
 import { mp } from "../../net/mehrspieler";
 import { distanceM } from "../../sim/geo";
 import { KATEGORIE_LABEL } from "../../sim/settings";
@@ -213,34 +213,44 @@ export function einsatzMaske(e: Einsatz): { root: HTMLElement; refresh(): void }
     void fehlerZeigen(sim.call("aktualisiere", e.id, { telefon: telIn.value }));
   });
   aufZeile("Rückruf", telIn, telB);
-  // Partner-Organisationen (sofort vor Ort, sobald angefordert)
+  // Partner-Organisationen (Feuerwehr, Polizei, Berg-/Wasserrettung) mit eigenen Fahrzeugen
   const partnerZeile = el("div", { class: "partner-zeile" });
+  const partnerInfo = el("div", { class: "partner-info muted" });
   let partnerKey = "";
   const partnerZeigen = () => {
-    const a = e.anruf;
-    const name = `${findCode(e.code ?? undefined)?.beschreibung ?? ""} ${store.schema?.codes[e.code ?? ""]?.name ?? ""}`;
-    const noetig = partnerNoetig(a?.kapitel, a?.antworten ?? {}, name);
-    const key = JSON.stringify([e.partner ?? {}, noetig]);
+    const noetig = sim.partnerErkannt(e);
+    const einheiten = sim.partnerVon(e);
+    const key = JSON.stringify([e.partner ?? {}, e.partnerDa ?? {}, e.br?.label ?? "", e.boSicher ?? 0, noetig, einheiten.map((u) => [u.name, u.phase])]);
     if (key === partnerKey) return;
     partnerKey = key;
     partnerZeile.innerHTML = "";
+    const uhr = (x: number) => new Date(x).toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" });
     for (const art of PARTNER_ARTEN) {
       const p = PARTNER[art];
-      const da = e.partner?.[art];
+      const alarmiert = e.partner?.[art];
+      const da = e.partnerDa?.[art];
       const n = noetig.find((x) => x.art === art);
-      const b = el("button", { class: `btn small partner-b${da ? " da" : n ? " noetig" : ""}`, type: "button" }, `${da ? "✓ " : ""}${p.symbol} ${p.name}`);
+      const b = el("button", { class: `btn small partner-b${da ? " da" : alarmiert ? " unterwegs" : n ? " noetig" : ""}`, type: "button" }, `${da ? "✓ " : alarmiert ? "⏱ " : ""}${p.symbol} ${p.name}`);
       b.title = da
-        ? `${p.name} vor Ort seit ${new Date(da).toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" })}`
-        : n
-          ? `${p.name} erforderlich: ${n.grund} – klicken zum Anfordern`
-          : `${p.name} anfordern (ist sofort vor Ort)`;
-      b.disabled = !!da;
+        ? `${p.name} vor Ort seit ${uhr(da)}`
+        : alarmiert
+          ? `${p.name} alarmiert um ${uhr(alarmiert)}, unterwegs`
+          : n
+            ? `${p.name} erforderlich: ${n.grund} – klicken zum Alarmieren`
+            : `${p.name} alarmieren`;
+      b.disabled = !!alarmiert;
       b.addEventListener("click", () => void fehlerZeigen(sim.call("partnerAnfordern", e.id, art)));
       partnerZeile.appendChild(b);
     }
+    const zeilen: string[] = [];
+    if (e.br) zeilen.push(`<div class="partner-br">🅿 ${esc(e.br.label)}${e.boSicher ? " – <b>Einsatzort gesichert</b>" : " – warten auf Freigabe durch die Polizei"}</div>`);
+    if (einheiten.length) zeilen.push(einheiten.map((u) => `<span class="partner-fz">${PARTNER[u.art].symbol} ${esc(u.name)}: ${esc(PARTNER_PHASE_TEXT[u.phase])}</span>`).join(""));
+    partnerInfo.innerHTML = zeilen.join("");
   };
   partnerZeigen();
-  aufZeile("Partner", partnerZeile);
+  const partnerBox = el("div");
+  partnerBox.append(partnerZeile, partnerInfo);
+  aufZeile("Partner", partnerBox);
   aufZeile("Info RTW", infoRtw);
   aufZeile("Intern", infoIntern);
 

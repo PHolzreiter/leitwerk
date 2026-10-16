@@ -180,6 +180,17 @@ def build_stations() -> tuple[list[dict], dict[str, str]]:
         name_to_id[norm(name)] = sid
 
     stations.sort(key=lambda x: (x["typ"] != "Luftrettung", x["name"]))
+    # 4. Feuerwehr (Hauptfeuerwehr je Gemeinde + Bezirkskommanden), Polizeiinspektionen, Wasser- und Bergrettung
+    #    aus OpenStreetMap (tools/osm_partner_holen.py) – ohne eigene Fahrzeuge
+    partner = SRC / "osm_partner.csv"
+    if partner.exists():
+        kurz = {"Feuerwehr": "fw", "Polizei": "pol", "Wasserrettung": "wr", "Bergrettung": "br"}
+        for r in read_csv(partner):
+            stations.append({
+                "id": f"{kurz[r['typ']]}-{r['osm'].replace('/', '')}", "name": r["name"], "organisation": r["organisation"],
+                "typ": r["typ"], "ort": r["ort"], "bezirk": "", "adresse": "",
+                "breitengrad": r["lat"], "laengengrad": r["lon"], "hinweis": "Quelle: OpenStreetMap",
+            })
     return stations, name_to_id
 
 
