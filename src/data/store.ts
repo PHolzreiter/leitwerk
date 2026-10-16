@@ -17,9 +17,10 @@ import {
   type Records,
   type Station,
 } from "./model";
-import { standardRecords } from "./standard";
+import { standardCodesystem, standardRecords } from "./standard";
 import { mergeSettings, type Settings } from "../sim/settings";
 import { ergaenzeSchema, istSchema, type Schema } from "../abfrage/schema";
+import { themenSchema } from "../abfrage/themen";
 
 type Listener = () => void;
 
@@ -128,6 +129,7 @@ export class Store {
 
   private changed(persist = true): void {
     this.effectiveCache = null;
+    void this.schema; // Themen-Zuordnung des Codesystems aktualisieren
     if (persist && !this.eigeneSicherung) this.scheduleSave();
     for (const fn of this.listeners) fn();
   }
@@ -170,8 +172,15 @@ export class Store {
     return istSchema(this.data.abfrageschema) ? this.data.abfrageschema : null;
   }
 
+  /** Ist das mitgelieferte LeitWerk-Codesystem aktiv (kein eigenes geladen)? */
+  get schemaIstStandard(): boolean {
+    return !istSchema(this.data.abfrageschema);
+  }
+
   get schema(): Schema | null {
-    return istSchema(this.data.abfrageschema) ? ergaenzeSchema(this.data.abfrageschema) : null;
+    const s = ergaenzeSchema(istSchema(this.data.abfrageschema) ? this.data.abfrageschema : standardCodesystem());
+    themenSchema(s);
+    return s;
   }
 
   setSchema(s: Schema | null): void {
@@ -199,9 +208,14 @@ export class Store {
     for (const kind of KINDS) {
       const own = this.data.eigene[kind] as KindMap[Kind][];
       const ownIds = new Set(own.map((r) => r.id));
-      const base = this.data.standardAktiv
-        ? (std[kind] as KindMap[Kind][]).filter((r) => !hidden.has(r.id) && !ownIds.has(r.id))
-        : [];
+      const base =
+        kind === "codes"
+          ? istSchema(this.data.abfrageschema)
+            ? []
+            : std.codes.filter((r) => !hidden.has(r.id) && !ownIds.has(r.id))
+          : this.data.standardAktiv
+            ? (std[kind] as KindMap[Kind][]).filter((r) => !hidden.has(r.id) && !ownIds.has(r.id))
+            : [];
       (out as Record<Kind, KindMap[Kind][]>)[kind] = [...base, ...own];
     }
     // Ausweich-NEF: eigene Fahrzeuge ohne Angabe (z. B. älterer Import) übernehmen die Zuordnung der Standarddaten

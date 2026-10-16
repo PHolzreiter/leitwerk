@@ -54,8 +54,9 @@ export type AnruferTyp =
 
 export interface SzenarioVorlage {
   id: string;
-  kapitel: string;
-  /** Häufigkeit innerhalb des Kapitels */
+  /** neutrales Thema (themen.ts), z. B. „sturz“ */
+  thema: string;
+  /** Häufigkeit innerhalb des Themas */
   gewicht?: number;
   alter: [number, number];
   geschlecht?: "m" | "w";
@@ -94,7 +95,7 @@ export interface SzenarioVorlage {
 
 export interface Szenario {
   vorlage: string;
-  kapitel: string;
+  thema: string;
   ortArt: OrtArt;
   /** z. B. „im Badezimmer, Wohnung im 2. Stock“ */
   stelle: string;
@@ -322,15 +323,15 @@ export function vorlageFest(v: SzenarioVorlage, rnd: Rnd): Antworten {
   return a;
 }
 
-/** Vorlage für ein Kapitel wählen (Jahreszeit, Uhrzeit, Wetter beachten) */
+/** Vorlage für ein Thema wählen (Jahreszeit, Uhrzeit, Wetter beachten) */
 export function vorlageWaehlen(
   vorlagen: SzenarioVorlage[],
-  kapitel: string,
+  thema: string,
   ctx: { jahreszeit: string; stunde: number; temp: number; glatt: boolean },
   rnd: Rnd,
 ): SzenarioVorlage | null {
   const passend = vorlagen.filter((v) => {
-    if (v.kapitel !== kapitel) return false;
+    if (!thema || v.thema !== thema) return false;
     if (v.jahreszeit && !v.jahreszeit.includes(ctx.jahreszeit as never)) return false;
     if (v.stunden) {
       const [a, b] = v.stunden;
@@ -425,7 +426,7 @@ export function szenarioBauen(
   setze("hautfarbe", schlimm || a.at === "abnorm" ? "ja" : "nein");
   setze("kaltschweiss", schlimm ? "ja" : "nein");
   setze("sprachschw", a.at === "abnorm" ? "ja" : "nein");
-  const traumatisch = ["17", "29", "30", "3", "4", "27", "22", "21", "7", "15", "14", "16", "ALP"].includes(v.kapitel);
+  const traumatisch = ["sturz", "verkehrsunfall", "verletzung", "tierbiss", "gewalt", "stich_schuss", "eingeklemmt", "blutung", "brand", "strom", "wasser", "auge", "alpin"].includes(v.thema);
   if (!traumatisch) {
     setze("verletzt", "nein");
     setze("blutung_stark", "nein");
@@ -440,7 +441,7 @@ export function szenarioBauen(
   const gewicht = zusatz.schwer_pat === "ja" || a.schwer_pat === "ja" ? "sehr schwer, deutlich über 120 kg" : alter < 14 ? "normal für das Alter" : pick(["normal", "eher schlank", "ein bisschen kräftiger"], rnd);
   return {
     vorlage: v.id,
-    kapitel: v.kapitel,
+    thema: v.thema,
     ortArt,
     stelle: f(pick(v.stelle, rnd)),
     wo: v.wo?.length ? f(pick(v.wo, rnd)) : undefined,

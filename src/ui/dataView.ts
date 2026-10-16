@@ -17,6 +17,7 @@ import {
 import { exportCsv } from "../data/schema";
 import { codesystemDatei } from "../abfrage/codesystem";
 import beispielCodesystem from "../../data/beispiele/beispiel_codesystem.json?raw";
+import { STANDARD_CODESYSTEM_TEXT, standardCodesystem } from "../data/standard";
 import { planKurz } from "../sim/dienst";
 import { sim } from "../sim/engine";
 import { FUNKGRUPPEN, inFunkgruppe } from "../sim/funkgruppen";
@@ -101,40 +102,45 @@ export function createDataView(container: HTMLElement, deps: DataViewDeps): { re
   function renderSchemaBar() {
     schemaBar.hidden = current !== "codes";
     if (schemaBar.hidden) return;
-    const sch = store.schema;
-    schemaBar.innerHTML = sch
-      ? `<div><b>Codesystem geladen${sch.name ? `: ${esc(sch.name)}` : ""}</b> <span class="muted">· ${Object.keys(sch.kapitel).length} Kapitel · ${Object.keys(sch.codes).length} Codes${sch.version ? ` · Version ${esc(String(sch.version))}` : ""}</span>
-         <div class="muted small">Codes und Abfrage kommen aus einer Datei. Neue Einsätze kommen als Notruf, den du annimmst und abfragst – der Code ergibt sich aus der Abfrage.</div></div>`
-      : `<div><b>Kein Codesystem geladen</b>
-         <div class="muted small">Ein Codesystem ist eine JSON-Datei mit Einsatzcodes und Abfrage. Damit kommen Einsätze als Anruf, den du abfragst. Das Beispiel enthält eine Anleitung, mit der eine KI ein eigenes Codesystem erstellen kann.</div></div>`;
+    const sch = store.schema!;
+    const std = store.schemaIstStandard;
+    schemaBar.innerHTML = `<div><b>${std ? "LeitWerk-Codesystem (mitgeliefert)" : `Eigenes Codesystem${sch.name ? `: ${esc(sch.name)}` : ""}`}</b> <span class="muted">· ${Object.keys(sch.kapitel).length} Kapitel · ${Object.keys(sch.codes).length} Codes</span>
+         <div class="muted small">${
+           std
+             ? "Eigenständiges Codesystem von LeitWerk (Codes KK-Sx-NN, Stufen S0–S5) – frei verwendbar. Du kannst stattdessen ein eigenes Codesystem (JSON-Datei mit Codes und Abfrage) laden."
+             : "Codes und Abfrage kommen aus deiner Datei. Neue Einsätze kommen als Notruf, den du annimmst und abfragst – der Code ergibt sich aus der Abfrage."
+         }</div></div>`;
     const btns = el("div", { class: "row-btns" });
-    const laden = el("button", { class: "btn small primary" }, sch ? "Ersetzen …" : "Codesystem laden …");
+    const laden = el("button", { class: "btn small primary" }, std ? "Eigenes Codesystem laden …" : "Anderes laden …");
     laden.addEventListener("click", () => void startImport("codes", (k) => select(k)));
     btns.appendChild(laden);
-    if (sch) {
-      const roh = store.schemaRoh;
-      const sp = el("button", { class: "btn small", title: "Codes und Abfrage zusammen als eine JSON-Datei speichern" }, "Als eine Datei speichern …");
-      sp.addEventListener("click", async () => {
-        if (!roh) return;
-        const name = (roh.name || "codesystem").replace(/[^\wäöüÄÖÜß-]+/g, "_");
-        const p = await saveTextFile(`${name}.json`, codesystemDatei(roh, store.list("codes")));
-        if (p) toast("Codesystem gespeichert (Codes und Abfrage in einer Datei)");
-      });
-      btns.appendChild(sp);
-    }
+    const sp = el("button", { class: "btn small", title: "Codes und Abfrage zusammen als eine JSON-Datei speichern" }, "Als eine Datei speichern …");
+    sp.addEventListener("click", async () => {
+      const roh = store.schemaRoh ?? standardCodesystem();
+      const name = (roh.name || "codesystem").replace(/[^\wäöüÄÖÜß-]+/g, "_");
+      const p = await saveTextFile(`${name}.json`, std ? STANDARD_CODESYSTEM_TEXT : codesystemDatei(roh, store.list("codes")));
+      if (p) toast("Codesystem gespeichert (Codes und Abfrage in einer Datei)");
+    });
+    btns.appendChild(sp);
     const bsp = el("button", { class: "btn small", title: "Kleines Beispiel mit Anleitung für eine KI" }, "Beispiel-Codesystem …");
     bsp.addEventListener("click", async () => {
       const p = await saveTextFile("beispiel_codesystem.json", beispielCodesystem);
       if (p) toast("Beispiel gespeichert – die Anleitung für eine KI steht in „anleitung_fuer_ki“");
     });
     btns.appendChild(bsp);
-    if (sch) {
-      const weg = el("button", { class: "btn small danger-text" }, "Entfernen");
+    if (!std) {
+      const weg = el("button", { class: "btn small danger-text" }, "Zurück zum LeitWerk-Codesystem");
       weg.addEventListener("click", async () => {
-        const ok = await confirmDialog("Codesystem entfernen", "Die Abfrage wird entfernt. Die Codeliste bleibt. Neue Einsätze kommen dann wieder ohne Anruf.", "Entfernen", true);
+        const ok = await confirmDialog(
+          "Eigenes Codesystem entfernen",
+          "Dein Codesystem wird entfernt, dann gilt wieder das mitgelieferte LeitWerk-Codesystem. Deine Codeliste wird ebenfalls entfernt (die Datei kannst du jederzeit wieder laden).",
+          "Entfernen",
+          true,
+        );
         if (!ok) return;
         store.setSchema(null);
-        toast("Codesystem entfernt");
+        store.removeMany("codes", store.list("codes").filter((c) => c.herkunft !== "standard").map((c) => c.id));
+        toast("Wieder das LeitWerk-Codesystem");
         render();
       });
       btns.appendChild(weg);

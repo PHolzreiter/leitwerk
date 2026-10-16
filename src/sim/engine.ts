@@ -39,6 +39,7 @@ import { anruferWaehlen, veraenderungText, zufallsName, type Anrufer } from "../
 import { alleOrte, kategorienFuerOrtArt, poiKategorien } from "../data/orte";
 import { bezugFuer, fuellen, stimmungAusVerlauf, szenarioBauen, vorlageFest, vorlageWaehlen, type OrtArt, type Szenario } from "../abfrage/szenario";
 import { SZENARIEN } from "../abfrage/szenarien";
+import { ist, kapitelZuThema, merkmaleAusSchema, merkmaleInSchema, thema } from "../abfrage/themen";
 import { abfrageBlock, abfrageSaetze } from "../abfrage/protokollText";
 import {
   dauerDaten,
@@ -231,28 +232,30 @@ function gemeindeVon(adresse: string): string {
  * Hauptbeschwerde → „Grund der Anforderung“, Zustand und Patient bleiben gleich.
  */
 function alsAnforderung33(schema: Schema, f: Fall): Fall | null {
-  if (!schema.kapitel["33"]) return null;
+  const k33 = kapitelZuThema("anforderung_arzt", schema);
+  if (!k33) return null;
   const a = f.antworten;
-  const GRUND: Record<string, string> = { "10": "herz", "19": "herz", "6": "atmung", "28": "neuro", "13": "bz", "21": "blutung", "17": "sturz" };
-  let grund = GRUND[f.kapitel] ?? "transport";
+  const GRUND: Record<string, string> = { brustschmerz: "herz", herz: "herz", atemnot: "atmung", schlaganfall: "neuro", zucker: "bz", blutung: "blutung", sturz: "sturz" };
+  const t = thema(f.kapitel, schema);
+  let grund = GRUND[t] ?? "transport";
   if (a.bw === "nein" || a.bw === "getruebt") grund = grund === "transport" ? "bewusstsein" : grund;
-  if (f.kapitel === "17" && a.umstand && !/boden/.test(String(a.umstand))) grund = "transport";
+  if (t === "sturz" && a.umstand && !/boden/.test(String(a.umstand))) grund = "transport";
   const fest: Antworten = { anforderer: "normal", grund };
   for (const id of ["alter", "geschlecht", "bw", "at", "anzahl_patienten"]) if (a[id] !== undefined) fest[id] = a[id];
   if (grund === "transport") {
     fest.dringlichkeit = "sofort";
     fest.transportart = a.bw === "ja" && a.at === "normal" ? "sitzend" : "liegend";
   }
-  const z = fallZiehen(schema, "33", Math.random, 0, fest);
-  if (!z || z.ergebnis.pfad[0] !== "33") return null;
-  return { ...f, kapitel: "33", antworten: z.antworten, code: z.ergebnis.code };
+  const z = fallZiehen(schema, k33, Math.random, 0, fest);
+  if (!z || z.ergebnis.pfad[0] !== k33) return null;
+  return { ...f, kapitel: k33, antworten: z.antworten, code: z.ergebnis.code };
 }
 
 /** Medizinisch plausibel? (z. B. keine Geburt mit 60, keine Schwangerschaft beim Mann) */
 export function plausibel(kapitel: string, a: Antworten, codeName: string): boolean {
   const alter = typeof a.alter === "number" ? a.alter : null;
   const schwanger =
-    kapitel === "24" ||
+    thema(kapitel) === "schwangerschaft" ||
     a.problem === "geburt" ||
     (a.schwanger !== undefined && a.schwanger !== "nein" && a.schwanger !== "unbekannt") ||
     /schwanger|geburt|eklampsie|wehen|fruchtwasser|postpartal|entbind/i.test(codeName);
@@ -262,9 +265,9 @@ export function plausibel(kapitel: string, a: Antworten, codeName: string): bool
   return true;
 }
 
-/** Kapitel für einen neuen Fall – häufige Notrufe öfter, Alpinunfälle selten */
-const KAPITEL_GEWICHT: Record<string, number> = {
-  "17": 3, "26": 3, "10": 2.5, "6": 2.5, "28": 2, "31": 2, "29": 2, "12": 1.5, "21": 1.5, "1": 1.5, "18": 1.5, "9": 1.2, ALP: 0.15, "42": 0.3, "34": 0.3,
+/** Themen für einen neuen Fall – häufige Notrufe öfter, Alpinunfälle selten */
+const THEMA_GEWICHT: Record<string, number> = {
+  sturz: 3, krank: 3, brustschmerz: 2.5, atemnot: 2.5, schlaganfall: 2, bewusstlos: 2, verkehrsunfall: 2, krampf: 1.5, blutung: 1.5, bauch: 1.5, kopfschmerz: 1.5, stillstand: 1.2, alpin: 0.15, anforderung_ls: 0.3, ecall: 0.3,
 };
 /** Wetter macht manche Notrufe häufiger: Hitze → Hitzenotfälle, Badeunfälle; Kälte → Unterkühlung, Infekte; Glätte → Stürze, Unfälle */
 export function wetterFaktor(kap: string, temp: number, lage: WetterLage, wind = 0): number {
@@ -272,31 +275,31 @@ export function wetterFaktor(kap: string, temp: number, lage: WetterLage, wind =
   const glatt = lage === "eisregen" || (temp < 1 && (art === "schnee" || art === "regen" || art === "nebel"));
   const sturm = wind >= 45 || lage === "unwetter";
   const nass = art === "regen" || art === "gewitter";
-  switch (kap) {
-    case "20":
+  switch (thema(kap)) {
+    case "hitze_kaelte":
       return temp >= 30 ? 6 : temp >= 26 ? 3 : temp <= -5 ? 5 : temp <= 0 ? 3 : temp <= 5 ? 1.2 : 0.15;
-    case "14":
+    case "wasser":
       return temp >= 28 ? 3.5 : temp >= 23 ? 2 : temp < 12 ? 0.3 : 1;
-    case "2":
+    case "allergie":
       return temp >= 20 ? 1.6 : temp < 5 ? 0.6 : 1;
-    case "3":
+    case "tierbiss":
       return temp >= 18 ? 1.3 : temp < 3 ? 0.7 : 1;
-    case "8":
+    case "gefahrstoff":
       return temp <= 0 ? 2.2 : temp <= 6 ? 1.5 : 0.8;
-    case "6":
+    case "atemnot":
       return (temp <= 0 ? 1.5 : temp >= 30 ? 1.3 : 1) * (lage === "hochnebel" ? 1.3 : 1);
-    case "36":
+    case "infekt":
       return temp <= 5 ? 2.2 : temp >= 22 ? 0.4 : 1;
-    case "26":
-    case "31":
+    case "krank":
+    case "bewusstlos":
       return temp >= 30 ? 1.5 : temp >= 27 ? 1.2 : 1;
-    case "17":
+    case "sturz":
       return (lage === "eisregen" ? 3 : glatt ? 1.8 : 1) * (sturm ? 1.3 : 1);
-    case "30":
+    case "verletzung":
       return sturm ? 1.6 : glatt ? 1.3 : 1;
-    case "29":
+    case "verkehrsunfall":
       return (lage === "eisregen" ? 2.6 : glatt ? 2 : lage === "nebel" ? 1.5 : lage === "starkregen" || lage === "unwetter" ? 1.5 : nass ? 1.3 : 1) * (sturm ? 1.3 : 1);
-    case "15":
+    case "strom":
       return art === "gewitter" ? 6 : 1;
     default:
       return 1;
@@ -305,7 +308,7 @@ export function wetterFaktor(kap: string, temp: number, lage: WetterLage, wind =
 
 function kapitelZiehen(schema: Schema, faktor: (kap: string) => number = () => 1): string {
   const kaps = Object.keys(schema.kapitel);
-  const g = (k: string) => (KAPITEL_GEWICHT[k] ?? 1) * faktor(k);
+  const g = (k: string) => (THEMA_GEWICHT[thema(k, schema)] ?? 1) * faktor(k);
   const sum = kaps.reduce((s, k) => s + g(k), 0);
   let r = Math.random() * sum;
   for (const k of kaps) {
@@ -317,7 +320,7 @@ function kapitelZiehen(schema: Schema, faktor: (kap: string) => number = () => 1
 
 /** Passt der gezogene Fall zum Wetter? (Hitze-/Kältenotfall, Blitzschlag) */
 function passtZumWetter(kap: string, a: Antworten, codeName: string, temp: number, lage: WetterLage): boolean {
-  if (kap === "20" || /Hitze|Kälte|Unterkühl|Erfrier|Sonnenstich/i.test(codeName)) {
+  if (thema(kap) === "hitze_kaelte" || /Hitze|Kälte|Unterkühl|Erfrier|Sonnenstich/i.test(codeName)) {
     const kalt = a.art === "kaelte" || /Kälte|Unterkühl|Erfrier/i.test(codeName);
     if (kalt && temp > 12) return Math.random() < 0.05;
     if (!kalt && temp < 18) return Math.random() < 0.05;
@@ -630,19 +633,20 @@ function versetzt(lat: number, lon: number, meter: number, grad: number): { lat:
 }
 
 /** Wahrscheinlichkeit je Kapitel, dass der Anrufer draußen ist und den Ort nicht genau kennt */
-const ORT_UNBEKANNT: Record<string, number> = { ALP: 0.8, "14": 0.4, "29": 0.2, "17": 0.12, "30": 0.12, "20": 0.15, "22": 0.15, "3": 0.15, "2": 0.08 };
+const ORT_UNBEKANNT: Record<string, number> = { alpin: 0.8, wasser: 0.4, verkehrsunfall: 0.2, sturz: 0.12, verletzung: 0.12, hitze_kaelte: 0.15, eingeklemmt: 0.15, tierbiss: 0.15, allergie: 0.08 };
 
 /** Grobe Ortsbeschreibung, wie ein Anrufer ohne Adresse sie gibt (oder null = Adresse bekannt) */
 function ortUnbekanntBeschreibung(kapitel: string, ort: string): string | null {
-  if (Math.random() >= (ORT_UNBEKANNT[kapitel] ?? 0)) return null;
+  const t = thema(kapitel);
+  if (Math.random() >= (ORT_UNBEKANNT[t] ?? 0)) return null;
   const bei = ort.replace(/^.*,\s*/, "").replace(/^\d{4}\s+/, "") || "dem Ort";
   const varianten: Record<string, string[]> = {
-    ALP: [`am Berg oberhalb von ${bei}, irgendwo am Wanderweg`, `im Wald über ${bei}, auf einem Steig, ich seh nur Bäume`, `auf einer Forststraße bei ${bei}, wir sind schon ewig gegangen`],
-    "14": [`am Wasser bei ${bei}, beim Ufer, da ist so ein Badeplatz`, `an der Donau bei ${bei}, irgendwo am Radweg`],
-    "29": [`auf der Landstraße bei ${bei}, kurz nach dem Ortsende`, `auf der Straße zwischen ${bei} und dem nächsten Ort, bei einer Kurve`],
+    alpin: [`am Berg oberhalb von ${bei}, irgendwo am Wanderweg`, `im Wald über ${bei}, auf einem Steig, ich seh nur Bäume`, `auf einer Forststraße bei ${bei}, wir sind schon ewig gegangen`],
+    wasser: [`am Wasser bei ${bei}, beim Ufer, da ist so ein Badeplatz`, `an der Donau bei ${bei}, irgendwo am Radweg`],
+    verkehrsunfall: [`auf der Landstraße bei ${bei}, kurz nach dem Ortsende`, `auf der Straße zwischen ${bei} und dem nächsten Ort, bei einer Kurve`],
   };
   const allgemein = [`auf einem Feldweg bei ${bei}`, `im Wald bei ${bei}, beim Weg`, `am Radweg bei ${bei}, zwischen den Feldern`];
-  return pick(varianten[kapitel] ?? allgemein);
+  return pick(varianten[t] ?? allgemein);
 }
 
 function pick<T>(arr: T[]): T {
@@ -1613,7 +1617,7 @@ export class Simulation {
       );
       // Ruft Pflege, Arzt oder Ordination an, fragt man in Kapitel 33 ab (Anforderung durch Einrichtung) –
       // dann muss auch die richtige Lösung dort liegen
-      if (anrufer.art === "einrichtung" && !["33", "38", "42", "34", "ALP"].includes(p.fall.kapitel)) {
+      if (anrufer.art === "einrichtung" && !ist(p.fall.kapitel, "anforderung_arzt", "anforderung_polizei", "anforderung_ls", "ecall", "alpin")) {
         const neu = alsAnforderung33(schema, p.fall);
         if (neu) {
           p.fall = neu;
@@ -1629,7 +1633,7 @@ export class Simulation {
         const familie = /ehe|lebensgef|mutter|vater|tochter|sohn/i.test(anrufer.rolle);
         const neu = zufallsName(w ? "w" : "m");
         const pname = anrufer.selbst ? anrufer.name : familie ? `${neu.split(" ")[0]} ${anrufer.name.split(" ").slice(1).join(" ")}` : neu;
-        szenario = szenarioBauen(vorlage, a, { bezug: bezugFuer(anrufer.rolle, anrufer.selbst, w, alt), selbst: anrufer.selbst, ort: p.gemeinde ?? gemeindeVon(p.adresse), name: pname, ortArt }, Math.random);
+        szenario = szenarioBauen(vorlage, store.schema ? merkmaleAusSchema(store.schema, a) : a, { bezug: bezugFuer(anrufer.rolle, anrufer.selbst, w, alt), selbst: anrufer.selbst, ort: p.gemeinde ?? gemeindeVon(p.adresse), name: pname, ortArt }, Math.random);
         const st = stimmungAusVerlauf(szenario.verlauf);
         if (st && (anrufer.art ?? "privat") === "privat") anrufer.emotion = st;
       }
@@ -1937,7 +1941,7 @@ export class Simulation {
       const transport = imEinsatz.filter((f) => this.transportfaehig(f)).length + (rm && !imEinsatz.includes(rm) ? 1 : 0);
       const offen = (e.nachforderungen ?? []).filter((n) => !n.erledigt && n.art === "RTW").reduce((a, n) => a + n.anzahl, 0);
       const kap = e.wahr.abfrage?.kapitel ?? "";
-      const gross = stufe.kategorie === "kritisch" && ["29", "22", "7", "8", "34", "42"].includes(kap);
+      const gross = stufe.kategorie === "kritisch" && ist(kap, "verkehrsunfall", "eingeklemmt", "brand", "gefahrstoff", "ecall", "anforderung_ls");
       if (transport + offen >= 3 || gross) {
         const bel = nutzbar.find((v) => v.fz.rmTyp === "BEL");
         if (bel) {
@@ -2049,8 +2053,8 @@ export class Simulation {
       for (let i = 0; i < 400 && !fall; i++) {
         const kap = kapitelZiehen(schema, wetter ? (kp) => wetterFaktor(kp, temp, lage, this.state.wetter.wind ?? 0) : undefined);
         // Fallgeschichte zuerst: sie legt Ort, Hergang und die wichtigsten Antworten fest
-        const vorlage = vorlageWaehlen(SZENARIEN, kap, ctx, Math.random);
-        const f = fallZiehen(schema, kap, Math.random, 0.04, vorlage ? vorlageFest(vorlage, Math.random) : {});
+        const vorlage = vorlageWaehlen(SZENARIEN, thema(kap, schema), ctx, Math.random);
+        const f = fallZiehen(schema, kap, Math.random, 0.04, vorlage ? merkmaleInSchema(schema, vorlageFest(vorlage, Math.random)) : {});
         const c = f ? findCode(f.ergebnis.code) : undefined;
         const name = `${c?.beschreibung ?? ""} ${c ? (schema.codes[c.code]?.name ?? "") : ""}`;
         if (
@@ -2462,7 +2466,7 @@ export class Simulation {
     }
     if (!erstes && !angefordert) return;
     const sofort = !!l && istStillstand(l.patienten[0]);
-    const vu = kap === "29" || kap === "34";
+    const vu = ist(kap, "verkehrsunfall", "ecall");
     const um = sofort ? t : t + (vu ? rnd(0.8, 1.3) : rnd(2, 5)) * MIN;
     e.lageGeplant = { um, fzId: fz.id, angefordert, erstes };
     if (sofort) this.lageMeldungJetzt(e);
@@ -2489,7 +2493,7 @@ export class Simulation {
     const naUnterwegs = this.einsatzFz(e).some((x) => (x.kategorie === "NEF" || fliegt(x)) && x.phase !== "vorOrt");
     const naStorno = plan.erstes && this.transportfaehig(fz) && naUnterwegs && bedarf(l).na === 0;
     const partner = this.partnerFehlt(e);
-    const abweichung = l.irrtum !== null || angenommenRea !== istStillstand(p0) || l.patienten.length > 1 || ["29", "34", "22", "7", "8"].includes(kap);
+    const abweichung = l.irrtum !== null || angenommenRea !== istStillstand(p0) || l.patienten.length > 1 || ist(kap, "verkehrsunfall", "ecall", "eingeklemmt", "brand", "gefahrstoff");
     if ((plan.erstes && (abweichung || fehlt.na > 0 || fehlt.rtw > 0 || fehlt.bit > 0 || naStorno || partner.length > 0)) || plan.angefordert) {
       let text = lagemeldungText(l, kap, fehlt, naStorno);
       const da = (Object.keys(e.partner ?? {}) as PartnerArt[]).map((a) => PARTNER[a].name);

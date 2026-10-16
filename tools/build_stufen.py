@@ -29,6 +29,18 @@ STUFEN = [
     ("Telemedizin", "KTW>RTW>RTW-C", "nein", "nein", "nein", "stabil", 30),
     ("Weitergabe", "", "nein", "nein", "nein", "stabil", 0),
     ("Großunfall", "RTW-C>RTW>KTW", "nein", "schnellster", "ja", "kritisch", 90),
+    ("Alpinunfall", "RTW>RTW-C>KTW", "nein", "schnellster", "ja", "dringend", 70),
+]
+
+
+# Stufen des eigenen LeitWerk-Codesystems (tools/leitwerk_codesystem.py)
+import sys as _sys
+_sys.path.insert(0, str(Path(__file__).resolve().parent))
+from leitwerk_codesystem import EINSATZSTUFEN as _LWC  # noqa: E402
+
+STUFEN += [
+    (x["stufe"], x["rettungsmittel"], "ja" if x["nfs_erforderlich"] else "nein", x["notarzt"], "ja" if x["sondersignal"] else "nein", x["kategorie"], x["transport_prozent"])
+    for x in _LWC
 ]
 
 

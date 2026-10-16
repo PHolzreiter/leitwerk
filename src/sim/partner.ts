@@ -4,6 +4,7 @@
  * Hier steht, wann sie gebraucht werden (nach Kapitel, Antworten und Codename).
  */
 import type { Antworten } from "../abfrage/schema";
+import { thema } from "../abfrage/themen";
 
 export type PartnerArt = "fw" | "pol" | "berg" | "wasser";
 
@@ -27,7 +28,7 @@ export interface PartnerGrund {
  * kapitel/antworten aus der Abfrage (bzw. der Wahrheit), codeName = Name/Beschreibung des Codes.
  */
 export function partnerNoetig(kapitel: string | null | undefined, a: Antworten, codeName: string): PartnerGrund[] {
-  const kap = kapitel ?? "";
+  const t = thema(kapitel);
   const n = codeName;
   const out: PartnerGrund[] = [];
   const add = (art: PartnerArt, grund: string) => {
@@ -35,30 +36,30 @@ export function partnerNoetig(kapitel: string | null | undefined, a: Antworten, 
   };
   // Feuerwehr
   if (a.eingeklemmt === "ja" || /eingeklemmt|verschüttet|eingeschlossen/i.test(n)) add("fw", "Person eingeklemmt");
-  if (kap === "29" || kap === "34" || /\bVU\b|Verkehrsunfall|Unfallmeldung/i.test(n)) add("fw", "Verkehrsunfall – Absicherung und technische Hilfe");
-  if (kap === "7" || /Feuer|Brand|Explosion|Brennende/i.test(n)) add("fw", "Brand/Explosion");
-  if (kap === "8" || a.gefahrgut === "ja" || /Gefahrgut|Kohlenmonoxid|Gasgeruch|CBRN/i.test(n)) add("fw", "Gefahrstoff");
-  if (kap === "22") add("fw", "technische Rettung");
-  if (kap === "15" || /Strom/i.test(n)) add("fw", "Stromunfall – Freischalten/Absichern");
+  if (t === "verkehrsunfall" || t === "ecall" || /\bVU\b|Verkehrsunfall|Unfallmeldung/i.test(n)) add("fw", "Verkehrsunfall – Absicherung und technische Hilfe");
+  if (t === "brand" || /Feuer|Brand|Explosion|Brennende/i.test(n)) add("fw", "Brand/Explosion");
+  if (t === "gefahrstoff" || a.gefahrgut === "ja" || /Gefahrgut|Kohlenmonoxid|Gasgeruch|CBRN/i.test(n)) add("fw", "Gefahrstoff");
+  if (t === "eingeklemmt") add("fw", "technische Rettung");
+  if (t === "strom" || /Strom/i.test(n)) add("fw", "Stromunfall – Freischalten/Absichern");
   if (/verschlossen|Türöffnung/i.test(n)) add("fw", "Türöffnung");
   if (a.andere_gefahren === "ja") add("fw", "Gefahr an der Einsatzstelle");
   // Polizei
-  if (kap === "4" || /Gewalt|Überfall|Verbrechen|Sexualdelikt|Körperverletzung/i.test(n)) add("pol", "Gewalttat");
-  if (kap === "27" || /Schuss|Stich|Pfählung/i.test(n)) add("pol", "Schuss-/Stichverletzung");
+  if (t === "gewalt" || /Gewalt|Überfall|Verbrechen|Sexualdelikt|Körperverletzung/i.test(n)) add("pol", "Gewalttat");
+  if (t === "stich_schuss" || /Schuss|Stich|Pfählung/i.test(n)) add("pol", "Schuss-/Stichverletzung");
   if (/aggressiv|gewalttätig|Waffen/i.test(n) || a.aggressiv === "ja" || a.gewalt === "ja") add("pol", "aggressiver Patient – Eigenschutz");
-  if (kap === "25" || /Suizid|UBG|Unterbringung|Psychiatrie/i.test(n)) add("pol", "Psychiatrie/Suizidgefahr (ggf. Unterbringung)");
-  if ((kap === "29" || kap === "34") && a.verletzte === "ja") add("pol", "Verkehrsunfall mit Verletzten");
-  if (kap === "9" && (a.tod === "offensichtlich" || a.tod === "moeglich")) add("pol", "Todesfall");
-  if (kap === "38") add("pol", "Anforderung durch die Polizei");
+  if (t === "psych" || /Suizid|UBG|Unterbringung|Psychiatrie/i.test(n)) add("pol", "Psychiatrie/Suizidgefahr (ggf. Unterbringung)");
+  if ((t === "verkehrsunfall" || t === "ecall") && a.verletzte === "ja") add("pol", "Verkehrsunfall mit Verletzten");
+  if (t === "stillstand" && (a.tod === "offensichtlich" || a.tod === "moeglich")) add("pol", "Todesfall");
+  if (t === "anforderung_polizei") add("pol", "Anforderung durch die Polizei");
   // Bergrettung
-  if (kap === "ALP" || /Alpin|Lawine|Bergrettung|Gondel|Lift/i.test(n)) add("berg", "Alpinunfall");
+  if (t === "alpin" || /Alpin|Lawine|Bergrettung|Gondel|Lift/i.test(n)) add("berg", "Alpinunfall");
   // Wasserrettung
   const imWasser = a.wo !== undefined ? a.wo !== "land" : true;
-  if ((kap === "14" && imWasser && !/nicht mehr im Wasser/i.test(n)) || /Eisrettung|Hochwasser|Fliessgewässer|Fließgewässer/i.test(n)) add("wasser", "Person im Wasser");
+  if ((t === "wasser" && imWasser && !/nicht mehr im Wasser/i.test(n)) || /Eisrettung|Hochwasser|Fliessgewässer|Fließgewässer/i.test(n)) add("wasser", "Person im Wasser");
   return out;
 }
 
 /** Bei Polizeieinsätzen ist die Polizei schon dort (Kapitel 38) */
 export function partnerSchonDa(kapitel: string | null | undefined): PartnerArt[] {
-  return kapitel === "38" ? ["pol"] : [];
+  return thema(kapitel) === "anforderung_polizei" ? ["pol"] : [];
 }

@@ -11,3 +11,11 @@ Akuttransport grün;KTW>RTW>RTW-C;nein;nein;nein;stabil;100
 Telemedizin;KTW>RTW>RTW-C;nein;nein;nein;stabil;30
 Weitergabe;;nein;nein;nein;stabil;0
 Großunfall;RTW-C>RTW>KTW;nein;schnellster;ja;kritisch;90
+Alpinunfall;RTW>RTW-C>KTW;nein;schnellster;ja;dringend;70
+S5 Reanimation;RTW-C>RTW>KTW;nein;schnellster;ja;kritisch;70
+S4 Notarzt;RTW-C>RTW>KTW;nein;nef;ja;kritisch;85
+S4 Mehrere Verletzte;RTW-C>RTW>KTW;nein;schnellster;ja;kritisch;90
+S3 Notfall;RTW-C>RTW>KTW;ja;nein;ja;dringend;80
+S2 Dringend;RTW>KTW>RTW-C;nein;nein;ja;dringend;75
+S1 Nicht dringend;KTW>RTW>RTW-C;nein;nein;nein;stabil;65
+S0 Beratung / Weitergabe;;nein;nein;nein;stabil;0

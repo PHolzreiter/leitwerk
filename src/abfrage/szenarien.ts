@@ -1,7 +1,7 @@
 /**
- * Realistische Fallgeschichten je Kapitel. Platzhalter: {P}/{p} = wie der Anrufer den Patienten nennt
+ * Realistische Fallgeschichten je Thema (neutral, siehe themen.ts). Platzhalter: {P}/{p} = wie der Anrufer den Patienten nennt
  * („meine Mutter“), {er}/{Er}/{ihn}/{ihm}/{sein…} = Pronomen des Patienten, {ort} = Gemeinde,
- * {a|b|c} = eines davon. `fest` setzt Antworten des Abfrageschemas (Liste = eine davon zufällig).
+ * {a|b|c} = eines davon. `fest` setzt Merkmale (neutrale Antworten, z. B. hoehe = „boden“; Liste = eines davon zufällig) – sie werden auf das geladene Codesystem übertragen.
  */
 import type { SzenarioVorlage } from "./szenario";
 
@@ -9,7 +9,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   // ---------------------------------------------------------------- 17 Sturz
   {
     id: "sturz_bad_nacht",
-    kapitel: "17",
+    thema: "sturz",
     gewicht: 3,
     alter: [72, 94],
     orte: ["wohnung", "haus"],
@@ -34,7 +34,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   },
   {
     id: "sturz_stiege",
-    kapitel: "17",
+    thema: "sturz",
     gewicht: 2,
     alter: [55, 90],
     orte: ["haus", "wohnung"],
@@ -57,7 +57,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   },
   {
     id: "sturz_leiter",
-    kapitel: "17",
+    thema: "sturz",
     gewicht: 2,
     alter: [45, 82],
     geschlecht: "m",
@@ -79,7 +79,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   },
   {
     id: "sturz_glatteis",
-    kapitel: "17",
+    thema: "sturz",
     gewicht: 2,
     alter: [50, 88],
     orte: ["strasse"],
@@ -98,7 +98,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   },
   {
     id: "sturz_pflegeheim",
-    kapitel: "17",
+    thema: "sturz",
     gewicht: 1.5,
     alter: [78, 98],
     orte: ["pflegeheim"],
@@ -118,7 +118,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   },
   {
     id: "sturz_wanderweg",
-    kapitel: "17",
+    thema: "sturz",
     gewicht: 1,
     alter: [35, 78],
     orte: ["natur"],
@@ -135,7 +135,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   },
   {
     id: "sturz_spielplatz",
-    kapitel: "17",
+    thema: "sturz",
     gewicht: 1,
     alter: [3, 11],
     orte: ["freizeit", "schule"],
@@ -151,7 +151,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   // ---------------------------------------------------------------- 26 Kranke Person
   {
     id: "krank_fieber_alt",
-    kapitel: "26",
+    thema: "krank",
     gewicht: 2,
     alter: [75, 95],
     orte: ["wohnung", "haus"],
@@ -171,7 +171,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   },
   {
     id: "krank_erbrechen",
-    kapitel: "26",
+    thema: "krank",
     gewicht: 1.5,
     alter: [18, 70],
     orte: ["wohnung", "haus"],
@@ -186,7 +186,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   },
   {
     id: "krank_schwindel",
-    kapitel: "26",
+    thema: "krank",
     gewicht: 1.5,
     alter: [50, 88],
     orte: ["wohnung", "haus", "geschaeft"],
@@ -200,7 +200,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   },
   {
     id: "krank_pflegeheim_az",
-    kapitel: "26",
+    thema: "krank",
     gewicht: 1,
     alter: [80, 99],
     orte: ["pflegeheim"],
@@ -215,7 +215,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   },
   {
     id: "krank_harnverhalt",
-    kapitel: "26",
+    thema: "krank",
     gewicht: 0.6,
     alter: [65, 90],
     geschlecht: "m",
@@ -232,7 +232,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   // ---------------------------------------------------------------- 10 Brustschmerzen
   {
     id: "brust_rasenmaehen",
-    kapitel: "10",
+    thema: "brustschmerz",
     gewicht: 2,
     alter: [52, 80],
     geschlecht: "m",
@@ -251,7 +251,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   },
   {
     id: "brust_nacht",
-    kapitel: "10",
+    thema: "brustschmerz",
     gewicht: 1.5,
     alter: [45, 85],
     orte: ["wohnung", "haus"],
@@ -267,7 +267,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   },
   {
     id: "brust_buero",
-    kapitel: "10",
+    thema: "brustschmerz",
     gewicht: 1,
     alter: [40, 64],
     orte: ["arbeit"],
@@ -282,7 +282,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   },
   {
     id: "brust_jung_party",
-    kapitel: "10",
+    thema: "brustschmerz",
     gewicht: 0.4,
     alter: [19, 32],
     geschlecht: "m",
@@ -300,7 +300,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   // ---------------------------------------------------------------- 6 Atembeschwerden
   {
     id: "atem_copd",
-    kapitel: "6",
+    thema: "atemnot",
     gewicht: 2,
     alter: [60, 88],
     orte: ["wohnung", "haus"],
@@ -315,7 +315,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   },
   {
     id: "atem_asthma",
-    kapitel: "6",
+    thema: "atemnot",
     gewicht: 1.2,
     alter: [8, 35],
     orte: ["wohnung", "sport", "schule"],
@@ -329,7 +329,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   },
   {
     id: "atem_herz_nacht",
-    kapitel: "6",
+    thema: "atemnot",
     gewicht: 1.2,
     alter: [72, 94],
     orte: ["wohnung", "haus"],
@@ -346,7 +346,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   // ---------------------------------------------------------------- 28 Schlaganfall
   {
     id: "sa_fruehstueck",
-    kapitel: "28",
+    thema: "schlaganfall",
     gewicht: 2,
     alter: [58, 90],
     orte: ["wohnung", "haus"],
@@ -361,7 +361,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   },
   {
     id: "sa_aufgewacht",
-    kapitel: "28",
+    thema: "schlaganfall",
     gewicht: 1,
     alter: [65, 92],
     orte: ["wohnung", "haus"],
@@ -376,7 +376,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   },
   {
     id: "sa_geschaeft",
-    kapitel: "28",
+    thema: "schlaganfall",
     gewicht: 0.8,
     alter: [55, 85],
     orte: ["geschaeft"],
@@ -391,7 +391,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   // ---------------------------------------------------------------- 31 Bewusstlosigkeit / Ohnmacht
   {
     id: "kollaps_hitze_bus",
-    kapitel: "31",
+    thema: "bewusstlos",
     gewicht: 1.5,
     alter: [16, 85],
     orte: ["strasse", "geschaeft", "bahnhof"],
@@ -405,7 +405,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   },
   {
     id: "kollaps_klo_nacht",
-    kapitel: "31",
+    thema: "bewusstlos",
     gewicht: 1.2,
     alter: [65, 92],
     orte: ["wohnung", "haus"],
@@ -422,7 +422,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   // ---------------------------------------------------------------- 29 Verkehrsunfälle
   {
     id: "vu_auffahr",
-    kapitel: "29",
+    thema: "verkehrsunfall",
     gewicht: 1.5,
     alter: [20, 75],
     orte: ["strasse"],
@@ -436,7 +436,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   },
   {
     id: "vu_radfahrer",
-    kapitel: "29",
+    thema: "verkehrsunfall",
     gewicht: 1.5,
     alter: [10, 80],
     orte: ["strasse"],
@@ -451,7 +451,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   },
   {
     id: "vu_baum",
-    kapitel: "29",
+    thema: "verkehrsunfall",
     gewicht: 1,
     alter: [18, 60],
     orte: ["strasse", "natur"],
@@ -466,7 +466,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   },
   {
     id: "vu_motorrad",
-    kapitel: "29",
+    thema: "verkehrsunfall",
     gewicht: 0.8,
     alter: [18, 65],
     geschlecht: "m",
@@ -485,7 +485,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   // ---------------------------------------------------------------- 12 Krampfanfall
   {
     id: "krampf_epilepsie",
-    kapitel: "12",
+    thema: "krampf",
     gewicht: 1.5,
     alter: [16, 70],
     orte: ["wohnung", "haus", "arbeit"],
@@ -499,7 +499,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   },
   {
     id: "krampf_fieber_kind",
-    kapitel: "12",
+    thema: "krampf",
     gewicht: 1,
     alter: [1, 4],
     orte: ["wohnung", "haus"],
@@ -513,7 +513,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   },
   {
     id: "krampf_erstmalig",
-    kapitel: "12",
+    thema: "krampf",
     gewicht: 0.8,
     alter: [18, 45],
     orte: ["arbeit", "geschaeft", "strasse"],
@@ -528,7 +528,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   // ---------------------------------------------------------------- 21 Blutung
   {
     id: "blut_kueche",
-    kapitel: "21",
+    thema: "blutung",
     gewicht: 1.5,
     alter: [16, 80],
     orte: ["wohnung", "haus", "lokal"],
@@ -542,7 +542,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   },
   {
     id: "blut_nase",
-    kapitel: "21",
+    thema: "blutung",
     gewicht: 1,
     alter: [65, 92],
     orte: ["wohnung", "haus"],
@@ -557,7 +557,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   },
   {
     id: "blut_krampfader",
-    kapitel: "21",
+    thema: "blutung",
     gewicht: 0.7,
     alter: [65, 92],
     geschlecht: "w",
@@ -574,7 +574,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   // ---------------------------------------------------------------- 1 Bauchschmerzen
   {
     id: "bauch_galle",
-    kapitel: "1",
+    thema: "bauch",
     gewicht: 1.2,
     alter: [35, 70],
     orte: ["wohnung", "haus"],
@@ -588,7 +588,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   },
   {
     id: "bauch_blinddarm",
-    kapitel: "1",
+    thema: "bauch",
     gewicht: 1,
     alter: [10, 30],
     orte: ["wohnung", "haus", "schule"],
@@ -602,7 +602,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   },
   {
     id: "bauch_aorta",
-    kapitel: "1",
+    thema: "bauch",
     gewicht: 0.3,
     alter: [65, 88],
     geschlecht: "m",
@@ -620,7 +620,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   // ---------------------------------------------------------------- 18 Kopfschmerzen
   {
     id: "kopf_donnerschlag",
-    kapitel: "18",
+    thema: "kopfschmerz",
     gewicht: 1,
     alter: [35, 70],
     orte: ["wohnung", "haus", "sport"],
@@ -634,7 +634,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   },
   {
     id: "kopf_migraene",
-    kapitel: "18",
+    thema: "kopfschmerz",
     gewicht: 0.8,
     alter: [20, 55],
     geschlecht: "w",
@@ -651,7 +651,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   // ---------------------------------------------------------------- 9 Kreislaufstillstand
   {
     id: "rea_bett_frueh",
-    kapitel: "9",
+    thema: "stillstand",
     gewicht: 1.5,
     alter: [55, 92],
     orte: ["wohnung", "haus"],
@@ -667,7 +667,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   },
   {
     id: "rea_beobachtet",
-    kapitel: "9",
+    thema: "stillstand",
     gewicht: 1,
     alter: [50, 85],
     geschlecht: "m",
@@ -682,7 +682,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   },
   {
     id: "tot_erwartet",
-    kapitel: "9",
+    thema: "stillstand",
     gewicht: 0.6,
     alter: [70, 98],
     orte: ["wohnung", "haus", "pflegeheim"],
@@ -699,7 +699,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   // ---------------------------------------------------------------- 2 Allergie
   {
     id: "allergie_wespe",
-    kapitel: "2",
+    thema: "allergie",
     gewicht: 1.2,
     alter: [15, 75],
     orte: ["garten", "freizeit", "lokal"],
@@ -714,7 +714,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   },
   {
     id: "allergie_essen",
-    kapitel: "2",
+    thema: "allergie",
     gewicht: 0.8,
     alter: [8, 50],
     orte: ["lokal", "wohnung"],
@@ -729,7 +729,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   // ---------------------------------------------------------------- 3 Tierbiss
   {
     id: "biss_hund",
-    kapitel: "3",
+    thema: "tierbiss",
     gewicht: 1,
     alter: [5, 80],
     orte: ["strasse", "garten", "natur"],
@@ -746,7 +746,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   // ---------------------------------------------------------------- 4 Überfall
   {
     id: "rauferei_lokal",
-    kapitel: "4",
+    thema: "gewalt",
     gewicht: 1,
     alter: [17, 45],
     geschlecht: "m",
@@ -764,7 +764,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   // ---------------------------------------------------------------- 5 Rücken
   {
     id: "ruecken_hexenschuss",
-    kapitel: "5",
+    thema: "ruecken",
     gewicht: 1,
     alter: [30, 70],
     orte: ["wohnung", "haus", "arbeit"],
@@ -780,7 +780,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   // ---------------------------------------------------------------- 7 Verbrennung
   {
     id: "verbrueh_kind",
-    kapitel: "7",
+    thema: "brand",
     gewicht: 1,
     alter: [1, 5],
     orte: ["wohnung", "haus"],
@@ -794,7 +794,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   },
   {
     id: "verbrennung_grill",
-    kapitel: "7",
+    thema: "brand",
     gewicht: 0.7,
     alter: [18, 60],
     geschlecht: "m",
@@ -812,7 +812,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   // ---------------------------------------------------------------- 8 Kohlenmonoxid
   {
     id: "co_therme",
-    kapitel: "8",
+    thema: "gefahrstoff",
     gewicht: 1,
     alter: [25, 80],
     orte: ["wohnung", "haus"],
@@ -829,7 +829,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   // ---------------------------------------------------------------- 11 Ersticken
   {
     id: "ersticken_fleisch",
-    kapitel: "11",
+    thema: "ersticken",
     gewicht: 1,
     alter: [65, 92],
     orte: ["lokal", "wohnung", "pflegeheim"],
@@ -843,7 +843,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   },
   {
     id: "ersticken_kind",
-    kapitel: "11",
+    thema: "ersticken",
     gewicht: 0.8,
     alter: [1, 6],
     orte: ["wohnung", "haus"],
@@ -859,7 +859,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   // ---------------------------------------------------------------- 13 Blutzucker
   {
     id: "unterzucker",
-    kapitel: "13",
+    thema: "zucker",
     gewicht: 1,
     alter: [30, 85],
     orte: ["wohnung", "haus", "arbeit"],
@@ -875,7 +875,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   // ---------------------------------------------------------------- 14 Wasser
   {
     id: "badesee_kind",
-    kapitel: "14",
+    thema: "wasser",
     gewicht: 1,
     alter: [4, 14],
     orte: ["wasser"],
@@ -892,7 +892,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   // ---------------------------------------------------------------- 15 Strom
   {
     id: "strom_heimwerker",
-    kapitel: "15",
+    thema: "strom",
     gewicht: 1,
     alter: [25, 75],
     geschlecht: "m",
@@ -908,7 +908,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   // ---------------------------------------------------------------- 16 Auge
   {
     id: "auge_flex",
-    kapitel: "16",
+    thema: "auge",
     gewicht: 1,
     alter: [20, 65],
     geschlecht: "m",
@@ -925,7 +925,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   // ---------------------------------------------------------------- 19 Herzrasen
   {
     id: "herzrasen",
-    kapitel: "19",
+    thema: "herz",
     gewicht: 1,
     alter: [30, 85],
     orte: ["wohnung", "haus", "arbeit"],
@@ -942,7 +942,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   // ---------------------------------------------------------------- 20 Hitze / Kälte
   {
     id: "hitze_arbeit",
-    kapitel: "20",
+    thema: "hitze_kaelte",
     gewicht: 1,
     alter: [20, 70],
     orte: ["baustelle", "arbeit", "freizeit"],
@@ -957,7 +957,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   },
   {
     id: "kaelte_parkbank",
-    kapitel: "20",
+    thema: "hitze_kaelte",
     gewicht: 1,
     alter: [35, 80],
     geschlecht: "m",
@@ -975,7 +975,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   // ---------------------------------------------------------------- 22 Eingeklemmt / eingeschlossen
   {
     id: "lift_steckt",
-    kapitel: "22",
+    thema: "eingeklemmt",
     gewicht: 0.8,
     alter: [20, 90],
     orte: ["wohnung", "arbeit"],
@@ -989,7 +989,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   },
   {
     id: "hand_maschine",
-    kapitel: "22",
+    thema: "eingeklemmt",
     gewicht: 0.8,
     alter: [18, 64],
     orte: ["arbeit", "baustelle"],
@@ -1004,7 +1004,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   // ---------------------------------------------------------------- 23 Vergiftung
   {
     id: "kind_tabletten",
-    kapitel: "23",
+    thema: "vergiftung",
     gewicht: 1,
     alter: [1, 5],
     orte: ["wohnung", "haus"],
@@ -1018,7 +1018,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   },
   {
     id: "absicht_tabletten",
-    kapitel: "23",
+    thema: "vergiftung",
     gewicht: 0.6,
     alter: [17, 70],
     orte: ["wohnung"],
@@ -1035,7 +1035,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   // ---------------------------------------------------------------- 24 Schwangerschaft
   {
     id: "geburt_wehen",
-    kapitel: "24",
+    thema: "schwangerschaft",
     gewicht: 1,
     alter: [20, 40],
     geschlecht: "w",
@@ -1051,7 +1051,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   },
   {
     id: "fruehschwanger_blutung",
-    kapitel: "24",
+    thema: "schwangerschaft",
     gewicht: 0.6,
     alter: [20, 40],
     geschlecht: "w",
@@ -1069,7 +1069,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   // ---------------------------------------------------------------- 25 Psychiatrie
   {
     id: "panik",
-    kapitel: "25",
+    thema: "psych",
     gewicht: 1,
     alter: [17, 45],
     orte: ["wohnung", "arbeit", "geschaeft"],
@@ -1085,7 +1085,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   // ---------------------------------------------------------------- 27 Stich
   {
     id: "stich_streit",
-    kapitel: "27",
+    thema: "stich_schuss",
     gewicht: 0.8,
     alter: [18, 45],
     geschlecht: "m",
@@ -1103,7 +1103,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   // ---------------------------------------------------------------- 30 Verletzung
   {
     id: "kreissaege",
-    kapitel: "30",
+    thema: "verletzung",
     gewicht: 1,
     alter: [30, 80],
     geschlecht: "m",
@@ -1117,7 +1117,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   },
   {
     id: "knie_fussball",
-    kapitel: "30",
+    thema: "verletzung",
     gewicht: 0.8,
     alter: [14, 45],
     geschlecht: "m",
@@ -1134,7 +1134,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   // ---------------------------------------------------------------- 36 Grippe
   {
     id: "grippe_alt",
-    kapitel: "36",
+    thema: "infekt",
     gewicht: 1,
     alter: [65, 92],
     orte: ["wohnung", "haus"],
@@ -1151,7 +1151,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   // ---------------------------------------------------------------- 32 Unklar / hilflose Person
   {
     id: "hilflos_park",
-    kapitel: "32",
+    thema: "unklar",
     gewicht: 1,
     alter: [40, 85],
     orte: ["strasse"],
@@ -1166,7 +1166,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   // ---------------------------------------------------------------- 33 Anforderung durch Arzt / Pflegeheim / Telemedizin
   {
     id: "heim_atemnot",
-    kapitel: "33",
+    thema: "anforderung_arzt",
     gewicht: 1.5,
     alter: [78, 98],
     orte: ["pflegeheim"],
@@ -1181,7 +1181,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   },
   {
     id: "heim_sturz",
-    kapitel: "33",
+    thema: "anforderung_arzt",
     gewicht: 1.5,
     alter: [75, 99],
     orte: ["pflegeheim"],
@@ -1196,7 +1196,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   },
   {
     id: "heim_eingetruebt",
-    kapitel: "33",
+    thema: "anforderung_arzt",
     gewicht: 1,
     alter: [80, 99],
     orte: ["pflegeheim"],
@@ -1211,7 +1211,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   },
   {
     id: "heim_einweisung",
-    kapitel: "33",
+    thema: "anforderung_arzt",
     gewicht: 1.5,
     alter: [75, 99],
     orte: ["pflegeheim"],
@@ -1226,7 +1226,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   },
   {
     id: "ordi_infarkt",
-    kapitel: "33",
+    thema: "anforderung_arzt",
     gewicht: 1,
     alter: [48, 80],
     orte: ["arzt"],
@@ -1241,7 +1241,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   },
   {
     id: "hausbesuch_schlaganfall",
-    kapitel: "33",
+    thema: "anforderung_arzt",
     gewicht: 0.8,
     alter: [65, 92],
     orte: ["wohnung", "haus"],
@@ -1256,7 +1256,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   },
   {
     id: "ordi_zucker",
-    kapitel: "33",
+    thema: "anforderung_arzt",
     gewicht: 0.6,
     alter: [30, 85],
     orte: ["arzt"],
@@ -1271,7 +1271,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   },
   {
     id: "ordi_lungenentzuendung",
-    kapitel: "33",
+    thema: "anforderung_arzt",
     gewicht: 1,
     alter: [55, 92],
     orte: ["arzt"],
@@ -1286,7 +1286,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   },
   {
     id: "telemed_brust",
-    kapitel: "33",
+    thema: "anforderung_arzt",
     gewicht: 0.8,
     alter: [45, 85],
     orte: ["wohnung", "haus"],
@@ -1301,7 +1301,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   },
   {
     id: "telemed_transport",
-    kapitel: "33",
+    thema: "anforderung_arzt",
     gewicht: 0.8,
     alter: [60, 95],
     orte: ["wohnung", "haus"],
@@ -1316,7 +1316,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   },
   {
     id: "palliativ",
-    kapitel: "33",
+    thema: "anforderung_arzt",
     gewicht: 0.5,
     alter: [50, 95],
     orte: ["wohnung", "haus"],
@@ -1333,7 +1333,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   // ---------------------------------------------------------------- 38 Anforderung durch Polizei
   {
     id: "pol_kontrolle_brust",
-    kapitel: "38",
+    thema: "anforderung_polizei",
     gewicht: 1,
     alter: [45, 75],
     orte: ["strasse"],
@@ -1347,7 +1347,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   },
   {
     id: "pol_verwirrt",
-    kapitel: "38",
+    thema: "anforderung_polizei",
     gewicht: 1,
     alter: [25, 60],
     orte: ["strasse"],
@@ -1363,7 +1363,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   },
   {
     id: "pol_krampf",
-    kapitel: "38",
+    thema: "anforderung_polizei",
     gewicht: 0.8,
     alter: [18, 32],
     vorerkrankungen: ["!Epilepsie"],
@@ -1379,7 +1379,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   },
   {
     id: "pol_schlaganfall",
-    kapitel: "38",
+    thema: "anforderung_polizei",
     gewicht: 0.8,
     alter: [65, 90],
     orte: ["strasse", "auto"],
@@ -1394,7 +1394,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   },
   {
     id: "pol_geburt",
-    kapitel: "38",
+    thema: "anforderung_polizei",
     gewicht: 0.3,
     alter: [22, 38],
     orte: ["auto", "strasse"],
@@ -1409,7 +1409,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   },
   {
     id: "pol_gering",
-    kapitel: "38",
+    thema: "anforderung_polizei",
     gewicht: 0.8,
     alter: [18, 60],
     orte: ["strasse", "lokal"],
@@ -1425,7 +1425,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   // ---------------------------------------------------------------- ALP Alpin / Bergrettung
   {
     id: "alp_vermisst",
-    kapitel: "ALP",
+    thema: "alpin",
     gewicht: 1,
     alter: [55, 85],
     orte: ["haus", "wohnung"],
@@ -1441,7 +1441,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   },
   {
     id: "alp_klettersteig",
-    kapitel: "ALP",
+    thema: "alpin",
     gewicht: 1,
     alter: [25, 60],
     orte: ["natur"],
@@ -1457,7 +1457,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   },
   {
     id: "alp_paragleiter",
-    kapitel: "ALP",
+    thema: "alpin",
     gewicht: 0.6,
     alter: [25, 60],
     orte: ["natur"],
@@ -1473,7 +1473,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   },
   {
     id: "alp_signale",
-    kapitel: "ALP",
+    thema: "alpin",
     gewicht: 0.5,
     alter: [30, 70],
     orte: ["haus"],
@@ -1489,7 +1489,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
   },
   {
     id: "alp_hund",
-    kapitel: "ALP",
+    thema: "alpin",
     gewicht: 0.5,
     alter: [25, 70],
     orte: ["natur"],

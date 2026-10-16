@@ -4,6 +4,7 @@
  */
 import { fragtNachZustand, hinweisZurArt, type NachrichtArt } from "./runde";
 import { antwortLabel, frageIndex, type Antworten, type Frage, type Schema } from "./schema";
+import { ist, thema } from "./themen";
 import { bezugFuer, fallakte, faktSaetze, SELBSTVERSTAENDLICH, type AnruferTyp, type Szenario } from "./szenario";
 
 export interface Anrufer {
@@ -89,7 +90,7 @@ export function anruferWaehlen(
   const kannSelbst = a.bw === "ja" && (a.at === "normal" || a.at === "abnorm") && alter >= 14;
   const kind = alter < 14;
   const alt = alter >= 75;
-  const draussen = ["29", "17", "4", "3", "27", "30", "ALP", "22", "20"].includes(kapitel);
+  const draussen = ist(kapitel, "verkehrsunfall", "sturz", "gewalt", "tierbiss", "stich_schuss", "verletzung", "alpin", "eingeklemmt", "hitze_kaelte");
   const kandidaten: [Situation, number][] = [];
   const add = (s: Situation, w: number) => w > 0 && kandidaten.push([s, w]);
 
@@ -104,14 +105,14 @@ export function anruferWaehlen(
   add({ ort: "Wohnung", rolle: "Angehöriger, nicht vor Ort (am Telefon mit dem Patienten)", anruferWert: "3", typ: "fern" }, kannSelbst ? 0.6 : 0);
   // Einrichtungen
   add({ ort: "Pflegeheim", rolle: "Pflegekraft im Pflegeheim", anruferWert: "einrichtung", profi: true, typ: "pflege" }, alt ? 4 : alter >= 65 ? 1 : 0);
-  add({ ort: "Arztpraxis", rolle: "Hausärztin/Hausarzt", anruferWert: "einrichtung", profi: true, typ: "arzt" }, !kind && ["10", "6", "26", "28", "1", "19", "18"].includes(kapitel) ? 1 : 0.2);
+  add({ ort: "Arztpraxis", rolle: "Hausärztin/Hausarzt", anruferWert: "einrichtung", profi: true, typ: "arzt" }, !kind && ist(kapitel, "brustschmerz", "atemnot", "krank", "schlaganfall", "bauch", "herz", "kopfschmerz") ? 1 : 0.2);
   add({ ort: "Arztpraxis", rolle: "Ordinationsassistentin am Empfang", anruferWert: "einrichtung", geschlecht: "w", typ: "ordi" }, !kind ? 0.6 : 0.2);
   add({ ort: "Schule / Kindergarten", rolle: "Lehrerin", anruferWert: "2", geschlecht: "w", typ: "lehrer" }, kind && alter >= 3 ? 1.5 : 0);
   add({ ort: "Arbeitsplatz", rolle: rnd() < 0.5 ? "Arbeitskollege" : "Arbeitskollegin", anruferWert: "2", typ: "kollege" }, alter >= 17 && alter < 66 ? 1.5 : 0);
   // Draußen
   add({ ort: "Straße / Gehsteig", rolle: "Passant", anruferWert: "2", typ: "passant" }, draussen ? 5 : 1);
   add({ ort: "Supermarkt", rolle: "Mitarbeiterin im Supermarkt", anruferWert: "2", geschlecht: "w", typ: "verkauf" }, 0.6);
-  add({ ort: "Straße", rolle: "Lenker, der den Unfall beobachtet hat", anruferWert: "2", typ: "lenker" }, kapitel === "29" ? 4 : 0);
+  add({ ort: "Straße", rolle: "Lenker, der den Unfall beobachtet hat", anruferWert: "2", typ: "lenker" }, ist(kapitel, "verkehrsunfall") ? 4 : 0);
 
   // Fallgeschichte: nur passende Anrufer (Ort kommt aus der Geschichte)
   if (geschichte?.typen.length) {
@@ -249,7 +250,7 @@ function sonderAnrufer(kapitel: string, a: Antworten, rnd: () => number, adresse
       ...p,
     };
   };
-  if (kapitel === "38") {
+  if (ist(kapitel, "anforderung_polizei")) {
     const streife = `${ort} ${1 + Math.floor(rnd() * 3)}`;
     return basis({
       art: "polizei",
@@ -261,7 +262,7 @@ function sonderAnrufer(kapitel: string, a: Antworten, rnd: () => number, adresse
       nummer: "059133",
     });
   }
-  if (kapitel === "33") {
+  if (ist(kapitel, "anforderung_arzt")) {
     const anf = String(a.anforderer ?? "normal");
     const heim = pick([`Pflegeheim ${ort}`, `Landespflegeheim ${ort}`, `Seniorenzentrum ${ort}`, `Pflege- und Betreuungszentrum ${ort}`], rnd);
     const station = `Station ${1 + Math.floor(rnd() * 4)}`;
@@ -284,7 +285,7 @@ function sonderAnrufer(kapitel: string, a: Antworten, rnd: () => number, adresse
     const [rolle, stelle, wo] = varianten[anf] ?? varianten.normal;
     return basis({ art: "einrichtung", rolle, anruferWert: "einrichtung", stelle, ort: wo, emotion: "ruhig", ...(rolle.startsWith("Ordinationsassistentin") ? { geschlecht: "w" as const } : {}) });
   }
-  if (kapitel === "42") {
+  if (ist(kapitel, "anforderung_ls")) {
     const org = gewichtet<[string, string, string]>(
       [
         [["Bezirksalarmzentrale der Feuerwehr", "Feuerwehr", "feuerwehr"], 5],
@@ -305,7 +306,7 @@ function sonderAnrufer(kapitel: string, a: Antworten, rnd: () => number, adresse
       meldung: lagebild42(org[2], mittel, adresse, rnd),
     });
   }
-  if (kapitel === "34") {
+  if (ist(kapitel, "ecall")) {
     const kontakt = a.sprachkontakt === "ja";
     const insassen = 1 + Math.floor(rnd() * 3);
     const richtung = pick(["Nord", "Süd", "Ost", "West", "Nordost", "Südwest"], rnd);
@@ -427,40 +428,40 @@ function faktenText(k: AnrufKontext): string {
 
 /** Was ein Laie über die Hauptbeschwerde sagt (je Kapitel) */
 const KAPITEL_LAIE: Record<string, string> = {
-  "1": "hat starke Bauchschmerzen",
-  "2": "hat eine allergische Reaktion, Ausschlag und Schwellung",
-  "3": "ist von einem Tier gebissen worden",
-  "4": "ist angegriffen worden",
-  "5": "hat starke Rückenschmerzen",
-  "6": "kriegt ganz schlecht Luft",
-  "7": "hat sich verbrannt",
-  "8": "hat irgendwas eingeatmet, Rauch oder Gas",
-  "9": "rührt sich nicht mehr",
-  "10": "hat starke Schmerzen in der Brust",
-  "11": "hat sich verschluckt",
-  "12": "hat einen Krampfanfall gehabt",
-  "13": "ist ganz komisch, mit dem Zucker stimmt wahrscheinlich was nicht",
-  "14": "war im Wasser, wir haben ihn rausgeholt",
-  "15": "hat einen Stromschlag bekommen",
-  "16": "hat was mit dem Auge",
-  "17": "ist gestürzt",
-  "18": "hat ganz starke Kopfschmerzen",
-  "19": "hat Herzrasen bzw. Probleme mit dem Herz",
-  "20": "war zu lange in der Hitze oder Kälte und ist ganz schwach",
-  "21": "blutet stark",
-  "22": "ist eingeklemmt",
-  "23": "hat Tabletten oder etwas anderes geschluckt",
-  "24": "ist schwanger und es geht ihr nicht gut",
-  "25": "ist psychisch völlig durch den Wind",
-  "26": "fühlt sich krank und schwach",
-  "27": "ist verletzt worden, mit einem Messer oder ähnlichem",
-  "28": "ist auf einmal ganz komisch, ich glaub, das ist ein Schlaganfall",
-  "29": "ist in einen Unfall verwickelt",
-  "30": "hat sich verletzt",
-  "31": "ist umgekippt",
-  "32": "da stimmt was nicht, ich weiß nicht genau was",
-  "36": "hat hohes Fieber und Husten",
-  ALP: "hat sich am Berg verletzt",
+  bauch: "hat starke Bauchschmerzen",
+  allergie: "hat eine allergische Reaktion, Ausschlag und Schwellung",
+  tierbiss: "ist von einem Tier gebissen worden",
+  gewalt: "ist angegriffen worden",
+  ruecken: "hat starke Rückenschmerzen",
+  atemnot: "kriegt ganz schlecht Luft",
+  brand: "hat sich verbrannt",
+  gefahrstoff: "hat irgendwas eingeatmet, Rauch oder Gas",
+  stillstand: "rührt sich nicht mehr",
+  brustschmerz: "hat starke Schmerzen in der Brust",
+  ersticken: "hat sich verschluckt",
+  krampf: "hat einen Krampfanfall gehabt",
+  zucker: "ist ganz komisch, mit dem Zucker stimmt wahrscheinlich was nicht",
+  wasser: "war im Wasser, wir haben ihn rausgeholt",
+  strom: "hat einen Stromschlag bekommen",
+  auge: "hat was mit dem Auge",
+  sturz: "ist gestürzt",
+  kopfschmerz: "hat ganz starke Kopfschmerzen",
+  herz: "hat Herzrasen bzw. Probleme mit dem Herz",
+  hitze_kaelte: "war zu lange in der Hitze oder Kälte und ist ganz schwach",
+  blutung: "blutet stark",
+  eingeklemmt: "ist eingeklemmt",
+  vergiftung: "hat Tabletten oder etwas anderes geschluckt",
+  schwangerschaft: "ist schwanger und es geht ihr nicht gut",
+  psych: "ist psychisch völlig durch den Wind",
+  krank: "fühlt sich krank und schwach",
+  stich_schuss: "ist verletzt worden, mit einem Messer oder ähnlichem",
+  schlaganfall: "ist auf einmal ganz komisch, ich glaub, das ist ein Schlaganfall",
+  verkehrsunfall: "ist in einen Unfall verwickelt",
+  verletzung: "hat sich verletzt",
+  bewusstlos: "ist umgekippt",
+  unklar: "da stimmt was nicht, ich weiß nicht genau was",
+  infekt: "hat hohes Fieber und Husten",
+  alpin: "hat sich am Berg verletzt",
 };
 
 /** Wie der Anrufer den Patienten nennt */
@@ -506,17 +507,17 @@ export function schilderung(k: AnrufKontext): string {
     return saetze.slice(0, 2).map((x) => x.trim()).join(" ");
   }
   const wer = bezug(k);
-  let was = KAPITEL_LAIE[k.kapitel] ?? "fühlt sich gar nicht gut";
-  if (k.kapitel === "33") {
+  let was = KAPITEL_LAIE[thema(k.kapitel)] ?? "fühlt sich gar nicht gut";
+  if (ist(k.kapitel, "anforderung_arzt")) {
     const g: Record<string, string> = { transport: "muss ins Krankenhaus, ist aber stabil", na: "braucht einen Notarzt", nah: "braucht den Hubschrauber", reanimiert: "ist gerade wiederbelebt worden", bewusstsein: "ist akut eingetrübt", atmung: "atmet akut schlecht", blutung: "blutet stark", herz: "hat Herzbeschwerden" };
     was = g[String(k.wahrheit.grund ?? "")] ?? "muss ins Krankenhaus";
   }
-  if (k.kapitel === "34") {
+  if (ist(k.kapitel, "ecall")) {
     const v: Record<string, string> = { keine: "Wir hatten einen Unfall, aber ich glaub, es ist keiner verletzt.", leicht: "Wir hatten einen Unfall, es tut nur ein bissl weh.", eine: "Wir hatten einen Unfall, und eine Person ist verletzt.", mehrere_1: "Wir hatten einen Unfall, zwei von uns sind verletzt.", mehrere_n: "Wir hatten einen schweren Unfall, mehrere sind verletzt.", unbekannt: "Wir hatten einen Unfall, ich weiß nicht, wie's den anderen geht." };
     return v[String(k.wahrheit.verletzte ?? "unbekannt")] ?? v.unbekannt;
   }
   if (k.anrufer.art === "leitstelle") return k.anrufer.meldung ?? "";
-  if (k.kapitel === "38") {
+  if (ist(k.kapitel, "anforderung_polizei")) {
     const p = String(k.wahrheit.problem ?? "");
     const pt: Record<string, string> = { brust: "hat Brustschmerzen", geburt: "bekommt gerade ein Kind", krampf: "hat einen Krampfanfall gehabt", schlaganfall: "hat Anzeichen für einen Schlaganfall", psych: "ist in einem psychischen Ausnahmezustand", lebensbedrohlich: "ist schwer krank", gering: "hat leichte Beschwerden" };
     was = pt[p] ?? "hat ein medizinisches Problem";
@@ -536,7 +537,7 @@ export function schilderung(k: AnrufKontext): string {
   else if (k.wahrheit.bw === "getruebt") zusatz.push("ist ganz benommen");
   if (k.wahrheit.at === "keine") zusatz.push("atmet nicht");
   else if (k.wahrheit.at === "agonal") zusatz.push("schnappt nur ganz selten nach Luft");
-  else if (k.wahrheit.at === "abnorm" && k.kapitel !== "6") zusatz.push("schnauft ganz schwer");
+  else if (k.wahrheit.at === "abnorm" && !ist(k.kapitel, "atemnot")) zusatz.push("schnauft ganz schwer");
   const satz = `${wer === "ich" ? "Ich" : wer.charAt(0).toUpperCase() + wer.slice(1)} ${was}${zusatz.length && wer !== "ich" ? `, ${zusatz.join(" und ")}` : ""}.`;
   return k.anrufer.art === "polizei" ? `Die Streife meldet: ${satz.charAt(0).toLowerCase()}${satz.slice(1)}` : satz;
 }

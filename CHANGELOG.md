@@ -1,5 +1,17 @@
 # Änderungen
 
+## 0.23.0 – Eigenes LeitWerk-Codesystem
+**LeitWerk-Codesystem (mitgeliefert, frei verwendbar)**
+- LeitWerk bringt jetzt ein eigenes, eigenständig formuliertes Codesystem mit: 38 Kapitel (Hauptbeschwerden) mit eigenen Fragen und Regeln, über 500 Codes im Aufbau **KK-Sx-NN** – Kapitel, Dringlichkeitsstufe S0 (Beratung/Weitergabe) bis S5 (Reanimation), laufende Nummer. Zusätze: /L liegt über 1 Stunde am Boden, /A Witterung bzw. schwer erreichbar, /M mehrere Verletzte, /P Polizei verständigt. Manuelles Aufwerten auf S3/S4
+- Passende Einsatzstufen (Rettungsmittel je Stufe) sind dabei. Ohne eigenes Codesystem gilt automatisch das LeitWerk-Codesystem – neue Spieler können sofort Notrufe abfragen
+- Wer ein eigenes lädt (z. B. euer bisheriges), spielt wie gewohnt damit weiter; „Zurück zum LeitWerk-Codesystem“ wechselt zurück
+
+**Fallgeschichten passen zu jedem Codesystem**
+- Fallgeschichten, Anrufer, Lage, Feuerwehr/Polizei-Bedarf und Wetter hängen nicht mehr an Kapitelnummern, sondern an neutralen **Themen** (Sturz, Atemnot …) und **Merkmalen** („liegt 1–2 Stunden am Boden“, „Sturz über die Stiege“ …)
+- Ein Codesystem ordnet seine Kapitel einem Thema zu („thema“); Fragen mit anderen Bezeichnungen lassen sich über „merkmal“/„merkmal_wert“ zuordnen. Ältere Schemas ohne Zuordnung laufen über die gewohnte Nummerierung weiter
+- Beim Laden zeigt LeitWerk an, welche Kapitel kein Thema haben; Beispiel-Codesystem und KI-Anleitung erklären das neu
+- Neue Einsatzstufe „Alpinunfall“ (fehlte bisher)
+
 ## 0.22.1 – Schicht in der Liste, Ausweich-NEF, Orte
 - In den Fahrzeuglisten steht jetzt immer die aktuelle Schicht (z. B. „◷ 07–19“); kurz vor Dienstende hervorgehoben. Länger mit der Maus darauf: kleine Wochenübersicht aller Schichten
 - „Rund um die Uhr“ zeigt im Dienstplan zwei echte Schichten (07–19 und 19–07) – Tage lassen sich jetzt auch dort wählen; ebenso bei allen anderen 24/7-Modellen

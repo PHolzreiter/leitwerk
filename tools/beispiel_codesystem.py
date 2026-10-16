@@ -112,7 +112,14 @@ Die Fragetexte und Beschriftungen darfst (und sollst) du eigenständig formulier
 - Ohne `aufloesung` ist der fertige Code `Code + Suffix`, **wenn es diesen Code in `codes` gibt**, sonst der Code ohne Suffix. Das ist die einfache Variante – nimm sie.
 - Mit `aufloesung` (`{"<Code>": {"_": "<Code>", "L": "<Code/L>"}}`) legst du jede Kombination selbst fest; `_` = ohne Suffix.
 
-### 3.8 codes
+### 3.8 Themen und Merkmale (damit die Fallgeschichten des Spiels passen)
+LeitWerk erzeugt Notrufe aus fertigen Fallgeschichten („Opa ist in der Nacht im Bad gestürzt …“). Damit sie zu deinem Codesystem passen:
+- Jedes Kapitel bekommt ein **„thema“** – eines von: bauch, allergie, tierbiss, gewalt, ruecken, atemnot, brand, gefahrstoff, stillstand, brustschmerz, ersticken, krampf, zucker, wasser, strom, auge, sturz, kopfschmerz, herz, hitze_kaelte, blutung, eingeklemmt, vergiftung, schwangerschaft, psych, krank, stich_schuss, schlaganfall, verkehrsunfall, verletzung, bewusstlos, unklar, anforderung_arzt, ecall, infekt, anforderung_polizei, anforderung_ls, alpin. Ein Thema ohne Kapitel bekommt keine Fallgeschichten; ein Kapitel ohne Thema wird nur zufällig abgefragt.
+- Die Geschichten setzen **Merkmale** mit festen IDs und Werten (z. B. `hoehe` = `boden` / `treppe` / `gross` / `extrem`, `blutung_stark` = `ja`/`nein`, `umstand` = `boden_2` für „liegt 1–2 Stunden am Boden“). Am einfachsten: deine Fragen verwenden genau diese IDs und Werte. Das mitgelieferte LeitWerk-Codesystem (Einstellungen → Einsatzcodes & Abfrage → „Als eine Datei speichern …“) enthält alle – bitte den Ersteller, es dir zu geben, und übernimm IDs und Werte von dort (die Texte formulierst du selbst).
+- Weicht eine Frage ab, ordne sie zu: an der Frage `"merkmal": "<ID>"`, an einer Antwort `"merkmal_wert": "<Wert>"` (siehe Fragen „spricht“, „farbe“, „hoehe“ und „blutung“ unten).
+- Diese Antworten wertet das Spiel selbst aus und sollten deshalb gleich heißen: `grund` (Anforderung Arzt), `tod`, `verletzte`, `eingeklemmt`, `gefahrgut`, `andere_gefahren`, `aggressiv`, `gewalt`, `wo` (Wasser), `problem` (Polizei), `mittel` (andere Leitstelle), `sprachkontakt` (automatische Meldung).
+
+### 3.9 codes
 Jeder Code, der herauskommen kann, braucht einen Eintrag: `name` (kurz und eindeutig), `kategorie` (genau ein `einsatzstufen[].stufe`), `kapitel` („02 - Sturz“).
 
 ## 4. Regeln für gute Abfragen
@@ -129,6 +136,7 @@ Jeder Code, der herauskommen kann, braucht einen Eintrag: `name` (kurz und einde
 1. Gültiges JSON (doppelte Anführungszeichen, keine Kommentare, keine Komma-Fehler).
 2. Jeder Code in `regeln`, `kreislaufstillstand`, `aufwertung`, `polizei_kennung`, `zusatzkennungen` steht in `codes` (oder ist in `aufloesung` aufgelöst).
 3. Jede `kategorie` in `codes` steht in `einsatzstufen`.
+3a. Jedes Kapitel hat ein `thema`, und kein Thema kommt doppelt vor.
 4. Jedes Kapitel: letzte Regel ohne `wenn`; `wechsel_zu_kapitel` zeigt auf ein vorhandenes Kapitel.
 5. Jede Bedingung fragt nur IDs, die es gibt.
 6. Gehe pro Kapitel mindestens drei Fälle durch (leicht, mittel, lebensbedrohlich) und schreib dem Ersteller kurz auf, welcher Code jeweils herauskommt.
@@ -171,11 +179,11 @@ codes = dict([
 
 prim_ks_code = lambda c: {"code": c}
 kapitel = {
- "01": {"kapitel": "01", "titel": "Atemnot", "stichworte": ["Atemnot", "kriegt keine Luft", "Asthma", "schnauft schwer"], "primaerabfrage": True,
+ "01": {"kapitel": "01", "thema": "atemnot", "titel": "Atemnot", "stichworte": ["Atemnot", "kriegt keine Luft", "Asthma", "schnauft schwer"], "primaerabfrage": True,
    "kreislaufstillstand": prim_ks_code("01-S5-01"),
    "fragen": [
-     {"id": "spricht", "text": "Kann die Person in ganzen Sätzen sprechen?", "typ": "single", "optionen": [{"wert": "saetze", "label": "Ja, ganze Sätze"}, {"wert": "teile", "label": "Nur Satzteile / einzelne Wörter"}, {"wert": "gar_nicht", "label": "Kann gar nicht sprechen"}, {"wert": "unbekannt", "label": "Weiß nicht"}]},
-     {"id": "farbe", "text": "Sind Lippen oder Gesicht bläulich oder grau?", "typ": "single", "optionen": JN},
+     {"id": "spricht", "merkmal": "sprachschw", "text": "Kann die Person in ganzen Sätzen sprechen?", "typ": "single", "optionen": [{"wert": "saetze", "label": "Ja, ganze Sätze", "merkmal_wert": "nein"}, {"wert": "teile", "label": "Nur Satzteile / einzelne Wörter", "merkmal_wert": "ja"}, {"wert": "gar_nicht", "label": "Kann gar nicht sprechen"}, {"wert": "unbekannt", "label": "Weiß nicht"}]},
+     {"id": "farbe", "merkmal": "hautfarbe", "text": "Sind Lippen oder Gesicht bläulich oder grau?", "typ": "single", "optionen": JN},
    ],
    "regeln": [
      {"wenn": {"q": "bw", "in": ["nein", "getruebt"]}, "code": "01-S4-01"},
@@ -185,11 +193,11 @@ kapitel = {
      {"code": "01-S2-01"},
    ],
    "suffix": {"regeln": [], "standard": ""}},
- "02": {"kapitel": "02", "titel": "Sturz", "stichworte": ["gestürzt", "hingefallen", "Leiter", "Treppe", "liegt am Boden"], "primaerabfrage": True,
+ "02": {"kapitel": "02", "thema": "sturz", "titel": "Sturz", "stichworte": ["gestürzt", "hingefallen", "Leiter", "Treppe", "liegt am Boden"], "primaerabfrage": True,
    "kreislaufstillstand": prim_ks_code("02-S5-01"),
    "fragen": [
-     {"id": "hoehe", "text": "Aus welcher Höhe ist die Person gefallen?", "typ": "single", "optionen": [{"wert": "eben", "label": "Auf ebener Erde / aus dem Stand"}, {"wert": "niedrig", "label": "Bis etwa 3 Meter (Stufen, Sessel, kleine Leiter)"}, {"wert": "hoch", "label": "Mehr als 3 Meter"}, {"wert": "unbekannt", "label": "Weiß nicht"}]},
-     {"id": "blutung", "text": "Blutet es stark, oder ist der Kopf verletzt?", "typ": "single", "optionen": JN},
+     {"id": "hoehe", "text": "Aus welcher Höhe ist die Person gefallen?", "typ": "single", "optionen": [{"wert": "eben", "label": "Auf ebener Erde / aus dem Stand", "merkmal_wert": "boden"}, {"wert": "niedrig", "label": "Bis etwa 3 Meter (Stufen, Sessel, kleine Leiter)", "merkmal_wert": "treppe"}, {"wert": "hoch", "label": "Mehr als 3 Meter", "merkmal_wert": "gross"}, {"wert": "unbekannt", "label": "Weiß nicht"}]},
+     {"id": "blutung", "merkmal": "blutung_stark", "text": "Blutet es stark, oder ist der Kopf verletzt?", "typ": "single", "optionen": JN},
      {"id": "huefte", "text": "Kann die Person ein Bein nicht bewegen, oder ist ein Bein verdreht/verkürzt?", "typ": "single", "optionen": JN},
      {"id": "schmerz", "text": "Hat die Person Schmerzen?", "typ": "single", "optionen": JN},
      {"id": "liegezeit", "text": "Wie lange liegt die Person schon am Boden?", "typ": "single", "optionen": [{"wert": "kurz", "label": "Weniger als 1 Stunde"}, {"wert": "lang", "label": "1 Stunde oder länger"}, {"wert": "steht", "label": "Liegt nicht mehr"}, {"wert": "unbekannt", "label": "Weiß nicht"}]},
@@ -205,7 +213,7 @@ kapitel = {
    "suffix": {"regeln": [{"wenn": {"q": "liegezeit", "in": ["lang"]}, "suffix": "/L"}], "standard": ""},
    "aufwertung": {"4": "02-S4-00"},
    "polizei_kennung": {"02-S3-01": "02-S3-01/P"}},
- "03": {"kapitel": "03", "titel": "Brustschmerz", "stichworte": ["Brustschmerz", "Druck auf der Brust", "Herz", "Engegefühl"], "primaerabfrage": True,
+ "03": {"kapitel": "03", "thema": "brustschmerz", "titel": "Brustschmerz", "stichworte": ["Brustschmerz", "Druck auf der Brust", "Herz", "Engegefühl"], "primaerabfrage": True,
    "kreislaufstillstand": prim_ks_code("03-S5-01"),
    "fragen": [
      {"id": "kaltschweiss", "text": "Ist die Person blass und kaltschweißig?", "typ": "single", "optionen": JN},

@@ -7,6 +7,8 @@
  * Suffix und Auflösung auf einen existierenden Code.
  */
 
+import { ist, kapitelZuThema, thema } from "./themen";
+
 export type Wert = string | number | null;
 export type Antworten = Record<string, Wert>;
 
@@ -41,6 +43,8 @@ export interface Regel {
 
 export interface Kapitel {
   kapitel: string;
+  /** neutrales Thema (siehe themen.ts), z. B. „sturz“ – verbindet das Kapitel mit Fallgeschichten und Spiellogik */
+  thema?: string;
   titel: string;
   stichworte: string[];
   primaerabfrage: boolean;
@@ -297,11 +301,11 @@ export function bestimmeCode(
     if (extra.zusatz && (K.zusatzkennungen?.[det] ?? []).includes(extra.zusatz)) code = extra.zusatz;
     const name = schema.codes[code]?.name ?? "";
     const reanimation =
-      (istKreislaufstillstand(a) && (EIGENER_KS.test(name) || ksSchnell || kap === "9") && !/Tote Person|Tod/.test(name)) ||
+      (istKreislaufstillstand(a) && (EIGENER_KS.test(name) || ksSchnell || thema(kap, schema) === "stillstand") && !/Tote Person|Tod/.test(name)) ||
       code === "RD-9E2";
     // Bewusstlos: Codes ohne eigene Bewusstlos-Variante werden zum Bewusstlosigkeits-Code (Kapitel 31) nach der Atmung
     const bl = reanimation ? null : bewusstlosCode(schema, kap, code, a);
-    if (bl) return { kapitel: "31", pfad, determinante: bl, code: bl, reanimation, antworten: a };
+    if (bl) return { kapitel: kapitelZuThema("bewusstlos", schema) ?? "31", pfad, determinante: bl, code: bl, reanimation, antworten: a };
     return { kapitel: kap, pfad, determinante: det, code, reanimation, antworten: a };
   }
   return null;
@@ -309,7 +313,8 @@ export function bestimmeCode(
 
 /** Bewusstloser Patient: 31D1 (agonal/ineffektiv), 31D2 (abnorm), 31D3 (effektiv), 31D4 (unklar) – außer der Code kennt Bewusstlosigkeit schon */
 function bewusstlosCode(schema: Schema, kap: string, code: string, a: Antworten): string | null {
-  if (a.bw !== "nein" || kap === "31" || kap === "9") return null;
+  const t = thema(kap, schema);
+  if (a.bw !== "nein" || t === "bewusstlos" || t === "stillstand") return null;
   const name = schema.codes[code]?.name ?? "";
   // eigene Bewusstlos-Variante (z. B. Vergiftung-Bewusstlos, Sturz-Bewusstlos) bzw. eigener Stillstand-/Ineffektiv-Code bleibt;
   // „Bewusstseinstrübung“ ist für getrübte Patienten
@@ -417,7 +422,7 @@ export function stimmigMachen(kap: string, a: Antworten): void {
   const ja = (id: string) => a[id] === "ja";
   // Anzahl der Betroffenen: Primärabfrage und Kapitelfrage gleich
   if (a.anzahl !== undefined && a.anzahl_patienten !== undefined) a.anzahl = a.anzahl_patienten;
-  if (kap === "29" || kap === "30" || kap === "17") {
+  if (ist(kap, "verkehrsunfall", "verletzung", "sturz")) {
     const schwer = ja("blutung_stark") || ja("eingeklemmt") || (a.bw !== undefined && a.bw !== "ja") || (a.at !== undefined && a.at !== "normal");
     if (schwer) setze("verletzte", "ja");
     if (a.verletzte === "nein_sicher" || a.verletzte === "nein_unsicher") {

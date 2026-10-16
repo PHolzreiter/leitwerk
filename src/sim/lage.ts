@@ -4,6 +4,7 @@
  * Besatzungen erzählen es nur.
  */
 import type { Antworten } from "../abfrage/schema";
+import { ist, thema } from "../abfrage/themen";
 
 export type Bewusstsein = "ja" | "getruebt" | "nein";
 export type Atmung = "normal" | "abnorm" | "agonal" | "keine";
@@ -61,9 +62,9 @@ export function sichtungFuer(bw: Bewusstsein, at: Atmung, kritisch: boolean): Si
 }
 
 /** Kapitel, bei denen es oft mehr Betroffene gibt, als gemeldet werden */
-const MEHRERE = ["29", "34", "7", "8", "22", "ALP"];
+const MEHRERE = ["verkehrsunfall", "ecall", "brand", "gefahrstoff", "eingeklemmt", "alpin"];
 /** Kapitel, bei denen sich der Zustand wieder bessern kann */
-const BESSERUNG = ["12", "31", "13", "25", "26"];
+const BESSERUNG = ["krampf", "bewusstlos", "zucker", "psych", "krank"];
 
 /**
  * Lage zu einem neuen Einsatz: Patient(en) aus den Antworten der „Wahrheit“ und
@@ -111,7 +112,7 @@ export function lageErzeugen(kapitel: string, a: Antworten, jetzt: number, kriti
     p0.bw = Math.random() < 0.5 ? "getruebt" : "nein";
     p0.at = "abnorm";
     p0.sichtung = "rot";
-  } else if (MEHRERE.includes(kapitel) && Math.random() < 0.25 * f) {
+  } else if (MEHRERE.includes(thema(kapitel)) && Math.random() < 0.25 * f) {
     // Irrtum: mehr Betroffene als gemeldet
     lage.irrtum = "mehrPatienten";
     weitere(1 + Math.floor(Math.random() * 3));
@@ -126,7 +127,7 @@ export function lageErzeugen(kapitel: string, a: Antworten, jetzt: number, kriti
     const nbw: Bewusstsein = stillstand || p0.bw === "getruebt" ? "nein" : "getruebt";
     const nat: Atmung = stillstand ? (Math.random() < 0.5 ? "agonal" : "keine") : p0.at === "normal" ? "abnorm" : p0.at;
     lage.ereignisse.push({ um: jetzt + zufall(3, 14) * MIN, art: "verschlechterung", patient: 1, bw: nbw, at: nat, eingetreten: false });
-  } else if (BESSERUNG.includes(kapitel) && p0.bw !== "ja" && !istStillstand(p0) && Math.random() < 0.25 * f) {
+  } else if (BESSERUNG.includes(thema(kapitel)) && p0.bw !== "ja" && !istStillstand(p0) && Math.random() < 0.25 * f) {
     lage.ereignisse.push({ um: jetzt + zufall(2, 8) * MIN, art: "besserung", patient: 1, bw: "ja", at: "normal", eingetreten: false });
   }
   return lage;
@@ -176,7 +177,7 @@ export function lagemeldungText(l: Lage, kapitel: string, fehlt: { na: number; r
     const z = { rot: 0, gelb: 0, gruen: 0 };
     for (const p of l.patienten) z[p.sichtung]++;
     const s = [z.rot && `${z.rot}× rot`, z.gelb && `${z.gelb}× gelb`, z.gruen && `${z.gruen}× grün`].filter(Boolean).join(", ");
-    teile.push(`${["29", "34"].includes(kapitel) ? "Verkehrsunfall, " : ""}${l.patienten.length} Betroffene, davon ${s}`);
+    teile.push(`${ist(kapitel, "verkehrsunfall", "ecall") ? "Verkehrsunfall, " : ""}${l.patienten.length} Betroffene, davon ${s}`);
   } else if (istStillstand(p0)) teile.push("Patient reanimationspflichtig, Reanimation läuft");
   else {
     const bw = { ja: "wach", getruebt: "eingetrübt", nein: "bewusstlos" }[p0.bw];

@@ -18,7 +18,9 @@ import beispielTemplates from "../../data/beispiele/beispiel_einsatzvorlagen.csv
 import vorlageCodes from "../../data/beispiele/vorlage_einsatzcodes.csv?raw";
 import beispielCodes from "../../data/beispiele/beispiel_einsatzcodes.csv?raw";
 
-import { type Kind, type Records } from "./model";
+import lwcText from "../../data/codesystem/leitwerk_codesystem.json?raw";
+import type { Schema } from "../abfrage/schema";
+import { type Einsatzcode, type Kind, type Records } from "./model";
 import { importCsv } from "./schema";
 
 export const STANDARD_INFO = "Niederösterreich, Stand Oktober 2026";
@@ -42,8 +44,10 @@ export function standardRecords(): Records {
     hospitals: hospitals.records,
     pois: pois.records,
     templates: templates.records,
-    // Einsatzcodes gibt es keine mitgelieferten – jeder importiert seine eigene Liste
-    codes: [],
+    // Codes des eigenen LeitWerk-Codesystems (gelten, solange kein anderes Codesystem geladen ist)
+    codes: Object.entries(standardCodesystem().codes).map(
+      ([code, c]): Einsatzcode => ({ id: code, code, name: c.name, kategorie: c.kategorie, kapitel: c.kapitel, hinweis: "", herkunft: "standard", herkunftDetail: "LeitWerk-Codesystem" }),
+    ),
   };
   return cache;
 }
@@ -65,3 +69,11 @@ export const BEISPIEL: Record<Kind, string> = {
   templates: beispielTemplates,
   codes: beispielCodes,
 };
+
+let lwc: Schema | null = null;
+/** Das eigene LeitWerk-Codesystem (Codes + Abfrage), gilt ohne geladenes Codesystem */
+export function standardCodesystem(): Schema {
+  if (!lwc) lwc = JSON.parse(lwcText) as Schema;
+  return lwc;
+}
+export const STANDARD_CODESYSTEM_TEXT = lwcText;

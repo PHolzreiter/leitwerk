@@ -5,6 +5,7 @@
  */
 import type { Einsatzcode } from "../data/model";
 import { pruefe, type Bedingung, type Frage, type Schema } from "./schema";
+import { THEMEN } from "./themen";
 
 export const FORMAT = "leitwerk-codesystem";
 
@@ -87,6 +88,17 @@ export function pruefeCodesystem(s: Schema): { fehler: string[]; hinweise: strin
     for (const c of Object.values(K.aufwertung ?? {})) det(c, `${wo}, aufwertung`);
     for (const c of Object.values(K.polizei_kennung ?? {})) code(c, `${wo}, polizei_kennung`);
     for (const l of Object.values(K.zusatzkennungen ?? {})) for (const c of l) code(c, `${wo}, zusatzkennungen`);
+  }
+  // Themen (für die Fallgeschichten)
+  const themen = Object.entries(s.kapitel).map(([k, K]) => [k, K?.thema] as const);
+  if (themen.some(([, t]) => t)) {
+    const gesehen = new Map<string, string>();
+    for (const [k, t] of themen) {
+      if (!t) hinweise.push(`Kapitel ${k}: „thema“ fehlt – dazu gibt es keine Fallgeschichten.`);
+      else if (!THEMEN.some((x) => x.id === t)) hinweise.push(`Kapitel ${k}: Thema „${t}“ kennt LeitWerk nicht.`);
+      else if (gesehen.has(t)) hinweise.push(`Thema „${t}“ kommt doppelt vor (Kapitel ${gesehen.get(t)} und ${k}).`);
+      else gesehen.set(t, k);
+    }
   }
   const kats = new Set<string>();
   for (const [c, v] of Object.entries(codes)) {

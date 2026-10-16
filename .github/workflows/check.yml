@@ -39,6 +39,8 @@ jobs:
           (cd src-tauri && run cargo check) || status=1
           run python3 tools/build_default_data.py || status=1
           run python3 tools/build_stufen.py || status=1
+          run python3 tools/leitwerk_codesystem.py data/codesystem/leitwerk_codesystem.json || status=1
+          run python3 tools/beispiel_codesystem.py data/beispiele/beispiel_codesystem.json || status=1
           run git diff --stat --exit-code data/ || status=1
           echo "### Ergebnis: $status" | tee -a "$LOG"
           exit $status
