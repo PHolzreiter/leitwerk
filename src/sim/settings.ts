@@ -129,6 +129,10 @@ export interface Settings {
   generatorQuelle: "zufall" | "vorlagen";
   /** Neue Einsätze kommen als Anruf mit Notrufabfrage (wenn ein Abfrageschema importiert ist) */
   anrufe: boolean;
+  /** Work in Progress: Einsätze in Nachbarzonen, zu denen eigene Fahrzeuge fahren */
+  fremdzoneAktiv?: boolean;
+  /** solche Einsätze pro Stunde (ungefähr) */
+  fremdzoneProStunde?: number;
   /** Wie oft sich Lagen verändern (Verschlechterung, Irrtum des Anrufers, mehr Betroffene) */
   komplikationen: "ruhig" | "normal" | "fordernd";
   gebiet: Gebiet;
@@ -196,6 +200,8 @@ export function defaultSettings(): Settings {
     generatorAktiv: true,
     generatorQuelle: "zufall",
     anrufe: true,
+    fremdzoneAktiv: false,
+    fremdzoneProStunde: 1,
     komplikationen: "normal",
     gebiet: GEBIETE[0],
     sondersignalFaktor: 0.8,

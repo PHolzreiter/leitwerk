@@ -1,5 +1,22 @@
 # Änderungen
 
+## 0.24.0 – Fahrzeugarten und -modelle, Reiter NEF ÖAMTC und EL, Einsätze in Nachbarzonen (Work in Progress)
+**Fahrzeuge**
+- Im Fahrzeug-Fenster wählst du zuerst die Fahrzeugart (RTW, KTW, NEF, EL …). Ein zweites Feld kommt nur, wo es etwas zu unterscheiden gibt: RTW / RTW groß (Crafter, kein C) / RTW-C, KTW / KTW-B, NEF / NEF ÖAMTC, BEL / EL ÖBB. Beim KTW und BEL zusätzlich das Fahrzeug (oder „zufällig“). Die Felder „Fahrzeugtyp“ und „Fahrzeuggröße“ sind weg
+- Passende 3D-Modelle: NEF = VW T6, NEF ÖAMTC = VW Tiguan, KTW = VW T6 Hochdach oder Mercedes Sprinter kurz, BEL = VW Passat oder T6, EL ÖBB = VW Caddy, SKTW = Sprinter lang, SRTW/SNAW = Sprinter groß, BIT = MAN TGL mit Koffer
+- KTW: 30 % normale KTW, 70 % KTW-B (auch bei bereits importierten Fahrzeugen)
+- Die Ausweich-NEFs heißen jetzt „NEF ÖAMTC“
+
+**Fahrzeuglisten**
+- Neue Reiter „NEF ÖAMTC“ (die Ausweich-NEFs, nicht mehr unter „NEF“) und „EL“ (BEL und EL ÖBB, mit Filter „nur BEL“ / „nur EL ÖBB“)
+- „Nachtflug“ steht nicht mehr in den Listen – die Dienstzeiten sind ja sichtbar
+
+**Einsätze in Nachbarzonen (Work in Progress, standardmäßig aus)**
+- Einstellungen → Einsatzaufkommen: Einsätze knapp außerhalb deiner Funkgruppe, die der Kollege der Nachbarzone mit dem planmäßigen Code anlegt und nach Vorschlag disponiert. Du siehst nur die, zu denen deine Fahrzeuge fahren – meistens das NEF, manchmal auch RTW oder Hubschrauber; was die Nachbarzone selbst schneller schafft, fährt nicht
+- Nur normale Einsätze mit einem Patienten. In deiner Liste und auf der Karte grau, mit „Zone NÖ-0x“. Funkverkehr hörst du nur, wenn du deine Fahrzeuge dort selbst anfunkst
+- In der Gegend eines Notrufs, der gerade läutet oder abgefragt wird, kommen keine solchen Einsätze
+- Häufigkeit mit Schieberegler; beim Einschalten ein Hinweis, dass Fehler auftreten können, die im laufenden Spiel nicht behebbar sind
+
 ## 0.23.0 – Eigenes LeitWerk-Codesystem
 **LeitWerk-Codesystem (mitgeliefert, frei verwendbar)**
 - LeitWerk bringt jetzt ein eigenes, eigenständig formuliertes Codesystem mit: 38 Kapitel (Hauptbeschwerden) mit eigenen Fragen und Regeln, über 500 Codes im Aufbau **KK-Sx-NN** – Kapitel, Dringlichkeitsstufe S0 (Beratung/Weitergabe) bis S5 (Reanimation), laufende Nummer. Zusätze: /L liegt über 1 Stunde am Boden, /A Witterung bzw. schwer erreichbar, /M mehrere Verletzte, /P Polizei verständigt. Manuelles Aufwerten auf S3/S4

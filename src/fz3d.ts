@@ -38,7 +38,7 @@ function raeder(spur: number, vorn: number, hinten: number, r = 0.35): Quader[] 
   return [q(-spur, vorn, r, 0.26, r * 2, r * 2, "rad"), q(spur, vorn, r, 0.26, r * 2, r * 2, "rad"), q(-spur, hinten, r, 0.26, r * 2, r * 2, "rad"), q(spur, hinten, r, 0.26, r * 2, r * 2, "rad")];
 }
 
-/** VW T6 Hochdach: KTW, RTW, SKTW */
+/** VW T6 Hochdach: RTW, KTW */
 const T6_HOCHDACH: Quader[] = [
   q(0, -0.5, 1.35, 1.9, 4.3, 2.0, "karosserie"),
   q(0, 2.15, 0.8, 1.9, 1.0, 0.9, "karosserie"),
@@ -51,7 +51,7 @@ const T6_HOCHDACH: Quader[] = [
   ...raeder(0.85, 1.75, -1.6),
 ];
 
-/** VW Crafter: RTW-C, SRTW, SNAW */
+/** VW Crafter: RTW-C, RTW groß */
 const CRAFTER: Quader[] = [
   q(0, -0.55, 1.65, 2.05, 5.8, 2.5, "karosserie"),
   q(0, 2.85, 0.9, 2.0, 1.0, 1.0, "karosserie"),
@@ -64,7 +64,7 @@ const CRAFTER: Quader[] = [
   ...raeder(0.95, 2.55, -2.2, 0.38),
 ];
 
-/** VW T6 Bus (ohne Hochdach): NEF */
+/** VW T6 (ohne Hochdach): NEF, BEL */
 const T6_BUS: Quader[] = [
   q(0, -0.5, 1.15, 1.9, 3.9, 1.6, "karosserie"),
   q(0, 1.95, 0.78, 1.9, 1.0, 0.86, "karosserie"),
@@ -100,7 +100,7 @@ const EC135: Quader[] = [
   q(0, 0.6, 2.55, 10.2, 0.28, 0.05, "rotor", true),
 ];
 
-/** BIT: kleiner Koffer-LKW */
+/** MAN TGL 12.25 mit Kofferaufbau: BIT */
 const LKW: Quader[] = [
   q(0, 2.45, 1.3, 2.1, 1.5, 1.9, "karosserie"),
   q(0, 3.22, 1.75, 1.95, 0.06, 0.8, "glas"),
@@ -111,27 +111,62 @@ const LKW: Quader[] = [
   ...raeder(1.0, 2.4, -2.3, 0.45),
 ];
 
+/** VW Tiguan (SUV): NEF ÖAMTC */
+const TIGUAN: Quader[] = [
+  q(0, 0, 0.8, 1.85, 4.5, 0.9, "karosserie"),
+  q(0, -0.3, 1.45, 1.72, 2.6, 0.45, "glas"),
+  q(0, -0.35, 1.72, 1.66, 2.4, 0.1, "karosserie"),
+  q(0, 0.4, 1.83, 1.2, 0.25, 0.12, "blau"),
+  ...raeder(0.82, 1.35, -1.35, 0.36),
+];
+
+/** VW Caddy (kleiner Kastenwagen): EL ÖBB */
+const CADDY: Quader[] = [
+  q(0, -0.3, 1.05, 1.8, 3.4, 1.35, "karosserie"),
+  q(0, 1.75, 0.7, 1.8, 0.9, 0.7, "karosserie"),
+  q(0, 1.32, 1.4, 1.7, 0.08, 0.55, "glas"),
+  q(0, 0.95, 1.45, 1.83, 0.75, 0.45, "glas"),
+  q(0, 0.6, 1.8, 1.1, 0.25, 0.12, "blau"),
+  ...raeder(0.8, 1.4, -1.35, 0.33),
+];
+
+/** Mercedes Sprinter: kurz/lang ohne Hochdach (KTW, SKTW), groß wie Crafter (SRTW, SNAW) */
+function sprinter(laenge: number, hoehe: number): Quader[] {
+  const hinten = -laenge / 2 + 0.8;
+  return [
+    q(0, -0.5, 0.35 + hoehe / 2, 2.0, laenge, hoehe, "karosserie"),
+    q(0, laenge / 2 + 0.05, 0.85, 1.95, 1.0, 0.95, "karosserie"),
+    q(0, laenge / 2 - 0.5, 1.6, 1.85, 0.08, 0.75, "glas"),
+    q(0, laenge / 2 - 1.05, 1.65, 2.03, 1.0, 0.55, "glas"),
+    q(-0.6, laenge / 2 - 0.75, 0.38 + hoehe, 0.42, 0.26, 0.16, "blau"),
+    q(0.6, laenge / 2 - 0.75, 0.38 + hoehe, 0.42, 0.26, 0.16, "blau"),
+    q(-0.62, hinten - 0.75, 0.38 + hoehe, 0.32, 0.2, 0.14, "blau"),
+    q(0.62, hinten - 0.75, 0.38 + hoehe, 0.32, 0.2, 0.14, "blau"),
+    ...raeder(0.9, laenge / 2 - 0.3, hinten, 0.37),
+  ];
+}
+const SPRINTER_KURZ = sprinter(4.6, 1.75);
+const SPRINTER_LANG = sprinter(5.6, 1.75);
+const SPRINTER_GROSS = sprinter(5.9, 2.45);
+
+const MODELLE: Record<string, Quader[]> = {
+  t6hoch: T6_HOCHDACH,
+  crafter: CRAFTER,
+  t6: T6_BUS,
+  tiguan: TIGUAN,
+  passat: PASSAT,
+  caddy: CADDY,
+  sprinter_kurz: SPRINTER_KURZ,
+  sprinter_lang: SPRINTER_LANG,
+  sprinter_gross: SPRINTER_GROSS,
+  man: LKW,
+  ec135: EC135,
+};
+
 function formFuer(fz: SimFahrzeug): Quader[] {
-  // Großraum-RTW (auch wenn er nicht der RTW-C der Dienststelle ist) = Crafter, kleiner RTW = T6 Hochdach
-  if (fz.rmTyp === "RTW" || fz.rmTyp === "RTW-C") return fz.gross === false ? T6_HOCHDACH : fz.gross || fz.rmTyp === "RTW-C" ? CRAFTER : T6_HOCHDACH;
-  switch (fz.rmTyp) {
-    case "NAH":
-    case "ITH":
-      return EC135;
-    case "BIT":
-      return LKW;
-    case "EL ÖBB":
-      return PASSAT;
-    case "SRTW":
-    case "SNAW":
-      return CRAFTER;
-    case "NEF":
-      return T6_BUS;
-    case "BEL":
-      return PASSAT;
-    default:
-      return T6_HOCHDACH;
-  }
+  if (fz.modell && MODELLE[fz.modell]) return MODELLE[fz.modell];
+  if (fz.rmTyp === "NAH" || fz.rmTyp === "ITH") return EC135;
+  return T6_HOCHDACH;
 }
 
 // ---------------------------------------------------------------- Mathe (Spalten-Matrizen, 64 bit)

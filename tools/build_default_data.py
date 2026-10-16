@@ -23,7 +23,7 @@ OUT = ROOT / "data" / "default"
 EX = ROOT / "data" / "beispiele"
 
 STATION_COLS = ["id", "name", "organisation", "typ", "ort", "bezirk", "adresse", "breitengrad", "laengengrad", "hinweis"]
-VEHICLE_COLS = ["id", "funkrufname", "kurzname", "kategorie", "typ", "aufbau", "dienststelle", "aktiv", "nachtflug", "dienstplan", "ersatz_fuer", "hinweis"]
+VEHICLE_COLS = ["id", "funkrufname", "kurzname", "kategorie", "typ", "aufbau", "modell", "dienststelle", "aktiv", "nachtflug", "dienstplan", "ersatz_fuer", "hinweis"]
 HOSPITAL_FLAGS = [
     "notfallambulanz", "schockraum", "unfallambulanz", "kinderambulanz", "intensiv_anaesthesie",
     "neurologie", "kinderintensiv", "neonatologie", "hno", "urologie", "gyn_geburtshilfe",
@@ -270,12 +270,13 @@ def ersatz_nef(vehicles: list[dict]) -> None:
         nef = nach_funk.get(funk)
         if nef is None:
             nef = {
-                "id": "nef-" + funk.replace("/", ""), "funkrufname": funk, "kurzname": "", "kategorie": "NEF", "typ": "NEF",
+                "id": "nef-" + funk.replace("/", ""), "funkrufname": funk, "kurzname": "", "kategorie": "NEF", "typ": "NEF ÖAMTC",
                 "dienststelle": nah["dienststelle"], "aktiv": "ja", "nachtflug": "nein", "dienstplan": "24/7",
                 "hinweis": "ÖAMTC-NEF, nur angemeldet, wenn der Hubschrauber nicht fliegen kann",
             }
             vehicles.append(nef)
         nef["ersatz_fuer"] = nah["funkrufname"]
+        nef["typ"] = "NEF ÖAMTC"
         if not nef.get("hinweis"):
             nef["hinweis"] = "ÖAMTC-NEF, nur angemeldet, wenn der Hubschrauber nicht fliegen kann"
 
@@ -386,7 +387,7 @@ def dienstplaene_einspielen(vehicles: list[dict]) -> None:
             continue
         typ = typen[f]
         if typ in {"KTW", "KTW-B"}:
-            typ = "KTW" if streuung(f) < 0.5 else "KTW-B"
+            typ = "KTW" if streuung(f) < 0.3 else "KTW-B"
         alt_kat = v["kategorie"]
         v["typ"] = typ
         v["kategorie"] = category_of(typ, f, "")

@@ -11,13 +11,20 @@ import { registriere, type PanelKontext } from "../ws/arbeitsplatz";
 import { fahrzeugZeigen, karteZeigen, waehle } from "../ws/auswahl";
 import { crewHtml, fzKlassen, statusChip, statusMenu, typHtml, dienstHtml } from "./teile";
 
+/** Ausweich-NEF des ÖAMTC am Hubschrauberstützpunkt */
+function istOeamtcNef(f: SimFahrzeug): boolean {
+  return f.rmTyp === "NEF" && (!!f.ersatzFuer || /ÖAMTC/i.test(f.typ ?? ""));
+}
+
 /** grobe Fahrzeuggruppen für den Filter */
 const GRUPPEN: [string, string, (fz: SimFahrzeug) => boolean][] = [
   ["alle", "Alle", () => true],
   ["rtw", "RTW", (f) => f.rmTyp === "RTW" || f.rmTyp === "RTW-C"],
-  ["nef", "NEF", (f) => f.rmTyp === "NEF"],
+  ["nef", "NEF", (f) => f.rmTyp === "NEF" && !istOeamtcNef(f)],
+  ["nef_oeamtc", "NEF ÖAMTC", (f) => istOeamtcNef(f)],
   ["nah", "Hubschrauber", (f) => f.rmTyp === "NAH" || f.rmTyp === "ITH"],
   ["s", "S-Fahrzeuge", (f) => ["SKTW", "SRTW", "SNAW", "BIT", "ITH"].includes(f.rmTyp)],
+  ["el", "EL", (f) => f.rmTyp === "BEL" || f.rmTyp === "EL ÖBB"],
   ["kt", "KT", (f) => f.rmTyp === "KTW" || !!f.kt],
 ];
 
@@ -89,11 +96,13 @@ function fahrzeugListe(ctx: PanelKontext, nurAktive: boolean) {
   root.append(kopf, liste);
   let gruppe = (ctx.params.gruppe as string) ?? "alle";
   let status = (ctx.params.status as string) ?? "alle";
+  let elArt = (ctx.params.elArt as string) ?? "alle";
   const zu = new Set<string>((ctx.params.zu as string[]) ?? []);
   suche.addEventListener("input", () => render());
 
   const passt = (fz: SimFahrzeug, q: string) => {
     if (!GRUPPEN.find((g) => g[0] === gruppe)?.[2](fz)) return false;
+    if (gruppe === "el" && elArt !== "alle" && fz.rmTyp !== elArt) return false;
     if (nurAktive && status !== "alle" && fz.status !== status) return false;
     if (!q) return true;
     return `${fz.funkrufname} ${fz.kurzname} ${fz.stationName} ${fz.rmTyp}`.toLowerCase().includes(q);
@@ -112,6 +121,17 @@ function fahrzeugListe(ctx: PanelKontext, nurAktive: boolean) {
         render();
       });
       chips.appendChild(b);
+    }
+    if (gruppe === "el") {
+      const sel = el("select", { class: "pl-select", title: "BEL oder EL ÖBB" });
+      for (const [v, l] of [["alle", "BEL und EL ÖBB"], ["BEL", "nur BEL"], ["EL ÖBB", "nur EL ÖBB"]]) sel.appendChild(el("option", { value: v }, l));
+      sel.value = elArt;
+      sel.addEventListener("change", () => {
+        elArt = sel.value;
+        ctx.setzeParams({ elArt });
+        render();
+      });
+      chips.appendChild(sel);
     }
     if (nurAktive) {
       const sel = el("select", { class: "pl-select", title: "Nach Status filtern" });
@@ -189,14 +209,15 @@ function fahrzeugListe(ctx: PanelKontext, nurAktive: boolean) {
     // nach Dienststelle
     const gruppen = new Map<string, SimFahrzeug[]>();
     const HELI = "Notarzthubschrauber";
+    const OEAMTC = "NEF ÖAMTC (Ausweich für Hubschrauber)";
     for (const fz of sichtbar) {
       // alle Hubschrauber (NAH, ITH) gemeinsam statt verstreut nach Stützpunkt
-      const name = fz.rmTyp === "NAH" || fz.rmTyp === "ITH" ? HELI : fz.stationName;
+      const name = fz.rmTyp === "NAH" || fz.rmTyp === "ITH" ? HELI : istOeamtcNef(fz) ? OEAMTC : fz.stationName;
       const g = gruppen.get(name) ?? [];
       g.push(fz);
       gruppen.set(name, g);
     }
-    for (const [name, fzs] of [...gruppen.entries()].sort((a, b) => (a[0] === HELI ? -1 : b[0] === HELI ? 1 : a[0].localeCompare(b[0], "de")))) {
+    for (const [name, fzs] of [...gruppen.entries()].sort((a, b) => (a[0] === HELI ? -1 : b[0] === HELI ? 1 : a[0] === OEAMTC ? -1 : b[0] === OEAMTC ? 1 : a[0].localeCompare(b[0], "de")))) {
       const offen = !zu.has(name) || !!q;
       const frei = fzs.filter((f) => f.status === "freiWache" || f.status === "freiFunk").length;
       const head = zeileAus(
@@ -220,7 +241,7 @@ function fahrzeugListe(ctx: PanelKontext, nurAktive: boolean) {
         const kt = fz.kt ? `<span class="kt-fz${fz.kt.aktiv ? " aktiv" : " vorgemerkt"}${ktSek ? " sek" : ""}">${ktSek ? "SEK" : "KT"}${ktIds.length > 1 ? `×${ktIds.length}` : ""}${ab}</span>` : "";
         const e = fz.einsatzId ? sim.einsatz(fz.einsatzId) : undefined;
         // Hubschrauber: ausgeschriebener Name (Christophorus 2) statt Stützpunkt
-        const zusatz = name === HELI ? ` · ${esc(fz.kurzname || fz.stationName)}${fz.nachtflug ? " · 🌙 Nachtflug" : ""}` : fz.kurzname ? " · " + esc(fz.kurzname) : "";
+        const zusatz = name === HELI ? ` · ${esc(fz.kurzname || fz.stationName)}` : fz.kurzname ? " · " + esc(fz.kurzname) : "";
         const html = `${statusChip(fz)}<b data-dienstfz="${esc(fz.id)}">${esc(fz.funkrufname)}</b><span class="muted">${typHtml(fz)}${zusatz}</span>${crewHtml(fz)}${dienstHtml(fz)}${kt}<span class="spacer"></span><span class="muted">${esc(e?.nummer ?? "")}</span>`;
         liste.appendChild(zeileAus(fz.id, `fz-row${fzKlassen(fz)}`, html, (r) => klickVerhalten(r, fz)));
       }

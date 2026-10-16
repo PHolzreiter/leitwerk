@@ -1,6 +1,7 @@
 /** Formular zum Anlegen und Bearbeiten von Dienststellen, Fahrzeugen, Krankenhäusern und POIs. */
 import {
-  FAHRZEUG_TYPEN,
+  AUSFUEHRUNGEN,
+  MODELL_WAHL,
   HOSPITAL_FLAGS,
   BEREICHE_AMBULANZ,
   BEREICHE_STATION,
@@ -124,36 +125,53 @@ export function openEditor(
     const v = existing as Vehicle | undefined;
     add("funkrufname", "Funkrufname *", textInput(v?.funkrufname ?? "", "z. B. 75/001"), "RTW/KTW: 75/001 · NEF: 75/099 · NAH: 99/002");
     add("kurzname", "Kurzname", textInput(v?.kurzname ?? "", "z. B. Christophorus 2"));
+    // Fahrzeugart; ein zweites Feld nur, wo es etwas zu unterscheiden gibt (RTW / RTW groß / RTW-C …)
+    const katStart = v?.kategorie === "EL ÖBB" ? "BEL" : (v?.kategorie ?? "RTW");
     add(
       "kategorie",
-      "Kategorie",
-      selectInput(VEHICLE_CATEGORIES.map((c) => [c, c]), v?.kategorie ?? "RTW"),
-      "wird beim Typ automatisch vorgeschlagen",
+      "Fahrzeugart",
+      selectInput(VEHICLE_CATEGORIES.filter((c) => c !== "EL ÖBB").map((c) => [c, c === "BEL" ? "EL (BEL / EL ÖBB)" : c]), katStart),
     );
-    const typFeld = textInput(v?.typ ?? "", "z. B. RTW-C");
-    const typListe = el("datalist", { id: "fz-typen-liste" });
-    for (const t of FAHRZEUG_TYPEN) typListe.appendChild(el("option", { value: t.typ }, t.label));
-    typFeld.setAttribute("list", "fz-typen-liste");
-    form.appendChild(typListe);
-    add("typ", "Fahrzeugtyp", typFeld, "RTW-C: nur einer je Dienststelle · KTW-B: Zivildienst, fährt ohne Blaulicht");
-    // Kategorie passend zum Typ vorschlagen
-    typFeld.addEventListener("change", () => {
-      const t = FAHRZEUG_TYPEN.find((x) => x.typ.toLowerCase() === typFeld.value.trim().toLowerCase());
-      if (t) (inputs.kategorie as HTMLSelectElement).value = t.kategorie;
-    });
-    add(
-      "aufbau",
-      "Fahrzeuggröße",
-      selectInput(
-        [
-          ["", "automatisch (RTW-C groß, sonst klein)"],
-          ["klein", "klein – VW T6 Hochdach"],
-          ["gross", "groß – VW Crafter (Großraum)"],
-        ],
-        v?.aufbau ?? "",
-      ),
-      "Wirkt auf die 3D-Ansicht",
-    );
+    add("ausfuehrung", "Ausführung", selectInput([], ""));
+    add("modell", "Fahrzeug", selectInput([], ""), "Wirkt auf die 3D-Ansicht");
+    const ausStart = (): string => {
+      const t = (v?.typ ?? "").toUpperCase().replace(/\s+/g, "");
+      switch (katStart) {
+        case "RTW":
+          return t.includes("RTW-C") || t === "RTWC" ? (v?.aufbau === "klein" ? "rtw" : "rtwc") : v?.aufbau === "gross" ? "rtw_gross" : "rtw";
+        case "KTW":
+          return /^KTW-?B$/.test(t) ? "ktwb" : "ktw";
+        case "NEF":
+          return /ÖAMTC|OEAMTC/.test(t) || v?.ersatzFuer ? "nef_oeamtc" : "nef";
+        case "BEL":
+          return v?.kategorie === "EL ÖBB" ? "el_oebb" : "bel";
+        default:
+          return "";
+      }
+    };
+    const artFelder = () => {
+      const kat = (inputs.kategorie as HTMLSelectElement).value as VehicleCategory;
+      const aSel = inputs.ausfuehrung as HTMLSelectElement;
+      const mSel = inputs.modell as HTMLSelectElement;
+      const alt = aSel.value;
+      const ausf = AUSFUEHRUNGEN[kat] ?? [];
+      aSel.innerHTML = "";
+      for (const a of ausf) aSel.appendChild(el("option", { value: a.id }, a.label));
+      if (ausf.some((a) => a.id === alt)) aSel.value = alt;
+      else if (kat === katStart && ausf.some((a) => a.id === ausStart())) aSel.value = ausStart();
+      (aSel.closest(".fld") as HTMLElement).hidden = !ausf.length;
+      const kZiel = ausf.find((a) => a.id === aSel.value)?.kategorie ?? kat;
+      const mw = MODELL_WAHL[kZiel] ?? [];
+      const altM = mSel.value || v?.modell || "";
+      mSel.innerHTML = "";
+      if (mw.length) mSel.appendChild(el("option", { value: "" }, "zufällig"));
+      for (const [id, label] of mw) mSel.appendChild(el("option", { value: id }, label));
+      mSel.value = mw.some(([id]) => id === altM) ? altM : "";
+      (mSel.closest(".fld") as HTMLElement).hidden = !mw.length;
+    };
+    (inputs.kategorie as HTMLSelectElement).addEventListener("change", artFelder);
+    (inputs.ausfuehrung as HTMLSelectElement).addEventListener("change", artFelder);
+    artFelder();
     const stations = store
       .list("stations")
       .slice()
@@ -221,15 +239,7 @@ export function openEditor(
     ausChk.addEventListener("change", sichtbar);
     ausSel.addEventListener("change", sichtbar);
     sichtbar();
-    // kleiner RTW (VW T6) ist nie ein RTW-C
-    const aufbauSel = inputs.aufbau as HTMLSelectElement;
-    aufbauSel.addEventListener("change", () => {
-      const t = inputs.typ as HTMLInputElement;
-      if (aufbauSel.value === "klein" && /^RTW-?C$/i.test(t.value.trim())) {
-        t.value = "RTW";
-        toast("Ein kleiner RTW (VW T6) kann kein RTW-C sein – Typ ist jetzt RTW");
-      }
-    });
+
   } else if (kind === "codes") {
     const c = existing as Einsatzcode | undefined;
     add("code", "Code *", textInput(c?.code ?? "", "z. B. 18-S2-02"));
@@ -360,17 +370,18 @@ export function openEditor(
         ...base,
         funkrufname: val("funkrufname"),
         kurzname: val("kurzname"),
-        kategorie: val("kategorie") as VehicleCategory,
-        typ: val("typ"),
+        kategorie: (AUSFUEHRUNGEN[val("kategorie") as VehicleCategory]?.find((x) => x.id === val("ausfuehrung"))?.kategorie ?? val("kategorie")) as VehicleCategory,
+        typ: AUSFUEHRUNGEN[val("kategorie") as VehicleCategory]?.find((x) => x.id === val("ausfuehrung"))?.typ ?? (existing && (existing as Vehicle).kategorie === val("kategorie") ? (existing as Vehicle).typ : val("kategorie")),
         dienststelleId: val("dienststelle"),
         aktiv: aktivInput?.checked ?? true,
         nachtflug: nachtInput?.checked ?? false,
         dienstplan: dienstplan?.wert() ?? [],
         // leer = bewusst kein Ausweichfahrzeug (Standard-Zuordnung wird dann nicht ergänzt)
         ersatzFuer: val("kategorie") === "NEF" && ausweich?.chk.checked ? ausweich.sel.value : "",
-        ...(val("aufbau") === "klein" || val("aufbau") === "gross" ? { aufbau: val("aufbau") as "klein" | "gross" } : {}),
       };
-      if (v.aufbau === "klein" && /^RTW-?C$/i.test(v.typ.trim())) v.typ = "RTW";
+      const ausf = AUSFUEHRUNGEN[val("kategorie") as VehicleCategory]?.find((x) => x.id === val("ausfuehrung"));
+      if (ausf?.aufbau) v.aufbau = ausf.aufbau;
+      if (val("modell")) v.modell = val("modell");
       const geaendert: Vehicle[] = [v];
       // Regel: nur ein RTW-C je Dienststelle – ein anderer wird zum großen RTW
       if (v.typ.trim().toUpperCase() === "RTW-C") {

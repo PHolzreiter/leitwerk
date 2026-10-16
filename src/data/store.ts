@@ -6,7 +6,7 @@
  * Ein eigener Datensatz mit derselben ID wie ein Standard-Datensatz ersetzt diesen
  * (so werden bearbeitete Standarddaten gespeichert).
  */
-import { categoryFromType } from "./schema";
+import { categoryFromType, streuung } from "./schema";
 import { loadStore, saveStore } from "../platform";
 import {
   emptyPersisted,
@@ -113,6 +113,13 @@ export class Store {
             }
           }
           this.data.version = 3;
+        }
+        if (this.data.version < 4) {
+          // ab v0.24: importierte KTW zu 30 % KTW, 70 % KTW-B (fest je Funkrufname)
+          for (const v of this.data.eigene.vehicles) {
+            if (v.herkunft === "import" && v.kategorie === "KTW" && (v.typ === "KTW" || v.typ === "KTW-B")) v.typ = streuung(v.funkrufname) < 0.3 ? "KTW" : "KTW-B";
+          }
+          this.data.version = 4;
         }
       }
     } catch (e) {

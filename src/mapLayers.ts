@@ -442,7 +442,7 @@ function incidentFeatures(): FeatureCollection<Point> {
       .map((e) =>
         pointFeature(e.id, e.adresse!.lon, e.adresse!.lat, {
           name: e.nummer,
-          color: stufeFarbe(findCode(e.code ?? undefined)?.stufe),
+          color: e.fremd ? "#9aa0a6" : stufeFarbe(findCode(e.code ?? undefined)?.stufe),
           sel: e.id === selectedIncident ? 1 : 0,
         }),
       ),

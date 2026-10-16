@@ -64,7 +64,42 @@ export interface Vehicle extends Base {
   aufbau?: "klein" | "gross";
   /** Ersatz-NEF eines Hubschraubers (Funkrufname des NAH): nur angemeldet, wenn dieser nicht fliegen kann */
   ersatzFuer?: string;
+  /** Fahrzeugmodell, wo es eine Wahl gibt (KTW: t6hoch/sprinter_kurz, BEL: passat/t6); leer = zufällig fest je Funkrufname */
+  modell?: string;
 }
+
+/** Wählbare Fahrzeugmodelle je Kategorie (leer = zufällig) */
+export const MODELL_WAHL: Partial<Record<VehicleCategory, [string, string][]>> = {
+  KTW: [
+    ["t6hoch", "VW T6 Hochdach"],
+    ["sprinter_kurz", "Mercedes Sprinter (kurz, ohne Hochdach)"],
+  ],
+  BEL: [
+    ["passat", "VW Passat"],
+    ["t6", "VW T6 (ohne Hochdach)"],
+  ],
+};
+
+/** Ausführungen je Kategorie (zweites Feld im Fahrzeug-Dialog); nicht aufgeführt = keine Wahl */
+export const AUSFUEHRUNGEN: Partial<Record<VehicleCategory, { id: string; label: string; typ: string; aufbau?: "klein" | "gross"; kategorie?: VehicleCategory }[]>> = {
+  BEL: [
+    { id: "bel", label: "BEL (Bezirkseinsatzleiter)", typ: "BEL", kategorie: "BEL" },
+    { id: "el_oebb", label: "EL ÖBB (VW Caddy)", typ: "EL ÖBB", kategorie: "EL ÖBB" },
+  ],
+  RTW: [
+    { id: "rtw", label: "RTW (VW T6 Hochdach)", typ: "RTW", aufbau: "klein" },
+    { id: "rtw_gross", label: "RTW groß (VW Crafter, kein C)", typ: "RTW", aufbau: "gross" },
+    { id: "rtwc", label: "RTW-C (VW Crafter, Notfallsanitäter-Kompetenz)", typ: "RTW-C", aufbau: "gross" },
+  ],
+  KTW: [
+    { id: "ktw", label: "KTW", typ: "KTW" },
+    { id: "ktwb", label: "KTW-B (Zivildienst – ohne Blaulicht)", typ: "KTW-B" },
+  ],
+  NEF: [
+    { id: "nef", label: "NEF (VW T6)", typ: "NEF" },
+    { id: "nef_oeamtc", label: "NEF ÖAMTC (VW Tiguan)", typ: "NEF ÖAMTC" },
+  ],
+};
 
 /** Fahrzeugtypen mit eigener Bedeutung in der Simulation (Typ-Feld) */
 export const FAHRZEUG_TYPEN: { typ: string; kategorie: VehicleCategory; label: string }[] = [
@@ -73,6 +108,7 @@ export const FAHRZEUG_TYPEN: { typ: string; kategorie: VehicleCategory; label: s
   { typ: "KTW", kategorie: "KTW", label: "KTW" },
   { typ: "KTW-B", kategorie: "KTW", label: "KTW-B (Zivildienst – ohne Blaulicht)" },
   { typ: "NEF", kategorie: "NEF", label: "NEF" },
+  { typ: "NEF ÖAMTC", kategorie: "NEF", label: "NEF ÖAMTC (Ausweich-NEF am Hubschrauberstützpunkt)" },
   { typ: "NAH", kategorie: "NAH", label: "NAH (Notarzthubschrauber)" },
   { typ: "ITH", kategorie: "ITH", label: "ITH (Intensivtransport-Hubschrauber)" },
   { typ: "SKTW", kategorie: "SKTW", label: "SKTW" },
@@ -278,5 +314,5 @@ export interface Persisted {
 }
 
 export function emptyPersisted(): Persisted {
-  return { version: 3, standardAktiv: true, ausgeblendet: [], eigene: emptyRecords() };
+  return { version: 4, standardAktiv: true, ausgeblendet: [], eigene: emptyRecords() };
 }

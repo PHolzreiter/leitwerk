@@ -134,6 +134,42 @@ export function createSettingsView(container: HTMLElement, teil: "simulation" | 
     kSel.value = draft.komplikationen ?? "normal";
     kSel.addEventListener("change", () => (draft.komplikationen = kSel.value as Settings["komplikationen"]));
     aGrid.append(el("label", {}, "Komplikationen (Verschlechterung, Irrtum des Anrufers, mehr Betroffene)"), kSel);
+    // Work in Progress: Einsätze in Nachbarzonen
+    const fzWrap = el("label", { title: "Einsätze knapp außerhalb deiner Funkgruppe, zu denen eigene Fahrzeuge (meist das NEF) fahren – angelegt und disponiert vom Kollegen der Nachbarzone" });
+    fzWrap.innerHTML = `Einsätze in Nachbarzonen <span class="wip-badge">Work in Progress</span>`;
+    const fzAn = el("input", { type: "checkbox" }) as HTMLInputElement;
+    fzAn.checked = !!draft.fremdzoneAktiv;
+    const fzRate = el("input", { type: "range", min: "0.2", max: "6", step: "0.2" }) as HTMLInputElement;
+    fzRate.value = String(draft.fremdzoneProStunde ?? 1);
+    const fzWert = el("span", { class: "muted small" });
+    const fzText = () => (fzWert.textContent = `ca. ${Number(fzRate.value).toLocaleString("de-AT")} pro Stunde`);
+    fzText();
+    fzRate.addEventListener("input", () => {
+      draft.fremdzoneProStunde = Number(fzRate.value);
+      fzText();
+    });
+    const fzRateZeile = el("div", { class: "fremd-rate" });
+    fzRateZeile.append(fzRate, fzWert);
+    fzRateZeile.hidden = !fzAn.checked;
+    const fzRateLabel = el("label", {}, "Häufigkeit (Nachbarzonen)");
+    fzRateLabel.hidden = !fzAn.checked;
+    fzAn.addEventListener("change", async () => {
+      if (fzAn.checked) {
+        const ok = await confirmDialog(
+          "Einsätze in Nachbarzonen (Work in Progress)",
+          "Diese Funktion ist noch in Arbeit: In den anderen Zonen sind noch kaum Fahrzeuge hinterlegt, deren Einsätze werden deshalb nur vereinfacht nachgestellt. Dabei kann es zu Fehlern kommen, die sich im laufenden Spiel NICHT beheben lassen. Trotzdem einschalten?",
+          "Einschalten",
+        );
+        if (!ok) {
+          fzAn.checked = false;
+          return;
+        }
+      }
+      draft.fremdzoneAktiv = fzAn.checked;
+      fzRateZeile.hidden = !fzAn.checked;
+      fzRateLabel.hidden = !fzAn.checked;
+    });
+    aGrid.append(fzWrap, fzAn, fzRateLabel, fzRateZeile);
     aSec.appendChild(aGrid);
 
     // Aufkommen je Stunde (Notfälle und Krankentransporte)

@@ -2386,3 +2386,9 @@ button.weather.offen {
 .es-quelle .set-sec[hidden] {
   display: none;
 }
+
+/* Einsätze anderer Zonen (Work in Progress) */
+.el-row.fremd { opacity: 0.62; filter: grayscale(0.9); }
+.el-row.fremd:hover, .el-row.fremd.sel { opacity: 0.9; }
+.el-fremd { font-size: 10px; padding: 0 5px; border-radius: 7px; background: var(--panel-3); color: var(--text-dim); margin-left: 6px; white-space: nowrap; }
+.wip-badge { font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 8px; background: var(--warn-bg); color: var(--warn-text); margin-left: 6px; vertical-align: middle; }

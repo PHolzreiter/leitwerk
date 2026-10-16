@@ -26,7 +26,7 @@ import {
 /** Spalten in der Reihenfolge, in der LeitWerk sie schreibt. */
 export const COLUMNS: Record<Kind, string[]> = {
   stations: ["id", "name", "organisation", "typ", "ort", "bezirk", "adresse", "breitengrad", "laengengrad", "hinweis"],
-  vehicles: ["id", "funkrufname", "kurzname", "kategorie", "typ", "aufbau", "dienststelle", "aktiv", "nachtflug", "dienstplan", "ersatz_fuer", "hinweis"],
+  vehicles: ["id", "funkrufname", "kurzname", "kategorie", "typ", "aufbau", "modell", "dienststelle", "aktiv", "nachtflug", "dienstplan", "ersatz_fuer", "hinweis"],
   hospitals: ["id", "name", "kurzname", "ort", "breitengrad", "laengengrad", ...HOSPITAL_FLAGS, "bereiche", "hinweis"],
   pois: ["id", "name", "typ", "ort", "breitengrad", "laengengrad", "hinweis"],
   templates: ["id", "code", "adresse", "breitengrad", "laengengrad", "meldung", "patient_alter", "transport", "hinweis"],
@@ -67,7 +67,8 @@ const ALIASES: Record<string, string[]> = {
   wochentage: ["wochentage", "wochentag", "tage"],
   beginn: ["beginn", "dienstbeginn", "schichtbeginn", "start"],
   ende: ["ende", "dienstende", "schichtende"],
-  aufbau: ["aufbau", "groesse", "fahrzeugmodell", "modell"],
+  aufbau: ["aufbau", "groesse"],
+  modell: ["modell", "fahrzeugmodell"],
   ersatz_fuer: ["ersatzfuer", "ersatzfuerhubschrauber", "ersatznef"],
   code: ["code", "ampds", "einsatzcode", "ampdscode"],
   meldung: ["meldung", "meldebild", "text"],
@@ -265,6 +266,17 @@ export function streuung(text: string): number {
   return ((h >>> 0) % 10_000) / 10_000;
 }
 
+/** „Sprinter“, „T6 Hochdach“, „Passat“ … → Modell-Kürzel */
+function modellLesen(v: string): string | null {
+  const t = v.trim().toLowerCase();
+  if (!t) return null;
+  if (/sprinter/.test(t)) return "sprinter_kurz";
+  if (/hochdach/.test(t)) return "t6hoch";
+  if (/passat/.test(t)) return "passat";
+  if (/t6|transporter|bus/.test(t)) return "t6";
+  return ["t6hoch", "sprinter_kurz", "passat", "t6"].includes(t) ? t : null;
+}
+
 function aufbauLesen(v: string): "klein" | "gross" | null {
   const t = v.trim().toLowerCase();
   if (!t) return null;
@@ -410,7 +422,7 @@ export function importCsv<K extends Kind>(kind: K, text: string, ctx: ImportCont
         }
         let typ = typNormal(get("typ"));
         // KTW: zufällig KTW oder KTW-B (Zivildienst, ohne Blaulicht) – fest je Funkrufname
-        if ((typ === "KTW" || typ === "KTW-B") && ctx.zufallKtw !== false) typ = streuung(funk) < 0.5 ? "KTW" : "KTW-B";
+        if ((typ === "KTW" || typ === "KTW-B") && ctx.zufallKtw !== false) typ = streuung(funk) < 0.3 ? "KTW" : "KTW-B";
         const kategorie = parseCategory(get("kategorie"), typ, funk, warn, derived);
         const aufbau = aufbauLesen(get("aufbau")) ?? (typ === "RTW-C" ? "gross" : typ === "RTW" ? "klein" : undefined);
         const aktivRaw = get("aktiv");
@@ -428,6 +440,7 @@ export function importCsv<K extends Kind>(kind: K, text: string, ctx: ImportCont
           nachtflug: get("nachtflug") === "" ? false : parseBool(get("nachtflug"), "nachtflug"),
           ...(aufbau ? { aufbau } : {}),
           ...(get("ersatz_fuer") ? { ersatzFuer: get("ersatz_fuer") } : {}),
+          ...(modellLesen(get("modell")) ? { modell: modellLesen(get("modell"))! } : {}),
           ...(schichten !== undefined ? { dienstplan: schichten } : {}),
         };
         proFunk.set(normKey(funk), v);
@@ -567,6 +580,7 @@ export function exportCsv<K extends Kind>(kind: K, records: KindMap[K][], statio
         aktiv: f.aktiv ? "ja" : "nein",
         nachtflug: f.nachtflug ? "ja" : "nein",
         aufbau: f.aufbau === "gross" ? "groß" : f.aufbau === "klein" ? "klein" : "",
+        modell: f.modell ?? "",
         dienstplan: planText(f.dienstplan) || "24/7",
         ersatz_fuer: f.ersatzFuer ?? "",
         dienststelle_name: stationName.get(f.dienststelleId) ?? "",

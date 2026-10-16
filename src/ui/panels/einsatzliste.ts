@@ -31,7 +31,8 @@ export function einsatzLage(e: Einsatz): Lage {
   if (e.zustand === "abgeschlossen") return "erledigt";
   if (e.anruf && ANRUF_LAEUFT.includes(e.anruf.status)) return "anruf";
   const fz = e.fahrzeuge.map((id) => sim.state.fahrzeuge[id]).filter((f) => f && f.einsatzId === e.id);
-  if (!fz.length || e.nachforderungen?.some((n) => !n.erledigt) || e.khAnfrage || e.adressePruefen) return "dispo";
+  if (!fz.length && e.fremd) return "erledigt";
+  if (!e.fremd && (!fz.length || e.nachforderungen?.some((n) => !n.erledigt) || e.khAnfrage || e.adressePruefen)) return "dispo";
   if (fz.some((f) => ["suche", "vorOrt", "warteKH", "transport", "uebergabe"].includes(f!.phase))) return "vorort";
   return "unterwegs";
 }
@@ -238,7 +239,7 @@ function erstellen(ctx: PanelKontext) {
 
   function rdZeile(e: Einsatz, lage: Lage, gewaehlt: boolean): HTMLElement {
     const c = findCode(e.code ?? undefined);
-    const row = el("div", { class: `el-row lage-${lage}${gewaehlt ? " sel" : ""}` });
+    const row = el("div", { class: `el-row lage-${lage}${gewaehlt ? " sel" : ""}${e.fremd ? " fremd" : ""}` });
     const a = e.anruf;
     const warn = e.adressePruefen || e.khAnfrage || e.nachforderungen?.some((n) => !n.erledigt);
     const tel =
@@ -257,7 +258,7 @@ function erstellen(ctx: PanelKontext) {
           c
             ? `<span class="el-typ rd el-code"><span class="stufe-dot" style="background:${stufeFarbe(c.stufe)}"></span>${esc(c.code)}</span><span class="el-text">${esc(c.beschreibung)}</span>`
             : `<span class="el-typ rd el-code leer">${a ? "Abfrage" : "ohne Code"}</span>`
-        }${warn ? `<span class="warn-dot" title="Rückfrage oder Nachforderung offen">!</span>` : ""}${tel}</div>
+        }${e.fremd ? `<span class="el-fremd" title="Einsatz einer anderen Zone – dort disponiert, deine Fahrzeuge fahren mit">Zone ${esc(e.fremd.zone)}</span>` : ""}${warn ? `<span class="warn-dot" title="Rückfrage oder Nachforderung offen">!</span>` : ""}${tel}</div>
         <div class="el-z2 muted">${esc(e.adresse?.label ?? (e.meldung.adresse ? `gemeldet: ${e.meldung.adresse}` : "Adresse fehlt"))}</div>
         ${bearbeiterHtml(e)}
       </div>

@@ -9,6 +9,7 @@ import { aktuelleSchicht, dienstEnde, imDienst, naechsterBeginn, type Schicht } 
 import { nachKlick } from "../klick";
 import { ACTIVE_CATEGORIES, bereicheVon, HOSPITAL_FLAG_LABEL, type Hospital, type HospitalFlag, type Vehicle } from "../data/model";
 import { store } from "../data/store";
+import { streuung } from "../data/schema";
 import { abteilungFuer, allCodes, findCode, hasCodes, type Einsatzcode } from "./codes";
 import { distanceM, erreichbar, flightRoute, geoStatus, randomAddresses, route, searchAddress, travelTimes, type LatLon, type Route } from "./geo";
 import { generiereBesetzung, hatNFS, rmTypVon, type Platz, type RmTyp } from "./crew";
@@ -56,7 +57,7 @@ import {
 } from "./kt";
 import { codeInfo, codeVorschlag, istUeberstellung } from "./ktCodes";
 import { PARTNER, partnerNoetig, partnerSchonDa, type PartnerArt } from "./partner";
-import { funkgruppe, inFunkgruppe, mitteVon, type Funkgruppe } from "./funkgruppen";
+import { FUNKGRUPPEN, funkgruppe, inFunkgruppe, mitteVon, type Funkgruppe } from "./funkgruppen";
 import { sekZufall } from "./sek";
 import { bedarf, istStillstand, lageErzeugen, lagemeldungText, patientText, type Lage } from "./lage";
 
@@ -98,11 +99,48 @@ export type Phase =
   | "ktReinigung";
 
 /** Art des Fahrzeugs aus den Stammdaten: Anzeige-Typ, Großraum, ohne Blaulicht */
-function fzArt(v: Vehicle, rmTyp: RmTyp): { typ: string; gross: boolean; ohneBlaulicht: boolean; ersatzFuer?: string } {
+function fzArt(v: Vehicle, rmTyp: RmTyp): { typ: string; gross: boolean; ohneBlaulicht: boolean; ersatzFuer?: string; modell: string } {
   const typ = (v.typ || rmTyp).trim();
   const istKtwB = /^KTW-?B$/i.test(typ.replace(/\s+/g, ""));
   const gross = v.aufbau ? v.aufbau === "gross" : rmTyp === "RTW-C";
-  return { typ: istKtwB ? "KTW-B" : rmTyp === "RTW-C" ? "RTW-C" : rmTyp === "RTW" ? "RTW" : typ, gross, ohneBlaulicht: istKtwB, ersatzFuer: v.ersatzFuer?.trim() || undefined };
+  const ersatzFuer = v.ersatzFuer?.trim() || undefined;
+  return {
+    typ: istKtwB ? "KTW-B" : rmTyp === "RTW-C" ? "RTW-C" : rmTyp === "RTW" ? "RTW" : rmTyp === "NEF" && ersatzFuer ? "NEF ÖAMTC" : typ,
+    gross,
+    ohneBlaulicht: istKtwB,
+    ersatzFuer,
+    modell: modellVon(v, rmTyp, gross, typ, ersatzFuer),
+  };
+}
+
+/** 3D-Modell eines Fahrzeugs */
+export function modellVon(v: Pick<Vehicle, "funkrufname" | "modell">, rmTyp: RmTyp, gross: boolean, typ: string, ersatzFuer?: string): string {
+  const zufall = (a: string, b: string) => (streuung(`${v.funkrufname}#modell`) < 0.5 ? a : b);
+  switch (rmTyp) {
+    case "RTW":
+    case "RTW-C":
+      return gross || rmTyp === "RTW-C" ? "crafter" : "t6hoch";
+    case "KTW":
+      return v.modell === "t6hoch" || v.modell === "sprinter_kurz" ? v.modell : zufall("t6hoch", "sprinter_kurz");
+    case "NEF":
+      return ersatzFuer || /ÖAMTC|OEAMTC/i.test(typ) ? "tiguan" : "t6";
+    case "BEL":
+      return v.modell === "passat" || v.modell === "t6" ? v.modell : zufall("passat", "t6");
+    case "EL ÖBB":
+      return "caddy";
+    case "SKTW":
+      return "sprinter_lang";
+    case "SRTW":
+    case "SNAW":
+      return "sprinter_gross";
+    case "BIT":
+      return "man";
+    case "NAH":
+    case "ITH":
+      return "ec135";
+    default:
+      return "t6hoch";
+  }
 }
 
 export interface SimFahrzeug {
@@ -155,6 +193,8 @@ export interface SimFahrzeug {
   dienstBeginn?: number | null;
   /** Ersatz-NEF eines Hubschraubers (dessen Funkrufname): nur angemeldet, wenn der nicht fliegen kann */
   ersatzFuer?: string;
+  /** 3D-Modell (t6hoch, crafter, t6, tiguan, passat, caddy, sprinter_kurz/_lang/_gross, man, ec135) */
+  modell?: string;
   /** Hubschrauber vom Spiel abgemeldet, weil er nicht fliegen kann (meldet sich bei Flugwetter wieder an) */
   flugAbgemeldet?: boolean;
   /** Krankentransport-Plan (vorgemerkte bzw. laufende Fahrten) */
@@ -471,6 +511,8 @@ export interface Einsatz {
   anruf?: Anruf | null;
   /** offene Nachforderungen der Besatzung (Notarzt, weitere RTW) */
   nachforderungen?: Nachforderung[];
+  /** Einsatz einer Nachbarzone (vom Kollegen dort angelegt und disponiert) */
+  fremd?: { zone: string; rtwText?: string };
   /** BIT kam nicht: Besatzung transportiert selbst */
   bitVerzicht?: boolean;
   /** zuletzt ins Protokoll geschriebene Abfrage (Erstaufnahme, Änderungen) */
@@ -1523,6 +1565,8 @@ export class Simulation {
   }
 
   funk(von: string, einsatzId: string | null, text: string, art: Funkmeldung["art"]): void {
+    // Einsätze der Nachbarzone laufen auf deren Funk – man hört sie nur, wenn man selbst anfunkt
+    if (this.stumm || (einsatzId && this.einsatz(einsatzId)?.fremd)) return;
     this.state.funk.unshift({
       id: ++this.state.funkZaehler,
       zeit: this.state.zeit,
@@ -1834,11 +1878,14 @@ export class Simulation {
   async vorschlaege(id: string): Promise<Vorschlag[]> {
     const e = this.einsatz(id);
     if (!e?.adresse) return [];
-    const ziel = e.adresse;
+    return this.vorschlaegeAn(e.adresse, this.faktor(e));
+  }
+
+  /** Fahrzeuge mit Ankunftszeit zu einem Ziel (faktor = Sondersignal-Faktor) */
+  async vorschlaegeAn(ziel: LatLon, faktor: number): Promise<Vorschlag[]> {
     const frei = Object.values(this.state.fahrzeuge).filter((f) => this.verfuegbar(f) || this.ktAbziehbar(f));
     const boden = frei.filter((f) => !fliegt(f));
     const zeiten = await travelTimes(ziel, boden.map((f) => ({ lat: f.lat, lon: f.lon })));
-    const faktor = this.faktor(e);
     const out = boden.map((fz, i) => {
       const z = zeiten[i];
       const ausr = this.ausrueckSek(fz, true);
@@ -2010,7 +2057,117 @@ export class Simulation {
     for (const k of ["stabil", "dringend", "kritisch"] as Kategorie[]) {
       const rate = (proStunde * Math.max(0, anteile[k] ?? 0)) / summe;
       if (Math.random() < (rate * dt) / 3_600_000) void this.generiere(k);
+    }    // Work in Progress: Einsätze in Nachbarzonen
+    if (this.settings.fremdzoneAktiv && Math.random() < ((this.settings.fremdzoneProStunde ?? 1) * dt) / 3_600_000) void this.generiereFremd();
+  }
+
+  private stumm = 0;
+  private fremdLaeuft = false;
+
+  /**
+   * Einsatz in einer Nachbarzone (Work in Progress): der Kollege dort legt ihn mit dem planmäßigen Code an und
+   * disponiert nach dem Vorschlag. Angezeigt wird er nur, wenn eigene Fahrzeuge hinfahren – was die Nachbarzone
+   * schneller selbst schafft (dort sind noch kaum Fahrzeuge hinterlegt: simuliert), fährt nicht.
+   * Nur normale Einsätze mit einem Patienten, meist mit Notarzt (NEF).
+   */
+  async generiereFremd(): Promise<Einsatz | null> {
+    if (this.fremdLaeuft || !hasCodes()) return null;
+    this.fremdLaeuft = true;
+    try {
+      const g = this.funkgruppe();
+      // Ausgangspunkt: ein freies eigenes Fahrzeug (meist NEF) – der Einsatz liegt ein Stück außerhalb der Zone
+      const eigene = Object.values(this.state.fahrzeuge).filter((f) => this.verfuegbar(f) && inFunkgruppe(g, f.heim.lat, f.heim.lon));
+      const nefs = eigene.filter((f) => f.rmTyp === "NEF");
+      const rms = eigene.filter((f) => this.transportfaehig(f));
+      let adr: Awaited<ReturnType<typeof randomAddresses>>[number] | null = null;
+      let zone: Funkgruppe | undefined;
+      for (let i = 0; i < 8 && !adr; i++) {
+        const basis = Math.random() < 0.8 && nefs.length ? pick(nefs) : rms.length ? pick(rms) : null;
+        if (!basis) return null;
+        const p = versetzt(basis.heim.lat, basis.heim.lon, rnd(5000, 16000), rnd(0, 360));
+        const d = 0.02;
+        const hits = await randomAddresses([p.lon - d, p.lat - d, p.lon + d, p.lat + d], 8);
+        for (const h of hits) {
+          if (h.place || inFunkgruppe(g, h.lat, h.lon)) continue;
+          zone = FUNKGRUPPEN.find((x) => x.id !== g.id && inFunkgruppe(x, h.lat, h.lon));
+          if (zone) {
+            adr = h;
+            break;
+          }
+        }
+      }
+      if (!adr || !zone) return null;
+      // nicht in der Gegend eines Notrufs, der gerade läutet oder abgefragt wird
+      if (this.state.einsaetze.some((x) => x.anruf && ["klingelt", "aktiv", "gehalten"].includes(x.anruf.status) && distanceM(x.wahr, adr!) < 15_000)) return null;
+      const code = this.fremdCode();
+      if (!code) return null;
+      const stufe = this.stufeDef(code.stufe);
+      const liste = await this.vorschlaegeAn(adr, stufe?.sondersignal ? this.settings.sondersignalFaktor : 1);
+      // Kräfte der Nachbarzone (simuliert): wer langsamer wäre, fährt nicht
+      const grenzeRm = rnd(8, 15) * 60;
+      const grenzeNa = rnd(12, 22) * 60;
+      const gefiltert = liste.filter((v) => {
+        if (v.sekunden === null || v.hinweis || v.kt) return false;
+        if (this.transportfaehig(v.fz)) {
+          // KTW nur, wenn die Stufe ohnehin zuerst einen KTW will
+          if (v.fz.rmTyp === "KTW" && !(stufe ? (raenge(stufe)[0] ?? []) : []).some((t) => t.startsWith("KTW"))) return false;
+          return v.sekunden <= grenzeRm;
+        }
+        if (v.fz.rmTyp === "NEF" || fliegt(v.fz)) return v.sekunden <= grenzeNa;
+        return false;
+      });
+      const label = adr.label;
+      this.stumm++;
+      let e: Einsatz;
+      try {
+        e = this.erstelleEinsatz({ lat: adr.lat, lon: adr.lon, adresse: label, code, meldung: `${code.beschreibung}. Einsatz der Zone ${zone.id}.` });
+      } finally {
+        this.stumm--;
+      }
+      e.fremd = { zone: zone.id };
+      e.adresse = { lat: adr.lat, lon: adr.lon, label };
+      e.bo = e.adresse;
+      e.code = code.code;
+      e.codeQuelle = "dispo";
+      e.zustand = "offen";
+      e.wahr.rtwBuchtSelbst = true;
+      // Partner (Feuerwehr, Polizei …) hat die Nachbarzone selbst alarmiert
+      for (const x of this.partnerFehlt(e)) (e.partner ??= {})[x.art] = this.state.zeit;
+      const { ids } = this.empfehlung(e.id, gefiltert);
+      const meine = ids.filter((id) => {
+        const f = this.state.fahrzeuge[id];
+        return f && inFunkgruppe(g, f.heim.lat, f.heim.lon);
+      });
+      if (!meine.length) {
+        this.state.einsaetze = this.state.einsaetze.filter((x) => x.id !== e.id);
+        this.state.zaehler--;
+        return null;
+      }
+      if (!ids.some((id) => this.state.fahrzeuge[id] && this.transportfaehig(this.state.fahrzeuge[id]))) e.fremd.rtwText = `Rettungswagen der Zone ${zone.id}`;
+      e.zusatz = `Einsatz der Zone ${zone.id} – angelegt und disponiert vom Kollegen dort${e.fremd.rtwText ? `; ${e.fremd.rtwText} fährt mit` : ""}`;
+      this.log(e, `Zone ${zone.id}: Einsatz angelegt (${code.code}), alarmiert ${ids.map((id) => this.state.fahrzeuge[id]?.funkrufname).join(", ")}`);
+      this.alarmiere(e.id, ids);
+      this.emit();
+      return e;
+    } finally {
+      this.fremdLaeuft = false;
     }
+  }
+
+  /** Planmäßiger Code für einen Nachbarzonen-Einsatz: meist mit Notarzt, keine Großlagen, ein Patient */
+  private fremdCode(): Einsatzcode | null {
+    const codes = allCodes().filter((c) => {
+      const st = this.stufeDef(c.stufe);
+      if (!st || !st.rettungsmittel) return false;
+      if (/Großunfall|Großschaden|Massen|MANV|mehrere|Mehrere|Alpin|Lawine/i.test(`${c.stufe} ${c.beschreibung}`)) return false;
+      return !/Aufwertung|aufgewertet/i.test(c.beschreibung);
+    });
+    const na = codes.filter((c) => this.stufeDef(c.stufe)?.notarzt === "nef");
+    const schnell = codes.filter((c) => this.stufeDef(c.stufe)?.notarzt === "schnellster");
+    const sonst = codes.filter((c) => this.stufeDef(c.stufe)?.notarzt === "nein");
+    const r = Math.random();
+    const pool = r < 0.65 && na.length ? na : r < 0.85 && schnell.length ? schnell : sonst.length ? sonst : codes;
+    return pool.length ? pick(pool) : null;
   }
 
   /** Erzeugt sofort einen Einsatz (Kategorie zufällig, wenn nicht angegeben). */
@@ -2595,6 +2752,10 @@ export class Simulation {
 
   /** Fahrzeug ruft LEO („LEO von 75/001 kommen“) und wartet auf Antwort */
   fzRuft(fz: SimFahrzeug, e: Einsatz | null, art: FunkAnliegen, text: string): void {
+    if (e?.fremd) {
+      this.log(e, `${fz.funkrufname} (Funk der Zone ${e.fremd.zone}): ${text}`);
+      return;
+    }
     const offen = this.state.funkGespraeche?.find((g) => g.fzId === fz.id && g.status !== "ende");
     if (offen && offen.status === "offen") {
       // schon verbunden: gleich durchgeben
