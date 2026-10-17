@@ -19,7 +19,10 @@
 **Behoben**
 - Die Anweisung an die KI widersprach sich („redet normal“ und gleichzeitig „nur einzelne Wörter“)
 - „Wenn du selbst anrufst …“ stand auch bei anderen Anrufern drin
-- Beispiel-Sätze der KI-Anweisung passen jetzt zum Geschlecht des Patienten
+- Die Beispiel-Sätze in der KI-Anweisung enthalten keine Beschwerden mehr – die KI hat sie sonst übernommen („redet so komisch“, „schnauft schwer“), obwohl der Patient normal redet und atmet
+- „Die Rettung ist unterwegs, bleiben Sie am Telefon“ gilt als Mitteilung: der Anrufer zählt nicht wieder den Zustand auf, sondern reagiert jedes Mal anders (Danke, „Wie lang dauert's?“, „Was soll ich tun?“, schickt jemanden zum Einweisen …)
+- Fremde sagen auf „Wer ruft an?“ nicht mehr „Ich bin der Passant“, sondern wie sie dazugekommen sind
+- Die erste Antwort bleibt bei der Adresse (Stock, Tür, Zufahrt erst auf Nachfrage)
 
 **Fall-Editor**
 - Schritt 2 heißt jetzt „Anrufer & Geschichte“: Fakten, Stilbeispiele, Details, feste Umgebung (z. B. „3. Stock, enges Stiegenhaus“) und Hinweise fürs Gespräch – mit Hilfe zu allen Bedingungen
