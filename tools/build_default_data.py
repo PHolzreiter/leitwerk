@@ -790,12 +790,16 @@ def build_hospitals() -> list[dict]:
 
     NOTFALL = {"amb_notaufnahme", "amb_unfall", "amb_kindernotaufnahme", "amb_psychiatrie_krise", "fb_schockraum", "its_stroke_unit", "fb_kreisssaal"}
 
-    def akut_aus(d: dict) -> tuple[str, str]:
-        """Häuser ohne jede Notfall-Anlaufstelle (und Privatkliniken) nehmen keine Rettung auf: alle Akut-Abteilungen aus"""
+    def akut_aus(d: dict, kid: str = "") -> tuple[str, str]:
+        """Häuser ohne jede Notfall-Anlaufstelle (und Privatkliniken) nehmen keine Rettung auf: alle Akut-Abteilungen aus.
+        Dazu einzeln belegte Ausnahmen (z. B. keine Thrombektomie trotz Angiographie)."""
         haben = set(d["einrichtungen"])
-        if not d.get("privat") and (haben | set(d.get("unklar", []))) & NOTFALL:
-            return "", ""
         ak = [a["id"] for a in klinik["ebene2_akut_abteilungen"] if any(all(x in haben for x in alt) for alt in a["voraussetzung"])]
+        extra_aus = zeiten_alle.get(kid, {}).get("_akut_aus", [])
+        if "*" in extra_aus:
+            return ", ".join(ak), "nimmt derzeit keine Rettung auf"
+        if not d.get("privat") and (haben | set(d.get("unklar", []))) & NOTFALL:
+            return ", ".join(x for x in ak if x in extra_aus), ""
         grund = "Privatklinik – nimmt keine Rettung auf" if d.get("privat") else "keine Notaufnahme belegt – nimmt keine Rettung auf"
         return ", ".join(ak), grund
 
@@ -808,7 +812,7 @@ def build_hospitals() -> list[dict]:
             lat, lon = float(r["@lat"]), float(r["@lon"])
         kid = f"kh{i:03d}"
         d = einr[kid]
-        aus, grund = akut_aus(d)
+        aus, grund = akut_aus(d, kid)
         out.append({"id": kid, "name": name, "kurzname": kurz, "ort": ort,
                     "breitengrad": f"{lat:.6f}", "laengengrad": f"{lon:.6f}",
                     "einrichtungen": ", ".join(d["einrichtungen"]), "akut_aus": aus, **extra(kid, d),
@@ -822,8 +826,8 @@ def build_hospitals() -> list[dict]:
         n += 1
         out.append({"id": f"kh{n:03d}", "name": d["name"], "kurzname": d.get("kurzname") or d["name"], "ort": d.get("ort", ""),
                     "breitengrad": f"{float(d['lat']):.6f}", "laengengrad": f"{float(d['lon']):.6f}",
-                    "einrichtungen": ", ".join(d["einrichtungen"]), "akut_aus": akut_aus(d)[0], **extra(f"kh{n:03d}", d),
-                    "hinweis": (f"{akut_aus(d)[1]} – " if akut_aus(d)[1] else "") + hinweis(d)})
+                    "einrichtungen": ", ".join(d["einrichtungen"]), "akut_aus": akut_aus(d, f"kh{n:03d}")[0], **extra(f"kh{n:03d}", d),
+                    "hinweis": (f"{akut_aus(d, f'kh{n:03d}')[1]} – " if akut_aus(d, f"kh{n:03d}")[1] else "") + hinweis(d)})
     return out
 
 
