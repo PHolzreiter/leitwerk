@@ -82,30 +82,47 @@ export function inZeiten(plan: Schicht[], t: number): boolean {
   return false;
 }
 
-/** Aufnahmerad: das Haus hat an jedem n-ten Tag Aufnahmetag (Wechsel um „wechsel“ Uhr) */
+/**
+ * Aufnahmerad (z. B. Linz): fester Zyklus, je Tag ein Buchstabe für das diensthabende Haus
+ * (Dienst von „wechsel“ bis „wechsel“ am Folgetag). Je Einrichtung steht, an welchen Buchstaben-Tagen sie aufnimmt.
+ */
 export interface Aufnahmerad {
   gruppe: string;
-  /** Position im Rad (0 … anzahl-1) */
-  nr: number;
-  anzahl: number;
-  /** Uhrzeit des Wechsels, z. B. "07:30" */
+  /** erster Tag des Zyklus (yyyy-mm-dd) */
+  start: string;
+  /** ein Buchstabe je Tag, z. B. "SBSKBBSK…" */
+  zyklus: string;
+  /** Uhrzeit des Wechsels, z. B. "07:00" */
   wechsel: string;
-  /** betroffene Einrichtungen: nur am Aufnahmetag offen */
-  einrichtungen: string[];
+  /** Einrichtung → Buchstaben der Tage, an denen sie aufnimmt (nur diese sind vom Rad betroffen) */
+  einrichtungen: Record<string, string>;
 }
 
-export function aufnahmetag(r: Aufnahmerad, t: number): boolean {
-  const lokal = t - new Date(t).getTimezoneOffset() * 60_000;
-  const verschoben = lokal - minuten(r.wechsel) * 60_000;
-  const tagNr = Math.floor(verschoben / TAG_MS);
-  return ((tagNr % r.anzahl) + r.anzahl) % r.anzahl === r.nr;
+/** Buchstabe des diensthabenden Hauses zum Zeitpunkt t */
+export function radTag(r: Aufnahmerad, t: number): string {
+  const d = new Date(t - minuten(r.wechsel) * 60_000);
+  const [y, m, dd] = r.start.split("-").map(Number);
+  const start = Date.UTC(y, (m || 1) - 1, dd || 1);
+  const heute = Date.UTC(d.getFullYear(), d.getMonth(), d.getDate());
+  const n = r.zyklus.length;
+  if (!n) return "";
+  const i = Math.round((heute - start) / TAG_MS);
+  return r.zyklus[((i % n) + n) % n];
+}
+
+/** Ist heute Aufnahmetag (für eine Einrichtung, sonst für die Notaufnahme bzw. die erste genannte)? */
+export function aufnahmetag(r: Aufnahmerad, t: number, einrichtung?: string): boolean {
+  const ids = Object.keys(r.einrichtungen);
+  const id = einrichtung ?? (ids.includes("amb_notaufnahme") ? "amb_notaufnahme" : ids[0]);
+  const tage = id ? r.einrichtungen[id] : undefined;
+  return tage === undefined ? true : tage.includes(radTag(r, t));
 }
 
 /** Ist die Einrichtung jetzt offen (für Akutaufnahmen)? */
 export function offen(h: Hospital, einrichtung: string, t: number): boolean {
   if (!(h.einrichtungen ?? []).includes(einrichtung)) return false;
   const rad = h.aufnahmerad;
-  if (rad && rad.einrichtungen.includes(einrichtung) && !aufnahmetag(rad, t)) return false;
+  if (rad && rad.einrichtungen[einrichtung] !== undefined && !aufnahmetag(rad, t, einrichtung)) return false;
   const z = h.zeiten?.[einrichtung];
   return z && z.length ? inZeiten(z, t) : true;
 }

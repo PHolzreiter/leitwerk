@@ -49,14 +49,17 @@ function plaetzeLesen(text: string): Partial<Record<Ressource, number>> {
   return out;
 }
 
-/** Aufnahmerad: „Linz 2/4 07:30: amb_notaufnahme, fb_herzkatheter“ */
+/** Aufnahmerad: „Linz 2026-09-01 07:00 SBSKBBSK…: amb_notaufnahme=S, its_stroke_unit=BS“ */
 function radLesen(text: string): Aufnahmerad | null {
-  const m = text.trim().match(/^(.+?)\s+(\d+)\s*\/\s*(\d+)\s+(\d{1,2}:\d{2})\s*:\s*(.+)$/);
+  const m = text.trim().match(/^(.+?)\s+(\d{4}-\d{2}-\d{2})\s+(\d{1,2}:\d{2})\s+([A-Za-z]+)\s*:\s*(.+)$/);
   if (!m) return null;
-  const anzahl = Number(m[3]);
-  const nr = Number(m[2]) - 1;
-  if (anzahl < 2 || nr < 0 || nr >= anzahl) return null;
-  return { gruppe: m[1].trim(), nr, anzahl, wechsel: m[4].padStart(5, "0"), einrichtungen: m[5].split(",").map((x) => x.trim()).filter(Boolean) };
+  const einrichtungen: Record<string, string> = {};
+  for (const teil of m[5].split(",").map((x) => x.trim()).filter(Boolean)) {
+    const [id, tage] = teil.split("=").map((x) => x.trim());
+    if (id && tage) einrichtungen[id] = tage;
+  }
+  if (!Object.keys(einrichtungen).length) return null;
+  return { gruppe: m[1].trim(), start: m[2], wechsel: m[3].padStart(5, "0"), zyklus: m[4], einrichtungen };
 }
 
 /** Einrichtungen aus einer CSV-Zelle: IDs oder Namen, mit Komma getrennt */
@@ -683,7 +686,8 @@ export function exportCsv<K extends Kind>(kind: K, records: KindMap[K][], statio
         v.plaetze = Object.entries(h.plaetze ?? {})
           .map(([k, n]) => `${k}=${n}`)
           .join(", ");
-        v.aufnahmerad = h.aufnahmerad ? `${h.aufnahmerad.gruppe} ${h.aufnahmerad.nr + 1}/${h.aufnahmerad.anzahl} ${h.aufnahmerad.wechsel}: ${h.aufnahmerad.einrichtungen.join(", ")}` : "";
+        const r = h.aufnahmerad;
+        v.aufnahmerad = r ? `${r.gruppe} ${r.start} ${r.wechsel} ${r.zyklus}: ${Object.entries(r.einrichtungen).map(([k, x]) => `${k}=${x}`).join(", ")}` : "";
       } else {
         const p = rec as Poi;
         Object.assign(v, { typ: p.typ, ort: p.ort });

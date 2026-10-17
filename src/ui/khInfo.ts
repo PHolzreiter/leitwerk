@@ -102,7 +102,7 @@ export function khDetail(h: Hospital): void {
     .map(
       (r) => `<div class="khd-platz">
         <div class="khd-pn">${esc(r.name)}</div>
-        <div class="khd-pz">${esc(zeitenText(h.zeiten?.[r.einrichtung]))}${h.aufnahmerad?.einrichtungen.includes(r.einrichtung) ? " · nur am Aufnahmetag" : ""}</div>
+        <div class="khd-pz">${esc(zeitenText(h.zeiten?.[r.einrichtung]))}${h.aufnahmerad?.einrichtungen[r.einrichtung] !== undefined ? " · nur an Aufnahmetagen" : ""}</div>
         ${platzZelle(h, r.id, t)}
       </div>`,
     )
