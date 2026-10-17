@@ -5,6 +5,7 @@
  */
 import type { Antworten } from "../abfrage/schema";
 import { ist, thema } from "../abfrage/themen";
+import type { AnleitungTyp, FallVariante, NaBedarf } from "../abfrage/faelle";
 
 export type Bewusstsein = "ja" | "getruebt" | "nein";
 export type Atmung = "normal" | "abnorm" | "agonal" | "keine";
@@ -26,6 +27,36 @@ export interface LageEreignis {
   bw: Bewusstsein;
   at: Atmung;
   eingetreten: boolean;
+  /** Fallkatalog: neue Sichtung, Lagebild, NA-Bedarf, Variante, Text des Anrufers */
+  sichtung?: Sichtung;
+  kern?: string;
+  na?: NaBedarf;
+  wechselZu?: string;
+  text?: string;
+  /** gehört zu dieser Variante (wechselt die Variante, entfällt es) */
+  variante?: string;
+  chance?: number;
+  mitAnleitung?: { typ: AnleitungTyp; chance: number };
+  chanceOhneNa?: number;
+  nurMitNa?: boolean;
+  /** nur, solange kein NA vor Ort ist (Verschlechterung ohne Notarzt) */
+  nurOhneNa?: boolean;
+  /** Ereignis ändert nichts am Patienten (z. B. Geburt erfolgt) */
+  nurText?: boolean;
+}
+
+/** Fall aus dem Katalog: aktuelle Variante, Lagebild und Bedarf */
+export interface LageFall {
+  id: string;
+  variante: string;
+  kern: string;
+  na: NaBedarf;
+  /** Anleitungen am Telefon: Typ → Zeitpunkt */
+  anleitungen: Partial<Record<AnleitungTyp, number>>;
+  /** Verschlechterung ohne NA ist schon eingeplant */
+  ohneNaGeplant?: boolean;
+  /** Entscheidung: NA begleitet den Transport */
+  naMit?: boolean;
 }
 
 export interface Lage {
@@ -40,6 +71,8 @@ export interface Lage {
   verlauf: { zeit: number; text: string }[];
   /** Patient zu schwer für die normale Trage (ca. 150 kg und mehr): BIT nötig */
   bit?: boolean;
+  /** Einsatz aus dem Fallkatalog */
+  fall?: LageFall;
 }
 
 export type Komplikationen = "ruhig" | "normal" | "fordernd";
@@ -133,6 +166,54 @@ export function lageErzeugen(kapitel: string, a: Antworten, jetzt: number, kriti
   return lage;
 }
 
+/** Lage aus einem Fall des Katalogs: Patient, Zeitleiste und Bedarf stehen im Fall */
+export function lageAusFall(fallId: string, v: FallVariante, a: Antworten, jetzt: number): Lage {
+  const gueltig = <T extends string>(x: unknown, l: readonly T[], d: T): T => (l.includes(x as T) ? (x as T) : d);
+  const bw = gueltig(v.wahr?.bw ?? a.bw, ["ja", "getruebt", "nein"] as const, "ja");
+  const at = gueltig(v.wahr?.at ?? a.at, ["normal", "abnorm", "agonal", "keine"] as const, "normal");
+  const geschlecht: "m" | "w" = a.geschlecht === "w" ? "w" : a.geschlecht === "m" ? "m" : Math.random() < 0.5 ? "w" : "m";
+  const alter = typeof a.alter === "number" ? a.alter : Math.round(zufall(20, 85));
+  const lage: Lage = {
+    patienten: [{ nr: 1, geschlecht, alter, bw, at, sichtung: v.sichtung }],
+    gemeldet: 1,
+    irrtum: null,
+    ereignisse: [],
+    aufgedeckt: false,
+    verlauf: [],
+    fall: { id: fallId, variante: v.id, kern: v.lage, na: v.na, anleitungen: {} },
+  };
+  ereignisseEinplanen(lage, v, jetzt);
+  return lage;
+}
+
+/** Zeitleiste einer Variante einplanen (Minuten ab „start“) */
+export function ereignisseEinplanen(l: Lage, v: FallVariante, start: number): void {
+  const p0 = l.patienten[0];
+  for (const ev of v.verlauf ?? []) {
+    const nur = ev.bw === undefined && ev.at === undefined && ev.sichtung === undefined;
+    l.ereignisse.push({
+      um: start + zufall(ev.nachMin[0], ev.nachMin[1]) * MIN,
+      art: ev.art ?? "besserung",
+      patient: 1,
+      bw: ev.bw ?? p0.bw,
+      at: ev.at ?? p0.at,
+      eingetreten: false,
+      sichtung: ev.sichtung,
+      kern: ev.lage,
+      na: ev.na,
+      wechselZu: ev.wechselZu,
+      text: ev.text,
+      variante: v.id,
+      chance: ev.chance,
+      mitAnleitung: ev.mitAnleitung,
+      chanceOhneNa: ev.chanceOhneNa,
+      nurMitNa: ev.nurMitNa,
+      nurText: nur,
+    });
+  }
+  l.ereignisse.sort((x, y) => x.um - y.um);
+}
+
 /** Kurztext eines Patienten, z. B. „Mann, ca. 71 J., benommen, atmet schwer (rot)“ */
 export function patientText(p: LagePatient): string {
   const bw = { ja: "wach", getruebt: "benommen", nein: "bewusstlos" }[p.bw];
@@ -178,6 +259,9 @@ export function lagemeldungText(l: Lage, kapitel: string, fehlt: { na: number; r
     for (const p of l.patienten) z[p.sichtung]++;
     const s = [z.rot && `${z.rot}× rot`, z.gelb && `${z.gelb}× gelb`, z.gruen && `${z.gruen}× grün`].filter(Boolean).join(", ");
     teile.push(`${ist(kapitel, "verkehrsunfall", "ecall") ? "Verkehrsunfall, " : ""}${l.patienten.length} Betroffene, davon ${s}`);
+  } else if (l.fall && !(istStillstand(p0) && !/Reanimation|verstorben|Kreislauf/i.test(l.fall.kern))) {
+    const wer = p0.alter < 14 ? `Kind ${p0.alter} ${p0.alter === 1 ? "Jahr" : "Jahre"}` : `${p0.geschlecht === "w" ? "Frau" : "Mann"} ${p0.alter}`;
+    teile.push(`${wer}, ${l.fall.kern}`);
   } else if (istStillstand(p0)) teile.push("Patient reanimationspflichtig, Reanimation läuft");
   else {
     const bw = { ja: "wach", getruebt: "eingetrübt", nein: "bewusstlos" }[p0.bw];

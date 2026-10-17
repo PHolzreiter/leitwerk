@@ -36,10 +36,11 @@ import { funkVorlesenStarten, sprachTest } from "./ui/sprache";
 import { dienstHoverEinrichten } from "./ui/dienstWoche";
 import { schemaUebernehmen } from "./ui/importDialog";
 import type { Schema } from "./abfrage/schema";
+import { faellePruefen } from "./abfrage/faellePruefen";
 dienstHoverEinrichten();
 
 // Für automatische Tests im Browser (…/?debug): Zugriff auf Simulation und Daten
-if (location.search.includes("debug")) Object.assign(window, { __lw: { sim, store, sprachTest, codesystemLaden: (s: Schema) => schemaUebernehmen(s, "test.json") } });
+if (location.search.includes("debug")) Object.assign(window, { __lw: { sim, store, sprachTest, codesystemLaden: (s: Schema) => schemaUebernehmen(s, "test.json"), faellePruefen: () => faellePruefen(store.schema) } });
 
 async function watchGeo(): Promise<void> {
   const out = document.getElementById("geo-status");

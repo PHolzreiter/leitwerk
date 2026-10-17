@@ -15,7 +15,7 @@ import { store } from "../data/store";
 import { streuung } from "../data/schema";
 import { allCodes, findCode, hasCodes, type Einsatzcode } from "./codes";
 import { distanceM, erreichbar, flightRoute, geoStatus, randomAddresses, route, searchAddress, travelTimes, type LatLon, type Route } from "./geo";
-import { generiereBesetzung, hatNFS, rmTypVon, type Platz, type RmTyp } from "./crew";
+import { generiereBesetzung, hatNFS, hoechsteQuali, rang, rmTypVon, type Platz, type Quali, type RmTyp } from "./crew";
 import { defaultStufeFuer, raenge, type Kategorie, type Settings, type StatusKey, type StufeDef } from "./settings";
 import {
   fahrFaktor,
@@ -62,7 +62,9 @@ import { codeInfo, codeVorschlag, istUeberstellung } from "./ktCodes";
 import { PARTNER, PARTNER_ANZAHL, partnerArtVonTyp, partnerNoetig, partnerSchonDa, type PartnerArt, type PartnerGrund } from "./partner";
 import { FUNKGRUPPEN, funkgruppe, inFunkgruppe, mitteVon, type Funkgruppe } from "./funkgruppen";
 import { sekZufall } from "./sek";
-import { bedarf, istStillstand, lageErzeugen, lagemeldungText, patientText, type Lage } from "./lage";
+import { bedarf, ereignisseEinplanen, istStillstand, lageAusFall, lageErzeugen, lagemeldungText, patientText, type Lage } from "./lage";
+import { anleitungAus, fallVariante, fallVorlage, fallWaehlen, varianteWaehlen, type FallVariante } from "../abfrage/faelle";
+import { nachrichtArt } from "../abfrage/runde";
 
 const MIN = 60_000;
 const NF_NAME = { NA: "Notarzt", RTW: "Rettungsmittel", BIT: "BIT (Schwerlasttransport)" } as const;
@@ -244,6 +246,8 @@ export interface Fall {
   /** Fallgeschichte (Vorlage) und gewählter Ort */
   vorlage?: string;
   ortArt?: OrtArt;
+  /** Fall aus dem Fallkatalog (faelle.ts) mit der gezogenen Variante */
+  katalog?: { id: string; variante: string };
 }
 
 /** So heißt der Ort beim Anrufer */
@@ -484,6 +488,9 @@ export interface Einsatz {
     transport: boolean;
     /** Verdachtsdiagnose (Buchungs-ID) – ergibt sich erst beim Patienten */
     verdacht?: string;
+    /** Fallkatalog: Transportverweigerung geprüft bzw. Revers unterschrieben */
+    reversGeprueft?: boolean;
+    revers?: boolean;
     /** veraltet (ältere Spielstände) */
     abteilung?: string;
     rtwBuchtSelbst: boolean;
@@ -1553,11 +1560,11 @@ export class Simulation {
           return x && x.einsatzId === e.id && this.transportfaehig(x);
         });
       // Notarzt fährt mit: kritischer Einsatz oder (beim BIT-Transport) Notarzt nötig
-      const naMit = this.kritisch(e) || (!!e.wahr.lage?.bit && bedarf(e.wahr.lage).na > 0);
+      const naMit = e.wahr.lage?.fall ? this.naBegleitetFall(e) : this.kritisch(e) || (!!e.wahr.lage?.bit && bedarf(e.wahr.lage).na > 0);
       if (rtwMitTransport && naMit && fz.kategorie === "NEF") {
         fz.begleitet = true;
         this.log(e, `${fz.funkrufname}: Notarzt begleitet den Transport`);
-      } else if (rtwMitTransport && this.kritisch(e) && fliegt(fz)) {
+      } else if (rtwMitTransport && (e.wahr.lage?.fall ? naMit : this.kritisch(e)) && fliegt(fz)) {
         this.log(e, `${fz.funkrufname}: Patient wird mit dem NAH transportiert`);
         fz.begleitet = true;
       } else {
@@ -1590,9 +1597,32 @@ export class Simulation {
       this.log(e, `${fz.funkrufname}: kein BIT verfügbar – Transport mit eigenem Fahrzeug`);
       this.fzRuft(fz, e, "info", "kein BIT gekommen, wir transportieren mit eigenem Fahrzeug, mit zusätzlicher Tragehilfe");
     }
+    // Fallkatalog: Todesfall, Transportverweigerung
+    const fvar = this.fallVar(e);
+    if (fvar?.tot) {
+      if (!this.einsatzFz(e).some((x) => this.mitNotarzt(x) && x.phase === "vorOrt")) {
+        // ohne Arzt keine Todesfeststellung: warten, bis der Notarzt da ist
+        if (!this.einsatzFz(e).some((x) => this.mitNotarzt(x))) this.nachfordern(e, fz, { na: 1, rtw: 0, bit: 0 });
+        fz.phaseEnde = t + 3 * MIN;
+        return;
+      }
+      this.log(e, `${fz.funkrufname}: Patient verstorben, Todesfeststellung durch den Notarzt`);
+      this.fzRuft(fz, e, "info", "Patient verstorben, Tod durch den Notarzt festgestellt, kein Transport, wir werden einsatzbereit");
+      return this.freigeben(fz);
+    }
+    if (fvar?.revers && e.wahr.transport && !e.wahr.reversGeprueft) {
+      e.wahr.reversGeprueft = true;
+      const p0 = l?.patienten[0];
+      const f = this.settings.revers === "aus" ? 0 : this.settings.revers === "selten" ? 0.5 : 1;
+      if (p0 && p0.bw === "ja" && p0.sichtung !== "rot" && Math.random() < fvar.revers * f) {
+        e.wahr.transport = false;
+        e.wahr.revers = true;
+      }
+    }
     if (!e.wahr.transport) {
-      this.log(e, `${fz.funkrufname}: kein Transport erforderlich`);
-      this.funk(fz.funkrufname, e.id, "Kein Transport, Patient verbleibt vor Ort", "info");
+      this.log(e, `${fz.funkrufname}: ${e.wahr.revers ? "Transportverweigerung, Revers unterschrieben" : "kein Transport erforderlich"}`);
+      if (e.wahr.revers) this.fzRuft(fz, e, "info", "Patient verweigert den Transport, Revers unterschrieben, wir werden einsatzbereit");
+      else this.funk(fz.funkrufname, e.id, "Kein Transport, Patient verbleibt vor Ort", "info");
       return this.freigeben(fz);
     }
     fz.phase = "warteKH";
@@ -1612,9 +1642,28 @@ export class Simulation {
     this.log(e, `${fz.funkrufname} erbittet KH-Buchung (Verdacht ${buchungName(verdacht)})`);
   }
 
+  /** Fallkatalog: fährt der Notarzt mit? (rot, NA-Bedarf oder Vorgabe des Falls; gelb oft, grün nie) */
+  private naBegleitetFall(e: Einsatz): boolean {
+    const lf = e.wahr.lage?.fall;
+    if (!lf) return false;
+    if (lf.naMit !== undefined) return lf.naMit;
+    const v = this.fallVar(e);
+    const p0 = e.wahr.lage!.patienten[0];
+    let mit: boolean;
+    if (v?.tot) mit = false;
+    else if (p0.sichtung === "rot" || istStillstand(p0)) mit = true;
+    else if (v?.naBegleitet !== undefined) mit = v.naBegleitet;
+    else if (lf.na !== "nein") mit = true;
+    else mit = p0.sichtung === "gelb" ? Math.random() < 0.5 : false;
+    lf.naMit = mit;
+    return mit;
+  }
+
   /** Verdachtsdiagnose des Einsatzes (einmal festgelegt, sobald die Besatzung beim Patienten war) */
   verdacht(e: Einsatz): string {
     if (e.wahr.verdacht) return e.wahr.verdacht;
+    const fv = this.fallVar(e);
+    if (fv) return (e.wahr.verdacht = fv.buchung);
     const w = e.wahr.abfrage;
     const c = findCode(e.wahr.code);
     const l = e.wahr.lage;
@@ -1858,7 +1907,7 @@ export class Simulation {
     }
     if (p.fall && store.schema) {
       const schema = store.schema;
-      const vorlage = p.fall.vorlage ? SZENARIEN.find((v) => v.id === p.fall!.vorlage) : undefined;
+      const vorlage = p.fall.vorlage ? (fallVorlage(p.fall.vorlage) ?? SZENARIEN.find((v) => v.id === p.fall!.vorlage)) : undefined;
       const ortArt: OrtArt | undefined = p.fall.ortArt ?? vorlage?.orte[0];
       const anrufer = anruferWaehlen(
         p.fall.kapitel,
@@ -1885,7 +1934,11 @@ export class Simulation {
         const familie = /ehe|lebensgef|mutter|vater|tochter|sohn/i.test(anrufer.rolle);
         const neu = zufallsName(w ? "w" : "m");
         const pname = anrufer.selbst ? anrufer.name : familie ? `${neu.split(" ")[0]} ${anrufer.name.split(" ").slice(1).join(" ")}` : neu;
-        szenario = szenarioBauen(vorlage, store.schema ? merkmaleAusSchema(store.schema, a) : a, { bezug: bezugFuer(anrufer.rolle, anrufer.selbst, w, alt), selbst: anrufer.selbst, ort: p.gemeinde ?? gemeindeVon(p.adresse), name: pname, ortArt }, Math.random);
+        const merkmale = store.schema ? merkmaleAusSchema(store.schema, a) : { ...a };
+        // Fallkatalog: Texte mit [variante=…] gelten nur für die gezogene Variante
+        if (p.fall.katalog) merkmale.variante = p.fall.katalog.variante;
+        szenario = szenarioBauen(vorlage, merkmale, { bezug: bezugFuer(anrufer.rolle, anrufer.selbst, w, alt), selbst: anrufer.selbst, ort: p.gemeinde ?? gemeindeVon(p.adresse), name: pname, ortArt }, Math.random);
+        delete szenario.zusatz.variante;
         const st = stimmungAusVerlauf(szenario.verlauf);
         if (st && (anrufer.art ?? "privat") === "privat") anrufer.emotion = st;
       }
@@ -1898,7 +1951,12 @@ export class Simulation {
         szenario,
       };
       e.meldung.text = "";
-      e.wahr.lage = lageErzeugen(p.fall.kapitel, p.fall.antworten, this.state.zeit, kritisch, this.settings.komplikationen ?? "normal");
+      const fv = p.fall.katalog ? fallVorlage(p.fall.katalog.id) : undefined;
+      const fvar = fv && p.fall.katalog ? fallVariante(fv, p.fall.katalog.variante) : undefined;
+      if (fv && fvar) {
+        e.wahr.lage = lageAusFall(fv.id, fvar, store.schema ? merkmaleAusSchema(store.schema, p.fall.antworten) : p.fall.antworten, this.state.zeit);
+        e.wahr.transport = fvar.transport !== false;
+      } else e.wahr.lage = lageErzeugen(p.fall.kapitel, p.fall.antworten, this.state.zeit, kritisch, this.settings.komplikationen ?? "normal");
       e.anruf = {
         status: "klingelt",
         seit: this.state.zeit,
@@ -2416,7 +2474,16 @@ export class Simulation {
     };
     let code: Einsatzcode | undefined;
     let fall: Fall | null = null;
-    if (schema) {
+    // Fallkatalog: der Fall (die Wahrheit) zuerst, alles andere wird daraus abgeleitet
+    const katalogModus = this.fallWunsch ? "nur" : (s.fallKatalog ?? "nur");
+    if (schema && katalogModus !== "aus" && (katalogModus === "nur" || Math.random() < 0.6)) {
+      const kf = this.fallAusKatalog(schema);
+      if (kf) {
+        code = kf.code;
+        fall = kf.fall;
+      }
+    }
+    if (schema && !fall) {
       // Fall aus dem Abfrageschema ziehen: Antworten und Code passen garantiert zusammen
       const temp = this.temperatur();
       const lage = lageVon(this.state.wetter.lage);
@@ -2475,7 +2542,7 @@ export class Simulation {
     }
     const alter = typeof fall?.antworten.alter === "number" ? fall.antworten.alter : null;
     // Notruf aus der Natur: Anrufer weiß nicht genau, wo er ist (Ortung nötig)
-    const vorlage = fall?.vorlage ? SZENARIEN.find((v) => v.id === fall!.vorlage) : undefined;
+    const vorlage = fall?.vorlage ? (fallVorlage(fall.vorlage) ?? SZENARIEN.find((v) => v.id === fall!.vorlage)) : undefined;
     let draussen: string | null = null;
     if (vorlage) {
       // Geschichte im Freien (Wald, Feldweg, Landstraße): Ort nur grob bekannt
@@ -2500,6 +2567,45 @@ export class Simulation {
       return e;
     }
     return this.erstelleEinsatz({ lat: adr.lat, lon: adr.lon, adresse: adr.label, code, gemeldeteAdresse: gemeldet, fall, patientAlter: alter });
+  }
+
+  /** Nächster Einsatz kommt aus diesem Fall (für Tests und den Fall-Editor) */
+  private fallWunsch: { id: string; variante?: string } | null = null;
+  async generiereFall(id: string, variante?: string): Promise<Einsatz | null> {
+    this.fallWunsch = { id, variante };
+    try {
+      return await this.generiere();
+    } finally {
+      this.fallWunsch = null;
+    }
+  }
+
+  /** Fall aus dem Katalog ziehen: Variante, Antworten (Wahrheit), Kapitel und der Code, der dazu passt */
+  private fallAusKatalog(schema: Schema): { fall: Fall; code: Einsatzcode } | null {
+    const temp = this.temperatur();
+    const lage = lageVon(this.state.wetter.lage);
+    const wetter = this.settings.wetterAktiv;
+    const glatt = lage === "eisregen" || (temp < 1 && ["schnee", "regen", "nebel"].includes(lageArt(lage)));
+    const ctx = { jahreszeit: jahreszeitVon(this.state.zeit, this.wetterOpt()), stunde: new Date(this.state.zeit).getHours(), temp: wetter ? temp : 15, glatt: wetter && glatt };
+    for (let i = 0; i < 12; i++) {
+      const wunsch = this.fallWunsch;
+      const f = wunsch ? fallVorlage(wunsch.id) : fallWaehlen(ctx, Math.random);
+      if (!f) return null;
+      const kap = kapitelZuThema(f.thema, schema);
+      if (!kap) continue;
+      const v = (wunsch?.variante ? fallVariante(f, wunsch.variante) : undefined) ?? varianteWaehlen(f, this.settings.komplikationen ?? "normal", Math.random);
+      const a: Antworten = { ...vorlageFest(f, Math.random), ...(v.fest ?? {}) };
+      const antworten = merkmaleInSchema(schema, a);
+      const erg = bestimmeCode(schema, kap, antworten);
+      const c = erg ? findCode(erg.code) : undefined;
+      if (!erg || !c) {
+        console.warn("Fallkatalog: kein Code für", f.id, v.id);
+        continue;
+      }
+      const ortArt = this.ortArtWaehlen(f.orte, typeof a.alter === "number" ? a.alter : null);
+      return { fall: { kapitel: kap, antworten, code: c.code, vorlage: f.id, ortArt, katalog: { id: f.id, variante: v.id } }, code: c };
+    }
+    return null;
   }
 
   private fallFuerCode(schema: Schema, code: string): Fall | null {
@@ -2616,6 +2722,16 @@ export class Simulation {
     if (!t) return;
     a.gespraech.push({ zeit: this.state.zeit, echt: Date.now(), von, text: t, wer: von === "leitstelle" ? this.calltaker().name : undefined, quelle });
     if (a.gespraech.length > 200) a.gespraech.splice(1, a.gespraech.length - 200);
+    // Anleitung am Telefon (Fallkatalog): wirkt auf den Verlauf
+    const lf = e.wahr.lage?.fall;
+    if (von === "leitstelle" && lf) {
+      for (const typ of anleitungAus(t, nachrichtArt(t) === "anweisung")) {
+        if (lf.anleitungen[typ] === undefined) {
+          lf.anleitungen[typ] = this.state.zeit;
+          this.log(e, `Anleitung am Telefon: ${typ.replace(/_/g, " ")}`);
+        }
+      }
+    }
     this.emit();
   }
 
@@ -2770,6 +2886,10 @@ export class Simulation {
       if (!l || e.zustand === "abgeschlossen") continue;
       for (const ev of l.ereignisse) {
         if (ev.eingetreten || t < ev.um) continue;
+        if (l.fall) {
+          this.fallEreignis(e, l, ev, t);
+          continue;
+        }
         ev.eingetreten = true;
         const p = l.patienten[ev.patient - 1];
         if (!p) continue;
@@ -2782,18 +2902,70 @@ export class Simulation {
     }
   }
 
-  private lageMelden(e: Einsatz, besserung: boolean, t: number): void {
+  /** Ereignis eines Falls aus dem Katalog (Chance, Anleitung, Notarzt vor Ort, Variantenwechsel) */
+  private fallEreignis(e: Einsatz, l: Lage, ev: Lage["ereignisse"][number], t: number): void {
+    const lf = l.fall!;
+    if (ev.variante && ev.variante !== lf.variante) {
+      ev.eingetreten = true;
+      return;
+    }
+    const naDa = this.einsatzFz(e).some((x) => this.mitNotarzt(x) && x.phase === "vorOrt");
+    if (ev.nurMitNa && !naDa) {
+      ev.um = t + 3 * MIN;
+      return;
+    }
+    ev.eingetreten = true;
+    if (ev.nurOhneNa && naDa) return;
+    let chance = ev.chance ?? 1;
+    const gegeben = ev.mitAnleitung ? lf.anleitungen[ev.mitAnleitung.typ] : undefined;
+    if (ev.mitAnleitung && gegeben !== undefined && gegeben <= t) chance = ev.mitAnleitung.chance;
+    else if (ev.chanceOhneNa !== undefined && !naDa) chance = ev.chanceOhneNa;
+    if (Math.random() >= chance) return;
+    const p = l.patienten[0];
+    if (!ev.nurText) {
+      p.bw = ev.bw;
+      p.at = ev.at;
+    }
+    if (ev.sichtung) p.sichtung = ev.sichtung;
+    if (ev.wechselZu) {
+      const fv = fallVorlage(lf.id);
+      const nv = fv ? fallVariante(fv, ev.wechselZu) : undefined;
+      if (nv) {
+        lf.variante = nv.id;
+        lf.kern = nv.lage;
+        lf.na = nv.na;
+        lf.ohneNaGeplant = false;
+        lf.naMit = undefined;
+        e.wahr.transport = nv.transport !== false;
+        if (!e.kh) e.wahr.verdacht = undefined;
+        ereignisseEinplanen(l, nv, t);
+      }
+    }
+    if (ev.kern) lf.kern = ev.kern;
+    if (ev.na) lf.na = ev.na;
+    l.verlauf.push({ zeit: t, text: `${ev.art === "verschlechterung" ? "Verschlechterung" : "Veränderung"}: ${lf.kern}` });
+    this.lageMelden(e, ev.art !== "verschlechterung", t, ev.text, ev.nurText);
+  }
+
+  private lageMelden(e: Einsatz, besserung: boolean, t: number, fallText?: string, nurText?: boolean): void {
     const l = e.wahr.lage!;
     const p0 = l.patienten[0];
     if (l.aufgedeckt) {
       // Besatzung vor Ort meldet sich
       const fz = e.fahrzeuge.map((id) => this.state.fahrzeuge[id]).find((f) => f && f.einsatzId === e.id && f.phase === "vorOrt");
       if (!fz) return;
-      const text = besserung
-        ? `Patient hat sich gebessert, ${patientText(p0).replace(/ \(.*\)$/, "")}`
-        : istStillstand(p0)
+      const kern = l.fall?.kern;
+      const text = l.fall && kern
+        ? istStillstand(p0) && !/Reanimation|verstorben/i.test(kern)
           ? "Patient jetzt reanimationspflichtig, Reanimation läuft"
-          : `Patient verschlechtert sich, ${patientText(p0).replace(/ \(.*\)$/, "")}`;
+          : nurText || besserung
+            ? `Lage verändert: ${kern}`
+            : `Patient verschlechtert sich, ${kern}`
+        : besserung
+          ? `Patient hat sich gebessert, ${patientText(p0).replace(/ \(.*\)$/, "")}`
+          : istStillstand(p0)
+            ? "Patient jetzt reanimationspflichtig, Reanimation läuft"
+            : `Patient verschlechtert sich, ${patientText(p0).replace(/ \(.*\)$/, "")}`;
       const fehlt = this.fehlendeKraefte(e);
       this.nachfordern(e, fz, fehlt);
       const zusatz = fehlt.na ? ", benötigen Notarzt" : "";
@@ -2805,7 +2977,16 @@ export class Simulation {
     const w = e.wahr.abfrage;
     const a = e.anruf;
     if (!w || !a) return;
-    const text = veraenderungText(w.anrufer, p0.geschlecht === "w", p0, besserung, a.status === "beendet");
+    let text: string | null;
+    if (fallText) {
+      const weg = w.anrufer.selbst && !besserung && p0.bw !== "ja";
+      const pw = p0.geschlecht === "w";
+      text = weg ? null : fuellen(fallText, { w: pw, bezug: bezugFuer(w.anrufer.rolle, w.anrufer.selbst, pw, p0.alter), ort: "", name: w.szenario?.patient.name ?? "" }, Math.random);
+      if (text && /^\(/.test(text)) {
+        if (a.status === "aktiv") a.gespraech.push({ zeit: t, echt: Date.now(), von: "system", text: text.replace(/^\(|\)$/g, "") });
+        return;
+      }
+    } else text = veraenderungText(w.anrufer, p0.geschlecht === "w", p0, besserung, a.status === "beendet");
     if (!text) {
       if (a.status === "aktiv" && w.anrufer.selbst) {
         a.gespraech.push({ zeit: t, echt: Date.now(), von: "system", text: "Der Anrufer antwortet nicht mehr – man hört nur noch Geräusche." });
@@ -2880,9 +3061,9 @@ export class Simulation {
     const fehlt = this.fehlendeKraefte(e);
     // NEF/NAH unterwegs, aber kein Notarzt nötig → Storno empfehlen (nur das erste transportfähige Fahrzeug)
     const naUnterwegs = this.einsatzFz(e).some((x) => (x.kategorie === "NEF" || fliegt(x)) && x.phase !== "vorOrt");
-    const naStorno = plan.erstes && this.transportfaehig(fz) && naUnterwegs && bedarf(l).na === 0;
+    const naStorno = plan.erstes && this.transportfaehig(fz) && naUnterwegs && this.bedarfVon(e).na === 0;
     const partner = this.partnerFehlt(e);
-    const abweichung = l.irrtum !== null || angenommenRea !== istStillstand(p0) || l.patienten.length > 1 || ist(kap, "verkehrsunfall", "ecall", "eingeklemmt", "brand", "gefahrstoff");
+    const abweichung = !!l.fall || l.irrtum !== null || angenommenRea !== istStillstand(p0) || l.patienten.length > 1 || ist(kap, "verkehrsunfall", "ecall", "eingeklemmt", "brand", "gefahrstoff");
     if ((plan.erstes && (abweichung || fehlt.na > 0 || fehlt.rtw > 0 || fehlt.bit > 0 || naStorno || partner.length > 0)) || plan.angefordert) {
       let text = lagemeldungText(l, kap, fehlt, naStorno);
       const da = (Object.keys(e.partnerDa ?? {}) as PartnerArt[]).map((a) => PARTNER[a].name);
@@ -2892,16 +3073,41 @@ export class Simulation {
         e.partnerErinnert = this.state.zeit;
       }
       this.nachfordern(e, fz, fehlt);
+      this.ohneNaEinplanen(e, fehlt.na > 0);
       const art: FunkAnliegen = fehlt.na || fehlt.rtw || fehlt.bit || partner.length ? "nachforderung" : naStorno ? "storno" : "lage";
       this.fzRuft(this.sprecher(e, fz), e, art, `Lagemeldung: ${text}`);
       l.verlauf.push({ zeit: this.state.zeit, text: `${fz.funkrufname}: ${text}` });
     }
   }
 
+  /** Fallkatalog: fehlt der nötige Notarzt, verschlechtert sich der Patient nach der Zeit aus dem Fall */
+  private ohneNaEinplanen(e: Einsatz, fehltNa: boolean): void {
+    const l = e.wahr.lage;
+    const lf = l?.fall;
+    if (!l || !lf || !fehltNa || lf.ohneNaGeplant) return;
+    const fv = fallVorlage(lf.id);
+    const v = fv ? fallVariante(fv, lf.variante) : undefined;
+    if (!v?.ohneNa) return;
+    lf.ohneNaGeplant = true;
+    const p0 = l.patienten[0];
+    const o = v.ohneNa;
+    l.ereignisse.push({ um: this.state.zeit + o.nachMin * MIN, art: "verschlechterung", patient: 1, bw: o.bw ?? p0.bw, at: o.at ?? p0.at, eingetreten: false, sichtung: o.sichtung, kern: o.lage, na: o.na, variante: v.id, nurOhneNa: true });
+    l.ereignisse.sort((x, y) => x.um - y.um);
+  }
+
+  /** Aktuelle Variante eines Katalog-Falls */
+  private fallVar(e: Einsatz): FallVariante | undefined {
+    const lf = e.wahr.lage?.fall;
+    const fv = lf ? fallVorlage(lf.id) : undefined;
+    return fv && lf ? fallVariante(fv, lf.variante) : undefined;
+  }
+
   // ------------------------------------------------------------------ Partner-Organisationen
 
   /** Was der Einsatz laut Lage (Wahrheit) braucht */
   partnerBedarf(e: Einsatz): PartnerGrund[] {
+    const fv = this.fallVar(e);
+    if (fv) return fv.partner ?? [];
     const w = e.wahr.abfrage;
     const name = `${findCode(e.wahr.code)?.beschreibung ?? ""} ${store.schema?.codes[w?.code ?? e.wahr.code]?.name ?? ""}`;
     return partnerNoetig(w?.kapitel, w?.antworten ?? {}, name, { ortArt: w?.szenario?.ortArt, ortUnbekannt: w?.ortUnbekannt });
@@ -3158,11 +3364,42 @@ export class Simulation {
     return e.fahrzeuge.map((id) => this.state.fahrzeuge[id]).filter((x): x is SimFahrzeug => !!x && x.einsatzId === e.id);
   }
 
+  /** Höchste Sanitäter-Qualifikation vor Ort (NKA zählt wie NFS – ohne eigenen Zugang) */
+  private kompetenzVorOrt(e: Einsatz): Quali | null {
+    let best: Quali | null = null;
+    for (const fz of this.einsatzFz(e)) {
+      if (fz.phase !== "vorOrt" && fz.phase !== "warteKH") continue;
+      const q = hoechsteQuali(fz.besetzung);
+      if (q && (best === null || rang(q) > rang(best))) best = q;
+    }
+    return best === "NFS-NKA" ? "NFS" : best;
+  }
+
+  /** Braucht der Fall (Katalog) bei dieser Kompetenz einen Notarzt? */
+  private naBedarfFall(e: Einsatz): boolean {
+    const l = e.wahr.lage;
+    const lf = l?.fall;
+    if (!l || !lf) return false;
+    const p0 = l.patienten[0];
+    if (istStillstand(p0) || lf.na === "immer") return true;
+    if (lf.na === "nein") return false;
+    const q = this.kompetenzVorOrt(e);
+    return q === null || rang(q) <= rang(lf.na as Quali);
+  }
+
+  /** Bedarf an Notärzten und Transportmitteln (Fallkatalog: nach Kompetenz vor Ort) */
+  bedarfVon(e: Einsatz): { na: number; transport: number } {
+    const l = e.wahr.lage;
+    if (!l) return { na: 0, transport: 1 };
+    if (l.fall) return { na: this.naBedarfFall(e) ? 1 : 0, transport: 1 };
+    return bedarf(l);
+  }
+
   /** Wie viele Notärzte / transportfähige Fahrzeuge fehlen laut Lage? */
   fehlendeKraefte(e: Einsatz): { na: number; rtw: number; bit: number } {
     const l = e.wahr.lage;
     if (!l) return { na: 0, rtw: 0, bit: 0 };
-    const b = bedarf(l);
+    const b = this.bedarfVon(e);
     const fz = this.einsatzFz(e);
     const na = fz.filter((x) => this.mitNotarzt(x)).length;
     const tr = fz.filter((x) => this.transportfaehig(x)).length;

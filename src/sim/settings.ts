@@ -139,6 +139,10 @@ export interface Settings {
   khGrundFaktor?: number;
   /** Wie oft sich Lagen verändern (Verschlechterung, Irrtum des Anrufers, mehr Betroffene) */
   komplikationen: "ruhig" | "normal" | "fordernd";
+  /** Einsätze aus dem Fallkatalog: aus, gemischt (mit den bisherigen Fallgeschichten) oder nur Katalog */
+  fallKatalog?: "aus" | "gemischt" | "nur";
+  /** Transportverweigerung (Revers): aus, selten (halb so oft) oder normal */
+  revers?: "aus" | "selten" | "normal";
   gebiet: Gebiet;
   /** Fahrzeit mit Sondersignal = Fahrzeit × Faktor */
   sondersignalFaktor: number;
@@ -209,6 +213,8 @@ export function defaultSettings(): Settings {
     khGrundAktiv: true,
     khGrundFaktor: 1,
     komplikationen: "normal",
+    fallKatalog: "nur",
+    revers: "normal",
     gebiet: GEBIETE[0],
     sondersignalFaktor: 0.8,
     toleranzMin: 10,

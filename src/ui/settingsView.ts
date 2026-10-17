@@ -134,6 +134,16 @@ export function createSettingsView(container: HTMLElement, teil: "simulation" | 
     kSel.value = draft.komplikationen ?? "normal";
     kSel.addEventListener("change", () => (draft.komplikationen = kSel.value as Settings["komplikationen"]));
     aGrid.append(el("label", {}, "Komplikationen (Verschlechterung, Irrtum des Anrufers, mehr Betroffene)"), kSel);
+    const fkSel = el("select", { class: "set-fallkatalog" }) as HTMLSelectElement;
+    for (const [v, l] of [["nur", "nur Fallkatalog (neu, zum Testen)"], ["gemischt", "gemischt mit den bisherigen Fallgeschichten"], ["aus", "aus – bisherige Fallgeschichten"]]) fkSel.appendChild(el("option", { value: v }, l));
+    fkSel.value = draft.fallKatalog ?? "nur";
+    fkSel.addEventListener("change", () => (draft.fallKatalog = fkSel.value as Settings["fallKatalog"]));
+    aGrid.append(el("label", { title: "Fälle mit stimmigem Telefonat, Verlauf, Notarzt-Bedarf nach Kompetenz und Krankenhaus" }, "Einsätze aus dem Fallkatalog"), fkSel);
+    const rvSel = el("select", { class: "set-revers" }) as HTMLSelectElement;
+    for (const [v, l] of [["normal", "normal"], ["selten", "selten"], ["aus", "aus"]]) rvSel.appendChild(el("option", { value: v }, l));
+    rvSel.value = draft.revers ?? "normal";
+    rvSel.addEventListener("change", () => (draft.revers = rvSel.value as Settings["revers"]));
+    aGrid.append(el("label", { title: "Wache, stabile Patienten verweigern manchmal den Transport (Revers)" }, "Transportverweigerung (Revers)"), rvSel);
     // Work in Progress: Einsätze in Nachbarzonen
     const fzWrap = el("label", { title: "Einsätze knapp außerhalb deiner Funkgruppe, zu denen eigene Fahrzeuge (meist das NEF) fahren – angelegt und disponiert vom Kollegen der Nachbarzone" });
     fzWrap.innerHTML = `Einsätze in Nachbarzonen <span class="wip-badge">Work in Progress</span>`;
