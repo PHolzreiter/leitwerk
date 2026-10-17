@@ -1,5 +1,13 @@
 # Änderungen
 
+## 0.27.2 – NÖ-Krankenhäuser nach der Akutversorgungs-Übersicht von Notruf NÖ
+- Schockräume je Haus wie in der Übersicht: Trauma (SRT), internistisch (SRI) oder beides in einem Raum. St. Pölten 2 internistisch + 1 Trauma; nur Trauma: Korneuburg; nur internistisch: Melk, Mödling, Neunkirchen, Stockerau, Waidhofen/Thaya
+- Kein Schockraum mehr in Hainburg und Klosterneuburg
+- Unfallaufnahme jetzt auch in Gmünd, Hainburg, Hollabrunn, Klosterneuburg und Waidhofen/Thaya (eine Unfallaufnahme reicht für Unfallpatienten, auch ohne eigene Unfallabteilung)
+- Neu: Medizinisches Zentrum Gänserndorf mit allgemeinmedizinischer Notfallambulanz rund um die Uhr (Unfälle gehen nach Mistelbach)
+- Herzkatheter, Stroke Units und Notaufnahmen in NÖ stimmten schon und sind jetzt bestätigt
+- Eisenstadt mit internistischem Schockraum, UKH Meidling und UKH Linz mit je einem Trauma-Schockraum
+
 ## 0.27.1 – Krankenhaus-Plätze aus amtlichen Daten statt Schätzungen
 - Herzkatheterlabore laut ÖSG-Großgeräteplan (Ist-Stand), Stroke-Unit-Betten und Notaufnahme-Behandlungsplätze laut den Regionalen Strukturplänen (NÖ, Wien, OÖ, Steiermark, Burgenland)
 - Schockräume: genannte Zahlen der Häuser (z. B. Graz 3, Ottakring 1 Trauma + 2 internistisch, Hietzing 2), sonst Mindestvorgabe nach Traumazentrum-Stufe (Weißbuch: überregional 2, regional/lokal 1); NÖ-Kliniken mit Unfall/Notaufnahme haben mindestens einen

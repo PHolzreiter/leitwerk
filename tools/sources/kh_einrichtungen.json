@@ -830,10 +830,10 @@
    "fb_roentgen",
    "fb_ct",
    "fb_physiotherapie",
-   "fb_schockraum"
+   "fb_schockraum",
+   "amb_unfall"
   ],
   "unklar": [
-   "amb_unfall",
    "its_imcu",
    "fb_mrt",
    "st_orthopaedie_traumatologie"
@@ -850,7 +850,8 @@
    "https://hollabrunn.lknoe.at/fuer-patienten/sozialpsychiatrische-tagesklinik/informationen (Sozialpsychiatrische Tagesklinik)",
    "https://hollabrunn.lknoe.at/fuer-patienten/tagesklinik-/-wochenklinik/abteilung (Tagesklinik/Wochenklinik)",
    "https://hollabrunn.lknoe.at/fuer-patienten/institute/institut-fuer-radiologie/institut (24h besetzt; Röntgen, Durchleuchtung, CT; kein MRT)",
-   "Angabe Paul: alle NÖ Landes-/Universitätskliniken mit Unfallchirurgie oder Akut-Notaufnahme haben einen Schockraum"
+   "Angabe Paul: alle NÖ Landes-/Universitätskliniken mit Unfallchirurgie oder Akut-Notaufnahme haben einen Schockraum",
+   "Übersicht Akutversorgung Notruf NÖ (Angabe Paul 10/2026)"
   ],
   "notiz": "Keine eigene Notaufnahme so benannt: Chirurgische Ambulanz ist rund um die Uhr für akute Beschwerden/Unfälle offen (als amb_notaufnahme gewertet); Interne Ambulanz nur Mo-Fr vormittags. Nur unfallchirurgische Basisversorgung durch Chirurgie, keine Unfallabteilung (Tages-/Wochenklinik-Seite nennt Gyn und Ortho/Trauma - vermutlich Textvorlage, keine solchen Abteilungen gelistet). Keine Geburtshilfe. Onkologische Tagesklinik in Kooperation in Stockerau. NÖ Zentrum für Übergewichtschirurgie (keine passende ID)."
  },
@@ -877,10 +878,9 @@
    "fb_op",
    "fb_roentgen",
    "fb_ct",
-   "fb_schockraum"
+   "amb_unfall"
   ],
   "unklar": [
-   "amb_unfall",
    "amb_onko_tagesklinik",
    "amb_wunde",
    "amb_psychiatrie_krise",
@@ -901,7 +901,9 @@
    "https://hainburg.lknoe.at/fuer-patienten/interdisziplinaere-tagesklinik/informationen (Tagesklinik 8 Betten)",
    "https://hainburg.lknoe.at/fuer-patienten/ambulanzen/abteilung (Psychiatrische Terminambulanz und Tagesklinik seit 05/2024; stationär in Baden/Neunkirchen)",
    "https://hainburg.lknoe.at/fuer-patienten/institute/institut-fuer-radiologie/informationen (Röntgen, Durchleuchtung, Spiral-CT, 24h RT besetzt, CT-Telekonsultation Mistelbach; kein MRT)",
-   "Angabe Paul: alle NÖ Landes-/Universitätskliniken mit Unfallchirurgie oder Akut-Notaufnahme haben einen Schockraum"
+   "Angabe Paul: alle NÖ Landes-/Universitätskliniken mit Unfallchirurgie oder Akut-Notaufnahme haben einen Schockraum",
+   "Übersicht Akutversorgung Notruf NÖ (Angabe Paul 10/2026)",
+   "Übersicht Akutversorgung Notruf NÖ (Angabe Paul 10/2026)"
   ],
   "notiz": "Unfallchirurgie als Department (Teil der Abteilung Orthopädie/Traumatologie LK Baden-Mödling); komplexe Verletzungen nach Baden-Mödling. Chirurgische Ambulanz 24h für Notfälle, Schwerverletzte werden dort erstversorgt (keine eigene Unfallambulanz benannt). Psychiatrie nur Terminambulanz + Tagesklinik, keine Station. Kein MRT. Onkologische Ambulanz vorhanden (Chemotherapie nicht ausdrücklich genannt)."
  },
@@ -923,15 +925,14 @@
    "fb_roentgen",
    "fb_ct",
    "fb_physiotherapie",
-   "fb_schockraum"
+   "amb_unfall"
   ],
   "unklar": [
    "its_interdisziplinaer",
    "amb_onko_tagesklinik",
    "fb_endoskopie",
    "st_rns",
-   "fb_mrt",
-   "amb_unfall"
+   "fb_mrt"
   ],
   "quellen": [
    "https://klosterneuburg.lknoe.at/fuer-patienten/abteilungen (3 Abteilungen: Anästhesie/Intensiv, Gynäkologie (Tagesklinik), Innere Medizin; 2 Institute)",
@@ -946,7 +947,9 @@
    "https://klosterneuburg.lknoe.at/fuer-patienten/chirurgische-tagesklinik/informationen (Tageschirurgie Chirurgie, Unfallchirurgie, Augen, HNO-Kinder)",
    "https://klosterneuburg.lknoe.at/fuer-patienten/abteilungen/gynaekologie-und-geburtshilfe/informationen (nur gyn. Tagesklinik; größere OPs und Notfälle ab 07/2025 UK Tulln)",
    "https://klosterneuburg.lknoe.at/fuer-patienten/einrichtung-fuer-radiologie/radiologie/informationen (Röntgen, Ultraschall, Mehrzeilen-CT; MRT über Verbund mit Tulln)",
-   "Angabe Paul: alle NÖ Landes-/Universitätskliniken mit Unfallchirurgie oder Akut-Notaufnahme haben einen Schockraum"
+   "Angabe Paul: alle NÖ Landes-/Universitätskliniken mit Unfallchirurgie oder Akut-Notaufnahme haben einen Schockraum",
+   "Übersicht Akutversorgung Notruf NÖ (Angabe Paul 10/2026)",
+   "Übersicht Akutversorgung Notruf NÖ (Angabe Paul 10/2026)"
   ],
   "notiz": "Keine stationäre Chirurgie/Unfallchirurgie, nur chirurgische Tagesklinik; widersprüchliche Angaben zur chirurgischen 24h-Akutversorgung (Ambulanzseite 'rund um die Uhr', Spezialambulanzseite: außerhalb der Tagesklinik-Öffnungszeiten über Nachbarkliniken). Internistische Notfälle 24h. Gynäkologie nur Tagesklinik, keine Geburtshilfe (Akut-Gyn ab 01.07.2025 UK Tulln). MRT nur über Verbund Tulln. Keine eigene Intensivstation beschrieben, nur Überwachungseinheit."
  },
@@ -1245,7 +1248,8 @@
    "fb_mrt",
    "fb_angiographie",
    "amb_notaufnahme",
-   "fb_schockraum"
+   "fb_schockraum",
+   "amb_unfall"
   ],
   "unklar": [
    "st_angiologie",
@@ -1263,7 +1267,8 @@
    "https://gmuend.lknoe.at/fuer-patienten/roentgeninstitut/informationen (MRT, CT, Mammographie, Röntgen, interventionelle Radiologie)",
    "https://gmuend.lknoe.at/fuer-patienten/dislozierte-augen-tagesklinik/abteilung (dislozierte Augen-Tagesklinik des LK Horn, Katarakt-OPs)",
    "LK Gmünd: „Akutuntersuchungen jederzeit möglich“",
-   "Angabe Paul: alle NÖ Landes-/Universitätskliniken mit Unfallchirurgie oder Akut-Notaufnahme haben einen Schockraum"
+   "Angabe Paul: alle NÖ Landes-/Universitätskliniken mit Unfallchirurgie oder Akut-Notaufnahme haben einen Schockraum",
+   "Übersicht Akutversorgung Notruf NÖ (Angabe Paul 10/2026)"
   ],
   "notiz": "Chirurgie ist als dislozierte Wochenklinik geführt (keine 24/7-Chirurgie belegt). Orthopädie ohne ausdrückliche Traumatologie/Unfallambulanz. 'Akutuntersuchungen jederzeit möglich', eine benannte Notaufnahme fehlt. Keine Geburtshilfe/Gynäkologie. Stroke-Team in der Inneren, aber keine Stroke Unit. Anästhesie stellt den Notarztwagen (ca. 800 Einsätze/Jahr). Augen-Tagesklinik gehört organisatorisch zum LK Horn."
  },
@@ -1288,7 +1293,8 @@
    "fb_physiotherapie",
    "fb_roentgen",
    "fb_ct",
-   "fb_schockraum"
+   "fb_schockraum",
+   "amb_unfall"
   ],
   "unklar": [
    "fb_mrt",
@@ -1309,7 +1315,8 @@
    "https://waidhofen-thaya.lknoe.at/fuer-patienten/roentgeninstitut/informationen (Röntgen inkl. Unfallröntgen, CT, Sonographie)",
    "https://waidhofen-thaya.lknoe.at/fuer-patienten/tagesklinik-fuer-kinder-und-jugendpsychiatrie-und-psychotherapie/informationen (KJPP nur Tagesklinik + Ambulanz)",
    "https://waidhofen-thaya.lknoe.at/fuer-patienten/ambulanzen/physikalische-therapie/informationen",
-   "Angabe Paul: alle NÖ Landes-/Universitätskliniken mit Unfallchirurgie oder Akut-Notaufnahme haben einen Schockraum"
+   "Angabe Paul: alle NÖ Landes-/Universitätskliniken mit Unfallchirurgie oder Akut-Notaufnahme haben einen Schockraum",
+   "Übersicht Akutversorgung Notruf NÖ (Angabe Paul 10/2026)"
   ],
   "notiz": "Keine bettenführende Chirurgie: nur Tageschirurgie (FSP der Chirurgie Horn). Notfallversorgung außerhalb 8-14 Uhr nur durch Allgemeinmediziner. Herzüberwachungsstation (4 Betten) als its_ccu eingetragen. Kinder- und Jugendpsychiatrie nur teilstationär/ambulant (Tagesklinik). MRT nur auf der Psychiatrie-Seite erwähnt, Radiologie-Seite nennt nur CT. Keine Geburtshilfe."
  },
@@ -2623,10 +2630,10 @@
    "fb_physiotherapie",
    "fb_op",
    "fb_kreisssaal",
-   "z_cardiac_arrest_center"
+   "z_cardiac_arrest_center",
+   "fb_schockraum"
   ],
   "unklar": [
-   "fb_schockraum",
    "its_internistisch",
    "its_nicu",
    "amb_schmerz",
@@ -2650,7 +2657,8 @@
    "https://www.barmherzige-brueder.at/portal/eisenstadt/medizinpflege/psychiatrieundpsychothera + /ambulanzen (Psychiatrie: Akut- und Subakutstation, Tagesklinik, Terminambulanz)",
    "https://www.barmherzige-brueder.at/portal/eisenstadt/medizinpflege/hno, palliativstation, interdisziplinaeretageskl, zentralop (HNO-Abteilung, Palliativstation, Interdisziplinäre Tagesklinik, Zentral-OP)",
    "https://www.barmherzige-brueder.at/portal/eisenstadt/medizinpflege/radiologie + /ambulanzen; https://www.barmherzige-brueder.at/portal/eisenstadt/terminvergabe/ctmrtuntersuchungen (diagnostische + interventionelle Radiologie, Nuklearmedizin, CT, MRT)",
-   "https://www.barmherzige-brueder.at/portal/eisenstadt/medtechndienste/physiotherapie (Physiotherapie)"
+   "https://www.barmherzige-brueder.at/portal/eisenstadt/medtechndienste/physiotherapie (Physiotherapie)",
+   "Übersicht Akutversorgung Notruf NÖ (Angabe Paul 10/2026)"
   ],
   "notiz": "Schwerpunktkrankenhaus Nordburgenland. ZAE (IM/Neuro/Chirurgie gemeinsam) rund um die Uhr; Kinder <18 J. über Kinder-Notfallambulanz. ECMO-Therapie an der Intensivstation angeboten (als z_cardiac_arrest_center gewertet, ausdrücklicher Begriff 'Cardiac Arrest Center' nicht genannt). Schockraum nicht ausdrücklich genannt. Kreißsaal nicht wörtlich genannt, aber Geburtenstation mit ca. 1000 Geburten/Jahr. Neonatologie als IMCU (Frühgeborene ab SSW 29/30), keine NICU-Bezeichnung. Stomaberatung nur als Beratungsdienst. Unfall-Ortho-Ambulanz Frauenkirchen (kh091) ist Außenstelle der Orthopädie/Traumatologie. Notarztstützpunkt (NAW Eisenstadt), C3/C9-Anbindung."
  },
@@ -5661,5 +5669,27 @@
    "KA-Verzeichnis 18.09.2026: K665+ (Akutteil, Landesfonds, 126 Betten) und K615 (Pflegeanstalt für chronisch Kranke, 180 Betten)"
   ],
   "notiz": "Geriatrische Sonderkrankenanstalt der Stadt Graz; Akutteil = AG/R (internistisch und neurologisch). Aufnahme nur nach Zuweisung/Assessment, keine Notaufnahme. Hospiz ist keine Palliativstation im ÖSG-Sinn (daher unklar)."
+ },
+ "neu12": {
+  "name": "Landesklinikum Mistelbach-Gänserndorf, Medizinisches Zentrum Gänserndorf",
+  "kurzname": "MZ Gänserndorf",
+  "ort": "Gänserndorf",
+  "bundesland": "Niederösterreich",
+  "privat": false,
+  "lat": 48.3456862,
+  "lon": 16.7286305,
+  "website": "https://gaenserndorf.lknoe.at/",
+  "einrichtungen": [
+   "amb_notaufnahme",
+   "amb_tagesklinik"
+  ],
+  "unklar": [],
+  "quellen": [
+   "https://gaenserndorf.lknoe.at/fuer-patienten/ambulanzen/allgemeinmedizinische-ambulanz/informationen – 'Die Allgemeinmedizinische Ambulanz ist von Montag bis Sonntag durchgehend geöffnet … Erstversorgung von Notfällen und akuten Erkrankungen' ; 'Die traumatologische Versorgung findet ab sofort am Standort Mistelbach statt.'",
+   "https://gaenserndorf.lknoe.at/fuer-patienten/ambulanzen (Onkologische, Rheuma-, Urologische Ambulanz; Tagesklinik)",
+   "Übersicht Akutversorgung Notruf NÖ (Angabe Paul 10/2026): NFA vorhanden, UNF grau",
+   "Adresse Barbaraheimstraße 18, 2230 Gänserndorf; Koordinaten OpenStreetMap"
+  ],
+  "notiz": "Kein Bettenhaus; nur leichte internistische/allgemeinmedizinische Notfälle."
  }
 }

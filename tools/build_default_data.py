@@ -686,6 +686,8 @@ def _lade(name: str) -> dict:
 OESG = _lade("kh_oesg.json")
 ZAHLEN = _lade("kh_zahlen.json")
 SCHOCK = _lade("kh_schockraum.json")
+# Übersicht „Akutversorgung“ Notruf NÖ (Angabe Paul): SRT/SRI je Haus, Zahl = Anzahl Zeichen
+AKUTV = _lade("kh_akutversorgung_noe.json")
 # Thrombektomie (neurologisches Spezialzentrum / Schlaganfall-Interventionszentrum) laut RSG bzw. Website
 THROMBEKTOMIE = {"kh001", "kh003", "kh004", "kh023", "kh029", "kh032", "kh046", "kh063"}
 
@@ -737,10 +739,18 @@ def plaetze_ableiten(kid: str, einr: set[str], kav: dict, z: dict) -> dict[str, 
     if "fb_schockraum" in einr:
         tr = re.search(r"TR ([ZSL])", rsg)
         stufe = sr.get("traumanetzwerk") or ({"Z": "ÜTZ", "S": "RTZ", "L": "LTZ"}[tr.group(1)] if tr else None)
-        if kid == "kh001":
-            out.update(schockraum_intern=2, schockraum_trauma=1)
-        elif kid == "kh002":
-            out["schockraum"] = 1
+        av = AKUTV.get(kid) or {}
+        if kid == "kh002":
+            out["schockraum"] = 1  # Angabe Paul: ein Schockraum (in der Übersicht unter SRT und SRI)
+        elif av.get("srt") or av.get("sri"):
+            t_, i_ = int(av.get("srt") or 0), int(av.get("sri") or 0)
+            if t_ == 1 and i_ == 1:
+                out["schockraum"] = 1  # ein Raum für beides (wie Krems)
+            else:
+                if t_:
+                    out["schockraum_trauma"] = t_
+                if i_:
+                    out["schockraum_intern"] = i_
         elif zahl(sr.get("schockraum_trauma"), sr.get("schockraum_intern"), sr.get("schockraum")) or pl.get("schockraum"):
             t, i, k = sr.get("schockraum_trauma"), sr.get("schockraum_intern"), zahl(sr.get("schockraum"), pl.get("schockraum"))
             if t and i and k and k <= max(t, i):

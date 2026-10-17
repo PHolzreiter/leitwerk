@@ -1,0 +1,268 @@
+{
+ "_quelle": "Angabe Paul: Fotos der Übersicht „Akutversorgung“ (Notruf NÖ, Stand 10/2026). Ein Zeichen (grün/grau/rot) = vorhanden, leeres Feld = nicht vorhanden. Bei St. Pölten zwei Zeichen unter SRI = zwei internistische Schockräume.",
+ "_spalten": "srt = Schockraum Trauma, sri = Schockraum intern (Zahl = Anzahl Zeichen), pci, stroke, nfa, unf",
+ "_hinweis": "Häuser außerhalb NÖ (UKH Meidling, UKH Linz, Eisenstadt): nur Ergänzungen, nichts wird entfernt (die Liste zeigt dort evtl. nur, was der NÖ-Rettungsdienst nutzt).",
+ "kh006": {
+  "name": "Amstetten",
+  "srt": 1,
+  "sri": 1,
+  "pci": false,
+  "stroke": true,
+  "nfa": true,
+  "unf": true
+ },
+ "kh008": {
+  "name": "Baden",
+  "srt": 1,
+  "sri": 1,
+  "pci": false,
+  "stroke": false,
+  "nfa": true,
+  "unf": true
+ },
+ "kh021": {
+  "name": "Gmünd",
+  "srt": 1,
+  "sri": 1,
+  "pci": false,
+  "stroke": false,
+  "nfa": true,
+  "unf": true
+ },
+ "gaenserndorf": {
+  "name": "Gänserndorf",
+  "srt": 0,
+  "sri": 0,
+  "pci": false,
+  "stroke": false,
+  "nfa": true,
+  "unf": true,
+  "grau": [
+   "unf"
+  ]
+ },
+ "kh014": {
+  "name": "Hainburg",
+  "srt": 0,
+  "sri": 0,
+  "pci": false,
+  "stroke": false,
+  "nfa": true,
+  "unf": true
+ },
+ "kh041": {
+  "name": "Hochegg",
+  "srt": 0,
+  "sri": 0,
+  "pci": false,
+  "stroke": false,
+  "nfa": false,
+  "unf": false
+ },
+ "kh013": {
+  "name": "Hollabrunn",
+  "srt": 1,
+  "sri": 1,
+  "pci": false,
+  "stroke": false,
+  "nfa": true,
+  "unf": true
+ },
+ "kh007": {
+  "name": "Horn",
+  "srt": 1,
+  "sri": 1,
+  "pci": false,
+  "stroke": true,
+  "nfa": true,
+  "unf": true
+ },
+ "kh015": {
+  "name": "Klosterneuburg",
+  "srt": 0,
+  "sri": 0,
+  "pci": false,
+  "stroke": false,
+  "nfa": true,
+  "unf": true
+ },
+ "kh011": {
+  "name": "Korneuburg",
+  "srt": 1,
+  "sri": 0,
+  "pci": false,
+  "stroke": false,
+  "nfa": true,
+  "unf": true
+ },
+ "kh002": {
+  "name": "Krems",
+  "srt": 1,
+  "sri": 1,
+  "pci": true,
+  "stroke": false,
+  "nfa": true,
+  "unf": true,
+  "grau": [
+   "pci"
+  ]
+ },
+ "kh016": {
+  "name": "Lilienfeld",
+  "srt": 1,
+  "sri": 1,
+  "pci": false,
+  "stroke": false,
+  "nfa": true,
+  "unf": true
+ },
+ "kh039": {
+  "name": "Mauer",
+  "srt": 0,
+  "sri": 0,
+  "pci": false,
+  "stroke": false,
+  "nfa": false,
+  "unf": false
+ },
+ "kh017": {
+  "name": "Melk",
+  "srt": 0,
+  "sri": 1,
+  "pci": false,
+  "stroke": false,
+  "nfa": true,
+  "unf": true
+ },
+ "kh005": {
+  "name": "Mistelbach",
+  "srt": 1,
+  "sri": 1,
+  "pci": true,
+  "stroke": true,
+  "nfa": true,
+  "unf": true,
+  "grau": [
+   "pci"
+  ]
+ },
+ "kh009": {
+  "name": "Mödling",
+  "srt": 0,
+  "sri": 1,
+  "pci": false,
+  "stroke": true,
+  "nfa": true,
+  "unf": true
+ },
+ "kh010": {
+  "name": "Neunkirchen",
+  "srt": 0,
+  "sri": 1,
+  "pci": false,
+  "stroke": false,
+  "nfa": true,
+  "unf": true,
+  "grau": [
+   "unf"
+  ]
+ },
+ "kh018": {
+  "name": "Scheibbs",
+  "srt": 1,
+  "sri": 1,
+  "pci": false,
+  "stroke": false,
+  "nfa": true,
+  "unf": true
+ },
+ "kh001": {
+  "name": "St. Pölten",
+  "srt": 1,
+  "sri": 2,
+  "pci": true,
+  "stroke": true,
+  "nfa": true,
+  "unf": true
+ },
+ "kh012": {
+  "name": "Stockerau",
+  "srt": 0,
+  "sri": 1,
+  "pci": false,
+  "stroke": false,
+  "nfa": true,
+  "unf": false
+ },
+ "kh003": {
+  "name": "Tulln",
+  "srt": 1,
+  "sri": 1,
+  "pci": false,
+  "stroke": true,
+  "nfa": true,
+  "unf": true
+ },
+ "kh022": {
+  "name": "Waidhofen/Thaya",
+  "srt": 0,
+  "sri": 1,
+  "pci": false,
+  "stroke": false,
+  "nfa": true,
+  "unf": true
+ },
+ "kh019": {
+  "name": "Waidhofen/Ybbs",
+  "srt": 1,
+  "sri": 1,
+  "pci": true,
+  "stroke": false,
+  "nfa": true,
+  "unf": true,
+  "grau": [
+   "pci",
+   "unf"
+  ]
+ },
+ "kh004": {
+  "name": "Wiener Neustadt",
+  "srt": 1,
+  "sri": 1,
+  "pci": true,
+  "stroke": true,
+  "nfa": true,
+  "unf": true,
+  "grau": [
+   "pci",
+   "unf"
+  ]
+ },
+ "kh030": {
+  "name": "UKH Meidling",
+  "srt": 1,
+  "sri": 0,
+  "pci": false,
+  "stroke": false,
+  "nfa": false,
+  "unf": true
+ },
+ "kh038": {
+  "name": "UKH Linz",
+  "srt": 1,
+  "sri": 0,
+  "pci": false,
+  "stroke": false,
+  "nfa": false,
+  "unf": true
+ },
+ "kh034": {
+  "name": "Eisenstadt",
+  "srt": 0,
+  "sri": 1,
+  "pci": true,
+  "stroke": false,
+  "nfa": true,
+  "unf": false
+ }
+}
