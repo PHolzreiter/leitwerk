@@ -745,7 +745,7 @@ def plaetze_ableiten(kid: str, einr: set[str], kav: dict, z: dict) -> dict[str, 
             gyn = sum(b for a, b in abt.items() if a.startswith("06"))
             out["kreisssaal"] = klemm(gyn / 12 if gyn else 2, 1, 6)
     if "fb_druckkammer" in einr:
-        out["druckkammer"] = pl.get("druckkammer") or 1
+        out["druckkammer"] = min(pl.get("druckkammer") or 1, 6)
     return out
 
 

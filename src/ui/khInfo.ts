@@ -155,7 +155,7 @@ const SPALTEN: [Ressource[], string][] = [
   [["notaufnahme"], "NFA"],
   [["unfall"], "Unfall"],
   [["kindernotaufnahme"], "Kinder"],
-  [["schockraum", "schockraum_trauma", "schockraum_intern"], "Schockraum"],
+  [["schockraum", "schockraum_trauma", "schockraum_intern"], "Schock"],
   [["herzkatheter"], "PCI"],
   [["stroke_unit"], "Stroke"],
   [["kreisssaal"], "Kreißsaal"],

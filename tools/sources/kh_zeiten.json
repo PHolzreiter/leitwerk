@@ -1,0 +1,4566 @@
+{
+ "kh001": {
+  "zeiten": {
+   "amb_notaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "amb_unfall": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "fb_herzkatheter": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "fb_kreisssaal": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "its_stroke_unit": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ]
+  },
+  "aufnahmerad": "",
+  "plaetze": {
+   "herzkatheter": 2
+  },
+  "groesse": {
+   "mitarbeiter": 3600,
+   "stationaer_jahr": 50000,
+   "ambulant_jahr": 535000,
+   "notaufnahme_jahr": 50000
+  },
+  "quellen": [
+   "https://stpoelten.lknoe.at/fuer-patienten/notfall-und-unfallzentrum/notfall-und-unfallzentrum – Notfall- und Ortho-Trauma-Zentrum Haus C, gemeinsame Vorfahrt/Leitstelle, versorgt 24 Stunden",
+   "https://stpoelten.lknoe.at/fuer-patienten/ambulanzen/innere-medizin-3-ambulanz/informationen – Erstversorgung/zentrale Notaufnahme täglich 00:00-24:00",
+   "https://stpoelten.lknoe.at/fuer-patienten/ambulanzen/unfallambulanz-und-sporttraumatologie/informationen – Unfall-Erstversorgung rund um die Uhr",
+   "https://stpoelten.lknoe.at/fuer-patienten/klinische-abteilungen/innere-medizin-3/informationen – Herzkatheterlabor (zwei Angiographietische) 24 h/7 Tage für akute Herzinfarkte",
+   "https://stpoelten.lknoe.at/fuer-patienten/klinische-abteilungen/gynaekologie-und-geburtshilfe/geburtshilfe – Kreißzimmer 24/7",
+   "https://stpoelten.lknoe.at/fuer-patienten/ambulanzen/neurologische-ambulanz/informationen – neurologische Akutfälle rund um die Uhr",
+   "https://stpoelten.lknoe.at/universitaetsklinikum-st-poelten/das-universitaetsklinikum-st-poelten – rund 3.600 Mitarbeiter, >50.000 Patienten/Jahr, ~535.000 ambulante Kontakte",
+   "https://krems.lknoe.at/universitaetsklinikum-krems/pressemeldungen/newsdetail/noe-kliniken-sichern-notfallversorgung – NÖ LGA-Presse (2026): 7 Stroke Units (Horn, Mistelbach, Amstetten, St. Pölten, Tulln, Wr. Neustadt, Mödling) durchgehend besetzt, 24/7; Herzinfarkt-Zentren St. Pölten (24/7), Krems, Wr. Neustadt, Mistelbach; St. Pölten ~50.000 Pat. in der internistischen Notaufnahme im letzten Jahr (2025)"
+  ],
+  "notiz": "Größe lt. Website (Stand 2026, ohne Jahresangabe); notaufnahme_jahr = internistische Notaufnahme 2025 (Presse). herzkatheter=2 meint 2 Angiographietische in einem HKL. Thrombektomie (Radiologie) ohne Zeitangabe. Kinder-Notfallambulanz 00-24 (Haus hat amb_kindernotaufnahme nicht in der Liste). Schockraum-/Intensivzahlen nicht genannt; Forschung-Seite nennt abweichend ca. 3.000 MA."
+ },
+ "kh002": {
+  "zeiten": {
+   "amb_notaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "amb_unfall": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "fb_schockraum": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ]
+  },
+  "aufnahmerad": "",
+  "plaetze": {},
+  "groesse": {
+   "mitarbeiter": 1200
+  },
+  "quellen": [
+   "https://krems.lknoe.at/fuer-patienten/interdisziplinaerer-aufnahmebereich/informationen – IAB Anlaufstelle für alle Notfallpatienten, durchgehend besetzt",
+   "https://krems.lknoe.at/fuer-patienten/klinische-abteilungen/orthopaedie/informationen – unfallchirurgische Versorgung rund um die Uhr, 365 Tage, inkl. Polytrauma/Schockraum; ~40.000 ambulante Pat./Jahr (nur Ortho/Trauma)",
+   "https://krems.lknoe.at/fuer-patienten/ambulanzen/innere-medizin-1-ambulanz/informationen – Herzkatheter-Ambulanz Mo-Fr 08:00-15:00 (elektiv)",
+   "https://krems.lknoe.at/universitaetsklinikum-krems/das-universitaetsklinikum-krems/forschung-lehre – mehr als 1200 Mitarbeiter",
+   "https://krems.lknoe.at/universitaetsklinikum-krems/pressemeldungen/newsdetail/noe-kliniken-sichern-notfallversorgung – NÖ LGA-Presse (2026): 7 Stroke Units (Horn, Mistelbach, Amstetten, St. Pölten, Tulln, Wr. Neustadt, Mödling) durchgehend besetzt, 24/7; Herzinfarkt-Zentren St. Pölten (24/7), Krems, Wr. Neustadt, Mistelbach"
+  ],
+  "notiz": "Herzkatheter: nur elektive Ambulanzzeit Mo-Fr 08-15 genannt, keine Aussage zu Akut-PCI-Zeiten (Presse nennt Krems als Infarkt-Standort, 24/7 nur für St. Pölten ausdrücklich) -> nicht eingetragen. Schockraum-Zeit abgeleitet aus 'rund um die Uhr ... inkl. Schockraum-Behandlungen'. Innere 1: >3.700 stationär/16.000 ambulant pro Jahr (nur Abteilung)."
+ },
+ "kh003": {
+  "zeiten": {
+   "amb_unfall": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "its_stroke_unit": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ]
+  },
+  "aufnahmerad": "",
+  "plaetze": {},
+  "groesse": {
+   "betten": 430
+  },
+  "quellen": [
+   "https://tulln.lknoe.at/fuer-patienten/ambulanzen/unfallchirurgische-ambulanz/informationen – akute, frische Verletzungen rund um die Uhr",
+   "https://krems.lknoe.at/universitaetsklinikum-krems/pressemeldungen/newsdetail/noe-kliniken-sichern-notfallversorgung – NÖ LGA-Presse (2026): 7 Stroke Units (Horn, Mistelbach, Amstetten, St. Pölten, Tulln, Wr. Neustadt, Mödling) durchgehend besetzt, 24/7; Herzinfarkt-Zentren St. Pölten (24/7), Krems, Wr. Neustadt, Mistelbach",
+   "https://www.noel.gv.at/noe/pressAnnouncement/getPdf/97043 – Landeskorrespondenz NÖ 19.06.2019: UK Tulln mit derzeit rund 430 Betten",
+   "https://tulln.lknoe.at/fuer-patienten/ambulanzen/chirurgische-ambulanz/informationen – chirurgische Akutversorgung rund um die Uhr",
+   "https://tulln.lknoe.at/fuer-patienten/ambulanzen/allgemeine-kinder-und-jugendambulanz/informationen – Kinder-Notfallambulanz rund um die Uhr"
+  ],
+  "notiz": "Betten ~430 Stand 2019 (Land NÖ Presse); Mitarbeiter-/Patientenzahlen nirgends offiziell gefunden. Kinder-Notfallambulanz 24h und chirurg. Akutversorgung 24h vorhanden, aber amb_kindernotaufnahme/amb_notaufnahme nicht in der Einrichtungsliste. KJP: Akutbegutachtung bei Selbst-/Fremdgefährdung nach telefonischer Vorankündigung."
+ },
+ "kh004": {
+  "zeiten": {
+   "amb_notaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "amb_unfall": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "its_stroke_unit": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "fb_kreisssaal": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ]
+  },
+  "aufnahmerad": "",
+  "plaetze": {},
+  "groesse": {
+   "betten": 770,
+   "mitarbeiter": 2616,
+   "stationaer_jahr": 34933,
+   "ambulant_jahr": 444169
+  },
+  "quellen": [
+   "https://wienerneustadt.lknoe.at/universitaetsklinikum-wiener-neustadt/herzlich-willkommen-im-universitaetsklinikum-wiener-neustadt – derzeit 770 Betten, 14 Abteilungen, 5 Institute",
+   "https://wienerneustadt.lknoe.at/fuer-patienten/ambulanzen/innere-medizin-kardiologie-und-nephrologie-ambulanz/informationen – Allgemeine internistische Ambulanz (IAB, Haus C) Mo-So 0:00-24:00",
+   "https://wienerneustadt.lknoe.at/fuer-patienten/ambulanzen/unfallchirurgische-ambulanz/informationen – Frischverletzte 00:00-24:00",
+   "https://wienerneustadt.lknoe.at/fuer-patienten/ambulanzen/gynaekologische-ambulanz/informationen – Gyn. Ambulanz akut Mo-Fr 07:00-13:50 (Ebene 0) und Mo-Fr 13:50-07:00 sowie Sa-So 0-24 (Ebene 5) = durchgehend",
+   "https://wienerneustadt.lknoe.at/fuer-patienten/abteilungen/innere-medizin-kardiologie-und-nephrologie/informationen – int. Intensiv: 4 Intensiv- + 4 Herzüberwachungsbetten; Behandlung akuter Herzinfarkt, Herzkatheter",
+   "https://www.milak.at/partner/universitaetsklinikum-wiener-neustadt – Bundesheer-Partnerseite: 826 Betten, 2023: 34.933 stationäre Pat., 444.169 ambulante 'Eingriffe', 2.616 Mitarbeiter, 787 Hubschrauberlandungen",
+   "https://krems.lknoe.at/universitaetsklinikum-krems/pressemeldungen/newsdetail/noe-kliniken-sichern-notfallversorgung – NÖ LGA-Presse (2026): 7 Stroke Units (Horn, Mistelbach, Amstetten, St. Pölten, Tulln, Wr. Neustadt, Mödling) durchgehend besetzt, 24/7; Herzinfarkt-Zentren St. Pölten (24/7), Krems, Wr. Neustadt, Mistelbach"
+  ],
+  "notiz": "Betten 770 (Klinik-Website, aktuell); MA/stationär/ambulant aus 2023 (milak.at, dort 826 Betten). Kreißsaal-Zeit abgeleitet aus durchgehender gyn./geburtshilfl. Akutambulanz. Herzkatheter: kein Zeitfenster genannt. Kinder- und Jugendambulanz nennt nur allgemeine Ambulanz 08-14, keine Notfallzeiten -> amb_kindernotaufnahme nicht eingetragen. Neurologische Notfallambulanz Mo-Fr 07-15 (Haus D) – Stroke Unit selbst lt. LGA-Presse 24/7. Thrombektomie (Radiologie) ohne Zeitangabe. 787 Hubschrauberlandungen 2023."
+ },
+ "kh005": {
+  "zeiten": {
+   "amb_unfall": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "amb_kindernotaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "its_stroke_unit": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ]
+  },
+  "aufnahmerad": "",
+  "plaetze": {},
+  "groesse": {
+   "mitarbeiter": 1700
+  },
+  "quellen": [
+   "https://mistelbach.lknoe.at/fuer-patienten/ambulanzen/orthopaedische-und-traumatologische-ambulanz/ambulanzzeiten – Erstversorgung Frischverletzte täglich 0-24",
+   "https://mistelbach.lknoe.at/fuer-patienten/ambulanzen/kinder-und-jugendambulanz/informationen – Notfallambulanz 0:00-24:00",
+   "https://mistelbach.lknoe.at/fuer-patienten/ambulanzen/neurologische-ambulanz/informationen – neurologische Notfälle 00:00-24:00 (über Portier)",
+   "https://mistelbach.lknoe.at/fuer-patienten/ambulanzen/chirurgische-ambulanz/informationen – chirurgische Notfälle 0:00-24:00",
+   "https://mistelbach.lknoe.at/fuer-patienten/abteilungen/innere-medizin-i-abteilung-fuer-kardiologie-und-internistische-intensivmedizin/abteilung – überregionales Zentrum für akute und geplante Herzkatheter; int. ICU 8 Intensiv- + 4 Überwachungsbetten",
+   "https://mistelbach.lknoe.at/landesklinikum-mistelbach-gaenserndorf/das-landesklinikum-mistelbach-gaenserndorf – rund 1.700 MitarbeiterInnen (inkl. Standort Gänserndorf)",
+   "https://krems.lknoe.at/universitaetsklinikum-krems/pressemeldungen/newsdetail/noe-kliniken-sichern-notfallversorgung – NÖ LGA-Presse (2026): 7 Stroke Units (Horn, Mistelbach, Amstetten, St. Pölten, Tulln, Wr. Neustadt, Mödling) durchgehend besetzt, 24/7; Herzinfarkt-Zentren St. Pölten (24/7), Krems, Wr. Neustadt, Mistelbach"
+  ],
+  "notiz": "Keine eigene Notaufnahme-Seite/-Zeit gefunden (nur chirurgische Notfälle 0-24) -> amb_notaufnahme nicht eingetragen. Herzkatheter 'akut und geplant', aber ohne Uhrzeit. Schockraum ohne Zeitangabe. Mitarbeiterzahl gilt für LK Mistelbach-Gänserndorf gesamt. Radiologie rund um die Uhr fachärztlich besetzt."
+ },
+ "kh006": {
+  "zeiten": {
+   "amb_notaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "amb_unfall": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "amb_kindernotaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "fb_kreisssaal": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "its_stroke_unit": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ]
+  },
+  "aufnahmerad": "",
+  "plaetze": {
+   "notaufnahme_betten": 12,
+   "stroke_unit": 4
+  },
+  "groesse": {},
+  "quellen": [
+   "https://amstetten.lknoe.at/fuer-patienten/interdisziplinaere-aufnahmestation/abteilung – IAS Anlaufstelle für alle Notfallpatienten, durchgehend besetzt, 12 Betten",
+   "https://amstetten.lknoe.at/fuer-patienten/abteilungen/unfallchirurgie/informationen – Trauma-Zentrum Mostviertel, rund um die Uhr an allen Tagen",
+   "https://amstetten.lknoe.at/fuer-patienten/ambulanzen/kinder-und-jugend-ambulanz/informationen – Notfälle 00:00-24:00",
+   "https://amstetten.lknoe.at/fuer-patienten/abteilungen/frauenheilkunde-und-geburtshilfe/informationen-1 – Kreißzimmer, rund um die Uhr erfahrenes Team",
+   "https://amstetten.lknoe.at/fuer-patienten/abteilungen/neurologie/informationen – Stroke Unit 4 monitorisierte Betten (+6 B-Phase-Betten), Station 32",
+   "https://amstetten.lknoe.at/fuer-patienten/abteilungen/innere-medizin-1/abteilung – rund um die Uhr für Akutfälle in der Notaufnahme; 16 Dialyseplätze",
+   "https://krems.lknoe.at/universitaetsklinikum-krems/pressemeldungen/newsdetail/noe-kliniken-sichern-notfallversorgung – NÖ LGA-Presse (2026): 7 Stroke Units (Horn, Mistelbach, Amstetten, St. Pölten, Tulln, Wr. Neustadt, Mödling) durchgehend besetzt, 24/7; Herzinfarkt-Zentren St. Pölten (24/7), Krems, Wr. Neustadt, Mistelbach; Herzkatheter Waidhofen/Ybbs soll langfristig nach Amstetten verlagert werden"
+  ],
+  "notiz": "Keine Größenzahlen (Betten/MA/Patienten) auf der Website gefunden; KAV-Verzeichnis: 340 Betten. Kreißsaal-Zeit aus 'rund um die Uhr erfahrenes Team bereit'."
+ },
+ "kh007": {
+  "zeiten": {
+   "amb_notaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "amb_unfall": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "its_stroke_unit": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ]
+  },
+  "aufnahmerad": "",
+  "plaetze": {},
+  "groesse": {},
+  "quellen": [
+   "https://horn.lknoe.at/patienten-besucher/patienteninfos/aufnahme – IAS Not- und Nachtaufnahme täglich 0.00-24.00 (außer Unfall); Unfallpatienten Notfälle täglich 0.00-24.00",
+   "https://horn.lknoe.at/fuer-patienten/ambulanzen/unfallchirurgische-ambulanz/informationen – Frischverletzte/akute Notfälle jederzeit, rund um die Uhr",
+   "https://horn.lknoe.at/fuer-patienten/abteilungen/anaesthesiologie-und-intensivmedizin/informationen – allgemeine Intensivstation mit 9 Intensivbehandlungsplätzen",
+   "https://horn.lknoe.at/fuer-patienten/ambulanzen/ambulanz-fuer-frauenheilkunde-und-geburtshilfe/informationen – Gyn/Geburtshilfe-Ambulanz Mo-Fr 8-12, in Notfällen jederzeit",
+   "https://krems.lknoe.at/universitaetsklinikum-krems/pressemeldungen/newsdetail/noe-kliniken-sichern-notfallversorgung – NÖ LGA-Presse (2026): 7 Stroke Units (Horn, Mistelbach, Amstetten, St. Pölten, Tulln, Wr. Neustadt, Mödling) durchgehend besetzt, 24/7; Herzinfarkt-Zentren St. Pölten (24/7), Krems, Wr. Neustadt, Mistelbach"
+  ],
+  "notiz": "Allg. ICU (Anästhesie) 9 Plätze, int. ICU zusätzlich ohne Zahl -> 'intensiv' nicht eingetragen. Kreißsaal: nur 'in Notfällen jederzeit' (Gyn-Ambulanz) -> nicht eingetragen. Keine Größenzahlen gefunden (KAV: 292 Betten). Radiologie rund um die Uhr."
+ },
+ "kh008": {
+  "zeiten": {
+   "amb_notaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "amb_unfall": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "amb_psychiatrie_krise": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5
+     ],
+     "von": "08:00",
+     "bis": "13:00"
+    }
+   ]
+  },
+  "aufnahmerad": "",
+  "plaetze": {
+   "intensiv": 24
+  },
+  "groesse": {
+   "betten": 443,
+   "mitarbeiter": 1600,
+   "stationaer_jahr": 34000,
+   "ambulant_jahr": 300000
+  },
+  "quellen": [
+   "https://baden.lknoe.at/fuer-patienten/ambulanzen/innere-medizin-ambulanz/informationen – interne Notfallambulanz täglich 00:00-24:00",
+   "https://baden.lknoe.at/fuer-patienten/ambulanzen/chirurgische-ambulanz/informationen – chirurgische Notfallambulanz täglich 00:00-24:00",
+   "https://baden.lknoe.at/fuer-patienten/ambulanzen/unfallambulanz/informationen – Unfall-Notfälle täglich 00:00-24:00, 24-Stunden-Leitstelle",
+   "https://baden.lknoe.at/fuer-patienten/ambulanzen/psychiatrie-und-psychotherapeutische-medizin-ambulanz/informationen – psychiatrische Aufnahmeambulanz (akute Krisen) Mo-Fr 08:00-13:00",
+   "https://baden.lknoe.at/landesklinikum-baden/das-landesklinikum-baden – 443 Betten inkl. 24 Intensivbetten, 20 Dialyseplätze, 6 OP; LK Baden-Mödling: ~1.600 MA, ~34.000 stationär, >300.000 ambulant, ~12.000 OPs/Jahr",
+   "https://baden.lknoe.at/fuer-patienten/abteilungen/orthopaedie-und-traumatologie/informationen – Unfallzentrum rund um die Uhr; Mödling-Ortho nur Mo-Fr 8-13"
+  ],
+  "notiz": "ACHTUNG: MA/stationär/ambulant gelten für LK Baden-Mödling (beide Standorte) zusammen; Betten/Intensiv nur Standort Baden. Psychiatrie-Krise: offizielle Aufnahmeambulanz nur Mo-Fr 08-13; außerhalb vermutlich über 24h-Notfallambulanz (UbG), nicht ausdrücklich genannt – ggf. im Spiel als 24h behandeln. Schockraum ohne Zeitangabe. NAW Baden ~2.500 Einsätze/Jahr; ICU ~400 Pat./Jahr."
+ },
+ "kh009": {
+  "zeiten": {
+   "amb_notaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "fb_kreisssaal": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "its_stroke_unit": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "amb_unfall": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5
+     ],
+     "von": "08:00",
+     "bis": "13:00"
+    }
+   ]
+  },
+  "aufnahmerad": "Unfall/Ortho am Standort Mödling nur Mo-Fr 08-13 (Erwachsene/Kinder ab 11 -> 24h nach Baden); Kinder bis 10 Jahre Unfall 24h in Mödling.",
+  "plaetze": {
+   "intensiv": 8
+  },
+  "groesse": {
+   "betten": 338,
+   "geburten_jahr": 2000,
+   "mitarbeiter": 1600,
+   "stationaer_jahr": 34000,
+   "ambulant_jahr": 300000
+  },
+  "quellen": [
+   "https://moedling.lknoe.at/fuer-patienten/ambulanzen/ambulanz-fuer-innere-medizin/informationen – interdisziplinäre Notfallambulanz täglich 00:00-24:00",
+   "https://moedling.lknoe.at/fuer-patienten/ambulanzen/ambulanz-fuer-gynaekologie-und-geburtshilfe/informationen – Gyn/Geburtshilfe-Notfallambulanz täglich 00:00-24:00",
+   "https://moedling.lknoe.at/fuer-patienten/ambulanzen/neurologische-ambulanz/informationen – Notfallambulanz (über interdisz. Aufnahmeambulanz) täglich 00:00-24:00",
+   "https://moedling.lknoe.at/fuer-patienten/ambulanzen/ambulanz-fuer-orthopaedie/informationen – Ortho/Trauma Mödling nur Mo-Fr 08-13, Kinder bis 10 J. 24h, sonst Baden 24h",
+   "https://moedling.lknoe.at/fuer-patienten/ambulanzen/kinder-und-jugendambulanz/informationen – Kinder-Notfallambulanz täglich 00:00-24:00",
+   "https://moedling.lknoe.at/fuer-patienten/abteilungen/gynaekologie-und-geburtshilfe/informationen – geburtenreichste Abteilung NÖ, knapp 2.000 Geburten/Jahr",
+   "https://moedling.lknoe.at/landesklinikum-moedling/das-landesklinikum-moedling – 338 Betten inkl. 8 Intensivbetten, 5 OP; LK Baden-Mödling ~1.600 MA, ~34.000 stationär, >300.000 ambulant",
+   "https://krems.lknoe.at/universitaetsklinikum-krems/pressemeldungen/newsdetail/noe-kliniken-sichern-notfallversorgung – NÖ LGA-Presse (2026): 7 Stroke Units (Horn, Mistelbach, Amstetten, St. Pölten, Tulln, Wr. Neustadt, Mödling) durchgehend besetzt, 24/7; Herzinfarkt-Zentren St. Pölten (24/7), Krems, Wr. Neustadt, Mistelbach"
+  ],
+  "notiz": "MA/stationär/ambulant = LK Baden-Mödling gesamt (identische Zahlen wie kh008, nicht doppelt zählen!). Kreißsaal-Zeit aus gyn./geburtshilfl. Notfallambulanz 0-24. Kinder-Notfallambulanz 0-24 vorhanden, amb_kindernotaufnahme aber nicht in Einrichtungsliste. Stroke Unit lt. LGA-Presse 24/7."
+ },
+ "kh010": {
+  "zeiten": {
+   "amb_notaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "amb_unfall": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5
+     ],
+     "von": "07:30",
+     "bis": "15:30"
+    }
+   ],
+   "amb_psychiatrie_krise": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5
+     ],
+     "von": "08:00",
+     "bis": "16:00"
+    }
+   ]
+  },
+  "aufnahmerad": "",
+  "plaetze": {
+   "notaufnahme_betten": 8
+  },
+  "groesse": {
+   "betten": 343,
+   "ambulant_jahr": 90063,
+   "stationaer_jahr": 11609,
+   "geburten_jahr": 657
+  },
+  "quellen": [
+   "https://neunkirchen.lknoe.at/ – Startseiten-Hinweis: Unfallambulanzbetrieb beschränkt auf Mo–Fr 07:30–15:30 (nicht Feiertage/Wochenende)",
+   "https://neunkirchen.lknoe.at/fuer-patienten/ambulanzen/unfallambulanz/informationen – Unfallambulanz Mo–Fr 07:30–15:30, nur ambulante Versorgung",
+   "https://neunkirchen.lknoe.at/fuer-patienten/interdisziplinaerer-aufnahmebereich/informationen – IAB durchgehend besetzt, Anlaufstelle aller Notfälle; Aufnahmestation 8 Betten",
+   "https://neunkirchen.lknoe.at/fuer-patienten/ambulanzen/psychiatrie-und-psychotherapeutische-medizin-aufnahmeambulanz/informationen – Psych. Aufnahmeambulanz (akute Krisen) Mo–Fr 08:00–16:00",
+   "https://www.landesgesundheitsagentur.at/fileadmin/media_data/Dateien/LKNOE_Webseite/Medien-Center/Publikationen/LGA_Geschaeftsbericht_2025_END.pdf – NÖ LGA Geschäftsbericht 2025, Kennzahlen der Kliniken (S. 150–153): amb. Kontakte, stat. Aufenthalte, tatsächliche Betten, Geburten 2025"
+  ],
+  "notiz": "Unfallambulanz nur werktags 07:30–15:30 (ausdrücklich auf Startseite). Psych. Aufnahmeambulanz offiziell Mo–Fr 08–16 'nach Terminvereinbarung', aber für akute Krisen; nachts vermutlich über IAB/Station – nicht belegt. Kreißsaal-Zeiten nicht genannt. Innere: ~4.400 Normalstation + ~500 IMCU-Aufnahmen/Jahr (Website). Größe: Zahlen 2025 (LGA-GB), Betten = tatsächliche Betten."
+ },
+ "kh011": {
+  "zeiten": {
+   "amb_notaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "amb_unfall": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ]
+  },
+  "aufnahmerad": "",
+  "plaetze": {},
+  "groesse": {
+   "betten": 176,
+   "ambulant_jahr": 98443,
+   "stationaer_jahr": 8373,
+   "geburten_jahr": 648
+  },
+  "quellen": [
+   "https://korneuburg.lknoe.at/fuer-patienten/ambulanzen/unfallambulanz/informationen – Akutversorgung 7 Tage/Woche rund um die Uhr in der interdisziplinären Notfallambulanz",
+   "https://www.landesgesundheitsagentur.at/fileadmin/media_data/Dateien/LKNOE_Webseite/Medien-Center/Publikationen/LGA_Geschaeftsbericht_2025_END.pdf – NÖ LGA Geschäftsbericht 2025, Kennzahlen der Kliniken (S. 150–153): amb. Kontakte, stat. Aufenthalte, tatsächliche Betten, Geburten 2025"
+  ],
+  "notiz": "Größe 2025 laut LGA-GB (Betten 176, Geburten 648; Geburtshilfe Hollabrunn seit 1.7.2025 nach Korneuburg verlagert). Kreißsaal-Zeiten/-Anzahl nicht genannt. fb_angiographie: keine Thrombektomie-Angaben."
+ },
+ "kh012": {
+  "zeiten": {
+   "amb_notaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ]
+  },
+  "aufnahmerad": "",
+  "plaetze": {},
+  "groesse": {
+   "betten": 124,
+   "ambulant_jahr": 49890,
+   "stationaer_jahr": 3963
+  },
+  "quellen": [
+   "https://stockerau.lknoe.at/fuer-patienten/ambulanzen/erstversorgungsambulanz/informationen – Erstversorgungsambulanz 00:00–24:00 für alle ungeplanten Patienten",
+   "https://www.landesgesundheitsagentur.at/fileadmin/media_data/Dateien/LKNOE_Webseite/Medien-Center/Publikationen/LGA_Geschaeftsbericht_2025_END.pdf – NÖ LGA Geschäftsbericht 2025, Kennzahlen der Kliniken (S. 150–153): amb. Kontakte, stat. Aufenthalte, tatsächliche Betten, Geburten 2025"
+  ],
+  "notiz": "Größe 2025 laut LGA-GB (Betten 124, kaum OPs – internistisch/akutgeriatrischer Standort; Akutgeriatrie 16 Betten). Rheumatologie ~7.500 Kontakte/Jahr (Website)."
+ },
+ "kh013": {
+  "zeiten": {
+   "amb_notaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "amb_psychiatrie_krise": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5
+     ],
+     "von": "08:00",
+     "bis": "13:00"
+    }
+   ]
+  },
+  "aufnahmerad": "",
+  "plaetze": {},
+  "groesse": {
+   "betten": 168,
+   "ambulant_jahr": 42318,
+   "stationaer_jahr": 6000,
+   "geburten_jahr": 167
+  },
+  "quellen": [
+   "https://hollabrunn.lknoe.at/fuer-patienten/ambulanzen/chirurgische-ambulanz/informationen – Chirurg. Ambulanz 0–24 Uhr bei akuten Beschwerden oder Unfällen",
+   "https://hollabrunn.lknoe.at/fuer-patienten/ambulanzen/sozialpsychiatrische-ambulanz/informationen – Sozialpsych. Aufnahmeambulanz (akute Krisen) Mo–Fr 08:00–13:00 nach Voranmeldung",
+   "https://www.landesgesundheitsagentur.at/fileadmin/media_data/Dateien/LKNOE_Webseite/Medien-Center/Publikationen/LGA_Geschaeftsbericht_2025_END.pdf – NÖ LGA Geschäftsbericht 2025, Kennzahlen der Kliniken (S. 150–153): amb. Kontakte, stat. Aufenthalte, tatsächliche Betten, Geburten 2025"
+  ],
+  "notiz": "Größe 2025 laut LGA-GB; die 167 Geburten stammen aus H1/2025 – Geburtshilfe Hollabrunn seit 1.7.2025 eingestellt (nach Korneuburg), stationäre Gynäkologie seit 1.10.2025 beendet. Psych. Krisenambulanz nur werktags vormittags (einzige stationäre Sozialpsychiatrie im Weinviertel)."
+ },
+ "kh014": {
+  "zeiten": {
+   "amb_notaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ]
+  },
+  "aufnahmerad": "",
+  "plaetze": {},
+  "groesse": {
+   "betten": 122,
+   "ambulant_jahr": 69661,
+   "stationaer_jahr": 5535,
+   "geburten_jahr": 366,
+   "mitarbeiter": 400
+  },
+  "quellen": [
+   "https://hainburg.lknoe.at/fuer-patienten/ambulanzen/interne-ambulanz-mit-notaufnahme/informationen – Interne Notfallambulanz 00:00–24:00",
+   "https://hainburg.lknoe.at/fuer-patienten/ambulanzen/chirurgische-ambulanz/informationen – Chirurgie: Notfälle rund um die Uhr, Schwerverletzte werden erstversorgt",
+   "https://hainburg.lknoe.at/landesklinikum-hainburg/das-landesklinikum-hainburg – 142 Betten, rund 400 Mitarbeiter, ~6.000 stationäre/>43.000 ambulante Patienten jährlich",
+   "https://www.landesgesundheitsagentur.at/fileadmin/media_data/Dateien/LKNOE_Webseite/Medien-Center/Publikationen/LGA_Geschaeftsbericht_2025_END.pdf – NÖ LGA Geschäftsbericht 2025, Kennzahlen der Kliniken (S. 150–153): amb. Kontakte, stat. Aufenthalte, tatsächliche Betten, Geburten 2025"
+  ],
+  "notiz": "Betten/Leistung 2025 laut LGA-GB (122 tatsächliche Betten); Website nennt 142 Betten, ~400 MA (ohne Jahr). Kreißsaal-Zeiten nicht genannt."
+ },
+ "kh015": {
+  "zeiten": {
+   "amb_notaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ]
+  },
+  "aufnahmerad": "",
+  "plaetze": {},
+  "groesse": {
+   "betten": 97,
+   "ambulant_jahr": 46171,
+   "stationaer_jahr": 4646,
+   "geburten_jahr": 188
+  },
+  "quellen": [
+   "https://klosterneuburg.lknoe.at/fuer-patienten/ambulanzen/chirurgische-ambulanz/informationen – chirurg. Ambulanz für Akutfälle rund um die Uhr",
+   "https://klosterneuburg.lknoe.at/fuer-patienten/ambulanzen/ambulanz-fuer-innere-medizin-inkl-labormedizin/informationen – Interne Ambulanz in Notfällen rund um die Uhr",
+   "https://klosterneuburg.lknoe.at/fuer-patienten/abteilungen/gynaekologie-und-geburtshilfe/informationen – akute Gyn-Notfälle seit 01.07.2025 an UK Tulln; nur gyn. Tagesklinik",
+   "https://www.landesgesundheitsagentur.at/fileadmin/media_data/Dateien/LKNOE_Webseite/Medien-Center/Publikationen/LGA_Geschaeftsbericht_2025_END.pdf – NÖ LGA Geschäftsbericht 2025, Kennzahlen der Kliniken (S. 150–153): amb. Kontakte, stat. Aufenthalte, tatsächliche Betten, Geburten 2025"
+  ],
+  "notiz": "Standort des UK Tulln-Klosterneuburg. Größe 2025 laut LGA-GB (97 Betten; 188 Geburten 2025 vermutlich vor Verlagerung nach Tulln – Geburtshilfe heute nicht mehr vorhanden). Akutgeriatrie 24 Betten."
+ },
+ "kh016": {
+  "zeiten": {
+   "amb_notaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "fb_kreisssaal": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ]
+  },
+  "aufnahmerad": "",
+  "plaetze": {},
+  "groesse": {
+   "betten": 138,
+   "ambulant_jahr": 58803,
+   "stationaer_jahr": 5932,
+   "geburten_jahr": 247
+  },
+  "quellen": [
+   "https://lilienfeld.lknoe.at/fuer-patienten/interdisziplinaerer-aufnahmebereich/ambulanzzeiten – IAB 7 Tage/Woche, 24 Stunden täglich",
+   "https://lilienfeld.lknoe.at/fuer-patienten/ambulanzen/gynaekologische-ambulanz/informationen – Gyn./Geburtshilfe: Notfälle jederzeit 24h/7 Tage",
+   "https://lilienfeld.lknoe.at/fuer-patienten/ambulanzen/unfallchirurgische-ambulanz/informationen – Unfallchirurg. Ambulanz Mo–Fr 08:00–11:00 (Terminambulanz)",
+   "https://www.landesgesundheitsagentur.at/fileadmin/media_data/Dateien/LKNOE_Webseite/Medien-Center/Publikationen/LGA_Geschaeftsbericht_2025_END.pdf – NÖ LGA Geschäftsbericht 2025, Kennzahlen der Kliniken (S. 150–153): amb. Kontakte, stat. Aufenthalte, tatsächliche Betten, Geburten 2025"
+  ],
+  "notiz": "Kreißsaal 24/7 abgeleitet aus 'Notfälle jederzeit 24h/7 Tage' der gyn./geburtshilfl. Ambulanz. amb_unfall nicht gesetzt: Unfallchirurg. Ambulanz offiziell nur Mo–Fr 08–11, akute Unfälle laufen vermutlich über den 24h-IAB – unklar. Größe 2025 laut LGA-GB."
+ },
+ "kh017": {
+  "zeiten": {
+   "amb_unfall": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "08:00",
+     "bis": "16:00"
+    }
+   ],
+   "fb_kreisssaal": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ]
+  },
+  "aufnahmerad": "",
+  "plaetze": {},
+  "groesse": {
+   "betten": 157,
+   "ambulant_jahr": 43634,
+   "stationaer_jahr": 7506,
+   "geburten_jahr": 381
+  },
+  "quellen": [
+   "https://melk.lknoe.at/fuer-patienten/ambulanzen/chirurgie-ambulanz/informationen – Unfallchirurg. Ambulanzzeiten Mo–So 08:00–16:00; außerhalb nach Erstversorgung Weiterleitung an umliegende Kliniken mit Unfallchirurgie",
+   "https://melk.lknoe.at/fuer-patienten/abteilungen/frauenheilkunde-und-geburtshilfe/geburtshilfe – permanente Anwesenheit FA Geburtshilfe und Anästhesie",
+   "https://melk.lknoe.at/fuer-patienten/ambulanzen/gynaekologische-ambulanz/informationen – Gyn. Ambulanz: Notfälle jederzeit",
+   "https://www.landesgesundheitsagentur.at/fileadmin/media_data/Dateien/LKNOE_Webseite/Medien-Center/Publikationen/LGA_Geschaeftsbericht_2025_END.pdf – NÖ LGA Geschäftsbericht 2025, Kennzahlen der Kliniken (S. 150–153): amb. Kontakte, stat. Aufenthalte, tatsächliche Betten, Geburten 2025"
+  ],
+  "notiz": "Unfallversorgung nur täglich 08–16, danach Erstversorgung + Weiterleitung (wichtig fürs Spiel). Notaufnahme-Zeiten nicht genannt. Kreißsaal 24/7 aus 'permanente Anwesenheit eines FA für Geburtshilfe' abgeleitet. Größe 2025 laut LGA-GB."
+ },
+ "kh018": {
+  "zeiten": {
+   "amb_notaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "amb_unfall": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "fb_kreisssaal": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ]
+  },
+  "aufnahmerad": "",
+  "plaetze": {},
+  "groesse": {
+   "betten": 183,
+   "ambulant_jahr": 103345,
+   "stationaer_jahr": 8284,
+   "geburten_jahr": 499
+  },
+  "quellen": [
+   "https://scheibbs.lknoe.at/fuer-patienten/ambulanzen/ambulanz-fuer-innere-medizin/informationen – IAB Erstversorgung rund um die Uhr",
+   "https://scheibbs.lknoe.at/fuer-patienten/ambulanzen/chirurgie-und-orthopaedie-ambulanz/informationen – Notfallambulanz (Orthopädie/Traumatologie) Erstversorgung rund um die Uhr",
+   "https://scheibbs.lknoe.at/fuer-patienten/ambulanzen/gynaekologische-und-geburtshilfliche-ambulanz/informationen – Gynäkologische Notfallambulanz 00:00–24:00",
+   "https://www.landesgesundheitsagentur.at/fileadmin/media_data/Dateien/LKNOE_Webseite/Medien-Center/Publikationen/LGA_Geschaeftsbericht_2025_END.pdf – NÖ LGA Geschäftsbericht 2025, Kennzahlen der Kliniken (S. 150–153): amb. Kontakte, stat. Aufenthalte, tatsächliche Betten, Geburten 2025"
+  ],
+  "notiz": "Kreißsaal 24/7 abgeleitet aus gyn./geburtshilfl. Notfallambulanz 00–24. Palliativ 8 Betten. Größe 2025 laut LGA-GB."
+ },
+ "kh019": {
+  "zeiten": {
+   "amb_unfall": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "fb_herzkatheter": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5
+     ],
+     "von": "07:00",
+     "bis": "19:00"
+    }
+   ]
+  },
+  "aufnahmerad": "",
+  "plaetze": {
+   "herzkatheter": 1,
+   "schockraum": 1,
+   "notaufnahme_betten": 4
+  },
+  "groesse": {
+   "betten": 144,
+   "ambulant_jahr": 63895,
+   "stationaer_jahr": 8623
+  },
+  "quellen": [
+   "https://waidhofen-ybbs.lknoe.at/fuer-patienten/abteilungen/innere-medizin/informationen – ein Herzkatheterlabor, ~1.400 Untersuchungen/Jahr; Akut-PCI bei Herzinfarkt Bereitschaft Mo–Fr 07:00–19:00; Aufnahmestation 4 Betten",
+   "https://waidhofen-ybbs.lknoe.at/fuer-patienten/ambulanzen/ambulanz-fuer-chirurgie-und-unfallchirurgie/informationen – (unfall-)chirurgische Ambulanz 24-stündig; ein Schockraum; ~15.000 Kontakte/Jahr",
+   "https://waidhofen-ybbs.lknoe.at/landesklinikum-waidhofenybbs/pressemeldungen/newsdetail/noe-kliniken-sichern-notfallversorgung – Herzinfarkt-Versorgung 'zurzeit noch' in Waidhofen/Ybbs, langfristig Verlagerung nach Amstetten geplant",
+   "https://www.landesgesundheitsagentur.at/fileadmin/media_data/Dateien/LKNOE_Webseite/Medien-Center/Publikationen/LGA_Geschaeftsbericht_2025_END.pdf – NÖ LGA Geschäftsbericht 2025, Kennzahlen der Kliniken (S. 150–153): amb. Kontakte, stat. Aufenthalte, tatsächliche Betten, Geburten 2025"
+  ],
+  "notiz": "Akut-PCI nur werktags 07–19 (außerhalb -> St. Pölten 24/7 o. a.). Herzkatheter-Standort soll langfristig nach Amstetten verlagert werden. Notaufnahme-Zeiten (intern) nicht explizit genannt. notaufnahme_betten = internist. Aufnahmestation (4, davon 3 überwacht). Größe 2025 laut LGA-GB."
+ },
+ "kh020": {
+  "zeiten": {
+   "fb_kreisssaal": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ]
+  },
+  "aufnahmerad": "",
+  "plaetze": {
+   "kreisssaal": 3
+  },
+  "groesse": {},
+  "quellen": [
+   "https://zwettl.lknoe.at/landesklinikum-zwettl/pressemeldungen/newsdetail/500-baby-im-landesklinikum-zwettl-freude-ueber-500-geburt – drei neue Kreißzimmer; Gyn/Geburtshilfe-Team rund um die Uhr; 500. Geburt 2026 am 24.09.2026",
+   "https://zwettl.lknoe.at/landesklinikum-zwettl/pressemeldungen/newsdetail/gemeinsame-uebung-fuer-den-ernstfall-landesklinikum-zwettl-probt-evakuierung-und-patientenversorgung – Notfallanlieferung und Hubschrauberlandeplatz vorhanden",
+   "https://zwettl.lknoe.at/fuer-patienten/ambulanzen/orthopaedische-ambulanz/informationen – Orthopädie/Unfallchirurgie-Ambulanz nur Mo+Mi 08-10 Uhr nach Termin (keine Akutzeiten genannt)",
+   "https://zwettl.lknoe.at/fuer-patienten/abteilungen/orthopaedie-und-orthopaedische-chirurgie/informationen – >3000 orthopädisch-traumatologische OPs/Jahr"
+  ],
+  "notiz": "fb_kreisssaal steht in kh_einrichtungen nur unter 'unklar', ist aber durch die Presse (3 Kreißzimmer, Geburtshilfe 24h, 500 Geburten bis 24.09.2026, hochgerechnet ca. 650/Jahr, nicht eingetragen) belegt → sollte in einrichtungen. Keine Zeiten für Unfallambulanz/Notaufnahme genannt (nur geplante Ortho-Ambulanz Mo/Mi 8-10). Keine Mitarbeiter-/Patientenzahlen gefunden."
+ },
+ "kh021": {
+  "zeiten": {},
+  "aufnahmerad": "",
+  "plaetze": {},
+  "groesse": {},
+  "quellen": [
+   "https://gmuend.lknoe.at/fuer-patienten/ambulanzen/ambulanzen-im-landesklinikum-gmuend/informationen – 'Akutuntersuchungen sind jederzeit möglich'; Ambulanzen sonst Mo-Fr vormittags",
+   "https://gmuend.lknoe.at/fuer-patienten/abteilungen/anaesthesiologie-und-intensivmedizin/informationen – IMCU, Notarztwagen ca. 800 Einsätze/Jahr"
+  ],
+  "notiz": "Keine benannte Notaufnahme (amb_notaufnahme unklar), aber 'Akutuntersuchungen jederzeit möglich' → falls aufgenommen: 24/7. Keine Zahlen zu Betten/Mitarbeitern auf der Website."
+ },
+ "kh022": {
+  "zeiten": {
+   "amb_notaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ]
+  },
+  "aufnahmerad": "",
+  "plaetze": {},
+  "groesse": {},
+  "quellen": [
+   "https://waidhofen-thaya.lknoe.at/fuer-patienten/ambulanzen/chirurgische-ambulanz/informationen – chir. Ambulanz 08-14 Uhr; außerhalb ambulante Erst- und Notfallversorgung 7 Tage/24 h durch Allgemeinmediziner"
+  ],
+  "notiz": "Notaufnahme 24/7, aber außerhalb 08-14 Uhr nur allgemeinmedizinische Erstversorgung (kein Chirurg). Psychiatrie (Waldviertler Zentrum für seelische Gesundheit) ist für Akutversorgung der Bezirke WT, HO, GD, ZT zuständig, Zeiten für Krisenaufnahme nicht genannt. Herzüberwachung 4 Betten (bereits bekannt). Keine Größenzahlen gefunden."
+ },
+ "kh039": {
+  "zeiten": {},
+  "aufnahmerad": "",
+  "plaetze": {},
+  "groesse": {},
+  "quellen": [
+   "https://mauer.lknoe.at/fuer-patienten/abteilungen/erwachsenenpsychiatrie-akut/abteilung – Akutpsychiatrie, keine Aufnahmezeiten genannt",
+   "https://mauer.lknoe.at/fuer-patienten/abteilungen/5-psychiatrische-abteilung-fuer-kinder-und-jugendpsychiatrie-und-psychotherapie/informationen – KJPP 30 vollstationäre + 6 halbstationäre Plätze"
+  ],
+  "notiz": "Keine der gesuchten Akut-Einrichtungen; keine Aufnahmezeiten für psychiatrische Akutaufnahmen und keine Gesamtzahlen (Betten/Mitarbeiter) auf der Website. KJPP: 30 + 6 Plätze."
+ },
+ "kh040": {
+  "zeiten": {},
+  "aufnahmerad": "",
+  "plaetze": {},
+  "groesse": {},
+  "quellen": [
+   "https://allentsteig.lknoe.at/fuer-patienten/neurologische-rehabilitation/informationen – neurologische Reha Phase C, 24/7 ärztlich besetzt, Notfälle → LK Horn"
+  ],
+  "notiz": "Reine Reha-Einrichtung ohne Akutaufnahme; nichts einzutragen. Keine Größenzahlen auf der Website (KAV: 65 Betten Neurologie)."
+ },
+ "kh041": {
+  "zeiten": {},
+  "aufnahmerad": "",
+  "plaetze": {
+   "intensiv": 4
+  },
+  "groesse": {},
+  "quellen": [
+   "https://hochegg.lknoe.at/fuer-patienten/abteilungen/pulmologie/informationen – Respiratory Care Unit 4 Betten (Intensivstation Stufe I, Weaning), IMCU 2 Betten, Schlaflabor",
+   "https://hochegg.lknoe.at/fuer-patienten/abteilungen/klinische-abteilung-fuer-neurologie/informationen – 3 neurologische Bettenstationen + 6 Betten Frührehabilitation"
+  ],
+  "notiz": "Gesamtbettenzahl auch auf der Website nicht genannt (nur 3 Neuro-Stationen + 6 Frühreha-Betten, RCU 4, IMCU 2). intensiv = 4 RCU-Betten (+2 IMCU). Keine Akutaufnahme (Übernahmen aus anderen Häusern)."
+ },
+ "kh099": {
+  "zeiten": {},
+  "aufnahmerad": "",
+  "plaetze": {},
+  "groesse": {},
+  "quellen": [
+   "https://moedling.lknoe.at/fuer-patienten/abteilungen/abteilung-fuer-kinder-und-jugendpsychiatrie-und-psychotherapie-am-standort-hinterbruehl/information – KJPP Hinterbrühl (LK Mödling): stationär 6-18 J., Krisenintervention, Akutstation; Aufnahmen 'je nach Dringlichkeit und freien Kapazitäten'; ambulante Erstvorstellungen geplant 09-14 Uhr; Versorgungsregion Industrieviertel + Nordburgenland"
+  ],
+  "notiz": "Fehlt in kh_einrichtungen.json (Standort Hinterbrühl des LK Mödling, reine Kinder- und Jugendpsychiatrie; Einrichtungen etwa st_kinder_jugendpsychiatrie, amb_psychiatrie_krise?). Keine 24h-Krisenaufnahmezeiten genannt. Bettenzahl nicht auf der Website (KAV: 28)."
+ },
+ "kh034": {
+  "zeiten": {
+   "amb_unfall": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "amb_kindernotaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "fb_kreisssaal": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ]
+  },
+  "aufnahmerad": "",
+  "plaetze": {},
+  "groesse": {
+   "geburten_jahr": 1000
+  },
+  "quellen": [
+   "https://www.barmherzige-brueder.at/portal/eisenstadt/medizinpflege/orthopaedieundtraumatolog/ambulanzen – Notfälle und frische Verletzungen Mo-So 0-24 Uhr",
+   "https://www.barmherzige-brueder.at/portal/eisenstadt/home/aktuelles/article/13865533.html – Unfallambulanz 24 h besetzt, Not- und Akutfälle werden erstversorgt",
+   "https://www.barmherzige-brueder.at/portal/eisenstadt/medizinpflege/kinderundjugendheilkunde/ambulanzen – Kinder-Notfallambulanz Mo-So 0-24 Uhr",
+   "https://www.barmherzige-brueder.at/portal/eisenstadt/medizinpflege/gynaekologieundgeburtshil – gyn./geburtshilfliche NOTFALLAMBULANZ jederzeit",
+   "https://www.barmherzige-brueder.at/portal/eisenstadt/medizinpflege/gynaekologieundgeburtshil/unserehebammen – jährlich rund 1.000 Geburten",
+   "https://www.barmherzige-brueder.at/portal/eisenstadt/medizinpflege/inneremedizinikardiologie/zae – ZAE mit Manchester-Triage, Kinder <18 → Kinderabteilung (keine Zeitangabe)",
+   "https://www.barmherzige-brueder.at/portal/eisenstadt/medizinpflege/neurologie – Schlaganfallverdacht über ZAE"
+  ],
+  "notiz": "ZAE (amb_notaufnahme): keine ausdrückliche Zeitangabe auf der ZAE-Seite; 'Not- und Akutfälle werden bei uns erstversorgt' (24h-Unfallambulanz) → Spiel-Default 24/7 passt. fb_kreisssaal aus 'Notfallambulanz Gyn/Geburtshilfe jederzeit'. Keine Zeiten zu Herzkatheter, Stroke Unit, Psychiatrie-Krise (Psychiatrie-Ambulanz nur Mo-Fr 8-13:30 Terminambulanz). Keine Zahlen zu Betten/Mitarbeitern auf der Website gefunden (KAV: 390 Betten). Geburten ca. 1000/Jahr (ohne Jahr)."
+ },
+ "kh035": {
+  "zeiten": {
+   "amb_notaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "amb_unfall": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "amb_kindernotaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ]
+  },
+  "aufnahmerad": "",
+  "plaetze": {},
+  "groesse": {
+   "betten": 334,
+   "mitarbeiter": 1400
+  },
+  "quellen": [
+   "https://www.gesundheit-burgenland.at/oberwart/ – rund 1.400 Mitarbeiter, 334 stationäre Betten, 56 ambulante Betreuungsplätze; zweitgrößte KA des Burgenlands",
+   "https://www.gesundheit-burgenland.at/oberwart/leistungen/abteilungen/chirurgie/ – ZAE täglich 24 Stunden; chirurgische Notfälle rund um die Uhr",
+   "https://www.gesundheit-burgenland.at/oberwart/leistungen/abteilungen/orthopaedie-und-traumatologie/ – Akutambulanz (frische Verletzungen) 7 Tage/24 h; 48 Betten; Trauma-Schwerpunkt seit 2018",
+   "https://www.gesundheit-burgenland.at/oberwart/leistungen/abteilungen/kinderheilkunde/ – Notfallambulanz rund um die Uhr 24/7/365; PIMCU seit 05/2024",
+   "https://www.gesundheit-burgenland.at/oberwart/leistungen/abteilungen/anaesthesie-und-intensiv/ – Schockraum, 5 OP-Säle + Notfallsectio-OP, Kreißsaal",
+   "https://www.gesundheit-burgenland.at/oberwart/leistungen/abteilungen/innere-medizin-i/ – CCU 6 Monitorbetten, Telemetrie 8, Dialyse 15, Herzkatheterlabor",
+   "https://www.gesundheit-burgenland.at/oberwart/leistungen/abteilungen/neurologie/ – 33 Betten, eigene Stroke Unit (Bettenzahl nicht genannt)",
+   "https://www.gesundheit-burgenland.at/oberwart/patienten-info/patientinnen-info-im-ueberblick/akutordination/ – allgemeinmed. Akutordination werktags 17-22 Uhr (nicht Notaufnahme)"
+  ],
+  "notiz": "Stand Website 2026. 334 Betten (Website) vs. KAV 318. Keine Zeitangaben zu Herzkatheter, Stroke Unit, Schockraum, Kreißsaal (Default 24/7). Herzkatheter-Labore-Anzahl, Intensivbetten, Stroke-Betten nicht genannt. Zusätzlich Akutordination Mo-Fr 17-22 Uhr (Allgemeinmedizin, Ergänzung zum Hausarzt)."
+ },
+ "kh036": {
+  "zeiten": {},
+  "aufnahmerad": "",
+  "plaetze": {},
+  "groesse": {
+   "betten": 99,
+   "mitarbeiter": 350
+  },
+  "quellen": [
+   "https://www.gesundheit-burgenland.at/kittsee/ – rund 350 Mitarbeiter, 99 Betten; ZAE 'in den Nachmittagsstunden sowie an Wochenenden'; keine Kinder <18, keine Unfallchirurgie (Erstversorgung, dann Eisenstadt/Frauenkirchen)",
+   "https://www.gesundheit-burgenland.at/kittsee/leistungen/abteilungen/innere-medizin/ – 62 Betten inkl. 4 IMCU, AG/R 24 Betten, ambulante Behandlungseinheit",
+   "https://www.gesundheit-burgenland.at/kittsee/patienten-info/patientinnen-info-im-ueberblick/akutordination/ – Akutordination Mo-Fr 17-22 Uhr"
+  ],
+  "notiz": "ZAE laut Startseite nur nachmittags und am Wochenende; vormittags werktags läuft Akutversorgung offenbar über die Fachambulanzen/ambulante Behandlungseinheit – keine genaue Uhrzeit genannt, daher keine Zeitfenster eingetragen (bei Bedarf: Mo-Fr ab ca. 13 Uhr + Sa/So ganztägig). Intensivbettenzahl nicht genannt."
+ },
+ "kh089": {
+  "zeiten": {
+   "amb_notaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "amb_unfall": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ]
+  },
+  "aufnahmerad": "",
+  "plaetze": {
+   "intensiv": 6
+  },
+  "groesse": {
+   "betten": 117,
+   "mitarbeiter": 390
+  },
+  "quellen": [
+   "https://www.gesundheit-burgenland.at/guessing/ – 117 Betten, rund 390 Mitarbeiter",
+   "https://www.gesundheit-burgenland.at/guessing/leistungen/abteilungen/innere-medizin/ – ZAE Montag bis Sonntag 00:00-24:00; IM 40 Betten inkl. Überwachungseinheit",
+   "https://www.gesundheit-burgenland.at/guessing/leistungen/abteilungen/orthopaedie-und-traumatologie/ – 24-Stunden-Trauma-Basisversorgung; Polytrauma/Schockraum primär Klinik Oberwart",
+   "https://www.gesundheit-burgenland.at/guessing/leistungen/abteilungen/anaesthesie-und-intensiv/ – Intensivstation 6 Betten, ca. 3000 Narkosen/Jahr, NAW"
+  ],
+  "notiz": "Kein Schockraum (Polytrauma → Oberwart). Akutordination Mo-Fr 17-22 Uhr zusätzlich (Allgemeinmedizin)."
+ },
+ "kh090": {
+  "zeiten": {
+   "fb_kreisssaal": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ]
+  },
+  "aufnahmerad": "",
+  "plaetze": {
+   "intensiv": 6
+  },
+  "groesse": {
+   "betten": 121,
+   "mitarbeiter": 430
+  },
+  "quellen": [
+   "https://www.gesundheit-burgenland.at/oberpullendorf/ – Bettenstand 121, rund 430 Mitarbeiter",
+   "https://www.gesundheit-burgenland.at/oberpullendorf/leistungen/abteilungen/chirurgie/ – chirurgische Notfälle: Aufnahme rund um die Uhr; ca. 1200 OP-Patienten, ca. 7000 ambulante Patienten/Jahr (Chirurgie)",
+   "https://www.gesundheit-burgenland.at/oberpullendorf/leistungen/abteilungen/innere-medizin/ – 58 Betten + IMCU/Herzstation 6 Betten für kardiologische/interne Notfälle",
+   "https://www.gesundheit-burgenland.at/oberpullendorf/leistungen/abteilungen/anaesthesie-und-intensiv/ – Intensivstation 6 Betten, >3000 Anästhesien/Jahr",
+   "https://www.gesundheit-burgenland.at/oberpullendorf/leistungen/abteilungen/gynaekologie-und-geburtshilfe/ – Team aus Ärzten, Hebammen, Pflege rund um die Uhr; diensthabende Hebamme, Kreißsaal"
+  ],
+  "notiz": "Keine benannte ZAE (amb_notaufnahme unklar), aber 'chirurgische Notfälle: Aufnahme rund um die Uhr' → falls Notaufnahme eingetragen wird: 24/7. Kreißsaal 24/7 aus 'Geburtshilfe-Team rund um die Uhr'. Ambulante Zahl (7000) nur Chirurgie, daher nicht als ambulant_jahr eingetragen. Akutordination Mo-Fr 17-22 Uhr."
+ },
+ "kh091": {
+  "zeiten": {
+   "amb_unfall": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "08:00",
+     "bis": "19:00"
+    }
+   ],
+   "fb_schockraum": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "08:00",
+     "bis": "19:00"
+    }
+   ]
+  },
+  "aufnahmerad": "",
+  "plaetze": {},
+  "groesse": {},
+  "quellen": [
+   "https://www.barmherzige-brueder.at/portal/frauenkirchen/home – täglich Mo-So, auch feiertags, 8 bis 19 Uhr geöffnet; ab 19 Uhr bei Notfällen 144",
+   "https://www.barmherzige-brueder.at/portal/frauenkirchen/ueberuns – jeden Tag 8-19 Uhr Versorgung frischer Verletzungen",
+   "https://www.barmherzige-brueder.at/portal/frauenkirchen/leistungen – Schockraum, Gipszimmer, Röntgen"
+  ],
+  "notiz": "Einzige Einrichtung mit eingeschränkten Zeiten: täglich 08:00-19:00, danach geschlossen. Schockraum-Zeit = Öffnungszeit der Ambulanz angenommen."
+ },
+ "kh023": {
+  "zeiten": {
+   "amb_notaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "amb_unfall": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "amb_kindernotaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "amb_psychiatrie_krise": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ]
+  },
+  "aufnahmerad": "Psychiatrie-Notfallambulanz: Klin. Abt. Allgemeine Psychiatrie 'täglich'; Klin. Abt. Sozialpsychiatrie nur an geraden Tagen (Mo–Fr 14–08, Sa/So/Feiertag 0–24). KJP-Notfallambulanz zuständig für die Bezirke 4–9, 16–18, 21, 22. Akut-PCI- und Thrombektomie-Dienstrad in Wien (Landstraße nennt eigene Tage) – für das AKH auf den Seiten keine Tage genannt.",
+  "plaetze": {
+   "intensiv": 137
+  },
+  "groesse": {
+   "betten": 1727,
+   "mitarbeiter": 9038,
+   "stationaer_jahr": 65079,
+   "ambulant_jahr": 570692
+  },
+  "quellen": [
+   "https://www.akhwien.at/default.aspx?pid=664 – Notfallambulanz täglich 0:00–24:00",
+   "https://www.akhwien.at/default.aspx?pid=335 – Unfallambulanz Erstversorgung täglich 0:00–24:00",
+   "https://kinderklinik.meduniwien.ac.at/ – 24-Stunden-Notfallambulanz (Kinder)",
+   "https://www.akhwien.at/default.aspx?pid=2935 – Notfallambulanz Allg. Psychiatrie 'täglich'; https://www.akhwien.at/default.aspx?pid=16977 – Sozialpsychiatrie gerade Tage; https://www.akhwien.at/default.aspx?pid=29534 – KJP-Notfallambulanz (Bezirke)",
+   "https://www.akhwien.at/default.aspx?pid=793 – Bettenstand 2026: 1.727 gesamt, davon 137 Intensiv, 130 IMC",
+   "https://www.akhwien.at/default.aspx?pid=788 – Eckdaten 2025: 570.692 ambulante Fälle, 65.079 stationäre Aufnahmen",
+   "https://www.akhwien.at/default.aspx?pid=791 – Personalstand 2025: 9.038",
+   "https://unfallchirurgie.meduniwien.ac.at/ – >70.000 ambulante Unfallpatient:innen/Jahr, >500 schockraumpflichtige/Jahr",
+   "https://notfallmedizin.meduniwien.ac.at/ – Cardiac Arrest Center, 60–70 eCPR/Jahr"
+  ],
+  "notiz": "Betten/Intensiv Stand 2026, Mitarbeiter/stationär/ambulant Jahr 2025 (ambulant_jahr = ambulante Fälle; Ambulanzfrequenz 1.233.235). Psych-Zeit 'täglich' ohne Uhrzeit als rund um die Uhr gewertet. Unfallchirurgie: >500 Schockraumpatienten/Jahr (keine Raumanzahl genannt). eCPR/ECMO vorhanden, Geräteanzahl nicht genannt. Keine Kreißsaal-/Stroke-/HK-Zeiten oder -Anzahlen gefunden."
+ },
+ "kh024": {
+  "zeiten": {
+   "amb_notaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "amb_kindernotaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "amb_psychiatrie_krise": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "its_stroke_unit": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ]
+  },
+  "aufnahmerad": "Psychiatrische Notfallversorgung außerhalb Mo–Fr 08–15 auf den Stationen nach Geburtsjahrgang (gerade: St. 02, ungerade: St. 45, ab 55 J.: St. 44). Akut-PCI: Wiener Herzinfarkt-Dienstrad existiert (siehe kh029), für Floridsdorf keine Tage genannt.",
+  "plaetze": {
+   "herzkatheter": 2,
+   "schockraum": 1,
+   "notaufnahme": 10
+  },
+  "groesse": {
+   "mitarbeiter": 2000
+  },
+  "quellen": [
+   "https://klinik-floridsdorf.gesundheitsverbund.at/leistung/zentrale-notaufnahme/ – täglich 00.00–24.00, 10 Untersuchungsräume + Eingriffs-/Röntgenraum + Beobachtungszone, 1 intensivmedizinisch ausgestatteter Schockraum",
+   "https://klinik-floridsdorf.gesundheitsverbund.at/leistung/kardiologie-abteilung/ – zwei Herzkatheter-Räume, Hybrid-OP",
+   "https://klinik-floridsdorf.gesundheitsverbund.at/leistung/kinder-und-jugendheilkunde-notfallambulanz/ – Kindernotfallambulanz täglich 00.00–24.00",
+   "https://klinik-floridsdorf.gesundheitsverbund.at/leistung/psychiatrie-und-psychotherapeutische-medizin-ambulanz/ – 24 Stunden Sozialpsychiatrische Notfallambulanz",
+   "https://klinik-floridsdorf.gesundheitsverbund.at/leistung/neurologie_abteilung/ – Stroke Unit, 'rund um die Uhr Ansprechpartner für neurologische Akut- und Notfälle'",
+   "https://klinik-floridsdorf.gesundheitsverbund.at/leistung/radiologie-institut/ – 2 angiographische Katheterplätze, 3 CT",
+   "https://klinik-floridsdorf.gesundheitsverbund.at/das-haus/ – knapp 2.000 Mitarbeiter*innen übersiedelt (2019)"
+  ],
+  "notiz": "Mitarbeiterzahl = 'knapp 2.000' bei Eröffnung 2019, kein aktueller Wert. 'notaufnahme' = Untersuchungsräume. Kreißsaal-Zeiten nicht genannt. Thrombektomie am Haus nicht belegt (nur Angiographie-Plätze).",
+  "_akut_aus": [
+   "ak_thrombektomie"
+  ]
+ },
+ "kh025": {
+  "zeiten": {
+   "amb_notaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "amb_unfall": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "amb_kindernotaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "amb_psychiatrie_krise": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5
+     ],
+     "von": "08:00",
+     "bis": "13:00"
+    }
+   ]
+  },
+  "aufnahmerad": "Psychiatrische Notfallambulanz zuständig für den 2. und 22. Bezirk (auf Zuweisung). Herzkatheterlabor 'in das Netzwerk zur akuten Herzinfarktversorgung in Wien eingebunden' – Diensttage nicht genannt.",
+  "plaetze": {
+   "herzkatheter": 1,
+   "schockraum": 1
+  },
+  "groesse": {},
+  "quellen": [
+   "https://klinik-donaustadt.gesundheitsverbund.at/leistung/abteilung-fuer-notfallmedizin/ – Allgemeine Notfallambulanz täglich 24 Stunden",
+   "https://klinik-donaustadt.gesundheitsverbund.at/leistung/unfallambulanz/ – Notfälle täglich 00.00–24.00",
+   "https://klinik-donaustadt.gesundheitsverbund.at/leistung/abteilung-fuer-orthopaedie-und-traumatologie/ – Maximalversorgung, 'ein Schockraum', Kindertraumatologie",
+   "https://klinik-donaustadt.gesundheitsverbund.at/leistung/abteilung-fuer-kinder-und-jugendheilkunde/ – Notfallambulanz täglich 00.00–24.00",
+   "https://klinik-donaustadt.gesundheitsverbund.at/leistung/ambulanz-fuer-psychiatrische-notfaelle/ – Ambulanzzeiten Mo–Fr 08.00–13.00",
+   "https://klinik-donaustadt.gesundheitsverbund.at/leistung/1_medizinische-abteilung/ – 'Unser ... Herzkatheterlabor' (Einzahl), Herzinfarktnetzwerk Wien",
+   "https://klinik-donaustadt.gesundheitsverbund.at/das-haus/ – 933 Betten im Endausbau 1996 (historisch)"
+  ],
+  "notiz": "Psych-Ambulanz nur Mo–Fr 08–13 laut Website; stationäre Akutaufnahme/Notfälle außerhalb vermutlich über Abteilung bzw. ZNA, aber nicht genannt – ggf. lieber weglassen. Keine aktuelle Bettenzahl/MA auf der Website (933 Betten = Stand 1996). Stroke-Unit-Zeiten nicht genannt.",
+  "_akut_aus": [
+   "ak_thrombektomie"
+  ]
+ },
+ "kh026": {
+  "zeiten": {
+   "amb_notaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "amb_unfall": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "amb_kindernotaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "amb_psychiatrie_krise": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "fb_kreisssaal": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ]
+  },
+  "aufnahmerad": "Psychiatrie: Krisenintervention Mo–Fr 08.30–13.00 für Bezirke 8, 16, 17, 18; ab 13.00 Notfalldienst rund um die Uhr. Thrombektomie NICHT im Haus: Patienten gehen an die Wiener Schlaganfall-Interventionszentren (AKH, Klinik Landstraße, Barmherzige Brüder).",
+  "plaetze": {
+   "stroke_unit": 6,
+   "schockraum": 1
+  },
+  "groesse": {},
+  "quellen": [
+   "https://klinik-ottakring.gesundheitsverbund.at/leistung/zentrale-notaufnahme/ – 24-Stunden Notdienst",
+   "https://klinik-ottakring.gesundheitsverbund.at/leistung/unfallchirurgische-notfallambulanz-und-unfallchirurgische-ambulanz/ – Mo–So 00.00–24.00, Schockraum mit Röntgen und CT",
+   "https://klinik-ottakring.gesundheitsverbund.at/leistung/unfallchirurgische-abteilung-mit-ambulanz/ – 'ein Schockraum' mit allen Abklärungsmodalitäten",
+   "https://klinik-ottakring.gesundheitsverbund.at/leistung/kindernotfallambulanz/ – Mo–So 00.00–24.00",
+   "https://klinik-ottakring.gesundheitsverbund.at/leistung/psychiatrie-1-abteilung/ – Krisenintervention Mo–Fr 8.30–13.00, ab 13.00 Notfalldienst rund um die Uhr",
+   "https://klinik-ottakring.gesundheitsverbund.at/leistung/gynaekologie-abteilung/ – 24-Stunden Bereitschaft für geburtshilfliche Notfälle, Kreißsaal Station C-Ost",
+   "https://klinik-ottakring.gesundheitsverbund.at/leistung/neurologische-abteilung-mit-ambulanz/ – 6 Betten Stroke Unit; endovaskuläre Therapie in Kooperation mit AKH/Landstraße/BHB",
+   "https://klinik-ottakring.gesundheitsverbund.at/leistung/3-medizinische-abteilung-mit-kardiologie/ – Herzkatheterlabore (Plural), ECMO/Impella"
+  ],
+  "notiz": "Herzkatheterlabore: Anzahl nicht genannt (Plural). fb_angiographie ist hier keine Thrombektomie-Stelle. Keine Bettenzahl/MA auf Website. Psych als 24/7 eingetragen (Ambulanz + Notfalldienst ergeben lückenlos).",
+  "_akut_aus": [
+   "ak_thrombektomie"
+  ]
+ },
+ "kh027": {
+  "zeiten": {
+   "amb_notaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "fb_kreisssaal": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "amb_psychiatrie_krise": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5
+     ],
+     "von": "08:00",
+     "bis": "12:30"
+    }
+   ]
+  },
+  "aufnahmerad": "",
+  "plaetze": {
+   "kreisssaal": 5,
+   "herzkatheter": 1
+  },
+  "groesse": {
+   "geburten_jahr": 2000
+  },
+  "quellen": [
+   "https://klinik-favoriten.gesundheitsverbund.at/leistung/internistische-notaufnahme/ – 365 Tage, täglich 24 Stunden",
+   "https://klinik-favoriten.gesundheitsverbund.at/leistung/abteilung-fuer-gynaekologie-und-geburtshilfe/ – 5 Kreißsäle, 1 Notsectio-OP, 2.000 Geburten/Jahr, Hebammen/Geburtshelfer rund um die Uhr anwesend",
+   "https://klinik-favoriten.gesundheitsverbund.at/leistung/5-medizinische-abteilung-mit-kardiologie/ – 'Herzkatheter-Labor' (Einzahl), Akutversorgung von Herzinfarkten",
+   "https://klinik-favoriten.gesundheitsverbund.at/leistung/institut-fuer-diagnostische-und-interventionelle-radiologie/ – 2 Angiografieanlagen (mit Kardiologie), Akutuntersuchungen 00.00–24.00",
+   "https://klinik-favoriten.gesundheitsverbund.at/leistung/psychiatrische-ambulanz/ – Erstbegutachtung/Krisenintervention Mo–Fr 08.00–12.30",
+   "https://klinik-favoriten.gesundheitsverbund.at/leistung/chirurgische-ambulanz/ – 24 Stunden chirurgische Notfallambulanz"
+  ],
+  "notiz": "Geburtenzahl ohne Jahresangabe (Website Stand 2026). Psych-Ambulanz Mo–Fr 08.00–12.30 laut Website, 24-h-Aufnahme nicht genannt – ggf. weglassen. Herzkatheter: 1 Labor laut Kardiologie, Radiologie nennt 2 Angiografieanlagen gemeinsam mit Kardiologie. Stroke-Unit-Zeiten nicht genannt.",
+  "_akut_aus": [
+   "ak_thrombektomie"
+  ]
+ },
+ "kh028": {
+  "zeiten": {
+   "amb_notaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "fb_kreisssaal": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ]
+  },
+  "aufnahmerad": "Psychiatrie 3: Erstbegutachtung/Krisenintervention für Bezirke 5, 6, 7, 9, 19 (keine Zeiten genannt). Koronarangiographie gemeinsam mit Klinik Ottakring (kein eigenes Akut-HK).",
+  "plaetze": {
+   "schockraum": 1,
+   "notaufnahme_betten": 15
+  },
+  "groesse": {
+   "betten": 800,
+   "mitarbeiter": 3000,
+   "stationaer_jahr": 26000,
+   "ambulant_jahr": 485000,
+   "notaufnahme_jahr": 40000
+  },
+  "quellen": [
+   "https://klinik-hietzing.gesundheitsverbund.at/leistung/notfallmedizin-abteilung/ – rund um die Uhr, >40.000 Notfälle/Jahr, 80 % per Rettung, Station 15 Betten mit Schockraum, NEF-Stützpunkt 2 NEF (>10.000 Einsätze/Jahr)",
+   "https://klinik-hietzing.gesundheitsverbund.at/leistung/notfallambulanz/ – 24-Stunden-Notdienst",
+   "https://klinik-hietzing.gesundheitsverbund.at/leistung/frauenheilkunde-abteilung/ – 24-Stunden Bereitschaft in der Akutambulanz, Geburtshilfe ab 36. SSW",
+   "https://klinik-hietzing.gesundheitsverbund.at/das-haus/ – gut 800 Betten, über 3.000 Mitarbeiter*innen, 26.000 stationäre Patient*innen und 485.000 ambulante Behandlungen jährlich (2 Standorte)",
+   "https://klinik-hietzing.gesundheitsverbund.at/leistung/psychiatrie-3/ – ambulante Krisenintervention (keine Zeiten)",
+   "https://klinik-hietzing.gesundheitsverbund.at/leistung/kardiologie/ – Koronarangiographie gemeinsam mit Klinik Ottakring"
+  ],
+  "notiz": "Größenzahlen ohne Jahr (Website Stand 2026), umfassen beide Standorte inkl. Rosenhügel; Werte sind 'gut/über'-Angaben. Erwachsenen-Psych-Krisenzeiten nicht genannt. Die 24-h-KJP-Akutambulanz liegt am Standort Rosenhügel (kh098). Kreißsaal: nur Geburten ab 36. SSW. Stroke-Unit-Zeiten nicht genannt.",
+  "_akut_aus": [
+   "ak_thrombektomie"
+  ]
+ },
+ "kh029": {
+  "zeiten": {
+   "amb_notaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "amb_psychiatrie_krise": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "fb_kreisssaal": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "its_stroke_unit": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "fb_herzkatheter": [
+    {
+     "tage": [
+      1
+     ],
+     "von": "08:00",
+     "bis": "08:00"
+    }
+   ],
+   "fb_angiographie": [
+    {
+     "tage": [
+      3,
+      5
+     ],
+     "von": "08:00",
+     "bis": "08:00"
+    }
+   ]
+  },
+  "aufnahmerad": "Wienweiter Interventionsdienst Akut-PCI: Klinik Landstraße primär zuständig Montag 08.00 bis Dienstag 08.00; sonst Akut-PTCA nur nach telefonischer Rückfrage. Thrombektomie (Schlaganfall-Interventionszentrum, mit AKH und BHB): Mittwoch und Freitag jeweils 08.00 bis 08.00 des Folgetages ärztliche Akutanfrage. Psychiatrie: Notfallbegutachtungen 24/7, außerhalb Mo–Fr 08–15 direkt auf den Stationen; zuständig u. a. nach Anfangsbuchstaben M/N für nicht in Wien Gemeldete und für Unbekannte.",
+  "plaetze": {},
+  "groesse": {
+   "betten": 600,
+   "geburten_jahr": 1800
+  },
+  "quellen": [
+   "https://klinik-landstrasse.gesundheitsverbund.at/leistung/zentrale-notaufnahme-aufnahmeabteilung-und-erstuntersuchungsambulanz/ – 24-Stunden Notdienst, Aufnahmestation 6A",
+   "https://klinik-landstrasse.gesundheitsverbund.at/leistung/2-medizinische-abteilung-mit-kardiologie-und-internistischer-intensivmedizin/ – Herzinfarkt-Interventionsdienst Mo 08.00 bis Di 08.00 primär zuständig",
+   "https://klinik-landstrasse.gesundheitsverbund.at/leistung/neurologische-abteilung/ – Stroke Unit + Thrombektomie, Mi und Fr 08.00–08.00 Folgetag, 24-Stunden Notdienst",
+   "https://klinik-landstrasse.gesundheitsverbund.at/leistung/psychiatrische-akutambulanz-erstbegutachtung-und-krisenintervention/ – Mo–Fr 08–15, Notfallbegutachtung 24/7 (außerhalb auf Stationen)",
+   "https://klinik-landstrasse.gesundheitsverbund.at/leistung/abteilung-fuer-gynaekologie-und-geburtshilfe/ – Notfallambulanz täglich 24 Stunden, ca. 1.800 Entbindungen/Jahr",
+   "https://klinik-landstrasse.gesundheitsverbund.at/leistung/erstversorgungsambulanz/ – vorgelagerte Erstversorgungsambulanz Mo–Fr 10–22, Sa/So/Fei 09–20",
+   "https://klinik-landstrasse.gesundheitsverbund.at/das-haus/ – über 600 Betten"
+  ],
+  "notiz": "Aufnahmerad als Zeitfenster eingetragen (bis < von = bis Folgetag 08:00). Außerhalb des HK-Diensttags ist Akut-PCI nach Rückfrage möglich – bei Bedarf statt Zeitfenster nur Hinweis nutzen. Gyn-Abteilung: 40.000 ambulante/5.200 stationäre Patientinnen jährlich (nur Abteilung). Betten 'über 600', ohne Jahr."
+ },
+ "kh043": {
+  "zeiten": {},
+  "aufnahmerad": "",
+  "plaetze": {},
+  "groesse": {},
+  "quellen": [
+   "https://standort-penzing.gesundheitsverbund.at/das-haus/ – Geschichte, keine aktuellen Kennzahlen"
+  ],
+  "notiz": "Keine der abgefragten Akut-Einrichtungen laut kh_einrichtungen.json; seit 2025 Standort Penzing der Klinik Ottakring. Keine Größenzahlen auf der Website gefunden (KAV: 172 Betten)."
+ },
+ "kh098": {
+  "zeiten": {
+   "amb_psychiatrie_krise": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ]
+  },
+  "aufnahmerad": "24-Stunden-Akutambulanz der Kinder- und Jugendpsychiatrie mit telefonischer Voranmeldung (Riedelgasse 5, Pavillon C).",
+  "plaetze": {},
+  "groesse": {},
+  "quellen": [
+   "https://klinik-hietzing.gesundheitsverbund.at/leistung/kinder-und-jugendpsychiatrie-abteilung/ – 3 Stationen, 24-Stunden-Akutambulanz für psychiatrische Notfälle, telefonische Voranmeldung erforderlich"
+  ],
+  "notiz": "Nur KJP (Kinder/Jugendliche). Größe in kh028 enthalten."
+ },
+ "kh030": {
+  "zeiten": {
+   "amb_unfall": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "fb_schockraum": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ]
+  },
+  "aufnahmerad": "",
+  "plaetze": {},
+  "groesse": {
+   "mitarbeiter": 696,
+   "stationaer_jahr": 8212,
+   "ambulant_jahr": 60000
+  },
+  "quellen": [
+   "https://www.auva.at/gesundheitseinrichtungen/traumazentrum-wien-meidling – Notfallambulanz täglich 00:00–24:00 (Meidling und Brigittenau); Zahlen 2024: >68k Behandlungen, 8.212 stationär, 696 Mitarbeitende",
+   "https://www.auva.at/gesundheitseinrichtungen/traumazentrum-wien-meidling/ambulanz – Notfallambulanz für Frischverletzte rund um die Uhr, sofortige Schockraumversorgung; 2024 >60k ambulant versorgt; Erstversorgungsambulanz allgemeinmed. Mo–Fr 08–20, Sa/So 09–17"
+  ],
+  "notiz": "Zahlen 2024 (ambulant als '>60k' angegeben, gesamt '>68k Behandlungen'). Schockraum-Zeit aus 24h-Notfallambulanz abgeleitet; Anzahl Schockräume nicht genannt. Übernimmt derzeit auch stationäre Fälle von Brigittenau."
+ },
+ "kh031": {
+  "zeiten": {
+   "amb_unfall": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ]
+  },
+  "aufnahmerad": "",
+  "plaetze": {},
+  "groesse": {},
+  "quellen": [
+   "https://www.auva.at/gesundheitseinrichtungen/traumazentrum-wien-brigittenau – Erstuntersuchungsambulanz täglich 00:00–24:00 für selbst kommende Verletzte; wer nicht selbst kommen kann: 144, Rettung bringt ins nächstgelegene Krankenhaus; Modulbau Probebetrieb Ende 2026, Vollbetrieb bis Ende März 2027"
+  ],
+  "notiz": "Ambulanz 24/7, aber nur für Selbstzuweiser – laut Website keine Rettungszufahrten während Sanierung (stationär ausgelagert). Im Spiel ggf. als nicht rettungsanfahrbar behandeln.",
+  "_akut_aus": [
+   "*"
+  ]
+ },
+ "kh032": {
+  "zeiten": {},
+  "aufnahmerad": "",
+  "plaetze": {
+   "stroke_unit": 7,
+   "notaufnahme_betten": 6,
+   "intensiv": 12
+  },
+  "groesse": {
+   "mitarbeiter": 1200
+  },
+  "quellen": [
+   "https://www.barmherzige-brueder.at/portal/wien/home – Zähler: 1.200 Mitarbeitende in Wien, 213.000 Patient:innen 2025, 17.946 Operationen 2025",
+   "https://www.barmherzige-brueder.at/portal/wien/medizinpflege/ambulanzen/zae – ZAE = Notfallambulanz, Bettenstation ZNA mit 6 Positionen (bis 24 h); keine Öffnungszeiten genannt",
+   "https://www.barmherzige-brueder.at/portal/wien/medizinpflege/neurologie/schlaganfallzentrum/leistungen – Stroke Unit 7 Betten (+6 B-Phase, 9 C-Phase, 2 Isolierung), Lyse, mechanische Thrombektomie, CT/MRT inkl. Angiographie/Perfusion 24/7",
+   "https://www.barmherzige-brueder.at/portal/wien/medizinpflege/anaesthesiologieintensivm/unsereleistungen – allgemeine Intensivmedizin 12 Betten (lt. kh_einrichtungen-Quelle)"
+  ],
+  "notiz": "213.000 'Patient:innen 2025' (stationär+ambulant gemischt, daher nicht als ambulant_jahr eingetragen). Keine expliziten Zeiten für ZAE/Stroke/Thrombektomie; '24/7' bezieht sich auf Bildgebung (CT-/MR-Angio)."
+ },
+ "kh033": {
+  "zeiten": {
+   "amb_kindernotaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ]
+  },
+  "aufnahmerad": "",
+  "plaetze": {},
+  "groesse": {},
+  "quellen": [
+   "https://www.stanna.at/abteilungen/interne-abteilung/interne-ambulanzen/notfallambulanz/ – Notfallambulanz täglich 0:00–24:00, Übernahme von Patient*innen der Rettungsorganisationen, Manchester-Triage",
+   "https://www.stanna.at/ – 'Für Notfälle täglich 00:00–24:00 Uhr'; 'Pro Jahr betreuen wir rund 22.000 Patient*innen'"
+  ],
+  "notiz": "~22.000 Patient*innen/Jahr (nicht nach stationär/ambulant getrennt, ohne Jahresangabe)."
+ },
+ "kh042": {
+  "zeiten": {
+   "amb_notaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "amb_unfall": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "fb_herzkatheter": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4
+     ],
+     "von": "07:30",
+     "bis": "15:00"
+    },
+    {
+     "tage": [
+      5
+     ],
+     "von": "08:00",
+     "bis": "24:00"
+    },
+    {
+     "tage": [
+      6
+     ],
+     "von": "00:00",
+     "bis": "08:00"
+    }
+   ]
+  },
+  "aufnahmerad": "Wiener STEMI-Netzwerk: Akut-PCI rund um die Uhr nur jeden Freitag 08:00 bis Samstag 08:00; sonst Herzkatheter-Betriebszeit Mo–Do 07:30–15:00 (akute Interventionen auch im täglichen Routineprogramm).",
+  "plaetze": {
+   "schockraum": 1,
+   "schockraum_trauma": 1,
+   "intensiv": 10
+  },
+  "groesse": {},
+  "quellen": [
+   "https://www.oegk.at/cdscontent/?contentid=10007.875662&portal=oegkhanuschkrankenhausportal – Zentrale Notaufnahme 00.00–24.00 Uhr, Notfälle und Unfälle rund um die Uhr (Pavillon 4)",
+   "https://www.oegk.at/cdscontent/?contentid=10007.875567&portal=oegkhanuschkrankenhausportal – Herzkatheterlabor Betriebszeiten Mo–Do 7.30–15.00, Fr 8.00 bis Sa 8.00; akute PCI jeden Freitag im Wiener STEMI-Netzwerk; >1.200 Koronarangiographien, >600 PCI/Jahr",
+   "https://www.oegk.at/cdscontent/?contentid=10007.875648&portal=oegkhanuschkrankenhausportal – Unfallabteilung: Ambulanz Mo–So 00.00–24.00, ein Schockraum, 2 OP-Säle, 46 Betten, >20.000 Patient*innen/Jahr (2.500 stationär)",
+   "https://www.oegk.at/cdscontent/?contentid=10007.875590&portal=oegkhanuschkrankenhausportal – Anästhesie: 10 Intensivbetten (lt. kh_einrichtungen-Quelle)"
+  ],
+  "notiz": "Gesamt-Hauszahlen (Mitarbeiter/Patienten) auf ÖGK-Seiten nicht gefunden. Keine Thrombektomie-/Neuro-Notfallversorgung (Notaufnahme-Seite). Unfallabt. allein >20.000 Pat./Jahr."
+ },
+ "kh044": {
+  "zeiten": {},
+  "aufnahmerad": "",
+  "plaetze": {},
+  "groesse": {
+   "betten": 280,
+   "mitarbeiter": 900
+  },
+  "quellen": [
+   "https://www.oss.at/ueber-uns – Zähler: 900 Mitarbeitende, 10.000 Operationen/Jahr, 280 Betten/Behandlungsplätze, 52.000 Patienten jährlich",
+   "https://www.oss.at/leistungen/akutambulanz – Akutambulanz Mo–Fr 8–13 (lt. kh_einrichtungen-Quelle; keine Notaufnahme)"
+  ],
+  "notiz": "Zahlen ohne Jahresangabe; 52.000 Patienten/Jahr gesamt (nicht getrennt). Keine der abgefragten Akut-Einrichtungen."
+ },
+ "kh045": {
+  "zeiten": {},
+  "aufnahmerad": "Teil des Schlaganfall-Rades der Stadt Wien (2025: 500 Aufnahmen aus dem Schlaganfallrad, davon 250 behandelte Schlaganfälle); stellt Rettungskontingente zur Verfügung. Tage/Zeiten des Rades nicht genannt.",
+  "plaetze": {
+   "stroke_unit": 4,
+   "intensiv": 8
+  },
+  "groesse": {
+   "betten": 269,
+   "mitarbeiter": 820,
+   "stationaer_jahr": 12939,
+   "ambulant_jahr": 31435,
+   "rettungszufahrten_jahr": 2100
+  },
+  "quellen": [
+   "https://www.khgh.at/ – 2025: 2.100 Rettungsanfahrten (2026 geplant ~4.000), Schlaganfall-Rad, 500 Aufnahmen/250 Schlaganfälle 2025",
+   "https://www.khgh.at/ueber-uns/leistungsbilanzen – Leistungszahlen 2025: 289 systemisierte/269 tatsächliche Betten, 12.939 stationäre Aufnahmen, 31.435 ambulante Pat., 4.739 OPs",
+   "https://www.khgh.at/ueber-uns – 820 Mitarbeitende",
+   "https://www.khgh.at/leistungen/abteilungen/neurologie – Stroke Unit 4 Betten, Lyse",
+   "https://www.khgh.at/leistungen/abteilungen/anaesthesie-und-intensivmedizin/intensivstation-und-imcu – 8 Intensiv-, 4 IMCU-Betten (lt. kh_einrichtungen-Quelle)"
+  ],
+  "notiz": "Zahlen 2025 (Mitarbeitende ohne Jahr). Thrombektomie nicht erwähnt (nur Lyse); Angiographie ohne Zeiten.",
+  "_akut_aus": [
+   "ak_thrombektomie"
+  ]
+ },
+ "kh092": {
+  "zeiten": {
+   "amb_notaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5
+     ],
+     "von": "08:00",
+     "bis": "18:00"
+    }
+   ]
+  },
+  "aufnahmerad": "",
+  "plaetze": {
+   "intensiv": 8
+  },
+  "groesse": {},
+  "quellen": [
+   "https://www.bhswien.at/leistungsspektrum/zentrale-aufnahme-und-erstversorgung-zae – ZAE/Notfallambulanz Montag bis Freitag 8.00–18.00, nimmt Zuweisungen und Rettungen auf; 'jährlich mehr als 55.000 Patient*innen'",
+   "https://www.bhswien.at/anaesthesie/intensivstation – interdisziplinäre Intensivstation 8 Betten (lt. kh_einrichtungen-Quelle)"
+  ],
+  "notiz": "Notaufnahme nur werktags tagsüber! >55.000 Patient*innen/Jahr gesamt (ohne Jahr, nicht getrennt). Angiographie ohne Zeiten."
+ },
+ "kh093": {
+  "zeiten": {},
+  "aufnahmerad": "",
+  "plaetze": {},
+  "groesse": {
+   "betten": 158,
+   "mitarbeiter": 528,
+   "stationaer_jahr": 13065,
+   "ambulant_jahr": 30513
+  },
+  "quellen": [
+   "https://www.kh-herzjesu.at/ueber-uns/zahlen-daten-fakten – 2023: 158 aufgestellte Betten, 30.513 ambulante, 13.065 stationäre Pat., 6.547 OPs, 528 Beschäftigte"
+  ],
+  "notiz": "Zahlen 2023. Keine Notaufnahme (Terminambulanzen)."
+ },
+ "kh094": {
+  "zeiten": {
+   "fb_kreisssaal": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ]
+  },
+  "aufnahmerad": "",
+  "plaetze": {
+   "intensiv": 6
+  },
+  "groesse": {
+   "stationaer_jahr": 16877,
+   "ambulant_jahr": 51831,
+   "geburten_jahr": 4229
+  },
+  "quellen": [
+   "https://www.sjk-wien.at/unser-angebot/eltern-kind-zentrum/geburtshilfe/die-geburt-in-st-josef/waehrend-der-geburt/unsere-kreisszimmer – Geburtshilfe-Team rund um die Uhr, jederzeit direkt ins Krankenhaus kommen; Anzahl Kreißzimmer nicht genannt",
+   "https://www.sjk-wien.at/ueber-uns – Zähler: 4.229 Geburten, 7.414 Operationen, 16.877 stationäre, 51.831 ambulante Patient*innen",
+   "https://www.sjk-wien.at/leistungen/geburtshilfe – über 4.000 Geburten/Jahr, größte Geburtsklinik Österreichs",
+   "https://www.sjk-wien.at/leistungen/anaesthesie-und-intensivmedizin – Intensivstation 6 Betten (lt. kh_einrichtungen-Quelle); NICU 6 + NIMCU 10 separat"
+  ],
+  "notiz": "Zähler ohne Jahresangabe (vermutlich 2025). Kreißsaal-24/7 aus 'rund um die Uhr / jederzeit kommen' abgeleitet."
+ },
+ "kh095": {
+  "zeiten": {},
+  "aufnahmerad": "",
+  "plaetze": {},
+  "groesse": {},
+  "quellen": [
+   "https://www.franziskusspital.at/wir – keine Kennzahlen; https://www.franziskusspital.at/2026/04/Wiener-Ordensspit%C3%A4ler-versorgen-fast-eine-halbe-Million-Menschen – nur Summen aller 7 Wiener Ordensspitäler 2025"
+  ],
+  "notiz": "Keine abgefragten Akut-Einrichtungen, keine hausbezogenen Kennzahlen gefunden."
+ },
+ "kh096": {
+  "zeiten": {},
+  "aufnahmerad": "",
+  "plaetze": {},
+  "groesse": {},
+  "quellen": [
+   "https://www.franziskusspital.at/ – keine Kennzahlen; Ordensspitäler-Presse 2025 nur als Summe (120.341 stationär, 359.980 ambulant, 11.590 Rettungsanfahrten, 5.507 MA über 7 Häuser)"
+  ],
+  "notiz": "Keine abgefragten Akut-Einrichtungen, keine hausbezogenen Kennzahlen gefunden."
+ },
+ "kh097": {
+  "zeiten": {},
+  "aufnahmerad": "",
+  "plaetze": {},
+  "groesse": {},
+  "quellen": [
+   "https://www.ekhwien.at/ueber-uns – keine Kennzahlen"
+  ],
+  "notiz": "Nicht in kh_einrichtungen.json (dort als neu01 in gruppe_neu.json); keine Notaufnahme, Ambulanz nur Mo–Fr 7:30–16:00 (lt. gruppe_neu). Keine Kennzahlen gefunden."
+ },
+ "kh037": {
+  "zeiten": {
+   "fb_herzkatheter": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ]
+  },
+  "aufnahmerad": "Linzer Aufnahmerad (Stand Kalender Sep 2026–Dez 2027, geprüft): Die Akut-/Notfallaufnahme (Rettung, Notarzt, Selbstzuweiser) der Erwachsenen-Grundversorgung in Linz wechselt tageweise zwischen DREI Partnern: (1) Kepler Uniklinikum Med Campus III (kh037), (2) Barmherzige Brüder Linz (kh052) GEMEINSAM mit Ordensklinikum Elisabethinen (kh049), (3) Ordensklinikum Barmherzige Schwestern (kh048). Dienst jeweils 07:00 bis 07:00 Uhr Folgetag. Kein fester Wochentag: starrer 21-Tage-Zyklus (3 Wochen), jeder Partner hat genau 7 Tage pro Zyklus (= im Schnitt jeder 3. Tag), Wochenenden werden als Block Sa+So an einen Partner vergeben (jeder Partner jedes 3. Wochenende). Feiertage verschieben das Muster nicht. Öffentlicher Plan: Aufnahmekalender auf kepleruniklinikum.at/aufnahmekalender, ordensklinikum.at/de/patienten/aufnahmetage, barmherzige-brueder.at (Aufnahmetage) sowie lokale Printmedien. Nicht im Rad (immer aufnahmebereit): KUK Med Campus IV (Frauen/Kinder) und KUK Neuromed Campus (Neurologie/Psychiatrie) – permanente Aufnahme; AUVA UKH Linz für Frischverletzte 24/7; Kinderabteilung BHS 24/7; Fachambulanzen (Termin) laufen unabhängig vom Rad. Neurologie/Stroke: an Ordensspital-Tagen (BB/Eli- UND BHS-Tage = 2/3 der Tage) BB-Neurologie/Stroke Unit, an KUK-Tagen KUK-Neurologie MC III; Neuromed permanent. Akut-PCI: an Ordensspital-Tagen Herzkatheter Elisabethinen rund um die Uhr, an KUK-Tagen KUK MC III (KUK gibt 24/7 an). HAUS-SPEZIFISCH MC III: Aufnahmetage = 7 von 21 Tagen (Muster s. _aufnahmerad_linz, Kürzel KUK), z. B. Okt 2026: 1,5,7,10,11,16,20,22,26,28,31. Am Aufnahmetag: ZAE/ZNA nimmt Interne, Allgemeinchirurgie, Neurologie (Stroke Unit MC III, 4 Betten; Neuro-Notfallambulanz an Aufnahmetagen Mo–Fr 07–19 ohne Termin) etc. auf. An Nicht-Aufnahmetagen: Patient:innen sollen das diensthabende Haus aufsuchen (Kalender); Ausnahmen: akute postoperative Probleme der Allgemeinchirurgie werden 7 Tage/Woche auch an Nicht-Aufnahmetagen angenommen; Herzkatheter laut Kardiologie 24 h/7 Tage (praktisch v. a. Infarkte an KUK-Tagen, an Ordenstagen übernimmt Eli). Dermatologie nimmt Patienten ohne Termin nur an Aufnahmetagen 08–12 Uhr.",
+  "plaetze": {
+   "herzkatheter": 2,
+   "schockraum_intern": 2,
+   "stroke_unit": 4
+  },
+  "groesse": {},
+  "quellen": [
+   "https://www.kepleruniklinikum.at/aufnahmekalender – offizieller Aufnahmekalender (KUK): MC III im Aufnahmerad mit allen anderen Linzer KH, Dienst 07:00–07:00 Folgetag; MC IV und Neuromed Campus permanente Aufnahme; Tagesplan monatlich abrufbar (Sep 2026–Sep 2028)",
+   "https://www.kepleruniklinikum.at/kliniken-einrichtungen/notfallmedizin-zaezna – KUK ZAE/ZNA MC III: Notfallaufnahmen der Linzer KH im Aufnahmerad organisiert, vor Vorstellung Kalender konsultieren",
+   "https://www.kepleruniklinikum.at/kliniken-einrichtungen/innere-medizin-1-kardiologie-und-internistische-intensivmedizin/ – 2 Biplane-Koronarangiographien; Akut-PCI 24 Stunden/7 Tage; Interne ICU 12 Betten (8 ICU + 4 Herzüberwachung)",
+   "https://www.kepleruniklinikum.at/kliniken-einrichtungen/anaesthesiologie-und-operative-intensivmedizin/schwerpunkte-und-leistungen/ – konservativer Schockraum/Notfallinterventionsraum mit 2 Behandlungspositionen an ICU 3 (MC III); KUK gesamt 7 Anästhesie-ICUs mit 58 Betten; ECMO/LVAD ca. 45–50 Pat./Jahr",
+   "https://www.kepleruniklinikum.at/kliniken-einrichtungen/neurologie/stationen/ – Stroke Unit MC III Bau D 4 Betten; Neuro-ICU MC III 8 Betten",
+   "https://www.kepleruniklinikum.at/kliniken-einrichtungen/neurologie/ambulanzen/ – an Aufnahmetagen für Notfälle Mo–Fr 07–19 Uhr",
+   "https://www.kepleruniklinikum.at/kliniken-einrichtungen/allgemein-und-viszeralchirurgie/ambulanzen/ – akute postoperative Probleme 7 Tage/Woche auch an Nicht-Aufnahmetagen",
+   "https://www.kepleruniklinikum.at/ueber-uns/zahlen-daten-fakten/ – KUK gesamt (3 Standorte): rund 1.800 Betten, rund 7.500 Mitarbeitende",
+   "https://www.ordensklinikum.at/de/patienten/aufnahmetage/ – Ordensklinikum: Aufnahme wechselt in bestimmtem Rhythmus zwischen KUK MC III, BB gemeinsam mit Elisabethinen, BHS; 07:00–07:00; Kinder- und Jugendheilkunde (BHS) und Ambulanzen ausgenommen (Kinder 24/7); UKH Linz für Frischverletzte täglich 00–24 Uhr"
+  ],
+  "notiz": "Größenangaben nur für KUK gesamt (alle 3 Standorte): ~1.800 Betten, ~7.500 Mitarbeitende (Stand 2026) – daher nicht in groesse. Intensiv MC III nicht sauber trennbar (Interne ICU 12, Neuro-ICU 8, OP-ICU 3 = 6 u. a.). Notaufnahme (amb_notaufnahme) bewusst ohne zeiten: Aufnahmerad, s. aufnahmerad/_aufnahmerad_linz. Trauma-Schockraum (Polytrauma, Trauma Zentrum) vorhanden, Anzahl nicht genannt.",
+  "_rad": "Linz 2026-09-01 07:00 SBSKBBSKSKBSSKBKBSKKB: amb_notaufnahme=K, fb_schockraum=K, its_stroke_unit=K"
+ },
+ "kh046": {
+  "zeiten": {
+   "amb_notaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "amb_psychiatrie_krise": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "its_stroke_unit": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ]
+  },
+  "aufnahmerad": "NICHT im Linzer Aufnahmerad: Laut KUK-Aufnahmekalender hat der Neuromed Campus (neurologisch-psychiatrisches Kompetenzzentrum) aufgrund seiner fachspezifischen Ausrichtung PERMANENT Aufnahme (Neurologie, Neurochirurgie, Psychiatrie inkl. Kinder-/Jugendpsychiatrie). Akute Schlaganfälle im Linzer Zentralraum gehen jedoch tagesabhängig auch an die BB-Neurologie (an Ordensspital-Tagen, 2/3 der Tage) bzw. an die KUK-Neurologie MC III (an KUK-Tagen); Neuromed hat zusätzlich eigene Stroke Unit (Station C302) und die Neuroradiologie mit mechanischer Thrombektomie (>300 Pat. 2024) – faktisch Zentrum für Thrombektomie-Zuweisungen. Linzer Aufnahmerad (Stand Kalender Sep 2026–Dez 2027, geprüft): Die Akut-/Notfallaufnahme (Rettung, Notarzt, Selbstzuweiser) der Erwachsenen-Grundversorgung in Linz wechselt tageweise zwischen DREI Partnern: (1) Kepler Uniklinikum Med Campus III (kh037), (2) Barmherzige Brüder Linz (kh052) GEMEINSAM mit Ordensklinikum Elisabethinen (kh049), (3) Ordensklinikum Barmherzige Schwestern (kh048). Dienst jeweils 07:00 bis 07:00 Uhr Folgetag. Kein fester Wochentag: starrer 21-Tage-Zyklus (3 Wochen), jeder Partner hat genau 7 Tage pro Zyklus (= im Schnitt jeder 3. Tag), Wochenenden werden als Block Sa+So an einen Partner vergeben (jeder Partner jedes 3. Wochenende). Feiertage verschieben das Muster nicht. Öffentlicher Plan: Aufnahmekalender auf kepleruniklinikum.at/aufnahmekalender, ordensklinikum.at/de/patienten/aufnahmetage, barmherzige-brueder.at (Aufnahmetage) sowie lokale Printmedien. Nicht im Rad (immer aufnahmebereit): KUK Med Campus IV (Frauen/Kinder) und KUK Neuromed Campus (Neurologie/Psychiatrie) – permanente Aufnahme; AUVA UKH Linz für Frischverletzte 24/7; Kinderabteilung BHS 24/7; Fachambulanzen (Termin) laufen unabhängig vom Rad. Neurologie/Stroke: an Ordensspital-Tagen (BB/Eli- UND BHS-Tage = 2/3 der Tage) BB-Neurologie/Stroke Unit, an KUK-Tagen KUK-Neurologie MC III; Neuromed permanent. Akut-PCI: an Ordensspital-Tagen Herzkatheter Elisabethinen rund um die Uhr, an KUK-Tagen KUK MC III (KUK gibt 24/7 an).",
+  "plaetze": {
+   "intensiv": 18
+  },
+  "groesse": {},
+  "quellen": [
+   "https://www.kepleruniklinikum.at/aufnahmekalender – offizieller Aufnahmekalender (KUK): MC III im Aufnahmerad mit allen anderen Linzer KH, Dienst 07:00–07:00 Folgetag; MC IV und Neuromed Campus permanente Aufnahme; Tagesplan monatlich abrufbar (Sep 2026–Sep 2028)",
+   "https://www.kepleruniklinikum.at/kliniken-einrichtungen/anaesthesiologie-und-operative-intensivmedizin/schwerpunkte-und-leistungen/ – Neuromed Campus: zwei Intensivstationen mit insgesamt 18 Betten (Neurointensivmedizin)",
+   "https://www.kepleruniklinikum.at/kliniken-einrichtungen/neurologie/stationen/ – Station C302 (Stroke Unit und IMCU) am Neuromed Campus, Bettenzahl nicht genannt",
+   "https://www.kepleruniklinikum.at/kliniken-einrichtungen/neuroradiologie/schwerpunkte-und-leistungen/ – mechanische Thrombektomie, 2024 über 300 Patient:innen",
+   "https://www.kepleruniklinikum.at/kliniken-einrichtungen/neurochirurgie/ – 90 Betten Neurochirurgie, 3.600 stationäre Pat./Jahr (nur Neurochirurgie)"
+  ],
+  "notiz": "zeiten 24/7 abgeleitet aus 'permanent Aufnahme' (Aufnahmekalender KUK). Thrombektomie-Zeiten nicht explizit genannt → fb_angiographie weggelassen. Stroke-Unit-Bettenzahl Neuromed nicht genannt. Neurologie-Klinik spricht von 'zwei Stroke Units' (MC III + Neuromed)."
+ },
+ "kh047": {
+  "zeiten": {
+   "amb_kindernotaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "fb_kreisssaal": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ]
+  },
+  "aufnahmerad": "NICHT im Linzer Aufnahmerad: Med Campus IV (Frauen-, Kinder- und Jugendheilkunde) hat laut KUK-Aufnahmekalender permanent Aufnahme. Kinderklinik: 'Notfälle werden an sieben Tagen in der Woche rund um die Uhr – unabhängig von den Aufnahmetagen anderer Linzer Spitäler – behandelt'; Kinderchirurgische Ambulanz für Notfälle rund um die Uhr. Hinweis: auch die Kinderabteilung der Barmherzigen Schwestern (Ordensklinikum) ist vom Rad ausgenommen und 24/7 offen. Linzer Aufnahmerad (Stand Kalender Sep 2026–Dez 2027, geprüft): Die Akut-/Notfallaufnahme (Rettung, Notarzt, Selbstzuweiser) der Erwachsenen-Grundversorgung in Linz wechselt tageweise zwischen DREI Partnern: (1) Kepler Uniklinikum Med Campus III (kh037), (2) Barmherzige Brüder Linz (kh052) GEMEINSAM mit Ordensklinikum Elisabethinen (kh049), (3) Ordensklinikum Barmherzige Schwestern (kh048). Dienst jeweils 07:00 bis 07:00 Uhr Folgetag. Kein fester Wochentag: starrer 21-Tage-Zyklus (3 Wochen), jeder Partner hat genau 7 Tage pro Zyklus (= im Schnitt jeder 3. Tag), Wochenenden werden als Block Sa+So an einen Partner vergeben (jeder Partner jedes 3. Wochenende). Feiertage verschieben das Muster nicht. Öffentlicher Plan: Aufnahmekalender auf kepleruniklinikum.at/aufnahmekalender, ordensklinikum.at/de/patienten/aufnahmetage, barmherzige-brueder.at (Aufnahmetage) sowie lokale Printmedien. Nicht im Rad (immer aufnahmebereit): KUK Med Campus IV (Frauen/Kinder) und KUK Neuromed Campus (Neurologie/Psychiatrie) – permanente Aufnahme; AUVA UKH Linz für Frischverletzte 24/7; Kinderabteilung BHS 24/7; Fachambulanzen (Termin) laufen unabhängig vom Rad. Neurologie/Stroke: an Ordensspital-Tagen (BB/Eli- UND BHS-Tage = 2/3 der Tage) BB-Neurologie/Stroke Unit, an KUK-Tagen KUK-Neurologie MC III; Neuromed permanent. Akut-PCI: an Ordensspital-Tagen Herzkatheter Elisabethinen rund um die Uhr, an KUK-Tagen KUK MC III (KUK gibt 24/7 an).",
+  "plaetze": {
+   "intensiv": 8
+  },
+  "groesse": {},
+  "quellen": [
+   "https://www.kepleruniklinikum.at/aufnahmekalender – offizieller Aufnahmekalender (KUK): MC III im Aufnahmerad mit allen anderen Linzer KH, Dienst 07:00–07:00 Folgetag; MC IV und Neuromed Campus permanente Aufnahme; Tagesplan monatlich abrufbar (Sep 2026–Sep 2028)",
+   "https://www.kepleruniklinikum.at/kliniken-einrichtungen/kinder-und-jugendheilkunde/ambulanzen/ – Kinder-Notfälle 7 Tage/Woche rund um die Uhr, unabhängig von Aufnahmetagen",
+   "https://www.kepleruniklinikum.at/kliniken-einrichtungen/kinder-und-jugendchirurgie/ambulanzen/ – Kinderchirurgische Ambulanz für Notfälle rund um die Uhr",
+   "https://www.kepleruniklinikum.at/kliniken-einrichtungen/anaesthesiologie-und-operative-intensivmedizin/schwerpunkte-und-leistungen/ – MC IV pädiatrische Intensivstation 8 Betten + Überwachungsstation 4 Betten",
+   "https://www.kepleruniklinikum.at/kliniken-einrichtungen/neonatologie/schwerpunkte-und-leistungen/ – Neonatologie-Transportdienst 24 h/7 Tage, ca. 100 Transporte/Jahr"
+  ],
+  "notiz": "Kreißsaal 24/7 abgeleitet aus 'permanent Aufnahme' (Frauenklinik); Anzahl Kreißzimmer/Geburten nicht gefunden. intensiv=8 nur PICU (+4 Überwachung); NICU-Betten nicht genannt."
+ },
+ "kh038": {
+  "zeiten": {
+   "amb_unfall": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "fb_schockraum": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ]
+  },
+  "aufnahmerad": "NICHT im Aufnahmerad: Das UKH Linz steht Frischverletzten nach akuten Unfällen täglich 00:00–24:00 zur Verfügung (bestätigt auch auf der Aufnahmetage-Seite des Ordensklinikums). Behandelt ohne zusätzliche Verletzung KEINE internistischen, allgemeinchirurgischen, gynäkologischen, urologischen, HNO-, Augen-, Haut- oder orthopädischen (nicht-traumatischen) Erkrankungen. Unfallpatienten in Linz daher unabhängig vom Rad primär UKH (Polytrauma alternativ KUK MC III Trauma Zentrum).",
+  "plaetze": {
+   "intensiv": 9
+  },
+  "groesse": {
+   "betten": 147,
+   "mitarbeiter": 584,
+   "stationaer_jahr": 5726,
+   "ambulant_jahr": 48000
+  },
+  "quellen": [
+   "https://www.auva.at/gesundheitseinrichtungen/ukh-linz – UKH Linz: Notfallambulanz täglich 00:00–24:00, Frischverletzte rund um die Uhr, Schockraum; Zahlen 2024: ≈54k behandelt, 5.726 stationär, 147 Betten, 584 Mitarbeitende",
+   "https://www.auva.at/gesundheitseinrichtungen/ukh-linz/ambulanz – Notfallambulanz für Frischverletzte rund um die Uhr; Schockraum; 2024 >48k ambulant versorgt",
+   "https://www.auva.at/gesundheitseinrichtungen/ukh-linz/schwerpunkte/anaesthesiologie-und-intensivmedizin – Intensivstation 9 Kojen mit Beatmung (~250 Schwerverletzte/Jahr), IMCU 4 Betten, Aufwachraum 8 Plätze",
+   "https://www.ordensklinikum.at/de/patienten/aufnahmetage/ – Ordensklinikum: Aufnahme wechselt in bestimmtem Rhythmus zwischen KUK MC III, BB gemeinsam mit Elisabethinen, BHS; 07:00–07:00; Kinder- und Jugendheilkunde (BHS) und Ambulanzen ausgenommen (Kinder 24/7); UKH Linz für Frischverletzte täglich 00–24 Uhr"
+  ],
+  "notiz": "Zahlen 2024 (AUVA-Seite): ≈54.000 behandelte Patient:innen gesamt, >48.000 ambulant, 5.726 stationär, 147 Betten, 584 Mitarbeitende. Schockraum-Anzahl nicht genannt. IMCU 4 Betten zusätzlich zu ICU 9."
+ },
+ "kh048": {
+  "zeiten": {},
+  "aufnahmerad": "Linzer Aufnahmerad (Stand Kalender Sep 2026–Dez 2027, geprüft): Die Akut-/Notfallaufnahme (Rettung, Notarzt, Selbstzuweiser) der Erwachsenen-Grundversorgung in Linz wechselt tageweise zwischen DREI Partnern: (1) Kepler Uniklinikum Med Campus III (kh037), (2) Barmherzige Brüder Linz (kh052) GEMEINSAM mit Ordensklinikum Elisabethinen (kh049), (3) Ordensklinikum Barmherzige Schwestern (kh048). Dienst jeweils 07:00 bis 07:00 Uhr Folgetag. Kein fester Wochentag: starrer 21-Tage-Zyklus (3 Wochen), jeder Partner hat genau 7 Tage pro Zyklus (= im Schnitt jeder 3. Tag), Wochenenden werden als Block Sa+So an einen Partner vergeben (jeder Partner jedes 3. Wochenende). Feiertage verschieben das Muster nicht. Öffentlicher Plan: Aufnahmekalender auf kepleruniklinikum.at/aufnahmekalender, ordensklinikum.at/de/patienten/aufnahmetage, barmherzige-brueder.at (Aufnahmetage) sowie lokale Printmedien. Nicht im Rad (immer aufnahmebereit): KUK Med Campus IV (Frauen/Kinder) und KUK Neuromed Campus (Neurologie/Psychiatrie) – permanente Aufnahme; AUVA UKH Linz für Frischverletzte 24/7; Kinderabteilung BHS 24/7; Fachambulanzen (Termin) laufen unabhängig vom Rad. Neurologie/Stroke: an Ordensspital-Tagen (BB/Eli- UND BHS-Tage = 2/3 der Tage) BB-Neurologie/Stroke Unit, an KUK-Tagen KUK-Neurologie MC III; Neuromed permanent. Akut-PCI: an Ordensspital-Tagen Herzkatheter Elisabethinen rund um die Uhr, an KUK-Tagen KUK MC III (KUK gibt 24/7 an). HAUS-SPEZIFISCH BHS: eigener Partner im Rad (Kürzel BHS), 7 von 21 Tagen, z. B. Okt 2026: 3,4,9,13,15,19,21,24,25,30. Notfallambulanz BHS (Leitung gemeinsam für Ordensklinikum, Prim. Kölbl) ist am Aufnahmetag 07:00–07:00 besetzt; Kernfächer Innere Medizin, Allgemeinchirurgie und Neurologie (Neurologie über Spitalspartnerschaft mit BB nebenan, Seilerstätte 2/4), Kooperation mit Augen, Gyn, HNO, Orthopädie, Urologie. Akut-PCI an BHS-Tagen über Herzkatheter der Elisabethinen (Eli-Team an ALLEN Ordensspital-Aufnahmetagen rund um die Uhr). Nicht betroffen: Kinder- und Jugendheilkunde (24/7) und Fachambulanzen. An Nicht-Aufnahmetagen keine Rettungszufahrt für die Akutaufnahme vorgesehen (Patienten zum diensthabenden Haus laut Kalender).",
+  "plaetze": {},
+  "groesse": {},
+  "quellen": [
+   "https://www.ordensklinikum.at/de/patienten/aufnahmetage/ – Ordensklinikum: Aufnahme wechselt in bestimmtem Rhythmus zwischen KUK MC III, BB gemeinsam mit Elisabethinen, BHS; 07:00–07:00; Kinder- und Jugendheilkunde (BHS) und Ambulanzen ausgenommen (Kinder 24/7); UKH Linz für Frischverletzte täglich 00–24 Uhr",
+   "https://www.ordensklinikum.at/de/patienten/ambulanzen/notfallambulanz/barmherzige-schwestern/ – Notfallambulanz BHS: interdisziplinär, Kern Innere Medizin, Allgemeinchirurgie und Neurologie (Kooperation Augen, Gyn, HNO, Orthopädie, Urologie); am Aufnahmetag 07:00 bis 07:00 Folgetag",
+   "https://www.ordensklinikum.at/de/patienten/abteilungen/kardiologie/elisabethinen/ – Eli Kardiologie: Herzkatheterteam an allen Aufnahmetagen der Ordensspitäler rund um die Uhr für Herzinfarkte; Interne ICU 10 Betten, ECMO; ICU Anlaufstelle für Notarztdienst an Ordensklinikum-Aufnahmetagen; größter Herzinfarkt-Versorger OÖ",
+   "https://www.kepleruniklinikum.at/aufnahmekalender – offizieller Aufnahmekalender (KUK): MC III im Aufnahmerad mit allen anderen Linzer KH, Dienst 07:00–07:00 Folgetag; MC IV und Neuromed Campus permanente Aufnahme; Tagesplan monatlich abrufbar (Sep 2026–Sep 2028)",
+   "https://www.ordensklinikum.at/de/ueber-uns/ – Ordensklinikum gesamt (BHS+Eli): ca. 4.000 Mitarbeitende, 1.100 Betten, 210.000 ambulante Pat./Jahr, 60.500 stationäre+tagesklinische Aufnahmen, >21.000 OPs",
+   "https://www.tips.at/nachrichten/linz/land-leute/675409-verwechselte-patientin-in-linzer-spital-eine-folge-der-ueberlastung-der-notfallambulanzen – Tips (Zeitung): Prim. Kölbl (Leiter Notfallambulanz Ordensklinikum): ca. 200 Personen pro Aufnahmetag; Patientin wurde umgeleitet, weil Elisabethinen 'an diesem Tag keine Aufnahme hatte'"
+  ],
+  "notiz": "Größenzahlen nur für Ordensklinikum gesamt (BHS+Eli: ~1.100 Betten, ~4.000 MA, 210.000 ambulant, 60.500 stat.+TK/Jahr) – nicht in groesse. Notfallambulanz Ordensklinikum laut Leiter ca. 200 Personen pro Aufnahmetag (Tips-Artikel). Notaufnahme ohne zeiten (Aufnahmerad).",
+  "_rad": "Linz 2026-09-01 07:00 SBSKBBSKSKBSSKBKBSKKB: amb_notaufnahme=S"
+ },
+ "kh049": {
+  "zeiten": {},
+  "aufnahmerad": "Linzer Aufnahmerad (Stand Kalender Sep 2026–Dez 2027, geprüft): Die Akut-/Notfallaufnahme (Rettung, Notarzt, Selbstzuweiser) der Erwachsenen-Grundversorgung in Linz wechselt tageweise zwischen DREI Partnern: (1) Kepler Uniklinikum Med Campus III (kh037), (2) Barmherzige Brüder Linz (kh052) GEMEINSAM mit Ordensklinikum Elisabethinen (kh049), (3) Ordensklinikum Barmherzige Schwestern (kh048). Dienst jeweils 07:00 bis 07:00 Uhr Folgetag. Kein fester Wochentag: starrer 21-Tage-Zyklus (3 Wochen), jeder Partner hat genau 7 Tage pro Zyklus (= im Schnitt jeder 3. Tag), Wochenenden werden als Block Sa+So an einen Partner vergeben (jeder Partner jedes 3. Wochenende). Feiertage verschieben das Muster nicht. Öffentlicher Plan: Aufnahmekalender auf kepleruniklinikum.at/aufnahmekalender, ordensklinikum.at/de/patienten/aufnahmetage, barmherzige-brueder.at (Aufnahmetage) sowie lokale Printmedien. Nicht im Rad (immer aufnahmebereit): KUK Med Campus IV (Frauen/Kinder) und KUK Neuromed Campus (Neurologie/Psychiatrie) – permanente Aufnahme; AUVA UKH Linz für Frischverletzte 24/7; Kinderabteilung BHS 24/7; Fachambulanzen (Termin) laufen unabhängig vom Rad. Neurologie/Stroke: an Ordensspital-Tagen (BB/Eli- UND BHS-Tage = 2/3 der Tage) BB-Neurologie/Stroke Unit, an KUK-Tagen KUK-Neurologie MC III; Neuromed permanent. Akut-PCI: an Ordensspital-Tagen Herzkatheter Elisabethinen rund um die Uhr, an KUK-Tagen KUK MC III (KUK gibt 24/7 an). HAUS-SPEZIFISCH Elisabethinen: im Rad GEMEINSAM mit den Barmherzigen Brüdern (Kürzel BB/ELI), 7 von 21 Tagen, z. B. Okt 2026: 2,6,8,12,14,17,18,23,27,29. Die Aufteilung der Fächer zwischen Eli und BB an diesen Tagen ist nicht öffentlich beschrieben (BB: Notfallambulanz/ZAE, Neurologie/Stroke, Innere; Eli: Kardiologie/Herzkatheter, Interne ICU als Anlaufstelle für den Notarztdienst, Nephrologie/Dialyse, Pneumologie, Chirurgie/Thorax/Gefäß). SONDERROLLE Herzinfarkt: Das Eli-Herzkatheterteam steht an ALLEN Aufnahmetagen der Ordensspitäler (also auch an BHS-Tagen = 14 von 21 Tagen) rund um die Uhr für Infarkte zur Verfügung; Eli versorgt den Großteil der akuten Infarkte im Großraum Linz. Nicht-Aufnahmetage (KUK-Tage): keine Akutaufnahme vorgesehen; ein Zeitungsbericht (Tips) beschreibt eine Umleitung zu BB, weil Eli 'an diesem Tag keine Aufnahme hatte'.",
+  "plaetze": {
+   "intensiv": 10
+  },
+  "groesse": {},
+  "quellen": [
+   "https://www.ordensklinikum.at/de/patienten/aufnahmetage/ – Ordensklinikum: Aufnahme wechselt in bestimmtem Rhythmus zwischen KUK MC III, BB gemeinsam mit Elisabethinen, BHS; 07:00–07:00; Kinder- und Jugendheilkunde (BHS) und Ambulanzen ausgenommen (Kinder 24/7); UKH Linz für Frischverletzte täglich 00–24 Uhr",
+   "https://www.ordensklinikum.at/de/patienten/abteilungen/kardiologie/elisabethinen/ – Eli Kardiologie: Herzkatheterteam an allen Aufnahmetagen der Ordensspitäler rund um die Uhr für Herzinfarkte; Interne ICU 10 Betten, ECMO; ICU Anlaufstelle für Notarztdienst an Ordensklinikum-Aufnahmetagen; größter Herzinfarkt-Versorger OÖ",
+   "https://www.kepleruniklinikum.at/aufnahmekalender – offizieller Aufnahmekalender (KUK): MC III im Aufnahmerad mit allen anderen Linzer KH, Dienst 07:00–07:00 Folgetag; MC IV und Neuromed Campus permanente Aufnahme; Tagesplan monatlich abrufbar (Sep 2026–Sep 2028)",
+   "https://barmherzige-brueder.at/portal/linz/patientenbesucher/anmeldung – BB Linz: Aufnahmerad der Linzer Spitäler, wechselt zwischen KUK MC III, Ordensklinikum BHS sowie Elisabethinen gemeinsam mit BB; Plan auch in lokalen Printmedien",
+   "https://www.ordensklinikum.at/de/ueber-uns/ – Ordensklinikum gesamt (BHS+Eli): ca. 4.000 MA, 1.100 Betten, 210.000 ambulant, 60.500 stat.+TK",
+   "https://www.tips.at/nachrichten/linz/land-leute/675409-verwechselte-patientin-in-linzer-spital-eine-folge-der-ueberlastung-der-notfallambulanzen – Tips (Zeitung): Prim. Kölbl (Leiter Notfallambulanz Ordensklinikum): ca. 200 Personen pro Aufnahmetag; Patientin wurde umgeleitet, weil Elisabethinen 'an diesem Tag keine Aufnahme hatte'"
+  ],
+  "notiz": "fb_herzkatheter bewusst ohne zeiten: nur an Ordensspital-Aufnahmetagen (14/21) rund um die Uhr, nicht wochentagsfest – Muster in _aufnahmerad_linz (Kürzel BHS + BB/ELI). Intensiv = Interne ICU 10 Betten (60 MA), ECMO vorhanden (Anzahl nicht genannt). Anzahl Katheterlabore nicht genannt. Eigene Notfallambulanz-Seite für Eli liefert 404.",
+  "_rad": "Linz 2026-09-01 07:00 SBSKBBSKSKBSSKBKBSKKB: amb_notaufnahme=B, fb_herzkatheter=BS"
+ },
+ "kh052": {
+  "zeiten": {},
+  "aufnahmerad": "Linzer Aufnahmerad (Stand Kalender Sep 2026–Dez 2027, geprüft): Die Akut-/Notfallaufnahme (Rettung, Notarzt, Selbstzuweiser) der Erwachsenen-Grundversorgung in Linz wechselt tageweise zwischen DREI Partnern: (1) Kepler Uniklinikum Med Campus III (kh037), (2) Barmherzige Brüder Linz (kh052) GEMEINSAM mit Ordensklinikum Elisabethinen (kh049), (3) Ordensklinikum Barmherzige Schwestern (kh048). Dienst jeweils 07:00 bis 07:00 Uhr Folgetag. Kein fester Wochentag: starrer 21-Tage-Zyklus (3 Wochen), jeder Partner hat genau 7 Tage pro Zyklus (= im Schnitt jeder 3. Tag), Wochenenden werden als Block Sa+So an einen Partner vergeben (jeder Partner jedes 3. Wochenende). Feiertage verschieben das Muster nicht. Öffentlicher Plan: Aufnahmekalender auf kepleruniklinikum.at/aufnahmekalender, ordensklinikum.at/de/patienten/aufnahmetage, barmherzige-brueder.at (Aufnahmetage) sowie lokale Printmedien. Nicht im Rad (immer aufnahmebereit): KUK Med Campus IV (Frauen/Kinder) und KUK Neuromed Campus (Neurologie/Psychiatrie) – permanente Aufnahme; AUVA UKH Linz für Frischverletzte 24/7; Kinderabteilung BHS 24/7; Fachambulanzen (Termin) laufen unabhängig vom Rad. Neurologie/Stroke: an Ordensspital-Tagen (BB/Eli- UND BHS-Tage = 2/3 der Tage) BB-Neurologie/Stroke Unit, an KUK-Tagen KUK-Neurologie MC III; Neuromed permanent. Akut-PCI: an Ordensspital-Tagen Herzkatheter Elisabethinen rund um die Uhr, an KUK-Tagen KUK MC III (KUK gibt 24/7 an). HAUS-SPEZIFISCH BB Linz: im Rad gemeinsam mit Elisabethinen (Kürzel BB/ELI), 7 von 21 Tagen, z. B. Okt 2026: 2,6,8,12,14,17,18,23,27,29; NotfallAufnahmedienst 07:00–07:00 Folgetag, Notfallambulanz (ZAE) EG Seilerstätte 2. Wird die Aufnahme nach Untersuchung nötig, erfolgt sie stationär bei BB. SONDERROLLE Neurologie/Stroke: Die BB-Neurologie (größte Stroke Unit OÖ, Thrombolyse) ist an 2/3 ALLER Aufnahmetage im Linzer Zentralraum zuständig (= BB/Eli-Tage UND BHS-Tage, also 14 von 21 Tagen) und versorgt ~2/3 aller akuten Schlaganfälle im Zentralraum; an KUK-Tagen KUK MC III (bzw. Neuromed). Gyn/Geburtshilfe als gemeinsame Abteilung mit Ordensklinikum geführt; Kreißsaal-Zeiten nicht genannt.",
+  "plaetze": {},
+  "groesse": {
+   "betten": 331,
+   "stationaer_jahr": 23000,
+   "ambulant_jahr": 105000
+  },
+  "quellen": [
+   "https://barmherzige-brueder.at/portal/linz/patientenbesucher/anmeldung – BB Linz: Aufnahmerad der Linzer Spitäler, wechselt zwischen KUK MC III, Ordensklinikum BHS sowie Elisabethinen gemeinsam mit BB; Plan auch in lokalen Printmedien",
+   "https://www.barmherzige-brueder.at/portal/linz/patientenbesucher/aufnahmetage – BB Linz: Kalender 'NotfallAufnahmedienst 07:00 Uhr – 07:00 Uhr Folgetag', Notfallambulanz (ZAE) EG Seilerstätte 2",
+   "https://www.barmherzige-brueder.at/portal/linz/medizinpflege/neurologie/unsereleistungen – BB Neurologie: größte Stroke Unit OÖ; im Linzer Aufnahmerad an 2/3 aller Aufnahmetage im Zentralraum für neurologische Akutversorgung zuständig, versorgt 2/3 aller akuten Schlaganfälle; Thrombolyse auf Stroke Unit",
+   "https://www.barmherzige-brueder.at/portal/linz/ueberuns – BB Linz: jährlich rund 23.000 stationär, 105.000 ambulant, 331 Betten in 9 Abteilungen; ~2/3 aller Schlaganfälle im Linzer Zentralraum; Spitalspartnerschaft mit Ordensklinikum (Anästhesie, Gyn/Geburtshilfe, Neurologie)",
+   "https://www.barmherzige-brueder.at/portal/linz/medizinpflege/neurologie – Stroke Unit 5. Stock Lift B (Bettenzahl nicht genannt)",
+   "https://www.ordensklinikum.at/de/patienten/aufnahmetage/ – Ordensklinikum: Aufnahme wechselt in bestimmtem Rhythmus zwischen KUK MC III, BB gemeinsam mit Elisabethinen, BHS; 07:00–07:00; Kinder- und Jugendheilkunde (BHS) und Ambulanzen ausgenommen (Kinder 24/7); UKH Linz für Frischverletzte täglich 00–24 Uhr",
+   "https://www.kepleruniklinikum.at/aufnahmekalender – offizieller Aufnahmekalender (KUK): MC III im Aufnahmerad mit allen anderen Linzer KH, Dienst 07:00–07:00 Folgetag; MC IV und Neuromed Campus permanente Aufnahme; Tagesplan monatlich abrufbar (Sep 2026–Sep 2028)",
+   "https://www.tips.at/nachrichten/linz/land-leute/675409-verwechselte-patientin-in-linzer-spital-eine-folge-der-ueberlastung-der-notfallambulanzen – Tips (Zeitung): Prim. Kölbl (Leiter Notfallambulanz Ordensklinikum): ca. 200 Personen pro Aufnahmetag; Patientin wurde umgeleitet, weil Elisabethinen 'an diesem Tag keine Aufnahme hatte'"
+  ],
+  "notiz": "Zahlen ohne Jahresangabe (Seite 'Über uns', Stand 2026). its_stroke_unit bewusst ohne zeiten: an 14 von 21 Tagen (Ordensspital-Tage) zuständig, nicht wochentagsfest. Stroke-Unit-Bettenzahl nicht gefunden.",
+  "_rad": "Linz 2026-09-01 07:00 SBSKBBSKSKBSSKBKBSKKB: amb_notaufnahme=B, its_stroke_unit=BS"
+ },
+ "kh100": {
+  "zeiten": {},
+  "aufnahmerad": "Klinik Diakonissen Linz (Privat-Sanatorium) ist NICHT Teil des Linzer Aufnahmerads – in keinem der offiziellen Aufnahmekalender (KUK, Ordensklinikum, BB) genannt. Keine öffentliche Notaufnahme für Rettungszufahrten bekannt.",
+  "plaetze": {},
+  "groesse": {},
+  "quellen": [
+   "https://www.kepleruniklinikum.at/aufnahmekalender – offizieller Aufnahmekalender (KUK): MC III im Aufnahmerad mit allen anderen Linzer KH, Dienst 07:00–07:00 Folgetag; MC IV und Neuromed Campus permanente Aufnahme; Tagesplan monatlich abrufbar (Sep 2026–Sep 2028)",
+   "https://www.ordensklinikum.at/de/patienten/aufnahmetage/ – Ordensklinikum: Aufnahme wechselt in bestimmtem Rhythmus zwischen KUK MC III, BB gemeinsam mit Elisabethinen, BHS; 07:00–07:00; Kinder- und Jugendheilkunde (BHS) und Ambulanzen ausgenommen (Kinder 24/7); UKH Linz für Frischverletzte täglich 00–24 Uhr"
+  ],
+  "notiz": "Keine Einrichtungen in kh_einrichtungen.json; Website nicht erreichbar (Verbindungsfehler), daher keine Zeiten/Kapazitäten. KAV: Sanatorium, 102 Betten gemischter Belag."
+ },
+ "kh050": {
+  "zeiten": {
+   "amb_notaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "amb_psychiatrie_krise": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ]
+  },
+  "aufnahmerad": "",
+  "plaetze": {},
+  "groesse": {
+   "betten": 593,
+   "mitarbeiter": 2113,
+   "stationaer_jahr": 28302,
+   "ambulant_jahr": 131028,
+   "geburten_jahr": 1002,
+   "notaufnahme_jahr": 29000
+  },
+  "quellen": [
+   "https://www.ooeg.at/pek/sr/fachbereiche/notaufnahme-zae – ZAE rund um die Uhr, rund 29.000 Pat./Jahr",
+   "https://www.ooeg.at/pek/sr/fachbereiche/psychiatrie-und-psychotherapeutische-medizin – Krisenbereich: ambulante Notversorgung auch nachts und an Wochenenden",
+   "https://www.ooeg.at/fileadmin/media/pek/Dateien_PDFs_Worddokumente/PEK_Kurzinfo.pdf – Kennzahlen je Standort (Stand 1.5.2025): Betten 593, stationär 28.302, ambulant 131.028, Geburten 1.002, MA 2.113",
+   "https://www.ooeg.at/pek/sr/fachbereiche/anaesthesiologie-und-intensivmedizin – 7 Intensiv- + 4 Überwachungsbetten (nur Anästhesie)",
+   "https://www.ooeg.at/pek/sr/fachbereiche/neurologie/stroke-unit – Stroke Unit ca. 450 Pat./Jahr, systemische Lyse"
+  ],
+  "notiz": "Kennzahlen Stand 1.5.2025 (Steyr-Spalte der PEK-Kurzinfo); ZAE-Zahl ohne Jahr. Psychiatrie-Krise als 24/7 gewertet (Krisenbereich nachts/Wochenende). Intensiv-Gesamtzahl nicht genannt (nur Anästhesie-ICU 7+4; Interne ICU 30A ohne Zahl). Stroke Unit: Lyse, keine Thrombektomie-Zeiten; Unfall-Schockraum erwähnt, Anzahl nicht. Kreißsaal keine Zeiten."
+ },
+ "kh051": {
+  "zeiten": {
+   "amb_notaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ]
+  },
+  "aufnahmerad": "",
+  "plaetze": {},
+  "groesse": {
+   "betten": 169,
+   "mitarbeiter": 662,
+   "stationaer_jahr": 8530,
+   "ambulant_jahr": 106875,
+   "geburten_jahr": 431
+  },
+  "quellen": [
+   "https://www.ooeg.at/fr/fachbereiche/notfallambulanz – Notfallversorgung rund um die Uhr",
+   "https://www.ooeg.at/fr/service/ueber-uns/zahlen-fakten – Zahlen 2024: 8.530 stationär, 106.875 ambulante Frequenzen, 431 Geburten, 169 Betten, 662 MA"
+  ],
+  "notiz": "Zahlen 2024. Unfallambulanz/Schockraum/Kreißsaal ohne Zeitangaben; Gyn-Seite nennt ca. 500 Geburten/Jahr (gerundet)."
+ },
+ "kh053": {
+  "zeiten": {
+   "amb_notaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "amb_unfall": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "fb_herzkatheter": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "amb_psychiatrie_krise": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ]
+  },
+  "aufnahmerad": "",
+  "plaetze": {},
+  "groesse": {
+   "betten": 1019
+  },
+  "quellen": [
+   "https://www.klinikum-wegr.at/de/content/notfallinformation – ZNA Mo-So 00-24; Unfall-Erstversorgung Mo-Fr 15-07 (tagsüber über ZNA), WE 0-24, Rettungen 0-24; Kinderambulanz (Anmeldung außerhalb Kernzeit über ZNA)",
+   "https://www.klinikum-wegr.at/de/abteilung/unfallchirurgie – Unfallerstversorgung durchgehend 24 Stunden, Rettungen 00-24",
+   "https://www.klinikum-wegr.at/de/abteilung/innere-medizin-ii – 24/7-Akutversorgung bei Herzinfarkt (Herzkatheter)",
+   "https://www.klinikum-wegr.at/de/abteilung/psychiatrie-und-psychotherapeutische-medizin – rund um die Uhr Erste Hilfe bei seelischen Krisen",
+   "https://www.klinikum-wegr.at/de/abteilung/neurologie – Stroke Unit, Voranmeldung Stroke Phone; Thrombolyse, Thrombektomie in Linz (drip & ship)",
+   "https://www.klinikum-wegr.at/de/ueber-uns – Klinikum gesamt 1.251 syst. Betten, davon 232 Grieskirchen; ca. 4.400 MA, 65.000 stationär, 269.000 ambulant, 2.300 Geburten (beide Standorte)",
+   "https://www.klinikum-wegr.at/de/abteilung/anaesthesiologie-und-intensivmedizin – OP-Intensiv I 9 Betten, OP-Intensiv II 7 Betten"
+  ],
+  "notiz": "Betten = 1.251 − 232 (Grieskirchen), abgeleitet. Übrige Größen nur für beide Standorte gemeinsam (ca. 4.400 MA, 65.000 stationär, 269.000 ambulant, 29.000 OPs, 2.300 Geburten; ohne Jahr). WICHTIG: Thrombektomie NICHT in Wels (drip & ship nach Linz) – fb_angiographie nicht für Schlaganfall-Thrombektomie verwenden. Kindernotaufnahme ohne explizite 24h-Angabe (Kinderambulanz Mo-Fr 08-15:30, außerhalb Anmeldung über ZNA, Notfalltelefon ab Mitternacht). Intensiv-Gesamt unbekannt (OP-Intensiv 9+7, Interne ICU ohne Zahl). Psychiatrie: 27 Betten, davon 13 gesicherter Akutbereich.",
+  "_akut_aus": [
+   "ak_thrombektomie"
+  ]
+ },
+ "kh054": {
+  "zeiten": {
+   "amb_notaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "amb_unfall": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5
+     ],
+     "von": "07:00",
+     "bis": "15:30"
+    }
+   ]
+  },
+  "aufnahmerad": "",
+  "plaetze": {},
+  "groesse": {
+   "betten": 232
+  },
+  "quellen": [
+   "https://www.klinikum-wegr.at/de/content/notfallinformation – Grieskirchen: EVE (Innere V) 24h/365 Tage; Unfall-Erstversorgung Mo-Fr 07-15:30, danach/WE in Wels; Kinder grundsätzlich in Wels; Augen/Uro/HNO/Haut nur Wels",
+   "https://www.klinikum-wegr.at/de/ueber-uns – davon in Grieskirchen 232 systemisierte Betten"
+  ],
+  "notiz": "Unfall nach 15:30 und am Wochenende → Wels. Kinder werden nur erstbegutachtet, Weiterversorgung Wels. Kreißsaal ohne Zeitangabe. Übrige Größen nur gesamt (siehe kh053)."
+ },
+ "kh055": {
+  "zeiten": {
+   "amb_unfall": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ]
+  },
+  "aufnahmerad": "",
+  "plaetze": {
+   "intensiv": 9
+  },
+  "groesse": {
+   "betten": 218,
+   "mitarbeiter": 699,
+   "stationaer_jahr": 9044,
+   "ambulant_jahr": 56941,
+   "geburten_jahr": 464
+  },
+  "quellen": [
+   "https://www.ooeg.at/pek/ki/fachbereiche/orthopaedie-und-traumatologie – außerhalb der Ambulanzzeiten Notfall-Team vor Ort für akute Beschwerden",
+   "https://www.ooeg.at/pek/ki/fachbereiche/chirurgie – 24-Stunden-Akutambulanz und 24h-OP-Bereitschaft an 7 Tagen",
+   "https://www.ooeg.at/pek/ki/fachbereiche/anaesthesiologie-und-intensivmedizin – interdisziplinäre Intensivstation, 9 Intensivbetten",
+   "https://www.ooeg.at/fileadmin/media/pek/Dateien_PDFs_Worddokumente/PEK_Kurzinfo.pdf – Kirchdorf (Stand 1.5.2025): 218 Betten, 9.044 stationär, 56.941 ambulant, 464 Geburten, 699 MA"
+  ],
+  "notiz": "Kennzahlen Stand 1.5.2025. Unfall als 24/7 gewertet (Notfallteam außerhalb der Ambulanzzeiten im Haus). Kein amb_notaufnahme in den Einrichtungen, obwohl Chirurgie eine 24h-Akutambulanz nennt. Kindernotfallambulanz ohne Zeitangabe. Angiographie: Carotis-Stent erwähnt, keine Thrombektomie."
+ },
+ "kh056": {
+  "zeiten": {
+   "amb_notaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "amb_kindernotaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ]
+  },
+  "aufnahmerad": "",
+  "plaetze": {},
+  "groesse": {
+   "geburten_jahr": 1400
+  },
+  "quellen": [
+   "https://www.ooeg.at/sk/vb/fachbereiche/notaufnahme – ZAE täglich rund um die Uhr",
+   "https://www.ooeg.at/sk/vb/fachbereiche/kinder-und-jugendheilkunde – Notfallambulanz 24 Stunden täglich",
+   "https://www.ooeg.at/sk/vb/fachbereiche/frauenheilkunde-und-geburtshilfe – jährlich rund 1.400 Babys",
+   "https://www.ooeg.at/sk/vb/fachbereiche/unfallchirurgie – Unfall-Erstuntersuchung Mo-Fr 07:15-16:00",
+   "https://www.ooeg.at/sk/vb/fachbereiche/psychiatrie-und-psychotherapeutische-medizin – Psychiatrische Akut- und Aufnahmeambulanz Mo-Do 07:45-15:45, Fr 07:45-13:30, nur nach tel. Anmeldung + Zuweisung",
+   "https://www.ooeg.at/sk/service/ueber-uns/zahlen-fakten – SK gesamt (3 Standorte, Datenbasis 2023): 1.008 Betten, 3.118 MA, 45.418 stationär, 496.108 ambulant"
+  ],
+  "notiz": "Geburten gerundet, ohne Jahr. Unfall-Erstuntersuchung (Mo-Fr 07:15-16:00) und Psychiatrie-Akutambulanz (Mo-Do 07:45-15:45, Fr bis 13:30, nur mit Zuweisung) NICHT als Aufnahmezeiten eingetragen, da das Ambulanz-/Terminzeiten sind und die ZAE rund um die Uhr Notfälle annimmt – ggf. im Spiel prüfen. Stroke Unit Stufe B ohne Zeiten. Größe nur für SK gesamt (s. Quelle). Interne II: 7 Intensiv- + 4 Herzüberwachungsbetten (Anästhesie-ICU ohne Zahl)."
+ },
+ "kh057": {
+  "zeiten": {
+   "amb_notaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "amb_unfall": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "07:00",
+     "bis": "19:00"
+    }
+   ]
+  },
+  "aufnahmerad": "",
+  "plaetze": {},
+  "groesse": {},
+  "quellen": [
+   "https://www.ooeg.at/sk/gm/fachbereiche/akutaufnahme-notaufnahme – Notaufnahme 00-24 an 365 Tagen; Unfallambulanz täglich 07-19, außerhalb Versorgung in Nachbarspitälern"
+  ],
+  "notiz": "Unfall nachts → Nachbarspitäler (z. B. Vöcklabruck). Keine aktuellen Standort-Kennzahlen (nur SK gesamt; Historie-Seite nennt veraltet 247 Betten/500 MA ohne Jahr)."
+ },
+ "kh058": {
+  "zeiten": {
+   "amb_notaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ]
+  },
+  "aufnahmerad": "",
+  "plaetze": {
+   "intensiv": 6
+  },
+  "groesse": {},
+  "quellen": [
+   "https://www.ooeg.at/sk/bi/fachbereiche/akutaufnahme-notaufnahme – Akutaufnahme rund um die Uhr für Notfälle",
+   "https://www.ooeg.at/sk/service/ueber-uns/historie/salzkammergut-klinikum-bad-ischl – interdisziplinäre Intensivstation mit 6 Betten (Eröffnung 2001)",
+   "https://www.ooeg.at/sk/bi/fachbereiche/frauenheilkunde-und-geburtshilfe – Abteilung 21 Betten + Tagesklinik, Kreißzimmer"
+  ],
+  "notiz": "Intensivbetten aus Historie (2001), deckt sich mit KAV (6). Unfallambulanz und Kreißsaal ohne Akut-Zeitangaben. Keine Standort-Kennzahlen (nur SK gesamt)."
+ },
+ "kh059": {
+  "zeiten": {
+   "amb_unfall": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ]
+  },
+  "aufnahmerad": "",
+  "plaetze": {},
+  "groesse": {
+   "betten": 380,
+   "mitarbeiter": 1703,
+   "ambulant_jahr": 200420,
+   "stationaer_jahr": 17764
+  },
+  "quellen": [
+   "https://khbr.at/department/orthopaedie-und-traumatologie/ – Notfälle werden rund um die Uhr behandelt",
+   "https://khbr.at/department/gynaekologie/ – Notfälle (Gyn/Geb) werden rund um die Uhr behandelt",
+   "https://khbr.at/ – Kennzahlen-Zähler: 380 Betten, 1.703 MA (mobile Variante 1.650), 200.420 ambulant, 17.764 stationär",
+   "https://khbr.at/department/erstversorgungseinheit-eve/ – EVE (Notaufnahme) ohne Zeitangabe"
+  ],
+  "notiz": "Startseiten-Zahlen ohne Jahr; Zuordnung Label↔Zahl aus Seitenstruktur (plausibel), MA-Zahl in zwei Varianten (1.703/1.650). EVE und Psychiatrie (nur Terminambulanz) ohne Akutzeiten. AUFFÄLLIG: Braunau hat Geburtshilfe/Entbindungen, aber kein fb_kreisssaal in kh_einrichtungen.json – Gyn/Geb-Notfälle laut Seite rund um die Uhr."
+ },
+ "kh060": {
+  "zeiten": {
+   "amb_notaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "amb_unfall": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "07:00",
+     "bis": "19:00"
+    }
+   ],
+   "fb_kreisssaal": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ]
+  },
+  "aufnahmerad": "",
+  "plaetze": {},
+  "groesse": {
+   "mitarbeiter": 644,
+   "stationaer_jahr": 8582,
+   "ambulant_jahr": 80826,
+   "geburten_jahr": 312
+  },
+  "quellen": [
+   "https://www.ooeg.at/sd/fachbereiche/notfallambulanz-zentrale-aufnahme – 00-24 an 365 Tagen (EVEA)",
+   "https://www.ooeg.at/sd/fachbereiche/unfallchirurgie – Unfall-Erstversorgung täglich 07-19",
+   "https://www.ooeg.at/sd/fachbereiche/frauenheilkunde-und-geburtshilfe – Notfälle werden rund um die Uhr (0-24) versorgt",
+   "https://www.ooeg.at/fileadmin/media/schaerding/Dateien_PDFs_Worddokumente_/SD_Jahresbericht_2025_MAIL.pdf – 2025: 312 Geburten, 644 MA, stationäre Aufnahmen und ambulante Frequenzen je Fach"
+  ],
+  "notiz": "Jahr 2025. stationaer_jahr = Summe der Aufnahmen je Fach (inkl. 895 dislozierte Augen-Tagesklinik), ambulant_jahr = Summe der Frequenzen je Fach. Kreißsaal 24/7 aus 'Notfälle rund um die Uhr' der Gyn/Geb-Abteilung abgeleitet. Unfall nachts → Nachbarhäuser."
+ },
+ "kh061": {
+  "zeiten": {
+   "amb_kindernotaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "amb_unfall": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "its_stroke_unit": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ]
+  },
+  "aufnahmerad": "",
+  "plaetze": {
+   "stroke_unit": 6
+  },
+  "groesse": {
+   "betten": 422,
+   "mitarbeiter": 1900
+  },
+  "quellen": [
+   "https://www.bhsried.at/medizinisches-angebot/ambulanzen – Kinder-Notfallambulanz täglich 0-24; Unfallchirurgie Notfallambulanz 24-Stunden-Bereitschaft; Neurologie Notfallversorgung täglich 24 Stunden; Orthopädie Akut-/Notfallversorgung 24 h",
+   "https://www.bhsried.at/medizinisches-angebot/neurologie/stroke-unit – Stroke Unit mit sechs Betten",
+   "https://www.bhsried.at/wir-ueber-uns – über 1.900 MA, 422 Betten, knapp 147.000 stationäre+ambulante Pat./Jahr, ca. 17.500 OPs (Stand 12.2025)"
+  ],
+  "notiz": "Stand 12.2025; MA 'über 1.900'. Stationär/ambulant nur zusammen (knapp 147.000). Stroke Unit 24/7 aus 'Neurologie Notfallversorgung täglich 24 Stunden'. ZAE ohne explizite Zeiten. Herzkatheter nicht im Haus (Wels/Linz). Angiographie ohne Zeiten/Thrombektomie-Angabe."
+ },
+ "kh062": {
+  "zeiten": {
+   "amb_notaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ]
+  },
+  "aufnahmerad": "",
+  "plaetze": {},
+  "groesse": {
+   "betten": 196,
+   "mitarbeiter": 832,
+   "stationaer_jahr": 10281,
+   "ambulant_jahr": 108148,
+   "geburten_jahr": 509
+  },
+  "quellen": [
+   "https://www.ooeg.at/ro/fachbereiche/erstversorgungseinheit – rund um die Uhr Anlaufpunkt für alle Notfälle",
+   "https://www.ooeg.at/ro/service/ueber-uns/zahlen-fakten – 2025: 10.281 stationär, 108.148 ambulante Frequenzen, 196 Betten, 509 Geburten, 832 MA"
+  ],
+  "notiz": "Zahlen 2025. Kreißsaal ohne Akutzeiten; Angiographie nur 'ausgewählte angiographische Untersuchungen' (keine Thrombektomie)."
+ },
+ "kh101": {
+  "zeiten": {},
+  "aufnahmerad": "",
+  "plaetze": {},
+  "groesse": {
+   "betten": 90,
+   "mitarbeiter": 203,
+   "stationaer_jahr": 1514,
+   "ambulant_jahr": 2505
+  },
+  "quellen": [
+   "https://khs.kreuzschwestern.at/de/zahlen-daten-fakten – Strukturkennzahlen 2025: 90 syst. Betten, 1.514 stationäre Aufnahmen, 2.505 ambulante Pat., 203 MA"
+  ],
+  "notiz": "Zahlen 2025. Sonder-KA Akutgeriatrie/Remobilisation (Aufnahme nur per Zuweisung), keine Akut-Einrichtungen → keine Zeiten. In kh_einrichtungen.json unter neu05 statt kh101 geführt."
+ },
+ "kh063": {
+  "zeiten": {
+   "amb_notaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "amb_unfall": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "amb_kindernotaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "amb_psychiatrie_krise": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "fb_schockraum": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "fb_herzkatheter": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "fb_angiographie": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "fb_druckkammer": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ]
+  },
+  "aufnahmerad": "Laut Kennzahlen Spital der Basisversorgung im Großraum Graz östlich der Mur (westlich der Mur: LKH Graz II West). ZAM ist 24/7 zentrale Notaufnahme (Innere, Neuro, Unfall/Ortho, Chirurgie, Urologie) und nimmt nachts/am Wochenende auch die internistischen Akutpatienten auf, da Elisabethinen und Barmherzige Brüder nur werktags tagsüber aufnehmen. Akut-PCI Steiermark (laut LKH Graz II): 24/7 flächendeckend in Kooperation Univ.-Klinikum Graz, LKH Graz II West und LKH Hochsteiermark; LKH Graz II West versorgt Graz/Graz-Umgebung rechts (westlich) der Mur und die Südweststeiermark, an definierten Tagen (derzeit Di, Fr und jeden 2. So) alle steirischen Herzinfarkt-Patient:innen; an den übrigen Tagen übernimmt für den Raum östlich der Mur das Univ.-Klinikum (Ableitung, nicht wörtlich belegt). Thrombektomie steiermarkweit einzig hier (24/7). Gyn-Notfallambulanz Frauenklinik: Mo–Fr 14:30–07:30, Sa/So/Feiertag 0–24 (tagsüber werktags über Ambulanzen).",
+  "plaetze": {
+   "schockraum": 3,
+   "herzkatheter": 3,
+   "notaufnahme": 20,
+   "intensiv": 179,
+   "druckkammer": 20
+  },
+  "groesse": {
+   "betten": 1554,
+   "mitarbeiter": 8259,
+   "stationaer_jahr": 71065,
+   "ambulant_jahr": 883127,
+   "notaufnahme_jahr": 91000,
+   "geburten_jahr": 3387
+  },
+  "quellen": [
+   "https://www.uniklinikumgraz.at/notfall – ZAM-Notaufnahme; Kinder- und Jugendheilkunde 00:00–24:00; Kinderchirurgie 24h (Tag-/Nachtnummer); Frauenklinik-Notfallzeiten",
+   "https://www.uniklinikumgraz.at/zam – ZAM rund um die Uhr, überregionales Traumacenter, 3 Schockräume, 20 Kojen, Beobachtungsstation, ca. 250 (bis 300) Pat./24 h",
+   "https://www.uniklinikumgraz.at/inneremedizin/kardiologie – 3 Katheterlabore, interventionelles Team für Notfälle rund um die Uhr; CCU 9 Betten mit ECLS/Impella",
+   "https://www.uniklinikumgraz.at/radiologie/neuroradiologie – mechanische Thrombektomie steiermarkweit einzigartig rund um die Uhr",
+   "https://www.uniklinikumgraz.at/chirurgie/thorax – einzige Therapiedruckkammer Österreichs, 24 h täglich einsatzbereit, bis 20 sitzende Pat. bzw. 2 Intensiv-/5 Liegeplätze",
+   "https://www.uniklinikumgraz.at/psychiatrie/psychiatrie-und-psychotherapeutische-medizin – Akutambulanz im Notfall Mo–So durchgehend geöffnet",
+   "https://www.uniklinikumgraz.at/fileadmin/media/lkh-univ-klinikum-graz/Uniklinikum/ueber_uns/Dokumente/Kennzahlen_-_Deutsch.pdf – Basisversorgung Graz östl. der Mur; 1.554 system. Betten (179 Intensiv inkl. IMC/IÜ; 1.282 tatsächliche), 71.065 Aufnahmen, 883.127 amb. Behandlungen, 3.387 Geburten, 2.497 Herzkatheter, 7.469 MA Land + 790 MA Bund"
+  ],
+  "notiz": "Kennzahlen-PDF Stand August 2024 (Zahlen vermutl. 2023). notaufnahme_jahr = Schätzung aus ca. 250 Pat./24 h im ZAM. intensiv = systemisierte Intensivbetten inkl. IMC/IÜ (tatsächlich 138). Kreißsaal und Stroke Unit vorhanden, aber keine Zeiten genannt (→ 24/7 angenommen). Seit 2024 im Verbund mit LKH Weiz."
+ },
+ "kh064": {
+  "zeiten": {
+   "amb_notaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "fb_herzkatheter": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ]
+  },
+  "aufnahmerad": "Interdisziplinäre Notaufnahme (NFA) ist laut Haus die wichtigste Anlaufstelle für internistische Notfälle aus dem Grazer Westen und den angrenzenden Gemeinden von Graz-Umgebung (Einzugsgebiet >200.000 EW); 24h-Notaufnahme (laut Elisabethinen). Patienten, die wegen Bettenmangel nicht am Standort West aufgenommen werden können, werden an die Partnerspitäler Barmherzige Brüder Marschallgasse und Elisabethinen transferiert. Akut-PCI Steiermark (laut LKH Graz II): 24/7 flächendeckend in Kooperation Univ.-Klinikum Graz, LKH Graz II West und LKH Hochsteiermark; LKH Graz II West versorgt Graz/Graz-Umgebung rechts (westlich) der Mur und die Südweststeiermark, an definierten Tagen (derzeit Di, Fr und jeden 2. So) alle steirischen Herzinfarkt-Patient:innen; an den übrigen Tagen übernimmt für den Raum östlich der Mur das Univ.-Klinikum (Ableitung, nicht wörtlich belegt).",
+  "plaetze": {
+   "notaufnahme_betten": 14,
+   "intensiv": 16
+  },
+  "groesse": {
+   "betten": 256,
+   "notaufnahme_jahr": 24000
+  },
+  "quellen": [
+   "https://www.lkh-graz2.at/abteilungen/abteilung-fuer-innere-medizin/interdisziplinaere-notaufnahme-nfa-mit-beobachtung – Einzugsgebiet Grazer Westen, ca. 24.000 Pat./Jahr (50–80/Tag), Beobachtungsstation 14 Betten, Weiterverlegung an BHB/Elisabethinen",
+   "https://www.lkh-graz2.at/abteilungen/abteilung-fuer-innere-medizin/abteilung-fuer-innere-medizin-2-kardiologie-und-intensivmedizin – Akut-PCI 24/7, Regionen + Di/Fr/jeder 2. So ganze Steiermark; 9 Intensiv- + 3 IMC-Betten, ECMO",
+   "https://www.lkh-graz2.at/ueber-uns-1/allgemeine-infos-zu-den-standorten – Standort West 256 Betten, davon 16 Intensivbetten",
+   "https://www.elisabethinen.at/patient-innen/notfall – verweist außerhalb ihrer Zeiten an die 24h-Notfallaufnahmen Uniklinikum und LKH Graz 2 West"
+  ],
+  "notiz": "Anzahl Herzkatheterlabore nicht genannt. KAV nennt 210 Betten.",
+  "_akut_aus": [
+   "ak_thrombektomie"
+  ]
+ },
+ "kh065": {
+  "zeiten": {
+   "amb_psychiatrie_krise": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ]
+  },
+  "aufnahmerad": "Psychiatrische Akut-/Notfallambulanz 24/7, zuständig für 18–70-Jährige (Versorgungsauftrag Psychiatrie 1–3: ganze Steiermark und Südburgenland). Ab 70 J. aus Graz, Graz-Umgebung, Hartberg-Fürstenfeld, Südoststeiermark und Weiz: alterspsychiatrische Notfallambulanz der Elisabethinen (0–24). Neurologie mit Stroke Unit versorgt v. a. Graz und Graz-Umgebung West sowie die Südweststeiermark (Graz-Ost/Thrombektomie: Univ.-Klinikum).",
+  "plaetze": {
+   "stroke_unit": 5,
+   "intensiv": 4
+  },
+  "groesse": {
+   "betten": 780
+  },
+  "quellen": [
+   "https://www.lkh-graz2.at/abteilungen/psychiatrische-notfallambulanz – Akutambulanz in Notfällen 24/7, 18–70 Jahre",
+   "https://www.lkh-graz2.at/abteilungen/abteilung-fuer-psychiatrie-und-psychotherapie-1 – Versorgungsauftrag 18–70 J., Steiermark und Südburgenland",
+   "https://www.lkh-graz2.at/abteilungen/abteilung-fuer-neurologie – ca. 125 Betten, Stroke Unit 5 Betten, Intensivüberwachung 4 Betten, Einzugsgebiet Graz/GU-West/Südweststeiermark",
+   "https://www.lkh-graz2.at/ueber-uns-1/allgemeine-infos-zu-den-standorten – Standort Süd rund 780 Betten, 24-h-CT"
+  ],
+  "notiz": "intensiv = neurologische Intensivüberwachung (4 Betten). Stroke-Unit-Zeiten nicht genannt. Laut RSG 2030 wird die stationäre Alterspsychiatrie großteils zu den Elisabethinen verlagert. KAV: 676 Betten.",
+  "_akut_aus": [
+   "ak_thrombektomie"
+  ]
+ },
+ "kh066": {
+  "zeiten": {},
+  "aufnahmerad": "Keine Notaufnahme; Enzenbach = Lungenzentrum (stationär/ambulant aus ganzer Steiermark), Hörgas = Facharztzentrum nur mit Termin.",
+  "plaetze": {},
+  "groesse": {
+   "stationaer_jahr": 4800,
+   "ambulant_jahr": 8000
+  },
+  "quellen": [
+   "https://www.lkh-graz2.at/ueber-uns-1/allgemeine-infos-zu-den-standorten – Enzenbach jährlich rund 4.800 stationäre und über 8.000 ambulante Pat.; Hörgas nur nach Terminvereinbarung"
+  ],
+  "notiz": "Zahlen ohne Jahresangabe (Website). KAV: 70 Betten.",
+  "_akut_aus": [
+   "*"
+  ]
+ },
+ "kh067": {
+  "zeiten": {},
+  "aufnahmerad": "",
+  "plaetze": {
+   "intensiv": 5,
+   "notaufnahme_betten": 5
+  },
+  "groesse": {
+   "betten": 91
+  },
+  "quellen": [
+   "https://www.lkh-graz2.at/abteilungen/abteilung-fuer-innere-medizin-voitsberg – Innere 63 Betten, 5 Beobachtungsbetten, Intensivstation 5 Betten (3 Behandlungs-/2 Überwachungseinheiten), AG/R 48 Betten + 12 TK; Labor 24/7",
+   "KAV (Krankenanstalten-Verzeichnis, kav_betten.json) – Bettenzahl"
+  ],
+  "notiz": "Öffnungszeiten der Notaufnahme nicht genannt (→ 24/7 angenommen). Betten = KAV."
+ },
+ "kh068": {
+  "zeiten": {
+   "amb_notaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5
+     ],
+     "von": "07:00",
+     "bis": "15:00"
+    }
+   ],
+   "amb_psychiatrie_krise": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ]
+  },
+  "aufnahmerad": "Internistische Notfallaufnahme (ZAE) nur Mo–Fr 07:00–15:00; außerhalb an die 24h-Notaufnahmen Univ.-Klinikum oder LKH Graz II West. Nimmt zusätzlich Verlegungen aus der NFA West bei Bettenmangel auf. Alterspsychiatrische Notfallambulanz 0–24 nur für Pat. ab 70 J. aus Graz, Graz-Umgebung, Hartberg-Fürstenfeld, Südoststeiermark und Weiz; allgemeinpsychiatrische Notfälle → Univ.-Klinikum oder LKH Graz II Süd.",
+  "plaetze": {
+   "intensiv": 5
+  },
+  "groesse": {
+   "betten": 158
+  },
+  "quellen": [
+   "https://www.elisabethinen.at/patient-innen/notfall – ZAE Mo–Fr 7–15 Uhr; alterspsychiatrische Notfallambulanz 0–24 (ab 70 J., Einzugsbezirke)",
+   "https://www.elisabethinen.at/abteilungen-einrichtungen/abteilungen/innere-medizin/intensivstation – internistische Intensivstation 5 Plätze",
+   "KAV (Krankenanstalten-Verzeichnis, kav_betten.json) – Bettenzahl"
+  ],
+  "notiz": "Seit 2022 konservativer Schwerpunkt (Chirurgie/HNO an BHB abgegeben). Betten = KAV."
+ },
+ "kh069": {
+  "zeiten": {
+   "amb_notaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5
+     ],
+     "von": "07:30",
+     "bis": "14:00"
+    }
+   ]
+  },
+  "aufnahmerad": "Zentrale Notaufnahme nur Mo–Fr 07:30–14:00; nicht alle Fächer vertreten, Weiterverweisung nach Ersteinschätzung. Nachts/Wochenende → Univ.-Klinikum bzw. LKH Graz II West. Nimmt Verlegungen aus der NFA West bei Bettenmangel auf. Operativer Schwerpunkt der Kooperation 'Ordenskrankenhaus Graz-Mitte' mit den Elisabethinen.",
+  "plaetze": {},
+  "groesse": {
+   "betten": 362
+  },
+  "quellen": [
+   "https://www.barmherzige-brueder.at/portal/graz/medizinpflege/zentralenotaufnahme – Öffnungszeiten Mo–Fr 07:30–14:00",
+   "https://www.barmherzige-brueder.at/portal/graz/krankenhausleitung/geschichte – heute 362 Betten in sechs Fachabteilungen"
+  ],
+  "notiz": "KAV nennt 304 Betten.",
+  "_akut_aus": [
+   "ak_thrombektomie"
+  ]
+ },
+ "kh070": {
+  "zeiten": {
+   "amb_unfall": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "fb_schockraum": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ]
+  },
+  "aufnahmerad": "Notfallambulanz für Frischverletzte rund um die Uhr. Zusätzlich Erstversorgungsambulanz (EVA) Graz-West, allgemeinmedizinisch ohne Termin, Mo–Fr 08:00–20:00, Sa/So/Feiertag 09:00–17:00.",
+  "plaetze": {},
+  "groesse": {
+   "betten": 126,
+   "mitarbeiter": 599,
+   "stationaer_jahr": 5991,
+   "ambulant_jahr": 42000
+  },
+  "quellen": [
+   "https://www.auva.at/gesundheitseinrichtungen/ukh-steiermark-graz – Notfallambulanz täglich 00:00–24:00; ca. 48k behandelte Pat., 5.991 stationär, 126 Betten, 599 Mitarbeitende",
+   "https://www.auva.at/gesundheitseinrichtungen/ukh-steiermark-graz/ambulanz – Frischverletzte rund um die Uhr, Schockraum, ca. 42k ambulant versorgt, EVA-Zeiten"
+  ],
+  "notiz": "Kennzahlen von der Website ohne Jahresangabe (vermutl. 2024/2025); ambulant_jahr gerundet (Website '42 k')."
+ },
+ "kh071": {
+  "zeiten": {
+   "amb_unfall": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "fb_schockraum": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ]
+  },
+  "aufnahmerad": "",
+  "plaetze": {
+   "schockraum": 1
+  },
+  "groesse": {
+   "betten": 71,
+   "mitarbeiter": 270,
+   "stationaer_jahr": 2830,
+   "ambulant_jahr": 10000
+  },
+  "quellen": [
+   "https://www.auva.at/gesundheitseinrichtungen/ukh-steiermark-kalwang – täglich 00:00–24:00; drei OP-Säle sowie ein Schockraum rund um die Uhr; ca. 13k behandelte Pat., 2.830 stationär, 71 Betten, 270 Mitarbeitende",
+   "https://www.auva.at/gesundheitseinrichtungen/ukh-steiermark-kalwang/ambulanz – Frischverletzte rund um die Uhr, ca. 10k ambulant"
+  ],
+  "notiz": "Kennzahlen ohne Jahresangabe (Website); ambulant_jahr gerundet ('≈10 k')."
+ },
+ "kh081": {
+  "zeiten": {
+   "amb_notaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "amb_unfall": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ]
+  },
+  "aufnahmerad": "",
+  "plaetze": {
+   "intensiv": 6
+  },
+  "groesse": {
+   "betten": 80,
+   "mitarbeiter": 330,
+   "stationaer_jahr": 5363,
+   "ambulant_jahr": 46240
+  },
+  "quellen": [
+   "https://www.lkh-weiz.at/abteilungen/innere – ZAE Zentrale Notaufnahme Mo–So 00:00–24:00; interdisziplinäre Intensivstation 6 Betten",
+   "https://www.lkh-weiz.at/abteilungen/orthotrauma – orthopädisch-traumatologische Akutversorgung 24/7, 24-h-Notfallambulanz, bis 150 Pat./Tag",
+   "https://www.lkh-weiz.at/ – 80 Betten, 330 Mitarbeitende, 5.363 stationäre Aufnahmen, 46.240 ambulante Patienten"
+  ],
+  "notiz": "Kennzahlen Startseite ohne Jahresangabe. Seit 1.1.2024 im Verbund mit LKH-Univ. Klinikum Graz."
+ },
+ "kh102": {
+  "zeiten": {},
+  "aufnahmerad": "",
+  "plaetze": {},
+  "groesse": {
+   "betten": 144
+  },
+  "quellen": [
+   "KAV (Krankenanstalten-Verzeichnis, kav_betten.json) – Bettenzahl"
+  ],
+  "notiz": "Privatklinik Graz-Ragnitz; Sanatorium, keine öffentliche Notaufnahme. KAV: 138 gemischter Belag + 6 Intensiv"
+ },
+ "kh103": {
+  "zeiten": {},
+  "aufnahmerad": "",
+  "plaetze": {},
+  "groesse": {
+   "betten": 44
+  },
+  "quellen": [
+   "KAV (Krankenanstalten-Verzeichnis, kav_betten.json) – Bettenzahl"
+  ],
+  "notiz": "Privatklinik Leech; Sanatorium, keine öffentliche Notaufnahme."
+ },
+ "kh104": {
+  "zeiten": {},
+  "aufnahmerad": "",
+  "plaetze": {},
+  "groesse": {
+   "betten": 130
+  },
+  "quellen": [
+   "KAV (Krankenanstalten-Verzeichnis, kav_betten.json) – Bettenzahl"
+  ],
+  "notiz": "Privatklinik der Kreuzschwestern Graz; Sanatorium, keine öffentliche Notaufnahme."
+ },
+ "kh105": {
+  "zeiten": {},
+  "aufnahmerad": "",
+  "plaetze": {},
+  "groesse": {
+   "betten": 50
+  },
+  "quellen": [
+   "KAV (Krankenanstalten-Verzeichnis, kav_betten.json) – Bettenzahl"
+  ],
+  "notiz": "Hansa Privatklinikum; Sanatorium, keine öffentliche Notaufnahme."
+ },
+ "kh106": {
+  "zeiten": {},
+  "aufnahmerad": "",
+  "plaetze": {},
+  "groesse": {
+   "betten": 45
+  },
+  "quellen": [
+   "KAV (Krankenanstalten-Verzeichnis, kav_betten.json) – Bettenzahl"
+  ],
+  "notiz": "Privatklinik Kastanienhof; Sanatorium, keine öffentliche Notaufnahme."
+ },
+ "kh107": {
+  "zeiten": {},
+  "aufnahmerad": "Keine Notaufnahme; Akutgeriatrie/Remobilisation der Geriatrischen Gesundheitszentren der Stadt Graz, Aufnahme über Aufnahmeanfrage.",
+  "plaetze": {},
+  "groesse": {
+   "betten": 126
+  },
+  "quellen": [
+   "KAV (Krankenanstalten-Verzeichnis, kav_betten.json) – Bettenzahl (120 AG/R + 6 RNS)",
+   "https://ggz.graz.at/albert-schweitzer-klinik/ – Aufnahme über Aufnahmeanfrage"
+  ],
+  "notiz": "Website nennt keine Bettenzahl."
+ },
+ "kh072": {
+  "zeiten": {
+   "amb_notaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "amb_unfall": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "amb_kindernotaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "fb_kreisssaal": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ]
+  },
+  "aufnahmerad": "",
+  "plaetze": {
+   "kreisssaal": 3,
+   "intensiv": 36
+  },
+  "groesse": {
+   "geburten_jahr": 1200
+  },
+  "quellen": [
+   "https://www.lkh-hochsteiermark.at/abteilungen/abteilung-fuer-innere-medizin/department-fuer-innere-medizin-und-intensivmedizin – Akut- und Notfallambulanz täglich 0-24; internistische Intensivstation 14 Betten",
+   "https://www.lkh-hochsteiermark.at/abteilungen/abteilung-fuer-innere-medizin/abteilung-fuer-orthopaedie-und-traumatologie – orthopädisch-traumatologische Notfallambulanz rund um die Uhr, Polytrauma",
+   "https://www.lkh-hochsteiermark.at/abteilungen/abteilung-fuer-kinder-und-jugendheilkunde – Notfallaufnahme/Akutfälle täglich 0-24 (ab 21 Uhr 3.OG Zi. 334); NICU/PICU 9 Intensivbehandlungsplätze",
+   "https://www.lkh-hochsteiermark.at/abteilungen/abteilung-fuer-frauenheilkunde-und-geburtshilfe – 3 Entbindungsräume; Gyn-Notfallambulanz täglich 0-24; Anästhesie (PDA/Sectio) rund um die Uhr; 24 h Kinderarzt im Haus",
+   "https://www.lkh-hochsteiermark.at/abteilungen/abteilung-fuer-anaesthesiologie-und-intensivmedizin-2-1 – 13 ICU-Betten (Anästhesie), ca. 1200 Geburten/Jahr, Schockraum-Management, Angiographie-Arbeitsplatz",
+   "https://www.lkh-hochsteiermark.at/ – Verbundzahlen 3 Standorte: 3100 MA, 49.100 stationäre Aufnahmen, 148.600 ambulante Pat."
+  ],
+  "notiz": "intensiv 36 = 14 internist. ICU + 13 anästh. ICU + 9 NICU/PICU (deckt sich mit KAV 36). Angiographie: keine Akut-/Thrombektomie-Zeiten genannt (Thrombektomie lt. LKH Murtal an Uni-Radiologie Graz) -> weggelassen. Gefäßchirurgische Notfallambulanz Mo-Mi nur 07-15, Do-So 0-24. Verbund LKH Hochsteiermark (Leoben/Bruck/Mürzzuschlag, Website 2026): 3100 MA, 49.100 stat. Aufnahmen, 148.600 ambulante Pat. – nicht standortbezogen, daher nicht in groesse."
+ },
+ "kh073": {
+  "zeiten": {
+   "amb_notaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "amb_psychiatrie_krise": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5
+     ],
+     "von": "07:30",
+     "bis": "15:30"
+    }
+   ]
+  },
+  "aufnahmerad": "",
+  "plaetze": {
+   "herzkatheter": 1,
+   "stroke_unit": 4
+  },
+  "groesse": {},
+  "quellen": [
+   "https://www.lkh-hochsteiermark.at/abteilungen/abteilung-fuer-innere-medizin/abteilung-fuer-innere-medizin-bruck – Notfallambulanz 24 h/7 Tage (Ambulanz 07-15, Akutaufnahme 15-07); ein Herzkatheterlabor ~1800 Unters./J; Intensiv inkl. ECMO; 8 ICU-Betten der Inneren + 6 IMC; ~6000 stationär/24.000 ambulant (Abteilung)",
+   "https://www.lkh-hochsteiermark.at/abteilungen/abteilung-fuer-innere-medizin-und-pneumologie – interdisziplinäre Notfallambulanz rund um die Uhr; Notfall/Akutaufnahme täglich 0-24",
+   "https://www.lkh-hochsteiermark.at/abteilungen/abteilung-fuer-neurologie – 59 Betten, Stroke Unit 4 Betten",
+   "https://www.lkh-hochsteiermark.at/abteilungen/dislozierte-ambulanzen-des-lkh-graz-ii – allgemeinpsychiatrische Ambulanz Mo-Fr 07:30-15:30 nach Terminvereinbarung"
+  ],
+  "notiz": "Herzkatheter: kein 24-h-/Akut-PCI-Hinweis auf offizieller Seite gefunden -> Zeiten weggelassen. Stroke Unit/Angiographie: keine Zeiten genannt. Psychiatrie: nur dislozierte Terminambulanz des LKH Graz II (keine Station, nicht für akute Selbst-/Fremdgefährdung) -> Zeiten Mo-Fr 07:30-15:30 sind Terminzeiten, für Krisen eigentlich ungeeignet. Intensiv gesamt nicht genannt (Innere-Anteil 8 Betten; KAV 16). ECMO vorhanden, Anzahl nicht genannt. Abteilung Innere: ~6000 stationär, ~24.000 ambulant/Jahr."
+ },
+ "kh074": {
+  "zeiten": {
+   "amb_notaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ]
+  },
+  "aufnahmerad": "",
+  "plaetze": {
+   "intensiv": 4
+  },
+  "groesse": {
+   "betten": 98
+  },
+  "quellen": [
+   "https://www.lkh-hochsteiermark.at/abteilungen/abteilung-fuer-innere-medizin/abteilung-fuer-innere-medizin-muerzzuschlag – Notfallambulanz täglich 00-24; 98 Betten (38 akut, 56 geriatrisch, 4 Intensiv)"
+  ],
+  "notiz": "98 Betten = gesamte Abteilung Innere inkl. AG/R (einzige bettenführende Abteilung; KAV: 90)."
+ },
+ "kh075": {
+  "zeiten": {
+   "amb_notaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ]
+  },
+  "aufnahmerad": "",
+  "plaetze": {
+   "intensiv": 12
+  },
+  "groesse": {},
+  "quellen": [
+   "https://www.lkh-rottenmann.at/abteilungen/standort-rottenmann/innere-medizin – Notfallambulanz täglich 00-24, ca. 80 Betten",
+   "https://www.lkh-rottenmann.at/abteilungen/chirurgie-rottenmann – Notfallambulanz täglich 00-24",
+   "https://www.lkh-rottenmann.at/abteilungen/anaesthesiologie-und-intensivmedizin – interdisziplinäre Intensivstation 12 Betten",
+   "https://www.lkh-rottenmann.at/ – Verbund 2 Standorte: 680 MA, 7.900 stationäre Aufnahmen, 48.300 ambulante Pat."
+  ],
+  "notiz": "Kreißsaal: keine Zeiten auf der Seite (Gyn/GH 12 Betten) -> weggelassen. Ab Herbst 2026 Geburtshilfe-Kooperation mit Klinik Diakonissen Schladming (dort keine Geburten mehr). Verbund Rottenmann-Bad Aussee: 680 MA, 7.900 stat., 48.300 amb. (nicht standortbezogen)."
+ },
+ "kh076": {
+  "zeiten": {},
+  "aufnahmerad": "",
+  "plaetze": {},
+  "groesse": {},
+  "quellen": [
+   "https://www.lkh-rottenmann.at/abteilungen/internistische-ambulanz – dislozierte internistische Ambulanz Mo-Fr 07-15; dislozierte Akutambulanz zur Grundversorgung täglich 00-24",
+   "https://www.lkh-rottenmann.at/abteilungen/-akutgeriatrie-und-remobilisation – AG/R 20 stationäre + 4 ambulante Plätze",
+   "https://www.lkh-murtal.at/abteilungen/abteilung-fuer-neurologie – Telelyse: Knittelfelder Neurologen unterstützen Bad Aussee bei akutem Schlaganfall"
+  ],
+  "notiz": "AUFFÄLLIG: Website nennt 'Dislozierte Akutambulanz zur Grundversorgung täglich 00-24' – in kh_einrichtungen.json hat kh076 aber keine amb_notaufnahme; ggf. ergänzen (Grundversorgung, Telelyse-Schlaganfall mit Knittelfeld). Zeiten daher nicht eingetragen."
+ },
+ "kh077": {
+  "zeiten": {
+   "amb_notaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "amb_unfall": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ]
+  },
+  "aufnahmerad": "",
+  "plaetze": {
+   "intensiv": 6
+  },
+  "groesse": {
+   "betten": 106,
+   "mitarbeiter": 350
+  },
+  "quellen": [
+   "https://www.schladming.diakonissen.at/medizin-aerzte/innere-medizin-2/ – Akutambulanz 24h",
+   "https://www.schladming.diakonissen.at/ – rund 350 Mitarbeiter; rund um die Uhr Ärzteteam, rasche Erstversorgung in akuten Fällen",
+   "https://www.schladming.diakonissen.at/pflege-therapie/unsere-stationen/ – 106 systemisierte Betten; interdisziplinäre Ambulanz (chir./unfallchir./intern.); Intensivüberwachungseinheit 6 Betten",
+   "https://www.schladming.diakonissen.at/medizin-aerzte/unfallchirurgie/ – O&T: >10.000 ambulante Pat./J, ~2.000 OPs/J"
+  ],
+  "notiz": "amb_unfall 24h nur aus allgemeiner Aussage (Startseite 'rund um die Uhr', interdisziplinäre Ambulanz) abgeleitet; Unfallseite selbst nennt nur Spezialambulanz-Zeiten. Intensiv = Intensivüberwachungseinheit (6). Geburten nicht mehr möglich. O&T >10.000 ambulante Pat./J (nur Abteilung). Zahlen Stand Website 2026."
+ },
+ "kh078": {
+  "zeiten": {
+   "amb_notaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "amb_unfall": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ]
+  },
+  "aufnahmerad": "",
+  "plaetze": {
+   "kreisssaal": 4,
+   "intensiv": 7
+  },
+  "groesse": {
+   "geburten_jahr": 600
+  },
+  "quellen": [
+   "https://www.lkh-murtal.at/abteilungen/abteilung-fuer-allgemeinchirurgie – 24-stündige Notfallambulanz, 32 Betten",
+   "https://www.lkh-murtal.at/abteilungen/abteilung-fuer-unfallchirurgie – Notfallambulanz Mo-So 00-24, 30 Betten",
+   "https://www.lkh-murtal.at/abteilungen/abteilung-fuer-frauenheilkunde-u-geburtshilfe – ca. 600 Geburten/J, 4 Entbindungszimmer, 24 Betten",
+   "https://www.lkh-murtal.at/abteilungen/anaesthesiologie-und-intensivmedizin/abteilung-fuer-anaesthesiologie-u-intensivmedizin-judenburg – interdisziplinäre Intensivstation 7 Betten",
+   "https://www.lkh-murtal.at/ – Verbund 3 Standorte: 1.380 MA (Text: über 1.400), 16.300 stationäre Aufnahmen, 65.600 ambulante Pat."
+  ],
+  "notiz": "Kreißsaal: keine Zeitangabe -> weggelassen. Internistische Notfälle: in Judenburg nur Konsiliar-Ambulanz, Innere in Knittelfeld. Verbund LKH Murtal: 1.380 MA, 16.300 stat., 65.600 amb. (nicht standortbezogen)."
+ },
+ "kh079": {
+  "zeiten": {
+   "amb_notaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "fb_schockraum": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ]
+  },
+  "aufnahmerad": "",
+  "plaetze": {
+   "stroke_unit": 4
+  },
+  "groesse": {},
+  "quellen": [
+   "https://www.lkh-murtal.at/abteilungen/abteilung-fuer-innere-medizin – internistische Notfallambulanz 24 h / rund um die Uhr; Schockraum rund um die Uhr",
+   "https://www.lkh-murtal.at/abteilungen/abteilung-fuer-neurologie – 38 Betten inkl. 4-Betten-Stroke-Unit; Thrombektomie an Uni-Radiologie Graz; Telelyse für Bad Aussee"
+  ],
+  "notiz": "Stroke Unit: keine Zeitangabe -> weggelassen. Nimmt internistische Notfälle aus Stolzalpe außerhalb Mo-Fr 07-19 auf."
+ },
+ "kh080": {
+  "zeiten": {
+   "amb_notaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5
+     ],
+     "von": "07:00",
+     "bis": "19:00"
+    }
+   ]
+  },
+  "aufnahmerad": "",
+  "plaetze": {},
+  "groesse": {},
+  "quellen": [
+   "https://www.lkh-murtal.at/abteilungen/internistische-ambulanz – internistische Notfallambulanz Mo-Fr 07-19; außerhalb ausschließlich Innere Knittelfeld",
+   "https://www.lkh-murtal.at/abteilungen/abteilung-fuer-orthopaedie-und-orthopaedische-chirurgie – Erstversorgung Mo-So 00-24, Akutambulanz Mo-Fr 08-11; 140 Betten, ~7000 stationär, ~4000 OPs, ~30.000 ambulante Fälle/J"
+  ],
+  "notiz": "AUFFÄLLIG: internistische Notfallambulanz nur Mo-Fr 07-19 (sonst Knittelfeld). Orthopädisch-traumatologische Erstversorgung aber 0-24 – amb_unfall fehlt in kh_einrichtungen.json, evtl. ergänzen. Ortho-Abteilung 140 Betten/7000 stat./30.000 amb. – KAV ordnet Stolzalpe nur 33 Betten zu (O&T-Betten offenbar unter Judenburg K672.1 gezählt)."
+ },
+ "kh082": {
+  "zeiten": {
+   "amb_notaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "amb_unfall": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "fb_schockraum": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "fb_kreisssaal": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ]
+  },
+  "aufnahmerad": "",
+  "plaetze": {
+   "stroke_unit": 4
+  },
+  "groesse": {
+   "geburten_jahr": 1200
+  },
+  "quellen": [
+   "https://www.lkh-oststeiermark.at/abteilungen/abteilung-fuer-innere-medizin-feldbach – Allg. Ambulanz Mo-Fr 07-15, außerhalb nur Notfälle",
+   "https://www.lkh-oststeiermark.at/abteilungen/abteilung-fuer-chirurgie – an allen Standorten rund um die Uhr ambulante Erst- und Notfallversorgung",
+   "https://www.lkh-oststeiermark.at/abteilungen/abteilung-fuer-orthopaedie-und-traumatologie – Schockraum rund um die Uhr; Akutambulanz rund um die Uhr; Station 36 Betten",
+   "https://www.lkh-oststeiermark.at/abteilungen/abteilung-fuer-neurologie – Stroke Unit 4 Betten",
+   "https://www.lkh-oststeiermark.at/abteilungen/abteilung-fuer-frauenheilkunde-und-geburtshilfe/abteilung-fuer-frauenheilkunde-und-geburtshilfe-standort-feldbach – ca. 1.200 Geburten/J; Kinderärzte rund um die Uhr in Bereitschaft für den Kreißsaal"
+  ],
+  "notiz": "Kreißsaal 24h abgeleitet (Kinderarzt 'zu jeder Tages- und Nachtzeit in den Kreißsaal', Hebammen-12h-Dienste), keine explizite Öffnungszeit. Stroke Unit: keine Zeitangabe. Anzahl Kreißsäle nicht genannt ('Kreißsäle')."
+ },
+ "kh083": {
+  "zeiten": {
+   "amb_notaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ]
+  },
+  "aufnahmerad": "",
+  "plaetze": {},
+  "groesse": {},
+  "quellen": [
+   "https://www.lkh-oststeiermark.at/abteilungen/abteilung-fuer-chirurgie – Chirurgische Ambulanz Fürstenfeld; an allen Standorten rund um die Uhr Erst- und Notfallversorgung"
+  ],
+  "notiz": "24h nur aus Sammelaussage der Chirurgie ('alle Standorte'); Innere Fürstenfeld nennt keine Notfallzeiten."
+ },
+ "kh084": {
+  "zeiten": {
+   "amb_notaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "amb_unfall": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "fb_kreisssaal": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ]
+  },
+  "aufnahmerad": "",
+  "plaetze": {},
+  "groesse": {},
+  "quellen": [
+   "https://www.lkh-oststeiermark.at/abteilungen/abteilung-fuer-innere-medizin-1 – Notfallambulanz 24 h täglich/7 Tage; 68 Betten inkl. 4 internist. Intensiv- + 5 Telemetriebetten; ~4000 stationär/7000 ambulant (Abteilung)",
+   "https://www.lkh-oststeiermark.at/abteilungen/abteilung-fuer-chirurgie – an allen Standorten rund um die Uhr Erst- und Notfallversorgung",
+   "https://www.lkh-oststeiermark.at/abteilungen/abteilung-fuer-frauenheilkunde-und-geburtshilfe/abteilung-fuer-frauenheilkunde-und-geburtshilfe-standort-hartberg – rund um die Uhr in Kreissaal und Notfallambulanz",
+   "https://www.lkh-oststeiermark.at/abteilungen/psychiatrische-ambulanz/disl-psych-ambulanz – Mo-Fr nur nach telefonischer Terminvereinbarung; Notfälle an LKH Graz II Süd"
+  ],
+  "notiz": "amb_psychiatrie_krise: nur dislozierte Terminambulanz, keine Zeiten; psychiatrische Notfälle -> LKH Graz II Standort Süd (AUFFÄLLIG, Krisen-Einstufung fraglich). Intensiv gesamt nicht genannt (4 internistische + perioperative Intensivstation). Innere: ~4000 stationär/7000 ambulant pro Jahr (nur Abteilung)."
+ },
+ "kh085": {
+  "zeiten": {
+   "amb_notaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "fb_kreisssaal": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ]
+  },
+  "aufnahmerad": "",
+  "plaetze": {
+   "kreisssaal": 3,
+   "intensiv": 9
+  },
+  "groesse": {},
+  "quellen": [
+   "https://www.lkh-suedweststeiermark.at/abteilungen/abteilung-fuer-innere-medizin-deutschlandsberg – Medizinische Notfallambulanz täglich 00-24; Intensiv 9 Betten",
+   "https://www.lkh-suedweststeiermark.at/abteilungen/abteilung-fuer-chirurgie-deutschlandsberg – Notfallambulanz täglich 00-24; Schockraum",
+   "https://www.lkh-suedweststeiermark.at/abteilung-fuer-frauenheilkunde – 3 Entbindungsräume; Notfallambulanz Gyn/GH täglich 00-24; Sectio/PDA rund um die Uhr",
+   "https://www.lkh-suedweststeiermark.at/ueber-uns – Verbund 3 Standorte: 1.340 MA, 17.588 stationäre, 116.947 ambulante Pat."
+  ],
+  "notiz": "Schockraum vorhanden, aber ohne eigene Zeitangabe -> weggelassen. Verbund LKH Südweststeiermark: 1.340 MA, 17.588 stat., 116.947 amb. (nicht standortbezogen)."
+ },
+ "kh086": {
+  "zeiten": {
+   "amb_notaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "amb_unfall": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ],
+   "fb_schockraum": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ]
+  },
+  "aufnahmerad": "",
+  "plaetze": {},
+  "groesse": {},
+  "quellen": [
+   "https://www.lkh-suedweststeiermark.at/abteilungen/abteilung-fuer-innere-medizin-wagna – Innere rund um die Uhr; 73 Betten inkl. Intensivstation",
+   "https://www.lkh-suedweststeiermark.at/abteilungen/abteilung-fuer-orthopaedie – Wagna: Akutversorgung Tag und Nacht, Schwerverletztenversorgung, traumatologische Ambulanz Akut-/Notfälle rund um die Uhr, 'Notaufnahme in Wagna'",
+   "https://www.lkh-suedweststeiermark.at/abteilungen/abteilungen-fuer-radiologie – Röntgen im Schockraum Wagna"
+  ],
+  "notiz": "Schockraum 24h aus 'Schwerverletztenversorgung Tag und Nacht'. Intensivbetten nicht genannt (KAV 8)."
+ },
+ "kh087": {
+  "zeiten": {
+   "amb_unfall": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ]
+  },
+  "aufnahmerad": "",
+  "plaetze": {},
+  "groesse": {},
+  "quellen": [
+   "https://www.lkh-suedweststeiermark.at/abteilungen/abteilung-fuer-orthopaedie – Bad Radkersburg: Orthopädische Ambulanz Akut- und Notfälle rund um die Uhr"
+  ],
+  "notiz": "Keine internistische Notaufnahme (seit 12/2022 nur Tagesklinik Innere)."
+ },
+ "kh088": {
+  "zeiten": {
+   "amb_notaufnahme": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "von": "00:00",
+     "bis": "24:00"
+    }
+   ]
+  },
+  "aufnahmerad": "",
+  "plaetze": {
+   "intensiv": 3
+  },
+  "groesse": {},
+  "quellen": [
+   "https://marienkrankenhaus.at/abteilungen-ambulanzen/notfallambulanz/ – Notfallambulanz durchgehend geöffnet",
+   "https://marienkrankenhaus.at/abteilungen-ambulanzen/chirurgische-ambulanz/ – chirurgische Notfallambulanz nur Mo 08:00 bis Fr 24:00, Wochenende keine",
+   "https://marienkrankenhaus.at/abteilungen-ambulanzen/ueberwachungsstation-imcu/ – IMCU 3 Betten"
+  ],
+  "notiz": "AUFFÄLLIG: chirurgische Notfallambulanz nur Mo 08:00 – Fr 24:00 (Wochenende keine Chirurgie); amb_unfall nicht in einrichtungen. intensiv = IMCU 3 Betten (keine echte ICU)."
+ }
+}

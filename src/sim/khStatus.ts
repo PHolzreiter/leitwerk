@@ -169,9 +169,14 @@ export function belegt(b: BelegungMap | undefined, khId: string, r: Ressource, t
   return (b?.[khId]?.[r] ?? []).filter((x) => x.bis > t).length;
 }
 
-/** Welche Ressource braucht der Patient in diesem Haus? (Reihenfolge: erste passende mit Plätzen) */
+/**
+ * Welche Plätze braucht der Patient in diesem Haus? Gruppen nach Rang: die erste Gruppe, die das Haus führt,
+ * entscheidet (innerhalb der Gruppe reicht ein freier Platz). Ist sie voll, gilt das Haus als voll.
+ */
 export function ressourcenFuer(buchung: string | undefined, eignung: "passend" | "ausweich" | "rueckfall", kind: boolean): Ressource[][] {
   const b = buchung ?? "";
+  const SCHOCK_T: Ressource[] = ["schockraum_trauma", "schockraum"];
+  const SCHOCK_I: Ressource[] = ["schockraum_intern", "schockraum"];
   if (eignung === "ausweich" || eignung === "rueckfall") {
     if (/verletz|verbrennung|trauma|amputation|gesicht/.test(b)) return [["unfall"], ["notaufnahme"]];
     return kind ? [["kindernotaufnahme"], ["notaufnahme"]] : [["notaufnahme"]];
@@ -180,13 +185,13 @@ export function ressourcenFuer(buchung: string | undefined, eignung: "passend" |
     case "bu_stemi":
       return [["herzkatheter"]];
     case "bu_laufende_reanimation_ecpr":
-      return [["ecmo"], ["schockraum_intern"], ["schockraum"]];
+      return [["ecmo"], SCHOCK_I];
     case "bu_reanimation_mit_rosc":
     case "bu_aortendissektion":
     case "bu_rupturiertes_bauchaortenaneurysma":
     case "bu_lungenembolie":
     case "bu_sepsis":
-      return [["schockraum_intern"], ["schockraum"], ["notaufnahme"]];
+      return [SCHOCK_I, ["notaufnahme"]];
     case "bu_polytrauma":
     case "bu_schweres_sht":
     case "bu_schweres_thoraxtrauma":
@@ -194,7 +199,7 @@ export function ressourcenFuer(buchung: string | undefined, eignung: "passend" |
     case "bu_wirbelsaeulenverletzung_mit_neurologisch":
     case "bu_amputationsverletzung":
     case "bu_schwere_verbrennung":
-      return [["schockraum_trauma"], ["schockraum"], ["unfall"]];
+      return [SCHOCK_T, ["unfall"]];
     case "bu_schlaganfall":
     case "bu_schlaganfall_mit_v_a_grossen_gefaessvers":
     case "bu_intrakranielle_blutung":
@@ -209,7 +214,7 @@ export function ressourcenFuer(buchung: string | undefined, eignung: "passend" |
     case "bu_gesichtsschaedelverletzung":
       return [["unfall"], ["notaufnahme"]];
     case "bu_verletztes_kind":
-      return [["unfall"], ["kindernotaufnahme"], ["notaufnahme"]];
+      return [["unfall", "kindernotaufnahme"], ["notaufnahme"]];
     case "bu_internistischer_kindernotfall":
     case "bu_kritisch_krankes_kind":
     case "bu_kritisch_krankes_neugeborenes":
@@ -221,19 +226,21 @@ export function ressourcenFuer(buchung: string | undefined, eignung: "passend" |
 }
 
 /**
- * Freie Ressource für den Patienten im Haus: erste Alternative, die das Haus hat (Plätze > 0).
- * frei = mindestens ein Platz frei; null = das Haus führt keine dieser Ressourcen (dann zählt es nicht als „voll“).
+ * Platz für den Patienten im Haus: die erste Gruppe, die das Haus führt, entscheidet.
+ * frei = dort ist ein Platz frei; null = das Haus führt keine dieser Ressourcen (zählt dann nicht als „voll“).
  */
-export function platzFuer(h: Hospital, b: BelegungMap | undefined, alternativen: Ressource[][], t: number): { r: Ressource; frei: boolean } | null {
-  let erste: Ressource | null = null;
-  for (const alt of alternativen) {
-    for (const r of alt) {
-      if (plaetze(h, r) <= 0) continue;
-      erste ??= r;
-      if (belegt(b, h.id, r, t) < plaetze(h, r)) return { r, frei: true };
-    }
+export function platzFuer(h: Hospital, b: BelegungMap | undefined, gruppen: Ressource[][], t: number): { r: Ressource; frei: boolean } | null {
+  for (const g of gruppen) {
+    const da = g.filter((r) => plaetze(h, r) > 0 && offen(h, RESSOURCE.get(r)!.einrichtung, t));
+    const alle = g.filter((r) => plaetze(h, r) > 0);
+    if (!alle.length) continue;
+    const frei = da.find((r) => belegt(b, h.id, r, t) < plaetze(h, r));
+    if (frei) return { r: frei, frei: true };
+    // nur geschlossene dieser Art: nächste Gruppe versuchen
+    if (!da.length) continue;
+    return { r: da[0], frei: false };
   }
-  return erste ? { r: erste, frei: false } : null;
+  return null;
 }
 
 // ------------------------------------------------------------------ Grundbelegung

@@ -48,10 +48,10 @@
    "fb_ct",
    "fb_mrt",
    "fb_angiographie",
-   "fb_nuklearmedizin"
+   "fb_nuklearmedizin",
+   "fb_schockraum"
   ],
   "unklar": [
-   "fb_schockraum",
    "fb_echo",
    "fb_eeg",
    "its_imcu",
@@ -85,7 +85,8 @@
    "https://stpoelten.lknoe.at/fuer-patienten/klinische-abteilungen/neurochirurgie/informationen (Neurochirurgie inkl. Wirbelsäulenchirurgie)",
    "https://stpoelten.lknoe.at/fuer-patienten/klinische-abteilungen/psychiatrie-und-psychotherapeutische-medizin/abteilung (2 Stationen, Psychiatrische Tagesklinik; keine Suchtentwöhnung)",
    "https://stpoelten.lknoe.at/fuer-patienten/klinische-institute/institut-fuer-medizinische-radiologie-diagnostik-intervention/informationen (Röntgen, CT, MRT, Mammographie, interventionelle Radiologie, mechanische Thrombektomie)",
-   "https://stpoelten.lknoe.at/fuer-patienten/klinische-institute/institut-fuer-nuklearmedizin-molekulare-bildgebung-und-spezielle-endokrinologie/informationen (Gammakamera, SPECT-CT, PET-CT, ambulante Radiojodtherapie)"
+   "https://stpoelten.lknoe.at/fuer-patienten/klinische-institute/institut-fuer-nuklearmedizin-molekulare-bildgebung-und-spezielle-endokrinologie/informationen (Gammakamera, SPECT-CT, PET-CT, ambulante Radiojodtherapie)",
+   "Schockräume: Angabe Paul (2 internistisch, 1 Unfall)"
   ],
   "notiz": "Überregionales Traumazentrum Level I (Schockraum nicht ausdrücklich genannt). Herzchirurgie mit ECMO (als z_cardiac_arrest_center gewertet; 'Cardiac Arrest Center' nicht wörtlich). Psychiatrie seit 2025 eigene Abteilung, keine Entwöhnungsbehandlung; amb_tagesklinik = Psychiatrische Tagesklinik. Nuklearmedizin nur ambulante Radiojodtherapie, keine Therapiestation belegt. Nur Palliativteam (Konsiliar), keine Palliativstation belegt. Akutgeriatrie-Stelleninserat betrifft Standort Lilienfeld (UK St. Pölten-Lilienfeld), daher nicht eingetragen. Innere 2 nennt Rheuma/Lunge/Infektionen nur als Schwerpunkte. Physikalische Medizin als Institut + Ambulanz vorhanden."
  },
@@ -189,10 +190,11 @@
    "fb_mrt",
    "fb_angiographie",
    "fb_physiotherapie",
-   "its_stroke_unit"
+   "its_stroke_unit",
+   "amb_notaufnahme",
+   "amb_kindernotaufnahme"
   ],
   "unklar": [
-   "amb_notaufnahme",
    "fb_schockraum",
    "its_neuro",
    "its_nicu",
@@ -220,7 +222,9 @@
    "https://tulln.lknoe.at/fuer-patienten/klinisches-institut-fuer-radiologie/radiologie/informationen (Röntgen, CT, MRT, Angiographie diagnostisch/interventionell)",
    "https://tulln.lknoe.at/fuer-besucher/besuchszeiten (Intensivstation IBS, Neonatologie, Neurologie 2, Geburtshilfe)",
    "https://tulln.lknoe.at/patienten-besucher/default-bb22e6e24e (Physiotherapie, Ergotherapie, Logopädie)",
-   "LGA-Pressemeldung 09/2026 („NÖ Kliniken sichern Notfallversorgung“): Stroke Units in Horn, Mistelbach, Amstetten, St. Pölten, Tulln, Wiener Neustadt und Mödling"
+   "LGA-Pressemeldung 09/2026 („NÖ Kliniken sichern Notfallversorgung“): Stroke Units in Horn, Mistelbach, Amstetten, St. Pölten, Tulln, Wiener Neustadt und Mödling",
+   "UK Tulln: chirurgische Akutversorgung 24h (Recherche Zeiten 10/2026)",
+   "UK Tulln: Kinder-Notfallambulanz 24h (Recherche Zeiten 10/2026)"
   ],
   "notiz": "Neurologischer Schwerpunkt mit Neurointervention (Thrombektomie 24h, 2020: 118 Eingriffe) – Stroke Unit aber nicht wörtlich genannt (nur 'akute Schlaganfalltherapie'/'neurologische Überwachungsmedizin' Neurologie 2). Frührehabilitation Phase B/C ohne passende ID. Neonatologie nur als NIMCU (Intermediate Care), keine NICU belegt. Keine Notaufnahme als eigene Einheit genannt (nur 'Akutaufnahmedienst' der Anästhesie, Unfallchirurgische Ambulanz). amb_tagesklinik = KJP-Tagesklinik. Pressemeldung 2018 nennt zusätzlich eine 'Abteilung für Stationäre Psychotherapie' (aktuell nicht in Abteilungsliste). Kein Herzkatheter, keine Dialyse belegt."
  },
@@ -622,10 +626,10 @@
    "fb_ct",
    "fb_mrt",
    "fb_angiographie",
-   "fb_physiotherapie"
+   "fb_physiotherapie",
+   "amb_unfall"
   ],
   "unklar": [
-   "amb_unfall",
    "fb_schockraum",
    "st_kardiologie",
    "amb_herzinsuffizienz",
@@ -648,7 +652,8 @@
    "https://moedling.lknoe.at/fuer-patienten/abteilungen/orthopaedie-und-traumatologie/informationen (Ambulanz reduziert; Kinder bis 10 J. 24h; Unfallzentrum in Baden)",
    "https://moedling.lknoe.at/fuer-patienten/abteilungen/chirurgie/informationen (Viszeral, Venen/Gefäße, Tagesklinik; Brustgesundheitszentrum/Brustambulanz in Baden)",
    "https://moedling.lknoe.at/fuer-patienten/institute/institut-fuer-diagnostische-und-interventionelle-radiologie/informationen (Röntgen, CT inkl. Herz-CT, MRT, Angiographie/Interventionen, Mammographie)",
-   "https://moedling.lknoe.at/fuer-patienten/institute/institut-fuer-physikalische-medizin-rehabilitation-arbeitsmedizin-thermenregion-ipmra/institut (IPMRA betreut amb./stat. Patienten auch am Standort Mödling)"
+   "https://moedling.lknoe.at/fuer-patienten/institute/institut-fuer-physikalische-medizin-rehabilitation-arbeitsmedizin-thermenregion-ipmra/institut (IPMRA betreut amb./stat. Patienten auch am Standort Mödling)",
+   "LK Mödling: Ortho/Unfall-Ambulanz Mo–Fr 08–13 (Rest nach Baden)"
   ],
   "notiz": "Standort Mödling des Landesklinikums Baden-Mödling. Orthopädie/Traumatologie-Ambulanz in Mödling auf Mo-Fr 8-13 Uhr reduziert, Unfallversorgung Erwachsener rund um die Uhr am Standort Baden; Kinder bis 10 Jahre weiterhin 24h in Mödling. Kinder- und Jugendpsychiatrie liegt am Standort Hinterbrühl (gehört zu LK Mödling). Neurologie hat zusätzlich Phase-B-Station. Brustambulanz/Brustgesundheitszentrum und Gefäßambulanz am Standort Baden. Geburtshilfe: geburtenreichste Abteilung NÖ. Kindernotaufnahme/Neonatologie nicht eigens beschrieben. Angiographie: interventionelle Radiologie beschrieben."
  },
@@ -1168,11 +1173,11 @@
    "fb_mrt",
    "fb_angiographie",
    "amb_brust",
-   "fb_physiotherapie"
+   "fb_physiotherapie",
+   "fb_kreisssaal"
   ],
   "unklar": [
    "amb_notaufnahme",
-   "fb_kreisssaal",
    "st_kardiologie",
    "st_gastroenterologie",
    "amb_onko_tagesklinik",
@@ -1195,7 +1200,8 @@
    "https://zwettl.lknoe.at/fuer-patienten/institute/medizinische-radiologie-diagnostik/informationen (CT, MRT [Gerät eines niedergelassenen Radiologen im Klinikum], Mammographie, interventionelle Radiologie)",
    "https://zwettl.lknoe.at/fuer-patienten/ambulanzen/roentgeninstitut-ambulanz/informationen (Mammaambulanz)",
    "https://zwettl.lknoe.at/fuer-patienten/institute/physikalische-medizin-und-rehabilitation/informationen",
-   "https://zwettl.lknoe.at/fuer-patienten/interdisziplinaere-tagesklinik/informationen"
+   "https://zwettl.lknoe.at/fuer-patienten/interdisziplinaere-tagesklinik/informationen",
+   "LK Zwettl: drei neue Kreißzimmer (LGA-Presse 2026)"
   ],
   "notiz": "Keine Seite zu Notaufnahme/Erstversorgung gefunden; Presse erwähnt aber eine 'Notfallanlieferung' und einen Hubschrauberlandeplatz. Herzüberwachungsstation als its_ccu eingetragen (kardiologische Überwachungseinheit, kein Herzkatheter). Neonatologie als neonatologische IMCU (Frühgeborene ab 29. SSW) unter its_nicu eingetragen. Kreißsaal nicht wörtlich genannt (Geburten inkl. Wassergeburt aber belegt). MRT gehört einem niedergelassenen Radiologen, steht aber den Patienten des Hauses zur Verfügung. Schwere Traumen -> Schwerpunkt Unfallchirurgie LK Horn."
  },
@@ -1220,10 +1226,10 @@
    "fb_roentgen",
    "fb_ct",
    "fb_mrt",
-   "fb_angiographie"
+   "fb_angiographie",
+   "amb_notaufnahme"
   ],
   "unklar": [
-   "amb_notaufnahme",
    "st_angiologie",
    "amb_wunde",
    "amb_brust",
@@ -1237,7 +1243,8 @@
    "https://gmuend.lknoe.at/fuer-patienten/abteilungen/orthopaedie/informationen (Orthopädie und orthopädische Chirurgie)",
    "https://gmuend.lknoe.at/fuer-patienten/abteilungen/remobilisation-und-nachsorge/informationen (RNS inkl. Physio/Ergo)",
    "https://gmuend.lknoe.at/fuer-patienten/roentgeninstitut/informationen (MRT, CT, Mammographie, Röntgen, interventionelle Radiologie)",
-   "https://gmuend.lknoe.at/fuer-patienten/dislozierte-augen-tagesklinik/abteilung (dislozierte Augen-Tagesklinik des LK Horn, Katarakt-OPs)"
+   "https://gmuend.lknoe.at/fuer-patienten/dislozierte-augen-tagesklinik/abteilung (dislozierte Augen-Tagesklinik des LK Horn, Katarakt-OPs)",
+   "LK Gmünd: „Akutuntersuchungen jederzeit möglich“"
   ],
   "notiz": "Chirurgie ist als dislozierte Wochenklinik geführt (keine 24/7-Chirurgie belegt). Orthopädie ohne ausdrückliche Traumatologie/Unfallambulanz. 'Akutuntersuchungen jederzeit möglich', eine benannte Notaufnahme fehlt. Keine Geburtshilfe/Gynäkologie. Stroke-Team in der Inneren, aber keine Stroke Unit. Anästhesie stellt den Notarztwagen (ca. 800 Einsätze/Jahr). Augen-Tagesklinik gehört organisatorisch zum LK Horn."
  },
@@ -1296,11 +1303,11 @@
    "fb_eeg",
    "fb_physiotherapie",
    "fb_roentgen",
-   "fb_ct"
+   "fb_ct",
+   "amb_psychiatrie_krise"
   ],
   "unklar": [
    "st_psychosomatik",
-   "amb_psychiatrie_krise",
    "st_neurologie"
   ],
   "quellen": [
@@ -1312,7 +1319,8 @@
    "https://mauer.lknoe.at/fuer-patienten/abteilungen/5-psychiatrische-abteilung-fuer-kinder-und-jugendpsychiatrie-und-psychotherapie/informationen (KJPP 30 stationäre + 6 halbstationäre Plätze)",
    "https://mauer.lknoe.at/fuer-patienten/einrichtung-fuer-bildgebende-diagnostik/einrichtung-fuer-bildgebende-diagnostik/informationen (Röntgen, CT, Ultraschall, CT-gesteuerte Infiltrationen)",
    "https://mauer.lknoe.at/fuer-patienten/beratungsstellen/medizinisch-technischer-dienst/eegevozierte-potenzialeemg-eng (EEG/EP/EMG)",
-   "https://mauer.lknoe.at/fuer-patienten/beratungsstellen/medizinisch-technischer-dienst/physiotherapiephysikalische-therapie"
+   "https://mauer.lknoe.at/fuer-patienten/beratungsstellen/medizinisch-technischer-dienst/physiotherapiephysikalische-therapie",
+   "LK Mauer: psychiatrische Akutaufnahme (Pflichtversorgung Mostviertel)"
   ],
   "notiz": "Rein psychiatrisches Fachklinikum (Erwachsenenpsychiatrie, stationäre Psychotherapie, Abhängigkeitserkrankungen, Forensik, KJPP): keine Notaufnahme, keine Intensivstation, kein OP. Alkoholstation Haus 35 wegen Modernisierung im September/Oktober 2026 vorübergehend geschlossen, ab November 2026 wieder offen. Die Radiologie-Seite erwähnt eine Kooperation 'mit der Neurologie', eine Neurologie-Abteilung ist aber nicht gelistet."
  },
@@ -2319,10 +2327,10 @@
    "fb_ct",
    "fb_mrt",
    "fb_angiographie",
-   "fb_physiotherapie"
+   "fb_physiotherapie",
+   "amb_notaufnahme"
   ],
   "unklar": [
-   "amb_notaufnahme",
    "its_ccu",
    "fb_herzkatheter",
    "amb_herzinsuffizienz",
@@ -2343,7 +2351,8 @@
    "https://www.khgh.at/leistungen/endoskopie (Gastro-/Koloskopie)",
    "https://www.khgh.at/leistungen/therapie-und-betreuung/wundmanagement (Wund-Ambulanz, Stomaversorgung)",
    "https://www.khgh.at/aufenthalt-besuch/tagesklinische-operationen (tagesklinische OPs)",
-   "https://www.khgh.at/leistungen/abteilungen/physikalische-medizin (Physikalische Medizin, Physiotherapie)"
+   "https://www.khgh.at/leistungen/abteilungen/physikalische-medizin (Physikalische Medizin, Physiotherapie)",
+   "KH Göttlicher Heiland: nimmt Rettungen auf (2025 rund 2.100 Zufahrten)"
   ],
   "notiz": "Vinzenz Gruppe (Vinzenz Kliniken Wien). Das Haus nimmt Rettungen an (Rettungskontingente, Schlaganfall-Rad, 2025 rund 2.100 Rettungsanfahrten, 2026 rund 4.000 geplant). Eine Zentrale Notaufnahme wird aber nicht ausdrücklich genannt, darum amb_notaufnahme nur unklar, und Ambulanzen laufen nur mit Termin. Keine Unfallchirurgie, Gynäkologie oder Geburtshilfe. Die Kardiologie hat eine Herzüberwachungsstation (CCU unklar), ein Herzkatheterlabor ist nicht belegt. Die Diabetologie ist als Schwerpunkt der Inneren 2 als st_endokrinologie eingetragen. Die Radiologie-Abteilung wird gemeinsam mit den Barmherzigen Schwestern Wien und St. Josef geführt."
  },
@@ -2811,10 +2820,10 @@
    "fb_schlaflabor",
    "fb_physiotherapie",
    "fb_op",
-   "fb_kreisssaal"
+   "fb_kreisssaal",
+   "amb_notaufnahme"
   ],
   "unklar": [
-   "amb_notaufnahme",
    "fb_mrt",
    "st_augenheilkunde",
    "fb_echo",
@@ -2829,7 +2838,8 @@
    "https://www.gesundheit-burgenland.at/oberpullendorf/leistungen/tagesklinik/interdisziplinaere-tagesklinik/ (22 Betten)",
    "https://www.gesundheit-burgenland.at/oberpullendorf/leistungen/fachschwerpunkt/augenheilkunde/ (Augen-Tagesklinik)",
    "https://www.gesundheit-burgenland.at/oberwart/leistungen/abteilungen/radiologieverbund-burgenland-mitte-sued-1/ (Oberpullendorf: Röntgen & CT; MR 'Ende 2025' angekündigt)",
-   "https://www.gesundheit-burgenland.at/oberpullendorf/patienten-info/patientinnen-info-im-ueberblick/akutordination/ (Akutordination Mo-Fr 17-22 Uhr, allgemeinmedizinisch)"
+   "https://www.gesundheit-burgenland.at/oberpullendorf/patienten-info/patientinnen-info-im-ueberblick/akutordination/ (Akutordination Mo-Fr 17-22 Uhr, allgemeinmedizinisch)",
+   "Klinik Oberpullendorf: chirurgische Notfälle Aufnahme rund um die Uhr"
   ],
   "notiz": "Grundversorgung Mittelburgenland. Keine eigene ZAE/Notaufnahme namentlich genannt, aber chirurgische Notfälle rund um die Uhr und internistische Akut-/Notfallbetreuung; Unfallpatienten sollen an Fachabteilungen überwiesen werden (keine Unfallchirurgie). MR-Gerät laut Radiologieverbund für Ende 2025 angekündigt, Inbetriebnahme nicht bestätigt. Augenheilkunde nur als Tagesklinik. IMCU = 'Herzstation' für kardiologische und andere interne Notfälle. Institut Kinderwunsch (IVF)."
  },
@@ -3606,10 +3616,10 @@
    "fb_endoskopie",
    "fb_physiotherapie",
    "fb_op",
-   "fb_kreisssaal"
+   "fb_kreisssaal",
+   "amb_notaufnahme"
   ],
   "unklar": [
-   "amb_notaufnahme",
    "fb_mrt",
    "fb_schockraum",
    "amb_onko_tagesklinik",
@@ -3625,7 +3635,8 @@
    "https://www.ooeg.at/pek/ki/fachbereiche/palliativeinheit (Palliativeinheit 6. OG)",
    "https://www.ooeg.at/pek/ki/fachbereiche/radiologie (Röntgen/Ultraschall, Infiltration/CT, interventionelle Radiologie mit Durchleuchtung, CT, Angiografie)",
    "https://www.ooeg.at/pek/ki/fachbereiche/tageschirurgie, physikalische-medizin-und-rehabilitation/physiotherapie",
-   "https://www.ooeg.at/pek/ki/patienten/aufnahme-anmeldung (Zentrale Aufnahme; keine eigene ZAE-Seite)"
+   "https://www.ooeg.at/pek/ki/patienten/aufnahme-anmeldung (Zentrale Aufnahme; keine eigene ZAE-Seite)",
+   "PEK Kirchdorf: chirurgische 24-h-Akutambulanz"
   ],
   "notiz": "Keine eigene Notaufnahme/ZAE-Seite; Akutversorgung über chirurgische 24h-Akutambulanz, Unfallambulanz und pädiatrische Notfallambulanz. MRT nicht belegt. Augenheilkunde und Psychiatrie nur Konsiliarangebot; Dermatologie telemedizinisch durch Ordensklinikum Elisabethinen; Nuklearmedizin über PEK Steyr."
  },
@@ -4586,7 +4597,6 @@
    "amb_schmerz",
    "amb_schrittmacher",
    "amb_diabetes",
-   "amb_psychiatrie_krise",
    "amb_tagesklinik",
    "fb_roentgen",
    "fb_ct",
@@ -4622,7 +4632,8 @@
    "https://www.lkh-hochsteiermark.at/abteilungen/abteilung-fuer-augenheilkunde (Augenabteilung Bruck inkl. Akut-/Notfallambulanz, OP, Tagesklinik)",
    "https://www.lkh-hochsteiermark.at/abteilungen/dislozierte-ambulanzen-des-lkh-graz-ii (allgemeinpsychiatrische + suchtmedizinische Ambulanz, keine Station, nicht für akute Selbst-/Fremdgefährdung)",
    "https://www.lkh-hochsteiermark.at/abteilungen/tagesklinisches-zentrum (interdisziplinäre Tagesklinik Bruck: Chirurgie, HNO, Orthopädie, Kardiologie)",
-   "https://www.lkh-hochsteiermark.at/abteilungen/medizinisch-technische-dienste (Physiotherapie Bruck/Leoben/Mürzzuschlag)"
+   "https://www.lkh-hochsteiermark.at/abteilungen/medizinisch-technische-dienste (Physiotherapie Bruck/Leoben/Mürzzuschlag)",
+   "Psychiatrie nur Terminambulanz, keine Krisenaufnahme"
   ],
   "notiz": "Verbund LKH Hochsteiermark (Bruck/Leoben/Mürzzuschlag). Orthopädie & Traumatologie, Chirurgie, Gyn/Geburtshilfe, Urologie, HNO, Kinder, Palliativ, Onkologie sind am Standort Leoben; in Bruck nur tagesklinische orthopädische Eingriffe. ECMO an der interdisziplinären Intensivstation genannt (kein 'Cardiac Arrest Center' ausdrücklich). Pneumologie hat eine Respiratory Care Unit (RCU). Kardiologische Fachambulanz inkl. Herzinsuffizienzbetreuung, HerzMobil-Programm. Psychiatrie nur ambulant (dislozierte Ambulanz LKH Graz II). Notarztstützpunkt (NEF) Bruck."
  },
@@ -4713,10 +4724,10 @@
    "fb_endoskopie",
    "fb_echo",
    "fb_lungenfunktion",
-   "fb_physiotherapie"
+   "fb_physiotherapie",
+   "amb_notaufnahme"
   ],
   "unklar": [
-   "amb_notaufnahme",
    "amb_schrittmacher",
    "st_innere_medizin"
   ],
@@ -4726,7 +4737,8 @@
    "https://www.lkh-rottenmann.at/abteilungen/internistische-ambulanz (dislozierte internistische Ambulanz Mo-Fr 7-15 Uhr: Röntgen, CT, Ultraschall/Herzecho, TEE, Endoskopie, Lungenfunktion, Schrittmacherkontrollen)",
    "https://www.lkh-rottenmann.at/abteilungen/standort-rottenmann/radiologie (Leitende Radiologietechnologin Bad Aussee)",
    "https://www.lkh-rottenmann.at/abteilungen/standort-rottenmann/physiotherapie (Leitung Physiotherapie Bad Aussee)",
-   "https://www.lkh-murtal.at/abteilungen/abteilung-fuer-neurologie (Teleneurologie: Knittelfelder Neurologen unterstützen Internisten im LKH Bad Aussee bei akuten Schlaganfällen)"
+   "https://www.lkh-murtal.at/abteilungen/abteilung-fuer-neurologie (Teleneurologie: Knittelfelder Neurologen unterstützen Internisten im LKH Bad Aussee bei akuten Schlaganfällen)",
+   "LKH Bad Aussee: Akutambulanz (Basisversorgung) täglich 0–24"
   ],
   "notiz": "Kleiner Standort: stationär nur AG/R; internistische Ambulanz nur Mo-Fr 7-15 Uhr (keine 24h-Notaufnahme belegt). Keine Chirurgie/kein OP auf der Website genannt. Teleneurologie-Anbindung an LKH Murtal/Knittelfeld für akute Schlaganfälle."
  },
@@ -4861,12 +4873,12 @@
    "fb_endoskopie",
    "fb_echo",
    "fb_op",
-   "fb_physiotherapie"
+   "fb_physiotherapie",
+   "amb_unfall"
   ],
   "unklar": [
    "fb_roentgen",
    "fb_ct",
-   "amb_unfall",
    "st_physikalische_medizin",
    "st_kinder_jugendheilkunde",
    "z_wirbelsaeule",
@@ -4879,7 +4891,8 @@
    "https://www.lkh-murtal.at/abteilungen/internistische-ambulanz (internistische Notfallambulanz Mo-Fr 7-19 Uhr, außerhalb Versorgung durch Knittelfeld)",
    "https://www.lkh-murtal.at/abteilungen/medizinische-radiologie-diagnostik/mrt-institut-dr-peter-schmidt (MRT 1,5 T am Standort Stolzalpe)",
    "https://www.lkh-murtal.at/abteilungen/institut-fuer-physikalische-medizin-u-rehabilitation-pmr (Institut PMR, Physiotherapie/physikalische Therapie)",
-   "https://www.lkh-murtal.at/abteilungen/dislozierte-ambulanz-fuer-kinder-und-jugendheilkunde (dislozierte Kinderambulanz des LKH Hochsteiermark, Kinderdiabetes-/Kinderrheuma-/Hüftultraschallambulanz)"
+   "https://www.lkh-murtal.at/abteilungen/dislozierte-ambulanz-fuer-kinder-und-jugendheilkunde (dislozierte Kinderambulanz des LKH Hochsteiermark, Kinderdiabetes-/Kinderrheuma-/Hüftultraschallambulanz)",
+   "LKH Stolzalpe: orthopädische Erstversorgung 0–24"
   ],
   "notiz": "Orthopädisches Schwerpunkthaus. Internistische Notfallambulanz nur Mo-Fr 7-19 Uhr (keine 24h-Notaufnahme); orthopädische Akutambulanz 8-11 Uhr, Unfallversorgung primär in Judenburg. Röntgen/CT am Standort auf der Website nicht ausdrücklich beschrieben (Radiologietechnologie-Team vorhanden, MRT belegt). Wirbelsäulenchirurgie als Schwerpunkt, aber kein ausdrückliches 'Wirbelsäulenzentrum'."
  },
@@ -5021,7 +5034,6 @@
    "amb_schrittmacher",
    "amb_schwangere",
    "amb_stoma",
-   "amb_psychiatrie_krise",
    "amb_tagesklinik",
    "fb_roentgen",
    "fb_ct",
@@ -5049,7 +5061,8 @@
    "https://www.lkh-oststeiermark.at/abteilungen/pflege/pflege-in-den-ambulanzen (Chirurgische Ambulanz versorgt Allgemein- und Unfallchirurgie, Erstversorgung von Verletzten, Gips, Wundmanagement; Kontinenz- und Stomaberatung)",
    "https://www.lkh-oststeiermark.at/abteilungen/pflege/pflege-in-den-ambulanzen/pflege-in-den-bettenstationen (Bettenstationen: Gyn/GH, Chirurgie, Tagesstation, 2 interne Stationen)",
    "https://www.lkh-oststeiermark.at/abteilungen/institut-fuer-radiologie (Radiologische Ambulanz und Computertomographie Standort Hartberg)",
-   "https://www.lkh-oststeiermark.at/abteilungen/psychiatrische-ambulanz/disl-psych-ambulanz (dislozierte psychiatrische Ambulanz des LKH Graz II); https://www.lkh-oststeiermark.at/abteilungen/psychiatrische-ambulanz/kjp (Ambulanz & Tagesklinik Kinder- und Jugendpsychiatrie)"
+   "https://www.lkh-oststeiermark.at/abteilungen/psychiatrische-ambulanz/disl-psych-ambulanz (dislozierte psychiatrische Ambulanz des LKH Graz II); https://www.lkh-oststeiermark.at/abteilungen/psychiatrische-ambulanz/kjp (Ambulanz & Tagesklinik Kinder- und Jugendpsychiatrie)",
+   "Psychiatrie nur Terminambulanz, keine Krisenaufnahme"
   ],
   "notiz": "Keine eigene O&T-Station in Hartberg (Bettenstationen nur Chirurgie, Gyn/GH, Innere); Unfallversorgung über chirurgische Ambulanz. MRT laut Partnerseite über externes 'CT MR Hartberg' (Kooperation) – unklar. Psychiatrie und KJP nur als dislozierte Ambulanz/Tagesklinik des LKH Graz II, keine Station."
  },

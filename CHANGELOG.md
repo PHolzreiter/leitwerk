@@ -1,5 +1,22 @@
 # Änderungen
 
+## 0.27.0 – Öffnungszeiten, Plätze und Belegung der Krankenhäuser, Fenster „KH-Status“
+**Öffnungszeiten**
+- Notaufnahmen, Unfallambulanzen, Kindernotaufnahmen, Herzkatheter, Schockräume, Kreißsäle, Stroke Units und Druckkammer haben jetzt ihre Zeiten laut Website (z. B. Notaufnahme Elisabethinen Graz Mo–Fr 7–15, Barmherzige Schwestern Wien Mo–Fr 8–18, Herzkatheter Waidhofen/Ybbs Mo–Fr 7–19, Unfall Neunkirchen Mo–Fr 7:30–15:30). Ohne Angabe gilt rund um die Uhr
+- Ist die Notaufnahme zu, nimmt das Haus keine allgemeinen Rettungspatienten; Kreißsaal, Herzkatheter, Stroke Unit und Schockraum zählen nach ihren eigenen Zeiten
+- Linzer Aufnahmerad nach dem offiziellen Kalender (21-Tage-Zyklus, Wechsel um 7 Uhr): Barmherzige Schwestern, Barmherzige Brüder/Elisabethinen und Kepler wechseln sich ab; Stroke und PCI nach den Sonderregeln. Wiener Herzinfarkt- und Schlaganfall-Dienste (Landstraße, Hanusch) als Zeitfenster
+- Thrombektomie nur noch, wo sie wirklich gemacht wird (Wien: AKH, Landstraße, Barmherzige Brüder; Graz: Uniklinikum; nicht Wels)
+
+**Plätze und Belegung**
+- Jedes Haus hat Plätze je Bereich: Schockraum (Trauma, internistisch oder kombiniert), Herzkatheter, ECMO, Notaufnahme, Unfall, Kindernotaufnahme, Kreißsaal, Stroke Unit, Druckkammer – genannte Zahlen von den Websites, sonst aus der Größe des Hauses (Betten laut Krankenanstalten-Verzeichnis, Patientenzahlen). St. Pölten: 2 internistische + 1 Unfall-Schockraum, Krems: 1 Schockraum
+- Dein Patient belegt ab der Buchung einen Platz (Schockraum 30–60 min, PCI 60–90 min, Notaufnahme 2–4 h, Kreißsaal 4–8 h …)
+- Grundbelegung durch andere Patienten mit Tageskurve (vormittags viel, nachts kaum); Schockraum, PCI, ECMO und Druckkammer nur sehr selten. Einstellungen → Einsatzaufkommen: Regler und Ausschalter
+- Die Besatzung bucht ein offenes Haus mit freiem Platz. Beim Buchen siehst du „zu“ oder „belegt“ – wählen kannst du trotzdem, niemand meldet sich
+
+**Anzeige**
+- Karte: kleines Fenster mit dem Wichtigsten (offen/zu, freie Plätze) und „Mehr Info“ mit allen Akut-Abteilungen, Stationen, Ambulanzen und Zeiten. Quellen stehen nur noch in den Einstellungen
+- Neues Fenster „KH-Status“ (Fenster-Menü): alle Häuser in der Nähe mit freien Plätzen in Notaufnahme, Unfall, Kinder, Schockraum, PCI, Stroke Unit und Kreißsaal
+
 ## 0.26.0 – Krankenhäuser mit Stationen und Ambulanzen, Buchung nach Verdachtsdiagnose
 **Krankenhäuser**
 - Für jedes Krankenhaus steht jetzt, welche Einrichtungen es hat: Stationen, Intensiv- und Überwachungsstationen, Ambulanzen, Funktionsbereiche (CT, Herzkatheter, Schockraum, Kreißsaal …) und Zentren. Recherchiert auf den offiziellen Websites aller 96 bisherigen Häuser (Stand Oktober 2026); was dort nicht belegt ist, ist nicht eingetragen

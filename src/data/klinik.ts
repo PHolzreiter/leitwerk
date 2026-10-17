@@ -71,7 +71,11 @@ export function akutVon(h: Hospital): Set<string> {
   if (c) return c;
   const haben = new Set(h.einrichtungen?.length ? h.einrichtungen : einrichtungenAusAlt(h.abteilungen as Record<string, boolean> | undefined, h.bereiche));
   const aus = new Set(h.akutAus ?? []);
-  const out = new Set(AKUT.filter((a) => !aus.has(a.id) && erfuellt(haben, a.voraussetzung)).map((a) => a.id));
+  let out = new Set(AKUT.filter((a) => !aus.has(a.id) && erfuellt(haben, a.voraussetzung)).map((a) => a.id));
+  // ohne Notaufnahme/Unfall: nur, was die Rettung direkt anfährt oder eine eigene Tür hat (Kreißsaal, Psychiatrie, Kinder)
+  if (out.size && !["amb_notaufnahme", "amb_unfall", "fb_schockraum"].some((x) => haben.has(x))) {
+    out = new Set([...out].filter((id) => DIREKT.has(id) || tueren(h, id).length > 0));
+  }
   cache.set(h, out);
   return out;
 }
@@ -82,13 +86,39 @@ export function akutMoeglich(einrichtungen: string[]): AkutAbteilung[] {
   return AKUT.filter((a) => erfuellt(haben, a.voraussetzung));
 }
 
-/** Akut-Abteilungen, die zum Zeitpunkt t offen sind (Öffnungszeiten, Aufnahmerad) */
+/** Diese Akut-Abteilungen erreicht die Rettung direkt (eigene Zeiten in den Einrichtungen), ohne Notaufnahme */
+const DIREKT = new Set(["ak_herzkatheter", "ak_stroke_unit", "ak_thrombektomie", "ak_schockraum", "ak_druckkammer", "ak_cardiac_arrest_center", "ak_kreisssaal", "ak_angiographie", "ak_ct", "ak_mrt", "ak_dialyse"]);
+const TRAUMA_AK = new Set(["ak_unfallchirurgie", "ak_chirurgische_intensiv", "ak_neurochirurgie", "ak_plastische_chirurgie", "ak_thoraxchirurgie", "ak_wirbelsaeulenchirurgie", "ak_mkg", "ak_verbrennungszentrum", "ak_allgemeinchirurgie", "ak_gefaesschirurgie"]);
+const KINDER_AK = new Set(["ak_kinder_jugendheilkunde", "ak_kinder_intensiv", "ak_neonatologie", "ak_kinderchirurgie"]);
+const PSYCH_AK = new Set(["ak_psychiatrie", "ak_kinder_jugend_psychiatrie", "ak_sucht_entzug"]);
+
+/** Über welche Tür kommt die Rettung zu dieser Akut-Abteilung? (eine offene reicht) */
+function tueren(h: Hospital, ak: string): string[] {
+  const e = new Set(h.einrichtungen ?? []);
+  const na = e.has("amb_notaufnahme") ? ["amb_notaufnahme"] : [];
+  const unfall = ["amb_unfall", "fb_schockraum"].filter((x) => e.has(x));
+  let t: string[];
+  if (TRAUMA_AK.has(ak)) t = [...unfall, ...na];
+  else if (KINDER_AK.has(ak)) t = [...["amb_kindernotaufnahme"].filter((x) => e.has(x)), ...na];
+  else if (PSYCH_AK.has(ak)) t = [...["amb_psychiatrie_krise"].filter((x) => e.has(x)), ...na];
+  else if (ak === "ak_gynaekologie") t = [...["fb_kreisssaal"].filter((x) => e.has(x)), ...na];
+  else t = na.length ? na : unfall;
+  return t;
+}
+
+/** Akut-Abteilungen, die zum Zeitpunkt t aufnehmen (Öffnungszeiten, Aufnahmerad, offene Notaufnahme) */
 export function akutJetzt(h: Hospital, t: number): Set<string> {
   const alle = akutVon(h);
   const out = new Set<string>();
   for (const id of alle) {
     const a = E2.get(id)!;
-    if (a.voraussetzung.some((alt) => alt.every((x) => offen(h, x, t)))) out.add(id);
+    if (!a.voraussetzung.some((alt) => alt.every((x) => offen(h, x, t)))) continue;
+    if (!DIREKT.has(id)) {
+      const tue = tueren(h, id);
+      // Haus ohne eigene Notfall-Tür: nicht zusätzlich einschränken
+      if (tue.length && !tue.some((x) => offen(h, x, t))) continue;
+    }
+    out.add(id);
   }
   return out;
 }
