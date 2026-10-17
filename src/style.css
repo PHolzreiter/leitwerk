@@ -2985,3 +2985,280 @@ input[type="color"] {
 .data-table th.sortierbar:hover { color: var(--blue); }
 .data-table th .sort-pfeil { font-size: 10px; margin-left: 3px; color: var(--blue); }
 .data-table tr.fremd td { color: var(--text-dim); }
+
+/* ---------------------------------------------------------------- Krankenhaus: Popup, Detail, KH-Status */
+.khp {
+  position: relative;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 1px;
+  min-width: 42px;
+  justify-content: center;
+  padding: 1px 6px;
+  border-radius: 5px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--text);
+}
+.khp b {
+  font-weight: 700;
+  position: relative;
+}
+.khp-bar {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--anteil);
+  opacity: 0.18;
+  background: currentColor;
+}
+.khp.frei {
+  color: var(--ok);
+  border-color: color-mix(in srgb, var(--ok) 45%, var(--line));
+}
+.khp.knapp {
+  color: var(--warn-text);
+  border-color: color-mix(in srgb, var(--warn) 55%, var(--line));
+  background: var(--warn-bg);
+}
+.khp.voll {
+  color: var(--alert-text);
+  border-color: color-mix(in srgb, var(--alert-text) 45%, var(--line));
+  background: var(--alert-bg);
+}
+.khp.zu {
+  color: var(--text-dim);
+  border-style: dashed;
+}
+.khp.leer {
+  color: var(--text-dim);
+  border-color: transparent;
+  background: transparent;
+}
+.khk {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 240px;
+}
+.khk-name {
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 1.25;
+}
+.khk-ort {
+  color: var(--text-dim);
+  font-size: 12px;
+}
+.khk-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.khk-tag {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 10px;
+  background: var(--hover);
+  color: var(--text-dim);
+}
+.khk-tag.ja {
+  background: color-mix(in srgb, var(--ok) 14%, transparent);
+  color: var(--ok);
+}
+.khk-tag.nein {
+  background: var(--warn-bg);
+  color: var(--warn-text);
+}
+.khk-rad {
+  font-size: 12px;
+  color: var(--blue);
+}
+.khk-liste {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  border-top: 1px solid var(--line);
+  padding-top: 6px;
+}
+.khk-z {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+}
+.khk-knoepfe {
+  display: flex;
+  gap: 6px;
+}
+.khd {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.khd section h3 {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin: 0 0 6px;
+}
+.khd-kopf {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.khd-ort {
+  color: var(--text-dim);
+}
+.khd-plaetze {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 6px;
+}
+.khd-platz {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto auto;
+  column-gap: 8px;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+.khd-platz .khp {
+  grid-row: 1 / span 2;
+  grid-column: 2;
+  align-self: center;
+}
+.khd-pn {
+  font-weight: 600;
+  font-size: 13px;
+}
+.khd-pz {
+  font-size: 11.5px;
+  color: var(--text-dim);
+}
+.khd-gruppe {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 8px;
+  align-items: start;
+  margin-bottom: 6px;
+}
+.khd-gruppe h4 {
+  margin: 3px 0 0;
+  font-size: 12px;
+  color: var(--text-dim);
+  font-weight: 600;
+}
+.khd-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.khd-chip {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--ok) 12%, transparent);
+  color: var(--text);
+}
+.khd-chip.zu {
+  background: transparent;
+  border: 1px dashed var(--line);
+  color: var(--text-dim);
+}
+.khd-chip.plain {
+  background: var(--hover);
+}
+.khd-einr summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+  padding: 3px 0;
+}
+.khd-einr .khd-chips {
+  padding: 4px 0 8px;
+}
+.khs {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+.khs-kopf {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  padding: 8px;
+  border-bottom: 1px solid var(--line);
+}
+.khs-such {
+  flex: 1 1 140px;
+  min-width: 0;
+}
+.khs-check {
+  font-size: 12px;
+  white-space: nowrap;
+}
+.khs-tab {
+  overflow: auto;
+  min-height: 0;
+  flex: 1;
+}
+.khs-z {
+  display: grid;
+  grid-template-columns: minmax(130px, 1.6fr) repeat(7, minmax(52px, 1fr));
+  gap: 4px;
+  align-items: center;
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+}
+.khs-z:hover,
+.khs-z:focus-visible {
+  background: var(--hover);
+  outline: none;
+}
+.khs-z > span:not(.khs-name) {
+  text-align: center;
+}
+.khs-head {
+  position: sticky;
+  top: 0;
+  background: var(--panel);
+  z-index: 1;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  cursor: default;
+}
+.khs-head:hover {
+  background: var(--panel);
+}
+.khs-name {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.khs-name b {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.khs-name small {
+  color: var(--text-dim);
+  font-size: 11px;
+}
+.khs-leer {
+  padding: 16px;
+  color: var(--text-dim);
+}

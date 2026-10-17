@@ -3,7 +3,7 @@ import maplibregl from "maplibre-gl";
 import type { Feature as GFeature, FeatureCollection, LineString, Point } from "geojson";
 import { flughoehe } from "./sim/bewegung";
 import { PARTNER_PHASE_TEXT, sim } from "./sim/engine";
-import { akutAbteilung, akutVon } from "./data/klinik";
+import { khKurzElement } from "./ui/khInfo";
 import { PARTNER_ANZAHL, partnerArtVonTyp, type PartnerArt } from "./sim/partner";
 import { kategorieLabel, poiKategorien } from "./data/orte";
 import { findCode } from "./sim/codes";
@@ -357,13 +357,15 @@ function showDetails(map: maplibregl.Map, kind: Kind, id: string, at: maplibregl
   } else if (kind === "hospitals") {
     const h = store.get("hospitals", id) as Hospital | undefined;
     if (!h) return;
-    const yes = [...akutVon(h)].map((a) => akutAbteilung(a)?.name ?? a);
-    body.innerHTML = `
-      <div class="lw-popup-title">${esc(h.name)}</div>
-      <div class="lw-popup-sub">${esc(h.ort)}</div>
-      <div class="lw-popup-sub">Akut-Abteilungen (${yes.length})</div>
-      <div class="lw-popup-list">${yes.map((y) => `<span class="dep">${esc(y)}</span>`).join("") || "<em>keine Akutaufnahme</em>"}</div>
-      ${h.hinweis ? `<div class="lw-popup-meta">${esc(h.hinweis)}</div>` : ""}`;
+    // kurze Übersicht; Details über „Mehr Info“ – Quellen nur in den Einstellungen
+    body.appendChild(
+      khKurzElement(h, () => {
+        openPopup?.remove();
+        cb.onEdit(kind, id);
+      }),
+    );
+    openPopup = new maplibregl.Popup({ maxWidth: "320px" }).setLngLat(at).setDOMContent(body).addTo(map);
+    return;
   } else {
     const p = store.get(kind, id) as Poi | undefined;
     if (!p) return;

@@ -22,6 +22,7 @@ import "./ui/panels/telefon";
 import "./ui/panels/abfrage";
 import "./ui/panels/masken";
 import "./ui/panels/kommunikation";
+import "./ui/khInfo";
 import { alleAnrufe, anrufAnnehmen, anrufAuflegen, anrufBeobachterStarten, anrufHalten, istMeins, meinGespraech } from "./ui/panels/telefon";
 import { anordnungLaden, arbeitsplatzStarten, panelOeffnen, panelZeigen, VORLAGEN, vorlageAnwenden } from "./ui/ws/arbeitsplatz";
 import { IST_HAUPT } from "./ui/ws/bus";

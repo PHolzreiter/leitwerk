@@ -133,6 +133,10 @@ export interface Settings {
   fremdzoneAktiv?: boolean;
   /** solche Einsätze pro Stunde (ungefähr) */
   fremdzoneProStunde?: number;
+  /** Krankenhäuser: zufällige Grundbelegung (andere Leitstellen, Selbstzuweiser) */
+  khGrundAktiv?: boolean;
+  /** Stärke der Grundbelegung (1 = normal, 0–2) */
+  khGrundFaktor?: number;
   /** Wie oft sich Lagen verändern (Verschlechterung, Irrtum des Anrufers, mehr Betroffene) */
   komplikationen: "ruhig" | "normal" | "fordernd";
   gebiet: Gebiet;
@@ -202,6 +206,8 @@ export function defaultSettings(): Settings {
     anrufe: true,
     fremdzoneAktiv: false,
     fremdzoneProStunde: 1,
+    khGrundAktiv: true,
+    khGrundFaktor: 1,
     komplikationen: "normal",
     gebiet: GEBIETE[0],
     sondersignalFaktor: 0.8,

@@ -1,6 +1,7 @@
 /** Datenmodell einer Leitstelle (Stammdaten). */
 import { BEREICH_EINRICHTUNG, einrichtung, einrichtungenAusAlt } from "./klinik";
 import type { Schicht } from "../sim/dienst";
+import type { Aufnahmerad, Ressource } from "../sim/khStatus";
 
 /** Herkunft eines Datensatzes. */
 export type Origin = "standard" | "import" | "manuell";
@@ -159,6 +160,12 @@ export interface Hospital extends Base {
   einrichtungen?: string[];
   /** abgeschaltete Akut-Abteilungen (Station vorhanden, aber keine Akutaufnahme) */
   akutAus?: string[];
+  /** Öffnungszeiten je Einrichtung (ohne Eintrag: rund um die Uhr) */
+  zeiten?: Record<string, Schicht[]>;
+  /** Plätze der Akut-Bereiche (Schockraum, Herzkatheter, Notaufnahme …) */
+  plaetze?: Partial<Record<Ressource, number>>;
+  /** Aufnahmerad (z. B. Linz): manche Einrichtungen nur am Aufnahmetag offen */
+  aufnahmerad?: Aufnahmerad | null;
   /** veraltet: frühere Abteilungs-Häkchen (nur noch zum Einlesen alter Daten) */
   abteilungen?: Partial<Record<HospitalFlag, boolean>>;
   /** veraltet: frühere Bereichskürzel (nur noch zum Einlesen alter Daten) */

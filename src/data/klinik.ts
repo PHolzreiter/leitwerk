@@ -7,6 +7,7 @@
  */
 import daten from "./klinik.json";
 import type { Hospital } from "./model";
+import { belegt, offen, platzFuer, plaetze, ressourcenFuer, type BelegungMap, type Ressource } from "../sim/khStatus";
 
 export type EinrichtungTyp = "station" | "intensiv" | "ambulanz" | "funktionsbereich" | "zentrum";
 export interface Einrichtung {
@@ -81,7 +82,25 @@ export function akutMoeglich(einrichtungen: string[]): AkutAbteilung[] {
   return AKUT.filter((a) => erfuellt(haben, a.voraussetzung));
 }
 
+/** Akut-Abteilungen, die zum Zeitpunkt t offen sind (Öffnungszeiten, Aufnahmerad) */
+export function akutJetzt(h: Hospital, t: number): Set<string> {
+  const alle = akutVon(h);
+  const out = new Set<string>();
+  for (const id of alle) {
+    const a = E2.get(id)!;
+    if (a.voraussetzung.some((alt) => alt.every((x) => offen(h, x, t)))) out.add(id);
+  }
+  return out;
+}
+
 export type Eignung = "passend" | "ausweich" | "rueckfall" | null;
+
+function eignungMit(ak: Set<string>, b: Buchung | undefined, rot: boolean): Eignung {
+  if (!b) return ak.has("ak_notaufnahme") ? "passend" : null;
+  if (erfuellt(ak, b.optionen)) return "passend";
+  if (!b.zeitkritisch && !rot && b.ausweich && erfuellt(ak, AUSWEICH[b.ausweich])) return "ausweich";
+  return null;
+}
 
 /**
  * Passt das Haus zur Buchung?
@@ -89,11 +108,7 @@ export type Eignung = "passend" | "ausweich" | "rueckfall" | null;
  * sonst null (Rückfall entscheidet der Aufrufer).
  */
 export function eignung(h: Hospital, b: Buchung | undefined, rot: boolean): Eignung {
-  if (!b) return akutVon(h).has("ak_notaufnahme") ? "passend" : null;
-  const ak = akutVon(h);
-  if (erfuellt(ak, b.optionen)) return "passend";
-  if (!b.zeitkritisch && !rot && b.ausweich && erfuellt(ak, AUSWEICH[b.ausweich])) return "ausweich";
-  return null;
+  return eignungMit(akutVon(h), b, rot);
 }
 
 /** Erste erfüllte Option (0 = bevorzugt) oder -1 */
@@ -106,28 +121,70 @@ export interface KhVorschlag {
   h: Hospital;
   eignung: Exclude<Eignung, null>;
   km: number;
+  /** passt grundsätzlich, ist aber gerade zu (Öffnungszeit, Aufnahmerad) */
+  zu: boolean;
+  /** offen, aber alle Plätze belegt */
+  voll: boolean;
+  /** Platz, den der Patient belegen würde */
+  platz: Ressource | null;
+  frei: number;
+  gesamt: number;
 }
 
 /** Wie weit ein passendes Haus höchstens entfernt sein darf, bevor der Rückfall greift (Luftlinie) */
 export const ERREICHBAR_KM = 100;
 
+export interface VorschlagOpt {
+  t: number;
+  belegung?: BelegungMap;
+  kind?: boolean;
+}
+
 /**
- * Vorschläge zu einer Buchung, nach Entfernung sortiert: zuerst passende (bevorzugte Option vor weiteren),
- * dann Ausweich-Häuser. Ohne erreichbares Haus: Rückfall (Schockraum/Unfall bei Trauma, sonst Notaufnahme).
+ * Vorschläge zu einer Buchung: zuerst passende (bevorzugte Option vor weiteren), dann Ausweich-Häuser,
+ * jeweils nach Entfernung; mit Angabe, ob das Haus gerade zu oder voll ist. Ohne erreichbares Haus:
+ * Rückfall (Schockraum/Unfall bei Trauma, sonst Notaufnahme).
  */
-export function khVorschlaege(alle: Hospital[], b: Buchung | undefined, rot: boolean, km: (h: Hospital) => number): KhVorschlag[] {
+export function khVorschlaege(alle: Hospital[], b: Buchung | undefined, rot: boolean, km: (h: Hospital) => number, opt?: VorschlagOpt): KhVorschlag[] {
+  const t = opt?.t;
+  const info = (h: Hospital, e: Exclude<Eignung, null>, k: number): KhVorschlag => {
+    let zu = false;
+    let platz: Ressource | null = null;
+    let frei = 0;
+    let gesamt = 0;
+    let voll = false;
+    if (t !== undefined) {
+      const jetzt = akutJetzt(h, t);
+      zu = e === "rueckfall" ? false : eignungMit(jetzt, b, rot) === null;
+      const p = platzFuer(h, opt?.belegung, ressourcenFuer(b?.id, e, !!opt?.kind), t);
+      if (p) {
+        platz = p.r;
+        gesamt = plaetze(h, p.r);
+        frei = Math.max(0, gesamt - belegt(opt?.belegung, h.id, p.r, t));
+        voll = !p.frei;
+      }
+    }
+    return { h, eignung: e, km: k, zu, voll, platz, frei, gesamt };
+  };
   const mit = alle.map((h) => ({ h, km: km(h), e: eignung(h, b, rot), o: b ? Math.max(0, optionIndex(h, b)) : 0 }));
   // bevorzugte Option zuerst – eine weitere Option nur, wenn sie deutlich (15 km je Stufe) näher ist
   const passend = mit.filter((x) => x.e === "passend" && x.km <= ERREICHBAR_KM).sort((a, c) => a.km + a.o * 15 - (c.km + c.o * 15));
   const ausweich = mit.filter((x) => x.e === "ausweich" && x.km <= ERREICHBAR_KM).sort((a, c) => a.km - c.km);
-  const out: KhVorschlag[] = [...passend.map((x) => ({ h: x.h, eignung: "passend" as const, km: x.km })), ...ausweich.map((x) => ({ h: x.h, eignung: "ausweich" as const, km: x.km }))];
-  if (out.length) return out;
+  const out: KhVorschlag[] = [...passend.map((x) => info(x.h, "passend", x.km)), ...ausweich.map((x) => info(x.h, "ausweich", x.km))];
+  // Rückfall, wenn kein passendes Haus offen ist
+  if (out.some((v) => !v.zu)) return out;
   const rf = RUECKFALL[b?.kategorie === "Trauma" ? "Trauma" : "sonst"] ?? RUECKFALL.sonst;
   for (const alt of rf) {
-    const r = mit.filter((x) => alt.every((a) => akutVon(x.h).has(a))).sort((a, c) => a.km - c.km);
-    if (r.length) return r.map((x) => ({ h: x.h, eignung: "rueckfall" as const, km: x.km }));
+    const ak = (h: Hospital) => (t !== undefined ? akutJetzt(h, t) : akutVon(h));
+    const r = mit.filter((x) => alt.every((a) => ak(x.h).has(a)) && !out.some((v) => v.h === x.h)).sort((a, c) => a.km - c.km);
+    if (r.length) return [...out, ...r.map((x) => info(x.h, "rueckfall", x.km))];
   }
-  return [];
+  return out;
+}
+
+/** Ziel für die Besatzung: erstes Haus, das offen ist und einen freien Platz hat (sonst offen, sonst irgendeins) */
+export function bestesKh(v: KhVorschlag[]): KhVorschlag | undefined {
+  return v.find((x) => !x.zu && !x.voll) ?? v.find((x) => !x.zu) ?? v[0];
 }
 
 // ------------------------------------------------------------------ alte Daten (Häkchen und Bereichskürzel)

@@ -170,6 +170,32 @@ export function createSettingsView(container: HTMLElement, teil: "simulation" | 
       fzRateLabel.hidden = !fzAn.checked;
     });
     aGrid.append(fzWrap, fzAn, fzRateLabel, fzRateZeile);
+    // Krankenhäuser: Grundbelegung (andere Leitstellen, Selbstzuweiser) mit Tageskurve
+    const kgAn = el("input", { type: "checkbox" }) as HTMLInputElement;
+    kgAn.checked = draft.khGrundAktiv !== false;
+    const kgRate = el("input", { type: "range", min: "0.1", max: "2", step: "0.1", class: "kh-grund" }) as HTMLInputElement;
+    kgRate.value = String(draft.khGrundFaktor ?? 1);
+    const kgWert = el("span", { class: "muted small" });
+    const kgText = () => (kgWert.textContent = `${Math.round(Number(kgRate.value) * 100)} %`);
+    kgText();
+    kgRate.addEventListener("input", () => {
+      draft.khGrundFaktor = Number(kgRate.value);
+      kgText();
+    });
+    const kgZeile = el("div", { class: "fremd-rate" });
+    kgZeile.append(kgRate, kgWert);
+    const kgLabel = el("label", {}, "Stärke der Grundbelegung");
+    kgZeile.hidden = kgLabel.hidden = !kgAn.checked;
+    kgAn.addEventListener("change", () => {
+      draft.khGrundAktiv = kgAn.checked;
+      kgZeile.hidden = kgLabel.hidden = !kgAn.checked;
+    });
+    aGrid.append(
+      el("label", { title: "Krankenhäuser sind auch ohne deine Patienten belegt – vormittags viel, nachts kaum. Schockraum, Herzkatheter, ECMO und Druckkammer nur sehr selten." }, "Krankenhäuser: Grundbelegung durch andere Patienten"),
+      kgAn,
+      kgLabel,
+      kgZeile,
+    );
     aSec.appendChild(aGrid);
 
     // Aufkommen je Stunde (Notfälle und Krankentransporte)

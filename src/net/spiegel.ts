@@ -27,6 +27,7 @@ function leer() {
     kt: new Map<string, string>(),
     ktIds: "",
     partner: "",
+    khBel: "",
   };
 }
 
@@ -142,6 +143,11 @@ export class DeltaBauer {
       d.partnerFz = pf;
       c.partner = pKey;
     }
+    const kb = JSON.stringify(st.khBelegung ?? {});
+    if (kb !== c.khBel) {
+      d.khBelegung = st.khBelegung ?? {};
+      c.khBel = kb;
+    }
     const chatN = st.chat?.length ?? 0;
     if (chatN !== c.chat) {
       d.chat = st.chat;
@@ -219,6 +225,7 @@ export function deltaAnwenden(d: Nachricht): void {
   }
   if (typeof d.ktZaehler === "number") st.ktZaehler = d.ktZaehler;
   if (d.partnerFz) st.partnerFz = d.partnerFz as SimState["partnerFz"];
+  if (d.khBelegung) st.khBelegung = d.khBelegung as SimState["khBelegung"];
   if (d.chat) st.chat = d.chat as SimState["chat"];
   sim.notify();
 }

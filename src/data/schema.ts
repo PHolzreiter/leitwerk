@@ -23,6 +23,41 @@ import {
   type VehicleCategory,
 } from "./model";
 import { akutAbteilung, EINRICHTUNGEN, einrichtungenAusAlt, einrichtungenOrdnen } from "./klinik";
+import { RESSOURCE, type Aufnahmerad, type Ressource } from "../sim/khStatus";
+
+/** Öffnungszeiten: „amb_notaufnahme: Mo–Fr 07:00–15:00; Sa 08:00–12:00 | fb_herzkatheter: täglich 00:00–24:00“ */
+function zeitenLesen(text: string): Record<string, Schicht[]> {
+  const out: Record<string, Schicht[]> = {};
+  for (const teil of text.split("|").map((x) => x.trim()).filter(Boolean)) {
+    const i = teil.indexOf(":");
+    if (i < 0) continue;
+    const id = teil.slice(0, i).trim();
+    if (!EINRICHTUNGEN.some((e) => e.id === id)) continue;
+    const { plan } = planLesen(teil.slice(i + 1).trim());
+    if (plan.length) out[id] = plan;
+  }
+  return out;
+}
+
+/** Plätze: „notaufnahme=12, schockraum=1“ */
+function plaetzeLesen(text: string): Partial<Record<Ressource, number>> {
+  const out: Partial<Record<Ressource, number>> = {};
+  for (const teil of text.split(/[,;]/).map((x) => x.trim()).filter(Boolean)) {
+    const m = teil.match(/^([a-z_]+)\s*=\s*(\d+)$/);
+    if (m && RESSOURCE.has(m[1] as Ressource)) out[m[1] as Ressource] = Number(m[2]);
+  }
+  return out;
+}
+
+/** Aufnahmerad: „Linz 2/4 07:30: amb_notaufnahme, fb_herzkatheter“ */
+function radLesen(text: string): Aufnahmerad | null {
+  const m = text.trim().match(/^(.+?)\s+(\d+)\s*\/\s*(\d+)\s+(\d{1,2}:\d{2})\s*:\s*(.+)$/);
+  if (!m) return null;
+  const anzahl = Number(m[3]);
+  const nr = Number(m[2]) - 1;
+  if (anzahl < 2 || nr < 0 || nr >= anzahl) return null;
+  return { gruppe: m[1].trim(), nr, anzahl, wechsel: m[4].padStart(5, "0"), einrichtungen: m[5].split(",").map((x) => x.trim()).filter(Boolean) };
+}
 
 /** Einrichtungen aus einer CSV-Zelle: IDs oder Namen, mit Komma getrennt */
 function einrichtungenLesen(text: string): string[] {
@@ -43,7 +78,7 @@ function einrichtungenLesen(text: string): string[] {
 export const COLUMNS: Record<Kind, string[]> = {
   stations: ["id", "name", "organisation", "typ", "ort", "bezirk", "adresse", "breitengrad", "laengengrad", "hinweis"],
   vehicles: ["id", "funkrufname", "kurzname", "kategorie", "typ", "aufbau", "modell", "dienststelle", "aktiv", "nachtflug", "dienstplan", "ersatz_fuer", "hinweis"],
-  hospitals: ["id", "name", "kurzname", "ort", "breitengrad", "laengengrad", "einrichtungen", "akut_aus", "hinweis"],
+  hospitals: ["id", "name", "kurzname", "ort", "breitengrad", "laengengrad", "einrichtungen", "akut_aus", "zeiten", "plaetze", "aufnahmerad", "hinweis"],
   pois: ["id", "name", "typ", "ort", "breitengrad", "laengengrad", "hinweis"],
   templates: ["id", "code", "adresse", "breitengrad", "laengengrad", "meldung", "patient_alter", "transport", "hinweis"],
   codes: ["id", "code", "name", "kategorie", "kapitel", "hinweis"],
@@ -103,6 +138,9 @@ const ALIASES: Record<string, string[]> = {
   bereiche: ["bereiche", "stationenambulanzen"],
   einrichtungen: ["einrichtungen", "stationen", "ambulanzen", "abteilungen"],
   akut_aus: ["akutaus", "akutabgeschaltet", "keineakutaufnahme"],
+  zeiten: ["zeiten", "oeffnungszeiten"],
+  plaetze: ["plaetze", "kapazitaet", "kapazitaeten"],
+  aufnahmerad: ["aufnahmerad", "aufnahmetage"],
   gyn_geburtshilfe: ["gyngeburtshilfe", "gyn", "geburtshilfe", "gynaekologie", "gynaekologieundgeburtshilfe"],
 };
 
@@ -531,6 +569,12 @@ export function importCsv<K extends Kind>(kind: K, text: string, ctx: ImportCont
             .map((x) => x.trim())
             .filter((x) => akutAbteilung(x));
           const h: Hospital = { ...base, id, name, kurzname: get("kurzname"), ort: get("ort"), lat, lon, einrichtungen, akutAus };
+          const z = zeitenLesen(get("zeiten"));
+          if (Object.keys(z).length) h.zeiten = z;
+          const pl = plaetzeLesen(get("plaetze"));
+          if (Object.keys(pl).length) h.plaetze = pl;
+          const rad = radLesen(get("aufnahmerad"));
+          if (rad) h.aufnahmerad = rad;
           record = h;
         } else {
           id = id || `poi-${slug(name)}`;
@@ -632,6 +676,14 @@ export function exportCsv<K extends Kind>(kind: K, records: KindMap[K][], statio
         Object.assign(v, { kurzname: h.kurzname, ort: h.ort });
         v.einrichtungen = (h.einrichtungen?.length ? h.einrichtungen : einrichtungenAusAlt(h.abteilungen, h.bereiche)).join(", ");
         v.akut_aus = (h.akutAus ?? []).join(", ");
+        v.zeiten = Object.entries(h.zeiten ?? {})
+          .filter(([, p]) => p.length)
+          .map(([k, p]) => `${k}: ${planText(p)}`)
+          .join(" | ");
+        v.plaetze = Object.entries(h.plaetze ?? {})
+          .map(([k, n]) => `${k}=${n}`)
+          .join(", ");
+        v.aufnahmerad = h.aufnahmerad ? `${h.aufnahmerad.gruppe} ${h.aufnahmerad.nr + 1}/${h.aufnahmerad.anzahl} ${h.aufnahmerad.wechsel}: ${h.aufnahmerad.einrichtungen.join(", ")}` : "";
       } else {
         const p = rec as Poi;
         Object.assign(v, { typ: p.typ, ort: p.ort });

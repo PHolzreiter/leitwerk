@@ -300,18 +300,24 @@ export function einsatzMaske(e: Einsatz): { root: HTMLElement; refresh(): void }
   let khKey = "";
   const fillKh = (force = false) => {
     const d = dringlichkeit();
-    const key = `${grundSel.value}|${d}|${e.adresse?.lat}`;
-    if (key === khKey && !force) return;
+    const key = `${grundSel.value}|${d}|${e.adresse?.lat}|${Math.floor(sim.state.zeit / 60_000)}`;
+    if ((key === khKey || document.activeElement === khSel) && !force) return;
     khKey = key;
     dringChip.className = `kh-dring ${d}`;
     dringChip.textContent = DRING_TEXT[d];
     const pos = e.adresse ?? e.wahr;
-    const vorschlaege = sim.khFuer(pos, grundSel.value || null, d === "rot");
+    const kind = (e.wahr.lage?.aufgedeckt ? (e.wahr.lage.patienten[0]?.alter ?? 99) : 99) < 15;
+    const vorschlaege = sim.khFuer(pos, grundSel.value || null, d === "rot", kind);
     const gezeigt = new Set(vorschlaege.map((v) => v.h.id));
     const alt = khSel.value;
     khSel.innerHTML = "";
     const MARKE = { passend: "passend", ausweich: "Ausweich", rueckfall: "Rückfall" } as const;
-    for (const v of vorschlaege) khSel.appendChild(el("option", { value: v.h.id, class: `kh-opt ${v.eignung}` }, `${v.h.kurzname || v.h.name} (${v.km.toFixed(0)} km) · ${MARKE[v.eignung]}`));
+    for (const v of vorschlaege) {
+      const lage = v.zu ? " · zu" : v.voll ? ` · belegt (${v.gesamt}/${v.gesamt})` : v.gesamt ? ` · ${v.frei}/${v.gesamt} frei` : "";
+      khSel.appendChild(el("option", { value: v.h.id, class: `kh-opt ${v.eignung}${v.zu || v.voll ? " nein" : ""}` }, `${v.h.kurzname || v.h.name} (${v.km.toFixed(0)} km) · ${MARKE[v.eignung]}${lage}`));
+    }
+    // zuerst ein Haus vorwählen, das offen ist und Platz hat
+    const erstes = vorschlaege.find((v) => !v.zu && !v.voll);
     // alle anderen bleiben wählbar (grau), nach Entfernung
     const rest = store
       .list("hospitals")
@@ -327,6 +333,7 @@ export function einsatzMaske(e: Einsatz): { root: HTMLElement; refresh(): void }
     }
     if (!khSel.options.length) khSel.appendChild(el("option", { value: "" }, "kein Krankenhaus gefunden"));
     if (alt && [...khSel.options].some((o) => o.value === alt) && !force) khSel.value = alt;
+    else if (erstes) khSel.value = erstes.h.id;
   };
   grundSel.addEventListener("change", () => fillKh(true));
   btnBook.addEventListener("click", () => {

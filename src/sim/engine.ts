@@ -8,7 +8,8 @@
 import { aktuelleSchicht, dienstEnde, imDienst, naechsterBeginn, type Schicht } from "./dienst";
 import { nachKlick } from "../klick";
 import { ACTIVE_CATEGORIES, bereicheVon, type Hospital, type Vehicle } from "../data/model";
-import { buchung, buchungName, khVorschlaege } from "../data/klinik";
+import { bestesKh, buchung, buchungName, eignung as khEignung, khVorschlaege } from "../data/klinik";
+import { grundbelegungTick, platzFuer, RESSOURCE, ressourcenFuer, type BelegungMap } from "./khStatus";
 import { verdachtFuer } from "./verdacht";
 import { store } from "../data/store";
 import { streuung } from "../data/schema";
@@ -575,6 +576,9 @@ export interface SimState {
   ktDauerTag?: number;
   /** Fahrzeuge von Feuerwehr, Polizei, Berg- und Wasserrettung im Einsatz */
   partnerFz?: PartnerFz[];
+  /** Belegung der Akut-Plätze in den Krankenhäusern */
+  khBelegung?: BelegungMap;
+  khGrundZeit?: number;
   partnerZaehler?: number;
 }
 
@@ -1104,6 +1108,7 @@ export class Simulation {
     this.dienstTick(t);
     for (const fz of Object.values(this.state.fahrzeuge)) this.updateVehicle(fz, t);
     this.partnerTick(t);
+    this.khTick(t);
     this.checkKhAnfragen(t);
     this.anrufeTick(t);
     this.lageTick(t);
@@ -1632,16 +1637,46 @@ export class Simulation {
     return p0 ? p0.sichtung === "rot" : this.kritisch(e);
   }
 
-  /** Krankenhäuser zur Verdachtsdiagnose, nach Eignung und Entfernung */
-  khFuer(pos: LatLon, verdacht: string | null | undefined, rot: boolean) {
+  /** Krankenhäuser zur Verdachtsdiagnose, nach Eignung und Entfernung – mit offen/zu und freien Plätzen */
+  khFuer(pos: LatLon, verdacht: string | null | undefined, rot: boolean, kind = false) {
     const alle = store.list("hospitals").filter((h) => this.khImNetz(h));
-    return khVorschlaege(alle, buchung(verdacht), rot, (h) => distanceM(pos, h) / 1000);
+    return khVorschlaege(alle, buchung(verdacht), rot, (h) => distanceM(pos, h) / 1000, { t: this.state.zeit, belegung: this.state.khBelegung, kind });
+  }
+
+  /** Grundbelegung der Krankenhäuser fortschreiben (einmal pro Simulationsminute) */
+  private khTick(t: number): void {
+    const b = (this.state.khBelegung ??= {});
+    const letzte = this.state.khGrundZeit ?? t;
+    const dt = (t - letzte) / MIN;
+    if (dt < 1 && this.state.khGrundZeit !== undefined) return;
+    this.state.khGrundZeit = t;
+    const an = this.settings.khGrundAktiv !== false;
+    grundbelegungTick(b, store.list("hospitals"), t, Math.min(dt || 1, 30), an ? (this.settings.khGrundFaktor ?? 1) : 0);
+  }
+
+  /** Platz im gebuchten Krankenhaus belegen (ab Buchung bis Ende der Behandlung) */
+  private khPlatzBelegen(e: Einsatz): void {
+    const b = (this.state.khBelegung ??= {});
+    // frühere Reservierung dieses Einsatzes lösen (Umbuchung)
+    for (const proKh of Object.values(b)) for (const liste of Object.values(proKh)) if (liste) for (let i = liste.length - 1; i >= 0; i--) if (liste[i].einsatz === e.id) liste.splice(i, 1);
+    if (!e.kh) return;
+    const h = store.get("hospitals", e.kh.hospitalId);
+    if (!h) return;
+    const t = this.state.zeit;
+    const bu = buchung(e.kh.grund);
+    const eig = khEignung(h, bu, this.patientRot(e)) ?? "rueckfall";
+    const kind = (e.wahr.lage?.patienten[0]?.alter ?? e.wahr.patientAlter) < 15;
+    const p = platzFuer(h, b, ressourcenFuer(bu?.id, eig, kind), t);
+    if (!p) return;
+    const def = RESSOURCE.get(p.r)!;
+    const fahrt = (distanceM(e.wahr, h) / 1000) * 1.3 * MIN;
+    ((b[h.id] ??= {})[p.r] ??= []).push({ bis: t + fahrt + rnd(def.dauer[0], def.dauer[1]) * MIN, einsatz: e.id });
   }
 
   /** Bucht automatisch das nächstgelegene passende Krankenhaus (RTW bucht selbst). */
   private bucheKhAuto(e: Einsatz, von: string): void {
     const verdacht = this.verdacht(e);
-    const ziel = this.naechstesKh(e.wahr, verdacht, this.patientRot(e));
+    const ziel = this.naechstesKh(e.wahr, verdacht, this.patientRot(e), (e.wahr.lage?.patienten[0]?.alter ?? e.wahr.patientAlter) < 15);
     if (!ziel) return;
     e.verdacht = verdacht;
     e.kh = { hospitalId: ziel.id, grund: verdacht, durch: "rtw", zeit: this.state.zeit };
@@ -1649,12 +1684,13 @@ export class Simulation {
     e.khAnfrage = null;
     this.log(e, `${von} bucht ${ziel.name} (Verdacht ${buchungName(verdacht)})`);
     this.funk(von, e.id, `KH gebucht: ${ziel.kurzname || ziel.name} – Verdacht ${buchungName(verdacht)}`, "info");
+    this.khPlatzBelegen(e);
     this.startTransport(e);
   }
 
   /** Bestes Krankenhaus zur Verdachtsdiagnose (passend vor Ausweichen, sonst Rückfall) */
-  naechstesKh(pos: LatLon, verdacht: string, rot: boolean): Hospital | undefined {
-    return this.khFuer(pos, verdacht, rot)[0]?.h;
+  naechstesKh(pos: LatLon, verdacht: string, rot: boolean, kind = false): Hospital | undefined {
+    return bestesKh(this.khFuer(pos, verdacht, rot, kind))?.h;
   }
 
   private checkKhAnfragen(t: number): void {
@@ -2018,6 +2054,7 @@ export class Simulation {
     e.khAnfrage = null;
     if (grund) e.verdacht ??= grund;
     this.log(e, `KH gebucht durch Leitstelle: ${h.name}${grund ? ` (${buchungName(grund)})` : ""}`);
+    this.khPlatzBelegen(e);
     // RTW wartet schon? Dann losfahren
     this.startTransport(e);
     this.emit();

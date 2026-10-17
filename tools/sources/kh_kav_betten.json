@@ -1,0 +1,1635 @@
+{
+ "kh001": {
+  "kav": [
+   "K382.1"
+  ],
+  "typ": "Zentral-KA",
+  "betten": 848,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 90,
+   "02/1 Kinder- und Jugendheilkunde": 31,
+   "03 Chirurgie": 113,
+   "04 Neurochirurgie": 42,
+   "05 Innere Medizin": 182,
+   "06 Frauenheilkunde und Geburtshilfe": 42,
+   "07 Neurologie": 58,
+   "08 Psychiatrie": 10,
+   "09 Haut- und Geschlechtskrankheiten": 33,
+   "10 Augenheilkunde": 40,
+   "11 Hals-, Nasen- und Ohrenheilkunde": 48,
+   "12 Urologie": 30,
+   "13 Plastische Chirurgie": 23,
+   "15 Orthopädie und Traumatologie": 84,
+   "16 Mund-, Kiefer- und Gesichtschirurgie": 15,
+   "50 Gemischter Belag": 7
+  }
+ },
+ "kh002": {
+  "kav": [
+   "K326.1"
+  ],
+  "typ": "Schwerpunkt-KA",
+  "betten": 441,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 20,
+   "02/1 Kinder- und Jugendheilkunde": 19,
+   "03 Chirurgie": 52,
+   "05 Innere Medizin": 151,
+   "06 Frauenheilkunde und Geburtshilfe": 21,
+   "11 Hals-, Nasen- und Ohrenheilkunde": 20,
+   "12 Urologie": 24,
+   "15 Orthopädie und Traumatologie": 82,
+   "18 Strahlentherapie-Radioonkologie": 30,
+   "50 Gemischter Belag": 8,
+   "61/2 Psychosomatik/KJ": 6,
+   "64/1 Palliativmedizin/Erwachsene": 8
+  }
+ },
+ "kh003": {
+  "kav": [
+   "K324.1"
+  ],
+  "typ": "Schwerpunkt-KA",
+  "betten": 0,
+  "abt": {}
+ },
+ "kh004": {
+  "kav": [
+   "K367.1"
+  ],
+  "typ": "Schwerpunkt-KA",
+  "betten": 0,
+  "abt": {}
+ },
+ "kh005": {
+  "kav": [
+   "K335.1"
+  ],
+  "typ": "Schwerpunkt-KA",
+  "betten": 502,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 26,
+   "02/1 Kinder- und Jugendheilkunde": 22,
+   "03 Chirurgie": 57,
+   "05 Innere Medizin": 194,
+   "06 Frauenheilkunde und Geburtshilfe": 19,
+   "07 Neurologie": 42,
+   "10 Augenheilkunde": 8,
+   "11 Hals-, Nasen- und Ohrenheilkunde": 35,
+   "12 Urologie": 32,
+   "15 Orthopädie und Traumatologie": 61,
+   "64/1 Palliativmedizin/Erwachsene": 6
+  }
+ },
+ "kh006": {
+  "kav": [
+   "K303.1"
+  ],
+  "typ": "Schwerpunkt-KA",
+  "betten": 340,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 26,
+   "02/1 Kinder- und Jugendheilkunde": 26,
+   "03 Chirurgie": 53,
+   "05 Innere Medizin": 76,
+   "06 Frauenheilkunde und Geburtshilfe": 32,
+   "07 Neurologie": 50,
+   "15 Orthopädie und Traumatologie": 76,
+   "64/1 Palliativmedizin/Erwachsene": 1
+  }
+ },
+ "kh007": {
+  "kav": [
+   "K377.1"
+  ],
+  "typ": "Schwerpunkt-KA",
+  "betten": 292,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 18,
+   "03 Chirurgie": 54,
+   "05 Innere Medizin": 64,
+   "06 Frauenheilkunde und Geburtshilfe": 29,
+   "07 Neurologie": 34,
+   "10 Augenheilkunde": 27,
+   "15 Orthopädie und Traumatologie": 66
+  }
+ },
+ "kh008": {
+  "kav": [
+   "K380.2"
+  ],
+  "typ": "Schwerpunkt-KA",
+  "betten": 344,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 18,
+   "03 Chirurgie": 71,
+   "05 Innere Medizin": 69,
+   "08 Psychiatrie": 60,
+   "12 Urologie": 28,
+   "15 Orthopädie und Traumatologie": 70,
+   "61/1 Psychosomatik/Erwachsene": 28
+  }
+ },
+ "kh009": {
+  "kav": [
+   "K380.1"
+  ],
+  "typ": "Schwerpunkt-KA",
+  "betten": 309,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 17,
+   "02/1 Kinder- und Jugendheilkunde": 23,
+   "03 Chirurgie": 24,
+   "05 Innere Medizin": 96,
+   "06 Frauenheilkunde und Geburtshilfe": 62,
+   "07 Neurologie": 33,
+   "10 Augenheilkunde": 2,
+   "15 Orthopädie und Traumatologie": 39,
+   "61/2 Psychosomatik/KJ": 10,
+   "64/2 Palliativmedizin/KJ": 3
+  }
+ },
+ "kh010": {
+  "kav": [
+   "K338.1"
+  ],
+  "typ": "Standard-KA",
+  "betten": 343,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 12,
+   "03 Chirurgie": 46,
+   "05 Innere Medizin": 93,
+   "06 Frauenheilkunde und Geburtshilfe": 29,
+   "08 Psychiatrie": 44,
+   "15 Orthopädie und Traumatologie": 90,
+   "63 Remobilisation/Nachsorge": 29
+  }
+ },
+ "kh011": {
+  "kav": [
+   "K343.1"
+  ],
+  "typ": "Standard-KA",
+  "betten": 0,
+  "abt": {}
+ },
+ "kh012": {
+  "kav": [
+   "K343.2"
+  ],
+  "typ": "Standard-KA",
+  "betten": 0,
+  "abt": {}
+ },
+ "kh013": {
+  "kav": [
+   "K343.3"
+  ],
+  "typ": "Standard-KA",
+  "betten": 0,
+  "abt": {}
+ },
+ "kh014": {
+  "kav": [
+   "K316.1"
+  ],
+  "typ": "Standard-KA",
+  "betten": 122,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 5,
+   "03 Chirurgie": 32,
+   "05 Innere Medizin": 47,
+   "06 Frauenheilkunde und Geburtshilfe": 24,
+   "15 Orthopädie und Traumatologie": 14
+  }
+ },
+ "kh015": {
+  "kav": [
+   "K324.2"
+  ],
+  "typ": "Schwerpunkt-KA",
+  "betten": 0,
+  "abt": {}
+ },
+ "kh016": {
+  "kav": [
+   "K382.2"
+  ],
+  "typ": "Zentral-KA",
+  "betten": 138,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 4,
+   "03 Chirurgie": 21,
+   "05 Innere Medizin": 56,
+   "06 Frauenheilkunde und Geburtshilfe": 18,
+   "15 Orthopädie und Traumatologie": 31,
+   "64/1 Palliativmedizin/Erwachsene": 8
+  }
+ },
+ "kh017": {
+  "kav": [
+   "K334.1"
+  ],
+  "typ": "Standard-KA",
+  "betten": 157,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 6,
+   "03 Chirurgie": 14,
+   "05 Innere Medizin": 87,
+   "06 Frauenheilkunde und Geburtshilfe": 26,
+   "07 Neurologie": 24
+  }
+ },
+ "kh018": {
+  "kav": [
+   "K347.1"
+  ],
+  "typ": "Standard-KA",
+  "betten": 183,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 6,
+   "03 Chirurgie": 12,
+   "05 Innere Medizin": 81,
+   "06 Frauenheilkunde und Geburtshilfe": 20,
+   "15 Orthopädie und Traumatologie": 32,
+   "63 Remobilisation/Nachsorge": 24,
+   "64/1 Palliativmedizin/Erwachsene": 8
+  }
+ },
+ "kh019": {
+  "kav": [
+   "K354.1"
+  ],
+  "typ": "Standard-KA",
+  "betten": 144,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 6,
+   "03 Chirurgie": 31,
+   "05 Innere Medizin": 77,
+   "10 Augenheilkunde": 8,
+   "12 Urologie": 8,
+   "15 Orthopädie und Traumatologie": 14
+  }
+ },
+ "kh020": {
+  "kav": [
+   "K383.1"
+  ],
+  "typ": "Standard-KA",
+  "betten": 262,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 15,
+   "02/1 Kinder- und Jugendheilkunde": 21,
+   "03 Chirurgie": 61,
+   "05 Innere Medizin": 71,
+   "06 Frauenheilkunde und Geburtshilfe": 29,
+   "15 Orthopädie und Traumatologie": 65
+  }
+ },
+ "kh021": {
+  "kav": [
+   "K383.2"
+  ],
+  "typ": "Standard-KA",
+  "betten": 140,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 5,
+   "03 Chirurgie": 25,
+   "05 Innere Medizin": 53,
+   "10 Augenheilkunde": 2,
+   "15 Orthopädie und Traumatologie": 30,
+   "63 Remobilisation/Nachsorge": 25
+  }
+ },
+ "kh022": {
+  "kav": [
+   "K383.3"
+  ],
+  "typ": "Standard-KA",
+  "betten": 171,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 10,
+   "03 Chirurgie": 8,
+   "05 Innere Medizin": 52,
+   "08 Psychiatrie": 33,
+   "12 Urologie": 22,
+   "62 Akutgeriatrie/Remobilisation": 38,
+   "64/1 Palliativmedizin/Erwachsene": 8
+  }
+ },
+ "kh023": {
+  "kav": [
+   "K901.1"
+  ],
+  "typ": "Zentral-KA",
+  "betten": 1448,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 235,
+   "02/1 Kinder- und Jugendheilkunde": 14,
+   "02/2 Kinder- und Jugendchirurgie": 35,
+   "02/3 Kinder- und Jugendpsychiatrie": 22,
+   "03 Chirurgie": 185,
+   "04 Neurochirurgie": 36,
+   "05 Innere Medizin": 279,
+   "06 Frauenheilkunde und Geburtshilfe": 116,
+   "07 Neurologie": 57,
+   "08 Psychiatrie": 104,
+   "09 Haut- und Geschlechtskrankheiten": 26,
+   "10 Augenheilkunde": 17,
+   "11 Hals-, Nasen- und Ohrenheilkunde": 41,
+   "12 Urologie": 36,
+   "13 Plastische Chirurgie": 22,
+   "15 Orthopädie und Traumatologie": 144,
+   "16 Mund-, Kiefer- und Gesichtschirurgie": 26,
+   "18 Strahlentherapie-Radioonkologie": 26,
+   "19 Nuklearmedizinische Therapie": 8,
+   "50 Gemischter Belag": 7,
+   "64/1 Palliativmedizin/Erwachsene": 12
+  }
+ },
+ "kh024": {
+  "kav": [
+   "K976.1"
+  ],
+  "typ": "Schwerpunkt-KA",
+  "betten": 685,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 75,
+   "02/1 Kinder- und Jugendheilkunde": 20,
+   "03 Chirurgie": 110,
+   "05 Innere Medizin": 177,
+   "06 Frauenheilkunde und Geburtshilfe": 41,
+   "07 Neurologie": 34,
+   "08 Psychiatrie": 74,
+   "15 Orthopädie und Traumatologie": 108,
+   "50 Gemischter Belag": 22,
+   "62 Akutgeriatrie/Remobilisation": 24
+  }
+ },
+ "kh025": {
+  "kav": [
+   "K956.1"
+  ],
+  "typ": "Schwerpunkt-KA",
+  "betten": 811,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 69,
+   "02/1 Kinder- und Jugendheilkunde": 40,
+   "02/2 Kinder- und Jugendchirurgie": 40,
+   "03 Chirurgie": 40,
+   "04 Neurochirurgie": 17,
+   "05 Innere Medizin": 182,
+   "06 Frauenheilkunde und Geburtshilfe": 59,
+   "07 Neurologie": 22,
+   "08 Psychiatrie": 79,
+   "09 Haut- und Geschlechtskrankheiten": 16,
+   "10 Augenheilkunde": 14,
+   "11 Hals-, Nasen- und Ohrenheilkunde": 39,
+   "12 Urologie": 45,
+   "15 Orthopädie und Traumatologie": 77,
+   "17 Zahn-, Mund- und Kieferheilkunde": 3,
+   "19 Nuklearmedizinische Therapie": 7,
+   "50 Gemischter Belag": 18,
+   "62 Akutgeriatrie/Remobilisation": 44
+  }
+ },
+ "kh026": {
+  "kav": [
+   "K921.1"
+  ],
+  "typ": "Schwerpunkt-KA",
+  "betten": 823,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 53,
+   "02/1 Kinder- und Jugendheilkunde": 44,
+   "03 Chirurgie": 85,
+   "05 Innere Medizin": 292,
+   "06 Frauenheilkunde und Geburtshilfe": 48,
+   "07 Neurologie": 51,
+   "08 Psychiatrie": 60,
+   "12 Urologie": 39,
+   "13 Plastische Chirurgie": 26,
+   "15 Orthopädie und Traumatologie": 52,
+   "50 Gemischter Belag": 13,
+   "61/2 Psychosomatik/KJ": 27,
+   "62 Akutgeriatrie/Remobilisation": 19,
+   "64/1 Palliativmedizin/Erwachsene": 14
+  }
+ },
+ "kh027": {
+  "kav": [
+   "K910.1"
+  ],
+  "typ": "Schwerpunkt-KA",
+  "betten": 643,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 53,
+   "02/1 Kinder- und Jugendheilkunde": 29,
+   "03 Chirurgie": 70,
+   "05 Innere Medizin": 229,
+   "06 Frauenheilkunde und Geburtshilfe": 56,
+   "07 Neurologie": 55,
+   "08 Psychiatrie": 44,
+   "12 Urologie": 42,
+   "62 Akutgeriatrie/Remobilisation": 65
+  }
+ },
+ "kh028": {
+  "kav": [
+   "K916.1"
+  ],
+  "typ": "Schwerpunkt-KA",
+  "betten": 832,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 43,
+   "02/3 Kinder- und Jugendpsychiatrie": 34,
+   "03 Chirurgie": 56,
+   "05 Innere Medizin": 242,
+   "06 Frauenheilkunde und Geburtshilfe": 52,
+   "07 Neurologie": 100,
+   "08 Psychiatrie": 191,
+   "09 Haut- und Geschlechtskrankheiten": 27,
+   "10 Augenheilkunde": 9,
+   "50 Gemischter Belag": 20,
+   "61/1 Psychosomatik/Erwachsene": 20,
+   "62 Akutgeriatrie/Remobilisation": 24,
+   "64/1 Palliativmedizin/Erwachsene": 14
+  }
+ },
+ "kh029": {
+  "kav": [
+   "K917.1"
+  ],
+  "typ": "Schwerpunkt-KA",
+  "betten": 574,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 32,
+   "02/1 Kinder- und Jugendheilkunde": 3,
+   "03 Chirurgie": 72,
+   "04 Neurochirurgie": 51,
+   "05 Innere Medizin": 169,
+   "06 Frauenheilkunde und Geburtshilfe": 47,
+   "07 Neurologie": 39,
+   "08 Psychiatrie": 60,
+   "09 Haut- und Geschlechtskrankheiten": 20,
+   "10 Augenheilkunde": 16,
+   "11 Hals-, Nasen- und Ohrenheilkunde": 36,
+   "13 Plastische Chirurgie": 14,
+   "50 Gemischter Belag": 15
+  }
+ },
+ "kh030": {
+  "kav": [
+   "K920.1"
+  ],
+  "typ": "Sonder-KA",
+  "betten": 251,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 18,
+   "15 Orthopädie und Traumatologie": 233
+  }
+ },
+ "kh031": {
+  "kav": [
+   "K920.2"
+  ],
+  "typ": "Sonder-KA",
+  "betten": 6,
+  "abt": {
+   "15 Orthopädie und Traumatologie": 6
+  }
+ },
+ "kh032": {
+  "kav": [
+   "K903.1"
+  ],
+  "typ": "Schwerpunkt-KA",
+  "betten": 396,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 18,
+   "03 Chirurgie": 51,
+   "05 Innere Medizin": 112,
+   "06 Frauenheilkunde und Geburtshilfe": 15,
+   "07 Neurologie": 54,
+   "10 Augenheilkunde": 35,
+   "11 Hals-, Nasen- und Ohrenheilkunde": 23,
+   "12 Urologie": 47,
+   "50 Gemischter Belag": 17,
+   "62 Akutgeriatrie/Remobilisation": 24
+  }
+ },
+ "kh033": {
+  "kav": [
+   "K952.1"
+  ],
+  "typ": "Sonder-KA",
+  "betten": 119,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 26,
+   "02/1 Kinder- und Jugendheilkunde": 75,
+   "11 Hals-, Nasen- und Ohrenheilkunde": 18
+  }
+ },
+ "kh034": {
+  "kav": [
+   "K102.1"
+  ],
+  "typ": "Schwerpunkt-KA",
+  "betten": 390,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 32,
+   "02/1 Kinder- und Jugendheilkunde": 12,
+   "03 Chirurgie": 43,
+   "05 Innere Medizin": 100,
+   "06 Frauenheilkunde und Geburtshilfe": 23,
+   "07 Neurologie": 43,
+   "08 Psychiatrie": 40,
+   "11 Hals-, Nasen- und Ohrenheilkunde": 20,
+   "15 Orthopädie und Traumatologie": 50,
+   "50 Gemischter Belag": 15,
+   "61/2 Psychosomatik/KJ": 4,
+   "64/1 Palliativmedizin/Erwachsene": 8
+  }
+ },
+ "kh035": {
+  "kav": [
+   "K107.1"
+  ],
+  "typ": "Schwerpunkt-KA",
+  "betten": 318,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 21,
+   "02/1 Kinder- und Jugendheilkunde": 20,
+   "03 Chirurgie": 34,
+   "04 Neurochirurgie": 2,
+   "05 Innere Medizin": 69,
+   "06 Frauenheilkunde und Geburtshilfe": 27,
+   "07 Neurologie": 33,
+   "11 Hals-, Nasen- und Ohrenheilkunde": 10,
+   "12 Urologie": 34,
+   "15 Orthopädie und Traumatologie": 56,
+   "50 Gemischter Belag": 4,
+   "64/1 Palliativmedizin/Erwachsene": 8
+  }
+ },
+ "kh036": {
+  "kav": [
+   "K105.1"
+  ],
+  "typ": "Standard-KA",
+  "betten": 92,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 10,
+   "03 Chirurgie": 21,
+   "05 Innere Medizin": 29,
+   "12 Urologie": 9,
+   "62 Akutgeriatrie/Remobilisation": 23
+  }
+ },
+ "kh037": {
+  "kav": [
+   "K470.4"
+  ],
+  "typ": "Zentral-KA",
+  "betten": 1019,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 103,
+   "02/1 Kinder- und Jugendheilkunde": 58,
+   "02/2 Kinder- und Jugendchirurgie": 37,
+   "02/3 Kinder- und Jugendpsychiatrie": 13,
+   "03 Chirurgie": 123,
+   "05 Innere Medizin": 218,
+   "06 Frauenheilkunde und Geburtshilfe": 93,
+   "07 Neurologie": 40,
+   "09 Haut- und Geschlechtskrankheiten": 28,
+   "10 Augenheilkunde": 19,
+   "11 Hals-, Nasen- und Ohrenheilkunde": 31,
+   "12 Urologie": 40,
+   "13 Plastische Chirurgie": 8,
+   "15 Orthopädie und Traumatologie": 137,
+   "16 Mund-, Kiefer- und Gesichtschirurgie": 23,
+   "50 Gemischter Belag": 19,
+   "63 Remobilisation/Nachsorge": 20,
+   "64/1 Palliativmedizin/Erwachsene": 9
+  }
+ },
+ "kh038": {
+  "kav": [
+   "K420.1"
+  ],
+  "typ": "Sonder-KA",
+  "betten": 153,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 15,
+   "15 Orthopädie und Traumatologie": 138
+  }
+ },
+ "kh039": {
+  "kav": [
+   "K333.1"
+  ],
+  "typ": "Sonder-KA",
+  "betten": 272,
+  "abt": {
+   "02/3 Kinder- und Jugendpsychiatrie": 21,
+   "08 Psychiatrie": 251
+  }
+ },
+ "kh040": {
+  "kav": [
+   "K377.3"
+  ],
+  "typ": "Schwerpunkt-KA",
+  "betten": 65,
+  "abt": {
+   "07 Neurologie": 65
+  }
+ },
+ "kh041": {
+  "kav": [
+   "K367.2"
+  ],
+  "typ": "Schwerpunkt-KA",
+  "betten": 0,
+  "abt": {}
+ },
+ "kh042": {
+  "kav": [
+   "K912.1"
+  ],
+  "typ": "Schwerpunkt-KA",
+  "betten": 322,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 15,
+   "03 Chirurgie": 34,
+   "05 Innere Medizin": 160,
+   "06 Frauenheilkunde und Geburtshilfe": 14,
+   "10 Augenheilkunde": 20,
+   "11 Hals-, Nasen- und Ohrenheilkunde": 19,
+   "12 Urologie": 18,
+   "15 Orthopädie und Traumatologie": 42
+  }
+ },
+ "kh043": {
+  "kav": [
+   "K921.3"
+  ],
+  "typ": "Schwerpunkt-KA",
+  "betten": 172,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 5,
+   "05 Innere Medizin": 72,
+   "08 Psychiatrie": 20,
+   "15 Orthopädie und Traumatologie": 75
+  }
+ },
+ "kh044": {
+  "kav": [
+   "K943.1"
+  ],
+  "typ": "Sonder-KA",
+  "betten": 216,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 4,
+   "15 Orthopädie und Traumatologie": 183,
+   "62 Akutgeriatrie/Remobilisation": 29
+  }
+ },
+ "kh045": {
+  "kav": [
+   "K955.1"
+  ],
+  "typ": "Standard-KA",
+  "betten": 270,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 16,
+   "03 Chirurgie": 57,
+   "05 Innere Medizin": 101,
+   "07 Neurologie": 35,
+   "62 Akutgeriatrie/Remobilisation": 51,
+   "64/1 Palliativmedizin/Erwachsene": 10
+  }
+ },
+ "kh046": {
+  "kav": [
+   "K470.2"
+  ],
+  "typ": "Zentral-KA",
+  "betten": 616,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 22,
+   "02/3 Kinder- und Jugendpsychiatrie": 30,
+   "04 Neurochirurgie": 87,
+   "07 Neurologie": 77,
+   "08 Psychiatrie": 365,
+   "61/1 Psychosomatik/Erwachsene": 35
+  }
+ },
+ "kh047": {
+  "kav": [
+   "K470.4"
+  ],
+  "typ": "Zentral-KA",
+  "betten": 1019,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 103,
+   "02/1 Kinder- und Jugendheilkunde": 58,
+   "02/2 Kinder- und Jugendchirurgie": 37,
+   "02/3 Kinder- und Jugendpsychiatrie": 13,
+   "03 Chirurgie": 123,
+   "05 Innere Medizin": 218,
+   "06 Frauenheilkunde und Geburtshilfe": 93,
+   "07 Neurologie": 40,
+   "09 Haut- und Geschlechtskrankheiten": 28,
+   "10 Augenheilkunde": 19,
+   "11 Hals-, Nasen- und Ohrenheilkunde": 31,
+   "12 Urologie": 40,
+   "13 Plastische Chirurgie": 8,
+   "15 Orthopädie und Traumatologie": 137,
+   "16 Mund-, Kiefer- und Gesichtschirurgie": 23,
+   "50 Gemischter Belag": 19,
+   "63 Remobilisation/Nachsorge": 20,
+   "64/1 Palliativmedizin/Erwachsene": 9
+  }
+ },
+ "kh048": {
+  "kav": [
+   "K418.1"
+  ],
+  "typ": "Schwerpunkt-KA",
+  "betten": 575,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 27,
+   "02/1 Kinder- und Jugendheilkunde": 21,
+   "03 Chirurgie": 85,
+   "05 Innere Medizin": 173,
+   "06 Frauenheilkunde und Geburtshilfe": 30,
+   "11 Hals-, Nasen- und Ohrenheilkunde": 45,
+   "12 Urologie": 16,
+   "13 Plastische Chirurgie": 24,
+   "15 Orthopädie und Traumatologie": 68,
+   "18 Strahlentherapie-Radioonkologie": 27,
+   "19 Nuklearmedizinische Therapie": 4,
+   "50 Gemischter Belag": 24,
+   "62 Akutgeriatrie/Remobilisation": 21,
+   "64/1 Palliativmedizin/Erwachsene": 10
+  }
+ },
+ "kh049": {
+  "kav": [
+   "K419.1"
+  ],
+  "typ": "Schwerpunkt-KA",
+  "betten": 413,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 24,
+   "03 Chirurgie": 47,
+   "05 Innere Medizin": 197,
+   "09 Haut- und Geschlechtskrankheiten": 42,
+   "12 Urologie": 58,
+   "50 Gemischter Belag": 13,
+   "62 Akutgeriatrie/Remobilisation": 24,
+   "64/1 Palliativmedizin/Erwachsene": 8
+  }
+ },
+ "kh050": {
+  "kav": [
+   "K460.1"
+  ],
+  "typ": "Schwerpunkt-KA",
+  "betten": 522,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 30,
+   "02/1 Kinder- und Jugendheilkunde": 19,
+   "03 Chirurgie": 54,
+   "05 Innere Medizin": 141,
+   "06 Frauenheilkunde und Geburtshilfe": 30,
+   "07 Neurologie": 44,
+   "08 Psychiatrie": 50,
+   "10 Augenheilkunde": 15,
+   "11 Hals-, Nasen- und Ohrenheilkunde": 12,
+   "12 Urologie": 27,
+   "15 Orthopädie und Traumatologie": 73,
+   "50 Gemischter Belag": 3,
+   "61/2 Psychosomatik/KJ": 12,
+   "64/1 Palliativmedizin/Erwachsene": 12
+  }
+ },
+ "kh051": {
+  "kav": [
+   "K408.1"
+  ],
+  "typ": "Standard-KA",
+  "betten": 165,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 6,
+   "03 Chirurgie": 30,
+   "05 Innere Medizin": 76,
+   "06 Frauenheilkunde und Geburtshilfe": 15,
+   "15 Orthopädie und Traumatologie": 38
+  }
+ },
+ "kh052": {
+  "kav": [
+   "K417.1"
+  ],
+  "typ": "Schwerpunkt-KA",
+  "betten": 309,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 14,
+   "03 Chirurgie": 70,
+   "05 Innere Medizin": 68,
+   "06 Frauenheilkunde und Geburtshilfe": 33,
+   "07 Neurologie": 75,
+   "10 Augenheilkunde": 25,
+   "62 Akutgeriatrie/Remobilisation": 24
+  }
+ },
+ "kh053": {
+  "kav": [
+   "K434.1"
+  ],
+  "typ": "Schwerpunkt-KA",
+  "betten": 978,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 45,
+   "02/1 Kinder- und Jugendheilkunde": 28,
+   "03 Chirurgie": 104,
+   "05 Innere Medizin": 309,
+   "06 Frauenheilkunde und Geburtshilfe": 59,
+   "07 Neurologie": 52,
+   "08 Psychiatrie": 69,
+   "09 Haut- und Geschlechtskrankheiten": 30,
+   "10 Augenheilkunde": 23,
+   "11 Hals-, Nasen- und Ohrenheilkunde": 30,
+   "12 Urologie": 40,
+   "13 Plastische Chirurgie": 8,
+   "15 Orthopädie und Traumatologie": 153,
+   "16 Mund-, Kiefer- und Gesichtschirurgie": 8,
+   "50 Gemischter Belag": 10,
+   "64/1 Palliativmedizin/Erwachsene": 10
+  }
+ },
+ "kh054": {
+  "kav": [
+   "K434.2"
+  ],
+  "typ": "Schwerpunkt-KA",
+  "betten": 215,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 4,
+   "02/3 Kinder- und Jugendpsychiatrie": 10,
+   "03 Chirurgie": 10,
+   "05 Innere Medizin": 62,
+   "06 Frauenheilkunde und Geburtshilfe": 15,
+   "15 Orthopädie und Traumatologie": 14,
+   "61/1 Psychosomatik/Erwachsene": 14,
+   "61/2 Psychosomatik/KJ": 12,
+   "62 Akutgeriatrie/Remobilisation": 50,
+   "63 Remobilisation/Nachsorge": 24
+  }
+ },
+ "kh055": {
+  "kav": [
+   "K460.2"
+  ],
+  "typ": "Schwerpunkt-KA",
+  "betten": 198,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 9,
+   "02/1 Kinder- und Jugendheilkunde": 15,
+   "03 Chirurgie": 37,
+   "05 Innere Medizin": 57,
+   "06 Frauenheilkunde und Geburtshilfe": 16,
+   "11 Hals-, Nasen- und Ohrenheilkunde": 1,
+   "15 Orthopädie und Traumatologie": 59,
+   "64/1 Palliativmedizin/Erwachsene": 4
+  }
+ },
+ "kh056": {
+  "kav": [
+   "K480.1"
+  ],
+  "typ": "Schwerpunkt-KA",
+  "betten": 500,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 26,
+   "02/1 Kinder- und Jugendheilkunde": 21,
+   "03 Chirurgie": 48,
+   "05 Innere Medizin": 118,
+   "06 Frauenheilkunde und Geburtshilfe": 44,
+   "07 Neurologie": 47,
+   "08 Psychiatrie": 60,
+   "10 Augenheilkunde": 14,
+   "11 Hals-, Nasen- und Ohrenheilkunde": 12,
+   "12 Urologie": 33,
+   "15 Orthopädie und Traumatologie": 48,
+   "16 Mund-, Kiefer- und Gesichtschirurgie": 1,
+   "18 Strahlentherapie-Radioonkologie": 10,
+   "61/2 Psychosomatik/KJ": 6,
+   "64/1 Palliativmedizin/Erwachsene": 12
+  }
+ },
+ "kh057": {
+  "kav": [
+   "K480.3"
+  ],
+  "typ": "Schwerpunkt-KA",
+  "betten": 259,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 12,
+   "03 Chirurgie": 40,
+   "05 Innere Medizin": 85,
+   "06 Frauenheilkunde und Geburtshilfe": 4,
+   "15 Orthopädie und Traumatologie": 58,
+   "62 Akutgeriatrie/Remobilisation": 60
+  }
+ },
+ "kh058": {
+  "kav": [
+   "K480.2"
+  ],
+  "typ": "Schwerpunkt-KA",
+  "betten": 200,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 6,
+   "02/1 Kinder- und Jugendheilkunde": 8,
+   "03 Chirurgie": 30,
+   "05 Innere Medizin": 64,
+   "06 Frauenheilkunde und Geburtshilfe": 15,
+   "07 Neurologie": 18,
+   "11 Hals-, Nasen- und Ohrenheilkunde": 1,
+   "12 Urologie": 1,
+   "15 Orthopädie und Traumatologie": 37,
+   "62 Akutgeriatrie/Remobilisation": 20
+  }
+ },
+ "kh059": {
+  "kav": [
+   "K405.1"
+  ],
+  "typ": "Standard-KA",
+  "betten": 326,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 16,
+   "02/1 Kinder- und Jugendheilkunde": 16,
+   "03 Chirurgie": 33,
+   "05 Innere Medizin": 74,
+   "06 Frauenheilkunde und Geburtshilfe": 25,
+   "08 Psychiatrie": 66,
+   "10 Augenheilkunde": 4,
+   "11 Hals-, Nasen- und Ohrenheilkunde": 7,
+   "12 Urologie": 2,
+   "15 Orthopädie und Traumatologie": 52,
+   "62 Akutgeriatrie/Remobilisation": 25,
+   "64/1 Palliativmedizin/Erwachsene": 6
+  }
+ },
+ "kh060": {
+  "kav": [
+   "K428.1"
+  ],
+  "typ": "Standard-KA",
+  "betten": 152,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 6,
+   "03 Chirurgie": 28,
+   "05 Innere Medizin": 70,
+   "06 Frauenheilkunde und Geburtshilfe": 10,
+   "10 Augenheilkunde": 2,
+   "15 Orthopädie und Traumatologie": 14,
+   "50 Gemischter Belag": 2,
+   "62 Akutgeriatrie/Remobilisation": 20
+  }
+ },
+ "kh061": {
+  "kav": [
+   "K427.1"
+  ],
+  "typ": "Schwerpunkt-KA",
+  "betten": 411,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 17,
+   "02/1 Kinder- und Jugendheilkunde": 17,
+   "03 Chirurgie": 53,
+   "05 Innere Medizin": 90,
+   "06 Frauenheilkunde und Geburtshilfe": 31,
+   "07 Neurologie": 51,
+   "10 Augenheilkunde": 12,
+   "11 Hals-, Nasen- und Ohrenheilkunde": 12,
+   "12 Urologie": 29,
+   "15 Orthopädie und Traumatologie": 69,
+   "62 Akutgeriatrie/Remobilisation": 20,
+   "64/1 Palliativmedizin/Erwachsene": 10
+  }
+ },
+ "kh062": {
+  "kav": [
+   "K441.1"
+  ],
+  "typ": "Standard-KA",
+  "betten": 196,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 6,
+   "02/1 Kinder- und Jugendheilkunde": 9,
+   "03 Chirurgie": 30,
+   "05 Innere Medizin": 73,
+   "06 Frauenheilkunde und Geburtshilfe": 18,
+   "11 Hals-, Nasen- und Ohrenheilkunde": 1,
+   "15 Orthopädie und Traumatologie": 36,
+   "62 Akutgeriatrie/Remobilisation": 20,
+   "64/1 Palliativmedizin/Erwachsene": 3
+  }
+ },
+ "kh063": {
+  "kav": [
+   "K612.1"
+  ],
+  "typ": "Zentral-KA",
+  "betten": 1265,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 141,
+   "02/1 Kinder- und Jugendheilkunde": 105,
+   "02/2 Kinder- und Jugendchirurgie": 29,
+   "03 Chirurgie": 133,
+   "04 Neurochirurgie": 40,
+   "05 Innere Medizin": 213,
+   "06 Frauenheilkunde und Geburtshilfe": 86,
+   "07 Neurologie": 82,
+   "08 Psychiatrie": 64,
+   "09 Haut- und Geschlechtskrankheiten": 35,
+   "10 Augenheilkunde": 40,
+   "11 Hals-, Nasen- und Ohrenheilkunde": 49,
+   "12 Urologie": 45,
+   "13 Plastische Chirurgie": 27,
+   "15 Orthopädie und Traumatologie": 81,
+   "16 Mund-, Kiefer- und Gesichtschirurgie": 20,
+   "18 Strahlentherapie-Radioonkologie": 23,
+   "50 Gemischter Belag": 28,
+   "61/2 Psychosomatik/KJ": 12,
+   "64/1 Palliativmedizin/Erwachsene": 12
+  }
+ },
+ "kh064": {
+  "kav": [
+   "K673.1"
+  ],
+  "typ": "Standard-KA",
+  "betten": 210,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 15,
+   "03 Chirurgie": 58,
+   "05 Innere Medizin": 137
+  }
+ },
+ "kh065": {
+  "kav": [
+   "K673.2"
+  ],
+  "typ": "Standard-KA",
+  "betten": 676,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 4,
+   "02/3 Kinder- und Jugendpsychiatrie": 57,
+   "07 Neurologie": 104,
+   "08 Psychiatrie": 511
+  }
+ },
+ "kh066": {
+  "kav": [
+   "K673.3"
+  ],
+  "typ": "Standard-KA",
+  "betten": 70,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 10,
+   "05 Innere Medizin": 53,
+   "50 Gemischter Belag": 7
+  }
+ },
+ "kh067": {
+  "kav": [
+   "K673.5"
+  ],
+  "typ": "Standard-KA",
+  "betten": 91,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 5,
+   "05 Innere Medizin": 50,
+   "62 Akutgeriatrie/Remobilisation": 36
+  }
+ },
+ "kh068": {
+  "kav": [
+   "K620.1",
+   "K620.2"
+  ],
+  "typ": "Standard-KA",
+  "betten": 158,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 5,
+   "05 Innere Medizin": 53,
+   "62 Akutgeriatrie/Remobilisation": 17,
+   "64/1 Palliativmedizin/Erwachsene": 8,
+   "07 Neurologie": 25,
+   "08 Psychiatrie": 47,
+   "50 Gemischter Belag": 3
+  }
+ },
+ "kh069": {
+  "kav": [
+   "K619.1"
+  ],
+  "typ": "Standard-KA",
+  "betten": 304,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 14,
+   "03 Chirurgie": 74,
+   "05 Innere Medizin": 138,
+   "06 Frauenheilkunde und Geburtshilfe": 12,
+   "08 Psychiatrie": 30,
+   "11 Hals-, Nasen- und Ohrenheilkunde": 36
+  }
+ },
+ "kh070": {
+  "kav": [
+   "K614.1"
+  ],
+  "typ": "Sonder-KA",
+  "betten": 132,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 9,
+   "15 Orthopädie und Traumatologie": 123
+  }
+ },
+ "kh071": {
+  "kav": [
+   "K614.2"
+  ],
+  "typ": "Sonder-KA",
+  "betten": 73,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 5,
+   "15 Orthopädie und Traumatologie": 68
+  }
+ },
+ "kh072": {
+  "kav": [
+   "K638.1"
+  ],
+  "typ": "Schwerpunkt-KA",
+  "betten": 434,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 36,
+   "02/1 Kinder- und Jugendheilkunde": 42,
+   "03 Chirurgie": 74,
+   "05 Innere Medizin": 121,
+   "06 Frauenheilkunde und Geburtshilfe": 46,
+   "11 Hals-, Nasen- und Ohrenheilkunde": 19,
+   "12 Urologie": 37,
+   "15 Orthopädie und Traumatologie": 37,
+   "50 Gemischter Belag": 2,
+   "61/2 Psychosomatik/KJ": 12,
+   "64/1 Palliativmedizin/Erwachsene": 8
+  }
+ },
+ "kh073": {
+  "kav": [
+   "K638.3"
+  ],
+  "typ": "Schwerpunkt-KA",
+  "betten": 172,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 16,
+   "03 Chirurgie": 1,
+   "05 Innere Medizin": 71,
+   "06 Frauenheilkunde und Geburtshilfe": 1,
+   "07 Neurologie": 62,
+   "10 Augenheilkunde": 17,
+   "11 Hals-, Nasen- und Ohrenheilkunde": 1,
+   "12 Urologie": 2,
+   "15 Orthopädie und Traumatologie": 1
+  }
+ },
+ "kh074": {
+  "kav": [
+   "K638.4"
+  ],
+  "typ": "Schwerpunkt-KA",
+  "betten": 90,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 4,
+   "05 Innere Medizin": 38,
+   "62 Akutgeriatrie/Remobilisation": 48
+  }
+ },
+ "kh075": {
+  "kav": [
+   "K643.1"
+  ],
+  "typ": "Standard-KA",
+  "betten": 153,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 11,
+   "03 Chirurgie": 46,
+   "05 Innere Medizin": 56,
+   "06 Frauenheilkunde und Geburtshilfe": 12,
+   "50 Gemischter Belag": 1,
+   "62 Akutgeriatrie/Remobilisation": 23,
+   "64/1 Palliativmedizin/Erwachsene": 4
+  }
+ },
+ "kh076": {
+  "kav": [
+   "K643.2"
+  ],
+  "typ": "Standard-KA",
+  "betten": 24,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 3,
+   "03 Chirurgie": 1,
+   "05 Innere Medizin": 20
+  }
+ },
+ "kh077": {
+  "kav": [
+   "K646.1"
+  ],
+  "typ": "Standard-KA",
+  "betten": 101,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 6,
+   "03 Chirurgie": 11,
+   "05 Innere Medizin": 48,
+   "06 Frauenheilkunde und Geburtshilfe": 6,
+   "15 Orthopädie und Traumatologie": 30
+  }
+ },
+ "kh078": {
+  "kav": [
+   "K672.1"
+  ],
+  "typ": "Standard-KA",
+  "betten": 213,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 7,
+   "03 Chirurgie": 24,
+   "06 Frauenheilkunde und Geburtshilfe": 20,
+   "15 Orthopädie und Traumatologie": 162
+  }
+ },
+ "kh079": {
+  "kav": [
+   "K672.2"
+  ],
+  "typ": "Standard-KA",
+  "betten": 113,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 6,
+   "05 Innere Medizin": 57,
+   "07 Neurologie": 38,
+   "63 Remobilisation/Nachsorge": 4,
+   "64/1 Palliativmedizin/Erwachsene": 8
+  }
+ },
+ "kh080": {
+  "kav": [
+   "K672.3"
+  ],
+  "typ": "Standard-KA",
+  "betten": 33,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 4,
+   "62 Akutgeriatrie/Remobilisation": 29
+  }
+ },
+ "kh081": {
+  "kav": [
+   "K612.2"
+  ],
+  "typ": "Zentral-KA",
+  "betten": 80,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 6,
+   "03 Chirurgie": 19,
+   "05 Innere Medizin": 42,
+   "15 Orthopädie und Traumatologie": 13
+  }
+ },
+ "kh082": {
+  "kav": [
+   "K608.1"
+  ],
+  "typ": "Standard-KA",
+  "betten": 252,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 14,
+   "03 Chirurgie": 44,
+   "05 Innere Medizin": 84,
+   "06 Frauenheilkunde und Geburtshilfe": 35,
+   "07 Neurologie": 39,
+   "15 Orthopädie und Traumatologie": 36
+  }
+ },
+ "kh083": {
+  "kav": [
+   "K608.2"
+  ],
+  "typ": "Standard-KA",
+  "betten": 101,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 6,
+   "03 Chirurgie": 2,
+   "05 Innere Medizin": 58,
+   "06 Frauenheilkunde und Geburtshilfe": 1,
+   "12 Urologie": 1,
+   "15 Orthopädie und Traumatologie": 1,
+   "62 Akutgeriatrie/Remobilisation": 24,
+   "64/1 Palliativmedizin/Erwachsene": 8
+  }
+ },
+ "kh084": {
+  "kav": [
+   "K608.3"
+  ],
+  "typ": "Standard-KA",
+  "betten": 130,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 8,
+   "03 Chirurgie": 21,
+   "05 Innere Medizin": 65,
+   "06 Frauenheilkunde und Geburtshilfe": 22,
+   "15 Orthopädie und Traumatologie": 14
+  }
+ },
+ "kh085": {
+  "kav": [
+   "K654.3"
+  ],
+  "typ": "Standard-KA",
+  "betten": 135,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 9,
+   "03 Chirurgie": 32,
+   "05 Innere Medizin": 63,
+   "06 Frauenheilkunde und Geburtshilfe": 23,
+   "64/1 Palliativmedizin/Erwachsene": 8
+  }
+ },
+ "kh086": {
+  "kav": [
+   "K654.1"
+  ],
+  "typ": "Standard-KA",
+  "betten": 138,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 8,
+   "03 Chirurgie": 33,
+   "05 Innere Medizin": 66,
+   "15 Orthopädie und Traumatologie": 31
+  }
+ },
+ "kh087": {
+  "kav": [
+   "K654.2"
+  ],
+  "typ": "Standard-KA",
+  "betten": 69,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 5,
+   "15 Orthopädie und Traumatologie": 49,
+   "63 Remobilisation/Nachsorge": 15
+  }
+ },
+ "kh088": {
+  "kav": [
+   "K652.1"
+  ],
+  "typ": "Standard-KA",
+  "betten": 107,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 3,
+   "03 Chirurgie": 16,
+   "05 Innere Medizin": 52,
+   "62 Akutgeriatrie/Remobilisation": 32,
+   "63 Remobilisation/Nachsorge": 4
+  }
+ },
+ "kh089": {
+  "kav": [
+   "K104.1"
+  ],
+  "typ": "Standard-KA",
+  "betten": 113,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 10,
+   "03 Chirurgie": 16,
+   "05 Innere Medizin": 34,
+   "10 Augenheilkunde": 3,
+   "15 Orthopädie und Traumatologie": 26,
+   "62 Akutgeriatrie/Remobilisation": 24
+  }
+ },
+ "kh090": {
+  "kav": [
+   "K106.1"
+  ],
+  "typ": "Standard-KA",
+  "betten": 110,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 12,
+   "03 Chirurgie": 25,
+   "05 Innere Medizin": 54,
+   "06 Frauenheilkunde und Geburtshilfe": 12,
+   "10 Augenheilkunde": 7
+  }
+ },
+ "kh091": {
+  "kav": [],
+  "typ": null,
+  "betten": 0,
+  "abt": {}
+ },
+ "kh092": {
+  "kav": [
+   "K904.1"
+  ],
+  "typ": "Standard-KA",
+  "betten": 222,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 12,
+   "03 Chirurgie": 45,
+   "05 Innere Medizin": 85,
+   "12 Urologie": 26,
+   "61/1 Psychosomatik/Erwachsene": 27,
+   "62 Akutgeriatrie/Remobilisation": 15,
+   "64/1 Palliativmedizin/Erwachsene": 12
+  }
+ },
+ "kh093": {
+  "kav": [
+   "K914.1"
+  ],
+  "typ": "Standard-KA",
+  "betten": 166,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 4,
+   "05 Innere Medizin": 37,
+   "15 Orthopädie und Traumatologie": 72,
+   "62 Akutgeriatrie/Remobilisation": 53
+  }
+ },
+ "kh094": {
+  "kav": [
+   "K919.1"
+  ],
+  "typ": "Standard-KA",
+  "betten": 182,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 21,
+   "02/1 Kinder- und Jugendheilkunde": 10,
+   "03 Chirurgie": 36,
+   "05 Innere Medizin": 47,
+   "06 Frauenheilkunde und Geburtshilfe": 68
+  }
+ },
+ "kh095": {
+  "kav": [
+   "K915.2"
+  ],
+  "typ": "Standard-KA",
+  "betten": 89,
+  "abt": {
+   "05 Innere Medizin": 49,
+   "62 Akutgeriatrie/Remobilisation": 24,
+   "64/1 Palliativmedizin/Erwachsene": 16
+  }
+ },
+ "kh096": {
+  "kav": [
+   "K915.1"
+  ],
+  "typ": "Standard-KA",
+  "betten": 161,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 6,
+   "03 Chirurgie": 41,
+   "05 Innere Medizin": 87,
+   "10 Augenheilkunde": 2,
+   "62 Akutgeriatrie/Remobilisation": 25
+  }
+ },
+ "kh097": {
+  "kav": [
+   "K908.1"
+  ],
+  "typ": "Standard-KA",
+  "betten": 232,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 6,
+   "03 Chirurgie": 34,
+   "05 Innere Medizin": 82,
+   "07 Neurologie": 18,
+   "10 Augenheilkunde": 5,
+   "15 Orthopädie und Traumatologie": 87
+  }
+ },
+ "kh098": {
+  "kav": [],
+  "typ": null,
+  "betten": 0,
+  "abt": {}
+ },
+ "kh099": {
+  "kav": [
+   "K380.3"
+  ],
+  "typ": "Schwerpunkt-KA",
+  "betten": 28,
+  "abt": {
+   "02/3 Kinder- und Jugendpsychiatrie": 28
+  }
+ },
+ "kh100": {
+  "kav": [
+   "K421.1"
+  ],
+  "typ": "Sanatorium",
+  "betten": 102,
+  "abt": {
+   "50 Gemischter Belag": 102
+  }
+ },
+ "kh101": {
+  "kav": [
+   "K429.1"
+  ],
+  "typ": "Sonder-KA",
+  "betten": 90,
+  "abt": {
+   "62 Akutgeriatrie/Remobilisation": 90
+  }
+ },
+ "kh102": {
+  "kav": [
+   "K674.1"
+  ],
+  "typ": "Sanatorium",
+  "betten": 144,
+  "abt": {
+   "01 Anästhesiologie und Intensivmedizin/Intensivversorgung": 6,
+   "50 Gemischter Belag": 138
+  }
+ },
+ "kh103": {
+  "kav": [
+   "K623.1"
+  ],
+  "typ": "Sanatorium",
+  "betten": 44,
+  "abt": {
+   "50 Gemischter Belag": 44
+  }
+ },
+ "kh104": {
+  "kav": [
+   "K624.1"
+  ],
+  "typ": "Sanatorium",
+  "betten": 130,
+  "abt": {
+   "50 Gemischter Belag": 130
+  }
+ },
+ "kh105": {
+  "kav": [
+   "K659.1"
+  ],
+  "typ": "Sanatorium",
+  "betten": 50,
+  "abt": {
+   "50 Gemischter Belag": 50
+  }
+ },
+ "kh106": {
+  "kav": [
+   "K667.1"
+  ],
+  "typ": "Sanatorium",
+  "betten": 45,
+  "abt": {
+   "50 Gemischter Belag": 45
+  }
+ },
+ "kh107": {
+  "kav": [
+   "K665.1+"
+  ],
+  "typ": null,
+  "betten": 126,
+  "abt": {
+   "62 Akutgeriatrie/Remobilisation": 120,
+   "63 Remobilisation/Nachsorge": 6
+  }
+ }
+}

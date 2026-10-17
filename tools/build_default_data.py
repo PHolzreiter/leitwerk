@@ -29,7 +29,7 @@ HOSPITAL_FLAGS = [
     "notfallambulanz", "schockraum", "unfallambulanz", "kinderambulanz", "intensiv_anaesthesie",
     "neurologie", "kinderintensiv", "neonatologie", "hno", "urologie", "gyn_geburtshilfe",
 ]
-HOSPITAL_COLS = ["id", "name", "kurzname", "ort", "breitengrad", "laengengrad", "einrichtungen", "akut_aus", "hinweis"]
+HOSPITAL_COLS = ["id", "name", "kurzname", "ort", "breitengrad", "laengengrad", "einrichtungen", "akut_aus", "zeiten", "plaetze", "aufnahmerad", "hinweis"]
 POI_COLS = ["id", "name", "typ", "ort", "breitengrad", "laengengrad", "hinweis"]
 TEMPLATE_COLS = ["id", "code", "adresse", "breitengrad", "laengengrad", "meldung", "patient_alter", "transport", "hinweis"]
 
@@ -648,6 +648,107 @@ SPEZIAL = {
 }
 
 
+TAG = ["", "Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
+
+
+def zeit_text(fenster: list[dict]) -> str:
+    """[{tage, von, bis}] → „Mo–Fr 07:00–15:00; Sa 08:00–12:00“ (wie im Spiel)"""
+    teile = []
+    for f in fenster:
+        tage = sorted(set(f["tage"]))
+        if tage == list(range(1, 8)):
+            t = "täglich"
+        else:
+            gruppen, i = [], 0
+            while i < len(tage):
+                j = i
+                while j + 1 < len(tage) and tage[j + 1] == tage[j] + 1:
+                    j += 1
+                gruppen.append(f"{TAG[tage[i]]}–{TAG[tage[j]]}" if j > i else TAG[tage[i]])
+                i = j + 1
+            t = ", ".join(gruppen)
+        teile.append(f"{t} {f['von']}–{f['bis']}")
+    return "; ".join(teile)
+
+
+def ist_rund_um_die_uhr(fenster: list[dict]) -> bool:
+    return any(sorted(set(f["tage"])) == list(range(1, 8)) and f["von"] == "00:00" and f["bis"] in ("24:00", "00:00") for f in fenster)
+
+
+AKUTBETTEN_AUSSER = ("08 Psychiatrie", "02/3", "62 ", "63 ", "64 ", "Remobilisation", "Rehabilitation", "Akutgeriatrie", "Psychosomatik")
+
+
+def plaetze_ableiten(kid: str, einr: set[str], kav: dict, z: dict) -> dict[str, int]:
+    """Plätze je Akut-Bereich: genannte Zahlen zuerst, sonst aus der Größe (Betten laut Krankenanstalten-Verzeichnis,
+    Patientenzahlen) abgeleitet. Paul hat für Krems und St. Pölten Schockräume vorgegeben."""
+    pl = {k: int(v) for k, v in (z.get("plaetze") or {}).items() if isinstance(v, (int, float)) and v > 0}
+    gr = z.get("groesse") or {}
+    abt = kav.get("abt", {})
+    akut = sum(b for a, b in abt.items() if not any(x in a for x in AKUTBETTEN_AUSSER)) or int(gr.get("betten") or 0)
+    typ = kav.get("typ") or ""
+    gross = typ == "Zentral-KA" or akut >= 700
+    mittel = not gross and (typ == "Schwerpunkt-KA" or akut >= 300)
+    out: dict[str, int] = {}
+
+    def klemm(x: float, lo: int, hi: int) -> int:
+        return max(lo, min(hi, round(x)))
+
+    if "amb_notaufnahme" in einr:
+        if pl.get("notaufnahme"):
+            n = pl["notaufnahme"] + pl.get("notaufnahme_betten", 0) // 2
+        elif gr.get("notaufnahme_jahr"):
+            n = gr["notaufnahme_jahr"] / 2200
+        else:
+            n = akut / 32
+        out["notaufnahme"] = klemm(n, 3, 30)
+    if "amb_unfall" in einr:
+        ortho = sum(b for a, b in abt.items() if a.startswith("15"))
+        out["unfall"] = klemm(ortho / 7 if ortho else akut / 60, 3, 25)
+    if "amb_kindernotaufnahme" in einr:
+        kinder = sum(b for a, b in abt.items() if a.startswith("02/1") or a.startswith("02/2"))
+        out["kindernotaufnahme"] = klemm(kinder / 6 if kinder else 3, 2, 12)
+    if "fb_schockraum" in einr:
+        if kid == "kh001":
+            out.update(schockraum_intern=2, schockraum_trauma=1)
+        elif kid == "kh002":
+            out["schockraum"] = 1
+        elif pl.get("schockraum_trauma") or pl.get("schockraum_intern"):
+            for k in ("schockraum_trauma", "schockraum_intern"):
+                if pl.get(k):
+                    out[k] = pl[k]
+            if pl.get("schockraum") and not (pl.get("schockraum_trauma") and pl.get("schockraum_intern")):
+                rest = pl["schockraum"] - pl.get("schockraum_trauma", 0) - pl.get("schockraum_intern", 0)
+                if rest > 0:
+                    out["schockraum"] = rest
+        elif pl.get("schockraum"):
+            out["schockraum"] = pl["schockraum"]
+        elif "amb_notaufnahme" not in einr and "amb_unfall" in einr:
+            out["schockraum_trauma"] = 2 if akut >= 200 else 1
+        elif gross:
+            out.update(schockraum_trauma=2, schockraum_intern=2)
+        elif mittel:
+            out.update(schockraum_trauma=1, schockraum_intern=1)
+        else:
+            out["schockraum"] = 1
+    if "fb_herzkatheter" in einr:
+        out["herzkatheter"] = pl.get("herzkatheter") or (2 if gross else 1)
+    if "z_cardiac_arrest_center" in einr:
+        out["ecmo"] = pl.get("ecmo") or (2 if akut >= 1200 else 1)
+    if "its_stroke_unit" in einr:
+        out["stroke_unit"] = klemm((pl.get("stroke_unit") or (8 if gross else 4)) / 4, 1, 3)
+    if "fb_kreisssaal" in einr or "st_geburtshilfe" in einr:
+        if pl.get("kreisssaal"):
+            out["kreisssaal"] = pl["kreisssaal"]
+        elif gr.get("geburten_jahr"):
+            out["kreisssaal"] = klemm(gr["geburten_jahr"] / 450, 1, 7)
+        else:
+            gyn = sum(b for a, b in abt.items() if a.startswith("06"))
+            out["kreisssaal"] = klemm(gyn / 12 if gyn else 2, 1, 6)
+    if "fb_druckkammer" in einr:
+        out["druckkammer"] = pl.get("druckkammer") or 1
+    return out
+
+
 def build_hospitals() -> list[dict]:
     """Krankenhäuser mit ihren Einrichtungen (Stationen, Intensiv, Ambulanzen …).
     Die Einrichtungen stammen aus der Recherche auf den offiziellen Websites (tools/sources/kh_einrichtungen.json,
@@ -671,6 +772,22 @@ def build_hospitals() -> list[dict]:
         return " – ".join(teile)
 
     klinik = json.loads((ROOT / "src" / "data" / "klinik.json").read_text(encoding="utf-8"))
+    zeiten_alle = json.loads((SRC / "kh_zeiten.json").read_text(encoding="utf-8")) if (SRC / "kh_zeiten.json").exists() else {}
+    kav_alle = json.loads((SRC / "kh_kav_betten.json").read_text(encoding="utf-8")) if (SRC / "kh_kav_betten.json").exists() else {}
+    MIT_ZEITEN = ["amb_notaufnahme", "amb_unfall", "amb_kindernotaufnahme", "amb_psychiatrie_krise", "fb_herzkatheter", "fb_schockraum", "fb_kreisssaal", "fb_druckkammer", "its_stroke_unit", "fb_angiographie"]
+
+    def extra(kid: str, d: dict) -> dict:
+        """Öffnungszeiten (nur belegte, nicht rund um die Uhr), Plätze, Aufnahmerad"""
+        z = zeiten_alle.get(kid, {})
+        einr = set(d["einrichtungen"])
+        zt = []
+        for e in MIT_ZEITEN:
+            f = (z.get("zeiten") or {}).get(e)
+            if e in einr and f and not ist_rund_um_die_uhr(f):
+                zt.append(f"{e}: {zeit_text(f)}")
+        pl = plaetze_ableiten(kid, einr, kav_alle.get(kid, {}), z)
+        return {"zeiten": " | ".join(zt), "plaetze": ", ".join(f"{k}={v}" for k, v in pl.items()), "aufnahmerad": z.get("_rad", "")}
+
     NOTFALL = {"amb_notaufnahme", "amb_unfall", "amb_kindernotaufnahme", "amb_psychiatrie_krise", "fb_schockraum", "its_stroke_unit", "fb_kreisssaal"}
 
     def akut_aus(d: dict) -> tuple[str, str]:
@@ -694,7 +811,7 @@ def build_hospitals() -> list[dict]:
         aus, grund = akut_aus(d)
         out.append({"id": kid, "name": name, "kurzname": kurz, "ort": ort,
                     "breitengrad": f"{lat:.6f}", "laengengrad": f"{lon:.6f}",
-                    "einrichtungen": ", ".join(d["einrichtungen"]), "akut_aus": aus,
+                    "einrichtungen": ", ".join(d["einrichtungen"]), "akut_aus": aus, **extra(kid, d),
                     "hinweis": (f"{grund} – " if grund else "") + hinweis(d)})
     # neu recherchierte Häuser (auch Privatkliniken außerhalb Wiens)
     n = len(out)
@@ -705,7 +822,7 @@ def build_hospitals() -> list[dict]:
         n += 1
         out.append({"id": f"kh{n:03d}", "name": d["name"], "kurzname": d.get("kurzname") or d["name"], "ort": d.get("ort", ""),
                     "breitengrad": f"{float(d['lat']):.6f}", "laengengrad": f"{float(d['lon']):.6f}",
-                    "einrichtungen": ", ".join(d["einrichtungen"]), "akut_aus": akut_aus(d)[0],
+                    "einrichtungen": ", ".join(d["einrichtungen"]), "akut_aus": akut_aus(d)[0], **extra(f"kh{n:03d}", d),
                     "hinweis": (f"{akut_aus(d)[1]} – " if akut_aus(d)[1] else "") + hinweis(d)})
     return out
 
