@@ -258,7 +258,7 @@ export const FAELLE: FallVorlage[] = [
     orte: ["wohnung", "haus", "geschaeft"],
     stelle: ["im Wohnzimmer im Sessel", "in der Küche", "im Geschäft bei der Kassa"],
     anrufer: ["kind", "partner", "verkauf"],
-    hergang: ["Mit {P} stimmt was nicht, {er} redet so komisch und der Mund hängt {rechts|links} runter!"],
+    hergang: ["{P} ist auf einmal so komisch, {er} redet ganz verwaschen und der Mund hängt {rechts|links} runter!"],
     seitMin: [30, 60],
     fest: {
       sprachstoerung: "ja",
