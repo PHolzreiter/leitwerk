@@ -16,10 +16,12 @@ export function nachrichtArt(text: string): NachrichtArt {
   if (!frage && /^(okay,? |gut,? |so,? )?(also|das heißt|sie sagen|sie sagten|somit|verstehe|ich fasse zusammen)\b/.test(t)) return "zusammenfassung";
   if (!frage && /\b(somit|das heißt|sie sagten|wenn ich (sie )?richtig verstehe)\b/.test(t)) return "zusammenfassung";
   if (frage && /(richtig|korrekt|stimmt (das|so)|oder|gell|ja)\?\s*$/.test(t) && /\b(also|das heißt|sie sagten|somit|verstehe ich)\b/.test(t)) return "zusammenfassung";
+  // „Die Rettung ist unterwegs, bleiben Sie am Telefon“ ist eine Mitteilung, keine Anweisung
+  const nurDranBleiben = /bleiben sie (bitte )?(am telefon|dran|in der leitung|bei (ihm|ihr))/.test(t);
   const befehl =
     /\b(legen|bringen|drücken|drucken|öffnen|schauen|bleiben|machen|halten|gehen|holen|sperren|schalten|lassen|geben|kühlen|setzen|nehmen|beginnen|zählen|sagen|stellen|decken|ziehen|schicken|suchen|heben|drehen|knien|pressen|klopfen|sprechen|warten|rufen) sie\b/.test(t) ||
     /\bsie (sollen|müssen|dürfen)\b|\bbitte (nicht )?(\w+en)\b/.test(t);
-  if (!frage && befehl) return "anweisung";
+  if (!frage && befehl && !(nurDranBleiben && /\b(unterwegs|kommt|kommen|geschickt|alarmiert)\b/.test(t))) return "anweisung";
   const mitteilung =
     /\b(rettung|rettungsdienst|rettungswagen|notarzt|hubschrauber|kollegen|fahrzeug|hilfe|wagen|auto|team|feuerwehr|polizei|transport|krankentransport)\b[^.?!]*\b(unterwegs|kommt|kommen|auf dem weg|geschickt|alarmiert|schicke|schicken|verständigt|da sein|bei ihnen)\b/.test(t) ||
     /\b(ich|wir) (werde|werden|versuche|versuchen|tu|tun)\b[^.?!]*\b(orten|schicken|verständigen|kümmern|organisieren|eintragen|weitergeben)\b/.test(t) ||
@@ -44,8 +46,11 @@ export function hinweisZurArt(art: NachrichtArt, laie: boolean): string {
       return "Die Leitstelle fasst zusammen, was sie verstanden hat. Antworte nur ganz kurz: bestätigen („Ja, genau.“, „Ja, so ist es.“) oder korrigieren, was nicht stimmt. Wiederhole ihre Worte nicht und zähl nichts neu auf.";
     case "anweisung":
       return `Die Leitstelle sagt dir, was du tun sollst. Passt es zur Fallakte, tu es und sag kurz, was du tust oder was du dabei siehst – nur das, was zu genau dieser Anweisung passt. Passt es nicht, frag nach. Bedingte Anweisungen („falls“, „wenn“) und Bitten wie „Bleiben Sie dran“ bestätigst du nur kurz.`;
-    case "mitteilung":
-      return `Die Leitstelle hat dir etwas MITGETEILT, keine Frage gestellt. Reagiere kurz und menschlich darauf${laie ? " – z. B. erleichtert, mit einem Danke, oder mit einer kurzen Rückfrage („Wie lang dauert's ungefähr?“, „Was soll ich bis dahin machen?“)" : " (bestätigen, kurz nachfragen, was noch nötig ist)"}. Beschreib jetzt NICHT noch einmal den Zustand des Patienten.`;
+    case "mitteilung": {
+      const art = ["sag erleichtert danke", "frag, wie lange es ungefähr dauert", "frag, was du bis dahin machen sollst", "sag, dass du jemanden zum Einweisen hinausschickst bzw. die Tür aufmachst", "sag kurz „okay“ und dass du dranbleibst", "frag, ob du noch irgendwas herrichten sollst"];
+      const w = art[Math.floor(Math.random() * art.length)];
+      return `Die Leitstelle hat dir etwas MITGETEILT, keine Frage gestellt. Reagiere kurz und menschlich darauf${laie ? ` – diesmal: ${w} (in deinen eigenen Worten)` : " (bestätigen, kurz nachfragen, was noch nötig ist)"}. Beschreib jetzt NICHT noch einmal den Zustand des Patienten.`;
+    }
     case "abschluss":
       return "Die Leitstelle beendet das Gespräch. Verabschiede dich kurz in einem Satz.";
     default:

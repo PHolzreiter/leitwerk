@@ -226,21 +226,21 @@ export function personaText(p: Persona, w: boolean, selbst: boolean): string {
 }
 
 /** Hinweis für den ersten Satz (Antwort auf „Wo ist der Notfallort?“) */
-export function einstiegHinweis(p: Persona, adresse: string): string {
+export function einstiegHinweis(p: Persona, adresse: string, rnd: Rnd = Math.random): string {
   const teile = adresse.split(",").map((t) => t.trim());
   const strasse = teile[0] ?? adresse;
   switch (p.einstieg) {
     case "dringend":
-      return "Sag zuerst kurz, dass es dringend ist (z. B. „Bitte, schnell …“), dann den Ort.";
+      return `Sag zuerst kurz, dass es dringend ist (in deinen Worten, z. B. ${pick(["„Bitte, schnell …“", "„Sie müssen sofort kommen!“", "„Es ist dringend!“", "„Hilfe, bitte!“", "„Schnell, bitte!“"], rnd)}), dann die Adresse – sonst nichts.`;
     case "problem":
       return "Du bist so durch den Wind, dass du NICHT mit der Adresse anfängst: du sagst in einem Satz, was los ist – ohne Adresse. Die Adresse sagst du erst, wenn die Leitstelle noch einmal nach dem Ort fragt.";
     case "hallo":
-      return "Du bist unsicher, ob du richtig verbunden bist („Hallo? Bin ich da bei der Rettung?“) – danach sagst du den Ort.";
+      return `Du bist unsicher, ob du richtig verbunden bist (z. B. ${pick(["„Hallo? Ist da die Rettung?“", "„Ja, hallo … bin ich da richtig beim Notruf?“", "„Rettung? Hallo?“", "„Hallo, ist das die 144?“"], rnd)}) – danach sagst du die Adresse (Straße, Hausnummer, Ort). Sonst nichts, keine weiteren Einzelheiten.`;
     case "unvollstaendig":
       return teile.length > 1 ? `Du nennst nur „${strasse}“ – die Gemeinde vergisst du. Die sagst du erst, wenn die Leitstelle nachfragt.` : "Nenn den Ort.";
     case "umschreibung":
-      return "Du nennst die Adresse und sagst gleich dazu, woran man das Haus oder die Stelle erkennt (frei erfunden, passend zum Ort, z. B. „das gelbe Haus neben dem Gasthaus“).";
+      return "Du nennst die vollständige Adresse (Straße, Hausnummer, Ort) und sagst in einem kurzen Satz dazu, woran man das Haus erkennt – denk dir selbst etwas Passendes aus.";
     default:
-      return "Nenn den Ort.";
+      return "Nenn nur die Adresse (Straße, Hausnummer, Ort) – sonst nichts.";
   }
 }

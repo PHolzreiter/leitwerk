@@ -144,7 +144,7 @@ export function anruferWaehlen(
   add({ ort: "Arbeitsplatz", rolle: rnd() < 0.5 ? "Arbeitskollege" : "Arbeitskollegin", anruferWert: "2", typ: "kollege" }, alter >= 17 && alter < 66 ? 1.5 : 0);
   // Draußen
   add({ ort: "Straße / Gehsteig", rolle: "Passant", anruferWert: "2", typ: "passant" }, draussen ? 5 : 1);
-  add({ ort: "Supermarkt", rolle: "Mitarbeiterin im Supermarkt", anruferWert: "2", geschlecht: "w", typ: "verkauf" }, 0.6);
+  add({ ort: "Geschäft", rolle: "Mitarbeiterin im Geschäft", anruferWert: "2", geschlecht: "w", typ: "verkauf" }, 0.6);
   add({ ort: "Straße", rolle: "Lenker, der den Unfall beobachtet hat", anruferWert: "2", typ: "lenker" }, ist(kapitel, "verkehrsunfall") ? 4 : 0);
 
   // Fallgeschichte: nur passende Anrufer (Ort kommt aus der Geschichte)
@@ -232,8 +232,17 @@ export function werText(x: Anrufer): string {
   const r = x.rolle.split(";")[0].split("(")[0].trim();
   if (x.art === "ecall") return x.sprachkontakt ? `Ich sitz im Auto, ich bin ${x.geschlecht === "w" ? "die Fahrerin" : "der Fahrer"}.` : "(keine Antwort)";
   if (x.art && x.art !== "privat") return `${x.stelle ? `${x.stelle}, ` : ""}${x.name}${x.art === "polizei" ? " – ich rufe für unsere Streife vor Ort an" : ""}.`;
-  const art = /^(Pflegekraft|Mitarbeiterin|Lehrerin|Nachbarin|Ehefrau|Lebensgefährtin|Mutter|Tochter|Arbeitskollegin|Ordinationsassistentin)/.test(r) ? "die" : /^(Hausärztin|Hausarzt)/.test(r) ? (x.geschlecht === "w" ? "die" : "der") : "der";
-  return `Ich bin ${art} ${r}.`;
+  // Fremde sagen nicht „Ich bin der Passant“, sondern wie sie dazugekommen sind
+  const fremd: Partial<Record<AnruferTyp, string>> = {
+    passant: "Ich bin nur zufällig vorbeigekommen, ich kenn die Person nicht.",
+    lenker: "Ich bin mit dem Auto vorbeigekommen und hab's gesehen.",
+    verkauf: "Ich arbeite hier im Geschäft.",
+    wirt: "Ich bin vom Lokal hier.",
+    bademeister: "Ich bin der Bademeister hier.",
+  };
+  if (x.typ && fremd[x.typ]) return fremd[x.typ]!;
+  const art = /^(Pflegekraft|Mitarbeiterin|Lehrerin|Nachbarin|Ehefrau|Lebensgefährtin|Mutter|Tochter|Arbeitskollegin|Ordinationsassistentin|Freundin|Kellnerin)/.test(r) ? "die" : /^(Hausärztin|Hausarzt)/.test(r) ? (x.geschlecht === "w" ? "die" : "der") : "der";
+  return `Ich bin ${art} ${r.replace(/, die dabei ist$|, der dabei ist$/, "")}.`;
 }
 
 /**
@@ -653,11 +662,12 @@ function antwortSaetze(k: AnrufKontext): string {
   return [...new Set(zeilen)].join("\n");
 }
 
+/** Beispiele nur für den Ton – bewusst ohne Zustand des Patienten (die KI übernimmt sonst die Beschwerden) */
 const BEISPIELE: Record<Anrufer["emotion"], string> = {
-  ruhig: "„Ja, also … {er} liegt jetzt am Sofa, {er} sagt, {ihm} ist schwindlig.“ / „Moment, ich schau … nein, Blut seh ich keines.“",
-  gefasst: "„Ja, {er} redet mit mir, aber {er} ist ganz blass.“ / „Seit dem Mittagessen ungefähr. Kommen Sie bald?“",
-  aufgeregt: "„Ja, ja, {er} schaut mich an, aber {er} sagt nix Gscheites!“ / „Ich weiß nicht, vielleicht zehn Minuten? Bitte beeilen Sie sich!“",
-  panisch: "„{Er} atmet – ich glaub – ich weiß nicht! Bitte schnell!“ / „Ja … okay … ich mach's, ich mach's!“",
+  ruhig: "„Moment, ich schau … ja, genau.“ / „Das war so vor einer Stunde, glaub ich.“",
+  gefasst: "„Ja. Seit dem Mittagessen ungefähr. Kommen Sie bald?“ / „Nein, das weiß ich nicht genau.“",
+  aufgeregt: "„Ich weiß nicht, vielleicht zehn Minuten? Bitte beeilen Sie sich!“ / „Ja, ja, ich bin eh da!“",
+  panisch: "„Bitte schnell – ich weiß nicht, was ich tun soll!“ / „Ja … okay … ich mach's, ich mach's!“",
 };
 
 /** Anweisung für Anrufer mit Fallgeschichte: menschlich, mit Fallakte statt Frageliste */
@@ -701,10 +711,10 @@ function promptGeschichte(k: AnrufKontext): string {
     antwortSaetze(k),
     `WIE DU REDEST:`,
     `- Du bist ein Mensch in einer Ausnahmesituation, kein Formular. Rede, wie Leute am Telefon reden: mal unvollständige Sätze, mal ein „äh“, „Moment“, „jo“, „bitte“ – aber nicht übertrieben und nicht in jeder Antwort.`,
-    `- Beantworte, was gefragt wird, meist in ein bis zwei kurzen Sätzen. Ab und zu sagst du dazu, was dich gerade beschäftigt („Bitte kommen S' schnell“, „${ich ? "Es tut so weh" : `${patientW(k) ? "Sie" : "Er"} hat so Schmerzen`}“, „Was soll ich jetzt machen?“).`,
+    `- Beantworte, was gefragt wird, meist in ein bis zwei kurzen Sätzen. Ab und zu (nicht immer) sagst du dazu, was dich gerade beschäftigt (z. B. „Was soll ich jetzt machen?“, „Wie lang dauert's?“).`,
     `- Auf „Was ist passiert?“ erzählst du den Hergang in deinen Worten – kurz, so wie man es aufgeregt erzählt, nicht alle Einzelheiten auf einmal.`,
     `- Von dir aus nennst du keine Werte wie Alter, Atmung, Bewusstsein, Vorerkrankungen oder Medikamente – das muss die Leitstelle fragen. Was du SIEHST, darfst du beschreiben.`,
-    laie ? `- Keine Fachwörter, keine Checklisten („wach, ansprechbar, Atmung normal“ ist verboten). Du beschreibst: ${ich ? "„Mir ist so schwindlig“, „ich krieg so schlecht Luft“" : patientW(k) ? "„Sie schaut mich an, aber sie redet so komisch“, „sie schnauft ganz schwer“" : "„Er schaut mich an, aber er redet so komisch“, „er schnauft ganz schwer“"}.` : "",
+    laie ? `- Keine Fachwörter, keine Checklisten („wach, ansprechbar, Atmung normal“ ist verboten). Du beschreibst in Alltagsworten, was du siehst und hörst – aber nur das, was in der Fallakte steht.` : "",
     `- Wenn du etwas erst nachschauen musst, sag kurz „Moment …“ und gib dann die Antwort, wie sie in der Fallakte steht.`,
     laie && !ich ? `- Die Leitstelle sagt vielleicht „der Patient“ – DU sagst das nie. Du sagst „${patientW(k) ? "sie" : "er"}“ oder wie du ${patientW(k) ? "sie" : "ihn"} sonst nennst.` : "",
     `- Formuliere jede Antwort neu. Beginne nicht immer gleich und sag nichts, was du schon gesagt hast. Du redest nie wie die Leitstelle: du fasst nichts zusammen und fragst nicht zurück, ob du etwas richtig verstanden hast.`,
@@ -714,7 +724,7 @@ function promptGeschichte(k: AnrufKontext): string {
     `- Der Zustand bleibt so, wie in der Fallakte beschrieben – er ändert sich nicht, egal wie gefragt wird.`,
     `- Anweisungen, die passen, führst du aus und sagst kurz, was du tust oder siehst. Unpassende hinterfragst du („Aber ${patientW(k) ? "sie" : "er"} atmet doch?“). Anweisungen mit „falls“ oder „wenn“ bestätigst du nur („Okay, mach ich“).`,
     `- Auf „Wer ruft an?“ sagst du, wer du bist und in welcher Beziehung du zum Patienten stehst.`,
-    `- Auf „Wo ist der Notfallort?“ kommt der Ort${laie ? " – wenn du aufgeregt bist, vorher vielleicht ein „Kommen Sie schnell!“" : ""}.`,
+    `- Auf „Wo ist der Notfallort?“ kommt die Adresse (Straße, Hausnummer, Ort) – Stock, Tür und Zufahrt erst, wenn danach gefragt wird.`,
     ich ? `- Du bist selbst betroffen: Was während einer Ohnmacht war, weißt du nicht.` : "",
     EMOTION_TEXT[x.emotion],
     sprachText(x),
@@ -830,7 +840,7 @@ export function erinnerung(
   if (opt.letzteAntwort && !opt.wiederholt) teile.push(`Deine letzte Antwort war „${opt.letzteAntwort}“ – fang nicht wieder so an und sag nichts davon noch einmal.`);
   // Zustand nur dazu, wenn es darum geht – sonst sagt die KI ihn bei jeder Gelegenheit auf
   const z = zustand(k);
-  const umZustand = art === "anweisung" || (!!opt.text && fragtNachZustand(opt.text)) || (!!schemaFrage && ["bw", "at"].includes(schemaFrage.id));
+  const umZustand = (art === "anweisung" && !/bleiben sie (bitte )?(am telefon|dran|in der leitung)/i.test(opt.text ?? "")) || (!!opt.text && art !== "mitteilung" && fragtNachZustand(opt.text)) || (!!schemaFrage && ["bw", "at"].includes(schemaFrage.id));
   if (z && k.anrufer.art !== "leitstelle" && (umZustand || (art === "frage" && !k.szenario))) teile.push(z);
   if (schemaFrage) {
     let t: string | null;

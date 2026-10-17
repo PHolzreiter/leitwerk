@@ -508,7 +508,7 @@ const FAKT: Record<string, Record<string, string>> = {
   psych_vorerkrankung: { ja: "{Er} ist wegen Depressionen in Behandlung", nein: "psychisch ist nichts bekannt" },
   lungenerkrankung: { asthma: "{Er} hat Asthma", copd: "{Er} hat COPD, eine Raucherlunge", andere: "{Er} hat eine Lungenkrankheit", nein: "mit der Lunge hat {er} nichts" },
   schwanger: { ja: "{Er} ist schwanger", nein: "schwanger ist sie nicht" },
-  hautfarbe: { ja: "{Er} ist ganz blass bzw. grau im Gesicht, die Lippen bläulich", nein: "die Gesichtsfarbe ist normal" },
+  hautfarbe: { ja: "{Er} ist ganz blass im Gesicht", nein: "die Gesichtsfarbe ist normal" },
   kaltschweiss: { ja: "{Er} ist kalt und schweißig", nein: "{Er} schwitzt nicht" },
   sprachschw: { ja: "{Er} kann vor lauter Schnaufen nur einzelne Wörter sagen", nein: "{Er} kann ganze Sätze sprechen" },
   verwirrt: { ja: "{Er} ist durcheinander und weiß nicht recht, wo {er} ist", nein: "{Er} ist im Kopf klar" },
