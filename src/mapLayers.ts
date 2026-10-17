@@ -506,6 +506,9 @@ function incidentFeatures(): FeatureCollection<Point> {
     );
     // Bereitstellungsraum (bis die Polizei den Einsatzort freigibt)
     if (e.br && !e.boSicher) out.push(pointFeature(e.id, e.br.lon, e.br.lat, { name: `BR ${e.nummer}`, color: "#6b7280", sel: 0, br: 1 }));
+    // Treffpunkt RTW – NEF (bis zur Übergabe)
+    const rv = e.rendezvous;
+    if (rv && rv.status !== "fertig") out.push(pointFeature(e.id, rv.punkt.lon, rv.punkt.lat, { name: `Treffpunkt ${e.nummer}`, color: "#7c3aed", sel: 0, br: 1 }));
   }
   return collection(out);
 }

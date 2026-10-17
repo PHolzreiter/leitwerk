@@ -33,7 +33,7 @@ export function einsatzLage(e: Einsatz): Lage {
   const fz = e.fahrzeuge.map((id) => sim.state.fahrzeuge[id]).filter((f) => f && f.einsatzId === e.id);
   if (!fz.length && e.fremd) return "erledigt";
   if (!e.fremd && (!fz.length || e.nachforderungen?.some((n) => !n.erledigt) || e.khAnfrage || e.adressePruefen)) return "dispo";
-  if (fz.some((f) => ["suche", "vorOrt", "warteKH", "transport", "uebergabe"].includes(f!.phase))) return "vorort";
+  if (fz.some((f) => ["suche", "vorOrt", "warteKH", "transport", "uebergabe", "rendezvous", "treffpunkt"].includes(f!.phase))) return "vorort";
   return "unterwegs";
 }
 

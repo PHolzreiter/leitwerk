@@ -35,6 +35,8 @@ const PHASE_TEXT: Record<string, string> = {
   suche: "sucht den Einsatzort",
   vorOrt: "vor Ort",
   warteKH: "wartet auf KH",
+  rendezvous: "fährt zum Treffpunkt",
+  treffpunkt: "am Treffpunkt",
   transport: "Transport",
   uebergabe: "Übergabe",
   rueckfahrt: "Rückfahrt",

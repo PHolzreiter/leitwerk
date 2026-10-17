@@ -144,6 +144,10 @@ export function createSettingsView(container: HTMLElement, teil: "simulation" | 
     rvSel.value = draft.revers ?? "normal";
     rvSel.addEventListener("change", () => (draft.revers = rvSel.value as Settings["revers"]));
     aGrid.append(el("label", { title: "Wache, stabile Patienten verweigern manchmal den Transport (Revers)" }, "Transportverweigerung (Revers)"), rvSel);
+    const rzv = el("input", { type: "checkbox", class: "set-rendezvous" }) as HTMLInputElement;
+    rzv.checked = draft.rendezvous !== false;
+    rzv.addEventListener("change", () => (draft.rendezvous = rzv.checked));
+    aGrid.append(el("label", { title: "Braucht der Patient einen Notarzt und ist das NEF noch mehr als 15 Minuten entfernt, fährt der RTW mit dem Patienten los und trifft das NEF unterwegs" }, "Rendezvous RTW – NEF"), rzv);
     // Work in Progress: Einsätze in Nachbarzonen
     const fzWrap = el("label", { title: "Einsätze knapp außerhalb deiner Funkgruppe, zu denen eigene Fahrzeuge (meist das NEF) fahren – angelegt und disponiert vom Kollegen der Nachbarzone" });
     fzWrap.innerHTML = `Einsätze in Nachbarzonen <span class="wip-badge">Work in Progress</span>`;

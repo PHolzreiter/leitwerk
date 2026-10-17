@@ -143,6 +143,8 @@ export interface Settings {
   fallKatalog?: "aus" | "gemischt" | "nur";
   /** Transportverweigerung (Revers): aus, selten (halb so oft) oder normal */
   revers?: "aus" | "selten" | "normal";
+  /** Rendezvous RTW–NEF, wenn das NEF noch mehr als 15 Minuten entfernt ist (Standard an) */
+  rendezvous?: boolean;
   gebiet: Gebiet;
   /** Fahrzeit mit Sondersignal = Fahrzeit × Faktor */
   sondersignalFaktor: number;

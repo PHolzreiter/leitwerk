@@ -104,7 +104,10 @@ export type Phase =
   | "wartetBR"
   | "ktFahrt"
   | "ktHalt"
-  | "ktReinigung";
+  | "ktReinigung"
+  /** Rendezvous: Fahrt zum Treffpunkt mit dem NEF bzw. Warten/Übergabe dort */
+  | "rendezvous"
+  | "treffpunkt";
 
 /** Art des Fahrzeugs aus den Stammdaten: Anzeige-Typ, Großraum, ohne Blaulicht */
 function fzArt(v: Vehicle, rmTyp: RmTyp): { typ: string; gross: boolean; ohneBlaulicht: boolean; ersatzFuer?: string; modell: string } {
@@ -391,14 +394,15 @@ export interface FunkSpruch {
 
 export type FunkAnliegen = "lage" | "nachforderung" | "storno" | "kh" | "adresse" | "info";
 
-/** Funkgespräch zwischen LEO und einem Fahrzeug */
+/** Funkgespräch zwischen LEO und einem Fahrzeug (bzw. zwischen zwei Fahrzeugen, LEO hört mit) */
 export interface FunkGespraech {
   id: number;
   fzId: string;
   funkname: string;
   einsatzId: string | null;
-  /** ruft = Fahrzeug ruft LEO; leoRuft = LEO ruft das Fahrzeug; offen = verbunden */
-  status: "ruft" | "leoRuft" | "offen" | "ende";
+  /** ruft = Fahrzeug ruft LEO; leoRuft = LEO ruft das Fahrzeug; offen = verbunden;
+   *  direkt = zwei Fahrzeuge funken miteinander; mithoeren = ein Fahrzeug fragt, ob LEO mitgehört hat */
+  status: "ruft" | "leoRuft" | "offen" | "ende" | "direkt" | "mithoeren";
   seit: number;
   /** ruft: nächster Wiederholungsruf; leoRuft: Fahrzeug meldet sich */
   naechster: number | null;
@@ -410,6 +414,19 @@ export interface FunkGespraech {
   wartetAufKi?: boolean;
   /** dringender Ruf (Nachforderung, Verschlechterung, Eigenschutz) – steht oben */
   dringend?: boolean;
+  /** Funk von Fahrzeug zu Fahrzeug: Gegenstelle (fzId/funkname = wer ruft) */
+  an?: { fzId: string; funkname: string } | null;
+  /** noch zu sprechende Sätze (Funk von Fahrzeug zu Fahrzeug) */
+  ablauf?: FunkSatz[];
+  /** am Ende fragt dieses Fahrzeug, ob LEO mitgehört hat (Wiederholung) */
+  mithoeren?: { von: string; text: string } | null;
+}
+
+/** Satz im Funk zwischen zwei Fahrzeugen; aktion passiert, wenn er gesprochen ist */
+export interface FunkSatz {
+  von: string;
+  text: string;
+  aktion?: "nefStorno";
 }
 
 export interface Nachforderung {
@@ -550,6 +567,8 @@ export interface Einsatz {
   lageGeplant?: { um: number; fzId: string; angefordert: boolean; erstes: boolean } | null;
   /** zuletzt an fehlende Partner erinnert */
   partnerErinnert?: number;
+  /** Rendezvous: RTW fährt dem (zu weit entfernten) NEF entgegen, Treffpunkt unterwegs */
+  rendezvous?: { rtwId: string; nefId: string; punkt: Ort; status: "anfahrt" | "treffen" | "fertig"; bis?: number | null } | null;
 }
 
 export interface Funkmeldung {
@@ -643,6 +662,7 @@ export const BEFEHLE = {
     "abfrageCode",
     "ortung",
     "funkAntworten",
+    "funkMitgehoert",
     "funkRufen",
     "funkSenden",
     "funkFzAntwort",
@@ -1518,6 +1538,16 @@ export class Simulation {
       }
       case "warteKH":
         break;
+      case "rendezvous": {
+        if (!e) return this.freigeben(fz);
+        this.amTreffpunkt(fz, e, t);
+        break;
+      }
+      case "treffpunkt": {
+        if (!e) return this.freigeben(fz);
+        this.rendezvousEnde(e, t);
+        break;
+      }
       case "transport": {
         fz.fahrt = null;
         fz.blaulicht = false;
@@ -1628,18 +1658,166 @@ export class Simulation {
     fz.phase = "warteKH";
     fz.phaseEnde = null;
     const verdacht = this.verdacht(e);
-    if (e.kh) return this.startTransport(e);
+    if (e.kh) {
+      this.startTransport(e);
+      return this.rendezvousLos(e, fz);
+    }
     // Die Besatzung bucht fast immer selbst – nur bei Reanimation oder unübersichtlicher Lage fragt sie an
     const p0 = l?.patienten[0];
     const anfragen = (p0 && istStillstand(p0)) || (l?.patienten.length ?? 1) > 1 || Math.random() < 0.05;
     if (e.wahr.rtwBuchtSelbst && !anfragen) {
       this.bucheKhAuto(e, fz.funkrufname);
-      return;
+      return this.rendezvousLos(e, fz);
     }
     e.verdacht = verdacht;
     e.khAnfrage = { verdacht, seit: t, von: fz.funkrufname };
     this.fzRuft(fz, e, "kh", `erbitte KH-Buchung, Verdacht ${buchungName(verdacht)}`);
     this.log(e, `${fz.funkrufname} erbittet KH-Buchung (Verdacht ${buchungName(verdacht)})`);
+    this.rendezvousLos(e, fz);
+  }
+
+  // ------------------------------------------------------------------ Rendezvous RTW – NEF
+
+  /**
+   * Rendezvous: Braucht der Patient (mindestens gelb) einen Notarzt und ist das alarmierte NEF noch mehr als
+   * 15 Minuten entfernt, fährt die Besatzung mit dem Patienten los; beide treffen sich unterwegs so, dass
+   * beide gleich lange fahren. Der Funk RTW–NEF läuft über die Gruppe (LEO hört mit).
+   */
+  private rendezvousPruefen(e: Einsatz, t: number): void {
+    const rv = e.rendezvous;
+    if (rv) {
+      if (rv.status !== "fertig") this.rendezvousUeberwachen(e, rv);
+      return;
+    }
+    if (e.fremd || e.lageGeplant || !e.wahr.transport || this.settings.rendezvous === false) return;
+    const l = e.wahr.lage;
+    if (!l?.aufgedeckt || l.patienten.length !== 1 || l.bit) return;
+    const p0 = l.patienten[0];
+    if (istStillstand(p0) || (p0.sichtung !== "gelb" && p0.sichtung !== "rot")) return;
+    if (this.fallVar(e)?.tot || this.partnerBlockiert(e).length) return;
+    if (this.bedarfVon(e).na <= 0) return;
+    const fzs = this.einsatzFz(e);
+    if (fzs.some((x) => this.mitNotarzt(x) && x.phase === "vorOrt")) return;
+    const rtw = fzs.find((x) => this.transportfaehig(x) && x.rmTyp !== "BIT" && x.phase === "vorOrt" && x.phaseEnde !== null);
+    if (!rtw) return;
+    // nur ein mit- bzw. nachalarmiertes NEF (kein Hubschrauber), das noch weit weg ist
+    const nef = fzs.find((x) => x.kategorie === "NEF" && !fliegt(x) && x.phase === "anfahrt" && !!x.fahrt && x.phaseEnde !== null && x.phaseEnde - t > 15 * MIN);
+    if (!nef?.fahrt || nef.phaseEnde === null) return;
+    // Patient einladen, dann los; Treffpunkt auf der Route des NEF, wo beide gleich lange fahren
+    const los = Math.min(rtw.phaseEnde!, t + rnd(3, 6) * MIN);
+    rtw.phaseEnde = los;
+    const f = nef.fahrt;
+    const bisLos = (los - f.start) / 1000;
+    const sek = (f.dauer + bisLos) / 2;
+    let i = 1;
+    while (i < f.times.length && f.times[i] < sek) i++;
+    const a = f.coords[i - 1];
+    const b = f.coords[i] ?? a;
+    const t0 = f.times[i - 1];
+    const t1 = f.times[i] ?? t0;
+    const k = t1 > t0 ? Math.min(1, Math.max(0, (sek - t0) / (t1 - t0))) : 0;
+    const punkt = { lat: a[1] + (b[1] - a[1]) * k, lon: a[0] + (b[0] - a[0]) * k };
+    const label = this.treffpunktName(punkt, e.adresse ?? e.wahr);
+    e.rendezvous = { rtwId: rtw.id, nefId: nef.id, punkt: { ...punkt, label }, status: "anfahrt", bis: null };
+    const eta = Math.round((nef.phaseEnde - t) / MIN);
+    this.log(e, `Rendezvous ${rtw.funkrufname} – ${nef.funkrufname}: ${label} (NEF noch ca. ${eta} Minuten entfernt)`);
+    this.fahre(nef, punkt, "rendezvous", true);
+    const r = rtw.funkrufname;
+    const n = nef.funkrufname;
+    this.fzFunk(this.sprecher(e, rtw), nef, e, [
+      { von: r, text: `${n} von ${r} kommen` },
+      { von: n, text: `Hier ${n} kommen` },
+      { von: r, text: `Hier ${r}, Patient braucht Notarzt, ihr seid noch ca. ${eta} Minuten entfernt, wir fahren euch entgegen, Rendezvous ${label}, kommen` },
+      { von: n, text: `Hier ${n}, Rendezvous ${label} verstanden, ENDE` },
+    ]);
+  }
+
+  /** Name des Treffpunkts: nächster Ort in der Nähe, sonst Richtung und Entfernung vom Einsatzort */
+  private treffpunktName(p: LatLon, bo: LatLon): string {
+    let best: { ort: string; d: number } | null = null;
+    for (const o of alleOrte()) {
+      if (!o.ort) continue;
+      const d = distanceM(p, o);
+      if (d < 6000 && (!best || d < best.d)) best = { ort: o.ort, d };
+    }
+    if (best) return `im Bereich ${best.ort}`;
+    const grad = (Math.atan2((p.lon - bo.lon) * Math.cos((bo.lat * Math.PI) / 180), p.lat - bo.lat) * 180) / Math.PI;
+    const richtung = ["nördlich", "nordöstlich", "östlich", "südöstlich", "südlich", "südwestlich", "westlich", "nordwestlich"][Math.round((((grad % 360) + 360) % 360) / 45) % 8];
+    return `ca. ${Math.max(1, Math.round(distanceM(p, bo) / 1000))} km ${richtung} vom Einsatzort`;
+  }
+
+  /** RTW fährt mit dem Patienten zum Treffpunkt (nach der KH-Buchung bzw. -Anfrage) */
+  private rendezvousLos(e: Einsatz, fz: SimFahrzeug): void {
+    const rv = e.rendezvous;
+    if (!rv || rv.status !== "anfahrt" || rv.rtwId !== fz.id || fz.phase !== "warteKH") return;
+    this.setStatus(fz, "zumZO");
+    this.log(e, `${fz.funkrufname} fährt mit dem Patienten zum Treffpunkt (${rv.punkt.label})`);
+    this.fahre(fz, rv.punkt, "rendezvous", true);
+  }
+
+  /** Einer der beiden nicht mehr im Einsatz (Storno, Umdisponieren, Revers): Rendezvous aufgeben */
+  private rendezvousUeberwachen(e: Einsatz, rv: NonNullable<Einsatz["rendezvous"]>): void {
+    const rtw = this.state.fahrzeuge[rv.rtwId];
+    const nef = this.state.fahrzeuge[rv.nefId];
+    const rtwDa = !!rtw && rtw.einsatzId === e.id;
+    const nefDa = !!nef && nef.einsatzId === e.id;
+    if (rtwDa && nefDa) return;
+    rv.status = "fertig";
+    rv.bis = null;
+    this.log(e, "Rendezvous aufgehoben");
+    if (rtwDa && rtw.phase === "treffpunkt") {
+      rtw.phase = "warteKH";
+      rtw.phaseEnde = null;
+      this.startTransport(e);
+    }
+    // ohne RTW (z. B. Revers): das NEF fährt zum Einsatzort
+    if (nefDa && (nef.phase === "treffpunkt" || nef.phase === "rendezvous") && e.adresse) this.fahre(nef, e.adresse, "anfahrt", true);
+  }
+
+  /** Am Treffpunkt angekommen; sind beide da, übernimmt der Notarzt (3–8 Minuten) */
+  private amTreffpunkt(fz: SimFahrzeug, e: Einsatz, t: number): void {
+    fz.fahrt = null;
+    const rv = e.rendezvous;
+    if (!rv || rv.status === "fertig") {
+      // Rendezvous aufgehoben: RTW fährt ins Krankenhaus, NEF zum Einsatzort
+      if (this.transportfaehig(fz)) {
+        fz.phase = "warteKH";
+        fz.phaseEnde = null;
+        this.startTransport(e);
+      } else if (e.adresse) this.fahre(fz, e.adresse, "anfahrt", true);
+      else this.freigeben(fz);
+      return;
+    }
+    fz.phase = "treffpunkt";
+    fz.phaseEnde = null;
+    if (!this.transportfaehig(fz)) this.setStatus(fz, "amBO");
+    const rtw = this.state.fahrzeuge[rv.rtwId];
+    const nef = this.state.fahrzeuge[rv.nefId];
+    if (rtw?.phase === "treffpunkt" && nef?.phase === "treffpunkt") {
+      rv.status = "treffen";
+      rv.bis = t + rnd(3, 8) * MIN;
+      rtw.phaseEnde = rv.bis;
+      this.log(e, `Rendezvous: ${nef.funkrufname} beim Patienten in ${rtw.funkrufname}`);
+    } else this.log(e, `${fz.funkrufname} am Treffpunkt, wartet auf ${fz.id === rv.rtwId ? nef?.funkrufname : rtw?.funkrufname}`);
+  }
+
+  /** Übergabe am Treffpunkt fertig: wie am Einsatzort entscheidet der Notarzt, ob er mitfährt */
+  private rendezvousEnde(e: Einsatz, t: number): void {
+    const rv = e.rendezvous;
+    if (!rv) return;
+    rv.status = "fertig";
+    rv.bis = null;
+    const rtw = this.state.fahrzeuge[rv.rtwId];
+    const nef = this.state.fahrzeuge[rv.nefId];
+    if (rtw && rtw.einsatzId === e.id) {
+      rtw.phase = "warteKH";
+      rtw.phaseEnde = null;
+    }
+    if (nef && nef.einsatzId === e.id && nef.phase === "treffpunkt") {
+      nef.phase = "vorOrt";
+      this.entscheideTransport(nef, e, t);
+    }
+    this.startTransport(e);
   }
 
   /** Fallkatalog: fährt der Notarzt mit? (rot, NA-Bedarf oder Vorgabe des Falls; gelb oft, grün nie) */
@@ -1756,9 +1934,12 @@ export class Simulation {
     if (!e.kh) return;
     const h = store.get("hospitals", e.kh.hospitalId);
     if (!h) return;
+    const rv = e.rendezvous && e.rendezvous.status !== "fertig" ? e.rendezvous : null;
     for (const id of e.fahrzeuge) {
       const fz = this.state.fahrzeuge[id];
       if (!fz || fz.phase !== "warteKH") continue;
+      // Rendezvous: erst zum Treffpunkt
+      if (rv && (id === rv.rtwId || id === rv.nefId)) continue;
       this.setStatus(fz, "zumZO");
       this.fahre(fz, h, "transport", this.kritisch(e));
       if (this.transportfaehig(fz)) this.polizeiBegleitung(e, fz, h);
@@ -2884,6 +3065,7 @@ export class Simulation {
       if (e.lageGeplant && t >= e.lageGeplant.um && e.zustand !== "abgeschlossen") this.lageMeldungJetzt(e);
       const l = e.wahr.lage;
       if (!l || e.zustand === "abgeschlossen") continue;
+      this.rendezvousPruefen(e, t);
       for (const ev of l.ereignisse) {
         if (ev.eingetreten || t < ev.um) continue;
         if (l.fall) {
@@ -2909,7 +3091,7 @@ export class Simulation {
       ev.eingetreten = true;
       return;
     }
-    const naDa = this.einsatzFz(e).some((x) => this.mitNotarzt(x) && x.phase === "vorOrt");
+    const naDa = this.einsatzFz(e).some((x) => this.mitNotarzt(x) && (x.phase === "vorOrt" || (x.phase === "treffpunkt" && e.rendezvous?.status === "treffen")));
     if (ev.nurMitNa && !naDa) {
       ev.um = t + 3 * MIN;
       return;
@@ -3059,13 +3241,14 @@ export class Simulation {
     const angenommenRea = ant.at === "keine" || ant.at === "agonal";
     const p0 = l.patienten[0];
     const fehlt = this.fehlendeKraefte(e);
-    // NEF/NAH unterwegs, aber kein Notarzt nötig → Storno empfehlen (nur das erste transportfähige Fahrzeug)
-    const naUnterwegs = this.einsatzFz(e).some((x) => (x.kategorie === "NEF" || fliegt(x)) && x.phase !== "vorOrt");
-    const naStorno = plan.erstes && this.transportfaehig(fz) && naUnterwegs && this.bedarfVon(e).na === 0;
+    // NEF/NAH unterwegs, aber kein Notarzt nötig → die Besatzung storniert ihn selbst über Funk (LEO hört mit)
+    const naUnterwegs = this.einsatzFz(e).filter((x) => (x.kategorie === "NEF" || fliegt(x)) && x.phase !== "vorOrt" && x.phase !== "treffpunkt");
+    const naStorno = plan.erstes && this.transportfaehig(fz) && naUnterwegs.length > 0 && this.bedarfVon(e).na === 0;
+    if (naStorno) for (const na of naUnterwegs) this.naStornoFunk(e, this.sprecher(e, fz), na);
     const partner = this.partnerFehlt(e);
     const abweichung = !!l.fall || l.irrtum !== null || angenommenRea !== istStillstand(p0) || l.patienten.length > 1 || ist(kap, "verkehrsunfall", "ecall", "eingeklemmt", "brand", "gefahrstoff");
-    if ((plan.erstes && (abweichung || fehlt.na > 0 || fehlt.rtw > 0 || fehlt.bit > 0 || naStorno || partner.length > 0)) || plan.angefordert) {
-      let text = lagemeldungText(l, kap, fehlt, naStorno);
+    if ((plan.erstes && (abweichung || fehlt.na > 0 || fehlt.rtw > 0 || fehlt.bit > 0 || partner.length > 0)) || plan.angefordert) {
+      let text = lagemeldungText(l, kap, fehlt, false);
       const da = (Object.keys(e.partnerDa ?? {}) as PartnerArt[]).map((a) => PARTNER[a].name);
       if (da.length) text += `, ${da.join(" und ")} vor Ort`;
       if (partner.length) {
@@ -3074,10 +3257,30 @@ export class Simulation {
       }
       this.nachfordern(e, fz, fehlt);
       this.ohneNaEinplanen(e, fehlt.na > 0);
-      const art: FunkAnliegen = fehlt.na || fehlt.rtw || fehlt.bit || partner.length ? "nachforderung" : naStorno ? "storno" : "lage";
+      const art: FunkAnliegen = fehlt.na || fehlt.rtw || fehlt.bit || partner.length ? "nachforderung" : "lage";
       this.fzRuft(this.sprecher(e, fz), e, art, `Lagemeldung: ${text}`);
       l.verlauf.push({ zeit: this.state.zeit, text: `${fz.funkrufname}: ${text}` });
     }
+  }
+
+  /** RTW storniert den Notarzt direkt über Funk; der Notarzt fragt, ob LEO mitgehört hat */
+  private naStornoFunk(e: Einsatz, rtw: SimFahrzeug, na: SimFahrzeug): void {
+    const r = rtw.funkrufname;
+    const n = na.funkrufname;
+    const grund = "Patient stabil";
+    this.log(e, `${r} storniert ${n} (kein Notarzt nötig)`);
+    this.fzFunk(
+      rtw,
+      na,
+      e,
+      [
+        { von: r, text: `${n} von ${r} kommen` },
+        { von: n, text: `Hier ${n} kommen` },
+        { von: r, text: `Hier ${r}, ${grund}, das ist ein Storno für euch, kommen` },
+        { von: n, text: `Hier ${n}, Storno verstanden, frage LEO mitgehört, kommen`, aktion: "nefStorno" },
+      ],
+      { von: n, text: `LEO von ${n}, Storno durch ${r} mitgehört, kommen` },
+    );
   }
 
   /** Fallkatalog: fehlt der nötige Notarzt, verschlechtert sich der Patient nach der Zeit aus dem Fall */
@@ -3447,8 +3650,52 @@ export class Simulation {
     g.sprueche.push({ zeit: this.state.zeit, von, text, wer });
     // Inhaltliche Funksprüche stehen auch im Einsatzprotokoll (nicht das reine Rufen)
     const e = g.einsatzId ? this.einsatz(g.einsatzId) : undefined;
-    if (e && text && !/^(LEO von \S+ kommen|Hier \S+ kommen|\S+ von LEO kommen|Hier LEO kommen|Hier LEO,? verstanden,? ENDE|Hier LEO ENDE)$/i.test(text.trim()))
+    if (e && text && !/^(\S.* von \S+ kommen|Hier [^,]+ kommen|Hier LEO,? verstanden,? ENDE|Hier LEO ENDE)$/i.test(text.trim()))
       this.log(e, `📻 ${von}: ${text}`);
+  }
+
+  /** Laufendes Gespräch des Fahrzeugs mit LEO (nicht der Funk zwischen zwei Fahrzeugen) */
+  private leoGespraech(fzId: string): FunkGespraech | undefined {
+    return this.state.funkGespraeche?.find((g) => g.fzId === fzId && g.status !== "ende" && !g.an);
+  }
+
+  /**
+   * Funk von Fahrzeug zu Fahrzeug (z. B. RTW storniert das NEF): läuft von selbst ab, LEO hört mit.
+   * mithoeren: am Ende fragt dieses Fahrzeug „LEO mitgehört?“ und wartet auf „Hier LEO, mitgehört, ENDE“.
+   */
+  private fzFunk(von: SimFahrzeug, an: SimFahrzeug, e: Einsatz, saetze: FunkSatz[], mithoeren?: { von: string; text: string }): void {
+    if (e.fremd) {
+      for (const s of saetze) {
+        this.log(e, `${s.von} (Funk der Zone ${e.fremd.zone}): ${s.text}`);
+        if (s.aktion) this.funkAktion(e, an, s.aktion);
+      }
+      return;
+    }
+    const g = this.neuesGespraech(von, e, "direkt");
+    g.an = { fzId: an.id, funkname: an.funkrufname };
+    g.ablauf = saetze;
+    g.mithoeren = mithoeren ?? null;
+    g.naechster = this.state.zeit + rnd(2, 5) * 1000;
+  }
+
+  /** Was ein Funkspruch zwischen Fahrzeugen auslöst */
+  private funkAktion(e: Einsatz | undefined, an: SimFahrzeug | undefined, aktion: FunkSatz["aktion"]): void {
+    if (aktion === "nefStorno" && e && an && an.einsatzId === e.id) {
+      this.log(e, `Storno an ${an.funkrufname} durch die Besatzung vor Ort`);
+      this.freigeben(an);
+    }
+  }
+
+  /** LEO bestätigt, dass sie den Funk zwischen zwei Fahrzeugen mitgehört hat */
+  funkMitgehoert(id: number): void {
+    const g = this.gespraech(id);
+    if (g.status !== "mithoeren" && g.status !== "direkt") return;
+    this.nurFunkfuehrer(g);
+    if (g.status === "direkt") return;
+    this.spruch(g, "LEO", "Hier LEO, mitgehört, ENDE", this.calltaker().name);
+    g.status = "ende";
+    g.naechster = null;
+    this.emit();
   }
 
   /** Fahrzeug ruft LEO („LEO von 75/001 kommen“) und wartet auf Antwort */
@@ -3457,7 +3704,7 @@ export class Simulation {
       this.log(e, `${fz.funkrufname} (Funk der Zone ${e.fremd.zone}): ${text}`);
       return;
     }
-    const offen = this.state.funkGespraeche?.find((g) => g.fzId === fz.id && g.status !== "ende");
+    const offen = this.leoGespraech(fz.id);
     if (offen && offen.status === "offen") {
       // schon verbunden: gleich durchgeben
       this.spruch(offen, fz.funkrufname, `${text}, kommen`);
@@ -3519,6 +3766,29 @@ export class Simulation {
         g.status = "offen";
         g.naechster = null;
         this.spruch(g, g.funkname, `Hier ${g.funkname} kommen`);
+      } else if (g.status === "direkt" && g.naechster !== null && t >= g.naechster) {
+        // Funk zwischen zwei Fahrzeugen: Satz für Satz
+        const s = g.ablauf?.shift();
+        if (s) {
+          this.spruch(g, s.von, s.text);
+          if (s.aktion) this.funkAktion(g.einsatzId ? this.einsatz(g.einsatzId) : undefined, g.an ? this.state.fahrzeuge[g.an.fzId] : undefined, s.aktion);
+          g.naechster = t + rnd(4, 9) * 1000;
+        }
+        if (!g.ablauf?.length) {
+          g.status = g.mithoeren ? "mithoeren" : "ende";
+          g.rufe = 1;
+          g.naechster = g.mithoeren ? t + rnd(45, 70) * 1000 : null;
+        }
+      } else if (g.status === "mithoeren" && g.naechster !== null && t >= g.naechster && g.mithoeren) {
+        // keine Antwort von LEO: noch einmal fragen, nach dem dritten Mal aufgeben
+        if (g.rufe >= 3) {
+          g.status = "ende";
+          g.naechster = null;
+        } else {
+          g.rufe++;
+          g.naechster = t + rnd(60, 90) * 1000;
+          this.spruch(g, g.mithoeren.von, g.mithoeren.text);
+        }
       }
     }
     // Nachforderungen: erledigt, sobald genug alarmiert ist; sonst nach 5 Minuten erinnern
@@ -3570,7 +3840,15 @@ export class Simulation {
   funkRufen(fzId: string, text?: string): number {
     const fz = this.state.fahrzeuge[fzId];
     if (!fz) throw new Error("Fahrzeug nicht gefunden");
-    const offen = this.state.funkGespraeche?.find((g) => g.fzId === fz.id && g.status !== "ende");
+    // „Hier LEO, mitgehört, ENDE“ (gesprochen oder getippt) auf eine Frage aus dem Fahrzeugfunk
+    if (text && /mitgeh[öo]r/i.test(text)) {
+      const mg = this.state.funkGespraeche?.find((g) => g.status === "mithoeren" && (g.an?.fzId === fz.id || g.fzId === fz.id));
+      if (mg) {
+        this.funkMitgehoert(mg.id);
+        return mg.id;
+      }
+    }
+    const offen = this.leoGespraech(fz.id);
     if (offen) {
       if (offen.status === "ruft") this.funkAntworten(offen.id);
       return offen.id;
@@ -3624,7 +3902,7 @@ export class Simulation {
     const fz = this.state.fahrzeuge[fzId];
     if (!fz?.einsatzId) return;
     const e = this.einsatz(fz.einsatzId) ?? null;
-    const offen = this.state.funkGespraeche?.find((g) => g.fzId === fz.id && g.status !== "ende");
+    const offen = this.leoGespraech(fz.id);
     const g = offen ?? this.neuesGespraech(fz, e, "offen");
     const wer = this.calltaker().name;
     if (!offen || offen.status !== "offen") {
@@ -3675,6 +3953,8 @@ export class Simulation {
       if (fz.phase === "anfahrt" || fz.phase === "ausruecken") return `${hier}, sind auf Anfahrt, Eintreffen in ca. ${min ?? "?"} Minuten, kommen`;
       if (vorOrt) return `${hier}, sind vor Ort beim Patienten, kommen`;
       if (fz.phase === "transport") return `${hier}, sind mit Patient auf dem Weg ins Krankenhaus, ca. ${min ?? "?"} Minuten, kommen`;
+      if (fz.phase === "rendezvous") return `${hier}, sind auf dem Weg zum Rendezvous${e?.rendezvous ? ` ${e.rendezvous.punkt.label}` : ""}, ca. ${min ?? "?"} Minuten, kommen`;
+      if (fz.phase === "treffpunkt") return `${hier}, sind am Treffpunkt${e?.rendezvous?.status === "treffen" ? ", Notarzt ist beim Patienten" : ", warten auf das Rendezvous"}, kommen`;
       if (fz.phase === "uebergabe") return `${hier}, sind bei der Übergabe im Krankenhaus, kommen`;
       if (fz.phase === "rueckfahrt") return `${hier}, sind frei und auf dem Rückweg zur Dienststelle, kommen`;
       return `${hier}, sind frei, kommen`;

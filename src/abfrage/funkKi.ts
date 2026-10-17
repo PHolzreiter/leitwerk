@@ -16,11 +16,12 @@ function lageWissen(g: FunkGespraech): string {
   const teile = [`Ihr seid ${fz.funkrufname} (${fz.rmTyp}), Status: ${sim.statusDef(fz.status).name}.`];
   if (e) {
     teile.push(`Euer Einsatz: ${e.nummer}, Einsatzort ${e.adresse?.label ?? "unbekannt"}.`);
-    const vorOrt = fz.phase === "vorOrt" || fz.phase === "warteKH" || fz.phase === "transport" || fz.phase === "uebergabe";
+    const vorOrt = ["vorOrt", "warteKH", "transport", "uebergabe", "rendezvous", "treffpunkt"].includes(fz.phase);
     const l = e.wahr.lage;
     if (vorOrt && l) teile.push(`Was ihr vor Ort seht: ${l.patienten.map((p) => patientText(p)).join("; ")}.`);
     else teile.push("Ihr seid noch nicht beim Patienten und wisst nur, was die Leitstelle durchgegeben hat.");
-    if (fz.phaseEnde && (fz.phase === "anfahrt" || fz.phase === "transport")) {
+    if (e.rendezvous && e.rendezvous.status !== "fertig") teile.push(`Rendezvous mit dem NEF: Treffpunkt ${e.rendezvous.punkt.label}.`);
+    if (fz.phaseEnde && (fz.phase === "anfahrt" || fz.phase === "transport" || fz.phase === "rendezvous")) {
       teile.push(`Ankunft in ca. ${Math.max(1, Math.round((fz.phaseEnde - sim.state.zeit) / 60000))} Minuten.`);
     }
   } else teile.push("Ihr habt gerade keinen Einsatz.");

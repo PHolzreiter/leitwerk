@@ -429,7 +429,7 @@ export function funkVorlesenStarten(sim: {
       if (g.sprueche.length > n) {
         gesehen.set(g.id, g.sprueche.length);
         if (!ichFuehre(g)) continue;
-        for (const s of g.sprueche.slice(n)) if (s.von !== "LEO") funkSagt(g.funkname, s.text);
+        for (const s of g.sprueche.slice(n)) if (s.von !== "LEO") funkSagt(s.von, s.text);
       }
     }
   });

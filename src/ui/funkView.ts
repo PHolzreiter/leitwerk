@@ -189,7 +189,7 @@ export function createFunkView(root: HTMLElement, deps: { select(einsatzId: stri
     if (gruppe.textContent !== fg) gruppe.textContent = fg;
     const alle = sim.state.funkGespraeche ?? [];
     // Rufende Fahrzeuge – dringende zuerst; nur neu zeichnen, wenn sich etwas geändert hat
-    const rufend = alle.filter((g) => g.status === "ruft").sort((a, b) => Number(!!b.dringend) - Number(!!a.dringend) || a.seit - b.seit);
+    const rufend = alle.filter((g) => g.status === "ruft" || g.status === "mithoeren").sort((a, b) => Number(!!b.dringend) - Number(!!a.dringend) || a.seit - b.seit);
     const rufKey = JSON.stringify(rufend.map((g) => [g.id, g.rufe, g.dringend]));
     if (rufKey !== letzteRufe) {
     letzteRufe = rufKey;
@@ -197,6 +197,18 @@ export function createFunkView(root: HTMLElement, deps: { select(einsatzId: stri
     for (const g of rufend) {
       const z = el("div", { class: `funk-ruf${g.dringend ? " dringend" : ""}` });
       const e = g.einsatzId ? sim.einsatz(g.einsatzId) : undefined;
+      if (g.status === "mithoeren" && g.an) {
+        // Funk zwischen zwei Fahrzeugen: die Gegenstelle fragt, ob LEO mitgehört hat
+        z.innerHTML = `<span class="funk-ruf-text">📻 <b>${esc(g.an.funkname)}</b> fragt: LEO mitgehört?${g.rufe > 1 ? ` (${g.rufe}×)` : ""}${e ? ` <span class="muted">· ${esc(e.nummer)}</span>` : ""}</span>`;
+        const mb = el("button", { class: "btn small primary" }, "Mitgehört, ENDE");
+        mb.addEventListener("click", () => {
+          fehler(sim.call("funkMitgehoert", g.id).then(() => refresh()));
+          if (g.einsatzId) deps.select(g.einsatzId);
+        });
+        z.appendChild(mb);
+        rufe.appendChild(z);
+        continue;
+      }
       z.innerHTML = `<span class="funk-ruf-text">${g.dringend ? "❗" : "📻"} <b>${esc(g.funkname)}</b> ruft LEO${g.rufe > 1 ? ` (${g.rufe}×)` : ""}${e ? ` <span class="muted">· ${esc(e.nummer)}</span>` : ""}${g.dringend ? ` <span class="funk-dringend">dringend</span>` : ""}</span>`;
       const b = el("button", { class: "btn small primary" }, "Antworten");
       b.addEventListener("click", () => {
@@ -210,7 +222,7 @@ export function createFunkView(root: HTMLElement, deps: { select(einsatzId: stri
     }
     // Aktives Gespräch: zuletzt gewähltes, sonst das neueste offene, das ich führe
     let g = aktivId !== null ? gespraech(aktivId) : undefined;
-    if (!g || g.status === "ende" || !ichFuehre(g)) {
+    if (!g || g.status === "ende" || g.an || !ichFuehre(g)) {
       g = alle.find((x) => (x.status === "offen" || x.status === "leoRuft") && x.fuehrer && ichFuehre(x));
       aktivId = g?.id ?? null;
     }
@@ -238,10 +250,10 @@ export function createFunkView(root: HTMLElement, deps: { select(einsatzId: stri
       for (const x of sicht) {
         const box = el("div", { class: `funk-g st-${x.status}` });
         const e = x.einsatzId ? sim.einsatz(x.einsatzId) : undefined;
-        box.innerHTML = `<div class="funk-g-kopf"><b>${esc(x.funkname)}</b>${e ? ` <span class="muted">${esc(e.nummer)}</span>` : ""}${x.fuehrer && mp.aktiv ? ` <span class="prot-von">${esc(x.fuehrer.name)}</span>` : ""}${x.status === "ende" ? "" : ` <span class="funk-live">● ${x.status === "ruft" ? "ruft" : "läuft"}</span>`}</div>${spruchHtml(x)}`;
+        box.innerHTML = `<div class="funk-g-kopf"><b>${esc(x.funkname)}</b>${x.an ? ` ↔ <b>${esc(x.an.funkname)}</b> <span class="muted">(Fahrzeugfunk)</span>` : ""}${e ? ` <span class="muted">${esc(e.nummer)}</span>` : ""}${x.fuehrer && mp.aktiv ? ` <span class="prot-von">${esc(x.fuehrer.name)}</span>` : ""}${x.status === "ende" ? "" : ` <span class="funk-live">● ${x.status === "ruft" ? "ruft" : x.status === "mithoeren" ? "fragt LEO" : "läuft"}</span>`}</div>${spruchHtml(x)}`;
         box.addEventListener("click", () => {
           if (x.einsatzId) deps.select(x.einsatzId);
-          if (x.status !== "ende" && ichFuehre(x)) {
+          if (x.status !== "ende" && !x.an && ichFuehre(x)) {
             aktivId = x.id;
             refresh();
           }
@@ -274,6 +286,6 @@ export function createFunkView(root: HTMLElement, deps: { select(einsatzId: stri
   return {
     refresh,
     rufen,
-    offen: () => (sim.state.funkGespraeche ?? []).filter((g) => g.status === "ruft").length,
+    offen: () => (sim.state.funkGespraeche ?? []).filter((g) => g.status === "ruft" || g.status === "mithoeren").length,
   };
 }
