@@ -228,7 +228,7 @@ function gendern(t: string, g: "m" | "w"): string {
 
 /** „Ich bin …“ für die Frage „Wer ruft an?“ */
 export function werText(x: Anrufer): string {
-  if (x.selbst) return "Ich bin selbst der Patient.";
+  if (x.selbst) return `${x.name.split(" ")[0]} ${x.name.split(" ").slice(1).join(" ")} – ich ruf für mich selber an, mir geht's nicht gut.`;
   const r = x.rolle.split(";")[0].split("(")[0].trim();
   if (x.art === "ecall") return x.sprachkontakt ? `Ich sitz im Auto, ich bin ${x.geschlecht === "w" ? "die Fahrerin" : "der Fahrer"}.` : "(keine Antwort)";
   if (x.art && x.art !== "privat") return `${x.stelle ? `${x.stelle}, ` : ""}${x.name}${x.art === "polizei" ? " – ich rufe für unsere Streife vor Ort an" : ""}.`;

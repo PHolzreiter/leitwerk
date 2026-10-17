@@ -1,5 +1,31 @@
 # Änderungen
 
+## 0.32.0 – Notrufe wie echte Notrufe
+**Jeder Anrufer ist anders**
+- Jeder Anrufer bekommt eine eigene Persönlichkeit: wie er redet (knapp, normal, gesprächig, unsicher), eigene Füllwörter und manchmal eine Eigenheit (redet mit dem Patienten, sagt oft „Moment“, fragt, wie lange die Rettung braucht …)
+- Wissen wie im echten Leben: Angehörige kennen Krankheiten und Alter (die Medikamente manchmal nur „irgendwas fürs Herz“), Nachbarn und Kollegen nur teilweise, Fremde gar nicht – sie schätzen das Alter („so zwischen 60 und 70“) und können den Patienten höchstens fragen
+- Der Einstieg ist verschieden: mal gleich die Adresse, mal „Bitte schnell …“, mal „Hallo, bin ich da bei der Rettung?“, mal sprudelt das Problem heraus und die Adresse fehlt, mal fehlt die Gemeinde – dann musst du nachfragen
+- Kein Anrufer sagt mehr „der Patient“: Angehörige sagen „meine Frau“, „die Mama“, „der Franz“, Fremde „der ältere Herr“, „die Dame“ – sonst „er“ oder „sie“
+
+**Fälle mit Fakten statt fertiger Sätze**
+- Die Fälle beschreiben jetzt, was wirklich passiert ist (Abfolge, Umstände) – die KI erzählt es bei jedem Anruf in den Worten des jeweiligen Anrufers neu. Die bisherigen Sätze dienen nur noch als Stilbeispiel
+- Fakten mit Zufall („{beim Fernsehen|nach dem Essen}“) und Bedingungen: nach Ort, Anrufer, Ausgang und Wissen (eine Verkäuferin weiß nicht, wie es vor einer Stunde war)
+- Anrufer passen zum Ort (keine Lehrerin in der Wohnung, kein Ehemann im Büro) und zum Alter; die Stelle passt zum Ort (kein Klassenzimmer in der Wohnung)
+
+**Fragen aus der Abfrage**
+- Ein Klick auf 🗨 stellt die Frage so, wie man sie spricht – ohne Klammertext und abwechselnd formuliert
+- Bis das Geschlecht in der Abfrage eingetragen ist, fragst du allgemein („Ist der Patient wach?“), danach mit „er“/„sie“; bei mehreren Betroffenen bleibt es allgemein. Ruft der Patient selbst an, wird er mit „Sie“ gefragt
+
+**Behoben**
+- Die Anweisung an die KI widersprach sich („redet normal“ und gleichzeitig „nur einzelne Wörter“)
+- „Wenn du selbst anrufst …“ stand auch bei anderen Anrufern drin
+- Beispiel-Sätze der KI-Anweisung passen jetzt zum Geschlecht des Patienten
+
+**Fall-Editor**
+- Schritt 2 heißt jetzt „Anrufer & Geschichte“: Fakten, Stilbeispiele, Details, feste Umgebung (z. B. „3. Stock, enges Stiegenhaus“) und Hinweise fürs Gespräch – mit Hilfe zu allen Bedingungen
+- „Prüfen & Testen“: „3 Probe-Anrufe“ würfelt drei verschiedene Anrufer (Rolle, Stimmung, Art zu reden, Wissen, Einstieg) und lässt sie mit der KI die ersten Fragen beantworten – ohne dass etwas ins Spiel kommt
+- Der KI-Entwurf schreibt auch Fakten
+
 ## 0.31.0 – Fall-Editor
 **Fälle selbst schreiben**
 - Neuer Knopf „Fälle“ oben (auch unter Einstellungen → Einsatzaufkommen): alle Fälle des Fallkatalogs ansehen, neue schreiben, prüfen und gleich durchspielen

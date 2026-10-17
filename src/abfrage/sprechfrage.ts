@@ -155,7 +155,7 @@ function inSieForm(t: string): string {
     void wer;
     return `${verb[0] === verb[0].toUpperCase() ? v[0].toUpperCase() + v.slice(1) : v} Sie`;
   });
-  s = s.replace(/\b(der Patient|die Patientin|die Person)\b/g, "Sie").replace(/\b(den Patienten|dem Patienten)\b/g, "Sie");
+  s = s.replace(/\b(der Patient|die Patientin|die Person)\b/g, "Sie").replace(/\bden Patienten\b/g, "Sie").replace(/\b(dem Patienten|der Patientin)\b/g, "Ihnen");
   s = s.replace(/\b(sein|ihr)(e|en|er|em)?\b(?= \w)/g, (_m, _a, e: string | undefined) => `Ihr${e ?? ""}`);
   return s;
 }

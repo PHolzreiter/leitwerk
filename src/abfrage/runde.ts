@@ -43,7 +43,7 @@ export function hinweisZurArt(art: NachrichtArt, laie: boolean): string {
     case "zusammenfassung":
       return "Die Leitstelle fasst zusammen, was sie verstanden hat. Antworte nur ganz kurz: bestätigen („Ja, genau.“, „Ja, so ist es.“) oder korrigieren, was nicht stimmt. Wiederhole ihre Worte nicht und zähl nichts neu auf.";
     case "anweisung":
-      return `Die Leitstelle sagt dir, was du tun sollst. Passt es zur Fallakte, tu es und sag kurz, was du tust oder was du dabei siehst${laie ? " („Okay … so, jetzt liegt er auf der Seite.“)" : ""}. Passt es nicht, frag nach. Bedingte Anweisungen („falls“, „wenn“) bestätigst du nur.`;
+      return `Die Leitstelle sagt dir, was du tun sollst. Passt es zur Fallakte, tu es und sag kurz, was du tust oder was du dabei siehst – nur das, was zu genau dieser Anweisung passt. Passt es nicht, frag nach. Bedingte Anweisungen („falls“, „wenn“) und Bitten wie „Bleiben Sie dran“ bestätigst du nur kurz.`;
     case "mitteilung":
       return `Die Leitstelle hat dir etwas MITGETEILT, keine Frage gestellt. Reagiere kurz und menschlich darauf${laie ? " – z. B. erleichtert, mit einem Danke, oder mit einer kurzen Rückfrage („Wie lang dauert's ungefähr?“, „Was soll ich bis dahin machen?“)" : " (bestätigen, kurz nachfragen, was noch nötig ist)"}. Beschreib jetzt NICHT noch einmal den Zustand des Patienten.`;
     case "abschluss":

@@ -124,6 +124,33 @@ export async function eroeffnen(e: Einsatz, onToken?: (t: string) => void): Prom
   await fragen(e, ERÖFFNUNG, undefined, onToken);
 }
 
+/** Nachrichten für die KI: Anweisung, bisheriges Gespräch und der Hinweis zur aktuellen Frage */
+export function kiVerlauf(e: Einsatz, k: AnrufKontext, frage: string, schemaFrage: Frage | undefined, wiederholtId = false): KiNachricht[] {
+  const ersteAntwort = !(e.anruf?.gespraech ?? []).some((m) => m.von === "anrufer");
+  const verlauf: KiNachricht[] = [{ role: "system", content: systemPrompt(k) }];
+  for (const m of e.anruf?.gespraech ?? []) {
+    if (m.von === "leitstelle") verlauf.push({ role: "user", content: `Leitstelle: ${m.text}` });
+    else if (m.von === "anrufer") verlauf.push({ role: "assistant", content: m.text });
+  }
+  // Die gerade gestellte Frage ist evtl. noch nicht im synchronisierten Verlauf
+  const letzte = verlauf[verlauf.length - 1];
+  if (frage && !(letzte.role === "user" && letzte.content === `Leitstelle: ${frage}`)) {
+    verlauf.push({ role: "user", content: `Leitstelle: ${frage}` });
+  }
+  // Kurzer Hinweis an die letzte Frage hängen (wird nicht im Verlauf gespeichert)
+  const zuletzt = verlauf[verlauf.length - 1];
+  if (zuletzt.role === "user") {
+    const sf = schemaFrage ?? (frage === ERÖFFNUNG ? ({ id: "ort_adresse", typ: "text", text: frage } as Frage) : undefined);
+    const g = e.anruf?.gespraech ?? [];
+    const letzteAntwort = [...g].reverse().find((m) => m.von === "anrufer")?.text;
+    verlauf[verlauf.length - 1] = {
+      role: "user",
+      content: `${zuletzt.content}\n${erinnerung(k, sf, { wiederholt: wiederholtId || schonGefragt(g, frage), letzteAntwort, art: sf ? "frage" : nachrichtArt(frage), text: frage, erste: ersteAntwort })}`,
+    };
+  }
+  return verlauf;
+}
+
 async function anruferAntwort(
   e: Einsatz,
   k: AnrufKontext,
@@ -156,27 +183,7 @@ async function anruferAntwort(
     const a = einfacheAntwort(k, frage, schemaFrage);
     return schonGefragt(e.anruf?.gespraech ?? [], frage) ? `Wie gesagt: ${a.charAt(0).toLowerCase()}${a.slice(1)}` : a;
   }
-  const verlauf: KiNachricht[] = [{ role: "system", content: systemPrompt(k) }];
-  for (const m of e.anruf?.gespraech ?? []) {
-    if (m.von === "leitstelle") verlauf.push({ role: "user", content: `Leitstelle: ${m.text}` });
-    else if (m.von === "anrufer") verlauf.push({ role: "assistant", content: m.text });
-  }
-  // Die gerade gestellte Frage ist evtl. noch nicht im synchronisierten Verlauf
-  const letzte = verlauf[verlauf.length - 1];
-  if (frage && !(letzte.role === "user" && letzte.content === `Leitstelle: ${frage}`)) {
-    verlauf.push({ role: "user", content: `Leitstelle: ${frage}` });
-  }
-  // Kurzer Hinweis an die letzte Frage hängen (wird nicht im Verlauf gespeichert)
-  const zuletzt = verlauf[verlauf.length - 1];
-  if (zuletzt.role === "user") {
-    const sf = schemaFrage ?? (frage === ERÖFFNUNG ? ({ id: "ort_adresse", typ: "text", text: frage } as Frage) : undefined);
-    const g = e.anruf?.gespraech ?? [];
-    const letzteAntwort = [...g].reverse().find((m) => m.von === "anrufer")?.text;
-    verlauf[verlauf.length - 1] = {
-      role: "user",
-      content: `${zuletzt.content}\n${erinnerung(k, sf, { wiederholt: wiederholtId || schonGefragt(g, frage), letzteAntwort, art: sf ? "frage" : nachrichtArt(frage), text: frage, erste: ersteAntwort })}`,
-    };
-  }
+  const verlauf = kiVerlauf(e, k, frage, schemaFrage, wiederholtId);
   try {
     const g = e.anruf?.gespraech ?? [];
     const frueher = g.filter((m) => m.von === "anrufer").map((m) => m.text);
