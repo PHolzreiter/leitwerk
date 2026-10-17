@@ -1,0 +1,296 @@
+{
+ "_weissbuch": {
+  "LTZ": "Weißbuch 3. Aufl. 2019, S. 15: 'Im LTZ wird ein Schockraum mit einer ausreichenden Grundfläche (≥ 25 m2) vorgehalten.' Intensivstation: 'Die Möglichkeit zur intensivmedizinischen Behandlung eines Schwerverletzten muss vorgehalten werden.' -> 1 Schockraum(platz).",
+  "RTZ": "Weißbuch 3. Aufl. 2019, S. 16: 'In RTZ wird ein Schockraum mit einer ausreichenden Grundfläche (≥ 25 m2) vorgehalten.' Indikatoren: '24-stündige Operationsbereitschaft zur definitiven Versorgung mindestens eines Schwerverletzten'; ICU für 'eines Schwerverletzten'. Ausführungsbestimmungen V2.0 (2023): 'Schockraum mind. 25 m2'. -> 1 Schockraum(platz). (Achtung: die KAGes-Presse zu Feldbach nennt als RTZ-Kriterium 'jederzeit zwei Schwerverletzte gleichzeitig' – das steht so nicht im Weißbuch-RTZ-Abschnitt.)",
+  "UTZ": "Weißbuch 3. Aufl. 2019, S. 17/18: 'ÜTZ haben einen Schockraum zur gleichzeitigen Versorgung von mindestens zwei Schwerverletzten mit einer Grundfläche von wenigstens 50 m2 oder zwei einzeln nutzbare Schockräume mit einer ausreichenden Grundfläche (≥ 25 m2).' Aufgaben: 'Verpflichtung zur 24-stündigen Aufnahme und Versorgung von gleichzeitig 2 Schwerverletzten aller Schweregrade'; '24-stündige Bereitschaft der Notaufnahme für die Versorgung von mindestens zwei Schwerverletzten'; 'jederzeit zwei Operationssäle'. Ausführungsbestimmungen V2.0: 'Schockraum für 2 Patienten mit mind. 50 m2 alternativ 2 Schockräume mit je 25 m2'; 'Durchgehende Aufnahmebereitschaft für 2 Schwerverletzte gleichzeitig'. -> 2 Schockraumplätze.",
+  "quelle": [
+   "https://www.auc-online.de/fileadmin/AUC/Dokumente/Zertifizierung/TraumaNetzwerk_DGU/dgu-weissbuch_schwerverletztenversorgung_2020_3._Auflage.pdf – DGU Weißbuch Schwerverletztenversorgung, 3. erweiterte Auflage 2019 (aktuell gültige Auflage lt. AUC, Stand 10/2026)",
+   "https://www.auc-online.de/fileadmin/AUC/Dokumente/Zertifizierung/TraumaNetzwerk_DGU/Ausfuehrungsbestimmungen_TZ_V2.0_Stand01122023.pdf – AUC Ausführungsbestimmungen zum Weißbuch V2.0 (01.12.2023)",
+   "https://www.auc-online.de/unsere-angebote/zertifizierung/traumazentrum-dgu/ – AUC-Seite verweist auf Weißbuch 3. Aufl. 2019 + Ausführungsbestimmungen V2.0"
+  ],
+  "hinweis": "Die DGU-Kliniksuche (traumanetzwerk-dgu.de) war nicht abrufbar (TLS-Zertifikat des Servers passt nicht zum Hostnamen, Web-Archiv gesperrt). Zertifizierungen daher nur aus Klinik-/Träger-/Pressequellen; das Zertifikat läuft jeweils 3 Jahre, aktueller Status nicht über DGU geprüft. In AT gibt es TraumaNetzwerke nach DGU-Regeln (u. a. Steiermark; 'Traumanetzwerk Ost' NÖ/Wien war 2020 'in Entstehung')."
+ },
+ "kh005": {
+  "traumanetzwerk": null,
+  "dgu_zertifiziert": null,
+  "schockraum": null,
+  "schockraum_trauma": 1,
+  "schockraum_intern": null,
+  "quellen": [
+   "https://www.noe.gv.at/noe/66817_22-Mai-2007-09-43-Neuer-aeSchockraum-am-Landeskliniku.html – NÖ Landespressedienst 22.05.2007: 'ist seit wenigen Tagen ein so genannter „Schockraum“ in Betrieb' (Unfallchirurgie, mit integrierter Bildgebung)"
+  ],
+  "notiz": "Stand 2007 (alt). Ein unfallchirurgischer Schockraum; neuere Angaben nicht gefunden."
+ },
+ "kh006": {
+  "traumanetzwerk": null,
+  "dgu_zertifiziert": null,
+  "schockraum": null,
+  "schockraum_trauma": null,
+  "schockraum_intern": null,
+  "quellen": [
+   "https://amstetten.lknoe.at/fuer-patienten/abteilungen/unfallchirurgie/informationen – 'als Trauma-Zentrum der Region Mostviertel … im Rahmen des niederösterreichweiten Trauma-Netzwerkes'"
+  ],
+  "notiz": "Bezeichnet sich als Trauma-Zentrum der Region Mostviertel im NÖ-Trauma-Netzwerk; Stufe (LTZ/RTZ) und DGU-Zertifikat nicht genannt. Keine Schockraumzahl."
+ },
+ "kh007": {
+  "traumanetzwerk": "RTZ",
+  "dgu_zertifiziert": true,
+  "schockraum": null,
+  "schockraum_trauma": null,
+  "schockraum_intern": null,
+  "quellen": [
+   "https://horn.lknoe.at/landesklinikum-horn/pressemeldungen/newsdetail/landesklinikum-horn-unfallabteilung-zertifizierung-als-regionales-traumazentrum – Presse LK Horn 10.12.2020: Audit durch CertIQ nach DGU-Vorgaben, 'Zertifizierung als „Regionales Traumazentrum“ zugesprochen'",
+   "https://www.meinbezirk.at/horn/c-lokales/klinikum-die-unfallabteilung-wird-teil-des-in-entstehung-befindlichen-traumanetzwerk-ost-in-oesterreich_a4395267 – meinbezirk 11.12.2020, gleicher Inhalt"
+  ],
+  "notiz": "Zertifizierung 2020 (Traumanetzwerk Ost NÖ/Wien 'in Entstehung'; 9 NÖ-Unfallabteilungen auditiert – welche, wird nicht genannt). Rezertifizierung nicht geprüft. Keine Schockraumzahl."
+ },
+ "kh008": {
+  "traumanetzwerk": null,
+  "dgu_zertifiziert": null,
+  "schockraum": null,
+  "schockraum_trauma": null,
+  "schockraum_intern": null,
+  "quellen": [
+   "https://baden.lknoe.at/fuer-patienten/abteilungen/anaesthesiologie-und-intensivmedizin/informationen – Anästhesie versorgt u. a. 'den SCHOCKRAUM'"
+  ],
+  "notiz": "Nur Singular-Erwähnung, keine ausdrückliche Zahl."
+ },
+ "kh023": {
+  "traumanetzwerk": null,
+  "dgu_zertifiziert": null,
+  "schockraum": null,
+  "schockraum_trauma": null,
+  "schockraum_intern": null,
+  "quellen": [
+   "https://notfallmedizin.meduniwien.ac.at/ueber-uns/universitaetsklinik-fuer-notfallmedizin/ – Univ.-Klinik f. Notfallmedizin: 'Akutbehandlungsstation (ABS) besteht aus zwei Akutbehandlungsräumen, in welchen je vier bzw. drei Akutbehandlungsplätze untergebracht sind'",
+   "https://unfallchirurgie.meduniwien.ac.at/ueber-uns/mission-statement/ – Unfallchirurgie: 'mehr als 500 schockraumpflichtige Patient:innen' pro Jahr"
+  ],
+  "notiz": "Keine ausdrückliche Schockraumzahl. Internistisch-notfallmedizinisch: 7 voll monitorisierte Akutbehandlungsplätze (2 Räume, 4+3) – nicht als 'Schockraum' bezeichnet. Kein DGU-Zertifikat gefunden."
+ },
+ "kh024": {
+  "traumanetzwerk": null,
+  "dgu_zertifiziert": null,
+  "schockraum": 1,
+  "schockraum_trauma": 1,
+  "schockraum_intern": 1,
+  "quellen": [
+   "https://klinik-floridsdorf.gesundheitsverbund.at/leistung/zentrale-notaufnahme/ – ZNA: 'gibt es einen intensivmedizinisch ausgestatteten Schockraum für alle erwachsenen Patient*innen, also etwa Unfallopfer und internistische Patient*innen'"
+  ],
+  "notiz": "EIN gemeinsamer Schockraum für Trauma und internistisch (trauma/intern beziehen sich auf denselben Raum, nicht addieren)."
+ },
+ "kh025": {
+  "traumanetzwerk": null,
+  "dgu_zertifiziert": null,
+  "schockraum": null,
+  "schockraum_trauma": 1,
+  "schockraum_intern": null,
+  "quellen": [
+   "https://gesundheitsverbund.at/wp-content/uploads/sites/3/2026/06/wiener-gesundheitsverbund-klinikkosmos-podcast-transkript-folge-43-schockraum.docx – WIGEV-Podcast 06/2026, Ortho/Trauma Klinik Donaustadt: 'vier hochmoderne Operationssäle, Spezialambulanzen, ein Schockraum, eine Intensivstation …'",
+   "https://klinik-donaustadt.gesundheitsverbund.at/klinik-donaustadt-baustart-fuer-die-neue-zentrale-notaufnahme/ – 20.01.2026: Baustart neue ZNA, Flächen werden 'zu modernen Schockräumen umgebaut', Fertigstellung Ende 2028"
+  ],
+  "notiz": "Aktuell 1 Trauma-Schockraum; ab ~2028 neue ZNA mit mehreren Schockräumen (Anzahl nicht genannt)."
+ },
+ "kh026": {
+  "traumanetzwerk": null,
+  "dgu_zertifiziert": null,
+  "schockraum": 3,
+  "schockraum_trauma": 1,
+  "schockraum_intern": 2,
+  "quellen": [
+   "https://klinik-ottakring.gesundheitsverbund.at/leistung/unfallchirurgische-notfallambulanz-und-unfallchirurgische-ambulanz/ – 'steht ein modernster Schockraum mit integriertem Röntgen und Computertomographen bereit'",
+   "https://klinik-ottakring.gesundheitsverbund.at/neuer-schockraum-fuer-notfallmedizinische-erstbehandlung/ – 18.09.2024: nicht-traumatologischer Schockraum in der ZNA, 'an zwei Positionen Notfall-Patient*innen erstversorgt'; Unfallopfer 'weiterhin im Schockraum der Unfallchirurgie'",
+   "https://klinik-ottakring.gesundheitsverbund.at/neuer-pavillon-fuer-unfallchirurgie-fuer-moderne-und-komfortable-akutversorgung/ – 14.10.2026: Unfallchirurgie seit Juni 2026 im Pavillon 92, ICU 'auf derselben Ebene wie der Schockraum'"
+  ],
+  "notiz": "Trauma: 1 Schockraum. Internistisch/neurologisch: 1 Raum mit 2 Behandlungspositionen (als 2 Plätze gezählt). Summe 3 Plätze."
+ },
+ "kh028": {
+  "traumanetzwerk": null,
+  "dgu_zertifiziert": null,
+  "schockraum": 2,
+  "schockraum_trauma": null,
+  "schockraum_intern": 2,
+  "quellen": [
+   "https://klinik-hietzing.gesundheitsverbund.at/klinik-hietzing-modernisiert-notfallmedizin-und-labor/ – 'Die neue Notfallmedizin verfügt nun über zwei Schockräume und einen Überwachungsraum mit Platz für drei Patient*innen … sowie ein eigenes CT'",
+   "https://www.heute.at/s/neue-schockraeume-und-labor-klinik-hietzing-ruestet-auf-120253912 – Heute 18.09.2026, gleiche Angabe"
+  ],
+  "notiz": "2 Schockräume der Notfallmedizin (Pavillon 13, eröffnet 09/2026) – primär internistische Notfälle (Herzinfarkt, Rhythmusstörungen, COPD …); Trauma-Schockraum nicht gesondert genannt."
+ },
+ "kh030": {
+  "traumanetzwerk": null,
+  "dgu_zertifiziert": null,
+  "schockraum": null,
+  "schockraum_trauma": null,
+  "schockraum_intern": null,
+  "quellen": [
+   "https://wien.orf.at/stories/3361102/ – ORF 03.07.2026: 'Der Schockraum im Traumazentrum Meidling …'; 'Bisher hatten OP-Saal und Schockraum jederzeit parallel bespielt werden können'",
+   "https://wien.orf.at/stories/3329072/ – ORF 07.11.2025: Schwerverletzten-Versorgung des TZW wird in Meidling 'mit entsprechend ausgerüstetem Schockraum' konzentriert",
+   "https://www.meinbezirk.at/meidling/c-lokales/nachtbetrieb-des-schockraums-in-meidling-steht-auf-dem-pruefstand_a8779017 – 09.07.2026: Nachtbetrieb (20–8 Uhr) mit eigenem Schockraumteam wird geprüft"
+  ],
+  "notiz": "Quellen sprechen durchgehend von 'dem Schockraum' (Singular) – keine ausdrückliche Zahl, daher null. AUVA-Bezeichnung 'Traumazentrum' ist ein Name, kein DGU-Zertifikat (keines gefunden). Achtung: nächtliche Schockraumbereitschaft 2026 in Diskussion."
+ },
+ "kh031": {
+  "traumanetzwerk": null,
+  "dgu_zertifiziert": null,
+  "schockraum": 0,
+  "schockraum_trauma": 0,
+  "schockraum_intern": null,
+  "quellen": [
+   "https://wien.orf.at/stories/3329072/ – ORF 07.11.2025 (AUVA-Aussendung): 'Ein Akut-Interventionsraum mit direkter CT-Anbindung wird zur Verfügung stehen … eine Schockraum- bzw. Polytraumaversorgung hingegen nicht vorgesehen'",
+   "https://www.vienna.at/das-ist-im-wiener-lorenz-boehler-spital-nicht-geplant/9790325 – vienna.at 07.11.2025, gleicher Inhalt; Schockraum war schon vorher nur tageweise in Betrieb"
+  ],
+  "notiz": "Kein Schockraum (auch nicht im Neubau, Vollbetrieb bis 03/2027). Nur Akut-Interventionsraum."
+ },
+ "kh035": {
+  "traumanetzwerk": null,
+  "dgu_zertifiziert": null,
+  "schockraum": null,
+  "schockraum_trauma": null,
+  "schockraum_intern": null,
+  "quellen": [
+   "https://www.gesundheit-burgenland.at/guessing/leistungen/abteilungen/orthopaedie-und-traumatologie/ – 'Traumacenter der Klinik Oberwart'; bei Polytrauma 'aufgrund infrastruktureller Gegebenheiten (Schockraum) primär die Klinik Oberwart zuständig'",
+   "https://www.gesundheit-burgenland.at/oberwart/leistungen/abteilungen/anaesthesie-und-intensiv/ – 'anästhesiologische Versorgung im Schockraum'"
+  ],
+  "notiz": "Polytrauma-Zielklinik Südburgenland; Schockraumzahl und DGU-Status nicht genannt."
+ },
+ "kh089": {
+  "traumanetzwerk": null,
+  "dgu_zertifiziert": null,
+  "schockraum": null,
+  "schockraum_trauma": null,
+  "schockraum_intern": null,
+  "quellen": [
+   "https://www.gesundheit-burgenland.at/guessing/leistungen/abteilungen/orthopaedie-und-traumatologie/ – nur 24-h-Trauma-Basisversorgung; Polytrauma wegen Schockraum-Infrastruktur primär nach Oberwart"
+  ],
+  "notiz": "Kein polytraumatauglicher Schockraum (sinngemäß belegt, aber keine ausdrückliche '0')."
+ },
+ "kh037": {
+  "traumanetzwerk": null,
+  "dgu_zertifiziert": null,
+  "schockraum": null,
+  "schockraum_trauma": null,
+  "schockraum_intern": 2,
+  "quellen": [
+   "https://kepleruniklinikum.at/kliniken-einrichtungen/anaesthesiologie-und-operative-intensivmedizin/schwerpunkte-und-leistungen/notfallmedizin – 'in insgesamt drei Schockräumen und dem Notfallinterventionsraum an den drei Standorten des Kepler Universitätsklinikums'; 'Der Notfallinterventionsraum ist mit zwei Behandlungspositionen direkt an die Intensivstation 3 angegliedert' (Med Campus III)",
+   "https://www.kepleruniklinikum.at/kliniken-einrichtungen/anaesthesiologie-und-operative-intensivmedizin/schwerpunkte-und-leistungen – 'Notfallinterventionsraum oder konservative Schockraum … mit zwei Behandlungspositionen'"
+  ],
+  "notiz": "KUK gesamt: 3 Schockräume über MC III, MC IV und Neuromed verteilt (Verteilung nicht angegeben) + Notfallinterventionsraum ('konservativer Schockraum', 2 Positionen) am MC III. Unfallchirurgischer Schockraum am MC III genannt, Anzahl dort nicht ausdrücklich."
+ },
+ "kh046": {
+  "traumanetzwerk": null,
+  "dgu_zertifiziert": null,
+  "schockraum": null,
+  "schockraum_trauma": null,
+  "schockraum_intern": null,
+  "quellen": [
+   "https://kepleruniklinikum.at/kliniken-einrichtungen/anaesthesiologie-und-operative-intensivmedizin/schwerpunkte-und-leistungen/notfallmedizin – 'in insgesamt drei Schockräumen und dem Notfallinterventionsraum an den drei Standorten des Kepler Universitätsklinikums'; 'Der Notfallinterventionsraum ist mit zwei Behandlungspositionen direkt an die Intensivstation 3 angegliedert' (Med Campus III)"
+  ],
+  "notiz": "Teil der 3 KUK-Schockräume (Verteilung auf die Standorte nicht angegeben)."
+ },
+ "kh047": {
+  "traumanetzwerk": null,
+  "dgu_zertifiziert": null,
+  "schockraum": null,
+  "schockraum_trauma": null,
+  "schockraum_intern": null,
+  "quellen": [
+   "https://kepleruniklinikum.at/kliniken-einrichtungen/anaesthesiologie-und-operative-intensivmedizin/schwerpunkte-und-leistungen/notfallmedizin – 'in insgesamt drei Schockräumen und dem Notfallinterventionsraum an den drei Standorten des Kepler Universitätsklinikums'; 'Der Notfallinterventionsraum ist mit zwei Behandlungspositionen direkt an die Intensivstation 3 angegliedert' (Med Campus III)"
+  ],
+  "notiz": "Teil der 3 KUK-Schockräume (Verteilung auf die Standorte nicht angegeben)."
+ },
+ "kh063": {
+  "traumanetzwerk": "ÜTZ",
+  "dgu_zertifiziert": null,
+  "schockraum": 3,
+  "schockraum_trauma": 3,
+  "schockraum_intern": 3,
+  "quellen": [
+   "https://ortho-trauma.medunigraz.at/frontend/user_upload/OEs/kliniken/ortho-trauma/pdf/OT_Jahresbericht_2024.pdf – Jahresbericht Ortho-Trauma 2024: 'In der neuen ZAM stehen 3 Schockräume und ein Reserve-Schockraum (Multifunktionaler Eingriffsraum) zur Verfügung'; 'Alle Schockräume sind ident ausgestattet und können sowohl für traumatologische, als auch für konservative Indikationen genutzt werden'; 'bis zu 4 parallelen Schockräumen'",
+   "https://www.uniklinikumgraz.at/aktuelles/detail/pressemitteilung-28 – Presse 11/2024: ZAM mit 'drei Schockräume[n]', CT direkt im Schockraumbereich",
+   "https://www.kages.at/fileadmin/media/KAGes/Publikationen/Gsund/G_sund_113.pdf – KAGes G'sund 113 (03/2022): 'LKH Univ.-Klinikum Graz: Überregionales Traumazentrum - ÜTZ' im Traumanetzwerk Steiermark",
+   "https://www.verwaltung.steiermark.at/cms/dokumente/12567975_135846567/0baa7855/RSG-St2030_Textteil.pdf – RSG-St 2030 Kap. 6.3.7: Univ.-Klinik f. Orthopädie und Traumatologie = Zentralversorger"
+  ],
+  "notiz": "3 gleichwertige Schockräume (Trauma ODER konservativ – die Felder trauma/intern beziehen sich auf dieselben 3 Räume) + 1 Reserve-Schockraum (max. 4 parallel). ÜTZ-Funktion im Traumanetzwerk Steiermark; formales DGU-Zertifikat nicht explizit belegt (Teilnahme TraumaRegister DGU belegt). Separater Kinderchirurgie-Schockraum erwähnt (Pressemitteilung 78), ohne Zahl."
+ },
+ "kh070": {
+  "traumanetzwerk": "RTZ",
+  "dgu_zertifiziert": null,
+  "schockraum": null,
+  "schockraum_trauma": null,
+  "schockraum_intern": null,
+  "quellen": [
+   "https://gesundheitsfonds-steiermark.at/news/neue-kooperation-auva/ – 02.07.2026: Mitwirkung des 'Standortes in Graz des AUVA UKH Steiermark als regionales Traumazentrum im Traumanetzwerk Steiermark'",
+   "https://www.verwaltung.steiermark.at/cms/dokumente/12567975_135846567/0baa7855/RSG-St2030_Textteil.pdf – RSG-St 2030: UKH Steiermark Graz hat 'die Aufgabe der regionalen Traumaversorgung'",
+   "https://www.meinbezirk.at/graz/c-lokales/steiermark-staerkt-akutversorgung-mit-millionen-kooperation_a8776218 – 09.07.2026: UKH Graz künftig regulär Zielkrankenhaus im abgestuften Traumanetzwerk"
+  ],
+  "notiz": "RTZ-Funktion im Traumanetzwerk Steiermark (Planung/Vertrag), DGU-Zertifikat nicht belegt. Keine Schockraumzahl gefunden."
+ },
+ "kh071": {
+  "traumanetzwerk": null,
+  "dgu_zertifiziert": null,
+  "schockraum": null,
+  "schockraum_trauma": 1,
+  "schockraum_intern": null,
+  "quellen": [
+   "https://www.auva.at/gesundheitseinrichtungen/ukh-steiermark-kalwang – 'stehen drei nach den modernsten Ansprüchen ausgerichtete Operationssäle sowie ein Schockraum rund um die Uhr zur Verfügung'"
+  ],
+  "notiz": ""
+ },
+ "kh072": {
+  "traumanetzwerk": "RTZ",
+  "dgu_zertifiziert": null,
+  "schockraum": null,
+  "schockraum_trauma": null,
+  "schockraum_intern": null,
+  "quellen": [
+   "https://www.verwaltung.steiermark.at/cms/dokumente/12567975_135846567/0baa7855/RSG-St2030_Textteil.pdf – RSG-St 2030 (gültig ab 01.01.2026) Kap. 6.3.7: 'der Standort in Leoben und jener des AUVA-UKH Steiermark in Graz [haben] die Aufgabe der regionalen Traumaversorgung'",
+   "https://www.lkh-hochsteiermark.at/abteilungen/abteilung-fuer-anaesthesiologie-und-intensivmedizin-2-1 – Anästhesie Leoben 'federführend im Schockraum-Management'; KPJ-Einblick in 'Abläufe eines zukünftigen Traumazentrums'"
+  ],
+  "notiz": "RTZ-Funktion lt. RSG; DGU-Zertifikat nicht belegt ('zukünftiges Traumazentrum'). Keine Schockraumzahl."
+ },
+ "kh073": {
+  "traumanetzwerk": null,
+  "dgu_zertifiziert": null,
+  "schockraum": null,
+  "schockraum_trauma": null,
+  "schockraum_intern": null,
+  "quellen": [
+   "https://www.kages.at/fileadmin/media/KAGes/Publikationen/Gsund/G_sund_113.pdf – G'sund 113 (03/2022): 'LKH Hochsteiermark: Regionales Traumazentrum - RTZ Bruck … offizieller Start des RTZ Bruck ist mit 1. Juli 2022 vorgesehen'"
+  ],
+  "notiz": "2022 als RTZ geplant; der RSG-St 2030 nennt aber Leoben (kh072) als regionalen Traumastandort – Status Bruck daher unklar, traumanetzwerk bewusst null."
+ },
+ "kh078": {
+  "traumanetzwerk": null,
+  "dgu_zertifiziert": null,
+  "schockraum": null,
+  "schockraum_trauma": null,
+  "schockraum_intern": null,
+  "quellen": [
+   "https://www.kages.at/fileadmin/media/KAGes/Publikationen/Geschaeftsberichte/KAGes_Geschaeftsbericht_2023_final_27062024.pdf – KAGes Geschäftsbericht 2023: 'wurden die Zertifizierungen der Standorte Feldbach und Judenburg zu Lokalen Traumazentren in die Wege geleitet'"
+  ],
+  "notiz": "LTZ-Zertifizierung 2023 eingeleitet, Abschluss nicht belegt."
+ },
+ "kh082": {
+  "traumanetzwerk": "RTZ",
+  "dgu_zertifiziert": true,
+  "schockraum": null,
+  "schockraum_trauma": null,
+  "schockraum_intern": null,
+  "quellen": [
+   "https://www.lkh-oststeiermark.at/detail/standort-feldbach-als-regionales-traumazentrum-zertifiziert – Presse LKH Oststeiermark 02/2025: 'als regionales Traumazentrum (Stufe 2) zertifiziert … Die Zertifizierung als regionales Traumazentrum erfolgt durch die Deutsche Gesellschaft für Unfallchirurgie (DGU)'; Kriterium lt. Presse 'jederzeit zwei Schwerverletzte gleichzeitig versorgt werden können'",
+   "https://www.meinbezirk.at/suedoststeiermark/c-lokales/neues-traumazentrum-am-lkh-feldbach_a7162632 – meinbezirk 20.02.2025, gleicher Inhalt; Teil des Traumanetzwerks Steiermark"
+  ],
+  "notiz": "DGU-RTZ seit 02/2025. Klinik gibt Fähigkeit zur gleichzeitigen Versorgung von 2 Schwerverletzten an, aber keine Schockraumzahl."
+ },
+ "kh086": {
+  "traumanetzwerk": "LTZ",
+  "dgu_zertifiziert": true,
+  "schockraum": null,
+  "schockraum_trauma": null,
+  "schockraum_intern": null,
+  "quellen": [
+   "https://www.kages.at/fileadmin/media/KAGes/Publikationen/Geschaeftsberichte/KAGes_Geschaeftsbericht_2023_final_27062024.pdf – KAGes Geschäftsbericht 2023: 'Das Lokale Traumazentrum (LTZ) Wagna wurde durch die Deutsche Gesellschaft für Unfallchirurgie (DGU) zertifiziert'",
+   "https://www.kages.at/fileadmin/media/KAGes/Publikationen/Gsund/G_sund_113.pdf – G'sund 113 (03/2022): 'Lokales Traumazentrum - LTZ Wagna', Betrieb ab Frühjahr 2022"
+  ],
+  "notiz": "Keine Schockraumzahl. (GB 2023 erwähnt zusätzlich 'Traumazentrum mit regionalem Versorgungsauftrag' – Stufe lt. DGU-Zertifikat = LTZ.)"
+ }
+}

@@ -678,72 +678,98 @@ def ist_rund_um_die_uhr(fenster: list[dict]) -> bool:
 AKUTBETTEN_AUSSER = ("08 Psychiatrie", "02/3", "62 ", "63 ", "64 ", "Remobilisation", "Rehabilitation", "Akutgeriatrie", "Psychosomatik")
 
 
+def _lade(name: str) -> dict:
+    f = SRC / name
+    return json.loads(f.read_text(encoding="utf-8")) if f.exists() else {}
+
+
+OESG = _lade("kh_oesg.json")
+ZAHLEN = _lade("kh_zahlen.json")
+SCHOCK = _lade("kh_schockraum.json")
+# Thrombektomie (neurologisches Spezialzentrum / Schlaganfall-Interventionszentrum) laut RSG bzw. Website
+THROMBEKTOMIE = {"kh001", "kh003", "kh004", "kh023", "kh029", "kh032", "kh046", "kh063"}
+
+
 def plaetze_ableiten(kid: str, einr: set[str], kav: dict, z: dict) -> dict[str, int]:
-    """Plätze je Akut-Bereich: genannte Zahlen zuerst, sonst aus der Größe (Betten laut Krankenanstalten-Verzeichnis,
-    Patientenzahlen) abgeleitet. Paul hat für Krems und St. Pölten Schockräume vorgegeben."""
+    """Plätze je Akut-Bereich. Reihenfolge: Angabe Paul → belegte Zahl (Website, Jahresbericht) → amtliche Planung
+    (ÖSG-Großgeräteplan, RSG) → Mindestvorgabe (Weißbuch Schwerverletztenversorgung) → nur zuletzt aus der Größe geschätzt."""
     pl = {k: int(v) for k, v in (z.get("plaetze") or {}).items() if isinstance(v, (int, float)) and v > 0}
     gr = z.get("groesse") or {}
+    oe = OESG.get(kid) or {}
+    za = ZAHLEN.get(kid) or {}
+    sr = SCHOCK.get(kid) or {}
+    rsg = oe.get("rsg") or ""
     abt = kav.get("abt", {})
     akut = sum(b for a, b in abt.items() if not any(x in a for x in AKUTBETTEN_AUSSER)) or int(gr.get("betten") or 0)
-    typ = kav.get("typ") or ""
-    # Größe nach Akutbetten; nur ohne Bettenzahl nach dem Typ laut Verzeichnis (der gilt oft für einen ganzen Verbund)
-    if akut:
-        gross, mittel = akut >= 700, 300 <= akut < 700
-    else:
-        gross, mittel = typ == "Zentral-KA", typ == "Schwerpunkt-KA"
     out: dict[str, int] = {}
 
     def klemm(x: float, lo: int, hi: int) -> int:
         return max(lo, min(hi, round(x)))
 
+    def zahl(*werte):
+        for w in werte:
+            if isinstance(w, (int, float)) and w > 0:
+                return w
+        return None
+
     if "amb_notaufnahme" in einr:
+        bp = re.search(r"\((\d+) ambBP\)", rsg)
+        jahr = zahl(za.get("notaufnahme_jahr"), gr.get("notaufnahme_jahr"))
         if pl.get("notaufnahme"):
             n = pl["notaufnahme"] + pl.get("notaufnahme_betten", 0) // 2
-        elif gr.get("notaufnahme_jahr"):
-            n = gr["notaufnahme_jahr"] / 2200
+        elif zahl(za.get("notaufnahme_plaetze")):
+            n = za["notaufnahme_plaetze"]
+        elif jahr:
+            # Patienten pro Jahr → gleichzeitig behandelte (Aufenthalt im Schnitt ca. 3 h)
+            n = jahr / 2200
+        elif bp and int(bp.group(1)) > 0:
+            n = int(bp.group(1))
         else:
             n = akut / 32
-        out["notaufnahme"] = klemm(n, 3, 30)
+        out["notaufnahme"] = klemm(n, 2, 30)
     if "amb_unfall" in einr:
         ortho = sum(b for a, b in abt.items() if a.startswith("15"))
-        out["unfall"] = klemm(ortho / 7 if ortho else akut / 60, 3, 25)
+        uj = zahl(za.get("unfall_jahr"))
+        out["unfall"] = klemm(uj / 4000 if uj else ortho / 7 if ortho else akut / 60, 2, 25)
     if "amb_kindernotaufnahme" in einr:
         kinder = sum(b for a, b in abt.items() if a.startswith("02/1") or a.startswith("02/2"))
         out["kindernotaufnahme"] = klemm(kinder / 6 if kinder else 3, 2, 12)
     if "fb_schockraum" in einr:
+        tr = re.search(r"TR ([ZSL])", rsg)
+        stufe = sr.get("traumanetzwerk") or ({"Z": "ÜTZ", "S": "RTZ", "L": "LTZ"}[tr.group(1)] if tr else None)
         if kid == "kh001":
             out.update(schockraum_intern=2, schockraum_trauma=1)
         elif kid == "kh002":
             out["schockraum"] = 1
-        elif pl.get("schockraum_trauma") or pl.get("schockraum_intern"):
-            for k in ("schockraum_trauma", "schockraum_intern"):
-                if pl.get(k):
-                    out[k] = pl[k]
-            if pl.get("schockraum") and not (pl.get("schockraum_trauma") and pl.get("schockraum_intern")):
-                rest = pl["schockraum"] - pl.get("schockraum_trauma", 0) - pl.get("schockraum_intern", 0)
-                if rest > 0:
-                    out["schockraum"] = rest
-        elif pl.get("schockraum"):
-            out["schockraum"] = pl["schockraum"]
-        elif "amb_notaufnahme" not in einr and "amb_unfall" in einr and "st_innere_medizin" not in einr:
-            out["schockraum_trauma"] = 2 if akut >= 200 else 1
-        elif gross:
-            out.update(schockraum_trauma=2, schockraum_intern=2)
-        elif mittel:
-            out.update(schockraum_trauma=1, schockraum_intern=1)
+        elif zahl(sr.get("schockraum_trauma"), sr.get("schockraum_intern"), sr.get("schockraum")) or pl.get("schockraum"):
+            t, i, k = sr.get("schockraum_trauma"), sr.get("schockraum_intern"), zahl(sr.get("schockraum"), pl.get("schockraum"))
+            if t and i and k and k <= max(t, i):
+                out["schockraum"] = k  # dieselben Räume für beides
+            else:
+                if t:
+                    out["schockraum_trauma"] = int(t)
+                if i:
+                    out["schockraum_intern"] = int(i)
+                if k and not (t or i):
+                    out["schockraum"] = int(k)
+        elif stufe == "ÜTZ":
+            out["schockraum"] = 2  # Weißbuch: mindestens zwei Schwerverletzte gleichzeitig
         else:
-            out["schockraum"] = 1
+            out["schockraum"] = 1  # Schockraum belegt; Weißbuch LTZ/RTZ: einer
     if "fb_herzkatheter" in einr:
-        out["herzkatheter"] = pl.get("herzkatheter") or (2 if gross else 1)
+        out["herzkatheter"] = int(zahl(pl.get("herzkatheter"), oe.get("cor")) or 1)
     if "z_cardiac_arrest_center" in einr:
-        out["ecmo"] = pl.get("ecmo") or (2 if akut >= 1200 else 1)
+        out["ecmo"] = int(pl.get("ecmo") or 1)
     if "its_stroke_unit" in einr:
-        out["stroke_unit"] = klemm((pl.get("stroke_unit") or (8 if gross else 4)) / 4, 1, 3)
+        betten = zahl(pl.get("stroke_unit"), oe.get("stroke_unit_betten"))
+        out["stroke_unit"] = klemm((betten or 4) / 4, 1, 3)
     if "fb_kreisssaal" in einr or "st_geburtshilfe" in einr:
-        if pl.get("kreisssaal"):
-            out["kreisssaal"] = pl["kreisssaal"]
-        elif gr.get("geburten_jahr"):
-            out["kreisssaal"] = klemm(gr["geburten_jahr"] / 450, 1, 7)
+        ks = zahl(pl.get("kreisssaal"), za.get("kreisssaal"))
+        gb = zahl(za.get("geburten_jahr"), gr.get("geburten_jahr"))
+        if ks:
+            out["kreisssaal"] = int(ks)
+        elif gb:
+            out["kreisssaal"] = klemm(gb / 450, 1, 7)
         else:
             gyn = sum(b for a, b in abt.items() if a.startswith("06"))
             out["kreisssaal"] = klemm(gyn / 12 if gyn else 2, 1, 6)
@@ -798,7 +824,9 @@ def build_hospitals() -> list[dict]:
         Dazu einzeln belegte Ausnahmen (z. B. keine Thrombektomie trotz Angiographie)."""
         haben = set(d["einrichtungen"])
         ak = [a["id"] for a in klinik["ebene2_akut_abteilungen"] if any(all(x in haben for x in alt) for alt in a["voraussetzung"])]
-        extra_aus = zeiten_alle.get(kid, {}).get("_akut_aus", [])
+        extra_aus = list(zeiten_alle.get(kid, {}).get("_akut_aus", []))
+        if kid not in THROMBEKTOMIE:
+            extra_aus.append("ak_thrombektomie")
         if "*" in extra_aus:
             return ", ".join(ak), "nimmt derzeit keine Rettung auf"
         if not d.get("privat") and (haben | set(d.get("unklar", []))) & NOTFALL:

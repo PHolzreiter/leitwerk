@@ -1,0 +1,1337 @@
+{
+ "kh001": {
+  "kreisssaal": null,
+  "geburten_jahr": 1032,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": 90,
+  "jahr": "2026",
+  "jahre": {
+   "geburten_jahr": "2025",
+   "intensiv": "2026"
+  },
+  "quellen": [
+   "https://www.landesgesundheitsagentur.at/fileadmin/media_data/Dateien/LKNOE_Webseite/Medien-Center/Publikationen/LGA_Geschaeftsbericht_2025_END.pdf – Kennzahlen Landes-/Universitätskliniken S.152–155, Spalte Geburten 2025",
+   "https://www.sozialministerium.gv.at/dam/jcr:0a2c1fb9-68c3-4355-bf22-ff0d11c0186e/KA-Verzeichnis%202026-09-18.xlsx – KA-Verzeichnis Stand 18.09.2026, Standort K382.1, ÖSG-Fach 01 Intensivversorgung: 90 Betten"
+  ],
+  "notiz": "Kliniksuche 2024: St. Pölten 909 + Lilienfeld 321 (abweichend von LGA)."
+ },
+ "kh002": {
+  "kreisssaal": null,
+  "geburten_jahr": 501,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": 20,
+  "jahr": "2026",
+  "jahre": {
+   "geburten_jahr": "2025",
+   "intensiv": "2026"
+  },
+  "quellen": [
+   "https://www.landesgesundheitsagentur.at/fileadmin/media_data/Dateien/LKNOE_Webseite/Medien-Center/Publikationen/LGA_Geschaeftsbericht_2025_END.pdf – Kennzahlen Landes-/Universitätskliniken S.152–155, Spalte Geburten 2025",
+   "https://www.sozialministerium.gv.at/dam/jcr:0a2c1fb9-68c3-4355-bf22-ff0d11c0186e/KA-Verzeichnis%202026-09-18.xlsx – KA-Verzeichnis Stand 18.09.2026, Standort K326.1, ÖSG-Fach 01 Intensivversorgung: 20 Betten"
+  ],
+  "notiz": ""
+ },
+ "kh003": {
+  "kreisssaal": null,
+  "geburten_jahr": 913,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": null,
+  "jahr": "2025",
+  "jahre": {
+   "geburten_jahr": "2025"
+  },
+  "quellen": [
+   "https://www.landesgesundheitsagentur.at/fileadmin/media_data/Dateien/LKNOE_Webseite/Medien-Center/Publikationen/LGA_Geschaeftsbericht_2025_END.pdf – Kennzahlen Landes-/Universitätskliniken S.152–155, Spalte Geburten 2025"
+  ],
+  "notiz": ""
+ },
+ "kh004": {
+  "kreisssaal": null,
+  "geburten_jahr": 899,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": null,
+  "jahr": "2025",
+  "jahre": {
+   "geburten_jahr": "2025"
+  },
+  "quellen": [
+   "https://www.landesgesundheitsagentur.at/fileadmin/media_data/Dateien/LKNOE_Webseite/Medien-Center/Publikationen/LGA_Geschaeftsbericht_2025_END.pdf – Kennzahlen Landes-/Universitätskliniken S.152–155, Spalte Geburten 2025"
+  ],
+  "notiz": ""
+ },
+ "kh005": {
+  "kreisssaal": null,
+  "geburten_jahr": 597,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": 26,
+  "jahr": "2026",
+  "jahre": {
+   "geburten_jahr": "2025",
+   "intensiv": "2026"
+  },
+  "quellen": [
+   "https://www.landesgesundheitsagentur.at/fileadmin/media_data/Dateien/LKNOE_Webseite/Medien-Center/Publikationen/LGA_Geschaeftsbericht_2025_END.pdf – Kennzahlen Landes-/Universitätskliniken S.152–155, Spalte Geburten 2025",
+   "https://www.sozialministerium.gv.at/dam/jcr:0a2c1fb9-68c3-4355-bf22-ff0d11c0186e/KA-Verzeichnis%202026-09-18.xlsx – KA-Verzeichnis Stand 18.09.2026, Standort K335.1, ÖSG-Fach 01 Intensivversorgung: 26 Betten"
+  ],
+  "notiz": "Geburten lt. LGA \"LK Mistelbach (inkl. Gänserndorf)\".  Website: Innere I hat 8 Intensiv- + 4 Überwachungsbetten (Teilmenge)."
+ },
+ "kh006": {
+  "kreisssaal": 4,
+  "geburten_jahr": 874,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": 26,
+  "jahr": "2026",
+  "jahre": {
+   "geburten_jahr": "2025",
+   "kreisssaal": "2024",
+   "intensiv": "2026"
+  },
+  "quellen": [
+   "https://www.landesgesundheitsagentur.at/fileadmin/media_data/Dateien/LKNOE_Webseite/Medien-Center/Publikationen/LGA_Geschaeftsbericht_2025_END.pdf – Kennzahlen Landes-/Universitätskliniken S.152–155, Spalte Geburten 2025",
+   "https://www.tips.at/nachrichten/amstetten/land-leute/636166-landesklinikum-amstetten-informiert-werdende-eltern – 22.02.2024: vier Kreißzimmer + eigenes Wehenzimmer, OP im Kreißzimmerbereich",
+   "https://www.sozialministerium.gv.at/dam/jcr:0a2c1fb9-68c3-4355-bf22-ff0d11c0186e/KA-Verzeichnis%202026-09-18.xlsx – KA-Verzeichnis Stand 18.09.2026, Standort K303.1, ÖSG-Fach 01 Intensivversorgung: 26 Betten"
+  ],
+  "notiz": ""
+ },
+ "kh007": {
+  "kreisssaal": null,
+  "geburten_jahr": 356,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": 18,
+  "jahr": "2026",
+  "jahre": {
+   "geburten_jahr": "2025",
+   "intensiv": "2026"
+  },
+  "quellen": [
+   "https://www.landesgesundheitsagentur.at/fileadmin/media_data/Dateien/LKNOE_Webseite/Medien-Center/Publikationen/LGA_Geschaeftsbericht_2025_END.pdf – Kennzahlen Landes-/Universitätskliniken S.152–155, Spalte Geburten 2025",
+   "https://www.sozialministerium.gv.at/dam/jcr:0a2c1fb9-68c3-4355-bf22-ff0d11c0186e/KA-Verzeichnis%202026-09-18.xlsx – KA-Verzeichnis Stand 18.09.2026, Standort K377.1, ÖSG-Fach 01 Intensivversorgung: 18 Betten"
+  ],
+  "notiz": "Website: Anästhesie-Intensiv 9 Behandlungsplätze (Teilmenge)."
+ },
+ "kh009": {
+  "kreisssaal": null,
+  "geburten_jahr": 1929,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": null,
+  "jahr": "2025",
+  "jahre": {
+   "geburten_jahr": "2025"
+  },
+  "quellen": [
+   "https://www.landesgesundheitsagentur.at/fileadmin/media_data/Dateien/LKNOE_Webseite/Medien-Center/Publikationen/LGA_Geschaeftsbericht_2025_END.pdf – Kennzahlen Landes-/Universitätskliniken S.152–155, Spalte Geburten 2025"
+  ],
+  "notiz": "Website nennt rund 2.000/Jahr; LGA 2025: 1.929."
+ },
+ "kh010": {
+  "kreisssaal": null,
+  "geburten_jahr": 657,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": 12,
+  "jahr": "2026",
+  "jahre": {
+   "geburten_jahr": "2025",
+   "intensiv": "2026"
+  },
+  "quellen": [
+   "https://www.landesgesundheitsagentur.at/fileadmin/media_data/Dateien/LKNOE_Webseite/Medien-Center/Publikationen/LGA_Geschaeftsbericht_2025_END.pdf – Kennzahlen Landes-/Universitätskliniken S.152–155, Spalte Geburten 2025",
+   "https://www.sozialministerium.gv.at/dam/jcr:0a2c1fb9-68c3-4355-bf22-ff0d11c0186e/KA-Verzeichnis%202026-09-18.xlsx – KA-Verzeichnis Stand 18.09.2026, Standort K338.1, ÖSG-Fach 01 Intensivversorgung: 12 Betten"
+  ],
+  "notiz": "Website: allg. Intensivstation, bis zu 6 Beatmungsplätze."
+ },
+ "kh011": {
+  "kreisssaal": null,
+  "geburten_jahr": 648,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": null,
+  "jahr": "2025",
+  "jahre": {
+   "geburten_jahr": "2025"
+  },
+  "quellen": [
+   "https://www.landesgesundheitsagentur.at/fileadmin/media_data/Dateien/LKNOE_Webseite/Medien-Center/Publikationen/LGA_Geschaeftsbericht_2025_END.pdf – Kennzahlen Landes-/Universitätskliniken S.152–155, Spalte Geburten 2025"
+  ],
+  "notiz": ""
+ },
+ "kh013": {
+  "kreisssaal": null,
+  "geburten_jahr": 167,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": null,
+  "jahr": "2025",
+  "jahre": {
+   "geburten_jahr": "2025"
+  },
+  "quellen": [
+   "https://www.landesgesundheitsagentur.at/fileadmin/media_data/Dateien/LKNOE_Webseite/Medien-Center/Publikationen/LGA_Geschaeftsbericht_2025_END.pdf – Kennzahlen Landes-/Universitätskliniken S.152–155, Spalte Geburten 2025"
+  ],
+  "notiz": "Geburtshilfe Hollabrunn 2025 planmäßig eingestellt und nach Korneuburg verlagert (LGA-GB 2025) – Zahl ist Restjahr 2025."
+ },
+ "kh014": {
+  "kreisssaal": null,
+  "geburten_jahr": 366,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": 5,
+  "jahr": "2026",
+  "jahre": {
+   "geburten_jahr": "2025",
+   "intensiv": "2026"
+  },
+  "quellen": [
+   "https://www.landesgesundheitsagentur.at/fileadmin/media_data/Dateien/LKNOE_Webseite/Medien-Center/Publikationen/LGA_Geschaeftsbericht_2025_END.pdf – Kennzahlen Landes-/Universitätskliniken S.152–155, Spalte Geburten 2025",
+   "https://www.sozialministerium.gv.at/dam/jcr:0a2c1fb9-68c3-4355-bf22-ff0d11c0186e/KA-Verzeichnis%202026-09-18.xlsx – KA-Verzeichnis Stand 18.09.2026, Standort K316.1, ÖSG-Fach 01 Intensivversorgung: 5 Betten"
+  ],
+  "notiz": "Website: 2 ICU + 3 IMCU (=KAV 5)."
+ },
+ "kh015": {
+  "kreisssaal": null,
+  "geburten_jahr": 188,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": null,
+  "jahr": "2025",
+  "jahre": {
+   "geburten_jahr": "2025"
+  },
+  "quellen": [
+   "https://www.landesgesundheitsagentur.at/fileadmin/media_data/Dateien/LKNOE_Webseite/Medien-Center/Publikationen/LGA_Geschaeftsbericht_2025_END.pdf – Kennzahlen Landes-/Universitätskliniken S.152–155, Spalte Geburten 2025"
+  ],
+  "notiz": "Geburtshilfe Klosterneuburg seit 30.06.2025 am UK Tulln gebündelt (LGA-GB 2025) – Zahl ist Teiljahr 2025."
+ },
+ "kh016": {
+  "kreisssaal": null,
+  "geburten_jahr": 247,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": 4,
+  "jahr": "2026",
+  "jahre": {
+   "geburten_jahr": "2025",
+   "intensiv": "2026"
+  },
+  "quellen": [
+   "https://www.landesgesundheitsagentur.at/fileadmin/media_data/Dateien/LKNOE_Webseite/Medien-Center/Publikationen/LGA_Geschaeftsbericht_2025_END.pdf – Kennzahlen Landes-/Universitätskliniken S.152–155, Spalte Geburten 2025",
+   "https://www.sozialministerium.gv.at/dam/jcr:0a2c1fb9-68c3-4355-bf22-ff0d11c0186e/KA-Verzeichnis%202026-09-18.xlsx – KA-Verzeichnis Stand 18.09.2026, Standort K382.2, ÖSG-Fach 01 Intensivversorgung: 4 Betten"
+  ],
+  "notiz": ""
+ },
+ "kh017": {
+  "kreisssaal": null,
+  "geburten_jahr": 381,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": 6,
+  "jahr": "2026",
+  "jahre": {
+   "geburten_jahr": "2025",
+   "intensiv": "2026"
+  },
+  "quellen": [
+   "https://www.landesgesundheitsagentur.at/fileadmin/media_data/Dateien/LKNOE_Webseite/Medien-Center/Publikationen/LGA_Geschaeftsbericht_2025_END.pdf – Kennzahlen Landes-/Universitätskliniken S.152–155, Spalte Geburten 2025",
+   "https://www.sozialministerium.gv.at/dam/jcr:0a2c1fb9-68c3-4355-bf22-ff0d11c0186e/KA-Verzeichnis%202026-09-18.xlsx – KA-Verzeichnis Stand 18.09.2026, Standort K334.1, ÖSG-Fach 01 Intensivversorgung: 6 Betten"
+  ],
+  "notiz": ""
+ },
+ "kh018": {
+  "kreisssaal": 3,
+  "geburten_jahr": 499,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": 6,
+  "jahr": "2026",
+  "jahre": {
+   "geburten_jahr": "2025",
+   "kreisssaal": "2006",
+   "intensiv": "2026"
+  },
+  "quellen": [
+   "https://www.landesgesundheitsagentur.at/fileadmin/media_data/Dateien/LKNOE_Webseite/Medien-Center/Publikationen/LGA_Geschaeftsbericht_2025_END.pdf – Kennzahlen Landes-/Universitätskliniken S.152–155, Spalte Geburten 2025",
+   "https://www.noe.gv.at/noe/pressAnnouncement/getPdf/71508 – NÖ Landeskorrespondenz 24.10.2006: \"drei Kreißzimmer\"",
+   "https://www.sozialministerium.gv.at/dam/jcr:0a2c1fb9-68c3-4355-bf22-ff0d11c0186e/KA-Verzeichnis%202026-09-18.xlsx – KA-Verzeichnis Stand 18.09.2026, Standort K347.1, ÖSG-Fach 01 Intensivversorgung: 6 Betten"
+  ],
+  "notiz": "Kreißzimmer-Zahl alt (2006), aktuellere Angabe nicht gefunden."
+ },
+ "kh019": {
+  "kreisssaal": null,
+  "geburten_jahr": null,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": 6,
+  "jahr": "2026",
+  "jahre": {
+   "intensiv": "2026"
+  },
+  "quellen": [
+   "https://www.sozialministerium.gv.at/dam/jcr:0a2c1fb9-68c3-4355-bf22-ff0d11c0186e/KA-Verzeichnis%202026-09-18.xlsx – KA-Verzeichnis Stand 18.09.2026, Standort K354.1, ÖSG-Fach 01 Intensivversorgung: 6 Betten"
+  ],
+  "notiz": ""
+ },
+ "kh020": {
+  "kreisssaal": null,
+  "geburten_jahr": 754,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": 15,
+  "jahr": "2026",
+  "jahre": {
+   "geburten_jahr": "2025",
+   "intensiv": "2026"
+  },
+  "quellen": [
+   "https://www.landesgesundheitsagentur.at/fileadmin/media_data/Dateien/LKNOE_Webseite/Medien-Center/Publikationen/LGA_Geschaeftsbericht_2025_END.pdf – Kennzahlen Landes-/Universitätskliniken S.152–155, Spalte Geburten 2025",
+   "https://www.sozialministerium.gv.at/dam/jcr:0a2c1fb9-68c3-4355-bf22-ff0d11c0186e/KA-Verzeichnis%202026-09-18.xlsx – KA-Verzeichnis Stand 18.09.2026, Standort K383.1, ÖSG-Fach 01 Intensivversorgung: 15 Betten"
+  ],
+  "notiz": ""
+ },
+ "kh021": {
+  "kreisssaal": null,
+  "geburten_jahr": null,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": 5,
+  "jahr": "2026",
+  "jahre": {
+   "intensiv": "2026"
+  },
+  "quellen": [
+   "https://www.sozialministerium.gv.at/dam/jcr:0a2c1fb9-68c3-4355-bf22-ff0d11c0186e/KA-Verzeichnis%202026-09-18.xlsx – KA-Verzeichnis Stand 18.09.2026, Standort K383.2, ÖSG-Fach 01 Intensivversorgung: 5 Betten"
+  ],
+  "notiz": ""
+ },
+ "kh022": {
+  "kreisssaal": null,
+  "geburten_jahr": null,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": 10,
+  "jahr": "2026",
+  "jahre": {
+   "intensiv": "2026"
+  },
+  "quellen": [
+   "https://www.sozialministerium.gv.at/dam/jcr:0a2c1fb9-68c3-4355-bf22-ff0d11c0186e/KA-Verzeichnis%202026-09-18.xlsx – KA-Verzeichnis Stand 18.09.2026, Standort K383.3, ÖSG-Fach 01 Intensivversorgung: 10 Betten"
+  ],
+  "notiz": ""
+ },
+ "kh023": {
+  "kreisssaal": null,
+  "geburten_jahr": 2928,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": 60000,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": null,
+  "jahr": "2025",
+  "jahre": {
+   "geburten_jahr": "2024",
+   "notaufnahme_jahr": "2025"
+  },
+  "quellen": [
+   "https://kliniksuche.at/api/hospitals?treatment=3 (Kliniksuche.at, BMASGPK) – Anzahl Geburten 2024, AKH Wien",
+   "https://wien.orf.at/stories/3311369/ – ORF 28.06.2025: rund 60.000 Notfälle pro Jahr an der Univ.-Klinik für Notfallmedizin"
+  ],
+  "notiz": "Festschrift 25 J. UKNFM (ca. 2016, notfallmedizin.meduniwien.ac.at/fileadmin/content/OE/notfallmedizin/dokumente/Festschrift_25Jahre_UKNFM.pdf): damals ~70.000 Pat./Jahr, täglich 30–40 Rettungen; Notfallambulanz 11 Räume, Akutbehandlungsstation 7 Plätze (4+3, Vollintensiv-Ausstattung), Notfallstation 7 Betten."
+ },
+ "kh024": {
+  "kreisssaal": null,
+  "geburten_jahr": 2297,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": 75,
+  "jahr": "2026",
+  "jahre": {
+   "geburten_jahr": "2024",
+   "intensiv": "2026"
+  },
+  "quellen": [
+   "https://kliniksuche.at/api/hospitals?treatment=3 (Kliniksuche.at, BMASGPK) – Anzahl Geburten 2024, Klinik Floridsdorf",
+   "https://www.sozialministerium.gv.at/dam/jcr:0a2c1fb9-68c3-4355-bf22-ff0d11c0186e/KA-Verzeichnis%202026-09-18.xlsx – KA-Verzeichnis Stand 18.09.2026, Standort K976.1, ÖSG-Fach 01 Intensivversorgung: 75 Betten"
+  ],
+  "notiz": ""
+ },
+ "kh025": {
+  "kreisssaal": null,
+  "geburten_jahr": 1978,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": 69,
+  "jahr": "2026",
+  "jahre": {
+   "geburten_jahr": "2024",
+   "intensiv": "2026"
+  },
+  "quellen": [
+   "https://kliniksuche.at/api/hospitals?treatment=3 (Kliniksuche.at, BMASGPK) – Anzahl Geburten 2024, Klinik Donaustadt",
+   "https://www.sozialministerium.gv.at/dam/jcr:0a2c1fb9-68c3-4355-bf22-ff0d11c0186e/KA-Verzeichnis%202026-09-18.xlsx – KA-Verzeichnis Stand 18.09.2026, Standort K956.1, ÖSG-Fach 01 Intensivversorgung: 69 Betten"
+  ],
+  "notiz": ""
+ },
+ "kh026": {
+  "kreisssaal": 5,
+  "geburten_jahr": 1572,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": 64000,
+  "unfall_jahr": 53000,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": 23725,
+  "intensiv": 53,
+  "jahr": "2026",
+  "jahre": {
+   "geburten_jahr": "2024",
+   "kreisssaal": "2022",
+   "notaufnahme_jahr": "2022",
+   "rettungszufahrten_jahr": "2022",
+   "unfall_jahr": "2024",
+   "intensiv": "2026"
+  },
+  "quellen": [
+   "https://kliniksuche.at/api/hospitals?treatment=3 (Kliniksuche.at, BMASGPK) – Anzahl Geburten 2024, Klinik Ottakring",
+   "https://klinik-ottakring.gesundheitsverbund.at/leistung/c-ost-kreisssaal/ – \"fünf modernste Kreißsäle\"; Umbau 2022: Entbindungsräume von 4 auf 5, Kapazität rund 2.000 Geburten/Jahr (klinik-ottakring.gesundheitsverbund.at/eroeffnung-des-neu-renovierten-kreisssaals-in-der-klinik-ottakring/), zusätzlich 1 Infektionskreißsaal",
+   "https://wien.orf.at/stories/3203477/ – 2022 über 64.000 Pat. auf den Zentralen Ambulanten Erstversorgungseinheiten der Klinik Ottakring (1×/Tag gezählt), Ø 176/Tag; ZNA Ø 65 Rettungszufahrten täglich",
+   "https://wien.orf.at/stories/3203477/ – ZNA Ø 65 Rettungszufahrten/Tag (2022)",
+   "https://klinik-ottakring.gesundheitsverbund.at/neubau-und-sanierung-der-unfallchirurgie-starten/ – \"Mehr als 53.000 ambulante Besuche wurden 2024 in der Unfallchirurgie der Klinik Ottakring gezählt\"",
+   "https://www.sozialministerium.gv.at/dam/jcr:0a2c1fb9-68c3-4355-bf22-ff0d11c0186e/KA-Verzeichnis%202026-09-18.xlsx – KA-Verzeichnis Stand 18.09.2026, Standort K921.1, ÖSG-Fach 01 Intensivversorgung: 53 Betten"
+  ],
+  "notiz": "rettungszufahrten_jahr = 65/Tag × 365 (berechnet, Quelle nennt Tageswert)."
+ },
+ "kh027": {
+  "kreisssaal": null,
+  "geburten_jahr": 2004,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": 53,
+  "jahr": "2026",
+  "jahre": {
+   "geburten_jahr": "2024",
+   "intensiv": "2026"
+  },
+  "quellen": [
+   "https://kliniksuche.at/api/hospitals?treatment=3 (Kliniksuche.at, BMASGPK) – Anzahl Geburten 2024, Klinik Favoriten",
+   "https://www.sozialministerium.gv.at/dam/jcr:0a2c1fb9-68c3-4355-bf22-ff0d11c0186e/KA-Verzeichnis%202026-09-18.xlsx – KA-Verzeichnis Stand 18.09.2026, Standort K910.1, ÖSG-Fach 01 Intensivversorgung: 53 Betten"
+  ],
+  "notiz": ""
+ },
+ "kh028": {
+  "kreisssaal": null,
+  "geburten_jahr": 1071,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": 27100,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": 43,
+  "jahr": "2026",
+  "jahre": {
+   "geburten_jahr": "2024",
+   "notaufnahme_jahr": "2025",
+   "intensiv": "2026"
+  },
+  "quellen": [
+   "https://kliniksuche.at/api/hospitals?treatment=3 (Kliniksuche.at, BMASGPK) – Anzahl Geburten 2024, Klinik Hietzing",
+   "https://www.vienna.at/wiener-klinik-hietzing-schliesst-geburtenstation/9954938 – Ende Geburtshilfe ab 2027",
+   "https://klinik-hietzing.gesundheitsverbund.at/klinik-hietzing-modernisiert-notfallmedizin-und-labor/ – 18.09.2026: Abt. Notfallmedizin 2025 mehr als 27.100 Patient*innen-Kontakte, täglich bis zu 100 Rettungsanfahrten, ~4.500 stationäre Aufnahmen; neu 2 Schockräume + Überwachungsraum mit 3 Plätzen",
+   "https://www.sozialministerium.gv.at/dam/jcr:0a2c1fb9-68c3-4355-bf22-ff0d11c0186e/KA-Verzeichnis%202026-09-18.xlsx – KA-Verzeichnis Stand 18.09.2026, Standort K916.1, ÖSG-Fach 01 Intensivversorgung: 43 Betten"
+  ],
+  "notiz": "Geburtshilfe Hietzing wird Anfang 2027 eingestellt, Verlagerung von ca. 5 Geburten/Tag (WIGEV, vienna.at 29.01.2026; klinik-hietzing.gesundheitsverbund.at/neuausrichtung-der-gynaekologie-und-geburtshilfe-der-klinik-hietzing/).  Rettungsanfahrten nur als Tagesmaximum (bis 100/Tag) belegt, kein Jahreswert. Ältere Abteilungsseite (klinik-hietzing.gesundheitsverbund.at/?p=150, undatiert): \"jährlich über 40.000 Notfälle\", 80 % per Rettungsdienst, Station 15 Betten – widerspricht 2025-Wert; zeiten_* hat 40.000."
+ },
+ "kh029": {
+  "kreisssaal": null,
+  "geburten_jahr": 1247,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": 32,
+  "jahr": "2026",
+  "jahre": {
+   "geburten_jahr": "2024",
+   "intensiv": "2026"
+  },
+  "quellen": [
+   "https://kliniksuche.at/api/hospitals?treatment=3 (Kliniksuche.at, BMASGPK) – Anzahl Geburten 2024, Klinik Landstraße",
+   "https://www.sozialministerium.gv.at/dam/jcr:0a2c1fb9-68c3-4355-bf22-ff0d11c0186e/KA-Verzeichnis%202026-09-18.xlsx – KA-Verzeichnis Stand 18.09.2026, Standort K917.1, ÖSG-Fach 01 Intensivversorgung: 32 Betten"
+  ],
+  "notiz": ""
+ },
+ "kh030": {
+  "kreisssaal": null,
+  "geburten_jahr": null,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": 18,
+  "jahr": "2026",
+  "jahre": {
+   "intensiv": "2026"
+  },
+  "quellen": [
+   "https://www.sozialministerium.gv.at/dam/jcr:0a2c1fb9-68c3-4355-bf22-ff0d11c0186e/KA-Verzeichnis%202026-09-18.xlsx – KA-Verzeichnis Stand 18.09.2026, Standort K920.1, ÖSG-Fach 01 Intensivversorgung: 18 Betten"
+  ],
+  "notiz": ""
+ },
+ "kh033": {
+  "kreisssaal": null,
+  "geburten_jahr": null,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": 26,
+  "jahr": "2026",
+  "jahre": {
+   "intensiv": "2026"
+  },
+  "quellen": [
+   "https://www.sozialministerium.gv.at/dam/jcr:0a2c1fb9-68c3-4355-bf22-ff0d11c0186e/KA-Verzeichnis%202026-09-18.xlsx – KA-Verzeichnis Stand 18.09.2026, Standort K952.1, ÖSG-Fach 01 Intensivversorgung: 26 Betten"
+  ],
+  "notiz": ""
+ },
+ "kh034": {
+  "kreisssaal": null,
+  "geburten_jahr": 810,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": 32,
+  "jahr": "2026",
+  "jahre": {
+   "geburten_jahr": "2024",
+   "intensiv": "2026"
+  },
+  "quellen": [
+   "https://kliniksuche.at/api/hospitals?treatment=3 (Kliniksuche.at, BMASGPK) – Anzahl Geburten 2024, BB Eisenstadt",
+   "https://www.sozialministerium.gv.at/dam/jcr:0a2c1fb9-68c3-4355-bf22-ff0d11c0186e/KA-Verzeichnis%202026-09-18.xlsx – KA-Verzeichnis Stand 18.09.2026, Standort K102.1, ÖSG-Fach 01 Intensivversorgung: 32 Betten"
+  ],
+  "notiz": ""
+ },
+ "kh035": {
+  "kreisssaal": null,
+  "geburten_jahr": 610,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": 21,
+  "jahr": "2026",
+  "jahre": {
+   "geburten_jahr": "2024",
+   "intensiv": "2026"
+  },
+  "quellen": [
+   "https://kliniksuche.at/api/hospitals?treatment=3 (Kliniksuche.at, BMASGPK) – Anzahl Geburten 2024, Klinik Oberwart",
+   "https://www.sozialministerium.gv.at/dam/jcr:0a2c1fb9-68c3-4355-bf22-ff0d11c0186e/KA-Verzeichnis%202026-09-18.xlsx – KA-Verzeichnis Stand 18.09.2026, Standort K107.1, ÖSG-Fach 01 Intensivversorgung: 21 Betten"
+  ],
+  "notiz": ""
+ },
+ "kh036": {
+  "kreisssaal": null,
+  "geburten_jahr": null,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": 10,
+  "jahr": "2026",
+  "jahre": {
+   "intensiv": "2026"
+  },
+  "quellen": [
+   "https://www.sozialministerium.gv.at/dam/jcr:0a2c1fb9-68c3-4355-bf22-ff0d11c0186e/KA-Verzeichnis%202026-09-18.xlsx – KA-Verzeichnis Stand 18.09.2026, Standort K105.1, ÖSG-Fach 01 Intensivversorgung: 10 Betten"
+  ],
+  "notiz": ""
+ },
+ "kh037": {
+  "kreisssaal": null,
+  "geburten_jahr": null,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": 103,
+  "jahr": "2026",
+  "jahre": {
+   "intensiv": "2026"
+  },
+  "quellen": [
+   "https://www.sozialministerium.gv.at/dam/jcr:0a2c1fb9-68c3-4355-bf22-ff0d11c0186e/KA-Verzeichnis%202026-09-18.xlsx – KA-Verzeichnis Stand 18.09.2026, Standort K470.4, ÖSG-Fach 01 Intensivversorgung: 103 Betten"
+  ],
+  "notiz": "KAV führt Med Campus III und IV als einen Standort (K470.4): 103 Intensivbetten gemeinsam; Med Campus IV separat lt. Website 8."
+ },
+ "kh047": {
+  "kreisssaal": null,
+  "geburten_jahr": 3249,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": null,
+  "jahr": "2025",
+  "jahre": {
+   "geburten_jahr": "2025"
+  },
+  "quellen": [
+   "https://www.kepleruniklinikum.at/kliniken-einrichtungen/gynaekologie-geburtshilfe-und-gyn-endokrinologie/aktuelles/ – 2025: 3.249 Geburten, 3.331 Babys (KUK gesamt, Geburtshilfe am Med Campus IV)"
+  ],
+  "notiz": ""
+ },
+ "kh048": {
+  "kreisssaal": null,
+  "geburten_jahr": null,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": 27,
+  "jahr": "2026",
+  "jahre": {
+   "intensiv": "2026"
+  },
+  "quellen": [
+   "https://www.sozialministerium.gv.at/dam/jcr:0a2c1fb9-68c3-4355-bf22-ff0d11c0186e/KA-Verzeichnis%202026-09-18.xlsx – KA-Verzeichnis Stand 18.09.2026, Standort K418.1, ÖSG-Fach 01 Intensivversorgung: 27 Betten"
+  ],
+  "notiz": "Website: anästh. Intensivstation 10 Einzelkojen (Teilmenge)."
+ },
+ "kh050": {
+  "kreisssaal": 5,
+  "geburten_jahr": 1057,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": 30,
+  "jahr": "2026",
+  "jahre": {
+   "geburten_jahr": "2025",
+   "kreisssaal": "2026",
+   "intensiv": "2026"
+  },
+  "quellen": [
+   "https://www.ooeg.at/fileadmin/media/ooeg/Dateien_PDFs_Worddokumente_/Geschaeftsbericht_2025_gesamt.pdf – Geburtenbilanz 2025: PEK Steyr 1.057 Kinder (davon 12 Zwillingsgeburten)",
+   "https://www.ooeg.at/pek/sr/fachbereiche/frauenheilkunde-und-geburtshilfe/kreisszimmer – \"5 Kreißzimmern inkl. Badezimmer\", 2 mit Badewanne",
+   "https://www.sozialministerium.gv.at/dam/jcr:0a2c1fb9-68c3-4355-bf22-ff0d11c0186e/KA-Verzeichnis%202026-09-18.xlsx – KA-Verzeichnis Stand 18.09.2026, Standort K460.1, ÖSG-Fach 01 Intensivversorgung: 30 Betten"
+  ],
+  "notiz": "OÖG zählt hier Kinder (nicht Entbindungen). Website: Anästh. Intensiv 7 + Überwachung 4 Betten (Teilmenge)."
+ },
+ "kh051": {
+  "kreisssaal": null,
+  "geburten_jahr": 398,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": 6,
+  "jahr": "2026",
+  "jahre": {
+   "geburten_jahr": "2025",
+   "intensiv": "2026"
+  },
+  "quellen": [
+   "https://www.ooeg.at/fileadmin/media/ooeg/Dateien_PDFs_Worddokumente_/Geschaeftsbericht_2025_gesamt.pdf – Geburtenbilanz 2025: Klinikum Freistadt 398 Babys",
+   "https://www.sozialministerium.gv.at/dam/jcr:0a2c1fb9-68c3-4355-bf22-ff0d11c0186e/KA-Verzeichnis%202026-09-18.xlsx – KA-Verzeichnis Stand 18.09.2026, Standort K408.1, ÖSG-Fach 01 Intensivversorgung: 6 Betten"
+  ],
+  "notiz": ""
+ },
+ "kh052": {
+  "kreisssaal": null,
+  "geburten_jahr": 1623,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": 14,
+  "jahr": "2026",
+  "jahre": {
+   "geburten_jahr": "2024",
+   "intensiv": "2026"
+  },
+  "quellen": [
+   "https://kliniksuche.at/api/hospitals?treatment=3 (Kliniksuche.at, BMASGPK) – Anzahl Geburten 2024, BB Linz",
+   "https://www.sozialministerium.gv.at/dam/jcr:0a2c1fb9-68c3-4355-bf22-ff0d11c0186e/KA-Verzeichnis%202026-09-18.xlsx – KA-Verzeichnis Stand 18.09.2026, Standort K417.1, ÖSG-Fach 01 Intensivversorgung: 14 Betten"
+  ],
+  "notiz": ""
+ },
+ "kh053": {
+  "kreisssaal": null,
+  "geburten_jahr": 1832,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": 45,
+  "jahr": "2026",
+  "jahre": {
+   "geburten_jahr": "2024",
+   "intensiv": "2026"
+  },
+  "quellen": [
+   "https://kliniksuche.at/api/hospitals?treatment=3 (Kliniksuche.at, BMASGPK) – Anzahl Geburten 2024, Klinikum Wels-Grieskirchen, Standort Wels",
+   "https://www.sozialministerium.gv.at/dam/jcr:0a2c1fb9-68c3-4355-bf22-ff0d11c0186e/KA-Verzeichnis%202026-09-18.xlsx – KA-Verzeichnis Stand 18.09.2026, Standort K434.1, ÖSG-Fach 01 Intensivversorgung: 45 Betten"
+  ],
+  "notiz": ""
+ },
+ "kh054": {
+  "kreisssaal": null,
+  "geburten_jahr": 464,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": 4,
+  "jahr": "2026",
+  "jahre": {
+   "geburten_jahr": "2024",
+   "intensiv": "2026"
+  },
+  "quellen": [
+   "https://kliniksuche.at/api/hospitals?treatment=3 (Kliniksuche.at, BMASGPK) – Anzahl Geburten 2024, Standort Grieskirchen",
+   "https://www.sozialministerium.gv.at/dam/jcr:0a2c1fb9-68c3-4355-bf22-ff0d11c0186e/KA-Verzeichnis%202026-09-18.xlsx – KA-Verzeichnis Stand 18.09.2026, Standort K434.2, ÖSG-Fach 01 Intensivversorgung: 4 Betten"
+  ],
+  "notiz": ""
+ },
+ "kh055": {
+  "kreisssaal": null,
+  "geburten_jahr": 500,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": null,
+  "jahr": "2025",
+  "jahre": {
+   "geburten_jahr": "2025"
+  },
+  "quellen": [
+   "https://www.ooeg.at/fileadmin/media/ooeg/Dateien_PDFs_Worddokumente_/Geschaeftsbericht_2025_gesamt.pdf – Geburtenbilanz 2025: PEK Kirchdorf 500 Kinder (darunter 1 Zwillingspaar)"
+  ],
+  "notiz": "OÖG zählt hier Kinder (nicht Entbindungen)."
+ },
+ "kh056": {
+  "kreisssaal": 4,
+  "geburten_jahr": 1001,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": 26,
+  "jahr": "2026",
+  "jahre": {
+   "geburten_jahr": "2025",
+   "kreisssaal": "2026",
+   "intensiv": "2026"
+  },
+  "quellen": [
+   "https://www.ooeg.at/fileadmin/media/ooeg/Dateien_PDFs_Worddokumente_/Geschaeftsbericht_2025_gesamt.pdf – Geburtenbilanz 2025: SK Vöcklabruck 1.001 Kinder (darunter 6 Zwillingspaare)",
+   "https://www.ooeg.at/sk/vb/fachbereiche/frauenheilkunde-und-geburtshilfe/kreisszimmer – \"vier ... Kreißzimmer sowie ein Wehenzimmer\"",
+   "https://www.sozialministerium.gv.at/dam/jcr:0a2c1fb9-68c3-4355-bf22-ff0d11c0186e/KA-Verzeichnis%202026-09-18.xlsx – KA-Verzeichnis Stand 18.09.2026, Standort K480.1, ÖSG-Fach 01 Intensivversorgung: 26 Betten"
+  ],
+  "notiz": "OÖG zählt hier Kinder (nicht Entbindungen). Website: 6 Intensiv (Kat. 2) + 4 Überwachung + 2 RCU (Teilmenge)."
+ },
+ "kh057": {
+  "kreisssaal": null,
+  "geburten_jahr": null,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": 12,
+  "jahr": "2026",
+  "jahre": {
+   "intensiv": "2026"
+  },
+  "quellen": [
+   "https://www.sozialministerium.gv.at/dam/jcr:0a2c1fb9-68c3-4355-bf22-ff0d11c0186e/KA-Verzeichnis%202026-09-18.xlsx – KA-Verzeichnis Stand 18.09.2026, Standort K480.3, ÖSG-Fach 01 Intensivversorgung: 12 Betten"
+  ],
+  "notiz": "Website: Anästh. Intensivstation 6 Plätze (Teilmenge)."
+ },
+ "kh058": {
+  "kreisssaal": 3,
+  "geburten_jahr": 435,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": null,
+  "jahr": "2026",
+  "jahre": {
+   "geburten_jahr": "2025",
+   "kreisssaal": "2026"
+  },
+  "quellen": [
+   "https://www.ooeg.at/fileadmin/media/ooeg/Dateien_PDFs_Worddokumente_/Geschaeftsbericht_2025_gesamt.pdf – Geburtenbilanz 2025: SK Bad Ischl 435 Kinder (darunter 2 Zwillingspaare)",
+   "https://www.ooeg.at/sk/bi/fachbereiche/frauenheilkunde-und-geburtshilfe/kreisszimmer – Kreißzimmerbereich mit 3 Einzelzimmern + Neugeboreneneinheit"
+  ],
+  "notiz": "OÖG zählt hier Kinder (nicht Entbindungen)."
+ },
+ "kh059": {
+  "kreisssaal": null,
+  "geburten_jahr": 737,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": 16,
+  "jahr": "2026",
+  "jahre": {
+   "geburten_jahr": "2024",
+   "intensiv": "2026"
+  },
+  "quellen": [
+   "https://kliniksuche.at/api/hospitals?treatment=3 (Kliniksuche.at, BMASGPK) – Anzahl Geburten 2024, KH St. Josef Braunau",
+   "https://www.sozialministerium.gv.at/dam/jcr:0a2c1fb9-68c3-4355-bf22-ff0d11c0186e/KA-Verzeichnis%202026-09-18.xlsx – KA-Verzeichnis Stand 18.09.2026, Standort K405.1, ÖSG-Fach 01 Intensivversorgung: 16 Betten"
+  ],
+  "notiz": ""
+ },
+ "kh060": {
+  "kreisssaal": 2,
+  "geburten_jahr": 312,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": 6,
+  "jahr": "2026",
+  "jahre": {
+   "geburten_jahr": "2025",
+   "kreisssaal": "2026",
+   "intensiv": "2026"
+  },
+  "quellen": [
+   "https://www.ooeg.at/fileadmin/media/ooeg/Dateien_PDFs_Worddokumente_/Geschaeftsbericht_2025_gesamt.pdf – Geburtenbilanz 2025: Klinikum Schärding 312 Babys (Kennzahl Geburten 312)",
+   "https://www.ooeg.at/sd/fachbereiche/frauenheilkunde-und-geburtshilfe/geburtshilfe – \"2 moderne Kreißsäle\", 1 CTG-Raum, Bad mit Gebärwanne",
+   "https://www.sozialministerium.gv.at/dam/jcr:0a2c1fb9-68c3-4355-bf22-ff0d11c0186e/KA-Verzeichnis%202026-09-18.xlsx – KA-Verzeichnis Stand 18.09.2026, Standort K428.1, ÖSG-Fach 01 Intensivversorgung: 6 Betten"
+  ],
+  "notiz": ""
+ },
+ "kh061": {
+  "kreisssaal": null,
+  "geburten_jahr": 972,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": 17,
+  "jahr": "2026",
+  "jahre": {
+   "geburten_jahr": "2024",
+   "intensiv": "2026"
+  },
+  "quellen": [
+   "https://kliniksuche.at/api/hospitals?treatment=3 (Kliniksuche.at, BMASGPK) – Anzahl Geburten 2024, BHS Ried",
+   "https://www.sozialministerium.gv.at/dam/jcr:0a2c1fb9-68c3-4355-bf22-ff0d11c0186e/KA-Verzeichnis%202026-09-18.xlsx – KA-Verzeichnis Stand 18.09.2026, Standort K427.1, ÖSG-Fach 01 Intensivversorgung: 17 Betten"
+  ],
+  "notiz": ""
+ },
+ "kh062": {
+  "kreisssaal": null,
+  "geburten_jahr": 509,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": 6,
+  "jahr": "2026",
+  "jahre": {
+   "geburten_jahr": "2025",
+   "intensiv": "2026"
+  },
+  "quellen": [
+   "https://www.ooeg.at/fileadmin/media/ooeg/Dateien_PDFs_Worddokumente_/Geschaeftsbericht_2025_gesamt.pdf – Geburtenbilanz 2025: Klinikum Rohrbach 509 Kinder (Kennzahl Geburten 509)",
+   "https://www.sozialministerium.gv.at/dam/jcr:0a2c1fb9-68c3-4355-bf22-ff0d11c0186e/KA-Verzeichnis%202026-09-18.xlsx – KA-Verzeichnis Stand 18.09.2026, Standort K441.1, ÖSG-Fach 01 Intensivversorgung: 6 Betten"
+  ],
+  "notiz": ""
+ },
+ "kh063": {
+  "kreisssaal": 8,
+  "geburten_jahr": 3327,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": 55000,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": null,
+  "jahr": "2026",
+  "jahre": {
+   "geburten_jahr": "2024",
+   "kreisssaal": "2026",
+   "unfall_jahr": "2026"
+  },
+  "quellen": [
+   "https://www.kages.at/fileadmin/media/KAGes/Publikationen/Geburtenregister_Jahresbericht/2024/Geburtenregister_Jahresbericht_2024_final.pdf – Tabelle 5 Geburten pro Abteilung 2024: LKH-Univ. Klinikum Graz",
+   "https://www.uniklinikumgraz.at/frauenklinik/geburtshilfe – \"acht Entbindungszimmer, zwei Zimmer mit Entbindungsbadewannen und ein Vor- und Nachsorgezimmer\"",
+   "https://www.uniklinikumgraz.at/kinderchirurgie/patienten – überregionales Traumazentrum, \"jährlich ca. 55.000 Patient*innen behandelt\", davon ca. 170 schwerverletzte Kinder im Schockraum"
+  ],
+  "notiz": "Kreißsaal: 8 Entbindungszimmer, zusätzlich 2 Wannenzimmer. unfall_jahr: Angabe bezieht sich auf das Traumazentrum des Hauses (Seite der Kinderchirurgie)."
+ },
+ "kh069": {
+  "kreisssaal": null,
+  "geburten_jahr": null,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": 14,
+  "jahr": "2026",
+  "jahre": {
+   "intensiv": "2026"
+  },
+  "quellen": [
+   "https://www.sozialministerium.gv.at/dam/jcr:0a2c1fb9-68c3-4355-bf22-ff0d11c0186e/KA-Verzeichnis%202026-09-18.xlsx – KA-Verzeichnis Stand 18.09.2026, Standort K619.1, ÖSG-Fach 01 Intensivversorgung: 14 Betten"
+  ],
+  "notiz": ""
+ },
+ "kh070": {
+  "kreisssaal": null,
+  "geburten_jahr": null,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": 9,
+  "jahr": "2026",
+  "jahre": {
+   "intensiv": "2026"
+  },
+  "quellen": [
+   "https://www.sozialministerium.gv.at/dam/jcr:0a2c1fb9-68c3-4355-bf22-ff0d11c0186e/KA-Verzeichnis%202026-09-18.xlsx – KA-Verzeichnis Stand 18.09.2026, Standort K614.1, ÖSG-Fach 01 Intensivversorgung: 9 Betten"
+  ],
+  "notiz": ""
+ },
+ "kh071": {
+  "kreisssaal": null,
+  "geburten_jahr": null,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": 5,
+  "jahr": "2026",
+  "jahre": {
+   "intensiv": "2026"
+  },
+  "quellen": [
+   "https://www.sozialministerium.gv.at/dam/jcr:0a2c1fb9-68c3-4355-bf22-ff0d11c0186e/KA-Verzeichnis%202026-09-18.xlsx – KA-Verzeichnis Stand 18.09.2026, Standort K614.2, ÖSG-Fach 01 Intensivversorgung: 5 Betten"
+  ],
+  "notiz": ""
+ },
+ "kh072": {
+  "kreisssaal": null,
+  "geburten_jahr": 1118,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": null,
+  "jahr": "2024",
+  "jahre": {
+   "geburten_jahr": "2024"
+  },
+  "quellen": [
+   "https://www.kages.at/fileadmin/media/KAGes/Publikationen/Geburtenregister_Jahresbericht/2024/Geburtenregister_Jahresbericht_2024_final.pdf – Tabelle 5 Geburten pro Abteilung 2024: LKH Hochsteiermark Leoben"
+  ],
+  "notiz": "Website/zeiten nennt ca. 1.200; Register 2024: 1.118."
+ },
+ "kh073": {
+  "kreisssaal": null,
+  "geburten_jahr": null,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": 16,
+  "jahr": "2026",
+  "jahre": {
+   "intensiv": "2026"
+  },
+  "quellen": [
+   "https://www.sozialministerium.gv.at/dam/jcr:0a2c1fb9-68c3-4355-bf22-ff0d11c0186e/KA-Verzeichnis%202026-09-18.xlsx – KA-Verzeichnis Stand 18.09.2026, Standort K638.3, ÖSG-Fach 01 Intensivversorgung: 16 Betten"
+  ],
+  "notiz": ""
+ },
+ "kh075": {
+  "kreisssaal": null,
+  "geburten_jahr": 206,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": null,
+  "jahr": "2024",
+  "jahre": {
+   "geburten_jahr": "2024"
+  },
+  "quellen": [
+   "https://www.kages.at/fileadmin/media/KAGes/Publikationen/Geburtenregister_Jahresbericht/2024/Geburtenregister_Jahresbericht_2024_final.pdf – Tabelle 5 Geburten pro Abteilung 2024: LKH Rottenmann-Bad Aussee, Rottenmann"
+  ],
+  "notiz": ""
+ },
+ "kh076": {
+  "kreisssaal": null,
+  "geburten_jahr": null,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": 3,
+  "jahr": "2026",
+  "jahre": {
+   "intensiv": "2026"
+  },
+  "quellen": [
+   "https://www.sozialministerium.gv.at/dam/jcr:0a2c1fb9-68c3-4355-bf22-ff0d11c0186e/KA-Verzeichnis%202026-09-18.xlsx – KA-Verzeichnis Stand 18.09.2026, Standort K643.2, ÖSG-Fach 01 Intensivversorgung: 3 Betten"
+  ],
+  "notiz": ""
+ },
+ "kh077": {
+  "kreisssaal": null,
+  "geburten_jahr": 95,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": null,
+  "jahr": "2024",
+  "jahre": {
+   "geburten_jahr": "2024"
+  },
+  "quellen": [
+   "https://www.kages.at/fileadmin/media/KAGes/Publikationen/Geburtenregister_Jahresbericht/2024/Geburtenregister_Jahresbericht_2024_final.pdf – Tabelle 5 Geburten pro Abteilung 2024: Klinik Diakonissen Schladming"
+  ],
+  "notiz": ""
+ },
+ "kh078": {
+  "kreisssaal": null,
+  "geburten_jahr": 475,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": null,
+  "jahr": "2024",
+  "jahre": {
+   "geburten_jahr": "2024"
+  },
+  "quellen": [
+   "https://www.kages.at/fileadmin/media/KAGes/Publikationen/Geburtenregister_Jahresbericht/2024/Geburtenregister_Jahresbericht_2024_final.pdf – Tabelle 5 Geburten pro Abteilung 2024: LKH Murtal Judenburg"
+  ],
+  "notiz": "Website nennt \"jährlich etwa 600\"; Register 2024: 475."
+ },
+ "kh079": {
+  "kreisssaal": null,
+  "geburten_jahr": null,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": 6,
+  "jahr": "2026",
+  "jahre": {
+   "intensiv": "2026"
+  },
+  "quellen": [
+   "https://www.sozialministerium.gv.at/dam/jcr:0a2c1fb9-68c3-4355-bf22-ff0d11c0186e/KA-Verzeichnis%202026-09-18.xlsx – KA-Verzeichnis Stand 18.09.2026, Standort K672.2, ÖSG-Fach 01 Intensivversorgung: 6 Betten"
+  ],
+  "notiz": ""
+ },
+ "kh080": {
+  "kreisssaal": null,
+  "geburten_jahr": null,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": 4,
+  "jahr": "2026",
+  "jahre": {
+   "intensiv": "2026"
+  },
+  "quellen": [
+   "https://www.sozialministerium.gv.at/dam/jcr:0a2c1fb9-68c3-4355-bf22-ff0d11c0186e/KA-Verzeichnis%202026-09-18.xlsx – KA-Verzeichnis Stand 18.09.2026, Standort K672.3, ÖSG-Fach 01 Intensivversorgung: 4 Betten"
+  ],
+  "notiz": ""
+ },
+ "kh082": {
+  "kreisssaal": null,
+  "geburten_jahr": 856,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": 14,
+  "jahr": "2026",
+  "jahre": {
+   "geburten_jahr": "2024",
+   "intensiv": "2026"
+  },
+  "quellen": [
+   "https://www.kages.at/fileadmin/media/KAGes/Publikationen/Geburtenregister_Jahresbericht/2024/Geburtenregister_Jahresbericht_2024_final.pdf – Tabelle 5 Geburten pro Abteilung 2024: LKH Oststeiermark Feldbach",
+   "https://www.sozialministerium.gv.at/dam/jcr:0a2c1fb9-68c3-4355-bf22-ff0d11c0186e/KA-Verzeichnis%202026-09-18.xlsx – KA-Verzeichnis Stand 18.09.2026, Standort K608.1, ÖSG-Fach 01 Intensivversorgung: 14 Betten"
+  ],
+  "notiz": ""
+ },
+ "kh083": {
+  "kreisssaal": null,
+  "geburten_jahr": null,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": 6,
+  "jahr": "2026",
+  "jahre": {
+   "intensiv": "2026"
+  },
+  "quellen": [
+   "https://www.sozialministerium.gv.at/dam/jcr:0a2c1fb9-68c3-4355-bf22-ff0d11c0186e/KA-Verzeichnis%202026-09-18.xlsx – KA-Verzeichnis Stand 18.09.2026, Standort K608.2, ÖSG-Fach 01 Intensivversorgung: 6 Betten"
+  ],
+  "notiz": ""
+ },
+ "kh084": {
+  "kreisssaal": null,
+  "geburten_jahr": 616,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": 8,
+  "jahr": "2026",
+  "jahre": {
+   "geburten_jahr": "2024",
+   "intensiv": "2026"
+  },
+  "quellen": [
+   "https://www.kages.at/fileadmin/media/KAGes/Publikationen/Geburtenregister_Jahresbericht/2024/Geburtenregister_Jahresbericht_2024_final.pdf – Tabelle 5 Geburten pro Abteilung 2024: LKH Oststeiermark Hartberg",
+   "https://www.sozialministerium.gv.at/dam/jcr:0a2c1fb9-68c3-4355-bf22-ff0d11c0186e/KA-Verzeichnis%202026-09-18.xlsx – KA-Verzeichnis Stand 18.09.2026, Standort K608.3, ÖSG-Fach 01 Intensivversorgung: 8 Betten"
+  ],
+  "notiz": ""
+ },
+ "kh085": {
+  "kreisssaal": null,
+  "geburten_jahr": 709,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": null,
+  "jahr": "2024",
+  "jahre": {
+   "geburten_jahr": "2024"
+  },
+  "quellen": [
+   "https://www.kages.at/fileadmin/media/KAGes/Publikationen/Geburtenregister_Jahresbericht/2024/Geburtenregister_Jahresbericht_2024_final.pdf – Tabelle 5 Geburten pro Abteilung 2024: LKH Weststeiermark Deutschlandsberg"
+  ],
+  "notiz": ""
+ },
+ "kh086": {
+  "kreisssaal": null,
+  "geburten_jahr": null,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": 8,
+  "jahr": "2026",
+  "jahre": {
+   "intensiv": "2026"
+  },
+  "quellen": [
+   "https://www.sozialministerium.gv.at/dam/jcr:0a2c1fb9-68c3-4355-bf22-ff0d11c0186e/KA-Verzeichnis%202026-09-18.xlsx – KA-Verzeichnis Stand 18.09.2026, Standort K654.1, ÖSG-Fach 01 Intensivversorgung: 8 Betten"
+  ],
+  "notiz": ""
+ },
+ "kh087": {
+  "kreisssaal": null,
+  "geburten_jahr": null,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": 5,
+  "jahr": "2026",
+  "jahre": {
+   "intensiv": "2026"
+  },
+  "quellen": [
+   "https://www.sozialministerium.gv.at/dam/jcr:0a2c1fb9-68c3-4355-bf22-ff0d11c0186e/KA-Verzeichnis%202026-09-18.xlsx – KA-Verzeichnis Stand 18.09.2026, Standort K654.2, ÖSG-Fach 01 Intensivversorgung: 5 Betten"
+  ],
+  "notiz": ""
+ },
+ "kh090": {
+  "kreisssaal": null,
+  "geburten_jahr": 314,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": null,
+  "jahr": "2024",
+  "jahre": {
+   "geburten_jahr": "2024"
+  },
+  "quellen": [
+   "https://kliniksuche.at/api/hospitals?treatment=3 (Kliniksuche.at, BMASGPK) – Anzahl Geburten 2024, Klinik Oberpullendorf"
+  ],
+  "notiz": ""
+ },
+ "kh094": {
+  "kreisssaal": null,
+  "geburten_jahr": 4152,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": null,
+  "jahr": "2024",
+  "jahre": {
+   "geburten_jahr": "2024"
+  },
+  "quellen": [
+   "https://kliniksuche.at/api/hospitals?treatment=3 (Kliniksuche.at, BMASGPK) – Anzahl Geburten 2024, St. Josef-Krankenhaus"
+  ],
+  "notiz": ""
+ },
+ "kh102": {
+  "kreisssaal": null,
+  "geburten_jahr": 1211,
+  "notaufnahme_plaetze": null,
+  "notaufnahme_jahr": null,
+  "unfall_jahr": null,
+  "kinder_na_jahr": null,
+  "rettungszufahrten_jahr": null,
+  "intensiv": 6,
+  "jahr": "2026",
+  "jahre": {
+   "geburten_jahr": "2024",
+   "intensiv": "2026"
+  },
+  "quellen": [
+   "https://www.kages.at/fileadmin/media/KAGes/Publikationen/Geburtenregister_Jahresbericht/2024/Geburtenregister_Jahresbericht_2024_final.pdf – Tabelle 5 Geburten pro Abteilung 2024: Privatklinik Graz Ragnitz",
+   "https://www.sozialministerium.gv.at/dam/jcr:0a2c1fb9-68c3-4355-bf22-ff0d11c0186e/KA-Verzeichnis%202026-09-18.xlsx – KA-Verzeichnis Stand 18.09.2026, Standort K674.1, ÖSG-Fach 01 Intensivversorgung: 6 Betten"
+  ],
+  "notiz": ""
+ }
+}

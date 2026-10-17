@@ -1,5 +1,12 @@
 # Änderungen
 
+## 0.27.1 – Krankenhaus-Plätze aus amtlichen Daten statt Schätzungen
+- Herzkatheterlabore laut ÖSG-Großgeräteplan (Ist-Stand), Stroke-Unit-Betten und Notaufnahme-Behandlungsplätze laut den Regionalen Strukturplänen (NÖ, Wien, OÖ, Steiermark, Burgenland)
+- Schockräume: genannte Zahlen der Häuser (z. B. Graz 3, Ottakring 1 Trauma + 2 internistisch, Hietzing 2), sonst Mindestvorgabe nach Traumazentrum-Stufe (Weißbuch: überregional 2, regional/lokal 1); NÖ-Kliniken mit Unfall/Notaufnahme haben mindestens einen
+- Kreißsäle aus genannten Zahlen bzw. Geburten pro Jahr (LGA- und OÖG-Geschäftsbericht 2025, Geburtenregister Steiermark, Kliniksuche des Ministeriums); Notaufnahmen aus Patientenzahlen, wo veröffentlicht
+- Thrombektomie nur in den Schlaganfall-Spezialzentren laut RSG: St. Pölten, Tulln, Wiener Neustadt, AKH, Landstraße, Barmherzige Brüder Wien, Neuromed Linz, Uniklinikum Graz
+- Geschätzt (nach Betten) wird nur noch, wo sich nichts finden ließ – vor allem Unfallambulanz und Kindernotaufnahme
+
 ## 0.27.0 – Öffnungszeiten, Plätze und Belegung der Krankenhäuser, Fenster „KH-Status“
 **Öffnungszeiten**
 - Notaufnahmen, Unfallambulanzen, Kindernotaufnahmen, Herzkatheter, Schockräume, Kreißsäle, Stroke Units und Druckkammer haben jetzt ihre Zeiten laut Website (z. B. Notaufnahme Elisabethinen Graz Mo–Fr 7–15, Barmherzige Schwestern Wien Mo–Fr 8–18, Herzkatheter Waidhofen/Ybbs Mo–Fr 7–19, Unfall Neunkirchen Mo–Fr 7:30–15:30). Ohne Angabe gilt rund um die Uhr

@@ -1,0 +1,2975 @@
+{
+ "kh001": {
+  "cor": 2,
+  "ct": 2,
+  "mr": 2,
+  "spect": 3,
+  "str": 0,
+  "pet": 1,
+  "stroke_unit_betten": 6,
+  "rsg": "RSG NÖ 2030 (beschl. 15.12.2025), Planungsmatrix; ZAE/Notaufnahme Plan 2030: 7/24 (10 ambBP); ICU 64 / IMCU 25 Betten (IST 2023, tatsächl.) → Plan 2030 ICU 68 / IMCU 26; Stroke Unit: 6 Betten IST 2023 → 10 Plan 2030; Versorgungsstufen IST 2023: KAR Z, HCH Z, NCHa Z, GCH Z, ONK Z, NEP Z; Versorgungsstufen Plan 2030: KAR Z, HCH Z, TR Z, NCHa Z, NEU-SZ SZ-ENDO, SZ-EPI, SZ-EPMS, GH S/A, KIJU 2, GCH Z, ONK Z, BRZ BRZ, NEP Z, SZT aut",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K382.x Standort St. Pölten': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://noe.gv.at/noe/Gesundheitseinrichtungen/RSG_NOe_2030_s.pdf – RSG NÖ 2030 (beschl. 15.12.2025), Planungsmatrix, KA-Blatt K382.1 (PDF-Seite 60): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2023 / Plan 2030)",
+   "https://jasmin.goeg.at/3445/1/STROKE%20Register%20Bericht%202022_bf_.pdf – GÖG Stroke-Unit-Register 2022: Haus unter den 38 teilnehmenden Stroke Units"
+  ],
+  "notiz": "Zusätzlich Funktionsgeräte (Schockraum/OP/Therapieplanung, nicht Teil des GGP): CT 1, MR 1",
+  "ggp_plan_2030": {
+   "cor": 2,
+   "ct": 2,
+   "mr": 2,
+   "spect": 2,
+   "str": 0,
+   "pet": 2
+  },
+  "funktionsgeraete_ist": {
+   "ct": 1,
+   "mr": 1,
+   "str": 0,
+   "cor": 0
+  },
+  "stroke_unit_betten_plan_2030": 10,
+  "icu_betten_ist": 64,
+  "imcu_betten_ist": 25,
+  "icu_betten_plan_2030": 68,
+  "imcu_betten_plan_2030": 26
+ },
+ "kh002": {
+  "cor": 1,
+  "ct": 1,
+  "mr": 1,
+  "spect": 0,
+  "str": 3,
+  "pet": 0,
+  "stroke_unit_betten": 0,
+  "rsg": "RSG NÖ 2030 (beschl. 15.12.2025), Planungsmatrix; ZAE/Notaufnahme Plan 2030: 7/24 (11 ambBP); ICU 12 / IMCU 8 Betten (IST 2023, tatsächl.) → Plan 2030 ICU 12 / IMCU 10; Stroke Unit: 0 Betten IST 2023 → 0 Plan 2030; Versorgungsstufen IST 2023: KAR S, TCH Z, ONK Z; Versorgungsstufen Plan 2030: KAR S, TR S, GH G, KIJU 3, TCH Z, ONK Z, BRZ BRZ",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K326 Krems UnivKL': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://noe.gv.at/noe/Gesundheitseinrichtungen/RSG_NOe_2030_s.pdf – RSG NÖ 2030 (beschl. 15.12.2025), Planungsmatrix, KA-Blatt K332.1 (PDF-Seite 59): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2023 / Plan 2030)"
+  ],
+  "notiz": "Zusätzlich Funktionsgeräte (Schockraum/OP/Therapieplanung, nicht Teil des GGP): CT 1",
+  "ggp_plan_2030": {
+   "cor": 1,
+   "ct": 1,
+   "mr": 1,
+   "spect": 0,
+   "str": 5,
+   "pet": 0
+  },
+  "funktionsgeraete_ist": {
+   "ct": 1,
+   "mr": 0,
+   "str": 0,
+   "cor": 0
+  },
+  "stroke_unit_betten_plan_2030": 0,
+  "icu_betten_ist": 12,
+  "imcu_betten_ist": 8,
+  "icu_betten_plan_2030": 12,
+  "imcu_betten_plan_2030": 10
+ },
+ "kh003": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 1,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 6,
+  "rsg": "RSG NÖ 2030 (beschl. 15.12.2025), Planungsmatrix; ZAE/Notaufnahme Plan 2030: 7/24 (14 ambBP); ICU 5 / IMCU 13 Betten (IST 2023, tatsächl.) → Plan 2030 ICU 5 / IMCU 17; Stroke Unit: 6 Betten IST 2023 → 6 Plan 2030; Versorgungsstufen Plan 2030: TR S, NEU-SZ SZ-ENDO*, GH S/B, KIJU 2",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K379 Tulln UnivKL': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://noe.gv.at/noe/Gesundheitseinrichtungen/RSG_NOe_2030_s.pdf – RSG NÖ 2030 (beschl. 15.12.2025), Planungsmatrix, KA-Blatt K324.1 (PDF-Seite 57): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2023 / Plan 2030)",
+   "https://jasmin.goeg.at/3445/1/STROKE%20Register%20Bericht%202022_bf_.pdf – GÖG Stroke-Unit-Register 2022: Haus unter den 38 teilnehmenden Stroke Units"
+  ],
+  "notiz": "",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 1,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 6,
+  "icu_betten_ist": 5,
+  "imcu_betten_ist": 13,
+  "icu_betten_plan_2030": 5,
+  "imcu_betten_plan_2030": 17
+ },
+ "kh004": {
+  "cor": 2,
+  "ct": 1,
+  "mr": 1,
+  "spect": 2,
+  "str": 3,
+  "pet": 1,
+  "stroke_unit_betten": 12,
+  "rsg": "RSG NÖ 2030 (beschl. 15.12.2025), Planungsmatrix; ZAE/Notaufnahme Plan 2030: 7/24 (9 ambBP); ICU 34 / IMCU 21 Betten (IST 2023, tatsächl.) → Plan 2030 ICU 37 / IMCU 23; Stroke Unit: 12 Betten IST 2023 → 12 Plan 2030; Versorgungsstufen IST 2023: KAR S, GCH Z, ONK Z, NEP S; Versorgungsstufen Plan 2030: KAR S, TR Z, NEU-SZ SZ-ENDO, SZ-EPI, GH S/A, KIJU 2, GCH Z, ONK Z, BRZ BRZ, NEP S",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K356 Wiener Neustadt LKL': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://noe.gv.at/noe/Gesundheitseinrichtungen/RSG_NOe_2030_s.pdf – RSG NÖ 2030 (beschl. 15.12.2025), Planungsmatrix, KA-Blatt K367.1 (PDF-Seite 75): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2023 / Plan 2030)",
+   "https://jasmin.goeg.at/3445/1/STROKE%20Register%20Bericht%202022_bf_.pdf – GÖG Stroke-Unit-Register 2022: Haus unter den 38 teilnehmenden Stroke Units"
+  ],
+  "notiz": "Zusätzlich Funktionsgeräte (Schockraum/OP/Therapieplanung, nicht Teil des GGP): CT 2",
+  "ggp_plan_2030": {
+   "cor": 2,
+   "ct": 1,
+   "mr": 1,
+   "spect": 2,
+   "str": 4,
+   "pet": 1
+  },
+  "funktionsgeraete_ist": {
+   "ct": 2,
+   "mr": 0,
+   "str": 0,
+   "cor": 0
+  },
+  "stroke_unit_betten_plan_2030": 12,
+  "icu_betten_ist": 34,
+  "imcu_betten_ist": 21,
+  "icu_betten_plan_2030": 37,
+  "imcu_betten_plan_2030": 23
+ },
+ "kh005": {
+  "cor": 1,
+  "ct": 1,
+  "mr": 1,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 4,
+  "rsg": "RSG NÖ 2030 (beschl. 15.12.2025), Planungsmatrix; ZAE/Notaufnahme Plan 2030: 7/24 (14 ambBP); ICU 16 / IMCU 11 Betten (IST 2023, tatsächl.) → Plan 2030 ICU 16 / IMCU 13; Stroke Unit: 4 Betten IST 2023 → 6 Plan 2030; Versorgungsstufen IST 2023: KAR S, GCH S, ONK S, NEP S; Versorgungsstufen Plan 2030: KAR S, TR S, GH S/B, KIJU 2, GCH S, ONK S, BRZ BRZ, NEP S",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K335 Mistelbach LKL 5, 8': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://noe.gv.at/noe/Gesundheitseinrichtungen/RSG_NOe_2030_s.pdf – RSG NÖ 2030 (beschl. 15.12.2025), Planungsmatrix, KA-Blatt K335.1 (PDF-Seite 68): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2023 / Plan 2030)",
+   "https://jasmin.goeg.at/3445/1/STROKE%20Register%20Bericht%202022_bf_.pdf – GÖG Stroke-Unit-Register 2022: Haus unter den 38 teilnehmenden Stroke Units"
+  ],
+  "notiz": "GGP SPECT: 'K' = Kooperationsstandort (Gerät eines Kooperationspartners, kein eigenes).",
+  "ggp_plan_2030": {
+   "cor": 1,
+   "ct": 1,
+   "mr": 1,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 6,
+  "icu_betten_ist": 16,
+  "imcu_betten_ist": 11,
+  "icu_betten_plan_2030": 16,
+  "imcu_betten_plan_2030": 13
+ },
+ "kh006": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 2,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 4,
+  "rsg": "RSG NÖ 2030 (beschl. 15.12.2025), Planungsmatrix; ZAE/Notaufnahme Plan 2030: 7/24 (12 ambBP); ICU 14 / IMCU 12 Betten (IST 2023, tatsächl.) → Plan 2030 ICU 14 / IMCU 14; Stroke Unit: 4 Betten IST 2023 → 4 Plan 2030; Versorgungsstufen IST 2023: GCH S, ONK S, NEP S; Versorgungsstufen Plan 2030: KAR S, TR S, GH S/B, KIJU 2, GCH S, ONK S, BRZ BRZ, NEP S",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K303 Amstetten LKL 7': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://noe.gv.at/noe/Gesundheitseinrichtungen/RSG_NOe_2030_s.pdf – RSG NÖ 2030 (beschl. 15.12.2025), Planungsmatrix, KA-Blatt K303 (PDF-Seite 81): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2023 / Plan 2030)",
+   "https://jasmin.goeg.at/3445/1/STROKE%20Register%20Bericht%202022_bf_.pdf – GÖG Stroke-Unit-Register 2022: Haus unter den 38 teilnehmenden Stroke Units"
+  ],
+  "notiz": "",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 2,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 4,
+  "icu_betten_ist": 14,
+  "imcu_betten_ist": 12,
+  "icu_betten_plan_2030": 14,
+  "imcu_betten_plan_2030": 14
+ },
+ "kh007": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 1,
+  "spect": 1,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 4,
+  "rsg": "RSG NÖ 2030 (beschl. 15.12.2025), Planungsmatrix; ZAE/Notaufnahme Plan 2030: 7/24 (11 ambBP); ICU 14 / IMCU 4 Betten (IST 2023, tatsächl.) → Plan 2030 ICU 13 / IMCU 4; Stroke Unit: 4 Betten IST 2023 → 6 Plan 2030; Versorgungsstufen IST 2023: GCH S, ONK S, NEP E; Versorgungsstufen Plan 2030: TR S, GH G, KIJU 4, GCH S, ONK S, BRZ BRZ, NEP E",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K377.x Standort Horn': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://noe.gv.at/noe/Gesundheitseinrichtungen/RSG_NOe_2030_s.pdf – RSG NÖ 2030 (beschl. 15.12.2025), Planungsmatrix, KA-Blatt K377.1 (PDF-Seite 62): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2023 / Plan 2030)",
+   "https://jasmin.goeg.at/3445/1/STROKE%20Register%20Bericht%202022_bf_.pdf – GÖG Stroke-Unit-Register 2022: Haus unter den 38 teilnehmenden Stroke Units"
+  ],
+  "notiz": "",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 1,
+   "spect": 2,
+   "str": 0,
+   "pet": 1
+  },
+  "stroke_unit_betten_plan_2030": 6,
+  "icu_betten_ist": 14,
+  "imcu_betten_ist": 4,
+  "icu_betten_plan_2030": 13,
+  "imcu_betten_plan_2030": 4
+ },
+ "kh008": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 1,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 0,
+  "rsg": "RSG NÖ 2030 (beschl. 15.12.2025), Planungsmatrix; ZAE/Notaufnahme Plan 2030: 7/24 (12 ambBP); ICU 8 / IMCU 10 Betten (IST 2023, tatsächl.) → Plan 2030 ICU 10 / IMCU 8; Stroke Unit: 0 Betten IST 2023 → 6 Plan 2030; Versorgungsstufen IST 2023: GCH S, ONK S, NEP S; Versorgungsstufen Plan 2030: TR S, KIJU 4, GCH Z, BRZ BRZ, NEP S",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K380.x Standort Baden': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://noe.gv.at/noe/Gesundheitseinrichtungen/RSG_NOe_2030_s.pdf – RSG NÖ 2030 (beschl. 15.12.2025), Planungsmatrix, KA-Blatt K380.2 (PDF-Seite 78): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2023 / Plan 2030)"
+  ],
+  "notiz": "",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 1,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 6,
+  "icu_betten_ist": 8,
+  "imcu_betten_ist": 10,
+  "icu_betten_plan_2030": 10,
+  "imcu_betten_plan_2030": 8
+ },
+ "kh009": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 1,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 4,
+  "rsg": "RSG NÖ 2030 (beschl. 15.12.2025), Planungsmatrix; ZAE/Notaufnahme Plan 2030: 7/24 (11 ambBP); ICU 8 / IMCU 10 Betten (IST 2023, tatsächl.) → Plan 2030 ICU 6 / IMCU 17; Stroke Unit: 4 Betten IST 2023 → 0 Plan 2030; Versorgungsstufen Plan 2030: GH S/B, KIJU 2",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K380.y Standort Mödling': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://noe.gv.at/noe/Gesundheitseinrichtungen/RSG_NOe_2030_s.pdf – RSG NÖ 2030 (beschl. 15.12.2025), Planungsmatrix, KA-Blatt K380.1 (PDF-Seite 77): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2023 / Plan 2030)",
+   "https://jasmin.goeg.at/3445/1/STROKE%20Register%20Bericht%202022_bf_.pdf – GÖG Stroke-Unit-Register 2022: Haus unter den 38 teilnehmenden Stroke Units"
+  ],
+  "notiz": "RSG NÖ: SU (4 Betten IST 2023) wird bis 2030 nach Baden verlagert (Plan Mödling 0, Baden 6).",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 1,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 0,
+  "icu_betten_ist": 8,
+  "imcu_betten_ist": 10,
+  "icu_betten_plan_2030": 6,
+  "imcu_betten_plan_2030": 17
+ },
+ "kh010": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 1,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 0,
+  "rsg": "RSG NÖ 2030 (beschl. 15.12.2025), Planungsmatrix; ZAE/Notaufnahme Plan 2030: 7/24 (10 ambBP); ICU 6 / IMCU 6 Betten (IST 2023, tatsächl.) → Plan 2030 ICU 6 / IMCU 6; Stroke Unit: 0 Betten IST 2023 → 0 Plan 2030; Versorgungsstufen Plan 2030: TR L, KIJU 4",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K338 Neunkirchen LKL': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://noe.gv.at/noe/Gesundheitseinrichtungen/RSG_NOe_2030_s.pdf – RSG NÖ 2030 (beschl. 15.12.2025), Planungsmatrix, KA-Blatt K338 (PDF-Seite 74): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2023 / Plan 2030)"
+  ],
+  "notiz": "",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 1,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 0,
+  "icu_betten_ist": 6,
+  "imcu_betten_ist": 6,
+  "icu_betten_plan_2030": 6,
+  "imcu_betten_plan_2030": 6
+ },
+ "kh011": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 0,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 0,
+  "rsg": "RSG NÖ 2030 (beschl. 15.12.2025), Planungsmatrix; ZAE/Notaufnahme Plan 2030: 7/24 (5 ambBP); ICU 4 / IMCU 1 Betten (IST 2023, tatsächl.) → Plan 2030 ICU 6 / IMCU 0; Stroke Unit: 0 Betten IST 2023 → 0 Plan 2030; Versorgungsstufen Plan 2030: TR L, GH G, KIJU 4",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K378.x Standort Korneuburg': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://noe.gv.at/noe/Gesundheitseinrichtungen/RSG_NOe_2030_s.pdf – RSG NÖ 2030 (beschl. 15.12.2025), Planungsmatrix, KA-Blatt K343.1 (PDF-Seite 70): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2023 / Plan 2030)"
+  ],
+  "notiz": "",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 1,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 0,
+  "icu_betten_ist": 4,
+  "imcu_betten_ist": 1,
+  "icu_betten_plan_2030": 6,
+  "imcu_betten_plan_2030": 0
+ },
+ "kh012": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 0,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 0,
+  "rsg": "RSG NÖ 2030 (beschl. 15.12.2025), Planungsmatrix; ZAE Plan 2030: keine; ICU 2 / IMCU 3 Betten (IST 2023, tatsächl.) → Plan 2030 ICU 0 / IMCU 5; Stroke Unit: 0 Betten IST 2023 → 0 Plan 2030; Versorgungsstufen Plan 2030: KIJU 4",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K378.y Standort Stockerau': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://noe.gv.at/noe/Gesundheitseinrichtungen/RSG_NOe_2030_s.pdf – RSG NÖ 2030 (beschl. 15.12.2025), Planungsmatrix, KA-Blatt K343.2 (PDF-Seite 71): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2023 / Plan 2030)"
+  ],
+  "notiz": "",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 0,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 0,
+  "icu_betten_ist": 2,
+  "imcu_betten_ist": 3,
+  "icu_betten_plan_2030": 0,
+  "imcu_betten_plan_2030": 5
+ },
+ "kh013": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 0,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 0,
+  "rsg": "RSG NÖ 2030 (beschl. 15.12.2025), Planungsmatrix; ZAE/Notaufnahme Plan 2030: 7/24 (6 ambBP); ICU 4 / IMCU 6 Betten (IST 2023, tatsächl.) → Plan 2030 ICU 4 / IMCU 4; Stroke Unit: 0 Betten IST 2023 → 0 Plan 2030; Versorgungsstufen Plan 2030: TR L, KIJU 4",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K319 Hollabrunn LKL': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://noe.gv.at/noe/Gesundheitseinrichtungen/RSG_NOe_2030_s.pdf – RSG NÖ 2030 (beschl. 15.12.2025), Planungsmatrix, KA-Blatt K343.3 (PDF-Seite 72): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2023 / Plan 2030)"
+  ],
+  "notiz": "",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 0,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 0,
+  "icu_betten_ist": 4,
+  "imcu_betten_ist": 6,
+  "icu_betten_plan_2030": 4,
+  "imcu_betten_plan_2030": 4
+ },
+ "kh014": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 0,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 0,
+  "rsg": "RSG NÖ 2030 (beschl. 15.12.2025), Planungsmatrix; ZAE/Notaufnahme Plan 2030: 7/24 (6 ambBP); ICU 2 / IMCU 3 Betten (IST 2023, tatsächl.) → Plan 2030 ICU 2 / IMCU 3; Stroke Unit: 0 Betten IST 2023 → 0 Plan 2030; Versorgungsstufen Plan 2030: TR L, GH G, KIJU 4",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K316 Hainburg LKL': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://noe.gv.at/noe/Gesundheitseinrichtungen/RSG_NOe_2030_s.pdf – RSG NÖ 2030 (beschl. 15.12.2025), Planungsmatrix, KA-Blatt K316 (PDF-Seite 73): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2023 / Plan 2030)"
+  ],
+  "notiz": "",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 0,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 0,
+  "icu_betten_ist": 2,
+  "imcu_betten_ist": 3,
+  "icu_betten_plan_2030": 2,
+  "imcu_betten_plan_2030": 3
+ },
+ "kh015": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 0,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 0,
+  "rsg": "RSG NÖ 2030 (beschl. 15.12.2025), Planungsmatrix; ZAE/Notaufnahme Plan 2030: AA (2 ambBP); ICU 0 / IMCU 4 Betten (IST 2023, tatsächl.) → Plan 2030 ICU 0 / IMCU 4; Stroke Unit: 0 Betten IST 2023 → 0 Plan 2030; Versorgungsstufen Plan 2030: KIJU 4",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K321 Klosterneuburg LKL': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://noe.gv.at/noe/Gesundheitseinrichtungen/RSG_NOe_2030_s.pdf – RSG NÖ 2030 (beschl. 15.12.2025), Planungsmatrix, KA-Blatt K324.2 (PDF-Seite 58): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2023 / Plan 2030)"
+  ],
+  "notiz": "",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 0,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 0,
+  "icu_betten_ist": 0,
+  "imcu_betten_ist": 4,
+  "icu_betten_plan_2030": 0,
+  "imcu_betten_plan_2030": 4
+ },
+ "kh016": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 0,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 0,
+  "rsg": "RSG NÖ 2030 (beschl. 15.12.2025), Planungsmatrix; ZAE/Notaufnahme Plan 2030: 7/24 (2 ambBP); ICU 0 / IMCU 4 Betten (IST 2023, tatsächl.) → Plan 2030 ICU 0 / IMCU 4; Stroke Unit: 0 Betten IST 2023 → 0 Plan 2030; Versorgungsstufen Plan 2030: TR L, GH G, KIJU 4",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K382.y Standort Lilienfeld': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://noe.gv.at/noe/Gesundheitseinrichtungen/RSG_NOe_2030_s.pdf – RSG NÖ 2030 (beschl. 15.12.2025), Planungsmatrix, KA-Blatt K382.2 (PDF-Seite 61): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2023 / Plan 2030)"
+  ],
+  "notiz": "",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 0,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 0,
+  "icu_betten_ist": 0,
+  "imcu_betten_ist": 4,
+  "icu_betten_plan_2030": 0,
+  "imcu_betten_plan_2030": 4
+ },
+ "kh017": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 0,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 0,
+  "rsg": "RSG NÖ 2030 (beschl. 15.12.2025), Planungsmatrix; ZAE Plan 2030: keine; ICU 2 / IMCU 4 Betten (IST 2023, tatsächl.) → Plan 2030 ICU 0 / IMCU 4; Stroke Unit: 0 Betten IST 2023 → 0 Plan 2030; Versorgungsstufen Plan 2030: KIJU 4",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K334 Melk LKL': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://noe.gv.at/noe/Gesundheitseinrichtungen/RSG_NOe_2030_s.pdf – RSG NÖ 2030 (beschl. 15.12.2025), Planungsmatrix, KA-Blatt K332.2 (PDF-Seite 82): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2023 / Plan 2030)"
+  ],
+  "notiz": "",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 0,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 0,
+  "icu_betten_ist": 2,
+  "imcu_betten_ist": 4,
+  "icu_betten_plan_2030": 0,
+  "imcu_betten_plan_2030": 4
+ },
+ "kh018": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 0,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 0,
+  "rsg": "RSG NÖ 2030 (beschl. 15.12.2025), Planungsmatrix; ZAE/Notaufnahme Plan 2030: 7/24 (6 ambBP); ICU 2 / IMCU 4 Betten (IST 2023, tatsächl.) → Plan 2030 ICU 2 / IMCU 4; Stroke Unit: 0 Betten IST 2023 → 0 Plan 2030; Versorgungsstufen Plan 2030: TR L, GH G, KIJU 4",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K347 Scheibbs LKL': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://noe.gv.at/noe/Gesundheitseinrichtungen/RSG_NOe_2030_s.pdf – RSG NÖ 2030 (beschl. 15.12.2025), Planungsmatrix, KA-Blatt K347 (PDF-Seite 84): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2023 / Plan 2030)"
+  ],
+  "notiz": "",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 0,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 0,
+  "icu_betten_ist": 2,
+  "imcu_betten_ist": 4,
+  "icu_betten_plan_2030": 2,
+  "imcu_betten_plan_2030": 4
+ },
+ "kh019": {
+  "cor": 1,
+  "ct": 1,
+  "mr": 0,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 0,
+  "rsg": "RSG NÖ 2030 (beschl. 15.12.2025), Planungsmatrix; ZAE/Notaufnahme Plan 2030: 7/24 (4 ambBP); ICU 2 / IMCU 4 Betten (IST 2023, tatsächl.) → Plan 2030 ICU 0 / IMCU 4; Stroke Unit: 0 Betten IST 2023 → 0 Plan 2030; Versorgungsstufen IST 2023: KAR S; Versorgungsstufen Plan 2030: KIJU 4",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K354 Waidhofen/Ybbs LKL 2': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://noe.gv.at/noe/Gesundheitseinrichtungen/RSG_NOe_2030_s.pdf – RSG NÖ 2030 (beschl. 15.12.2025), Planungsmatrix, KA-Blatt K354 (PDF-Seite 85): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2023 / Plan 2030)"
+  ],
+  "notiz": "RSG NÖ: KAR S (Herzkatheter) nur im IST 2023, im Plan 2030 nicht mehr vorgesehen (Plan: Amstetten KAR S); GGP-Plan COR weiterhin 1.",
+  "ggp_plan_2030": {
+   "cor": 1,
+   "ct": 1,
+   "mr": 0,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 0,
+  "icu_betten_ist": 2,
+  "imcu_betten_ist": 4,
+  "icu_betten_plan_2030": 0,
+  "imcu_betten_plan_2030": 4
+ },
+ "kh020": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 0,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 0,
+  "rsg": "RSG NÖ 2030 (beschl. 15.12.2025), Planungsmatrix; ZAE Plan 2030: keine; ICU 4 / IMCU 11 Betten (IST 2023, tatsächl.) → Plan 2030 ICU 4 / IMCU 13; Stroke Unit: 0 Betten IST 2023 → 0 Plan 2030; Versorgungsstufen Plan 2030: GH S/B, KIJU 2",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K383.y Standort Zwettl': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://noe.gv.at/noe/Gesundheitseinrichtungen/RSG_NOe_2030_s.pdf – RSG NÖ 2030 (beschl. 15.12.2025), Planungsmatrix, KA-Blatt K383.1 (PDF-Seite 64): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2023 / Plan 2030)"
+  ],
+  "notiz": "",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 0,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 0,
+  "icu_betten_ist": 4,
+  "imcu_betten_ist": 11,
+  "icu_betten_plan_2030": 4,
+  "imcu_betten_plan_2030": 13
+ },
+ "kh021": {
+  "cor": 0,
+  "ct": 0,
+  "mr": 0,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 0,
+  "rsg": "RSG NÖ 2030 (beschl. 15.12.2025), Planungsmatrix; ZAE Plan 2030: keine; ICU 0 / IMCU 5 Betten (IST 2023, tatsächl.) → Plan 2030 ICU 0 / IMCU 0; Stroke Unit: 0 Betten IST 2023 → 0 Plan 2030",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025): Standort ohne Großgeräte-Eintrag",
+   "https://noe.gv.at/noe/Gesundheitseinrichtungen/RSG_NOe_2030_s.pdf – RSG NÖ 2030 (beschl. 15.12.2025), Planungsmatrix, KA-Blatt K383.2 (PDF-Seite 65): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2023 / Plan 2030)"
+  ],
+  "notiz": "GGP: NÖ K383 Gmünd-W/T-Zwettl: im GGP nur Standorte Waidhofen/Thaya und Zwettl mit Geräten, Gmünd ohne Eintrag → 0 Großgeräte am Standort.",
+  "stroke_unit_betten_plan_2030": 0,
+  "icu_betten_ist": 0,
+  "imcu_betten_ist": 5,
+  "icu_betten_plan_2030": 0,
+  "imcu_betten_plan_2030": 0
+ },
+ "kh022": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 0,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 0,
+  "rsg": "RSG NÖ 2030 (beschl. 15.12.2025), Planungsmatrix; ZAE/Notaufnahme Plan 2030: 7/24 (3 ambBP); ICU 4 / IMCU 6 Betten (IST 2023, tatsächl.) → Plan 2030 ICU 0 / IMCU 4; Stroke Unit: 0 Betten IST 2023 → 0 Plan 2030; Versorgungsstufen IST 2023: ONK A; Versorgungsstufen Plan 2030: KIJU 4",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K383.x Standort Waidhofen/Thaya': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://noe.gv.at/noe/Gesundheitseinrichtungen/RSG_NOe_2030_s.pdf – RSG NÖ 2030 (beschl. 15.12.2025), Planungsmatrix, KA-Blatt K383.3 (PDF-Seite 66): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2023 / Plan 2030)"
+  ],
+  "notiz": "",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 0,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 0,
+  "icu_betten_ist": 4,
+  "imcu_betten_ist": 6,
+  "icu_betten_plan_2030": 0,
+  "imcu_betten_plan_2030": 4
+ },
+ "kh023": {
+  "cor": 5,
+  "ct": 4,
+  "mr": 6,
+  "spect": 4,
+  "str": 5,
+  "pet": 2,
+  "stroke_unit_betten": 4,
+  "rsg": "RSG Wien 2030, Anlage 2 Planungsmatrizen stationär; ZAE/Notaufnahme Plan 2030: 7/24 (6 ambBP); ICU 118 / IMCU 121 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 166 / IMCU 165; Stroke Unit: 4 Betten IST 2022 → 6 Plan 2030; Versorgungsstufen IST 2022: KAR Z, HCH Z, TR Z, NCHa Z, NEU-SZ Z, GH Z, KIJU Z, TCH Z, GCH Z, ONK Z, NEP Z, NUKT Z, ZMG Z, TXC Z, KHZ Z, KJONK Z, BRA Z, SZT Z; Versorgungsstufen Plan 2030: KAR Z, HCH Z, TR Z, NCHa Z, NEU-SZ Z, GH Z, KIJU 1, TCH Z, GCH Z, ONK Z, NEP Z, NUKT Z, ZMG Z, TXC Z, KHZ Z, KJONK Z, BRA Z, SZT Z",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K901 Wien AKH 4': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.wien.gv.at/pdf/ma24/rsg-wien2030-anlage-2-planungsmatrizen.pdf – RSG Wien 2030, Anlage 2 Planungsmatrizen stationär, KA-Blatt K901 (PDF-Seite 10): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)",
+   "https://jasmin.goeg.at/3445/1/STROKE%20Register%20Bericht%202022_bf_.pdf – GÖG Stroke-Unit-Register 2022: Haus unter den 38 teilnehmenden Stroke Units"
+  ],
+  "notiz": "Zusätzlich Funktionsgeräte (Schockraum/OP/Therapieplanung, nicht Teil des GGP): CT 3, MR 4, COR 1",
+  "ggp_plan_2030": {
+   "cor": 5,
+   "ct": 5,
+   "mr": 6,
+   "spect": 7,
+   "str": 5,
+   "pet": 2
+  },
+  "funktionsgeraete_ist": {
+   "ct": 3,
+   "mr": 4,
+   "str": 0,
+   "cor": 1
+  },
+  "stroke_unit_betten_plan_2030": 6,
+  "icu_betten_ist": 118,
+  "imcu_betten_ist": 121,
+  "icu_betten_plan_2030": 166,
+  "imcu_betten_plan_2030": 165
+ },
+ "kh024": {
+  "cor": 2,
+  "ct": 2,
+  "mr": 2,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 4,
+  "rsg": "RSG Wien 2030, Anlage 2 Planungsmatrizen stationär; ZAE/Notaufnahme Plan 2030: ZAE (4 ambBP); ICU 38 / IMCU 33 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 38 / IMCU 35; Stroke Unit: 4 Betten IST 2022 → 6 Plan 2030; Versorgungsstufen IST 2022: KAR S, HCH Z, TCH Z, GCH Z; Versorgungsstufen Plan 2030: KAR Z, HCH Z, KIJU 2, TCH Z, GCH Z",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K976 Klinik Floridsdorf': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.wien.gv.at/pdf/ma24/rsg-wien2030-anlage-2-planungsmatrizen.pdf – RSG Wien 2030, Anlage 2 Planungsmatrizen stationär, KA-Blatt K976 (PDF-Seite 32): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)",
+   "https://jasmin.goeg.at/3445/1/STROKE%20Register%20Bericht%202022_bf_.pdf – GÖG Stroke-Unit-Register 2022: Haus unter den 38 teilnehmenden Stroke Units"
+  ],
+  "notiz": "Zusätzlich Funktionsgeräte (Schockraum/OP/Therapieplanung, nicht Teil des GGP): CT 1",
+  "ggp_plan_2030": {
+   "cor": 2,
+   "ct": 2,
+   "mr": 2,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "funktionsgeraete_ist": {
+   "ct": 1,
+   "mr": 0,
+   "str": 0,
+   "cor": 0
+  },
+  "stroke_unit_betten_plan_2030": 6,
+  "icu_betten_ist": 38,
+  "imcu_betten_ist": 33,
+  "icu_betten_plan_2030": 38,
+  "imcu_betten_plan_2030": 35
+ },
+ "kh025": {
+  "cor": 1,
+  "ct": 2,
+  "mr": 2,
+  "spect": 3,
+  "str": 4,
+  "pet": 1,
+  "stroke_unit_betten": 5,
+  "rsg": "RSG Wien 2030, Anlage 2 Planungsmatrizen stationär; ZAE/Notaufnahme Plan 2030: ZAE (4 ambBP); ICU 52 / IMCU 19 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 46 / IMCU 29; Stroke Unit: 5 Betten IST 2022 → 6 Plan 2030; Versorgungsstufen IST 2022: KAR S, NCHa Z, GH Z, KIJU Z, ONK Z, NEP Z, KBRA Z, SZT Z(aut); Versorgungsstufen Plan 2030: KAR S, NCHa Z, GH Z, KIJU 1, ONK Z, NEP Z, KBRA Z, SZT Z(aut)",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K956 Klinik Donaustadt': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.wien.gv.at/pdf/ma24/rsg-wien2030-anlage-2-planungsmatrizen.pdf – RSG Wien 2030, Anlage 2 Planungsmatrizen stationär, KA-Blatt K956 (PDF-Seite 31): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)",
+   "https://jasmin.goeg.at/3445/1/STROKE%20Register%20Bericht%202022_bf_.pdf – GÖG Stroke-Unit-Register 2022: Haus unter den 38 teilnehmenden Stroke Units"
+  ],
+  "notiz": "Zusätzlich Funktionsgeräte (Schockraum/OP/Therapieplanung, nicht Teil des GGP): CT 2",
+  "ggp_plan_2030": {
+   "cor": 1,
+   "ct": 2,
+   "mr": 2,
+   "spect": 3,
+   "str": 4,
+   "pet": 1
+  },
+  "funktionsgeraete_ist": {
+   "ct": 2,
+   "mr": 0,
+   "str": 0,
+   "cor": 0
+  },
+  "stroke_unit_betten_plan_2030": 6,
+  "icu_betten_ist": 52,
+  "imcu_betten_ist": 19,
+  "icu_betten_plan_2030": 46,
+  "imcu_betten_plan_2030": 29
+ },
+ "kh026": {
+  "cor": 1,
+  "ct": 2,
+  "mr": 2,
+  "spect": 3,
+  "str": 2,
+  "pet": 1,
+  "stroke_unit_betten": 6,
+  "rsg": "RSG Wien 2030, Anlage 2 Planungsmatrizen stationär; ZAE/Notaufnahme Plan 2030: ZAE (4 ambBP); ICU 39 / IMCU 10 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 42 / IMCU 26; Stroke Unit: 6 Betten IST 2022 → 6 Plan 2030; Versorgungsstufen IST 2022: KAR S, GCH Z, ONK Z, SZT Z(aut); Versorgungsstufen Plan 2030: KAR S, KIJU 2, GCH Z, ONK Z, SZT Z(aut)",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K921.1 Klinik Ottakring': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.wien.gv.at/pdf/ma24/rsg-wien2030-anlage-2-planungsmatrizen.pdf – RSG Wien 2030, Anlage 2 Planungsmatrizen stationär, KA-Blatt K921 (PDF-Seite 26): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)",
+   "https://jasmin.goeg.at/3445/1/STROKE%20Register%20Bericht%202022_bf_.pdf – GÖG Stroke-Unit-Register 2022: Haus unter den 38 teilnehmenden Stroke Units"
+  ],
+  "notiz": "Zusätzlich Funktionsgeräte (Schockraum/OP/Therapieplanung, nicht Teil des GGP): CT 2",
+  "ggp_plan_2030": {
+   "cor": 2,
+   "ct": 2,
+   "mr": 2,
+   "spect": 3,
+   "str": 2,
+   "pet": 1
+  },
+  "funktionsgeraete_ist": {
+   "ct": 2,
+   "mr": 0,
+   "str": 0,
+   "cor": 0
+  },
+  "stroke_unit_betten_plan_2030": 6,
+  "icu_betten_ist": 39,
+  "imcu_betten_ist": 10,
+  "icu_betten_plan_2030": 42,
+  "imcu_betten_plan_2030": 26
+ },
+ "kh027": {
+  "cor": 1,
+  "ct": 2,
+  "mr": 1,
+  "spect": 0,
+  "str": 2,
+  "pet": 0,
+  "stroke_unit_betten": 5,
+  "rsg": "RSG Wien 2030, Anlage 2 Planungsmatrizen stationär; ZAE/Notaufnahme Plan 2030: ZAE (4 ambBP); ICU 28 / IMCU 24 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 39 / IMCU 28; Stroke Unit: 5 Betten IST 2022 → 6 Plan 2030; Versorgungsstufen IST 2022: KAR S, GCH Z, ONK Z, NEP Z, HKLE Z; Versorgungsstufen Plan 2030: KAR S, KIJU 2, ONK Z, NEP Z, HKLE Z",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K910 Klinik Favoriten': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.wien.gv.at/pdf/ma24/rsg-wien2030-anlage-2-planungsmatrizen.pdf – RSG Wien 2030, Anlage 2 Planungsmatrizen stationär, KA-Blatt K910 (PDF-Seite 13): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)",
+   "https://jasmin.goeg.at/3445/1/STROKE%20Register%20Bericht%202022_bf_.pdf – GÖG Stroke-Unit-Register 2022: Haus unter den 38 teilnehmenden Stroke Units"
+  ],
+  "notiz": "Zusätzlich Funktionsgeräte (Schockraum/OP/Therapieplanung, nicht Teil des GGP): CT 1",
+  "ggp_plan_2030": {
+   "cor": 1,
+   "ct": 2,
+   "mr": 1,
+   "spect": 0,
+   "str": 2,
+   "pet": 0
+  },
+  "funktionsgeraete_ist": {
+   "ct": 1,
+   "mr": 0,
+   "str": 0,
+   "cor": 0
+  },
+  "stroke_unit_betten_plan_2030": 6,
+  "icu_betten_ist": 28,
+  "imcu_betten_ist": 24,
+  "icu_betten_plan_2030": 39,
+  "imcu_betten_plan_2030": 28
+ },
+ "kh028": {
+  "cor": 0,
+  "ct": 2,
+  "mr": 2,
+  "spect": 2,
+  "str": 2,
+  "pet": 0,
+  "stroke_unit_betten": 10,
+  "rsg": "RSG Wien 2030, Anlage 2 Planungsmatrizen stationär; ZAE/Notaufnahme Plan 2030: ZAE (4 ambBP); ICU 24 / IMCU 20 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 22 / IMCU 18; Stroke Unit: 10 Betten IST 2022 → 9 Plan 2030; Versorgungsstufen IST 2022: ONK Z; Versorgungsstufen Plan 2030: KIJU 4, ONK Z",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K916 Klinik Hietzing': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.wien.gv.at/pdf/ma24/rsg-wien2030-anlage-2-planungsmatrizen.pdf – RSG Wien 2030, Anlage 2 Planungsmatrizen stationär, KA-Blatt K916 (PDF-Seite 24): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)",
+   "https://jasmin.goeg.at/3445/1/STROKE%20Register%20Bericht%202022_bf_.pdf – GÖG Stroke-Unit-Register 2022: Haus unter den 38 teilnehmenden Stroke Units"
+  ],
+  "notiz": "Zusätzlich Funktionsgeräte (Schockraum/OP/Therapieplanung, nicht Teil des GGP): CT 1",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 2,
+   "mr": 2,
+   "spect": 2,
+   "str": 2,
+   "pet": 0
+  },
+  "funktionsgeraete_ist": {
+   "ct": 1,
+   "mr": 0,
+   "str": 0,
+   "cor": 0
+  },
+  "stroke_unit_betten_plan_2030": 9,
+  "icu_betten_ist": 24,
+  "imcu_betten_ist": 20,
+  "icu_betten_plan_2030": 22,
+  "imcu_betten_plan_2030": 18
+ },
+ "kh029": {
+  "cor": 1,
+  "ct": 1,
+  "mr": 1,
+  "spect": 2,
+  "str": 0,
+  "pet": 1,
+  "stroke_unit_betten": 4,
+  "rsg": "RSG Wien 2030, Anlage 2 Planungsmatrizen stationär; ICU 23 / IMCU 12 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 16 / IMCU 10; Stroke Unit: 4 Betten IST 2022 → 6 Plan 2030; Versorgungsstufen IST 2022: KAR S, NEP Z; Versorgungsstufen Plan 2030: KIJU 3",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K917 Klinik Landstraße': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.wien.gv.at/pdf/ma24/rsg-wien2030-anlage-2-planungsmatrizen.pdf – RSG Wien 2030, Anlage 2 Planungsmatrizen stationär, KA-Blatt K917 (PDF-Seite 17): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)",
+   "https://jasmin.goeg.at/3445/1/STROKE%20Register%20Bericht%202022_bf_.pdf – GÖG Stroke-Unit-Register 2022: Haus unter den 38 teilnehmenden Stroke Units"
+  ],
+  "notiz": "RSG Wien: KAR S nur IST 2022; Plan 2030 weist am Standort keine KAR-Versorgungsstufe mehr aus (GGP-Plan COR weiterhin 1).",
+  "ggp_plan_2030": {
+   "cor": 1,
+   "ct": 1,
+   "mr": 1,
+   "spect": 2,
+   "str": 0,
+   "pet": 1
+  },
+  "stroke_unit_betten_plan_2030": 6,
+  "icu_betten_ist": 23,
+  "imcu_betten_ist": 12,
+  "icu_betten_plan_2030": 16,
+  "imcu_betten_plan_2030": 10
+ },
+ "kh030": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 1,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 0,
+  "rsg": "RSG Wien 2030, Anlage 2 Planungsmatrizen stationär; ICU 12 / IMCU 0 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 12 / IMCU 0; Stroke Unit: 0 Betten IST 2022 → 0 Plan 2030; Versorgungsstufen Plan 2030: KIJU 4",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K920 Meidling UKH': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.wien.gv.at/pdf/ma24/rsg-wien2030-anlage-2-planungsmatrizen.pdf – RSG Wien 2030, Anlage 2 Planungsmatrizen stationär, KA-Blatt K920.1 (PDF-Seite 19): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)"
+  ],
+  "notiz": "Nicht-Fonds-KA (GGP-Rubrik 'sonstige Akut-KA').",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 1,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 0,
+  "icu_betten_ist": 12,
+  "imcu_betten_ist": 0,
+  "icu_betten_plan_2030": 12,
+  "imcu_betten_plan_2030": 0
+ },
+ "kh031": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 1,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 0,
+  "rsg": "RSG Wien 2030, Anlage 2 Planungsmatrizen stationär; ICU 6 / IMCU 0 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 0 / IMCU None; Stroke Unit: 0 Betten IST 2022 → 0 Plan 2030; Versorgungsstufen Plan 2030: KIJU 4",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K940 Böhler UKH': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.wien.gv.at/pdf/ma24/rsg-wien2030-anlage-2-planungsmatrizen.pdf – RSG Wien 2030, Anlage 2 Planungsmatrizen stationär, KA-Blatt K920.2 (PDF-Seite 20): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)"
+  ],
+  "notiz": "Nicht-Fonds-KA (GGP-Rubrik 'sonstige Akut-KA'). GGP-Zeile 'K940 Böhler UKH' (Brigittenau) = RSG Wien K920.2.",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 1,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 0,
+  "icu_betten_ist": 6,
+  "imcu_betten_ist": 0,
+  "icu_betten_plan_2030": 0,
+  "imcu_betten_plan_2030": null
+ },
+ "kh032": {
+  "cor": 0,
+  "ct": 2,
+  "mr": 1,
+  "spect": 1,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 7,
+  "rsg": "RSG Wien 2030, Anlage 2 Planungsmatrizen stationär; ZAE/Notaufnahme Plan 2030: ZAE; ICU 12 / IMCU 6 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 12 / IMCU 6; Stroke Unit: 7 Betten IST 2022 → 8 Plan 2030; Versorgungsstufen Plan 2030: KIJU 4",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K903 BBR KH': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.wien.gv.at/pdf/ma24/rsg-wien2030-anlage-2-planungsmatrizen.pdf – RSG Wien 2030, Anlage 2 Planungsmatrizen stationär, KA-Blatt K903 (PDF-Seite 11): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)",
+   "https://jasmin.goeg.at/3445/1/STROKE%20Register%20Bericht%202022_bf_.pdf – GÖG Stroke-Unit-Register 2022: Haus unter den 38 teilnehmenden Stroke Units"
+  ],
+  "notiz": "",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 2,
+   "mr": 1,
+   "spect": 1,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 8,
+  "icu_betten_ist": 12,
+  "imcu_betten_ist": 6,
+  "icu_betten_plan_2030": 12,
+  "imcu_betten_plan_2030": 6
+ },
+ "kh033": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 1,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 0,
+  "rsg": "RSG Wien 2030, Anlage 2 Planungsmatrizen stationär; ICU 4 / IMCU 22 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 4 / IMCU 30; Stroke Unit: 0 Betten IST 2022 → 0 Plan 2030; Versorgungsstufen IST 2022: KJONK Z, KSZT Z; Versorgungsstufen Plan 2030: KIJU 2, KJONK Z, KSZT Z",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K952 St. Anna KISP': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.wien.gv.at/pdf/ma24/rsg-wien2030-anlage-2-planungsmatrizen.pdf – RSG Wien 2030, Anlage 2 Planungsmatrizen stationär, KA-Blatt K952 (PDF-Seite 18): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)"
+  ],
+  "notiz": "",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 1,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 0,
+  "icu_betten_ist": 4,
+  "imcu_betten_ist": 22,
+  "icu_betten_plan_2030": 4,
+  "imcu_betten_plan_2030": 30
+ },
+ "kh034": {
+  "cor": 1,
+  "ct": 1,
+  "mr": 1,
+  "spect": 1,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 4,
+  "rsg": "RSG Bgld 2030, RSG-Planungsmatrix; ZAE/Notaufnahme Plan 2030: 7/24 (10 ambBP); ICU 8 / IMCU 24 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 12 / IMCU 29; Stroke Unit: 4 Betten IST 2022 → 6 Plan 2030; Versorgungsstufen IST 2022: KAR S, TR S, GH S/B, KIJU 2, GCH S, ONK S, BRZ A, NEP S; Versorgungsstufen Plan 2030: KAR S, TR S, GH S/B, KIJU 2, GCH S, ONK S, BRZ A, NEP S",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K102 Eisenstadt BBR KH 3, 4': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.burgenland.at/fileadmin/user_upload/Downloads/Gesundheit_und_Soziales/RSG_Bgld_2030.pdf – RSG Bgld 2030, RSG-Planungsmatrix, KA-Blatt K102 (PDF-Seite 51): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)",
+   "https://jasmin.goeg.at/3445/1/STROKE%20Register%20Bericht%202022_bf_.pdf – GÖG Stroke-Unit-Register 2022: Haus unter den 38 teilnehmenden Stroke Units"
+  ],
+  "notiz": "Zusätzlich Funktionsgeräte (Schockraum/OP/Therapieplanung, nicht Teil des GGP): CT 1 RSG Bgld: NEU-ANB/B 4→9, ANB/C 9→12.",
+  "ggp_plan_2030": {
+   "cor": 1,
+   "ct": 1,
+   "mr": 2,
+   "spect": 1,
+   "str": 0,
+   "pet": 0
+  },
+  "funktionsgeraete_ist": {
+   "ct": 1,
+   "mr": 0,
+   "str": 0,
+   "cor": 0
+  },
+  "stroke_unit_betten_plan_2030": 6,
+  "icu_betten_ist": 8,
+  "imcu_betten_ist": 24,
+  "icu_betten_plan_2030": 12,
+  "imcu_betten_plan_2030": 29
+ },
+ "kh035": {
+  "cor": 1,
+  "ct": 1,
+  "mr": 1,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 4,
+  "rsg": "RSG Bgld 2030, RSG-Planungsmatrix; ZAE/Notaufnahme Plan 2030: 7/24 (10 ambBP); ICU 8 / IMCU 13 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 10 / IMCU 19; Stroke Unit: 4 Betten IST 2022 → 4 Plan 2030; Versorgungsstufen IST 2022: TR S, GH S/B, KIJU 2, GCH S, ONK S, NEP S; Versorgungsstufen Plan 2030: KAR S, TR S, GH S/B, KIJU 2, GCH S, ONK S, BRZ Z, NEP S",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K107 Oberwart LKH 4': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.burgenland.at/fileadmin/user_upload/Downloads/Gesundheit_und_Soziales/RSG_Bgld_2030.pdf – RSG Bgld 2030, RSG-Planungsmatrix, KA-Blatt K107 (PDF-Seite 57): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)",
+   "https://jasmin.goeg.at/3445/1/STROKE%20Register%20Bericht%202022_bf_.pdf – GÖG Stroke-Unit-Register 2022: Haus unter den 38 teilnehmenden Stroke Units"
+  ],
+  "notiz": "RSG Bgld: KAR im IST 2022 nicht als Versorgungsstufe geführt, Plan 2030 KAR S; GGP Ist 31.12.2023 bereits COR 1. RSG Bgld: NEU-ANB/B 5→6, ANB/C 6→6.",
+  "ggp_plan_2030": {
+   "cor": 1,
+   "ct": 1,
+   "mr": 1,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 4,
+  "icu_betten_ist": 8,
+  "imcu_betten_ist": 13,
+  "icu_betten_plan_2030": 10,
+  "imcu_betten_plan_2030": 19
+ },
+ "kh036": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 1,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 0,
+  "rsg": "RSG Bgld 2030, RSG-Planungsmatrix; ZAE Plan 2030: keine; ICU 4 / IMCU 6 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 4 / IMCU 6; Stroke Unit: 0 Betten IST 2022 → 0 Plan 2030; Versorgungsstufen IST 2022: ONK A; Versorgungsstufen Plan 2030: ONK A",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K105 Kittsee LKH 4': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.burgenland.at/fileadmin/user_upload/Downloads/Gesundheit_und_Soziales/RSG_Bgld_2030.pdf – RSG Bgld 2030, RSG-Planungsmatrix, KA-Blatt K105 (PDF-Seite 53): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)"
+  ],
+  "notiz": "",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 1,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 0,
+  "icu_betten_ist": 4,
+  "imcu_betten_ist": 6,
+  "icu_betten_plan_2030": 4,
+  "imcu_betten_plan_2030": 6
+ },
+ "kh037": {
+  "cor": 3,
+  "ct": 2,
+  "mr": 3,
+  "spect": 3,
+  "str": 0,
+  "pet": 1,
+  "stroke_unit_betten": 4,
+  "rsg": "RSG OÖ 2030 (Stand 10/2025), KA-Planungsmatrix; ZAE/Notaufnahme Plan 2030: AA (4 ambBP); ICU 66 / IMCU 31 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 78 / IMCU 56; Stroke Unit: 4 Betten IST 2022 → 7 Plan 2030; Versorgungsstufen IST 2022: KAR Z, HCH Z, GH Z, KIJU 1, TCH Z, GCH Z, ONK Z, BRZ Z, ZMG Z, KHZ Z, KJONK Z; Versorgungsstufen Plan 2030: KAR Z, HCH Z, TR Z, GH Z, KIJU 1, TCH Z, GCH Z, ONK Z, BRZ Z, NEP Z, ZMG Z, KHZ Z, KJONK Z, SZT aut*, KSZT aut*",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K470.1 KUK Med Campus 6': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.land-oberoesterreich.gv.at/Mediendateien/Formulare/Dokumente%20SGD%20Abt_Ges/Ges_Regionaler%20Strukturplan%20Gesundheit%20Ober%c3%b6sterreich%20(RSG%20O.pdf – RSG OÖ 2030 (Stand 10/2025), KA-Planungsmatrix, KA-Blatt K470.4 (PDF-Seite 123): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)",
+   "https://jasmin.goeg.at/3445/1/STROKE%20Register%20Bericht%202022_bf_.pdf – GÖG Stroke-Unit-Register 2022: Haus unter den 38 teilnehmenden Stroke Units"
+  ],
+  "notiz": "Zusätzlich Funktionsgeräte (Schockraum/OP/Therapieplanung, nicht Teil des GGP): CT 1, COR 1 GGP K470.1 und RSG K470.4 umfassen den gesamten Standort Med Campus (III+IV); Herzkatheter (KAR Z) am Med Campus.",
+  "ggp_plan_2030": {
+   "cor": 3,
+   "ct": 2,
+   "mr": 3,
+   "spect": 3,
+   "str": 0,
+   "pet": 1
+  },
+  "funktionsgeraete_ist": {
+   "ct": 1,
+   "mr": 0,
+   "str": 0,
+   "cor": 1
+  },
+  "stroke_unit_betten_plan_2030": 7,
+  "icu_betten_ist": 66,
+  "imcu_betten_ist": 31,
+  "icu_betten_plan_2030": 78,
+  "imcu_betten_plan_2030": 56
+ },
+ "kh038": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 1,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": null,
+  "rsg": "",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K420 Linz UKH': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)"
+  ],
+  "notiz": "Nicht-Fonds-KA (GGP-Rubrik 'sonstige Akut-KA'). Kein KA-Blatt in der RSG-Planungsmatrix (Nicht-Fonds-KA) – keine RSG-Werte (Stroke Unit/Intensiv/Versorgungsstufen) belegt.",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 1,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  }
+ },
+ "kh039": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 0,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 0,
+  "rsg": "RSG NÖ 2030 (beschl. 15.12.2025), Planungsmatrix; ZAE Plan 2030: keine; ICU 0 / IMCU 0 Betten (IST 2023, tatsächl.) → Plan 2030 ICU 0 / IMCU 0; Stroke Unit: 0 Betten IST 2023 → 0 Plan 2030; Versorgungsstufen Plan 2030: KIJU 4",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K333 Mauer LKL': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://noe.gv.at/noe/Gesundheitseinrichtungen/RSG_NOe_2030_s.pdf – RSG NÖ 2030 (beschl. 15.12.2025), Planungsmatrix, KA-Blatt K333 (PDF-Seite 83): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2023 / Plan 2030)"
+  ],
+  "notiz": "",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 0,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 0,
+  "icu_betten_ist": 0,
+  "imcu_betten_ist": 0,
+  "icu_betten_plan_2030": 0,
+  "imcu_betten_plan_2030": 0
+ },
+ "kh040": {
+  "cor": 0,
+  "ct": 0,
+  "mr": 0,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 0,
+  "rsg": "RSG NÖ 2030 (beschl. 15.12.2025), Planungsmatrix; ZAE Plan 2030: keine; ICU 0 / IMCU 0 Betten (IST 2023, tatsächl.) → Plan 2030 ICU 0 / IMCU 0; Stroke Unit: 0 Betten IST 2023 → 0 Plan 2030; Versorgungsstufen Plan 2030: KIJU 4",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025): Standort ohne Großgeräte-Eintrag",
+   "https://noe.gv.at/noe/Gesundheitseinrichtungen/RSG_NOe_2030_s.pdf – RSG NÖ 2030 (beschl. 15.12.2025), Planungsmatrix, KA-Blatt K377.3 (PDF-Seite 63): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2023 / Plan 2030)"
+  ],
+  "notiz": "GGP: NÖ K377 Horn-Allentsteig: im GGP nur Standort Horn mit Geräten, Allentsteig ohne Eintrag → 0 Großgeräte am Standort.",
+  "stroke_unit_betten_plan_2030": 0,
+  "icu_betten_ist": 0,
+  "imcu_betten_ist": 0,
+  "icu_betten_plan_2030": 0,
+  "imcu_betten_plan_2030": 0
+ },
+ "kh041": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 0,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 0,
+  "rsg": "RSG NÖ 2030 (beschl. 15.12.2025), Planungsmatrix; ZAE Plan 2030: keine; ICU 4 / IMCU 2 Betten (IST 2023, tatsächl.) → Plan 2030 ICU 4 / IMCU 2; Stroke Unit: 0 Betten IST 2023 → 0 Plan 2030; Versorgungsstufen Plan 2030: KIJU 4",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K315 Hochegg LKL': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://noe.gv.at/noe/Gesundheitseinrichtungen/RSG_NOe_2030_s.pdf – RSG NÖ 2030 (beschl. 15.12.2025), Planungsmatrix, KA-Blatt K367.2 (PDF-Seite 76): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2023 / Plan 2030)"
+  ],
+  "notiz": "",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 0,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 0,
+  "icu_betten_ist": 4,
+  "imcu_betten_ist": 2,
+  "icu_betten_plan_2030": 4,
+  "imcu_betten_plan_2030": 2
+ },
+ "kh042": {
+  "cor": 1,
+  "ct": 1,
+  "mr": 2,
+  "spect": 2,
+  "str": 0,
+  "pet": 1,
+  "stroke_unit_betten": 0,
+  "rsg": "RSG Wien 2030, Anlage 2 Planungsmatrizen stationär; ZAE/Notaufnahme Plan 2030: ZAE; ICU 9 / IMCU 7 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 9 / IMCU 7; Stroke Unit: 0 Betten IST 2022 → 0 Plan 2030; Versorgungsstufen IST 2022: KAR S, GCH Z, NEP Z, ZMG Z, SZT Z(aut); Versorgungsstufen Plan 2030: KAR S, KIJU 4, GCH Z, NEP Z, ZMG Z, SZT Z(aut)",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K912 Hanusch KH': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.wien.gv.at/pdf/ma24/rsg-wien2030-anlage-2-planungsmatrizen.pdf – RSG Wien 2030, Anlage 2 Planungsmatrizen stationär, KA-Blatt K912 (PDF-Seite 23): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)"
+  ],
+  "notiz": "",
+  "ggp_plan_2030": {
+   "cor": 1,
+   "ct": 1,
+   "mr": 2,
+   "spect": 2,
+   "str": 0,
+   "pet": 1
+  },
+  "stroke_unit_betten_plan_2030": 0,
+  "icu_betten_ist": 9,
+  "imcu_betten_ist": 7,
+  "icu_betten_plan_2030": 9,
+  "imcu_betten_plan_2030": 7
+ },
+ "kh043": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 1,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 0,
+  "rsg": "RSG Wien 2030, Anlage 2 Planungsmatrizen stationär; ICU 8 / IMCU 3 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 0 / IMCU 0; Stroke Unit: 0 Betten IST 2022 → 0 Plan 2030",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K921.3 Standort Penzing 7': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.wien.gv.at/pdf/ma24/rsg-wien2030-anlage-2-planungsmatrizen.pdf – RSG Wien 2030, Anlage 2 Planungsmatrizen stationär, KA-Blatt K971 (PDF-Seite 29): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)"
+  ],
+  "notiz": "GGP führt Penzing als K921.3 (Standort von Klinik Ottakring); RSG Wien als K971 Klinik Penzing.",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 1,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 0,
+  "icu_betten_ist": 8,
+  "imcu_betten_ist": 3,
+  "icu_betten_plan_2030": 0,
+  "imcu_betten_plan_2030": 0
+ },
+ "kh044": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 0,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 0,
+  "rsg": "RSG Wien 2030, Anlage 2 Planungsmatrizen stationär; ZAE/Notaufnahme Plan 2030: ZAE; ICU 6 / IMCU 0 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 6 / IMCU 0; Stroke Unit: 0 Betten IST 2022 → 0 Plan 2030; Versorgungsstufen Plan 2030: KIJU KOZ",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K943 KH Speising': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.wien.gv.at/pdf/ma24/rsg-wien2030-anlage-2-planungsmatrizen.pdf – RSG Wien 2030, Anlage 2 Planungsmatrizen stationär, KA-Blatt K943 (PDF-Seite 27): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)"
+  ],
+  "notiz": "",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 0,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 0,
+  "icu_betten_ist": 6,
+  "imcu_betten_ist": 0,
+  "icu_betten_plan_2030": 6,
+  "imcu_betten_plan_2030": 0
+ },
+ "kh045": {
+  "cor": 1,
+  "ct": 1,
+  "mr": 1,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 4,
+  "rsg": "RSG Wien 2030, Anlage 2 Planungsmatrizen stationär; ZAE/Notaufnahme Plan 2030: ZAE; ICU 7 / IMCU 7 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 8 / IMCU 10; Stroke Unit: 4 Betten IST 2022 → 5 Plan 2030; Versorgungsstufen IST 2022: KAR S; Versorgungsstufen Plan 2030: KAR S, KIJU 4",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K955 Göttlicher Heiland KH 7': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.wien.gv.at/pdf/ma24/rsg-wien2030-anlage-2-planungsmatrizen.pdf – RSG Wien 2030, Anlage 2 Planungsmatrizen stationär, KA-Blatt K955 (PDF-Seite 28): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)",
+   "https://jasmin.goeg.at/3445/1/STROKE%20Register%20Bericht%202022_bf_.pdf – GÖG Stroke-Unit-Register 2022: Haus unter den 38 teilnehmenden Stroke Units"
+  ],
+  "notiz": "",
+  "ggp_plan_2030": {
+   "cor": 1,
+   "ct": 1,
+   "mr": 1,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 5,
+  "icu_betten_ist": 7,
+  "imcu_betten_ist": 7,
+  "icu_betten_plan_2030": 8,
+  "imcu_betten_plan_2030": 10
+ },
+ "kh046": {
+  "cor": 0,
+  "ct": 2,
+  "mr": 2,
+  "spect": 1,
+  "str": 0,
+  "pet": 1,
+  "stroke_unit_betten": 6,
+  "rsg": "RSG OÖ 2030 (Stand 10/2025), KA-Planungsmatrix; ZAE/Notaufnahme Plan 2030: AA; ICU 18 / IMCU 4 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 18 / IMCU 16; Stroke Unit: 6 Betten IST 2022 → 6 Plan 2030; Versorgungsstufen IST 2022: NCHa Z, NEU-SZ Z, KIJU 4, ONK NONK; Versorgungsstufen Plan 2030: NCHa Z, NEU-SZ Z, KIJU 4, ONK Z",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K470.2 KUK Neuromed Campus': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.land-oberoesterreich.gv.at/Mediendateien/Formulare/Dokumente%20SGD%20Abt_Ges/Ges_Regionaler%20Strukturplan%20Gesundheit%20Ober%c3%b6sterreich%20(RSG%20O.pdf – RSG OÖ 2030 (Stand 10/2025), KA-Planungsmatrix, KA-Blatt K470.2 (PDF-Seite 124): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)",
+   "https://jasmin.goeg.at/3445/1/STROKE%20Register%20Bericht%202022_bf_.pdf – GÖG Stroke-Unit-Register 2022: Haus unter den 38 teilnehmenden Stroke Units"
+  ],
+  "notiz": "Zusätzlich Funktionsgeräte (Schockraum/OP/Therapieplanung, nicht Teil des GGP): MR 1",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 2,
+   "mr": 2,
+   "spect": 1,
+   "str": 0,
+   "pet": 1
+  },
+  "funktionsgeraete_ist": {
+   "ct": 0,
+   "mr": 1,
+   "str": 0,
+   "cor": 0
+  },
+  "stroke_unit_betten_plan_2030": 6,
+  "icu_betten_ist": 18,
+  "imcu_betten_ist": 4,
+  "icu_betten_plan_2030": 18,
+  "imcu_betten_plan_2030": 16
+ },
+ "kh047": {
+  "cor": null,
+  "ct": null,
+  "mr": null,
+  "spect": null,
+  "str": null,
+  "pet": null,
+  "stroke_unit_betten": null,
+  "rsg": "siehe kh037 (gemeinsames KA-Blatt Med Campus; GH Z / KIJU-Stufe 1 betreffen v. a. Med Campus IV)",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – GGP-Zeile 'K470.1 KUK Med Campus' (gemeinsam mit kh037)",
+   "https://www.land-oberoesterreich.gv.at/Mediendateien/Formulare/Dokumente%20SGD%20Abt_Ges/Ges_Regionaler%20Strukturplan%20Gesundheit%20Ober%c3%b6sterreich%20(RSG%20O.pdf – RSG OÖ, KA-Blatt K470.4 'Standort Med Campus' (gemeinsam mit kh037)"
+  ],
+  "notiz": "GGP und RSG OÖ führen den Kepler-Standort 'Med Campus' (III+IV) gemeinsam (GGP K470.1, RSG K470.4); Werte vollständig bei kh037 erfasst, hier nicht getrennt ausweisbar."
+ },
+ "kh048": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 1,
+  "spect": 2,
+  "str": 5,
+  "pet": 1,
+  "stroke_unit_betten": 0,
+  "rsg": "RSG OÖ 2030 (Stand 10/2025), KA-Planungsmatrix; ZAE/Notaufnahme Plan 2030: AA (6 ambBP); ICU 17 / IMCU 6 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 17 / IMCU 16; Stroke Unit: 0 Betten IST 2022 → 0 Plan 2030; Versorgungsstufen IST 2022: NEU-SZ Z, KIJU 2, ONK Z, BRZ Z, NUKT Z, ZMG Z; Versorgungsstufen Plan 2030: NEU-SZ Z, KIJU 2, GCH Z, ONK Z, BRZ Z, NUKT Z, ZMG Z",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K418 Ordens-KL Linz BSRV': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.land-oberoesterreich.gv.at/Mediendateien/Formulare/Dokumente%20SGD%20Abt_Ges/Ges_Regionaler%20Strukturplan%20Gesundheit%20Ober%c3%b6sterreich%20(RSG%20O.pdf – RSG OÖ 2030 (Stand 10/2025), KA-Planungsmatrix, KA-Blatt K418 (PDF-Seite 113): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)"
+  ],
+  "notiz": "Zusätzlich Funktionsgeräte (Schockraum/OP/Therapieplanung, nicht Teil des GGP): CT 2, STR 1",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 1,
+   "spect": 2,
+   "str": 5,
+   "pet": 1
+  },
+  "funktionsgeraete_ist": {
+   "ct": 2,
+   "mr": 0,
+   "str": 1,
+   "cor": 0
+  },
+  "stroke_unit_betten_plan_2030": 0,
+  "icu_betten_ist": 17,
+  "imcu_betten_ist": 6,
+  "icu_betten_plan_2030": 17,
+  "imcu_betten_plan_2030": 16
+ },
+ "kh049": {
+  "cor": 1,
+  "ct": 1,
+  "mr": 1,
+  "spect": 2,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 0,
+  "rsg": "RSG OÖ 2030 (Stand 10/2025), KA-Planungsmatrix; ZAE/Notaufnahme Plan 2030: AA (4 ambBP); ICU 24 / IMCU 0 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 22 / IMCU 10; Stroke Unit: 0 Betten IST 2022 → 0 Plan 2030; Versorgungsstufen IST 2022: KAR S, KIJU 4, TCH Z, GCH S, ONK Z, BRZ Z, NEP Z, TXC Z, SZT Z (all); Versorgungsstufen Plan 2030: KAR S, KIJU 4, TCH Z, GCH Z, ONK Z, NEP Z, TXC Z, SZT Z (all)",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K419 Ordens-KL Linz Elisabethinen 6': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.land-oberoesterreich.gv.at/Mediendateien/Formulare/Dokumente%20SGD%20Abt_Ges/Ges_Regionaler%20Strukturplan%20Gesundheit%20Ober%c3%b6sterreich%20(RSG%20O.pdf – RSG OÖ 2030 (Stand 10/2025), KA-Planungsmatrix, KA-Blatt K419 (PDF-Seite 114): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)"
+  ],
+  "notiz": "GGP PET: 'K' = Kooperationsstandort (Gerät eines Kooperationspartners, kein eigenes).",
+  "ggp_plan_2030": {
+   "cor": 1,
+   "ct": 1,
+   "mr": 1,
+   "spect": 3,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 0,
+  "icu_betten_ist": 24,
+  "imcu_betten_ist": 0,
+  "icu_betten_plan_2030": 22,
+  "imcu_betten_plan_2030": 10
+ },
+ "kh050": {
+  "cor": 0,
+  "ct": 2,
+  "mr": 1,
+  "spect": 2,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 4,
+  "rsg": "RSG OÖ 2030 (Stand 10/2025), KA-Planungsmatrix; ZAE/Notaufnahme Plan 2030: AA (8 ambBP); ICU 14 / IMCU 16 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 14 / IMCU 22; Stroke Unit: 4 Betten IST 2022 → 4 Plan 2030; Versorgungsstufen IST 2022: GH S/B, KIJU 2, GCH Z, ONK S, BRZ Z; Versorgungsstufen Plan 2030: TR S, GH S/B, KIJU 2, GCH Z, ONK S, BRZ Z, NEP S",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K460.1 Steyr': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.land-oberoesterreich.gv.at/Mediendateien/Formulare/Dokumente%20SGD%20Abt_Ges/Ges_Regionaler%20Strukturplan%20Gesundheit%20Ober%c3%b6sterreich%20(RSG%20O.pdf – RSG OÖ 2030 (Stand 10/2025), KA-Planungsmatrix, KA-Blatt K460.1 (PDF-Seite 121): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)",
+   "https://jasmin.goeg.at/3445/1/STROKE%20Register%20Bericht%202022_bf_.pdf – GÖG Stroke-Unit-Register 2022: Haus unter den 38 teilnehmenden Stroke Units"
+  ],
+  "notiz": "",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 2,
+   "mr": 1,
+   "spect": 2,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 4,
+  "icu_betten_ist": 14,
+  "imcu_betten_ist": 16,
+  "icu_betten_plan_2030": 14,
+  "imcu_betten_plan_2030": 22
+ },
+ "kh051": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 0,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 0,
+  "rsg": "RSG OÖ 2030 (Stand 10/2025), KA-Planungsmatrix; ZAE Plan 2030: keine; ICU 6 / IMCU 0 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 6 / IMCU 2; Stroke Unit: 0 Betten IST 2022 → 0 Plan 2030; Versorgungsstufen IST 2022: GH G, KIJU 4, ONK A; Versorgungsstufen Plan 2030: TR L, GH G, KIJU 4, ONK A, NEP DIA",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K408 Freistadt LKH 9': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.land-oberoesterreich.gv.at/Mediendateien/Formulare/Dokumente%20SGD%20Abt_Ges/Ges_Regionaler%20Strukturplan%20Gesundheit%20Ober%c3%b6sterreich%20(RSG%20O.pdf – RSG OÖ 2030 (Stand 10/2025), KA-Planungsmatrix, KA-Blatt K408 (PDF-Seite 111): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)"
+  ],
+  "notiz": "RSG OÖ: Erstversorgungseinheit (EVE) Betriebsform AA, 2 ambBP",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 1,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 0,
+  "icu_betten_ist": 6,
+  "imcu_betten_ist": 0,
+  "icu_betten_plan_2030": 6,
+  "imcu_betten_plan_2030": 2
+ },
+ "kh052": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 1,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 6,
+  "rsg": "RSG OÖ 2030 (Stand 10/2025), KA-Planungsmatrix; ZAE/Notaufnahme Plan 2030: AA (8 ambBP); ICU 14 / IMCU 0 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 14 / IMCU 4; Stroke Unit: 6 Betten IST 2022 → 8 Plan 2030; Versorgungsstufen IST 2022: GH S/B, KIJU 4, GCH Z; Versorgungsstufen Plan 2030: GH S/B, KIJU 4, GCH Z",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K417 Linz BBR KH': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.land-oberoesterreich.gv.at/Mediendateien/Formulare/Dokumente%20SGD%20Abt_Ges/Ges_Regionaler%20Strukturplan%20Gesundheit%20Ober%c3%b6sterreich%20(RSG%20O.pdf – RSG OÖ 2030 (Stand 10/2025), KA-Planungsmatrix, KA-Blatt K417 (PDF-Seite 112): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)",
+   "https://jasmin.goeg.at/3445/1/STROKE%20Register%20Bericht%202022_bf_.pdf – GÖG Stroke-Unit-Register 2022: Haus unter den 38 teilnehmenden Stroke Units"
+  ],
+  "notiz": "",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 1,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 8,
+  "icu_betten_ist": 14,
+  "imcu_betten_ist": 0,
+  "icu_betten_plan_2030": 14,
+  "imcu_betten_plan_2030": 4
+ },
+ "kh053": {
+  "cor": 2,
+  "ct": 2,
+  "mr": 2,
+  "spect": 3,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 6,
+  "rsg": "RSG OÖ 2030 (Stand 10/2025), KA-Planungsmatrix; ZAE/Notaufnahme Plan 2030: AA (5 ambBP); ICU 32 / IMCU 14 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 35 / IMCU 21; Stroke Unit: 6 Betten IST 2022 → 10 Plan 2030; Versorgungsstufen IST 2022: KAR Z, HCH Z, GH S/A, KIJU 2, TCH Z, GCH Z, ONK S, BRZ Z; Versorgungsstufen Plan 2030: KAR Z, HCH Z, TR S, GH S/A, KIJU 2, TCH Z, GCH Z, ONK S, BRZ Z, NEP S",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K434.1 Standort Wels 7': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.land-oberoesterreich.gv.at/Mediendateien/Formulare/Dokumente%20SGD%20Abt_Ges/Ges_Regionaler%20Strukturplan%20Gesundheit%20Ober%c3%b6sterreich%20(RSG%20O.pdf – RSG OÖ 2030 (Stand 10/2025), KA-Planungsmatrix, KA-Blatt K434.1 (PDF-Seite 118): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)",
+   "https://jasmin.goeg.at/3445/1/STROKE%20Register%20Bericht%202022_bf_.pdf – GÖG Stroke-Unit-Register 2022: Haus unter den 38 teilnehmenden Stroke Units"
+  ],
+  "notiz": "Zusätzlich Funktionsgeräte (Schockraum/OP/Therapieplanung, nicht Teil des GGP): CT 1",
+  "ggp_plan_2030": {
+   "cor": 2,
+   "ct": 2,
+   "mr": 2,
+   "spect": 3,
+   "str": 0,
+   "pet": 1
+  },
+  "funktionsgeraete_ist": {
+   "ct": 1,
+   "mr": 0,
+   "str": 0,
+   "cor": 0
+  },
+  "stroke_unit_betten_plan_2030": 10,
+  "icu_betten_ist": 32,
+  "imcu_betten_ist": 14,
+  "icu_betten_plan_2030": 35,
+  "imcu_betten_plan_2030": 21
+ },
+ "kh054": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 0,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 0,
+  "rsg": "RSG OÖ 2030 (Stand 10/2025), KA-Planungsmatrix; ZAE Plan 2030: keine; ICU 0 / IMCU 4 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 4 / IMCU 0; Stroke Unit: 0 Betten IST 2022 → 0 Plan 2030; Versorgungsstufen IST 2022: GH G, KIJU 4; Versorgungsstufen Plan 2030: TR L, GH G, KIJU 4",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K434.2 Standort Grieskirchen 9': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.land-oberoesterreich.gv.at/Mediendateien/Formulare/Dokumente%20SGD%20Abt_Ges/Ges_Regionaler%20Strukturplan%20Gesundheit%20Ober%c3%b6sterreich%20(RSG%20O.pdf – RSG OÖ 2030 (Stand 10/2025), KA-Planungsmatrix, KA-Blatt K434.2 (PDF-Seite 119): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)"
+  ],
+  "notiz": "RSG OÖ: Erstversorgungseinheit (EVE) Betriebsform AA, 2 ambBP",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 1,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 0,
+  "icu_betten_ist": 0,
+  "imcu_betten_ist": 4,
+  "icu_betten_plan_2030": 4,
+  "imcu_betten_plan_2030": 0
+ },
+ "kh055": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 0,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 0,
+  "rsg": "RSG OÖ 2030 (Stand 10/2025), KA-Planungsmatrix; ZAE Plan 2030: keine; ICU 6 / IMCU 3 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 6 / IMCU 3; Stroke Unit: 0 Betten IST 2022 → 0 Plan 2030; Versorgungsstufen IST 2022: GH G, KIJU 3, GCH S, ONK A, BRZ AP; Versorgungsstufen Plan 2030: TR L, GH G, KIJU 3, ONK A",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K460.2 Kirchdorf a.d. Krems 9': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.land-oberoesterreich.gv.at/Mediendateien/Formulare/Dokumente%20SGD%20Abt_Ges/Ges_Regionaler%20Strukturplan%20Gesundheit%20Ober%c3%b6sterreich%20(RSG%20O.pdf – RSG OÖ 2030 (Stand 10/2025), KA-Planungsmatrix, KA-Blatt K460.2 (PDF-Seite 122): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)"
+  ],
+  "notiz": "RSG OÖ: Erstversorgungseinheit (EVE) Betriebsform AA, 4 ambBP",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 1,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 0,
+  "icu_betten_ist": 6,
+  "imcu_betten_ist": 3,
+  "icu_betten_plan_2030": 6,
+  "imcu_betten_plan_2030": 3
+ },
+ "kh056": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 2,
+  "spect": 2,
+  "str": 2,
+  "pet": 1,
+  "stroke_unit_betten": 6,
+  "rsg": "RSG OÖ 2030 (Stand 10/2025), KA-Planungsmatrix; ZAE/Notaufnahme Plan 2030: AA; ICU 16 / IMCU 11 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 17 / IMCU 14; Stroke Unit: 6 Betten IST 2022 → 10 Plan 2030; Versorgungsstufen IST 2022: GH S/B, KIJU 2, GCH Z, ONK S, BRZ Z; Versorgungsstufen Plan 2030: TR S, GH S/B, KIJU 2, GCH Z, ONK S, BRZ Z, NEP S",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K480.1 Standort Vöcklabruck 9': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.land-oberoesterreich.gv.at/Mediendateien/Formulare/Dokumente%20SGD%20Abt_Ges/Ges_Regionaler%20Strukturplan%20Gesundheit%20Ober%c3%b6sterreich%20(RSG%20O.pdf – RSG OÖ 2030 (Stand 10/2025), KA-Planungsmatrix, KA-Blatt K480.1 (PDF-Seite 125): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)",
+   "https://jasmin.goeg.at/3445/1/STROKE%20Register%20Bericht%202022_bf_.pdf – GÖG Stroke-Unit-Register 2022: Haus unter den 38 teilnehmenden Stroke Units"
+  ],
+  "notiz": "Zusätzlich Funktionsgeräte (Schockraum/OP/Therapieplanung, nicht Teil des GGP): CT 1",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 2,
+   "spect": 2,
+   "str": 2,
+   "pet": 1
+  },
+  "funktionsgeraete_ist": {
+   "ct": 1,
+   "mr": 0,
+   "str": 0,
+   "cor": 0
+  },
+  "stroke_unit_betten_plan_2030": 10,
+  "icu_betten_ist": 16,
+  "imcu_betten_ist": 11,
+  "icu_betten_plan_2030": 17,
+  "imcu_betten_plan_2030": 14
+ },
+ "kh057": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 0,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 0,
+  "rsg": "RSG OÖ 2030 (Stand 10/2025), KA-Planungsmatrix; ZAE Plan 2030: keine; ICU 6 / IMCU 6 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 4 / IMCU 10; Stroke Unit: 0 Betten IST 2022 → 0 Plan 2030; Versorgungsstufen IST 2022: KIJU 4; Versorgungsstufen Plan 2030: TR L, KIJU 4",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K480.3 Standort Gmunden 3': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.land-oberoesterreich.gv.at/Mediendateien/Formulare/Dokumente%20SGD%20Abt_Ges/Ges_Regionaler%20Strukturplan%20Gesundheit%20Ober%c3%b6sterreich%20(RSG%20O.pdf – RSG OÖ 2030 (Stand 10/2025), KA-Planungsmatrix, KA-Blatt K480.3 (PDF-Seite 127): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)"
+  ],
+  "notiz": "GGP MR: 'K' = Kooperationsstandort (Gerät eines Kooperationspartners, kein eigenes). RSG OÖ: Erstversorgungseinheit (EVE) Betriebsform AA",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 0,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 0,
+  "icu_betten_ist": 6,
+  "imcu_betten_ist": 6,
+  "icu_betten_plan_2030": 4,
+  "imcu_betten_plan_2030": 10
+ },
+ "kh058": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 0,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 0,
+  "rsg": "RSG OÖ 2030 (Stand 10/2025), KA-Planungsmatrix; ZAE Plan 2030: keine; ICU 6 / IMCU 0 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 4 / IMCU 6; Stroke Unit: 0 Betten IST 2022 → 0 Plan 2030; Versorgungsstufen IST 2022: GH G, KIJU 3, ONK A; Versorgungsstufen Plan 2030: TR L, GH G, KIJU 3, ONK A, NEP DIA",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K480.2 Standort Bad Ischl 9': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.land-oberoesterreich.gv.at/Mediendateien/Formulare/Dokumente%20SGD%20Abt_Ges/Ges_Regionaler%20Strukturplan%20Gesundheit%20Ober%c3%b6sterreich%20(RSG%20O.pdf – RSG OÖ 2030 (Stand 10/2025), KA-Planungsmatrix, KA-Blatt K480.2 (PDF-Seite 126): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)"
+  ],
+  "notiz": "RSG OÖ: Erstversorgungseinheit (EVE) Betriebsform AA",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 1,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 0,
+  "icu_betten_ist": 6,
+  "imcu_betten_ist": 0,
+  "icu_betten_plan_2030": 4,
+  "imcu_betten_plan_2030": 6
+ },
+ "kh059": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 0,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 0,
+  "rsg": "RSG OÖ 2030 (Stand 10/2025), KA-Planungsmatrix; ZAE Plan 2030: keine; ICU 12 / IMCU 4 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 10 / IMCU 6; Stroke Unit: 0 Betten IST 2022 → 0 Plan 2030; Versorgungsstufen IST 2022: GH S/B, KIJU 2, GCH S, ONK A, BRZ AP; Versorgungsstufen Plan 2030: TR S, GH S/B, KIJU 2, ONK A, BRZ AP, NEP DIA",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K405 Braunau KH St. Josef 3': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.land-oberoesterreich.gv.at/Mediendateien/Formulare/Dokumente%20SGD%20Abt_Ges/Ges_Regionaler%20Strukturplan%20Gesundheit%20Ober%c3%b6sterreich%20(RSG%20O.pdf – RSG OÖ 2030 (Stand 10/2025), KA-Planungsmatrix, KA-Blatt K405 (PDF-Seite 110): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)"
+  ],
+  "notiz": "GGP MR: 'K' = Kooperationsstandort (Gerät eines Kooperationspartners, kein eigenes). RSG OÖ: Erstversorgungseinheit (EVE) Betriebsform AA, 4 ambBP",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 0,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 0,
+  "icu_betten_ist": 12,
+  "imcu_betten_ist": 4,
+  "icu_betten_plan_2030": 10,
+  "imcu_betten_plan_2030": 6
+ },
+ "kh060": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 0,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 0,
+  "rsg": "RSG OÖ 2030 (Stand 10/2025), KA-Planungsmatrix; ZAE Plan 2030: keine; ICU 6 / IMCU 0 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 6 / IMCU 0; Stroke Unit: 0 Betten IST 2022 → 0 Plan 2030; Versorgungsstufen IST 2022: GH G, KIJU 4, ONK A, BRZ AP; Versorgungsstufen Plan 2030: TR L, GH G, KIJU 4, ONK A, BRZ Z, NEP DIA",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K428 Schärding LKH 9': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.land-oberoesterreich.gv.at/Mediendateien/Formulare/Dokumente%20SGD%20Abt_Ges/Ges_Regionaler%20Strukturplan%20Gesundheit%20Ober%c3%b6sterreich%20(RSG%20O.pdf – RSG OÖ 2030 (Stand 10/2025), KA-Planungsmatrix, KA-Blatt K428 (PDF-Seite 116): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)"
+  ],
+  "notiz": "RSG OÖ: Erstversorgungseinheit (EVE) Betriebsform AA, 2 ambBP",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 1,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 0,
+  "icu_betten_ist": 6,
+  "imcu_betten_ist": 0,
+  "icu_betten_plan_2030": 6,
+  "imcu_betten_plan_2030": 0
+ },
+ "kh061": {
+  "cor": 0,
+  "ct": 0,
+  "mr": 0,
+  "spect": 2,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 6,
+  "rsg": "RSG OÖ 2030 (Stand 10/2025), KA-Planungsmatrix; ZAE/Notaufnahme Plan 2030: AA (6 ambBP); ICU 14 / IMCU 3 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 14 / IMCU 3; Stroke Unit: 6 Betten IST 2022 → 8 Plan 2030; Versorgungsstufen IST 2022: GH S/B, KIJU 2, GCH Z, ONK S, BRZ AP; Versorgungsstufen Plan 2030: TR S, GH S/B, KIJU 2, GCH Z, ONK S, BRZ Z, NEP S",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K427 Ried/Innkreis BSRV KH 2, 7': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.land-oberoesterreich.gv.at/Mediendateien/Formulare/Dokumente%20SGD%20Abt_Ges/Ges_Regionaler%20Strukturplan%20Gesundheit%20Ober%c3%b6sterreich%20(RSG%20O.pdf – RSG OÖ 2030 (Stand 10/2025), KA-Planungsmatrix, KA-Blatt K427 (PDF-Seite 115): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)",
+   "https://jasmin.goeg.at/3445/1/STROKE%20Register%20Bericht%202022_bf_.pdf – GÖG Stroke-Unit-Register 2022: Haus unter den 38 teilnehmenden Stroke Units"
+  ],
+  "notiz": "GGP CT: 'K' = Kooperationsstandort (Gerät eines Kooperationspartners, kein eigenes). GGP MR: 'K' = Kooperationsstandort (Gerät eines Kooperationspartners, kein eigenes). GGP PET: 'K' = Kooperationsstandort (Gerät eines Kooperationspartners, kein eigenes).",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 0,
+   "mr": 0,
+   "spect": 2,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 8,
+  "icu_betten_ist": 14,
+  "imcu_betten_ist": 3,
+  "icu_betten_plan_2030": 14,
+  "imcu_betten_plan_2030": 3
+ },
+ "kh062": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 1,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 0,
+  "rsg": "RSG OÖ 2030 (Stand 10/2025), KA-Planungsmatrix; ZAE Plan 2030: keine; ICU 6 / IMCU 0 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 6 / IMCU 4; Stroke Unit: 0 Betten IST 2022 → 0 Plan 2030; Versorgungsstufen IST 2022: GH G, KIJU 3, GCH S, ONK A, BRZ AP; Versorgungsstufen Plan 2030: TR L, GH G, KIJU 3, ONK A, BRZ Z, NEP DIA",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K441 Rohrbach LKH 9': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.land-oberoesterreich.gv.at/Mediendateien/Formulare/Dokumente%20SGD%20Abt_Ges/Ges_Regionaler%20Strukturplan%20Gesundheit%20Ober%c3%b6sterreich%20(RSG%20O.pdf – RSG OÖ 2030 (Stand 10/2025), KA-Planungsmatrix, KA-Blatt K441 (PDF-Seite 120): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)"
+  ],
+  "notiz": "RSG OÖ: Erstversorgungseinheit (EVE) Betriebsform AA, 3 ambBP",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 1,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 0,
+  "icu_betten_ist": 6,
+  "imcu_betten_ist": 0,
+  "icu_betten_plan_2030": 6,
+  "imcu_betten_plan_2030": 4
+ },
+ "kh063": {
+  "cor": 3,
+  "ct": 5,
+  "mr": 4,
+  "spect": 5,
+  "str": 7,
+  "pet": 2,
+  "stroke_unit_betten": 6,
+  "rsg": "RSG-St 2030 Anhang, RSG-Planungsmatrix; ZAE/Notaufnahme Plan 2030: 7/24 (30 ambBP); ICU 112 / IMCU 36 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 126 / IMCU 56; Stroke Unit: 6 Betten IST 2022 → 10 Plan 2030; Versorgungsstufen IST 2022: KAR Z, HCH Z, TR Z, NCHa Z, NEU-SZ SZ, GH Z, KIJU 1, TCH Z, GCH Z, ONK Z, BRZ Z, NEP Z, NUKT Z, ZMG Z, KHZ Z, KJONK Z, BRA Z, KBRA Z, SZT Z, KSZT Z; Versorgungsstufen Plan 2030: KAR Z, HCH Z, TR Z, NCHa Z, NEU-SZ SZ, GH Z, KIJU 1, TCH Z, GCH Z, ONK Z, BRZ Z, NEP Z, NUKT Z, ZMG Z, KHZ Z, KJONK Z, BRA Z, KBRA Z, SZT Z, KSZT Z, HKLE Z",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K612.1 Standort Graz 5': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.verwaltung.steiermark.at/cms/dokumente/12567975_135846567/ea78141b/RSG-St_2030_Anhang.pdf – RSG-St 2030 Anhang, RSG-Planungsmatrix, KA-Blatt K612.1 (PDF-Seite 34): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)",
+   "https://jasmin.goeg.at/3445/1/STROKE%20Register%20Bericht%202022_bf_.pdf – GÖG Stroke-Unit-Register 2022: Haus unter den 38 teilnehmenden Stroke Units"
+  ],
+  "notiz": "Zusätzlich Funktionsgeräte (Schockraum/OP/Therapieplanung, nicht Teil des GGP): CT 2, MR 1, COR 1",
+  "ggp_plan_2030": {
+   "cor": 4,
+   "ct": 5,
+   "mr": 5,
+   "spect": 5,
+   "str": 7,
+   "pet": 3
+  },
+  "funktionsgeraete_ist": {
+   "ct": 2,
+   "mr": 1,
+   "str": 0,
+   "cor": 1
+  },
+  "stroke_unit_betten_plan_2030": 10,
+  "icu_betten_ist": 112,
+  "imcu_betten_ist": 36,
+  "icu_betten_plan_2030": 126,
+  "imcu_betten_plan_2030": 56
+ },
+ "kh064": {
+  "cor": 1,
+  "ct": 1,
+  "mr": 0,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 0,
+  "rsg": "RSG-St 2030 Anhang, RSG-Planungsmatrix; ZAE Plan 2030: keine; ICU 16 / IMCU 0 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 12 / IMCU 10; Stroke Unit: 0 Betten IST 2022 → 6 Plan 2030; Versorgungsstufen IST 2022: KAR S, BRZ AP; Versorgungsstufen Plan 2030: KAR S, BRZ AP",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K673.1 Standort West 3': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.verwaltung.steiermark.at/cms/dokumente/12567975_135846567/ea78141b/RSG-St_2030_Anhang.pdf – RSG-St 2030 Anhang, RSG-Planungsmatrix, KA-Blatt K673.1 (PDF-Seite 60): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)"
+  ],
+  "notiz": "GGP MR: 'K' = Kooperationsstandort (Gerät eines Kooperationspartners, kein eigenes).",
+  "ggp_plan_2030": {
+   "cor": 1,
+   "ct": 1,
+   "mr": 0,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 6,
+  "icu_betten_ist": 16,
+  "imcu_betten_ist": 0,
+  "icu_betten_plan_2030": 12,
+  "imcu_betten_plan_2030": 10
+ },
+ "kh065": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 1,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 4,
+  "rsg": "RSG-St 2030 Anhang, RSG-Planungsmatrix; ZAE Plan 2030: keine; ICU 0 / IMCU 4 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 0 / IMCU 0; Stroke Unit: 4 Betten IST 2022 → 0 Plan 2030",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K673.2 Standort Süd': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.verwaltung.steiermark.at/cms/dokumente/12567975_135846567/ea78141b/RSG-St_2030_Anhang.pdf – RSG-St 2030 Anhang, RSG-Planungsmatrix, KA-Blatt K673.2 (PDF-Seite 61): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)",
+   "https://jasmin.goeg.at/3445/1/STROKE%20Register%20Bericht%202022_bf_.pdf – GÖG Stroke-Unit-Register 2022: Haus unter den 38 teilnehmenden Stroke Units"
+  ],
+  "notiz": "RSG Stmk: SU Graz II Süd (4 Betten IST 2022) wird bis 2030 an Standort West verlagert (Plan West 6).",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 1,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 0,
+  "icu_betten_ist": 0,
+  "imcu_betten_ist": 4,
+  "icu_betten_plan_2030": 0,
+  "imcu_betten_plan_2030": 0
+ },
+ "kh066": {
+  "cor": 0,
+  "ct": 0,
+  "mr": 0,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 0,
+  "rsg": "RSG-St 2030 Anhang, RSG-Planungsmatrix; ZAE Plan 2030: keine; ICU 3 / IMCU 5 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 4 / IMCU 6; Stroke Unit: 0 Betten IST 2022 → 0 Plan 2030",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025): Standort ohne Großgeräte-Eintrag",
+   "https://www.verwaltung.steiermark.at/cms/dokumente/12567975_135846567/ea78141b/RSG-St_2030_Anhang.pdf – RSG-St 2030 Anhang, RSG-Planungsmatrix, KA-Blatt K673.3 (PDF-Seite 62): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)"
+  ],
+  "notiz": "GGP: Stmk K673 Graz II: im GGP nur West, Süd, Voitsberg mit Geräten; Hörgas-Enzenbach ohne Eintrag → 0 Großgeräte am Standort. RSG Stmk: Werte für K673.3 Enzenbach; K673.4 Hörgas separat (0 ICU/IMCU).",
+  "stroke_unit_betten_plan_2030": 0,
+  "icu_betten_ist": 3,
+  "imcu_betten_ist": 5,
+  "icu_betten_plan_2030": 4,
+  "imcu_betten_plan_2030": 6
+ },
+ "kh067": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 0,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 0,
+  "rsg": "RSG-St 2030 Anhang, RSG-Planungsmatrix; ZAE Plan 2030: keine; ICU 3 / IMCU 2 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 0 / IMCU 3; Stroke Unit: 0 Betten IST 2022 → 0 Plan 2030",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K673.5 Standort Voitsberg': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.verwaltung.steiermark.at/cms/dokumente/12567975_135846567/ea78141b/RSG-St_2030_Anhang.pdf – RSG-St 2030 Anhang, RSG-Planungsmatrix, KA-Blatt K673.5 (PDF-Seite 64): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)"
+  ],
+  "notiz": "",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 0,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 0,
+  "icu_betten_ist": 3,
+  "imcu_betten_ist": 2,
+  "icu_betten_plan_2030": 0,
+  "imcu_betten_plan_2030": 3
+ },
+ "kh068": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 0,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 0,
+  "rsg": "RSG-St 2030 Anhang, RSG-Planungsmatrix; ZAE Plan 2030: keine; ICU 5 / IMCU 0 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 4 / IMCU 2; Stroke Unit: 0 Betten IST 2022 → 0 Plan 2030",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K620 ELISAB KH': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.verwaltung.steiermark.at/cms/dokumente/12567975_135846567/ea78141b/RSG-St_2030_Anhang.pdf – RSG-St 2030 Anhang, RSG-Planungsmatrix, KA-Blatt K620 (PDF-Seite 37): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)"
+  ],
+  "notiz": "RSG Stmk: Summenblatt K620 (Elisabethinergasse + Bergstraße).",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 0,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 0,
+  "icu_betten_ist": 5,
+  "imcu_betten_ist": 0,
+  "icu_betten_plan_2030": 4,
+  "imcu_betten_plan_2030": 2
+ },
+ "kh069": {
+  "cor": 0,
+  "ct": 2,
+  "mr": 1,
+  "spect": 3,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 0,
+  "rsg": "RSG-St 2030 Anhang, RSG-Planungsmatrix; ZAE Plan 2030: keine; ICU 12 / IMCU 0 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 9 / IMCU 6; Stroke Unit: 0 Betten IST 2022 → 0 Plan 2030; Versorgungsstufen IST 2022: ONK A, NEP DIA; Versorgungsstufen Plan 2030: ONK A, NEP DIA",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K619 Graz BBR KH': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.verwaltung.steiermark.at/cms/dokumente/12567975_135846567/ea78141b/RSG-St_2030_Anhang.pdf – RSG-St 2030 Anhang, RSG-Planungsmatrix, KA-Blatt K619 (PDF-Seite 36): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)"
+  ],
+  "notiz": "",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 2,
+   "mr": 1,
+   "spect": 3,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 0,
+  "icu_betten_ist": 12,
+  "imcu_betten_ist": 0,
+  "icu_betten_plan_2030": 9,
+  "imcu_betten_plan_2030": 6
+ },
+ "kh070": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 1,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": null,
+  "rsg": "",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K614 Graz UKH 3': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)"
+  ],
+  "notiz": "Nicht-Fonds-KA (GGP-Rubrik 'sonstige Akut-KA'). Kein KA-Blatt in der RSG-Planungsmatrix (Nicht-Fonds-KA) – keine RSG-Werte (Stroke Unit/Intensiv/Versorgungsstufen) belegt.",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 1,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  }
+ },
+ "kh071": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 1,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": null,
+  "rsg": "",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K634 Kalwang UKH': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)"
+  ],
+  "notiz": "Nicht-Fonds-KA (GGP-Rubrik 'sonstige Akut-KA'). Kein KA-Blatt in der RSG-Planungsmatrix (Nicht-Fonds-KA) – keine RSG-Werte (Stroke Unit/Intensiv/Versorgungsstufen) belegt.",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 1,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  }
+ },
+ "kh072": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 1,
+  "spect": 1,
+  "str": 1,
+  "pet": 1,
+  "stroke_unit_betten": 0,
+  "rsg": "RSG-St 2030 Anhang, RSG-Planungsmatrix; ZAE Plan 2030: keine; ICU 32 / IMCU 3 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 21 / IMCU 17; Stroke Unit: 0 Betten IST 2022 → 0 Plan 2030; Versorgungsstufen IST 2022: TR S, GH S/A, KIJU 2, ONK S, BRZ Z; Versorgungsstufen Plan 2030: TR S, GH S/A, KIJU 2, GCH S, ONK S, BRZ Z",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K638.1 Standort Leoben 7': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.verwaltung.steiermark.at/cms/dokumente/12567975_135846567/ea78141b/RSG-St_2030_Anhang.pdf – RSG-St 2030 Anhang, RSG-Planungsmatrix, KA-Blatt K638.1 (PDF-Seite 42): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)"
+  ],
+  "notiz": "Zusätzlich Funktionsgeräte (Schockraum/OP/Therapieplanung, nicht Teil des GGP): CT 2",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 2,
+   "spect": 1,
+   "str": 2,
+   "pet": 1
+  },
+  "funktionsgeraete_ist": {
+   "ct": 2,
+   "mr": 0,
+   "str": 0,
+   "cor": 0
+  },
+  "stroke_unit_betten_plan_2030": 0,
+  "icu_betten_ist": 32,
+  "imcu_betten_ist": 3,
+  "icu_betten_plan_2030": 21,
+  "imcu_betten_plan_2030": 17
+ },
+ "kh073": {
+  "cor": 1,
+  "ct": 1,
+  "mr": 1,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 6,
+  "rsg": "RSG-St 2030 Anhang, RSG-Planungsmatrix; ZAE Plan 2030: keine; ICU 12 / IMCU 8 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 10 / IMCU 6; Stroke Unit: 6 Betten IST 2022 → 7 Plan 2030; Versorgungsstufen IST 2022: KAR S, GCH S, NEP S; Versorgungsstufen Plan 2030: KAR S, NEP S",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K638.3 Standort Bruck/Mur': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.verwaltung.steiermark.at/cms/dokumente/12567975_135846567/ea78141b/RSG-St_2030_Anhang.pdf – RSG-St 2030 Anhang, RSG-Planungsmatrix, KA-Blatt K638.3 (PDF-Seite 43): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)",
+   "https://jasmin.goeg.at/3445/1/STROKE%20Register%20Bericht%202022_bf_.pdf – GÖG Stroke-Unit-Register 2022: Haus unter den 38 teilnehmenden Stroke Units"
+  ],
+  "notiz": "",
+  "ggp_plan_2030": {
+   "cor": 2,
+   "ct": 1,
+   "mr": 1,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 7,
+  "icu_betten_ist": 12,
+  "imcu_betten_ist": 8,
+  "icu_betten_plan_2030": 10,
+  "imcu_betten_plan_2030": 6
+ },
+ "kh074": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 0,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 0,
+  "rsg": "RSG-St 2030 Anhang, RSG-Planungsmatrix; ZAE Plan 2030: keine; ICU 4 / IMCU 0 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 0 / IMCU 2; Stroke Unit: 0 Betten IST 2022 → 0 Plan 2030",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K638.4 Standort Mürzzuschlag 6': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.verwaltung.steiermark.at/cms/dokumente/12567975_135846567/ea78141b/RSG-St_2030_Anhang.pdf – RSG-St 2030 Anhang, RSG-Planungsmatrix, KA-Blatt K638.4 (PDF-Seite 44): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)"
+  ],
+  "notiz": "",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 0,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 0,
+  "icu_betten_ist": 4,
+  "imcu_betten_ist": 0,
+  "icu_betten_plan_2030": 0,
+  "imcu_betten_plan_2030": 2
+ },
+ "kh075": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 1,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 0,
+  "rsg": "RSG-St 2030 Anhang, RSG-Planungsmatrix; ZAE Plan 2030: keine; ICU 8 / IMCU 3 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 4 / IMCU 4; Stroke Unit: 0 Betten IST 2022 → 0 Plan 2030; Versorgungsstufen IST 2022: GH G, NEP DIA; Versorgungsstufen Plan 2030: TR L, GH G, NEP DIA",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K643.1 Standort Rottenmann': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.verwaltung.steiermark.at/cms/dokumente/12567975_135846567/ea78141b/RSG-St_2030_Anhang.pdf – RSG-St 2030 Anhang, RSG-Planungsmatrix, KA-Blatt K643.1 (PDF-Seite 46): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)"
+  ],
+  "notiz": "",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 1,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 0,
+  "icu_betten_ist": 8,
+  "imcu_betten_ist": 3,
+  "icu_betten_plan_2030": 4,
+  "imcu_betten_plan_2030": 4
+ },
+ "kh076": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 0,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 0,
+  "rsg": "RSG-St 2030 Anhang, RSG-Planungsmatrix; ZAE Plan 2030: keine; ICU 3 / IMCU 0 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 0 / IMCU 0; Stroke Unit: 0 Betten IST 2022 → 0 Plan 2030",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K643.2 Standort Bad Aussee': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.verwaltung.steiermark.at/cms/dokumente/12567975_135846567/ea78141b/RSG-St_2030_Anhang.pdf – RSG-St 2030 Anhang, RSG-Planungsmatrix, KA-Blatt K643.2 (PDF-Seite 47): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)"
+  ],
+  "notiz": "",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 0,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 0,
+  "icu_betten_ist": 3,
+  "imcu_betten_ist": 0,
+  "icu_betten_plan_2030": 0,
+  "imcu_betten_plan_2030": 0
+ },
+ "kh077": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 0,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 0,
+  "rsg": "RSG-St 2030 Anhang, RSG-Planungsmatrix; ZAE/Notaufnahme Plan 2030: 7/24 (2 ambBP); ICU 6 / IMCU 0 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 0 / IMCU 4; Stroke Unit: 0 Betten IST 2022 → 0 Plan 2030; Versorgungsstufen IST 2022: TR L, GH G, NEP DIA; Versorgungsstufen Plan 2030: TR L, NEP DIA",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K646 Schladming DIA KH': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.verwaltung.steiermark.at/cms/dokumente/12567975_135846567/ea78141b/RSG-St_2030_Anhang.pdf – RSG-St 2030 Anhang, RSG-Planungsmatrix, KA-Blatt K646 (PDF-Seite 48): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)"
+  ],
+  "notiz": "",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 0,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 0,
+  "icu_betten_ist": 6,
+  "imcu_betten_ist": 0,
+  "icu_betten_plan_2030": 0,
+  "imcu_betten_plan_2030": 4
+ },
+ "kh078": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 0,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": null,
+  "rsg": "RSG-St 2030 Anhang, RSG-Planungsmatrix; ZAE Plan 2030: keine; ICU 7 / IMCU 0 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 4 / IMCU 2; Stroke Unit: 0 Betten IST 2022 → 0 Plan 2030; Versorgungsstufen IST 2022: TR L, GH G; Versorgungsstufen Plan 2030: TR L, GH G",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K672.1 Standort Judenburg': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.verwaltung.steiermark.at/cms/dokumente/12567975_135846567/ea78141b/RSG-St_2030_Anhang.pdf – RSG-St 2030 Anhang, RSG-Planungsmatrix, KA-Blatt K672.1 (PDF-Seite 56): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)"
+  ],
+  "notiz": "RSG Stmk: SU-Feld Judenburg nur Platzhalter 'x' – keine SU-Betten ausgewiesen; SU des Murtals in Knittelfeld.",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 0,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": null,
+  "icu_betten_ist": 7,
+  "imcu_betten_ist": 0,
+  "icu_betten_plan_2030": 4,
+  "imcu_betten_plan_2030": 2
+ },
+ "kh079": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 1,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 4,
+  "rsg": "RSG-St 2030 Anhang, RSG-Planungsmatrix; ZAE Plan 2030: keine; ICU 5 / IMCU 2 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 5 / IMCU 3; Stroke Unit: 4 Betten IST 2022 → 4 Plan 2030",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K672.2 Standort Knittelfeld 4f': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.verwaltung.steiermark.at/cms/dokumente/12567975_135846567/ea78141b/RSG-St_2030_Anhang.pdf – RSG-St 2030 Anhang, RSG-Planungsmatrix, KA-Blatt K672.2 (PDF-Seite 57): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)",
+   "https://jasmin.goeg.at/3445/1/STROKE%20Register%20Bericht%202022_bf_.pdf – GÖG Stroke-Unit-Register 2022: Haus unter den 38 teilnehmenden Stroke Units"
+  ],
+  "notiz": "",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 1,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 4,
+  "icu_betten_ist": 5,
+  "imcu_betten_ist": 2,
+  "icu_betten_plan_2030": 5,
+  "imcu_betten_plan_2030": 3
+ },
+ "kh080": {
+  "cor": 0,
+  "ct": 0,
+  "mr": 1,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 0,
+  "rsg": "RSG-St 2030 Anhang, RSG-Planungsmatrix; ZAE Plan 2030: keine; ICU 0 / IMCU 4 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 0 / IMCU 3; Stroke Unit: 0 Betten IST 2022 → 0 Plan 2030",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K672.3 Standort Stolzalpe 7': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.verwaltung.steiermark.at/cms/dokumente/12567975_135846567/ea78141b/RSG-St_2030_Anhang.pdf – RSG-St 2030 Anhang, RSG-Planungsmatrix, KA-Blatt K672.3 (PDF-Seite 58): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)"
+  ],
+  "notiz": "",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 0,
+   "mr": 1,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 0,
+  "icu_betten_ist": 0,
+  "imcu_betten_ist": 4,
+  "icu_betten_plan_2030": 0,
+  "imcu_betten_plan_2030": 3
+ },
+ "kh081": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 0,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 0,
+  "rsg": "RSG-St 2030 Anhang, RSG-Planungsmatrix; ZAE Plan 2030: keine; ICU 4 / IMCU 2 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 2 / IMCU 4; Stroke Unit: 0 Betten IST 2022 → 0 Plan 2030",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K612.2 Standort Weiz': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.verwaltung.steiermark.at/cms/dokumente/12567975_135846567/ea78141b/RSG-St_2030_Anhang.pdf – RSG-St 2030 Anhang, RSG-Planungsmatrix, KA-Blatt K612.2 (PDF-Seite 35): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)"
+  ],
+  "notiz": "",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 0,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 0,
+  "icu_betten_ist": 4,
+  "imcu_betten_ist": 2,
+  "icu_betten_plan_2030": 2,
+  "imcu_betten_plan_2030": 4
+ },
+ "kh082": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 1,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 4,
+  "rsg": "RSG-St 2030 Anhang, RSG-Planungsmatrix; ZAE Plan 2030: keine; ICU 14 / IMCU 0 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 12 / IMCU 4; Stroke Unit: 4 Betten IST 2022 → 4 Plan 2030; Versorgungsstufen IST 2022: TR L, GH G, BRZ A; Versorgungsstufen Plan 2030: TR L, GH G, BRZ A",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K608.1 Standort Feldbach 4e': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.verwaltung.steiermark.at/cms/dokumente/12567975_135846567/ea78141b/RSG-St_2030_Anhang.pdf – RSG-St 2030 Anhang, RSG-Planungsmatrix, KA-Blatt K608.1 (PDF-Seite 29): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)",
+   "https://jasmin.goeg.at/3445/1/STROKE%20Register%20Bericht%202022_bf_.pdf – GÖG Stroke-Unit-Register 2022: Haus unter den 38 teilnehmenden Stroke Units"
+  ],
+  "notiz": "Zusätzlich Funktionsgeräte (Schockraum/OP/Therapieplanung, nicht Teil des GGP): CT 1",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 1,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "funktionsgeraete_ist": {
+   "ct": 1,
+   "mr": 0,
+   "str": 0,
+   "cor": 0
+  },
+  "stroke_unit_betten_plan_2030": 4,
+  "icu_betten_ist": 14,
+  "imcu_betten_ist": 0,
+  "icu_betten_plan_2030": 12,
+  "imcu_betten_plan_2030": 4
+ },
+ "kh083": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 0,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 0,
+  "rsg": "RSG-St 2030 Anhang, RSG-Planungsmatrix; ZAE Plan 2030: keine; ICU 6 / IMCU 0 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 0 / IMCU 4; Stroke Unit: 0 Betten IST 2022 → 0 Plan 2030; Versorgungsstufen IST 2022: ONK A; Versorgungsstufen Plan 2030: ONK A",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K608.2 Standort Fürstenfeld': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.verwaltung.steiermark.at/cms/dokumente/12567975_135846567/ea78141b/RSG-St_2030_Anhang.pdf – RSG-St 2030 Anhang, RSG-Planungsmatrix, KA-Blatt K608.2 (PDF-Seite 30): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)"
+  ],
+  "notiz": "",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 0,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 0,
+  "icu_betten_ist": 6,
+  "imcu_betten_ist": 0,
+  "icu_betten_plan_2030": 0,
+  "imcu_betten_plan_2030": 4
+ },
+ "kh084": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 1,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 0,
+  "rsg": "RSG-St 2030 Anhang, RSG-Planungsmatrix; ZAE Plan 2030: keine; ICU 6 / IMCU 2 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 2 / IMCU 4; Stroke Unit: 0 Betten IST 2022 → 0 Plan 2030; Versorgungsstufen IST 2022: GH G; Versorgungsstufen Plan 2030: GH G",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K608.3 Standort Hartberg 2a, 4d': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.verwaltung.steiermark.at/cms/dokumente/12567975_135846567/ea78141b/RSG-St_2030_Anhang.pdf – RSG-St 2030 Anhang, RSG-Planungsmatrix, KA-Blatt K608.3 (PDF-Seite 31): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)"
+  ],
+  "notiz": "",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 1,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 0,
+  "icu_betten_ist": 6,
+  "imcu_betten_ist": 2,
+  "icu_betten_plan_2030": 2,
+  "imcu_betten_plan_2030": 4
+ },
+ "kh085": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 0,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 0,
+  "rsg": "RSG-St 2030 Anhang, RSG-Planungsmatrix; ZAE Plan 2030: keine; ICU 6 / IMCU 3 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 5 / IMCU 3; Stroke Unit: 0 Betten IST 2022 → 0 Plan 2030; Versorgungsstufen IST 2022: GH G; Versorgungsstufen Plan 2030: GH G",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K654.3 Standort Deutschlandsberg 6': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.verwaltung.steiermark.at/cms/dokumente/12567975_135846567/ea78141b/RSG-St_2030_Anhang.pdf – RSG-St 2030 Anhang, RSG-Planungsmatrix, KA-Blatt K654.3 (PDF-Seite 53): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)"
+  ],
+  "notiz": "",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 0,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 0,
+  "icu_betten_ist": 6,
+  "imcu_betten_ist": 3,
+  "icu_betten_plan_2030": 5,
+  "imcu_betten_plan_2030": 3
+ },
+ "kh086": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 0,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 0,
+  "rsg": "RSG-St 2030 Anhang, RSG-Planungsmatrix; ZAE Plan 2030: keine; ICU 8 / IMCU 0 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 8 / IMCU 4; Stroke Unit: 0 Betten IST 2022 → 0 Plan 2030; Versorgungsstufen IST 2022: TR L, NEP DIA; Versorgungsstufen Plan 2030: TR L, NEP DIA",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K654.1 Standort Wagna 7': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.verwaltung.steiermark.at/cms/dokumente/12567975_135846567/ea78141b/RSG-St_2030_Anhang.pdf – RSG-St 2030 Anhang, RSG-Planungsmatrix, KA-Blatt K654.1 (PDF-Seite 51): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)"
+  ],
+  "notiz": "",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 1,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 0,
+  "icu_betten_ist": 8,
+  "imcu_betten_ist": 0,
+  "icu_betten_plan_2030": 8,
+  "imcu_betten_plan_2030": 4
+ },
+ "kh087": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 0,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 0,
+  "rsg": "RSG-St 2030 Anhang, RSG-Planungsmatrix; ZAE Plan 2030: keine; ICU 5 / IMCU 0 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 0 / IMCU 0; Stroke Unit: 0 Betten IST 2022 → 0 Plan 2030",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K654.2 Standort Bad Radkersburg': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.verwaltung.steiermark.at/cms/dokumente/12567975_135846567/ea78141b/RSG-St_2030_Anhang.pdf – RSG-St 2030 Anhang, RSG-Planungsmatrix, KA-Blatt K654.2 (PDF-Seite 52): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)"
+  ],
+  "notiz": "",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 0,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 0,
+  "icu_betten_ist": 5,
+  "imcu_betten_ist": 0,
+  "icu_betten_plan_2030": 0,
+  "imcu_betten_plan_2030": 0
+ },
+ "kh088": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 0,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 0,
+  "rsg": "RSG-St 2030 Anhang, RSG-Planungsmatrix; ZAE Plan 2030: keine; ICU 0 / IMCU 2 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 0 / IMCU 3; Stroke Unit: 0 Betten IST 2022 → 0 Plan 2030",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K652 Vorau Marien KH': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.verwaltung.steiermark.at/cms/dokumente/12567975_135846567/ea78141b/RSG-St_2030_Anhang.pdf – RSG-St 2030 Anhang, RSG-Planungsmatrix, KA-Blatt K652 (PDF-Seite 49): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)"
+  ],
+  "notiz": "",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 0,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 0,
+  "icu_betten_ist": 0,
+  "imcu_betten_ist": 2,
+  "icu_betten_plan_2030": 0,
+  "imcu_betten_plan_2030": 3
+ },
+ "kh089": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 1,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 0,
+  "rsg": "RSG Bgld 2030, RSG-Planungsmatrix; ZAE/Notaufnahme Plan 2030: 7/24; ICU 6 / IMCU 4 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 4 / IMCU 6; Stroke Unit: 0 Betten IST 2022 → 0 Plan 2030; Versorgungsstufen IST 2022: ONK A, BRZ A; Versorgungsstufen Plan 2030: ONK A, BRZ Z",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K104 Güssing LKH 4': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.burgenland.at/fileadmin/user_upload/Downloads/Gesundheit_und_Soziales/RSG_Bgld_2030.pdf – RSG Bgld 2030, RSG-Planungsmatrix, KA-Blatt K104 (PDF-Seite 56): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)"
+  ],
+  "notiz": "",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 1,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 0,
+  "icu_betten_ist": 6,
+  "imcu_betten_ist": 4,
+  "icu_betten_plan_2030": 4,
+  "imcu_betten_plan_2030": 6
+ },
+ "kh090": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 0,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 0,
+  "rsg": "RSG Bgld 2030, RSG-Planungsmatrix; ZAE/Notaufnahme Plan 2030: 7/24 (3 ambBP); ICU 6 / IMCU 6 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 4 / IMCU 8; Stroke Unit: 0 Betten IST 2022 → 0 Plan 2030; Versorgungsstufen IST 2022: GH G, ONK A; Versorgungsstufen Plan 2030: GH G, ONK A, BRZ Z",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K106 Oberpullendorf LKH 4': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.burgenland.at/fileadmin/user_upload/Downloads/Gesundheit_und_Soziales/RSG_Bgld_2030.pdf – RSG Bgld 2030, RSG-Planungsmatrix, KA-Blatt K106 (PDF-Seite 54): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)"
+  ],
+  "notiz": "",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 1,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 0,
+  "icu_betten_ist": 6,
+  "imcu_betten_ist": 6,
+  "icu_betten_plan_2030": 4,
+  "imcu_betten_plan_2030": 8
+ },
+ "kh091": {
+  "cor": null,
+  "ct": null,
+  "mr": null,
+  "spect": null,
+  "str": null,
+  "pet": null,
+  "stroke_unit_betten": null,
+  "rsg": "",
+  "quellen": [],
+  "notiz": "Weder im ÖSG-Großgeräteplan noch mit eigenem KA-Blatt im RSG Bgld 2030 geführt; keine KA-Nummer zugeordnet – keine belegten Werte."
+ },
+ "kh092": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 0,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 0,
+  "rsg": "RSG Wien 2030, Anlage 2 Planungsmatrizen stationär; ZAE/Notaufnahme Plan 2030: ZAE; ICU 6 / IMCU 4 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 7 / IMCU 6; Stroke Unit: 0 Betten IST 2022 → 0 Plan 2030; Versorgungsstufen Plan 2030: KIJU 4",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K904 BSR KH': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.wien.gv.at/pdf/ma24/rsg-wien2030-anlage-2-planungsmatrizen.pdf – RSG Wien 2030, Anlage 2 Planungsmatrizen stationär, KA-Blatt K904 (PDF-Seite 12): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)"
+  ],
+  "notiz": "",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 1,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 0,
+  "icu_betten_ist": 6,
+  "imcu_betten_ist": 4,
+  "icu_betten_plan_2030": 7,
+  "imcu_betten_plan_2030": 6
+ },
+ "kh093": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 0,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 0,
+  "rsg": "RSG Wien 2030, Anlage 2 Planungsmatrizen stationär; ICU 0 / IMCU 4 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 0 / IMCU 4; Stroke Unit: 0 Betten IST 2022 → 0 Plan 2030; Versorgungsstufen Plan 2030: KIJU 4",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K914 Herz-Jesu KH 7': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.wien.gv.at/pdf/ma24/rsg-wien2030-anlage-2-planungsmatrizen.pdf – RSG Wien 2030, Anlage 2 Planungsmatrizen stationär, KA-Blatt K914 (PDF-Seite 14): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)"
+  ],
+  "notiz": "",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 1,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 0,
+  "icu_betten_ist": 0,
+  "imcu_betten_ist": 4,
+  "icu_betten_plan_2030": 0,
+  "imcu_betten_plan_2030": 4
+ },
+ "kh094": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 0,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 0,
+  "rsg": "RSG Wien 2030, Anlage 2 Planungsmatrizen stationär; ICU 5 / IMCU 13 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 12 / IMCU 10; Stroke Unit: 0 Betten IST 2022 → 0 Plan 2030; Versorgungsstufen Plan 2030: KIJU 2",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K919 St. Josef KH 7': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.wien.gv.at/pdf/ma24/rsg-wien2030-anlage-2-planungsmatrizen.pdf – RSG Wien 2030, Anlage 2 Planungsmatrizen stationär, KA-Blatt K919 (PDF-Seite 25): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)"
+  ],
+  "notiz": "",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 1,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 0,
+  "icu_betten_ist": 5,
+  "imcu_betten_ist": 13,
+  "icu_betten_plan_2030": 12,
+  "imcu_betten_plan_2030": 10
+ },
+ "kh095": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 0,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 0,
+  "rsg": "RSG Wien 2030, Anlage 2 Planungsmatrizen stationär; ICU 0 / IMCU 0 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 0 / IMCU 0; Stroke Unit: 0 Betten IST 2022 → 0 Plan 2030; Versorgungsstufen Plan 2030: KIJU 4",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K915.y vorm. St. Elisabeth KH': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.wien.gv.at/pdf/ma24/rsg-wien2030-anlage-2-planungsmatrizen.pdf – RSG Wien 2030, Anlage 2 Planungsmatrizen stationär, KA-Blatt K915.2 (PDF-Seite 16): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)"
+  ],
+  "notiz": "Franziskusspital: GGP 'vorm. St. Elisabeth KH' = Landstraße (K915.2), 'vorm. Hartmannspital' = Margareten (K915.1); Margareten CT/MR nur als Kooperation mit extramuralem Anbieter (GGP 'K').",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 0,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 0,
+  "icu_betten_ist": 0,
+  "imcu_betten_ist": 0,
+  "icu_betten_plan_2030": 0,
+  "imcu_betten_plan_2030": 0
+ },
+ "kh096": {
+  "cor": 0,
+  "ct": 0,
+  "mr": 0,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 0,
+  "rsg": "RSG Wien 2030, Anlage 2 Planungsmatrizen stationär; ICU 6 / IMCU 0 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 6 / IMCU 0; Stroke Unit: 0 Betten IST 2022 → 0 Plan 2030; Versorgungsstufen Plan 2030: KIJU 4",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K915.x vorm. Hartmannspital 2': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.wien.gv.at/pdf/ma24/rsg-wien2030-anlage-2-planungsmatrizen.pdf – RSG Wien 2030, Anlage 2 Planungsmatrizen stationär, KA-Blatt K915.1 (PDF-Seite 15): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)"
+  ],
+  "notiz": "GGP CT: 'K' = Kooperationsstandort (Gerät eines Kooperationspartners, kein eigenes). GGP MR: 'K' = Kooperationsstandort (Gerät eines Kooperationspartners, kein eigenes). Franziskusspital: GGP 'vorm. St. Elisabeth KH' = Landstraße (K915.2), 'vorm. Hartmannspital' = Margareten (K915.1); Margareten CT/MR nur als Kooperation mit extramuralem Anbieter (GGP 'K').",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 0,
+   "mr": 0,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 0,
+  "icu_betten_ist": 6,
+  "imcu_betten_ist": 0,
+  "icu_betten_plan_2030": 6,
+  "imcu_betten_plan_2030": 0
+ },
+ "kh097": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 1,
+  "spect": 1,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 0,
+  "rsg": "RSG Wien 2030, Anlage 2 Planungsmatrizen stationär; ZAE/Notaufnahme Plan 2030: ZAE; ICU 0 / IMCU 6 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 0 / IMCU 4; Stroke Unit: 0 Betten IST 2022 → 0 Plan 2030; Versorgungsstufen Plan 2030: KIJU 4",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K908 Evangelisches KH 6': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.wien.gv.at/pdf/ma24/rsg-wien2030-anlage-2-planungsmatrizen.pdf – RSG Wien 2030, Anlage 2 Planungsmatrizen stationär, KA-Blatt K908 (PDF-Seite 22): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)"
+  ],
+  "notiz": "",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 1,
+   "spect": 1,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 0,
+  "icu_betten_ist": 0,
+  "imcu_betten_ist": 6,
+  "icu_betten_plan_2030": 0,
+  "imcu_betten_plan_2030": 4
+ },
+ "kh098": {
+  "cor": null,
+  "ct": null,
+  "mr": null,
+  "spect": null,
+  "str": null,
+  "pet": null,
+  "stroke_unit_betten": null,
+  "rsg": "",
+  "quellen": [],
+  "notiz": "Standort Rosenhügel ist Teil von K916 Klinik Hietzing; GGP/RSG weisen ihn nicht getrennt aus – Werte bei kh028."
+ },
+ "kh099": {
+  "cor": 0,
+  "ct": 0,
+  "mr": 0,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 0,
+  "rsg": "RSG NÖ 2030 (beschl. 15.12.2025), Planungsmatrix; ZAE Plan 2030: keine; ICU 0 / IMCU 0 Betten (IST 2023, tatsächl.) → Plan 2030 ICU 0 / IMCU 0; Stroke Unit: 0 Betten IST 2023 → 0 Plan 2030; Versorgungsstufen Plan 2030: KIJU 4",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025): Standort ohne Großgeräte-Eintrag",
+   "https://noe.gv.at/noe/Gesundheitseinrichtungen/RSG_NOe_2030_s.pdf – RSG NÖ 2030 (beschl. 15.12.2025), Planungsmatrix, KA-Blatt K380.3 (PDF-Seite 79): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2023 / Plan 2030)"
+  ],
+  "notiz": "GGP: NÖ K380 Baden-Mödling: im GGP nur Standorte Baden und Mödling mit Geräten, Hinterbrühl ohne Eintrag → 0 Großgeräte am Standort.",
+  "stroke_unit_betten_plan_2030": 0,
+  "icu_betten_ist": 0,
+  "imcu_betten_ist": 0,
+  "icu_betten_plan_2030": 0,
+  "imcu_betten_plan_2030": 0
+ },
+ "kh100": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 0,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": null,
+  "rsg": "",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K421 Linz DIA KH': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)"
+  ],
+  "notiz": "Nicht-Fonds-KA (GGP-Rubrik 'sonstige Akut-KA'). Kein KA-Blatt in der RSG-Planungsmatrix (Nicht-Fonds-KA) – keine RSG-Werte (Stroke Unit/Intensiv/Versorgungsstufen) belegt.",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 0,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  }
+ },
+ "kh101": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 0,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": 0,
+  "rsg": "RSG OÖ 2030 (Stand 10/2025), KA-Planungsmatrix; ZAE Plan 2030: keine; ICU 0 / IMCU 0 Betten (IST 2022, tatsächl.) → Plan 2030 ICU 0 / IMCU 0; Stroke Unit: 0 Betten IST 2022 → 0 Plan 2030",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K429 Sierning BSRK SKH': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)",
+   "https://www.land-oberoesterreich.gv.at/Mediendateien/Formulare/Dokumente%20SGD%20Abt_Ges/Ges_Regionaler%20Strukturplan%20Gesundheit%20Ober%c3%b6sterreich%20(RSG%20O.pdf – RSG OÖ 2030 (Stand 10/2025), KA-Planungsmatrix, KA-Blatt K429 (PDF-Seite 117): ZAE, ICU/IMCU-Betten, Versorgungsstufen, Stroke-Unit-Betten (IST 2022 / Plan 2030)"
+  ],
+  "notiz": "",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 1,
+   "mr": 0,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  },
+  "stroke_unit_betten_plan_2030": 0,
+  "icu_betten_ist": 0,
+  "imcu_betten_ist": 0,
+  "icu_betten_plan_2030": 0,
+  "imcu_betten_plan_2030": 0
+ },
+ "kh102": {
+  "cor": 1,
+  "ct": 1,
+  "mr": 1,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": null,
+  "rsg": "",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K674 Graz-Ragnitz PKL': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)"
+  ],
+  "notiz": "Nicht-Fonds-KA (GGP-Rubrik 'sonstige Akut-KA'). Kein KA-Blatt in der RSG-Planungsmatrix (Nicht-Fonds-KA) – keine RSG-Werte (Stroke Unit/Intensiv/Versorgungsstufen) belegt. GGP: Ist-Geräte CT 1, MR 1, COR 1 ohne Planungsvorgabe (GGP 0) = nicht plankonform/ohne Kassenvertrag.",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 0,
+   "mr": 0,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  }
+ },
+ "kh103": {
+  "cor": 0,
+  "ct": 1,
+  "mr": 0,
+  "spect": 0,
+  "str": 0,
+  "pet": 0,
+  "stroke_unit_betten": null,
+  "rsg": "",
+  "quellen": [
+   "https://goeg.at/sites/goeg.at/files/inline-files/%C3%96SG%202023%20Gro%C3%9Fger%C3%A4teplan_Anhang%2010_Stand%2010.10.2025.xlsx – ÖSG 2023 Großgeräteplan (Anhang 10, Stand 10.10.2025), Zeile 'K623 Graz Leech PKL': GG = Ist-Stand 31.12.2023 (cor/ct/mr/spect/str/pet), GGP = Plan (ggp_plan_2030)"
+  ],
+  "notiz": "Nicht-Fonds-KA (GGP-Rubrik 'sonstige Akut-KA'). Kein KA-Blatt in der RSG-Planungsmatrix (Nicht-Fonds-KA) – keine RSG-Werte (Stroke Unit/Intensiv/Versorgungsstufen) belegt. GGP: CT Ist 1, Plan 0 (nicht plankonform).",
+  "ggp_plan_2030": {
+   "cor": 0,
+   "ct": 0,
+   "mr": 0,
+   "spect": 0,
+   "str": 0,
+   "pet": 0
+  }
+ },
+ "kh104": {
+  "cor": null,
+  "ct": null,
+  "mr": null,
+  "spect": null,
+  "str": null,
+  "pet": null,
+  "stroke_unit_betten": null,
+  "rsg": "",
+  "quellen": [],
+  "notiz": "Nicht-Fonds-/Sonder-KA ohne Eintrag in der GGP-Rubrik 'sonstige Akut-KA' (Steiermark) und ohne KA-Blatt im RSG-St 2030 – keine belegten Werte (Geräte vor Ort ggf. durch extramurales Institut)."
+ },
+ "kh105": {
+  "cor": null,
+  "ct": null,
+  "mr": null,
+  "spect": null,
+  "str": null,
+  "pet": null,
+  "stroke_unit_betten": null,
+  "rsg": "",
+  "quellen": [],
+  "notiz": "Nicht-Fonds-/Sonder-KA ohne Eintrag in der GGP-Rubrik 'sonstige Akut-KA' (Steiermark) und ohne KA-Blatt im RSG-St 2030 – keine belegten Werte (Geräte vor Ort ggf. durch extramurales Institut)."
+ },
+ "kh106": {
+  "cor": null,
+  "ct": null,
+  "mr": null,
+  "spect": null,
+  "str": null,
+  "pet": null,
+  "stroke_unit_betten": null,
+  "rsg": "",
+  "quellen": [],
+  "notiz": "Nicht-Fonds-/Sonder-KA ohne Eintrag in der GGP-Rubrik 'sonstige Akut-KA' (Steiermark) und ohne KA-Blatt im RSG-St 2030 – keine belegten Werte (Geräte vor Ort ggf. durch extramurales Institut)."
+ },
+ "kh107": {
+  "cor": null,
+  "ct": null,
+  "mr": null,
+  "spect": null,
+  "str": null,
+  "pet": null,
+  "stroke_unit_betten": null,
+  "rsg": "",
+  "quellen": [],
+  "notiz": "Nicht-Fonds-/Sonder-KA ohne Eintrag in der GGP-Rubrik 'sonstige Akut-KA' (Steiermark) und ohne KA-Blatt im RSG-St 2030 – keine belegten Werte (Geräte vor Ort ggf. durch extramurales Institut)."
+ },
+ "_meta": {
+  "erstellt": "2026-10-17",
+  "legende": {
+   "cor/ct/mr/spect/str/pet": "Ist-Stand Großgeräte 31.12.2023 laut ÖSG 2023 GGP (Spalte GG); ggp_plan_2030 = Planungsvorgabe (Spalte GGP). spect = ECT/SPECT, str = Linearbeschleuniger, cor = Herzkatheterarbeitsplätze.",
+   "stroke_unit_betten": "tatsächliche SU-Betten IST (NÖ 2023, sonst 2022) laut RSG-Planungsmatrix; stroke_unit_betten_plan_2030 = Planbetten.",
+   "KAR": "Kardiologie endovaskulär (Herzkatheter-Versorgung): Z = Referenzzentrum (KARZ), S = Schwerpunkt (KARS)",
+   "HCH": "Herzchirurgie (Z)",
+   "TR": "Traumaversorgung: Z = Traumazentrum, S = Schwerpunkt, L = lokale Traumaversorgung; n.e. = nicht erhoben",
+   "NCHa": "Neurochirurgie akut",
+   "NEU-SZ": "neurologisches Spezialzentrum (SZ-ENDO = endovaskuläre Neurointervention/Thrombektomie, SZ-EPI Epilepsie, SZ-EPMS Bewegungsstörungen); Stmk/OÖ: SZ bzw. Z",
+   "GH": "Geburtshilfe: Z = Referenzzentrum, S/A bzw. S/B = Perinatal-Schwerpunkt Typ A/B, G = Grundversorgung",
+   "KIJU": "Versorgungsstufe Kinder- und Jugendheilkunde 1–4 (1 = höchste) bzw. Z",
+   "ZAE": "zentrale ambulante Erstversorgung (Notaufnahme-Ambulanz) – Betriebsform: 7/24 rund um die Uhr, AA Akutambulanz, ZAE = vorhanden; ambBP = ambulante Betreuungsplätze",
+   "ICU/IMCU": "Intensivbehandlungs-/Intensivüberwachungsbetten gesamt (tatsächliche Betten IST bzw. Planbetten 2030) laut RSG"
+  }
+ }
+}
