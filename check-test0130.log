@@ -13,7 +13,7 @@ To address all issues (including breaking changes), run:
 Run `npm audit` for details.
 ### npm run build
 
-> leitwerk@0.28.1 build
+> leitwerk@0.29.0 build
 > tsc && vite build
 
 [36mvite v6.4.4 [32mbuilding for production...[36m[39m
@@ -36,7 +36,7 @@ computing gzip size...
 - Using dynamic import() to code-split the application
 - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
 - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.[39m
-[32m✓ built in 5.78s[39m
+[32m✓ built in 4.66s[39m
 ### npx tauri icon app-icon.png
         Appx Creating StoreLogo.png
         Appx Creating Square30x30Logo.png
@@ -115,8 +115,8 @@ computing gzip size...
 [1m[92m    Checking[0m mio v1.2.4
 [1m[92m   Compiling[0m parking_lot_core v0.9.12
 [1m[92m    Checking[0m gobject-sys v0.18.0
-[1m[92m   Compiling[0m parking_lot v0.12.5
 [1m[92m   Compiling[0m getrandom v0.4.3
+[1m[92m   Compiling[0m parking_lot v0.12.5
 [1m[92m    Checking[0m cairo-sys-rs v0.18.2
 [1m[92m   Compiling[0m uuid v1.28.0
 [1m[92m    Checking[0m tokio v1.53.3
@@ -141,13 +141,13 @@ computing gzip size...
 [1m[92m   Compiling[0m clang-sys v1.9.1
 [1m[92m    Checking[0m soup3-sys v0.5.0
 [1m[92m    Checking[0m javascriptcore-rs-sys v1.1.1
-[1m[92m    Checking[0m getrandom v0.2.17
 [1m[92m    Checking[0m x11 v2.21.0
-[1m[92m    Checking[0m gdkx11-sys v0.18.2
-[1m[92m    Checking[0m ring v0.17.14
 [1m[92m    Checking[0m gio v0.18.4
 [1m[92m    Checking[0m cairo-rs v0.18.5
 [1m[92m    Checking[0m atk v0.18.2
+[1m[92m    Checking[0m getrandom v0.2.17
+[1m[92m    Checking[0m ring v0.17.14
+[1m[92m    Checking[0m gdkx11-sys v0.18.2
 [1m[92m    Checking[0m javascriptcore-rs v1.1.2
 [1m[92m    Checking[0m webkit2gtk-sys v2.0.2
 [1m[92m    Checking[0m rustls-webpki v0.103.15
@@ -159,21 +159,22 @@ computing gzip size...
 [1m[92m    Checking[0m dbus v0.9.12
 [1m[92m    Checking[0m dlopen2 v0.8.2
 [1m[92m   Compiling[0m tauri-codegen v2.7.3
+[1m[92m   Compiling[0m bindgen v0.71.1
 [1m[92m    Checking[0m pango v0.18.3
 [1m[92m    Checking[0m gdk-pixbuf v0.18.5
-[1m[92m    Checking[0m soup3 v0.5.0
-[1m[92m    Checking[0m gdk v0.18.2
 [1m[92m   Compiling[0m tauri v2.12.4
+[1m[92m    Checking[0m gdk v0.18.2
+[1m[92m    Checking[0m soup3 v0.5.0
 [1m[92m   Compiling[0m tauri-plugin-fs v2.7.1
-[1m[92m   Compiling[0m bindgen v0.71.1
 [1m[92m    Checking[0m hyper v1.12.0
 [1m[92m   Compiling[0m dirs-sys v0.4.1
 [1m[92m   Compiling[0m filetime v0.2.29
+[1m[92m    Checking[0m gtk v0.18.2
+[1m[92m    Checking[0m gdkx11 v0.18.2
 [1m[92m   Compiling[0m socks v0.3.4
 [1m[92m   Compiling[0m ureq v2.12.1
 [1m[92m    Checking[0m hyper-util v0.1.21
-[1m[92m    Checking[0m gtk v0.18.2
-[1m[92m    Checking[0m gdkx11 v0.18.2
+[1m[92m   Compiling[0m whisper-rs-sys v0.13.1
 [1m[92m   Compiling[0m tar v0.4.46
 [1m[92m   Compiling[0m dirs v5.0.1
 [1m[92m   Compiling[0m tauri-macros v2.7.3
@@ -184,20 +185,19 @@ computing gzip size...
 [1m[92m    Checking[0m getrandom v0.3.4
 [1m[92m    Checking[0m tower-http v0.6.11
 [1m[92m    Checking[0m hyper-rustls v0.27.10
-[1m[92m   Compiling[0m tauri-plugin-dialog v2.8.3
 [1m[92m   Compiling[0m tauri-plugin-updater v2.14.0
+[1m[92m   Compiling[0m tauri-plugin-dialog v2.8.3
 [1m[92m    Checking[0m tokio-util v0.7.20
 [1m[92m    Checking[0m rustls-platform-verifier v0.7.1
 [1m[92m    Checking[0m alsa-sys v0.3.1
 [1m[92m    Checking[0m tempfile v3.27.0
-[1m[92m   Compiling[0m whisper-rs-sys v0.13.1
 [1m[92m    Checking[0m alsa v0.9.1
 [1m[92m    Checking[0m reqwest v0.13.5
-[1m[92m   Compiling[0m leitwerk v0.28.1 (/home/runner/work/leitwerk/leitwerk/src-tauri)
+[1m[92m   Compiling[0m leitwerk v0.29.0 (/home/runner/work/leitwerk/leitwerk/src-tauri)
 [1m[92m    Checking[0m rfd v0.16.0
 [1m[92m    Checking[0m cpal v0.15.3
-[1m[92m    Checking[0m reqwest v0.12.28
 [1m[92m   Compiling[0m sherpa-rs-sys v0.6.8
+[1m[92m    Checking[0m reqwest v0.12.28
 [1m[92m    Checking[0m webkit2gtk v2.0.2
 [1m[92m    Checking[0m tao v0.37.1
 [1m[92m    Checking[0m muda v0.20.0
@@ -215,7 +215,7 @@ computing gzip size...
     [1m[94m= [0m[1mnote[0m: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
 
 [1m[33mwarning[0m: `leitwerk` (lib) generated 1 warning
-[1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 1m 08s
+[1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 56.04s
 ### python3 tools/build_default_data.py
 data/default/dienststellen.csv: 851 Zeilen
 data/default/fahrzeuge.csv: 142 Zeilen
