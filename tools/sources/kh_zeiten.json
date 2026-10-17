@@ -4562,5 +4562,217 @@
    "https://marienkrankenhaus.at/abteilungen-ambulanzen/ueberwachungsstation-imcu/ – IMCU 3 Betten"
   ],
   "notiz": "AUFFÄLLIG: chirurgische Notfallambulanz nur Mo 08:00 – Fr 24:00 (Wochenende keine Chirurgie); amb_unfall nicht in einrichtungen. intensiv = IMCU 3 Betten (keine echte ICU)."
+ },
+ "kh109": {
+  "zeiten": {
+   "amb_pvz": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5
+     ],
+     "von": "07:00",
+     "bis": "13:00"
+    },
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5
+     ],
+     "von": "14:00",
+     "bis": "19:00"
+    }
+   ]
+  }
+ },
+ "kh110": {
+  "zeiten": {
+   "amb_pvz": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5
+     ],
+     "von": "07:00",
+     "bis": "19:00"
+    }
+   ],
+   "amb_pvz_unfall": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5
+     ],
+     "von": "07:00",
+     "bis": "19:00"
+    }
+   ]
+  }
+ },
+ "kh111": {
+  "zeiten": {
+   "amb_pvz": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5
+     ],
+     "von": "07:00",
+     "bis": "19:00"
+    }
+   ],
+   "amb_pvz_unfall": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5
+     ],
+     "von": "07:00",
+     "bis": "19:00"
+    }
+   ]
+  }
+ },
+ "kh112": {
+  "zeiten": {
+   "amb_pvz": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5
+     ],
+     "von": "07:00",
+     "bis": "19:00"
+    }
+   ],
+   "amb_pvz_unfall": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5
+     ],
+     "von": "07:00",
+     "bis": "19:00"
+    }
+   ]
+  }
+ },
+ "kh113": {
+  "zeiten": {
+   "amb_pvz": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5
+     ],
+     "von": "08:00",
+     "bis": "13:00"
+    },
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5
+     ],
+     "von": "14:00",
+     "bis": "19:00"
+    }
+   ],
+   "amb_pvz_unfall": [
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5
+     ],
+     "von": "08:00",
+     "bis": "13:00"
+    },
+    {
+     "tage": [
+      1,
+      2,
+      3,
+      4,
+      5
+     ],
+     "von": "14:00",
+     "bis": "19:00"
+    }
+   ]
+  }
+ },
+ "kh114": {
+  "zeiten": {
+   "amb_pvz": [
+    {
+     "tage": [
+      1
+     ],
+     "von": "08:00",
+     "bis": "16:00"
+    },
+    {
+     "tage": [
+      2,
+      3,
+      4,
+      5
+     ],
+     "von": "08:00",
+     "bis": "20:00"
+    }
+   ],
+   "amb_pvz_unfall": [
+    {
+     "tage": [
+      1
+     ],
+     "von": "08:00",
+     "bis": "16:00"
+    },
+    {
+     "tage": [
+      2,
+      3,
+      4,
+      5
+     ],
+     "von": "08:00",
+     "bis": "20:00"
+    }
+   ]
+  }
  }
 }

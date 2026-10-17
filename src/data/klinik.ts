@@ -87,7 +87,7 @@ export function akutMoeglich(einrichtungen: string[]): AkutAbteilung[] {
 }
 
 /** Diese Akut-Abteilungen erreicht die Rettung direkt (eigene Zeiten in den Einrichtungen), ohne Notaufnahme */
-const DIREKT = new Set(["ak_primaerversorgung", "ak_herzkatheter", "ak_stroke_unit", "ak_thrombektomie", "ak_schockraum", "ak_druckkammer", "ak_cardiac_arrest_center", "ak_kreisssaal", "ak_angiographie", "ak_ct", "ak_mrt", "ak_dialyse"]);
+const DIREKT = new Set(["ak_primaerversorgung", "ak_primaerversorgung_unfall", "ak_herzkatheter", "ak_stroke_unit", "ak_thrombektomie", "ak_schockraum", "ak_druckkammer", "ak_cardiac_arrest_center", "ak_kreisssaal", "ak_angiographie", "ak_ct", "ak_mrt", "ak_dialyse"]);
 const TRAUMA_AK = new Set(["ak_unfallchirurgie", "ak_chirurgische_intensiv", "ak_neurochirurgie", "ak_plastische_chirurgie", "ak_thoraxchirurgie", "ak_wirbelsaeulenchirurgie", "ak_mkg", "ak_verbrennungszentrum", "ak_allgemeinchirurgie", "ak_gefaesschirurgie"]);
 const KINDER_AK = new Set(["ak_kinder_jugendheilkunde", "ak_kinder_intensiv", "ak_neonatologie", "ak_kinderchirurgie"]);
 const PSYCH_AK = new Set(["ak_psychiatrie", "ak_kinder_jugend_psychiatrie", "ak_sucht_entzug"]);

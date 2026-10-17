@@ -1,5 +1,18 @@
 # Änderungen
 
+## 0.28.0 – Fenster „Akutversorgung“ und Primärversorgungszentren
+**Akutversorgung**
+- Neues Fenster „Akutversorgung“ (auch als Ansicht im KH-Status umschaltbar): je Haus SRT, SRI, PCI, CT, Endoskopie, Stroke, Notaufnahme, Unfall, Kinder und Kreißsaal – wie die Übersicht der Leitstelle
+- Grün = verfügbar, rot = belegt, grau = geschlossen, leer = gibt es dort nicht. Schockräume mit einem Zeichen je Raum (St. Pölten: 2 × SRI)
+
+**Primärversorgungszentren (PVZ)**
+- Neu: PVZ Böheimkirchen, St. Pölten, St. Pölten Nord, Tullnerfeld, Wiener Neustadt und Wienerwald – Adressen und Öffnungszeiten von ihren Websites
+- Ein PVZ ist keine Notaufnahme: Es nimmt nur unter der Woche zu den Öffnungszeiten Patienten, die sonst nur einen Hausarzt bräuchten (neue Verdachtsdiagnosen „Hausärztlich versorgbar“ und „Bagatellverletzung“, nur bei grün gesichteten Erwachsenen). Kleine Verletzungen nicht in Böheimkirchen
+- Ist kein PVZ in der Nähe (bis 25 km) oder offen, fährt die Besatzung ins Krankenhaus
+
+**Daten**
+- Zwettl hat eine Notaufnahme (laut Übersicht Akutversorgung)
+
 ## 0.27.2 – NÖ-Krankenhäuser nach der Akutversorgungs-Übersicht von Notruf NÖ
 - Schockräume je Haus wie in der Übersicht: Trauma (SRT), internistisch (SRI) oder beides in einem Raum. St. Pölten 2 internistisch + 1 Trauma; nur Trauma: Korneuburg; nur internistisch: Melk, Mödling, Neunkirchen, Stockerau, Waidhofen/Thaya
 - Kein Schockraum mehr in Hainburg und Klosterneuburg

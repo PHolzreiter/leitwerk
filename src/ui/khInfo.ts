@@ -195,7 +195,7 @@ const AKV_SPALTEN: { n: string; titel: string; rs?: Ressource[]; einr?: string; 
   { n: "END", titel: "Endoskopie", einr: "fb_endoskopie" },
   { n: "STROKE", titel: "Stroke Unit", rs: ["stroke_unit"] },
   { n: "NFA", titel: "Notaufnahme", rs: ["notaufnahme"], ersatz: "amb_pvz", trenn: true },
-  { n: "UNF", titel: "Unfallaufnahme", rs: ["unfall"] },
+  { n: "UNF", titel: "Unfallaufnahme", rs: ["unfall"], ersatz: "amb_pvz_unfall" },
   { n: "KIND", titel: "Kindernotaufnahme", rs: ["kindernotaufnahme"], trenn: true },
   { n: "KRS", titel: "Kreißsaal", rs: ["kreisssaal"] },
 ];
@@ -214,7 +214,7 @@ function akvZelle(h: Hospital, s: (typeof AKV_SPALTEN)[number], t: number): stri
   const r = (s.rs ?? []).find((x) => plaetze(h, x) > 0);
   if (!r && s.ersatz && (h.einrichtungen ?? []).includes(s.ersatz)) {
     const z: AkvZustand = offen(h, s.ersatz, t) ? "ok" : "zu";
-    return akvFeld([z], `Primärversorgung (keine vollwertige Notaufnahme): ${AKV_TEXT[z]}`);
+    return akvFeld([z], `Primärversorgungszentrum (keine vollwertige ${s.n === "NFA" ? "Notaufnahme" : "Unfallaufnahme"}): ${AKV_TEXT[z]}`);
   }
   if (!r) return `<span class="akv-f leer"></span>`;
   const st = platzStatus(h, r, t);

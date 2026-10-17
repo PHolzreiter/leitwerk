@@ -247,6 +247,11 @@
    "name": "Primärversorgung (PVZ) – Akutbehandlung zu Ordinationszeiten, keine Krankenhausaufnahme"
   },
   {
+   "id": "amb_pvz_unfall",
+   "typ": "ambulanz",
+   "name": "Primärversorgung (PVZ) – Erstversorgung kleiner Verletzungen"
+  },
+  {
    "id": "amb_unfall",
    "typ": "ambulanz",
    "name": "Unfallambulanz"
@@ -755,6 +760,15 @@
    ]
   },
   {
+   "id": "ak_primaerversorgung_unfall",
+   "name": "Primärversorgung (PVZ) – kleine Verletzungen",
+   "voraussetzung": [
+    [
+     "amb_pvz_unfall"
+    ]
+   ]
+  },
+  {
    "id": "ak_nuklearmedizin",
    "name": "Nuklearmedizin",
    "voraussetzung": [
@@ -1172,7 +1186,7 @@
    "name": "Bagatellverletzung (kleine Wunde, Prellung)",
    "optionen": [
     [
-     "ak_primaerversorgung"
+     "ak_primaerversorgung_unfall"
     ]
    ],
    "zeitkritisch": false,

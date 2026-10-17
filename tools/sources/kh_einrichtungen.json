@@ -905,6 +905,8 @@
    "Übersicht Akutversorgung Notruf NÖ (Angabe Paul 10/2026)",
    "Übersicht Akutversorgung Notruf NÖ (Angabe Paul 10/2026)",
    "Angabe Paul: alle NÖ Landes-/Universitätskliniken mit Unfallchirurgie oder Akut-Notaufnahme haben einen Schockraum",
+   "Übersicht Akutversorgung Notruf NÖ (Angabe Paul 10/2026)",
+   "Angabe Paul: alle NÖ Landes-/Universitätskliniken mit Unfallchirurgie oder Akut-Notaufnahme haben einen Schockraum",
    "Übersicht Akutversorgung Notruf NÖ (Angabe Paul 10/2026)"
   ],
   "notiz": "Unfallchirurgie als Department (Teil der Abteilung Orthopädie/Traumatologie LK Baden-Mödling); komplexe Verletzungen nach Baden-Mödling. Chirurgische Ambulanz 24h für Notfälle, Schwerverletzte werden dort erstversorgt (keine eigene Unfallambulanz benannt). Psychiatrie nur Terminambulanz + Tagesklinik, keine Station. Kein MRT. Onkologische Ambulanz vorhanden (Chemotherapie nicht ausdrücklich genannt)."
@@ -951,6 +953,8 @@
    "https://klosterneuburg.lknoe.at/fuer-patienten/einrichtung-fuer-radiologie/radiologie/informationen (Röntgen, Ultraschall, Mehrzeilen-CT; MRT über Verbund mit Tulln)",
    "Angabe Paul: alle NÖ Landes-/Universitätskliniken mit Unfallchirurgie oder Akut-Notaufnahme haben einen Schockraum",
    "Übersicht Akutversorgung Notruf NÖ (Angabe Paul 10/2026)",
+   "Übersicht Akutversorgung Notruf NÖ (Angabe Paul 10/2026)",
+   "Angabe Paul: alle NÖ Landes-/Universitätskliniken mit Unfallchirurgie oder Akut-Notaufnahme haben einen Schockraum",
    "Übersicht Akutversorgung Notruf NÖ (Angabe Paul 10/2026)",
    "Angabe Paul: alle NÖ Landes-/Universitätskliniken mit Unfallchirurgie oder Akut-Notaufnahme haben einen Schockraum",
    "Übersicht Akutversorgung Notruf NÖ (Angabe Paul 10/2026)"
@@ -5696,5 +5700,164 @@
    "Adresse Barbaraheimstraße 18, 2230 Gänserndorf; Koordinaten OpenStreetMap"
   ],
   "notiz": "Kein Bettenhaus; nur leichte internistische/allgemeinmedizinische Notfälle."
+ },
+ "neu13": {
+  "name": "PVE Böheimkirchen – Zentrum für medizinische und soziale Nahversorgung",
+  "kurzname": "PVZ Böheimkirchen",
+  "ort": "Böheimkirchen",
+  "bundesland": "Niederösterreich",
+  "privat": false,
+  "pvz": true,
+  "lat": 48.1975396,
+  "lon": 15.7669987,
+  "website": "https://www.pve-boe.at/",
+  "einrichtungen": [
+   "amb_pvz"
+  ],
+  "unklar": [],
+  "quellen": [
+   "https://www.pve-boe.at/ordinationszeiten – 'Montag bis Freitag: 07:00 - 13:00 Uhr und 14:00 - 19:00 Uhr (13:00 - 14:00 Uhr für medizinische Notfälle telefonische Erreichbarkeit)'",
+   "https://www.pve-boe.at/ordinationszeiten – 'Samstag17.10.26 Dr. Ginsthofer-Schwetz 09:00 - 11:00 Bereitschaftsdienst PVE Böheimkirchen'",
+   "https://www.pve-boe.at/leistungen/allgemeinmedizin/kassenleistungen – 'Kleine Chirurgie' … 'Wundmanagement'",
+   "https://www.pve-boe.at/online-service/terminbuchung – 'Sie können keine Notfall- und Erste Hilfe Termine online buchen!'",
+   "https://www.pve-boe.at/leistungen/kinderheilkunde – 'Kinderärztin Dr. Julia Kubinger, Kassenordination in der PVE Böheimkirchen' … 'Behandlung akuter Erkrankungen im Kindesalter' … 'Dienstag, Donnerstag, Freitag von 8:00 bis 12:00 Uhr'",
+   "https://primaerversorgung.gv.at/standorte-pve-landkarte – 'PVE Böheimkirchen - Zentrum für medizinische und soziale Nahversorgung … Untere Hauptstraße 24, 3071 Böheimkirchen'",
+   "Übersicht Akutversorgung Notruf NÖ (Angabe Paul 10/2026): nur NFA",
+   "Angabe Paul: PVZ nimmt unter der Woche zu den Öffnungszeiten Patienten, die sonst nur einen Hausarzt bräuchten; keine Krankenhausaufnahme"
+  ],
+  "notiz": "Primärversorgungszentrum – keine vollwertige Notaufnahme. Ob Akutpatienten ohne Termin kommen können, steht nicht ausdrücklich auf der Website (nur: Notfall-/Erste-Hilfe-Termine nicht online buchbar, Online-Termine nur für Hausarztpatienten). Wundversorgung belegt als 'Kleine Chirurgie' und 'Wundmanagement' (Kassenleistungen), 'Erstversorgung kleiner Verletzungen' nicht wörtlich genannt. Kinderärztin hat Termin-Pflicht ('Terminvereinbarung ausschließlich unter Tel. 02743 / 94 100')."
+ },
+ "neu14": {
+  "name": "Primärversorgungszentrum St. Pölten",
+  "kurzname": "PVZ St. Pölten",
+  "ort": "St. Pölten (Harland)",
+  "bundesland": "Niederösterreich",
+  "privat": false,
+  "pvz": true,
+  "lat": 48.1732598,
+  "lon": 15.6387811,
+  "website": "https://pvzstpoelten.at/",
+  "einrichtungen": [
+   "amb_pvz",
+   "amb_pvz_unfall"
+  ],
+  "unklar": [],
+  "quellen": [
+   "https://pvzstpoelten.at/ – 'Öffnungszeiten, allgemein: Montag – Freitag 07:00 – 19:00 Uhr Bereitschaftsdienst: Samstag, Sonn- und Feiertag: 08:00 – 13:00 Uhr'",
+   "https://pvzstpoelten.at/ – 'Um unser geregeltes Terminsystem optimal zu organisieren, bitten wir Sie um telefonische Terminvereinbarung vor Ihrem Besuch. Für Akutbehandlungen halten wir stets Terminblöcke frei, bitten jedoch auch hier um telefonische Vorankündigung.'",
+   "https://pvzstpoelten.at/leistungen/ – 'Verbandswechsel', 'Nahtentfernung', 'kleine Chirurgie (Wundbehandlung, Excisionen,…)'",
+   "https://pvzstpoelten.at/ – 'Haus- und Kinderarzt: Wir begleiten unsere Patienten von der Geburt bis ins hohe Alter.' / 'Öffnungszeiten, Kinderarzt: …'",
+   "https://primaerversorgung.gv.at/standorte-pve-landkarte – 'Kinder PVZ St. Pölten, Mathilde Beyerknecht-Str. 7, 3104 St. Pölten'",
+   "Übersicht Akutversorgung Notruf NÖ (Angabe Paul 10/2026): NFA und UNF",
+   "Angabe Paul: PVZ nimmt unter der Woche zu den Öffnungszeiten Patienten, die sonst nur einen Hausarzt bräuchten; keine Krankenhausaufnahme"
+  ],
+  "notiz": "Primärversorgungszentrum – keine vollwertige Notaufnahme. akut_ohne_termin=false, weil auch für Akutbehandlungen 'telefonische Vorankündigung' erbeten wird (es gibt aber freigehaltene Akut-Terminblöcke). Wochenende/Feiertag 08:00–13:00 laut Website als 'Bereitschaftsdienst' bezeichnet. Kinder-PVZ (eigene Kinderarzt-Zeiten) am selben Standort."
+ },
+ "neu15": {
+  "name": "Primärversorgungszentrum St. Pölten Nord (Dr. Hauer, Dr. Hosserek, Dr. Tolino, Dr. Mrass & Dr. Ohsberger Allgemeinmedizin GmbH)",
+  "kurzname": "PVZ St. Pölten Nord",
+  "ort": "St. Pölten (Viehofen)",
+  "bundesland": "Niederösterreich",
+  "privat": false,
+  "pvz": true,
+  "lat": 48.2327962,
+  "lon": 15.6501906,
+  "website": "https://pvznord.at/",
+  "einrichtungen": [
+   "amb_pvz",
+   "amb_pvz_unfall"
+  ],
+  "unklar": [],
+  "quellen": [
+   "https://pvznord.at/kontakt/ – 'Montag bis Freitag 7.00 bis 19.00 Uhr (12.00 bis 13:00 Uhr Bereitschaftsdienst) Wochenende / Notdienst Samstag 8.00 bis 14.00 Uhr Termine nur mit Voranmeldung (ausgenommen Notfälle)'",
+   "https://pvznord.at/kontakt/ – 'Bitte vereinbaren Sie vor Ihrem Besuch einen Termin. Für Akutfälle halten wir täglich Zeitfenster frei.'",
+   "https://pvznord.at/leistung/hausaerztliche-versorgung/ – 'Wundversorgung: Behandlung von chronischen Wunden, Naht- und Klammernahtentfernung, einfache unfallchirurgische Wundversorgung.'",
+   "https://pvznord.at/leistung/akutversorgung-diagnostik/ – 'Diagnostik & Therapie bei akuten Erkrankungen und Verletzungen. Das PVZ St. Pölten Nord wird auch vom Rettungsdienst angesteuert, damit Krankenhäuser entlastet werden.'",
+   "https://pvznord.at/notfall/ – 'PVZ Nord Ordination: … Hautausschläge, leichte Verletzungen'",
+   "https://pvznord.com/ – 'Erweiterte Öffnungszeiten ab April 2026: Weil Gesundheit nicht immer bis Montag warten kann, haben wir ab April auch an Samstagen für Sie geöffnet'",
+   "Übersicht Akutversorgung Notruf NÖ (Angabe Paul 10/2026): NFA und UNF",
+   "Angabe Paul: PVZ nimmt unter der Woche zu den Öffnungszeiten Patienten, die sonst nur einen Hausarzt bräuchten; keine Krankenhausaufnahme"
+  ],
+  "notiz": "Primärversorgungszentrum – keine vollwertige Notaufnahme. Zwei offizielle Domains: pvznord.at (neue Seite) und pvznord.com (auf PVE-Landkarte verlinkt), Zeiten identisch. Laut Website wird das PVZ vom Rettungsdienst angefahren ('Die Entscheidung obliegt dem Rettungsdienstpersonal'); Notfallultraschall, Akutlabor, Blutgasanalyse vor Ort. akut_ohne_termin=true nur im Sinn von 'ausgenommen Notfälle'. Kinder: kein Kinderarzt im Team; erwähnt werden nur 'Gesundheitscheck-Junior ab dem 6. Lebensjahr bei der SVS' sowie Psychotherapie für Kinder und Jugendliche – ausdrückliche Aussage zur ärztlichen Behandlung von Kindern fehlt, daher null."
+ },
+ "neu16": {
+  "name": "PVZ Tullnerfeld (Gesundheitszentrum Tullnerfeld)",
+  "kurzname": "PVZ Tullnerfeld",
+  "ort": "Pixendorf (Gemeinde Michelhausen), gegenüber Bahnhof Tullnerfeld",
+  "bundesland": "Niederösterreich",
+  "privat": false,
+  "pvz": true,
+  "lat": 48.2936986,
+  "lon": 15.9953272,
+  "website": "https://www.gztu.at/pvz",
+  "einrichtungen": [
+   "amb_pvz",
+   "amb_pvz_unfall"
+  ],
+  "unklar": [],
+  "quellen": [
+   "https://www.gztu.at/pvz – 'Montag - Freitag 7:00 - 19:00 Telefonische Terminvereinbarung erforderlich'",
+   "https://www.gztu.at/pvz – 'Neben dem gesamten hausärztlichen Spektrum und der Akutversorgung bieten wir …'",
+   "https://www.gztu.at/pvz-berufsgruppe/allgemeinmedizin – 'Behandlung von akuten Erkrankungen und Verletzungen' … 'kleine chirurgische Eingriffe' … 'Versorgung chronischer Wunden' … 'Und das 60 Stunden in der Woche und ganzjährig ohne Urlaubsunterbrechung.'",
+   "https://www.gztu.at/kinder – 'PVZ Kinderordi, unserer Kassenordination für Kinder- und Jugendheilkunde' … 'Dr. Astrid Mutenthaler, Fachärztin für Kinder- und Jugendheilkunde'",
+   "https://primaerversorgung.gv.at/standorte-pve-landkarte – 'PVZ Tullnerfeld … Annaweg 1, 3451 Pixendorf … https://www.gztu.at/'",
+   "Übersicht Akutversorgung Notruf NÖ (Angabe Paul 10/2026): NFA und UNF",
+   "Angabe Paul: PVZ nimmt unter der Woche zu den Öffnungszeiten Patienten, die sonst nur einen Hausarzt bräuchten; keine Krankenhausaufnahme"
+  ],
+  "notiz": "Primärversorgungszentrum – keine vollwertige Notaufnahme. Akutversorgung wird angeboten, aber 'Telefonische Terminvereinbarung erforderlich' → akut_ohne_termin=false. Wundversorgung: 'Behandlung von … Verletzungen' + 'kleine chirurgische Eingriffe' + Wundmanagement-DGKP. Am Wochenende kein Betrieb im PVZ (Dienstplan zeigt externe Bereitschaft)."
+ },
+ "neu17": {
+  "name": "Primärversorgungszentrum Wiener Neustadt",
+  "kurzname": "PVZ Wiener Neustadt",
+  "ort": "Wiener Neustadt",
+  "bundesland": "Niederösterreich",
+  "privat": false,
+  "pvz": true,
+  "lat": 47.8040966,
+  "lon": 16.2386964,
+  "website": "https://pvz-wn.at/",
+  "einrichtungen": [
+   "amb_pvz",
+   "amb_pvz_unfall"
+  ],
+  "unklar": [],
+  "quellen": [
+   "https://pvz-wn.at/ – 'Öffnungszeiten PVZ MO - FR 07:00 - 19:00 Uhr Akutambulanz MO - FR 08:00 - 13:00 Uhr & 14:00 - 19:00 Uhr'",
+   "https://pvz-wn.at/ – 'Wir bitten um Terminvereinbarung vor Ihrem Besuch.' / 'Termin vereinbaren ALLGMEINMEDIZIN: Akutambulanz, Blutabnahme, …'",
+   "https://pvz-wn.at/akutambulanz – 'Allgemeinmedizinische Akutambulanz' … 'Blutungen, Brüche, Verletzungen' (unter: 'ist umgehend und ohne zu zögern der Notruf 144 zu wählen')",
+   "https://pvz-wn.at/wundmanagement-1 – 'Behandlungsspektrum … Wundheilungsstörungen nach Verletzung oder Operation … traumatische Wunden … infizierte Wunden'",
+   "https://pvz-wn.at/ – 'Kinder- und Jugendheilkunde MO 08:30 - 12:30 Uhr …' / 'Termin vereinbaren KINDERARZT'",
+   "https://primaerversorgung.gv.at/standorte-pve-landkarte – 'Primärversorgungszentrum Wr. Neustadt … Marktgasse 3a, 2700 Wr. Neustadt'",
+   "Übersicht Akutversorgung Notruf NÖ (Angabe Paul 10/2026): NFA und UNF",
+   "Angabe Paul: PVZ nimmt unter der Woche zu den Öffnungszeiten Patienten, die sonst nur einen Hausarzt bräuchten; keine Krankenhausaufnahme"
+  ],
+  "notiz": "Primärversorgungszentrum – keine vollwertige Notaufnahme. Akutambulanz bucht man über die Online-Terminvergabe ('Termin vereinbaren … Akutambulanz'); um Termin wird gebeten → false. Achtung: Die Website zählt 'Blutungen, Brüche, Verletzungen' zu den Fällen für 144, nicht für die Akutambulanz; die Akutfall-Beispiele sind Infekte/Schmerzen. Wundversorgung (inkl. 'traumatische Wunden') läuft über Wundmanagement (DGKP) – Erstversorgung frischer kleiner Verletzungen nicht ausdrücklich genannt. Ärzte z. T. Notärzte (Dr. Weik, Dr. Stjepanovic)."
+ },
+ "neu18": {
+  "name": "Primärversorgung Wienerwald (PVW) – Zentrum für Allgemein-, Kinder- und Notfallmedizin",
+  "kurzname": "PVZ Wienerwald",
+  "ort": "Breitenfurt bei Wien",
+  "bundesland": "Niederösterreich",
+  "privat": false,
+  "pvz": true,
+  "lat": 48.1363532,
+  "lon": 16.1951439,
+  "website": "https://pvw.at/",
+  "einrichtungen": [
+   "amb_pvz",
+   "amb_pvz_unfall"
+  ],
+  "unklar": [],
+  "quellen": [
+   "https://pvw.at/oeffnungszeiten – 'Montag 08:00-16:00 Dienstag 08:00-20:00 … Freitag 08:00-20:00 Samstag 08:00-14:00* (Bereitschaft) Sonntag 08:00-14:00* (Bereitschaft)' / '*Bereitschaftsdienst: 09:00 - 11:00 Ordination geöffnet 08:00 - 14:00 Rufbereitschaft'",
+   "https://pvw.at/oeffnungszeiten – 'Bitte immer telefonisch unter 059 141 einen Termin vereinbaren.'",
+   "https://pvw.at/ – 'Notfallversorgung: Anlaufstelle für akute Erkrankungen und Verletzungen' / '70 Wochenstunden geöffnet, an Wochenenden und Feiertagen geöffnet'",
+   "https://pvw.at/kinderheilkunde – 'Die Kinderambulanz der Primärversorgung Wienerwald bietet … von der Routineuntersuchung bis hin zur Behandlung von akuten Erkrankungen und Verletzungen.' / 'Dr. Birgit Kager, Ärztin für Kinder- und Jugendheilkunde'",
+   "https://pvw.at/oeffnungszeiten – 'Selbst, wenn kein Facharzt für Kinder- und Jugendheilkunde im Dienst ist, sind unsere Allgemeinmediziner:innen gerne für die akuten Beschwerden unserer Jüngsten da.'",
+   "https://primaerversorgung.gv.at/standorte-pve-landkarte – 'Primärversorgung Wienerwald … Hauptstraße 111, 2384 Breitenfurt … https://pvw.at/'",
+   "Übersicht Akutversorgung Notruf NÖ (Angabe Paul 10/2026): NFA und UNF",
+   "Angabe Paul: PVZ nimmt unter der Woche zu den Öffnungszeiten Patienten, die sonst nur einen Hausarzt bräuchten; keine Krankenhausaufnahme"
+  ],
+  "notiz": "Primärversorgungszentrum – keine vollwertige Notaufnahme. Betreiber laut Cookie-Hinweis: 'Primärversorgung Wienerwald Dr. Klar und Co. Ärzte für Allgemeinmedizin GmbH'. Sa/So in 'zeiten' nur die tatsächliche Ordinationszeit 09:00–11:00 (08:00–14:00 Rufbereitschaft). Wundversorgung=true auf Basis 'Anlaufstelle für … Verletzungen' (Notfallversorgung); das Wort 'Wundversorgung' selbst steht nicht auf der Seite. Zweitstandort Pressbaum (Adresse auf der Website nicht genannt)."
  }
 }

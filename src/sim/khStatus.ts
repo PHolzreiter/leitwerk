@@ -48,7 +48,7 @@ export const RESSOURCEN: RessourceDef[] = [
 export const RESSOURCE = new Map(RESSOURCEN.map((r) => [r.id, r]));
 
 /** Einrichtungen mit Öffnungszeiten (der Rest ist immer offen, solange es ihn gibt) */
-export const MIT_ZEITEN = ["amb_notaufnahme", "amb_pvz", "amb_unfall", "amb_kindernotaufnahme", "amb_psychiatrie_krise", "fb_herzkatheter", "fb_schockraum", "fb_kreisssaal", "fb_druckkammer", "its_stroke_unit", "fb_angiographie"];
+export const MIT_ZEITEN = ["amb_notaufnahme", "amb_pvz", "amb_pvz_unfall", "amb_unfall", "amb_kindernotaufnahme", "amb_psychiatrie_krise", "fb_herzkatheter", "fb_schockraum", "fb_kreisssaal", "fb_druckkammer", "its_stroke_unit", "fb_angiographie"];
 
 const TAG_MS = 86_400_000;
 
