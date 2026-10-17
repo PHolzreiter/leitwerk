@@ -3262,3 +3262,111 @@ input[type="color"] {
   padding: 16px;
   color: var(--text-dim);
 }
+.khs-ansicht {
+  display: inline-flex;
+  gap: 2px;
+}
+/* Ansicht „Akutversorgung“: Tabelle wie die Übersicht der Leitstelle */
+.khs-tab.akv {
+  --akv-ok: color-mix(in srgb, var(--ok) 26%, var(--panel));
+  --akv-voll: var(--alert-bg);
+  --akv-zu: color-mix(in srgb, var(--text-dim) 22%, var(--panel));
+}
+.akv-z {
+  display: grid;
+  grid-template-columns: minmax(120px, 1.7fr) repeat(10, minmax(34px, 1fr));
+  align-items: stretch;
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+  min-width: 520px;
+}
+.akv-z > span {
+  border-left: 1px solid var(--line);
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  min-height: 30px;
+}
+.akv-z > span.akv-trenn {
+  border-left: 3px solid color-mix(in srgb, var(--text-dim) 45%, var(--line));
+}
+.akv-z > .akv-name {
+  border-left: 0;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 3px 8px;
+  min-width: 0;
+}
+.akv-name b {
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 12.5px;
+}
+.akv-name small {
+  color: var(--text-dim);
+  font-size: 10.5px;
+}
+.akv-z:hover:not(.akv-head),
+.akv-z:focus-visible {
+  outline: none;
+  background: var(--hover);
+}
+.akv-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--panel);
+  cursor: default;
+}
+.akv-head > span {
+  align-items: center;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--text-dim);
+  min-height: 28px;
+}
+.akv-f {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+}
+.akv-f.ok { background: var(--akv-ok); }
+.akv-f.voll { background: var(--akv-voll); }
+.akv-f.zu { background: var(--akv-zu); }
+.akv-s {
+  display: inline-flex;
+  width: 16px;
+  height: 16px;
+}
+.akv-s svg {
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.akv-s.ok { color: var(--ok); }
+.akv-s.voll { color: var(--alert-text); }
+.akv-s.zu { color: var(--text-dim); }
+.akv-legende {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  padding: 8px;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+.akv-legende span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+

@@ -21,6 +21,16 @@ const TRAUMA = ["sturz", "verletzung", "blutung", "verkehrsunfall", "eingeklemmt
 
 export function verdachtFuer(d: VerdachtDaten): string {
   const r = d.rnd ?? Math.random;
+  const b = verdachtRoh(d, r);
+  // leichte Fälle (grün gesichtet): oft reicht der Hausarzt bzw. ein Primärversorgungszentrum
+  if (d.patient?.sichtung === "gruen" && d.alter >= 15) {
+    if (b === "bu_exsikkose_synkope_az_verschlechterung" && r() < 0.5) return "bu_hausaerztlich";
+    if (b === "bu_isolierte_extremitaetenverletzung" && r() < 0.4) return "bu_bagatellverletzung";
+  }
+  return b;
+}
+
+function verdachtRoh(d: VerdachtDaten, r: () => number): string {
   const t = d.thema;
   const n = d.name;
   const a = d.antworten;

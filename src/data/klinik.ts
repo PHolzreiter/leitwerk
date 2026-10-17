@@ -87,7 +87,7 @@ export function akutMoeglich(einrichtungen: string[]): AkutAbteilung[] {
 }
 
 /** Diese Akut-Abteilungen erreicht die Rettung direkt (eigene Zeiten in den Einrichtungen), ohne Notaufnahme */
-const DIREKT = new Set(["ak_herzkatheter", "ak_stroke_unit", "ak_thrombektomie", "ak_schockraum", "ak_druckkammer", "ak_cardiac_arrest_center", "ak_kreisssaal", "ak_angiographie", "ak_ct", "ak_mrt", "ak_dialyse"]);
+const DIREKT = new Set(["ak_primaerversorgung", "ak_herzkatheter", "ak_stroke_unit", "ak_thrombektomie", "ak_schockraum", "ak_druckkammer", "ak_cardiac_arrest_center", "ak_kreisssaal", "ak_angiographie", "ak_ct", "ak_mrt", "ak_dialyse"]);
 const TRAUMA_AK = new Set(["ak_unfallchirurgie", "ak_chirurgische_intensiv", "ak_neurochirurgie", "ak_plastische_chirurgie", "ak_thoraxchirurgie", "ak_wirbelsaeulenchirurgie", "ak_mkg", "ak_verbrennungszentrum", "ak_allgemeinchirurgie", "ak_gefaesschirurgie"]);
 const KINDER_AK = new Set(["ak_kinder_jugendheilkunde", "ak_kinder_intensiv", "ak_neonatologie", "ak_kinderchirurgie"]);
 const PSYCH_AK = new Set(["ak_psychiatrie", "ak_kinder_jugend_psychiatrie", "ak_sucht_entzug"]);
@@ -175,6 +175,14 @@ export interface VorschlagOpt {
  * jeweils nach Entfernung; mit Angabe, ob das Haus gerade zu oder voll ist. Ohne erreichbares Haus:
  * Rückfall (Schockraum/Unfall bei Trauma, sonst Notaufnahme).
  */
+/** Primärversorgungszentrum (keine Notaufnahme, kein Bettenhaus) */
+export function istPvz(h: Hospital): boolean {
+  const e = h.einrichtungen ?? [];
+  return e.includes("amb_pvz") && !e.includes("amb_notaufnahme");
+}
+/** Ein PVZ fährt die Rettung nur in der Nähe an */
+export const PVZ_KM = 25;
+
 export function khVorschlaege(alle: Hospital[], b: Buchung | undefined, rot: boolean, km: (h: Hospital) => number, opt?: VorschlagOpt): KhVorschlag[] {
   const t = opt?.t;
   const info = (h: Hospital, e: Exclude<Eignung, null>, k: number): KhVorschlag => {
@@ -198,7 +206,7 @@ export function khVorschlaege(alle: Hospital[], b: Buchung | undefined, rot: boo
   };
   const mit = alle.map((h) => ({ h, km: km(h), e: eignung(h, b, rot), o: b ? Math.max(0, optionIndex(h, b)) : 0 }));
   // bevorzugte Option zuerst – eine weitere Option nur, wenn sie deutlich (15 km je Stufe) näher ist
-  const passend = mit.filter((x) => x.e === "passend" && x.km <= ERREICHBAR_KM).sort((a, c) => a.km + a.o * 15 - (c.km + c.o * 15));
+  const passend = mit.filter((x) => x.e === "passend" && x.km <= (istPvz(x.h) ? PVZ_KM : ERREICHBAR_KM)).sort((a, c) => a.km + a.o * 15 - (c.km + c.o * 15));
   const ausweich = mit.filter((x) => x.e === "ausweich" && x.km <= ERREICHBAR_KM).sort((a, c) => a.km - c.km);
   const out: KhVorschlag[] = [...passend.map((x) => info(x.h, "passend", x.km)), ...ausweich.map((x) => info(x.h, "ausweich", x.km))];
   // Rückfall, wenn kein passendes Haus offen ist

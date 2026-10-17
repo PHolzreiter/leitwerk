@@ -813,7 +813,7 @@ def build_hospitals() -> list[dict]:
     klinik = json.loads((ROOT / "src" / "data" / "klinik.json").read_text(encoding="utf-8"))
     zeiten_alle = json.loads((SRC / "kh_zeiten.json").read_text(encoding="utf-8")) if (SRC / "kh_zeiten.json").exists() else {}
     kav_alle = json.loads((SRC / "kh_kav_betten.json").read_text(encoding="utf-8")) if (SRC / "kh_kav_betten.json").exists() else {}
-    MIT_ZEITEN = ["amb_notaufnahme", "amb_unfall", "amb_kindernotaufnahme", "amb_psychiatrie_krise", "fb_herzkatheter", "fb_schockraum", "fb_kreisssaal", "fb_druckkammer", "its_stroke_unit", "fb_angiographie"]
+    MIT_ZEITEN = ["amb_notaufnahme", "amb_pvz", "amb_unfall", "amb_kindernotaufnahme", "amb_psychiatrie_krise", "fb_herzkatheter", "fb_schockraum", "fb_kreisssaal", "fb_druckkammer", "its_stroke_unit", "fb_angiographie"]
 
     def extra(kid: str, d: dict) -> dict:
         """Öffnungszeiten (nur belegte, nicht rund um die Uhr), Plätze, Aufnahmerad"""
@@ -827,7 +827,7 @@ def build_hospitals() -> list[dict]:
         pl = plaetze_ableiten(kid, einr, kav_alle.get(kid, {}), z)
         return {"zeiten": " | ".join(zt), "plaetze": ", ".join(f"{k}={v}" for k, v in pl.items()), "aufnahmerad": z.get("_rad", "")}
 
-    NOTFALL = {"amb_notaufnahme", "amb_unfall", "amb_kindernotaufnahme", "amb_psychiatrie_krise", "fb_schockraum", "its_stroke_unit", "fb_kreisssaal"}
+    NOTFALL = {"amb_notaufnahme", "amb_pvz", "amb_unfall", "amb_kindernotaufnahme", "amb_psychiatrie_krise", "fb_schockraum", "its_stroke_unit", "fb_kreisssaal"}
 
     def akut_aus(d: dict, kid: str = "") -> tuple[str, str]:
         """Häuser ohne jede Notfall-Anlaufstelle (und Privatkliniken) nehmen keine Rettung auf: alle Akut-Abteilungen aus.

@@ -903,6 +903,8 @@
    "https://hainburg.lknoe.at/fuer-patienten/institute/institut-fuer-radiologie/informationen (Röntgen, Durchleuchtung, Spiral-CT, 24h RT besetzt, CT-Telekonsultation Mistelbach; kein MRT)",
    "Angabe Paul: alle NÖ Landes-/Universitätskliniken mit Unfallchirurgie oder Akut-Notaufnahme haben einen Schockraum",
    "Übersicht Akutversorgung Notruf NÖ (Angabe Paul 10/2026)",
+   "Übersicht Akutversorgung Notruf NÖ (Angabe Paul 10/2026)",
+   "Angabe Paul: alle NÖ Landes-/Universitätskliniken mit Unfallchirurgie oder Akut-Notaufnahme haben einen Schockraum",
    "Übersicht Akutversorgung Notruf NÖ (Angabe Paul 10/2026)"
   ],
   "notiz": "Unfallchirurgie als Department (Teil der Abteilung Orthopädie/Traumatologie LK Baden-Mödling); komplexe Verletzungen nach Baden-Mödling. Chirurgische Ambulanz 24h für Notfälle, Schwerverletzte werden dort erstversorgt (keine eigene Unfallambulanz benannt). Psychiatrie nur Terminambulanz + Tagesklinik, keine Station. Kein MRT. Onkologische Ambulanz vorhanden (Chemotherapie nicht ausdrücklich genannt)."
@@ -949,6 +951,8 @@
    "https://klosterneuburg.lknoe.at/fuer-patienten/einrichtung-fuer-radiologie/radiologie/informationen (Röntgen, Ultraschall, Mehrzeilen-CT; MRT über Verbund mit Tulln)",
    "Angabe Paul: alle NÖ Landes-/Universitätskliniken mit Unfallchirurgie oder Akut-Notaufnahme haben einen Schockraum",
    "Übersicht Akutversorgung Notruf NÖ (Angabe Paul 10/2026)",
+   "Übersicht Akutversorgung Notruf NÖ (Angabe Paul 10/2026)",
+   "Angabe Paul: alle NÖ Landes-/Universitätskliniken mit Unfallchirurgie oder Akut-Notaufnahme haben einen Schockraum",
    "Übersicht Akutversorgung Notruf NÖ (Angabe Paul 10/2026)"
   ],
   "notiz": "Keine stationäre Chirurgie/Unfallchirurgie, nur chirurgische Tagesklinik; widersprüchliche Angaben zur chirurgischen 24h-Akutversorgung (Ambulanzseite 'rund um die Uhr', Spezialambulanzseite: außerhalb der Tagesklinik-Öffnungszeiten über Nachbarkliniken). Internistische Notfälle 24h. Gynäkologie nur Tagesklinik, keine Geburtshilfe (Akut-Gyn ab 01.07.2025 UK Tulln). MRT nur über Verbund Tulln. Keine eigene Intensivstation beschrieben, nur Überwachungseinheit."
@@ -1193,10 +1197,10 @@
    "amb_brust",
    "fb_physiotherapie",
    "fb_kreisssaal",
-   "fb_schockraum"
+   "fb_schockraum",
+   "amb_notaufnahme"
   ],
   "unklar": [
-   "amb_notaufnahme",
    "st_kardiologie",
    "st_gastroenterologie",
    "amb_onko_tagesklinik",
@@ -1221,7 +1225,8 @@
    "https://zwettl.lknoe.at/fuer-patienten/institute/physikalische-medizin-und-rehabilitation/informationen",
    "https://zwettl.lknoe.at/fuer-patienten/interdisziplinaere-tagesklinik/informationen",
    "LK Zwettl: drei neue Kreißzimmer (LGA-Presse 2026)",
-   "Angabe Paul: alle NÖ Landes-/Universitätskliniken mit Unfallchirurgie oder Akut-Notaufnahme haben einen Schockraum"
+   "Angabe Paul: alle NÖ Landes-/Universitätskliniken mit Unfallchirurgie oder Akut-Notaufnahme haben einen Schockraum",
+   "Übersicht Akutversorgung Notruf NÖ (Angabe Paul 10/2026)"
   ],
   "notiz": "Keine Seite zu Notaufnahme/Erstversorgung gefunden; Presse erwähnt aber eine 'Notfallanlieferung' und einen Hubschrauberlandeplatz. Herzüberwachungsstation als its_ccu eingetragen (kardiologische Überwachungseinheit, kein Herzkatheter). Neonatologie als neonatologische IMCU (Frühgeborene ab 29. SSW) unter its_nicu eingetragen. Kreißsaal nicht wörtlich genannt (Geburten inkl. Wassergeburt aber belegt). MRT gehört einem niedergelassenen Radiologen, steht aber den Patienten des Hauses zur Verfügung. Schwere Traumen -> Schwerpunkt Unfallchirurgie LK Horn."
  },

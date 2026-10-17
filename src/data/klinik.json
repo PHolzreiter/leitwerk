@@ -242,6 +242,11 @@
    "name": "Zentrale Notaufnahme / Erstversorgung"
   },
   {
+   "id": "amb_pvz",
+   "typ": "ambulanz",
+   "name": "Primärversorgung (PVZ) – Akutbehandlung zu Ordinationszeiten, keine Krankenhausaufnahme"
+  },
+  {
    "id": "amb_unfall",
    "typ": "ambulanz",
    "name": "Unfallambulanz"
@@ -741,6 +746,15 @@
    ]
   },
   {
+   "id": "ak_primaerversorgung",
+   "name": "Primärversorgung (PVZ)",
+   "voraussetzung": [
+    [
+     "amb_pvz"
+    ]
+   ]
+  },
+  {
    "id": "ak_nuklearmedizin",
    "name": "Nuklearmedizin",
    "voraussetzung": [
@@ -1153,6 +1167,18 @@
    "ausweich": "trauma"
   },
   {
+   "id": "bu_bagatellverletzung",
+   "kategorie": "Trauma",
+   "name": "Bagatellverletzung (kleine Wunde, Prellung)",
+   "optionen": [
+    [
+     "ak_primaerversorgung"
+    ]
+   ],
+   "zeitkritisch": false,
+   "ausweich": "trauma"
+  },
+  {
    "id": "bu_amputationsverletzung",
    "kategorie": "Trauma",
    "name": "Amputationsverletzung",
@@ -1280,6 +1306,18 @@
     ],
     [
      "ak_notaufnahme"
+    ]
+   ],
+   "zeitkritisch": false,
+   "ausweich": "intern"
+  },
+  {
+   "id": "bu_hausaerztlich",
+   "kategorie": "Innere Medizin & Abdomen",
+   "name": "Hausärztlich versorgbar (leichte Erkrankung)",
+   "optionen": [
+    [
+     "ak_primaerversorgung"
     ]
    ],
    "zeitkritisch": false,

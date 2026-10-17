@@ -176,8 +176,72 @@ function sammelZelle(h: Hospital, rs: Ressource[], t: number): string {
   return `<span class="khp ${art}" title="${esc(titel)}"><span class="khp-bar" style="--anteil:${((n - frei) / n) * 100}%"></span><b>${frei}</b>/${n}</span>`;
 }
 
-function khStatusPanel(ctx: { params: Record<string, unknown>; setzeParams(p: Record<string, unknown>): void; sichtbar(): boolean }) {
+// ------------------------------------------------------------------ Ansicht „Akutversorgung“ (wie die Übersicht der Leitstelle)
+
+type AkvZustand = "ok" | "zu" | "voll";
+const AKV_SYMBOL: Record<AkvZustand, string> = {
+  ok: `<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5"/><path d="M5 8.3l2 2 4-4.3"/></svg>`,
+  zu: `<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5"/><path d="M5 8h6"/></svg>`,
+  voll: `<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5"/><path d="M5.6 5.6l4.8 4.8M10.4 5.6l-4.8 4.8"/></svg>`,
+};
+const AKV_TEXT: Record<AkvZustand, string> = { ok: "verfügbar", zu: "geschlossen", voll: "belegt" };
+
+/** Spalten: Name, Ressourcen (Plätze) oder Einrichtung (nur vorhanden/offen), je Platz ein Zeichen */
+const AKV_SPALTEN: { n: string; titel: string; rs?: Ressource[]; einr?: string; ersatz?: string; einzeln?: boolean; trenn?: boolean }[] = [
+  { n: "SRT", titel: "Schockraum Trauma", rs: ["schockraum_trauma", "schockraum"], einzeln: true },
+  { n: "SRI", titel: "Schockraum internistisch", rs: ["schockraum_intern", "schockraum"], einzeln: true },
+  { n: "PCI", titel: "Herzkatheter", rs: ["herzkatheter"] },
+  { n: "CT", titel: "Computertomographie", einr: "fb_ct" },
+  { n: "END", titel: "Endoskopie", einr: "fb_endoskopie" },
+  { n: "STROKE", titel: "Stroke Unit", rs: ["stroke_unit"] },
+  { n: "NFA", titel: "Notaufnahme", rs: ["notaufnahme"], ersatz: "amb_pvz", trenn: true },
+  { n: "UNF", titel: "Unfallaufnahme", rs: ["unfall"] },
+  { n: "KIND", titel: "Kindernotaufnahme", rs: ["kindernotaufnahme"], trenn: true },
+  { n: "KRS", titel: "Kreißsaal", rs: ["kreisssaal"] },
+];
+
+function akvFeld(zust: AkvZustand[], titel: string): string {
+  const schlimmst: AkvZustand = zust.includes("ok") ? "ok" : zust.includes("voll") ? "voll" : "zu";
+  return `<span class="akv-f ${schlimmst}" title="${esc(titel)}">${zust.map((z) => `<i class="akv-s ${z}">${AKV_SYMBOL[z]}</i>`).join("")}</span>`;
+}
+
+function akvZelle(h: Hospital, s: (typeof AKV_SPALTEN)[number], t: number): string {
+  if (s.einr) {
+    if (!(h.einrichtungen ?? []).includes(s.einr)) return `<span class="akv-f leer"></span>`;
+    const z: AkvZustand = offen(h, s.einr, t) ? "ok" : "zu";
+    return akvFeld([z], `${s.titel}: ${AKV_TEXT[z]}`);
+  }
+  const r = (s.rs ?? []).find((x) => plaetze(h, x) > 0);
+  if (!r && s.ersatz && (h.einrichtungen ?? []).includes(s.ersatz)) {
+    const z: AkvZustand = offen(h, s.ersatz, t) ? "ok" : "zu";
+    return akvFeld([z], `Primärversorgung (keine vollwertige Notaufnahme): ${AKV_TEXT[z]}`);
+  }
+  if (!r) return `<span class="akv-f leer"></span>`;
+  const st = platzStatus(h, r, t);
+  const titel = `${s.titel}${r === "schockraum" ? " (gemeinsamer Schockraum)" : ""}: ${st.offen ? `${st.frei} von ${st.n} frei` : "geschlossen"}`;
+  if (!st.offen) return akvFeld(s.einzeln ? Array(Math.min(st.n, 3)).fill("zu") : ["zu"], titel);
+  if (s.einzeln) {
+    const l: AkvZustand[] = [];
+    for (let i = 0; i < Math.min(st.n, 3); i++) l.push(i < st.frei ? "ok" : "voll");
+    return akvFeld(l, titel);
+  }
+  return akvFeld([st.frei > 0 ? "ok" : "voll"], titel);
+}
+
+function khStatusPanel(ctx: { params: Record<string, unknown>; setzeParams(p: Record<string, unknown>): void; sichtbar(): boolean }, standard: "plaetze" | "akut") {
   const root = el("div", { class: "khs" });
+  const ansicht = el("div", { class: "khs-ansicht", role: "tablist" });
+  let modus: "plaetze" | "akut" = ctx.params.ansicht === "akut" || ctx.params.ansicht === "plaetze" ? (ctx.params.ansicht as "plaetze" | "akut") : standard;
+  const knopf = (m: "plaetze" | "akut", l: string) => {
+    const b = el("button", { class: "btn small", type: "button", "data-ansicht": m }, l);
+    b.addEventListener("click", () => {
+      modus = m;
+      merken();
+      render();
+    });
+    return b;
+  };
+  ansicht.append(knopf("akut", "Akutversorgung"), knopf("plaetze", "Plätze"));
   const kopf = el("div", { class: "khs-kopf" });
   const such = el("input", { type: "search", placeholder: "Krankenhaus suchen …", class: "khs-such" }) as HTMLInputElement;
   const umkreis = el("select", { class: "khs-umkreis", title: "Umkreis um die Mitte deiner Funkgruppe" }) as HTMLSelectElement;
@@ -187,7 +251,7 @@ function khStatusPanel(ctx: { params: Record<string, unknown>; setzeParams(p: Re
   nurRettung.checked = ctx.params.nurRettung !== false;
   const nrLabel = el("label", { class: "khs-check" });
   nrLabel.append(nurRettung, document.createTextNode(" nur mit Rettung"));
-  kopf.append(such, umkreis, nrLabel);
+  kopf.append(ansicht, such, umkreis, nrLabel);
   const tabelle = el("div", { class: "khs-tab" });
   root.append(kopf, tabelle);
 
@@ -202,6 +266,23 @@ function khStatusPanel(ctx: { params: Record<string, unknown>; setzeParams(p: Re
       .map((h) => ({ h, km: distanceM(mitte, h) / 1000 }))
       .filter((x) => (!max || x.km <= max) && (!nurRettung.checked || nimmtRettung(x.h)) && (!q || `${x.h.name} ${x.h.kurzname} ${x.h.ort}`.toLowerCase().includes(q)))
       .sort((a, b) => a.km - b.km);
+    ansicht.querySelectorAll<HTMLElement>("[data-ansicht]").forEach((b) => b.classList.toggle("primary", b.dataset.ansicht === modus));
+    tabelle.classList.toggle("akv", modus === "akut");
+    if (modus === "akut") {
+      const kopf = `<div class="akv-z akv-head"><span class="akv-name">Krankenhaus</span>${AKV_SPALTEN.map((s) => `<span class="${s.trenn ? "akv-trenn" : ""}" title="${esc(s.titel)}">${s.n}</span>`).join("")}</div>`;
+      tabelle.innerHTML =
+        kopf +
+        (liste
+          .map(
+            ({ h, km }) => `<div class="akv-z" data-kh="${esc(h.id)}" tabindex="0" role="button">
+              <span class="akv-name"><b>${esc(h.kurzname || h.name)}</b><small>${km.toFixed(0)} km</small></span>
+              ${AKV_SPALTEN.map((s) => `<span class="${s.trenn ? "akv-trenn" : ""}">${akvZelle(h, s, t)}</span>`).join("")}
+            </div>`,
+          )
+          .join("") || `<div class="khs-leer">Kein Krankenhaus im gewählten Umkreis.</div>`) +
+        `<div class="akv-legende"><span><i class="akv-s ok">${AKV_SYMBOL.ok}</i> verfügbar</span><span><i class="akv-s voll">${AKV_SYMBOL.voll}</i> belegt</span><span><i class="akv-s zu">${AKV_SYMBOL.zu}</i> geschlossen</span><span>leer = gibt es dort nicht</span></div>`;
+      return;
+    }
     const kopfZeile = `<div class="khs-z khs-head"><span>Krankenhaus</span>${SPALTEN.map(([, n]) => `<span>${n}</span>`).join("")}</div>`;
     tabelle.innerHTML =
       kopfZeile +
@@ -214,7 +295,7 @@ function khStatusPanel(ctx: { params: Record<string, unknown>; setzeParams(p: Re
         )
         .join("") || `<div class="khs-leer">Kein Krankenhaus im gewählten Umkreis.</div>`);
   };
-  const merken = () => ctx.setzeParams({ umkreis: umkreis.value, nurRettung: nurRettung.checked });
+  const merken = () => ctx.setzeParams({ umkreis: umkreis.value, nurRettung: nurRettung.checked, ansicht: modus });
   umkreis.addEventListener("change", () => (merken(), render()));
   nurRettung.addEventListener("change", () => (merken(), render()));
   such.addEventListener("input", render);
@@ -246,5 +327,13 @@ registriere({
   titel: "KH-Status",
   info: "Krankenhäuser in der Nähe: offen oder zu, freie Plätze in Notaufnahme, Schockraum, Herzkatheter, Stroke Unit, Kreißsaal",
   bereich: "rechts",
-  erstellen: (ctx) => khStatusPanel(ctx),
+  erstellen: (ctx) => khStatusPanel(ctx, "plaetze"),
+});
+
+registriere({
+  komponente: "akutversorgung",
+  titel: "Akutversorgung",
+  info: "Übersicht wie in der Leitstelle: was jedes Krankenhaus hat (Schockraum Trauma/intern, PCI, CT, Endoskopie, Stroke, Notaufnahme, Unfall …) und ob es gerade verfügbar, belegt oder geschlossen ist",
+  bereich: "rechts",
+  erstellen: (ctx) => khStatusPanel(ctx, "akut"),
 });

@@ -1,5 +1,5 @@
 {
- "_quelle": "Angabe Paul: Fotos der Übersicht „Akutversorgung“ (Notruf NÖ, Stand 10/2026). Ein Zeichen (grün/grau/rot) = vorhanden, leeres Feld = nicht vorhanden. Bei St. Pölten zwei Zeichen unter SRI = zwei internistische Schockräume.",
+ "_quelle": "Angabe Paul: Fotos (zweite, vollständige Serie) der Übersicht „Akutversorgung“ (Notruf NÖ, Stand 10/2026). Ein Zeichen (grün/grau/rot) = vorhanden, leeres Feld = nicht vorhanden. Bei St. Pölten zwei Zeichen unter SRI = zwei internistische Schockräume.",
  "_spalten": "srt = Schockraum Trauma, sri = Schockraum intern (Zahl = Anzahl Zeichen), pci, stroke, nfa, unf",
  "_hinweis": "Häuser außerhalb NÖ (UKH Meidling, UKH Linz, Eisenstadt): nur Ergänzungen, nichts wird entfernt (die Liste zeigt dort evtl. nur, was der NÖ-Rettungsdienst nutzt).",
  "kh006": {
@@ -234,8 +234,7 @@
   "nfa": true,
   "unf": true,
   "grau": [
-   "pci",
-   "unf"
+   "pci"
   ]
  },
  "kh030": {
@@ -264,5 +263,14 @@
   "stroke": false,
   "nfa": true,
   "unf": false
+ },
+ "kh020": {
+  "name": "Zwettl",
+  "srt": 1,
+  "sri": 1,
+  "pci": false,
+  "stroke": false,
+  "nfa": true,
+  "unf": true
  }
 }
