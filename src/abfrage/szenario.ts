@@ -149,6 +149,7 @@ export function fuellen(t: string, v: { w: boolean; bezug: string; ort: string; 
     seinen: ["seinen", "ihren"],
     seinem: ["seinem", "ihrem"],
     seiner: ["seiner", "ihrer"],
+    seines: ["seines", "ihres"],
     Sein: ["Sein", "Ihr"],
     Seine: ["Seine", "Ihre"],
     der: ["der", "die"],

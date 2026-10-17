@@ -1,5 +1,21 @@
 # Änderungen
 
+## 0.30.0 – Rendezvous mit dem NEF, Storno über Fahrzeugfunk
+**Rendezvous RTW – NEF**
+- Braucht der Patient (gelb oder rot) einen Notarzt und ist das alarmierte NEF noch mehr als 15 Minuten entfernt, fährt die Besatzung mit dem Patienten los und trifft das NEF unterwegs
+- Der Treffpunkt liegt so, dass beide etwa gleich lange fahren; er ist auf der Karte markiert, bis sich beide getroffen haben
+- Am Treffpunkt steigt der Notarzt zu (3–8 Minuten), danach entscheidet er wie am Einsatzort, ob er mitfährt
+- Nur mit einem mit- oder nachalarmierten NEF (kein Hubschrauber). Den Funk zwischen RTW und NEF hörst du mit, an LEO geht keine eigene Meldung
+- Neue Einstellung „Rendezvous RTW – NEF“ (Standard: an)
+
+**NEF-Storno durch die Besatzung**
+- Braucht der Patient keinen Notarzt, storniert der RTW das NEF selbst über Funk: „NEF von RTW kommen – Hier NEF kommen – Patient stabil, das ist ein Storno für euch – Storno verstanden, frage LEO mitgehört“
+- Im Funk erscheint dann „fragt: LEO mitgehört?“ mit dem Knopf „Mitgehört, ENDE“ (oder sprechen/tippen: „Hier LEO, mitgehört, ENDE“)
+
+**Kleinigkeiten**
+- Funkverlauf zeigt Fahrzeugfunk mit beiden Funkrufnamen; Vorlesen mit der Stimme des jeweiligen Fahrzeugs
+- Fallgeschichten: zwei Platzhalter wurden nicht ersetzt („{seines}“, „{zweimal}“)
+
 ## 0.29.0 – Fallkatalog: Einsätze aus einer stimmigen Wahrheit
 **Neu: Fallkatalog (Test)**
 - Jeder Einsatz entsteht jetzt aus einem Fall: zuerst steht fest, was wirklich los ist (Patient, Verlauf, was die Besatzung vorfindet, Notarzt-Bedarf, Krankenhaus). Telefonat, Lagemeldung und Buchung werden daraus abgeleitet – so widerspricht sich nichts mehr (kein „wach + Schnappatmung“, keine Polizei ohne Grund)

@@ -321,7 +321,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
     orte: ["wohnung", "sport", "schule"],
     stelle: ["im Wohnzimmer", "am Sportplatz", "in der Klasse"],
     anrufer: ["eltern", "trainer", "lehrer", "begleiter"],
-    hergang: ["{P} hat einen Asthmaanfall, das Spray hat {zweimal} nichts geholfen. {Er} pfeift beim Atmen und kriegt kaum Luft."],
+    hergang: ["{P} hat einen Asthmaanfall, das Spray hat {zweimal|jetzt schon dreimal} nichts geholfen. {Er} pfeift beim Atmen und kriegt kaum Luft."],
     seitMin: [5, 25],
     fest: { lungenerkrankung: "asthma", tracheostoma: "nein", at: "abnorm", bw: "ja", sprachschw: ["ja", "ja", "nein"], hautfarbe: ["nein", "ja"], kaltschweiss: "nein", anzahl_patienten: "1" },
     details: ["{Er} sitzt aufrecht und ist ganz ängstlich.", "Das kommt sonst nur bei Pollen oder bei Anstrengung."],
