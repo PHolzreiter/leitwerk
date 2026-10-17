@@ -3150,8 +3150,9 @@ export class Simulation {
             : `Patient verschlechtert sich, ${patientText(p0).replace(/ \(.*\)$/, "")}`;
       const fehlt = this.fehlendeKraefte(e);
       this.nachfordern(e, fz, fehlt);
-      const zusatz = fehlt.na ? ", benötigen Notarzt" : "";
-      this.fzRuft(this.sprecher(e, fz), e, fehlt.na ? "nachforderung" : "lage", `${text}${zusatz}`);
+      const brauchen = [fehlt.na && "Notarzt", fehlt.rtw && `${fehlt.rtw} weitere${fehlt.rtw > 1 ? "" : "s"} Rettungsmittel`, fehlt.bit && "BIT"].filter(Boolean);
+      const zusatz = brauchen.length ? `, benötigen ${brauchen.join(" und ")}` : "";
+      this.fzRuft(this.sprecher(e, fz), e, brauchen.length ? "nachforderung" : "lage", `${text}${zusatz}`);
       if (istStillstand(p0) && fz.phaseEnde !== null) fz.phaseEnde = Math.max(fz.phaseEnde, t + rnd(30, 40) * MIN);
       return;
     }

@@ -15,6 +15,7 @@
 **Kleinigkeiten**
 - Funkverlauf zeigt Fahrzeugfunk mit beiden Funkrufnamen; Vorlesen mit der Stimme des jeweiligen Fahrzeugs
 - Fallgeschichten: zwei Platzhalter wurden nicht ersetzt („{seines}“, „{zweimal}“)
+- Verändert sich der Patient, bevor die Lagemeldung kommt, nennt die Besatzung jetzt alles, was sie braucht (auch BIT oder weitere Rettungsmittel), nicht nur den Notarzt
 
 ## 0.29.0 – Fallkatalog: Einsätze aus einer stimmigen Wahrheit
 **Neu: Fallkatalog (Test)**
