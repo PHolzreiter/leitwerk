@@ -3391,8 +3391,9 @@ export class Simulation {
   bedarfVon(e: Einsatz): { na: number; transport: number } {
     const l = e.wahr.lage;
     if (!l) return { na: 0, transport: 1 };
-    if (l.fall) return { na: this.naBedarfFall(e) ? 1 : 0, transport: 1 };
-    return bedarf(l);
+    if (l.fall && l.patienten.length === 1) return { na: this.naBedarfFall(e) ? 1 : 0, transport: 1 };
+    const b = bedarf(l);
+    return l.fall ? { na: Math.max(b.na, this.naBedarfFall(e) ? 1 : 0), transport: b.transport } : b;
   }
 
   /** Wie viele Notärzte / transportfähige Fahrzeuge fehlen laut Lage? */
