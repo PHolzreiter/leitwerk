@@ -1,5 +1,25 @@
 # Änderungen
 
+## 0.29.0 – Fallkatalog: Einsätze aus einer stimmigen Wahrheit
+**Neu: Fallkatalog (Test)**
+- Jeder Einsatz entsteht jetzt aus einem Fall: zuerst steht fest, was wirklich los ist (Patient, Verlauf, was die Besatzung vorfindet, Notarzt-Bedarf, Krankenhaus). Telefonat, Lagemeldung und Buchung werden daraus abgeleitet – so widerspricht sich nichts mehr (kein „wach + Schnappatmung“, keine Polizei ohne Grund)
+- 16 Fälle zum Testen, viele davon harmlos oder „klingt schlimm, ist harmlos“: Fremdkörper beim Kleinkind, Brustschmerz (auch unauffällig), Schlaganfall, Sturz mit Hüftbruch, Kreislaufstillstand, Verkehrsunfall mit Eingeklemmtem, Unterzucker, Asthma, Geburt, psychische Krise, Kollaps, Hyperventilation, Person auf Parkbank, Schnittwunde, Pflegeheim mit Fieber, Hexenschuss. Jeder mit mehreren Varianten (Anrufer, Ort, Patient, Ausgang)
+- Der Code ergibt sich aus deiner Abfrage – es gibt keinen „richtigen Code“, deshalb funktioniert es mit jedem Abfrageschema
+
+**Notarzt nach Kompetenz**
+- Ob ein Notarzt gebraucht wird, hängt vom Patienten und davon ab, wer vor Ort ist (RS, NFS, NKV, NKI – nach der Scope of Practice des RKNÖ; NKA zählt wie NFS). Beispiel Asthma: ein RS fordert den NA nach, ein NFS nicht
+- Die Besatzung entscheidet nach dem, was sie sieht: unauffälliger Brustschmerz → kein NA („kann storniert werden“), kaltschweißig mit Hebungen im EKG → NA
+- Ist der NA schon vor Ort, fährt er öfter mit (rot und nach NA-Maßnahmen immer, gelb oft, grün nie)
+- Fehlt der nötige NA, verschlechtert sich der Patient nach der Zeit aus dem Fall
+- Den Tod stellt der Notarzt fest – ohne NA wartet die Besatzung
+
+**Anleitungen am Telefon**
+- Anweisungen wie Fremdkörper-Manöver, Reanimation, Druck auf die Wunde, Zucker trinken, Beruhigen werden erkannt und verbessern den Verlauf (z. B. löst sich der Fremdkörper, Laien-Reanimation mit AED)
+
+**Einstellungen**
+- „Einsätze aus dem Fallkatalog“: nur Katalog (Standard, zum Testen) / gemischt / aus
+- „Transportverweigerung (Revers)“: normal / selten / aus – höchstens ca. 15 % der passenden Fälle, nur bei wachen, stabilen Patienten
+
 ## 0.28.1 – Hausarzt-Fälle ins nächste Haus
 - Hausärztlich versorgbare Patienten und Bagatellverletzungen kommen ins nächste offene Haus – PVZ oder Krankenhaus, je nachdem, was näher ist (vorher hatte das PVZ immer Vorrang, bis 25 km)
 
