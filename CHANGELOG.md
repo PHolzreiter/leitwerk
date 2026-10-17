@@ -1,5 +1,21 @@
 # Änderungen
 
+## 0.31.0 – Fall-Editor
+**Fälle selbst schreiben**
+- Neuer Knopf „Fälle“ oben (auch unter Einstellungen → Einsatzaufkommen): alle Fälle des Fallkatalogs ansehen, neue schreiben, prüfen und gleich durchspielen
+- Fünf Schritte mit Auswahllisten statt Programmcode: 1 Grundlagen (Name, Thema, Häufigkeit, Alter, Ort, Jahreszeit/Uhrzeit/Wetter) · 2 Anrufer & Hergang (wer anruft, was er erzählt, Details, Stimmung) · 3 Abfrage (die Fragen deines Abfrageschemas der Reihe nach – du legst die wahre Antwort fest, der Code ergibt sich zur Kontrolle von selbst; auch je Ausgang unterschiedlich) · 4 Ausgänge (Wahrscheinlichkeit, Sichtung, Lagebild, Notarzt-Bedarf nach Kompetenz, Krankenhaus, Feuerwehr/Polizei, Revers, Tod, Verlauf mit Anleitungen am Telefon) · 5 Prüfen & Testen
+- Die Ampel oben prüft live: grün = spielbar, gelb = spielbar mit Hinweisen (z. B. offene Fragen, die das Spiel selbst beantwortet), rot = so nicht spielbar
+- „Diesen Fall durchspielen“ startet sofort einen Notruf mit dem Fall (auch mit einem bestimmten Ausgang)
+- Optional: „✨ Entwurf mit KI“ – kurze Beschreibung eingeben, die KI macht einen Entwurf, danach ist alles von Hand änderbar. Leer beginnen geht immer
+- Jeder Fall lässt sich im Spiel ein- und ausschalten
+
+**Eingebaute Fälle**
+- Eingebaute Fälle sind gesperrt (nur ansehen oder als eigenen Fall kopieren). Mit dem Admin-Passwort lassen sie sich ändern; die Änderung liegt neben dem Original und lässt sich jederzeit zurücksetzen
+
+**Fallpakete**
+- Exportieren: gewählte Fälle als .json-Datei speichern und weitergeben
+- Importieren: eigene Fälle mit gleicher ID werden ersetzt; eingebaute nur mit Admin-Freigabe (sonst kommen sie als Kopie dazu). Fehlerhafte Fälle werden übersprungen und genannt
+
 ## 0.30.0 – Rendezvous mit dem NEF, Storno über Fahrzeugfunk
 **Rendezvous RTW – NEF**
 - Braucht der Patient (gelb oder rot) einen Notarzt und ist das alarmierte NEF noch mehr als 15 Minuten entfernt, fährt die Besatzung mit dem Patienten los und trifft das NEF unterwegs
