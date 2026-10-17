@@ -1,5 +1,8 @@
 # Änderungen
 
+## 0.28.1 – Hausarzt-Fälle ins nächste Haus
+- Hausärztlich versorgbare Patienten und Bagatellverletzungen kommen ins nächste offene Haus – PVZ oder Krankenhaus, je nachdem, was näher ist (vorher hatte das PVZ immer Vorrang, bis 25 km)
+
 ## 0.28.0 – Fenster „Akutversorgung“ und Primärversorgungszentren
 **Akutversorgung**
 - Neues Fenster „Akutversorgung“ (auch als Ansicht im KH-Status umschaltbar): je Haus SRT, SRI, PCI, CT, Endoskopie, Stroke, Notaufnahme, Unfall, Kinder und Kreißsaal – wie die Übersicht der Leitstelle
@@ -8,7 +11,7 @@
 **Primärversorgungszentren (PVZ)**
 - Neu: PVZ Böheimkirchen, St. Pölten, St. Pölten Nord, Tullnerfeld, Wiener Neustadt und Wienerwald – Adressen und Öffnungszeiten von ihren Websites
 - Ein PVZ ist keine Notaufnahme: Es nimmt nur unter der Woche zu den Öffnungszeiten Patienten, die sonst nur einen Hausarzt bräuchten (neue Verdachtsdiagnosen „Hausärztlich versorgbar“ und „Bagatellverletzung“, nur bei grün gesichteten Erwachsenen). Kleine Verletzungen nicht in Böheimkirchen
-- Ist kein PVZ in der Nähe (bis 25 km) oder offen, fährt die Besatzung ins Krankenhaus
+- Ist das PVZ zu, fährt die Besatzung ins Krankenhaus
 
 **Daten**
 - Zwettl hat eine Notaufnahme (laut Übersicht Akutversorgung)

@@ -180,8 +180,6 @@ export function istPvz(h: Hospital): boolean {
   const e = h.einrichtungen ?? [];
   return e.includes("amb_pvz") && !e.includes("amb_notaufnahme");
 }
-/** Ein PVZ fährt die Rettung nur in der Nähe an */
-export const PVZ_KM = 25;
 
 export function khVorschlaege(alle: Hospital[], b: Buchung | undefined, rot: boolean, km: (h: Hospital) => number, opt?: VorschlagOpt): KhVorschlag[] {
   const t = opt?.t;
@@ -206,9 +204,11 @@ export function khVorschlaege(alle: Hospital[], b: Buchung | undefined, rot: boo
   };
   const mit = alle.map((h) => ({ h, km: km(h), e: eignung(h, b, rot), o: b ? Math.max(0, optionIndex(h, b)) : 0 }));
   // bevorzugte Option zuerst – eine weitere Option nur, wenn sie deutlich (15 km je Stufe) näher ist
-  const passend = mit.filter((x) => x.e === "passend" && x.km <= (istPvz(x.h) ? PVZ_KM : ERREICHBAR_KM)).sort((a, c) => a.km + a.o * 15 - (c.km + c.o * 15));
+  const passend = mit.filter((x) => x.e === "passend" && x.km <= ERREICHBAR_KM).sort((a, c) => a.km + a.o * 15 - (c.km + c.o * 15));
   const ausweich = mit.filter((x) => x.e === "ausweich" && x.km <= ERREICHBAR_KM).sort((a, c) => a.km - c.km);
   const out: KhVorschlag[] = [...passend.map((x) => info(x.h, "passend", x.km)), ...ausweich.map((x) => info(x.h, "ausweich", x.km))];
+  // Hausarzt-Fälle: PVZ und Krankenhaus gleichwertig – das nächste gewinnt
+  if (b && b.optionen.every((alt) => alt.every((a) => a.startsWith("ak_primaerversorgung")))) out.sort((a, c) => a.km - c.km);
   // Rückfall, wenn kein passendes Haus offen ist
   if (out.some((v) => !v.zu)) return out;
   const rf = RUECKFALL[b?.kategorie === "Trauma" ? "Trauma" : "sonst"] ?? RUECKFALL.sonst;
