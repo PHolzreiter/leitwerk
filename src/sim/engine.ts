@@ -40,6 +40,7 @@ import {
 } from "./weather";
 import { bestimmeCode, fallZiehen, kapitelVonCode, wahrheitFuer, type Antworten, type Schema } from "../abfrage/schema";
 import { anruferWaehlen, veraenderungText, zufallsName, type Anrufer } from "../abfrage/anrufer";
+import { personaWaehlen } from "../abfrage/persona";
 import { alleOrte, kategorienFuerOrtArt, poiKategorien } from "../data/orte";
 import { bezugFuer, fuellen, stimmungAusVerlauf, szenarioBauen, vorlageFest, vorlageWaehlen, type OrtArt, type Szenario } from "../abfrage/szenario";
 import { SZENARIEN } from "../abfrage/szenarien";
@@ -2047,7 +2048,7 @@ export class Simulation {
     const gemeldet = p.gemeldeteAdresse ?? p.adresse;
     const e: Einsatz = {
       id: `e${Date.now().toString(36)}${Math.floor(Math.random() * 1e6).toString(36)}`,
-      nummer: this.neueNummer(),
+      nummer: this.fallWunsch?.probe ? "PROBE" : this.neueNummer(),
       erstellt: this.state.zeit,
       zustand: "neu",
       wahr: {
@@ -2095,7 +2096,7 @@ export class Simulation {
         p.fall.antworten,
         Math.random,
         gemeldet,
-        vorlage && ortArt ? { typen: vorlage.anrufer, ort: ORT_LABEL[ortArt] } : undefined,
+        vorlage && ortArt ? { typen: vorlage.anrufer, ort: ORT_LABEL[ortArt], ortArt } : undefined,
       );
       // Ruft Pflege, Arzt oder Ordination an, fragt man in Kapitel 33 ab (Anforderung durch Einrichtung) –
       // dann muss auch die richtige Lösung dort liegen
@@ -2118,10 +2119,18 @@ export class Simulation {
         const merkmale = store.schema ? merkmaleAusSchema(store.schema, a) : { ...a };
         // Fallkatalog: Texte mit [variante=…] gelten nur für die gezogene Variante
         if (p.fall.katalog) merkmale.variante = p.fall.katalog.variante;
+        const privat = (anrufer.art ?? "privat") === "privat";
+        // Persönlichkeit (Wissen, Art zu reden, Einstieg …) – auch Texte mit [wissen=fremd] bzw. [anrufer=…] richten sich danach
+        if (privat || anrufer.art === "einrichtung") {
+          const [vn, ...nn] = pname.split(" ");
+          anrufer.persona = personaWaehlen(anrufer, { alter: alt, w, vorname: vn, nachname: nn.join(" ") }, { ortUnbekannt: false, draussen: !!ortArt && ["strasse", "natur", "auto", "wasser", "bahnhof"].includes(ortArt) }, Math.random);
+          merkmale.wissen = anrufer.persona.wissen;
+        }
+        if (anrufer.typ) merkmale.anrufer_typ = anrufer.typ;
         szenario = szenarioBauen(vorlage, merkmale, { bezug: bezugFuer(anrufer.rolle, anrufer.selbst, w, alt), selbst: anrufer.selbst, ort: p.gemeinde ?? gemeindeVon(p.adresse), name: pname, ortArt }, Math.random);
-        delete szenario.zusatz.variante;
+        for (const x of ["variante", "wissen", "anrufer_typ", "ort", "selbst"]) delete szenario.zusatz[x];
         const st = stimmungAusVerlauf(szenario.verlauf);
-        if (st && (anrufer.art ?? "privat") === "privat") anrufer.emotion = st;
+        if (st && privat) anrufer.emotion = st;
       }
       e.wahr.abfrage = {
         kapitel: p.fall.kapitel,
@@ -2153,6 +2162,8 @@ export class Simulation {
         ergebnis: null,
       };
     }
+    // Probe aus dem Fall-Editor: nur die Wahrheit bauen, nicht ins Spiel nehmen
+    if (this.fallWunsch?.probe) return e;
     this.log(e, e.anruf ? "Notruf klingelt" : "Notruf eingegangen");
     this.state.einsaetze.unshift(e);
     this.funk("Notruf", e.id, `Neuer Einsatz ${e.nummer}`, "info");
@@ -2751,7 +2762,17 @@ export class Simulation {
   }
 
   /** Nächster Einsatz kommt aus diesem Fall (für Tests und den Fall-Editor) */
-  private fallWunsch: { id: string; variante?: string } | null = null;
+  private fallWunsch: { id: string; variante?: string; probe?: boolean } | null = null;
+  /** Probe für den Fall-Editor: Einsatz mit Anrufer und Fallgeschichte bauen, ohne ihn ins Spiel zu nehmen */
+  async probeFall(id: string, variante?: string): Promise<Einsatz | null> {
+    this.fallWunsch = { id, variante, probe: true };
+    try {
+      return await this.generiere();
+    } finally {
+      this.fallWunsch = null;
+    }
+  }
+
   async generiereFall(id: string, variante?: string): Promise<Einsatz | null> {
     this.fallWunsch = { id, variante };
     try {

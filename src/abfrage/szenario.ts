@@ -66,7 +66,12 @@ export interface SzenarioVorlage {
   /** nur bei Natur/unklarem Ort: so beschreibt der Anrufer, wo er ist ({ort} = Gemeinde in der Nähe) */
   wo?: string[];
   anrufer: AnruferTyp[];
-  /** Hergang aus Sicht des Anrufers (3. Person, Platzhalter siehe fuellen) */
+  /**
+   * Was wirklich passiert ist – Fakten (Abfolge, Umstände), aus denen die KI die Erzählung jedes Mal neu
+   * formuliert. Bedingungen in eckigen Klammern: [variante=A], [ort=schule], [selbst=ja], [wissen=fremd], [anrufer=kind] …
+   */
+  geschehen?: string[];
+  /** So könnte es klingen – Stilbeispiele für den ersten Satz (3. Person, Platzhalter siehe fuellen); nie wörtlich verwendet, wenn es Fakten gibt */
   hergang: string[];
   /** Hergang, wenn der Patient selbst anruft (Ich-Form); fehlt = Patient ruft nie selbst an */
   hergangIch?: string[];
@@ -80,6 +85,8 @@ export interface SzenarioVorlage {
   vorerkrankungen?: string[];
   /** wie sich die Lage während des Gesprächs anfühlt (Stimmung, kleine Veränderungen) */
   verlauf?: string[];
+  /** feste Umgebung (statt zufälligem Stock/Tür), z. B. „3. Stock, enges Stiegenhaus“ */
+  umgebung?: string[];
   /** Jahreszeiten / Uhrzeiten, in denen es passt */
   jahreszeit?: ("fruehling" | "sommer" | "herbst" | "winter")[];
   stunden?: [number, number];
@@ -105,6 +112,10 @@ export interface Szenario {
   wo?: string;
   hergang: string;
   hergangIch?: string;
+  /** Fakten zum Hergang (gefüllt) */
+  geschehen?: string[];
+  /** Stilbeispiele (gefüllt) */
+  stil?: string[];
   /** „vor etwa 10 Minuten“ */
   seit: string;
   seitMin: number;
@@ -167,9 +178,10 @@ export function fuellen(t: string, v: { w: boolean; bezug: string; ort: string; 
     if (v.seite !== undefined && teile.length === 2 && /^recht/.test(teile[0]) && /^link/.test(teile[1])) return teile[v.seite];
     return pick(teile, rnd);
   });
-  s = s.replace(/\{(\w+)\}/g, (m, k: string) => {
+  s = s.replace(/\{(\w+)\}/g, (m, k: string, pos: number, ganz: string) => {
     if (pr[k]) return pr[k][v.w ? 1 : 0];
-    if (k === "P") return v.bezug.charAt(0).toUpperCase() + v.bezug.slice(1);
+    // {P} am Satzanfang groß, mitten im Satz klein („Dann ist meine Mutter …“)
+    if (k === "P") return /(^|[.!?:„“"]\s*)$/.test(ganz.slice(0, pos)) ? v.bezug.charAt(0).toUpperCase() + v.bezug.slice(1) : v.bezug;
     if (k === "p") return v.bezug;
     if (k === "ort") return v.ort;
     if (k === "name") return v.name;
@@ -310,6 +322,10 @@ function passtBedingung(d: string, a: Antworten): boolean {
   });
 }
 
+function ohneBedingung(d: string): string {
+  return d.replace(/^\[[^\]]*\]\s*/, "");
+}
+
 /** Das sagt der Anrufer, wenn er nicht weiß, was eine Option bedeutet: „weiß ich nicht“ wird zu „unbekannt“ */
 function wert(x: Wert | Wert[], rnd: Rnd): Wert {
   return Array.isArray(x) ? pick(x, rnd) : x;
@@ -387,6 +403,8 @@ export function szenarioBauen(
   const alter = typeof a.alter === "number" ? a.alter : zwischen(v.alter[0], v.alter[1], rnd);
   const seite = rnd() < 0.5 ? 0 : 1;
   const f = (t: string) => fuellen(t, { w, bezug: opt.bezug, ort: opt.ort, name: opt.name, seite }, rnd);
+  // Fakten und Details stehen in der 3. Person – ruft der Patient selbst an, heißt {P} dort „er“/„sie“
+  const f3 = opt.selbst ? (t: string) => fuellen(t, { w, bezug: w ? "sie" : "er", ort: opt.ort, name: opt.name, seite }, rnd) : f;
   const ortArt = opt.ortArt ?? pick(v.orte, rnd);
   // Zeit passend zu den Antworten (liegt am Boden < 1 h, > 6 h her, < 4,5 h …)
   let [smin, smax] = v.seitMin ?? [3, 20];
@@ -433,8 +451,8 @@ export function szenarioBauen(
     setze("blutung_stark", "nein");
     setze("fehlstellung", "nein");
   }
-  // Texte mit [bedingung] nur, wenn sie zu den Antworten passen
-  const alle = { ...zusatz, ...a };
+  // Texte mit [bedingung] nur, wenn sie zu den Antworten (und Ort, Anrufer) passen
+  const alle: Antworten = { ...zusatz, ...a, ort: ortArt, selbst: opt.selbst ? "ja" : "nein" };
   const passend = (l: string[]) => {
     const ok = l.filter((t) => passtBedingung(t, alle));
     return pick(ok.length ? ok : l, rnd).replace(/^\[[^\]]*\]\s*/, "");
@@ -444,10 +462,12 @@ export function szenarioBauen(
     vorlage: v.id,
     thema: v.thema,
     ortArt,
-    stelle: f(pick(v.stelle, rnd)),
+    stelle: f(passend(v.stelle.length ? v.stelle : [""])),
     wo: v.wo?.length ? f(pick(v.wo, rnd)) : undefined,
-    hergang: f(passend(v.hergang)),
+    hergang: f(passend(v.hergang.length ? v.hergang : v.geschehen?.length ? [v.geschehen[0]] : [""])),
     hergangIch: opt.selbst && v.hergangIch?.length ? f(passend(v.hergangIch)) : undefined,
+    geschehen: v.geschehen?.length ? v.geschehen.filter((d) => passtBedingung(d, alle)).map((d) => f3(ohneBedingung(d))) : undefined,
+    stil: (opt.selbst && v.hergangIch?.length ? v.hergangIch : v.hergang).filter((d) => d.trim() && passtBedingung(d, alle)).map((d) => f(ohneBedingung(d))),
     seit: SEIT_TEXT(seitMin),
     seitMin,
     patient: {
@@ -460,9 +480,9 @@ export function szenarioBauen(
       hausarzt: `${pick(["Dr. Huber", "Dr. Leitner", "Dr. Wagner", "Dr. Pichler", "Dr. Steiner", "Dr. Bauer"], rnd)} in ${opt.ort}`,
       gewicht,
     },
-    details: (v.details ?? []).filter((d) => passtBedingung(d, alle)).map((d) => f(d.replace(/^\[[^\]]*\]\s*/, ""))).filter(() => rnd() < 0.85),
-    umgebung: umgebung(ortArt, alter, rnd),
-    verlauf: (v.verlauf ?? []).map(f),
+    details: (v.details ?? []).filter((d) => passtBedingung(d, alle)).map((d) => f3(ohneBedingung(d))).filter(() => rnd() < 0.85),
+    umgebung: v.umgebung?.length ? v.umgebung.filter((d) => passtBedingung(d, alle)).map((d) => f(ohneBedingung(d))) : umgebung(ortArt, alter, rnd),
+    verlauf: (v.verlauf ?? []).filter((d) => passtBedingung(d, alle)).map((d) => f(ohneBedingung(d))),
     zusatz,
     ohnePatient: v.ohnePatient ? f(v.ohnePatient) : undefined,
   };
@@ -520,14 +540,17 @@ export function faktSaetze(z: Antworten, w: boolean): string[] {
 export const SELBSTVERSTAENDLICH = new Set(["diabetiker", "epilepsie", "herz_vg", "herzleiden", "blutverduenner", "vg_schlaganfall", "vg_tia", "psych_vorerkrankung", "aneurysma", "bluter", "kokain", "lungenerkrankung", "gewalt", "gewalttaetig", "aggressiv", "waffen"]);
 
 /** Fallakte für die KI (Geheimwissen der Anruferin/des Anrufers) */
-export function fallakte(sz: Szenario, opt: { selbst: boolean; bezug: string; quelle?: "vorort" | "polizei" | "telefon"; fremd?: boolean; hausarztIch?: boolean }): string {
+export function fallakte(sz: Szenario, opt: { selbst: boolean; bezug: string; quelle?: "vorort" | "polizei" | "telefon"; fremd?: boolean; hausarztIch?: boolean; vorgeschichte?: "ja" | "teilweise" | "nein" }): string {
   const p = sz.patient;
   const w = p.geschlecht === "w";
   const q = opt.quelle ?? "vorort";
   const wer = opt.selbst ? "Du selbst" : `${opt.bezug.charAt(0).toUpperCase()}${opt.bezug.slice(1)} (${p.name})`;
   const z: string[] = [];
   const erlebt = q === "polizei" ? "so hat es dir die Streife vor Ort gemeldet" : q === "telefon" ? "das hat dir der Patient bzw. die Angehörigen gerade am Telefon geschildert – du bist nicht vor Ort" : "das hast du erlebt";
-  z.push(`WAS PASSIERT IST (${erlebt}): ${opt.selbst && sz.hergangIch ? sz.hergangIch : sz.hergang} Das war ${sz.seit}.`);
+  if (sz.geschehen?.length) {
+    z.push(`WAS WIRKLICH PASSIERT IST (${erlebt}) – Fakten. Erzähl es in DEINEN Worten, so wie du es erlebt hast, nie wörtlich ablesen und nicht alles auf einmal:\n${sz.geschehen.map((g) => `- ${g}`).join("\n")}\n- Das war ${sz.seit}.`);
+    if (sz.stil?.length) z.push(`So ähnlich KÖNNTE ein erster Satz klingen – nur als Anhaltspunkt für den Ton, NICHT wörtlich übernehmen, eigene Worte finden: ${sz.stil.map((x) => `„${x}“`).join(" / ")}`);
+  } else z.push(`WAS PASSIERT IST (${erlebt}): ${opt.selbst && sz.hergangIch ? sz.hergangIch : sz.hergang} Das war ${sz.seit}.`);
   z.push(`WO: ${sz.stelle}${sz.umgebung.length ? ` (${sz.umgebung.join("; ")})` : ""}.`);
   const titel = opt.selbst
     ? "WAS DU SPÜRST UND WEISST (hier über dich in der dritten Person notiert – du sagst es natürlich in Ich-Form)"
@@ -541,9 +564,15 @@ export function fallakte(sz: Szenario, opt: { selbst: boolean; bezug: string; qu
   if (sz.ohnePatient) z.push(`BETROFFENE: ${sz.ohnePatient}`);
   else if (opt.fremd)
     z.push(
-      `ÜBER DEN PATIENTEN (du kennst ${w ? "sie" : "ihn"} nicht; den Namen und das, was hier steht, weißt du nur, weil ${q === "polizei" ? "die Streife" : "du"} ${w ? "sie" : "ihn"} gefragt ${q === "polizei" ? "hat" : "hast"} – fragt die Leitstelle danach, ${q === "polizei" ? "gibst du es von der Streife weiter" : "fragst du kurz nach und sagst es dann"}): ${p.name}, ungefähr ${p.alter} Jahre, ${w ? "weiblich" : "männlich"}. ${vorErk} Den Hausarzt kennst du nicht.`,
+      `ÜBER ${w ? "SIE" : "IHN"} (du kennst ${w ? "sie" : "ihn"} nicht; den Namen und das, was hier steht, weißt du nur, weil ${q === "polizei" ? "die Streife" : "du"} ${w ? "sie" : "ihn"} gefragt ${q === "polizei" ? "hat" : "hast"} – fragt die Leitstelle danach, ${q === "polizei" ? "gibst du es von der Streife weiter" : "fragst du kurz nach und sagst es dann"}): ${p.name}, ${w ? "weiblich" : "männlich"}. ${vorErk} (Das erfährst du nur, wenn ${w ? "sie" : "er"} antworten kann.) Den Hausarzt kennst du nicht.`,
     );
-  else z.push(`ÜBER ${opt.selbst ? "DICH" : "DEN PATIENTEN"}: ${wer}, ${p.alter} Jahre, ${w ? "weiblich" : "männlich"}, Gewicht ${p.gewicht}. ${vorErk} Hausarzt: ${opt.hausarztIch ? "du selbst" : p.hausarzt}.`);
+  else if (opt.vorgeschichte && opt.vorgeschichte !== "ja" && !opt.selbst)
+    z.push(
+      `ÜBER ${w ? "SIE" : "IHN"}: ${wer}, ${w ? "weiblich" : "männlich"}. ${
+        opt.vorgeschichte === "teilweise" && p.vorerkrankungen.length ? `Du weißt nur, dass ${w ? "sie" : "er"} ${p.vorerkrankungen[0]} hat – sonst kennst du keine Krankheiten, Medikamente oder den Hausarzt.` : "Krankheiten, Medikamente und Hausarzt kennst du nicht."
+      }`,
+    );
+  else z.push(`ÜBER ${opt.selbst ? "DICH" : w ? "SIE" : "IHN"}: ${wer}, ${p.alter} Jahre, ${w ? "weiblich" : "männlich"}, Gewicht ${p.gewicht}. ${vorErk} Hausarzt: ${opt.hausarztIch ? "du selbst" : p.hausarzt}.`);
   void w;
   if (sz.verlauf.length) z.push(`STIMMUNG UND VERLAUF IM GESPRÄCH: ${sz.verlauf.join(" ")}`);
   return z.join("\n");

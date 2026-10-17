@@ -157,3 +157,8 @@ export function merkmaleAusSchema(schema: Schema, a: Antworten): Antworten {
   }
   return out;
 }
+
+/** Merkmal einer Schemafrage (eigene ID, wenn das Schema keine Zuordnung hat) */
+export function merkmalVonFrage(schema: Schema, frageId: string): string {
+  return zuordnungen(schema).find((z) => z.frage === frageId)?.merkmal ?? frageId;
+}

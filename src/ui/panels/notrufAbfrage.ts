@@ -2,6 +2,7 @@
  * Notrufgespräch und strukturierte Abfrage (Leitfaden) für das Abfrage-Fenster.
  * Nur wer den Anruf angenommen hat, führt Gespräch und Abfrage; alle anderen sehen mit.
  */
+import { sprechFrage } from "../../abfrage/sprechfrage";
 import { mikroAnbinden } from "../sprache";
 import { store } from "../../data/store";
 import { fragen, antwortetGerade, kontext } from "../../abfrage/gespraech";
@@ -254,7 +255,7 @@ export function notrufTeile(e: Einsatz): NotrufTeile {
       kopfz.textContent = f.text;
       if (darf && a.status === "aktiv") {
         const q = el("button", { class: "frag-knopf", title: "Dem Anrufer diese Frage stellen" }, "🗨");
-        q.addEventListener("click", () => void stelle(f.text, f));
+        q.addEventListener("click", () => void stelle(sprechFrage(f, store.schema, a.antworten, { erste: !a.gespraech.some((m) => m.von === "leitstelle") }), f));
         kopfz.prepend(q);
       }
       row.appendChild(kopfz);
@@ -305,7 +306,7 @@ export function notrufTeile(e: Einsatz): NotrufTeile {
         const kt = el("div", { class: "frage-text" }, f.text);
         if (darf && a.status === "aktiv") {
           const q = el("button", { class: "frag-knopf" }, "🗨");
-          q.addEventListener("click", () => void stelle(f.text, f));
+          q.addEventListener("click", () => void stelle(sprechFrage(f, store.schema, a.antworten, { erste: !a.gespraech.some((m) => m.von === "leitstelle") }), f));
           kt.prepend(q);
         }
         r.appendChild(kt);
@@ -361,7 +362,7 @@ export function notrufTeile(e: Einsatz): NotrufTeile {
         const kt = el("div", { class: "frage-text" }, f.text);
         if (darf && a.status === "aktiv") {
           const q = el("button", { class: "frag-knopf" }, "🗨");
-          q.addEventListener("click", () => void stelle(f.text, f));
+          q.addEventListener("click", () => void stelle(sprechFrage(f, store.schema, a.antworten, { erste: !a.gespraech.some((m) => m.von === "leitstelle") }), f));
           kt.prepend(q);
         }
         const inp = el("input", { type: "text", class: "text", placeholder: "Stiege, Stock, Tür, Zufahrt …" });

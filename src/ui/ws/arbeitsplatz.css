@@ -2967,3 +2967,42 @@ button.weather.offen {
   max-height: 50vh;
   overflow: auto;
 }
+.fe-proben {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+  max-width: 900px;
+}
+.fe-probe {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: var(--panel);
+}
+.fe-probe-kopf {
+  font-size: 13px;
+  line-height: 1.5;
+}
+.fe-probe-fakten {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.fe-probe-verlauf {
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+}
+.fe-probe-z.anrufer {
+  padding-left: 12px;
+  font-style: italic;
+}
+.fe-probe-von {
+  font-style: normal;
+  font-weight: 600;
+  color: var(--text-dim);
+  margin-right: 4px;
+}

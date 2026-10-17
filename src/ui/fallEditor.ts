@@ -27,7 +27,8 @@ import {
 import { fallPruefen } from "../abfrage/faellePruefen";
 import { kiBereit, kiJson, kiStatus } from "../abfrage/ki";
 import { bestimmeCode, fragenImAblauf, type Antworten, type Frage, type Schema, type Wert } from "../abfrage/schema";
-import { fuellen, type AnruferTyp, type OrtArt } from "../abfrage/szenario";
+import type { AnruferTyp, OrtArt } from "../abfrage/szenario";
+import { ERÖFFNUNG, probeGespraech } from "../abfrage/gespraech";
 import { kapitelZuThema, merkmaleAusSchema, merkmaleInSchema, THEMEN, themaLabel } from "../abfrage/themen";
 import { BUCHUNGEN } from "../data/klinik";
 import { store } from "../data/store";
@@ -286,7 +287,8 @@ function neuerFall(): FallVorlage {
     orte: ["wohnung"],
     stelle: ["im Wohnzimmer"],
     anrufer: ["partner"],
-    hergang: [""],
+    geschehen: [""],
+    hergang: [],
     seitMin: [5, 30],
     fest: {},
     details: [],
@@ -410,7 +412,7 @@ function fensterBauen(): { zeigen(id?: string): void } {
     const box = nav.querySelector(".fe-nav-liste")!;
     box.innerHTML = "";
     const q = suche.trim().toLowerCase();
-    const passt = (f: FallVorlage) => !q || `${f.name ?? ""} ${f.id} ${themaLabel(f.thema)} ${f.hergang.join(" ")}`.toLowerCase().includes(q);
+    const passt = (f: FallVorlage) => !q || `${f.name ?? ""} ${f.id} ${themaLabel(f.thema)} ${(f.geschehen ?? []).join(" ")} ${f.hergang.join(" ")}`.toLowerCase().includes(q);
     const alle = alleFaelle(true).filter(passt);
     const gruppen: [string, FallVorlage[]][] = [
       ["Eigene Fälle", alle.filter((f) => !eingebauterFall(f.id))],
@@ -596,6 +598,11 @@ function fensterBauen(): { zeigen(id?: string): void } {
     // leere Einträge weg
     f.stelle = f.stelle.filter((x) => x.trim());
     f.hergang = f.hergang.filter((x) => x.trim());
+    if (f.geschehen) f.geschehen = f.geschehen.filter((x) => x.trim());
+    if (f.umgebung) {
+      f.umgebung = f.umgebung.filter((x) => x.trim());
+      if (!f.umgebung.length) delete f.umgebung;
+    }
     if (f.hergangIch) f.hergangIch = f.hergangIch.filter((x) => x.trim());
     if (f.hergangIch && !f.hergangIch.length) delete f.hergangIch;
     for (const k of ["details", "vorerkrankungen", "verlauf", "wo"] as const) {
@@ -709,37 +716,55 @@ function fensterBauen(): { zeigen(id?: string): void } {
     formular.append(a, p, o, z);
   }
 
-  // ---- Schritt 2: Anrufer & Hergang
+  // ---- Schritt 2: Anrufer & Geschichte
   function schrittHergang(): void {
     const f = entwurf!;
     const hilfe = el("details", { class: "fe-platzhalter" });
-    hilfe.innerHTML = `<summary>Platzhalter in Texten</summary>
+    hilfe.innerHTML = `<summary>Platzhalter und Bedingungen</summary>
       <table>
-        <tr><td><code>{P}</code> / <code>{p}</code></td><td>der Patient aus Sicht des Anrufers („Mein Mann“, „Die Frau“) – groß/klein</td></tr>
+        <tr><td><code>{P}</code> / <code>{p}</code></td><td>die Person aus Sicht des Anrufers („Mein Mann“, „Die Frau“) – groß/klein</td></tr>
         <tr><td><code>{er} {Er} {ihn} {ihm} {sein} {seine} …</code></td><td>wird bei Frauen zu „sie, Sie, sie, ihr, ihr, ihre …“</td></tr>
-        <tr><td><code>{rechts|links}</code></td><td>eines davon zufällig</td></tr>
+        <tr><td><code>{beim Essen|beim Fernsehen}</code></td><td>eines davon zufällig – mehr Abwechslung (<code>{rechten|linken}</code> bleibt im ganzen Fall gleich)</td></tr>
         <tr><td><code>{ort}</code> <code>{name}</code></td><td>Gemeinde, Name des Patienten</td></tr>
-        <tr><td><code>[variante=A] Text</code></td><td>Text gilt nur im Ausgang A (<code>[variante!=A]</code>: in allen anderen)</td></tr>
-        <tr><td><code>[frage=wert] Text</code></td><td>Text gilt nur, wenn die Antwort so ist (z. B. <code>[woran=essen]</code>)</td></tr>
+        <tr><td><code>[variante=A] …</code></td><td>gilt nur im Ausgang A (<code>[variante!=A]</code>: in allen anderen)</td></tr>
+        <tr><td><code>[ort=schule] …</code></td><td>gilt nur an diesem Ort (<code>[ort=wohnung|haus]</code>: an einem davon)</td></tr>
+        <tr><td><code>[anrufer_typ=nachbar] …</code></td><td>gilt nur, wenn dieser Anrufer anruft</td></tr>
+        <tr><td><code>[selbst=ja] …</code></td><td>gilt nur, wenn der Patient selbst anruft</td></tr>
+        <tr><td><code>[wissen=fremd] …</code></td><td>gilt nur für Fremde (<code>nah</code> = Angehörige, <code>bekannt</code> = Nachbarn, Kollegen …)</td></tr>
+        <tr><td><code>[woran=essen] …</code></td><td>gilt nur bei dieser Antwort aus der Abfrage</td></tr>
       </table>`;
-    const a = abschnitt("Wer ruft an?", "Aus Typ, Alter und Geschlecht wird die passende Rolle (Ehefrau, Sohn, Pflegerin …).");
+    const a = abschnitt("Wer kann anrufen?", "Bei jedem Notruf wird daraus ein anderer Anrufer gewürfelt – passend zu Ort und Alter, mit eigener Art zu reden, eigenem Wissen (Angehörige wissen mehr als Fremde) und eigenem Einstieg ins Gespräch.");
     a.append(
       zeile("Anrufer", chips(ANRUFER, f.anrufer, (v) => {
         f.anrufer = v;
         aenderung();
       })),
     );
-    const h = abschnitt("Was erzählt der Anrufer?", "Der erste Satz am Telefon – aus Sicht des Anrufers. Mehrere Fassungen = mehr Abwechslung. Keine Codes und keine Fachsprache: so, wie Laien es sagen.");
+    const h = abschnitt(
+      "Was ist wirklich passiert?",
+      "Fakten statt fertiger Sätze: Die KI erzählt daraus bei jedem Anruf neu – in den Worten des jeweiligen Anrufers. Schreib auf, was passiert ist, in welcher Reihenfolge und unter welchen Umständen. Was nur bestimmte Anrufer wissen können, mit Bedingung (z. B. [wissen=nah]).",
+    );
     h.append(
       hilfe,
-      zeile("Hergang", textListe(f.hergang, (v) => {
-        f.hergang = v;
+      zeile("Fakten", textListe(f.geschehen ?? [], (v) => {
+        f.geschehen = v;
         aenderung();
-      }, { lang: true, platzhalter: "z. B. {P} ist im Bad ausgerutscht und kommt nicht mehr hoch, {er} hat solche Schmerzen in der Hüfte!", neu: "+ Fassung" })),
-      zeile("Hergang (Patient ruft selbst)", textListe(f.hergangIch ?? [], (v) => {
-        f.hergangIch = v;
-        aenderung();
-      }, { lang: true, platzhalter: "Ich-Form, z. B. Ich bin im Bad gestürzt und komm nicht mehr hoch!", neu: "+ Fassung" }), "nur nötig, wenn als Anrufer „Patient selbst“ gewählt ist"),
+      }, { lang: true, platzhalter: "z. B. {P} ist {in der Nacht|am Morgen} auf dem Weg ins Bad ausgerutscht und auf die Hüfte gefallen.", neu: "+ Fakt" })),
+      zeile(
+        "So könnte es klingen",
+        textListe(f.hergang, (v) => {
+          f.hergang = v;
+          aenderung();
+        }, { lang: true, platzhalter: "z. B. {P} ist gestürzt, {er} liegt am Boden und kommt nicht mehr auf!", neu: "+ Beispiel" }),
+        "nur als Anhaltspunkt für den Ton – die KI übernimmt das nie wörtlich",
+      ),
+      zeile(
+        "… wenn der Patient selbst anruft",
+        textListe(f.hergangIch ?? [], (v) => {
+          f.hergangIch = v;
+          aenderung();
+        }, { lang: true, platzhalter: "Ich-Form, z. B. Ich bin im Bad gestürzt und komm nicht mehr hoch!", neu: "+ Beispiel" }),
+      ),
     );
     const seitVon = zahl(f.seitMin?.[0] ?? 5, (v) => {
       f.seitMin = [v, f.seitMin?.[1] ?? v];
@@ -749,21 +774,25 @@ function fensterBauen(): { zeigen(id?: string): void } {
       f.seitMin = [f.seitMin?.[0] ?? 0, v];
       aenderung();
     }, { min: 0, breit: "70px" });
-    const d = abschnitt("Was weiß der Anrufer noch?", "Das erzählt er auf Nachfrage. Die KI darf zwischen den Zeilen lesen, aber nichts davon widersprechen.");
+    const d = abschnitt("Was sieht und weiß der Anrufer noch?", "Das erzählt er auf Nachfrage oder wenn es passt. Die KI darf zwischen den Zeilen lesen, aber nichts davon widersprechen.");
     d.append(
       zeile("Seit wann", [seitVon, el("span", { class: "muted" }, " bis "), seitBis, el("span", { class: "muted" }, " Minuten")]),
       zeile("Details", textListe(f.details ?? [], (v) => {
         f.details = v;
         aenderung();
       }, { lang: true, platzhalter: "z. B. {Er} liegt auf den Fliesen, das Bein ist so komisch verdreht.", neu: "+ Detail" })),
+      zeile("Umgebung", textListe(f.umgebung ?? [], (v) => {
+        f.umgebung = v;
+        aenderung();
+      }, { platzhalter: "z. B. 3. Stock, enges Stiegenhaus", neu: "+ Angabe" }), "leer = zufällig (Stock, Tür, Haustür) – nur ausfüllen, wenn es für den Fall wichtig ist"),
       zeile("Vorerkrankungen", textListe(f.vorerkrankungen ?? [], (v) => {
         f.vorerkrankungen = v;
         aenderung();
-      }, { platzhalter: "z. B. Osteoporose", neu: "+ Vorerkrankung" }), "eine davon (oder keine) kommt zu den altersüblichen dazu"),
-      zeile("Stimmung am Telefon", textListe(f.verlauf ?? [], (v) => {
+      }, { platzhalter: "z. B. Osteoporose (mit ! davor: immer)", neu: "+ Vorerkrankung" }), "eine davon (oder keine) kommt zu den altersüblichen dazu; „!Asthma“ kommt immer vor"),
+      zeile("Hinweise fürs Gespräch", textListe(f.verlauf ?? [], (v) => {
         f.verlauf = v;
         aenderung();
-      }, { lang: true, platzhalter: "z. B. Du bist aufgeregt, beruhigst dich aber, wenn man dir sagt, dass Hilfe kommt.", neu: "+ Hinweis" }), "Regieanweisung für die KI (Du-Form)"),
+      }, { lang: true, platzhalter: "z. B. Wenn man dir die Herzdruckmassage erklärt, machst du sie und zählst laut mit.", neu: "+ Hinweis" }), "Regieanweisung für die KI (Du-Form). Die Stimmung würfelt das Spiel – nur festlegen, wenn sie zum Fall gehört."),
     );
     formular.append(a, h, d);
   }
@@ -1212,11 +1241,11 @@ function fensterBauen(): { zeigen(id?: string): void } {
     if (!entwurf) return [];
     const out = fallPruefen(entwurf, store.schema as Schema | null).map((b) => ({ text: `${b.variante ? `Ausgang ${b.variante}: ` : ""}${b.fehler.replace(/hat keine Antwort$/, "ist offen – das Spiel wählt eine passende Antwort")}`, hart: !/hat keine Antwort$/.test(b.fehler) }));
     if (!fallName(entwurf).trim()) out.unshift({ text: "Name fehlt (Schritt 1)", hart: true });
-    if (!entwurf.hergang.some((h) => h.trim())) out.push({ text: "Hergang fehlt (Schritt 2)", hart: true });
+    if (!entwurf.geschehen?.some((h) => h.trim())) out.push({ text: "Was passiert ist (Fakten) fehlt (Schritt 2)", hart: true });
     if (!entwurf.anrufer.length) out.push({ text: "kein Anrufer gewählt (Schritt 2)", hart: true });
     if (!entwurf.orte.length) out.push({ text: "kein Ort gewählt (Schritt 1)", hart: true });
     for (const v of entwurf.varianten) if (!v.lage.trim()) out.push({ text: `Ausgang ${v.id}: Lagebild fehlt`, hart: true });
-    if (entwurf.anrufer.includes("selbst") && !entwurf.hergangIch?.some((h) => h.trim())) out.push({ text: "Patient ruft selbst an, aber es gibt keinen Hergang in Ich-Form (Schritt 2)", hart: false });
+    if (entwurf.anrufer.includes("selbst") && !entwurf.hergangIch?.some((h) => h.trim())) out.push({ text: "Patient kann selbst anrufen, aber es gibt kein Beispiel in Ich-Form (Schritt 2) – geht auch ohne", hart: false });
     const ein = out.filter((b, i) => out.findIndex((x) => x.text === b.text) === i);
     return [...ein.filter((b) => b.hart), ...ein.filter((b) => !b.hart)];
   }
@@ -1233,22 +1262,14 @@ function fensterBauen(): { zeigen(id?: string): void } {
       a.appendChild(ul);
       a.appendChild(el("p", { class: "fe-info" }, "Fehlende Antworten legst du in Schritt 3 fest – oder lass sie bewusst offen, dann wählt das Spiel eine passende."));
     }
-    const b = abschnitt("Beispiel", "So könnte der Anruf beginnen (Platzhalter zufällig gefüllt):");
-    const beispiel = el("div", { class: "fe-beispiel" });
-    const neuBeispiel = () => {
-      const h = f.hergang.filter((x) => x.trim());
-      if (!h.length) {
-        beispiel.textContent = "– noch kein Hergang –";
-        return;
-      }
-      const w = f.geschlecht ? f.geschlecht === "w" : Math.random() < 0.5;
-      const roh = h[Math.floor(Math.random() * h.length)].replace(/\[[^\]]*\]\s*/g, "");
-      beispiel.textContent = `„${fuellen(roh, { w, bezug: w ? "Meine Frau" : "Mein Mann", ort: "Krems", name: w ? "Maria Huber" : "Franz Huber" }, Math.random)}“`;
-    };
-    neuBeispiel();
-    const nochmal = el("button", { class: "btn small", type: "button" }, "anderes Beispiel");
-    nochmal.addEventListener("click", neuBeispiel);
-    b.append(beispiel, nochmal);
+    const b = abschnitt(
+      "Probe-Anrufe",
+      "Drei Notrufe mit diesem Fall, jeweils mit einem anderen Anrufer: wer anruft, wie er redet, was er weiß – und mit KI die ersten Antworten. So siehst du, wie unterschiedlich die Anrufe werden. Nichts davon kommt ins Spiel.",
+    );
+    const proben = el("div", { class: "fe-proben" });
+    const probeB = el("button", { class: "btn small", type: "button" }, "▶ 3 Probe-Anrufe");
+    probeB.addEventListener("click", () => void probeAnrufe(f, proben, probeB));
+    b.append(probeB, proben);
     const t = abschnitt("Durchspielen", "Startet gleich einen Notruf mit diesem Fall. Ungespeicherte Änderungen werden vorher gespeichert.");
     const varWahl = auswahl([["", "Ausgang zufällig"], ...f.varianten.map((v) => [v.id, `Ausgang ${v.id} – ${v.lage.slice(0, 50) || v.sichtung}`] as [string, string])], "", () => undefined);
     const los = el("button", { class: "btn primary", type: "button" }, "▶ Diesen Fall durchspielen");
@@ -1266,6 +1287,66 @@ function fensterBauen(): { zeigen(id?: string): void } {
     });
     t.append(zeile("Ausgang", varWahl), los);
     formular.append(a, b, t);
+  }
+
+  /** Probe-Anrufe: Anrufer würfeln, Fakten füllen und (mit KI) die ersten Fragen stellen */
+  async function probeAnrufe(f: FallVorlage, box: HTMLElement, knopf: HTMLButtonElement): Promise<void> {
+    if (sim.mode === "client") return void toast("Im Mehrspieler-Spiel kann nur der Gastgeber Proben starten", "error");
+    if (!gesperrt() && (geaendert || istNeu) && !speichern()) return;
+    knopf.disabled = true;
+    box.innerHTML = "";
+    await kiStatus().catch(() => null);
+    const ki = kiBereit();
+    if (!ki) box.appendChild(el("p", { class: "fe-hilfe" }, "Die KI läuft nicht – gezeigt werden nur die gewürfelten Anrufer und Fakten. Mit KI (Einstellungen → KI-Anrufer) antworten sie auch."));
+    const schema = store.schema as Schema | null;
+    const alleFragen = schema ? Object.values(schema.globale_fragen ?? {}).flat() : [];
+    const fr = (id: string) => alleFragen.find((x) => x.id === id);
+    try {
+      for (let i = 0; i < 3; i++) {
+        const e = await sim.probeFall(f.id);
+        const w = e?.wahr.abfrage;
+        if (!e || !w) {
+          box.appendChild(el("p", { class: "fe-warn" }, "Der Fall ließ sich nicht erzeugen – siehe Hinweise oben."));
+          break;
+        }
+        const x = w.anrufer;
+        const p = x.persona;
+        const karte = el("div", { class: "fe-probe" });
+        const kopf = el("div", { class: "fe-probe-kopf" });
+        const EMO: Record<string, string> = { ruhig: "ruhig", gefasst: "gefasst", aufgeregt: "aufgeregt", panisch: "panisch" };
+        const STIL: Record<string, string> = { knapp: "redet knapp", normal: "redet normal", gespraechig: "redet gern", unsicher: "unsicher" };
+        const WISSEN: Record<string, string> = { nah: "kennt den Patienten gut", bekannt: "kennt ihn ein bisschen", fremd: "kennt ihn nicht", profi: "Fachkraft" };
+        const EIN: Record<string, string> = { adresse: "beginnt mit der Adresse", dringend: "„bitte schnell“", problem: "beginnt mit dem Problem", hallo: "„bin ich richtig?“", unvollstaendig: "vergisst die Gemeinde", umschreibung: "beschreibt das Haus" };
+        kopf.innerHTML = `<b>${esc(x.rolle)}</b> · ${esc(EMO[x.emotion] ?? x.emotion)}${x.sprache !== "hochdeutsch" ? ` · ${x.sprache === "dialekt" ? "Dialekt" : "gebrochenes Deutsch"}` : ""}${p ? ` · ${esc(STIL[p.stil])} · ${esc(WISSEN[p.wissen])} · ${esc(EIN[p.einstieg])}${p.nennt[0] !== "ich" ? ` · sagt „${esc(p.nennt.slice(0, 2).join("“, „"))}“` : ""}` : ""}`;
+        karte.appendChild(kopf);
+        const sz = w.szenario;
+        if (sz?.geschehen?.length) karte.appendChild(el("div", { class: "fe-probe-fakten" }, sz.geschehen.join(" ")));
+        const verlauf = el("div", { class: "fe-probe-verlauf" });
+        karte.appendChild(verlauf);
+        box.appendChild(karte);
+        if (!ki) continue;
+        const warten = el("div", { class: "fe-probe-z muted" }, "…");
+        verlauf.appendChild(warten);
+        await probeGespraech(
+          e,
+          [
+            { text: ERÖFFNUNG, frage: fr("ort_adresse") },
+            { text: "Was ist passiert?", frage: fr("schilderung") },
+            { text: "Wie alt ist der Patient ungefähr?", frage: fr("alter") },
+          ],
+          (von, text) => {
+            const z = el("div", { class: `fe-probe-z ${von}` });
+            z.innerHTML = `<span class="fe-probe-von">${von === "leitstelle" ? "Leitstelle" : "Anrufer"}:</span> ${esc(text)}`;
+            verlauf.insertBefore(z, warten);
+          },
+        );
+        warten.remove();
+      }
+    } catch (err) {
+      toast(`Probe: ${String((err as Error).message ?? err)}`, "error");
+    } finally {
+      knopf.disabled = false;
+    }
   }
 
   // ---- Neuer Fall (leer oder KI-Entwurf)
@@ -1456,7 +1537,8 @@ Felder:
 - "orte": Liste aus ${ORTE.map(([k]) => k).join(", ")}
 - "stelle": 2–3 kurze Ortsangaben wie „im Badezimmer“
 - "anrufer": Liste aus ${ANRUFER.map(([k]) => k).join(", ")}
-- "hergang": 2–3 Fassungen des ersten Satzes am Telefon aus Sicht eines Laien (österreichisches Deutsch, keine Fachsprache). Platzhalter: {P} = der Patient („Mein Mann“), {er}/{Er}/{ihn}/{ihm}/{sein} = Pronomen.
+- "geschehen": 3–5 Fakten, was wirklich passiert ist (Abfolge, Umstände) – sachlich, aus Sicht von jemandem, der dabei war. Platzhalter: {P} = die Person („Mein Mann“), {er}/{Er}/{ihn}/{ihm}/{sein} = Pronomen, {a|b} = eines davon zufällig.
+- "hergang": 1–2 Beispiele, wie ein Laie den ersten Satz am Telefon sagen könnte (österreichisches Deutsch, keine Fachsprache, gleiche Platzhalter).
 - "details": 2–4 Dinge, die der Anrufer auf Nachfrage erzählt (mit Platzhaltern)
 - "seitMin": [von, bis] Minuten seit dem Ereignis
 - "varianten": 1–3 Ausgänge, zusammen p = 1. Jeder: { "id": "A", "p": 0.8, "sichtung": "gruen"|"gelb"|"rot", "lage": "Lagebild der Besatzung, kurz, fachlich", "na": "nein"|"immer"|"RS"|"NFS-NKV", "buchung": eine ID aus der Liste }
@@ -1492,6 +1574,8 @@ export function entwurfAusKi(antwort: string, name: string): FallVorlage | null 
   if (anr.length) f.anrufer = anr;
   const h = strs(j.hergang);
   if (h.length) f.hergang = h;
+  const g = strs(j.geschehen);
+  if (g.length) f.geschehen = g;
   const det = strs(j.details);
   if (det.length) f.details = det;
   f.seitMin = paar(j.seitMin, f.seitMin ?? [5, 30]);

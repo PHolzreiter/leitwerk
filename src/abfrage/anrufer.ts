@@ -5,7 +5,9 @@
 import { fragtNachZustand, hinweisZurArt, type NachrichtArt } from "./runde";
 import { antwortLabel, frageIndex, type Antworten, type Frage, type Schema } from "./schema";
 import { ist, thema } from "./themen";
-import { bezugFuer, fallakte, faktSaetze, SELBSTVERSTAENDLICH, type AnruferTyp, type Szenario } from "./szenario";
+import { bezugFuer, fallakte, faktSaetze, fuellen, SELBSTVERSTAENDLICH, type AnruferTyp, type OrtArt, type Szenario } from "./szenario";
+import { einstiegHinweis, personaText, type Persona } from "./persona";
+import { frageMitPronomen } from "./sprechfrage";
 
 export interface Anrufer {
   /** Beziehung zum Patienten, z. B. „Ehefrau“, „Pflegerin im Heim“ */
@@ -31,6 +33,37 @@ export interface Anrufer {
   meldung?: string;
   /** eCall: ob jemand im Fahrzeug antwortet */
   sprachkontakt?: boolean;
+  /** Art des Anrufers (aus der Fallgeschichte) */
+  typ?: AnruferTyp;
+  /** Persönlichkeit: Wissen, Art zu reden, Einstieg, Wörter für den Patienten */
+  persona?: Persona;
+}
+
+/** Wo kann dieser Anrufer sein? (fehlt = überall) */
+const ORT_ANRUFER: Partial<Record<AnruferTyp, OrtArt[]>> = {
+  partner: ["wohnung", "haus", "garten", "strasse", "geschaeft", "lokal", "freizeit", "natur", "wasser", "auto", "arzt", "bahnhof", "sport"],
+  kind: ["wohnung", "haus", "garten", "strasse", "geschaeft", "lokal", "freizeit", "natur", "auto", "arzt", "pflegeheim"],
+  eltern: ["wohnung", "haus", "garten", "strasse", "geschaeft", "freizeit", "natur", "wasser", "auto", "arzt", "sport", "bahnhof"],
+  nachbar: ["wohnung", "haus", "garten", "strasse"],
+  fern: ["wohnung", "haus", "garten"],
+  pflege: ["pflegeheim", "wohnung", "haus"],
+  arzt: ["arzt", "wohnung", "haus", "pflegeheim"],
+  ordi: ["arzt"],
+  lehrer: ["schule", "sport", "freizeit"],
+  kollege: ["arbeit", "baustelle", "geschaeft", "lokal"],
+  passant: ["strasse", "geschaeft", "freizeit", "natur", "bahnhof", "sport", "lokal", "wasser", "auto", "garten"],
+  verkauf: ["geschaeft", "bahnhof"],
+  lenker: ["strasse", "auto"],
+  trainer: ["sport"],
+  bademeister: ["wasser", "freizeit", "sport"],
+  wirt: ["lokal"],
+};
+
+/** Anrufer-Typen, die an diesem Ort passen (passt keiner, bleiben alle) */
+export function anruferAmOrt(typen: AnruferTyp[], ort: OrtArt | undefined): AnruferTyp[] {
+  if (!ort) return typen;
+  const ok = typen.filter((t) => !ORT_ANRUFER[t] || ORT_ANRUFER[t]!.includes(ort));
+  return ok.length ? ok : typen;
 }
 
 const VORNAMEN_W = ["Maria", "Anna", "Elisabeth", "Sabine", "Andrea", "Claudia", "Julia", "Lisa", "Sandra", "Karin", "Monika", "Theresa", "Sophie", "Katharina", "Birgit", "Ingrid"];
@@ -81,7 +114,7 @@ export function anruferWaehlen(
   rnd: () => number = Math.random,
   adresse = "",
   /** aus der Fallgeschichte: wer anrufen darf und wo es passiert */
-  geschichte?: { typen: AnruferTyp[]; ort: string },
+  geschichte?: { typen: AnruferTyp[]; ort: string; ortArt?: OrtArt },
 ): Anrufer {
   const sonder = sonderAnrufer(kapitel, a, rnd, adresse, geschichte);
   if (sonder) return sonder;
@@ -116,7 +149,6 @@ export function anruferWaehlen(
 
   // Fallgeschichte: nur passende Anrufer (Ort kommt aus der Geschichte)
   if (geschichte?.typen.length) {
-    const erlaubt = kandidaten.filter(([x]) => x.typ && geschichte.typen.includes(x.typ));
     const ersatz: Record<AnruferTyp, Situation> = {
       partner: { ort: "", rolle: patientW ? "Ehemann" : "Ehefrau", anruferWert: "2", geschlecht: patientW ? "m" : "w", typ: "partner" },
       kind: { ort: "", rolle: rnd() < 0.5 ? "Tochter" : "Sohn", anruferWert: "2", typ: "kind" },
@@ -140,13 +172,16 @@ export function anruferWaehlen(
       polizei: { ort: "", rolle: rnd() < 0.5 ? "Polizist" : "Polizistin", anruferWert: "2", profi: true, typ: "polizei" },
       bergrettung: { ort: "", rolle: "Einsatzleiter der Bergrettung", anruferWert: "einrichtung", geschlecht: "m", profi: true, typ: "bergrettung" },
     };
-    // Selbst anrufen geht nur wach und mit ausreichender Atmung
-    const typen = geschichte.typen.filter((t) => t !== "selbst" || kannSelbst);
+    // Selbst anrufen geht nur wach und mit ausreichender Atmung; der Anrufer muss zum Ort und zum Alter passen
+    const altersGerecht = (t: AnruferTyp) => (t === "eltern" ? alter < 30 : t === "kind" ? alter >= 45 : t === "partner" ? alter >= 18 : t === "lehrer" ? alter < 20 : true);
+    let typen = anruferAmOrt(geschichte.typen, geschichte.ortArt).filter((t) => t !== "selbst" || kannSelbst);
+    if (typen.some(altersGerecht)) typen = typen.filter(altersGerecht);
+    const erlaubt = kandidaten.filter(([x]) => x.typ && typen.includes(x.typ));
     const pool: [Situation, number][] = erlaubt.length ? erlaubt : typen.map((t) => [ersatz[t], 1] as [Situation, number]);
     if (!erlaubt.length && !pool.length) pool.push([ersatz.passant, 1]);
     kandidaten.length = 0;
     for (const [x, w] of pool) kandidaten.push([{ ...x, ort: geschichte.ort }, w]);
-    // Typen ohne Gewicht (z. B. Begleiter) trotzdem möglich
+    // Typen, die oben nicht gewichtet werden (Begleiter, Trainer …), trotzdem möglich
     for (const t of typen) if (!kandidaten.some(([x]) => x.typ === t)) kandidaten.push([{ ...ersatz[t], ort: geschichte.ort }, 0.8]);
   }
   const s = gewichtet(kandidaten, rnd);
@@ -175,6 +210,7 @@ export function anruferWaehlen(
     schwerhoerig: (s.selbst && alter > 78 && rnd() < 0.35) || rnd() < 0.03,
     nummer: telefonnummer(rnd),
     selbst: !!s.selbst,
+    typ: s.typ,
   };
 }
 
@@ -386,7 +422,7 @@ export interface AnrufKontext {
 /** Bewusstsein und Atmung in Laiensprache (so beschreibt es ein Anrufer) */
 const LAIE: Record<string, Record<string, string>> = {
   bw: {
-    ja: "ist wach und redet normal",
+    ja: "ist wach und reagiert, wenn man mit {ihm} redet",
     getruebt: "ist benommen, redet verwirrt oder undeutlich, reagiert nur langsam",
     nein: "reagiert überhaupt nicht, auch nicht auf Rütteln oder lautes Ansprechen",
     unbekannt: "das weißt du nicht genau",
@@ -404,13 +440,36 @@ const LAIE: Record<string, Record<string, string>> = {
 export function wahrheitText(k: AnrufKontext, f: Frage): string | null {
   const wert = k.wahrheit[f.id];
   if (wert === undefined || wert === null) return null;
+  const p = k.anrufer.persona;
+  const w = patientW(k);
+  if (p && !k.anrufer.selbst) {
+    if (f.id === "alter") return `${p.alterGesagt}${p.wissen === "fremd" || p.wissen === "bekannt" ? " – genauer weißt du es nicht" : ""}`;
+    if (VORGESCHICHTE.has(f.id) && p.kenntVorgeschichte !== "ja") {
+      const ehrlich = antwortLabel(f, wert);
+      return p.wissen === "fremd"
+        ? k.wahrheit.bw === "ja"
+          ? `das weißt du nicht, du kennst ${w ? "sie" : "ihn"} nicht – du kannst ${w ? "sie" : "ihn"} kurz fragen, dann sagt ${w ? "sie" : "er"}: ${ehrlich}`
+          : `das weißt du nicht, du kennst ${w ? "sie" : "ihn"} nicht`
+        : p.kenntVorgeschichte === "teilweise" && /^(Ja|ja)/.test(ehrlich)
+          ? `${ehrlich} (soweit du weißt)`
+          : "das weißt du nicht genau";
+    }
+  }
   if (LAIE[f.id]?.[String(wert)]) {
-    const t = LAIE[f.id][String(wert)];
+    const t = fuellen(LAIE[f.id][String(wert)], { w, bezug: "", ort: "", name: "" }, Math.random);
     return k.anrufer.selbst && f.id === "bw" ? "du bist wach, aber dir geht es nicht gut" : t;
   }
   const label = antwortLabel(f, wert);
   if (label === "–") return null;
   return label === "Unbekannt" || label === "unbekannt" ? "das weißt du nicht" : label;
+}
+
+/** Fragen zur Vorgeschichte – weiß nur, wer den Patienten gut kennt */
+const VORGESCHICHTE = new Set(["diabetiker", "epilepsie", "herz_vg", "herzleiden", "blutverduenner", "vg_schlaganfall", "vg_tia", "psych_vorerkrankung", "aneurysma", "bluter", "lungenerkrankung", "sonderdiagnose", "kokain"]);
+
+/** Ist der Patient eine Frau? */
+function patientW(k: AnrufKontext): boolean {
+  return k.szenario ? k.szenario.patient.geschlecht === "w" : k.wahrheit.geschlecht === "w";
 }
 
 /** Fakten: jede Schemafrage mit der wahren Antwort (nur auf Nachfrage verraten) */
@@ -421,7 +480,7 @@ function faktenText(k: AnrufKontext): string {
     const f: Frage | undefined = idx.get(id);
     if (!f || f.typ === "text" || f.typ === "kapitelwahl" || id === "anrufer") continue;
     const t = wahrheitText(k, f);
-    if (t) zeilen.push(`- ${f.text} → ${t}`);
+    if (t) zeilen.push(`- ${frageMitPronomen(f.text, patientW(k))} → ${t}`);
   }
   return zeilen.join("\n");
 }
@@ -548,12 +607,16 @@ function zustand(k: AnrufKontext): string {
   if (k.wahrheit.bw === "ja" && k.wahrheit.verwirrt === "ja") t.push("ist wach und redet, aber durcheinander");
   else if (typeof k.wahrheit.bw === "string" && LAIE.bw[k.wahrheit.bw]) t.push(LAIE.bw[k.wahrheit.bw]);
   if (typeof k.wahrheit.at === "string" && LAIE.at[k.wahrheit.at]) t.push(LAIE.at[k.wahrheit.at]);
-  return t.length ? `Der Patient ${t.join(" und ")} – daran ändert sich während des ganzen Gesprächs nichts.` : "";
+  const w = patientW(k);
+  return t.length ? fuellen(`${k.anrufer.selbst ? "Zustand:" : w ? "Sie" : "Er"} ${t.join(" und ")} – daran ändert sich während des ganzen Gesprächs nichts.`, { w, bezug: "", ort: "", name: "" }, Math.random) : "";
 }
 
 /** Bekannte Antworten in Sätzen (Alltagssprache, wo möglich) */
 function antwortSaetze(k: AnrufKontext): string {
-  const w = k.szenario?.patient.geschlecht === "w" || k.wahrheit.geschlecht === "w";
+  const w = patientW(k);
+  const wer = k.anrufer.selbst ? "Du" : w ? "Sie" : "Er";
+  const p = k.anrufer.persona;
+  const fuell = (t: string) => fuellen(t, { w, bezug: "", ort: "", name: "" }, Math.random);
   const idx = frageIndex(k.schema, k.kapitel);
   const zeilen: string[] = [];
   const nurFakt: Antworten = {};
@@ -567,31 +630,34 @@ function antwortSaetze(k: AnrufKontext): string {
     if (/schwanger|entbunden/.test(id) && (!w || (k.szenario && (k.szenario.patient.alter < 12 || k.szenario.patient.alter > 55)))) continue;
     const f = idx.get(id);
     if (id === "bw" && wert === "ja" && k.wahrheit.verwirrt === "ja") {
-      zeilen.push(`- ${k.anrufer.selbst ? "Du" : "Der Patient"}: ist wach und redet, aber durcheinander`);
+      zeilen.push(`- ${wer}: ist wach und redet, aber durcheinander`);
       continue;
     }
     if (LAIE[id]?.[String(wert)]) {
-      zeilen.push(`- ${k.anrufer.selbst ? "Du" : "Der Patient"}: ${LAIE[id][String(wert)]}`);
+      zeilen.push(`- ${wer}: ${fuell(LAIE[id][String(wert)])}`);
       continue;
     }
+    // Vorgeschichte und Alter: was dieser Anrufer davon weiß (siehe DEINE ART)
+    if (p && !k.anrufer.selbst && ((VORGESCHICHTE.has(id) && p.kenntVorgeschichte !== "ja") || id === "alter")) continue;
     if (faktSaetze({ [id]: wert }, w).length) {
       nurFakt[id] = wert;
       continue;
     }
     if (!f || f.typ === "text" || f.typ === "kapitelwahl") continue;
     const t = wahrheitText(k, f);
-    if (t) zeilen.push(`- ${f.text} → ${t}`);
+    if (t) zeilen.push(`- ${frageMitPronomen(f.text, w)} → ${t}`);
   }
   for (const s of faktSaetze(nurFakt, w)) zeilen.push(`- ${s}`);
-  if (k.szenario && !k.szenario.ohnePatient) zeilen.push("- Alles, was oben nicht als Vorerkrankung oder Medikament steht, hat bzw. nimmt der Patient nicht (soweit du weißt).");
+  if (k.szenario && !k.szenario.ohnePatient && (!p || p.kenntVorgeschichte === "ja" || k.anrufer.selbst))
+    zeilen.push(`- Alles, was oben nicht als Vorerkrankung oder Medikament steht, ${k.anrufer.selbst ? "hast bzw. nimmst du nicht" : `hat bzw. nimmt ${w ? "sie" : "er"} nicht (soweit du weißt)`}.`);
   return [...new Set(zeilen)].join("\n");
 }
 
 const BEISPIELE: Record<Anrufer["emotion"], string> = {
-  ruhig: "„Ja, also … sie liegt jetzt am Sofa, sie sagt, ihr ist schwindlig.“ / „Moment, ich schau … nein, Blut seh ich keines.“",
-  gefasst: "„Ja, er redet mit mir, aber er ist ganz blass.“ / „Seit dem Mittagessen ungefähr. Kommen Sie bald?“",
-  aufgeregt: "„Ja, ja, er schaut mich an, aber – Papa? – er sagt nix Gscheites!“ / „Ich weiß nicht, vielleicht zehn Minuten? Bitte beeilen Sie sich!“",
-  panisch: "„Er atmet – ich glaub – ich weiß nicht! Bitte schnell!“ / „Ja … okay … ich mach's, ich mach's!“",
+  ruhig: "„Ja, also … {er} liegt jetzt am Sofa, {er} sagt, {ihm} ist schwindlig.“ / „Moment, ich schau … nein, Blut seh ich keines.“",
+  gefasst: "„Ja, {er} redet mit mir, aber {er} ist ganz blass.“ / „Seit dem Mittagessen ungefähr. Kommen Sie bald?“",
+  aufgeregt: "„Ja, ja, {er} schaut mich an, aber {er} sagt nix Gscheites!“ / „Ich weiß nicht, vielleicht zehn Minuten? Bitte beeilen Sie sich!“",
+  panisch: "„{Er} atmet – ich glaub – ich weiß nicht! Bitte schnell!“ / „Ja … okay … ich mach's, ich mach's!“",
 };
 
 /** Anweisung für Anrufer mit Fallgeschichte: menschlich, mit Fallakte statt Frageliste */
@@ -623,22 +689,30 @@ function promptGeschichte(k: AnrufKontext): string {
     `WER DU BIST: ${x.name}. ${wer} Rückrufnummer: ${x.nummer}.`,
     ort,
     `FALLAKTE – das ist wirklich passiert. Alles, was du sagst, muss dazu passen. Erfinde nichts, was dem widerspricht; was hier nicht steht, beantwortest du so, wie es zu dieser Geschichte passt, oder sagst ehrlich, dass du es nicht weißt.${ich ? " („Er/sie“ in der Fallakte meint dich selbst.)" : ""}`,
-    fallakte(sz, { selbst: ich, bezug: bz, quelle, fremd: !ich && /passant|lenker|mitarbeiter|bademeister|wirt|kellner|polizei|beamt/i.test(x.rolle), hausarztIch: /^haus(arzt|ärztin)/i.test(x.rolle) }),
+    fallakte(sz, {
+      selbst: ich,
+      bezug: bz,
+      quelle,
+      fremd: !ich && (x.persona ? x.persona.wissen === "fremd" : /passant|lenker|mitarbeiter|bademeister|wirt|kellner|polizei|beamt/i.test(x.rolle)),
+      hausarztIch: /^haus(arzt|ärztin)/i.test(x.rolle),
+      vorgeschichte: x.persona?.wissen === "bekannt" ? x.persona.kenntVorgeschichte : undefined,
+    }),
     `DAS STIMMT SICHER (nur wenn die Leitstelle danach fragt, in deinen eigenen Worten):`,
     antwortSaetze(k),
     `WIE DU REDEST:`,
     `- Du bist ein Mensch in einer Ausnahmesituation, kein Formular. Rede, wie Leute am Telefon reden: mal unvollständige Sätze, mal ein „äh“, „Moment“, „jo“, „bitte“ – aber nicht übertrieben und nicht in jeder Antwort.`,
-    `- Beantworte, was gefragt wird, meist in ein bis zwei kurzen Sätzen. Ab und zu sagst du dazu, was dich gerade beschäftigt („Bitte kommen S' schnell“, „Sie hat so Schmerzen“, „Was soll ich jetzt machen?“).`,
+    `- Beantworte, was gefragt wird, meist in ein bis zwei kurzen Sätzen. Ab und zu sagst du dazu, was dich gerade beschäftigt („Bitte kommen S' schnell“, „${ich ? "Es tut so weh" : `${patientW(k) ? "Sie" : "Er"} hat so Schmerzen`}“, „Was soll ich jetzt machen?“).`,
     `- Auf „Was ist passiert?“ erzählst du den Hergang in deinen Worten – kurz, so wie man es aufgeregt erzählt, nicht alle Einzelheiten auf einmal.`,
     `- Von dir aus nennst du keine Werte wie Alter, Atmung, Bewusstsein, Vorerkrankungen oder Medikamente – das muss die Leitstelle fragen. Was du SIEHST, darfst du beschreiben.`,
-    laie ? `- Keine Fachwörter, keine Checklisten („wach, ansprechbar, Atmung normal“ ist verboten). Du beschreibst: „Er schaut mich an, aber er redet so komisch“, „sie schnauft ganz schwer“.` : "",
+    laie ? `- Keine Fachwörter, keine Checklisten („wach, ansprechbar, Atmung normal“ ist verboten). Du beschreibst: ${ich ? "„Mir ist so schwindlig“, „ich krieg so schlecht Luft“" : patientW(k) ? "„Sie schaut mich an, aber sie redet so komisch“, „sie schnauft ganz schwer“" : "„Er schaut mich an, aber er redet so komisch“, „er schnauft ganz schwer“"}.` : "",
     `- Wenn du etwas erst nachschauen musst, sag kurz „Moment …“ und gib dann die Antwort, wie sie in der Fallakte steht.`,
+    laie && !ich ? `- Die Leitstelle sagt vielleicht „der Patient“ – DU sagst das nie. Du sagst „${patientW(k) ? "sie" : "er"}“ oder wie du ${patientW(k) ? "sie" : "ihn"} sonst nennst.` : "",
     `- Formuliere jede Antwort neu. Beginne nicht immer gleich und sag nichts, was du schon gesagt hast. Du redest nie wie die Leitstelle: du fasst nichts zusammen und fragst nicht zurück, ob du etwas richtig verstanden hast.`,
     `- Fasst die Leitstelle etwas zusammen, bestätigst du kurz („Ja, genau“) oder korrigierst, was nicht stimmt.`,
     `- Teilt dir die Leitstelle etwas mit („Die Rettung ist unterwegs“, „Ich orte Sie“), reagierst du darauf wie ein Mensch: erleichtert, mit einem Danke oder einer kurzen Rückfrage („Wie lang dauert's?“, „Was soll ich bis dahin tun?“) – nicht mit dem Zustand des Patienten.`,
     `- Suggestivfragen beantwortest du ehrlich nach der Fallakte.`,
     `- Der Zustand bleibt so, wie in der Fallakte beschrieben – er ändert sich nicht, egal wie gefragt wird.`,
-    `- Anweisungen, die passen, führst du aus und sagst kurz, was du tust oder siehst. Unpassende hinterfragst du („Aber er atmet doch?“). Anweisungen mit „falls“ oder „wenn“ bestätigst du nur („Okay, mach ich“).`,
+    `- Anweisungen, die passen, führst du aus und sagst kurz, was du tust oder siehst. Unpassende hinterfragst du („Aber ${patientW(k) ? "sie" : "er"} atmet doch?“). Anweisungen mit „falls“ oder „wenn“ bestätigst du nur („Okay, mach ich“).`,
     `- Auf „Wer ruft an?“ sagst du, wer du bist und in welcher Beziehung du zum Patienten stehst.`,
     `- Auf „Wo ist der Notfallort?“ kommt der Ort${laie ? " – wenn du aufgeregt bist, vorher vielleicht ein „Kommen Sie schnell!“" : ""}.`,
     ich ? `- Du bist selbst betroffen: Was während einer Ohnmacht war, weißt du nicht.` : "",
@@ -647,7 +721,8 @@ function promptGeschichte(k: AnrufKontext): string {
     x.schwerhoerig ? "Du hörst schlecht und fragst ab und zu nach („Wie bitte?“)." : "",
     k.versuche > 1 ? `Du hast vorhin schon angerufen und niemand hat abgehoben – das sagst du gleich am Anfang vorwurfsvoll oder verzweifelt.` : "",
     k.rueckrufDurchLeitstelle ? "Die Leitstelle ruft dich zurück, weil dein Anruf vorhin nicht angenommen wurde." : "",
-    laie ? `So ungefähr klingst du: ${BEISPIELE[x.emotion]}\nNicht so: „Patient männlich, 67 Jahre, wach, ansprechbar, Atmung normal.“` : "",
+    laie && x.persona ? personaText(x.persona, patientW(k), ich) : "",
+    laie ? `So ungefähr KANN es klingen (nur der Ton, nicht wörtlich): ${fuellen(BEISPIELE[x.emotion], { w: patientW(k), bezug: "", ort: "", name: "" }, Math.random)}\nNicht so: „Patient männlich, 67 Jahre, wach, ansprechbar, Atmung normal.“` : "",
   ]
     .filter(Boolean)
     .join("\n");
@@ -739,7 +814,10 @@ export function erinnerung(
         ? "Die Leitstelle ruft dich zurück, weil vorhin keiner abgehoben hat. Sag zuerst kurz etwas wie „Ja? … Ach, die Rettung – endlich! Ich hab vorhin schon angerufen!“ und dann, wo ihr seid."
         : "Du hast vorhin schon angerufen und keiner hat abgehoben – sag das zuerst kurz (vorwurfsvoll oder verzweifelt), dann, wo ihr seid.",
     );
-  if (art === "frage") {
+  const einstieg = !!opt.erste && laie && !!k.anrufer.persona && !k.ortUnbekannt && !(k.versuche > 1 || k.rueckrufDurchLeitstelle) && (schemaFrage?.id === "ort_adresse" || /notfallort/i.test(opt.text ?? ""));
+  if (einstieg) {
+    teile.push(einstiegHinweis(k.anrufer.persona!, k.adresse));
+  } else if (art === "frage") {
     teile.push("Antworte nur auf diese eine Frage, kurz, ohne weitere Details von dir aus.");
     if (opt.wiederholt) teile.push("Diese Frage hat die Leitstelle schon einmal gestellt: antworte kurz mit „Wie gesagt, …“ und denselben Fakten, aber in anderen Worten.");
     if (!schemaFrage)
@@ -756,8 +834,13 @@ export function erinnerung(
   if (z && k.anrufer.art !== "leitstelle" && (umZustand || (art === "frage" && !k.szenario))) teile.push(z);
   if (schemaFrage) {
     let t: string | null;
-    if (schemaFrage.id === "ort_adresse") t = k.ortUnbekannt ? `du weißt es nicht genau: ${k.adresse}` : k.adresse;
-    else if (schemaFrage.id === "schilderung") t = k.szenario ? `erzähl den Hergang aus der Fallakte in deinen Worten (Kern: ${schilderung(k)})` : schilderung(k);
+    if (schemaFrage.id === "ort_adresse") t = einstieg && ["problem", "unvollstaendig"].includes(k.anrufer.persona!.einstieg) ? null : k.ortUnbekannt ? `du weißt es nicht genau: ${k.adresse}` : k.adresse;
+    else if (schemaFrage.id === "schilderung")
+      t = k.szenario?.geschehen?.length
+        ? "erzähl in deinen eigenen Worten, was passiert ist (siehe WAS WIRKLICH PASSIERT IST) – kurz, so wie man es am Telefon erzählt, nicht alles auf einmal und nicht wörtlich"
+        : k.szenario
+          ? `erzähl den Hergang aus der Fallakte in deinen Worten (Kern: ${schilderung(k)})`
+          : schilderung(k);
     else if (schemaFrage.id === "anrufer") t = werText(k.anrufer);
     else t = wahrheitText(k, schemaFrage);
     if (t) teile.push(k.szenario ? `Die ehrliche Antwort darauf ist: ${t} – sag es in deinen eigenen Worten, wie ein Mensch am Telefon.` : `Die ehrliche Antwort darauf ist: ${t}.`);

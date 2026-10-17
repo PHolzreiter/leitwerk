@@ -11,6 +11,13 @@ import { kiAntwortNeu, nachrichtArt } from "./runde";
 import { inTauri } from "../platform";
 import { fragenImAblauf, type Frage } from "./schema";
 import { anruferSagt, satzSprecher } from "../ui/sprache";
+import { ohnePatientWort } from "./sprechfrage";
+
+/** Welche Schemafragen in diesem Notruf schon gestellt wurden (die Formulierung wechselt) */
+const gefragt = new Map<string, Set<string>>();
+function schonGefragtId(e: Einsatz, f: Frage | undefined): boolean {
+  return !!f && !!gefragt.get(e.id)?.has(f.id);
+}
 
 /** für Vergleiche: klein, ohne Satzzeichen */
 function normFrage(t: string): string {
@@ -91,13 +98,18 @@ export async function fragen(e: Einsatz, text: string, schemaFrage?: Frage, onTo
   laufend.add(e.id);
   try {
     if (text) await sim.call("anrufNachricht", e.id, "leitstelle", text);
+    const wiederholt = schonGefragtId(e, schemaFrage);
+    if (schemaFrage) {
+      if (!gefragt.has(e.id)) gefragt.set(e.id, new Set());
+      gefragt.get(e.id)!.add(schemaFrage.id);
+    }
     const quelle = { wert: "ki" as "ki" | "fest" };
     // fertige Sätze schon vorlesen, während die KI noch schreibt
     const sprecher = satzSprecher((satz) => e.anruf?.status === "aktiv" && anruferSagt(satz, k.anrufer, e.id));
     const antwort = await anruferAntwort(e, k, text, schemaFrage, (t) => {
       onToken?.(t);
       sprecher.token(t);
-    }, quelle);
+    }, quelle, wiederholt);
     if (antwort) {
       await sim.call("anrufNachricht", e.id, "anrufer", antwort, quelle.wert);
       sprecher.ende(antwort);
@@ -119,6 +131,7 @@ async function anruferAntwort(
   schemaFrage: Frage | undefined,
   onToken?: (t: string) => void,
   quelle: { wert: "ki" | "fest" } = { wert: "ki" },
+  wiederholtId = false,
 ): Promise<string> {
   quelle.wert = "fest";
   // Andere Leitstelle und eCall: die erste Meldung kommt fix vom Programm
@@ -161,17 +174,37 @@ async function anruferAntwort(
     const letzteAntwort = [...g].reverse().find((m) => m.von === "anrufer")?.text;
     verlauf[verlauf.length - 1] = {
       role: "user",
-      content: `${zuletzt.content}\n${erinnerung(k, sf, { wiederholt: schonGefragt(g, frage), letzteAntwort, art: sf ? "frage" : nachrichtArt(frage), text: frage, erste: ersteAntwort })}`,
+      content: `${zuletzt.content}\n${erinnerung(k, sf, { wiederholt: wiederholtId || schonGefragt(g, frage), letzteAntwort, art: sf ? "frage" : nachrichtArt(frage), text: frage, erste: ersteAntwort })}`,
     };
   }
   try {
     const g = e.anruf?.gespraech ?? [];
     const frueher = g.filter((m) => m.von === "anrufer").map((m) => m.text);
-    const t = await kiAntwortNeu(verlauf, frueher, (x) => onToken?.(x), { pruefen: !schonGefragt(g, frage) });
+    // „der Patient“ sagt kein Anrufer – auch wenn die Leitstelle so fragt
+    const w = k.szenario ? k.szenario.patient.geschlecht === "w" : k.wahrheit.geschlecht === "w";
+    const laie = (x.art ?? "privat") === "privat" && !x.selbst;
+    const glatt = (t: string) => (laie ? ohnePatientWort(t, w) : t);
+    const t = await kiAntwortNeu(verlauf, frueher, (y) => onToken?.(glatt(y)), { pruefen: !(wiederholtId || schonGefragt(g, frage)) });
     quelle.wert = "ki";
-    return t;
+    return glatt(t);
   } catch (err) {
     console.warn("KI-Antwort", err);
     return einfacheAntwort(k, frage, schemaFrage);
+  }
+}
+
+/**
+ * Probe-Gespräch (Fall-Editor): stellt dem Anrufer eines Probe-Einsatzes ein paar Fragen, ohne das Spiel zu
+ * verändern. onSatz bekommt jede Nachricht (Leitstelle und Anrufer).
+ */
+export async function probeGespraech(e: Einsatz, fragenListe: { text: string; frage?: Frage }[], onSatz: (von: "leitstelle" | "anrufer", text: string) => void): Promise<void> {
+  const k = kontext(e);
+  if (!k || !e.anruf) return;
+  for (const f of fragenListe) {
+    e.anruf.gespraech.push({ zeit: 0, echt: Date.now(), von: "leitstelle", text: f.text });
+    onSatz("leitstelle", f.text);
+    const a = await anruferAntwort(e, k, f.text, f.frage);
+    e.anruf.gespraech.push({ zeit: 0, echt: Date.now(), von: "anrufer", text: a });
+    onSatz("anrufer", a);
   }
 }
