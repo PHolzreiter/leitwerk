@@ -686,8 +686,11 @@ def plaetze_ableiten(kid: str, einr: set[str], kav: dict, z: dict) -> dict[str, 
     abt = kav.get("abt", {})
     akut = sum(b for a, b in abt.items() if not any(x in a for x in AKUTBETTEN_AUSSER)) or int(gr.get("betten") or 0)
     typ = kav.get("typ") or ""
-    gross = typ == "Zentral-KA" or akut >= 700
-    mittel = not gross and (typ == "Schwerpunkt-KA" or akut >= 300)
+    # Größe nach Akutbetten; nur ohne Bettenzahl nach dem Typ laut Verzeichnis (der gilt oft für einen ganzen Verbund)
+    if akut:
+        gross, mittel = akut >= 700, 300 <= akut < 700
+    else:
+        gross, mittel = typ == "Zentral-KA", typ == "Schwerpunkt-KA"
     out: dict[str, int] = {}
 
     def klemm(x: float, lo: int, hi: int) -> int:
@@ -722,7 +725,7 @@ def plaetze_ableiten(kid: str, einr: set[str], kav: dict, z: dict) -> dict[str, 
                     out["schockraum"] = rest
         elif pl.get("schockraum"):
             out["schockraum"] = pl["schockraum"]
-        elif "amb_notaufnahme" not in einr and "amb_unfall" in einr:
+        elif "amb_notaufnahme" not in einr and "amb_unfall" in einr and "st_innere_medizin" not in einr:
             out["schockraum_trauma"] = 2 if akut >= 200 else 1
         elif gross:
             out.update(schockraum_trauma=2, schockraum_intern=2)
