@@ -6,6 +6,7 @@ import { einstellungenFenster, type EinstellungenFenster } from "./einstellungen
 import { store } from "../../data/store";
 import { mp } from "../../net/mehrspieler";
 import { sim } from "../../sim/engine";
+import { fallEditorOeffnen } from "../fallEditor";
 import { fehlerMelden } from "../fehlerMelden";
 import { symbolFuer, WETTER_LABEL } from "../../sim/weather";
 import { wetterOeffnen } from "../wetterView";
@@ -207,6 +208,7 @@ export function steuerleisteBauen(kopf: HTMLElement): void {
       <button type="button" class="btn small sl-menu-knopf" data-menu="anordnung">Anordnung ▾</button>
     </div>
     <div class="sl-gruppe">
+      <button type="button" class="btn small" data-act="faelle" title="Fall-Editor: Fälle für den Fallkatalog ansehen, schreiben, prüfen, importieren und exportieren">Fälle</button>
       <button type="button" class="btn small" data-act="einstellungen">Einstellungen</button>
       <button id="btn-spiel" class="btn small" type="button" title="Spielstand und Multiplayer">Spiel</button>
       <button type="button" class="btn small icon" data-act="fehler" title="Fehler melden – speichert eine Datei mit den letzten Fehlermeldungen für den Entwickler">🐞</button>
@@ -270,6 +272,7 @@ export function steuerleisteBauen(kopf: HTMLElement): void {
     }
   });
   kopf.querySelector("[data-act=einstellungen]")!.addEventListener("click", () => einstellungenOeffnen());
+  kopf.querySelector("[data-act=faelle]")!.addEventListener("click", () => fallEditorOeffnen());
   kopf.querySelector("[data-act=fehler]")!.addEventListener("click", () => void fehlerMelden());
 
   // Hinweise im Spiel (z. B. Rechte) aktuell halten

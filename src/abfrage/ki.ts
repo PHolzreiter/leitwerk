@@ -138,6 +138,14 @@ export async function kiChat(messages: KiNachricht[], onToken?: (t: string) => v
   return satzEnde(bereinigen(text));
 }
 
+/** Längere Antwort als JSON (z. B. Fall-Entwurf im Fall-Editor) – ohne Kürzen und Bereinigen */
+export async function kiJson(messages: KiNachricht[], onToken?: (t: string) => void, maxTokens = 1600): Promise<string> {
+  const ch = new Channel<string>();
+  ch.onmessage = (t) => onToken?.(t);
+  const text = await invoke<string>("ki_chat", { model: kiPrefs().modell, messages, onToken: ch, maxTokens, json: true });
+  return text.replace(/<think>[\s\S]*?<\/think>/g, "");
+}
+
 /** Denk-Abschnitte, Regieanweisungen und Anführungszeichen entfernen */
 export function bereinigen(t: string): string {
   return t

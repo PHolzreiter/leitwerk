@@ -3,7 +3,7 @@
  * Abfrageschema spielbar? (läuft in den Tests und in den Einstellungen → Daten)
  */
 import { buchung } from "../data/klinik";
-import { FAELLE, type FallVariante, type FallVorlage } from "./faelle";
+import { alleFaelle, type FallVariante, type FallVorlage } from "./faelle";
 import { bestimmeCode, fragenImAblauf, type Antworten, type Schema } from "./schema";
 import { vorlageFest } from "./szenario";
 import { kapitelZuThema, merkmaleInSchema } from "./themen";
@@ -32,12 +32,21 @@ function varianteSoll(f: FallVorlage, v: FallVariante, out: FallBefund[]): void 
 }
 
 /** Alle Fälle prüfen; mit Schema auch: Kapitel vorhanden, Code ergibt sich, jede Abfragefrage beantwortbar */
-export function faellePruefen(schema: Schema | null): FallBefund[] {
+export function faellePruefen(schema: Schema | null, liste: FallVorlage[] = alleFaelle(true)): FallBefund[] {
   const out: FallBefund[] = [];
   const ids = new Set<string>();
-  for (const f of FAELLE) {
+  for (const f of liste) {
     if (ids.has(f.id)) out.push({ fall: f.id, fehler: "doppelte ID" });
     ids.add(f.id);
+    out.push(...fallPruefen(f, schema));
+  }
+  return out;
+}
+
+/** Einen Fall prüfen (auch im Editor, live) */
+export function fallPruefen(f: FallVorlage, schema: Schema | null): FallBefund[] {
+  const out: FallBefund[] = [];
+  {
     const summe = f.varianten.reduce((s, v) => s + v.p, 0);
     if (Math.abs(summe - 1) > 0.001) out.push({ fall: f.id, fehler: `Wahrscheinlichkeiten ergeben ${Math.round(summe * 100)} % statt 100 %` });
     for (const v of f.varianten) {
@@ -70,5 +79,5 @@ export function faellePruefen(schema: Schema | null): FallBefund[] {
       }
     }
   }
-  return out;
+  return out.filter((b, i) => out.findIndex((x) => x.variante === b.variante && x.fehler === b.fehler) === i);
 }

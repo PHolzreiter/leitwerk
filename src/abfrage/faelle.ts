@@ -96,6 +96,8 @@ export interface FallVariante {
 }
 
 export interface FallVorlage extends SzenarioVorlage {
+  /** Name zum Anzeigen (Fall-Editor) */
+  name?: string;
   /** wie oft: 1 selten, 2 mittel, 3 häufig, 5 sehr häufig */
   haeufigkeit: number;
   varianten: FallVariante[];
@@ -107,6 +109,7 @@ export const FAELLE: FallVorlage[] = [
   // ---------------------------------------------------------------- 1 Fremdkörper Kleinkind
   {
     id: "fk_kleinkind",
+    name: "Fremdkörper beim Kleinkind",
     thema: "ersticken",
     haeufigkeit: 1,
     alter: [1, 3],
@@ -176,6 +179,7 @@ export const FAELLE: FallVorlage[] = [
   // ---------------------------------------------------------------- 2 Brustschmerz
   {
     id: "brustschmerz",
+    name: "Brustschmerz",
     thema: "brustschmerz",
     haeufigkeit: 3,
     alter: [50, 85],
@@ -252,6 +256,7 @@ export const FAELLE: FallVorlage[] = [
   // ---------------------------------------------------------------- 3 Schlaganfall
   {
     id: "insult",
+    name: "Schlaganfall",
     thema: "schlaganfall",
     haeufigkeit: 3,
     alter: [60, 92],
@@ -311,6 +316,7 @@ export const FAELLE: FallVorlage[] = [
   // ---------------------------------------------------------------- 4 Sturz, Hüfte
   {
     id: "sturz_huefte",
+    name: "Sturz mit Hüftverletzung",
     thema: "sturz",
     haeufigkeit: 5,
     alter: [75, 95],
@@ -374,6 +380,7 @@ export const FAELLE: FallVorlage[] = [
   // ---------------------------------------------------------------- 5 Kreislaufstillstand
   {
     id: "kreislaufstillstand",
+    name: "Kreislaufstillstand",
     thema: "stillstand",
     haeufigkeit: 1,
     alter: [45, 85],
@@ -425,6 +432,7 @@ export const FAELLE: FallVorlage[] = [
   // ---------------------------------------------------------------- 6 Verkehrsunfall, eingeklemmt
   {
     id: "vu_eingeklemmt",
+    name: "Verkehrsunfall, eingeklemmt",
     thema: "verkehrsunfall",
     haeufigkeit: 2,
     alter: [18, 60],
@@ -495,6 +503,7 @@ export const FAELLE: FallVorlage[] = [
   // ---------------------------------------------------------------- 7 Unterzucker
   {
     id: "hypoglykaemie",
+    name: "Unterzucker",
     thema: "zucker",
     haeufigkeit: 2,
     alter: [25, 80],
@@ -542,6 +551,7 @@ export const FAELLE: FallVorlage[] = [
   // ---------------------------------------------------------------- 8 Asthma
   {
     id: "asthma",
+    name: "Asthmaanfall",
     thema: "atemnot",
     haeufigkeit: 2,
     alter: [12, 25],
@@ -584,6 +594,7 @@ export const FAELLE: FallVorlage[] = [
   // ---------------------------------------------------------------- 9 Geburt
   {
     id: "geburt",
+    name: "Geburt",
     thema: "schwangerschaft",
     haeufigkeit: 1,
     alter: [22, 40],
@@ -635,6 +646,7 @@ export const FAELLE: FallVorlage[] = [
   // ---------------------------------------------------------------- 10 Psychische Krise
   {
     id: "psych_eingesperrt",
+    name: "Psychische Krise, eingesperrt",
     thema: "psych",
     haeufigkeit: 2,
     alter: [20, 60],
@@ -694,6 +706,7 @@ export const FAELLE: FallVorlage[] = [
   // ---------------------------------------------------------------- 11 Kollaps – klingt bewusstlos
   {
     id: "kollaps",
+    name: "Kollaps",
     thema: "bewusstlos",
     haeufigkeit: 5,
     alter: [16, 85],
@@ -739,6 +752,7 @@ export const FAELLE: FallVorlage[] = [
   // ---------------------------------------------------------------- 12 Hyperventilation
   {
     id: "hyperventilation",
+    name: "Hyperventilation",
     thema: "atemnot",
     haeufigkeit: 3,
     alter: [15, 40],
@@ -776,6 +790,7 @@ export const FAELLE: FallVorlage[] = [
   // ---------------------------------------------------------------- 13 Person auf Parkbank
   {
     id: "parkbank",
+    name: "Person auf der Parkbank",
     thema: "bewusstlos",
     haeufigkeit: 3,
     alter: [25, 65],
@@ -815,6 +830,7 @@ export const FAELLE: FallVorlage[] = [
   // ---------------------------------------------------------------- 14 Schnittwunde
   {
     id: "schnittwunde",
+    name: "Schnittwunde",
     thema: "blutung",
     haeufigkeit: 3,
     alter: [15, 85],
@@ -852,6 +868,7 @@ export const FAELLE: FallVorlage[] = [
   // ---------------------------------------------------------------- 15 Pflegeheim, Fieber
   {
     id: "pflegeheim_fieber",
+    name: "Pflegeheim, Fieber",
     thema: "krank",
     haeufigkeit: 5,
     alter: [78, 96],
@@ -881,6 +898,7 @@ export const FAELLE: FallVorlage[] = [
   // ---------------------------------------------------------------- 16 Hexenschuss
   {
     id: "hexenschuss",
+    name: "Hexenschuss",
     thema: "ruecken",
     haeufigkeit: 3,
     alter: [30, 75],
@@ -909,7 +927,7 @@ export const FAELLE: FallVorlage[] = [
 // ------------------------------------------------------------------ Auswahl
 
 export function fallVorlage(id: string | undefined): FallVorlage | undefined {
-  return id ? FAELLE.find((f) => f.id === id) : undefined;
+  return id ? alleFaelle(true).find((f) => f.id === id) : undefined;
 }
 
 export function fallVariante(f: FallVorlage, id: string): FallVariante | undefined {
@@ -918,7 +936,7 @@ export function fallVariante(f: FallVorlage, id: string): FallVariante | undefin
 
 /** Fall wählen (Häufigkeit, Uhrzeit, Jahreszeit, Wetter) */
 export function fallWaehlen(ctx: { jahreszeit: string; stunde: number; temp: number; glatt: boolean }, rnd: () => number): FallVorlage | null {
-  const passend = FAELLE.filter((v) => {
+  const passend = alleFaelle().filter((v) => {
     if (v.jahreszeit && !v.jahreszeit.includes(ctx.jahreszeit as never)) return false;
     if (v.stunden) {
       const [a, b] = v.stunden;
@@ -985,5 +1003,172 @@ export function anleitungAus(text: string, istAnweisung: boolean): AnleitungTyp[
   for (const [typ, re] of ANLEITUNG_MUSTER) if (re.test(t)) out.push(typ);
   // „drücken“ auf die Wunde ist keine Reanimation
   if (out.includes("druck_blutung")) return out.filter((x) => x !== "reanimation");
+  return out;
+}
+
+// ------------------------------------------------------------------ eigene und geänderte Fälle (Fall-Editor)
+
+/**
+ * Eigene Fälle (jeder kann sie anlegen) und Änderungen an eingebauten Fällen (nur mit Admin-Passwort im Editor)
+ * liegen auf diesem Rechner; ausgeschaltete Fälle kommen im Spiel nicht vor.
+ */
+export interface FallSammlung {
+  eigene: FallVorlage[];
+  geaendert: Record<string, FallVorlage>;
+  aus: string[];
+}
+
+const SAMMLUNG_KEY = "leitwerk.faelle";
+const EINGEBAUT = new Map(FAELLE.map((f) => [f.id, f]));
+let sammlung: FallSammlung = sammlungLaden();
+const hoerer = new Set<() => void>();
+
+function sammlungLaden(): FallSammlung {
+  try {
+    const j = JSON.parse(localStorage.getItem(SAMMLUNG_KEY) ?? "null") as Partial<FallSammlung> | null;
+    if (j && typeof j === "object") return { eigene: Array.isArray(j.eigene) ? j.eigene : [], geaendert: j.geaendert && typeof j.geaendert === "object" ? j.geaendert : {}, aus: Array.isArray(j.aus) ? j.aus : [] };
+  } catch {
+    /* kein Speicher */
+  }
+  return { eigene: [], geaendert: {}, aus: [] };
+}
+
+function sammlungSpeichern(): void {
+  try {
+    localStorage.setItem(SAMMLUNG_KEY, JSON.stringify(sammlung));
+  } catch {
+    /* kein Speicher */
+  }
+  for (const h of hoerer) h();
+}
+
+/** Bei Änderungen benachrichtigen (gibt die Abmeldung zurück) */
+export function faelleGeaendert(fn: () => void): () => void {
+  hoerer.add(fn);
+  return () => hoerer.delete(fn);
+}
+
+/** Alle Fälle: eingebaute (ggf. geändert) und eigene; ohne mitAus nur die eingeschalteten */
+export function alleFaelle(mitAus = false): FallVorlage[] {
+  const aus = new Set(mitAus ? [] : sammlung.aus);
+  const out = FAELLE.map((f) => sammlung.geaendert[f.id] ?? f);
+  for (const f of sammlung.eigene) if (!EINGEBAUT.has(f.id)) out.push(f);
+  return out.filter((f) => !aus.has(f.id));
+}
+
+/** Original eines eingebauten Falls (undefined bei eigenen Fällen) */
+export function eingebauterFall(id: string): FallVorlage | undefined {
+  return EINGEBAUT.get(id);
+}
+
+export function istGeaendert(id: string): boolean {
+  return !!sammlung.geaendert[id];
+}
+
+export function istFallAktiv(id: string): boolean {
+  return !sammlung.aus.includes(id);
+}
+
+export function fallAktivSetzen(id: string, an: boolean): void {
+  sammlung.aus = sammlung.aus.filter((x) => x !== id);
+  if (!an) sammlung.aus.push(id);
+  sammlungSpeichern();
+}
+
+/** Fall speichern: eingebaut → als Änderung neben dem Original, sonst als eigener Fall */
+export function fallSpeichern(f: FallVorlage): void {
+  if (EINGEBAUT.has(f.id)) sammlung.geaendert[f.id] = f;
+  else {
+    const i = sammlung.eigene.findIndex((x) => x.id === f.id);
+    if (i >= 0) sammlung.eigene[i] = f;
+    else sammlung.eigene.push(f);
+  }
+  sammlungSpeichern();
+}
+
+/** Eigenen Fall löschen bzw. Änderung an einem eingebauten verwerfen */
+export function fallLoeschen(id: string): void {
+  if (EINGEBAUT.has(id)) delete sammlung.geaendert[id];
+  else {
+    sammlung.eigene = sammlung.eigene.filter((x) => x.id !== id);
+    sammlung.aus = sammlung.aus.filter((x) => x !== id);
+  }
+  sammlungSpeichern();
+}
+
+const PAKET_FORMAT = "leitwerk-faelle";
+
+/** Fallpaket (JSON) mit den gewählten Fällen */
+export function fallpaketExport(ids: string[]): string {
+  const alle = alleFaelle(true);
+  const faelle = ids.map((id) => alle.find((f) => f.id === id)).filter((f): f is FallVorlage => !!f);
+  return JSON.stringify({ format: PAKET_FORMAT, version: 1, erstellt: new Date().toISOString(), faelle }, null, 2);
+}
+
+/** Grobe Formprüfung eines Falls aus einer Datei (null = in Ordnung) */
+export function fallFormFehler(x: unknown): string | null {
+  if (!x || typeof x !== "object") return "kein Fall";
+  const f = x as Partial<FallVorlage>;
+  const str = (v: unknown) => typeof v === "string";
+  const strs = (v: unknown) => Array.isArray(v) && v.every(str);
+  if (!str(f.id) || !f.id) return "ID fehlt";
+  if (!str(f.thema)) return "Thema fehlt";
+  if (!Array.isArray(f.alter) || f.alter.length !== 2 || !f.alter.every((n) => typeof n === "number")) return "Alter fehlt";
+  if (!strs(f.orte) || !strs(f.stelle) || !strs(f.anrufer) || !strs(f.hergang)) return "Orte, Stelle, Anrufer oder Hergang fehlen";
+  if (typeof f.haeufigkeit !== "number") return "Häufigkeit fehlt";
+  if (!Array.isArray(f.varianten) || !f.varianten.length) return "keine Ausgänge";
+  for (const v of f.varianten) {
+    if (!v || typeof v !== "object" || !str(v.id) || typeof v.p !== "number" || !str(v.sichtung) || !str(v.lage) || !str(v.na) || !str(v.buchung)) return "Ausgang unvollständig";
+  }
+  return null;
+}
+
+/**
+ * Fallpaket einlesen. Eigene Fälle mit gleicher ID werden ersetzt; eingebaute nur mit Admin-Freigabe
+ * (sonst kommt der Fall als eigener mit neuer ID dazu).
+ */
+export function fallpaketImport(text: string, admin: boolean): { neu: number; ersetzt: number; fehler: string[] } {
+  const out = { neu: 0, ersetzt: 0, fehler: [] as string[] };
+  let j: unknown;
+  try {
+    j = JSON.parse(text);
+  } catch {
+    out.fehler.push("Die Datei ist kein gültiges JSON.");
+    return out;
+  }
+  const liste = Array.isArray(j) ? j : (j as { format?: string; faelle?: unknown[] } | null)?.faelle;
+  if (!Array.isArray(liste)) {
+    out.fehler.push("Kein Fallpaket (es fehlt die Liste „faelle“).");
+    return out;
+  }
+  const ids = new Set(alleFaelle(true).map((f) => f.id));
+  for (const x of liste) {
+    const fehler = fallFormFehler(x);
+    const f = structuredClone(x) as FallVorlage;
+    if (fehler) {
+      out.fehler.push(`${(x as { name?: string; id?: string })?.name ?? (x as { id?: string })?.id ?? "?"}: ${fehler}`);
+      continue;
+    }
+    if (EINGEBAUT.has(f.id)) {
+      if (admin) {
+        out.ersetzt++;
+        sammlung.geaendert[f.id] = f;
+        continue;
+      }
+      let n = 2;
+      while (ids.has(`${f.id}_${n}`)) n++;
+      f.id = `${f.id}_${n}`;
+    }
+    const i = sammlung.eigene.findIndex((e) => e.id === f.id);
+    if (i >= 0) {
+      sammlung.eigene[i] = f;
+      out.ersetzt++;
+    } else {
+      sammlung.eigene.push(f);
+      out.neu++;
+    }
+    ids.add(f.id);
+  }
+  sammlungSpeichern();
   return out;
 }

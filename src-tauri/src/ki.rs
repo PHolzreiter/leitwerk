@@ -289,7 +289,14 @@ pub struct ChatNachricht {
 
 /// Gesprächsschritt: schickt den Verlauf, liefert die Antwort Stück für Stück und am Ende ganz.
 #[tauri::command]
-pub async fn ki_chat(model: String, messages: Vec<ChatNachricht>, on_token: Channel<String>) -> Result<String, String> {
+/// `max_tokens`: Länge der Antwort (Standard 110 für kurze Gesprächsantworten); `json`: Antwort als JSON (Fall-Entwurf).
+pub async fn ki_chat(
+    model: String,
+    messages: Vec<ChatNachricht>,
+    on_token: Channel<String>,
+    max_tokens: Option<u32>,
+    json: Option<bool>,
+) -> Result<String, String> {
     #[derive(Deserialize)]
     struct Msg {
         content: Option<String>,
@@ -304,13 +311,18 @@ pub async fn ki_chat(model: String, messages: Vec<ChatNachricht>, on_token: Chan
         "messages": messages,
         "stream": true,
         "keep_alive": "15m",
-        "options": { "temperature": 0.75, "num_ctx": 6144, "num_predict": 110, "repeat_penalty": 1.1 }
+        "options": { "temperature": 0.75, "num_ctx": 6144, "num_predict": max_tokens.unwrap_or(110), "repeat_penalty": 1.1 }
     });
+    if json == Some(true) {
+        body["format"] = serde_json::json!("json");
+        body["options"]["temperature"] = serde_json::json!(0.4);
+    }
+    let lang = max_tokens.unwrap_or(110) > 300;
     // Modelle mit „Denkmodus“: für schnelle Antworten abschalten
     if model.starts_with("qwen3") || model.starts_with("deepseek-r1") {
         body["think"] = serde_json::json!(false);
     }
-    let r = client(Some(Duration::from_secs(180)))?
+    let r = client(Some(Duration::from_secs(if lang { 600 } else { 180 })))?
         .post(format!("{BASIS}/api/chat"))
         .json(&body)
         .send()

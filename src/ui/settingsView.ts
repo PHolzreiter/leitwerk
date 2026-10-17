@@ -1,4 +1,5 @@
 /** Reiter „Einstellungen“: Statusmodell, Einsatzaufkommen, Stufen-Zuordnung, Fahrzeiten, Flugrettung. */
+import { fallEditorOeffnen } from "./fallEditor";
 import { store } from "../data/store";
 import { sim } from "../sim/engine";
 import { mp } from "../net/mehrspieler";
@@ -138,7 +139,11 @@ export function createSettingsView(container: HTMLElement, teil: "simulation" | 
     for (const [v, l] of [["nur", "nur Fallkatalog (neu, zum Testen)"], ["gemischt", "gemischt mit den bisherigen Fallgeschichten"], ["aus", "aus – bisherige Fallgeschichten"]]) fkSel.appendChild(el("option", { value: v }, l));
     fkSel.value = draft.fallKatalog ?? "nur";
     fkSel.addEventListener("change", () => (draft.fallKatalog = fkSel.value as Settings["fallKatalog"]));
-    aGrid.append(el("label", { title: "Fälle mit stimmigem Telefonat, Verlauf, Notarzt-Bedarf nach Kompetenz und Krankenhaus" }, "Einsätze aus dem Fallkatalog"), fkSel);
+    const fkBox = el("div", { class: "row-btns" });
+    const fkEdit = el("button", { class: "btn small", type: "button", title: "Fälle ansehen, selbst schreiben, prüfen, importieren und exportieren" }, "Fälle bearbeiten …");
+    fkEdit.addEventListener("click", () => fallEditorOeffnen());
+    fkBox.append(fkSel, fkEdit);
+    aGrid.append(el("label", { title: "Fälle mit stimmigem Telefonat, Verlauf, Notarzt-Bedarf nach Kompetenz und Krankenhaus" }, "Einsätze aus dem Fallkatalog"), fkBox);
     const rvSel = el("select", { class: "set-revers" }) as HTMLSelectElement;
     for (const [v, l] of [["normal", "normal"], ["selten", "selten"], ["aus", "aus"]]) rvSel.appendChild(el("option", { value: v }, l));
     rvSel.value = draft.revers ?? "normal";
