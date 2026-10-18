@@ -226,6 +226,7 @@ const KRANKHEITEN: Krankheit[] = [
   { name: "Nierenschwäche", medikamente: [], fakten: {}, ab: 65 },
   { name: "Krebs, ist in Behandlung", medikamente: ["Schmerzpflaster"], fakten: {}, ab: 55 },
   // nur aus Geschichten (nie zufällig)
+  { name: "Diabetes, spritzt Insulin", medikamente: ["Insulin"], fakten: { diabetiker: "ja" }, ab: 999 },
   { name: "Krebs im Endstadium", medikamente: ["Morphin über eine Schmerzpumpe"], fakten: {}, ab: 999 },
 ];
 
@@ -243,8 +244,14 @@ function profil(alter: number, a: Antworten, vorlage: string[] | undefined, rnd:
     Object.assign(fakten, k.fakten);
   };
   // was die Abfrage schon festgelegt hat, muss in der Geschichte vorkommen
+  // was die Geschichte vorgibt („!…“), zuerst – dann ergänzt „nach“ nichts Doppeltes (z. B. zweimal Diabetes)
+  for (const n of (vorlage ?? []).filter((x) => x.startsWith("!")).map((x) => x.slice(1))) {
+    const k = KRANKHEITEN.find((x) => x.name === n);
+    if (k) nimm(k);
+    else if (!vor.includes(n)) vor.push(n);
+  }
   const nach = (id: string, w: string, name: string) => {
-    if (a[id] === w) {
+    if (a[id] === w && fakten[id] !== w) {
       const k = KRANKHEITEN.find((x) => x.name === name);
       if (k) nimm(k);
     }
@@ -438,20 +445,22 @@ export function szenarioBauen(
   setze("seit", seitMin > 270 ? "ueber" : "unter");
   for (const id of ["diabetiker", "epilepsie", "herz_vg", "herzleiden", "blutverduenner", "vg_schlaganfall", "vg_tia", "psych_vorerkrankung", "aneurysma", "bluter", "kokain"]) setze(id, "nein");
   setze("lungenerkrankung", "nein");
-  if (!w || alter < 15 || alter > 48) setze("schwanger", "nein");
-  else setze("schwanger", rnd() < 0.06 ? "ja" : "nein");
+  // schwanger nur, wenn die Geschichte davon handelt (sonst verwirrt es nur)
+  setze("schwanger", w && /schwanger|geburt/.test(v.thema) ? "ja" : "nein");
   const schlimm = a.bw === "nein" || a.at === "keine" || a.at === "agonal";
-  setze("ohnmacht", schlimm ? "ja" : "nein");
-  setze("verwirrt", a.bw === "getruebt" ? "ja" : "nein");
+  // wer gerade bewusstlos ist: „war kurz weg“, „ist im Kopf klar“, „redet ganze Sätze“ passen nicht
+  const weg = a.bw === "nein";
+  if (!weg) setze("ohnmacht", schlimm ? "ja" : "nein");
+  if (!weg) setze("verwirrt", a.bw === "getruebt" ? "ja" : "nein");
   setze("gewalt", "nein");
   setze("gewalttaetig", "nein");
   setze("aggressiv", "nein");
   setze("waffen", "nein");
   setze("mehrere_verletzte", a.anzahl_patienten === "n" ? "ja" : "nein");
   setze("schwer_pat", rnd() < 0.08 ? "ja" : "nein");
-  setze("hautfarbe", schlimm || a.at === "abnorm" ? "ja" : "nein");
+  setze("hautfarbe", schlimm ? "ja" : "nein");
   setze("kaltschweiss", schlimm ? "ja" : "nein");
-  setze("sprachschw", a.at === "abnorm" ? "ja" : "nein");
+  if (!weg && a.bw !== "getruebt") setze("sprachschw", a.at === "abnorm" ? "ja" : "nein");
   // Pflege und Ärzte fordern meist an: Transportart und Dringlichkeit wissen sie
   if (a.wissen === "profi") {
     const stabil = (a.bw === undefined || a.bw === "ja") && (a.at === undefined || a.at === "normal");
@@ -511,9 +520,9 @@ const FAKT: Record<string, Record<string, string>> = {
   verletzt: { ja: "{Er} hat sich verletzt", nein: "{Er} hat sich nicht sichtbar verletzt" },
   blutung_stark: { ja: "es blutet stark, die Tücher sind schnell durch", nein: "es blutet nicht stark" },
   fehlstellung: { ja: "ein Arm/Bein steht komisch ab bzw. ist sichtbar verformt", nein: "nichts steht komisch ab" },
-  aelter6h: { ja: "das Ganze ist schon länger als sechs Stunden her", nein: "es ist erst vor kurzem passiert" },
-  seit: { unter: "die Beschwerden sind erst vor kurzem gekommen (weniger als 4 Stunden)", ueber: "die Beschwerden gibt es schon länger als 4–5 Stunden" },
-  diabetiker: { ja: "{Er} ist Zuckerkranker (Diabetes)", nein: "{Er} hat keinen Zucker" },
+  aelter6h: { ja: "das Ganze ist schon länger als sechs Stunden her", nein: "es ist weniger als sechs Stunden her" },
+  seit: { unter: "die Beschwerden gibt es seit weniger als 4 Stunden", ueber: "die Beschwerden gibt es schon länger als 4–5 Stunden" },
+  diabetiker: { ja: "{Er} ist zuckerkrank (Diabetes)", nein: "{Er} hat keinen Zucker" },
   epilepsie: { ja: "{Er} hat Epilepsie", nein: "Epilepsie hat {er} keine" },
   herz_vg: { ja: "{Er} hatte schon einmal einen Herzinfarkt", nein: "einen Herzinfarkt hatte {er} noch nie" },
   herzleiden: { ja: "{Er} hat es mit dem Herzen", nein: "mit dem Herzen hat {er} nichts" },
@@ -565,9 +574,9 @@ export function fallakte(sz: Szenario, opt: { selbst: boolean; bezug: string; qu
   const z: string[] = [];
   const erlebt = q === "polizei" ? "so hat es dir die Streife vor Ort gemeldet" : q === "telefon" ? "das hat dir der Patient bzw. die Angehörigen gerade am Telefon geschildert – du bist nicht vor Ort" : "das hast du erlebt";
   if (sz.geschehen?.length) {
-    z.push(`WAS WIRKLICH PASSIERT IST (${erlebt}) – Fakten. Erzähl es in DEINEN Worten, so wie du es erlebt hast, nie wörtlich ablesen und nicht alles auf einmal:\n${sz.geschehen.map((g) => `- ${g}`).join("\n")}\n- Das war ${sz.seit}.`);
+    z.push(`WAS WIRKLICH PASSIERT IST (${erlebt}) – Fakten. Erzähl es in DEINEN Worten, so wie du es erlebt hast, nie wörtlich ablesen und nicht alles auf einmal:\n${sz.geschehen.map((g) => `- ${g}`).join("\n")}\n- ${/^seit/.test(sz.seit) ? `Das geht so ${sz.seit}` : `Das war ${sz.seit}`}.`);
     if (sz.stil?.length) z.push(`So ähnlich KÖNNTE ein erster Satz klingen – nur als Anhaltspunkt für den Ton, NICHT wörtlich übernehmen, eigene Worte finden: ${sz.stil.map((x) => `„${x}“`).join(" / ")}`);
-  } else z.push(`WAS PASSIERT IST (${erlebt}): ${opt.selbst && sz.hergangIch ? sz.hergangIch : sz.hergang} Das war ${sz.seit}.`);
+  } else z.push(`WAS PASSIERT IST (${erlebt}): ${opt.selbst && sz.hergangIch ? sz.hergangIch : sz.hergang} ${/^seit/.test(sz.seit) ? `Das geht so ${sz.seit}` : `Das war ${sz.seit}`}.`);
   z.push(`WO: ${sz.stelle}${sz.umgebung.length ? ` (${sz.umgebung.join("; ")})` : ""}.`);
   const titel = opt.selbst
     ? "WAS DU SPÜRST UND WEISST (hier über dich in der dritten Person notiert – du sagst es natürlich in Ich-Form)"

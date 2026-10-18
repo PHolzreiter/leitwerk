@@ -205,7 +205,7 @@ function allgemein(text: string, an: Anrede): string {
     .replace(/\bdem Patienten\b|\bder Patientin\b/g, w ? "ihr" : "ihm")
     .replace(/\bdes Patienten\b/g, w ? "der Patientin" : "des Patienten");
   // „Verhält sich er“ → „Verhält er sich“
-  t = t.replace(/\b(\w+) sich (Er|Sie)\b/g, (_m, v: string, p: string) => `${v} ${p.toLowerCase()} sich`);
+  t = t.replace(/\b(\w+) sich (er|sie)\b/gi, (m, v: string, p: string) => (/^(er|sie)$/i.test(v) ? m : `${v} ${p.toLowerCase()} sich`));
   // „Ist Er wach?“ → „Ist er wach?“ (nur am Satzanfang groß)
   t = t.replace(/(\S) (Er|Sie)\b/g, (m, vor: string, p: string) => (/[.?!:]$/.test(vor) ? m : `${vor} ${p.toLowerCase()}`));
   return t;

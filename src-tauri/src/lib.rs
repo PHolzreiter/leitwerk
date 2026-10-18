@@ -505,6 +505,21 @@ fn write_text_file(path: String, content: String) -> Result<(), String> {
     fs::write(&path, content).map_err(|e| format!("Datei konnte nicht geschrieben werden: {e}"))
 }
 
+/// Schreibt mehrere Textdateien als ZIP-Archiv (Testlauf der Notrufgespräche).
+#[tauri::command]
+fn write_zip_file(path: String, files: Vec<(String, String)>) -> Result<(), String> {
+    use std::io::Write;
+    let f = fs::File::create(&path).map_err(|e| format!("Datei konnte nicht angelegt werden: {e}"))?;
+    let mut z = zip::ZipWriter::new(f);
+    let opt = zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
+    for (name, inhalt) in files {
+        z.start_file(name, opt).map_err(|e| e.to_string())?;
+        z.write_all(inhalt.as_bytes()).map_err(|e| e.to_string())?;
+    }
+    z.finish().map_err(|e| e.to_string())?;
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -543,6 +558,7 @@ pub fn run() {
             autosave_write,
             autosave_read,
             write_text_file,
+            write_zip_file,
             geo_status,
             region_setzen,
             erreichbar,

@@ -102,8 +102,11 @@ const vorab = new Map<string, Promise<{ text: string; quelle: "ki" | "fest" } | 
 let vorabLaeuft = false;
 const vorabSchluessel = (e: Einsatz) => `${e.id}:${e.anruf?.versuche ?? 0}:${e.anruf?.rueckruf ? 1 : 0}`;
 
+/** Während eines Testlaufs ruht das Vorwärmen (die KI ist mit dem Testlauf beschäftigt) */
+export const testlaufStatus = { aktiv: false };
+
 export function vorwaermen(): void {
-  if (vorabLaeuft || !kiBereit()) return;
+  if (vorabLaeuft || testlaufStatus.aktiv || !kiBereit()) return;
   // alte Einträge (Anruf längst angenommen oder vorbei) wegräumen
   for (const key of vorab.keys()) {
     const e = sim.einsatz(key.split(":")[0]);
@@ -153,8 +156,13 @@ export async function fragen(e: Einsatz, text: string, schemaFrage?: Frage, onTo
     const quelle = { wert: "ki" as "ki" | "fest" };
     // fertige Sätze schon vorlesen, während die KI noch schreibt
     const sprecher = satzSprecher((satz) => e.anruf?.status === "aktiv" && anruferSagt(satz, k.anrufer, e.id));
+    const start = Date.now();
     const fertig = await vorabAntwort(e, text, schemaFrage);
     if (fertig) {
+      // vorbereitet – aber der Anrufer hört erst zu: so lange, wie man den Satz zum Sprechen braucht, plus kurz Luft holen
+      const sprechzeit = text.length * 65 + 600 + Math.random() * 800;
+      const rest = sprechzeit - (Date.now() - start);
+      if (rest > 0) await new Promise((r) => setTimeout(r, rest));
       quelle.wert = fertig.quelle;
       onToken?.(fertig.text);
       sprecher.token(fertig.text);
@@ -271,7 +279,7 @@ export function kiVerlauf(e: Einsatz, k: AnrufKontext, frage: string, schemaFrag
   return verlauf;
 }
 
-async function anruferAntwort(
+export async function anruferAntwort(
   e: Einsatz,
   k: AnrufKontext,
   frage: string,

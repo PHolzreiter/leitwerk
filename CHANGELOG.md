@@ -1,5 +1,26 @@
 # Änderungen
 
+## 0.34.0 – Testlauf für Notrufgespräche
+**Testlauf (Fall-Editor)**
+- Neuer Knopf „🧪 Testlauf“ bei jedem Fall: Ausgang wählen (A, B, C … oder alle) und wie oft – dann spielt das Programm die Notrufe automatisch durch, ohne Zwischenfragen
+- „🧪 Alle testen“ spielt alle eingeschalteten Fälle durch
+- Die Leitstelle fragt wie ein Calltaker: Adresse (bei Bedarf nachgefragt), was passiert ist, wer anruft, dann die Fragen des Kapitels in der Reihenfolge der Abfrage. Dazu kommen eine frei getippte Frage, eine Zusammenfassung (manchmal absichtlich falsch), „Die Rettung ist unterwegs“, eine passende Anweisung, die Nachfrage, ob sie etwas bringt, und – wenn der Fall eine hat – eine Verschlechterung oder Besserung
+- Die KI formuliert wie sonst, es wird aber nichts vorgelesen. Das Spiel ist so lange pausiert, die Testgespräche kommen nicht ins Spiel
+- Fortschritt mit Restzeit und Mitlesen; „Abbrechen“ hält an, die fertigen Gespräche bleiben
+- Am Ende: ZIP-Ordner speichern – eine Übersicht mit allen auffälligen Antworten (sagt „der Patient“, zu lang, wiederholt die Frage, sagt etwas doppelt, verrät den Zustand zu früh, KI-Fehler, langsam) und je Gespräch ein Gesprächsexport
+
+**Annehmen**
+- Die vorbereitete erste Antwort kommt erst, wenn der Eröffnungssatz gesagt ist, mit einer kurzen Pause – nicht mehr sofort
+
+**Fälle geprüft und bereinigt**
+- Bewusstlose Patienten waren laut Fakten „im Kopf klar“, „kann ganze Sätze sprechen“ und „war kurz weg“ – das steht jetzt nicht mehr da
+- „Ganz blass“ nur noch, wenn es schlimm ist – das verschluckte Kind ist rot im Gesicht, nicht blass
+- Geburt: „schwanger ist sie nicht“ – jetzt richtig „sie ist schwanger“. Andere Frauen sind nicht mehr zufällig schwanger
+- Unterzucker: spritzt Insulin (vorher stand Metformin da), ist verschwitzt und blass (vorher „schwitzt nicht“)
+- Schlaganfall: die Seite im Einstiegssatz passt jetzt zur Seite in den Fakten
+- Ruft der Patient selbst an, stehen Bewusstsein und Atmung in Ich-Form in den Fakten („Du kriegst ganz schlecht Luft“) statt „Du: ist wach“
+- „Zuckerkranker“ → „zuckerkrank“, „Woran hat sich sie verschluckt?“ → „Woran hat sie sich verschluckt?“, „Das war seit heute früh“ → „Das geht so seit heute früh“, „es ist erst vor kurzem passiert“ bei zwei Stunden → „weniger als sechs Stunden her“
+
 ## 0.33.0 – Schnellere erste Antwort, freie Fragen, Orte je Fall
 **Schneller**
 - Klingelt ein Notruf, schreibt die KI schon die erste Antwort – beim Annehmen ist sie (fast) sofort da statt nach 10 Sekunden

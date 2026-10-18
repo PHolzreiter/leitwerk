@@ -290,7 +290,7 @@ export const FAELLE: FallVorlage[] = [
     hergang: [
       "{P} ist auf einmal so komisch, {er} redet ganz verwaschen und der Mund hängt {rechts|links} runter!",
       "{P} ist auf einmal ganz komisch, {er} kann nicht mehr richtig reden!",
-      "{P} kann {den rechten|den linken} Arm nicht mehr heben und redet so komisch!",
+      "{P} kann den {rechten|linken} Arm nicht mehr heben und redet so komisch!",
     ],
     seitMin: [30, 60],
     fest: {
@@ -568,6 +568,7 @@ export const FAELLE: FallVorlage[] = [
     hergang: ["{P} ist Diabetiker, {er} ist total verwirrt und schwitzt, ich glaub, {er} ist unterzuckert.", "{P} ist auf einmal ganz komisch, total durcheinander und klatschnass geschwitzt – {er} hat Zucker.", "{P} redet auf einmal wirres Zeug und schwitzt so, {er} ist zuckerkrank."],
     seitMin: [5, 20],
     fest: { verhalten: "ja", gewalttaetig: "nein", diabetiker: "ja", bw: "getruebt", at: "normal", anzahl_patienten: "1" },
+    extra: { kaltschweiss: "ja", hautfarbe: "ja" },
     details: [
       "{Er} redet wirres Zeug und weiß nicht, wo {er} ist.",
       "{Er} ist klatschnass geschwitzt und zittert.",
@@ -576,7 +577,7 @@ export const FAELLE: FallVorlage[] = [
       "Du hast {ihm} Saft hingestellt, aber {er} will nicht richtig trinken.",
       "[anrufer_typ=partner] Ihr habt so ein Notfallset, aber du weißt nicht, wie das geht.",
     ],
-    vorerkrankungen: ["!Diabetes"],
+    vorerkrankungen: ["!Diabetes, spritzt Insulin"],
     verlauf: ["Wenn man dir sagt, du sollst Zucker oder Saft geben, versuchst du es."],
     varianten: [
       {

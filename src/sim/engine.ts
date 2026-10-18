@@ -3120,6 +3120,28 @@ export class Simulation {
     }
   }
 
+  /**
+   * Testlauf (Fall-Editor): das nächste Ereignis des Falls sofort eintreten lassen (Verschlechterung/Besserung),
+   * damit man sieht, wie der Anrufer es meldet. Chancen gelten wie im Spiel, Anleitungen am Telefon zählen.
+   * Gibt zurück, ob sich etwas getan hat.
+   */
+  testEreignis(e: Einsatz): boolean {
+    const l = e.wahr.lage;
+    if (!l?.fall) return false;
+    const ev = l.ereignisse.filter((x) => !x.eingetreten && (!x.variante || x.variante === l.fall!.variante) && !x.nurMitNa).sort((a, b) => a.um - b.um)[0];
+    if (!ev) return false;
+    const vorher = e.anruf?.gespraech.length ?? 0;
+    this.fallEreignis(e, l, ev, Math.max(this.state.zeit, ev.um));
+    return (e.anruf?.gespraech.length ?? 0) > vorher;
+  }
+
+  /** Anleitung am Telefon für den Testlauf merken (wie bei einer echten Nachricht der Leitstelle) */
+  testAnleitung(e: Einsatz, text: string): void {
+    const lf = e.wahr.lage?.fall;
+    if (!lf) return;
+    for (const typ of anleitungAus(text, nachrichtArt(text) === "anweisung")) if (lf.anleitungen[typ] === undefined) lf.anleitungen[typ] = this.state.zeit;
+  }
+
   /** Ereignis eines Falls aus dem Katalog (Chance, Anleitung, Notarzt vor Ort, Variantenwechsel) */
   private fallEreignis(e: Einsatz, l: Lage, ev: Lage["ereignisse"][number], t: number): void {
     const lf = l.fall!;

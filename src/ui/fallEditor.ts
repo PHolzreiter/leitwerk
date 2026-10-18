@@ -37,6 +37,7 @@ import { sim } from "../sim/engine";
 import type { Atmung, Bewusstsein, Sichtung } from "../sim/lage";
 import { PARTNER, type PartnerArt, type PartnerGrund } from "../sim/partner";
 import { confirmDialog, openDialog } from "./dialog";
+import { testlaufDialog } from "./testlauf";
 import { el, esc, toast } from "./dom";
 
 // ------------------------------------------------------------------ Auswahllisten
@@ -409,7 +410,9 @@ function fensterBauen(): { zeigen(id?: string): void } {
     const exp = el("button", { class: "btn small", type: "button", title: "Fälle als Fallpaket (.json) speichern" }, "Exportieren");
     exp.addEventListener("click", () => exportDialog());
     oben.append(s, el("div", { class: "fe-nav-knoepfe" }));
-    oben.lastElementChild!.append(neu, imp, exp);
+    const alleTest = el("button", { class: "btn small", type: "button", title: "Alle eingeschalteten Fälle automatisch durchspielen (KI), Gespräche als ZIP speichern" }, "🧪 Alle testen");
+    alleTest.addEventListener("click", () => void testlaufDialog(null));
+    oben.lastElementChild!.append(neu, imp, exp, alleTest);
     nav.appendChild(oben);
     nav.appendChild(el("div", { class: "fe-nav-liste" }));
     listeZeichnen();
@@ -513,6 +516,17 @@ function fensterBauen(): { zeigen(id?: string): void } {
       schritt = 4;
       zeichnen();
     });
+    if (!istNeu) {
+      const tb = el("button", { type: "button", class: "btn small fe-test", title: "Diesen Fall automatisch mehrmals durchspielen (KI), Gespräche als ZIP speichern" }, "🧪 Testlauf");
+      tb.addEventListener("click", () => {
+        if (geaendert) {
+          toast("Bitte den Fall zuerst speichern – getestet wird die gespeicherte Fassung", "error");
+          return;
+        }
+        void testlaufDialog(f.id);
+      });
+      kopfZeile.appendChild(tb);
+    }
   }
 
   /** nach jeder Eingabe: ungespeichert markieren, Ampel aktualisieren */

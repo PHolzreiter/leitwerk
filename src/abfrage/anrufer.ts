@@ -678,7 +678,13 @@ function antwortSaetze(k: AnrufKontext): string {
     }
     if (LAIE[id]?.[String(wert)]) {
       const frage = id === "bw" ? `Ob ${wer.toLowerCase()} wach ist und reagiert` : `Wie ${wer.toLowerCase()} atmet`;
-      zeilen.push(wert === "unbekannt" && !k.anrufer.selbst ? `- ${frage}: ${fuell(LAIE[id][String(wert)])}` : `- ${wer}: ${fuell(LAIE[id][String(wert)])}`);
+      const ich: Record<string, string> = { "bw:ja": "Du bist wach, aber dir geht es nicht gut", "bw:getruebt": "Du bist benommen und kannst nicht klar denken", "at:normal": "Du kriegst normal Luft", "at:abnorm": "Du kriegst ganz schlecht Luft und musst schnaufen" };
+      if (k.anrufer.selbst) {
+        const t = ich[`${id}:${wert}`];
+        if (t) zeilen.push(`- ${t}`);
+        continue;
+      }
+      zeilen.push(wert === "unbekannt" ? `- ${frage}: ${fuell(LAIE[id][String(wert)])}` : `- ${wer}: ${fuell(LAIE[id][String(wert)])}`);
       continue;
     }
     // Vorgeschichte und Alter: was dieser Anrufer davon weiß (siehe DEINE ART)
