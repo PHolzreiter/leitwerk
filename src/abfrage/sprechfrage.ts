@@ -85,6 +85,32 @@ const SPRECH: Record<string, { er: string[]; sie?: string[] }> = {
   bluter: { er: ["Ist {er} Bluter?"] },
   aneurysma: { er: ["Ist bei {ihm} ein Aneurysma an der Bauchschlagader bekannt?"] },
   mehrere_verletzte: { er: ["Sind noch andere Personen verletzt?"] },
+  anrufer_selbst: { er: ["Sind Sie selbst auch verletzt?", "Und Sie – sind Sie selber verletzt?"] },
+  anzahl: { er: ["Wie viele Verletzte gibt es?", "Wie viele Personen sind verletzt?"] },
+  gering: { er: ["War das nur ein leichter Unfall – langsam, so wie ein Parkschaden?"] },
+  hohe_geschw: { er: ["War das mit hoher Geschwindigkeit, auf der Freilandstraße oder Autobahn?", "Wie schnell waren die Autos ungefähr unterwegs?"] },
+  hohe_energie: { er: ["War das ein heftiger Aufprall, mit hoher Geschwindigkeit?"] },
+  grossunfall: { er: ["Ist ein Bus, ein Zug oder eine Straßenbahn beteiligt, oder sind sehr viele Autos betroffen?"] },
+  mechanismus: { er: ["Ist ein Fußgänger, ein Radfahrer oder ein Motorrad beteiligt? Hat sich ein Auto überschlagen oder ist jemand herausgeschleudert worden?"] },
+  andere_gefahren: { er: ["Gibt es sonst eine Gefahr – Feuer, Rauch, auslaufendes Benzin, fließender Verkehr?"] },
+  gefahrgut: { er: ["Ist ein Lkw mit Gefahrgut beteiligt – mit so einer orangen Tafel?"] },
+  eingeklemmt: { er: ["Ist jemand eingeklemmt, kommt jemand nicht aus dem Auto heraus?", "Ist jemand eingeklemmt?"] },
+  verletzte: { er: ["Ist jemand verletzt?", "Gibt es Verletzte?"] },
+  grund: { er: ["Warum braucht {er} die Rettung – was ist der Grund?", "Weshalb soll {er} ins Krankenhaus?"] },
+  dringlichkeit: { er: ["Wie dringend ist es – muss {er} sofort fahren, braucht {er} Sauerstoff oder Überwachung?", "Wie eilig ist es?"] },
+  transportart: { er: ["Kann {er} sitzen, oder muss {er} liegend transportiert werden?", "Kann {er} gehen oder sitzen?"] },
+  anforderer: { er: ["Rufen Sie als Arzt oder von der Pflege an?"] },
+  hauptbeschwerde: { er: ["Was ist {sein} Hauptproblem – was macht {ihm} am meisten zu schaffen?", "Welche Beschwerden hat {er} vor allem?"] },
+  lage: { er: ["Beschreiben Sie mir bitte genau, wie die Situation gerade ist.", "Was genau ist die Situation im Moment?"] },
+  schwaeche: { er: ["Ist eine Körperseite plötzlich schwach oder taub?"] },
+  gleichgewicht: { er: ["Hat {er} plötzlich Probleme mit dem Gleichgewicht, schwankt {er}?"] },
+  sehen: { er: ["Sieht {er} plötzlich schlechter oder doppelt?"] },
+  kopfschmerz: { er: ["Hat {er} plötzlich ganz starke Kopfschmerzen bekommen?"] },
+  nur_alarm: { er: ["Ist das nur ein Brandalarm, ohne dass jemand verletzt ist?"] },
+  hochrisiko: { er: ["Hat {er} schwere Vorerkrankungen oder ein geschwächtes Immunsystem?"] },
+  medikation: { er: ["Hat {er} schon ein Notfallmedikament bekommen, zum Beispiel einen Adrenalin-Pen?"] },
+  vergiftung: { er: ["Könnte {er} etwas eingenommen haben, zu viele Tabletten oder Gift?"] },
+  verhalten: { er: ["Verhält {er} sich anders als sonst?", "Benimmt {er} sich irgendwie auffällig?"] },
 };
 
 /** Fragen, die nur der Calltaker beantwortet – werden nicht gestellt */
@@ -168,6 +194,8 @@ function allgemein(text: string, an: Anrede): string {
     .replace(/\s+([?.!])/g, "$1")
     .replace(/\s{2,}/g, " ")
     .trim();
+  // „Überdosis / Vergiftung“ → „Überdosis oder Vergiftung“
+  t = t.replace(/\s*\/\s*/g, " oder ");
   if (an === "sie") return inSieForm(t);
   if (an === "neutral") return t;
   const w = an === "w";
@@ -176,6 +204,8 @@ function allgemein(text: string, an: Anrede): string {
     .replace(/\bden Patienten\b|\bdie Patientin\b/g, w ? "sie" : "ihn")
     .replace(/\bdem Patienten\b|\bder Patientin\b/g, w ? "ihr" : "ihm")
     .replace(/\bdes Patienten\b/g, w ? "der Patientin" : "des Patienten");
+  // „Verhält sich er“ → „Verhält er sich“
+  t = t.replace(/\b(\w+) sich (Er|Sie)\b/g, (_m, v: string, p: string) => `${v} ${p.toLowerCase()} sich`);
   // „Ist Er wach?“ → „Ist er wach?“ (nur am Satzanfang groß)
   t = t.replace(/(\S) (Er|Sie)\b/g, (m, vor: string, p: string) => (/[.?!:]$/.test(vor) ? m : `${vor} ${p.toLowerCase()}`));
   return t;

@@ -11,7 +11,7 @@ import type { AnruferTyp } from "./szenario";
 
 export type Wissen = "nah" | "bekannt" | "fremd" | "profi";
 export type Redestil = "knapp" | "normal" | "gespraechig" | "unsicher";
-export type Einstieg = "adresse" | "dringend" | "problem" | "hallo" | "unvollstaendig" | "umschreibung";
+export type Einstieg = "adresse" | "dringend" | "problem" | "hallo" | "unvollstaendig" | "umschreibung" | "vorstellung";
 
 export interface Persona {
   wissen: Wissen;
@@ -78,9 +78,12 @@ export function wissenVon(typ: AnruferTyp | undefined, selbst: boolean): Wissen 
 
 /** Wörter für den Patienten – je nach Beziehung, Geschlecht und Alter */
 function nennWoerter(typ: AnruferTyp | undefined, rolle: string, w: boolean, alter: number, vorname: string, nachname: string, rnd: Rnd): string[] {
+  // Achtung: „Pflegeheim“ enthält „ehe“ – deshalb Wortanfänge prüfen
   const r = rolle.toLowerCase();
   const er = w ? "sie" : "er";
-  if (typ === "partner" || /ehe|lebensgef/.test(r)) return [w ? "meine Frau" : "mein Mann", w ? `die ${vorname}` : `der ${vorname}`, er];
+  if (typ === "pflege") return [w ? `die Frau ${nachname}` : `der Herr ${nachname}`, w ? "die Bewohnerin" : "der Bewohner", er];
+  if (typ === "arzt" || typ === "ordi") return [w ? `die Frau ${nachname}` : `der Herr ${nachname}`, w ? "die Patientin" : "der Patient", er];
+  if (typ === "partner" || /\b(ehefrau|ehemann|lebensgef\w*|partner\w*)\b/.test(r)) return [w ? "meine Frau" : "mein Mann", w ? `die ${vorname}` : `der ${vorname}`, er];
   if (typ === "kind" || /tochter|sohn/.test(r))
     return rnd() < 0.6 ? [w ? "die Mama" : "der Papa", w ? "meine Mutter" : "mein Vater", er] : [w ? "meine Mutter" : "mein Vater", w ? "die Mutti" : "der Vati", er];
   if (typ === "eltern" || /^mutter|^vater/.test(r)) {
@@ -92,8 +95,6 @@ function nennWoerter(typ: AnruferTyp | undefined, rolle: string, w: boolean, alt
   if (typ === "begleiter" || /freund/.test(r)) return [w ? "meine Freundin" : "mein Freund", w ? `die ${vorname}` : `der ${vorname}`, er];
   if (typ === "lehrer") return [w ? "eine Schülerin" : "ein Schüler", w ? `die ${vorname}` : `der ${vorname}`, er];
   if (typ === "trainer") return [w ? "eine Spielerin" : "ein Spieler", w ? `die ${vorname}` : `der ${vorname}`, er];
-  if (typ === "pflege") return [w ? `Frau ${nachname}` : `Herr ${nachname}`, w ? "unsere Bewohnerin" : "unser Bewohner", er];
-  if (typ === "arzt" || typ === "ordi") return [w ? `Frau ${nachname}` : `Herr ${nachname}`, w ? "die Patientin" : "der Patient", er];
   // Fremde: nach Aussehen
   if (alter < 14) return [w ? "ein Mädchen" : "ein Bub", w ? "die Kleine" : "der Kleine", er];
   if (alter < 25) return w ? ["eine junge Frau", "das Mädel", er] : ["ein junger Mann", "der Bursch", er];
@@ -132,10 +133,10 @@ export function personaWaehlen(
   rnd: Rnd = Math.random,
 ): Persona {
   const wissen = wissenVon(x.typ, x.selbst);
-  const alt = !x.selbst && /mutter|vater|ehe|nachbar/i.test(x.rolle) && p.alter >= 70;
+  const alt = !x.selbst && /mutter|vater|ehefrau|ehemann|nachbar/i.test(x.rolle) && p.alter >= 70;
   const stil: Redestil =
     wissen === "profi"
-      ? "knapp"
+      ? gewichtet<Redestil>([["knapp", 3], ["normal", 3], ["gespraechig", 0.7], ["unsicher", 0.7]], rnd)
       : gewichtet<Redestil>(
           [
             ["normal", 4],
@@ -146,8 +147,10 @@ export function personaWaehlen(
           rnd,
         );
   const einstieg: Einstieg =
-    wissen === "profi" || opt.ortUnbekannt
+    opt.ortUnbekannt
       ? "adresse"
+      : wissen === "profi"
+        ? gewichtet<Einstieg>([["adresse", 2], ["vorstellung", 3]], rnd)
       : gewichtet<Einstieg>(
           [
             ["adresse", 5],
@@ -174,7 +177,14 @@ export function personaWaehlen(
           `Du erwähnst einmal nebenbei etwas, das dich zusätzlich beschäftigt (dass ${er} eh nie zum Arzt geht, dass du gerade erst heimgekommen bist o. Ä.).`,
           "Du fragst einmal zwischendurch, wie lange die Rettung noch braucht.",
         ];
-  const eigenheit = wissen === "profi" || rnd() < 0.45 ? null : pick(eigenheiten, rnd);
+  const eigenheitenProfi = [
+    "Du schaust zwischendurch in die Dokumentation nach („Moment, ich schau in die Doku …“).",
+    "Du hast es eilig, weil auf der Station noch viel los ist – du redest schnell und sachlich.",
+    `Du bist erst seit kurzem im Haus und kennst ${p.w ? "sie" : "ihn"} noch nicht so gut – manches musst du nachschauen.`,
+    "Du sagst Werte gern mit Uhrzeit dazu („um sieben in der Früh …“).",
+    "Du fragst einmal, welches Krankenhaus es wird, weil du die Angehörigen anrufen musst.",
+  ];
+  const eigenheit = wissen === "profi" ? (rnd() < 0.3 ? null : pick(eigenheitenProfi, rnd)) : rnd() < 0.45 ? null : pick(eigenheiten, rnd);
   const kenntVorgeschichte: Persona["kenntVorgeschichte"] = wissen === "nah" || wissen === "profi" ? "ja" : wissen === "bekannt" ? (rnd() < 0.5 ? "teilweise" : "nein") : "nein";
   const dabeiListe =
     wissen === "fremd"
@@ -212,7 +222,11 @@ export function personaText(p: Persona, w: boolean, selbst: boolean): string {
   z.push(`- Deine typischen Füllwörter: „${p.woerter.join("“, „")}“ – sparsam, nicht in jedem Satz.`);
   if (p.eigenheit) z.push(`- ${p.eigenheit}`);
   if (!selbst) {
-    z.push(`- So nennst du ${ihn} (abwechselnd): ${p.nennt.map((n) => `„${n}“`).join(", ")}. NIE „der Patient“ oder „die Patientin“ – so redet kein Angehöriger oder Passant.`);
+    z.push(
+      p.wissen === "profi"
+        ? `- So nennst du ${ihn} (abwechselnd): ${p.nennt.map((n) => `„${n}“`).join(", ")}.`
+        : `- So nennst du ${ihn} (abwechselnd): ${p.nennt.map((n) => `„${n}“`).join(", ")}. NIE „der Patient“ oder „die Patientin“ – so redet kein Angehöriger oder Passant.`,
+    );
     if (p.wissen === "fremd") z.push(`- Du kennst ${ihn} NICHT. Name, Alter, Krankheiten, Medikamente, Hausarzt weißt du nicht. Fragt die Leitstelle danach, sagst du das – ist ${er} wach, kannst du ${ihn} kurz fragen („Moment, ich frag …“) und gibst weiter, was ${er} sagt.`);
     else if (p.wissen === "bekannt")
       z.push(
@@ -231,13 +245,15 @@ export function einstiegHinweis(p: Persona, adresse: string, rnd: Rnd = Math.ran
   const strasse = teile[0] ?? adresse;
   switch (p.einstieg) {
     case "dringend":
-      return `Sag zuerst kurz, dass es dringend ist (in deinen Worten, z. B. ${pick(["„Bitte, schnell …“", "„Sie müssen sofort kommen!“", "„Es ist dringend!“", "„Hilfe, bitte!“", "„Schnell, bitte!“"], rnd)}), dann die Adresse – sonst nichts.`;
+      return `Zwei ganz kurze Sätze: zuerst ein Ausruf, dass es dringend ist (z. B. ${pick(["„Bitte, schnell …“", "„Sie müssen sofort kommen!“", "„Hilfe, bitte!“", "„Schnell, bitte!“", "„Bitte kommen Sie schnell!“"], rnd)}), DANN SOFORT die Adresse (${adresse}). Sonst nichts.`;
     case "problem":
       return "Du bist so durch den Wind, dass du NICHT mit der Adresse anfängst: du rufst nur kurz heraus, was los ist (ein kurzer Satz, höchstens zehn Wörter, keine Einzelheiten) – ohne Adresse. Die Adresse sagst du erst, wenn die Leitstelle noch einmal nach dem Ort fragt.";
     case "hallo":
-      return `Du bist unsicher, ob du richtig verbunden bist (z. B. ${pick(["„Hallo? Ist da die Rettung?“", "„Ja, hallo … bin ich da richtig beim Notruf?“", "„Rettung? Hallo?“", "„Hallo, ist das die 144?“"], rnd)}) – danach sagst du die Adresse (Straße, Hausnummer, Ort). Sonst nichts, keine weiteren Einzelheiten.`;
+      return `Du hast vor Aufregung nicht richtig zugehört und fragst NUR nach, ob du richtig verbunden bist (z. B. ${pick(["„Hallo? Ist da die Rettung?“", "„Ja, hallo … bin ich da richtig beim Notruf?“", "„Rettung? Hallo?“", "„Hallo, ist das die 144?“"], rnd)}). Nur diese eine kurze Frage – keine Adresse, keine Antwort darauf, nichts weiter. Die Adresse sagst du, wenn die Leitstelle es bestätigt und noch einmal fragt.`;
     case "unvollstaendig":
       return teile.length > 1 ? `Du nennst nur „${strasse}“ – die Gemeinde vergisst du. Die sagst du erst, wenn die Leitstelle nachfragt.` : "Nenn den Ort.";
+    case "vorstellung":
+      return `Du meldest dich wie ein Profi: wer du bist und von wo (z. B. ${pick(["„Grüß Gott, hier ist <dein Name> von <wo du arbeitest>“", "„<wo du arbeitest>, <dein Name>, grüß Gott“", "„Ja, grüß Gott, <dein Name> hier, <wo du arbeitest>“"], rnd)}), dann die Adresse (${adresse}). Zwei kurze Sätze, sonst nichts.`;
     case "umschreibung":
       return "Du nennst die vollständige Adresse (Straße, Hausnummer, Ort) und sagst in einem kurzen Satz dazu, woran man das Haus erkennt – denk dir selbst etwas Passendes aus.";
     default:

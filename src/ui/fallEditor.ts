@@ -27,7 +27,7 @@ import {
 import { fallPruefen } from "../abfrage/faellePruefen";
 import { kiBereit, kiJson, kiStatus } from "../abfrage/ki";
 import { bestimmeCode, fragenImAblauf, type Antworten, type Frage, type Schema, type Wert } from "../abfrage/schema";
-import type { AnruferTyp, OrtArt } from "../abfrage/szenario";
+import type { AnruferTyp, OrtArt, OrtModus } from "../abfrage/szenario";
 import { ERÖFFNUNG, probeGespraech } from "../abfrage/gespraech";
 import { kapitelZuThema, merkmaleAusSchema, merkmaleInSchema, THEMEN, themaLabel } from "../abfrage/themen";
 import { BUCHUNGEN } from "../data/klinik";
@@ -189,6 +189,13 @@ function haken(wert: boolean, setze: (v: boolean) => void, label: string, titel 
 }
 
 /** Mehrfachauswahl als Chips */
+/** mehrere Elemente nebeneinander */
+function mit(...kinder: HTMLElement[]): HTMLElement {
+  const d = el("div", { class: "fe-feld" });
+  d.append(...kinder);
+  return d;
+}
+
 function chips<T extends string>(opts: Opt<T>, gewaehlt: T[], setze: (v: T[]) => void): HTMLElement {
   const box = el("div", { class: "fe-chips" });
   const an = new Set(gewaehlt);
@@ -663,8 +670,20 @@ function fensterBauen(): { zeigen(id?: string): void } {
         aenderung();
       }, "nur bei Fällen ohne Patient, z. B. „Lichtsignale am Berg“"), "leer lassen, wenn es einen Patienten gibt"),
     );
-    const o = abschnitt("Wo?", "Der Einsatzort wird passend gewählt (Wohnadresse, Pflegeheim, Straße …).");
+    const o = abschnitt("Wo?", "Der Einsatzort wird passend gewählt (Wohnadresse, Pflegeheim, Straße …). Pflegeheim, Arztpraxis, Schule und Bahnhof nur dort, wo es so einen Ort (POI) im Gebiet gibt.");
+    const modusHilfe: Record<OrtModus, string> = {
+      nur: "der Fall passiert nur an den markierten Orten",
+      ueberall: "der Fall kann überall passieren (Markierung egal) – Stellen am besten mit [ort=…] schreiben",
+      ausser: "der Fall passiert überall, nur NICHT an den markierten Orten",
+    };
+    const hilfe = el("span", { class: "fe-hinweis" }, modusHilfe[f.ortModus ?? "nur"]);
     o.append(
+      zeile("Vorkommen", mit(auswahl([["nur", "nur an diesen Orten"], ["ueberall", "überall"], ["ausser", "überall außer an diesen Orten"]] as Opt<OrtModus>, f.ortModus ?? "nur", (v) => {
+        if (v === "nur") delete f.ortModus;
+        else f.ortModus = v;
+        hilfe.textContent = modusHilfe[v];
+        aenderung();
+      }), hilfe)),
       zeile("Ort", chips(ORTE, f.orte, (v) => {
         f.orte = v;
         aenderung();
@@ -1243,7 +1262,7 @@ function fensterBauen(): { zeigen(id?: string): void } {
     if (!fallName(entwurf).trim()) out.unshift({ text: "Name fehlt (Schritt 1)", hart: true });
     if (!entwurf.geschehen?.some((h) => h.trim())) out.push({ text: "Was passiert ist (Fakten) fehlt (Schritt 2)", hart: true });
     if (!entwurf.anrufer.length) out.push({ text: "kein Anrufer gewählt (Schritt 2)", hart: true });
-    if (!entwurf.orte.length) out.push({ text: "kein Ort gewählt (Schritt 1)", hart: true });
+    if (!entwurf.orte.length && (entwurf.ortModus ?? "nur") === "nur") out.push({ text: "kein Ort gewählt (Schritt 1)", hart: true });
     for (const v of entwurf.varianten) if (!v.lage.trim()) out.push({ text: `Ausgang ${v.id}: Lagebild fehlt`, hart: true });
     if (entwurf.anrufer.includes("selbst") && !entwurf.hergangIch?.some((h) => h.trim())) out.push({ text: "Patient kann selbst anrufen, aber es gibt kein Beispiel in Ich-Form (Schritt 2) – geht auch ohne", hart: false });
     const ein = out.filter((b, i) => out.findIndex((x) => x.text === b.text) === i);
@@ -1316,7 +1335,7 @@ function fensterBauen(): { zeigen(id?: string): void } {
         const EMO: Record<string, string> = { ruhig: "ruhig", gefasst: "gefasst", aufgeregt: "aufgeregt", panisch: "panisch" };
         const STIL: Record<string, string> = { knapp: "redet knapp", normal: "redet normal", gespraechig: "redet gern", unsicher: "unsicher" };
         const WISSEN: Record<string, string> = { nah: "kennt den Patienten gut", bekannt: "kennt ihn ein bisschen", fremd: "kennt ihn nicht", profi: "Fachkraft" };
-        const EIN: Record<string, string> = { adresse: "beginnt mit der Adresse", dringend: "„bitte schnell“", problem: "beginnt mit dem Problem", hallo: "„bin ich richtig?“", unvollstaendig: "vergisst die Gemeinde", umschreibung: "beschreibt das Haus" };
+        const EIN: Record<string, string> = { adresse: "beginnt mit der Adresse", dringend: "„bitte schnell“", problem: "beginnt mit dem Problem", hallo: "„bin ich richtig?“", unvollstaendig: "vergisst die Gemeinde", umschreibung: "beschreibt das Haus", vorstellung: "stellt sich vor" };
         kopf.innerHTML = `<b>${esc(x.rolle)}</b> · ${esc(EMO[x.emotion] ?? x.emotion)}${x.sprache !== "hochdeutsch" ? ` · ${x.sprache === "dialekt" ? "Dialekt" : "gebrochenes Deutsch"}` : ""}${p ? ` · ${esc(STIL[p.stil])} · ${esc(WISSEN[p.wissen])} · ${esc(EIN[p.einstieg])}${p.nennt[0] !== "ich" ? ` · sagt „${esc(p.nennt.slice(0, 2).join("“, „"))}“` : ""}` : ""}`;
         karte.appendChild(kopf);
         const sz = w.szenario;
@@ -1568,6 +1587,7 @@ export function entwurfAusKi(antwort: string, name: string): FallVorlage | null 
   if (j.geschlecht === "m" || j.geschlecht === "w") f.geschlecht = j.geschlecht;
   const orte = strs(j.orte).filter((o) => ORTE.some(([k]) => k === o)) as OrtArt[];
   if (orte.length) f.orte = orte;
+  if (j.ortModus === "ueberall" || j.ortModus === "ausser") f.ortModus = j.ortModus;
   const stelle = strs(j.stelle);
   if (stelle.length) f.stelle = stelle;
   const anr = strs(j.anrufer).filter((o) => ANRUFER.some(([k]) => k === o)) as AnruferTyp[];

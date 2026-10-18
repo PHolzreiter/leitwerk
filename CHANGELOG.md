@@ -1,5 +1,40 @@
 # Änderungen
 
+## 0.33.0 – Schnellere erste Antwort, freie Fragen, Orte je Fall
+**Schneller**
+- Klingelt ein Notruf, schreibt die KI schon die erste Antwort – beim Annehmen ist sie (fast) sofort da statt nach 10 Sekunden
+- Die Anweisung an die KI bleibt während eines Anrufs gleich: Ollama muss sie nicht jedes Mal neu lesen, jede Antwort kommt schneller. Das Modell bleibt eine Stunde geladen (statt 15 Minuten)
+
+**Freie Fragen werden verstanden**
+- Fragen ohne Fragezeichen und klein geschrieben („was ist ihre adresse“, „okay danke was ist passiert“, „können sie mir sagen wo sie sind“) gelten jetzt als Fragen – vorher wurden sie als Mitteilung behandelt und der Anrufer antwortete „Ich schick jemanden raus“
+- „Erzählen Sie mal, was passiert ist“ ist eine Frage, keine Anweisung; Fragen nach der Adresse werden als solche erkannt
+- Anweisungen wie „dann tun Sie …“, „sonst führen Sie …“ werden erkannt
+
+**Bessere Antworten**
+- Adressen mit „St. Andrä“, „Dr.“ oder „3. Stock“ werden nicht mehr nach „St.“ abgeschnitten
+- „Bitte schnell!“ zu Beginn: danach kommt jetzt auch die Adresse (vorher war nach „Es ist dringend!“ Schluss)
+- „Hallo, bin ich richtig?“: der Anrufer fragt nur nach und wartet, statt sich selbst zu antworten
+- Pflegekräfte sagten „meine Frau“ (wegen „Pflegeh**ehe**im“) – jetzt „die Frau Schmid“, „die Bewohnerin“
+- Profis (Pflege, Ärzte) reden wie Profis: sachlich, mit Messwerten und Fachwörtern, stellen sich mit Namen und Heim vor. Sie wissen, ob jemand liegend transportiert werden muss und wie dringend es ist
+- Anrufer wiederholen nicht mehr bloß die Frage („Der Transport ist dringend“, „Sie liegt liegend“) – sie sagen, was los ist
+- Bei Anweisungen sagt der Anrufer, was er tut und sieht, statt „Aber sie atmet doch …“
+- Weiß der Anrufer etwas nicht, weil er den Patienten nicht sieht (vor der versperrten Tür), sagt er das
+- „Männlich“ → „ein Mann“
+- Auf „Was ist passiert?“ bekommt die KI den Kern der Geschichte mit – damit sie nichts Falsches erfindet
+
+**Mehr Abwechslung**
+- Mehrere Einstiegssätze je Fall; das Pflegeheim-Beispiel würfelt Fieber, Werte, Stelle und Grund des Anrufs
+- Pflegekräfte reden unterschiedlich (knapp, normal, neu im Haus, in Eile, schauen in die Doku …)
+- Fall-Texte können Platzhalter in Wahlmöglichkeiten haben: „{Seit heute ist {er} schläfrig.|{Er} ist matt.}“
+
+**Gesprochene Fragen**
+- Mehr Fragen aus der Abfrage klingen gesprochen: „Sind Sie selbst auch verletzt?“, „Kann sie sitzen, oder muss sie liegend transportiert werden?“, „Warum braucht er die Rettung?“ statt „Ist der Anrufer selbst verletzt und nur leicht?“ oder „Grund der Anforderung“
+- „A / B“ wird zu „A oder B“
+
+**Orte je Fall (Fall-Editor)**
+- Neu: „Vorkommen“ – nur an den markierten Orten, überall, oder überall außer an den markierten Orten (z. B. „überall außer Pflegeheim“)
+- Fälle an Pflegeheim, Arztpraxis, Schule und Bahnhof passieren jetzt immer an einem echten Ort dieser Art (POI), wenn es einen im Gebiet gibt. Gibt es keinen und der Fall erlaubt andere Orte, wird einer davon gewählt
+
 ## 0.32.1 – Kürzere Antworten, Atemnot in Fetzen
 - Auf die erste Frage und auf „Was ist passiert?“ sagen Anrufer jetzt nur das Wichtigste – ein, zwei kurze Sätze (gesprächige etwas mehr). Atmung, Bewusstsein, Alter und Zeit musst du erfragen
 - Wer gleich mit dem Problem anfängt, ruft nur kurz heraus, was los ist

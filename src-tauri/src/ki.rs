@@ -310,7 +310,7 @@ pub async fn ki_chat(
         "model": model,
         "messages": messages,
         "stream": true,
-        "keep_alive": "15m",
+        "keep_alive": "60m",
         "options": { "temperature": 0.75, "num_ctx": 6144, "num_predict": max_tokens.unwrap_or(110), "repeat_penalty": 1.1 }
     });
     if json == Some(true) {

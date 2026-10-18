@@ -28,6 +28,9 @@ export type OrtArt =
   | "arzt"
   | "bahnhof";
 
+/** Wo ein Fall vorkommt: nur an den genannten Orten, überall oder überall außer dort */
+export type OrtModus = "nur" | "ueberall" | "ausser";
+
 /** Wer anruft (wird mit Alter/Geschlecht zur passenden Rolle) */
 export type AnruferTyp =
   | "partner"
@@ -61,6 +64,8 @@ export interface SzenarioVorlage {
   alter: [number, number];
   geschlecht?: "m" | "w";
   orte: OrtArt[];
+  /** „nur“ (Standard): nur an den Orten oben; „ueberall“: an allen passenden Orten; „ausser“: überall außer an den Orten oben */
+  ortModus?: OrtModus;
   /** genaue Stelle, z. B. „im Badezimmer“; {ort} = Gemeinde */
   stelle: string[];
   /** nur bei Natur/unklarem Ort: so beschreibt der Anrufer, wo er ist ({ort} = Gemeinde in der Nähe) */
@@ -172,12 +177,14 @@ export function fuellen(t: string, v: { w: boolean; bezug: string; ort: string; 
     unser: ["unser", "unsere"],
     in: ["", "in"],
   };
-  let s = t.replace(/\{([^{}]*\|[^{}]*)\}/g, (_, x: string) => {
+  // Platzhalter wie {er} dürfen in Wahlmöglichkeiten stecken („{Seit heute ist {er} …|{Er} ist …}“)
+  let s = t.replace(/\{(\w+)\}/g, "\u0001$1\u0002").replace(/\{([^{}]*\|[^{}]*)\}/g, (_, x: string) => {
     const teile = x.split("|");
     // rechts/links bleibt im ganzen Fall dieselbe Seite
     if (v.seite !== undefined && teile.length === 2 && /^recht/.test(teile[0]) && /^link/.test(teile[1])) return teile[v.seite];
     return pick(teile, rnd);
   });
+  s = s.replace(/\u0001(\w+)\u0002/g, "{$1}");
   s = s.replace(/\{(\w+)\}/g, (m, k: string, pos: number, ganz: string) => {
     if (pr[k]) return pr[k][v.w ? 1 : 0];
     // {P} am Satzanfang groß, mitten im Satz klein („Dann ist meine Mutter …“)
@@ -405,7 +412,7 @@ export function szenarioBauen(
   const f = (t: string) => fuellen(t, { w, bezug: opt.bezug, ort: opt.ort, name: opt.name, seite }, rnd);
   // Fakten und Details stehen in der 3. Person – ruft der Patient selbst an, heißt {P} dort „er“/„sie“
   const f3 = opt.selbst ? (t: string) => fuellen(t, { w, bezug: w ? "sie" : "er", ort: opt.ort, name: opt.name, seite }, rnd) : f;
-  const ortArt = opt.ortArt ?? pick(v.orte, rnd);
+  const ortArt = opt.ortArt ?? (v.ortModus && v.ortModus !== "nur" ? "wohnung" : pick(v.orte, rnd));
   // Zeit passend zu den Antworten (liegt am Boden < 1 h, > 6 h her, < 4,5 h …)
   let [smin, smax] = v.seitMin ?? [3, 20];
   const eng = (a2: number, b2: number) => {
@@ -445,6 +452,14 @@ export function szenarioBauen(
   setze("hautfarbe", schlimm || a.at === "abnorm" ? "ja" : "nein");
   setze("kaltschweiss", schlimm ? "ja" : "nein");
   setze("sprachschw", a.at === "abnorm" ? "ja" : "nein");
+  // Pflege und Ärzte fordern meist an: Transportart und Dringlichkeit wissen sie
+  if (a.wissen === "profi") {
+    const stabil = (a.bw === undefined || a.bw === "ja") && (a.at === undefined || a.at === "normal");
+    setze("anforderer", "normal");
+    setze("grund", a.bw === "getruebt" || a.bw === "nein" ? "bewusstsein" : a.at === "abnorm" ? "atmung" : "transport");
+    setze("dringlichkeit", stabil ? "sofort" : "geraete");
+    setze("transportart", !stabil || alter >= 80 ? "liegend" : "sitzend");
+  }
   const traumatisch = ["sturz", "verkehrsunfall", "verletzung", "tierbiss", "gewalt", "stich_schuss", "eingeklemmt", "blutung", "brand", "strom", "wasser", "auge", "alpin"].includes(v.thema);
   if (!traumatisch) {
     setze("verletzt", "nein");
@@ -515,6 +530,8 @@ const FAKT: Record<string, Record<string, string>> = {
   kokain: { ja: "{Er} hat Kokain genommen", nein: "Drogen nimmt {er} keine" },
   aneurysma: { ja: "{Er} hat ein Aneurysma an der Bauchschlagader", nein: "von einem Aneurysma weißt du nichts" },
   bluter: { ja: "{Er} ist Bluter", nein: "Bluter ist {er} keiner" },
+  transportart: { liegend: "{Er} kann nicht sitzen – {er} muss liegend transportiert werden", sitzend: "{Er} kann sitzen, aber nicht weit gehen", gehend: "{Er} kann selbst gehen", rollstuhl: "{Er} sitzt im eigenen Rollstuhl" },
+  dringlichkeit: { ohne: "es ist nicht eilig", sofort: "es sollte bald jemand kommen, {er} ist aber stabil", geraete: "es ist dringend – {er} braucht Sauerstoff bzw. Überwachung" },
   schwer_pat: { ja: "{Er} ist sehr schwer, deutlich über 120 Kilo", nein: "{Er} ist normal schwer" },
   gewalt: { ja: "{Er} ist gewalttätig", nein: "{Er} ist nicht gewalttätig" },
   gewalttaetig: { ja: "{Er} ist aggressiv und schlägt um sich", nein: "{Er} ist nicht aggressiv" },

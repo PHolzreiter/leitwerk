@@ -39,10 +39,13 @@ import {
   type WetterWerte,
 } from "./weather";
 import { bestimmeCode, fallZiehen, kapitelVonCode, wahrheitFuer, type Antworten, type Schema } from "../abfrage/schema";
-import { anruferWaehlen, veraenderungText, zufallsName, type Anrufer } from "../abfrage/anrufer";
+import { anruferWaehlen, ortKandidaten, veraenderungText, zufallsName, type Anrufer } from "../abfrage/anrufer";
 import { personaWaehlen } from "../abfrage/persona";
 import { alleOrte, kategorienFuerOrtArt, poiKategorien } from "../data/orte";
-import { bezugFuer, fuellen, stimmungAusVerlauf, szenarioBauen, vorlageFest, vorlageWaehlen, type OrtArt, type Szenario } from "../abfrage/szenario";
+import { bezugFuer, fuellen, stimmungAusVerlauf, szenarioBauen, vorlageFest, vorlageWaehlen, type AnruferTyp, type OrtArt, type OrtModus, type Szenario } from "../abfrage/szenario";
+
+/** Einsatzorte, die eine echte Einrichtung brauchen (sonst ruft z. B. eine Pflegekraft aus einem Wohnhaus an) */
+const ORT_NUR_MIT_POI: OrtArt[] = ["pflegeheim", "arzt", "schule", "bahnhof"];
 import { SZENARIEN } from "../abfrage/szenarien";
 import { ist, kapitelZuThema, merkmaleAusSchema, merkmaleInSchema, thema } from "../abfrage/themen";
 import { abfrageBlock, abfrageSaetze } from "../abfrage/protokollText";
@@ -983,15 +986,27 @@ export class Simulation {
   }
 
   /** Einsatzort der Fallgeschichte: Orte, für die es echte POIs gibt, werden bevorzugt */
-  private ortArtWaehlen(orte: OrtArt[], alter: number | null): OrtArt {
-    const mitPoi = orte.filter((o) => this.poisFuer(o, alter).length > 0);
-    return mitPoi.length && Math.random() < 0.6 ? pick(mitPoi) : pick(orte);
+  private ortArtWaehlen(v: { orte: OrtArt[]; ortModus?: OrtModus; anrufer: AnruferTyp[] }, alter: number | null): OrtArt {
+    let kand = ortKandidaten(v);
+    // Einrichtungen (Pflegeheim, Ordination, Schule, Bahnhof) nur, wo es so einen Ort im Gebiet gibt
+    const ohneEinrichtung = kand.filter(([o]) => !ORT_NUR_MIT_POI.includes(o) || this.poisFuer(o, alter).length > 0);
+    if (ohneEinrichtung.length) kand = ohneEinrichtung;
+    if (!v.ortModus || v.ortModus === "nur") {
+      const orte = kand.map(([o]) => o);
+      const mitPoi = orte.filter((o) => this.poisFuer(o, alter).length > 0);
+      return mitPoi.length && Math.random() < 0.6 ? pick(mitPoi) : pick(orte);
+    }
+    const sum = kand.reduce((a, [, w]) => a + w, 0);
+    let r = Math.random() * sum;
+    for (const [o, w] of kand) if ((r -= w) <= 0) return o;
+    return kand[kand.length - 1][0];
   }
 
   /** Adresse eines passenden POI (meistens – manchmal passiert es trotzdem woanders) */
   private async poiAdresse(art: OrtArt, alter: number | null): Promise<Awaited<ReturnType<typeof randomAddresses>>[number] | null> {
     const kand = this.poisFuer(art, alter);
-    if (!kand.length || Math.random() > 0.8) return null;
+    // Pflegeheim, Ordination, Schule: immer dort; sonst passiert es manchmal auch woanders
+    if (!kand.length || (!ORT_NUR_MIT_POI.includes(art) && Math.random() > 0.8)) return null;
     const o = pick(kand);
     const d = 0.002;
     const hits = (await randomAddresses([o.lon - d, o.lat - d, o.lon + d, o.lat + d], 8)).filter((h) => !h.place);
@@ -2702,7 +2717,7 @@ export class Simulation {
           fall = { kapitel: f.ergebnis.pfad[0], antworten: f.antworten, code: c.code };
           if (vorlage) {
             fall.vorlage = vorlage.id;
-            fall.ortArt = this.ortArtWaehlen(vorlage.orte, typeof f.antworten.alter === "number" ? f.antworten.alter : null);
+            fall.ortArt = this.ortArtWaehlen(vorlage, typeof f.antworten.alter === "number" ? f.antworten.alter : null);
           }
         }
       }
@@ -2804,7 +2819,7 @@ export class Simulation {
         console.warn("Fallkatalog: kein Code für", f.id, v.id);
         continue;
       }
-      const ortArt = this.ortArtWaehlen(f.orte, typeof a.alter === "number" ? a.alter : null);
+      const ortArt = this.ortArtWaehlen(f, typeof a.alter === "number" ? a.alter : null);
       return { fall: { kapitel: kap, antworten, code: c.code, vorlage: f.id, ortArt, katalog: { id: f.id, variante: v.id } }, code: c };
     }
     return null;

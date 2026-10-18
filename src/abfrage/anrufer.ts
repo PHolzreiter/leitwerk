@@ -5,7 +5,7 @@
 import { fragtNachZustand, hinweisZurArt, type NachrichtArt } from "./runde";
 import { antwortLabel, frageIndex, type Antworten, type Frage, type Schema } from "./schema";
 import { ist, thema } from "./themen";
-import { bezugFuer, fallakte, faktSaetze, fuellen, SELBSTVERSTAENDLICH, type AnruferTyp, type OrtArt, type Szenario } from "./szenario";
+import { bezugFuer, fallakte, faktSaetze, fuellen, SELBSTVERSTAENDLICH, type AnruferTyp, type OrtArt, type OrtModus, type Szenario } from "./szenario";
 import { einstiegHinweis, personaText, type Persona } from "./persona";
 import { frageMitPronomen } from "./sprechfrage";
 
@@ -58,6 +58,35 @@ const ORT_ANRUFER: Partial<Record<AnruferTyp, OrtArt[]>> = {
   bademeister: ["wasser", "freizeit", "sport"],
   wirt: ["lokal"],
 };
+
+/** Wie oft Notfälle an welchem Ort passieren, wenn ein Fall „überall“ vorkommen darf (0 = nur mit eigener Geschichte) */
+export const ORT_GEWICHT: Record<OrtArt, number> = {
+  wohnung: 5,
+  haus: 4,
+  garten: 0.8,
+  pflegeheim: 1.5,
+  strasse: 2,
+  geschaeft: 1.5,
+  lokal: 1,
+  arbeit: 1.5,
+  baustelle: 0,
+  schule: 0.8,
+  sport: 0.7,
+  freizeit: 1,
+  natur: 0,
+  wasser: 0,
+  auto: 0,
+  arzt: 0.7,
+  bahnhof: 0.5,
+};
+
+/** Mögliche Einsatzorte eines Falls mit Gewicht – nach Modus (nur/überall/außer) und passend zu den Anrufern */
+export function ortKandidaten(v: { orte: OrtArt[]; ortModus?: OrtModus; anrufer: AnruferTyp[] }): [OrtArt, number][] {
+  if (!v.ortModus || v.ortModus === "nur") return v.orte.map((o) => [o, 1]);
+  const alle = (Object.keys(ORT_GEWICHT) as OrtArt[]).filter((o) => ORT_GEWICHT[o] > 0 && (v.ortModus === "ueberall" || !v.orte.includes(o)));
+  const passend = alle.filter((o) => !v.anrufer.length || v.anrufer.some((t) => !ORT_ANRUFER[t] || ORT_ANRUFER[t]!.includes(o)));
+  return (passend.length ? passend : alle.length ? alle : (["wohnung"] as OrtArt[])).map((o) => [o, ORT_GEWICHT[o]]);
+}
 
 /** Anrufer-Typen, die an diesem Ort passen (passt keiner, bleiben alle) */
 export function anruferAmOrt(typen: AnruferTyp[], ort: OrtArt | undefined): AnruferTyp[] {
@@ -241,6 +270,7 @@ export function werText(x: Anrufer): string {
     bademeister: "Ich bin der Bademeister hier.",
   };
   if (x.typ && fremd[x.typ]) return fremd[x.typ]!;
+  if (x.typ === "pflege") return `${x.name}, ich bin ${x.geschlecht === "w" ? "diplomierte Pflegerin" : "diplomierter Pfleger"} hier im Heim.`;
   const art = /^(Pflegekraft|Mitarbeiterin|Lehrerin|Nachbarin|Ehefrau|Lebensgefährtin|Mutter|Tochter|Arbeitskollegin|Ordinationsassistentin|Freundin|Kellnerin)/.test(r) ? "die" : /^(Hausärztin|Hausarzt)/.test(r) ? (x.geschlecht === "w" ? "die" : "der") : "der";
   return `Ich bin ${art} ${r.replace(/, die dabei ist$|, der dabei ist$/, "")}.`;
 }
@@ -434,14 +464,14 @@ const LAIE: Record<string, Record<string, string>> = {
     ja: "ist wach und reagiert, wenn man mit {ihm} redet",
     getruebt: "ist benommen, redet verwirrt oder undeutlich, reagiert nur langsam",
     nein: "reagiert überhaupt nicht, auch nicht auf Rütteln oder lautes Ansprechen",
-    unbekannt: "das weißt du nicht genau",
+    unbekannt: "das kannst du nicht sagen – du siehst nicht, wie es {ihm} gerade geht",
   },
   at: {
     normal: "atmet ganz normal",
     abnorm: "schnauft schwer, ringt nach Luft oder atmet sehr schnell",
     agonal: "macht nur ganz selten so komische schnappende Atemzüge",
     keine: "atmet nicht",
-    unbekannt: "das weißt du nicht",
+    unbekannt: "das kannst du nicht sagen – du siehst bzw. hörst es nicht",
   },
 };
 
@@ -464,10 +494,14 @@ export function wahrheitText(k: AnrufKontext, f: Frage): string | null {
           : "das weißt du nicht genau";
     }
   }
+  if (f.id === "geschlecht" && (wert === "m" || wert === "w")) return wert === "w" ? (k.szenario && k.szenario.patient.alter < 14 ? "ein Mädchen" : "eine Frau") : k.szenario && k.szenario.patient.alter < 14 ? "ein Bub" : "ein Mann";
   if (LAIE[f.id]?.[String(wert)]) {
     const t = fuellen(LAIE[f.id][String(wert)], { w, bezug: "", ort: "", name: "" }, Math.random);
     return k.anrufer.selbst && f.id === "bw" ? "du bist wach, aber dir geht es nicht gut" : t;
   }
+  // Alltagssatz statt Etikett („muss liegend transportiert werden“ statt „Liegend“)
+  const satz = faktSaetze({ [f.id]: wert }, w)[0];
+  if (satz) return satz;
   const label = antwortLabel(f, wert);
   if (label === "–") return null;
   return label === "Unbekannt" || label === "unbekannt" ? "das weißt du nicht" : label;
@@ -643,7 +677,8 @@ function antwortSaetze(k: AnrufKontext): string {
       continue;
     }
     if (LAIE[id]?.[String(wert)]) {
-      zeilen.push(`- ${wer}: ${fuell(LAIE[id][String(wert)])}`);
+      const frage = id === "bw" ? `Ob ${wer.toLowerCase()} wach ist und reagiert` : `Wie ${wer.toLowerCase()} atmet`;
+      zeilen.push(wert === "unbekannt" && !k.anrufer.selbst ? `- ${frage}: ${fuell(LAIE[id][String(wert)])}` : `- ${wer}: ${fuell(LAIE[id][String(wert)])}`);
       continue;
     }
     // Vorgeschichte und Alter: was dieser Anrufer davon weiß (siehe DEINE ART)
@@ -678,6 +713,8 @@ function promptGeschichte(k: AnrufKontext): string {
   const laie = art === "privat";
   const bz = bezug(k);
   const ich = x.selbst;
+  // Pflegekräfte, Ärzte, Polizei: Profis – sachlich, mit Fachwörtern und Messwerten
+  const profi = !ich && x.persona?.wissen === "profi";
   const telefon = /telemed|141|1450|gesundheitshotline/i.test(`${x.rolle} ${x.stelle ?? ""}`);
   const quelle: "vorort" | "polizei" | "telefon" = art === "polizei" ? "polizei" : telefon ? "telefon" : "vorort";
   const wer = sz.ohnePatient
@@ -710,19 +747,22 @@ function promptGeschichte(k: AnrufKontext): string {
     `DAS STIMMT SICHER (nur wenn die Leitstelle danach fragt, in deinen eigenen Worten):`,
     antwortSaetze(k),
     `WIE DU REDEST:`,
-    `- Du bist ein Mensch in einer Ausnahmesituation, kein Formular. Rede, wie Leute am Telefon reden: mal unvollständige Sätze, mal ein „äh“, „Moment“, „jo“, „bitte“ – aber nicht übertrieben und nicht in jeder Antwort.`,
+    profi
+      ? `- Du bist Profi und rufst so etwas öfter an: ruhig, sachlich, geordnet, aber trotzdem wie ein Mensch am Telefon (kein Bericht vom Blatt). Fachwörter und Messwerte (Fieber, Blutdruck, Puls, Sättigung, Blutzucker) darfst du nennen, wenn sie zur Frage passen. Du redest per Sie und nennst ${patientW(k) ? "die Bewohnerin bzw. Patientin" : "den Bewohner bzw. Patienten"} beim Nachnamen.`
+      : `- Du bist ein Mensch in einer Ausnahmesituation, kein Formular. Rede, wie Leute am Telefon reden: mal unvollständige Sätze, mal ein „äh“, „Moment“, „jo“, „bitte“ – aber nicht übertrieben und nicht in jeder Antwort.`,
     `- Beantworte, was gefragt wird, meist in ein bis zwei kurzen Sätzen. Ab und zu (nicht immer) sagst du dazu, was dich gerade beschäftigt (z. B. „Was soll ich jetzt machen?“, „Wie lang dauert's?“).`,
     `- Auf „Was ist passiert?“ erzählst du den Hergang in deinen Worten – kurz, so wie man es aufgeregt erzählt, nicht alle Einzelheiten auf einmal.`,
     `- Von dir aus nennst du keine Werte wie Alter, Atmung, Bewusstsein, Vorerkrankungen oder Medikamente – das muss die Leitstelle fragen. Was du SIEHST, darfst du beschreiben.`,
-    laie ? `- Keine Fachwörter, keine Checklisten („wach, ansprechbar, Atmung normal“ ist verboten). Du beschreibst in Alltagsworten, was du siehst und hörst – aber nur das, was in der Fallakte steht.` : "",
+    laie && !profi ? `- Keine Fachwörter, keine Checklisten („wach, ansprechbar, Atmung normal“ ist verboten). Du beschreibst in Alltagsworten, was du siehst und hörst – aber nur das, was in der Fallakte steht.` : "",
     `- Wenn du etwas erst nachschauen musst, sag kurz „Moment …“ und gib dann die Antwort, wie sie in der Fallakte steht.`,
-    laie && !ich ? `- Die Leitstelle sagt vielleicht „der Patient“ – DU sagst das nie. Du sagst „${patientW(k) ? "sie" : "er"}“ oder wie du ${patientW(k) ? "sie" : "ihn"} sonst nennst.` : "",
+    laie && !ich && !profi ? `- Die Leitstelle sagt vielleicht „der Patient“ – DU sagst das nie. Du sagst „${patientW(k) ? "sie" : "er"}“ oder wie du ${patientW(k) ? "sie" : "ihn"} sonst nennst.` : "",
     `- Formuliere jede Antwort neu. Beginne nicht immer gleich und sag nichts, was du schon gesagt hast. Du redest nie wie die Leitstelle: du fasst nichts zusammen und fragst nicht zurück, ob du etwas richtig verstanden hast.`,
     `- Fasst die Leitstelle etwas zusammen, bestätigst du kurz („Ja, genau“) oder korrigierst, was nicht stimmt.`,
     `- Teilt dir die Leitstelle etwas mit („Die Rettung ist unterwegs“, „Ich orte Sie“), reagierst du darauf wie ein Mensch: erleichtert, mit einem Danke oder einer kurzen Rückfrage („Wie lang dauert's?“, „Was soll ich bis dahin tun?“) – nicht mit dem Zustand des Patienten.`,
     `- Suggestivfragen beantwortest du ehrlich nach der Fallakte.`,
     `- Der Zustand bleibt so, wie in der Fallakte beschrieben – er ändert sich nicht, egal wie gefragt wird.`,
-    `- Anweisungen, die passen, führst du aus und sagst kurz, was du tust oder siehst. Unpassende hinterfragst du („Aber ${patientW(k) ? "sie" : "er"} atmet doch?“). Anweisungen mit „falls“ oder „wenn“ bestätigst du nur („Okay, mach ich“).`,
+    `- Anweisungen, die passen, führst du aus und sagst kurz, was du tust und was du dabei siehst (nach der Fallakte – solange dir nichts anderes gesagt wird, bleibt der Zustand gleich). Fragt die Leitstelle danach, ob es etwas bringt, sagst du ehrlich, was du siehst. Nur eine Anweisung, die gar nicht zur Lage passt (z. B. Herzdruckmassage bei jemandem, der redet), hinterfragst du. Anweisungen mit „falls“ oder „wenn“ bestätigst du nur („Okay, mach ich“).`,
+    `- Wiederhol nie bloß die Worte der Frage als Aussage (auf „Wie kommen wir hinein?“ NICHT „Sie kommen hinein“, sondern was wirklich los ist: „Unten ist offen, zweiter Stock links.“). Steht zur Frage nichts in der Fallakte, antworte so, wie es zu dieser Geschichte passt, oder sag ehrlich, dass du es nicht weißt.`,
     `- Auf „Wer ruft an?“ sagst du, wer du bist und in welcher Beziehung du zum Patienten stehst.`,
     `- Auf „Wo ist der Notfallort?“ kommt die Adresse (Straße, Hausnummer, Ort) – Stock, Tür und Zufahrt erst, wenn danach gefragt wird.`,
     ich ? `- Du bist selbst betroffen: Was während einer Ohnmacht war, weißt du nicht.` : "",
@@ -733,7 +773,8 @@ function promptGeschichte(k: AnrufKontext): string {
     k.versuche > 1 ? `Du hast vorhin schon angerufen und niemand hat abgehoben – das sagst du gleich am Anfang vorwurfsvoll oder verzweifelt.` : "",
     k.rueckrufDurchLeitstelle ? "Die Leitstelle ruft dich zurück, weil dein Anruf vorhin nicht angenommen wurde." : "",
     laie && x.persona ? personaText(x.persona, patientW(k), ich) : "",
-    laie ? `So ungefähr KANN es klingen (nur der Ton, nicht wörtlich): ${fuellen(BEISPIELE[x.emotion], { w: patientW(k), bezug: "", ort: "", name: "" }, Math.random)}\nNicht so: „Patient männlich, 67 Jahre, wach, ansprechbar, Atmung normal.“` : "",
+    laie && !profi ? `So ungefähr KANN es klingen (nur der Ton, nicht wörtlich): ${fuellen(BEISPIELE[x.emotion], { w: patientW(k), bezug: "", ort: "", name: "" }, Math.random)}\nNicht so: „Patient männlich, 67 Jahre, wach, ansprechbar, Atmung normal.“` : "",
+    profi ? `So ungefähr KANN es klingen (nur der Ton, nicht wörtlich): „Moment, ich schau in die Doku … ja, seit gestern Abend.“ / „Nein, das ist nicht bekannt.“` : "",
   ]
     .filter(Boolean)
     .join("\n");
@@ -848,7 +889,7 @@ export function erinnerung(
     if (schemaFrage.id === "ort_adresse") t = einstieg && ["problem", "unvollstaendig"].includes(k.anrufer.persona!.einstieg) ? null : k.ortUnbekannt ? `du weißt es nicht genau: ${k.adresse}` : k.adresse;
     else if (schemaFrage.id === "schilderung")
       t = k.szenario?.geschehen?.length
-        ? "sag in deinen eigenen Worten nur das Wichtigste, was passiert ist (siehe WAS WIRKLICH PASSIERT IST) – EIN kurzer Satz, so wie man es aufgeregt ins Telefon sagt. Atmung, Bewusstsein, Verletzungen, Alter, Vorerkrankungen und wann es war, sagst du NICHT von dir aus – das fragt die Leitstelle nach"
+        ? `sag in deinen eigenen Worten nur das Wichtigste, was passiert ist (siehe WAS WIRKLICH PASSIERT IST)${k.szenario.stil?.length ? ` – inhaltlich ungefähr: „${k.szenario.stil[Math.floor(Math.random() * k.szenario.stil.length)]}“ (aber mit deinen eigenen Worten, nicht genau so)` : ""}. ${k.anrufer.persona?.wissen === "profi" ? "Ein, zwei kurze sachliche Sätze" : "EIN kurzer Satz, so wie man es aufgeregt ins Telefon sagt"}. Atmung, Bewusstsein, Verletzungen, Alter, Vorerkrankungen und wann es war, sagst du NICHT von dir aus – das fragt die Leitstelle nach`
         : k.szenario
           ? `erzähl den Hergang aus der Fallakte in deinen Worten (Kern: ${schilderung(k)})`
           : schilderung(k);

@@ -7,7 +7,7 @@ import { store } from "../data/store";
 import { sim, type Einsatz } from "../sim/engine";
 import { antwortOhneKi, erinnerung, ersterSatzOhneKi, systemPrompt, type AnrufKontext } from "./anrufer";
 import { kiBereit, kiPrefs, kiStatus, type KiNachricht } from "./ki";
-import { kiAntwortNeu, nachrichtArt } from "./runde";
+import { kiAntwortNeu, nachrichtArt, ohneVorspann } from "./runde";
 import { inTauri } from "../platform";
 import { fragenImAblauf, type Frage } from "./schema";
 import { anruferSagt, satzSprecher } from "../ui/sprache";
@@ -94,6 +94,48 @@ function einfacheAntwort(k: AnrufKontext, frage: string, schemaFrage?: Frage): s
 }
 
 /**
+ * Vorwärmen: Solange ein Notruf klingelt, lässt die KI schon die erste Antwort (auf „Wo genau ist der
+ * Notfallort?“) schreiben. Dabei lädt Ollama das Modell und liest die lange Anweisung – beim Annehmen
+ * ist die erste Antwort dann (fast) sofort da. Immer nur ein Anruf gleichzeitig.
+ */
+const vorab = new Map<string, Promise<{ text: string; quelle: "ki" | "fest" } | null>>();
+let vorabLaeuft = false;
+const vorabSchluessel = (e: Einsatz) => `${e.id}:${e.anruf?.versuche ?? 0}:${e.anruf?.rueckruf ? 1 : 0}`;
+
+export function vorwaermen(): void {
+  if (vorabLaeuft || !kiBereit()) return;
+  // alte Einträge (Anruf längst angenommen oder vorbei) wegräumen
+  for (const key of vorab.keys()) {
+    const e = sim.einsatz(key.split(":")[0]);
+    if (!e?.anruf || !["klingelt", "aktiv"].includes(e.anruf.status)) vorab.delete(key);
+  }
+  const e = sim.state.einsaetze.find((x) => x.anruf?.status === "klingelt" && !!x.wahr.abfrage && !x.anruf.gespraech.some((m) => m.von === "anrufer") && !vorab.has(vorabSchluessel(x)));
+  if (!e) return;
+  const k = kontext(e);
+  if (!k) return;
+  vorabLaeuft = true;
+  const quelle = { wert: "ki" as "ki" | "fest" };
+  const p = anruferAntwort(e, k, ERÖFFNUNG, undefined, undefined, quelle)
+    .then((text) => (text ? { text, quelle: quelle.wert } : null))
+    .catch(() => null)
+    .finally(() => {
+      vorabLaeuft = false;
+      setTimeout(vorwaermen, 0);
+    });
+  vorab.set(vorabSchluessel(e), p);
+}
+
+/** Schon vorbereitete erste Antwort holen (wartet, falls sie gerade noch geschrieben wird) */
+async function vorabAntwort(e: Einsatz, text: string, schemaFrage?: Frage): Promise<{ text: string; quelle: "ki" | "fest" } | null> {
+  if (text !== ERÖFFNUNG || schemaFrage || (e.anruf?.gespraech ?? []).some((m) => m.von === "anrufer")) return null;
+  const key = vorabSchluessel(e);
+  const p = vorab.get(key);
+  if (!p) return null;
+  vorab.delete(key);
+  return p;
+}
+
+/**
  * Leitstelle fragt (frei oder per 🗨 aus dem Schema); der Anrufer antwortet.
  * onToken zeigt die KI-Antwort live an (nur beim Gesprächsführer).
  */
@@ -111,10 +153,18 @@ export async function fragen(e: Einsatz, text: string, schemaFrage?: Frage, onTo
     const quelle = { wert: "ki" as "ki" | "fest" };
     // fertige Sätze schon vorlesen, während die KI noch schreibt
     const sprecher = satzSprecher((satz) => e.anruf?.status === "aktiv" && anruferSagt(satz, k.anrufer, e.id));
-    const antwort = await anruferAntwort(e, k, text, schemaFrage, (t) => {
-      onToken?.(t);
-      sprecher.token(t);
-    }, quelle, wiederholt);
+    const fertig = await vorabAntwort(e, text, schemaFrage);
+    if (fertig) {
+      quelle.wert = fertig.quelle;
+      onToken?.(fertig.text);
+      sprecher.token(fertig.text);
+    }
+    const antwort =
+      fertig?.text ??
+      (await anruferAntwort(e, k, text, schemaFrage, (t) => {
+        onToken?.(t);
+        sprecher.token(t);
+      }, quelle, wiederholt));
     if (antwort) {
       await sim.call("anrufNachricht", e.id, "anrufer", antwort, quelle.wert);
       sprecher.ende(antwort);
@@ -132,14 +182,26 @@ export async function eroeffnen(e: Einsatz, onToken?: (t: string) => void): Prom
 /** Frei gestellte Frage, die einer Grundfrage entspricht (Eröffnung, „Was ist passiert?“) */
 function freieSchemaFrage(frage: string): Frage | undefined {
   if (frage === ERÖFFNUNG) return { id: "ort_adresse", typ: "text", text: frage } as Frage;
-  if (/^(okay[.,]?\s*)?(und )?(was ist (denn )?(passiert|los|geschehen)|was genau ist (passiert|los)|erzählen sie (mir )?(kurz,? )?was)/i.test(frage.trim())) return { id: "schilderung", typ: "text", text: frage } as Frage;
+  // letzter Satz, ohne „okay, danke“ davor
+  const teile = frage.toLowerCase().split(/[.!?]+\s*/).map((t) => ohneVorspann(t)).filter(Boolean);
+  const t = (teile[teile.length - 1] ?? "").replace(/,/g, " ").replace(/\s+/g, " ").trim();
+  if (/^(und )?(was ist (denn |da |eigentlich |genau )*(passiert|los|geschehen)|was genau ist (passiert|los)|was (ist )?(hat|haben) (sich )?(denn )?(passiert|ereignet)|worum geht('?s| es)|(erzählen|sagen|schildern|beschreiben) sie (mir )?(mal |bitte |kurz |doch )*(was|worum))/.test(t))
+    return { id: "schilderung", typ: "text", text: frage } as Frage;
+  if (/^(was|wie) (ist|lautet) (denn )?(ihre|die) (genaue )?(addresse|adresse)|^(wo|wohin) (genau )?(sind sie|ist (das|der notfallort|es|der einsatzort|die einsatzstelle))|^(ihre|die) (genaue )?adresse|^(können|könnten) sie mir (bitte )?sagen,? wo|^wo (genau )?(befinden sie sich|ist das passiert)|^(in )?welche[mn]? (ort|gemeinde|straße|stadt)/.test(t))
+    return { id: "ort_adresse", typ: "text", text: frage } as Frage;
   return undefined;
 }
 
 /** Wie viele Sätze der Anrufer auf einmal sagt: auf den Einstieg und „Was ist passiert?“ nur wenig, je nach Art */
 function hoechstSaetze(k: AnrufKontext, sf: Frage | undefined, erste: boolean): number {
   const stil = k.anrufer.persona?.stil ?? "normal";
-  if ((sf?.id === "ort_adresse" && erste) || sf?.id === "schilderung") return stil === "gespraechig" ? 3 : stil === "knapp" ? 1 : 2;
+  if (sf?.id === "ort_adresse" && erste) {
+    // Adresse: ein Satz; mit „Bitte schnell!“ oder „Hallo, bin ich richtig?“ davor zwei
+    const e = k.anrufer.persona?.einstieg;
+    return e === "dringend" || e === "umschreibung" || e === "vorstellung" || k.versuche > 1 || k.rueckrufDurchLeitstelle ? 2 : 1;
+  }
+  if (sf?.id === "ort_adresse") return 2;
+  if (sf?.id === "schilderung") return k.anrufer.persona?.wissen === "profi" ? 2 : stil === "gespraechig" ? 3 : stil === "knapp" ? 1 : 2;
   return stil === "gespraechig" ? 4 : 3;
 }
 
@@ -167,10 +229,25 @@ function atemnotSelbst(k: AnrufKontext): boolean {
   return k.anrufer.selbst && (k.wahrheit.sprachschw === "ja" || (k.wahrheit.at === "abnorm" && ist(k.kapitel, "atemnot")));
 }
 
+/**
+ * Die Anweisung an die KI bleibt während eines Anrufs gleich (solange sich die Lage nicht ändert):
+ * gleiche Beispiele und Eigenheiten in jeder Runde – und Ollama kann den schon gelesenen Anfang
+ * wiederverwenden, statt die lange Anweisung jedes Mal neu zu lesen (spart Sekunden pro Antwort).
+ */
+const prompts = new Map<string, { schluessel: string; text: string }>();
+function systemFuer(e: Einsatz, k: AnrufKontext): string {
+  const schluessel = `${k.versuche}|${k.rueckrufDurchLeitstelle}|${k.adresse}|${JSON.stringify(k.wahrheit)}`;
+  const p = prompts.get(e.id);
+  if (p && p.schluessel === schluessel) return p.text;
+  const text = systemPrompt(k);
+  prompts.set(e.id, { schluessel, text });
+  return text;
+}
+
 /** Nachrichten für die KI: Anweisung, bisheriges Gespräch und der Hinweis zur aktuellen Frage */
 export function kiVerlauf(e: Einsatz, k: AnrufKontext, frage: string, schemaFrage: Frage | undefined, wiederholtId = false): KiNachricht[] {
   const ersteAntwort = !(e.anruf?.gespraech ?? []).some((m) => m.von === "anrufer");
-  const verlauf: KiNachricht[] = [{ role: "system", content: systemPrompt(k) }];
+  const verlauf: KiNachricht[] = [{ role: "system", content: systemFuer(e, k) }];
   for (const m of e.anruf?.gespraech ?? []) {
     if (m.von === "leitstelle") verlauf.push({ role: "user", content: `Leitstelle: ${m.text}` });
     else if (m.von === "anrufer") verlauf.push({ role: "assistant", content: m.text });
