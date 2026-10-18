@@ -13,30 +13,30 @@ To address all issues (including breaking changes), run:
 Run `npm audit` for details.
 ### npm run build
 
-> leitwerk@0.33.0 build
+> leitwerk@0.34.0 build
 > tsc && vite build
 
 [36mvite v6.4.4 [32mbuilding for production...[36m[39m
 transforming...
-[32m✓[39m 141 modules transformed.
+[32m✓[39m 142 modules transformed.
 rendering chunks...
 [33m[plugin vite:reporter] 
-(!) /home/runner/work/leitwerk/leitwerk/src/ui/dom.ts is dynamically imported by /home/runner/work/leitwerk/leitwerk/src/ui/ws/auswahl.ts but also statically imported by /home/runner/work/leitwerk/leitwerk/src/fzFokus.ts, /home/runner/work/leitwerk/leitwerk/src/main.ts, /home/runner/work/leitwerk/leitwerk/src/mapLayers.ts, /home/runner/work/leitwerk/leitwerk/src/ui/codesPrompt.ts, /home/runner/work/leitwerk/leitwerk/src/ui/dataView.ts, /home/runner/work/leitwerk/leitwerk/src/ui/dialog.ts, /home/runner/work/leitwerk/leitwerk/src/ui/dienstWoche.ts, /home/runner/work/leitwerk/leitwerk/src/ui/dienstplanEditor.ts, /home/runner/work/leitwerk/leitwerk/src/ui/editForm.ts, /home/runner/work/leitwerk/leitwerk/src/ui/fallEditor.ts, /home/runner/work/leitwerk/leitwerk/src/ui/fehlerMelden.ts, /home/runner/work/leitwerk/leitwerk/src/ui/funkView.ts, /home/runner/work/leitwerk/leitwerk/src/ui/gespraechExport.ts, /home/runner/work/leitwerk/leitwerk/src/ui/importDialog.ts, /home/runner/work/leitwerk/leitwerk/src/ui/khInfo.ts, /home/runner/work/leitwerk/leitwerk/src/ui/kiView.ts, /home/runner/work/leitwerk/leitwerk/src/ui/ktView.ts, /home/runner/work/leitwerk/leitwerk/src/ui/packsView.ts, /home/runner/work/leitwerk/leitwerk/src/ui/panels/abfrage.ts, /home/runner/work/leitwerk/leitwerk/src/ui/panels/einsatzliste.ts, /home/runner/work/leitwerk/leitwerk/src/ui/panels/fahrzeuge.ts, /home/runner/work/leitwerk/leitwerk/src/ui/panels/karte.ts, /home/runner/work/leitwerk/leitwerk/src/ui/panels/kommunikation.ts, /home/runner/work/leitwerk/leitwerk/src/ui/panels/masken.ts, /home/runner/work/leitwerk/leitwerk/src/ui/panels/notrufAbfrage.ts, /home/runner/work/leitwerk/leitwerk/src/ui/panels/teile.ts, /home/runner/work/leitwerk/leitwerk/src/ui/panels/telefon.ts, /home/runner/work/leitwerk/leitwerk/src/ui/settingsView.ts, /home/runner/work/leitwerk/leitwerk/src/ui/spielDialog.ts, /home/runner/work/leitwerk/leitwerk/src/ui/sprache.ts, /home/runner/work/leitwerk/leitwerk/src/ui/wetterView.ts, /home/runner/work/leitwerk/leitwerk/src/ui/ws/arbeitsplatz.ts, /home/runner/work/leitwerk/leitwerk/src/ui/ws/einstellungen.ts, /home/runner/work/leitwerk/leitwerk/src/ui/ws/nebenfenster.ts, /home/runner/work/leitwerk/leitwerk/src/ui/ws/persoenlichView.ts, /home/runner/work/leitwerk/leitwerk/src/ui/ws/steuerleiste.ts, dynamic import will not move module into another chunk.
+(!) /home/runner/work/leitwerk/leitwerk/src/ui/dom.ts is dynamically imported by /home/runner/work/leitwerk/leitwerk/src/ui/ws/auswahl.ts but also statically imported by /home/runner/work/leitwerk/leitwerk/src/fzFokus.ts, /home/runner/work/leitwerk/leitwerk/src/main.ts, /home/runner/work/leitwerk/leitwerk/src/mapLayers.ts, /home/runner/work/leitwerk/leitwerk/src/ui/codesPrompt.ts, /home/runner/work/leitwerk/leitwerk/src/ui/dataView.ts, /home/runner/work/leitwerk/leitwerk/src/ui/dialog.ts, /home/runner/work/leitwerk/leitwerk/src/ui/dienstWoche.ts, /home/runner/work/leitwerk/leitwerk/src/ui/dienstplanEditor.ts, /home/runner/work/leitwerk/leitwerk/src/ui/editForm.ts, /home/runner/work/leitwerk/leitwerk/src/ui/fallEditor.ts, /home/runner/work/leitwerk/leitwerk/src/ui/fehlerMelden.ts, /home/runner/work/leitwerk/leitwerk/src/ui/funkView.ts, /home/runner/work/leitwerk/leitwerk/src/ui/gespraechExport.ts, /home/runner/work/leitwerk/leitwerk/src/ui/importDialog.ts, /home/runner/work/leitwerk/leitwerk/src/ui/khInfo.ts, /home/runner/work/leitwerk/leitwerk/src/ui/kiView.ts, /home/runner/work/leitwerk/leitwerk/src/ui/ktView.ts, /home/runner/work/leitwerk/leitwerk/src/ui/packsView.ts, /home/runner/work/leitwerk/leitwerk/src/ui/panels/abfrage.ts, /home/runner/work/leitwerk/leitwerk/src/ui/panels/einsatzliste.ts, /home/runner/work/leitwerk/leitwerk/src/ui/panels/fahrzeuge.ts, /home/runner/work/leitwerk/leitwerk/src/ui/panels/karte.ts, /home/runner/work/leitwerk/leitwerk/src/ui/panels/kommunikation.ts, /home/runner/work/leitwerk/leitwerk/src/ui/panels/masken.ts, /home/runner/work/leitwerk/leitwerk/src/ui/panels/notrufAbfrage.ts, /home/runner/work/leitwerk/leitwerk/src/ui/panels/teile.ts, /home/runner/work/leitwerk/leitwerk/src/ui/panels/telefon.ts, /home/runner/work/leitwerk/leitwerk/src/ui/settingsView.ts, /home/runner/work/leitwerk/leitwerk/src/ui/spielDialog.ts, /home/runner/work/leitwerk/leitwerk/src/ui/sprache.ts, /home/runner/work/leitwerk/leitwerk/src/ui/testlauf.ts, /home/runner/work/leitwerk/leitwerk/src/ui/wetterView.ts, /home/runner/work/leitwerk/leitwerk/src/ui/ws/arbeitsplatz.ts, /home/runner/work/leitwerk/leitwerk/src/ui/ws/einstellungen.ts, /home/runner/work/leitwerk/leitwerk/src/ui/ws/nebenfenster.ts, /home/runner/work/leitwerk/leitwerk/src/ui/ws/persoenlichView.ts, /home/runner/work/leitwerk/leitwerk/src/ui/ws/steuerleiste.ts, dynamic import will not move module into another chunk.
 [39m
 computing gzip size...
 [2mdist/[22m[32mindex.html                        [39m[1m[2m    1.03 kB[22m[1m[22m[2m │ gzip:   0.53 kB[22m
-[2mdist/[22m[2massets/[22m[35mindex-TWwFKNEd.css         [39m[1m[2m  289.64 kB[22m[1m[22m[2m │ gzip:  37.69 kB[22m
-[2mdist/[22m[2massets/[22m[36mevent-BToYhKJb.js          [39m[1m[2m    1.38 kB[22m[1m[22m[2m │ gzip:   0.67 kB[22m
-[2mdist/[22m[2massets/[22m[36mwebviewWindow-DUaqJGhB.js  [39m[1m[2m    1.82 kB[22m[1m[22m[2m │ gzip:   0.81 kB[22m
-[2mdist/[22m[2massets/[22m[36mwebview-DwC4vsZk.js        [39m[1m[2m    3.40 kB[22m[1m[22m[2m │ gzip:   1.16 kB[22m
-[2mdist/[22m[2massets/[22m[36mwindow-CRMp2RsS.js         [39m[1m[2m   13.71 kB[22m[1m[22m[2m │ gzip:   3.41 kB[22m
-[2mdist/[22m[2massets/[22m[36mindex-Cyx8WK-y.js          [39m[1m[33m3,101.77 kB[39m[22m[2m │ gzip: 845.20 kB[22m
+[2mdist/[22m[2massets/[22m[35mindex-De3D7cnM.css         [39m[1m[2m  290.26 kB[22m[1m[22m[2m │ gzip:  37.84 kB[22m
+[2mdist/[22m[2massets/[22m[36mevent-DdLRpsJj.js          [39m[1m[2m    1.38 kB[22m[1m[22m[2m │ gzip:   0.67 kB[22m
+[2mdist/[22m[2massets/[22m[36mwebviewWindow-Cwg9i0P6.js  [39m[1m[2m    1.82 kB[22m[1m[22m[2m │ gzip:   0.81 kB[22m
+[2mdist/[22m[2massets/[22m[36mwebview-DNhifm2U.js        [39m[1m[2m    3.40 kB[22m[1m[22m[2m │ gzip:   1.16 kB[22m
+[2mdist/[22m[2massets/[22m[36mwindow-B_jsERD9.js         [39m[1m[2m   13.71 kB[22m[1m[22m[2m │ gzip:   3.41 kB[22m
+[2mdist/[22m[2massets/[22m[36mindex-ColM7Wvs.js          [39m[1m[33m3,119.58 kB[39m[22m[2m │ gzip: 851.43 kB[22m
 [33m
 (!) Some chunks are larger than 2000 kB after minification. Consider:
 - Using dynamic import() to code-split the application
 - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
 - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.[39m
-[32m✓ built in 5.66s[39m
+[32m✓ built in 6.38s[39m
 ### npx tauri icon app-icon.png
         Appx Creating StoreLogo.png
         Appx Creating Square30x30Logo.png
@@ -111,12 +111,12 @@ computing gzip size...
 [1m[92m   Compiling[0m libc v0.2.191
 [1m[92m    Checking[0m unicode-normalization v0.1.26
 [1m[92m    Checking[0m glib-sys v0.18.1
-[1m[92m    Checking[0m socket2 v0.6.5
 [1m[92m    Checking[0m mio v1.2.4
+[1m[92m    Checking[0m socket2 v0.6.5
 [1m[92m   Compiling[0m parking_lot_core v0.9.12
 [1m[92m    Checking[0m gobject-sys v0.18.0
-[1m[92m   Compiling[0m getrandom v0.4.3
 [1m[92m   Compiling[0m parking_lot v0.12.5
+[1m[92m   Compiling[0m getrandom v0.4.3
 [1m[92m    Checking[0m cairo-sys-rs v0.18.2
 [1m[92m   Compiling[0m uuid v1.28.0
 [1m[92m    Checking[0m tokio v1.53.3
@@ -143,10 +143,10 @@ computing gzip size...
 [1m[92m    Checking[0m javascriptcore-rs-sys v1.1.1
 [1m[92m    Checking[0m x11 v2.21.0
 [1m[92m    Checking[0m getrandom v0.2.17
-[1m[92m    Checking[0m ring v0.17.14
 [1m[92m    Checking[0m gio v0.18.4
 [1m[92m    Checking[0m cairo-rs v0.18.5
 [1m[92m    Checking[0m atk v0.18.2
+[1m[92m    Checking[0m ring v0.17.14
 [1m[92m    Checking[0m javascriptcore-rs v1.1.2
 [1m[92m    Checking[0m gdkx11-sys v0.18.2
 [1m[92m    Checking[0m webkit2gtk-sys v2.0.2
@@ -170,10 +170,10 @@ computing gzip size...
 [1m[92m   Compiling[0m dirs-sys v0.4.1
 [1m[92m   Compiling[0m filetime v0.2.29
 [1m[92m   Compiling[0m socks v0.3.4
+[1m[92m   Compiling[0m ureq v2.12.1
+[1m[92m    Checking[0m hyper-util v0.1.21
 [1m[92m    Checking[0m gtk v0.18.2
 [1m[92m    Checking[0m gdkx11 v0.18.2
-[1m[92m    Checking[0m hyper-util v0.1.21
-[1m[92m   Compiling[0m ureq v2.12.1
 [1m[92m   Compiling[0m tar v0.4.46
 [1m[92m   Compiling[0m dirs v5.0.1
 [1m[92m   Compiling[0m tauri-macros v2.7.3
@@ -184,20 +184,20 @@ computing gzip size...
 [1m[92m    Checking[0m getrandom v0.3.4
 [1m[92m    Checking[0m tower-http v0.6.11
 [1m[92m    Checking[0m hyper-rustls v0.27.10
-[1m[92m   Compiling[0m whisper-rs-sys v0.13.1
 [1m[92m   Compiling[0m tauri-plugin-dialog v2.8.3
 [1m[92m   Compiling[0m tauri-plugin-updater v2.14.0
+[1m[92m   Compiling[0m whisper-rs-sys v0.13.1
 [1m[92m    Checking[0m tokio-util v0.7.20
 [1m[92m    Checking[0m rustls-platform-verifier v0.7.1
 [1m[92m    Checking[0m alsa-sys v0.3.1
 [1m[92m    Checking[0m alsa v0.9.1
 [1m[92m    Checking[0m tempfile v3.27.0
 [1m[92m    Checking[0m reqwest v0.13.5
-[1m[92m   Compiling[0m leitwerk v0.33.0 (/home/runner/work/leitwerk/leitwerk/src-tauri)
-[1m[92m   Compiling[0m sherpa-rs-sys v0.6.8
+[1m[92m   Compiling[0m leitwerk v0.34.0 (/home/runner/work/leitwerk/leitwerk/src-tauri)
 [1m[92m    Checking[0m rfd v0.16.0
 [1m[92m    Checking[0m cpal v0.15.3
 [1m[92m    Checking[0m reqwest v0.12.28
+[1m[92m   Compiling[0m sherpa-rs-sys v0.6.8
 [1m[92m    Checking[0m webkit2gtk v2.0.2
 [1m[92m    Checking[0m tao v0.37.1
 [1m[92m    Checking[0m muda v0.20.0
@@ -215,7 +215,7 @@ computing gzip size...
     [1m[94m= [0m[1mnote[0m: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
 
 [1m[33mwarning[0m: `leitwerk` (lib) generated 1 warning
-[1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 1m 06s
+[1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 1m 08s
 ### python3 tools/build_default_data.py
 data/default/dienststellen.csv: 851 Zeilen
 data/default/fahrzeuge.csv: 142 Zeilen
