@@ -105,7 +105,7 @@ function sichtbar(roh: string): string {
  * Bleibt nichts Neues übrig, wird einmal mit einem Hinweis neu gefragt.
  * `frueher`: bisherige Antworten des Anrufers.
  */
-export async function kiAntwortNeu(verlauf: KiNachricht[], frueher: string[], onText: (stueck: string) => void, opt: { pruefen?: boolean; chat?: typeof kiChat } = {}): Promise<string> {
+export async function kiAntwortNeu(verlauf: KiNachricht[], frueher: string[], onText: (stueck: string) => void, opt: { pruefen?: boolean; chat?: typeof kiChat; maxSaetze?: number } = {}): Promise<string> {
   const chat = opt.chat ?? kiChat;
   const pruefen = opt.pruefen !== false && frueher.length > 0;
   const runde = async (msgs: KiNachricht[], streng: boolean): Promise<{ text: string; verworfen: string[] }> => {
@@ -123,6 +123,8 @@ export async function kiAntwortNeu(verlauf: KiNachricht[], frueher: string[], on
       }
       raus.push(satz.trim());
       onText(`${raus.length > 1 ? " " : ""}${satz.trim()}`);
+      // so viel sagt man am Telefon auf einmal – der Rest wird nicht mehr ausgesprochen
+      if (opt.maxSaetze && raus.length >= opt.maxSaetze) stopp = true;
     };
     await chat(msgs, (tok) => {
       if (stopp) return;

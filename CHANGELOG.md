@@ -1,5 +1,13 @@
 # Änderungen
 
+## 0.32.1 – Kürzere Antworten, Atemnot in Fetzen
+- Auf die erste Frage und auf „Was ist passiert?“ sagen Anrufer jetzt nur das Wichtigste – ein, zwei kurze Sätze (gesprächige etwas mehr). Atmung, Bewusstsein, Alter und Zeit musst du erfragen
+- Wer gleich mit dem Problem anfängt, ruft nur kurz heraus, was los ist
+- Ruft jemand mit Atemnot selbst an, kommen nur kurze Fetzen mit Pausen („Ich krieg … kaum noch Luft … das Spray …“)
+- Auch ein frei getipptes „Was ist passiert?“ gilt als diese Frage
+- Kollaps: statt „in der Wärme“ steht jetzt da, wo es passiert ist (in der Messe, an der Kassa, beim Warten auf den Bus, im Wartezimmer)
+- Ohne KI: auf Mitteilungen und Anweisungen kommt „Okay, danke“ bzw. „Okay, mach ich“ statt „Das weiß ich nicht“
+
 ## 0.32.0 – Notrufe wie echte Notrufe
 **Jeder Anrufer ist anders**
 - Jeder Anrufer bekommt eine eigene Persönlichkeit: wie er redet (knapp, normal, gesprächig, unsicher), eigene Füllwörter und manchmal eine Eigenheit (redet mit dem Patienten, sagt oft „Moment“, fragt, wie lange die Rettung braucht …)

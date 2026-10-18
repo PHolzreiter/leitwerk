@@ -726,6 +726,7 @@ function promptGeschichte(k: AnrufKontext): string {
     `- Auf „Wer ruft an?“ sagst du, wer du bist und in welcher Beziehung du zum Patienten stehst.`,
     `- Auf „Wo ist der Notfallort?“ kommt die Adresse (Straße, Hausnummer, Ort) – Stock, Tür und Zufahrt erst, wenn danach gefragt wird.`,
     ich ? `- Du bist selbst betroffen: Was während einer Ohnmacht war, weißt du nicht.` : "",
+    ich && (k.wahrheit.sprachschw === "ja" || k.wahrheit.at === "abnorm") ? `- Du kriegst kaum Luft: Du sprichst nur in ganz kurzen Fetzen von zwei, drei Wörtern, mit Pausen dazwischen („Ich … krieg … keine Luft …“). Nie ganze Sätze.` : "",
     EMOTION_TEXT[x.emotion],
     sprachText(x),
     x.schwerhoerig ? "Du hörst schlecht und fragst ab und zu nach („Wie bitte?“)." : "",
@@ -847,7 +848,7 @@ export function erinnerung(
     if (schemaFrage.id === "ort_adresse") t = einstieg && ["problem", "unvollstaendig"].includes(k.anrufer.persona!.einstieg) ? null : k.ortUnbekannt ? `du weißt es nicht genau: ${k.adresse}` : k.adresse;
     else if (schemaFrage.id === "schilderung")
       t = k.szenario?.geschehen?.length
-        ? "erzähl in deinen eigenen Worten, was passiert ist (siehe WAS WIRKLICH PASSIERT IST) – kurz, so wie man es am Telefon erzählt, nicht alles auf einmal und nicht wörtlich"
+        ? "sag in deinen eigenen Worten nur das Wichtigste, was passiert ist (siehe WAS WIRKLICH PASSIERT IST) – EIN kurzer Satz, so wie man es aufgeregt ins Telefon sagt. Atmung, Bewusstsein, Verletzungen, Alter, Vorerkrankungen und wann es war, sagst du NICHT von dir aus – das fragt die Leitstelle nach"
         : k.szenario
           ? `erzähl den Hergang aus der Fallakte in deinen Worten (Kern: ${schilderung(k)})`
           : schilderung(k);
@@ -880,8 +881,10 @@ export function antwortOhneKi(k: AnrufKontext, frage: Frage): string {
   if (frage.id === "schilderung") return schilderung(k);
   if (frage.id === "anrufer") return werText(k.anrufer);
   if (LAIE[frage.id] && typeof k.wahrheit[frage.id] === "string") {
+    if (k.anrufer.selbst && frage.id === "bw") return "Ja, ich bin wach, aber mir geht's gar nicht gut.";
     const t = wahrheitText(k, frage);
-    if (t) return `${t.charAt(0).toUpperCase()}${t.slice(1)}.`;
+    const wer = k.anrufer.selbst ? "Ich" : patientW(k) ? "Sie" : "Er";
+    if (t) return k.anrufer.selbst ? `${t.charAt(0).toUpperCase()}${t.slice(1)}.` : `${wer} ${t}.`;
   }
   const w = k.wahrheit[frage.id];
   if (w === undefined || w === null) return "Das weiß ich nicht.";

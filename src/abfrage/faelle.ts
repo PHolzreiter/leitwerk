@@ -779,7 +779,10 @@ export const FAELLE: FallVorlage[] = [
     stelle: ["[ort=freizeit] in der Kirche", "[ort=geschaeft] an der Kassa", "[ort=strasse] an der Bushaltestelle", "[ort=arzt] im Wartezimmer"],
     anrufer: ["passant", "verkauf", "eltern", "partner"],
     geschehen: [
-      "{P} ist {nach langem Stehen|in der Wärme|beim Warten} auf einmal ganz blass geworden und zusammengesackt.",
+      "[ort=freizeit] {P} ist in der Messe nach langem Stehen auf einmal ganz blass geworden und zusammengesackt.",
+      "[ort=geschaeft] {P} hat an der Kassa gewartet, ist auf einmal ganz blass geworden und zusammengesackt.",
+      "[ort=strasse] {P} hat auf den Bus gewartet, ist auf einmal ganz blass geworden und zusammengesackt.",
+      "[ort=arzt] {P} ist im Wartezimmer aufgestanden, auf einmal ganz blass geworden und zusammengesackt.",
       "[wissen=fremd] Du hast gesehen, wie {er} umgefallen ist – {er} ist eher hingerutscht als hingefallen.",
       "Jetzt liegt {er} am Boden und reagiert nicht, aber {er} atmet.",
     ],

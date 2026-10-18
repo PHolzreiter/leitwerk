@@ -12,6 +12,7 @@ import { inTauri } from "../platform";
 import { fragenImAblauf, type Frage } from "./schema";
 import { anruferSagt, satzSprecher } from "../ui/sprache";
 import { ohnePatientWort } from "./sprechfrage";
+import { ist } from "./themen";
 
 /** Welche Schemafragen in diesem Notruf schon gestellt wurden (die Formulierung wechselt) */
 const gefragt = new Map<string, Set<string>>();
@@ -67,6 +68,10 @@ export function antwortetGerade(id: string): boolean {
 
 function einfacheAntwort(k: AnrufKontext, frage: string, schemaFrage?: Frage): string {
   if (schemaFrage) return antwortOhneKi(k, schemaFrage);
+  const art = nachrichtArt(frage);
+  if (art === "mitteilung") return "Okay, danke.";
+  if (art === "anweisung") return "Okay, mach ich.";
+  if (art === "abschluss") return "Danke, auf Wiederhören.";
   // freie Frage: passendste Frage der Abfrage suchen (gemeinsame Wörter)
   const woerter = new Set(normFrage(frage).split(" ").filter((w) => w.length > 3));
   let beste: Frage | null = null;
@@ -124,6 +129,44 @@ export async function eroeffnen(e: Einsatz, onToken?: (t: string) => void): Prom
   await fragen(e, ERÖFFNUNG, undefined, onToken);
 }
 
+/** Frei gestellte Frage, die einer Grundfrage entspricht (Eröffnung, „Was ist passiert?“) */
+function freieSchemaFrage(frage: string): Frage | undefined {
+  if (frage === ERÖFFNUNG) return { id: "ort_adresse", typ: "text", text: frage } as Frage;
+  if (/^(okay[.,]?\s*)?(und )?(was ist (denn )?(passiert|los|geschehen)|was genau ist (passiert|los)|erzählen sie (mir )?(kurz,? )?was)/i.test(frage.trim())) return { id: "schilderung", typ: "text", text: frage } as Frage;
+  return undefined;
+}
+
+/** Wie viele Sätze der Anrufer auf einmal sagt: auf den Einstieg und „Was ist passiert?“ nur wenig, je nach Art */
+function hoechstSaetze(k: AnrufKontext, sf: Frage | undefined, erste: boolean): number {
+  const stil = k.anrufer.persona?.stil ?? "normal";
+  if ((sf?.id === "ort_adresse" && erste) || sf?.id === "schilderung") return stil === "gespraechig" ? 3 : stil === "knapp" ? 1 : 2;
+  return stil === "gespraechig" ? 4 : 3;
+}
+
+/**
+ * Atemnot: wer selbst kaum Luft kriegt, redet in Fetzen – kurze Wortgruppen mit „…“ dazwischen,
+ * insgesamt nur wenige Wörter.
+ */
+export function inAtemnot(text: string): string {
+  // nur der Anfang: der erste Satz (ist er sehr kurz, auch der zweite), höchstens neun Wörter
+  const saetze = text.replace(/[„“"]/g, "").replace(/\s*…\s*/g, " ").match(/[^.!?]+[.!?]*/g) ?? [text];
+  let teil = saetze[0] ?? "";
+  if (teil.split(/\s+/).filter(Boolean).length < 5 && saetze[1]) teil += ` ${saetze[1]}`;
+  const woerter = teil.replace(/[.!?,;:–-]+/g, " ").split(/\s+/).filter(Boolean).slice(0, 10);
+  const gruppen: string[] = [];
+  let i = 0;
+  while (i < woerter.length) {
+    const n = 2 + Math.floor(Math.random() * 2);
+    gruppen.push(woerter.slice(i, i + n).join(" "));
+    i += n;
+  }
+  return gruppen.length ? `${gruppen.join(" … ")} …` : "… (schweres Atmen) …";
+}
+
+function atemnotSelbst(k: AnrufKontext): boolean {
+  return k.anrufer.selbst && (k.wahrheit.sprachschw === "ja" || (k.wahrheit.at === "abnorm" && ist(k.kapitel, "atemnot")));
+}
+
 /** Nachrichten für die KI: Anweisung, bisheriges Gespräch und der Hinweis zur aktuellen Frage */
 export function kiVerlauf(e: Einsatz, k: AnrufKontext, frage: string, schemaFrage: Frage | undefined, wiederholtId = false): KiNachricht[] {
   const ersteAntwort = !(e.anruf?.gespraech ?? []).some((m) => m.von === "anrufer");
@@ -140,7 +183,7 @@ export function kiVerlauf(e: Einsatz, k: AnrufKontext, frage: string, schemaFrag
   // Kurzer Hinweis an die letzte Frage hängen (wird nicht im Verlauf gespeichert)
   const zuletzt = verlauf[verlauf.length - 1];
   if (zuletzt.role === "user") {
-    const sf = schemaFrage ?? (frage === ERÖFFNUNG ? ({ id: "ort_adresse", typ: "text", text: frage } as Frage) : undefined);
+    const sf = schemaFrage ?? freieSchemaFrage(frage);
     const g = e.anruf?.gespraech ?? [];
     const letzteAntwort = [...g].reverse().find((m) => m.von === "anrufer")?.text;
     verlauf[verlauf.length - 1] = {
@@ -191,9 +234,11 @@ async function anruferAntwort(
     const w = k.szenario ? k.szenario.patient.geschlecht === "w" : k.wahrheit.geschlecht === "w";
     const laie = (x.art ?? "privat") === "privat" && !x.selbst;
     const glatt = (t: string) => (laie ? ohnePatientWort(t, w) : t);
-    const t = await kiAntwortNeu(verlauf, frueher, (y) => onToken?.(glatt(y)), { pruefen: !(wiederholtId || schonGefragt(g, frage)) });
+    const sf = schemaFrage ?? freieSchemaFrage(frage);
+    const atemnot = atemnotSelbst(k);
+    const t = await kiAntwortNeu(verlauf, frueher, (y) => onToken?.(atemnot ? "" : glatt(y)), { pruefen: !(wiederholtId || schonGefragt(g, frage)), maxSaetze: atemnot ? 2 : hoechstSaetze(k, sf, ersteAntwort) });
     quelle.wert = "ki";
-    return glatt(t);
+    return atemnot ? inAtemnot(t) : glatt(t);
   } catch (err) {
     console.warn("KI-Antwort", err);
     return einfacheAntwort(k, frage, schemaFrage);

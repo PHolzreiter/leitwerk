@@ -90,14 +90,19 @@ export function setKiPrefs(p: Partial<KiPrefs>): void {
 let letzterStatus: KiStatus | null = null;
 
 export async function kiStatus(): Promise<KiStatus> {
+  if (kiTest.chat) return { installiert: true, laeuft: true, version: "test", modelle: [kiPrefs().modell] };
   if (!inTauri()) return (letzterStatus = { installiert: false, laeuft: false, version: null, modelle: [] });
   const s = await invoke<KiStatus>("ki_status");
   letzterStatus = s;
   return s;
 }
 
+/** nur für Tests: eigenes Sprachmodell statt Ollama über Tauri (z. B. Ollama direkt per HTTP) */
+export const kiTest: { chat: null | ((messages: KiNachricht[], onToken: (t: string) => void, maxTokens?: number) => Promise<string>) } = { chat: null };
+
 /** Ist die KI für Gespräche bereit (läuft, Modell da, eingeschaltet)? */
 export function kiBereit(): boolean {
+  if (kiTest.chat) return true;
   const p = kiPrefs();
   return !!letzterStatus?.laeuft && p.aktiv && letzterStatus.modelle.some((m) => m === p.modell || m.startsWith(`${p.modell}`));
 }
@@ -132,6 +137,7 @@ export interface KiNachricht {
 
 /** Eine Antwort der KI; onToken bekommt den Text Stück für Stück */
 export async function kiChat(messages: KiNachricht[], onToken?: (t: string) => void): Promise<string> {
+  if (kiTest.chat) return satzEnde(bereinigen(await kiTest.chat(messages, (t) => onToken?.(t))));
   const ch = new Channel<string>();
   ch.onmessage = (t) => onToken?.(t);
   const text = await invoke<string>("ki_chat", { model: kiPrefs().modell, messages, onToken: ch });

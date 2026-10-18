@@ -2,8 +2,9 @@ import { fehlerLogStarten } from "./fehlerLog";
 fehlerLogStarten();
 import { ohnePatientWort, sprechFrage } from "./abfrage/sprechfrage";
 import { erinnerung, systemPrompt } from "./abfrage/anrufer";
-import { kiVerlauf, kontext } from "./abfrage/gespraech";
-import { bereinigen, satzEnde } from "./abfrage/ki";
+import { inAtemnot, kiVerlauf, kontext, probeGespraech } from "./abfrage/gespraech";
+import { kiAntwortNeu } from "./abfrage/runde";
+import { bereinigen, kiTest, satzEnde } from "./abfrage/ki";
 import { alleFaelle, fallAktivSetzen, fallLoeschen, fallpaketExport, fallpaketImport, fallSpeichern } from "./abfrage/faelle";
 import { entwurfAusKi, fallEditorOeffnen } from "./ui/fallEditor";
 import "./style.css";
@@ -46,7 +47,7 @@ import { faellePruefen } from "./abfrage/faellePruefen";
 dienstHoverEinrichten();
 
 // Für automatische Tests im Browser (…/?debug): Zugriff auf Simulation und Daten
-if (location.search.includes("debug")) Object.assign(window, { __lw: { sim, store, sprachTest, codesystemLaden: (s: Schema) => schemaUebernehmen(s, "test.json"), faellePruefen: () => faellePruefen(store.schema), faelle: { alleFaelle, fallSpeichern, fallLoeschen, fallpaketExport, fallpaketImport, fallAktivSetzen }, fallEditorOeffnen, entwurfAusKi, sprechFrage, systemPrompt, kontext, erinnerung, kiVerlauf, ohnePatientWort, bereinigen, satzEnde } });
+if (location.search.includes("debug")) Object.assign(window, { __lw: { sim, store, sprachTest, codesystemLaden: (s: Schema) => schemaUebernehmen(s, "test.json"), faellePruefen: () => faellePruefen(store.schema), faelle: { alleFaelle, fallSpeichern, fallLoeschen, fallpaketExport, fallpaketImport, fallAktivSetzen }, fallEditorOeffnen, entwurfAusKi, sprechFrage, systemPrompt, kontext, erinnerung, kiVerlauf, ohnePatientWort, bereinigen, satzEnde, inAtemnot, kiAntwortNeu, kiTest, probe: probeGespraech } });
 
 async function watchGeo(): Promise<void> {
   const out = document.getElementById("geo-status");

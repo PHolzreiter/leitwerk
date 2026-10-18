@@ -233,7 +233,7 @@ export function einstiegHinweis(p: Persona, adresse: string, rnd: Rnd = Math.ran
     case "dringend":
       return `Sag zuerst kurz, dass es dringend ist (in deinen Worten, z. B. ${pick(["„Bitte, schnell …“", "„Sie müssen sofort kommen!“", "„Es ist dringend!“", "„Hilfe, bitte!“", "„Schnell, bitte!“"], rnd)}), dann die Adresse – sonst nichts.`;
     case "problem":
-      return "Du bist so durch den Wind, dass du NICHT mit der Adresse anfängst: du sagst in einem Satz, was los ist – ohne Adresse. Die Adresse sagst du erst, wenn die Leitstelle noch einmal nach dem Ort fragt.";
+      return "Du bist so durch den Wind, dass du NICHT mit der Adresse anfängst: du rufst nur kurz heraus, was los ist (ein kurzer Satz, höchstens zehn Wörter, keine Einzelheiten) – ohne Adresse. Die Adresse sagst du erst, wenn die Leitstelle noch einmal nach dem Ort fragt.";
     case "hallo":
       return `Du bist unsicher, ob du richtig verbunden bist (z. B. ${pick(["„Hallo? Ist da die Rettung?“", "„Ja, hallo … bin ich da richtig beim Notruf?“", "„Rettung? Hallo?“", "„Hallo, ist das die 144?“"], rnd)}) – danach sagst du die Adresse (Straße, Hausnummer, Ort). Sonst nichts, keine weiteren Einzelheiten.`;
     case "unvollstaendig":
