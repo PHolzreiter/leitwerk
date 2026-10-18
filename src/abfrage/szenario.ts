@@ -216,7 +216,7 @@ const KRANKHEITEN: Krankheit[] = [
   { name: "hoher Blutdruck", medikamente: ["Blutdrucktabletten"], fakten: {}, ab: 40 },
   { name: "Diabetes", medikamente: ["Metformin", "Insulin"], fakten: { diabetiker: "ja" }, ab: 35 },
   { name: "Vorhofflimmern", medikamente: ["Eliquis (Blutverdünner)", "Xarelto (Blutverdünner)", "Marcoumar (Blutverdünner)"], fakten: { blutverduenner: "ja", herzleiden: "ja" }, ab: 55 },
-  { name: "hatte vor ein paar Jahren einen Herzinfarkt, hat zwei Stents", medikamente: ["Aspirin", "Blutdrucktabletten", "Cholesterinsenker"], fakten: { herz_vg: "ja", herzleiden: "ja", blutverduenner: "ja" }, ab: 50 },
+  { name: "hatte vor ein paar Jahren einen Herzinfarkt, hat zwei Stents", medikamente: ["Aspirin und Blutdrucktabletten", "Aspirin und einen Cholesterinsenker", "Aspirin"], fakten: { herz_vg: "ja", herzleiden: "ja", blutverduenner: "ja" }, ab: 50 },
   { name: "Herzschwäche", medikamente: ["Entwässerungstabletten", "Herztabletten"], fakten: { herzleiden: "ja" }, ab: 65 },
   { name: "COPD (vom Rauchen)", medikamente: ["zwei Sprays zum Inhalieren"], fakten: { lungenerkrankung: "copd" }, ab: 50 },
   { name: "Asthma", medikamente: ["ein Asthmaspray"], fakten: { lungenerkrankung: "asthma" } },
@@ -230,6 +230,7 @@ const KRANKHEITEN: Krankheit[] = [
   { name: "Nierenschwäche", medikamente: [], fakten: {}, ab: 65 },
   { name: "Krebs, ist in Behandlung", medikamente: ["Schmerzpflaster"], fakten: {}, ab: 55 },
   // nur aus Geschichten (nie zufällig)
+  { name: "hatte vor ein paar Monaten eine Thrombose im Bein", medikamente: ["Xarelto (Blutverdünner)", "Eliquis (Blutverdünner)"], fakten: { blutverduenner: "ja" }, ab: 999 },
   { name: "Diabetes, spritzt Insulin", medikamente: ["Insulin"], fakten: { diabetiker: "ja" }, ab: 999 },
   { name: "Krebs im Endstadium", medikamente: ["Morphin über eine Schmerzpumpe"], fakten: {}, ab: 999 },
 ];
@@ -244,7 +245,10 @@ function profil(alter: number, a: Antworten, vorlage: string[] | undefined, rnd:
     // widerspricht einer festen Antwort (z. B. diabetiker = nein)?
     for (const [id, w] of Object.entries(k.fakten)) if (a[id] !== undefined && a[id] !== w && a[id] !== "unbekannt") return;
     vor.push(k.name);
-    if (k.medikamente.length) med.push(pick(k.medikamente, rnd));
+    if (k.medikamente.length) {
+      const m = pick(k.medikamente, rnd);
+      if (!med.includes(m)) med.push(m);
+    }
     Object.assign(fakten, k.fakten);
   };
   // was die Abfrage schon festgelegt hat, muss in der Geschichte vorkommen
@@ -269,7 +273,8 @@ function profil(alter: number, a: Antworten, vorlage: string[] | undefined, rnd:
   nach("psych_vorerkrankung", "ja", "Depressionen");
   if (a.herzleiden === "ja" && !vor.some((v) => /Herz|Vorhof/.test(v))) nimm(KRANKHEITEN[alter >= 55 ? 2 : 4]);
   if (a.blutverduenner === "ja" && !med.some((m) => /Blutverd|Aspirin/.test(m))) {
-    nimm(KRANKHEITEN[2]);
+    // junge Menschen haben selten Vorhofflimmern – eher eine Thrombose
+    nimm(alter >= 50 ? KRANKHEITEN[2] : KRANKHEITEN.find((x) => /Thrombose/.test(x.name))!);
     if (!med.some((m) => /Blutverd/.test(m))) med.push("Eliquis (Blutverdünner)");
   }
   if (a.lungenerkrankung === "andere") vor.push("eine Lungenerkrankung (Lungenfibrose)");

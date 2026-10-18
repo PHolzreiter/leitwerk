@@ -24,7 +24,7 @@ import {
   type FallVorlage,
   type NaBedarf,
 } from "../abfrage/faelle";
-import { fallPruefen } from "../abfrage/faellePruefen";
+import { fallHinweise, fallPruefen } from "../abfrage/faellePruefen";
 import { kiBereit, kiJson, kiStatus } from "../abfrage/ki";
 import { bestimmeCode, fragenImAblauf, type Antworten, type Frage, type Schema, type Wert } from "../abfrage/schema";
 import type { AnruferTyp, OrtArt, OrtModus } from "../abfrage/szenario";
@@ -1278,6 +1278,7 @@ function fensterBauen(): { zeigen(id?: string): void } {
     if (!entwurf.anrufer.length) out.push({ text: "kein Anrufer gewählt (Schritt 2)", hart: true });
     if (!entwurf.orte.length && (entwurf.ortModus ?? "nur") === "nur") out.push({ text: "kein Ort gewählt (Schritt 1)", hart: true });
     for (const v of entwurf.varianten) if (!v.lage.trim()) out.push({ text: `Ausgang ${v.id}: Lagebild fehlt`, hart: true });
+    for (const h of fallHinweise(entwurf)) out.push({ text: `${h.variante ? `Ausgang ${h.variante}: ` : ""}${h.fehler}`, hart: false });
     if (entwurf.anrufer.includes("selbst") && !entwurf.hergangIch?.some((h) => h.trim())) out.push({ text: "Patient kann selbst anrufen, aber es gibt kein Beispiel in Ich-Form (Schritt 2) – geht auch ohne", hart: false });
     const ein = out.filter((b, i) => out.findIndex((x) => x.text === b.text) === i);
     return [...ein.filter((b) => b.hart), ...ein.filter((b) => !b.hart)];
@@ -1561,21 +1562,42 @@ function fensterBauen(): { zeigen(id?: string): void } {
 function kiPrompt(name: string, beschreibung: string): { role: "system" | "user"; content: string }[] {
   const themen = THEMEN.map((t) => `${t.id} (${t.label})`).join(", ");
   const buchungen = BUCHUNGEN.map((b) => `${b.id} (${b.name})`).join("; ");
-  const system = `Du entwirfst Notruf-Fälle für einen Leitstellensimulator in Niederösterreich. Antworte NUR mit einem JSON-Objekt, ohne Erklärung.
-Felder:
+  const system = `Du entwirfst Notruf-Fälle für einen Leitstellensimulator in Niederösterreich (Rettungsdienst, Notruf 144). Antworte NUR mit einem JSON-Objekt, ohne Erklärung.
+Aus deinem Entwurf baut das Programm bei jedem Anruf eine neue Fallgeschichte; eine zweite KI spielt dann den Anrufer und darf NUR wissen, was in "geschehen", "details" und den festen Antworten steht. Alles muss deshalb eindeutig und widerspruchsfrei sein.
+
+FELDER
 - "name": kurzer Name
 - "thema": eine dieser IDs: ${themen}
 - "alter": [von, bis] in Jahren
 - "geschlecht": "m", "w" oder weglassen
 - "orte": Liste aus ${ORTE.map(([k]) => k).join(", ")}
-- "stelle": 2–3 kurze Ortsangaben wie „im Badezimmer“
-- "anrufer": Liste aus ${ANRUFER.map(([k]) => k).join(", ")}
-- "geschehen": 3–5 Fakten, was wirklich passiert ist (Abfolge, Umstände) – sachlich, aus Sicht von jemandem, der dabei war. Platzhalter: {P} = die Person („Mein Mann“), {er}/{Er}/{ihn}/{ihm}/{sein} = Pronomen, {a|b} = eines davon zufällig.
-- "hergang": 1–2 Beispiele, wie ein Laie den ersten Satz am Telefon sagen könnte (österreichisches Deutsch, keine Fachsprache, gleiche Platzhalter).
-- "details": 2–4 Dinge, die der Anrufer auf Nachfrage erzählt (mit Platzhaltern)
+- "ortModus": weglassen (= nur an diesen Orten), "ueberall" (an allen passenden Orten, "orte" leer) oder "ausser" (überall außer an diesen Orten)
+- "stelle": 2–3 kurze Angaben, WO genau am Ort, z. B. „im Badezimmer“ – keine Stockwerke, Hausnummern oder Türen (die erzeugt das Programm)
+- "anrufer": Liste aus ${ANRUFER.map(([k]) => k).join(", ")} (nur Rollen, die wirklich dabei sein können; "selbst" nur, wenn der Patient selbst telefonieren kann)
+- "geschehen": 3–5 FAKTEN, was wirklich passiert ist: Abfolge, Umstände, was man sieht. Sachlich, ohne Uhrzeiten und ohne „seit … Minuten“ (die Zeit setzt das Programm aus "seitMin").
+- "hergang": 2–3 Beispiele, wie ein Laie den ersten Satz am Telefon sagt (österreichisches Deutsch, keine Fachsprache, 3. Person). Nur Stilbeispiele – sie werden nie wörtlich vorgelesen und dürfen den Fakten nicht widersprechen.
+- "hergangIch": nur wenn "selbst" bei den Anrufern ist: 1–2 Beispiele in der Ich-Form
+- "details": 3–5 Dinge, die der Anrufer auf Nachfrage weiß (Befunde, Umstände, Medikamente, was vorher war)
+- "verlauf": 0–2 Stimmungen während des Gesprächs, z. B. „Du wirst immer nervöser.“ (Du-Form, an den Anrufer)
+- "vorerkrankungen": 0–3 passende Vorerkrankungen, z. B. „hat Bluthochdruck“
 - "seitMin": [von, bis] Minuten seit dem Ereignis
-- "varianten": 1–3 Ausgänge, zusammen p = 1. Jeder: { "id": "A", "p": 0.8, "sichtung": "gruen"|"gelb"|"rot", "lage": "Lagebild der Besatzung, kurz, fachlich", "na": "nein"|"immer"|"RS"|"NFS-NKV", "buchung": eine ID aus der Liste }
-Meist harmlos, selten ernst. Buchungen: ${buchungen}`;
+- "fest": Zustand beim Anruf: { "bw": "ja"|"getruebt"|"nein", "at": "normal"|"abnorm"|"agonal"|"keine" } (bw = wach?, at = Atmung)
+- "ohneSicht": true, wenn der Anrufer den Patienten NICHT sieht (versperrte Tür, nur Telefon mit ihm) – dann kennt er Hautfarbe, Atmung usw. nicht
+- "varianten": 1–3 Ausgänge, zusammen p = 1. Jeder: { "id": "A", "p": 0.8, "sichtung": "gruen"|"gelb"|"rot", "lage": "Lagebild der Besatzung, kurz, fachlich", "na": "nein"|"immer"|"RS"|"NFS-NKV", "buchung": eine ID aus der Liste, optional "fest": {"bw":…, "at":…}, optional "ereignis": { "nachMin": [von, bis], "text": "so meldet es der Anrufer, z. B. {Er} wird ganz blau.", "bw": …, "at": …, "sichtung": …, "lage": … } }
+
+PLATZHALTER (in geschehen, hergang, details, stelle, verlauf, ereignis.text)
+{P} = die Person aus Sicht des Anrufers („Mein Mann“, „Die Frau“), {er}/{Er}/{ihn}/{ihm}/{sein}/{seine}/{seinem} = Pronomen, {a|b|c} = eines davon zufällig (für Abwechslung – nutze das oft). {rechten|linken} bzw. {rechts|links} ergibt im ganzen Fall dieselbe Seite.
+
+BEDINGUNGEN
+Ein Text, der nur manchmal gilt, beginnt mit einer Bedingung in eckigen Klammern: [variante=B] nur in Ausgang B, [variante!=A] nicht in A, [ort=wohnung|haus] nur an diesen Orten, [selbst=ja] nur wenn der Patient selbst anruft, [wissen=fremd] nur wenn der Anrufer ihn nicht kennt, [anrufer_typ=passant]. Damit unterscheiden sich die Ausgänge schon im Gespräch: Was der Anrufer bei einem ernsten Ausgang anders sieht, gehört in eine Zeile mit [variante=…].
+
+REGELN
+1. Kein Widerspruch: Wer blass ist, ist nicht „rot im Gesicht“; wer bewusstlos ist ("bw": "nein"), redet, verwirrt oder klagt über nichts; wer „schwach blutet“, blutet nicht „stark“.
+2. Jede Angabe nur einmal und an einer Stelle. Keine Zeitangaben außerhalb von "seitMin".
+3. Nur, was der Anrufer wirklich wissen kann (ein Passant kennt keine Medikamente; [wissen=nah] für Dinge, die nur Angehörige wissen).
+4. Keine Namen, Adressen, Telefonnummern oder Firmen.
+5. Meist harmlos, selten ernst: der häufigste Ausgang steht zuerst.
+Buchungen: ${buchungen}`;
   return [
     { role: "system", content: system },
     { role: "user", content: `${name ? `Name: ${name}\n` : ""}Beschreibung: ${beschreibung}` },
@@ -1612,7 +1634,17 @@ export function entwurfAusKi(antwort: string, name: string): FallVorlage | null 
   if (g.length) f.geschehen = g;
   const det = strs(j.details);
   if (det.length) f.details = det;
+  const ich = strs(j.hergangIch);
+  if (ich.length && f.anrufer.includes("selbst")) f.hergangIch = ich;
+  const vl = strs(j.verlauf);
+  if (vl.length) f.verlauf = vl;
+  const ve = strs(j.vorerkrankungen);
+  if (ve.length) f.vorerkrankungen = ve;
+  if (j.ohneSicht === true) f.ohneSicht = true;
+  const zust = kiZustand(j.fest);
+  if (Object.keys(zust).length) f.fest = { ...(f.fest ?? {}), ...zust };
   f.seitMin = paar(j.seitMin, f.seitMin ?? [5, 30]);
+  const varIds = new Map<string, string>();
   if (Array.isArray(j.varianten)) {
     const vs: FallVariante[] = [];
     for (const x of j.varianten as Record<string, unknown>[]) {
@@ -1620,7 +1652,17 @@ export function entwurfAusKi(antwort: string, name: string): FallVorlage | null 
       const sichtung = (["gruen", "gelb", "rot"] as Sichtung[]).includes(x.sichtung as Sichtung) ? (x.sichtung as Sichtung) : "gelb";
       const na = NA_BEDARF.some(([k]) => k === x.na) ? (x.na as NaBedarf) : "nein";
       const buchung = BUCHUNGEN.some((b) => b.id === x.buchung) ? (x.buchung as string) : sichtung === "gruen" ? "bu_hausaerztlich" : "bu_exsikkose_synkope_az_verschlechterung";
-      vs.push({ id: naechsteVarId({ ...f, varianten: vs }), p: typeof x.p === "number" ? Math.max(0, Math.min(1, x.p)) : 0, sichtung, lage: str(x.lage), na, buchung });
+      const v: FallVariante = { id: naechsteVarId({ ...f, varianten: vs }), p: typeof x.p === "number" ? Math.max(0, Math.min(1, x.p)) : 0, sichtung, lage: str(x.lage), na, buchung };
+      const vz = kiZustand(x.fest);
+      if (Object.keys(vz).length) v.fest = vz;
+      const er = x.ereignis as Record<string, unknown> | undefined;
+      if (er && typeof er === "object" && str(er.text)) {
+        const ez = kiZustand(er);
+        v.verlauf = [{ nachMin: paar(er.nachMin, [3, 8]), text: str(er.text), ...(ez as { bw?: Bewusstsein; at?: Atmung }), ...((["gruen", "gelb", "rot"] as Sichtung[]).includes(er.sichtung as Sichtung) ? { sichtung: er.sichtung as Sichtung } : {}), ...(str(er.lage) ? { lage: str(er.lage) } : {}) }];
+      }
+      // Bedingungen [variante=X] zeigen auf die alten IDs der KI – auf die neuen umschreiben
+      if (typeof x.id === "string" && x.id !== v.id) varIds.set(x.id, v.id);
+      vs.push(v);
     }
     if (vs.length) {
       const s = vs.reduce((a, v) => a + v.p, 0);
@@ -1629,5 +1671,22 @@ export function entwurfAusKi(antwort: string, name: string): FallVorlage | null 
       f.varianten = vs;
     }
   }
+  if (varIds.size) {
+    const um = (t: string) => t.replace(/^\[([^\]]*)\]/, (_m, b: string) => `[${b.replace(/(variante!?=)([^,\]]+)/g, (_x, k: string, w: string) => k + w.split("|").map((i) => varIds.get(i) ?? i).join("|"))}]`);
+    for (const feld of ["geschehen", "details", "hergang", "hergangIch", "stelle", "verlauf"] as const) {
+      const l = f[feld];
+      if (Array.isArray(l)) (f as unknown as Record<string, string[]>)[feld] = l.map(um);
+    }
+  }
   return f;
+}
+
+/** {bw, at} aus einer KI-Antwort – nur gültige Werte */
+function kiZustand(x: unknown): { bw?: Bewusstsein; at?: Atmung } {
+  if (!x || typeof x !== "object") return {};
+  const o = x as Record<string, unknown>;
+  const r: { bw?: Bewusstsein; at?: Atmung } = {};
+  if (o.bw === "ja" || o.bw === "getruebt" || o.bw === "nein") r.bw = o.bw;
+  if (o.at === "normal" || o.at === "abnorm" || o.at === "agonal" || o.at === "keine") r.at = o.at;
+  return r;
 }

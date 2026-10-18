@@ -202,7 +202,7 @@ export function anruferWaehlen(
       bergrettung: { ort: "", rolle: "Einsatzleiter der Bergrettung", anruferWert: "einrichtung", geschlecht: "m", profi: true, typ: "bergrettung" },
     };
     // Selbst anrufen geht nur wach und mit ausreichender Atmung; der Anrufer muss zum Ort und zum Alter passen
-    const altersGerecht = (t: AnruferTyp) => (t === "eltern" ? alter < 30 : t === "kind" ? alter >= 45 : t === "partner" ? alter >= 18 : t === "lehrer" ? alter < 20 : true);
+    const altersGerecht = (t: AnruferTyp) => (t === "eltern" ? alter < 30 : t === "kind" ? alter >= 45 : t === "partner" ? alter >= 20 : t === "lehrer" ? alter < 20 : t === "kollege" ? alter >= 16 && alter < 67 : t === "trainer" ? alter < 45 : true);
     let typen = anruferAmOrt(geschichte.typen, geschichte.ortArt).filter((t) => t !== "selbst" || kannSelbst);
     if (typen.some(altersGerecht)) typen = typen.filter(altersGerecht);
     const erlaubt = kandidaten.filter(([x]) => x.typ && typen.includes(x.typ));

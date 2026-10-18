@@ -1,5 +1,44 @@
 # Änderungen
 
+## 0.35.0 – Anrufer-KI, Fallmodell und Fall-Erstellung überarbeitet
+Grundlage: der Testlauf mit 420 Gesprächen (alle Fälle, qwen3:8b), Gespräch für Gespräch ausgewertet.
+
+**Der Anrufer widerspricht falschen Zusammenfassungen**
+- Bisher wurde eine falsche Zusammenfassung fast immer mit „Ja, genau.“ bestätigt (93 %). Jetzt vergleicht das Programm die Zusammenfassung mit den Fakten: Ist etwas falsch, bekommt die KI den Hinweis „widersprich“ – und nickt sie trotzdem ab, wird die Antwort durch „Nein, nein – …“ mit dem richtigen Teil ersetzt
+- Stimmt die Zusammenfassung, bestätigt der Anrufer kurz und abwechslungsreich (nicht immer „Ja, genau.“)
+
+**Fragen, die vorher ins Leere gingen**
+- „Seit wann ist das so?“, „Wie lange schon?“, „Um wie viel Uhr?“ werden als Fragen erkannt und beantwortet – vorher nie
+- Die Zeit steht nur noch an einer Stelle in den Fakten (vorher widersprachen sich „seit zehn Minuten“ und „seit einer halben Stunde“)
+
+**Was sich während des Gesprächs ändert, weiß jetzt auch die KI**
+- Verschlechterung/Besserung (z. B. „Er wird ganz blau“) steht im Prompt unter „GERADE GEÄNDERT“ – vorher erzählte der Anrufer danach weiter vom alten Zustand
+- Ruft der Patient selbst an und wird bewusstlos, kommt keine Antwort mehr, nur Geräusche
+
+**Anrufer klingen echter**
+- Ruft der Patient selbst an, redet er in der Ich-Form („Ich krieg schlecht Luft“) statt von „ihm“
+- Kein erfundenes „Unten ist offen, zweiter Stock links“ mehr (das kam aus einem Beispiel im Prompt)
+- „Ich schick jemanden raus“ nur, wenn wirklich jemand da ist – sonst sagt der Anrufer, dass er allein ist
+- Fakten werden in eigenen Worten erzählt statt vorgelesen; dieselbe Tatsache hat mehrere Formulierungen, damit nicht jeder Anrufer gleich klingt
+- Füllwörter, Eigenheiten und Stil werden pro Antwort neu angestoßen – vorher wirkten sie kaum
+- Dialekt ohne deutsches „isch/nee/ick/so 'ne“, Hochdeutsch ohne „is/net“, gebrochenes Deutsch mit klaren Regeln; fremde Schriftzeichen werden entfernt
+- Profis (Pflege, Ärzte) nennen Messwerte
+- Persona passt zur Lage: wer allein ist, hat niemanden zum Türöffnen; „redet mit ihm“ nur, wenn der Patient wach ist; Medikamente nur bei Erwachsenen
+
+**Fallgeschichten ohne Widersprüche**
+- Hautfarbe und Schweiß ergeben sich aus dem Text (blass/grau → blass, „rot im Gesicht“ → nicht blass, „klatschnass“ → schwitzt)
+- Bewusstlose sind nicht zugleich verwirrt oder „kurz weg gewesen“; schwanger nur bei Geburt/Schwangerschaft; „schwer zu tragen“ erst ab 16 Jahren
+- Medikamente passen zu den Krankheiten (Herzinfarkt mit Aspirin, Blutverdünner bei Jüngeren wegen Thrombose, keine doppelten)
+- Fälle korrigiert: Schnittwunde (Blutung passt zu „schwach“, Ausgang C blutet durch), Verkehrsunfall (Kurve, keine doppelte Beschreibung), Parkbank (brummt statt „rührt sich nicht“; Ausgang D ohne Alkohol, C schlägt nach dir), Hyperventilation, Psych (Anrufer sieht ihn nicht), Kreislaufstillstand (Defi nur im Geschäft/Sportplatz), Pflegeheim (Ausgang B mit schlechten Werten, keine Stockwerke), Schlaganfall, Geburt, Sturz
+
+**Fall-Erstellung (Fall-Editor)**
+- Die Anweisung für „Mit KI entwerfen“ ist neu: Felder für Ich-Form, Zustand (wach/Atmung), „sieht ihn nicht“, Vorerkrankungen, Stimmung, ein Ereignis pro Ausgang, Bedingungen wie [variante=B] – und klare Regeln gegen Widersprüche und Zeitangaben
+- Neue Prüfung in Schritt 5: Widersprüche im Text (blass ↔ rot, stark ↔ schwach blutend, bewusstlos ↔ redet …), Zeitangaben im Text, Stockwerke in der Stelle, doppelte Texte, Bedingungen mit unbekanntem Ausgang, „sieht ihn nicht“ aber beschreibt ihn, Ausgänge, die am Telefon gleich klingen
+
+**Testlauf**
+- Fragt nach dem Ort, wenn er fehlt; überspringt unpassende Fragen (Geschlecht bei Geburt, Polizei-Fragen, „wach?“ beim Selbstanrufer)
+- Anweisungen passen zur Lage (kein Auflegen bei Lebensgefahr, keine Rückenschläge bei Husten, keine Haustür im Freien); nach einer Verschlechterung kommt die passende Anleitung
+
 ## 0.34.0 – Testlauf für Notrufgespräche
 **Testlauf (Fall-Editor)**
 - Neuer Knopf „🧪 Testlauf“ bei jedem Fall: Ausgang wählen (A, B, C … oder alle) und wie oft – dann spielt das Programm die Notrufe automatisch durch, ohne Zwischenfragen
