@@ -35,12 +35,12 @@ const SPRECH: Record<string, { er: string[]; sie?: string[] }> = {
   alter: { er: ["Wie alt ist {er} ungefähr?", "Wie alt ist {er} denn?", "Wissen Sie, wie alt {er} ist – ungefähr reicht."], sie: ["Wie alt sind Sie?", "Darf ich fragen, wie alt Sie sind?"] },
   geschlecht: { er: ["Ist es ein Mann oder eine Frau?", "Handelt es sich um einen Mann oder eine Frau?"] },
   bw: { er: ["Ist {er} wach? Reagiert {er}, wenn Sie {ihn} ansprechen?", "Ist {er} bei Bewusstsein und ansprechbar?", "Reagiert {er} auf Sie, wenn Sie mit {ihm} reden?"], sie: ["Sind Sie ganz wach, oder ist Ihnen schwindlig oder wird Ihnen schwarz vor Augen?"] },
-  at: { er: ["Atmet {er} normal?", "Wie atmet {er} – ganz normal?", "Schauen Sie bitte genau: atmet {er} normal?"], sie: ["Kriegen Sie normal Luft?", "Wie geht's Ihnen mit dem Atmen?"] },
+  at: { er: ["Atmet {er} normal?", "Wie atmet {er}?", "Schauen Sie bitte genau hin: Wie atmet {er}?"], sie: ["Kriegen Sie normal Luft?", "Wie geht's Ihnen mit dem Atmen?"] },
   sprachschw: { er: ["Kann {er} ganze Sätze sprechen, oder nur einzelne Wörter?", "Muss {er} beim Reden nach jedem Wort Luft holen?"], sie: ["Können Sie ganze Sätze sprechen, oder müssen Sie zwischendurch Luft holen?"] },
   hautfarbe: { er: ["Welche Hautfarbe hat {er} – ist {er} blass, grau oder bläulich?", "Wie schaut {er} im Gesicht aus – blass oder bläulich?"] },
   grau: { er: ["Ist die Haut aschfahl oder grau?", "Ist {er} ganz grau im Gesicht?"] },
-  kaltschweiss: { er: ["Ist {er} kaltschweißig?", "Schwitzt {er}, und fühlt sich die Haut kalt an?"], sie: ["Sind Sie kaltschweißig?", "Schwitzen Sie stark?"] },
-  blutung_stark: { er: ["Blutet es stark – läuft oder spritzt es, sind die Tücher durchtränkt?", "Wie stark blutet es?"] },
+  kaltschweiss: { er: ["Ist {seine} Haut kalt und feucht?", "Schwitzt {er} kalt?"], sie: ["Ist Ihre Haut kalt und feucht?", "Schwitzen Sie kalt?"] },
+  blutung_stark: { er: ["Blutet {er} irgendwo? Wenn ja – wie stark?", "Blutet es stark – läuft oder spritzt es?"] },
   fehlstellung: { er: ["Steht irgendwas komisch ab, ist etwas sichtbar verformt?", "Schaut ein Arm oder Bein verdreht oder gebrochen aus?"] },
   ohnmacht: { er: ["War {er} bewusstlos oder kurz weg?", "Ist {er} ohnmächtig geworden, auch nur kurz?"], sie: ["Waren Sie kurz bewusstlos oder ist Ihnen schwarz vor Augen geworden?"] },
   verletzt: { er: ["Hat {er} sich dabei verletzt?", "Sehen Sie irgendwo eine Verletzung?"], sie: ["Haben Sie sich verletzt?"] },
@@ -79,7 +79,7 @@ const SPRECH: Record<string, { er: string[]; sie?: string[] }> = {
   kokain: { er: ["Hat {er} Drogen genommen, Kokain zum Beispiel?"] },
   substanzen: { er: ["Hat {er} irgendwelche Tabletten oder Substanzen genommen?"] },
   aggressiv: { er: ["Ist {er} aggressiv oder gewalttätig?"] },
-  gewalttaetig: { er: ["War {er} gewalttätig, oder ist {er} es jetzt?"] },
+  gewalttaetig: { er: ["Ist {er} aggressiv?", "Ist {er} gewalttätig geworden?"] },
   waffen: { er: ["Sind irgendwelche Waffen da?", "Gibt es Waffen in der Nähe?"] },
   psych_vorerkrankung: { er: ["Ist bei {ihm} eine psychische Erkrankung bekannt?"] },
   bluter: { er: ["Ist {er} Bluter?"] },
@@ -88,7 +88,7 @@ const SPRECH: Record<string, { er: string[]; sie?: string[] }> = {
   anrufer_selbst: { er: ["Sind Sie selbst auch verletzt?", "Und Sie – sind Sie selber verletzt?"] },
   anzahl: { er: ["Wie viele Verletzte gibt es?", "Wie viele Personen sind verletzt?"] },
   gering: { er: ["War das nur ein leichter Unfall – langsam, so wie ein Parkschaden?"] },
-  hohe_geschw: { er: ["War das mit hoher Geschwindigkeit, auf der Freilandstraße oder Autobahn?", "Wie schnell waren die Autos ungefähr unterwegs?"] },
+  hohe_geschw: { er: ["War das mit hoher Geschwindigkeit, auf der Freilandstraße oder Autobahn – oder wissen Sie das nicht?", "War das Auto schnell unterwegs – oder wissen Sie das nicht?"] },
   hohe_energie: { er: ["War das ein heftiger Aufprall, mit hoher Geschwindigkeit?"] },
   grossunfall: { er: ["Ist ein Bus, ein Zug oder eine Straßenbahn beteiligt, oder sind sehr viele Autos betroffen?"] },
   mechanismus: { er: ["Ist ein Fußgänger, ein Radfahrer oder ein Motorrad beteiligt? Hat sich ein Auto überschlagen oder ist jemand herausgeschleudert worden?"] },
@@ -111,6 +111,10 @@ const SPRECH: Record<string, { er: string[]; sie?: string[] }> = {
   medikation: { er: ["Hat {er} schon ein Notfallmedikament bekommen, zum Beispiel einen Adrenalin-Pen?"] },
   vergiftung: { er: ["Könnte {er} etwas eingenommen haben, zu viele Tabletten oder Gift?"] },
   verhalten: { er: ["Verhält {er} sich anders als sonst?", "Benimmt {er} sich irgendwie auffällig?"] },
+  tod: { er: ["Ist {er} schon kalt oder steif – oder ist das ganz plötzlich passiert?"] },
+  ursache_9: { er: ["Wissen Sie, warum {er} umgefallen ist – ein Unfall, Strom, Wasser, Drogen?"] },
+  todeszeichen: { er: ["Ist {er} schon kalt und steif, oder hat {er} so dunkle Flecken auf der Haut?"] },
+  zeuge: { er: ["Haben Sie gesehen, wie {er} umgefallen ist?"] },
 };
 
 /** Fragen, die nur der Calltaker beantwortet – werden nicht gestellt */
@@ -226,6 +230,8 @@ export function sprechFrage(f: Frage, schema: Schema | null, antworten: Antworte
   const def = SPRECH[m];
   const rnd = opt.zufall ?? Math.random;
   if (m === "ort_adresse" && opt.erste) return "Notruf 144, Rettungsdienst. Wo genau ist der Notfallort?";
+  // Kinder: „Bub oder Mädchen?“
+  if (m === "geschlecht" && typeof antworten.alter === "number" && antworten.alter < 14) return "Ist es ein Bub oder ein Mädchen?";
   if (def) {
     if (an === "sie" && def.sie?.length) return def.sie[Math.floor(rnd() * def.sie.length)];
     // „schwanger“ fragt immer nach „sie“

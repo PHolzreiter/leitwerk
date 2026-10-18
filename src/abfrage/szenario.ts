@@ -101,6 +101,8 @@ export interface SzenarioVorlage {
   extra?: Record<string, Wert>;
   /** kein (bekannter) Patient – z. B. Lichtsignale, Tier: so steht es statt der Patientenangaben in der Fallakte */
   ohnePatient?: string;
+  /** Anrufer sieht den Patienten nicht (versperrte Tür, nur am Telefon): Befunde wie Hautfarbe, Atmung, Sprechen kennt er nicht */
+  ohneSicht?: boolean;
 }
 
 // ------------------------------------------------------------------ fertige Fallgeschichte
@@ -113,6 +115,8 @@ export interface Szenario {
   stelle: string;
   /** kein bekannter Patient (Text für die Fallakte) */
   ohnePatient?: string;
+  /** Anrufer sieht den Patienten nicht */
+  ohneSicht?: boolean;
   /** Anrufer kennt den Ort nicht genau (Natur) – so beschreibt er ihn */
   wo?: string;
   hergang: string;
@@ -440,6 +444,16 @@ export function szenarioBauen(
   const setze = (id: string, x: Wert) => {
     if (a[id] === undefined && zusatz[id] === undefined) zusatz[id] = x;
   };
+  // Was die Geschichte schon sagt, gilt auch für die Fakten (sonst „ganz blass“ in der Geschichte, „Farbe normal“ in den Fakten)
+  const alleTexte = [...(v.geschehen ?? []), ...(v.details ?? [])]
+    .filter((t) => passtBedingung(t, { ...a, variante: a.variante ?? "" }))
+    .map((t) => ohneBedingung(t).toLowerCase())
+    .join(" ");
+  if (/\b(blass|grau im gesicht|ganz grau|bläulich|blau (im gesicht|an den lippen|anlaufen)|wird blau|ganz blau)/.test(alleTexte)) setze("hautfarbe", "ja");
+  else if (/rot im gesicht|rot ist [^.]{0,8}im gesicht|hochrot/.test(alleTexte)) setze("hautfarbe", "nein");
+  if (/(klatschnass|nass geschwitzt|schwitzt (stark|total|so)|schweißnass|kalter schweiß|kaltschweiß|verschwitzt)/.test(alleTexte)) setze("kaltschweiss", "ja");
+  // Anrufer sieht den Patienten nicht: Befunde bleiben offen (keine Zeile in den Fakten)
+  const sicht = !v.ohneSicht;
   // was jeder Anrufer beantworten kann, auch wenn das eigene Kapitel nicht danach fragt
   setze("aelter6h", seitMin > 360 ? "ja" : "nein");
   setze("seit", seitMin > 270 ? "ueber" : "unter");
@@ -450,17 +464,21 @@ export function szenarioBauen(
   const schlimm = a.bw === "nein" || a.at === "keine" || a.at === "agonal";
   // wer gerade bewusstlos ist: „war kurz weg“, „ist im Kopf klar“, „redet ganze Sätze“ passen nicht
   const weg = a.bw === "nein";
-  if (!weg) setze("ohnmacht", schlimm ? "ja" : "nein");
-  if (!weg) setze("verwirrt", a.bw === "getruebt" ? "ja" : "nein");
+  if (!weg && sicht) setze("ohnmacht", schlimm ? "ja" : "nein");
+  if (!weg && sicht) setze("verwirrt", a.bw === "getruebt" ? "ja" : "nein");
   setze("gewalt", "nein");
   setze("gewalttaetig", "nein");
   setze("aggressiv", "nein");
   setze("waffen", "nein");
   setze("mehrere_verletzte", a.anzahl_patienten === "n" ? "ja" : "nein");
-  setze("schwer_pat", rnd() < 0.08 ? "ja" : "nein");
-  setze("hautfarbe", schlimm ? "ja" : "nein");
-  setze("kaltschweiss", schlimm ? "ja" : "nein");
-  if (!weg && a.bw !== "getruebt") setze("sprachschw", a.at === "abnorm" ? "ja" : "nein");
+  // sehr schwer nur bei Erwachsenen
+  setze("schwer_pat", alter >= 16 && rnd() < 0.08 ? "ja" : "nein");
+  if (sicht) {
+    setze("hautfarbe", schlimm ? "ja" : "nein");
+    setze("kaltschweiss", schlimm ? "ja" : "nein");
+    // kleine Kinder reden ohnehin nicht in Sätzen
+    if (!weg && a.bw !== "getruebt" && alter >= 4) setze("sprachschw", a.at === "abnorm" ? "ja" : "nein");
+  }
   // Pflege und Ärzte fordern meist an: Transportart und Dringlichkeit wissen sie
   if (a.wissen === "profi") {
     const stabil = (a.bw === undefined || a.bw === "ja") && (a.at === undefined || a.at === "normal");
@@ -470,7 +488,7 @@ export function szenarioBauen(
     setze("transportart", !stabil || alter >= 80 ? "liegend" : "sitzend");
   }
   const traumatisch = ["sturz", "verkehrsunfall", "verletzung", "tierbiss", "gewalt", "stich_schuss", "eingeklemmt", "blutung", "brand", "strom", "wasser", "auge", "alpin"].includes(v.thema);
-  if (!traumatisch) {
+  if (!traumatisch && sicht) {
     setze("verletzt", "nein");
     setze("blutung_stark", "nein");
     setze("fehlstellung", "nein");
@@ -482,6 +500,7 @@ export function szenarioBauen(
     return pick(ok.length ? ok : l, rnd).replace(/^\[[^\]]*\]\s*/, "");
   };
   const gewicht = zusatz.schwer_pat === "ja" || a.schwer_pat === "ja" ? "sehr schwer, deutlich über 120 kg" : alter < 14 ? "normal für das Alter" : pick(["normal", "eher schlank", "ein bisschen kräftiger"], rnd);
+  const arztOrt = /^\d+$/.test(opt.ort.trim()) || !opt.ort.trim() ? "im Ort" : `in ${opt.ort}`;
   return {
     vorlage: v.id,
     thema: v.thema,
@@ -501,14 +520,16 @@ export function szenarioBauen(
       vorerkrankungen: pr.vor,
       medikamente: pr.med,
       allergien: rnd() < 0.15 ? pick(["Penicillin", "Pflaster", "Nüsse", "Wespenstiche", "Kontrastmittel"], rnd) : "keine bekannt",
-      hausarzt: `${pick(["Dr. Huber", "Dr. Leitner", "Dr. Wagner", "Dr. Pichler", "Dr. Steiner", "Dr. Bauer"], rnd)} in ${opt.ort}`,
+      hausarzt: `${pick(["Dr. Huber", "Dr. Leitner", "Dr. Wagner", "Dr. Pichler", "Dr. Steiner", "Dr. Bauer"], rnd)} ${arztOrt}`,
       gewicht,
     },
-    details: (v.details ?? []).filter((d) => passtBedingung(d, alle)).map((d) => f3(ohneBedingung(d))).filter(() => rnd() < 0.85),
+    // alle Details – wichtige Befunde dürfen nicht zufällig fehlen (sonst sagt der Anrufer „nix steht ab“)
+    details: (v.details ?? []).filter((d) => passtBedingung(d, alle)).map((d) => f3(ohneBedingung(d))),
     umgebung: v.umgebung?.length ? v.umgebung.filter((d) => passtBedingung(d, alle)).map((d) => f(ohneBedingung(d))) : umgebung(ortArt, alter, rnd),
     verlauf: (v.verlauf ?? []).filter((d) => passtBedingung(d, alle)).map((d) => f(ohneBedingung(d))),
     zusatz,
     ohnePatient: v.ohnePatient ? f(v.ohnePatient) : undefined,
+    ohneSicht: v.ohneSicht || undefined,
   };
 }
 
@@ -516,10 +537,10 @@ export function szenarioBauen(
 
 /** Antwort → Satz, so wie es ein Laie weiß. {er} usw. werden gefüllt. */
 const FAKT: Record<string, Record<string, string>> = {
-  ohnmacht: { ja: "{Er} war kurz weg bzw. fast ohnmächtig", nein: "{Er} war nie bewusstlos, auch nicht kurz" },
-  verletzt: { ja: "{Er} hat sich verletzt", nein: "{Er} hat sich nicht sichtbar verletzt" },
-  blutung_stark: { ja: "es blutet stark, die Tücher sind schnell durch", nein: "es blutet nicht stark" },
-  fehlstellung: { ja: "ein Arm/Bein steht komisch ab bzw. ist sichtbar verformt", nein: "nichts steht komisch ab" },
+  ohnmacht: { ja: "{Er} war kurz weg bzw. fast ohnmächtig", nein: "{{Er} war nicht bewusstlos, auch nicht kurz|weggekippt ist {er} nicht|ohnmächtig war {er} nicht}" },
+  verletzt: { ja: "{Er} hat sich verletzt", nein: "{eine Verletzung siehst du keine|verletzt ist {er} nicht, soweit du siehst|du siehst keine Wunde}" },
+  blutung_stark: { ja: "es blutet stark, die Tücher sind schnell durch", nein: "es blutet nicht stark (gibt es keine Wunde, blutet gar nichts)" },
+  fehlstellung: { ja: "ein Arm/Bein steht komisch ab bzw. ist sichtbar verformt", nein: "{nichts steht komisch ab|Arme und Beine schauen normal aus}" },
   aelter6h: { ja: "das Ganze ist schon länger als sechs Stunden her", nein: "es ist weniger als sechs Stunden her" },
   seit: { unter: "die Beschwerden gibt es seit weniger als 4 Stunden", ueber: "die Beschwerden gibt es schon länger als 4–5 Stunden" },
   diabetiker: { ja: "{Er} ist zuckerkrank (Diabetes)", nein: "{Er} hat keinen Zucker" },
@@ -532,16 +553,16 @@ const FAKT: Record<string, Record<string, string>> = {
   psych_vorerkrankung: { ja: "{Er} ist wegen Depressionen in Behandlung", nein: "psychisch ist nichts bekannt" },
   lungenerkrankung: { asthma: "{Er} hat Asthma", copd: "{Er} hat COPD, eine Raucherlunge", andere: "{Er} hat eine Lungenkrankheit", nein: "mit der Lunge hat {er} nichts" },
   schwanger: { ja: "{Er} ist schwanger", nein: "schwanger ist sie nicht" },
-  hautfarbe: { ja: "{Er} ist ganz blass im Gesicht", nein: "die Gesichtsfarbe ist normal" },
-  kaltschweiss: { ja: "{Er} ist kalt und schweißig", nein: "{Er} schwitzt nicht" },
-  sprachschw: { ja: "{Er} kann vor lauter Schnaufen nur einzelne Wörter sagen", nein: "{Er} kann ganze Sätze sprechen" },
-  verwirrt: { ja: "{Er} ist durcheinander und weiß nicht recht, wo {er} ist", nein: "{Er} ist im Kopf klar" },
+  hautfarbe: { ja: "{{Er} ist ganz blass im Gesicht|{Er} schaut ganz blass aus|{Er} ist käsweiß}", nein: "{die Gesichtsfarbe ist normal|blass ist {er} nicht|{er} hat eine normale Farbe}" },
+  kaltschweiss: { ja: "{{Er} ist kalt und schweißig|die Haut ist kalt und feucht|{er} ist ganz verschwitzt}", nein: "{verschwitzt ist {er} nicht|die Haut ist normal, nicht feucht|{Er} schwitzt nicht}" },
+  sprachschw: { ja: "{Er} kann vor lauter Schnaufen nur einzelne Wörter sagen", nein: "{reden kann {er} normal|{er} redet in ganzen Sätzen|beim Reden muss {er} nicht nach Luft schnappen}" },
+  verwirrt: { ja: "{Er} ist durcheinander und weiß nicht recht, wo {er} ist", nein: "{{er} ist nicht verwirrt (nicht mehr als sonst)|durcheinander ist {er} nicht|{er} weiß, wo {er} ist}" },
   kokain: { ja: "{Er} hat Kokain genommen", nein: "Drogen nimmt {er} keine" },
   aneurysma: { ja: "{Er} hat ein Aneurysma an der Bauchschlagader", nein: "von einem Aneurysma weißt du nichts" },
   bluter: { ja: "{Er} ist Bluter", nein: "Bluter ist {er} keiner" },
   transportart: { liegend: "{Er} kann nicht sitzen – {er} muss liegend transportiert werden", sitzend: "{Er} kann sitzen, aber nicht weit gehen", gehend: "{Er} kann selbst gehen", rollstuhl: "{Er} sitzt im eigenen Rollstuhl" },
   dringlichkeit: { ohne: "es ist nicht eilig", sofort: "es sollte bald jemand kommen, {er} ist aber stabil", geraete: "es ist dringend – {er} braucht Sauerstoff bzw. Überwachung" },
-  schwer_pat: { ja: "{Er} ist sehr schwer, deutlich über 120 Kilo", nein: "{Er} ist normal schwer" },
+  schwer_pat: { ja: "{Er} ist sehr schwer, deutlich über 120 Kilo", nein: "zum Tragen ist {er} nicht übermäßig schwer" },
   gewalt: { ja: "{Er} ist gewalttätig", nein: "{Er} ist nicht gewalttätig" },
   gewalttaetig: { ja: "{Er} ist aggressiv und schlägt um sich", nein: "{Er} ist nicht aggressiv" },
   aggressiv: { ja: "{Er} ist aggressiv", nein: "{Er} ist nicht aggressiv" },
@@ -566,16 +587,16 @@ export function faktSaetze(z: Antworten, w: boolean): string[] {
 export const SELBSTVERSTAENDLICH = new Set(["diabetiker", "epilepsie", "herz_vg", "herzleiden", "blutverduenner", "vg_schlaganfall", "vg_tia", "psych_vorerkrankung", "aneurysma", "bluter", "kokain", "lungenerkrankung", "gewalt", "gewalttaetig", "aggressiv", "waffen"]);
 
 /** Fallakte für die KI (Geheimwissen der Anruferin/des Anrufers) */
-export function fallakte(sz: Szenario, opt: { selbst: boolean; bezug: string; quelle?: "vorort" | "polizei" | "telefon"; fremd?: boolean; hausarztIch?: boolean; vorgeschichte?: "ja" | "teilweise" | "nein" }): string {
+export function fallakte(sz: Szenario, opt: { selbst: boolean; bezug: string; quelle?: "vorort" | "polizei" | "telefon"; fremd?: boolean; hausarztIch?: boolean; vorgeschichte?: "ja" | "teilweise" | "nein"; name?: string }): string {
   const p = sz.patient;
   const w = p.geschlecht === "w";
   const q = opt.quelle ?? "vorort";
-  const wer = opt.selbst ? "Du selbst" : `${opt.bezug.charAt(0).toUpperCase()}${opt.bezug.slice(1)} (${p.name})`;
+  const wer = opt.selbst ? `Du selbst${opt.name ? ` (${opt.name})` : ""}` : `${opt.bezug.charAt(0).toUpperCase()}${opt.bezug.slice(1)} (${p.name})`;
   const z: string[] = [];
   const erlebt = q === "polizei" ? "so hat es dir die Streife vor Ort gemeldet" : q === "telefon" ? "das hat dir der Patient bzw. die Angehörigen gerade am Telefon geschildert – du bist nicht vor Ort" : "das hast du erlebt";
   if (sz.geschehen?.length) {
-    z.push(`WAS WIRKLICH PASSIERT IST (${erlebt}) – Fakten. Erzähl es in DEINEN Worten, so wie du es erlebt hast, nie wörtlich ablesen und nicht alles auf einmal:\n${sz.geschehen.map((g) => `- ${g}`).join("\n")}\n- ${/^seit/.test(sz.seit) ? `Das geht so ${sz.seit}` : `Das war ${sz.seit}`}.`);
-    if (sz.stil?.length) z.push(`So ähnlich KÖNNTE ein erster Satz klingen – nur als Anhaltspunkt für den Ton, NICHT wörtlich übernehmen, eigene Worte finden: ${sz.stil.map((x) => `„${x}“`).join(" / ")}`);
+    // keine fertigen Beispielsätze mehr – die KI hat sie fast immer wörtlich übernommen
+    z.push(`WAS WIRKLICH PASSIERT IST (${erlebt}) – Fakten. Erzähl es in DEINEN Worten, so wie du es erlebt hast, nie wörtlich ablesen und nicht alles auf einmal:\n${sz.geschehen.map((g) => `- ${g}`).join("\n")}`);
   } else z.push(`WAS PASSIERT IST (${erlebt}): ${opt.selbst && sz.hergangIch ? sz.hergangIch : sz.hergang} ${/^seit/.test(sz.seit) ? `Das geht so ${sz.seit}` : `Das war ${sz.seit}`}.`);
   z.push(`WO: ${sz.stelle}${sz.umgebung.length ? ` (${sz.umgebung.join("; ")})` : ""}.`);
   const titel = opt.selbst
@@ -600,6 +621,7 @@ export function fallakte(sz: Szenario, opt: { selbst: boolean; bezug: string; qu
     );
   else z.push(`ÜBER ${opt.selbst ? "DICH" : w ? "SIE" : "IHN"}: ${wer}, ${p.alter} Jahre, ${w ? "weiblich" : "männlich"}, Gewicht ${p.gewicht}. ${vorErk} Hausarzt: ${opt.hausarztIch ? "du selbst" : p.hausarzt}.`);
   void w;
+  if (sz.ohneSicht) z.push(`WICHTIG: Du siehst ${w ? "sie" : "ihn"} NICHT. Wie ${w ? "sie" : "er"} ausschaut, ob ${w ? "sie" : "er"} atmet oder reagiert, weißt du nicht – das sagst du ehrlich.`);
   if (sz.verlauf.length) z.push(`STIMMUNG UND VERLAUF IM GESPRÄCH: ${sz.verlauf.join(" ")}`);
   return z.join("\n");
 }

@@ -128,8 +128,8 @@ const WOERTER: Record<string, string[]> = {
 /** Persönlichkeit für einen privaten Anrufer (Profis bekommen eine ruhige, knappe) */
 export function personaWaehlen(
   x: { rolle: string; selbst: boolean; typ?: AnruferTyp; emotion: "ruhig" | "gefasst" | "aufgeregt" | "panisch"; sprache: string },
-  p: { alter: number; w: boolean; vorname: string; nachname: string },
-  opt: { ortUnbekannt?: boolean; draussen?: boolean },
+  p: { alter: number; w: boolean; vorname: string; nachname: string; wach?: boolean; sicht?: boolean },
+  opt: { ortUnbekannt?: boolean; draussen?: boolean; zuhause?: boolean },
   rnd: Rnd = Math.random,
 ): Persona {
   const wissen = wissenVon(x.typ, x.selbst);
@@ -167,14 +167,23 @@ export function personaWaehlen(
   const w2 = pick(pool.filter((w) => w !== w1), rnd);
   const er = p.w ? "sie" : "er";
   const ihm = p.w ? "ihr" : "ihm";
-  const eigenheiten =
-    wissen === "fremd"
-      ? ["Du redest zwischendurch kurz mit anderen Leuten, die dabeistehen („Kann wer eine Decke holen?“).", "Du sagst oft „Moment“ und schaust dann nach.", "Du entschuldigst dich zwischendurch, weil du nicht weißt, was du tun sollst.", "Du fragst einmal zwischendurch, wie lange die Rettung noch braucht."]
-      : [
-          `Du redest zwischendurch kurz mit ${p.w ? "ihr" : "ihm"} („${p.vorname}, bleib liegen, die Rettung kommt gleich!“).`,
-          "Du wiederholst Fragen der Leitstelle halb, bevor du antwortest („Ob " + er + " atmet? Ja …“).",
+  // Eigenheiten nur, wenn sie zur Lage passen (mit einem Bewusstlosen redet man nicht, ein Kleinkind „geht nie zum Arzt“ nicht …)
+  const wach = p.wach !== false;
+  const sicht = p.sicht !== false;
+  const eigenheiten: string[] = x.selbst
+    ? ["Du stöhnst zwischendurch kurz („Au … Moment …“).", "Du fragst einmal zwischendurch, wie lange die Rettung noch braucht.", "Du sagst oft „Moment“, weil dir alles schwerfällt.", "Du entschuldigst dich einmal, dass du so lästig bist."]
+    : wissen === "fremd"
+      ? [
+          ...(opt.draussen ? ["Du redest zwischendurch kurz mit anderen Leuten, die dabeistehen („Kann wer eine Decke holen?“)."] : []),
           "Du sagst oft „Moment“ und schaust dann nach.",
-          `Du erwähnst einmal nebenbei etwas, das dich zusätzlich beschäftigt (dass ${er} eh nie zum Arzt geht, dass du gerade erst heimgekommen bist o. Ä.).`,
+          "Du entschuldigst dich zwischendurch, weil du nicht weißt, was du tun sollst.",
+          "Du fragst einmal zwischendurch, wie lange die Rettung noch braucht.",
+        ]
+      : [
+          ...(wach && sicht && p.alter >= 3 ? [`Du redest zwischendurch kurz mit ${p.w ? "ihr" : "ihm"} („${p.vorname}, die Rettung kommt gleich!“).`] : []),
+          "Du wiederholst Fragen der Leitstelle halb, bevor du antwortest („Ob " + er + " … ? Moment …“).",
+          "Du sagst oft „Moment“ und schaust dann nach.",
+          ...(p.alter >= 18 ? [`Du erwähnst einmal nebenbei etwas, das dich zusätzlich beschäftigt (dass du gerade erst heimgekommen bist, dass ${er} sich nie schont o. Ä.).`] : []),
           "Du fragst einmal zwischendurch, wie lange die Rettung noch braucht.",
         ];
   const eigenheitenProfi = [
@@ -186,12 +195,18 @@ export function personaWaehlen(
   ];
   const eigenheit = wissen === "profi" ? (rnd() < 0.3 ? null : pick(eigenheitenProfi, rnd)) : rnd() < 0.45 ? null : pick(eigenheiten, rnd);
   const kenntVorgeschichte: Persona["kenntVorgeschichte"] = wissen === "nah" || wissen === "profi" ? "ja" : wissen === "bekannt" ? (rnd() < 0.5 ? "teilweise" : "nein") : "nein";
+  // Wer sonst noch da ist – konkret (wichtig für Anweisungen wie „Schicken Sie jemanden zur Tür“)
+  const verwandt = pick(["deine Schwester", "dein Bruder", "deine Tochter", "dein Sohn", "eine Nachbarin"], rnd);
   const dabeiListe =
     wissen === "fremd"
-      ? ["Ein paar Leute stehen herum, einer kniet schon neben " + (p.w ? "ihr" : "ihm") + ".", "Außer dir ist gerade niemand da.", "Eine zweite Person ist bei dir und hilft."]
+      ? opt.draussen
+        ? ["Ein paar Leute stehen herum, einer kniet schon neben " + ihm + ".", "Außer dir ist gerade niemand da.", "Eine zweite Person ist bei dir und hilft."]
+        : ["Außer dir ist gerade niemand da.", "Eine Kollegin von dir ist auch da und hilft."]
       : wissen === "profi"
-        ? ["Eine Kollegin ist beim Patienten."]
-        : ["Du bist allein mit " + ihm + ".", "Ein Angehöriger ist auch da und kann helfen (z. B. die Haustür aufmachen).", "Du bist allein mit " + ihm + ", das Telefon hast du auf Lautsprecher."];
+        ? ["Eine Kollegin ist bei " + ihm + ", du telefonierst vom Stationszimmer.", "Du bist selbst bei " + ihm + ", eine Kollegin hilft dir."]
+        : opt.zuhause === false
+          ? ["Du bist allein mit " + ihm + ".", "Ein paar Leute stehen herum und schauen."]
+          : ["Du bist allein mit " + ihm + " – sonst ist niemand da, der die Tür aufmachen könnte.", `Außer dir ist ${verwandt} da und kann helfen (z. B. die Haustür aufmachen).`, "Du bist allein mit " + ihm + ", das Telefon hast du auf Lautsprecher."];
   return {
     wissen,
     stil,
@@ -201,8 +216,8 @@ export function personaWaehlen(
     nennt: x.selbst ? ["ich"] : nennWoerter(x.typ, x.rolle, p.w, p.alter, p.vorname, p.nachname, rnd),
     alterGesagt: alterSagen(p.alter, wissen, rnd),
     kenntVorgeschichte,
-    medsUngefaehr: wissen === "nah" && !x.selbst && rnd() < 0.45,
-    dabei: x.selbst ? (rnd() < 0.7 ? "Du bist allein." : "Jemand ist bei dir.") : pick(dabeiListe, rnd),
+    medsUngefaehr: wissen === "nah" && !x.selbst && p.alter >= 18 && rnd() < 0.45,
+    dabei: x.selbst ? (rnd() < 0.7 ? "Du bist allein – niemand kann dir die Tür aufmachen." : `${verwandt.charAt(0).toUpperCase()}${verwandt.slice(1)} ist bei dir.`) : pick(dabeiListe, rnd),
   };
 }
 
@@ -235,7 +250,6 @@ export function personaText(p: Persona, w: boolean, selbst: boolean): string {
     else if (p.medsUngefaehr) z.push(`- Die Namen der Medikamente weißt du nicht auswendig – du beschreibst sie („irgendwas fürs Herz“, „so eine kleine weiße Tablette“) oder bietest an, nachzuschauen.`);
     z.push(`- Auf die Frage nach dem Alter sagst du: ${p.alterGesagt}${p.wissen === "fremd" || p.wissen === "bekannt" ? " (genauer weißt du es nicht)" : ""}.`);
   }
-  z.push(`- ${p.dabei}`);
   return z.join("\n");
 }
 

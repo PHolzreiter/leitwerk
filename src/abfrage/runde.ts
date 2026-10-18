@@ -21,7 +21,7 @@ export function ohneVorspann(t: string): string {
   return x;
 }
 
-const W_WORT = /^(?:was|wo|wie|wer|wen|wem|wessen|wann|welche[rsmn]?|warum|wieso|weshalb|woran|womit|wohin|woher|wovon|wodurch|wofür|wieviel\w*|wie ?viel\w*)\b/;
+const W_WORT = /^(?:seit wann|ab wann|bis wann|wie lange?|um wie viel uhr|was|wo|wie|wer|wen|wem|wessen|wann|welche[rsmn]?|warum|wieso|weshalb|woran|womit|wohin|woher|wovon|wodurch|wofür|wieviel\w*|wie ?viel\w*)\b/;
 /** Verb am Anfang = Ja/Nein-Frage („atmet er normal“, „können sie mir sagen …“) */
 const FRAGE_VERB = /^(?:ist|sind|war|waren|hat|haben|hatte|hatten|kann|können|könnten|konnte|darf|dürfen|muss|müssen|soll|sollen|will|wollen|möchte|atmet|reagiert|blutet|hustet|spricht|redet|antwortet|bewegt|liegt|sitzt|steht|gibt|geht|kommt|bringt|hilft|nimmt|tut|weiß|wissen|kennen|kennt|sieht|hört|merkt|fühlt|trinkt|isst|schwitzt|wirkt|klagt|braucht|brauchen|befindet|wurde|wurden|wird|werden|leidet|krampft|zittert|blutete|schläft|nimmt|verwendet|hast|bist|seid|habt)\b/;
 /** Befehlsverben in der Sie-Form („legen Sie …“) */
@@ -81,14 +81,14 @@ export function fragtNachZustand(text: string): boolean {
 }
 
 /** Kurzer Hinweis je nach Art der Nachricht (gilt für alle Anrufer) */
-export function hinweisZurArt(art: NachrichtArt, laie: boolean): string {
+export function hinweisZurArt(art: NachrichtArt, laie: boolean, jemandDa = true): string {
   switch (art) {
     case "zusammenfassung":
       return "Die Leitstelle fasst zusammen, was sie verstanden hat. Antworte nur ganz kurz: bestätigen („Ja, genau.“, „Ja, so ist es.“) oder korrigieren, was nicht stimmt. Wiederhole ihre Worte nicht und zähl nichts neu auf.";
     case "anweisung":
       return `Die Leitstelle sagt dir, was du tun sollst. Passt es zur Fallakte, tu es und sag kurz, was du tust oder was du dabei siehst – nur das, was zu genau dieser Anweisung passt. Passt es nicht, frag nach. Bedingte Anweisungen („falls“, „wenn“) und Bitten wie „Bleiben Sie dran“ bestätigst du nur kurz.`;
     case "mitteilung": {
-      const art = ["sag erleichtert danke", "frag, wie lange es ungefähr dauert", "frag, was du bis dahin machen sollst", "sag, dass du jemanden zum Einweisen hinausschickst bzw. die Tür aufmachst", "sag kurz „okay“ und dass du dranbleibst", "frag, ob du noch irgendwas herrichten sollst"];
+      const art = ["sag erleichtert danke", "frag, wie lange es ungefähr dauert", "frag, was du bis dahin machen sollst", ...(jemandDa ? ["sag, dass jemand die Tür aufmacht bzw. die Rettung einweist (nur wer laut Fallakte da ist)"] : ["sag, dass du allein bist und nicht weg kannst"]), "sag kurz „okay“ und dass du dranbleibst", "frag, ob du noch irgendwas herrichten sollst", "sag kurz, was du gerade tust bzw. was du siehst"];
       const w = art[Math.floor(Math.random() * art.length)];
       return `Die Leitstelle hat dir etwas MITGETEILT, keine Frage gestellt. Reagiere kurz und menschlich darauf${laie ? ` – diesmal: ${w} (in deinen eigenen Worten)` : " (bestätigen, kurz nachfragen, was noch nötig ist)"}. Beschreib jetzt NICHT noch einmal den Zustand des Patienten.`;
     }

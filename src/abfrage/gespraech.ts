@@ -5,7 +5,7 @@
  */
 import { store } from "../data/store";
 import { sim, type Einsatz } from "../sim/engine";
-import { antwortOhneKi, erinnerung, ersterSatzOhneKi, systemPrompt, type AnrufKontext } from "./anrufer";
+import { antwortOhneKi, erinnerung, ersterSatzOhneKi, sprachFilter, systemPrompt, zusammenfassungPruefen, type AnrufKontext } from "./anrufer";
 import { kiBereit, kiPrefs, kiStatus, type KiNachricht } from "./ki";
 import { kiAntwortNeu, nachrichtArt, ohneVorspann } from "./runde";
 import { inTauri } from "../platform";
@@ -57,6 +57,7 @@ export function kontext(e: Einsatz): AnrufKontext | null {
     rueckrufDurchLeitstelle: e.anruf.rueckruf,
     ortUnbekannt: !!w.ortUnbekannt,
     szenario: w.szenario,
+    verlauf: w.verlauf,
   };
 }
 
@@ -92,6 +93,8 @@ function einfacheAntwort(k: AnrufKontext, frage: string, schemaFrage?: Frage): s
   if (/name/.test(f)) return k.anrufer.name;
   return "Das weiß ich nicht genau.";
 }
+
+const zufallAus = (a: string[]): string => a[Math.floor(Math.random() * a.length)];
 
 /**
  * Vorwärmen: Solange ein Notruf klingelt, lässt die KI schon die erste Antwort (auf „Wo genau ist der
@@ -244,7 +247,7 @@ function atemnotSelbst(k: AnrufKontext): boolean {
  */
 const prompts = new Map<string, { schluessel: string; text: string }>();
 function systemFuer(e: Einsatz, k: AnrufKontext): string {
-  const schluessel = `${k.versuche}|${k.rueckrufDurchLeitstelle}|${k.adresse}|${JSON.stringify(k.wahrheit)}`;
+  const schluessel = `${k.versuche}|${k.rueckrufDurchLeitstelle}|${k.adresse}|${JSON.stringify(k.wahrheit)}|${(k.verlauf ?? []).length}`;
   const p = prompts.get(e.id);
   if (p && p.schluessel === schluessel) return p.text;
   const text = systemPrompt(k);
@@ -273,7 +276,7 @@ export function kiVerlauf(e: Einsatz, k: AnrufKontext, frage: string, schemaFrag
     const letzteAntwort = [...g].reverse().find((m) => m.von === "anrufer")?.text;
     verlauf[verlauf.length - 1] = {
       role: "user",
-      content: `${zuletzt.content}\n${erinnerung(k, sf, { wiederholt: wiederholtId || schonGefragt(g, frage), letzteAntwort, art: sf ? "frage" : nachrichtArt(frage), text: frage, erste: ersteAntwort })}`,
+      content: `${zuletzt.content}\n${erinnerung(k, sf, { wiederholt: wiederholtId || schonGefragt(g, frage), letzteAntwort, art: sf ? "frage" : nachrichtArt(frage), text: frage, erste: ersteAntwort, nr: g.filter((m) => m.von === "anrufer").length })}`,
     };
   }
   return verlauf;
@@ -301,6 +304,11 @@ export async function anruferAntwort(
     await pause();
     return "(keine Antwort – im Hintergrund nur Geräusche aus dem Fahrzeug)";
   }
+  // Wer selbst anruft und jetzt bewusstlos ist, kann nicht mehr antworten
+  if (x.selbst && (k.wahrheit.bw === "nein" || k.wahrheit.at === "keine" || k.wahrheit.at === "agonal")) {
+    await pause();
+    return "(keine Antwort – man hört nur noch Geräusche)";
+  }
   // Ollama evtl. erst nach dem Programmstart gestartet: Status neu holen
   if (!kiBereit() && inTauri() && kiPrefs().aktiv) await kiStatus().catch(() => null);
   if (!kiBereit()) {
@@ -318,12 +326,19 @@ export async function anruferAntwort(
     // „der Patient“ sagt kein Anrufer – auch wenn die Leitstelle so fragt
     const w = k.szenario ? k.szenario.patient.geschlecht === "w" : k.wahrheit.geschlecht === "w";
     const laie = (x.art ?? "privat") === "privat" && !x.selbst;
-    const glatt = (t: string) => (laie ? ohnePatientWort(t, w) : t);
+    const glatt = (t: string) => sprachFilter(laie ? ohnePatientWort(t, w) : t, x.sprache);
     const sf = schemaFrage ?? freieSchemaFrage(frage);
     const atemnot = atemnotSelbst(k);
     const t = await kiAntwortNeu(verlauf, frueher, (y) => onToken?.(atemnot ? "" : glatt(y)), { pruefen: !(wiederholtId || schonGefragt(g, frage)), maxSaetze: atemnot ? 2 : hoechstSaetze(k, sf, ersteAntwort) });
     quelle.wert = "ki";
-    return atemnot ? inAtemnot(t) : glatt(t);
+    let fertig = atemnot ? inAtemnot(t) : glatt(t);
+    // falsche Zusammenfassung abgenickt? Dann widerspricht der Anrufer (das kleine Modell sagt sonst fast immer „Ja, genau“)
+    if (!sf && nachrichtArt(frage) === "zusammenfassung") {
+      const pr = zusammenfassungPruefen(k, frage);
+      if (pr && pr.falsch.length && /^\W*(ja|genau|richtig|stimmt|jo|mhm)\b/i.test(fertig) && !/\b(nein|na|nicht|net)\b/i.test(fertig.split(/[.!?]/)[0]))
+        fertig = atemnot ? "Nein … nein …" : `${zufallAus(x.sprache === "dialekt" ? ["Na, na", "Nein, nein", "Na, des stimmt net"] : ["Nein, nein", "Nein, das stimmt so nicht", "Nein, Moment"])} – ${pr.richtig || pr.falsch.join(", ")}.`;
+    }
+    return fertig;
   } catch (err) {
     console.warn("KI-Antwort", err);
     return einfacheAntwort(k, frage, schemaFrage);

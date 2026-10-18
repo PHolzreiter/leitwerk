@@ -516,7 +516,7 @@ export interface Einsatz {
     abteilung?: string;
     rtwBuchtSelbst: boolean;
     /** Wahrheit für den Anrufer (Abfrageschema) */
-    abfrage?: { kapitel: string; antworten: Antworten; code: string; anrufer: Anrufer; lage: string; ortUnbekannt?: boolean; szenario?: Szenario };
+    abfrage?: { kapitel: string; antworten: Antworten; code: string; anrufer: Anrufer; lage: string; ortUnbekannt?: boolean; szenario?: Szenario; verlauf?: string[] };
     /** Verborgene Lage: Patienten und ihr Verlauf */
     lage?: Lage;
   };
@@ -2128,8 +2128,11 @@ export class Simulation {
         const w = a.geschlecht === "w";
         const alt = typeof a.alter === "number" ? a.alter : alter;
         // Familie heißt gleich
-        const familie = /ehe|lebensgef|mutter|vater|tochter|sohn/i.test(anrufer.rolle);
-        const neu = zufallsName(w ? "w" : "m");
+        // („Pflegeheim“ enthält „ehe“ – deshalb nach Typ bzw. ganzen Wörtern)
+        const familie = ["partner", "kind", "eltern"].includes(anrufer.typ ?? "") || /\b(ehefrau|ehemann|lebensgef\w*|mutter|vater|tochter|sohn)\b/i.test(anrufer.rolle);
+        let neu = zufallsName(w ? "w" : "m");
+        // Fremde heißen nicht zufällig gleich wie der Anrufer
+        for (let i = 0; i < 5 && !familie && !anrufer.selbst && neu.split(" ").slice(1).join(" ") === anrufer.name.split(" ").slice(1).join(" "); i++) neu = zufallsName(w ? "w" : "m");
         const pname = anrufer.selbst ? anrufer.name : familie ? `${neu.split(" ")[0]} ${anrufer.name.split(" ").slice(1).join(" ")}` : neu;
         const merkmale = store.schema ? merkmaleAusSchema(store.schema, a) : { ...a };
         // Fallkatalog: Texte mit [variante=…] gelten nur für die gezogene Variante
@@ -2138,7 +2141,12 @@ export class Simulation {
         // Persönlichkeit (Wissen, Art zu reden, Einstieg …) – auch Texte mit [wissen=fremd] bzw. [anrufer=…] richten sich danach
         if (privat || anrufer.art === "einrichtung") {
           const [vn, ...nn] = pname.split(" ");
-          anrufer.persona = personaWaehlen(anrufer, { alter: alt, w, vorname: vn, nachname: nn.join(" ") }, { ortUnbekannt: false, draussen: !!ortArt && ["strasse", "natur", "auto", "wasser", "bahnhof"].includes(ortArt) }, Math.random);
+          anrufer.persona = personaWaehlen(
+            anrufer,
+            { alter: alt, w, vorname: vn, nachname: nn.join(" "), wach: (a.bw ?? "ja") === "ja" || a.bw === "getruebt", sicht: !vorlage.ohneSicht },
+            { ortUnbekannt: false, draussen: !!ortArt && ["strasse", "natur", "auto", "wasser", "bahnhof", "sport", "freizeit"].includes(ortArt), zuhause: !ortArt || ["wohnung", "haus", "garten"].includes(ortArt) },
+            Math.random,
+          );
           merkmale.wissen = anrufer.persona.wissen;
         }
         if (anrufer.typ) merkmale.anrufer_typ = anrufer.typ;
@@ -3225,6 +3233,8 @@ export class Simulation {
       text = weg ? null : fuellen(fallText, { w: pw, bezug: bezugFuer(w.anrufer.rolle, w.anrufer.selbst, pw, p0.alter), ort: "", name: w.szenario?.patient.name ?? "" }, Math.random);
       if (text && /^\(/.test(text)) {
         if (a.status === "aktiv") a.gespraech.push({ zeit: t, echt: Date.now(), von: "system", text: text.replace(/^\(|\)$/g, "") });
+        (w.verlauf ??= []).push(`Am Telefon ist jetzt nur noch zu hören: ${text.replace(/^\(|\)$/g, "")} – du kannst kaum noch sprechen.`);
+        w.antworten = { ...w.antworten, bw: p0.bw, at: p0.at };
         return;
       }
     } else text = veraenderungText(w.anrufer, p0.geschlecht === "w", p0, besserung, a.status === "beendet");
@@ -3232,10 +3242,12 @@ export class Simulation {
       if (a.status === "aktiv" && w.anrufer.selbst) {
         a.gespraech.push({ zeit: t, echt: Date.now(), von: "system", text: "Der Anrufer antwortet nicht mehr – man hört nur noch Geräusche." });
       }
+      w.antworten = { ...w.antworten, bw: p0.bw, at: p0.at };
       return;
     }
-    // Was der Anrufer jetzt weiß (für die KI und die Abfrage-Antworten)
+    // Was der Anrufer jetzt weiß (für die KI und die Abfrage-Antworten) – und was sich verändert hat (die KI reagiert darauf)
     w.antworten = { ...w.antworten, bw: p0.bw, at: p0.at };
+    (w.verlauf ??= []).push(text);
     if (a.status === "aktiv") {
       a.gespraech.push({ zeit: t, echt: Date.now(), von: "anrufer", text });
       this.log(e, "Anrufer meldet eine Veränderung");
