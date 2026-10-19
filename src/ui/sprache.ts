@@ -402,9 +402,12 @@ export function funkSagt(funkname: string, text: string): void {
   sagen(funkAussprache(text), hash(funkname) < 0.3 ? "w" : "m", funkname, 1.08);
 }
 
+const ZAHL_MAL: Record<string, string> = { "1": "einmal", "2": "zweimal", "3": "dreimal", "4": "viermal", "5": "fünfmal", "6": "sechsmal", "7": "siebenmal", "8": "achtmal", "9": "neunmal", "10": "zehnmal" };
+
 /** Am Funk geschrieben wie üblich („Pat.“, „St. Pölten“), vorgelesen ausgesprochen („Patient“, „Sankt Pölten“) */
 export function funkAussprache(t: string): string {
   return t
+    .replace(/\b(\d+)\s?[x×]\s?(?=[A-ZÄÖÜa-zäöü])/g, (_m, n: string) => `${ZAHL_MAL[n] ?? `${n} mal`} `)
     .replace(/\bPat\.?(?=\s|,|$)/g, "Patient")
     .replace(/\bPatin\b/g, "Patientin")
     .replace(/\bSt\.\s?(?=[A-ZÄÖÜ])/g, "Sankt ")

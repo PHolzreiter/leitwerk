@@ -1,5 +1,8 @@
 # Änderungen
 
+## 0.41.1 – Vorlesen
+- „1× Rot“, „2x NEF“ wird vorgelesen als „einmal Rot“, „zweimal NEF“ (Funkrufnamen wie bisher als „75 1“)
+
 ## 0.41.0 – Funk über die KI
 Der Sprechfunk läuft jetzt wie echt – nach dem Prinzip „Das Programm denkt, die KI redet“: Was gemeldet, nachgefordert oder storniert wird, entscheidet weiter das Programm; die Besatzung formuliert es mit der KI in Funksprache; das Programm prüft jeden Funkspruch und nimmt sonst die feste Meldung. Das gilt für jeden Einsatz – auch für künftige und selbst erstellte Fälle.
 
