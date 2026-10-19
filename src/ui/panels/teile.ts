@@ -151,7 +151,7 @@ export function typHtml(fz: SimFahrzeug): string {
 export function dienstHtml(fz: SimFahrzeug): string {
   const t = sim.state.zeit;
   const hhmm = (x: number) => new Date(x).toTimeString().slice(0, 5);
-  if (fz.ausserDienst && fz.ersatzFuer) return ` <span class="dienst-aus" title="Ersatz-NEF für ${esc(fz.ersatzFuer)}: wird angemeldet, wenn der Hubschrauber nicht fliegen kann (Wetter, Nacht)">nur bei Flugverbot</span>`;
+  if (fz.ausserDienst && fz.ersatzFuer) return ` <span class="dienst-aus" title="Ersatz-NEF für ${esc(fz.ersatzFuer)}: wird angemeldet, wenn der Hubschrauber wegen des Wetters nicht fliegen kann">nur bei Flugverbot</span>`;
   if (fz.ersatzFuer && !fz.ausserDienst) return ` <span class="dienst-ende st1" title="Ersatz für ${esc(fz.ersatzFuer)} – der Hubschrauber kann gerade nicht fliegen">statt ${esc(fz.ersatzFuer)}</span>`;
   if (fz.ausserDienst) {
     const b = fz.dienstBeginn;

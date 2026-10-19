@@ -67,7 +67,7 @@ import { codeInfo, codeVorschlag, istUeberstellung } from "./ktCodes";
 import { PARTNER, PARTNER_ANZAHL, partnerArtVonTyp, partnerNoetig, partnerSchonDa, type PartnerArt, type PartnerGrund } from "./partner";
 import { FUNKGRUPPEN, funkgruppe, inFunkgruppe, mitteVon, type Funkgruppe } from "./funkgruppen";
 import { sekZufall } from "./sek";
-import { bedarf, ereignisseEinplanen, istStillstand, lageAusFall, lageErzeugen, lagemeldungText, patientText, type Lage } from "./lage";
+import { bedarf, ereignisseEinplanen, istStillstand, lageAusFall, lageErzeugen, lagemeldungText, patientText, rtwBedarf, type Lage } from "./lage";
 import { anleitungAus, fallVariante, fallVorlage, fallWaehlen, varianteWaehlen, type FallVariante } from "../abfrage/faelle";
 import { nachrichtArt } from "../abfrage/runde";
 
@@ -1355,8 +1355,9 @@ export class Simulation {
         // Ersatz-NEF: angemeldet, solange „sein“ Hubschrauber im Dienst ist, aber nicht fliegen kann
         nah = Object.values(this.state.fahrzeuge).find((x) => x.funkrufname === fz.ersatzFuer || x.kurzname === fz.ersatzFuer);
         const nahW = nah ? aktuelleSchicht(this.dienstplanVon(nah.id), t, nah.heim) : null;
-        // Hubschrauber im Dienst, aber kann nicht fliegen oder ist abgemeldet → Ausweich-NEF fährt
-        w = nah && nahW && !nah.ausserDienst && (this.flugHindernis(nah) || nah.status === "abgemeldet") ? { ...nahW, key: `${nahW.key}#boden` } : null;
+        // Hubschrauber im Dienst, kann aber wegen des WETTERS nicht fliegen → Ausweich-NEF fährt.
+        // Nacht ist kein Grund: ein Hubschrauber, der nur bei Tag fliegt, hat in der Nacht kein Ersatz-NEF.
+        w = nah && nahW && !nah.ausserDienst && this.wetterHindertFlug(nah) ? { ...nahW, key: `${nahW.key}#boden` } : null;
         fz.dienstEnde = null;
         fz.dienstBeginn = null;
       } else {
@@ -1432,6 +1433,12 @@ export class Simulation {
 
   verfuegbar(fz: SimFahrzeug): boolean {
     return this.statusDef(fz.status).verfuegbar && !fz.einsatzId && !fz.kt?.aktiv && !fz.ausserDienst;
+  }
+
+  /** Hält gerade nur das Wetter den Hubschrauber am Boden? (Nacht ohne Nachtflug zählt nicht – dann fliegt er ohnehin nicht) */
+  wetterHindertFlug(fz: SimFahrzeug): boolean {
+    if (!this.flugverbotJetzt()) return false;
+    return !(istNacht(this.state.zeit, fz.heim.lat, fz.heim.lon) && !fz.nachtflug);
   }
 
   /** Kann der Hubschrauber gerade fliegen? Gibt den Grund zurück, wenn nicht. */
@@ -3428,7 +3435,9 @@ export class Simulation {
     const naStorno = plan.erstes && this.transportfaehig(fz) && naUnterwegs.length > 0 && this.bedarfVon(e).na === 0;
     if (naStorno) for (const na of naUnterwegs) this.naStornoFunk(e, this.sprecher(e, fz), na);
     const partner = this.partnerFehlt(e);
-    const abweichung = !!l.fall || l.irrtum !== null || angenommenRea !== istStillstand(p0) || l.patienten.length > 1 || ist(kap, "verkehrsunfall", "ecall", "eingeklemmt", "brand", "gefahrstoff");
+    // Lagemeldung nur bei besonderen Umständen (Verkehrsunfall, Brand, mehrere Patienten, Lage ganz anders als gemeldet …),
+    // bei Nachforderung oder wenn LEO darum gebeten hat – nicht bei jedem Einsatz
+    const abweichung = l.irrtum !== null || angenommenRea !== istStillstand(p0) || l.patienten.length > 1 || ist(kap, "verkehrsunfall", "ecall", "eingeklemmt", "brand", "gefahrstoff", "alpin", "wasser", "strom", "stich_schuss");
     if ((plan.erstes && (abweichung || fehlt.na > 0 || fehlt.rtw > 0 || fehlt.bit > 0 || partner.length > 0)) || plan.angefordert) {
       let text = lagemeldungText(l, kap, fehlt, false);
       const da = (Object.keys(e.partnerDa ?? {}) as PartnerArt[]).map((a) => PARTNER[a].name);
@@ -4391,12 +4400,12 @@ export class Simulation {
     if (heli) lage += `, Frage: ist der ${heli} verfügbar`;
     out.push({ von: r, art: fehlt.na || fehlt.rtw || fehlt.bit ? "nachforderung" : "lage", fest: festerSpruch(r, "lage", `Lagemeldung: ${ohneVitalwerte(lage)}`), bis });
     const zustandFrage = "Hier LEO, wie ist der Zustand des Patienten, braucht ihr weitere Kräfte, kommen";
-    const bedarf = fehlt.na || fehlt.rtw ? `, ${[fehlt.na && "benötigen Notarzt", fehlt.rtw && `benötigen ${fehlt.rtw} weitere Rettungsmittel`].filter(Boolean).join(", ")}` : ", keine weiteren Kräfte erforderlich";
+    const bedarf = fehlt.na || fehlt.rtw ? `, ${[fehlt.na && "benötigen Notarzt", fehlt.rtw && rtwBedarf(fehlt.rtw, this.transportfaehig(fz))].filter(Boolean).join(", ")}` : ", keine weiteren Kräfte erforderlich";
     out.push({ von: r, art: "antwort", fest: `Hier ${r}, ${l.patienten.length > 1 ? `${l.patienten.length} Patienten, ` : ""}${ohneVitalwerte(patientText(p0).replace(/ \(.*\)$/, ""))}${bedarf}, kommen`, frage: zustandFrage, bis });
     const werte = (l.fall?.kern ?? "").split(/,\s*/).filter((x) => ohneVitalwerte(x) !== x.trim());
     out.push({ von: r, art: "antwort", fest: `Hier ${r}, ${werte.length ? werte.join(", ") : "Werte noch nicht erhoben"}, kommen`, frage: "Hier LEO, wie sind die Vitalwerte, kommen", bis });
-    out.push({ von: r, art: "frage", fest: `Hier ${r}, verstanden, kommen`, frage: "Hier LEO, was habt ihr für einen Verdacht, kommen", bis });
     const verdacht = this.verdacht(e);
+    out.push({ von: r, art: "antwort", fest: `Hier ${r}, Verdacht ${buchungName(verdacht)}, kommen`, frage: "Hier LEO, was habt ihr für einen Verdacht, kommen", bis });
     const h = this.naechstesKh(e.wahr, verdacht, this.patientRot(e), (p0?.alter ?? 50) < 15);
     const vor = this.kritisch(e) ? `, Voranmeldung Notaufnahme: ${ohneVitalwerte(patientText(p0).replace(/ \(.*\)$/, ""))}` : "";
     out.push({ von: r, art: "info", fest: festerSpruch(r, "info", `Patient übernommen, Transport ${h ? `ins ${h.kurzname || h.name}` : "ins Krankenhaus"}, Eintreffen in ca. ${12 + Math.floor(Math.random() * 20)} Minuten${vor}`), bis });
@@ -4465,12 +4474,27 @@ export class Simulation {
       const l = e.wahr.lage;
       if (!l) return `${hier}, Patient wird versorgt, Zustand stabil, kommen`;
       const fehlt = this.fehlendeKraefte(e);
-      const bedarfText = fehlt.na || fehlt.rtw ? `, ${[fehlt.na && "benötigen Notarzt", fehlt.rtw && `benötigen ${fehlt.rtw} weitere Rettungsmittel`].filter(Boolean).join(", ")}` : ", keine weiteren Kräfte erforderlich";
+      const bedarfText = fehlt.na || fehlt.rtw ? `, ${[fehlt.na && "benötigen Notarzt", fehlt.rtw && rtwBedarf(fehlt.rtw, this.transportfaehig(fz))].filter(Boolean).join(", ")}` : ", keine weiteren Kräfte erforderlich";
       return `${hier}, ${l.patienten.length > 1 ? `${l.patienten.length} Patienten, ` : ""}${ohneVitalwerte(patientText(l.patienten[0]).replace(/ \(.*\)$/, ""))}${bedarfText}, kommen`;
+    }
+    if (/verdacht|diagnose|was hat (er|sie|der patient|die patientin)\b/.test(t)) {
+      if (!vorOrt || !e) return `${hier}, sind noch nicht beim Patienten, kommen`;
+      const v = e.kh?.grund ?? e.verdacht ?? this.verdacht(e);
+      return v ? `${hier}, Verdacht ${buchungName(v)}, kommen` : `${hier}, noch nicht beurteilbar, kommen`;
     }
     if (/funkcheck|wie hört ihr|wie hören sie|verständigung/.test(t)) return `${hier}, höre euch laut und klar, kommen`;
     if (/(feuerwehr|polizei|bergrettung|wasserrettung).*(vor ort|kommt|unterwegs|alarmiert|angefordert)/.test(t)) return `${hier}, verstanden, kommen`;
-    if (/zielkrankenhaus|zielklinik|fahrt ins|bringt (ihn|sie|den patienten)/.test(t)) return `${hier}, Zielkrankenhaus verstanden, kommen`;
+    if (/zielkrankenhaus|zielklinik|welches (kh|krankenhaus)|wohin (fahrt|bringt|transportiert)|wo fahrt ihr hin|fahrt ins|bringt (ihn|sie|den patienten)/.test(t)) {
+      // Frage („was wird euer Zielkrankenhaus?“) → Antwort mit dem Ziel; sonst ist es eine Vorgabe von LEO
+      const frage = /\?|\b(was|welche[sr]?|wohin|wo)\b/.test(t);
+      if (!frage) return `${hier}, Zielkrankenhaus verstanden, kommen`;
+      const gebucht = e?.kh ? store.get("hospitals", e.kh.hospitalId) : undefined;
+      if (gebucht) return `${hier}, Ziel ist ${gebucht.kurzname || gebucht.name}, kommen`;
+      if (!vorOrt || !e) return `${hier}, sind noch nicht beim Patienten, Ziel noch offen, kommen`;
+      const verdacht = this.verdacht(e);
+      const h = this.naechstesKh(e.wahr, verdacht, this.patientRot(e), (e.wahr.lage?.patienten[0]?.alter ?? e.wahr.patientAlter) < 15);
+      return h ? `${hier}, wir würden ins ${h.kurzname || h.name} fahren, kommen` : `${hier}, Ziel noch offen, kommen`;
+    }
     if (/zusatzinfo|zur info|beachtet|achtung|hinweis/.test(t)) return `${hier}, Information verstanden, kommen`;
     if (/einsatz .*(code|adresse|einsatzort)|neuer einsatz|einsatzauftrag|übernehmt/.test(t)) {
       return fz.einsatzId ? `${hier}, Einsatz verstanden, kommen` : `${hier}, Einsatz verstanden, rücken aus, kommen`;

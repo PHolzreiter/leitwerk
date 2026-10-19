@@ -227,7 +227,7 @@ export function openEditor(
       const aus = kat === "NEF" && ausChk.checked;
       ausSel.hidden = !aus;
       ausInfo.textContent = aus
-        ? `Im Dienst nur, wenn ${ausSel.value} im Dienst ist, aber nicht fliegen kann (Wetter, Nacht ohne Nachtflug) oder abgemeldet ist. Besatzung wie am Hubschrauber (ohne Pilot). Fliegt er wieder, meldet sich das NEF nach dem laufenden Einsatz ab.`
+        ? `Im Dienst nur, wenn ${ausSel.value} im Dienst ist, aber wegen des Wetters nicht fliegen kann. Nacht ist kein Grund: fliegt der Hubschrauber nur bei Tag, gibt es in der Nacht kein Ersatz-NEF. Besatzung wie am Hubschrauber (ohne Pilot). Fliegt er wieder, meldet sich das NEF nach dem laufenden Einsatz ab.`
         : "Normales NEF mit eigenem Dienstplan.";
       dpWrap.hidden = aus;
       dpErsatz.hidden = !aus;

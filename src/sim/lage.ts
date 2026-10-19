@@ -270,8 +270,14 @@ export function lagemeldungText(l: Lage, kapitel: string, fehlt: { na: number; r
     teile.push(`${l.irrtum === "keineRea" ? "keine Reanimation, " : ""}Patient ${bw}, ${at}`);
   }
   if (fehlt.na > 0) teile.push(fehlt.na === 1 ? "benötigen Notarzt" : `benötigen ${fehlt.na} Notärzte`);
-  if (fehlt.rtw > 0) teile.push(fehlt.rtw === 1 ? "benötigen ein weiteres Rettungsmittel" : `benötigen ${fehlt.rtw} weitere Rettungsmittel`);
+  if (fehlt.rtw > 0) teile.push(rtwBedarf(fehlt.rtw));
   if (fehlt.bit) teile.push(`Patient ca. ${150 + Math.round(Math.random() * 8) * 10} kg, mit unserer Trage nicht transportierbar, benötigen BIT`);
   if (naStorno) teile.push("Notarzt nicht erforderlich, kann storniert werden");
   return teile.join(", ");
+}
+
+/** Nachforderung von Transportmitteln in Funksprache („benötigen einen weiteren RTW“); selbst = meldendes Fahrzeug transportiert selbst */
+export function rtwBedarf(n: number, selbstTransport = true): string {
+  if (n === 1) return selbstTransport ? "benötigen einen weiteren RTW" : "benötigen einen RTW";
+  return selbstTransport ? `benötigen ${n} weitere RTW` : `benötigen ${n} RTW`;
 }

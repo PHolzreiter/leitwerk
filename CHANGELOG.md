@@ -1,5 +1,18 @@
 # Änderungen
 
+## 0.42.0 – Ersatz-NEF nur bei Schlechtwetter, Lagemeldung nur mit Grund
+**Ersatz-NEF (NEF ÖAMTC)**
+- Ist nur im Dienst, wenn sein Hubschrauber im Dienst ist, aber wegen des **Wetters** nicht fliegen kann
+- Nacht ist kein Grund: Ein Hubschrauber, der nur bei Tag fliegt, hat in der Nacht kein Ersatz-NEF
+
+**Funk**
+- Nicht mehr jeder Einsatz bekommt eine Lagemeldung – nur bei besonderen Umständen (Verkehrsunfall, Brand, eingeklemmt, Gefahrstoff, Absturz/Berg, Wasser, Strom, Stich/Schuss, mehrere Patienten, Lage ganz anders als gemeldet), bei einer Nachforderung oder wenn du darum bittest
+- Fragst du „Was wird euer Zielkrankenhaus?“, sagt die Besatzung das Krankenhaus („wir würden ins UK Krems fahren“) statt „Zielkrankenhaus verstanden“. Gibst du das Ziel vor, wird es wie bisher bestätigt
+- „Was habt ihr für einen Verdacht?“ wird fest beantwortet („Verdacht Akutes Koronarsyndrom“) – die KI hat hier oft Messwerte erfunden
+- Bei freien Fragen bekommt die KI die Messwerte gar nicht mehr zu sehen, außer du fragst ausdrücklich danach
+- „benötigen 1 weitere Rettungsmittel“ heißt jetzt „benötigen einen weiteren RTW“ (vom NEF/Hubschrauber: „benötigen einen RTW“)
+- Testlauf: „… bis hier“ zählt nicht mehr als doppeltes „Hier“
+
 ## 0.41.1 – Vorlesen
 - „1× Rot“, „2x NEF“ wird vorgelesen als „einmal Rot“, „zweimal NEF“ (Funkrufnamen wie bisher als „75 1“)
 

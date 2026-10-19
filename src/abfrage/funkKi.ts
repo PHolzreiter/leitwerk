@@ -7,7 +7,7 @@
  * Gilt für jeden Einsatz – auch für künftige und selbst erstellte Fälle.
  * Läuft beim Gesprächsführer (wer das Gespräch begonnen bzw. den Ruf beantwortet hat).
  */
-import { sim, type FunkAusstehend, type FunkGespraech } from "../sim/engine";
+import { ohneVitalwerte, sim, type FunkAusstehend, type FunkGespraech } from "../sim/engine";
 import { patientText } from "../sim/lage";
 import { buchungName } from "../data/klinik";
 import { store } from "../data/store";
@@ -32,7 +32,7 @@ function besatzungVon(fzId: string): string {
 }
 
 /** Was die Besatzung weiß (für freie Fragen der Leitstelle) – Messwerte nur auf Nachfrage */
-export function lageWissen(fzId: string, einsatzId: string | null): string {
+export function lageWissen(fzId: string, einsatzId: string | null, frage = ""): string {
   const fz = sim.state.fahrzeuge[fzId];
   const e = einsatzId ? sim.einsatz(einsatzId) : fz?.einsatzId ? sim.einsatz(fz.einsatzId) : undefined;
   if (!fz) return "";
@@ -46,7 +46,9 @@ export function lageWissen(fzId: string, einsatzId: string | null): string {
   const l = e.wahr.lage;
   if (vorOrt && l) {
     teile.push(`Was ihr vor Ort seht: ${l.patienten.map((p) => patientText(p)).join("; ")}.`);
-    if (l.fall?.kern) teile.push(`Befund: ${l.fall.kern}. (Messwerte wie Sättigung, Blutdruck, Puls nennt ihr NUR, wenn die Leitstelle ausdrücklich danach fragt – und nur die, die hier stehen.)`);
+    // Messwerte kennt die KI nur, wenn die Leitstelle ausdrücklich danach fragt – sonst erzählt sie sie ungefragt
+    const befund = l.fall?.kern ? (WERT_FRAGE.test(frage) ? l.fall.kern : ohneVitalwerte(l.fall.kern)) : "";
+    if (befund) teile.push(`Befund: ${befund}.${WERT_FRAGE.test(frage) ? " (Nur die Messwerte nennen, die hier stehen.)" : " (Keine Messwerte nennen.)"}`);
     const v = e.kh?.grund ?? e.verdacht ?? e.wahr.verdacht;
     if (v) teile.push(`Verdacht: ${buchungName(v)}.`);
     const h = e.kh ? store.get("hospitals", e.kh.hospitalId) : undefined;
@@ -120,6 +122,8 @@ const ERFUNDEN: [RegExp, RegExp][] = [
   [/(benötig|brauch|fordern|bitte)[^.]*\bbit\b/i, /\bbit\b/i],
   [/storno/i, /storno/i],
 ];
+/** Fragt die Leitstelle ausdrücklich nach Messwerten? */
+const WERT_FRAGE = /sättigung|spo2|blutdruck|\brr\b|puls|herzfrequenz|blutzucker|\bbz\b|vital|temperatur|fieber|gcs|atemfrequenz|werte/i;
 const MESSWERT = /(sättigung|spo2|spo₂|blutdruck|\brr\b|puls|herzfrequenz|blutzucker|\bbz\b|temperatur|\bgcs\b|atemfrequenz)\s*(von|bei|um|liegt bei|ist|:)?\s*(ca\.?\s*)?\d|\d+\s*(%|mmhg|\/min\b|mg\/dl)/i;
 
 /** Eigennamen im Inhalt, die bleiben müssen (Krankenhäuser, Treffpunkte, Hubschrauber-Rufnamen) */
@@ -141,7 +145,7 @@ export function funkPruefen(festGanz: string, text: string, opt: { frage?: strin
   // nie der Name des Patienten
   for (const n of opt.namen ?? []) if (new RegExp(`\\b${n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i").test(text)) g.push("Name des Patienten am Funk");
   // Messwerte nur auf Nachfrage
-  const wertGefragt = /sättigung|spo2|blutdruck|\brr\b|puls|herzfrequenz|blutzucker|\bbz\b|vital|temperatur|fieber|gcs|atemfrequenz|werte/i.test(opt.frage ?? "");
+  const wertGefragt = WERT_FRAGE.test(opt.frage ?? "");
   if (!wertGefragt && MESSWERT.test(text) && !MESSWERT.test(fest)) g.push("Messwerte ungefragt");
   if (opt.art === "frage") {
     // freie Antwort: keine Zahl, die die Besatzung nicht kennt (erfundene Messwerte, Minuten …)
@@ -194,7 +198,7 @@ function aufgabeText(g: FunkGespraech, a: FunkAusstehend, inhalt: string): strin
   if (a.art === "frage") {
     return [
       "WAS IHR WISST:",
-      lageWissen(g.fzId, g.einsatzId),
+      lageWissen(g.fzId, g.einsatzId, a.frage ?? ""),
       `Die Leitstelle fragt: „${a.frage ?? ""}“`,
       "Antworte knapp, nur mit dem, was ihr wisst. Was ihr nicht wisst: „noch nicht beurteilbar“ oder „unbekannt“.",
     ].join("\n");
@@ -219,7 +223,7 @@ export async function funkSpruchErzeugen(g: FunkGespraech, a: FunkAusstehend): P
     { role: "user", content: aufgabeText(g, a, inhalt) },
   ];
   const namen = patientNamen(g.einsatzId);
-  const wissen = a.art === "frage" ? lageWissen(g.fzId, g.einsatzId) : undefined;
+  const wissen = a.art === "frage" ? lageWissen(g.fzId, g.einsatzId, a.frage ?? "") : undefined;
   const versuch = async (msgs: KiNachricht[]) => nurInhalt(await kiChat(msgs), a.von);
   try {
     let t = await versuch(verlauf);

@@ -61,7 +61,7 @@ export function fahrzeugWocheHtml(id: string): string {
   if (!v && !fz) return "";
   const name = v ? `${v.funkrufname}${v.kurzname ? ` · ${v.kurzname}` : ""}` : fz.funkrufname;
   if (v?.ersatzFuer || fz?.ersatzFuer) {
-    return `<div class="dw-titel"><b>${esc(name)}</b></div><div class="muted">Ersatz-NEF für ${esc(v?.ersatzFuer ?? fz.ersatzFuer ?? "")}: im Dienst nur, wenn der Hubschrauber im Dienst ist, aber nicht fliegen kann (Wetter, Nacht).</div>`;
+    return `<div class="dw-titel"><b>${esc(name)}</b></div><div class="muted">Ersatz-NEF für ${esc(v?.ersatzFuer ?? fz.ersatzFuer ?? "")}: im Dienst nur, wenn der Hubschrauber im Dienst ist, aber wegen des Wetters nicht fliegen kann (nicht wegen der Nacht).</div>`;
   }
   const st = v ? store.get("stations", v.dienststelleId) : undefined;
   const ort = fz?.heim ?? (st ? { lat: (st as { lat: number }).lat, lon: (st as { lon: number }).lon } : NOE);

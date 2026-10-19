@@ -497,8 +497,9 @@ async function einFunkDurchlauf(auftrag: TestAuftrag, nr: number, abbruch: { ja:
       if (r.quelle === "fest") gruende.push(r.nachgebessert ? `feste Meldung statt KI (${r.nachgebessert.replace(/^feste Meldung \(|\)$/g, "")})` : "feste Meldung statt KI");
       else if (r.nachgebessert) gruende.push(`vom Programm nachgebessert: ${r.nachgebessert}`);
       // nochmal prüfen, was am Ende herauskommt
-      for (const x of funkPruefen(a.fest, r.text, { frage: a.frage, namen, art: a.art, wissen: a.art === "frage" ? lageWissen(fz.id, e.id) : undefined })) gruende.push(x);
-      if ((r.text.match(/\bhier\b/gi) ?? []).length > 1) gruende.push("„Hier …“ doppelt");
+      for (const x of funkPruefen(a.fest, r.text, { frage: a.frage, namen, art: a.art, wissen: a.art === "frage" ? lageWissen(fz.id, e.id, a.frage ?? "") : undefined })) gruende.push(x);
+      // „Hier 75/001 …“ zweimal am Satzanfang (nicht „… bis hier“)
+      if ((r.text.match(/(?:^|[.!?,]\s*)hier\s+(?!(?:ist|sind|bei|in)\b)\S/gi) ?? []).length > 1) gruende.push("„Hier …“ doppelt");
       if (!/(kommen|ende)\W*$/i.test(r.text)) gruende.push("ohne „kommen“ am Ende");
       if (r.text.length > 320) gruende.push("lang");
       if (dauer > 20000) gruende.push(`langsam (${Math.round(dauer / 1000)} s)`);
