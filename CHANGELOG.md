@@ -1,5 +1,36 @@
 # Änderungen
 
+## 0.41.0 – Funk über die KI
+Der Sprechfunk läuft jetzt wie echt – nach dem Prinzip „Das Programm denkt, die KI redet“: Was gemeldet, nachgefordert oder storniert wird, entscheidet weiter das Programm; die Besatzung formuliert es mit der KI in Funksprache; das Programm prüft jeden Funkspruch und nimmt sonst die feste Meldung. Das gilt für jeden Einsatz – auch für künftige und selbst erstellte Fälle.
+
+**Funkablauf wie in echt**
+- Immer zuerst der Anruf: „LEO von 75/001, kommen“ → „Hier LEO, kommen“ / „LEO hört“ → dann die Meldung. Ruft LEO: „75/001 von LEO, kommen“ → „Hier 75/001, kommen“ / „75/001 hört“
+- Nur EIN Funkgespräch gleichzeitig. Wer etwas will, wartet, bis das laufende Gespräch zu Ende ist – nichts wird unterbrochen, auch LEO nicht (ein Ruf wird vorgemerkt und geht hinaus, sobald der Funk frei ist). Oben steht „🟢 Funk frei“ bzw. „🔴 Funk belegt – …“
+- Warten mehrere: zuerst LEO, dann Dringendes (Nachforderung Notarzt, Verschlechterung, Reanimation), dann wer länger wartet
+- Ende, wenn das letzte Wort „verstanden“, „Ende“ oder „danke“ ist – oder nach 30 Sekunden Stille (echte Zeit)
+- Keine Antwort: nach 30 Sekunden ruft das Fahrzeug nochmal, höchstens dreimal – dann bleibt ein Sprechwunsch stehen
+- Telefon hat Vorrang: Allein wartet der Funk, solange du telefonierst (ein kurzer Ton sagt, dass jemand funken möchte – abschaltbar über den Funkton). Im Mehrspieler funken die anderen normal weiter; nur wenn alle telefonieren, wartet der Funk (Ton bei jedem). Wer telefoniert, sieht den Funk trotzdem im Funkfenster
+- Formuliert wird beim Spieler, der das Gespräch beginnt bzw. den Ruf beantwortet
+- RTW und NEF funken beim Rendezvous bzw. beim NEF-Storno miteinander – nach denselben Regeln, LEO hört mit
+
+**Rufnamen**
+- Normal der Funkrufname (75/001); Dienststelle mit nur einem Fahrzeug: „RTW Gföhl“, „RTW Spitz“; Hubschrauber „C2“, „C33“; Ersatz-NEF „NEF ÖAMTC 2“; NEF „NEF Tulln“; „BEL Krems“; „ÖBB Einsatzleiter Tulln“; vorbereitet: „ACN St. Pölten“
+- Anfunken geht mit Funkrufname oder Rufname („NEF Tulln von LEO, kommen“, „C 2“)
+
+**Was die Besatzung sagt**
+- Lagemeldung im Stil „Hier 75/001 mit einer Lagemeldung. Pat. mit …, kommen.“ – mit Fachbegriffen, kurz
+- Nie der Name des Patienten; Messwerte (Sättigung, Blutdruck, Puls …) nur, wenn du ausdrücklich danach fragst – und nur die, die es im Fall gibt
+- Nichts wird dazuerfunden: keine zusätzliche Nachforderung, kein Storno, keine Zahl, die das Programm nicht vorgibt. Fehlt etwas Wichtiges oder ist etwas erfunden, wird einmal neu formuliert, sonst kommt die feste Meldung
+- Neu: Braucht der Patient einen Notarzt und ist kein NEF in der Nähe, fragt die Besatzung „Frage: ist der C2 verfügbar?“ – deine Antwort („ja, alarmiert“ / „nein“) wird verstanden
+- Neu: Nicht jede Besatzung meldet vollständig – BEL fast immer, NEF meist, RTW öfter nicht, KTW am öftesten. Dann musst du nachfragen (Einstellungen → KI-Anrufer → „Funkmeldungen manchmal unvollständig“)
+- Krankenhaus-Buchung über Funk nur noch in Ausnahmen (laufende Reanimation, mehrere Patienten) – sonst bucht die Besatzung selbst
+- Vorlesen: „Pat.“ wird „Patient“, „St. Pölten“ wird „Sankt Pölten“, „KH“ wird „Krankenhaus“
+- Kinder heißen in Meldungen „Bub“ bzw. „Mädchen“ statt „Mann“ bzw. „Frau“
+
+**Einstellungen und Test**
+- Einstellungen → KI-Anrufer → „Funk“: „KI“ (Standard) oder „fest – wie bis Version 0.40“
+- Testlauf: neue Auswahl „Funk“ – erzeugt zu jedem Fall und Ausgang die typischen Funksprüche (Lagemeldung, Zustand und Vitalwerte auf Nachfrage, Verdacht, Transport mit Voranmeldung, Rendezvous, NEF-Storno) und prüft sie; „alles“ enthält jetzt auch den Funk
+
 ## 0.40.0 – Statusänderungen
 **Fahrzeuge**
 - Neuer Reiter „Statusänderungen“ neben „Aktive Fahrzeuge“ und „Alle Fahrzeuge“: jeder Statuswechsel mit Uhrzeit, Fahrzeug, alter → neuer Status, Einsatz bzw. Transport und Grund (Dienstende, Dienstbeginn, kein Flugwetter, von Hand); neueste oben, mit Suche und „nur im Einsatz“. Bei bestehenden Anordnungen erscheint er einmal automatisch neben „Aktive Fahrzeuge“; klappt auch im Mehrspieler

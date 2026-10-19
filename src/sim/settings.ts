@@ -155,6 +155,8 @@ export interface Settings {
   /** Anteil der Anrufer, die eine falsche/ungenaue Adresse nennen (%) */
   falscheAdresseProzent: number;
   wetterAktiv: boolean;
+  /** Funk: Besatzungen lassen manchmal etwas weg (BEL fast nie, KTW öfter) – man muss nachfragen */
+  funkUnvollstaendig?: boolean;
   /** veraltet (bis 0.14): realistisch/wechselhaft/fest – ersetzt durch wetterWechsel */
   wetterModus?: "realistisch" | "wechselhaft" | "fest";
   /** Wetter: 0 = fix (festes Wetter) … 100 = sehr wechselhaft */

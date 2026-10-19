@@ -1,4 +1,5 @@
 /** Einstellungen → „KI-Anrufer“: Ollama installieren/starten, Modell laden, Test. */
+import { store } from "../data/store";
 import { MODELLE, STUFE_LABEL, empfohleneStufe, kiBeenden, kiChat, kiInstallieren, kiModellLaden, kiModellLoeschen, kiPrefs, kiStarten, kiStatus, rechnerRam, setKiPrefs, type KiStatus } from "../abfrage/ki";
 import { inTauri } from "../platform";
 import type { Settings } from "../sim/settings";
@@ -43,6 +44,17 @@ export function buildKiSection(sec: HTMLElement, draft: Settings): void {
   ablauf.value = p.ablauf;
   ablauf.addEventListener("change", () => setKiPrefs({ ablauf: ablauf.value as "neu" | "klassisch" }));
   lg.append(el("label", {}, "Gesprächsablauf"), ablauf);
+  // Funk über die KI oder feste Funksprüche
+  const funk = el("select") as HTMLSelectElement;
+  funk.append(el("option", { value: "ki" }, "KI – Besatzungen reden wie echt (Inhalt vom Programm, geprüft)"), el("option", { value: "fest" }, "fest – feste Funksprüche wie bis Version 0.40"));
+  funk.value = p.funk;
+  funk.addEventListener("change", () => setKiPrefs({ funk: funk.value as "ki" | "fest" }));
+  lg.append(el("label", {}, "Funk"), funk);
+  const unv = el("input", { type: "checkbox" }) as HTMLInputElement;
+  unv.checked = store.settings.funkUnvollstaendig !== false;
+  unv.title = "BEL meldet fast immer vollständig, NEF meist, RTW öfter nicht, KTW am öftesten – dann musst du nachfragen";
+  unv.addEventListener("change", () => store.setSettings({ ...store.settings, funkUnvollstaendig: unv.checked }));
+  lg.append(el("label", { title: unv.title }, "Funkmeldungen manchmal unvollständig"), unv);
   sec.appendChild(lg);
 
   // Sprachmodell nach Rechner-Stärke

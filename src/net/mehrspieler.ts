@@ -294,6 +294,7 @@ class Mehrspieler {
   private clientModus(): void {
     sim.mode = "client";
     sim.istOnline = null;
+    sim.onlineSpieler = null;
     sim.remote = (name, args) => this.anfrage({ t: "cmd", name, args });
     store.remote = (name: StoreBefehl, args) => {
       void this.anfrage({ t: "scmd", name, args }).catch((e) => this.fehler(String(e.message ?? e)));
@@ -606,6 +607,7 @@ class Mehrspieler {
     sim.mode = "host";
     sim.remote = null;
     sim.istOnline = (pid) => this.spieler.some((x) => x.pid === pid && x.online);
+    sim.onlineSpieler = () => this.spieler.filter((x) => x.online).map((x) => ({ pid: x.pid, name: x.name }));
     sim.ich = this.ich;
     store.remote = null;
     // Nach einer Übernahme bleiben die Daten der Sitzung im Speicher (die eigenen Daten bleiben unberührt)

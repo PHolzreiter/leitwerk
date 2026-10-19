@@ -3375,3 +3375,8 @@ input[type="color"] {
 .statuslog .statuslog-zeile { gap: 6px; cursor: pointer; }
 .statuslog .statuslog-zeile .mono { font-variant-numeric: tabular-nums; }
 .statuslog .pl-check { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; white-space: nowrap; margin-left: 8px; }
+
+/* Funk: wer nur wartet (Kanal belegt / Telefon), blinkt nicht und ist ruhiger */
+.funk-ruf.wartend { background: var(--panel-2); border-color: var(--line-2); }
+.funk-ruf.wartend .funk-ruf-text { animation: none; color: var(--text-dim); }
+.funk-kanal { padding: 2px 0 6px; }

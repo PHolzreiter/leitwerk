@@ -399,7 +399,25 @@ export function satzSprecher(sagen: (satz: string) => void): { token(t: string):
 export function funkSagt(funkname: string, text: string): void {
   const p = sprachPrefs();
   if (!p.funkVorlesen || aufnahmeLaeuft) return;
-  sagen(text, hash(funkname) < 0.3 ? "w" : "m", funkname, 1.08);
+  sagen(funkAussprache(text), hash(funkname) < 0.3 ? "w" : "m", funkname, 1.08);
+}
+
+/** Am Funk geschrieben wie üblich („Pat.“, „St. Pölten“), vorgelesen ausgesprochen („Patient“, „Sankt Pölten“) */
+export function funkAussprache(t: string): string {
+  return t
+    .replace(/\bPat\.?(?=\s|,|$)/g, "Patient")
+    .replace(/\bPatin\b/g, "Patientin")
+    .replace(/\bSt\.\s?(?=[A-ZÄÖÜ])/g, "Sankt ")
+    .replace(/\bKH\b/g, "Krankenhaus")
+    .replace(/\bNA\b/g, "Notarzt")
+    .replace(/\bNEF\b/g, "Neff")
+    .replace(/\bca\.\s?/g, "circa ")
+    .replace(/\bC\s?(\d+)\b/g, "C $1")
+    .replace(/\bLK\b/g, "Landesklinikum")
+    .replace(/\bUK\b/g, "Universitätsklinikum")
+    .replace(/\bZNA\b/g, "Notaufnahme")
+    .replace(/\bV\.\s?a\.\s?/gi, "Verdacht auf ")
+    .replace(/\bz\.\s?B\.\s?/g, "zum Beispiel ");
 }
 
 /** Probehören in den Einstellungen */

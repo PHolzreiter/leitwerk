@@ -1,5 +1,6 @@
 import { fehlerLogStarten } from "./fehlerLog";
 fehlerLogStarten();
+import { funkDienst, funkPruefen, funkSpruchErzeugen, lageWissen, zerlegen, zusammensetzen } from "./abfrage/funkKi";
 import { ohnePatientWort, sprechFrage } from "./abfrage/sprechfrage";
 import { erinnerung, ortKandidaten, systemPrompt } from "./abfrage/anrufer";
 import { anruferAntwort, eroeffnen, fuellwortDosis, inAtemnot, kiVerlauf, kontext, ohneFrageEcho, ohneRollentausch, probeGespraech, vorwaermen } from "./abfrage/gespraech";
@@ -51,7 +52,7 @@ import { fallHinweise, faellePruefen } from "./abfrage/faellePruefen";
 dienstHoverEinrichten();
 
 // Für automatische Tests im Browser (…/?debug): Zugriff auf Simulation und Daten
-if (location.search.includes("debug")) Object.assign(window, { __lw: { sim, store, sprachTest, codesystemLaden: (s: Schema) => schemaUebernehmen(s, "test.json"), faellePruefen: () => faellePruefen(store.schema), fallHinweise, ohneFrageEcho, fuellwortDosis, ohneRollentausch, faelle: { alleFaelle, fallSpeichern, fallLoeschen, fallpaketExport, fallpaketImport, fallAktivSetzen }, fallEditorOeffnen, entwurfAusKi, sprechFrage, systemPrompt, kontext, erinnerung, kiVerlauf, ohnePatientWort, bereinigen, satzEnde, inAtemnot, kiAntwortNeu, kiTest, probe: probeGespraech, vorwaermen, eroeffnen, nachrichtArt, ortKandidaten, testlauf: { auftraegeFuer, ktAuftraege, testlaufAusfuehren, testlaufDateien, testlaufDialog, zipOhneKompression }, kt: { ktPrompt, ktPruefen, ktZusammenfassungFalsch }, anruferAntwort, verstehen: { themenErkennen, antwortKern, antwortPruefen, kernAntwort, schemaFrageZu }, kiPrefsSetzen: setKiPrefs, panelZeigen } });
+if (location.search.includes("debug")) Object.assign(window, { __lw: { sim, store, sprachTest, codesystemLaden: (s: Schema) => schemaUebernehmen(s, "test.json"), faellePruefen: () => faellePruefen(store.schema), fallHinweise, ohneFrageEcho, fuellwortDosis, ohneRollentausch, faelle: { alleFaelle, fallSpeichern, fallLoeschen, fallpaketExport, fallpaketImport, fallAktivSetzen }, fallEditorOeffnen, entwurfAusKi, sprechFrage, systemPrompt, kontext, erinnerung, kiVerlauf, ohnePatientWort, bereinigen, satzEnde, inAtemnot, kiAntwortNeu, kiTest, probe: probeGespraech, vorwaermen, eroeffnen, nachrichtArt, ortKandidaten, testlauf: { auftraegeFuer, ktAuftraege, testlaufAusfuehren, testlaufDateien, testlaufDialog, zipOhneKompression }, kt: { ktPrompt, ktPruefen, ktZusammenfassungFalsch }, anruferAntwort, verstehen: { themenErkennen, antwortKern, antwortPruefen, kernAntwort, schemaFrageZu }, kiPrefsSetzen: setKiPrefs, panelZeigen, funk: { funkPruefen, zerlegen, zusammensetzen, funkSpruchErzeugen, lageWissen } } });
 
 async function watchGeo(): Promise<void> {
   const out = document.getElementById("geo-status");
@@ -184,6 +185,12 @@ async function init(): Promise<void> {
   void kiBeimStart().catch((e) => console.warn("KI-Start", e));
   // klingelt ein Notruf, schreibt die KI schon die erste Antwort (kürzere Wartezeit beim Annehmen)
   sim.onChange(() => vorwaermen());
+  // Funk: was ich als Gesprächsführer sagen lassen muss, formuliert die KI hier (nur im Hauptfenster)
+  if (IST_HAUPT) {
+    const funkJetzt = () => funkDienst(sim.ich?.pid ?? mp.ich.pid);
+    sim.onChange(funkJetzt);
+    window.setInterval(funkJetzt, 1000);
+  }
 
   arbeitsplatzStarten(document.getElementById("dock")!);
   if (!anordnungLaden()) {

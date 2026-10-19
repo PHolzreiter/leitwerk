@@ -69,10 +69,12 @@ export interface KiPrefs {
   klingelton: boolean;
   /** Gesprächsablauf: „neu“ = Frage verstehen, Antwortkern, prüfen, bei Fehler neu erzeugen; „klassisch“ = wie bis v0.37 */
   ablauf: "neu" | "klassisch";
+  /** Funk: „ki“ = Besatzungen reden über die KI (Inhalt vom Programm, geprüft); „fest“ = feste Funksprüche wie bis Version 0.40 */
+  funk: "ki" | "fest";
 }
 
 export function kiPrefs(): KiPrefs {
-  const d: KiPrefs = { aktiv: true, modell: "qwen3:8b", beenden: false, klingelton: true, ablauf: "neu" };
+  const d: KiPrefs = { aktiv: true, modell: "qwen3:8b", beenden: false, klingelton: true, ablauf: "neu", funk: "ki" };
   try {
     return { ...d, ...(JSON.parse(localStorage.getItem(LS) ?? "{}") as Partial<KiPrefs>) };
   } catch {

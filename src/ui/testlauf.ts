@@ -18,12 +18,14 @@ import { el, toast } from "./dom";
 import { ktExportText, rdExportText } from "./gespraechExport";
 import { KT_FRAGEN, ktAntwort, ktPruefen, ktSelbst, type KtFrage } from "../abfrage/ktGespraech";
 import { hhmm, type KtAuftrag } from "../sim/kt";
+import { funkPruefen, funkSpruchErzeugen, lageWissen } from "../abfrage/funkKi";
+import type { FunkGespraech } from "../sim/engine";
 
 export interface TestAuftrag {
   fallId: string;
   variante: string;
-  /** Krankentransport bzw. Überstellung statt Notruf */
-  art?: "kt" | "sek";
+  /** Krankentransport bzw. Überstellung statt Notruf; „funk“ = Funksprüche der Besatzung zu diesem Fall */
+  art?: "kt" | "sek" | "funk";
 }
 
 interface Auffaellig {
@@ -451,6 +453,96 @@ async function einKtGespraech(art: "kt" | "sek", nr: number, abbruch: { ja: bool
   };
 }
 
+// ------------------------------------------------------------------ Funk
+
+/**
+ * Funksprüche einer Besatzung zu einem Fall: Lagemeldung, Zustand und Messwert auf Nachfrage, Transport mit
+ * Voranmeldung, Rendezvous und Storno an das NEF. Die KI formuliert, das Programm prüft – wie im Spiel.
+ */
+async function einFunkDurchlauf(auftrag: TestAuftrag, nr: number, abbruch: { ja: boolean }, live: (z: string) => void): Promise<Durchlauf | null> {
+  const start = Date.now();
+  const e = await sim.probeFall(auftrag.fallId, auftrag.variante);
+  if (!e?.wahr.lage) return null;
+  const neuDrin = !sim.state.einsaetze.includes(e);
+  if (neuDrin) sim.state.einsaetze.push(e);
+  const auff: Auffaellig[] = [];
+  const zeiten: number[] = [];
+  const zeilen: string[] = [];
+  const fzs = Object.values(sim.state.fahrzeuge);
+  const typ = pick(["RTW", "RTW", "RTW", "KTW", "NEF", "BEL", "NAH"]);
+  const passt = fzs.filter((f) => (typ === "NAH" ? f.rmTyp === "NAH" : typ === "BEL" ? f.rmTyp === "BEL" : f.kategorie === typ && !f.ersatzFuer));
+  const fz = passt.length ? pick(passt) : fzs.find((f) => f.kategorie === "RTW")!;
+  const nef = fzs.find((f) => f.kategorie === "NEF" && !f.ersatzFuer && f.id !== fz.id);
+  // die Besatzung steht für die Probe beim Patienten (danach wieder wie vorher)
+  const vorher = { phase: fz.phase, einsatzId: fz.einsatzId };
+  try {
+    const saetze = sim.funkProbe(e, fz, fz.kategorie === "RTW" || fz.kategorie === "KTW" ? nef : undefined);
+    fz.phase = "vorOrt";
+    fz.einsatzId = e.id;
+    const namen = (e.wahr.abfrage?.szenario?.patient.name ?? "").split(/\s+/).filter((x) => x.length >= 3);
+    for (const a of saetze) {
+      if (abbruch.ja) break;
+      const g = { id: -nr, fzId: fz.id, funkname: a.von, einsatzId: e.id, status: "offen", seit: sim.state.zeit, naechster: null, rufe: 0, anliegen: null, fuehrer: null, sprueche: [] } as FunkGespraech;
+      const t0 = Date.now();
+      const r = await funkSpruchErzeugen(g, a);
+      const dauer = Date.now() - t0;
+      zeiten.push(dauer);
+      const wer = a.an ? `${a.von} → ${a.an}` : a.von;
+      if (a.frage) zeilen.push(`**${a.an ? a.von : "LEO"}:** ${a.frage}`);
+      zeilen.push(`**${wer}** (${r.quelle === "ki" ? "KI" : "fest"}${r.nachgebessert ? ` – ${r.nachgebessert}` : ""}): ${r.text}`);
+      if (r.quelle === "ki") zeilen.push(`<sub>fester Inhalt: ${a.fest}</sub>`);
+      zeilen.push("");
+      live(`${wer}: ${r.text}`);
+      const gruende: string[] = [];
+      if (r.quelle === "fest") gruende.push(r.nachgebessert ? `feste Meldung statt KI (${r.nachgebessert.replace(/^feste Meldung \(|\)$/g, "")})` : "feste Meldung statt KI");
+      else if (r.nachgebessert) gruende.push(`vom Programm nachgebessert: ${r.nachgebessert}`);
+      // nochmal prüfen, was am Ende herauskommt
+      for (const x of funkPruefen(a.fest, r.text, { frage: a.frage, namen, art: a.art, wissen: a.art === "frage" ? lageWissen(fz.id, e.id) : undefined })) gruende.push(x);
+      if ((r.text.match(/\bhier\b/gi) ?? []).length > 1) gruende.push("„Hier …“ doppelt");
+      if (!/(kommen|ende)\W*$/i.test(r.text)) gruende.push("ohne „kommen“ am Ende");
+      if (r.text.length > 320) gruende.push("lang");
+      if (dauer > 20000) gruende.push(`langsam (${Math.round(dauer / 1000)} s)`);
+      for (const grund of gruende) auff.push({ frage: a.frage ?? "(Meldung)", antwort: r.text, grund });
+    }
+  } finally {
+    fz.phase = vorher.phase;
+    fz.einsatzId = vorher.einsatzId;
+    if (neuDrin) sim.state.einsaetze = sim.state.einsaetze.filter((x) => x !== e);
+  }
+  const f = fallVorlage(auftrag.fallId);
+  const name = f?.name ?? auftrag.fallId;
+  const datei = `${String(nr).padStart(3, "0")}_funk_${auftrag.fallId}_${auftrag.variante}.md`.replace(/[^\w.-]+/g, "_");
+  const kopf = [
+    `# Testlauf ${nr}: Funk – ${name}, Ausgang ${auftrag.variante}`,
+    "",
+    `- Fahrzeug: ${sim.rufname(fz)} (${fz.funkrufname}, ${fz.rmTyp})`,
+    `- Lage: ${e.wahr.lage?.fall?.kern ?? "–"}`,
+    `- Funksprüche: ${zeiten.length} · Dauer: ${Math.round((Date.now() - start) / 1000)} s`,
+    "",
+    "## Auffällig",
+    "",
+    ...(auff.length ? auff.map((x) => `- **${x.grund}** – „${x.antwort}“`) : ["- nichts"]),
+    "",
+    "## Funk",
+    "",
+    ...zeilen,
+  ];
+  return {
+    nr,
+    fallId: auftrag.fallId,
+    fallName: `Funk: ${name}`,
+    variante: auftrag.variante,
+    rolle: `${sim.rufname(fz)} (${fz.rmTyp})`,
+    persona: "Besatzung",
+    fragen: zeiten.length,
+    dauerMs: Date.now() - start,
+    antwortMs: zeiten,
+    auffaellig: auff,
+    datei,
+    text: kopf.join("\n"),
+  };
+}
+
 function uebersicht(liste: Durchlauf[], abgebrochen: boolean): string {
   const z = [`# LeitWerk – Testlauf der Notrufgespräche`, "", `- Programmversion: ${document.getElementById("app-version")?.textContent?.trim() ?? "?"}`, `- KI: ${kiPrefs().modell}`, `- Datum: ${new Date().toLocaleString("de-AT")}`, `- Gespräche: ${liste.length}${abgebrochen ? " (abgebrochen)" : ""}`];
   const alleZeiten = liste.flatMap((x) => x.antwortMs);
@@ -492,9 +584,13 @@ export async function testlaufAusfuehren(auftraege: TestAuftrag[], opt: { abbruc
     for (let i = 0; i < auftraege.length && !opt.abbruch.ja; i++) {
       let d: Durchlauf | null = null;
       try {
-        d = auftraege[i].art
-          ? await einKtGespraech(auftraege[i].art!, out.length + 1, opt.abbruch, opt.live ?? (() => {}))
-          : await einGespraech(auftraege[i], out.length + 1, opt.abbruch, opt.live ?? (() => {}));
+        const art = auftraege[i].art;
+        d =
+          art === "funk"
+            ? await einFunkDurchlauf(auftraege[i], out.length + 1, opt.abbruch, opt.live ?? (() => {}))
+            : art
+              ? await einKtGespraech(art, out.length + 1, opt.abbruch, opt.live ?? (() => {}))
+              : await einGespraech(auftraege[i], out.length + 1, opt.abbruch, opt.live ?? (() => {}));
       } catch (err) {
         console.warn("Testlauf", err);
       }
@@ -516,7 +612,7 @@ export function testlaufDateien(liste: Durchlauf[], abgebrochen: boolean): [stri
 // ------------------------------------------------------------------ Oberfläche
 
 /** Fenster: Ausgang und Anzahl wählen, dann läuft alles automatisch durch; am Ende ZIP speichern */
-export async function testlaufDialog(fallId: string | null, vorwahl: "notruf" | "kt" | "sek" | "ktsek" | "alles" = "notruf"): Promise<void> {
+export async function testlaufDialog(fallId: string | null, vorwahl: "notruf" | "kt" | "sek" | "ktsek" | "funk" | "alles" = "notruf"): Promise<void> {
   if (!kiBereit() && inTauri()) await kiStatus().catch(() => null);
   if (!kiBereit()) {
     toast("Testlauf nur mit KI – bitte zuerst die KI einschalten (Einstellungen → KI-Anrufer)", "error");
@@ -533,12 +629,14 @@ export async function testlaufDialog(fallId: string | null, vorwahl: "notruf" | 
     ["kt", "Krankentransporte"],
     ["sek", "Überstellungen"],
     ["ktsek", "Krankentransporte und Überstellungen"],
-    ["alles", "alles: Notrufe, Krankentransporte, Überstellungen"],
+    ["funk", "Funk (Meldungen und Antworten der Besatzungen zu allen Fällen)"],
+    ["alles", "alles: Notrufe, Krankentransporte, Überstellungen, Funk"],
   ] as const)
     wasSel.appendChild(el("option", { value: v }, t));
   wasSel.value = vorwahl;
   const was = () => (fall ? "notruf" : wasSel.value);
   const mitNotruf = () => was() === "notruf" || was() === "alles";
+  const mitFunk = () => was() === "funk" || was() === "alles";
   const vSel = el("select") as HTMLSelectElement;
   vSel.appendChild(el("option", { value: "alle" }, "alle Ausgänge"));
   if (fall) for (const v of fall.varianten) vSel.appendChild(el("option", { value: v.id }, `nur Ausgang ${v.id}${v.lage ? ` – ${v.lage.slice(0, 50)}` : ""}`));
@@ -551,6 +649,7 @@ export async function testlaufDialog(fallId: string | null, vorwahl: "notruf" | 
     const w = was();
     return [
       ...(mitNotruf() ? auftraegeFuer(faelle, vSel.value, anzahl) : []),
+      ...(mitFunk() ? auftraegeFuer(faelle, "alle", 1).map((x) => ({ ...x, art: "funk" as const })) : []),
       ...(["kt", "ktsek", "alles"].includes(w) ? ktAuftraege("kt", anzahl) : []),
       ...(["sek", "ktsek", "alles"].includes(w) ? ktAuftraege("sek", anzahl) : []),
     ];
@@ -558,13 +657,14 @@ export async function testlaufDialog(fallId: string | null, vorwahl: "notruf" | 
   const schaetzen = () => {
     const l = bauen();
     const notrufe = l.filter((x) => !x.art).length;
-    const kts = l.length - notrufe;
-    // Notruf ≈ 18 KI-Antworten, KT ≈ 12 – fast die ganze Zeit rechnet die KI
-    const min = Math.max(1, Math.round((notrufe * 45 + kts * 30) / 60));
-    const max = Math.max(2, Math.round((notrufe * 120 + kts * 80) / 60));
+    const funks = l.filter((x) => x.art === "funk").length;
+    const kts = l.length - notrufe - funks;
+    // Notruf ≈ 18 KI-Antworten, KT ≈ 12, Funk ≈ 6 – fast die ganze Zeit rechnet die KI
+    const min = Math.max(1, Math.round((notrufe * 45 + kts * 30 + funks * 12) / 60));
+    const max = Math.max(2, Math.round((notrufe * 120 + kts * 80 + funks * 40) / 60));
     vLabel.hidden = vSel.hidden = !mitNotruf();
     nLabel.textContent = mitNotruf() ? (was() === "alles" ? "Wie oft (je Ausgang bzw. Anzahl Transporte)" : "Wie oft je Ausgang") : "Wie viele Anrufe";
-    info.textContent = `${l.length} Gespräche${notrufe && kts ? ` (${notrufe} Notrufe, ${kts} Transporte)` : ""} · grob ${min}–${max} Minuten (je nach Rechner). Es wird nichts vorgelesen und nichts kommt ins Spiel; das Spiel ist so lange pausiert.`;
+    info.textContent = `${l.length} Gespräche${[notrufe && `${notrufe} Notrufe`, kts && `${kts} Transporte`, funks && `${funks}× Funk (je Fall und Ausgang einmal)`].filter(Boolean).length > 1 ? ` (${[notrufe && `${notrufe} Notrufe`, kts && `${kts} Transporte`, funks && `${funks}× Funk`].filter(Boolean).join(", ")})` : ""} · grob ${min}–${max} Minuten (je nach Rechner). Es wird nichts vorgelesen und nichts kommt ins Spiel; das Spiel ist so lange pausiert.`;
   };
   vSel.addEventListener("change", schaetzen);
   wasSel.addEventListener("change", schaetzen);

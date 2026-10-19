@@ -218,7 +218,8 @@ export function ereignisseEinplanen(l: Lage, v: FallVariante, start: number): vo
 export function patientText(p: LagePatient): string {
   const bw = { ja: "wach", getruebt: "benommen", nein: "bewusstlos" }[p.bw];
   const at = { normal: "atmet normal", abnorm: "atmet schwer", agonal: "Schnappatmung", keine: "atmet nicht" }[p.at];
-  return `${p.geschlecht === "w" ? "Frau" : "Mann"}, ca. ${p.alter} J., ${bw}, ${at} (${p.sichtung === "gruen" ? "grün" : p.sichtung})`;
+  const wer = p.alter < 14 ? (p.geschlecht === "w" ? "Mädchen" : "Bub") : p.geschlecht === "w" ? "Frau" : "Mann";
+  return `${wer}, ca. ${p.alter} J., ${bw}, ${at} (${p.sichtung === "gruen" ? "grün" : p.sichtung})`;
 }
 
 /** Lagemeldung der ersten Besatzung beim Eintreffen (nur wenn sie etwas Neues zu melden hat) */

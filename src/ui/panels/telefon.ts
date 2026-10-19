@@ -267,6 +267,7 @@ registriere({
 export function anrufBeobachterStarten(): void {
   const bekannt = new Set<string>();
   let erstes = true;
+  const funkGemeldet = new Set<number>();
   const pruefen = () => {
     const p = pers();
     const anrufe = alleAnrufe();
@@ -277,6 +278,12 @@ export function anrufBeobachterStarten(): void {
     klingeltonAktualisieren(!telefoniere && klingeltNotruf && p.notrufe && sim.state.laeuft, !telefoniere && klingeltKt && p.ktHotline && sim.state.laeuft);
     const rufe = (sim.state.funkGespraeche ?? []).filter((g) => g.status === "ruft");
     funkPiepAktualisieren(p.funkTon && rufe.length > 0, rufe.some((g) => g.dringend));
+    // Während ich telefoniere: einmal ein kurzer Ton, wenn jemand funken möchte (der Funk wartet aufs Auflegen)
+    for (const g of sim.state.funkGespraeche ?? []) {
+      if (g.status !== "wartet" || !g.wegenTelefon || funkGemeldet.has(g.id)) continue;
+      funkGemeldet.add(g.id);
+      if (telefoniere && p.funkTon && !erstes) spielen("funk");
+    }
     // Neuer Anruf klingelt: Telefon zeigen (wenn ich diese Anrufe annehme)
     for (const x of anrufe) {
       const key = `${x.id}:${x.anruf.versuche}:${x.anruf.status === "klingelt" ? x.anruf.seit : ""}`;
