@@ -1,5 +1,18 @@
 # Änderungen
 
+## 0.37.0 – Testlauf für Krankentransporte und Überstellungen
+**Testlauf**
+- Der Testlauf spielt jetzt auch Anrufe an der Krankentransport-Hotline durch: Krankentransporte, Überstellungen oder beides – zu finden unter „🧪 Alle testen“ im Fall-Editor (Auswahl „Was“) und in der Einsatzliste unter „+ Test“ → „🧪 Testlauf KI-Gespräche …“
+- Die Hotline fragt wie im Spiel (Wer, Patient, Grund, Abholort, Zeit, Ziel, sitzend/liegend, Besonderheiten; bei Überstellungen Dringlichkeit, Zustand, Übernahme), dazu eine frei getippte Frage, eine Rückfrage (manchmal absichtlich falsch), eine Mitteilung und den Abschied
+- Kurz gehalten: ein Krankentransport hat etwa 12 Fragen, eine Überstellung etwa 16 – deutlich schneller als ein Notruf
+- Jede Antwort wird gegen die Wahrheit geprüft: verdrehte Transportart, erfundene Uhrzeit, fehlender Name/Alter/Abholort/Ziel, falsche Angabe zu Begleitung, Sauerstoff oder Infektion, „der Patient“ beim Selbstanrufer, abgenickte falsche Rückfrage
+- Nichts kommt ins Spiel, nichts wird vorgelesen; am Ende gibt es wie gewohnt die ZIP-Datei
+
+**Krankentransport-Anrufer**
+- „Der Patient kann nicht liegen, er muss liegend transportiert werden“: Die Transportart steht jetzt als ganzer Satz in der Anweisung an die KI („Sitzen geht nicht – er muss liegend transportiert werden“). Verdreht die KI es trotzdem, ersetzt das Programm die Antwort durch die richtige
+- Ruft der Patient selbst an, redet er in der Ich-Form (nicht mehr „der Patient wohnt bei mir“)
+- Begleitung, Sauerstoff und Infektion stehen als Sätze statt „ja/nein“; Uhrzeiten werden genau so genannt, wie sie ausgemacht sind; die Hotline wird gesiezt
+
 ## 0.36.0 – Zweiter Testlauf ausgewertet: Anrufer, Fälle und Testlauf feiner
 Grundlage: der Testlauf mit v0.35.0 (420 Gespräche, qwen3:8b). Gegenüber dem Lauf davor: falsche Zusammenfassungen werden jetzt in 96 % der Fälle zurückgewiesen (vorher 13 %), „Seit wann?“ wird fast immer beantwortet, „der Patient“, „isch/nee/ick“ und erfundene Stockwerke sind weg.
 

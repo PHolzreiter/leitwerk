@@ -15,11 +15,15 @@ import { inTauri, saveZipFile } from "../platform";
 import { sim, type Einsatz } from "../sim/engine";
 import { openDialog } from "./dialog";
 import { el, toast } from "./dom";
-import { rdExportText } from "./gespraechExport";
+import { ktExportText, rdExportText } from "./gespraechExport";
+import { KT_FRAGEN, ktAntwort, ktPruefen, ktSelbst, type KtFrage } from "../abfrage/ktGespraech";
+import { hhmm, type KtAuftrag } from "../sim/kt";
 
 export interface TestAuftrag {
   fallId: string;
   variante: string;
+  /** Krankentransport bzw. Überstellung statt Notruf */
+  art?: "kt" | "sek";
 }
 
 interface Auffaellig {
@@ -338,6 +342,112 @@ async function einGespraech(auftrag: TestAuftrag, nr: number, abbruch: { ja: boo
   };
 }
 
+// ------------------------------------------------------------------ Krankentransport und Überstellung
+
+/** Aufträge für Krankentransporte bzw. Überstellungen */
+export function ktAuftraege(art: "kt" | "sek", anzahl: number): TestAuftrag[] {
+  return Array.from({ length: anzahl }, () => ({ fallId: art, variante: "–", art }));
+}
+
+/** Rückfrage der Hotline, manchmal absichtlich falsch (andere Uhrzeit oder Transportart) */
+function ktRueckfrage(k: KtAuftrag, falsch: boolean): string {
+  const w = k.wahr.d;
+  const zeit = w.abholung ?? w.termin;
+  const lage = w.lage === "liegend" ? "liegend" : w.lage === "rollstuhl" ? "im eigenen Rollstuhl" : "sitzend";
+  const welcherFehler = Math.random() < 0.5 && zeit ? "zeit" : "lage";
+  const z = zeit ? hhmm(falsch && welcherFehler === "zeit" ? zeit + 45 * 60_000 : zeit) : null;
+  const l = falsch && welcherFehler === "lage" ? (w.lage === "liegend" ? "sitzend" : "liegend") : lage;
+  const ziel = (w.nach?.label ?? "").split(",")[0];
+  return `Also: ${w.patient.name}${z ? `, Abholung um ${z}` : ""}${ziel ? `, nach ${ziel}` : ""}, ${l}${w.begleitung ? ", mit Begleitung" : ""} – passt das so?`;
+}
+
+/** Ein Anruf an der KT-Hotline: Fragen wie im Spiel, Antworten der KI, Prüfung gegen die Wahrheit */
+async function einKtGespraech(art: "kt" | "sek", nr: number, abbruch: { ja: boolean }, live: (z: string) => void): Promise<Durchlauf | null> {
+  const start = Date.now();
+  const k = await sim.probeKt(art);
+  if (!k || !k.anruf) return null;
+  const a = k.anruf;
+  a.status = "aktiv";
+  const auff: Auffaellig[] = [];
+  const zeiten: number[] = [];
+  let fragen = 0;
+  const profi = /pflege|ärzt|arzt|station|assistent|ordination|heim/i.test(k.wahr.anrufer.rolle);
+  const frag = async (text: string, f?: KtFrage): Promise<string> => {
+    if (abbruch.ja) return "";
+    a.gespraech.push({ zeit: sim.state.zeit, echt: Date.now(), von: "leitstelle", text, wer: "Testlauf" });
+    live(`Hotline: ${text}`);
+    const frueher = a.gespraech.filter((m) => m.von === "anrufer").map((m) => m.text);
+    const t0 = Date.now();
+    const { antwort, quelle, korrigiert } = await ktAntwort(k, text, f);
+    const dauer = Date.now() - t0;
+    zeiten.push(dauer);
+    fragen++;
+    a.gespraech.push({ zeit: sim.state.zeit, echt: Date.now(), von: "anrufer", text: antwort, quelle });
+    live(`Anrufer: ${antwort}`);
+    const gruende = [...ktPruefen(k, text, antwort)];
+    if (korrigiert) gruende.push(`Transportart verdreht – vom Programm ersetzt (KI sagte: „${korrigiert}“)`);
+    else if (quelle !== "ki") gruende.push("feste Antwort statt KI (KI-Fehler?)");
+    const n = saetze(antwort).length;
+    if (n > 3 || antwort.split(/\s+/).length > 45) gruende.push(`lang (${n} Sätze)`);
+    if (/Hinweis|Leitstelle:|\[/.test(antwort)) gruende.push("Anweisung an die KI durchgerutscht");
+    if (!/^also/i.test(text) && !/nummer|wo |abgeholt|wohin/i.test(text) && saetze(antwort).some((x) => schonGesagt(x, frueher))) gruende.push("sagt etwas zum zweiten Mal");
+    if (!profi && !ktSelbst(k) && /\b(der Patient|die Patientin)\b/.test(antwort) && !/patient/i.test(text)) gruende.push("sagt „der Patient“");
+    if (dauer > 20000) gruende.push(`langsam (${Math.round(dauer / 1000)} s)`);
+    for (const grund of gruende) auff.push({ frage: text, antwort, grund });
+    return antwort;
+  };
+  const kf = (id: KtFrage["id"]) => KT_FRAGEN.find((f) => f.id === id)!;
+  const sek = !!k.wahr.d.sek;
+  // kurz halten: eine Zeitfrage, eine Sammelfrage für Besonderheiten (spart KI-Zeit; einzeln nur ab und zu)
+  const zeitId: KtFrage["id"] = k.wahr.d.abholung ? "abholung" : "termin";
+  for (const id of ["wer", "patient", "grund", "von", zeitId, "nach", "lage"] as KtFrage["id"][]) await frag(kf(id).text, kf(id));
+  if (Math.random() < 0.75) await frag(kf("zusatz").text, kf("zusatz"));
+  else for (const id of ["begleitung", "sauerstoff", "infektion"] as KtFrage["id"][]) await frag(kf(id).text, kf(id));
+  if (sek) {
+    await frag(kf("sofort").text, kf("sofort"));
+    await frag(kf("zustand").text, kf("zustand"));
+    await frag(kf("zusage").text, kf("zusage"));
+  }
+  if (Math.random() < 0.3) await frag(kf("telefon").text, kf("telefon"));
+  // frei getippt, Rückfrage (manchmal falsch), Mitteilung, Abschluss
+  const er = k.wahr.d.patient.geschlecht === "w" ? "sie" : "er";
+  await frag(pick(["um wie viel uhr ist der termin nochmal", `kann ${er} selber ein paar schritte gehen`, "fährt jemand mit", "wie schreibt sich der nachname", sek ? `wie geht es ${er === "sie" ? "der patientin" : "dem patienten"} gerade` : `hat ${er} die e-card dabei`]));
+  await frag(ktRueckfrage(k, Math.random() < 0.35));
+  const kommt = (k.wahr.d.abholung ?? sim.state.zeit + 40 * 60_000);
+  await frag(pick(["Gut, ich habe den Transport eingetragen.", `Der Wagen kommt so gegen ${hhmm(kommt)}.`, "Es kann sein, dass es ein bisschen später wird – wir melden uns, falls sich etwas ändert."]));
+  await frag("Danke, auf Wiederhören.");
+  a.status = "beendet";
+  const name = sek ? "Überstellung" : "Krankentransport";
+  const datei = `${String(nr).padStart(3, "0")}_${art}_${(k.wahr.d.code ?? "ohne").replace(/[^\w-]+/g, "_")}.md`;
+  const kopf = [
+    `# Testlauf ${nr}: ${name} – ${k.wahr.d.code ?? "ohne Code"}`,
+    "",
+    `- Anrufer: ${k.wahr.anrufer.rolle} (${k.wahr.anrufer.name})`,
+    `- Fragen: ${fragen} · Dauer: ${Math.round((Date.now() - start) / 1000)} s · Antwortzeit Ø ${zeiten.length ? (zeiten.reduce((x, y) => x + y, 0) / zeiten.length / 1000).toFixed(1) : "–"} s`,
+    "",
+    "## Auffällig",
+    "",
+    ...(auff.length ? auff.map((x) => `- **${x.grund}** – auf „${x.frage}“: „${x.antwort}“`) : ["- nichts"]),
+    "",
+    "---",
+    "",
+  ];
+  return {
+    nr,
+    fallId: art,
+    fallName: name,
+    variante: k.wahr.d.code ?? "–",
+    rolle: k.wahr.anrufer.rolle,
+    persona: profi ? "Profi" : ktSelbst(k) ? "Patient selbst" : "Laie",
+    fragen,
+    dauerMs: Date.now() - start,
+    antwortMs: zeiten,
+    auffaellig: auff,
+    datei,
+    text: kopf.join("\n") + ktExportText(k),
+  };
+}
+
 function uebersicht(liste: Durchlauf[], abgebrochen: boolean): string {
   const z = [`# LeitWerk – Testlauf der Notrufgespräche`, "", `- Programmversion: ${document.getElementById("app-version")?.textContent?.trim() ?? "?"}`, `- KI: ${kiPrefs().modell}`, `- Datum: ${new Date().toLocaleString("de-AT")}`, `- Gespräche: ${liste.length}${abgebrochen ? " (abgebrochen)" : ""}`];
   const alleZeiten = liste.flatMap((x) => x.antwortMs);
@@ -379,7 +489,9 @@ export async function testlaufAusfuehren(auftraege: TestAuftrag[], opt: { abbruc
     for (let i = 0; i < auftraege.length && !opt.abbruch.ja; i++) {
       let d: Durchlauf | null = null;
       try {
-        d = await einGespraech(auftraege[i], out.length + 1, opt.abbruch, opt.live ?? (() => {}));
+        d = auftraege[i].art
+          ? await einKtGespraech(auftraege[i].art!, out.length + 1, opt.abbruch, opt.live ?? (() => {}))
+          : await einGespraech(auftraege[i], out.length + 1, opt.abbruch, opt.live ?? (() => {}));
       } catch (err) {
         console.warn("Testlauf", err);
       }
@@ -401,33 +513,62 @@ export function testlaufDateien(liste: Durchlauf[], abgebrochen: boolean): [stri
 // ------------------------------------------------------------------ Oberfläche
 
 /** Fenster: Ausgang und Anzahl wählen, dann läuft alles automatisch durch; am Ende ZIP speichern */
-export async function testlaufDialog(fallId: string | null): Promise<void> {
+export async function testlaufDialog(fallId: string | null, vorwahl: "notruf" | "kt" | "sek" | "ktsek" | "alles" = "notruf"): Promise<void> {
   if (!kiBereit() && inTauri()) await kiStatus().catch(() => null);
   if (!kiBereit()) {
     toast("Testlauf nur mit KI – bitte zuerst die KI einschalten (Einstellungen → KI-Anrufer)", "error");
-    return;
-  }
-  if (!store.schema) {
-    toast("Kein Abfrageschema geladen", "error");
     return;
   }
   const fall = fallId ? fallVorlage(fallId) : undefined;
   const faelle = fall ? [fall] : alleFaelle(false).filter((f) => istFallAktiv(f.id));
   const body = el("div", { class: "tl" });
   const wahl = el("div", { class: "tl-wahl" });
+  // Was getestet wird (nur bei „Alle testen“ bzw. aus dem KT-Bereich)
+  const wasSel = el("select", { class: "tl-was" }) as HTMLSelectElement;
+  for (const [v, t] of [
+    ["notruf", "Notrufe (alle eingeschalteten Fälle)"],
+    ["kt", "Krankentransporte"],
+    ["sek", "Überstellungen"],
+    ["ktsek", "Krankentransporte und Überstellungen"],
+    ["alles", "alles: Notrufe, Krankentransporte, Überstellungen"],
+  ] as const)
+    wasSel.appendChild(el("option", { value: v }, t));
+  wasSel.value = vorwahl;
+  const was = () => (fall ? "notruf" : wasSel.value);
+  const mitNotruf = () => was() === "notruf" || was() === "alles";
   const vSel = el("select") as HTMLSelectElement;
   vSel.appendChild(el("option", { value: "alle" }, "alle Ausgänge"));
   if (fall) for (const v of fall.varianten) vSel.appendChild(el("option", { value: v.id }, `nur Ausgang ${v.id}${v.lage ? ` – ${v.lage.slice(0, 50)}` : ""}`));
   const n = el("input", { type: "number", min: "1", max: "100", value: "10", class: "fe-zahl" }) as HTMLInputElement;
   const info = el("p", { class: "muted small" });
+  const vLabel = el("label", {}, "Ausgang");
+  const nLabel = el("label", {}, "Wie oft je Ausgang");
+  const bauen = (): TestAuftrag[] => {
+    const anzahl = Math.max(1, Math.min(100, Number(n.value) || 1));
+    const w = was();
+    return [
+      ...(mitNotruf() ? auftraegeFuer(faelle, vSel.value, anzahl) : []),
+      ...(["kt", "ktsek", "alles"].includes(w) ? ktAuftraege("kt", anzahl) : []),
+      ...(["sek", "ktsek", "alles"].includes(w) ? ktAuftraege("sek", anzahl) : []),
+    ];
+  };
   const schaetzen = () => {
-    const anz = auftraegeFuer(faelle, vSel.value, Math.max(1, Number(n.value) || 1)).length;
-    info.textContent = `${anz} Gespräche · grob ${Math.max(1, Math.round((anz * 45) / 60))}–${Math.max(2, Math.round((anz * 120) / 60))} Minuten (je nach Rechner). Es wird nichts vorgelesen und nichts kommt ins Spiel; das Spiel ist so lange pausiert.`;
+    const l = bauen();
+    const notrufe = l.filter((x) => !x.art).length;
+    const kts = l.length - notrufe;
+    // Notruf ≈ 18 KI-Antworten, KT ≈ 12 – fast die ganze Zeit rechnet die KI
+    const min = Math.max(1, Math.round((notrufe * 45 + kts * 30) / 60));
+    const max = Math.max(2, Math.round((notrufe * 120 + kts * 80) / 60));
+    vLabel.hidden = vSel.hidden = !mitNotruf();
+    nLabel.textContent = mitNotruf() ? (was() === "alles" ? "Wie oft (je Ausgang bzw. Anzahl Transporte)" : "Wie oft je Ausgang") : "Wie viele Anrufe";
+    info.textContent = `${l.length} Gespräche${notrufe && kts ? ` (${notrufe} Notrufe, ${kts} Transporte)` : ""} · grob ${min}–${max} Minuten (je nach Rechner). Es wird nichts vorgelesen und nichts kommt ins Spiel; das Spiel ist so lange pausiert.`;
   };
   vSel.addEventListener("change", schaetzen);
+  wasSel.addEventListener("change", schaetzen);
   n.addEventListener("input", schaetzen);
-  wahl.append(el("label", {}, "Ausgang"), vSel, el("label", {}, "Wie oft je Ausgang"), n);
-  body.append(el("p", {}, fall ? `Fall „${fall.name ?? fall.id}“ automatisch durchspielen.` : `Alle ${faelle.length} eingeschalteten Fälle automatisch durchspielen.`), wahl, info);
+  if (!fall) wahl.append(el("label", {}, "Was"), wasSel);
+  wahl.append(vLabel, vSel, nLabel, n);
+  body.append(el("p", {}, fall ? `Fall „${fall.name ?? fall.id}“ automatisch durchspielen.` : "Notrufe, Krankentransporte und Überstellungen automatisch durchspielen."), wahl, info);
   schaetzen();
   const lauf = el("div", { class: "tl-lauf" });
   lauf.hidden = true;
@@ -441,7 +582,7 @@ export async function testlaufDialog(fallId: string | null): Promise<void> {
   const abbruch = { ja: false };
   let laeuft = false;
   const d = openDialog({
-    title: fall ? "Testlauf" : "Testlauf – alle Fälle",
+    title: fall ? "Testlauf" : "Testlauf",
     body,
     wide: true,
     actions: [
@@ -459,7 +600,11 @@ export async function testlaufDialog(fallId: string | null): Promise<void> {
         label: "▶ Starten",
         kind: "primary",
         onClick: () => {
-          const auftraege = auftraegeFuer(faelle, vSel.value, Math.max(1, Math.min(100, Number(n.value) || 1)));
+          const auftraege = bauen();
+          if (mitNotruf() && !store.schema) {
+            toast("Kein Abfrageschema geladen – Notrufe lassen sich nicht testen", "error");
+            return false;
+          }
           if (!auftraege.length) {
             toast("Keine Gespräche gewählt", "error");
             return false;

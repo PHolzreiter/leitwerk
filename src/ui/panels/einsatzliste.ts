@@ -347,6 +347,12 @@ function testMenu(anker: HTMLElement, art: Art): void {
   punkt("Überstellung", () => kt(true));
   if (art === "kt") m.prepend(m.children[1]);
   if (art === "sek") m.prepend(m.children[2]);
+  // KI-Gespräche automatisch durchspielen (wie im Fall-Editor)
+  m.appendChild(el("hr"));
+  punkt("🧪 Testlauf KI-Gespräche …", async () => {
+    const { testlaufDialog } = await import("../testlauf");
+    await testlaufDialog(null, art === "sek" ? "sek" : art === "kt" ? "kt" : art === "ktsek" ? "ktsek" : art === "rd" ? "notruf" : "alles");
+  });
   document.body.appendChild(m);
   setTimeout(() =>
     document.addEventListener("mousedown", function weg(ev) {

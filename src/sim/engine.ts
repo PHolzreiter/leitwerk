@@ -4130,12 +4130,12 @@ export class Simulation {
       .sort((a, b) => distanceM(a, nahe) - distanceM(b, nahe));
   }
 
-  private ktNeu(d: KtDaten, quelle: KtAuftrag["quelle"], serie?: string): KtAuftrag {
+  private ktNeu(d: KtDaten, quelle: KtAuftrag["quelle"], serie?: string, probe = false): KtAuftrag {
     const hotline = quelle === "hotline";
     const vonHeim = !d.von?.khId;
     const k: KtAuftrag = {
       id: `kt${Date.now().toString(36)}${Math.floor(Math.random() * 1e6).toString(36)}`,
-      nummer: this.ktNummer(),
+      nummer: probe ? "PROBE" : this.ktNummer(),
       quelle,
       eingang: this.state.zeit,
       status: hotline ? "aufnahme" : "offen",
@@ -4154,6 +4154,8 @@ export class Simulation {
     };
     k.wahr.d.code ??= this.ktCodeFuer(k.wahr.d);
     if (!hotline) k.d.code ??= k.wahr.d.code;
+    // Probe (Testlauf): kommt nicht ins Spiel
+    if (probe) return k;
     this.ktLog(
       k,
       hotline ? "Anruf an der KT-Hotline" : quelle === "online" ? "Online-Anmeldung eingegangen" : quelle === "manuell" ? "Auftrag von Hand angelegt" : "Dauerauftrag",
@@ -4177,6 +4179,26 @@ export class Simulation {
     k.wahr.d = neueDaten();
     this.emit();
     return k.id;
+  }
+
+  /**
+   * Probe-Auftrag für den Testlauf: ein zufälliger Krankentransport bzw. eine Überstellung mit Anruf an der Hotline,
+   * genau wie im Spiel erzeugt – kommt aber nicht in die Auftragsliste.
+   */
+  async probeKt(art: "kt" | "sek"): Promise<KtAuftrag | null> {
+    let d: KtDaten | null = null;
+    if (art === "sek") {
+      const mitte = mitteVon(this.funkgruppe());
+      const khs = store.list("hospitals").filter((h) => this.khImNetz(h));
+      d = sekZufall({ mitte, khs, jetzt: this.state.zeit })?.[0] ?? null;
+    } else
+      for (let i = 0; i < 4 && !d; i++) {
+        const adr = await this.adresseImGebiet();
+        if (!adr) continue;
+        const heim: KtOrt = { lat: adr.lat, lon: adr.lon, label: adr.label };
+        d = zufallsDaten({ heim, khMit: (b) => this.khMit(b, heim) }, this.state.zeit);
+      }
+    return d ? this.ktNeu(d, "hotline", undefined, true) : null;
   }
 
   /** Neue zufällige Überstellung zwischen Krankenhäusern (dringend: immer Anruf) */
