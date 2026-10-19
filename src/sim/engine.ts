@@ -516,7 +516,20 @@ export interface Einsatz {
     abteilung?: string;
     rtwBuchtSelbst: boolean;
     /** Wahrheit für den Anrufer (Abfrageschema) */
-    abfrage?: { kapitel: string; antworten: Antworten; code: string; anrufer: Anrufer; lage: string; ortUnbekannt?: boolean; szenario?: Szenario; verlauf?: string[] };
+    abfrage?: {
+      kapitel: string;
+      antworten: Antworten;
+      code: string;
+      anrufer: Anrufer;
+      lage: string;
+      ortUnbekannt?: boolean;
+      szenario?: Szenario;
+      verlauf?: string[];
+      /** was der Anrufer auf Anweisung schon macht (Seitenlage, Druck auf die Wunde …) */
+      massnahmen?: string[];
+      /** Stimmung im Gespräch (0 ruhig … 3 panisch) und wie viele Veränderungen schon eingerechnet sind */
+      stimmung?: { stufe: number; verlauf: number; beruhigt: boolean };
+    };
     /** Verborgene Lage: Patienten und ihr Verlauf */
     lage?: Lage;
   };

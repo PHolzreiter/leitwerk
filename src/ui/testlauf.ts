@@ -216,7 +216,7 @@ async function einGespraech(auftrag: TestAuftrag, nr: number, abbruch: { ja: boo
     const k = kontext(e);
     if (!k) return "";
     const frueher = a.gespraech.filter((m) => m.von === "anrufer").map((m) => m.text);
-    const quelle = { wert: "ki" as "ki" | "fest" };
+    const quelle: { wert: "ki" | "fest"; nachgebessert?: string } = { wert: "ki" };
     const t0 = Date.now();
     const ant = await anruferAntwort(e, k, text, sf, undefined, quelle);
     const dauer = Date.now() - t0;
@@ -225,7 +225,10 @@ async function einGespraech(auftrag: TestAuftrag, nr: number, abbruch: { ja: boo
     a.gespraech.push({ zeit: sim.state.zeit, echt: Date.now(), von: "anrufer", text: ant, quelle: quelle.wert });
     live(`Anrufer: ${ant}`);
     const art = sf ? "frage" : nachrichtArt(text);
-    for (const grund of pruefeAntwort(e, text, ant, art, frueher, quelle.wert, dauer, profi, sf?.id === "schilderung" || /passiert/.test(text))) auff.push({ frage: text, antwort: ant, grund });
+    const gruende = pruefeAntwort(e, text, ant, art, frueher, quelle.nachgebessert ? "ki" : quelle.wert, dauer, profi, sf?.id === "schilderung" || /passiert/.test(text));
+    // Widerspruch erkannt und vom Programm behoben – zählt mit, damit man sieht, wie oft die KI danebenlag
+    if (quelle.nachgebessert) gruende.push(`vom Programm nachgebessert: ${quelle.nachgebessert}`);
+    for (const grund of gruende) auff.push({ frage: text, antwort: ant, grund });
     return ant;
   };
   const global = (id: string): Frage | undefined => Object.values(schema.globale_fragen).flat().find((f) => f.id === id);

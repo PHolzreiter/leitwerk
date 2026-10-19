@@ -1,5 +1,27 @@
 # Änderungen
 
+## 0.38.0 – Neuer Gesprächsablauf: Das Programm denkt, die KI redet
+Bisher bekam die KI bei jeder Frage die ganze Fallakte und musste selbst herausfinden, was passt. Für ein kleines Modell ist das zu viel – daher kamen Verwechslungen, Erfundenes und Widersprüche. Jetzt läuft jede Antwort in Schritten ab, und das gilt für JEDEN Fall – auch für selbst erstellte:
+
+**1. Verstehen** – Das Programm erkennt, worum es in einer frei getippten Frage geht (Atmung, Bewusstsein, Alter, Zeit, Vorerkrankungen, Medikamente, Blutung, Verletzung, Hautfarbe, Schweiß, wer dabei ist, Name …) – auch klein geschrieben, umgangssprachlich und mit mehreren Themen in einer Frage. Passt kein Thema, sucht es die passendste Frage aus der Abfrage.
+
+**2. Wahrheit** – Für jedes Thema bestimmt das Programm, was DIESER Anrufer JETZT weiß (Zustand nach Ereignissen, sieht er den Patienten, kennt er ihn, ruft er selbst an) und gibt der KI genau das als „ehrliche Antwort“ mit. Bisher bekamen nur die Fragen per 🗨-Knopf diesen Hinweis – frei getippte nicht.
+
+**3. Prüfen** – Die fertige Antwort wird gegen die Wahrheit geprüft: Atmung, Bewusstsein, Ja/Nein, Alter, Zeitangabe, Geschlecht, Anzahl, „allein“, Ich-Form beim Selbstanrufer.
+
+**4. Reparieren** – Stimmt etwas nicht, wird die Antwort einmal mit klarer Korrektur neu erzeugt; klappt es dann immer noch nicht, kommt eine feste, richtige Antwort. Eine falsche Antwort wird nie angezeigt oder vorgelesen (prüfbare Antworten erscheinen erst nach der Prüfung).
+
+**5. Anweisungen** – Das Programm entscheidet, ob eine Anweisung in dieser Lage geht: Einem Bewusstlosen wird nichts zu trinken gegeben, wer allein ist, kann niemanden zur Tür schicken, vor einer versperrten Tür kann man niemanden lagern, Herzdruckmassage bei einem wachen Patienten wird hinterfragt, ohne Spray kein Spray. Was ausgeführt wurde, merkt sich das Gespräch („Er liegt jetzt in stabiler Seitenlage“) und es gilt weiter.
+
+**6. Stimmung** – Die Stimmung des Anrufers ändert sich: „Die Rettung ist unterwegs“ und klare Anweisungen beruhigen, eine Verschlechterung oder langes Warten ohne Zusage machen unruhiger.
+
+**Zurück zum alten Verhalten**
+- Einstellungen → KI-Anrufer → „Gesprächsablauf“: „neu“ (Standard) oder „klassisch – wie bis Version 0.37“
+- Alle früheren Versionen bleiben auf GitHub unter „Releases“ zum Download
+
+**Testlauf**
+- In der Übersicht steht jetzt, wie oft das Programm eine Antwort nachbessern musste („vom Programm nachgebessert: neu erzeugt / feste Antwort“) – so sieht man, wie oft die KI danebenlag
+
 ## 0.37.0 – Testlauf für Krankentransporte und Überstellungen
 **Testlauf**
 - Der Testlauf spielt jetzt auch Anrufe an der Krankentransport-Hotline durch: Krankentransporte, Überstellungen oder beides – zu finden unter „🧪 Alle testen“ im Fall-Editor (Auswahl „Was“) und in der Einsatzliste unter „+ Test“ → „🧪 Testlauf KI-Gespräche …“

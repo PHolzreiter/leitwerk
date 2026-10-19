@@ -461,6 +461,8 @@ export interface AnrufKontext {
   ortUnbekannt: boolean;
   /** was sich im Gespräch schon verändert hat (Verlauf, vom Anrufer gemeldet) */
   verlauf?: string[];
+  /** was der Anrufer auf Anweisung schon macht */
+  massnahmen?: string[];
   /** Fallgeschichte (Hergang, Patient, Umgebung …), falls vorhanden */
   szenario?: Szenario;
 }
@@ -533,7 +535,7 @@ export function wahrheitText(k: AnrufKontext, f: Frage): string | null {
 const VORGESCHICHTE = new Set(["diabetiker", "epilepsie", "herz_vg", "herzleiden", "blutverduenner", "vg_schlaganfall", "vg_tia", "psych_vorerkrankung", "aneurysma", "bluter", "lungenerkrankung", "sonderdiagnose", "kokain"]);
 
 /** Ist der Patient eine Frau? */
-function patientW(k: AnrufKontext): boolean {
+export function patientW(k: AnrufKontext): boolean {
   return k.szenario ? k.szenario.patient.geschlecht === "w" : k.wahrheit.geschlecht === "w";
 }
 
@@ -795,6 +797,18 @@ function imFreien(k: AnrufKontext): boolean {
   return ["strasse", "natur", "wasser", "auto", "sport", "freizeit", "bahnhof"].includes(k.szenario?.ortArt ?? "");
 }
 
+/** „Seit wann?“ – die eine Zeitangabe des Falls (gefunden bzw. angefangen) */
+export function zeitText(k: AnrufKontext): string | null {
+  const sz = k.szenario;
+  if (!sz) return null;
+  const w = patientW(k);
+  return sz.gefunden && !k.anrufer.selbst
+    ? `Gefunden hast du ${w ? "sie" : "ihn"} ${sz.seit.replace(/^seit /, "vor ")}; wie lange ${w ? "sie" : "er"} davor schon so war, weißt du nicht`
+    : /^seit/.test(sz.seit)
+      ? `Das geht so ${sz.seit}`
+      : `Angefangen hat es ${sz.seit}`;
+}
+
 /** Szenario für die Fallakte: nach einer Veränderung ohne alte Befunde; beim Selbstanrufer in Du-Form */
 function aktenSzenario(sz: Szenario, geaendert: boolean, ich: boolean): Szenario {
   let details = sz.details;
@@ -841,9 +855,7 @@ function promptGeschichte(k: AnrufKontext): string {
   const dabei = x.persona?.dabei;
   const wohnlich = ["wohnung", "haus", "garten", "pflegeheim", "arzt"].includes(sz.ortArt);
   const keineTuer = !wohnlich ? " Hier gibt es keine Wohnungs- oder Haustür, die jemand aufsperren müsste." : "";
-  const zeit = sz.gefunden && !ich
-    ? `Gefunden hast du ${ihn} ${sz.seit.replace(/^seit /, "vor ")}; wie lange ${er} davor schon so war, weißt du nicht`
-    : /^seit/.test(sz.seit) ? `Das geht so ${sz.seit}` : `Angefangen hat es ${sz.seit}`;
+  const zeit = zeitText(k)!;
   const verlauf = (k.verlauf ?? []).filter(Boolean);
   const z = zustand(k);
   const zeilen = antwortSaetze(k)
@@ -874,6 +886,7 @@ function promptGeschichte(k: AnrufKontext): string {
     verlauf.length
       ? `GERADE GEÄNDERT (gilt ab jetzt und ist wichtiger als alles oben – darauf reagierst du jetzt, das beschäftigt dich; was oben dem widerspricht, gilt nicht mehr): ${verlauf.join(" / ")}${z && !ich && !/schwanger|geburt/.test(sz.thema) ? ` ${z.replace(/ – daran ändert sich.*$/, "")}.` : ""} Fragt die Leitstelle, wie es jetzt ist, beschreibst du DIESEN neuen Zustand.`
       : "",
+    (k.massnahmen ?? []).length ? `WAS DU AUF ANWEISUNG DER LEITSTELLE SCHON MACHST (gilt weiter, bis die Leitstelle etwas anderes sagt): ${k.massnahmen!.join(" ")}` : "",
     `DAS STIMMT SICHER (sag es nur, wenn danach gefragt wird – mit DEINEN Worten, nie Wort für Wort):`,
     zeilen,
     `WIE DU REDEST:`,
@@ -1089,7 +1102,7 @@ export function sprachFilter(text: string, sprache: string): string {
 }
 
 /** Ist außer dem Anrufer noch jemand da, der helfen (z. B. die Tür aufmachen) kann? */
-function jemandDa(k: AnrufKontext): boolean {
+export function jemandDa(k: AnrufKontext): boolean {
   const d = k.anrufer.persona?.dabei ?? "";
   return !!d && !/allein|niemand/i.test(d);
 }
@@ -1118,7 +1131,7 @@ function stilImpuls(k: AnrufKontext, art: NachrichtArt, nr: number): string | nu
 export function erinnerung(
   k: AnrufKontext,
   schemaFrage?: Frage,
-  opt: { wiederholt?: boolean; letzteAntwort?: string; art?: NachrichtArt; text?: string; erste?: boolean; nr?: number } = {},
+  opt: { wiederholt?: boolean; letzteAntwort?: string; art?: NachrichtArt; text?: string; erste?: boolean; nr?: number; kern?: string[]; stimmung?: string } = {},
 ): string {
   const laie = (k.anrufer.art ?? "privat") === "privat";
   const art: NachrichtArt = schemaFrage ? "frage" : (opt.art ?? "frage");
@@ -1135,7 +1148,9 @@ export function erinnerung(
   } else if (art === "frage") {
     teile.push("Antworte nur auf diese eine Frage, kurz, ohne weitere Details von dir aus.");
     if (opt.wiederholt) teile.push("Diese Frage hat die Leitstelle schon einmal gestellt: antworte kurz mit „Wie gesagt, …“ und denselben Fakten, aber in anderen Worten.");
-    if (!schemaFrage)
+    if (!schemaFrage && opt.kern?.length)
+      teile.push(`Die ehrliche Antwort darauf ist: ${opt.kern.join(" ")} – sag genau das, in deinen eigenen Worten, wie ein Mensch am Telefon. Nichts dazu erfinden.`);
+    else if (!schemaFrage)
       teile.push(
         k.szenario
           ? "Geh genau auf DIESE Frage ein und antworte passend zur Fallakte, menschlich und in deinen eigenen Worten."
@@ -1147,7 +1162,11 @@ export function erinnerung(
       teile.push(`Die Zusammenfassung der Leitstelle ist FALSCH: ${pr.falsch.join("; ")}. Widersprich sofort (z. B. „${eins(k.anrufer.sprache === "dialekt" ? ["Na, des stimmt net", "Na, na", "Naa", "Nein, nein"] : ["Nein, das stimmt nicht", "Nein", "Nein, Moment", "Nein, nein", "Das stimmt so nicht"])} – …“) und sag in einem Satz, wie es wirklich ist. Auf keinen Fall „Ja“ oder „genau“.`);
     else if (pr) teile.push(`Die Zusammenfassung stimmt. Bestätige ganz kurz, etwa so: „${eins(k.anrufer.sprache === "dialekt" ? ["Jo, genau so", "Jo", "Passt, so is es", "Stimmt"] : ["Ja", "Stimmt", "Ja, richtig", "Genau so", "Ja, so ist es", "Ja, das stimmt"])}.“ – nichts aufzählen.`);
     else teile.push(hinweisZurArt(art, laie, jemandDa(k)));
-  } else teile.push(hinweisZurArt(art, laie, jemandDa(k)));
+  } else {
+    if (art === "anweisung" && opt.kern?.length) teile.push(`So ist es: ${opt.kern.join(" ")} Sag kurz, wie du es machst bzw. warum es nicht geht – genau so, nichts anderes.`);
+    teile.push(hinweisZurArt(art, laie, jemandDa(k)));
+  }
+  if (opt.stimmung) teile.push(opt.stimmung);
   const impuls = !einstieg && !(k.anrufer.selbst && (k.wahrheit.sprachschw === "ja" || k.wahrheit.at === "abnorm")) ? stilImpuls(k, art, opt.nr ?? 0) : null;
   if (impuls) teile.push(impuls);
   if (opt.letzteAntwort && !opt.wiederholt) teile.push(`Deine letzte Antwort war „${opt.letzteAntwort}“ – fang nicht wieder so an und sag nichts davon noch einmal.`);

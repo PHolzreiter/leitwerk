@@ -13,6 +13,7 @@ import { fragenImAblauf, type Frage } from "./schema";
 import { anruferSagt, satzSprecher } from "../ui/sprache";
 import { ohnePatientWort } from "./sprechfrage";
 import { ist } from "./themen";
+import { antwortKern, antwortPruefen, anweisungKern, anweisungPruefen, kernAntwort, kernFuerFrage, schemaFrageZu, themenErkennen, themenZuFeld, type AnweisungKern, type Kern, type Thema } from "./verstehen";
 
 /** Welche Schemafragen in diesem Notruf schon gestellt wurden (die Formulierung wechselt) */
 const gefragt = new Map<string, Set<string>>();
@@ -58,6 +59,7 @@ export function kontext(e: Einsatz): AnrufKontext | null {
     ortUnbekannt: !!w.ortUnbekannt,
     szenario: w.szenario,
     verlauf: w.verlauf,
+    massnahmen: w.massnahmen,
   };
 }
 
@@ -255,7 +257,7 @@ function atemnotSelbst(k: AnrufKontext): boolean {
  */
 const prompts = new Map<string, { schluessel: string; text: string }>();
 function systemFuer(e: Einsatz, k: AnrufKontext): string {
-  const schluessel = `${k.versuche}|${k.rueckrufDurchLeitstelle}|${k.adresse}|${JSON.stringify(k.wahrheit)}|${(k.verlauf ?? []).length}`;
+  const schluessel = `${k.versuche}|${k.rueckrufDurchLeitstelle}|${k.adresse}|${JSON.stringify(k.wahrheit)}|${(k.verlauf ?? []).length}|${(k.massnahmen ?? []).length}`;
   const p = prompts.get(e.id);
   if (p && p.schluessel === schluessel) return p.text;
   const text = systemPrompt(k);
@@ -264,7 +266,7 @@ function systemFuer(e: Einsatz, k: AnrufKontext): string {
 }
 
 /** Nachrichten für die KI: Anweisung, bisheriges Gespräch und der Hinweis zur aktuellen Frage */
-export function kiVerlauf(e: Einsatz, k: AnrufKontext, frage: string, schemaFrage: Frage | undefined, wiederholtId = false): KiNachricht[] {
+export function kiVerlauf(e: Einsatz, k: AnrufKontext, frage: string, schemaFrage: Frage | undefined, wiederholtId = false, kern?: string[], stimmung?: string): KiNachricht[] {
   const ersteAntwort = !(e.anruf?.gespraech ?? []).some((m) => m.von === "anrufer");
   const verlauf: KiNachricht[] = [{ role: "system", content: systemFuer(e, k) }];
   for (const m of e.anruf?.gespraech ?? []) {
@@ -284,7 +286,7 @@ export function kiVerlauf(e: Einsatz, k: AnrufKontext, frage: string, schemaFrag
     const letzteAntwort = [...g].reverse().find((m) => m.von === "anrufer")?.text;
     verlauf[verlauf.length - 1] = {
       role: "user",
-      content: `${zuletzt.content}\n${erinnerung(k, sf, { wiederholt: wiederholtId || schonGefragt(g, frage), letzteAntwort, art: sf ? "frage" : nachrichtArt(frage), text: frage, erste: ersteAntwort, nr: g.filter((m) => m.von === "anrufer").length })}`,
+      content: `${zuletzt.content}\n${erinnerung(k, sf, { wiederholt: wiederholtId || schonGefragt(g, frage), letzteAntwort, art: sf ? "frage" : nachrichtArt(frage), text: frage, erste: ersteAntwort, nr: g.filter((m) => m.von === "anrufer").length, kern, stimmung })}`,
     };
   }
   return verlauf;
@@ -296,7 +298,7 @@ export async function anruferAntwort(
   frage: string,
   schemaFrage: Frage | undefined,
   onToken?: (t: string) => void,
-  quelle: { wert: "ki" | "fest" } = { wert: "ki" },
+  quelle: { wert: "ki" | "fest"; nachgebessert?: string } = { wert: "ki" },
   wiederholtId = false,
 ): Promise<string> {
   quelle.wert = "fest";
@@ -332,7 +334,44 @@ export async function anruferAntwort(
     const a = einfacheAntwort(k, frage, schemaFrage);
     return schonGefragt(e.anruf?.gespraech ?? [], frage) ? `Wie gesagt: ${a.charAt(0).toLowerCase()}${a.slice(1)}` : a;
   }
-  const verlauf = kiVerlauf(e, k, frage, schemaFrage, wiederholtId);
+  // Gesprächsablauf „neu“: Frage verstehen, Antwortkern bestimmen (das Programm denkt, die KI redet)
+  const neu = kiPrefs().ablauf !== "klassisch";
+  const art = schemaFrage ? "frage" : nachrichtArt(frage);
+  let themen: Thema[] = [];
+  let kern: Kern | null = null;
+  let pruefFrage: Frage | undefined;
+  let hinweisFrage = schemaFrage;
+  if (neu && art === "frage" && !(ersteAntwort && frage === ERÖFFNUNG)) {
+    const grund = schemaFrage ?? freieSchemaFrage(frage);
+    if (grund && ["ort_adresse", "schilderung", "anrufer", "rueckrufnummer"].includes(grund.id)) {
+      // Grundfragen: wie bisher
+    } else if (schemaFrage) {
+      pruefFrage = schemaFrage;
+      themen = themenZuFeld(schemaFrage.id);
+      kern = kernFuerFrage(k, schemaFrage);
+    } else {
+      themen = themenErkennen(frage);
+      if (themen.length) kern = antwortKern(k, themen);
+      else {
+        // kein bekanntes Thema: passendste Frage der Abfrage (auch bei selbst erstellten Fällen)
+        pruefFrage = schemaFrageZu(k, frage);
+        if (pruefFrage) {
+          hinweisFrage = pruefFrage;
+          kern = kernFuerFrage(k, pruefFrage);
+        }
+      }
+    }
+  }
+  // Anweisungen: geht das überhaupt, und was gilt danach?
+  let anweisung: AnweisungKern | null = null;
+  if (neu && art === "anweisung") {
+    anweisung = anweisungKern(k, frage);
+    if (!anweisung.typen.length) anweisung = null;
+  }
+  const stimmung = neu ? stimmungHinweis(e, k, art, frage, anweisung) : undefined;
+  const pruefbar = (!!kern && (kern.saetze.length > 0 || Object.keys(kern.felder).length > 0)) || !!anweisung?.nichtMachbar.length;
+  const kernText = anweisung ? anweisung.saetze : !hinweisFrage && kern?.saetze.length ? kern.saetze : undefined;
+  const verlauf = kiVerlauf(e, k, frage, hinweisFrage, wiederholtId, kernText, stimmung);
   try {
     const g = e.anruf?.gespraech ?? [];
     const frueher = g.filter((m) => m.von === "anrufer").map((m) => m.text);
@@ -342,17 +381,52 @@ export async function anruferAntwort(
     const glatt = (t: string) => sprachFilter(laie ? ohnePatientWort(t, w) : t, x.sprache);
     const sf = schemaFrage ?? freieSchemaFrage(frage);
     const atemnot = atemnotSelbst(k);
-    const t = await kiAntwortNeu(verlauf, frueher, (y) => onToken?.(atemnot ? "" : glatt(y)), { pruefen: !(wiederholtId || schonGefragt(g, frage)), maxSaetze: atemnot ? 2 : hoechstSaetze(k, sf, ersteAntwort) });
+    const maxSaetze = atemnot ? 2 : themen.length ? Math.min(3, hoechstSaetze(k, sf, ersteAntwort)) : hoechstSaetze(k, sf, ersteAntwort);
+    const nachbearbeiten = (t: string): string => {
+      let f = fuellwortDosis(ohneRollentausch(ohneFrageEcho(atemnot ? inAtemnot(t) : glatt(t), frage)), frueher, x.persona?.woerter ?? []);
+      // Adresse nochmal aufgesagt, obwohl nicht danach gefragt (kommt nach der ersten Antwort vor)
+      if (k.adresse && !/adresse|notfallort|\bwo\b|straße|hausnummer|ort\b/i.test(frage)) {
+        const strasse = k.adresse.split(",")[0].trim().toLowerCase();
+        const teile = f.split(/(?<=[.!?…])\s+/);
+        if (teile.length > 1 && strasse.length > 4 && teile[0].toLowerCase().includes(strasse)) f = teile.slice(1).join(" ");
+      }
+      return f;
+    };
+    // Prüfbare Antworten erst nach der Prüfung zeigen bzw. vorlesen (eine falsche soll man nie hören)
+    const t = await kiAntwortNeu(verlauf, frueher, (y) => (pruefbar ? undefined : onToken?.(atemnot ? "" : glatt(y))), { pruefen: !(wiederholtId || schonGefragt(g, frage)), maxSaetze });
     quelle.wert = "ki";
-    let fertig = fuellwortDosis(ohneRollentausch(ohneFrageEcho(atemnot ? inAtemnot(t) : glatt(t), frage)), frueher, x.persona?.woerter ?? []);
-    // Adresse nochmal aufgesagt, obwohl nicht danach gefragt (kommt nach der ersten Antwort vor)
-    if (k.adresse && !/adresse|notfallort|\bwo\b|straße|hausnummer|ort\b/i.test(frage)) {
-      const strasse = k.adresse.split(",")[0].trim().toLowerCase();
-      const teile = fertig.split(/(?<=[.!?…])\s+/);
-      if (teile.length > 1 && strasse.length > 4 && teile[0].toLowerCase().includes(strasse)) fertig = teile.slice(1).join(" ");
-    }
+    let fertig = nachbearbeiten(t);
     // nur die Frage zurückgegeben (kommt beim kleinen Modell vor) → einfache Antwort aus den Fakten
     if (!fertig.trim()) fertig = einfacheAntwort(k, frage, schemaFrage);
+    // Prüfen und bei einem Widerspruch einmal neu erzeugen – mit klarer Korrektur
+    const allePruefen = (a: string) => [...(kern ? antwortPruefen(k, themen, kern, a, pruefFrage) : []), ...(anweisung ? anweisungPruefen(anweisung, a) : [])];
+    if (pruefbar && !atemnot) {
+      const probleme = allePruefen(fertig);
+      if (probleme.length) {
+        const nochmal = verlauf.map((m) => ({ ...m }));
+        const letzte = nochmal[nochmal.length - 1];
+        const richtig = anweisung ? anweisung.saetze : kern?.saetze ?? [];
+        letzte.content += `\n[Korrektur nur für dich: Deine Antwort „${fertig}“ war falsch – ${probleme.join("; ")}.${richtig.length ? ` Richtig ist: ${richtig.join(" ")}` : ""} Antworte neu, kurz, in deinen eigenen Worten.]`;
+        let zweite = "";
+        try {
+          zweite = nachbearbeiten(await kiAntwortNeu(nochmal, frueher, () => undefined, { pruefen: false, maxSaetze }));
+        } catch {
+          zweite = "";
+        }
+        if (zweite.trim() && !allePruefen(zweite).length) {
+          fertig = zweite;
+          quelle.nachgebessert = `neu erzeugt (${probleme.join("; ")})`;
+        } else if (anweisung?.nichtMachbar.length) {
+          fertig = anweisung.gesagt[0];
+          quelle.wert = "fest";
+          quelle.nachgebessert = `feste Antwort (${probleme.join("; ")})`;
+        } else if (kern && (kern.saetze.length || pruefFrage)) {
+          fertig = kernAntwort(k, themen, kern, pruefFrage);
+          quelle.wert = "fest";
+          quelle.nachgebessert = `feste Antwort (${probleme.join("; ")})`;
+        }
+      }
+    }
     // falsche Zusammenfassung abgenickt? Dann widerspricht der Anrufer (das kleine Modell sagt sonst fast immer „Ja, genau“)
     if (!sf && nachrichtArt(frage) === "zusammenfassung") {
       const pr = zusammenfassungPruefen(k, frage);
@@ -361,11 +435,48 @@ export async function anruferAntwort(
     }
     // nach dem Weglassen von schon Gesagtem kann der Rest klein anfangen
     if (/^[a-zäöü]/.test(fertig)) fertig = fertig.charAt(0).toUpperCase() + fertig.slice(1);
+    if (pruefbar) onToken?.(fertig);
+    // ausgeführte Anweisungen merken (gelten im weiteren Gespräch)
+    const wa = e.wahr.abfrage;
+    if (anweisung?.massnahmen.length && wa) for (const m of anweisung.massnahmen) if (!(wa.massnahmen ??= []).includes(m)) wa.massnahmen.push(m);
     return fertig;
   } catch (err) {
     console.warn("KI-Antwort", err);
     return einfacheAntwort(k, frage, schemaFrage);
   }
+}
+
+const STIMMUNGEN = ["ruhig", "gefasst", "aufgeregt", "panisch"] as const;
+const STIMMUNG_TEXT = [
+  "Du bist jetzt ruhiger und sachlich.",
+  "Du bist jetzt besorgt, aber gefasst.",
+  "Du bist jetzt aufgeregt und redest schneller.",
+  "Du bist jetzt panisch: kurze, abgehackte Sätze.",
+];
+
+/**
+ * Stimmung im Gespräch: „Die Rettung ist unterwegs“ und klare Anweisungen beruhigen, eine Verschlechterung
+ * oder langes Warten ohne Zusage machen unruhiger. Gibt einen Hinweis zurück, wenn sie anders ist als am Anfang.
+ */
+function stimmungHinweis(e: Einsatz, k: AnrufKontext, art: string, frage: string, anweisung: AnweisungKern | null): string | undefined {
+  const w = e.wahr.abfrage;
+  if (!w || (k.anrufer.art ?? "privat") !== "privat") return undefined;
+  const start = Math.max(0, STIMMUNGEN.indexOf(k.anrufer.emotion));
+  const s = (w.stimmung ??= { stufe: start, verlauf: 0, beruhigt: false });
+  const n = (k.verlauf ?? []).length;
+  if (n > s.verlauf) {
+    // Veränderung im Gespräch: bei einer Verschlechterung unruhiger, bei einer Besserung ruhiger
+    const neu = (k.verlauf ?? []).slice(s.verlauf).join(" ").toLowerCase();
+    s.stufe = /besser|wieder|atmet wieder|draußen|ausgespuckt|schreit|wach/.test(neu) ? Math.max(0, s.stufe - 1) : Math.min(3, s.stufe + 1);
+    s.verlauf = n;
+  }
+  if (art === "mitteilung" && /rettung|unterwegs|kommt|schick|alarmiert|auf dem weg/i.test(frage)) {
+    s.stufe = Math.max(0, s.stufe - 1);
+    s.beruhigt = true;
+  } else if (anweisung && !anweisung.nichtMachbar.length) s.stufe = Math.max(start >= 3 ? 1 : 0, s.stufe - 1);
+  // lange keine Zusage, dass Hilfe kommt: einmal unruhiger
+  else if (!s.beruhigt && (e.anruf?.gespraech ?? []).filter((m) => m.von === "anrufer").length === 9 && s.stufe < 3 && start >= 1) s.stufe += 1;
+  return s.stufe !== start ? STIMMUNG_TEXT[s.stufe] : undefined;
 }
 
 /**

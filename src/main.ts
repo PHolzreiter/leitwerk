@@ -2,13 +2,14 @@ import { fehlerLogStarten } from "./fehlerLog";
 fehlerLogStarten();
 import { ohnePatientWort, sprechFrage } from "./abfrage/sprechfrage";
 import { erinnerung, ortKandidaten, systemPrompt } from "./abfrage/anrufer";
-import { eroeffnen, fuellwortDosis, inAtemnot, kiVerlauf, kontext, ohneFrageEcho, ohneRollentausch, probeGespraech, vorwaermen } from "./abfrage/gespraech";
+import { anruferAntwort, eroeffnen, fuellwortDosis, inAtemnot, kiVerlauf, kontext, ohneFrageEcho, ohneRollentausch, probeGespraech, vorwaermen } from "./abfrage/gespraech";
 import { kiAntwortNeu, nachrichtArt } from "./abfrage/runde";
-import { bereinigen, kiTest, satzEnde } from "./abfrage/ki";
+import { bereinigen, kiTest, satzEnde, setKiPrefs } from "./abfrage/ki";
 import { alleFaelle, fallAktivSetzen, fallLoeschen, fallpaketExport, fallpaketImport, fallSpeichern } from "./abfrage/faelle";
 import { entwurfAusKi, fallEditorOeffnen } from "./ui/fallEditor";
 import { auftraegeFuer, ktAuftraege, testlaufAusfuehren, testlaufDateien, testlaufDialog } from "./ui/testlauf";
 import { ktPrompt, ktPruefen, ktZusammenfassungFalsch } from "./abfrage/ktGespraech";
+import { antwortKern, antwortPruefen, kernAntwort, schemaFrageZu, themenErkennen } from "./abfrage/verstehen";
 import { zipOhneKompression } from "./platform";
 import "./style.css";
 import "./ui/ws/dockview.css";
@@ -50,7 +51,7 @@ import { fallHinweise, faellePruefen } from "./abfrage/faellePruefen";
 dienstHoverEinrichten();
 
 // Für automatische Tests im Browser (…/?debug): Zugriff auf Simulation und Daten
-if (location.search.includes("debug")) Object.assign(window, { __lw: { sim, store, sprachTest, codesystemLaden: (s: Schema) => schemaUebernehmen(s, "test.json"), faellePruefen: () => faellePruefen(store.schema), fallHinweise, ohneFrageEcho, fuellwortDosis, ohneRollentausch, faelle: { alleFaelle, fallSpeichern, fallLoeschen, fallpaketExport, fallpaketImport, fallAktivSetzen }, fallEditorOeffnen, entwurfAusKi, sprechFrage, systemPrompt, kontext, erinnerung, kiVerlauf, ohnePatientWort, bereinigen, satzEnde, inAtemnot, kiAntwortNeu, kiTest, probe: probeGespraech, vorwaermen, eroeffnen, nachrichtArt, ortKandidaten, testlauf: { auftraegeFuer, ktAuftraege, testlaufAusfuehren, testlaufDateien, testlaufDialog, zipOhneKompression }, kt: { ktPrompt, ktPruefen, ktZusammenfassungFalsch } } });
+if (location.search.includes("debug")) Object.assign(window, { __lw: { sim, store, sprachTest, codesystemLaden: (s: Schema) => schemaUebernehmen(s, "test.json"), faellePruefen: () => faellePruefen(store.schema), fallHinweise, ohneFrageEcho, fuellwortDosis, ohneRollentausch, faelle: { alleFaelle, fallSpeichern, fallLoeschen, fallpaketExport, fallpaketImport, fallAktivSetzen }, fallEditorOeffnen, entwurfAusKi, sprechFrage, systemPrompt, kontext, erinnerung, kiVerlauf, ohnePatientWort, bereinigen, satzEnde, inAtemnot, kiAntwortNeu, kiTest, probe: probeGespraech, vorwaermen, eroeffnen, nachrichtArt, ortKandidaten, testlauf: { auftraegeFuer, ktAuftraege, testlaufAusfuehren, testlaufDateien, testlaufDialog, zipOhneKompression }, kt: { ktPrompt, ktPruefen, ktZusammenfassungFalsch }, anruferAntwort, verstehen: { themenErkennen, antwortKern, antwortPruefen, kernAntwort, schemaFrageZu }, kiPrefsSetzen: setKiPrefs } });
 
 async function watchGeo(): Promise<void> {
   const out = document.getElementById("geo-status");

@@ -67,10 +67,12 @@ export interface KiPrefs {
   beenden: boolean;
   /** Klingelton bei Anrufen */
   klingelton: boolean;
+  /** Gesprächsablauf: „neu“ = Frage verstehen, Antwortkern, prüfen, bei Fehler neu erzeugen; „klassisch“ = wie bis v0.37 */
+  ablauf: "neu" | "klassisch";
 }
 
 export function kiPrefs(): KiPrefs {
-  const d: KiPrefs = { aktiv: true, modell: "qwen3:8b", beenden: false, klingelton: true };
+  const d: KiPrefs = { aktiv: true, modell: "qwen3:8b", beenden: false, klingelton: true, ablauf: "neu" };
   try {
     return { ...d, ...(JSON.parse(localStorage.getItem(LS) ?? "{}") as Partial<KiPrefs>) };
   } catch {
