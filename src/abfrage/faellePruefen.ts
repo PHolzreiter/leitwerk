@@ -5,7 +5,7 @@
 import { buchung } from "../data/klinik";
 import { alleFaelle, type FallVariante, type FallVorlage } from "./faelle";
 import { bestimmeCode, fragenImAblauf, type Antworten, type Schema } from "./schema";
-import { vorlageFest } from "./szenario";
+import { altersPlausibel, sichtUnbekannt, vorlageFest } from "./szenario";
 import { kapitelZuThema, merkmaleInSchema } from "./themen";
 
 export interface FallBefund {
@@ -60,6 +60,8 @@ export function fallPruefen(f: FallVorlage, schema: Schema | null): FallBefund[]
       // mehrere Ziehungen, weil feste Antworten Listen sein können
       for (let i = 0; i < 6; i++) {
         const a: Antworten = { ...vorlageFest(f, Math.random), ...(v.fest ?? {}) };
+      altersPlausibel({ alter: f.alter, fest: { ...(f.fest ?? {}), ...(v.fest ?? {}) }, anrufer: f.anrufer }, a, Math.random);
+      sichtUnbekannt(schema, kap, f.ohneSicht, a);
         const w = widerspruch(a);
         if (w) out.push({ fall: f.id, variante: v.id, fehler: `Widerspruch: ${w}` });
         const ant = merkmaleInSchema(schema, a);

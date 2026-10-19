@@ -42,7 +42,7 @@ import { bestimmeCode, fallZiehen, kapitelVonCode, wahrheitFuer, type Antworten,
 import { anruferWaehlen, ortKandidaten, veraenderungText, zufallsName, type Anrufer } from "../abfrage/anrufer";
 import { personaWaehlen } from "../abfrage/persona";
 import { alleOrte, kategorienFuerOrtArt, poiKategorien } from "../data/orte";
-import { bezugFuer, fuellen, stimmungAusVerlauf, szenarioBauen, vorlageFest, vorlageWaehlen, type AnruferTyp, type OrtArt, type OrtModus, type Szenario } from "../abfrage/szenario";
+import { bezugFuer, fuellen, stimmungAusVerlauf, szenarioBauen, altersPlausibel, sichtUnbekannt, vorlageFest, vorlageWaehlen, type AnruferTyp, type OrtArt, type OrtModus, type Szenario } from "../abfrage/szenario";
 
 /** Einsatzorte, die eine echte Einrichtung brauchen (sonst ruft z. B. eine Pflegekraft aus einem Wohnhaus an) */
 const ORT_NUR_MIT_POI: OrtArt[] = ["pflegeheim", "arzt", "schule", "bahnhof"];
@@ -2835,6 +2835,8 @@ export class Simulation {
       if (!kap) continue;
       const v = (wunsch?.variante ? fallVariante(f, wunsch.variante) : undefined) ?? varianteWaehlen(f, this.settings.komplikationen ?? "normal", Math.random);
       const a: Antworten = { ...vorlageFest(f, Math.random), ...(v.fest ?? {}) };
+      altersPlausibel({ alter: f.alter, fest: { ...(f.fest ?? {}), ...(v.fest ?? {}) }, anrufer: f.anrufer }, a, Math.random);
+      sichtUnbekannt(schema, kap, f.ohneSicht, a);
       const antworten = merkmaleInSchema(schema, a);
       const erg = bestimmeCode(schema, kap, antworten);
       const c = erg ? findCode(erg.code) : undefined;

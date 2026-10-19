@@ -1102,9 +1102,9 @@ export function varianteWaehlen(f: FallVorlage, komplikationen: "ruhig" | "norma
 // ------------------------------------------------------------------ Anleitungen am Telefon erkennen
 
 const ANLEITUNG_MUSTER: [AnleitungTyp, RegExp][] = [
-  ["druck_blutung", /(wunde|blut|tuch|verband|abbind)/],
-  ["fremdkoerper", /(\brücken|schulterbl|heimlich|oberbauch|bäuchlings|kopf (nach )?(unten|tiefer)|unterarm)/],
-  ["reanimation", /(herzdruck|reanim|wiederbeleb|brustkorb|brustmitte|brustbein|drück|drueck|pump|mitzählen|defi|aed)/],
+  ["druck_blutung", /(wunde|blut(?!verd|druck|zucker|wert|gerinn)|tuch|tücher|verband|abbind|kompress|(drück|druck|press|halt)\w*[^.?!]*\bauf (den|die|das|ihren|seinen|ihre|seine) (finger|daumen|hand|arm|unterarm|oberarm|bein|fuß|zeh|kopf|stirn|stelle|schnitt|verletzung))/],
+  ["fremdkoerper", /(\brücken|schulterbl|heimlich|oberbauch|bäuchlings|kopf (nach )?(unten|tiefer)|unterarm|(weiter|kräftig|fest) (zu )?husten|zum husten|husten lassen)/],
+  ["reanimation", /(herzdruck|reanim|wiederbeleb|brustkorb|brustmitte|brustbein|hände[^.?!]*\bbrust|auf (die|seine|ihre) brust|drück|drueck|pump|mitzählen|defi|aed)/],
   ["seitenlage", /(seitenlage|auf die seite)/],
   ["oberkoerper_hoch", /(oberkörper|aufsetzen|hinsetzen|aufrecht|kutscher|sitzen)/],
   ["beine_hoch", /(beine (hoch|anheben)|hochlagern)/],

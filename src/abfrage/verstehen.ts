@@ -50,7 +50,7 @@ const MUSTER: [Thema, RegExp][] = [
   ["verletzung", /verletz|wunde|gebrochen|\bbruch|fehlstell|steht .* ab|verformt|verrenkt/],
   ["haut", /blass|bleich|gesichtsfarbe|\bfarbe\b|\bgrau\b|bläulich|\bblau\b|hautfarbe|im gesicht aus/],
   ["schweiss", /schwitz|schweiß|kalt und feucht|feucht/],
-  ["sprechen", /ganze sätze|einzelne wörter|reden kann|sprechen kann|kann (er|sie) (normal )?(reden|sprechen)/],
+  ["sprechen", /ganze sätze|einzelne wörter|reden kann|sprechen kann|kann (er|sie) (normal )?(reden|sprechen)|nach jedem wort|zwischen (den )?wörtern|beim (reden|sprechen)|sprechpause/],
   ["verwirrt", /verwirrt|orientiert|durcheinander|weiß (er|sie) ,? ?wo|desorient/],
   ["dabei", /(jemand|wer|leute|personen?) (anderer |anders |sonst |noch |weiterer )*(da|bei ihnen|dabei|anwesend|vor ort)\b|\ballein\b|wer (kann|könnte) (die tür|aufmachen|helfen)|sonst noch wer/],
   ["name_patient", /wie heißt (er|sie|der|die|das|ihr|ihre)\b|name (des|der|vom|von der) (patient|mann|frau|person|kind)|wie heißt .* (patient|mann|frau|kind|person)/],
@@ -128,6 +128,13 @@ export function antwortKern(k: AnrufKontext, themen: Thema[]): Kern {
   const er = w ? "sie" : "er";
   const geaendert = (k.verlauf ?? []).length > 0;
   const kenntVor = k.anrufer.selbst || !p || p.kenntVorgeschichte === "ja";
+  // Was in der Fallakte ausdrücklich steht („Sie hat Depressionen“), weiß der Anrufer – auch wenn er sonst wenig weiß
+  const akte = sz ? [...(sz.geschehen ?? []), ...sz.details].join(" ").toLowerCase() : "";
+  const ausAkte = (liste: string[]) =>
+    liste.filter((x) => {
+      const woerter = x.toLowerCase().replace(/\(.*?\)/g, "").split(/[^a-zäöüß]+/).filter((w) => w.length >= 5);
+      return woerter.some((w) => akte.includes(w.slice(0, Math.max(5, w.length - 3))));
+    });
   for (const thema of themen) {
     if (sz?.ohneSicht && SICHT.includes(thema)) {
       saetze.push(`Das weißt du nicht – du siehst ${ihn} nicht.`);
@@ -161,6 +168,7 @@ export function antwortKern(k: AnrufKontext, themen: Thema[]): Kern {
       case "vorerkrankung":
         if (!sz) break;
         if (kenntVor) saetze.push(sz.patient.vorerkrankungen.length ? `Vorerkrankungen: ${sz.patient.vorerkrankungen.join(", ")} – sonst nichts.` : "Vorerkrankungen hat " + (k.anrufer.selbst ? "du keine" : `${er} keine`) + ", soweit bekannt.");
+        else if (ausAkte(sz.patient.vorerkrankungen).length) saetze.push(`Du weißt nur: ${ausAkte(sz.patient.vorerkrankungen).join(", ")}. Mehr weißt du nicht.`);
         else if (p?.kenntVorgeschichte === "teilweise" && sz.patient.vorerkrankungen.length) saetze.push(`Du weißt nur: ${sz.patient.vorerkrankungen[0]}. Mehr weißt du nicht.`);
         else {
           saetze.push(p?.wissen === "fremd" ? `Das weißt du nicht, du kennst ${ihn} nicht.` : "Das weißt du nicht genau.");
@@ -173,7 +181,8 @@ export function antwortKern(k: AnrufKontext, themen: Thema[]): Kern {
           if (!sz.patient.medikamente.length) saetze.push(k.anrufer.selbst ? "Du nimmst keine Medikamente regelmäßig." : `Regelmäßig nimmt ${er} keine Medikamente.`);
           else if (p?.medsUngefaehr) saetze.push(`${er.charAt(0).toUpperCase()}${er.slice(1)} nimmt Medikamente (${sz.patient.medikamente.join(", ")}), aber die Namen weißt du nicht auswendig – beschreib sie ungefähr oder biete an nachzuschauen.`);
           else saetze.push(`Medikamente: ${sz.patient.medikamente.join(", ")}.`);
-        } else {
+        } else if (ausAkte(sz.patient.medikamente).length) saetze.push(`Du weißt nur: ${ausAkte(sz.patient.medikamente).join(", ")}. Mehr weißt du nicht.`);
+        else {
           saetze.push(p?.wissen === "fremd" ? `Das weißt du nicht, du kennst ${ihn} nicht.` : "Das weißt du nicht.");
           unbekannt = true;
         }
@@ -222,6 +231,30 @@ export function schemaFrageZu(k: AnrufKontext, text: string): Frage | undefined 
 }
 
 // ------------------------------------------------------------------ Prüfen
+
+const WEISS_NICHT = /wei(ß|ss) (ich|i)? ?(nicht|net|ned)|(nicht|net),? (wei(ß|ss)|sagen)|keine ahnung|kann ich (nicht|net) sagen|seh (ich )?(sie|ihn|nix|nichts)|weiß nicht|nicht sehen|keine sicht|kenn (ihn|sie) (nicht|net)/;
+
+const ZAHL_EINER: Record<string, number> = { ein: 1, eins: 1, zwei: 2, drei: 3, vier: 4, fünf: 5, sechs: 6, sieben: 7, acht: 8, neun: 9 };
+const ZAHL_BIS19: Record<string, number> = { null: 0, eins: 1, eine: 1, einer: 1, zwei: 2, drei: 3, vier: 4, fünf: 5, sechs: 6, sieben: 7, acht: 8, neun: 9, zehn: 10, elf: 11, zwölf: 12, dreizehn: 13, vierzehn: 14, fünfzehn: 15, sechzehn: 16, siebzehn: 17, achtzehn: 18, neunzehn: 19 };
+const ZAHL_ZEHNER: Record<string, number> = { zwanzig: 20, dreißig: 30, dreissig: 30, vierzig: 40, fünfzig: 50, sechzig: 60, siebzig: 70, achtzig: 80, neunzig: 90, hundert: 100 };
+/** Alle Zahlen eines Texts – als Ziffern oder ausgeschrieben („sechsundsiebzig“) */
+export function zahlenIn(text: string): number[] {
+  const out: number[] = [];
+  for (const m of text.toLowerCase().matchAll(/\d{1,3}|[a-zäöüß]+/g)) {
+    const w = m[0];
+    if (/^\d/.test(w)) {
+      out.push(Number(w));
+      continue;
+    }
+    if (w in ZAHL_ZEHNER) out.push(ZAHL_ZEHNER[w]);
+    else if (w in ZAHL_BIS19 && !["ein", "eine", "einer", "eins"].includes(w)) out.push(ZAHL_BIS19[w]);
+    else {
+      const x = w.match(/^([a-zäöü]+?)und(zwanzig|dreißig|dreissig|vierzig|fünfzig|sechzig|siebzig|achtzig|neunzig)$/);
+      if (x && x[1] in ZAHL_EINER) out.push(ZAHL_EINER[x[1]] + ZAHL_ZEHNER[x[2]]);
+    }
+  }
+  return out;
+}
 
 const NEG = /\b(nein|na|naa|nö|nicht|net|ned|kein\w*|nix|nichts|niemand|nie)\b/;
 const erster = (t: string) => klein(t).split(/[.!?…]/)[0] ?? "";
@@ -282,13 +315,18 @@ export function antwortPruefen(k: AnrufKontext, themen: Thema[], kern: Kern, ant
   const anz = wahr("anzahl_patienten");
   if (anz === "1" && /\b(zwei|drei|mehrere|beide)\b/.test(a) && !NEG.test(erster(a))) g.push("es ist nur eine Person betroffen");
   // Alter
-  if (themen.includes("alter") && k.szenario && !k.anrufer.selbst) {
-    const genannt = Number(a.match(/\b(\d{1,3})\b/)?.[1] ?? NaN);
+  if (themen.includes("alter") && k.szenario) {
     const p = k.anrufer.persona;
-    const soll = Number(String(p?.alterGesagt ?? k.szenario.patient.alter).match(/\d+/)?.[0] ?? NaN);
-    const spanne = p?.wissen === "fremd" || p?.wissen === "bekannt" ? 12 : 2;
-    if (!Number.isNaN(genannt) && !Number.isNaN(soll) && Math.abs(genannt - soll) > spanne) g.push(`das Alter ist ${p?.alterGesagt ?? soll}`);
+    const sollListe = zahlenIn(String(p?.alterGesagt ?? k.szenario.patient.alter));
+    // Spanne nur bei einer geschätzten Einzelzahl („so um die 50“); eine genannte Spanne („zwischen 60 und 70“) gilt genau
+    const spanne = sollListe.length >= 2 ? 3 : p?.wissen === "fremd" || p?.wissen === "bekannt" ? 12 : 2;
+    const zw = zahlenIn((a.match(/zwischen ([^.!?]*?) und ([^.!?,]+)/) ?? []).slice(1).join(" "));
+    if (zw.length === 2 && zw[0] >= zw[1]) g.push(`das Alter ist ${p?.alterGesagt ?? sollListe[0]}`);
+    const genannt = zahlenIn(a.replace(/[\wäöüß]+\s+(minute|minuten|stunde|stunden|uhr|stock|kilo|kg|tage|tagen|wochen)\b/g, "")).filter((n) => n > 0 && n < 120);
+    if (sollListe.length && genannt.some((n) => n < Math.min(...sollListe) - spanne || n > Math.max(...sollListe) + spanne)) g.push(`das Alter ist ${p?.alterGesagt ?? sollListe[0]}`);
   }
+  // „weiß ich nicht“ ist die Antwort – dann kein Ja oder Nein behaupten
+  if (kern.unbekannt && kern.saetze.length && !WEISS_NICHT.test(a) && /^\W*(ja|jo|nein|na|naa|genau|stimmt)\b/.test(erster(a))) g.push(kern.saetze[0].replace(/\.$/, ""));
   // Zeit
   if (themen.includes("zeit") && k.szenario && !k.szenario.gefunden) {
     const soll = k.szenario.seitMin;
@@ -435,7 +473,11 @@ export function anweisungKern(k: AnrufKontext, text: string): AnweisungKern {
         break;
       case "reanimation":
         if (wach || atmetNormal) nein(`${er} ist ${wach ? "wach" : "nicht wach, atmet aber normal"} – Herzdruckmassage passt da nicht, sag das verwundert`, wach ? `Was? ${er.charAt(0).toUpperCase()}${er.slice(1)} ist doch wach und redet!` : `Aber ${er} atmet doch – soll ich da wirklich drücken?`);
-        else saetze.push("Du legst los: Herzdruckmassage, und du zählst laut mit („eins, zwei, drei …“).");
+        else if (!/drück|druck|pump|herzdruck|reanim|wiederbeleb|zähl|weiter/.test(text.toLowerCase())) {
+          // erst hinknien und Hände auflegen – gedrückt wird, wenn die Leitstelle es sagt
+          saetze.push(f("Du kniest dich neben {ihn} und legst die Hände auf die Mitte der Brust – gedrückt wird erst, wenn die Leitstelle es sagt."));
+          continue;
+        } else saetze.push("Du legst los: Herzdruckmassage, und du zählst laut mit („eins, zwei, drei …“).");
         break;
       case "seitenlage":
         if (wach) saetze.push(`${er.charAt(0).toUpperCase()}${er.slice(1)} ist wach – du hilfst ${ihm} in eine bequeme Lage und sagst, dass ${er} wach ist.`);

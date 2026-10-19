@@ -5,7 +5,9 @@
 import { inTauri } from "../platform";
 import { sim } from "../sim/engine";
 import { bereichName, hhmm, type KtAuftrag, type KtDaten } from "../sim/kt";
-import { schonGefragt } from "./gespraech";
+import { ohneFrageEcho, schonGefragt } from "./gespraech";
+import { buchstabiert, fragtSchreibweise, namensTeil } from "./buchstabieren";
+import { ohnePatientWort } from "./sprechfrage";
 import { kiBereit, kiPrefs, kiStatus, type KiNachricht } from "./ki";
 import { hinweisZurArt, kiAntwortNeu, nachrichtArt } from "./runde";
 import { anruferSagt, geschlechtAusName, satzSprecher } from "../ui/sprache";
@@ -62,8 +64,12 @@ function ort(o: KtDaten["von"]): string {
   return o.khId ? `${o.label}` : o.label;
 }
 
-/** Wahre Antwort in einfachen Worten */
+/** Wahre Antwort in einfachen Worten (passend zum Geschlecht des Patienten) */
 export function ktAntwortOhneKi(k: KtAuftrag, f: KtFrage): string {
+  return ktGeschlecht(ktAntwortRoh(k, f), k.wahr.d.patient.geschlecht);
+}
+
+function ktAntwortRoh(k: KtAuftrag, f: KtFrage): string {
   const w = k.wahr.d;
   const zuHause = !w.von?.khId;
   switch (f.id) {
@@ -139,6 +145,7 @@ export function ktAntwortOhneKi(k: KtAuftrag, f: KtFrage): string {
       teile.push(z.instabil ? "er ist kreislaufinstabil, wir justieren laufend nach" : "derzeit ist er stabil");
       if (z.inkubator) teile.push((w.patient.alter ?? 1) < 1 ? "es ist ein Neugeborenes, wir brauchen einen Inkubator" : `es ist ein Kind, ${w.patient.alter} Jahre`);
       if (z.bit) teile.push("und er ist sehr schwer, über 150 Kilo – da braucht es den BIT");
+      else if (!z.inkubator) teile.push("vom Gewicht her normal");
       return satz(teile.join(", "));
     }
     default:
@@ -240,6 +247,7 @@ export function ktPrompt(k: KtAuftrag): string {
     profi
       ? `- Du bist vom Fach und hast so einen Anruf schon oft gemacht: freundlich, knapp, sachlich – aber wie ein Mensch am Telefon, nicht wie ein Formular.`
       : `- Du bist kein Profi: Du redest in Alltagssprache, manchmal etwas umständlich, ab und zu mit „äh“ oder „Moment, ich schau nach“.`,
+    !ktSelbst(k) ? (laie ? `- Den Patienten nennst du so, wie du ${w.patient.geschlecht === "w" ? "sie" : "ihn"} nennst (z. B. ${laieBezug(a.rolle, w.patient.geschlecht)} oder „${w.patient.geschlecht === "w" ? "sie" : "er"}“) – nie „der Patient“.` : `- Es ist ${w.patient.geschlecht === "w" ? "eine Patientin: sag „die Patientin“ bzw. „sie“" : "ein Patient: sag „der Patient“ bzw. „er“"}.`) : "",
     ktSelbst(k) ? `- Du bist selbst der Patient: Du redest IMMER in der Ich-Form über dich („ich muss liegen“, „ich wohne …“) – nie „der Patient“, nie „er“.` : "",
     `- Beantworte genau die Frage, die gestellt wird, in ein bis zwei kurzen Sätzen. Auf „Wohin?“ kommt nur das Ziel, auf „Wann?“ nur die Zeit. Uhrzeiten nennst du genau so, wie sie oben stehen.`,
     `- Die Leitstelle sprichst du mit „Sie“ an.`,
@@ -255,6 +263,18 @@ export function ktPrompt(k: KtAuftrag): string {
     .join("\n");
 }
 
+/** Wie ein Angehöriger den Patienten nennt („Tochter der Patientin“ → „meine Mutter“) */
+function laieBezug(rolle: string, g: "m" | "w" | null): string {
+  const r = rolle.toLowerCase();
+  const w = g === "w";
+  if (/tochter|sohn/.test(r)) return w ? "„meine Mutter“" : "„mein Vater“";
+  if (/(ehe)?frau|gattin|partnerin/.test(r)) return w ? "„meine Frau“" : "„mein Mann“";
+  if (/(ehe)?mann|gatte|partner/.test(r)) return w ? "„meine Frau“" : "„mein Mann“";
+  if (/enkel/.test(r)) return w ? "„meine Oma“" : "„mein Opa“";
+  if (/mutter|vater|eltern/.test(r)) return w ? "„meine Tochter“" : "„mein Sohn“";
+  return w ? "„die Frau …“ mit Namen" : "„der Herr …“ mit Namen";
+}
+
 const laufend = new Set<string>();
 export function ktAntwortetGerade(id: string): boolean {
   return laufend.has(id);
@@ -268,6 +288,13 @@ export async function ktAntwort(k: KtAuftrag, text: string, frage?: KtFrage, onT
   let antwort = "";
   let korrigiert: string | undefined;
   let quelle: "ki" | "fest" = "ki";
+  // Fest vom Programm: Buchstabieren und Verabschieden (da hat das kleine Modell Unsinn geredet)
+  const art0 = frage ? "frage" : nachrichtArt(text);
+  if (!frage && fragtSchreibweise(text)) {
+    const anruferName = /\b(ihr(en)?|ihr) (name|nachname|vorname)\b|wie heißen sie/i.test(text) && !/patient/i.test(text);
+    return { antwort: buchstabiert(namensTeil(text, anruferName ? k.wahr.anrufer.name : k.wahr.d.patient.name)), quelle: "fest" };
+  }
+  if (art0 === "abschluss") return { antwort: ktAbschied(k), quelle: "fest" };
   if (!kiBereit() && inTauri() && kiPrefs().aktiv) await kiStatus().catch(() => null);
   if (kiBereit()) {
     const verlauf: KiNachricht[] = [{ role: "system", content: ktPrompt(k) }];
@@ -299,8 +326,13 @@ export async function ktAntwort(k: KtAuftrag, text: string, frage?: KtFrage, onT
     } catch (e) {
       console.warn("KT-KI", e);
     }
+    if (antwort) {
+      const vorSchliff = antwort;
+      antwort = ktFeinschliff(k, text, art, antwort);
+      if (antwort !== vorSchliff && quelle === "ki") korrigiert ??= vorSchliff;
+    }
     // Transportart verdreht („kann nicht liegen, muss liegend …“)? Dann die richtige Angabe
-    if (antwort && ktPruefen(k, text, antwort).some((x) => x.startsWith("Transportart"))) {
+    if (antwort && art !== "zusammenfassung" && ktPruefen(k, text, antwort).some((x) => x.startsWith("Transportart"))) {
       korrigiert = antwort;
       antwort = ktAntwortOhneKi(k, KT_FRAGEN.find((f) => f.id === "lage")!);
       quelle = "fest";
@@ -312,6 +344,88 @@ export async function ktAntwort(k: KtAuftrag, text: string, frage?: KtFrage, onT
     quelle = "fest";
   }
   return { antwort, quelle, korrigiert };
+}
+
+function zufall<T>(l: T[]): T {
+  return l[Math.floor(Math.random() * l.length)];
+}
+
+/** Ist der Anrufer vom Fach (Station, Heim, Ordination)? */
+function ktProfi(k: KtAuftrag): boolean {
+  return /pflege|ärzt|arzt|station|assistent|ordination|heim/i.test(k.wahr.anrufer.rolle);
+}
+
+/** Verabschieden – fest, kurz, freundlich */
+export function ktAbschied(k: KtAuftrag): string {
+  return ktProfi(k) ? zufall(["Danke, auf Wiederhören.", "Passt, danke – auf Wiederhören.", "Danke Ihnen, wiederhören!"]) : zufall(["Danke schön, auf Wiederhören!", "Vielen Dank, auf Wiederhören.", "Danke, wiederhören!"]);
+}
+
+/**
+ * Letzter Schliff an jeder KT-Antwort (gilt für alle Aufträge):
+ * keine wiederholte Frage, „die Patientin“ statt „der Patient“, keine Leitstellen-Rückfragen,
+ * kein Notruf-Satz („ich bleib dran“), falsche Rückfragen der Leitstelle werden korrigiert.
+ */
+export function ktFeinschliff(k: KtAuftrag, text: string, art: string, antwort: string): string {
+  const w = k.wahr.d;
+  const weiblich = w.patient.geschlecht === "w";
+  const profi = ktProfi(k);
+  let t = ohneFrageEcho(antwort, text) || antwort;
+  t = ktGeschlecht(t, w.patient.geschlecht);
+  // Angehörige und der Patient selbst sagen nicht „der Patient“
+  if (!profi) t = ohnePatientWort(t, weiblich);
+  return ktSchliffRest(k, text, art, t);
+}
+
+/** „Der Patient“, „er“ … passend zum Geschlecht des Patienten */
+export function ktGeschlecht(t: string, g: "m" | "w" | null): string {
+  if (g === "w") {
+    return t
+      .replace(/\bDer Patientin (?=(soll|wird|muss|kann|ist|hat|heißt|braucht|benötigt|fährt|bekommt)\b)/g, "Die Patientin ")
+      .replace(/\bDer Patient\b/g, "Die Patientin")
+      .replace(/\bder Patient\b/g, "die Patientin")
+      .replace(/\b(den|dem|des) Patienten\b/g, (_m, a: string) => (a === "den" ? "die Patientin" : "der Patientin"))
+      .replace(/(^|[.!?–,:]\s+|\bund\s+)Er\b|(^|[.!?–,:]\s+|\bund\s+)er\b(?= (kann|muss|braucht|hat|ist|fährt|wird|soll|benötigt|bekommt|geht|sitzt|liegt)\b)/g, (m) => m.replace(/Er$/, "Sie").replace(/er$/, "sie"))
+      .replace(/\b(kann|muss|braucht|hat|ist|wird|soll|benötigt) er\b/g, "$1 sie")
+      .replace(/\bihn\b/g, "sie")
+      .replace(/\bihm\b/g, "ihr")
+      .replace(/\bsein(e[nmrs]?)?\b/g, (_m, e?: string) => `ihr${e ?? ""}`)
+      .replace(/\ber\/sie\b/g, "sie");
+  }
+  if (g === "m") {
+    return t
+      .replace(/\bDie Patientin\b/g, "Der Patient")
+      .replace(/\bdie Patientin\b/g, "der Patient")
+      .replace(/\bder Patientin\b/g, "dem Patienten")
+      .replace(/(^|[.!?–,:]\s+)Sie (?=(kann|muss|braucht|hat|ist|fährt|wird|soll|benötigt|bekommt|geht|sitzt|liegt)\b)/g, "$1Er ")
+      .replace(/\ber\/sie\b/g, "er");
+  }
+  return t;
+}
+
+function ktSchliffRest(k: KtAuftrag, text: string, art: string, eingang: string): string {
+  const profi = ktProfi(k);
+  let t = eingang;
+  // Notruf-Sätze und schräge Reaktionen gehören nicht an die KT-Hotline
+  const schraeg = /\b(ich )?bleib\w* (ich )?dran\b|\bich warte\b|bis gleich\b|das (weiß ich|wissen wir)\b|ich schau, dass ich (sie|ihn) seh|das melden sie gern|wird gut gemacht|das war gut( so)?\b/i;
+  // Rückfragen, die nur die Leitstelle stellt („Noch etwas anderes nötig?“) – erlaubt bleiben echte Anrufer-Fragen
+  const erlaubteFrage = /wann|wie lange|vorbereiten|mitgeben|mitnehmen|herrichten|e-?card|transportschein|pünktlich|ausgeht|bescheid|wer (holt|kommt)|wie viel kostet|kostet/i;
+  const teile = t.split(/(?<=[.!?…])\s+/).filter((x) => x.trim());
+  let rest = teile.filter((x) => !schraeg.test(x) && (!/\?\s*$/.test(x) || erlaubteFrage.test(x) || art === "frage" && teile.length === 1));
+  // Rückfrage der Leitstelle: bei einem Fehler widersprechen, sonst kurz bestätigen (ohne alles zu wiederholen)
+  if (art === "zusammenfassung") {
+    const falsch = ktZusammenfassungFalsch(k, text);
+    const stimmtZu = /^\W*(ja|passt|genau|richtig|stimmt|jo|mhm|korrekt)\b/i.test(rest[0] ?? "") && !/\b(nein|nicht|net)\b/i.test(rest[0] ?? "");
+    if (falsch.length && (stimmtZu || !rest.length)) rest = [`${zufall(["Nein, Moment", "Nein, nicht ganz", "Na, Moment"])} – ${falsch.join(", und ")}.`];
+    else if (falsch.length) rest = rest.filter((x, i) => i === 0 || !/^\W*(passt|ja,? passt|stimmt)\b/i.test(x));
+    else {
+      const ww = (x: string) => x.toLowerCase().replace(/[^a-zäöüß0-9 ]/g, " ").split(/\s+/).filter((y) => y.length > 3);
+      const fw = new Set(ww(text));
+      rest = rest.filter((x, i) => i === 0 || ww(x).filter((y) => fw.has(y)).length / Math.max(1, ww(x).length) < 0.5);
+    }
+  }
+  if (!rest.length) rest = [art === "mitteilung" ? (profi ? zufall(["Passt, danke!", "Gut, danke.", "Alles klar, danke."]) : zufall(["Gut, danke schön.", "Danke! Muss ich noch irgendwas vorbereiten?", "Alles klar, danke."])) : art === "anweisung" ? zufall(["Gut, mach ich.", "Ja, passt, richte ich her.", "Okay, danke."]) : "Das weiß ich leider nicht."];
+  t = rest.join(" ").trim();
+  return t ? t.charAt(0).toUpperCase() + t.slice(1) : t;
 }
 
 /** Rückfrage der Leitstelle („Also: … passt das?“) gegen die Wahrheit prüfen */
@@ -326,7 +440,7 @@ function ktZusammenfassungHinweis(k: KtAuftrag, text: string): string {
 function uhrzeiten(t: string): number[] {
   const out: number[] = [];
   for (const m of t.matchAll(/\b(\d{1,2})[:.](\d{2})\b/g)) out.push(Number(m[1]) * 60 + Number(m[2]));
-  for (const m of t.matchAll(/\bum (\d{1,2}) ?Uhr\b/gi)) out.push(Number(m[1]) * 60);
+  for (const m of t.matchAll(/\b(\d{1,2}) ?Uhr(?:\s+(\d{1,2})\b)?/gi)) if (!/[:.]\d{2}\s*$/.test(t.slice(0, m.index ?? 0))) out.push(Number(m[1]) * 60 + Number(m[2] ?? 0));
   return out.filter((x) => x < 24 * 60);
 }
 
@@ -342,7 +456,8 @@ export function ktZusammenfassungFalsch(k: KtAuftrag, text: string): string[] {
   const t = text.toLowerCase();
   const falsch: string[] = [];
   const zeiten = [minuten(w.abholung), minuten(w.termin)].filter((x): x is number => x !== null);
-  for (const z of uhrzeiten(text)) if (zeiten.length && !zeiten.some((x) => Math.abs(x - z) <= 5)) falsch.push(`die Uhrzeit stimmt nicht (richtig: ${[w.abholung && `Abholung ${hhmm(w.abholung)}`, w.termin && `Termin ${hhmm(w.termin)}`].filter(Boolean).join(", ")})`);
+  if (uhrzeiten(text).some((z) => zeiten.length && !zeiten.some((x) => Math.abs(x - z) <= 5)))
+    falsch.push(`die Uhrzeit stimmt nicht: ${[w.abholung && `Abholung um ${hhmm(w.abholung)}`, w.termin && `Termin um ${hhmm(w.termin)}`].filter(Boolean).join(", ")}`);
   if (/\bliegend\b/.test(t) && w.lage && w.lage !== "liegend") falsch.push(`nicht liegend, sondern ${w.lage === "rollstuhl" ? "im eigenen Rollstuhl" : w.lage === "gehend" ? "gehend" : "sitzend"}`);
   if (/\bsitzend\b/.test(t) && w.lage === "liegend") falsch.push("nicht sitzend, sondern liegend");
   if (/mit begleit/.test(t) && !w.begleitung) falsch.push("es fährt niemand mit");
@@ -379,7 +494,7 @@ export function ktPruefen(k: KtAuftrag, frage: string, antwort: string): string[
   }
   const wort = (o: KtDaten["von"]) => (o?.label.split(/[ ,]/).find((x) => x.length > 3 && !/^(klinik|landesklinikum|universitätsklinikum)$/i.test(x)) ?? "").toLowerCase();
   if (/abgeholt|abhol.*wo|von wo/.test(f) && !/wann/.test(f) && w.von && !a.includes(wort(w.von))) g.push("Abholort falsch oder fehlt");
-  if (/wohin|ziel/.test(f) && w.nach && !a.includes(wort(w.nach))) g.push("Ziel falsch oder fehlt");
+  if (/wohin|\bziel(ort)?\b/.test(f) && w.nach && !a.includes(wort(w.nach))) g.push("Ziel falsch oder fehlt");
   // Selbstanrufer redet von sich in der 3. Person
   if (ktSelbst(k) && /\b(der patient|die patientin)\b/.test(a)) g.push("Selbstanrufer redet von „dem Patienten“");
   // falsche Rückfrage abgenickt

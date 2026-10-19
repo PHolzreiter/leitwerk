@@ -1,5 +1,43 @@
 # Änderungen
 
+## 0.39.0 – Testlauf und Pauls Gespräche ausgewertet
+Alle Verbesserungen gelten für jeden Fall – auch für selbst erstellte.
+
+**Adresse**
+- „📍 Genannte“ übernimmt nur, was der Anrufer wirklich gesagt hat (Straße, Hausnummer, Ort – auch ausgeschrieben wie „neunundsechzig“). Hat er nur „auf der Landstraße nach dem Ortsende“ gesagt, bleibt der Knopf aus – die Adresse wird nicht mehr verraten
+
+**Anweisungen am Telefon**
+- „Drücken Sie fest auf den Finger“ ist Druck auf die Wunde, keine Herzdruckmassage mehr (vorher: „Das geht nicht, ich bin wach“)
+- Erkannt werden jetzt auch Bitten mitten im Satz („… und schlagen Sie ihm auf den Rücken“), mit beliebigem Verb („Ermutigen Sie ihn zu husten“) und mit „Wenn Sie so weit sind, dann drücken Sie …“
+- Herzdruckmassage: „Hände auf die Brust“ heißt erst hinknien und Hände auflegen; ab „drücken“ zählt der Anrufer laut mit – und zählt weiter, auch bei „Sehr gut, machen Sie weiter“, bis sich etwas ändert
+- „Nehmen Sie Blutverdünner?“ ist eine Frage, keine Anweisung
+
+**Antworten prüfen**
+- Alter auch in Worten („sechsundsiebzig“) und Unsinn wie „zwischen 76 und 70“ wird erkannt
+- Wer den Patienten nicht sieht, sagt „weiß ich nicht“ statt „Nein, sie ist nicht durcheinander“
+- Was ausdrücklich in der Fallakte steht („Sie hat Depressionen“), weiß auch ein Anrufer, der sonst wenig weiß
+- Auf „Wer spricht da?“ kommt immer der Name
+- Eine Gegenfrage statt einer Antwort („Wie lange braucht die Rettung noch?“) wird neu erzeugt
+- Der Anrufer nennt keine erfundene Ankunftszeit der Rettung und plappert Durchsagen nicht nach
+- Selbstanrufer mit Atemnot reden in der Ich-Form („Ich hab … Asthma …“), und auch ihre Antworten werden jetzt geprüft
+- „Zur Patientin“, „beim Patienten“ sagt kein Angehöriger mehr; gebrochenes Deutsch ohne Dialekt („nicht“ statt „net“)
+
+**Fälle und Wahrheit**
+- Vorgeschichte passt zum Alter: Blutverdünner, Herzinfarkt, Schlaganfall u. Ä. erst ab einem glaubwürdigen Alter (keine 15-Jährige mit Xarelto)
+- „Fordert die Polizei einen UBG-Transport an?“ ist „nein“, wenn nicht die Polizei anruft
+- Wer den Patienten nicht sieht, für den sind Verwirrtheit, Hautfarbe, Schweiß u. Ä. „unbekannt“
+- Hergang des Selbstanrufers in richtiger Ich-Form („Ich hab mich geschnitten“)
+
+**Krankentransport und Überstellung**
+- „Die Patientin“ statt „der Patient“ bei Frauen, „sie“ statt „er“; Angehörige sagen „meine Mutter“ bzw. „sie“
+- Die Frage wird nicht mehr wiederholt („Wann ist der Termin? Um 13:54.“)
+- Keine Leitstellen-Rückfragen mehr („Noch was anderes nötig?“, „Ist alles erledigt?“) und keine Notruf-Sätze („ich bleib dran“, „ich warte“)
+- Verabschieden fest und freundlich („Danke, auf Wiederhören.“)
+- „Wie schreibt sich der Nachname?“ – wird buchstabiert („Weber – W, E, B, E, R.“), auch beim Notruf
+- Falsche Rückfrage der Leitstelle (Uhrzeit, liegend/sitzend, Begleitung) wird jetzt immer korrigiert; eine richtige wird kurz bestätigt, ohne alles zu wiederholen
+- Termine realistischer: Ambulanztermine frühestens in gut einer Stunde und untertags; Gründe passend zum Geschlecht (kein Mammakarzinom beim Mann); Tochter bzw. Sohn mit passendem Vornamen
+- Testlauf: „Ist die Übernahme im Zielkrankenhaus zugesagt?“ zählt nicht mehr als falsches Ziel; „14 Uhr 15“ wird als 14:15 erkannt
+
 ## 0.38.0 – Neuer Gesprächsablauf: Das Programm denkt, die KI redet
 Bisher bekam die KI bei jeder Frage die ganze Fallakte und musste selbst herausfinden, was passt. Für ein kleines Modell ist das zu viel – daher kamen Verwechslungen, Erfundenes und Widersprüche. Jetzt läuft jede Antwort in Schritten ab, und das gilt für JEDEN Fall – auch für selbst erstellte:
 

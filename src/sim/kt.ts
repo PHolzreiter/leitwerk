@@ -286,8 +286,15 @@ export function zufallsDaten(o: ZufallsOrte, jetzt: number): KtDaten | null {
   const art: KtArt = gewichtet([["KTx", 6], ["KTR", 3], ["KTA", 1]]);
   const typ = gewichtet<"ambulanz" | "heim" | "entlassung" | "einweisung">([["ambulanz", 4], ["heim", 3], ["entlassung", 3], ["einweisung", 0.8]]);
   // Vorlauf: sofort, 1–3 h oder später am Tag
-  const vorlaufMin = gewichtet<() => number>([[() => rnd(25, 60), 4], [() => rnd(60, 180), 4], [() => rnd(180, 480), 2]])();
-  const termin = jetzt + vorlaufMin * 60_000;
+  const vorlaufMin = gewichtet<() => number>([[() => rnd(70, 120), 4], [() => rnd(120, 240), 4], [() => rnd(240, 480), 2]])();
+  let termin = jetzt + vorlaufMin * 60_000;
+  // Ambulanzen und Entlassungen untertags: nicht nach 17:30 (Entlassung 19:00), wenn es sich heute noch ausgeht
+  const tag = new Date(jetzt);
+  tag.setHours(0, 0, 0, 0);
+  const schluss = tag.getTime() + (typ === "entlassung" ? 19 : 17.5) * 3_600_000;
+  const frueh = jetzt + 70 * 60_000;
+  if (typ !== "einweisung" && termin > schluss && frueh < schluss) termin = frueh + Math.random() * (schluss - frueh);
+  termin = Math.round(termin / 300_000) * 300_000;
   let bereich: string;
   let kh: Hospital | undefined;
   let von: KtOrt;
@@ -319,7 +326,7 @@ export function zufallsDaten(o: ZufallsOrte, jetzt: number): KtDaten | null {
     }
   }
   const lage = lageFuer(alter, bereich);
-  const grund = typ === "einweisung" ? pick(EINWEISUNG) : pick(GRUENDE[bereich] ?? ["Kontrolle"]);
+  const grund = typ === "einweisung" ? pick(EINWEISUNG) : pick(grundFuer(GRUENDE[bereich] ?? ["Kontrolle"], geschlecht));
   const sofort = typ === "einweisung";
   // Abholzeit: bei Fahrten zur Ambulanz vor dem Termin (mit etwas mehr Puffer als nötig)
   const abholung = sofort
@@ -348,6 +355,12 @@ export function zufallsDaten(o: ZufallsOrte, jetzt: number): KtDaten | null {
     abholung: abholung && abholung > jetzt ? abholung : null,
     telefon: zufallsNummer(),
   };
+}
+
+/** Gründe, die zum Geschlecht passen (kein Prostatakarzinom bei einer Frau) */
+export function grundFuer(liste: string[], geschlecht: "m" | "w" | null): string[] {
+  const passt = liste.filter((g) => (geschlecht === "m" ? !/mamma|gynäk|ovar|uterus|schwanger|zervix/i.test(g) : geschlecht === "w" ? !/prostata|hoden/i.test(g) : true));
+  return passt.length ? passt : liste;
 }
 
 /** Dialyse-Schichten: [Hinfahrt-Termin (h), Heimfahrt-Termin (h), Anteil] */
@@ -382,7 +395,7 @@ export function dauerDaten(heim: KtOrt, kh: Hospital, bereich: "DIA" | "STR" | "
     sofort: false,
     sek: null,
     patient: { name: zufallsName(geschlecht), alter, geschlecht, info: pick(INFOS[lage]) },
-    grund: pick(GRUENDE[bereich]),
+    grund: pick(grundFuer(GRUENDE[bereich], geschlecht)),
     lage,
     begleitung: false,
     sauerstoff: Math.random() < 0.05,
@@ -418,13 +431,21 @@ export function hotlineAnrufer(d: KtDaten): { rolle: string; name: string } {
   }
   if (d.sofort && !vonKh) return { rolle: "Ordinationsassistentin des Hausarztes", name: zufallsName("w") };
   if (vonKh) return { rolle: `Pflegekraft ${stationText(d.von!.label)}`, name: zufallsName(g) };
+  const pw = d.patient.geschlecht === "w";
   const r = gewichtet<string>([
     ["Patient selbst", 3],
-    [d.patient.geschlecht === "w" ? "Tochter der Patientin" : "Tochter des Patienten", 2],
+    [pw ? "Tochter der Patientin" : "Tochter des Patienten", 1.4],
+    [pw ? "Sohn der Patientin" : "Sohn des Patienten", 0.8],
     ["Ordinationsassistentin des Hausarztes", 2],
     ["Pflegekraft der Hauskrankenpflege", 1],
   ]);
-  return { rolle: r, name: r === "Patient selbst" ? d.patient.name : zufallsName(g) };
+  if (r === "Patient selbst") return { rolle: r, name: d.patient.name };
+  // Name passend zur Rolle (keine „Tochter“ namens Florian); Kinder tragen oft den Familiennamen
+  const gr: "m" | "w" = /^Sohn/.test(r) ? "m" : /^(Tochter|Ordinationsassistentin)/.test(r) ? "w" : g;
+  let name = zufallsName(gr);
+  const famName = d.patient.name.split(/\s+/).slice(1).join(" ");
+  if (/^(Tochter|Sohn)/.test(r) && famName && Math.random() < 0.6) name = `${name.split(/\s+/)[0]} ${famName}`;
+  return { rolle: r, name };
 }
 
 /** Uhrzeit hh:mm */

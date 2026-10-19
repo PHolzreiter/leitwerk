@@ -2,6 +2,7 @@
  * Notrufgespräch und strukturierte Abfrage (Leitfaden) für das Abfrage-Fenster.
  * Nur wer den Anruf angenommen hat, führt Gespräch und Abfrage; alle anderen sehen mit.
  */
+import { gesagteAdresse } from "../../abfrage/adresseGesagt";
 import { sprechFrage } from "../../abfrage/sprechfrage";
 import { mikroAnbinden } from "../sprache";
 import { store } from "../../data/store";
@@ -324,9 +325,12 @@ export function notrufTeile(e: Einsatz): NotrufTeile {
           fehler(sim.call("aktualisiere", e.id, { adresse: { ...pkt, label: `Koordinate ${pkt.lat.toFixed(5)}, ${pkt.lon.toFixed(5)}` } }));
         });
         const genannt = el("button", { class: "btn small", type: "button", title: "Was der Anrufer gesagt hat, in die Suche übernehmen" }, "📍 Genannte");
-        genannt.disabled = !a.gespraech.some((m) => m.von === "anrufer");
+        const gesagt = gesagteAdresse(e.meldung.adresse, a.gespraech.filter((m) => m.von === "anrufer").map((m) => m.text));
+        genannt.disabled = !gesagt;
+        genannt.title = gesagt ? `Genannte Adresse übernehmen: „${gesagt}“` : "Genannte Adresse – erst wenn der Anrufer eine Straße oder einen Ort gesagt hat";
         genannt.addEventListener("click", () => {
-          adr.input.value = e.meldung.adresse;
+          if (!gesagt) return;
+          adr.input.value = gesagt;
           adr.input.dispatchEvent(new Event("input"));
           adr.input.focus();
         });

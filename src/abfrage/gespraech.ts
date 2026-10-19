@@ -13,6 +13,7 @@ import { fragenImAblauf, type Frage } from "./schema";
 import { anruferSagt, satzSprecher } from "../ui/sprache";
 import { ohnePatientWort } from "./sprechfrage";
 import { ist } from "./themen";
+import { buchstabiert, fragtSchreibweise, namensTeil } from "./buchstabieren";
 import { antwortKern, antwortPruefen, anweisungKern, anweisungPruefen, kernAntwort, kernFuerFrage, schemaFrageZu, themenErkennen, themenZuFeld, type AnweisungKern, type Kern, type Thema } from "./verstehen";
 
 /** Welche Schemafragen in diesem Notruf schon gestellt wurden (die Formulierung wechselt) */
@@ -324,6 +325,16 @@ export async function anruferAntwort(
     await pause();
     return zufallAus(["(nur noch Stöhnen, keine verständliche Antwort)", "Mmh … ich … (dann nur noch schweres Atmen)", "(man hört nur noch Keuchen)"]);
   }
+  // „Wie schreibt sich das?“ – buchstabieren (fest vom Programm)
+  if (!schemaFrage && fragtSchreibweise(frage) && (x.art ?? "privat") !== "ecall") {
+    await pause();
+    const patientGemeint = /patient|\b(sein|ihr)(en)? (nach|vor)?name des|von (ihm|ihr)|der (mann|frau|bub|kind)/i.test(frage) || (!/\b(ihr(en)?|ihr) (nach|vor)?name\b|wie heißen sie/i.test(frage) && (k.verlauf ?? []).length === 0 && /\b(er|sie) heißt|heißt (er|sie)/i.test([...(e.anruf?.gespraech ?? [])].reverse().find((m) => m.von === "anrufer")?.text ?? ""));
+    if (patientGemeint && !x.selbst) {
+      const kennt = k.szenario && !(x.persona?.wissen === "fremd" && k.wahrheit.bw !== "ja");
+      return kennt ? buchstabiert(namensTeil(frage, k.szenario!.patient.name)) : "Den Namen weiß ich nicht, tut mir leid.";
+    }
+    return buchstabiert(namensTeil(frage, x.name));
+  }
   // Ollama evtl. erst nach dem Programmstart gestartet: Status neu holen
   if (!kiBereit() && inTauri() && kiPrefs().aktiv) await kiStatus().catch(() => null);
   if (!kiBereit()) {
@@ -370,7 +381,10 @@ export async function anruferAntwort(
   }
   const stimmung = neu ? stimmungHinweis(e, k, art, frage, anweisung) : undefined;
   const pruefbar = (!!kern && (kern.saetze.length > 0 || Object.keys(kern.felder).length > 0)) || !!anweisung?.nichtMachbar.length;
-  const kernText = anweisung ? anweisung.saetze : !hinweisFrage && kern?.saetze.length ? kern.saetze : undefined;
+  let kernText = anweisung ? anweisung.saetze : !hinweisFrage && kern?.saetze.length ? kern.saetze : undefined;
+  // Herzdruckmassage läuft: bei allem außer Fragen wird weiter gedrückt und laut gezählt
+  const reaLaeuft = neu && reanimationLaeuft(e, k) && (art === "anweisung" || art === "mitteilung");
+  if (reaLaeuft) kernText = [...(kernText ?? []), "Du drückst weiter auf die Brust und zählst dabei laut weiter („… eins, zwei, drei, vier …“) – du hörst nicht auf."];
   const verlauf = kiVerlauf(e, k, frage, hinweisFrage, wiederholtId, kernText, stimmung);
   try {
     const g = e.anruf?.gespraech ?? [];
@@ -390,7 +404,7 @@ export async function anruferAntwort(
         const teile = f.split(/(?<=[.!?…])\s+/);
         if (teile.length > 1 && strasse.length > 4 && teile[0].toLowerCase().includes(strasse)) f = teile.slice(1).join(" ");
       }
-      return f;
+      return feinschliff(f, frage, art, k, g);
     };
     // Prüfbare Antworten erst nach der Prüfung zeigen bzw. vorlesen (eine falsche soll man nie hören)
     const t = await kiAntwortNeu(verlauf, frueher, (y) => (pruefbar ? undefined : onToken?.(atemnot ? "" : glatt(y))), { pruefen: !(wiederholtId || schonGefragt(g, frage)), maxSaetze });
@@ -400,7 +414,21 @@ export async function anruferAntwort(
     if (!fertig.trim()) fertig = einfacheAntwort(k, frage, schemaFrage);
     // Prüfen und bei einem Widerspruch einmal neu erzeugen – mit klarer Korrektur
     const allePruefen = (a: string) => [...(kern ? antwortPruefen(k, themen, kern, a, pruefFrage) : []), ...(anweisung ? anweisungPruefen(anweisung, a) : [])];
-    if (pruefbar && !atemnot) {
+    // nur eine Gegenfrage statt einer Antwort („Wie lange braucht die Rettung noch?“) → einmal neu
+    const nurGegenfrage = (a: string) => art === "frage" && !!a.trim() && a.split(/(?<=[.!?…])\s+/).every((x) => /\?\s*$/.test(x)) && !/was heißt|wie bitte|was meinen sie|wie meinen sie|bitte\?|was\?|wie\?/i.test(a);
+    if (nurGegenfrage(fertig)) {
+      const nochmal = verlauf.map((m) => ({ ...m }));
+      nochmal[nochmal.length - 1].content += `\n[Korrektur nur für dich: Du hast mit einer Gegenfrage geantwortet. Beantworte zuerst die Frage der Leitstelle – wenn du es nicht weißt, sag das.]`;
+      let zweite = "";
+      try {
+        zweite = nachbearbeiten(await kiAntwortNeu(nochmal, frueher, () => undefined, { pruefen: false, maxSaetze }));
+      } catch {
+        zweite = "";
+      }
+      fertig = zweite.trim() && !nurGegenfrage(zweite) ? zweite : kern?.saetze.length ? kernAntwort(k, themen, kern, pruefFrage) : "Das weiß ich nicht genau.";
+      quelle.nachgebessert = "Gegenfrage statt Antwort";
+    }
+    if (pruefbar) {
       const probleme = allePruefen(fertig);
       if (probleme.length) {
         const nochmal = verlauf.map((m) => ({ ...m }));
@@ -425,6 +453,7 @@ export async function anruferAntwort(
           quelle.wert = "fest";
           quelle.nachgebessert = `feste Antwort (${probleme.join("; ")})`;
         }
+        if (atemnot && quelle.wert === "fest") fertig = inAtemnot(fertig);
       }
     }
     // falsche Zusammenfassung abgenickt? Dann widerspricht der Anrufer (das kleine Modell sagt sonst fast immer „Ja, genau“)
@@ -433,6 +462,7 @@ export async function anruferAntwort(
       if (pr && pr.falsch.length && /^\W*(ja|genau|richtig|stimmt|jo|mhm)\b/i.test(fertig) && !/\b(nein|na|nicht|net)\b/i.test(fertig.split(/[.!?]/)[0]))
         fertig = atemnot ? "Nein … nein …" : `${zufallAus(x.sprache === "dialekt" ? ["Na, na", "Nein, nein", "Na, des stimmt net"] : ["Nein, nein", "Nein, das stimmt so nicht", "Nein, Moment"])} – ${pr.richtig || pr.falsch.join(", ")}.`;
     }
+    if (reaLaeuft && !zaehltMit(fertig)) fertig = `${fertig.replace(/\s*(okay,? )?(ich )?bleib\w* (ich )?dran\.?/i, "").replace(/[.!…\s]+$/, "")}${fertig.trim() ? " … " : ""}${zaehlFolge()}`.trim();
     // nach dem Weglassen von schon Gesagtem kann der Rest klein anfangen
     if (/^[a-zäöü]/.test(fertig)) fertig = fertig.charAt(0).toUpperCase() + fertig.slice(1);
     if (pruefbar) onToken?.(fertig);
@@ -444,6 +474,67 @@ export async function anruferAntwort(
     console.warn("KI-Antwort", err);
     return einfacheAntwort(k, frage, schemaFrage);
   }
+}
+
+/**
+ * Letzter Schliff an jeder Antwort (gilt für alle Fälle):
+ * Ich-Form beim Selbstanrufer, kein „Nein, weiß ich nicht“, keine erfundene Ankunftszeit,
+ * keine wiederholte Durchsage, und auf „Wer spricht?“ kommt der Name.
+ */
+export function feinschliff(antwort: string, frage: string, art: string, k: AnrufKontext, gespraech: { von: string; text: string }[] = []): string {
+  let t = antwort.trim();
+  if (!t || t.startsWith("(")) return t;
+  // Selbstanrufer: „Sie hat … Asthma …“ → „Ich hab … Asthma …“
+  if (k.anrufer.selbst) {
+    const ICH: Record<string, string> = { hat: "hab", ist: "bin", nimmt: "nehm", kann: "kann", atmet: "atme", kriegt: "krieg", braucht: "brauch", muss: "muss", hatte: "hatte", war: "war", fühlt: "fühl", spürt: "spür" };
+    t = t.replace(/^(\W*)(Er|Sie) (hat|ist|nimmt|kann|atmet|kriegt|braucht|muss|hatte|war|fühlt|spürt)\b/, (_m, v: string, _p: string, verb: string) => `${v}Ich ${ICH[verb] ?? verb}`);
+  }
+  // „Nein, ich weiß nicht …“ – das Nein gehört da nicht hin
+  t = t.replace(/^(nein|ja|na|jo),\s+(?=(ich weiß|das weiß|weiß ich|keine ahnung|das kann ich nicht sagen))/i, "");
+  // Ankunftszeiten weiß nur die Leitstelle
+  if (!/minute|gleich|bald|dauert/i.test(frage)) {
+    const teile = t.split(/(?<=[.!?…])\s+/).filter((x) => !/^(die |der )?(rettung|rettungsdienst|notarzt|kollegen|sanitäter|sie)\b[^.?!]*\b(ist|sind|kommt|kommen|wird|werden)\b[^.?!]*\b(\d+|zehn|fünf|zwanzig|fünfzehn|paar) minuten\b/i.test(x.trim()));
+    t = teile.length ? teile.join(" ") : "Okay.";
+  }
+  // Durchsage nicht nachplappern („Okay, der Rettungsdienst ist unterwegs.“)
+  if (art === "mitteilung") {
+    const w = (x: string) => x.toLowerCase().replace(/[^a-zäöüß ]/g, " ").split(/\s+/).filter((y) => y.length > 3);
+    const fw = new Set(w(frage));
+    const teile = t.split(/(?<=[.!?…])\s+/);
+    const rest = teile.filter((x) => {
+      const ww = w(x);
+      return ww.length < 2 || ww.filter((y) => fw.has(y)).length / ww.length < 0.6;
+    });
+    if (rest.length < teile.length) t = rest.join(" ").replace(/^(okay|gut|ja),?\s*$/i, "") || "Okay, danke.";
+  }
+  // „Wer spricht?“ – der Name gehört dazu
+  if (/wer (spricht|ruft)|wie heißen sie|ihr(en)? name|mit wem (spreche|rede)/i.test(frage) && k.anrufer.name && k.anrufer.art !== "ecall") {
+    const teile = k.anrufer.name.split(/\s+/).filter((x) => x.length > 2);
+    if (teile.length && !teile.some((x) => t.toLowerCase().includes(x.toLowerCase()))) {
+      const atemlos = /…/.test(t) && (t.match(/…/g) ?? []).length >= 2;
+      const rest = `${t.charAt(0).toLowerCase()}${t.slice(1)}`;
+      t = atemlos ? `${k.anrufer.name.replace(/\s+/, " … ")} … ${rest}` : `${k.anrufer.name} – ${rest}`;
+    }
+  }
+  void gespraech;
+  return t ? t.charAt(0).toUpperCase() + t.slice(1) : t;
+}
+
+/** Läuft gerade eine Herzdruckmassage (angeleitet und der Patient ist noch nicht wieder da)? */
+export function reanimationLaeuft(e: Einsatz, k: AnrufKontext): boolean {
+  return (e.wahr.abfrage?.massnahmen ?? []).some((m) => /Herzdruckmassage/.test(m)) && k.wahrheit.bw !== "ja" && k.wahrheit.at !== "normal" && !k.anrufer.selbst;
+}
+
+const ZAHLEN = ["eins", "zwei", "drei", "vier", "fünf", "sechs", "sieben", "acht", "neun", "zehn", "elf", "zwölf", "dreizehn", "vierzehn", "fünfzehn", "sechzehn", "siebzehn", "achtzehn", "neunzehn", "zwanzig", "einundzwanzig", "zweiundzwanzig", "dreiundzwanzig", "vierundzwanzig", "fünfundzwanzig", "sechsundzwanzig", "siebenundzwanzig", "achtundzwanzig", "neunundzwanzig", "dreißig"];
+/** Zählt die Antwort mit (mindestens drei Zahlen)? */
+export function zaehltMit(t: string): boolean {
+  const n = t.toLowerCase().match(new RegExp(`\\b(${ZAHLEN.join("|")}|\\d{1,2})\\b`, "g"));
+  return (n?.length ?? 0) >= 3;
+}
+/** „… sieben, acht, neun, zehn …“ – ein Stück vom Mitzählen */
+export function zaehlFolge(): string {
+  const start = Math.floor(Math.random() * 24);
+  return `${ZAHLEN.slice(start, start + 5).join(", ")} …`;
 }
 
 const STIMMUNGEN = ["ruhig", "gefasst", "aufgeregt", "panisch"] as const;

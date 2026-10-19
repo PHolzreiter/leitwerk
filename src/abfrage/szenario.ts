@@ -4,7 +4,7 @@
  * abgeleitet – und die KI bekommt die ganze Fallakte, damit sie jede Frage (auch aus einem
  * anderen Abfrageschema) menschlich und widerspruchsfrei beantworten kann.
  */
-import type { Antworten, Wert } from "./schema";
+import { frageIndex, type Antworten, type Schema, type Wert } from "./schema";
 
 // ------------------------------------------------------------------ Vorlagen
 
@@ -363,7 +363,37 @@ export function vorlageFest(v: SzenarioVorlage, rnd: Rnd): Antworten {
   for (const [k, x] of Object.entries(v.fest ?? {})) a[k] = wert(x, rnd);
   if (a.alter === undefined) a.alter = zwischen(v.alter[0], v.alter[1], rnd);
   if (a.geschlecht === undefined) a.geschlecht = v.geschlecht ?? (rnd() < 0.5 ? "m" : "w");
+  altersPlausibel(v, a, rnd);
   return a;
+}
+
+/**
+ * Vorgeschichte, die zum Alter passen muss (eine 15-Jährige mit Blutverdünner wirkt unecht):
+ * Steht in der Vorlage eine Auswahl („ja“ oder „nein“), wird die passende genommen – sonst rückt das Alter
+ * (innerhalb der Spanne der Vorlage) in einen glaubwürdigen Bereich. Gilt für alle Fälle, auch selbst erstellte.
+ */
+const AB_ALTER: [string, string, number][] = [
+  ["blutverduenner", "ja", 35],
+  ["herz_vg", "ja", 35],
+  ["herzleiden", "ja", 30],
+  ["vg_schlaganfall", "ja", 40],
+  ["vg_tia", "ja", 40],
+  ["aneurysma", "ja", 45],
+  ["lungenerkrankung", "copd", 40],
+];
+export function altersPlausibel(v: { alter: [number, number]; fest?: Record<string, Wert | Wert[]>; anrufer?: string[] }, a: Antworten, rnd: Rnd): void {
+  if (typeof a.alter !== "number") return;
+  for (const [id, w, ab] of AB_ALTER) {
+    if (a[id] !== w || (a.alter as number) >= ab) continue;
+    const moeglich = v.fest?.[id];
+    const andere = Array.isArray(moeglich) ? moeglich.filter((x) => x !== w) : [];
+    if (andere.length) a[id] = pick(andere, rnd);
+    else if (v.alter[1] >= ab) a.alter = zwischen(Math.max(ab, v.alter[0]), v.alter[1], rnd);
+  }
+  // Nur die Polizei fordert einen UBG-Transport an – ruft sonst jemand an, lautet die Antwort „nein“
+  if (a.ubg !== undefined && a.ubg !== "nein" && !(v.anrufer ?? []).some((x) => /polizei/.test(x))) a.ubg = "nein";
+  // Schwanger nur im passenden Alter
+  if (a.schwanger === "ja" && ((a.alter as number) < 14 || (a.alter as number) > 50) && v.alter[1] >= 16) a.alter = zwischen(Math.max(16, v.alter[0]), Math.min(45, v.alter[1]), rnd);
 }
 
 /** Vorlage für ein Thema wählen (Jahreszeit, Uhrzeit, Wetter beachten) */
@@ -515,7 +545,7 @@ export function szenarioBauen(
     ortArt,
     stelle: f(passend(v.stelle.length ? v.stelle : [""])),
     wo: v.wo?.length ? f(pick(v.wo, rnd)) : undefined,
-    hergang: f(passend(v.hergang.length ? v.hergang : v.geschehen?.length ? [v.geschehen[0]] : [""])),
+    hergang: (opt.selbst ? ichFix : (t: string) => t)(f(passend(v.hergang.length ? v.hergang : v.geschehen?.length ? [v.geschehen[0]] : [""]))),
     hergangIch: opt.selbst && v.hergangIch?.length ? f(passend(v.hergangIch)) : undefined,
     geschehen: v.geschehen?.length ? v.geschehen.filter((d) => passtBedingung(d, alle)).map((d) => f3(ohneBedingung(d))) : undefined,
     stil: (opt.selbst && v.hergangIch?.length ? v.hergangIch : v.hergang).filter((d) => d.trim() && passtBedingung(d, alle)).map((d) => f(ohneBedingung(d))),
@@ -670,4 +700,25 @@ export function stimmungAusVerlauf(verlauf: string[]): "ruhig" | "gefasst" | "au
   if (/nervös|besorgt|erschrocken|traurig/.test(t)) return "gefasst";
   if (/ruhig|sachlich|routiniert/.test(t)) return "ruhig";
   return null;
+}
+
+/** Was man nur beim Patienten sieht – wer ihn nicht sieht (vor der Tür), kann es nicht wissen */
+const SICHT_FELDER = ["verwirrt", "hautfarbe", "kaltschweiss", "sprachschw", "blutung_stark", "blutung", "fehlstellung", "verletzt"];
+/** Bei Fällen „sieht ihn nicht“ sind solche Befunde „unbekannt“ (wenn die Frage das als Antwort kennt) */
+export function sichtUnbekannt(schema: Schema, kapitel: string, ohneSicht: boolean | undefined, a: Antworten): void {
+  if (!ohneSicht) return;
+  const idx = frageIndex(schema, kapitel);
+  for (const id of SICHT_FELDER) {
+    if (a[id] === undefined || a[id] === "unbekannt") continue;
+    if ((idx.get(id)?.optionen ?? []).some((o) => String(o.wert) === "unbekannt")) a[id] = "unbekannt";
+  }
+}
+
+/** „Ich hat sich geschnitten“ → „Ich hab mich geschnitten“ (Hergang in 3. Person, aber der Patient ruft selbst an) */
+export function ichFix(t: string): string {
+  const fest: Record<string, string> = { hat: "hab", ist: "bin", kann: "kann", muss: "muss", will: "will", weiß: "weiß", war: "war", hatte: "hatte", darf: "darf", soll: "soll", mag: "mag", wird: "werd", nimmt: "nehm", isst: "ess", sieht: "seh", spricht: "sprech", liegt: "lieg", kriegt: "krieg" };
+  return t
+    .replace(/\bIch ([a-zäöüß]+)\b/g, (m, v: string) => (fest[v] ? `Ich ${fest[v]}` : /et$/.test(v) ? `Ich ${v.slice(0, -1)}` : /[^s]t$/.test(v) ? `Ich ${v.slice(0, -1)}e` : m))
+    .replace(/\b(Ich \S+(?: \S+){0,4}?) sich\b/g, "$1 mich")
+    .replace(/\b(Ich [^.!?]*?)\bsein(e[nmrs]?)?\b/g, (_m, a: string, e?: string) => `${a}mein${e ?? ""}`);
 }

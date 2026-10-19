@@ -1091,13 +1091,31 @@ export function sprachFilter(text: string, sprache: string): string {
     [/\bsorry\b/gi, "Entschuldigung"],
     [/\b(ago|just|regular|pretty)\b\s*/gi, ""],
     [/\b(er|sie|es) isst (net|nicht|ganz|so|käsweiß|blass|wach|munter|orientiert|bleich)(?![\wäöüß])/gi, "$1 ist $2"],
+    [/\bbräuchen\b/gi, "bräuchten"],
+    [/\bschreiten\b/gi, "gehen"],
+    [/\b(Okay|Gut|Ja|Alles klar),? (bleib|warte) ich (dran|hier|da)\b/g, "$1, ich $2 $3"],
+    [/(^|[.!?…]\s+)Bleib ich (dran|hier|da)\b/g, "$1Ich bleib $2"],
+    [/(^|[.!?…]\s+)Warte ich (dran|hier|da)\b/g, "$1Ich warte $2"],
   ];
   for (const [re, neu] of ersetze) t = neu.includes("$") ? t.replace(re, neu) : t.replace(re, (m) => (m[0] === m[0].toUpperCase() && neu[0] ? neu[0].toUpperCase() + neu.slice(1) : neu));
   t = t.replace(/^\s+/, "").replace(/\s{2,}/g, " ");
   // „Jo, is net …“ klingt wie ja – vor einer Verneinung heißt es „Na“
   t = t.replace(/\bJo,?\s+(?=(is |i |ich |er |sie |des )?(net|nix|nicht|kein\w*|nie)\b)/g, "Na, ");
   t = t.replace(/\bun\b(?=\s)/g, "und");
-  if (sprache === "hochdeutsch") t = t.replace(/\bis\b/g, "ist").replace(/\bIs\b/g, "Ist").replace(/\bnet\b/g, "nicht").replace(/\bun\b/g, "und");
+  // Hochdeutsch und gebrochenes Deutsch: kein Dialekt („net“, „ma“, „i“ …)
+  if (sprache === "hochdeutsch" || sprache === "gebrochen")
+    t = t
+      .replace(/\bis\b/g, "ist")
+      .replace(/\bIs\b/g, "Ist")
+      .replace(/\b(net|ned)\b/g, "nicht")
+      .replace(/\b(Net|Ned)\b/g, "Nicht")
+      .replace(/\bun\b/g, "und")
+      .replace(/\bma\b(?=\s)/g, "man")
+      .replace(/\bi\b(?=\s+[a-zäöü])/g, "ich")
+      .replace(/\bI\b(?=\s+[a-zäöü])/g, "Ich")
+      .replace(/\bnix\b/g, sprache === "gebrochen" ? "nix" : "nichts")
+      .replace(/\bdes\b(?=\s+(is|ist|weiß|stimmt|geht|war)\b)/g, "das")
+      .replace(/\bDes\b(?=\s)/g, "Das");
   return t;
 }
 
@@ -1118,7 +1136,7 @@ function stilImpuls(k: AnrufKontext, art: NachrichtArt, nr: number): string | nu
   if (!p || art === "zusammenfassung" || art === "abschluss") return null;
   const r = Math.random();
   if (r < 0.1 && p.woerter.length && art !== "frage") return `Bau in diese Antwort das Wort „${p.woerter[Math.floor(Math.random() * p.woerter.length)]}“ ein.`;
-  if (r < 0.18 && p.eigenheit && nr >= 4) return `Wenn es gerade passt, mach jetzt einmal das, was zu deiner Art gehört: ${p.eigenheit} Die Antwort auf die Leitstelle kommt trotzdem zuerst.`;
+  if (r < 0.18 && p.eigenheit && nr >= 4 && (art !== "frage" || !/fragst|frag /.test(p.eigenheit))) return `Wenn es gerade passt, mach jetzt einmal das, was zu deiner Art gehört: ${p.eigenheit} Die Antwort auf die Leitstelle kommt trotzdem zuerst.`;
   if (r < 0.42) {
     if (p.stil === "gespraechig") return "Erzähl diesmal einen kleinen Nebensatz mehr dazu (nur was zur Fallakte passt).";
     if (p.stil === "unsicher") return "Sag diesmal „ich glaub“ oder „ich weiß nicht genau“ dazu.";

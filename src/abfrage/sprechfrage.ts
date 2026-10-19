@@ -257,6 +257,8 @@ export function frageMitPronomen(text: string, w: boolean | null): string {
 /** „der Patient“ in einer Antwort des Anrufers durch „er“/„sie“ ersetzen (so redet kein Laie) */
 export function ohnePatientWort(text: string, w: boolean): string {
   return text
+    .replace(/\bzu(m Patienten| der Patientin|r Patientin)\b/g, w ? "zu ihr" : "zu ihm")
+    .replace(/\bbei(m Patienten| der Patientin| dem Patienten)\b/g, w ? "bei ihr" : "bei ihm")
     .replace(/\b([Dd])(er Patient|ie Patientin)\b/g, (_m, d: string) => (d === "D" ? (w ? "Sie" : "Er") : w ? "sie" : "er"))
     .replace(/\b(den Patienten|die Patientin)\b/g, w ? "sie" : "ihn")
     .replace(/\b(dem Patienten|der Patientin)\b/g, w ? "ihr" : "ihm")

@@ -23,20 +23,28 @@ export function ohneVorspann(t: string): string {
 
 const W_WORT = /^(?:seit wann|ab wann|bis wann|wie lange?|um wie viel uhr|was|wo|wie|wer|wen|wem|wessen|wann|welche[rsmn]?|warum|wieso|weshalb|woran|womit|wohin|woher|wovon|wodurch|wofür|wieviel\w*|wie ?viel\w*)\b/;
 /** Verb am Anfang = Ja/Nein-Frage („atmet er normal“, „können sie mir sagen …“) */
-const FRAGE_VERB = /^(?:ist|sind|war|waren|hat|haben|hatte|hatten|kann|können|könnten|konnte|darf|dürfen|muss|müssen|soll|sollen|will|wollen|möchte|atmet|reagiert|blutet|hustet|spricht|redet|antwortet|bewegt|liegt|sitzt|steht|gibt|geht|kommt|bringt|hilft|nimmt|tut|weiß|wissen|kennen|kennt|sieht|hört|merkt|fühlt|trinkt|isst|schwitzt|wirkt|klagt|braucht|brauchen|befindet|wurde|wurden|wird|werden|leidet|krampft|zittert|blutete|schläft|nimmt|verwendet|hast|bist|seid|habt)\b/;
+const FRAGE_VERB = /^(?:ist|sind|war|waren|hat|haben|hatte|hatten|kann|können|könnten|konnte|darf|dürfen|muss|müssen|soll|sollen|will|wollen|möchte|atmet|reagiert|blutet|hustet|spricht|redet|antwortet|bewegt|liegt|sitzt|steht|gibt|geht|kommt|bringt|hilft|nimmt|tut|weiß|wissen|kennen|kennt|sieht|hört|merkt|fühlt|trinkt|isst|schwitzt|wirkt|klagt|braucht|brauchen|befindet|wurde|wurden|wird|werden|leidet|krampft|zittert|blutete|schläft|nimmt|verwendet|hast|bist|seid|habt|fährt|fahren|wohnt|bekommt|kriegt|geht's|gehts|atmen|bluten|leiden|schwitzen|spüren|fühlen|merken|frieren|zittern|husten|schlafen|vertragen|erinnern|verstehen|kriegen|bekommen|nehmen sie (regelmäßig|irgendwelche|medikamente|blutverdünn|tabletten))\b/;
 /** Befehlsverben in der Sie-Form („legen Sie …“) */
-const BEFEHL_VERB = /^(?:legen|bringen|drücken|drucken|öffnen|schauen|bleiben|machen|halten|gehen|holen|sperren|schalten|lassen|geben|kühlen|setzen|nehmen|beginnen|zählen|stellen|decken|ziehen|schicken|suchen|heben|drehen|knien|pressen|klopfen|sprechen|warten|rufen|tun|regen|führen|versuchen|achten|beobachten|kontrollieren|überprüfen|prüfen|fassen|umfassen|schlagen|beugen|strecken|überstrecken|entfernen|räumen|sichern|sorgen|bitten|fragen|reden|beruhigen|wickeln|pressen|lagern|ziehen|tragen|helfen|schreiben|notieren|hören|kommen|lesen|verwenden|benutzen|nutzen|kleben|richten|stützen|stoppen|wecken|rütteln|sprühen|wiederholen|machens|schauns|legens)\s+sie\b/;
+const BEFEHL_VERB = /^(?:legen|bringen|drücken|drucken|öffnen|schauen|bleiben|machen|halten|gehen|holen|sperren|schalten|lassen|geben|kühlen|setzen|nehmen|beginnen|zählen|stellen|decken|ziehen|schicken|suchen|heben|drehen|knien|pressen|klopfen|sprechen|warten|rufen|tun|regen|führen|versuchen|achten|beobachten|kontrollieren|überprüfen|prüfen|fassen|umfassen|schlagen|beugen|strecken|überstrecken|entfernen|räumen|sichern|sorgen|bitten|fragen|reden|beruhigen|wickeln|pressen|lagern|ziehen|tragen|helfen|schreiben|notieren|hören|kommen|lesen|verwenden|benutzen|nutzen|kleben|richten|stützen|stoppen|wecken|rütteln|sprühen|wiederholen|machens|schauns|legens|ermutigen|animieren|unterstützen|trösten|zudecken|aufsetzen|hinlegen)\s+sie\b/;
 /** Bitten, etwas zu erzählen, sind Fragen („erzählen Sie mal, was passiert ist“) */
 const ERZAEHL = /^(?:erzählen|sagen|beschreiben|schildern|nennen|buchstabieren|wiederholen)\s+sie\s+(?:mir\s+)?(?:mal\s+|bitte\s+|kurz\s+|doch\s+|noch\s+(?:einmal|mal)\s+)*(?:was|wo|wie|wer|wann|welche|ob|die|den|das|ihre|ihren|genau|kurz)\b/;
+const BEFEHL_MITTE = new RegExp(`\\b(?:und|dann|bitte|danach|jetzt|nun|dabei)\\s+${BEFEHL_VERB.source.slice(1)}`);
 const NUR_BEFEHL = /^(?:warten|weiter(?:machen)?|drücken|pressen|zählen|ruhig bleiben|nicht auflegen|dranbleiben|weiter so)\b/;
 
 function satzArt(c: string): "frage" | "anweisung" | "mitteilung" | "aussage" {
   const roh = c.trim();
-  const t = ohneVorspann(roh.replace(/[?.!]+$/, "")).trim();
+  // „Wenn Sie so weit sind, dann drücken Sie …“ → „drücken Sie …“
+  const t = ohneVorspann(ohneVorspann(roh.replace(/[?.!]+$/, "")).replace(/^(?:wenn|sobald|falls)\b[^,]*?(?:,\s*(?:dann\s+)?|\s+dann\s+)/, "")).trim();
   if (!t) return "aussage";
   if (ERZAEHL.test(t)) return "frage";
-  if (BEFEHL_VERB.test(t) || NUR_BEFEHL.test(t) || /\bsie (sollen|müssen)\b/.test(t)) return roh.endsWith("?") && !BEFEHL_VERB.test(t) ? "frage" : "anweisung";
+  // „Nehmen Sie Medikamente“ ist eine Frage, auch ohne Fragezeichen
+  if (/^nehmen sie (regelmäßig|irgendwelche|medikamente|blutverdünn|tabletten|etwas|was|schon)/.test(t)) return "frage";
+  if (BEFEHL_VERB.test(t) || NUR_BEFEHL.test(t) || /\bsie (sollen|müssen)\b/.test(t)) return roh.endsWith("?") && (!BEFEHL_VERB.test(t) || /^(?:nehmen|hören|verwenden|benutzen|nutzen|kommen|sprechen|brauchen) sie\b/.test(t)) ? "frage" : "anweisung";
   if (roh.endsWith("?") || W_WORT.test(t) || FRAGE_VERB.test(t)) return "frage";
+  // jedes andere „<Verb>en Sie …“ ohne Fragezeichen ist eine Bitte („Ermutigen Sie ihn zu husten“)
+  if (/^[a-zäöüß]+(?:en|ern|eln)\s+sie\b/.test(t) && !/^(?:sehen|glauben|meinen|denken|finden|wohnen|heißen|rufen|sprechen|atmen|bluten|leiden|schwitzen|kriegen|bekommen|spüren|fühlen|merken|frieren|zittern|erinnern|verstehen|husten|schlafen|essen|trinken|leben|arbeiten|befinden|vertragen|erkennen|hatten|waren)\b/.test(t)) return "anweisung";
+  // „… und schlagen Sie ihm auf den Rücken“: Bitte mitten im Satz
+  if (BEFEHL_MITTE.test(t)) return "anweisung";
   if (/^bitte\b/.test(roh.toLowerCase()) && /\b\w+en\b/.test(t)) return "anweisung";
   return "aussage";
 }

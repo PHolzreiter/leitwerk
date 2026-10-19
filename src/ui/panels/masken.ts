@@ -2,6 +2,7 @@
  * Einsatzmaske (Notfall) und KT-Maske (Krankentransport/Überstellung) als eigene Fenster.
  * Sie zeigen, was in der Einsatzliste (oder auf der Karte) ausgewählt ist.
  */
+import { gesagteAdresse } from "../../abfrage/adresseGesagt";
 import { nummerAus } from "../../sim/rufnummer";
 import { PARTNER, PARTNER_ARTEN } from "../../sim/partner";
 import { exportKnopf } from "../gespraechExport";
@@ -117,8 +118,10 @@ export function einsatzMaske(e: Einsatz): { root: HTMLElement; refresh(): void }
   adrRow.appendChild(btnPick);
   // Bei Notrufen: genannte Adresse übernehmen und Handy-Ortung
   const btnGenannt = el("button", { class: "btn small icon" }, "📍");
+  let gesagt: string | null = null;
   btnGenannt.addEventListener("click", () => {
-    adr.input.value = e.meldung.adresse;
+    if (!gesagt) return;
+    adr.input.value = gesagt;
     adr.input.dispatchEvent(new Event("input"));
     adr.input.focus();
   });
@@ -131,8 +134,9 @@ export function einsatzMaske(e: Einsatz): { root: HTMLElement; refresh(): void }
     const a = e.anruf;
     btnGenannt.hidden = btnOrtung.hidden = !a;
     if (!a) return;
-    btnGenannt.disabled = !a.gespraech.some((m) => m.von === "anrufer");
-    btnGenannt.title = btnGenannt.disabled ? "Genannte Adresse – erst wenn der Anrufer etwas gesagt hat" : `Genannte Adresse übernehmen: „${e.meldung.adresse}“`;
+    gesagt = gesagteAdresse(e.meldung.adresse, a.gespraech.filter((m) => m.von === "anrufer").map((m) => m.text));
+    btnGenannt.disabled = !gesagt;
+    btnGenannt.title = gesagt ? `Genannte Adresse übernehmen: „${gesagt}“` : "Genannte Adresse – erst wenn der Anrufer eine Straße oder einen Ort gesagt hat";
     const o = a.ortung;
     btnOrtung.disabled = a.status === "klingelt" || o?.status === "laeuft";
     const key = JSON.stringify(o ?? null);
