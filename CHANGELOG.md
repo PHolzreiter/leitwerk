@@ -1,5 +1,13 @@
 # Änderungen
 
+## 0.40.0 – Statusänderungen
+**Fahrzeuge**
+- Neuer Reiter „Statusänderungen“ neben „Aktive Fahrzeuge“ und „Alle Fahrzeuge“: jeder Statuswechsel mit Uhrzeit, Fahrzeug, alter → neuer Status, Einsatz bzw. Transport und Grund (Dienstende, Dienstbeginn, kein Flugwetter, von Hand); neueste oben, mit Suche und „nur im Einsatz“. Bei bestehenden Anordnungen erscheint er einmal automatisch neben „Aktive Fahrzeuge“; klappt auch im Mehrspieler
+- „Aktive Fahrzeuge“ zeigt keine abgemeldeten Fahrzeuge (Status 0) mehr – nur solche, die unterwegs oder beschäftigt sind
+
+**Gespräche**
+- Herzdruckmassage: schon beim ersten „Drücken Sie …“ zählt der Anrufer laut ab eins
+
 ## 0.39.0 – Testlauf und Pauls Gespräche ausgewertet
 Alle Verbesserungen gelten für jeden Fall – auch für selbst erstellte.
 

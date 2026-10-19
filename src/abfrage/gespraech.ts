@@ -383,7 +383,8 @@ export async function anruferAntwort(
   const pruefbar = (!!kern && (kern.saetze.length > 0 || Object.keys(kern.felder).length > 0)) || !!anweisung?.nichtMachbar.length;
   let kernText = anweisung ? anweisung.saetze : !hinweisFrage && kern?.saetze.length ? kern.saetze : undefined;
   // Herzdruckmassage läuft: bei allem außer Fragen wird weiter gedrückt und laut gezählt
-  const reaLaeuft = neu && reanimationLaeuft(e, k) && (art === "anweisung" || art === "mitteilung");
+  const reaStart = !!anweisung?.massnahmen.some((m) => /Herzdruckmassage/.test(m));
+  const reaLaeuft = neu && (reaStart || (reanimationLaeuft(e, k) && (art === "anweisung" || art === "mitteilung")));
   if (reaLaeuft) kernText = [...(kernText ?? []), "Du drückst weiter auf die Brust und zählst dabei laut weiter („… eins, zwei, drei, vier …“) – du hörst nicht auf."];
   const verlauf = kiVerlauf(e, k, frage, hinweisFrage, wiederholtId, kernText, stimmung);
   try {
@@ -462,7 +463,11 @@ export async function anruferAntwort(
       if (pr && pr.falsch.length && /^\W*(ja|genau|richtig|stimmt|jo|mhm)\b/i.test(fertig) && !/\b(nein|na|nicht|net)\b/i.test(fertig.split(/[.!?]/)[0]))
         fertig = atemnot ? "Nein … nein …" : `${zufallAus(x.sprache === "dialekt" ? ["Na, na", "Nein, nein", "Na, des stimmt net"] : ["Nein, nein", "Nein, das stimmt so nicht", "Nein, Moment"])} – ${pr.richtig || pr.falsch.join(", ")}.`;
     }
-    if (reaLaeuft && !zaehltMit(fertig)) fertig = `${fertig.replace(/\s*(okay,? )?(ich )?bleib\w* (ich )?dran\.?/i, "").replace(/[.!…\s]+$/, "")}${fertig.trim() ? " … " : ""}${zaehlFolge()}`.trim();
+    if (reaLaeuft && !zaehltMit(fertig)) {
+      const rest = fertig.replace(/\s*(okay,? )?(ich )?bleib\w* (ich )?dran\.?/i, "").replace(/[.!…\s]+$/, "").trim();
+      const z = zaehlFolge(reaStart && !reanimationLaeuft(e, k));
+      fertig = rest ? `${rest} … ${z}` : z.charAt(0).toUpperCase() + z.slice(1);
+    }
     // nach dem Weglassen von schon Gesagtem kann der Rest klein anfangen
     if (/^[a-zäöü]/.test(fertig)) fertig = fertig.charAt(0).toUpperCase() + fertig.slice(1);
     if (pruefbar) onToken?.(fertig);
@@ -532,8 +537,8 @@ export function zaehltMit(t: string): boolean {
   return (n?.length ?? 0) >= 3;
 }
 /** „… sieben, acht, neun, zehn …“ – ein Stück vom Mitzählen */
-export function zaehlFolge(): string {
-  const start = Math.floor(Math.random() * 24);
+export function zaehlFolge(vonAnfang = false): string {
+  const start = vonAnfang ? 0 : Math.floor(Math.random() * 24);
   return `${ZAHLEN.slice(start, start + 5).join(", ")} …`;
 }
 

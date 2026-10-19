@@ -1,5 +1,6 @@
 /**
- * Fahrzeuge: „Alle Fahrzeuge“ (nach Dienststelle) und „Aktive Fahrzeuge“ (alle, die nicht frei auf der Wache sind).
+ * Fahrzeuge: „Alle Fahrzeuge“ (nach Dienststelle), „Aktive Fahrzeuge“ (alle, die nicht frei auf der Wache und nicht abgemeldet sind)
+ * und „Statusänderungen“ (wer wann von welchem in welchen Status gewechselt hat).
  * Klick: auf der Karte zeigen und den Auftrag öffnen · Doppelklick: Kamera folgt · Rechtsklick: Status setzen.
  */
 import { sim, type SimFahrzeug } from "../../sim/engine";
@@ -139,7 +140,7 @@ function fahrzeugListe(ctx: PanelKontext, nurAktive: boolean) {
       const sel = el("select", { class: "pl-select", title: "Nach Status filtern" });
       sel.appendChild(el("option", { value: "alle" }, "jeder Status"));
       const da = new Set(alle.map((f) => f.status));
-      for (const k of ["alarmWache", "alarmFunk", "alarmiert", "zumBO", "amBO", "zumZO", "amZO", "freiFunk", "dienstfahrt", "bereitschaft", "abgemeldet"] as StatusKey[]) {
+      for (const k of ["alarmWache", "alarmFunk", "alarmiert", "zumBO", "amBO", "zumZO", "amZO", "freiFunk", "dienstfahrt", "bereitschaft"] as StatusKey[]) {
         if (!da.has(k)) continue;
         const d = sim.statusDef(k);
         sel.appendChild(el("option", { value: k }, `${d.nummer} – ${d.name}`));
@@ -183,7 +184,8 @@ function fahrzeugListe(ctx: PanelKontext, nurAktive: boolean) {
   function render(): void {
     const q = suche.value.trim().toLowerCase();
     let alle = Object.values(sim.state.fahrzeuge);
-    if (nurAktive) alle = alle.filter((f) => f.status !== "freiWache" || !!f.einsatzId || !!f.kt || f.phase !== "frei");
+    // aktiv = unterwegs oder beschäftigt; frei auf der Wache und abgemeldet (Status 0) zählen nicht
+    if (nurAktive) alle = alle.filter((f) => !!f.einsatzId || !!f.kt?.aktiv || (f.status !== "freiWache" && f.status !== "abgemeldet") || (f.status === "freiWache" && f.phase !== "frei"));
     if (!ctx.sichtbar()) {
       if (nurAktive) ctx.setzeBadge(alle.length || null);
       veraltet = true;
@@ -203,7 +205,7 @@ function fahrzeugListe(ctx: PanelKontext, nurAktive: boolean) {
         const html = `${statusChip(fz)}<div class="fz-main"><div><b data-dienstfz="${esc(fz.id)}">${esc(fz.funkrufname)}</b> <span class="muted">${typHtml(fz)} · ${esc(fz.kurzname || fz.stationName)}</span> ${crewHtml(fz)}${dienstHtml(fz)}</div><div class="fz-auftrag">${auftrag(fz) || `<span class="muted">${esc(sim.statusDef(fz.status).name)}</span>`}</div></div><div class="fz-rechts"><div>${esc(ph)}</div><div class="muted">${eta(fz)}</div></div>`;
         liste.appendChild(zeileAus(fz.id, `fz-row aktiv${fzKlassen(fz)}`, html, (r) => klickVerhalten(r, fz)));
       }
-      if (!sichtbar.length) liste.appendChild(el("div", { class: "muted pad" }, alle.length ? "Nichts passt zum Filter." : "Alle Fahrzeuge sind frei auf der Wache."));
+      if (!sichtbar.length) liste.appendChild(el("div", { class: "muted pad" }, alle.length ? "Nichts passt zum Filter." : "Kein Fahrzeug unterwegs – alle frei auf der Wache oder abgemeldet."));
       ctx.setzeBadge(alle.length || null);
       ausgeben();
       return;
@@ -284,7 +286,88 @@ registriere({
 registriere({
   komponente: "aktive",
   titel: "Aktive Fahrzeuge",
-  info: "Alle Fahrzeuge, die nicht frei auf der Wache sind – mit Status und Auftrag",
+  info: "Alle Fahrzeuge, die nicht frei auf der Wache und nicht abgemeldet sind – mit Status und Auftrag",
   bereich: "links",
   erstellen: (ctx) => fahrzeugListe(ctx, true),
+});
+
+// ---------------------------------------------------------------- Statusänderungen
+
+function statusLogFenster(ctx: PanelKontext) {
+  const root = el("div", { class: "pl fz-fenster statuslog" });
+  const kopf = el("div", { class: "pl-kopf" });
+  const werkzeug = el("div", { class: "pl-werkzeug" });
+  const suche = el("input", { type: "search", class: "pl-suche", placeholder: "Fahrzeug, Status, Einsatz …" });
+  const nurEinsatz = el("label", { class: "pl-check", title: "Nur Änderungen im Einsatz bzw. Transport" });
+  const cb = el("input", { type: "checkbox" }) as HTMLInputElement;
+  cb.checked = !!ctx.params.nurEinsatz;
+  nurEinsatz.append(cb, document.createTextNode(" nur im Einsatz"));
+  werkzeug.append(suche, nurEinsatz);
+  kopf.appendChild(werkzeug);
+  const liste = el("div", { class: "pl-body fz-liste" });
+  root.append(kopf, liste);
+  suche.addEventListener("input", () => render());
+  cb.addEventListener("change", () => {
+    ctx.setzeParams({ nurEinsatz: cb.checked });
+    render();
+  });
+  let veraltet = false;
+  let zuletzt = "";
+  const chip = (k: StatusKey) => {
+    const d = sim.statusDef(k);
+    return `<span class="st-chip" style="background:${esc(d.farbe)}" title="${esc(d.name)}">${esc(d.nummer)}</span>`;
+  };
+  function render(): void {
+    if (!ctx.sichtbar()) {
+      veraltet = true;
+      return;
+    }
+    veraltet = false;
+    const log = sim.state.statusLog ?? [];
+    const q = suche.value.trim().toLowerCase();
+    const schluessel = `${log.length}|${log[log.length - 1]?.zeit ?? 0}|${q}|${cb.checked}`;
+    if (schluessel === zuletzt) return;
+    zuletzt = schluessel;
+    const zeilen: HTMLElement[] = [];
+    for (let i = log.length - 1; i >= 0 && zeilen.length < 300; i--) {
+      const x = log[i];
+      if (cb.checked && !x.einsatz) continue;
+      const von = sim.statusDef(x.von);
+      const nach = sim.statusDef(x.nach);
+      if (q && !`${x.funkrufname} ${von.name} ${nach.name} ${nach.nummer} ${x.einsatz ?? ""} ${x.grund ?? ""}`.toLowerCase().includes(q)) continue;
+      const r = el("div", { class: "fz-row statuslog-zeile" });
+      const uhr = new Date(x.zeit).toTimeString().slice(0, 8);
+      r.innerHTML = `<span class="muted mono">${uhr}</span> <b data-dienstfz="${esc(x.fzId)}">${esc(x.funkrufname)}</b> ${chip(x.von)}<span class="muted">→</span>${chip(x.nach)} <span>${esc(nach.name)}</span><span class="spacer"></span><span class="muted">${esc([x.einsatz, x.grund].filter(Boolean).join(" · "))}</span>`;
+      r.title = `${von.nummer} ${von.name} → ${nach.nummer} ${nach.name} · Klick: Fahrzeug auf der Karte zeigen`;
+      r.addEventListener("click", () => fahrzeugZeigen(x.fzId, false));
+      zeilen.push(r);
+    }
+    if (!zeilen.length) zeilen.push(el("div", { class: "muted pad" }, log.length ? "Nichts passt zum Filter." : "Noch keine Statusänderungen in diesem Spiel."));
+    liste.replaceChildren(...zeilen);
+  }
+  let wartet = false;
+  const aus = sim.onChange(() => {
+    if (wartet) return;
+    wartet = true;
+    setTimeout(() => {
+      wartet = false;
+      render();
+    }, 500);
+  });
+  render();
+  return {
+    el: root,
+    dispose: () => aus(),
+    sichtbar: (an: boolean) => {
+      if (an && veraltet) render();
+    },
+  };
+}
+
+registriere({
+  komponente: "statuslog",
+  titel: "Statusänderungen",
+  info: "Alle Statuswechsel der Fahrzeuge, neueste oben – mit Uhrzeit, Einsatz und Grund",
+  bereich: "links",
+  erstellen: (ctx) => statusLogFenster(ctx),
 });

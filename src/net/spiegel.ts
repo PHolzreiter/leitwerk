@@ -28,6 +28,7 @@ function leer() {
     ktIds: "",
     partner: "",
     khBel: "",
+    statusLog: "",
   };
 }
 
@@ -148,6 +149,13 @@ export class DeltaBauer {
       d.khBelegung = st.khBelegung ?? {};
       c.khBel = kb;
     }
+    // Statusänderungen: die letzten (der Spiegel hängt sie an)
+    const sl = st.statusLog ?? [];
+    const sKey = `${sl.length}|${sl[sl.length - 1]?.zeit ?? 0}|${sl[sl.length - 1]?.fzId ?? ""}`;
+    if (sKey !== c.statusLog) {
+      d.statusLog = sl.slice(-80);
+      c.statusLog = sKey;
+    }
     const chatN = st.chat?.length ?? 0;
     if (chatN !== c.chat) {
       d.chat = st.chat;
@@ -227,6 +235,11 @@ export function deltaAnwenden(d: Nachricht): void {
   if (d.partnerFz) st.partnerFz = d.partnerFz as SimState["partnerFz"];
   if (d.khBelegung) st.khBelegung = d.khBelegung as SimState["khBelegung"];
   if (d.chat) st.chat = d.chat as SimState["chat"];
+  if (d.statusLog) {
+    const neu = d.statusLog as NonNullable<SimState["statusLog"]>;
+    const ab = neu[0]?.zeit ?? Infinity;
+    st.statusLog = [...(st.statusLog ?? []).filter((x) => x.zeit < ab), ...neu].slice(-500);
+  }
   sim.notify();
 }
 

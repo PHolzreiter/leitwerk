@@ -331,6 +331,7 @@ export function arbeitsplatzStarten(container: HTMLElement): DockviewApi {
         add(a, "chat", { ref: "abfrage", dir: "below" });
         add(a, "fahrzeuge", { ref: "telefon", dir: "below" });
         add(a, "aktive", { ref: "chat", dir: "below" });
+        add(a, "statuslog", { ref: "aktive", dir: "right" });
       },
     };
   }
@@ -359,6 +360,10 @@ export function anordnungLaden(json?: unknown): boolean {
     api.fromJSON(daten as Parameters<DockviewApi["fromJSON"]>[0]);
     // Fenster, die es nicht (mehr) gibt, entfernen
     for (const p of [...api.panels]) if (!DEFS.has(komponenteVon(p))) p.api.close();
+    // neu seit 0.40: „Statusänderungen“ einmal neben „Aktive Fahrzeuge“ anlegen (schließt man ihn, bleibt er zu)
+    const NEU_KEY = "leitwerk.neu.statuslog";
+    if (!json && !lsGet(NEU_KEY) && api.getPanel("aktive") && !api.panels.some((p) => komponenteVon(p) === "statuslog")) add(api, "statuslog", { ref: "aktive", dir: "within" });
+    lsSet(NEU_KEY, "1");
     return api.panels.length > 0;
   } catch (e) {
     console.warn("Anordnung konnte nicht geladen werden", e);
@@ -586,6 +591,7 @@ export const VORLAGEN: Vorlage[] = [
       add(a, "telefon", { ref: "einsatzliste", dir: "above" });
       add(a, "aktive", { ref: "einsatzliste", dir: "below" });
       add(a, "fahrzeuge", { ref: "aktive", dir: "within" });
+      add(a, "statuslog", { ref: "aktive", dir: "within" });
       add(a, "abfrage", { ref: "karte", dir: "within" });
       add(a, "einsatz", { ref: "karte", dir: "right" });
       add(a, "kt", { ref: "einsatz", dir: "within" });
@@ -630,6 +636,7 @@ export const VORLAGEN: Vorlage[] = [
       add(a, "abfrage", { ref: "karte", dir: "within" });
       add(a, "kt", { ref: "karte", dir: "right" });
       add(a, "aktive", { ref: "karte", dir: "below" });
+      add(a, "statuslog", { ref: "aktive", dir: "within" });
       add(a, "funk", { ref: "aktive", dir: "right" });
       breite(a, "einsatzliste", 0.27);
       breite(a, "kt", 0.33);
@@ -649,6 +656,7 @@ export const VORLAGEN: Vorlage[] = [
       add(a, "einsatz", { ref: "funk", dir: "below" });
       add(a, "kt", { ref: "einsatz", dir: "within" });
       add(a, "einsatzliste", { ref: "aktive", dir: "below" });
+      add(a, "statuslog", { ref: "aktive", dir: "within" });
       breite(a, "aktive", 0.26);
       breite(a, "karte", 0.38);
       hoehe(a, "einsatz", 0.45);

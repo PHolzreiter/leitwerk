@@ -623,6 +623,21 @@ export interface SimState {
   khBelegung?: BelegungMap;
   khGrundZeit?: number;
   partnerZaehler?: number;
+  /** Statusänderungen aller Fahrzeuge (neueste zuletzt, begrenzt) */
+  statusLog?: StatusEintrag[];
+}
+
+/** Eine Statusänderung (für den Reiter „Statusänderungen“) */
+export interface StatusEintrag {
+  zeit: number;
+  fzId: string;
+  funkrufname: string;
+  von: StatusKey;
+  nach: StatusKey;
+  /** Einsatznummer bzw. KT-Auftrag, falls im Einsatz */
+  einsatz?: string;
+  /** warum (Dienstende, Flugwetter, von Hand …) */
+  grund?: string;
 }
 
 /** Fahrzeug einer Partner-Organisation (nur im Einsatz vorhanden; transportiert nie Patienten) */
@@ -1258,11 +1273,11 @@ export class Simulation {
       const hindernis = this.flugHindernis(fz);
       if (hindernis && !fz.flugAbgemeldet && fz.status !== "abgemeldet" && this.dienstfrei(fz) && !fz.kt) {
         fz.flugAbgemeldet = true;
-        fz.status = "abgemeldet";
+        this.statusWechsel(fz, "abgemeldet", "kein Flugwetter");
         geaendert = true;
       } else if (!hindernis && fz.flugAbgemeldet) {
         fz.flugAbgemeldet = false;
-        if (fz.status === "abgemeldet" && !(fz.defektBis && fz.defektBis > t)) fz.status = fz.phase === "frei" && distanceM(fz, fz.heim) < 80 ? "freiWache" : "freiFunk";
+        if (fz.status === "abgemeldet" && !(fz.defektBis && fz.defektBis > t)) this.statusWechsel(fz, fz.phase === "frei" && distanceM(fz, fz.heim) < 80 ? "freiWache" : "freiFunk", "wieder Flugwetter");
         geaendert = true;
       }
     }
@@ -1287,7 +1302,7 @@ export class Simulation {
       if (fz.schicht === undefined) {
         // erster Blick (Programmstart): ohne Teamwechsel übernehmen
         fz.schicht = key;
-        if (!key && this.dienstfrei(fz) && !(fz.kt?.fahrten.length ?? 0)) this.abmeldenDienst(fz);
+        if (!key && this.dienstfrei(fz) && !(fz.kt?.fahrten.length ?? 0)) this.abmeldenDienst(fz, false);
         geaendert = true;
         continue;
       }
@@ -1302,7 +1317,7 @@ export class Simulation {
         fz.besetzung = crew?.length ? crew.map((x) => ({ ...x })) : generiereBesetzung(fz.rmTyp);
         if (fz.ausserDienst) {
           fz.ausserDienst = false;
-          if (fz.status === "abgemeldet" && !(fz.defektBis && fz.defektBis > t)) fz.status = fz.phase === "frei" && distanceM(fz, fz.heim) < 80 ? "freiWache" : "freiFunk";
+          if (fz.status === "abgemeldet" && !(fz.defektBis && fz.defektBis > t)) this.statusWechsel(fz, fz.phase === "frei" && distanceM(fz, fz.heim) < 80 ? "freiWache" : "freiFunk", "Dienstbeginn");
         }
       } else this.abmeldenDienst(fz);
     }
@@ -1316,9 +1331,10 @@ export class Simulation {
   }
 
   /** Dienstende: Fahrzeug meldet sich ab (fährt ggf. noch heim) */
-  private abmeldenDienst(fz: SimFahrzeug): void {
+  private abmeldenDienst(fz: SimFahrzeug, merken = true): void {
     fz.ausserDienst = true;
-    fz.status = "abgemeldet";
+    if (merken) this.statusWechsel(fz, "abgemeldet", "Dienstende");
+    else fz.status = "abgemeldet";
     if (fz.phase === "frei" && distanceM(fz, fz.heim) >= 80 && !this.routingBusy.has(fz.id)) this.fahre(fz, fz.heim, "rueckfahrt", false);
   }
 
@@ -1366,9 +1382,20 @@ export class Simulation {
     return null;
   }
 
-  private setStatus(fz: SimFahrzeug, s: StatusKey, quiet = false): void {
+  /** Status setzen und für „Statusänderungen“ merken */
+  private statusWechsel(fz: SimFahrzeug, s: StatusKey, grund?: string): void {
     if (fz.status === s) return;
+    const log = (this.state.statusLog ??= []);
+    const e = fz.einsatzId ? this.einsatz(fz.einsatzId) : undefined;
+    const kt = !e && fz.kt?.aktiv ? fz.kt.fahrten.flat()[0] : undefined;
+    log.push({ zeit: this.state.zeit, fzId: fz.id, funkrufname: fz.funkrufname, von: fz.status, nach: s, ...(e ? { einsatz: e.nummer } : kt ? { einsatz: this.ktAuftrag(kt)?.nummer } : {}), ...(grund ? { grund } : {}) });
+    if (log.length > 500) log.splice(0, log.length - 500);
     fz.status = s;
+  }
+
+  private setStatus(fz: SimFahrzeug, s: StatusKey, quiet = false, grund?: string): void {
+    if (fz.status === s) return;
+    this.statusWechsel(fz, s, grund);
     const def = this.statusDef(s);
     const e = fz.einsatzId ? this.einsatz(fz.einsatzId) : undefined;
     if (e) this.log(e, /^\d+$/.test(def.nummer) ? `${fz.funkrufname}: Status ${def.nummer} – ${def.name}` : `${fz.funkrufname}: ${def.name}`);
@@ -1384,7 +1411,7 @@ export class Simulation {
     if (fz.einsatzId) return "Fahrzeug ist im Einsatz – zuerst freigeben";
     // von Hand in Dienst genommen bzw. abgemeldet: gilt bis zum nächsten Schichtwechsel
     if (s !== "abgemeldet" && this.statusDef(s).verfuegbar) fz.ausserDienst = false;
-    this.setStatus(fz, s, true);
+    this.setStatus(fz, s, true, "von Hand");
     if (s === "freiWache") {
       fz.lat = fz.heim.lat;
       fz.lon = fz.heim.lon;
