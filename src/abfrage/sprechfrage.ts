@@ -71,7 +71,10 @@ const SPRECH: Record<string, { er: string[]; sie?: string[] }> = {
   puls: { er: ["Können Sie einen Puls fühlen?"] },
   unzweifelhaft: { er: ["Sind Sie sich ganz sicher, dass {er} tot ist?"] },
   atmung_geprueft: { er: ["Haben Sie nachgeschaut, ob {er} jetzt normal atmet?"] },
-  hoehe: { er: ["Aus welcher Höhe ist {er} gestürzt?", "Wie tief ist {er} gefallen?"] },
+  hoehe: { er: ["Ist {er} ebenerdig hingefallen oder von irgendwo heruntergestürzt?", "Wie tief ist {er} gefallen – nur am Boden hingefallen oder von weiter oben?"] },
+  situation: { er: ["Wie weit ist die Geburt – hat sie Wehen, muss sie schon pressen, sieht man schon etwas?", "Wie schaut's mit der Geburt aus – wie oft kommen die Wehen, presst sie schon?"], sie: ["Wie weit ist die Geburt – haben Sie Wehen, müssen Sie schon pressen?", "Wie oft kommen die Wehen, müssen Sie schon pressen?"] },
+  umstand: { er: ["Liegt {er} noch am Boden – und wie lange schon ungefähr?", "Gibt es sonst etwas Besonderes – liegt {er} noch am Boden, ist {er} schwer zu erreichen?"] },
+  staerke: { er: ["Wie stark blutet es – tropft es, läuft es, oder spritzt es?", "Wie viel Blut ist das – hört es mit Draufdrücken auf?"] },
   sturz: { er: ["Ist {er} dabei gestürzt?"] },
   region: { er: ["Wo genau ist {er} verletzt?", "Wo tut es {ihm} weh?"] },
   schmerzort: { er: ["Wo genau tut es {ihm} weh?"], sie: ["Wo genau tut es Ihnen weh?"] },
@@ -101,7 +104,8 @@ const SPRECH: Record<string, { er: string[]; sie?: string[] }> = {
   transportart: { er: ["Kann {er} sitzen, oder muss {er} liegend transportiert werden?", "Kann {er} gehen oder sitzen?"] },
   anforderer: { er: ["Rufen Sie als Arzt oder von der Pflege an?"] },
   hauptbeschwerde: { er: ["Was ist {sein} Hauptproblem – was macht {ihm} am meisten zu schaffen?", "Welche Beschwerden hat {er} vor allem?"] },
-  lage: { er: ["Beschreiben Sie mir bitte genau, wie die Situation gerade ist.", "Was genau ist die Situation im Moment?"] },
+  lage: { er: ["Ist {er} irgendwo eingeklemmt oder eingeschlossen?", "Kommt {er} selbst heraus, oder steckt {er} irgendwo fest?"] },
+  lage_psych: { er: ["Was genau hat {er} gesagt oder geschrieben – will {er} sich etwas antun?", "Hat {er} gesagt, dass {er} sich etwas antun will – oder wie?"] },
   schwaeche: { er: ["Ist eine Körperseite plötzlich schwach oder taub?"] },
   gleichgewicht: { er: ["Hat {er} plötzlich Probleme mit dem Gleichgewicht, schwankt {er}?"] },
   sehen: { er: ["Sieht {er} plötzlich schlechter oder doppelt?"] },
@@ -227,7 +231,9 @@ function merkmal(schema: Schema | null, f: Frage): string {
 export function sprechFrage(f: Frage, schema: Schema | null, antworten: Antworten, opt: { zufall?: () => number; erste?: boolean } = {}): string {
   const an = anredeAus(schema, antworten);
   const m = merkmal(schema, f);
-  const def = SPRECH[m];
+  // gleiche ID, anderes Kapitel: „Situation“ bei der psychischen Krise ist etwas anderes als beim Eingeklemmten
+  const psych = m === "lage" && (f.optionen ?? []).some((o) => o.wert === "absicht" || o.wert === "gedanken");
+  const def = psych ? SPRECH.lage_psych : SPRECH[m];
   const rnd = opt.zufall ?? Math.random;
   if (m === "ort_adresse" && opt.erste) return "Notruf 144, Rettungsdienst. Wo genau ist der Notfallort?";
   // Kinder: „Bub oder Mädchen?“

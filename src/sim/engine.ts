@@ -2133,6 +2133,8 @@ export class Simulation {
         let neu = zufallsName(w ? "w" : "m");
         // Fremde heißen nicht zufällig gleich wie der Anrufer
         for (let i = 0; i < 5 && !familie && !anrufer.selbst && neu.split(" ").slice(1).join(" ") === anrufer.name.split(" ").slice(1).join(" "); i++) neu = zufallsName(w ? "w" : "m");
+        // … und niemand heißt mit Vornamen gleich wie der Anrufer (Mutter Sophie, Tochter Sophie)
+        for (let i = 0; i < 8 && !anrufer.selbst && neu.split(" ")[0] === anrufer.name.split(" ")[0]; i++) neu = zufallsName(w ? "w" : "m");
         const pname = anrufer.selbst ? anrufer.name : familie ? `${neu.split(" ")[0]} ${anrufer.name.split(" ").slice(1).join(" ")}` : neu;
         const merkmale = store.schema ? merkmaleAusSchema(store.schema, a) : { ...a };
         // Fallkatalog: Texte mit [variante=…] gelten nur für die gezogene Variante
@@ -2144,7 +2146,7 @@ export class Simulation {
           anrufer.persona = personaWaehlen(
             anrufer,
             { alter: alt, w, vorname: vn, nachname: nn.join(" "), wach: (a.bw ?? "ja") === "ja" || a.bw === "getruebt", sicht: !vorlage.ohneSicht },
-            { ortUnbekannt: false, draussen: !!ortArt && ["strasse", "natur", "auto", "wasser", "bahnhof", "sport", "freizeit"].includes(ortArt), zuhause: !ortArt || ["wohnung", "haus", "garten"].includes(ortArt) },
+            { ortUnbekannt: false, draussen: !!ortArt && ["strasse", "natur", "auto", "wasser", "bahnhof", "sport", "freizeit"].includes(ortArt), zuhause: !ortArt || ["wohnung", "haus", "garten"].includes(ortArt), oeffentlich: !!ortArt && ["geschaeft", "lokal", "bahnhof", "sport", "freizeit", "schule", "arbeit", "baustelle", "arzt"].includes(ortArt) },
             Math.random,
           );
           merkmale.wissen = anrufer.persona.wissen;
@@ -3231,6 +3233,8 @@ export class Simulation {
       const weg = w.anrufer.selbst && !besserung && p0.bw !== "ja";
       const pw = p0.geschlecht === "w";
       text = weg ? null : fuellen(fallText, { w: pw, bezug: bezugFuer(w.anrufer.rolle, w.anrufer.selbst, pw, p0.alter), ort: "", name: w.szenario?.patient.name ?? "" }, Math.random);
+      // „(nur noch Keuchen am Telefon)“ gilt nur, wenn der Patient selbst telefoniert – sonst erzählt der Anrufer, was er sieht
+      if (text && /^\(/.test(text) && !w.anrufer.selbst) text = veraenderungText(w.anrufer, pw, p0, besserung, a.status === "beendet");
       if (text && /^\(/.test(text)) {
         if (a.status === "aktiv") a.gespraech.push({ zeit: t, echt: Date.now(), von: "system", text: text.replace(/^\(|\)$/g, "") });
         (w.verlauf ??= []).push(`Am Telefon ist jetzt nur noch zu hören: ${text.replace(/^\(|\)$/g, "")} – du kannst kaum noch sprechen.`);

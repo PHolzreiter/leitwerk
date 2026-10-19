@@ -2,7 +2,7 @@ import { fehlerLogStarten } from "./fehlerLog";
 fehlerLogStarten();
 import { ohnePatientWort, sprechFrage } from "./abfrage/sprechfrage";
 import { erinnerung, ortKandidaten, systemPrompt } from "./abfrage/anrufer";
-import { eroeffnen, inAtemnot, kiVerlauf, kontext, probeGespraech, vorwaermen } from "./abfrage/gespraech";
+import { eroeffnen, fuellwortDosis, inAtemnot, kiVerlauf, kontext, ohneFrageEcho, ohneRollentausch, probeGespraech, vorwaermen } from "./abfrage/gespraech";
 import { kiAntwortNeu, nachrichtArt } from "./abfrage/runde";
 import { bereinigen, kiTest, satzEnde } from "./abfrage/ki";
 import { alleFaelle, fallAktivSetzen, fallLoeschen, fallpaketExport, fallpaketImport, fallSpeichern } from "./abfrage/faelle";
@@ -49,7 +49,7 @@ import { fallHinweise, faellePruefen } from "./abfrage/faellePruefen";
 dienstHoverEinrichten();
 
 // Für automatische Tests im Browser (…/?debug): Zugriff auf Simulation und Daten
-if (location.search.includes("debug")) Object.assign(window, { __lw: { sim, store, sprachTest, codesystemLaden: (s: Schema) => schemaUebernehmen(s, "test.json"), faellePruefen: () => faellePruefen(store.schema), fallHinweise, faelle: { alleFaelle, fallSpeichern, fallLoeschen, fallpaketExport, fallpaketImport, fallAktivSetzen }, fallEditorOeffnen, entwurfAusKi, sprechFrage, systemPrompt, kontext, erinnerung, kiVerlauf, ohnePatientWort, bereinigen, satzEnde, inAtemnot, kiAntwortNeu, kiTest, probe: probeGespraech, vorwaermen, eroeffnen, nachrichtArt, ortKandidaten, testlauf: { auftraegeFuer, testlaufAusfuehren, testlaufDateien, testlaufDialog, zipOhneKompression } } });
+if (location.search.includes("debug")) Object.assign(window, { __lw: { sim, store, sprachTest, codesystemLaden: (s: Schema) => schemaUebernehmen(s, "test.json"), faellePruefen: () => faellePruefen(store.schema), fallHinweise, ohneFrageEcho, fuellwortDosis, ohneRollentausch, faelle: { alleFaelle, fallSpeichern, fallLoeschen, fallpaketExport, fallpaketImport, fallAktivSetzen }, fallEditorOeffnen, entwurfAusKi, sprechFrage, systemPrompt, kontext, erinnerung, kiVerlauf, ohnePatientWort, bereinigen, satzEnde, inAtemnot, kiAntwortNeu, kiTest, probe: probeGespraech, vorwaermen, eroeffnen, nachrichtArt, ortKandidaten, testlauf: { auftraegeFuer, testlaufAusfuehren, testlaufDateien, testlaufDialog, zipOhneKompression } } });
 
 async function watchGeo(): Promise<void> {
   const out = document.getElementById("geo-status");

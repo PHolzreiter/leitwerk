@@ -1,5 +1,47 @@
 # Änderungen
 
+## 0.36.0 – Zweiter Testlauf ausgewertet: Anrufer, Fälle und Testlauf feiner
+Grundlage: der Testlauf mit v0.35.0 (420 Gespräche, qwen3:8b). Gegenüber dem Lauf davor: falsche Zusammenfassungen werden jetzt in 96 % der Fälle zurückgewiesen (vorher 13 %), „Seit wann?“ wird fast immer beantwortet, „der Patient“, „isch/nee/ick“ und erfundene Stockwerke sind weg.
+
+**Anrufer-KI**
+- Falsche Zeitangaben („seit dem Mittagessen“, „vielleicht zehn Minuten“) kamen aus Beispielsätzen in der Anweisung – die Beispiele haben jetzt keine Zeiten mehr; „weniger als 4/6 Stunden“ steht nicht mehr zusätzlich in den Fakten
+- „Ich bin allein“, obwohl jemand da ist: der Satz zum Alleinsein steht nur noch, wenn der Anrufer wirklich allein ist, und wird nur auf Nachfrage gesagt
+- Keine erfundenen Wegbeschreibungen, Hausfarben oder Geschäfte mehr; an Orten ohne Wohnung (Geschäft, Haltestelle, Spielfeld …) gibt es keine Tür zum Aufsperren
+- Die Leitstelle wird gesiezt; Bewusstlosen wird nichts zu trinken gegeben; Anweisungen werden genau so ausgeführt („aufsetzen“ heißt nicht hinlegen)
+- Auf „Die Rettung ist unterwegs“ kommt eine kurze menschliche Reaktion statt „Das mach ich eh schon“ oder Zustandsbericht
+- Antworten, die die Frage wiederholen („Wie atmet sie? Sie …“), Fragen, die nur die Leitstelle stellt („Wie geht's ihm jetzt?“), und eine nochmals aufgesagte Adresse werden herausgefiltert
+- Füllwörter höchstens jede dritte Antwort – zu viele werden automatisch entfernt
+- Mehr falsche Dialektformen werden korrigiert (so'n, isser, ischt, keene, doll, guck, sorry …); „Jo, is net …“ wird zu „Na, is net …“
+- Bestätigungen, Widerspruch und Verabschiedung wechseln ab (nicht mehr immer „Mhm, ja.“, „Nein, nein –“, „Danke, bis gleich.“)
+- Wer selbst anruft und eingetrübt wird, bringt nur noch Laute heraus
+
+**Fallakte (das, was die KI weiß)**
+- Nach einer Verschlechterung stehen die alten Befunde (Farbe, Husten, „Baby hat keine Probleme“) nicht mehr in der Akte
+- Protokoll-Stichworte („Nur Arme/Beine …“, „Schwach: tropft, lässt sich stillen“, „Ebenerdig / unter 3 m“) stehen als normale Sätze da
+- Text gewinnt: wer verwaschen redet, „redet“ nicht „normal“; wer am Kopf blutet, ist nicht „unverletzt“; „rot im Gesicht“ ist nicht „normale Farbe“
+- Selbstanrufer bekommen alle Fakten in Du-Form („Reden kannst du normal“)
+- Kleinkinder „reden“ nicht und „wissen nicht, wo sie sind“
+- Passanten kennen Namen und Krankheiten eines Bewusstlosen nicht; wer jemanden nur gefunden hat, sagt „gefunden vor …“
+
+**Persönlichkeiten**
+- Weg sind: „Ob er …? Moment …“ statt einer Antwort, „gerade erst heimgekommen“, „Kann wer eine Decke holen?“ ohne andere Leute
+- „Unsicher“ gilt nur für Beobachtungen – nicht für den eigenen Namen, Alter oder Geschlecht der Angehörigen
+- An öffentlichen Orten ist man nie allein; Rollen passen zum Namen (Maria ist „Freundin“, nicht „Freund“); Anrufer und Patient heißen nie gleich
+
+**Fälle**
+- Pflegeheim: Fieber seit gestern (vorher widersprach die Zeit), Ausgang B mit grauer Haut und dringendem Transport
+- Sturz: keine widersprüchlichen Zeiten mehr; Kreislaufstillstand: kein „Gerät sagt Schock“ ohne Defi, kein Aufwärmen mit 80
+- Psychische Krise: der Anrufer steht vor der Tür – keine Haustür, kein Lautsprecher, keine Haustiere, Substanzen „weiß ich nicht“
+- Parkbank: Ausgänge klingen unterschiedlich (betrunken / schlägt nach dir / kein Alkohol)
+- Fremdkörper Kind: der Ort passt zu dem, was verschluckt wurde; Asthma, Unterzucker, Geburt: kleinere Widersprüche behoben
+
+**Testlauf**
+- Hustet das Kind nicht mehr wirksam, kommen Rückenschläge statt Auflegen; nach Wiederbelebung Seitenlage; nach der Geburt Anleitung fürs Baby
+- Reanimation erst im Kreislaufstillstand, Warnblinkanlage nur für Autofahrer, „Beine hoch“ nicht mehr bei Fieber
+- Selbstanrufer werden nicht nach dem eigenen Geschlecht, der Hautfarbe oder „Sie reagieren nicht“ gefragt
+- „Alle Ausgänge“ testet nur Ausgänge, die von selbst vorkommen
+- Weniger Fehlalarme in der Übersicht („Eine Person.“ ist keine Wiederholung der Frage)
+
 ## 0.35.0 – Anrufer-KI, Fallmodell und Fall-Erstellung überarbeitet
 Grundlage: der Testlauf mit 420 Gesprächen (alle Fälle, qwen3:8b), Gespräch für Gespräch ausgewertet.
 

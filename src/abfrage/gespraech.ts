@@ -221,6 +221,14 @@ function hoechstSaetze(k: AnrufKontext, sf: Frage | undefined, erste: boolean): 
  * insgesamt nur wenige Wörter.
  */
 export function inAtemnot(text: string): string {
+  // Adresse: die muss vollständig ankommen – nur mit Pausen
+  if (/\d{4}/.test(text) && /\d/.test(text.split(",")[0] ?? "")) return text.replace(/,\s*/g, " … ").replace(/[.!]$/, " …");
+  // schon in Fetzen gesprochen: so lassen (nur kürzen)
+  if ((text.match(/…/g) ?? []).length >= 2) {
+    const w = text.replace(/[„“"]/g, "").split(/\s+/).filter(Boolean);
+    const t = w.slice(0, 12).join(" ");
+    return /…\s*$/.test(t) ? t : `${t.replace(/[.!?]$/, "")} …`;
+  }
   // nur der Anfang: der erste Satz (ist er sehr kurz, auch der zweite), höchstens neun Wörter
   const saetze = text.replace(/[„“"]/g, "").replace(/\s*…\s*/g, " ").match(/[^.!?]+[.!?]*/g) ?? [text];
   let teil = saetze[0] ?? "";
@@ -309,6 +317,11 @@ export async function anruferAntwort(
     await pause();
     return "(keine Antwort – man hört nur noch Geräusche)";
   }
+  // … und wer selbst anruft und jetzt eingetrübt ist, bringt nur noch Laute heraus
+  if (x.selbst && k.wahrheit.bw === "getruebt" && (k.verlauf ?? []).length) {
+    await pause();
+    return zufallAus(["(nur noch Stöhnen, keine verständliche Antwort)", "Mmh … ich … (dann nur noch schweres Atmen)", "(man hört nur noch Keuchen)"]);
+  }
   // Ollama evtl. erst nach dem Programmstart gestartet: Status neu holen
   if (!kiBereit() && inTauri() && kiPrefs().aktiv) await kiStatus().catch(() => null);
   if (!kiBereit()) {
@@ -331,18 +344,71 @@ export async function anruferAntwort(
     const atemnot = atemnotSelbst(k);
     const t = await kiAntwortNeu(verlauf, frueher, (y) => onToken?.(atemnot ? "" : glatt(y)), { pruefen: !(wiederholtId || schonGefragt(g, frage)), maxSaetze: atemnot ? 2 : hoechstSaetze(k, sf, ersteAntwort) });
     quelle.wert = "ki";
-    let fertig = atemnot ? inAtemnot(t) : glatt(t);
+    let fertig = fuellwortDosis(ohneRollentausch(ohneFrageEcho(atemnot ? inAtemnot(t) : glatt(t), frage)), frueher, x.persona?.woerter ?? []);
+    // Adresse nochmal aufgesagt, obwohl nicht danach gefragt (kommt nach der ersten Antwort vor)
+    if (k.adresse && !/adresse|notfallort|\bwo\b|straße|hausnummer|ort\b/i.test(frage)) {
+      const strasse = k.adresse.split(",")[0].trim().toLowerCase();
+      const teile = fertig.split(/(?<=[.!?…])\s+/);
+      if (teile.length > 1 && strasse.length > 4 && teile[0].toLowerCase().includes(strasse)) fertig = teile.slice(1).join(" ");
+    }
+    // nur die Frage zurückgegeben (kommt beim kleinen Modell vor) → einfache Antwort aus den Fakten
+    if (!fertig.trim()) fertig = einfacheAntwort(k, frage, schemaFrage);
     // falsche Zusammenfassung abgenickt? Dann widerspricht der Anrufer (das kleine Modell sagt sonst fast immer „Ja, genau“)
     if (!sf && nachrichtArt(frage) === "zusammenfassung") {
       const pr = zusammenfassungPruefen(k, frage);
       if (pr && pr.falsch.length && /^\W*(ja|genau|richtig|stimmt|jo|mhm)\b/i.test(fertig) && !/\b(nein|na|nicht|net)\b/i.test(fertig.split(/[.!?]/)[0]))
         fertig = atemnot ? "Nein … nein …" : `${zufallAus(x.sprache === "dialekt" ? ["Na, na", "Nein, nein", "Na, des stimmt net"] : ["Nein, nein", "Nein, das stimmt so nicht", "Nein, Moment"])} – ${pr.richtig || pr.falsch.join(", ")}.`;
     }
+    // nach dem Weglassen von schon Gesagtem kann der Rest klein anfangen
+    if (/^[a-zäöü]/.test(fertig)) fertig = fertig.charAt(0).toUpperCase() + fertig.slice(1);
     return fertig;
   } catch (err) {
     console.warn("KI-Antwort", err);
     return einfacheAntwort(k, frage, schemaFrage);
   }
+}
+
+/**
+ * Füllwörter sparsam: Steht eines schon in einer der letzten beiden Antworten, in einer ganz kurzen Antwort
+ * (Alter, Geschlecht …) oder mehrmals in dieser, fliegt es raus. Bedeutungstragende („jo“, „na“, „bitte“) bleiben.
+ */
+export function fuellwortDosis(antwort: string, frueher: string[], woerter: string[]): string {
+  const weg = woerter.filter((w) => !["jo", "na", "ja ja", "okay", "bitte", "ja genau"].includes(w.toLowerCase()));
+  if (!weg.length) return antwort;
+  const muster = (w: string, g = "") => new RegExp(`(?<![\\wäöüß])${w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?![\\wäöüß])`, `i${g}`);
+  const kommt = (t: string) => weg.some((w) => muster(w).test(t));
+  if (!kommt(antwort)) return antwort;
+  const kurz = antwort.split(/\s+/).length <= 5;
+  const zuletzt = frueher.slice(-2).some(kommt);
+  const oft = weg.reduce((n, w) => n + (antwort.match(muster(w, "g"))?.length ?? 0), 0) > 1;
+  if (!kurz && !zuletzt && !oft) return antwort;
+  let t = antwort;
+  for (const w of weg) t = t.replace(new RegExp(`[,\\s]*${muster(w).source}[,]?`, "gi"), "");
+  t = t.replace(/\s+([.!?…,])/g, "$1").replace(/^[\s,.…-]+/, "").replace(/\s{2,}/g, " ").trim();
+  if (!t) return antwort;
+  return t.charAt(0).toUpperCase() + t.slice(1);
+}
+
+/**
+ * Rückfragen, die nur die Leitstelle stellen würde („Wie geht's ihm jetzt?“, „Haben Sie Fragen dazu?“),
+ * hängt das kleine Modell manchmal an – die fallen weg. Echte Anrufer-Fragen („Wie lange dauert es?“) bleiben.
+ */
+export function ohneRollentausch(antwort: string): string {
+  const falsch = /^(kann ich (noch )?(etwas|was) für sie tun|haben sie (noch )?fragen( dazu)?|wie sagt man( das)?|wie geht.s (ihm|ihr|dem|der)\b[^?]*|was ist los|was macht ihr sonst|was ist passiert|wie geht.s weiter mit (ihm|ihr)|ist das richtig so|verstehen sie mich)\?$/i;
+  const teile = antwort.split(/(?<=[.!?…])\s+/);
+  while (teile.length > 1 && falsch.test(teile[teile.length - 1].trim())) teile.pop();
+  return teile.join(" ");
+}
+
+/** „Wie atmet sie? Sie kriegt …“ → „Sie kriegt …“: das Modell wiederholt manchmal die Frage am Anfang */
+export function ohneFrageEcho(antwort: string, frage: string): string {
+  const norm = (t: string) => t.toLowerCase().replace(/[^a-zäöüß0-9 ]/g, " ").replace(/\s+/g, " ").trim();
+  const nf = norm(frage.split("?")[0]);
+  if (nf.length < 6) return antwort;
+  const m = antwort.match(/^\s*([^?]{4,}\?)\s*(?:[–—→:-]\s*)?/);
+  if (!m || norm(m[1]) !== nf) return antwort;
+  const rest = antwort.slice(m[0].length).trim();
+  return rest ? rest.charAt(0).toUpperCase() + rest.slice(1) : "";
 }
 
 /**

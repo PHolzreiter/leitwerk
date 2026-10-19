@@ -252,7 +252,10 @@ function gendern(t: string, g: "m" | "w"): string {
     .replace(/Disponent\/in/g, g === "w" ? "Disponentin" : "Disponent")
     .replace(/Mitarbeiter\/in/g, g === "w" ? "Mitarbeiterin" : "Mitarbeiter")
     .replace(/Pistenretter\/in/g, g === "w" ? "Pistenretterin" : "Pistenretter")
-    .replace(/eine\/n /g, g === "w" ? "eine " : "einen ");
+    .replace(/eine\/n /g, g === "w" ? "eine " : "einen ")
+    .replace(/^(Freund|Passant|Lenker|Arbeitskollege|Nachbar|Bademeister|Trainer|Wirt|Polizist|Lehrer|Mitarbeiter|Begleiter)\b(, der)?/, (m, wort: string, der?: string) =>
+      g === "w" ? `${wort === "Arbeitskollege" ? "Arbeitskollegin" : `${wort}in`}${der ? ", die" : ""}` : m,
+    );
 }
 
 /** „Ich bin …“ für die Frage „Wer ruft an?“ */
@@ -435,9 +438,9 @@ const EMOTION_TEXT: Record<Anrufer["emotion"], string> = {
 
 function sprachText(x: Anrufer): string {
   if (x.sprache === "dialekt")
-    return "Du sprichst ein bisschen niederösterreichisch gefärbt – NUR mit diesen Wörtern: „i“ (ich), „net“ (nicht), „is“ (ist), „a bissl“, „eh“, „jo“, „na“ (nein), „gschwind“, „nix“. Alles andere ganz normales Deutsch. NIE Schweizer, Berliner oder norddeutsche Formen (kein „isch“, „gsi“, „nee“, „nich“, „ick“, „wat“, „so 'ne“, „un“).";
+    return "Du sprichst ein bisschen niederösterreichisch gefärbt – NUR mit diesen Wörtern: „i“ (ich), „net“ (nicht), „is“ (ist), „a bissl“, „eh“, „jo“ (ja), „na“ (nein), „nix“ – höchstens ein, zwei davon pro Antwort. Alles andere ganz normales, richtiges Deutsch (richtige Verbformen: „er hat sich geschnitten“, nicht „er is sich …“). NIE Schweizer, Berliner oder norddeutsche Formen (kein „isch“, „gsi“, „nee“, „nich“, „ick“, „wat“, „so 'ne“, „so'n“, „un“, „doll“, „gucken“).";
   if (x.sprache === "gebrochen")
-    return `Deutsch ist nicht deine Muttersprache (du kommst aus ${x.herkunft}). Du sprichst einfaches, gebrochenes Deutsch: kurze Sätze, oft ohne Artikel, Verben manchmal in der Grundform, einfache Wörter („Mann liegt da, nix reden. Bitte schnell kommen!“). Schwierige Wörter verstehst du nicht und fragst nach („Was heißt …?“).`;
+    return `Deutsch ist nicht deine Muttersprache (du kommst aus ${x.herkunft}). Du sprichst einfaches, gebrochenes Deutsch: kurze Sätze, oft ohne Artikel, Verben manchmal in der Grundform, einfache Wörter („Mann liegt da, nix reden. Bitte schnell kommen!“). Schwierige Wörter verstehst du nicht und fragst nach („Was heißt …?“). Kein österreichischer Dialekt (kein „net“, „is“, „i“, „gell“) – nur einfaches Deutsch.`;
   return "Du sprichst normales Hochdeutsch (österreichisch, aber kein Dialekt).";
 }
 
@@ -479,6 +482,17 @@ const LAIE: Record<string, Record<string, string>> = {
   },
 };
 
+/** Kleinkinder reden nicht: dafür eigene Worte */
+const LAIE_KLEIN: Record<string, Record<string, string>> = {
+  bw: { ja: "{ist wach und schaut einen an|ist munter und weint|ist wach und reagiert, wenn man {ihn} anspricht}" },
+};
+
+/** Alltagswort für eine Antwort – passend zum Alter des Patienten */
+function laieWort(k: AnrufKontext, id: string, wert: string): string | undefined {
+  const alter = Number(k.szenario?.patient.alter ?? k.wahrheit.alter ?? 99);
+  return (alter < 4 ? LAIE_KLEIN[id]?.[wert] : undefined) ?? LAIE[id]?.[wert];
+}
+
 /** Wahrheit zu einer Frage in Worten (für die KI) */
 export function wahrheitText(k: AnrufKontext, f: Frage): string | null {
   const wert = k.wahrheit[f.id];
@@ -498,9 +512,13 @@ export function wahrheitText(k: AnrufKontext, f: Frage): string | null {
           : "das weißt du nicht genau";
     }
   }
-  if (f.id === "geschlecht" && (wert === "m" || wert === "w")) return wert === "w" ? (k.szenario && k.szenario.patient.alter < 14 ? "ein Mädchen" : "eine Frau") : k.szenario && k.szenario.patient.alter < 14 ? "ein Bub" : "ein Mann";
+  if (f.id === "geschlecht" && (wert === "m" || wert === "w")) {
+    const alter = k.szenario?.patient.alter ?? 99;
+    if (k.anrufer.selbst) return wert === "w" ? "du bist weiblich" : "du bist männlich";
+    return wert === "w" ? (alter < 14 ? "ein Mädchen" : alter < 18 ? "ein junges Mädchen" : "eine Frau") : alter < 14 ? "ein Bub" : alter < 18 ? "ein Bursch" : "ein Mann";
+  }
   if (LAIE[f.id]?.[String(wert)]) {
-    const t = fuellen(LAIE[f.id][String(wert)], { w, bezug: "", ort: "", name: "" }, Math.random);
+    const t = fuellen(laieWort(k, f.id, String(wert))!, { w, bezug: "", ort: "", name: "" }, Math.random);
     return k.anrufer.selbst && f.id === "bw" ? "du bist wach, aber dir geht es nicht gut" : t;
   }
   // Alltagssatz statt Etikett („muss liegend transportiert werden“ statt „Liegend“)
@@ -588,7 +606,8 @@ function dativ(b: string): string {
     .replace(/^ein Patient$/, "einem Patienten")
     .replace(/^ein Kollege$/, "einem Kollegen")
     .replace(/^ein /, "einem ")
-    .replace(/^eine /, "einer ");
+    .replace(/^eine /, "einer ")
+    .replace(/\b(Kollege|Bursch|Herr|Patient|Nachbar|Bub|Junge|Mensch)$/, (m) => (m === "Herr" || m === "Nachbar" ? `${m}n` : m === "Kollege" || m === "Junge" ? `${m}n` : `${m}en`));
 }
 
 function bezugVon(x: Anrufer, w: boolean): string {
@@ -652,7 +671,7 @@ export function schilderung(k: AnrufKontext): string {
 function zustand(k: AnrufKontext): string {
   const t: string[] = [];
   if (k.wahrheit.bw === "ja" && k.wahrheit.verwirrt === "ja") t.push("ist wach und redet, aber durcheinander");
-  else if (typeof k.wahrheit.bw === "string" && LAIE.bw[k.wahrheit.bw]) t.push(LAIE.bw[k.wahrheit.bw]);
+  else if (typeof k.wahrheit.bw === "string" && LAIE.bw[k.wahrheit.bw]) t.push(laieWort(k, "bw", k.wahrheit.bw)!);
   if (typeof k.wahrheit.at === "string" && LAIE.at[k.wahrheit.at]) t.push(LAIE.at[k.wahrheit.at]);
   const w = patientW(k);
   return t.length ? fuellen(`${k.anrufer.selbst ? "Zustand:" : w ? "Sie" : "Er"} ${t.join(" und ")} – daran ändert sich während des ganzen Gesprächs nichts.`, { w, bezug: "", ort: "", name: "" }, Math.random) : "";
@@ -669,6 +688,14 @@ function antwortSaetze(k: AnrufKontext): string {
   const nurFakt: Antworten = {};
   for (const [id, wert] of Object.entries(k.wahrheit)) {
     if (["anrufer", "schilderung", "ort_adresse", "ort_zusatz", "rueckrufnummer", "kapitel"].includes(id)) continue;
+    // nach einer Veränderung im Gespräch: Antworten zum alten Zustand (Atemweg, Baby, Komplikationen) gelten nicht mehr sicher
+    if ((k.verlauf ?? []).length && ["atemweg", "kompl_baby", "komplikationen", "kompl_mutter", "situation", "sprachschw", "verwirrt", "hautfarbe", "kaltschweiss", "ohnmacht"].includes(id)) continue;
+    // Fragen, die nur die Polizei beantworten kann
+    if (["ubg"].includes(id) && k.anrufer.art !== "polizei") continue;
+    // seltene Sonderkrankheiten: „nein“ verwirrt nur („keine Vorerkrankungen“)
+    if (id === "sonderdiagnose" && wert === "nein") continue;
+    // wer selbst anruft, wird nicht nach dem eigenen Geschlecht gefragt
+    if (k.anrufer.selbst && id === "geschlecht") continue;
     // kein bekannter Patient (Lichtsignale, Tier): nur die eigenen Fragen des Kapitels
     if (k.szenario?.ohnePatient && (id in k.szenario.zusatz || ["alter", "geschlecht", "bw", "at", "anzahl_patienten"].includes(id))) continue;
     // aus der Geschichte ergänzte „nein“-Antworten stehen schon in den Vorerkrankungen
@@ -682,13 +709,13 @@ function antwortSaetze(k: AnrufKontext): string {
     }
     if (LAIE[id]?.[String(wert)]) {
       const frage = id === "bw" ? `Ob ${wer.toLowerCase()} wach ist und reagiert` : `Wie ${wer.toLowerCase()} atmet`;
-      const ich: Record<string, string> = { "bw:ja": "Du bist wach, aber dir geht es nicht gut", "bw:getruebt": "Du bist benommen und kannst nicht klar denken", "at:normal": "Du kriegst normal Luft", "at:abnorm": "Du kriegst ganz schlecht Luft und musst schnaufen" };
+      const ich: Record<string, string> = { "bw:ja": "Du bist wach und klar im Kopf", "bw:getruebt": "Du bist benommen und kannst nicht klar denken", "at:normal": "Du kriegst normal Luft", "at:abnorm": "Du kriegst ganz schlecht Luft und musst schnaufen" };
       if (k.anrufer.selbst) {
         const t = ich[`${id}:${wert}`];
         if (t) zeilen.push(`- ${t}`);
         continue;
       }
-      zeilen.push(wert === "unbekannt" ? `- ${frage}: ${fuell(LAIE[id][String(wert)])}` : `- ${wer} ${fuell(LAIE[id][String(wert)])}`);
+      zeilen.push(wert === "unbekannt" ? `- ${frage}: ${fuell(laieWort(k, id, String(wert))!)}` : `- ${wer} ${fuell(laieWort(k, id, String(wert))!)}`);
       continue;
     }
     // Vorgeschichte und Alter: was dieser Anrufer davon weiß (siehe DEINE ART)
@@ -699,11 +726,29 @@ function antwortSaetze(k: AnrufKontext): string {
     }
     if (!f || f.typ === "text" || f.typ === "kapitelwahl") continue;
     const t = wahrheitText(k, f);
-    if (t) zeilen.push(`- ${frageMitPronomen(f.text, w)} → ${t}`);
+    if (t) zeilen.push(`- Fragt man „${frageMitPronomen(f.text, w)}“, ist die Antwort: ${t}`);
   }
   // wer gerade nicht wach ist bzw. kaum atmet: „im Kopf klar“, „redet in Sätzen“, „war nie weg“ passen nicht (auch nach einer Verschlechterung)
   const nichtWach = k.wahrheit.bw === "nein" || k.wahrheit.at === "keine" || k.wahrheit.at === "agonal";
   if (nichtWach) for (const id of ["verwirrt", "sprachschw", "ohnmacht"]) delete nurFakt[id];
+  // Zeit steht schon unter ZEIT (sonst widersprechen sich „weniger als 4 Stunden“ und „vor einer halben Stunde“); Anzahl nur einmal
+  for (const id of ["aelter6h", "seit"]) delete nurFakt[id];
+  if (k.wahrheit.anzahl_patienten !== undefined) delete nurFakt.mehrere_verletzte;
+  // was im Text steht, gewinnt: verwaschene Sprache, Verwirrtheit, Blut, Farbe
+  const text = [...(k.szenario?.geschehen ?? []), ...(k.szenario?.details ?? []), ...(k.verlauf ?? [])].join(" ").toLowerCase();
+  if (k.wahrheit.bw === "getruebt" || /verwaschen|kaum versteh|wirr|durcheinander|fragt immer wieder|redet nicht mehr|lallt/.test(text)) {
+    if (nurFakt.verwirrt === "nein") delete nurFakt.verwirrt;
+    if (nurFakt.sprachschw === "nein") delete nurFakt.sprachschw;
+  }
+  if (/rot im gesicht|ganz rot|hochrot/.test(text) && nurFakt.hautfarbe === "nein") delete nurFakt.hautfarbe;
+  // Kleinkinder: „weiß, wo er ist“, „zum Tragen schwer“, „redet in ganzen Sätzen“ passen nicht
+  if (Number(k.szenario?.patient.alter ?? 99) < 4) for (const id of ["verwirrt", "schwer_pat", "sprachschw"]) delete nurFakt[id];
+  if (/blut|wunde/.test(text)) {
+    if (nurFakt.verletzt === "nein") delete nurFakt.verletzt;
+    if (nurFakt.blutung_stark === "nein" && !/blutet (nur )?(ein bisschen|leicht|kaum)/.test(text)) delete nurFakt.blutung_stark;
+  }
+  // nach einer Veränderung im Gespräch gelten die alten Befunde nicht mehr sicher
+  if ((k.verlauf ?? []).length) for (const id of ["verwirrt", "sprachschw", "ohnmacht", "hautfarbe", "kaltschweiss"]) delete nurFakt[id];
   if (k.szenario?.ohneSicht) for (const id of ["verwirrt", "sprachschw", "ohnmacht", "hautfarbe", "kaltschweiss", "verletzt", "blutung_stark", "fehlstellung", "schwer_pat"]) delete nurFakt[id];
   for (const s of faktSaetze(nurFakt, w)) zeilen.push(`- ${s.charAt(0).toUpperCase()}${s.slice(1)}`);
   if (k.szenario && !k.szenario.ohnePatient && (!p || p.kenntVorgeschichte === "ja" || k.anrufer.selbst))
@@ -713,27 +758,49 @@ function antwortSaetze(k: AnrufKontext): string {
 
 /** Beispiele nur für den Ton – bewusst ohne Zustand des Patienten (die KI übernimmt sonst die Beschwerden) */
 const BEISPIELE: Record<Anrufer["emotion"], string> = {
-  ruhig: "„Moment, ich schau … ja, genau.“ / „Das war so vor einer Stunde, glaub ich.“",
-  gefasst: "„Ja. Seit dem Mittagessen ungefähr. Kommen Sie bald?“ / „Nein, das weiß ich nicht genau.“",
-  aufgeregt: "„Ich weiß nicht, vielleicht zehn Minuten? Bitte beeilen Sie sich!“ / „Ja, ja, ich bin eh da!“",
+  ruhig: "„Moment, ich schau … ja, das stimmt.“ / „Nein, das weiß ich nicht.“",
+  gefasst: "„Ja, so ist es. Kommen Sie bald?“ / „Nein, das weiß ich nicht genau.“",
+  aufgeregt: "„Ich weiß nicht … bitte beeilen Sie sich!“ / „Ja, ja, ich bin eh da!“",
   panisch: "„Bitte schnell – ich weiß nicht, was ich tun soll!“ / „Ja … okay … ich mach's, ich mach's!“",
 };
 
 /** Ich-/Du-Form für Fakten über den Anrufer selbst („Sie hat Asthma“ → „Du hast Asthma“) */
 export function inDuForm(t: string): string {
-  const verben: Record<string, string> = { ist: "bist", hat: "hast", kann: "kannst", war: "warst", hatte: "hattest", nimmt: "nimmst", schwitzt: "schwitzt", atmet: "atmest", redet: "redest", weiß: "weißt", muss: "musst", schaut: "schaust", wird: "wirst" };
+  const verben: Record<string, string> = { erwartet: "erwartest", spürt: "spürst", traut: "traust", merkt: "merkst", sitzt: "sitzt", steht: "stehst", geht: "gehst", kommt: "kommst", zittert: "zitterst", friert: "frierst", hört: "hörst", sieht: "siehst", schreit: "schreist", weint: "weinst", sagt: "sagst", will: "willst", mag: "magst", braucht: "brauchst", trinkt: "trinkst", darf: "darfst", soll: "sollst", spricht: "sprichst", versteht: "verstehst", lag: "lagst", reagiert: "reagierst", antwortet: "antwortest", kriegt: "kriegst", liegt: "liegst", hustet: "hustest", blutet: "blutest", fühlt: "fühlst", ist: "bist", hat: "hast", kann: "kannst", war: "warst", hatte: "hattest", nimmt: "nimmst", schwitzt: "schwitzt", atmet: "atmest", redet: "redest", weiß: "weißt", muss: "musst", schaut: "schaust", wird: "wirst" };
   let x = t;
   // „Sie ist …“ / „Er hat …“ am Anfang
-  x = x.replace(/^(Er|Sie)\s+(\w+)/, (m, _p, v: string) => (verben[v] ? `Du ${verben[v]}` : m));
+  x = x.replace(/^(Er|Sie)\s+([\wäöüßÄÖÜ]+)/, (m, _p, v: string) => (verben[v] ? `Du ${verben[v]}` : m));
   // „… hat sie nichts“, „nimmt er keine“, „ist sie nicht“
-  x = x.replace(/\b(\w+)\s+(er|sie)\b(?=\s+(nicht|nichts|keine|keiner|keinen|noch|nie|schon))/g, (m, v: string) => (verben[v] ? `${verben[v]} du` : m));
+  x = x.replace(/\b([\wäöüßÄÖÜ]+)\s+(er|sie)\b(?=\s+(nicht|nichts|keine|keiner|keinen|noch|nie|schon))/g, (m, v: string) => (verben[v] ? `${verben[v]} du` : m));
+  // „Reden kann er normal“, „Er weiß, wo er ist“ – auch mitten im Satz
+  x = x.replace(/\b([\wäöüßÄÖÜ]+)\s+(er|sie)\b/g, (m, v: string) => (verben[v] ? `${verben[v]} du` : m));
+  x = x.replace(/\b(er|sie)\s+([\wäöüßÄÖÜ]+)\b/gi, (m, _p, v: string) => (verben[v] ? `du ${verben[v]}` : m));
+  x = x.replace(/\b(du \w+) sich\b/gi, "$1 dich").replace(/\b(\w+st du) sich\b/g, "$1 dich");
+  if (/^Du /.test(x)) x = x.replace(/\bund (redet|atmet|schaut|antwortet|reagiert)\b/g, (_m, v: string) => `und ${v === "reagiert" ? "reagierst" : v.replace(/t$/, "st").replace(/ett?st$/, "est")}`);
   x = x.replace(/\b(ihn|ihm|ihr)\b/g, (m) => (m === "ihn" ? "dich" : "dir"));
   return x.replace(/^Wie alt ist (er|sie)\?/, "Dein Alter?");
 }
 
+/** Notfallort in einem Gebäude, das keine Wohnung ist: so heißt die Adresse */
+const ORT_GEBAEUDE: Partial<Record<OrtArt, string>> = {
+  geschaeft: "die Adresse vom Geschäft",
+  lokal: "die Adresse vom Lokal",
+  arbeit: "die Adresse von der Firma",
+  baustelle: "die Adresse der Baustelle",
+  schule: "die Adresse der Schule",
+};
+
 /** Liegt der Notfallort im Freien bzw. nicht in einem Haus? Dann ist die Adresse nur die nächste Hausnummer. */
 function imFreien(k: AnrufKontext): boolean {
   return ["strasse", "natur", "wasser", "auto", "sport", "freizeit", "bahnhof"].includes(k.szenario?.ortArt ?? "");
+}
+
+/** Szenario für die Fallakte: nach einer Veränderung ohne alte Befunde; beim Selbstanrufer in Du-Form */
+function aktenSzenario(sz: Szenario, geaendert: boolean, ich: boolean): Szenario {
+  let details = sz.details;
+  if (geaendert) details = details.filter((d) => !/blau|farbe|rot im gesicht|blass|grau|hustet|husten|atmet|atmen|luft|pfeif|redet|antwortet|wach|reagiert|bewegt/i.test(d));
+  const du = (l: string[]) => (ich ? l.map((t) => inDuForm(t)) : l);
+  return { ...sz, details: du(details), geschehen: sz.geschehen ? du(sz.geschehen) : sz.geschehen };
 }
 
 /** Anweisung für Anrufer mit Fallgeschichte: menschlich, mit Fallakte statt Frageliste */
@@ -768,9 +835,15 @@ function promptGeschichte(k: AnrufKontext): string {
     ? `Wo du bist, weißt du NICHT genau. Auf die Frage nach dem Ort beschreibst du nur, was du weißt und siehst: „${k.adresse}“. Straße und Hausnummer kennst du nicht. Beschreib immer dieselbe Stelle (nicht einmal „vor“ und einmal „nach“ dem Ort).`
     : imFreien(k)
       ? `Die Adresse, die du nennst: ${k.adresse} – das ist die nächste Hausnummer; der Notfall ist ${sz.stelle} gleich dort. Sag das so, wenn man nach dem Ort fragt.`
-      : `Die Adresse, die du nennst: ${k.adresse}. Stock, Tür und Zufahrt sagst du nur, wenn danach gefragt wird – und nur so, wie es unter WO steht.`;
+      : ORT_GEBAEUDE[sz.ortArt]
+        ? `Die Adresse, die du nennst: ${k.adresse} – das ist ${ORT_GEBAEUDE[sz.ortArt]}; der Notfall ist ${sz.stelle} dort. Sag das so, wenn man nach dem Ort fragt.`
+        : `Die Adresse, die du nennst: ${k.adresse}. Stock, Tür und Zufahrt sagst du nur, wenn danach gefragt wird – und nur so, wie es unter WO steht.`;
   const dabei = x.persona?.dabei;
-  const zeit = /^seit/.test(sz.seit) ? `Das geht so ${sz.seit}` : `Angefangen hat es ${sz.seit}`;
+  const wohnlich = ["wohnung", "haus", "garten", "pflegeheim", "arzt"].includes(sz.ortArt);
+  const keineTuer = !wohnlich ? " Hier gibt es keine Wohnungs- oder Haustür, die jemand aufsperren müsste." : "";
+  const zeit = sz.gefunden && !ich
+    ? `Gefunden hast du ${ihn} ${sz.seit.replace(/^seit /, "vor ")}; wie lange ${er} davor schon so war, weißt du nicht`
+    : /^seit/.test(sz.seit) ? `Das geht so ${sz.seit}` : `Angefangen hat es ${sz.seit}`;
   const verlauf = (k.verlauf ?? []).filter(Boolean);
   const z = zustand(k);
   const zeilen = antwortSaetze(k)
@@ -780,11 +853,15 @@ function promptGeschichte(k: AnrufKontext): string {
   return [
     `Du spielst in einer Trainingssimulation eine echte Person, die beim Rettungsnotruf 144 in Niederösterreich anruft.${laie && !profi ? " Du bist KEIN Sanitäter und kein Arzt." : ""} Du sagst nur, was diese Person ins Telefon spricht: gesprochene Sprache, Ich-Form, Deutsch – keine Regieanweisungen, keine Sternchen, keine Listen.`,
     `WER DU BIST: ${x.name}. ${wer} Rückrufnummer: ${x.nummer}.`,
-    ort,
-    dabei && !sz.ohnePatient ? `WER SONST NOCH DA IST: ${dabei} (Daran hältst du dich: Bist du allein, schickst du niemanden zur Tür – du sagst, dass du allein bist.)` : "",
+    ort + keineTuer + " Wegbeschreibungen, Hausfarben oder Geschäfte in der Nähe erfindest du nicht – nur, was hier bzw. unter WO steht.",
+    dabei && !sz.ohnePatient
+      ? /allein|niemand/i.test(dabei)
+        ? `WER SONST NOCH DA IST: ${dabei} Fragt die Leitstelle, ob noch jemand da ist oder jemand die Tür aufmachen kann, sagst du, dass du allein bist (von dir aus erwähnst du das nicht).`
+        : `WER SONST NOCH DA IST: ${dabei} Du bist also NICHT allein. Fragt die Leitstelle, ob noch wer da ist, sagst du das; bittet sie, jemanden zur Tür oder hinaus zu schicken, schickst du diese Person.`
+      : "",
     `ZEIT: ${zeit}. (Das ist die Antwort auf „Seit wann?“, „Wann war das?“, „Wie lange schon?“.)`,
     `FALLAKTE – das ist wirklich passiert. Alles, was du sagst, muss dazu passen. Was hier nicht steht, weißt du nicht – dann sagst du ehrlich „weiß ich nicht“. Erfinde NIE etwas dazu (keine Stockwerke, Wunden, Medikamente, Helfer, Geräte, die nicht hier stehen).${ich ? " („Er/sie“ in der Fallakte meint dich selbst.)" : ""}`,
-    fallakte(sz, {
+    fallakte(aktenSzenario(sz, verlauf.length > 0, ich), {
       selbst: ich,
       bezug: bz,
       quelle,
@@ -792,9 +869,10 @@ function promptGeschichte(k: AnrufKontext): string {
       hausarztIch: /^haus(arzt|ärztin)/i.test(x.rolle),
       vorgeschichte: x.persona?.wissen === "bekannt" ? x.persona.kenntVorgeschichte : undefined,
       name: ich ? x.name : undefined,
+      kannAntworten: k.wahrheit.bw === "ja",
     }),
     verlauf.length
-      ? `GERADE GEÄNDERT (gilt ab jetzt und ist wichtiger als alles oben – darauf reagierst du jetzt, das beschäftigt dich): ${verlauf.join(" / ")}${z ? ` ${z.replace(/ – daran ändert sich.*$/, "")}.` : ""}`
+      ? `GERADE GEÄNDERT (gilt ab jetzt und ist wichtiger als alles oben – darauf reagierst du jetzt, das beschäftigt dich; was oben dem widerspricht, gilt nicht mehr): ${verlauf.join(" / ")}${z && !ich && !/schwanger|geburt/.test(sz.thema) ? ` ${z.replace(/ – daran ändert sich.*$/, "")}.` : ""} Fragt die Leitstelle, wie es jetzt ist, beschreibst du DIESEN neuen Zustand.`
       : "",
     `DAS STIMMT SICHER (sag es nur, wenn danach gefragt wird – mit DEINEN Worten, nie Wort für Wort):`,
     zeilen,
@@ -809,12 +887,14 @@ function promptGeschichte(k: AnrufKontext): string {
     laie && !ich && !profi ? `- „Der Patient“ sagst du nie – du sagst „${er}“ oder wie du ${ihn} sonst nennst.` : "",
     `- Formuliere jede Antwort neu, fang nicht immer gleich an und sag nichts zweimal. Du fasst nichts zusammen und fragst nicht zurück, ob du richtig verstanden hast.`,
     `- Fasst die Leitstelle zusammen („Also: … richtig?“), vergleichst du JEDEN Teil mit der Fallakte. Stimmt etwas nicht, widersprichst du sofort („Nein, nein – …“) und sagst, wie es wirklich ist. Weißt du es nicht, sagst du das. Nur wenn alles stimmt, bestätigst du kurz.`,
-    `- Teilt dir die Leitstelle etwas mit („Die Rettung ist unterwegs“), reagierst du darauf wie ein Mensch (Danke, kurze Rückfrage) – ohne den Zustand aufzuzählen.`,
+    `- Teilt dir die Leitstelle nur etwas mit (z. B. „Die Rettung ist unterwegs“), reagierst du kurz wie ein Mensch – erleichtert, mit einem Danke oder mit der Frage, wie lange es dauert. Du wiederholst die Durchsage nicht und zählst den Zustand nicht auf.`,
+    `- Die Leitstelle sprichst du mit „Sie“ an – nie mit „du“ oder „ihr“.`,
+    `- Wer nicht richtig wach ist, bekommt von dir nichts zu essen oder zu trinken.`,
     `- Der Zustand bleibt so, wie in der Fallakte beschrieben – außer es steht oben „GERADE GEÄNDERT“.`,
-    `- Anweisungen, die passen, führst du aus und sagst kurz, WIE du es machst und was du dabei siehst (nach der Fallakte). Machst du es schon, sag das („Das mach ich eh schon“). Kannst du es nicht (allein, kein Gerät, ${ich ? "du kannst nicht aufstehen" : "geht nicht"}), sag das. Nur eine Anweisung, die gar nicht zur Lage passt, hinterfragst du. Bei Herzdruckmassage zählst du hörbar mit („eins, zwei, drei …“).`,
-    `- Auf „Wer ruft an?“ sagst du deinen Namen und wer du bist${ich ? " (du rufst für dich selbst an)" : " bzw. in welcher Beziehung du zum Patienten stehst"}.`,
+    `- Anweisungen, die passen, führst du GENAU so aus, wie sie gesagt wurden (aufsetzen heißt aufsetzen, nicht hinlegen), und sagst kurz, WIE du es machst und was du dabei siehst (nach der Fallakte). Nur wenn du genau das wirklich schon machst, sagst du das. Kannst du es nicht (allein, kein Gerät, ${ich ? "du kannst nicht aufstehen" : "geht nicht"}), sag das. Nur eine Anweisung, die gar nicht zur Lage passt, hinterfragst du. Bei Herzdruckmassage zählst du hörbar mit („eins, zwei, drei …“).`,
+    `- Auf „Wer ruft an?“ bzw. „Wie heißen Sie?“ sagst du deinen Namen (${x.name})${ich ? " und dass es um dich selbst geht – jedes Mal in anderen Worten" : " und wer du bist bzw. in welcher Beziehung du zu der Person stehst"}.`,
     `- Auf „Wo ist der Notfallort?“ kommt die Adresse (Straße, Hausnummer, Ort) – sonst nichts.`,
-    ich ? `- Du bist selbst betroffen: Du redest IMMER in der Ich-Form über dich („Ich hab …“, nie „er/sie“). Was während einer Ohnmacht war, weißt du nicht.` : "",
+    ich ? `- Du bist selbst betroffen: Du redest IMMER in der Ich-Form über dich („Ich hab …“, nie „er/sie“). Was während einer Ohnmacht war, weißt du nicht. Aufstehen oder herumgehen tust du nur, wenn die Leitstelle es ausdrücklich verlangt und du es in deinem Zustand kannst.` : "",
     ich && (k.wahrheit.sprachschw === "ja" || k.wahrheit.at === "abnorm") ? `- Du kriegst kaum Luft: Du sprichst nur in ganz kurzen Fetzen von zwei, drei Wörtern, mit Pausen dazwischen („Ich … krieg … keine Luft …“). Nie ganze Sätze.` : "",
     EMOTION_TEXT[x.emotion],
     sprachText(x),
@@ -940,14 +1020,14 @@ export function zusammenfassungPruefen(k: AnrufKontext, text: string): { falsch:
   if (b.bw) {
     const wahrJa = bwW === "ja" || bwW === "getruebt";
     if (bwW === "unbekannt") falsch.push(`ob ${Er} wach ${k.anrufer.selbst ? "bin" : "ist"}, weißt du nicht`);
-    else if (bwW && (b.bw === "ja") !== wahrJa) falsch.push(k.anrufer.selbst ? (wahrJa ? "du bist wach" : "") : `${Er} ${fuell(LAIE.bw[bwW] ?? "")}`);
+    else if (bwW && (b.bw === "ja") !== wahrJa) falsch.push(k.anrufer.selbst ? (wahrJa ? "du bist wach" : "") : `${Er} ${fuell(laieWort(k, "bw", bwW) ?? "")}`);
   }
   if (b.at) {
     const wahr = atW === "agonal" ? "keine" : atW;
     if (atW === "unbekannt") falsch.push(`wie ${Er} ${k.anrufer.selbst ? "atme" : "atmet"}, weißt du nicht`);
     else if (wahr && b.at !== wahr) falsch.push(k.anrufer.selbst ? (atW === "abnorm" ? "du kriegst ganz schlecht Luft" : "du kriegst normal Luft") : `${Er} ${fuell(LAIE.at[atW] ?? "")}`);
   }
-  if (bwW && LAIE.bw[bwW]) richtig.push(`${Er} ${fuell(LAIE.bw[bwW])}`);
+  if (bwW && LAIE.bw[bwW]) richtig.push(`${Er} ${fuell(laieWort(k, "bw", bwW)!)}`);
   if (atW && LAIE.at[atW]) richtig.push(`${Er} ${fuell(LAIE.at[atW])}`);
   return { falsch: falsch.filter(Boolean), richtig: richtig.join(" und ") };
 }
@@ -978,8 +1058,32 @@ export function sprachFilter(text: string, sprache: string): string {
     [/\bVadder\b/g, "Vater"],
     [/\bexactly\b/gi, "genau"],
     [/\bnone\b/gi, "keine"],
+    [/\bso['’]n\b/gi, "so a"],
+    [/\bisser\b/gi, "is er"],
+    [/\bischt\b/gi, "is"],
+    [/\bisse\b/gi, "is"],
+    [/\bsisch\b/gi, "sich"],
+    [/\bvun\b/gi, "vo"],
+    [/\bfürr\b/gi, "für"],
+    [/\bselbste\b/gi, "selbst"],
+    [/\bkeene\b/gi, "keine"],
+    [/\been\b/gi, "a"],
+    [/\bdoll\b/gi, "arg"],
+    [/\bweißte\b/gi, "wissen S'"],
+    [/\bgeguckt\b/gi, "gschaut"],
+    [/\bguck(t|en|e)?\b/gi, "schau"],
+    [/\bdruff\b/gi, "drauf"],
+    [/\bunner\b/gi, "unter"],
+    [/\bmega\b/gi, "sehr"],
+    [/\bsorry\b/gi, "Entschuldigung"],
+    [/\b(ago|just|regular|pretty)\b\s*/gi, ""],
+    [/\b(er|sie|es) isst (net|nicht|ganz|so|käsweiß|blass|wach|munter|orientiert|bleich)(?![\wäöüß])/gi, "$1 ist $2"],
   ];
-  for (const [re, neu] of ersetze) t = t.replace(re, (m) => (m[0] === m[0].toUpperCase() && neu[0] ? neu[0].toUpperCase() + neu.slice(1) : neu));
+  for (const [re, neu] of ersetze) t = neu.includes("$") ? t.replace(re, neu) : t.replace(re, (m) => (m[0] === m[0].toUpperCase() && neu[0] ? neu[0].toUpperCase() + neu.slice(1) : neu));
+  t = t.replace(/^\s+/, "").replace(/\s{2,}/g, " ");
+  // „Jo, is net …“ klingt wie ja – vor einer Verneinung heißt es „Na“
+  t = t.replace(/\bJo,?\s+(?=(is |i |ich |er |sie |des )?(net|nix|nicht|kein\w*|nie)\b)/g, "Na, ");
+  t = t.replace(/\bun\b(?=\s)/g, "und");
   if (sprache === "hochdeutsch") t = t.replace(/\bis\b/g, "ist").replace(/\bIs\b/g, "Ist").replace(/\bnet\b/g, "nicht").replace(/\bun\b/g, "und");
   return t;
 }
@@ -991,12 +1095,17 @@ function jemandDa(k: AnrufKontext): boolean {
 }
 
 /** Ein kleiner Anstoß zur Persönlichkeit für diese eine Antwort (das Modell setzt Stil-Regeln sonst kaum um) */
+/** eines davon zufällig */
+function eins(l: string[]): string {
+  return l[Math.floor(Math.random() * l.length)];
+}
+
 function stilImpuls(k: AnrufKontext, art: NachrichtArt, nr: number): string | null {
   const p = k.anrufer.persona;
   if (!p || art === "zusammenfassung" || art === "abschluss") return null;
   const r = Math.random();
-  if (r < 0.18 && p.woerter.length) return `Bau in diese Antwort das Wort „${p.woerter[Math.floor(Math.random() * p.woerter.length)]}“ ein.`;
-  if (r < 0.3 && p.eigenheit && nr >= 3) return `Mach jetzt einmal das, was zu deiner Art gehört: ${p.eigenheit}`;
+  if (r < 0.1 && p.woerter.length && art !== "frage") return `Bau in diese Antwort das Wort „${p.woerter[Math.floor(Math.random() * p.woerter.length)]}“ ein.`;
+  if (r < 0.18 && p.eigenheit && nr >= 4) return `Wenn es gerade passt, mach jetzt einmal das, was zu deiner Art gehört: ${p.eigenheit} Die Antwort auf die Leitstelle kommt trotzdem zuerst.`;
   if (r < 0.42) {
     if (p.stil === "gespraechig") return "Erzähl diesmal einen kleinen Nebensatz mehr dazu (nur was zur Fallakte passt).";
     if (p.stil === "unsicher") return "Sag diesmal „ich glaub“ oder „ich weiß nicht genau“ dazu.";
@@ -1035,8 +1144,8 @@ export function erinnerung(
   } else if (art === "zusammenfassung") {
     const pr = zusammenfassungPruefen(k, opt.text ?? "");
     if (pr && pr.falsch.length)
-      teile.push(`Die Zusammenfassung der Leitstelle ist FALSCH: ${pr.falsch.join("; ")}. Widersprich sofort („Nein, nein – …“) und sag in einem Satz, wie es wirklich ist. Auf keinen Fall „Ja“ oder „genau“.`);
-    else if (pr) teile.push(`Die Zusammenfassung stimmt. Bestätige ganz kurz in deinen eigenen Worten (z. B. „Ja.“, „Stimmt.“, „Mhm, ja.“, „Ja, so ist es.“) – nichts aufzählen.`);
+      teile.push(`Die Zusammenfassung der Leitstelle ist FALSCH: ${pr.falsch.join("; ")}. Widersprich sofort (z. B. „${eins(k.anrufer.sprache === "dialekt" ? ["Na, des stimmt net", "Na, na", "Naa", "Nein, nein"] : ["Nein, das stimmt nicht", "Nein", "Nein, Moment", "Nein, nein", "Das stimmt so nicht"])} – …“) und sag in einem Satz, wie es wirklich ist. Auf keinen Fall „Ja“ oder „genau“.`);
+    else if (pr) teile.push(`Die Zusammenfassung stimmt. Bestätige ganz kurz, etwa so: „${eins(k.anrufer.sprache === "dialekt" ? ["Jo, genau so", "Jo", "Passt, so is es", "Stimmt"] : ["Ja", "Stimmt", "Ja, richtig", "Genau so", "Ja, so ist es", "Ja, das stimmt"])}.“ – nichts aufzählen.`);
     else teile.push(hinweisZurArt(art, laie, jemandDa(k)));
   } else teile.push(hinweisZurArt(art, laie, jemandDa(k)));
   const impuls = !einstieg && !(k.anrufer.selbst && (k.wahrheit.sprachschw === "ja" || k.wahrheit.at === "abnorm")) ? stilImpuls(k, art, opt.nr ?? 0) : null;

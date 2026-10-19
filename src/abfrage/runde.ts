@@ -84,16 +84,16 @@ export function fragtNachZustand(text: string): boolean {
 export function hinweisZurArt(art: NachrichtArt, laie: boolean, jemandDa = true): string {
   switch (art) {
     case "zusammenfassung":
-      return "Die Leitstelle fasst zusammen, was sie verstanden hat. Antworte nur ganz kurz: bestätigen („Ja, genau.“, „Ja, so ist es.“) oder korrigieren, was nicht stimmt. Wiederhole ihre Worte nicht und zähl nichts neu auf.";
+      return "Die Leitstelle fasst zusammen, was sie verstanden hat. Antworte nur ganz kurz: bestätigen oder korrigieren, was nicht stimmt. Wiederhole ihre Worte nicht und zähl nichts neu auf.";
     case "anweisung":
       return `Die Leitstelle sagt dir, was du tun sollst. Passt es zur Fallakte, tu es und sag kurz, was du tust oder was du dabei siehst – nur das, was zu genau dieser Anweisung passt. Passt es nicht, frag nach. Bedingte Anweisungen („falls“, „wenn“) und Bitten wie „Bleiben Sie dran“ bestätigst du nur kurz.`;
     case "mitteilung": {
-      const art = ["sag erleichtert danke", "frag, wie lange es ungefähr dauert", "frag, was du bis dahin machen sollst", ...(jemandDa ? ["sag, dass jemand die Tür aufmacht bzw. die Rettung einweist (nur wer laut Fallakte da ist)"] : ["sag, dass du allein bist und nicht weg kannst"]), "sag kurz „okay“ und dass du dranbleibst", "frag, ob du noch irgendwas herrichten sollst", "sag kurz, was du gerade tust bzw. was du siehst"];
+      const art = ["sag erleichtert danke", "frag, wie lange es ungefähr dauert", "frag, was du bis dahin machen sollst", ...(jemandDa ? ["sag, dass jemand die Rettung einweist (nur wer laut Fallakte da ist)"] : []), "sag kurz „okay“ und dass du dranbleibst", "sag, wie froh du bist, dass jemand kommt", "frag, ob du noch irgendwas herrichten sollst"];
       const w = art[Math.floor(Math.random() * art.length)];
       return `Die Leitstelle hat dir etwas MITGETEILT, keine Frage gestellt. Reagiere kurz und menschlich darauf${laie ? ` – diesmal: ${w} (in deinen eigenen Worten)` : " (bestätigen, kurz nachfragen, was noch nötig ist)"}. Beschreib jetzt NICHT noch einmal den Zustand des Patienten.`;
     }
     case "abschluss":
-      return "Die Leitstelle beendet das Gespräch. Verabschiede dich kurz in einem Satz.";
+      return `Die Leitstelle beendet das Gespräch. Verabschiede dich kurz in einem Satz, etwa so: „${["Danke, bis gleich", "Okay, danke Ihnen", "Danke – ich warte", "Gut, danke schön", "Danke, ich schau, dass ich sie sehe"][Math.floor(Math.random() * 5)]}.“`;
     default:
       return "";
   }

@@ -76,6 +76,7 @@ const ANWEISUNG: Record<string, string[]> = {
   beruhigen: ["Versuchen Sie bitte, {ihn} zu beruhigen – ganz langsam ein und aus atmen, mit {ihm} gemeinsam."],
   nicht_bewegen: ["Bitte bewegen Sie {ihn} nicht und decken Sie {ihn} zu."],
   absichern: ["Schalten Sie bitte die Warnblinkanlage ein und sichern Sie die Unfallstelle ab."],
+  absichern_fuss: ["Bleiben Sie bitte von der Fahrbahn weg und achten Sie auf den Verkehr. Sprechen Sie {ihn} an, aber bewegen Sie {ihn} nicht."],
   tuer: ["Schicken Sie bitte jemanden zur Haustür, der die Rettung einweist."],
   husten: ["Lassen Sie {ihn} kräftig husten – solange {er} gut hustet, klopfen Sie nicht. Sagen Sie mir sofort, wenn {er} nicht mehr husten kann."],
   kontakt: ["Klopfen Sie bitte laut an die Tür und rufen Sie {ihn} beim Namen – hören Sie etwas?"],
@@ -107,7 +108,10 @@ function anweisungWaehlen(e: Einsatz, selbst: boolean): { typ: string; text: str
   const a = w.antworten;
   const allein = /allein|niemand/i.test(w.anrufer.persona?.dabei ?? "");
   if (sz?.ohneSicht) return { typ: "kontakt", text: "Klopfen Sie bitte laut an die Tür und rufen Sie {ihn} beim Namen – hören Sie etwas?" };
-  const mitAnl = l?.ereignisse.find((x) => !x.eingetreten && x.mitAnleitung && (!x.variante || x.variante === l.fall?.variante))?.mitAnleitung?.typ;
+  let mitAnl = l?.ereignisse.find((x) => !x.eingetreten && x.mitAnleitung && (!x.variante || x.variante === l.fall?.variante))?.mitAnleitung?.typ;
+  // Reanimation erst im Kreislaufstillstand, Seitenlage erst bei Bewusstlosigkeit – nicht schon vorher
+  if (mitAnl === "reanimation" && a.at !== "keine" && a.at !== "agonal") mitAnl = undefined;
+  if (mitAnl === "seitenlage" && a.bw !== "nein") mitAnl = undefined;
   const thema = sz?.thema ?? "";
   let typ =
     a.at === "keine" || a.at === "agonal"
@@ -115,14 +119,22 @@ function anweisungWaehlen(e: Einsatz, selbst: boolean): { typ: string; text: str
       : a.bw === "nein"
         ? "seitenlage"
         : (mitAnl ??
-          ({ ersticken: "fremdkoerper", atemnot: "oberkoerper_hoch", blutung: "druck_blutung", schnitt: "druck_blutung", schwangerschaft: "geburt", geburt: "geburt", verkehrsunfall: "absichern", diabetes: "zucker", zucker: "zucker", sturz: "nicht_bewegen", ruecken: "nicht_bewegen", psych: "kontakt", krank: "beine_hoch" } as Record<string, string>)[thema] ??
+          ({ ersticken: "fremdkoerper", atemnot: "oberkoerper_hoch", blutung: "druck_blutung", schnitt: "druck_blutung", schwangerschaft: "geburt", geburt: "geburt", verkehrsunfall: "absichern", diabetes: "zucker", zucker: "zucker", sturz: "nicht_bewegen", ruecken: "nicht_bewegen", psych: "kontakt" } as Record<string, string>)[thema] ??
           "tuer");
   // wer noch kräftig hustet, soll husten – Rückenschläge erst, wenn es nicht mehr geht
   if (typ === "fremdkoerper" && a.atemweg === "teilweise") typ = "husten";
   if (typ === "fremdkoerper" && (e.wahr.patientAlter ?? 50) < 2) typ = "fremdkoerper_kind";
   if (/hyperventil/i.test(sz?.vorlage ?? "")) typ = "beruhigen";
   if (typ === "tuer" && (allein || !imHaus(e))) typ = imHaus(e) ? "dableiben" : "einweisen";
-  if (selbst) return { typ, text: ANWEISUNG_SELBST[typ] ?? (imHaus(e) ? "Sperren Sie bitte schon die Wohnungstür auf, wenn Sie können, und setzen Sie sich dann hin." : "Bleiben Sie bitte, wo Sie sind, und setzen Sie sich hin.") };
+  if (typ === "absichern" && w.anrufer.typ !== "lenker") typ = "absichern_fuss";
+  const wohnlich = ["wohnung", "haus"].includes(sz?.ortArt ?? "wohnung");
+  if (selbst)
+    return {
+      typ,
+      text:
+        ANWEISUNG_SELBST[typ] ??
+        (wohnlich ? (allein ? "Sperren Sie bitte schon die Wohnungstür auf, wenn Sie können, und setzen Sie sich dann hin." : "Schicken Sie bitte jemanden zur Tür, der die Rettung hereinlässt, und setzen Sie sich hin.") : "Bleiben Sie bitte, wo Sie sind, und setzen Sie sich hin."),
+    };
   let text = pick(ANWEISUNG[typ] ?? ANWEISUNG.tuer);
   if (typ === "oberkoerper_hoch" && !imHaus(e)) text = text.replace(/ und öffnen Sie ein Fenster/, "");
   return { typ, text };
@@ -130,16 +142,18 @@ function anweisungWaehlen(e: Einsatz, selbst: boolean): { typ: string; text: str
 
 /** Freie Fragen (klein, ohne Fragezeichen – so wie man schnell tippt) */
 const FREI = ["seit wann ist das so", "wann hat das angefangen", "wie lange geht das schon", "nimmt {er} regelmäßig medikamente", "hat {er} vorerkrankungen", "wie heißt {er} eigentlich", "was hat {er} zuletzt gemacht bevor das passiert ist", "ist sonst noch wer bei ihnen"];
-const FREI_SELBST = ["seit wann haben sie das", "wann hat das angefangen", "nehmen sie regelmäßig medikamente", "haben sie vorerkrankungen", "sind sie alleine zu hause"];
+const FREI_SELBST = ["seit wann haben sie das", "wann hat das angefangen", "nehmen sie regelmäßig medikamente", "haben sie vorerkrankungen", "ist jemand bei ihnen"];
 
 function zusammenfassung(a: Antworten, g: "m" | "w" | null, selbst: boolean, falsch: boolean): string {
-  const bw = falsch ? (a.bw === "ja" ? "nein" : "ja") : a.bw;
+  // wer selbst redet, ist wach – „Sie reagieren nicht“ wäre absurd; falsch ist dann nur die Atmung
+  const bw = falsch && !selbst ? (a.bw === "ja" ? "nein" : "ja") : selbst ? undefined : a.bw;
   const at = falsch ? (a.at === "normal" ? "abnorm" : "normal") : a.at;
   const teile: string[] = [];
   if (bw === "ja") teile.push(selbst ? "Sie sind wach" : "{er} ist wach");
   else if (bw === "nein") teile.push(selbst ? "Sie reagieren nicht" : "{er} reagiert nicht");
-  if (at === "normal") teile.push(selbst ? "atmen normal" : "atmet normal");
-  else if (at === "abnorm") teile.push(selbst ? "kriegen schlecht Luft" : "kriegt schlecht Luft");
+  const subjekt = teile.length ? "" : selbst ? "Sie " : "{er} ";
+  if (at === "normal") teile.push(`${subjekt}${selbst ? "atmen normal" : "atmet normal"}`);
+  else if (at === "abnorm") teile.push(`${subjekt}${selbst ? "kriegen schlecht Luft" : "kriegt schlecht Luft"}`);
   if (!teile.length) return "";
   return mitPronomen(`Also: ${teile.join(" und ")}, richtig?`, g);
 }
@@ -148,18 +162,24 @@ function zusammenfassung(a: Antworten, g: "m" | "w" | null, selbst: boolean, fal
 function pruefeAntwort(e: Einsatz, frage: string, antwort: string, art: string, frueher: string[], quelle: string, dauer: number, profi: boolean, schilderung: boolean): string[] {
   const g: string[] = [];
   if (!antwort.trim()) return ["leere Antwort"];
-  if (quelle !== "ki") g.push("feste Antwort statt KI (KI-Fehler?)");
+  if (quelle !== "ki" && !/^\(|^Mmh … ich/.test(antwort)) g.push("feste Antwort statt KI (KI-Fehler?)");
   if (!profi && !e.wahr.abfrage?.anrufer.selbst && /\b(der Patient|die Patientin|den Patienten|dem Patienten)\b/.test(antwort)) g.push("sagt „der Patient“");
   if (/Hinweis|Fallakte|WAS WIRKLICH|Leitstelle:|\[/.test(antwort)) g.push("Anweisung an die KI durchgerutscht");
   const n = saetze(antwort).length;
   if (n > 3 || antwort.split(/\s+/).length > 45) g.push(`lang (${n} Sätze)`);
-  if (schilderung && !profi && /\b(atmet|atmen|bewusst|reagiert|jahre alt)\b/i.test(antwort)) g.push("verrät bei „Was ist passiert?“ schon den Zustand");
+  // bei Kollaps, Atemnot & Co. IST der Zustand die Schilderung – dort nicht melden
+  const zustandIstThema = /bewusstlos|stillstand|kollaps|atemnot|ersticken|hyperventil|krampf/.test(`${e.wahr.abfrage?.szenario?.thema ?? ""} ${e.wahr.abfrage?.szenario?.vorlage ?? ""}`);
+  if (schilderung && !profi && !zustandIstThema && /\b(atmet|atmen|bewusst|reagiert|jahre alt)\b/i.test(antwort)) g.push("verrät bei „Was ist passiert?“ schon den Zustand");
   const w = (t: string) => t.toLowerCase().replace(/[^a-zäöüß ]/g, " ").split(/\s+/).filter((x) => x.length > 3);
   const aw = w(antwort);
   const fw = new Set(w(frage));
-  if (art === "frage" && aw.length >= 3 && aw.filter((x) => fw.has(x)).length / aw.length >= 0.6) g.push("wiederholt bloß die Frage");
+  // nur echte Echos: die Frage wörtlich zurück (ohne Ja/Nein/neue Angabe) – „Er atmet ganz normal“ auf „Atmet er normal?“ ist eine gute Antwort
+  const neu = aw.filter((x) => !fw.has(x));
+  if (art === "frage" && aw.length >= 3 && neu.length === 0 && !/\b(ja|nein|na|jo|nicht|net|kein\w*|\d+)\b/i.test(antwort)) g.push("wiederholt bloß die Frage");
   // nach der Adresse darf man zweimal fragen
-  if (!/adresse|notfallort|wo genau/i.test(frage) && saetze(antwort).some((s) => schonGesagt(s, frueher))) g.push("sagt etwas zum zweiten Mal");
+  // Zustand nach „Wie geht's jetzt?“ oder beim Richtigstellen einer Zusammenfassung zu wiederholen, ist normal
+  const zustandsfrage = /wie geht|wie schaut|was sehen|wie ist es jetzt|bringt das was|wird es besser|^also:/i.test(frage.trim());
+  if (!zustandsfrage && !/adresse|notfallort|wo genau/i.test(frage) && saetze(antwort).some((s) => schonGesagt(s, frueher))) g.push("sagt etwas zum zweiten Mal");
   if (art === "mitteilung" && /\b(atmet|bewusst|reagiert)\b/.test(antwort)) g.push("zählt bei einer Mitteilung den Zustand auf");
   if (dauer > 20000) g.push(`langsam (${Math.round(dauer / 1000)} s)`);
   return g;
@@ -230,7 +250,9 @@ async function einGespraech(auftrag: TestAuftrag, nr: number, abbruch: { ja: boo
   const thema = w.szenario?.thema ?? "";
   // Fragen, die ein Calltaker hier nicht stellen würde
   const ueberspringen = (f: Frage) =>
-    (f.id === "geschlecht" && /schwanger|geburt/.test(thema)) || (/polizei/i.test(f.text) && w.anrufer.art !== "polizei") || (selbst && f.id === "bw");
+    (f.id === "geschlecht" && /schwanger|geburt/.test(thema)) ||
+    (/polizei/i.test(f.text) && w.anrufer.art !== "polizei") ||
+    (selbst && ["bw", "geschlecht", "anzahl_patienten", "hautfarbe"].includes(f.id));
   for (let i = 0; i < 16 && !abbruch.ja; i++) {
     const f = fragenImAblauf(schema, w.kapitel, eingetragen)
       .map((x) => x.frage)
@@ -248,8 +270,14 @@ async function einGespraech(auftrag: TestAuftrag, nr: number, abbruch: { ja: boo
   // 5) Anweisung, Nachfrage (nur nach einer Maßnahme, die etwas bewirken soll), Verlauf
   const anw = anweisungWaehlen(e, selbst);
   await frag(mitPronomen(anw.text, g()));
-  if (WIRKT.has(anw.typ) || anw.typ === "reanimation") await frag(mitPronomen(selbst ? "Und – wird es besser?" : anw.typ === "reanimation" ? "Gut so, weiter drücken. Wie schaut's aus?" : pick(["Und, bringt das was?", "Wie geht's {ihm} jetzt?", "was sehen sie jetzt"]), g()));
-  let kritisch = w.antworten.bw === "nein" || w.antworten.at === "keine" || w.antworten.at === "agonal" || /schwanger|geburt/.test(thema);
+  let wirkung = "";
+  if (WIRKT.has(anw.typ) || anw.typ === "reanimation") wirkung = await frag(mitPronomen(selbst ? "Und – wird es besser?" : anw.typ === "reanimation" ? "Gut so, weiter drücken. Wie schaut's aus?" : pick(["Und, bringt das was?", "Wie geht's {ihm} jetzt?", "was sehen sie jetzt"]), g()));
+  // Husten bringt nichts mehr → Rückenschläge (beim Kleinkind über dem Unterarm)
+  if (anw.typ === "husten" && /nicht mehr|kaum|nix|nichts|schlechter|schwerer|blau|bitte/i.test(wirkung)) {
+    await frag(mitPronomen(ANWEISUNG[(e.wahr.patientAlter ?? 50) < 2 ? "fremdkoerper_kind" : "fremdkoerper"][0], g()));
+    await frag(mitPronomen("Und – ist es draußen? Kriegt {er} Luft?", g()));
+  }
+  let kritisch = w.antworten.bw === "nein" || w.antworten.at === "keine" || w.antworten.at === "agonal" || /schwanger|geburt|ersticken/.test(thema);
   if (!abbruch.ja && sim.testEreignis(e)) {
     const m = a.gespraech[a.gespraech.length - 1];
     if (m) live(`(Verlauf) ${m.von === "system" ? "" : "Anrufer: "}${m.text}`);
@@ -261,12 +289,20 @@ async function einGespraech(auftrag: TestAuftrag, nr: number, abbruch: { ja: boo
       // Wechsel zur Reanimation – wie ein Calltaker es macht
       await frag(mitPronomen("Hören Sie mir zu: Legen Sie {ihn} auf den Rücken und drücken Sie fest in die Mitte des Brustkorbs, zweimal pro Sekunde. Zählen Sie laut mit.", g()));
       await frag("Gut so, nicht aufhören. Wie schaut's aus?");
-    } else if (/schwanger|geburt/.test(thema)) await frag(pick(["Wie geht es dem Baby? Atmet es, schreit es?", "Was ist mit dem Baby – bewegt es sich, schreit es?"]));
-    else if (jetzt.bw === "nein") await frag(mitPronomen("Reagiert {er} noch, wenn Sie {ihn} ansprechen? Und atmet {er}?", g()));
+    } else if (/schwanger|geburt/.test(thema)) {
+      const baby = await frag(pick(["Wie schaut das Baby aus?", "Was ist mit dem Baby?"]));
+      if (/schlaff|schreit nicht|blau|bewegt sich nicht|atmet nicht/i.test(`${baby} ${m?.text ?? ""}`)) {
+        await frag("Trocknen Sie das Baby sofort mit einem Handtuch kräftig ab, reiben Sie ihm den Rücken und halten Sie es warm. Atmet es?");
+      } else await frag("Legen Sie das Baby der Mutter auf den Bauch und decken Sie beide gut zu. Die Nabelschnur lassen Sie, wie sie ist.");
+    } else if (jetzt.bw === "nein") {
+      // nach einer Wiederbelebung bzw. bei Bewusstlosigkeit: Seitenlage, nichts zu trinken
+      await frag(mitPronomen(`${anw.typ === "reanimation" ? "Hören Sie auf zu drücken. " : ""}Drehen Sie {ihn} bitte in die stabile Seitenlage und geben Sie {ihm} nichts zu trinken. Atmet {er}?`, g()));
+    }
     else await frag(mitPronomen(pick(["Okay. Wie geht's {ihm} jetzt?", "Was sehen Sie jetzt?", "Und, wie ist es jetzt?"]), g()));
   }
   // 6) Ende – in Lebensgefahr bleibt die Leitstelle am Telefon
   if (kritisch) await frag(selbst ? "Ich bleibe am Telefon, die Rettung ist gleich da." : mitPronomen("Ich bleibe bei Ihnen am Telefon, bis die Rettung da ist. Machen Sie weiter wie besprochen.", g()));
+  else if (w.szenario?.ohneSicht) await frag("Bleiben Sie bitte vor der Tür und gehen Sie nicht allein hinein – Rettung und Polizei sind unterwegs. Auf Wiederhören.");
   else await frag(mitPronomen(selbst ? "Gut, die Rettung ist gleich bei Ihnen. Auf Wiederhören." : "Gut, die Rettung ist gleich bei Ihnen. Bleiben Sie bei {ihm}. Auf Wiederhören.", g()));
   a.status = "beendet";
   const fall = fallVorlage(auftrag.fallId);
@@ -326,7 +362,8 @@ function uebersicht(liste: Durchlauf[], abgebrochen: boolean): string {
 export function auftraegeFuer(faelle: FallVorlage[], variante: string | "alle", anzahl: number): TestAuftrag[] {
   const out: TestAuftrag[] = [];
   for (const f of faelle) {
-    const vs = variante === "alle" ? f.varianten.map((v) => v.id) : f.varianten.some((v) => v.id === variante) ? [variante] : [];
+    // „alle“: nur Ausgänge, die von selbst vorkommen (p > 0) – die anderen erreicht man nur über ein Ereignis
+    const vs = variante === "alle" ? f.varianten.filter((v) => v.p > 0).map((v) => v.id) : f.varianten.some((v) => v.id === variante) ? [variante] : [];
     for (const v of vs) for (let i = 0; i < anzahl; i++) out.push({ fallId: f.id, variante: v });
   }
   return out;
