@@ -3380,3 +3380,13 @@ input[type="color"] {
 .funk-ruf.wartend { background: var(--panel-2); border-color: var(--line-2); }
 .funk-ruf.wartend .funk-ruf-text { animation: none; color: var(--text-dim); }
 .funk-kanal { padding: 2px 0 6px; }
+
+/* Zuordnung Codesystem → Merkmale */
+.zuo-tab { width: 100%; border-collapse: collapse; font-size: 13px; }
+.zuo-tab th, .zuo-tab td { text-align: left; vertical-align: top; padding: 4px 6px; border-bottom: 1px solid var(--line, #e5e7eb); }
+.zuo-tab tr.zuo-offen td:first-child { color: var(--muted, #6b7280); }
+.zuo-tab tr.zuo-unsicher td:nth-child(2) { background: rgba(253, 216, 53, 0.18); }
+.zuo-sel { max-width: 280px; }
+.zuo-wert { display: flex; gap: 4px; align-items: center; margin: 1px 0; }
+.zuo-wert select { max-width: 180px; }
+.zuo-stufen { margin-top: 10px; }

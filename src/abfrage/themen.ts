@@ -104,6 +104,48 @@ export function kapitelZuThema(t: string, schema?: Schema | null): string | null
   return nr && s.kapitel[nr] ? nr : null;
 }
 
+/** Fehlt einem Codesystem ein Kapitel zu einem Thema, passt oft ein verwandtes (Ersticken → Atemnot …) */
+const ERSATZ: Record<string, string[]> = {
+  ersticken: ["atemnot", "unklar", "krank"],
+  schwangerschaft: ["bauch", "krank", "unklar"],
+  psych: ["unklar", "krank"],
+  ruecken: ["verletzung", "krank", "unklar"],
+  kopfschmerz: ["schlaganfall", "krank"],
+  herz: ["brustschmerz", "bewusstlos", "krank"],
+  brustschmerz: ["herz", "krank"],
+  infekt: ["krank"],
+  zucker: ["bewusstlos", "krank"],
+  hitze_kaelte: ["krank", "unklar"],
+  tierbiss: ["verletzung", "blutung"],
+  stich_schuss: ["verletzung", "blutung"],
+  gewalt: ["verletzung", "unklar"],
+  sturz: ["verletzung"],
+  verletzung: ["sturz", "blutung"],
+  bewusstlos: ["unklar", "krank"],
+  ecall: ["verkehrsunfall"],
+  eingeklemmt: ["verkehrsunfall", "verletzung"],
+  allergie: ["atemnot", "krank"],
+  vergiftung: ["bewusstlos", "krank"],
+  krampf: ["bewusstlos", "krank"],
+  bauch: ["krank"],
+  auge: ["verletzung", "krank"],
+  anforderung_arzt: ["krank", "unklar"],
+  anforderung_polizei: ["unklar", "krank"],
+  unklar: ["krank", "bewusstlos"],
+  krank: ["unklar"],
+};
+
+/** Kapitel für ein Thema – notfalls ein verwandtes */
+export function kapitelFuerThema(t: string, schema?: Schema | null): string | null {
+  const k = kapitelZuThema(t, schema);
+  if (k) return k;
+  for (const e of ERSATZ[t] ?? []) {
+    const x = kapitelZuThema(e, schema);
+    if (x) return x;
+  }
+  return null;
+}
+
 export function themaLabel(t: string): string {
   return NACH_ID.get(t)?.label ?? t;
 }
@@ -135,14 +177,20 @@ export function merkmaleInSchema(schema: Schema, fest: Antworten): Antworten {
   const z = zuordnungen(schema);
   if (!z.length) return fest;
   const out: Antworten = { ...fest };
+  const eigene = alleIds(schema);
   for (const { frage, merkmal, werte } of z) {
     if (!(merkmal in fest)) continue;
     const v = fest[merkmal];
-    if (merkmal !== frage) delete out[merkmal];
+    // gibt es das Merkmal auch als eigene Frage, bleibt seine Antwort stehen
+    if (merkmal !== frage && !eigene.has(merkmal)) delete out[merkmal];
     const opt = [...werte.entries()].find(([, mw]) => mw === String(v));
     out[frage] = opt ? opt[0] : v;
   }
   return out;
+}
+
+function alleIds(schema: Schema): Set<string> {
+  return new Set([...Object.values(schema.globale_fragen ?? {}).flat(), ...Object.values(schema.kapitel).flatMap((k) => k.fragen ?? [])].map((f) => f.id));
 }
 
 /** Antworten des Codesystems → Merkmale (für Fallgeschichte und Anrufer) */
@@ -150,8 +198,11 @@ export function merkmaleAusSchema(schema: Schema, a: Antworten): Antworten {
   const z = zuordnungen(schema);
   if (!z.length) return a;
   const out: Antworten = { ...a };
+  const eigene = alleIds(schema);
   for (const { frage, merkmal, werte } of z) {
     if (!(frage in a)) continue;
+    // die eigene Frage zum Merkmal hat Vorrang
+    if (eigene.has(merkmal) && merkmal in a && merkmal !== frage) continue;
     const v = a[frage];
     out[merkmal] = werte.get(String(v)) ?? v;
   }

@@ -5,6 +5,9 @@ import { store } from "../data/store";
 import { pickTextFile } from "../platform";
 import { istSchema, type Schema } from "../abfrage/schema";
 import { pruefeCodesystem } from "../abfrage/codesystem";
+import { uebersetzeSchema } from "../abfrage/normalisieren";
+import { standardCodesystem } from "../data/standard";
+import { stufeRaten } from "../sim/settings";
 import type { Einsatzcode } from "../data/model";
 import { openDialog } from "./dialog";
 import { el, esc, toast } from "./dom";
@@ -117,11 +120,19 @@ function schemaImport(file: { name: string; text: string }, onDone: (kind: Kind)
     return;
   }
   const s = schema as Schema;
-  const { fehler, hinweise } = pruefeCodesystem(s);
+  const { fehler, hinweise: roheHinweise } = pruefeCodesystem(s);
+  // fehlende Fragen „alter/bw/at“ zählen nicht, wenn eine andere Frage dasselbe Merkmal hat
+  const u = uebersetzeSchema(s, standardCodesystem());
+  const hinweise = roheHinweise.filter((h) => !/^Primärabfrage: die Frage „/.test(h));
+  if (u.fehlend.length) hinweise.push(`Für diese Merkmale gibt es keine Frage – Anrufer und Patient werden dazu nur geraten: ${u.fehlend.join(", ")}`);
+  if (!u.kompatibel) hinweise.push(`Dein Codesystem wird auf die LeitWerk-Merkmale übersetzt: ${u.zuordnung.filter((z) => z.merkmal).length} von ${u.zuordnung.length} Fragen zugeordnet. Prüfen unter Einstellungen → Einsatzcodes & Abfrage → „Zuordnung …“.`);
   // Kategorien ohne Einsatzstufe (weder in den Einstellungen noch in der Datei)
   const bekannt = new Set([...store.settings.stufen.map((x) => x.stufe), ...(s.einsatzstufen ?? []).map((x) => x.stufe)]);
   const fehlt = [...new Set(Object.values(s.codes ?? {}).map((c) => c?.kategorie).filter((k): k is string => !!k && !bekannt.has(k)))];
-  if (fehlt.length) hinweise.push(`Diese Kategorien haben noch keine Einsatzstufe (Rettungsmittel je Stufe): ${fehlt.slice(0, 12).join(", ")}${fehlt.length > 12 ? " …" : ""}`);
+  const geraten = fehlt.filter((k) => stufeRaten(k));
+  const unklar = fehlt.filter((k) => !stufeRaten(k));
+  if (geraten.length) hinweise.push(`Diese Kategorien wurden nach dem Namen eingeordnet (prüfen unter Rettungsmittel je Stufe): ${geraten.slice(0, 12).join(", ")}${geraten.length > 12 ? " …" : ""}`);
+  if (unklar.length) hinweise.push(`Diese Kategorien haben noch keine Einsatzstufe (Rettungsmittel je Stufe): ${unklar.slice(0, 12).join(", ")}${unklar.length > 12 ? " …" : ""}`);
   const neu = new Set(Object.keys(s.codes ?? {}).map((c) => c.toUpperCase()));
   const alt = store.list("codes").filter((c) => c.herkunft !== "standard" && !neu.has(c.code.toUpperCase()));
   if (!fehler.length && !alt.length) {

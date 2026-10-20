@@ -79,7 +79,12 @@ function dringlichkeit(z: Zeile): number {
 /** Rang des Codes (E/D zuerst) */
 function codeRang(z: Zeile): string {
   const code = z.e ? (z.e.code ?? "") : (z.k!.d.code ?? "");
-  const st = code.match(/^[A-Z]+-\d+([OABCDEK])/)?.[1] ?? "Z";
+  let st = code.match(/^[A-Z]+-\d+([OABCDEK])/)?.[1] ?? "Z";
+  // anderes Code-Format: nach der Einsatzstufe
+  if (st === "Z" && z.e) {
+    const k = sim.stufeVon(z.e)?.kategorie;
+    st = k === "kritisch" ? "D" : k === "dringend" ? "C" : k === "stabil" ? "A" : "Z";
+  }
   return `${"EDCBKAOZ".indexOf(st)}${code}`;
 }
 

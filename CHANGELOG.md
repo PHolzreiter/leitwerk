@@ -1,5 +1,22 @@
 # Änderungen
 
+## 0.43.0 – Jedes Codesystem funktioniert
+Ziel: Ein gutes Telefonat, dessen Code zum Geschehen vor Ort passt – mit jedem Abfrageschema, egal welche Fragen, Antworten und Codes es verwendet. Am eigenen Notruf-NÖ-Schema ändert sich nichts (geprüft: Anrufer, KI-Anweisungen, Wahrheit und Codes von 174 Fällen sind Zeichen für Zeichen gleich).
+
+**Übersetzung auf die LeitWerk-Merkmale**
+- Innen arbeitet LeitWerk mit festen Merkmalen (Bewusstsein ja / getrübt / nein, Atmung, Alter, Sturzhöhe …). Ein Codesystem mit anderen Fragen wird beim Laden automatisch darauf übersetzt – über Fragetext und Antworten, auch bei umgedrehten Fragen („Ist der Patient bewusstlos?“ = Bewusstsein „nein“)
+- Fehlt einem Kapitel das „thema“, wird es aus Titel und Stichworten erkannt
+- Kann ein Codesystem etwas nicht abfragen (z. B. nur „atmet normal: ja/nein“), passt sich die Antwort an – der Anrufer weiß trotzdem, was wirklich ist (z. B. Schnappatmung)
+- Fehlt ein Kapitel zu einem Fall (z. B. kein Kapitel „Ersticken“), kommt der Fall im verwandten Kapitel (Atemnot)
+- Neu: Einstellungen → Einsatzcodes & Abfrage → „Zuordnung …“: welche Frage welchem Merkmal entspricht, mit Sicherheit; Merkmal und Antworten lassen sich von Hand ausbessern (wird im Codesystem gespeichert)
+- Ein Codesystem, das schon die LeitWerk-IDs verwendet (wie deines), wird nicht umgebaut
+
+**Einsatzstufen fremder Codesysteme**
+- Unbekannte Kategorien werden nach dem Namen eingeordnet: „Prio 1“, „Notarzt“, „rot“ → kritisch mit Notarzt; „mit Sondersignal“, „Prio 2“ → dringend; „Prio 3“, „ohne Sondersignal“ → RTW ohne Eile; „Krankentransport“, „Prio 4“ → KTW; „Weitergabe“, „Beratung“
+- Farben und Sortierung der Einsatzliste richten sich danach, auch bei anderem Code-Format
+
+**Geprüft mit einem selbst gebauten fremden Schema** (eigene Formulierungen, umgedrehte Fragen, Codes „NF-S1-05“, Kategorien „Prio 1–4“): 40 von 40 Fragen richtig zugeordnet, alle 42 Fälle bekommen einen Code; bei 27 von 42 Fällen gleiche Dringlichkeit wie mit deinem Schema, sonst eine Stufe daneben (wo dem Testschema Kapitel fehlen)
+
 ## 0.42.0 – Ersatz-NEF nur bei Schlechtwetter, Lagemeldung nur mit Grund
 **Ersatz-NEF (NEF ÖAMTC)**
 - Ist nur im Dienst, wenn sein Hubschrauber im Dienst ist, aber wegen des **Wetters** nicht fliegen kann

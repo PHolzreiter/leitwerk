@@ -4,7 +4,7 @@ import { store } from "../data/store";
 import { sim } from "../sim/engine";
 import { mp } from "../net/mehrspieler";
 import { geoStatus, REGIONEN } from "../sim/geo";
-import { KATEGORIEN, KATEGORIE_LABEL, NOTARZT_LABEL, defaultStufeFuer, type Kategorie, type NotarztRegel, type Settings } from "../sim/settings";
+import { KATEGORIEN, KATEGORIE_LABEL, NOTARZT_LABEL, defaultStufeFuer, stufeRaten, type Kategorie, type NotarztRegel, type Settings } from "../sim/settings";
 import { codeKategorien } from "../sim/codes";
 import { modusVon, WETTER_LABEL, type WetterLage } from "../sim/weather";
 import { FUNKGRUPPEN } from "../sim/funkgruppen";
@@ -265,7 +265,7 @@ export function createSettingsView(container: HTMLElement, teil: "simulation" | 
     );
     // Kategorien aus der importierten Codeliste, die noch keine Zuordnung haben
     for (const k of codeKategorien()) {
-      if (!draft.stufen.some((x) => x.stufe === k)) draft.stufen.push(defaultStufeFuer(k));
+      if (!draft.stufen.some((x) => x.stufe === k)) draft.stufen.push(stufeRaten(k) ?? defaultStufeFuer(k));
     }
     const stTab = el("table", { class: "set-table" });
     stTab.innerHTML = `<tr><th>Stufe</th><th>Rettungsmittel (Rangfolge)</th><th>NFS</th><th>Notarzt</th><th>Sondersignal</th><th>Kategorie</th><th>Transport %</th></tr>`;

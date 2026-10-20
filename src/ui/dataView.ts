@@ -18,6 +18,7 @@ import { akutVon } from "../data/klinik";
 import { codesystemDatei } from "../abfrage/codesystem";
 import beispielCodesystem from "../../data/beispiele/beispiel_codesystem.json?raw";
 import { STANDARD_CODESYSTEM_TEXT, standardCodesystem } from "../data/standard";
+import { zuordnungDialog, zuordnungKurz } from "./zuordnungDialog";
 import { planKurz } from "../sim/dienst";
 import { sim } from "../sim/engine";
 import { FUNKGRUPPEN, inFunkgruppe } from "../sim/funkgruppen";
@@ -107,7 +108,7 @@ export function createDataView(container: HTMLElement, deps: DataViewDeps): { re
            std
              ? "Eigenständiges Codesystem von LeitWerk (Codes KK-Sx-NN, Stufen S0–S5) – frei verwendbar. Du kannst stattdessen ein eigenes Codesystem (JSON-Datei mit Codes und Abfrage) laden."
              : "Codes und Abfrage kommen aus deiner Datei. Neue Einsätze kommen als Notruf, den du annimmst und abfragst – der Code ergibt sich aus der Abfrage."
-         }</div></div>`;
+         }</div>${std ? "" : `<div class="small">${zuordnungKurz()}</div>`}</div>`;
     const btns = el("div", { class: "row-btns" });
     const laden = el("button", { class: "btn small primary" }, std ? "Eigenes Codesystem laden …" : "Anderes laden …");
     laden.addEventListener("click", () => void startImport("codes", (k) => select(k)));
@@ -126,6 +127,11 @@ export function createDataView(container: HTMLElement, deps: DataViewDeps): { re
       if (p) toast("Beispiel gespeichert – die Anleitung für eine KI steht in „anleitung_fuer_ki“");
     });
     btns.appendChild(bsp);
+    if (!std) {
+      const zu = el("button", { class: "btn small", title: "Welche Frage deines Codesystems welchem LeitWerk-Merkmal entspricht" }, "Zuordnung …");
+      zu.addEventListener("click", () => zuordnungDialog());
+      btns.appendChild(zu);
+    }
     if (!std) {
       const weg = el("button", { class: "btn small danger-text" }, "Zurück zum LeitWerk-Codesystem");
       weg.addEventListener("click", async () => {

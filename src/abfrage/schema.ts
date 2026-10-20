@@ -476,6 +476,8 @@ export function fallZiehen(
       else if (f.id === "bw") a.bw = rnd() < 0.72 ? "ja" : rnd() < 0.6 ? "getruebt" : rnd() < 0.85 ? "nein" : "unbekannt";
       else if (f.id === "at") a.at = a.bw === "nein" ? zufall(["normal", "abnorm", "agonal", "keine"], rnd) : rnd() < 0.75 ? "normal" : rnd() < 0.9 ? "abnorm" : "unbekannt";
       else a[f.id] = zufallsAntwort(f, rnd, alter, pUnbekannt);
+      // fremdes Codesystem: nur Werte, die es dort als Antwort gibt
+      if (f.typ === "single" && f.optionen?.length && !f.optionen.some((o) => o.wert === a[f.id])) a[f.id] = zufallsAntwort(f, rnd, alter, pUnbekannt);
     }
   }
   // Fragen (inkl. Kapitelwechsel) beantworten, bis keine neuen mehr auftauchen

@@ -18,6 +18,13 @@ const STUFE_FARBE: Record<string, string> = {
 export function stufeFarbe(stufe: string | undefined): string {
   if (!stufe) return "#6b7280";
   for (const [k, v] of Object.entries(STUFE_FARBE)) if (stufe.includes(k)) return v;
+  // Stufe eines fremden Codesystems (nicht in den Einstellungen): Farbe nach der Einordnung
+  if (!sim.settings.stufen.some((x) => x.stufe === stufe)) {
+    const d = sim.stufeDef(stufe);
+    if (d?.kategorie === "kritisch") return STUFE_FARBE.rot;
+    if (d?.kategorie === "dringend") return d.sondersignal ? STUFE_FARBE.gelb : STUFE_FARBE.grün;
+    if (d?.kategorie === "stabil" && d.rettungsmittel) return STUFE_FARBE.grün;
+  }
   return "#90a4ae";
 }
 

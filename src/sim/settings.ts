@@ -90,6 +90,28 @@ function defaultStufen(): StufeDef[] {
   }));
 }
 
+/**
+ * Eine unbekannte Einsatzstufe (Kategorie eines fremden Codesystems) nach ihrem Namen einordnen:
+ * „Prio 1 – Notarzt“, „rot“, „Reanimation“ → kritisch mit Notarzt; „mit Sondersignal“, „Prio 2“ → dringend;
+ * „ohne Sondersignal“, „Prio 3“ → RTW ohne Eile; „Krankentransport“, „Prio 4“ → KTW; „Weitergabe“, „Beratung“.
+ * null = am Namen nicht erkennbar.
+ */
+export function stufeRaten(stufe: string): StufeDef | null {
+  const t = stufe.toLowerCase();
+  const prio = t.match(/\b(?:prio(?:rit[aä]t)?|dringlichkeit(?:sstufe)?|stufe|p)\s*\.?\s*([0-9])\b/)?.[1];
+  const d = (x: Partial<StufeDef>): StufeDef => ({ ...defaultStufeFuer(stufe), ...x });
+  if (/weitergabe|weiterleitung|andere (stelle|leitstelle)|kein(e)? (rettungs|einsatz)/.test(t)) return d({ rettungsmittel: "", sondersignal: false, kategorie: "stabil", transportProzent: 0 });
+  if (/telemed|beratung|telefonisch/.test(t)) return d({ rettungsmittel: "KTW>RTW>RTW-C", sondersignal: false, kategorie: "stabil", transportProzent: 30 });
+  if (/reanimation|stillstand|\brea\b/.test(t)) return d({ rettungsmittel: "RTW-C>RTW>KTW", notarzt: "schnellster", kategorie: "kritisch", transportProzent: 70 });
+  if (/notarzt|\bnef\b|\bna\b|lebensbedroh|\brot\b|\bechos?\b|\bdelta\b|h[oö]chste/.test(t) || prio === "1")
+    return d({ rettungsmittel: "RTW-C>RTW>KTW", notarzt: "nef", kategorie: "kritisch", transportProzent: 85 });
+  if (/krankentransport|\bktw\b|termin|\bblau\b|nicht dringend|ohne eile/.test(t) || (prio !== undefined && Number(prio) >= 4))
+    return d({ rettungsmittel: "KTW>RTW>RTW-C", sondersignal: false, kategorie: "stabil", transportProzent: 65 });
+  if (/ohne (sondersignal|blaulicht|signal)|gr[uü]n/.test(t) || prio === "3") return d({ rettungsmittel: "RTW>KTW>RTW-C", sondersignal: false, kategorie: "stabil", transportProzent: 70 });
+  if (/sondersignal|blaulicht|dringend|orange|gelb/.test(t) || prio === "2") return d({ rettungsmittel: "RTW>RTW-C>KTW", kategorie: "dringend", transportProzent: 75 });
+  return null;
+}
+
 /** Standardwerte für eine Stufe, die in den Einstellungen (noch) nicht vorkommt. */
 export function defaultStufeFuer(stufe: string): StufeDef {
   return {

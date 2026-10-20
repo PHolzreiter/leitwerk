@@ -17,7 +17,7 @@ import { streuung } from "../data/schema";
 import { allCodes, findCode, hasCodes, type Einsatzcode } from "./codes";
 import { distanceM, erreichbar, flightRoute, geoStatus, randomAddresses, route, searchAddress, travelTimes, type LatLon, type Route } from "./geo";
 import { generiereBesetzung, hatNFS, hoechsteQuali, rang, rmTypVon, type Platz, type Quali, type RmTyp } from "./crew";
-import { defaultStufeFuer, raenge, type Kategorie, type Settings, type StatusKey, type StufeDef } from "./settings";
+import { defaultStufeFuer, raenge, stufeRaten, type Kategorie, type Settings, type StatusKey, type StufeDef } from "./settings";
 import {
   fahrFaktor,
   flugverbot,
@@ -48,7 +48,8 @@ import { bezugFuer, fuellen, stimmungAusVerlauf, szenarioBauen, altersPlausibel,
 /** Einsatzorte, die eine echte Einrichtung brauchen (sonst ruft z. B. eine Pflegekraft aus einem Wohnhaus an) */
 const ORT_NUR_MIT_POI: OrtArt[] = ["pflegeheim", "arzt", "schule", "bahnhof"];
 import { SZENARIEN } from "../abfrage/szenarien";
-import { ist, kapitelZuThema, merkmaleAusSchema, merkmaleInSchema, thema } from "../abfrage/themen";
+import { ist, kapitelFuerThema, kapitelZuThema, merkmaleAusSchema, merkmaleInSchema, thema } from "../abfrage/themen";
+import { wahrheitAnpassen } from "../abfrage/normalisieren";
 import { abfrageBlock, abfrageSaetze } from "../abfrage/protokollText";
 import {
   dauerDaten,
@@ -256,6 +257,8 @@ export interface Fall {
   ortArt?: OrtArt;
   /** Fall aus dem Fallkatalog (faelle.ts) mit der gezogenen Variante */
   katalog?: { id: string; variante: string };
+  /** Wahrheit, die das Schema nicht abfragen kann (z. B. Schnappatmung bei „atmet normal: ja/nein“) – für Anrufer und Lage */
+  roh?: Antworten;
 }
 
 /** So heißt der Ort beim Anrufer */
@@ -567,6 +570,8 @@ export interface Einsatz {
       massnahmen?: string[];
       /** Stimmung im Gespräch (0 ruhig … 3 panisch) und wie viele Veränderungen schon eingerechnet sind */
       stimmung?: { stufe: number; verlauf: number; beruhigt: boolean };
+      /** genauere Wahrheit, als das Schema abfragen kann (fremdes Codesystem) */
+      roh?: Antworten;
     };
     /** Verborgene Lage: Patienten und ihr Verlauf */
     lage?: Lage;
@@ -2117,7 +2122,7 @@ export class Simulation {
   /** Bedeutung einer Stufe; unbekannte Stufen (neu importiert) bekommen Standardwerte. */
   stufeDef(stufe: string): StufeDef | undefined {
     if (!stufe) return undefined;
-    return this.settings.stufen.find((s) => s.stufe === stufe) ?? defaultStufeFuer(stufe);
+    return this.settings.stufen.find((s) => s.stufe === stufe) ?? stufeRaten(stufe) ?? defaultStufeFuer(stufe);
   }
 
   log(e: Einsatz, text: string): void {
@@ -2216,11 +2221,13 @@ export class Simulation {
     }
     if (p.fall && store.schema) {
       const schema = store.schema;
+      /** Wahrheit für Anrufer und Lage (mit dem, was das Schema nicht abfragen kann) */
+      const wahr = (f: Fall): Antworten => (f.roh ? { ...f.antworten, ...f.roh } : f.antworten);
       const vorlage = p.fall.vorlage ? (fallVorlage(p.fall.vorlage) ?? SZENARIEN.find((v) => v.id === p.fall!.vorlage)) : undefined;
       const ortArt: OrtArt | undefined = p.fall.ortArt ?? vorlage?.orte[0];
       const anrufer = anruferWaehlen(
         p.fall.kapitel,
-        p.fall.antworten,
+        wahr(p.fall),
         Math.random,
         gemeldet,
         vorlage && ortArt ? { typen: vorlage.anrufer, ort: ORT_LABEL[ortArt], ortArt } : undefined,
@@ -2236,7 +2243,7 @@ export class Simulation {
       }
       let szenario: Szenario | undefined;
       if (vorlage) {
-        const a = p.fall.antworten;
+        const a = wahr(p.fall);
         const w = a.geschlecht === "w";
         const alt = typeof a.alter === "number" ? a.alter : alter;
         // Familie heißt gleich
@@ -2276,14 +2283,15 @@ export class Simulation {
         anrufer,
         lage: `${schema.codes[p.fall.code]?.name ?? p.code.beschreibung} (${schema.kapitel[p.fall.kapitel]?.titel ?? ""})`,
         szenario,
+        ...(p.fall.roh && Object.keys(p.fall.roh).length ? { roh: p.fall.roh } : {}),
       };
       e.meldung.text = "";
       const fv = p.fall.katalog ? fallVorlage(p.fall.katalog.id) : undefined;
       const fvar = fv && p.fall.katalog ? fallVariante(fv, p.fall.katalog.variante) : undefined;
       if (fv && fvar) {
-        e.wahr.lage = lageAusFall(fv.id, fvar, store.schema ? merkmaleAusSchema(store.schema, p.fall.antworten) : p.fall.antworten, this.state.zeit);
+        e.wahr.lage = lageAusFall(fv.id, fvar, store.schema ? merkmaleAusSchema(store.schema, wahr(p.fall)) : wahr(p.fall), this.state.zeit);
         e.wahr.transport = fvar.transport !== false;
-      } else e.wahr.lage = lageErzeugen(p.fall.kapitel, p.fall.antworten, this.state.zeit, kritisch, this.settings.komplikationen ?? "normal");
+      } else e.wahr.lage = lageErzeugen(p.fall.kapitel, wahr(p.fall), this.state.zeit, kritisch, this.settings.komplikationen ?? "normal");
       e.anruf = {
         status: "klingelt",
         seit: this.state.zeit,
@@ -2823,7 +2831,8 @@ export class Simulation {
         const kap = kapitelZiehen(schema, wetter ? (kp) => wetterFaktor(kp, temp, lage, this.state.wetter.wind ?? 0) : undefined);
         // Fallgeschichte zuerst: sie legt Ort, Hergang und die wichtigsten Antworten fest
         const vorlage = vorlageWaehlen(SZENARIEN, thema(kap, schema), ctx, Math.random);
-        const f = fallZiehen(schema, kap, Math.random, 0.04, vorlage ? merkmaleInSchema(schema, vorlageFest(vorlage, Math.random)) : {});
+        const fest = vorlage ? this.anpassen(schema, merkmaleInSchema(schema, vorlageFest(vorlage, Math.random))) : { antworten: {}, roh: {} };
+        const f = fallZiehen(schema, kap, Math.random, 0.04, fest.antworten);
         const c = f ? findCode(f.ergebnis.code) : undefined;
         const name = `${c?.beschreibung ?? ""} ${c ? (schema.codes[c.code]?.name ?? "") : ""}`;
         if (
@@ -2836,7 +2845,7 @@ export class Simulation {
           (!partnerNoetig(f.ergebnis.pfad[0], f.antworten, name).some((x) => x.art === "wasser") || this.partnerStationenImGebiet("wasser").length > 0)
         ) {
           code = c;
-          fall = { kapitel: f.ergebnis.pfad[0], antworten: f.antworten, code: c.code };
+          fall = { kapitel: f.ergebnis.pfad[0], antworten: f.antworten, code: c.code, ...(Object.keys(fest.roh).length ? { roh: fest.roh } : {}) };
           if (vorlage) {
             fall.vorlage = vorlage.id;
             fall.ortArt = this.ortArtWaehlen(vorlage, typeof f.antworten.alter === "number" ? f.antworten.alter : null);
@@ -2930,13 +2939,13 @@ export class Simulation {
       const wunsch = this.fallWunsch;
       const f = wunsch ? fallVorlage(wunsch.id) : fallWaehlen(ctx, Math.random);
       if (!f) return null;
-      const kap = kapitelZuThema(f.thema, schema);
+      const kap = kapitelFuerThema(f.thema, schema);
       if (!kap) continue;
       const v = (wunsch?.variante ? fallVariante(f, wunsch.variante) : undefined) ?? varianteWaehlen(f, this.settings.komplikationen ?? "normal", Math.random);
       const a: Antworten = { ...vorlageFest(f, Math.random), ...(v.fest ?? {}) };
       altersPlausibel({ alter: f.alter, fest: { ...(f.fest ?? {}), ...(v.fest ?? {}) }, anrufer: f.anrufer }, a, Math.random);
       sichtUnbekannt(schema, kap, f.ohneSicht, a);
-      const antworten = merkmaleInSchema(schema, a);
+      const { antworten, roh } = this.anpassen(schema, merkmaleInSchema(schema, a));
       const erg = bestimmeCode(schema, kap, antworten);
       const c = erg ? findCode(erg.code) : undefined;
       if (!erg || !c) {
@@ -2944,9 +2953,15 @@ export class Simulation {
         continue;
       }
       const ortArt = this.ortArtWaehlen(f, typeof a.alter === "number" ? a.alter : null);
-      return { fall: { kapitel: kap, antworten, code: c.code, vorlage: f.id, ortArt, katalog: { id: f.id, variante: v.id } }, code: c };
+      return { fall: { kapitel: kap, antworten, code: c.code, vorlage: f.id, ortArt, katalog: { id: f.id, variante: v.id }, ...(Object.keys(roh).length ? { roh } : {}) }, code: c };
     }
     return null;
+  }
+
+  /** Fremdes Codesystem: Wahrheit an die Antwortmöglichkeiten anpassen (das eigene bzw. kompatible bleibt unverändert) */
+  private anpassen(schema: Schema, a: Antworten): { antworten: Antworten; roh: Antworten } {
+    if (store.uebersetzung.kompatibel) return { antworten: a, roh: {} };
+    return wahrheitAnpassen(schema, a);
   }
 
   private fallFuerCode(schema: Schema, code: string): Fall | null {

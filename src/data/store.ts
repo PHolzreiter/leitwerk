@@ -22,6 +22,7 @@ import {
 import { standardCodesystem, standardRecords } from "./standard";
 import { mergeSettings, type Settings } from "../sim/settings";
 import { ergaenzeSchema, istSchema, type Schema } from "../abfrage/schema";
+import { uebersetzeSchema, type Uebersetzung } from "../abfrage/normalisieren";
 import { themenSchema } from "../abfrage/themen";
 
 type Listener = () => void;
@@ -199,9 +200,16 @@ export class Store {
   }
 
   get schema(): Schema | null {
-    const s = ergaenzeSchema(istSchema(this.data.abfrageschema) ? this.data.abfrageschema : standardCodesystem());
+    const s = ergaenzeSchema(this.uebersetzung.schema);
     themenSchema(s);
     return s;
+  }
+
+  /** Übersetzung des geladenen Codesystems auf die neutralen Merkmale (Zuordnung Frage → Merkmal) */
+  get uebersetzung(): Uebersetzung {
+    const roh = istSchema(this.data.abfrageschema) ? this.data.abfrageschema : standardCodesystem();
+    const std = standardCodesystem();
+    return uebersetzeSchema(roh, roh === std ? null : std);
   }
 
   setSchema(s: Schema | null): void {
