@@ -7,6 +7,10 @@ import type { Frage, Schema } from "../abfrage/schema";
 import { standardCodesystem } from "../data/standard";
 import { store } from "../data/store";
 import { sim } from "../sim/engine";
+import { kiBereit, kiStatus } from "../abfrage/ki";
+import { kiVorschlag, vorschlagEintragen } from "../abfrage/zuordnungKi";
+import { stufeRaten } from "../sim/settings";
+import { inTauri } from "../platform";
 import { openDialog } from "./dialog";
 import { el, esc, toast } from "./dom";
 
@@ -22,7 +26,7 @@ export function zuordnungKurz(): string {
   if (store.schemaIstStandard) return "";
   const u = store.uebersetzung;
   const n = u.zuordnung.length;
-  const mit = u.zuordnung.filter((z) => z.merkmal).length;
+  const mit = u.zuordnung.filter((z) => z.merkmal || z.teile).length;
   const auto = u.zuordnung.filter((z) => z.quelle === "automatisch").length;
   const fehlt = u.fehlend.length ? ` · <span class="warn-text">fehlt: ${esc(u.fehlend.join(", "))}</span>` : "";
   return u.kompatibel
@@ -47,7 +51,46 @@ export function zuordnungDialog(): void {
   const nurOffen = el("input", { type: "checkbox" }) as HTMLInputElement;
   filterWrap.append(nurOffen, " nur automatische und fehlende anzeigen");
   const tab = el("table", { class: "zuo-tab" });
-  body.append(info, filterWrap, tab);
+  const kiZeile = el("div", { class: "zuo-ki" });
+  const kiBtn = el("button", { class: "btn small" }, "KI-Vorschläge für offene und unsichere Fragen") as HTMLButtonElement;
+  const kiInfo = el("span", { class: "muted small" });
+  kiZeile.append(kiBtn, kiInfo);
+  body.append(info, kiZeile, filterWrap, tab);
+  kiBtn.addEventListener("click", async () => {
+    if (!kiBereit() && inTauri()) await kiStatus().catch(() => null);
+    if (!kiBereit()) {
+      toast("Die KI läuft nicht (Einstellungen → KI-Anrufer)", "error");
+      return;
+    }
+    const u = store.uebersetzung;
+    const offen = u.zuordnung.filter((z) => (!z.merkmal && !z.teile && z.quelle !== "explizit") || (z.quelle === "automatisch" && z.sicherheit < 0.7));
+    if (!offen.length) {
+      toast("Keine offenen oder unsicheren Fragen");
+      return;
+    }
+    kiBtn.disabled = true;
+    const s = ausDatei();
+    let n = 0;
+    let ok = 0;
+    for (const z of offen) {
+      kiInfo.textContent = ` ${++n} von ${offen.length} …`;
+      const f = fragenMitId(s, z.frage)[0];
+      if (!f) continue;
+      const titel = z.wo === "global" ? "Primärabfrage" : (s.kapitel[z.wo]?.titel ?? z.wo);
+      try {
+        const v = await kiVorschlag(f, titel, standardCodesystem());
+        if (v) {
+          vorschlagEintragen(s, z.frage, v);
+          ok++;
+        }
+      } catch (e) {
+        console.warn("KI-Zuordnung", e);
+      }
+    }
+    kiBtn.disabled = false;
+    kiInfo.textContent = ` ${ok} von ${offen.length} Vorschlägen übernommen – bitte prüfen (Quelle „KI“)`;
+    speichern(s);
+  });
 
   const ausDatei = (): Schema => structuredClone(store.schemaRoh!);
   const speichern = (s: Schema) => {
@@ -83,7 +126,11 @@ export function zuordnungDialog(): void {
       });
       const tdM = el("td");
       tdM.appendChild(sel);
-      if (z.umgekehrt) tdM.appendChild(el("div", { class: "muted small" }, "umgedreht gefragt"));
+      if (z.teile) {
+        sel.value = KEIN_MERKMAL;
+        tdM.appendChild(el("div", { class: "small" }, `zusammengesetzt: ${z.teile.map((t) => t.merkmal).join(" oder ")}`));
+      }
+      if (z.umgekehrt) tdM.appendChild(el("div", { class: "muted small" }, z.gedreht ? "umgedreht gefragt (aus den Regeln erkannt)" : "umgedreht gefragt"));
       tr.appendChild(tdM);
       // Antworten
       const tdW = el("td", { class: "small" });
@@ -113,9 +160,11 @@ export function zuordnungDialog(): void {
           zeile.append(el("span", {}, `${o.label} → `), ws);
           tdW.appendChild(zeile);
         }
+      } else if (z.teile) {
+        tdW.textContent = `„Ja“, wenn ${z.teile.map((t) => `${t.merkmal} = ${t.ja.join("/")}`).join(" oder ")}`;
       } else tdW.textContent = f0?.typ === "zahl" ? "Zahl" : "";
       tr.appendChild(tdW);
-      tr.appendChild(el("td", { class: "small" }, `${QUELLE[z.quelle]}${z.quelle === "automatisch" ? ` (${Math.round(z.sicherheit * 100)} %)` : ""}`));
+      tr.appendChild(el("td", { class: "small" }, `${z.ki ? "KI-Vorschlag" : QUELLE[z.quelle]}${z.quelle === "automatisch" ? ` (${Math.round(z.sicherheit * 100)} %)` : ""}`));
       tb.appendChild(tr);
     }
     stufenBox.innerHTML = stufen;
@@ -137,7 +186,8 @@ function stufenText(): string {
   const zeilen = offen.map((k) => {
     const d = sim.stufeDef(k);
     const na = d?.notarzt === "nein" ? "" : ", Notarzt";
-    return `<li><b>${esc(k)}</b> → ${d?.kategorie ?? "?"}${d?.sondersignal ? ", mit Sondersignal" : ""}${na}, ${esc(d?.rettungsmittel || "kein Fahrzeug")}</li>`;
+    const woher = stufeRaten(k) ? "nach dem Namen" : "nach dem Aufbau";
+    return `<li><b>${esc(k)}</b> → ${d?.kategorie ?? "?"}${d?.sondersignal ? ", mit Sondersignal" : ""}${na}, ${esc(d?.rettungsmittel || "kein Fahrzeug")} <span class="muted">(${woher})</span></li>`;
   });
-  return `<div class="cs-titel">Einsatzstufen nach dem Namen eingeordnet (ändern unter Einstellungen → Rettungsmittel je Stufe):</div><ul class="cs-liste">${zeilen.join("")}</ul>`;
+  return `<div class="cs-titel">Einsatzstufen, die nicht in den Einstellungen stehen – eingeordnet nach Name bzw. Aufbau des Codesystems (ändern unter Einstellungen → Rettungsmittel je Stufe):</div><ul class="cs-liste">${zeilen.join("")}</ul>`;
 }

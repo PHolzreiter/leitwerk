@@ -1,5 +1,25 @@
 # Änderungen
 
+## 0.44.0 – Fremde Codesysteme: die Schwächen behoben
+Geprüft mit sechs fremden Codesystemen, die ein eigener Agent ohne Kenntnis des Übersetzers geschrieben hat (Leitstellen-Jargon, Laiensprache, Kürzel-Stil, Schweizer Stil, MPDS-Stil, Checkliste). Am eigenen Notruf-NÖ-Schema ändert sich weiterhin nichts (174 Fälle Zeichen für Zeichen gleich).
+
+**Zuordnung der Fragen**
+- Großes Wörterbuch: Fach-, Leitstellen- und Laiensprache je Merkmal, medizinische Abkürzungen (GCS, AVPU, SHT, HWS, ACS, Apoplex, Intox, VKOF, PPH …)
+- Auch die Antwortmöglichkeiten zeigen, worum es geht („Hergang: absichtlich / versehentlich …“, „Noxe“, „Leitbeschwerde“)
+- Umgedrehte Fragen auch ohne „nicht“: „Ist das Lächeln symmetrisch?“, „Atmung unauffällig?“, „Kann er beide Arme gleich hoch halten?“; dazu Gegenprobe über die Regeln
+- Gemischte Antworten wie „Ja – keine Reaktion“ / „Nein, aber verwirrt“ / „Nein – wach“ und „Nein – erschwert“ / „Nein – Schnappatmung“ / „Nein – keine Atmung“
+- Checklisten-Schreibweise „+ / – / ?“
+- Zusammengesetzte Fragen („bewusstlos oder atmet nicht normal?“): die Antwort ergibt sich aus beiden Merkmalen
+- Gleichbedeutende Merkmale (Brustschmerz/Brust, Gewalt/aggressiv …) teilen sich die Wahrheit
+- Kapitel-Thema auch aus dem Inhalt, wenn der Titel nichts sagt („Kreislauf“, „Seele“, „Feuer & Hitze“)
+- Neu: „KI-Vorschläge für offene und unsichere Fragen“ in der Zuordnung (lokale KI, Ergebnis als „KI-Vorschlag“ markiert)
+
+**Einsatzstufen**
+- Kategorien ohne sprechenden Namen („Stufe A“, „D1“, „P2“) werden aus dem Aufbau eingeordnet (Reihenfolge der Regeln, Stufen-Reihenfolge)
+- Einsatzstufen aus der Datei ohne „kategorie“: aus Notarzt und Sondersignal abgeleitet
+
+**Ergebnis** (Anteil richtig zugeordneter Fragen, vorher → jetzt): Schema 1: 66 % → 82 %, Schema 2: 67 % → 87 %, Schema 3 (Kürzel): 46 % → 62 %; drei weitere, vorher nie gesehene Schemas: 75 %, 88 %, 81 %. Dringlichkeit der Codes gegen die Wahrheit vor Ort (42 Fälle): eigenes Schema 28 passend / 12 eine Stufe daneben / 2 zwei daneben – fremde Schemas 18–29 / 10–21 / 1–5
+
 ## 0.43.0 – Jedes Codesystem funktioniert
 Ziel: Ein gutes Telefonat, dessen Code zum Geschehen vor Ort passt – mit jedem Abfrageschema, egal welche Fragen, Antworten und Codes es verwendet. Am eigenen Notruf-NÖ-Schema ändert sich nichts (geprüft: Anrufer, KI-Anweisungen, Wahrheit und Codes von 174 Fällen sind Zeichen für Zeichen gleich).
 

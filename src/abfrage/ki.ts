@@ -102,7 +102,7 @@ export async function kiStatus(): Promise<KiStatus> {
 }
 
 /** nur für Tests: eigenes Sprachmodell statt Ollama über Tauri (z. B. Ollama direkt per HTTP) */
-export const kiTest: { chat: null | ((messages: KiNachricht[], onToken: (t: string) => void, maxTokens?: number) => Promise<string>) } = { chat: null };
+export const kiTest: { chat: null | ((messages: KiNachricht[], onToken: (t: string) => void, maxTokens?: number) => Promise<string>); json?: null | ((messages: KiNachricht[]) => Promise<string>) } = { chat: null, json: null };
 
 /** Ist die KI für Gespräche bereit (läuft, Modell da, eingeschaltet)? */
 export function kiBereit(): boolean {
@@ -150,6 +150,7 @@ export async function kiChat(messages: KiNachricht[], onToken?: (t: string) => v
 
 /** Längere Antwort als JSON (z. B. Fall-Entwurf im Fall-Editor) – ohne Kürzen und Bereinigen */
 export async function kiJson(messages: KiNachricht[], onToken?: (t: string) => void, maxTokens = 1600): Promise<string> {
+  if (kiTest.json) return kiTest.json(messages);
   const ch = new Channel<string>();
   ch.onmessage = (t) => onToken?.(t);
   const text = await invoke<string>("ki_chat", { model: kiPrefs().modell, messages, onToken: ch, maxTokens, json: true });

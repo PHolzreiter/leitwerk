@@ -49,7 +49,7 @@ import { bezugFuer, fuellen, stimmungAusVerlauf, szenarioBauen, altersPlausibel,
 const ORT_NUR_MIT_POI: OrtArt[] = ["pflegeheim", "arzt", "schule", "bahnhof"];
 import { SZENARIEN } from "../abfrage/szenarien";
 import { ist, kapitelFuerThema, kapitelZuThema, merkmaleAusSchema, merkmaleInSchema, thema } from "../abfrage/themen";
-import { wahrheitAnpassen } from "../abfrage/normalisieren";
+import { istZusammengesetzt, wahrheitAnpassen } from "../abfrage/normalisieren";
 import { abfrageBlock, abfrageSaetze } from "../abfrage/protokollText";
 import {
   dauerDaten,
@@ -2122,7 +2122,7 @@ export class Simulation {
   /** Bedeutung einer Stufe; unbekannte Stufen (neu importiert) bekommen Standardwerte. */
   stufeDef(stufe: string): StufeDef | undefined {
     if (!stufe) return undefined;
-    return this.settings.stufen.find((s) => s.stufe === stufe) ?? stufeRaten(stufe) ?? defaultStufeFuer(stufe);
+    return this.settings.stufen.find((s) => s.stufe === stufe) ?? stufeRaten(stufe) ?? store.uebersetzung.stufen[stufe] ?? defaultStufeFuer(stufe);
   }
 
   log(e: Einsatz, text: string): void {
@@ -2832,7 +2832,13 @@ export class Simulation {
         // Fallgeschichte zuerst: sie legt Ort, Hergang und die wichtigsten Antworten fest
         const vorlage = vorlageWaehlen(SZENARIEN, thema(kap, schema), ctx, Math.random);
         const fest = vorlage ? this.anpassen(schema, merkmaleInSchema(schema, vorlageFest(vorlage, Math.random))) : { antworten: {}, roh: {} };
-        const f = fallZiehen(schema, kap, Math.random, 0.04, fest.antworten);
+        let f = fallZiehen(schema, kap, Math.random, 0.04, fest.antworten);
+        // fremdes Codesystem: zusammengesetzte Fragen aus den gewürfelten Merkmalen berechnen
+        if (f && !store.uebersetzung.kompatibel) {
+          const korr = this.anpassen(schema, Object.fromEntries(Object.entries(f.antworten).filter(([k]) => !istZusammengesetzt(schema, k))));
+          const erg = bestimmeCode(schema, kap, korr.antworten);
+          if (erg) f = { antworten: erg.antworten, ergebnis: erg };
+        }
         const c = f ? findCode(f.ergebnis.code) : undefined;
         const name = `${c?.beschreibung ?? ""} ${c ? (schema.codes[c.code]?.name ?? "") : ""}`;
         if (

@@ -209,7 +209,8 @@ export function schemaUebernehmen(schema: Schema, dateiname: string): void {
         nfsErforderlich: !!x.nfs_erforderlich,
         notarzt: x.notarzt === "nef" || x.notarzt === "schnellster" ? x.notarzt : "nein",
         sondersignal: !!x.sondersignal,
-        kategorie: x.kategorie === "kritisch" || x.kategorie === "dringend" ? x.kategorie : "stabil",
+        // ohne Angabe: aus Notarzt und Sondersignal ableiten
+        kategorie: x.kategorie === "kritisch" || x.kategorie === "dringend" || x.kategorie === "stabil" ? x.kategorie : x.notarzt === "nef" || x.notarzt === "schnellster" ? "kritisch" : x.sondersignal ? "dringend" : "stabil",
         transportProzent: Math.max(0, Math.min(100, Number(x.transport_prozent ?? 70))),
       });
     store.setSettings(set);

@@ -3390,3 +3390,4 @@ input[type="color"] {
 .zuo-wert { display: flex; gap: 4px; align-items: center; margin: 1px 0; }
 .zuo-wert select { max-width: 180px; }
 .zuo-stufen { margin-top: 10px; }
+.zuo-ki { display: flex; gap: 8px; align-items: center; margin: 4px 0 6px; }
