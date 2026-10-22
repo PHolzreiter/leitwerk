@@ -14,7 +14,7 @@ pbf, out = sys.argv[1], sys.argv[2]
 
 KEYS = ['amenity', 'social_facility', 'healthcare', 'railway', 'highway', 'shop', 'leisure',
         'landuse', 'man_made', 'tourism', 'historic', 'craft', 'power', 'aeroway', 'sport',
-        'boundary', 'building', 'office', 'club', 'aerialway', 'natural', 'attraction', 'place', 'waterway']
+        'boundary', 'building', 'office', 'club', 'aerialway', 'natural', 'attraction', 'place', 'waterway', 'public_transport']
 
 AMEN = {'nursing_home', 'social_facility', 'kindergarten', 'childcare', 'school', 'college',
         'university', 'doctors', 'clinic', 'hospital', 'cinema', 'theatre', 'arts_centre',
@@ -46,6 +46,12 @@ def interesting(t):
     if 'social_facility' in t or 'healthcare' in t: return True
     if g('railway') in ('station', 'halt'): return True
     if g('highway') == 'services' or g('highway') == 'rest_area': return True
+    if g('highway') == 'bus_stop': return True
+    if g('public_transport') in ('platform', 'stop_position', 'station') and (g('bus') == 'yes' or g('highway') == 'bus_stop' or g('amenity') == 'bus_station'): return True
+    if g('amenity') in ('bus_station', 'ferry_terminal'): return True
+    if g('leisure') in ('marina', 'slipway'): return True
+    if g('man_made') == 'pier' and g('name'): return True
+    if g('route') == 'ferry' and g('name'): return True
     if g('shop') in SHOP: return True
     if g('leisure') in LEIS: return True
     if g('landuse') in LANDUSE: return True
@@ -94,7 +100,7 @@ for o in proc:
             # non-closed ways (closed ones come as areas): keep only some
             if o.is_closed():
                 continue
-            if not (t.get('railway') in ('station', 'halt') or t.get('highway') == 'services' or t.get('aeroway') in ('airstrip',) or t.get('leisure') in ('track',)):
+            if not (t.get('railway') in ('station', 'halt') or t.get('highway') in ('services', 'bus_stop') or t.get('public_transport') == 'platform' or t.get('man_made') == 'pier' or t.get('route') == 'ferry' or t.get('amenity') == 'ferry_terminal' or t.get('aeroway') in ('airstrip',) or t.get('leisure') in ('track',)):
                 continue
             g = swkb.loads(wkbf.create_linestring(o), hex=True)
             typ, oid = 'w', o.id

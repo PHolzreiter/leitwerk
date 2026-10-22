@@ -1,5 +1,29 @@
 # Änderungen
 
+## 0.47.0 – Jeder Ort hat sein eigenes Einsatzprofil
+Pro Ortskategorie ist festgelegt, wer anruft, wo genau der Patient ist, welche Partner mitkommen und was der Disponent wissen sollte.
+
+**Wasser: Bad ≠ offenes Gewässer**
+- Frei-/Hallenbad, Therme: der Bademeister ruft an, die Person ist meist schon aus dem Wasser – **keine Wasserrettung**
+- Badesee, Fluss, Hafen/Anlegestelle/Fähre (neu, 64 Orte): kein Bademeister; ist die Person noch im Wasser, kommen **Wasserrettung und Feuerwehr (Wasserdienst)** – der Fall spielt dann an einem echten See oder Hafen in Reichweite einer Wasserrettung
+- Badeseen und Bäder in den Daten sauber getrennt (Naturbadeteiche und Strandbäder zählen als offenes Gewässer)
+
+**Verkehr: Bahnhof ≠ Bushaltestelle ≠ Raststation**
+- Bahnhof: Anrufer auch ÖBB-Personal, Stelle Bahnsteig/Unterführung/Zug; bei Unfall im Gleis Polizei und Feuerwehr (Oberleitung erden), Hinweis „ÖBB verständigen“
+- Bushaltestellen (neu, rund 7 700) und Busbahnhöfe: der Busfahrer ruft an, Patient im Bus oder an der Haltestelle
+- Autobahn-Raststation: Anrufer Raststätten-Personal oder LKW-Fahrer, Hinweis „Anfahrt nur über die Richtungsfahrbahn“
+
+**Freizeit: Museum ≠ Tierpark**
+- Museum: die Aufsicht ruft an (Ausstellung, Stiege ohne Lift); Tierpark: die Tierpflegerin (Gehege, „ist das Tier gesichert?“); dazu Freizeitpark, Veranstaltung (Ordner), Campingplatz (Platzwart), Ausflugsziel
+- Ebenso Profile für Sport (Trainer, Reitlehrerin), Schulen und Kindergärten (Pädagogin), Einkauf, Disco (Security), Heuriger, Hotel (Rezeption) und Betriebe (Werkstor, Silo)
+
+**Neue Fälle an bestimmten Orten** (kommen nur, wo es so einen Ort im Gebiet gibt)
+- Kopfsprung ins seichte Becken (Freibad), Schwimmer untergegangen (Badesee/Donau), Kollaps nach der Sauna (Therme), Sturz auf der Bahnhofsstiege, Krampfanfall im Bus, LKW-Fahrer mit Brustschmerz (Raststation), Biss im Tierpark, Sturz im Museum, Sturz vom Pferd, Alkoholvergiftung in der Disco
+
+**Einsatzmaske und Karte**
+- Liegt die eingegebene Adresse bei einem bekannten Ort, steht unter „Partner“ ein Hinweis (📍 Freibad … – Bademeister vor Ort, keine Wasserrettung nötig); die Partner-Knöpfe richten sich danach
+- Der Hinweis steht auch im Ort-Fenster auf der Karte
+
 ## 0.46.0 – NEF nach dem RTW, Akutversorgung = Übersicht, Orte mit feinen Kategorien
 **Leitstelle**
 - Abfrage: Die **Leertaste** stellt die markierte Frage – genau wie ein Klick auf das Frage-Symbol (wie F)

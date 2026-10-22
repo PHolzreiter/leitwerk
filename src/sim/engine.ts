@@ -43,10 +43,13 @@ import { bestimmeCode, fallZiehen, kapitelVonCode, wahrheitFuer, type Antworten,
 import { anruferWaehlen, ortKandidaten, veraenderungText, zufallsName, type Anrufer } from "../abfrage/anrufer";
 import { personaWaehlen } from "../abfrage/persona";
 import { alleOrte, kategorienFuerOrtArt, ortGewicht, poiKategorien } from "../data/orte";
+import { ortAnStelle, ortPartner } from "../data/ortProfile";
 import { bezugFuer, fuellen, stimmungAusVerlauf, szenarioBauen, altersPlausibel, sichtUnbekannt, vorlageFest, vorlageWaehlen, type AnruferTyp, type OrtArt, type OrtModus, type Szenario } from "../abfrage/szenario";
 
 /** Einsatzorte, die eine echte Einrichtung brauchen (sonst ruft z. B. eine Pflegekraft aus einem Wohnhaus an) */
 const ORT_NUR_MIT_POI: OrtArt[] = ["pflegeheim", "arzt", "schule", "bahnhof"];
+/** Wie oft ein Fall an einem echten Ort (POI) spielt, wenn er auch woanders passieren kann */
+const POI_ANTEIL: Partial<Record<OrtArt, number>> = { strasse: 0.25 };
 import { SZENARIEN } from "../abfrage/szenarien";
 import { ist, kapitelFuerThema, kapitelZuThema, merkmaleAusSchema, merkmaleInSchema, thema } from "../abfrage/themen";
 import { istZusammengesetzt, wahrheitAnpassen } from "../abfrage/normalisieren";
@@ -257,6 +260,8 @@ export interface Fall {
   /** Fallgeschichte (Vorlage) und gewählter Ort */
   vorlage?: string;
   ortArt?: OrtArt;
+  /** genaue Kategorie des echten Ortes (Freibad, Bahnhof, Tierpark …) */
+  ortKat?: string;
   /** Fall aus dem Fallkatalog (faelle.ts) mit der gezogenen Variante */
   katalog?: { id: string; variante: string };
   /** Wahrheit, die das Schema nicht abfragen kann (z. B. Schnappatmung bei „atmet normal: ja/nein“) – für Anrufer und Lage */
@@ -1079,8 +1084,8 @@ export class Simulation {
 
   /** Zufällige Adresse innerhalb der Funkgruppe (Adressen kommen aus der Box, hier wird genau geprüft) */
   /** POIs im eigenen Gebiet mit einer Kategorie, die zum Einsatzort passt */
-  private poisFuer(art: OrtArt, alter: number | null) {
-    const keys = kategorienFuerOrtArt(art, alter);
+  private poisFuer(art: OrtArt, alter: number | null, nurKat?: string[]) {
+    const keys = kategorienFuerOrtArt(art, alter).filter((k) => !nurKat?.length || nurKat.includes(k));
     if (!keys.length) return [];
     const g = this.funkgruppe();
     return alleOrte().filter((o) => o.kind === "pois" && o.kategorien.some((k) => keys.includes(k)) && inFunkgruppe(g, o.lat, o.lon));
@@ -1127,10 +1132,16 @@ export class Simulation {
   }
 
   /** Adresse eines passenden POI (meistens – manchmal passiert es trotzdem woanders) */
-  private async poiAdresse(art: OrtArt, alter: number | null, thema?: string | null): Promise<Awaited<ReturnType<typeof randomAddresses>>[number] | null> {
-    const kand = this.poisFuer(art, alter);
-    // Pflegeheim, Ordination, Schule: immer dort; sonst passiert es manchmal auch woanders
-    if (!kand.length || (!ORT_NUR_MIT_POI.includes(art) && Math.random() > 0.8)) return null;
+  private async poiAdresse(
+    art: OrtArt,
+    alter: number | null,
+    thema?: string | null,
+    nurKat?: string[],
+    filter?: (o: { lat: number; lon: number }) => boolean,
+  ): Promise<(Awaited<ReturnType<typeof randomAddresses>>[number] & { kat?: string }) | null> {
+    const kand = this.poisFuer(art, alter, nurKat).filter((o) => !filter || filter(o));
+    // Pflegeheim, Ordination, Schule und Fälle mit eigenem Ort: immer dort; sonst passiert es manchmal auch woanders (auf der Straße meist nicht an einer Haltestelle)
+    if (!kand.length || (!nurKat?.length && !ORT_NUR_MIT_POI.includes(art) && Math.random() > (POI_ANTEIL[art] ?? 0.8))) return null;
     // genaue Kategorie mit passendem Thema und Alter bevorzugt (Huftritt → Reitanlage, Fieberkrampf → Kindergarten)
     const gew = kand.map((x) => ortGewicht(x.kategorien, thema, alter));
     let r = Math.random() * gew.reduce((a, b) => a + b, 0);
@@ -1143,7 +1154,11 @@ export class Simulation {
     const hits = (await randomAddresses([o.lon - d, o.lat - d, o.lon + d, o.lat + d], 8)).filter((h) => !h.place);
     hits.sort((a, b) => distanceM(a, o) - distanceM(b, o));
     const h = hits[0] && distanceM(hits[0], o) < 250 ? hits[0] : null;
+    // welche Kategorie des Ortes passt zum Fall (ein Ort kann Bahnhof und Bushaltestelle sein)
+    const keys = kategorienFuerOrtArt(art, alter).filter((k) => !nurKat?.length || nurKat.includes(k));
+    const kat = o.kategorien.filter((k) => keys.includes(k)).sort((a, b) => ortGewicht([b], thema, alter) - ortGewicht([a], thema, alter))[0];
     return {
+      kat,
       label: h ? `${o.name}, ${h.label}` : `${o.name}${o.ort ? `, ${o.ort}` : ""}`,
       street: h?.street ?? o.name,
       number: h?.number ?? "",
@@ -2263,7 +2278,7 @@ export class Simulation {
         wahr(p.fall),
         Math.random,
         gemeldet,
-        vorlage && ortArt ? { typen: vorlage.anrufer, ort: ORT_LABEL[ortArt], ortArt } : undefined,
+        vorlage && ortArt ? { typen: vorlage.anrufer, ort: ORT_LABEL[ortArt], ortArt, ortKat: p.fall.ortKat } : undefined,
         this.einrichtungAmOrt(p.lat, p.lon),
       );
       // Ruft Pflege, Arzt oder Ordination an, fragt man in Kapitel 33 ab (Anforderung durch Einrichtung) –
@@ -2305,8 +2320,8 @@ export class Simulation {
           merkmale.wissen = anrufer.persona.wissen;
         }
         if (anrufer.typ) merkmale.anrufer_typ = anrufer.typ;
-        szenario = szenarioBauen(vorlage, merkmale, { bezug: bezugFuer(anrufer.rolle, anrufer.selbst, w, alt), selbst: anrufer.selbst, ort: p.gemeinde ?? gemeindeVon(p.adresse), name: pname, ortArt }, Math.random);
-        for (const x of ["variante", "wissen", "anrufer_typ", "ort", "selbst"]) delete szenario.zusatz[x];
+        szenario = szenarioBauen(vorlage, merkmale, { bezug: bezugFuer(anrufer.rolle, anrufer.selbst, w, alt), selbst: anrufer.selbst, ort: p.gemeinde ?? gemeindeVon(p.adresse), name: pname, ortArt, ortKat: p.fall.ortKat }, Math.random);
+        for (const x of ["variante", "wissen", "anrufer_typ", "ort", "ortkat", "selbst"]) delete szenario.zusatz[x];
         const st = stimmungAusVerlauf(szenario.verlauf);
         if (st && privat) anrufer.emotion = st;
       }
@@ -2922,12 +2937,21 @@ export class Simulation {
     // Person im Wasser: in der Nähe einer Wasserrettung (die liegen dort, wo so etwas passiert)
     const cname = `${code.beschreibung} ${schema?.codes[code.code]?.name ?? ""}`;
     const imWasser = !!fall && partnerNoetig(fall.kapitel, fall.antworten, cname).some((x) => x.art === "wasser");
-    const wasserAdr = imWasser ? await this.adresseNahe(pick(this.partnerStationenImGebiet("wasser")), 5000) : null;
+    const vKat = fall?.vorlage ? (fallVorlage(fall.vorlage) ?? SZENARIEN.find((v) => v.id === fall!.vorlage))?.kategorien : undefined;
+    // Person im offenen Gewässer: an einem echten See/Hafen in Reichweite einer Wasserrettung, sonst irgendwo in deren Nähe
+    const wStationen = imWasser ? this.partnerStationenImGebiet("wasser") : [];
+    const wasserPoi =
+      imWasser && fall
+        ? await this.poiAdresse("wasser", null, thema(fall.kapitel), vKat?.length ? vKat : ["badesee", "hafen"], (o) => wStationen.some((st) => distanceM(st, o) < 15000))
+        : null;
+    if (fall && wasserPoi?.kat) fall.ortKat = wasserPoi.kat;
+    const wasserAdr = imWasser ? (wasserPoi ?? (await this.adresseNahe(pick(wStationen), 5000))) : null;
     // Anforderung durch Arzt/Pflege: meist aus einem echten Pflegeheim im Gebiet (die Adresse muss dazu passen)
     if (fall && !fall.ortArt && ist(fall.kapitel, "anforderung_arzt") && String(fall.antworten.anforderer ?? "normal") === "normal" && this.poisFuer("pflegeheim", null).length && Math.random() < 0.6)
       fall.ortArt = "pflegeheim";
     // passender echter Ort (Pflegeheim, Schule, Bahnhof …), wenn es einen im Gebiet gibt
-    const poiAdr = !wasserAdr && fall?.ortArt ? await this.poiAdresse(fall.ortArt, typeof fall.antworten.alter === "number" ? fall.antworten.alter : null, thema(fall.kapitel)) : null;
+    const poiAdr = !wasserAdr && fall?.ortArt ? await this.poiAdresse(fall.ortArt, typeof fall.antworten.alter === "number" ? fall.antworten.alter : null, thema(fall.kapitel), vKat) : null;
+    if (fall && poiAdr?.kat) fall.ortKat = poiAdr.kat;
     let adr = wasserAdr ?? poiAdr ?? (await this.adresseImGebiet());
     if (!adr) return null;
     let gemeldet = adr.label;
@@ -3015,6 +3039,10 @@ export class Simulation {
       const ortArt = this.ortArtWaehlen(f, typeof a.alter === "number" ? a.alter : null, f.thema);
       // Geschichte im Pflegeheim, in der Ordination, Schule …: nur, wo es so einen Ort im Gebiet gibt (sonst ein anderer Fall)
       if (!wunsch && ORT_NUR_MIT_POI.includes(ortArt) && !this.poisFuer(ortArt, typeof a.alter === "number" ? a.alter : null).length) continue;
+      // Fall an einem bestimmten Ort (Freibad, Bahnhof, Tierpark …): nur, wo es den gibt
+      if (!wunsch && f.kategorien?.length && !this.poisFuer(ortArt, typeof a.alter === "number" ? a.alter : null, f.kategorien).length) continue;
+      // braucht die Wasserrettung: nur, wo es eine gibt
+      if (!wunsch && v.partner?.some((x) => x.art === "wasser") && !this.partnerStationenImGebiet("wasser").length) continue;
       return { fall: { kapitel: kap, antworten, code: c.code, vorlage: f.id, ortArt, katalog: { id: f.id, variante: v.id }, ...(Object.keys(roh).length ? { roh } : {}) }, code: c };
     }
     return null;
@@ -3634,10 +3662,10 @@ export class Simulation {
   /** Was der Einsatz laut Lage (Wahrheit) braucht */
   partnerBedarf(e: Einsatz): PartnerGrund[] {
     const fv = this.fallVar(e);
-    if (fv) return fv.partner ?? [];
     const w = e.wahr.abfrage;
+    if (fv) return ortPartner(fv.partner ?? [], w?.szenario?.ortKat, thema(w?.kapitel));
     const name = `${findCode(e.wahr.code)?.beschreibung ?? ""} ${store.schema?.codes[w?.code ?? e.wahr.code]?.name ?? ""}`;
-    return partnerNoetig(w?.kapitel, w?.antworten ?? {}, name, { ortArt: w?.szenario?.ortArt, ortUnbekannt: w?.ortUnbekannt });
+    return ortPartner(partnerNoetig(w?.kapitel, w?.antworten ?? {}, name, { ortArt: w?.szenario?.ortArt, ortUnbekannt: w?.ortUnbekannt }), w?.szenario?.ortKat, thema(w?.kapitel));
   }
 
   /** Was der Disponent aus Abfrage und Code erkennen kann (Knopf leuchtet, Bereitstellungsraum) */
@@ -3645,7 +3673,10 @@ export class Simulation {
     const a = e.anruf;
     const name = `${findCode(e.code ?? undefined)?.beschreibung ?? ""} ${store.schema?.codes[e.code ?? ""]?.name ?? ""}`;
     const w = e.wahr.abfrage;
-    return partnerNoetig(a?.kapitel, a?.antworten ?? {}, name, { ortArt: a?.antworten && Object.keys(a.antworten).length ? w?.szenario?.ortArt : undefined, ortUnbekannt: w?.ortUnbekannt });
+    const erkannt = partnerNoetig(a?.kapitel, a?.antworten ?? {}, name, { ortArt: a?.antworten && Object.keys(a.antworten).length ? w?.szenario?.ortArt : undefined, ortUnbekannt: w?.ortUnbekannt });
+    // der Ort ist erkennbar, sobald der Disponent die Adresse (an einem echten Ort) eingetragen hat
+    const amOrt = e.adresse ? ortAnStelle(e.adresse.lat, e.adresse.lon) : null;
+    return ortPartner(erkannt, amOrt?.kat, thema(a?.kapitel));
   }
 
   /** Partner, die laut Lage gebraucht werden, aber noch nicht angefordert sind */

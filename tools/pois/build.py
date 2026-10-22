@@ -111,7 +111,7 @@ kino golfplatz golfclub minigolf fitnessstudio fitness studio gym motocross kart
 kraftwerk wasserkraftwerk flugplatz landeplatz hubschrauberlandeplatz heliport sportverein sv sc usv fc
 billa plus spar eurospar interspar hofer lidl penny unimarkt mpreis adeg nah frisch merkur obi hornbach bauhaus hagebau
 xxxlutz lutz moebelix mobelix kika leiner momax ikea baumax baumarkt supermarkt markt rwa raiffeisen bau garten
-bauernmuseum heimatmuseum dorfmuseum stadtmuseum ortsmuseum heimathaus feuerwehrmuseum handelsakademie handelsschule gymnasium htl hak has bhak bhas hlw borg brg bg landespflegeheim seniorenhaus seniorenresidenz pflegeheim pensionistenheim streichelzoo tierpark wildpark biogasanlage heizwerk fernheizwerk biomasse biomasseheizwerk seniorenwohnheim gemeindezentrum seminarhotel caritas gesundheitszentrum allgemeine kinderhaus landwirtschaftliche fachschule eishalle eissporthalle eislaufplatz squash boulder bouldern speedway motocross track hotel gasthof hort lebenshilfe werkstatte wohnhaus tagesstatte reithalle tennishalle stocksportanlage freizeitzentrum festhalle mehrzweckhalle kunsteisbahn turnsaal sportheim fussball fussballverein sportunion union tennisverein kinderbetreuung spielgruppe kino theater pfarrsaal klettergarten hochseilgarten windpark solarpark photovoltaikanlage wasserkraftwerk kleinwasserkraftwerk silo getreidesilo lagerhausturm raiffeisenlagerhaus raiffeisen-lagerhaus schloss burg ruine burgruine aussichtswarte warte aussichtsturm i ii iii iv v vi 1 2 3 4 5 6 7 8 9 der die das des und am an im in bei zum zur"""
+bauernmuseum heimatmuseum dorfmuseum stadtmuseum ortsmuseum heimathaus feuerwehrmuseum handelsakademie handelsschule gymnasium htl hak has bhak bhas hlw borg brg bg landespflegeheim seniorenhaus seniorenresidenz pflegeheim pensionistenheim naturbadeplatz badeplatz ruderbootverleih bootsverleih ost sud west nord slipstelle anlegestelle schiffsanlegestelle schiffsstation feuerwehrhafen bootssteg steg landesteg umsetzanlage sportboote boote boot fur hafen yachthafen jachthafen sporthafen bootshafen marina fahre rollfahre faehre busbahnhof busterminal autobusbahnhof hauptbahnhof bahnhof streichelzoo tierpark wildpark biogasanlage heizwerk fernheizwerk biomasse biomasseheizwerk seniorenwohnheim gemeindezentrum seminarhotel caritas gesundheitszentrum allgemeine kinderhaus landwirtschaftliche fachschule eishalle eissporthalle eislaufplatz squash boulder bouldern speedway motocross track hotel gasthof hort lebenshilfe werkstatte wohnhaus tagesstatte reithalle tennishalle stocksportanlage freizeitzentrum festhalle mehrzweckhalle kunsteisbahn turnsaal sportheim fussball fussballverein sportunion union tennisverein kinderbetreuung spielgruppe kino theater pfarrsaal klettergarten hochseilgarten windpark solarpark photovoltaikanlage wasserkraftwerk kleinwasserkraftwerk silo getreidesilo lagerhausturm raiffeisenlagerhaus raiffeisen-lagerhaus schloss burg ruine burgruine aussichtswarte warte aussichtsturm i ii iii iv v vi 1 2 3 4 5 6 7 8 9 der die das des und am an im in bei zum zur"""
 .replace('\n', ' ')).split())
 
 def is_generic(name):
@@ -128,6 +128,19 @@ FURN = r'xxxl|lutz|m(o|ö|oe)belix|kika|leiner|m(ö|o|oe)max|ikea|möbelstadt|mo
 
 def sports(t):
     return set(re.split(r'[;,]\s*', t.get('sport', ''))) - {''}
+
+def is_pool(t):
+    """pool-type bathing facility (never badesee)"""
+    if is_open_water(t): return False
+    return t.get('leisure') in ('swimming_pool', 'water_park') or t.get('amenity') in ('public_bath', 'swimming_pool') \
+        or (t.get('leisure') == 'sports_centre' and 'swimming' in sports(t)) or ('water_park' in t) or t.get('spa') == 'therme'
+
+def is_open_water(t):
+    return t.get('leisure') in ('bathing_place', 'beach_resort', 'swimming_area') or t.get('natural') in ('water', 'beach') or 'water' in t \
+        or t.get('water_park') in ('lake', 'natural', 'river', 'pond')
+
+def is_bus(t):
+    return t.get('highway') == 'bus_stop' or (t.get('public_transport') in ('platform', 'stop_position') and t.get('bus') == 'yes')
 
 def classify(t, g, a):
     """return list of keys (most specific first)"""
@@ -247,10 +260,12 @@ def classify(t, g, a):
             add('lagerhaus')
 
     # ---- Wasser (before generic sport)
-    pool_ctx = le in ('swimming_pool', 'water_park', 'sports_centre', 'swimming_area', 'beach_resort', 'resort') or am in ('public_bath', 'swimming_pool') or 'swimming' in sp
+    open_water = is_open_water(t)
+    pool = is_pool(t)
+    pool_ctx = pool or (le == 'resort' and not open_water)
     indoor = t.get('indoor') == 'yes' or t.get('location') == 'indoor' or t.get('covered') == 'yes'
     water_ok = not (to in ('camp_site', 'caravan_site', 'hotel', 'apartment') or am in ('restaurant', 'cafe', 'bar', 'pub', 'parking', 'fast_food', 'bus_station') or sh or t.get('highway') or t.get('railway') or has(n, r'becken|weg zum|parkplatz|kantine|buffet|imbiss|kiosk|restaurant|wohnmobil|stellplatz|haltestelle'))
-    if water_ok and (pool_ctx or has(n, r'therme|thermal|hallenbad|freibad|strandbad|erlebnisbad|sommerbad|waldbad|schwimmbad|badearena|aqua|\bbad$')):
+    if water_ok and not (open_water and not pool) and (pool_ctx or has(n, r'therme|thermal|hallenbad|freibad|strandbad|erlebnisbad|sommerbad|waldbad|schwimmbad|badearena|aqua|\bbad$')):
         if has(n, r'therme|thermal|römertherme|kurbad|moorbad|sole|thermalbad|aqua ?city|badener römer|wellness ?bad|asia spa|thermen'):
             if pool_ctx or am == 'public_bath' or le in ('water_park', 'sports_centre', 'resort') or to in ('attraction',) or hc:
                 add('therme')
@@ -258,10 +273,7 @@ def classify(t, g, a):
             add('hallenbad')
         if has(n, r'freibad|strandbad|erlebnisbad|sommerbad|waldbad|parkbad|naturbad|familienbad|schwimmbad|badeanlage|\bbad\b') and not has(n, r'hallen|therme'):
             if not has(n, r'^(bad|schwimmbad)$') or le in ('water_park', 'sports_centre') or am == 'public_bath' or a > 2000:
-                if has(n, r'strandbad|naturbad') and (le in ('beach_resort', 'bathing_place', 'swimming_area')):
-                    add('badesee', 'freibad')
-                else:
-                    add('freibad')
+                add('freibad')
         if not any(k in K for k in ('therme', 'hallenbad', 'freibad', 'badesee')) and name:
             if le in ('water_park', 'sports_centre') and 'swimming' in sp or am == 'public_bath' or le == 'water_park':
                 add('hallenbad' if indoor and le != 'water_park' else 'freibad')
@@ -270,8 +282,8 @@ def classify(t, g, a):
                     add('freibad')
             elif le == 'swimming_pool' and indoor and a > 250 and not has(n, r'becken|kinder|nichtschwimm|pool'):
                 add('hallenbad')
-    if le in ('bathing_place', 'beach_resort', 'swimming_area') or (t.get('natural') == 'water' and (t.get('swimming') == 'yes' or has(n, r'badesee|badeteich|badeplatz|strandbad|schwimmteich'))) \
-       or (to == 'attraction' and has(n, r'badesee|badeteich')):
+    if not pool and (le in ('bathing_place', 'beach_resort', 'swimming_area') or (t.get('natural') == 'beach' and ('swimming' in sp or has(n, r'bade'))) or t.get('water_park') in ('lake', 'natural', 'river', 'pond') or (t.get('natural') == 'water' and (t.get('swimming') == 'yes' or has(n, r'badesee|badeteich|badeplatz|strandbad|schwimmteich|flussbad')))
+       or (to == 'attraction' and has(n, r'badesee|badeteich'))):
         if name: add('badesee')
 
     # ---- Sport
@@ -398,6 +410,15 @@ def classify(t, g, a):
         else: ok = bool(name) or mw >= 5
         if ok and (name or mw >= 5): add('kraftwerk')
 
+    # ---- Bus / Wasserzugang
+    if am == 'bus_station' and name and not has(n, r'parkplatz|charter|depot|garage|remise|betriebshof'):
+        add('busbahnhof')
+    pier_ok = has(n, r'hafen|steg|anleg|lände|lande|mole|slip|boot|ruder|zillen|yacht|jacht|fähr|pier|werft|wassersport|segel|kanu|kajak|pionier|überfuhr|spitz$') \
+        and not has(n, r'^DST\b|straße|strasse|\bpv\b|photovoltaik|bühne|schwimminsel|restaurant')
+    if le == 'marina' or am == 'ferry_terminal' or (t.get('route') == 'ferry' and not has(n, r'floß|flossfahrt|teich')) \
+       or le == 'slipway' or (t.get('man_made') == 'pier' and pier_ok):
+        if name: add('hafen')
+
     # ---- Sonstiges
     aw = t.get('aeroway')
     if aw in ('aerodrome', 'heliport') or (aw == 'airstrip' and has(n, r'flugplatz|flugfeld|landeplatz|airfield|segelflug')):
@@ -415,7 +436,8 @@ for g, ks in {
     'kinder': 'kinderkrippe kindergarten',
     'schule': 'volksschule mittelschule hoehere_schule berufsschule sonderschule hochschule',
     'gesund': 'arztpraxis primaerversorgung reha',
-    'bahn': 'bahnhof haltestelle',
+    'bahn': 'bahnhof haltestelle busbahnhof bushaltestelle',
+    'hafen': 'hafen',
     'rast': 'raststation',
     'shop': 'supermarkt einkaufszentrum baumarkt lagerhaus',
     'sport': 'sportplatz sporthalle fitnessstudio tennis kletteranlage eislaufplatz motorsport',
@@ -429,9 +451,9 @@ for g, ks in {
 ALLKEYS = list(GROUP)
 ORDER = {k: i for i, k in enumerate(['pflegeheim', 'betreutes_wohnen', 'behinderteneinrichtung', 'kinderkrippe', 'kindergarten',
     'volksschule', 'sonderschule', 'hoehere_schule', 'mittelschule', 'berufsschule', 'hochschule', 'primaerversorgung', 'reha', 'arztpraxis',
-    'bahnhof', 'haltestelle', 'raststation', 'einkaufszentrum', 'supermarkt', 'baumarkt',
+    'bahnhof', 'haltestelle', 'busbahnhof', 'bushaltestelle', 'raststation', 'einkaufszentrum', 'supermarkt', 'baumarkt',
     'sportplatz', 'sporthalle', 'fitnessstudio', 'reitanlage', 'tennis', 'golf', 'kletteranlage', 'skigebiet', 'eislaufplatz', 'motorsport',
-    'hallenbad', 'freibad', 'therme', 'badesee', 'freizeitpark', 'tierpark', 'veranstaltung', 'museum', 'campingplatz', 'ausflugsziel',
+    'hallenbad', 'freibad', 'therme', 'badesee', 'hafen', 'freizeitpark', 'tierpark', 'veranstaltung', 'museum', 'campingplatz', 'ausflugsziel',
     'disco', 'heuriger', 'hotel', 'industrie', 'steinbruch', 'saegewerk', 'lagerhaus', 'kraftwerk', 'landeplatz'])}
 HUGE_KEYS = {'steinbruch', 'skigebiet', 'golf', 'industrie', 'campingplatz', 'freizeitpark', 'tierpark', 'landeplatz', 'kraftwerk', 'motorsport', 'reitanlage', 'lagerhaus', 'ausflugsziel', 'einkaufszentrum', 'sportplatz', 'badesee', 'saegewerk'}
 HUGE_M2 = 120000
@@ -455,6 +477,7 @@ def drop(t, name):
 rows = []
 unnamed_pitches = []
 unnamed_edu = []
+bus_objs = []
 
 def edu_type(t):
     """category key for an unnamed kindergarten/school, only if the tags make it clear"""
@@ -503,6 +526,9 @@ for r in RECS:
     if name and re.match(r'(?i)^(start|end|ziel|tal|berg)(punkt|station)\b', name):
         continue
     if t.get('amenity') == 'parking' or re.match(r'(?i)^(park(platz|deck|haus)|p\d|zufahrt|eingang)\b', name):
+        continue
+    if is_bus(t) and not (t.get('amenity') or t.get('leisure') or t.get('tourism') or t.get('shop') or t.get('railway')):
+        if name and not drop(t, name): bus_objs.append(r)
         continue
     keys = classify(t, g, a)
     if not keys: continue
@@ -662,7 +688,7 @@ def union(a, b):
     ra, rb = find(a), find(b)
     if ra != rb: par[rb] = ra
 
-CLOSE_KEYS = set('primaerversorgung reha hochschule hoehere_schule berufsschule supermarkt baumarkt einkaufszentrum bahnhof haltestelle sportplatz freibad hallenbad therme pflegeheim kindergarten volksschule mittelschule tennis reitanlage golf steinbruch skigebiet campingplatz landeplatz raststation lagerhaus'.split())
+CLOSE_KEYS = set('hafen busbahnhof primaerversorgung reha hochschule hoehere_schule berufsschule supermarkt baumarkt einkaufszentrum bahnhof haltestelle sportplatz freibad hallenbad therme pflegeheim kindergarten volksschule mittelschule tennis reitanlage golf steinbruch skigebiet campingplatz landeplatz raststation lagerhaus'.split())
 pts = [r['p'] for r in rows]
 PTREE = STRtree(pts)
 polys = [(r['i'], r['g']) for r in rows if r['g'].geom_type in ('Polygon', 'MultiPolygon')]
@@ -707,12 +733,13 @@ clusters = collections.defaultdict(list)
 for r in rows: clusters[find(r['i'])].append(r)
 
 def richness(r):
-    return (1 if r.get('old') else 0, 0 if r.get('edu') else 1, 0 if re.match(r'^\d{4}\b', r['name']) else 1, 0 if r['ergaenzt'] else 1, 1 if r['g'].geom_type != 'Point' else 0, len(r['tags']))
+    return (1 if r.get('old') else 0, 1 if r['tags'].get('railway') in ('station', 'halt') else 0, 0 if r.get('edu') else 1, 0 if re.match(r'^\d{4}\b', r['name']) else 1, 0 if r['ergaenzt'] else 1, 1 if r['g'].geom_type != 'Point' else 0, len(r['tags']))
 if ARGS.debug_dir:
     os.makedirs(ARGS.debug_dir, exist_ok=True)
     with open(os.path.join(ARGS.debug_dir, 'merges.txt'), 'w', encoding='utf-8') as dbg:
         for cl in clusters.values():
             if len(cl) > 1: dbg.write(' || '.join(r['name'] + ' [' + ','.join(r['keys']) + ']' for r in cl) + '\n')
+WATERFIX = collections.Counter()
 final = []
 for cl in clusters.values():
     best = max(cl, key=richness)
@@ -732,6 +759,9 @@ for cl in clusters.values():
             pt = nodes[0]['p']
     else:
         pt = best['p']
+    if 'badesee' in keys and is_pool(best['tags']):
+        keys = [k for k in keys if k != 'badesee'] or ['freibad']
+        WATERFIX['badesee removed (pool)'] += 1
     names = []
     for r in [best] + [r for r in cl if r is not best]:
         if re.match(r'^\d{4}\b', r['name']) and any(not re.match(r'^\d{4}\b', x['name']) for x in cl): continue
@@ -787,6 +817,132 @@ for f in sorted([f for f in final if f.get('gen_edu')], key=lambda f: -f['area']
 final = [f for f in final if id(f) not in drop_ids]
 print('unnamed edu: candidates', len(unnamed_edu), 'dropped near named/dup', len(drop_ids),
       'added', collections.Counter(f['gen_edu'] for f in final if f.get('gen_edu')))
+
+print('water fixes', dict(WATERFIX))
+
+# identical final name + same main key within 600 m (e.g. two generic 'Slipstelle X' nodes) -> keep one
+drop_ids = set(); seen = collections.defaultdict(list)
+for f in sorted(final, key=lambda f: (-f['area'], f['id'])):
+    k = (f['name'], f['keys'][0])
+    if any(dist(f['p'], g['p']) < 600 for g in seen[k]):
+        drop_ids.add(id(f)); continue
+    seen[k].append(f)
+final = [f for f in final if id(f) not in drop_ids]
+print('same name/key <600m dropped', len(drop_ids))
+
+# ---------------------------------------------------------------- bus stops
+GENERIC_PLACE = {'sankt', 'st', 'markt', 'bad', 'gross', 'klein', 'ober', 'unter', 'nieder', 'hohen', 'neu', 'alt', 'an', 'am', 'der',
+                 'die', 'im', 'in', 'bei', 'ob', 'dem', 'den', 'des', 'zum', 'zur', 'donau', 'thaya', 'ybbs', 'leitha', 'triesting', 'wien',
+                 'erlauf', 'traisen', 'pielach', 'gebirge', 'weinviertel', 'waldviertel', 'march', 'zaya', 'kamp', 'krems', 'gölsen', 'golsen'}
+def place_in_name(nm, *places):
+    toks = fold(nm).split()
+    for pl in places:
+        if not pl: continue
+        if fold(pl) in fold(nm): return True
+        for pt in fold(pl).replace('-', ' ').split():
+            if len(pt) >= 4 and pt not in GENERIC_PLACE and any(tk.startswith(pt) or pt.startswith(tk) and len(tk) >= 4 for tk in toks):
+                return True
+    # river-named towns: accept the first token even if generic (e.g. "Krems Bahnhof")
+    for pl in places:
+        if pl:
+            ft = fold(pl).split()[0]
+            if len(ft) >= 4 and ft not in ('sankt', 'markt', 'gross', 'klein', 'ober', 'unter', 'nieder') and ft in toks:
+                return True
+    return False
+
+BUSSTRIP = re.compile(r'\b(bahnhof|bhf|hbf|hauptbahnhof|bahnhst|bahnhaltestelle|haltestelle|hst|station|bahnhofsplatz|bahnhofplatz|vorplatz|busbahnhof|bushaltestelle|bahnstation|bus|autobusbahnhof|nord|sud|ost|west)\b')
+def bus_core(nm):
+    return ' '.join(BUSSTRIP.sub(' ', core(fold(nm))).split())
+
+bus = []
+for r in bus_objs:
+    g = r['g']
+    p = g if g.geom_type == 'Point' else (g.centroid if g.geom_type in ('Polygon', 'MultiPolygon') else g.interpolate(0.5, normalized=True))
+    if not NOEP.contains(p): continue
+    bnm = r['tags']['name'].strip().replace(';', ',')
+    if re.match(r'(?i)^((bus)?steig|bahnsteig|platform|perron|bucht)?\s*[a-z]?\d{0,2}[a-z]?$', bnm):
+        continue  # bare platform label (A, B2, Steig 3) -> part of a bus station
+    bus.append({'osm': r['t'] + str(r['id']), 'name': bnm, 'nn': core(fold(re.sub(r'\(.*?\)', ' ', bnm))), 'p': p, 'tags': r['tags'],
+                'prio': (0 if r['tags'].get('highway') == 'bus_stop' else 1, 0 if r['t'] == 'n' else 1)})
+bpar = list(range(len(bus)))
+def bfind(x):
+    while bpar[x] != x:
+        bpar[x] = bpar[bpar[x]]; x = bpar[x]
+    return x
+BT_ = STRtree([b['p'] for b in bus])
+for i, b in enumerate(bus):
+    for j in BT_.query(b['p'].buffer(260 / KX)):
+        if j > i and dist(b['p'], bus[j]['p']) <= 250 and (bus[j]['nn'] == b['nn'] or difflib.SequenceMatcher(None, bus[j]['nn'], b['nn']).ratio() >= 0.92):
+            ri, rj = bfind(i), bfind(j)
+            if ri != rj: bpar[rj] = ri
+bcl = collections.defaultdict(list)
+for i, b in enumerate(bus): bcl[bfind(i)].append(b)
+stops = []
+for members in bcl.values():
+    cx = sum(m['p'].x for m in members) / len(members); cy = sum(m['p'].y for m in members) / len(members)
+    pt = Point(round(cx, 6), round(cy, 6))
+    if not NOEP.contains(pt):
+        pt = min(members, key=lambda m: dist(m['p'], Point(cx, cy)))['p']; pt = Point(round(pt.x, 6), round(pt.y, 6))
+    ort = gemeinde(pt)
+    if not ort: continue
+    nm = collections.Counter(m['name'] for m in members).most_common(1)[0][0]
+    rep_m = min(members, key=lambda m: (m['prio'], dist(m['p'], pt)))
+    loc = locality(pt, rep_m['tags']) or ort
+    stops.append({'members': members, 'p': pt, 'ort': ort, 'loc': loc, 'name': nm, 'rep': rep_m, 'n': len(members)})
+
+# skip stops that belong to a rail station / bus station row (add key there instead)
+STATION_KEYS = {'bahnhof', 'haltestelle', 'busbahnhof'}
+st_rows = [f for f in final if STATION_KEYS & set(f['keys'])]
+STT = STRtree([f['p'] for f in st_rows]) if st_rows else None
+def station_match(sp):
+    best = None
+    bc = bus_core(sp['name'])
+    for i in STT.query(sp['p'].buffer(160 / KX)):
+        f = st_rows[i]
+        dd = dist(sp['p'], f['p'])
+        if dd > 150: continue
+        fc = bus_core(f['name'])
+        ok = (not bc) or (fc and (bc == fc or bc.startswith(fc) or fc.startswith(bc)
+              or difflib.SequenceMatcher(None, bc, fc).ratio() >= 0.85
+              or (min(len(set(bc.split())), len(set(fc.split()))) >= 1 and (set(fc.split()) <= set(bc.split()) or set(bc.split()) <= set(fc.split())) and len(fc) >= 4)))
+        if not bc and not re.search(r'bahnhof|bhf|station|haltestelle', fold(sp['name'])): ok = False
+        if ok and (best is None or dd < best[0]): best = (dd, f)
+    return best[1] if best else None
+bus_stat = collections.Counter()
+kept_stops = []
+for sp in stops:
+    f = station_match(sp) if STT is not None else None
+    if f is not None:
+        if 'bushaltestelle' not in f['keys']: f['keys'].append('bushaltestelle')
+        bus_stat['merged into station row'] += 1
+        continue
+    kept_stops.append(sp)
+# one row per stop name per locality (largest cluster wins)
+byname = {}
+for sp in kept_stops:
+    nm = sp['name'] if place_in_name(sp['name'], sp['loc'], sp['ort']) else sp['name'] + ' (' + sp['loc'] + ')'
+    sp['final_name'] = nm
+    key = (fold(nm), sp['loc'])
+    if key not in byname or sp['n'] > byname[key]['n']:
+        if key in byname: bus_stat['same name/locality dropped'] += 1
+        byname[key] = sp
+    else:
+        bus_stat['same name/locality dropped'] += 1
+used = {(f['p'].x, f['p'].y) for f in final}
+for sp in byname.values():
+    pt = sp['p']
+    if (pt.x, pt.y) in used:
+        bus_stat['coord clash skipped'] += 1; continue
+    used.add((pt.x, pt.y))
+    others = [m['osm'] for m in sp['members'] if m is not sp['rep']]
+    hin = 'OSM ' + sp['rep']['osm'] + (' (+%d)' % len(others) if others else '') + ' · Mittelpunkt Steige'
+    if sp['final_name'] != sp['name']: hin += ' · Name ergänzt'
+    final.append({'id': 'poi-' + sp['rep']['osm'], 'name': sp['final_name'], 'keys': ['bushaltestelle'], 'ort': sp['ort'], 'bez': bezirk(pt), 'p': pt,
+                  'hin': hin, 'area': 0, 'loc': sp['loc'], 'tags': {}, 'gen_edu': None})
+    bus_stat['stop rows'] += 1
+print('bus objects', len(bus), 'clusters', len(stops), dict(bus_stat))
+ids_seen = collections.Counter(f['id'] for f in final)
+assert max(ids_seen.values()) == 1, [k for k, v in ids_seen.items() if v > 1][:5]
 
 # make names unique-ish: same name in different places is fine; same name within 2km and same key -> add street
 cnt = collections.Counter((f['name'], f['ort']) for f in final)

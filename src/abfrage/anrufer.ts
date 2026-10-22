@@ -2,6 +2,8 @@
  * KI-Anrufer: Wer ruft an (passend zur Lage, mit Zufall), was weiß er, wie spricht er.
  * Erzeugt die Anweisung für das Sprachmodell und einfache Antworten ohne KI.
  */
+import { ortKategorie } from "../data/orte";
+import { ortProfil, PERSONAL } from "../data/ortProfile";
 import { fragtNachZustand, hinweisZurArt, type NachrichtArt } from "./runde";
 import { antwortLabel, frageIndex, type Antworten, type Frage, type Schema } from "./schema";
 import { ist, thema } from "./themen";
@@ -56,6 +58,11 @@ const ORT_ANRUFER: Partial<Record<AnruferTyp, OrtArt[]>> = {
   lenker: ["strasse", "auto"],
   trainer: ["sport"],
   bademeister: ["wasser", "freizeit", "sport"],
+  bahnpersonal: ["bahnhof"],
+  busfahrer: ["strasse"],
+  tierpfleger: ["freizeit"],
+  aufsicht: ["freizeit", "geschaeft", "sport", "lokal"],
+  rezeption: ["lokal", "freizeit"],
   wirt: ["lokal"],
 };
 
@@ -143,7 +150,7 @@ export function anruferWaehlen(
   rnd: () => number = Math.random,
   adresse = "",
   /** aus der Fallgeschichte: wer anrufen darf und wo es passiert */
-  geschichte?: { typen: AnruferTyp[]; ort: string; ortArt?: OrtArt },
+  geschichte?: { typen: AnruferTyp[]; ort: string; ortArt?: OrtArt; ortKat?: string },
   /** Was steht wirklich an der Adresse? (Pflegeheim, Arztpraxis, Schule – aus den Orten/POIs); fehlt es, wird es geschätzt */
   amOrt?: { arten: OrtArt[]; name?: string },
 ): Anrufer {
@@ -210,10 +217,22 @@ export function anruferWaehlen(
       telemed: { ort: "", rolle: "Ärztin/Arzt der Telemedizin", anruferWert: "einrichtung", profi: true, typ: "telemed" },
       polizei: { ort: "", rolle: rnd() < 0.5 ? "Polizist" : "Polizistin", anruferWert: "2", profi: true, typ: "polizei" },
       bergrettung: { ort: "", rolle: "Einsatzleiter der Bergrettung", anruferWert: "einrichtung", geschlecht: "m", profi: true, typ: "bergrettung" },
+      bahnpersonal: { ort: "", rolle: rnd() < 0.6 ? "Mitarbeiter der ÖBB" : "Mitarbeiterin der ÖBB", anruferWert: "2", typ: "bahnpersonal" },
+      busfahrer: { ort: "", rolle: rnd() < 0.7 ? "Busfahrer" : "Busfahrerin", anruferWert: "2", typ: "busfahrer" },
+      tierpfleger: { ort: "", rolle: rnd() < 0.5 ? "Tierpfleger" : "Tierpflegerin", anruferWert: "2", typ: "tierpfleger" },
+      aufsicht: { ort: "", rolle: rnd() < 0.5 ? "Mitarbeiter vor Ort" : "Mitarbeiterin vor Ort", anruferWert: "2", typ: "aufsicht" },
+      rezeption: { ort: "", rolle: rnd() < 0.6 ? "Mitarbeiterin an der Rezeption" : "Mitarbeiter an der Rezeption", anruferWert: "2", typ: "rezeption" },
     };
     // Selbst anrufen geht nur wach und mit ausreichender Atmung; der Anrufer muss zum Ort und zum Alter passen
     const altersGerecht = (t: AnruferTyp) => (t === "eltern" ? alter < 30 : t === "kind" ? alter >= 45 : t === "partner" ? alter >= 20 : t === "lehrer" ? alter < 20 : t === "kollege" ? alter >= 16 && alter < 67 : t === "trainer" ? alter < 45 : true);
     let typen = anruferAmOrt(geschichte.typen, geschichte.ortArt).filter((t) => t !== "selbst" || kannSelbst);
+    // echter Ort: wer dort anruft (Freibad: Bademeister; Badesee: keiner; Bahnhof: auch ÖBB-Personal)
+    const prof = ortProfil(geschichte.ortKat);
+    if (prof?.anrufer) {
+      const fremdeOk = typen.some((t) => t === "passant" || t === "begleiter");
+      const ziel = prof.anrufer.filter((t) => (typen.includes(t) || (fremdeOk && PERSONAL.includes(t))) && (t !== "selbst" || kannSelbst));
+      if (ziel.length) typen = ziel;
+    }
     if (typen.some(altersGerecht)) typen = typen.filter(altersGerecht);
     const erlaubt = kandidaten.filter(([x]) => x.typ && typen.includes(x.typ));
     const pool: [Situation, number][] = erlaubt.length ? erlaubt : typen.map((t) => [ersatz[t], 1] as [Situation, number]);
@@ -222,6 +241,17 @@ export function anruferWaehlen(
     for (const [x, w] of pool) kandidaten.push([{ ...x, ort: geschichte.ort }, w]);
     // Typen, die oben nicht gewichtet werden (Begleiter, Trainer …), trotzdem möglich
     for (const t of typen) if (!kandidaten.some(([x]) => x.typ === t)) kandidaten.push([{ ...ersatz[t], ort: geschichte.ort }, 0.8]);
+    // vorne im Profil = häufiger; Rolle und Ort wie am echten Ort
+    if (prof?.anrufer) {
+      const n = prof.anrufer.length;
+      for (const k of kandidaten) {
+        // am echten Ort zählt die Reihenfolge des Profils (Tierpark: meist die Tierpflegerin)
+        const i = prof.anrufer.indexOf(k[0].typ!);
+        if (i >= 0) k[1] = n - i;
+        const rolle = k[0].typ ? prof.rollen?.[k[0].typ] : undefined;
+        k[0] = { ...k[0], ...(rolle ? { rolle } : {}), ort: ortKategorie(geschichte.ortKat!)?.label ?? k[0].ort };
+      }
+    }
   }
   let s = gewichtet(kandidaten, rnd);
   // Pflegekraft, aber kein Pflegeheim an der Adresse: mobile Hauskrankenpflege beim Patienten zu Hause
@@ -269,7 +299,7 @@ function gendern(t: string, g: "m" | "w"): string {
     .replace(/Mitarbeiter\/in/g, g === "w" ? "Mitarbeiterin" : "Mitarbeiter")
     .replace(/Pistenretter\/in/g, g === "w" ? "Pistenretterin" : "Pistenretter")
     .replace(/eine\/n /g, g === "w" ? "eine " : "einen ")
-    .replace(/^(Freund|Passant|Lenker|Arbeitskollege|Nachbar|Bademeister|Trainer|Wirt|Polizist|Lehrer|Mitarbeiter|Begleiter)\b(, der)?/, (m, wort: string, der?: string) =>
+    .replace(/^(Freund|Passant|Lenker|Arbeitskollege|Nachbar|Bademeister|Trainer|Wirt|Polizist|Lehrer|Mitarbeiter|Begleiter|Busfahrer|Tierpfleger|Ordner|Platzwart|Liftwart)\b(, der)?/, (m, wort: string, der?: string) =>
       g === "w" ? `${wort === "Arbeitskollege" ? "Arbeitskollegin" : `${wort}in`}${der ? ", die" : ""}` : m,
     );
 }
@@ -287,6 +317,11 @@ export function werText(x: Anrufer): string {
     verkauf: "Ich arbeite hier im Geschäft.",
     wirt: "Ich bin vom Lokal hier.",
     bademeister: "Ich bin der Bademeister hier.",
+    bahnpersonal: "Ich arbeite hier am Bahnhof, bei der ÖBB.",
+    busfahrer: "Ich bin der Busfahrer.",
+    tierpfleger: "Ich arbeite hier im Tierpark.",
+    aufsicht: "Ich arbeite hier, ich bin vom Personal.",
+    rezeption: "Ich bin von der Rezeption.",
   };
   if (x.typ && fremd[x.typ]) return fremd[x.typ]!;
   if (x.typ === "pflege") return `${x.name}, ich bin ${x.geschlecht === "w" ? "diplomierte Pflegerin" : "diplomierter Pfleger"} hier im Heim.`;

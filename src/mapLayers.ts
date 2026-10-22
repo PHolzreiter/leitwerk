@@ -6,6 +6,7 @@ import { PARTNER_PHASE_TEXT, sim } from "./sim/engine";
 import { khKurzElement } from "./ui/khInfo";
 import { PARTNER_ANZAHL, partnerArtVonTyp, type PartnerArt } from "./sim/partner";
 import { kategorieLabel, ortKategorie, poiKategorien } from "./data/orte";
+import { ORT_PROFIL } from "./data/ortProfile";
 import { findCode } from "./sim/codes";
 import { stufeFarbe } from "./ui/panels/teile";
 
@@ -422,7 +423,10 @@ function showDetails(map: maplibregl.Map, kind: Kind, id: string, at: maplibregl
     body.innerHTML = `
       <div class="lw-popup-title">${esc(p.name)}</div>
       <div class="lw-popup-sub">${esc(p.ort)}</div>
-      <div class="lw-popup-list">${poiKategorien(p).map((k) => `<span class="dep">${esc(kategorieLabel(k))}</span>`).join("")}</div>`;
+      <div class="lw-popup-list">${poiKategorien(p).map((k) => `<span class="dep">${esc(kategorieLabel(k))}</span>`).join("")}</div>${(() => {
+        const h = poiKategorien(p).map((k) => ORT_PROFIL[k]?.hinweis).find(Boolean);
+        return h ? `<div class="lw-popup-hinweis muted small">${esc(h)}</div>` : "";
+      })()}`;
   }
   const edit = el("button", { class: "btn small" }, "Bearbeiten");
   edit.addEventListener("click", () => {

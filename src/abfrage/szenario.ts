@@ -4,6 +4,7 @@
  * abgeleitet – und die KI bekommt die ganze Fallakte, damit sie jede Frage (auch aus einem
  * anderen Abfrageschema) menschlich und widerspruchsfrei beantworten kann.
  */
+import { ortProfil } from "../data/ortProfile";
 import { frageIndex, type Antworten, type Schema, type Wert } from "./schema";
 
 // ------------------------------------------------------------------ Vorlagen
@@ -50,6 +51,11 @@ export type AnruferTyp =
   | "begleiter"
   | "trainer"
   | "bademeister"
+  | "bahnpersonal"
+  | "busfahrer"
+  | "tierpfleger"
+  | "aufsicht"
+  | "rezeption"
   | "wirt"
   | "telemed"
   | "polizei"
@@ -64,6 +70,8 @@ export interface SzenarioVorlage {
   alter: [number, number];
   geschlecht?: "m" | "w";
   orte: OrtArt[];
+  /** nur an Orten dieser Kategorien (POIs, z. B. „freibad“, „bahnhof“) – gibt es keinen im Gebiet, kommt der Fall nicht */
+  kategorien?: string[];
   /** „nur“ (Standard): nur an den Orten oben; „ueberall“: an allen passenden Orten; „ausser“: überall außer an den Orten oben */
   ortModus?: OrtModus;
   /** genaue Stelle, z. B. „im Badezimmer“; {ort} = Gemeinde */
@@ -113,6 +121,8 @@ export interface Szenario {
   vorlage: string;
   thema: string;
   ortArt: OrtArt;
+  /** genaue Ortskategorie (Freibad, Bahnhof, Tierpark …), wenn der Fall an einem echten Ort spielt */
+  ortKat?: string;
   /** z. B. „im Badezimmer, Wohnung im 2. Stock“ */
   stelle: string;
   /** kein bekannter Patient (Text für die Fallakte) */
@@ -452,7 +462,7 @@ export function bezugFuer(anruferRolle: string, selbst: boolean, w: boolean, alt
 export function szenarioBauen(
   v: SzenarioVorlage,
   a: Antworten,
-  opt: { bezug: string; selbst: boolean; ort: string; name: string; ortArt?: OrtArt },
+  opt: { bezug: string; selbst: boolean; ort: string; name: string; ortArt?: OrtArt; ortKat?: string },
   rnd: Rnd,
 ): Szenario {
   const w = a.geschlecht === "w";
@@ -532,7 +542,15 @@ export function szenarioBauen(
     setze("fehlstellung", "nein");
   }
   // Texte mit [bedingung] nur, wenn sie zu den Antworten (und Ort, Anrufer) passen
-  const alle: Antworten = { ...zusatz, ...a, ort: ortArt, selbst: opt.selbst ? "ja" : "nein" };
+  const alle: Antworten = { ...zusatz, ...a, ort: ortArt, ...(opt.ortKat ? { ortkat: opt.ortKat } : {}), selbst: opt.selbst ? "ja" : "nein" };
+  // Stelle passend zum echten Ort (Freibad: Beckenrand – nicht „am Badesee beim Steg“)
+  const prof = ortProfil(opt.ortKat);
+  const stellen = (() => {
+    const l = v.stelle.filter((t) => passtBedingung(t, alle));
+    if (!prof) return v.stelle;
+    const ok = prof.stelleMuster ? l.filter((t) => prof.stelleMuster!.test(ohneBedingung(t))) : [];
+    return ok.length ? ok : prof.stelle?.length ? prof.stelle : v.stelle;
+  })();
   const passend = (l: string[]) => {
     const ok = l.filter((t) => passtBedingung(t, alle));
     return pick(ok.length ? ok : l, rnd).replace(/^\[[^\]]*\]\s*/, "");
@@ -543,7 +561,8 @@ export function szenarioBauen(
     vorlage: v.id,
     thema: v.thema,
     ortArt,
-    stelle: f(passend(v.stelle.length ? v.stelle : [""])),
+    ...(opt.ortKat ? { ortKat: opt.ortKat } : {}),
+    stelle: f(passend(stellen.length ? stellen : [""])),
     wo: v.wo?.length ? f(pick(v.wo, rnd)) : undefined,
     hergang: (opt.selbst ? ichFix : (t: string) => t)(f(passend(v.hergang.length ? v.hergang : v.geschehen?.length ? [v.geschehen[0]] : [""]))),
     hergangIch: opt.selbst && v.hergangIch?.length ? f(passend(v.hergangIch)) : undefined,
@@ -563,7 +582,11 @@ export function szenarioBauen(
     },
     // alle Details – wichtige Befunde dürfen nicht zufällig fehlen (sonst sagt der Anrufer „nix steht ab“)
     details: (v.details ?? []).filter((d) => passtBedingung(d, alle)).map((d) => f3(ohneBedingung(d))),
-    umgebung: v.umgebung?.length ? v.umgebung.filter((d) => passtBedingung(d, alle)).map((d) => f(ohneBedingung(d))) : umgebung(ortArt, alter, rnd),
+    umgebung: v.umgebung?.length
+      ? v.umgebung.filter((d) => passtBedingung(d, alle)).map((d) => f(ohneBedingung(d)))
+      : prof?.umgebung?.length
+        ? [f(pick(prof.umgebung, rnd))]
+        : umgebung(ortArt, alter, rnd),
     verlauf: (v.verlauf ?? []).filter((d) => passtBedingung(d, alle)).map((d) => f(ohneBedingung(d))),
     zusatz,
     ohnePatient: v.ohnePatient ? f(v.ohnePatient) : undefined,

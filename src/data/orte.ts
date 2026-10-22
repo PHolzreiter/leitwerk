@@ -87,7 +87,9 @@ export const ORT_KATEGORIEN: OrtKategorie[] = [
   // ---- Verkehr
   k("bahnhof", "Bahnhof", "verkehr", "bahnhof", /bahnhof|\bbhf\b|hauptbahnhof/i, "Reisende und Pendler: Kollaps, Sturz auf Stiegen, Intoxikation, Personen im Gleis", undefined, ["bewusstlos", "sturz", "vergiftung", "psych", "verletzung"]),
   k("haltestelle", "Bahn-Haltestelle", "verkehr", "bahnhof", /haltestelle|\bhst\b/i, "kleine Bahnstation: Kollaps, Sturz", undefined, ["bewusstlos", "sturz", "verletzung"]),
-  k("raststation", "Autobahn-Raststation", "verkehr", undefined, /raststation|raststätte|rasthaus|autohof/i, "Reisende, LKW-Fahrer: Kollaps, Brustschmerz, Unfälle am Parkplatz", undefined, ["bewusstlos", "brustschmerz", "verkehrsunfall"]),
+  k("bushaltestelle", "Bushaltestelle", "verkehr", "strasse", /bushaltestelle|\bbus\b|postbus|autobus/i, "Fahrgäste, Schüler, Senioren: Kollaps im Bus, Sturz beim Aussteigen, vom Bus/Auto erfasst", undefined, ["bewusstlos", "sturz", "verkehrsunfall", "krampf", "zucker"]),
+  k("busbahnhof", "Busbahnhof", "verkehr", "strasse", /busbahnhof|busterminal|autobusbahnhof/i, "viele Fahrgäste: Kollaps, Sturz, Intoxikation, Unfall mit Bus", undefined, ["bewusstlos", "sturz", "vergiftung", "verkehrsunfall", "psych"]),
+  k("raststation", "Autobahn-Raststation", "verkehr", "strasse", /raststation|raststätte|rasthaus|autohof/i, "Reisende, LKW-Fahrer: Kollaps, Brustschmerz, Unfälle am Parkplatz", undefined, ["bewusstlos", "brustschmerz", "verkehrsunfall"]),
   // ---- Einkauf
   k("supermarkt", "Supermarkt", "einkauf", "geschaeft", /supermarkt|billa|spar\b|eurospar|interspar|hofer|lidl|penny|unimarkt|mpreis|merkur/i, "Kundschaft jeden Alters: Kollaps an der Kassa, Sturz, Brustschmerz", undefined, ["bewusstlos", "sturz", "brustschmerz", "zucker"]),
   k("einkaufszentrum", "Einkaufszentrum / Möbelhaus", "einkauf", "geschaeft", /einkaufszentrum|shopping|center|\bez\b|fachmarktzentrum|möbel|xxxlutz|ikea|kika|leiner/i, "viele Menschen: Kollaps, Sturz auf Rolltreppe, psychische Krisen", undefined, ["bewusstlos", "sturz", "psych", "brustschmerz"]),
@@ -110,6 +112,7 @@ export const ORT_KATEGORIEN: OrtKategorie[] = [
   k("hallenbad", "Hallenbad", "wasser", "wasser", /hallenbad|schwimmhalle|sportbad/i, "Badegäste: Badeunfall, Sturz auf nassen Fliesen, Kollaps", undefined, ["wasser", "sturz", "bewusstlos"]),
   k("therme", "Therme", "wasser", "wasser", /therme|thermal|sauna|kurbad/i, "oft ältere Gäste: Kreislaufkollaps (Hitze, Sauna), Brustschmerz, Badeunfall", [30, 90], ["bewusstlos", "brustschmerz", "wasser", "hitze_kaelte", "sturz"]),
   k("badesee", "Badesee / Badeplatz", "wasser", "wasser", /badesee|badeteich|badeplatz|badestelle|strand|\bsee\b|teich/i, "Badegäste: Ertrinken, Kopfsprung ins Seichte, Hitze, Insektenstich", undefined, ["wasser", "verletzung", "hitze_kaelte", "allergie"]),
+  k("hafen", "Hafen / Anlegestelle / Fähre", "wasser", "wasser", /hafen|marina|anlegestelle|schiffsstation|fähre|faehre|bootshaus|slip/i, "Bootsfahrer, Ausflügler, Angler: Sturz ins Wasser, Ertrinken, Unterkühlung – offenes Gewässer mit Strömung", undefined, ["wasser", "sturz", "hitze_kaelte", "verletzung"]),
   k("bad", "Bad (allgemein)", "wasser", "wasser", /\bbad\b|freibad|hallenbad|badeplatz|badesee|therme/i, "Bade- und Wasserunfälle", undefined, ["wasser"], true),
   // ---- Freizeit & Kultur
   k("freizeitpark", "Freizeitpark", "freizeit", "freizeit", /freizeitpark|familypark|erlebnispark|abenteuerpark|vergnügungspark|märchenpark/i, "Familien mit Kindern: Stürze, Verletzungen, Hitze, Kollaps", undefined, ["sturz", "verletzung", "hitze_kaelte", "bewusstlos"]),
@@ -137,7 +140,7 @@ export const ORT_KATEGORIEN: OrtKategorie[] = [
 ];
 
 /** Seltener ohne besonderen Grund (sonst wären Steinbrüche und Museen so häufig wie Betriebe und Geschäfte) */
-const HAEUFIG: Record<string, number> = { steinbruch: 0.3, kraftwerk: 0.3, saegewerk: 0.6, lagerhaus: 0.5, museum: 0.5, ausflugsziel: 0.6, golf: 0.6, campingplatz: 0.7, hochschule: 0.7, raststation: 0.6 };
+const HAEUFIG: Record<string, number> = { bushaltestelle: 0.5, steinbruch: 0.3, kraftwerk: 0.3, saegewerk: 0.6, lagerhaus: 0.5, museum: 0.5, ausflugsziel: 0.6, golf: 0.6, campingplatz: 0.7, hochschule: 0.7, raststation: 0.6 };
 for (const x of ORT_KATEGORIEN) if (HAEUFIG[x.key]) x.haeufig = HAEUFIG[x.key];
 
 export const POI_KATEGORIEN = ORT_KATEGORIEN.filter((x) => !x.liste);

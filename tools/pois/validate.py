@@ -11,7 +11,7 @@ KEYS = set('''pflegeheim betreutes_wohnen behinderteneinrichtung kinderkrippe ki
 berufsschule sonderschule hochschule arztpraxis primaerversorgung reha bahnhof haltestelle raststation supermarkt einkaufszentrum
 baumarkt sportplatz sporthalle fitnessstudio reitanlage tennis golf kletteranlage skigebiet eislaufplatz motorsport freibad hallenbad
 therme badesee freizeitpark tierpark veranstaltung museum campingplatz ausflugsziel disco heuriger hotel industrie steinbruch
-saegewerk lagerhaus kraftwerk landeplatz'''.split())
+saegewerk lagerhaus kraftwerk landeplatz busbahnhof bushaltestelle hafen'''.split())
 f = sys.argv[2]
 raw = open(f, encoding='utf-8').read()
 lines = raw.split('\n')

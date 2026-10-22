@@ -5,6 +5,7 @@
 import { gesagteAdresse } from "../../abfrage/adresseGesagt";
 import { nummerAus } from "../../sim/rufnummer";
 import { PARTNER, PARTNER_ARTEN } from "../../sim/partner";
+import { ortAnStelle } from "../../data/ortProfile";
 import { exportKnopf } from "../gespraechExport";
 import { BUCHUNGEN, buchungName } from "../../data/klinik";
 import { store } from "../../data/store";
@@ -236,7 +237,9 @@ export function einsatzMaske(e: Einsatz): { root: HTMLElement; refresh(): void }
   const partnerZeigen = () => {
     const noetig = sim.partnerErkannt(e);
     const einheiten = sim.partnerVon(e);
-    const key = JSON.stringify([e.partner ?? {}, e.partnerDa ?? {}, e.br?.label ?? "", e.boSicher ?? 0, noetig, einheiten.map((u) => [u.name, u.phase])]);
+    // Einsatzort ist ein bekannter Ort (Freibad, Bahnhof, Tierpark …): Hinweis für den Disponenten
+    const ort = e.adresse ? ortAnStelle(e.adresse.lat, e.adresse.lon) : null;
+    const key = JSON.stringify([e.partner ?? {}, e.partnerDa ?? {}, e.br?.label ?? "", e.boSicher ?? 0, noetig, einheiten.map((u) => [u.name, u.phase]), ort?.name ?? ""]);
     if (key === partnerKey) return;
     partnerKey = key;
     partnerZeile.innerHTML = "";
@@ -259,6 +262,7 @@ export function einsatzMaske(e: Einsatz): { root: HTMLElement; refresh(): void }
       partnerZeile.appendChild(b);
     }
     const zeilen: string[] = [];
+    if (ort) zeilen.push(`<div class="partner-ort">📍 <b>${esc(ort.label)}</b> – ${esc(ort.name)}${ort.profil?.hinweis ? `<br>${esc(ort.profil.hinweis)}` : ""}</div>`);
     if (e.br) zeilen.push(`<div class="partner-br">🅿 ${esc(e.br.label)}${e.boSicher ? " – <b>Einsatzort gesichert</b>" : " – warten auf Freigabe durch die Polizei"}</div>`);
     if (einheiten.length) zeilen.push(einheiten.map((u) => `<span class="partner-fz">${PARTNER[u.art].symbol} ${esc(u.name)}: ${esc(PARTNER_PHASE_TEXT[u.phase])}</span>`).join(""));
     partnerInfo.innerHTML = zeilen.join("");
