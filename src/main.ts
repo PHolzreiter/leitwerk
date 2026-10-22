@@ -2,7 +2,7 @@ import { fehlerLogStarten } from "./fehlerLog";
 fehlerLogStarten();
 import { funkDienst, funkPruefen, funkSpruchErzeugen, lageWissen, zerlegen, zusammensetzen } from "./abfrage/funkKi";
 import { ohnePatientWort, sprechFrage } from "./abfrage/sprechfrage";
-import { antwortOhneKi, erinnerung, ortKandidaten, systemPrompt } from "./abfrage/anrufer";
+import { antwortOhneKi, anruferWaehlen, erinnerung, ortKandidaten, systemPrompt } from "./abfrage/anrufer";
 import { anruferAntwort, eroeffnen, fuellwortDosis, inAtemnot, kiVerlauf, kontext, ohneFrageEcho, ohneRollentausch, probeGespraech, vorwaermen } from "./abfrage/gespraech";
 import { kiAntwortNeu, nachrichtArt } from "./abfrage/runde";
 import { bereinigen, kiTest, satzEnde, setKiPrefs } from "./abfrage/ki";
@@ -52,7 +52,7 @@ import { fallHinweise, faellePruefen } from "./abfrage/faellePruefen";
 dienstHoverEinrichten();
 
 // Für automatische Tests im Browser (…/?debug): Zugriff auf Simulation und Daten
-if (location.search.includes("debug")) Object.assign(window, { __lw: { sim, store, sprachTest, codesystemLaden: (s: Schema) => schemaUebernehmen(s, "test.json"), faellePruefen: () => faellePruefen(store.schema), fallHinweise, ohneFrageEcho, fuellwortDosis, ohneRollentausch, faelle: { alleFaelle, fallSpeichern, fallLoeschen, fallpaketExport, fallpaketImport, fallAktivSetzen }, fallEditorOeffnen, entwurfAusKi, sprechFrage, systemPrompt, kontext, erinnerung, kiVerlauf, ohnePatientWort, bereinigen, satzEnde, inAtemnot, kiAntwortNeu, kiTest, probe: probeGespraech, vorwaermen, eroeffnen, nachrichtArt, ortKandidaten, testlauf: { auftraegeFuer, ktAuftraege, testlaufAusfuehren, testlaufDateien, testlaufDialog, zipOhneKompression }, kt: { ktPrompt, ktPruefen, ktZusammenfassungFalsch }, anruferAntwort, verstehen: { themenErkennen, antwortKern, antwortPruefen, kernAntwort, schemaFrageZu }, kiPrefsSetzen: setKiPrefs, panelZeigen, funk: { funkPruefen, zerlegen, zusammensetzen, funkSpruchErzeugen, lageWissen }, antwortOhneKi, schemaFkt: { fragenImAblauf, bestimmeCode } } });
+if (location.search.includes("debug")) Object.assign(window, { __lw: { sim, store, sprachTest, codesystemLaden: (s: Schema) => schemaUebernehmen(s, "test.json"), faellePruefen: () => faellePruefen(store.schema), fallHinweise, ohneFrageEcho, fuellwortDosis, ohneRollentausch, faelle: { alleFaelle, fallSpeichern, fallLoeschen, fallpaketExport, fallpaketImport, fallAktivSetzen }, fallEditorOeffnen, entwurfAusKi, sprechFrage, systemPrompt, kontext, erinnerung, kiVerlauf, ohnePatientWort, bereinigen, satzEnde, inAtemnot, kiAntwortNeu, kiTest, probe: probeGespraech, vorwaermen, eroeffnen, nachrichtArt, ortKandidaten, testlauf: { auftraegeFuer, ktAuftraege, testlaufAusfuehren, testlaufDateien, testlaufDialog, zipOhneKompression }, kt: { ktPrompt, ktPruefen, ktZusammenfassungFalsch }, anruferAntwort, verstehen: { themenErkennen, antwortKern, antwortPruefen, kernAntwort, schemaFrageZu }, kiPrefsSetzen: setKiPrefs, panelZeigen, funk: { funkPruefen, zerlegen, zusammensetzen, funkSpruchErzeugen, lageWissen }, antwortOhneKi, anruferWaehlen, schemaFkt: { fragenImAblauf, bestimmeCode } } });
 
 async function watchGeo(): Promise<void> {
   const out = document.getElementById("geo-status");

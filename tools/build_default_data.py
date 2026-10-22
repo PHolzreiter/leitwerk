@@ -249,8 +249,7 @@ def build_vehicles(stations: list[dict], name_to_id: dict[str, str]) -> list[dic
             "id": f"p{r['Unit-ID']}", "funkrufname": funk, "kurzname": kurz if kurz != funk else "",
             "kategorie": kat, "typ": typ, "dienststelle": st_id,
             "aktiv": "nein" if kat == "Sonstige" else "ja",
-            # Nachts fliegen nur Christophorus 2 und 9
-            "nachtflug": "ja" if funk in {"99/002", "99/009"} else "nein",
+            "nachtflug": "ja" if funk in RUND_UM_DIE_UHR else "nein",
             "hinweis": "Nachtflugtauglichkeit bitte prüfen" if kat == "NAH" else "",
         })
     for kurz, (funk, st_name) in NAH.items():
@@ -258,13 +257,29 @@ def build_vehicles(stations: list[dict], name_to_id: dict[str, str]) -> list[dic
             continue
         vehicles.append({
             "id": "nah-" + funk.replace("/", ""), "funkrufname": funk, "kurzname": kurz, "kategorie": "NAH",
-            "typ": "NAH", "dienststelle": name_to_id[norm(st_name)], "aktiv": "ja", "nachtflug": "ja" if funk in {"99/002", "99/009"} else "nein",
+            "typ": "NAH", "dienststelle": name_to_id[norm(st_name)], "aktiv": "ja", "nachtflug": "ja" if funk in RUND_UM_DIE_UHR else "nein",
             "hinweis": "Ergänzt (Recherche OpenStreetMap); Nachtflugtauglichkeit bitte prüfen",
         })
     dienstplaene_einspielen(vehicles)
+    hubschrauber_dienst(vehicles)
     ersatz_nef(vehicles)
     vehicles.sort(key=lambda v: (v["dienststelle"], v["funkrufname"]))
     return vehicles
+
+
+# Hubschrauber rund um die Uhr (mit Nachtflug) – alle anderen nur tagsüber (Angabe Paul, 22.10.2026)
+RUND_UM_DIE_UHR = {"99/002", "99/017"}
+
+
+def hubschrauber_dienst(vehicles: list[dict]) -> None:
+    """C2 und C17 sind 24-Stunden-Hubschrauber mit Nachtflug, alle anderen fliegen nur von Sonnenaufgang bis -untergang."""
+    for v in vehicles:
+        if v["kategorie"] not in ("NAH", "ITH"):
+            continue
+        rund = v["funkrufname"] in RUND_UM_DIE_UHR
+        v["nachtflug"] = "ja" if rund else "nein"
+        v["dienstplan"] = "24/7" if rund else "täglich Sonnenaufgang–Sonnenuntergang"
+        v["hinweis"] = "rund um die Uhr, mit Nachtflug" if rund else "nur tagsüber (Sonnenaufgang bis Sonnenuntergang)"
 
 
 def ersatz_nef(vehicles: list[dict]) -> None:
@@ -788,6 +803,27 @@ def plaetze_ableiten(kid: str, einr: set[str], kav: dict, z: dict) -> dict[str, 
     return out
 
 
+def build_pois() -> list[dict]:
+    """Orte (POIs) in Niederösterreich: Pflegeheime, Schulen, Kindergärten, Bahnhöfe, Einkaufszentren, Sport, Bäder …
+    Quelle: OpenStreetMap (ODbL), aufbereitet in tools/sources/pois_noe.csv (Stand 10/2026)."""
+    src = SRC / "pois_noe.csv"
+    if not src.exists():
+        return []
+    out, gesehen = [], set()
+    for r in read_csv(src):
+        if not r.get("name") or not r.get("breitengrad") or not r.get("laengengrad"):
+            continue
+        lat, lon = float(r["breitengrad"]), float(r["laengengrad"])
+        key = (r["name"].strip().lower(), round(lat, 4), round(lon, 4))
+        if key in gesehen:
+            continue
+        gesehen.add(key)
+        out.append({"id": r["id"], "name": r["name"].strip(), "typ": r["typ"].strip(), "ort": (r.get("ort") or "").strip(),
+                    "breitengrad": f"{lat:.6f}", "laengengrad": f"{lon:.6f}", "hinweis": "Quelle: OpenStreetMap (ODbL)" + (f" – {r['hinweis'].strip()}" if r.get("hinweis") else "")})
+    out.sort(key=lambda x: (x["typ"], x["ort"], x["name"], x["id"]))
+    return out
+
+
 def build_hospitals() -> list[dict]:
     """Krankenhäuser mit ihren Einrichtungen (Stationen, Intensiv, Ambulanzen …).
     Die Einrichtungen stammen aus der Recherche auf den offiziellen Websites (tools/sources/kh_einrichtungen.json,
@@ -799,6 +835,12 @@ def build_hospitals() -> list[dict]:
         by_name.setdefault(r["name"], r)
         by_key[(r["@type"], r["@id"])] = r
     einr = json.loads((SRC / "kh_einrichtungen.json").read_text(encoding="utf-8"))
+    # Eine Geburtshilfe-Abteilung hat immer einen Kreißsaal – auch wenn die Website ihn nicht wörtlich nennt
+    for d in einr.values():
+        if "st_geburtshilfe" in d.get("einrichtungen", []) and "fb_kreisssaal" not in d["einrichtungen"]:
+            d["einrichtungen"] = [*d["einrichtungen"], "fb_kreisssaal"]
+            d["unklar"] = [x for x in d.get("unklar", []) if x != "fb_kreisssaal"]
+            d["notiz"] = ((d.get("notiz") or "") + " Kreißsaal aus der Geburtshilfe abgeleitet.").strip()
 
     def hinweis(d: dict) -> str:
         teile = ["Einrichtungen laut Website (Stand 10/2026)"]
@@ -922,7 +964,7 @@ def main() -> None:
     write_csv(OUT / "dienststellen.csv", STATION_COLS, stations)
     write_csv(OUT / "fahrzeuge.csv", VEHICLE_COLS, vehicles)
     write_csv(OUT / "krankenhaeuser.csv", HOSPITAL_COLS, hospitals)
-    write_csv(OUT / "pois.csv", POI_COLS, [])
+    write_csv(OUT / "pois.csv", POI_COLS, build_pois())
     write_csv(OUT / "einsatzvorlagen.csv", TEMPLATE_COLS, [])
     build_examples()
 

@@ -247,7 +247,10 @@ export class Store {
             : kind === "stations"
               ? // Feuerwehr, Polizei, Berg- und Wasserrettung gibt es auch mit eigenen Rettungsdienst-Daten
                 (std.stations as KindMap[Kind][]).filter((r) => partnerArtVonTyp((r as Station).typ) && !hidden.has(r.id) && !ownIds.has(r.id))
-              : [];
+              : kind === "pois" && !own.length
+                ? // Orte (Pflegeheime, Schulen …) gelten auch mit eigenen Rettungsdienst-Daten, solange keine eigenen Orte da sind
+                  (std.pois as KindMap[Kind][]).filter((r) => !hidden.has(r.id))
+                : [];
       (out as Record<Kind, KindMap[Kind][]>)[kind] = [...base, ...own];
     }
     // Ausweich-NEF: eigene Fahrzeuge ohne Angabe (z. B. älterer Import) übernehmen die Zuordnung der Standarddaten

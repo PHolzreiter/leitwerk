@@ -1,11 +1,11 @@
 ﻿id;funkrufname;kurzname;kategorie;typ;aufbau;modell;dienststelle;aktiv;nachtflug;dienstplan;ersatz_fuer;hinweis
-nah-99010;99/010;Christophorus 10;NAH;NAH;;;air-c10;ja;nein;;;"Ergänzt (Recherche OpenStreetMap); Nachtflugtauglichkeit bitte prüfen"
+nah-99010;99/010;Christophorus 10;NAH;NAH;;;air-c10;ja;nein;täglich Sonnenaufgang–Sonnenuntergang;;nur tagsüber (Sonnenaufgang bis Sonnenuntergang)
 nef-99910;99/910;;NEF;NEF ÖAMTC;;;air-c10;ja;nein;24/7;99/010;ÖAMTC-NEF, nur angemeldet, wenn der Hubschrauber nicht fliegen kann
-nah-99016;99/016;Christophorus 16;NAH;NAH;;;air-c16;ja;nein;;;"Ergänzt (Recherche OpenStreetMap); Nachtflugtauglichkeit bitte prüfen"
+nah-99016;99/016;Christophorus 16;NAH;NAH;;;air-c16;ja;nein;täglich Sonnenaufgang–Sonnenuntergang;;nur tagsüber (Sonnenaufgang bis Sonnenuntergang)
 nef-99916;99/916;;NEF;NEF ÖAMTC;;;air-c16;ja;nein;24/7;99/016;ÖAMTC-NEF, nur angemeldet, wenn der Hubschrauber nicht fliegen kann
-nah-99017;99/017;Christophorus 17;NAH;NAH;;;air-c17;ja;nein;;;"Ergänzt (Recherche OpenStreetMap); Nachtflugtauglichkeit bitte prüfen"
+nah-99017;99/017;Christophorus 17;NAH;NAH;;;air-c17;ja;ja;24/7;;rund um die Uhr, mit Nachtflug
 nef-99917;99/917;;NEF;NEF ÖAMTC;;;air-c17;ja;nein;24/7;99/017;ÖAMTC-NEF, nur angemeldet, wenn der Hubschrauber nicht fliegen kann
-nah-99018;99/018;Christophorus 18;NAH;NAH;;;air-c18;ja;nein;;;"Ergänzt (Recherche OpenStreetMap); Nachtflugtauglichkeit bitte prüfen"
+nah-99018;99/018;Christophorus 18;NAH;NAH;;;air-c18;ja;nein;täglich Sonnenaufgang–Sonnenuntergang;;nur tagsüber (Sonnenaufgang bis Sonnenuntergang)
 nef-99918;99/918;;NEF;NEF ÖAMTC;;;air-c18;ja;nein;24/7;99/018;ÖAMTC-NEF, nur angemeldet, wenn der Hubschrauber nicht fliegen kann
 p791345;75/001;;RTW;RTW-C;groß;;p1496914;ja;nein;24/7;;
 p791346;75/002;;RTW;RTW;groß;;p1496914;ja;nein;24/7;;
@@ -26,7 +26,7 @@ p818888;75/030;BEL Krems;BEL;BEL;;;p1496914;ja;nein;24/7;;
 p791349;75/099;;NEF;NEF;;;p1496914;ja;nein;24/7;;
 p791352;75/051;;RTW;RTW;klein;;p1496917;ja;nein;24/7;;
 p791351;75/071;;RTW;RTW-C;groß;;p1496918;ja;nein;24/7;;
-p791353;99/002;Christophorus 2;NAH;NAH;;;p1496919;ja;ja;24/7;;Nachtflugtauglichkeit bitte prüfen
+p791353;99/002;Christophorus 2;NAH;NAH;;;p1496919;ja;ja;24/7;;rund um die Uhr, mit Nachtflug
 p816732;99/902;;NEF;NEF ÖAMTC;;;p1496919;ja;nein;24/7;99/002;ÖAMTC-NEF, nur angemeldet, wenn der Hubschrauber nicht fliegen kann
 p792147;60/001;;RTW;RTW-C;groß;;p1497833;ja;nein;24/7;;
 p792149;60/002;;KTW;KTW-B;;;p1497833;ja;nein;Mo–Fr 07:00–19:00;;
@@ -78,12 +78,12 @@ p816631;57/201;;KTW;KTW-B;;;p1528064;ja;nein;"Mo–Fr 06:00–19:00; Sa 06:00–
 p816641;57/203;;KTW;KTW-B;;;p1528064;ja;nein;Mo–Fr 06:00–16:00;;
 p814722;57/204;;RTW;RTW-C;groß;;p1528064;ja;nein;24/7;;
 p816636;57/205;;KTW;KTW;;;p1528064;ja;nein;Mo–Fr 06:00–16:00;;
-p814731;99/009;Christophorus 9;NAH;NAH;;;p1528090;ja;ja;täglich Sonnenaufgang–Sonnenuntergang;;Nachtflugtauglichkeit bitte prüfen
+p814731;99/009;Christophorus 9;NAH;NAH;;;p1528090;ja;nein;täglich Sonnenaufgang–Sonnenuntergang;;nur tagsüber (Sonnenaufgang bis Sonnenuntergang)
 nef-99909;99/909;;NEF;NEF ÖAMTC;;;p1528090;ja;nein;24/7;99/009;ÖAMTC-NEF, nur angemeldet, wenn der Hubschrauber nicht fliegen kann
-p814732;99/015;Christophorus 15;NAH;NAH;;;p1528091;ja;nein;täglich Sonnenaufgang–Sonnenuntergang;;Nachtflugtauglichkeit bitte prüfen
+p814732;99/015;Christophorus 15;NAH;NAH;;;p1528091;ja;nein;täglich Sonnenaufgang–Sonnenuntergang;;nur tagsüber (Sonnenaufgang bis Sonnenuntergang)
 nef-99915;99/915;;NEF;NEF ÖAMTC;;;p1528091;ja;nein;24/7;99/015;ÖAMTC-NEF, nur angemeldet, wenn der Hubschrauber nicht fliegen kann
-p814733;99/003;Christophorus 3;NAH;NAH;;;p1528092;ja;nein;täglich Sonnenaufgang–Sonnenuntergang;;Nachtflugtauglichkeit bitte prüfen
-p814734;99/033;Christophorus 33;ITH;ITH;;;p1528092;ja;nein;täglich Sonnenaufgang–Sonnenuntergang;;
+p814733;99/003;Christophorus 3;NAH;NAH;;;p1528092;ja;nein;täglich Sonnenaufgang–Sonnenuntergang;;nur tagsüber (Sonnenaufgang bis Sonnenuntergang)
+p814734;99/033;Christophorus 33;ITH;ITH;;;p1528092;ja;nein;täglich Sonnenaufgang–Sonnenuntergang;;nur tagsüber (Sonnenaufgang bis Sonnenuntergang)
 nef-99903;99/903;;NEF;NEF ÖAMTC;;;p1528092;ja;nein;24/7;99/003;ÖAMTC-NEF, nur angemeldet, wenn der Hubschrauber nicht fliegen kann
 p814738;56/006;;RTW;RTW;klein;;p1528094;ja;nein;24/7;;
 p815569;56/007;;RTW;RTW-C;groß;;p1528094;ja;nein;24/7;;

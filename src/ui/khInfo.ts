@@ -187,7 +187,7 @@ const AKV_SYMBOL: Record<AkvZustand, string> = {
 const AKV_TEXT: Record<AkvZustand, string> = { ok: "verfügbar", zu: "geschlossen", voll: "belegt" };
 
 /** Spalten: Name, Ressourcen (Plätze) oder Einrichtung (nur vorhanden/offen), je Platz ein Zeichen */
-const AKV_SPALTEN: { n: string; titel: string; rs?: Ressource[]; einr?: string; ersatz?: string; einzeln?: boolean; trenn?: boolean }[] = [
+const AKV_SPALTEN: { n: string; titel: string; rs?: Ressource[]; einr?: string; ersatz?: string; ak?: string; akText?: string; einzeln?: boolean; trenn?: boolean }[] = [
   { n: "SRT", titel: "Schockraum Trauma", rs: ["schockraum_trauma", "schockraum"], einzeln: true },
   { n: "SRI", titel: "Schockraum internistisch", rs: ["schockraum_intern", "schockraum"], einzeln: true },
   { n: "PCI", titel: "Herzkatheter", rs: ["herzkatheter"] },
@@ -196,8 +196,8 @@ const AKV_SPALTEN: { n: string; titel: string; rs?: Ressource[]; einr?: string; 
   { n: "STROKE", titel: "Stroke Unit", rs: ["stroke_unit"] },
   { n: "NFA", titel: "Notaufnahme", rs: ["notaufnahme"], ersatz: "amb_pvz", trenn: true },
   { n: "UNF", titel: "Unfallaufnahme", rs: ["unfall"], ersatz: "amb_pvz_unfall" },
-  { n: "KIND", titel: "Kindernotaufnahme", rs: ["kindernotaufnahme"], trenn: true },
-  { n: "KRS", titel: "Kreißsaal", rs: ["kreisssaal"] },
+  { n: "KIND", titel: "Kindernotaufnahme", rs: ["kindernotaufnahme"], ak: "ak_kinder_jugendheilkunde", akText: "Kinderabteilung (keine eigene Kindernotaufnahme)", trenn: true },
+  { n: "KRS", titel: "Kreißsaal", rs: ["kreisssaal"], ak: "ak_kreisssaal", akText: "Kreißsaal" },
 ];
 
 function akvFeld(zust: AkvZustand[], titel: string): string {
@@ -215,6 +215,11 @@ function akvZelle(h: Hospital, s: (typeof AKV_SPALTEN)[number], t: number): stri
   if (!r && s.ersatz && (h.einrichtungen ?? []).includes(s.ersatz)) {
     const z: AkvZustand = offen(h, s.ersatz, t) ? "ok" : "zu";
     return akvFeld([z], `Primärversorgungszentrum (keine vollwertige ${s.n === "NFA" ? "Notaufnahme" : "Unfallaufnahme"}): ${AKV_TEXT[z]}`);
+  }
+  // keine gezählten Plätze, aber die Akut-Abteilung gibt es (wie in der Krankenhaus-Übersicht)
+  if (!r && s.ak && akutVon(h).has(s.ak)) {
+    const z: AkvZustand = akutJetzt(h, t).has(s.ak) ? "ok" : "zu";
+    return akvFeld([z], `${s.akText ?? s.titel}: ${AKV_TEXT[z]}`);
   }
   if (!r) return `<span class="akv-f leer"></span>`;
   const st = platzStatus(h, r, t);

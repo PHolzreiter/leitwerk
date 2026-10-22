@@ -1,5 +1,31 @@
 # Änderungen
 
+## 0.45.0 – Pauls Liste: Rückruf, Funk, Karte, Orte
+**Leitstelle**
+- Rückruf: Der 📞-Knopf bei „Rückruf“ ruft den Anrufer jetzt wirklich zurück – auch wenn das Gespräch schon beendet war (ohne Nummer übernimmt er die Nummer des Anrufers)
+- Abfrage: Haken „🔊 Vorlesen“ direkt in der Abfrage (Antworten vorlesen ein/aus). Mit der **Leertaste** kommt die markierte Frage ins Eingabefeld (anpassen, Enter schickt sie ab); F stellt sie wie bisher direkt
+- Funk: Wer gerade schreibt (oder Text im Feld stehen hat), verliert das Gespräch nicht mehr nach 30 Sekunden Stille
+- SEK: „Dringlichkeit“ steht gleich unter „Abholung“
+
+**Fahrzeuge**
+- Hubschrauber: nur C2 und C17 fliegen rund um die Uhr, alle anderen von Sonnenaufgang bis Sonnenuntergang
+- NEF rücken unterschiedlicher schnell aus als RTW/KTW (Tag 20 s – 4 min, Nacht 1,5 – 13 min; in den Einstellungen änderbar)
+
+**Krankenhäuser**
+- Wo es eine Geburtshilfe gibt, gibt es auch einen Kreißsaal (UK Krems, UK Tulln, Donaustadt, Braunau)
+- Akutversorgung: Kreißsaal und Kinder (Kinderabteilung ohne eigene Kindernotaufnahme) stehen jetzt auch dort, wo sie in der Krankenhaus-Übersicht stehen
+
+**Anrufer passt zum Ort**
+- Kein Pflegeheim mehr, das aus einem Privathaus anruft: Pflegekräfte aus dem Heim nur, wenn die Adresse ein Pflegeheim ist; sonst mobile Hauskrankenpflege oder die Hausärztin auf Hausbesuch. Dasselbe für Ordination und Schule
+- Geschichten im Pflegeheim, in der Ordination, Schule oder am Bahnhof kommen nur, wo es so einen Ort im Gebiet gibt
+
+**Orte (POIs)**
+- Neu in den Standarddaten: rund 2 600 Orte in Niederösterreich aus OpenStreetMap – 115 Pflegeheime, 660 Schulen, 240 Kindergärten, 290 Bahnhöfe, 375 Einkaufsorte, Sportplätze, Bäder, Freizeitanlagen, Betriebe und Arztpraxen. Pflegeheime sind mit den Listen des Landes NÖ abgeglichen
+- Geschichten (Pflegeheim, Schule, Bahnhof …) spielen jetzt an diesen echten Orten; die Orte gelten auch mit eigenen Rettungsdienst-Daten, solange keine eigenen Orte importiert sind
+
+**Karte**
+- Suchfeld in der Karte (bei 2D/3D): Orte, Adressen und Einrichtungen (Pflegeheime, Schulen, Krankenhäuser, Dienststellen …) – auch nach Art, z. B. „Pflegeheim Krems“
+
 ## 0.44.0 – Fremde Codesysteme: die Schwächen behoben
 Geprüft mit sechs fremden Codesystemen, die ein eigener Agent ohne Kenntnis des Übersetzers geschrieben hat (Leitstellen-Jargon, Laiensprache, Kürzel-Stil, Schweizer Stil, MPDS-Stil, Checkliste). Am eigenen Notruf-NÖ-Schema ändert sich weiterhin nichts (174 Fälle Zeichen für Zeichen gleich).
 

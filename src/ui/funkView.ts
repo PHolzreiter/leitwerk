@@ -137,6 +137,19 @@ export function createFunkView(root: HTMLElement, deps: { select(einsatzId: stri
   endeB.addEventListener("click", () => aktivId !== null && fehler(sim.call("funkEnde", aktivId)));
   schnell.append(stornoB, endeB);
 
+  // Wer gerade schreibt (oder Text im Feld stehen hat), bekommt keine 30-Sekunden-Stille: Gespräch bleibt offen
+  let tipptGemeldet = 0;
+  const tippt = () => {
+    if (aktivId === null || Date.now() - tipptGemeldet < 3000) return;
+    tipptGemeldet = Date.now();
+    sim.call("funkTippt", aktivId).catch(() => {});
+  };
+  eingabe.addEventListener("input", tippt);
+  eingabe.addEventListener("keydown", tippt);
+  const tipptUhr = setInterval(() => {
+    if (!eingabe.isConnected) return clearInterval(tipptUhr);
+    if (eingabe.value.trim() && !eingabe.disabled) tippt();
+  }, 10_000);
   form.addEventListener("submit", (ev) => {
     ev.preventDefault();
     const t = eingabe.value.trim();

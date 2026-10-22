@@ -4,7 +4,10 @@
  */
 import { addFahrzeug3D, type Fahrzeug3D } from "../../fz3d";
 import { addFzFokus, type FzFokus } from "../../fzFokus";
+import maplibregl from "maplibre-gl";
+import { alleOrte, kategorieLabel, type Ort } from "../../data/orte";
 import { availableMaps, createMap, type MapHandle } from "../../map";
+import { searchAddress } from "../../sim/geo";
 import { addDataLayers, addSimLayers, ORG_FARBEN, pickLaeuft, pickLocation, setGroupVisible, setSelectedIncident } from "../../mapLayers";
 import { sim, type SimFahrzeug } from "../../sim/engine";
 import { onPacksChanged } from "../../updates";
@@ -45,6 +48,7 @@ function erstellen(ctx: PanelKontext) {
   // Bedienfeld oben links
   const panel = el("div", { class: "map-panel" });
   panel.innerHTML = `
+    <div class="karte-suche addr"><input type="search" placeholder="🔍 Ort, Adresse oder Einrichtung …" aria-label="Auf der Karte suchen" /><div class="addr-list karte-treffer" hidden></div></div>
     <div class="seg" role="group" aria-label="Ansicht"><button type="button" data-dim="2d" class="active">2D</button><button type="button" data-dim="3d">3D</button></div>
     <div class="seg" role="group" aria-label="Kartenart"><button type="button" data-base="karte" class="active">Karte</button><button type="button" data-base="sat">Satellit</button></div>
     <div class="hint-3d map-hint" hidden>Für 3D fehlt das Paket <b>„Gelände (3D)“</b> (Einstellungen → Kartenpakete).</div>
@@ -94,6 +98,80 @@ function erstellen(ctx: PanelKontext) {
     if (!m) return;
     m.flyTo({ center: [lon, lat], zoom: zoom ?? Math.max(m.getZoom(), 12.5), essential: true });
   };
+
+  // ---- Suche (wie bei Online-Karten): eigene Orte (Pflegeheime, Schulen, Krankenhäuser, Dienststellen …) und Adressen/Orte
+  const suchFeld = panel.querySelector<HTMLInputElement>(".karte-suche input")!;
+  const trefferListe = panel.querySelector<HTMLElement>(".karte-treffer")!;
+  let suchMarker: maplibregl.Marker | null = null;
+  type Treffer = { titel: string; zusatz: string; lat: number; lon: number; zoom: number };
+  let treffer: Treffer[] = [];
+  let suchTimer: number | undefined;
+  const ortArt = (o: Ort) => (o.kind === "hospitals" ? "Krankenhaus" : o.kategorien.map(kategorieLabel).filter(Boolean)[0] ?? (o.kind === "stations" ? "Dienststelle" : "Ort"));
+  const zeigeTreffer = (t: Treffer) => {
+    suchFeld.value = t.titel;
+    trefferListe.hidden = true;
+    const m = h?.map;
+    if (!m) return;
+    suchMarker?.remove();
+    suchMarker = new maplibregl.Marker({ color: "#e76f51" }).setLngLat([t.lon, t.lat]).addTo(m);
+    m.flyTo({ center: [t.lon, t.lat], zoom: t.zoom, essential: true });
+  };
+  const suchen = async () => {
+    const q = suchFeld.value.trim().toLowerCase();
+    if (q.length < 2) {
+      trefferListe.hidden = true;
+      suchMarker?.remove();
+      suchMarker = null;
+      return;
+    }
+    const woerter = q.split(/[\s,]+/).filter(Boolean);
+    const orte = alleOrte()
+      .map((o) => ({ o, text: `${o.name} ${o.ort} ${ortArt(o)} ${o.kategorien.map(kategorieLabel).join(" ")}`.toLowerCase() }))
+      .filter((x) => woerter.every((w) => x.text.includes(w)))
+      .sort((a, b) => Number(!a.o.name.toLowerCase().startsWith(woerter[0])) - Number(!b.o.name.toLowerCase().startsWith(woerter[0])) || a.o.name.localeCompare(b.o.name))
+      .slice(0, 8)
+      .map(({ o }): Treffer => ({ titel: o.name, zusatz: `${ortArt(o)}${o.ort ? ` · ${o.ort}` : ""}`, lat: o.lat, lon: o.lon, zoom: 16 }));
+    let adressen: Treffer[] = [];
+    try {
+      adressen = (await searchAddress(suchFeld.value, 8))
+        .filter((a) => !orte.some((o) => Math.abs(o.lat - a.lat) < 1e-4 && Math.abs(o.lon - a.lon) < 1e-4))
+        .map((a) => ({ titel: a.label, zusatz: a.place ? "Ort" : "Adresse", lat: a.lat, lon: a.lon, zoom: a.place ? 13.5 : 17 }));
+    } catch {
+      /* ohne Adresssuche nur eigene Orte */
+    }
+    if (suchFeld.value.trim().toLowerCase() !== q) return; // inzwischen weitergetippt
+    treffer = [...orte, ...adressen].slice(0, 12);
+    trefferListe.innerHTML = "";
+    for (const t of treffer) {
+      const it = el("div", { class: "addr-item" });
+      it.append(el("b", {}, t.titel), el("small", { class: "muted" }, ` ${t.zusatz}`));
+      it.addEventListener("mousedown", (ev) => {
+        ev.preventDefault();
+        zeigeTreffer(t);
+      });
+      trefferListe.appendChild(it);
+    }
+    if (!treffer.length) trefferListe.appendChild(el("div", { class: "addr-item muted" }, "Nichts gefunden"));
+    trefferListe.hidden = false;
+  };
+  suchFeld.addEventListener("input", () => {
+    window.clearTimeout(suchTimer);
+    suchTimer = window.setTimeout(() => void suchen(), 220);
+  });
+  suchFeld.addEventListener("keydown", (ev) => {
+    ev.stopPropagation();
+    if (ev.key === "Enter" && treffer[0]) {
+      ev.preventDefault();
+      zeigeTreffer(treffer[0]);
+    } else if (ev.key === "Escape") {
+      suchFeld.value = "";
+      trefferListe.hidden = true;
+      suchMarker?.remove();
+      suchMarker = null;
+    }
+  });
+  suchFeld.addEventListener("focus", () => treffer.length && suchFeld.value.trim().length >= 2 && (trefferListe.hidden = false));
+  suchFeld.addEventListener("blur", () => setTimeout(() => (trefferListe.hidden = true), 150));
 
   async function starten(): Promise<void> {
     let maps: string[] = [];

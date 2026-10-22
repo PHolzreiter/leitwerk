@@ -211,10 +211,22 @@ export function einsatzMaske(e: Einsatz): { root: HTMLElement; refresh(): void }
   const telIn = el("input", { type: "tel", class: "auf-tel", placeholder: "Rückrufnummer" });
   telIn.value = e.telefon ?? "";
   telIn.addEventListener("change", () => void fehlerZeigen(sim.call("aktualisiere", e.id, { telefon: telIn.value.trim() })));
-  const telB = el("button", { class: "btn small icon", title: "Rufnummer des Anrufers übernehmen" }, "📞");
+  // 📞: ohne Nummer die Rufnummer des Anrufers übernehmen, mit Nummer den Anrufer zurückrufen
+  const telB = el("button", { class: "btn small icon" }, "📞");
+  const telTitel = () => (telB.title = telIn.value.trim() && e.anruf ? "Anrufer zurückrufen" : "Rufnummer des Anrufers übernehmen");
+  telTitel();
+  telIn.addEventListener("input", telTitel);
   telB.addEventListener("click", () => {
-    telIn.value = nummerAus(e.id, true);
-    void fehlerZeigen(sim.call("aktualisiere", e.id, { telefon: telIn.value }));
+    if (!telIn.value.trim()) {
+      telIn.value = nummerAus(e.id, true);
+      telTitel();
+      void fehlerZeigen(sim.call("aktualisiere", e.id, { telefon: telIn.value }));
+      return;
+    }
+    const st = e.anruf?.status;
+    if (!e.anruf) return toast("Zu diesem Einsatz gibt es keinen Anrufer", "error");
+    if (st === "aktiv") return toast("Das Gespräch läuft bereits");
+    void import("./telefon").then((m) => m.anrufAnnehmen("rd", e.id));
   });
   aufZeile("Rückruf", telIn, telB);
   // Partner-Organisationen (Feuerwehr, Polizei, Berg-/Wasserrettung) mit eigenen Fahrzeugen

@@ -4,7 +4,7 @@
  */
 import { gesagteAdresse } from "../../abfrage/adresseGesagt";
 import { sprechFrage } from "../../abfrage/sprechfrage";
-import { mikroAnbinden } from "../sprache";
+import { mikroAnbinden, setzeSprache, sprachPrefs } from "../sprache";
 import { store } from "../../data/store";
 import { fragen, antwortetGerade, kontext } from "../../abfrage/gespraech";
 import { schilderung } from "../../abfrage/anrufer";
@@ -47,6 +47,12 @@ export function notrufTeile(e: Einsatz): NotrufTeile {
   const form = el("form", { class: "anruf-form" });
   const eingabe = el("input", { type: "text", placeholder: "Frage an den Anrufer … (Enter)" });
   const senden = el("button", { class: "btn small primary", type: "submit" }, "Fragen");
+  // Vorlesen der Anrufer-Antworten ein/aus (gilt überall, wie Einstellungen → Sprache)
+  const vorlesenWrap = el("label", { class: "chk small anruf-vorlesen", title: "Antworten des Anrufers vorlesen" });
+  const vorlesenChk = el("input", { type: "checkbox" }) as HTMLInputElement;
+  vorlesenChk.checked = sprachPrefs().vorlesen;
+  vorlesenChk.addEventListener("change", () => setzeSprache({ vorlesen: vorlesenChk.checked }));
+  vorlesenWrap.append(vorlesenChk, " 🔊 Vorlesen");
   form.append(
     eingabe,
     mikroAnbinden({
@@ -57,6 +63,7 @@ export function notrufTeile(e: Einsatz): NotrufTeile {
       hinweis: () => HINWEIS_NOTRUF,
     }),
     senden,
+    vorlesenWrap,
   );
   const codeZeile = el("div", { class: "anruf-code" });
   const abfrage = el("div", { class: "abfrage" });
@@ -148,8 +155,10 @@ export function notrufTeile(e: Einsatz): NotrufTeile {
     fokusZeigen(false);
   }
 
-  // ---- Tastatur: 1–9 wählt die Antwort der markierten Frage, Enter/↓ nächste offene Frage, ↑ zurück, F stellt die Frage
+  // ---- Tastatur: 1–9 wählt die Antwort der markierten Frage, Enter/↓ nächste offene Frage, ↑ zurück, F stellt die Frage,
+  // Leertaste schreibt die Frage ins Eingabefeld (zum Anpassen, Enter schickt sie ab)
   let fokusId: string | null = null;
+  const fragenNachId = new Map<string, Frage>();
   const zeilen = () => [...abfrage.querySelectorAll<HTMLElement>(".frage[data-id]")].filter((r) => r.dataset.typ === "single" || r.dataset.typ === "zahl");
   const beantwortet = (r: HTMLElement) =>
     r.dataset.typ === "single" ? !!r.querySelector(".opt.gewaehlt") : !!r.querySelector<HTMLInputElement>("input.zahl")?.value || !!r.querySelector(".opt.gewaehlt");
@@ -221,6 +230,14 @@ export function notrufTeile(e: Einsatz): NotrufTeile {
         ev.preventDefault();
         q.click();
       }
+    } else if (ev.key === " " || ev.code === "Space") {
+      const f = fragenNachId.get(r.dataset.id ?? "");
+      const a = e.anruf;
+      if (!f || !a || form.hidden || eingabe.disabled) return;
+      ev.preventDefault();
+      eingabe.value = sprechFrage(f, store.schema, a.antworten, { erste: !a.gespraech.some((m) => m.von === "leitstelle") });
+      eingabe.focus();
+      eingabe.setSelectionRange(eingabe.value.length, eingabe.value.length);
     }
   };
   document.addEventListener("keydown", taste);
@@ -250,6 +267,7 @@ export function notrufTeile(e: Einsatz): NotrufTeile {
     const setze = (id: string, wert: Wert) => fehler(sim.call("abfrageSetze", e.id, id, wert));
     const frageZeile = (f: Frage) => {
       const row = el("div", { class: "frage" });
+      fragenNachId.set(f.id, f);
       row.dataset.id = f.id;
       row.dataset.typ = f.typ;
       const kopfz = el("div", { class: "frage-text" });

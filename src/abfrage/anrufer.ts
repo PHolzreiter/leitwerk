@@ -144,8 +144,16 @@ export function anruferWaehlen(
   adresse = "",
   /** aus der Fallgeschichte: wer anrufen darf und wo es passiert */
   geschichte?: { typen: AnruferTyp[]; ort: string; ortArt?: OrtArt },
+  /** Was steht wirklich an der Adresse? (Pflegeheim, Arztpraxis, Schule – aus den Orten/POIs); fehlt es, wird es geschätzt */
+  amOrt?: { arten: OrtArt[]; name?: string },
 ): Anrufer {
-  const sonder = sonderAnrufer(kapitel, a, rnd, adresse, geschichte);
+  // Anrufer aus einer Einrichtung nur, wenn die Adresse auch diese Einrichtung ist (kein Pflegeheim aus einem Privathaus)
+  // (spielt die Fallgeschichte dort, gilt sie – das Spiel wählt solche Geschichten nur, wo es den Ort gibt)
+  const hier = (art: OrtArt, muster: RegExp) => geschichte?.ortArt === art || (amOrt ? amOrt.arten.includes(art) : muster.test(adresse));
+  const heimHier = hier("pflegeheim", /pflege|senioren|altenheim|\bpbz\b|heim\b/i);
+  const praxisHier = hier("arzt", /ordination|praxis|\bdr\.|ärzt|arzt/i);
+  const schuleHier = hier("schule", /schule|kindergarten|\bhort\b|\bbg\b|\bbrg\b|\bhak\b|\bhtl\b/i);
+  const sonder = sonderAnrufer(kapitel, a, rnd, adresse, geschichte, { heim: heimHier, name: amOrt?.name });
   if (sonder) return sonder;
   const alter = typeof a.alter === "number" ? a.alter : 50;
   const patientW = a.geschlecht === "w";
@@ -166,10 +174,12 @@ export function anruferWaehlen(
   add({ ort: "Wohnung", rolle: "Patient selbst", anruferWert: "1", selbst: true, typ: "selbst" }, kannSelbst ? (alter > 80 ? 1 : 3) : 0);
   add({ ort: "Wohnung", rolle: "Angehöriger, nicht vor Ort (am Telefon mit dem Patienten)", anruferWert: "3", typ: "fern" }, kannSelbst ? 0.6 : 0);
   // Einrichtungen
-  add({ ort: "Pflegeheim", rolle: "Pflegekraft im Pflegeheim", anruferWert: "einrichtung", profi: true, typ: "pflege" }, alt ? 4 : alter >= 65 ? 1 : 0);
-  add({ ort: "Arztpraxis", rolle: "Hausärztin/Hausarzt", anruferWert: "einrichtung", profi: true, typ: "arzt" }, !kind && ist(kapitel, "brustschmerz", "atemnot", "krank", "schlaganfall", "bauch", "herz", "kopfschmerz") ? 1 : 0.2);
-  add({ ort: "Arztpraxis", rolle: "Ordinationsassistentin am Empfang", anruferWert: "einrichtung", geschlecht: "w", typ: "ordi" }, !kind ? 0.6 : 0.2);
-  add({ ort: "Schule / Kindergarten", rolle: "Lehrerin", anruferWert: "2", geschlecht: "w", typ: "lehrer" }, kind && alter >= 3 ? 1.5 : 0);
+  if (heimHier) add({ ort: "Pflegeheim", rolle: "Pflegekraft im Pflegeheim", anruferWert: "einrichtung", profi: true, typ: "pflege" }, alt ? 4 : alter >= 65 ? 1 : 0);
+  else add({ ort: "Wohnung", rolle: "Pflegekraft der mobilen Hauskrankenpflege", anruferWert: "einrichtung", profi: true, typ: "pflege" }, alt ? 0.6 : 0);
+  const hausarzt = !kind && ist(kapitel, "brustschmerz", "atemnot", "krank", "schlaganfall", "bauch", "herz", "kopfschmerz") ? 1 : 0.2;
+  add({ ort: praxisHier ? "Arztpraxis" : "Wohnung (Hausbesuch)", rolle: "Hausärztin/Hausarzt", anruferWert: "einrichtung", profi: true, typ: "arzt" }, praxisHier ? hausarzt : hausarzt / 2);
+  if (praxisHier) add({ ort: "Arztpraxis", rolle: "Ordinationsassistentin am Empfang", anruferWert: "einrichtung", geschlecht: "w", typ: "ordi" }, !kind ? 0.6 : 0.2);
+  if (schuleHier) add({ ort: "Schule / Kindergarten", rolle: "Lehrerin", anruferWert: "2", geschlecht: "w", typ: "lehrer" }, kind && alter >= 3 ? 1.5 : 0);
   add({ ort: "Arbeitsplatz", rolle: rnd() < 0.5 ? "Arbeitskollege" : "Arbeitskollegin", anruferWert: "2", typ: "kollege" }, alter >= 17 && alter < 66 ? 1.5 : 0);
   // Draußen
   add({ ort: "Straße / Gehsteig", rolle: "Passant", anruferWert: "2", typ: "passant" }, draussen ? 5 : 1);
@@ -213,7 +223,13 @@ export function anruferWaehlen(
     // Typen, die oben nicht gewichtet werden (Begleiter, Trainer …), trotzdem möglich
     for (const t of typen) if (!kandidaten.some(([x]) => x.typ === t)) kandidaten.push([{ ...ersatz[t], ort: geschichte.ort }, 0.8]);
   }
-  const s = gewichtet(kandidaten, rnd);
+  let s = gewichtet(kandidaten, rnd);
+  // Pflegekraft, aber kein Pflegeheim an der Adresse: mobile Hauskrankenpflege beim Patienten zu Hause
+  if (s.typ === "pflege" && !heimHier) s = { ...s, rolle: "Pflegekraft der mobilen Hauskrankenpflege", ort: /pflegeheim/i.test(s.ort) || !s.ort ? "Wohnung" : s.ort };
+  else if (s.typ === "pflege" && amOrt?.name) s = { ...s, ort: amOrt.name };
+  // Ordination nur in einer Praxis; sonst ist die Ärztin auf Hausbesuch
+  if ((s.typ === "arzt" || s.typ === "ordi") && !praxisHier && /praxis|ordination/i.test(s.ort || "Arztpraxis"))
+    s = s.typ === "arzt" ? { ...s, ort: "Wohnung (Hausbesuch)" } : { ...s, rolle: "Hausärztin/Hausarzt", geschlecht: undefined, typ: "arzt", ort: "Wohnung (Hausbesuch)" };
   const geschlecht: "m" | "w" =
     s.geschlecht ?? (s.selbst ? (patientW ? "w" : "m") : /Tochter|Kollegin|in\b/.test(s.rolle) ? "w" : /Sohn|Kollege/.test(s.rolle) ? "m" : rnd() < 0.5 ? "w" : "m");
 
@@ -311,7 +327,14 @@ function ortVon(adresse: string): string {
 const FAHRZEUGE = ["BMW X5", "VW Golf", "Skoda Octavia", "Audi A4", "VW Passat", "Mercedes C-Klasse", "Ford Focus", "Toyota Yaris", "Seat Leon", "Dacia Duster", "VW Transporter", "Renault Clio"];
 const FARBEN = ["schwarz", "weiß", "silber", "grau", "blau", "rot", "dunkelgrün"];
 
-function sonderAnrufer(kapitel: string, a: Antworten, rnd: () => number, adresse: string, geschichte?: { typen: AnruferTyp[]; ort: string }): Anrufer | null {
+function sonderAnrufer(
+  kapitel: string,
+  a: Antworten,
+  rnd: () => number,
+  adresse: string,
+  geschichte?: { typen: AnruferTyp[]; ort: string },
+  einr: { heim: boolean; name?: string } = { heim: true },
+): Anrufer | null {
   const ort = ortVon(adresse) || "dem Ort";
   const basis = (p: Partial<Anrufer> & Pick<Anrufer, "rolle" | "anruferWert">): Anrufer => {
     const geschlecht = p.geschlecht ?? (rnd() < 0.5 ? "w" : "m");
@@ -342,10 +365,15 @@ function sonderAnrufer(kapitel: string, a: Antworten, rnd: () => number, adresse
   }
   if (ist(kapitel, "anforderung_arzt")) {
     const anf = String(a.anforderer ?? "normal");
-    const heim = pick([`Pflegeheim ${ort}`, `Landespflegeheim ${ort}`, `Seniorenzentrum ${ort}`, `Pflege- und Betreuungszentrum ${ort}`], rnd);
+    const heim = einr.name ?? pick([`Pflegeheim ${ort}`, `Landespflegeheim ${ort}`, `Seniorenzentrum ${ort}`, `Pflege- und Betreuungszentrum ${ort}`], rnd);
+    // Pflegeheim nur, wenn die Adresse eines ist – sonst ruft die Hausärztin vom Hausbesuch oder aus der Ordination an
+    const pflegeAnteil = einr.heim ? 0.7 : 0;
     const station = `Station ${1 + Math.floor(rnd() * 4)}`;
     const varianten: Record<string, [string, string, string]> = {
-      normal: [rnd() < 0.7 ? `diplomierte Pflegekraft im ${heim}, ${station}` : `Hausärztin/Hausarzt in ${ort}`, rnd() < 0.7 ? heim : `Ordination in ${ort}`, rnd() < 0.7 ? `${heim}, ${station}` : `Ordination`],
+      normal:
+        rnd() < pflegeAnteil
+          ? [`diplomierte Pflegekraft im ${heim}, ${station}`, heim, `${heim}, ${station}`]
+          : [`Hausärztin/Hausarzt in ${ort}`, `Ordination in ${ort}`, einr.heim ? `${heim} (Visite)` : "beim Patienten zu Hause (Hausbesuch)"],
       telemed: ["Ärztin/Arzt der telefonischen Gesundheitsberatung (Telemedizin)", "Telemedizin", "Telemedizin-Zentrale (der Patient ist zu Hause)"],
       "141": ["Ärztin/Arzt vom Ärztefunkdienst 141", "Ärztefunkdienst 141", "141-Callcenter (der Patient ist zu Hause)"],
       ecn: ["Mitarbeiter/in der Gesundheitshotline 1450", "Gesundheitshotline 1450", "1450-Callcenter"],
@@ -353,10 +381,12 @@ function sonderAnrufer(kapitel: string, a: Antworten, rnd: () => number, adresse
     };
     // Fallgeschichte legt fest, wer anruft (Pflegeheim, Hausarzt, Ordination, Telemedizin)
     if (geschichte?.typen.length && anf === "normal") {
-      const pool = geschichte.typen.filter((x) => ["pflege", "arzt", "ordi"].includes(x));
-      const t = pool.length ? pick(pool, rnd) : "pflege";
+      let pool = geschichte.typen.filter((x) => ["pflege", "arzt", "ordi"].includes(x));
+      if (!einr.heim && pool.some((x) => x !== "pflege")) pool = pool.filter((x) => x !== "pflege");
+      const t = pool.length ? pick(pool, rnd) : einr.heim ? "pflege" : "arzt";
       const hausbesuch = !/praxis|pflegeheim/i.test(geschichte.ort);
-      if (t === "pflege") varianten.normal = [`diplomierte Pflegekraft im ${heim}, ${station}`, heim, `${heim}, ${station}`];
+      if (t === "pflege" && !einr.heim) varianten.normal = ["diplomierte Pflegekraft der mobilen Hauskrankenpflege", "Mobile Hauskrankenpflege", "beim Patienten zu Hause"];
+      else if (t === "pflege") varianten.normal = [`diplomierte Pflegekraft im ${heim}, ${station}`, heim, `${heim}, ${station}`];
       else if (t === "arzt") varianten.normal = [`Hausärztin/Hausarzt in ${ort}`, `Ordination in ${ort}`, hausbesuch ? "beim Patienten zu Hause (Hausbesuch)" : "Ordination"];
       else varianten.normal = [`Ordinationsassistentin der Hausarztpraxis in ${ort}`, `Ordination in ${ort}`, "Ordination"];
     }

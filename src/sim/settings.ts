@@ -202,6 +202,9 @@ export interface Settings {
     bodenNacht: [number, number];
     nahTag: [number, number];
     nahNacht: [number, number];
+    /** NEF: streut stärker (Notarzt kommt oft aus dem Krankenhaus oder vom Stützpunkt) */
+    nefTag: [number, number];
+    nefNacht: [number, number];
     /** frei unterwegs (Status Funk): Sekunden bis zur Abfahrt */
     unterwegs: number;
     /** Bereitschaft: zusätzliche Minuten zur Ausrückzeit der Wache */
@@ -219,7 +222,7 @@ export function defaultStunden(): Settings["stunden"] {
 }
 
 export function defaultAusrueck(): Settings["ausrueck"] {
-  return { tagVon: 5, tagBis: 22, bodenTag: [30, 120], bodenNacht: [120, 600], nahTag: [120, 300], nahNacht: [300, 600], unterwegs: 10, bereitschaftPlusMin: 5 };
+  return { tagVon: 5, tagBis: 22, bodenTag: [30, 120], bodenNacht: [120, 600], nahTag: [120, 300], nahNacht: [300, 600], nefTag: [20, 240], nefNacht: [90, 780], unterwegs: 10, bereitschaftPlusMin: 5 };
 }
 
 export function defaultSettings(): Settings {

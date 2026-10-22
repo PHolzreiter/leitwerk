@@ -339,8 +339,12 @@ export function createSettingsView(container: HTMLElement, teil: "simulation" | 
     const tw = el("div", { class: "row-btns" });
     tw.append(tv, el("span", { class: "muted" }, "bis"), tb, el("span", { class: "muted" }, "Uhr"));
     rGrid.append(el("label", {}, "Tag (sonst Nacht)"), tw);
-    bereich("Bodengebunden – Tag", a.bodenTag);
-    bereich("Bodengebunden – Nacht", a.bodenNacht);
+    bereich("RTW/KTW – Tag", a.bodenTag);
+    bereich("RTW/KTW – Nacht", a.bodenNacht);
+    a.nefTag ??= [20, 240];
+    a.nefNacht ??= [90, 780];
+    bereich("NEF – Tag", a.nefTag);
+    bereich("NEF – Nacht", a.nefNacht);
     bereich("Hubschrauber – Tag", a.nahTag);
     bereich("Hubschrauber – Nacht", a.nahNacht);
     const uw = num(a.unterwegs, "1");

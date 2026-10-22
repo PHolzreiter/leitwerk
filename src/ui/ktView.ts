@@ -291,8 +291,13 @@ export function ktFormular(k: KtAuftrag, stelle: (text: string, f?: KtFrage) => 
       el("div", { class: "muted" }, k.quelle === "hotline" ? (k.anruf?.gespraech.some((m) => m.von === "anrufer") ? "siehe Gespräch" : "–") : QUELLE[k.quelle]),
     );
     const rueck = el("div", { class: "row-btns kt-tel" });
-    const telB = el("button", { class: "btn small icon", type: "button", title: "Rufnummer des Anrufers übernehmen" }, "📞");
-    telB.addEventListener("click", () => setze({ telefon: k.wahr?.d?.telefon || nummerAus(k.id, false) }));
+    // 📞: ohne Nummer übernehmen, mit Nummer (und beendetem Gespräch) zurückrufen
+    const telB = el("button", { class: "btn small icon", type: "button", title: k.d.telefon && k.anruf ? "Anrufer zurückrufen" : "Rufnummer des Anrufers übernehmen" }, "📞");
+    telB.addEventListener("click", () => {
+      if (!k.d.telefon) return setze({ telefon: k.wahr?.d?.telefon || nummerAus(k.id, false) });
+      if (k.anruf?.status === "aktiv") return;
+      void import("./panels/telefon").then((m) => m.anrufAnnehmen("kt", k.id));
+    });
     deaktiv.push(telB);
     telB.hidden = !k.anruf;
     rueck.append(text(k.d.telefon, "Telefonnummer", (v) => setze({ telefon: v })), telB);
@@ -338,20 +343,25 @@ export function ktFormular(k: KtAuftrag, stelle: (text: string, f?: KtFrage) => 
       return box;
     };
     const v = k.d.zeitVorgabe;
+    const dringlichkeit = () =>
+      zeile(
+        "Dringlichkeit",
+        "sofort",
+        knopfleiste<boolean>(
+          [
+            [false, "geplant"],
+            [true, art === "sek" ? "SOFORT" : "SOFORT (Einweisung)", "sofort"],
+          ],
+          k.d.sofort,
+          (v) => setze({ sofort: v }),
+        ),
+      );
     if (v !== "termin") zeile("Abholung", "abholung", zeitFeld("abholung"));
+    // SEK: Dringlichkeit gleich unter der Abholung (bei SOFORT ist die Zeit egal)
+    const frueh = art === "sek" && v !== "termin";
+    if (frueh) dringlichkeit();
     if (v !== "abholung") zeile(terminName, "termin", zeitFeld("termin"));
-    zeile(
-      "Dringlichkeit",
-      "sofort",
-      knopfleiste<boolean>(
-        [
-          [false, "geplant"],
-          [true, art === "sek" ? "SOFORT" : "SOFORT (Einweisung)", "sofort"],
-        ],
-        k.d.sofort,
-        (v) => setze({ sofort: v }),
-      ),
-    );
+    if (!frueh) dringlichkeit();
 
     // ---- Transport
     abschnitt("Transport");

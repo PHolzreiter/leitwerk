@@ -768,6 +768,7 @@ export const BEFEHLE = {
     "funkMitgehoert",
     "funkRufen",
     "funkSenden",
+    "funkTippt",
     "funkEnde",
     "storno",
     "partnerAnfordern",
@@ -1081,6 +1082,20 @@ export class Simulation {
     if (!keys.length) return [];
     const g = this.funkgruppe();
     return alleOrte().filter((o) => o.kind === "pois" && o.kategorien.some((k) => keys.includes(k)) && inFunkgruppe(g, o.lat, o.lon));
+  }
+
+  /** Welche Einrichtung (Pflegeheim, Arztpraxis, Schule) steht an dieser Stelle? Aus den Orten (POIs) */
+  private einrichtungAmOrt(lat: number, lon: number, alter: number | null): { arten: OrtArt[]; name?: string } {
+    const arten: OrtArt[] = [];
+    let name: string | undefined;
+    for (const art of ["pflegeheim", "arzt", "schule"] as OrtArt[]) {
+      const o = this.poisFuer(art, alter).find((x) => distanceM(x, { lat, lon }) < 150);
+      if (o) {
+        arten.push(art);
+        if (art === "pflegeheim") name = o.name;
+      }
+    }
+    return { arten, name };
   }
 
   /** Einsatzort der Fallgeschichte: Orte, für die es echte POIs gibt, werden bevorzugt */
@@ -2231,6 +2246,7 @@ export class Simulation {
         Math.random,
         gemeldet,
         vorlage && ortArt ? { typen: vorlage.anrufer, ort: ORT_LABEL[ortArt], ortArt } : undefined,
+        this.einrichtungAmOrt(p.lat, p.lon, alter),
       );
       // Ruft Pflege, Arzt oder Ordination an, fragt man in Kapitel 33 ab (Anforderung durch Einrichtung) –
       // dann muss auch die richtige Lösung dort liegen
@@ -2432,6 +2448,8 @@ export class Simulation {
     const wache = () => {
       const tag = this.istTag();
       if (fliegt(fz)) return z(tag ? a.nahTag : a.nahNacht);
+      // NEF streut stärker als RTW/KTW
+      if (fz.kategorie === "NEF") return z(tag ? (a.nefTag ?? [20, 240]) : (a.nefNacht ?? [90, 780]));
       return z(tag ? a.bodenTag : a.bodenNacht);
     };
     if (fz.status === "freiWache") return wache();
@@ -2872,6 +2890,9 @@ export class Simulation {
     const cname = `${code.beschreibung} ${schema?.codes[code.code]?.name ?? ""}`;
     const imWasser = !!fall && partnerNoetig(fall.kapitel, fall.antworten, cname).some((x) => x.art === "wasser");
     const wasserAdr = imWasser ? await this.adresseNahe(pick(this.partnerStationenImGebiet("wasser")), 5000) : null;
+    // Anforderung durch Arzt/Pflege: meist aus einem echten Pflegeheim im Gebiet (die Adresse muss dazu passen)
+    if (fall && !fall.ortArt && ist(fall.kapitel, "anforderung_arzt") && String(fall.antworten.anforderer ?? "normal") === "normal" && this.poisFuer("pflegeheim", null).length && Math.random() < 0.6)
+      fall.ortArt = "pflegeheim";
     // passender echter Ort (Pflegeheim, Schule, Bahnhof …), wenn es einen im Gebiet gibt
     const poiAdr = !wasserAdr && fall?.ortArt ? await this.poiAdresse(fall.ortArt, typeof fall.antworten.alter === "number" ? fall.antworten.alter : null) : null;
     let adr = wasserAdr ?? poiAdr ?? (await this.adresseImGebiet());
@@ -2959,6 +2980,8 @@ export class Simulation {
         continue;
       }
       const ortArt = this.ortArtWaehlen(f, typeof a.alter === "number" ? a.alter : null);
+      // Geschichte im Pflegeheim, in der Ordination, Schule …: nur, wo es so einen Ort im Gebiet gibt (sonst ein anderer Fall)
+      if (!wunsch && ORT_NUR_MIT_POI.includes(ortArt) && !this.poisFuer(ortArt, typeof a.alter === "number" ? a.alter : null).length) continue;
       return { fall: { kapitel: kap, antworten, code: c.code, vorlage: f.id, ortArt, katalog: { id: f.id, variante: v.id }, ...(Object.keys(roh).length ? { roh } : {}) }, code: c };
     }
     return null;
@@ -3068,6 +3091,17 @@ export class Simulation {
         a.gespraech.push({ zeit: this.state.zeit, echt: Date.now(), von: "anrufer", text: a.folge });
         a.folge = null;
       }
+    } else if (a.status === "beendet") {
+      // Leitstelle ruft den Anrufer zurück (Nachfragen nach dem Gespräch)
+      if (this.settings.rueckrufNurMitNummer && !e.telefon) throw new Error("Keine Rückrufnummer aufgenommen – Rückruf nicht möglich");
+      this.andereHalten(ich, e.id);
+      a.rueckruf = true;
+      a.status = "aktiv";
+      a.seit = this.state.zeit;
+      a.angenommenVon = { ...ich };
+      a.gespraech.push({ zeit: this.state.zeit, echt: Date.now(), von: "system", text: `Rückruf durch ${ich.name}` });
+      a.gespraech.push({ zeit: this.state.zeit, echt: Date.now(), von: "anrufer", text: pick(["Ja, hallo?", "Hallo? Ja?", "Ja, bitte?", "Hallo, ja, ich bin's."]) });
+      this.log(e, "Leitstelle ruft den Anrufer zurück");
     } else {
       throw new Error("Das Gespräch ist bereits beendet");
     }
@@ -4365,6 +4399,13 @@ export class Simulation {
     this.emit();
   }
 
+  /** Die Leitstelle schreibt gerade einen Funkspruch: das Gespräch nicht wegen Stille beenden */
+  funkTippt(id: number): void {
+    const g = (this.state.funkGespraeche ?? []).find((x) => x.id === id);
+    if (!g || g.status === "ende") return;
+    if (g.status === "offen" || g.status === "ruft" || g.status === "mithoeren") g.echtLetzt = Date.now();
+  }
+
   funkEnde(id: number): void {
     const g = this.gespraech(id);
     if (g.status === "ende") return;
@@ -4865,6 +4906,16 @@ export class Simulation {
         a.gespraech.push({ zeit: this.state.zeit, echt: Date.now(), von: "anrufer", text: a.folge });
         a.folge = null;
       }
+    } else if (a.status === "beendet") {
+      // Leitstelle ruft den Anrufer zurück
+      if (this.settings.rueckrufNurMitNummer && !k.d.telefon) throw new Error("Keine Rückrufnummer aufgenommen – Rückruf nicht möglich");
+      this.andereHalten(ich, k.id);
+      a.rueckruf = true;
+      a.status = "aktiv";
+      a.seit = this.state.zeit;
+      a.angenommenVon = { ...ich };
+      a.gespraech.push({ zeit: this.state.zeit, echt: Date.now(), von: "system", text: `Rückruf durch ${ich.name}` });
+      a.gespraech.push({ zeit: this.state.zeit, echt: Date.now(), von: "anrufer", text: pick(["Ja, hallo?", "Ja, bitte?", "Hallo, ja?"]) });
     } else throw new Error("Das Gespräch ist beendet");
     k.bearbeiter = { ...ich };
     this.emit();

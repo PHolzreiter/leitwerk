@@ -3391,3 +3391,23 @@ input[type="color"] {
 .zuo-wert select { max-width: 180px; }
 .zuo-stufen { margin-top: 10px; }
 .zuo-ki { display: flex; gap: 8px; align-items: center; margin: 4px 0 6px; }
+
+/* Kartensuche (v0.45) */
+.karte-suche {
+  position: relative;
+}
+.karte-suche input {
+  width: 100%;
+  min-width: 210px;
+  font-size: 12.5px;
+  padding: 5px 7px;
+}
+.karte-treffer {
+  max-height: 320px;
+  overflow-y: auto;
+  min-width: 260px;
+}
+.karte-treffer .addr-item small {
+  display: block;
+  font-size: 11px;
+}
