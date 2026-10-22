@@ -156,9 +156,8 @@ export function notrufTeile(e: Einsatz): NotrufTeile {
   }
 
   // ---- Tastatur: 1–9 wählt die Antwort der markierten Frage, Enter/↓ nächste offene Frage, ↑ zurück, F stellt die Frage,
-  // Leertaste schreibt die Frage ins Eingabefeld (zum Anpassen, Enter schickt sie ab)
+  // Leertaste ebenso (wie ein Klick auf das Frage-Symbol)
   let fokusId: string | null = null;
-  const fragenNachId = new Map<string, Frage>();
   const zeilen = () => [...abfrage.querySelectorAll<HTMLElement>(".frage[data-id]")].filter((r) => r.dataset.typ === "single" || r.dataset.typ === "zahl");
   const beantwortet = (r: HTMLElement) =>
     r.dataset.typ === "single" ? !!r.querySelector(".opt.gewaehlt") : !!r.querySelector<HTMLInputElement>("input.zahl")?.value || !!r.querySelector(".opt.gewaehlt");
@@ -224,20 +223,13 @@ export function notrufTeile(e: Einsatz): NotrufTeile {
     } else if (ev.key === "ArrowUp") {
       ev.preventDefault();
       fokusWeiter(-1, false);
-    } else if (ev.key === "f" || ev.key === "F") {
+    } else if (ev.key === "f" || ev.key === "F" || ev.key === " " || ev.code === "Space") {
       const q = r.querySelector<HTMLButtonElement>(".frag-knopf");
+      if (ev.key === " ") ev.preventDefault();
       if (q && !q.disabled) {
         ev.preventDefault();
         q.click();
       }
-    } else if (ev.key === " " || ev.code === "Space") {
-      const f = fragenNachId.get(r.dataset.id ?? "");
-      const a = e.anruf;
-      if (!f || !a || form.hidden || eingabe.disabled) return;
-      ev.preventDefault();
-      eingabe.value = sprechFrage(f, store.schema, a.antworten, { erste: !a.gespraech.some((m) => m.von === "leitstelle") });
-      eingabe.focus();
-      eingabe.setSelectionRange(eingabe.value.length, eingabe.value.length);
     }
   };
   document.addEventListener("keydown", taste);
@@ -267,7 +259,6 @@ export function notrufTeile(e: Einsatz): NotrufTeile {
     const setze = (id: string, wert: Wert) => fehler(sim.call("abfrageSetze", e.id, id, wert));
     const frageZeile = (f: Frage) => {
       const row = el("div", { class: "frage" });
-      fragenNachId.set(f.id, f);
       row.dataset.id = f.id;
       row.dataset.typ = f.typ;
       const kopfz = el("div", { class: "frage-text" });

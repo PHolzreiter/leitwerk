@@ -42,7 +42,7 @@ import {
 import { bestimmeCode, fallZiehen, kapitelVonCode, wahrheitFuer, type Antworten, type Schema } from "../abfrage/schema";
 import { anruferWaehlen, ortKandidaten, veraenderungText, zufallsName, type Anrufer } from "../abfrage/anrufer";
 import { personaWaehlen } from "../abfrage/persona";
-import { alleOrte, kategorienFuerOrtArt, poiKategorien } from "../data/orte";
+import { alleOrte, kategorienFuerOrtArt, ortGewicht, poiKategorien } from "../data/orte";
 import { bezugFuer, fuellen, stimmungAusVerlauf, szenarioBauen, altersPlausibel, sichtUnbekannt, vorlageFest, vorlageWaehlen, type AnruferTyp, type OrtArt, type OrtModus, type Szenario } from "../abfrage/szenario";
 
 /** Einsatzorte, die eine echte Einrichtung brauchen (sonst ruft z. B. eine Pflegekraft aus einem Wohnhaus an) */
@@ -192,6 +192,8 @@ export interface SimFahrzeug {
   defektBis?: number | null;
   /** KT auf der Wache alarmiert: quittiert um (Status „Alarmiert und quittiert“) */
   quittUm?: number | null;
+  /** Spielzeit der letzten Alarmierung (NEF rückt bei gleichzeitiger Alarmierung nach dem RTW aus) */
+  alarmUm?: number;
   /** Blaulicht an (Fahrt mit Sondersignal; bleibt am Einsatzort an, wenn mit Blaulicht angefahren) */
   blaulicht?: boolean;
   /** Typ zur Anzeige (z. B. „KTW-B“, „RTW“) */
@@ -1085,11 +1087,11 @@ export class Simulation {
   }
 
   /** Welche Einrichtung (Pflegeheim, Arztpraxis, Schule) steht an dieser Stelle? Aus den Orten (POIs) */
-  private einrichtungAmOrt(lat: number, lon: number, alter: number | null): { arten: OrtArt[]; name?: string } {
+  private einrichtungAmOrt(lat: number, lon: number): { arten: OrtArt[]; name?: string } {
     const arten: OrtArt[] = [];
     let name: string | undefined;
     for (const art of ["pflegeheim", "arzt", "schule"] as OrtArt[]) {
-      const o = this.poisFuer(art, alter).find((x) => distanceM(x, { lat, lon }) < 150);
+      const o = this.poisFuer(art, null).find((x) => distanceM(x, { lat, lon }) < 150);
       if (o) {
         arten.push(art);
         if (art === "pflegeheim") name = o.name;
@@ -1099,14 +1101,23 @@ export class Simulation {
   }
 
   /** Einsatzort der Fallgeschichte: Orte, für die es echte POIs gibt, werden bevorzugt */
-  private ortArtWaehlen(v: { orte: OrtArt[]; ortModus?: OrtModus; anrufer: AnruferTyp[] }, alter: number | null): OrtArt {
+  private ortArtWaehlen(v: { orte: OrtArt[]; ortModus?: OrtModus; anrufer: AnruferTyp[] }, alter: number | null, thema?: string | null): OrtArt {
     let kand = ortKandidaten(v);
+    // Arbeit und Baustelle nur im Arbeitsalter (wenn es noch etwas anderes gibt)
+    if (typeof alter === "number" && (alter < 15 || alter > 72)) {
+      const ohne = kand.filter(([o]) => o !== "arbeit" && o !== "baustelle");
+      if (ohne.length) kand = ohne;
+    }
+    // Orte, die zum Fall passen (Tierbiss → Tierpark/Reitanlage, Intoxikation → Disco), kommen öfter vor
+    if (thema) kand = kand.map(([o, w]) => [o, this.poisFuer(o, alter).some((x) => ortGewicht(x.kategorien, thema, alter) >= 4) ? w * 2.5 : w] as [OrtArt, number]);
     // Einrichtungen (Pflegeheim, Ordination, Schule, Bahnhof) nur, wo es so einen Ort im Gebiet gibt
     const ohneEinrichtung = kand.filter(([o]) => !ORT_NUR_MIT_POI.includes(o) || this.poisFuer(o, alter).length > 0);
     if (ohneEinrichtung.length) kand = ohneEinrichtung;
     if (!v.ortModus || v.ortModus === "nur") {
       const orte = kand.map(([o]) => o);
       const mitPoi = orte.filter((o) => this.poisFuer(o, alter).length > 0);
+      const passend = thema ? mitPoi.filter((o) => this.poisFuer(o, alter).some((x) => ortGewicht(x.kategorien, thema, alter) >= 4)) : [];
+      if (passend.length && Math.random() < 0.6) return pick(passend);
       return mitPoi.length && Math.random() < 0.6 ? pick(mitPoi) : pick(orte);
     }
     const sum = kand.reduce((a, [, w]) => a + w, 0);
@@ -1116,11 +1127,18 @@ export class Simulation {
   }
 
   /** Adresse eines passenden POI (meistens – manchmal passiert es trotzdem woanders) */
-  private async poiAdresse(art: OrtArt, alter: number | null): Promise<Awaited<ReturnType<typeof randomAddresses>>[number] | null> {
+  private async poiAdresse(art: OrtArt, alter: number | null, thema?: string | null): Promise<Awaited<ReturnType<typeof randomAddresses>>[number] | null> {
     const kand = this.poisFuer(art, alter);
     // Pflegeheim, Ordination, Schule: immer dort; sonst passiert es manchmal auch woanders
     if (!kand.length || (!ORT_NUR_MIT_POI.includes(art) && Math.random() > 0.8)) return null;
-    const o = pick(kand);
+    // genaue Kategorie mit passendem Thema und Alter bevorzugt (Huftritt → Reitanlage, Fieberkrampf → Kindergarten)
+    const gew = kand.map((x) => ortGewicht(x.kategorien, thema, alter));
+    let r = Math.random() * gew.reduce((a, b) => a + b, 0);
+    let o = kand[kand.length - 1];
+    for (let i = 0; i < kand.length; i++) if ((r -= gew[i]) <= 0) {
+      o = kand[i];
+      break;
+    }
     const d = 0.002;
     const hits = (await randomAddresses([o.lon - d, o.lat - d, o.lon + d, o.lat + d], 8)).filter((h) => !h.place);
     hits.sort((a, b) => distanceM(a, o) - distanceM(b, o));
@@ -2246,7 +2264,7 @@ export class Simulation {
         Math.random,
         gemeldet,
         vorlage && ortArt ? { typen: vorlage.anrufer, ort: ORT_LABEL[ortArt], ortArt } : undefined,
-        this.einrichtungAmOrt(p.lat, p.lon, alter),
+        this.einrichtungAmOrt(p.lat, p.lon),
       );
       // Ruft Pflege, Arzt oder Ordination an, fragt man in Kapitel 33 ab (Anforderung durch Einrichtung) –
       // dann muss auch die richtige Lösung dort liegen
@@ -2418,6 +2436,7 @@ export class Simulation {
       fz.fahrt = null;
       fz.phase = "ausruecken";
       fz.phaseEnde = this.state.zeit + sek * 1000;
+      fz.alarmUm = this.state.zeit;
       this.log(e, `${fz.funkrufname} alarmiert`);
       // Fahrzeug von außerhalb der Funkgruppe: wechselt für den Einsatz auf unsere Gruppe
       const fg = this.funkgruppe();
@@ -2426,9 +2445,23 @@ export class Simulation {
         this.funk(fz.funkrufname, e.id, `wechselt auf TETRA ${fg.id}`, "info");
       }
     }
+    this.nefNachRtw(e);
     if (e.fahrzeuge.length > 0) e.zustand = "laufend";
     this.emit();
     return hinweise;
+  }
+
+  /**
+   * Gleichzeitig alarmiert (innerhalb einer Minute): ein NEF von der Wache rückt immer nach dem RTW aus –
+   * der Notarzt muss erst dazukommen. (Später: Notarzt-Abholstützpunkte je NEF.)
+   */
+  private nefNachRtw(e: Einsatz): void {
+    const jetzt = this.state.zeit;
+    const fz = e.fahrzeuge.map((id) => this.state.fahrzeuge[id]).filter((f): f is SimFahrzeug => !!f && f.phase === "ausruecken" && jetzt - (f.alarmUm ?? -1e15) <= 60_000);
+    const rtwEnde = Math.max(...fz.filter((f) => f.kategorie !== "NEF" && !fliegt(f)).map((f) => f.phaseEnde ?? 0), 0);
+    if (!rtwEnde) return;
+    for (const nef of fz.filter((f) => f.kategorie === "NEF" && f.status === "alarmWache"))
+      if ((nef.phaseEnde ?? 0) < rtwEnde + 20_000) nef.phaseEnde = rtwEnde + rnd(20, 90) * 1000;
   }
 
   /** Tagsüber laut Einstellung (Standard 5–22 Uhr)? */
@@ -2872,7 +2905,7 @@ export class Simulation {
           fall = { kapitel: f.ergebnis.pfad[0], antworten: f.antworten, code: c.code, ...(Object.keys(fest.roh).length ? { roh: fest.roh } : {}) };
           if (vorlage) {
             fall.vorlage = vorlage.id;
-            fall.ortArt = this.ortArtWaehlen(vorlage, typeof f.antworten.alter === "number" ? f.antworten.alter : null);
+            fall.ortArt = this.ortArtWaehlen(vorlage, typeof f.antworten.alter === "number" ? f.antworten.alter : null, thema(f.ergebnis.pfad[0]));
           }
         }
       }
@@ -2894,7 +2927,7 @@ export class Simulation {
     if (fall && !fall.ortArt && ist(fall.kapitel, "anforderung_arzt") && String(fall.antworten.anforderer ?? "normal") === "normal" && this.poisFuer("pflegeheim", null).length && Math.random() < 0.6)
       fall.ortArt = "pflegeheim";
     // passender echter Ort (Pflegeheim, Schule, Bahnhof …), wenn es einen im Gebiet gibt
-    const poiAdr = !wasserAdr && fall?.ortArt ? await this.poiAdresse(fall.ortArt, typeof fall.antworten.alter === "number" ? fall.antworten.alter : null) : null;
+    const poiAdr = !wasserAdr && fall?.ortArt ? await this.poiAdresse(fall.ortArt, typeof fall.antworten.alter === "number" ? fall.antworten.alter : null, thema(fall.kapitel)) : null;
     let adr = wasserAdr ?? poiAdr ?? (await this.adresseImGebiet());
     if (!adr) return null;
     let gemeldet = adr.label;
@@ -2979,7 +3012,7 @@ export class Simulation {
         console.warn("Fallkatalog: kein Code für", f.id, v.id);
         continue;
       }
-      const ortArt = this.ortArtWaehlen(f, typeof a.alter === "number" ? a.alter : null);
+      const ortArt = this.ortArtWaehlen(f, typeof a.alter === "number" ? a.alter : null, f.thema);
       // Geschichte im Pflegeheim, in der Ordination, Schule …: nur, wo es so einen Ort im Gebiet gibt (sonst ein anderer Fall)
       if (!wunsch && ORT_NUR_MIT_POI.includes(ortArt) && !this.poisFuer(ortArt, typeof a.alter === "number" ? a.alter : null).length) continue;
       return { fall: { kapitel: kap, antworten, code: c.code, vorlage: f.id, ortArt, katalog: { id: f.id, variante: v.id }, ...(Object.keys(roh).length ? { roh } : {}) }, code: c };

@@ -5,7 +5,7 @@ import { flughoehe } from "./sim/bewegung";
 import { PARTNER_PHASE_TEXT, sim } from "./sim/engine";
 import { khKurzElement } from "./ui/khInfo";
 import { PARTNER_ANZAHL, partnerArtVonTyp, type PartnerArt } from "./sim/partner";
-import { kategorieLabel, poiKategorien } from "./data/orte";
+import { kategorieLabel, ortKategorie, poiKategorien } from "./data/orte";
 import { findCode } from "./sim/codes";
 import { stufeFarbe } from "./ui/panels/teile";
 
@@ -88,8 +88,37 @@ function hospitalFeatures(): FeatureCollection<Point> {
   );
 }
 
+/** Orte, die man schon weiter herausgezoomt sieht (große Einrichtungen, Pflege, Bahnhöfe, Landeplätze) */
+const POI_WICHTIG = new Set(["pflegeheim", "betreutes_wohnen", "behinderteneinrichtung", "bahnhof", "landeplatz", "einkaufszentrum", "freizeitpark", "therme", "skigebiet", "hochschule"]);
+/** Farbe je Gruppe */
+const POI_FARBE: Record<string, string> = {
+  pflege: "#8e44ad",
+  bildung: "#e09f1f",
+  gesundheit: "#c0392b",
+  verkehr: "#34495e",
+  einkauf: "#2a9d8f",
+  sport: "#2e86de",
+  wasser: "#00a8c6",
+  freizeit: "#27ae60",
+  gastro: "#d35400",
+  arbeit: "#7f6a54",
+  sonstiges: "#6c7a89",
+};
+
 function poiFeatures(): FeatureCollection<Point> {
-  return collection(store.list("pois").map((p) => pointFeature(p.id, p.lon, p.lat, { name: p.name })));
+  return collection(
+    store.list("pois").map((p) => {
+      const k = poiKategorien(p);
+      const gruppe = ortKategorie(k[0])?.gruppe ?? "sonstiges";
+      return pointFeature(p.id, p.lon, p.lat, { name: p.name, wichtig: k.some((x) => POI_WICHTIG.has(x)) ? 1 : 0, farbe: POI_FARBE[gruppe] ?? POI_FARBE.sonstiges });
+    }),
+  );
+}
+
+/** Ab welcher Zoomstufe Orte erscheinen (persönliche Einstellung; wichtige drei Stufen früher) */
+export function poiZoom(): { normal: number; wichtig: number } {
+  const z = pers().poiZoom ?? 14;
+  return { normal: Math.min(z, 24), wichtig: z >= 24 ? 24 : Math.max(0, z - 3) };
 }
 
 export interface DataLayerCallbacks {
@@ -100,7 +129,7 @@ export interface DataLayerCallbacks {
 export const LAYER_GROUPS: Record<"stations" | "hospitals" | "pois", string[]> = {
   stations: ["lw-partner-stations", "lw-partner-stations-label", "lw-stations", "lw-stations-label"],
   hospitals: ["lw-hospitals", "lw-hospitals-h", "lw-hospitals-label"],
-  pois: ["lw-pois", "lw-pois-label"],
+  pois: ["lw-pois", "lw-pois-w", "lw-pois-label", "lw-pois-w-label"],
 };
 
 /** Grenzen der TETRA-Funkgruppen als feine Linien (Farbe und Sichtbarkeit persönlich) */
@@ -157,31 +186,51 @@ export function addDataLayers(map: maplibregl.Map, cb: DataLayerCallbacks): void
   map.addSource("lw-hospitals", { type: "geojson", data: hospitalFeatures() });
   map.addSource("lw-pois", { type: "geojson", data: poiFeatures() });
 
-  map.addLayer({
-    id: "lw-pois",
-    type: "circle",
-    source: "lw-pois",
-    paint: {
-      "circle-radius": ["interpolate", ["linear"], ["zoom"], 6, 1.5, 9, 3, 13, 6],
-      "circle-color": "#2a9d8f",
-      "circle-stroke-color": "#ffffff",
-      "circle-stroke-width": ["interpolate", ["linear"], ["zoom"], 6, 0.5, 10, 1.5],
-    },
+  // Orte (POIs): normale erst nah herangezoomt, wichtige schon früher (einstellbar unter Persönlich → Darstellung)
+  const pz = poiZoom();
+  const poiKreis = (id: string, wichtig: boolean, minzoom: number) =>
+    map.addLayer({
+      id,
+      type: "circle",
+      source: "lw-pois",
+      minzoom,
+      filter: ["==", ["get", "wichtig"], wichtig ? 1 : 0],
+      paint: {
+        "circle-radius": ["interpolate", ["linear"], ["zoom"], 6, 1.5, 9, 3, 13, 5.5, 16, 7],
+        "circle-color": ["get", "farbe"],
+        "circle-stroke-color": "#ffffff",
+        "circle-stroke-width": ["interpolate", ["linear"], ["zoom"], 6, 0.5, 10, 1.5],
+      },
+    });
+  const poiText = (id: string, wichtig: boolean, minzoom: number) =>
+    map.addLayer({
+      id,
+      type: "symbol",
+      source: "lw-pois",
+      minzoom,
+      filter: ["==", ["get", "wichtig"], wichtig ? 1 : 0],
+      layout: {
+        "text-field": ["get", "name"],
+        "text-font": FONT,
+        "text-size": 11,
+        "text-offset": [0, 1.0],
+        "text-anchor": "top",
+      },
+      paint: { "text-color": "#1f4f5a", "text-halo-color": "#ffffff", "text-halo-width": 1.5 },
+    });
+  poiKreis("lw-pois", false, pz.normal);
+  poiKreis("lw-pois-w", true, pz.wichtig);
+  poiText("lw-pois-label", false, Math.max(pz.normal, 13));
+  poiText("lw-pois-w-label", true, Math.min(24, Math.max(pz.wichtig + 1, 12)));
+  const ausPoiZoom = onPers(() => {
+    const z = poiZoom();
+    if (!map.getLayer("lw-pois")) return;
+    map.setLayerZoomRange("lw-pois", z.normal, 24);
+    map.setLayerZoomRange("lw-pois-w", z.wichtig, 24);
+    map.setLayerZoomRange("lw-pois-label", Math.max(z.normal, 13), 24);
+    map.setLayerZoomRange("lw-pois-w-label", Math.min(24, Math.max(z.wichtig + 1, 12)), 24);
   });
-  map.addLayer({
-    id: "lw-pois-label",
-    type: "symbol",
-    source: "lw-pois",
-    minzoom: 12,
-    layout: {
-      "text-field": ["get", "name"],
-      "text-font": FONT,
-      "text-size": 11,
-      "text-offset": [0, 1.0],
-      "text-anchor": "top",
-    },
-    paint: { "text-color": "#1f5f57", "text-halo-color": "#ffffff", "text-halo-width": 1.5 },
-  });
+  map.once("remove", ausPoiZoom);
 
   map.addLayer({
     id: "lw-hospitals",
@@ -295,6 +344,7 @@ export function addDataLayers(map: maplibregl.Map, cb: DataLayerCallbacks): void
     ["lw-partner-stations", "stations"],
     ["lw-hospitals", "hospitals"],
     ["lw-pois", "pois"],
+    ["lw-pois-w", "pois"],
   ];
   for (const [layer, kind] of clickable) {
     map.on("click", layer, (e) => {

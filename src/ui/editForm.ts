@@ -24,7 +24,7 @@ import { codeKategorien } from "../sim/codes";
 import { confirmDialog, openDialog } from "./dialog";
 import { el, toast } from "./dom";
 import { dienstplanEditor } from "./dienstplanEditor";
-import { ORT_KATEGORIEN, POI_KATEGORIEN, kategorienText, poiKategorien } from "../data/orte";
+import { ORT_GRUPPEN, ORT_KATEGORIEN, POI_KATEGORIEN, kategorienText, poiKategorien } from "../data/orte";
 import type { Schicht } from "../sim/dienst";
 
 export interface EditorDeps {
@@ -290,11 +290,17 @@ export function openEditor(
       const box = el("div", { class: "flag-grid wide" });
       box.appendChild(el("div", { class: "fld-label" }, "Kategorien (mehrere möglich) – bestimmen, welche Notfälle hier passieren"));
       katInputs = {};
-      for (const k of POI_KATEGORIEN.filter((x) => x.key !== "sonstiges")) {
-        const [wrap, input] = checkbox(k.label, gesetzt.includes(k.key));
-        wrap.title = k.wirkung;
-        katInputs[k.key] = input;
-        box.appendChild(wrap);
+      // nach Gruppen (Pflege, Bildung, Sport …); Hilfetext: wer dort ist und was typischerweise passiert
+      for (const [g, titel] of ORT_GRUPPEN) {
+        const l = POI_KATEGORIEN.filter((x) => x.key !== "sonstiges" && (x.gruppe ?? "sonstiges") === g);
+        if (!l.length) continue;
+        box.appendChild(el("div", { class: "fld-label kat-gruppe" }, titel));
+        for (const k of l) {
+          const [wrap, input] = checkbox(k.label, gesetzt.includes(k.key));
+          wrap.title = k.alter ? `${k.wirkung} (meist ${k.alter[0]}–${k.alter[1]} Jahre)` : k.wirkung;
+          katInputs[k.key] = input;
+          box.appendChild(wrap);
+        }
       }
       form.appendChild(box);
       add("typ_eigen", "Sonstiges (eigene Bezeichnung)", textInput(eigenTeile.join(", "), "z. B. Kirche, Campingplatz"), "Krankenhäuser und Dienststellen sind eigene Listen und zählen automatisch als Orte", true);

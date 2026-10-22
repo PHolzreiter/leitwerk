@@ -212,7 +212,7 @@ function erstellen(ctx: PanelKontext) {
       });
       fokus = addFzFokus(map, { is3d: () => is3d, oeffne: auftragOeffnen });
       const getroffen = (p: { x: number; y: number }) =>
-        map.queryRenderedFeatures([p.x, p.y], { layers: ["lw-vehicles", "lw-incidents", "lw-stations", "lw-hospitals", "lw-pois"].filter((l) => map.getLayer(l)) }).length > 0;
+        map.queryRenderedFeatures([p.x, p.y], { layers: ["lw-vehicles", "lw-incidents", "lw-stations", "lw-hospitals", "lw-pois", "lw-pois-w"].filter((l) => map.getLayer(l)) }).length > 0;
       map.on("click", (e) => {
         if (pickLaeuft() || getroffen(e.point)) return;
         const id = fz3d?.treffer(e.point.x, e.point.y);

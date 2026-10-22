@@ -3411,3 +3411,10 @@ input[type="color"] {
   display: block;
   font-size: 11px;
 }
+
+/* POI-Kategorien nach Gruppen (v0.46) */
+.flag-grid .kat-gruppe {
+  grid-column: 1 / -1;
+  margin-top: 6px;
+  font-weight: 600;
+}

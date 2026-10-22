@@ -152,6 +152,18 @@ export function persoenlichView(container: HTMLElement): { refresh(): void } {
       "Leichter Regen, Schnee, Hagel, Dunst und Blitze. Ohne „Bewegungen“ steht der Regen still und es gibt keine Blitze.",
     );
 
+    const poiWahl = el("select") as HTMLSelectElement;
+    for (const [v, l] of [["0", "immer"], ["10", "ab Zoom 10 (Bezirk)"], ["12", "ab Zoom 12 (Gemeinde)"], ["13", "ab Zoom 13"], ["14", "ab Zoom 14 (Ortskern) – Standard"], ["15", "ab Zoom 15"], ["16", "ab Zoom 16 (Straßen)"], ["24", "nie"]])
+      poiWahl.appendChild(el("option", { value: v }, l));
+    poiWahl.value = String(p.poiZoom ?? 14);
+    poiWahl.addEventListener("change", () => setzePers({ poiZoom: Number(poiWahl.value) }));
+    zeile(
+      a,
+      "Orte (POIs) auf der Karte",
+      poiWahl,
+      "Schulen, Geschäfte, Sportplätze … erscheinen erst, wenn man so nah herangezoomt hat. Wichtige Orte (Pflegeheime, Bahnhöfe, Landeplätze, große Einrichtungen) schon drei Stufen früher.",
+    );
+
     // ---- Farben
     const fa = section("Farben", "Vorlage auswählen und bei Bedarf einzelne Farben ändern. Die Schrift passt sich automatisch an, damit sie lesbar bleibt.");
     const vorl = el("div", { class: "farb-vorlagen" });

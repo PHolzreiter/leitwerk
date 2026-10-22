@@ -813,13 +813,16 @@ def build_pois() -> list[dict]:
     for r in read_csv(src):
         if not r.get("name") or not r.get("breitengrad") or not r.get("laengengrad"):
             continue
+        # technische Bezeichnungen statt Namen („VAK_BK BK500“) weglassen
+        if "_" in r["name"]:
+            continue
         lat, lon = float(r["breitengrad"]), float(r["laengengrad"])
         key = (r["name"].strip().lower(), round(lat, 4), round(lon, 4))
         if key in gesehen:
             continue
         gesehen.add(key)
         out.append({"id": r["id"], "name": r["name"].strip(), "typ": r["typ"].strip(), "ort": (r.get("ort") or "").strip(),
-                    "breitengrad": f"{lat:.6f}", "laengengrad": f"{lon:.6f}", "hinweis": "Quelle: OpenStreetMap (ODbL)" + (f" – {r['hinweis'].strip()}" if r.get("hinweis") else "")})
+                    "breitengrad": f"{lat:.6f}", "laengengrad": f"{lon:.6f}", "hinweis": "© OpenStreetMap" + (f" · {r['hinweis'].strip()}" if r.get("hinweis") else "")})
     out.sort(key=lambda x: (x["typ"], x["ort"], x["name"], x["id"]))
     return out
 

@@ -1,5 +1,20 @@
 # Änderungen
 
+## 0.46.0 – NEF nach dem RTW, Akutversorgung = Übersicht, Orte mit feinen Kategorien
+**Leitstelle**
+- Abfrage: Die **Leertaste** stellt die markierte Frage – genau wie ein Klick auf das Frage-Symbol (wie F)
+- NEF: Werden NEF und RTW gleichzeitig alarmiert (innerhalb einer Minute), rückt das NEF von der Wache immer nach dem RTW aus (20 s – 1,5 min später) – der Notarzt muss erst dazukommen
+
+**Krankenhäuser**
+- Akutversorgung und Plätze-Ansicht kommen jetzt aus derselben Quelle wie die Krankenhaus-Übersicht (Akut-Abteilungen): was dort steht, steht auch in der Tabelle – bei allen Häusern und allen Spalten (Schockraum, PCI, CT, Endoskopie, Stroke, Notaufnahme, Unfall, Kinder, Kreißsaal). Abteilungen ohne gezählte Plätze zeigen offen/zu
+
+**Orte (POIs)**
+- Ganz Niederösterreich auf demselben Stand: rund 10 700 Orte aus OpenStreetMap (vorher 2 600, vor allem um Krems), doppelte zusammengelegt. Darunter 120 Pflegeheime (abgeglichen mit den Listen von LGA und Land NÖ), 840 Kindergärten, 520 Volksschulen, 320 Mittelschulen, 130 höhere Schulen, 450 Bahnhöfe/Haltestellen, 1 050 Supermärkte, 770 Sportplätze, 290 Reitanlagen, 230 Bäder, 850 Heurige, 47 Discos, 415 Industriebetriebe, 285 Steinbrüche
+- Feine Kategorien mit Patientengruppe und typischen Notfällen, in Gruppen: Pflege & Betreuung, Kinder & Bildung, Gesundheit, Verkehr, Einkauf, Sport, Wasser, Freizeit & Kultur, Gastronomie & Hotel, Arbeit & Betriebe
+- Einsätze passen zum Ort: das Alter passt zur Einrichtung (Kleinkind → Krabbelstube/Kindergarten, Jugendlicher → höhere Schule), das Thema zieht passende Orte an (Tierbiss → Tierpark/Reitanlage, Intoxikation → Disco, Einklemmung → Industriebetrieb/Sägewerk, Kreislauf → Therme)
+- Karte: normale Orte erst ab Zoom 14, wichtige (Pflegeheime, Bahnhöfe, Landeplätze, große Einrichtungen) ab Zoom 11; einstellbar unter Persönlich → Darstellung. Farbe nach Gruppe
+- Im Orte-Editor sind die Kategorien nach Gruppen sortiert, mit Hilfetext (wer dort ist, was dort passiert)
+
 ## 0.45.0 – Pauls Liste: Rückruf, Funk, Karte, Orte
 **Leitstelle**
 - Rückruf: Der 📞-Knopf bei „Rückruf“ ruft den Anrufer jetzt wirklich zurück – auch wenn das Gespräch schon beendet war (ohne Nummer übernimmt er die Nummer des Anrufers)

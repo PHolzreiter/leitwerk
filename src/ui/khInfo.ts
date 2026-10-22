@@ -98,7 +98,7 @@ export function khDetail(h: Hospital): void {
   const akJetzt = akutJetzt(h, t);
   const einr = new Set(h.einrichtungen ?? []);
 
-  const plaetzeHtml = RESSOURCEN.filter((r) => plaetze(h, r.id) > 0)
+  const plaetzeHtml = RESSOURCEN.filter((r) => plaetze(h, r.id) > 0 && ak.has(RESSOURCE_AK[r.id] ?? ""))
     .map(
       (r) => `<div class="khd-platz">
         <div class="khd-pn">${esc(r.name)}</div>
@@ -149,22 +149,53 @@ export function khDetail(h: Hospital): void {
   openDialog({ title: h.name, body, wide: true, actions: [{ label: "Schließen", kind: "primary" }] });
 }
 
+/** Zu welcher Akut-Abteilung gehören die gezählten Plätze? (Plätze zeigen wir nur, wenn es die Abteilung gibt) */
+const RESSOURCE_AK: Record<string, string> = {
+  notaufnahme: "ak_notaufnahme",
+  unfall: "ak_unfallchirurgie",
+  kindernotaufnahme: "ak_kinder_jugendheilkunde",
+  schockraum: "ak_schockraum",
+  schockraum_trauma: "ak_schockraum",
+  schockraum_intern: "ak_schockraum",
+  herzkatheter: "ak_herzkatheter",
+  ecmo: "ak_cardiac_arrest_center",
+  stroke_unit: "ak_stroke_unit",
+  kreisssaal: "ak_kreisssaal",
+  druckkammer: "ak_druckkammer",
+};
+
 // ------------------------------------------------------------------ Fenster „KH-Status“
 
-const SPALTEN: [Ressource[], string][] = [
-  [["notaufnahme"], "NFA"],
-  [["unfall"], "Unfall"],
-  [["kindernotaufnahme"], "Kinder"],
-  [["schockraum", "schockraum_trauma", "schockraum_intern"], "Schock"],
-  [["herzkatheter"], "PCI"],
-  [["stroke_unit"], "Stroke"],
-  [["kreisssaal"], "Kreißsaal"],
+/**
+ * Spalten der Plätze-Ansicht. Jede Spalte gehört zu einer Akut-Abteilung (ak): was die Krankenhaus-Übersicht
+ * unter „Akut-Abteilungen“ zeigt, steht auch hier – und umgekehrt (eine Quelle für beide Ansichten).
+ */
+const SPALTEN: { rs: Ressource[]; n: string; ak: string[] }[] = [
+  { rs: ["notaufnahme"], n: "NFA", ak: ["ak_notaufnahme", "ak_primaerversorgung"] },
+  { rs: ["unfall"], n: "Unfall", ak: ["ak_unfallchirurgie", "ak_primaerversorgung_unfall"] },
+  { rs: ["kindernotaufnahme"], n: "Kinder", ak: ["ak_kinder_jugendheilkunde"] },
+  { rs: ["schockraum", "schockraum_trauma", "schockraum_intern"], n: "Schock", ak: ["ak_schockraum"] },
+  { rs: ["herzkatheter"], n: "PCI", ak: ["ak_herzkatheter"] },
+  { rs: ["stroke_unit"], n: "Stroke", ak: ["ak_stroke_unit"] },
+  { rs: ["kreisssaal"], n: "Kreißsaal", ak: ["ak_kreisssaal"] },
 ];
 
+/** Welche der Akut-Abteilungen hat das Haus (in der Reihenfolge der Liste), und ist sie gerade offen? */
+function akDa(h: Hospital, ak: string[], t: number): { id: string; offen: boolean } | null {
+  const alle = akutVon(h);
+  const id = ak.find((x) => alle.has(x));
+  return id ? { id, offen: akutJetzt(h, t).has(id) } : null;
+}
+
 /** Mehrere Ressourcen (Schockräume) zusammengefasst */
-function sammelZelle(h: Hospital, rs: Ressource[], t: number): string {
-  const da = rs.filter((r) => plaetze(h, r) > 0);
-  if (!da.length) return `<span class="khp leer">–</span>`;
+function sammelZelle(h: Hospital, sp: (typeof SPALTEN)[number], t: number): string {
+  const ak = akDa(h, sp.ak, t);
+  if (!ak) return `<span class="khp leer">–</span>`;
+  const name = akutAbteilung(ak.id)?.name ?? ak.id;
+  if (!ak.offen) return `<span class="khp zu" title="${esc(name)}: gerade geschlossen">zu</span>`;
+  const da = ak.id.startsWith("ak_primaerversorgung") ? [] : sp.rs.filter((r) => plaetze(h, r) > 0);
+  // Abteilung ohne gezählte Plätze: nur offen/zu (wie in der Übersicht)
+  if (!da.length) return `<span class="khp frei" title="${esc(name)}: offen (keine Plätze hinterlegt)">offen</span>`;
   if (da.length === 1) return platzZelle(h, da[0], t);
   const st = da.map((r) => platzStatus(h, r, t));
   const offenL = st.filter((s) => s.offen);
@@ -186,18 +217,18 @@ const AKV_SYMBOL: Record<AkvZustand, string> = {
 };
 const AKV_TEXT: Record<AkvZustand, string> = { ok: "verfügbar", zu: "geschlossen", voll: "belegt" };
 
-/** Spalten: Name, Ressourcen (Plätze) oder Einrichtung (nur vorhanden/offen), je Platz ein Zeichen */
-const AKV_SPALTEN: { n: string; titel: string; rs?: Ressource[]; einr?: string; ersatz?: string; ak?: string; akText?: string; einzeln?: boolean; trenn?: boolean }[] = [
-  { n: "SRT", titel: "Schockraum Trauma", rs: ["schockraum_trauma", "schockraum"], einzeln: true },
-  { n: "SRI", titel: "Schockraum internistisch", rs: ["schockraum_intern", "schockraum"], einzeln: true },
-  { n: "PCI", titel: "Herzkatheter", rs: ["herzkatheter"] },
-  { n: "CT", titel: "Computertomographie", einr: "fb_ct" },
-  { n: "END", titel: "Endoskopie", einr: "fb_endoskopie" },
-  { n: "STROKE", titel: "Stroke Unit", rs: ["stroke_unit"] },
-  { n: "NFA", titel: "Notaufnahme", rs: ["notaufnahme"], ersatz: "amb_pvz", trenn: true },
-  { n: "UNF", titel: "Unfallaufnahme", rs: ["unfall"], ersatz: "amb_pvz_unfall" },
-  { n: "KIND", titel: "Kindernotaufnahme", rs: ["kindernotaufnahme"], ak: "ak_kinder_jugendheilkunde", akText: "Kinderabteilung (keine eigene Kindernotaufnahme)", trenn: true },
-  { n: "KRS", titel: "Kreißsaal", rs: ["kreisssaal"], ak: "ak_kreisssaal", akText: "Kreißsaal" },
+/** Spalten: Name, Akut-Abteilung(en) (erste vorhandene zählt; Primärversorgung als Ersatz), Ressourcen für die Plätze */
+const AKV_SPALTEN: { n: string; titel: string; ak: string[]; rs?: Ressource[]; einzeln?: boolean; trenn?: boolean }[] = [
+  { n: "SRT", titel: "Schockraum Trauma", ak: ["ak_schockraum"], rs: ["schockraum_trauma", "schockraum"], einzeln: true },
+  { n: "SRI", titel: "Schockraum internistisch", ak: ["ak_schockraum"], rs: ["schockraum_intern", "schockraum"], einzeln: true },
+  { n: "PCI", titel: "Herzkatheter", ak: ["ak_herzkatheter"], rs: ["herzkatheter"] },
+  { n: "CT", titel: "Computertomographie", ak: ["ak_ct"] },
+  { n: "END", titel: "Endoskopie", ak: ["ak_gastro_endoskopie"] },
+  { n: "STROKE", titel: "Stroke Unit", ak: ["ak_stroke_unit"], rs: ["stroke_unit"] },
+  { n: "NFA", titel: "Notaufnahme", ak: ["ak_notaufnahme", "ak_primaerversorgung"], rs: ["notaufnahme"], trenn: true },
+  { n: "UNF", titel: "Unfallaufnahme", ak: ["ak_unfallchirurgie", "ak_primaerversorgung_unfall"], rs: ["unfall"] },
+  { n: "KIND", titel: "Kindernotaufnahme / Kinderabteilung", ak: ["ak_kinder_jugendheilkunde"], rs: ["kindernotaufnahme"], trenn: true },
+  { n: "KRS", titel: "Kreißsaal", ak: ["ak_kreisssaal"], rs: ["kreisssaal"] },
 ];
 
 function akvFeld(zust: AkvZustand[], titel: string): string {
@@ -205,23 +236,28 @@ function akvFeld(zust: AkvZustand[], titel: string): string {
   return `<span class="akv-f ${schlimmst}" title="${esc(titel)}">${zust.map((z) => `<i class="akv-s ${z}">${AKV_SYMBOL[z]}</i>`).join("")}</span>`;
 }
 
+/** Zustand einer Spalte: null = gibt es dort nicht (für Tests und die Anzeige) */
+export function akvZustand(h: Hospital, n: string, t: number): { ak: string; offen: boolean } | null {
+  const s = AKV_SPALTEN.find((x) => x.n === n);
+  const ak = s ? akDa(h, s.ak, t) : null;
+  return ak ? { ak: ak.id, offen: ak.offen } : null;
+}
+export const AKV_SPALTEN_AK: Record<string, string[]> = Object.fromEntries(AKV_SPALTEN.map((s) => [s.n, s.ak]));
+
 function akvZelle(h: Hospital, s: (typeof AKV_SPALTEN)[number], t: number): string {
-  if (s.einr) {
-    if (!(h.einrichtungen ?? []).includes(s.einr)) return `<span class="akv-f leer"></span>`;
-    const z: AkvZustand = offen(h, s.einr, t) ? "ok" : "zu";
-    return akvFeld([z], `${s.titel}: ${AKV_TEXT[z]}`);
+  const ak = akDa(h, s.ak, t);
+  if (!ak) return `<span class="akv-f leer"></span>`;
+  const name = akutAbteilung(ak.id)?.name ?? s.titel;
+  if (ak.id.startsWith("ak_primaerversorgung")) {
+    const z: AkvZustand = ak.offen ? "ok" : "zu";
+    return akvFeld([z], `${name} (keine vollwertige ${s.n === "NFA" ? "Notaufnahme" : "Unfallaufnahme"}): ${AKV_TEXT[z]}`);
   }
   const r = (s.rs ?? []).find((x) => plaetze(h, x) > 0);
-  if (!r && s.ersatz && (h.einrichtungen ?? []).includes(s.ersatz)) {
-    const z: AkvZustand = offen(h, s.ersatz, t) ? "ok" : "zu";
-    return akvFeld([z], `Primärversorgungszentrum (keine vollwertige ${s.n === "NFA" ? "Notaufnahme" : "Unfallaufnahme"}): ${AKV_TEXT[z]}`);
+  // keine gezählten Plätze: offen/zu wie in der Krankenhaus-Übersicht
+  if (!r || !ak.offen) {
+    const z: AkvZustand = ak.offen ? "ok" : "zu";
+    return akvFeld([z], `${name}: ${AKV_TEXT[z]}`);
   }
-  // keine gezählten Plätze, aber die Akut-Abteilung gibt es (wie in der Krankenhaus-Übersicht)
-  if (!r && s.ak && akutVon(h).has(s.ak)) {
-    const z: AkvZustand = akutJetzt(h, t).has(s.ak) ? "ok" : "zu";
-    return akvFeld([z], `${s.akText ?? s.titel}: ${AKV_TEXT[z]}`);
-  }
-  if (!r) return `<span class="akv-f leer"></span>`;
   const st = platzStatus(h, r, t);
   const titel = `${s.titel}${r === "schockraum" ? " (gemeinsamer Schockraum)" : ""}: ${st.offen ? `${st.frei} von ${st.n} frei` : "geschlossen"}`;
   if (!st.offen) return akvFeld(s.einzeln ? Array(Math.min(st.n, 3)).fill("zu") : ["zu"], titel);
@@ -288,14 +324,14 @@ function khStatusPanel(ctx: { params: Record<string, unknown>; setzeParams(p: Re
         `<div class="akv-legende"><span><i class="akv-s ok">${AKV_SYMBOL.ok}</i> verfügbar</span><span><i class="akv-s voll">${AKV_SYMBOL.voll}</i> belegt</span><span><i class="akv-s zu">${AKV_SYMBOL.zu}</i> geschlossen</span><span>leer = gibt es dort nicht</span></div>`;
       return;
     }
-    const kopfZeile = `<div class="khs-z khs-head"><span>Krankenhaus</span>${SPALTEN.map(([, n]) => `<span>${n}</span>`).join("")}</div>`;
+    const kopfZeile = `<div class="khs-z khs-head"><span>Krankenhaus</span>${SPALTEN.map((sp) => `<span>${sp.n}</span>`).join("")}</div>`;
     tabelle.innerHTML =
       kopfZeile +
       (liste
         .map(
           ({ h, km }) => `<div class="khs-z" data-kh="${esc(h.id)}" tabindex="0" role="button">
             <span class="khs-name"><b>${esc(h.kurzname || h.name)}</b><small>${km.toFixed(0)} km${h.aufnahmerad ? (aufnahmetag(h.aufnahmerad, t) ? " · Aufnahmetag" : " · kein Aufnahmetag") : ""}</small></span>
-            ${SPALTEN.map(([rs]) => `<span>${sammelZelle(h, rs, t)}</span>`).join("")}
+            ${SPALTEN.map((sp) => `<span>${sammelZelle(h, sp, t)}</span>`).join("")}
           </div>`,
         )
         .join("") || `<div class="khs-leer">Kein Krankenhaus im gewählten Umkreis.</div>`);
