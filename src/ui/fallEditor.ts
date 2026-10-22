@@ -718,7 +718,7 @@ function fensterBauen(): { zeigen(id?: string): void } {
         aenderung();
       }, { platzhalter: "z. B. am Wanderweg oberhalb von {ort}, beim Marterl", neu: "+ Beschreibung" }), "nur wenn der Anrufer die Adresse nicht kennt"),
     );
-    const z = abschnitt("Wann?", "Leer = jederzeit.");
+    const z = abschnitt("Wann?", "Leer = jederzeit. Orte haben Öffnungszeiten (Schule werktags, Disco Fr/Sa nachts …) – dort kommt der Fall nur, wenn offen ist.");
     const stundenAn = !!f.stunden;
     const von = zahl(f.stunden?.[0] ?? 8, (v) => {
       f.stunden = [v, f.stunden?.[1] ?? 18];
@@ -730,6 +730,24 @@ function fensterBauen(): { zeigen(id?: string): void } {
     }, { min: 0, max: 24, breit: "60px" });
     von.disabled = bis.disabled = !stundenAn;
     z.append(
+      zeile(
+        "Tageszeit",
+        auswahl([["24h", "immer (24 h)"], ["tag", "tagsüber (7–19 Uhr)"], ["nacht", "nachts (19–7 Uhr)"]] as Opt<"24h" | "tag" | "nacht">, f.tageszeit ?? "24h", (v) => {
+          if (v === "24h") delete f.tageszeit;
+          else f.tageszeit = v;
+          aenderung();
+        }),
+        "Orte wie Bahnhof oder Pflegeheim bringen so nachts andere Fälle als tagsüber",
+      ),
+      zeile(
+        "Ausnahme",
+        haken(!!f.auchGeschlossen, (an) => {
+          if (an) f.auchGeschlossen = true;
+          else delete f.auchGeschlossen;
+          aenderung();
+        }, "kann auch passieren, wenn der Ort zu ist"),
+        "z. B. betrunkene Person, Rauferei, hilflose Person – dann draußen vor dem Eingang oder am Parkplatz",
+      ),
       zeile("Jahreszeit", chips(JAHRESZEITEN, f.jahreszeit ?? [], (v) => {
         if (v.length) f.jahreszeit = v;
         else delete f.jahreszeit;

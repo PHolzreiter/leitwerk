@@ -11,7 +11,7 @@
  *   was die Besatzung sieht (Lagemeldung), Notarzt-Bedarf nach Kompetenz, Partner, Krankenhaus.
  */
 import type { Antworten } from "./schema";
-import type { SzenarioVorlage } from "./szenario";
+import { tageszeitPasst, type SzenarioVorlage } from "./szenario";
 import type { Atmung, Bewusstsein, Sichtung } from "../sim/lage";
 import type { PartnerGrund } from "../sim/partner";
 
@@ -886,6 +886,7 @@ export const FAELLE: FallVorlage[] = [
     haeufigkeit: 3,
     alter: [25, 65],
     geschlecht: "m",
+    auchGeschlossen: true,
     orte: ["bahnhof", "strasse"],
     stelle: ["auf der Bank beim Bahnhof", "an der Bushaltestelle", "auf einer Parkbank"],
     anrufer: ["passant", "verkauf"],
@@ -1152,6 +1153,7 @@ export const FAELLE: FallVorlage[] = [
     thema: "sturz",
     haeufigkeit: 1,
     alter: [55, 88],
+    tageszeit: "tag",
     orte: ["bahnhof"],
     kategorien: ["bahnhof"],
     stelle: ["auf der Stiege in der Unterführung", "auf der Stiege zum Bahnsteig {2|3}"],
@@ -1232,6 +1234,7 @@ export const FAELLE: FallVorlage[] = [
     thema: "tierbiss",
     haeufigkeit: 1,
     alter: [4, 12],
+    tageszeit: "tag",
     orte: ["freizeit"],
     kategorien: ["tierpark"],
     stelle: ["beim Streichelgehege", "beim Wildschweingehege"],
@@ -1256,6 +1259,7 @@ export const FAELLE: FallVorlage[] = [
     thema: "sturz",
     haeufigkeit: 1,
     alter: [65, 90],
+    tageszeit: "tag",
     orte: ["freizeit"],
     kategorien: ["museum"],
     stelle: ["auf der Stiege im Museum", "in der Ausstellung im 1. Stock"],
@@ -1572,6 +1576,7 @@ export function fallVariante(f: FallVorlage, id: string): FallVariante | undefin
 export function fallWaehlen(ctx: { jahreszeit: string; stunde: number; temp: number; glatt: boolean }, rnd: () => number): FallVorlage | null {
   const passend = alleFaelle().filter((v) => {
     if (v.jahreszeit && !v.jahreszeit.includes(ctx.jahreszeit as never)) return false;
+    if (!tageszeitPasst(v.tageszeit, ctx.stunde)) return false;
     if (v.stunden) {
       const [a, b] = v.stunden;
       const drin = a <= b ? ctx.stunde >= a && ctx.stunde < b : ctx.stunde >= a || ctx.stunde < b;

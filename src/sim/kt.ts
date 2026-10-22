@@ -231,6 +231,8 @@ export interface ZufallsOrte {
   heim: KtOrt;
   /** passende Krankenhäuser (in der Nähe, nach Entfernung) */
   khMit(bereich: string): Hospital[];
+  /** Art des Transports vorgeben (z. B. Einweisung aus der Arztpraxis) */
+  typ?: "ambulanz" | "heim" | "entlassung" | "einweisung";
 }
 
 /** Ambulanzen, zu denen Patienten von zu Hause gebracht werden, mit Gewicht */
@@ -284,7 +286,7 @@ export function zufallsDaten(o: ZufallsOrte, jetzt: number): KtDaten | null {
   const geschlecht: "m" | "w" = Math.random() < 0.5 ? "w" : "m";
   const alter = Math.round(Math.min(98, Math.max(18, rnd(45, 95) + (Math.random() < 0.15 ? -25 : 0))));
   const art: KtArt = gewichtet([["KTx", 6], ["KTR", 3], ["KTA", 1]]);
-  const typ = gewichtet<"ambulanz" | "heim" | "entlassung" | "einweisung">([["ambulanz", 4], ["heim", 3], ["entlassung", 3], ["einweisung", 0.8]]);
+  const typ = o.typ ?? gewichtet<"ambulanz" | "heim" | "entlassung" | "einweisung">([["ambulanz", 4], ["heim", 3], ["entlassung", 3], ["einweisung", 0.8]]);
   // Vorlauf: sofort, 1–3 h oder später am Tag
   const vorlaufMin = gewichtet<() => number>([[() => rnd(70, 120), 4], [() => rnd(120, 240), 4], [() => rnd(240, 480), 2]])();
   let termin = jetzt + vorlaufMin * 60_000;

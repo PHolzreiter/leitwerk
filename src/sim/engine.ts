@@ -45,6 +45,7 @@ import { personaWaehlen } from "../abfrage/persona";
 import { alleOrte, kategorienFuerOrtArt, ortGewicht, ortKategorie, poiKategorien } from "../data/orte";
 import { ortAnStelle, ortPartner } from "../data/ortProfile";
 import { ortRegeln } from "../abfrage/ortRegeln";
+import { katKtOffen, katOffen, ortArtOffen } from "../data/ortZeiten";
 import { stellen, stellenInGruppe, stellenLaden, stelleBeschreibung, type Einsatzstelle } from "../data/einsatzstellen";
 import { bezugFuer, fuellen, ORT_IM_FREIEN, stimmungAusVerlauf, szenarioBauen, altersPlausibel, sichtUnbekannt, vorlageFest, vorlageWaehlen, type AnruferTyp, type OrtArt, type OrtModus, type Szenario } from "../abfrage/szenario";
 
@@ -267,6 +268,8 @@ export interface Fall {
   ortArt?: OrtArt;
   /** genaue Kategorie des echten Ortes (Freibad, Bahnhof, Tierpark …) */
   ortKat?: string;
+  /** der Ort hat gerade zu – es passiert draußen davor */
+  geschlossen?: boolean;
   /** Fall aus dem Fallkatalog (faelle.ts) mit der gezogenen Variante */
   katalog?: { id: string; variante: string };
   /** Wahrheit, die das Schema nicht abfragen kann (z. B. Schnappatmung bei „atmet normal: ja/nein“) – für Anrufer und Lage */
@@ -1106,11 +1109,13 @@ export class Simulation {
 
   /** Zufällige Adresse innerhalb der Funkgruppe (Adressen kommen aus der Box, hier wird genau geprüft) */
   /** POIs im eigenen Gebiet mit einer Kategorie, die zum Einsatzort passt */
-  private poisFuer(art: OrtArt, alter: number | null, nurKat?: string[]) {
+  private poisFuer(art: OrtArt, alter: number | null, nurKat?: string[], auchGeschlossen = false) {
     // Fall mit eigenen Orten (Bahnübergang, Hochstand …): die zählen auch ohne passende Ortsart
     const keys = nurKat?.length ? nurKat.filter((k) => kategorienFuerOrtArt(art, alter).includes(k) || !ortKategorie(k)?.ortArt) : kategorienFuerOrtArt(art, alter);
     if (!keys.length) return [];
-    return this.orteImGebiet().filter((o) => o.kategorien.some((k) => keys.includes(k)));
+    // nur Orte, die gerade offen sind (Schule nicht am Sonntag, Disco nur Fr/Sa nachts)
+    const t = this.state.zeit;
+    return this.orteImGebiet().filter((o) => o.kategorien.some((k) => keys.includes(k) && (auchGeschlossen || katOffen(k, t))));
   }
 
   /** POIs und Einsatzstellen der eigenen Funkgruppe (zwischengespeichert – der Generator fragt oft) */
@@ -1140,8 +1145,13 @@ export class Simulation {
   }
 
   /** Einsatzort der Fallgeschichte: Orte, für die es echte POIs gibt, werden bevorzugt */
-  private ortArtWaehlen(v: { orte: OrtArt[]; ortModus?: OrtModus; anrufer: AnruferTyp[] }, alter: number | null, thema?: string | null): OrtArt {
+  private ortArtWaehlen(v: { orte: OrtArt[]; ortModus?: OrtModus; anrufer: AnruferTyp[]; auchGeschlossen?: boolean }, alter: number | null, thema?: string | null): OrtArt {
     let kand = ortKandidaten(v);
+    // Orte, die gerade zu haben, fallen weg (außer der Fall darf auch dort passieren, z. B. betrunkene Person)
+    if (!v.auchGeschlossen) {
+      const offen = kand.filter(([o]) => ortArtOffen(o, this.state.zeit));
+      if (offen.length) kand = offen;
+    }
     // Arbeit und Baustelle nur im Arbeitsalter (wenn es noch etwas anderes gibt)
     if (typeof alter === "number" && (alter < 15 || alter > 72)) {
       const ohne = kand.filter(([o]) => o !== "arbeit" && o !== "baustelle");
@@ -1150,7 +1160,7 @@ export class Simulation {
     // Orte, die zum Fall passen (Tierbiss → Tierpark/Reitanlage, Intoxikation → Disco), kommen öfter vor
     if (thema) kand = kand.map(([o, w]) => [o, this.poisFuer(o, alter).some((x) => ortGewicht(x.kategorien, thema, alter) >= 4) ? w * 2.5 : w] as [OrtArt, number]);
     // Einrichtungen (Pflegeheim, Ordination, Schule, Bahnhof) nur, wo es so einen Ort im Gebiet gibt
-    const ohneEinrichtung = kand.filter(([o]) => !ORT_NUR_MIT_POI.includes(o) || this.poisFuer(o, alter).length > 0);
+    const ohneEinrichtung = kand.filter(([o]) => !ORT_NUR_MIT_POI.includes(o) || this.poisFuer(o, alter, undefined, v.auchGeschlossen).length > 0);
     if (ohneEinrichtung.length) kand = ohneEinrichtung;
     if (!v.ortModus || v.ortModus === "nur") {
       const orte = kand.map(([o]) => o);
@@ -1172,8 +1182,12 @@ export class Simulation {
     thema?: string | null,
     nurKat?: string[],
     filter?: (o: { lat: number; lon: number }) => boolean,
-  ): Promise<(Awaited<ReturnType<typeof randomAddresses>>[number] & { kat?: string; stelle?: Einsatzstelle }) | null> {
-    const kand = this.poisFuer(art, alter, nurKat).filter((o) => !filter || filter(o));
+    auchGeschlossen = false,
+  ): Promise<(Awaited<ReturnType<typeof randomAddresses>>[number] & { kat?: string; stelle?: Einsatzstelle; geschlossen?: boolean }) | null> {
+    // offene Orte zuerst; geschlossene nur, wenn der Fall auch dort passieren kann
+    let kand = this.poisFuer(art, alter, nurKat).filter((o) => !filter || filter(o));
+    if (!kand.length && auchGeschlossen) kand = this.poisFuer(art, alter, nurKat, true).filter((o) => !filter || filter(o));
+    else if (auchGeschlossen && Math.random() < 0.5) kand = this.poisFuer(art, alter, nurKat, true).filter((o) => !filter || filter(o));
     // Pflegeheim, Ordination, Schule und Fälle mit eigenem Ort: immer dort; sonst passiert es manchmal auch woanders (auf der Straße meist nicht an einer Haltestelle)
     if (!kand.length || (!nurKat?.length && !ORT_NUR_MIT_POI.includes(art) && Math.random() > (POI_ANTEIL[art] ?? 0.8))) return null;
     // genaue Kategorie mit passendem Thema und Alter bevorzugt (Huftritt → Reitanlage, Fieberkrampf → Kindergarten)
@@ -1204,6 +1218,7 @@ export class Simulation {
     }
     return {
       kat,
+      ...(kat && !katOffen(kat, this.state.zeit) ? { geschlossen: true } : {}),
       label: h ? `${name}, ${h.label}` : `${name}${o.ort ? `, ${o.ort}` : ""}`,
       street: h?.street ?? o.name,
       number: h?.number ?? "",
@@ -2323,7 +2338,7 @@ export class Simulation {
         wahr(p.fall),
         Math.random,
         gemeldet,
-        vorlage && ortArt ? { typen: vorlage.anrufer, ort: ORT_LABEL[ortArt], ortArt, ortKat: p.fall.ortKat } : undefined,
+        vorlage && ortArt ? { typen: vorlage.anrufer, ort: ORT_LABEL[ortArt], ortArt, ortKat: p.fall.ortKat, geschlossen: p.fall.geschlossen } : undefined,
         this.einrichtungAmOrt(p.lat, p.lon),
       );
       // Ruft Pflege, Arzt oder Ordination an, fragt man in Kapitel 33 ab (Anforderung durch Einrichtung) –
@@ -2365,7 +2380,7 @@ export class Simulation {
           merkmale.wissen = anrufer.persona.wissen;
         }
         if (anrufer.typ) merkmale.anrufer_typ = anrufer.typ;
-        szenario = szenarioBauen(vorlage, merkmale, { bezug: bezugFuer(anrufer.rolle, anrufer.selbst, w, alt), selbst: anrufer.selbst, ort: p.gemeinde ?? gemeindeVon(p.adresse), name: pname, ortArt, ortKat: p.fall.ortKat }, Math.random);
+        szenario = szenarioBauen(vorlage, merkmale, { bezug: bezugFuer(anrufer.rolle, anrufer.selbst, w, alt), selbst: anrufer.selbst, ort: p.gemeinde ?? gemeindeVon(p.adresse), name: pname, ortArt, ortKat: p.fall.ortKat, geschlossen: p.fall.geschlossen }, Math.random);
         for (const x of ["variante", "wissen", "anrufer_typ", "ort", "ortkat", "selbst"]) delete szenario.zusatz[x];
         const st = stimmungAusVerlauf(szenario.verlauf);
         if (st && privat) anrufer.emotion = st;
@@ -3000,8 +3015,11 @@ export class Simulation {
     if (fall && !fall.ortArt && ist(fall.kapitel, "anforderung_arzt") && String(fall.antworten.anforderer ?? "normal") === "normal" && this.poisFuer("pflegeheim", null).length && Math.random() < 0.6)
       fall.ortArt = "pflegeheim";
     // passender echter Ort (Pflegeheim, Schule, Bahnhof …), wenn es einen im Gebiet gibt
-    const poiAdr = !wasserAdr && fall?.ortArt ? await this.poiAdresse(fall.ortArt, typeof fall.antworten.alter === "number" ? fall.antworten.alter : null, thema(fall.kapitel), vKat) : null;
+    const vAuchZu = !!(fall?.vorlage && (fallVorlage(fall.vorlage) ?? SZENARIEN.find((v) => v.id === fall!.vorlage))?.auchGeschlossen);
+    const poiAdr = !wasserAdr && fall?.ortArt ? await this.poiAdresse(fall.ortArt, typeof fall.antworten.alter === "number" ? fall.antworten.alter : null, thema(fall.kapitel), vKat, undefined, vAuchZu) : null;
     if (fall && poiAdr?.kat) fall.ortKat = poiAdr.kat;
+    // Ort hat gerade zu (nur bei Fällen, die das erlauben): es passiert draußen davor
+    if (fall && vAuchZu && (poiAdr?.geschlossen || (!poiAdr && fall.ortArt && !ortArtOffen(fall.ortArt, this.state.zeit)))) fall.geschlossen = true;
     let adr = wasserAdr ?? poiAdr ?? (await this.adresseImGebiet());
     if (!adr) return null;
     // Einsatzstelle ohne Hausnummer (Autobahn-Kilometer, Landstraße, Wald, Berg …): genau dort, der Anrufer beschreibt sie
@@ -3109,9 +3127,9 @@ export class Simulation {
         continue;
       }
       // Geschichte im Pflegeheim, in der Ordination, Schule …: nur, wo es so einen Ort im Gebiet gibt (sonst ein anderer Fall)
-      if (!wunsch && ORT_NUR_MIT_POI.includes(ortArt) && !this.poisFuer(ortArt, typeof a.alter === "number" ? a.alter : null).length) continue;
+      if (!wunsch && ORT_NUR_MIT_POI.includes(ortArt) && !this.poisFuer(ortArt, typeof a.alter === "number" ? a.alter : null, undefined, f.auchGeschlossen).length) continue;
       // Fall an einem bestimmten Ort (Freibad, Bahnhof, Tierpark …): nur, wo es den gibt
-      if (!wunsch && f.kategorien?.length && !this.poisFuer(ortArt, typeof a.alter === "number" ? a.alter : null, f.kategorien).length) continue;
+      if (!wunsch && f.kategorien?.length && !this.poisFuer(ortArt, typeof a.alter === "number" ? a.alter : null, f.kategorien, f.auchGeschlossen).length) continue;
       // braucht die Wasserrettung: nur, wo es eine gibt
       if (!wunsch && v.partner?.some((x) => x.art === "wasser") && !this.partnerStationenImGebiet("wasser").length) continue;
       return { fall: { kapitel: kap, antworten, code: c.code, vorlage: f.id, ortArt, katalog: { id: f.id, variante: v.id }, ...(Object.keys(roh).length ? { roh } : {}) }, code: c };
@@ -4883,7 +4901,7 @@ export class Simulation {
 
   /** Neuer zufälliger Krankentransport (online angemeldet oder über die Hotline) */
   async generiereKt(quelle?: "online" | "hotline"): Promise<KtAuftrag | null> {
-    let d: KtDaten | null = null;
+    let d: KtDaten | null = this.ktVonEinrichtung();
     for (let i = 0; i < 4 && !d; i++) {
       const adr = await this.adresseImGebiet();
       if (!adr) continue;
@@ -4894,6 +4912,35 @@ export class Simulation {
     const k = this.ktNeu(d, quelle ?? (Math.random() < 0.45 ? "hotline" : "online"));
     this.emit();
     return k;
+  }
+
+  /**
+   * Etwa ein Drittel der Krankentransporte kommt aus Einrichtungen (Pflegeheim, Betreutes Wohnen, Reha,
+   * Arztpraxis …) – nur zu deren KT-Zeiten (Abholung bzw. Ankunft dort). Arztpraxis = Einweisung ins KH.
+   */
+  private ktVonEinrichtung(): KtDaten | null {
+    if (Math.random() > 0.35) return null;
+    const GEWICHT: Record<string, number> = { pflegeheim: 5, betreutes_wohnen: 1.5, behinderteneinrichtung: 1, reha: 1.5, arztpraxis: 1, primaerversorgung: 1 };
+    const orte = this.orteImGebiet().filter((o) => o.kind === "pois" && o.kategorien.some((k) => GEWICHT[k]));
+    if (!orte.length) return null;
+    for (let i = 0; i < 4; i++) {
+      const gew = orte.map((o) => Math.max(...o.kategorien.map((k) => GEWICHT[k] ?? 0)));
+      let r = Math.random() * gew.reduce((x, y) => x + y, 0);
+      let o = orte[orte.length - 1];
+      for (let j = 0; j < orte.length; j++) if ((r -= gew[j]) <= 0) {
+        o = orte[j];
+        break;
+      }
+      const kat = o.kategorien.find((k) => GEWICHT[k])!;
+      const heim: KtOrt = { lat: o.lat, lon: o.lon, label: `${o.name}${o.ort ? `, ${o.ort}` : ""}` };
+      const praxis = kat === "arztpraxis" || kat === "primaerversorgung";
+      const d = zufallsDaten({ heim, khMit: (b) => this.khMit(b, heim), ...(praxis ? { typ: "einweisung" as const } : {}) }, this.state.zeit);
+      if (!d) continue;
+      // Zeitpunkt in der Einrichtung: Abholung dort bzw. Ankunft dort
+      const dort = d.von === heim ? (d.abholung ?? (d.termin ? d.termin - 60 * 60_000 : this.state.zeit)) : (d.termin ?? d.abholung ?? this.state.zeit);
+      if (katKtOffen(kat, dort)) return d;
+    }
+    return null;
   }
 
   /** Daueraufträge (Dialyse, Bestrahlung) für einen Tag anlegen – nur, was noch bevorsteht */

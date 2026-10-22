@@ -1,5 +1,19 @@
 # Änderungen
 
+## 0.49.0 – Öffnungszeiten der Orte, Tag- und Nachtfälle
+**Orte haben Zeiten** (Einsätze und Krankentransporte nur, wenn dort offen ist; Feiertage wie Sonntag)
+- z. B. Schulen und Kindergärten Mo–Fr tagsüber, Supermarkt Mo–Sa 7–20, Arztpraxis Mo–Fr 8–18, Museum Di–So 10–17, Disco Fr/Sa 22–5, Freibad 9–19, Hochstand in der Dämmerung; Bahnhof, Pflegeheim, Hotel, Wohnung, alle Straßen und das Gelände immer
+- Österreichische Feiertage (auch Ostermontag, Pfingstmontag, Christi Himmelfahrt, Fronleichnam) sind hinterlegt
+- Die Zeiten stehen gesammelt in `src/data/ortZeiten.ts` (lesbar: „Mo-Fr 7-16; Sa 8-12“)
+
+**Tag- und Nachtfälle** (Fall-Editor → „Wann?“)
+- Jeder Fall: immer (24 h), tagsüber (7–19) oder nachts (19–7) – Orte wie Bahnhof oder Pflegeheim bringen so nachts andere Fälle als tagsüber
+- Ausnahme „kann auch passieren, wenn der Ort zu ist“ (betrunkene Person, Rauferei, hilflose Person …): dann draußen vor dem Eingang oder am Parkplatz, und es ruft kein Personal an
+- Vorbelegt: Sturz auf der Bahnhofsstiege, Museum, Tierpark nur tagsüber; Ausnahme bei Person auf der Parkbank, Rauferei, Stichverletzung im Streit, hilflose und unterkühlte Person, Polizei-Anforderungen
+
+**Krankentransporte aus Einrichtungen**
+- Etwa ein Drittel der KTs kommt jetzt aus Pflegeheimen, Betreutem Wohnen, Einrichtungen für Menschen mit Behinderung, Reha-Zentren und Arztpraxen (Einweisung) – nur zu deren KT-Zeiten (Pflegeheim Mo–Fr 7–16, Reha Mo–Fr 8–15, Praxis Mo–Fr 8–18)
+
 ## 0.48.0 – Straßen, Gelände und unsichtbare Einsatzstellen
 **Karte**
 - Orte (POIs) sind kleine, blasse Punkte; Namen erst ganz nah (ab Zoom 16)

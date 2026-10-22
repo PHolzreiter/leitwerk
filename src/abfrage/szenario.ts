@@ -84,6 +84,10 @@ export interface SzenarioVorlage {
   orte: OrtArt[];
   /** nur an Orten dieser Kategorien (POIs, z. B. „freibad“, „bahnhof“) – gibt es keinen im Gebiet, kommt der Fall nicht */
   kategorien?: string[];
+  /** wann der Fall vorkommt: tagsüber (7–19), nachts (19–7) oder immer (Standard) */
+  tageszeit?: "tag" | "nacht" | "24h";
+  /** kann auch an einem Ort passieren, der gerade zu ist (betrunkene Person vor dem Supermarkt, Rauferei vor dem Lokal) – dann draußen davor */
+  auchGeschlossen?: boolean;
   /** „nur“ (Standard): nur an den Orten oben; „ueberall“: an allen passenden Orten; „ausser“: überall außer an den Orten oben */
   ortModus?: OrtModus;
   /** genaue Stelle, z. B. „im Badezimmer“; {ort} = Gemeinde */
@@ -418,6 +422,13 @@ export function altersPlausibel(v: { alter: [number, number]; fest?: Record<stri
   if (a.schwanger === "ja" && ((a.alter as number) < 14 || (a.alter as number) > 50) && v.alter[1] >= 16) a.alter = zwischen(Math.max(16, v.alter[0]), Math.min(45, v.alter[1]), rnd);
 }
 
+/** Tag 7–19, Nacht 19–7, sonst immer */
+export function tageszeitPasst(tz: "tag" | "nacht" | "24h" | undefined, stunde: number): boolean {
+  if (!tz || tz === "24h") return true;
+  const tag = stunde >= 7 && stunde < 19;
+  return tz === "tag" ? tag : !tag;
+}
+
 /** Vorlage für ein Thema wählen (Jahreszeit, Uhrzeit, Wetter beachten) */
 export function vorlageWaehlen(
   vorlagen: SzenarioVorlage[],
@@ -428,6 +439,7 @@ export function vorlageWaehlen(
   const passend = vorlagen.filter((v) => {
     if (!thema || v.thema !== thema) return false;
     if (v.jahreszeit && !v.jahreszeit.includes(ctx.jahreszeit as never)) return false;
+    if (!tageszeitPasst(v.tageszeit, ctx.stunde)) return false;
     if (v.stunden) {
       const [a, b] = v.stunden;
       const drin = a <= b ? ctx.stunde >= a && ctx.stunde < b : ctx.stunde >= a || ctx.stunde < b;
@@ -474,7 +486,7 @@ export function bezugFuer(anruferRolle: string, selbst: boolean, w: boolean, alt
 export function szenarioBauen(
   v: SzenarioVorlage,
   a: Antworten,
-  opt: { bezug: string; selbst: boolean; ort: string; name: string; ortArt?: OrtArt; ortKat?: string },
+  opt: { bezug: string; selbst: boolean; ort: string; name: string; ortArt?: OrtArt; ortKat?: string; geschlossen?: boolean },
   rnd: Rnd,
 ): Szenario {
   const w = a.geschlecht === "w";
@@ -559,6 +571,8 @@ export function szenarioBauen(
   const prof = ortProfil(opt.ortKat);
   const stellen = (() => {
     const l = v.stelle.filter((t) => passtBedingung(t, alle));
+    // Ort hat gerade zu: es passiert draußen davor
+    if (opt.geschlossen) return ortArt === "schule" ? ["im Schulhof", "vor dem Eingang"] : ["vor dem Eingang", "auf dem Parkplatz davor"];
     if (!prof) return v.stelle;
     const ok = prof.stelleMuster ? l.filter((t) => prof.stelleMuster!.test(ohneBedingung(t))) : [];
     return ok.length ? ok : prof.stelle?.length ? prof.stelle : v.stelle;

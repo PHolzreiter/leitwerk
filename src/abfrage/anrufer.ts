@@ -158,7 +158,7 @@ export function anruferWaehlen(
   rnd: () => number = Math.random,
   adresse = "",
   /** aus der Fallgeschichte: wer anrufen darf und wo es passiert */
-  geschichte?: { typen: AnruferTyp[]; ort: string; ortArt?: OrtArt; ortKat?: string },
+  geschichte?: { typen: AnruferTyp[]; ort: string; ortArt?: OrtArt; ortKat?: string; geschlossen?: boolean },
   /** Was steht wirklich an der Adresse? (Pflegeheim, Arztpraxis, Schule – aus den Orten/POIs); fehlt es, wird es geschätzt */
   amOrt?: { arten: OrtArt[]; name?: string },
 ): Anrufer {
@@ -240,6 +240,11 @@ export function anruferWaehlen(
       const fremdeOk = typen.some((t) => t === "passant" || t === "begleiter");
       const ziel = prof.anrufer.filter((t) => (typen.includes(t) || (fremdeOk && PERSONAL.includes(t))) && (t !== "selbst" || kannSelbst));
       if (ziel.length) typen = ziel;
+    }
+    // Ort hat zu: kein Personal da – es ruft jemand an, der vorbeikommt oder dabei ist
+    if (geschichte.geschlossen) {
+      const ohne = typen.filter((t) => !PERSONAL.includes(t) && t !== "pflege" && t !== "ordi");
+      typen = ohne.length ? ohne : ["passant"];
     }
     if (typen.some(altersGerecht)) typen = typen.filter(altersGerecht);
     const erlaubt = kandidaten.filter(([x]) => x.typ && typen.includes(x.typ));
