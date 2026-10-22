@@ -6,9 +6,10 @@ import { addFahrzeug3D, type Fahrzeug3D } from "../../fz3d";
 import { addFzFokus, type FzFokus } from "../../fzFokus";
 import maplibregl from "maplibre-gl";
 import { alleOrte, kategorieLabel, type Ort } from "../../data/orte";
+import { stellenLaden } from "../../data/einsatzstellen";
 import { availableMaps, createMap, type MapHandle } from "../../map";
 import { searchAddress } from "../../sim/geo";
-import { addDataLayers, addSimLayers, ORG_FARBEN, pickLaeuft, pickLocation, setGroupVisible, setSelectedIncident } from "../../mapLayers";
+import { addDataLayers, addSimLayers, FONT, ORG_FARBEN, pickLaeuft, pickLocation, setGroupVisible, setSelectedIncident } from "../../mapLayers";
 import { sim, type SimFahrzeug } from "../../sim/engine";
 import { onPacksChanged } from "../../updates";
 import { el, toast } from "../dom";
@@ -58,6 +59,7 @@ function erstellen(ctx: PanelKontext) {
       <label class="chk"><input type="checkbox" data-group="hospitals" checked /><span class="dot hosp"></span>Krankenhäuser</label>
       <label class="chk"><input type="checkbox" data-group="pois" checked /><span class="dot" style="background:#2a9d8f"></span>POIs</label>
       <label class="chk" title="Grenzen der TETRA-Funkgruppen (Farben unter Einstellungen → Darstellung)"><input type="checkbox" class="chk-funk" />Funkgruppen</label>
+      <label class="chk nur-entwickler" hidden title="Entwickler: mögliche Einsatzstellen, die sonst nicht auf der Karte stehen"><input type="checkbox" class="chk-stellen" />Einsatzstellen (unsichtbar)</label>
       <label class="chk" title="Nur in der 3D-Ansicht und nah herangezoomt"><input type="checkbox" class="chk-modelle" checked />3D-Fahrzeugmodelle</label>
       <label class="chk" title="Die Karte springt zum ausgewählten Einsatz"><input type="checkbox" class="chk-folgt" />folgt der Auswahl</label>
       <div class="legende"></div>
@@ -265,6 +267,19 @@ function erstellen(ctx: PanelKontext) {
     chkFunk.checked = pers().funkLinien !== false;
     chkFunk.addEventListener("change", () => setzePers({ funkLinien: chkFunk.checked }));
     onPers((p) => (chkFunk.checked = p.funkLinien !== false));
+    // Entwickler: unsichtbare Einsatzstellen (erst beim Einschalten geladen)
+    const devZeile = panel.querySelector<HTMLElement>(".nur-entwickler")!;
+    const chkSt = panel.querySelector<HTMLInputElement>(".chk-stellen")!;
+    const devZeigen = () => {
+      devZeile.hidden = !pers().entwickler;
+      if (!pers().entwickler && chkSt.checked) {
+        chkSt.checked = false;
+        stellenEbene(map, false);
+      }
+    };
+    devZeigen();
+    onPers(devZeigen);
+    chkSt.addEventListener("change", () => void stellenEbene(map, chkSt.checked));
     panel.querySelectorAll<HTMLInputElement>("input[data-group]").forEach((cb) =>
       cb.addEventListener("change", () => setGroupVisible(map, cb.dataset.group as "stations" | "hospitals" | "pois", cb.checked)),
     );
@@ -409,3 +424,34 @@ registriere({
   mehrfach: true,
   erstellen,
 });
+
+/** Entwickler-Ebene: alle Einsatzstellen als kleine Punkte, beschriftet mit Art und Name */
+async function stellenEbene(map: maplibregl.Map, an: boolean): Promise<void> {
+  if (!an) {
+    for (const id of ["lw-stellen", "lw-stellen-label"]) if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", "none");
+    return;
+  }
+  const l = await stellenLaden();
+  if (!map.getSource("lw-stellen")) {
+    map.addSource("lw-stellen", {
+      type: "geojson",
+      data: {
+        type: "FeatureCollection",
+        features: l.map((s) => ({ type: "Feature", geometry: { type: "Point", coordinates: [s.lon, s.lat] }, properties: { typ: s.typ, text: `${kategorieLabel(s.typ)}${s.name ? `: ${s.name}` : ""}${s.typ === "autobahn" && s.info ? ` (${s.info.replace("|", " km, → ")})` : ""}` } })),
+      },
+    });
+    map.addLayer({
+      id: "lw-stellen",
+      type: "circle",
+      source: "lw-stellen",
+      minzoom: 8,
+      paint: {
+        "circle-radius": ["interpolate", ["linear"], ["zoom"], 8, 1, 14, 3],
+        "circle-color": ["match", ["get", "typ"], "autobahn", "#d62828", "landstrasse", "#f77f00", "feldweg", "#a07a50", "radweg", "#7cb518", "wald", "#2d6a4f", "berg", "#6c584c", "ufer", "#0096c7", "weinberg", "#9d4edd", "feld", "#c9a227", "#e63946"],
+        "circle-opacity": 0.8,
+      },
+    });
+    map.addLayer({ id: "lw-stellen-label", type: "symbol", source: "lw-stellen", minzoom: 13, layout: { "text-field": ["get", "text"], "text-font": FONT, "text-size": 10, "text-offset": [0, 0.8], "text-anchor": "top" }, paint: { "text-color": "#333", "text-halo-color": "#fff", "text-halo-width": 1 } });
+  }
+  for (const id of ["lw-stellen", "lw-stellen-label"]) map.setLayoutProperty(id, "visibility", "visible");
+}

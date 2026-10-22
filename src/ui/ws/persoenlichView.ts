@@ -719,6 +719,8 @@ export function persoenlichView(container: HTMLElement): { refresh(): void } {
     reset.disabled = !IST_HAUPT;
     knoepfe.append(imp, jetzt, reset);
     o.append(liste, knoepfe);
+    const dev = section("Entwickler", "Nur zum Prüfen der Daten – für das Spiel nicht nötig.");
+    zeile(dev, "Entwicklerfunktionen", schalter(!!p.entwickler, (v) => setzePers({ entwickler: v })), "Zeigt in der Karte unter „Ebenen“ die unsichtbaren Einsatzstellen (Autobahn-Kilometer, Landstraßen, Wald, Berg, Ufer, Bahnübergänge, Brücken …).");
     const p2 = section("Einführung");
     const intro = el("button", { class: "btn small" }, "Hinweise zum Arbeitsplatz wieder zeigen");
     intro.addEventListener("click", () => setzePers({ einfuehrung: false }));

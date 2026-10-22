@@ -27,7 +27,19 @@ export type OrtArt =
   | "wasser"
   | "auto"
   | "arzt"
-  | "bahnhof";
+  | "bahnhof"
+  | "landstrasse"
+  | "autobahn"
+  | "feldweg"
+  | "wald"
+  | "berg"
+  | "ufer"
+  | "feld";
+
+/** Einsatzorte im Freien (Anrufer sieht keine Hausnummer, die Adresse ist höchstens die nächste) */
+export const ORT_IM_FREIEN: OrtArt[] = ["strasse", "landstrasse", "autobahn", "natur", "feldweg", "wald", "berg", "ufer", "feld", "wasser", "auto", "sport", "freizeit", "bahnhof"];
+/** Einsatzorte ohne Adresse: der Anrufer beschreibt, wo er ist (Straße und Kilometer, Wald bei …) – oft Ortung nötig */
+export const ORT_OHNE_ADRESSE: OrtArt[] = ["natur", "landstrasse", "autobahn", "feldweg", "wald", "berg", "ufer", "feld"];
 
 /** Wo ein Fall vorkommt: nur an den genannten Orten, überall oder überall außer dort */
 export type OrtModus = "nur" | "ueberall" | "ausser";

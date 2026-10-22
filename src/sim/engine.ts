@@ -42,12 +42,17 @@ import {
 import { bestimmeCode, fallZiehen, kapitelVonCode, wahrheitFuer, type Antworten, type Schema } from "../abfrage/schema";
 import { anruferWaehlen, ortKandidaten, veraenderungText, zufallsName, type Anrufer } from "../abfrage/anrufer";
 import { personaWaehlen } from "../abfrage/persona";
-import { alleOrte, kategorienFuerOrtArt, ortGewicht, poiKategorien } from "../data/orte";
+import { alleOrte, kategorienFuerOrtArt, ortGewicht, ortKategorie, poiKategorien } from "../data/orte";
 import { ortAnStelle, ortPartner } from "../data/ortProfile";
-import { bezugFuer, fuellen, stimmungAusVerlauf, szenarioBauen, altersPlausibel, sichtUnbekannt, vorlageFest, vorlageWaehlen, type AnruferTyp, type OrtArt, type OrtModus, type Szenario } from "../abfrage/szenario";
+import { ortRegeln } from "../abfrage/ortRegeln";
+import { stellen, stellenInGruppe, stellenLaden, stelleBeschreibung, type Einsatzstelle } from "../data/einsatzstellen";
+import { bezugFuer, fuellen, ORT_IM_FREIEN, stimmungAusVerlauf, szenarioBauen, altersPlausibel, sichtUnbekannt, vorlageFest, vorlageWaehlen, type AnruferTyp, type OrtArt, type OrtModus, type Szenario } from "../abfrage/szenario";
 
 /** Einsatzorte, die eine echte Einrichtung brauchen (sonst ruft z. B. eine Pflegekraft aus einem Wohnhaus an) */
-const ORT_NUR_MIT_POI: OrtArt[] = ["pflegeheim", "arzt", "schule", "bahnhof"];
+/** Orte, die es im Gebiet geben muss (Einrichtung als POI bzw. Strecke/Fläche als Einsatzstelle) */
+const ORT_NUR_MIT_POI: OrtArt[] = ["pflegeheim", "arzt", "schule", "bahnhof", "landstrasse", "autobahn", "feldweg", "wald", "berg", "ufer", "feld"];
+/** Einsatzstellen ohne Hausnummer in der Nähe: Strecken und Flächen */
+const STELLE_FLAECHE = new Set(["autobahn", "landstrasse", "feldweg", "radweg", "wald", "berg", "ufer", "weinberg", "feld", "hochstand", "kletterfels", "klettersteig"]);
 /** Wie oft ein Fall an einem echten Ort (POI) spielt, wenn er auch woanders passieren kann */
 const POI_ANTEIL: Partial<Record<OrtArt, number>> = { strasse: 0.25 };
 import { SZENARIEN } from "../abfrage/szenarien";
@@ -274,7 +279,7 @@ const ORT_LABEL: Record<OrtArt, string> = {
   haus: "Einfamilienhaus",
   garten: "Garten",
   pflegeheim: "Pflegeheim",
-  strasse: "Straße / Gehsteig",
+  strasse: "Straße / Gehsteig im Ort",
   geschaeft: "Geschäft",
   lokal: "Lokal",
   arbeit: "Arbeitsplatz",
@@ -287,7 +292,24 @@ const ORT_LABEL: Record<OrtArt, string> = {
   auto: "im Auto",
   arzt: "Arztpraxis",
   bahnhof: "Bahnhof",
+  landstrasse: "Landstraße (außerorts)",
+  autobahn: "Autobahn / Schnellstraße",
+  feldweg: "Feld-, Forst- oder Radweg",
+  wald: "im Wald",
+  berg: "am Berg",
+  ufer: "am Fluss- oder Seeufer",
+  feld: "auf dem Feld / im Weingarten",
 };
+
+/** Name einer unauffälligen Stelle: „Bahnübergang an der L14“, „Brücke B32 über Kamp“, „Kellergasse Bühl“ */
+function stellenName(kat: string, name: string): string {
+  const n = name.includes("_") ? "" : name.trim();
+  const art = kat === "kellergasse" ? "Kellergasse" : (ortKategorie(kat)?.label ?? kat).split(" / ")[0];
+  if (!n) return art;
+  if (n.toLowerCase().includes(art.toLowerCase().slice(0, 6))) return n;
+  if (kat === "bahnuebergang" || kat === "kreisverkehr") return `${art} an der ${n}`;
+  return `${art} ${n}`;
+}
 
 /** Gemeinde aus einer Adresse („Hauptstraße 3, 3500 Krems“ → „Krems“) */
 function gemeindeVon(adresse: string): string {
@@ -1085,10 +1107,22 @@ export class Simulation {
   /** Zufällige Adresse innerhalb der Funkgruppe (Adressen kommen aus der Box, hier wird genau geprüft) */
   /** POIs im eigenen Gebiet mit einer Kategorie, die zum Einsatzort passt */
   private poisFuer(art: OrtArt, alter: number | null, nurKat?: string[]) {
-    const keys = kategorienFuerOrtArt(art, alter).filter((k) => !nurKat?.length || nurKat.includes(k));
+    // Fall mit eigenen Orten (Bahnübergang, Hochstand …): die zählen auch ohne passende Ortsart
+    const keys = nurKat?.length ? nurKat.filter((k) => kategorienFuerOrtArt(art, alter).includes(k) || !ortKategorie(k)?.ortArt) : kategorienFuerOrtArt(art, alter);
     if (!keys.length) return [];
+    return this.orteImGebiet().filter((o) => o.kategorien.some((k) => keys.includes(k)));
+  }
+
+  /** POIs und Einsatzstellen der eigenen Funkgruppe (zwischengespeichert – der Generator fragt oft) */
+  private orteCache: { g: string; quelle: unknown; stellen: number; orte: ReturnType<typeof alleOrte> } | null = null;
+  private orteImGebiet(): ReturnType<typeof alleOrte> {
     const g = this.funkgruppe();
-    return alleOrte().filter((o) => o.kind === "pois" && o.kategorien.some((k) => keys.includes(k)) && inFunkgruppe(g, o.lat, o.lon));
+    const quelle = alleOrte();
+    const st = stellen().length;
+    if (this.orteCache && this.orteCache.g === g.id && this.orteCache.quelle === quelle && this.orteCache.stellen === st) return this.orteCache.orte;
+    const orte = [...quelle.filter((o) => o.kind === "pois" && inFunkgruppe(g, o.lat, o.lon)), ...stellenInGruppe(g)];
+    this.orteCache = { g: g.id, quelle, stellen: st, orte };
+    return orte;
   }
 
   /** Welche Einrichtung (Pflegeheim, Arztpraxis, Schule) steht an dieser Stelle? Aus den Orten (POIs) */
@@ -1138,7 +1172,7 @@ export class Simulation {
     thema?: string | null,
     nurKat?: string[],
     filter?: (o: { lat: number; lon: number }) => boolean,
-  ): Promise<(Awaited<ReturnType<typeof randomAddresses>>[number] & { kat?: string }) | null> {
+  ): Promise<(Awaited<ReturnType<typeof randomAddresses>>[number] & { kat?: string; stelle?: Einsatzstelle }) | null> {
     const kand = this.poisFuer(art, alter, nurKat).filter((o) => !filter || filter(o));
     // Pflegeheim, Ordination, Schule und Fälle mit eigenem Ort: immer dort; sonst passiert es manchmal auch woanders (auf der Straße meist nicht an einer Haltestelle)
     if (!kand.length || (!nurKat?.length && !ORT_NUR_MIT_POI.includes(art) && Math.random() > (POI_ANTEIL[art] ?? 0.8))) return null;
@@ -1150,16 +1184,27 @@ export class Simulation {
       o = kand[i];
       break;
     }
+    // Einsatzstelle (Strecke, Fläche): keine Hausnummer – der Anrufer beschreibt, wo er ist
+    if (o.kind === "stellen" && o.stelle && STELLE_FLAECHE.has(o.stelle.typ)) {
+      const b = stelleBeschreibung(o.stelle);
+      return { kat: o.stelle.typ, stelle: o.stelle, label: b, street: o.stelle.name, number: "", postcode: "", city: o.stelle.ort, lat: o.lat, lon: o.lon, place: false };
+    }
     const d = 0.002;
     const hits = (await randomAddresses([o.lon - d, o.lat - d, o.lon + d, o.lat + d], 8)).filter((h) => !h.place);
     hits.sort((a, b) => distanceM(a, o) - distanceM(b, o));
     const h = hits[0] && distanceM(hits[0], o) < 250 ? hits[0] : null;
     // welche Kategorie des Ortes passt zum Fall (ein Ort kann Bahnhof und Bushaltestelle sein)
-    const keys = kategorienFuerOrtArt(art, alter).filter((k) => !nurKat?.length || nurKat.includes(k));
+    const keys = nurKat?.length ? nurKat.filter((k) => kategorienFuerOrtArt(art, alter).includes(k) || !ortKategorie(k)?.ortArt) : kategorienFuerOrtArt(art, alter);
     const kat = o.kategorien.filter((k) => keys.includes(k)).sort((a, b) => ortGewicht([b], thema, alter) - ortGewicht([a], thema, alter))[0];
+    // unauffällige Stelle (Bahnübergang, Kreisverkehr …): heißt nach der Art, nicht nach dem Namen
+    const name = o.kind === "stellen" ? stellenName(kat, o.name) : o.name;
+    if (o.kind === "stellen" && !h && o.stelle) {
+      const b = stelleBeschreibung(o.stelle);
+      return { kat, stelle: o.stelle, label: b, street: o.stelle.name, number: "", postcode: "", city: o.stelle.ort, lat: o.lat, lon: o.lon, place: false };
+    }
     return {
       kat,
-      label: h ? `${o.name}, ${h.label}` : `${o.name}${o.ort ? `, ${o.ort}` : ""}`,
+      label: h ? `${name}, ${h.label}` : `${name}${o.ort ? `, ${o.ort}` : ""}`,
       street: h?.street ?? o.name,
       number: h?.number ?? "",
       postcode: h?.postcode ?? "",
@@ -2314,7 +2359,7 @@ export class Simulation {
           anrufer.persona = personaWaehlen(
             anrufer,
             { alter: alt, w, vorname: vn, nachname: nn.join(" "), wach: (a.bw ?? "ja") === "ja" || a.bw === "getruebt", sicht: !vorlage.ohneSicht },
-            { ortUnbekannt: false, draussen: !!ortArt && ["strasse", "natur", "auto", "wasser", "bahnhof", "sport", "freizeit"].includes(ortArt), zuhause: !ortArt || ["wohnung", "haus", "garten"].includes(ortArt), oeffentlich: !!ortArt && ["geschaeft", "lokal", "bahnhof", "sport", "freizeit", "schule", "arbeit", "baustelle", "arzt"].includes(ortArt) },
+            { ortUnbekannt: false, draussen: !!ortArt && ORT_IM_FREIEN.includes(ortArt), zuhause: !ortArt || ["wohnung", "haus", "garten"].includes(ortArt), oeffentlich: !!ortArt && ["geschaeft", "lokal", "bahnhof", "sport", "freizeit", "schule", "arbeit", "baustelle", "arzt"].includes(ortArt) },
             Math.random,
           );
           merkmale.wissen = anrufer.persona.wissen;
@@ -2850,6 +2895,7 @@ export class Simulation {
   /** Erzeugt sofort einen Einsatz (Kategorie zufällig, wenn nicht angegeben). */
   async generiere(k?: Kategorie): Promise<Einsatz | null> {
     const s = this.settings;
+    await stellenLaden();
     if (!hasCodes()) return null;
     const schema = s.anrufe ? store.schema : null;
     if (s.generatorQuelle === "vorlagen") {
@@ -2897,7 +2943,11 @@ export class Simulation {
         const kap = kapitelZiehen(schema, wetter ? (kp) => wetterFaktor(kp, temp, lage, this.state.wetter.wind ?? 0) : undefined);
         // Fallgeschichte zuerst: sie legt Ort, Hergang und die wichtigsten Antworten fest
         const vorlage = vorlageWaehlen(SZENARIEN, thema(kap, schema), ctx, Math.random);
-        const fest = vorlage ? this.anpassen(schema, merkmaleInSchema(schema, vorlageFest(vorlage, Math.random))) : { antworten: {}, roh: {} };
+        // Ort zuerst: manche Antworten hängen vom Ort ab (außerorts schneller als im Ort)
+        const vFest = vorlage ? vorlageFest(vorlage, Math.random) : {};
+        const vOrt = vorlage ? this.ortArtWaehlen(vorlage, typeof vFest.alter === "number" ? vFest.alter : null, vorlage.thema) : undefined;
+        if (vorlage) ortRegeln(vOrt, vorlage.thema, vFest, new Set(Object.keys(vorlage.fest ?? {})));
+        const fest = vorlage ? this.anpassen(schema, merkmaleInSchema(schema, vFest)) : { antworten: {}, roh: {} };
         let f = fallZiehen(schema, kap, Math.random, 0.04, fest.antworten);
         // fremdes Codesystem: zusammengesetzte Fragen aus den gewürfelten Merkmalen berechnen
         if (f && !store.uebersetzung.kompatibel) {
@@ -2920,7 +2970,7 @@ export class Simulation {
           fall = { kapitel: f.ergebnis.pfad[0], antworten: f.antworten, code: c.code, ...(Object.keys(fest.roh).length ? { roh: fest.roh } : {}) };
           if (vorlage) {
             fall.vorlage = vorlage.id;
-            fall.ortArt = this.ortArtWaehlen(vorlage, typeof f.antworten.alter === "number" ? f.antworten.alter : null, thema(f.ergebnis.pfad[0]));
+            fall.ortArt = vOrt ?? this.ortArtWaehlen(vorlage, typeof f.antworten.alter === "number" ? f.antworten.alter : null, thema(f.ergebnis.pfad[0]));
           }
         }
       }
@@ -2954,6 +3004,25 @@ export class Simulation {
     if (fall && poiAdr?.kat) fall.ortKat = poiAdr.kat;
     let adr = wasserAdr ?? poiAdr ?? (await this.adresseImGebiet());
     if (!adr) return null;
+    // Einsatzstelle ohne Hausnummer (Autobahn-Kilometer, Landstraße, Wald, Berg …): genau dort, der Anrufer beschreibt sie
+    const stelleOhne = (adr as { stelle?: Einsatzstelle }).stelle;
+    if (fall && stelleOhne && adr.number === "" && !adr.postcode) {
+      const b = adr.label;
+      // Autobahn und Landstraße findet der Disponent über die Suche („A1 85“, „B37 Gföhl“), sonst braucht es die Ortung
+      const findbar = stelleOhne.typ === "autobahn" || stelleOhne.typ === "landstrasse";
+      const e = this.erstelleEinsatz({
+        lat: adr.lat,
+        lon: adr.lon,
+        adresse: findbar ? b.replace(/^auf der /, "") : `Koordinate ${adr.lat.toFixed(5)}, ${adr.lon.toFixed(5)} (${b})`,
+        code,
+        gemeldeteAdresse: b,
+        gemeinde: stelleOhne.ort || undefined,
+        fall,
+        patientAlter: typeof fall.antworten.alter === "number" ? fall.antworten.alter : null,
+      });
+      if (e.wahr.abfrage && !findbar) e.wahr.abfrage.ortUnbekannt = true;
+      return e;
+    }
     let gemeldet = adr.label;
     // Manche Anrufer nennen eine falsche Adresse (andere Hausnummer derselben Straße)
     if (Math.random() * 100 < s.falscheAdresseProzent) {
@@ -3028,6 +3097,9 @@ export class Simulation {
       const v = (wunsch?.variante ? fallVariante(f, wunsch.variante) : undefined) ?? varianteWaehlen(f, this.settings.komplikationen ?? "normal", Math.random);
       const a: Antworten = { ...vorlageFest(f, Math.random), ...(v.fest ?? {}) };
       altersPlausibel({ alter: f.alter, fest: { ...(f.fest ?? {}), ...(v.fest ?? {}) }, anrufer: f.anrufer }, a, Math.random);
+      // erst der Ort, dann die Antworten, die vom Ort abhängen (außerorts schneller als im Ort), dann der Code
+      const ortArt = this.ortArtWaehlen(f, typeof a.alter === "number" ? a.alter : null, f.thema);
+      ortRegeln(ortArt, f.thema, a, new Set([...Object.keys(f.fest ?? {}), ...Object.keys(v.fest ?? {})]));
       sichtUnbekannt(schema, kap, f.ohneSicht, a);
       const { antworten, roh } = this.anpassen(schema, merkmaleInSchema(schema, a));
       const erg = bestimmeCode(schema, kap, antworten);
@@ -3036,7 +3108,6 @@ export class Simulation {
         console.warn("Fallkatalog: kein Code für", f.id, v.id);
         continue;
       }
-      const ortArt = this.ortArtWaehlen(f, typeof a.alter === "number" ? a.alter : null, f.thema);
       // Geschichte im Pflegeheim, in der Ordination, Schule …: nur, wo es so einen Ort im Gebiet gibt (sonst ein anderer Fall)
       if (!wunsch && ORT_NUR_MIT_POI.includes(ortArt) && !this.poisFuer(ortArt, typeof a.alter === "number" ? a.alter : null).length) continue;
       // Fall an einem bestimmten Ort (Freibad, Bahnhof, Tierpark …): nur, wo es den gibt
@@ -3675,7 +3746,7 @@ export class Simulation {
     const w = e.wahr.abfrage;
     const erkannt = partnerNoetig(a?.kapitel, a?.antworten ?? {}, name, { ortArt: a?.antworten && Object.keys(a.antworten).length ? w?.szenario?.ortArt : undefined, ortUnbekannt: w?.ortUnbekannt });
     // der Ort ist erkennbar, sobald der Disponent die Adresse (an einem echten Ort) eingetragen hat
-    const amOrt = e.adresse ? ortAnStelle(e.adresse.lat, e.adresse.lon) : null;
+    const amOrt = typeof e.adresse?.lat === "number" ? ortAnStelle(e.adresse.lat, e.adresse.lon) : null;
     return ortPartner(erkannt, amOrt?.kat, thema(a?.kapitel));
   }
 

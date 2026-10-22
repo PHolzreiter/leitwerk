@@ -22,7 +22,7 @@ import { FUNK_FARBEN, FUNKGRUPPEN } from "./sim/funkgruppen";
 import { onPers, pers } from "./ui/ws/persoenlich";
 import { el, esc } from "./ui/dom";
 
-const FONT = ["Noto Sans Medium"];
+export const FONT = ["Noto Sans Medium"];
 
 /** Farbe des Punkts je Organisation (Legende im Ebenen-Fenster) */
 export const ORG_FARBEN: Record<string, string> = {
@@ -196,11 +196,14 @@ export function addDataLayers(map: maplibregl.Map, cb: DataLayerCallbacks): void
       source: "lw-pois",
       minzoom,
       filter: ["==", ["get", "wichtig"], wichtig ? 1 : 0],
+      // klein und blass – Orte sind Hintergrund, nicht so wichtig wie Dienststellen und Krankenhäuser
       paint: {
-        "circle-radius": ["interpolate", ["linear"], ["zoom"], 6, 1.5, 9, 3, 13, 5.5, 16, 7],
+        "circle-radius": ["interpolate", ["linear"], ["zoom"], 9, 1.2, 13, 2, 16, 3.2, 18, 4.5],
         "circle-color": ["get", "farbe"],
+        "circle-opacity": 0.55,
         "circle-stroke-color": "#ffffff",
-        "circle-stroke-width": ["interpolate", ["linear"], ["zoom"], 6, 0.5, 10, 1.5],
+        "circle-stroke-opacity": 0.6,
+        "circle-stroke-width": ["interpolate", ["linear"], ["zoom"], 12, 0.3, 16, 0.8],
       },
     });
   const poiText = (id: string, wichtig: boolean, minzoom: number) =>
@@ -213,23 +216,23 @@ export function addDataLayers(map: maplibregl.Map, cb: DataLayerCallbacks): void
       layout: {
         "text-field": ["get", "name"],
         "text-font": FONT,
-        "text-size": 11,
-        "text-offset": [0, 1.0],
+        "text-size": 10,
+        "text-offset": [0, 0.7],
         "text-anchor": "top",
       },
-      paint: { "text-color": "#1f4f5a", "text-halo-color": "#ffffff", "text-halo-width": 1.5 },
+      paint: { "text-color": "#4a5a60", "text-opacity": 0.8, "text-halo-color": "#ffffff", "text-halo-width": 1.2 },
     });
   poiKreis("lw-pois", false, pz.normal);
   poiKreis("lw-pois-w", true, pz.wichtig);
-  poiText("lw-pois-label", false, Math.max(pz.normal, 13));
-  poiText("lw-pois-w-label", true, Math.min(24, Math.max(pz.wichtig + 1, 12)));
+  poiText("lw-pois-label", false, Math.max(pz.normal, 16));
+  poiText("lw-pois-w-label", true, Math.min(24, Math.max(pz.wichtig + 2, 15)));
   const ausPoiZoom = onPers(() => {
     const z = poiZoom();
     if (!map.getLayer("lw-pois")) return;
     map.setLayerZoomRange("lw-pois", z.normal, 24);
     map.setLayerZoomRange("lw-pois-w", z.wichtig, 24);
-    map.setLayerZoomRange("lw-pois-label", Math.max(z.normal, 13), 24);
-    map.setLayerZoomRange("lw-pois-w-label", Math.min(24, Math.max(z.wichtig + 1, 12)), 24);
+    map.setLayerZoomRange("lw-pois-label", Math.min(24, Math.max(z.normal, 16)), 24);
+    map.setLayerZoomRange("lw-pois-w-label", Math.min(24, Math.max(z.wichtig + 2, 15)), 24);
   });
   map.once("remove", ausPoiZoom);
 

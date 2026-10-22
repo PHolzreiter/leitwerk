@@ -95,7 +95,7 @@ export function partnerNoetig(kapitel: string | null | undefined, a: Antworten, 
   if (t === "anforderung_polizei") add("pol", "Anforderung durch die Polizei");
   // Bergrettung: Person in der Natur, weiß nicht wo sie ist (oder Alpinunfall)
   if (t === "alpin" || /Alpin|Lawine|Bergrettung|Gondel|Lift/i.test(n)) add("berg", "Alpinunfall", { blockiert: true });
-  if (ort.ortUnbekannt && ort.ortArt === "natur" && !vu && !["brand", "gefahrstoff", "wasser"].includes(t)) add("berg", "Person in unwegsamem Gelände, Standort unbekannt", { blockiert: true });
+  if (ort.ortUnbekannt && ["natur", "wald", "berg"].includes(ort.ortArt ?? "") && !vu && !["brand", "gefahrstoff", "wasser"].includes(t)) add("berg", "Person in unwegsamem Gelände, Standort unbekannt", { blockiert: true });
   // Wasserrettung: nur solange die Person noch im Wasser ist
   const imWasser = a.wo !== undefined ? a.wo !== "land" : true;
   if ((t === "wasser" && imWasser && !/nicht mehr im Wasser|gerettet/i.test(n)) || /Eisrettung|Hochwasser|Fliessgewässer|Fließgewässer/i.test(n)) add("wasser", "Person im Wasser", { blockiert: true });

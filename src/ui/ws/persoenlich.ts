@@ -61,6 +61,8 @@ export interface Persoenlich {
   farben: { hell: Record<string, string>; dunkel: Record<string, string> };
   /** Regen, Schnee, Nebel und Blitze in der 3D-Ansicht */
   wetter3d: boolean;
+  /** Entwicklerfunktionen (z. B. unsichtbare Einsatzstellen auf der Karte zeigen) */
+  entwickler?: boolean;
   /** Orte (POIs) auf der Karte ab dieser Zoomstufe (wichtige drei Stufen früher); 0 = immer */
   poiZoom?: number;
   /** Funkgruppen-Grenzen auf der Karte */

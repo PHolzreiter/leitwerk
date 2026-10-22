@@ -6,6 +6,7 @@ Usage: python3 -I build.py CAND_PKL BASE_CSV OUT_CSV [--debug-dir DIR] [--no-unn
   OUT_CSV    file to write
   --debug-dir  optional folder for merges.txt and final.pkl
   --no-unnamed-edu  do not add unnamed kindergartens/schools (v2 behaviour)
+  --no-bus-stops    omit the bushaltestelle category (v5)
 """
 import sys, os, re, csv, math, pickle, difflib, collections, unicodedata, argparse
 from shapely.geometry import Point
@@ -15,6 +16,7 @@ from shapely.ops import unary_union
 ap = argparse.ArgumentParser()
 ap.add_argument('cand'); ap.add_argument('base_csv'); ap.add_argument('out_csv')
 ap.add_argument('--debug-dir'); ap.add_argument('--no-unnamed-edu', action='store_true')
+ap.add_argument('--no-bus-stops', action='store_true', help='omit the bushaltestelle category (v5)')
 ARGS = ap.parse_args()
 d = pickle.load(open(ARGS.cand, 'rb'))
 RECS, ADMIN = d['recs'], d['admin']
@@ -855,6 +857,7 @@ def bus_core(nm):
     return ' '.join(BUSSTRIP.sub(' ', core(fold(nm))).split())
 
 bus = []
+if ARGS.no_bus_stops: bus_objs = []
 for r in bus_objs:
     g = r['g']
     p = g if g.geom_type == 'Point' else (g.centroid if g.geom_type in ('Polygon', 'MultiPolygon') else g.interpolate(0.5, normalized=True))
@@ -869,7 +872,7 @@ def bfind(x):
     while bpar[x] != x:
         bpar[x] = bpar[bpar[x]]; x = bpar[x]
     return x
-BT_ = STRtree([b['p'] for b in bus])
+BT_ = STRtree([b['p'] for b in bus]) if bus else None
 for i, b in enumerate(bus):
     for j in BT_.query(b['p'].buffer(260 / KX)):
         if j > i and dist(b['p'], bus[j]['p']) <= 250 and (bus[j]['nn'] == b['nn'] or difflib.SequenceMatcher(None, bus[j]['nn'], b['nn']).ratio() >= 0.92):

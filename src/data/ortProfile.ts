@@ -7,6 +7,7 @@
  */
 import type { AnruferTyp } from "../abfrage/szenario";
 import type { PartnerArt } from "../sim/partner";
+import { stellen } from "./einsatzstellen";
 import { alleOrte, ortKategorie } from "./orte";
 
 export interface OrtProfil {
@@ -63,14 +64,6 @@ export const ORT_PROFIL: Record<string, OrtProfil> = {
     stelleMuster: /bahnsteig|haltestelle|zug|gleis/i,
     hinweis: "Bahn-Haltestelle ohne Personal: Bei Person im Gleis ÖBB-Betriebsführung verständigen (Strecke sperren), Polizei",
     partner: BAHN_PARTNER,
-  },
-  bushaltestelle: {
-    anrufer: ["busfahrer", "passant", "selbst", "begleiter"],
-    rollen: { busfahrer: "Busfahrer, der an der Haltestelle steht" },
-    stelle: ["an der Bushaltestelle", "im Bus, der an der Haltestelle steht", "beim Aussteigen aus dem Bus", "im Wartehäuschen der Bushaltestelle"],
-    stelleMuster: /bus|haltestelle/i,
-    hinweis: "Bushaltestelle: Bei Unfall mit dem Bus oder einem Auto Polizei; der Bus steht oft noch an der Haltestelle",
-    partner: [{ art: "pol", grund: "Unfall an der Bushaltestelle", themen: ["verkehrsunfall"] }],
   },
   busbahnhof: {
     anrufer: ["busfahrer", "passant", "selbst", "begleiter"],
@@ -222,6 +215,65 @@ export const ORT_PROFIL: Record<string, OrtProfil> = {
     partner: [{ art: "fw", grund: "Silo – Höhenrettung/Atemschutz", themen: ["eingeklemmt", "gefahrstoff"], blockiert: true }],
   },
   kraftwerk: { anrufer: ["kollege"], stelle: ["in der Schaltanlage", "im Maschinenhaus"], umgebung: ARBEIT_UMGEBUNG, hinweis: "Kraftwerk/Umspannwerk: Stromunfall – Freischalten durch den Betreiber, Feuerwehr" },
+  // ---- Straßen & Gelände (unsichtbare Einsatzstellen)
+  autobahn: {
+    anrufer: ["lenker", "selbst", "partner", "passant"],
+    rollen: { lenker: "Autofahrer, der angehalten hat" },
+    stelle: ["auf dem Pannenstreifen", "auf der rechten Fahrspur", "im Stau auf der Überholspur"],
+    hinweis: "Autobahn: Kilometer und Fahrtrichtung erfragen – Anfahrt nur über die Richtungsfahrbahn; Polizei zur Absicherung",
+    partner: [{ art: "pol", grund: "Absicherung auf der Autobahn", themen: ["verkehrsunfall", "brustschmerz", "bewusstlos", "sturz", "krank", "verletzung"] }],
+  },
+  landstrasse: {
+    anrufer: ["lenker", "passant", "selbst", "partner"],
+    stelle: ["auf der Fahrbahn", "im Straßengraben", "auf dem Bankett"],
+    hinweis: "Landstraße außerorts: Straße und nächste Orte erfragen („zwischen … und …“), ggf. Ortung",
+  },
+  feldweg: { anrufer: ["passant", "partner", "begleiter", "selbst"], hinweis: "Feld-/Forstweg: keine Adresse – Ortung, Zufahrt und Treffpunkt erfragen" },
+  radweg: { anrufer: ["begleiter", "passant", "selbst"], stelle: ["auf dem Radweg", "neben dem Radweg in der Wiese"], hinweis: "Radweg: keine Adresse – Ortung, nächste Zufahrt erfragen" },
+  wald: { anrufer: ["kollege", "begleiter", "partner", "passant"], hinweis: "Wald: keine Adresse – Ortung, Forststraße und Treffpunkt erfragen; ggf. Bergrettung" },
+  berg: {
+    anrufer: ["begleiter", "partner", "passant", "selbst"],
+    hinweis: "Berg: Ortung, Bergrettung und Hubschrauber (Tau) erwägen",
+    partner: [{ art: "berg", grund: "Person am Berg – Bergung", themen: ["alpin", "sturz"], blockiert: true }],
+  },
+  ufer: {
+    ...OFFEN,
+    anrufer: ["passant", "begleiter", "partner"],
+    hinweis: "Fluss-/Seeufer: Ist die Person im Wasser – Wasserrettung und Feuerwehr (Wasserdienst); Ortung",
+  },
+  weinberg: { anrufer: ["kollege", "partner", "kind"], stelle: ["zwischen den Rebzeilen", "beim Traktor am Weingarten"], hinweis: "Weingarten: Zufahrt über Güterwege – Ortung, Treffpunkt erfragen" },
+  feld: { anrufer: ["partner", "kind", "kollege", "passant"], stelle: ["auf dem Acker", "beim Traktor am Feldrand"], hinweis: "Feld: Zufahrt über Güterwege – Ortung, Treffpunkt erfragen" },
+  bahnuebergang: {
+    anrufer: ["lenker", "passant"],
+    stelle: ["direkt am Bahnübergang", "neben den Gleisen beim Bahnübergang"],
+    hinweis: "Bahnübergang: ÖBB-Betriebsführung verständigen (Strecke sperren), Polizei und Feuerwehr",
+    partner: BAHN_PARTNER,
+  },
+  bruecke: {
+    anrufer: ["passant", "lenker"],
+    stelle: ["auf der Brücke", "unter der Brücke am Ufer"],
+    hinweis: "Brücke: bei drohendem Sprung Polizei (Verhandlung) und Feuerwehr; ist jemand im Wasser – Wasserrettung",
+    partner: [
+      { art: "pol", grund: "Person auf der Brücke", themen: ["psych"] },
+      { art: "fw", grund: "Sicherung/Sprungpolster, Wasserdienst", themen: ["psych", "wasser"], blockiert: true },
+    ],
+  },
+  tunnel: { anrufer: ["lenker", "selbst"], hinweis: "Tunnel: Feuerwehr, Fahrtrichtung und Portal erfragen", partner: [{ art: "fw", grund: "Tunnel – Absicherung/Brandschutz", themen: ["verkehrsunfall", "brand"] }] },
+  anschlussstelle: { anrufer: ["lenker", "passant"], hinweis: "Autobahn-Auffahrt: Richtung und Rampe erfragen; Polizei" },
+  kreisverkehr: { anrufer: ["lenker", "passant"], stelle: ["im Kreisverkehr", "bei der Ausfahrt aus dem Kreisverkehr"] },
+  kreuzung: { anrufer: ["lenker", "passant"], stelle: ["auf der Kreuzung", "im Graben neben der Kreuzung"] },
+  kellergasse: {
+    anrufer: ["partner", "kind", "nachbar", "passant"],
+    stelle: ["im Weinkeller", "im Presshaus", "auf der Kellerstiege"],
+    hinweis: "Kellergasse: Gärgas (CO₂) im Keller? Nicht hinuntergehen lassen – Feuerwehr mit Atemschutz",
+    partner: [{ art: "fw", grund: "Gärgas im Keller – Atemschutz", themen: ["gefahrstoff", "bewusstlos"], blockiert: true }],
+  },
+  hochstand: { anrufer: ["begleiter", "selbst", "partner"], stelle: ["unter dem Hochstand", "am Hochstand"], hinweis: "Hochstand im Revier: keine Adresse – Ortung, Forststraße und Treffpunkt erfragen" },
+  windrad: { anrufer: ["kollege"], stelle: ["oben in der Gondel des Windrads", "im Turm des Windrads"], hinweis: "Windrad: Person in der Höhe – Höhenrettung (Feuerwehr)", partner: [{ art: "fw", grund: "Höhenrettung", themen: ["brustschmerz", "sturz", "bewusstlos"], blockiert: true }] },
+  sendemast: { anrufer: ["kollege"], hinweis: "Sendemast: Person in der Höhe – Höhenrettung (Feuerwehr)", partner: [{ art: "fw", grund: "Höhenrettung", themen: ["sturz", "bewusstlos"], blockiert: true }] },
+  biogasanlage: { anrufer: ["kollege"], hinweis: "Biogasanlage: Gase (H₂S) – Eigenschutz, Feuerwehr mit Atemschutz", partner: [{ art: "fw", grund: "Gase – Atemschutz", themen: ["gefahrstoff", "eingeklemmt", "bewusstlos"], blockiert: true }] },
+  kletterfels: { anrufer: ["begleiter"], hinweis: "Kletterfelsen: Bergrettung, Hubschrauber mit Tau", partner: [{ art: "berg", grund: "Bergung aus dem Fels", themen: ["alpin", "sturz"], blockiert: true }] },
+  klettersteig: { anrufer: ["begleiter"], hinweis: "Klettersteig: Bergrettung, Hubschrauber mit Tau", partner: [{ art: "berg", grund: "Bergung aus dem Klettersteig", themen: ["alpin", "sturz"], blockiert: true }] },
 };
 
 /** Profil eines Ortes (mehrere Kategorien: das erste mit Profil) */
@@ -230,10 +282,20 @@ export function ortProfil(kat: string | null | undefined): OrtProfil | undefined
 }
 
 /** Ort (POI) mit Profil an dieser Stelle – für den Hinweis in der Einsatzmaske */
-export function ortAnStelle(lat: number, lon: number, radiusM = 120): { name: string; kat: string; label: string; profil?: OrtProfil } | null {
+let letzte: { key: string; erg: ReturnType<typeof ortAnStelleNeu> } | null = null;
+export function ortAnStelle(lat: number, lon: number, radiusM = 120): ReturnType<typeof ortAnStelleNeu> {
+  const key = `${lat.toFixed(5)}|${lon.toFixed(5)}|${radiusM}|${stellen().length}|${alleOrte().length}`;
+  if (letzte?.key === key) return letzte.erg;
+  const erg = ortAnStelleNeu(lat, lon, radiusM);
+  letzte = { key, erg };
+  return erg;
+}
+function ortAnStelleNeu(lat: number, lon: number, radiusM: number): { name: string; kat: string; label: string; profil?: OrtProfil } | null {
   let best: { name: string; kat: string; label: string; profil?: OrtProfil; d: number } | null = null;
-  for (const o of alleOrte()) {
-    if (o.kind !== "pois") continue;
+  const st = stellen().map((x) => ({ kind: "stellen" as const, name: x.name, lat: x.lat, lon: x.lon, kategorien: [x.typ] }));
+  for (const o of [...alleOrte(), ...st]) {
+    if (o.kind !== "pois" && o.kind !== "stellen") continue;
+    if (Math.abs(o.lat - lat) > 0.003 || Math.abs(o.lon - lon) > 0.004) continue;
     const dLat = (o.lat - lat) * 111_320;
     const dLon = (o.lon - lon) * 111_320 * Math.cos((lat * Math.PI) / 180);
     const d = Math.hypot(dLat, dLon);

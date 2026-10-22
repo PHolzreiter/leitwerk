@@ -28,9 +28,11 @@ export interface OrtKategorie {
   themen?: string[];
   /** wie oft hier ohne besonderen Grund etwas passiert (1 = normal; Steinbruch, Museum seltener) */
   haeufig?: number;
+  /** nicht auf der Karte (Einsatzstelle: Strecke, Fläche oder unauffälliger Punkt wie Bahnübergang) */
+  unsichtbar?: boolean;
 }
 
-export type OrtGruppe = "pflege" | "bildung" | "gesundheit" | "verkehr" | "einkauf" | "sport" | "wasser" | "freizeit" | "gastro" | "arbeit" | "sonstiges";
+export type OrtGruppe = "pflege" | "bildung" | "gesundheit" | "verkehr" | "einkauf" | "sport" | "wasser" | "freizeit" | "gastro" | "arbeit" | "gelaende" | "sonstiges";
 export const ORT_GRUPPEN: [OrtGruppe, string][] = [
   ["pflege", "Pflege & Betreuung"],
   ["bildung", "Kinder & Bildung"],
@@ -42,6 +44,7 @@ export const ORT_GRUPPEN: [OrtGruppe, string][] = [
   ["freizeit", "Freizeit & Kultur"],
   ["gastro", "Gastronomie & Hotel"],
   ["arbeit", "Arbeit & Betriebe"],
+  ["gelaende", "Straßen & Gelände (unsichtbar)"],
   ["sonstiges", "Sonstiges"],
 ];
 
@@ -87,7 +90,6 @@ export const ORT_KATEGORIEN: OrtKategorie[] = [
   // ---- Verkehr
   k("bahnhof", "Bahnhof", "verkehr", "bahnhof", /bahnhof|\bbhf\b|hauptbahnhof/i, "Reisende und Pendler: Kollaps, Sturz auf Stiegen, Intoxikation, Personen im Gleis", undefined, ["bewusstlos", "sturz", "vergiftung", "psych", "verletzung"]),
   k("haltestelle", "Bahn-Haltestelle", "verkehr", "bahnhof", /haltestelle|\bhst\b/i, "kleine Bahnstation: Kollaps, Sturz", undefined, ["bewusstlos", "sturz", "verletzung"]),
-  k("bushaltestelle", "Bushaltestelle", "verkehr", "strasse", /bushaltestelle|\bbus\b|postbus|autobus/i, "Fahrgäste, Schüler, Senioren: Kollaps im Bus, Sturz beim Aussteigen, vom Bus/Auto erfasst", undefined, ["bewusstlos", "sturz", "verkehrsunfall", "krampf", "zucker"]),
   k("busbahnhof", "Busbahnhof", "verkehr", "strasse", /busbahnhof|busterminal|autobusbahnhof/i, "viele Fahrgäste: Kollaps, Sturz, Intoxikation, Unfall mit Bus", undefined, ["bewusstlos", "sturz", "vergiftung", "verkehrsunfall", "psych"]),
   k("raststation", "Autobahn-Raststation", "verkehr", "strasse", /raststation|raststätte|rasthaus|autohof/i, "Reisende, LKW-Fahrer: Kollaps, Brustschmerz, Unfälle am Parkplatz", undefined, ["bewusstlos", "brustschmerz", "verkehrsunfall"]),
   // ---- Einkauf
@@ -137,15 +139,43 @@ export const ORT_KATEGORIEN: OrtKategorie[] = [
   // ---- Sonstiges
   k("landeplatz", "Hubschrauber-Landeplatz / Flugplatz", "sonstiges", undefined, /lande|heli|hubschrauber|flugplatz|flughafen|flugfeld/i, "Landemöglichkeit für Hubschrauber"),
   k("sonstiges", "Sonstiges", "sonstiges", undefined, /^$/, "nur als Ort auf der Karte"),
+  // ---- Straßen & Gelände: Einsatzstellen, die nicht auf der Karte stehen (Strecken und Flächen als viele Punkte)
+  u("autobahn", "Autobahn / Schnellstraße", "autobahn", "Auffahrunfall, Falschfahrer, Panne mit Personenschaden – Anrufer nennt Kilometer und Fahrtrichtung", ["verkehrsunfall", "brustschmerz", "bewusstlos"]),
+  u("landstrasse", "Landstraße außerorts", "landstrasse", "schwere Unfälle mit hoher Geschwindigkeit (Baum, Frontal, Motorrad), Wildunfall", ["verkehrsunfall"]),
+  u("feldweg", "Feld- oder Forstweg", "feldweg", "Spaziergänger, Landwirte, Radfahrer: Sturz, Kollaps, Hundebiss", ["sturz", "bewusstlos", "tierbiss", "verletzung"]),
+  u("radweg", "Radweg (Donauradweg …)", "feldweg", "Radfahrer: Sturz, Kopfverletzung, Kollaps bei Hitze", ["sturz", "verletzung", "hitze_kaelte", "bewusstlos"]),
+  u("wald", "Wald", "wald", "Forstarbeit, Wanderer, Pilzesammler: Baum, Sturz, verirrt", ["eingeklemmt", "sturz", "alpin", "tierbiss"]),
+  u("berg", "Berg / Gipfel / Bergweg", "berg", "Wanderer, Bergsteiger: Absturz, Erschöpfung, Herz – Bergrettung", ["alpin", "sturz", "brustschmerz", "hitze_kaelte"]),
+  u("ufer", "Fluss- oder Seeufer", "ufer", "Badende, Angler, Bootsfahrer: Person im Wasser – Wasserrettung", ["wasser", "sturz", "hitze_kaelte"]),
+  u("weinberg", "Weingarten", "feld", "Lese und Arbeit im Weingarten: Sturz, Hitze, Traktor", ["sturz", "hitze_kaelte", "eingeklemmt", "allergie"]),
+  u("feld", "Feld / Acker", "feld", "Landwirtschaft: Traktor, Maschinen, Hitze", ["eingeklemmt", "verletzung", "hitze_kaelte"]),
+  u("bahnuebergang", "Bahnübergang", undefined, "Zug gegen Auto, Fußgänger oder Radfahrer – ÖBB verständigen (Strecke sperren)", ["verkehrsunfall"]),
+  u("bruecke", "Brücke", undefined, "Sprung oder Sturz von der Brücke, Person im Fluss – Polizei, Feuerwehr, Wasserrettung", ["psych", "wasser", "verkehrsunfall"]),
+  u("tunnel", "Tunnel", undefined, "Unfall oder Brand im Tunnel – Feuerwehr, Zufahrt erfragen", ["verkehrsunfall", "brand"]),
+  u("anschlussstelle", "Autobahn-Anschlussstelle", undefined, "Auffahrt/Abfahrt: Auffahrunfall, Falschfahrer", ["verkehrsunfall"]),
+  u("kreisverkehr", "Kreisverkehr", undefined, "Rad- und Mopedunfälle, Auffahrunfälle", ["verkehrsunfall"]),
+  u("kreuzung", "Kreuzung außerorts", undefined, "Seitenaufprall bei hoher Geschwindigkeit", ["verkehrsunfall"]),
+  u("kellergasse", "Kellergasse / Weinkeller", undefined, "Gärgas (CO₂) im Keller während der Lese, Stürze auf Kellerstiegen – Eigenschutz! Feuerwehr mit Atemschutz", ["gefahrstoff", "sturz", "bewusstlos"]),
+  u("hochstand", "Hochstand", undefined, "Jäger: Sturz vom Hochstand, Jagdunfall – oft im Wald ohne Adresse", ["sturz", "stich_schuss"]),
+  u("windrad", "Windrad", undefined, "Techniker in großer Höhe: Herz, Sturz – Höhenrettung (Feuerwehr)", ["brustschmerz", "sturz", "bewusstlos"]),
+  u("sendemast", "Sendemast", undefined, "Techniker in großer Höhe – Höhenrettung (Feuerwehr)", ["sturz", "bewusstlos"]),
+  u("biogasanlage", "Biogasanlage", undefined, "Gase (Schwefelwasserstoff), Einklemmung – Feuerwehr mit Atemschutz", ["gefahrstoff", "eingeklemmt"]),
+  u("kletterfels", "Kletterfelsen", undefined, "Kletterer: Absturz – Bergrettung", ["alpin", "sturz"]),
+  u("klettersteig", "Klettersteig", undefined, "Absturz, Blockierung im Steig – Bergrettung, Hubschrauber mit Tau", ["alpin", "sturz"]),
 ];
 
+/** Einsatzstelle ohne Kartenpunkt */
+function u(key: string, label: string, ortArt: OrtArt | undefined, wirkung: string, themen: string[]): OrtKategorie {
+  return { ...k(key, label, "gelaende", ortArt, /^$/, wirkung, undefined, themen), unsichtbar: true };
+}
+
 /** Seltener ohne besonderen Grund (sonst wären Steinbrüche und Museen so häufig wie Betriebe und Geschäfte) */
-const HAEUFIG: Record<string, number> = { bushaltestelle: 0.5, steinbruch: 0.3, kraftwerk: 0.3, saegewerk: 0.6, lagerhaus: 0.5, museum: 0.5, ausflugsziel: 0.6, golf: 0.6, campingplatz: 0.7, hochschule: 0.7, raststation: 0.6 };
+const HAEUFIG: Record<string, number> = { steinbruch: 0.3, kraftwerk: 0.3, saegewerk: 0.6, lagerhaus: 0.5, museum: 0.5, ausflugsziel: 0.6, golf: 0.6, campingplatz: 0.7, hochschule: 0.7, raststation: 0.6 };
 for (const x of ORT_KATEGORIEN) if (HAEUFIG[x.key]) x.haeufig = HAEUFIG[x.key];
 
 export const POI_KATEGORIEN = ORT_KATEGORIEN.filter((x) => !x.liste);
 /** Zum Erkennen aus Text: genaue Kategorien vor den Oberbegriffen */
-const ERKENNUNG = [...POI_KATEGORIEN.filter((x) => !x.allgemein), ...POI_KATEGORIEN.filter((x) => x.allgemein)];
+const ERKENNUNG = [...POI_KATEGORIEN.filter((x) => !x.allgemein && !x.unsichtbar), ...POI_KATEGORIEN.filter((x) => x.allgemein)];
 
 export function ortKategorie(key: string): OrtKategorie | undefined {
   return NACH_KEY.get(key);
@@ -204,13 +234,16 @@ export function stationKategorien(s: Pick<Station, "typ" | "name">): string[] {
 }
 
 export interface Ort {
-  kind: "pois" | "hospitals" | "stations";
+  /** stellen = unsichtbare Einsatzstelle (Strecke, Fläche, Bahnübergang …) */
+  kind: "pois" | "hospitals" | "stations" | "stellen";
   id: string;
   name: string;
   ort: string;
   lat: number;
   lon: number;
   kategorien: string[];
+  /** nur bei Einsatzstellen: Straße/Kilometer, Wald … */
+  stelle?: import("./einsatzstellen").Einsatzstelle;
 }
 
 let orteCache: { quellen: unknown[]; orte: Ort[] } | null = null;

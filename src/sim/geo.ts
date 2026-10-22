@@ -1,4 +1,5 @@
 /** Zugriff auf Routing und Adressen (im Programm über Rust, im Browser mit einfachem Ersatz). */
+import { stellenSuchen } from "../data/einsatzstellen";
 import { invoke } from "@tauri-apps/api/core";
 import { inTauri } from "../platform";
 import { store } from "../data/store";
@@ -117,6 +118,9 @@ export async function travelTimes(to: LatLon, sources: LatLon[]): Promise<(numbe
 
 export async function searchAddress(query: string, limit = 12): Promise<AddressHit[]> {
   if (query.trim().length < 2) return [];
+  // Straßen-Angaben ohne Hausnummer: „A1 85“ (Autobahn-Kilometer), „B37 Gföhl“
+  const strasse = (await stellenSuchen(query, 6)).map((h) => ({ label: h.label, street: h.label, number: "", postcode: "", city: "", lat: h.lat, lon: h.lon, place: false }));
+  if (strasse.length) return strasse.slice(0, limit);
   if (!inTauri()) return browserSearch(query, limit);
   const treffer = await invoke<AddressHit[]>("address_search", { query, limit });
   // eigene Orte (POIs wie „Pflegeheim …“, „Volksschule …“) zuerst, wenn der Name passt

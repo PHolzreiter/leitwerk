@@ -292,7 +292,7 @@ export function openEditor(
       katInputs = {};
       // nach Gruppen (Pflege, Bildung, Sport …); Hilfetext: wer dort ist und was typischerweise passiert
       for (const [g, titel] of ORT_GRUPPEN) {
-        const l = POI_KATEGORIEN.filter((x) => x.key !== "sonstiges" && (x.gruppe ?? "sonstiges") === g);
+        const l = POI_KATEGORIEN.filter((x) => x.key !== "sonstiges" && !x.unsichtbar && (x.gruppe ?? "sonstiges") === g);
         if (!l.length) continue;
         box.appendChild(el("div", { class: "fld-label kat-gruppe" }, titel));
         for (const k of l) {

@@ -1,5 +1,25 @@
 # Änderungen
 
+## 0.48.0 – Straßen, Gelände und unsichtbare Einsatzstellen
+**Karte**
+- Orte (POIs) sind kleine, blasse Punkte; Namen erst ganz nah (ab Zoom 16)
+- Bushaltestellen entfernt (Notfälle passieren einfach auf der Straße), Busbahnhöfe bleiben
+
+**Unsichtbare Einsatzstellen** (zählen für Einsätze, stehen nicht auf der Karte)
+- Strecken und Flächen als viele mögliche Einsatzstellen: Autobahn/Schnellstraße alle 500 m je Fahrtrichtung mit Kilometer, Landstraßen außerorts, Feld- und Forstwege, Radwege, Wald, Berg, Fluss- und Seeufer, Weingärten, Felder
+- Unauffällige Punkte: Bahnübergänge, Brücken, Tunnel, Autobahn-Anschlussstellen, Kreisverkehre, Kreuzungen außerorts, Kellergassen, Hochstände, Windräder, Sendemasten, Biogasanlagen, Kletterfelsen, Klettersteige
+- Leistung: die Daten werden erst beim ersten Einsatz geladen und je Funkgruppe zwischengespeichert
+- Entwickler: unter Persönlich → Entwickler einschaltbar, dann in der Karte unter „Ebenen“ sichtbar
+
+**Wo ein Notfall passiert** (im Fall-Editor unter „Wo?“ anhakbar, bestehende Fälle vorbelegt)
+- Neue Ortsarten: Landstraße (außerorts), Autobahn/Schnellstraße, Feld-/Forst-/Radweg, Wald, Berg/Fels, Fluss/Seeufer, Feld/Weingarten – dazu wie bisher Wohnung, Haus, Straße im Ort, Einrichtungen …
+- Im Freien ohne Adresse beschreibt der Anrufer, wo er ist („im Dunkelsteinerwald bei Mauer“, „am Ufer der Krems bei Rehberg“) – Ortung nötig; am Berg Bergrettung, am Ufer Wasserrettung
+- Autobahn: „auf der A1 bei Kilometer 85,4 Richtung Wien“; Landstraße: „auf der B37 zwischen Lengenfeld und Gföhl“. Beides findet man in der Adresssuche („A1 85“, „B37 Gföhl“)
+- Grundregel Straße: im Ort eher Fußgänger und Radfahrer, langsam; außerorts und auf der Autobahn hohe Geschwindigkeit
+- Profile mit Hinweis für den Disponenten: Autobahn (Kilometer, Richtungsfahrbahn, Polizei), Bahnübergang (ÖBB, Oberleitung), Brücke (Polizei, Feuerwehr), Kellergasse (Gärgas – Atemschutz), Windrad (Höhenrettung) …
+
+**Neue Fälle**: Auffahrunfall auf der Autobahn, Auto am Bahnübergang vom Zug erfasst, Person auf dem Brückengeländer, Gärgas im Weinkeller, Jäger vom Hochstand gestürzt, Forstarbeiter unter einem Baum, Traktor umgestürzt, Radfahrer am Radweg gestürzt
+
 ## 0.47.0 – Jeder Ort hat sein eigenes Einsatzprofil
 Pro Ortskategorie ist festgelegt, wer anruft, wo genau der Patient ist, welche Partner mitkommen und was der Disponent wissen sollte.
 

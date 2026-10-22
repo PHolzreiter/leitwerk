@@ -7,7 +7,7 @@ import { ortProfil, PERSONAL } from "../data/ortProfile";
 import { fragtNachZustand, hinweisZurArt, type NachrichtArt } from "./runde";
 import { antwortLabel, frageIndex, type Antworten, type Frage, type Schema } from "./schema";
 import { ist, thema } from "./themen";
-import { bezugFuer, fallakte, faktSaetze, fuellen, SELBSTVERSTAENDLICH, type AnruferTyp, type OrtArt, type OrtModus, type Szenario } from "./szenario";
+import { bezugFuer, fallakte, faktSaetze, fuellen, ORT_IM_FREIEN, SELBSTVERSTAENDLICH, type AnruferTyp, type OrtArt, type OrtModus, type Szenario } from "./szenario";
 import { einstiegHinweis, personaText, type Persona } from "./persona";
 import { frageMitPronomen } from "./sprechfrage";
 
@@ -43,19 +43,19 @@ export interface Anrufer {
 
 /** Wo kann dieser Anrufer sein? (fehlt = überall) */
 const ORT_ANRUFER: Partial<Record<AnruferTyp, OrtArt[]>> = {
-  partner: ["wohnung", "haus", "garten", "strasse", "geschaeft", "lokal", "freizeit", "natur", "wasser", "auto", "arzt", "bahnhof", "sport"],
-  kind: ["wohnung", "haus", "garten", "strasse", "geschaeft", "lokal", "freizeit", "natur", "auto", "arzt", "pflegeheim"],
-  eltern: ["wohnung", "haus", "garten", "strasse", "geschaeft", "freizeit", "natur", "wasser", "auto", "arzt", "sport", "bahnhof"],
+  partner: ["wohnung", "haus", "garten", "strasse", "geschaeft", "lokal", "freizeit", "natur", "wasser", "auto", "arzt", "bahnhof", "sport", "landstrasse", "autobahn", "feldweg", "wald", "berg", "ufer", "feld"],
+  kind: ["wohnung", "haus", "garten", "strasse", "geschaeft", "lokal", "freizeit", "natur", "auto", "arzt", "pflegeheim", "landstrasse", "autobahn", "feldweg", "feld"],
+  eltern: ["wohnung", "haus", "garten", "strasse", "geschaeft", "freizeit", "natur", "wasser", "auto", "arzt", "sport", "bahnhof", "landstrasse", "autobahn", "feldweg", "wald", "berg", "ufer"],
   nachbar: ["wohnung", "haus", "garten", "strasse"],
   fern: ["wohnung", "haus", "garten"],
   pflege: ["pflegeheim", "wohnung", "haus"],
   arzt: ["arzt", "wohnung", "haus", "pflegeheim"],
   ordi: ["arzt"],
   lehrer: ["schule", "sport", "freizeit"],
-  kollege: ["arbeit", "baustelle", "geschaeft", "lokal"],
-  passant: ["strasse", "geschaeft", "freizeit", "natur", "bahnhof", "sport", "lokal", "wasser", "auto", "garten"],
+  kollege: ["arbeit", "baustelle", "geschaeft", "lokal", "wald", "feld", "autobahn", "landstrasse"],
+  passant: ["strasse", "geschaeft", "freizeit", "natur", "bahnhof", "sport", "lokal", "wasser", "auto", "garten", "landstrasse", "autobahn", "feldweg", "wald", "berg", "ufer", "feld"],
   verkauf: ["geschaeft", "bahnhof"],
-  lenker: ["strasse", "auto"],
+  lenker: ["strasse", "auto", "landstrasse", "autobahn"],
   trainer: ["sport"],
   bademeister: ["wasser", "freizeit", "sport"],
   bahnpersonal: ["bahnhof"],
@@ -85,6 +85,14 @@ export const ORT_GEWICHT: Record<OrtArt, number> = {
   auto: 0,
   arzt: 0.7,
   bahnhof: 0.5,
+  // im Freien ohne Adresse: selten, aber möglich (Kollaps beim Wandern, am Radweg, im Weingarten)
+  landstrasse: 0.6,
+  autobahn: 0.2,
+  feldweg: 0.3,
+  wald: 0.2,
+  berg: 0.1,
+  ufer: 0.15,
+  feld: 0.2,
 };
 
 /** Mögliche Einsatzorte eines Falls mit Gewicht – nach Modus (nur/überall/außer) und passend zu den Anrufern */
@@ -859,7 +867,7 @@ const ORT_GEBAEUDE: Partial<Record<OrtArt, string>> = {
 
 /** Liegt der Notfallort im Freien bzw. nicht in einem Haus? Dann ist die Adresse nur die nächste Hausnummer. */
 function imFreien(k: AnrufKontext): boolean {
-  return ["strasse", "natur", "wasser", "auto", "sport", "freizeit", "bahnhof"].includes(k.szenario?.ortArt ?? "");
+  return ORT_IM_FREIEN.includes((k.szenario?.ortArt ?? "") as OrtArt);
 }
 
 /** „Seit wann?“ – die eine Zeitangabe des Falls (gefunden bzw. angefangen) */

@@ -238,7 +238,7 @@ export function einsatzMaske(e: Einsatz): { root: HTMLElement; refresh(): void }
     const noetig = sim.partnerErkannt(e);
     const einheiten = sim.partnerVon(e);
     // Einsatzort ist ein bekannter Ort (Freibad, Bahnhof, Tierpark …): Hinweis für den Disponenten
-    const ort = e.adresse ? ortAnStelle(e.adresse.lat, e.adresse.lon) : null;
+    const ort = typeof e.adresse?.lat === "number" ? ortAnStelle(e.adresse.lat, e.adresse.lon) : null;
     const key = JSON.stringify([e.partner ?? {}, e.partnerDa ?? {}, e.br?.label ?? "", e.boSicher ?? 0, noetig, einheiten.map((u) => [u.name, u.phase]), ort?.name ?? ""]);
     if (key === partnerKey) return;
     partnerKey = key;
