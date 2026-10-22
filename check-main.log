@@ -1,6 +1,6 @@
 ### npm install
 
-added 49 packages, and audited 50 packages in 8s
+added 49 packages, and audited 50 packages in 6s
 
 9 packages are looking for funding
   run `npm fund` for details
@@ -13,7 +13,7 @@ To address all issues (including breaking changes), run:
 Run `npm audit` for details.
 ### npm run build
 
-> leitwerk@0.45.0 build
+> leitwerk@0.46.0 build
 > tsc && vite build
 
 [36mvite v6.4.5 [32mbuilding for production...[36m[39m
@@ -30,19 +30,19 @@ rendering chunks...
 (!) /home/runner/work/leitwerk/leitwerk/src/ui/panels/telefon.ts is dynamically imported by /home/runner/work/leitwerk/leitwerk/src/ui/ktView.ts, /home/runner/work/leitwerk/leitwerk/src/ui/panels/masken.ts but also statically imported by /home/runner/work/leitwerk/leitwerk/src/main.ts, /home/runner/work/leitwerk/leitwerk/src/ui/panels/abfrage.ts, dynamic import will not move module into another chunk.
 [39m
 computing gzip size...
-[2mdist/[22m[32mindex.html                        [39m[1m[2m    1.03 kB[22m[1m[22m[2m │ gzip:   0.53 kB[22m
-[2mdist/[22m[2massets/[22m[35mindex-N_xsKUHa.css         [39m[1m[2m  291.42 kB[22m[1m[22m[2m │ gzip:  38.12 kB[22m
-[2mdist/[22m[2massets/[22m[36mevent-BEoecVwK.js          [39m[1m[2m    1.38 kB[22m[1m[22m[2m │ gzip:   0.67 kB[22m
-[2mdist/[22m[2massets/[22m[36mwebviewWindow-Cd34GR66.js  [39m[1m[2m    1.82 kB[22m[1m[22m[2m │ gzip:   0.81 kB[22m
-[2mdist/[22m[2massets/[22m[36mwebview-AkrCr7Xt.js        [39m[1m[2m    3.40 kB[22m[1m[22m[2m │ gzip:   1.16 kB[22m
-[2mdist/[22m[2massets/[22m[36mwindow-B-Eg3Ai1.js         [39m[1m[2m   13.71 kB[22m[1m[22m[2m │ gzip:   3.41 kB[22m
-[2mdist/[22m[2massets/[22m[36mindex-BoqcX6LC.js          [39m[1m[33m3,678.07 kB[39m[22m[2m │ gzip: 999.18 kB[22m
+[2mdist/[22m[32mindex.html                        [39m[1m[2m    1.03 kB[22m[1m[22m[2m │ gzip:     0.53 kB[22m
+[2mdist/[22m[2massets/[22m[35mindex-CkgBXy5i.css         [39m[1m[2m  291.49 kB[22m[1m[22m[2m │ gzip:    38.14 kB[22m
+[2mdist/[22m[2massets/[22m[36mevent-KvfNmPQO.js          [39m[1m[2m    1.38 kB[22m[1m[22m[2m │ gzip:     0.67 kB[22m
+[2mdist/[22m[2massets/[22m[36mwebviewWindow-PbI_Int8.js  [39m[1m[2m    1.82 kB[22m[1m[22m[2m │ gzip:     0.81 kB[22m
+[2mdist/[22m[2massets/[22m[36mwebview-Br7o37Og.js        [39m[1m[2m    3.40 kB[22m[1m[22m[2m │ gzip:     1.16 kB[22m
+[2mdist/[22m[2massets/[22m[36mwindow-CTQJvbqV.js         [39m[1m[2m   13.71 kB[22m[1m[22m[2m │ gzip:     3.41 kB[22m
+[2mdist/[22m[2massets/[22m[36mindex-CjsGMZ87.js          [39m[1m[33m4,685.00 kB[39m[22m[2m │ gzip: 1,274.07 kB[22m
 [33m
 (!) Some chunks are larger than 2000 kB after minification. Consider:
 - Using dynamic import() to code-split the application
 - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
 - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.[39m
-[32m✓ built in 6.09s[39m
+[32m✓ built in 6.77s[39m
 ### npx tauri icon app-icon.png
         Appx Creating StoreLogo.png
         Appx Creating Square30x30Logo.png
@@ -115,30 +115,30 @@ computing gzip size...
 [1m[92m  Downloaded[0m cc v1.9.0
 [1m[92m  Downloaded[0m crc32fast v1.5.3
 [1m[92m  Downloaded[0m find-msvc-tools v0.1.15
-[1m[92m  Downloaded[0m icu_locale_core v2.4.0
 [1m[92m  Downloaded[0m ico v0.6.0
 [1m[92m  Downloaded[0m icu_collections v2.4.0
 [1m[92m  Downloaded[0m icu_properties v2.4.0
 [1m[92m  Downloaded[0m icu_provider v2.4.0
 [1m[92m  Downloaded[0m icu_normalizer_data v2.4.0
+[1m[92m  Downloaded[0m icu_locale_core v2.4.0
 [1m[92m  Downloaded[0m icu_properties_data v2.4.0
 [1m[92m  Downloaded[0m icu_normalizer v2.4.0
 [1m[92m  Downloaded[0m libc v0.2.191
 [1m[92m  Downloaded[0m plist v1.10.3
 [1m[92m  Downloaded[0m rustls-webpki v0.103.16
-[1m[92m  Downloaded[0m tauri-build v2.7.4
+[1m[92m  Downloaded[0m tauri v2.12.5
 [1m[92m  Downloaded[0m tauri-codegen v2.7.4
 [1m[92m  Downloaded[0m tauri-macros v2.7.4
+[1m[92m  Downloaded[0m tauri-build v2.7.4
+[1m[92m  Downloaded[0m tauri-runtime-wry v2.12.3
 [1m[92m  Downloaded[0m tauri-winres v0.3.7
 [1m[92m  Downloaded[0m tinystr v0.8.5
-[1m[92m  Downloaded[0m tauri-runtime-wry v2.12.3
-[1m[92m  Downloaded[0m tauri v2.12.5
 [1m[92m  Downloaded[0m tokio v1.54.1
 [1m[92m  Downloaded[0m unicode-normalization v0.1.26
 [1m[92m  Downloaded[0m webpki-roots v1.0.10
 [1m[92m  Downloaded[0m yoke v0.8.4
-[1m[92m  Downloaded[0m zerovec v0.11.9
 [1m[92m  Downloaded[0m zerovec-derive v0.11.7
+[1m[92m  Downloaded[0m zerovec v0.11.9
 [1m[92m   Compiling[0m libc v0.2.191
 [1m[92m   Compiling[0m zerovec-derive v0.11.7
 [1m[92m   Compiling[0m find-msvc-tools v0.1.15
@@ -149,11 +149,11 @@ computing gzip size...
 [1m[92m   Compiling[0m zerovec v0.11.9
 [1m[92m    Checking[0m glib-sys v0.18.1
 [1m[92m   Compiling[0m zerotrie v0.2.5
-[1m[92m    Checking[0m gobject-sys v0.18.0
 [1m[92m   Compiling[0m tinystr v0.8.5
+[1m[92m    Checking[0m gobject-sys v0.18.0
 [1m[92m   Compiling[0m potential_utf v0.1.6
-[1m[92m   Compiling[0m icu_collections v2.4.0
 [1m[92m   Compiling[0m icu_locale_core v2.4.0
+[1m[92m   Compiling[0m icu_collections v2.4.0
 [1m[92m    Checking[0m gio-sys v0.18.1
 [1m[92m   Compiling[0m parking_lot_core v0.9.12
 [1m[92m   Compiling[0m parking_lot v0.12.5
@@ -163,19 +163,19 @@ computing gzip size...
 [1m[92m   Compiling[0m web_atoms v0.2.6
 [1m[92m   Compiling[0m icu_provider v2.4.0
 [1m[92m   Compiling[0m cfb v0.14.0
-[1m[92m   Compiling[0m icu_normalizer v2.4.0
 [1m[92m   Compiling[0m icu_properties v2.4.0
+[1m[92m   Compiling[0m icu_normalizer v2.4.0
 [1m[92m   Compiling[0m markup5ever v0.39.0
 [1m[92m   Compiling[0m html5ever v0.39.0
 [1m[92m    Checking[0m glib v0.18.5
-[1m[92m    Checking[0m pango-sys v0.18.0
 [1m[92m    Checking[0m gdk-pixbuf-sys v0.18.0
 [1m[92m    Checking[0m cairo-sys-rs v0.18.2
+[1m[92m    Checking[0m pango-sys v0.18.0
 [1m[92m   Compiling[0m ring v0.17.14
 [1m[92m   Compiling[0m idna_adapter v1.2.2
-[1m[92m   Compiling[0m dom_query v0.28.0
 [1m[92m   Compiling[0m idna v1.1.0
 [1m[92m   Compiling[0m plist v1.10.3
+[1m[92m   Compiling[0m dom_query v0.28.0
 [1m[92m   Compiling[0m url v2.5.8
 [1m[92m   Compiling[0m urlpattern v0.6.0
 [1m[92m   Compiling[0m schemars v0.8.22
@@ -185,8 +185,8 @@ computing gzip size...
 [1m[92m    Checking[0m gdk-sys v0.18.2
 [1m[92m    Checking[0m gio v0.18.4
 [1m[92m    Checking[0m atk-sys v0.18.2
-[1m[92m    Checking[0m mio v1.2.4
 [1m[92m    Checking[0m socket2 v0.6.5
+[1m[92m    Checking[0m mio v1.2.4
 [1m[92m    Checking[0m tokio v1.54.1
 [1m[92m    Checking[0m gtk-sys v0.18.2
 [1m[92m    Checking[0m cairo-rs v0.18.5
@@ -195,53 +195,53 @@ computing gzip size...
 [1m[92m   Compiling[0m tauri-winres v0.3.7
 [1m[92m   Compiling[0m dirs v7.0.0
 [1m[92m   Compiling[0m flate2 v1.1.10
-[1m[92m   Compiling[0m tauri-build v2.7.4
-[1m[92m    Checking[0m pango v0.18.3
-[1m[92m    Checking[0m gdk-pixbuf v0.18.5
 [1m[92m   Compiling[0m clang-sys v1.9.1
 [1m[92m    Checking[0m atk v0.18.2
-[1m[92m    Checking[0m gdk v0.18.2
+[1m[92m   Compiling[0m tauri-build v2.7.4
+[1m[92m   Compiling[0m tauri-plugin v2.7.2
 [1m[92m    Checking[0m javascriptcore-rs-sys v1.1.1
 [1m[92m    Checking[0m soup3-sys v0.5.0
-[1m[92m   Compiling[0m tauri-plugin v2.7.2
 [1m[92m    Checking[0m x11 v2.21.0
 [1m[92m    Checking[0m getrandom v0.2.17
 [1m[92m   Compiling[0m cmake v0.1.58
-[1m[92m    Checking[0m gtk v0.18.2
 [1m[92m    Checking[0m gdkx11-sys v0.18.2
-[1m[92m    Checking[0m javascriptcore-rs v1.1.2
 [1m[92m    Checking[0m webkit2gtk-sys v2.0.2
-[1m[92m   Compiling[0m tauri v2.12.5
-[1m[92m    Checking[0m soup3 v0.5.0
+[1m[92m    Checking[0m javascriptcore-rs v1.1.2
 [1m[92m   Compiling[0m rustls v0.23.46
-[1m[92m   Compiling[0m png v0.18.1
 [1m[92m    Checking[0m rustls-webpki v0.103.16
+[1m[92m    Checking[0m gdk-pixbuf v0.18.5
+[1m[92m    Checking[0m pango v0.18.3
+[1m[92m    Checking[0m soup3 v0.5.0
+[1m[92m    Checking[0m gdk v0.18.2
+[1m[92m   Compiling[0m png v0.18.1
 [1m[92m    Checking[0m x11-dl v2.21.0
+[1m[92m   Compiling[0m tauri v2.12.5
 [1m[92m   Compiling[0m bzip2-sys v0.1.13+1.0.8
-[1m[92m    Checking[0m dlopen2 v0.8.2
-[1m[92m    Checking[0m dbus v0.9.12
-[1m[92m   Compiling[0m ico v0.6.0
+[1m[92m    Checking[0m gtk v0.18.2
 [1m[92m    Checking[0m gdkx11 v0.18.2
+[1m[92m    Checking[0m dlopen2 v0.8.2
+[1m[92m   Compiling[0m ico v0.6.0
+[1m[92m    Checking[0m dbus v0.9.12
 [1m[92m   Compiling[0m webpki-roots v1.0.10
 [1m[92m    Checking[0m gdkwayland-sys v0.18.2
 [1m[92m   Compiling[0m tauri-runtime-wry v2.12.3
 [1m[92m    Checking[0m hyper v1.12.0
-[1m[92m   Compiling[0m webpki-roots v0.26.11
 [1m[92m   Compiling[0m bindgen v0.71.1
+[1m[92m   Compiling[0m webpki-roots v0.26.11
 [1m[92m   Compiling[0m tauri-codegen v2.7.4
 [1m[92m   Compiling[0m tauri-plugin-fs v2.7.1
 [1m[92m   Compiling[0m socks v0.3.4
 [1m[92m   Compiling[0m dirs-sys v0.4.1
 [1m[92m   Compiling[0m filetime v0.2.29
 [1m[92m    Checking[0m hyper-util v0.1.21
+[1m[92m   Compiling[0m ureq v2.12.1
 [1m[92m   Compiling[0m bindgen v0.69.5
 [1m[92m    Checking[0m tower v0.5.3
-[1m[92m   Compiling[0m ureq v2.12.1
 [1m[92m   Compiling[0m whisper-rs-sys v0.13.1
 [1m[92m   Compiling[0m tar v0.4.46
 [1m[92m   Compiling[0m dirs v5.0.1
-[1m[92m   Compiling[0m bzip2 v0.4.4
 [1m[92m   Compiling[0m tauri-macros v2.7.4
+[1m[92m   Compiling[0m bzip2 v0.4.4
 [1m[92m    Checking[0m getrandom v0.3.4
 [1m[92m    Checking[0m tokio-rustls v0.26.6
 [1m[92m    Checking[0m tokio-util v0.7.20
@@ -249,24 +249,24 @@ computing gzip size...
 [1m[92m    Checking[0m tower-http v0.6.11
 [1m[92m   Compiling[0m tauri-plugin-dialog v2.8.3
 [1m[92m   Compiling[0m tauri-plugin-updater v2.14.0
+[1m[92m    Checking[0m alsa-sys v0.3.1
+[1m[92m    Checking[0m rustls-platform-verifier v0.7.1
+[1m[92m    Checking[0m zopfli v0.8.4
+[1m[92m    Checking[0m tempfile v3.27.0
+[1m[92m   Compiling[0m sherpa-rs-sys v0.6.8
+[1m[92m    Checking[0m reqwest v0.13.5
+[1m[92m    Checking[0m alsa v0.9.1
+[1m[92m    Checking[0m rfd v0.16.0
+[1m[92m   Compiling[0m leitwerk v0.46.0 (/home/runner/work/leitwerk/leitwerk/src-tauri)
+[1m[92m    Checking[0m unicode-normalization v0.1.26
+[1m[92m    Checking[0m cpal v0.15.3
 [1m[92m    Checking[0m webkit2gtk v2.0.2
 [1m[92m    Checking[0m tao v0.37.1
 [1m[92m    Checking[0m muda v0.20.0
-[1m[92m   Compiling[0m sherpa-rs-sys v0.6.8
-[1m[92m    Checking[0m alsa-sys v0.3.1
-[1m[92m    Checking[0m rustls-platform-verifier v0.7.1
-[1m[92m    Checking[0m tempfile v3.27.0
-[1m[92m    Checking[0m zopfli v0.8.4
-[1m[92m    Checking[0m reqwest v0.13.5
-[1m[92m    Checking[0m tauri-runtime v2.12.2
-[1m[92m    Checking[0m wry v0.57.0
-[1m[92m    Checking[0m alsa v0.9.1
-[1m[92m    Checking[0m rfd v0.16.0
-[1m[92m   Compiling[0m leitwerk v0.45.0 (/home/runner/work/leitwerk/leitwerk/src-tauri)
-[1m[92m    Checking[0m cpal v0.15.3
-[1m[92m    Checking[0m unicode-normalization v0.1.26
 [1m[92m    Checking[0m reqwest v0.12.28
 [1m[92m    Checking[0m zip v4.6.1 (https://github.com/zip-rs/zip2?tag=v4.6.1#56fa5f6e)
+[1m[92m    Checking[0m tauri-runtime v2.12.2
+[1m[92m    Checking[0m wry v0.57.0
 [1m[92m    Checking[0m sherpa-rs v0.6.8
 [1m[92m   Compiling[0m whisper-rs v0.14.4
 [1m[33mwarning[0m[1m: unused import: `cpal::Sample`[0m
@@ -278,12 +278,12 @@ computing gzip size...
     [1m[94m= [0m[1mnote[0m: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
 
 [1m[33mwarning[0m: `leitwerk` (lib) generated 1 warning
-[1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 1m 14s
+[1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 1m 22s
 ### python3 tools/build_default_data.py
 data/default/dienststellen.csv: 851 Zeilen
 data/default/fahrzeuge.csv: 142 Zeilen
 data/default/krankenhaeuser.csv: 114 Zeilen
-data/default/pois.csv: 2600 Zeilen
+data/default/pois.csv: 10681 Zeilen
 data/default/einsatzvorlagen.csv: 0 Zeilen
 data/beispiele/beispiel_dienststellen.csv: 2 Zeilen
 data/beispiele/beispiel_fahrzeuge.csv: 4 Zeilen
