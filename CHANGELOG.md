@@ -1,5 +1,21 @@
 # Änderungen
 
+## 0.53.0 – ACN (Acute Community Nurse)
+**7 ACN an 6 Standorten** (Land NÖ, Oktober 2026): St. Pölten, Stockerau (2), Waidhofen an der Thaya, Bruck an der Leitha, Baden/Leobersdorf, Haag
+- Eine diplomierte Pflegekraft mit Notfallsanitäter-Ausbildung (NKI) allein im PKW, rund um die Uhr
+- Funkrufnamen 80/xxx; nicht belegte (80/001, 80/002, 80/005, 80/007) sind im Hinweis als „geschätzt“ markiert
+- Eigene Fahrzeugart „ACN“ (Filter in der Fahrzeugliste)
+
+**ACN-Einsätze (Akutpflege zu Hause)**
+- Kommen selten über die Gesundheitsberatung 1450 schon mit ACN-Code herein (ACN-O1 … ACN-O8: Katheter, PEG-Sonde, Sturz ohne Verletzung, Wunde, Port/Pumpe, Stoma, Palliativ, Sonstiges) – keine zeitliche Dringlichkeit
+- Nur die ACN fährt hin, ist 30–60 Minuten vor Ort, der Patient bleibt zu Hause; ist keine ACN frei, wartet der Einsatz
+- Schickt man einen KTW/RTW, nimmt der den Patienten mit ins Krankenhaus
+- Häufigkeit einstellbar (Einstellungen → „ACN-Einsätze“, Standard ca. 2 pro Standort und Tag)
+
+**ACN unterstützt den Rettungsdienst**
+- Fehlt am Rettungsmittel der Notfallsanitäter (z. B. nur ein RS-RTW, weil kein RTW-C frei ist), schlägt LeitWerk statt NEF/Hubschrauber die ACN vor, wenn sie nicht später da ist – sie fährt beim Transport mit
+- Notarzt-Einsätze (ALS orange/rot): ist die ACN das nächste Fahrzeug, kommt sie als First Responder dazu (RTW und Notarzt wie gewohnt)
+
 ## 0.52.0 – Fußweg der Besatzung, Hubschrauberlandeplätze, NEF-Status beim Notarzt-Abholen
 **Fahrzeuge bleiben auf der Straße stehen**
 - RTW, NEF, KTW fahren nicht mehr „ins Haus“: sie halten am nächsten Punkt der Straße, die Besatzung geht zu Fuß zum Patienten (auch bei Krankentransporten)

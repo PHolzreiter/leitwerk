@@ -51,7 +51,11 @@ export function rufname(fz: FunkFz, alle: FunkFz[]): string {
   }
   if (typ === "BEL") return fz.kurzname?.trim() || `BEL ${ort}`;
   if (/^EL ÖBB/i.test(fz.rmTyp) || /^EL ÖBB/i.test(fz.funkrufname)) return `ÖBB Einsatzleiter ${ortAusDienststelle(fz.stationName)}`.trim();
-  if (typ === "ACN") return `ACN ${ort}`;
+  if (typ === "ACN") {
+    // zwei ACN am selben Ort (Stockerau): Funkrufname, damit es eindeutig bleibt
+    const gleich = alle.filter((x) => x.rmTyp.toUpperCase() === "ACN" && ortAusDienststelle(x.stationName) === ort);
+    return gleich.length <= 1 ? `ACN ${ort}` : fz.funkrufname.replace(/\s*ACN$/i, "");
+  }
   if (fz.kategorie === "NEF" || typ === "NEF") {
     // mehrere NEF an einem Ort: Funkrufname, damit es eindeutig bleibt
     const gleich = alle.filter((x) => (x.kategorie === "NEF" || x.rmTyp === "NEF") && !x.ersatzFuer && ortAusDienststelle(x.stationName) === ort);

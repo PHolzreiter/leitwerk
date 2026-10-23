@@ -13,6 +13,7 @@ nef-70499;70/499;;NEF;NEF;;;osm11101232755;ja;nein;täglich 19:00–07:00;;;NEF-
 nef-72399;72/399;;NEF;NEF;;;osm1196072381;ja;nein;täglich 19:00–07:00;;;NEF-141 (Ärztefunkdienst 141), nur nachts · Funkrufname geschätzt · Notarzt am Stützpunkt
 nef-65099;65/099;;NEF;NEF;;;osm1196783471;ja;nein;24/7;;;Funkrufname geschätzt · Notarzt am Stützpunkt
 nef-62499;62/499;;NEF;NEF;;;osm129902910;ja;nein;24/7;;;RK/ASB geteilt · Notarzt am Stützpunkt
+acn-80005;80/005 ACN;;ACN;ACN;;;osm1299947976;ja;nein;24/7;;;ACN Haag · Funkrufname geschätzt · seit 01.06.2024 beim Roten Kreuz Haag – Dienstzeit heute nicht belegt (beim Start nicht rund um die Uhr)
 nef-54099;54/099;;NEF;NEF;;;osm142883232;ja;nein;24/7;;;Notarzt am Stützpunkt
 nef-74099;74/099;;NEF;NEF;;;osm143373053;ja;nein;24/7;;;Notarzt am Stützpunkt
 nef-77099;77/099;;NEF;NEF;;;osm150308151;ja;nein;24/7;;;Funkrufname geschätzt · Notarzt am Stützpunkt
@@ -21,9 +22,11 @@ nef-54499;54/499;;NEF;NEF;;;osm184596475;ja;nein;24/7;;;Notarzt am Stützpunkt
 nef-61099;61/099;;NEF;NEF;;;osm263355775;ja;nein;24/7;;;Notarzt am Stützpunkt
 nef-53499;53/499;;NEF;NEF;;;osm26806369;ja;nein;24/7;;;Funkrufname geschätzt · Notarzt am Stützpunkt
 nef-62699;62/699;;NEF;NEF;;;osm268319830;ja;nein;täglich 18:00–06:00;;;Funkrufname geschätzt · Notarzt am Stützpunkt
+acn-80001;80/001 ACN;;ACN;ACN;;;osm30557227;ja;nein;24/7;;;ACN Bruck an der Leitha · Funkrufname geschätzt · erster ACN-Standort (Pilot seit 18.05.2020), am Rettungsstützpunkt des Roten Kreuzes
 nef-52099;52/099;;NEF;NEF;;;osm35683540;ja;nein;24/7;;;Funkrufname geschätzt · Notarzt am Stützpunkt
 nef-65499;65/499;;NEF;NEF;;;osm466387055;ja;nein;24/7;;;Funkrufname geschätzt · Notarzt am Stützpunkt
 nef-51099;51/099;;NEF;NEF;;;osm591992316;ja;nein;24/7;;kh006;Funkrufname geschätzt · Notarzt wird im Krankenhaus abgeholt
+acn-80002;80/002 ACN;;ACN;ACN;;;osm621328687;ja;nein;24/7;;;ACN Baden/Leobersdorf · Funkrufname geschätzt · Standort lt. OpenStreetMap
 nef-76099;76/099;;NEF;NEF;;;osm90045647;ja;nein;24/7;;kh019;Funkrufname geschätzt · Notarzt wird im Krankenhaus abgeholt
 p791345;75/001;;RTW;RTW-C;groß;;p1496914;ja;nein;24/7;;;
 p791346;75/002;;RTW;RTW;groß;;p1496914;ja;nein;24/7;;;
@@ -138,10 +141,11 @@ p816069;73/003;;RTW;RTW;groß;;p1533827;ja;nein;24/7;;;
 p816072;73/342;;RTW;RTW-C;groß;;p1533829;ja;nein;24/7;;;
 p816073;73/343;;RTW;RTW;klein;;p1533829;ja;nein;Mo–Fr 06:00–18:00;;;
 p816071;73/099;;NEF;NEF;;;p1533830;ja;nein;24/7;;;RK/ASB geteilt · Notarzt am Stützpunkt
-p816093;80/006 ACN;;Sonstige;NEF;;;p1533832;nein;nein;24/7;;;
-p816086;80/003 ACN;;Sonstige;NEF;;;p1533837;nein;nein;24/7;;;
+p816093;80/006 ACN;;ACN;ACN;;;p1533832;ja;nein;24/7;;;ACN Stockerau · Stützpunkt in der Leitstelle Stockerau
+acn-80007;80/007 ACN;;ACN;ACN;;;p1533832;ja;nein;24/7;;;ACN Stockerau · Funkrufname geschätzt · zweite Einheit vermutet (Ausbau auf zwei Teams 2022 angekündigt, 7 Einheiten an 6 Standorten lt. Land NÖ 10/2026)
+p816086;80/003 ACN;;ACN;ACN;;;p1533837;ja;nein;24/7;;;ACN St. Pölten
 nef-70099;70/099;;NEF;NEF;;;p1533839;ja;nein;24/7;;;Funkrufname geschätzt · Notarzt am Stützpunkt
-p816088;80/004 ACN;;Sonstige;NEF;;;p1533839;nein;nein;24/7;;;
+p816088;80/004 ACN;;ACN;ACN;;;p1533839;ja;nein;24/7;;;ACN Waidhofen an der Thaya
 p818818;EL ÖBB Tulln;;EL ÖBB;EL ÖBB;;;p1537990;ja;nein;24/7;;;
 p818862;EL ÖBB Krems;;EL ÖBB;EL ÖBB;;;p1537993;ja;nein;24/7;;;
 p816877;67/341;;RTW;RTW;klein;;p1538360;ja;nein;"Mo–Fr 06:00–18:00; Mo–Fr 18:00–06:00";;;

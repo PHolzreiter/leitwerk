@@ -200,7 +200,7 @@ def build_stations() -> tuple[list[dict], dict[str, str]]:
 def category_of(typ: str, funkruf: str, station_typ: str) -> str:
     t = typ.upper()
     if "ACN" in funkruf.upper():
-        return "Sonstige"
+        return "ACN"
     if t == "NAH":
         return "NAH"
     if t in {"RTW", "RTW-C"}:
@@ -264,6 +264,7 @@ def build_vehicles(stations: list[dict], name_to_id: dict[str, str]) -> list[dic
     hubschrauber_dienst(vehicles)
     ersatz_nef(vehicles)
     nef_noe(vehicles, stations)
+    acn_noe(vehicles, stations)
     vehicles.sort(key=lambda v: (v["dienststelle"], v["funkrufname"]))
     return vehicles
 
@@ -355,6 +356,28 @@ def nef_noe(vehicles: list[dict], stations: list[dict]) -> None:
             teile.append("Funkrufname geschätzt")
         teile.append("Notarzt wird im Krankenhaus abgeholt" if v["na_abholung"] else "Notarzt am Stützpunkt")
         v["hinweis"] = " · ".join(teile)
+
+
+def acn_noe(vehicles: list[dict], stations: list[dict]) -> None:
+    """ACN (Acute Community Nurse, Notruf NÖ): 6 Standorte, 7 Einheiten (Land NÖ, 08.10.2026), je eine DGKP mit
+    Notfallsanitäter-Ausbildung allein im PKW. Funkrufnamen 80/xxx – soweit nicht aus Pauls Daten: geschätzt."""
+    st_ids = {x["id"] for x in stations}
+    nach_funk = {re.sub(r"\s*ACN$", "", v["funkrufname"].strip()): v for v in vehicles if "ACN" in v["funkrufname"].upper()}
+    for r in read_csv(SRC / "acn_noe.csv"):
+        funk = r["funkrufname"].strip()
+        if r["dienststelle"] not in st_ids:
+            raise SystemExit(f"ACN {funk}: Dienststelle {r['dienststelle']} fehlt")
+        v = nach_funk.get(funk)
+        if v is None:
+            v = {"id": "acn-" + funk.replace("/", ""), "funkrufname": f"{funk} ACN", "kurzname": ""}
+            vehicles.append(v)
+        teile = [f"ACN {r['standort']}"]
+        if r["funkrufname_status"] == "geschätzt":
+            teile.append("Funkrufname geschätzt")
+        if r["hinweis"]:
+            teile.append(r["hinweis"])
+        v.update({"kategorie": "ACN", "typ": "ACN", "dienststelle": r["dienststelle"], "aktiv": "ja", "nachtflug": "nein",
+                  "dienstplan": r["dienstzeit"], "hinweis": " · ".join(teile)})
 
 
 # ---------------------------------------------------------------- Dienstpläne und Typen (paul_fahrzeuge_schichten.csv)
