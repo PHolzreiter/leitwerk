@@ -1,5 +1,15 @@
 # Änderungen
 
+## 0.50.0 – Rettungszufahrten der Krankenhäuser
+**Fahrzeuge fahren über die Rettungseinfahrt zum Punkt P** (dort geht die Besatzung „ins KH“)
+- UK St. Pölten (Einfahrt von der Matthias-Corvinus-Straße), UK Krems (vom Mitterweg zur Schleife), UK Tulln (vom Alten Ziegelweg bei der Föhrengasse)
+- Gilt für Transporte und Krankentransporte; Hubschrauber landen weiter am Haus
+- Auf der Karte steht ganz nah ein blaues „P“
+- Krankenhaus bearbeiten → „Rettungszufahrt“: Einfahrt und Punkt P auf der Karte wählen (auch für weitere Häuser); in der CSV-Spalte `zufahrt`: `einfahrt=48.41296,15.61544; p=48.41247,15.61458`
+
+**Behoben**
+- Beim Bearbeiten eines Krankenhauses gingen Öffnungszeiten, Plätze und Aufnahmerad verloren
+
 ## 0.49.0 – Öffnungszeiten der Orte, Tag- und Nachtfälle
 **Orte haben Zeiten** (Einsätze und Krankentransporte nur, wenn dort offen ist; Feiertage wie Sonntag)
 - z. B. Schulen und Kindergärten Mo–Fr tagsüber, Supermarkt Mo–Sa 7–20, Arztpraxis Mo–Fr 8–18, Museum Di–So 10–17, Disco Fr/Sa 22–5, Freibad 9–19, Hochstand in der Dämmerung; Bahnhof, Pflegeheim, Hotel, Wohnung, alle Straßen und das Gelände immer

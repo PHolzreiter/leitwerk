@@ -21,6 +21,7 @@ import {
   type Station,
   type Vehicle,
   type VehicleCategory,
+  type Zufahrt,
 } from "./model";
 import { akutAbteilung, EINRICHTUNGEN, einrichtungenAusAlt, einrichtungenOrdnen } from "./klinik";
 import { RESSOURCE, type Aufnahmerad, type Ressource } from "../sim/khStatus";
@@ -62,6 +63,39 @@ function radLesen(text: string): Aufnahmerad | null {
   return { gruppe: m[1].trim(), start: m[2], wechsel: m[3].padStart(5, "0"), zyklus: m[4], einrichtungen };
 }
 
+/** Rettungszufahrt: „einfahrt=48.41296,15.61544; p=48.41247,15.61458“ (oder nur „48.41247,15.61458“ = P) */
+export function zufahrtLesen(text: string): Zufahrt | null {
+  const t = text.trim();
+  if (!t) return null;
+  const punkt = (x: string) => {
+    const m = x.match(/(-?\d+(?:\.\d+)?)\s*[,\s]\s*(-?\d+(?:\.\d+)?)/);
+    if (!m) return null;
+    const lat = Number(m[1]);
+    const lon = Number(m[2]);
+    return Number.isFinite(lat) && Number.isFinite(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180 ? { lat, lon } : null;
+  };
+  let p: { lat: number; lon: number } | null = null;
+  let ein: { lat: number; lon: number } | null = null;
+  for (const teil of t.split(";").map((x) => x.trim()).filter(Boolean)) {
+    const m = teil.match(/^([a-zäöü ]+)\s*[=:]\s*(.+)$/i);
+    if (!m) {
+      p ??= punkt(teil);
+      continue;
+    }
+    const k = normKey(m[1]);
+    if (/^(ein|einfahrt|zufahrt|tor)$/.test(k)) ein = punkt(m[2]);
+    else p = punkt(m[2]);
+  }
+  if (!p) return null;
+  return ein ? { p, ein } : { p };
+}
+
+export function zufahrtText(z: Zufahrt | null | undefined): string {
+  if (!z) return "";
+  const f = (x: { lat: number; lon: number }) => `${x.lat.toFixed(6)},${x.lon.toFixed(6)}`;
+  return (z.ein ? `einfahrt=${f(z.ein)}; ` : "") + `p=${f(z.p)}`;
+}
+
 /** Einrichtungen aus einer CSV-Zelle: IDs oder Namen, mit Komma getrennt */
 function einrichtungenLesen(text: string): string[] {
   const nachName = new Map(EINRICHTUNGEN.map((e) => [normKey(e.name), e.id]));
@@ -81,7 +115,7 @@ function einrichtungenLesen(text: string): string[] {
 export const COLUMNS: Record<Kind, string[]> = {
   stations: ["id", "name", "organisation", "typ", "ort", "bezirk", "adresse", "breitengrad", "laengengrad", "hinweis"],
   vehicles: ["id", "funkrufname", "kurzname", "kategorie", "typ", "aufbau", "modell", "dienststelle", "aktiv", "nachtflug", "dienstplan", "ersatz_fuer", "hinweis"],
-  hospitals: ["id", "name", "kurzname", "ort", "breitengrad", "laengengrad", "einrichtungen", "akut_aus", "zeiten", "plaetze", "aufnahmerad", "hinweis"],
+  hospitals: ["id", "name", "kurzname", "ort", "breitengrad", "laengengrad", "einrichtungen", "akut_aus", "zeiten", "plaetze", "aufnahmerad", "zufahrt", "hinweis"],
   pois: ["id", "name", "typ", "ort", "breitengrad", "laengengrad", "hinweis"],
   templates: ["id", "code", "adresse", "breitengrad", "laengengrad", "meldung", "patient_alter", "transport", "hinweis"],
   codes: ["id", "code", "name", "kategorie", "kapitel", "hinweis"],
@@ -144,6 +178,7 @@ const ALIASES: Record<string, string[]> = {
   zeiten: ["zeiten", "oeffnungszeiten"],
   plaetze: ["plaetze", "kapazitaet", "kapazitaeten"],
   aufnahmerad: ["aufnahmerad", "aufnahmetage"],
+  zufahrt: ["zufahrt", "rettungszufahrt", "rettungseinfahrt", "liegendanfahrt"],
   gyn_geburtshilfe: ["gyngeburtshilfe", "gyn", "geburtshilfe", "gynaekologie", "gynaekologieundgeburtshilfe"],
 };
 
@@ -578,6 +613,8 @@ export function importCsv<K extends Kind>(kind: K, text: string, ctx: ImportCont
           if (Object.keys(pl).length) h.plaetze = pl;
           const rad = radLesen(get("aufnahmerad"));
           if (rad) h.aufnahmerad = rad;
+          const zf = zufahrtLesen(get("zufahrt"));
+          if (zf) h.zufahrt = zf;
           record = h;
         } else {
           id = id || `poi-${slug(name)}`;
@@ -688,6 +725,7 @@ export function exportCsv<K extends Kind>(kind: K, records: KindMap[K][], statio
           .join(", ");
         const r = h.aufnahmerad;
         v.aufnahmerad = r ? `${r.gruppe} ${r.start} ${r.wechsel} ${r.zyklus}: ${Object.entries(r.einrichtungen).map(([k, x]) => `${k}=${x}`).join(", ")}` : "";
+        v.zufahrt = zufahrtText(h.zufahrt);
       } else {
         const p = rec as Poi;
         Object.assign(v, { typ: p.typ, ort: p.ort });

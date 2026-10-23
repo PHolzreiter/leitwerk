@@ -29,7 +29,7 @@ HOSPITAL_FLAGS = [
     "notfallambulanz", "schockraum", "unfallambulanz", "kinderambulanz", "intensiv_anaesthesie",
     "neurologie", "kinderintensiv", "neonatologie", "hno", "urologie", "gyn_geburtshilfe",
 ]
-HOSPITAL_COLS = ["id", "name", "kurzname", "ort", "breitengrad", "laengengrad", "einrichtungen", "akut_aus", "zeiten", "plaetze", "aufnahmerad", "hinweis"]
+HOSPITAL_COLS = ["id", "name", "kurzname", "ort", "breitengrad", "laengengrad", "einrichtungen", "akut_aus", "zeiten", "plaetze", "aufnahmerad", "zufahrt", "hinweis"]
 POI_COLS = ["id", "name", "typ", "ort", "breitengrad", "laengengrad", "hinweis"]
 TEMPLATE_COLS = ["id", "code", "adresse", "breitengrad", "laengengrad", "meldung", "patient_alter", "transport", "hinweis"]
 
@@ -827,6 +827,15 @@ def build_pois() -> list[dict]:
     return out
 
 
+# Rettungszufahrten: Einfahrt von der öffentlichen Straße und Punkt P, an dem das Fahrzeug „ins KH“ geht.
+# Eingezeichnet von Paul (10/2026), Koordinaten an den OpenStreetMap-Zufahrtswegen abgelesen.
+ZUFAHRTEN = {
+    "kh001": "einfahrt=48.215729,15.626310; p=48.215000,15.625600",  # UK St. Pölten: von der Matthias-Corvinus-Straße
+    "kh002": "einfahrt=48.412960,15.615440; p=48.412470,15.614580",  # UK Krems: vom Mitterweg, Schleife
+    "kh003": "einfahrt=48.322987,16.065202; p=48.322700,16.065150",  # UK Tulln: vom Alten Ziegelweg (Föhrengasse)
+}
+
+
 def build_hospitals() -> list[dict]:
     """Krankenhäuser mit ihren Einrichtungen (Stationen, Intensiv, Ambulanzen …).
     Die Einrichtungen stammen aus der Recherche auf den offiziellen Websites (tools/sources/kh_einrichtungen.json,
@@ -902,6 +911,7 @@ def build_hospitals() -> list[dict]:
         out.append({"id": kid, "name": name, "kurzname": kurz, "ort": ort,
                     "breitengrad": f"{lat:.6f}", "laengengrad": f"{lon:.6f}",
                     "einrichtungen": ", ".join(d["einrichtungen"]), "akut_aus": aus, **extra(kid, d),
+                    "zufahrt": ZUFAHRTEN.get(kid, ""),
                     "hinweis": (f"{grund} – " if grund else "") + hinweis(d)})
     # neu recherchierte Häuser (auch Privatkliniken außerhalb Wiens)
     n = len(out)

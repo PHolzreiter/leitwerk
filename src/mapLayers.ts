@@ -83,6 +83,16 @@ function partnerStationFeatures(): FeatureCollection<Point> {
   return collection(out);
 }
 
+/** Punkt P der Rettungszufahrten (wo das Fahrzeug „ins KH“ geht) */
+function zufahrtFeatures(): FeatureCollection<Point> {
+  return collection(
+    store
+      .list("hospitals")
+      .filter((h) => h.zufahrt?.p)
+      .map((h) => pointFeature(`${h.id}-p`, h.zufahrt!.p.lon, h.zufahrt!.p.lat, { name: h.kurzname || h.name })),
+  );
+}
+
 function hospitalFeatures(): FeatureCollection<Point> {
   return collection(
     store.list("hospitals").map((h) => pointFeature(h.id, h.lon, h.lat, { name: h.kurzname || h.name })),
@@ -129,7 +139,7 @@ export interface DataLayerCallbacks {
 
 export const LAYER_GROUPS: Record<"stations" | "hospitals" | "pois", string[]> = {
   stations: ["lw-partner-stations", "lw-partner-stations-label", "lw-stations", "lw-stations-label"],
-  hospitals: ["lw-hospitals", "lw-hospitals-h", "lw-hospitals-label"],
+  hospitals: ["lw-hospitals", "lw-hospitals-h", "lw-hospitals-label", "lw-kh-p"],
   pois: ["lw-pois", "lw-pois-w", "lw-pois-label", "lw-pois-w-label"],
 };
 
@@ -185,6 +195,7 @@ export function addDataLayers(map: maplibregl.Map, cb: DataLayerCallbacks): void
   map.addSource("lw-stations", { type: "geojson", data: stationFeatures() });
   map.addSource("lw-partner-stations", { type: "geojson", data: partnerStationFeatures() });
   map.addSource("lw-hospitals", { type: "geojson", data: hospitalFeatures() });
+  map.addSource("lw-kh-p", { type: "geojson", data: zufahrtFeatures() });
   map.addSource("lw-pois", { type: "geojson", data: poiFeatures() });
 
   // Orte (POIs): normale erst nah herangezoomt, wichtige schon früher (einstellbar unter Persönlich → Darstellung)
@@ -276,6 +287,22 @@ export function addDataLayers(map: maplibregl.Map, cb: DataLayerCallbacks): void
     paint: { "text-color": "#9d1c1c", "text-halo-color": "#ffffff", "text-halo-width": 1.5 },
   });
 
+  // Rettungszufahrt: „P“ erst ganz nah
+  map.addLayer({
+    id: "lw-kh-p",
+    type: "symbol",
+    source: "lw-kh-p",
+    minzoom: 15.5,
+    layout: {
+      "text-field": "P",
+      "text-font": FONT,
+      "text-size": 13,
+      "text-allow-overlap": true,
+      "text-ignore-placement": true,
+    },
+    paint: { "text-color": "#ffffff", "text-halo-color": "#1d4f91", "text-halo-width": 3 },
+  });
+
   map.addLayer({
     id: "lw-partner-stations",
     type: "circle",
@@ -338,6 +365,7 @@ export function addDataLayers(map: maplibregl.Map, cb: DataLayerCallbacks): void
     (map.getSource("lw-stations") as maplibregl.GeoJSONSource | undefined)?.setData(stationFeatures());
     (map.getSource("lw-partner-stations") as maplibregl.GeoJSONSource | undefined)?.setData(partnerStationFeatures());
     (map.getSource("lw-hospitals") as maplibregl.GeoJSONSource | undefined)?.setData(hospitalFeatures());
+    (map.getSource("lw-kh-p") as maplibregl.GeoJSONSource | undefined)?.setData(zufahrtFeatures());
     (map.getSource("lw-pois") as maplibregl.GeoJSONSource | undefined)?.setData(poiFeatures());
   });
   map.once("remove", ausStore);

@@ -16,7 +16,8 @@ import "./style.css";
 import "./ui/ws/dockview.css";
 import "./ui/ws/arbeitsplatz.css";
 import { store } from "./data/store";
-import { sim } from "./sim/engine";
+import { khZufahrtBei, sim } from "./sim/engine";
+import { zufahrtLesen, zufahrtText } from "./data/schema";
 import { geoStatus } from "./sim/geo";
 import { toast } from "./ui/dom";
 import { confirmDialog } from "./ui/dialog";
@@ -57,7 +58,7 @@ import { fallHinweise, faellePruefen } from "./abfrage/faellePruefen";
 dienstHoverEinrichten();
 
 // Für automatische Tests im Browser (…/?debug): Zugriff auf Simulation und Daten
-if (location.search.includes("debug")) Object.assign(window, { __lw: { sim, store, sprachTest, codesystemLaden: (s: Schema) => schemaUebernehmen(s, "test.json"), faellePruefen: () => faellePruefen(store.schema), fallHinweise, ohneFrageEcho, fuellwortDosis, ohneRollentausch, faelle: { alleFaelle, fallSpeichern, fallLoeschen, fallpaketExport, fallpaketImport, fallAktivSetzen }, fallEditorOeffnen, entwurfAusKi, sprechFrage, systemPrompt, kontext, erinnerung, kiVerlauf, ohnePatientWort, bereinigen, satzEnde, inAtemnot, kiAntwortNeu, kiTest, probe: probeGespraech, vorwaermen, eroeffnen, nachrichtArt, ortKandidaten, testlauf: { auftraegeFuer, ktAuftraege, testlaufAusfuehren, testlaufDateien, testlaufDialog, zipOhneKompression }, kt: { ktPrompt, ktPruefen, ktZusammenfassungFalsch }, anruferAntwort, verstehen: { themenErkennen, antwortKern, antwortPruefen, kernAntwort, schemaFrageZu }, kiPrefsSetzen: setKiPrefs, panelZeigen, funk: { funkPruefen, zerlegen, zusammensetzen, funkSpruchErzeugen, lageWissen }, antwortOhneKi, anruferWaehlen, kh: { akvZustand, AKV_SPALTEN_AK, akutVon }, orte: { poiKategorien, ortGewicht, kategorienFuerOrtArt }, setzePers, stellen: { laden: stellenLaden }, suche: searchAddress, zeiten: { offenUm, istFeiertag, katOffen, katKtOffen }, schemaFkt: { fragenImAblauf, bestimmeCode } } });
+if (location.search.includes("debug")) Object.assign(window, { __lw: { sim, store, sprachTest, codesystemLaden: (s: Schema) => schemaUebernehmen(s, "test.json"), faellePruefen: () => faellePruefen(store.schema), fallHinweise, ohneFrageEcho, fuellwortDosis, ohneRollentausch, faelle: { alleFaelle, fallSpeichern, fallLoeschen, fallpaketExport, fallpaketImport, fallAktivSetzen }, fallEditorOeffnen, entwurfAusKi, sprechFrage, systemPrompt, kontext, erinnerung, kiVerlauf, ohnePatientWort, bereinigen, satzEnde, inAtemnot, kiAntwortNeu, kiTest, probe: probeGespraech, vorwaermen, eroeffnen, nachrichtArt, ortKandidaten, testlauf: { auftraegeFuer, ktAuftraege, testlaufAusfuehren, testlaufDateien, testlaufDialog, zipOhneKompression }, kt: { ktPrompt, ktPruefen, ktZusammenfassungFalsch }, anruferAntwort, verstehen: { themenErkennen, antwortKern, antwortPruefen, kernAntwort, schemaFrageZu }, kiPrefsSetzen: setKiPrefs, panelZeigen, funk: { funkPruefen, zerlegen, zusammensetzen, funkSpruchErzeugen, lageWissen }, antwortOhneKi, anruferWaehlen, kh: { akvZustand, AKV_SPALTEN_AK, akutVon }, orte: { poiKategorien, ortGewicht, kategorienFuerOrtArt }, setzePers, stellen: { laden: stellenLaden }, suche: searchAddress, zeiten: { offenUm, istFeiertag, katOffen, katKtOffen }, zufahrt: { lesen: zufahrtLesen, text: zufahrtText, bei: khZufahrtBei }, schemaFkt: { fragenImAblauf, bestimmeCode } } });
 
 async function watchGeo(): Promise<void> {
   const out = document.getElementById("geo-status");

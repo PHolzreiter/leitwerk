@@ -19,6 +19,7 @@ import {
   type Einsatzcode,
 } from "../data/model";
 import { store } from "../data/store";
+import { zufahrtLesen, zufahrtText } from "../data/schema";
 import { akutMoeglich, EINRICHTUNG_TYP_LABEL, EINRICHTUNGEN, einrichtungenAusAlt, type EinrichtungTyp } from "../data/klinik";
 import { codeKategorien } from "../sim/codes";
 import { confirmDialog, openDialog } from "./dialog";
@@ -310,6 +311,30 @@ export function openEditor(
 
     if (kind === "hospitals") {
       const h = existing as Hospital | undefined;
+      // Rettungszufahrt: Einfahrt von der Straße und Punkt P, wo das Fahrzeug „ins KH“ geht
+      add(
+        "zufahrt",
+        "Rettungszufahrt",
+        textInput(zufahrtText(h?.zufahrt), "einfahrt=48.41296,15.61544; p=48.41247,15.61458"),
+        "P = wo das Fahrzeug „ins KH“ geht (Transporte fahren dorthin, über die Einfahrt). Leer = zum Haus selbst.",
+        true,
+      );
+      const zfWrap = el("div", { class: "fld wide" });
+      for (const [was, titel] of [["einfahrt", "Einfahrt auf der Karte wählen"], ["p", "Punkt P auf der Karte wählen"]] as const) {
+        const b = el("button", { class: "btn small", type: "button" }, titel);
+        b.addEventListener("click", async () => {
+          dlg.hide();
+          const pkt = await deps.pickOnMap(was === "p" ? "Punkt P anklicken (wo das Fahrzeug ins KH geht)" : "Einfahrt von der öffentlichen Straße anklicken");
+          dlg.show();
+          if (!pkt) return;
+          const inp = inputs.zufahrt as HTMLInputElement;
+          const alt = zufahrtLesen(inp.value);
+          const neu = was === "p" ? { ...(alt ?? {}), p: pkt } : { p: alt?.p ?? pkt, ein: pkt };
+          inp.value = zufahrtText(neu);
+        });
+        zfWrap.appendChild(b);
+      }
+      form.appendChild(zfWrap);
       const vorher = new Set(h?.einrichtungen?.length ? h.einrichtungen : h ? einrichtungenAusAlt(h.abteilungen, h.bereiche) : []);
       const aus = new Set(h?.akutAus ?? []);
       einrInputs = {};
@@ -453,7 +478,16 @@ export function openEditor(
       } else if (kind === "hospitals") {
         const einrichtungen = EINRICHTUNGEN.map((x) => x.id).filter((id) => einrInputs[id]?.checked);
         const akutAus = Object.entries(akutInputs).filter(([, i]) => !i.checked).map(([k]) => k);
+        const zfText = val("zufahrt");
+        const zufahrt = zufahrtLesen(zfText);
+        if (zfText.trim() && !zufahrt) return fail("Rettungszufahrt: bitte so angeben: einfahrt=48.41296,15.61544; p=48.41247,15.61458");
+        const alt = existing as Hospital | undefined;
         const h: Hospital = { ...geo, kurzname: val("kurzname"), ort: val("ort"), einrichtungen, akutAus };
+        // was das Formular nicht zeigt, bleibt erhalten
+        if (alt?.zeiten) h.zeiten = alt.zeiten;
+        if (alt?.plaetze) h.plaetze = alt.plaetze;
+        if (alt?.aufnahmerad) h.aufnahmerad = alt.aufnahmerad;
+        if (zufahrt) h.zufahrt = zufahrt;
         delete h.abteilungen;
         delete h.bereiche;
         store.upsert("hospitals", [h]);

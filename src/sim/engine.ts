@@ -8,7 +8,7 @@
 import { rufnamen } from "./funkname";
 import { aktuelleSchicht, dienstEnde, imDienst, naechsterBeginn, type Schicht } from "./dienst";
 import { nachKlick } from "../klick";
-import { ACTIVE_CATEGORIES, bereicheVon, type Hospital, type Vehicle } from "../data/model";
+import { ACTIVE_CATEGORIES, bereicheVon, type Hospital, type Vehicle, type Zufahrt } from "../data/model";
 import { bestesKh, buchung, buchungName, eignung as khEignung, khVorschlaege } from "../data/klinik";
 import { grundbelegungTick, platzFuer, RESSOURCE, ressourcenFuer, type BelegungMap } from "./khStatus";
 import { verdachtFuer } from "./verdacht";
@@ -934,6 +934,15 @@ function pad(n: number, w: number): string {
   return String(n).padStart(w, "0");
 }
 
+/** Rettungszufahrt des Krankenhauses, zu dem dieses Ziel gehört (Ziel = Haus oder Punkt P), sonst null */
+export function khZufahrtBei(ziel: LatLon): Zufahrt | null {
+  for (const h of store.list("hospitals")) {
+    const z = h.zufahrt;
+    if (z?.p && (distanceM(ziel, h) < 5 || distanceM(ziel, z.p) < 5)) return z;
+  }
+  return null;
+}
+
 /** Zufälliges Patientenalter, passend zur Gruppe. */
 function alterFuer(code: Einsatzcode): number {
   if (code.gruppe === 24) return Math.round(rnd(18, 42));
@@ -1642,7 +1651,7 @@ export class Simulation {
     fz.blaulicht = sondersignal && !fliegt(fz);
     const von = { lat: fz.lat, lon: fz.lon };
     const p: Promise<Route> =
-      fliegt(fz) ? Promise.resolve(flightRoute(von, ziel, this.settings.nahGeschwindigkeit)) : route(von, ziel);
+      fliegt(fz) ? Promise.resolve(flightRoute(von, ziel, this.settings.nahGeschwindigkeit)) : this.strassenRoute(von, ziel);
     void p.then((r) => {
       this.routingBusy.delete(fz.id);
       const wf = !fliegt(fz) && this.settings.wetterAktiv ? fahrFaktor(this.state.wetter.lage, this.temperatur()) : 1;
@@ -1655,6 +1664,24 @@ export class Simulation {
       fz.phase = phase;
       fz.phaseEnde = this.state.zeit + fz.fahrt.dauer * 1000;
       this.emit();
+    });
+  }
+
+  /**
+   * Route auf der Straße. Ziel ist ein Krankenhaus mit Rettungszufahrt? Dann über die Einfahrt zum Punkt P
+   * (dort geht die Besatzung „ins KH“) – nicht irgendwo ans Haus.
+   */
+  private strassenRoute(von: LatLon, ziel: LatLon): Promise<Route> {
+    const z = khZufahrtBei(ziel);
+    if (!z) return route(von, ziel);
+    const p = z.p;
+    const ein = z.ein;
+    // schon auf dem Gelände (näher an P als die Einfahrt) oder keine Einfahrt: direkt zu P
+    if (!ein || distanceM(von, p) <= distanceM(ein, p) || distanceM(von, ein) < 30) return route(von, p);
+    return Promise.all([route(von, ein), route(ein, p)]).then(([a, b]) => {
+      const coords = [...a.coords, ...b.coords.slice(1)];
+      const times = [...a.times, ...b.times.slice(1).map((t) => t + a.duration)];
+      return { coords, times, duration: a.duration + b.duration, distance: a.distance + b.distance };
     });
   }
 

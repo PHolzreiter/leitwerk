@@ -150,6 +150,18 @@ export const HOSPITAL_FLAG_LABEL: Record<HospitalFlag, string> = {
   gyn_geburtshilfe: "Gyn. / Geburtshilfe",
 };
 
+export interface Zufahrt {
+  /** wo der Rettungsdienst stehen bleibt (Liegendanfahrt) */
+  p: { lat: number; lon: number };
+  /** Einfahrt von der öffentlichen Straße (optional) */
+  ein?: { lat: number; lon: number };
+}
+
+/** Wohin Fahrzeuge fahren, wenn sie „ins KH“ fahren: Punkt P der Rettungszufahrt, sonst das Haus selbst */
+export function khAnkunft(h: Pick<Hospital, "lat" | "lon" | "zufahrt">): { lat: number; lon: number } {
+  return h.zufahrt?.p ? { lat: h.zufahrt.p.lat, lon: h.zufahrt.p.lon } : { lat: h.lat, lon: h.lon };
+}
+
 export interface Hospital extends Base {
   name: string;
   kurzname: string;
@@ -166,6 +178,8 @@ export interface Hospital extends Base {
   plaetze?: Partial<Record<Ressource, number>>;
   /** Aufnahmerad (z. B. Linz): manche Einrichtungen nur am Aufnahmetag offen */
   aufnahmerad?: Aufnahmerad | null;
+  /** Rettungszufahrt: Einfahrt von der öffentlichen Straße und Punkt P, an dem das Fahrzeug „ins KH“ geht */
+  zufahrt?: Zufahrt | null;
   /** veraltet: frühere Abteilungs-Häkchen (nur noch zum Einlesen alter Daten) */
   abteilungen?: Partial<Record<HospitalFlag, boolean>>;
   /** veraltet: frühere Bereichskürzel (nur noch zum Einlesen alter Daten) */
