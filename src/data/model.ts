@@ -66,6 +66,8 @@ export interface Vehicle extends Base {
   aufbau?: "klein" | "gross";
   /** Ersatz-NEF eines Hubschraubers (Funkrufname des NAH): nur angemeldet, wenn dieser nicht fliegen kann */
   ersatzFuer?: string;
+  /** NEF: Notarzt wird in diesem Krankenhaus abgeholt (ID); leer = Notarzt am Stützpunkt */
+  naAbholung?: string;
   /** Fahrzeugmodell, wo es eine Wahl gibt (KTW: t6hoch/sprinter_kurz, BEL: passat/t6); leer = zufällig fest je Funkrufname */
   modell?: string;
 }

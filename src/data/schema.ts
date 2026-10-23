@@ -114,7 +114,7 @@ function einrichtungenLesen(text: string): string[] {
 /** Spalten in der Reihenfolge, in der LeitWerk sie schreibt. */
 export const COLUMNS: Record<Kind, string[]> = {
   stations: ["id", "name", "organisation", "typ", "ort", "bezirk", "adresse", "breitengrad", "laengengrad", "hinweis"],
-  vehicles: ["id", "funkrufname", "kurzname", "kategorie", "typ", "aufbau", "modell", "dienststelle", "aktiv", "nachtflug", "dienstplan", "ersatz_fuer", "hinweis"],
+  vehicles: ["id", "funkrufname", "kurzname", "kategorie", "typ", "aufbau", "modell", "dienststelle", "aktiv", "nachtflug", "dienstplan", "ersatz_fuer", "na_abholung", "hinweis"],
   hospitals: ["id", "name", "kurzname", "ort", "breitengrad", "laengengrad", "einrichtungen", "akut_aus", "zeiten", "plaetze", "aufnahmerad", "zufahrt", "hinweis"],
   pois: ["id", "name", "typ", "ort", "breitengrad", "laengengrad", "hinweis"],
   templates: ["id", "code", "adresse", "breitengrad", "laengengrad", "meldung", "patient_alter", "transport", "hinweis"],
@@ -158,6 +158,7 @@ const ALIASES: Record<string, string[]> = {
   aufbau: ["aufbau", "groesse"],
   modell: ["modell", "fahrzeugmodell"],
   ersatz_fuer: ["ersatzfuer", "ersatzfuerhubschrauber", "ersatznef"],
+  na_abholung: ["naabholung", "notarztabholung", "notarztabholen", "naabholen"],
   code: ["code", "ampds", "einsatzcode", "ampdscode"],
   meldung: ["meldung", "meldebild", "text"],
   patient_alter: ["patientalter", "alter"],
@@ -415,6 +416,7 @@ function uebernimmVorhandenes(v: Vehicle, alt: Partial<Vehicle> | undefined, spa
   if (!hat("beginn") && !hat("ende") && !hat("dienstplan") && alt.dienstplan) v.dienstplan = alt.dienstplan;
   if (!hat("aufbau") && alt.aufbau && v.typ === alt.typ) v.aufbau = alt.aufbau;
   if (!hat("ersatz_fuer") && alt.ersatzFuer) v.ersatzFuer = alt.ersatzFuer;
+  if (!hat("na_abholung") && alt.naAbholung) v.naAbholung = alt.naAbholung;
 }
 
 /** Liest eine CSV-Datei als Datensätze der gewünschten Art. */
@@ -534,6 +536,7 @@ export function importCsv<K extends Kind>(kind: K, text: string, ctx: ImportCont
           nachtflug: get("nachtflug") === "" ? false : parseBool(get("nachtflug"), "nachtflug"),
           ...(aufbau ? { aufbau } : {}),
           ...(get("ersatz_fuer") ? { ersatzFuer: get("ersatz_fuer") } : {}),
+          ...(get("na_abholung").trim() ? { naAbholung: get("na_abholung").trim() } : {}),
           ...(modellLesen(get("modell")) ? { modell: modellLesen(get("modell"))! } : {}),
           ...(schichten !== undefined ? { dienstplan: schichten } : {}),
         };
@@ -692,6 +695,7 @@ export function exportCsv<K extends Kind>(kind: K, records: KindMap[K][], statio
         modell: f.modell ?? "",
         dienstplan: planText(f.dienstplan) || "24/7",
         ersatz_fuer: f.ersatzFuer ?? "",
+        na_abholung: f.naAbholung ?? "",
         dienststelle_name: stationName.get(f.dienststelleId) ?? "",
       });
     } else if (kind === "templates") {

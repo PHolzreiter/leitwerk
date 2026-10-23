@@ -24,7 +24,7 @@ OUT = ROOT / "data" / "default"
 EX = ROOT / "data" / "beispiele"
 
 STATION_COLS = ["id", "name", "organisation", "typ", "ort", "bezirk", "adresse", "breitengrad", "laengengrad", "hinweis"]
-VEHICLE_COLS = ["id", "funkrufname", "kurzname", "kategorie", "typ", "aufbau", "modell", "dienststelle", "aktiv", "nachtflug", "dienstplan", "ersatz_fuer", "hinweis"]
+VEHICLE_COLS = ["id", "funkrufname", "kurzname", "kategorie", "typ", "aufbau", "modell", "dienststelle", "aktiv", "nachtflug", "dienstplan", "ersatz_fuer", "na_abholung", "hinweis"]
 HOSPITAL_FLAGS = [
     "notfallambulanz", "schockraum", "unfallambulanz", "kinderambulanz", "intensiv_anaesthesie",
     "neurologie", "kinderintensiv", "neonatologie", "hno", "urologie", "gyn_geburtshilfe",
@@ -263,6 +263,7 @@ def build_vehicles(stations: list[dict], name_to_id: dict[str, str]) -> list[dic
     dienstplaene_einspielen(vehicles)
     hubschrauber_dienst(vehicles)
     ersatz_nef(vehicles)
+    nef_noe(vehicles, stations)
     vehicles.sort(key=lambda v: (v["dienststelle"], v["funkrufname"]))
     return vehicles
 
@@ -306,6 +307,54 @@ def ersatz_nef(vehicles: list[dict]) -> None:
         nef["typ"] = "NEF ÖAMTC"
         if not nef.get("hinweis"):
             nef["hinweis"] = "ÖAMTC-NEF, nur angemeldet, wenn der Hubschrauber nicht fliegen kann"
+
+
+# NEF in ganz NÖ (Stand heute, Recherche 10/2026: tools/sources/nef_noe.csv) und Notarzt-Abholung im Krankenhaus.
+# Notarzt wird im KH abgeholt (Angabe Paul): Krems, Tulln, Horn, Zwettl, Waidhofen/Ybbs, Amstetten – alle anderen: Notarzt am Stützpunkt.
+NA_ABHOLUNG = {"Krems": "kh002", "Tulln": "kh003", "Horn": "kh007", "Zwettl": "kh020", "Waidhofen an der Ybbs": "kh019", "Amstetten": "kh006"}
+DIENSTZEIT = {"24h": "24/7", "18-6": "täglich 18:00–06:00", "19-7": "täglich 19:00–07:00"}
+ORG = {"RK": "Rotes Kreuz", "ASB": "Arbeiter-Samariter-Bund", "RK/ASB": "Rotes Kreuz / ASB"}
+
+
+def nef_noe(vehicles: list[dict], stations: list[dict]) -> None:
+    """Fehlende NÖ-NEF ergänzen, Dienstzeiten und Notarzt-Abholung setzen. Stützpunkt = vorhandene RK/ASB-Dienststelle
+    in der Nähe (< 400 m), sonst neu. NEF-141 (Ärztefunkdienst, nachts) heißen nach dem 141-Dienst."""
+    nach_funk = {v["funkrufname"]: v for v in vehicles}
+    rett = [x for x in stations if x["organisation"] in ("Rotes Kreuz", "Arbeiter-Samariter-Bund", "Rotes Kreuz / ASB")]
+    for r in read_csv(SRC / "nef_noe.csv"):
+        funk, ort = r["funkrufname"].strip(), r["ort"].strip()
+        lat, lon = float(r["breitengrad"]), float(r["laengengrad"])
+        ist141 = r["stuetzpunkt"].startswith("Ärztefunkdienst 141")
+        v = nach_funk.get(funk)
+        if v is None:
+            nah = sorted((dist_m((lat, lon), (float(x["breitengrad"]), float(x["laengengrad"]))), x) for x in rett)
+            st = nah[0][1] if nah and nah[0][0] < 400 else None
+            if st is None:
+                st = {"id": "nef-st-" + re.sub(r"[^a-z0-9]+", "-", norm_key(ort)).strip("-"), "name": r["stuetzpunkt"].strip(),
+                      "organisation": ORG[r["organisation"]], "typ": "Notarztstützpunkt", "ort": ort, "bezirk": "",
+                      "adresse": r["adresse"].split(" (")[0].strip(), "breitengrad": f"{lat:.6f}", "laengengrad": f"{lon:.6f}",
+                      "hinweis": "NEF-Stützpunkt (Recherche 10/2026)"}
+                stations.append(st)
+                rett.append(st)
+            if ist141:
+                st["name"] = r["stuetzpunkt"].strip()
+                st["typ"] = "Notarztstützpunkt"
+                st["hinweis"] = "NEF-141: besetzt vom Ärztefunkdienst 141, wird wie ein normales NEF alarmiert"
+            v = {"id": "nef-" + funk.replace("/", ""), "funkrufname": funk, "kurzname": "", "kategorie": "NEF", "typ": "NEF",
+                 "dienststelle": st["id"], "aktiv": "ja", "nachtflug": "nein", "hinweis": ""}
+            vehicles.append(v)
+            nach_funk[funk] = v
+        v["dienstplan"] = DIENSTZEIT[r["dienstzeit"].strip()]
+        v["na_abholung"] = NA_ABHOLUNG.get(ort, "")
+        teile = []
+        if ist141:
+            teile.append("NEF-141 (Ärztefunkdienst 141), nur nachts")
+        if r["organisation"] == "RK/ASB":
+            teile.append("RK/ASB geteilt")
+        if r["funkrufname_status"].strip() == "geschätzt":
+            teile.append("Funkrufname geschätzt")
+        teile.append("Notarzt wird im Krankenhaus abgeholt" if v["na_abholung"] else "Notarzt am Stützpunkt")
+        v["hinweis"] = " · ".join(teile)
 
 
 # ---------------------------------------------------------------- Dienstpläne und Typen (paul_fahrzeuge_schichten.csv)

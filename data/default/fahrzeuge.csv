@@ -1,143 +1,162 @@
-﻿id;funkrufname;kurzname;kategorie;typ;aufbau;modell;dienststelle;aktiv;nachtflug;dienstplan;ersatz_fuer;hinweis
-nah-99010;99/010;Christophorus 10;NAH;NAH;;;air-c10;ja;nein;täglich Sonnenaufgang–Sonnenuntergang;;nur tagsüber (Sonnenaufgang bis Sonnenuntergang)
-nef-99910;99/910;;NEF;NEF ÖAMTC;;;air-c10;ja;nein;24/7;99/010;ÖAMTC-NEF, nur angemeldet, wenn der Hubschrauber nicht fliegen kann
-nah-99016;99/016;Christophorus 16;NAH;NAH;;;air-c16;ja;nein;täglich Sonnenaufgang–Sonnenuntergang;;nur tagsüber (Sonnenaufgang bis Sonnenuntergang)
-nef-99916;99/916;;NEF;NEF ÖAMTC;;;air-c16;ja;nein;24/7;99/016;ÖAMTC-NEF, nur angemeldet, wenn der Hubschrauber nicht fliegen kann
-nah-99017;99/017;Christophorus 17;NAH;NAH;;;air-c17;ja;ja;24/7;;rund um die Uhr, mit Nachtflug
-nef-99917;99/917;;NEF;NEF ÖAMTC;;;air-c17;ja;nein;24/7;99/017;ÖAMTC-NEF, nur angemeldet, wenn der Hubschrauber nicht fliegen kann
-nah-99018;99/018;Christophorus 18;NAH;NAH;;;air-c18;ja;nein;täglich Sonnenaufgang–Sonnenuntergang;;nur tagsüber (Sonnenaufgang bis Sonnenuntergang)
-nef-99918;99/918;;NEF;NEF ÖAMTC;;;air-c18;ja;nein;24/7;99/018;ÖAMTC-NEF, nur angemeldet, wenn der Hubschrauber nicht fliegen kann
-p791345;75/001;;RTW;RTW-C;groß;;p1496914;ja;nein;24/7;;
-p791346;75/002;;RTW;RTW;groß;;p1496914;ja;nein;24/7;;
-p791348;75/003;;RTW;RTW;klein;;p1496914;ja;nein;täglich 05:00–21:00;;
-p816080;75/004;;KTW;KTW;;;p1496914;ja;nein;"Mo–Fr 05:00–13:00; Sa 05:00–14:00";;
-p816083;75/005;;KTW;KTW-B;;;p1496914;ja;nein;"Mo–Fr 05:00–13:00; Sa 05:00–14:00";;
-p816085;75/006;;KTW;KTW-B;;;p1496914;ja;nein;Mo–Sa 05:00–14:00;;
-p816090;75/007;;KTW;KTW-B;;;p1496914;ja;nein;"Mo–Fr 06:00–14:00; Sa 05:00–14:00";;
-p816091;75/008;;KTW;KTW;;;p1496914;ja;nein;"Mo–Fr 06:00–14:00; Sa 12:00–21:00";;
-p816092;75/009;;KTW;KTW-B;;;p1496914;ja;nein;Mo–Fr 06:00–14:00;;
-p816094;75/010;;KTW;KTW-B;;;p1496914;ja;nein;"Mo–Fr 06:00–14:00; Sa 17:00–01:00";;
-p816095;75/011;;KTW;KTW-B;;;p1496914;ja;nein;"Mo–Fr 07:00–15:00; täglich 22:00–06:00";;
-p816096;75/012;;KTW;KTW;;;p1496914;ja;nein;"Mo–Fr 08:00–17:00; Sa 05:00–14:00; So 07:00–16:00";;
-p816097;75/013;;KTW;KTW-B;;;p1496914;ja;nein;Mo–Fr 14:00–22:00;;
-p816098;75/014;;KTW;KTW-B;;;p1496914;ja;nein;"Mo–Fr 12:00–20:00; Sa 11:00–20:00";;
-p816099;75/015;;KTW;KTW-B;;;p1496914;ja;nein;"Mo–Fr 17:00–01:00; Sa 11:00–20:00";;
-p818888;75/030;BEL Krems;BEL;BEL;;;p1496914;ja;nein;24/7;;
-p791349;75/099;;NEF;NEF;;;p1496914;ja;nein;24/7;;
-p791352;75/051;;RTW;RTW;klein;;p1496917;ja;nein;24/7;;
-p791351;75/071;;RTW;RTW-C;groß;;p1496918;ja;nein;24/7;;
-p791353;99/002;Christophorus 2;NAH;NAH;;;p1496919;ja;ja;24/7;;rund um die Uhr, mit Nachtflug
-p816732;99/902;;NEF;NEF ÖAMTC;;;p1496919;ja;nein;24/7;99/002;ÖAMTC-NEF, nur angemeldet, wenn der Hubschrauber nicht fliegen kann
-p792147;60/001;;RTW;RTW-C;groß;;p1497833;ja;nein;24/7;;
-p792149;60/002;;KTW;KTW-B;;;p1497833;ja;nein;Mo–Fr 07:00–19:00;;
-p816102;60/012;;KTW;KTW;;;p1497833;ja;nein;Mo–Fr 07:00–15:00;;
-p816103;60/014;;KTW;KTW-B;;;p1497833;ja;nein;Mo–Fr 06:00–16:00;;
-p792151;69/001;;RTW;RTW-C;groß;;p1497840;ja;nein;24/7;;
-p792172;69/002;;RTW;RTW;klein;;p1497840;ja;nein;"Mo–Fr 06:00–22:00; Sa, So 08:00–20:00";;
-p816478;69/010;;KTW;KTW-B;;;p1497840;ja;nein;Mo–Sa 05:00–15:00;;
-p816479;69/011;;KTW;KTW-B;;;p1497840;ja;nein;Mo–Fr 05:00–15:00;;
-p816480;69/014;;KTW;KTW-B;;;p1497840;ja;nein;"Mo–Fr 06:00–22:00; Sa 06:00–14:00; So 10:00–20:00";;
-p816481;69/015;;KTW;KTW-B;;;p1497840;ja;nein;"Mo–Fr 06:00–16:00; Sa 10:00–20:00";;
-p816475;69/018;;KTW;KTW-B;;;p1497840;ja;nein;"Mo–Fr 10:00–20:00; Mo–Fr, So 20:00–06:00";;
-p816474;69/021;;KTW;KTW-B;;;p1497840;ja;nein;"Mo–Fr 08:00–18:00; Sa 10:00–20:00; Sa 20:00–06:00";;
-p793185;69/099;;NEF;NEF;;;p1497840;ja;nein;24/7;;
-p818925;69/119;BEL Tulln;BEL;BEL;;;p1497840;ja;nein;24/7;;
-p793175;69/061;;RTW;RTW-C;groß;;p1500606;ja;nein;24/7;;
-p816654;69/062;;KTW;KTW-B;;;p1500606;ja;nein;"Mo, Mi, Fr 07:00–16:00; Di, Do 07:00–15:00";;
-p793177;69/051;;RTW;RTW-C;groß;;p1500607;ja;nein;24/7;;
-p793183;69/071;;RTW;RTW-C;groß;;p1500610;ja;nein;"Mo–Fr 06:00–22:00; Sa, So 08:00–20:00";;
-p795040;69/401;;RTW;RTW-C;groß;;p1502429;ja;nein;24/7;;
-p816600;69/411;;KTW;KTW-B;;;p1502429;ja;nein;"Mo, Mi, Fr 06:00–14:00; Di, Do 06:00–16:00";;
-p816602;69/414;;KTW;KTW-B;;;p1502429;ja;nein;Mo–Sa 06:00–16:00;;
-p816608;69/415;;KTW;KTW-B;;;p1502429;ja;nein;Mo–Fr 06:00–14:00;;
-p816621;69/601;;KTW;KTW-B;;;p1502430;ja;nein;Mo–Fr 06:00–14:00;;
-p795041;69/602;;RTW;RTW-C;groß;;p1502430;ja;nein;24/7;;
-p816616;69/611;;KTW;KTW;;;p1502430;ja;nein;Mo–Fr 06:00–16:00;;
-p816619;69/612;;KTW;KTW-B;;;p1502430;ja;nein;Di–Do 06:00–16:00;;
-p814724;57/001;;RTW;RTW;klein;;p1528061;ja;nein;24/7;;
-p815571;57/002;;RTW;RTW-C;groß;;p1528061;ja;nein;24/7;;
-p816630;57/020;;KTW;KTW;;;p1528061;ja;nein;"Mo–Fr 06:00–16:00; Sa, So 07:00–17:00";;
-p816635;57/021;;KTW;KTW-B;;;p1528061;ja;nein;"Mo–Fr 06:00–16:00; Sa 08:00–16:00";;
-p816637;57/022;;KTW;KTW-B;;;p1528061;ja;nein;Mo–Fr 12:00–22:00;;
-p816639;57/023;;KTW;KTW-B;;;p1528061;ja;nein;"Mo, Do, Fr 06:00–14:00; Di 07:00–23:59; Mi 06:00–22:00";;
-p816646;57/024;;KTW;KTW;;;p1528061;ja;nein;Mo–Fr 07:00–17:00;;
-p816650;57/025;;KTW;KTW-B;;;p1528061;ja;nein;"Mo–Fr 14:00–22:00; Sa, So 06:00–16:00";;
-p816655;57/026;;KTW;KTW-B;;;p1528061;ja;nein;Mo–Fr 07:00–17:00;;
-p816657;57/027;;KTW;KTW-B;;;p1528061;ja;nein;Mo–Fr 06:00–16:00;;
-p815568;57/099;;NEF;NEF;;;p1528061;ja;nein;24/7;;
-p814726;57/401;;RTW;RTW-C;groß;;p1528062;ja;nein;24/7;;
-p814723;57/402;;RTW;RTW;klein;;p1528062;ja;nein;Mo–Fr 07:00–19:00;;
-p816604;57/411;;KTW;KTW-B;;;p1528062;ja;nein;"Mo, Mi, Fr 05:30–15:30; Mo, Mi, Fr 15:30–23:30; Di, Do 07:00–19:00; Di, Do 19:00–03:00; Sa 07:00–15:00; Sa 15:00–22:00";;
-p816613;57/412;;KTW;KTW;;;p1528062;ja;nein;"Mo, Mi, Fr 07:00–15:00; Di, Do 06:00–14:00";;
-p816622;57/413;;KTW;KTW;;;p1528062;ja;nein;Mo–Fr 05:00–21:00;;
-p816617;57/414;;KTW;KTW-B;;;p1528062;ja;nein;"Mo, Mi, Fr 07:00–15:00; Di, Do, Sa 05:30–13:30";;
-p814721;57/499;;NEF;NEF;;;p1528062;ja;nein;24/7;;
-p814728;57/041;;RTW;RTW-C;groß;;p1528063;ja;nein;24/7;;
-p816644;57/042;;KTW;KTW-B;;;p1528063;ja;nein;Di–Do 05:30–12:30;;
-p816631;57/201;;KTW;KTW-B;;;p1528064;ja;nein;"Mo–Fr 06:00–19:00; Sa 06:00–14:00";;
-p816641;57/203;;KTW;KTW-B;;;p1528064;ja;nein;Mo–Fr 06:00–16:00;;
-p814722;57/204;;RTW;RTW-C;groß;;p1528064;ja;nein;24/7;;
-p816636;57/205;;KTW;KTW;;;p1528064;ja;nein;Mo–Fr 06:00–16:00;;
-p814731;99/009;Christophorus 9;NAH;NAH;;;p1528090;ja;nein;täglich Sonnenaufgang–Sonnenuntergang;;nur tagsüber (Sonnenaufgang bis Sonnenuntergang)
-nef-99909;99/909;;NEF;NEF ÖAMTC;;;p1528090;ja;nein;24/7;99/009;ÖAMTC-NEF, nur angemeldet, wenn der Hubschrauber nicht fliegen kann
-p814732;99/015;Christophorus 15;NAH;NAH;;;p1528091;ja;nein;täglich Sonnenaufgang–Sonnenuntergang;;nur tagsüber (Sonnenaufgang bis Sonnenuntergang)
-nef-99915;99/915;;NEF;NEF ÖAMTC;;;p1528091;ja;nein;24/7;99/015;ÖAMTC-NEF, nur angemeldet, wenn der Hubschrauber nicht fliegen kann
-p814733;99/003;Christophorus 3;NAH;NAH;;;p1528092;ja;nein;täglich Sonnenaufgang–Sonnenuntergang;;nur tagsüber (Sonnenaufgang bis Sonnenuntergang)
-p814734;99/033;Christophorus 33;ITH;ITH;;;p1528092;ja;nein;täglich Sonnenaufgang–Sonnenuntergang;;nur tagsüber (Sonnenaufgang bis Sonnenuntergang)
-nef-99903;99/903;;NEF;NEF ÖAMTC;;;p1528092;ja;nein;24/7;99/003;ÖAMTC-NEF, nur angemeldet, wenn der Hubschrauber nicht fliegen kann
-p814738;56/006;;RTW;RTW;klein;;p1528094;ja;nein;24/7;;
-p815569;56/007;;RTW;RTW-C;groß;;p1528094;ja;nein;24/7;;
-p814739;56/008;;RTW;RTW;klein;;p1528094;ja;nein;Mo–Fr 06:00–16:00;;
-p816656;56/009;;KTW;KTW-B;;;p1528094;ja;nein;Mo–Fr 09:00–19:00;;
-p816658;56/010;;KTW;KTW;;;p1528094;ja;nein;Mo–Fr 08:00–18:00;;
-p816659;56/011;;KTW;KTW-B;;;p1528094;ja;nein;Mo, Mi, Fr 16:00–01:00;;
-p816661;56/012;;KTW;KTW-B;;;p1528094;ja;nein;Di, Do 16:00–01:00;;
-p816662;56/014;;KTW;KTW;;;p1528094;ja;nein;Mo–Fr 07:00–15:00;;
-p816663;56/015;;KTW;KTW-B;;;p1528094;ja;nein;Mo–Fr 06:00–14:00;;
-p816665;56/016;;KTW;KTW-B;;;p1528094;ja;nein;Mo–Fr 06:00–16:00;;
-p816668;56/017;;KTW;KTW-B;;;p1528094;ja;nein;Mo–Sa 05:30–15:30;;
-p815570;56/099;;NEF;NEF;;;p1528094;ja;nein;24/7;;
-p819410;56/119;BEL Klosterneuburg;BEL;BEL;;;p1528094;ja;nein;24/7;;
-p814737;62/004;;RTW;RTW-C;groß;;p1528790;ja;nein;24/7;;
-p815542;62/099;;NEF;NEF;;;p1528790;ja;nein;24/7;;
-p815548;58/001;;RTW;RTW-C;groß;;p1528794;ja;nein;24/7;;
-p815550;58/002;;RTW;RTW;klein;;p1528794;ja;nein;24/7;;
-p815546;58/099;;NEF;NEF;;;p1528794;ja;nein;24/7;;
-p818905;58/119;BEL Horn;BEL;BEL;;;p1528794;ja;nein;24/7;;
-p815549;72/098;;RTW;RTW-C;groß;;p1528801;ja;nein;24/7;;
-p815547;72/099;;NEF;NEF;;;p1528801;ja;nein;24/7;;
-p815559;59/001;;RTW;RTW;klein;;p1528806;ja;nein;24/7;;
-p815555;59/002;;RTW;RTW-C;groß;;p1528806;ja;nein;24/7;;
-p815554;59/099;;NEF;NEF;;;p1528806;ja;nein;24/7;;
-p814729;63/001;;RTW;RTW-C;groß;;p1528807;ja;nein;24/7;;
-p815553;63/099;;NEF;NEF;;;p1528807;ja;nein;24/7;;
-p815561;67/001;;RTW;RTW-C;groß;;p1528810;ja;nein;24/7;;
-p815558;67/099;;NEF;NEF;;;p1528810;ja;nein;24/7;;
-p814730;66/099;;NEF;NEF;;;p1528824;ja;nein;24/7;;
-p815565;66/390;;RTW;RTW-C;groß;;p1528824;ja;nein;24/7;;
-p816067;73/002;;RTW;RTW-C;groß;;p1533827;ja;nein;24/7;;
-p816069;73/003;;RTW;RTW;groß;;p1533827;ja;nein;24/7;;
-p816072;73/342;;RTW;RTW-C;groß;;p1533829;ja;nein;24/7;;
-p816073;73/343;;RTW;RTW;klein;;p1533829;ja;nein;Mo–Fr 06:00–18:00;;
-p816071;73/099;;NEF;NEF;;;p1533830;ja;nein;24/7;;
-p816093;80/006 ACN;;Sonstige;NEF;;;p1533832;nein;nein;24/7;;
-p816086;80/003 ACN;;Sonstige;NEF;;;p1533837;nein;nein;24/7;;
-p816088;80/004 ACN;;Sonstige;NEF;;;p1533839;nein;nein;24/7;;
-p818818;EL ÖBB Tulln;;EL ÖBB;EL ÖBB;;;p1537990;ja;nein;24/7;;
-p818862;EL ÖBB Krems;;EL ÖBB;EL ÖBB;;;p1537993;ja;nein;24/7;;
-p816877;67/341;;RTW;RTW;klein;;p1538360;ja;nein;"Mo–Fr 06:00–18:00; Mo–Fr 18:00–06:00";;
-p816876;67/342;;RTW;RTW-C;groß;;p1538360;ja;nein;24/7;;
-p818693;67/343;;KTW;KTW-B;;;p1538360;ja;nein;Mo–Fr 06:00–18:00;;
-p818692;67/344;;KTW;KTW-B;;;p1538360;ja;nein;"Mo–Fr 06:00–18:00; Mo, Mi, Fr 18:00–06:00";;
-p818922;67/409;;RTW;RTW-C;groß;;p1538369;ja;nein;24/7;;
-p818915;67/915;BEL Herzogenburg;BEL;BEL;;;p1538369;ja;nein;24/7;;
-p818937;79/001;;SKTW;SKTW;;;p1538382;ja;nein;24/7;;
-p818942;79/002;;SKTW;SKTW;;;p1538382;ja;nein;24/7;;
-p818939;79/901;;SNAW;SNAW;;;p1538382;ja;nein;24/7;;
-p818940;79/902;;BIT;BIT;;;p1538382;ja;nein;24/7;;
-p818946;79/903;;SRTW;SRTW;;;p1538382;ja;nein;24/7;;
-p818947;79/904;;SRTW;SRTW;;;p1538382;ja;nein;24/7;;
-p818943;79/003;;SKTW;SKTW;;;p1538387;ja;nein;24/7;;
-p818944;79/004;;SKTW;SKTW;;;p1538387;ja;nein;24/7;;
-p818948;79/905;;SRTW;SRTW;;;p1538387;ja;nein;24/7;;
-p818949;79/906;;SRTW;SRTW;;;p1538387;ja;nein;24/7;;
+﻿id;funkrufname;kurzname;kategorie;typ;aufbau;modell;dienststelle;aktiv;nachtflug;dienstplan;ersatz_fuer;na_abholung;hinweis
+nah-99010;99/010;Christophorus 10;NAH;NAH;;;air-c10;ja;nein;täglich Sonnenaufgang–Sonnenuntergang;;;nur tagsüber (Sonnenaufgang bis Sonnenuntergang)
+nef-99910;99/910;;NEF;NEF ÖAMTC;;;air-c10;ja;nein;24/7;99/010;;ÖAMTC-NEF, nur angemeldet, wenn der Hubschrauber nicht fliegen kann
+nah-99016;99/016;Christophorus 16;NAH;NAH;;;air-c16;ja;nein;täglich Sonnenaufgang–Sonnenuntergang;;;nur tagsüber (Sonnenaufgang bis Sonnenuntergang)
+nef-99916;99/916;;NEF;NEF ÖAMTC;;;air-c16;ja;nein;24/7;99/016;;ÖAMTC-NEF, nur angemeldet, wenn der Hubschrauber nicht fliegen kann
+nah-99017;99/017;Christophorus 17;NAH;NAH;;;air-c17;ja;ja;24/7;;;rund um die Uhr, mit Nachtflug
+nef-99917;99/917;;NEF;NEF ÖAMTC;;;air-c17;ja;nein;24/7;99/017;;ÖAMTC-NEF, nur angemeldet, wenn der Hubschrauber nicht fliegen kann
+nah-99018;99/018;Christophorus 18;NAH;NAH;;;air-c18;ja;nein;täglich Sonnenaufgang–Sonnenuntergang;;;nur tagsüber (Sonnenaufgang bis Sonnenuntergang)
+nef-99918;99/918;;NEF;NEF ÖAMTC;;;air-c18;ja;nein;24/7;99/018;;ÖAMTC-NEF, nur angemeldet, wenn der Hubschrauber nicht fliegen kann
+nef-55099;55/099;;NEF;NEF;;;nef-st-gmuend;ja;nein;24/7;;;Notarzt am Stützpunkt
+nef-64099;64/099;;NEF;NEF;;;nef-st-moedling;ja;nein;24/7;;;Funkrufname geschätzt · Notarzt am Stützpunkt
+nef-70499;70/499;;NEF;NEF;;;osm11101232755;ja;nein;täglich 19:00–07:00;;;NEF-141 (Ärztefunkdienst 141), nur nachts · Funkrufname geschätzt · Notarzt am Stützpunkt
+nef-72399;72/399;;NEF;NEF;;;osm1196072381;ja;nein;täglich 19:00–07:00;;;NEF-141 (Ärztefunkdienst 141), nur nachts · Funkrufname geschätzt · Notarzt am Stützpunkt
+nef-65099;65/099;;NEF;NEF;;;osm1196783471;ja;nein;24/7;;;Funkrufname geschätzt · Notarzt am Stützpunkt
+nef-62499;62/499;;NEF;NEF;;;osm129902910;ja;nein;24/7;;;RK/ASB geteilt · Notarzt am Stützpunkt
+nef-54099;54/099;;NEF;NEF;;;osm142883232;ja;nein;24/7;;;Notarzt am Stützpunkt
+nef-74099;74/099;;NEF;NEF;;;osm143373053;ja;nein;24/7;;;Notarzt am Stützpunkt
+nef-77099;77/099;;NEF;NEF;;;osm150308151;ja;nein;24/7;;;Funkrufname geschätzt · Notarzt am Stützpunkt
+nef-68099;68/099;;NEF;NEF;;;osm184211548;ja;nein;24/7;;;Funkrufname geschätzt · Notarzt am Stützpunkt
+nef-54499;54/499;;NEF;NEF;;;osm184596475;ja;nein;24/7;;;Notarzt am Stützpunkt
+nef-61099;61/099;;NEF;NEF;;;osm263355775;ja;nein;24/7;;;Notarzt am Stützpunkt
+nef-53499;53/499;;NEF;NEF;;;osm26806369;ja;nein;24/7;;;Funkrufname geschätzt · Notarzt am Stützpunkt
+nef-62699;62/699;;NEF;NEF;;;osm268319830;ja;nein;täglich 18:00–06:00;;;Funkrufname geschätzt · Notarzt am Stützpunkt
+nef-52099;52/099;;NEF;NEF;;;osm35683540;ja;nein;24/7;;;Funkrufname geschätzt · Notarzt am Stützpunkt
+nef-65499;65/499;;NEF;NEF;;;osm466387055;ja;nein;24/7;;;Funkrufname geschätzt · Notarzt am Stützpunkt
+nef-51099;51/099;;NEF;NEF;;;osm591992316;ja;nein;24/7;;kh006;Funkrufname geschätzt · Notarzt wird im Krankenhaus abgeholt
+nef-76099;76/099;;NEF;NEF;;;osm90045647;ja;nein;24/7;;kh019;Funkrufname geschätzt · Notarzt wird im Krankenhaus abgeholt
+p791345;75/001;;RTW;RTW-C;groß;;p1496914;ja;nein;24/7;;;
+p791346;75/002;;RTW;RTW;groß;;p1496914;ja;nein;24/7;;;
+p791348;75/003;;RTW;RTW;klein;;p1496914;ja;nein;täglich 05:00–21:00;;;
+p816080;75/004;;KTW;KTW;;;p1496914;ja;nein;"Mo–Fr 05:00–13:00; Sa 05:00–14:00";;;
+p816083;75/005;;KTW;KTW-B;;;p1496914;ja;nein;"Mo–Fr 05:00–13:00; Sa 05:00–14:00";;;
+p816085;75/006;;KTW;KTW-B;;;p1496914;ja;nein;Mo–Sa 05:00–14:00;;;
+p816090;75/007;;KTW;KTW-B;;;p1496914;ja;nein;"Mo–Fr 06:00–14:00; Sa 05:00–14:00";;;
+p816091;75/008;;KTW;KTW;;;p1496914;ja;nein;"Mo–Fr 06:00–14:00; Sa 12:00–21:00";;;
+p816092;75/009;;KTW;KTW-B;;;p1496914;ja;nein;Mo–Fr 06:00–14:00;;;
+p816094;75/010;;KTW;KTW-B;;;p1496914;ja;nein;"Mo–Fr 06:00–14:00; Sa 17:00–01:00";;;
+p816095;75/011;;KTW;KTW-B;;;p1496914;ja;nein;"Mo–Fr 07:00–15:00; täglich 22:00–06:00";;;
+p816096;75/012;;KTW;KTW;;;p1496914;ja;nein;"Mo–Fr 08:00–17:00; Sa 05:00–14:00; So 07:00–16:00";;;
+p816097;75/013;;KTW;KTW-B;;;p1496914;ja;nein;Mo–Fr 14:00–22:00;;;
+p816098;75/014;;KTW;KTW-B;;;p1496914;ja;nein;"Mo–Fr 12:00–20:00; Sa 11:00–20:00";;;
+p816099;75/015;;KTW;KTW-B;;;p1496914;ja;nein;"Mo–Fr 17:00–01:00; Sa 11:00–20:00";;;
+p818888;75/030;BEL Krems;BEL;BEL;;;p1496914;ja;nein;24/7;;;
+p791349;75/099;;NEF;NEF;;;p1496914;ja;nein;24/7;;kh002;Notarzt wird im Krankenhaus abgeholt
+p791352;75/051;;RTW;RTW;klein;;p1496917;ja;nein;24/7;;;
+p791351;75/071;;RTW;RTW-C;groß;;p1496918;ja;nein;24/7;;;
+p791353;99/002;Christophorus 2;NAH;NAH;;;p1496919;ja;ja;24/7;;;rund um die Uhr, mit Nachtflug
+p816732;99/902;;NEF;NEF ÖAMTC;;;p1496919;ja;nein;24/7;99/002;;ÖAMTC-NEF, nur angemeldet, wenn der Hubschrauber nicht fliegen kann
+p792147;60/001;;RTW;RTW-C;groß;;p1497833;ja;nein;24/7;;;
+p792149;60/002;;KTW;KTW-B;;;p1497833;ja;nein;Mo–Fr 07:00–19:00;;;
+p816102;60/012;;KTW;KTW;;;p1497833;ja;nein;Mo–Fr 07:00–15:00;;;
+p816103;60/014;;KTW;KTW-B;;;p1497833;ja;nein;Mo–Fr 06:00–16:00;;;
+p792151;69/001;;RTW;RTW-C;groß;;p1497840;ja;nein;24/7;;;
+p792172;69/002;;RTW;RTW;klein;;p1497840;ja;nein;"Mo–Fr 06:00–22:00; Sa, So 08:00–20:00";;;
+p816478;69/010;;KTW;KTW-B;;;p1497840;ja;nein;Mo–Sa 05:00–15:00;;;
+p816479;69/011;;KTW;KTW-B;;;p1497840;ja;nein;Mo–Fr 05:00–15:00;;;
+p816480;69/014;;KTW;KTW-B;;;p1497840;ja;nein;"Mo–Fr 06:00–22:00; Sa 06:00–14:00; So 10:00–20:00";;;
+p816481;69/015;;KTW;KTW-B;;;p1497840;ja;nein;"Mo–Fr 06:00–16:00; Sa 10:00–20:00";;;
+p816475;69/018;;KTW;KTW-B;;;p1497840;ja;nein;"Mo–Fr 10:00–20:00; Mo–Fr, So 20:00–06:00";;;
+p816474;69/021;;KTW;KTW-B;;;p1497840;ja;nein;"Mo–Fr 08:00–18:00; Sa 10:00–20:00; Sa 20:00–06:00";;;
+p793185;69/099;;NEF;NEF;;;p1497840;ja;nein;24/7;;kh003;Notarzt wird im Krankenhaus abgeholt
+p818925;69/119;BEL Tulln;BEL;BEL;;;p1497840;ja;nein;24/7;;;
+p793175;69/061;;RTW;RTW-C;groß;;p1500606;ja;nein;24/7;;;
+p816654;69/062;;KTW;KTW-B;;;p1500606;ja;nein;"Mo, Mi, Fr 07:00–16:00; Di, Do 07:00–15:00";;;
+p793177;69/051;;RTW;RTW-C;groß;;p1500607;ja;nein;24/7;;;
+p793183;69/071;;RTW;RTW-C;groß;;p1500610;ja;nein;"Mo–Fr 06:00–22:00; Sa, So 08:00–20:00";;;
+p795040;69/401;;RTW;RTW-C;groß;;p1502429;ja;nein;24/7;;;
+p816600;69/411;;KTW;KTW-B;;;p1502429;ja;nein;"Mo, Mi, Fr 06:00–14:00; Di, Do 06:00–16:00";;;
+p816602;69/414;;KTW;KTW-B;;;p1502429;ja;nein;Mo–Sa 06:00–16:00;;;
+p816608;69/415;;KTW;KTW-B;;;p1502429;ja;nein;Mo–Fr 06:00–14:00;;;
+p816621;69/601;;KTW;KTW-B;;;p1502430;ja;nein;Mo–Fr 06:00–14:00;;;
+p795041;69/602;;RTW;RTW-C;groß;;p1502430;ja;nein;24/7;;;
+p816616;69/611;;KTW;KTW;;;p1502430;ja;nein;Mo–Fr 06:00–16:00;;;
+p816619;69/612;;KTW;KTW-B;;;p1502430;ja;nein;Di–Do 06:00–16:00;;;
+p814724;57/001;;RTW;RTW;klein;;p1528061;ja;nein;24/7;;;
+p815571;57/002;;RTW;RTW-C;groß;;p1528061;ja;nein;24/7;;;
+p816630;57/020;;KTW;KTW;;;p1528061;ja;nein;"Mo–Fr 06:00–16:00; Sa, So 07:00–17:00";;;
+p816635;57/021;;KTW;KTW-B;;;p1528061;ja;nein;"Mo–Fr 06:00–16:00; Sa 08:00–16:00";;;
+p816637;57/022;;KTW;KTW-B;;;p1528061;ja;nein;Mo–Fr 12:00–22:00;;;
+p816639;57/023;;KTW;KTW-B;;;p1528061;ja;nein;"Mo, Do, Fr 06:00–14:00; Di 07:00–23:59; Mi 06:00–22:00";;;
+p816646;57/024;;KTW;KTW;;;p1528061;ja;nein;Mo–Fr 07:00–17:00;;;
+p816650;57/025;;KTW;KTW-B;;;p1528061;ja;nein;"Mo–Fr 14:00–22:00; Sa, So 06:00–16:00";;;
+p816655;57/026;;KTW;KTW-B;;;p1528061;ja;nein;Mo–Fr 07:00–17:00;;;
+p816657;57/027;;KTW;KTW-B;;;p1528061;ja;nein;Mo–Fr 06:00–16:00;;;
+p815568;57/099;;NEF;NEF;;;p1528061;ja;nein;24/7;;;Notarzt am Stützpunkt
+p814726;57/401;;RTW;RTW-C;groß;;p1528062;ja;nein;24/7;;;
+p814723;57/402;;RTW;RTW;klein;;p1528062;ja;nein;Mo–Fr 07:00–19:00;;;
+p816604;57/411;;KTW;KTW-B;;;p1528062;ja;nein;"Mo, Mi, Fr 05:30–15:30; Mo, Mi, Fr 15:30–23:30; Di, Do 07:00–19:00; Di, Do 19:00–03:00; Sa 07:00–15:00; Sa 15:00–22:00";;;
+p816613;57/412;;KTW;KTW;;;p1528062;ja;nein;"Mo, Mi, Fr 07:00–15:00; Di, Do 06:00–14:00";;;
+p816622;57/413;;KTW;KTW;;;p1528062;ja;nein;Mo–Fr 05:00–21:00;;;
+p816617;57/414;;KTW;KTW-B;;;p1528062;ja;nein;"Mo, Mi, Fr 07:00–15:00; Di, Do, Sa 05:30–13:30";;;
+p814721;57/499;;NEF;NEF;;;p1528062;ja;nein;24/7;;;Notarzt am Stützpunkt
+p814728;57/041;;RTW;RTW-C;groß;;p1528063;ja;nein;24/7;;;
+p816644;57/042;;KTW;KTW-B;;;p1528063;ja;nein;Di–Do 05:30–12:30;;;
+p816631;57/201;;KTW;KTW-B;;;p1528064;ja;nein;"Mo–Fr 06:00–19:00; Sa 06:00–14:00";;;
+p816641;57/203;;KTW;KTW-B;;;p1528064;ja;nein;Mo–Fr 06:00–16:00;;;
+p814722;57/204;;RTW;RTW-C;groß;;p1528064;ja;nein;24/7;;;
+p816636;57/205;;KTW;KTW;;;p1528064;ja;nein;Mo–Fr 06:00–16:00;;;
+p814731;99/009;Christophorus 9;NAH;NAH;;;p1528090;ja;nein;täglich Sonnenaufgang–Sonnenuntergang;;;nur tagsüber (Sonnenaufgang bis Sonnenuntergang)
+nef-99909;99/909;;NEF;NEF ÖAMTC;;;p1528090;ja;nein;24/7;99/009;;ÖAMTC-NEF, nur angemeldet, wenn der Hubschrauber nicht fliegen kann
+p814732;99/015;Christophorus 15;NAH;NAH;;;p1528091;ja;nein;täglich Sonnenaufgang–Sonnenuntergang;;;nur tagsüber (Sonnenaufgang bis Sonnenuntergang)
+nef-99915;99/915;;NEF;NEF ÖAMTC;;;p1528091;ja;nein;24/7;99/015;;ÖAMTC-NEF, nur angemeldet, wenn der Hubschrauber nicht fliegen kann
+p814733;99/003;Christophorus 3;NAH;NAH;;;p1528092;ja;nein;täglich Sonnenaufgang–Sonnenuntergang;;;nur tagsüber (Sonnenaufgang bis Sonnenuntergang)
+p814734;99/033;Christophorus 33;ITH;ITH;;;p1528092;ja;nein;täglich Sonnenaufgang–Sonnenuntergang;;;nur tagsüber (Sonnenaufgang bis Sonnenuntergang)
+nef-99903;99/903;;NEF;NEF ÖAMTC;;;p1528092;ja;nein;24/7;99/003;;ÖAMTC-NEF, nur angemeldet, wenn der Hubschrauber nicht fliegen kann
+p814738;56/006;;RTW;RTW;klein;;p1528094;ja;nein;24/7;;;
+p815569;56/007;;RTW;RTW-C;groß;;p1528094;ja;nein;24/7;;;
+p814739;56/008;;RTW;RTW;klein;;p1528094;ja;nein;Mo–Fr 06:00–16:00;;;
+p816656;56/009;;KTW;KTW-B;;;p1528094;ja;nein;Mo–Fr 09:00–19:00;;;
+p816658;56/010;;KTW;KTW;;;p1528094;ja;nein;Mo–Fr 08:00–18:00;;;
+p816659;56/011;;KTW;KTW-B;;;p1528094;ja;nein;Mo, Mi, Fr 16:00–01:00;;;
+p816661;56/012;;KTW;KTW-B;;;p1528094;ja;nein;Di, Do 16:00–01:00;;;
+p816662;56/014;;KTW;KTW;;;p1528094;ja;nein;Mo–Fr 07:00–15:00;;;
+p816663;56/015;;KTW;KTW-B;;;p1528094;ja;nein;Mo–Fr 06:00–14:00;;;
+p816665;56/016;;KTW;KTW-B;;;p1528094;ja;nein;Mo–Fr 06:00–16:00;;;
+p816668;56/017;;KTW;KTW-B;;;p1528094;ja;nein;Mo–Sa 05:30–15:30;;;
+p815570;56/099;;NEF;NEF;;;p1528094;ja;nein;24/7;;;Notarzt am Stützpunkt
+p819410;56/119;BEL Klosterneuburg;BEL;BEL;;;p1528094;ja;nein;24/7;;;
+p814737;62/004;;RTW;RTW-C;groß;;p1528790;ja;nein;24/7;;;
+p815542;62/099;;NEF;NEF;;;p1528790;ja;nein;24/7;;;Notarzt am Stützpunkt
+p815548;58/001;;RTW;RTW-C;groß;;p1528794;ja;nein;24/7;;;
+p815550;58/002;;RTW;RTW;klein;;p1528794;ja;nein;24/7;;;
+p815546;58/099;;NEF;NEF;;;p1528794;ja;nein;24/7;;kh007;Notarzt wird im Krankenhaus abgeholt
+p818905;58/119;BEL Horn;BEL;BEL;;;p1528794;ja;nein;24/7;;;
+p815549;72/098;;RTW;RTW-C;groß;;p1528801;ja;nein;24/7;;;
+p815547;72/099;;NEF;NEF;;;p1528801;ja;nein;24/7;;kh020;Notarzt wird im Krankenhaus abgeholt
+p815559;59/001;;RTW;RTW;klein;;p1528806;ja;nein;24/7;;;
+p815555;59/002;;RTW;RTW-C;groß;;p1528806;ja;nein;24/7;;;
+p815554;59/099;;NEF;NEF;;;p1528806;ja;nein;24/7;;;Notarzt am Stützpunkt
+p814729;63/001;;RTW;RTW-C;groß;;p1528807;ja;nein;24/7;;;
+p815553;63/099;;NEF;NEF;;;p1528807;ja;nein;24/7;;;Notarzt am Stützpunkt
+p815561;67/001;;RTW;RTW-C;groß;;p1528810;ja;nein;24/7;;;
+p815558;67/099;;NEF;NEF;;;p1528810;ja;nein;24/7;;;RK/ASB geteilt · Notarzt am Stützpunkt
+p814730;66/099;;NEF;NEF;;;p1528824;ja;nein;24/7;;;RK/ASB geteilt · Notarzt am Stützpunkt
+p815565;66/390;;RTW;RTW-C;groß;;p1528824;ja;nein;24/7;;;
+p816067;73/002;;RTW;RTW-C;groß;;p1533827;ja;nein;24/7;;;
+p816069;73/003;;RTW;RTW;groß;;p1533827;ja;nein;24/7;;;
+p816072;73/342;;RTW;RTW-C;groß;;p1533829;ja;nein;24/7;;;
+p816073;73/343;;RTW;RTW;klein;;p1533829;ja;nein;Mo–Fr 06:00–18:00;;;
+p816071;73/099;;NEF;NEF;;;p1533830;ja;nein;24/7;;;RK/ASB geteilt · Notarzt am Stützpunkt
+p816093;80/006 ACN;;Sonstige;NEF;;;p1533832;nein;nein;24/7;;;
+p816086;80/003 ACN;;Sonstige;NEF;;;p1533837;nein;nein;24/7;;;
+nef-70099;70/099;;NEF;NEF;;;p1533839;ja;nein;24/7;;;Funkrufname geschätzt · Notarzt am Stützpunkt
+p816088;80/004 ACN;;Sonstige;NEF;;;p1533839;nein;nein;24/7;;;
+p818818;EL ÖBB Tulln;;EL ÖBB;EL ÖBB;;;p1537990;ja;nein;24/7;;;
+p818862;EL ÖBB Krems;;EL ÖBB;EL ÖBB;;;p1537993;ja;nein;24/7;;;
+p816877;67/341;;RTW;RTW;klein;;p1538360;ja;nein;"Mo–Fr 06:00–18:00; Mo–Fr 18:00–06:00";;;
+p816876;67/342;;RTW;RTW-C;groß;;p1538360;ja;nein;24/7;;;
+p818693;67/343;;KTW;KTW-B;;;p1538360;ja;nein;Mo–Fr 06:00–18:00;;;
+p818692;67/344;;KTW;KTW-B;;;p1538360;ja;nein;"Mo–Fr 06:00–18:00; Mo, Mi, Fr 18:00–06:00";;;
+p818922;67/409;;RTW;RTW-C;groß;;p1538369;ja;nein;24/7;;;
+p818915;67/915;BEL Herzogenburg;BEL;BEL;;;p1538369;ja;nein;24/7;;;
+p818937;79/001;;SKTW;SKTW;;;p1538382;ja;nein;24/7;;;
+p818942;79/002;;SKTW;SKTW;;;p1538382;ja;nein;24/7;;;
+p818939;79/901;;SNAW;SNAW;;;p1538382;ja;nein;24/7;;;
+p818940;79/902;;BIT;BIT;;;p1538382;ja;nein;24/7;;;
+p818946;79/903;;SRTW;SRTW;;;p1538382;ja;nein;24/7;;;
+p818947;79/904;;SRTW;SRTW;;;p1538382;ja;nein;24/7;;;
+p818943;79/003;;SKTW;SKTW;;;p1538387;ja;nein;24/7;;;
+p818944;79/004;;SKTW;SKTW;;;p1538387;ja;nein;24/7;;;
+p818948;79/905;;SRTW;SRTW;;;p1538387;ja;nein;24/7;;;
+p818949;79/906;;SRTW;SRTW;;;p1538387;ja;nein;24/7;;;

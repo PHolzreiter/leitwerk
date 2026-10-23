@@ -79,7 +79,7 @@ osm11101980459;Rotes Kreuz Dienststelle Lassee;Rotes Kreuz;Rettungsdienst;Lassee
 osm306795959;Rotes Kreuz Dienststelle Leopoldsdorf;Rotes Kreuz;Rettungsdienst;Leopoldsdorf;;;48.110903;16.398177;Quelle: OpenStreetMap
 osm101647581;Rotes Kreuz Dienststelle Payerbach Reichenau;Rotes Kreuz;Rettungsdienst;Payerbach;;;47.692740;15.858979;Quelle: OpenStreetMap
 osm528735256;Rotes Kreuz Dienststelle Wieselburg;Rotes Kreuz;Rettungsdienst;Wieselburg;;;48.138462;15.137055;Quelle: OpenStreetMap
-osm11101232755;Rotes Kreuz Notarztstützpunkt Raabs;Rotes Kreuz;Notarztstützpunkt;Raabs an der Thaya;;;48.853350;15.486045;Quelle: OpenStreetMap
+osm11101232755;Ärztefunkdienst 141 Raabs;Rotes Kreuz;Notarztstützpunkt;Raabs an der Thaya;;;48.853350;15.486045;NEF-141: besetzt vom Ärztefunkdienst 141, wird wie ein normales NEF alarmiert
 osm1229993073;Rotes Kreuz Ortsstelle Altenmarkt-Großreifling Standort Altenmarkt;Rotes Kreuz;Rettungsdienst;Altenmarkt bei Sankt Gallen;;;47.724089;14.650438;Quelle: OpenStreetMap
 osm3695859367;Rotes Kreuz Ortsstelle Arbesbach;Rotes Kreuz;Rettungsdienst;Arbesbach;;;48.494430;14.955668;Quelle: OpenStreetMap
 osm466387055;Rotes Kreuz Ortsstelle Aspang;Rotes Kreuz;Rettungsdienst;Aspang-Markt;;;47.558370;16.091486;Quelle: OpenStreetMap
@@ -150,7 +150,7 @@ osm156175529;Samariterbund Ebreichsdorf;Arbeiter-Samariter-Bund;Rettungsdienst;E
 osm294406371;Samariterbund Eichgraben;Arbeiter-Samariter-Bund;Rettungsdienst;Eichgraben;;;48.175672;15.990448;Quelle: OpenStreetMap
 osm8460412540;Samariterbund Frankenfels - Schwarzenbach;Arbeiter-Samariter-Bund;Rettungsdienst;Frankenfels;;;47.980505;15.322337;Quelle: OpenStreetMap
 osm8459071351;Samariterbund Gaaden-Wienerwald;Arbeiter-Samariter-Bund;Rettungsdienst;Gaaden;;;48.055740;16.207202;Quelle: OpenStreetMap
-osm1196072381;Samariterbund Groß Gerungs;Arbeiter-Samariter-Bund;Rettungsdienst;Groß Gerungs;;;48.565562;14.955378;Quelle: OpenStreetMap
+osm1196072381;Ärztefunkdienst 141 Groß Gerungs;Arbeiter-Samariter-Bund;Notarztstützpunkt;Groß Gerungs;;;48.565562;14.955378;NEF-141: besetzt vom Ärztefunkdienst 141, wird wie ein normales NEF alarmiert
 osm8460443947;Samariterbund Loosdorf;Arbeiter-Samariter-Bund;Rettungsdienst;Loosdorf;;;48.204455;15.389341;Quelle: OpenStreetMap
 osm129037155;Samariterbund Persenbeug;Arbeiter-Samariter-Bund;Rettungsdienst;Persenbeug-Gottsdorf;;;48.190002;15.095396;Quelle: OpenStreetMap
 osm574214591;Samariterbund Pöchlarn - Neuda;Arbeiter-Samariter-Bund;Rettungsdienst;Golling an der Erlauf;;;48.205076;15.188327;Quelle: OpenStreetMap
@@ -850,3 +850,5 @@ wr-way295279772;Wasserrettung Allentsteig;Wasserrettung;Wasserrettung;Allentstei
 wr-way175979220;Wasserrettung Oberradlberg;Wasserrettung;Wasserrettung;Oberradlberg;;;48.224136;15.656615;Quelle: OpenStreetMap
 wr-node11665221157;Wasserrettung Pottendorf;Wasserrettung;Wasserrettung;Pottendorf;;;47.902866;16.353892;Quelle: OpenStreetMap
 wr-way340277133;Wasserrettung Tulln;Wasserrettung;Wasserrettung;Tulln an der Donau;;;48.332076;16.077284;Quelle: OpenStreetMap
+nef-st-moedling;NEF-Stützpunkt Landesklinikum Mödling;Rotes Kreuz;Notarztstützpunkt;Mödling;;Schwester-Maria-Restituta-Gasse 12, 2340 Mödling;48.089130;16.297430;NEF-Stützpunkt (Recherche 10/2026)
+nef-st-gmuend;RK Bezirksstelle Gmünd;Rotes Kreuz;Notarztstützpunkt;Gmünd;;Weitraer Straße 54, 3950 Gmünd;48.766780;14.977340;NEF-Stützpunkt (Recherche 10/2026)

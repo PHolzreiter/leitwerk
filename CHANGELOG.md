@@ -1,5 +1,20 @@
 # Änderungen
 
+## 0.51.0 – Alle NEF in Niederösterreich, Notarzt-Abholung im Krankenhaus
+**19 neue NEF** (jetzt 32 NEF in ganz NÖ, Stand heute)
+- Neu: Amstetten, Waidhofen/Ybbs, Waidhofen/Thaya, Mödling, Gmünd, Baden, Scheibbs, Wiener Neustadt, Lilienfeld, Neunkirchen, Aspang, Schwechat, Hainburg, Ybbs-Persenbeug, Groß-Enzersdorf, Gänserndorf, Pöggstall, Raabs, Groß Gerungs
+- Pöggstall nur nachts 18–6 Uhr; Aspang rund um die Uhr
+- NEF-141 Raabs und Groß Gerungs: 19–7 Uhr, besetzt vom Ärztefunkdienst 141, Stützpunkte heißen „Ärztefunkdienst 141 …“ – werden wie ein normales NEF alarmiert
+- Purkersdorf, Neulengbach, Ybbs-Persenbeug und St. Pölten: RK/ASB geteilt
+- Funkrufnamen ohne Beleg sind im Hinweis als „geschätzt“ markiert
+
+**Notarzt im Krankenhaus abholen** (Krems, Tulln, Horn, Zwettl, Waidhofen/Ybbs, Amstetten)
+- Das NEF fährt bei der Alarmierung zuerst zum Krankenhaus (Punkt P), der Notarzt steigt ein (1–2 Minuten), dann geht es zum Einsatz
+- Auf dem Heimweg bringt es den Notarzt zurück ins Krankenhaus
+- Die Ankunftszeit im Einsatzmittelvorschlag rechnet den Umweg mit
+- Funkabfrage „Wo seid ihr?“: „holen gerade den Notarzt im UK Krems ab …“
+- Fahrzeug bearbeiten (NEF) → „Notarzt“: am Stützpunkt oder im Krankenhaus abholen; CSV-Spalte `na_abholung`
+
 ## 0.50.0 – Rettungszufahrten der Krankenhäuser
 **Fahrzeuge fahren über die Rettungseinfahrt zum Punkt P** (dort geht die Besatzung „ins KH“)
 - UK St. Pölten (Einfahrt von der Matthias-Corvinus-Straße), UK Krems (vom Mitterweg zur Schleife), UK Tulln (vom Alten Ziegelweg bei der Föhrengasse)

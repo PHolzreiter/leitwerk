@@ -206,6 +206,16 @@ export function openEditor(
     ausBox.append(ausWrap, ausSel, ausInfo);
     form.appendChild(ausBox);
     ausweich = { chk: ausChk, sel: ausSel };
+    // NEF: Notarzt am Stützpunkt oder im Krankenhaus abholen
+    const khs = store
+      .list("hospitals")
+      .slice()
+      .sort((a, b) => (a.kurzname || a.name).localeCompare(b.kurzname || b.name, "de"));
+    const naSel = selectInput([["", "Notarzt ist am Stützpunkt"], ...khs.map((h) => [h.id, `Notarzt im ${h.kurzname || h.name} abholen`] as [string, string])], v?.naAbholung ?? "");
+    const naBox = field("Notarzt", naSel, "Abholen: das NEF fährt bei jeder Alarmierung zuerst zum Punkt P des Krankenhauses (1–2 Min. Einstieg), danach zum Einsatz; auf dem Heimweg bringt es den Notarzt zurück.");
+    naBox.classList.add("wide");
+    form.appendChild(naBox);
+    inputs.na_abholung = naSel;
     // beim Hubschrauber: welches NEF ihn vertritt
     const vertreter = v ? store.list("vehicles").filter((x) => x.ersatzFuer && (x.ersatzFuer === v.funkrufname || x.ersatzFuer === v.kurzname)) : [];
     const nahInfo = el("div", { class: "fld wide fld-hint" }, vertreter.length ? `Ausweich-NEF: ${vertreter.map((x) => x.funkrufname).join(", ")} – fährt mit dieser Besatzung, wenn der Hubschrauber nicht fliegen kann oder abgemeldet ist.` : "Kein Ausweich-NEF. Ein NEF wird zum Ausweichfahrzeug, wenn du bei ihm „Nur Ausweichfahrzeug“ wählst.");
@@ -225,6 +235,7 @@ export function openEditor(
       wrapN.hidden = kat !== "NAH" && kat !== "ITH";
       nahInfo.hidden = kat !== "NAH";
       ausBox.hidden = kat !== "NEF";
+      naBox.hidden = kat !== "NEF" || ausChk.checked;
       const aus = kat === "NEF" && ausChk.checked;
       ausSel.hidden = !aus;
       ausInfo.textContent = aus
@@ -425,6 +436,7 @@ export function openEditor(
         // leer = bewusst kein Ausweichfahrzeug (Standard-Zuordnung wird dann nicht ergänzt)
         ersatzFuer: val("kategorie") === "NEF" && ausweich?.chk.checked ? ausweich.sel.value : "",
       };
+      if (val("kategorie") === "NEF" && !ausweich?.chk.checked && val("na_abholung")) v.naAbholung = val("na_abholung");
       const ausf = AUSFUEHRUNGEN[val("kategorie") as VehicleCategory]?.find((x) => x.id === val("ausfuehrung"));
       if (ausf?.aufbau) v.aufbau = ausf.aufbau;
       if (val("modell")) v.modell = val("modell");

@@ -8,7 +8,7 @@
 import { rufnamen } from "./funkname";
 import { aktuelleSchicht, dienstEnde, imDienst, naechsterBeginn, type Schicht } from "./dienst";
 import { nachKlick } from "../klick";
-import { ACTIVE_CATEGORIES, bereicheVon, type Hospital, type Vehicle, type Zufahrt } from "../data/model";
+import { ACTIVE_CATEGORIES, bereicheVon, khAnkunft, type Hospital, type Vehicle, type Zufahrt } from "../data/model";
 import { bestesKh, buchung, buchungName, eignung as khEignung, khVorschlaege } from "../data/klinik";
 import { grundbelegungTick, platzFuer, RESSOURCE, ressourcenFuer, type BelegungMap } from "./khStatus";
 import { verdachtFuer } from "./verdacht";
@@ -122,7 +122,10 @@ export type Phase =
   | "ktReinigung"
   /** Rendezvous: Fahrt zum Treffpunkt mit dem NEF bzw. Warten/Übergabe dort */
   | "rendezvous"
-  | "treffpunkt";
+  | "treffpunkt"
+  /** NEF: Fahrt ins Krankenhaus, um den Notarzt abzuholen, und Warten, bis er eingestiegen ist */
+  | "naAbholung"
+  | "naEinstieg";
 
 /** Art des Fahrzeugs aus den Stammdaten: Anzeige-Typ, Großraum, ohne Blaulicht */
 function fzArt(v: Vehicle, rmTyp: RmTyp): { typ: string; gross: boolean; ohneBlaulicht: boolean; ersatzFuer?: string; modell: string } {
@@ -221,6 +224,14 @@ export interface SimFahrzeug {
   dienstBeginn?: number | null;
   /** Ersatz-NEF eines Hubschraubers (dessen Funkrufname): nur angemeldet, wenn der nicht fliegen kann */
   ersatzFuer?: string;
+  /** NEF: Notarzt wird in diesem Krankenhaus abgeholt (ID) */
+  naAbholung?: string;
+  /** Notarzt sitzt im NEF (abgeholt) */
+  naAnBord?: boolean;
+  /** nach dem Abholen: eigentliches Ziel */
+  nachNa?: { ziel: LatLon; phase: Phase; blau: boolean } | null;
+  /** Rückfahrt bringt zuerst den Notarzt ins Krankenhaus */
+  naZurueck?: boolean;
   /** 3D-Modell (t6hoch, crafter, t6, tiguan, passat, caddy, sprinter_kurz/_lang/_gross, man, ec135) */
   modell?: string;
   /** Hubschrauber vom Spiel abgemeldet, weil er nicht fliegen kann (meldet sich bei Flugwetter wieder an) */
@@ -934,6 +945,9 @@ function pad(n: number, w: number): string {
   return String(n).padStart(w, "0");
 }
 
+/** Fahrten, für die ein NEF den Notarzt an Bord braucht */
+const NA_PHASEN = new Set<Phase>(["anfahrt", "bereitstellung", "rendezvous"]);
+
 /** Rettungszufahrt des Krankenhauses, zu dem dieses Ziel gehört (Ziel = Haus oder Punkt P), sonst null */
 export function khZufahrtBei(ziel: LatLon): Zufahrt | null {
   for (const h of store.list("hospitals")) {
@@ -1401,6 +1415,7 @@ export class Simulation {
           rmTyp,
           nachtflug: v.nachtflug,
           stationName: st.name,
+          naAbholung: v.naAbholung?.trim() || undefined,
           ...fzArt(v, rmTyp),
         });
         continue;
@@ -1424,6 +1439,7 @@ export class Simulation {
         fahrt: null,
         nachtflug: v.nachtflug,
         begleitet: false,
+        naAbholung: v.naAbholung?.trim() || undefined,
         ...fzArt(v, rmTyp),
       };
     }
@@ -1644,6 +1660,30 @@ export class Simulation {
 
   /** Startet eine Fahrt (asynchron, Routing) und setzt danach die Phase. */
   private fahre(fz: SimFahrzeug, ziel: LatLon, phase: Phase, sondersignal: boolean): void {
+    // NEF mit Notarzt im Krankenhaus: zuerst abholen bzw. nach dem Einsatz zurückbringen
+    fz.naZurueck = false;
+    const kh = this.naKh(fz);
+    if (kh) {
+      const p = khAnkunft(kh);
+      if (!fz.naAnBord && NA_PHASEN.has(phase)) {
+        fz.nachNa = { ziel, phase, blau: sondersignal };
+        if (distanceM(fz, p) < 40) {
+          fz.fahrt = null;
+          fz.phase = "naEinstieg";
+          fz.phaseEnde = this.state.zeit + rnd(60, 120) * 1000;
+          return;
+        }
+        ziel = p;
+        phase = "naAbholung";
+      } else if (fz.naAnBord && phase === "rueckfahrt") {
+        // schon beim Krankenhaus (z. B. nach dem Transport): Notarzt steigt aus
+        if (distanceM(fz, p) < 40) fz.naAnBord = false;
+        else {
+          fz.naZurueck = true;
+          ziel = p;
+        }
+      }
+    }
     this.routingBusy.add(fz.id);
     fz.phase = "routing";
     // KTW-B (Zivildienst) fährt nie mit Blaulicht
@@ -1665,6 +1705,22 @@ export class Simulation {
       fz.phaseEnde = this.state.zeit + fz.fahrt.dauer * 1000;
       this.emit();
     });
+  }
+
+  /** Krankenhaus, in dem dieses NEF den Notarzt abholt (ID oder Name), sonst null */
+  private naKh(fz: SimFahrzeug): Hospital | null {
+    if (!fz.naAbholung || fliegt(fz)) return null;
+    const x = fz.naAbholung;
+    const h = store.get("hospitals", x) ?? store.list("hospitals").find((k) => k.kurzname === x || k.name === x);
+    return h ?? null;
+  }
+
+  /** Umweg über das Krankenhaus (Notarzt abholen) für die Ankunftsschätzung: Startpunkt und Zusatzzeit */
+  private naUmweg(fz: SimFahrzeug): { start: LatLon; sek: number } | null {
+    const kh = this.naKh(fz);
+    if (!kh || fz.naAnBord) return null;
+    const p = khAnkunft(kh);
+    return { start: p, sek: (distanceM(fz, p) * 1.3) / (45 / 3.6) + 90 };
   }
 
   /**
@@ -1829,8 +1885,32 @@ export class Simulation {
         this.freigeben(fz);
         break;
       }
+      case "naAbholung": {
+        fz.fahrt = null;
+        fz.phase = "naEinstieg";
+        fz.phaseEnde = t + rnd(60, 120) * 1000;
+        break;
+      }
+      case "naEinstieg": {
+        const n = fz.nachNa;
+        fz.nachNa = null;
+        fz.naAnBord = true;
+        if (!e || !n) return this.freigeben(fz);
+        this.log(e, `${fz.funkrufname}: Notarzt im ${this.naKh(fz)?.kurzname || "Krankenhaus"} übernommen`);
+        // Einsatzort kann sich inzwischen geändert haben
+        const ziel = n.phase === "anfahrt" ? (e.adresse ?? n.ziel) : n.ziel;
+        this.fahre(fz, ziel, n.phase, n.blau);
+        break;
+      }
       case "rueckfahrt": {
         fz.fahrt = null;
+        if (fz.naZurueck) {
+          // Notarzt im Krankenhaus abgesetzt, weiter zur Dienststelle
+          fz.naZurueck = false;
+          fz.naAnBord = false;
+          this.fahre(fz, fz.heim, "rueckfahrt", false);
+          break;
+        }
         fz.phase = "frei";
         fz.phaseEnde = null;
         fz.lat = fz.heim.lat;
@@ -2222,8 +2302,10 @@ export class Simulation {
     fz.blaulicht = false;
     fz.vorOrtSeit = null;
     fz.transportGemeldet = false;
+    fz.nachNa = null;
     this.setStatus(fz, "freiFunk");
     if (distanceM(fz, fz.heim) < 80) {
+      fz.naAnBord = false;
       fz.phase = "frei";
       fz.phaseEnde = null;
       fz.fahrt = null;
@@ -2645,9 +2727,10 @@ export class Simulation {
   async vorschlaegeAn(ziel: LatLon, faktor: number): Promise<Vorschlag[]> {
     const frei = Object.values(this.state.fahrzeuge).filter((f) => this.verfuegbar(f) || this.ktAbziehbar(f));
     const boden = frei.filter((f) => !fliegt(f));
-    const zeiten = await travelTimes(ziel, boden.map((f) => ({ lat: f.lat, lon: f.lon })));
+    const umweg = boden.map((f) => this.naUmweg(f));
+    const zeiten = await travelTimes(ziel, boden.map((f, i) => umweg[i]?.start ?? { lat: f.lat, lon: f.lon }));
     const out = boden.map((fz, i) => {
-      const z = zeiten[i];
+      const z = zeiten[i] === null ? null : zeiten[i]! + (umweg[i]?.sek ?? 0);
       const ausr = this.ausrueckSek(fz, true);
       // KT-Fahrzeug ohne Patient: nur auf ausdrückliche Wahl (nicht in der Empfehlung)
       return { fz, sekunden: z === null ? null : z * (fz.ohneBlaulicht ? 1 : faktor) + ausr, hinweis: null as string | null, kt: !!fz.kt?.aktiv };
@@ -4696,6 +4779,7 @@ export class Simulation {
     if (/status|wo seid|wo bist|eintreff|wie lange|wann seid|wann seit|position|fahrzeit/.test(t)) {
       const min = fz.phaseEnde ? Math.max(1, Math.round((fz.phaseEnde - this.state.zeit) / MIN)) : null;
       if (fz.phase === "anfahrt" || fz.phase === "ausruecken") return `${hier}, sind auf Anfahrt, Eintreffen in ca. ${min ?? "?"} Minuten, kommen`;
+      if (fz.phase === "naAbholung" || fz.phase === "naEinstieg") return `${hier}, holen gerade den Notarzt im ${this.naKh(fz)?.kurzname || "Krankenhaus"} ab, dann direkt zum Einsatzort, kommen`;
       if (vorOrt) return `${hier}, sind vor Ort beim Patienten, kommen`;
       if (fz.phase === "transport") return `${hier}, sind mit Patient auf dem Weg ins Krankenhaus, ca. ${min ?? "?"} Minuten, kommen`;
       if (fz.phase === "rendezvous") return `${hier}, sind auf dem Weg zum Rendezvous${e?.rendezvous ? ` ${e.rendezvous.punkt.label}` : ""}, ca. ${min ?? "?"} Minuten, kommen`;
@@ -5302,9 +5386,10 @@ export class Simulation {
     let nef: { fz: SimFahrzeug; sek: number } | null = null;
     if (w.some((x) => x.nef)) {
       const nefs = Object.values(this.state.fahrzeuge).filter((f) => f.rmTyp === "NEF" && this.verfuegbar(f) && !f.kt);
-      const nz = await travelTimes(von, nefs.map((f) => ({ lat: f.lat, lon: f.lon })));
+      const nu = nefs.map((f) => this.naUmweg(f));
+      const nz = await travelTimes(von, nefs.map((f, i) => nu[i]?.start ?? { lat: f.lat, lon: f.lon }));
       nefs.forEach((f, i) => {
-        const s = nz[i] === null ? null : nz[i]! * faktor + this.ausrueckSek(f, true);
+        const s = nz[i] === null ? null : (nz[i]! + (nu[i]?.sek ?? 0)) * faktor + this.ausrueckSek(f, true);
         if (s !== null && (!nef || s < nef.sek)) nef = { fz: f, sek: s };
       });
     }
