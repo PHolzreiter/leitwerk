@@ -15,6 +15,9 @@
 - Funkabfrage „Wo seid ihr?“: „holen gerade den Notarzt im UK Krems ab …“
 - Fahrzeug bearbeiten (NEF) → „Notarzt“: am Stützpunkt oder im Krankenhaus abholen; CSV-Spalte `na_abholung`
 
+**Behoben**
+- Ein Ort mit zwei Kategorien (z. B. Lokal und Heuriger) konnte als „Heuriger“ in der Nacht vorkommen, obwohl der zu hat
+
 ## 0.50.0 – Rettungszufahrten der Krankenhäuser
 **Fahrzeuge fahren über die Rettungseinfahrt zum Punkt P** (dort geht die Besatzung „ins KH“)
 - UK St. Pölten (Einfahrt von der Matthias-Corvinus-Straße), UK Krems (vom Mitterweg zur Schleife), UK Tulln (vom Alten Ziegelweg bei der Föhrengasse)

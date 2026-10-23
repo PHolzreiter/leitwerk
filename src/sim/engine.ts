@@ -1232,7 +1232,10 @@ export class Simulation {
     const h = hits[0] && distanceM(hits[0], o) < 250 ? hits[0] : null;
     // welche Kategorie des Ortes passt zum Fall (ein Ort kann Bahnhof und Bushaltestelle sein)
     const keys = nurKat?.length ? nurKat.filter((k) => kategorienFuerOrtArt(art, alter).includes(k) || !ortKategorie(k)?.ortArt) : kategorienFuerOrtArt(art, alter);
-    const kat = o.kategorien.filter((k) => keys.includes(k)).sort((a, b) => ortGewicht([b], thema, alter) - ortGewicht([a], thema, alter))[0];
+    // bei mehreren passenden Kategorien eine, die gerade offen hat (Lokal ja, Heuriger um 3 Uhr nicht)
+    const passendeKat = o.kategorien.filter((k) => keys.includes(k));
+    const offeneKat = passendeKat.filter((k) => katOffen(k, this.state.zeit));
+    const kat = (offeneKat.length ? offeneKat : passendeKat).sort((a, b) => ortGewicht([b], thema, alter) - ortGewicht([a], thema, alter))[0];
     // unauffällige Stelle (Bahnübergang, Kreisverkehr …): heißt nach der Art, nicht nach dem Namen
     const name = o.kind === "stellen" ? stellenName(kat, o.name) : o.name;
     if (o.kind === "stellen" && !h && o.stelle) {
