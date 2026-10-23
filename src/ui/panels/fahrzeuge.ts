@@ -26,6 +26,7 @@ const GRUPPEN: [string, string, (fz: SimFahrzeug) => boolean][] = [
   ["nah", "Hubschrauber", (f) => f.rmTyp === "NAH" || f.rmTyp === "ITH"],
   ["s", "S-Fahrzeuge", (f) => ["SKTW", "SRTW", "SNAW", "BIT", "ITH"].includes(f.rmTyp)],
   ["el", "EL", (f) => f.rmTyp === "BEL" || f.rmTyp === "EL ÖBB"],
+  ["acn", "ACN", (f) => f.rmTyp === "ACN"],
   ["kt", "KT", (f) => f.rmTyp === "KTW" || !!f.kt],
 ];
 

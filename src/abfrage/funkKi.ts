@@ -23,6 +23,7 @@ function besatzungVon(fzId: string): string {
   if (!fz) return "Besatzung eines Rettungsmittels";
   const t = fz.rmTyp.toUpperCase();
   if (t === "BEL") return "Bezirkseinsatzleiter (BEL) des Roten Kreuzes";
+  if (t === "ACN") return "Acute Community Nurse (diplomierte Pflegekraft mit Notfallsanitäter-Ausbildung und Notfallkompetenz Intubation, allein im Fahrzeug)";
   if (/ÖBB/.test(t)) return "Einsatzleiter der ÖBB";
   if (t === "NAH" || t === "ITH") return "Notarzt-Hubschrauber (Notarzt, Flugretter, Pilot)";
   if (fz.kategorie === "NEF") return "Notarzteinsatzfahrzeug (Notarzt und Notfallsanitäter)";

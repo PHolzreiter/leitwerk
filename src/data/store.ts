@@ -136,6 +136,17 @@ export class Store {
           }
           this.data.version = 5;
         }
+        if (this.data.version < 6) {
+          // ab v0.53: ACN (Acute Community Nurse) fährt mit
+          for (const v of this.data.eigene.vehicles) {
+            if (v.kategorie === "Sonstige" && /ACN/i.test(v.funkrufname)) {
+              v.kategorie = "ACN";
+              v.typ = "ACN";
+              v.aktiv = true;
+            }
+          }
+          this.data.version = 6;
+        }
       }
     } catch (e) {
       this.lastError = `Gespeicherte Leitstelle konnte nicht gelesen werden: ${String(e)}`;

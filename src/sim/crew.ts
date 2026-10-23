@@ -12,7 +12,7 @@ export type Quali = (typeof QUALIS)[number] | "NA" | "Pilot";
 export const ALLE_QUALIS: Quali[] = [...QUALIS, "NA", "Pilot"];
 
 /** Rettungsmitteltyp für Vorschlag und Besetzung */
-export type RmTyp = "RTW-C" | "RTW" | "KTW" | "NEF" | "NAH" | "SKTW" | "SRTW" | "SNAW" | "BIT" | "ITH" | "BEL" | "EL ÖBB" | "Sonstige";
+export type RmTyp = "RTW-C" | "RTW" | "KTW" | "NEF" | "NAH" | "SKTW" | "SRTW" | "SNAW" | "BIT" | "ITH" | "BEL" | "EL ÖBB" | "ACN" | "Sonstige";
 
 export interface Platz {
   rolle: string;
@@ -23,7 +23,7 @@ export function rmTypVon(v: Pick<Vehicle, "kategorie" | "typ"> & { aufbau?: Vehi
   const t = (v.typ ?? "").toUpperCase().replace(/\s+/g, "");
   // RTW-C nur im großen Aufbau – ein kleiner RTW (VW T6) ist nie ein RTW-C, egal wer drauf sitzt
   if (v.kategorie === "RTW") return (t.includes("RTW-C") || t === "RTWC") && v.aufbau !== "klein" ? "RTW-C" : "RTW";
-  if (["KTW", "NEF", "NAH", "SKTW", "SRTW", "SNAW", "BIT", "ITH", "BEL", "EL ÖBB"].includes(v.kategorie)) return v.kategorie as RmTyp;
+  if (["KTW", "NEF", "NAH", "SKTW", "SRTW", "SNAW", "BIT", "ITH", "BEL", "EL ÖBB", "ACN"].includes(v.kategorie)) return v.kategorie as RmTyp;
   return "Sonstige";
 }
 
@@ -125,6 +125,8 @@ export const REGELN: Record<RmTyp, PlatzRegel[]> = {
   "EL ÖBB": [],
   // Bezirkseinsatzleiter: versorgt keine Patienten, koordiniert vor Ort
   BEL: [{ rolle: "Einsatzleiter", gewichte: { NFS: 20, "NFS-NKA": 25, "NFS-NKV": 30, "NFS-NKI": 25 } }],
+  // Acute Community Nurse: diplomierte Pflegekraft (DGKP) mit Notfallkompetenz Intubation, allein im Fahrzeug
+  ACN: [{ rolle: "ACN", gewichte: { "NFS-NKI": 1 } }],
   Sonstige: [],
 };
 

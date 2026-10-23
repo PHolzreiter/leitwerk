@@ -15,6 +15,27 @@ export interface Einsatzcode {
   stufe: string;
 }
 
+/**
+ * ACN-Codes (Acute Community Nurse): eigene LeitWerk-Codes – die echten Bezeichnungen bei Notruf NÖ sind
+ * nicht öffentlich. Wie dort steht „ACN-“ statt „RD-“ davor, Omega-Ebene („O“): keine zeitliche Dringlichkeit,
+ * nur die ACN fährt zum Patienten nach Hause.
+ */
+export const ACN_CODES: Einsatzcode[] = [
+  ["ACN-O1", "Harnkatheter: verstopft, undicht oder herausgerutscht"],
+  ["ACN-O2", "Ernährungssonde (PEG): verstopft oder herausgerutscht"],
+  ["ACN-O3", "Sturz ohne Verletzung – kann nicht selbst aufstehen"],
+  ["ACN-O4", "Wunde oder Verband: Versorgung nötig"],
+  ["ACN-O5", "Port, Infusion oder Schmerzpumpe: Problem"],
+  ["ACN-O6", "Stoma: Problem mit der Versorgung"],
+  ["ACN-O7", "Palliativpatient: Symptome nehmen zu"],
+  ["ACN-O8", "Pflegerische Akutsituation zu Hause, sonstige"],
+].map(([code, beschreibung]) => ({ code, gruppe: 0, gruppenname: "ACN – Akutpflege zu Hause", beschreibung, stufe: "ACN" }));
+
+/** Einsatz nur für die ACN (Akutpflege zu Hause)? */
+export function istAcnCode(code: string | null | undefined): boolean {
+  return !!code && /^ACN-/i.test(code);
+}
+
 let cache: Einsatzcode[] | null = null;
 let byCode: Map<string, Einsatzcode> | null = null;
 store.onChange(() => {
@@ -35,6 +56,8 @@ export function allCodes(): Einsatzcode[] {
     const [gruppe, gruppenname] = kapitelTeile(c.kapitel);
     return { code: c.code, gruppe, gruppenname, beschreibung: c.name, stufe: c.kategorie };
   });
+  // ACN-Codes gibt es immer (sofern eine eigene Codeliste geladen ist und sie nicht selbst enthält)
+  if (cache.length) for (const c of ACN_CODES) if (!cache.some((x) => x.code === c.code)) cache.push(c);
   byCode = new Map(cache.map((c) => [c.code, c]));
   return cache;
 }

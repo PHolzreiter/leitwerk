@@ -44,9 +44,9 @@ export interface Station extends Base {
 }
 
 /** Fahrzeugkategorien. RTW umfasst RTW und RTW-C (Unterscheidung über den Typ). */
-export const VEHICLE_CATEGORIES = ["RTW", "NEF", "NAH", "KTW", "SKTW", "SRTW", "SNAW", "BIT", "ITH", "BEL", "EL ÖBB", "Sonstige"] as const;
+export const VEHICLE_CATEGORIES = ["RTW", "NEF", "NAH", "KTW", "SKTW", "SRTW", "SNAW", "BIT", "ITH", "BEL", "EL ÖBB", "ACN", "Sonstige"] as const;
 export type VehicleCategory = (typeof VEHICLE_CATEGORIES)[number];
-export const ACTIVE_CATEGORIES: readonly VehicleCategory[] = ["RTW", "NEF", "NAH", "KTW", "SKTW", "SRTW", "SNAW", "BIT", "ITH", "BEL", "EL ÖBB"];
+export const ACTIVE_CATEGORIES: readonly VehicleCategory[] = ["RTW", "NEF", "NAH", "KTW", "SKTW", "SRTW", "SNAW", "BIT", "ITH", "BEL", "EL ÖBB", "ACN"];
 /** Sekundärfahrzeuge: nur vorgeschlagen, wenn kein passendes Primärfahrzeug verfügbar ist */
 export const SEKUNDAER: readonly VehicleCategory[] = ["SKTW", "SRTW", "SNAW", "BIT", "ITH"];
 
@@ -121,6 +121,7 @@ export const FAHRZEUG_TYPEN: { typ: string; kategorie: VehicleCategory; label: s
   { typ: "BIT", kategorie: "BIT", label: "BIT (Schwerlast)" },
   { typ: "BEL", kategorie: "BEL", label: "BEL (Bezirkseinsatzleiter)" },
   { typ: "EL ÖBB", kategorie: "EL ÖBB", label: "EL ÖBB" },
+  { typ: "ACN", kategorie: "ACN", label: "ACN (Acute Community Nurse: DGKP mit NKI, allein im Fahrzeug)" },
 ];
 
 export const HOSPITAL_FLAGS = [
@@ -361,5 +362,5 @@ export interface Persisted {
 }
 
 export function emptyPersisted(): Persisted {
-  return { version: 5, standardAktiv: true, ausgeblendet: [], eigene: emptyRecords() };
+  return { version: 6, standardAktiv: true, ausgeblendet: [], eigene: emptyRecords() };
 }

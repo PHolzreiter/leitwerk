@@ -312,7 +312,7 @@ function parseBool(v: string, what: string): boolean {
 /** Leitet die Fahrzeugkategorie aus dem Originaltyp ab. */
 export function categoryFromType(typ: string, funkrufname = ""): VehicleCategory {
   const t = typ.trim().toUpperCase();
-  if (/ACN/.test(funkrufname.toUpperCase())) return "Sonstige";
+  if (/ACN/.test(funkrufname.toUpperCase()) || t === "ACN") return "ACN";
   if (t === "NAH" || t.startsWith("RTH") || t.startsWith("NAH")) return "NAH";
   if (t === "RTW" || t === "RTW-C") return "RTW";
   if (["PHYSICIAN", "NEF", "NAW", "NOTARZT"].includes(t)) return "NEF";

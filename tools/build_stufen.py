@@ -43,6 +43,9 @@ STUFEN += [
     for x in _LWC
 ]
 
+# ACN (Acute Community Nurse): eigene Codes „ACN-O…“, nur die ACN fährt, ohne Eile, Patient bleibt zu Hause (Vorgabe Paul, 23.10.2026)
+STUFEN.append(("ACN", "ACN", "nein", "nein", "nein", "stabil", 0))
+
 
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)

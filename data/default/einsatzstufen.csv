@@ -19,3 +19,4 @@ S3 Notfall;RTW-C>RTW>KTW;ja;nein;ja;dringend;80
 S2 Dringend;RTW>KTW>RTW-C;nein;nein;ja;dringend;75
 S1 Nicht dringend;KTW>RTW>RTW-C;nein;nein;nein;stabil;65
 S0 Beratung / Weitergabe;;nein;nein;nein;stabil;0
+ACN;ACN;nein;nein;nein;stabil;0

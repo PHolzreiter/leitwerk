@@ -155,6 +155,8 @@ export interface Settings {
   fremdzoneAktiv?: boolean;
   /** solche Einsätze pro Stunde (ungefähr) */
   fremdzoneProStunde?: number;
+  /** ACN-Einsätze (Akutpflege zu Hause) je ACN-Standort und Tag */
+  acnProTag?: number;
   /** Krankenhäuser: zufällige Grundbelegung (andere Leitstellen, Selbstzuweiser) */
   khGrundAktiv?: boolean;
   /** Stärke der Grundbelegung (1 = normal, 0–2) */
@@ -239,6 +241,7 @@ export function defaultSettings(): Settings {
     anrufe: true,
     fremdzoneAktiv: false,
     fremdzoneProStunde: 1,
+    acnProTag: 2,
     khGrundAktiv: true,
     khGrundFaktor: 1,
     komplikationen: "normal",

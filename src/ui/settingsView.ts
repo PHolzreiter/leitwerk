@@ -153,6 +153,19 @@ export function createSettingsView(container: HTMLElement, teil: "simulation" | 
     rzv.checked = draft.rendezvous !== false;
     rzv.addEventListener("change", () => (draft.rendezvous = rzv.checked));
     aGrid.append(el("label", { title: "Braucht der Patient einen Notarzt und ist das NEF noch mehr als 15 Minuten entfernt, fährt der RTW mit dem Patienten los und trifft das NEF unterwegs" }, "Rendezvous RTW – NEF"), rzv);
+    // ACN: Akutpflege-Einsätze zu Hause
+    const acnRate = el("input", { type: "range", min: "0", max: "8", step: "0.5" }) as HTMLInputElement;
+    acnRate.value = String(draft.acnProTag ?? 2);
+    const acnWert = el("span", { class: "muted small" });
+    const acnText = () => (acnWert.textContent = Number(acnRate.value) ? `ca. ${Number(acnRate.value).toLocaleString("de-AT")} pro Standort und Tag` : "aus");
+    acnText();
+    acnRate.addEventListener("input", () => {
+      draft.acnProTag = Number(acnRate.value);
+      acnText();
+    });
+    const acnZeile = el("div", { class: "fremd-rate" });
+    acnZeile.append(acnRate, acnWert);
+    aGrid.append(el("label", { title: "Pflegerische Einsätze ohne Eile (ACN-Codes), zu denen nur die ACN nach Hause fährt – nur rund um ACN-Standorte" }, "ACN-Einsätze (Akutpflege)"), acnZeile);
     // Work in Progress: Einsätze in Nachbarzonen
     const fzWrap = el("label", { title: "Einsätze knapp außerhalb deiner Funkgruppe, zu denen eigene Fahrzeuge (meist das NEF) fahren – angelegt und disponiert vom Kollegen der Nachbarzone" });
     fzWrap.innerHTML = `Einsätze in Nachbarzonen <span class="wip-badge">Work in Progress</span>`;

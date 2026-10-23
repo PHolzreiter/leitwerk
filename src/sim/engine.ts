@@ -14,7 +14,7 @@ import { grundbelegungTick, platzFuer, RESSOURCE, ressourcenFuer, type BelegungM
 import { verdachtFuer } from "./verdacht";
 import { store } from "../data/store";
 import { streuung } from "../data/schema";
-import { allCodes, findCode, hasCodes, type Einsatzcode } from "./codes";
+import { ACN_CODES, allCodes, findCode, hasCodes, istAcnCode, type Einsatzcode } from "./codes";
 import { distanceM, erreichbar, flightRoute, geoStatus, randomAddresses, route, searchAddress, travelTimes, type LatLon, type Route } from "./geo";
 import { generiereBesetzung, hatNFS, hoechsteQuali, rang, rmTypVon, type Platz, type Quali, type RmTyp } from "./crew";
 import { defaultStufeFuer, raenge, stufeRaten, type Kategorie, type Settings, type StatusKey, type StufeDef } from "./settings";
@@ -167,6 +167,8 @@ export function modellVon(v: Pick<Vehicle, "funkrufname" | "modell">, rmTyp: RmT
     case "NAH":
     case "ITH":
       return "ec135";
+    case "ACN":
+      return "passat";
     default:
       return "t6hoch";
   }
@@ -1930,6 +1932,12 @@ export class Simulation {
             this.fzRuft(fz, e, "info", `Zufahrt schwierig, Hausnummer schlecht auffindbar, Patientenkontakt verzögert sich um ca. ${Math.round(plus)} Minuten`);
           }
           if (fz.rmTyp === "BIT") fz.phaseEnde = t + rnd(20, 35) * MIN; // Schwerlast: Umlagern dauert
+          if (istAcnCode(e.wahr.code)) {
+            // Akutpflege zu Hause: die ACN versorgt 30–60 Minuten, der Patient bleibt daheim;
+            // ein KTW/RTW kann das nicht – er nimmt den Patienten mit ins Krankenhaus
+            if (fz.rmTyp === "ACN") fz.phaseEnde = t + rnd(30, 60) * MIN;
+            else if (this.transportfaehig(fz) && !this.einsatzFz(e).some((x) => x.rmTyp === "ACN")) e.wahr.transport = true;
+          }
           this.eintreffenLage(fz, e);
           this.ktHilfeDa(e);
           const p0 = e.wahr.lage?.patienten[0];
@@ -2050,6 +2058,10 @@ export class Simulation {
       if (rtwMitTransport && naMit && fz.kategorie === "NEF") {
         fz.begleitet = true;
         this.log(e, `${fz.funkrufname}: Notarzt begleitet den Transport`);
+      } else if (fz.rmTyp === "ACN" && rtwMitTransport && !istAcnCode(e.wahr.code) && !this.einsatzFz(e).some((x) => this.mitNotarzt(x)) && !this.einsatzFz(e).some((x) => this.transportfaehig(x) && hatNFS(x.besetzung))) {
+        // ACN statt Notarzt (RS-RTW ohne NFS): fährt mit ins Krankenhaus
+        fz.begleitet = true;
+        this.log(e, `${fz.funkrufname}: ACN begleitet den Transport`);
       } else if (rtwMitTransport && (e.wahr.lage?.fall ? naMit : this.kritisch(e)) && fliegt(fz)) {
         this.log(e, `${fz.funkrufname}: Patient wird mit dem NAH transportiert`);
         fz.begleitet = true;
@@ -2898,8 +2910,18 @@ export class Simulation {
     const imEinsatz = e.fahrzeuge.map((fid) => this.state.fahrzeuge[fid]).filter((f) => f && f.einsatzId === e.id);
     let rm: SimFahrzeug | undefined = imEinsatz.find((f) => this.transportfaehig(f));
     let arzt: SimFahrzeug | undefined = imEinsatz.find((f) => this.mitNotarzt(f));
+    const acnFrei = nutzbar.find((v) => v.fz.rmTyp === "ACN");
 
     const rangListe = raenge(stufe);
+    // ACN-Code: nur die ACN fährt hin – ist keine frei, wartet der Einsatz (keine zeitliche Dringlichkeit)
+    if (rangListe.flat().every((t) => t === "ACN")) {
+      if (imEinsatz.length) return { ids, gruende, oben };
+      if (acnFrei) {
+        ids.push(acnFrei.fz.id);
+        gruende.push(`${acnFrei.fz.funkrufname} (ACN, ${min(acnFrei.sekunden!)}): Akutpflege zu Hause`);
+      } else gruende.push("Keine ACN frei – der Einsatz wartet, bis eine frei wird");
+      return { ids, gruende, oben };
+    }
     if (!rm && rangListe.length) {
       let best: { v: Vorschlag; punkte: number; rang: number } | null = null;
       for (const v of nutzbar) {
@@ -2936,6 +2958,16 @@ export class Simulation {
     if (!arzt && rm && this.mitNotarzt(rm)) arzt = rm;
     const nfsFehlt = stufe.nfsErforderlich && rm !== undefined && !hatNFS(rm.besetzung);
     const regel = stufe.notarzt !== "nein" ? stufe.notarzt : nfsFehlt ? "nef" : "nein";
+    // Kein NFS am Rettungsmittel (z. B. nur ein RS-RTW, weil der RTW-C nicht frei ist): eine freie ACN (NKI)
+    // ersetzt den Notarzt, wenn sie nicht später als NEF/NAH da ist – spart Notarztmittel
+    if (!arzt && regel === "nef" && stufe.notarzt === "nein" && nfsFehlt && !imEinsatz.some((f) => f.rmTyp === "ACN") && acnFrei) {
+      const naSek = Math.min(...nutzbar.filter((v) => v.fz.rmTyp === "NEF" || v.fz.rmTyp === "NAH").map((v) => v.sekunden!), Number.POSITIVE_INFINITY);
+      if (acnFrei.sekunden! <= naSek + tol) {
+        ids.push(acnFrei.fz.id);
+        gruende.push(`${acnFrei.fz.funkrufname} (ACN, ${min(acnFrei.sekunden!)}): kein NFS am Rettungsmittel – ACN (NKI) statt Notarzt`);
+        arzt = acnFrei.fz;
+      }
+    }
     if (!arzt && regel !== "nein") {
       const nef = nutzbar.find((v) => v.fz.rmTyp === "NEF");
       const nah = nutzbar.find((v) => v.fz.rmTyp === "NAH") ?? (nef ? undefined : nutzbar.find((v) => v.fz.rmTyp === "ITH"));
@@ -2950,6 +2982,14 @@ export class Simulation {
         gruende.push(`${arzt.funkrufname} (${arzt.rmTyp}, ${min(wahl.sekunden!)}): ${grund}`);
       } else {
         gruende.push("Kein Notarztmittel (NEF/NAH) verfügbar");
+      }
+    }
+    // ACN als First Responder: Notarzt-Einsatz (ALS orange/rot) und die ACN ist das nächste Fahrzeug
+    if (stufe.notarzt !== "nein" && acnFrei && !ids.includes(acnFrei.fz.id) && !imEinsatz.some((f) => f.rmTyp === "ACN")) {
+      const andere = [...ids.map((x) => nutzbar.find((v) => v.fz.id === x)?.sekunden ?? Number.POSITIVE_INFINITY), ...imEinsatz.map((f) => (f.phase === "vorOrt" ? 0 : (f.phaseEnde ?? Number.POSITIVE_INFINITY) - this.state.zeit) / (f.phase === "vorOrt" ? 1 : 1000))];
+      if (andere.length && acnFrei.sekunden! < Math.min(...andere)) {
+        ids.push(acnFrei.fz.id);
+        gruende.push(`${acnFrei.fz.funkrufname} (ACN, ${min(acnFrei.sekunden!)}): First Responder – ist als Erstes beim Patienten`);
       }
     }
     // BEL bei Großeinsätzen: mehrere Rettungsmittel oder Großaufgebot (Feuerwehr/Polizei)
@@ -3026,12 +3066,67 @@ export class Simulation {
     for (const k of ["stabil", "dringend", "kritisch"] as Kategorie[]) {
       const rate = (proStunde * Math.max(0, anteile[k] ?? 0)) / summe;
       if (Math.random() < (rate * dt) / 3_600_000) void this.generiere(k);
-    }    // Work in Progress: Einsätze in Nachbarzonen
+    }
+    // ACN: Akutpflege zu Hause, je Standort (dessen ACN gerade Dienst hat) einige pro Tag
+    const acnRate = this.settings.acnProTag ?? 2;
+    if (acnRate > 0) {
+      const g = this.funkgruppe();
+      const standorte = new Set(Object.values(this.state.fahrzeuge).filter((f) => f.rmTyp === "ACN" && !f.ausserDienst && inFunkgruppe(g, f.heim.lat, f.heim.lon)).map((f) => f.stationId));
+      for (const st of standorte) if (Math.random() < (acnRate * dt) / 86_400_000) void this.generiereAcn(st);
+    }
+    // Work in Progress: Einsätze in Nachbarzonen
     if (this.settings.fremdzoneAktiv && Math.random() < ((this.settings.fremdzoneProStunde ?? 1) * dt) / 3_600_000) void this.generiereFremd();
   }
 
   private stumm = 0;
   private fremdLaeuft = false;
+
+  /**
+   * ACN-Einsatz (Akutpflege zu Hause): kommt über die Gesundheitsberatung 1450 schon mit ACN-Code herein,
+   * Adresse im Umkreis des ACN-Standorts, meist ältere Patienten. Keine zeitliche Dringlichkeit.
+   */
+  async generiereAcn(stationId?: string): Promise<Einsatz | null> {
+    if (!hasCodes()) return null;
+    const g = this.funkgruppe();
+    const acns = Object.values(this.state.fahrzeuge).filter((f) => f.rmTyp === "ACN" && inFunkgruppe(g, f.heim.lat, f.heim.lon) && (!stationId || f.stationId === stationId));
+    if (!acns.length) return null;
+    const basis = pick(acns).heim;
+    let adr: Awaited<ReturnType<typeof randomAddresses>>[number] | null = null;
+    for (let i = 0; i < 6 && !adr; i++) {
+      const p = versetzt(basis.lat, basis.lon, rnd(300, 15000), rnd(0, 360));
+      const d = 0.01;
+      const hits = (await randomAddresses([p.lon - d, p.lat - d, p.lon + d, p.lat + d], 6)).filter((h) => !h.place && inFunkgruppe(g, h.lat, h.lon));
+      adr = hits[0] ?? null;
+    }
+    if (!adr) return null;
+    const gew: [string, number][] = [["ACN-O1", 25], ["ACN-O3", 20], ["ACN-O2", 12], ["ACN-O4", 12], ["ACN-O7", 10], ["ACN-O5", 8], ["ACN-O8", 7], ["ACN-O6", 6]];
+    let r = Math.random() * gew.reduce((a, [, w]) => a + w, 0);
+    let wahl = gew[0][0];
+    for (const [c, w] of gew) if ((r -= w) <= 0) {
+      wahl = c;
+      break;
+    }
+    const code = findCode(wahl) ?? ACN_CODES.find((c) => c.code === wahl)!;
+    const alter = Math.round(Math.random() < 0.7 ? rnd(75, 96) : rnd(55, 75));
+    const w = Math.random() < 0.6;
+    const label = adr.label;
+    const e = this.erstelleEinsatz({
+      lat: adr.lat,
+      lon: adr.lon,
+      adresse: label,
+      code,
+      meldung: `Gesundheitsberatung 1450: ${code.beschreibung}. ${w ? "Patientin" : "Patient"} ca. ${alter} Jahre, zu Hause. Keine zeitliche Dringlichkeit.`,
+      patientAlter: alter,
+      transport: false,
+    });
+    e.adresse = { lat: adr.lat, lon: adr.lon, label };
+    e.bo = e.adresse;
+    e.code = code.code;
+    e.codeQuelle = "abfrage";
+    this.log(e, `Von der Gesundheitsberatung 1450 übernommen (${code.code})`);
+    this.emit();
+    return e;
+  }
 
   /**
    * Einsatz in einer Nachbarzone (Work in Progress): der Kollege dort legt ihn mit dem planmäßigen Code an und
