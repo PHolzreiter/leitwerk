@@ -1,7 +1,7 @@
 /** Eigene Kartenebenen: Dienststellen, Krankenhäuser, POIs. Dazu Kontextmenü und Positionswahl. */
 import maplibregl from "maplibre-gl";
 import type { Feature as GFeature, FeatureCollection, LineString, Point } from "geojson";
-import { flughoehe } from "./sim/bewegung";
+import { besatzungBei, flughoehe, personenBei } from "./sim/bewegung";
 import { PARTNER_PHASE_TEXT, sim } from "./sim/engine";
 import { khKurzElement } from "./ui/khInfo";
 import { PARTNER_ANZAHL, partnerArtVonTyp, type PartnerArt } from "./sim/partner";
@@ -577,6 +577,21 @@ function vehicleFeatures(): FeatureCollection<Point> {
   );
 }
 
+/** Besatzungen zu Fuß bzw. beim Patienten: ein Punkt je Besatzung (weiter weg), ein Punkt je Person (nah) */
+function besatzungFeatures(): FeatureCollection<Point> {
+  const t = sim.state.zeit;
+  const out: Feature[] = [];
+  for (const fz of Object.values(sim.state.fahrzeuge)) {
+    const b = besatzungBei(fz, t);
+    if (!b) continue;
+    const st = store.get("stations", fz.stationId);
+    const farbe = st ? orgFarbe(st) : "#c62828";
+    out.push(pointFeature(fz.id, b.pos[0], b.pos[1], { einzel: 0, farbe }));
+    personenBei(fz, t).forEach((p, i) => out.push(pointFeature(`${fz.id}-${i}`, p.pos[0], p.pos[1], { einzel: 1, farbe })));
+  }
+  return collection(out);
+}
+
 function incidentFeatures(): FeatureCollection<Point> {
   const out: Feature[] = [];
   for (const e of sim.state.einsaetze) {
@@ -627,6 +642,7 @@ export function addSimLayers(
   map.addSource("lw-incidents", { type: "geojson", data: incidentFeatures() });
   map.addSource("lw-vehicles", { type: "geojson", data: vehicleFeatures() });
   map.addSource("lw-partner-fz", { type: "geojson", data: partnerFzFeatures() });
+  map.addSource("lw-besatzung", { type: "geojson", data: besatzungFeatures() });
 
   map.addLayer({
     id: "lw-routes",
@@ -679,6 +695,24 @@ export function addSimLayers(
     minzoom: 12,
     layout: { "text-field": ["get", "name"], "text-font": FONT, "text-size": 10, "text-offset": [0, 1], "text-anchor": "top" },
     paint: { "text-color": "#374151", "text-halo-color": "#ffffff", "text-halo-width": 1.3 },
+  });
+  // Besatzung zu Fuß: weiter weg ein Punkt, nah je Person ein kleiner Punkt (in 3D ganz nah: Figuren)
+  map.addLayer({
+    id: "lw-besatzung",
+    type: "circle",
+    source: "lw-besatzung",
+    filter: ["==", ["get", "einzel"], 0],
+    minzoom: 13,
+    maxzoom: 16,
+    paint: { "circle-radius": 3.5, "circle-color": "#ffffff", "circle-stroke-color": ["get", "farbe"], "circle-stroke-width": 2 },
+  });
+  map.addLayer({
+    id: "lw-besatzung-einzeln",
+    type: "circle",
+    source: "lw-besatzung",
+    filter: ["==", ["get", "einzel"], 1],
+    minzoom: 16,
+    paint: { "circle-radius": ["interpolate", ["linear"], ["zoom"], 16, 2.2, 19, 4], "circle-color": ["get", "farbe"], "circle-stroke-color": "#ffffff", "circle-stroke-width": 1 },
   });
   // Schatten unter fliegenden Hubschraubern (zeigt: er ist in der Luft)
   map.addLayer({
@@ -759,6 +793,7 @@ export function addSimLayers(
     last = now;
     (map.getSource("lw-vehicles") as maplibregl.GeoJSONSource | undefined)?.setData(vehicleFeatures());
     (map.getSource("lw-partner-fz") as maplibregl.GeoJSONSource | undefined)?.setData(partnerFzFeatures());
+    (map.getSource("lw-besatzung") as maplibregl.GeoJSONSource | undefined)?.setData(besatzungFeatures());
     (map.getSource("lw-incidents") as maplibregl.GeoJSONSource | undefined)?.setData(incidentFeatures());
     (map.getSource("lw-routes") as maplibregl.GeoJSONSource | undefined)?.setData(routeFeatures());
   });

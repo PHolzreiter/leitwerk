@@ -230,6 +230,10 @@ function erstellen(ctx: PanelKontext) {
         }
       });
       fz3d = addFahrzeug3D(map);
+      if (location.search.includes("debug")) {
+        const w = window as unknown as { __lw?: Record<string, unknown> };
+        if (w.__lw) w.__lw.fz3d = fz3d;
+      }
       let erzwungen = false;
       const w3d = wetter3dAnbinden(mapEl, () => is3d || erzwungen, map);
       aus.push(() => w3d.dispose());

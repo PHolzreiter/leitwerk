@@ -1,0 +1,100 @@
+id;kurzname;landeplatz;hinweis;quelle
+kh001;UK St. Pölten;48.214429,15.625500;OpenStreetMap-Landeplatz;https://www.openstreetmap.org/way/677424387
+kh002;UK Krems;48.412711,15.615186;OpenStreetMap-Landeplatz;https://www.openstreetmap.org/way/34075071
+kh003;UK Tulln;48.322275,16.065021;OpenStreetMap-Landeplatz;https://www.openstreetmap.org/way/1221495630
+kh004;UK Wr. Neustadt;47.815746,16.246993;OpenStreetMap-Landeplatz;https://www.openstreetmap.org/way/704090742
+kh005;LK Mistelbach;48.567210,16.580985;OpenStreetMap-Landeplatz;https://www.openstreetmap.org/way/213138786
+kh006;LK Amstetten;48.126766,14.880879;OpenStreetMap-Landeplatz;https://www.openstreetmap.org/way/1011740533
+kh007;LK Horn;48.669211,15.660651;OpenStreetMap-Landeplatz;https://www.openstreetmap.org/way/127777227
+kh008;LK Baden;48.000625,16.255792;OpenStreetMap-Landeplatz;https://www.openstreetmap.org/way/625576300
+kh009;LK Mödling;48.089476,16.298235;OpenStreetMap-Landeplatz;https://www.openstreetmap.org/way/121956236
+kh010;UK Neunkirchen;47.726822,16.086430;OpenStreetMap-Landeplatz;https://www.openstreetmap.org/way/1221494210
+kh011;LK Korneuburg;;laut Quelle (2010/2012) kein Landeplatz – Schockraum-Regel: Landung in der Klinik;https://www.oeamtc.at/thema/flugrettung/ith-landung-in-kaserne-dringende-notverlegung-39321971 https://noe-landtag.gv.at/fileadmin/gegenstaende/17/14/1420/69B.pdf
+kh012;LK Stockerau;;Hubschrauber landet laut Quelle außerhalb (zählt als Landung in der Klinik);https://noe-landtag.gv.at/fileadmin/gegenstaende/17/07/750/39B.pdf https://noe-landtag.gv.at/fileadmin/gegenstaende/17/14/1420/69B.pdf
+kh013;LK Hollabrunn;48.562777,16.091566;OpenStreetMap-Landeplatz;https://www.openstreetmap.org/way/1223202460
+kh014;LK Hainburg;48.143201,16.958812;OpenStreetMap-Landeplatz;https://www.openstreetmap.org/way/130104883
+kh015;LK Klosterneuburg;;Hubschrauber landet laut Quelle außerhalb (zählt als Landung in der Klinik);https://www.noe.gv.at/noe/pressAnnouncement/getPdf/82470 https://noe-landtag.gv.at/fileadmin/gegenstaende/17/07/750/39B.pdf
+kh016;LK Lilienfeld;;Hubschrauber landet laut Quelle außerhalb (zählt als Landung in der Klinik);https://www.noen.at/lilienfeld/premiere-erste-notarzt-hubi-landung-in-lilienfeld-ist-geglueckt-lilienfeld-landesklinikum-lilienfeld-hubschrauberlandeplatz-notarzthubschrauber-print-286150601 https://noe-landtag.gv.at/fileadmin/gegenstaende/17/07/750/39B.pdf
+kh017;LK Melk;;laut Quelle (2010/2012) kein Landeplatz – Schockraum-Regel: Landung in der Klinik;https://noe-landtag.gv.at/fileadmin/gegenstaende/17/07/750/39B.pdf https://noe-landtag.gv.at/fileadmin/gegenstaende/17/14/1420/69B.pdf
+kh018;LK Scheibbs;48.011169,15.162683;OpenStreetMap-Landeplatz;https://www.openstreetmap.org/way/277627513
+kh019;LK Waidhofen/Ybbs;47.952658,14.788041;OpenStreetMap-Landeplatz;https://www.openstreetmap.org/way/95383990
+kh020;LK Zwettl;48.599715,15.163688;OpenStreetMap-Landeplatz;https://www.openstreetmap.org/way/162387445
+kh021;LK Gmünd;;Hubschrauber landet laut Quelle außerhalb (zählt als Landung in der Klinik);https://noe-landtag.gv.at/fileadmin/gegenstaende/17/07/750/39B.pdf https://noe-landtag.gv.at/fileadmin/gegenstaende/17/14/1420/69B.pdf
+kh022;LK Waidhofen/Thaya;;Hubschrauber landet laut Quelle außerhalb (zählt als Landung in der Klinik);https://noe-landtag.gv.at/fileadmin/gegenstaende/17/07/750/39B.pdf https://noe-landtag.gv.at/fileadmin/gegenstaende/17/14/1420/69B.pdf
+kh023;AKH;48.221426,16.346201;Landeplatz laut Recherche;https://de.wikipedia.org/wiki/Flugpl%C3%A4tze_in_Wien https://ourairports.com/airports/AT-0088/
+kh024;Floridsdorf;48.267660,16.405914;Landeplatz laut Recherche;https://www.meinbezirk.at/floridsdorf/c-gesundheit/tag-der-offenen-tuer-im-krankenhaus-nord-klinik-floridsdorf_a3309684 https://ourairports.com/airports/AT-0021/closest.html
+kh025;Donaustadt;48.218890,16.463459;OpenStreetMap-Landeplatz;https://www.openstreetmap.org/way/1188088829
+kh026;Ottakring;48.210637,16.300718;OpenStreetMap-Landeplatz;https://www.openstreetmap.org/way/634693098
+kh027;Favoriten;;Landeplatz laut Recherche, Lage unbekannt – Landung in der Klinik;https://de.wikipedia.org/wiki/Flugpl%C3%A4tze_in_Wien https://www.helis.com/database/gps/meidling_akh_at/
+kh028;Hietzing;;Hubschrauber landet laut Quelle außerhalb (zählt als Landung in der Klinik);https://de.wikipedia.org/wiki/Flugpl%C3%A4tze_in_Wien https://www.geschichtewiki.wien.gv.at/Neurologisches_Krankenhaus_Rosenh%C3%BCgel
+kh029;Landstraße;48.195640,16.390623;OpenStreetMap-Landeplatz;https://www.openstreetmap.org/way/518943625
+kh030;TZ Meidling;48.173042,16.344215;OpenStreetMap-Landeplatz;https://www.openstreetmap.org/way/1016721862
+kh032;BB Wien;;Landeplatz unbekannt – Landung in der Klinik;https://de.wikipedia.org/wiki/Krankenhaus_der_Barmherzigen_Br%C3%BCder_Wien https://www.geschichtewiki.wien.gv.at/Krankenhaus_der_Barmherzigen_Br%C3%BCder
+kh033;St. Anna;;Landeplatz unbekannt – Landung in der Klinik;
+kh034;BB Eisenstadt;47.846797,16.513498;OpenStreetMap-Landeplatz;https://www.openstreetmap.org/way/1223346997
+kh035;Oberwart;47.278571,16.205242;OpenStreetMap-Landeplatz;https://www.openstreetmap.org/way/1508788867
+kh036;Kittsee;;Landeplatz laut Recherche, Lage unbekannt – Landung in der Klinik;https://www.bvz.at/neusiedl/medizinische-versorgung-kh-kittsee-neue-heimat-fuer-hubschrauber-kittsee-krankenhaus-hubschrauber-print-272724100 https://sprinkle.com/airport/LOAC
+kh037;KUK Linz;48.303254,14.303544;OpenStreetMap-Landeplatz;https://www.openstreetmap.org/way/285075319
+kh038;UKH Linz;48.303973,14.309798;OpenStreetMap-Landeplatz;https://www.openstreetmap.org/way/98521778
+kh039;LK Mauer;kein;laut Quelle kein Landeplatz;https://noe-landtag.gv.at/fileadmin/gegenstaende/17/07/750/39B.pdf
+kh042;Hanusch;48.199931,16.291332;OpenStreetMap-Landeplatz;https://www.openstreetmap.org/way/518945897
+kh043;Penzing;;Landeplatz unbekannt – Landung in der Klinik;https://www.geschichtewiki.wien.gv.at/Klinik_Penzing https://de.wikipedia.org/wiki/Klinik_Penzing
+kh044;Speising;;Landeplatz laut Recherche, Lage unbekannt – Landung in der Klinik;https://de.wikipedia.org/wiki/Flugpl%C3%A4tze_in_Wien
+kh045;Göttl. Heiland;;Landeplatz unbekannt – Landung in der Klinik;https://www.geschichtewiki.wien.gv.at/G%C3%B6ttlicher_Heiland_Krankenhaus https://www.khgh.at/patienten-besucher/lageplan
+kh046;KUK Neuromed;48.280217,14.297339;OpenStreetMap-Landeplatz;https://www.openstreetmap.org/way/99898840
+kh047;KUK Kinder;48.303254,14.303544;OpenStreetMap-Landeplatz;https://kepleruniklinikum.at/über-uns/standorte https://prod.kepleruniklinikum.at/media/13817/flugplatzhandbuch_mc.pdf
+kh048;BHS Linz;48.299397,14.288629;OpenStreetMap-Landeplatz;https://www.openstreetmap.org/way/108637088
+kh049;Elisabethinen Linz;48.305461,14.294284;OpenStreetMap-Landeplatz;https://www.openstreetmap.org/way/103590561
+kh050;PEK Steyr;48.045531,14.392498;OpenStreetMap-Landeplatz;https://www.openstreetmap.org/way/207560252
+kh051;KH Freistadt;48.491503,14.497459;OpenStreetMap-Landeplatz;https://www.openstreetmap.org/way/148898955
+kh052;BB Linz;48.299397,14.288629;OpenStreetMap-Landeplatz;https://www.openstreetmap.org/way/108637088
+kh053;Klinikum Wels;48.174574,14.024867;OpenStreetMap-Landeplatz;https://www.openstreetmap.org/way/766169891
+kh054;Klinikum Grieskirchen;48.238095,13.819601;OpenStreetMap-Landeplatz;https://www.openstreetmap.org/way/175684482
+kh055;PEK Kirchdorf;47.908700,14.124941;OpenStreetMap-Landeplatz;https://www.openstreetmap.org/way/147189652
+kh056;SK Vöcklabruck;48.002951,13.639101;OpenStreetMap-Landeplatz;https://www.openstreetmap.org/way/869749823
+kh057;SK Gmunden;47.915709,13.779091;OpenStreetMap-Landeplatz;https://www.openstreetmap.org/way/1038833736
+kh058;SK Bad Ischl;47.705736,13.623439;OpenStreetMap-Landeplatz;https://www.openstreetmap.org/way/85952743
+kh059;KH Braunau;48.256015,13.033231;OpenStreetMap-Landeplatz;https://www.openstreetmap.org/way/228686312
+kh060;Klinikum Schärding;48.455158,13.436737;OpenStreetMap-Landeplatz;https://www.openstreetmap.org/way/1026953176
+kh061;BHS Ried;48.210089,13.492931;OpenStreetMap-Landeplatz;https://www.openstreetmap.org/way/766169314
+kh062;Klinikum Rohrbach;48.571783,13.981184;OpenStreetMap-Landeplatz;https://www.openstreetmap.org/way/201945978
+kh063;LKH-Univ. Graz;47.084417,15.468954;Landeplatz laut Recherche;https://www.uniklinikumgraz.at/fileadmin/media/lkh-univ-klinikum-graz/Uniklinikum/pressemitteilungen/2020/Hubschrauberlandeplatz_neu_Kinderzentrum/PM_Neuer_Hubschrauberlandeplatz_Kinderzentrum_Klinikum_Graz.pdf https://www.medunigraz.at//frontend/user_upload/dokumente/news-archiv/2017/2017-09-13%20-%20Er%C3%B6ffnung%20Chirurgie%20neu.pdf
+kh064;LKH Graz West;47.078260,15.397970;OpenStreetMap-Landeplatz;https://www.openstreetmap.org/way/87979293
+kh065;LKH Graz Süd;47.038499,15.420006;OpenStreetMap-Landeplatz;https://www.openstreetmap.org/way/929251335
+kh067;LKH Voitsberg;47.052376,15.139405;OpenStreetMap-Landeplatz;https://www.openstreetmap.org/way/98717472
+kh068;Elisabethinen Graz;;Landeplatz unbekannt – Landung in der Klinik;
+kh069;BB Graz;;Landeplatz unbekannt – Landung in der Klinik;https://www.wissounig.com/news/spatenstichfeier-krankenhaus-barmherzige-brueder-graz?lang=en
+kh070;UKH Graz;47.078260,15.397970;OpenStreetMap-Landeplatz;https://www.openstreetmap.org/way/87979293
+kh071;UKH Kalwang;47.425535,14.759888;OpenStreetMap-Landeplatz;https://www.openstreetmap.org/way/200289636
+kh072;LKH Leoben;47.380661,15.084863;OpenStreetMap-Landeplatz;https://www.openstreetmap.org/way/1236262984
+kh073;LKH Bruck/Mur;47.423607,15.265478;OpenStreetMap-Landeplatz;
+kh074;LKH Mürzzuschlag;47.599994,15.667555;OpenStreetMap-Landeplatz;https://www.openstreetmap.org/way/186284511
+kh075;LKH Rottenmann;47.525012,14.367095;OpenStreetMap-Landeplatz;https://www.openstreetmap.org/way/1236263600
+kh076;LKH Bad Aussee;47.606701,13.770127;OpenStreetMap-Landeplatz;
+kh077;DKH Schladming;47.392286,13.675465;OpenStreetMap-Landeplatz;https://www.openstreetmap.org/way/1198881638
+kh078;LKH Judenburg;47.165739,14.654704;OpenStreetMap-Landeplatz;https://www.openstreetmap.org/way/801288758
+kh079;LKH Knittelfeld;47.216061,14.820106;OpenStreetMap-Landeplatz;https://www.openstreetmap.org/way/199997816
+kh080;LKH Stolzalpe;47.118132,14.189945;OpenStreetMap-Landeplatz;
+kh081;LKH Weiz;47.212986,15.636298;OpenStreetMap-Landeplatz;https://www.openstreetmap.org/way/199997814
+kh082;LKH Feldbach;46.950710,15.882241;OpenStreetMap-Landeplatz;https://www.openstreetmap.org/way/160549201
+kh083;LKH Fürstenfeld;47.046103,16.086741;OpenStreetMap-Landeplatz;https://www.openstreetmap.org/way/1255549433
+kh084;LKH Hartberg;47.273389,15.966089;OpenStreetMap-Landeplatz;https://www.openstreetmap.org/way/199997815
+kh085;LKH Deutschlandsberg;46.811679,15.231128;OpenStreetMap-Landeplatz;https://www.openstreetmap.org/way/653568965
+kh086;LKH Wagna;46.769573,15.558773;OpenStreetMap-Landeplatz;https://www.openstreetmap.org/way/199997817
+kh087;LKH Bad Radkersburg;46.691580,15.992410;OpenStreetMap-Landeplatz;https://www.openstreetmap.org/way/144013878
+kh088;KH Vorau;47.404185,15.881994;OpenStreetMap-Landeplatz;https://www.openstreetmap.org/way/89559048
+kh089;Güssing;47.049770,16.321700;Landeplatz laut Recherche;https://ourairports.com/airports/AT-0004/ https://www.bvz.at/guessing/hubschrauberlandeplatz-regt-auf-5075287
+kh090;Oberpullendorf;47.507738,16.511697;Landeplatz laut Recherche;https://ourairports.com/airports/AT-0036/ https://de.wikipedia.org/wiki/Liste_der_Hubschrauberlandepl%C3%A4tze_und_Wasserlandepl%C3%A4tze_in_%C3%96sterreich
+kh091;BB Frauenkirchen;47.838820,16.922109;OpenStreetMap-Landeplatz;https://www.openstreetmap.org/node/12738782057
+kh092;BS Wien;;Landeplatz unbekannt – Landung in der Klinik;
+kh094;St. Josef Wien;;Landeplatz unbekannt – Landung in der Klinik;
+kh096;Franziskus Margareten;;Landeplatz unbekannt – Landung in der Klinik;
+kh098;Klinik Hietzing Rosenhügel;48.159648,16.280421;Landeplatz laut Recherche;https://www.geschichtewiki.wien.gv.at/Neurologisches_Krankenhaus_Rosenh%C3%BCgel https://de.wikipedia.org/wiki/Flugpl%C3%A4tze_in_Wien
+kh099;LK Hinterbrühl;kein;laut Quelle kein Landeplatz;https://noe-landtag.gv.at/fileadmin/gegenstaende/17/07/750/39B.pdf https://noe-landtag.gv.at/fileadmin/gegenstaende/17/14/1420/69B.pdf
+kh108;MZ Gänserndorf;kein;laut Quelle kein Landeplatz;https://noe-landtag.gv.at/fileadmin/gegenstaende/17/07/750/39B.pdf https://noe-landtag.gv.at/fileadmin/gegenstaende/17/14/1420/69B.pdf
+kh109;PVZ Böheimkirchen;;Landeplatz unbekannt – Landung in der Klinik;
+kh110;PVZ St. Pölten;;Landeplatz unbekannt – Landung in der Klinik;
+kh111;PVZ St. Pölten Nord;;Landeplatz unbekannt – Landung in der Klinik;
+kh112;PVZ Tullnerfeld;;Landeplatz unbekannt – Landung in der Klinik;
+kh113;PVZ Wiener Neustadt;;Landeplatz unbekannt – Landung in der Klinik;
+kh114;PVZ Wienerwald;;Landeplatz unbekannt – Landung in der Klinik;

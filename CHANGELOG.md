@@ -1,5 +1,23 @@
 # Änderungen
 
+## 0.52.0 – Fußweg der Besatzung, Hubschrauberlandeplätze, NEF-Status beim Notarzt-Abholen
+**Fahrzeuge bleiben auf der Straße stehen**
+- RTW, NEF, KTW fahren nicht mehr „ins Haus“: sie halten am nächsten Punkt der Straße, die Besatzung geht zu Fuß zum Patienten (auch bei Krankentransporten)
+- Der Fußweg kostet Zeit: hin mit Ausrüstung, zurück mit dem Patienten langsamer
+- Abseits der Straße (Wald, Berg, Feld): das Fahrzeug fährt auf Wegen so nah wie möglich; ab ca. 300 m meldet die Besatzung „Patient liegt abseits der Straße, ca. … Meter Fußweg“
+- Auf der Karte: weiter weg ein Punkt für die Besatzung, nah ein kleiner Punkt je Person, in 3D ganz nah Figuren (Jacke in der Farbe der Organisation)
+
+**Hubschrauberlandeplätze**
+- Hubschrauber landen auf dem Landeplatz des Krankenhauses (Recherche + OpenStreetMap), sonst in der Klinik
+- Kein Landeplatz (laut Quelle): LK Mauer, LK Hinterbrühl, MZ Gänserndorf – dorthin fliegt kein Hubschrauber Patienten; bucht man so ein Haus, wird bodengebunden transportiert
+- Häuser mit Schockraum haben immer einen Landeplatz; landet der Hubschrauber eigentlich außerhalb (Sportplatz, Flugfeld), zählt das als Landung in der Klinik
+- Krankenhaus bearbeiten → „Hubschrauberlandeplatz“ (auf der Karte wählen oder „kein“); CSV-Spalte `landeplatz`
+- In der KH-Auswahl steht „kein Hubschrauberlandeplatz“ dazu
+
+**NEF mit Notarzt-Abholung**
+- Bis zur Abfahrt beim Krankenhaus bleibt das NEF „alarmiert und quittiert“, erst dann „zum Berufungsort“
+- Nach dem Zurückbringen des Notarztes geht das NEF auf Bereitschaft (Status 8) und fährt heim
+
 ## 0.51.0 – Alle NEF in Niederösterreich, Notarzt-Abholung im Krankenhaus
 **19 neue NEF** (jetzt 32 NEF in ganz NÖ, Stand heute)
 - Neu: Amstetten, Waidhofen/Ybbs, Waidhofen/Thaya, Mödling, Gmünd, Baden, Scheibbs, Wiener Neustadt, Lilienfeld, Neunkirchen, Aspang, Schwechat, Hainburg, Ybbs-Persenbeug, Groß-Enzersdorf, Gänserndorf, Pöggstall, Raabs, Groß Gerungs

@@ -334,7 +334,7 @@ export function einsatzMaske(e: Einsatz): { root: HTMLElement; refresh(): void }
     const MARKE = { passend: "passend", ausweich: "Ausweich", rueckfall: "Rückfall" } as const;
     for (const v of vorschlaege) {
       const lage = v.zu ? " · zu" : v.voll ? ` · belegt (${v.gesamt}/${v.gesamt})` : v.gesamt ? ` · ${v.frei}/${v.gesamt} frei` : "";
-      khSel.appendChild(el("option", { value: v.h.id, class: `kh-opt ${v.eignung}${v.zu || v.voll ? " nein" : ""}` }, `${v.h.kurzname || v.h.name} (${v.km.toFixed(0)} km) · ${MARKE[v.eignung]}${lage}`));
+      khSel.appendChild(el("option", { value: v.h.id, class: `kh-opt ${v.eignung}${v.zu || v.voll ? " nein" : ""}` }, `${v.h.kurzname || v.h.name} (${v.km.toFixed(0)} km) · ${MARKE[v.eignung]}${lage}${v.h.landeplatz === "kein" ? " · kein Hubschrauberlandeplatz" : ""}`));
     }
     // zuerst ein Haus vorwählen, das offen ist und Platz hat
     const erstes = vorschlaege.find((v) => !v.zu && !v.voll);

@@ -29,7 +29,7 @@ HOSPITAL_FLAGS = [
     "notfallambulanz", "schockraum", "unfallambulanz", "kinderambulanz", "intensiv_anaesthesie",
     "neurologie", "kinderintensiv", "neonatologie", "hno", "urologie", "gyn_geburtshilfe",
 ]
-HOSPITAL_COLS = ["id", "name", "kurzname", "ort", "breitengrad", "laengengrad", "einrichtungen", "akut_aus", "zeiten", "plaetze", "aufnahmerad", "zufahrt", "hinweis"]
+HOSPITAL_COLS = ["id", "name", "kurzname", "ort", "breitengrad", "laengengrad", "einrichtungen", "akut_aus", "zeiten", "plaetze", "aufnahmerad", "zufahrt", "landeplatz", "hinweis"]
 POI_COLS = ["id", "name", "typ", "ort", "breitengrad", "laengengrad", "hinweis"]
 TEMPLATE_COLS = ["id", "code", "adresse", "breitengrad", "laengengrad", "meldung", "patient_alter", "transport", "hinweis"]
 
@@ -947,6 +947,10 @@ def build_hospitals() -> list[dict]:
         grund = "Privatklinik – nimmt keine Rettung auf" if d.get("privat") else "keine Notaufnahme belegt – nimmt keine Rettung auf"
         return ", ".join(ak), grund
 
+    # Hubschrauberlandeplätze (Recherche 10/2026 + OpenStreetMap): Koordinaten, „kein“ oder leer (Landung in der Klinik)
+    lp_pfad = SRC / "kh_landeplaetze.csv"
+    landeplatz = {r["id"]: r["landeplatz"] for r in read_csv(lp_pfad)} if lp_pfad.exists() else {}
+
     out = []
     for i, (name, kurz, ort, loc, _flags, _hinweis) in enumerate(HOSPITALS, start=1):
         if isinstance(loc, tuple) and isinstance(loc[0], float):
@@ -960,7 +964,7 @@ def build_hospitals() -> list[dict]:
         out.append({"id": kid, "name": name, "kurzname": kurz, "ort": ort,
                     "breitengrad": f"{lat:.6f}", "laengengrad": f"{lon:.6f}",
                     "einrichtungen": ", ".join(d["einrichtungen"]), "akut_aus": aus, **extra(kid, d),
-                    "zufahrt": ZUFAHRTEN.get(kid, ""),
+                    "zufahrt": ZUFAHRTEN.get(kid, ""), "landeplatz": landeplatz.get(kid, ""),
                     "hinweis": (f"{grund} – " if grund else "") + hinweis(d)})
     # neu recherchierte Häuser (auch Privatkliniken außerhalb Wiens)
     n = len(out)
@@ -972,6 +976,7 @@ def build_hospitals() -> list[dict]:
         out.append({"id": f"kh{n:03d}", "name": d["name"], "kurzname": d.get("kurzname") or d["name"], "ort": d.get("ort", ""),
                     "breitengrad": f"{float(d['lat']):.6f}", "laengengrad": f"{float(d['lon']):.6f}",
                     "einrichtungen": ", ".join(d["einrichtungen"]), "akut_aus": akut_aus(d, f"kh{n:03d}")[0], **extra(f"kh{n:03d}", d),
+                    "landeplatz": landeplatz.get(f"kh{n:03d}", ""),
                     "hinweis": (f"{akut_aus(d, f'kh{n:03d}')[1]} – " if akut_aus(d, f"kh{n:03d}")[1] else "") + hinweis(d)})
     return out
 

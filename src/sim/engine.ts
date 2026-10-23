@@ -8,7 +8,7 @@
 import { rufnamen } from "./funkname";
 import { aktuelleSchicht, dienstEnde, imDienst, naechsterBeginn, type Schicht } from "./dienst";
 import { nachKlick } from "../klick";
-import { ACTIVE_CATEGORIES, bereicheVon, khAnkunft, type Hospital, type Vehicle, type Zufahrt } from "../data/model";
+import { ACTIVE_CATEGORIES, bereicheVon, khAnkunft, khLandung, type Hospital, type Vehicle, type Zufahrt } from "../data/model";
 import { bestesKh, buchung, buchungName, eignung as khEignung, khVorschlaege } from "../data/klinik";
 import { grundbelegungTick, platzFuer, RESSOURCE, ressourcenFuer, type BelegungMap } from "./khStatus";
 import { verdachtFuer } from "./verdacht";
@@ -232,6 +232,10 @@ export interface SimFahrzeug {
   nachNa?: { ziel: LatLon; phase: Phase; blau: boolean } | null;
   /** Rückfahrt bringt zuerst den Notarzt ins Krankenhaus */
   naZurueck?: boolean;
+  /** Besatzung zu Fuß unterwegs (Fahrzeug steht auf der Straße, Patient abseits) */
+  fuss?: Fussweg | null;
+  /** eigentliches Ziel der Fahrt (Haus/Patient), wenn das Fahrzeug auf der Straße davor stehen bleibt */
+  fussZiel?: LatLon | null;
   /** 3D-Modell (t6hoch, crafter, t6, tiguan, passat, caddy, sprinter_kurz/_lang/_gross, man, ec135) */
   modell?: string;
   /** Hubschrauber vom Spiel abgemeldet, weil er nicht fliegen kann (meldet sich bei Flugwetter wieder an) */
@@ -945,6 +949,50 @@ function pad(n: number, w: number): string {
   return String(n).padStart(w, "0");
 }
 
+/** Fußweg der Besatzung vom Fahrzeug zum Patienten und zurück (Zeiten in Spielzeit-ms bzw. Sekunden) */
+export interface Fussweg {
+  park: LatLon;
+  ziel: LatLon;
+  /** Länge in Metern */
+  m: number;
+  ab: number;
+  hinSek: number;
+  zurueckSek: number;
+  /** Rückweg beginnt (gesetzt, sobald die Besatzung zum Fahrzeug zurückgeht) */
+  zurueckAb?: number;
+}
+
+/** Gehgeschwindigkeit in m/s: mit Ausrüstung hin, mit Patient (Trage/Tragesessel) zurück */
+const GEHEN = 1.1;
+const TRAGEN = 0.7;
+/** ab dieser Entfernung meldet die Besatzung den Fußweg */
+const FUSS_MELDEN_M = 300;
+/** Fahrten, nach denen das Fahrzeug auf der Straße stehen bleibt (nicht ins Haus fährt) */
+const AN_STRASSE = new Set<Phase>(["anfahrt", "ktFahrt"]);
+
+/**
+ * Route endet auf der Straße: das letzte Stück (Straße → Haus, quer durchs Gelände) fällt weg,
+ * das Fahrzeug hält am nächsten Punkt der letzten Straße.
+ */
+export function anStrasse(r: Route): Route {
+  const c = r.coords;
+  const n = c.length;
+  if (n < 3) return r;
+  const ziel = c[n - 1];
+  const b = c[n - 2];
+  // ohne echte letzte Straßenkante (nur Zubringer): am letzten Straßenknoten halten
+  if (n < 4) return { ...r, coords: c.slice(0, n - 1), times: r.times.slice(0, n - 1), duration: r.times[n - 2] };
+  const a = c[n - 3];
+  const kx = Math.cos((b[1] * Math.PI) / 180);
+  const dx = (b[0] - a[0]) * kx;
+  const dy = b[1] - a[1];
+  const l2 = dx * dx + dy * dy;
+  const k = l2 > 0 ? Math.min(1, Math.max(0, ((ziel[0] - a[0]) * kx * dx + (ziel[1] - a[1]) * dy) / l2)) : 1;
+  const p: [number, number] = [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k];
+  const tp = r.times[n - 3] + (r.times[n - 2] - r.times[n - 3]) * k;
+  return { ...r, coords: [...c.slice(0, n - 2), p], times: [...r.times.slice(0, n - 2), tp], duration: tp };
+}
+
 /** Fahrten, für die ein NEF den Notarzt an Bord braucht */
 const NA_PHASEN = new Set<Phase>(["anfahrt", "bereitstellung", "rendezvous"]);
 
@@ -954,6 +1002,12 @@ export function khZufahrtBei(ziel: LatLon): Zufahrt | null {
     const z = h.zufahrt;
     if (z?.p && (distanceM(ziel, h) < 5 || distanceM(ziel, z.p) < 5)) return z;
   }
+  return null;
+}
+
+/** Krankenhaus, dessen Mitte oder Punkt P dieses Ziel ist */
+function khAmZiel(ziel: LatLon): Hospital | null {
+  for (const h of store.list("hospitals")) if (distanceM(ziel, h) < 5 || (h.zufahrt?.p && distanceM(ziel, h.zufahrt.p) < 5)) return h;
   return null;
 }
 
@@ -1693,6 +1747,16 @@ export class Simulation {
     if (fz.ohneBlaulicht) sondersignal = false;
     fz.blaulicht = sondersignal && !fliegt(fz);
     const von = { lat: fz.lat, lon: fz.lon };
+    // Besatzung steigt ein; bei Fahrten zum Patienten bleibt das Fahrzeug auf der Straße stehen
+    fz.fuss = null;
+    const strasse = AN_STRASSE.has(phase) && !fliegt(fz) && !khAmZiel(ziel);
+    fz.fussZiel = strasse ? { lat: ziel.lat, lon: ziel.lon } : null;
+    // Hubschrauber ins Krankenhaus: auf dem Landeplatz
+    if (fliegt(fz)) {
+      const h = khAmZiel(ziel);
+      const l = h ? khLandung(h) : null;
+      if (l) ziel = l;
+    }
     const p: Promise<Route> =
       fliegt(fz) ? Promise.resolve(flightRoute(von, ziel, this.settings.nahGeschwindigkeit)) : this.strassenRoute(von, ziel);
     void p.then((r) => {
@@ -1701,13 +1765,41 @@ export class Simulation {
       const f = (sondersignal && !fliegt(fz) ? this.settings.sondersignalFaktor : 1) * wf;
       // Hubschrauber kreist 1–3 Mal über Einsatzorten (nicht über Krankenhäusern und Landeplätzen)
       const kreis = fliegt(fz) && phase === "anfahrt" && !this.istLandeplatz(ziel) ? platzrunden(r, ziel, 1 + Math.floor(Math.random() * 3)) : null;
-      const rr = kreis ?? r;
+      const rr = kreis ?? (strasse ? anStrasse(r) : r);
       fz.fahrt = { coords: rr.coords, times: rr.times.map((x) => x * f), start: this.state.zeit, dauer: rr.duration * f, blau: sondersignal };
       if (kreis) Object.assign(fz.fahrt, { kreisAb: kreis.kreisAb, landungAb: kreis.landungAb });
       fz.phase = phase;
       fz.phaseEnde = this.state.zeit + fz.fahrt.dauer * 1000;
       this.emit();
     });
+  }
+
+  /**
+   * Fahrzeug ist angekommen und steht auf der Straße: die Besatzung geht zu Fuß zum Patienten
+   * (Zeit bis zum Patientenkontakt wird länger). Größere Entfernungen meldet sie per Funk.
+   */
+  private zuFuss(fz: SimFahrzeug, patient: LatLon, t: number, e: Einsatz | null): void {
+    const ziel = fz.fussZiel;
+    fz.fussZiel = null;
+    if (!ziel || fliegt(fz) || fz.phaseEnde === null) return;
+    const park = { lat: fz.lat, lon: fz.lon };
+    // Patient liegt dort, wo er wirklich ist (Einsatz), sonst am Ziel der Fahrt (KT)
+    const p = distanceM(patient, ziel) <= this.settings.verortungRadius ? patient : ziel;
+    const m = distanceM(park, p);
+    if (m < 15) return;
+    const hinSek = m / GEHEN;
+    fz.fuss = { park, ziel: { lat: p.lat, lon: p.lon }, m, ab: t, hinSek, zurueckSek: m / TRAGEN };
+    fz.phaseEnde += hinSek * 1000;
+    if (m >= FUSS_MELDEN_M) {
+      const gerundet = Math.round(m / 50) * 50;
+      const min = Math.max(1, Math.round(hinSek / 60));
+      // nur das erste Fahrzeug meldet
+      const schon = e && this.einsatzFz(e).some((x) => x !== fz && x.fuss && x.fuss.m >= FUSS_MELDEN_M);
+      if (!schon) {
+        if (e) this.log(e, `${fz.funkrufname}: Patient abseits der Straße, ca. ${gerundet} m Fußweg`);
+        this.fzRuft(fz, e, "info", `Patient liegt abseits der Straße, ca. ${gerundet} Meter Fußweg, Patientenkontakt in ca. ${min} Minute${min === 1 ? "" : "n"}`);
+      }
+    }
   }
 
   /** Krankenhaus, in dem dieses NEF den Notarzt abholt (ID oder Name), sonst null */
@@ -1778,7 +1870,8 @@ export class Simulation {
           this.setStatus(fz, "abgemeldet");
           return;
         }
-        this.setStatus(fz, "zumBO");
+        // NEF, das den Notarzt erst abholt: bleibt „alarmiert und quittiert“, bis es beim Krankenhaus losfährt
+        this.setStatus(fz, this.naUmweg(fz) ? "alarmiert" : "zumBO");
         // Gewalt/Waffen: zuerst in den Bereitstellungsraum, bis die Polizei den Einsatzort sichert
         if (e.br && !e.boSicher) this.fahre(fz, e.br, "bereitstellung", this.faktor(e) < 1);
         else this.fahre(fz, e.adresse, "anfahrt", this.faktor(e) < 1);
@@ -1841,6 +1934,8 @@ export class Simulation {
           this.ktHilfeDa(e);
           const p0 = e.wahr.lage?.patienten[0];
           if (p0 && istStillstand(p0)) fz.phaseEnde = t + rnd(30, 45) * MIN;
+          // Fahrzeug steht auf der Straße: zu Fuß zum Patienten
+          this.zuFuss(fz, e.wahr, t, e);
         }
         break;
       }
@@ -1858,6 +1953,14 @@ export class Simulation {
               this.fzRuft(this.sprecher(e, fz), e, "nachforderung", `benötigen weiterhin ${fehlen.map((x) => `${PARTNER[x.art].name} (${x.grund})`).join(" und ")}, ohne können wir nicht weiterarbeiten`);
             } else this.log(e, `${fz.funkrufname} wartet auf ${warten.map((x) => PARTNER[x.art].name).join(", ")} (unterwegs)`);
           }
+          break;
+        }
+        // zu Fuß zurück zum Fahrzeug (mit Patient langsamer)
+        if (fz.fuss && fz.fuss.zurueckAb === undefined) {
+          const mitPatient = this.transportfaehig(fz) && !!e.wahr.transport;
+          fz.fuss.zurueckSek = fz.fuss.m / (mitPatient ? TRAGEN : GEHEN);
+          fz.fuss.zurueckAb = t;
+          fz.phaseEnde = t + fz.fuss.zurueckSek * 1000;
           break;
         }
         this.entscheideTransport(fz, e, t);
@@ -1900,6 +2003,7 @@ export class Simulation {
         fz.naAnBord = true;
         if (!e || !n) return this.freigeben(fz);
         this.log(e, `${fz.funkrufname}: Notarzt im ${this.naKh(fz)?.kurzname || "Krankenhaus"} übernommen`);
+        this.setStatus(fz, "zumBO");
         // Einsatzort kann sich inzwischen geändert haben
         const ziel = n.phase === "anfahrt" ? (e.adresse ?? n.ziel) : n.ziel;
         this.fahre(fz, ziel, n.phase, n.blau);
@@ -1908,9 +2012,10 @@ export class Simulation {
       case "rueckfahrt": {
         fz.fahrt = null;
         if (fz.naZurueck) {
-          // Notarzt im Krankenhaus abgesetzt, weiter zur Dienststelle
+          // Notarzt im Krankenhaus abgesetzt: Bereitschaft, weiter zur Dienststelle
           fz.naZurueck = false;
           fz.naAnBord = false;
+          if (!fz.ausserDienst && !(fz.defektBis && t < fz.defektBis)) this.setStatus(fz, "bereitschaft");
           this.fahre(fz, fz.heim, "rueckfahrt", false);
           break;
         }
@@ -2216,8 +2321,8 @@ export class Simulation {
   }
 
   /** Krankenhäuser zur Verdachtsdiagnose, nach Eignung und Entfernung – mit offen/zu und freien Plätzen */
-  khFuer(pos: LatLon, verdacht: string | null | undefined, rot: boolean, kind = false) {
-    const alle = store.list("hospitals").filter((h) => this.khImNetz(h));
+  khFuer(pos: LatLon, verdacht: string | null | undefined, rot: boolean, kind = false, nurLandeplatz = false) {
+    const alle = store.list("hospitals").filter((h) => this.khImNetz(h) && (!nurLandeplatz || khLandung(h) !== null));
     return khVorschlaege(alle, buchung(verdacht), rot, (h) => distanceM(pos, h) / 1000, { t: this.state.zeit, belegung: this.state.khBelegung, kind });
   }
 
@@ -2254,7 +2359,8 @@ export class Simulation {
   /** Bucht automatisch das nächstgelegene passende Krankenhaus (RTW bucht selbst). */
   private bucheKhAuto(e: Einsatz, von: string): void {
     const verdacht = this.verdacht(e);
-    const ziel = this.naechstesKh(e.wahr, verdacht, this.patientRot(e), (e.wahr.lage?.patienten[0]?.alter ?? e.wahr.patientAlter) < 15);
+    const kind = (e.wahr.lage?.patienten[0]?.alter ?? e.wahr.patientAlter) < 15;
+    const ziel = (this.hubschrauberTransport(e) && this.naechstesKh(e.wahr, verdacht, this.patientRot(e), kind, true)) || this.naechstesKh(e.wahr, verdacht, this.patientRot(e), kind);
     if (!ziel) return;
     e.verdacht = verdacht;
     e.kh = { hospitalId: ziel.id, grund: verdacht, durch: "rtw", zeit: this.state.zeit };
@@ -2267,8 +2373,23 @@ export class Simulation {
   }
 
   /** Bestes Krankenhaus zur Verdachtsdiagnose (passend vor Ausweichen, sonst Rückfall) */
-  naechstesKh(pos: LatLon, verdacht: string, rot: boolean, kind = false): Hospital | undefined {
-    return bestesKh(this.khFuer(pos, verdacht, rot, kind))?.h;
+  naechstesKh(pos: LatLon, verdacht: string, rot: boolean, kind = false, nurLandeplatz = false): Hospital | undefined {
+    return bestesKh(this.khFuer(pos, verdacht, rot, kind, nurLandeplatz))?.h;
+  }
+
+  /** Transportiert in diesem Einsatz ein Hubschrauber den Patienten? */
+  private hubschrauberTransport(e: Einsatz): boolean {
+    return this.einsatzFz(e).some((x) => fliegt(x) && x.begleitet);
+  }
+
+  /** Hubschrauber soll in ein Haus ohne Landeplatz: Patient fährt bodengebunden, Hubschrauber ist frei */
+  private ohneLandeplatz(fz: SimFahrzeug, e: Einsatz, h: Hospital): boolean {
+    if (!fliegt(fz) || khLandung(h) !== null) return false;
+    fz.begleitet = false;
+    this.log(e, `${fz.funkrufname}: ${h.kurzname || h.name} hat keinen Hubschrauberlandeplatz – Patient wird bodengebunden transportiert`);
+    this.funk(fz.funkrufname, e.id, `${h.kurzname || h.name} hat keinen Landeplatz – Transport bodengebunden, ${fz.funkrufname} frei`, "info");
+    this.freigeben(fz);
+    return true;
   }
 
   private checkKhAnfragen(t: number): void {
@@ -2291,6 +2412,7 @@ export class Simulation {
       if (!fz || fz.phase !== "warteKH") continue;
       // Rendezvous: erst zum Treffpunkt
       if (rv && (id === rv.rtwId || id === rv.nefId)) continue;
+      if (this.ohneLandeplatz(fz, e, h)) continue;
       this.setStatus(fz, "zumZO");
       this.fahre(fz, h, "transport", this.kritisch(e));
       if (this.transportfaehig(fz)) this.polizeiBegleitung(e, fz, h);
@@ -2617,7 +2739,7 @@ export class Simulation {
       fz.einsatzId = e.id;
       if (!e.fahrzeuge.includes(fz.id)) e.fahrzeuge.push(fz.id);
       const sek = this.ausrueckSek(fz, false);
-      const aufWache = fz.status === "freiWache" || fz.status === "bereitschaft";
+      const aufWache = fz.status === "freiWache" || (fz.status === "bereitschaft" && fz.phase !== "rueckfahrt");
       fz.quittUm = null;
       this.setStatus(fz, aufWache ? "alarmWache" : "alarmFunk");
       fz.fahrt = null;
@@ -2673,7 +2795,8 @@ export class Simulation {
       return z(tag ? a.bodenTag : a.bodenNacht);
     };
     if (fz.status === "freiWache") return wache();
-    if (fz.status === "bereitschaft") return wache() + a.bereitschaftPlusMin * 60;
+    // Bereitschaft unterwegs (NEF nach dem Zurückbringen des Notarztes): wie unterwegs
+    if (fz.status === "bereitschaft" && fz.phase !== "rueckfahrt") return wache() + a.bereitschaftPlusMin * 60;
     return schaetzung ? a.unterwegs : a.unterwegs * rnd(0.7, 1.5);
   }
 
@@ -5703,6 +5826,15 @@ export class Simulation {
         } else {
           this.setStatus(fz, "amZO");
           fz.phaseEnde = t + (sek && (s?.arzt || s?.monitoring) ? rnd(10, 20) : k.d.lage === "liegend" ? rnd(8, 15) : rnd(4, 10)) * MIN;
+        }
+        // auf der Straße geparkt: hin und mit dem Patienten zurück zu Fuß
+        if (fz.fussZiel && fz.phaseEnde !== null) {
+          const ende = fz.phaseEnde;
+          this.zuFuss(fz, fz.fussZiel, t, null);
+          if (fz.fuss) {
+            fz.phaseEnde = ende + (fz.fuss.hinSek + fz.fuss.zurueckSek) * 1000;
+            fz.fuss.zurueckAb = fz.phaseEnde - fz.fuss.zurueckSek * 1000;
+          }
         }
         break;
       }

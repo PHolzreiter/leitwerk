@@ -7,7 +7,7 @@
  */
 import maplibregl from "maplibre-gl";
 import { store } from "./data/store";
-import { flughoehe, positionBei, richtungBei, rotorLaeuft } from "./sim/bewegung";
+import { flughoehe, personenBei, positionBei, richtungBei, rotorLaeuft } from "./sim/bewegung";
 import { sim, type SimFahrzeug } from "./sim/engine";
 import { orgFarbe } from "./mapLayers";
 
@@ -18,7 +18,7 @@ export const ZOOM_FLUG = 12.5;
 /** Unterhalb dieser Zoomstufe werden die Modelle etwas vergrößert, damit man sie erkennt */
 const ZOOM_ECHT = 18.5;
 
-type Teil = "karosserie" | "glas" | "rad" | "blau" | "rotor" | "dunkel";
+type Teil = "karosserie" | "glas" | "rad" | "blau" | "rotor" | "dunkel" | "haut" | "weiss";
 /** Quader: Mitte (x quer, y längs nach vorne, z hoch) und Maße in Metern */
 interface Quader {
   x: number;
@@ -261,7 +261,23 @@ const FARBEN: Record<Exclude<Teil, "karosserie">, [number, number, number]> = {
   dunkel: hexRgb("#2a2d31"),
   rotor: hexRgb("#30343a"),
   blau: hexRgb("#1f5dff"),
+  haut: hexRgb("#d9a77f"),
+  weiss: hexRgb("#e8eaed"),
 };
+
+/** Person (Sanitäter/Notarzt): Jacke in der Farbe der Organisation, Reflexstreifen, dunkle Hose; Beine schwingen beim Gehen */
+function person(schritt: number): Quader[] {
+  const s = schritt * 0.18;
+  return [
+    q(-0.11, s, 0.42, 0.15, 0.18, 0.84, "dunkel"),
+    q(0.11, -s, 0.42, 0.15, 0.18, 0.84, "dunkel"),
+    q(0, 0, 1.15, 0.46, 0.26, 0.62, "karosserie"),
+    q(0, 0, 1.0, 0.47, 0.27, 0.06, "weiss"),
+    q(-0.29, -s * 0.6, 1.12, 0.11, 0.13, 0.58, "karosserie"),
+    q(0.29, s * 0.6, 1.12, 0.11, 0.13, 0.58, "karosserie"),
+    q(0, 0, 1.6, 0.21, 0.23, 0.25, "haut"),
+  ];
+}
 
 export interface Fahrzeug3D {
   /** 3D-Ansicht an/aus (Modelle nur in 3D) */
@@ -322,6 +338,8 @@ export function addFahrzeug3D(map: maplibregl.Map): Fahrzeug3D {
       map.setPaintProperty("lw-vehicles-nr", "text-opacity", an ? ["step", ["zoom"], 1, ZOOM_FLUG, ["case", ["==", ["get", "flug"], 1], 0, 1]] : 1);
     }
     if (map.getLayer("lw-vehicles-shadow")) map.setLayerZoomRange("lw-vehicles-shadow", 0, max);
+    // Besatzung: in 3D ganz nah als Figuren statt Punkte
+    if (map.getLayer("lw-besatzung-einzeln")) map.setLayerZoomRange("lw-besatzung-einzeln", 16, max);
     if (map.getLayer("lw-vehicles-label")) {
       map.setLayoutProperty("lw-vehicles-label", "text-anchor", an ? ["step", ["zoom"], "top", ZOOM_MODELLE, "bottom"] : "top");
       map.setLayoutProperty("lw-vehicles-label", "text-offset", an ? ["step", ["zoom"], ["literal", [0, 1.2]], ZOOM_MODELLE, ["literal", [0, -3.2]]] : [0, 1.2]);
@@ -432,6 +450,38 @@ export function addFahrzeug3D(map: maplibregl.Map): Fahrzeug3D {
           gl.uniform3fv(loc.uFarbe, an ? [0.35, 0.55, 1] : farbeTeil);
           gl.uniform1f(loc.uLeucht, an ? 1 : 0);
           gl.drawArrays(gl.TRIANGLES, 0, 36);
+        }
+      }
+      // Besatzung zu Fuß bzw. beim Patienten (nur ganz nah)
+      if (zoom >= ZOOM_MODELLE) {
+        for (const fz of Object.values(sim.state.fahrzeuge)) {
+          const leute = personenBei(fz, t);
+          if (!leute.length) continue;
+          const koerper = farbe(fz);
+          leute.forEach((p, i) => {
+            const [lon, lat] = p.pos;
+            if (lon < b.getWest() - 0.01 || lon > b.getEast() + 0.01 || lat < b.getSouth() - 0.01 || lat > b.getNorth() + 0.01) return;
+            const boden = map.queryTerrainElevation([lon, lat]) ?? 0;
+            const mc = maplibregl.MercatorCoordinate.fromLngLat([lon, lat], boden);
+            const gross = Math.min(3, Math.max(1, Math.pow(2, (ZOOM_ECHT - zoom) * 0.9)));
+            const s = mc.meterInMercatorCoordinateUnits() * gross;
+            const heading = p.richtung;
+            const welt = mul(mul(trans(mc.x, mc.y, mc.z), skal(s, -s, s)), rotZ((-heading * Math.PI) / 180));
+            const basis = mul(matrix, welt);
+            const schritt = p.geht ? Math.sin(real / 140 + i * 1.7) : 0;
+            if (p.geht) laeuft = true;
+            const a = (-heading * Math.PI) / 180;
+            const ca = Math.cos(a);
+            const sa = Math.sin(a);
+            gl.uniformMatrix3fv(loc.uRot, false, new Float32Array([ca, sa, 0, -sa, ca, 0, 0, 0, 1]));
+            gl.uniform1f(loc.uLeucht, 0);
+            for (const teil of person(schritt)) {
+              const mvp = mul(basis, mul(trans(teil.x, teil.y, teil.z), skal(teil.b, teil.l, teil.h)));
+              gl.uniformMatrix4fv(loc.uMVP, false, new Float32Array(mvp));
+              gl.uniform3fv(loc.uFarbe, teil.teil === "karosserie" ? koerper : FARBEN[teil.teil as Exclude<Teil, "karosserie">]);
+              gl.drawArrays(gl.TRIANGLES, 0, 36);
+            }
+          });
         }
       }
       bildpunkte = punkte;

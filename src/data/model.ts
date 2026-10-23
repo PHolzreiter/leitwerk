@@ -164,6 +164,12 @@ export function khAnkunft(h: Pick<Hospital, "lat" | "lon" | "zufahrt">): { lat: 
   return h.zufahrt?.p ? { lat: h.zufahrt.p.lat, lon: h.zufahrt.p.lon } : { lat: h.lat, lon: h.lon };
 }
 
+/** Wo der Hubschrauber beim Krankenhaus landet (null = hier landet keiner) */
+export function khLandung(h: Pick<Hospital, "lat" | "lon" | "landeplatz">): { lat: number; lon: number } | null {
+  if (h.landeplatz === "kein") return null;
+  return h.landeplatz ? { lat: h.landeplatz.lat, lon: h.landeplatz.lon } : { lat: h.lat, lon: h.lon };
+}
+
 export interface Hospital extends Base {
   name: string;
   kurzname: string;
@@ -182,6 +188,8 @@ export interface Hospital extends Base {
   aufnahmerad?: Aufnahmerad | null;
   /** Rettungszufahrt: Einfahrt von der öffentlichen Straße und Punkt P, an dem das Fahrzeug „ins KH“ geht */
   zufahrt?: Zufahrt | null;
+  /** Hubschrauberlandeplatz: Punkt, „kein“ (dort landet kein Hubschrauber) oder leer (Landung am Haus) */
+  landeplatz?: { lat: number; lon: number } | "kein" | null;
   /** veraltet: frühere Abteilungs-Häkchen (nur noch zum Einlesen alter Daten) */
   abteilungen?: Partial<Record<HospitalFlag, boolean>>;
   /** veraltet: frühere Bereichskürzel (nur noch zum Einlesen alter Daten) */

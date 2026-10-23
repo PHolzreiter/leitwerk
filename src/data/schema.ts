@@ -90,6 +90,23 @@ export function zufahrtLesen(text: string): Zufahrt | null {
   return ein ? { p, ein } : { p };
 }
 
+/** Hubschrauberlandeplatz: „48.41210,15.61480“, „kein“ oder leer */
+export function landeplatzLesen(text: string): { lat: number; lon: number } | "kein" | null {
+  const t = text.trim();
+  if (!t) return null;
+  if (/^(kein|keiner|nein|-)$/i.test(t)) return "kein";
+  const m = t.match(/(-?\d+(?:\.\d+)?)\s*[,\s]\s*(-?\d+(?:\.\d+)?)/);
+  if (!m) return null;
+  const lat = Number(m[1]);
+  const lon = Number(m[2]);
+  return Number.isFinite(lat) && Number.isFinite(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180 ? { lat, lon } : null;
+}
+
+export function landeplatzText(l: { lat: number; lon: number } | "kein" | null | undefined): string {
+  if (!l) return "";
+  return l === "kein" ? "kein" : `${l.lat.toFixed(6)},${l.lon.toFixed(6)}`;
+}
+
 export function zufahrtText(z: Zufahrt | null | undefined): string {
   if (!z) return "";
   const f = (x: { lat: number; lon: number }) => `${x.lat.toFixed(6)},${x.lon.toFixed(6)}`;
@@ -115,7 +132,7 @@ function einrichtungenLesen(text: string): string[] {
 export const COLUMNS: Record<Kind, string[]> = {
   stations: ["id", "name", "organisation", "typ", "ort", "bezirk", "adresse", "breitengrad", "laengengrad", "hinweis"],
   vehicles: ["id", "funkrufname", "kurzname", "kategorie", "typ", "aufbau", "modell", "dienststelle", "aktiv", "nachtflug", "dienstplan", "ersatz_fuer", "na_abholung", "hinweis"],
-  hospitals: ["id", "name", "kurzname", "ort", "breitengrad", "laengengrad", "einrichtungen", "akut_aus", "zeiten", "plaetze", "aufnahmerad", "zufahrt", "hinweis"],
+  hospitals: ["id", "name", "kurzname", "ort", "breitengrad", "laengengrad", "einrichtungen", "akut_aus", "zeiten", "plaetze", "aufnahmerad", "zufahrt", "landeplatz", "hinweis"],
   pois: ["id", "name", "typ", "ort", "breitengrad", "laengengrad", "hinweis"],
   templates: ["id", "code", "adresse", "breitengrad", "laengengrad", "meldung", "patient_alter", "transport", "hinweis"],
   codes: ["id", "code", "name", "kategorie", "kapitel", "hinweis"],
@@ -180,6 +197,7 @@ const ALIASES: Record<string, string[]> = {
   plaetze: ["plaetze", "kapazitaet", "kapazitaeten"],
   aufnahmerad: ["aufnahmerad", "aufnahmetage"],
   zufahrt: ["zufahrt", "rettungszufahrt", "rettungseinfahrt", "liegendanfahrt"],
+  landeplatz: ["landeplatz", "hubschrauberlandeplatz", "heliport", "helipad"],
   gyn_geburtshilfe: ["gyngeburtshilfe", "gyn", "geburtshilfe", "gynaekologie", "gynaekologieundgeburtshilfe"],
 };
 
@@ -618,6 +636,8 @@ export function importCsv<K extends Kind>(kind: K, text: string, ctx: ImportCont
           if (rad) h.aufnahmerad = rad;
           const zf = zufahrtLesen(get("zufahrt"));
           if (zf) h.zufahrt = zf;
+          const lp = landeplatzLesen(get("landeplatz"));
+          if (lp) h.landeplatz = lp;
           record = h;
         } else {
           id = id || `poi-${slug(name)}`;
@@ -730,6 +750,7 @@ export function exportCsv<K extends Kind>(kind: K, records: KindMap[K][], statio
         const r = h.aufnahmerad;
         v.aufnahmerad = r ? `${r.gruppe} ${r.start} ${r.wechsel} ${r.zyklus}: ${Object.entries(r.einrichtungen).map(([k, x]) => `${k}=${x}`).join(", ")}` : "";
         v.zufahrt = zufahrtText(h.zufahrt);
+        v.landeplatz = landeplatzText(h.landeplatz);
       } else {
         const p = rec as Poi;
         Object.assign(v, { typ: p.typ, ort: p.ort });

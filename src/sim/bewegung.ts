@@ -68,3 +68,43 @@ export function rotorLaeuft(fz: SimFahrzeug, t: number): boolean {
   if (!fliegt(fz)) return false;
   return fz.phase === "ausruecken" || flughoehe(fz, t) > 0 || fz.phase === "routing";
 }
+
+/**
+ * Wo ist die Besatzung, wenn sie zu Fuß unterwegs bzw. beim Patienten ist? [lon, lat], Gehrichtung (Grad)
+ * und ob sie gerade geht. null = sitzt im Fahrzeug.
+ */
+export function besatzungBei(fz: SimFahrzeug, t: number): { pos: [number, number]; richtung: number; geht: boolean } | null {
+  const f = fz.fuss;
+  if (!f) return null;
+  const richtung = (a: { lat: number; lon: number }, b: { lat: number; lon: number }) =>
+    ((Math.atan2((b.lon - a.lon) * Math.cos((a.lat * Math.PI) / 180), b.lat - a.lat) * 180) / Math.PI + 360) % 360;
+  const zwischen = (a: { lat: number; lon: number }, b: { lat: number; lon: number }, k: number): [number, number] => [a.lon + (b.lon - a.lon) * k, a.lat + (b.lat - a.lat) * k];
+  const hinEnde = f.ab + f.hinSek * 1000;
+  if (t < f.ab) return null;
+  if (t < hinEnde) return { pos: zwischen(f.park, f.ziel, (t - f.ab) / (f.hinSek * 1000)), richtung: richtung(f.park, f.ziel), geht: true };
+  if (f.zurueckAb === undefined || t < f.zurueckAb) return { pos: [f.ziel.lon, f.ziel.lat], richtung: richtung(f.park, f.ziel), geht: false };
+  const zurueckEnde = f.zurueckAb + f.zurueckSek * 1000;
+  if (t < zurueckEnde) return { pos: zwischen(f.ziel, f.park, (t - f.zurueckAb) / (f.zurueckSek * 1000)), richtung: richtung(f.ziel, f.park), geht: true };
+  return null;
+}
+
+/** Positionen der einzelnen Personen (nebeneinander, quer zur Gehrichtung, ca. 0,9 m Abstand) */
+export function personenBei(fz: SimFahrzeug, t: number): { pos: [number, number]; richtung: number; geht: boolean }[] {
+  const b = besatzungBei(fz, t);
+  if (!b) return [];
+  const n = Math.max(1, fz.besetzung?.length ?? 2);
+  const r = (b.richtung * Math.PI) / 180;
+  // quer zur Gehrichtung (nach rechts), in Grad
+  const qLat = (-Math.sin(r) * 0.9) / 111_320;
+  const qLon = (Math.cos(r) * 0.9) / (111_320 * Math.cos((b.pos[1] * Math.PI) / 180));
+  const out = [];
+  for (let i = 0; i < n; i++) {
+    const k = i - (n - 1) / 2;
+    // beim Gehen hintereinander leicht versetzt
+    const zurueck = b.geht ? Math.abs(k) * 0.6 : 0;
+    const vLat = (-Math.cos(r) * zurueck) / 111_320;
+    const vLon = (-Math.sin(r) * zurueck) / (111_320 * Math.cos((b.pos[1] * Math.PI) / 180));
+    out.push({ pos: [b.pos[0] + qLon * k + vLon, b.pos[1] + qLat * k + vLat] as [number, number], richtung: b.richtung, geht: b.geht });
+  }
+  return out;
+}

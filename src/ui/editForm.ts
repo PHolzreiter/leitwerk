@@ -19,7 +19,7 @@ import {
   type Einsatzcode,
 } from "../data/model";
 import { store } from "../data/store";
-import { zufahrtLesen, zufahrtText } from "../data/schema";
+import { landeplatzLesen, landeplatzText, zufahrtLesen, zufahrtText } from "../data/schema";
 import { akutMoeglich, EINRICHTUNG_TYP_LABEL, EINRICHTUNGEN, einrichtungenAusAlt, type EinrichtungTyp } from "../data/klinik";
 import { codeKategorien } from "../sim/codes";
 import { confirmDialog, openDialog } from "./dialog";
@@ -346,6 +346,24 @@ export function openEditor(
         zfWrap.appendChild(b);
       }
       form.appendChild(zfWrap);
+      // Hubschrauberlandeplatz
+      add(
+        "landeplatz",
+        "Hubschrauberlandeplatz",
+        textInput(landeplatzText(h?.landeplatz), "48.41210,15.61480 – oder „kein“"),
+        "Leer = Hubschrauber landet am Haus. „kein“ = hier landet kein Hubschrauber (wird für Hubschraubertransporte nicht gewählt).",
+        true,
+      );
+      const lpWrap = el("div", { class: "fld wide" });
+      const lpBtn = el("button", { class: "btn small", type: "button" }, "Landeplatz auf der Karte wählen");
+      lpBtn.addEventListener("click", async () => {
+        dlg.hide();
+        const pkt = await deps.pickOnMap("Hubschrauberlandeplatz anklicken");
+        dlg.show();
+        if (pkt) (inputs.landeplatz as HTMLInputElement).value = landeplatzText(pkt);
+      });
+      lpWrap.appendChild(lpBtn);
+      form.appendChild(lpWrap);
       const vorher = new Set(h?.einrichtungen?.length ? h.einrichtungen : h ? einrichtungenAusAlt(h.abteilungen, h.bereiche) : []);
       const aus = new Set(h?.akutAus ?? []);
       einrInputs = {};
@@ -500,6 +518,10 @@ export function openEditor(
         if (alt?.plaetze) h.plaetze = alt.plaetze;
         if (alt?.aufnahmerad) h.aufnahmerad = alt.aufnahmerad;
         if (zufahrt) h.zufahrt = zufahrt;
+        const lpText = val("landeplatz");
+        const landeplatz = landeplatzLesen(lpText);
+        if (lpText && !landeplatz) return fail("Hubschrauberlandeplatz: bitte Koordinaten („48.41210,15.61480“) oder „kein“ angeben");
+        if (landeplatz) h.landeplatz = landeplatz;
         delete h.abteilungen;
         delete h.bereiche;
         store.upsert("hospitals", [h]);
