@@ -8,7 +8,7 @@ nef-99917;99/917;;NEF;NEF ÖAMTC;;;air-c17;ja;nein;24/7;99/017;;ÖAMTC-NEF, nur 
 nah-99018;99/018;Christophorus 18;NAH;NAH;;;air-c18;ja;nein;täglich Sonnenaufgang–Sonnenuntergang;;;nur tagsüber (Sonnenaufgang bis Sonnenuntergang)
 nef-99918;99/918;;NEF;NEF ÖAMTC;;;air-c18;ja;nein;24/7;99/018;;ÖAMTC-NEF, nur angemeldet, wenn der Hubschrauber nicht fliegen kann
 nef-55099;55/099;;NEF;NEF;;;nef-st-gmuend;ja;nein;24/7;;;Notarzt am Stützpunkt
-nef-64099;64/099;;NEF;NEF;;;nef-st-moedling;ja;nein;24/7;;;Funkrufname geschätzt · Notarzt am Stützpunkt
+nef-64099;64/099;;NEF;NEF;;;nef-st-moedling;ja;nein;24/7;;;Funkrufname aus öffentlich zugänglichen Daten · Notarzt am Stützpunkt
 napn1;APN1;;NEF;NEF;;;neu-pvz-wienerwald;ja;nein;täglich 08:00–23:00;;;APN1: DGKP/Notfallsanitäter NKV + Notarzt, als NEF geführt · Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n65603;65/603;;RTW;RTW-C;groß;;osm101647581;ja;nein;24/7;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 nef-70499;70/499;;NEF;NEF;;;osm11101232755;ja;nein;täglich 19:00–07:00;;;NEF-141 (Ärztefunkdienst 141), nur nachts · Funkrufname geschätzt · Notarzt am Stützpunkt
@@ -30,7 +30,7 @@ n65016;65/016;;KTW;KTW;;;osm1196783471;ja;nein;täglich 06:00–14:00;;;Daten un
 n65017;65/017;;KTW;KTW-B;;;osm1196783471;ja;nein;täglich 06:00–14:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n65022;65/022;;RTW;RTW;klein;;osm1196783471;ja;nein;täglich 10:00–20:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n65024;65/024;;KTW;KTW;;;osm1196783471;ja;nein;täglich 08:00–18:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
-nef-65099;65/099;;NEF;NEF;;;osm1196783471;ja;nein;24/7;;;Funkrufname geschätzt · Notarzt am Stützpunkt
+nef-65099;65/099;;NEF;NEF;;;osm1196783471;ja;nein;24/7;;;Funkrufname aus öffentlich zugänglichen Daten · Notarzt am Stützpunkt
 n65900;65/900;;BEL;BEL;;;osm1196783471;ja;nein;24/7;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n52401;52/401;;RTW;RTW-C;groß;;osm125822505;ja;nein;24/7;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n52402;52/402;;RTW;RTW;klein;;osm125822505;ja;nein;täglich 08:00–17:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
@@ -83,7 +83,7 @@ n77013;77/013;;KTW;KTW-B;;;osm150308151;ja;nein;Mo–Fr 08:00–18:00;;;Daten un
 n77014;77/014;;KTW;KTW;;;osm150308151;ja;nein;Mo–Fr 09:00–19:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n77015;77/015;;KTW;KTW-B;;;osm150308151;ja;nein;Mo–Fr 09:00–19:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n77032;77/032;;KTW;KTW;;;osm150308151;ja;nein;"täglich 18:00–04:00; Mo–Fr 06:00–14:00";;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
-nef-77099;77/099;;NEF;NEF;;;osm150308151;ja;nein;24/7;;;Funkrufname geschätzt · Notarzt am Stützpunkt
+nef-77099;77/099;;NEF;NEF;;;osm150308151;ja;nein;24/7;;;Funkrufname aus öffentlich zugänglichen Daten · Notarzt am Stützpunkt
 n77903;77/903;;BEL;BEL;;;osm150308151;ja;nein;24/7;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n52002;52/002;;RTW;RTW-C;groß;;osm1560087043;ja;nein;24/7;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n52382;52/382;;KTW;KTW-B;;;osm156175529;ja;nein;Mo–Fr 06:00–12:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
@@ -109,7 +109,7 @@ n53611;53/611;;KTW;KTW-B;;;osm26806369;ja;nein;Mo, Mi, Fr 15:00–01:00;;;Daten 
 n53613;53/613;;KTW;KTW;;;osm26806369;ja;nein;Di, Do 10:00–20:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n53614;53/614;;KTW;KTW-B;;;osm26806369;ja;nein;"Mo, Mi, Fr 05:30–15:30; Di, Do, Sa 06:00–16:00";;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n53615;53/615;;KTW;KTW-B;;;osm26806369;ja;nein;Mo–Fr 06:00–16:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
-nef-53699;53/699;;NEF;NEF;;;osm26806369;ja;nein;24/7;;;Notarzt am Stützpunkt
+nef-53699;53/699;;NEF;NEF;;;osm26806369;ja;nein;24/7;;;Funkrufname aus öffentlich zugänglichen Daten · Notarzt am Stützpunkt
 nef-62699;62/699;;NEF;NEF;;;osm268319830;ja;nein;täglich 18:00–06:00;;;Funkrufname geschätzt · Notarzt am Stützpunkt
 n71601;71/601;;RTW;RTW;klein;;osm269145928;ja;nein;24/7;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n71611;71/611;;KTW;KTW;;;osm269145928;ja;nein;Mo–Fr 08:00–15:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
@@ -133,7 +133,7 @@ n53006;53/006;;KTW;KTW;;;osm30557227;ja;nein;Mo–Fr 06:00–15:00;;;Daten ungep
 n53011;53/011;;KTW;KTW-B;;;osm30557227;ja;nein;Mo–Fr 08:00–18:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n53012;53/012;;KTW;KTW;;;osm30557227;ja;nein;Mo–Fr 09:00–19:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n53022;53/022;;BEL;BEL;;;osm30557227;ja;nein;24/7;;;Dienstzeit unbekannt – rund um die Uhr angenommen · Daten ungeprüft (öffentlich zugänglich, 10/2026)
-acn-80008;80/008 ACN;;ACN;ACN;;;osm30557227;ja;nein;24/7;;;ACN Bruck an der Leitha · erster ACN-Standort (Pilot seit 18.05.2020), am Rettungsstützpunkt des Roten Kreuzes
+acn-80008;80/008 ACN;;ACN;ACN;;;osm30557227;ja;nein;24/7;;;ACN Bruck an der Leitha · Funkrufname aus öffentlich zugänglichen Daten · erster ACN-Standort (Pilot seit 18.05.2020), am Rettungsstützpunkt des Roten Kreuzes
 n77060;77/060;;RTW;RTW;klein;;osm306795959;ja;nein;Mo–Fr 06:00–18:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n52441;52/441;;RTW;RTW-C;groß;;osm338055144;ja;nein;24/7;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n52007;52/007;;RTW;RTW;klein;;osm339318194;ja;nein;täglich 06:00–22:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
@@ -160,7 +160,7 @@ n52016;52/016;;KTW;KTW;;;osm35683540;ja;nein;Mo–Fr 08:00–17:00;;;Daten ungep
 n52017;52/017;;KTW;KTW;;;osm35683540;ja;nein;täglich 08:00–17:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n52018;52/018;;KTW;KTW-B;;;osm35683540;ja;nein;täglich 07:00–17:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n52019;52/019;;KTW;KTW-B;;;osm35683540;ja;nein;täglich 07:00–17:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
-nef-52099;52/099;;NEF;NEF;;;osm35683540;ja;nein;24/7;;;Funkrufname geschätzt · Notarzt am Stützpunkt
+nef-52099;52/099;;NEF;NEF;;;osm35683540;ja;nein;24/7;;;Funkrufname aus öffentlich zugänglichen Daten · Notarzt am Stützpunkt
 n52119;52/119;;BEL;BEL;;;osm35683540;ja;nein;Mo–Mi, Fr–So 00:00–24:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n52351;52/351;;RTW;RTW;klein;;osm35691584;ja;nein;täglich 06:00–18:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n52352;52/352;;RTW;RTW;klein;;osm35691584;ja;nein;24/7;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
@@ -173,7 +173,7 @@ n65018;65/018;;KTW;KTW-B;;;osm466387055;ja;nein;Mo–Fr 06:00–14:00;;;Daten un
 n65020;65/020;;KTW;KTW-B;;;osm466387055;ja;nein;Mo–Fr 06:00–16:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n65021;65/021;;KTW;KTW-B;;;osm466387055;ja;nein;Mo–Fr 06:00–14:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n65023;65/023;;RTW;RTW;klein;;osm466387055;ja;nein;24/7;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
-nef-65098;65/098;;NEF;NEF;;;osm466387055;ja;nein;24/7;;;Notarzt am Stützpunkt
+nef-65098;65/098;;NEF;NEF;;;osm466387055;ja;nein;24/7;;;Funkrufname aus öffentlich zugänglichen Daten · Notarzt am Stützpunkt
 n77050;77/050;;RTW;RTW;klein;;osm475957537;ja;nein;täglich 06:00–18:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n65502;65/502;;RTW;RTW;klein;;osm541686569;ja;nein;Mo–Fr 06:00–16:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n65503;65/503;;RTW;RTW;klein;;osm541686569;ja;nein;Mo–Fr 06:00–14:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
@@ -183,8 +183,7 @@ n65512;65/512;;KTW;KTW;;;osm541686569;ja;nein;Mo–Fr 06:00–14:00;;;Daten unge
 n52331;52/331;;KTW;KTW-B;;;osm574304122;ja;nein;Mo–Fr 09:00–15:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n52334;52/334;;RTW;RTW;klein;;osm574304122;ja;nein;Mo–Fr 00:00–24:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 nef-51099;51/099;;NEF;NEF;;;osm591992316;ja;nein;24/7;;kh006;Funkrufname geschätzt · Notarzt wird im Krankenhaus abgeholt
-acn-80002;80/002 ACN;;ACN;ACN;;;osm621328687;ja;nein;24/7;;;ACN Baden/Leobersdorf · Standort lt. OpenStreetMap
-acn-80009;80/009 ACN;;ACN;ACN;;;osm621328687;ja;nein;24/7;;;ACN Baden/Leobersdorf · zweite Einheit am Standort Baden/Leobersdorf (7 Einheiten an 6 Standorten lt. Land NÖ 10/2026)
+acn-80002;80/002 ACN;;ACN;ACN;;;osm621328687;ja;nein;24/7;;;ACN Baden/Leobersdorf · Funkrufname aus öffentlich zugänglichen Daten · Standort lt. OpenStreetMap
 n65019;65/019;;RTW;RTW;klein;;osm627333473;ja;nein;"Sa, So 08:00–20:00; Mo–Fr 06:00–18:00";;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n77006;77/006;;RTW;RTW;klein;;osm633425355;ja;nein;Mo–Fr 06:00–18:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n77030;77/030;;RTW;RTW-C;groß;;osm633425355;ja;nein;24/7;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)

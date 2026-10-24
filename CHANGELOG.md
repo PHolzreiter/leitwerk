@@ -4,8 +4,19 @@
 - **Neue Funkgruppen:** NÖ-05 (Mödling, Bruck an der Leitha, Schwechat, Baden Nord) und NÖ-06 (Wiener Neustadt, Neunkirchen, Baden Süd) sind auf der Startseite wählbar – mit eigenen Einsätzen und Funk
 - **194 neue Fahrzeuge** in beiden Gruppen: 52 RTW, 17 RTW-C, 118 KTW, 6 Bezirkseinsatzleiter, 1 NEF (APN1, PVZ Wienerwald) – mit Dienstplänen; Rotes Kreuz, Samariterbund, Sozialmedizinischer Dienst
 - Neue Dienststellen: Samariterbund Wiener Neustadt, SMD Aspang, PVZ Wienerwald Breitenfurt; „Rotes Kreuz“ in Himberg heißt jetzt Ortsstelle Himberg
-- Funkrufnamen angepasst: NEF Hainburg 53/699, NEF Aspang 65/098, ACN Bruck an der Leitha 80/008; neu die zweite ACN in Baden/Leobersdorf (80/009) – dafür entfällt die vermutete zweite ACN in Stockerau (80/007)
 - Die Daten sind öffentlich zugänglich, aber noch nicht geprüft – im Hinweis jedes Fahrzeugs vermerkt
+
+## 0.61.3 – Ein ACN je Stützpunkt
+- An jedem ACN-Stützpunkt steht nur noch ein Fahrzeug: die zweite Einheit in Stockerau (80/007) und in Baden/Leobersdorf (80/009) entfallen
+- ACN gibt es damit in St. Pölten (80/003), Stockerau (80/006), Waidhofen an der Thaya (80/004), Bruck an der Leitha (80/008), Baden/Leobersdorf (80/002) und Haag (80/005)
+
+## 0.61.2 – ACN-Funkrufnamen laut LEOSIM
+- ACN Bruck an der Leitha heißt jetzt **80/008** (vorher geschätzt 80/001)
+- ACN Baden/Leobersdorf behält 80/002 (jetzt laut LEOSIM statt geschätzt) und bekommt eine **zweite Einheit 80/009** – im Funk heißen beide dann nach dem Funkrufnamen, damit sie eindeutig bleiben
+
+## 0.61.1 – NEF-Funkrufnamen im Industrieviertel
+- NEF Hainburg heißt jetzt **53/699** (vorher geschätzt 53/499), NEF Aspang **65/098** (vorher geschätzt 65/499)
+- NEF Baden 52/099, Mödling 64/099, Neunkirchen 65/099 und Schwechat 77/099 bleiben gleich, gelten aber nicht mehr als geschätzt (Hinweis „Funkrufname laut LEOSIM“)
 
 ## 0.61.0 – Einstellungen und Dialoge im neuen Design
 - Einstellungen, Bereitschafts-Check und alle Rückfragen sehen jetzt aus wie die Startseite und die Spielstände: dunkelblaues Glas (bzw. hell), gleiche Rundungen, Auswahllisten, Schalter und Knöpfe im Blauverlauf, Navigation wie die Startseiten-Leiste, Abschnitte als Karten

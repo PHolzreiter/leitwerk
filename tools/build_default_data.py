@@ -406,13 +406,15 @@ def nef_noe(vehicles: list[dict], stations: list[dict]) -> None:
             teile.append("RK/ASB geteilt")
         if r["funkrufname_status"].strip() == "geschätzt":
             teile.append("Funkrufname geschätzt")
+        elif r["funkrufname_status"].strip() == "öffentliche Daten":
+            teile.append("Funkrufname aus öffentlich zugänglichen Daten")
         teile.append("Notarzt wird im Krankenhaus abgeholt" if v["na_abholung"] else "Notarzt am Stützpunkt")
         v["hinweis"] = " · ".join(teile)
 
 
 def acn_noe(vehicles: list[dict], stations: list[dict]) -> None:
-    """ACN (Acute Community Nurse, Notruf NÖ): 6 Standorte, 7 Einheiten (Land NÖ, 08.10.2026), je eine DGKP mit
-    Notfallsanitäter-Ausbildung allein im PKW. Funkrufnamen 80/xxx – soweit nicht aus Pauls Daten: geschätzt."""
+    """ACN (Acute Community Nurse, Notruf NÖ): 6 Standorte (Land NÖ, 08.10.2026), je Standort genau ein Fahrzeug, je eine DGKP mit
+    Notfallsanitäter-Ausbildung allein im PKW. Funkrufnamen 80/xxx – Pauls Daten, öffentlich zugängliche Daten oder geschätzt."""
     st_ids = {x["id"] for x in stations}
     nach_funk = {re.sub(r"\s*ACN$", "", v["funkrufname"].strip()): v for v in vehicles if "ACN" in v["funkrufname"].upper()}
     for r in read_csv(SRC / "acn_noe.csv"):
@@ -426,6 +428,8 @@ def acn_noe(vehicles: list[dict], stations: list[dict]) -> None:
         teile = [f"ACN {r['standort']}"]
         if r["funkrufname_status"] == "geschätzt":
             teile.append("Funkrufname geschätzt")
+        elif r["funkrufname_status"] == "öffentliche Daten":
+            teile.append("Funkrufname aus öffentlich zugänglichen Daten")
         if r["hinweis"]:
             teile.append(r["hinweis"])
         v.update({"kategorie": "ACN", "typ": "ACN", "dienststelle": r["dienststelle"], "aktiv": "ja", "nachtflug": "nein",
