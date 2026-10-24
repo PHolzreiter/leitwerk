@@ -602,6 +602,7 @@ export function startseiteZeigen(fertig?: () => void, opt: { zurueck?: boolean }
   function render() {
     const gast = binGast();
     root.classList.toggle("gast", gast);
+    root.classList.toggle("multi-an", modus === "multi");
     const st = s();
     const fg = st.funkgruppe ?? "NÖ-03";
     fgSel.value = fg;

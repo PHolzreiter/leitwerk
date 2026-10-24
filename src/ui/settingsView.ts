@@ -1,5 +1,6 @@
 /** Reiter „Einstellungen“: Statusmodell, Einsatzaufkommen, Stufen-Zuordnung, Fahrzeiten, Flugrettung. */
-import { ordnerPfad, ordnerZeigen } from "../net/spielstandOrdner";
+import { ordnerZeigen } from "../net/spielstandOrdner";
+import { ABLAGE_INFO, ablageBasis, ablageZeigen, type AblageOrdner } from "../net/ablage";
 import { spielstaendeOeffnen } from "./spielstaende";
 import { fallEditorOeffnen } from "./fallEditor";
 import { store } from "../data/store";
@@ -598,20 +599,34 @@ export function createSettingsView(container: HTMLElement, teil: "simulation" | 
     );
     buildAppSection(section("Programm"));
 
-    // Spielstände: Ordner und Übersicht
-    const ssSec = section("Spielstände", "Gespeicherte Spiele liegen als Dateien im Ordner Dokumente/LeitWerk/Spielstände – dort kannst du sie auch sichern oder weitergeben.");
+    // Eigene Dateien in Dokumente/LeitWerk: Spielstände und alles Importierte
+    const ssSec = section(
+      "Eigene Dateien & Spielstände",
+      "Spielstände und alles, was du selbst dazugibst (Abfrageschema, Codelisten, Daten, Fälle, Töne, Designs, Anordnungen), liegt zusätzlich als Datei in Dokumente/LeitWerk – je Art in einem eigenen Ordner. Fehlt beim Start das Abfrageschema, wird es von dort wieder geladen.",
+    );
     const ssPfad = el("div", { class: "muted small" }, "…");
-    void ordnerPfad().then((p) => (ssPfad.textContent = p));
+    void ablageBasis().then((p) => (ssPfad.textContent = p));
+    const ssListe = el("ul", { class: "ablage-liste" });
+    for (const [o, t] of Object.entries({ Spielstände: "gespeicherte Spiele", ...ABLAGE_INFO })) {
+      const li = el("li");
+      li.append(el("b", {}, o), el("span", { class: "muted" }, ` – ${t}`));
+      if (inTauri()) {
+        const b = el("button", { class: "btn small", type: "button" }, "Öffnen");
+        b.addEventListener("click", () => void (o === "Spielstände" ? ordnerZeigen() : ablageZeigen(o as AblageOrdner)).catch((e) => toast(String(e?.message ?? e), "error")));
+        li.appendChild(b);
+      }
+      ssListe.appendChild(li);
+    }
     const ssKn = el("div", { class: "row-btns" });
     const ssUeb = el("button", { class: "btn small primary", type: "button" }, "Spielstände ansehen …");
     ssUeb.addEventListener("click", () => spielstaendeOeffnen({ warnen: sim.state.einsaetze.length > 0 }));
     ssKn.appendChild(ssUeb);
     if (inTauri()) {
-      const ssOrd = el("button", { class: "btn small", type: "button" }, "Ordner öffnen");
-      ssOrd.addEventListener("click", () => void ordnerZeigen().catch((e) => toast(String(e?.message ?? e), "error")));
+      const ssOrd = el("button", { class: "btn small", type: "button" }, "Ordner LeitWerk öffnen");
+      ssOrd.addEventListener("click", () => void ablageZeigen().catch((e) => toast(String(e?.message ?? e), "error")));
       ssKn.appendChild(ssOrd);
     }
-    ssSec.append(ssPfad, ssKn);
+    ssSec.append(ssPfad, ssListe, ssKn);
 
     // Status von Straßennetz/Adressen
     const gSec = section("Straßennetz und Adressen");

@@ -1,4 +1,5 @@
 /** CSV-Import mit Vorschau, Fehlerliste und Wahl der Datenart. */
+import { ablageName, ablageSichern } from "../net/ablage";
 import { KIND_LABEL, KINDS, type Kind } from "../data/model";
 import { detectKind, importCsv, type ImportResult } from "../data/schema";
 import { store } from "../data/store";
@@ -96,6 +97,7 @@ export async function startImport(defaultKind: Kind, onDone: (kind: Kind) => voi
         onClick: () => {
           if (!result || result.records.length === 0) return false;
           store.upsert(kind, result.records, mode === "ersetzen");
+          ablageSichern(kind === "codes" ? "Codelisten" : "Daten", ablageName(file.name, "csv"), file.text);
           toast(`${result.records.length} ${KIND_LABEL[kind]} importiert`);
           onDone(kind);
           return true;
@@ -198,6 +200,7 @@ export function schemaUebernehmen(schema: Schema, dateiname: string): void {
   }));
   store.setSchema(schema);
   store.upsert("codes", codes);
+  ablageSichern("Abfrageschema", ablageName(dateiname, "json"), JSON.stringify(schema));
   // Einsatzstufen aus der Datei, die es noch nicht gibt
   const neu = (schema.einsatzstufen ?? []).filter((x) => x?.stufe && !store.settings.stufen.some((st) => st.stufe === x.stufe));
   if (neu.length) {

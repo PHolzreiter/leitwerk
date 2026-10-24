@@ -7,6 +7,7 @@
  * zurücksetzen). Eigene Fälle kann jeder anlegen; Fallpakete lassen sich exportieren und importieren.
  * Optional entwirft die KI einen Fall aus einer kurzen Beschreibung – alles bleibt danach von Hand änderbar.
  */
+import { ablageName, ablageSichern } from "../net/ablage";
 import {
   alleFaelle,
   eingebauterFall,
@@ -1533,6 +1534,7 @@ function fensterBauen(): { zeigen(id?: string): void } {
     const d = await pickTextFile(".json");
     if (!d) return;
     const r = fallpaketImport(d.text, adminFrei);
+    if (r.neu || r.ersetzt) ablageSichern("Fälle", ablageName(d.name, "json"), d.text);
     if (r.fehler.length && !r.neu && !r.ersetzt) {
       openDialog({ title: "Import nicht möglich", body: el("pre", { class: "fe-importfehler" }, r.fehler.slice(0, 20).join("\n")), actions: [{ label: "OK", kind: "primary" }] });
       return;

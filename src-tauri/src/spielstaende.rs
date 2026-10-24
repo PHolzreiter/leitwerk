@@ -14,15 +14,29 @@ const ENDUNG: &str = "leitwerk";
 /// So viel vom Anfang der Datei reicht für die Infos (stehen ganz vorne).
 const KOPF_BYTES: usize = 16 * 1024;
 
-fn ordner(app: &tauri::AppHandle) -> Result<PathBuf, String> {
-    let basis = app
+/// Alle Ordner, die LeitWerk in „Dokumente/LeitWerk“ anlegt
+const ABLAGEN: &[&str] = &["Spielstände", "Abfrageschema", "Codelisten", "Daten", "Fälle", "Töne", "Designs", "Anordnungen"];
+
+fn basis(app: &tauri::AppHandle) -> Result<PathBuf, String> {
+    let doku = app
         .path()
         .document_dir()
         .or_else(|_| app.path().home_dir())
         .map_err(|e| format!("Dokumente-Ordner nicht gefunden: {e}"))?;
-    let dir = basis.join("LeitWerk").join("Spielstände");
+    Ok(doku.join("LeitWerk"))
+}
+
+fn unterordner(app: &tauri::AppHandle, name: &str) -> Result<PathBuf, String> {
+    if !ABLAGEN.contains(&name) {
+        return Err(format!("Unbekannter Ordner {name}"));
+    }
+    let dir = basis(app)?.join(name);
     fs::create_dir_all(&dir).map_err(|e| format!("Ordner {} nicht anlegbar: {e}", dir.display()))?;
     Ok(dir)
+}
+
+fn ordner(app: &tauri::AppHandle) -> Result<PathBuf, String> {
+    unterordner(app, "Spielstände")
 }
 
 /// Nur ein Dateiname (keine Pfade), sonst Fehler
@@ -171,13 +185,85 @@ pub fn spielstand_importieren(app: tauri::AppHandle, pfad: String) -> Result<Str
 /// Öffnet den Spielstand-Ordner im Finder / Explorer.
 #[tauri::command]
 pub fn spielstaende_zeigen(app: tauri::AppHandle) -> Result<(), String> {
-    let dir = ordner(&app)?;
+    zeigen(&ordner(&app)?)
+}
+
+// ------------------------------------------------------------------ Ablage für weitere Dateien
+
+#[derive(Serialize)]
+pub struct AblageDatei {
+    datei: String,
+    groesse: u64,
+    geaendert: u64,
+}
+
+/// Legt alle Ordner an und gibt den Pfad von „Dokumente/LeitWerk“ zurück
+#[tauri::command]
+pub fn ablage_basis(app: tauri::AppHandle) -> Result<String, String> {
+    for n in ABLAGEN {
+        unterordner(&app, n)?;
+    }
+    basis(&app).map(|p| p.display().to_string())
+}
+
+/// Speichert eine Datei (überschreibt eine gleichnamige); gibt den Dateinamen zurück
+#[tauri::command]
+pub fn ablage_schreiben(app: tauri::AppHandle, ordner: String, name: String, daten: Vec<u8>) -> Result<String, String> {
+    let dir = unterordner(&app, &ordner)?;
+    let name = name.trim().to_string();
+    let ziel = datei_in(&dir, &name)?;
+    let tmp = dir.join(format!(".{name}.tmp"));
+    fs::write(&tmp, daten).map_err(|e| format!("Speichern fehlgeschlagen: {e}"))?;
+    fs::rename(&tmp, &ziel).map_err(|e| format!("Speichern fehlgeschlagen: {e}"))?;
+    Ok(name)
+}
+
+#[tauri::command]
+pub fn ablage_liste(app: tauri::AppHandle, ordner: String) -> Result<Vec<AblageDatei>, String> {
+    let dir = unterordner(&app, &ordner)?;
+    let mut out = Vec::new();
+    for e in fs::read_dir(&dir).map_err(|e| e.to_string())?.flatten() {
+        let n = e.file_name().to_string_lossy().to_string();
+        if n.starts_with('.') || !e.path().is_file() {
+            continue;
+        }
+        let meta = match e.metadata() {
+            Ok(m) => m,
+            Err(_) => continue,
+        };
+        let geaendert = meta.modified().ok().and_then(|t| t.duration_since(UNIX_EPOCH).ok()).map(|d| d.as_millis() as u64).unwrap_or(0);
+        out.push(AblageDatei { datei: n, groesse: meta.len(), geaendert });
+    }
+    Ok(out)
+}
+
+#[tauri::command]
+pub fn ablage_lesen(app: tauri::AppHandle, ordner: String, name: String) -> Result<String, String> {
+    let p = datei_in(&unterordner(&app, &ordner)?, &name)?;
+    fs::read_to_string(&p).map_err(|e| format!("Datei nicht lesbar: {e}"))
+}
+
+/// Öffnet „Dokumente/LeitWerk“ (oder einen Unterordner) im Finder / Explorer
+#[tauri::command]
+pub fn ablage_zeigen(app: tauri::AppHandle, ordner: Option<String>) -> Result<(), String> {
+    let dir = match ordner {
+        Some(o) => unterordner(&app, &o)?,
+        None => {
+            let b = basis(&app)?;
+            fs::create_dir_all(&b).map_err(|e| e.to_string())?;
+            b
+        }
+    };
+    zeigen(&dir)
+}
+
+fn zeigen(dir: &Path) -> Result<(), String> {
     #[cfg(target_os = "macos")]
     let prog = "open";
     #[cfg(target_os = "windows")]
     let prog = "explorer";
     #[cfg(all(not(target_os = "macos"), not(target_os = "windows")))]
     let prog = "xdg-open";
-    std::process::Command::new(prog).arg(&dir).spawn().map_err(|e| format!("Ordner konnte nicht geöffnet werden: {e}"))?;
+    std::process::Command::new(prog).arg(dir).spawn().map_err(|e| format!("Ordner konnte nicht geöffnet werden: {e}"))?;
     Ok(())
 }

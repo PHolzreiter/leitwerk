@@ -47,6 +47,8 @@ import { alleAnrufe, anrufAnnehmen, anrufAuflegen, anrufBeobachterStarten, anruf
 import { anordnungLaden, arbeitsplatzStarten, panelOeffnen, panelZeigen, VORLAGEN, vorlageAnwenden } from "./ui/ws/arbeitsplatz";
 import { IST_HAUPT } from "./ui/ws/bus";
 import { startseiteOffen, startseiteZeigen } from "./ui/startseite";
+import { ablageAbgleichen } from "./ui/ablageStart";
+import * as ablage from "./net/ablage";
 import * as spielstandOrdner from "./net/spielstandOrdner";
 import { updateDienstStarten, updateInstallieren, updateTesten } from "./ui/updateDienst";
 import { waehle } from "./ui/ws/auswahl";
@@ -63,7 +65,7 @@ import { fallHinweise, faellePruefen } from "./abfrage/faellePruefen";
 dienstHoverEinrichten();
 
 // Für automatische Tests im Browser (…/?debug): Zugriff auf Simulation und Daten
-if (location.search.includes("debug")) Object.assign(window, { __lw: { sim, store, sprachTest, codesystemLaden: (s: Schema) => schemaUebernehmen(s, "test.json"), faellePruefen: () => faellePruefen(store.schema), fallHinweise, ohneFrageEcho, fuellwortDosis, ohneRollentausch, faelle: { alleFaelle, fallSpeichern, fallLoeschen, fallpaketExport, fallpaketImport, fallAktivSetzen }, fallEditorOeffnen, entwurfAusKi, sprechFrage, systemPrompt, kontext, erinnerung, kiVerlauf, ohnePatientWort, bereinigen, satzEnde, inAtemnot, kiAntwortNeu, kiTest, probe: probeGespraech, vorwaermen, eroeffnen, nachrichtArt, ortKandidaten, testlauf: { auftraegeFuer, ktAuftraege, testlaufAusfuehren, testlaufDateien, testlaufDialog, zipOhneKompression }, kt: { ktPrompt, ktPruefen, ktZusammenfassungFalsch }, anruferAntwort, verstehen: { themenErkennen, antwortKern, antwortPruefen, kernAntwort, schemaFrageZu }, kiPrefsSetzen: setKiPrefs, panelZeigen, funk: { funkPruefen, zerlegen, zusammensetzen, funkSpruchErzeugen, lageWissen }, antwortOhneKi, anruferWaehlen, kh: { akvZustand, AKV_SPALTEN_AK, akutVon }, orte: { poiKategorien, ortGewicht, kategorienFuerOrtArt }, setzePers, stellen: { laden: stellenLaden }, suche: searchAddress, zeiten: { offenUm, istFeiertag, katOffen, katKtOffen }, zufahrt: { lesen: zufahrtLesen, text: zufahrtText, bei: khZufahrtBei }, landeplatz: { lesen: landeplatzLesen }, fuss: { anStrasse, besatzungBei, personenBei }, schemaFkt: { fragenImAblauf, bestimmeCode }, startseite: { zeigen: startseiteZeigen, offen: startseiteOffen }, update: { testen: updateTesten, installieren: updateInstallieren }, spielstaende: spielstandOrdner } });
+if (location.search.includes("debug")) Object.assign(window, { __lw: { sim, store, sprachTest, codesystemLaden: (s: Schema) => schemaUebernehmen(s, "test.json"), faellePruefen: () => faellePruefen(store.schema), fallHinweise, ohneFrageEcho, fuellwortDosis, ohneRollentausch, faelle: { alleFaelle, fallSpeichern, fallLoeschen, fallpaketExport, fallpaketImport, fallAktivSetzen }, fallEditorOeffnen, entwurfAusKi, sprechFrage, systemPrompt, kontext, erinnerung, kiVerlauf, ohnePatientWort, bereinigen, satzEnde, inAtemnot, kiAntwortNeu, kiTest, probe: probeGespraech, vorwaermen, eroeffnen, nachrichtArt, ortKandidaten, testlauf: { auftraegeFuer, ktAuftraege, testlaufAusfuehren, testlaufDateien, testlaufDialog, zipOhneKompression }, kt: { ktPrompt, ktPruefen, ktZusammenfassungFalsch }, anruferAntwort, verstehen: { themenErkennen, antwortKern, antwortPruefen, kernAntwort, schemaFrageZu }, kiPrefsSetzen: setKiPrefs, panelZeigen, funk: { funkPruefen, zerlegen, zusammensetzen, funkSpruchErzeugen, lageWissen }, antwortOhneKi, anruferWaehlen, kh: { akvZustand, AKV_SPALTEN_AK, akutVon }, orte: { poiKategorien, ortGewicht, kategorienFuerOrtArt }, setzePers, stellen: { laden: stellenLaden }, suche: searchAddress, zeiten: { offenUm, istFeiertag, katOffen, katKtOffen }, zufahrt: { lesen: zufahrtLesen, text: zufahrtText, bei: khZufahrtBei }, landeplatz: { lesen: landeplatzLesen }, fuss: { anStrasse, besatzungBei, personenBei }, schemaFkt: { fragenImAblauf, bestimmeCode }, startseite: { zeigen: startseiteZeigen, offen: startseiteOffen }, update: { testen: updateTesten, installieren: updateInstallieren }, spielstaende: spielstandOrdner, ablage: { ...ablage, abgleichen: ablageAbgleichen } } });
 
 async function watchGeo(): Promise<void> {
   const out = document.getElementById("geo-status");
@@ -176,6 +178,7 @@ async function init(): Promise<void> {
     });
     sim.ich = mp.ich;
     updateDienstStarten();
+    void ablageAbgleichen();
   } else {
     if (hinweis) hinweis.textContent = "Verbinde mit dem Hauptfenster …";
     await nebenfensterVerbinden();
@@ -220,11 +223,18 @@ async function init(): Promise<void> {
     anrufBeobachterStarten();
     soundBeobachterStarten(sim, () => sim.ich?.name ?? mp.ich.name);
     funkVorlesenStarten(sim, (g) => !g.fuehrer || sim.mode === "solo" || g.fuehrer.pid === (sim.ich?.pid ?? mp.ich.pid));
-    void nebenfensterWiederherstellen();
-    // Startseite bei jedem Programmstart (automatische Tests: nur mit ?start)
+    // Startseite bei jedem Programmstart (automatische Tests: nur mit ?start).
+    // Weitere Programmfenster (zweiter Bildschirm) gehen erst auf, wenn das Spiel beginnt.
     const params = new URLSearchParams(location.search);
-    if (!navigator.webdriver || params.has("start")) startseiteZeigen(() => einfuehrung());
-    else einfuehrung();
+    if (!navigator.webdriver || params.has("start"))
+      startseiteZeigen(() => {
+        void nebenfensterWiederherstellen();
+        einfuehrung();
+      });
+    else {
+      void nebenfensterWiederherstellen();
+      einfuehrung();
+    }
   }
 }
 

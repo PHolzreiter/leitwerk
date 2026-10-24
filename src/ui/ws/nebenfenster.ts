@@ -159,8 +159,10 @@ export function hauptfensterStarten(): void {
 }
 
 /** Beim Start: Nebenfenster vom letzten Mal wieder öffnen */
+let wiederhergestellt = false;
 export async function nebenfensterWiederherstellen(): Promise<void> {
-  if (!IST_HAUPT) return;
+  if (!IST_HAUPT || wiederhergestellt) return;
+  wiederhergestellt = true;
   let ids: string[] = [];
   try {
     ids = JSON.parse(localStorage.getItem(OFFEN_KEY) ?? "[]") as string[];

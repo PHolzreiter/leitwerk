@@ -1,5 +1,12 @@
 # Änderungen
 
+## 0.60.0 – Eigene Dateien in Dokumente/LeitWerk, Startseite ohne Bildlauf
+- Beim Programmstart öffnet sich nur das Hauptmenü – weitere Programmfenster (zweiter Bildschirm) gehen erst auf, wenn das Spiel beginnt
+- Startseite im Multiplayer: die rechte Spalte bekommt die volle Höhe und wird etwas kompakter, die Kachelleiste unten wird mit einer Animation schmäler – kein Bildlauf mehr
+- Alles, was du selbst dazugibst, liegt jetzt auch als Datei in **Dokumente/LeitWerk**, je Art in einem eigenen Ordner: Abfrageschema, Codelisten, Daten (CSV), Fälle, Töne, Designs, Anordnungen (dazu wie bisher Spielstände)
+- Ein bereits geladenes Abfrageschema wird beim ersten Start in den Ordner gelegt; fehlt es einmal (z. B. nach einer Neuinstallation), lädt LeitWerk es von dort automatisch
+- Einstellungen → Programm & Updates → „Eigene Dateien & Spielstände“: alle Ordner mit „Öffnen“
+
 ## 0.59.0 – Spielstände-Ordner, aufgeräumte Einstellungen, einheitliche Startseite
 - **Spielstände** liegen jetzt als Dateien im Ordner **Dokumente/LeitWerk/Spielstände**. „Spielstand laden“ zeigt eine Übersicht mit Name, Speicherzeit, Funkgruppe, Spielzeit, Einsätzen (offen), Wetter und Mitspielern – mit Suche, Umbenennen, Exportieren (zum Weitergeben), Löschen und der automatischen Sicherung ganz oben
 - **Spielstand importieren …** öffnet die Dateiauswahl; importierte Spielstände werden in den Ordner kopiert (nur echte LeitWerk-Spielstände)

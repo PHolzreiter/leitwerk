@@ -61,7 +61,7 @@ const SEITEN: (Seite & { stichworte?: string })[] = [
   { id: "status", gruppe: "leitstelle", label: "Statusmodell", info: "Nummern, Namen, Farben der Status", quelle: "simulation", abschnitte: ["Statusmodell"], stichworte: "status statusmodell nummer farbe" },
 
   { id: "karten", gruppe: "programm", label: "Kartenpakete", info: "Straßen, Detailkarten, Gelände", quelle: "programm", abschnitte: ["Kartenpakete", "Straßennetz und Adressen"], stichworte: "karte download paket straßennetz adressen routing offline" },
-  { id: "programm", gruppe: "programm", label: "Programm & Updates", info: "Version, Updates, Speicherorte, Spielstände", quelle: "programm", abschnitte: ["Programm", "Spielstände"], stichworte: "version update aktualisieren speicherort ordner spielstand spielstände dokumente" },
+  { id: "programm", gruppe: "programm", label: "Programm & Updates", info: "Version, Updates, eigene Dateien und Spielstände", quelle: "programm", abschnitte: ["Programm", "Eigene Dateien & Spielstände"], stichworte: "version update aktualisieren speicherort ordner spielstand spielstände dokumente eigene dateien abfrageschema sichern backup" },
 ];
 
 /** Was man in den Datenbereichen findet (für die Suche) */

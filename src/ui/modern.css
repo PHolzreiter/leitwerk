@@ -386,3 +386,8 @@
 .es .set-grid > input[type="checkbox"] { width: 18px; min-height: 0; justify-self: end; border: 0; padding: 0; margin: 14px 0; }
 .es .set-sec { overflow-x: auto; }
 .es .set-sec > p.muted { max-width: 760px; }
+
+.ablage-liste { list-style: none; margin: 10px 0 12px; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.ablage-liste li { display: flex; align-items: center; gap: 4px; padding: 6px 0; border-bottom: 1px solid var(--m-rand); font-size: 13px; }
+.ablage-liste li span { flex: 1; }
+.ablage-liste li:last-child { border-bottom: 0; }

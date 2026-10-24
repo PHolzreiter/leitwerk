@@ -1,4 +1,5 @@
 /** Einstellungen → Persönlich: Aussehen, Größe, Anrufe, Töne, Kurzbefehle, Statusfarben, Anordnungen. */
+import { ablageName, ablageSichern } from "../../net/ablage";
 import { kiPrefs, setKiPrefs } from "../../abfrage/ki";
 import { inTauri, pickTextFile, saveTextFile } from "../../platform";
 import { sim } from "../../sim/engine";
@@ -213,6 +214,7 @@ export function persoenlichView(container: HTMLElement): { refresh(): void } {
       try {
         const d = JSON.parse(f.text);
         if (!d || d.leitwerkDesign !== 1) throw new Error("Das ist keine LeitWerk-Design-Datei");
+        ablageSichern("Designs", ablageName(f.name, "json"), f.text);
         setzePers({
           farbVorlage: typeof d.farbVorlage === "string" ? d.farbVorlage : "noe",
           farben: { hell: { ...(d.farben?.hell ?? {}) }, dunkel: { ...(d.farben?.dunkel ?? {}) } },
@@ -566,6 +568,7 @@ export function persoenlichView(container: HTMLElement): { refresh(): void } {
       if (!f) return;
       try {
         const d = await dateiHinzufuegen(f, fuer);
+        ablageSichern("Töne", f.name, await f.arrayBuffer());
         toast(`„${d.name}“ gespeichert (${d.sek.toFixed(1)} s)`);
         render();
       } catch (e) {
@@ -702,6 +705,7 @@ export function persoenlichView(container: HTMLElement): { refresh(): void } {
       if (!f) return;
       try {
         const a2 = anordnungImportieren(f.text);
+        ablageSichern("Anordnungen", ablageName(f.name, "json"), f.text);
         toast(`Anordnung „${a2.name}“ übernommen`);
       } catch (e) {
         toast(String((e as Error).message ?? e), "error");
