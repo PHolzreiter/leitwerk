@@ -1,5 +1,12 @@
 # Änderungen
 
+## 0.61.0 – Einstellungen und Dialoge im neuen Design
+- Einstellungen, Bereitschafts-Check und alle Rückfragen sehen jetzt aus wie die Startseite und die Spielstände: dunkelblaues Glas (bzw. hell), gleiche Rundungen, Auswahllisten, Schalter und Knöpfe im Blauverlauf, Navigation wie die Startseiten-Leiste, Abschnitte als Karten
+- Bereitschafts-Check: jeder Prüfpunkt als Karte mit farbigem Symbol
+- Startseite im Multiplayer: die Kachelleiste wird nur noch schmäler, wenn die Lobby den Platz wirklich braucht (auf großen Bildschirmen bleibt sie breit)
+- Wetter „Realistisch“: ohne Verbindung zum Wetterdienst ausgegraut und nicht wählbar (war es gewählt, gilt „Normal“); der Hinweis „braucht Internet“ entfällt
+- Unten links nur noch Version und „Nur eine Simulation – keine echten Einsätze.“
+
 ## 0.60.0 – Eigene Dateien in Dokumente/LeitWerk, Startseite ohne Bildlauf
 - Beim Programmstart öffnet sich nur das Hauptmenü – weitere Programmfenster (zweiter Bildschirm) gehen erst auf, wenn das Spiel beginnt
 - Startseite im Multiplayer: die rechte Spalte bekommt die volle Höhe und wird etwas kompakter, die Kachelleiste unten wird mit einer Animation schmäler – kein Bildlauf mehr

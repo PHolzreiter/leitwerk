@@ -18,7 +18,7 @@ import { inTauri } from "../platform";
 import { hasCodes } from "../sim/codes";
 import { sim, type Berechtigung } from "../sim/engine";
 import { FUNKGRUPPEN, type FunkgruppeId } from "../sim/funkgruppen";
-import { echtwetterQuelle } from "../sim/echtwetter";
+import { echtwetterQuelle, wetterdienstErreichbar } from "../sim/echtwetter";
 import { geoStatus } from "../sim/geo";
 import type { Settings } from "../sim/settings";
 import { WETTER_LABEL, type WetterLage } from "../sim/weather";
@@ -242,7 +242,7 @@ export function startseiteZeigen(fertig?: () => void, opt: { zurueck?: boolean }
       <button class="st-update" hidden>${ico("update")}<span><b>Update verfügbar</b><small></small></span><em>Jetzt laden</em></button>
       <div class="st-fuss">
         <div>LeitWerk ${esc(version)}</div>
-        <div class="st-leise">Privates Projekt · nicht offiziell</div>
+        <div class="st-leise">Nur eine Simulation – keine echten Einsätze.</div>
       </div>
     </aside>
     <main class="st-mitte">
@@ -365,8 +365,27 @@ export function startseiteZeigen(fertig?: () => void, opt: { zurueck?: boolean }
     const t = startzeitArt === "fest" && zeitIn.value ? new Date(zeitIn.value).getTime() : Date.now();
     const q = echtwetterQuelle(t);
     if (!q) return "Für dieses Datum gibt es noch kein echtes Wetter – es wird simuliert";
-    return q === "archiv" ? "Echtes Wetter von damals (Wetterarchiv, braucht Internet)" : "Echtes Wetter für die Funkgruppe (Open-Meteo, braucht Internet)";
+    return q === "archiv" ? "Echtes Wetter von damals (Wetterarchiv)" : "Echtes Wetter für die Funkgruppe, Stunde für Stunde";
   };
+  // Ohne Verbindung zum Wetterdienst ist „Realistisch“ ausgegraut
+  let echtOk: boolean | null = null;
+  const echtPruefen = async (neu = false) => {
+    const ok = await wetterdienstErreichbar(neu);
+    if (!root.isConnected) return;
+    echtOk = ok;
+    if (!ok && wetterArt() === "echt" && !binGast()) wetterWaehlen("normal");
+    render();
+  };
+  void echtPruefen();
+  const online = () => void echtPruefen(true);
+  window.addEventListener("online", online);
+  window.addEventListener("offline", online);
+  const echtTakt = window.setInterval(() => void echtPruefen(true), 30_000);
+  aus.push(() => {
+    window.removeEventListener("online", online);
+    window.removeEventListener("offline", online);
+    clearInterval(echtTakt);
+  });
   wLage.addEventListener("change", () => setzen({ wetterFestLage: wLage.value as WetterLage }));
   wTemp.addEventListener("change", () => setzen({ wetterFestTemp: Math.max(-25, Math.min(40, Number(wTemp.value) || 0)) }));
 
@@ -382,9 +401,33 @@ export function startseiteZeigen(fertig?: () => void, opt: { zurueck?: boolean }
         i.style.transform = `translateX(${b.offsetLeft}px)`;
       }
     });
-  const ro = new ResizeObserver(() => schieber());
+  // Kachelleiste nur schmäler machen, wenn die rechte Spalte (Lobby) sonst darüber reicht
+  const platzPruefen = () => {
+    const re = root.querySelector<HTMLElement>(".st-rechts");
+    const ka = root.querySelector<HTMLElement>(".st-kacheln");
+    if (!re || !ka) return;
+    if (!root.classList.contains("multi-an") || getComputedStyle(re).contain === "none") {
+      root.classList.remove("kacheln-eng");
+      return;
+    }
+    // Unterkante des Inhalts (nicht der Spalte – die reicht im Multiplayer immer bis ganz unten)
+    let unten = 0;
+    for (const k of re.children) if ((k as HTMLElement).offsetParent !== null) unten = Math.max(unten, k.getBoundingClientRect().bottom + re.scrollTop);
+    const oben = ka.getBoundingClientRect().top;
+    root.classList.toggle("kacheln-eng", unten > oben - 10);
+  };
+  const ro = new ResizeObserver(() => {
+    schieber();
+    platzPruefen();
+  });
   ro.observe(root);
   aus.push(() => ro.disconnect());
+  const mo = new MutationObserver(() => requestAnimationFrame(platzPruefen));
+  queueMicrotask(() => {
+    const re = root.querySelector(".st-rechts");
+    if (re) mo.observe(re, { childList: true, subtree: true });
+  });
+  aus.push(() => mo.disconnect());
 
   // ---------------- Kacheln (echte Zahlen)
   const kacheln = () => {
@@ -603,6 +646,8 @@ export function startseiteZeigen(fertig?: () => void, opt: { zurueck?: boolean }
     const gast = binGast();
     root.classList.toggle("gast", gast);
     root.classList.toggle("multi-an", modus === "multi");
+    requestAnimationFrame(platzPruefen);
+    setTimeout(platzPruefen, 500);
     const st = s();
     const fg = st.funkgruppe ?? "NÖ-03";
     fgSel.value = fg;
@@ -620,6 +665,9 @@ export function startseiteZeigen(fertig?: () => void, opt: { zurueck?: boolean }
     });
     $(".st-wetter-fest").hidden = wArt !== "fest";
     $(".st-wetter-info").textContent = wetterInfo();
+    const echtB = $<HTMLButtonElement>('.st-seg[data-seg="wetter"] button[data-v="echt"]');
+    echtB.disabled = echtOk === false;
+    echtB.title = echtOk === false ? "Keine Verbindung zum Wetterdienst – echtes Wetter gerade nicht verfügbar" : "Echtes Wetter für die Funkgruppe";
     wLage.value = st.wetterFestLage ?? "klar";
     wTemp.value = String(st.wetterFestTemp ?? 18);
     for (const x of [fgSel, zeitIn, wLage, wTemp] as (HTMLInputElement | HTMLSelectElement)[]) x.disabled = gast;

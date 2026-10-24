@@ -56,3 +56,33 @@ export async function echtwetterLaden(lat: number, lon: number, zeit: number): P
     clearTimeout(timer);
   }
 }
+
+// ------------------------------------------------------------------ Erreichbarkeit
+
+let letztePruefung = 0;
+let erreichbar: boolean | null = null;
+let laufend: Promise<boolean> | null = null;
+
+/** Ist der Wetterdienst erreichbar? (Ergebnis wird eine Minute gemerkt; jede Antwort zählt als erreichbar) */
+export function wetterdienstErreichbar(neu = false): Promise<boolean> {
+  if (!neu && erreichbar !== null && Date.now() - letztePruefung < 60_000) return Promise.resolve(erreichbar);
+  if (laufend) return laufend;
+  if (typeof navigator !== "undefined" && navigator.onLine === false) {
+    erreichbar = false;
+    letztePruefung = Date.now();
+    return Promise.resolve(false);
+  }
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 6000);
+  laufend = fetch("https://api.open-meteo.com/v1/forecast?latitude=48.4&longitude=15.6&current=temperature_2m", { signal: ctrl.signal, cache: "no-store" })
+    .then(() => true)
+    .catch(() => false)
+    .then((ok) => {
+      clearTimeout(timer);
+      erreichbar = ok;
+      letztePruefung = Date.now();
+      laufend = null;
+      return ok;
+    });
+  return laufend;
+}

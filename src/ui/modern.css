@@ -391,3 +391,179 @@
 .ablage-liste li { display: flex; align-items: center; gap: 4px; padding: 6px 0; border-bottom: 1px solid var(--m-rand); font-size: 13px; }
 .ablage-liste li span { flex: 1; }
 .ablage-liste li:last-child { border-bottom: 0; }
+
+/* ================================================================
+ * Einstellungen und Dialoge im Stil der Startseite (Navy-Glas, Blauverlauf)
+ * – die Farben der Inhalte werden innerhalb der Fenster umgestellt.
+ * ================================================================ */
+:root[data-theme="dunkel"] :is(.gross.es, .dlg),
+:root:not([data-theme]) :is(.gross.es, .dlg) {
+  --panel: #0f1a2e;
+  --panel-2: rgba(255, 255, 255, 0.045);
+  --panel-3: rgba(255, 255, 255, 0.08);
+  --line: rgba(150, 185, 235, 0.13);
+  --line-2: rgba(255, 255, 255, 0.13);
+  --text: #e9f0fb;
+  --text-dim: #9db0c9;
+  --input-bg: rgba(255, 255, 255, 0.055);
+  --hover: rgba(255, 255, 255, 0.06);
+  --sel: rgba(47, 124, 246, 0.2);
+  --blue: #3a8bff;
+  --blue-line: rgba(58, 139, 255, 0.6);
+  --highlight: #3a8bff;
+  --highlight-text: #fff;
+  --overlay: rgba(15, 26, 46, 0.97);
+  --n-grund: linear-gradient(165deg, rgba(16, 28, 52, 0.97), rgba(8, 14, 28, 0.98));
+  --n-karte: rgba(255, 255, 255, 0.035);
+  --n-rand: rgba(150, 185, 235, 0.14);
+  --n-feld: rgba(255, 255, 255, 0.055);
+  --n-feld-rand: rgba(255, 255, 255, 0.12);
+  --n-pfeil: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239db0c9' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  color-scheme: dark;
+}
+:root[data-theme="hell"] :is(.gross.es, .dlg) {
+  --panel: #ffffff;
+  --panel-2: rgba(20, 45, 90, 0.04);
+  --panel-3: rgba(20, 45, 90, 0.07);
+  --line: rgba(20, 45, 90, 0.1);
+  --line-2: rgba(20, 45, 90, 0.16);
+  --text: #0d1a2f;
+  --text-dim: #4b5d78;
+  --input-bg: rgba(20, 45, 90, 0.04);
+  --hover: rgba(20, 45, 90, 0.06);
+  --sel: rgba(47, 124, 246, 0.14);
+  --blue: #1e6af0;
+  --blue-line: rgba(30, 106, 240, 0.55);
+  --highlight: #1e6af0;
+  --highlight-text: #fff;
+  --overlay: rgba(255, 255, 255, 0.97);
+  --n-grund: linear-gradient(165deg, rgba(250, 252, 255, 0.97), rgba(238, 243, 251, 0.98));
+  --n-karte: rgba(255, 255, 255, 0.7);
+  --n-rand: rgba(20, 45, 90, 0.1);
+  --n-feld: rgba(20, 45, 90, 0.045);
+  --n-feld-rand: rgba(20, 45, 90, 0.14);
+  --n-pfeil: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234b5d78' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  color-scheme: light;
+}
+:is(.gross.es, .dlg) {
+  --m-akzent: #2f7cf6;
+  --m-akzent-2: #5cc8ff;
+  --m-verlauf: linear-gradient(100deg, #1e6af0, #3a8bff);
+  --m-feld: var(--n-feld);
+  --m-feld-rand: var(--n-feld-rand);
+  --m-rand: var(--n-rand);
+  --m-glas: var(--panel);
+  font-family: Inter, system-ui, sans-serif;
+  color: var(--text);
+}
+.gross-overlay.es-overlay,
+.dlg-overlay {
+  background: rgba(4, 9, 20, 0.55);
+  backdrop-filter: blur(12px) saturate(1.1);
+  -webkit-backdrop-filter: blur(12px) saturate(1.1);
+}
+:root[data-theme="hell"] :is(.gross-overlay.es-overlay, .dlg-overlay) { background: rgba(220, 229, 242, 0.55); }
+
+/* Fenster */
+.gross.es,
+.dlg {
+  background: var(--n-grund);
+  border: 1px solid var(--n-rand);
+  border-radius: 22px;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
+  animation: st-aufklappen 0.4s var(--m-ease) both;
+}
+.es .gross-kopf { padding: 18px 22px; border-bottom: 1px solid var(--n-rand); }
+.es .gross-titel { font-size: 21px; font-weight: 650; letter-spacing: -0.01em; }
+.es-suche { height: 40px; border-radius: 11px; background-color: var(--n-feld); border-color: var(--n-feld-rand); color: var(--text); }
+.gross-zu { width: 38px; height: 38px; border-radius: 11px; border: 1px solid var(--n-feld-rand); background: var(--n-feld); color: var(--text); font-size: 18px; }
+.gross-zu:hover { transform: none; background: var(--hover); }
+
+/* Navigation links wie die Seitenleiste der Startseite */
+.es-nav { padding: 16px 14px 22px; gap: 3px; }
+.es-gruppe { color: var(--text-dim); letter-spacing: 0.14em; padding: 18px 10px 6px; }
+.es-gruppe .small { letter-spacing: 0; opacity: 0.8; }
+.es-punkt { min-height: 38px; border-radius: 11px; font-size: 13.5px; font-weight: 500; border: 1px solid transparent; }
+.es-punkt:hover { background: var(--n-feld); border-color: var(--n-feld-rand); transform: translateX(3px); }
+.es-punkt.aktiv { background: var(--m-verlauf); color: #fff; border-color: transparent; box-shadow: 0 8px 22px rgba(47, 124, 246, 0.38); }
+.es-punkt .count { background: var(--n-feld); color: var(--text-dim); }
+
+/* Abschnitte als Glaskarten */
+.es .set-sec { background: var(--n-karte); border: 1px solid var(--n-rand); border-radius: 18px; padding: 20px 22px; }
+.es .set-hinweis, .set-hinweis { border-radius: 12px; background: rgba(47, 124, 246, 0.12); border: 1px solid rgba(47, 124, 246, 0.3); color: var(--text); }
+.es-seitenkopf h2 { font-size: 24px; }
+
+/* Felder und Auswahllisten wie auf der Startseite */
+:is(.es, .dlg) :is(select, input[type="text"], input[type="search"], input[type="number"], input[type="time"], input[type="date"], input[type="datetime-local"], input:not([type]), textarea):not(.data-layout *) {
+  min-height: 38px;
+  border-radius: 11px !important;
+  border: 1px solid var(--n-feld-rand) !important;
+  background-color: var(--n-feld) !important;
+  color: var(--text);
+  font: inherit;
+  font-size: 13.5px;
+}
+:is(.es, .dlg) select:not(.data-layout *) {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  padding: 0 34px 0 12px !important;
+  background-image: var(--n-pfeil) !important;
+  background-repeat: no-repeat !important;
+  background-position: right 11px center !important;
+  background-size: 15px !important;
+  text-overflow: ellipsis;
+}
+:is(.es, .dlg) select option { color: #0d1a2f; background: #fff; }
+:is(.es, .dlg) :is(input, select, textarea):focus { outline: none; border-color: var(--m-akzent); box-shadow: 0 0 0 3px rgba(47, 124, 246, 0.22); }
+:is(.es, .dlg) input[type="checkbox"], :is(.es, .dlg) input[type="radio"] { accent-color: #2f7cf6; width: 17px; height: 17px; }
+:is(.es, .dlg) input[type="range"] { accent-color: #2f7cf6; }
+
+/* Knöpfe */
+:is(.es, .dlg) .btn { min-height: 34px; border-radius: 11px; border: 1px solid var(--n-feld-rand); background: var(--n-feld); color: var(--text); font-weight: 500; }
+:is(.es, .dlg) .btn.small { min-height: 30px; border-radius: 9px; }
+:is(.es, .dlg) .btn:hover:not(:disabled) { background: var(--hover); border-color: rgba(47, 124, 246, 0.55); }
+:is(.es, .dlg) .btn.primary { background: var(--m-verlauf); border-color: transparent; color: #fff; font-weight: 600; box-shadow: 0 6px 16px rgba(47, 124, 246, 0.35); }
+:is(.es, .dlg) .btn.danger { background: linear-gradient(100deg, #dc2626, #ef4444); border-color: transparent; color: #fff; }
+
+/* Segmente: gleich hoch und rund wie auf der Startseite */
+:is(.es, .dlg) .seg { height: 38px; padding: 3px; gap: 0; border-radius: 12px; border: 1px solid var(--n-feld-rand); background: var(--n-feld); }
+:is(.es, .dlg) .seg button { border-radius: 9px; padding: 0 14px; color: var(--text); font-size: 13px; transition: background 0.3s var(--m-ease), color 0.3s, box-shadow 0.3s; }
+:is(.es, .dlg) .seg button.active { background: var(--m-verlauf); color: #fff; box-shadow: 0 4px 14px rgba(47, 124, 246, 0.4); }
+
+/* Schalter */
+:is(.es, .dlg) .schalter-knopf { background: var(--n-feld-rand); }
+:is(.es, .dlg) .schalter input:checked + .schalter-knopf { background: var(--m-verlauf); box-shadow: 0 3px 10px rgba(47, 124, 246, 0.35); }
+
+/* Farbvorlagen: Auswahl blau statt gelb umrandet */
+.es .farb-vorlage { background: var(--n-feld); border-color: var(--n-feld-rand); }
+.es .farb-vorlage.active { border-color: #3a8bff; box-shadow: 0 0 0 3px rgba(58, 139, 255, 0.25); }
+
+/* Dialoge */
+.dlg-head { padding: 20px 24px 12px; font-size: 19px; font-weight: 650; border-bottom: 0; }
+.dlg-body { padding: 8px 24px 16px; }
+.dlg-foot { padding: 12px 24px 20px; gap: 10px; }
+
+/* Bereitschafts-Check-Fenster: Prüfpunkte als Karten */
+.dlg .st-check-pop { gap: 8px; }
+.dlg .st-check-z {
+  border: 1px solid var(--n-rand);
+  border-radius: 14px;
+  background: var(--n-feld);
+  padding: 12px 14px;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
+}
+.dlg .st-check-z > .st-ico {
+  width: 38px;
+  height: 38px;
+  padding: 9px;
+  border-radius: 11px;
+  background: linear-gradient(140deg, rgba(47, 124, 246, 0.25), rgba(92, 200, 255, 0.1));
+}
+.dlg .st-check-z.ok > .st-ico { color: #22c55e; background: rgba(34, 197, 94, 0.13); }
+.dlg .st-check-z.warn > .st-ico { color: #f5a524; background: rgba(245, 165, 36, 0.14); }
+.dlg .st-check-z.fehler > .st-ico { color: #ef4444; background: rgba(239, 68, 68, 0.14); }
+.dlg .st-check-z.aus > .st-ico { color: var(--text-dim); background: var(--n-feld); }
+.dlg .st-check-z.ok span { color: #22c55e; }
+.dlg .st-check-z.warn span { color: #f5a524; }
+.dlg .st-check-z.fehler span { color: #ef4444; }
+.dlg .st-check-z small { color: var(--text-dim); opacity: 1; }
