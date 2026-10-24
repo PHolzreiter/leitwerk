@@ -18,6 +18,7 @@ import { inTauri } from "../platform";
 import { hasCodes } from "../sim/codes";
 import { sim, type Berechtigung } from "../sim/engine";
 import { FUNKGRUPPEN, type FunkgruppeId } from "../sim/funkgruppen";
+import { echtwetterQuelle } from "../sim/echtwetter";
 import { geoStatus } from "../sim/geo";
 import type { Settings } from "../sim/settings";
 import { WETTER_LABEL, type WetterLage } from "../sim/weather";
@@ -27,6 +28,7 @@ import { el, esc, toast } from "./dom";
 import { nimmtRettung } from "./khInfo";
 import { logoMarke, logoSchrift } from "./logo";
 import { sprachPrefs, sprachStatus } from "./sprache";
+import { onUpdate, updateInfo, updateInstallieren, updateLaeuft } from "./updateDienst";
 import { einstellungenOeffnen } from "./ws/steuerleiste";
 import { istDunkel, onThema, pers, setzePers, type Thema } from "./ws/persoenlich";
 
@@ -57,6 +59,9 @@ const P: Record<string, string> = {
   ok: `<circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.7 2.7L16 9.5"/>`,
   warn: `<path d="M12 3l9.5 17h-19z"/><path d="M12 10v4M12 17h.01"/>`,
   aus: `<circle cx="12" cy="12" r="9"/><path d="M8 12h8"/>`,
+  auto: `<path d="M3 16V9a2 2 0 0 1 2-2h9l4 4h1a2 2 0 0 1 2 2v3h-2"/><path d="M3 16h2M10 16h4"/><circle cx="7.5" cy="16.5" r="2"/><circle cx="16.5" cy="16.5" r="2"/>`,
+  update: `<path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/>`,
+  neustart: `<path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v5h-5"/>`,
   fehler: `<circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/>`,
   rtw: `<path d="M2 16V8a1 1 0 0 1 1-1h11v9"/><path d="M14 10h4l3 3v3h-7"/><circle cx="6.5" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/><path d="M8 9.5v3M6.5 11h3"/>`,
   arzt: `<path d="M3 12h4l2-6 4 12 2-6h6"/>`,
@@ -231,6 +236,7 @@ export function startseiteZeigen(fertig?: () => void, opt: { zurueck?: boolean }
         <button class="st-nav-b" data-act="einstellungen">${ico("zahnrad")}<span>Einstellungen</span></button>
         <button class="st-nav-b" data-act="check">${ico("schild")}<span>Bereitschafts-Check</span></button>
       </nav>
+      <button class="st-update" hidden>${ico("update")}<span><b>Update verfügbar</b><small></small></span><em>Jetzt laden</em></button>
       <div class="st-fuss">
         <div>LeitWerk ${esc(version)}</div>
         <div class="st-leise">Privates Projekt · nicht offiziell</div>
@@ -242,7 +248,7 @@ export function startseiteZeigen(fertig?: () => void, opt: { zurueck?: boolean }
       </div>
       <section class="st-held">
         <div class="st-willkommen">Willkommen bei</div>
-        <h1>${logoSchrift()}</h1>
+        <h1><span class="st-titel">${logoSchrift()}<span class="st-wip" title="LeitWerk ist noch in Arbeit">Work in Progress</span></span></h1>
         <p class="st-claim">Der Leitstellensimulator<br>für Niederösterreich.</p>
         <p class="st-sub">Realistische Einsatzlagen. Echte Abläufe.<br>Lernen, üben, erleben.</p>
       </section>
@@ -257,9 +263,10 @@ export function startseiteZeigen(fertig?: () => void, opt: { zurueck?: boolean }
           <div class="st-zeit"><div class="st-seg" data-seg="zeit"><button data-v="jetzt">Jetzt</button><button data-v="fest">Wunschzeit</button></div><input type="datetime-local" class="st-zeit-in"></div></div>
         <div class="st-feld"><label>${ico("balken")}Einsatzaufkommen</label>
           <div class="st-seg" data-seg="aufkommen"><button data-v="ruhig">Ruhig</button><button data-v="normal">Normal</button><button data-v="stressig">Stressig</button></div></div>
-        <div class="st-feld"><label>${ico("wolke")}Wetter</label>
-          <div class="st-wetter"><select class="st-wetter-sel"><option value="realistisch">Realistisch</option><option value="wechselhaft">Wechselhaft</option><option value="fest">Fest</option></select>
-          <div class="st-wetter-fest"><select class="st-wetter-lage"></select><input type="number" class="st-wetter-temp" min="-25" max="40"><span>°C</span></div></div></div>
+        <div class="st-feld st-feld-breit"><label>${ico("wolke")}Wetter</label>
+          <div class="st-wetter"><div class="st-seg" data-seg="wetter"><button data-v="echt">Realistisch</button><button data-v="normal">Normal</button><button data-v="wechselhaft">Wechselhaft</button><button data-v="fest">Fest</button></div>
+          <div class="st-wetter-fest"><select class="st-wetter-lage"></select><input type="number" class="st-wetter-temp" min="-25" max="40"><span>°C</span></div>
+          <div class="st-wetter-info st-leise"></div></div></div>
         <div class="st-feld"><label>${ico("leute")}Spielmodus</label>
           <button class="st-schalter" role="switch" aria-checked="false"><span data-v="solo">Solo</span><span data-v="multi">Multiplayer</span><i></i></button></div>
         <button class="st-start">${ico("play")}<span>Neue Simulation starten</span></button>
@@ -321,24 +328,32 @@ export function startseiteZeigen(fertig?: () => void, opt: { zurueck?: boolean }
       if (seg.dataset.seg === "zeit") {
         startzeitArt = v as "jetzt" | "fest";
         setzen({ startzeit: startzeitArt === "fest" ? zeitIn.value || lokal(Date.now()) : undefined });
-      } else if (seg.dataset.seg === "aufkommen") setzen({ aufkommenStufe: v as Settings["aufkommenStufe"] });
+      } else if (seg.dataset.seg === "wetter") wetterWaehlen(v);
+      else if (seg.dataset.seg === "aufkommen") setzen({ aufkommenStufe: v as Settings["aufkommenStufe"] });
       render();
     }),
   );
 
   // ---------------- Wetter
-  const wSel = $<HTMLSelectElement>(".st-wetter-sel");
   const wLage = $<HTMLSelectElement>(".st-wetter-lage");
   const wTemp = $<HTMLInputElement>(".st-wetter-temp");
   for (const [k, v] of Object.entries(WETTER_LABEL)) wLage.appendChild(el("option", { value: k }, v));
-  const wetterArt = (): "realistisch" | "wechselhaft" | "fest" => {
+  const wetterArt = (): "echt" | "normal" | "wechselhaft" | "fest" => {
     const w = s().wetterWechsel ?? (s().wetterModus === "fest" ? 0 : s().wetterModus === "wechselhaft" ? 80 : 50);
-    return w <= 0 ? "fest" : w >= 70 ? "wechselhaft" : "realistisch";
+    return w <= 0 ? "fest" : s().wetterEcht ? "echt" : w >= 70 ? "wechselhaft" : "normal";
   };
-  wSel.addEventListener("change", () => {
-    const v = wSel.value;
-    setzen({ wetterAktiv: true, wetterModus: undefined, wetterWechsel: v === "fest" ? 0 : v === "wechselhaft" ? 80 : 50 });
-  });
+  const wetterWaehlen = (v: string) =>
+    setzen({ wetterAktiv: true, wetterModus: undefined, wetterEcht: v === "echt", wetterWechsel: v === "fest" ? 0 : v === "wechselhaft" ? 80 : 50 });
+  const wetterInfo = (): string => {
+    const art = wetterArt();
+    if (art === "normal") return "Vom Simulator, passend zu Jahreszeit und Uhrzeit";
+    if (art === "wechselhaft") return "Ändert sich oft – auch Gewitter, Sturm, Glätte";
+    if (art === "fest") return "Bleibt das ganze Spiel gleich";
+    const t = startzeitArt === "fest" && zeitIn.value ? new Date(zeitIn.value).getTime() : Date.now();
+    const q = echtwetterQuelle(t);
+    if (!q) return "Für dieses Datum gibt es noch kein echtes Wetter – es wird simuliert";
+    return q === "archiv" ? "Echtes Wetter von damals (Wetterarchiv, braucht Internet)" : "Echtes Wetter für die Funkgruppe (Open-Meteo, braucht Internet)";
+  };
   wLage.addEventListener("change", () => setzen({ wetterFestLage: wLage.value as WetterLage }));
   wTemp.addEventListener("change", () => setzen({ wetterFestTemp: Math.max(-25, Math.min(40, Number(wTemp.value) || 0)) }));
 
@@ -403,7 +418,7 @@ export function startseiteZeigen(fertig?: () => void, opt: { zurueck?: boolean }
   const checkDetails = () => {
     const body = el("div", { class: "st-check-pop" });
     const z = zusammenfassung();
-    body.innerHTML = `<p class="st-pill gross ${z.k}">${ico(z.k === "ok" ? "ok" : "warn")}${esc(z.t)}</p>`;
+    body.innerHTML = `<p class="st-pill st-pill-gross ${z.k}">${ico(z.k === "ok" ? "ok" : "warn")}${esc(z.t)}</p>`;
     for (const c of checks) {
       const z2 = el("div", { class: `st-check-z ${c.stand}` });
       z2.innerHTML = `${ico(c.ico)}<div><b>${esc(c.name)}</b><span>${esc(c.text)}</span>${c.hilfe ? `<small>${esc(c.hilfe)}</small>` : ""}</div>`;
@@ -429,6 +444,7 @@ export function startseiteZeigen(fertig?: () => void, opt: { zurueck?: boolean }
   // ---------------- Multiplayer-Lobby
   const multiFeld = $(".st-multi");
   const RECHTE: Berechtigung[] = ["disponieren", "kt", "steuern", "einstellungen"];
+  const RECHT_ICO: Record<Berechtigung, string> = { disponieren: "funk", kt: "auto", steuern: "play", einstellungen: "zahnrad" };
   const multiZeichnen = () => {
     multiFeld.hidden = modus !== "multi";
     if (modus !== "multi") return;
@@ -471,7 +487,8 @@ export function startseiteZeigen(fertig?: () => void, opt: { zurueck?: boolean }
     const zustand = !mp.status.verbunden ? `<span class="st-pill warn">verbinde …</span>` : host || mp.status.hostDa ? `<span class="st-pill ok">verbunden</span>` : `<span class="st-pill warn">Host nicht da</span>`;
     multiFeld.innerHTML = `<h2>${ico("leute")}${host ? "Deine Lobby" : "Lobby"}${zustand}</h2>
       <div class="st-code-gross"><span>Code</span><b>${esc(mp.status.code)}</b><button class="st-mini st-kopie" title="Code kopieren">${ico("kopie")}</button></div>
-      <table class="st-spieler"><thead><tr><th></th>${RECHTE.map((x) => `<th title="${esc(RECHTE_LABEL[x])}">${esc(RECHTE_LABEL[x].split(" ")[0])}</th>`).join("")}</tr></thead><tbody></tbody></table>
+      <table class="st-spieler"><thead><tr><th></th>${RECHTE.map((x) => `<th title="${esc(RECHTE_LABEL[x])}">${ico(RECHT_ICO[x], "klein")}</th>`).join("")}</tr></thead><tbody></tbody></table>
+      <div class="st-rechte-legende">${RECHTE.map((x) => `<span>${ico(RECHT_ICO[x], "klein")}${esc(RECHTE_LABEL[x])}</span>`).join("")}</div>
       <p class="st-leise">${host ? "Rechte gelten sofort. Die Einstellungen links siehst nur du bearbeitbar." : "Der Host stellt ein und startet – du siehst alles mit."}</p>
       <button class="st-knopf leise voll st-lobby-weg">${host ? "Lobby schließen" : "Lobby verlassen"}</button>`;
     const tb = multiFeld.querySelector("tbody")!;
@@ -558,6 +575,16 @@ export function startseiteZeigen(fertig?: () => void, opt: { zurueck?: boolean }
     document.addEventListener("keydown", esc);
     aus.push(() => document.removeEventListener("keydown", esc));
   }
+  // ---------------- Update
+  const updKnopf = $<HTMLButtonElement>(".st-update");
+  const updZeigen = () => {
+    const u = updateInfo();
+    updKnopf.hidden = !u || updateLaeuft();
+    if (u) updKnopf.querySelector("small")!.textContent = `Version ${u.version} – bei dir ${u.current}`;
+  };
+  updKnopf.addEventListener("click", () => void spielstand.jetztSichern().catch(() => undefined).finally(() => updateInstallieren()));
+  aus.push(onUpdate(updZeigen));
+  updZeigen();
   $('[data-act="einstellungen"]').addEventListener("click", () => einstellungenOeffnen());
   $('[data-act="check"]').addEventListener("click", checkDetails);
 
@@ -574,15 +601,16 @@ export function startseiteZeigen(fertig?: () => void, opt: { zurueck?: boolean }
     if (st.startzeit && document.activeElement !== zeitIn) zeitIn.value = st.startzeit;
     zeitIn.hidden = zeitArt !== "fest";
     const auf = st.aufkommenStufe ?? "normal";
+    const wArt = wetterArt();
     root.querySelectorAll<HTMLButtonElement>(".st-seg button").forEach((b) => {
       const seg = b.closest<HTMLElement>(".st-seg")!.dataset.seg;
-      b.classList.toggle("an", seg === "zeit" ? b.dataset.v === zeitArt : b.dataset.v === auf);
+      b.classList.toggle("an", seg === "zeit" ? b.dataset.v === zeitArt : seg === "wetter" ? b.dataset.v === wArt : b.dataset.v === auf);
     });
-    wSel.value = wetterArt();
-    $(".st-wetter-fest").hidden = wSel.value !== "fest";
+    $(".st-wetter-fest").hidden = wArt !== "fest";
+    $(".st-wetter-info").textContent = wetterInfo();
     wLage.value = st.wetterFestLage ?? "klar";
     wTemp.value = String(st.wetterFestTemp ?? 18);
-    for (const x of [fgSel, zeitIn, wSel, wLage, wTemp] as (HTMLInputElement | HTMLSelectElement)[]) x.disabled = gast;
+    for (const x of [fgSel, zeitIn, wLage, wTemp] as (HTMLInputElement | HTMLSelectElement)[]) x.disabled = gast;
     schalter.setAttribute("aria-checked", String(modus === "multi"));
     schalter.classList.toggle("multi", modus === "multi");
     const th = pers().thema;

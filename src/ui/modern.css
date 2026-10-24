@@ -1,0 +1,317 @@
+/*
+ * Zeitgemäßes Aussehen für Einstellungen und Dialoge – passend zur Startseite.
+ * Nutzt die Farben des gewählten Farbschemas (auch eigene Akzentfarben).
+ */
+
+:root {
+  --m-akzent: var(--blue);
+  --m-akzent-2: color-mix(in srgb, var(--blue) 62%, #8fd8ff);
+  --m-verlauf: linear-gradient(100deg, var(--m-akzent), var(--m-akzent-2));
+  --m-feld: color-mix(in srgb, var(--panel-2) 70%, transparent);
+  --m-feld-rand: color-mix(in srgb, var(--line-2) 80%, transparent);
+  --m-glas: color-mix(in srgb, var(--panel) 90%, transparent);
+  --m-rand: color-mix(in srgb, var(--line) 85%, transparent);
+  --m-ease: cubic-bezier(0.2, 0.75, 0.2, 1);
+}
+
+/* ---------------------------------------------------------------- Hintergrund */
+.gross-overlay,
+.dlg-overlay {
+  background: rgba(6, 10, 18, 0.5);
+  backdrop-filter: blur(10px) saturate(1.1);
+  -webkit-backdrop-filter: blur(10px) saturate(1.1);
+}
+:root:not([data-theme="dunkel"]) .gross-overlay,
+:root:not([data-theme="dunkel"]) .dlg-overlay {
+  background: rgba(200, 212, 230, 0.45);
+}
+
+/* ---------------------------------------------------------------- Großes Fenster (Einstellungen) */
+.gross.es {
+  border-radius: 20px;
+  border: 1px solid var(--m-rand);
+  background: var(--m-glas);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35), 0 2px 6px rgba(0, 0, 0, 0.12);
+  animation: m-auf 0.32s var(--m-ease);
+}
+@keyframes m-auf {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.98);
+  }
+}
+.es .gross-kopf {
+  padding: 16px 20px;
+  background: transparent;
+  border-bottom: 1px solid var(--m-rand);
+}
+.es .gross-titel {
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.es-suche {
+  height: 38px;
+  width: min(440px, 42vw);
+  padding: 0 14px 0 38px;
+  border-radius: 12px;
+  border: 1px solid var(--m-feld-rand);
+  background: var(--m-feld) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238a96a6' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.5-3.5'/%3E%3C/svg%3E") no-repeat 12px center / 17px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.es-suche:focus {
+  outline: none;
+  border-color: var(--m-akzent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--m-akzent) 25%, transparent);
+}
+.gross-zu {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 20px;
+  line-height: 1;
+  transition: background 0.2s, transform 0.25s var(--m-ease);
+}
+.gross-zu:hover {
+  transform: rotate(90deg);
+}
+
+.es-koerper {
+  grid-template-columns: 250px 1fr;
+}
+.es-nav {
+  background: transparent;
+  border-right: 1px solid var(--m-rand);
+  padding: 14px 12px 20px;
+  gap: 2px;
+}
+.es-gruppe {
+  padding: 16px 12px 6px;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+}
+.es-punkt {
+  min-height: 36px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  transition: background 0.18s, color 0.18s, transform 0.2s var(--m-ease);
+}
+.es-punkt:hover {
+  transform: translateX(2px);
+}
+.es-punkt.aktiv {
+  background: var(--m-verlauf);
+  color: #fff;
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--m-akzent) 35%, transparent);
+}
+.es-punkt.aktiv .count {
+  color: rgba(255, 255, 255, 0.85);
+}
+.es-punkt .count {
+  font-variant-numeric: tabular-nums;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--m-feld);
+}
+.es-punkt.aktiv .count {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+/* Inhalt */
+.es-quelle:not(.es-q-daten) {
+  padding: 8px 10px 24px;
+  scroll-behavior: smooth;
+}
+.es .set-sec {
+  border-radius: 16px;
+  border: 1px solid var(--m-rand);
+  background: color-mix(in srgb, var(--panel-2) 55%, transparent);
+  padding: 20px 22px;
+  animation: m-sek 0.35s var(--m-ease) both;
+}
+@keyframes m-sek {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+.es .set-sec h3 {
+  font-size: 17px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  margin-bottom: 6px;
+}
+.es .set-sec > p,
+.es .set-sec p.muted {
+  line-height: 1.5;
+}
+.es .set-hinweis,
+.set-hinweis {
+  border-radius: 12px;
+  padding: 11px 14px;
+  border: 1px solid color-mix(in srgb, var(--m-akzent) 30%, transparent);
+  background: color-mix(in srgb, var(--m-akzent) 12%, transparent);
+}
+.es .pers-zeile {
+  padding: 12px 0;
+  border-bottom-color: var(--m-rand);
+}
+.es .set-grid {
+  gap: 12px 18px;
+}
+
+/* ---------------------------------------------------------------- Bedienelemente (Einstellungen und Dialoge) */
+:is(.es .set-sec, .dlg) :is(input[type="text"], input[type="search"], input[type="number"], input[type="time"], input[type="date"], input[type="datetime-local"], input:not([type]), select):not(.set-table *):not(.data-layout *) {
+  min-height: 34px;
+  padding: 5px 11px;
+  border-radius: 10px;
+  border: 1px solid var(--m-feld-rand);
+  background-color: var(--m-feld);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+:is(.es .set-sec, .dlg) :is(input, select):focus {
+  outline: none;
+  border-color: var(--m-akzent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--m-akzent) 24%, transparent);
+}
+:is(.es, .dlg) input[type="checkbox"],
+:is(.es, .dlg) input[type="radio"],
+:is(.es, .dlg) input[type="range"] {
+  accent-color: var(--m-akzent);
+}
+:is(.es, .dlg) input[type="range"] {
+  height: 22px;
+}
+
+:is(.es, .dlg) .btn {
+  border-radius: 10px;
+  padding: 7px 14px;
+  border-color: var(--m-feld-rand);
+  background: var(--m-feld);
+  transition: border-color 0.2s, background 0.2s, transform 0.2s var(--m-ease), box-shadow 0.2s;
+}
+:is(.es, .dlg) .btn.small {
+  padding: 5px 11px;
+  font-size: 12.5px;
+}
+:is(.es, .dlg) .btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--m-akzent) 60%, transparent);
+}
+:is(.es, .dlg) .btn.primary {
+  background: var(--m-verlauf);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--m-akzent) 32%, transparent);
+}
+:is(.es, .dlg) .btn.danger {
+  border-color: transparent;
+}
+
+/* Segmente (z. B. Hell / Dunkel / Wie das System) */
+:is(.es, .dlg) .seg {
+  gap: 3px;
+  padding: 3px;
+  border-radius: 12px;
+  border: 1px solid var(--m-feld-rand);
+  background: var(--m-feld);
+  overflow: visible;
+}
+:is(.es, .dlg) .seg button {
+  border-radius: 9px;
+  padding: 6px 12px;
+  color: var(--text);
+  transition: background 0.22s, color 0.22s, box-shadow 0.22s;
+}
+:is(.es, .dlg) .seg button + button {
+  border-left: 0;
+}
+:is(.es, .dlg) .seg button:hover:not(.active) {
+  background: var(--hover);
+}
+:is(.es, .dlg) .seg button.active {
+  background: var(--m-verlauf);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--m-akzent) 35%, transparent);
+}
+
+/* Schalter */
+.es .schalter-knopf,
+.dlg .schalter-knopf {
+  width: 42px;
+  height: 24px;
+  border-radius: 12px;
+  background: var(--line-2);
+}
+.es .schalter-knopf::after,
+.dlg .schalter-knopf::after {
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  transition: transform 0.3s var(--m-ease);
+}
+.es .schalter input:checked + .schalter-knopf,
+.dlg .schalter input:checked + .schalter-knopf {
+  background: var(--m-verlauf);
+}
+.es .schalter input:checked + .schalter-knopf::after,
+.dlg .schalter input:checked + .schalter-knopf::after {
+  transform: translateX(18px);
+}
+
+/* Farbvorlagen */
+.es .farb-vorlage {
+  border-radius: 14px;
+  transition: transform 0.25s var(--m-ease), box-shadow 0.25s;
+}
+.es .farb-vorlage:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+}
+
+/* ---------------------------------------------------------------- Dialoge */
+.dlg {
+  border-radius: 18px;
+  border: 1px solid var(--m-rand);
+  background: var(--m-glas);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35), 0 2px 6px rgba(0, 0, 0, 0.12);
+  animation: m-auf 0.28s var(--m-ease);
+}
+.dlg-head {
+  padding: 18px 22px 14px;
+  font-size: 17px;
+  border-bottom: 1px solid var(--m-rand);
+}
+.dlg-body {
+  padding: 18px 22px;
+}
+.dlg-foot {
+  padding: 14px 22px 18px;
+  border-top: 0;
+}
+
+/* Scrollbalken etwas feiner */
+.es ::-webkit-scrollbar,
+.dlg ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.es ::-webkit-scrollbar-thumb,
+.dlg ::-webkit-scrollbar-thumb {
+  background: var(--scroll);
+  border-radius: 10px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gross.es,
+  .dlg,
+  .es .set-sec {
+    animation: none;
+  }
+}

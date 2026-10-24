@@ -14,7 +14,8 @@
   -webkit-font-smoothing: antialiased;
   isolation: isolate;
 }
-.st.dunkel {
+.st.dunkel,
+.lw-neu.dunkel {
   --st-text: #e9f0fb;
   --st-dim: #9db0c9;
   --st-glas: rgba(11, 19, 35, 0.6);
@@ -29,7 +30,8 @@
   --st-schleier: linear-gradient(100deg, rgba(4, 9, 20, 0.94) 0%, rgba(6, 13, 28, 0.74) 34%, rgba(6, 13, 28, 0.42) 60%, rgba(4, 9, 20, 0.86) 100%);
   color-scheme: dark;
 }
-.st.hell {
+.st.hell,
+.lw-neu.hell {
   --st-text: #0d1a2f;
   --st-dim: #4b5d78;
   --st-glas: rgba(255, 255, 255, 0.7);
@@ -44,7 +46,8 @@
   --st-schleier: linear-gradient(100deg, rgba(242, 246, 252, 0.95) 0%, rgba(242, 246, 252, 0.8) 34%, rgba(242, 246, 252, 0.48) 60%, rgba(242, 246, 252, 0.88) 100%);
   color-scheme: light;
 }
-.st {
+.st,
+.lw-neu {
   --st-akzent: #2f7cf6;
   --st-akzent-2: #5cc8ff;
   --st-ok: #22c55e;
@@ -439,7 +442,7 @@
 .st-pill.fehler { background: rgba(239, 68, 68, 0.16); color: var(--st-fehler); }
 .st-pill.pruefe { background: rgba(47, 124, 246, 0.14); color: var(--st-akzent-2); }
 .st-pill.pruefe .st-ico { animation: st-dreh 1.4s linear infinite; }
-.st-pill.gross { font-size: 15px; padding: 8px 16px; margin: 0 0 12px; }
+.st-pill.st-pill-gross { font-size: 15px; padding: 8px 16px; margin: 0 0 12px; }
 .st-check-liste { list-style: none; margin: 16px 0 0; padding: 0; }
 .st-check-liste li {
   display: grid;
@@ -562,4 +565,169 @@
   .st-mitte { grid-template-columns: 1fr; }
   .st-held, .st-karte-wrap, .st-kacheln { grid-column: 1; grid-row: auto; }
   .st-rechts { padding-top: 0; }
+}
+
+/* ---------------- Wetter: Schiebeschalter über die ganze Breite */
+.st-feld.st-feld-breit { grid-template-columns: 1fr; gap: 8px; }
+.st-seg[data-seg="wetter"] button { font-size: 13px; padding: 0 4px; }
+.st-wetter-info { font-size: 12px; margin-top: 6px; line-height: 1.4; min-height: 1.4em; }
+
+/* ---------------- Rechte: Symbole statt langer Köpfe */
+.st-spieler { table-layout: fixed; }
+.st-spieler th:first-child { width: auto; }
+.st-spieler th:not(:first-child), .st-spieler td:not(:first-child) { width: 44px; }
+.st-spieler th .st-ico { width: 17px; height: 17px; color: var(--st-dim); }
+.st-spieler td:first-child { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.st-rechte-legende { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 11.5px; color: var(--st-dim); margin: -4px 0 12px; }
+.st-rechte-legende span { display: inline-flex; align-items: center; gap: 5px; }
+.st-rechte-legende .st-ico { width: 13px; height: 13px; }
+
+/* ---------------- Bereitschafts-Check (Fenster) */
+.st-check-pop { min-width: min(520px, 80vw); gap: 0; }
+.st-check-pop .st-pill.st-pill-gross { align-self: flex-start; margin: 0 0 10px; }
+.st-check-z { padding: 12px 4px; }
+.st-check-z b { font-size: 14px; }
+.st-check-z.warn > .st-ico { color: #d97706; }
+.st-check-z.fehler > .st-ico { color: #dc2626; }
+.st-check-z.ok > .st-ico { color: #16a34a; }
+
+/* ---------------- Work in Progress */
+.st-titel { position: relative; display: inline-block; }
+.st-wip {
+  position: absolute;
+  right: -18px;
+  bottom: -4px;
+  transform: rotate(-7deg);
+  padding: 4px 10px 4px 12px;
+  border-radius: 6px;
+  font: 700 11px/1.2 Inter, system-ui, sans-serif;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: #2a1c00;
+  background: repeating-linear-gradient(135deg, rgba(251, 191, 36, 0.92) 0 10px, rgba(245, 158, 11, 0.92) 10px 20px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  opacity: 0.82;
+  pointer-events: auto;
+  animation: st-wip-rein 0.7s var(--st-ease) 0.9s both;
+}
+.st.hell .st-wip { box-shadow: 0 4px 12px rgba(120, 80, 0, 0.18); }
+@keyframes st-wip-rein { from { opacity: 0; transform: rotate(-16deg) scale(1.4); } to { opacity: 0.82; transform: rotate(-7deg) scale(1); } }
+
+/* ---------------- Update-Knopf (Seitenleiste) */
+.st-update {
+  position: relative;
+  display: grid;
+  grid-template-columns: 26px 1fr;
+  align-items: center;
+  gap: 4px 12px;
+  width: 100%;
+  margin-top: auto;
+  padding: 14px 14px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(34, 197, 94, 0.45);
+  background: linear-gradient(120deg, rgba(34, 197, 94, 0.18), rgba(16, 185, 129, 0.08));
+  color: var(--st-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  animation: st-rein 0.6s var(--st-ease) both, st-upd-glow 2.8s ease-in-out 0.6s infinite;
+  transition: transform 0.25s var(--st-ease);
+}
+.st-update[hidden] { display: none; }
+.st-update:hover { transform: translateY(-2px); }
+.st-update > .st-ico { color: var(--st-ok); width: 24px; height: 24px; animation: st-upd-pfeil 1.6s ease-in-out infinite; }
+.st-update span { flex: 1; display: flex; flex-direction: column; }
+.st-update b { font-size: 14px; }
+.st-update small { font-size: 11.5px; color: var(--st-dim); }
+.st-update em { grid-column: 1 / -1; margin-top: 8px; text-align: center; font-style: normal; font-size: 13px; font-weight: 600; color: #fff; background: linear-gradient(100deg, #16a34a, #22c55e); padding: 8px 10px; border-radius: 10px; box-shadow: 0 6px 16px rgba(34, 197, 94, 0.3); }
+.st-update:not([hidden]) + .st-fuss { margin-top: 14px; }
+@keyframes st-upd-glow { 0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); } 50% { box-shadow: 0 0 0 6px rgba(34, 197, 94, 0.14); } }
+@keyframes st-upd-pfeil { 0%, 100% { transform: translateY(-1px); } 50% { transform: translateY(2px); } }
+
+/* ---------------- Update läuft (ganzer Bildschirm) */
+.lw-upd {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(4, 9, 20, 0.62);
+  backdrop-filter: blur(14px) saturate(1.1);
+  -webkit-backdrop-filter: blur(14px) saturate(1.1);
+  color: var(--st-text);
+  font-family: Inter, system-ui, sans-serif;
+  animation: st-rein 0.35s var(--st-ease) both;
+}
+.lw-upd.hell { background: rgba(225, 233, 245, 0.6); }
+.lw-upd.weg { animation: st-weg 0.3s var(--st-ease) forwards; }
+.lw-upd-karte {
+  width: min(440px, 100%);
+  padding: 34px 32px 26px;
+  border-radius: 24px;
+  border: 1px solid var(--st-rand);
+  background: var(--st-glas-stark);
+  box-shadow: var(--st-schatten);
+  text-align: center;
+  animation: st-aufklappen 0.5s var(--st-ease) both;
+}
+.lw-upd-logo { display: grid; place-items: center; margin-bottom: 8px; }
+.lw-upd h2 { margin: 0 0 10px; font-size: 21px; font-weight: 650; }
+.lw-upd-versionen { display: inline-flex; align-items: center; gap: 10px; font-size: 13px; color: var(--st-dim); }
+.lw-upd-versionen span, .lw-upd-versionen b { padding: 3px 9px; border-radius: 999px; background: var(--st-feld); border: 1px solid var(--st-feld-rand); font-variant-numeric: tabular-nums; }
+.lw-upd-versionen b { color: var(--st-akzent-2); border-color: rgba(47, 124, 246, 0.45); }
+.lw-upd-versionen i { width: 26px; height: 2px; border-radius: 2px; background: linear-gradient(90deg, var(--st-dim), var(--st-akzent-2)); position: relative; }
+.lw-upd-versionen i::after { content: ""; position: absolute; right: -2px; top: -3px; border: 4px solid transparent; border-left: 6px solid var(--st-akzent-2); }
+.lw-upd-ring { position: relative; width: 168px; height: 168px; margin: 24px auto 14px; }
+.lw-upd-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); overflow: visible; }
+.lw-upd-spur { fill: none; stroke: var(--st-feld-rand); stroke-width: 9; }
+.lw-upd-wert { fill: none; stroke: url(#lw-upd-g); stroke-width: 9; stroke-linecap: round; transition: stroke-dashoffset 0.4s var(--st-ease); filter: drop-shadow(0 0 6px rgba(92, 200, 255, 0.55)); }
+.lw-upd.unbestimmt .lw-upd-ring svg { animation: st-dreh 1.4s linear infinite; }
+.lw-upd.unbestimmt .lw-upd-wert { stroke-dashoffset: 250 !important; }
+.lw-upd-prozent { position: absolute; inset: 0; display: grid; place-content: center; grid-auto-flow: column; align-items: baseline; gap: 2px; }
+.lw-upd-prozent b { font-size: 44px; font-weight: 700; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+.lw-upd-prozent span { font-size: 18px; color: var(--st-dim); }
+.lw-upd.installiert .lw-upd-ring::after {
+  content: "";
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+  border: 2px solid rgba(92, 200, 255, 0.5);
+  animation: st-upd-welle 1.6s ease-out infinite;
+}
+@keyframes st-upd-welle { from { transform: scale(0.9); opacity: 0.9; } to { transform: scale(1.25); opacity: 0; } }
+.lw-upd-detail { min-height: 1.4em; font-size: 13.5px; color: var(--st-dim); font-variant-numeric: tabular-nums; }
+.lw-upd.fehler .lw-upd-detail { color: var(--st-fehler); }
+.lw-upd.fehler .lw-upd-wert { stroke: var(--st-fehler); filter: none; }
+.lw-upd-schritte { display: flex; justify-content: center; gap: 6px; list-style: none; margin: 18px 0 0; padding: 0; }
+.lw-upd-schritte li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--st-dim);
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: var(--st-feld);
+  border: 1px solid var(--st-feld-rand);
+  transition: all 0.3s;
+}
+.lw-upd-schritte li::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; opacity: 0.5; }
+.lw-upd-schritte li.an { color: var(--st-text); border-color: rgba(47, 124, 246, 0.55); background: rgba(47, 124, 246, 0.14); }
+.lw-upd-schritte li.an::before { background: var(--st-akzent-2); opacity: 1; animation: st-punkt 1.2s ease-in-out infinite; }
+.lw-upd-schritte li.fertig { color: var(--st-ok); }
+.lw-upd-schritte li.fertig::before { background: var(--st-ok); opacity: 1; }
+.lw-upd-neu { margin-top: 16px; text-align: left; font-size: 13px; border-top: 1px solid var(--st-rand); padding-top: 12px; }
+.lw-upd-neu summary { cursor: pointer; color: var(--st-dim); }
+.lw-upd-neu div { margin-top: 8px; line-height: 1.55; max-height: 140px; overflow: auto; }
+.lw-upd-knoepfe { display: flex; gap: 10px; justify-content: center; margin-top: 16px; }
+.lw-upd-knoepfe[hidden] { display: none; }
+.lw-upd-knopf { height: 40px; padding: 0 18px; border-radius: 11px; border: 0; background: linear-gradient(100deg, #1e6af0, #3a8bff); color: #fff; font: 600 14px Inter, system-ui, sans-serif; cursor: pointer; }
+.lw-upd-knopf.leise { background: var(--st-feld); color: var(--st-text); border: 1px solid var(--st-feld-rand); }
+.lw-upd-hinweis { margin: 16px 0 0; font-size: 11.5px; color: var(--st-dim); }
+.lw-upd.fehler .lw-upd-hinweis { display: none; }
+
+@media (max-width: 1500px) {
+  .st-feld > label { font-size: 13px; gap: 9px; }
 }

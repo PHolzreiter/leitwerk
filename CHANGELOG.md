@@ -1,5 +1,15 @@
 # Änderungen
 
+## 0.58.0 – Echtes Wetter, Updates mit Anzeige, neues Einstellungs-Design
+- Wetter auf der Startseite als Schiebeschalter: **Realistisch** (echtes Wetter), Normal, Wechselhaft, Fest
+- Realistisch = das echte Wetter für die Mitte der Funkgruppe, Stunde für Stunde (Open-Meteo, frei, braucht Internet): auch für vergangene Tage (Wetterarchiv) und bis 15 Tage voraus. Ohne Internet oder weiter in der Zukunft wird simuliert (mit Funkmeldung). Auch im Spiel unter Einstellungen → Wetter & Flugrettung einschaltbar
+- Updates: LeitWerk sieht alle 15 Minuten nach. Gibt es eine neue Version, erscheint auf der Startseite „Update verfügbar“ und im Spiel oben ein grüner Update-Knopf. Erst auf Klick wird geladen – mit großer Anzeige (Prozent, MB, Geschwindigkeit, Restzeit, Herunterladen → Installieren → Neustart). Vorher wird das laufende Spiel automatisch gesichert
+- Einstellungen und Dialoge im neuen Design passend zur Startseite (Glas-Look, runde Schalter, Segmente, Suche mit Lupe)
+- Bereitschafts-Check: das Fenster zeigt jetzt richtig alle Punkte (vorher verdeckte eine riesige Fläche alles)
+- Multiplayer-Lobby: Rechte als Symbole mit Legende – nichts steht mehr über
+- „Work in Progress“-Schild am großen LeitWerk-Schriftzug
+- Multiplayer: Mitspieler sehen die Lobby bis zum Start (vorher ging die Startseite bei ihnen sofort zu)
+
 ## 0.57.0 – Neue Startseite und neues Logo
 - Bei jedem Programmstart erscheint eine Startseite: Funkgruppe, Startzeit (jetzt oder Wunschzeit), Einsatzaufkommen (ruhig / normal / stressig), Wetter (realistisch / wechselhaft / fest) und Solo/Multiplayer direkt einstellen und los
 - Holografische NÖ-Karte: die gewählte Funkgruppe leuchtet auf (Klick auf die Karte wählt sie auch)

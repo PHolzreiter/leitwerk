@@ -33,6 +33,8 @@ import {
   wetterJetzt,
   wetterSetzen,
   WETTER_LABEL,
+  echtBei,
+  type EchtStunde,
   type PrognoseStunde,
   type Wetter,
   type WetterLage,
@@ -76,6 +78,7 @@ import {
 import { codeInfo, codeVorschlag, istUeberstellung } from "./ktCodes";
 import { PARTNER, PARTNER_ANZAHL, partnerArtVonTyp, partnerNoetig, partnerSchonDa, type PartnerArt, type PartnerGrund } from "./partner";
 import { FUNKGRUPPEN, funkgruppe, inFunkgruppe, mitteVon, type Funkgruppe } from "./funkgruppen";
+import { echtwetterLaden } from "./echtwetter";
 import { sekZufall } from "./sek";
 import { bedarf, ereignisseEinplanen, istStillstand, lageAusFall, lageErzeugen, lagemeldungText, patientText, rtwBedarf, type Lage } from "./lage";
 import { anleitungAus, fallVariante, fallVorlage, fallWaehlen, varianteWaehlen, type FallVariante } from "../abfrage/faelle";
@@ -721,6 +724,10 @@ export interface SimState {
   statusLog?: StatusEintrag[];
   /** Multiplayer: Lobby auf der Startseite offen (Mitspieler warten, bis der Host startet) */
   lobby?: boolean;
+  /** echtes Wetter (stündlich, aus dem Internet) – nur wenn eingestellt */
+  wetterEcht?: EchtStunde[];
+  /** Stand beim Laden des echten Wetters (für die Anzeige) */
+  wetterEchtStand?: { ok: boolean; text: string };
 }
 
 /** Eine Statusänderung (für den Reiter „Statusänderungen“) */
@@ -1350,7 +1357,55 @@ export class Simulation {
       jahreszeit: s.jahreszeit ?? "auto",
       festLage: lageVon(s.wetterFestLage ?? "klar"),
       festTemp: s.wetterFestTemp ?? 18,
+      echt: s.wetterEcht ? this.state.wetterEcht : undefined,
     };
+  }
+
+  private echtLaedt = false;
+  private echtNaechsterVersuch = 0;
+  private echtFehlerGemeldet = false;
+
+  /** Echtes Wetter laden, wenn eingestellt und die geladenen Stunden nicht (mehr) reichen */
+  private echtwetterPruefen(t: number): void {
+    if (!this.settings.wetterAktiv || !this.settings.wetterEcht || this.echtLaedt || performance.now() < this.echtNaechsterVersuch) return;
+    const e = this.state.wetterEcht;
+    const STD = 3_600_000;
+    if (e?.length && t >= e[0].t && t < e[e.length - 1].t - 6 * STD) return;
+    const ganzNeu = !e?.length || t < e[0].t || t >= e[e.length - 1].t + STD;
+    this.echtLaedt = true;
+    const g = mitteVon(funkgruppe(this.settings.funkgruppe));
+    void echtwetterLaden(g.lat, g.lon, t)
+      .then((daten) => {
+        this.state.wetterEcht = daten;
+        this.state.wetterEchtStand = { ok: true, text: "Echtes Wetter (Open-Meteo)" };
+        this.echtFehlerGemeldet = false;
+        this.echtNaechsterVersuch = performance.now() + 60_000;
+        const o = this.wetterOpt();
+        const jetzt = echtBei(this.state.zeit, o);
+        if (ganzNeu && jetzt) {
+          // sofort aufs echte Wetter umstellen (ohne Übergang)
+          this.state.wetter = wetterSetzen(jetzt.lage, this.state.zeit, o, this.state.wetter);
+          this.state.wetter.vorher = null;
+          this.state.wetter.bis = jetzt.t + STD;
+          this.state.wetter.wind = Math.round(jetzt.wind);
+          this.state.wetter.richtung = Math.round(jetzt.richtung);
+        }
+        this.state.wetter.plan = [];
+        this.emit();
+      })
+      .catch((err) => {
+        const text = String((err as Error)?.message ?? err);
+        this.state.wetterEchtStand = { ok: false, text };
+        this.echtNaechsterVersuch = performance.now() + 5 * 60_000;
+        if (!this.echtFehlerGemeldet) {
+          this.echtFehlerGemeldet = true;
+          this.funk("Wetterdienst", null, `Echtes Wetter nicht verfügbar – simuliertes Wetter. ${text}`, "info");
+        }
+        this.emit();
+      })
+      .finally(() => {
+        this.echtLaedt = false;
+      });
   }
 
   /** aktuelle Temperatur (°C) */
@@ -1434,6 +1489,7 @@ export class Simulation {
     this.state.zeit += dt;
     const t = this.state.zeit;
 
+    this.echtwetterPruefen(t);
     if (this.settings.wetterAktiv && (t >= this.state.wetter.bis || !this.state.wetter.plan?.length || (this.wetterOpt().wechsel <= 0 && this.state.wetter.lage !== this.wetterOpt().festLage))) {
       if (wetterFortschreiben(this.state.wetter, t, this.wetterOpt())) {
         this.funk("Wetterdienst", null, `Wetter: ${WETTER_LABEL[this.state.wetter.lage]}`, flugverbot(this.state.wetter.lage, this.state.wetter.wind) ? "warnung" : "info");
@@ -6076,6 +6132,10 @@ export class Simulation {
     this.pause();
     this.state.zeit = zeit;
     this.reset();
+    this.state.wetterEcht = undefined;
+    this.state.wetterEchtStand = undefined;
+    this.echtNaechsterVersuch = 0;
+    this.echtFehlerGemeldet = false;
     const o = this.wetterOpt();
     const start = o.wechsel <= 0 ? o.festLage : nextWetter(zeit, null, o).lage;
     this.state.wetter = wetterSetzen(lageVon(start), zeit, o);

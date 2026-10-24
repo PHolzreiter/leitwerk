@@ -1,4 +1,5 @@
 /** Kartenpakete (Einstellungen), Erststart-Download und Update-Fenster. */
+import { updateInstallieren } from "./updateDienst";
 import { inTauri } from "../platform";
 import {
   GRUNDPAKET,
@@ -6,7 +7,6 @@ import {
   checkUpdate,
   formatBytes,
   installPack,
-  installUpdate,
   packSize,
   packsChanged,
   packsLocal,
@@ -248,46 +248,16 @@ export function showUpdateDialog(u: UpdateInfo): void {
   body.innerHTML = `<p>Version <b>${esc(u.version)}</b> ist verfügbar (installiert: ${esc(u.current)}).</p>
     ${u.notes ? `<div class="update-notes">${esc(u.notes).replace(/\n/g, "<br>")}</div>` : ""}
     <p class="muted">LeitWerk startet nach der Installation neu. Laufende Einsätze gehen dabei verloren, deine Daten und Einstellungen bleiben.</p>`;
-  const pb = progressBar();
-  pb.root.hidden = true;
-  body.appendChild(pb.root);
-  const d = openDialog({
+  openDialog({
     title: "Neue Version verfügbar",
     body,
-    actions: [
-      { label: "Später" },
-      {
-        label: "Jetzt installieren",
-        kind: "primary",
-        onClick: async () => {
-          d.setActionEnabled(0, false);
-          d.setActionEnabled(1, false);
-          pb.root.hidden = false;
-          pb.set(null, "Update wird geladen …");
-          try {
-            await installUpdate((p) => pb.set(p));
-            pb.set(null, "Wird installiert, LeitWerk startet neu …");
-          } catch (e) {
-            toast(e instanceof Error ? e.message : String(e), "error");
-            d.setActionEnabled(0, true);
-            d.setActionEnabled(1, true);
-          }
-          return false;
-        },
-      },
-    ],
+    actions: [{ label: "Später" }, { label: "Jetzt installieren", kind: "primary", onClick: () => updateInstallieren(u) }],
   });
 }
 
 /** Beim Start: still nach Programm- und Kartenupdates sehen. */
 export async function checkOnStart(): Promise<void> {
   if (!inTauri()) return;
-  try {
-    const u = await checkUpdate();
-    if (u) showUpdateDialog(u);
-  } catch (e) {
-    console.warn("Update-Prüfung", e);
-  }
   try {
     const [packs, local] = await Promise.all([packsManifest(), packsLocal()]);
     manifestCache = packs;

@@ -191,6 +191,8 @@ export interface Settings {
   wetterWechsel?: number;
   /** Jahreszeit fürs Wetter: auto = nach Spieldatum */
   jahreszeit?: "auto" | "fruehling" | "sommer" | "herbst" | "winter";
+  /** echtes Wetter aus dem Internet (Open-Meteo) für die Funkgruppe */
+  wetterEcht?: boolean;
   wetterFestLage?: string;
   wetterFestTemp?: number;
   /** TETRA-Funkgruppe = Einsatzgebiet (z. B. „NÖ-03“) */

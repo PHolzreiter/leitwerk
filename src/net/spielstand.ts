@@ -97,6 +97,12 @@ export function schliessen(): void {
   sim.neu();
 }
 
+/** Sofort automatisch sichern (z. B. vor einem Update) */
+export async function jetztSichern(): Promise<void> {
+  if (sim.state.einsaetze.length === 0) return;
+  await autosaveWrite(JSON.stringify(erstellen()));
+}
+
 let letzteSicherung = "";
 /** Jede Minute sichern, solange es etwas zu sichern gibt */
 export function autosaveStarten(): void {

@@ -29,6 +29,7 @@ function leer() {
     partner: "",
     khBel: "",
     statusLog: "",
+    echt: "",
   };
 }
 
@@ -93,7 +94,14 @@ export class DeltaBauer {
       naechster: st.naechster,
       zaehler: st.zaehler,
       funkZaehler: st.funkZaehler,
+      lobby: !!st.lobby,
+      wetterEchtStand: st.wetterEchtStand ?? null,
     };
+    const echtKey = st.wetterEcht?.length ? `${st.wetterEcht[0].t}|${st.wetterEcht.length}` : "-";
+    if (echtKey !== c.echt) {
+      d.wetterEcht = st.wetterEcht ?? null;
+      c.echt = echtKey;
+    }
     if (fz.length) d.fz = fz;
     if (pos.length) d.pos = pos;
     if (fzIds !== c.fzIds) {
@@ -176,7 +184,10 @@ export function deltaAnwenden(d: Nachricht): void {
     naechster: d.naechster,
     zaehler: d.zaehler,
     funkZaehler: d.funkZaehler,
+    lobby: !!d.lobby,
+    wetterEchtStand: (d.wetterEchtStand as SimState["wetterEchtStand"]) ?? undefined,
   });
+  if (d.wetterEcht !== undefined) st.wetterEcht = (d.wetterEcht as SimState["wetterEcht"]) ?? undefined;
   for (const f of (d.fz as SimFahrzeug[] | undefined) ?? []) {
     // Objekte behalten (die Oberfläche hält Verweise darauf), nur Inhalt ersetzen
     if (st.fahrzeuge[f.id]) Object.assign(st.fahrzeuge[f.id], f);

@@ -129,7 +129,19 @@ export interface Wetter extends WetterAbschnitt {
   seit?: number;
 }
 
+/** Echtes Wetter (stündlich, aus dem Internet) */
+export interface EchtStunde {
+  /** Beginn der Stunde (ms) */
+  t: number;
+  lage: WetterLage;
+  temp: number;
+  wind: number;
+  richtung: number;
+}
+
 export interface WetterOpt {
+  /** echtes Wetter: solange die Zeit darin liegt, gilt es statt der Simulation */
+  echt?: EchtStunde[];
   /** 0 = fix … 100 = sehr wechselhaft */
   wechsel: number;
   /** "auto" = nach dem Spieldatum */
@@ -139,6 +151,36 @@ export interface WetterOpt {
 }
 
 export const WETTER_STANDARD: WetterOpt = { wechsel: 50, jahreszeit: "auto", festLage: "klar", festTemp: 18 };
+
+const STUNDE = 3_600_000;
+
+/** Echtes Wetter zur Zeit t (oder null, wenn außerhalb der geladenen Stunden) */
+export function echtBei(t: number, o: WetterOpt): EchtStunde | null {
+  const e = o.echt;
+  if (!e?.length || t < e[0].t || t >= e[e.length - 1].t + STUNDE) return null;
+  const i = Math.min(e.length - 1, Math.max(0, Math.floor((t - e[0].t) / STUNDE)));
+  return e[i].t <= t && t < e[i].t + STUNDE ? e[i] : (e.find((x) => x.t <= t && t < x.t + STUNDE) ?? null);
+}
+
+/** Wettercode (WMO, wie ihn Wetterdienste liefern) → Wetterlage */
+export function lageAusWmo(code: number, wolken: number, temp: number): WetterLage {
+  if (code === 0) return "klar";
+  if (code === 1) return wolken < 20 ? "klar" : "heiter";
+  if (code === 2) return wolken < 50 ? "leicht_bewoelkt" : "bewoelkt";
+  if (code === 3) return wolken >= 95 ? "bedeckt" : "bewoelkt";
+  if (code === 45 || code === 48) return "nebel";
+  if (code >= 51 && code <= 55) return "niesel";
+  if (code === 56 || code === 57 || code === 66 || code === 67) return "eisregen";
+  if (code === 61 || code === 80) return temp < 1.5 && temp > -1.5 ? "schneeregen" : "leichter_regen";
+  if (code === 63 || code === 81) return "regen";
+  if (code === 65 || code === 82) return "starkregen";
+  if (code === 71 || code === 77 || code === 85) return "leichter_schnee";
+  if (code === 73 || code === 86) return "schnee";
+  if (code === 75) return "starker_schnee";
+  if (code === 95) return "gewitter";
+  if (code === 96 || code === 99) return "hagel";
+  return wolken > 60 ? "bewoelkt" : "heiter";
+}
 
 export function modusVon(wechsel: number): WetterModus {
   return wechsel <= 0 ? "fest" : wechsel < 30 ? "beständig" : wechsel < 65 ? "normal" : wechsel < 88 ? "wechselhaft" : "sehr wechselhaft";
@@ -223,6 +265,12 @@ function lageOffset(lage: WetterLage, tagsueber: boolean): number {
 /** Temperatur (°C) zur Zeit t bei dieser Wetterlage (optional weicher Übergang von der vorigen Lage) */
 export function temperatur(t: number, lage: WetterLage, o: WetterOpt, vorher?: { lage: WetterLage | null | undefined; seit: number | undefined }): number {
   if (o.wechsel <= 0) return o.festTemp;
+  const echt = echtBei(t, o);
+  if (echt) {
+    const n = echtBei(echt.t + STUNDE, o);
+    const f = (t - echt.t) / STUNDE;
+    return Math.round((n ? echt.temp + (n.temp - echt.temp) * f : echt.temp) * 10) / 10;
+  }
   const [tmin, tmax] = KLIMA[klimaMonat(t, o) - 1];
   const d = new Date(t);
   const h = d.getHours() + d.getMinutes() / 60;
@@ -264,6 +312,8 @@ function ersatzLage(temp: number): WetterLage {
 /** Nächste Wetterlage: nur Nachbarn, gewichtet nach Tag, Jahreszeit, Uhrzeit und „wie wechselhaft“ */
 export function nextWetter(now: number, current: WetterLage | null, o: WetterOpt = WETTER_STANDARD, wind?: number, richtung?: number): WetterAbschnitt {
   if (o.wechsel <= 0) return { lage: o.festLage, bis: now + 60 * 60_000, wind: LAGE[lageVon(o.festLage)].wind, richtung: 270 };
+  const echt = echtBei(now, o);
+  if (echt) return { lage: echt.lage, bis: echt.t + STUNDE, wind: Math.max(1, Math.round(echt.wind)), richtung: Math.round(echt.richtung) };
   const d = new Date(now);
   const stunde = d.getHours();
   const jz = jahreszeitVon(now, o);
@@ -362,10 +412,10 @@ export function wetterFortschreiben(w: Wetter, t: number, o: WetterOpt): boolean
     w.wind = n.wind ?? w.wind;
     w.richtung = n.richtung ?? w.richtung;
   }
-  // Temperatur erlaubt die Lage nicht mehr (z. B. Regen bei Frost): sanft zur Nachbarlage
+  // Temperatur erlaubt die Lage nicht mehr (z. B. Regen bei Frost): sanft zur Nachbarlage (nicht bei echtem Wetter)
   const jz = jahreszeitVon(t, o);
   const temp = temperatur(t, "bewoelkt", o);
-  if (!erlaubt(w.lage, temp, new Date(t).getHours(), jz)) {
+  if (!echtBei(t, o) && !erlaubt(w.lage, temp, new Date(t).getHours(), jz)) {
     const ers = NACHBAR[w.lage].find((l) => erlaubt(l, temp, new Date(t).getHours(), jz)) ?? ersatzLage(temp);
     w.vorher = w.lage;
     w.seit = t;

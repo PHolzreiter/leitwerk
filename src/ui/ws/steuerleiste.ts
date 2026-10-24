@@ -34,6 +34,9 @@ import { fensterSchliessen } from "./nebenfenster";
 import { onPers, pers, setzePers } from "./persoenlich";
 import { logoMarke, logoSchrift } from "../logo";
 import { startseiteZeigen } from "../startseite";
+import { confirmDialog } from "../dialog";
+import { jetztSichern } from "../../net/spielstand";
+import { onUpdate, updateInfo, updateInstallieren, updateLaeuft } from "../updateDienst";
 
 // ---------------------------------------------------------------- Menüs
 
@@ -192,6 +195,7 @@ export function steuerleisteBauen(kopf: HTMLElement): void {
   setzeEditorDeps({ pickOnMap: waehlenAusPopup });
   kopf.innerHTML = `
     <div class="brand"${IST_HAUPT ? ` role="button" tabindex="0" title="Zur Startseite"` : ""}>${logoMarke(22)}<span class="brand-name">${logoSchrift()}</span>${IST_HAUPT ? "" : `<span class="brand-sub">${esc(fensterName(FENSTER_ID))}</span>`}</div>
+${IST_HAUPT ? `<button type="button" class="sl-update" hidden title="Neue LeitWerk-Version verfügbar">⬇ Update</button>` : ""}
     <div class="sl-gruppe sl-sim">
       <button id="sim-play" class="btn small" type="button">▶ Start</button>
       <div class="tempo seg" role="group" aria-label="Zeitraffer">
@@ -219,6 +223,30 @@ export function steuerleisteBauen(kopf: HTMLElement): void {
   // Uhr, Start/Pause, Tempo, Wetter
   const clock = kopf.querySelector<HTMLElement>("#clock")!;
   if (IST_HAUPT) {
+    const upd = kopf.querySelector<HTMLButtonElement>(".sl-update")!;
+    const updZeigen = () => {
+      const u = updateInfo();
+      upd.hidden = !u || updateLaeuft();
+      if (u) upd.textContent = `⬇ Update ${u.version}`;
+    };
+    onUpdate(updZeigen);
+    updZeigen();
+    upd.addEventListener("click", async () => {
+      const u = updateInfo();
+      if (!u) return;
+      const ok = await confirmDialog(
+        `Update auf ${u.version}`,
+        "LeitWerk lädt die neue Version und startet danach neu. Das laufende Spiel wird vorher automatisch gesichert – über „Spiel fortsetzen“ geht es weiter.",
+        "Jetzt aktualisieren",
+      );
+      if (!ok) return;
+      try {
+        await jetztSichern();
+      } catch (e) {
+        console.warn("Sichern vor Update", e);
+      }
+      updateInstallieren();
+    });
     const marke = kopf.querySelector<HTMLElement>(".brand")!;
     const zurStart = () => startseiteZeigen(undefined, { zurueck: true });
     marke.addEventListener("click", zurStart);

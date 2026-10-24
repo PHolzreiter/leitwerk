@@ -405,7 +405,20 @@ export function createSettingsView(container: HTMLElement, teil: "simulation" | 
     const skala = el("div", { class: "wetter-skala" });
     skala.append(el("span", {}, "fix"), el("span", {}, "sehr wechselhaft"));
     reglerBox.append(wr, skala, wrText);
-    nGrid.append(el("label", { title: "Wie oft und wie heftig sich das Wetter ändert. Ganz links bleibt es immer gleich." }, "Wetter"), reglerBox);
+    const echtCb = el("input", { type: "checkbox" });
+    echtCb.checked = !!draft.wetterEcht;
+    const echtWrap = el("div", { class: "row-btns" });
+    echtWrap.append(echtCb, el("span", { class: "muted" }, "stündlich für die Funkgruppe (Open-Meteo, braucht Internet; ohne Verbindung wird simuliert)"));
+    nGrid.append(el("label", { title: "Das echte Wetter zur Spielzeit – auch für vergangene Tage (Wetterarchiv) und bis 15 Tage voraus" }, "Echtes Wetter"), echtWrap);
+    const wetterLbl = el("label", { title: "Wie oft und wie heftig sich das Wetter ändert. Ganz links bleibt es immer gleich." }, "Wetter");
+    nGrid.append(wetterLbl, reglerBox);
+    echtCb.addEventListener("change", () => {
+      draft.wetterEcht = echtCb.checked;
+      if (echtCb.checked && (draft.wetterWechsel ?? 50) <= 0) draft.wetterWechsel = 50;
+      wr.value = String(draft.wetterWechsel ?? 50);
+      wrZeigen();
+      geaendert();
+    });
     const festWrap = el("div", { class: "row-btns" });
     const fl = el("select");
     for (const [k, v] of Object.entries(WETTER_LABEL)) fl.appendChild(el("option", { value: k }, v));
@@ -428,7 +441,8 @@ export function createSettingsView(container: HTMLElement, teil: "simulation" | 
       const v = Number(wr.value);
       const takt = v >= 88 ? "etwa jede Stunde, auch heftig" : v >= 65 ? "etwa alle 1–2 Stunden" : v >= 30 ? "etwa alle 2–4 Stunden" : "selten, etwa alle 4–8 Stunden";
       wrText.textContent = v > 0 ? `${modusVon(v)} – ändert sich ${takt}` : "fix – immer das gewählte Wetter";
-      festLbl.hidden = festWrap.hidden = v > 0;
+      festLbl.hidden = festWrap.hidden = v > 0 || !!draft.wetterEcht;
+      wetterLbl.hidden = reglerBox.hidden = !!draft.wetterEcht;
     };
     wr.addEventListener("input", () => {
       draft.wetterWechsel = Number(wr.value);
@@ -478,7 +492,7 @@ export function createSettingsView(container: HTMLElement, teil: "simulation" | 
     nSec.appendChild(uebernahme);
     const wetterSpeichern = () => {
       const s = structuredClone(store.settings);
-      Object.assign(s, { wetterWechsel: draft.wetterWechsel, wetterModus: draft.wetterModus, wetterFestLage: draft.wetterFestLage, wetterFestTemp: draft.wetterFestTemp, jahreszeit: draft.jahreszeit, wetterAktiv: draft.wetterAktiv });
+      Object.assign(s, { wetterEcht: draft.wetterEcht, wetterWechsel: draft.wetterWechsel, wetterModus: draft.wetterModus, wetterFestLage: draft.wetterFestLage, wetterFestTemp: draft.wetterFestTemp, jahreszeit: draft.jahreszeit, wetterAktiv: draft.wetterAktiv });
       store.setSettings(s);
     };
     fliessend.addEventListener("click", () => {
@@ -511,6 +525,7 @@ export function createSettingsView(container: HTMLElement, teil: "simulation" | 
     function geaendert() {
       const a = store.settings;
       uebernahme.hidden =
+        !!draft.wetterEcht === !!a.wetterEcht &&
         (draft.wetterWechsel ?? -1) === (a.wetterWechsel ?? -1) && draft.wetterFestLage === a.wetterFestLage && draft.wetterFestTemp === a.wetterFestTemp && draft.jahreszeit === a.jahreszeit;
     }
 
