@@ -1,8 +1,9 @@
 /** Fenster „Spiel“: Spielstand speichern/laden, Multiplayer hosten/beitreten, Spieler und Rechte. */
+import { speichernDialog, spielstaendeOeffnen } from "./spielstaende";
 import { RECHTE_LABEL, STANDARD_RECHTE, meinName, mp, type Spieler } from "../net/mehrspieler";
 import * as spielstand from "../net/spielstand";
 import { store } from "../data/store";
-import type { Berechtigung } from "../sim/engine";
+import { sim, type Berechtigung } from "../sim/engine";
 import { confirmDialog, openDialog, type DialogHandle } from "./dialog";
 import { el, esc, toast } from "./dom";
 
@@ -175,22 +176,11 @@ export function oeffneSpielDialog(): void {
     const ss = sec("Spielstand", "Speichert das laufende Spiel mit allen Einsätzen, Fahrzeugen und Daten. Jeder kann einen Spielstand laden und allein oder als Host weiterspielen.");
     const reihe = el("div", { class: "spiel-row" });
     const sp = el("button", { class: "btn primary" }, "Spielstand speichern …");
-    sp.addEventListener("click", () =>
-      busy(sp, async () => {
-        const p = await spielstand.speichern();
-        if (p) toast("Spielstand gespeichert");
-      }),
-    );
+    sp.addEventListener("click", () => void speichernDialog());
     reihe.appendChild(sp);
     if (r !== "client") {
-      const ld = el("button", { class: "btn" }, "Spielstand laden …");
-      ld.addEventListener("click", () =>
-        busy(ld, async () => {
-          const st = await spielstand.laden();
-          if (st) toast(`Spielstand vom ${uhrzeit(st.gespeichert)} geladen`);
-          render();
-        }),
-      );
+      const ld = el("button", { class: "btn" }, "Spielstände …");
+      ld.addEventListener("click", () => spielstaendeOeffnen({ warnen: sim.state.einsaetze.length > 0, geladen: () => render() }));
       reihe.appendChild(ld);
       const auto = el("button", { class: "btn" }, "Letzte automatische Sicherung …");
       auto.hidden = true;
@@ -294,7 +284,7 @@ export function setupSpielStatus(): void {
         : `<h2>Host getrennt – Spiel pausiert</h2><p>Sobald der Host wieder da ist, geht es genau hier weiter. Du kannst den Stand auch speichern oder selbst Host werden.</p>`;
       const r = el("div", { class: "spiel-row" });
       const sp = el("button", { class: "btn" }, "Spielstand speichern …");
-      sp.addEventListener("click", () => void spielstand.speichern().then((p) => p && toast("Spielstand gespeichert")));
+      sp.addEventListener("click", () => void speichernDialog());
       const ueb = el("button", { class: "btn primary" }, "Als Host übernehmen");
       ueb.addEventListener("click", () => mp.hostUebernehmen());
       const weg = el("button", { class: "btn danger-text" }, "Spiel verlassen");

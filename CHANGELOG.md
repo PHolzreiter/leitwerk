@@ -1,5 +1,14 @@
 # Änderungen
 
+## 0.59.0 – Spielstände-Ordner, aufgeräumte Einstellungen, einheitliche Startseite
+- **Spielstände** liegen jetzt als Dateien im Ordner **Dokumente/LeitWerk/Spielstände**. „Spielstand laden“ zeigt eine Übersicht mit Name, Speicherzeit, Funkgruppe, Spielzeit, Einsätzen (offen), Wetter und Mitspielern – mit Suche, Umbenennen, Exportieren (zum Weitergeben), Löschen und der automatischen Sicherung ganz oben
+- **Spielstand importieren …** öffnet die Dateiauswahl; importierte Spielstände werden in den Ordner kopiert (nur echte LeitWerk-Spielstände)
+- Speichern fragt nach einem Namen (Vorschlag: Funkgruppe und Spielzeit); gleiche Namen werden nicht überschrieben
+- **Einstellungen neu geordnet** (nichts entfernt): Mein Platz (Darstellung, Farben, Telefon & Töne, Sprache & Mikrofon, Bedienung) · Spiel & Simulation (Spielgebiet & Aufkommen, Notrufe & Anrufer, Alarmierung, Krankenhäuser & KT, Zeiten, Wetter & Flugrettung) · Leitstelle (Daten) · Programm. Der große Block „Einsatzaufkommen“ ist in Spielgebiet, Aufkommen, Anrufer und Verlauf, Alarmierung sowie Krankenhäuser und Daueraufträge aufgeteilt. Jede Seite hat einen Kopf mit Titel und kurzer Erklärung
+- „Aufkommen insgesamt“ (ruhig/normal/stressig) ist jetzt auch im Spiel einstellbar
+- **Suche** findet die einzelne Einstellung (auch über andere Wörter wie „Dunkelmodus“, „Mikro“, ohne Umlaute wie „groesse“) – Klick oder Enter springt hin und hebt sie hervor
+- Startseite: alle Schalter gleich (Beschriftung oben, gleiche Höhe und Rundung, gleitender Schieber), Hell/Dunkel/System sitzt rechts oben, die NÖ-Karte auf Höhe von „Simulation konfigurieren“, sechs Kacheln über die ganze Breite (dazu Hubschrauber und Dienststellen), Bereitschafts-Check kompakt mit Symbolen
+
 ## 0.58.0 – Echtes Wetter, Updates mit Anzeige, neues Einstellungs-Design
 - Wetter auf der Startseite als Schiebeschalter: **Realistisch** (echtes Wetter), Normal, Wechselhaft, Fest
 - Realistisch = das echte Wetter für die Mitte der Funkgruppe, Stunde für Stunde (Open-Meteo, frei, braucht Internet): auch für vergangene Tage (Wetterarchiv) und bis 15 Tage voraus. Ohne Internet oder weiter in der Zukunft wird simuliert (mit Funkmeldung). Auch im Spiel unter Einstellungen → Wetter & Flugrettung einschaltbar

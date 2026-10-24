@@ -1,7 +1,10 @@
 /** Reiter „Einstellungen“: Statusmodell, Einsatzaufkommen, Stufen-Zuordnung, Fahrzeiten, Flugrettung. */
+import { ordnerPfad, ordnerZeigen } from "../net/spielstandOrdner";
+import { spielstaendeOeffnen } from "./spielstaende";
 import { fallEditorOeffnen } from "./fallEditor";
 import { store } from "../data/store";
 import { sim } from "../sim/engine";
+import { inTauri } from "../platform";
 import { mp } from "../net/mehrspieler";
 import { geoStatus, REGIONEN } from "../sim/geo";
 import { KATEGORIEN, KATEGORIE_LABEL, NOTARZT_LABEL, defaultStufeFuer, stufeRaten, type Kategorie, type NotarztRegel, type Settings } from "../sim/settings";
@@ -91,17 +94,22 @@ export function createSettingsView(container: HTMLElement, teil: "simulation" | 
     }
     sSec.appendChild(sTab);
 
+    // Spielgebiet
+    const gSec = section("Spielgebiet", "Wo gespielt wird: Einsätze entstehen nur in dieser Funkgruppe, gefunkt wird auf ihr.");
+    const gGrid = el("div", { class: "set-grid" });
+    gSec.appendChild(gGrid);
+
     // Aufkommen
     const aSec = section(
       "Einsatzaufkommen",
-      "Wie viele Notfälle und Krankentransporte pro Stunde kommen, steht in der Tabelle darunter. Hier stellst du ein, wie sich die Notfälle auf die Kategorien verteilen (Anteile).",
+      "Wie viele Notfälle und Krankentransporte kommen. Die Stufe gilt für alles; die genauen Werte je Stunde stehen in der Tabelle darunter.",
     );
     const aGrid = el("div", { class: "set-grid" });
-    for (const k of KATEGORIEN) {
-      const i = num(draft.aufkommen[k], "0.5");
-      i.addEventListener("change", () => (draft.aufkommen[k as Kategorie] = Number(i.value) || 0));
-      aGrid.append(el("label", {}, `Anteil ${KATEGORIE_LABEL[k]}`), i);
-    }
+    const stufeSel = el("select", { class: "set-aufkommen-stufe" }) as HTMLSelectElement;
+    for (const [v, l] of [["ruhig", "Ruhig – etwa 60 %"], ["normal", "Normal – wie in der Tabelle"], ["stressig", "Stressig – etwa 160 %"]]) stufeSel.appendChild(el("option", { value: v }, l));
+    stufeSel.value = draft.aufkommenStufe ?? "normal";
+    stufeSel.addEventListener("change", () => (draft.aufkommenStufe = stufeSel.value as Settings["aufkommenStufe"]));
+    aGrid.append(el("label", { title: "Wie auf der Startseite: ruhig, normal oder stressig" }, "Aufkommen insgesamt"), stufeSel);
     const gen = el("input", { type: "checkbox" });
     gen.checked = draft.generatorAktiv;
     gen.addEventListener("change", () => (draft.generatorAktiv = gen.checked));
@@ -119,22 +127,26 @@ export function createSettingsView(container: HTMLElement, teil: "simulation" | 
     }
     geb.value = draft.funkgruppe ?? "NÖ-03";
     geb.addEventListener("change", () => (draft.funkgruppe = geb.value));
-    aGrid.append(
+    gGrid.append(
       el("label", { title: "Einsätze entstehen nur in diesen Bezirken, gefunkt wird auf dieser Gruppe. Fahrzeuge von außen kann man trotzdem alarmieren." }, "Funkgruppe (TETRA)"),
       geb,
     );
+    // Anrufer und Verlauf (eigener Abschnitt, gleich nach dem Aufkommen gebaut)
+    const vGrid = el("div", { class: "set-grid" });
+    const alGrid = el("div", { class: "set-grid" });
+    const khGrid = el("div", { class: "set-grid" });
     const fa = num(draft.falscheAdresseProzent);
     fa.addEventListener("change", () => (draft.falscheAdresseProzent = Number(fa.value) || 0));
-    aGrid.append(el("label", {}, "Anrufer mit falscher Adresse (%)"), fa);
+    vGrid.append(el("label", {}, "Anrufer mit falscher Adresse (%)"), fa);
     const rn = el("input", { type: "checkbox" });
     rn.checked = !!draft.rueckrufNurMitNummer;
     rn.addEventListener("change", () => (draft.rueckrufNurMitNummer = rn.checked));
-    aGrid.append(el("label", { title: "Ohne aufgenommene Rückrufnummer kann die Leitstelle den Anrufer nicht zurückrufen" }, "Rückruf nur mit aufgenommener Nummer"), rn);
+    vGrid.append(el("label", { title: "Ohne aufgenommene Rückrufnummer kann die Leitstelle den Anrufer nicht zurückrufen" }, "Rückruf nur mit aufgenommener Nummer"), rn);
     const kSel = el("select");
     for (const [v, l] of [["ruhig", "ruhig – selten Überraschungen"], ["normal", "normal – etwa jeder 10. Einsatz verändert sich"], ["fordernd", "fordernd – oft Verschlechterungen und Irrtümer"]]) kSel.appendChild(el("option", { value: v }, l));
     kSel.value = draft.komplikationen ?? "normal";
     kSel.addEventListener("change", () => (draft.komplikationen = kSel.value as Settings["komplikationen"]));
-    aGrid.append(el("label", {}, "Komplikationen (Verschlechterung, Irrtum des Anrufers, mehr Betroffene)"), kSel);
+    vGrid.append(el("label", {}, "Komplikationen (Verschlechterung, Irrtum des Anrufers, mehr Betroffene)"), kSel);
     const fkSel = el("select", { class: "set-fallkatalog" }) as HTMLSelectElement;
     for (const [v, l] of [["nur", "nur Fallkatalog (neu, zum Testen)"], ["gemischt", "gemischt mit den bisherigen Fallgeschichten"], ["aus", "aus – bisherige Fallgeschichten"]]) fkSel.appendChild(el("option", { value: v }, l));
     fkSel.value = draft.fallKatalog ?? "nur";
@@ -148,11 +160,11 @@ export function createSettingsView(container: HTMLElement, teil: "simulation" | 
     for (const [v, l] of [["normal", "normal"], ["selten", "selten"], ["aus", "aus"]]) rvSel.appendChild(el("option", { value: v }, l));
     rvSel.value = draft.revers ?? "normal";
     rvSel.addEventListener("change", () => (draft.revers = rvSel.value as Settings["revers"]));
-    aGrid.append(el("label", { title: "Wache, stabile Patienten verweigern manchmal den Transport (Revers)" }, "Transportverweigerung (Revers)"), rvSel);
+    vGrid.append(el("label", { title: "Wache, stabile Patienten verweigern manchmal den Transport (Revers)" }, "Transportverweigerung (Revers)"), rvSel);
     const rzv = el("input", { type: "checkbox", class: "set-rendezvous" }) as HTMLInputElement;
     rzv.checked = draft.rendezvous !== false;
     rzv.addEventListener("change", () => (draft.rendezvous = rzv.checked));
-    aGrid.append(el("label", { title: "Braucht der Patient einen Notarzt und ist das NEF noch mehr als 15 Minuten entfernt, fährt der RTW mit dem Patienten los und trifft das NEF unterwegs" }, "Rendezvous RTW – NEF"), rzv);
+    alGrid.append(el("label", { title: "Braucht der Patient einen Notarzt und ist das NEF noch mehr als 15 Minuten entfernt, fährt der RTW mit dem Patienten los und trifft das NEF unterwegs" }, "Rendezvous RTW – NEF"), rzv);
     // ACN: Akutpflege-Einsätze zu Hause
     const acnRate = el("input", { type: "range", min: "0", max: "8", step: "0.5" }) as HTMLInputElement;
     acnRate.value = String(draft.acnProTag ?? 2);
@@ -166,6 +178,12 @@ export function createSettingsView(container: HTMLElement, teil: "simulation" | 
     const acnZeile = el("div", { class: "fremd-rate" });
     acnZeile.append(acnRate, acnWert);
     aGrid.append(el("label", { title: "Pflegerische Einsätze ohne Eile (ACN-Codes), zu denen nur die ACN nach Hause fährt – nur rund um ACN-Standorte" }, "ACN-Einsätze (Akutpflege)"), acnZeile);
+    // Verteilung der Notfälle auf die Kategorien
+    for (const k of KATEGORIEN) {
+      const i = num(draft.aufkommen[k], "0.5");
+      i.addEventListener("change", () => (draft.aufkommen[k as Kategorie] = Number(i.value) || 0));
+      aGrid.append(el("label", {}, `Anteil ${KATEGORIE_LABEL[k]} (Notfälle)`), i);
+    }
     // Work in Progress: Einsätze in Nachbarzonen
     const fzWrap = el("label", { title: "Einsätze knapp außerhalb deiner Funkgruppe, zu denen eigene Fahrzeuge (meist das NEF) fahren – angelegt und disponiert vom Kollegen der Nachbarzone" });
     fzWrap.innerHTML = `Einsätze in Nachbarzonen <span class="wip-badge">Work in Progress</span>`;
@@ -201,7 +219,7 @@ export function createSettingsView(container: HTMLElement, teil: "simulation" | 
       fzRateZeile.hidden = !fzAn.checked;
       fzRateLabel.hidden = !fzAn.checked;
     });
-    aGrid.append(fzWrap, fzAn, fzRateLabel, fzRateZeile);
+    gGrid.append(fzWrap, fzAn, fzRateLabel, fzRateZeile);
     // Krankenhäuser: Grundbelegung (andere Leitstellen, Selbstzuweiser) mit Tageskurve
     const kgAn = el("input", { type: "checkbox" }) as HTMLInputElement;
     kgAn.checked = draft.khGrundAktiv !== false;
@@ -222,7 +240,7 @@ export function createSettingsView(container: HTMLElement, teil: "simulation" | 
       draft.khGrundAktiv = kgAn.checked;
       kgZeile.hidden = kgLabel.hidden = !kgAn.checked;
     });
-    aGrid.append(
+    khGrid.append(
       el("label", { title: "Krankenhäuser sind auch ohne deine Patienten belegt – vormittags viel, nachts kaum. Schockraum, Herzkatheter, ECMO und Druckkammer nur sehr selten." }, "Krankenhäuser: Grundbelegung durch andere Patienten"),
       kgAn,
       kgLabel,
@@ -259,6 +277,12 @@ export function createSettingsView(container: HTMLElement, teil: "simulation" | 
       tab.appendChild(tr);
     }
     aSec.appendChild(tab);
+    const vSec = section("Anrufer und Verlauf", "Wie sich Anrufer und Einsätze verhalten: falsche Adressen, Rückrufe, Verschlechterungen, Transportverweigerung.");
+    vSec.appendChild(vGrid);
+    const alSec = section("Alarmierung", "Wie alarmiert wird. Welches Rettungsmittel bei welcher Stufe kommt, steht darunter.");
+    alSec.appendChild(alGrid);
+    const khSec = section("Krankenhäuser und Daueraufträge", "Wie voll die Krankenhäuser durch andere Patienten sind, und feste Termine (Dialyse, Bestrahlung, Chemotherapie) für die KT.");
+    khSec.appendChild(khGrid);
     const dGrid = el("div", { class: "set-grid" });
     const dia = num(draft.dauerDialyseJeKh, "1");
     dia.addEventListener("change", () => (draft.dauerDialyseJeKh = Math.max(0, Number(dia.value) || 0)));
@@ -269,7 +293,7 @@ export function createSettingsView(container: HTMLElement, teil: "simulation" | 
     const che = num(draft.dauerChemoJeKh ?? 1, "1");
     che.addEventListener("change", () => (draft.dauerChemoJeKh = Math.max(0, Number(che.value) || 0)));
     dGrid.append(el("label", {}, "Chemotherapie-Patienten mit fixem Termin je Krankenhaus mit onkologischer Tagesklinik"), che);
-    aSec.appendChild(dGrid);
+    khSec.appendChild(dGrid);
 
     // Stufen
     const stSec = section(
@@ -573,6 +597,21 @@ export function createSettingsView(container: HTMLElement, teil: "simulation" | 
       ),
     );
     buildAppSection(section("Programm"));
+
+    // Spielstände: Ordner und Übersicht
+    const ssSec = section("Spielstände", "Gespeicherte Spiele liegen als Dateien im Ordner Dokumente/LeitWerk/Spielstände – dort kannst du sie auch sichern oder weitergeben.");
+    const ssPfad = el("div", { class: "muted small" }, "…");
+    void ordnerPfad().then((p) => (ssPfad.textContent = p));
+    const ssKn = el("div", { class: "row-btns" });
+    const ssUeb = el("button", { class: "btn small primary", type: "button" }, "Spielstände ansehen …");
+    ssUeb.addEventListener("click", () => spielstaendeOeffnen({ warnen: sim.state.einsaetze.length > 0 }));
+    ssKn.appendChild(ssUeb);
+    if (inTauri()) {
+      const ssOrd = el("button", { class: "btn small", type: "button" }, "Ordner öffnen");
+      ssOrd.addEventListener("click", () => void ordnerZeigen().catch((e) => toast(String(e?.message ?? e), "error")));
+      ssKn.appendChild(ssOrd);
+    }
+    ssSec.append(ssPfad, ssKn);
 
     // Status von Straßennetz/Adressen
     const gSec = section("Straßennetz und Adressen");

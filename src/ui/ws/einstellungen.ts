@@ -29,33 +29,39 @@ interface Seite {
 
 const GRUPPEN: { id: string; label: string; info: string }[] = [
   { id: "platz", label: "Mein Platz", info: "nur dieser Rechner" },
-  { id: "leitstelle", label: "Leitstelle", info: "für alle im Spiel" },
-  { id: "simulation", label: "Simulation", info: "für alle im Spiel" },
+  { id: "simulation", label: "Spiel & Simulation", info: "für alle im Spiel" },
+  { id: "leitstelle", label: "Leitstelle", info: "Daten – für alle im Spiel" },
   { id: "programm", label: "Programm", info: "" },
 ];
 
-const SEITEN: Seite[] = [
-  { id: "darstellung", gruppe: "platz", label: "Darstellung", info: "Hell/Dunkel, Farben, Statusfarben, Karte", quelle: "persoenlich", abschnitte: ["Aussehen", "Farben", "Eigene Statusfarben", "Funkgruppen auf der Karte"] },
-  { id: "telefon", gruppe: "platz", label: "Telefon & Töne", info: "Klingeln, Anklopfen, Funk-Piep, eigene Töne", quelle: "persoenlich", abschnitte: ["Anrufe und Töne", "Eigene Tondateien"] },
-  { id: "sprache", gruppe: "platz", label: "Sprache", info: "Vorlesen, Stimmen, Spracherkennung, Sprechtaste", quelle: "persoenlich", abschnitte: ["Sprache"] },
-  { id: "ki", gruppe: "platz", label: "KI-Anrufer", info: "Sprachmodell, Testanruf", quelle: "simulation", abschnitte: ["Notrufe und KI-Anrufer"] },
-  { id: "bedienung", gruppe: "platz", label: "Bedienung", info: "Tastenkürzel, Arbeitsplatz, Einführung", quelle: "persoenlich", abschnitte: ["Tastenkürzel", "Arbeitsplatz", "Einführung"] },
+/**
+ * Seiten: was zusammen gebraucht wird, steht beieinander. `stichworte` helfen der Suche
+ * (andere Wörter für dasselbe, z. B. „Dunkelmodus“ für das Farbschema).
+ */
+const SEITEN: (Seite & { stichworte?: string })[] = [
+  { id: "darstellung", gruppe: "platz", label: "Darstellung", info: "Hell/Dunkel, Größe, Bewegungen, Karte und Funkgruppen", quelle: "persoenlich", abschnitte: ["Aussehen", "Funkgruppen auf der Karte"], stichworte: "dunkelmodus nachtmodus thema theme zoom schriftgröße skalierung animation 3d poi grenzen" },
+  { id: "farben", gruppe: "platz", label: "Farben", info: "Farbvorlagen, eigene Farben, Statusfarben", quelle: "persoenlich", abschnitte: ["Farben", "Eigene Statusfarben"], stichworte: "farbe akzent kontrast rotes kreuz status hinterlegen" },
+  { id: "telefon", gruppe: "platz", label: "Telefon & Töne", info: "Annehmen, Klingeln, Lautstärke, eigene Töne", quelle: "persoenlich", abschnitte: ["Anrufe und Töne", "Eigene Tondateien"], stichworte: "klingelton ton sound lautstärke anklopfen piep funk-piep notruf annehmen hotline audio" },
+  { id: "sprache", gruppe: "platz", label: "Sprache & Mikrofon", info: "Vorlesen, Stimmen, Spracheingabe, Sprechtaste", quelle: "persoenlich", abschnitte: ["Sprache"], stichworte: "mikro mikrofon stimme vorlesen sprechen spracherkennung whisper diktieren push to talk ptt" },
+  { id: "bedienung", gruppe: "platz", label: "Bedienung", info: "Tastenkürzel, Fenster-Anordnung, Einführung, Entwickler", quelle: "persoenlich", abschnitte: ["Tastenkürzel", "Arbeitsplatz", "Einführung", "Entwickler"], stichworte: "tastatur shortcut hotkey taste fenster layout anordnung debug" },
+
+  { id: "aufkommen", gruppe: "simulation", label: "Spielgebiet & Aufkommen", info: "Funkgruppe, wie viele Einsätze, Fallkatalog, ACN", quelle: "simulation", abschnitte: ["Spielgebiet", "Einsatzaufkommen"], stichworte: "funkgruppe tetra zone gebiet bezirk nachbarzone einsätze pro stunde ruhig stressig fälle fallkatalog generator zufall vorlagen acn" },
+  { id: "ki", gruppe: "simulation", label: "Notrufe & Anrufer", info: "Anrufer, Verlauf, KI-Anrufer, Sprachmodell", quelle: "simulation", abschnitte: ["Anrufer und Verlauf", "Notrufe und KI-Anrufer"], stichworte: "ki ollama sprachmodell modell qwen gemma anrufer gespräch falsche adresse rückruf komplikation revers verweigerung" },
+  { id: "alarmierung", gruppe: "simulation", label: "Alarmierung", info: "Rendezvous, welches Rettungsmittel bei welcher Stufe", quelle: "simulation", abschnitte: ["Alarmierung", "Stufen-Zuordnung"], stichworte: "rettungsmittel stufe nef rtw rendezvous notarzt toleranz vorschlag" },
+  { id: "krankenhaus", gruppe: "simulation", label: "Krankenhäuser & KT", info: "Belegung, Dialyse, Bestrahlung, Chemo", quelle: "simulation", abschnitte: ["Krankenhäuser und Daueraufträge"], stichworte: "krankenhaus belegung grundbelegung dialyse bestrahlung chemo daueraufträge krankentransport" },
+  { id: "zeiten", gruppe: "simulation", label: "Zeiten", info: "Ausrücken, Fahrzeiten, Verortung", quelle: "simulation", abschnitte: ["Ausrückzeiten", "Fahrzeiten und Verortung"], stichworte: "ausrückzeit fahrzeit sondersignal blaulicht verortung tag nacht" },
+  { id: "wetter", gruppe: "simulation", label: "Wetter & Flugrettung", info: "echtes Wetter, Wechsel, Jahreszeit, Hubschrauber", quelle: "simulation", abschnitte: ["Flugrettung und Wetter"], stichworte: "wetter echt open-meteo regen schnee nebel jahreszeit nah hubschrauber flug nachtflug" },
 
   { id: "fahrzeuge", gruppe: "leitstelle", label: "Fahrzeuge", info: "Typ, Dienststelle, Dienstplan, Größe", quelle: "daten", art: "vehicles" },
   { id: "dienststellen", gruppe: "leitstelle", label: "Dienststellen", info: "Wachen, Stützpunkte", quelle: "daten", art: "stations" },
-  { id: "krankenhaeuser", gruppe: "leitstelle", label: "Krankenhäuser", info: "Abteilungen, Ambulanzen", quelle: "daten", art: "hospitals" },
+  { id: "krankenhaeuser", gruppe: "leitstelle", label: "Krankenhäuser", info: "Abteilungen, Ambulanzen, Zufahrt, Landeplatz", quelle: "daten", art: "hospitals" },
   { id: "pois", gruppe: "leitstelle", label: "Orte (POIs)", info: "Orte mit Kategorie: Schule, Pflegeheim, Bahnhof …", quelle: "daten", art: "pois" },
   { id: "codes", gruppe: "leitstelle", label: "Einsatzcodes & Abfrage", info: "Codeliste, Abfrageschema", quelle: "daten", art: "codes" },
   { id: "vorlagen", gruppe: "leitstelle", label: "Einsatzvorlagen", info: "feste Einsätze statt Zufall", quelle: "daten", art: "templates" },
-  { id: "rettungsmittel", gruppe: "leitstelle", label: "Rettungsmittel je Stufe", info: "welches Fahrzeug bei welcher Kategorie", quelle: "simulation", abschnitte: ["Stufen-Zuordnung"] },
-  { id: "status", gruppe: "leitstelle", label: "Statusmodell", info: "Nummern, Namen, Farben", quelle: "simulation", abschnitte: ["Statusmodell"] },
+  { id: "status", gruppe: "leitstelle", label: "Statusmodell", info: "Nummern, Namen, Farben der Status", quelle: "simulation", abschnitte: ["Statusmodell"], stichworte: "status statusmodell nummer farbe" },
 
-  { id: "aufkommen", gruppe: "simulation", label: "Einsatzaufkommen", info: "Notfälle und KT je Stunde, Komplikationen", quelle: "simulation", abschnitte: ["Einsatzaufkommen"] },
-  { id: "zeiten", gruppe: "simulation", label: "Zeiten", info: "Ausrücken, Fahrzeiten, Verortung", quelle: "simulation", abschnitte: ["Ausrückzeiten", "Fahrzeiten und Verortung"] },
-  { id: "wetter", gruppe: "simulation", label: "Wetter & Flugrettung", info: "Wetter, Nachtflug", quelle: "simulation", abschnitte: ["Flugrettung und Wetter"] },
-
-  { id: "karten", gruppe: "programm", label: "Kartenpakete", info: "Straßen, Detailkarten, Gelände", quelle: "programm", abschnitte: ["Kartenpakete", "Straßennetz und Adressen"] },
-  { id: "programm", gruppe: "programm", label: "Programm & Updates", info: "Version, Updates, Speicherort", quelle: "programm", abschnitte: ["Programm"] },
+  { id: "karten", gruppe: "programm", label: "Kartenpakete", info: "Straßen, Detailkarten, Gelände", quelle: "programm", abschnitte: ["Kartenpakete", "Straßennetz und Adressen"], stichworte: "karte download paket straßennetz adressen routing offline" },
+  { id: "programm", gruppe: "programm", label: "Programm & Updates", info: "Version, Updates, Speicherorte, Spielstände", quelle: "programm", abschnitte: ["Programm", "Spielstände"], stichworte: "version update aktualisieren speicherort ordner spielstand spielstände dokumente" },
 ];
 
 /** Was man in den Datenbereichen findet (für die Suche) */
@@ -68,8 +74,20 @@ const SUCHWOERTER: Partial<Record<Kind, string>> = {
   pois: "ort poi",
 };
 
+/** Für die Suche: klein, ohne Umlaute und Satzzeichen (Größe = groesse) */
+function norm(t: string): string {
+  return t
+    .toLowerCase()
+    .replace(/ä/g, "ae")
+    .replace(/ö/g, "oe")
+    .replace(/ü/g, "ue")
+    .replace(/ß/g, "ss")
+    .replace(/[^a-z0-9äöüß\s-]+/g, " ")
+    .replace(/\s+/g, " ");
+}
+
 /** Alte Einstiegspunkte (Reiter der früheren Fenster) → Seite */
-const ALT: Record<string, string> = { persoenlich: "darstellung", simulation: "aufkommen", programm: "karten", daten: "fahrzeuge" };
+const ALT: Record<string, string> = { persoenlich: "darstellung", simulation: "aufkommen", programm: "karten", daten: "fahrzeuge", rettungsmittel: "alarmierung" };
 
 export interface EinstellungenFenster {
   overlay: HTMLElement;
@@ -122,7 +140,10 @@ export function einstellungenFenster(deps: DataViewDeps): EinstellungenFenster {
     x = { c, v };
     quellen.set(q, x);
     // Ansichten bauen sich bei Änderungen neu auf → Abschnitte erneut filtern
-    new MutationObserver(() => filtern()).observe(c, { childList: true, subtree: false });
+    new MutationObserver(() => {
+      eintraegeCache = null;
+      filtern();
+    }).observe(c, { childList: true, subtree: false });
     return x;
   };
 
@@ -147,6 +168,15 @@ export function einstellungenFenster(deps: DataViewDeps): EinstellungenFenster {
       (sec as HTMLElement).hidden = !(zeigen.has(t) || (s.id.startsWith("weitere-") && !bekannt.has(t)));
     });
     weitere.set(s.quelle, rest);
+    // Seitenkopf: Titel und kurz, worum es geht
+    // (in die Seite selbst, nicht in den beobachteten Behälter – sonst ruft sich das Filtern endlos auf)
+    const seiteEl = q.c.querySelector<HTMLElement>(":scope > .settings") ?? q.c.firstElementChild;
+    if (seiteEl) {
+      seiteEl.querySelector(":scope > .es-seitenkopf")?.remove();
+      const kopfS = el("div", { class: "es-seitenkopf" });
+      kopfS.innerHTML = `<h2>${s.label}</h2>${s.info ? `<p>${s.info}</p>` : ""}`;
+      seiteEl.prepend(kopfS);
+    }
     // Speichern/Zurücksetzen nur bei Leitstellen-/Simulations-Einstellungen
     q.c.querySelectorAll<HTMLElement>(".set-actions").forEach((a) => (a.hidden = false));
   }
@@ -177,24 +207,24 @@ export function einstellungenFenster(deps: DataViewDeps): EinstellungenFenster {
   function indexVon(s: Seite): string {
     let t = textIndex.get(s.id);
     if (t !== undefined) return t;
-    t = `${s.label} ${s.info} ${(s.abschnitte ?? []).join(" ")}`;
+    t = `${s.label} ${s.info} ${(s.abschnitte ?? []).join(" ")} ${(s as { stichworte?: string }).stichworte ?? ""}`;
     if (s.quelle !== "daten") {
       const q = quelle(s.quelle);
       q.c.querySelectorAll(".set-sec").forEach((sec) => {
         if ((s.abschnitte ?? []).includes(titelVon(sec))) t += ` ${sec.textContent ?? ""}`;
       });
     } else if (s.art) t += ` ${KIND_LABEL[s.art]} importieren exportieren csv ${SUCHWOERTER[s.art] ?? ""}`;
-    t = t.toLowerCase();
+    t = norm(t);
     textIndex.set(s.id, t);
     return t;
   }
 
   function navZeichnen(): void {
     nav.innerHTML = "";
-    const q = suchText.trim().toLowerCase();
+    const q = norm(suchText.trim());
     let treffer = 0;
     for (const g of GRUPPEN) {
-      const seiten = SEITEN.filter((s) => s.gruppe === g.id && (!q || q.split(/\s+/).every((w) => indexVon(s).includes(w))));
+      const seiten = SEITEN.filter((s) => s.gruppe === g.id && (!q || q.split(/\s+/).every((w) => indexVon(s).includes(w) || trefferSeiten.has(s.id))));
       // „Weitere“ je Quelle, wenn es nicht zugeordnete Abschnitte gibt
       for (const [quelleId, rest] of weitere) {
         const w = weitereSeite(`weitere-${quelleId}`)!;
@@ -210,20 +240,117 @@ export function einstellungenFenster(deps: DataViewDeps): EinstellungenFenster {
         b.dataset.seite = s.id;
         const n = s.art ? store.counts(s.art).gesamt + (s.art === "pois" ? store.counts("hospitals").gesamt + store.counts("stations").gesamt : 0) : null;
         b.innerHTML = `<span class="es-label">${s.label}</span>${n !== null ? `<span class="count">${n}</span>` : ""}`;
-        b.addEventListener("click", () => zeige(s.id));
+        b.addEventListener("click", () => {
+          trefferBox.hidden = true;
+          zeige(s.id);
+        });
         nav.appendChild(b);
       }
     }
     if (!treffer) nav.appendChild(el("div", { class: "muted small es-nichts" }, "Nichts gefunden."));
   }
 
+  // ---- Suche bis auf die einzelne Einstellung
+  interface Treffer {
+    seite: Seite;
+    abschnitt: string;
+    titel: string;
+    text: string;
+    ziel: HTMLElement[];
+  }
+  let eintraegeCache: Treffer[] | null = null;
+  let trefferSeiten = new Set<string>();
+  const trefferBox = el("div", { class: "es-treffer", hidden: "" });
+  inhalt.appendChild(trefferBox);
+  function eintraege(): Treffer[] {
+    if (eintraegeCache) return eintraegeCache;
+    const out: Treffer[] = [];
+    for (const qid of ["persoenlich", "simulation", "programm"] as Quelle[]) {
+      const q = quelle(qid);
+      q.c.querySelectorAll<HTMLElement>(".set-sec").forEach((sec) => {
+        const abschnitt = titelVon(sec);
+        const seite = SEITEN.find((x) => x.quelle === qid && (x.abschnitte ?? []).includes(abschnitt)) ?? weitereSeite(`weitere-${qid}`);
+        if (!seite) return;
+        const hinweis = sec.querySelector(":scope > p")?.textContent ?? "";
+        out.push({ seite, abschnitt, titel: abschnitt, text: norm(`${abschnitt} ${hinweis}`), ziel: [sec.querySelector<HTMLElement>(":scope > h3") ?? sec] });
+        sec.querySelectorAll<HTMLElement>(".pers-zeile, .set-grid > label, .set-table th, h4").forEach((row) => {
+          let titel: string;
+          let mehr = "";
+          const ziel = [row];
+          if (row.classList.contains("pers-zeile")) {
+            const l = row.querySelector(".pers-label") ?? row.firstElementChild;
+            titel = (l?.firstElementChild ?? l)?.textContent?.trim() ?? "";
+            mehr = row.textContent ?? "";
+          } else {
+            titel = row.textContent?.trim() ?? "";
+            mehr = row.title ?? "";
+            if (row.parentElement?.classList.contains("set-grid") && row.nextElementSibling instanceof HTMLElement) {
+              ziel.push(row.nextElementSibling);
+              mehr += ` ${row.nextElementSibling.textContent ?? ""}`;
+            }
+          }
+          if (!titel || titel.length > 140) return;
+          out.push({ seite, abschnitt, titel, text: norm(`${titel} ${mehr}`), ziel });
+        });
+      });
+    }
+    eintraegeCache = out;
+    return out;
+  }
+  function trefferZeigen(): void {
+    const q = norm(suchText.trim());
+    trefferSeiten = new Set();
+    if (q.length < 2) {
+      trefferBox.hidden = true;
+      return;
+    }
+    const woerter = q.split(/\s+/);
+    const liste = eintraege()
+      .map((t) => {
+        const tt = norm(t.titel);
+        if (!woerter.every((w) => t.text.includes(w) || norm(t.seite.label).includes(w))) return null;
+        const punkte = woerter.reduce((a, w) => a + (tt.startsWith(w) ? 4 : tt.includes(w) ? 3 : 1), 0) + (t.titel === t.abschnitt ? 0.5 : 0);
+        return { t, punkte };
+      })
+      .filter((x): x is { t: Treffer; punkte: number } => !!x)
+      .sort((a, b) => b.punkte - a.punkte)
+      .slice(0, 40);
+    for (const x of liste) trefferSeiten.add(x.t.seite.id);
+    trefferBox.hidden = false;
+    trefferBox.innerHTML = "";
+    trefferBox.appendChild(el("div", { class: "es-treffer-kopf" }, liste.length ? `${liste.length} Einstellung${liste.length === 1 ? "" : "en"} gefunden` : "Keine einzelne Einstellung gefunden – links stehen passende Bereiche, falls es welche gibt."));
+    for (const { t } of liste) {
+      const b = el("button", { type: "button", class: "es-treffer-z" });
+      b.innerHTML = `<b></b><span></span>`;
+      b.querySelector("b")!.textContent = t.titel;
+      b.querySelector("span")!.textContent = t.titel === t.abschnitt ? t.seite.label : `${t.seite.label} › ${t.abschnitt}`;
+      b.addEventListener("click", () => {
+        trefferBox.hidden = true;
+        zeige(t.seite.id);
+        requestAnimationFrame(() => {
+          // die Seite baut sich beim Öffnen neu auf → das Element frisch suchen
+          eintraegeCache = null;
+          const neu = eintraege().find((x) => x.seite.id === t.seite.id && x.abschnitt === t.abschnitt && x.titel === t.titel) ?? t;
+          neu.ziel[0].scrollIntoView({ block: "center", behavior: "smooth" });
+          for (const z of neu.ziel) {
+            z.classList.remove("es-blink");
+            void z.offsetWidth;
+            z.classList.add("es-blink");
+          }
+        });
+      });
+      trefferBox.appendChild(b);
+    }
+  }
+
   suche.addEventListener("input", () => {
     suchText = suche.value;
+    trefferZeigen();
     navZeichnen();
   });
   suche.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
-      const erster = nav.querySelector<HTMLButtonElement>(".es-punkt");
+      const erster = trefferBox.hidden ? nav.querySelector<HTMLButtonElement>(".es-punkt") : trefferBox.querySelector<HTMLButtonElement>(".es-treffer-z");
       erster?.click();
     }
   });

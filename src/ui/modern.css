@@ -315,3 +315,74 @@
     animation: none;
   }
 }
+
+/* ---------------------------------------------------------------- Einstellungen: Seitenkopf, Suche */
+.es-seitenkopf { padding: 14px 4px 6px; }
+.es-seitenkopf h2 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.015em; }
+.es-seitenkopf p { margin: 4px 0 0; color: var(--text-dim); font-size: 13px; }
+.es-quelle .settings,
+.es-quelle .pers {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.es-treffer {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  overflow: auto;
+  padding: 18px 24px 30px;
+  background: var(--panel);
+  animation: m-sek 0.2s var(--m-ease) both;
+}
+.es-treffer[hidden] { display: none; }
+.es-treffer-kopf { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-dim); margin: 0 0 10px 4px; }
+.es-treffer-z {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  padding: 11px 14px;
+  margin-bottom: 6px;
+  border-radius: 12px;
+  border: 1px solid var(--m-rand);
+  background: var(--m-feld);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.18s, transform 0.2s var(--m-ease), background 0.18s;
+}
+.es-treffer-z:hover,
+.es-treffer-z:focus-visible {
+  border-color: color-mix(in srgb, var(--m-akzent) 60%, transparent);
+  transform: translateX(3px);
+  outline: none;
+}
+.es-treffer-z b { font-size: 14px; font-weight: 600; }
+.es-treffer-z span { font-size: 12px; color: var(--text-dim); }
+.es-blink { animation: es-blink 1.8s ease-out; border-radius: 8px; }
+@keyframes es-blink {
+  0%, 30% { background: color-mix(in srgb, var(--m-akzent) 30%, transparent); box-shadow: 0 0 0 6px color-mix(in srgb, var(--m-akzent) 30%, transparent); }
+  100% { background: transparent; box-shadow: 0 0 0 0 transparent; }
+}
+
+/* Einstellungen in Zeilen wie bei „Mein Platz“: Beschriftung links, Bedienelement rechts */
+.es .set-grid {
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 320px);
+  gap: 0 28px;
+  align-items: center;
+}
+.es .set-grid > * {
+  min-height: 46px;
+  padding: 6px 0;
+  display: flex;
+  align-items: center;
+}
+.es .set-grid > label { font-size: 13.5px; line-height: 1.35; }
+.es .set-grid > :not(label) { justify-content: flex-end; }
+.es .set-grid > :is(input, select) { justify-self: end; width: 100%; max-width: 320px; }
+.es .set-grid > input[type="checkbox"] { width: 18px; min-height: 0; justify-self: end; border: 0; padding: 0; margin: 14px 0; }
+.es .set-sec { overflow-x: auto; }
+.es .set-sec > p.muted { max-width: 760px; }

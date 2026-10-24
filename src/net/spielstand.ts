@@ -8,12 +8,17 @@ import { store } from "../data/store";
 import { autosaveRead, autosaveWrite, pickTextFile, saveTextFile } from "../platform";
 import { sim, type SimState } from "../sim/engine";
 import { mp } from "./mehrspieler";
+import { WETTER_LABEL, lageVon } from "../sim/weather";
+import * as ordner from "./spielstandOrdner";
+import type { SpielstandInfo } from "./spielstandOrdner";
 
 const FORMAT = "leitwerk-spielstand";
 
 export interface Spielstand {
   format: typeof FORMAT;
   version: 1;
+  /** kurze Infos für die Übersicht – steht vorne in der Datei */
+  info?: SpielstandInfo;
   gespeichert: number;
   /** Simulationszeit beim Speichern */
   simZeit: number;
@@ -22,11 +27,24 @@ export interface Spielstand {
   multiplayer: { code: string; spieler: string[] } | null;
 }
 
-function erstellen(): Spielstand {
+function erstellen(name?: string): Spielstand {
+  const st = sim.state;
+  const jetzt = Date.now();
   return {
     format: FORMAT,
     version: 1,
-    gespeichert: Date.now(),
+    info: {
+      name,
+      gespeichert: jetzt,
+      simZeit: st.zeit,
+      funkgruppe: store.settings.funkgruppe ?? "NÖ-03",
+      einsaetze: st.einsaetze.length,
+      offen: st.einsaetze.filter((e) => e.zustand !== "abgeschlossen").length,
+      wetter: st.wetter ? WETTER_LABEL[lageVon(st.wetter.lage)] : undefined,
+      spieler: mp.aktiv ? mp.spieler.map((x) => x.name) : undefined,
+      version: (document.getElementById("app-version")?.textContent ?? "").replace(/^v/, "") || undefined,
+    },
+    gespeichert: jetzt,
     simZeit: sim.state.zeit,
     state: sim.state,
     store: store.snapshot(),
@@ -61,6 +79,31 @@ function anwenden(d: Spielstand): void {
   store.enterSession(d.store);
   sim.ladeZustand(d.state);
   if (mp.status.rolle === "host") mp.neuSynchronisieren();
+}
+
+/** Vorschlag für den Namen: Funkgruppe und Spielzeit */
+export function standardName(): string {
+  const d = new Date(sim.state.zeit);
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${store.settings.funkgruppe ?? "NÖ-03"} – ${p(d.getDate())}.${p(d.getMonth() + 1)}.${d.getFullYear()} ${p(d.getHours())}.${p(d.getMinutes())} Uhr`;
+}
+
+/** Im Spielstand-Ordner speichern; gibt den Dateinamen zurück */
+export async function speichernAls(name: string, ersetzen = false): Promise<string> {
+  const n = name.trim() || standardName();
+  return ordner.schreiben(n, JSON.stringify(erstellen(n)), ersetzen);
+}
+
+/** Spielstand aus dem Ordner laden */
+export async function ladenDatei(datei: string): Promise<Spielstand> {
+  const d = pruefen(await ordner.lesen(datei));
+  anwenden(d);
+  return d;
+}
+
+/** Eine Datei aus dem Ordner woanders hin speichern (z. B. zum Weitergeben) */
+export async function exportieren(datei: string): Promise<string | null> {
+  return saveTextFile(datei, await ordner.lesen(datei), { name: "LeitWerk-Spielstand", extensions: ["leitwerk"] });
 }
 
 /** Lässt eine Datei wählen und lädt den Spielstand. */

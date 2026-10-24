@@ -1,3 +1,4 @@
+mod spielstaende;
 mod addresses;
 mod ki;
 mod packs;
@@ -557,6 +558,14 @@ pub fn run() {
             store_location,
             autosave_write,
             autosave_read,
+            spielstaende::spielstaende_ordner,
+            spielstaende::spielstaende_liste,
+            spielstaende::spielstand_lesen,
+            spielstaende::spielstand_schreiben,
+            spielstaende::spielstand_umbenennen,
+            spielstaende::spielstand_loeschen,
+            spielstaende::spielstand_importieren,
+            spielstaende::spielstaende_zeigen,
             write_text_file,
             write_zip_file,
             geo_status,

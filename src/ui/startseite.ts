@@ -28,6 +28,7 @@ import { el, esc, toast } from "./dom";
 import { nimmtRettung } from "./khInfo";
 import { logoMarke, logoSchrift } from "./logo";
 import { sprachPrefs, sprachStatus } from "./sprache";
+import { spielstaendeOeffnen } from "./spielstaende";
 import { onUpdate, updateInfo, updateInstallieren, updateLaeuft } from "./updateDienst";
 import { einstellungenOeffnen } from "./ws/steuerleiste";
 import { istDunkel, onThema, pers, setzePers, type Thema } from "./ws/persoenlich";
@@ -66,6 +67,8 @@ const P: Record<string, string> = {
   rtw: `<path d="M2 16V8a1 1 0 0 1 1-1h11v9"/><path d="M14 10h4l3 3v3h-7"/><circle cx="6.5" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/><path d="M8 9.5v3M6.5 11h3"/>`,
   arzt: `<path d="M3 12h4l2-6 4 12 2-6h6"/>`,
   kh: `<path d="M4 21V5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v16M2 21h20"/><path d="M12 8v6M9 11h6"/>`,
+  heli: `<path d="M3 5h18M12 5v3"/><path d="M5 12a4 4 0 0 1 4-4h5a5 5 0 0 1 5 5v1a2 2 0 0 1-2 2H9a4 4 0 0 1-4-4z"/><path d="M14 8v4h5M8 19h10M10 16v3M15 16v3"/>`,
+  wache: `<path d="M3 21V10l9-6 9 6v11"/><path d="M9 21v-6h6v6M2 21h20"/>`,
   buch: `<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 21a2 2 0 0 1 2-2h13v2H6"/><path d="M12 7v6M9 10h6"/>`,
   kopie: `<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>`,
   pfeil: `<path d="M9 6l6 6-6 6"/>`,
@@ -243,9 +246,6 @@ export function startseiteZeigen(fertig?: () => void, opt: { zurueck?: boolean }
       </div>
     </aside>
     <main class="st-mitte">
-      <div class="st-thema st-glas" role="group" aria-label="Darstellung">
-        <button data-thema="hell">${ico("sonne")}Hell</button><button data-thema="dunkel">${ico("mond")}Dunkel</button><button data-thema="system">${ico("monitor")}System</button>
-      </div>
       <section class="st-held">
         <div class="st-willkommen">Willkommen bei</div>
         <h1><span class="st-titel">${logoSchrift()}<span class="st-wip" title="LeitWerk ist noch in Arbeit">Work in Progress</span></span></h1>
@@ -253,9 +253,11 @@ export function startseiteZeigen(fertig?: () => void, opt: { zurueck?: boolean }
         <p class="st-sub">Realistische Einsatzlagen. Echte Abläufe.<br>Lernen, üben, erleben.</p>
       </section>
       <div class="st-karte-wrap"><div class="st-karte">${svg}</div><div class="st-sockel"></div></div>
-      <section class="st-kacheln"></section>
     </main>
     <aside class="st-rechts">
+      <div class="st-thema-zeile"><div class="st-seg st-thema st-glas" data-seg="thema" role="group" aria-label="Darstellung">
+        <button data-v="hell">${ico("sonne")}Hell</button><button data-v="dunkel">${ico("mond")}Dunkel</button><button data-v="system">${ico("monitor")}System</button>
+      </div></div>
       <section class="st-karte-cfg st-glas">
         <h2>Simulation konfigurieren</h2>
         <div class="st-feld"><label>${ico("funk")}Funkgruppe</label><select class="st-fg-sel"></select></div>
@@ -263,18 +265,19 @@ export function startseiteZeigen(fertig?: () => void, opt: { zurueck?: boolean }
           <div class="st-zeit"><div class="st-seg" data-seg="zeit"><button data-v="jetzt">Jetzt</button><button data-v="fest">Wunschzeit</button></div><input type="datetime-local" class="st-zeit-in"></div></div>
         <div class="st-feld"><label>${ico("balken")}Einsatzaufkommen</label>
           <div class="st-seg" data-seg="aufkommen"><button data-v="ruhig">Ruhig</button><button data-v="normal">Normal</button><button data-v="stressig">Stressig</button></div></div>
-        <div class="st-feld st-feld-breit"><label>${ico("wolke")}Wetter</label>
+        <div class="st-feld"><label>${ico("wolke")}Wetter</label>
           <div class="st-wetter"><div class="st-seg" data-seg="wetter"><button data-v="echt">Realistisch</button><button data-v="normal">Normal</button><button data-v="wechselhaft">Wechselhaft</button><button data-v="fest">Fest</button></div>
           <div class="st-wetter-fest"><select class="st-wetter-lage"></select><input type="number" class="st-wetter-temp" min="-25" max="40"><span>°C</span></div>
           <div class="st-wetter-info st-leise"></div></div></div>
         <div class="st-feld"><label>${ico("leute")}Spielmodus</label>
-          <button class="st-schalter" role="switch" aria-checked="false"><span data-v="solo">Solo</span><span data-v="multi">Multiplayer</span><i></i></button></div>
+          <div class="st-seg" data-seg="modus"><button data-v="solo">Solo</button><button data-v="multi">Multiplayer</button></div></div>
         <button class="st-start">${ico("play")}<span>Neue Simulation starten</span></button>
         <div class="st-start-info"></div>
       </section>
       <section class="st-check st-glas"></section>
       <section class="st-multi st-glas"></section>
     </aside>
+    <section class="st-kacheln"></section>
     <a class="st-nachweis" href="${esc(HINTERGRUND.link)}" target="_blank" rel="noopener">${esc(HINTERGRUND.nachweis)}</a>`;
   document.body.appendChild(root);
   void appVersion().then((v) => {
@@ -323,12 +326,22 @@ export function startseiteZeigen(fertig?: () => void, opt: { zurueck?: boolean }
   root.querySelectorAll<HTMLElement>(".st-seg").forEach((seg) =>
     seg.addEventListener("click", (e) => {
       const b = (e.target as Element).closest<HTMLButtonElement>("button[data-v]");
-      if (!b || binGast()) return;
+      if (!b) return;
       const v = b.dataset.v!;
+      if (seg.dataset.seg === "thema") {
+        setzePers({ thema: v as Thema });
+        return render();
+      }
+      if (binGast()) return;
       if (seg.dataset.seg === "zeit") {
         startzeitArt = v as "jetzt" | "fest";
         setzen({ startzeit: startzeitArt === "fest" ? zeitIn.value || lokal(Date.now()) : undefined });
       } else if (seg.dataset.seg === "wetter") wetterWaehlen(v);
+      else if (seg.dataset.seg === "modus") {
+        if (v === modus) return;
+        if (mp.status.rolle !== "aus") return toast("Erst die Lobby verlassen, dann zurück zu Solo");
+        modus = v as "solo" | "multi";
+      }
       else if (seg.dataset.seg === "aufkommen") setzen({ aufkommenStufe: v as Settings["aufkommenStufe"] });
       render();
     }),
@@ -357,29 +370,31 @@ export function startseiteZeigen(fertig?: () => void, opt: { zurueck?: boolean }
   wLage.addEventListener("change", () => setzen({ wetterFestLage: wLage.value as WetterLage }));
   wTemp.addEventListener("change", () => setzen({ wetterFestTemp: Math.max(-25, Math.min(40, Number(wTemp.value) || 0)) }));
 
-  // ---------------- Solo / Multiplayer
-  const schalter = $<HTMLButtonElement>(".st-schalter");
-  schalter.addEventListener("click", () => {
-    if (mp.status.rolle !== "aus") return toast("Erst die Lobby verlassen, dann zurück zu Solo");
-    modus = modus === "solo" ? "multi" : "solo";
-    render();
-  });
-
-  // ---------------- Thema
-  root.querySelectorAll<HTMLButtonElement>("[data-thema]").forEach((b) =>
-    b.addEventListener("click", () => {
-      setzePers({ thema: b.dataset.thema as Thema });
-      render();
-    }),
-  );
+  // ---------------- Schieber der Segmente (gleitet zur gewählten Stelle)
+  root.querySelectorAll<HTMLElement>(".st-seg").forEach((seg) => seg.prepend(el("i", { class: "st-seg-i", "aria-hidden": "true" })));
+  const schieber = () =>
+    root.querySelectorAll<HTMLElement>(".st-seg").forEach((seg) => {
+      const i = seg.querySelector<HTMLElement>(".st-seg-i")!;
+      const b = seg.querySelector<HTMLElement>("button.an");
+      i.style.opacity = b ? "1" : "0";
+      if (b) {
+        i.style.width = `${b.offsetWidth}px`;
+        i.style.transform = `translateX(${b.offsetLeft}px)`;
+      }
+    });
+  const ro = new ResizeObserver(() => schieber());
+  ro.observe(root);
+  aus.push(() => ro.disconnect());
 
   // ---------------- Kacheln (echte Zahlen)
   const kacheln = () => {
     const fz = store.list("vehicles").filter((v) => v.aktiv && ACTIVE_CATEGORIES.includes(v.kategorie));
     const z = [
       { i: "rtw", n: fz.filter((v) => ["RTW", "KTW"].includes(v.kategorie)).length, t: "RTW & KTW" },
-      { i: "arzt", n: fz.filter((v) => v.kategorie === "NEF" || v.kategorie === "NAH").length, t: "Notarztmittel" },
+      { i: "arzt", n: fz.filter((v) => v.kategorie === "NEF").length, t: "Notarztfahrzeuge" },
+      { i: "heli", n: fz.filter((v) => v.kategorie === "NAH" || v.kategorie === "ITH").length, t: "Hubschrauber" },
       { i: "kh", n: store.list("hospitals").filter(nimmtRettung).length, t: "Krankenhäuser" },
+      { i: "wache", n: store.list("stations").length, t: "Dienststellen" },
       { i: "buch", n: alleFaelle().length, t: "Fälle im Katalog" },
     ];
     $(".st-kacheln").innerHTML = z.map((k, i) => `<div class="st-kachel st-glas" style="--d:${0.5 + i * 0.08}s">${ico(k.i)}<div><b data-zahl="${k.n}">0</b><span>${esc(k.t)}</span></div></div>`).join("");
@@ -408,13 +423,10 @@ export function startseiteZeigen(fertig?: () => void, opt: { zurueck?: boolean }
   };
   const checkZeichnen = () => {
     const z = zusammenfassung();
-    const klein = modus === "multi";
-    checkFeld.classList.toggle("klein", klein);
     checkFeld.innerHTML = `<button class="st-check-kopf" title="Details anzeigen">${ico("schild")}<span class="st-check-titel">Bereitschafts-Check</span><span class="st-pill ${z.k}">${ico(z.k === "ok" ? "ok" : z.k === "pruefe" ? "uhr" : "warn")}${esc(z.t)}</span></button>
-      ${klein ? "" : `<ul class="st-check-liste">${checks.map((c, i) => `<li style="--d:${i * 0.09}s">${ico(c.ico)}<span>${esc(c.name)}</span><em class="${c.stand}">${ico(c.stand === "ok" ? "ok" : c.stand === "aus" ? "aus" : c.stand === "fehler" ? "fehler" : "warn")}${esc(c.text)}</em></li>`).join("")}</ul>`}`;
-    checkFeld.querySelector(".st-check-kopf")!.addEventListener("click", checkDetails);
-    checkFeld.querySelectorAll("li").forEach((li) => li.addEventListener("click", checkDetails));
+      <div class="st-check-punkte">${checks.map((c, i) => `<span class="st-check-p ${c.stand}" style="--d:${i * 0.07}s" title="${esc(c.name)}: ${esc(c.text)}">${ico(c.ico)}</span>`).join("")}<span class="st-check-mehr">Details ›</span></div>`;
   };
+  checkFeld.addEventListener("click", () => checkDetails());
   const checkDetails = () => {
     const body = el("div", { class: "st-check-pop" });
     const z = zusammenfassung();
@@ -559,16 +571,14 @@ export function startseiteZeigen(fertig?: () => void, opt: { zurueck?: boolean }
       toast(String((e as Error)?.message ?? e), "error");
     }
   });
-  $('[data-act="laden"]').addEventListener("click", async () => {
-    try {
-      const st = await spielstand.laden();
-      if (!st) return;
-      sim.start();
-      schliessen();
-    } catch (e) {
-      toast(String((e as Error)?.message ?? e), "error");
-    }
-  });
+  $('[data-act="laden"]').addEventListener("click", () =>
+    spielstaendeOeffnen({
+      geladen: () => {
+        sim.start();
+        schliessen();
+      },
+    }),
+  );
   if (opt.zurueck) {
     $('[data-act="zurueck"]').addEventListener("click", schliessen);
     const esc = (e: KeyboardEvent) => e.key === "Escape" && schliessen();
@@ -604,23 +614,21 @@ export function startseiteZeigen(fertig?: () => void, opt: { zurueck?: boolean }
     const wArt = wetterArt();
     root.querySelectorAll<HTMLButtonElement>(".st-seg button").forEach((b) => {
       const seg = b.closest<HTMLElement>(".st-seg")!.dataset.seg;
-      b.classList.toggle("an", seg === "zeit" ? b.dataset.v === zeitArt : seg === "wetter" ? b.dataset.v === wArt : b.dataset.v === auf);
+      const wert = seg === "zeit" ? zeitArt : seg === "wetter" ? wArt : seg === "modus" ? modus : seg === "thema" ? pers().thema : auf;
+      b.classList.toggle("an", b.dataset.v === wert);
     });
     $(".st-wetter-fest").hidden = wArt !== "fest";
     $(".st-wetter-info").textContent = wetterInfo();
     wLage.value = st.wetterFestLage ?? "klar";
     wTemp.value = String(st.wetterFestTemp ?? 18);
     for (const x of [fgSel, zeitIn, wLage, wTemp] as (HTMLInputElement | HTMLSelectElement)[]) x.disabled = gast;
-    schalter.setAttribute("aria-checked", String(modus === "multi"));
-    schalter.classList.toggle("multi", modus === "multi");
-    const th = pers().thema;
-    root.querySelectorAll<HTMLButtonElement>("[data-thema]").forEach((b) => b.classList.toggle("an", b.dataset.thema === th));
     const startText = startKnopf.querySelector("span")!;
     startKnopf.disabled = gast;
     startText.textContent = gast ? "Warte auf den Host …" : binHost() ? "Simulation für alle starten" : "Neue Simulation starten";
     $(".st-start-info").textContent = binHost() ? `${mp.spieler.filter((x) => x.online).length} Spieler in der Lobby` : "";
     checkZeichnen();
     multiZeichnen();
+    requestAnimationFrame(schieber);
   }
 
   aus.push(store.onChange(render));
