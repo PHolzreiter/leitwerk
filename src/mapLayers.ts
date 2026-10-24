@@ -1,7 +1,7 @@
 /** Eigene Kartenebenen: Dienststellen, Krankenhäuser, POIs. Dazu Kontextmenü und Positionswahl. */
 import maplibregl from "maplibre-gl";
 import type { Feature as GFeature, FeatureCollection, LineString, Point } from "geojson";
-import { besatzungBei, flughoehe, personenBei } from "./sim/bewegung";
+import { anzeigeZeit, besatzungBei, flughoehe, personenBei, positionBei } from "./sim/bewegung";
 import { PARTNER_PHASE_TEXT, sim } from "./sim/engine";
 import { khKurzElement } from "./ui/khInfo";
 import { PARTNER_ANZAHL, partnerArtVonTyp, type PartnerArt } from "./sim/partner";
@@ -563,23 +563,26 @@ function daheim(fz: (typeof sim.state.fahrzeuge)[string]): boolean {
 }
 
 function vehicleFeatures(): FeatureCollection<Point> {
+  const t = anzeigeZeit();
   return collection(
-    Object.values(sim.state.fahrzeuge).filter((fz) => !daheim(fz)).map((fz) =>
-      pointFeature(fz.id, fz.lon, fz.lat, {
+    Object.values(sim.state.fahrzeuge).filter((fz) => !daheim(fz)).map((fz) => {
+      // zwischen den Simulationsschritten weiterbewegt (sonst springen die Punkte)
+      const [lon, lat] = fz.fahrt ? positionBei(fz, t) : [fz.lon, fz.lat];
+      return pointFeature(fz.id, lon, lat, {
         name: fz.funkrufname,
         color: sim.statusDef(fz.status).farbe,
         nr: fz.status === "alarmWache" || fz.status === "alarmFunk" ? "" : sim.statusDef(fz.status).nummer,
         nah: fz.kategorie === "NAH" || fz.kategorie === "ITH" ? 1 : 0,
         ein: fz.einsatzId ? 1 : 0,
-        flug: flughoehe(fz, sim.state.zeit) > 5 ? 1 : 0,
-      }),
-    ),
+        flug: flughoehe(fz, t) > 5 ? 1 : 0,
+      });
+    }),
   );
 }
 
 /** Besatzungen zu Fuß bzw. beim Patienten: ein Punkt je Besatzung (weiter weg), ein Punkt je Person (nah) */
 function besatzungFeatures(): FeatureCollection<Point> {
-  const t = sim.state.zeit;
+  const t = anzeigeZeit();
   const out: Feature[] = [];
   for (const fz of Object.values(sim.state.fahrzeuge)) {
     const b = besatzungBei(fz, t);
@@ -798,4 +801,14 @@ export function addSimLayers(
     (map.getSource("lw-routes") as maplibregl.GeoJSONSource | undefined)?.setData(routeFeatures());
   });
   map.once("remove", ausSim);
+  // Flüssige Bewegung: fahrende Fahrzeuge ca. 10× pro Sekunde neu zeichnen (nur wenn das Spiel läuft und etwas fährt)
+  const glatt = window.setInterval(() => {
+    if (!sim.state.laeuft || document.hidden) return;
+    const t = anzeigeZeit();
+    const faehrt = Object.values(sim.state.fahrzeuge).some((fz) => fz.fahrt && t < fz.fahrt.start + fz.fahrt.dauer * 1000 + 1500);
+    const geht = Object.values(sim.state.fahrzeuge).some((fz) => fz.fuss);
+    if (faehrt) (map.getSource("lw-vehicles") as maplibregl.GeoJSONSource | undefined)?.setData(vehicleFeatures());
+    if (geht) (map.getSource("lw-besatzung") as maplibregl.GeoJSONSource | undefined)?.setData(besatzungFeatures());
+  }, 100);
+  map.once("remove", () => window.clearInterval(glatt));
 }

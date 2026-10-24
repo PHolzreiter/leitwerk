@@ -7,7 +7,7 @@
  */
 import maplibregl from "maplibre-gl";
 import { store } from "./data/store";
-import { flughoehe, personenBei, positionBei, richtungBei, rotorLaeuft } from "./sim/bewegung";
+import { anzeigeZeit, flughoehe, personenBei, positionBei, richtungBei, rotorLaeuft } from "./sim/bewegung";
 import { sim, type SimFahrzeug } from "./sim/engine";
 import { orgFarbe } from "./mapLayers";
 
@@ -307,16 +307,7 @@ export function addFahrzeug3D(map: maplibregl.Map): Fahrzeug3D {
   const richtungMerk = new Map<string, number>();
   const farbeMerk = new Map<string, [number, number, number]>();
   // Zwischen zwei Simulationsschritten weiterrechnen (flüssige Bewegung)
-  let simZeit = sim.state.zeit;
-  let simReal = performance.now();
-  const ausSim = sim.onChange(() => {
-    if (sim.state.zeit !== simZeit) {
-      simZeit = sim.state.zeit;
-      simReal = performance.now();
-    }
-  });
-  const jetzt = () => (sim.state.laeuft ? simZeit + Math.min(1500, performance.now() - simReal) * sim.state.tempo : simZeit);
-  map.once("remove", ausSim);
+  const jetzt = anzeigeZeit;
 
   const sichtbar = () => mode3d && gewuenscht && map.getZoom() >= ZOOM_FLUG;
   /** zuletzt gezeichnete Bildschirmpositionen (Pixel) */

@@ -3446,3 +3446,16 @@ input[type="color"] {
   color: var(--text);
   font-size: 12px;
 }
+
+/* Ausrückzeiten: Tag und Nacht nebeneinander */
+.ausr-tab {
+  display: grid;
+  grid-template-columns: max-content max-content max-content;
+  gap: 6px 18px;
+  align-items: center;
+  margin: 6px 0 10px;
+}
+.ausr-kopf { font-size: 12px; font-weight: 600; color: var(--text-dim); }
+.ausr-art { font-weight: 500; }
+.ausr-bereich { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+input.ausr-zahl { width: 64px !important; min-width: 0; }

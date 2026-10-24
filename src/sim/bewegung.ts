@@ -2,7 +2,32 @@
  * Bewegung für die Darstellung: Position, Fahrtrichtung und Flughöhe zu einem beliebigen
  * Zeitpunkt (aus der Fahrt berechnet, damit 3D-Modelle flüssig fahren – auch im Multiplayer).
  */
-import { fliegt, type SimFahrzeug } from "./engine";
+import { fliegt, sim, type SimFahrzeug } from "./engine";
+
+// Spielzeit zwischen zwei Simulationsschritten weiterrechnen (flüssige Bewegung, auch im Multiplayer,
+// wo der Zustand nur zweimal pro Sekunde ankommt)
+let simZeit = 0;
+let simReal = 0;
+let angebunden = false;
+/** Geschätzte aktuelle Spielzeit (ms), auch zwischen den Simulationsschritten */
+export function anzeigeZeit(): number {
+  if (!angebunden) {
+    angebunden = true;
+    simZeit = sim.state.zeit;
+    simReal = performance.now();
+    sim.onChange(() => {
+      if (sim.state.zeit !== simZeit) {
+        simZeit = sim.state.zeit;
+        simReal = performance.now();
+      }
+    });
+  }
+  if (sim.state.zeit !== simZeit) {
+    simZeit = sim.state.zeit;
+    simReal = performance.now();
+  }
+  return sim.state.laeuft ? simZeit + Math.min(1500, performance.now() - simReal) * sim.state.tempo : simZeit;
+}
 
 const FLUGHOEHE = 300;
 const STEIGEN_S = 45;

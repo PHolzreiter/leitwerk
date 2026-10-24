@@ -336,37 +336,54 @@ export function createSettingsView(container: HTMLElement, teil: "simulation" | 
     );
     const rGrid = el("div", { class: "set-grid" });
     const a = draft.ausrueck;
-    const bereich = (label: string, wert: [number, number]) => {
-      const lo = num(Math.round((wert[0] / 60) * 10) / 10, "0.5");
-      const hi = num(Math.round((wert[1] / 60) * 10) / 10, "0.5");
+    const klein = (wert: number, step: string) => {
+      const i = num(wert, step);
+      i.classList.add("ausr-zahl");
+      return i;
+    };
+    /** „0,5 – 2 min“ in einer Zeile */
+    const bereich = (wert: [number, number]) => {
+      const lo = klein(Math.round((wert[0] / 60) * 10) / 10, "0.5");
+      const hi = klein(Math.round((wert[1] / 60) * 10) / 10, "0.5");
       lo.addEventListener("change", () => (wert[0] = Math.max(0, Number(lo.value) || 0) * 60));
       hi.addEventListener("change", () => (wert[1] = Math.max(wert[0] / 60, Number(hi.value) || 0) * 60));
-      const w = el("div", { class: "row-btns" });
-      w.append(lo, el("span", { class: "muted" }, "bis"), hi, el("span", { class: "muted" }, "min"));
-      rGrid.append(el("label", {}, label), w);
+      const w = el("div", { class: "ausr-bereich" });
+      w.append(lo, el("span", { class: "muted" }, "–"), hi, el("span", { class: "muted" }, "min"));
+      return w;
     };
-    const tv = num(a.tagVon, "1");
-    const tb = num(a.tagBis, "1");
+    const tv = klein(a.tagVon, "1");
+    const tb = klein(a.tagBis, "1");
     tv.addEventListener("change", () => (a.tagVon = Math.min(23, Math.max(0, Number(tv.value) || 0))));
     tb.addEventListener("change", () => (a.tagBis = Math.min(24, Math.max(0, Number(tb.value) || 0))));
-    const tw = el("div", { class: "row-btns" });
-    tw.append(tv, el("span", { class: "muted" }, "bis"), tb, el("span", { class: "muted" }, "Uhr"));
+    const tw = el("div", { class: "ausr-bereich" });
+    tw.append(tv, el("span", { class: "muted" }, "–"), tb, el("span", { class: "muted" }, "Uhr"));
     rGrid.append(el("label", {}, "Tag (sonst Nacht)"), tw);
-    bereich("RTW/KTW – Tag", a.bodenTag);
-    bereich("RTW/KTW – Nacht", a.bodenNacht);
+    // Tabelle: je Fahrzeugart eine Zeile, Tag und Nacht nebeneinander
     a.nefTag ??= [20, 240];
     a.nefNacht ??= [90, 780];
-    bereich("NEF – Tag", a.nefTag);
-    bereich("NEF – Nacht", a.nefNacht);
-    bereich("Hubschrauber – Tag", a.nahTag);
-    bereich("Hubschrauber – Nacht", a.nahNacht);
-    const uw = num(a.unterwegs, "1");
+    const ausrTab = el("div", { class: "ausr-tab" });
+    ausrTab.append(el("span"), el("span", { class: "ausr-kopf" }, "☀ Tag"), el("span", { class: "ausr-kopf" }, "☾ Nacht"));
+    for (const [label, tag, nacht] of [
+      ["RTW / KTW", a.bodenTag, a.bodenNacht],
+      ["NEF", a.nefTag, a.nefNacht],
+      ["Hubschrauber", a.nahTag, a.nahNacht],
+    ] as [string, [number, number], [number, number]][]) {
+      ausrTab.append(el("span", { class: "ausr-art" }, label), bereich(tag), bereich(nacht));
+    }
+    const tabZeile = el("div", { class: "set-voll" });
+    tabZeile.appendChild(ausrTab);
+    const uw = klein(a.unterwegs, "1");
     uw.addEventListener("change", () => (a.unterwegs = Math.max(0, Number(uw.value) || 10)));
-    rGrid.append(el("label", {}, "Frei unterwegs (Sekunden)"), uw);
-    const bp = num(a.bereitschaftPlusMin, "1");
+    const uwW = el("div", { class: "ausr-bereich" });
+    uwW.append(uw, el("span", { class: "muted" }, "Sekunden"));
+    const bp = klein(a.bereitschaftPlusMin, "1");
     bp.addEventListener("change", () => (a.bereitschaftPlusMin = Math.max(0, Number(bp.value) || 0)));
-    rGrid.append(el("label", {}, "Bereitschaft: zusätzlich (Minuten)"), bp);
-    rSec.appendChild(rGrid);
+    const bpW = el("div", { class: "ausr-bereich" });
+    bpW.append(el("span", { class: "muted" }, "+"), bp, el("span", { class: "muted" }, "min"));
+    rSec.append(rGrid, tabZeile);
+    const rGrid2 = el("div", { class: "set-grid" });
+    rGrid2.append(el("label", {}, "Frei unterwegs"), uwW, el("label", {}, "Aus der Bereitschaft"), bpW);
+    rSec.appendChild(rGrid2);
 
     // Flugrettung
     const nSec = section(
