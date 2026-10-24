@@ -1,5 +1,9 @@
 # Änderungen
 
+## 0.55.0 – Wer belegt den Platz?
+- Akutversorgung: Klick auf ein belegtes Feld (rotes ✗) zeigt ein kleines Fenster: welcher Einsatz, welche Fahrzeuge am Transport beteiligt sind (RTW, begleitendes NEF/ACN, Hubschrauber), der Buchungsgrund und bis wann der Platz ungefähr belegt ist
+- Plätze, die nicht vom eigenen Rettungsdienst kommen, stehen als „Anderer Patient“ dabei
+
 ## 0.54.0 – Bewusstsein und Atmung zuerst
 - Abfrage: „Ist der Patient wach?“ und „Atmet er normal?“ kommen jetzt vor dem Grundproblem („3 · Bewusstsein und Atmung“, danach „4 · Was ist passiert?“) – in der Primärabfrage stehen sie nicht noch einmal
 - Bewusstlos und keine Atmung: sofort der Hinweis „Kreislaufstillstand – Reanimation anleiten!“ mit Knopf, der das Stillstand-Kapitel wählt

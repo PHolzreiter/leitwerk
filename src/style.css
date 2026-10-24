@@ -3339,6 +3339,23 @@ input[type="color"] {
 .akv-f.ok { background: var(--akv-ok); }
 .akv-f.voll { background: var(--akv-voll); }
 .akv-f.zu { background: var(--akv-zu); }
+.akv-f.klickbar { cursor: pointer; }
+.akv-f.klickbar:hover { filter: brightness(0.95); outline: 1px solid var(--border); }
+.akv-pop {
+  position: fixed;
+  z-index: 3000;
+  max-width: 340px;
+  min-width: 220px;
+  background: var(--panel, #fff);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+  padding: 8px 10px;
+  font-size: 12px;
+}
+.akv-pop-kopf { margin-bottom: 6px; }
+.akv-pop-z { padding: 5px 0; border-top: 1px solid var(--border); display: grid; gap: 2px; }
 .akv-s {
   display: inline-flex;
   width: 16px;

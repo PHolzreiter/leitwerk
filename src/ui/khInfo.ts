@@ -4,7 +4,7 @@
  */
 import type { Hospital } from "../data/model";
 import { store } from "../data/store";
-import { akutAbteilung, akutJetzt, akutVon, EINRICHTUNG_TYP_LABEL, EINRICHTUNGEN, type EinrichtungTyp } from "../data/klinik";
+import { akutAbteilung, akutJetzt, akutVon, buchungName, EINRICHTUNG_TYP_LABEL, EINRICHTUNGEN, type EinrichtungTyp } from "../data/klinik";
 import { aufnahmetag, belegt, MIT_ZEITEN, offen, plaetze, RESSOURCEN, zeitenText, type Ressource } from "../sim/khStatus";
 import { sim } from "../sim/engine";
 import { distanceM } from "../sim/geo";
@@ -231,9 +231,11 @@ const AKV_SPALTEN: { n: string; titel: string; ak: string[]; rs?: Ressource[]; e
   { n: "KRS", titel: "Kreißsaal", ak: ["ak_kreisssaal"], rs: ["kreisssaal"] },
 ];
 
-function akvFeld(zust: AkvZustand[], titel: string): string {
+function akvFeld(zust: AkvZustand[], titel: string, belegtR?: Ressource): string {
   const schlimmst: AkvZustand = zust.includes("ok") ? "ok" : zust.includes("voll") ? "voll" : "zu";
-  return `<span class="akv-f ${schlimmst}" title="${esc(titel)}">${zust.map((z) => `<i class="akv-s ${z}">${AKV_SYMBOL[z]}</i>`).join("")}</span>`;
+  // belegte Plätze: anklickbar – zeigt, wer sie belegt und warum
+  const klick = belegtR && zust.includes("voll") ? ` data-r="${belegtR}" role="button" tabindex="0"` : "";
+  return `<span class="akv-f ${schlimmst}${klick ? " klickbar" : ""}"${klick} title="${esc(titel)}${klick ? " – klicken: wer belegt" : ""}">${zust.map((z) => `<i class="akv-s ${z}">${AKV_SYMBOL[z]}</i>`).join("")}</span>`;
 }
 
 /** Zustand einer Spalte: null = gibt es dort nicht (für Tests und die Anzeige) */
@@ -264,9 +266,69 @@ function akvZelle(h: Hospital, s: (typeof AKV_SPALTEN)[number], t: number): stri
   if (s.einzeln) {
     const l: AkvZustand[] = [];
     for (let i = 0; i < Math.min(st.n, 3); i++) l.push(i < st.frei ? "ok" : "voll");
-    return akvFeld(l, titel);
+    return akvFeld(l, titel, r);
   }
-  return akvFeld([st.frei > 0 ? "ok" : "voll"], titel);
+  return akvFeld([st.frei > 0 ? "ok" : "voll"], titel, r);
+}
+
+/** Wer belegt die Plätze (Einsatz, beteiligte Fahrzeuge, Buchungsgrund, bis wann) */
+export function belegungListe(h: Hospital, r: Ressource, t: number): { einsatz: string | null; nummer: string; fahrzeuge: string[]; grund: string; bis: number }[] {
+  const liste = (sim.state.khBelegung?.[h.id]?.[r] ?? []).filter((x) => x.bis > t).sort((a, b) => a.bis - b.bis);
+  return liste.map((b) => {
+    const e = b.einsatz ? sim.einsatz(b.einsatz) : undefined;
+    if (!e) return { einsatz: null, nummer: "", fahrzeuge: [], grund: "Patient ohne Rettungsdienst (selbst gekommen, anderer Bereich)", bis: b.bis };
+    const prot = e.protokoll.map((p) => p.text).join("\n");
+    const fzs = e.fahrzeuge.map((id) => sim.state.fahrzeuge[id]).filter((f) => !!f);
+    // am Transport beteiligt: Transportmittel, begleitendes NEF/ACN, Hubschrauber mit Patient
+    const dabei = fzs.filter((f) =>
+      sim.transportfaehig(f)
+        ? !prot.includes(`${f.funkrufname}: Patient wird vom BIT`) && !prot.includes(`${f.funkrufname}: kein Transport`) && !prot.includes(`${f.funkrufname}: Transportverweigerung`) && !prot.includes(`${f.funkrufname}: Patient verstorben`)
+        : prot.includes(`${f.funkrufname}: Notarzt begleitet`) || prot.includes(`${f.funkrufname}: ACN begleitet`) || prot.includes(`${f.funkrufname}: Patient wird mit dem NAH`) || (f.begleitet && f.einsatzId === e.id),
+    );
+    return {
+      einsatz: e.id,
+      nummer: e.nummer,
+      fahrzeuge: dabei.map((f) => `${f.funkrufname} (${f.typ ?? f.rmTyp})`),
+      grund: e.kh?.grund ? buchungName(e.kh.grund) : "ohne Buchungsgrund",
+      bis: b.bis,
+    };
+  });
+}
+
+/** Kleines Fenster neben der Zelle: wer belegt die Plätze */
+function belegungZeigen(anker: HTMLElement, h: Hospital, r: Ressource): void {
+  document.querySelectorAll(".akv-pop").forEach((x) => x.remove());
+  const t = jetzt();
+  const uhr = (ms: number) => new Date(ms).toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" });
+  const pop = el("div", { class: "akv-pop", role: "dialog" });
+  const def = RESSOURCEN.find((x) => x.id === r);
+  pop.innerHTML =
+    `<div class="akv-pop-kopf"><b>${esc(h.kurzname || h.name)}</b> · ${esc(def?.name ?? r)}</div>` +
+    (belegungListe(h, r, t)
+      .map(
+        (x) => `<div class="akv-pop-z">
+          <div>${x.einsatz ? `<b>Einsatz ${esc(x.nummer)}</b>` : "<b>Anderer Patient</b>"} <span class="muted">· frei ca. ${uhr(x.bis)}</span></div>
+          ${x.fahrzeuge.length ? `<div>🚑 ${x.fahrzeuge.map(esc).join(", ")}</div>` : ""}
+          <div class="muted">${x.einsatz ? "Buchung: " : ""}${esc(x.grund)}</div>
+        </div>`,
+      )
+      .join("") || `<div class="muted">Gerade nichts belegt.</div>`);
+  document.body.appendChild(pop);
+  const rc = anker.getBoundingClientRect();
+  const w = pop.offsetWidth;
+  pop.style.left = `${Math.max(8, Math.min(window.innerWidth - w - 8, rc.left + rc.width / 2 - w / 2))}px`;
+  pop.style.top = `${Math.min(window.innerHeight - pop.offsetHeight - 8, rc.bottom + 6)}px`;
+  const zu = (ev: Event) => {
+    if (ev instanceof KeyboardEvent && ev.key !== "Escape") return;
+    if (ev.type === "mousedown" && pop.contains(ev.target as Node)) return;
+    pop.remove();
+    document.removeEventListener("mousedown", zu, true);
+    document.removeEventListener("keydown", zu, true);
+  };
+  setTimeout(() => {
+    document.addEventListener("mousedown", zu, true);
+    document.addEventListener("keydown", zu, true);
+  }, 0);
 }
 
 function khStatusPanel(ctx: { params: Record<string, unknown>; setzeParams(p: Record<string, unknown>): void; sichtbar(): boolean }, standard: "plaetze" | "akut") {
@@ -345,9 +407,23 @@ function khStatusPanel(ctx: { params: Record<string, unknown>; setzeParams(p: Re
     const h = id ? store.get("hospitals", id) : undefined;
     if (h) khDetail(h);
   };
-  tabelle.addEventListener("click", (e) => oeffnen((e.target as Element).closest("[data-kh]")));
+  // belegte Zelle: Aufschlüsselung statt Krankenhaus-Details
+  const belegtZelle = (ziel: Element): boolean => {
+    const f = ziel.closest<HTMLElement>(".akv-f[data-r]");
+    const id = f?.closest<HTMLElement>("[data-kh]")?.dataset.kh;
+    const h = id ? store.get("hospitals", id) : undefined;
+    if (!f || !h) return false;
+    belegungZeigen(f, h, f.dataset.r as Ressource);
+    return true;
+  };
+  tabelle.addEventListener("click", (e) => {
+    if (belegtZelle(e.target as Element)) return;
+    oeffnen((e.target as Element).closest("[data-kh]"));
+  });
   tabelle.addEventListener("keydown", (e) => {
-    if ((e as KeyboardEvent).key === "Enter") oeffnen((e.target as Element).closest("[data-kh]"));
+    if ((e as KeyboardEvent).key !== "Enter") return;
+    if (belegtZelle(e.target as Element)) return;
+    oeffnen((e.target as Element).closest("[data-kh]"));
   });
   let letzt = 0;
   const aus = [
