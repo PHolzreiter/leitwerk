@@ -27,7 +27,6 @@ nef-52099;52/099;;NEF;NEF;;;osm35683540;ja;nein;24/7;;;Funkrufname laut LEOSIM �
 nef-65098;65/098;;NEF;NEF;;;osm466387055;ja;nein;24/7;;;Funkrufname laut LEOSIM · Notarzt am Stützpunkt
 nef-51099;51/099;;NEF;NEF;;;osm591992316;ja;nein;24/7;;kh006;Funkrufname geschätzt · Notarzt wird im Krankenhaus abgeholt
 acn-80002;80/002 ACN;;ACN;ACN;;;osm621328687;ja;nein;24/7;;;ACN Baden/Leobersdorf · Funkrufname laut LEOSIM · Standort lt. OpenStreetMap
-acn-80009;80/009 ACN;;ACN;ACN;;;osm621328687;ja;nein;24/7;;;ACN Baden/Leobersdorf · Funkrufname laut LEOSIM · zweite Einheit laut LEOSIM
 nef-76099;76/099;;NEF;NEF;;;osm90045647;ja;nein;24/7;;kh019;Funkrufname geschätzt · Notarzt wird im Krankenhaus abgeholt
 p791345;75/001;;RTW;RTW-C;groß;;p1496914;ja;nein;24/7;;;
 p791346;75/002;;RTW;RTW;groß;;p1496914;ja;nein;24/7;;;
@@ -143,7 +142,6 @@ p816072;73/342;;RTW;RTW-C;groß;;p1533829;ja;nein;24/7;;;
 p816073;73/343;;RTW;RTW;klein;;p1533829;ja;nein;Mo–Fr 06:00–18:00;;;
 p816071;73/099;;NEF;NEF;;;p1533830;ja;nein;24/7;;;RK/ASB geteilt · Notarzt am Stützpunkt
 p816093;80/006 ACN;;ACN;ACN;;;p1533832;ja;nein;24/7;;;ACN Stockerau · Stützpunkt in der Leitstelle Stockerau
-acn-80007;80/007 ACN;;ACN;ACN;;;p1533832;ja;nein;24/7;;;ACN Stockerau · Funkrufname geschätzt · zweite Einheit vermutet (Ausbau auf zwei Teams 2022 angekündigt, 7 Einheiten an 6 Standorten lt. Land NÖ 10/2026)
 p816086;80/003 ACN;;ACN;ACN;;;p1533837;ja;nein;24/7;;;ACN St. Pölten
 nef-70099;70/099;;NEF;NEF;;;p1533839;ja;nein;24/7;;;Funkrufname geschätzt · Notarzt am Stützpunkt
 p816088;80/004 ACN;;ACN;ACN;;;p1533839;ja;nein;24/7;;;ACN Waidhofen an der Thaya

@@ -361,7 +361,7 @@ def nef_noe(vehicles: list[dict], stations: list[dict]) -> None:
 
 
 def acn_noe(vehicles: list[dict], stations: list[dict]) -> None:
-    """ACN (Acute Community Nurse, Notruf NÖ): 6 Standorte, 7 Einheiten (Land NÖ, 08.10.2026), je eine DGKP mit
+    """ACN (Acute Community Nurse, Notruf NÖ): 6 Standorte (Land NÖ, 08.10.2026), je Standort genau ein Fahrzeug, je eine DGKP mit
     Notfallsanitäter-Ausbildung allein im PKW. Funkrufnamen 80/xxx – Pauls Daten, laut LEOSIM oder geschätzt."""
     st_ids = {x["id"] for x in stations}
     nach_funk = {re.sub(r"\s*ACN$", "", v["funkrufname"].strip()): v for v in vehicles if "ACN" in v["funkrufname"].upper()}

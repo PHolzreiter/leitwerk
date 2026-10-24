@@ -1,5 +1,9 @@
 # Änderungen
 
+## 0.61.3 – Ein ACN je Stützpunkt
+- An jedem ACN-Stützpunkt steht nur noch ein Fahrzeug: die zweite Einheit in Stockerau (80/007) und in Baden/Leobersdorf (80/009) entfallen
+- ACN gibt es damit in St. Pölten (80/003), Stockerau (80/006), Waidhofen an der Thaya (80/004), Bruck an der Leitha (80/008), Baden/Leobersdorf (80/002) und Haag (80/005)
+
 ## 0.61.2 – ACN-Funkrufnamen laut LEOSIM
 - ACN Bruck an der Leitha heißt jetzt **80/008** (vorher geschätzt 80/001)
 - ACN Baden/Leobersdorf behält 80/002 (jetzt laut LEOSIM statt geschätzt) und bekommt eine **zweite Einheit 80/009** – im Funk heißen beide dann nach dem Funkrufnamen, damit sie eindeutig bleiben
