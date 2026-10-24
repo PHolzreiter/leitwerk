@@ -22,11 +22,12 @@ nef-54499;54/499;;NEF;NEF;;;osm184596475;ja;nein;24/7;;;Notarzt am Stützpunkt
 nef-61099;61/099;;NEF;NEF;;;osm263355775;ja;nein;24/7;;;Notarzt am Stützpunkt
 nef-53699;53/699;;NEF;NEF;;;osm26806369;ja;nein;24/7;;;Funkrufname laut LEOSIM · Notarzt am Stützpunkt
 nef-62699;62/699;;NEF;NEF;;;osm268319830;ja;nein;täglich 18:00–06:00;;;Funkrufname geschätzt · Notarzt am Stützpunkt
-acn-80001;80/001 ACN;;ACN;ACN;;;osm30557227;ja;nein;24/7;;;ACN Bruck an der Leitha · Funkrufname geschätzt · erster ACN-Standort (Pilot seit 18.05.2020), am Rettungsstützpunkt des Roten Kreuzes
+acn-80008;80/008 ACN;;ACN;ACN;;;osm30557227;ja;nein;24/7;;;ACN Bruck an der Leitha · Funkrufname laut LEOSIM · erster ACN-Standort (Pilot seit 18.05.2020), am Rettungsstützpunkt des Roten Kreuzes
 nef-52099;52/099;;NEF;NEF;;;osm35683540;ja;nein;24/7;;;Funkrufname laut LEOSIM · Notarzt am Stützpunkt
 nef-65098;65/098;;NEF;NEF;;;osm466387055;ja;nein;24/7;;;Funkrufname laut LEOSIM · Notarzt am Stützpunkt
 nef-51099;51/099;;NEF;NEF;;;osm591992316;ja;nein;24/7;;kh006;Funkrufname geschätzt · Notarzt wird im Krankenhaus abgeholt
-acn-80002;80/002 ACN;;ACN;ACN;;;osm621328687;ja;nein;24/7;;;ACN Baden/Leobersdorf · Funkrufname geschätzt · Standort lt. OpenStreetMap
+acn-80002;80/002 ACN;;ACN;ACN;;;osm621328687;ja;nein;24/7;;;ACN Baden/Leobersdorf · Funkrufname laut LEOSIM · Standort lt. OpenStreetMap
+acn-80009;80/009 ACN;;ACN;ACN;;;osm621328687;ja;nein;24/7;;;ACN Baden/Leobersdorf · Funkrufname laut LEOSIM · zweite Einheit laut LEOSIM
 nef-76099;76/099;;NEF;NEF;;;osm90045647;ja;nein;24/7;;kh019;Funkrufname geschätzt · Notarzt wird im Krankenhaus abgeholt
 p791345;75/001;;RTW;RTW-C;groß;;p1496914;ja;nein;24/7;;;
 p791346;75/002;;RTW;RTW;groß;;p1496914;ja;nein;24/7;;;

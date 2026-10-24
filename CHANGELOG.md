@@ -1,5 +1,9 @@
 # Änderungen
 
+## 0.61.2 – ACN-Funkrufnamen laut LEOSIM
+- ACN Bruck an der Leitha heißt jetzt **80/008** (vorher geschätzt 80/001)
+- ACN Baden/Leobersdorf behält 80/002 (jetzt laut LEOSIM statt geschätzt) und bekommt eine **zweite Einheit 80/009** – im Funk heißen beide dann nach dem Funkrufnamen, damit sie eindeutig bleiben
+
 ## 0.61.1 – NEF-Funkrufnamen im Industrieviertel
 - NEF Hainburg heißt jetzt **53/699** (vorher geschätzt 53/499), NEF Aspang **65/098** (vorher geschätzt 65/499)
 - NEF Baden 52/099, Mödling 64/099, Neunkirchen 65/099 und Schwechat 77/099 bleiben gleich, gelten aber nicht mehr als geschätzt (Hinweis „Funkrufname laut LEOSIM“)
