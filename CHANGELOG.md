@@ -1,5 +1,12 @@
 # Änderungen
 
+## 0.62.0 – NÖ-05 und NÖ-06 spielbar
+- **Neue Funkgruppen:** NÖ-05 (Mödling, Bruck an der Leitha, Schwechat, Baden Nord) und NÖ-06 (Wiener Neustadt, Neunkirchen, Baden Süd) sind auf der Startseite wählbar – mit eigenen Einsätzen und Funk
+- **194 neue Fahrzeuge** in beiden Gruppen: 52 RTW, 17 RTW-C, 118 KTW, 6 Bezirkseinsatzleiter, 1 NEF (APN1, PVZ Wienerwald) – mit Dienstplänen; Rotes Kreuz, Samariterbund, Sozialmedizinischer Dienst
+- Neue Dienststellen: Samariterbund Wiener Neustadt, SMD Aspang, PVZ Wienerwald Breitenfurt; „Rotes Kreuz“ in Himberg heißt jetzt Ortsstelle Himberg
+- Funkrufnamen angepasst: NEF Hainburg 53/699, NEF Aspang 65/098, ACN Bruck an der Leitha 80/008; neu die zweite ACN in Baden/Leobersdorf (80/009) – dafür entfällt die vermutete zweite ACN in Stockerau (80/007)
+- Die Daten sind öffentlich zugänglich, aber noch nicht geprüft – im Hinweis jedes Fahrzeugs vermerkt
+
 ## 0.61.0 – Einstellungen und Dialoge im neuen Design
 - Einstellungen, Bereitschafts-Check und alle Rückfragen sehen jetzt aus wie die Startseite und die Spielstände: dunkelblaues Glas (bzw. hell), gleiche Rundungen, Auswahllisten, Schalter und Knöpfe im Blauverlauf, Navigation wie die Startseiten-Leiste, Abschnitte als Karten
 - Bereitschafts-Check: jeder Prüfpunkt als Karte mit farbigem Symbol

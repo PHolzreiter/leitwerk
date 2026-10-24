@@ -3,6 +3,7 @@
 
 Quellen (tools/sources/):
   paul_dienststellen_nnoe.csv / paul_fahrzeuge_nnoe.csv  – von Paul geliefert (Raum Nord-NÖ)
+  fahrzeuge_noe05_06.csv                                  – RTW/KTW/BEL/NEF in NÖ-05 und NÖ-06 (öffentlich zugängliche Daten, 10/2026)
   osm_rettungsdienst.csv                                 – OpenStreetMap, emergency=ambulance_station
   osm_krankenhaeuser_luftrettung.csv                     – OpenStreetMap, Krankenhäuser + Luftrettung
 Krankenhaus-Abteilungen: NÖ LGA-Regionalberichte (Landtag NÖ, Gegenstand 0093),
@@ -180,6 +181,18 @@ def build_stations() -> tuple[list[dict], dict[str, str]]:
         })
         name_to_id[norm(name)] = sid
 
+    # 3b. NÖ-05/NÖ-06: Wachen, die OpenStreetMap kennt, die aber oben (Nähe < 400 m / Name) wegfallen, und neue
+    for sid, name, org, typ, ort, lat, lon, hinweis in WACHEN_NOE05_06:
+        if any(x["id"] == sid for x in stations):
+            continue
+        stations.append({"id": sid, "name": name, "organisation": org, "typ": typ, "ort": ort, "bezirk": "", "adresse": "",
+                         "breitengrad": f"{lat:.6f}", "laengengrad": f"{lon:.6f}", "hinweis": hinweis})
+        name_to_id[norm(name)] = sid
+    for x in stations:
+        if x["id"] in UMBENENNEN:
+            x["name"] = UMBENENNEN[x["id"]]
+            name_to_id[norm(x["name"])] = x["id"]
+
     stations.sort(key=lambda x: (x["typ"] != "Luftrettung", x["name"]))
     # 4. Feuerwehr (Hauptfeuerwehr je Gemeinde + Bezirkskommanden), Polizeiinspektionen, Wasser- und Bergrettung
     #    aus OpenStreetMap (tools/osm_partner_holen.py) – ohne eigene Fahrzeuge
@@ -193,6 +206,18 @@ def build_stations() -> tuple[list[dict], dict[str, str]]:
                 "breitengrad": r["lat"], "laengengrad": r["lon"], "hinweis": "Quelle: OpenStreetMap",
             })
     return stations, name_to_id
+
+
+# Dienststellen NÖ-05/NÖ-06 (Recherche 10/2026)
+WACHEN_NOE05_06 = [
+    ("osm1196072388", "Samariterbund Wiener Neustadt", "Arbeiter-Samariter-Bund", "Rettungsdienst", "Wiener Neustadt", 47.8193015, 16.2484267,
+     "Quelle: OpenStreetMap (Samariterbund LV Wiener Neustadt)"),
+    ("osm541686569", "SMD Dienststelle Aspang", "Sozialmedizinischer Dienst", "Rettungsdienst", "Aspang-Markt", 47.5664627, 16.0983662,
+     "Sozialmedizinischer Dienst Österreich, Dienststelle Mönichkirchen/Aspang – Quelle: OpenStreetMap"),
+    ("neu-pvz-wienerwald", "PVZ Wienerwald Breitenfurt", "Primärversorgungszentrum", "Notarztstützpunkt", "Breitenfurt bei Wien", 48.1363532, 16.1951439,
+     "Primärversorgungszentrum Wienerwald, Hauptstraße 111 (noe.gv.at); Koordinaten OpenStreetMap"),
+]
+UMBENENNEN = {"osm475957537": "Rotes Kreuz Ortsstelle Himberg"}
 
 
 # ---------------------------------------------------------------- Fahrzeuge
@@ -260,6 +285,7 @@ def build_vehicles(stations: list[dict], name_to_id: dict[str, str]) -> list[dic
             "typ": "NAH", "dienststelle": name_to_id[norm(st_name)], "aktiv": "ja", "nachtflug": "ja" if funk in RUND_UM_DIE_UHR else "nein",
             "hinweis": "Ergänzt (Recherche OpenStreetMap); Nachtflugtauglichkeit bitte prüfen",
         })
+    fahrzeuge_noe05_06(vehicles, name_to_id, by_id)
     dienstplaene_einspielen(vehicles)
     hubschrauber_dienst(vehicles)
     ersatz_nef(vehicles)
@@ -267,6 +293,32 @@ def build_vehicles(stations: list[dict], name_to_id: dict[str, str]) -> list[dic
     acn_noe(vehicles, stations)
     vehicles.sort(key=lambda v: (v["dienststelle"], v["funkrufname"]))
     return vehicles
+
+
+def fahrzeuge_noe05_06(vehicles: list[dict], name_to_id: dict[str, str], by_id: dict[str, dict]) -> None:
+    """RTW, KTW, BEL und NEF in NÖ-05 und NÖ-06 (öffentlich zugängliche Daten, 10/2026; tools/sources/fahrzeuge_noe05_06.csv).
+    Typ kommt aus dem Namen (KTW-B = KTW), BKTW nicht aufgenommen, doppelte Funkrufnamen nur einmal."""
+    vorhanden = {v["funkrufname"] for v in vehicles}
+    for r in read_csv(SRC / "fahrzeuge_noe05_06.csv"):
+        funk = r["funkrufname"].strip()
+        if funk in vorhanden:
+            continue
+        st = r["dienststelle"].strip()
+        st_id = st if st in by_id else name_to_id.get(norm(st))
+        if not st_id:
+            raise SystemExit(f"NÖ-05/06 {funk}: Dienststelle {st} fehlt")
+        typ = r["typ"].strip()
+        if typ in {"KTW", "KTW-B"}:
+            typ = "KTW" if streuung(funk) < 0.3 else "KTW-B"
+        kat = category_of(typ, funk, by_id[st_id]["typ"])
+        hinweis = [x for x in [r["hinweis"].strip(), "Daten ungeprüft (öffentlich zugänglich, 10/2026)"] if x]
+        vehicles.append({
+            "id": "n" + funk.replace("/", "").lower(), "funkrufname": funk, "kurzname": "", "kategorie": kat, "typ": typ,
+            "dienststelle": st_id, "aktiv": "ja", "nachtflug": "nein",
+            "aufbau": "groß" if typ == "RTW-C" else "klein" if typ == "RTW" else "",
+            "dienstplan": r["dienstplan"].strip() or "24/7", "hinweis": " · ".join(hinweis),
+        })
+        vorhanden.add(funk)
 
 
 # Hubschrauber rund um die Uhr (mit Nachtflug) – alle anderen nur tagsüber (Angabe Paul, 22.10.2026)

@@ -2,7 +2,7 @@ standort;dienststelle;funkrufname;funkrufname_status;dienstzeit;hinweis;quelle
 St. Pölten;p1533837;80/003;Pauls Daten;24/7;;https://noe.gv.at/noe/pressAnnouncement/getPdf/121196
 Stockerau;p1533832;80/006;Pauls Daten;24/7;Stützpunkt in der Leitstelle Stockerau;https://noe.gv.at/noe/pressAnnouncement/getPdf/111695
 Waidhofen an der Thaya;p1533839;80/004;Pauls Daten;24/7;;https://noe.gv.at/noe/pressAnnouncement/getPdf/121196
-Bruck an der Leitha;osm30557227;80/001;geschätzt;24/7;erster ACN-Standort (Pilot seit 18.05.2020), am Rettungsstützpunkt des Roten Kreuzes;https://jasmin.goeg.at/2291/1/ACN_Endbericht_bf.pdf
-Baden/Leobersdorf;osm621328687;80/002;geschätzt;24/7;Standort lt. OpenStreetMap;https://noe.gv.at/noe/pressAnnouncement/getPdf/121196
+Bruck an der Leitha;osm30557227;80/008;öffentliche Daten;24/7;erster ACN-Standort (Pilot seit 18.05.2020), am Rettungsstützpunkt des Roten Kreuzes;https://jasmin.goeg.at/2291/1/ACN_Endbericht_bf.pdf
+Baden/Leobersdorf;osm621328687;80/002;öffentliche Daten;24/7;Standort lt. OpenStreetMap;https://noe.gv.at/noe/pressAnnouncement/getPdf/121196
 Haag;osm1299947976;80/005;geschätzt;24/7;seit 01.06.2024 beim Roten Kreuz Haag – Dienstzeit heute nicht belegt (beim Start nicht rund um die Uhr);https://www.tips.at/nachrichten/amstetten/wirtschaft-politik/648699-neuer-standort-fuer-akutpflege-in-haag
-Stockerau;p1533832;80/007;geschätzt;24/7;zweite Einheit vermutet (Ausbau auf zwei Teams 2022 angekündigt, 7 Einheiten an 6 Standorten lt. Land NÖ 10/2026);https://noe.gv.at/noe/pressAnnouncement/getPdf/111695
+Baden/Leobersdorf;osm621328687;80/009;öffentliche Daten;24/7;zweite Einheit am Standort Baden/Leobersdorf (7 Einheiten an 6 Standorten lt. Land NÖ 10/2026);https://noe.gv.at/noe/pressAnnouncement/getPdf/121196

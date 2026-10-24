@@ -85,7 +85,7 @@ const KURZ: Record<FunkgruppeId, string> = {
   "NÖ-03": "Krems · Tulln · Hollabrunn",
   "NÖ-04": "Weinviertel",
   "NÖ-05": "Mödling · Bruck · Baden Nord",
-  "NÖ-06": "Industrieviertel Süd",
+  "NÖ-06": "Wr. Neustadt · Neunkirchen · Baden Süd",
 };
 
 function karteSvg(): { svg: string; mitte: Record<string, [number, number]> } {
