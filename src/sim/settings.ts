@@ -155,6 +155,10 @@ export interface Settings {
   fremdzoneAktiv?: boolean;
   /** solche Einsätze pro Stunde (ungefähr) */
   fremdzoneProStunde?: number;
+  /** Einsatzaufkommen (Startseite): Faktor auf die Notfälle je Stunde */
+  aufkommenStufe?: "ruhig" | "normal" | "stressig";
+  /** Startzeit eines neuen Spiels: leer = jetzt, sonst „2026-10-24T08:00“ (Ortszeit) */
+  startzeit?: string;
   /** ACN-Einsätze (Akutpflege zu Hause) je ACN-Standort und Tag */
   acnProTag?: number;
   /** Krankenhäuser: zufällige Grundbelegung (andere Leitstellen, Selbstzuweiser) */

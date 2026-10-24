@@ -719,6 +719,8 @@ export interface SimState {
   partnerZaehler?: number;
   /** Statusänderungen aller Fahrzeuge (neueste zuletzt, begrenzt) */
   statusLog?: StatusEintrag[];
+  /** Multiplayer: Lobby auf der Startseite offen (Mitspieler warten, bis der Host startet) */
+  lobby?: boolean;
 }
 
 /** Eine Statusänderung (für den Reiter „Statusänderungen“) */
@@ -822,7 +824,7 @@ export const BEFEHLE = {
     "storno",
     "partnerAnfordern",
   ],
-  steuern: ["start", "pause", "setTempo", "generiere", "setWetter", "wetterUebernehmen", "neuPlanen", "reset", "generiereKt", "generiereSek"],
+  steuern: ["start", "pause", "setTempo", "generiere", "setWetter", "wetterUebernehmen", "neuPlanen", "reset", "generiereKt", "generiereSek", "neuesSpiel"],
   kt: [
     "ktNeuManuell",
     "ktAnrufAnnehmen",
@@ -994,6 +996,9 @@ export function anStrasse(r: Route): Route {
   const tp = r.times[n - 3] + (r.times[n - 2] - r.times[n - 3]) * k;
   return { ...r, coords: [...c.slice(0, n - 2), p], times: [...r.times.slice(0, n - 2), tp], duration: tp };
 }
+
+/** Einsatzaufkommen (Startseite): ruhig / normal / stressig */
+export const AUFKOMMEN_FAKTOR = { ruhig: 0.6, normal: 1, stressig: 1.6 } as const;
 
 /** Fahrten, für die ein NEF den Notarzt an Bord braucht */
 const NA_PHASEN = new Set<Phase>(["anfahrt", "bereitstellung", "rendezvous"]);
@@ -3060,7 +3065,7 @@ export class Simulation {
   private runGenerator(dt: number): void {
     if (!this.settings.generatorAktiv) return;
     const h = new Date(this.state.zeit).getHours();
-    const proStunde = this.settings.stunden?.[h]?.rd ?? 6;
+    const proStunde = (this.settings.stunden?.[h]?.rd ?? 6) * AUFKOMMEN_FAKTOR[this.settings.aufkommenStufe ?? "normal"];
     const anteile = this.settings.aufkommen;
     const summe = (["stabil", "dringend", "kritisch"] as Kategorie[]).reduce((a, k) => a + Math.max(0, anteile[k] ?? 0), 0) || 1;
     for (const k of ["stabil", "dringend", "kritisch"] as Kategorie[]) {
@@ -6061,6 +6066,29 @@ export class Simulation {
 
   private ktFahrtWeiter(fz: SimFahrzeug): void {
     fz.phaseEnde = this.state.zeit;
+  }
+
+  /**
+   * Neues Spiel (Startseite): alles zurücksetzen, Uhr auf die Startzeit, Wetter dazu neu, Dienstpläne neu.
+   * Danach läuft die Simulation.
+   */
+  neuesSpiel(zeit: number): void {
+    this.pause();
+    this.state.zeit = zeit;
+    this.reset();
+    const o = this.wetterOpt();
+    const start = o.wechsel <= 0 ? o.festLage : nextWetter(zeit, null, o).lage;
+    this.state.wetter = wetterSetzen(lageVon(start), zeit, o);
+    this.state.wetter.vorher = null;
+    this.state.lobby = false;
+    this.dienstTick(zeit, true);
+    this.start();
+  }
+
+  /** Multiplayer-Lobby der Startseite offen/zu (Mitspieler warten bis zum Start) */
+  lobbySetzen(an: boolean): void {
+    this.state.lobby = an;
+    this.emit();
   }
 
   /** Alle Einsätze und Fahrzeugzustände zurücksetzen. */

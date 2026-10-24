@@ -32,6 +32,8 @@ import { FENSTER_ID, IST_HAUPT } from "./bus";
 import { karteWaehlen, karteZeigen } from "./auswahl";
 import { fensterSchliessen } from "./nebenfenster";
 import { onPers, pers, setzePers } from "./persoenlich";
+import { logoMarke, logoSchrift } from "../logo";
+import { startseiteZeigen } from "../startseite";
 
 // ---------------------------------------------------------------- Menüs
 
@@ -189,7 +191,7 @@ export function einstellungenOeffnen(seite?: string): void {
 export function steuerleisteBauen(kopf: HTMLElement): void {
   setzeEditorDeps({ pickOnMap: waehlenAusPopup });
   kopf.innerHTML = `
-    <div class="brand"><span class="brand-mark" aria-hidden="true"></span><span class="brand-name">LeitWerk</span>${IST_HAUPT ? "" : `<span class="brand-sub">${esc(fensterName(FENSTER_ID))}</span>`}</div>
+    <div class="brand"${IST_HAUPT ? ` role="button" tabindex="0" title="Zur Startseite"` : ""}>${logoMarke(22)}<span class="brand-name">${logoSchrift()}</span>${IST_HAUPT ? "" : `<span class="brand-sub">${esc(fensterName(FENSTER_ID))}</span>`}</div>
     <div class="sl-gruppe sl-sim">
       <button id="sim-play" class="btn small" type="button">▶ Start</button>
       <div class="tempo seg" role="group" aria-label="Zeitraffer">
@@ -216,6 +218,12 @@ export function steuerleisteBauen(kopf: HTMLElement): void {
 
   // Uhr, Start/Pause, Tempo, Wetter
   const clock = kopf.querySelector<HTMLElement>("#clock")!;
+  if (IST_HAUPT) {
+    const marke = kopf.querySelector<HTMLElement>(".brand")!;
+    const zurStart = () => startseiteZeigen(undefined, { zurueck: true });
+    marke.addEventListener("click", zurStart);
+    marke.addEventListener("keydown", (e) => (e.key === "Enter" || e.key === " ") && zurStart());
+  }
   const play = kopf.querySelector<HTMLButtonElement>("#sim-play")!;
   const weather = kopf.querySelector<HTMLElement>("#weather")!;
   const fmt = new Intl.DateTimeFormat("de-AT", { hour: "2-digit", minute: "2-digit", second: "2-digit" });

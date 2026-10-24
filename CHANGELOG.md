@@ -1,5 +1,17 @@
 # Änderungen
 
+## 0.57.0 – Neue Startseite und neues Logo
+- Bei jedem Programmstart erscheint eine Startseite: Funkgruppe, Startzeit (jetzt oder Wunschzeit), Einsatzaufkommen (ruhig / normal / stressig), Wetter (realistisch / wechselhaft / fest) und Solo/Multiplayer direkt einstellen und los
+- Holografische NÖ-Karte: die gewählte Funkgruppe leuchtet auf (Klick auf die Karte wählt sie auch)
+- Echte Zahlen: Fahrzeuge, Notarztmittel, Krankenhäuser, Fälle im Katalog
+- Bereitschafts-Check („Alles funktioniert!“): Kartenmaterial, Straßennetz, Einsatzcodes, KI-Anrufer, Spracheingabe, Speicherstand – Klick zeigt die Aufschlüsselung und wie man Probleme behebt
+- Spiel fortsetzen (letzter automatischer Speicherstand) und Spielstand laden direkt von der Startseite
+- Schiebeschalter Solo/Multiplayer: im Multiplayer klappt die Lobby auf; der Host stellt ein und vergibt die Rechte, Mitspieler sehen die Einstellungen nur an
+- Hell / Dunkel / System – gilt auch im Spiel
+- Klick auf das Logo oben links öffnet die Startseite wieder („Zurück zur Simulation“ oder Esc führt zurück)
+- Neues Logo (ansteigende Balken) in der Kopfzeile und als Programmsymbol
+- Hintergrundfoto: Dürnstein (Wachau), Uoaei1, Wikimedia Commons, CC BY-SA 4.0 – leicht austauschbar
+
 ## 0.56.0 – Flüssige Fahrzeuge, Mikrofon bleibt freigegeben, neues Mac-Symbol
 - Karte: Fahrzeuge (und Besatzungen zu Fuß) bewegen sich flüssig statt zu springen – die Position wird zwischen den Simulationsschritten weitergerechnet (auch im Multiplayer)
 - Mac: die App hat jetzt eine gleichbleibende Signatur – nach diesem Update das Mikrofon noch ein letztes Mal freigeben, danach bleibt die Freigabe auch über Updates erhalten

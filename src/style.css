@@ -119,6 +119,9 @@ body {
   gap: 10px;
 }
 
+.brand[role="button"] { cursor: pointer; }
+.brand .lw-logo-marke { flex: none; }
+.brand-name .lw-logo-schrift { --st-text: var(--text); }
 .brand-mark {
   width: 12px;
   height: 12px;
