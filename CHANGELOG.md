@@ -1,5 +1,9 @@
 # Änderungen
 
+## 0.54.0 – Bewusstsein und Atmung zuerst
+- Abfrage: „Ist der Patient wach?“ und „Atmet er normal?“ kommen jetzt vor dem Grundproblem („3 · Bewusstsein und Atmung“, danach „4 · Was ist passiert?“) – in der Primärabfrage stehen sie nicht noch einmal
+- Bewusstlos und keine Atmung: sofort der Hinweis „Kreislaufstillstand – Reanimation anleiten!“ mit Knopf, der das Stillstand-Kapitel wählt
+
 ## 0.53.0 – ACN (Acute Community Nurse)
 **7 ACN an 6 Standorten** (Land NÖ, Oktober 2026): St. Pölten, Stockerau (2), Waidhofen an der Thaya, Bruck an der Leitha, Baden/Leobersdorf, Haag
 - Eine diplomierte Pflegekraft mit Notfallsanitäter-Ausbildung (NKI) allein im PKW, rund um die Uhr

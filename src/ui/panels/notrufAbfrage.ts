@@ -9,7 +9,13 @@ import { store } from "../../data/store";
 import { fragen, antwortetGerade, kontext } from "../../abfrage/gespraech";
 import { schilderung } from "../../abfrage/anrufer";
 import { patientText } from "../../sim/lage";
-import { antwortLabel, bestimmeCode, fragenImAblauf, stufeRang, stufeVonCode, type Frage, type Schema, type Wert } from "../../abfrage/schema";
+import { antwortLabel, bestimmeCode, fragenImAblauf, istKreislaufstillstand, stufeRang, stufeVonCode, type Frage, type Schema, type Wert } from "../../abfrage/schema";
+import { kapitelZuThema } from "../../abfrage/themen";
+
+/** Fragen nach Bewusstsein und Atmung (kommen vor dem Grundproblem) */
+function istBwAt(f: Frage): boolean {
+  return f.id === "bw" || f.id === "at" || (f.typ === "single" && /(wach|ansprechbar|bewusst|atmet|atmung)/i.test(f.text));
+}
 import { mp } from "../../net/mehrspieler";
 import { sim, type Einsatz } from "../../sim/engine";
 import { el, esc, toast } from "../dom";
@@ -387,7 +393,24 @@ export function notrufTeile(e: Einsatz): NotrufTeile {
     }
     const p2 = abschnitt("2 · Rückrufnummer");
     for (const f of g.phase_2_rueckruf ?? []) p2.appendChild(frageZeile(f));
-    const p3 = abschnitt("3 · Was ist passiert?");
+    // Bewusstsein und Atmung VOR dem Grundproblem: ein Kreislaufstillstand fällt so sofort auf
+    const vitalFragen = (g.phase_4_primaerabfrage ?? []).filter(istBwAt);
+    if (vitalFragen.length) {
+      const pv = abschnitt("3 · Bewusstsein und Atmung");
+      for (const f of vitalFragen) pv.appendChild(frageZeile(f));
+      if (istKreislaufstillstand(a.antworten) && a.kapitel !== kapitelZuThema("stillstand", schema)) {
+        const ks = el("div", { class: "reanimation" });
+        ks.append(el("span", {}, "⚠ Bewusstlos und keine Atmung: Kreislaufstillstand – Reanimation anleiten! "));
+        const kap = kapitelZuThema("stillstand", schema);
+        if (kap && schema.kapitel[kap] && darf) {
+          const b = el("button", { class: "btn small primary", type: "button" }, `Kapitel ${kap} wählen`);
+          b.addEventListener("click", () => fehler(sim.call("abfrageSetze", e.id, "kapitel", kap)));
+          ks.appendChild(b);
+        }
+        pv.appendChild(ks);
+      }
+    }
+    const p3 = abschnitt(vitalFragen.length ? "4 · Was ist passiert?" : "3 · Was ist passiert?");
     for (const f of g.phase_3_was_ist_passiert ?? []) {
       if (f.typ === "kapitelwahl") p3.appendChild(kapitelWahl(schema, darf));
       else p3.appendChild(frageZeile(f));
@@ -409,13 +432,15 @@ export function notrufTeile(e: Einsatz): NotrufTeile {
       sec.appendChild(opts);
       return;
     }
-    // Primärabfrage + Kapitelfragen (inkl. Kapitelwechsel)
+    // Primärabfrage + Kapitelfragen (inkl. Kapitelwechsel); Bewusstsein und Atmung stehen schon oben
     let phase = "";
     let sec: HTMLElement | null = null;
+    const n0 = vitalFragen.length ? 5 : 4;
     for (const { phase: ph, frage } of fragenImAblauf(schema, a.kapitel, a.antworten)) {
+      if (ph === "Primärabfrage" && vitalFragen.includes(frage)) continue;
       if (ph !== phase) {
         phase = ph;
-        sec = abschnitt(ph === "Primärabfrage" ? "4 · Primärabfrage" : `5 · ${ph}`);
+        sec = abschnitt(ph === "Primärabfrage" ? `${n0} · Primärabfrage` : `${n0 + 1} · ${ph}`);
       }
       sec!.appendChild(frageZeile(frage));
     }
