@@ -1,5 +1,11 @@
 # Änderungen
 
+## 0.56.0 – Flüssige Fahrzeuge, Mikrofon bleibt freigegeben, neues Mac-Symbol
+- Karte: Fahrzeuge (und Besatzungen zu Fuß) bewegen sich flüssig statt zu springen – die Position wird zwischen den Simulationsschritten weitergerechnet (auch im Multiplayer)
+- Mac: die App hat jetzt eine gleichbleibende Signatur – nach diesem Update das Mikrofon noch ein letztes Mal freigeben, danach bleibt die Freigabe auch über Updates erhalten
+- Mac: Programmsymbol im Apple-Raster – kein verkleinertes Symbol auf heller Platte mehr (macOS 26)
+- Einstellungen → Zeiten: Ausrückzeiten als Tabelle, Tag und Nacht nebeneinander
+
 ## 0.55.0 – Wer belegt den Platz?
 - Akutversorgung: Klick auf ein belegtes Feld (rotes ✗) zeigt ein kleines Fenster: welcher Einsatz, welche Fahrzeuge am Transport beteiligt sind (RTW, begleitendes NEF/ACN, Hubschrauber), der Buchungsgrund und bis wann der Platz ungefähr belegt ist
 - Plätze, die nicht vom eigenen Rettungsdienst kommen, stehen als „Anderer Patient“ dabei
