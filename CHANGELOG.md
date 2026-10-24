@@ -1,5 +1,9 @@
 # Änderungen
 
+## 0.61.1 – NEF-Funkrufnamen im Industrieviertel
+- NEF Hainburg heißt jetzt **53/699** (vorher geschätzt 53/499), NEF Aspang **65/098** (vorher geschätzt 65/499)
+- NEF Baden 52/099, Mödling 64/099, Neunkirchen 65/099 und Schwechat 77/099 bleiben gleich, gelten aber nicht mehr als geschätzt (Hinweis „Funkrufname laut LEOSIM“)
+
 ## 0.61.0 – Einstellungen und Dialoge im neuen Design
 - Einstellungen, Bereitschafts-Check und alle Rückfragen sehen jetzt aus wie die Startseite und die Spielstände: dunkelblaues Glas (bzw. hell), gleiche Rundungen, Auswahllisten, Schalter und Knöpfe im Blauverlauf, Navigation wie die Startseiten-Leiste, Abschnitte als Karten
 - Bereitschafts-Check: jeder Prüfpunkt als Karte mit farbigem Symbol

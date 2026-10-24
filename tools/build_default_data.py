@@ -354,6 +354,8 @@ def nef_noe(vehicles: list[dict], stations: list[dict]) -> None:
             teile.append("RK/ASB geteilt")
         if r["funkrufname_status"].strip() == "geschätzt":
             teile.append("Funkrufname geschätzt")
+        elif r["funkrufname_status"].strip() == "LEOSIM":
+            teile.append("Funkrufname laut LEOSIM")
         teile.append("Notarzt wird im Krankenhaus abgeholt" if v["na_abholung"] else "Notarzt am Stützpunkt")
         v["hinweis"] = " · ".join(teile)
 

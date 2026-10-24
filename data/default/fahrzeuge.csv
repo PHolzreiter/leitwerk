@@ -8,23 +8,23 @@ nef-99917;99/917;;NEF;NEF ÖAMTC;;;air-c17;ja;nein;24/7;99/017;;ÖAMTC-NEF, nur 
 nah-99018;99/018;Christophorus 18;NAH;NAH;;;air-c18;ja;nein;täglich Sonnenaufgang–Sonnenuntergang;;;nur tagsüber (Sonnenaufgang bis Sonnenuntergang)
 nef-99918;99/918;;NEF;NEF ÖAMTC;;;air-c18;ja;nein;24/7;99/018;;ÖAMTC-NEF, nur angemeldet, wenn der Hubschrauber nicht fliegen kann
 nef-55099;55/099;;NEF;NEF;;;nef-st-gmuend;ja;nein;24/7;;;Notarzt am Stützpunkt
-nef-64099;64/099;;NEF;NEF;;;nef-st-moedling;ja;nein;24/7;;;Funkrufname geschätzt · Notarzt am Stützpunkt
+nef-64099;64/099;;NEF;NEF;;;nef-st-moedling;ja;nein;24/7;;;Funkrufname laut LEOSIM · Notarzt am Stützpunkt
 nef-70499;70/499;;NEF;NEF;;;osm11101232755;ja;nein;täglich 19:00–07:00;;;NEF-141 (Ärztefunkdienst 141), nur nachts · Funkrufname geschätzt · Notarzt am Stützpunkt
 nef-72399;72/399;;NEF;NEF;;;osm1196072381;ja;nein;täglich 19:00–07:00;;;NEF-141 (Ärztefunkdienst 141), nur nachts · Funkrufname geschätzt · Notarzt am Stützpunkt
-nef-65099;65/099;;NEF;NEF;;;osm1196783471;ja;nein;24/7;;;Funkrufname geschätzt · Notarzt am Stützpunkt
+nef-65099;65/099;;NEF;NEF;;;osm1196783471;ja;nein;24/7;;;Funkrufname laut LEOSIM · Notarzt am Stützpunkt
 nef-62499;62/499;;NEF;NEF;;;osm129902910;ja;nein;24/7;;;RK/ASB geteilt · Notarzt am Stützpunkt
 acn-80005;80/005 ACN;;ACN;ACN;;;osm1299947976;ja;nein;24/7;;;ACN Haag · Funkrufname geschätzt · seit 01.06.2024 beim Roten Kreuz Haag – Dienstzeit heute nicht belegt (beim Start nicht rund um die Uhr)
 nef-54099;54/099;;NEF;NEF;;;osm142883232;ja;nein;24/7;;;Notarzt am Stützpunkt
 nef-74099;74/099;;NEF;NEF;;;osm143373053;ja;nein;24/7;;;Notarzt am Stützpunkt
-nef-77099;77/099;;NEF;NEF;;;osm150308151;ja;nein;24/7;;;Funkrufname geschätzt · Notarzt am Stützpunkt
+nef-77099;77/099;;NEF;NEF;;;osm150308151;ja;nein;24/7;;;Funkrufname laut LEOSIM · Notarzt am Stützpunkt
 nef-68099;68/099;;NEF;NEF;;;osm184211548;ja;nein;24/7;;;Funkrufname geschätzt · Notarzt am Stützpunkt
 nef-54499;54/499;;NEF;NEF;;;osm184596475;ja;nein;24/7;;;Notarzt am Stützpunkt
 nef-61099;61/099;;NEF;NEF;;;osm263355775;ja;nein;24/7;;;Notarzt am Stützpunkt
-nef-53499;53/499;;NEF;NEF;;;osm26806369;ja;nein;24/7;;;Funkrufname geschätzt · Notarzt am Stützpunkt
+nef-53699;53/699;;NEF;NEF;;;osm26806369;ja;nein;24/7;;;Funkrufname laut LEOSIM · Notarzt am Stützpunkt
 nef-62699;62/699;;NEF;NEF;;;osm268319830;ja;nein;täglich 18:00–06:00;;;Funkrufname geschätzt · Notarzt am Stützpunkt
 acn-80001;80/001 ACN;;ACN;ACN;;;osm30557227;ja;nein;24/7;;;ACN Bruck an der Leitha · Funkrufname geschätzt · erster ACN-Standort (Pilot seit 18.05.2020), am Rettungsstützpunkt des Roten Kreuzes
-nef-52099;52/099;;NEF;NEF;;;osm35683540;ja;nein;24/7;;;Funkrufname geschätzt · Notarzt am Stützpunkt
-nef-65499;65/499;;NEF;NEF;;;osm466387055;ja;nein;24/7;;;Funkrufname geschätzt · Notarzt am Stützpunkt
+nef-52099;52/099;;NEF;NEF;;;osm35683540;ja;nein;24/7;;;Funkrufname laut LEOSIM · Notarzt am Stützpunkt
+nef-65098;65/098;;NEF;NEF;;;osm466387055;ja;nein;24/7;;;Funkrufname laut LEOSIM · Notarzt am Stützpunkt
 nef-51099;51/099;;NEF;NEF;;;osm591992316;ja;nein;24/7;;kh006;Funkrufname geschätzt · Notarzt wird im Krankenhaus abgeholt
 acn-80002;80/002 ACN;;ACN;ACN;;;osm621328687;ja;nein;24/7;;;ACN Baden/Leobersdorf · Funkrufname geschätzt · Standort lt. OpenStreetMap
 nef-76099;76/099;;NEF;NEF;;;osm90045647;ja;nein;24/7;;kh019;Funkrufname geschätzt · Notarzt wird im Krankenhaus abgeholt
