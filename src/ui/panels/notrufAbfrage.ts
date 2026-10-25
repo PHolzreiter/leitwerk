@@ -97,6 +97,39 @@ export function notrufTeile(e: Einsatz): NotrufTeile {
   });
 
   let letzterSchluessel = "";
+  // Ortung: eigene Zeile, wird auch erneuert, während jemand in der Abfrage tippt
+  const ortInfo = el("div", { class: "abf-ortung-zeile small" });
+  let ortenKnopf: HTMLButtonElement | null = null;
+  let ortKey = "";
+  function ortungAktualisieren(): void {
+    const a = e.anruf;
+    const o = a?.ortung ?? null;
+    if (ortenKnopf) {
+      ortenKnopf.disabled = !a || a.status !== "aktiv" || o?.status === "laeuft" || !istGespraechsfuehrer(e);
+      ortenKnopf.classList.toggle("primary", !!e.wahr.abfrage?.ortUnbekannt && !o);
+    }
+    const key = JSON.stringify(o);
+    if (key === ortKey) return;
+    ortKey = key;
+    ortInfo.innerHTML = "";
+    ortInfo.hidden = !o;
+    if (!o) return;
+    if (o.status === "laeuft") {
+      ortInfo.innerHTML = `<span class="muted">📡 Ortung läuft …</span>`;
+      return;
+    }
+    ortInfo.innerHTML = `📡 <b>${esc(o.art ?? "")}</b> ±${o.radius} m `;
+    const lat = o.lat!;
+    const lon = o.lon!;
+    const zeigen = el("button", { class: "btn small", type: "button" }, "Karte");
+    zeigen.addEventListener("click", () => karteZeigen(lat, lon, o.radius! > 500 ? 13 : 16));
+    const nehmen = el("button", { class: "btn small primary", type: "button" }, "Als Einsatzort");
+    nehmen.addEventListener("click", () => {
+      fehler(sim.call("aktualisiere", e.id, { adresse: { lat, lon, label: `Ortung ±${o.radius} m (${lat.toFixed(5)}, ${lon.toFixed(5)})` } }));
+      karteZeigen(lat, lon, o.radius! > 500 ? 13 : 16);
+    });
+    ortInfo.append(zeigen, nehmen);
+  }
   // Nach dem Verlassen eines Eingabefelds aufgeschobene Änderungen nachziehen
   abfrage.addEventListener("focusout", () => setTimeout(refresh, 0));
   function refresh() {
@@ -144,12 +177,13 @@ export function notrufTeile(e: Einsatz): NotrufTeile {
     }
 
     // Abfrage nur neu aufbauen, wenn sich etwas geändert hat (sonst geht der Fokus verloren)
-    const schluessel = JSON.stringify([a.status, a.kapitel, a.antworten, a.extra, darf, a.angenommenVon?.pid, a.kapitel === "42" ? e.code : null, e.adresse?.label, e.zusatz, a.gespraech.some((m) => m.von === "anrufer"), a.ortung?.status, a.ortung?.radius]);
+    const schluessel = JSON.stringify([a.status, a.kapitel, a.antworten, a.extra, darf, a.angenommenVon?.pid, a.kapitel === "42" ? e.code : null, e.adresse?.label, e.zusatz, a.gespraech.some((m) => m.von === "anrufer")]);
     const tippt = document.activeElement instanceof HTMLInputElement || document.activeElement instanceof HTMLSelectElement;
     if (schluessel !== letzterSchluessel && !(tippt && abfrage.contains(document.activeElement))) {
       letzterSchluessel = schluessel;
       abfrageBauen(darf);
     }
+    ortungAktualisieren();
   }
 
   /** Neu aufbauen, ohne dass die Ansicht nach oben springt */
@@ -164,9 +198,15 @@ export function notrufTeile(e: Einsatz): NotrufTeile {
   // ---- Tastatur: 1–9 wählt die Antwort der markierten Frage, Enter/↓ nächste offene Frage, ↑ zurück, F stellt die Frage,
   // Leertaste ebenso (wie ein Klick auf das Frage-Symbol)
   let fokusId: string | null = null;
-  const zeilen = () => [...abfrage.querySelectorAll<HTMLElement>(".frage[data-id]")].filter((r) => r.dataset.typ === "single" || r.dataset.typ === "zahl");
+  const zeilen = () => [...abfrage.querySelectorAll<HTMLElement>(".frage[data-id]")].filter((r) => r.dataset.typ === "single" || r.dataset.typ === "zahl" || r.dataset.typ === "kapitel");
   const beantwortet = (r: HTMLElement) =>
-    r.dataset.typ === "single" ? !!r.querySelector(".opt.gewaehlt") : !!r.querySelector<HTMLInputElement>("input.zahl")?.value || !!r.querySelector(".opt.gewaehlt");
+    r.dataset.typ === "kapitel"
+      ? !!r.querySelector(".kapitel-chip")
+      : r.dataset.typ === "single"
+        ? !!r.querySelector(".opt.gewaehlt")
+        : !!r.querySelector<HTMLInputElement>("input.zahl")?.value || !!r.querySelector(".opt.gewaehlt");
+  /** Eingabefeld der Zeile (Kapitel-Suche, Alter) */
+  const zeilenFeld = (r: HTMLElement) => r.querySelector<HTMLInputElement>("input.kapitel-suche, input.zahl");
   function fokusZeigen(scrollen: boolean): void {
     const rs = zeilen();
     let r = rs.find((x) => x.dataset.id === fokusId) ?? null;
@@ -184,6 +224,11 @@ export function notrufTeile(e: Einsatz): NotrufTeile {
         });
     }
     if (r && scrollen) r.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    // Kapitel-Suche und Alter: gleich ins Feld (nicht, wenn gerade woanders getippt wird)
+    const feld = r && !beantwortet(r) ? zeilenFeld(r) : null;
+    const akt = document.activeElement as HTMLElement | null;
+    const tipptWoanders = !!akt && akt !== feld && (akt.tagName === "INPUT" || akt.tagName === "TEXTAREA" || akt.tagName === "SELECT" || akt.isContentEditable);
+    if (feld && !feld.disabled && !tipptWoanders && abfrage.offsetParent) feld.focus({ preventScroll: !scrollen });
   }
   function fokusWeiter(richtung: 1 | -1, nurOffene: boolean): void {
     const rs = zeilen();
@@ -205,10 +250,35 @@ export function notrufTeile(e: Einsatz): NotrufTeile {
     if (ev.ctrlKey || ev.metaKey || ev.altKey || !abfrage.isConnected || !abfrage.offsetParent) return;
     const t = ev.target as HTMLElement | null;
     if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) {
+      const zeile = abfrage.contains(t) ? t.closest<HTMLElement>(".frage[data-id]") : null;
+      const imFeld = zeile && (t.classList.contains("zahl") || t.classList.contains("kapitel-suche"));
+      if (imFeld && (ev.key === " " || ev.code === "Space")) {
+        // Leertaste stellt die Frage (im Feld nur einzelne Wörter)
+        ev.preventDefault();
+        const q = zeile.querySelector<HTMLButtonElement>(".frag-knopf");
+        if (q && !q.disabled) q.click();
+        return;
+      }
       // in der Altersangabe: Enter übernimmt und geht weiter
       if (ev.key === "Enter" && t.classList.contains("zahl") && abfrage.contains(t)) {
         (t as HTMLInputElement).blur();
         setTimeout(() => fokusWeiter(1, true), 50);
+      }
+      // in der Kapitel-Suche: Enter wählt den obersten Treffer
+      if (ev.key === "Enter" && t.classList.contains("kapitel-suche") && zeile) {
+        ev.preventDefault();
+        const b = zeile.querySelector<HTMLButtonElement>(".kapitel-opt.erster");
+        if (b && !b.disabled) {
+          (t as HTMLInputElement).blur();
+          fokusId = null;
+          b.click();
+        }
+      }
+      // Pfeile und Escape: aus dem Feld zur nächsten/vorigen Frage
+      if (imFeld && (ev.key === "ArrowDown" || ev.key === "ArrowUp" || ev.key === "Escape")) {
+        ev.preventDefault();
+        (t as HTMLInputElement).blur();
+        if (ev.key !== "Escape") fokusWeiter(ev.key === "ArrowDown" ? 1 : -1, false);
       }
       return;
     }
@@ -224,7 +294,7 @@ export function notrufTeile(e: Einsatz): NotrufTeile {
       if (!b.classList.contains("gewaehlt")) b.click();
     } else if (ev.key === "Enter" || ev.key === "ArrowDown") {
       ev.preventDefault();
-      if (r.dataset.typ === "zahl" && ev.key === "Enter") return void r.querySelector<HTMLInputElement>("input.zahl")?.focus();
+      if ((r.dataset.typ === "zahl" || r.dataset.typ === "kapitel") && ev.key === "Enter" && !beantwortet(r)) return void zeilenFeld(r)?.focus();
       fokusWeiter(1, ev.key === "Enter");
     } else if (ev.key === "ArrowUp") {
       ev.preventDefault();
@@ -350,30 +420,12 @@ export function notrufTeile(e: Einsatz): NotrufTeile {
           adr.input.focus();
         });
         // Handy-Ortung gleich hier, wo die Adresse eingetragen wird
-        const o = a.ortung;
-        const orten = el("button", { class: `btn small${e.wahr.abfrage?.ortUnbekannt && !o ? " primary" : ""}`, type: "button", title: "Handy-Ortung anfordern (Standort aus dem Netz)" }, "📡 Orten");
-        orten.disabled = a.status !== "aktiv" || o?.status === "laeuft";
+        const orten = el("button", { class: "btn small", type: "button", title: "Handy-Ortung anfordern (Standort aus dem Netz)" }, "📡 Orten");
         orten.addEventListener("click", () => fehler(sim.call("ortung", e.id)));
+        ortenKnopf = orten;
         zeile.append(adr.root, karteB, genannt, orten);
-        r.appendChild(zeile);
-        if (o) {
-          const info = el("div", { class: "abf-ortung-zeile small" });
-          if (o.status === "laeuft") info.innerHTML = `<span class="muted">📡 Ortung läuft …</span>`;
-          else {
-            info.innerHTML = `📡 <b>${esc(o.art ?? "")}</b> ±${o.radius} m `;
-            const lat = o.lat!;
-            const lon = o.lon!;
-            const zeigen = el("button", { class: "btn small", type: "button" }, "Karte");
-            zeigen.addEventListener("click", () => karteZeigen(lat, lon, o.radius! > 500 ? 13 : 16));
-            const nehmen = el("button", { class: "btn small primary", type: "button" }, "Als Einsatzort");
-            nehmen.addEventListener("click", () => {
-              fehler(sim.call("aktualisiere", e.id, { adresse: { lat, lon, label: `Ortung ±${o.radius} m (${lat.toFixed(5)}, ${lon.toFixed(5)})` } }));
-              karteZeigen(lat, lon, o.radius! > 500 ? 13 : 16);
-            });
-            info.append(zeigen, nehmen);
-          }
-          r.appendChild(info);
-        }
+        r.append(zeile, ortInfo);
+        ortKey = "";
         p1.appendChild(r);
       } else if (f.id === "ort_zusatz" || /zusatz/i.test(f.id)) {
         // Zusatzinfos zum Ort = Zusatz der Einsatzmaske
@@ -412,7 +464,7 @@ export function notrufTeile(e: Einsatz): NotrufTeile {
     }
     const p3 = abschnitt(vitalFragen.length ? "4 · Was ist passiert?" : "3 · Was ist passiert?");
     for (const f of g.phase_3_was_ist_passiert ?? []) {
-      if (f.typ === "kapitelwahl") p3.appendChild(kapitelWahl(schema, darf));
+      if (f.typ === "kapitelwahl") p3.appendChild(kapitelWahl(schema, darf, (g.phase_3_was_ist_passiert ?? []).find((x) => x.typ === "text") ?? null));
       else p3.appendChild(frageZeile(f));
     }
 
@@ -486,10 +538,19 @@ export function notrufTeile(e: Einsatz): NotrufTeile {
     else ex.remove();
   }
 
-  function kapitelWahl(schema: Schema, darf: boolean): HTMLElement {
+  function kapitelWahl(schema: Schema, darf: boolean, wasPassiert: Frage | null): HTMLElement {
     const a = e.anruf!;
     const box = el("div", { class: "frage" });
-    box.appendChild(el("div", { class: "frage-text" }, "Kapitel (Hauptbeschwerde)"));
+    box.dataset.id = "__kapitel";
+    box.dataset.typ = "kapitel";
+    const kopf = el("div", { class: "frage-text" }, "Kapitel (Hauptbeschwerde)");
+    // Leertaste / 🗨 stellt die Frage „Was ist passiert?“
+    if (wasPassiert && darf && a.status === "aktiv" && !a.kapitel) {
+      const q = el("button", { class: "frag-knopf", title: "„Was ist passiert?“ fragen" }, "🗨");
+      q.addEventListener("click", () => void stelle(sprechFrage(wasPassiert, store.schema, a.antworten, { erste: !a.gespraech.some((m) => m.von === "leitstelle") }), wasPassiert));
+      kopf.prepend(q);
+    }
+    box.appendChild(kopf);
     if (a.kapitel) {
       const K = schema.kapitel[a.kapitel];
       const chip = el("div", { class: "kapitel-chip" });
@@ -502,7 +563,7 @@ export function notrufTeile(e: Einsatz): NotrufTeile {
       box.appendChild(chip);
       return box;
     }
-    const such = el("input", { type: "search", placeholder: "Stichwort, z. B. „Sturz“, „Brust“, „Atemnot“" });
+    const such = el("input", { type: "search", class: "kapitel-suche", placeholder: "Stichwort, z. B. „Sturz“, „Brust“, „Atemnot“ – Enter wählt, Leertaste fragt" });
     such.disabled = !darf;
     const liste = el("div", { class: "kapitel-liste" });
     const zeigen = () => {
@@ -511,14 +572,17 @@ export function notrufTeile(e: Einsatz): NotrufTeile {
       const treffer = Object.values(schema.kapitel).filter(
         (k) => !q || k.titel.toLowerCase().includes(q) || k.stichworte.some((s) => s.toLowerCase().includes(q)) || k.kapitel.toLowerCase() === q,
       );
-      for (const k of treffer.slice(0, q ? 12 : 40)) {
-        const b = el("button", { class: "kapitel-opt" });
+      treffer.slice(0, q ? 12 : 40).forEach((k, i) => {
+        const b = el("button", { class: `kapitel-opt${q && i === 0 ? " erster" : ""}` });
         b.innerHTML = `<b>${esc(k.kapitel)}</b> ${esc(k.titel)}`;
         b.title = k.stichworte.join(", ");
         b.disabled = !darf;
-        b.addEventListener("click", () => fehler(sim.call("abfrageSetze", e.id, "kapitel", k.kapitel)));
+        b.addEventListener("click", () => {
+          fokusId = null;
+          fehler(sim.call("abfrageSetze", e.id, "kapitel", k.kapitel));
+        });
         liste.appendChild(b);
-      }
+      });
     };
     such.addEventListener("input", zeigen);
     zeigen();

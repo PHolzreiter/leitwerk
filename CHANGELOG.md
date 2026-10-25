@@ -1,5 +1,11 @@
 # Änderungen
 
+## 0.68.0 – Ortung und schnellere Abfrage mit der Tastatur
+- **Ortung:** Das Ergebnis erscheint jetzt immer auch beim Adressfeld der Abfrage – vorher blieb dort „Ortung läuft …“ stehen, solange der Cursor im Adressfeld war
+- **„Was ist passiert?“ mit der Tastatur:** Nach „Wer ruft an“ steht der Cursor gleich in der Kapitel-Suche. Dort nur ein Stichwort tippen (z. B. „atem“, „Brust“, „VU“) – die **Leertaste stellt die Frage „Was ist passiert?“**, **Enter wählt den obersten Treffer** (ist markiert)
+- **Alter:** Der Cursor steht gleich im Zahlenfeld; Leertaste stellt die Frage, Enter übernimmt und geht zur nächsten Frage
+- Mit ↑/↓ oder Escape kommt man aus dem Feld wieder zur Fragenliste. Wer gerade eine freie Frage tippt, wird nicht aus dem Feld geholt
+
 ## 0.67.1 – Startseite: Hilfe-Feld passt sich an
 - „Deine Hilfe wird gebraucht“ nutzt den Platz in der linken Leiste bis zur Versionsangabe; bei wenigen Punkten bleibt das Feld kleiner, bei vielen kann man in der Liste blättern
 

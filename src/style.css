@@ -3504,3 +3504,4 @@ input.ausr-zahl { width: 64px !important; min-width: 0; }
 .mh-stand.s-eingebaut, .mh-stand.s-erledigt { background: rgba(34, 197, 94, 0.25); }
 .mh-stand.s-abgelehnt { background: rgba(239, 68, 68, 0.2); }
 .mh-antwort { font-size: 13px; padding: 6px 8px; border-left: 3px solid #2f7cf6; background: rgba(47, 124, 246, 0.07); }
+.kapitel-opt.erster { outline: 2px solid var(--accent, #2f7cf6); outline-offset: -2px; }
