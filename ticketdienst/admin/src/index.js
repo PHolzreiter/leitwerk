@@ -110,7 +110,7 @@ const SEITE = `<!doctype html><html lang="de"><head><meta charset="utf-8"><meta 
 <title>LeitWerk Tickets</title>
 <style>
 :root{--bg:#0f1726;--panel:#16213a;--fg:#e8eef8;--dim:#94a3bd;--line:#2a3a5c;--blau:#2f7cf6;--gruen:#2fb36d;--rot:#e5484d;--gelb:#e3b84a}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.45 system-ui,-apple-system,sans-serif}
+[hidden]{display:none!important}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.45 system-ui,-apple-system,sans-serif}
 header{display:flex;gap:12px;align-items:center;padding:14px 20px;border-bottom:1px solid var(--line);flex-wrap:wrap}
 h1{font-size:18px;margin:0 12px 0 0}button,select,input,textarea{font:inherit;color:var(--fg);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:6px 10px}
 button{cursor:pointer}button.primaer{background:var(--blau);border-color:var(--blau)}.tab.an{border-color:var(--blau)}

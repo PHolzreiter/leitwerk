@@ -1,5 +1,8 @@
 # Änderungen
 
+## 0.67.1 – Startseite: Hilfe-Feld passt sich an
+- „Deine Hilfe wird gebraucht“ nutzt den Platz in der linken Leiste bis zur Versionsangabe; bei wenigen Punkten bleibt das Feld kleiner, bei vielen kann man in der Liste blättern
+
 ## 0.67.0 – Mithelfen: Daten melden mit Tickets
 - **„Deine Hilfe wird gebraucht“ auf der Startseite:** offene Punkte, bei denen Wissen fehlt (zum Start: Fahrzeuge je Funkgruppe kontrollieren, Sekundärfahrzeuge der Johanniter). Mit „Ich weiß das“ direkt antworten
 - **Mithelfen:** fehlende oder falsche Fahrzeuge, Dienststellen, Orte (POIs) und Krankenhäuser melden – mit fertigen Formularen:

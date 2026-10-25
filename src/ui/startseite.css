@@ -1009,10 +1009,13 @@
 .st-seg button:disabled { opacity: 0.35; cursor: not-allowed; color: var(--st-dim) !important; }
 
 /* ================================================================ Deine Hilfe wird gebraucht (0.67) */
-.st-hilfe { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 12px; border: 1px solid rgba(245, 165, 36, 0.4); background: rgba(245, 165, 36, 0.08); }
+.st-hilfe { display: flex; flex-direction: column; gap: 8px; flex: 0 1 auto; min-height: 0; padding: 12px; border-radius: 12px; border: 1px solid rgba(245, 165, 36, 0.4); background: rgba(245, 165, 36, 0.08); }
 .st-hilfe h3 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 14px; font-weight: 600; }
 .st-hilfe h3 .st-ico { width: 18px; height: 18px; color: var(--st-warn); }
-.st-hilfe-liste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; max-height: 210px; overflow: auto; }
+.st-hilfe-liste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; flex: 0 1 auto; min-height: 60px; overflow: auto; }
+.st-hilfe-knoepfe { flex: none; }
+.st-seite { min-height: 0; max-height: calc(100vh - 44px); overflow: hidden; }
+@media (max-width: 1100px) { .st-seite { max-height: none; } .st-hilfe { width: 100%; } }
 .st-hilfe-liste li { display: flex; align-items: center; gap: 8px; font-size: 12.5px; line-height: 1.3; padding: 4px 0; border-bottom: 1px solid var(--st-rand); }
 .st-hilfe-liste li span { flex: 1; min-width: 0; }
 .st-hilfe-weiss { flex: none; font: inherit; font-size: 11.5px; padding: 3px 8px; border-radius: 8px; border: 1px solid var(--st-feld-rand); background: var(--st-feld); color: var(--st-text); cursor: pointer; }

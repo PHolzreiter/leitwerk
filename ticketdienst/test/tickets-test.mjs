@@ -99,7 +99,7 @@ r = await oeffentlich.fetch(anfrage("/api/hilfe"), env);
 const h = (await r.json()).punkte;
 check(j.ok && h.length === 1 && h[0].id === "neu1", "Hilfe-Liste bearbeiten (ausgeblendete Punkte fehlen öffentlich)");
 r = await mitPw("/");
-check(r.status === 200 && (await r.text()).includes("LeitWerk Tickets"), "Admin-Seite");
+{ const html = await r.text(); check(r.status === 200 && html.includes("LeitWerk Tickets") && html.includes("[hidden]{display:none!important}"), "Admin-Seite (Reiter schalten wirklich um)"); }
 
 // Access-Token prüfen (mit eigenem Schlüssel)
 const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
