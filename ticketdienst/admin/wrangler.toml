@@ -1,0 +1,19 @@
+# Admin-Seite des Ticket-Dienstes (nur für Paul): https://tickets-admin.leitwerk.workers.dev
+# Schutz: Cloudflare Access (Anmeldung mit GitHub) – die Seite prüft das Access-Token selbst.
+# Solange ACCESS_TEAM und ACCESS_AUD leer sind und kein Passwort (Secret ADMIN_PASSWORT) gesetzt ist,
+# bleibt die Seite gesperrt.
+name = "tickets-admin"
+main = "src/index.js"
+compatibility_date = "2025-09-01"
+workers_dev = true
+
+[vars]
+# Team-Domain von Cloudflare Zero Trust, z. B. "deinteam.cloudflareaccess.com"
+ACCESS_TEAM = ""
+# „Application Audience (AUD) Tag“ der Access-Anwendung
+ACCESS_AUD = ""
+
+[[durable_objects.bindings]]
+name = "TICKETS"
+class_name = "TicketStore"
+script_name = "tickets"

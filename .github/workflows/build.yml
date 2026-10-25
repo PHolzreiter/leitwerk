@@ -17,6 +17,8 @@ on:
       - "tools/build_packs_manifest.py"
       - "relay/**"
       - ".github/workflows/relay.yml"
+      - "ticketdienst/**"
+      - ".github/workflows/tickets.yml"
   workflow_dispatch:
 
 permissions:

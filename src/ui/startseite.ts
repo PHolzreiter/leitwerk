@@ -27,6 +27,8 @@ import { openDialog } from "./dialog";
 import { el, esc, toast } from "./dom";
 import { nimmtRettung } from "./khInfo";
 import { logoMarke, logoSchrift } from "./logo";
+import { mithelfenOeffnen } from "./mithelfen";
+import { hilfeLaden, hilfeLokal, meineTickets, onTickets, ungelesen, type HilfePunkt } from "../net/tickets";
 import { sprachPrefs, sprachStatus } from "./sprache";
 import { spielstaendeOeffnen } from "./spielstaende";
 import { onUpdate, updateInfo, updateInstallieren, updateLaeuft } from "./updateDienst";
@@ -239,6 +241,11 @@ export function startseiteZeigen(fertig?: () => void, opt: { zurueck?: boolean }
         <button class="st-nav-b" data-act="einstellungen">${ico("zahnrad")}<span>Einstellungen</span></button>
         <button class="st-nav-b" data-act="check">${ico("schild")}<span>Bereitschafts-Check</span></button>
       </nav>
+      <section class="st-hilfe">
+        <h3>${ico("leute")}Deine Hilfe wird gebraucht</h3>
+        <ul class="st-hilfe-liste"></ul>
+        <div class="st-hilfe-knoepfe"><button class="st-hilfe-b primaer" data-act="mithelfen">Mithelfen</button><button class="st-hilfe-b" data-act="meine-tickets">Meine Tickets</button></div>
+      </section>
       <button class="st-update" hidden>${ico("update")}<span><b>Update verfügbar</b><small></small></span><em>Jetzt laden</em></button>
       <div class="st-fuss">
         <div>LeitWerk ${esc(version)}</div>
@@ -640,6 +647,35 @@ export function startseiteZeigen(fertig?: () => void, opt: { zurueck?: boolean }
   updZeigen();
   $('[data-act="einstellungen"]').addEventListener("click", () => einstellungenOeffnen());
   $('[data-act="check"]').addEventListener("click", checkDetails);
+
+  // ---------------- Deine Hilfe wird gebraucht (offene Punkte, Tickets)
+  const hilfeListe = $(".st-hilfe-liste");
+  const hilfeZeigen = (punkte: HilfePunkt[]) => {
+    hilfeListe.innerHTML = "";
+    for (const p of punkte) {
+      const li = el("li", { title: p.text });
+      li.append(el("span", {}, p.titel));
+      const b = el("button", { class: "st-hilfe-weiss", "data-hilfe": p.id }, "Ich weiß das");
+      b.addEventListener("click", () => mithelfenOeffnen({ hilfe: p }));
+      li.append(b);
+      hilfeListe.appendChild(li);
+    }
+    $(".st-hilfe").hidden = !punkte.length;
+  };
+  hilfeZeigen(hilfeLokal());
+  void hilfeLaden().then((p) => root.isConnected && hilfeZeigen(p));
+  const meineKnopf = $<HTMLButtonElement>('[data-act="meine-tickets"]');
+  const meineZaehlen = () => {
+    const n = meineTickets().length;
+    const u = ungelesen();
+    meineKnopf.textContent = n ? `Meine Tickets (${n})` : "Meine Tickets";
+    meineKnopf.classList.toggle("neu", u > 0);
+    meineKnopf.title = u ? `${u} mit neuem Stand` : "";
+  };
+  meineZaehlen();
+  aus.push(onTickets(meineZaehlen));
+  $('[data-act="mithelfen"]').addEventListener("click", () => mithelfenOeffnen());
+  meineKnopf.addEventListener("click", () => mithelfenOeffnen({ reiter: "meine" }));
 
   // ---------------- Zeichnen (Werte aus den Einstellungen; Mitspieler sehen die des Hosts)
   function render() {

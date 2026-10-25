@@ -1,5 +1,16 @@
 # Änderungen
 
+## 0.67.0 – Mithelfen: Daten melden mit Tickets
+- **„Deine Hilfe wird gebraucht“ auf der Startseite:** offene Punkte, bei denen Wissen fehlt (zum Start: Fahrzeuge je Funkgruppe kontrollieren, Sekundärfahrzeuge der Johanniter). Mit „Ich weiß das“ direkt antworten
+- **Mithelfen:** fehlende oder falsche Fahrzeuge, Dienststellen, Orte (POIs) und Krankenhäuser melden – mit fertigen Formularen:
+  - Fahrzeug: Dienststelle aus der Liste, Funkrufname, Typ und (wenn bekannt) Dienstzeiten
+  - Dienststelle, Ort und Krankenhaus: Lage über Adresssuche, Koordinaten oder Klick in die Karte
+  - Änderungsvorschläge in eigenen Worten
+  - .txt- und .csv-Dateien anhängen (höchstens 5, je 2 MB, zusammen 5 MB); Kontakt ist freiwillig
+- Gemeldetes kommt **nicht** ins eigene Spiel – es geht an das LeitWerk-Team und kommt, wenn es stimmt, mit einem Update für alle
+- **Meine Tickets:** was du geschickt hast und wie der Stand ist (eingegangen, in Arbeit, eingebaut in Version …) samt Antwort. Ändert sich der Stand, kommt ein kleiner Hinweis
+- Ohne Internet wird das Ticket gespeichert und später geschickt
+
 ## 0.66.0 – Alle sechs Funkgruppen spielbar
 - **NÖ-01 (Mostviertel · St. Pölten), NÖ-02 (Waldviertel) und NÖ-04 (Weinviertel) sind spielbar** – auf der Startseite sind jetzt alle sechs Funkgruppen wählbar
 - **321 neue Fahrzeuge** aus öffentlich zugänglichen Daten (ungeprüft, im Hinweis jedes Fahrzeugs vermerkt): NÖ-01 177, NÖ-02 55, NÖ-04 89 – RTW-C, RTW, KTW und BEL; mit Rotkreuz-Fuhrparklisten, Presse und der Reformkarte abgeglichen

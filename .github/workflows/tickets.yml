@@ -1,0 +1,48 @@
+name: Tickets
+
+# Veröffentlicht den Ticket-Dienst (tickets.leitwerk.workers.dev) und die Admin-Seite
+# (tickets-admin.leitwerk.workers.dev, hinter Cloudflare Access) und prüft ihn danach.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "ticketdienst/**"
+      - ".github/workflows/tickets.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Testen (lokal)
+        run: node --experimental-sqlite ticketdienst/test/tickets-test.mjs
+      - name: Ticket-Dienst veröffentlichen
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: ticketdienst
+      - name: Admin-Seite veröffentlichen
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: ticketdienst/admin
+      - name: Prüfen
+        run: |
+          sleep 5
+          curl -fsS https://tickets.leitwerk.workers.dev/
+          echo
+          curl -fsS https://tickets.leitwerk.workers.dev/api/hilfe | head -c 300
+          echo
+          # Admin-Seite darf ohne Anmeldung nichts zeigen
+          code=$(curl -s -o /dev/null -w "%{http_code}" https://tickets-admin.leitwerk.workers.dev/api/tickets)
+          echo "Admin ohne Anmeldung: $code"
+          [ "$code" != "200" ]

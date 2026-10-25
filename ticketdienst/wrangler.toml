@@ -1,0 +1,17 @@
+# Ticket-Dienst für LeitWerk („Deine Hilfe wird gebraucht“, Mithelfen): nimmt Tickets der Nutzer an.
+# Öffentlich, ohne Schlüssel im Programm: Grenzen gegen Missbrauch stehen im Code (Größe, Anzahl je Stunde).
+# Die Tickets liegen in einem Durable Object mit SQLite (Gratis-Tarif). Die Admin-Seite ist ein eigener
+# Worker (admin/), der hinter Cloudflare Access liegt und dasselbe Durable Object benutzt.
+# Wird per GitHub Action (.github/workflows/tickets.yml) veröffentlicht: https://tickets.leitwerk.workers.dev
+name = "tickets"
+main = "src/index.js"
+compatibility_date = "2025-09-01"
+workers_dev = true
+
+[[durable_objects.bindings]]
+name = "TICKETS"
+class_name = "TicketStore"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["TicketStore"]

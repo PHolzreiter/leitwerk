@@ -50,6 +50,7 @@ import { alleAnrufe, anrufAnnehmen, anrufAuflegen, anrufBeobachterStarten, anruf
 import { anordnungLaden, arbeitsplatzStarten, panelOeffnen, panelZeigen, VORLAGEN, vorlageAnwenden } from "./ui/ws/arbeitsplatz";
 import { IST_HAUPT } from "./ui/ws/bus";
 import { startseiteOffen, startseiteZeigen } from "./ui/startseite";
+import { ticketDienstStarten } from "./net/tickets";
 import { ablageAbgleichen } from "./ui/ablageStart";
 import * as ablage from "./net/ablage";
 import * as spielstandOrdner from "./net/spielstandOrdner";
@@ -181,6 +182,7 @@ async function init(): Promise<void> {
     });
     sim.ich = mp.ich;
     updateDienstStarten();
+    ticketDienstStarten();
     void ablageAbgleichen();
   } else {
     if (hinweis) hinweis.textContent = "Verbinde mit dem Hauptfenster …";
