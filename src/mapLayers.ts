@@ -571,7 +571,7 @@ function vehicleFeatures(): FeatureCollection<Point> {
       // zwischen den Simulationsschritten weiterbewegt (sonst springen die Punkte)
       const [lon, lat] = fz.fahrt ? positionBei(fz, t) : [fz.lon, fz.lat];
       return pointFeature(fz.id, lon, lat, {
-        name: fz.funkrufname,
+        name: fz.pilot ? `${fz.funkrufname} · ${fz.pilot.name}` : fz.funkrufname,
         color: sim.statusDef(fz.status).farbe,
         nr: fz.status === "alarmWache" || fz.status === "alarmFunk" ? "" : sim.statusDef(fz.status).nummer,
         nah: fz.kategorie === "NAH" || fz.kategorie === "ITH" ? 1 : 0,

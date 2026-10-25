@@ -310,9 +310,40 @@ export interface SimFahrzeug {
   modell?: string;
   /** Hubschrauber vom Spiel abgemeldet, weil er nicht fliegen kann (meldet sich bei Flugwetter wieder an) */
   flugAbgemeldet?: boolean;
+  /** Spieler-NAH: wird von einem Mitspieler geflogen (das Programm wartet auf seine Status und Entscheidungen) */
+  pilot?: PilotInfo | null;
   /** Krankentransport-Plan (vorgemerkte bzw. laufende Fahrten) */
   kt?: (KtPlan & { reinigen?: boolean; wartetAuf?: string | null; wartetKt?: string | null; wartetSeit?: number | null }) | null;
 }
+
+/** Was der Pilot am Berufungsort mit dem Patienten vorhat */
+export type PilotPlan =
+  /** selbst transportieren, Ziel frei gewählt (wird immer genehmigt) */
+  | { art: "transport"; hospitalId: string }
+  /** Patient an den RTW übergeben (mit oder ohne Notarzt im RTW) */
+  | { art: "uebergabe"; naMit: boolean }
+  /** kein Transport: Patient bleibt vor Ort, Revers oder verstorben */
+  | { art: "kein"; grund: "kein" | "revers" | "tot" };
+
+/** Spieler-NAH: ein Mitspieler fliegt diesen Hubschrauber über das Piloten-Interface */
+export interface PilotInfo {
+  pid: string;
+  name: string;
+  /** Spielzeit der Übernahme */
+  seit: number;
+  /** nicht verbunden seit (echte Zeit, ms) – nach einer Minute übernimmt wieder der Computer */
+  offlineSeit?: number | null;
+  /** Entscheidung am Berufungsort */
+  plan?: PilotPlan | null;
+  /** Übungsflug ohne Flugsimulator: Ziel des laufenden Flugs */
+  flugZiel?: string | null;
+}
+
+/** Status, die der Pilot selbst drückt (Ziffern wie beim RTW) */
+export const PILOT_STATUS: StatusKey[] = ["zumBO", "amBO", "zumZO", "amZO", "freiFunk", "freiWache"];
+
+/** Nach so langer Zeit ohne Verbindung übernimmt der Computer den Hubschrauber wieder */
+export const PILOT_OFFLINE_MS = 60_000;
 
 /** Fahrzeugvorschlag für einen Krankentransport oder eine Überstellung */
 export interface KtVorschlag {
@@ -710,7 +741,7 @@ export interface Einsatz {
   bo: Ort | null;
   zo: Ort | null;
   /** grund = Buchung (Verdachtsdiagnose, ID aus klinik.json) */
-  kh: { hospitalId: string; grund: string; durch: "dispo" | "rtw"; zeit: number } | null;
+  kh: { hospitalId: string; grund: string; durch: "dispo" | "rtw" | "nah"; zeit: number } | null;
   /** Besatzung bittet um Buchung und nennt die Verdachtsdiagnose */
   khAnfrage: { verdacht: string; seit: number; von: string } | null;
   /** von der Besatzung genannte Verdachtsdiagnose (sichtbar) */
@@ -918,6 +949,8 @@ export const BEFEHLE = {
     "ktFunkStorno",
   ],
   immer: ["chat", "funkFzAntwort"],
+  /** Pilot (Spieler-NAH): jeder darf, geprüft wird, ob er diesen Hubschrauber fliegt */
+  pilot: ["pilotUebernehmen", "pilotAbgeben", "pilotStatus", "pilotPlan", "pilotFliegen", "pilotPosition"],
 } as const;
 export type Befehl = (typeof BEFEHLE)[keyof typeof BEFEHLE][number];
 export type Berechtigung = "disponieren" | "steuern" | "einstellungen" | "kt";
@@ -1571,6 +1604,7 @@ export class Simulation {
     this.runGenerator(dt);
     this.ktTick(t, dt);
     this.dienstTick(t);
+    this.pilotWache();
     for (const fz of Object.values(this.state.fahrzeuge)) this.updateVehicle(fz, t);
     this.partnerTick(t);
     this.flugTick(t);
@@ -1897,6 +1931,8 @@ export class Simulation {
 
   /** Startet eine Fahrt (asynchron, Routing) und setzt danach die Phase. */
   private fahre(fz: SimFahrzeug, ziel: LatLon, phase: Phase, sondersignal: boolean): void {
+    // Spieler-NAH: der Pilot fliegt selbst
+    if (fz.pilot) return;
     // NEF mit Notarzt im Krankenhaus: zuerst abholen bzw. nach dem Einsatz zurückbringen
     fz.naZurueck = false;
     const kh = this.naKh(fz);
@@ -1941,6 +1977,8 @@ export class Simulation {
       fliegt(fz) ? Promise.resolve(flightRoute(von, ziel, this.settings.nahGeschwindigkeit)) : this.strassenRoute(von, ziel);
     void p.then((r) => {
       this.routingBusy.delete(fz.id);
+      // inzwischen hat ein Pilot übernommen: er fliegt selbst
+      if (fz.pilot) return;
       const wf = !fliegt(fz) && this.settings.wetterAktiv ? fahrFaktor(this.state.wetter.lage, this.temperatur()) : 1;
       const f = (sondersignal && !fliegt(fz) ? this.settings.sondersignalFaktor : 1) * wf;
       // Hubschrauber kreist 1–3 Mal über Einsatzorten (nicht über Krankenhäusern und Landeplätzen)
@@ -2028,6 +2066,7 @@ export class Simulation {
   }
 
   private updateVehicle(fz: SimFahrzeug, t: number): void {
+    if (fz.pilot) return this.pilotUpdate(fz, t);
     if (fz.phase === "routing") return;
     this.position(fz, t);
     if (fz.kt?.aktiv && !fz.einsatzId) {
@@ -2266,6 +2305,12 @@ export class Simulation {
       fz.phaseEnde = null;
       if (e.kh) this.startTransport(e);
       return;
+    }
+    // Spieler-NAH transportiert den Patienten selbst: der RTW wird frei
+    const nahFliegt = this.pilotTransport(e);
+    if (nahFliegt) {
+      this.log(e, `${fz.funkrufname}: Patient wird mit ${nahFliegt.funkrufname} transportiert`);
+      return this.freigeben(fz);
     }
     // Schwerer Patient: der BIT transportiert; bis er da ist, wartet die Besatzung
     const l = e.wahr.lage;
@@ -2686,7 +2731,12 @@ export class Simulation {
     fz.transportGemeldet = false;
     fz.nachNa = null;
     this.setStatus(fz, "freiFunk");
-    if (distanceM(fz, fz.heim) < 80) {
+    if (fz.pilot) {
+      // Spieler-NAH: bleibt, wo er ist – der Pilot fliegt selbst zurück und drückt dort Status 1
+      fz.phase = "frei";
+      fz.phaseEnde = null;
+      fz.pilot.plan = null;
+    } else if (distanceM(fz, fz.heim) < 80) {
       fz.naAnBord = false;
       fz.phase = "frei";
       fz.phaseEnde = null;
@@ -4929,6 +4979,11 @@ export class Simulation {
    * („LEO von 75/001, kommen“). Der Text ist der feste Inhalt – formuliert wird er erst, wenn LEO antwortet.
    */
   fzRuft(fz: SimFahrzeug, e: Einsatz | null, art: FunkAnliegen, text: string): void {
+    // Spieler-NAH: der Pilot funkt selbst – das Programm spricht nicht für ihn
+    if (fz.pilot) {
+      if (e) this.log(e, `${fz.funkrufname} (Pilot ${fz.pilot.name}): ${ohneVitalwerte(text)}`);
+      return;
+    }
     if (e?.fremd) {
       this.log(e, `${fz.funkrufname} (Funk der Zone ${e.fremd.zone}): ${text}`);
       return;
@@ -5169,6 +5224,7 @@ export class Simulation {
   funkRufen(fzId: string, text?: string): number {
     const fz = this.state.fahrzeuge[fzId];
     if (!fz) throw new Error("Fahrzeug nicht gefunden");
+    if (fz.pilot) throw new Error(`${fz.funkrufname} wird von ${fz.pilot.name} geflogen – Funk mit Piloten folgt, bis dahin bitte über den Chat`);
     // „Hier LEO, mitgehört, Ende“ (gesprochen oder getippt) auf eine Frage aus dem Fahrzeugfunk
     if (text && /mitgeh[öo]r/i.test(text)) {
       const mg = this.state.funkGespraeche?.find((g) => (g.status === "mithoeren" || (g.status === "wartet" && g.mithoeren && !g.ablauf?.length)) && (g.an?.fzId === fz.id || g.fzId === fz.id));
@@ -6438,6 +6494,347 @@ export class Simulation {
    * Neues Spiel (Startseite): alles zurücksetzen, Uhr auf die Startzeit, Wetter dazu neu, Dienstpläne neu.
    * Danach läuft die Simulation.
    */
+  // ------------------------------------------------------------------ Spieler-NAH (Pilot)
+
+  /** Wer gerade einen Befehl gibt (Multiplayer: der Mitspieler, allein: ich) */
+  private wer(): Bearbeiter {
+    return this.actor ?? this.ich ?? { pid: "solo", name: "Pilot" };
+  }
+
+  /** Hubschrauber, den dieser Spieler fliegt */
+  pilotVon(pid: string): SimFahrzeug | undefined {
+    return Object.values(this.state.fahrzeuge).find((x) => x.pilot?.pid === pid);
+  }
+
+  /** Kann dieser Hubschrauber gerade von einem Piloten übernommen werden? Sonst der Grund. */
+  pilotHindernis(fz: SimFahrzeug, pid: string): string | null {
+    if (!fliegt(fz)) return "Nur Hubschrauber können geflogen werden";
+    if (fz.pilot && fz.pilot.pid !== pid) return `wird schon von ${fz.pilot.name} geflogen`;
+    if (fz.ausserDienst) return "nicht im Dienst";
+    if (fz.ersatzFuer) return "Ersatz-NEF";
+    return null;
+  }
+
+  /** Befehl des Piloten: nur für den Hubschrauber, den er selbst fliegt */
+  private meinHubschrauber(fzId: string): SimFahrzeug {
+    const fz = this.state.fahrzeuge[fzId];
+    if (!fz) throw new Error("Hubschrauber nicht gefunden");
+    if (!fz.pilot) throw new Error(`${fz.funkrufname} wird vom Computer geflogen – zuerst übernehmen`);
+    if (fz.pilot.pid !== this.wer().pid) throw new Error(`${fz.funkrufname} wird von ${fz.pilot.name} geflogen`);
+    return fz;
+  }
+
+  /** Mitspieler übernimmt einen Hubschrauber (auch Wiedereinstieg nach Verbindungsverlust) */
+  pilotUebernehmen(fzId: string): void {
+    const fz = this.state.fahrzeuge[fzId];
+    if (!fz) throw new Error("Hubschrauber nicht gefunden");
+    const ich = this.wer();
+    const grund = this.pilotHindernis(fz, ich.pid);
+    if (grund) throw new Error(`${fz.funkrufname}: ${grund}`);
+    if (fz.pilot) {
+      fz.pilot.offlineSeit = null;
+      this.emit();
+      return;
+    }
+    const anderer = this.pilotVon(ich.pid);
+    if (anderer) throw new Error(`Du fliegst schon ${anderer.funkrufname}`);
+    const t = this.state.zeit;
+    this.position(fz, t);
+    this.routingBusy.delete(fz.id);
+    const e = fz.einsatzId ? this.einsatz(fz.einsatzId) : undefined;
+    // laufende Computer-Phase in den Stand des Piloten übersetzen: er steht bzw. schwebt dort, wo der Hubschrauber gerade ist
+    let plan: PilotPlan | null = null;
+    if (fz.phase === "warteKH" || fz.phase === "routing") {
+      if (e && fz.begleitet && e.kh) plan = { art: "transport", hospitalId: e.kh.hospitalId };
+      fz.phase = e ? (fz.status === "zumZO" ? "transport" : fz.status === "zumBO" ? "anfahrt" : "vorOrt") : "frei";
+    } else if (fz.phase === "rueckfahrt") fz.phase = "frei";
+    fz.fahrt = null;
+    fz.phaseEnde = null;
+    fz.pilot = { pid: ich.pid, name: ich.name, seit: t, offlineSeit: null, plan, flugZiel: null };
+    if (e) this.log(e, `${fz.funkrufname} wird ab jetzt von ${ich.name} geflogen`);
+    this.funk(fz.funkrufname, fz.einsatzId, `wird ab jetzt von ${ich.name} geflogen (Pilot)`, "info");
+    this.emit();
+  }
+
+  /** Pilot verlässt den Hubschrauber: der Computer fliegt mit dem Stand des Piloten weiter */
+  pilotAbgeben(fzId: string): void {
+    const fz = this.meinHubschrauber(fzId);
+    this.computerUebernimmt(fz, `${fz.pilot!.name} hat den Hubschrauber abgegeben`);
+    this.emit();
+  }
+
+  /** Multiplayer: Pilot ohne Verbindung → nach einer Minute übernimmt der Computer */
+  private pilotWache(): void {
+    const online = this.istOnline;
+    if (this.mode !== "host" || !online) return;
+    const jetzt = Date.now();
+    for (const fz of Object.values(this.state.fahrzeuge)) {
+      const p = fz.pilot;
+      if (!p) continue;
+      if (online(p.pid)) {
+        p.offlineSeit = null;
+        continue;
+      }
+      p.offlineSeit ??= jetzt;
+      if (jetzt - p.offlineSeit >= PILOT_OFFLINE_MS) this.computerUebernimmt(fz, `Verbindung zu ${p.name} verloren`);
+    }
+  }
+
+  /**
+   * Der Computer übernimmt einen Spieler-NAH genau dort, wo der Pilot war: Position, Status, Einsatz,
+   * gewähltes Ziel und Patient an Bord bleiben – der Hubschrauber fliegt von dort normal weiter.
+   */
+  private computerUebernimmt(fz: SimFahrzeug, grund: string): void {
+    const p = fz.pilot;
+    if (!p) return;
+    const t = this.state.zeit;
+    this.position(fz, t);
+    fz.pilot = null;
+    fz.fahrt = null;
+    fz.phaseEnde = null;
+    const e = fz.einsatzId ? this.einsatz(fz.einsatzId) : undefined;
+    if (e) this.log(e, `${fz.funkrufname}: ${grund} – Computer fliegt weiter`);
+    this.funk(fz.funkrufname, fz.einsatzId, `${grund} – Computer fliegt weiter`, "info");
+    if (!e) {
+      if (fz.status === "freiWache" || fz.status === "abgemeldet" || fz.status === "bereitschaft") {
+        fz.phase = "frei";
+        if (distanceM(fz, fz.heim) >= 80) this.fahre(fz, fz.heim, "rueckfahrt", false);
+      } else this.freigeben(fz);
+      return;
+    }
+    switch (fz.status) {
+      case "alarmWache":
+      case "alarmFunk":
+      case "alarmiert":
+        fz.phase = "ausruecken";
+        fz.phaseEnde = t + 30_000;
+        return;
+      case "zumBO":
+        if (!e.adresse) return this.freigeben(fz);
+        this.fahre(fz, e.adresse, "anfahrt", this.faktor(e) < 1);
+        return;
+      case "amBO": {
+        const plan = p.plan;
+        if (plan?.art === "transport" && e.kh) {
+          fz.begleitet = true;
+          fz.phase = "warteKH";
+          this.startTransport(e);
+          return;
+        }
+        if (plan) {
+          this.log(e, `${fz.funkrufname}: Einsatz beendet`);
+          return this.freigeben(fz);
+        }
+        // noch nichts entschieden: kurz weiter versorgen, dann entscheidet das Programm wie sonst
+        fz.phase = "vorOrt";
+        fz.vorOrtSeit ??= t;
+        fz.phaseEnde = t + rnd(3, 8) * MIN;
+        return;
+      }
+      case "zumZO": {
+        const h = e.kh ? store.get("hospitals", e.kh.hospitalId) : undefined;
+        if (!h || !fz.begleitet) return this.freigeben(fz);
+        this.fahre(fz, h, "transport", this.kritisch(e));
+        return;
+      }
+      case "amZO":
+        fz.phase = "uebergabe";
+        fz.phaseEnde = t + rnd(3, 8) * MIN;
+        return;
+      default:
+        this.freigeben(fz);
+    }
+  }
+
+  /** Transportiert in diesem Einsatz ein Spieler-NAH den Patienten selbst? */
+  private pilotTransport(e: Einsatz): SimFahrzeug | undefined {
+    return this.einsatzFz(e).find((x) => x.pilot?.plan?.art === "transport");
+  }
+
+  /** Spieler-NAH: Position (Übungsflug) – sonst passiert nichts von selbst */
+  private pilotUpdate(fz: SimFahrzeug, t: number): void {
+    const f = fz.fahrt;
+    if (!f) return;
+    this.position(fz, t);
+    if (t >= f.start + f.dauer * 1000) {
+      fz.fahrt = null;
+      if (fz.pilot) fz.pilot.flugZiel = null;
+    }
+  }
+
+  /** Pilot drückt einen Status (Ziffern wie beim RTW). Gibt eine Fehlermeldung zurück oder null. */
+  pilotStatus(fzId: string, s: StatusKey): string | null {
+    const fz = this.meinHubschrauber(fzId);
+    const p = fz.pilot!;
+    const e = fz.einsatzId ? this.einsatz(fz.einsatzId) : undefined;
+    const t = this.state.zeit;
+    if (!PILOT_STATUS.includes(s)) return "Diesen Status setzt die Leitstelle";
+    if (fz.status === s) return null;
+    switch (s) {
+      case "zumBO":
+        if (!e) return "Kein Einsatz – Status 2 geht erst nach der Alarmierung";
+        this.setStatus(fz, "zumBO");
+        fz.phase = "anfahrt";
+        break;
+      case "amBO": {
+        if (!e) return "Kein Einsatz";
+        this.setStatus(fz, "amBO");
+        fz.phase = "vorOrt";
+        fz.vorOrtSeit = t;
+        const l = e.wahr.lage;
+        if (l && !l.aufgedeckt) {
+          l.aufgedeckt = true;
+          l.verlauf.push({ zeit: t, text: `${fz.funkrufname} als erstes Fahrzeug vor Ort` });
+        }
+        this.ktHilfeDa(e);
+        // Verdacht steht fest, sobald jemand beim Patienten ist (fürs Patientenblatt und die Zielwahl)
+        if (l || e.wahr.abfrage) this.verdacht(e);
+        break;
+      }
+      case "zumZO":
+        if (!e) return "Kein Einsatz";
+        if (!p.plan) return "Zuerst festlegen, was mit dem Patienten passiert";
+        if (p.plan.art === "kein") return "Kein Transport gewählt – Status 6, wenn ihr frei seid";
+        if (!e.kh) return "Der RTW hat noch kein Zielkrankenhaus – bitte warten";
+        fz.begleitet = p.plan.art === "transport";
+        this.setStatus(fz, "zumZO");
+        fz.phase = "transport";
+        break;
+      case "amZO":
+        if (!e) return "Kein Einsatz";
+        if (fz.status !== "zumZO") return "Zuerst Status 4 (zum Zielort)";
+        this.setStatus(fz, "amZO");
+        fz.phase = "uebergabe";
+        fz.blaulicht = false;
+        break;
+      case "freiFunk":
+        if (e) {
+          const amPatient = fz.status === "amBO" && !!e.wahr.lage?.aufgedeckt;
+          if (amPatient && !p.plan && !this.einsatzFz(e).some((x) => x !== fz && this.transportfaehig(x))) return "Zuerst festlegen, was mit dem Patienten passiert";
+          this.log(e, fz.status === "amZO" ? `${fz.funkrufname}: Übergabe abgeschlossen` : `${fz.funkrufname}: Einsatz beendet`);
+          this.freigeben(fz);
+        } else {
+          this.setStatus(fz, "freiFunk");
+          fz.phase = "frei";
+        }
+        break;
+      case "freiWache":
+        if (e) return "Zuerst Status 6 (Einsatz beenden)";
+        this.setStatus(fz, "freiWache");
+        fz.phase = "frei";
+        fz.naAnBord = false;
+        break;
+    }
+    fz.phaseEnde = null;
+    this.emit();
+    return null;
+  }
+
+  /** Pilot legt am Berufungsort fest, was mit dem Patienten passiert (alles wird genehmigt) */
+  pilotPlan(fzId: string, plan: PilotPlan): string | null {
+    const fz = this.meinHubschrauber(fzId);
+    const e = fz.einsatzId ? this.einsatz(fz.einsatzId) : undefined;
+    if (!e) return "Kein Einsatz";
+    if (fz.status !== "amBO") return "Erst am Berufungsort (Status 3)";
+    const p = fz.pilot!;
+    const name = fz.funkrufname;
+    const lf = e.wahr.lage?.fall;
+    switch (plan.art) {
+      case "transport": {
+        const h = store.get("hospitals", plan.hospitalId);
+        if (!h) return "Krankenhaus nicht gefunden";
+        const verdacht = this.verdacht(e);
+        e.wahr.transport = true;
+        e.verdacht = verdacht;
+        e.kh = { hospitalId: h.id, grund: verdacht, durch: "nah", zeit: this.state.zeit };
+        e.zo = { lat: h.lat, lon: h.lon, label: h.name };
+        e.khAnfrage = null;
+        this.khPlatzBelegen(e);
+        this.log(e, `${name}: Transport mit dem NAH ins ${h.kurzname || h.name} (Verdacht ${buchungName(verdacht)})`);
+        this.funk(name, e.id, `Transport mit NAH: ${h.kurzname || h.name} – Verdacht ${buchungName(verdacht)}`, "info");
+        // RTW, die schon auf das Krankenhaus warten, werden frei – der Patient fliegt
+        for (const x of this.einsatzFz(e)) if (x !== fz && this.transportfaehig(x) && x.phase === "warteKH") {
+          this.log(e, `${x.funkrufname}: Patient wird mit ${name} transportiert`);
+          this.freigeben(x);
+        }
+        break;
+      }
+      case "uebergabe": {
+        if (!this.einsatzFz(e).some((x) => x !== fz && this.transportfaehig(x))) return "Kein RTW im Einsatz – bitte zuerst bei der Leitstelle anfordern";
+        e.wahr.transport = true;
+        if (lf) lf.naMit = plan.naMit;
+        this.log(e, `${name}: Patient wird an den RTW übergeben${plan.naMit ? ", Notarzt begleitet im RTW" : ""}`);
+        this.funk(name, e.id, `Übergabe an RTW${plan.naMit ? " – Notarzt fährt im RTW mit" : ""}`, "info");
+        break;
+      }
+      case "kein": {
+        e.wahr.transport = false;
+        if (plan.grund === "revers") e.wahr.revers = true;
+        const text = plan.grund === "revers" ? "Transportverweigerung, Revers unterschrieben" : plan.grund === "tot" ? "Patient verstorben, Tod durch den Notarzt festgestellt" : "kein Transport erforderlich";
+        this.log(e, `${name}: ${text}`);
+        this.funk(name, e.id, text, "info");
+        // RTW, die auf ein Krankenhaus warten, werden frei
+        for (const x of this.einsatzFz(e)) if (x !== fz && this.transportfaehig(x) && x.phase === "warteKH") this.freigeben(x);
+        break;
+      }
+      default:
+        return "Unbekannte Auswahl";
+    }
+    p.plan = plan;
+    this.emit();
+    return null;
+  }
+
+  /**
+   * Übungsflug ohne Flugsimulator: der Hubschrauber fliegt in gerader Linie mit Reisegeschwindigkeit
+   * zum Berufungsort, Zielkrankenhaus, Stützpunkt oder einem Punkt; null hält an.
+   */
+  pilotFliegen(fzId: string, ziel: "bo" | "zo" | "heim" | (LatLon & { label?: string }) | null): string | null {
+    const fz = this.meinHubschrauber(fzId);
+    const t = this.state.zeit;
+    this.position(fz, t);
+    if (ziel === null) {
+      fz.fahrt = null;
+      fz.pilot!.flugZiel = null;
+      this.emit();
+      return null;
+    }
+    const e = fz.einsatzId ? this.einsatz(fz.einsatzId) : undefined;
+    let p: LatLon | null = null;
+    let label = "";
+    if (ziel === "bo") {
+      if (!e?.adresse) return "Kein Einsatzort";
+      p = e.adresse;
+      label = "Einsatzort";
+    } else if (ziel === "zo") {
+      const h = e?.kh ? store.get("hospitals", e.kh.hospitalId) : undefined;
+      if (!h) return "Kein Zielkrankenhaus";
+      p = khLandung(h) ?? h;
+      label = h.kurzname || h.name;
+    } else if (ziel === "heim") {
+      p = fz.heim;
+      label = fz.stationName || "Stützpunkt";
+    } else {
+      p = { lat: ziel.lat, lon: ziel.lon };
+      label = ziel.label || "Punkt";
+    }
+    const r = flightRoute({ lat: fz.lat, lon: fz.lon }, p, this.settings.nahGeschwindigkeit);
+    fz.fahrt = { coords: r.coords, times: r.times, start: t, dauer: r.duration };
+    fz.pilot!.flugZiel = label;
+    this.emit();
+    return null;
+  }
+
+  /** Position von außen (Flugsimulator) */
+  pilotPosition(fzId: string, lat: number, lon: number): void {
+    const fz = this.meinHubschrauber(fzId);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
+    fz.fahrt = null;
+    fz.pilot!.flugZiel = null;
+    fz.lat = lat;
+    fz.lon = lon;
+  }
+
   neuesSpiel(zeit: number): void {
     this.pause();
     this.state.zeit = zeit;

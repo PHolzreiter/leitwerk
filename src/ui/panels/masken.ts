@@ -529,7 +529,7 @@ export function einsatzMaske(e: Einsatz): { root: HTMLElement; refresh(): void }
       // KH
       const h = e.kh ? store.get("hospitals", e.kh.hospitalId) : undefined;
       khInfo.innerHTML = e.kh
-        ? `<div>Gebucht: <b>${esc(h?.name ?? e.kh.hospitalId)}</b></div><div class="muted">${e.kh.grund ? `Verdacht: ${esc(buchungName(e.kh.grund))} · ` : ""}durch ${e.kh.durch === "rtw" ? "RTW" : "Leitstelle"} · ${uhr(e.kh.zeit)}</div>`
+        ? `<div>Gebucht: <b>${esc(h?.name ?? e.kh.hospitalId)}</b></div><div class="muted">${e.kh.grund ? `Verdacht: ${esc(buchungName(e.kh.grund))} · ` : ""}durch ${e.kh.durch === "rtw" ? "RTW" : e.kh.durch === "nah" ? "NAH (Pilot)" : "Leitstelle"} · ${uhr(e.kh.zeit)}</div>`
         : e.khAnfrage
           ? `<div class="alert-text">${esc(e.khAnfrage.von)} erbittet KH-Buchung: <b>Verdacht ${esc(buchungName(e.khAnfrage.verdacht))}</b></div>`
           : `<div class="muted">Noch kein Krankenhaus gebucht.</div>`;

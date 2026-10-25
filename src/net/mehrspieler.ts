@@ -9,6 +9,7 @@
 import { store, type StoreBefehl } from "../data/store";
 import { aktiveRegionen, REGIONEN } from "../sim/geo";
 import { DeltaBauer, deltaAnwenden, zustandUebernehmen } from "./spiegel";
+import { istPilot } from "../ui/pilot/modus";
 import type { Persisted } from "../data/model";
 import {
   berechtigungFuer,
@@ -519,7 +520,8 @@ class Mehrspieler {
         // Alle brauchen dieselben Straßenpakete, sonst stimmen Fahrzeiten und Vorschläge nicht überein
         const hostReg = ((m.regionen as string[] | undefined) ?? []).filter((r) => r !== "alt");
         const meine = aktiveRegionen().filter((r) => r !== "alt");
-        if (hostReg.length && meine.length) {
+        // Piloten rechnen keine Fahrzeiten – für sie sind andere Straßenpakete egal
+        if (hostReg.length && meine.length && !istPilot()) {
           const fehlt = hostReg.filter((r) => !meine.includes(r));
           const zuviel = meine.filter((r) => !hostReg.includes(r));
           if (fehlt.length || zuviel.length) {

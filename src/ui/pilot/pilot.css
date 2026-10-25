@@ -1,0 +1,914 @@
+/* ------------------------------------------------------------------ Piloten-Interface (Spieler-NAH) */
+
+.plt {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  display: flex;
+  flex-direction: column;
+  background: var(--pl-bg);
+  color: var(--pl-text);
+  font-family: Inter, system-ui, sans-serif;
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+.plt.dunkel {
+  --pl-bg: #0a111f;
+  --pl-karte: #111b2e;
+  --pl-karte-2: #16223a;
+  --pl-rand: rgba(150, 185, 235, 0.13);
+  --pl-text: #e9f0fb;
+  --pl-dim: #93a6c1;
+  --pl-feld: rgba(255, 255, 255, 0.05);
+  --pl-feld-hover: rgba(255, 255, 255, 0.09);
+  color-scheme: dark;
+}
+.plt.hell {
+  --pl-bg: #e9eef5;
+  --pl-karte: #ffffff;
+  --pl-karte-2: #f4f7fb;
+  --pl-rand: rgba(20, 45, 90, 0.12);
+  --pl-text: #0d1a2f;
+  --pl-dim: #52627b;
+  --pl-feld: rgba(20, 45, 90, 0.04);
+  --pl-feld-hover: rgba(20, 45, 90, 0.08);
+  color-scheme: light;
+}
+.plt {
+  --pl-akzent: #2f7cf6;
+  --pl-ok: #22c55e;
+  --pl-warn: #f5a524;
+  --pl-rot: #e53935;
+}
+.plt-ico {
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+.plt-ico.gross {
+  width: 26px;
+  height: 26px;
+}
+.plt-leise {
+  color: var(--pl-dim);
+  font-weight: 400;
+}
+.plt-klein {
+  font-size: 12px;
+  margin: 6px 0 0;
+  line-height: 1.4;
+}
+.plt-warn {
+  color: var(--pl-warn);
+}
+
+/* Kopfzeile */
+.plt-kopf {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 10px 16px;
+  background: var(--pl-karte);
+  border-bottom: 1px solid var(--pl-rand);
+}
+.plt-marke {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-size: 12px;
+  color: var(--pl-dim);
+}
+.plt-heli {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.plt-heli b {
+  font-size: 18px;
+  display: block;
+}
+.plt-heli small {
+  color: var(--pl-dim);
+  font-size: 12px;
+}
+.plt-status-jetzt {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 14px 6px 6px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--f, #666) 18%, transparent);
+  font-weight: 600;
+}
+.plt-status-jetzt:empty {
+  display: none;
+}
+.plt-gross-num {
+  display: grid;
+  place-items: center;
+  min-width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: var(--f, #666);
+  color: #fff;
+  font-size: 19px;
+  font-weight: 800;
+}
+.plt-info {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-left: auto;
+  color: var(--pl-dim);
+  font-size: 13px;
+  white-space: nowrap;
+}
+.plt-info em {
+  font-style: normal;
+  color: var(--pl-warn);
+}
+.plt-pill {
+  font-size: 12px;
+  padding: 3px 9px;
+  border-radius: 99px;
+  font-weight: 600;
+}
+.plt-pill.ok {
+  background: rgba(34, 197, 94, 0.14);
+  color: var(--pl-ok);
+}
+.plt-pill.warn {
+  background: rgba(245, 165, 36, 0.15);
+  color: var(--pl-warn);
+}
+.plt-knoepfe {
+  display: flex;
+  gap: 6px;
+}
+
+/* Knöpfe */
+.plt-b {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--pl-rand);
+  background: var(--pl-feld);
+  color: inherit;
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.plt-b:hover:not(:disabled) {
+  background: var(--pl-feld-hover);
+}
+.plt-b:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.plt-b.voll {
+  width: 100%;
+}
+.plt-b.klein {
+  padding: 6px 10px;
+  font-size: 13px;
+}
+.plt-b.primaer {
+  background: var(--pl-akzent);
+  border-color: var(--pl-akzent);
+  color: #fff;
+}
+.plt-b.warn:hover {
+  border-color: var(--pl-rot);
+  color: var(--pl-rot);
+}
+.plt-b.an {
+  border-color: var(--pl-akzent);
+  color: var(--pl-akzent);
+}
+
+/* Alarm und Hinweise */
+.plt-alarm {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 12px 18px;
+  background: var(--pl-rot);
+  color: #fff;
+  animation: plt-alarm 0.9s ease-in-out infinite alternate;
+}
+.plt-alarm[hidden],
+.plt-warte[hidden] {
+  display: none;
+}
+@keyframes plt-alarm {
+  to {
+    background: #ff5a4f;
+  }
+}
+.plt-alarm-titel {
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+.plt-alarm-text {
+  display: flex;
+  flex-direction: column;
+}
+.plt-alarm-text b {
+  font-size: 17px;
+}
+.plt-alarm-hinweis {
+  margin-left: auto;
+  font-weight: 600;
+}
+.plt kbd {
+  display: inline-block;
+  min-width: 20px;
+  padding: 1px 6px;
+  border-radius: 5px;
+  border: 1px solid currentColor;
+  font: 600 12px/1.4 ui-monospace, monospace;
+  text-align: center;
+  opacity: 0.8;
+}
+.plt-warte {
+  padding: 9px 18px;
+  background: rgba(245, 165, 36, 0.14);
+  color: var(--pl-warn);
+  font-weight: 600;
+  border-bottom: 1px solid var(--pl-rand);
+}
+
+/* Hauptbereich */
+.plt-haupt {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 250px minmax(0, 1fr) 380px;
+  min-height: 0;
+}
+.plt-links,
+.plt-rechts {
+  overflow: auto;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--pl-bg);
+}
+.plt-links {
+  border-right: 1px solid var(--pl-rand);
+}
+.plt-rechts {
+  border-left: 1px solid var(--pl-rand);
+}
+.plt-karte-titel {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--pl-dim);
+  margin: 4px 0 2px;
+}
+.plt-karte-titel .plt-ico {
+  width: 15px;
+  height: 15px;
+}
+.plt-karte-titel .plt-leise {
+  margin-left: 2px;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 11px;
+}
+
+/* Statusknöpfe */
+.plt-status {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.plt-st {
+  display: grid;
+  grid-template-columns: 40px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--pl-rand);
+  border-left: 5px solid var(--f);
+  background: var(--pl-karte);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.08s, background 0.15s;
+}
+.plt-st:hover:not(:disabled) {
+  background: var(--pl-karte-2);
+}
+.plt-st:active:not(:disabled) {
+  transform: scale(0.98);
+}
+.plt-st:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.plt-st-num {
+  display: grid;
+  place-items: center;
+  height: 36px;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--f) 22%, transparent);
+  color: var(--f);
+  font-size: 20px;
+  font-weight: 800;
+}
+.plt-st-name {
+  font-weight: 600;
+  line-height: 1.2;
+}
+.plt-st.aktiv,
+.plt-st.aktiv:hover:not(:disabled) {
+  background: var(--f);
+  color: #fff;
+  border-color: var(--f);
+}
+.plt-st.aktiv .plt-st-num {
+  background: rgba(255, 255, 255, 0.22);
+  color: #fff;
+}
+.plt-st-alarm {
+  padding: 9px 12px;
+  border-radius: 12px;
+  background: var(--f);
+  color: #fff;
+  font-weight: 700;
+  text-align: center;
+}
+
+/* Übungsflug */
+.plt-flug {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.plt-flug-jetzt {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(47, 124, 246, 0.14);
+  color: var(--pl-akzent);
+}
+.plt-flug-jetzt b {
+  display: block;
+  color: var(--pl-text);
+}
+.plt-flug-jetzt small {
+  color: var(--pl-dim);
+}
+
+/* Karte */
+.plt-mitte {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+}
+.plt-map {
+  position: absolute;
+  inset: 0;
+  background: var(--pl-karte-2);
+}
+.plt-map-knoepfe {
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  display: flex;
+  gap: 6px;
+}
+.plt-map-knoepfe .plt-b {
+  background: var(--pl-karte);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+}
+.plt-map-hinweis {
+  position: absolute;
+  left: 50%;
+  top: 14px;
+  transform: translateX(-50%);
+  padding: 8px 14px;
+  border-radius: 99px;
+  background: var(--pl-akzent);
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+}
+.plt-map-hinweis[hidden] {
+  display: none;
+}
+
+/* rechte Spalte: Karten */
+.plt-einsatz,
+.plt-patient,
+.plt-plan,
+.plt-chat {
+  background: var(--pl-karte);
+  border: 1px solid var(--pl-rand);
+  border-radius: 14px;
+  padding: 12px 14px;
+}
+.plt-einsatz:empty,
+.plt-patient:empty,
+.plt-plan:empty {
+  display: none;
+}
+.plt-leer {
+  color: var(--pl-dim);
+  line-height: 1.45;
+}
+.plt-einsatz-kopf {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 4px;
+}
+.plt-nr {
+  font: 600 12px ui-monospace, monospace;
+  color: var(--pl-dim);
+}
+.plt-stufe {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 99px;
+  background: rgba(229, 57, 53, 0.14);
+  color: var(--pl-rot);
+}
+.plt-stichwort {
+  font-size: 17px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  line-height: 1.25;
+}
+.plt-zeile {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 5px 0;
+  line-height: 1.35;
+}
+.plt-zeile .plt-ico {
+  color: var(--pl-dim);
+  margin-top: 1px;
+}
+.plt-zeile small {
+  display: block;
+  color: var(--pl-dim);
+}
+.plt-info-rtw {
+  margin: 8px 0;
+  padding: 8px 10px;
+  border-radius: 9px;
+  background: var(--pl-feld);
+  line-height: 1.4;
+}
+.plt-mit {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 8px;
+}
+.plt-mit-fz {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 99px;
+  background: var(--pl-feld);
+}
+.plt-mit-fz i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+/* Patient */
+.plt-lagebild {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.4;
+  margin-bottom: 6px;
+}
+.plt-verdacht {
+  margin-bottom: 8px;
+}
+.plt-pat {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  padding: 8px 0;
+  border-top: 1px solid var(--pl-rand);
+}
+.plt-pat span:not(.plt-sicht) {
+  color: var(--pl-dim);
+}
+.plt-sicht {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 6px;
+  color: #fff;
+}
+.plt-sicht.rot {
+  background: #d32f2f;
+}
+.plt-sicht.gelb {
+  background: #f2b600;
+  color: #222;
+}
+.plt-sicht.gruen {
+  background: #2e9d4a;
+}
+.plt-verlauf {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--pl-dim);
+}
+.plt-verlauf span {
+  font-family: ui-monospace, monospace;
+  margin-right: 6px;
+}
+
+/* Entscheidung */
+.plt-plan-fest {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(34, 197, 94, 0.13);
+  color: var(--pl-ok);
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.plt-plan-fest small {
+  display: block;
+  font-weight: 400;
+  color: var(--pl-dim);
+  margin-top: 3px;
+}
+.plt-reiter {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  padding: 4px;
+  border-radius: 10px;
+  background: var(--pl-feld);
+  margin-bottom: 8px;
+}
+.plt-reiter button {
+  border: none;
+  border-radius: 7px;
+  padding: 7px 4px;
+  background: transparent;
+  color: var(--pl-dim);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.plt-reiter button.an {
+  background: var(--pl-karte);
+  color: var(--pl-text);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+}
+.plt-kh-suche {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border-radius: 9px;
+  border: 1px solid var(--pl-rand);
+  background: var(--pl-feld);
+  color: inherit;
+  font: inherit;
+  margin-bottom: 6px;
+}
+.plt-kh-liste {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.plt-kh {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: "name km" "tags km";
+  gap: 3px 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--pl-rand);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.plt-kh:hover {
+  background: var(--pl-feld-hover);
+}
+.plt-kh.an {
+  border-color: var(--pl-ok);
+  background: rgba(34, 197, 94, 0.1);
+}
+.plt-kh-name {
+  grid-area: name;
+  min-width: 0;
+}
+.plt-kh-name small {
+  display: block;
+  color: var(--pl-dim);
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.plt-kh-tags {
+  grid-area: tags;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.plt-kh-km {
+  grid-area: km;
+  text-align: right;
+  font-weight: 700;
+  align-self: center;
+}
+.plt-kh-km small {
+  display: block;
+  font-weight: 400;
+  color: var(--pl-dim);
+  font-size: 11px;
+}
+.plt-tag {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 5px;
+  background: var(--pl-feld-hover);
+  color: var(--pl-dim);
+}
+.plt-tag.passend {
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--pl-ok);
+}
+.plt-tag.ausweich,
+.plt-tag.warn {
+  background: rgba(245, 165, 36, 0.15);
+  color: var(--pl-warn);
+}
+.plt-tag.rueckfall {
+  background: rgba(229, 57, 53, 0.13);
+  color: var(--pl-rot);
+}
+.plt-wahl-k {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  margin-bottom: 6px;
+  border-radius: 10px;
+  border: 1px solid var(--pl-rand);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.plt-wahl-k small {
+  display: block;
+  color: var(--pl-dim);
+  margin-top: 2px;
+}
+.plt-wahl-k:hover:not(:disabled) {
+  background: var(--pl-feld-hover);
+}
+.plt-wahl-k.an {
+  border-color: var(--pl-ok);
+  background: rgba(34, 197, 94, 0.1);
+}
+.plt-wahl-k:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* Chat */
+.plt-chat {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 160px;
+}
+.plt-chat-liste {
+  flex: 1;
+  max-height: 220px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+}
+.plt-chat-m span {
+  font-weight: 700;
+  margin-right: 6px;
+}
+.plt-chat-m.ich span {
+  color: var(--pl-akzent);
+}
+.plt-chat-form {
+  display: flex;
+  gap: 6px;
+}
+.plt-chat-in {
+  flex: 1;
+  min-width: 0;
+  padding: 7px 10px;
+  border-radius: 9px;
+  border: 1px solid var(--pl-rand);
+  background: var(--pl-feld);
+  color: inherit;
+  font: inherit;
+}
+
+/* Dialoge (laufen über dem Piloten-Interface) */
+.plt-beitritt label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 10px 0;
+  font-weight: 600;
+}
+.plt-beitritt input {
+  padding: 8px 10px;
+  font: inherit;
+}
+.plt-wahl-liste {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+.plt-wahl-b {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas: "ico name" "ico st" "ico info";
+  gap: 2px 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.plt-wahl-b .plt-ico {
+  grid-area: ico;
+  align-self: center;
+  color: var(--blue);
+}
+.plt-wahl-b:hover:not(:disabled) {
+  border-color: var(--blue);
+}
+.plt-wahl-b.letzter {
+  border-color: var(--blue);
+  box-shadow: inset 0 0 0 1px var(--blue);
+}
+.plt-wahl-b.aus {
+  opacity: 0.55;
+  cursor: default;
+}
+.plt-wahl-name {
+  grid-area: name;
+}
+.plt-wahl-name small {
+  color: var(--text-dim);
+  margin-left: 6px;
+}
+.plt-wahl-st {
+  grid-area: st;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.plt-wahl-st i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+.plt-wahl-info {
+  grid-area: info;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.plt-tasten-tab {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 10px 0;
+}
+.plt-tasten-tab th {
+  text-align: left;
+  font-size: 12px;
+  color: var(--text-dim);
+  padding: 4px 6px;
+}
+.plt-tasten-tab td {
+  padding: 4px 6px;
+  border-top: 1px solid var(--line);
+}
+.plt-taste-feld {
+  min-width: 110px;
+  padding: 5px 10px;
+  border-radius: 7px;
+  border: 1px solid var(--line);
+  background: var(--input-bg);
+  color: var(--text);
+  font: 600 12px ui-monospace, monospace;
+  cursor: pointer;
+}
+.plt-taste-feld.lernt {
+  border-color: var(--blue);
+  color: var(--blue);
+  animation: plt-lernt 0.7s ease-in-out infinite alternate;
+}
+@keyframes plt-lernt {
+  to {
+    background: rgba(47, 124, 246, 0.15);
+  }
+}
+.plt-check {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin: 8px 0;
+}
+.plt-handy {
+  text-align: center;
+}
+.plt-qr {
+  width: 220px;
+  margin: 4px auto 10px;
+  padding: 8px;
+  background: #fff;
+  border-radius: 12px;
+}
+.plt-qr svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.plt-schritte {
+  text-align: left;
+  line-height: 1.5;
+}
+.plt-handy code {
+  font-size: 12px;
+  user-select: all;
+}
+
+/* schmale Fenster: Karte nach unten */
+@media (max-width: 1100px) {
+  .plt-haupt {
+    grid-template-columns: 220px minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) 320px;
+  }
+  .plt-links {
+    grid-row: 1 / 3;
+  }
+  .plt-rechts {
+    grid-column: 2;
+    border-left: none;
+    border-top: 1px solid var(--pl-rand);
+  }
+  .plt-mitte {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .plt-knoepfe .plt-b span {
+    display: none;
+  }
+}
+
+/* Hinweise der Leitstellen-Ansicht nicht über dem Piloten-Interface */
+.pilotmodus .einfuehrung {
+  display: none !important;
+}

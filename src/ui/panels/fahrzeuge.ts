@@ -251,7 +251,7 @@ function fahrzeugListe(ctx: PanelKontext, nurAktive: boolean) {
       sichtbar.sort((a, b) => ord.indexOf(a.status) - ord.indexOf(b.status) || a.funkrufname.localeCompare(b.funkrufname));
       for (const fz of sichtbar) {
         const ph = PHASE_TEXT[fz.phase] ?? "";
-        const html = `${statusChip(fz)}<div class="fz-main"><div><b data-dienstfz="${esc(fz.id)}">${esc(fz.funkrufname)}</b> <span class="muted">${typHtml(fz)} · ${esc(fz.kurzname || fz.stationName)}</span> ${aussenHtml(fz)}${crewHtml(fz)}${dienstHtml(fz)}</div><div class="fz-auftrag">${auftrag(fz) || `<span class="muted">${esc(sim.statusDef(fz.status).name)}</span>`}</div></div><div class="fz-rechts"><div>${esc(ph)}</div><div class="muted">${eta(fz)}</div></div>`;
+        const html = `${statusChip(fz)}<div class="fz-main"><div><b data-dienstfz="${esc(fz.id)}">${esc(fz.funkrufname)}</b>${pilotHtml(fz)} <span class="muted">${typHtml(fz)} · ${esc(fz.kurzname || fz.stationName)}</span> ${aussenHtml(fz)}${crewHtml(fz)}${dienstHtml(fz)}</div><div class="fz-auftrag">${auftrag(fz) || `<span class="muted">${esc(sim.statusDef(fz.status).name)}</span>`}</div></div><div class="fz-rechts"><div>${esc(ph)}</div><div class="muted">${eta(fz)}</div></div>`;
         liste.appendChild(zeileAus(fz.id, `fz-row aktiv${fzKlassen(fz)}`, html, (r) => klickVerhalten(r, fz)));
       }
       if (!sichtbar.length) liste.appendChild(el("div", { class: "muted pad" }, alle.length ? "Nichts passt zum Filter." : "Kein Fahrzeug unterwegs – alle frei auf der Wache oder abgemeldet."));
@@ -295,7 +295,7 @@ function fahrzeugListe(ctx: PanelKontext, nurAktive: boolean) {
         const e = fz.einsatzId ? sim.einsatz(fz.einsatzId) : undefined;
         // Hubschrauber: ausgeschriebener Name (Christophorus 2) statt Stützpunkt
         const zusatz = name === HELI ? ` · ${esc(fz.kurzname || fz.stationName)}` : fz.kurzname ? " · " + esc(fz.kurzname) : "";
-        const html = `${statusChip(fz)}<b data-dienstfz="${esc(fz.id)}">${esc(fz.funkrufname)}</b><span class="muted">${typHtml(fz)}${zusatz}</span>${aussenHtml(fz)}${crewHtml(fz)}${dienstHtml(fz)}${kt}<span class="spacer"></span><span class="muted">${esc(e?.nummer ?? "")}</span>`;
+        const html = `${statusChip(fz)}<b data-dienstfz="${esc(fz.id)}">${esc(fz.funkrufname)}</b>${pilotHtml(fz)}<span class="muted">${typHtml(fz)}${zusatz}</span>${aussenHtml(fz)}${crewHtml(fz)}${dienstHtml(fz)}${kt}<span class="spacer"></span><span class="muted">${esc(e?.nummer ?? "")}</span>`;
         liste.appendChild(zeileAus(fz.id, `fz-row${fzKlassen(fz)}`, html, (r) => klickVerhalten(r, fz)));
       }
     }
@@ -426,3 +426,9 @@ registriere({
   bereich: "links",
   erstellen: (ctx) => statusLogFenster(ctx),
 });
+
+/** Spieler-NAH: Hinweis, dass ein Mensch fliegt */
+function pilotHtml(fz: SimFahrzeug): string {
+  if (!fz.pilot) return "";
+  return ` <span class="fz-pilot${fz.pilot.offlineSeit ? " offline" : ""}" title="Wird von ${esc(fz.pilot.name)} geflogen (Pilot)${fz.pilot.offlineSeit ? " – Verbindung unterbrochen" : ""}">✈ ${esc(fz.pilot.name)}</span>`;
+}

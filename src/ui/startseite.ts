@@ -33,6 +33,7 @@ import { sprachPrefs, sprachStatus } from "./sprache";
 import { spielstaendeOeffnen } from "./spielstaende";
 import { onUpdate, updateInfo, updateInstallieren, updateLaeuft } from "./updateDienst";
 import { einstellungenOeffnen } from "./ws/steuerleiste";
+import { pilotBeitrittOeffnen } from "./pilot/pilotView";
 import { istDunkel, onThema, pers, setzePers, type Thema } from "./ws/persoenlich";
 
 // ------------------------------------------------------------------ Symbole (eigene, im Strichstil)
@@ -238,6 +239,7 @@ export function startseiteZeigen(fertig?: () => void, opt: { zurueck?: boolean }
         ${opt.zurueck ? `<button class="st-nav-b" data-act="zurueck">${ico("pfeil")}<span>Zurück zur Simulation<small>läuft weiter wie bisher</small></span></button>` : ""}
         <button class="st-nav-b" data-act="fortsetzen" hidden>${ico("fortsetzen")}<span>Spiel fortsetzen<small></small></span></button>
         <button class="st-nav-b" data-act="laden">${ico("ordner")}<span>Spielstand laden</span></button>
+        <button class="st-nav-b" data-act="pilot">${ico("heli")}<span>Als Pilot beitreten<small>Hubschrauber selbst fliegen</small></span></button>
         <button class="st-nav-b" data-act="einstellungen">${ico("zahnrad")}<span>Einstellungen</span></button>
         <button class="st-nav-b" data-act="check">${ico("schild")}<span>Bereitschafts-Check</span></button>
       </nav>
@@ -505,6 +507,20 @@ export function startseiteZeigen(fertig?: () => void, opt: { zurueck?: boolean }
 
   // ---------------- Multiplayer-Lobby
   const multiFeld = $(".st-multi");
+  /** Spieler, die als Pilot einen Hubschrauber fliegen */
+  const pilotVon = (pid: string) => {
+    const fz = sim.pilotVon(pid);
+    return fz ? ` <span class="st-pilot" title="fliegt ${esc(fz.funkrufname)} (Pilot)">✈ ${esc(fz.kurzname || fz.funkrufname)}</span>` : "";
+  };
+  let pilotenStand = "";
+  aus.push(
+    sim.onChange(() => {
+      const st = Object.values(sim.state.fahrzeuge).filter((x) => x.pilot).map((x) => `${x.id}:${x.pilot!.pid}`).join(",");
+      if (st === pilotenStand) return;
+      pilotenStand = st;
+      multiZeichnen();
+    }),
+  );
   const RECHTE: Berechtigung[] = ["disponieren", "kt", "steuern", "einstellungen"];
   const RECHT_ICO: Record<Berechtigung, string> = { disponieren: "funk", kt: "auto", steuern: "play", einstellungen: "zahnrad" };
   const multiZeichnen = () => {
@@ -556,7 +572,7 @@ export function startseiteZeigen(fertig?: () => void, opt: { zurueck?: boolean }
     const tb = multiFeld.querySelector("tbody")!;
     for (const sp of mp.spieler) {
       const tr = el("tr");
-      tr.innerHTML = `<td><span class="st-dot ${sp.online ? "an" : ""}"></span>${esc(sp.name)}${sp.host ? ` ${ico("krone", "klein")}` : ""}${sp.pid === mp.ich.pid ? ` <span class="st-leise">(du)</span>` : ""}</td>`;
+      tr.innerHTML = `<td><span class="st-dot ${sp.online ? "an" : ""}"></span>${esc(sp.name)}${sp.host ? ` ${ico("krone", "klein")}` : ""}${sp.pid === mp.ich.pid ? ` <span class="st-leise">(du)</span>` : ""}${pilotVon(sp.pid)}</td>`;
       for (const rr of RECHTE) {
         const td = el("td");
         const cb = el("input", { type: "checkbox" }) as HTMLInputElement;
@@ -621,6 +637,7 @@ export function startseiteZeigen(fertig?: () => void, opt: { zurueck?: boolean }
       toast(String((e as Error)?.message ?? e), "error");
     }
   });
+  $('[data-act="pilot"]').addEventListener("click", () => pilotBeitrittOeffnen(schliessen));
   $('[data-act="laden"]').addEventListener("click", () =>
     spielstaendeOeffnen({
       geladen: () => {

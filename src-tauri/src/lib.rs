@@ -1,5 +1,6 @@
 mod spielstaende;
 mod addresses;
+mod handy;
 mod ki;
 mod packs;
 mod routing;
@@ -526,6 +527,8 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
+        // Piloten-Interface: Status per Tastenkürzel, auch wenn der Flugsimulator vorne ist
+        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .setup(|app| {
             let data_dir = app.path().app_data_dir()?;
             let resources = app.path().resolve("maps", BaseDirectory::Resource).ok();
@@ -614,6 +617,9 @@ pub fn run() {
             supertonic::supertonic_laden,
             supertonic::supertonic_loeschen,
             supertonic::supertonic_erzeugen,
+            handy::handy_starten,
+            handy::handy_stand,
+            handy::handy_stoppen,
             app_version
         ])
         .build(tauri::generate_context!())

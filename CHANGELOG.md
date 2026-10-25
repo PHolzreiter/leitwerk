@@ -1,5 +1,20 @@
 # Änderungen
 
+## 0.69.0 – Spieler-NAH: Hubschrauber selbst fliegen (Teil 1)
+- **Als Pilot beitreten** (Startseite): Ein Mitspieler tritt mit dem Code bei, wählt einen Hubschrauber, der gerade im Dienst ist, und sieht statt der Leitstelle sein **Piloten-Interface**. Für die Leitstelle bleibt der Hubschrauber ein ganz normales Fahrzeug
+- **Alarmierung** mit Ton und rotem Balken (Stichwort, Adresse). **Status drückt der Pilot selbst** – 2 zum Berufungsort, 3 am Berufungsort, 4 zum Zielort, 5 am Zielort, 6 frei über Funk, 1 frei auf Wache. Das Programm wartet auf ihn
+- **Am Berufungsort (Status 3) siehst du den Patienten:** Lagebild, Verdacht, Sichtung, Bewusstsein, Atmung. Dann entscheidest du:
+  - **Wir transportieren** – Zielkrankenhaus frei wählbar (passende zuerst, mit Entfernung, Flugzeit und Landeplatz), jedes Ziel wird genehmigt. Der RTW wird frei
+  - **Übergabe an den RTW** – mit oder ohne Notarzt im RTW
+  - **Kein Transport** – Patient bleibt vor Ort, Revers oder verstorben
+- **Übungsflug ohne Flugsimulator:** zum Einsatzort, zum Zielkrankenhaus, zum Stützpunkt oder zu einem Punkt auf der Karte – gerade Linie mit Reisegeschwindigkeit. Die Karte folgt dem Hubschrauber
+- **Tasten:** Ziffern 1–6 und F (Übungsflug) – alles umbelegbar, dazu **globale Tastenkürzel** (Standard Strg + Umschalt + Ziffer), die auch funktionieren, wenn der Flugsimulator vorne ist, und **Joystick-Tasten**
+- **Handy als Statusgerät:** QR-Code scannen (selbes WLAN, keine App) – große Statustasten, Einsatz und Patient. Beim ersten Mal den Netzwerkzugriff für LeitWerk erlauben
+- **Chat mit der Leitstelle** im Piloten-Interface (bis der Sprechfunk kommt). Funkrufe der Leitstelle an einen Spieler-NAH zeigen einen Hinweis statt einer KI-Antwort
+- **Ausfallsicherung:** Verlässt der Pilot das Spiel oder ist er eine Minute nicht verbunden, fliegt der Computer genau dort weiter – mit Status, Einsatz, gewähltem Ziel und Patient an Bord. Wieder übernehmen geht mit „Wechseln“
+- **Leitstelle:** In der Fahrzeugliste, auf der Karte und in der Lobby steht ✈ und der Name des Piloten. Bucht der Pilot das Krankenhaus, steht „durch NAH (Pilot)“ in der Einsatzmaske
+- Noch nicht dabei (kommt als Nächstes): Position direkt aus dem MSFS 2024, Zeitregel (1:1 in der Luft), Sprechfunk zwischen Menschen, Sekundärflüge, X-Plane 12
+
 ## 0.68.0 – Ortung und schnellere Abfrage mit der Tastatur
 - **Ortung:** Das Ergebnis erscheint jetzt immer auch beim Adressfeld der Abfrage – vorher blieb dort „Ortung läuft …“ stehen, solange der Cursor im Adressfeld war
 - **„Was ist passiert?“ mit der Tastatur:** Nach „Wer ruft an“ steht der Cursor gleich in der Kapitel-Suche. Dort nur ein Stichwort tippen (z. B. „atem“, „Brust“, „VU“) – die **Leertaste stellt die Frage „Was ist passiert?“**, **Enter wählt den obersten Treffer** (ist markiert)

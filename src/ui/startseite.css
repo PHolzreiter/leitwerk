@@ -1024,3 +1024,14 @@
 .st-hilfe-b { flex: 1; font: inherit; font-size: 13px; padding: 7px 8px; border-radius: 9px; border: 1px solid var(--st-feld-rand); background: var(--st-feld); color: var(--st-text); cursor: pointer; }
 .st-hilfe-b.primaer { background: var(--st-warn); border-color: transparent; color: #1b1300; font-weight: 600; }
 .st-hilfe-b.neu { border-color: var(--st-ok); box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.35); }
+
+/* Lobby: Spieler fliegt als Pilot */
+.st-pilot {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: 99px;
+  background: rgba(47, 124, 246, 0.16);
+  color: var(--st-akzent-2);
+  white-space: nowrap;
+}

@@ -3505,3 +3505,19 @@ input.ausr-zahl { width: 64px !important; min-width: 0; }
 .mh-stand.s-abgelehnt { background: rgba(239, 68, 68, 0.2); }
 .mh-antwort { font-size: 13px; padding: 6px 8px; border-left: 3px solid #2f7cf6; background: rgba(47, 124, 246, 0.07); }
 .kapitel-opt.erster { outline: 2px solid var(--accent, #2f7cf6); outline-offset: -2px; }
+
+/* Spieler-NAH: ein Mensch fliegt */
+.fz-pilot {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 0 6px;
+  border-radius: 99px;
+  background: rgba(47, 124, 246, 0.14);
+  color: var(--blue);
+  white-space: nowrap;
+}
+.fz-pilot.offline {
+  background: var(--warn-bg);
+  color: var(--warn-text);
+}
