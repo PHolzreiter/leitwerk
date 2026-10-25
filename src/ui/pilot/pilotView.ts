@@ -25,6 +25,7 @@ import { pilotModusSetzen } from "./modus";
 import { AKTIONEN, belegung, type PilotAktion } from "./tasten";
 import { eingabeStarten, eingabeStoppen, tastenDialog } from "./eingabe";
 import { handyAktionen, handyDialog, handyStand } from "./handy";
+import { communityWaehlen, gtn, gtnAn, gtnBereitlegen, gtnSuchen, gtnUmschalten } from "./flugsim";
 import { datenEmpfangen, datenFrisch, dllWaehlen, flugplanSpeichern, flugsim, flugsimAnbinden, flugsimBeenden, flugsimTrennen, flugsimVerbinden, koordText, vorgabe, wetterDialog } from "./flugsim";
 
 // ------------------------------------------------------------------ Hilfen
@@ -359,6 +360,7 @@ export function pilotOeffnen(): void {
   handyAktionen(pilotAktion);
   flugsimAnbinden(meinFz, () => zeichneAlles());
   if (vorgabe().auto) void flugsimVerbinden();
+  void gtnSuchen();
   if (location.search.includes("debug")) Object.assign(window, { __pilot: { datenEmpfangen, flugsim } });
   aus.push(() => eingabeStoppen());
   zeichneAlles();
@@ -422,6 +424,7 @@ function zeichneAlles(): void {
   chat();
   karteAktualisieren(fz, e);
   handyStand(fz, e);
+  gtnZiel(fz, e);
 }
 
 function kopf(fz: SimFahrzeug | undefined): void {
@@ -510,6 +513,20 @@ function tastenNameKurz(code: string | undefined): string {
   return code;
 }
 
+/** PMS50 GTN750: Flugplan zum aktuellen Ziel bereitlegen (Einsatzort, nach der Zielwahl das Krankenhaus) */
+function gtnZiel(fz: SimFahrzeug | undefined, e: Einsatz | undefined): void {
+  if (!fz || !e) return;
+  const plan = fz.pilot?.plan;
+  const h = e.kh ? store.get("hospitals", e.kh.hospitalId) : undefined;
+  const l = h ? (khLandung(h) ?? h) : null;
+  const kh = h && l ? { lat: l.lat, lon: l.lon, name: h.kurzname || h.name } : undefined;
+  const bo = e.adresse ? { lat: e.adresse.lat, lon: e.adresse.lon } : undefined;
+  const zumKh = !!kh && (fz.status === "zumZO" || (fz.status === "amBO" && !!plan && (plan.art === "transport" || (plan.art === "uebergabe" && plan.naMit))));
+  const zumBo = !!bo && (["alarmWache", "alarmFunk", "alarmiert", "zumBO"].includes(fz.status) || (fz.status === "amBO" && !zumKh));
+  const ziel = zumKh && kh ? { ...kh, art: "kh" as const } : zumBo && bo ? { ...bo, name: "Einsatzort", art: "bo" as const } : null;
+  gtnBereitlegen(fz, ziel, { bo, kh });
+}
+
 /** Koordinaten und Flugplan für Einsatzort und Zielkrankenhaus */
 function navigation(fz: SimFahrzeug, e: Einsatz, kh: Hospital | undefined): string {
   const zeile = (titel: string, lat: number, lon: number, name: string, zusatz = "") => `<div class="plt-nav">
@@ -534,7 +551,7 @@ function simTeil(fz: SimFahrzeug | undefined): void {
   const p = fz?.pilot;
   const bremse = sim.zeitBremse();
   const daheim = !!fz && distanceM(fz, fz.heim) < 300;
-  const key = `${flugsim.zustand}|${flugsim.text}|${frisch}|${d && frisch ? [Math.round(d.hoehe / 50), Math.round(d.agl / 20), Math.round(d.kurs / 5), Math.round(d.kts), d.am_boden].join(",") : ""}|${p?.zeitOk}|${sim.state.tempo}|${bremse}|${daheim}|${!!fz}`;
+  const key = `${flugsim.zustand}|${flugsim.text}|${frisch}|${d && frisch ? [Math.round(d.hoehe / 50), Math.round(d.agl / 20), Math.round(d.kurs / 5), Math.round(d.kts), d.am_boden].join(",") : ""}|${p?.zeitOk}|${sim.state.tempo}|${bremse}|${daheim}|${!!fz}|${gtn.paket}|${gtn.fehler}|${gtn.geprueft}|${gtnAn()}|${gtn.ziel}`;
   teil(".plt-sim", key, (box) => {
     const z = flugsim.zustand;
     const klasse = z === "verbunden" ? (frisch ? "ok" : "warn") : z === "wartet" ? "warn" : z === "aus" ? "" : "fehl";
@@ -569,6 +586,21 @@ function simTeil(fz: SimFahrzeug | undefined): void {
       const b = el("button", { class: "plt-b voll" }, "Trennen");
       b.addEventListener("click", () => void flugsimTrennen());
       box.appendChild(b);
+    }
+    // PMS50 GTN750: Flugplan wird automatisch bereitgelegt
+    if (gtn.geprueft) {
+      const g = el("div", { class: "plt-gtn" });
+      if (gtn.paket) {
+        g.innerHTML = `<label class="plt-check-klein"><input type="checkbox" ${gtnAn() ? "checked" : ""}> GTN750: Flugplan automatisch bereitlegen</label>
+          <p class="plt-leise plt-klein">${gtn.fehler ? `<span class="plt-warn">${esc(gtn.fehler)}</span>` : gtn.ziel ? `Bereit – im GTN: Flight Plan → Menu → Import. Wegpunkte LWBO, LWKH, LWBAS unter Waypoint Info → Import Waypoints.` : "Bei Alarm und nach der Zielwahl liegt der Flugplan im GTN bereit."}</p>`;
+        g.querySelector("input")!.addEventListener("change", (ev) => gtnUmschalten((ev.target as HTMLInputElement).checked));
+      } else {
+        g.innerHTML = `<p class="plt-leise plt-klein">PMS50 GTN750 nicht gefunden${gtn.community ? "" : " (Community-Ordner unbekannt)"}.</p>`;
+        const b = el("button", { class: "plt-b klein" }, "Community-Ordner wählen …");
+        b.addEventListener("click", () => void communityWaehlen());
+        g.appendChild(b);
+      }
+      box.appendChild(g);
     }
     // Zeitraffer: mit Flugsimulator nur am Boden, und weg vom Stützpunkt nur mit Zustimmung
     if (fz && p && frisch) {

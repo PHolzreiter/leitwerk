@@ -27,6 +27,10 @@ const SCHLUESSEL = "leitwerk.pilot.msfs";
 interface Vorgabe {
   dll?: string;
   auto?: boolean;
+  /** Community-Ordner (wenn LeitWerk ihn nicht selbst findet) */
+  community?: string;
+  /** PMS50 GTN750: Flugplan automatisch bereitlegen */
+  gtnAuto?: boolean;
   wetter?: "leitwerk" | "selbst";
 }
 export function vorgabe(): Vorgabe {
@@ -165,6 +169,14 @@ export function koordText(lat: number, lon: number): string {
   return `${lat.toFixed(5)}, ${lon.toFixed(5)} (${gms(lat, "N", "S")} ${gms(lon, "E", "W")})`;
 }
 
+/** Nur einfache Zeichen (MSFS und Add-ons vertragen keine Sonderzeichen in Namen) */
+export function ascii(s: string): string {
+  return s
+    .replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/Ä/g, "Ae").replace(/Ö/g, "Oe").replace(/Ü/g, "Ue").replace(/ß/g, "ss")
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^A-Za-z0-9 ._@-]+/g, " ").replace(/\s+/g, " ").trim();
+}
+
 const xmlEsc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
 /** VFR-Flugplan von der aktuellen Position zu einem Ziel (zwei Benutzer-Wegpunkte) */
@@ -177,23 +189,23 @@ export function plnText(titel: string, von: { lat: number; lon: number; fuss: nu
 <SimBase.Document Type="AceXML" version="1,0">
     <Descr>AceXML Document</Descr>
     <FlightPlan.FlightPlan>
-        <Title>${xmlEsc(titel)}</Title>
+        <Title>${xmlEsc(ascii(titel))}</Title>
         <FPType>VFR</FPType>
         <RouteType>Direct</RouteType>
         <CruisingAlt>1500.000</CruisingAlt>
-        <DepartureID>START</DepartureID>
+        <DepartureID>CUSTD</DepartureID>
         <DepartureLLA>${lla(von.lat, von.lon, von.fuss)}</DepartureLLA>
-        <DestinationID>ZIEL</DestinationID>
+        <DestinationID>CUSTA</DestinationID>
         <DestinationLLA>${lla(nach.lat, nach.lon, 0)}</DestinationLLA>
-        <Descr>${xmlEsc(`LeitWerk: ${titel}`)}</Descr>
-        <DepartureName>Aktuelle Position</DepartureName>
-        <DestinationName>${xmlEsc(nach.name)}</DestinationName>
+        <Descr>${xmlEsc(ascii(`LeitWerk ${titel}`))}</Descr>
+        <DepartureName>Custom departure</DepartureName>
+        <DestinationName>${xmlEsc(ascii(nach.name))}</DestinationName>
         <AppVersion>
             <AppVersionMajor>11</AppVersionMajor>
             <AppVersionBuild>282174</AppVersionBuild>
         </AppVersion>
-${wp("START", von, von.fuss)}
-${wp("ZIEL", nach, 0)}
+${wp("CUSTD", von, von.fuss)}
+${wp("CUSTA", nach, 0)}
     </FlightPlan.FlightPlan>
 </SimBase.Document>
 `;
@@ -202,7 +214,7 @@ ${wp("ZIEL", nach, 0)}
 export async function flugplanSpeichern(fz: SimFahrzeug, nach: { lat: number; lon: number; name: string }): Promise<void> {
   const fuss = flugsim.daten && datenFrisch() ? flugsim.daten.hoehe : 0;
   const titel = `${fz.kurzname || fz.funkrufname} – ${nach.name}`;
-  const datei = `LeitWerk ${titel}`.replace(/[^\wäöüÄÖÜß .-]+/g, " ").replace(/\s+/g, " ").trim();
+  const datei = ascii(`LeitWerk ${titel}`).replace(/[ .]+/g, "_");
   const pfad = await saveTextFile(`${datei}.pln`, plnText(titel, { lat: fz.lat, lon: fz.lon, fuss }, nach), { name: "MSFS-Flugplan", extensions: ["pln"] });
   if (pfad) toast("Flugplan gespeichert – im MSFS auf der Weltkarte unter „Laden“ öffnen");
 }
@@ -252,4 +264,70 @@ export function wetterDialog(): void {
   };
   zeichnen();
   openDialog({ title: "Wetter für den Flugsimulator", body, actions: [{ label: "Fertig", kind: "primary" }] });
+}
+
+// ------------------------------------------------------------------ PMS50 GTN750: Flugplan automatisch bereitlegen
+
+export const gtn = { paket: null as string | null, community: null as string | null, ziel: "", fehler: "", geprueft: false };
+
+export async function gtnSuchen(): Promise<void> {
+  if (!inTauri()) return;
+  try {
+    const o = await invoke<{ community: string | null; paket: string | null }>("gtn_suchen", { community: vorgabe().community ?? null });
+    gtn.paket = o.paket;
+    gtn.community = o.community;
+  } catch (e) {
+    gtn.fehler = String((e as Error)?.message ?? e);
+  }
+  gtn.geprueft = true;
+  geaendert();
+}
+
+export async function communityWaehlen(): Promise<void> {
+  if (!inTauri()) return;
+  const { open } = await import("@tauri-apps/plugin-dialog");
+  const p = await open({ directory: true, multiple: false, title: "Community-Ordner des Flugsimulators wählen" });
+  if (typeof p !== "string") return;
+  vorgabeSetzen({ community: p });
+  gtn.ziel = "";
+  await gtnSuchen();
+}
+
+export function gtnAn(): boolean {
+  return vorgabe().gtnAuto !== false;
+}
+
+export function gtnUmschalten(an: boolean): void {
+  vorgabeSetzen({ gtnAuto: an });
+  gtn.ziel = "";
+  geaendert();
+}
+
+/** Wegpunkt-Kennung für das GTN (höchstens 5 Zeichen, Großbuchstaben/Ziffern) */
+function wpZeile(id: string, name: string, lat: number, lon: number): string {
+  // Kommentar: nur Buchstaben, Leerzeichen und . - _ @ (keine Ziffern), höchstens 20 Zeichen
+  const k = ascii(name).replace(/[^A-Za-z ._@-]/g, "").trim().slice(0, 20) || "LeitWerk";
+  return `${id},${k},${lat.toFixed(6)},${lon.toFixed(6)}`;
+}
+
+/** Legt den Flugplan zum aktuellen Ziel ins GTN750 (nur wenn sich das Ziel geändert hat) */
+export function gtnBereitlegen(fz: SimFahrzeug, ziel: { lat: number; lon: number; name: string; art: "bo" | "kh" } | null, alle: { bo?: { lat: number; lon: number }; kh?: { lat: number; lon: number; name: string } }): void {
+  if (!inTauri() || !gtn.paket || !gtnAn() || !ziel) return;
+  const key = `${fz.id}|${ziel.art}|${ziel.lat.toFixed(5)},${ziel.lon.toFixed(5)}`;
+  if (key === gtn.ziel) return;
+  gtn.ziel = key;
+  const fuss = flugsim.daten && datenFrisch() ? flugsim.daten.hoehe : 0;
+  const pln = plnText(`${fz.kurzname || fz.funkrufname} ${ziel.name}`, { lat: fz.lat, lon: fz.lon, fuss }, ziel);
+  const wp = [alle.bo ? wpZeile("LWBO", "Einsatzort", alle.bo.lat, alle.bo.lon) : "", alle.kh ? wpZeile("LWKH", alle.kh.name, alle.kh.lat, alle.kh.lon) : "", wpZeile("LWBAS", fz.stationName || "Stuetzpunkt", fz.heim.lat, fz.heim.lon)].filter(Boolean).join("\r\n");
+  void invoke<string>("gtn_schreiben", { community: vorgabe().community ?? null, pln, wegpunkte: wp })
+    .then(() => {
+      gtn.fehler = "";
+      toast(`GTN750: Flugplan zum ${ziel.art === "bo" ? "Einsatzort" : ziel.name} bereit – im GTN Flight Plan → Menu → Import`);
+      geaendert();
+    })
+    .catch((e) => {
+      gtn.fehler = String((e as Error)?.message ?? e);
+      gtn.ziel = "";
+      geaendert();
+    });
 }

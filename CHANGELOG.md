@@ -1,5 +1,11 @@
 # Änderungen
 
+## 0.70.1 – Spieler-NAH: Flugplan fürs GTN750, Ruhe für den Piloten
+- **Piloten-Interface:** keine Töne mehr von Notrufen, KT-Hotline, Funkrufen und Warnungen der Leitstelle – der Pilot hört nur seine Alarmierung und den Chat
+- **Flugplan (.pln) repariert:** Start und Ziel heißen jetzt wie bei MSFS selbst (eigener Start/eigenes Ziel), Dateiname und Texte ohne Sonderzeichen – der Import auf der Weltkarte sollte damit klappen
+- **PMS50 GTN750 (Premium):** LeitWerk legt den Flugplan bei der Alarmierung (zum Einsatzort) und nach der Zielwahl (zum Landeplatz des Krankenhauses) automatisch ins GTN. Im GTN nur noch **Flight Plan → Menu → Import**. Dazu die Wegpunkte **LWBO** (Einsatzort), **LWKH** (Krankenhaus) und **LWBAS** (Stützpunkt) für Direct-To (Waypoint Info → Import Waypoints)
+  - Den Community-Ordner findet LeitWerk selbst (Store und Steam); sonst im Piloten-Interface einmal wählen. Abschaltbar unter „Flugsimulator“
+
 ## 0.70.0 – Spieler-NAH: Microsoft Flight Simulator (Teil 2)
 - **Verbindung zum MSFS 2024** (geht auch mit MSFS 2020): Im Piloten-Interface „Mit MSFS verbinden“. Position, Höhe, Kurs, Geschwindigkeit und „am Boden“ kommen jede Sekunde aus dem Simulator; der Übungsflug ist dann aus. LeitWerk verbindet sich von selbst, sobald der Simulator läuft, und beim nächsten Mal automatisch
   - Dafür braucht es die **SimConnect.dll** aus dem kostenlosen MSFS-SDK (im Simulator den Entwicklermodus einschalten → „Help → SDK Installer“). LeitWerk sucht sie unter `C:\MSFS 2024 SDK\SimConnect SDK\lib`; liegt sie woanders, kann man sie wählen

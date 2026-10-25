@@ -2,6 +2,7 @@
  * Töne: mitgelieferte (Web Audio, ohne Dateien) und eigene Dateien (MP3/WAV, im Browser-Speicher IndexedDB).
  * Jedes Ereignis hat eine eigene Auswahl und Lautstärke (Einstellungen → Persönlich).
  */
+import { istPilot } from "./pilot/modus";
 import { invoke } from "@tauri-apps/api/core";
 import { inTauri } from "../platform";
 import { pers } from "./ws/persoenlich";
@@ -295,7 +296,9 @@ export function soundBeobachterStarten(sim: {
     }
     chatN = chat.length;
     const w = sim.state.funk.filter((f) => f.art === "warnung" && f.id > letzteWarnung);
-    if (w.length) {
+    // Piloten-Interface: keine Warnungen der Leitstelle
+    if (w.length && istPilot()) letzteWarnung = Math.max(...w.map((f) => f.id));
+    else if (w.length) {
       letzteWarnung = Math.max(...w.map((f) => f.id));
       const jetzt = Date.now();
       if (jetzt - zuletzt > 4000 && w.some((f) => f.von !== "Wetterdienst")) {

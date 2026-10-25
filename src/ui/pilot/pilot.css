@@ -1049,3 +1049,16 @@
 .plt-wetter .plt-warn {
   color: var(--warn-text);
 }
+.plt-gtn {
+  padding-top: 4px;
+  border-top: 1px solid var(--pl-rand);
+}
+.plt-gtn .plt-klein {
+  margin: 2px 0 4px;
+}
+.plt-check-klein {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 13px;
+}

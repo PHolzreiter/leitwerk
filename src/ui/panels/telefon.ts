@@ -2,6 +2,7 @@
  * Telefon: alle Anrufe (Notruf, KT-Hotline, Überstellung) mit Annehmen, Halten, Zurückwechseln, Auflegen.
  * Beim Annehmen geht das Abfrage-Fenster auf.
  */
+import { istPilot } from "../pilot/modus";
 import { spielen } from "../sounds";
 import { kiPrefs } from "../../abfrage/ki";
 import { nachKlick } from "../../klick";
@@ -269,6 +270,13 @@ export function anrufBeobachterStarten(): void {
   let erstes = true;
   const funkGemeldet = new Set<number>();
   const pruefen = () => {
+    // Piloten-Interface: Telefon, KT-Hotline und Funk der Leitstelle gehen den Piloten nichts an
+    if (istPilot()) {
+      klingeltonAktualisieren(false, false);
+      funkPiepAktualisieren(false);
+      erstes = true;
+      return;
+    }
     const p = pers();
     const anrufe = alleAnrufe();
     const klingeltNotruf = anrufe.some((x) => x.typ === "notruf" && x.anruf.status === "klingelt");

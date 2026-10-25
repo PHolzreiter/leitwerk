@@ -1,5 +1,6 @@
 mod spielstaende;
 mod addresses;
+mod gtn;
 mod handy;
 mod msfs;
 mod ki;
@@ -624,6 +625,8 @@ pub fn run() {
             msfs::msfs_starten,
             msfs::msfs_stoppen,
             msfs::msfs_dll_suchen,
+            gtn::gtn_suchen,
+            gtn::gtn_schreiben,
             app_version
         ])
         .build(tauri::generate_context!())
