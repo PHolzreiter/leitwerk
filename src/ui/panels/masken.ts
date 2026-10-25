@@ -283,7 +283,19 @@ export function einsatzMaske(e: Einsatz): { root: HTMLElement; refresh(): void }
   const btnAlarm = el("button", { class: "btn primary" }, "Alarmieren");
   const btnClose = el("button", { class: "btn" }, "Einsatz schließen");
   alarmRow.append(btnAlarm, btnClose);
-  alarmBox.append(assigned, sugg, alarmRow);
+  // Fahrzeuge über der Dienstzeit: nur vormerken – Hinweis zum Alarmieren
+  const ueberHinweis = el("div", { class: "ueber-hinweis", hidden: "" });
+  const knopfText = () => {
+    const ausw = [...chosen].map((id) => sim.state.fahrzeuge[id]).filter(Boolean);
+    const ueber = ausw.filter((f) => f.wechselOffen);
+    btnAlarm.textContent = ueber.length && ueber.length === ausw.length ? "Vormerken" : ueber.length ? "Alarmieren / Vormerken" : "Alarmieren";
+    ueberHinweis.hidden = !ueber.length;
+    if (ueber.length) {
+      const ende = ueber.some((f) => f.wechselOffen === "ende");
+      ueberHinweis.innerHTML = `<b>${ende ? "Über Dienstende" : "Wechsel ausständig"}</b> (${ueber.map((f) => esc(f.funkrufname)).join(", ")}) – zuerst anfunken und fragen, ob sie den Einsatz noch übernehmen. Erst nach der Bestätigung gilt das Fahrzeug als alarmiert.`;
+    }
+  };
+  alarmBox.append(assigned, sugg, ueberHinweis, alarmRow);
   root.appendChild(alarmBox);
 
   // KH / BO / ZO
@@ -419,7 +431,11 @@ export function einsatzMaske(e: Einsatz): { root: HTMLElement; refresh(): void }
       const cb = el("input", { type: "checkbox" });
       cb.checked = chosen.has(s.fz.id);
       cb.disabled = !!s.hinweis;
-      cb.addEventListener("change", () => (cb.checked ? chosen.add(s.fz.id) : chosen.delete(s.fz.id)));
+      cb.addEventListener("change", () => {
+        if (cb.checked) chosen.add(s.fz.id);
+        else chosen.delete(s.fz.id);
+        knopfText();
+      });
       row.appendChild(cb);
       const info = el("span", { class: "sugg-info" });
       info.innerHTML = `${statusChip(s.fz)} <b data-dienstfz="${esc(s.fz.id)}">${esc(s.fz.funkrufname)}</b> <span class="muted">${typHtml(s.fz)} · ${esc(s.fz.kurzname || s.fz.stationName)}</span> ${crewHtml(s.fz)}${dienstHtml(s.fz)}`;
@@ -430,12 +446,13 @@ export function einsatzMaske(e: Einsatz): { root: HTMLElement; refresh(): void }
       sugg.appendChild(row);
     }
     if (shown.length === 0) sugg.appendChild(el("div", { class: "muted" }, "Keine freien Fahrzeuge."));
+    knopfText();
   }
 
   btnAlarm.addEventListener("click", async () => {
     if (chosen.size === 0) return toast("Bitte Fahrzeuge auswählen", "error");
     const hinweise = await sim.call("alarmiere", e.id, [...chosen]).catch((x) => [String(x.message ?? x)]);
-    for (const h of hinweise) toast(h, "error");
+    for (const h of hinweise) toast(h, / vorgemerkt – /.test(h) ? "ok" : "error");
     void refreshSuggestions();
   });
   btnClose.addEventListener("click", () => {

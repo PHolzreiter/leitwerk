@@ -227,6 +227,10 @@ export interface SimFahrzeug {
   dienstEnde?: number | null;
   /** außer Dienst: nächster Dienstbeginn */
   dienstBeginn?: number | null;
+  /** Schichtwechsel bzw. Dienstende fällig, aber noch nicht auf der Dienststelle (gewechselt wird nur dort) */
+  wechselOffen?: "wechsel" | "ende" | null;
+  /** über der Dienstzeit für diesen Einsatz vorgemerkt – wird erst nach dem Anfunken alarmiert */
+  ueberzeitFuer?: string | null;
   /** Ersatz-NEF eines Hubschraubers (dessen Funkrufname): nur angemeldet, wenn der nicht fliegen kann */
   ersatzFuer?: string;
   /** NEF: Notarzt wird in diesem Krankenhaus abgeholt (ID) */
@@ -1361,6 +1365,8 @@ export class Simulation {
     };
   }
 
+  /** Fahrzeuge über der Dienstzeit, die gerade per Funk zugesagt haben (Alarmierung darf durch) */
+  private ueberzeitFreigabe = new Set<string>();
   private echtLaedt = false;
   private echtNaechsterVersuch = 0;
   private echtFehlerGemeldet = false;
@@ -1630,11 +1636,30 @@ export class Simulation {
         geaendert = true;
         continue;
       }
-      if (key === fz.schicht) continue;
-      // alte Mannschaft macht laufende Arbeit fertig; abgemeldet wird erst, wenn auch nichts mehr vorgemerkt ist
+      if (key === fz.schicht) {
+        if (fz.wechselOffen) {
+          fz.wechselOffen = null;
+          geaendert = true;
+        }
+        this.heimWennFrei(fz);
+        continue;
+      }
+      // alte Mannschaft macht laufende Arbeit fertig; gewechselt (bzw. abgemeldet) wird nur auf der Dienststelle
+      const offen: "wechsel" | "ende" = key ? "wechsel" : "ende";
+      if (fz.wechselOffen !== offen) {
+        fz.wechselOffen = offen;
+        geaendert = true;
+      }
       if (!this.dienstfrei(fz) || (!key && (fz.kt?.fahrten.length ?? 0) > 0)) continue;
+      if (!fz.ersatzFuer && !fliegt(fz) && !this.aufWache(fz)) {
+        // frei, aber unterwegs: still zurück zur Dienststelle (Status bleibt, weiter alarmierbar)
+        this.heimWennFrei(fz, true);
+        continue;
+      }
       fz.schicht = key;
+      fz.wechselOffen = null;
       geaendert = true;
+      const vorgemerkt = fz.ueberzeitFuer;
       if (key) {
         // Ersatz-NEF: dieselbe Besatzung wie am Hubschrauber (ohne Pilot)
         const crew = nah?.besetzung.filter((x) => x.quali !== "Pilot");
@@ -1643,9 +1668,33 @@ export class Simulation {
           fz.ausserDienst = false;
           if (fz.status === "abgemeldet" && !(fz.defektBis && fz.defektBis > t)) this.statusWechsel(fz, fz.phase === "frei" && distanceM(fz, fz.heim) < 80 ? "freiWache" : "freiFunk", "Dienstbeginn");
         }
-      } else this.abmeldenDienst(fz);
+        // war für einen Einsatz vorgemerkt: das neue Team übernimmt – normal alarmieren
+        if (vorgemerkt) {
+          fz.ueberzeitFuer = null;
+          const ev = this.einsatz(vorgemerkt);
+          if (ev && ev.zustand !== "abgeschlossen") this.alarmiere(ev.id, [fz.id]);
+        }
+      } else {
+        fz.ueberzeitFuer = null;
+        this.abmeldenDienst(fz);
+      }
     }
     if (geaendert && !sofort) this.emit();
+  }
+
+  /** Steht frei auf der Dienststelle */
+  private aufWache(fz: SimFahrzeug): boolean {
+    return fz.phase === "frei" && distanceM(fz, fz.heim) < 80;
+  }
+
+  /** Frei über Funk und nicht auf der Dienststelle: still heimfahren (auch ohne Wechsel – so ist es immer).
+   *  Bereitschaft an einem anderen Ort bleibt stehen, außer ein Wechsel ist fällig. */
+  private heimWennFrei(fz: SimFahrzeug, wechsel = false): void {
+    if (fz.phase !== "frei" || fz.einsatzId || fz.kt || fliegt(fz) || fz.ersatzFuer || this.routingBusy.has(fz.id)) return;
+    if (distanceM(fz, fz.heim) < 80) return;
+    if (fz.status === "bereitschaft" && !wechsel) return;
+    if (fz.status !== "freiFunk" && fz.status !== "bereitschaft") return;
+    this.fahre(fz, fz.heim, "rueckfahrt", false);
   }
 
   /** Nichts zu tun (kein Einsatz, kein Transport, nichts vorgemerkt) – Wechsel/Dienstende möglich */
@@ -2796,6 +2845,15 @@ export class Simulation {
         hinweise.push(`${fz.funkrufname} ist nicht verfügbar`);
         continue;
       }
+      // über der Dienstzeit (Wechsel ausständig / Dienstende): nur vormerken – alarmiert wird erst nach dem Anfunken
+      if (fz.wechselOffen && !this.ueberzeitFreigabe.has(fz.id)) {
+        if (fz.ueberzeitFuer !== e.id) {
+          fz.ueberzeitFuer = e.id;
+          this.log(e, `${fz.funkrufname} vorgemerkt (${fz.wechselOffen === "ende" ? "Dienstende vorbei" : "Wechsel ausständig"}) – zuerst anfunken`);
+        }
+        hinweise.push(`${fz.funkrufname} vorgemerkt – ${fz.wechselOffen === "ende" ? "über Dienstende" : "Wechsel ausständig"}: zuerst anfunken und fragen, ob sie den Einsatz noch übernehmen`);
+        continue;
+      }
       const hindernis = this.flugHindernis(fz);
       if (hindernis) {
         hinweise.push(`${fz.funkrufname}: ${hindernis}`);
@@ -2809,6 +2867,7 @@ export class Simulation {
         this.ktPlanLoesen(fz, `${fz.funkrufname} für Notfall ${e.nummer} abgezogen`, false);
         this.funk(fz.funkrufname, e.id, "Krankentransport abgebrochen – übernehmen Notfall", "info");
       }
+      fz.ueberzeitFuer = null;
       fz.einsatzId = e.id;
       if (!e.fahrzeuge.includes(fz.id)) e.fahrzeuge.push(fz.id);
       const sek = this.ausrueckSek(fz, false);
@@ -5033,6 +5092,21 @@ export class Simulation {
     const hier = `Hier ${g.funkname}`;
     const vorOrt = fz.phase === "vorOrt" || fz.phase === "warteKH" || fz.phase === "suche";
     if (/\bende\b/.test(t) && t.length < 30) return "";
+    // über der Dienstzeit vorgemerkt: nach der Frage übernehmen sie (sagen nie nein) → alarmiert über Funk
+    if (fz.ueberzeitFuer && (/einsatz|übernehm|bereit|brauch|dringend|alarm|noch|könn|fahrt|fahren|bitte|\?/.test(t))) {
+      const ev = this.einsatz(fz.ueberzeitFuer);
+      fz.ueberzeitFuer = null;
+      if (ev && ev.zustand !== "abgeschlossen") {
+        this.ueberzeitFreigabe.add(fz.id);
+        try {
+          this.alarmiere(ev.id, [fz.id]);
+        } finally {
+          this.ueberzeitFreigabe.delete(fz.id);
+        }
+        this.log(ev, `${fz.funkrufname} übernimmt den Einsatz trotz ${fz.wechselOffen === "ende" ? "Dienstende" : "ausständigem Wechsel"}`);
+        return `${hier}, ja, übernehmen wir noch, sind unterwegs zu ${ev.adresse?.label ?? "Einsatzort"}, kommen`;
+      }
+    }
     // Antwort auf die Frage nach dem Hubschrauber
     if (e?.heliFrage && /christophorus|\bc ?\d+\b|hubschrauber|\bnah\b|verfügbar/.test(t)) {
       const ja = /\b(ja|kommt|alarmier|unterwegs|fliegt|schick|ist verfügbar)\b/.test(t) && !/\b(nicht|kein|nein)\b/.test(t);

@@ -1,5 +1,13 @@
 # Änderungen
 
+## 0.63.0 – Eigene Funkgruppe, Schichtwechsel auf der Dienststelle, Vormerken
+- **Schalter „NÖ-03 | Alle“** in „Aktive Fahrzeuge“, „Alle Fahrzeuge“ und „Statusänderungen“: standardmäßig nur die eigene Funkgruppe. Hubschrauber sind immer dabei, fremde Fahrzeuge in einem eigenen Einsatz stehen mit „von außen“ in der Liste. Der Einsatzmittelvorschlag schlägt weiter das schnellste Fahrzeug vor, auch von außerhalb
+- **Rückfahrt:** Fahrzeuge, die frei über Funk sind, fahren nach jedem Auftrag still zu ihrer Dienststelle zurück
+- **Schichtwechsel nur auf der Dienststelle:** Die alte Mannschaft fährt weiter, bis sie auf der Dienststelle ist. Ohne Folgedienst meldet sich das Fahrzeug erst dort ab. In der Liste steht „Wechsel ausständig“ bzw. „Dienstende – fährt heim“
+- **Über der Dienstzeit: Vormerken statt Alarmieren.** Das Fahrzeug wird nur markiert. Erst wenn man es anfunkt und fragt, übernimmt es den Einsatz („alarmiert über Funk“). Ein Hinweis in der Einsatzmaske erklärt das
+- Hubschrauber mit Dienst von Sonnenaufgang bis Sonnenuntergang zeigen gerundete Zeiten („ca. 07:00–17:00“), ganztägige Dienste „24 h“ (z. B. BEL Baden 52/119)
+- ACN-Funkrufnamen ohne den Zusatz „ACN“ (z. B. 80/006)
+
 ## 0.62.0 – NÖ-05 und NÖ-06 spielbar
 - **Neue Funkgruppen:** NÖ-05 (Mödling, Bruck an der Leitha, Schwechat, Baden Nord) und NÖ-06 (Wiener Neustadt, Neunkirchen, Baden Süd) sind auf der Startseite wählbar – mit eigenen Einsätzen und Funk
 - **194 neue Fahrzeuge** in beiden Gruppen: 52 RTW, 17 RTW-C, 118 KTW, 6 Bezirkseinsatzleiter, 1 NEF (APN1, PVZ Wienerwald) – mit Dienstplänen; Rotes Kreuz, Samariterbund, Sozialmedizinischer Dienst

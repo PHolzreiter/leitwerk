@@ -423,7 +423,7 @@ def acn_noe(vehicles: list[dict], stations: list[dict]) -> None:
             raise SystemExit(f"ACN {funk}: Dienststelle {r['dienststelle']} fehlt")
         v = nach_funk.get(funk)
         if v is None:
-            v = {"id": "acn-" + funk.replace("/", ""), "funkrufname": f"{funk} ACN", "kurzname": ""}
+            v = {"id": "acn-" + funk.replace("/", ""), "funkrufname": funk, "kurzname": ""}
             vehicles.append(v)
         teile = [f"ACN {r['standort']}"]
         if r["funkrufname_status"] == "geschätzt":
@@ -432,7 +432,7 @@ def acn_noe(vehicles: list[dict], stations: list[dict]) -> None:
             teile.append("Funkrufname aus öffentlich zugänglichen Daten")
         if r["hinweis"]:
             teile.append(r["hinweis"])
-        v.update({"kategorie": "ACN", "typ": "ACN", "dienststelle": r["dienststelle"], "aktiv": "ja", "nachtflug": "nein",
+        v.update({"funkrufname": funk, "kategorie": "ACN", "typ": "ACN", "dienststelle": r["dienststelle"], "aktiv": "ja", "nachtflug": "nein",
                   "dienstplan": r["dienstzeit"], "hinweis": " · ".join(teile)})
 
 

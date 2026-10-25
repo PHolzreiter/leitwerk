@@ -11,6 +11,51 @@ import { el, esc } from "../dom";
 import { registriere, type PanelKontext } from "../ws/arbeitsplatz";
 import { fahrzeugZeigen, karteZeigen, waehle } from "../ws/auswahl";
 import { crewHtml, fzKlassen, statusChip, statusMenu, typHtml, dienstHtml } from "./teile";
+import { funkgruppe, inFunkgruppe } from "../../sim/funkgruppen";
+import { store } from "../../data/store";
+
+// ---------------------------------------------------------------- Eigene Funkgruppe / alle
+
+/** Wo gehört das Fahrzeug hin? „eigen“ = Dienststelle in der gespielten Funkgruppe (Hubschrauber immer),
+ *  „aussen“ = von außen, aber gerade bei einem Einsatz in der eigenen Funkgruppe, sonst „fremd“ */
+const heimCache = new Map<string, boolean>();
+export function fzBereich(fz: SimFahrzeug): "eigen" | "aussen" | "fremd" {
+  if (fz.rmTyp === "NAH" || fz.rmTyp === "ITH") return "eigen";
+  const g = funkgruppe(store.settings.funkgruppe);
+  const k = `${g.id}|${fz.id}|${fz.heim.lat.toFixed(4)},${fz.heim.lon.toFixed(4)}`;
+  let drin = heimCache.get(k);
+  if (drin === undefined) {
+    drin = inFunkgruppe(g, fz.heim.lat, fz.heim.lon);
+    heimCache.set(k, drin);
+  }
+  if (drin) return "eigen";
+  const e = fz.einsatzId ? sim.einsatz(fz.einsatzId) : undefined;
+  const ort = e?.wahr ?? e?.bo ?? null;
+  if (ort && typeof ort.lat === "number" && inFunkgruppe(g, ort.lat, ort.lon)) return "aussen";
+  return "fremd";
+}
+
+/** Schalter „NÖ-03 | Alle“ – startet immer auf der eigenen Funkgruppe (wird nicht gespeichert) */
+function bereichSchalter(onChange: () => void): { el: HTMLElement; alle: () => boolean } {
+  let alle = false;
+  const box = el("div", { class: "seg fz-bereich", role: "group", title: "Nur Fahrzeuge der eigenen Funkgruppe oder alle zeigen (Hubschrauber immer; Fahrzeuge von außen im eigenen Einsatz mit Vermerk). Der Einsatzmittelvorschlag ist davon nicht betroffen." });
+  const eigen = el("button", { type: "button", class: "active" }) as HTMLButtonElement;
+  const alleB = el("button", { type: "button" }, "Alle") as HTMLButtonElement;
+  const name = () => (eigen.textContent = funkgruppe(store.settings.funkgruppe).id);
+  name();
+  store.onChange(name);
+  const setzen = (a: boolean) => {
+    alle = a;
+    eigen.classList.toggle("active", !a);
+    alleB.classList.toggle("active", a);
+    onChange();
+  };
+  eigen.addEventListener("click", () => setzen(false));
+  alleB.addEventListener("click", () => setzen(true));
+  box.append(eigen, alleB);
+  return { el: box, alle: () => alle };
+}
+const aussenHtml = (fz: SimFahrzeug) => (fzBereich(fz) === "aussen" ? `<span class="fz-aussen" title="Dienststelle außerhalb der eigenen Funkgruppe – gerade bei einem Einsatz im eigenen Gebiet">von außen</span>` : "");
 
 /** Ausweich-NEF des ÖAMTC am Hubschrauberstützpunkt */
 function istOeamtcNef(f: SimFahrzeug): boolean {
@@ -94,7 +139,8 @@ function fahrzeugListe(ctx: PanelKontext, nurAktive: boolean) {
   const suche = el("input", { type: "search", class: "pl-suche", placeholder: "Fahrzeug, Funkrufname, Dienststelle …" });
   suche.dataset.fzSuche = "1";
   const werkzeug = el("div", { class: "pl-werkzeug" });
-  werkzeug.appendChild(suche);
+  const bereich = bereichSchalter(() => render());
+  werkzeug.append(suche, bereich.el);
   kopf.append(chips, werkzeug);
   const liste = el("div", { class: "pl-body fz-liste" });
   root.append(kopf, liste);
@@ -185,6 +231,7 @@ function fahrzeugListe(ctx: PanelKontext, nurAktive: boolean) {
   function render(): void {
     const q = suche.value.trim().toLowerCase();
     let alle = Object.values(sim.state.fahrzeuge);
+    if (!bereich.alle()) alle = alle.filter((f) => fzBereich(f) !== "fremd");
     // aktiv = unterwegs oder beschäftigt; frei auf der Wache und abgemeldet (Status 0) zählen nicht
     if (nurAktive) alle = alle.filter((f) => !!f.einsatzId || !!f.kt?.aktiv || (f.status !== "freiWache" && f.status !== "abgemeldet") || (f.status === "freiWache" && f.phase !== "frei"));
     if (!ctx.sichtbar()) {
@@ -203,7 +250,7 @@ function fahrzeugListe(ctx: PanelKontext, nurAktive: boolean) {
       sichtbar.sort((a, b) => ord.indexOf(a.status) - ord.indexOf(b.status) || a.funkrufname.localeCompare(b.funkrufname));
       for (const fz of sichtbar) {
         const ph = PHASE_TEXT[fz.phase] ?? "";
-        const html = `${statusChip(fz)}<div class="fz-main"><div><b data-dienstfz="${esc(fz.id)}">${esc(fz.funkrufname)}</b> <span class="muted">${typHtml(fz)} · ${esc(fz.kurzname || fz.stationName)}</span> ${crewHtml(fz)}${dienstHtml(fz)}</div><div class="fz-auftrag">${auftrag(fz) || `<span class="muted">${esc(sim.statusDef(fz.status).name)}</span>`}</div></div><div class="fz-rechts"><div>${esc(ph)}</div><div class="muted">${eta(fz)}</div></div>`;
+        const html = `${statusChip(fz)}<div class="fz-main"><div><b data-dienstfz="${esc(fz.id)}">${esc(fz.funkrufname)}</b> <span class="muted">${typHtml(fz)} · ${esc(fz.kurzname || fz.stationName)}</span> ${aussenHtml(fz)}${crewHtml(fz)}${dienstHtml(fz)}</div><div class="fz-auftrag">${auftrag(fz) || `<span class="muted">${esc(sim.statusDef(fz.status).name)}</span>`}</div></div><div class="fz-rechts"><div>${esc(ph)}</div><div class="muted">${eta(fz)}</div></div>`;
         liste.appendChild(zeileAus(fz.id, `fz-row aktiv${fzKlassen(fz)}`, html, (r) => klickVerhalten(r, fz)));
       }
       if (!sichtbar.length) liste.appendChild(el("div", { class: "muted pad" }, alle.length ? "Nichts passt zum Filter." : "Kein Fahrzeug unterwegs – alle frei auf der Wache oder abgemeldet."));
@@ -247,7 +294,7 @@ function fahrzeugListe(ctx: PanelKontext, nurAktive: boolean) {
         const e = fz.einsatzId ? sim.einsatz(fz.einsatzId) : undefined;
         // Hubschrauber: ausgeschriebener Name (Christophorus 2) statt Stützpunkt
         const zusatz = name === HELI ? ` · ${esc(fz.kurzname || fz.stationName)}` : fz.kurzname ? " · " + esc(fz.kurzname) : "";
-        const html = `${statusChip(fz)}<b data-dienstfz="${esc(fz.id)}">${esc(fz.funkrufname)}</b><span class="muted">${typHtml(fz)}${zusatz}</span>${crewHtml(fz)}${dienstHtml(fz)}${kt}<span class="spacer"></span><span class="muted">${esc(e?.nummer ?? "")}</span>`;
+        const html = `${statusChip(fz)}<b data-dienstfz="${esc(fz.id)}">${esc(fz.funkrufname)}</b><span class="muted">${typHtml(fz)}${zusatz}</span>${aussenHtml(fz)}${crewHtml(fz)}${dienstHtml(fz)}${kt}<span class="spacer"></span><span class="muted">${esc(e?.nummer ?? "")}</span>`;
         liste.appendChild(zeileAus(fz.id, `fz-row${fzKlassen(fz)}`, html, (r) => klickVerhalten(r, fz)));
       }
     }
@@ -303,7 +350,11 @@ function statusLogFenster(ctx: PanelKontext) {
   const cb = el("input", { type: "checkbox" }) as HTMLInputElement;
   cb.checked = !!ctx.params.nurEinsatz;
   nurEinsatz.append(cb, document.createTextNode(" nur im Einsatz"));
-  werkzeug.append(suche, nurEinsatz);
+  const bereich = bereichSchalter(() => {
+    zuletzt = "";
+    render();
+  });
+  werkzeug.append(suche, nurEinsatz, bereich.el);
   kopf.appendChild(werkzeug);
   const liste = el("div", { class: "pl-body fz-liste" });
   root.append(kopf, liste);
@@ -326,13 +377,15 @@ function statusLogFenster(ctx: PanelKontext) {
     veraltet = false;
     const log = sim.state.statusLog ?? [];
     const q = suche.value.trim().toLowerCase();
-    const schluessel = `${log.length}|${log[log.length - 1]?.zeit ?? 0}|${q}|${cb.checked}`;
+    const schluessel = `${log.length}|${log[log.length - 1]?.zeit ?? 0}|${q}|${cb.checked}|${bereich.alle()}|${store.settings.funkgruppe}`;
     if (schluessel === zuletzt) return;
     zuletzt = schluessel;
     const zeilen: HTMLElement[] = [];
     for (let i = log.length - 1; i >= 0 && zeilen.length < 300; i--) {
       const x = log[i];
       if (cb.checked && !x.einsatz) continue;
+      const lfz = sim.state.fahrzeuge[x.fzId];
+      if (!bereich.alle() && lfz && fzBereich(lfz) === "fremd") continue;
       const von = sim.statusDef(x.von);
       const nach = sim.statusDef(x.nach);
       if (q && !`${x.funkrufname} ${von.name} ${nach.name} ${nach.nummer} ${x.einsatz ?? ""} ${x.grund ?? ""}`.toLowerCase().includes(q)) continue;

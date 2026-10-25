@@ -1,7 +1,7 @@
 /** Kleine Bausteine, die mehrere Fenster brauchen (Statusfarben, Besetzung, Adresssuche, Statusmenü). */
 import { ALLE_QUALIS, REGELN, besetzungKurz, generiereBesetzung, hatNFS, pruefeBesetzung, type Platz, type Quali } from "../../sim/crew";
 import { sim, type Einsatz, type Ort, type SimFahrzeug } from "../../sim/engine";
-import { aktuelleSchicht } from "../../sim/dienst";
+import { aktuelleSchicht, planKurz } from "../../sim/dienst";
 import { mp } from "../../net/mehrspieler";
 import { searchAddress, type AddressHit } from "../../sim/geo";
 import type { StatusKey } from "../../sim/settings";
@@ -160,19 +160,37 @@ export function dienstHtml(fz: SimFahrzeug): string {
   const hhmm = (x: number) => new Date(x).toTimeString().slice(0, 5);
   if (fz.ausserDienst && fz.ersatzFuer) return ` <span class="dienst-aus" title="Ersatz-NEF für ${esc(fz.ersatzFuer)}: wird angemeldet, wenn der Hubschrauber wegen des Wetters nicht fliegen kann">nur bei Flugverbot</span>`;
   if (fz.ersatzFuer && !fz.ausserDienst) return ` <span class="dienst-ende st1" title="Ersatz für ${esc(fz.ersatzFuer)} – der Hubschrauber kann gerade nicht fliegen">statt ${esc(fz.ersatzFuer)}</span>`;
+  // Wechsel bzw. Dienstende fällig, aber noch unterwegs (gewechselt wird nur auf der Dienststelle)
+  const vorgem = fz.ueberzeitFuer ? sim.einsatz(fz.ueberzeitFuer) : undefined;
+  const ueber = fz.wechselOffen
+    ? ` <span class="dienst-ueber" title="${fz.wechselOffen === "ende" ? "Dienstende vorbei – meldet sich ab, sobald das Fahrzeug auf der Dienststelle ist" : "Schichtwechsel fällig – das neue Team übernimmt auf der Dienststelle"}. Alarmieren nur nach Anfunken (Vormerken).">${fz.wechselOffen === "ende" ? "Dienstende – fährt heim" : "Wechsel ausständig"}</span>${vorgem && vorgem.zustand !== "abgeschlossen" ? ` <span class="dienst-vorgemerkt" title="Für ${esc(vorgem.nummer)} vorgemerkt – zuerst anfunken und fragen, ob sie den Einsatz noch übernehmen">vorgemerkt ${esc(vorgem.nummer)} – anfunken</span>` : ""}`
+    : "";
+  if (fz.wechselOffen) return ueber;
   if (fz.ausserDienst) {
     const b = fz.dienstBeginn;
     const tag = b && new Date(b).toDateString() !== new Date(t).toDateString() ? `${["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"][new Date(b).getDay()]} ` : "";
     return ` <span class="dienst-aus" title="Laut Dienstplan nicht im Dienst${b ? ` – Dienstbeginn ${tag}${hhmm(b)}` : ""}">außer Dienst${b ? ` bis ${tag}${hhmm(b)}` : ""}</span>`;
   }
   // aktuelle Schicht immer sichtbar; kurz vor Dienstende hervorgehoben. Länger darüber: Wochenübersicht
-  const w = aktuelleSchicht(sim.dienstplanVon(fz.id), t, fz.heim);
-  const schicht = w ? `${hhmm(w.start).replace(/:00$/, "")}–${hhmm(w.ende).replace(/:00$/, "")}` : "";
+  const plan = sim.dienstplanVon(fz.id);
+  const w = aktuelleSchicht(plan, t, fz.heim);
+  // Schicht dieses Fensters (Sonnenaufgang/-untergang?), ganze Tage als „24 h“
+  const sch = w && plan?.length ? plan[Number(w.key.split("#")[1])] : undefined;
+  const sonne = !!sch && [sch.von, sch.bis].some((x) => x === "SA" || x === "SU");
+  const ganzTag = !!w && w.ende - w.start >= 24 * 3_600_000 - 60_000;
+  const rund = (x: number) => {
+    const d = new Date(x);
+    if (d.getMinutes() >= 30) d.setHours(d.getHours() + 1);
+    return `${String(d.getHours()).padStart(2, "0")}:00`;
+  };
+  const schicht = !w ? "" : ganzTag ? "24 h" : sonne ? `ca. ${rund(w.start)}–${rund(w.ende)}` : `${hhmm(w.start).replace(/:00$/, "")}–${hhmm(w.ende).replace(/:00$/, "")}`;
   const e = fz.dienstEnde;
   const rest = e ? (e - t) / 60_000 : Infinity;
   const stufe = rest <= 30 && rest >= -1 ? 2 : rest <= 60 && rest >= -1 ? 1 : 0;
   if (!schicht) return "";
-  const titel = e ? `Schicht ${schicht} · Dienstende ${hhmm(e)}${stufe ? ` (in ${Math.max(0, Math.round(rest))} min)` : ""}` : `Schicht ${schicht} (rund um die Uhr)`;
+  const tagE = e && new Date(e).toDateString() !== new Date(t).toDateString() ? `${["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"][new Date(e).getDay()]} ` : "";
+  const genau = sonne && w ? ` (${sch!.von === "SA" ? "Sonnenaufgang" : "Beginn"} ${hhmm(w.start)} – ${sch!.bis === "SU" ? "Sonnenuntergang" : "Ende"} ${hhmm(w.ende)})` : "";
+  const titel = `${planKurz(plan)}${genau}${e ? ` · Dienstende ${tagE}${hhmm(e)}${stufe ? ` (in ${Math.max(0, Math.round(rest))} min)` : ""}` : ""}`;
   return ` <span class="dienst-schicht${stufe ? ` dienst-ende st${stufe}` : ""}" data-dienstfz="${esc(fz.id)}" data-titel="${esc(titel)}">◷ ${schicht}</span>`;
 }
 
