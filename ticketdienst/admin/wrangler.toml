@@ -9,9 +9,9 @@ workers_dev = true
 
 [vars]
 # Team-Domain von Cloudflare Zero Trust, z. B. "deinteam.cloudflareaccess.com"
-ACCESS_TEAM = ""
+ACCESS_TEAM = "sweet-frog-3880.cloudflareaccess.com"
 # „Application Audience (AUD) Tag“ der Access-Anwendung
-ACCESS_AUD = ""
+ACCESS_AUD = "2072c96da6f3e5d63c9549b0c3caa385129e1e97beabce42f599525a0ddaeeed"
 
 [[durable_objects.bindings]]
 name = "TICKETS"
