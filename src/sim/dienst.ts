@@ -9,6 +9,28 @@ export interface Schicht {
   tage: number[];
   von: string;
   bis: string;
+  /** nur in geraden bzw. ungeraden Kalenderwochen (ISO-Woche des Tages, an dem die Schicht beginnt) */
+  kw?: "gerade" | "ungerade";
+  /** nur in diesen Monaten (1 = Jänner … 12 = Dezember), z. B. Winterstützpunkt Nov–Apr */
+  monate?: number[];
+}
+
+export const MONAT_KURZ = ["Jän", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
+
+/** ISO-Kalenderwoche */
+export function kalenderwoche(d: Date): number {
+  const x = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const wt = x.getUTCDay() || 7;
+  x.setUTCDate(x.getUTCDate() + 4 - wt);
+  const jahr = new Date(Date.UTC(x.getUTCFullYear(), 0, 1));
+  return Math.ceil(((x.getTime() - jahr.getTime()) / 86_400_000 + 1) / 7);
+}
+
+/** Gilt die Schicht an diesem Tag (Kalenderwoche, Monat)? */
+function schichtGiltAm(s: Schicht, tag: Date): boolean {
+  if (s.monate?.length && !s.monate.includes(tag.getMonth() + 1)) return false;
+  if (s.kw && (kalenderwoche(tag) % 2 === 0) !== (s.kw === "gerade")) return false;
+  return true;
 }
 
 export const TAG_KURZ = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
@@ -79,7 +101,7 @@ function termineAm(plan: Schicht[], tag: Date, ort: { lat: number; lon: number }
   const wt = wochentag(tag);
   const out: SchichtFenster[] = [];
   plan.forEach((s, i) => {
-    if (!s.tage.includes(wt)) return;
+    if (!s.tage.includes(wt) || !schichtGiltAm(s, tag)) return;
     const basis = tag.getTime();
     const von = minutenVon(s.von, tag, ort);
     let bis = minutenVon(s.bis, tag, ort);
@@ -174,7 +196,60 @@ export function zeitText(s: string): string {
 /** Dienstplan als eine Zeile, z. B. „Mo–Fr 07:00–19:00; Sa 08:00–16:00“ (leer = rund um die Uhr) */
 export function planText(plan: Schicht[] | undefined | null): string {
   if (!plan?.length) return "";
-  return plan.map((s) => `${tageText(s.tage)} ${zeitText(s.von)}–${zeitText(s.bis)}`).join("; ");
+  return plan.map((s) => `${zusatzText(s)}${tageText(s.tage)} ${zeitText(s.von)}–${zeitText(s.bis)}`).join("; ");
+}
+
+/** „gerade KW “, „Nov–Apr “ vor den Wochentagen */
+function zusatzText(s: Schicht): string {
+  const t: string[] = [];
+  if (s.monate?.length) t.push(monateText(s.monate));
+  if (s.kw) t.push(`${s.kw} KW`);
+  return t.length ? `${t.join(" ")} ` : "";
+}
+
+/** [11,12,1,2,3,4] → „Nov–Apr“ (zusammenhängend über den Jahreswechsel), sonst Aufzählung */
+export function monateText(m: number[]): string {
+  const set = new Set(m);
+  const start = [...set].find((x) => !set.has(((x + 10) % 12) + 1));
+  if (start === undefined) return "ganzjährig";
+  let ende = start;
+  let n = 1;
+  while (set.has((ende % 12) + 1) && n < set.size) {
+    ende = (ende % 12) + 1;
+    n++;
+  }
+  if (n === set.size && n > 2) return `${MONAT_KURZ[start - 1]}–${MONAT_KURZ[ende - 1]}`;
+  return [...set].sort((a, b) => a - b).map((x) => MONAT_KURZ[x - 1]).join(", ");
+}
+
+const MONAT_NAMEN: Record<string, number> = { jän: 1, jan: 1, feb: 2, mär: 3, mar: 3, apr: 4, mai: 5, jun: 6, jul: 7, aug: 8, sep: 9, okt: 10, nov: 11, dez: 12 };
+
+/** „gerade KW“ / „ungerade KW“ und „Nov–Apr“ vorne aus dem Text lösen */
+function zusatzLesen(text: string): { rest: string; kw?: Schicht["kw"]; monate?: number[] } {
+  let rest = text.trim();
+  let kw: Schicht["kw"];
+  let monate: number[] | undefined;
+  for (let i = 0; i < 2; i++) {
+    const k = rest.match(/^(un)?gerade\s*(?:KW|Kalenderwochen?)\b\s*/i);
+    if (k) {
+      kw = k[1] ? "ungerade" : "gerade";
+      rest = rest.slice(k[0].length);
+      continue;
+    }
+    const m = rest.match(/^([A-Za-zäÄ]{3})[a-zä]*\.?\s*[-–—]\s*([A-Za-zäÄ]{3})[a-zä]*\.?\s+/);
+    const a = m ? MONAT_NAMEN[m[1].toLowerCase()] : undefined;
+    const b = m ? MONAT_NAMEN[m[2].toLowerCase()] : undefined;
+    if (m && a && b) {
+      monate = [];
+      for (let x = a; ; x = (x % 12) + 1) {
+        monate.push(x);
+        if (x === b) break;
+      }
+      rest = rest.slice(m[0].length);
+      continue;
+    }
+  }
+  return { rest, kw, monate };
 }
 
 export function planKurz(plan: Schicht[] | undefined | null): string {
@@ -245,9 +320,10 @@ export function planLesen(text: string): { plan: Schicht[]; fehler?: string } {
   for (const teil of t.split(/;|\n/).map((x) => x.trim()).filter(Boolean)) {
     const m = teil.match(/^(.*?)\s*(\d{1,2}[:.]\d{2}|sonnenaufgang|sonnenuntergang)\s*[-–—]\s*(\d{1,2}[:.]\d{2}|sonnenaufgang|sonnenuntergang)$/i);
     if (!m) return { plan, fehler: `Schicht „${teil}“ verstehe ich nicht (Beispiel: „Mo–Fr 07:00–19:00“)` };
-    const s = schichtAusFeldern(m[1] || "täglich", m[2], m[3]);
+    const z = zusatzLesen(m[1] ?? "");
+    const s = schichtAusFeldern(z.rest || "täglich", m[2], m[3]);
     if (s.fehler) return { plan, fehler: s.fehler };
-    if (s.schicht) plan.push(s.schicht);
+    if (s.schicht) plan.push({ ...s.schicht, ...(z.kw ? { kw: z.kw } : {}), ...(z.monate ? { monate: z.monate } : {}) });
   }
   return { plan };
 }

@@ -1,5 +1,12 @@
 # Änderungen
 
+## 0.66.0 – Alle sechs Funkgruppen spielbar
+- **NÖ-01 (Mostviertel · St. Pölten), NÖ-02 (Waldviertel) und NÖ-04 (Weinviertel) sind spielbar** – auf der Startseite sind jetzt alle sechs Funkgruppen wählbar
+- **321 neue Fahrzeuge** aus öffentlich zugänglichen Daten (ungeprüft, im Hinweis jedes Fahrzeugs vermerkt): NÖ-01 177, NÖ-02 55, NÖ-04 89 – RTW-C, RTW, KTW und BEL; mit Rotkreuz-Fuhrparklisten, Presse und der Reformkarte abgeglichen
+- Neue Dienststellen: Rotes Kreuz Münichreith, Winterstützpunkt Hochkar, Dienststelle Marchegg, Dienststelle Leopoldsdorf im Marchfelde
+- **Dienstpläne mit Kalenderwochen und Saison:** Fahrzeuge, die nur in geraden oder ungeraden Kalenderwochen fahren, sind nur dann im Dienst; der RTW am Hochkar nur von November bis April. Im Dienstplan steht das z. B. als „gerade KW Mo–Fr 06:00–14:00“ oder „Nov–Apr täglich 09:00–16:30“
+- Korrekturen: NEF Raabs heißt 70/199 (RK-Fuhrpark), NEF Groß Gerungs ist von 17 bis 6 Uhr im Dienst, 58/002 ist der RTW-C der Ortsstelle Geras
+
 ## 0.65.0 – Flughafen: Orte und angekündigte Notfälle an Bord
 - **Neue Orte am Flughafen Wien** (aus OpenStreetMap, eigene Gruppe „Flughafen“ auf der Karte):
   - Flugzeuge am Gate (Pier Nord, Ost, West), auf Außenpositionen und eine Abstellposition für Notfälle

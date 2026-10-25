@@ -192,6 +192,8 @@ def build_stations() -> tuple[list[dict], dict[str, str]]:
         if x["id"] in UMBENENNEN:
             x["name"] = UMBENENNEN[x["id"]]
             name_to_id[norm(x["name"])] = x["id"]
+        # auch der angezeigte Name findet die Dienststelle (z. B. „Ortsstelle Ortsstelle“ bereinigt)
+        name_to_id.setdefault(norm(x["name"]), x["id"])
 
     stations.sort(key=lambda x: (x["typ"] != "Luftrettung", x["name"]))
     # 4. Feuerwehr (Hauptfeuerwehr je Gemeinde + Bezirkskommanden), Polizeiinspektionen, Wasser- und Bergrettung
@@ -219,6 +221,15 @@ WACHEN_NOE05_06 = [
      "Sozialmedizinischer Dienst Österreich, Dienststelle Mönichkirchen/Aspang – Quelle: OpenStreetMap"),
     ("neu-pvz-wienerwald", "PVZ Wienerwald Breitenfurt", "Primärversorgungszentrum", "Notarztstützpunkt", "Breitenfurt bei Wien", 48.1363532, 16.1951439,
      "Primärversorgungszentrum Wienerwald, Hauptstraße 111 (noe.gv.at); Koordinaten OpenStreetMap"),
+    # NÖ-01, NÖ-02, NÖ-04 (öffentlich zugängliche Daten 10/2026): Wachen, die es noch nicht gab
+    ("neu-rk-muenichreith", "Rotes Kreuz Münichreith", "Rotes Kreuz", "Rettungsdienst", "Münichreith-Laimbach", 48.265596, 15.133224,
+     "Ortsstelle der Bezirksstelle Pöggstall (roteskreuz.at)"),
+    ("neu-rk-hochkar", "Rotes Kreuz Winterstützpunkt Hochkar", "Rotes Kreuz", "Rettungsdienst", "Göstling an der Ybbs (Hochkar)", 47.7179924, 14.918237,
+     "Winterstützpunkt der Bezirksstelle Scheibbs, nur November bis April (roteskreuz.at)"),
+    ("neu-rk-marchegg", "Rotes Kreuz Dienststelle Marchegg", "Rotes Kreuz", "Rettungsdienst", "Marchegg", 48.2803736, 16.9095154,
+     "Dienststelle der Bezirksstelle Gänserndorf-Marchegg (seit 1.1.2021); Quelle: OpenStreetMap way 366028345"),
+    ("neu-rk-leopoldsdorf", "Rotes Kreuz Dienststelle Leopoldsdorf/Marchfelde", "Rotes Kreuz", "Rettungsdienst", "Leopoldsdorf im Marchfelde", 48.2255, 16.6907,
+     "Außenstelle der Bezirksstelle Marchfeld (RTW 16 h, meinbezirk 10/2023) – Lage ungefähr (Ortsmitte)"),
     # Flughafen Wien: Flughafenambulanz der Betriebsfeuerwehr (RTW + NAW, nur am Flughafengelände)
     ("btf-flughafen-wien", "Flughafenambulanz Flughafen Wien", "Betriebsfeuerwehr Flughafen Wien", "Rettungsdienst", "Schwechat (Flughafen Wien)", 48.120624, 16.5604921,
      "Rettungsdienst der Betriebsfeuerwehr Flughafen Wien – fährt nur am Flughafengelände (viennaairport.com, AFKDO Schwechat-Stadt); Koordinaten aus öffentlich zugänglichen Daten"),
@@ -305,26 +316,35 @@ def build_vehicles(stations: list[dict], name_to_id: dict[str, str]) -> list[dic
     fahrzeuge_noe05_06(vehicles, name_to_id, by_id)
     flughafen_fahrzeuge(vehicles)
     dienstplaene_einspielen(vehicles)
+    typ_korrekturen(vehicles)
     hubschrauber_dienst(vehicles)
     ersatz_nef(vehicles)
     nef_noe(vehicles, stations)
     acn_noe(vehicles, stations)
+    # NÖ-01, NÖ-02, NÖ-04 (öffentlich zugängliche Daten, 10/2026; Kalenderwochen und Saison im Dienstplan) –
+    # nach den NEF-Stützpunkten, weil manche Fahrzeuge dort stationiert sind
+    if (SRC / "fahrzeuge_noe01_02_04.csv").exists():
+        n2i = dict(name_to_id)
+        for x in stations:
+            n2i.setdefault(norm(x["name"]), x["id"])
+        fahrzeuge_noe05_06(vehicles, n2i, {x["id"]: x for x in stations}, read_csv(SRC / "fahrzeuge_noe01_02_04.csv"))
     vehicles.sort(key=lambda v: (v["dienststelle"], v["funkrufname"]))
     return vehicles
 
 
-def fahrzeuge_noe05_06(vehicles: list[dict], name_to_id: dict[str, str], by_id: dict[str, dict]) -> None:
+def fahrzeuge_noe05_06(vehicles: list[dict], name_to_id: dict[str, str], by_id: dict[str, dict], quelle: list[dict] | None = None) -> None:
     """RTW, KTW, BEL und NEF in NÖ-05 und NÖ-06 (öffentlich zugängliche Daten, 10/2026; tools/sources/fahrzeuge_noe05_06.csv).
     Typ kommt aus dem Namen (KTW-B = KTW), BKTW nicht aufgenommen, doppelte Funkrufnamen nur einmal."""
     vorhanden = {v["funkrufname"] for v in vehicles}
-    for r in read_csv(SRC / "fahrzeuge_noe05_06.csv"):
+    zeilen = read_csv(SRC / "fahrzeuge_noe05_06.csv") if quelle is None else quelle
+    for r in zeilen:
         funk = r["funkrufname"].strip()
         if funk in vorhanden:
             continue
         st = r["dienststelle"].strip()
         st_id = st if st in by_id else name_to_id.get(norm(st))
         if not st_id:
-            raise SystemExit(f"NÖ-05/06 {funk}: Dienststelle {st} fehlt")
+            raise SystemExit(f"{r.get('funkgruppe', 'NÖ')} {funk}: Dienststelle {st} fehlt")
         typ = r["typ"].strip()
         if typ in {"KTW", "KTW-B"}:
             typ = "KTW" if streuung(funk) < 0.3 else "KTW-B"
@@ -362,6 +382,23 @@ def flughafen_fahrzeuge(vehicles: list[dict]) -> None:
 
 # Hubschrauber rund um die Uhr (mit Nachtflug) – alle anderen nur tagsüber (Angabe Paul, 22.10.2026)
 RUND_UM_DIE_UHR = {"99/002", "99/017"}
+
+
+# Korrekturen an vorhandenen Fahrzeugen (öffentlich zugängliche Daten, Entscheidung Paul 25.10.2026)
+TYP_KORREKTUR = {"58/002": "RTW-C"}  # Geras: RTW-C rund um die Uhr
+WACHE_KORREKTUR = {"58/002": "osm12483894052"}  # steht in Geras (Ortsstelle), nicht in Horn
+
+
+def typ_korrekturen(vehicles: list[dict]) -> None:
+    for v in vehicles:
+        if v["funkrufname"] in WACHE_KORREKTUR:
+            v["dienststelle"] = WACHE_KORREKTUR[v["funkrufname"]]
+            v["hinweis"] = " · ".join(x for x in [v.get("hinweis", ""), "Ortsstelle Geras, RTW-C rund um die Uhr (öffentlich zugängliche Daten, 10/2026)"] if x)
+        neu = TYP_KORREKTUR.get(v["funkrufname"])
+        if neu:
+            v["typ"] = neu
+            v["kategorie"] = category_of(neu, v["funkrufname"], "")
+            v["aufbau"] = "groß" if neu == "RTW-C" else "klein" if neu == "RTW" else ""
 
 
 def hubschrauber_dienst(vehicles: list[dict]) -> None:
@@ -404,7 +441,7 @@ def ersatz_nef(vehicles: list[dict]) -> None:
 # NEF in ganz NÖ (Stand heute, Recherche 10/2026: tools/sources/nef_noe.csv) und Notarzt-Abholung im Krankenhaus.
 # Notarzt wird im KH abgeholt (Angabe Paul): Krems, Tulln, Horn, Zwettl, Waidhofen/Ybbs, Amstetten – alle anderen: Notarzt am Stützpunkt.
 NA_ABHOLUNG = {"Krems": "kh002", "Tulln": "kh003", "Horn": "kh007", "Zwettl": "kh020", "Waidhofen an der Ybbs": "kh019", "Amstetten": "kh006"}
-DIENSTZEIT = {"24h": "24/7", "18-6": "täglich 18:00–06:00", "19-7": "täglich 19:00–07:00"}
+DIENSTZEIT = {"24h": "24/7", "18-6": "täglich 18:00–06:00", "19-7": "täglich 19:00–07:00", "17-6": "täglich 17:00–06:00"}
 ORG = {"RK": "Rotes Kreuz", "ASB": "Arbeiter-Samariter-Bund", "RK/ASB": "Rotes Kreuz / ASB"}
 
 

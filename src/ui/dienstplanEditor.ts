@@ -140,7 +140,8 @@ export function dienstplanEditor(start: Schicht[] | undefined, ort?: { lat: numb
   return {
     root,
     wert: () => {
-      const p = plan.filter((s) => s.tage.length).map((s) => ({ tage: [...s.tage], von: s.von, bis: s.bis }));
+      // Kalenderwoche und Monate (aus den Daten) bleiben erhalten
+      const p = plan.filter((s) => s.tage.length).map((s) => ({ tage: [...s.tage], von: s.von, bis: s.bis, ...(s.kw ? { kw: s.kw } : {}), ...(s.monate?.length ? { monate: [...s.monate] } : {}) }));
       // genau der Standard → leer speichern (= rund um die Uhr)
       return JSON.stringify(p) === JSON.stringify(STANDARD) ? [] : p;
     },

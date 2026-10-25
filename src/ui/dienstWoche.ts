@@ -4,7 +4,7 @@
  */
 import { store } from "../data/store";
 import type { Vehicle } from "../data/model";
-import { TAG_KURZ, planKurz, tageText, wochenBeginn, wochenTermine, zeitText, type Schicht } from "../sim/dienst";
+import { TAG_KURZ, planKurz, planText, wochenBeginn, wochenTermine, type Schicht } from "../sim/dienst";
 import { sim } from "../sim/engine";
 import { esc } from "./dom";
 
@@ -49,7 +49,7 @@ export function wocheHtml(plan: Schicht[] | undefined | null, ort: { lat: number
   }
   const skala = `<div class="dw-zeile dw-skala"><span class="dw-tag"></span><span class="dw-leiste">${[0, 6, 12, 18, 24].map((h) => `<span style="left:${(h / 24) * 100}%">${h}</span>`).join("")}</span></div>`;
   const legende = teams
-    .map((s, i) => `<span class="dw-team"><span class="dw-farbe" style="background:${teamFarbe(i)}"></span>Team ${i + 1}: ${esc(tageText(s.tage))} ${esc(zeitText(s.von))}–${esc(zeitText(s.bis))}</span>`)
+    .map((s, i) => `<span class="dw-team"><span class="dw-farbe" style="background:${teamFarbe(i)}"></span>Team ${i + 1}: ${esc(planText([s]))}</span>`)
     .join("");
   return `<div class="dw">${zeilen.join("")}${skala}<div class="dw-legende">${plan?.length ? "" : `<span class="dw-team muted">rund um die Uhr (Standard)</span>`}${legende}</div></div>`;
 }

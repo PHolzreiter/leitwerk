@@ -38,7 +38,7 @@ export const FUNK_FARBEN: Record<FunkgruppeId, string> = {
 };
 
 /** bisher umgesetzt */
-const VERFUEGBAR: FunkgruppeId[] = ["NÖ-03", "NÖ-05", "NÖ-06"];
+const VERFUEGBAR: FunkgruppeId[] = ["NÖ-01", "NÖ-02", "NÖ-03", "NÖ-04", "NÖ-05", "NÖ-06"];
 
 export const FUNKGRUPPEN: Funkgruppe[] = (Object.keys(BEZIRKE) as FunkgruppeId[]).map((id) => {
   const ringe = ((daten as unknown as { gruppen: Record<string, [number, number][][]> }).gruppen[id] ?? []) as [number, number][][];
