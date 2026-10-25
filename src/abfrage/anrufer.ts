@@ -35,6 +35,9 @@ export interface Anrufer {
   meldung?: string;
   /** eCall: ob jemand im Fahrzeug antwortet */
   sprachkontakt?: boolean;
+  /** andere Leitstelle (Flughafen): nur diese Abfrage-Felder sind bekannt, sonst „unbekanntSatz“ */
+  nurBekannt?: string[];
+  unbekanntSatz?: string;
   /** Art des Anrufers (aus der Fallgeschichte) */
   typ?: AnruferTyp;
   /** Persönlichkeit: Wissen, Art zu reden, Einstieg, Wörter für den Patienten */
@@ -479,6 +482,31 @@ function sonderAnrufer(
     });
   }
   return null;
+}
+
+/**
+ * Flughafen-Leitstelle: ruft wegen eines Notfalls an Bord bzw. beim Personal an. Sie ist nicht beim Patienten und
+ * weiß nur, was gemeldet wurde (nurBekannt); alles andere beantwortet sie mit „unbekanntSatz“.
+ */
+export function flughafenAnrufer(meldung: string, nurBekannt: string[], unbekanntSatz: string, rnd: () => number = Math.random): Anrufer {
+  const geschlecht: "m" | "w" = rnd() < 0.5 ? "w" : "m";
+  return {
+    name: `${pick(geschlecht === "w" ? VORNAMEN_W : VORNAMEN_M, rnd)} ${pick(NACHNAMEN, rnd)}`,
+    geschlecht,
+    rolle: gendern("Disponent/in der Flughafen-Leitstelle (Flughafen Wien)", geschlecht),
+    anruferWert: "ls",
+    ort: "Flughafen-Leitstelle",
+    emotion: "ruhig",
+    sprache: "hochdeutsch",
+    schwerhoerig: false,
+    nummer: "01 7007 22245",
+    selbst: false,
+    art: "leitstelle",
+    stelle: "Flughafen Wien, Leitstelle",
+    meldung,
+    nurBekannt,
+    unbekanntSatz,
+  };
 }
 
 /** Kurz-Lagebild einer anderen Leitstelle (ohne Abfrage) */
@@ -1017,7 +1045,9 @@ export function systemPrompt(k: AnrufKontext): string {
     return [
       `Du spielst in einer Trainingssimulation eine/n ${x.rolle}. Du rufst die Rettungsleitstelle Niederösterreich an, weil ihr einen Notruf bekommen habt, bei dem der Rettungsdienst gebraucht wird. Antworte nur mit dem, was du ins Telefon sagst.`,
       `Du meldest dich mit „${x.stelle}, ${x.name}“ und gibst dann knapp und sachlich durch: ${x.meldung}`,
-      `Du sprichst wie ein Profi unter Leitstellen: kurz, sachlich, Stichworte. Eine medizinische Abfrage machst du nicht – Fragen zum Patienten beantwortest du nur mit dem, was du aus deinem Notruf weißt; alles andere „wissen wir nicht, unsere Kräfte sind noch nicht vor Ort“.`,
+      x.nurBekannt
+        ? `Du sprichst wie ein Profi unter Leitstellen: kurz, sachlich, Stichworte. Du bist NICHT beim Patienten. Du weißt nur, was in deiner Meldung steht. Auf alle anderen Fragen sagst du: „${x.unbekanntSatz ?? "Das wissen wir nicht."}“`
+        : `Du sprichst wie ein Profi unter Leitstellen: kurz, sachlich, Stichworte. Eine medizinische Abfrage machst du nicht – Fragen zum Patienten beantwortest du nur mit dem, was du aus deinem Notruf weißt; alles andere „wissen wir nicht, unsere Kräfte sind noch nicht vor Ort“.`,
       `Rückrufnummer: ${x.nummer}.`,
     ].join("\n");
   }
@@ -1303,12 +1333,20 @@ export function ersterSatzOhneKi(k: AnrufKontext): string {
 }
 
 
+/** Weiß der Anrufer das? (nur bei Anrufern mit eingeschränktem Wissen, z. B. Flughafen-Leitstelle) */
+export function istBekannt(x: Anrufer, id: string): boolean {
+  if (!x.nurBekannt) return true;
+  return ["ort_adresse", "rueckrufnummer", "schilderung", "anrufer"].includes(id) || x.nurBekannt.some((b) => id === b || id.startsWith(`${b}_`));
+}
+
 /** Antwort ohne KI auf eine Schemafrage: die wahre Antwort in einfacher Form */
 export function antwortOhneKi(k: AnrufKontext, frage: Frage): string {
   if (frage.id === "ort_adresse") return k.ortUnbekannt ? `Ich weiß nicht genau … ${k.adresse}.` : k.adresse;
   if (frage.id === "rueckrufnummer") return k.anrufer.nummer;
   if (frage.id === "schilderung") return schilderung(k);
   if (frage.id === "anrufer") return werText(k.anrufer);
+  // Flughafen-Leitstelle: nur, was gemeldet wurde
+  if (!istBekannt(k.anrufer, frage.id)) return k.anrufer.unbekanntSatz ?? "Das wissen wir nicht.";
   if (LAIE[frage.id] && typeof k.wahrheit[frage.id] === "string") {
     if (k.anrufer.selbst && frage.id === "bw") return "Ja, ich bin wach, aber mir geht's gar nicht gut.";
     const t = wahrheitText(k, frage);

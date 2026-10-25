@@ -1,5 +1,18 @@
 # Änderungen
 
+## 0.65.0 – Flughafen: Orte und angekündigte Notfälle an Bord
+- **Neue Orte am Flughafen Wien** (aus OpenStreetMap, eigene Gruppe „Flughafen“ auf der Karte):
+  - Flugzeuge am Gate (Pier Nord, Ost, West), auf Außenpositionen und eine Abstellposition für Notfälle
+  - Terminals, Sicherheitskontrolle, Gatebereiche, Gepäckausgabe, Lounges, Parkhäuser, Tankstellen
+  - Hangars, Vorfeld, Fracht und Gepäcksortierung
+- **Passagiere und Besucher** im Terminal, am Gate usw.: normaler Notruf über 144 (selten)
+- **Notfall an Bord oder beim Personal: die Flughafen-Leitstelle ruft an.** Sie ist nicht beim Patienten und weiß nur, was gemeldet wurde: Krankheitsbild, Bewusstsein, Alter, Geschlecht. Alles andere: „Das hat uns die Crew nicht gemeldet.“
+- **Angekündigte Notfälle an Bord** (z. B. Reanimation, Herzinfarkt, Geburt):
+  - Landung in 10–25 Minuten. Die alarmierten Fahrzeuge fahren zum Warteort bei der Feuerwehr-Wache 1 und warten dort
+  - Erst wenn das Flugzeug an der Abstellposition steht, fahren sie zum Patienten
+  - Auf der Karte sieht man das Flugzeug anfliegen, landen und zur Position rollen
+  - Die Feuerwehr fährt immer mit (selbst alarmieren – sonst fordert die Besatzung sie nach)
+
 ## 0.64.0 – Flughafen Wien
 - **Flughafenambulanz** am Flughafen Wien-Schwechat (Betriebsfeuerwehr): RTW 77/898 („RTW Flughafen“, 05–14 und 14–23 Uhr) und NAW 77/899 („NAW Flughafen“, rund um die Uhr). Sie fahren nur zu Einsätzen am Flughafengelände (Grenze aus OpenStreetMap)
 - **Neuer Fahrzeugtyp NAW** (Notarztwagen): RTW-C und NEF in einem, Besatzung RS/NFS + Notarzt + NKV/NKI. Braucht ein Einsatz einen RTW-C oder einen RTW mit Notarzt, schlägt das Programm den NAW vor, ohne zusätzliches NEF. Ist nur der RTW frei, kommt ein NEF von außen dazu

@@ -8,6 +8,7 @@ import { PARTNER_ANZAHL, partnerArtVonTyp, type PartnerArt } from "./sim/partner
 import { kategorieLabel, ortKategorie, poiKategorien } from "./data/orte";
 import { ORT_PROFIL } from "./data/ortProfile";
 import { findCode } from "./sim/codes";
+import { flugPosition } from "./sim/flughafen";
 import { stufeFarbe } from "./ui/panels/teile";
 
 import {
@@ -107,6 +108,7 @@ const POI_FARBE: Record<string, string> = {
   bildung: "#e09f1f",
   gesundheit: "#c0392b",
   verkehr: "#34495e",
+  flughafen: "#3d5a80",
   einkauf: "#2a9d8f",
   sport: "#2e86de",
   wasser: "#00a8c6",
@@ -616,6 +618,65 @@ function incidentFeatures(): FeatureCollection<Point> {
   return collection(out);
 }
 
+/** Flugzeuge mit angekündigtem Notfall an Bord: Anflug, Landung, Rollen zur Abstellposition (bleibt dort, bis der Einsatz zu ist) */
+function flugzeugFeatures(): FeatureCollection<Point> {
+  const t = anzeigeZeit();
+  const out: Feature[] = [];
+  for (const e of sim.state.einsaetze) {
+    const f = e.flughafen?.flug;
+    if (!f || e.zustand === "abgeschlossen") continue;
+    const p = flugPosition(f, t);
+    if (!p) continue;
+    out.push(pointFeature(`flug-${e.id}`, p.lon, p.lat, { name: f.nummer, kurs: p.kurs, boden: p.amBoden ? 1 : 0, einsatz: e.id }));
+  }
+  return collection(out);
+}
+/** Flugzeug in der Luft oder beim Rollen (dann öfter neu zeichnen) */
+function flugzeugBewegt(): boolean {
+  const t = anzeigeZeit();
+  return sim.state.einsaetze.some((e) => {
+    const f = e.flughafen?.flug;
+    return !!f && e.zustand !== "abgeschlossen" && t >= f.bahn[0].t && t <= f.amStand + 2000;
+  });
+}
+/** Flugzeug-Symbol (von oben, Nase nach oben) */
+function flugzeugBild(): ImageData {
+  const n = 64;
+  const c = document.createElement("canvas");
+  c.width = c.height = n;
+  const g = c.getContext("2d")!;
+  g.translate(n / 2, n / 2);
+  g.fillStyle = "#ffffff";
+  g.strokeStyle = "#1f2937";
+  g.lineWidth = 2.2;
+  g.lineJoin = "round";
+  g.beginPath();
+  // Rumpf, Flügel, Leitwerk
+  g.moveTo(0, -28);
+  g.quadraticCurveTo(4, -24, 4, -14);
+  g.lineTo(4, -6);
+  g.lineTo(28, 6);
+  g.lineTo(28, 11);
+  g.lineTo(4, 5);
+  g.lineTo(3.5, 18);
+  g.lineTo(12, 25);
+  g.lineTo(12, 29);
+  g.lineTo(0, 26);
+  g.lineTo(-12, 29);
+  g.lineTo(-12, 25);
+  g.lineTo(-3.5, 18);
+  g.lineTo(-4, 5);
+  g.lineTo(-28, 11);
+  g.lineTo(-28, 6);
+  g.lineTo(-4, -6);
+  g.lineTo(-4, -14);
+  g.quadraticCurveTo(-4, -24, 0, -28);
+  g.closePath();
+  g.fill();
+  g.stroke();
+  return g.getImageData(0, 0, n, n);
+}
+
 /** Fahrzeuge von Feuerwehr, Polizei, Berg- und Wasserrettung */
 function partnerFzFeatures(): FeatureCollection<Point> {
   return collection((sim.state.partnerFz ?? []).map((u) => pointFeature(u.id, u.lon, u.lat, { name: u.name, color: PARTNER_FARBE[u.art], einsatz: u.einsatzId })));
@@ -646,6 +707,8 @@ export function addSimLayers(
   map.addSource("lw-vehicles", { type: "geojson", data: vehicleFeatures() });
   map.addSource("lw-partner-fz", { type: "geojson", data: partnerFzFeatures() });
   map.addSource("lw-besatzung", { type: "geojson", data: besatzungFeatures() });
+  map.addSource("lw-flugzeuge", { type: "geojson", data: flugzeugFeatures() });
+  if (!map.hasImage("lw-flugzeug")) map.addImage("lw-flugzeug", flugzeugBild(), { pixelRatio: 2 });
 
   map.addLayer({
     id: "lw-routes",
@@ -717,6 +780,27 @@ export function addSimLayers(
     minzoom: 16,
     paint: { "circle-radius": ["interpolate", ["linear"], ["zoom"], 16, 2.2, 19, 4], "circle-color": ["get", "farbe"], "circle-stroke-color": "#ffffff", "circle-stroke-width": 1 },
   });
+  // Flugzeug mit angekündigtem Notfall (Anflug, Landung, Rollen)
+  map.addLayer({
+    id: "lw-flugzeuge",
+    type: "symbol",
+    source: "lw-flugzeuge",
+    layout: {
+      "icon-image": "lw-flugzeug",
+      "icon-size": ["interpolate", ["linear"], ["zoom"], 8, 0.45, 12, 0.8, 15, 1.4],
+      "icon-rotate": ["get", "kurs"],
+      "icon-rotation-alignment": "map",
+      "icon-allow-overlap": true,
+      "icon-ignore-placement": true,
+      "text-field": ["get", "name"],
+      "text-font": FONT,
+      "text-size": 10,
+      "text-offset": [0, 1.8],
+      "text-anchor": "top",
+      "text-optional": true,
+    },
+    paint: { "text-color": "#1f2937", "text-halo-color": "#ffffff", "text-halo-width": 1.4 },
+  });
   // Schatten unter fliegenden Hubschraubern (zeigt: er ist in der Luft)
   map.addLayer({
     id: "lw-vehicles-shadow",
@@ -765,6 +849,10 @@ export function addSimLayers(
     paint: { "text-color": "#0b1726", "text-halo-color": "#ffffff", "text-halo-width": 1.6 },
   });
 
+  map.on("click", "lw-flugzeuge", (e) => {
+    const id = e.features?.[0]?.properties?.einsatz as string | undefined;
+    if (id && !pickActive) cb.onIncident(id);
+  });
   map.on("click", "lw-partner-fz", (e) => {
     const id = e.features?.[0]?.properties?.einsatz as string | undefined;
     if (id && !pickActive) cb.onIncident(id);
@@ -799,6 +887,7 @@ export function addSimLayers(
     (map.getSource("lw-besatzung") as maplibregl.GeoJSONSource | undefined)?.setData(besatzungFeatures());
     (map.getSource("lw-incidents") as maplibregl.GeoJSONSource | undefined)?.setData(incidentFeatures());
     (map.getSource("lw-routes") as maplibregl.GeoJSONSource | undefined)?.setData(routeFeatures());
+    (map.getSource("lw-flugzeuge") as maplibregl.GeoJSONSource | undefined)?.setData(flugzeugFeatures());
   });
   map.once("remove", ausSim);
   // Flüssige Bewegung: fahrende Fahrzeuge ca. 10× pro Sekunde neu zeichnen (nur wenn das Spiel läuft und etwas fährt)
@@ -809,6 +898,7 @@ export function addSimLayers(
     const geht = Object.values(sim.state.fahrzeuge).some((fz) => fz.fuss);
     if (faehrt) (map.getSource("lw-vehicles") as maplibregl.GeoJSONSource | undefined)?.setData(vehicleFeatures());
     if (geht) (map.getSource("lw-besatzung") as maplibregl.GeoJSONSource | undefined)?.setData(besatzungFeatures());
+    if (flugzeugBewegt()) (map.getSource("lw-flugzeuge") as maplibregl.GeoJSONSource | undefined)?.setData(flugzeugFeatures());
   }, 100);
   map.once("remove", () => window.clearInterval(glatt));
 }

@@ -42,7 +42,7 @@ import {
   type WetterWerte,
 } from "./weather";
 import { bestimmeCode, fallZiehen, kapitelVonCode, wahrheitFuer, type Antworten, type Schema } from "../abfrage/schema";
-import { anruferWaehlen, ortKandidaten, veraenderungText, zufallsName, type Anrufer } from "../abfrage/anrufer";
+import { anruferWaehlen, flughafenAnrufer, ortKandidaten, veraenderungText, zufallsName, type Anrufer } from "../abfrage/anrufer";
 import { personaWaehlen } from "../abfrage/persona";
 import { alleOrte, kategorienFuerOrtArt, ortGewicht, ortKategorie, poiKategorien } from "../data/orte";
 import { ortAnStelle, ortPartner } from "../data/ortProfile";
@@ -58,6 +58,63 @@ const ORT_NUR_MIT_POI: OrtArt[] = ["pflegeheim", "arzt", "schule", "bahnhof", "l
 const STELLE_FLAECHE = new Set(["autobahn", "landstrasse", "feldweg", "radweg", "wald", "berg", "ufer", "weinberg", "feld", "hochstand", "kletterfels", "klettersteig"]);
 /** Wie oft ein Fall an einem echten Ort (POI) spielt, wenn er auch woanders passieren kann */
 const POI_ANTEIL: Partial<Record<OrtArt, number>> = { strasse: 0.25 };
+/** Flughafen-Fälle pro Tag (bei normalem Aufkommen) – selten */
+const FLUGHAFEN_PRO_TAG: [FlughafenArt, number][] = [
+  ["landung", 0.6],
+  ["flugzeug", 0.8],
+  ["personal", 0.8],
+];
+/** Krankheitsbild, wie es die Crew bzw. die Kollegen melden */
+const FLUG_BILD: Record<string, string> = {
+  brustschmerz: "starke Brustschmerzen",
+  schwangerschaft: "Wehen, die Geburt hat eingesetzt",
+  schlaganfall: "Verdacht auf Schlaganfall",
+  atemnot: "schwere Atemnot",
+  bewusstlos: "ist zusammengebrochen",
+  krampf: "hatte einen Krampfanfall",
+  allergie: "allergische Reaktion",
+  zucker: "Unterzucker, ist Diabetiker",
+  krank: "fühlt sich sehr schlecht",
+  sturz: "ist gestürzt",
+  eingeklemmt: "ist eingeklemmt",
+  verletzung: "hat sich verletzt",
+  blutung: "blutet stark",
+  hitze_kaelte: "Kreislaufprobleme",
+  gefahrstoff: "Kontakt mit Gefahrgut",
+  ruecken: "starke Rückenschmerzen",
+  herz: "Herzprobleme",
+};
+
+/** Meldung der Flughafen-Leitstelle (nur, was gemeldet wurde) */
+function flughafenMeldung(art: FlughafenArt, ortName: string, f: Fall, flug: Flug | null, flugNr: string, th: string): { meldung: string; bekannt: string[]; unbekannt: string } {
+  const a = f.antworten;
+  const alter = typeof a.alter === "number" ? a.alter : null;
+  const w = a.geschlecht === "w";
+  const person = alter !== null && alter < 14 ? `ein Kind, etwa ${Math.max(1, Math.round(alter))} Jahre` : `${w ? "eine Frau" : "ein Mann"}${alter !== null ? `, etwa ${Math.round(alter / 5) * 5} Jahre` : ""}`;
+  const reanimiert = a.at === "keine" || a.at === "agonal";
+  const bw = reanimiert ? "atmet nicht normal, die Crew reanimiert" : a.bw === "nein" ? "reagiert nicht" : a.bw === "getruebt" ? "ist nur eingetrübt ansprechbar" : "ist wach";
+  const bild = reanimiert ? "" : (FLUG_BILD[th] ?? "medizinischer Notfall");
+  const zustand = [bild, bw].filter(Boolean).join(", ");
+  if (art === "landung" && flug) {
+    return {
+      meldung: `Angekündigter Notfall an Bord von Flug ${flug.nummer} aus ${flug.von}: ${person}, ${zustand}. Landung voraussichtlich um ${hhmm(flug.landung)} auf Piste ${flug.piste}, das Flugzeug rollt dann auf die Abstellposition für Notfälle am Werft-Vorfeld. Bitte schicken Sie die Rettung zum Warteort bei der Feuerwehr-Wache 1.`,
+      bekannt: ["bw", "at", "alter", "geschlecht"],
+      unbekannt: "Das hat uns die Crew nicht gemeldet.",
+    };
+  }
+  if (art === "flugzeug") {
+    return {
+      meldung: `Notfall an Bord von Flug ${flugNr}, ${ortName.replace(/^Flugzeug /, "Flugzeug ")}: ${person}, ${zustand}. Die Crew ist beim Patienten.`,
+      bekannt: ["bw", "at", "alter", "geschlecht"],
+      unbekannt: "Das hat uns die Crew nicht gemeldet.",
+    };
+  }
+  return {
+    meldung: `Notfall beim Personal, ${ortName}: ${person}, ${zustand}. Kollegen sind beim Verletzten und zeigen den Weg.`,
+    bekannt: ["bw", "at", "alter", "geschlecht", "blutung", "eingeklemmt", "verletzung", "sturz", "hoehe", "schmerz"],
+    unbekannt: "Das wissen wir nicht, das können die Kollegen vor Ort sagen.",
+  };
+}
 import { SZENARIEN } from "../abfrage/szenarien";
 import { ist, kapitelFuerThema, kapitelZuThema, merkmaleAusSchema, merkmaleInSchema, thema } from "../abfrage/themen";
 import { istZusammengesetzt, wahrheitAnpassen } from "../abfrage/normalisieren";
@@ -77,7 +134,7 @@ import {
   type KtPlan,
 } from "./kt";
 import { codeInfo, codeVorschlag, istUeberstellung } from "./ktCodes";
-import { amFlughafen, HEALTH_CENTER, istFlughafenFz, istFlughafenZiel, kontrolleSek, MEDICAL_CENTER, mitKontrolle } from "./flughafen";
+import { amFlughafen, flugPlanen, HEALTH_CENTER, istFlughafenFz, istFlughafenZiel, kontrolleSek, MEDICAL_CENTER, mitKontrolle, NOTFALL_STAND, WARTEORT, type Flug } from "./flughafen";
 import { PARTNER, PARTNER_ANZAHL, partnerArtVonTyp, partnerNoetig, partnerSchonDa, type PartnerArt, type PartnerGrund } from "./partner";
 import { FUNKGRUPPEN, funkgruppe, inFunkgruppe, mitteVon, type Funkgruppe } from "./funkgruppen";
 import { echtwetterLaden } from "./echtwetter";
@@ -693,7 +750,11 @@ export interface Einsatz {
   heliFrage?: string | null;
   /** Flughafen: Patient im Medical Center, Überstellung (KT-Auftrag) ins passende Klinikum angelegt */
   mcUeberstellung?: string | null;
+  /** Flughafen-Fall (die Flughafen-Leitstelle ruft an): Art, Ort und bei angekündigten Notfällen der Flug */
+  flughafen?: { art: FlughafenArt; ortKat: string; flug?: Flug | null } | null;
 }
+
+export type FlughafenArt = "landung" | "flugzeug" | "personal";
 
 export interface Funkmeldung {
   id: number;
@@ -1512,6 +1573,7 @@ export class Simulation {
     this.dienstTick(t);
     for (const fz of Object.values(this.state.fahrzeuge)) this.updateVehicle(fz, t);
     this.partnerTick(t);
+    this.flugTick(t);
     this.khTick(t);
     this.checkKhAnfragen(t);
     this.anrufeTick(t);
@@ -2005,6 +2067,15 @@ export class Simulation {
           this.fahre(fz, e.adresse, "anfahrt", this.faktor(e) < 1);
           break;
         }
+        const flug = e.flughafen?.flug;
+        if (flug) {
+          // angekündigter Notfall an Bord: am Warteort, bis das Flugzeug an der Abstellposition steht
+          this.log(e, `${fz.funkrufname} am Warteort (Flug ${flug.nummer})`);
+          if (!this.einsatzFz(e).some((x) => x !== fz && x.phase === "wartetBR")) this.fzRuft(fz, e, "info", `am Warteort bei der Feuerwehr-Wache 1, warten auf Flug ${flug.nummer}, Landung um ${hhmm(flug.landung)}`);
+          fz.phase = "wartetBR";
+          fz.phaseEnde = Math.max(t + MIN, flug.amStand + MIN);
+          break;
+        }
         this.log(e, `${fz.funkrufname} im Bereitstellungsraum`);
         if (!this.einsatzFz(e).some((x) => x !== fz && x.phase === "wartetBR")) {
           this.fzRuft(fz, e, "info", e.partner?.pol ? "im Bereitstellungsraum, warten auf Freigabe durch die Polizei" : "im Bereitstellungsraum, Polizei ist noch nicht alarmiert, bitte Polizei verständigen");
@@ -2020,6 +2091,7 @@ export class Simulation {
           break;
         }
         fz.phaseEnde = t + 6 * MIN;
+        if (e.flughafen?.flug) break;
         // nur ein Fahrzeug erinnert
         const erstes = this.einsatzFz(e).find((x) => x.phase === "wartetBR");
         if (erstes === fz) this.fzRuft(fz, e, "nachforderung", e.partner?.pol ? "stehen weiterhin im Bereitstellungsraum, Einsatzort noch nicht freigegeben" : "stehen im Bereitstellungsraum, Polizei ist noch nicht alarmiert, bitte Polizei verständigen");
@@ -3278,6 +3350,11 @@ export class Simulation {
       const standorte = new Set(Object.values(this.state.fahrzeuge).filter((f) => f.rmTyp === "ACN" && !f.ausserDienst && inFunkgruppe(g, f.heim.lat, f.heim.lon)).map((f) => f.stationId));
       for (const st of standorte) if (Math.random() < (acnRate * dt) / 86_400_000) void this.generiereAcn(st);
     }
+    // Flughafen Wien (selten): angekündigter Notfall an Bord, Notfall an Bord am Gate, Arbeitsunfall beim Personal
+    if (inFunkgruppe(this.funkgruppe(), NOTFALL_STAND.lat, NOTFALL_STAND.lon)) {
+      const f = AUFKOMMEN_FAKTOR[this.settings.aufkommenStufe ?? "normal"];
+      for (const [art, proTag] of FLUGHAFEN_PRO_TAG) if (Math.random() < (proTag * f * dt) / 86_400_000) void this.generiereFlughafen(art);
+    }
     // Work in Progress: Einsätze in Nachbarzonen
     if (this.settings.fremdzoneAktiv && Math.random() < ((this.settings.fremdzoneProStunde ?? 1) * dt) / 3_600_000) void this.generiereFremd();
   }
@@ -3611,6 +3688,74 @@ export class Simulation {
       return e;
     }
     return this.erstelleEinsatz({ lat: adr.lat, lon: adr.lon, adresse: adr.label, code, gemeldeteAdresse: gemeldet, fall, patientAlter: alter });
+  }
+
+  // ------------------------------------------------------------------ Flughafen Wien
+
+  /**
+   * Notfall am Flughafen, bei dem die Flughafen-Leitstelle anruft (Vorgabe Paul):
+   * - landung: angekündigter Notfall an Bord – Landung in 10–25 Minuten, Fahrzeuge warten am Warteort
+   * - flugzeug: Notfall an Bord eines gelandeten Flugzeugs (Gate oder Außenposition)
+   * - personal: Arbeitsunfall bzw. Notfall beim Personal (Hangar, Vorfeld, Fracht, Gepäcksortierung)
+   * Die Leitstelle ist nicht beim Patienten: sie kennt nur Krankheitsbild, Bewusstsein, Alter und Geschlecht.
+   */
+  async generiereFlughafen(art: FlughafenArt = pick(["landung", "flugzeug", "personal"] as FlughafenArt[]), landungInMin?: number): Promise<Einsatz | null> {
+    const schema = this.settings.anrufe ? store.schema : null;
+    if (!schema || !hasCodes()) return null;
+    const kats: Record<FlughafenArt, string[]> = {
+      landung: ["flughafen_notlandung"],
+      flugzeug: ["flughafen_flugzeug_gate", "flughafen_flugzeug_vorfeld"],
+      personal: ["flughafen_hangar", "flughafen_vorfeld", "flughafen_cargo", "flughafen_gepaecksortierung"],
+    };
+    const pois = store.list("pois").filter((p) => poiKategorien(p).some((k) => kats[art].includes(k)));
+    if (!pois.length) return null;
+    const poi = pick(pois);
+    const ortKat = poiKategorien(poi).find((k) => kats[art].includes(k))!;
+    const themen = ortKategorie(ortKat)?.themen ?? ["bewusstlos"];
+    let fall: Fall | null = null;
+    let code: Einsatzcode | undefined;
+    for (let i = 0; i < 300 && !fall; i++) {
+      const th = pick(themen);
+      const kap = kapitelFuerThema(th, schema);
+      if (!kap) continue;
+      const f = fallZiehen(schema, kap, Math.random, 0.04);
+      const c = f ? findCode(f.ergebnis.code) : undefined;
+      if (!f || !c) continue;
+      const st = this.stufeDef(c.stufe);
+      const alter = typeof f.antworten.alter === "number" ? f.antworten.alter : null;
+      // angekündigte Landung nur bei echten Notfällen; Personal ist erwachsen; an Bord eher keine Kleinkinder allein
+      if (art === "landung" && !(st && (st.kategorie === "kritisch" || st.notarzt !== "nein" || ist(kap, "schwangerschaft")))) continue;
+      if (art === "personal" && (alter === null || alter < 18 || alter > 65)) continue;
+      if (ist(kap, "schwangerschaft") && f.antworten.geschlecht === "m") continue;
+      code = c;
+      fall = { kapitel: f.ergebnis.pfad[0], antworten: f.antworten, code: c.code, ortKat };
+    }
+    if (!fall || !code) return null;
+    const flug = art === "landung" ? flugPlanen(this.state.zeit + (landungInMin ?? rnd(10, 25)) * MIN) : null;
+    const flugNr = flug?.nummer ?? flugPlanen(this.state.zeit).nummer;
+    const { meldung, bekannt, unbekannt } = flughafenMeldung(art, poi.name, fall, flug, flugNr, thema(fall.kapitel));
+    const alter = typeof fall.antworten.alter === "number" ? fall.antworten.alter : null;
+    const e = this.erstelleEinsatz({ lat: poi.lat, lon: poi.lon, adresse: `${poi.name}, Flughafen Wien, 1300 Schwechat`, code, fall, patientAlter: alter, gemeldeteAdresse: `${poi.name}, Flughafen Wien` });
+    if (e.wahr.abfrage) e.wahr.abfrage.anrufer = flughafenAnrufer(meldung, bekannt, unbekannt);
+    e.flughafen = { art, ortKat, flug };
+    if (flug) {
+      e.br = { lat: WARTEORT.lat, lon: WARTEORT.lon, label: WARTEORT.label };
+      this.log(e, `Angekündigter Notfall an Bord von Flug ${flug.nummer} aus ${flug.von} – Landung um ${hhmm(flug.landung)} auf Piste ${flug.piste}, Fahrzeuge zum ${WARTEORT.label}`);
+    }
+    this.emit();
+    return e;
+  }
+
+  /** Flugzeug steht an der Abstellposition: wartende Fahrzeuge fahren hin */
+  private flugTick(t: number): void {
+    for (const e of this.state.einsaetze) {
+      const flug = e.flughafen?.flug;
+      if (!flug || e.boSicher || t < flug.amStand || e.zustand === "abgeschlossen") continue;
+      e.boSicher = t;
+      this.log(e, `Flug ${flug.nummer} steht an der Abstellposition – Patient kann übernommen werden`);
+      this.funk("Flughafen-Leitstelle", e.id, `${e.nummer}: Flug ${flug.nummer} steht an der Abstellposition, Zufahrt frei`, "warnung");
+      for (const fz of this.einsatzFz(e)) if ((fz.phase === "wartetBR" || fz.phase === "bereitstellung") && e.adresse) this.fahre(fz, e.adresse, "anfahrt", this.faktor(e) < 1);
+    }
   }
 
   /** Nächster Einsatz kommt aus diesem Fall (für Tests und den Fall-Editor) */
@@ -4287,9 +4432,10 @@ export class Simulation {
   partnerBedarf(e: Einsatz): PartnerGrund[] {
     const fv = this.fallVar(e);
     const w = e.wahr.abfrage;
-    if (fv) return ortPartner(fv.partner ?? [], w?.szenario?.ortKat, thema(w?.kapitel));
+    const ortKat = w?.szenario?.ortKat ?? e.flughafen?.ortKat;
+    if (fv) return ortPartner(fv.partner ?? [], ortKat, thema(w?.kapitel));
     const name = `${findCode(e.wahr.code)?.beschreibung ?? ""} ${store.schema?.codes[w?.code ?? e.wahr.code]?.name ?? ""}`;
-    return ortPartner(partnerNoetig(w?.kapitel, w?.antworten ?? {}, name, { ortArt: w?.szenario?.ortArt, ortUnbekannt: w?.ortUnbekannt }), w?.szenario?.ortKat, thema(w?.kapitel));
+    return ortPartner(partnerNoetig(w?.kapitel, w?.antworten ?? {}, name, { ortArt: w?.szenario?.ortArt, ortUnbekannt: w?.ortUnbekannt }), ortKat, thema(w?.kapitel));
   }
 
   /** Was der Disponent aus Abfrage und Code erkennen kann (Knopf leuchtet, Bereitstellungsraum) */

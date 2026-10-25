@@ -100,3 +100,79 @@ export function mitKontrolle(r: Route): { route: Route; halte: number } {
 export function kontrolleSek(von: LatLon, nach: LatLon): number {
   return amFlughafen(von) !== amFlughafen(nach) ? KONTROLLE_SEK : 0;
 }
+
+// ------------------------------------------------------------------ angekündigte Notfälle an Bord
+
+/** Warteort für angekündigte Notfälle: bei der Feuerwehr-Wache 1 (Werft-Vorfeld, OpenStreetMap way 220393067) */
+export const WARTEORT = { lat: 48.124354, lon: 16.547399, label: "Warteort Feuerwehr-Wache 1 (Flughafen Wien)" };
+/** Abstellposition für Notfälle (Werft-Vorfeld) – POI „flughafen_notlandung“ */
+export const NOTFALL_STAND = { lat: 48.12425, lon: 16.54379 };
+
+/** Pisten (OpenStreetMap aeroway=runway): Schwellen [lon, lat] */
+const PISTEN: { name: string; a: [number, number]; b: [number, number] }[] = [
+  { name: "11/29", a: [16.5333279, 48.1228233], b: [16.575623, 48.1090682] },
+  { name: "16/34", a: [16.5781957, 48.1197387], b: [16.5913153, 48.0886872] },
+];
+
+export interface Flug {
+  nummer: string;
+  von: string;
+  /** Aufsetzen (Spielzeit) */
+  landung: number;
+  /** an der Abstellposition */
+  amStand: number;
+  piste: string;
+  /** Bahn: Punkte [lon, lat] mit Zeit (ms) – Anflug, Aufsetzen, Ausrollen, Rollen zur Position */
+  bahn: { p: [number, number]; t: number }[];
+}
+
+const M_LAT = 111_320;
+const mLon = (lat: number) => 111_320 * Math.cos((lat * Math.PI) / 180);
+function versatz(p: [number, number], richtung: [number, number], m: number): [number, number] {
+  return [p[0] + (richtung[0] * m) / mLon(p[1]), p[1] + (richtung[1] * m) / M_LAT];
+}
+function meter(a: [number, number], b: [number, number]): number {
+  return Math.hypot((b[0] - a[0]) * mLon(a[1]), (b[1] - a[1]) * M_LAT);
+}
+
+const AIRLINES = ["OS", "OS", "OS", "LH", "LX", "TK", "EW", "FR", "W6", "KL", "AF", "BA", "QR", "EK", "LO", "OK"];
+const STAEDTE = ["Frankfurt", "London", "Paris", "Istanbul", "Zürich", "Amsterdam", "Rom", "Madrid", "Dubai", "Doha", "Warschau", "Palma de Mallorca", "Antalya", "Hurghada", "New York", "Kopenhagen", "Athen", "Barcelona"];
+
+/** Flug mit Landung um „landung“ auf einer zufälligen Piste, danach zur Abstellposition für Notfälle */
+export function flugPlanen(landung: number, rnd: () => number = Math.random, stand = NOTFALL_STAND): Flug {
+  const pi = PISTEN[Math.floor(rnd() * PISTEN.length)];
+  const umgekehrt = rnd() < 0.5;
+  const schwelle = umgekehrt ? pi.b : pi.a;
+  const ende = umgekehrt ? pi.a : pi.b;
+  const lang = meter(schwelle, ende);
+  const r: [number, number] = [((ende[0] - schwelle[0]) * mLon(schwelle[1])) / lang, ((ende[1] - schwelle[1]) * M_LAT) / lang];
+  const anflugStart = versatz(schwelle, r, -12_000);
+  const aufsetzen = versatz(schwelle, r, 400);
+  const ausrollen = versatz(schwelle, r, Math.min(2200, lang - 300));
+  const standP: [number, number] = [stand.lon, stand.lat];
+  const rollSek = meter(ausrollen, standP) / 9;
+  const bahn = [
+    { p: anflugStart, t: landung - (12_400 / 75) * 1000 },
+    { p: aufsetzen, t: landung },
+    { p: ausrollen, t: landung + 45_000 },
+    { p: standP, t: landung + 45_000 + rollSek * 1000 },
+  ];
+  const ri = (pi.name.split("/")[umgekehrt ? 1 : 0] ?? "").padStart(2, "0");
+  const nummer = `${AIRLINES[Math.floor(rnd() * AIRLINES.length)]} ${100 + Math.floor(rnd() * 900)}`;
+  return { nummer, von: STAEDTE[Math.floor(rnd() * STAEDTE.length)], landung, amStand: bahn[3].t, piste: ri, bahn };
+}
+
+/** Position und Richtung (Grad, 0 = Nord) des Flugzeugs zur Zeit t; null = noch nicht im Anflug */
+export function flugPosition(f: Flug, t: number): { lon: number; lat: number; kurs: number; amBoden: boolean } | null {
+  const b = f.bahn;
+  if (t < b[0].t) return null;
+  let i = 1;
+  while (i < b.length - 1 && t > b[i].t) i++;
+  const a = b[i - 1];
+  const z = b[i];
+  const k = Math.max(0, Math.min(1, (t - a.t) / Math.max(1, z.t - a.t)));
+  const lon = a.p[0] + (z.p[0] - a.p[0]) * k;
+  const lat = a.p[1] + (z.p[1] - a.p[1]) * k;
+  const kurs = (Math.atan2((z.p[0] - a.p[0]) * mLon(a.p[1]), (z.p[1] - a.p[1]) * M_LAT) * 180) / Math.PI;
+  return { lon, lat, kurs: (kurs + 360) % 360, amBoden: t >= f.landung };
+}

@@ -72,6 +72,82 @@ export const ORT_PROFIL: Record<string, OrtProfil> = {
     stelleMuster: /bus/i,
     hinweis: "Busbahnhof: viele Busse und Fahrgäste – Zufahrt und Steig erfragen",
   },
+  // ---- Flughafen Wien: Passagierbereiche (normaler Notruf); Flugzeuge und Arbeitsbereiche: die Flughafen-Leitstelle ruft an
+  flughafen_terminal: {
+    anrufer: ["begleiter", "passant", "verkauf", "selbst"],
+    rollen: { verkauf: "Mitarbeiterin am Info-Schalter im Terminal" },
+    stelle: ["in der Check-in-Halle", "bei den Check-in-Schaltern", "bei der Gepäckaufgabe", "vor dem Eingang zum Terminal", "beim Info-Schalter"],
+    stelleMuster: /terminal|check-in|halle|schalter|flughafen/i,
+    umgebung: ["Zufahrt über die Abflugebene vor dem Terminal"],
+    hinweis: "Flughafen: Flughafenambulanz (RTW, NAW) ist am Gelände – Fahrzeuge von außen 1 Minute Sicherheitskontrolle",
+  },
+  flughafen_sicherheitskontrolle: {
+    anrufer: ["passant", "begleiter", "verkauf"],
+    rollen: { verkauf: "Mitarbeiter der Sicherheitskontrolle" },
+    stelle: ["in der Warteschlange vor der Sicherheitskontrolle", "direkt an der Sicherheitskontrolle", "hinter der Sicherheitskontrolle"],
+    stelleMuster: /kontrolle|schlange|flughafen/i,
+    hinweis: "Flughafen: Sicherheitsbereich – Flughafenambulanz ist am schnellsten dort",
+  },
+  flughafen_gatebereich: {
+    anrufer: ["begleiter", "passant", "verkauf", "selbst"],
+    rollen: { verkauf: "Mitarbeiterin am Gate" },
+    stelle: ["im Wartebereich beim Gate", "beim Boarding am Gate", "in einem Café im Pier", "auf dem Weg zum Gate"],
+    stelleMuster: /gate|pier|warte|flughafen/i,
+    hinweis: "Flughafen: Gatebereich im Sicherheitsbereich – Flughafenambulanz ist am schnellsten dort",
+  },
+  flughafen_gepaeckausgabe: {
+    anrufer: ["begleiter", "passant", "verkauf", "selbst"],
+    rollen: { verkauf: "Mitarbeiter beim Gepäckservice" },
+    stelle: ["beim Gepäckband", "in der Ankunftshalle", "beim Ausgang aus der Gepäckausgabe"],
+    stelleMuster: /gepäck|band|ankunft|flughafen/i,
+    hinweis: "Flughafen: Ankunftsbereich – Flughafenambulanz ist am Gelände",
+  },
+  flughafen_lounge: {
+    anrufer: ["wirt", "begleiter", "passant"],
+    rollen: { wirt: "Mitarbeiterin der Lounge" },
+    stelle: ["in der Lounge", "am Buffet in der Lounge", "im Ruhebereich der Lounge"],
+    stelleMuster: /lounge|flughafen/i,
+  },
+  flughafen_parkhaus: {
+    anrufer: ["passant", "begleiter", "selbst"],
+    stelle: ["im Parkhaus auf Ebene {1|2|3|4}", "bei den Liften im Parkhaus", "bei der Ausfahrt aus dem Parkhaus"],
+    stelleMuster: /parkhaus|ebene|flughafen/i,
+  },
+  flughafen_tankstelle: {
+    anrufer: ["verkauf", "passant", "selbst"],
+    rollen: { verkauf: "Mitarbeiter der Tankstelle" },
+    stelle: ["an der Zapfsäule", "im Tankstellenshop", "beim Waschplatz"],
+    stelleMuster: /tank|zapf|shop|flughafen/i,
+  },
+  flughafen_flugzeug_gate: {
+    stelle: ["an Bord des Flugzeugs am Gate"],
+    hinweis: "Flughafen: Notfall an Bord – Zugang über die Fluggastbrücke, Flughafenambulanz ist am Gelände",
+  },
+  flughafen_flugzeug_vorfeld: {
+    stelle: ["an Bord des Flugzeugs auf der Außenposition"],
+    hinweis: "Flughafen: Flugzeug auf Außenposition – Zugang über die Treppe, Fahrzeuge von außen 1 Minute Sicherheitskontrolle",
+  },
+  flughafen_notlandung: {
+    stelle: ["an Bord des gelandeten Flugzeugs"],
+    hinweis: "Angekündigter Notfall an Bord: Fahrzeuge warten am Warteort bei der Feuerwehr-Wache 1, bis das Flugzeug an der Abstellposition steht – Feuerwehr immer mitalarmieren",
+    partner: [{ art: "fw", grund: "angekündigter Notfall an Bord – Feuerwehr fährt immer mit", themen: ["bauch", "allergie", "atemnot", "stillstand", "brustschmerz", "ersticken", "krampf", "zucker", "kopfschmerz", "herz", "blutung", "vergiftung", "schwangerschaft", "psych", "krank", "schlaganfall", "verletzung", "bewusstlos", "unklar", "infekt", "sturz"] }],
+  },
+  flughafen_hangar: {
+    stelle: ["im Hangar", "auf einer Arbeitsbühne im Hangar", "in der Werkstatt der Werft"],
+    hinweis: "Flughafen: Arbeitsunfall im Hangar – Zufahrt über das Werft-Vorfeld",
+  },
+  flughafen_vorfeld: {
+    stelle: ["auf dem Vorfeld bei einer Parkposition", "beim Gepäckwagen auf dem Vorfeld"],
+    hinweis: "Flughafen: Vorfeld – Flughafenambulanz ist am schnellsten dort",
+  },
+  flughafen_cargo: {
+    stelle: ["in der Frachthalle", "an der Laderampe der Frachthalle"],
+    hinweis: "Flughafen: Fracht – bei Gefahrgut Feuerwehr",
+  },
+  flughafen_gepaecksortierung: {
+    stelle: ["an der Gepäcksortieranlage unter dem Terminal"],
+    hinweis: "Flughafen: Gepäcksortierung im Untergeschoß – Zugang zeigt das Personal",
+  },
   raststation: {
     anrufer: ["verkauf", "lenker", "passant", "begleiter"],
     rollen: { verkauf: "Mitarbeiterin der Raststation", lenker: "LKW-Fahrer auf dem Rastplatz" },

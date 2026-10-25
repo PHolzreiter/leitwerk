@@ -5,7 +5,7 @@
  */
 import { store } from "../data/store";
 import { sim, type Einsatz } from "../sim/engine";
-import { antwortOhneKi, erinnerung, ersterSatzOhneKi, sprachFilter, systemPrompt, zusammenfassungPruefen, type AnrufKontext } from "./anrufer";
+import { antwortOhneKi, erinnerung, ersterSatzOhneKi, istBekannt, sprachFilter, systemPrompt, zusammenfassungPruefen, type AnrufKontext } from "./anrufer";
 import { kiBereit, kiPrefs, kiStatus, type KiNachricht } from "./ki";
 import { kiAntwortNeu, nachrichtArt, ohneVorspann } from "./runde";
 import { inTauri } from "../platform";
@@ -74,7 +74,7 @@ function einfacheAntwort(k: AnrufKontext, frage: string, schemaFrage?: Frage): s
   if (schemaFrage) return antwortOhneKi(k, schemaFrage);
   const art = nachrichtArt(frage);
   if (art === "mitteilung") return "Okay, danke.";
-  if (art === "anweisung") return "Okay, mach ich.";
+  if (art === "anweisung") return k.anrufer.nurBekannt ? "Verstanden, ich gebe das an die Crew weiter." : "Okay, mach ich.";
   if (art === "abschluss") return "Danke, auf Wiederhören.";
   // freie Frage: passendste Frage der Abfrage suchen (gemeinsame Wörter)
   const woerter = new Set(normFrage(frage).split(" ").filter((w) => w.length > 3));
@@ -314,6 +314,14 @@ export async function anruferAntwort(
   if (x.art === "ecall" && !x.sprachkontakt) {
     await pause();
     return "(keine Antwort – im Hintergrund nur Geräusche aus dem Fahrzeug)";
+  }
+  // Flughafen-Leitstelle (nicht beim Patienten): Abfragefragen fix – Gemeldetes aus der Wahrheit, sonst „nicht gemeldet“
+  if (x.nurBekannt && !(ersteAntwort && frage === ERÖFFNUNG)) {
+    const sf = schemaFrage ?? freieSchemaFrage(frage);
+    if (sf && !["ort_adresse", "schilderung", "anrufer", "rueckrufnummer"].includes(sf.id)) {
+      await pause();
+      return istBekannt(x, sf.id) ? einfacheAntwort(k, frage, sf) : (x.unbekanntSatz ?? "Das wissen wir nicht.");
+    }
   }
   // Wer selbst anruft und jetzt bewusstlos ist, kann nicht mehr antworten
   if (x.selbst && (k.wahrheit.bw === "nein" || k.wahrheit.at === "keine" || k.wahrheit.at === "agonal")) {

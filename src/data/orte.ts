@@ -32,12 +32,13 @@ export interface OrtKategorie {
   unsichtbar?: boolean;
 }
 
-export type OrtGruppe = "pflege" | "bildung" | "gesundheit" | "verkehr" | "einkauf" | "sport" | "wasser" | "freizeit" | "gastro" | "arbeit" | "gelaende" | "sonstiges";
+export type OrtGruppe = "pflege" | "bildung" | "gesundheit" | "verkehr" | "flughafen" | "einkauf" | "sport" | "wasser" | "freizeit" | "gastro" | "arbeit" | "gelaende" | "sonstiges";
 export const ORT_GRUPPEN: [OrtGruppe, string][] = [
   ["pflege", "Pflege & Betreuung"],
   ["bildung", "Kinder & Bildung"],
   ["gesundheit", "Gesundheit"],
   ["verkehr", "Verkehr"],
+  ["flughafen", "Flughafen"],
   ["einkauf", "Einkauf"],
   ["sport", "Sport"],
   ["wasser", "Wasser"],
@@ -60,6 +61,27 @@ const k = (key: string, label: string, gruppe: OrtGruppe, ortArt: OrtArt | undef
   ...(themen ? { themen } : {}),
   ...(allgemein ? { allgemein } : {}),
 });
+
+/** Flughafen-Kategorien: Schlüssel = Typ im POI („flughafen_terminal“) */
+function f(key: string, label: string, ortArt: OrtArt | undefined, wirkung: string, themen: string[], alter?: [number, number]): OrtKategorie {
+  return k(key, label, "flughafen", ortArt, new RegExp(`^${key}$`, "i"), wirkung, alter, themen);
+}
+const FLUGHAFEN: OrtKategorie[] = [
+  f("flughafen_terminal", "Flughafen: Terminal / Check-in", "bahnhof", "Reisende: Kollaps, Sturz mit Koffer, Brustschmerz, Unterzucker – normaler Notruf", ["bewusstlos", "sturz", "brustschmerz", "zucker", "krampf"]),
+  f("flughafen_sicherheitskontrolle", "Flughafen: Sicherheitskontrolle", "bahnhof", "Reisende in der Warteschlange: Kollaps, Panik, Brustschmerz", ["bewusstlos", "psych", "brustschmerz"]),
+  f("flughafen_gatebereich", "Flughafen: Gatebereich (Pier)", "bahnhof", "Wartende Passagiere: Kreislauf, Krampfanfall, verletztes Kind", ["bewusstlos", "krampf", "brustschmerz", "sturz"]),
+  f("flughafen_gepaeckausgabe", "Flughafen: Gepäckausgabe", "bahnhof", "Ankommende: Sturz und Quetschung am Förderband, Kollaps nach langem Flug", ["sturz", "verletzung", "bewusstlos"]),
+  f("flughafen_lounge", "Flughafen: Lounge", "lokal", "Reisende: Kollaps, Brustschmerz, Alkohol", ["bewusstlos", "brustschmerz", "vergiftung"]),
+  f("flughafen_parkhaus", "Flughafen: Parkhaus", "strasse", "Reisende: Sturz, Kollaps, Unfall im Parkhaus", ["sturz", "bewusstlos", "verkehrsunfall"]),
+  f("flughafen_tankstelle", "Flughafen: Tankstelle", "geschaeft", "Kollaps, Unfall an der Zapfsäule", ["bewusstlos", "verletzung"]),
+  f("flughafen_flugzeug_gate", "Flughafen: Flugzeug am Gate", undefined, "Notfall an Bord eines gelandeten Flugzeugs – die Flughafen-Leitstelle ruft an", ["bewusstlos", "brustschmerz", "atemnot", "krampf", "allergie"]),
+  f("flughafen_flugzeug_vorfeld", "Flughafen: Flugzeug auf Außenposition", undefined, "Notfall an Bord eines Flugzeugs auf dem Vorfeld (Passagiere mit Bus und Treppe) – die Flughafen-Leitstelle ruft an", ["bewusstlos", "brustschmerz", "atemnot", "krampf"]),
+  f("flughafen_notlandung", "Flughafen: Abstellposition für Notfälle", undefined, "Angekündigter Notfall an Bord: Landung in einigen Minuten – Fahrzeuge warten am Warteort, Feuerwehr fährt mit", ["stillstand", "brustschmerz", "schwangerschaft", "schlaganfall", "atemnot", "bewusstlos"]),
+  f("flughafen_hangar", "Flughafen: Hangar / Werft", undefined, "Technikpersonal: Sturz aus der Höhe, Quetschung, Schnittverletzung – die Flughafen-Leitstelle ruft an", ["sturz", "eingeklemmt", "verletzung", "blutung"], [18, 65]),
+  f("flughafen_vorfeld", "Flughafen: Vorfeld (Abfertigung)", undefined, "Bodenpersonal: angefahren, Quetschung, Hitze oder Kälte – die Flughafen-Leitstelle ruft an", ["verletzung", "eingeklemmt", "hitze_kaelte", "bewusstlos"], [18, 65]),
+  f("flughafen_cargo", "Flughafen: Fracht (Cargo)", undefined, "Lagerpersonal: Stapler, herabfallende Ladung, Gefahrgut – die Flughafen-Leitstelle ruft an", ["eingeklemmt", "verletzung", "gefahrstoff"], [18, 65]),
+  f("flughafen_gepaecksortierung", "Flughafen: Gepäcksortierung", undefined, "Personal an der Förderanlage: Einklemmung, Rücken, Schnitt – die Flughafen-Leitstelle ruft an", ["eingeklemmt", "verletzung", "ruecken"], [18, 65]),
+];
 
 export const ORT_KATEGORIEN: OrtKategorie[] = [
   { key: "krankenhaus", label: "Krankenhaus", wirkung: "wird von Rettungsmitteln angefahren (Transportziel)", muster: /krankenhaus|klinik|spital|\bkh\b|klinikum/i, liste: "hospitals" },
@@ -136,6 +158,9 @@ export const ORT_KATEGORIEN: OrtKategorie[] = [
   k("lagerhaus", "Lagerhaus / Landwirtschaft", "arbeit", "arbeit", /lagerhaus|\brwa\b|silo|agrar|landwirtschaft|genossenschaft|mühle/i, "Beschäftigte und Landwirte: Sturz vom Silo, Einklemmung, Gärgase", [16, 75], ["sturz", "eingeklemmt", "gefahrstoff", "verletzung"]),
   k("kraftwerk", "Kraftwerk / Umspannwerk", "arbeit", "arbeit", /kraftwerk|umspannwerk|\bevn\b|verbund|wasserkraft|heizwerk/i, "Beschäftigte: Stromunfall, Verbrennung, Gefahrstoff", [18, 65], ["strom", "brand", "gefahrstoff", "verletzung"]),
   k("arbeit", "Betrieb / Arbeitsplatz (allgemein)", "arbeit", "arbeit", /betrieb|firma|werk\b|fabrik|industrie|lager/i, "Arbeitsunfälle", [16, 65], ["verletzung", "eingeklemmt"], true),
+  // ---- Flughafen (Wien-Schwechat): Passagierbereiche wie ein Bahnhof (normaler Notruf), Flugzeuge und
+  //      Arbeitsbereiche nur über eigene Fälle (der Flughafen ruft an)
+  ...FLUGHAFEN,
   // ---- Sonstiges
   k("landeplatz", "Hubschrauber-Landeplatz / Flugplatz", "sonstiges", undefined, /lande|heli|hubschrauber|flugplatz|flughafen|flugfeld/i, "Landemöglichkeit für Hubschrauber"),
   k("sonstiges", "Sonstiges", "sonstiges", undefined, /^$/, "nur als Ort auf der Karte"),
@@ -170,7 +195,15 @@ function u(key: string, label: string, ortArt: OrtArt | undefined, wirkung: stri
 }
 
 /** Seltener ohne besonderen Grund (sonst wären Steinbrüche und Museen so häufig wie Betriebe und Geschäfte) */
-const HAEUFIG: Record<string, number> = { steinbruch: 0.3, kraftwerk: 0.3, saegewerk: 0.6, lagerhaus: 0.5, museum: 0.5, ausflugsziel: 0.6, golf: 0.6, campingplatz: 0.7, hochschule: 0.7, raststation: 0.6 };
+const HAEUFIG: Record<string, number> = {
+  flughafen_terminal: 0.5,
+  flughafen_sicherheitskontrolle: 0.3,
+  flughafen_gatebereich: 0.4,
+  flughafen_gepaeckausgabe: 0.3,
+  flughafen_lounge: 0.3,
+  flughafen_parkhaus: 0.3,
+  flughafen_tankstelle: 0.2,
+  steinbruch: 0.3, kraftwerk: 0.3, saegewerk: 0.6, lagerhaus: 0.5, museum: 0.5, ausflugsziel: 0.6, golf: 0.6, campingplatz: 0.7, hochschule: 0.7, raststation: 0.6 };
 for (const x of ORT_KATEGORIEN) if (HAEUFIG[x.key]) x.haeufig = HAEUFIG[x.key];
 
 export const POI_KATEGORIEN = ORT_KATEGORIEN.filter((x) => !x.liste);
