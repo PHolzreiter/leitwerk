@@ -44,9 +44,9 @@ export interface Station extends Base {
 }
 
 /** Fahrzeugkategorien. RTW umfasst RTW und RTW-C (Unterscheidung über den Typ). */
-export const VEHICLE_CATEGORIES = ["RTW", "NEF", "NAH", "KTW", "SKTW", "SRTW", "SNAW", "BIT", "ITH", "BEL", "EL ÖBB", "ACN", "Sonstige"] as const;
+export const VEHICLE_CATEGORIES = ["RTW", "NAW", "NEF", "NAH", "KTW", "SKTW", "SRTW", "SNAW", "BIT", "ITH", "BEL", "EL ÖBB", "ACN", "Sonstige"] as const;
 export type VehicleCategory = (typeof VEHICLE_CATEGORIES)[number];
-export const ACTIVE_CATEGORIES: readonly VehicleCategory[] = ["RTW", "NEF", "NAH", "KTW", "SKTW", "SRTW", "SNAW", "BIT", "ITH", "BEL", "EL ÖBB", "ACN"];
+export const ACTIVE_CATEGORIES: readonly VehicleCategory[] = ["RTW", "NAW", "NEF", "NAH", "KTW", "SKTW", "SRTW", "SNAW", "BIT", "ITH", "BEL", "EL ÖBB", "ACN"];
 /** Sekundärfahrzeuge: nur vorgeschlagen, wenn kein passendes Primärfahrzeug verfügbar ist */
 export const SEKUNDAER: readonly VehicleCategory[] = ["SKTW", "SRTW", "SNAW", "BIT", "ITH"];
 
@@ -111,6 +111,7 @@ export const FAHRZEUG_TYPEN: { typ: string; kategorie: VehicleCategory; label: s
   { typ: "RTW", kategorie: "RTW", label: "RTW" },
   { typ: "KTW", kategorie: "KTW", label: "KTW" },
   { typ: "KTW-B", kategorie: "KTW", label: "KTW-B (Zivildienst – ohne Blaulicht)" },
+  { typ: "NAW", kategorie: "NAW", label: "NAW (Notarztwagen: RTW-C mit Notarzt an Bord)" },
   { typ: "NEF", kategorie: "NEF", label: "NEF" },
   { typ: "NEF ÖAMTC", kategorie: "NEF", label: "NEF ÖAMTC (Ausweich-NEF am Hubschrauberstützpunkt)" },
   { typ: "NAH", kategorie: "NAH", label: "NAH (Notarzthubschrauber)" },

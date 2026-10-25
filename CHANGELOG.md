@@ -1,5 +1,15 @@
 # Änderungen
 
+## 0.64.0 – Flughafen Wien
+- **Flughafenambulanz** am Flughafen Wien-Schwechat (Betriebsfeuerwehr): RTW 77/898 („RTW Flughafen“, 05–14 und 14–23 Uhr) und NAW 77/899 („NAW Flughafen“, rund um die Uhr). Sie fahren nur zu Einsätzen am Flughafengelände (Grenze aus OpenStreetMap)
+- **Neuer Fahrzeugtyp NAW** (Notarztwagen): RTW-C und NEF in einem, Besatzung RS/NFS + Notarzt + NKV/NKI. Braucht ein Einsatz einen RTW-C oder einen RTW mit Notarzt, schlägt das Programm den NAW vor, ohne zusätzliches NEF. Ist nur der RTW frei, kommt ein NEF von außen dazu
+- **Sicherheitskontrolle:** Fahrzeuge von außen (KTW, RTW, NEF …) stehen an der Einfahrt zum Flughafengelände 1 Minute, hinein und hinaus. Das ist auch in der Ankunftszeit eingerechnet. Hubschrauber landen direkt
+- **Ziele am Flughafen:**
+  - Kann das Health Center (Office Park 3, Mo–Do) den Patienten allein versorgen, kommt er dorthin. Dort gehen auch Leute selbst hin, es kann voll sein
+  - Nicht kritische Patienten, die ins Krankenhaus müssen, kommen ins Medical Center (Terminal 1, rund um die Uhr). Von dort ruft das Medical Center an der KT-Hotline an: Überstellung mit KTW ins passende Klinikum
+  - Kritische Patienten kommen direkt in die Klinik
+- Neue Dienststellen: Flughafenambulanz, Betriebsfeuerwehr Flughafen Wien (Wache 1 und 2, fährt nur am Gelände), Polizei Flughafen Wien (Terminal)
+
 ## 0.63.0 – Eigene Funkgruppe, Schichtwechsel auf der Dienststelle, Vormerken
 - **Schalter „NÖ-03 | Alle“** in „Aktive Fahrzeuge“, „Alle Fahrzeuge“ und „Statusänderungen“: standardmäßig nur die eigene Funkgruppe. Hubschrauber (und ihr Ausweich-NEF) sind immer dabei, fremde Fahrzeuge in einem eigenen Einsatz stehen mit „von außen“ in der Liste. Der Einsatzmittelvorschlag schlägt weiter das schnellste Fahrzeug vor, auch von außerhalb
 - **Rückfahrt:** Fahrzeuge, die frei über Funk sind, fahren nach jedem Auftrag still zu ihrer Dienststelle zurück

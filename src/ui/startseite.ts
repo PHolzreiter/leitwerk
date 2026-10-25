@@ -434,7 +434,7 @@ export function startseiteZeigen(fertig?: () => void, opt: { zurueck?: boolean }
     const fz = store.list("vehicles").filter((v) => v.aktiv && ACTIVE_CATEGORIES.includes(v.kategorie));
     const z = [
       { i: "rtw", n: fz.filter((v) => ["RTW", "KTW"].includes(v.kategorie)).length, t: "RTW & KTW" },
-      { i: "arzt", n: fz.filter((v) => v.kategorie === "NEF").length, t: "Notarztfahrzeuge" },
+      { i: "arzt", n: fz.filter((v) => v.kategorie === "NEF" || v.kategorie === "NAW").length, t: "Notarztfahrzeuge" },
       { i: "heli", n: fz.filter((v) => v.kategorie === "NAH" || v.kategorie === "ITH").length, t: "Hubschrauber" },
       { i: "kh", n: store.list("hospitals").filter(nimmtRettung).length, t: "Krankenhäuser" },
       { i: "wache", n: store.list("stations").length, t: "Dienststellen" },

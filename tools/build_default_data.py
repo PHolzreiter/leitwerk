@@ -199,11 +199,14 @@ def build_stations() -> tuple[list[dict], dict[str, str]]:
     partner = SRC / "osm_partner.csv"
     if partner.exists():
         kurz = {"Feuerwehr": "fw", "Polizei": "pol", "Wasserrettung": "wr", "Bergrettung": "br"}
-        for r in read_csv(partner):
+        zeilen = read_csv(partner)
+        da = {r["osm"] for r in zeilen}
+        zeilen += [r for r in PARTNER_ZUSATZ if r["osm"] not in da]
+        for r in zeilen:
             stations.append({
-                "id": f"{kurz[r['typ']]}-{r['osm'].replace('/', '')}", "name": r["name"], "organisation": r["organisation"],
+                "id": f"{kurz[r['typ']]}-{r['osm'].replace('/', '')}", "name": PARTNER_NAMEN.get(r["osm"], r["name"]), "organisation": r["organisation"],
                 "typ": r["typ"], "ort": r["ort"], "bezirk": "", "adresse": "",
-                "breitengrad": r["lat"], "laengengrad": r["lon"], "hinweis": "Quelle: OpenStreetMap",
+                "breitengrad": r["lat"], "laengengrad": r["lon"], "hinweis": r.get("hinweis") or "Quelle: OpenStreetMap",
             })
     return stations, name_to_id
 
@@ -216,8 +219,20 @@ WACHEN_NOE05_06 = [
      "Sozialmedizinischer Dienst Österreich, Dienststelle Mönichkirchen/Aspang – Quelle: OpenStreetMap"),
     ("neu-pvz-wienerwald", "PVZ Wienerwald Breitenfurt", "Primärversorgungszentrum", "Notarztstützpunkt", "Breitenfurt bei Wien", 48.1363532, 16.1951439,
      "Primärversorgungszentrum Wienerwald, Hauptstraße 111 (noe.gv.at); Koordinaten OpenStreetMap"),
+    # Flughafen Wien: Flughafenambulanz der Betriebsfeuerwehr (RTW + NAW, nur am Flughafengelände)
+    ("btf-flughafen-wien", "Flughafenambulanz Flughafen Wien", "Betriebsfeuerwehr Flughafen Wien", "Rettungsdienst", "Schwechat (Flughafen Wien)", 48.120624, 16.5604921,
+     "Rettungsdienst der Betriebsfeuerwehr Flughafen Wien – fährt nur am Flughafengelände (viennaairport.com, AFKDO Schwechat-Stadt); Koordinaten aus öffentlich zugänglichen Daten"),
 ]
 UMBENENNEN = {"osm475957537": "Rotes Kreuz Ortsstelle Himberg"}
+
+# Partner am Flughafen Wien (OpenStreetMap, operator Flughafen Wien AG) – die Betriebsfeuerwehr fährt nur am Gelände
+PARTNER_ZUSATZ = [
+    {"osm": "way/220393067", "name": "Betriebsfeuerwehr Flughafen Wien – Wache 1", "typ": "Feuerwehr", "organisation": "Betriebsfeuerwehr Flughafen Wien",
+     "ort": "Schwechat (Flughafen Wien)", "lat": "48.124354", "lon": "16.547399", "hinweis": "Quelle: OpenStreetMap („Feuerwehr 1“, Flughafen Wien AG)"},
+    {"osm": "way/95164992", "name": "Betriebsfeuerwehr Flughafen Wien – Wache 2", "typ": "Feuerwehr", "organisation": "Betriebsfeuerwehr Flughafen Wien",
+     "ort": "Schwechat (Flughafen Wien)", "lat": "48.113527", "lon": "16.574801", "hinweis": "Quelle: OpenStreetMap („Feuerwehr 2“, Flughafen Wien AG)"},
+]
+PARTNER_NAMEN = {"node/11489407646": "Polizei Flughafen Wien (Terminal)"}
 
 
 # ---------------------------------------------------------------- Fahrzeuge
@@ -230,7 +245,9 @@ def category_of(typ: str, funkruf: str, station_typ: str) -> str:
         return "NAH"
     if t in {"RTW", "RTW-C"}:
         return "RTW"
-    if t in {"PHYSICIAN", "NEF", "NAW"}:
+    if t == "NAW":
+        return "NAW"
+    if t in {"PHYSICIAN", "NEF"}:
         return "Sonstige" if station_typ == "Luftrettung" else "NEF"
     if t.startswith("KTW"):
         return "KTW"
@@ -286,6 +303,7 @@ def build_vehicles(stations: list[dict], name_to_id: dict[str, str]) -> list[dic
             "hinweis": "Ergänzt (Recherche OpenStreetMap); Nachtflugtauglichkeit bitte prüfen",
         })
     fahrzeuge_noe05_06(vehicles, name_to_id, by_id)
+    flughafen_fahrzeuge(vehicles)
     dienstplaene_einspielen(vehicles)
     hubschrauber_dienst(vehicles)
     ersatz_nef(vehicles)
@@ -319,6 +337,27 @@ def fahrzeuge_noe05_06(vehicles: list[dict], name_to_id: dict[str, str], by_id: 
             "dienstplan": r["dienstplan"].strip() or "24/7", "hinweis": " · ".join(hinweis),
         })
         vorhanden.add(funk)
+
+
+# Flughafen Wien: RTW und NAW der Flughafenambulanz (öffentlich zugängliche Daten, Angabe Paul 25.10.2026)
+FLUGHAFEN_FZ = [
+    ("77/898", "RTW Flughafen", "RTW", "täglich 05:00–14:00; täglich 14:00–23:00"),
+    ("77/899", "NAW Flughafen", "NAW", "täglich 06:00–18:00; täglich 18:00–06:00"),
+]
+
+
+def flughafen_fahrzeuge(vehicles: list[dict]) -> None:
+    """RTW und NAW am Flughafen Wien: fahren nur am Flughafengelände (Regel in src/sim/flughafen.ts)."""
+    vorhanden = {v["funkrufname"] for v in vehicles}
+    for funk, kurz, typ, plan in FLUGHAFEN_FZ:
+        if funk in vorhanden:
+            continue
+        vehicles.append({
+            "id": "vie" + funk.replace("/", ""), "funkrufname": funk, "kurzname": kurz, "kategorie": category_of(typ, funk, "Rettungsdienst"), "typ": typ,
+            "dienststelle": "btf-flughafen-wien", "aktiv": "ja", "nachtflug": "nein", "aufbau": "groß" if typ == "NAW" else "klein",
+            "dienstplan": plan,
+            "hinweis": "Flughafenambulanz (Betriebsfeuerwehr) – fährt nur am Flughafengelände · Daten aus öffentlich zugänglichen Quellen, ungeprüft",
+        })
 
 
 # Hubschrauber rund um die Uhr (mit Nachtflug) – alle anderen nur tagsüber (Angabe Paul, 22.10.2026)
@@ -928,6 +967,8 @@ def plaetze_ableiten(kid: str, einr: set[str], kav: dict, z: dict) -> dict[str, 
             out["kreisssaal"] = klemm(gyn / 12 if gyn else 2, 1, 6)
     if "fb_druckkammer" in einr:
         out["druckkammer"] = min(pl.get("druckkammer") or 1, 6)
+    if "amb_pvz" in einr and pl.get("pvz"):
+        out["pvz"] = int(pl["pvz"])  # Primärversorgung mit begrenzten Plätzen (z. B. Health Center Flughafen)
     return out
 
 

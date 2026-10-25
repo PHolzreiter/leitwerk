@@ -162,6 +162,7 @@ const RESSOURCE_AK: Record<string, string> = {
   stroke_unit: "ak_stroke_unit",
   kreisssaal: "ak_kreisssaal",
   druckkammer: "ak_druckkammer",
+  pvz: "ak_primaerversorgung",
 };
 
 // ------------------------------------------------------------------ Fenster „KH-Status“
@@ -251,8 +252,11 @@ function akvZelle(h: Hospital, s: (typeof AKV_SPALTEN)[number], t: number): stri
   if (!ak) return `<span class="akv-f leer"></span>`;
   const name = akutAbteilung(ak.id)?.name ?? s.titel;
   if (ak.id.startsWith("ak_primaerversorgung")) {
-    const z: AkvZustand = ak.offen ? "ok" : "zu";
-    return akvFeld([z], `${name} (keine vollwertige ${s.n === "NFA" ? "Notaufnahme" : "Unfallaufnahme"}): ${AKV_TEXT[z]}`);
+    // Primärversorgung mit gezählten Plätzen (Health Center Flughafen): auch „voll“
+    const n = plaetze(h, "pvz");
+    const voll = ak.offen && n > 0 && belegt(sim.state.khBelegung, h.id, "pvz", t) >= n;
+    const z: AkvZustand = !ak.offen ? "zu" : voll ? "voll" : "ok";
+    return akvFeld([z], `${name} (keine vollwertige ${s.n === "NFA" ? "Notaufnahme" : "Unfallaufnahme"}): ${AKV_TEXT[z]}`, voll ? "pvz" : undefined);
   }
   const r = (s.rs ?? []).find((x) => plaetze(h, x) > 0);
   // keine gezählten Plätze: offen/zu wie in der Krankenhaus-Übersicht

@@ -5859,5 +5859,49 @@
    "Angabe Paul: PVZ nimmt unter der Woche zu den Öffnungszeiten Patienten, die sonst nur einen Hausarzt bräuchten; keine Krankenhausaufnahme"
   ],
   "notiz": "Primärversorgungszentrum – keine vollwertige Notaufnahme. Betreiber laut Cookie-Hinweis: 'Primärversorgung Wienerwald Dr. Klar und Co. Ärzte für Allgemeinmedizin GmbH'. Sa/So in 'zeiten' nur die tatsächliche Ordinationszeit 09:00–11:00 (08:00–14:00 Rufbereitschaft). Wundversorgung=true auf Basis 'Anlaufstelle für … Verletzungen' (Notfallversorgung); das Wort 'Wundversorgung' selbst steht nicht auf der Seite. Zweitstandort Pressbaum (Adresse auf der Website nicht genannt)."
+ },
+ "neu19": {
+  "name": "Health Center Vienna Airport (Ärztezentrum am Flughafen Wien)",
+  "kurzname": "Health Center Flughafen",
+  "ort": "Schwechat (Flughafen Wien, Office Park 3)",
+  "bundesland": "Niederösterreich",
+  "privat": false,
+  "pvz": true,
+  "lat": 48.122412,
+  "lon": 16.562665,
+  "website": "https://healthcenterairport.com/",
+  "einrichtungen": [
+   "amb_pvz",
+   "amb_pvz_unfall"
+  ],
+  "unklar": [],
+  "quellen": [
+   "https://viennaairport.com/passagiere/flughafen/medizinische_versorgung – Health Center Vienna Airport, Office Park 3, Bauteil 2, 4. Stock: Mo+Di 08:00–14:00, Mi 08:00–18:30, Do 08:00–19:00, Fr–So geschlossen",
+   "https://healthcenterairport.com/wahlaerzte/ordinationszeiten – Allgemeinmedizin (Wahlärzte) Mo 08–13, Di 09–14, Do 08–12; Fachärzte (Innere, Orthopädie, HNO, Augen, Gynäkologie)",
+   "Koordinaten: OpenStreetMap way 1301391988 (Office Park 3)"
+  ],
+  "notiz": "Ärztezentrum mit Wahlärzten – keine Notaufnahme. Im Spiel: Ziel für Patienten am Flughafen, die das Health Center allein versorgen kann (Öffnungszeiten); Leute gehen auch selbst hin."
+ },
+ "neu20": {
+  "name": "Medical Center Flughafen Wien (Terminal 1)",
+  "kurzname": "Medical Center Flughafen",
+  "ort": "Schwechat (Flughafen Wien, Terminal 1)",
+  "bundesland": "Niederösterreich",
+  "privat": false,
+  "pvz": true,
+  "lat": 48.1216946,
+  "lon": 16.560243,
+  "website": "https://viennaairport.com/passagiere/flughafen/medizinische_versorgung",
+  "einrichtungen": [
+   "amb_pvz",
+   "amb_pvz_unfall"
+  ],
+  "unklar": [],
+  "quellen": [
+   "https://viennaairport.com/passagiere/flughafen/medizinische_versorgung – 'Medical Center im Terminal 1 Arcade, bei Bedarf (Akut- und Notfälle) besetzt'; Notarztwagen mit Notarzt und zwei Sanitätern rund um die Uhr",
+   "https://viennaairport.com/jart/prj3/va/uploads/data-uploads/Passagier/Besucherwelt/krone_fw.pdf – Medical Center rund um die Uhr für Erste Hilfe bei akuten Notfällen besetzt",
+   "Koordinaten: OpenStreetMap node 4715584190 (Medizinische Ambulanz)"
+  ],
+  "notiz": "Flughafen-Ambulanz der Betriebsfeuerwehr – nur für Patienten am Flughafengelände. Im Spiel rund um die Uhr offen (Vorgabe Paul): nicht kritische Patienten kommen hierher, was weiter muss, wird von hier überstellt."
  }
 }

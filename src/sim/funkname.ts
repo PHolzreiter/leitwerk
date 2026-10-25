@@ -61,6 +61,8 @@ export function rufname(fz: FunkFz, alle: FunkFz[]): string {
     const gleich = alle.filter((x) => (x.kategorie === "NEF" || x.rmTyp === "NEF") && !x.ersatzFuer && ortAusDienststelle(x.stationName) === ort);
     return gleich.length <= 1 ? `NEF ${ort}` : fz.funkrufname;
   }
+  // eigener Rufname in den Stammdaten („RTW Flughafen“, „NAW Flughafen“)
+  if (fz.kurzname && /^(RTW|NAW|KTW|NEF)\s+\S/i.test(fz.kurzname.trim())) return fz.kurzname.trim();
   const amOrt = alle.filter((x) => x.stationName === fz.stationName);
   if (amOrt.length === 1) return `${ART[typ] ?? fz.kategorie ?? typ} ${ort}`;
   return fz.funkrufname;

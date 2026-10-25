@@ -11,6 +11,7 @@ osm621328687;Acute Community Nurse - Standort Leobersdorf;Notruf NÖ;Sonstige;Le
 p1533829;Arbeiter Samariterbund St. Pölten;Arbeiter-Samariter-Bund;Rettungsdienst;St. Pölten;;;48.212141;15.635157;
 p1528824;Arbeiter-Samariter-Bund Bezirksstelle Purkersdorf;Arbeiter-Samariter-Bund;Rettungsdienst;Purkersdorf;;;48.206591;16.182279;
 p1538360;Arbeiter-Samariter-Bund Traismauer;Arbeiter-Samariter-Bund;Rettungsdienst;Traismauer;;;48.351157;15.744858;
+btf-flughafen-wien;Flughafenambulanz Flughafen Wien;Betriebsfeuerwehr Flughafen Wien;Rettungsdienst;Schwechat (Flughafen Wien);;;48.120624;16.560492;"Rettungsdienst der Betriebsfeuerwehr Flughafen Wien – fährt nur am Flughafengelände (viennaairport.com, AFKDO Schwechat-Stadt); Koordinaten aus öffentlich zugänglichen Daten"
 p1538387;Johanniter-Krankentransport Spillern;Johanniter;Rettungsdienst;;;;48.373910;16.274636;
 p1538382;Johanniter-Krankentransport St. Pölten;Johanniter;Rettungsdienst;;;;48.174895;15.623680;
 osm417917544;Johanniter-Unfall-Hilfe Dienststelle Orth an der Donau;Johanniter;Rettungsdienst;Orth an der Donau;;;48.144114;16.702473;Quelle: OpenStreetMap
@@ -843,7 +844,7 @@ pol-node2897479001;Polizeiinspektion Zistersdorf;Polizei;Polizei;Zistersdorf;;;4
 pol-node476701461;Polizeiinspektion Zwettl;Polizei;Polizei;Zwettl;;;48.608795;15.163884;Quelle: OpenStreetMap
 pol-node9988995292;Polizeikommissariat Schwechat;Polizei;Polizei;Schwechat;;;48.141908;16.474316;Quelle: OpenStreetMap
 pol-node1089602185;Polizeiposten Wöllersdorf;Polizei;Polizei;Wöllersdorf-Steinabrückl;;;47.865849;16.171400;Quelle: OpenStreetMap
-pol-node11489407646;Polizeistation;Polizei;Polizei;;;;48.120886;16.560621;Quelle: OpenStreetMap
+pol-node11489407646;Polizei Flughafen Wien (Terminal);Polizei;Polizei;;;;48.120886;16.560621;Quelle: OpenStreetMap
 pol-node1489839755;Stadtpolizei;Polizei;Polizei;Neunkirchen;;;47.720737;16.081596;Quelle: OpenStreetMap
 pol-node4921781726;Stadtpolizei;Polizei;Polizei;;;;48.122513;14.871209;Quelle: OpenStreetMap
 pol-node1100536082;Stadtpolizei;Polizei;Polizei;Baden;;;48.006530;16.238606;Quelle: OpenStreetMap
@@ -853,5 +854,7 @@ wr-way295279772;Wasserrettung Allentsteig;Wasserrettung;Wasserrettung;Allentstei
 wr-way175979220;Wasserrettung Oberradlberg;Wasserrettung;Wasserrettung;Oberradlberg;;;48.224136;15.656615;Quelle: OpenStreetMap
 wr-node11665221157;Wasserrettung Pottendorf;Wasserrettung;Wasserrettung;Pottendorf;;;47.902866;16.353892;Quelle: OpenStreetMap
 wr-way340277133;Wasserrettung Tulln;Wasserrettung;Wasserrettung;Tulln an der Donau;;;48.332076;16.077284;Quelle: OpenStreetMap
+fw-way220393067;Betriebsfeuerwehr Flughafen Wien – Wache 1;Betriebsfeuerwehr Flughafen Wien;Feuerwehr;Schwechat (Flughafen Wien);;;48.124354;16.547399;Quelle: OpenStreetMap („Feuerwehr 1“, Flughafen Wien AG)
+fw-way95164992;Betriebsfeuerwehr Flughafen Wien – Wache 2;Betriebsfeuerwehr Flughafen Wien;Feuerwehr;Schwechat (Flughafen Wien);;;48.113527;16.574801;Quelle: OpenStreetMap („Feuerwehr 2“, Flughafen Wien AG)
 nef-st-moedling;NEF-Stützpunkt Landesklinikum Mödling;Rotes Kreuz;Notarztstützpunkt;Mödling;;Schwester-Maria-Restituta-Gasse 12, 2340 Mödling;48.089130;16.297430;NEF-Stützpunkt (Recherche 10/2026)
 nef-st-gmuend;RK Bezirksstelle Gmünd;Rotes Kreuz;Notarztstützpunkt;Gmünd;;Weitraer Straße 54, 3950 Gmünd;48.766780;14.977340;NEF-Stützpunkt (Recherche 10/2026)

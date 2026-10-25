@@ -315,7 +315,8 @@ export function categoryFromType(typ: string, funkrufname = ""): VehicleCategory
   if (/ACN/.test(funkrufname.toUpperCase()) || t === "ACN") return "ACN";
   if (t === "NAH" || t.startsWith("RTH") || t.startsWith("NAH")) return "NAH";
   if (t === "RTW" || t === "RTW-C") return "RTW";
-  if (["PHYSICIAN", "NEF", "NAW", "NOTARZT"].includes(t)) return "NEF";
+  if (t === "NAW") return "NAW";
+  if (["PHYSICIAN", "NEF", "NOTARZT"].includes(t)) return "NEF";
   if (t.startsWith("KTW")) return "KTW";
   if (t === "SKTW" || t === "SRTW" || t === "SNAW" || t === "BEL" || t === "BIT") return t;
   if (t === "ITH" || t === "AIR ICU-AMB" || t === "AIR ICU AMB") return "ITH";

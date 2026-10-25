@@ -9,7 +9,7 @@ import { rufnamen } from "./funkname";
 import { aktuelleSchicht, dienstEnde, imDienst, naechsterBeginn, type Schicht } from "./dienst";
 import { nachKlick } from "../klick";
 import { ACTIVE_CATEGORIES, bereicheVon, khAnkunft, khLandung, type Hospital, type Vehicle, type Zufahrt } from "../data/model";
-import { bestesKh, buchung, buchungName, eignung as khEignung, khVorschlaege } from "../data/klinik";
+import { bestesKh, buchung, buchungName, eignung as khEignung, khVorschlaege, type KhVorschlag } from "../data/klinik";
 import { grundbelegungTick, platzFuer, RESSOURCE, ressourcenFuer, type BelegungMap } from "./khStatus";
 import { verdachtFuer } from "./verdacht";
 import { store } from "../data/store";
@@ -66,6 +66,7 @@ import {
   dauerDaten,
   hhmm,
   hotlineAnrufer,
+  khOrt,
   neueDaten,
   passt,
   sekLeer,
@@ -76,6 +77,7 @@ import {
   type KtPlan,
 } from "./kt";
 import { codeInfo, codeVorschlag, istUeberstellung } from "./ktCodes";
+import { amFlughafen, HEALTH_CENTER, istFlughafenFz, istFlughafenZiel, kontrolleSek, MEDICAL_CENTER, mitKontrolle } from "./flughafen";
 import { PARTNER, PARTNER_ANZAHL, partnerArtVonTyp, partnerNoetig, partnerSchonDa, type PartnerArt, type PartnerGrund } from "./partner";
 import { FUNKGRUPPEN, funkgruppe, inFunkgruppe, mitteVon, type Funkgruppe } from "./funkgruppen";
 import { echtwetterLaden } from "./echtwetter";
@@ -165,6 +167,8 @@ export function modellVon(v: Pick<Vehicle, "funkrufname" | "modell">, rmTyp: RmT
     case "SRTW":
     case "SNAW":
       return "sprinter_gross";
+    case "NAW":
+      return "crafter";
     case "BIT":
       return "man";
     case "NAH":
@@ -687,6 +691,8 @@ export interface Einsatz {
   rendezvous?: { rtwId: string; nefId: string; punkt: Ort; status: "anfahrt" | "treffen" | "fertig"; bis?: number | null } | null;
   /** Besatzung hat gefragt, ob der Hubschrauber verfügbar ist (Rufname, z. B. „C2“) – LEOs Antwort wird verstanden */
   heliFrage?: string | null;
+  /** Flughafen: Patient im Medical Center, Überstellung (KT-Auftrag) ins passende Klinikum angelegt */
+  mcUeberstellung?: string | null;
 }
 
 export interface Funkmeldung {
@@ -1725,12 +1731,12 @@ export class Simulation {
 
   /** Kann Patienten transportieren (RTW, RTW-C, KTW, Sekundärfahrzeuge) */
   transportfaehig(fz: SimFahrzeug): boolean {
-    return ["RTW", "RTW-C", "KTW", "SKTW", "SRTW", "SNAW", "BIT"].includes(fz.rmTyp);
+    return ["RTW", "RTW-C", "NAW", "KTW", "SKTW", "SRTW", "SNAW", "BIT"].includes(fz.rmTyp);
   }
 
   /** Hat einen Notarzt an Bord (NEF, NAH, SNAW) */
   mitNotarzt(fz: SimFahrzeug): boolean {
-    return ["NEF", "NAH", "ITH", "SNAW"].includes(fz.rmTyp);
+    return ["NEF", "NAH", "ITH", "SNAW", "NAW"].includes(fz.rmTyp);
   }
 
   /** Wer spricht am Funk für den Einsatz? Der BEL vor Ort ist Ansprechpartner Nr. 1. */
@@ -1877,8 +1883,11 @@ export class Simulation {
       const f = (sondersignal && !fliegt(fz) ? this.settings.sondersignalFaktor : 1) * wf;
       // Hubschrauber kreist 1–3 Mal über Einsatzorten (nicht über Krankenhäusern und Landeplätzen)
       const kreis = fliegt(fz) && phase === "anfahrt" && !this.istLandeplatz(ziel) ? platzrunden(r, ziel, 1 + Math.floor(Math.random() * 3)) : null;
-      const rr = kreis ?? (strasse ? anStrasse(r) : r);
-      fz.fahrt = { coords: rr.coords, times: rr.times.map((x) => x * f), start: this.state.zeit, dauer: rr.duration * f, blau: sondersignal };
+      const r0 = kreis ?? (strasse ? anStrasse(r) : r);
+      let rr: Route = { ...r0, times: r0.times.map((x) => x * f), duration: r0.duration * f };
+      // Flughafen: Fahrzeuge von außen stehen an der Einfahrt eine Minute (Sicherheitskontrolle), hinein und hinaus
+      if (!fliegt(fz) && !istFlughafenFz(fz)) rr = mitKontrolle(rr).route;
+      fz.fahrt = { coords: rr.coords, times: rr.times, start: this.state.zeit, dauer: rr.duration, blau: sondersignal };
       if (kreis) Object.assign(fz.fahrt, { kreisAb: kreis.kreisAb, landungAb: kreis.landungAb });
       fz.phase = phase;
       fz.phaseEnde = this.state.zeit + fz.fahrt.dauer * 1000;
@@ -2100,6 +2109,8 @@ export class Simulation {
         fz.fahrt = null;
         fz.blaulicht = false;
         this.setStatus(fz, "amZO");
+        // Flughafen: Patient im Medical Center – braucht er ein Krankenhaus, wird er von dort überstellt
+        if (e?.kh?.hospitalId === MEDICAL_CENTER && this.transportfaehig(fz)) this.mcUeberstellung(e);
         fz.phase = "uebergabe";
         fz.phaseEnde = t + rnd(8, 18) * MIN;
         break;
@@ -2443,9 +2454,61 @@ export class Simulation {
   }
 
   /** Krankenhäuser zur Verdachtsdiagnose, nach Eignung und Entfernung – mit offen/zu und freien Plätzen */
-  khFuer(pos: LatLon, verdacht: string | null | undefined, rot: boolean, kind = false, nurLandeplatz = false) {
-    const alle = store.list("hospitals").filter((h) => this.khImNetz(h) && (!nurLandeplatz || khLandung(h) !== null));
-    return khVorschlaege(alle, buchung(verdacht), rot, (h) => distanceM(pos, h) / 1000, { t: this.state.zeit, belegung: this.state.khBelegung, kind });
+  khFuer(pos: LatLon, verdacht: string | null | undefined, rot: boolean, kind = false, nurLandeplatz = false): KhVorschlag[] {
+    // Medical Center am Flughafen: nur für Patienten vom Gelände (eigene Regel unten)
+    const alle = store.list("hospitals").filter((h) => this.khImNetz(h) && h.id !== MEDICAL_CENTER && (!nurLandeplatz || khLandung(h) !== null));
+    const v = khVorschlaege(alle, buchung(verdacht), rot, (h) => distanceM(pos, h) / 1000, { t: this.state.zeit, belegung: this.state.khBelegung, kind });
+    // Flughafen (Vorgabe Paul): kritisch → direkt in die passende Klinik; kann es das Health Center allein (offen, Platz frei) → dorthin;
+    // sonst ins Medical Center (rund um die Uhr) – was weiter muss, wird von dort überstellt
+    if (!amFlughafen(pos) || rot) return v;
+    if (bestesKh(v)?.h.id === HEALTH_CENTER) return v;
+    const mc = store.get("hospitals", MEDICAL_CENTER);
+    if (!mc || !this.khImNetz(mc) || (nurLandeplatz && khLandung(mc) === null)) return v;
+    return [{ h: mc, eignung: "passend", km: distanceM(pos, mc) / 1000, zu: false, voll: false, platz: null, frei: 0, gesamt: 0 }, ...v];
+  }
+
+  /** Buchung, die das Medical Center selbst erledigt (hausärztlich, Bagatellverletzung) – alles andere wird überstellt */
+  private mcReicht(verdacht: string | null | undefined): boolean {
+    const b = buchung(verdacht);
+    return !!b && b.optionen.every((alt) => alt.every((a) => a.startsWith("ak_primaerversorgung")));
+  }
+
+  /**
+   * Patient ist im Medical Center am Flughafen angekommen und braucht ein Krankenhaus: das Medical Center ruft an der
+   * KT-Hotline an – Überstellung mit KTW ins passende Klinikum (Vorgabe Paul).
+   */
+  private mcUeberstellung(e: Einsatz): void {
+    if (e.mcUeberstellung || !e.kh || this.mcReicht(e.kh.grund)) return;
+    const mc = store.get("hospitals", MEDICAL_CENTER);
+    if (!mc) return;
+    const p0 = e.wahr.lage?.patienten[0];
+    const alter = p0?.alter ?? e.wahr.patientAlter ?? null;
+    const kind = (alter ?? 99) < 15;
+    const alle = store.list("hospitals").filter((h) => this.khImNetz(h) && !istFlughafenZiel(h.id));
+    const ziel = bestesKh(khVorschlaege(alle, buchung(e.kh.grund), false, (h) => distanceM(mc, h) / 1000, { t: this.state.zeit, belegung: this.state.khBelegung, kind }))?.h;
+    if (!ziel) return;
+    const g0 = e.wahr.abfrage?.antworten.geschlecht;
+    const geschlecht: "m" | "w" = g0 === "w" || g0 === "m" ? g0 : Math.random() < 0.5 ? "w" : "m";
+    const e2 = new Set(ziel.einrichtungen ?? []);
+    const bereich = ["amb_notaufnahme", "amb_unfall", "amb_kindernotaufnahme"].find((x) => e2.has(x)) ?? "amb_notaufnahme";
+    const trauma = buchung(e.kh.grund)?.kategorie === "Trauma";
+    const abholung = Math.round((this.state.zeit + rnd(20, 45) * MIN) / (5 * MIN)) * 5 * MIN;
+    const d: KtDaten = {
+      ...neueDaten(),
+      art: "KTx",
+      sofort: false,
+      patient: { name: zufallsName(geschlecht), alter, geschlecht, info: `Erstversorgung im Medical Center Flughafen (Einsatz ${e.nummer})` },
+      von: khOrt(mc, "amb_pvz"),
+      nach: khOrt(ziel, bereich),
+      grund: `Weiterversorgung nach Erstversorgung am Flughafen – Verdacht ${buchungName(e.kh.grund)}`,
+      lage: trauma || Math.random() < 0.4 ? "liegend" : "sitzend",
+      abholung,
+      telefon: "01 7007 22245",
+    };
+    const k = this.ktNeu(d, "hotline");
+    e.mcUeberstellung = k.id;
+    this.log(e, `Medical Center Flughafen: Patient wird ins ${ziel.kurzname || ziel.name} überstellt – Anruf an der KT-Hotline`);
+    this.emit();
   }
 
   /** Grundbelegung der Krankenhäuser fortschreiben (einmal pro Simulationsminute) */
@@ -2845,6 +2908,11 @@ export class Simulation {
         hinweise.push(`${fz.funkrufname} ist nicht verfügbar`);
         continue;
       }
+      // Flughafenambulanz fährt nur am Flughafengelände
+      if (istFlughafenFz(fz) && !amFlughafen(e.adresse)) {
+        hinweise.push(`${fz.funkrufname} fährt nur am Flughafengelände`);
+        continue;
+      }
       // über der Dienstzeit (Wechsel ausständig / Dienstende): nur vormerken – alarmiert wird erst nach dem Anfunken
       if (fz.wechselOffen && !this.ueberzeitFreigabe.has(fz.id)) {
         if (fz.ueberzeitFuer !== e.id) {
@@ -2983,7 +3051,9 @@ export class Simulation {
 
   /** Fahrzeuge mit Ankunftszeit zu einem Ziel (faktor = Sondersignal-Faktor) */
   async vorschlaegeAn(ziel: LatLon, faktor: number): Promise<Vorschlag[]> {
-    const frei = Object.values(this.state.fahrzeuge).filter((f) => this.verfuegbar(f) || this.ktAbziehbar(f));
+    // Flughafenambulanz: nur für Einsätze am Flughafengelände
+    const amFh = amFlughafen(ziel);
+    const frei = Object.values(this.state.fahrzeuge).filter((f) => (this.verfuegbar(f) || this.ktAbziehbar(f)) && (amFh || !istFlughafenFz(f)));
     const boden = frei.filter((f) => !fliegt(f));
     const umweg = boden.map((f) => this.naUmweg(f));
     const zeiten = await travelTimes(ziel, boden.map((f, i) => umweg[i]?.start ?? { lat: f.lat, lon: f.lon }));
@@ -2991,7 +3061,9 @@ export class Simulation {
       const z = zeiten[i] === null ? null : zeiten[i]! + (umweg[i]?.sek ?? 0);
       const ausr = this.ausrueckSek(fz, true);
       // KT-Fahrzeug ohne Patient: nur auf ausdrückliche Wahl (nicht in der Empfehlung)
-      return { fz, sekunden: z === null ? null : z * (fz.ohneBlaulicht ? 1 : faktor) + ausr, hinweis: null as string | null, kt: !!fz.kt?.aktiv };
+      // von außen auf das Flughafengelände (oder hinaus): eine Minute Sicherheitskontrolle
+      const kontrolle = istFlughafenFz(fz) ? 0 : kontrolleSek(fz, ziel);
+      return { fz, sekunden: z === null ? null : z * (fz.ohneBlaulicht ? 1 : faktor) + ausr + kontrolle, hinweis: null as string | null, kt: !!fz.kt?.aktiv };
     });
     for (const fz of frei.filter((f) => fliegt(f))) {
       const flug = distanceM(fz, ziel) / (this.settings.nahGeschwindigkeit / 3.6) + this.ausrueckSek(fz, true) + 90;
@@ -3043,14 +3115,26 @@ export class Simulation {
       return { ids, gruende, oben };
     }
     if (!rm && rangListe.length) {
+      // NAW (RTW-C und Notarzt in einem): steht für einen RTW-C oder einen RTW mit Notarzt; braucht es nur einen RTW,
+      // kommt er erst nach dem RTW dran (Vorgabe Paul)
+      const rangC = rangListe.findIndex((g) => g.includes("RTW-C"));
+      const rangR = rangListe.findIndex((g) => g.includes("RTW"));
+      const rangK = rangListe.findIndex((g) => g.includes("KTW"));
+      const nawRang = Math.min(...[rangC, rangR, rangK].filter((x) => x >= 0));
+      // nur ein RTW nötig (RTW vor RTW-C, kein Notarzt): NAW knapp hinter dem RTW
+      const nawNach = stufe.notarzt === "nein" && !(rangC >= 0 && rangC === nawRang);
       let best: { v: Vorschlag; punkte: number; rang: number } | null = null;
       for (const v of nutzbar) {
         // „KTW-B“ kann in der Rangfolge eigens stehen, sonst zählt er als KTW
         const eigen = v.fz.typ?.toUpperCase();
         let r = eigen && eigen !== v.fz.rmTyp ? rangListe.findIndex((g) => g.includes(eigen)) : -1;
         if (r < 0) r = rangListe.findIndex((g) => g.includes(v.fz.rmTyp));
+        if (r < 0 && v.fz.rmTyp === "NAW" && Number.isFinite(nawRang)) r = nawRang;
         if (r < 0) continue;
         let punkte = v.sekunden! + r * tol;
+        if (v.fz.rmTyp === "NAW") punkte += stufe.notarzt !== "nein" ? -tol : nawNach ? tol / 2 : 0;
+        // Flughafenambulanz ist schon am Gelände: ihr RTW geht vor Fahrzeugen von außen (die durch die Kontrolle müssen)
+        else if (istFlughafenFz(v.fz)) punkte -= tol;
         if (stufe.nfsErforderlich && !hatNFS(v.fz.besetzung)) punkte += tol;
         // KTW-B fährt ohne Blaulicht: bei Blaulicht-Einsätzen nachrangig
         if (v.fz.ohneBlaulicht && stufe.sondersignal) punkte += tol;
@@ -4238,8 +4322,11 @@ export class Simulation {
   private partnerStation(art: PartnerArt, ziel: LatLon): { id: string; name: string; lat: number; lon: number } | null {
     let best: { id: string; name: string; lat: number; lon: number } | null = null;
     let bd = Infinity;
+    const amFh = amFlughafen(ziel);
     for (const st of store.list("stations")) {
       if (partnerArtVonTyp(st.typ) !== art) continue;
+      // Betriebsfeuerwehr des Flughafens fährt nur am Gelände
+      if (art === "fw" && !amFh && amFlughafen(st)) continue;
       const d = distanceM(st, ziel);
       if (d < bd) {
         bd = d;
@@ -4450,7 +4537,10 @@ export class Simulation {
       if (!this.state.partnerFz?.includes(u)) return;
       const wf = this.settings.wetterAktiv ? fahrFaktor(this.state.wetter.lage, this.temperatur()) : 1;
       const f = (blau ? this.settings.sondersignalFaktor : 1) * wf;
-      u.fahrt = { coords: r.coords, times: r.times.map((x) => x * f), start: this.state.zeit, dauer: r.duration * f, blau };
+      let rr: Route = { ...r, times: r.times.map((x) => x * f), duration: r.duration * f };
+      // Flughafen: Kontrolle an der Einfahrt – außer für die Kräfte vom Gelände (Betriebsfeuerwehr, Polizei am Terminal)
+      if (!amFlughafen(u.heim)) rr = mitKontrolle(rr).route;
+      u.fahrt = { coords: rr.coords, times: rr.times, start: this.state.zeit, dauer: rr.duration, blau };
       u.phase = phase;
       u.phaseEnde = this.state.zeit + u.fahrt.dauer * 1000;
       this.emit();
@@ -5675,7 +5765,7 @@ export class Simulation {
     if (!k || !von) return [];
     const info = codeInfo(k.d.code);
     let alle = Object.values(this.state.fahrzeuge).filter(
-      (f) => !f.einsatzId && (this.verfuegbar(f) || f.kt || (f.ausserDienst && f.phase === "frei" && !(f.defektBis && f.defektBis > this.state.zeit))),
+      (f) => !f.einsatzId && !istFlughafenFz(f) && (this.verfuegbar(f) || f.kt || (f.ausserDienst && f.phase === "frei" && !(f.defektBis && f.defektBis > this.state.zeit))),
     );
     // Fahrzeit vom Abholort zum Ziel (für „los spätestens“ und die Hubschrauber-Frage)
     let fahrzeit = 0;

@@ -26,6 +26,7 @@ function besatzungVon(fzId: string): string {
   if (t === "ACN") return "Acute Community Nurse (diplomierte Pflegekraft mit Notfallsanitäter-Ausbildung und Notfallkompetenz Intubation, allein im Fahrzeug)";
   if (/ÖBB/.test(t)) return "Einsatzleiter der ÖBB";
   if (t === "NAH" || t === "ITH") return "Notarzt-Hubschrauber (Notarzt, Flugretter, Pilot)";
+  if (t === "NAW") return "Notarztwagen der Flughafenambulanz (Notarzt, Notfallsanitäter, Rettungssanitäter)";
   if (fz.kategorie === "NEF") return "Notarzteinsatzfahrzeug (Notarzt und Notfallsanitäter)";
   if (fz.kategorie === "RTW") return "Rettungswagen (Notfallsanitäter und Rettungssanitäter)";
   if (fz.kategorie === "KTW") return "Krankentransportwagen (Rettungssanitäter)";

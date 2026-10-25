@@ -66,7 +66,7 @@ function istOeamtcNef(f: SimFahrzeug): boolean {
 /** grobe Fahrzeuggruppen für den Filter */
 const GRUPPEN: [string, string, (fz: SimFahrzeug) => boolean][] = [
   ["alle", "Alle", () => true],
-  ["rtw", "RTW", (f) => f.rmTyp === "RTW" || f.rmTyp === "RTW-C"],
+  ["rtw", "RTW", (f) => f.rmTyp === "RTW" || f.rmTyp === "RTW-C" || f.rmTyp === "NAW"],
   ["nef", "NEF", (f) => f.rmTyp === "NEF" && !istOeamtcNef(f)],
   ["nef_oeamtc", "NEF ÖAMTC", (f) => istOeamtcNef(f)],
   ["nah", "Hubschrauber", (f) => f.rmTyp === "NAH" || f.rmTyp === "ITH"],

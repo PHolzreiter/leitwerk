@@ -18,7 +18,8 @@ export type Ressource =
   | "kindernotaufnahme"
   | "kreisssaal"
   | "druckkammer"
-  | "stroke_unit";
+  | "stroke_unit"
+  | "pvz";
 
 export interface RessourceDef {
   id: Ressource;
@@ -44,6 +45,8 @@ export const RESSOURCEN: RessourceDef[] = [
   { id: "stroke_unit", name: "Stroke Unit (Akutaufnahme)", kurz: "Stroke", einrichtung: "its_stroke_unit", dauer: [30, 60], grund: 0.25 },
   { id: "kreisssaal", name: "Kreißsaal", kurz: "Kreißsaal", einrichtung: "fb_kreisssaal", dauer: [240, 480], grund: 0.6 },
   { id: "druckkammer", name: "Druckkammer", kurz: "HBO", einrichtung: "fb_druckkammer", dauer: [90, 150], grund: 0.03 },
+  // Primärversorgung mit begrenzten Plätzen (nur wo Plätze eingetragen sind, z. B. Health Center Flughafen): Leute kommen auch selbst
+  { id: "pvz", name: "Primärversorgung", kurz: "PVZ", einrichtung: "amb_pvz", dauer: [20, 45], grund: 1.4 },
 ];
 export const RESSOURCE = new Map(RESSOURCEN.map((r) => [r.id, r]));
 
@@ -213,6 +216,9 @@ export function ressourcenFuer(buchung: string | undefined, eignung: "passend" |
     case "bu_leichte_verbrennung":
     case "bu_gesichtsschaedelverletzung":
       return [["unfall"], ["notaufnahme"]];
+    case "bu_hausaerztlich":
+    case "bu_bagatellverletzung":
+      return [["pvz"], ["notaufnahme"], ["unfall"]];
     case "bu_verletztes_kind":
       return [["unfall", "kindernotaufnahme"], ["notaufnahme"]];
     case "bu_internistischer_kindernotfall":

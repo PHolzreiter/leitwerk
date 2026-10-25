@@ -7,6 +7,8 @@ nah-99017;99/017;Christophorus 17;NAH;NAH;;;air-c17;ja;ja;24/7;;;rund um die Uhr
 nef-99917;99/917;;NEF;NEF ÖAMTC;;;air-c17;ja;nein;24/7;99/017;;ÖAMTC-NEF, nur angemeldet, wenn der Hubschrauber nicht fliegen kann
 nah-99018;99/018;Christophorus 18;NAH;NAH;;;air-c18;ja;nein;täglich Sonnenaufgang–Sonnenuntergang;;;nur tagsüber (Sonnenaufgang bis Sonnenuntergang)
 nef-99918;99/918;;NEF;NEF ÖAMTC;;;air-c18;ja;nein;24/7;99/018;;ÖAMTC-NEF, nur angemeldet, wenn der Hubschrauber nicht fliegen kann
+vie77898;77/898;RTW Flughafen;RTW;RTW;klein;;btf-flughafen-wien;ja;nein;"täglich 05:00–14:00; täglich 14:00–23:00";;;Flughafenambulanz (Betriebsfeuerwehr) – fährt nur am Flughafengelände · Daten aus öffentlich zugänglichen Quellen, ungeprüft
+vie77899;77/899;NAW Flughafen;NAW;NAW;groß;;btf-flughafen-wien;ja;nein;"täglich 06:00–18:00; täglich 18:00–06:00";;;Flughafenambulanz (Betriebsfeuerwehr) – fährt nur am Flughafengelände · Daten aus öffentlich zugänglichen Quellen, ungeprüft
 nef-55099;55/099;;NEF;NEF;;;nef-st-gmuend;ja;nein;24/7;;;Notarzt am Stützpunkt
 nef-64099;64/099;;NEF;NEF;;;nef-st-moedling;ja;nein;24/7;;;Funkrufname aus öffentlich zugänglichen Daten · Notarzt am Stützpunkt
 napn1;APN1;;NEF;NEF;;;neu-pvz-wienerwald;ja;nein;täglich 08:00–23:00;;;APN1: DGKP/Notfallsanitäter NKV + Notarzt, als NEF geführt · Daten ungeprüft (öffentlich zugänglich, 10/2026)
