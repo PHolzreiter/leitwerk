@@ -1,7 +1,7 @@
 # Änderungen
 
 ## 0.63.0 – Eigene Funkgruppe, Schichtwechsel auf der Dienststelle, Vormerken
-- **Schalter „NÖ-03 | Alle“** in „Aktive Fahrzeuge“, „Alle Fahrzeuge“ und „Statusänderungen“: standardmäßig nur die eigene Funkgruppe. Hubschrauber sind immer dabei, fremde Fahrzeuge in einem eigenen Einsatz stehen mit „von außen“ in der Liste. Der Einsatzmittelvorschlag schlägt weiter das schnellste Fahrzeug vor, auch von außerhalb
+- **Schalter „NÖ-03 | Alle“** in „Aktive Fahrzeuge“, „Alle Fahrzeuge“ und „Statusänderungen“: standardmäßig nur die eigene Funkgruppe. Hubschrauber (und ihr Ausweich-NEF) sind immer dabei, fremde Fahrzeuge in einem eigenen Einsatz stehen mit „von außen“ in der Liste. Der Einsatzmittelvorschlag schlägt weiter das schnellste Fahrzeug vor, auch von außerhalb
 - **Rückfahrt:** Fahrzeuge, die frei über Funk sind, fahren nach jedem Auftrag still zu ihrer Dienststelle zurück
 - **Schichtwechsel nur auf der Dienststelle:** Die alte Mannschaft fährt weiter, bis sie auf der Dienststelle ist. Ohne Folgedienst meldet sich das Fahrzeug erst dort ab. In der Liste steht „Wechsel ausständig“ bzw. „Dienstende – fährt heim“
 - **Über der Dienstzeit: Vormerken statt Alarmieren.** Das Fahrzeug wird nur markiert. Erst wenn man es anfunkt und fragt, übernimmt es den Einsatz („alarmiert über Funk“). Ein Hinweis in der Einsatzmaske erklärt das

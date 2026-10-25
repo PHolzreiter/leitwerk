@@ -20,7 +20,8 @@ import { store } from "../../data/store";
  *  „aussen“ = von außen, aber gerade bei einem Einsatz in der eigenen Funkgruppe, sonst „fremd“ */
 const heimCache = new Map<string, boolean>();
 export function fzBereich(fz: SimFahrzeug): "eigen" | "aussen" | "fremd" {
-  if (fz.rmTyp === "NAH" || fz.rmTyp === "ITH") return "eigen";
+  // Hubschrauber und ihr Ausweich-NEF am Stützpunkt immer
+  if (fz.rmTyp === "NAH" || fz.rmTyp === "ITH" || fz.ersatzFuer) return "eigen";
   const g = funkgruppe(store.settings.funkgruppe);
   const k = `${g.id}|${fz.id}|${fz.heim.lat.toFixed(4)},${fz.heim.lon.toFixed(4)}`;
   let drin = heimCache.get(k);
