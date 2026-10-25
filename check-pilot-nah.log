@@ -1,6 +1,6 @@
 ### npm install
 
-added 51 packages, and audited 52 packages in 7s
+added 51 packages, and audited 52 packages in 6s
 
 9 packages are looking for funding
   run `npm fund` for details
@@ -13,7 +13,7 @@ To address all issues (including breaking changes), run:
 Run `npm audit` for details.
 ### npm run build
 
-> leitwerk@0.70.0 build
+> leitwerk@0.70.1 build
 > tsc && vite build
 
 [36mvite v6.4.5 [32mbuilding for production...[36m[39m
@@ -21,7 +21,7 @@ transforming...
 [32m✓[39m 182 modules transformed.
 rendering chunks...
 [33m[plugin vite:reporter] 
-(!) /home/runner/work/leitwerk/leitwerk/node_modules/@tauri-apps/plugin-dialog/dist-js/index.js is dynamically imported by /home/runner/work/leitwerk/leitwerk/src/ui/pilot/flugsim.ts but also statically imported by /home/runner/work/leitwerk/leitwerk/src/net/spielstandOrdner.ts, /home/runner/work/leitwerk/leitwerk/src/platform.ts, dynamic import will not move module into another chunk.
+(!) /home/runner/work/leitwerk/leitwerk/node_modules/@tauri-apps/plugin-dialog/dist-js/index.js is dynamically imported by /home/runner/work/leitwerk/leitwerk/src/ui/pilot/flugsim.ts, /home/runner/work/leitwerk/leitwerk/src/ui/pilot/flugsim.ts but also statically imported by /home/runner/work/leitwerk/leitwerk/src/net/spielstandOrdner.ts, /home/runner/work/leitwerk/leitwerk/src/platform.ts, dynamic import will not move module into another chunk.
 [39m
 [33m[plugin vite:reporter] 
 (!) /home/runner/work/leitwerk/leitwerk/src/ui/dom.ts is dynamically imported by /home/runner/work/leitwerk/leitwerk/src/ui/ws/auswahl.ts but also statically imported by /home/runner/work/leitwerk/leitwerk/src/fzFokus.ts, /home/runner/work/leitwerk/leitwerk/src/main.ts, /home/runner/work/leitwerk/leitwerk/src/mapLayers.ts, /home/runner/work/leitwerk/leitwerk/src/net/tickets.ts, /home/runner/work/leitwerk/leitwerk/src/ui/ablageStart.ts, /home/runner/work/leitwerk/leitwerk/src/ui/codesPrompt.ts, /home/runner/work/leitwerk/leitwerk/src/ui/dataView.ts, /home/runner/work/leitwerk/leitwerk/src/ui/dialog.ts, /home/runner/work/leitwerk/leitwerk/src/ui/dienstWoche.ts, /home/runner/work/leitwerk/leitwerk/src/ui/dienstplanEditor.ts, /home/runner/work/leitwerk/leitwerk/src/ui/editForm.ts, /home/runner/work/leitwerk/leitwerk/src/ui/fallEditor.ts, /home/runner/work/leitwerk/leitwerk/src/ui/fehlerMelden.ts, /home/runner/work/leitwerk/leitwerk/src/ui/funkView.ts, /home/runner/work/leitwerk/leitwerk/src/ui/gespraechExport.ts, /home/runner/work/leitwerk/leitwerk/src/ui/importDialog.ts, /home/runner/work/leitwerk/leitwerk/src/ui/khInfo.ts, /home/runner/work/leitwerk/leitwerk/src/ui/kiView.ts, /home/runner/work/leitwerk/leitwerk/src/ui/ktView.ts, /home/runner/work/leitwerk/leitwerk/src/ui/mithelfen.ts, /home/runner/work/leitwerk/leitwerk/src/ui/packsView.ts, /home/runner/work/leitwerk/leitwerk/src/ui/panels/abfrage.ts, /home/runner/work/leitwerk/leitwerk/src/ui/panels/einsatzliste.ts, /home/runner/work/leitwerk/leitwerk/src/ui/panels/fahrzeuge.ts, /home/runner/work/leitwerk/leitwerk/src/ui/panels/karte.ts, /home/runner/work/leitwerk/leitwerk/src/ui/panels/kommunikation.ts, /home/runner/work/leitwerk/leitwerk/src/ui/panels/masken.ts, /home/runner/work/leitwerk/leitwerk/src/ui/panels/notrufAbfrage.ts, /home/runner/work/leitwerk/leitwerk/src/ui/panels/teile.ts, /home/runner/work/leitwerk/leitwerk/src/ui/panels/telefon.ts, /home/runner/work/leitwerk/leitwerk/src/ui/pilot/eingabe.ts, /home/runner/work/leitwerk/leitwerk/src/ui/pilot/flugsim.ts, /home/runner/work/leitwerk/leitwerk/src/ui/pilot/handy.ts, /home/runner/work/leitwerk/leitwerk/src/ui/pilot/pilotView.ts, /home/runner/work/leitwerk/leitwerk/src/ui/settingsView.ts, /home/runner/work/leitwerk/leitwerk/src/ui/spielDialog.ts, /home/runner/work/leitwerk/leitwerk/src/ui/spielstaende.ts, /home/runner/work/leitwerk/leitwerk/src/ui/sprache.ts, /home/runner/work/leitwerk/leitwerk/src/ui/startseite.ts, /home/runner/work/leitwerk/leitwerk/src/ui/testlauf.ts, /home/runner/work/leitwerk/leitwerk/src/ui/updateDienst.ts, /home/runner/work/leitwerk/leitwerk/src/ui/wetterView.ts, /home/runner/work/leitwerk/leitwerk/src/ui/ws/arbeitsplatz.ts, /home/runner/work/leitwerk/leitwerk/src/ui/ws/einstellungen.ts, /home/runner/work/leitwerk/leitwerk/src/ui/ws/nebenfenster.ts, /home/runner/work/leitwerk/leitwerk/src/ui/ws/persoenlichView.ts, /home/runner/work/leitwerk/leitwerk/src/ui/ws/steuerleiste.ts, /home/runner/work/leitwerk/leitwerk/src/ui/zuordnungDialog.ts, dynamic import will not move module into another chunk.
@@ -42,18 +42,18 @@ computing gzip size...
 [2mdist/[22m[32mindex.html                          [39m[1m[2m    1.03 kB[22m[1m[22m[2m │ gzip:     0.53 kB[22m
 [2mdist/[22m[2massets/[22m[32mhintergrund-D-OnAX-s.jpg     [39m[1m[2m  422.99 kB[22m[1m[22m
 [2mdist/[22m[2massets/[22m[32meinsatzstellen-BKMVXWRH.csv  [39m[1m[2m2,885.41 kB[22m[1m[22m
-[2mdist/[22m[2massets/[22m[35mindex-C47ABhzy.css           [39m[1m[2m  366.76 kB[22m[1m[22m[2m │ gzip:    53.34 kB[22m
-[2mdist/[22m[2massets/[22m[36mindex-6LIDbzbv.js            [39m[1m[2m    0.54 kB[22m[1m[22m[2m │ gzip:     0.26 kB[22m
-[2mdist/[22m[2massets/[22m[36mwebviewWindow-0A6Q0dQ5.js    [39m[1m[2m    1.78 kB[22m[1m[22m[2m │ gzip:     0.79 kB[22m
-[2mdist/[22m[2massets/[22m[36mwebview-D1nw0F-g.js          [39m[1m[2m    3.34 kB[22m[1m[22m[2m │ gzip:     1.13 kB[22m
-[2mdist/[22m[2massets/[22m[36mwindow-9GCozfO5.js           [39m[1m[2m   13.65 kB[22m[1m[22m[2m │ gzip:     3.38 kB[22m
-[2mdist/[22m[2massets/[22m[36mindex-bvyGv1N0.js            [39m[1m[33m5,060.18 kB[39m[22m[2m │ gzip: 1,388.90 kB[22m
+[2mdist/[22m[2massets/[22m[35mindex-BAwOEnm2.css           [39m[1m[2m  366.93 kB[22m[1m[22m[2m │ gzip:    53.37 kB[22m
+[2mdist/[22m[2massets/[22m[36mindex-DvG9oIVz.js            [39m[1m[2m    0.54 kB[22m[1m[22m[2m │ gzip:     0.26 kB[22m
+[2mdist/[22m[2massets/[22m[36mwebviewWindow-BPASAhCB.js    [39m[1m[2m    1.78 kB[22m[1m[22m[2m │ gzip:     0.79 kB[22m
+[2mdist/[22m[2massets/[22m[36mwebview-Buf4XeI7.js          [39m[1m[2m    3.34 kB[22m[1m[22m[2m │ gzip:     1.13 kB[22m
+[2mdist/[22m[2massets/[22m[36mwindow-B4AEef-j.js           [39m[1m[2m   13.65 kB[22m[1m[22m[2m │ gzip:     3.38 kB[22m
+[2mdist/[22m[2massets/[22m[36mindex-CnTxtU2H.js            [39m[1m[33m5,063.52 kB[39m[22m[2m │ gzip: 1,389.87 kB[22m
 [33m
 (!) Some chunks are larger than 2000 kB after minification. Consider:
 - Using dynamic import() to code-split the application
 - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
 - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.[39m
-[32m✓ built in 5.05s[39m
+[32m✓ built in 5.21s[39m
 ### npx tauri icon app-icon.png
         Appx Creating StoreLogo.png
         Appx Creating Square30x30Logo.png
@@ -122,7 +122,7 @@ computing gzip size...
 [1m[92m      Adding[0m toml_datetime v0.6.3 [1m[33m(available: v0.6.11)[0m
 [1m[92m      Adding[0m toml_edit v0.20.2 [1m[33m(available: v0.20.7)[0m
 [1m[92m      Adding[0m whisper-rs v0.14.4 [1m[33m(available: v0.16.0)[0m
-[1m[92m   Compiling[0m leitwerk v0.70.0 (/home/runner/work/leitwerk/leitwerk/src-tauri)
+[1m[92m   Compiling[0m leitwerk v0.70.1 (/home/runner/work/leitwerk/leitwerk/src-tauri)
 [1m[33mwarning[0m[1m: unused import: `cpal::Sample`[0m
    [1m[94m--> [0msrc/sprache.rs:203:5
     [1m[94m|[0m
@@ -132,7 +132,7 @@ computing gzip size...
     [1m[94m= [0m[1mnote[0m: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
 
 [1m[33mwarning[0m: `leitwerk` (lib) generated 1 warning
-[1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 3.16s
+[1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 3.47s
 ### python3 tools/build_default_data.py
 data/default/dienststellen.csv: 863 Zeilen
 data/default/fahrzeuge.csv: 681 Zeilen
