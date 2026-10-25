@@ -979,11 +979,14 @@ def build_pois() -> list[dict]:
     if not src.exists():
         return []
     out, gesehen = [], set()
-    for r in read_csv(src):
+    # Flughafen Wien: Orte am Gelände (Recherche 10/2026, OpenStreetMap; „Lage ungefähr“ im Hinweis)
+    flughafen = SRC / "pois_flughafen.csv"
+    zeilen = read_csv(src) + (read_csv(flughafen) if flughafen.exists() else [])
+    for r in zeilen:
         if not r.get("name") or not r.get("breitengrad") or not r.get("laengengrad"):
             continue
         # technische Bezeichnungen statt Namen („VAK_BK BK500“) weglassen
-        if "_" in r["name"]:
+        if "_" in r["name"] and not r["typ"].startswith("flughafen_"):
             continue
         lat, lon = float(r["breitengrad"]), float(r["laengengrad"])
         key = (r["name"].strip().lower(), round(lat, 4), round(lon, 4))

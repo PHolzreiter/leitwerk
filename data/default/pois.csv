@@ -2810,6 +2810,39 @@ poi-w301645119;Top Fit Fitnessstudio;fitnessstudio;Zwettl-Niederösterreich;48.6
 poi-n5063856780;VITALCLUB;fitnessstudio;Zwettl-Niederösterreich;48.600985;15.161605;© OpenStreetMap · OSM n5063856780
 poi-n5063671435;Vitalclub;fitnessstudio;Zwettl-Niederösterreich;48.603653;15.167376;© OpenStreetMap · OSM n5063671435
 poi-w135901447;Mörth Sports;fitnessstudio,tennis;Laa an der Thaya;48.711346;16.366714;© OpenStreetMap · OSM w135901447
+poi-vie-cargo;Air Cargo Center;flughafen_cargo;Flughafen Wien;48.123150;16.551140;© OpenStreetMap · OSM w118931754
+poi-vie-flz-pier-nord;Flugzeug am Gate, Pier Nord;flughafen_flugzeug_gate;Flughafen Wien;48.118050;16.567840;© OpenStreetMap · Pier Nord (OSM w23854598)
+poi-vie-flz-pier-ost;Flugzeug am Gate, Pier Ost;flughafen_flugzeug_gate;Flughafen Wien;48.118700;16.561180;© OpenStreetMap · Pier Ost (OSM w220393069)
+poi-vie-flz-pier-west;Flugzeug am Gate, Pier West;flughafen_flugzeug_gate;Flughafen Wien;48.120260;16.557490;© OpenStreetMap · Pier West (OSM w495253474)
+poi-vie-flz-vorfeld-ost;Flugzeug auf Außenposition, Vorfeld Ost;flughafen_flugzeug_vorfeld;Flughafen Wien;48.115000;16.572000;© OpenStreetMap · Lage ungefähr (Vorfeld östlich Pier Nord)
+poi-vie-flz-vorfeld-west;Flugzeug auf Außenposition, Vorfeld West;flughafen_flugzeug_vorfeld;Flughafen Wien;48.120500;16.550000;© OpenStreetMap · Lage ungefähr (Vorfeld westlich Pier West)
+poi-vie-gate-nord;Gatebereich Pier Nord;flughafen_gatebereich;Flughafen Wien;48.117800;16.566000;© OpenStreetMap · Lage ungefähr (Wartebereich im Pier)
+poi-vie-gate-ost;Gatebereich Pier Ost;flughafen_gatebereich;Flughafen Wien;48.119000;16.560500;© OpenStreetMap · Lage ungefähr (Wartebereich im Pier)
+poi-vie-gate-west;Gatebereich Pier West;flughafen_gatebereich;Flughafen Wien;48.120500;16.558500;© OpenStreetMap · Lage ungefähr (Wartebereich im Pier)
+poi-vie-gepaeck-t1;Gepäckausgabe Terminal 1 (Ankunft);flughafen_gepaeckausgabe;Flughafen Wien;48.121200;16.561200;© OpenStreetMap · Lage ungefähr
+poi-vie-gepaeck-t3;Gepäckausgabe Terminal 3 (Ankunft);flughafen_gepaeckausgabe;Flughafen Wien;48.119700;16.562500;© OpenStreetMap · Lage ungefähr
+poi-vie-gepaecksortierung;Gepäcksortieranlage;flughafen_gepaecksortierung;Flughafen Wien;48.119000;16.563000;© OpenStreetMap · Lage ungefähr (unter dem Terminal 3)
+poi-vie-hangar6;Hangar 6;flughafen_hangar;Flughafen Wien;48.129050;16.538320;© OpenStreetMap · OSM aeroway=hangar
+poi-vie-hangar7;Hangar 7;flughafen_hangar;Flughafen Wien;48.128610;16.539320;© OpenStreetMap · OSM aeroway=hangar
+poi-vie-hangar8;Hangar 8;flughafen_hangar;Flughafen Wien;48.126820;16.538490;© OpenStreetMap · OSM aeroway=hangar
+poi-vie-hangar9;Hangar 9;flughafen_hangar;Flughafen Wien;48.126240;16.538060;© OpenStreetMap · OSM aeroway=hangar
+poi-vie-austrian-lounge;Austrian Lounge (Schengen);flughafen_lounge;Flughafen Wien;48.119290;16.565090;© OpenStreetMap · OSM
+poi-vie-sky-lounge;Sky Lounge;flughafen_lounge;Flughafen Wien;48.119540;16.564780;© OpenStreetMap · OSM
+poi-vie-vienna-lounge;Vienna Lounge;flughafen_lounge;Flughafen Wien;48.119920;16.560270;© OpenStreetMap · OSM
+poi-vie-notlandung;Abstellposition für Notfälle (Werft-Vorfeld);flughafen_notlandung;Flughafen Wien;48.124250;16.543790;© OpenStreetMap · Werft-Vorfeld (OSM w9882754) – angekündigte Notfälle an Bord
+poi-vie-parkhaus3;Parkhaus 3;flughafen_parkhaus;Flughafen Wien;48.122380;16.559230;© OpenStreetMap · OSM
+poi-vie-parkhaus4;Parkhaus 4;flughafen_parkhaus;Flughafen Wien;48.121060;16.565740;© OpenStreetMap · OSM
+poi-vie-parkhaus8;Parkhaus 8;flughafen_parkhaus;Flughafen Wien;48.123830;16.556020;© OpenStreetMap · OSM
+poi-vie-sk-t1;Sicherheitskontrolle Terminal 1;flughafen_sicherheitskontrolle;Flughafen Wien;48.120300;16.560000;© OpenStreetMap · Lage ungefähr
+poi-vie-sk-t3;Sicherheitskontrolle Terminal 3;flughafen_sicherheitskontrolle;Flughafen Wien;48.119200;16.564000;© OpenStreetMap · Lage ungefähr
+poi-vie-tank-bp;BP Tankstelle Flughafen;flughafen_tankstelle;Flughafen Wien;48.124840;16.562080;© OpenStreetMap · OSM
+poi-vie-tank-fuel;Fuel VIE (Flugfeldtankstelle);flughafen_tankstelle;Flughafen Wien;48.117010;16.563180;© OpenStreetMap · OSM n13984896322
+poi-vie-t1;Terminal 1, Check-in-Halle;flughafen_terminal;Flughafen Wien;48.120970;16.560640;© OpenStreetMap · OSM aeroway=terminal
+poi-vie-t1a;Terminal 1A, Check-in-Halle;flughafen_terminal;Flughafen Wien;48.121320;16.561320;© OpenStreetMap · OSM aeroway=terminal
+poi-vie-t2;Terminal 2, Check-in-Halle;flughafen_terminal;Flughafen Wien;48.120190;16.561320;© OpenStreetMap · OSM aeroway=terminal
+poi-vie-t3;Terminal 3, Check-in-Halle;flughafen_terminal;Flughafen Wien;48.119540;16.563260;© OpenStreetMap · OSM aeroway=terminal
+poi-vie-vorfeld-nord;Vorfeld Pier Nord (Abfertigung);flughafen_vorfeld;Flughafen Wien;48.116800;16.566500;© OpenStreetMap · Lage ungefähr
+poi-vie-vorfeld-werft;Werft-Vorfeld (Abfertigung);flughafen_vorfeld;Flughafen Wien;48.124000;16.545000;© OpenStreetMap · OSM w9882754
 poi-r7212235;Freibad Absdorf;freibad;Absdorf;48.404322;15.983217;© OpenStreetMap · OSM r7212235
 poi-w26442062;Freibad Els;freibad;Albrechtsberg an der Großen Krems;48.444891;15.370897;© OpenStreetMap · OSM w26442062
 poi-w769402049;Freizeitanlage Waldbad;freibad;Allentsteig;48.691873;15.328977;© OpenStreetMap · OSM w769402049
