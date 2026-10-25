@@ -912,3 +912,140 @@
 .pilotmodus .einfuehrung {
   display: none !important;
 }
+
+/* Flugsimulator */
+.plt-sim {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.plt-sim .plt-klein {
+  margin: 0;
+}
+.plt-pill.fehl {
+  background: rgba(229, 57, 53, 0.13);
+  color: var(--pl-rot);
+}
+.plt-sim-kopf .plt-pill:not(.ok):not(.warn):not(.fehl) {
+  background: var(--pl-feld-hover);
+  color: var(--pl-dim);
+}
+.plt-sim-werte {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.plt-sim-werte div {
+  padding: 7px 9px;
+  border-radius: 9px;
+  background: var(--pl-karte);
+  border: 1px solid var(--pl-rand);
+}
+.plt-sim-werte small {
+  display: block;
+  font-size: 11px;
+  color: var(--pl-dim);
+}
+.plt-sim-werte b {
+  font-variant-numeric: tabular-nums;
+}
+.plt-zeit {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--pl-dim);
+}
+.plt-zeit .plt-b {
+  font-size: 13px;
+}
+.plt-sim code,
+.plt-wetter code {
+  font-size: 11px;
+  word-break: break-all;
+}
+
+/* Koordinaten und Flugplan */
+.plt-navi {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 10px 0 4px;
+}
+.plt-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--pl-feld);
+}
+.plt-nav-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  font-size: 12px;
+}
+.plt-nav-text span {
+  color: var(--pl-dim);
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+}
+.plt-nav-knoepfe {
+  display: flex;
+  gap: 4px;
+}
+.plt-nav-knoepfe .plt-b {
+  padding: 5px 8px;
+  font-size: 12px;
+}
+
+/* Wetter-Dialog (liegt außerhalb des Interfaces: Farben der Leitstelle) */
+.plt-wetter {
+  max-width: 520px;
+  line-height: 1.5;
+}
+.plt-wetter-jetzt {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--hover);
+  margin-bottom: 10px;
+}
+.plt-wetter .plt-reiter {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 10px;
+  background: var(--hover);
+  margin-bottom: 8px;
+}
+.plt-wetter .plt-reiter button {
+  border: none;
+  border-radius: 7px;
+  padding: 7px;
+  background: transparent;
+  color: var(--text-dim);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.plt-wetter .plt-reiter button.an {
+  background: var(--panel);
+  color: var(--text);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+}
+.plt-wetter-tipp {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--blue);
+  color: var(--blue);
+  font-weight: 700;
+}
+.plt-wetter .plt-leise {
+  color: var(--text-dim);
+}
+.plt-wetter .plt-warn {
+  color: var(--warn-text);
+}

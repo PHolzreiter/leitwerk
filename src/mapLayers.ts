@@ -564,6 +564,25 @@ function daheim(fz: (typeof sim.state.fahrzeuge)[string]): boolean {
   return Math.abs(fz.lat - fz.heim.lat) < 0.0005 && Math.abs(fz.lon - fz.heim.lon) < 0.0005;
 }
 
+/** Spieler-NAH: Flugspur (wo er war), nur hier in der Anzeige gesammelt */
+const spuren = new Map<string, [number, number][]>();
+function spurFeatures(): FeatureCollection {
+  const features: FeatureCollection["features"] = [];
+  for (const fz of Object.values(sim.state.fahrzeuge)) {
+    if (!fz.pilot) {
+      spuren.delete(fz.id);
+      continue;
+    }
+    const l = spuren.get(fz.id) ?? [];
+    const letzt = l[l.length - 1];
+    if (!letzt || Math.abs(letzt[0] - fz.lon) + Math.abs(letzt[1] - fz.lat) > 0.0004) l.push([fz.lon, fz.lat]);
+    if (l.length > 600) l.splice(0, l.length - 600);
+    spuren.set(fz.id, l);
+    if (l.length > 1) features.push({ type: "Feature", geometry: { type: "LineString", coordinates: l }, properties: { color: sim.statusDef(fz.status).farbe } });
+  }
+  return { type: "FeatureCollection", features };
+}
+
 function vehicleFeatures(): FeatureCollection<Point> {
   const t = anzeigeZeit();
   return collection(
@@ -703,6 +722,7 @@ export function addSimLayers(
   cb: { onIncident(id: string): void; onVehicle(id: string): void; onVehicleDbl(id: string): void },
 ): void {
   map.addSource("lw-routes", { type: "geojson", data: routeFeatures() });
+  map.addSource("lw-pilot-spur", { type: "geojson", data: spurFeatures() });
   map.addSource("lw-incidents", { type: "geojson", data: incidentFeatures() });
   map.addSource("lw-vehicles", { type: "geojson", data: vehicleFeatures() });
   map.addSource("lw-partner-fz", { type: "geojson", data: partnerFzFeatures() });
@@ -716,6 +736,14 @@ export function addSimLayers(
     source: "lw-routes",
     layout: { "line-cap": "round", "line-join": "round" },
     paint: { "line-color": "#1d6fd8", "line-width": 3, "line-opacity": 0.55, "line-dasharray": [2, 1.5] },
+  });
+  // Spieler-NAH: geflogene Strecke
+  map.addLayer({
+    id: "lw-pilot-spur",
+    type: "line",
+    source: "lw-pilot-spur",
+    layout: { "line-cap": "round", "line-join": "round" },
+    paint: { "line-color": ["get", "color"], "line-width": 2.5, "line-opacity": 0.75 },
   });
   map.addLayer({
     id: "lw-incidents",
@@ -887,6 +915,7 @@ export function addSimLayers(
     (map.getSource("lw-besatzung") as maplibregl.GeoJSONSource | undefined)?.setData(besatzungFeatures());
     (map.getSource("lw-incidents") as maplibregl.GeoJSONSource | undefined)?.setData(incidentFeatures());
     (map.getSource("lw-routes") as maplibregl.GeoJSONSource | undefined)?.setData(routeFeatures());
+    (map.getSource("lw-pilot-spur") as maplibregl.GeoJSONSource | undefined)?.setData(spurFeatures());
     (map.getSource("lw-flugzeuge") as maplibregl.GeoJSONSource | undefined)?.setData(flugzeugFeatures());
   });
   map.once("remove", ausSim);

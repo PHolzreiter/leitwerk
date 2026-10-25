@@ -1,6 +1,7 @@
 mod spielstaende;
 mod addresses;
 mod handy;
+mod msfs;
 mod ki;
 mod packs;
 mod routing;
@@ -620,6 +621,9 @@ pub fn run() {
             handy::handy_starten,
             handy::handy_stand,
             handy::handy_stoppen,
+            msfs::msfs_starten,
+            msfs::msfs_stoppen,
+            msfs::msfs_dll_suchen,
             app_version
         ])
         .build(tauri::generate_context!())

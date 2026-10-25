@@ -1,5 +1,15 @@
 # Änderungen
 
+## 0.70.0 – Spieler-NAH: Microsoft Flight Simulator (Teil 2)
+- **Verbindung zum MSFS 2024** (geht auch mit MSFS 2020): Im Piloten-Interface „Mit MSFS verbinden“. Position, Höhe, Kurs, Geschwindigkeit und „am Boden“ kommen jede Sekunde aus dem Simulator; der Übungsflug ist dann aus. LeitWerk verbindet sich von selbst, sobald der Simulator läuft, und beim nächsten Mal automatisch
+  - Dafür braucht es die **SimConnect.dll** aus dem kostenlosen MSFS-SDK (im Simulator den Entwicklermodus einschalten → „Help → SDK Installer“). LeitWerk sucht sie unter `C:\MSFS 2024 SDK\SimConnect SDK\lib`; liegt sie woanders, kann man sie wählen
+- **Ortung bei der Leitstelle:** Der Hubschrauber bewegt sich auf der Karte, wie er im Simulator fliegt, mit **Flugspur**. Die **Ankunftszeit** in der Fahrzeugliste rechnet mit der echten Geschwindigkeit
+- **Zeitregel:** Fliegt ein Pilot mit Simulator, läuft das Spiel 1:1 – auch wenn die Leitstelle Zeitraffer eingestellt hat (der Knopf ist dann gelb durchgestrichen, der Grund steht im Hinweis). Zeitraffer geht wieder, wenn jeder Pilot am Boden steht: am eigenen Stützpunkt von selbst, am Einsatzort oder Krankenhaus erst, wenn er ihn erlaubt. Beim Abheben fällt die Erlaubnis weg. Der Übungsflug läuft weiter mit dem Zeitraffer mit
+- **Flugplan für MSFS:** Zum Einsatzort und zum Landeplatz des Zielkrankenhauses als `.pln`-Datei speichern (im MSFS auf der Weltkarte „Laden“). Dazu die Koordinaten zum Kopieren
+- **Landeplatz** des Zielkrankenhauses mit Koordinaten; Hinweis, wenn ein Haus keinen Landeplatz hat
+- **Wetter-Hilfe:** Beim ersten Mal und über „Wetter“: „wie LeitWerk“ oder „selbst einstellen“. Bei echtem Wetter in LeitWerk: im MSFS Live-Wetter einschalten; sonst die passende Voreinstellung mit Wind
+- Bei Verbindungsproblemen zeigt das Piloten-Interface, was los ist (Simulator nicht gestartet, im Menü statt im Flug, keine Daten)
+
 ## 0.69.0 – Spieler-NAH: Hubschrauber selbst fliegen (Teil 1)
 - **Als Pilot beitreten** (Startseite): Ein Mitspieler tritt mit dem Code bei, wählt einen Hubschrauber, der gerade im Dienst ist, und sieht statt der Leitstelle sein **Piloten-Interface**. Für die Leitstelle bleibt der Hubschrauber ein ganz normales Fahrzeug
 - **Alarmierung** mit Ton und rotem Balken (Stichwort, Adresse). **Status drückt der Pilot selbst** – 2 zum Berufungsort, 3 am Berufungsort, 4 zum Zielort, 5 am Zielort, 6 frei über Funk, 1 frei auf Wache. Das Programm wartet auf ihn
@@ -13,7 +23,7 @@
 - **Chat mit der Leitstelle** im Piloten-Interface (bis der Sprechfunk kommt). Funkrufe der Leitstelle an einen Spieler-NAH zeigen einen Hinweis statt einer KI-Antwort
 - **Ausfallsicherung:** Verlässt der Pilot das Spiel oder ist er eine Minute nicht verbunden, fliegt der Computer genau dort weiter – mit Status, Einsatz, gewähltem Ziel und Patient an Bord. Wieder übernehmen geht mit „Wechseln“
 - **Leitstelle:** In der Fahrzeugliste, auf der Karte und in der Lobby steht ✈ und der Name des Piloten. Bucht der Pilot das Krankenhaus, steht „durch NAH (Pilot)“ in der Einsatzmaske
-- Noch nicht dabei (kommt als Nächstes): Position direkt aus dem MSFS 2024, Zeitregel (1:1 in der Luft), Sprechfunk zwischen Menschen, Sekundärflüge, X-Plane 12
+- Noch nicht dabei: Sprechfunk zwischen Menschen, Sekundärflüge, X-Plane 12
 
 ## 0.68.0 – Ortung und schnellere Abfrage mit der Tastatur
 - **Ortung:** Das Ergebnis erscheint jetzt immer auch beim Adressfeld der Abfrage – vorher blieb dort „Ortung läuft …“ stehen, solange der Cursor im Adressfeld war

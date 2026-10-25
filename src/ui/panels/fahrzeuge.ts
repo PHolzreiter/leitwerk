@@ -110,6 +110,9 @@ function auftrag(fz: SimFahrzeug): string {
 }
 
 function eta(fz: SimFahrzeug): string {
+  // Spieler-NAH: Ankunft aus der echten Geschwindigkeit (Flugsimulator) bzw. dem Übungsflug
+  const a = fz.pilot ? sim.pilotAnkunft(fz) : null;
+  if (a) return `${Math.max(1, Math.round(a.min))} min`;
   if (!fz.fahrt) return "";
   const rest = (fz.fahrt.start + fz.fahrt.dauer * 1000 - sim.state.zeit) / 60_000;
   return rest > 0 ? `${Math.max(1, Math.round(rest))} min` : "";

@@ -337,7 +337,24 @@ export interface PilotInfo {
   plan?: PilotPlan | null;
   /** Übungsflug ohne Flugsimulator: Ziel des laufenden Flugs */
   flugZiel?: string | null;
+  /** zuletzt aus dem Flugsimulator: Höhe/über Grund (Fuß), Kurs, Knoten, am Boden, Triebwerk; um = echte Zeit (ms) */
+  sim?: PilotSimDaten | null;
+  /** Pilot erlaubt den Zeitraffer (steht am Berufungsort oder Krankenhaus am Boden) */
+  zeitOk?: boolean;
 }
+
+export interface PilotSimDaten {
+  hoehe: number;
+  agl: number;
+  kurs: number;
+  kts: number;
+  amBoden: boolean;
+  motor: boolean;
+  um: number;
+}
+
+/** Daten aus dem Flugsimulator gelten so lange als aktuell (echte Zeit) */
+export const PILOT_SIM_FRISCH_MS = 10_000;
 
 /** Status, die der Pilot selbst drückt (Ziffern wie beim RTW) */
 export const PILOT_STATUS: StatusKey[] = ["zumBO", "amBO", "zumZO", "amZO", "freiFunk", "freiWache"];
@@ -950,7 +967,7 @@ export const BEFEHLE = {
   ],
   immer: ["chat", "funkFzAntwort"],
   /** Pilot (Spieler-NAH): jeder darf, geprüft wird, ob er diesen Hubschrauber fliegt */
-  pilot: ["pilotUebernehmen", "pilotAbgeben", "pilotStatus", "pilotPlan", "pilotFliegen", "pilotPosition"],
+  pilot: ["pilotUebernehmen", "pilotAbgeben", "pilotStatus", "pilotPlan", "pilotFliegen", "pilotPosition", "pilotZeit"],
 } as const;
 export type Befehl = (typeof BEFEHLE)[keyof typeof BEFEHLE][number];
 export type Berechtigung = "disponieren" | "steuern" | "einstellungen" | "kt";
@@ -1590,7 +1607,9 @@ export class Simulation {
 
   private tick(): void {
     const nowReal = performance.now();
-    const dt = Math.min(2000, nowReal - this.lastReal) * this.state.tempo;
+    // Spieler-NAH in der Luft: Flugsimulatoren laufen in Echtzeit – dann kein Zeitraffer
+    const tempo = this.state.tempo > 1 && this.zeitBremse() ? 1 : this.state.tempo;
+    const dt = Math.min(2000, nowReal - this.lastReal) * tempo;
     this.lastReal = nowReal;
     this.state.zeit += dt;
     const t = this.state.zeit;
@@ -6821,18 +6840,90 @@ export class Simulation {
     const r = flightRoute({ lat: fz.lat, lon: fz.lon }, p, this.settings.nahGeschwindigkeit);
     fz.fahrt = { coords: r.coords, times: r.times, start: t, dauer: r.duration };
     fz.pilot!.flugZiel = label;
+    fz.pilot!.zeitOk = false;
     this.emit();
     return null;
   }
 
-  /** Position von außen (Flugsimulator) */
-  pilotPosition(fzId: string, lat: number, lon: number): void {
+  /** Position (und Flugdaten) von außen – Flugsimulator, etwa einmal pro Sekunde */
+  pilotPosition(fzId: string, lat: number, lon: number, d?: Omit<PilotSimDaten, "um"> | null): void {
     const fz = this.meinHubschrauber(fzId);
-    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
+    if (!Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) return;
+    const p = fz.pilot!;
     fz.fahrt = null;
-    fz.pilot!.flugZiel = null;
+    p.flugZiel = null;
     fz.lat = lat;
     fz.lon = lon;
+    if (d) {
+      p.sim = { hoehe: +d.hoehe || 0, agl: +d.agl || 0, kurs: +d.kurs || 0, kts: +d.kts || 0, amBoden: !!d.amBoden, motor: !!d.motor, um: Date.now() };
+      if (!p.sim.amBoden) p.zeitOk = false;
+    }
+  }
+
+  /** Pilot erlaubt (oder verbietet) den Zeitraffer, solange er am Boden steht */
+  pilotZeit(fzId: string, ok: boolean): string | null {
+    const fz = this.meinHubschrauber(fzId);
+    if (ok && this.inDerLuft(fz)) return "Zeitraffer geht nur am Boden";
+    fz.pilot!.zeitOk = ok;
+    this.emit();
+    return null;
+  }
+
+  /** Spieler-NAH fliegt gerade (Flugsimulator: nicht am Boden; Übungsflug: Flug läuft) */
+  inDerLuft(fz: SimFahrzeug): boolean {
+    const p = fz.pilot;
+    if (!p) return false;
+    if (fz.fahrt) return true;
+    const d = p.sim;
+    return !!d && Date.now() - d.um < PILOT_SIM_FRISCH_MS && !d.amBoden;
+  }
+
+  /**
+   * Zeitraffer gesperrt? Gibt den Grund zurück. Erlaubt nur, wenn JEDER Spieler-NAH mit Flugsimulator am Boden steht –
+   * am eigenen Stützpunkt oder mit Zustimmung des Piloten (am Berufungsort, im Krankenhaus).
+   */
+  zeitBremse(): string | null {
+    for (const fz of Object.values(this.state.fahrzeuge)) {
+      const p = fz.pilot;
+      if (!p || p.offlineSeit) continue;
+      // nur mit Flugsimulator (der läuft in Echtzeit) – der Übungsflug geht mit dem Zeitraffer mit
+      if (!p.sim || Date.now() - p.sim.um > 6 * PILOT_SIM_FRISCH_MS) continue;
+      const name = fz.kurzname || fz.funkrufname;
+      if (!p.sim.amBoden && Date.now() - p.sim.um < PILOT_SIM_FRISCH_MS) return `${name} fliegt (${p.name})`;
+      const daheim = distanceM(fz, fz.heim) < 300;
+      if (!daheim && !p.zeitOk) return `${name}: ${p.name} hat den Zeitraffer nicht freigegeben`;
+    }
+    return null;
+  }
+
+  /** Spieler-NAH: Ziel und geschätzte Ankunft (Übungsflug: Rest der Flugzeit; Flugsimulator: echte Geschwindigkeit) */
+  pilotAnkunft(fz: SimFahrzeug): { ziel: string; min: number } | null {
+    const p = fz.pilot;
+    if (!p) return null;
+    const e = fz.einsatzId ? this.einsatz(fz.einsatzId) : undefined;
+    let z: LatLon | null = null;
+    let ziel = "";
+    if (e && ["alarmWache", "alarmFunk", "alarmiert", "zumBO"].includes(fz.status) && e.adresse) {
+      z = e.adresse;
+      ziel = "Einsatzort";
+    } else if (e?.kh && fz.status === "zumZO") {
+      const h = store.get("hospitals", e.kh.hospitalId);
+      if (h) {
+        z = khLandung(h) ?? h;
+        ziel = h.kurzname || h.name;
+      }
+    } else if (fz.status === "freiFunk" && distanceM(fz, fz.heim) > 300) {
+      z = fz.heim;
+      ziel = "Stützpunkt";
+    }
+    if (fz.fahrt) {
+      const rest = (fz.fahrt.start + fz.fahrt.dauer * 1000 - this.state.zeit) / 60_000;
+      return { ziel: p.flugZiel || ziel, min: Math.max(0, rest) };
+    }
+    if (!z) return null;
+    const d = p.sim && Date.now() - p.sim.um < PILOT_SIM_FRISCH_MS ? p.sim : null;
+    const kmh = d && d.kts > 25 ? d.kts * 1.852 : this.settings.nahGeschwindigkeit;
+    return { ziel, min: distanceM(fz, z) / 1000 / kmh * 60 };
   }
 
   neuesSpiel(zeit: number): void {

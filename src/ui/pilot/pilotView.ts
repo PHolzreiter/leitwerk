@@ -25,6 +25,7 @@ import { pilotModusSetzen } from "./modus";
 import { AKTIONEN, belegung, type PilotAktion } from "./tasten";
 import { eingabeStarten, eingabeStoppen, tastenDialog } from "./eingabe";
 import { handyAktionen, handyDialog, handyStand } from "./handy";
+import { datenEmpfangen, datenFrisch, dllWaehlen, flugplanSpeichern, flugsim, flugsimAnbinden, flugsimBeenden, flugsimTrennen, flugsimVerbinden, koordText, vorgabe, wetterDialog } from "./flugsim";
 
 // ------------------------------------------------------------------ Hilfen
 
@@ -43,6 +44,10 @@ const I: Record<string, string> = {
   patient: `<circle cx="12" cy="7" r="3.5"/><path d="M5 21a7 7 0 0 1 14 0"/>`,
   chat: `<path d="M4 5h16v11H9l-5 4z"/>`,
   folgen: `<circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/>`,
+  wolke: `<path d="M7 18a4.5 4.5 0 0 1-.6-9 6 6 0 0 1 11.5 1.5A3.75 3.75 0 0 1 17.5 18z"/>`,
+  sim: `<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4M7 12l3-3 2 2 5-5"/>`,
+  plan: `<path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/>`,
+  zeit: `<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>`,
 };
 const ico = (n: string, k = "") => `<svg class="plt-ico ${k}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${I[n] ?? ""}</svg>`;
 
@@ -201,6 +206,8 @@ function hubschrauberWahl(): void {
           merkeHeli(fz.id);
           dlg.close();
           zeichneAlles();
+          // beim ersten Mal: Wetter im Flugsimulator wie LeitWerk oder selbst?
+          if (!vorgabe().wetter) wetterDialog();
         } catch (e) {
           fehler(e);
         }
@@ -244,6 +251,7 @@ export function pilotOeffnen(): void {
       <div class="plt-status-jetzt"></div>
       <div class="plt-info"></div>
       <div class="plt-knoepfe">
+        <button class="plt-b" data-act="wetter" title="Wetter für den Flugsimulator">${ico("wolke")}<span>Wetter</span></button>
         <button class="plt-b" data-act="handy" title="Handy als Statusgerät">${ico("handy")}<span>Handy</span></button>
         <button class="plt-b" data-act="tasten" title="Tasten und Joystick belegen">${ico("tasten")}<span>Tasten</span></button>
         <button class="plt-b" data-act="wechseln" title="Anderen Hubschrauber wählen">${ico("tausch")}<span>Wechseln</span></button>
@@ -256,6 +264,8 @@ export function pilotOeffnen(): void {
       <section class="plt-links">
         <div class="plt-karte-titel">Status</div>
         <div class="plt-status"></div>
+        <div class="plt-karte-titel">${ico("sim")}Flugsimulator</div>
+        <div class="plt-sim"></div>
         <div class="plt-karte-titel">Übungsflug <span class="plt-leise">ohne Flugsimulator</span></div>
         <div class="plt-flug"></div>
       </section>
@@ -284,6 +294,18 @@ export function pilotOeffnen(): void {
   const $ = <T extends HTMLElement = HTMLElement>(s: string) => root!.querySelector(s) as T;
   $('[data-act="tasten"]').addEventListener("click", () => tastenDialog());
   $('[data-act="handy"]').addEventListener("click", () => handyDialog());
+  $('[data-act="wetter"]').addEventListener("click", () => wetterDialog());
+  root.addEventListener("click", (ev) => {
+    const b = (ev.target as HTMLElement).closest<HTMLElement>("[data-pln],[data-kopie]");
+    const fz = meinFz();
+    if (!b || !fz) return;
+    if (b.dataset.kopie) {
+      void navigator.clipboard?.writeText(b.dataset.kopie).then(() => toast("Koordinaten kopiert"));
+      return;
+    }
+    const [lat, lon] = (b.dataset.pln ?? "").split(",").map(Number);
+    if (Number.isFinite(lat) && Number.isFinite(lon)) void flugplanSpeichern(fz, { lat, lon, name: b.dataset.name ?? "Ziel" }).catch(fehler);
+  });
   $('[data-act="wechseln"]').addEventListener("click", async () => {
     const fz = meinFz();
     if (fz) {
@@ -335,6 +357,9 @@ export function pilotOeffnen(): void {
   aus.push(() => window.clearInterval(takt));
   eingabeStarten(pilotAktion);
   handyAktionen(pilotAktion);
+  flugsimAnbinden(meinFz, () => zeichneAlles());
+  if (vorgabe().auto) void flugsimVerbinden();
+  if (location.search.includes("debug")) Object.assign(window, { __pilot: { datenEmpfangen, flugsim } });
   aus.push(() => eingabeStoppen());
   zeichneAlles();
   // noch kein Hubschrauber: wählen (sobald der Stand vom Host da ist)
@@ -359,6 +384,7 @@ export async function pilotVerlassen(): Promise<void> {
 }
 
 export function pilotSchliessen(): void {
+  flugsimBeenden();
   for (const f of aus) f();
   aus = [];
   karte?.map.remove();
@@ -388,6 +414,7 @@ function zeichneAlles(): void {
   warten(fz);
   alarm(fz, e);
   statusKnoepfe(fz, e);
+  simTeil(fz);
   flug(fz, e);
   einsatzKarte(fz, e);
   patient(fz, e);
@@ -483,12 +510,94 @@ function tastenNameKurz(code: string | undefined): string {
   return code;
 }
 
+/** Koordinaten und Flugplan für Einsatzort und Zielkrankenhaus */
+function navigation(fz: SimFahrzeug, e: Einsatz, kh: Hospital | undefined): string {
+  const zeile = (titel: string, lat: number, lon: number, name: string, zusatz = "") => `<div class="plt-nav">
+      <div class="plt-nav-text"><b>${esc(titel)}</b><span>${esc(koordText(lat, lon))}</span>${zusatz}</div>
+      <div class="plt-nav-knoepfe"><button class="plt-b klein" data-kopie="${lat.toFixed(6)}, ${lon.toFixed(6)}" title="Koordinaten kopieren">Kopieren</button><button class="plt-b klein" data-pln="${lat},${lon}" data-name="${esc(name)}" title="Flugplan für MSFS speichern">${ico("plan")}.pln</button></div>
+    </div>`;
+  let html = "";
+  if (e.adresse && ["alarmWache", "alarmFunk", "alarmiert", "zumBO", "amBO"].includes(fz.status)) html += zeile("Einsatzort", e.adresse.lat, e.adresse.lon, "Einsatzort");
+  if (kh) {
+    const l = khLandung(kh);
+    if (l) html += zeile(`Landeplatz ${kh.kurzname || kh.name}`, l.lat, l.lon, kh.kurzname || kh.name, kh.landeplatz && kh.landeplatz !== "kein" ? "" : `<small class="plt-leise">am Haus (kein eigener Landeplatz hinterlegt)</small>`);
+    else html += `<div class="plt-nav"><div class="plt-nav-text"><b>${esc(kh.kurzname || kh.name)}</b><span class="plt-warn">kein Hubschrauberlandeplatz</span></div></div>`;
+  }
+  return html ? `<div class="plt-navi">${html}</div>` : "";
+}
+
+const SIM_TEXT: Record<string, string> = { aus: "nicht verbunden", keineDll: "SimConnect fehlt", wartet: "wartet", verbunden: "verbunden", getrennt: "getrennt", fehler: "Fehler" };
+
+function simTeil(fz: SimFahrzeug | undefined): void {
+  const d = flugsim.daten;
+  const frisch = datenFrisch();
+  const p = fz?.pilot;
+  const bremse = sim.zeitBremse();
+  const daheim = !!fz && distanceM(fz, fz.heim) < 300;
+  const key = `${flugsim.zustand}|${flugsim.text}|${frisch}|${d && frisch ? [Math.round(d.hoehe / 50), Math.round(d.agl / 20), Math.round(d.kurs / 5), Math.round(d.kts), d.am_boden].join(",") : ""}|${p?.zeitOk}|${sim.state.tempo}|${bremse}|${daheim}|${!!fz}`;
+  teil(".plt-sim", key, (box) => {
+    const z = flugsim.zustand;
+    const klasse = z === "verbunden" ? (frisch ? "ok" : "warn") : z === "wartet" ? "warn" : z === "aus" ? "" : "fehl";
+    box.insertAdjacentHTML("beforeend", `<div class="plt-sim-kopf"><span class="plt-pill ${klasse}">MSFS ${esc(SIM_TEXT[z] ?? z)}</span></div>`);
+    if (flugsim.text && !(z === "verbunden" && frisch)) box.insertAdjacentHTML("beforeend", `<p class="plt-klein ${klasse === "fehl" ? "plt-warn" : "plt-leise"}">${esc(flugsim.text)}</p>`);
+    if (z === "verbunden" && !frisch) box.insertAdjacentHTML("beforeend", `<p class="plt-klein plt-warn">Keine Flugdaten – bist du im Flug (nicht im Menü)?</p>`);
+    if (d && frisch) {
+      box.insertAdjacentHTML(
+        "beforeend",
+        `<div class="plt-sim-werte">
+          <div><small>Höhe</small><b>${Math.round(d.hoehe).toLocaleString("de-AT")} ft</b></div>
+          <div><small>über Grund</small><b>${d.am_boden ? "am Boden" : `${Math.round(d.agl).toLocaleString("de-AT")} ft`}</b></div>
+          <div><small>Kurs</small><b>${String(Math.round(((d.kurs % 360) + 360) % 360)).padStart(3, "0")}°</b></div>
+          <div><small>Geschw.</small><b>${Math.round(d.kts)} kt</b></div>
+        </div>`,
+      );
+    }
+    if (z === "aus" || z === "fehler" || z === "keineDll" || z === "getrennt") {
+      const b = el("button", { class: "plt-b voll primaer" });
+      b.innerHTML = `${ico("sim")}<span>Mit MSFS verbinden</span>`;
+      b.addEventListener("click", () => void flugsimVerbinden());
+      box.appendChild(b);
+    }
+    if (z === "keineDll" || z === "fehler") {
+      const b = el("button", { class: "plt-b voll" });
+      b.innerHTML = `<span>SimConnect.dll wählen …</span>`;
+      b.addEventListener("click", () => void dllWaehlen());
+      box.appendChild(b);
+      box.insertAdjacentHTML("beforeend", `<p class="plt-leise plt-klein">Die Datei kommt mit dem kostenlosen MSFS-SDK: im Simulator den Entwicklermodus einschalten, oben im Menü „Help → SDK Installer“. Danach liegt sie unter <code>C:\MSFS 2024 SDK\SimConnect SDK\lib\SimConnect.dll</code> – LeitWerk findet sie dort von selbst.</p>`);
+    }
+    if (z === "verbunden" || z === "wartet") {
+      const b = el("button", { class: "plt-b voll" }, "Trennen");
+      b.addEventListener("click", () => void flugsimTrennen());
+      box.appendChild(b);
+    }
+    // Zeitraffer: mit Flugsimulator nur am Boden, und weg vom Stützpunkt nur mit Zustimmung
+    if (fz && p && frisch) {
+      const zeile = el("div", { class: "plt-zeit" });
+      if (d && !d.am_boden) zeile.innerHTML = `${ico("zeit")}<span>Zeitraffer aus, solange du fliegst</span>`;
+      else if (daheim) zeile.innerHTML = `${ico("zeit")}<span>Am Stützpunkt: Zeitraffer erlaubt</span>`;
+      else {
+        const b = el("button", { class: `plt-b voll${p.zeitOk ? " an" : ""}` });
+        b.innerHTML = `${ico("zeit")}<span>${p.zeitOk ? "Zeitraffer erlaubt – sperren" : "Zeitraffer erlauben"}</span>`;
+        b.addEventListener("click", () => void befehl(sim.call("pilotZeit", fz.id, !p.zeitOk)));
+        zeile.appendChild(b);
+      }
+      box.appendChild(zeile);
+      if (sim.state.tempo > 1) box.insertAdjacentHTML("beforeend", `<p class="plt-leise plt-klein">Leitstelle: Zeitraffer ×${sim.state.tempo}${bremse ? ` – gebremst auf 1× (${esc(bremse)})` : ""}</p>`);
+    }
+  });
+}
+
 function flug(fz: SimFahrzeug | undefined, e: Einsatz | undefined): void {
   const f = fz?.fahrt;
   const rest = f ? Math.max(0, f.start / 1000 + f.dauer - sim.state.zeit / 1000) : 0;
-  const key = `${fz?.id}|${!!e?.adresse}|${!!e?.kh}|${fz?.pilot?.flugZiel}|${f ? Math.ceil(rest / 30) : -1}`;
+  const ausSim = datenFrisch();
+  const key = `${fz?.id}|${!!e?.adresse}|${!!e?.kh}|${fz?.pilot?.flugZiel}|${f ? Math.ceil(rest / 30) : -1}|${ausSim}`;
   teil(".plt-flug", key, (box) => {
     if (!fz) return;
+    if (ausSim) {
+      box.innerHTML = `<p class="plt-leise plt-klein">Die Position kommt aus dem Flugsimulator – der Übungsflug ist aus.</p>`;
+      return;
+    }
     const knopf = (icon: string, text: string, ziel: "bo" | "zo" | "heim" | null, an = true) => {
       const b = el("button", { class: "plt-b voll" });
       b.innerHTML = `${ico(icon)}<span>${text}</span>`;
@@ -511,13 +620,13 @@ function flug(fz: SimFahrzeug | undefined, e: Einsatz | undefined): void {
       root!.querySelector<HTMLElement>(".plt-map-hinweis")!.hidden = false;
     });
     box.appendChild(p);
-    box.insertAdjacentHTML("beforeend", `<p class="plt-leise plt-klein">Gerade Linie mit Reisegeschwindigkeit (${sim.settings.nahGeschwindigkeit} km/h). Mit Flugsimulator kommt die Position später direkt aus dem Sim.</p>`);
+    box.insertAdjacentHTML("beforeend", `<p class="plt-leise plt-klein">Gerade Linie mit Reisegeschwindigkeit (${sim.settings.nahGeschwindigkeit} km/h).</p>`);
   });
 }
 
 function einsatzKarte(fz: SimFahrzeug | undefined, e: Einsatz | undefined): void {
   const mitFz = e ? e.fahrzeuge.map((id) => sim.state.fahrzeuge[id]).filter((x): x is SimFahrzeug => !!x && x.einsatzId === e.id) : [];
-  const key = e ? `${e.id}|${e.code}|${e.adresse?.label}|${e.infoRtw}|${e.zusatz}|${e.kh?.hospitalId}|${mitFz.map((x) => x.id + x.status).join(",")}|${Math.round(fz ? distanceM(fz, e.adresse ?? fz) / 500 : 0)}` : "-";
+  const key = e ? `${e.id}|${e.code}|${e.adresse?.label}|${e.infoRtw}|${e.zusatz}|${e.kh?.hospitalId}|${mitFz.map((x) => x.id + x.status).join(",")}|${Math.round(fz ? distanceM(fz, e.adresse ?? fz) / 500 : 0)}|${fz ? Math.round(sim.pilotAnkunft(fz)?.min ?? -1) : ""}` : "-";
   teil(".plt-einsatz", key, (box) => {
     box.insertAdjacentHTML("beforeend", `<div class="plt-karte-titel">${ico("ziel")}Einsatz</div>`);
     if (!fz || !e) {
@@ -526,15 +635,17 @@ function einsatzKarte(fz: SimFahrzeug | undefined, e: Einsatz | undefined): void
     }
     const c = findCode(e.code ?? undefined);
     const km = e.adresse ? distanceM(fz, e.adresse) / 1000 : null;
+    const ank = sim.pilotAnkunft(fz);
     const kh = e.kh ? store.get("hospitals", e.kh.hospitalId) : undefined;
     box.insertAdjacentHTML(
       "beforeend",
       `<div class="plt-einsatz-kopf"><span class="plt-nr">${esc(e.nummer)}</span>${c ? `<span class="plt-stufe">${esc(c.stufe)}</span>` : ""}</div>
       <div class="plt-stichwort">${esc(stichwort(e))}</div>
       <div class="plt-zeile">${ico("punkt")}<span>${esc(e.adresse?.label ?? "Adresse folgt")}${e.zusatz ? `<small>${esc(e.zusatz)}</small>` : ""}</span></div>
-      ${km !== null ? `<div class="plt-zeile">${ico("flug")}<span>${km.toFixed(1).replace(".", ",")} km · ca. ${minuten((km * 1000) / (sim.settings.nahGeschwindigkeit / 3.6))} Flug</span></div>` : ""}
+      ${km !== null ? `<div class="plt-zeile">${ico("flug")}<span>${km.toFixed(1).replace(".", ",")} km · ca. ${minuten((km * 1000) / (sim.settings.nahGeschwindigkeit / 3.6))} Flug${ank ? `<small>Ankunft ${esc(ank.ziel)} in ca. ${minuten(ank.min * 60)}</small>` : ""}</span></div>` : ""}
       ${e.infoRtw ? `<div class="plt-info-rtw">${esc(e.infoRtw)}</div>` : ""}
       ${kh ? `<div class="plt-zeile">${ico("kh")}<span>Ziel: <b>${esc(kh.kurzname || kh.name)}</b>${khLandung(kh) ? "" : ` <span class="plt-warn">kein Landeplatz</span>`}</span></div>` : ""}
+      ${navigation(fz, e, kh)}
       <div class="plt-mit">${mitFz.map((x) => { const st = sim.statusDef(x.status); return `<span class="plt-mit-fz" title="${esc(st.name)}"><i style="background:${st.farbe}"></i>${esc(x.funkrufname)}${x === fz ? " (du)" : ""}</span>`; }).join("")}</div>`,
     );
   });

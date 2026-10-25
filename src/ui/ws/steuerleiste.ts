@@ -261,6 +261,13 @@ ${IST_HAUPT ? `<button type="button" class="sl-update" hidden title="Neue LeitWe
     play.textContent = sim.state.laeuft ? "❚❚ Pause" : "▶ Start";
     play.classList.toggle("primary", !sim.state.laeuft);
     tempoBtns.forEach((b) => b.classList.toggle("active", Number(b.dataset.tempo) === sim.state.tempo));
+    // Spieler-NAH mit Flugsimulator in der Luft: Zeitraffer läuft nur 1×
+    const bremse = sim.state.tempo > 1 ? sim.zeitBremse() : null;
+    const tempoGruppe = tempoBtns[0]?.parentElement;
+    if (tempoGruppe) {
+      tempoGruppe.classList.toggle("gebremst", !!bremse);
+      tempoGruppe.title = bremse ? `Zeitraffer gerade 1× – ${bremse}` : "Zeitraffer";
+    }
     const ww = sim.wetterWerte();
     const txt = `${symbolFuer(ww.lage, ww.nacht)} ${WETTER_LABEL[ww.lage]} ${Math.round(ww.temp)}°`;
     if (weather.textContent !== txt) weather.textContent = txt;

@@ -3521,3 +3521,10 @@ input.ausr-zahl { width: 64px !important; min-width: 0; }
   background: var(--warn-bg);
   color: var(--warn-text);
 }
+
+/* Zeitraffer gebremst (Spieler-NAH fliegt mit Flugsimulator) */
+.tempo.gebremst .active {
+  background: var(--warn-bg) !important;
+  color: var(--warn-text) !important;
+  text-decoration: line-through;
+}
