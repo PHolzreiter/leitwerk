@@ -1,6 +1,6 @@
 [package]
 name = "leitwerk"
-version = "0.70.1"
+version = "0.71.0"
 description = "LeitWerk – privater Leitstellensimulator"
 edition = "2021"
 
@@ -22,6 +22,8 @@ tauri-plugin-updater = "2.14"
 tauri-plugin-global-shortcut = "2"
 # Spieler-NAH: SimConnect.dll (MSFS) wird zur Laufzeit geladen
 libloading = "0.8"
+# Spieler-NAH: Missions-Server für die HPG H145 (WebSocket)
+tungstenite = "0.24"
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "stream", "json"] }
 futures-util = "0.3"
 sha2 = "0.10"

@@ -9,6 +9,7 @@ import { sim, type SimFahrzeug } from "../../sim/engine";
 import { LAGE, WETTER_LABEL, type WetterLage } from "../../sim/weather";
 import { openDialog } from "../dialog";
 import { el, esc, toast } from "../dom";
+import { carlsEmpfangen } from "./eingabe";
 
 export type SimZustand = "aus" | "keineDll" | "wartet" | "verbunden" | "getrennt" | "fehler";
 
@@ -77,6 +78,10 @@ async function zuhoeren(): Promise<void> {
     geaendert();
   });
   await listen<SimDaten>("msfs-daten", (ev) => datenEmpfangen(ev.payload));
+  await listen<number>("msfs-carls", (ev) => {
+    carlsEmpfangen(Number(ev.payload) || 0);
+    geaendert();
+  });
 }
 
 /** Flugdaten (auch vom Test-Simulator) – höchstens einmal pro Sekunde an den Host */

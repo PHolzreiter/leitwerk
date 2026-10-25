@@ -25,6 +25,8 @@ import { pilotModusSetzen } from "./modus";
 import { AKTIONEN, belegung, type PilotAktion } from "./tasten";
 import { eingabeStarten, eingabeStoppen, tastenDialog } from "./eingabe";
 import { handyAktionen, handyDialog, handyStand } from "./handy";
+import { hpg, hpgAktualisieren, hpgEinrichten, hpgMissionFuer, hpgStarten, hpgTestNachricht } from "./hpg";
+import { letzterCarls } from "./eingabe";
 import { communityWaehlen, gtn, gtnAn, gtnBereitlegen, gtnSuchen, gtnUmschalten } from "./flugsim";
 import { datenEmpfangen, datenFrisch, dllWaehlen, flugplanSpeichern, flugsim, flugsimAnbinden, flugsimBeenden, flugsimTrennen, flugsimVerbinden, koordText, vorgabe, wetterDialog } from "./flugsim";
 
@@ -361,7 +363,15 @@ export function pilotOeffnen(): void {
   flugsimAnbinden(meinFz, () => zeichneAlles());
   if (vorgabe().auto) void flugsimVerbinden();
   void gtnSuchen();
-  if (location.search.includes("debug")) Object.assign(window, { __pilot: { datenEmpfangen, flugsim } });
+  void hpgStarten({
+    status: (s) => pilotStatusDruecken(s),
+    plan: (p) => {
+      const f = meinFz();
+      if (f) void befehl(sim.call("pilotPlan", f.id, p));
+    },
+    geaendert: () => zeichneAlles(),
+  });
+  if (location.search.includes("debug")) Object.assign(window, { __pilot: { datenEmpfangen, flugsim, hpgMissionFuer, hpgTestNachricht } });
   aus.push(() => eingabeStoppen());
   zeichneAlles();
   // noch kein Hubschrauber: wählen (sobald der Stand vom Host da ist)
@@ -425,6 +435,7 @@ function zeichneAlles(): void {
   karteAktualisieren(fz, e);
   handyStand(fz, e);
   gtnZiel(fz, e);
+  hpgAktualisieren(fz, e);
 }
 
 function kopf(fz: SimFahrzeug | undefined): void {
@@ -474,7 +485,7 @@ function alarm(fz: SimFahrzeug | undefined, e: Einsatz | undefined): void {
     window.setTimeout(() => spielen("funkDringend"), 1800);
   }
   letzterEinsatz = neu;
-  if (!fz || !e || !["alarmWache", "alarmFunk", "alarmiert"].includes(fz.status)) alarmOffen = false;
+  if (!fz || !e || !["alarmWache", "alarmFunk"].includes(fz.status)) alarmOffen = false;
   box.hidden = !alarmOffen || !e;
   if (box.hidden || !e) return;
   const key = `${e.id}|${e.code}|${e.adresse?.label}`;
@@ -482,7 +493,7 @@ function alarm(fz: SimFahrzeug | undefined, e: Einsatz | undefined): void {
   box.dataset.k = key;
   box.innerHTML = `<div class="plt-alarm-titel">ALARM</div>
     <div class="plt-alarm-text"><b>${esc(stichwort(e))}</b><span>${esc(e.adresse?.label ?? "Adresse folgt")}</span></div>
-    <div class="plt-alarm-hinweis">Status <kbd>2</kbd> = Einsatz übernommen</div>`;
+    <div class="plt-alarm-hinweis"><kbd>9</kbd> Quittieren · <kbd>2</kbd> beim Abheben</div>`;
 }
 
 function statusKnoepfe(fz: SimFahrzeug | undefined, e: Einsatz | undefined): void {
@@ -551,7 +562,7 @@ function simTeil(fz: SimFahrzeug | undefined): void {
   const p = fz?.pilot;
   const bremse = sim.zeitBremse();
   const daheim = !!fz && distanceM(fz, fz.heim) < 300;
-  const key = `${flugsim.zustand}|${flugsim.text}|${frisch}|${d && frisch ? [Math.round(d.hoehe / 50), Math.round(d.agl / 20), Math.round(d.kurs / 5), Math.round(d.kts), d.am_boden].join(",") : ""}|${p?.zeitOk}|${sim.state.tempo}|${bremse}|${daheim}|${!!fz}|${gtn.paket}|${gtn.fehler}|${gtn.geprueft}|${gtnAn()}|${gtn.ziel}`;
+  const key = `${flugsim.zustand}|${flugsim.text}|${frisch}|${d && frisch ? [Math.round(d.hoehe / 50), Math.round(d.agl / 20), Math.round(d.kurs / 5), Math.round(d.kts), d.am_boden].join(",") : ""}|${p?.zeitOk}|${sim.state.tempo}|${bremse}|${daheim}|${!!fz}|${gtn.paket}|${gtn.fehler}|${gtn.geprueft}|${gtnAn()}|${gtn.ziel}|${hpg.zustand}|${hpg.text}|${hpg.paket}|${hpg.mission}|${letzterCarls}`;
   teil(".plt-sim", key, (box) => {
     const z = flugsim.zustand;
     const klasse = z === "verbunden" ? (frisch ? "ok" : "warn") : z === "wartet" ? "warn" : z === "aus" ? "" : "fehl";
@@ -586,6 +597,24 @@ function simTeil(fz: SimFahrzeug | undefined): void {
       const b = el("button", { class: "plt-b voll" }, "Trennen");
       b.addEventListener("click", () => void flugsimTrennen());
       box.appendChild(b);
+    }
+    // HPG H145: Tablet (Missions-App) und Funkgerät
+    if (hpg.geprueft && (hpg.paket || hpg.zustand === "verbunden")) {
+      const g = el("div", { class: "plt-gtn" });
+      const klasse = hpg.zustand === "verbunden" ? "ok" : hpg.zustand === "fehler" ? "fehl" : "warn";
+      g.innerHTML = `<div class="plt-sim-kopf"><span class="plt-pill ${klasse}">H145-Tablet ${hpg.zustand === "verbunden" ? "verbunden" : hpg.zustand === "fehler" ? "Fehler" : "wartet"}</span></div>
+        <p class="plt-leise plt-klein">${esc(hpg.zustand === "verbunden" ? "Alarm, Route und Patient kommen aufs Tablet (Missions-App)." : hpg.mission ? "Im Tablet: Missions → Library → „LeitWerk Leitstelle“ wählen (nach dem Einrichten einmal REFRESH)." : hpg.text || "Einmal einrichten, dann im Tablet die Mission wählen.")}${letzterCarls ? ` · Funkgerät zuletzt: ${letzterCarls}` : ""}</p>`;
+      if (!hpg.mission) {
+        const b = el("button", { class: "plt-b klein" }, "H145 einrichten");
+        b.addEventListener("click", () => void hpgEinrichten());
+        g.appendChild(b);
+      } else if (hpg.zustand !== "verbunden") {
+        const b = el("button", { class: "plt-b klein" }, "Missions-Index neu bauen");
+        b.title = "Falls „LeitWerk Leitstelle“ im Tablet fehlt";
+        b.addEventListener("click", () => void hpgEinrichten());
+        g.appendChild(b);
+      }
+      box.appendChild(g);
     }
     // PMS50 GTN750: Flugplan wird automatisch bereitgelegt
     if (gtn.geprueft) {

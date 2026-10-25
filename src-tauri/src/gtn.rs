@@ -15,7 +15,7 @@ pub struct GtnOrt {
 }
 
 /// Community-Ordner aus den UserCfg.opt-Dateien (InstalledPackagesPath "…")
-fn community_suchen() -> Vec<PathBuf> {
+pub fn communities() -> Vec<PathBuf> {
     let mut opts = Vec::new();
     if let Ok(l) = std::env::var("LOCALAPPDATA") {
         let l = PathBuf::from(l);
@@ -65,7 +65,7 @@ fn paket_in(community: &Path) -> Option<PathBuf> {
 fn finden(gewaehlt: Option<&str>) -> (Option<PathBuf>, Option<PathBuf>) {
     let communities: Vec<PathBuf> = match gewaehlt.filter(|g| !g.trim().is_empty()) {
         Some(g) => vec![PathBuf::from(g)],
-        None => community_suchen(),
+        None => communities(),
     };
     for c in &communities {
         if let Some(p) = paket_in(c) {

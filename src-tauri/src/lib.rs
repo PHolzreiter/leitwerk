@@ -2,6 +2,7 @@ mod spielstaende;
 mod addresses;
 mod gtn;
 mod handy;
+mod hpg;
 mod msfs;
 mod ki;
 mod packs;
@@ -627,6 +628,10 @@ pub fn run() {
             msfs::msfs_dll_suchen,
             gtn::gtn_suchen,
             gtn::gtn_schreiben,
+            hpg::hpg_starten,
+            hpg::hpg_senden,
+            hpg::hpg_einrichten,
+            hpg::hpg_suchen,
             app_version
         ])
         .build(tauri::generate_context!())

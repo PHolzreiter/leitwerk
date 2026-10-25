@@ -6,9 +6,10 @@
  */
 import type { StatusKey } from "../../sim/settings";
 
-export type PilotAktion = "s1" | "s2" | "s3" | "s4" | "s5" | "s6" | "fliegen";
+export type PilotAktion = "s9" | "s1" | "s2" | "s3" | "s4" | "s5" | "s6" | "fliegen";
 
 export const AKTIONEN: { id: PilotAktion; name: string; status?: StatusKey }[] = [
+  { id: "s9", name: "Quittieren – Alarm angenommen", status: "alarmiert" },
   { id: "s1", name: "Status 1 – frei auf Wache", status: "freiWache" },
   { id: "s2", name: "Status 2 – zum Berufungsort", status: "zumBO" },
   { id: "s3", name: "Status 3 – am Berufungsort", status: "amBO" },
@@ -31,13 +32,15 @@ export interface Belegung {
   global: Partial<Record<PilotAktion, string>>;
   globalAn: boolean;
   joy: Partial<Record<PilotAktion, JoyTaste>>;
+  /** HPG H145: Wert von L:CARLS_RT_BUTTON je Aktion (Tasten am CARLS-Funkgerät) */
+  carls: Partial<Record<PilotAktion, number>>;
 }
 
 const SCHLUESSEL = "leitwerk.pilot.tasten";
 
 export function standardBelegung(): Belegung {
   return {
-    taste: { s1: "Digit1", s2: "Digit2", s3: "Digit3", s4: "Digit4", s5: "Digit5", s6: "Digit6", fliegen: "KeyF" },
+    taste: { s9: "Digit9", s1: "Digit1", s2: "Digit2", s3: "Digit3", s4: "Digit4", s5: "Digit5", s6: "Digit6", fliegen: "KeyF" },
     global: {
       s1: "CommandOrControl+Shift+1",
       s2: "CommandOrControl+Shift+2",
@@ -45,9 +48,12 @@ export function standardBelegung(): Belegung {
       s4: "CommandOrControl+Shift+4",
       s5: "CommandOrControl+Shift+5",
       s6: "CommandOrControl+Shift+6",
+      s9: "CommandOrControl+Shift+9",
     },
     globalAn: true,
     joy: {},
+    // Vermutung: die Taste liefert ihre Ziffer – sonst im Tasten-Fenster anlernen
+    carls: { s1: 1, s2: 2, s3: 3, s4: 4, s5: 5, s6: 6, s9: 9 },
   };
 }
 
@@ -57,7 +63,7 @@ export function belegung(): Belegung {
     if (roh) {
       const b = JSON.parse(roh) as Partial<Belegung>;
       const s = standardBelegung();
-      return { taste: { ...s.taste, ...b.taste }, global: { ...s.global, ...b.global }, globalAn: b.globalAn ?? s.globalAn, joy: { ...b.joy } };
+      return { taste: { ...s.taste, ...b.taste }, global: { ...s.global, ...b.global }, globalAn: b.globalAn ?? s.globalAn, joy: { ...b.joy }, carls: b.carls ? { ...b.carls } : s.carls };
     }
   } catch {
     /* Standard */

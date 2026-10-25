@@ -111,6 +111,22 @@ function joyLernen(abbruch: AbortSignal): Promise<{ geraet: string; taste: numbe
   });
 }
 
+// ------------------------------------------------------------------ HPG H145: CARLS-Funkgerät im Cockpit
+
+let carlsLerner: ((w: number) => void) | null = null;
+export let letzterCarls = 0;
+
+/** Neuer Wert von L:CARLS_RT_BUTTON (aus dem Flugsimulator) */
+export function carlsEmpfangen(w: number): void {
+  letzterCarls = w;
+  if (!w) return;
+  if (carlsLerner) return carlsLerner(w);
+  if (lernt || !ausloesen) return;
+  const b = belegung();
+  const a = (Object.keys(b.carls) as PilotAktion[]).find((k) => b.carls[k] === w);
+  if (a) ausloesen(a);
+}
+
 // ------------------------------------------------------------------ Start/Stopp
 
 export function eingabeStarten(f: (a: PilotAktion) => void): void {
@@ -141,8 +157,8 @@ export function tastenDialog(): void {
     body.innerHTML = `
       <p class="plt-leise">Klick auf ein Feld und drück dann die gewünschte Taste. <b>Entf</b> löscht die Belegung, <b>Esc</b> bricht ab.</p>
       <label class="plt-check"><input type="checkbox" class="plt-global-an" ${b.globalAn ? "checked" : ""}${inTauri() ? "" : " disabled"}> Globale Tastenkürzel – funktionieren auch, wenn der Flugsimulator im Vordergrund ist${inTauri() ? "" : " (nur im Programm, nicht im Browser)"}</label>
-      <table class="plt-tasten-tab"><thead><tr><th>Aktion</th><th>Taste im Fenster</th><th>Global</th><th>Joystick</th></tr></thead><tbody></tbody></table>
-      <p class="plt-leise plt-klein">Globale Kürzel brauchen eine Zusatztaste (Strg, Alt, Umschalt) – sonst wären die Ziffern im ganzen System belegt. Joystick: die Taste einmal drücken, während das Feld blinkt. Ob der Joystick auch bei Fokus auf dem Flugsimulator erkannt wird, hängt vom System ab – im Zweifel globale Kürzel oder das Handy nehmen.</p>`;
+      <table class="plt-tasten-tab"><thead><tr><th>Aktion</th><th>Taste im Fenster</th><th>Global</th><th>Joystick</th><th>H145-Funkgerät</th></tr></thead><tbody></tbody></table>
+      <p class="plt-leise plt-klein">Globale Kürzel brauchen eine Zusatztaste (Strg, Alt, Umschalt) – sonst wären die Ziffern im ganzen System belegt. Joystick: die Taste einmal drücken, während das Feld blinkt. Ob der Joystick auch bei Fokus auf dem Flugsimulator erkannt wird, hängt vom System ab – im Zweifel globale Kürzel oder das Handy nehmen. H145-Funkgerät: die Tasten am CARLS-Funkgerät in der Mittelkonsole der HPG H145 (MSFS muss verbunden sein); anklicken und dann die Taste im Cockpit drücken.</p>`;
     body.querySelector<HTMLInputElement>(".plt-global-an")!.addEventListener("change", (ev) => {
       b = { ...b, globalAn: (ev.target as HTMLInputElement).checked };
     });
@@ -150,7 +166,7 @@ export function tastenDialog(): void {
     for (const a of AKTIONEN) {
       const tr = el("tr");
       tr.innerHTML = `<td>${esc(a.name)}</td>`;
-      const feld = (text: string, art: "taste" | "global" | "joy") => {
+      const feld = (text: string, art: "taste" | "global" | "joy" | "carls") => {
         const td = el("td");
         const btn = el("button", { class: "plt-taste-feld" }, text);
         btn.addEventListener("click", () => lernen(btn, a.id, art));
@@ -161,17 +177,21 @@ export function tastenDialog(): void {
       feld(kuerzelName(b.global[a.id]), "global");
       const j = b.joy[a.id];
       feld(j ? `${kurzGeraet(j.geraet)} · Taste ${j.taste + 1}` : "–", "joy");
+      const c = b.carls[a.id];
+      if (a.id !== "fliegen") feld(c !== undefined ? `Wert ${c}` : "–", "carls");
+      else tr.appendChild(el("td"));
       tb.appendChild(tr);
     }
   };
-  const lernen = (btn: HTMLButtonElement, a: PilotAktion, art: "taste" | "global" | "joy") => {
+  const lernen = (btn: HTMLButtonElement, a: PilotAktion, art: "taste" | "global" | "joy" | "carls") => {
     abbruch?.abort();
     body.querySelectorAll(".plt-taste-feld.lernt").forEach((x) => x.classList.remove("lernt"));
     btn.classList.add("lernt");
-    btn.textContent = art === "joy" ? "Joystick-Taste drücken …" : "Taste drücken …";
+    btn.textContent = art === "joy" ? "Joystick-Taste drücken …" : art === "carls" ? "Taste am Funkgerät im Cockpit drücken …" : "Taste drücken …";
     lernt = true;
     const ende = () => {
       lernt = false;
+      carlsLerner = null;
       document.removeEventListener("keydown", key, true);
       abbruch?.abort();
       abbruch = null;
@@ -184,6 +204,7 @@ export function tastenDialog(): void {
       if (ev.key === "Delete" || ev.key === "Backspace") {
         if (art === "taste") delete b.taste[a];
         else if (art === "global") delete b.global[a];
+        else if (art === "carls") delete b.carls[a];
         else delete b.joy[a];
         return ende();
       }
@@ -206,6 +227,13 @@ export function tastenDialog(): void {
       }
     };
     document.addEventListener("keydown", key, true);
+    if (art === "carls") {
+      carlsLerner = (w) => {
+        for (const x of Object.keys(b.carls) as PilotAktion[]) if (b.carls[x] === w) delete b.carls[x];
+        b.carls[a] = w;
+        ende();
+      };
+    }
     if (art === "joy") {
       abbruch = new AbortController();
       void joyLernen(abbruch.signal).then((j) => {

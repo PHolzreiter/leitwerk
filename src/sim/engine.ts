@@ -357,7 +357,7 @@ export interface PilotSimDaten {
 export const PILOT_SIM_FRISCH_MS = 10_000;
 
 /** Status, die der Pilot selbst drückt (Ziffern wie beim RTW) */
-export const PILOT_STATUS: StatusKey[] = ["zumBO", "amBO", "zumZO", "amZO", "freiFunk", "freiWache"];
+export const PILOT_STATUS: StatusKey[] = ["alarmiert", "zumBO", "amBO", "zumZO", "amZO", "freiFunk", "freiWache"];
 
 /** Nach so langer Zeit ohne Verbindung übernimmt der Computer den Hubschrauber wieder */
 export const PILOT_OFFLINE_MS = 60_000;
@@ -6690,6 +6690,11 @@ export class Simulation {
     if (!PILOT_STATUS.includes(s)) return "Diesen Status setzt die Leitstelle";
     if (fz.status === s) return null;
     switch (s) {
+      case "alarmiert":
+        // Quittieren: Alarm angenommen – jetzt wird eingestiegen und der Rotor gestartet, Status 2 kommt beim Abheben
+        if (!e || !["alarmWache", "alarmFunk"].includes(fz.status)) return "Quittieren geht nur direkt nach der Alarmierung";
+        this.setStatus(fz, "alarmiert");
+        break;
       case "zumBO":
         if (!e) return "Kein Einsatz – Status 2 geht erst nach der Alarmierung";
         this.setStatus(fz, "zumBO");

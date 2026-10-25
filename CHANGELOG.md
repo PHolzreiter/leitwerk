@@ -1,5 +1,14 @@
 # Änderungen
 
+## 0.71.0 – Spieler-NAH: HPG H145 – Tablet und Funkgerät
+- **Einsatz aufs Tablet der HPG H145:** LeitWerk ist jetzt ein „Mission Server“ für das Missionssystem der H145. Einmal im Piloten-Interface **H145 einrichten** (legt die Mission „LeitWerk Leitstelle“ an und baut den Missions-Index neu), dann am Tablet **Missions → Library → LeitWerk Leitstelle** wählen. Danach:
+  - **Alarm poppt am Tablet auf** – Stichwort, Adresse, Info – mit **Quittieren**
+  - **Route automatisch:** Magenta-Linie und Peilzeiger zum Einsatzort, kurz vor dem Ziel die Schwebeanzeige; nach der Zielwahl zum Landeplatz des Krankenhauses
+  - **Am Einsatzort:** Patient liegt als Figur am Boden, die Crew kniet daneben. Am Tablet das **Patientenblatt** und die Entscheidung: transportieren (die 3 passenden Krankenhäuser mit Landeplatz), Übergabe an den RTW (mit/ohne Notarzt) oder kein Transport. Beim Transport liegt der Patient auf der Trage
+  - unten in der Missions-App: aktueller Status und Einsatznummer
+- **Quittieren (Status 9 „Alarmiert und quittiert“):** Alarm angenommen – einsteigen, Rotor starten; Status 2 beim Abheben. Am Tablet, mit Taste **9** oder Strg + Umschalt + 9
+- **Status über das CARLS-Funkgerät** in der Mittelkonsole der H145: die Ziffern 1–6 und 9 setzen den Status (über MSFS). Passt die Belegung nicht, im Fenster **Tasten** in der Spalte „H145-Funkgerät“ anlernen – Feld anklicken, Taste im Cockpit drücken
+
 ## 0.70.1 – Spieler-NAH: Flugplan fürs GTN750, Ruhe für den Piloten
 - **Piloten-Interface:** keine Töne mehr von Notrufen, KT-Hotline, Funkrufen und Warnungen der Leitstelle – der Pilot hört nur seine Alarmierung und den Chat
 - **Flugplan (.pln) repariert:** Start und Ziel heißen jetzt wie bei MSFS selbst (eigener Start/eigenes Ziel), Dateiname und Texte ohne Sonderzeichen – der Import auf der Weltkarte sollte damit klappen

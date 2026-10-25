@@ -36,6 +36,11 @@ const RECV_SIMOBJECT_DATA: u32 = 8;
 const DATEN_AB: usize = 40;
 const DEF: u32 = 1;
 const REQ: u32 = 1;
+/// HPG H145: Tasten am CARLS-Funkgerät (Status-Pads) – nur bei Änderung, dafür jedes Bild
+const DEF_CARLS: u32 = 2;
+const REQ_CARLS: u32 = 2;
+const PERIOD_VISUAL_FRAME: u32 = 2;
+const FLAG_CHANGED: u32 = 1;
 
 /// Was gelesen wird (Reihenfolge = Reihenfolge der Werte)
 const WERTE: [(&str, &str); 8] = [
@@ -174,6 +179,13 @@ fn sitzung(api: &Api, app: &AppHandle, stop: &AtomicBool, dll: &Path) -> Result<
         unsafe { (api.add)(h, DEF, v.as_ptr(), e.as_ptr(), DATATYPE_FLOAT64, 0.0, UNUSED) };
     }
     unsafe { (api.request)(h, REQ, DEF, OBJECT_ID_USER, PERIOD_SECOND, 0, 0, 0, 0) };
+    // HPG H145: zuletzt gedrückte Taste am CARLS-Funkgerät (andere Hubschrauber liefern hier einfach 0)
+    let carls = CString::new("L:CARLS_RT_BUTTON").unwrap();
+    let zahl = CString::new("number").unwrap();
+    unsafe {
+        (api.add)(h, DEF_CARLS, carls.as_ptr(), zahl.as_ptr(), DATATYPE_FLOAT64, 0.0, UNUSED);
+        (api.request)(h, REQ_CARLS, DEF_CARLS, OBJECT_ID_USER, PERIOD_VISUAL_FRAME, FLAG_CHANGED, 0, 0, 0);
+    }
     status(app, "verbunden", "Mit dem Flugsimulator verbunden", Some(dll));
     let mut letzte = Instant::now();
     let mut ergebnis = Ok(true);
@@ -188,7 +200,10 @@ fn sitzung(api: &Api, app: &AppHandle, stop: &AtomicBool, dll: &Path) -> Result<
                     status(app, "getrennt", "Flugsimulator wurde beendet", Some(dll));
                     break;
                 }
-                RECV_SIMOBJECT_DATA if b.len() >= DATEN_AB + 8 * WERTE.len() => {
+                RECV_SIMOBJECT_DATA if b.len() >= DATEN_AB + 8 && u32_bei(b, 12) == REQ_CARLS => {
+                    let _ = app.emit("msfs-carls", f64_bei(b, DATEN_AB));
+                }
+                RECV_SIMOBJECT_DATA if b.len() >= DATEN_AB + 8 * WERTE.len() && u32_bei(b, 12) == REQ => {
                     letzte = Instant::now();
                     let w = |k: usize| f64_bei(b, DATEN_AB + 8 * k);
                     let _ = app.emit(
