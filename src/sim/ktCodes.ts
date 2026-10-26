@@ -1,10 +1,15 @@
 /**
- * Codes für Krankentransporte (KTA/KTR/KTx) und Überstellungen (SEK-96):
- * feste Liste, was ein Code verlangt (Fahrzeug, Arzt, Sondersignal) und Code-Vorschlag aus den Auftragsdaten.
+ * Codes für Krankentransporte und Überstellungen (ab v0.74 über Bedingungen, siehe ktBedingungen.ts):
+ * Die Codes kommen aus dem aktiven Codesatz (Abschnitt „kt“ des Abfrageschemas) bzw. aus dem
+ * eingebauten LeitWerk-Codesystem. Was ein Code verlangt (Fahrzeug, Arzt, Sondersignal), steht in
+ * seinen Bedingungen – nicht mehr im Namen.
  */
-import { BEREICHE_AMBULANZ } from "../data/model";
-import { einrichtung } from "../data/klinik";
+import { store } from "../data/store";
+import { standardCodesystem } from "../data/standard";
+import type { Schema } from "../abfrage/schema";
+import { KT_FRAGEN } from "../abfrage/ktGespraech";
 import type { KtDaten } from "./kt";
+import { bedingungenAus, codeSuchen, istUeberstellungDaten, type KtAbfrageFrage, type KtBed, type KtCodeDef, type KtSatz } from "./ktBedingungen";
 
 export interface KtCode {
   code: string;
@@ -13,72 +18,66 @@ export interface KtCode {
   gruppe: "KT" | "SEK";
 }
 
-export const KT_KAPITEL: Record<string, string> = {
-  "90": "90 – Krankentransport / Einweisung",
-  "93": "93 – Fahrt zur Therapie",
-  "95": "95 – Heimtransport",
-  "96": "96 – Überstellung",
-};
-
-const LAGE = ["gehfähig", "Tragstuhl", "liegend", "eigener Rollstuhl"];
-const THERAPIE: [string, string][] = [
-  ["M", "Chemotherapie"],
-  ["S", "Strahlentherapie"],
-  ["Y", "Dialyse"],
-];
-
-function ktCodes(p: "KTA" | "KTR" | "KTx"): KtCode[] {
-  const l: KtCode[] = [];
-  const add = (c: string, name: string) => l.push({ code: `${p}-${c}`, name, kapitel: KT_KAPITEL[c.slice(0, 2)], gruppe: "KT" });
-  for (let i = 1; i <= 4; i++) add(`90K${i}`, `Krankentransport-${LAGE[i - 1]}`);
-  for (let i = 1; i <= 4; i++) add(`90K${i}!`, `Einweisung-${i === 1 ? "gehend" : LAGE[i - 1]} SOFORT`);
-  for (const [b, n] of THERAPIE) for (let i = 1; i <= 4; i++) add(`93${b}${i}`, `${n}-${LAGE[i - 1]}`);
-  if (p === "KTx") add("95KyA", "Sofortiger Rücktransport durch selbes Team");
-  for (let i = 1; i <= 4; i++) {
-    add(`95K${i}`, `Stationärer Heimtransport-${LAGE[i - 1]}`);
-    add(`95K${i}A`, `Ambulanter Heimtransport-${LAGE[i - 1]}`);
-  }
-  for (const [b, n] of THERAPIE) for (let i = 1; i <= 4; i++) add(`95${b}${i}`, `${n} Heimtransport-${LAGE[i - 1]}`);
-  for (let i = 1; i <= 4; i++) add(`96K${i}`, `Überstellung-${LAGE[i - 1]}`);
-  if (p === "KTx") {
-    for (let i = 1; i <= 4; i++) add(`96K${i}!`, `Überstellung-${LAGE[i - 1]} SOFORT`);
-    add("96K5", "Überstellung mit RTW und Arzt (beigestellt)");
-  }
-  return l;
+/** Die Abfrage der KT-Hotline, wie sie eingebaut ist */
+export function standardKtAbfrage(): KtAbfrageFrage[] {
+  return KT_FRAGEN.map((f) => ({ id: f.id, text: f.text, aktiv: true }));
 }
 
-const SEK: [string, string][] = [
-  ["SEK-96K1", "Überstellung-gehfähig"],
-  ["SEK-96K2", "Überstellung-Tragstuhl"],
-  ["SEK-96K3", "Überstellung-liegend"],
-  ["SEK-96K1!", "Überstellung-gehfähig SOFORT"],
-  ["SEK-96K2!", "Überstellung-Tragstuhl SOFORT"],
-  ["SEK-96K3!", "Überstellung-liegend SOFORT"],
-  ["SEK-96K6-SRTW", "Überstellung mit SRTW"],
-  ["SEK-96B6-SRTW", "Überstellung mit SRTW mit Sondersignal"],
-  ["SEK-96D6", "Notarztbegleitete Überstellung"],
-  ["SEK-96K6-SNAW", "Notarztbegleitete Überstellung mit SNAW"],
-  ["SEK-96D6-SNAW", "Notarztbegleitete Überstellung mit SNAW"],
-  ["SEK-96K7-ITH", "Notarztbegleitete Überstellung mit NAH/ITH"],
-  ["SEK-96D7-ITH", "Notarztbegleitete Überstellung mit NAH/ITH"],
-  ["SEK-96D8", "Inkubator-/Kinderüberstellung"],
-  ["SEK-96K8-SNAW", "Inkubator-/Kinderüberstellung mit SNAW"],
-  ["SEK-96D8-SNAW", "Inkubator-/Kinderüberstellung mit SNAW"],
-  ["SEK-96K8-ITH", "Inkubator-/Kinderüberstellung mit NAH/ITH"],
-  ["SEK-96D8-ITH", "Inkubator-/Kinderüberstellung mit NAH/ITH"],
-  ["SEK-96K8-RTW", "Inkubator-/Kinderüberstellung mit RTW"],
-];
+let cacheVon: Schema | null | undefined;
+let cache: { satz: KtSatz; codes: KtCode[]; nach: Map<string, KtCodeDef> } | null = null;
 
-export const KT_CODES: KtCode[] = [
-  ...ktCodes("KTA"),
-  ...ktCodes("KTR"),
-  ...ktCodes("KTx"),
-  ...SEK.map(([code, name]) => ({ code, name, kapitel: KT_KAPITEL["96"], gruppe: "SEK" as const })),
-];
+function satzVon(s: Schema | null | undefined): KtSatz | null {
+  const kt = (s as { kt?: KtSatz } | null | undefined)?.kt;
+  return kt && Array.isArray(kt.codes) && kt.codes.length ? kt : null;
+}
 
-const NACH_CODE = new Map(KT_CODES.map((c) => [c.code, c]));
+/** Aktiver KT-Codesatz: aus dem geladenen Codesatz, sonst der eingebaute */
+export function ktSatz(): KtSatz {
+  aktualisieren();
+  return cache!.satz;
+}
+
+function aktualisieren(): void {
+  const roh = store.schemaRoh;
+  if (cache && cacheVon === roh) return;
+  cacheVon = roh;
+  const satz = satzVon(roh) ?? satzVon(standardCodesystem()) ?? { codes: [] };
+  cache = {
+    satz,
+    codes: satz.codes.map((c) => ({ code: c.code, name: c.name, kapitel: c.kapitel ?? "", gruppe: c.bed.fahrt === "ueberstellung" ? "SEK" : "KT" })),
+    nach: new Map(satz.codes.map((c) => [c.code, c])),
+  };
+}
+
+/** Alle Codes des aktiven Satzes */
+export function ktCodes(): KtCode[] {
+  aktualisieren();
+  return cache!.codes;
+}
+
+export function ktCodeDef(code: string | null | undefined): KtCodeDef | undefined {
+  if (!code) return undefined;
+  aktualisieren();
+  return cache!.nach.get(code);
+}
+
 export function ktCode(code: string | null | undefined): KtCode | undefined {
-  return code ? NACH_CODE.get(code) : undefined;
+  if (!code) return undefined;
+  aktualisieren();
+  return cache!.codes.find((c) => c.code === code);
+}
+
+/** Fragen der KT-Abfrage (aktiver Satz oder eingebaut) */
+export function ktAbfrage(): KtAbfrageFrage[] {
+  const a = ktSatz().abfrage;
+  return a?.length ? a : standardKtAbfrage();
+}
+
+/** Text einer Frage der Abfrage (eigener Text des Codesatzes, sonst der eingebaute) */
+export function ktFrageText(id: string): string | null {
+  const f = ktAbfrage().find((x) => x.id === id);
+  if (f && f.aktiv === false) return null;
+  return f?.text ?? standardKtAbfrage().find((x) => x.id === id)?.text ?? null;
 }
 
 // ---------------------------------------------------------------- Was ein Code verlangt
@@ -87,91 +86,71 @@ export type SFahrzeug = "SKTW" | "SRTW" | "SNAW" | "ITH" | "RTW";
 
 export interface CodeInfo {
   gruppe: "KT" | "SEK";
-  /** SOFORT (!) */
+  /** SOFORT */
   sofort: boolean;
-  /** Fahrt mit Sondersignal (B, D) */
+  /** Fahrt mit Sondersignal */
   sondersignal: boolean;
   /** Notarzt begleitet */
   arzt: boolean;
+  /** Überwachung (Monitor), ohne Arzt */
+  monitoring: boolean;
   /** Inkubator-/Kinderüberstellung */
   inkubator: boolean;
   /** Hubschrauber vorgesehen */
   flug: boolean;
-  /** im Code festgelegtes Fahrzeug */
+  /** im Code festgelegtes Fahrzeug (RTW mit Notarzt aus dem Regelrettungsdienst: null) */
   fahrzeug: SFahrzeug | null;
 }
 
+const FZ: Record<string, SFahrzeug | null> = { sktw: "SKTW", srtw: "SRTW", snaw: "SNAW", ith: "ITH", rtw_na: null, ktw: null };
+
 export function codeInfo(code: string | null | undefined): CodeInfo {
-  const leer: CodeInfo = { gruppe: "KT", sofort: false, sondersignal: false, arzt: false, inkubator: false, flug: false, fahrzeug: null };
-  if (!code) return leer;
-  const m = code.match(/^SEK-96([KBD])(\d)(!?)(?:-(\w+))?$/);
-  if (m) {
-    const [, buchstabe, ziffer, ausruf, zusatz] = m;
-    const z = Number(ziffer);
-    const fahrzeug = (zusatz as SFahrzeug | undefined) ?? (z <= 3 ? "SKTW" : null);
-    return {
-      gruppe: "SEK",
-      sofort: ausruf === "!" || buchstabe !== "K",
-      sondersignal: buchstabe === "B" || buchstabe === "D",
-      arzt: buchstabe === "D" || z === 7 || (z >= 6 && (zusatz === "SNAW" || zusatz === "ITH")) || (z === 8 && zusatz !== "RTW"),
-      inkubator: z === 8,
-      flug: zusatz === "ITH",
-      fahrzeug,
-    };
-  }
-  return { ...leer, sofort: code.endsWith("!") };
+  const c = ktCodeDef(code);
+  const b = c?.bed ?? {};
+  const sek = b.fahrt === "ueberstellung";
+  const fahrzeug = b.fahrzeug ? FZ[b.fahrzeug] : sek && b.begleitung !== "notarzt" && b.begleitung !== "monitoring" ? "SKTW" : null;
+  return {
+    gruppe: sek ? "SEK" : "KT",
+    sofort: b.zeit === "sofort",
+    sondersignal: b.sondersignal === "ja",
+    arzt: b.begleitung === "notarzt",
+    monitoring: b.begleitung === "monitoring",
+    inkubator: b.inkubator === "ja",
+    flug: b.fahrzeug === "ith",
+    fahrzeug,
+  };
 }
 
 // ---------------------------------------------------------------- Vorschlag
 
-const ZIFFER: Record<string, number> = { gehend: 1, sitzend: 2, liegend: 3, rollstuhl: 4 };
-
 /** Überstellung: beide Orte sind Krankenhäuser (oder der Code sagt es) */
 export function istUeberstellung(d: KtDaten): boolean {
-  if (d.code?.startsWith("SEK-")) return true;
-  return !!d.sek;
+  if (d.code && ktCodeDef(d.code)?.bed.fahrt === "ueberstellung") return true;
+  return istUeberstellungDaten(d);
+}
+
+/** Bedingungen der Angaben (null, solange die Lage fehlt) */
+export function ktBedingungen(d: KtDaten, luftKm: number): KtBed | null {
+  return bedingungenAus(d, luftKm);
 }
 
 /**
- * Passender Code zu den Angaben. luftKm = Luftlinie Abholort–Ziel (für den Hubschrauber).
- * Gibt null zurück, wenn noch zu wenig bekannt ist.
+ * Der eine Code, dessen Bedingungen zu den Angaben passen. luftKm = Luftlinie Abholort–Ziel (für den Hubschrauber).
+ * null, wenn noch zu wenig bekannt ist oder im Codesatz kein (eindeutiger) Code hinterlegt ist.
  */
 export function codeVorschlag(d: KtDaten, luftKm: number): string | null {
-  if (!d.lage) return null;
-  const n = ZIFFER[d.lage];
-  if (istUeberstellung(d)) {
-    const s = d.sek ?? { arzt: false, monitoring: false, beatmet: false, inkubator: false, instabil: false, zusage: "" };
-    const arzt = s.arzt || s.beatmet;
-    // Hubschrauber: weite Strecke und kein Patient, an dem während des Transports dauernd gearbeitet werden muss
-    const flug = luftKm > 40 && !s.instabil;
-    if (s.inkubator) {
-      // stabiles Kind ohne Arzt: RTW (mit Inkubator vom Krankenhaus); sonst ITH oder SNAW
-      if (!arzt) return "SEK-96K8-RTW";
-      return d.sofort ? (flug ? "SEK-96D8-ITH" : "SEK-96D8") : flug ? "SEK-96K8-ITH" : "SEK-96K8-SNAW";
-    }
-    if (arzt) return d.sofort ? (flug ? "SEK-96D7-ITH" : "SEK-96D6") : flug ? "SEK-96K7-ITH" : "SEK-96K6-SNAW";
-    if (s.monitoring) return d.sofort ? "SEK-96B6-SRTW" : "SEK-96K6-SRTW";
-    // eigener Rollstuhl gibt es bei SEK nicht: Tragstuhl
-    return `SEK-96K${n === 1 ? 1 : n === 3 ? 3 : 2}${d.sofort ? "!" : ""}`;
-  }
-  const p = d.art;
-  const vonKh = !!d.von?.khId;
-  const nachKh = !!d.nach?.khId;
-  const therapie = (b: string | undefined) => (b === "DIA" ? "Y" : b === "STR" ? "S" : b === "CHE" ? "M" : null);
-  if (!vonKh && nachKh) {
-    const t = therapie(d.nach?.bereich);
-    if (t) return `${p}-93${t}${n}`;
-    return `${p}-90K${n}${d.sofort ? "!" : ""}`;
-  }
-  if (vonKh && !nachKh) {
-    const t = therapie(d.von?.bereich);
-    if (t) return `${p}-95${t}${n}`;
-    const t2 = d.von?.bereich ? einrichtung(d.von.bereich)?.typ : undefined;
-    const ambulant = !!d.von?.bereich && (d.von.bereich in BEREICHE_AMBULANZ || t2 === "ambulanz" || t2 === "funktionsbereich");
-    return `${p}-95K${n}${ambulant ? "A" : ""}`;
-  }
-  if (vonKh && nachKh) return `SEK-96K${n === 1 ? 1 : n === 3 ? 3 : 2}${d.sofort ? "!" : ""}`;
-  return `${p}-90K${n}${d.sofort ? "!" : ""}`;
+  const b = bedingungenAus(d, luftKm);
+  if (!b) return null;
+  const r = codeSuchen(ktSatz().codes, b);
+  return "code" in r ? r.code.code : null;
+}
+
+/** Warum es keinen Code gibt (für die Anzeige), sonst null */
+export function codeFehlt(d: KtDaten, luftKm: number): { fehler: "keiner" | "mehrdeutig"; bed: KtBed; kandidaten: string[] } | null {
+  const b = bedingungenAus(d, luftKm);
+  if (!b) return null;
+  const r = codeSuchen(ktSatz().codes, b);
+  return "fehler" in r ? { fehler: r.fehler, bed: b, kandidaten: r.kandidaten.map((c) => c.code) } : null;
 }
 
 /** Kurztext für Listen, z. B. „SEK-96D6 Notarztbegleitete Überstellung“ */

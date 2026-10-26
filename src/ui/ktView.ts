@@ -22,7 +22,9 @@ import {
   type KtOrt,
   type SekDaten,
 } from "../sim/kt";
-import { codeInfo, istUeberstellung, ktCode, KT_CODES } from "../sim/ktCodes";
+import { codeFehlt, codeInfo, istUeberstellung, ktCode, ktCodeDef, ktCodes, ktFrageText } from "../sim/ktCodes";
+import { bedText } from "../sim/ktBedingungen";
+import { distanceM } from "../sim/geo";
 import { addressInput, dienstHtml, typHtml } from "./panels/teile";
 import { liveSammler } from "./panels/live";
 import { el, esc, toast } from "./dom";
@@ -226,9 +228,11 @@ export function ktFormular(k: KtAuftrag, stelle: (text: string, f?: KtFrage) => 
   const setze = (patch: Partial<KtDaten>) => fehler(sim.call("ktSetze", k.id, patch));
   const frageKnopf = (id: KtFrage["id"]) => {
     const f = KT_FRAGEN.find((x) => x.id === id);
-    if (!f || k.anruf?.status !== "aktiv" || !ichFuehre(k)) return null;
-    const b = el("button", { class: "frag-knopf", type: "button", title: f.text }, "🗨");
-    b.addEventListener("click", () => void stelle(f.text, f));
+    // Text der Frage aus dem aktiven Codesatz (eigene KT-Abfrage); abgeschaltete Fragen ohne 🗨
+    const text = ktFrageText(id);
+    if (!f || !text || k.anruf?.status !== "aktiv" || !ichFuehre(k)) return null;
+    const b = el("button", { class: "frag-knopf", type: "button", title: text }, "🗨");
+    b.addEventListener("click", () => void stelle(text, f));
     return b;
   };
   function datenBauen(): void {
@@ -407,7 +411,12 @@ export function ktFormular(k: KtAuftrag, stelle: (text: string, f?: KtFrage) => 
     }
     const codeZeile = el("div", { class: "kt-codezeile" });
     const codeSel = el("select");
-    const passende = KT_CODES.filter((c) => (art === "sek" ? c.gruppe === "SEK" : c.gruppe === "KT" && c.code.startsWith(`${k.d.art}-`)));
+    const org = { KTR: "rk", KTA: "asb", KTx: "egal" }[k.d.art];
+    const passende = ktCodes().filter((c) => {
+      if (art === "sek") return c.gruppe === "SEK";
+      const o = ktCodeDef(c.code)?.bed.org;
+      return c.gruppe === "KT" && (!o || o === org);
+    });
     codeSel.appendChild(el("option", { value: "" }, "– Code –"));
     const gruppen = new Map<string, HTMLOptGroupElement>();
     for (const c of passende) {
@@ -431,6 +440,22 @@ export function ktFormular(k: KtAuftrag, stelle: (text: string, f?: KtFrage) => 
       codeZeile.appendChild(zurueck);
     } else codeZeile.appendChild(el("span", { class: "muted small" }, k.d.code ? "aus den Angaben" : "ergibt sich aus den Angaben"));
     zeile("Code", null, codeZeile);
+    // Kein (eindeutiger) Code im Codesatz für diese Angaben: deutlich zeigen statt raten
+    if (!k.d.code && k.d.lage) {
+      const km = k.d.von && k.d.nach ? distanceM(k.d.von, k.d.nach) / 1000 : 0;
+      const f = codeFehlt(k.d, km);
+      if (f)
+        grid.append(
+          el("div", { class: "kt-lbl" }),
+          el(
+            "div",
+            { class: "kt-codefehlt" },
+            f.fehler === "keiner"
+              ? `Im Codesatz ist für diese Angaben kein Code hinterlegt (${bedText(f.bed)}). Bitte den Codesatz ergänzen (Einstellungen → Einsatzcodes & Abfrage → KT/SEK-Codes).`
+              : `Mehrere Codes passen gleich gut: ${f.kandidaten.join(", ")} – der Codesatz ist nicht eindeutig.`,
+          ),
+        );
+    }
 
     for (const x of deaktiv) x.disabled = !darf;
     datenBox.appendChild(grid);

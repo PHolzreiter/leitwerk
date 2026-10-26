@@ -1,5 +1,17 @@
 [
  {
+  "version": "0.74.0",
+  "datum": "2026-10-26",
+  "titel": "Transport-Codes mit Editor",
+  "punkte": [
+   "Krankentransport- und Überstellungs-Codes richten sich jetzt nach klaren Bedingungen – es passt immer genau ein Code",
+   "Eigene eingebaute Codes für Krankentransporte und Überstellungen",
+   "Neuer Editor: Codes anlegen, benennen und Bedingungen wählen – auch die Fragen der KT-Hotline anpassen",
+   "Laufende Prüfung zeigt, was fehlt; unvollständige Sätze lassen sich als Entwurf speichern",
+   "Überstellungen laufen immer als Überstellung, der Hubschrauber nur bei dringenden"
+  ]
+ },
+ {
   "version": "0.73.0",
   "datum": "2026-10-26",
   "titel": "Eigenes Codesystem & Entwicklungsfortschritt",

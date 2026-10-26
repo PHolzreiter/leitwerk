@@ -12,6 +12,7 @@ import { decodeText } from "../platform";
 import { confirmDialog, openDialog } from "./dialog";
 import { el, esc, toast } from "./dom";
 import { schemaUebernehmen } from "./importDialog";
+import { ktEditorOeffnen } from "./ktCodeEditor";
 
 export const RECHTLICHER_HINWEIS =
   "Aus rechtlichen Gründen können wir die echten Einsatzcodes und Abfrageschemas leider nicht mitliefern. LeitWerk bringt deshalb ein eigenes Codesystem mit, das sich ähnlich spielt. Du kannst aber jederzeit deine eigene Codeliste und dein eigenes Abfrageschema einbauen.";
@@ -22,6 +23,8 @@ export interface CodeSatz {
   schema?: string;
   /** Dateiname in Codelisten/ */
   codes?: string;
+  /** im Editor als Entwurf gespeichert (noch nicht spielbar) */
+  entwurf?: boolean;
   geaendert: number;
 }
 
@@ -59,6 +62,15 @@ export async function satzListe(): Promise<CodeSatz[]> {
   };
   for (const d of await ablageListe("Abfrageschema").catch(() => [])) if (/\.json$/i.test(d.datei)) nimm(basis(d.datei), d.geaendert).schema = d.datei;
   for (const d of await ablageListe("Codelisten").catch(() => [])) if (/\.(csv|txt)$/i.test(d.datei)) nimm(basis(d.datei), d.geaendert).codes = d.datei;
+  // Entwürfe erkennen (Abfrageschema mit „entwurf“)
+  for (const s of m.values()) {
+    if (!s.schema) continue;
+    try {
+      s.entwurf = !!(JSON.parse(await ablageLesen("Abfrageschema", s.schema)) as { entwurf?: boolean }).entwurf;
+    } catch {
+      /* egal */
+    }
+  }
   return [...m.values()].sort((a, b) => a.name.localeCompare(b.name, "de"));
 }
 
@@ -83,6 +95,7 @@ export async function satzAktivieren(s: CodeSatz): Promise<void> {
     const roh = JSON.parse(await ablageLesen("Abfrageschema", s.schema)) as unknown;
     if (!istSchema(roh)) throw new Error(`${s.schema} ist kein gültiges Abfrageschema`);
     schema = roh as Schema;
+    if ((roh as { entwurf?: boolean }).entwurf) throw new Error(`„${s.name}“ ist ein Entwurf – erst im Editor fertigstellen`);
   }
   let codes: ReturnType<typeof codesLesen> | null = null;
   if (s.codes) {
@@ -228,7 +241,18 @@ export function codesaetzeOeffnen(geaendert?: () => void): void {
         void zeichnen();
       });
       const teile = [s.codes ? "Codeliste" : "", s.schema ? "Abfrageschema" : ""].filter(Boolean).join(" + ");
-      zeile(s.name, `${teile}${s.schema ? "" : " – Abfrage bleibt die eingebaute"}`, aktiv?.toLowerCase() === s.name.toLowerCase(), [nutzen, weg]);
+      const knoepfe = [nutzen];
+      if (s.schema) {
+        const bearb = el("button", { class: "btn small", title: "KT-/SEK-Codes und Abfrage bearbeiten" }, "Bearbeiten");
+        bearb.addEventListener("click", async () => {
+          const datei = JSON.parse(await ablageLesen("Abfrageschema", s.schema!)) as Schema;
+          ktEditorOeffnen({ datei, name: s.name, fertig: () => (geaendert?.(), void zeichnen()) });
+        });
+        knoepfe.push(bearb);
+      }
+      if (s.entwurf) nutzen.disabled = true;
+      knoepfe.push(weg);
+      zeile(s.name, `${s.entwurf ? "ENTWURF – noch nicht spielbar · " : ""}${teile}${s.schema ? "" : " – Abfrage bleibt die eingebaute"}`, aktiv?.toLowerCase() === s.name.toLowerCase(), knoepfe);
     }
     body.appendChild(ul);
     const neu = el("button", { class: "btn primary cs-neu" }, "+ Eigene Codes & Abfrageschema hinzufügen …");
@@ -239,6 +263,10 @@ export function codesaetzeOeffnen(geaendert?: () => void): void {
       }),
     );
     body.appendChild(neu);
+    const kt = el("button", { class: "btn cs-neu", "data-kt-editor": "" }, "KT-/SEK-Codes & Abfrage bearbeiten …");
+    kt.title = "Eigene Codes für Krankentransporte und Überstellungen – als neuer Codesatz auf Basis des aktiven";
+    kt.addEventListener("click", () => ktEditorOeffnen({ fertig: () => (geaendert?.(), void zeichnen()) }));
+    body.appendChild(kt);
   };
   void zeichnen();
   openDialog({ title: "Einsatzcodes & Abfrage", body, wide: true, actions: [{ label: "Schließen" }] });

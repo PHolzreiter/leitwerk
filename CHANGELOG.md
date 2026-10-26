@@ -1,5 +1,13 @@
 # Änderungen
 
+## 0.74.0 – Krankentransport- und Überstellungs-Codes über Bedingungen, mit Editor
+- **KT-/SEK-Codes über Bedingungen:** Was ein Code bedeutet, steht in festen Bedingungen (Organisation, Fahrt, Therapie, Lage, Zeit, Heimtransport, Begleitung, Fahrzeug, Sondersignal, Inkubator). Ein Code ist nur ein frei wählbarer Name mit diesen Bedingungen; aus den Angaben eines Auftrags gilt genau der eine passende Code
+- **Eigene eingebaute KT-/SEK-Codes** (KTR/KTA/KTx-90/93/95 …, SEK-96 …) mit eigener Unterteilung und eigenen Namen. Eigene Codesätze bringen ihre Codes im Abschnitt „kt“ des Abfrageschemas mit
+- Überstellungen sind immer SEK-Codes; NAH/ITH nur bei sofortigen Überstellungen; SOFORT heißt „sofort los, ohne Blaulicht“
+- **Editor** (Einstellungen → Einsatzcodes & Abfrage → Eigene Codes & Abfrageschema → KT-/SEK-Codes & Abfrage bearbeiten): Codes anlegen, benennen, Bedingungen wählen; Fragen der KT-Abfrage ein-/ausschalten und umformulieren
+- **Laufende Prüfung:** Jede Kombination, die im Spiel vorkommen kann, braucht genau einen Code; doppelte Bedingungen, fehlende Pflichtfragen und Unterscheidungen ohne passende Frage werden gemeldet. „Code anlegen“ übernimmt eine fehlende Kombination. Mit offenen Problemen nur als Entwurf speicherbar – Entwürfe sind nicht spielbar
+- Passt im Spiel kein Code zu den Angaben, zeigt die Aufnahme das deutlich an (statt zu raten)
+
 ## 0.73.0 – Eigenes Codesystem, eigene Codesätze, Entwicklungsfortschritt und Changelog
 - **Eingebautes Codesystem ab der Installation:** Codes im gewohnten Aufbau `RD-<Kapitel><Stufe><Nr>` (Stufen O–E), gewohnte Kapitelnummern und Kategorien (ALS rot, ALS orange, ALS gelb, ALS grün, BLS rot, BLS gelb, Telemedizin …) – mit eigener Abfrage, eigenen Namen und eigener Unterteilung. Die Kategorien sind je Kapitel und Stufe ähnlich verteilt wie gewohnt
 - **Hinweis im Menü Einsatzcodes & Abfrage:** Die echten Codes dürfen aus rechtlichen Gründen nicht mitgeliefert werden – eigene können eingebaut werden

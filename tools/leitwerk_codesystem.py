@@ -13,6 +13,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from kategorie_verteilung import VERTEILUNG  # noqa: E402
+from kt_codes import kt_codes  # noqa: E402
 
 STUFEN_KAT = {5: "S5 Reanimation", 4: "S4 Notarzt", 3: "S3 Notfall", 2: "S2 Dringend", 1: "S1 Nicht dringend", 0: "S0 Beratung / Weitergabe"}
 MANV = "S4 Mehrere Verletzte"
@@ -1005,6 +1006,7 @@ def main(ziel):
         "globale_fragen": GLOBAL,
         "kapitel": kapitel,
         "codes": codes,
+        "kt": {"codes": kt_codes()},
     }
     with open(ziel, "w", encoding="utf-8") as f:
         f.write(json.dumps(d, ensure_ascii=False, indent=1) + "\n")

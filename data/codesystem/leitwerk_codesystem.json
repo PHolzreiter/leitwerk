@@ -13337,5 +13337,1567 @@
    "kategorie": "ALS gelb",
    "kapitel": "32 - Unklare Lage"
   }
+ },
+ "kt": {
+  "codes": [
+   {
+    "code": "KTR-90T1",
+    "name": "Fahrt zum Krankenhaus – gehend",
+    "kapitel": "90 – Fahrt zum Krankenhaus",
+    "bed": {
+     "org": "rk",
+     "fahrt": "zum_kh",
+     "lage": "gehend",
+     "zeit": "geplant"
+    }
+   },
+   {
+    "code": "KTR-90T1S",
+    "name": "Einweisung SOFORT – gehend",
+    "kapitel": "90 – Fahrt zum Krankenhaus",
+    "bed": {
+     "org": "rk",
+     "fahrt": "zum_kh",
+     "lage": "gehend",
+     "zeit": "sofort"
+    }
+   },
+   {
+    "code": "KTR-90T2",
+    "name": "Fahrt zum Krankenhaus – eigener Rollstuhl",
+    "kapitel": "90 – Fahrt zum Krankenhaus",
+    "bed": {
+     "org": "rk",
+     "fahrt": "zum_kh",
+     "lage": "rollstuhl",
+     "zeit": "geplant"
+    }
+   },
+   {
+    "code": "KTR-90T2S",
+    "name": "Einweisung SOFORT – eigener Rollstuhl",
+    "kapitel": "90 – Fahrt zum Krankenhaus",
+    "bed": {
+     "org": "rk",
+     "fahrt": "zum_kh",
+     "lage": "rollstuhl",
+     "zeit": "sofort"
+    }
+   },
+   {
+    "code": "KTR-90T3",
+    "name": "Fahrt zum Krankenhaus – sitzend (Tragstuhl)",
+    "kapitel": "90 – Fahrt zum Krankenhaus",
+    "bed": {
+     "org": "rk",
+     "fahrt": "zum_kh",
+     "lage": "sitzend",
+     "zeit": "geplant"
+    }
+   },
+   {
+    "code": "KTR-90T3S",
+    "name": "Einweisung SOFORT – sitzend (Tragstuhl)",
+    "kapitel": "90 – Fahrt zum Krankenhaus",
+    "bed": {
+     "org": "rk",
+     "fahrt": "zum_kh",
+     "lage": "sitzend",
+     "zeit": "sofort"
+    }
+   },
+   {
+    "code": "KTR-90T4",
+    "name": "Fahrt zum Krankenhaus – liegend",
+    "kapitel": "90 – Fahrt zum Krankenhaus",
+    "bed": {
+     "org": "rk",
+     "fahrt": "zum_kh",
+     "lage": "liegend",
+     "zeit": "geplant"
+    }
+   },
+   {
+    "code": "KTR-90T4S",
+    "name": "Einweisung SOFORT – liegend",
+    "kapitel": "90 – Fahrt zum Krankenhaus",
+    "bed": {
+     "org": "rk",
+     "fahrt": "zum_kh",
+     "lage": "liegend",
+     "zeit": "sofort"
+    }
+   },
+   {
+    "code": "KTR-93C1",
+    "name": "Fahrt zur Chemotherapie – gehend",
+    "kapitel": "93 – Fahrt zur Therapie",
+    "bed": {
+     "org": "rk",
+     "fahrt": "therapie",
+     "therapie": "chemo",
+     "lage": "gehend"
+    }
+   },
+   {
+    "code": "KTR-93C2",
+    "name": "Fahrt zur Chemotherapie – eigener Rollstuhl",
+    "kapitel": "93 – Fahrt zur Therapie",
+    "bed": {
+     "org": "rk",
+     "fahrt": "therapie",
+     "therapie": "chemo",
+     "lage": "rollstuhl"
+    }
+   },
+   {
+    "code": "KTR-93C3",
+    "name": "Fahrt zur Chemotherapie – sitzend (Tragstuhl)",
+    "kapitel": "93 – Fahrt zur Therapie",
+    "bed": {
+     "org": "rk",
+     "fahrt": "therapie",
+     "therapie": "chemo",
+     "lage": "sitzend"
+    }
+   },
+   {
+    "code": "KTR-93C4",
+    "name": "Fahrt zur Chemotherapie – liegend",
+    "kapitel": "93 – Fahrt zur Therapie",
+    "bed": {
+     "org": "rk",
+     "fahrt": "therapie",
+     "therapie": "chemo",
+     "lage": "liegend"
+    }
+   },
+   {
+    "code": "KTR-93R1",
+    "name": "Fahrt zur Strahlentherapie – gehend",
+    "kapitel": "93 – Fahrt zur Therapie",
+    "bed": {
+     "org": "rk",
+     "fahrt": "therapie",
+     "therapie": "strahlen",
+     "lage": "gehend"
+    }
+   },
+   {
+    "code": "KTR-93R2",
+    "name": "Fahrt zur Strahlentherapie – eigener Rollstuhl",
+    "kapitel": "93 – Fahrt zur Therapie",
+    "bed": {
+     "org": "rk",
+     "fahrt": "therapie",
+     "therapie": "strahlen",
+     "lage": "rollstuhl"
+    }
+   },
+   {
+    "code": "KTR-93R3",
+    "name": "Fahrt zur Strahlentherapie – sitzend (Tragstuhl)",
+    "kapitel": "93 – Fahrt zur Therapie",
+    "bed": {
+     "org": "rk",
+     "fahrt": "therapie",
+     "therapie": "strahlen",
+     "lage": "sitzend"
+    }
+   },
+   {
+    "code": "KTR-93R4",
+    "name": "Fahrt zur Strahlentherapie – liegend",
+    "kapitel": "93 – Fahrt zur Therapie",
+    "bed": {
+     "org": "rk",
+     "fahrt": "therapie",
+     "therapie": "strahlen",
+     "lage": "liegend"
+    }
+   },
+   {
+    "code": "KTR-93D1",
+    "name": "Fahrt zur Dialyse – gehend",
+    "kapitel": "93 – Fahrt zur Therapie",
+    "bed": {
+     "org": "rk",
+     "fahrt": "therapie",
+     "therapie": "dialyse",
+     "lage": "gehend"
+    }
+   },
+   {
+    "code": "KTR-93D2",
+    "name": "Fahrt zur Dialyse – eigener Rollstuhl",
+    "kapitel": "93 – Fahrt zur Therapie",
+    "bed": {
+     "org": "rk",
+     "fahrt": "therapie",
+     "therapie": "dialyse",
+     "lage": "rollstuhl"
+    }
+   },
+   {
+    "code": "KTR-93D3",
+    "name": "Fahrt zur Dialyse – sitzend (Tragstuhl)",
+    "kapitel": "93 – Fahrt zur Therapie",
+    "bed": {
+     "org": "rk",
+     "fahrt": "therapie",
+     "therapie": "dialyse",
+     "lage": "sitzend"
+    }
+   },
+   {
+    "code": "KTR-93D4",
+    "name": "Fahrt zur Dialyse – liegend",
+    "kapitel": "93 – Fahrt zur Therapie",
+    "bed": {
+     "org": "rk",
+     "fahrt": "therapie",
+     "therapie": "dialyse",
+     "lage": "liegend"
+    }
+   },
+   {
+    "code": "KTR-95T1",
+    "name": "Entlassung nach Hause – gehend",
+    "kapitel": "95 – Heimtransport",
+    "bed": {
+     "org": "rk",
+     "fahrt": "heim",
+     "therapie": "keine",
+     "heim": "stationaer",
+     "lage": "gehend"
+    }
+   },
+   {
+    "code": "KTR-95T1A",
+    "name": "Heimfahrt nach ambulanter Behandlung – gehend",
+    "kapitel": "95 – Heimtransport",
+    "bed": {
+     "org": "rk",
+     "fahrt": "heim",
+     "therapie": "keine",
+     "heim": "ambulant",
+     "lage": "gehend"
+    }
+   },
+   {
+    "code": "KTR-95T2",
+    "name": "Entlassung nach Hause – eigener Rollstuhl",
+    "kapitel": "95 – Heimtransport",
+    "bed": {
+     "org": "rk",
+     "fahrt": "heim",
+     "therapie": "keine",
+     "heim": "stationaer",
+     "lage": "rollstuhl"
+    }
+   },
+   {
+    "code": "KTR-95T2A",
+    "name": "Heimfahrt nach ambulanter Behandlung – eigener Rollstuhl",
+    "kapitel": "95 – Heimtransport",
+    "bed": {
+     "org": "rk",
+     "fahrt": "heim",
+     "therapie": "keine",
+     "heim": "ambulant",
+     "lage": "rollstuhl"
+    }
+   },
+   {
+    "code": "KTR-95T3",
+    "name": "Entlassung nach Hause – sitzend (Tragstuhl)",
+    "kapitel": "95 – Heimtransport",
+    "bed": {
+     "org": "rk",
+     "fahrt": "heim",
+     "therapie": "keine",
+     "heim": "stationaer",
+     "lage": "sitzend"
+    }
+   },
+   {
+    "code": "KTR-95T3A",
+    "name": "Heimfahrt nach ambulanter Behandlung – sitzend (Tragstuhl)",
+    "kapitel": "95 – Heimtransport",
+    "bed": {
+     "org": "rk",
+     "fahrt": "heim",
+     "therapie": "keine",
+     "heim": "ambulant",
+     "lage": "sitzend"
+    }
+   },
+   {
+    "code": "KTR-95T4",
+    "name": "Entlassung nach Hause – liegend",
+    "kapitel": "95 – Heimtransport",
+    "bed": {
+     "org": "rk",
+     "fahrt": "heim",
+     "therapie": "keine",
+     "heim": "stationaer",
+     "lage": "liegend"
+    }
+   },
+   {
+    "code": "KTR-95T4A",
+    "name": "Heimfahrt nach ambulanter Behandlung – liegend",
+    "kapitel": "95 – Heimtransport",
+    "bed": {
+     "org": "rk",
+     "fahrt": "heim",
+     "therapie": "keine",
+     "heim": "ambulant",
+     "lage": "liegend"
+    }
+   },
+   {
+    "code": "KTR-95C1",
+    "name": "Heimfahrt nach Chemotherapie – gehend",
+    "kapitel": "95 – Heimtransport",
+    "bed": {
+     "org": "rk",
+     "fahrt": "heim",
+     "therapie": "chemo",
+     "lage": "gehend"
+    }
+   },
+   {
+    "code": "KTR-95C2",
+    "name": "Heimfahrt nach Chemotherapie – eigener Rollstuhl",
+    "kapitel": "95 – Heimtransport",
+    "bed": {
+     "org": "rk",
+     "fahrt": "heim",
+     "therapie": "chemo",
+     "lage": "rollstuhl"
+    }
+   },
+   {
+    "code": "KTR-95C3",
+    "name": "Heimfahrt nach Chemotherapie – sitzend (Tragstuhl)",
+    "kapitel": "95 – Heimtransport",
+    "bed": {
+     "org": "rk",
+     "fahrt": "heim",
+     "therapie": "chemo",
+     "lage": "sitzend"
+    }
+   },
+   {
+    "code": "KTR-95C4",
+    "name": "Heimfahrt nach Chemotherapie – liegend",
+    "kapitel": "95 – Heimtransport",
+    "bed": {
+     "org": "rk",
+     "fahrt": "heim",
+     "therapie": "chemo",
+     "lage": "liegend"
+    }
+   },
+   {
+    "code": "KTR-95R1",
+    "name": "Heimfahrt nach Strahlentherapie – gehend",
+    "kapitel": "95 – Heimtransport",
+    "bed": {
+     "org": "rk",
+     "fahrt": "heim",
+     "therapie": "strahlen",
+     "lage": "gehend"
+    }
+   },
+   {
+    "code": "KTR-95R2",
+    "name": "Heimfahrt nach Strahlentherapie – eigener Rollstuhl",
+    "kapitel": "95 – Heimtransport",
+    "bed": {
+     "org": "rk",
+     "fahrt": "heim",
+     "therapie": "strahlen",
+     "lage": "rollstuhl"
+    }
+   },
+   {
+    "code": "KTR-95R3",
+    "name": "Heimfahrt nach Strahlentherapie – sitzend (Tragstuhl)",
+    "kapitel": "95 – Heimtransport",
+    "bed": {
+     "org": "rk",
+     "fahrt": "heim",
+     "therapie": "strahlen",
+     "lage": "sitzend"
+    }
+   },
+   {
+    "code": "KTR-95R4",
+    "name": "Heimfahrt nach Strahlentherapie – liegend",
+    "kapitel": "95 – Heimtransport",
+    "bed": {
+     "org": "rk",
+     "fahrt": "heim",
+     "therapie": "strahlen",
+     "lage": "liegend"
+    }
+   },
+   {
+    "code": "KTR-95D1",
+    "name": "Heimfahrt nach Dialyse – gehend",
+    "kapitel": "95 – Heimtransport",
+    "bed": {
+     "org": "rk",
+     "fahrt": "heim",
+     "therapie": "dialyse",
+     "lage": "gehend"
+    }
+   },
+   {
+    "code": "KTR-95D2",
+    "name": "Heimfahrt nach Dialyse – eigener Rollstuhl",
+    "kapitel": "95 – Heimtransport",
+    "bed": {
+     "org": "rk",
+     "fahrt": "heim",
+     "therapie": "dialyse",
+     "lage": "rollstuhl"
+    }
+   },
+   {
+    "code": "KTR-95D3",
+    "name": "Heimfahrt nach Dialyse – sitzend (Tragstuhl)",
+    "kapitel": "95 – Heimtransport",
+    "bed": {
+     "org": "rk",
+     "fahrt": "heim",
+     "therapie": "dialyse",
+     "lage": "sitzend"
+    }
+   },
+   {
+    "code": "KTR-95D4",
+    "name": "Heimfahrt nach Dialyse – liegend",
+    "kapitel": "95 – Heimtransport",
+    "bed": {
+     "org": "rk",
+     "fahrt": "heim",
+     "therapie": "dialyse",
+     "lage": "liegend"
+    }
+   },
+   {
+    "code": "KTA-90T1",
+    "name": "Fahrt zum Krankenhaus – gehend",
+    "kapitel": "90 – Fahrt zum Krankenhaus",
+    "bed": {
+     "org": "asb",
+     "fahrt": "zum_kh",
+     "lage": "gehend",
+     "zeit": "geplant"
+    }
+   },
+   {
+    "code": "KTA-90T1S",
+    "name": "Einweisung SOFORT – gehend",
+    "kapitel": "90 – Fahrt zum Krankenhaus",
+    "bed": {
+     "org": "asb",
+     "fahrt": "zum_kh",
+     "lage": "gehend",
+     "zeit": "sofort"
+    }
+   },
+   {
+    "code": "KTA-90T2",
+    "name": "Fahrt zum Krankenhaus – eigener Rollstuhl",
+    "kapitel": "90 – Fahrt zum Krankenhaus",
+    "bed": {
+     "org": "asb",
+     "fahrt": "zum_kh",
+     "lage": "rollstuhl",
+     "zeit": "geplant"
+    }
+   },
+   {
+    "code": "KTA-90T2S",
+    "name": "Einweisung SOFORT – eigener Rollstuhl",
+    "kapitel": "90 – Fahrt zum Krankenhaus",
+    "bed": {
+     "org": "asb",
+     "fahrt": "zum_kh",
+     "lage": "rollstuhl",
+     "zeit": "sofort"
+    }
+   },
+   {
+    "code": "KTA-90T3",
+    "name": "Fahrt zum Krankenhaus – sitzend (Tragstuhl)",
+    "kapitel": "90 – Fahrt zum Krankenhaus",
+    "bed": {
+     "org": "asb",
+     "fahrt": "zum_kh",
+     "lage": "sitzend",
+     "zeit": "geplant"
+    }
+   },
+   {
+    "code": "KTA-90T3S",
+    "name": "Einweisung SOFORT – sitzend (Tragstuhl)",
+    "kapitel": "90 – Fahrt zum Krankenhaus",
+    "bed": {
+     "org": "asb",
+     "fahrt": "zum_kh",
+     "lage": "sitzend",
+     "zeit": "sofort"
+    }
+   },
+   {
+    "code": "KTA-90T4",
+    "name": "Fahrt zum Krankenhaus – liegend",
+    "kapitel": "90 – Fahrt zum Krankenhaus",
+    "bed": {
+     "org": "asb",
+     "fahrt": "zum_kh",
+     "lage": "liegend",
+     "zeit": "geplant"
+    }
+   },
+   {
+    "code": "KTA-90T4S",
+    "name": "Einweisung SOFORT – liegend",
+    "kapitel": "90 – Fahrt zum Krankenhaus",
+    "bed": {
+     "org": "asb",
+     "fahrt": "zum_kh",
+     "lage": "liegend",
+     "zeit": "sofort"
+    }
+   },
+   {
+    "code": "KTA-93C1",
+    "name": "Fahrt zur Chemotherapie – gehend",
+    "kapitel": "93 – Fahrt zur Therapie",
+    "bed": {
+     "org": "asb",
+     "fahrt": "therapie",
+     "therapie": "chemo",
+     "lage": "gehend"
+    }
+   },
+   {
+    "code": "KTA-93C2",
+    "name": "Fahrt zur Chemotherapie – eigener Rollstuhl",
+    "kapitel": "93 – Fahrt zur Therapie",
+    "bed": {
+     "org": "asb",
+     "fahrt": "therapie",
+     "therapie": "chemo",
+     "lage": "rollstuhl"
+    }
+   },
+   {
+    "code": "KTA-93C3",
+    "name": "Fahrt zur Chemotherapie – sitzend (Tragstuhl)",
+    "kapitel": "93 – Fahrt zur Therapie",
+    "bed": {
+     "org": "asb",
+     "fahrt": "therapie",
+     "therapie": "chemo",
+     "lage": "sitzend"
+    }
+   },
+   {
+    "code": "KTA-93C4",
+    "name": "Fahrt zur Chemotherapie – liegend",
+    "kapitel": "93 – Fahrt zur Therapie",
+    "bed": {
+     "org": "asb",
+     "fahrt": "therapie",
+     "therapie": "chemo",
+     "lage": "liegend"
+    }
+   },
+   {
+    "code": "KTA-93R1",
+    "name": "Fahrt zur Strahlentherapie – gehend",
+    "kapitel": "93 – Fahrt zur Therapie",
+    "bed": {
+     "org": "asb",
+     "fahrt": "therapie",
+     "therapie": "strahlen",
+     "lage": "gehend"
+    }
+   },
+   {
+    "code": "KTA-93R2",
+    "name": "Fahrt zur Strahlentherapie – eigener Rollstuhl",
+    "kapitel": "93 – Fahrt zur Therapie",
+    "bed": {
+     "org": "asb",
+     "fahrt": "therapie",
+     "therapie": "strahlen",
+     "lage": "rollstuhl"
+    }
+   },
+   {
+    "code": "KTA-93R3",
+    "name": "Fahrt zur Strahlentherapie – sitzend (Tragstuhl)",
+    "kapitel": "93 – Fahrt zur Therapie",
+    "bed": {
+     "org": "asb",
+     "fahrt": "therapie",
+     "therapie": "strahlen",
+     "lage": "sitzend"
+    }
+   },
+   {
+    "code": "KTA-93R4",
+    "name": "Fahrt zur Strahlentherapie – liegend",
+    "kapitel": "93 – Fahrt zur Therapie",
+    "bed": {
+     "org": "asb",
+     "fahrt": "therapie",
+     "therapie": "strahlen",
+     "lage": "liegend"
+    }
+   },
+   {
+    "code": "KTA-93D1",
+    "name": "Fahrt zur Dialyse – gehend",
+    "kapitel": "93 – Fahrt zur Therapie",
+    "bed": {
+     "org": "asb",
+     "fahrt": "therapie",
+     "therapie": "dialyse",
+     "lage": "gehend"
+    }
+   },
+   {
+    "code": "KTA-93D2",
+    "name": "Fahrt zur Dialyse – eigener Rollstuhl",
+    "kapitel": "93 – Fahrt zur Therapie",
+    "bed": {
+     "org": "asb",
+     "fahrt": "therapie",
+     "therapie": "dialyse",
+     "lage": "rollstuhl"
+    }
+   },
+   {
+    "code": "KTA-93D3",
+    "name": "Fahrt zur Dialyse – sitzend (Tragstuhl)",
+    "kapitel": "93 – Fahrt zur Therapie",
+    "bed": {
+     "org": "asb",
+     "fahrt": "therapie",
+     "therapie": "dialyse",
+     "lage": "sitzend"
+    }
+   },
+   {
+    "code": "KTA-93D4",
+    "name": "Fahrt zur Dialyse – liegend",
+    "kapitel": "93 – Fahrt zur Therapie",
+    "bed": {
+     "org": "asb",
+     "fahrt": "therapie",
+     "therapie": "dialyse",
+     "lage": "liegend"
+    }
+   },
+   {
+    "code": "KTA-95T1",
+    "name": "Entlassung nach Hause – gehend",
+    "kapitel": "95 – Heimtransport",
+    "bed": {
+     "org": "asb",
+     "fahrt": "heim",
+     "therapie": "keine",
+     "heim": "stationaer",
+     "lage": "gehend"
+    }
+   },
+   {
+    "code": "KTA-95T1A",
+    "name": "Heimfahrt nach ambulanter Behandlung – gehend",
+    "kapitel": "95 – Heimtransport",
+    "bed": {
+     "org": "asb",
+     "fahrt": "heim",
+     "therapie": "keine",
+     "heim": "ambulant",
+     "lage": "gehend"
+    }
+   },
+   {
+    "code": "KTA-95T2",
+    "name": "Entlassung nach Hause – eigener Rollstuhl",
+    "kapitel": "95 – Heimtransport",
+    "bed": {
+     "org": "asb",
+     "fahrt": "heim",
+     "therapie": "keine",
+     "heim": "stationaer",
+     "lage": "rollstuhl"
+    }
+   },
+   {
+    "code": "KTA-95T2A",
+    "name": "Heimfahrt nach ambulanter Behandlung – eigener Rollstuhl",
+    "kapitel": "95 – Heimtransport",
+    "bed": {
+     "org": "asb",
+     "fahrt": "heim",
+     "therapie": "keine",
+     "heim": "ambulant",
+     "lage": "rollstuhl"
+    }
+   },
+   {
+    "code": "KTA-95T3",
+    "name": "Entlassung nach Hause – sitzend (Tragstuhl)",
+    "kapitel": "95 – Heimtransport",
+    "bed": {
+     "org": "asb",
+     "fahrt": "heim",
+     "therapie": "keine",
+     "heim": "stationaer",
+     "lage": "sitzend"
+    }
+   },
+   {
+    "code": "KTA-95T3A",
+    "name": "Heimfahrt nach ambulanter Behandlung – sitzend (Tragstuhl)",
+    "kapitel": "95 – Heimtransport",
+    "bed": {
+     "org": "asb",
+     "fahrt": "heim",
+     "therapie": "keine",
+     "heim": "ambulant",
+     "lage": "sitzend"
+    }
+   },
+   {
+    "code": "KTA-95T4",
+    "name": "Entlassung nach Hause – liegend",
+    "kapitel": "95 – Heimtransport",
+    "bed": {
+     "org": "asb",
+     "fahrt": "heim",
+     "therapie": "keine",
+     "heim": "stationaer",
+     "lage": "liegend"
+    }
+   },
+   {
+    "code": "KTA-95T4A",
+    "name": "Heimfahrt nach ambulanter Behandlung – liegend",
+    "kapitel": "95 – Heimtransport",
+    "bed": {
+     "org": "asb",
+     "fahrt": "heim",
+     "therapie": "keine",
+     "heim": "ambulant",
+     "lage": "liegend"
+    }
+   },
+   {
+    "code": "KTA-95C1",
+    "name": "Heimfahrt nach Chemotherapie – gehend",
+    "kapitel": "95 – Heimtransport",
+    "bed": {
+     "org": "asb",
+     "fahrt": "heim",
+     "therapie": "chemo",
+     "lage": "gehend"
+    }
+   },
+   {
+    "code": "KTA-95C2",
+    "name": "Heimfahrt nach Chemotherapie – eigener Rollstuhl",
+    "kapitel": "95 – Heimtransport",
+    "bed": {
+     "org": "asb",
+     "fahrt": "heim",
+     "therapie": "chemo",
+     "lage": "rollstuhl"
+    }
+   },
+   {
+    "code": "KTA-95C3",
+    "name": "Heimfahrt nach Chemotherapie – sitzend (Tragstuhl)",
+    "kapitel": "95 – Heimtransport",
+    "bed": {
+     "org": "asb",
+     "fahrt": "heim",
+     "therapie": "chemo",
+     "lage": "sitzend"
+    }
+   },
+   {
+    "code": "KTA-95C4",
+    "name": "Heimfahrt nach Chemotherapie – liegend",
+    "kapitel": "95 – Heimtransport",
+    "bed": {
+     "org": "asb",
+     "fahrt": "heim",
+     "therapie": "chemo",
+     "lage": "liegend"
+    }
+   },
+   {
+    "code": "KTA-95R1",
+    "name": "Heimfahrt nach Strahlentherapie – gehend",
+    "kapitel": "95 – Heimtransport",
+    "bed": {
+     "org": "asb",
+     "fahrt": "heim",
+     "therapie": "strahlen",
+     "lage": "gehend"
+    }
+   },
+   {
+    "code": "KTA-95R2",
+    "name": "Heimfahrt nach Strahlentherapie – eigener Rollstuhl",
+    "kapitel": "95 – Heimtransport",
+    "bed": {
+     "org": "asb",
+     "fahrt": "heim",
+     "therapie": "strahlen",
+     "lage": "rollstuhl"
+    }
+   },
+   {
+    "code": "KTA-95R3",
+    "name": "Heimfahrt nach Strahlentherapie – sitzend (Tragstuhl)",
+    "kapitel": "95 – Heimtransport",
+    "bed": {
+     "org": "asb",
+     "fahrt": "heim",
+     "therapie": "strahlen",
+     "lage": "sitzend"
+    }
+   },
+   {
+    "code": "KTA-95R4",
+    "name": "Heimfahrt nach Strahlentherapie – liegend",
+    "kapitel": "95 – Heimtransport",
+    "bed": {
+     "org": "asb",
+     "fahrt": "heim",
+     "therapie": "strahlen",
+     "lage": "liegend"
+    }
+   },
+   {
+    "code": "KTA-95D1",
+    "name": "Heimfahrt nach Dialyse – gehend",
+    "kapitel": "95 – Heimtransport",
+    "bed": {
+     "org": "asb",
+     "fahrt": "heim",
+     "therapie": "dialyse",
+     "lage": "gehend"
+    }
+   },
+   {
+    "code": "KTA-95D2",
+    "name": "Heimfahrt nach Dialyse – eigener Rollstuhl",
+    "kapitel": "95 – Heimtransport",
+    "bed": {
+     "org": "asb",
+     "fahrt": "heim",
+     "therapie": "dialyse",
+     "lage": "rollstuhl"
+    }
+   },
+   {
+    "code": "KTA-95D3",
+    "name": "Heimfahrt nach Dialyse – sitzend (Tragstuhl)",
+    "kapitel": "95 – Heimtransport",
+    "bed": {
+     "org": "asb",
+     "fahrt": "heim",
+     "therapie": "dialyse",
+     "lage": "sitzend"
+    }
+   },
+   {
+    "code": "KTA-95D4",
+    "name": "Heimfahrt nach Dialyse – liegend",
+    "kapitel": "95 – Heimtransport",
+    "bed": {
+     "org": "asb",
+     "fahrt": "heim",
+     "therapie": "dialyse",
+     "lage": "liegend"
+    }
+   },
+   {
+    "code": "KTx-90T1",
+    "name": "Fahrt zum Krankenhaus – gehend",
+    "kapitel": "90 – Fahrt zum Krankenhaus",
+    "bed": {
+     "org": "egal",
+     "fahrt": "zum_kh",
+     "lage": "gehend",
+     "zeit": "geplant"
+    }
+   },
+   {
+    "code": "KTx-90T1S",
+    "name": "Einweisung SOFORT – gehend",
+    "kapitel": "90 – Fahrt zum Krankenhaus",
+    "bed": {
+     "org": "egal",
+     "fahrt": "zum_kh",
+     "lage": "gehend",
+     "zeit": "sofort"
+    }
+   },
+   {
+    "code": "KTx-90T2",
+    "name": "Fahrt zum Krankenhaus – eigener Rollstuhl",
+    "kapitel": "90 – Fahrt zum Krankenhaus",
+    "bed": {
+     "org": "egal",
+     "fahrt": "zum_kh",
+     "lage": "rollstuhl",
+     "zeit": "geplant"
+    }
+   },
+   {
+    "code": "KTx-90T2S",
+    "name": "Einweisung SOFORT – eigener Rollstuhl",
+    "kapitel": "90 – Fahrt zum Krankenhaus",
+    "bed": {
+     "org": "egal",
+     "fahrt": "zum_kh",
+     "lage": "rollstuhl",
+     "zeit": "sofort"
+    }
+   },
+   {
+    "code": "KTx-90T3",
+    "name": "Fahrt zum Krankenhaus – sitzend (Tragstuhl)",
+    "kapitel": "90 – Fahrt zum Krankenhaus",
+    "bed": {
+     "org": "egal",
+     "fahrt": "zum_kh",
+     "lage": "sitzend",
+     "zeit": "geplant"
+    }
+   },
+   {
+    "code": "KTx-90T3S",
+    "name": "Einweisung SOFORT – sitzend (Tragstuhl)",
+    "kapitel": "90 – Fahrt zum Krankenhaus",
+    "bed": {
+     "org": "egal",
+     "fahrt": "zum_kh",
+     "lage": "sitzend",
+     "zeit": "sofort"
+    }
+   },
+   {
+    "code": "KTx-90T4",
+    "name": "Fahrt zum Krankenhaus – liegend",
+    "kapitel": "90 – Fahrt zum Krankenhaus",
+    "bed": {
+     "org": "egal",
+     "fahrt": "zum_kh",
+     "lage": "liegend",
+     "zeit": "geplant"
+    }
+   },
+   {
+    "code": "KTx-90T4S",
+    "name": "Einweisung SOFORT – liegend",
+    "kapitel": "90 – Fahrt zum Krankenhaus",
+    "bed": {
+     "org": "egal",
+     "fahrt": "zum_kh",
+     "lage": "liegend",
+     "zeit": "sofort"
+    }
+   },
+   {
+    "code": "KTx-93C1",
+    "name": "Fahrt zur Chemotherapie – gehend",
+    "kapitel": "93 – Fahrt zur Therapie",
+    "bed": {
+     "org": "egal",
+     "fahrt": "therapie",
+     "therapie": "chemo",
+     "lage": "gehend"
+    }
+   },
+   {
+    "code": "KTx-93C2",
+    "name": "Fahrt zur Chemotherapie – eigener Rollstuhl",
+    "kapitel": "93 – Fahrt zur Therapie",
+    "bed": {
+     "org": "egal",
+     "fahrt": "therapie",
+     "therapie": "chemo",
+     "lage": "rollstuhl"
+    }
+   },
+   {
+    "code": "KTx-93C3",
+    "name": "Fahrt zur Chemotherapie – sitzend (Tragstuhl)",
+    "kapitel": "93 – Fahrt zur Therapie",
+    "bed": {
+     "org": "egal",
+     "fahrt": "therapie",
+     "therapie": "chemo",
+     "lage": "sitzend"
+    }
+   },
+   {
+    "code": "KTx-93C4",
+    "name": "Fahrt zur Chemotherapie – liegend",
+    "kapitel": "93 – Fahrt zur Therapie",
+    "bed": {
+     "org": "egal",
+     "fahrt": "therapie",
+     "therapie": "chemo",
+     "lage": "liegend"
+    }
+   },
+   {
+    "code": "KTx-93R1",
+    "name": "Fahrt zur Strahlentherapie – gehend",
+    "kapitel": "93 – Fahrt zur Therapie",
+    "bed": {
+     "org": "egal",
+     "fahrt": "therapie",
+     "therapie": "strahlen",
+     "lage": "gehend"
+    }
+   },
+   {
+    "code": "KTx-93R2",
+    "name": "Fahrt zur Strahlentherapie – eigener Rollstuhl",
+    "kapitel": "93 – Fahrt zur Therapie",
+    "bed": {
+     "org": "egal",
+     "fahrt": "therapie",
+     "therapie": "strahlen",
+     "lage": "rollstuhl"
+    }
+   },
+   {
+    "code": "KTx-93R3",
+    "name": "Fahrt zur Strahlentherapie – sitzend (Tragstuhl)",
+    "kapitel": "93 – Fahrt zur Therapie",
+    "bed": {
+     "org": "egal",
+     "fahrt": "therapie",
+     "therapie": "strahlen",
+     "lage": "sitzend"
+    }
+   },
+   {
+    "code": "KTx-93R4",
+    "name": "Fahrt zur Strahlentherapie – liegend",
+    "kapitel": "93 – Fahrt zur Therapie",
+    "bed": {
+     "org": "egal",
+     "fahrt": "therapie",
+     "therapie": "strahlen",
+     "lage": "liegend"
+    }
+   },
+   {
+    "code": "KTx-93D1",
+    "name": "Fahrt zur Dialyse – gehend",
+    "kapitel": "93 – Fahrt zur Therapie",
+    "bed": {
+     "org": "egal",
+     "fahrt": "therapie",
+     "therapie": "dialyse",
+     "lage": "gehend"
+    }
+   },
+   {
+    "code": "KTx-93D2",
+    "name": "Fahrt zur Dialyse – eigener Rollstuhl",
+    "kapitel": "93 – Fahrt zur Therapie",
+    "bed": {
+     "org": "egal",
+     "fahrt": "therapie",
+     "therapie": "dialyse",
+     "lage": "rollstuhl"
+    }
+   },
+   {
+    "code": "KTx-93D3",
+    "name": "Fahrt zur Dialyse – sitzend (Tragstuhl)",
+    "kapitel": "93 – Fahrt zur Therapie",
+    "bed": {
+     "org": "egal",
+     "fahrt": "therapie",
+     "therapie": "dialyse",
+     "lage": "sitzend"
+    }
+   },
+   {
+    "code": "KTx-93D4",
+    "name": "Fahrt zur Dialyse – liegend",
+    "kapitel": "93 – Fahrt zur Therapie",
+    "bed": {
+     "org": "egal",
+     "fahrt": "therapie",
+     "therapie": "dialyse",
+     "lage": "liegend"
+    }
+   },
+   {
+    "code": "KTx-95T1",
+    "name": "Entlassung nach Hause – gehend",
+    "kapitel": "95 – Heimtransport",
+    "bed": {
+     "org": "egal",
+     "fahrt": "heim",
+     "therapie": "keine",
+     "heim": "stationaer",
+     "lage": "gehend"
+    }
+   },
+   {
+    "code": "KTx-95T1A",
+    "name": "Heimfahrt nach ambulanter Behandlung – gehend",
+    "kapitel": "95 – Heimtransport",
+    "bed": {
+     "org": "egal",
+     "fahrt": "heim",
+     "therapie": "keine",
+     "heim": "ambulant",
+     "lage": "gehend"
+    }
+   },
+   {
+    "code": "KTx-95T2",
+    "name": "Entlassung nach Hause – eigener Rollstuhl",
+    "kapitel": "95 – Heimtransport",
+    "bed": {
+     "org": "egal",
+     "fahrt": "heim",
+     "therapie": "keine",
+     "heim": "stationaer",
+     "lage": "rollstuhl"
+    }
+   },
+   {
+    "code": "KTx-95T2A",
+    "name": "Heimfahrt nach ambulanter Behandlung – eigener Rollstuhl",
+    "kapitel": "95 – Heimtransport",
+    "bed": {
+     "org": "egal",
+     "fahrt": "heim",
+     "therapie": "keine",
+     "heim": "ambulant",
+     "lage": "rollstuhl"
+    }
+   },
+   {
+    "code": "KTx-95T3",
+    "name": "Entlassung nach Hause – sitzend (Tragstuhl)",
+    "kapitel": "95 – Heimtransport",
+    "bed": {
+     "org": "egal",
+     "fahrt": "heim",
+     "therapie": "keine",
+     "heim": "stationaer",
+     "lage": "sitzend"
+    }
+   },
+   {
+    "code": "KTx-95T3A",
+    "name": "Heimfahrt nach ambulanter Behandlung – sitzend (Tragstuhl)",
+    "kapitel": "95 – Heimtransport",
+    "bed": {
+     "org": "egal",
+     "fahrt": "heim",
+     "therapie": "keine",
+     "heim": "ambulant",
+     "lage": "sitzend"
+    }
+   },
+   {
+    "code": "KTx-95T4",
+    "name": "Entlassung nach Hause – liegend",
+    "kapitel": "95 – Heimtransport",
+    "bed": {
+     "org": "egal",
+     "fahrt": "heim",
+     "therapie": "keine",
+     "heim": "stationaer",
+     "lage": "liegend"
+    }
+   },
+   {
+    "code": "KTx-95T4A",
+    "name": "Heimfahrt nach ambulanter Behandlung – liegend",
+    "kapitel": "95 – Heimtransport",
+    "bed": {
+     "org": "egal",
+     "fahrt": "heim",
+     "therapie": "keine",
+     "heim": "ambulant",
+     "lage": "liegend"
+    }
+   },
+   {
+    "code": "KTx-95C1",
+    "name": "Heimfahrt nach Chemotherapie – gehend",
+    "kapitel": "95 – Heimtransport",
+    "bed": {
+     "org": "egal",
+     "fahrt": "heim",
+     "therapie": "chemo",
+     "lage": "gehend"
+    }
+   },
+   {
+    "code": "KTx-95C2",
+    "name": "Heimfahrt nach Chemotherapie – eigener Rollstuhl",
+    "kapitel": "95 – Heimtransport",
+    "bed": {
+     "org": "egal",
+     "fahrt": "heim",
+     "therapie": "chemo",
+     "lage": "rollstuhl"
+    }
+   },
+   {
+    "code": "KTx-95C3",
+    "name": "Heimfahrt nach Chemotherapie – sitzend (Tragstuhl)",
+    "kapitel": "95 – Heimtransport",
+    "bed": {
+     "org": "egal",
+     "fahrt": "heim",
+     "therapie": "chemo",
+     "lage": "sitzend"
+    }
+   },
+   {
+    "code": "KTx-95C4",
+    "name": "Heimfahrt nach Chemotherapie – liegend",
+    "kapitel": "95 – Heimtransport",
+    "bed": {
+     "org": "egal",
+     "fahrt": "heim",
+     "therapie": "chemo",
+     "lage": "liegend"
+    }
+   },
+   {
+    "code": "KTx-95R1",
+    "name": "Heimfahrt nach Strahlentherapie – gehend",
+    "kapitel": "95 – Heimtransport",
+    "bed": {
+     "org": "egal",
+     "fahrt": "heim",
+     "therapie": "strahlen",
+     "lage": "gehend"
+    }
+   },
+   {
+    "code": "KTx-95R2",
+    "name": "Heimfahrt nach Strahlentherapie – eigener Rollstuhl",
+    "kapitel": "95 – Heimtransport",
+    "bed": {
+     "org": "egal",
+     "fahrt": "heim",
+     "therapie": "strahlen",
+     "lage": "rollstuhl"
+    }
+   },
+   {
+    "code": "KTx-95R3",
+    "name": "Heimfahrt nach Strahlentherapie – sitzend (Tragstuhl)",
+    "kapitel": "95 – Heimtransport",
+    "bed": {
+     "org": "egal",
+     "fahrt": "heim",
+     "therapie": "strahlen",
+     "lage": "sitzend"
+    }
+   },
+   {
+    "code": "KTx-95R4",
+    "name": "Heimfahrt nach Strahlentherapie – liegend",
+    "kapitel": "95 – Heimtransport",
+    "bed": {
+     "org": "egal",
+     "fahrt": "heim",
+     "therapie": "strahlen",
+     "lage": "liegend"
+    }
+   },
+   {
+    "code": "KTx-95D1",
+    "name": "Heimfahrt nach Dialyse – gehend",
+    "kapitel": "95 – Heimtransport",
+    "bed": {
+     "org": "egal",
+     "fahrt": "heim",
+     "therapie": "dialyse",
+     "lage": "gehend"
+    }
+   },
+   {
+    "code": "KTx-95D2",
+    "name": "Heimfahrt nach Dialyse – eigener Rollstuhl",
+    "kapitel": "95 – Heimtransport",
+    "bed": {
+     "org": "egal",
+     "fahrt": "heim",
+     "therapie": "dialyse",
+     "lage": "rollstuhl"
+    }
+   },
+   {
+    "code": "KTx-95D3",
+    "name": "Heimfahrt nach Dialyse – sitzend (Tragstuhl)",
+    "kapitel": "95 – Heimtransport",
+    "bed": {
+     "org": "egal",
+     "fahrt": "heim",
+     "therapie": "dialyse",
+     "lage": "sitzend"
+    }
+   },
+   {
+    "code": "KTx-95D4",
+    "name": "Heimfahrt nach Dialyse – liegend",
+    "kapitel": "95 – Heimtransport",
+    "bed": {
+     "org": "egal",
+     "fahrt": "heim",
+     "therapie": "dialyse",
+     "lage": "liegend"
+    }
+   },
+   {
+    "code": "SEK-96G1",
+    "name": "Überstellung mit SKTW – gehend",
+    "kapitel": "96 – Überstellung",
+    "bed": {
+     "fahrt": "ueberstellung",
+     "lage": "gehend",
+     "begleitung": "keine",
+     "fahrzeug": "sktw",
+     "zeit": "geplant",
+     "sondersignal": "nein",
+     "inkubator": "nein"
+    }
+   },
+   {
+    "code": "SEK-96S1",
+    "name": "Überstellung SOFORT mit SKTW – gehend",
+    "kapitel": "96 – Überstellung",
+    "bed": {
+     "fahrt": "ueberstellung",
+     "lage": "gehend",
+     "begleitung": "keine",
+     "fahrzeug": "sktw",
+     "zeit": "sofort",
+     "sondersignal": "nein",
+     "inkubator": "nein"
+    }
+   },
+   {
+    "code": "SEK-96G3",
+    "name": "Überstellung mit SKTW – sitzend (Tragstuhl)",
+    "kapitel": "96 – Überstellung",
+    "bed": {
+     "fahrt": "ueberstellung",
+     "lage": "sitzend",
+     "begleitung": "keine",
+     "fahrzeug": "sktw",
+     "zeit": "geplant",
+     "sondersignal": "nein",
+     "inkubator": "nein"
+    }
+   },
+   {
+    "code": "SEK-96S3",
+    "name": "Überstellung SOFORT mit SKTW – sitzend (Tragstuhl)",
+    "kapitel": "96 – Überstellung",
+    "bed": {
+     "fahrt": "ueberstellung",
+     "lage": "sitzend",
+     "begleitung": "keine",
+     "fahrzeug": "sktw",
+     "zeit": "sofort",
+     "sondersignal": "nein",
+     "inkubator": "nein"
+    }
+   },
+   {
+    "code": "SEK-96G4",
+    "name": "Überstellung mit SKTW – liegend",
+    "kapitel": "96 – Überstellung",
+    "bed": {
+     "fahrt": "ueberstellung",
+     "lage": "liegend",
+     "begleitung": "keine",
+     "fahrzeug": "sktw",
+     "zeit": "geplant",
+     "sondersignal": "nein",
+     "inkubator": "nein"
+    }
+   },
+   {
+    "code": "SEK-96S4",
+    "name": "Überstellung SOFORT mit SKTW – liegend",
+    "kapitel": "96 – Überstellung",
+    "bed": {
+     "fahrt": "ueberstellung",
+     "lage": "liegend",
+     "begleitung": "keine",
+     "fahrzeug": "sktw",
+     "zeit": "sofort",
+     "sondersignal": "nein",
+     "inkubator": "nein"
+    }
+   },
+   {
+    "code": "SEK-96G5-SRTW",
+    "name": "Überstellung mit Überwachung (SRTW)",
+    "kapitel": "96 – Überstellung",
+    "bed": {
+     "fahrt": "ueberstellung",
+     "begleitung": "monitoring",
+     "fahrzeug": "srtw",
+     "zeit": "geplant",
+     "sondersignal": "nein",
+     "inkubator": "nein"
+    }
+   },
+   {
+    "code": "SEK-96N5-SRTW",
+    "name": "Dringende Überstellung mit Überwachung (SRTW, Blaulicht)",
+    "kapitel": "96 – Überstellung",
+    "bed": {
+     "fahrt": "ueberstellung",
+     "begleitung": "monitoring",
+     "fahrzeug": "srtw",
+     "zeit": "sofort",
+     "sondersignal": "ja",
+     "inkubator": "nein"
+    }
+   },
+   {
+    "code": "SEK-96N6-RTW",
+    "name": "Dringende Notarztüberstellung im Rettungsdienst (RTW mit Notarzt)",
+    "kapitel": "96 – Überstellung",
+    "bed": {
+     "fahrt": "ueberstellung",
+     "begleitung": "notarzt",
+     "fahrzeug": "rtw_na",
+     "zeit": "sofort",
+     "sondersignal": "ja",
+     "inkubator": "nein"
+    }
+   },
+   {
+    "code": "SEK-96G6-SNAW",
+    "name": "Geplante Notarztüberstellung mit SNAW",
+    "kapitel": "96 – Überstellung",
+    "bed": {
+     "fahrt": "ueberstellung",
+     "begleitung": "notarzt",
+     "fahrzeug": "snaw",
+     "zeit": "geplant",
+     "sondersignal": "nein",
+     "inkubator": "nein"
+    }
+   },
+   {
+    "code": "SEK-96N6-SNAW",
+    "name": "Dringende Notarztüberstellung mit SNAW",
+    "kapitel": "96 – Überstellung",
+    "bed": {
+     "fahrt": "ueberstellung",
+     "begleitung": "notarzt",
+     "fahrzeug": "snaw",
+     "zeit": "sofort",
+     "sondersignal": "ja",
+     "inkubator": "nein"
+    }
+   },
+   {
+    "code": "SEK-96N6-ITH",
+    "name": "Dringende Notarztüberstellung mit Hubschrauber (ITH)",
+    "kapitel": "96 – Überstellung",
+    "bed": {
+     "fahrt": "ueberstellung",
+     "begleitung": "notarzt",
+     "fahrzeug": "ith",
+     "zeit": "sofort",
+     "sondersignal": "ja",
+     "inkubator": "nein"
+    }
+   },
+   {
+    "code": "SEK-96N7-RTW",
+    "name": "Dringende Kinder-/Inkubatorüberstellung im Rettungsdienst",
+    "kapitel": "96 – Überstellung",
+    "bed": {
+     "fahrt": "ueberstellung",
+     "begleitung": "notarzt",
+     "fahrzeug": "rtw_na",
+     "zeit": "sofort",
+     "sondersignal": "ja",
+     "inkubator": "ja"
+    }
+   },
+   {
+    "code": "SEK-96G7-SNAW",
+    "name": "Geplante Kinder-/Inkubatorüberstellung mit SNAW",
+    "kapitel": "96 – Überstellung",
+    "bed": {
+     "fahrt": "ueberstellung",
+     "begleitung": "notarzt",
+     "fahrzeug": "snaw",
+     "zeit": "geplant",
+     "sondersignal": "nein",
+     "inkubator": "ja"
+    }
+   },
+   {
+    "code": "SEK-96N7-SNAW",
+    "name": "Dringende Kinder-/Inkubatorüberstellung mit SNAW",
+    "kapitel": "96 – Überstellung",
+    "bed": {
+     "fahrt": "ueberstellung",
+     "begleitung": "notarzt",
+     "fahrzeug": "snaw",
+     "zeit": "sofort",
+     "sondersignal": "ja",
+     "inkubator": "ja"
+    }
+   },
+   {
+    "code": "SEK-96N7-ITH",
+    "name": "Dringende Kinder-/Inkubatorüberstellung mit Hubschrauber (ITH)",
+    "kapitel": "96 – Überstellung",
+    "bed": {
+     "fahrt": "ueberstellung",
+     "begleitung": "notarzt",
+     "fahrzeug": "ith",
+     "zeit": "sofort",
+     "sondersignal": "ja",
+     "inkubator": "ja"
+    }
+   }
+  ]
  }
 }

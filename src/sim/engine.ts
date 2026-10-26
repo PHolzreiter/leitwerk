@@ -6241,15 +6241,15 @@ export class Simulation {
       w.push({ typen: ["KTW"], ersatz: false });
       w.push({ typen: ["RTW", "RTW-C"], ersatz: true, hinweis: "RTW – nur wenn nötig" });
     } else {
-      const code = k.d.code ?? "";
-      const z = Number(code.match(/^SEK-96[KBD](\d)/)?.[1] ?? 3);
+      // Art der Überstellung aus den Bedingungen des Codes (früher aus der Ziffer im Code)
+      const z = info.inkubator ? 8 : info.arzt ? (info.flug ? 7 : 6) : info.monitoring ? 6 : 3;
       const ith: Wahl = { typen: ["ITH"], ersatz: false, hinweis: "Intensivtransporthubschrauber" };
       const nah: Wahl = { typen: ["NAH"], ersatz: false, hinweis: "Hubschrauber" };
       const mitNef: Wahl = { typen: ["SRTW", "RTW", "RTW-C"], nef: true, ersatz: true, hinweis: "mit NEF" };
       if (z <= 3) {
         w.push({ typen: ["SKTW"], ersatz: false });
         w.push({ typen: ["KTW", "SRTW", "RTW", "RTW-C"], ersatz: true, hinweis: "kein SKTW frei" });
-      } else if (z === 6 && info.fahrzeug === "SRTW") {
+      } else if (z === 6 && (info.fahrzeug === "SRTW" || (info.monitoring && !info.arzt))) {
         w.push({ typen: ["SRTW"], ersatz: false });
         w.push({ typen: ["RTW", "RTW-C"], ersatz: true, hinweis: "kein SRTW frei" });
       } else if (z === 6) {
@@ -6261,9 +6261,6 @@ export class Simulation {
         w.push(ith, nah);
         w.push({ typen: ["SNAW"], ersatz: true, hinweis: "kein Hubschrauber" });
         w.push(mitNef);
-      } else if (code.endsWith("-RTW")) {
-        w.push({ typen: ["RTW", "RTW-C"], ersatz: false, hinweis: "Inkubator vom Krankenhaus" });
-        w.push({ typen: ["SRTW", "SNAW"], ersatz: true });
       } else {
         // Inkubator-/Kinderüberstellung: ITH oder SNAW
         if (info.fahrzeug === "SNAW") w.push({ typen: ["SNAW"], ersatz: false }, { ...ith, ersatz: true });
