@@ -7,6 +7,7 @@ import { invoke, Channel } from "@tauri-apps/api/core";
 import { inTauri } from "../platform";
 import { el, toast } from "./dom";
 import { onPers, pers, setzePers } from "./ws/persoenlich";
+import { FunkKodierer } from "./funkCodec";
 
 // ------------------------------------------------------------ Einstellungen
 
@@ -36,6 +37,16 @@ export interface SprachPrefs {
   stimmeArt: "system" | "piper" | "supertonic";
   /** Ausgabegerät für Stimmen (nur Piper), leer = wie das System */
   geraetStimmen: string;
+  /** Sprechfunk mit Piloten: eigene Taste (gedrückt halten) */
+  funkTaste: string;
+  /** Sprechfunk: Funk-Klang (blechern, kurzes Rauschen beim Loslassen) */
+  klangfilter: boolean;
+  /** Lautstärke des Sprechfunks (Stimmen der Mitspieler) 0–100 */
+  funkLaut: number;
+  /** Pilot: übrigen Funkverkehr (Fahrzeuge ↔ Leitstelle) mithören */
+  mithoeren: boolean;
+  /** Pilot: Lautstärke des mitgehörten Funkverkehrs 0–100 (Anteil der normalen Lautstärke) */
+  mithoerenLaut: number;
 }
 
 const istMac = /Mac/i.test(navigator.platform || navigator.userAgent);
@@ -54,6 +65,11 @@ export const SPRACH_STANDARD: SprachPrefs = {
   mikro: "",
   stimmeArt: "system",
   geraetStimmen: "",
+  funkTaste: "F4",
+  klangfilter: true,
+  funkLaut: 90,
+  mithoeren: true,
+  mithoerenLaut: 50,
 };
 
 export function sprachPrefs(): SprachPrefs {
@@ -272,18 +288,18 @@ function supertonicFuer(g: "w" | "m", schluessel: string): string {
 }
 
 /** Satz mit Piper erzeugen und nacheinander abspielen (der nächste Satz wird schon erzeugt, während einer läuft) */
-function piperSagen(text: string, v: { name: string; sid: number }, rate: number): void {
+function piperSagen(text: string, v: { name: string; sid: number }, rate: number, laut = 1): void {
   const p = sprachPrefs();
-  imProgrammSagen(invoke<ArrayBuffer>("stimme_erzeugen", { name: v.name, text, sid: v.sid, tempo: Math.max(0.5, Math.min(2, rate * (p.tempo / 100))) }));
+  imProgrammSagen(invoke<ArrayBuffer>("stimme_erzeugen", { name: v.name, text, sid: v.sid, tempo: Math.max(0.5, Math.min(2, rate * (p.tempo / 100))) }), laut);
 }
 
-function supertonicSagen(text: string, stimme: string, rate: number): void {
+function supertonicSagen(text: string, stimme: string, rate: number, laut = 1): void {
   const p = sprachPrefs();
-  imProgrammSagen(invoke<ArrayBuffer>("supertonic_erzeugen", { stimme, text, tempo: Math.max(0.5, Math.min(2, rate * (p.tempo / 100))) }));
+  imProgrammSagen(invoke<ArrayBuffer>("supertonic_erzeugen", { stimme, text, tempo: Math.max(0.5, Math.min(2, rate * (p.tempo / 100))) }), laut);
 }
 
 /** erzeugtes Audio (4 Byte Rate + f32) der Reihe nach auf dem gewählten Gerät abspielen */
-function imProgrammSagen(audio: Promise<ArrayBuffer>): void {
+function imProgrammSagen(audio: Promise<ArrayBuffer>, laut = 1): void {
   const p = sprachPrefs();
   const gen = generation;
   const id = `stimme-${++zaehler}`;
@@ -295,25 +311,25 @@ function imProgrammSagen(audio: Promise<ArrayBuffer>): void {
       if (gen !== generation) return;
       const rate = new DataView(buf).getUint32(0, true);
       await invoke("ton_spielen", new Uint8Array(buf.slice(4)), {
-        headers: { "x-rate": String(rate), "x-geraet": encodeURIComponent(p.geraetStimmen), "x-laut": String(Math.max(0, p.laut / 100)), "x-id": id },
+        headers: { "x-rate": String(rate), "x-geraet": encodeURIComponent(p.geraetStimmen), "x-laut": String(Math.max(0, (p.laut / 100) * laut)), "x-id": id },
       });
     })
     .catch((e) => console.warn("Piper", e))
     .finally(() => (spricht = Math.max(0, spricht - 1)));
 }
 
-function sagen(text: string, g: "w" | "m", schluessel: string, rate: number, emotion?: string): void {
+function sagen(text: string, g: "w" | "m", schluessel: string, rate: number, emotion?: string, laut = 1): void {
   const t = sprechText(text);
   if (!t) return;
   const p = sprachPrefs();
   if (p.stimmeArt === "supertonic" && inTauri() && supertonicDa) {
-    supertonicSagen(t, supertonicFuer(g, schluessel), rate);
+    supertonicSagen(t, supertonicFuer(g, schluessel), rate, laut);
     return;
   }
   if ((p.stimmeArt === "piper" || p.stimmeArt === "supertonic") && inTauri()) {
     const v = piperFuer(g, schluessel, emotion);
     if (v) {
-      piperSagen(t, v, rate);
+      piperSagen(t, v, rate, laut);
       return;
     }
   }
@@ -324,7 +340,7 @@ function sagen(text: string, g: "w" | "m", schluessel: string, rate: number, emo
   u.lang = voice?.lang ?? "de-AT";
   u.pitch = pitch;
   u.rate = Math.max(0.5, Math.min(2, rate * (p.tempo / 100)));
-  u.volume = Math.max(0, Math.min(1, p.laut / 100));
+  u.volume = Math.max(0, Math.min(1, (p.laut / 100) * laut));
   spricht++;
   const fertig = () => (spricht = Math.max(0, spricht - 1));
   u.onend = fertig;
@@ -395,11 +411,11 @@ export function satzSprecher(sagen: (satz: string) => void): { token(t: string):
   };
 }
 
-/** Fahrzeug spricht am Funk */
-export function funkSagt(funkname: string, text: string): void {
+/** Fahrzeug spricht am Funk (laut = Anteil der normalen Lautstärke) */
+export function funkSagt(funkname: string, text: string, laut = 1): void {
   const p = sprachPrefs();
-  if (!p.funkVorlesen || aufnahmeLaeuft) return;
-  sagen(funkAussprache(text), hash(funkname) < 0.3 ? "w" : "m", funkname, 1.08);
+  if (!p.funkVorlesen || aufnahmeLaeuft || aufnahmeSperre.funk || laut <= 0) return;
+  sagen(funkAussprache(text), hash(funkname) < 0.3 ? "w" : "m", funkname, 1.08, undefined, laut);
 }
 
 const ZAHL_MAL: Record<string, string> = { "1": "einmal", "2": "zweimal", "3": "dreimal", "4": "viermal", "5": "fünfmal", "6": "sechsmal", "7": "siebenmal", "8": "achtmal", "9": "neunmal", "10": "zehnmal" };
@@ -437,11 +453,13 @@ export function probe(g: "w" | "m", piperName?: string, supertonic?: string): vo
   sagen(g === "w" ? "Notruf? Bitte kommen Sie schnell, meine Mutter ist gestürzt und steht nicht mehr auf." : "Hier 75 1, sind am Einsatzort eingetroffen, kommen.", g, `probe-${g}`, 1);
 }
 
-/** Funk: neue Sprüche der Fahrzeuge in meinen Gesprächen vorlesen */
-export function funkVorlesenStarten(sim: {
-  state: { funkGespraeche?: { id: number; funkname: string; sprueche: { von: string; text: string }[]; fuehrer: { pid: string } | null }[] };
-  onChange(fn: () => void): () => void;
-}, ichFuehre: (g: { fuehrer: { pid: string } | null }) => boolean): void {
+type VorleseGespraech = { id: number; fzId: string; funkname: string; an?: { fzId: string } | null; sprueche: { von: string; text: string; stimme?: boolean }[]; fuehrer: { pid: string } | null };
+
+/**
+ * Funk: neue Sprüche vorlesen. laut(g, spruch) sagt, wie laut (0 = gar nicht, 1 = normal).
+ * Von Menschen gesprochene Sprüche (live übertragen) werden nie noch einmal vorgelesen.
+ */
+export function funkVorlesenStarten(sim: { state: { funkGespraeche?: VorleseGespraech[] }; onChange(fn: () => void): () => void }, laut: (g: VorleseGespraech, s: { von: string; text: string }) => number): void {
   const gesehen = new Map<number, number>();
   for (const g of sim.state.funkGespraeche ?? []) gesehen.set(g.id, g.sprueche.length);
   sim.onChange(() => {
@@ -449,8 +467,11 @@ export function funkVorlesenStarten(sim: {
       const n = gesehen.get(g.id) ?? 0;
       if (g.sprueche.length > n) {
         gesehen.set(g.id, g.sprueche.length);
-        if (!ichFuehre(g)) continue;
-        for (const s of g.sprueche.slice(n)) if (s.von !== "LEO") funkSagt(s.von, s.text);
+        for (const s of g.sprueche.slice(n)) {
+          if (s.stimme) continue;
+          const l = laut(g, s);
+          if (l > 0) funkSagt(s.von, s.text, l);
+        }
       }
     }
   });
@@ -464,8 +485,10 @@ export interface SprachZiel {
   rang: number;
   /** darf man hier gerade sprechen? */
   aktiv(): boolean;
-  /** erkannten Text abschicken */
-  senden(): void;
+  /** erkannten Text abschicken (gesprochen = kam aus der Spracheingabe) */
+  senden(gesprochen?: boolean): void;
+  /** Funk-Eingabe: die Sprache geht im Mehrspieler zusätzlich live an alle (Sprechfunk) */
+  funk?: boolean;
   /** Fachbegriffe, Orte, Funkrufnamen – hilft der Erkennung */
   hinweis?(): string;
   /** Text nachbearbeiten (z. B. „57 001“ → „57/001“) */
@@ -473,6 +496,17 @@ export interface SprachZiel {
 }
 
 const ziele = new Set<SprachZiel>();
+
+/** Sprechfunk (ui/sprechfunk.ts): sperrt die Spracheingabe, solange gefunkt wird; schickt Funk-Eingaben live mit */
+export const aufnahmeSperre = { funk: false };
+export const funkHaken: { start: null | (() => ((b64: string) => void) | null); ende: null | (() => void) } = { start: null, ende: null };
+let funkStueck: ((b64: string) => void) | null = null;
+let funkKod: FunkKodierer | null = null;
+
+/** Läuft gerade eine Spracheingabe (Notruf, KT, Funk)? */
+export function aufnahmeLaeuftJetzt(): boolean {
+  return aufnahmeLaeuft;
+}
 
 /** nur für Tests: eigene Erkennung statt Whisper (Aufnahme läuft wie im Programm) */
 export const sprachTest: { erkenner: null | ((audio: Float32Array, hinweis: string) => Promise<string>) } = { erkenner: null };
@@ -599,7 +633,7 @@ function browserErkennung(): { stop(): void; ergebnis: Promise<string> } | null 
 
 async function start(z: SprachZiel | null, knopf?: HTMLElement): Promise<void> {
   const p = sprachPrefs();
-  if (!p.eingabe || aufnahmeLaeuft) return;
+  if (!p.eingabe || aufnahmeLaeuft || aufnahmeSperre.funk) return;
   if (!z) {
     toast("Gerade gibt es kein Gespräch, in das du sprechen kannst.", "error");
     return;
@@ -610,6 +644,8 @@ async function start(z: SprachZiel | null, knopf?: HTMLElement): Promise<void> {
   knopf?.classList.add("an");
   verstummen();
   anzeigeZeigen(`Sprich jetzt … (loslassen zum Beenden)`, "hoert");
+  // Funk im Mehrspieler: die Stimme geht live an alle (wie beim Sprechfunk mit Piloten)
+  funkStueck = z.funk && programmWeg() ? (funkHaken.start?.() ?? null) : null;
   if (!programmWeg()) {
     browserErk = browserErkennung();
     if (!browserErk) {
@@ -621,12 +657,19 @@ async function start(z: SprachZiel | null, knopf?: HTMLElement): Promise<void> {
     return;
   }
   if (nativ()) {
-    nativStart = invoke<void>("sprache_aufnahme_start", { mikro: p.mikro || null });
+    let funk: Channel<string> | null = null;
+    if (funkStueck) {
+      const f = funkStueck;
+      funk = new Channel<string>();
+      funk.onmessage = (b64) => f(b64);
+    }
+    nativStart = invoke<void>("sprache_aufnahme_start", { mikro: p.mikro || null, funk });
     try {
       await nativStart;
     } catch (e) {
       nativStart = null;
       aufnahmeLaeuft = false;
+      funkStueckEnde();
       anzeigeWeg();
       knopf?.classList.remove("an");
       toast(`Mikrofon nicht verfügbar: ${(e as Error).message ?? e}`, "error");
@@ -646,9 +689,11 @@ async function start(z: SprachZiel | null, knopf?: HTMLElement): Promise<void> {
     quelle = ctx.createMediaStreamSource(s);
     proz = ctx.createScriptProcessor(4096, 1, 1);
     stuecke = [];
+    funkKod = funkStueck ? new FunkKodierer(ctx.sampleRate, funkStueck) : null;
     proz.onaudioprocess = (ev) => {
       const d = ev.inputBuffer.getChannelData(0);
       stuecke.push(new Float32Array(d));
+      funkKod?.daten(d);
       if (pegel) {
         let q = 0;
         for (let i = 0; i < d.length; i += 8) q += d[i] * d[i];
@@ -660,6 +705,7 @@ async function start(z: SprachZiel | null, knopf?: HTMLElement): Promise<void> {
     proz.connect(ctx.destination);
   } catch (e) {
     aufnahmeLaeuft = false;
+    funkStueckEnde();
     anzeigeWeg();
     knopf?.classList.remove("an");
     toast(`Mikrofon nicht verfügbar: ${(e as Error).message ?? e}`, "error");
@@ -684,9 +730,20 @@ function auf16k(daten: Float32Array, rate: number): Float32Array {
 /** typische Whisper-Erfindungen bei Stille */
 const FANTASIE = /^(untertitel|vielen dank( für)? (fürs )?zuschauen|copyright|\[?musik\]?|\*.*\*|bis zum nächsten mal|tschüss\.?)/i;
 
+/** Live-Funk der Spracheingabe beenden */
+function funkStueckEnde(): void {
+  if (!funkStueck) return;
+  funkKod?.ende();
+  funkKod = null;
+  funkStueck = null;
+  funkHaken.ende?.();
+}
+
 async function stopp(): Promise<void> {
   if (!aufnahmeLaeuft) return;
   aufnahmeLaeuft = false;
+  // nach der Aufnahme (inkl. Nachlauf) den Live-Funk schließen
+  const funkZu = () => setTimeout(funkStueckEnde, 80);
   aktuellerKnopf?.classList.remove("an");
   const z = zielJetzt;
   zielJetzt = null;
@@ -700,7 +757,7 @@ async function stopp(): Promise<void> {
       await st;
       anzeigeZeigen("Erkenne …", "denkt");
       const p = sprachPrefs();
-      const r = await invoke<{ text: string; sekunden: number; pegel: number }>("sprache_aufnahme_stopp", { modell: p.modell, hinweis: z?.hinweis?.() ?? "" });
+      const r = await invoke<{ text: string; sekunden: number; pegel: number }>("sprache_aufnahme_stopp", { modell: p.modell, hinweis: z?.hinweis?.() ?? "" }).finally(funkZu);
       if (r.sekunden < 0.3) {
         anzeigeWeg();
         return;
@@ -725,6 +782,7 @@ async function stopp(): Promise<void> {
       proz?.disconnect();
       void ctx?.close();
       ctx = null;
+      funkZu();
       const laenge = stuecke.reduce((a, s) => a + s.length, 0);
       const alles = new Float32Array(laenge);
       let o = 0;
@@ -749,6 +807,7 @@ async function stopp(): Promise<void> {
       text = await (sprachTest.erkenner ?? erkennen)(auf16k(alles, rate), z?.hinweis?.() ?? "");
     }
   } catch (e) {
+    funkStueckEnde();
     anzeigeWeg();
     toast(String((e as Error).message ?? e), "error");
     return;
@@ -763,7 +822,7 @@ async function stopp(): Promise<void> {
   if (!z || !z.input.isConnected) return;
   const vorher = z.input.value.trim();
   z.input.value = vorher ? `${vorher} ${text}` : text;
-  if (sprachPrefs().autoSenden && z.aktiv()) z.senden();
+  if (sprachPrefs().autoSenden && z.aktiv()) z.senden(true);
   else z.input.focus();
 }
 

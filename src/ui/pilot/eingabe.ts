@@ -5,15 +5,47 @@
 import { inTauri } from "../../platform";
 import { openDialog } from "../dialog";
 import { el, esc, toast } from "../dom";
-import { AKTIONEN, belegung, belegungSpeichern, kuerzelAus, kuerzelName, standardBelegung, tastenName, type Belegung, type PilotAktion } from "./tasten";
+import { AKTIONEN, belegung, belegungSpeichern, HALTEN, kuerzelAus, kuerzelName, standardBelegung, tastenName, type Belegung, type PilotAktion } from "./tasten";
 
 let ausloesen: ((a: PilotAktion) => void) | null = null;
+let loslassen: ((a: PilotAktion) => void) | null = null;
 let lernt = false;
+/** gerade gedrückte Halte-Aktionen (Sprechtasten) und von wo */
+const gehalten = new Map<PilotAktion, Set<string>>();
+
+/** Halte-Aktion gedrückt bzw. losgelassen (quelle: Taste, Kürzel, Joystick …) – mehrfaches Drücken zählt einmal */
+function halten(a: PilotAktion, quelle: string, an: boolean): void {
+  const q = gehalten.get(a) ?? new Set<string>();
+  const vorher = q.size > 0;
+  if (an) q.add(quelle);
+  else q.delete(quelle);
+  gehalten.set(a, q);
+  if (an && !vorher) ausloesen?.(a);
+  if (!an && vorher && q.size === 0) loslassen?.(a);
+}
+
+/** alle Halte-Aktionen einer Quelle loslassen (Fenster verliert den Fokus …) */
+function allesLoslassen(quelle?: string): void {
+  for (const [a, q] of gehalten) {
+    if (!q.size) continue;
+    if (quelle) halten(a, quelle, false);
+    else {
+      q.clear();
+      loslassen?.(a);
+    }
+  }
+}
 
 // ------------------------------------------------------------------ Tasten im Fenster
 
 function onKey(ev: KeyboardEvent): void {
-  if (!ausloesen || lernt || ev.repeat) return;
+  if (!ausloesen || lernt) return;
+  if (ev.repeat) {
+    // gehaltene Sprechtaste: Wiederholungen nicht weitergeben (Leertaste würde sonst Knöpfe drücken)
+    const b0 = belegung();
+    if ((Object.keys(b0.taste) as PilotAktion[]).some((k) => b0.taste[k] === ev.code && HALTEN.includes(k))) ev.preventDefault();
+    return;
+  }
   const t = ev.target as HTMLElement | null;
   if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
   if (document.querySelector(".dlg-overlay")) return;
@@ -22,8 +54,19 @@ function onKey(ev: KeyboardEvent): void {
   const a = (Object.keys(b.taste) as PilotAktion[]).find((k) => b.taste[k] === ev.code);
   if (!a) return;
   ev.preventDefault();
-  ausloesen(a);
+  if (HALTEN.includes(a)) halten(a, "taste", true);
+  else ausloesen(a);
 }
+
+function onKeyUp(ev: KeyboardEvent): void {
+  const b = belegung();
+  const a = (Object.keys(b.taste) as PilotAktion[]).find((k) => b.taste[k] === ev.code);
+  if (!a || !HALTEN.includes(a)) return;
+  ev.preventDefault();
+  halten(a, "taste", false);
+}
+
+const onBlur = () => allesLoslassen("taste");
 
 // ------------------------------------------------------------------ globale Kürzel (Tauri)
 
@@ -51,7 +94,9 @@ async function globalAnmelden(): Promise<void> {
       if (!k) continue;
       try {
         await gs.register(k, (ev) => {
-          if (ev.state === "Pressed" && !lernt) ausloesen?.(a);
+          if (lernt) return;
+          if (HALTEN.includes(a)) halten(a, "global", ev.state === "Pressed");
+          else if (ev.state === "Pressed") ausloesen?.(a);
         });
         globalAktiv.push(k);
       } catch (e) {
@@ -78,9 +123,11 @@ function joyAbfragen(): void {
       const k = `${p.id}#${i}`;
       const war = gedrueckt.get(k) ?? false;
       gedrueckt.set(k, btn.pressed);
-      if (!btn.pressed || war || lernt || !ausloesen) return;
+      if (btn.pressed === war || lernt || !ausloesen) return;
       const a = (Object.keys(b.joy) as PilotAktion[]).find((x) => b.joy[x]?.geraet === p.id && b.joy[x]?.taste === i);
-      if (a) ausloesen(a);
+      if (!a) return;
+      if (HALTEN.includes(a)) halten(a, `joy:${k}`, btn.pressed);
+      else if (btn.pressed) ausloesen(a);
     });
   }
 }
@@ -129,17 +176,29 @@ export function carlsEmpfangen(w: number): void {
 
 // ------------------------------------------------------------------ Start/Stopp
 
-export function eingabeStarten(f: (a: PilotAktion) => void): void {
+/** Handy: Sprechtaste gedrückt bzw. losgelassen */
+export function handyHalten(a: PilotAktion, an: boolean): void {
+  if (HALTEN.includes(a)) halten(a, "handy", an);
+}
+
+export function eingabeStarten(f: (a: PilotAktion) => void, los?: (a: PilotAktion) => void): void {
   ausloesen = f;
+  loslassen = los ?? null;
   document.addEventListener("keydown", onKey);
+  document.addEventListener("keyup", onKeyUp);
+  window.addEventListener("blur", onBlur);
   void globalAnmelden();
   window.clearInterval(joyTimer);
   joyTimer = window.setInterval(joyAbfragen, 50);
 }
 
 export function eingabeStoppen(): void {
+  allesLoslassen();
   ausloesen = null;
+  loslassen = null;
   document.removeEventListener("keydown", onKey);
+  document.removeEventListener("keyup", onKeyUp);
+  window.removeEventListener("blur", onBlur);
   void globalAbmelden();
   window.clearInterval(joyTimer);
   joyTimer = undefined;
@@ -178,7 +237,7 @@ export function tastenDialog(): void {
       const j = b.joy[a.id];
       feld(j ? `${kurzGeraet(j.geraet)} · Taste ${j.taste + 1}` : "–", "joy");
       const c = b.carls[a.id];
-      if (a.id !== "fliegen") feld(c !== undefined ? `Wert ${c}` : "–", "carls");
+      if (a.id !== "fliegen" && !HALTEN.includes(a.id)) feld(c !== undefined ? `Wert ${c}` : "–", "carls");
       else tr.appendChild(el("td"));
       tb.appendChild(tr);
     }

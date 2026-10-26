@@ -21,6 +21,14 @@ import {
 } from "../sim/engine";
 
 export const RELAY_URL = "wss://server.leitwerk.workers.dev";
+/** Relay-Adresse (nur im Testmodus mit ?debug über localStorage „leitwerk.relayUrl“ umstellbar) */
+function relayUrl(): string {
+  if (typeof location !== "undefined" && location.search.includes("debug")) {
+    const eigen = lsGet("leitwerk.relayUrl");
+    if (eigen) return eigen;
+  }
+  return RELAY_URL;
+}
 const DELTA_MS = 500;
 const CHUNK = 400_000;
 const ANTWORT_TIMEOUT_MS = 15_000;
@@ -320,7 +328,7 @@ class Mehrspieler {
       }
       let ws: WebSocket;
       try {
-        ws = new WebSocket(`${RELAY_URL}/room/${code}?${p}`);
+        ws = new WebSocket(`${relayUrl()}/room/${code}?${p}`);
       } catch (e) {
         reject(e as Error);
         return;
@@ -436,6 +444,23 @@ class Mehrspieler {
     }, warte);
   }
 
+  // ------------------------------------------------------------------ Sprechfunk (Sprache an alle, direkt über den Relay)
+
+  private funkHoerer = new Set<(pid: string, name: string, d: Record<string, unknown>) => void>();
+
+  /** Sprechfunk empfangen (Sprachstücke der anderen Spieler) */
+  onFunk(fn: (pid: string, name: string, d: Record<string, unknown>) => void): () => void {
+    this.funkHoerer.add(fn);
+    return () => this.funkHoerer.delete(fn);
+  }
+
+  /** Sprechfunk an alle anderen Spieler senden (false = keine Verbindung) */
+  funkSenden(d: Record<string, unknown>): boolean {
+    if (this.ws?.readyState !== WebSocket.OPEN) return false;
+    this.sendeRoh({ relay: "funk", d });
+    return true;
+  }
+
   private sendeRoh(m: unknown): void {
     if (this.ws?.readyState === WebSocket.OPEN) this.ws.send(JSON.stringify(m));
   }
@@ -511,6 +536,15 @@ class Mehrspieler {
         return;
       case "pong":
         this.rtt = Date.now() - Number(m.ts);
+        return;
+      case "funk":
+        for (const fn of this.funkHoerer) {
+          try {
+            fn(String(m.pid), String(m.name), (m.d ?? {}) as Record<string, unknown>);
+          } catch (e) {
+            console.warn("Sprechfunk", e);
+          }
+        }
         return;
       case "error":
         this.fehler(String(m.reason));

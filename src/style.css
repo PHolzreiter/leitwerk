@@ -3400,6 +3400,9 @@ input[type="color"] {
 .funk-ruf.wartend { background: var(--panel-2); border-color: var(--line-2); }
 .funk-ruf.wartend .funk-ruf-text { animation: none; color: var(--text-dim); }
 .funk-kanal { padding: 2px 0 6px; }
+.funk-sprech { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0 0 8px; }
+.funk-sprech-b { touch-action: none; user-select: none; }
+.funk-sprech-b.an { background: var(--danger, #c62828); border-color: var(--danger, #c62828); }
 
 /* Zuordnung Codesystem → Merkmale */
 .zuo-tab { width: 100%; border-collapse: collapse; font-size: 13px; }

@@ -1,5 +1,17 @@
 # Änderungen
 
+## 0.72.0 – Spieler-NAH: Sprechfunk (Teil 3)
+- **Sprechfunk zwischen Pilot und Leitstelle:** Sprechtaste gedrückt halten und sprechen – die Stimme geht live an alle im Spiel (Verzögerung etwa eine halbe Sekunde) und klingt wie über Funk (blechern, kurzes Rauschen beim Loslassen; abschaltbar)
+  - **Leitstelle:** eigene **Funktaste F4** (umstellbar unter Einstellungen → Sprache & Mikrofon) oder der Knopf **Sprechfunk** im Funkfenster. Geht auch während eines Telefonats; F2 bleibt für Notruf, KT und den KI-Funk
+  - **Pilot:** **Leertaste** im Piloten-Fenster, **Strg + Umschalt + F** auch bei MSFS im Vordergrund, eine **Joystick-Taste** oder die Sprechtaste am **Handy** – alles umbelegbar im Fenster „Tasten“
+- **Ein Kanal für alle, nichts wird unterbrochen:** Während jemand spricht oder ein Gespräch läuft, kommt ein kurzer Doppelton und der Hinweis „Funk belegt“. Gespräche zwischen Menschen enden wie bisher mit „verstanden“, „Ende“ oder „danke“ am Schluss oder nach 30 Sekunden Stille; die Fahrzeuge der KI warten so lange
+- **Text im Funkfenster:** Was gesprochen wird, erkennt Whisper beim Sprecher und schreibt es ins Funkfenster und ins Einsatzprotokoll (🎙 = gesprochen). Der Pilot lädt das Sprachmodell einmal unter **Sprechfunk → Einstellungen**
+- **Pilot ↔ RTW:** Im Anflug funkt der Pilot mit der Sprechtaste **RTW** (Standard **R**, global Strg + Umschalt + R) das Bodenfahrzeug am Einsatzort an. Der RTW meldet sich und antwortet über die Funk-KI: Landemöglichkeit, Zustand des Patienten, Werte, Verdacht, Eintreffen
+- **Am Einsatzort funkt der Pilot:** Steht der Spieler-NAH auf Status 3, funkt kein anderes Fahrzeug dieses Einsatzes die Leitstelle an (es wartet bis Status 4 bzw. 6)
+- **Der Pilot hört mit:** den übrigen Funkverkehr der Fahrzeuge leiser im Hintergrund (abschaltbar, eigene Lautstärke), alles, was ihn betrifft, in voller Lautstärke. Spricht die Leitstelle mit F2 mit einem KI-Fahrzeug, hört der Pilot ihre echte Stimme
+- **Funkfenster der Leitstelle:** zeigt, wer gerade spricht, und einen Ruf des Piloten („C2 ruft LEO“) mit Knopf **Sprechen**
+- Das Programmfenster läuft im Hintergrund ungebremst weiter (wichtig, wenn der Flugsimulator vorne ist)
+
 ## 0.71.0 – Spieler-NAH: HPG H145 – Tablet und Funkgerät
 - **Einsatz aufs Tablet der HPG H145:** LeitWerk ist jetzt ein „Mission Server“ für das Missionssystem der H145. Einmal im Piloten-Interface **H145 einrichten** (legt die Mission „LeitWerk Leitstelle“ an und baut den Missions-Index neu), dann am Tablet **Missions → Library → LeitWerk Leitstelle** wählen. Danach:
   - **Alarm poppt am Tablet auf** – Stichwort, Adresse, Info – mit **Quittieren**

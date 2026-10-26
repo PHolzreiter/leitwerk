@@ -421,6 +421,7 @@
 .plt-einsatz,
 .plt-patient,
 .plt-plan,
+.plt-funk,
 .plt-chat {
   background: var(--pl-karte);
   border: 1px solid var(--pl-rand);
@@ -708,6 +709,103 @@
 .plt-wahl-k:disabled {
   opacity: 0.45;
   cursor: default;
+}
+
+/* Sprechfunk */
+.plt-funk {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.plt-funk .plt-karte-titel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.plt-funk-einst {
+  margin-left: auto;
+}
+.plt-funk-kanal {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 14px;
+}
+.plt-funk-lampe {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--pl-ok);
+  flex: none;
+}
+.plt-funk-kanal.belegt .plt-funk-lampe {
+  background: var(--pl-warn);
+}
+.plt-funk-kanal.hoert .plt-funk-lampe {
+  background: var(--pl-akzent);
+  box-shadow: 0 0 0 4px rgba(47, 124, 246, 0.25);
+}
+.plt-funk-kanal.sendet .plt-funk-lampe {
+  background: var(--pl-rot);
+  box-shadow: 0 0 0 4px rgba(229, 57, 53, 0.25);
+}
+.plt-funk-knoepfe {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 8px;
+}
+.plt-ptt {
+  justify-content: flex-start;
+  padding: 12px;
+  touch-action: none;
+  user-select: none;
+  text-align: left;
+}
+.plt-ptt span {
+  display: flex;
+  flex-direction: column;
+}
+.plt-ptt small {
+  font-size: 11px;
+  opacity: 0.8;
+  font-weight: 400;
+}
+.plt-ptt.an,
+.plt-ptt.an:hover:not(:disabled) {
+  background: var(--pl-rot);
+  border-color: var(--pl-rot);
+  color: #fff;
+}
+.plt-funk-verlauf {
+  max-height: 170px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+}
+.plt-funk-z span {
+  color: var(--pl-dim);
+  margin-right: 6px;
+}
+.plt-funk-z.meins {
+  border-left: 3px solid var(--pl-akzent);
+  padding-left: 6px;
+}
+.plt-funk-z.ich b {
+  color: var(--pl-akzent);
+}
+.plt-funkdlg {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.plt-funkdlg label:not(.plt-check) {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-weight: 600;
 }
 
 /* Chat */

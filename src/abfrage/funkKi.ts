@@ -184,8 +184,13 @@ const BEISPIELE = [
   "Pat. männlich, 43 Jahre, mit Hemiparese links seit 1 Stunde. Frage, wäre ein Hubschrauber verfügbar",
 ];
 
+/** Fahrzeug, das spricht (beim Funk zwischen Fahrzeugen bzw. Pilot ↔ RTW nicht unbedingt das des Gesprächs) */
+function sprecherId(g: FunkGespraech, a: FunkAusstehend): string {
+  return (Object.values(sim.state.fahrzeuge).find((x) => sim.rufname(x) === a.von) ?? sim.state.fahrzeuge[g.fzId])?.id ?? g.fzId;
+}
+
 function systemText(g: FunkGespraech, a: FunkAusstehend): string {
-  const fz = Object.values(sim.state.fahrzeuge).find((x) => sim.rufname(x) === a.von) ?? sim.state.fahrzeuge[g.fzId];
+  const fz = sim.state.fahrzeuge[sprecherId(g, a)];
   const an = a.an ?? "LEO (die Leitstelle)";
   return [
     `Du bist in einer Trainingssimulation die Besatzung von „${a.von}“ – ${besatzungVon(fz?.id ?? g.fzId)} – im Rettungsdienst Niederösterreich am Funk (TETRA). Du sprichst mit ${an}.`,
@@ -200,8 +205,8 @@ function aufgabeText(g: FunkGespraech, a: FunkAusstehend, inhalt: string): strin
   if (a.art === "frage") {
     return [
       "WAS IHR WISST:",
-      lageWissen(g.fzId, g.einsatzId, a.frage ?? ""),
-      `Die Leitstelle fragt: „${a.frage ?? ""}“`,
+      lageWissen(sprecherId(g, a), g.einsatzId, a.frage ?? ""),
+      `${a.an ? a.an : "Die Leitstelle"} fragt: „${a.frage ?? ""}“`,
       "Antworte knapp, nur mit dem, was ihr wisst. Was ihr nicht wisst: „noch nicht beurteilbar“ oder „unbekannt“.",
     ].join("\n");
   }
@@ -225,7 +230,7 @@ export async function funkSpruchErzeugen(g: FunkGespraech, a: FunkAusstehend): P
     { role: "user", content: aufgabeText(g, a, inhalt) },
   ];
   const namen = patientNamen(g.einsatzId);
-  const wissen = a.art === "frage" ? lageWissen(g.fzId, g.einsatzId, a.frage ?? "") : undefined;
+  const wissen = a.art === "frage" ? lageWissen(sprecherId(g, a), g.einsatzId, a.frage ?? "") : undefined;
   const versuch = async (msgs: KiNachricht[]) => nurInhalt(await kiChat(msgs), a.von);
   try {
     let t = await versuch(verlauf);

@@ -2,7 +2,8 @@
  * Funk (rechter Reiter): rufende Fahrzeuge, laufendes Funkgespräch mit Schnellknöpfen,
  * Verlauf aller Funkgespräche (alle Spieler hören mit) und Statusmeldungen.
  */
-import { funkNamenGlaetten, mikroAnbinden } from "./sprache";
+import { funkNamenGlaetten, mikroAnbinden, sprachPrefs, tastenName } from "./sprache";
+import { funkEmpfang, funkSendeZustand, onFunkEmpfang, onFunkSenden, sprechKnopfAnbinden } from "./sprechfunk";
 import { fahrzeugZuName } from "../sim/funkname";
 import { mp } from "../net/mehrspieler";
 import { buchungName } from "../data/klinik";
@@ -65,8 +66,12 @@ export function createFunkView(root: HTMLElement, deps: { select(einsatzId: stri
     mikroAnbinden({
       input: eingabe,
       rang: 3,
+      funk: true,
       aktiv: () => aktivId !== null,
-      senden: () => form.requestSubmit(),
+      senden: (gesprochen) => {
+        naechstesGesprochen = !!gesprochen;
+        form.requestSubmit();
+      },
       hinweis: funkHinweis,
       nachher: (t) => funkNamenGlaetten(t, Object.values(sim.state.fahrzeuge).map((f) => f.funkrufname)),
     }),
@@ -84,8 +89,12 @@ export function createFunkView(root: HTMLElement, deps: { select(einsatzId: stri
     mikroAnbinden({
       input: freiInput,
       rang: 4,
+      funk: true,
       aktiv: () => true,
-      senden: () => rufenZeile.requestSubmit(),
+      senden: (gesprochen) => {
+        naechstesGesprochen = !!gesprochen;
+        rufenZeile.requestSubmit();
+      },
       hinweis: funkHinweis,
       nachher: (t) => funkNamenGlaetten(t, namen()),
     }),
@@ -109,9 +118,18 @@ export function createFunkView(root: HTMLElement, deps: { select(einsatzId: stri
   statusTitel.addEventListener("toggle", () => refresh());
   const gruppe = el("div", { class: "funk-gruppe", title: "Gefunkt wird auf dieser TETRA-Gruppe – auch Fahrzeuge von außen wechseln für den Einsatz hierher" });
   const kanal = el("div", { class: "funk-kanal small" });
-  root.append(gruppe, kanal, rufe, aktiv, rufenZeile, el("div", { class: "funk-titel" }, "Funkverkehr"), verlauf, statusTitel);
+  // Sprechfunk mit Piloten (Spieler-NAH): gedrückt halten oder Funktaste
+  const sprech = el("div", { class: "funk-sprech", hidden: "" });
+  const sprechB = el("button", { class: "btn small primary funk-sprech-b", type: "button" });
+  const sprechInfo = el("span", { class: "muted small" });
+  sprech.append(sprechB, sprechInfo);
+  sprechKnopfAnbinden(sprechB);
+  onFunkSenden(() => refresh());
+  onFunkEmpfang(() => refresh());
+  root.append(gruppe, kanal, sprech, rufe, aktiv, rufenZeile, el("div", { class: "funk-titel" }, "Funkverkehr"), verlauf, statusTitel);
 
   let aktivId: number | null = null;
+  let naechstesGesprochen = false;
 
   for (const [label, text, nurVorlage] of SCHNELL) {
     const b = el("button", { class: "btn small", type: "button" }, label);
@@ -153,9 +171,11 @@ export function createFunkView(root: HTMLElement, deps: { select(einsatzId: stri
   form.addEventListener("submit", (ev) => {
     ev.preventDefault();
     const t = eingabe.value.trim();
+    const gesprochen = naechstesGesprochen;
+    naechstesGesprochen = false;
     if (!t || aktivId === null) return;
     eingabe.value = "";
-    fehler(sim.call("funkSenden", aktivId, t));
+    fehler(sim.call("funkSenden", aktivId, t, gesprochen));
   });
   /** Rufname bzw. Funkrufname im Text finden (längster Treffer zuerst, „75 1“ zählt als „75/001“, „NEF Tulln“, „C 2“) */
   function fahrzeugIn(text: string) {
@@ -168,22 +188,25 @@ export function createFunkView(root: HTMLElement, deps: { select(einsatzId: stri
   rufenZeile.addEventListener("submit", (ev) => {
     ev.preventDefault();
     const roh = freiInput.value.trim();
+    const gesprochen = naechstesGesprochen;
+    naechstesGesprochen = false;
     if (!roh) return;
     const text = funkNamenGlaetten(roh, namen());
     const fz = fahrzeugIn(text);
     if (!fz) return toast("Kein Fahrzeug erkannt – bitte mit Funkrufnamen, z. B. „75/001 von LEO, kommen“", "error");
     freiInput.value = "";
     // nur der Name? Dann der übliche Anruf
-    rufen(fz.id, [fz.funkrufname, sim.rufname(fz)].some((n) => text.toLowerCase() === n.toLowerCase()) ? undefined : text);
+    if (fz.pilot) return toast(`${sim.rufname(fz)} fliegt ${fz.pilot.name} – zum Sprechen die Funktaste ${tastenName(sprachPrefs().funkTaste)} halten`, "error");
+    rufen(fz.id, [fz.funkrufname, sim.rufname(fz)].some((n) => text.toLowerCase() === n.toLowerCase()) ? undefined : text, gesprochen);
   });
 
   function gespraech(id: number): FunkGespraech | undefined {
     return sim.state.funkGespraeche?.find((g) => g.id === id);
   }
 
-  function rufen(fzId: string, text?: string): void {
+  function rufen(fzId: string, text?: string, gesprochen?: boolean): void {
     void sim
-      .call("funkRufen", fzId, text)
+      .call("funkRufen", fzId, text, !!gesprochen)
       .then((id) => {
         aktivId = id as number;
         refresh();
@@ -194,7 +217,7 @@ export function createFunkView(root: HTMLElement, deps: { select(einsatzId: stri
 
   const spruchHtml = (g: FunkGespraech) =>
     g.sprueche
-      .map((s) => `<div class="funk-spruch ${s.von === "LEO" ? "leo" : "fz"}"><span class="muted">${uhr(s.zeit)}</span> ${esc(s.text)}${s.wer && mp.aktiv ? ` <span class="prot-von">${esc(s.wer)}</span>` : ""}</div>`)
+      .map((s) => `<div class="funk-spruch ${s.von === "LEO" ? "leo" : "fz"}"><span class="muted">${uhr(s.zeit)}</span> ${s.stimme ? `<span title="gesprochen">🎙</span> ${g.mensch || g.an ? `<b>${esc(s.von)}:</b> ` : ""}` : ""}${esc(s.text)}${s.wer && mp.aktiv ? ` <span class="prot-von">${esc(s.wer)}</span>` : ""}</div>`)
       .join("") + (g.ausstehend || g.wartetAufKi ? `<div class="funk-spruch fz muted">… ${esc(g.ausstehend?.von ?? g.funkname)} spricht</div>` : "");
 
   let letzterVerlauf = "";
@@ -206,19 +229,53 @@ export function createFunkView(root: HTMLElement, deps: { select(einsatzId: stri
     const alle = sim.state.funkGespraeche ?? [];
     // Rufende Fahrzeuge – dringende zuerst; nur neu zeichnen, wenn sich etwas geändert hat
     const belegt = sim.funkKanalBelegt();
-    const kanalText = belegt ? `🔴 Funk belegt – ${belegt.an ? `${esc(belegt.funkname)} ↔ ${esc(belegt.an.funkname)}` : `${esc(belegt.funkname)}${belegt.status === "leoRuft" ? " (LEO ruft)" : ""}`}` : "🟢 Funk frei";
+    const hoert = funkEmpfang();
+    const ich = funkSendeZustand();
+    const sendet = sim.state.funkSendet;
+    const kanalText = ich?.art === "sendet"
+      ? "🎙 Du sprichst …"
+      : hoert
+        ? `🔊 ${esc(hoert.von === "LEO" ? `LEO (${hoert.wer})` : `${hoert.von} (${hoert.wer})`)} spricht`
+        : sendet
+          ? `🎙 ${esc(sendet.von === "LEO" ? `LEO (${sendet.name})` : `${sendet.von} (${sendet.name})`)} spricht`
+          : belegt
+            ? `🔴 Funk belegt – ${belegt.mensch ? `${esc(belegt.funkname)} ↔ ${esc(belegt.an?.funkname ?? "LEO")} (Sprechfunk)` : belegt.an ? `${esc(belegt.funkname)} ↔ ${esc(belegt.an.funkname)}` : `${esc(belegt.funkname)}${belegt.status === "leoRuft" ? " (LEO ruft)" : ""}`}`
+            : "🟢 Funk frei";
     if (kanal.innerHTML !== kanalText) kanal.innerHTML = kanalText;
+    // Sprechfunk-Knopf, sobald ein Pilot im Spiel ist
+    const piloten = Object.values(sim.state.fahrzeuge).filter((f) => f.pilot);
+    sprech.hidden = !piloten.length || !mp.aktiv;
+    if (!sprech.hidden) {
+      const t = tastenName(sprachPrefs().funkTaste);
+      const bText = ich?.art === "sendet" ? "🎙 Sendet …" : ich?.art === "wartet" ? "🎙 …" : `🎙 Sprechfunk (${t} halten)`;
+      if (sprechB.textContent !== bText) sprechB.textContent = bText;
+      sprechB.classList.toggle("an", !!ich);
+      const info = `mit ${piloten.map((f) => `${sim.rufname(f)} (${f.pilot!.name})`).join(", ")}`;
+      if (sprechInfo.textContent !== info) sprechInfo.textContent = info;
+    }
     const rang = (g: FunkGespraech) => (g.status === "ruft" || g.status === "mithoeren" ? 0 : g.status === "sprechwunsch" ? 1 : g.status === "leoWartet" ? 3 : 2);
+    // Pilot ruft LEO (Sprechfunk), noch ohne Antwort der Leitstelle
+    const pilotRuft = alle.filter((g) => g.status === "mensch" && !g.an && !g.sprueche.some((s) => s.von === "LEO"));
     const rufend = alle
-      .filter((g) => ["ruft", "mithoeren", "wartet", "sprechwunsch", "leoWartet"].includes(g.status))
+      .filter((g) => ["ruft", "mithoeren", "wartet", "sprechwunsch", "leoWartet"].includes(g.status) || pilotRuft.includes(g))
       .sort((a, b) => rang(a) - rang(b) || Number(!!b.dringend) - Number(!!a.dringend) || (a.echtSeit ?? a.seit) - (b.echtSeit ?? b.seit));
-    const rufKey = JSON.stringify([!!belegt, rufend.map((g) => [g.id, g.status, g.rufe, g.dringend, g.wegenTelefon])]);
+    const rufKey = JSON.stringify([!!belegt, rufend.map((g) => [g.id, g.status, g.rufe, g.dringend, g.wegenTelefon, g.wegenNah, g.sprueche.length])]);
     if (rufKey !== letzteRufe) {
     letzteRufe = rufKey;
     rufe.innerHTML = "";
     for (const g of rufend) {
       const z = el("div", { class: `funk-ruf${g.dringend ? " dringend" : ""}${g.status === "wartet" || g.status === "leoWartet" ? " wartend" : ""}` });
       const e = g.einsatzId ? sim.einsatz(g.einsatzId) : undefined;
+      if (g.status === "mensch") {
+        const fz = sim.state.fahrzeuge[g.fzId];
+        z.innerHTML = `<span class="funk-ruf-text">🎙 <b>${esc(g.funkname)}</b>${fz?.pilot ? ` <span class="muted">(Pilot ${esc(fz.pilot.name)})</span>` : ""} ruft LEO – Funktaste ${esc(tastenName(sprachPrefs().funkTaste))} halten${e ? ` <span class="muted">· ${esc(e.nummer)}</span>` : ""}</span>`;
+        const sb = el("button", { class: "btn small primary" }, "🎙 Sprechen");
+        sprechKnopfAnbinden(sb);
+        sb.addEventListener("pointerdown", () => g.einsatzId && deps.select(g.einsatzId));
+        z.appendChild(sb);
+        rufe.appendChild(z);
+        continue;
+      }
       if (g.status === "leoWartet") {
         z.innerHTML = `<span class="funk-ruf-text">⏳ LEO ruft <b>${esc(g.funkname)}</b>, sobald der Funk frei ist${e ? ` <span class="muted">· ${esc(e.nummer)}</span>` : ""}</span>`;
         const ab = el("button", { class: "btn small" }, "Abbrechen");
@@ -246,7 +303,7 @@ export function createFunkView(root: HTMLElement, deps: { select(einsatzId: stri
             ? "Sprechwunsch – hat dreimal gerufen"
             : g.an
               ? `möchte ${esc(g.an.funkname)} anfunken${g.wegenTelefon ? " – wartet, bis telefoniert ist" : " – Funk belegt"}`
-              : `möchte funken${g.wegenTelefon ? " – wartet, bis telefoniert ist" : belegt ? " – Funk belegt" : ""}`;
+              : `möchte funken${g.wegenNah ? " – wartet, Hubschrauber (Pilot) ist am Einsatzort" : g.wegenTelefon ? " – wartet, bis telefoniert ist" : belegt ? " – Funk belegt" : ""}`;
       z.innerHTML = `<span class="funk-ruf-text">${g.status === "wartet" ? "⏳" : g.dringend ? "❗" : "📻"} <b>${esc(g.funkname)}</b> ${was}${e ? ` <span class="muted">· ${esc(e.nummer)}</span>` : ""}${g.dringend ? ` <span class="funk-dringend">dringend</span>` : ""}</span>`;
       if (g.an) {
         rufe.appendChild(z);
@@ -267,7 +324,7 @@ export function createFunkView(root: HTMLElement, deps: { select(einsatzId: stri
     }
     // Aktives Gespräch: zuletzt gewähltes, sonst das neueste offene, das ich führe
     let g = aktivId !== null ? gespraech(aktivId) : undefined;
-    if (!g || g.status === "ende" || g.an || !ichFuehre(g)) {
+    if (!g || g.status === "ende" || g.an || g.mensch || !ichFuehre(g)) {
       g = alle.find((x) => (x.status === "offen" || x.status === "leoRuft") && x.fuehrer && ichFuehre(x));
       aktivId = g?.id ?? null;
     }
@@ -293,10 +350,10 @@ export function createFunkView(root: HTMLElement, deps: { select(einsatzId: stri
       for (const x of sicht) {
         const box = el("div", { class: `funk-g st-${x.status}` });
         const e = x.einsatzId ? sim.einsatz(x.einsatzId) : undefined;
-        box.innerHTML = `<div class="funk-g-kopf"><b>${esc(x.funkname)}</b>${x.an ? ` ↔ <b>${esc(x.an.funkname)}</b> <span class="muted">(Fahrzeugfunk)</span>` : ""}${e ? ` <span class="muted">${esc(e.nummer)}</span>` : ""}${x.fuehrer && mp.aktiv ? ` <span class="prot-von">${esc(x.fuehrer.name)}</span>` : ""}${x.status === "ende" || x.status === "wartet" || x.status === "sprechwunsch" || x.status === "leoWartet" ? "" : ` <span class="funk-live">● ${x.status === "ruft" ? "ruft" : x.status === "mithoeren" ? "fragt LEO" : "läuft"}</span>`}</div>${spruchHtml(x)}`;
+        box.innerHTML = `<div class="funk-g-kopf"><b>${esc(x.funkname)}</b>${x.mensch ? ` ↔ <b>${esc(x.an?.funkname ?? "LEO")}</b> <span class="muted">(Sprechfunk)</span>` : x.an ? ` ↔ <b>${esc(x.an.funkname)}</b> <span class="muted">(Fahrzeugfunk)</span>` : ""}${e ? ` <span class="muted">${esc(e.nummer)}</span>` : ""}${x.fuehrer && mp.aktiv ? ` <span class="prot-von">${esc(x.fuehrer.name)}</span>` : ""}${x.status === "ende" || x.status === "wartet" || x.status === "sprechwunsch" || x.status === "leoWartet" ? "" : ` <span class="funk-live">● ${x.status === "ruft" ? "ruft" : x.status === "mithoeren" ? "fragt LEO" : "läuft"}</span>`}</div>${spruchHtml(x)}`;
         box.addEventListener("click", () => {
           if (x.einsatzId) deps.select(x.einsatzId);
-          if (x.status !== "ende" && !x.an && ichFuehre(x)) {
+          if (x.status !== "ende" && !x.an && !x.mensch && ichFuehre(x)) {
             aktivId = x.id;
             refresh();
           }

@@ -22,8 +22,11 @@ import { logoMarke } from "../logo";
 import { spielen } from "../sounds";
 import { istDunkel } from "../ws/persoenlich";
 import { pilotModusSetzen } from "./modus";
-import { AKTIONEN, belegung, type PilotAktion } from "./tasten";
-import { eingabeStarten, eingabeStoppen, tastenDialog } from "./eingabe";
+import { AKTIONEN, belegung, kuerzelName, tastenName, type PilotAktion } from "./tasten";
+import { eingabeStarten, eingabeStoppen, handyHalten, tastenDialog } from "./eingabe";
+import { funkEmpfang, funkSendeZustand, onFunkEmpfang, onFunkSenden, sprechKnopfAnbinden, sprechStart, sprechStopp } from "../sprechfunk";
+import { MODELLE, mikrofone, modellLaden, setzeSprache, sprachPrefs, sprachStatus } from "../sprache";
+import { inTauri } from "../../platform";
 import { handyAktionen, handyDialog, handyStand } from "./handy";
 import { hpg, hpgAktualisieren, hpgEinrichten, hpgMissionFuer, hpgStarten, hpgTestNachricht } from "./hpg";
 import { letzterCarls } from "./eingabe";
@@ -51,6 +54,8 @@ const I: Record<string, string> = {
   sim: `<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4M7 12l3-3 2 2 5-5"/>`,
   plan: `<path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/>`,
   zeit: `<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>`,
+  funk: `<rect x="6" y="8" width="12" height="14" rx="2"/><path d="M9 8l6-6M9 13h6M9 17h6"/>`,
+  mikro: `<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>`,
 };
 const ico = (n: string, k = "") => `<svg class="plt-ico ${k}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${I[n] ?? ""}</svg>`;
 
@@ -128,6 +133,13 @@ export function pilotAktion(a: PilotAktion): void {
   const def = AKTIONEN.find((x) => x.id === a);
   if (def?.status) pilotStatusDruecken(def.status);
   else if (a === "fliegen") pilotFliegenNaechstes();
+  else if (a === "funk") void sprechStart("leo");
+  else if (a === "funkRtw") void sprechStart("rtw");
+}
+
+/** Sprechtaste losgelassen */
+export function pilotLoslassen(a: PilotAktion): void {
+  if (a === "funk" || a === "funkRtw") void sprechStopp();
 }
 
 // ------------------------------------------------------------------ Beitritt
@@ -283,8 +295,14 @@ export function pilotOeffnen(): void {
         <div class="plt-einsatz"></div>
         <div class="plt-patient"></div>
         <div class="plt-plan"></div>
+        <div class="plt-funk">
+          <div class="plt-karte-titel">${ico("funk")}Sprechfunk <button class="plt-b klein plt-funk-einst" data-act="funk-einst" title="Mikrofon, Spracherkennung, Mithören">${ico("tasten")}<span>Einstellungen</span></button></div>
+          <div class="plt-funk-kanal"></div>
+          <div class="plt-funk-knoepfe"></div>
+          <div class="plt-funk-verlauf"></div>
+        </div>
         <div class="plt-chat">
-          <div class="plt-karte-titel">${ico("chat")}Chat mit der Leitstelle <span class="plt-leise">bis der Sprechfunk kommt</span></div>
+          <div class="plt-karte-titel">${ico("chat")}Chat</div>
           <div class="plt-chat-liste"></div>
           <form class="plt-chat-form"><input class="plt-chat-in" maxlength="500" placeholder="Nachricht an alle …"><button class="plt-b klein primaer">Senden</button></form>
         </div>
@@ -298,6 +316,9 @@ export function pilotOeffnen(): void {
   $('[data-act="tasten"]').addEventListener("click", () => tastenDialog());
   $('[data-act="handy"]').addEventListener("click", () => handyDialog());
   $('[data-act="wetter"]').addEventListener("click", () => wetterDialog());
+  $('[data-act="funk-einst"]').addEventListener("click", () => funkDialog());
+  aus.push(onFunkEmpfang(() => zeichneAlles()));
+  aus.push(onFunkSenden(() => zeichneAlles()));
   root.addEventListener("click", (ev) => {
     const b = (ev.target as HTMLElement).closest<HTMLElement>("[data-pln],[data-kopie]");
     const fz = meinFz();
@@ -358,8 +379,8 @@ export function pilotOeffnen(): void {
   );
   const takt = window.setInterval(() => zeichneAlles(), 1000);
   aus.push(() => window.clearInterval(takt));
-  eingabeStarten(pilotAktion);
-  handyAktionen(pilotAktion);
+  eingabeStarten(pilotAktion, pilotLoslassen);
+  handyAktionen(pilotAktion, handyHalten);
   flugsimAnbinden(meinFz, () => zeichneAlles());
   if (vorgabe().auto) void flugsimVerbinden();
   void gtnSuchen();
@@ -431,9 +452,10 @@ function zeichneAlles(): void {
   einsatzKarte(fz, e);
   patient(fz, e);
   plan(fz, e);
+  const fk = funkTeil(fz, e);
   chat();
   karteAktualisieren(fz, e);
-  handyStand(fz, e);
+  handyStand(fz, e, fk);
   gtnZiel(fz, e);
   hpgAktualisieren(fz, e);
 }
@@ -842,6 +864,127 @@ function khListe(fz: SimFahrzeug, e: Einsatz): { h: Hospital; eignung: string | 
   ];
   if (q) return alle.filter((x) => `${x.h.name} ${x.h.kurzname ?? ""} ${x.h.ort ?? ""}`.toLowerCase().includes(q)).sort((a, b) => a.km - b.km).slice(0, 25);
   return alle.slice(0, 10);
+}
+
+// ------------------------------------------------------------------ Sprechfunk
+
+/** Kanal (wer spricht), Sprechtasten (gedrückt halten) und die letzten Funksprüche; gibt den Stand fürs Handy zurück */
+function funkTeil(fz: SimFahrzeug | undefined, e: Einsatz | undefined): { knoepfe: { aktion: string; name: string }[]; kanal: string; sendet: boolean } {
+  const ich = funkSendeZustand();
+  const hoert = funkEmpfang();
+  const sendet = sim.state.funkSendet;
+  const belegt = sim.funkKanalBelegt();
+  const kanal = ich?.art === "sendet"
+    ? `Du sprichst${ich.ziel === "rtw" ? " (an den RTW)" : ""} …`
+    : ich?.art === "wartet"
+      ? "Kanal wird geprüft …"
+      : hoert
+        ? `${hoert.von === "LEO" ? `Leitstelle (${hoert.wer})` : `${hoert.von} (${hoert.wer})`} spricht`
+        : sendet
+          ? `${sendet.von === "LEO" ? `Leitstelle (${sendet.name})` : `${sendet.von} (${sendet.name})`} spricht`
+          : belegt
+            ? `Funk belegt – ${belegt.funkname} ↔ ${belegt.an?.funkname ?? "LEO"}`
+            : "Funk frei";
+  const klasse = ich?.art === "sendet" ? "sendet" : hoert || sendet ? "hoert" : belegt ? "belegt" : "frei";
+  teil(".plt-funk-kanal", `${kanal}|${klasse}`, (b) => {
+    b.className = `plt-funk-kanal ${klasse}`;
+    b.innerHTML = `<span class="plt-funk-lampe"></span><span>${esc(kanal)}</span>`;
+  });
+  const rtw = fz && e ? sim.nahRtwPartner(fz, e) : undefined;
+  const bel = belegung();
+  const hinweis = (a: PilotAktion) => [bel.taste[a] ? tastenName(bel.taste[a]) : "", bel.globalAn && bel.global[a] ? kuerzelName(bel.global[a]) : "", bel.joy[a] ? "Joystick" : ""].filter(Boolean).join(" · ");
+  const knoepfe = fz ? [{ aktion: "funk", name: "Leitstelle" }, ...(rtw ? [{ aktion: "funkRtw", name: sim.rufname(rtw) }] : [])] : [];
+  teil(".plt-funk-knoepfe", `${knoepfe.map((k) => k.name).join("|")}|${hinweis("funk")}|${hinweis("funkRtw")}|${mp.aktiv}`, (b) => {
+    if (!fz) {
+      b.innerHTML = `<p class="plt-leise plt-klein">Erst einen Hubschrauber wählen.</p>`;
+      return;
+    }
+    for (const k of knoepfe) {
+      const a = k.aktion as PilotAktion;
+      const btn = el("button", { class: `plt-b plt-ptt${a === "funk" ? " primaer" : ""}`, "data-ptt": a });
+      btn.innerHTML = `${ico("mikro")}<span><b>${esc(a === "funk" ? "Leitstelle" : `RTW ${k.name}`)}</b><small>gedrückt halten${hinweis(a) ? ` · ${esc(hinweis(a))}` : ""}</small></span>`;
+      sprechKnopfAnbinden(btn, () => (a === "funkRtw" ? "rtw" : "leo"));
+      b.appendChild(btn);
+    }
+  });
+  root?.querySelectorAll<HTMLElement>(".plt-ptt").forEach((x) => x.classList.toggle("an", !!ich && (x.dataset.ptt === "funkRtw") === (ich.ziel === "rtw")));
+  // die letzten Funksprüche (alle hören mit)
+  const alle = (sim.state.funkGespraeche ?? []).slice(0, 12);
+  const zeilen = alle
+    .flatMap((g) => g.sprueche.map((x) => ({ ...x, g })))
+    .sort((a, b) => a.zeit - b.zeit)
+    .slice(-8);
+  const mein = fz ? sim.rufname(fz) : "";
+  teil(".plt-funk-verlauf", zeilen.map((z) => `${z.g.id}|${z.zeit}|${z.text}`).join(";"), (b) => {
+    if (!zeilen.length) {
+      b.innerHTML = `<p class="plt-leise plt-klein">Noch kein Funkverkehr. Sprechtaste halten und z. B. „LEO von ${esc(mein || "C2")}, kommen“.</p>`;
+      return;
+    }
+    for (const z of zeilen) {
+      const meins = !!fz && (z.g.fzId === fz.id || z.g.an?.fzId === fz.id);
+      b.insertAdjacentHTML("beforeend", `<div class="plt-funk-z${meins ? " meins" : ""}${z.von === mein ? " ich" : ""}"><span>${esc(uhrzeit(z.zeit))} ${z.stimme ? "🎙 " : ""}<b>${esc(z.von)}</b></span>${esc(z.text)}</div>`);
+    }
+    b.scrollTop = b.scrollHeight;
+  });
+  return { knoepfe, kanal, sendet: ich?.art === "sendet" };
+}
+
+/** Funk-Einstellungen: Mikrofon, Spracherkennung, Lautstärken, Mithören */
+function funkDialog(): void {
+  const p = sprachPrefs();
+  const body = el("div", { class: "plt-funkdlg" });
+  body.innerHTML = `
+    <label>Mikrofon<select class="plt-f-mikro"><option value="">Standard-Mikrofon</option></select></label>
+    <div class="plt-f-modell"></div>
+    <label class="plt-check"><input type="checkbox" class="plt-f-klang" ${p.klangfilter ? "checked" : ""}> Funk-Klang (blechern, kurzes Rauschen beim Loslassen)</label>
+    <label>Lautstärke Sprechfunk (Stimmen der Mitspieler)<input type="range" min="0" max="100" step="5" class="plt-f-laut" value="${p.funkLaut}"></label>
+    <label class="plt-check"><input type="checkbox" class="plt-f-vorlesen" ${p.funkVorlesen ? "checked" : ""}> Funk der Fahrzeuge vorlesen (Stimmen des Computers)</label>
+    <label class="plt-check"><input type="checkbox" class="plt-f-mit" ${p.mithoeren ? "checked" : ""}> Übrigen Funkverkehr mithören (Fahrzeuge ↔ Leitstelle)</label>
+    <label>Lautstärke mitgehörter Funk<input type="range" min="10" max="100" step="5" class="plt-f-mitlaut" value="${p.mithoerenLaut}"></label>
+    <p class="plt-leise plt-klein">Was dich betrifft (Leitstelle an dich, Antworten des RTW), kommt immer in voller Lautstärke. Den Status drückst du weiter selbst – der Funk ändert ihn nicht.</p>`;
+  const mikro = body.querySelector<HTMLSelectElement>(".plt-f-mikro")!;
+  void mikrofone().then((ms) => {
+    for (const m of ms) if (m.deviceId && m.deviceId !== "default") mikro.appendChild(el("option", { value: m.deviceId }, m.label || "Mikrofon"));
+    mikro.value = sprachPrefs().mikro;
+  });
+  mikro.addEventListener("change", () => setzeSprache({ mikro: mikro.value }));
+  const modell = body.querySelector<HTMLElement>(".plt-f-modell")!;
+  const modellZeigen = async () => {
+    if (!inTauri()) {
+      modell.innerHTML = `<p class="plt-leise plt-klein">Spracherkennung (Text im Funkfenster) gibt es nur im Programm.</p>`;
+      return;
+    }
+    const st = await sprachStatus().catch(() => ({ modelle: [] as string[] }));
+    const da = st.modelle.find((m) => MODELLE.some((x) => x.name === m));
+    if (da) {
+      if (!st.modelle.includes(sprachPrefs().modell)) setzeSprache({ modell: da });
+      modell.innerHTML = `<p class="plt-klein"><span class="plt-pill ok">Spracherkennung bereit</span> – was du sagst, steht als Text im Funk der Leitstelle. Mit dem RTW funken geht nur damit.</p>`;
+      return;
+    }
+    const m = MODELLE.find((x) => x.name === sprachPrefs().modell) ?? MODELLE[MODELLE.length - 1];
+    modell.innerHTML = `<p class="plt-klein"><span class="plt-pill warn">Spracherkennung fehlt</span> Ohne sie hört die Leitstelle dich trotzdem – nur der Text im Funkfenster fehlt, und mit dem RTW funken geht nicht.</p>`;
+    const b = el("button", { class: "plt-b klein primaer" }, `Sprachmodell laden (${m.mb} MB)`);
+    b.addEventListener("click", async () => {
+      b.disabled = true;
+      try {
+        await modellLaden(m.name, (d, t) => (b.textContent = t ? `Lädt … ${Math.round((d / t) * 100)} %` : `Lädt … ${Math.round(d / 1e6)} MB`));
+        setzeSprache({ modell: m.name });
+        toast("Spracherkennung ist bereit");
+      } catch (err) {
+        fehler(err);
+      }
+      void modellZeigen();
+    });
+    modell.appendChild(b);
+  };
+  void modellZeigen();
+  const an = (sel: string, f: (x: HTMLInputElement) => void) => body.querySelector<HTMLInputElement>(sel)!.addEventListener("change", (ev) => f(ev.target as HTMLInputElement));
+  an(".plt-f-klang", (x) => setzeSprache({ klangfilter: x.checked }));
+  an(".plt-f-laut", (x) => setzeSprache({ funkLaut: Number(x.value) }));
+  an(".plt-f-vorlesen", (x) => setzeSprache({ funkVorlesen: x.checked }));
+  an(".plt-f-mit", (x) => setzeSprache({ mithoeren: x.checked }));
+  an(".plt-f-mitlaut", (x) => setzeSprache({ mithoerenLaut: Number(x.value) }));
+  openDialog({ title: "Sprechfunk", body, actions: [{ label: "Fertig", kind: "primary" }] });
 }
 
 function chat(): void {

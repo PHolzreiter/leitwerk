@@ -264,9 +264,92 @@ pub fn sprache_mikrofone() -> Vec<String> {
         .unwrap_or_default()
 }
 
-/// Aufnahme starten (läuft, bis sprache_aufnahme_stopp kommt)
+// ------------------------------------------------------------ Sprechfunk: Sprache in Stücken (8 kHz, μ-law, Base64)
+//
+// Gleiches Format wie im Fenster (src/ui/funkCodec.ts): alle 100 ms ein Stück, das über den Relay an alle geht.
+
+struct FunkKodierer {
+    schritt: f64,
+    pos: f64,
+    rest: Vec<f32>,
+    puffer: Vec<u8>,
+}
+
+impl FunkKodierer {
+    fn neu(rate: u32) -> Self {
+        FunkKodierer { schritt: rate as f64 / 8000.0, pos: 0.0, rest: Vec::new(), puffer: Vec::with_capacity(800) }
+    }
+
+    /// neue Samples; zurück kommen fertige Stücke (je 100 ms)
+    fn daten(&mut self, d: &[f32]) -> Vec<String> {
+        let mut alle = std::mem::take(&mut self.rest);
+        alle.extend_from_slice(d);
+        let halb = (self.schritt / 2.0).max(0.5);
+        let mut p = self.pos;
+        let mut out = Vec::new();
+        while p + halb < alle.len() as f64 {
+            let a = (p - halb + 0.5).floor().max(0.0) as usize;
+            let b = ((p + halb).ceil() as usize).min(alle.len()).max(a + 1).min(alle.len());
+            let n = b.saturating_sub(a).max(1);
+            let s: f32 = alle[a.min(b)..b].iter().sum();
+            self.puffer.push(ulaw(s / n as f32));
+            if self.puffer.len() == 800 {
+                out.push(base64(&self.puffer));
+                self.puffer.clear();
+            }
+            p += self.schritt;
+        }
+        let ab = ((p - halb).floor().max(0.0) as usize).min(alle.len());
+        self.rest = alle[ab..].to_vec();
+        self.pos = p - ab as f64;
+        out
+    }
+
+    fn ende(&mut self) -> Option<String> {
+        if self.puffer.is_empty() {
+            return None;
+        }
+        let s = base64(&self.puffer);
+        self.puffer.clear();
+        Some(s)
+    }
+}
+
+fn ulaw(x: f32) -> u8 {
+    const BIAS: i32 = 0x84;
+    let mut s = (x.clamp(-1.0, 1.0) * 32767.0) as i32;
+    let sign = if s < 0 { 0x80 } else { 0 };
+    if s < 0 {
+        s = -s;
+    }
+    s = s.min(32635) + BIAS;
+    let mut exp = 7;
+    let mut mask = 0x4000;
+    while (s & mask) == 0 && exp > 0 {
+        exp -= 1;
+        mask >>= 1;
+    }
+    let mant = (s >> (exp + 3)) & 0x0f;
+    (!(sign | (exp << 4) | mant) & 0xff) as u8
+}
+
+fn base64(b: &[u8]) -> String {
+    const T: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    let mut out = String::with_capacity((b.len() + 2) / 3 * 4);
+    for c in b.chunks(3) {
+        let n = (c[0] as u32) << 16 | (*c.get(1).unwrap_or(&0) as u32) << 8 | *c.get(2).unwrap_or(&0) as u32;
+        out.push(T[(n >> 18) as usize & 63] as char);
+        out.push(T[(n >> 12) as usize & 63] as char);
+        out.push(if c.len() > 1 { T[(n >> 6) as usize & 63] as char } else { '=' });
+        out.push(if c.len() > 2 { T[n as usize & 63] as char } else { '=' });
+    }
+    out
+}
+
+/// Aufnahme starten (läuft, bis sprache_aufnahme_stopp kommt).
+/// funk: Sprechfunk – die Sprache geht zusätzlich laufend in Stücken an das Fenster.
 #[tauri::command]
-pub fn sprache_aufnahme_start(mikro: Option<String>) -> Result<(), String> {
+pub fn sprache_aufnahme_start(mikro: Option<String>, funk: Option<tauri::ipc::Channel<String>>) -> Result<(), String> {
     let mut a = AUFNAHME.lock().map_err(|_| "Aufnahme blockiert".to_string())?;
     if let Some(alt) = a.take() {
         let _ = alt.stopp.send(());
@@ -277,6 +360,7 @@ pub fn sprache_aufnahme_start(mikro: Option<String>) -> Result<(), String> {
     let (stopp_tx, stopp_rx) = std::sync::mpsc::channel::<()>();
     let (bereit_tx, bereit_rx) = std::sync::mpsc::channel::<Result<u32, String>>();
     let d2 = daten.clone();
+    let d3 = daten.clone();
     // der Audiostrom darf den Faden nicht wechseln (macOS) – eigener Faden bis zum Stopp
     let faden = std::thread::spawn(move || {
         let start = || -> Result<(cpal::Stream, u32), String> {
@@ -299,7 +383,40 @@ pub fn sprache_aufnahme_start(mikro: Option<String>) -> Result<(), String> {
         match start() {
             Ok((strom, rate)) => {
                 let _ = bereit_tx.send(Ok(rate));
-                let _ = stopp_rx.recv_timeout(std::time::Duration::from_secs(120));
+                match funk {
+                    Some(kanal) => {
+                        // Sprechfunk: alle 100 ms die neuen Samples als Stücke schicken
+                        let mut kod = FunkKodierer::neu(rate);
+                        let mut ab = 0usize;
+                        let schluss = std::time::Instant::now() + std::time::Duration::from_secs(120);
+                        loop {
+                            let fertig = match stopp_rx.recv_timeout(std::time::Duration::from_millis(100)) {
+                                Err(std::sync::mpsc::RecvTimeoutError::Timeout) => std::time::Instant::now() >= schluss,
+                                _ => true,
+                            };
+                            let neu: Vec<f32> = match d3.lock() {
+                                Ok(v) => {
+                                    let x = v[ab.min(v.len())..].to_vec();
+                                    ab = v.len();
+                                    x
+                                }
+                                Err(_) => Vec::new(),
+                            };
+                            for st in kod.daten(&neu) {
+                                let _ = kanal.send(st);
+                            }
+                            if fertig {
+                                if let Some(st) = kod.ende() {
+                                    let _ = kanal.send(st);
+                                }
+                                break;
+                            }
+                        }
+                    }
+                    None => {
+                        let _ = stopp_rx.recv_timeout(std::time::Duration::from_secs(120));
+                    }
+                }
                 drop(strom);
             }
             Err(e) => {
@@ -369,4 +486,36 @@ pub async fn sprache_aufnahme_stopp(app: tauri::AppHandle, modell: String, hinwe
         .await
         .map_err(|e| e.to_string())??;
     Ok(Erkannt { text, sekunden, pegel })
+}
+
+#[cfg(test)]
+mod funk_tests {
+    use super::*;
+
+    #[test]
+    fn ulaw_wie_im_fenster() {
+        // gleiche Werte wie funkCodec.ts (Stille, Maximum, Minimum)
+        assert_eq!(ulaw(0.0), 0xff);
+        assert_eq!(ulaw(1.0), 0x80);
+        assert_eq!(ulaw(-1.0), 0x00);
+    }
+
+    #[test]
+    fn base64_richtig() {
+        assert_eq!(base64(b"Man"), "TWFu");
+        assert_eq!(base64(b"Ma"), "TWE=");
+        assert_eq!(base64(b"M"), "TQ==");
+    }
+
+    #[test]
+    fn stuecke_100ms() {
+        let mut k = FunkKodierer::neu(48000);
+        let mut n = 0;
+        for _ in 0..10 {
+            n += k.daten(&vec![0.1f32; 4800]).len();
+        }
+        // 1 Sekunde bei 48 kHz = 10 Stücke à 800 Byte (das letzte evtl. erst mit ende())
+        let rest = k.ende().map(|_| 1).unwrap_or(0);
+        assert!(n + rest >= 10 && n + rest <= 11, "{n} + {rest}");
+    }
 }

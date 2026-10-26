@@ -10,6 +10,7 @@
  * Host → Relay:   {to?: pid, d: <Nachricht>}   (ohne "to": an alle Mitspieler)
  * Client → Relay: <Nachricht>                  (geht an den Host als {t:"from", pid, name, d})
  *                 {t:"claim-host", token}      (Host übernehmen, wenn keiner da ist)
+ * Alle → Relay:   {relay:"funk", d}            (Sprechfunk: geht an alle anderen als {t:"funk", pid, name, d})
  * Relay → alle:   {t:"welcome"|"join"|"leave"|"host-gone"|"host-back"|"host-changed"|"error", ...}
  */
 import { DurableObject } from "cloudflare:workers";
@@ -146,6 +147,12 @@ export class Room extends DurableObject {
     try {
       msg = JSON.parse(message);
     } catch {
+      return;
+    }
+    if (msg && msg.relay === "funk") {
+      // Sprechfunk: Sprache geht von jedem direkt an alle anderen (ohne Umweg über den Host)
+      const text = JSON.stringify({ t: "funk", pid: a.pid, name: a.name, d: msg.d });
+      for (const s of this.sockets()) if (s.a.pid !== a.pid) this.send(s.ws, text);
       return;
     }
     if (a.role === "host") {

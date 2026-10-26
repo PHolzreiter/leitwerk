@@ -12,7 +12,7 @@ import { sim, type Einsatz, type SimFahrzeug } from "../../sim/engine";
 import { inTauri } from "../../platform";
 import { openDialog } from "../dialog";
 import { el, esc, toast } from "../dom";
-import { AKTIONEN, type PilotAktion } from "./tasten";
+import { AKTIONEN, HALTEN, type PilotAktion } from "./tasten";
 
 interface HandyInfo {
   url: string;
@@ -24,10 +24,12 @@ let info: HandyInfo | null = null;
 let hoertZu = false;
 let letzterStand = "";
 let ausfuehren: ((a: PilotAktion) => void) | null = null;
+let haltenFn: ((a: PilotAktion, an: boolean) => void) | null = null;
 
-/** Wer die Tastendrücke vom Handy ausführt (Piloten-Interface) */
-export function handyAktionen(f: (a: PilotAktion) => void): void {
+/** Wer die Tastendrücke vom Handy ausführt (Piloten-Interface); halten = Sprechtasten (gedrückt/losgelassen) */
+export function handyAktionen(f: (a: PilotAktion) => void, halten?: (a: PilotAktion, an: boolean) => void): void {
   ausfuehren = f;
+  haltenFn = halten ?? null;
 }
 
 async function starten(): Promise<HandyInfo> {
@@ -37,8 +39,11 @@ async function starten(): Promise<HandyInfo> {
   if (!hoertZu) {
     hoertZu = true;
     await listen<string>("handy-befehl", (ev) => {
+      // Sprechtaste: „funk_an“ / „funk_aus“
+      const m = /^(\w+)_(an|aus)$/.exec(ev.payload);
+      if (m && HALTEN.includes(m[1] as PilotAktion)) return haltenFn?.(m[1] as PilotAktion, m[2] === "an");
       const a = ev.payload as PilotAktion;
-      if (AKTIONEN.some((x) => x.id === a)) ausfuehren?.(a);
+      if (AKTIONEN.some((x) => x.id === a) && !HALTEN.includes(a)) ausfuehren?.(a);
     });
   }
   letzterStand = "";
@@ -72,8 +77,8 @@ export function handyDialog(): void {
     });
 }
 
-/** Stand fürs Handy (nur wenn der Server läuft und sich etwas geändert hat) */
-export function handyStand(fz: SimFahrzeug | undefined, e: Einsatz | undefined): void {
+/** Stand fürs Handy (nur wenn der Server läuft und sich etwas geändert hat); funk = Sprechtasten und wer spricht */
+export function handyStand(fz: SimFahrzeug | undefined, e: Einsatz | undefined, funk?: { knoepfe: { aktion: string; name: string }[]; kanal: string; sendet: boolean }): void {
   if (!info) return;
   const st = fz ? sim.statusDef(fz.status) : null;
   const alarmiert = !!fz && !!e && ["alarmWache", "alarmFunk", "alarmiert"].includes(fz.status);
@@ -104,6 +109,7 @@ export function handyStand(fz: SimFahrzeug | undefined, e: Einsatz | undefined):
           ...(l?.patienten ?? []).map((p) => `${p.alter < 14 ? "Kind" : p.geschlecht === "w" ? "Frau" : "Mann"} ${p.alter} J. · ${p.sichtung} · ${{ ja: "wach", getruebt: "eingetrübt", nein: "bewusstlos" }[p.bw]}`),
         ]
       : null,
+    funk: funk ?? null,
   };
   const json = JSON.stringify(stand);
   if (json === letzterStand) return;

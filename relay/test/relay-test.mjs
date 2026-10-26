@@ -53,6 +53,21 @@ host.ws.send(JSON.stringify({ d: { t: "chunk", data: groß } }));
 const g = await c1.next((m) => m.t === "chunk");
 check(g && g.data.length === 600000, "Große Nachricht (600 kB)");
 
+// Sprechfunk: von jedem direkt an alle anderen
+const c3 = connect({ role: "client", pid: "c3", name: "Pilot" });
+await c3.opened;
+await c3.next((m) => m.t === "welcome");
+c3.ws.send(JSON.stringify({ relay: "funk", d: { k: "daten", n: 1 } }));
+const fh = await host.next((m) => m.t === "funk");
+check(fh && fh.pid === "c3" && fh.d.n === 1, "Sprechfunk Mitspieler → Host");
+check(!!(await c1.next((m) => m.t === "funk" && m.pid === "c3")), "Sprechfunk Mitspieler → anderer Mitspieler");
+host.ws.send(JSON.stringify({ relay: "funk", d: { k: "daten", n: 2 } }));
+check(!!(await c3.next((m) => m.t === "funk" && m.pid === "h1" && m.d.n === 2)), "Sprechfunk Host → Mitspieler");
+await wait(300);
+check(!c3.inbox.some((m) => m.t === "funk" && m.pid === "c3"), "Sprechfunk kommt nicht zum Absender zurück");
+c3.ws.close();
+await host.next((m) => m.t === "leave" && m.pid === "c3");
+
 // Mitspieler verbindet neu (gleiche ID)
 const c1b = connect({ role: "client", pid: "c1", name: "Max" });
 await c1b.opened;

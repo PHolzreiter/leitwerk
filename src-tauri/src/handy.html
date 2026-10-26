@@ -31,6 +31,11 @@
   .karte h3 { margin:0 0 6px; font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:var(--dim); }
   .dim { color:var(--dim); font-size:13px; }
   .fehler { color:var(--warn); }
+  .funk { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:6px; }
+  .ptt { border:none; border-radius:14px; padding:18px 10px; min-height:84px; background:#1f3a66; color:#fff; font-size:16px; font-weight:700; touch-action:none; user-select:none; -webkit-user-select:none; }
+  .ptt.an { background:var(--rot); }
+  .ptt small { display:block; font-weight:500; font-size:12px; opacity:.8; }
+  #kanal { margin:0 0 10px; }
 </style>
 </head>
 <body>
@@ -39,6 +44,8 @@
 <div class="jetzt" id="jetzt"><span class="n">–</span><span class="t">kein Hubschrauber</span></div>
 <div class="grid" id="grid"></div>
 <button class="flug" id="flug" hidden>Übungsflug</button>
+<div class="funk" id="funk" hidden></div>
+<p class="dim" id="kanal" hidden></p>
 <div class="karte" id="einsatz" hidden></div>
 <div class="karte" id="patient" hidden></div>
 <p class="dim">Tipp: Seite zum Startbildschirm hinzufügen und in den Handy-Einstellungen die automatische Bildschirmsperre verlängern, solange du fliegst.</p>
@@ -47,6 +54,7 @@ const t = new URLSearchParams(location.search).get("t") || "";
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" })[c]);
 let letzt = "";
+let funkLetzt = "";
 async function senden(cmd) {
   try {
     if (navigator.vibrate) navigator.vibrate(30);
@@ -79,6 +87,30 @@ function zeichnen(s) {
   const f = $("flug");
   f.hidden = !s.flug;
   if (s.flug) { f.textContent = s.flug; f.onclick = () => senden("fliegen"); }
+  // Sprechtasten: gedrückt halten (nur neu bauen, wenn sich die Knöpfe ändern – sonst bricht das Halten ab)
+  const fk = JSON.stringify(s.funk?.knoepfe || []);
+  const fb = $("funk");
+  fb.hidden = !s.funk?.knoepfe?.length;
+  if (fk !== funkLetzt) {
+    funkLetzt = fk;
+    fb.innerHTML = "";
+    for (const k of s.funk?.knoepfe || []) {
+      const b = document.createElement("button");
+      b.className = "ptt";
+      b.innerHTML = `🎙 ${esc(k.name)}<small>gedrückt halten</small>`;
+      let unten = false;
+      const an = (ev) => { ev.preventDefault(); if (unten) return; unten = true; b.classList.add("an"); b.setPointerCapture?.(ev.pointerId); senden(k.aktion + "_an"); };
+      const aus = () => { if (!unten) return; unten = false; b.classList.remove("an"); senden(k.aktion + "_aus"); };
+      b.addEventListener("pointerdown", an);
+      b.addEventListener("pointerup", aus);
+      b.addEventListener("pointercancel", aus);
+      b.addEventListener("contextmenu", (ev) => ev.preventDefault());
+      fb.appendChild(b);
+    }
+  }
+  const kn = $("kanal");
+  kn.hidden = !s.funk?.kanal;
+  kn.textContent = s.funk?.kanal || "";
   const e = $("einsatz");
   e.hidden = !s.einsatz;
   if (s.einsatz) e.innerHTML = `<h3>Einsatz ${esc(s.einsatz.nummer)}</h3><b>${esc(s.einsatz.stichwort)}</b><div>${esc(s.einsatz.adresse)}</div>${s.einsatz.info ? `<div class="dim">${esc(s.einsatz.info)}</div>` : ""}${s.einsatz.ziel ? `<div>Ziel: <b>${esc(s.einsatz.ziel)}</b></div>` : ""}`;

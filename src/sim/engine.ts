@@ -5,7 +5,7 @@
  * vom Host an die Mitspieler übertragen werden kann. Alle Eingriffe des Spielers
  * laufen über die öffentlichen Methoden (alarmieren, Adresse setzen, …).
  */
-import { rufnamen } from "./funkname";
+import { fahrzeugZuName, rufnamen } from "./funkname";
 import { aktuelleSchicht, dienstEnde, imDienst, naechsterBeginn, type Schicht } from "./dienst";
 import { nachKlick } from "../klick";
 import { ACTIVE_CATEGORIES, bereicheVon, khAnkunft, khLandung, type Hospital, type Vehicle, type Zufahrt } from "../data/model";
@@ -565,6 +565,20 @@ export interface FunkSpruch {
   wer?: string;
   /** von der KI formuliert („ki“) oder fester Text („fest“) */
   quelle?: "ki" | "fest";
+  /** von einem Menschen gesprochen und live übertragen (Sprechfunk) – nicht noch einmal vorlesen */
+  stimme?: boolean;
+}
+
+/** Wer gerade am Sprechfunk sendet (Sprechtaste gedrückt) */
+export interface FunkSendet {
+  pid: string;
+  name: string;
+  /** Gespräch, in das gesprochen wird */
+  gId: number;
+  /** Rufname („C2“) bzw. „LEO“ */
+  von: string;
+  /** echte Zeit (ms) */
+  seit: number;
 }
 
 /**
@@ -598,8 +612,8 @@ export interface FunkGespraech {
   /** wartet = Fahrzeug will funken, der Kanal ist belegt (oder es wird telefoniert); ruft = Fahrzeug ruft LEO;
    *  sprechwunsch = dreimal gerufen, keine Antwort; leoWartet = LEO will rufen, der Kanal ist belegt;
    *  leoRuft = LEO ruft das Fahrzeug; offen = verbunden; direkt = zwei Fahrzeuge funken miteinander;
-   *  mithoeren = ein Fahrzeug fragt, ob LEO mitgehört hat */
-  status: "wartet" | "ruft" | "sprechwunsch" | "leoWartet" | "leoRuft" | "offen" | "ende" | "direkt" | "mithoeren";
+   *  mithoeren = ein Fahrzeug fragt, ob LEO mitgehört hat; mensch = Sprechfunk zwischen Menschen (Pilot ↔ Leitstelle, Pilot ↔ RTW) */
+  status: "wartet" | "ruft" | "sprechwunsch" | "leoWartet" | "leoRuft" | "offen" | "ende" | "direkt" | "mithoeren" | "mensch";
   seit: number;
   /** ruft: nächster Wiederholungsruf; leoRuft: Fahrzeug meldet sich */
   naechster: number | null;
@@ -630,6 +644,10 @@ export interface FunkGespraech {
   leoRuf?: { text: string; nachricht?: string } | null;
   /** das Anliegen des Fahrzeugs ist schon durchgegeben */
   anliegenGesagt?: boolean;
+  /** Sprechfunk: Menschen sprechen selbst (Pilot ↔ Leitstelle; mit „an“: Pilot ↔ RTW, der RTW antwortet über die KI) */
+  mensch?: boolean;
+  /** wartet, weil ein Spieler-NAH am Einsatzort ist (dann funkt kein anderes Fahrzeug dieses Einsatzes) */
+  wegenNah?: boolean;
 }
 
 /** Satz im Funk zwischen zwei Fahrzeugen; aktion passiert, wenn er gesprochen ist */
@@ -828,6 +846,8 @@ export interface SimState {
   chat?: ChatNachricht[];
   funkGespraeche?: FunkGespraech[];
   funkGZaehler?: number;
+  /** Sprechfunk: wer gerade sendet */
+  funkSendet?: FunkSendet | null;
   /** Krankentransporte */
   kt?: KtAuftrag[];
   ktZaehler?: number;
@@ -965,7 +985,7 @@ export const BEFEHLE = {
     "ktStorno",
     "ktFunkStorno",
   ],
-  immer: ["chat", "funkFzAntwort"],
+  immer: ["chat", "funkFzAntwort", "funkMensch", "funkMenschText"],
   /** Pilot (Spieler-NAH): jeder darf, geprüft wird, ob er diesen Hubschrauber fliegt */
   pilot: ["pilotUebernehmen", "pilotAbgeben", "pilotStatus", "pilotPlan", "pilotFliegen", "pilotPosition", "pilotZeit"],
 } as const;
@@ -4893,7 +4913,7 @@ export class Simulation {
 
   /** Gespräch, das gerade den Kanal belegt (es kann nur eines geben) */
   funkKanalBelegt(): FunkGespraech | undefined {
-    return this.state.funkGespraeche?.find((g) => ["ruft", "leoRuft", "offen", "direkt", "mithoeren"].includes(g.status) || !!g.ausstehend);
+    return this.state.funkGespraeche?.find((g) => ["ruft", "leoRuft", "offen", "direkt", "mithoeren", "mensch"].includes(g.status) || !!g.ausstehend);
   }
 
   /** Telefoniert dieser Spieler gerade (Notruf oder KT-Hotline)? Allein: telefoniert überhaupt jemand? */
@@ -5044,8 +5064,31 @@ export class Simulation {
     const jetzt = Date.now();
     const alle = this.state.funkGespraeche ?? [];
     let geaendert = false;
+    // Sprechtaste hängt (Verbindung weg, Fenster zu): nach 2 Minuten bzw. sobald der Spieler weg ist frei geben
+    const sendet = this.state.funkSendet;
+    if (sendet && (jetzt - sendet.seit > 120_000 || (this.mode === "host" && this.istOnline && !this.istOnline(sendet.pid)))) {
+      this.state.funkSendet = null;
+      geaendert = true;
+    }
     for (const g of alle) {
       if (g.status === "ende") continue;
+      if (g.status === "mensch") {
+        if (g.ausstehend && jetzt >= g.ausstehend.bis) {
+          this.ausstehendSprechen(g, g.ausstehend.fest, "fest");
+          geaendert = true;
+        } else if (!g.ausstehend && g.ablauf?.length && g.echtNaechster != null && jetzt >= g.echtNaechster) {
+          // Pilot ↔ RTW: der RTW meldet sich („Hier 75/001, kommen“)
+          const s = g.ablauf.shift()!;
+          this.spruch(g, s.von, s.text);
+          g.echtNaechster = g.ablauf.length ? jetzt + 2000 : null;
+          geaendert = true;
+        } else if (!g.ausstehend && !g.ablauf?.length && this.state.funkSendet?.gId !== g.id && jetzt - (g.echtLetzt ?? jetzt) > 30_000) {
+          // 30 Sekunden Stille: Gespräch ist aus
+          this.funkSchliessen(g);
+          geaendert = true;
+        }
+        continue;
+      }
       // KI zu langsam oder aus: der feste Satz
       if (g.ausstehend && jetzt >= g.ausstehend.bis) {
         this.ausstehendSprechen(g, g.ausstehend.fest, "fest");
@@ -5104,8 +5147,17 @@ export class Simulation {
       }
     }
     // Kanal frei? Dann darf der Nächste
-    if (!this.funkKanalBelegt()) {
-      const wartend = alle.filter((g) => (g.status === "wartet" || g.status === "leoWartet") && (g.echtNaechster ?? 0) <= jetzt);
+    // Spieler-NAH am Einsatzort: kein anderes Fahrzeug dieses Einsatzes funkt (der Pilot meldet selbst)
+    for (const g of alle) {
+      if (g.status !== "wartet") continue;
+      const gesperrt = this.funkWegenNah(g);
+      if (!!g.wegenNah !== gesperrt) {
+        g.wegenNah = gesperrt;
+        geaendert = true;
+      }
+    }
+    if (!this.funkKanalBelegt() && !this.state.funkSendet) {
+      const wartend = alle.filter((g) => (g.status === "wartet" || g.status === "leoWartet") && (g.echtNaechster ?? 0) <= jetzt && !g.wegenNah);
       // LEO zuerst, dann Dringendes, dann wer länger wartet
       wartend.sort((a, b) => Number(b.status === "leoWartet") - Number(a.status === "leoWartet") || Number(!!b.dringend) - Number(!!a.dringend) || (a.echtSeit ?? 0) - (b.echtSeit ?? 0));
       const naechster = wartend[0];
@@ -5240,10 +5292,10 @@ export class Simulation {
    * LEO ruft ein Fahrzeug („75/001 von LEO, kommen“); text = eigener Anruf (gesprochen oder getippt).
    * Ist der Kanal belegt, wird der Ruf vorgemerkt und geht hinaus, sobald er frei ist.
    */
-  funkRufen(fzId: string, text?: string): number {
+  funkRufen(fzId: string, text?: string, stimme?: boolean): number {
     const fz = this.state.fahrzeuge[fzId];
     if (!fz) throw new Error("Fahrzeug nicht gefunden");
-    if (fz.pilot) throw new Error(`${fz.funkrufname} wird von ${fz.pilot.name} geflogen – Funk mit Piloten folgt, bis dahin bitte über den Chat`);
+    if (fz.pilot) throw new Error(`${fz.funkrufname} wird von ${fz.pilot.name} geflogen – zum Sprechen die Funktaste gedrückt halten`);
     // „Hier LEO, mitgehört, Ende“ (gesprochen oder getippt) auf eine Frage aus dem Fahrzeugfunk
     if (text && /mitgeh[öo]r/i.test(text)) {
       const mg = this.state.funkGespraeche?.find((g) => (g.status === "mithoeren" || (g.status === "wartet" && g.mithoeren && !g.ablauf?.length)) && (g.an?.fzId === fz.id || g.fzId === fz.id));
@@ -5257,7 +5309,12 @@ export class Simulation {
       if (["ruft", "wartet", "sprechwunsch"].includes(offen.status)) this.funkAntworten(offen.id);
       return offen.id;
     }
-    return this.leoRuftAn(fz, text?.trim().slice(0, 300) || `${this.rufname(fz)} von LEO, kommen`);
+    const id = this.leoRuftAn(fz, text?.trim().slice(0, 300) || `${this.rufname(fz)} von LEO, kommen`);
+    // gesprochen und live übertragen: nicht noch einmal vorlesen
+    const g = stimme && text ? this.state.funkGespraeche?.find((x) => x.id === id) : undefined;
+    const sp = g?.sprueche[g.sprueche.length - 1];
+    if (sp && sp.von === "LEO") sp.stimme = true;
+    return id;
   }
 
   /** LEO-Ruf starten bzw. vormerken; nachricht = Durchsage gleich nach der Antwort (Storno …) */
@@ -5276,7 +5333,7 @@ export class Simulation {
   }
 
   /** LEO spricht im offenen Gespräch; die Besatzung antwortet (Inhalt vom Programm, formuliert von der KI) */
-  funkSenden(id: number, text: string): void {
+  funkSenden(id: number, text: string, stimme?: boolean): void {
     const g = this.gespraech(id);
     const t = text.trim().slice(0, 500);
     if (!t) return;
@@ -5285,6 +5342,7 @@ export class Simulation {
     if (g.ausstehend) throw new Error(`${g.funkname} spricht gerade`);
     this.nurFunkfuehrer(g);
     this.spruch(g, "LEO", t, this.calltaker().name);
+    if (stimme) g.sprueche[g.sprueche.length - 1].stimme = true;
     const antwort = this.funkVerstehen(g, t);
     // Letztes Wort „verstanden“, „Ende“ oder „danke“: Gespräch ist aus (Aufträge darin gelten trotzdem)
     if (/\b(verstanden|ende|danke)\W*$/i.test(t)) {
@@ -5334,6 +5392,185 @@ export class Simulation {
     this.spruch(g, "LEO", "Hier LEO, verstanden, Ende", this.calltaker().name);
     this.funkSchliessen(g);
     this.emit();
+  }
+
+  // ------------------------------------------------------------------ Sprechfunk Mensch zu Mensch (Spieler-NAH)
+  //
+  // Pilot und Leitstelle sprechen selbst: die Sprache geht direkt über den Relay an alle (ui/sprechfunk.ts).
+  // Die Engine führt nur den Kanal – wer gerade sendet, welches Gespräch ihn belegt – und den Text aus der
+  // Spracherkennung. Ein Gespräch zwischen Menschen belegt den Kanal wie jedes andere, bis zum letzten Wort
+  // „verstanden“, „Ende“ oder „danke“ oder 30 Sekunden Stille. Pilot ↔ RTW: der RTW antwortet über die Funk-KI.
+
+  /** Spieler-NAH dieses Einsatzes steht am Einsatzort (Status 3)? Dann wartet der übrige Funk des Einsatzes. */
+  private funkWegenNah(g: FunkGespraech): boolean {
+    if (g.mensch || !g.einsatzId) return false;
+    const e = this.einsatz(g.einsatzId);
+    if (!e || e.zustand === "abgeschlossen") return false;
+    return this.einsatzFz(e).some((f) => f.pilot && f.status === "amBO" && f.id !== g.fzId);
+  }
+
+  /** Bodenfahrzeug, mit dem der Pilot im Anflug funken kann (RTW zuerst, wer vor Ort ist zuerst) */
+  nahRtwPartner(heli: SimFahrzeug, e: Einsatz): SimFahrzeug | undefined {
+    const rang = (f: SimFahrzeug) => (f.kategorie === "RTW" ? 0 : f.kategorie === "NEF" ? 1 : 2) + (["vorOrt", "warteKH", "suche"].includes(f.phase) ? 0 : 3);
+    return this.einsatzFz(e)
+      .filter((f) => f.id !== heli.id && !fliegt(f) && !f.pilot)
+      .sort((a, b) => rang(a) - rang(b))[0];
+  }
+
+  /** offenes Sprechfunk-Gespräch (an = mit diesem Fahrzeug; ohne = mit der Leitstelle) */
+  private menschGespraech(fzId: string | null, an: string | null): FunkGespraech | undefined {
+    return this.state.funkGespraeche?.find((g) => g.mensch && g.status !== "ende" && (fzId === null || g.fzId === fzId) && (an === null ? !g.an : g.an?.fzId === an));
+  }
+
+  /**
+   * Sprechtaste gedrückt (an = true) bzw. losgelassen. Pilot: ziel „leo“ (Leitstelle) oder „rtw“ (Bodenfahrzeug am Einsatz).
+   * Leitstelle: ins laufende Gespräch mit einem Piloten, sonst ein neues. Gibt die Gesprächsnummer zurück.
+   * Nichts wird unterbrochen: belegt ein anderes Gespräch den Kanal oder spricht jemand, kommt eine Fehlermeldung.
+   */
+  funkMensch(an: boolean, ziel: "leo" | "rtw" = "leo"): number | null {
+    const ich = this.wer();
+    const jetzt = Date.now();
+    const s = this.state.funkSendet;
+    if (!an) {
+      if (s && s.pid === ich.pid) {
+        const g = this.state.funkGespraeche?.find((x) => x.id === s.gId);
+        if (g) g.echtLetzt = jetzt;
+        this.state.funkSendet = null;
+        this.emit();
+      }
+      return s?.gId ?? null;
+    }
+    if (s && s.pid !== ich.pid) throw new Error(`Funk belegt – ${s.von === "LEO" ? `LEO (${s.name})` : s.von} spricht gerade`);
+    const heli = this.pilotVon(ich.pid);
+    let g: FunkGespraech | undefined;
+    let von = "LEO";
+    if (heli) {
+      von = this.rufname(heli);
+      const e = heli.einsatzId ? this.einsatz(heli.einsatzId) : undefined;
+      if (ziel === "rtw") {
+        const rtw = e ? this.nahRtwPartner(heli, e) : undefined;
+        if (!e || !rtw) throw new Error("Kein Bodenfahrzeug bei deinem Einsatz, das du anfunken kannst");
+        g = this.menschGespraech(heli.id, rtw.id);
+        if (!g) {
+          this.kanalFrei(null);
+          g = this.neuesGespraech(heli, e, "mensch");
+          g.mensch = true;
+          g.an = { fzId: rtw.id, funkname: this.rufname(rtw) };
+          // die Antworten des RTW formuliert ein Disponent (die KI läuft dort)
+          g.fuehrer = { ...this.funkErzeuger(e) };
+        }
+      } else {
+        g = this.menschGespraech(heli.id, null);
+        if (!g) {
+          this.kanalFrei(null);
+          g = this.neuesGespraech(heli, e ?? null, "mensch");
+          g.mensch = true;
+        }
+      }
+    } else {
+      g = this.menschGespraech(null, null);
+      if (!g) {
+        const piloten = Object.values(this.state.fahrzeuge).filter((f) => f.pilot);
+        if (!piloten.length) throw new Error("Kein Pilot im Spiel – die Funktaste ist für den Sprechfunk mit Piloten");
+        const zuletzt = this.state.funkGespraeche?.find((x) => x.mensch && !x.an && piloten.some((p) => p.id === x.fzId));
+        const fz = (zuletzt && this.state.fahrzeuge[zuletzt.fzId]) || piloten[0];
+        this.kanalFrei(null);
+        g = this.neuesGespraech(fz, fz.einsatzId ? (this.einsatz(fz.einsatzId) ?? null) : null, "mensch");
+        g.mensch = true;
+      }
+      g.fuehrer = { ...ich };
+    }
+    this.kanalFrei(g);
+    this.state.funkSendet = { pid: ich.pid, name: ich.name, gId: g.id, von, seit: jetzt };
+    g.echtLetzt = jetzt;
+    this.emit();
+    return g.id;
+  }
+
+  /** Erkannter Text eines Sprechfunk-Spruchs (kommt nach dem Loslassen, von der Spracherkennung des Sprechers) */
+  funkMenschText(gId: number, text: string): void {
+    const g = this.gespraech(gId);
+    const t = text.replace(/\s+/g, " ").trim().slice(0, 500);
+    if (!t || !g.mensch) return;
+    const ich = this.wer();
+    const heli = this.pilotVon(ich.pid);
+    const von = heli ? this.rufname(heli) : "LEO";
+    // Leitstelle ruft einen anderen Piloten („C9 von LEO, kommen“): das Gespräch gehört zu ihm
+    if (!heli && !g.sprueche.length) {
+      const piloten = Object.values(this.state.fahrzeuge).filter((f) => f.pilot);
+      const fz = fahrzeugZuName(t.split(/\s+von\s+/i)[0], piloten);
+      if (fz && fz.id !== g.fzId) {
+        g.fzId = fz.id;
+        g.funkname = this.rufname(fz);
+        g.einsatzId = fz.einsatzId ?? null;
+      }
+    }
+    this.spruch(g, von, t, ich.name);
+    g.sprueche[g.sprueche.length - 1].stimme = true;
+    if (g.status === "ende") return this.emit();
+    if (g.an && heli) this.nahRtwHoert(g, t);
+    else if (/\b(verstanden|ende|danke)\W*$/i.test(t)) this.funkSchliessen(g);
+    this.emit();
+  }
+
+  /** Der RTW hört den Piloten: meldet sich auf den Anruf, beantwortet Fragen (Inhalt vom Programm, formuliert von der KI) */
+  private nahRtwHoert(g: FunkGespraech, t: string): void {
+    const rtw = this.state.fahrzeuge[g.an!.fzId];
+    if (!rtw) return this.funkSchliessen(g);
+    const r = g.an!.funkname;
+    if (/\b(verstanden|ende|danke)\W*$/i.test(t)) return this.funkSchliessen(g);
+    if (istRufSpruch(t) || /^[^,]{1,30} von [^,]{1,30}\W*(kommen)?\W*$/i.test(t)) {
+      g.ablauf = [{ von: r, text: funkZufall([`Hier ${r}, kommen`, `${r} hört`, `Hier ${r}, kommen`]) }];
+      g.echtNaechster = Date.now() + rnd(1.5, 3) * 1000;
+      return;
+    }
+    g.ablauf = [];
+    const antwort = this.nahRtwAntwort(rtw, t);
+    if (antwort === "") return;
+    this.ausstehendSetzen(g, { von: r, art: antwort === null ? "frage" : "antwort", fest: antwort ?? `Hier ${r}, verstanden, kommen`, frage: t, an: g.funkname });
+  }
+
+  /** Was der RTW dem anfliegenden Hubschrauber sagt (null = freie Frage für die KI, "" = keine Antwort) */
+  private nahRtwAntwort(rtw: SimFahrzeug, text: string): string | null {
+    const t = text.toLowerCase();
+    const e = rtw.einsatzId ? this.einsatz(rtw.einsatzId) : undefined;
+    const hier = `Hier ${this.rufname(rtw)}`;
+    const vorOrt = rtw.phase === "vorOrt" || rtw.phase === "warteKH" || rtw.phase === "suche";
+    const min = rtw.phaseEnde ? Math.max(1, Math.round((rtw.phaseEnde - this.state.zeit) / MIN)) : null;
+    if (/\blande|landeplatz|landung|aufsetzen|wo (können|koennen|sollen|dürfen) wir/.test(t)) {
+      if (!vorOrt || !e) return `${hier}, sind selbst noch nicht vor Ort${min ? `, Eintreffen in ca. ${min} Minuten` : ""}, kommen`;
+      // gleiche Antwort für denselben Einsatz
+      let h = 0;
+      for (const c of e.id) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+      const ort = ["auf einer Wiese", "am Sportplatz", "am Parkplatz", "auf einem Feld", "auf einer Wiese"][h % 5];
+      const richtung = ["nördlich", "östlich", "südlich", "westlich"][(h >> 3) % 4];
+      const meter = [50, 80, 100, 150, 200][(h >> 6) % 5];
+      return `${hier}, Landemöglichkeit ${ort} ca. ${meter} Meter ${richtung} vom Einsatzort, wir weisen euch ein, kommen`;
+    }
+    if (/status|wo seid|wo bist|eintreff|wie lange|wann seid|position|fahrzeit|seid ihr (schon )?(vor ort|da)/.test(t)) {
+      if (vorOrt) return `${hier}, sind vor Ort beim Patienten, kommen`;
+      if (rtw.phase === "anfahrt" || rtw.phase === "ausruecken") return `${hier}, sind auf Anfahrt, Eintreffen in ca. ${min ?? "?"} Minuten, kommen`;
+      return `${hier}, sind nicht beim Patienten, kommen`;
+    }
+    if (/sättigung|spo2|blutdruck|\brr\b|puls|herzfrequenz|blutzucker|\bbz\b|vitalwerte|vitalparameter|temperatur|\bgcs\b|atemfrequenz|werte/.test(t)) {
+      if (!vorOrt || !e) return `${hier}, sind noch nicht beim Patienten, kommen`;
+      const werte = (e.wahr.lage?.fall?.kern ?? "").split(/,\s*/).filter((x) => ohneVitalwerte(x) !== x.trim());
+      return werte.length ? `${hier}, ${werte.join(", ")}, kommen` : `${hier}, Werte noch nicht erhoben, kommen`;
+    }
+    if (/patient|zustand|wie geht|lage|was habt ihr|reanim/.test(t)) {
+      if (!vorOrt || !e) return `${hier}, sind noch nicht beim Patienten, kommen`;
+      const l = e.wahr.lage;
+      if (!l) return `${hier}, Patient wird versorgt, kommen`;
+      return `${hier}, ${l.patienten.length > 1 ? `${l.patienten.length} Patienten, ` : ""}${ohneVitalwerte(patientText(l.patienten[0]).replace(/ \(.*\)$/, ""))}, kommen`;
+    }
+    if (/verdacht|diagnose/.test(t)) {
+      if (!vorOrt || !e) return `${hier}, sind noch nicht beim Patienten, kommen`;
+      const v = e.verdacht ?? this.verdacht(e);
+      return v ? `${hier}, Verdacht ${buchungName(v)}, kommen` : `${hier}, noch nicht beurteilbar, kommen`;
+    }
+    if (/funkcheck|wie hört ihr|wie hören sie|verständigung/.test(t)) return `${hier}, höre euch laut und klar, kommen`;
+    if (/^(hier [^,]+,? )?(verstanden|danke|passt|ok|okay)\W*(kommen)?\W*$/.test(t)) return "";
+    return null;
   }
 
   /** Storno an ein Fahrzeug: es rückt sofort ein, die Durchsage geht über Funk, sobald der Kanal frei ist */

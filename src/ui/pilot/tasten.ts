@@ -6,7 +6,10 @@
  */
 import type { StatusKey } from "../../sim/settings";
 
-export type PilotAktion = "s9" | "s1" | "s2" | "s3" | "s4" | "s5" | "s6" | "fliegen";
+export type PilotAktion = "s9" | "s1" | "s2" | "s3" | "s4" | "s5" | "s6" | "fliegen" | "funk" | "funkRtw";
+
+/** Aktionen, die man gedrückt hält (Sprechtasten) – lösen beim Drücken und beim Loslassen aus */
+export const HALTEN: PilotAktion[] = ["funk", "funkRtw"];
 
 export const AKTIONEN: { id: PilotAktion; name: string; status?: StatusKey }[] = [
   { id: "s9", name: "Quittieren – Alarm angenommen", status: "alarmiert" },
@@ -17,6 +20,8 @@ export const AKTIONEN: { id: PilotAktion; name: string; status?: StatusKey }[] =
   { id: "s5", name: "Status 5 – am Zielort", status: "amZO" },
   { id: "s6", name: "Status 6 – frei über Funk", status: "freiFunk" },
   { id: "fliegen", name: "Übungsflug zum nächsten Ziel / anhalten" },
+  { id: "funk", name: "Sprechtaste – Leitstelle (gedrückt halten)" },
+  { id: "funkRtw", name: "Sprechtaste – RTW am Einsatz (gedrückt halten)" },
 ];
 
 /** Joystick-Taste: welches Gerät (Name) und welche Taste */
@@ -40,7 +45,7 @@ const SCHLUESSEL = "leitwerk.pilot.tasten";
 
 export function standardBelegung(): Belegung {
   return {
-    taste: { s9: "Digit9", s1: "Digit1", s2: "Digit2", s3: "Digit3", s4: "Digit4", s5: "Digit5", s6: "Digit6", fliegen: "KeyF" },
+    taste: { s9: "Digit9", s1: "Digit1", s2: "Digit2", s3: "Digit3", s4: "Digit4", s5: "Digit5", s6: "Digit6", fliegen: "KeyF", funk: "Space", funkRtw: "KeyR" },
     global: {
       s1: "CommandOrControl+Shift+1",
       s2: "CommandOrControl+Shift+2",
@@ -49,6 +54,8 @@ export function standardBelegung(): Belegung {
       s5: "CommandOrControl+Shift+5",
       s6: "CommandOrControl+Shift+6",
       s9: "CommandOrControl+Shift+9",
+      funk: "CommandOrControl+Shift+F",
+      funkRtw: "CommandOrControl+Shift+R",
     },
     globalAn: true,
     joy: {},
