@@ -18,7 +18,7 @@ import { el, esc, toast } from "../dom";
 import { ktMaske } from "../ktView";
 import { panelZeigen, registriere, type PanelKontext } from "../ws/arbeitsplatz";
 import { auswahl, funkRufen, karteWaehlen, karteZeigen, onAuswahl, waehle } from "../ws/auswahl";
-import { addressInput, crewHtml, fehlerZeigen, fzKlassen, minuten, statusChip, stufeFarbe, uhr, vorgemerktHtml, typHtml, dienstHtml } from "./teile";
+import { addressInput, crewHtml, fehlerZeigen, fzKlassen, minuten, statusChip, stufeFarbe, uhr, vorgemerktHtml, typHtml, dienstHtml, fzPasst } from "./teile";
 
 /** Einsatzmaske für einen Einsatz bauen */
 export function einsatzMaske(e: Einsatz): { root: HTMLElement; refresh(): void } {
@@ -279,6 +279,15 @@ export function einsatzMaske(e: Einsatz): { root: HTMLElement; refresh(): void }
   alarmBox.innerHTML = `<div class="box-title">Fahrzeuge</div>`;
   const assigned = el("div", { class: "assigned" });
   const sugg = el("div", { class: "sugg" });
+  // Suche über alle Fahrzeuge (Funkrufname auch ohne „/“, Wache, Typ)
+  const suche = el("input", { type: "search", class: "fz-suche", placeholder: "Fahrzeug suchen (z. B. 75001, Krems, NEF) …" }) as HTMLInputElement;
+  suche.addEventListener("input", () => renderSuggestions());
+  suche.addEventListener("keydown", (ev) => {
+    if (ev.key === "Escape") {
+      suche.value = "";
+      renderSuggestions();
+    }
+  });
   const alarmRow = el("div", { class: "row-btns" });
   const btnAlarm = el("button", { class: "btn primary" }, "Alarmieren");
   const btnClose = el("button", { class: "btn" }, "Einsatz schließen");
@@ -295,7 +304,7 @@ export function einsatzMaske(e: Einsatz): { root: HTMLElement; refresh(): void }
       ueberHinweis.innerHTML = `<b>${ende ? "Über Dienstende" : "Wechsel ausständig"}</b> (${ueber.map((f) => esc(f.funkrufname)).join(", ")}) – zuerst anfunken und fragen, ob sie den Einsatz noch übernehmen. Erst nach der Bestätigung gilt das Fahrzeug als alarmiert.`;
     }
   };
-  alarmBox.append(assigned, sugg, ueberHinweis, alarmRow);
+  alarmBox.append(assigned, suche, sugg, ueberHinweis, alarmRow);
   root.appendChild(alarmBox);
 
   // KH / BO / ZO
@@ -425,7 +434,19 @@ export function einsatzMaske(e: Einsatz): { root: HTMLElement; refresh(): void }
     if (gruende.length) {
       sugg.appendChild(el("div", { class: "sugg-why" }, gruende.join(" · ")));
     }
-    const shown = suggestions.slice(0, 14);
+    const q = suche.value.trim();
+    let shown = suggestions.slice(0, 14);
+    if (q) {
+      // Treffer aus allen freien Fahrzeugen (mit Anfahrtszeit), dazu nicht freie mit ihrem Status
+      const frei = new Set(suggestions.map((s) => s.fz.id));
+      shown = [
+        ...suggestions.filter((s) => fzPasst(s.fz, q)),
+        ...Object.values(sim.state.fahrzeuge)
+          .filter((f) => !frei.has(f.id) && fzPasst(f, q))
+          .sort((a, b) => a.funkrufname.localeCompare(b.funkrufname, "de", { numeric: true }))
+          .map((fz) => ({ fz, sekunden: null, hinweis: fz.ausserDienst ? "außer Dienst" : "nicht frei", kt: false })),
+      ].slice(0, 40);
+    }
     for (const s of shown) {
       const row = el("label", { class: `sugg-row${s.hinweis ? " blocked" : ""}${empfohlen.has(s.fz.id) ? " rec" : ""}${fzKlassen(s.fz)}` });
       const cb = el("input", { type: "checkbox" });
@@ -445,7 +466,7 @@ export function einsatzMaske(e: Einsatz): { root: HTMLElement; refresh(): void }
       row.appendChild(el("span", { class: "sugg-eta" }, s.hinweis ? s.hinweis : minuten(s.sekunden)));
       sugg.appendChild(row);
     }
-    if (shown.length === 0) sugg.appendChild(el("div", { class: "muted" }, "Keine freien Fahrzeuge."));
+    if (shown.length === 0) sugg.appendChild(el("div", { class: "muted" }, q ? "Kein Fahrzeug gefunden." : "Keine freien Fahrzeuge."));
     knopfText();
   }
 

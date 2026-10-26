@@ -7,11 +7,29 @@
 import { invoke } from "@tauri-apps/api/core";
 import { inTauri } from "../platform";
 
-export type AblageOrdner = "Abfrageschema" | "Codelisten" | "Daten" | "Fälle" | "Töne" | "Designs" | "Anordnungen";
+/** Unterordner für Krankentransporte und Sekundärtransporte (Überstellungen) */
+export const KT_ORDNER = "Krankentransport_Sekundärtransporte";
+
+export type AblageOrdner =
+  | "Abfrageschema"
+  | "Codelisten"
+  | "Abfrageschema/RD"
+  | "Abfrageschema/Krankentransport_Sekundärtransporte"
+  | "Codelisten/RD"
+  | "Codelisten/Krankentransport_Sekundärtransporte"
+  | "Daten"
+  | "Fälle"
+  | "Töne"
+  | "Designs"
+  | "Anordnungen";
 
 export const ABLAGE_INFO: Record<AblageOrdner, string> = {
-  Abfrageschema: "importierte Abfrageschemas (JSON)",
-  Codelisten: "importierte Codelisten (CSV)",
+  Abfrageschema: "eigene Abfrageschemas (in RD und Krankentransport_Sekundärtransporte)",
+  Codelisten: "eigene Codelisten (in RD und Krankentransport_Sekundärtransporte)",
+  "Abfrageschema/RD": "Abfrageschemas für Notrufe (JSON)",
+  "Abfrageschema/Krankentransport_Sekundärtransporte": "Abfrage der KT-Hotline (JSON)",
+  "Codelisten/RD": "Codelisten für Notrufe (CSV)",
+  "Codelisten/Krankentransport_Sekundärtransporte": "Codes für Krankentransporte und Überstellungen mit Bedingungen (JSON)",
   Daten: "importierte Fahrzeuge, Dienststellen, Krankenhäuser, Orte … (CSV)",
   Fälle: "importierte Fallpakete",
   Töne: "eigene Klingel- und Signaltöne",
@@ -75,7 +93,7 @@ export async function ablageListe(ordner: AblageOrdner): Promise<AblageDatei[]> 
   let l: AblageDatei[];
   if (inTauri()) l = await invoke<AblageDatei[]>("ablage_liste", { ordner });
   else {
-    const keys = ((await idb("readonly", (s) => s.getAllKeys())) as string[]).filter((k) => k.startsWith(`${ordner}/`));
+    const keys = ((await idb("readonly", (s) => s.getAllKeys())) as string[]).filter((k) => k.startsWith(`${ordner}/`) && !k.slice(ordner.length + 1).includes("/"));
     l = [];
     for (const k of keys) {
       const e = (await idb("readonly", (s) => s.get(k))) as { bytes: Uint8Array; geaendert: number };

@@ -198,21 +198,21 @@ function erstellen(ctx: PanelKontext) {
         onCreateAt: (kind, lat, lon) => openEditor(kind, null, editorDeps, { lat, lon }),
       });
       const auftragOeffnen = (fz: SimFahrzeug) => {
-        if (fz.einsatzId) waehle("einsatz", fz.einsatzId, { karte: false });
-        else if (fz.kt?.fahrten[0]?.[0]) waehle("kt", fz.kt.fahrten[0][0], { karte: false });
+        if (fz.einsatzId) waehle("einsatz", fz.einsatzId, { karte: false, maske: false });
+        else if (fz.kt?.fahrten[0]?.[0]) waehle("kt", fz.kt.fahrten[0][0], { karte: false, maske: false });
       };
+      // Klick auf ein Fahrzeug: nur das Info-Fenster (öffnet nichts anderes, zieht nicht ins Hauptfenster)
       const fahrzeugKlick = (id: string) => {
-        const fz = sim.state.fahrzeuge[id];
-        if (!fz) return;
+        if (!sim.state.fahrzeuge[id]) return;
         fokus?.waehle(id);
-        auftragOeffnen(fz);
       };
       addSimLayers(map, {
         onIncident: (id) => waehle("einsatz", id, { karte: false }),
         onVehicle: fahrzeugKlick,
         onVehicleDbl: (id) => fokus?.folge(id),
       });
-      fokus = addFzFokus(map, { is3d: () => is3d, oeffne: auftragOeffnen });
+      // „Zum Einsatz“: in der Liste der aktuellen Einsätze auswählen (keine Maske nach vorne, Karte bleibt)
+      fokus = addFzFokus(map, { is3d: () => is3d, oeffne: (fz) => auftragOeffnen(fz) });
       const getroffen = (p: { x: number; y: number }) =>
         map.queryRenderedFeatures([p.x, p.y], { layers: ["lw-vehicles", "lw-incidents", "lw-stations", "lw-hospitals", "lw-pois", "lw-pois-w"].filter((l) => map.getLayer(l)) }).length > 0;
       map.on("click", (e) => {

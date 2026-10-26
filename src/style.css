@@ -3611,3 +3611,11 @@ input.ausr-zahl { width: 64px !important; min-width: 0; }
 .kt-frage-b{font-size:11px;padding:2px 6px;border-radius:10px;border:1px solid var(--line,#555);background:transparent;color:inherit;cursor:pointer;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .kt-frage-b.code{border-color:#d9822b}
 .kt-frage-b.info{border-color:#4a90c2}
+/* v0.76: Codesätze getrennt nach RD und KT/SEK */
+.cs-bereich { margin-top: 14px; display: flex; flex-direction: column; gap: 6px; }
+.cs-bereich-titel { margin: 0 0 2px; font-size: 14px; }
+.cs-bereich .cs-neu { margin-top: 4px; }
+/* v0.76: Fahrzeugsuche */
+.fz-suche { width: 100%; margin: 4px 0 6px; }
+.kt-ersatz-chip { font-size: 10.5px; padding: 0 6px; border-radius: 8px; background: rgba(245, 165, 36, 0.2); }
+.kt-frueh { margin: 6px 0; padding: 6px 8px; border-radius: 6px; border: 1px solid rgba(245, 165, 36, 0.6); background: rgba(245, 165, 36, 0.1); display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }

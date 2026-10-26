@@ -1,5 +1,14 @@
 # Änderungen
 
+## 0.76.0 – RD und KT/SEK getrennt, Fahrzeugsuche, neue Fahrzeugwahl bei Transporten, Fahrzeug-Info auf der Karte
+- **Notruf (RD) und Krankentransport/Überstellung (KT/SEK) getrennt:** eigene Sätze für beide Bereiche, einzeln wählbar (z. B. eigene RD-Codes mit den eingebauten Transportcodes). Ordner in Dokumente/LeitWerk: `Abfrageschema/RD`, `Abfrageschema/Krankentransport_Sekundärtransporte`, `Codelisten/RD`, `Codelisten/Krankentransport_Sekundärtransporte`. Der KT-/SEK-Editor speichert Codes und Abfrage in die KT/SEK-Ordner
+- **Einmalig mit diesem Update:** bisherige eigene Sätze werden entfernt und müssen getrennt neu hinzugefügt werden
+- **Fahrzeugsuche** in der Einsatzmaske und bei Transporten: nach Funkrufname (auch ohne „/“, z. B. 75001), Wache oder Typ – zeigt alle Fahrzeuge mit Status
+- **Fahrzeugwahl bei Krankentransporten und Überstellungen:** immer eine Liste nach Einsatzmittelvorschlag und Fahrzeit (Ersatz markiert), dazu die Suche für jedes andere Fahrzeug. **Alarmieren** (fährt sofort) oder **Vormerken** (fährt zur richtigen Zeit selbst los)
+- **Zu früh am Abholort:** Ist ein Fahrzeug mehr als 30 Minuten vor der Abholzeit dort, funkt es die Leitstelle an – **warten** (bis der Patient fertig ist) oder **frei melden** (zurück zur Dienststelle, der Transport steht wieder undisponiert). Antwort über Funk oder Knopf in der Maske
+- **Mehrfachtransport:** Solange ein Fahrzeug noch keinen Patienten an Bord hat, kann ein weiterer Transport dazu – auch Überstellungen, nicht mit Blaulicht oder Notarzt. Das Fahrzeug fährt die kürzeste Reihenfolge (z. B. beide abholen, dann beide abliefern)
+- **Fahrzeug-Info auf der Karte:** Klick auf ein Fahrzeug zeigt Funkrufname, Typ, Wache, Status, Einsatz mit Ziel und Ankunft – ohne etwas anderes zu öffnen. „Zum Einsatz“ wählt den Einsatz in der Liste der aktuellen Einsätze
+
 ## 0.75.0 – KT-Abfrage frei gestalten, SNAW-Code nach Fahrzeug
 - **Abfrage-Editor neu:** Fragen der KT-Hotline einfügen, umformulieren, löschen und in der Reihenfolge verschieben (↑↓ oder ziehen). Bei jeder Frage wählst du die Art – **Code-bestimmend** (Lage, Zeit, Notarzt, Überwachung, Inkubator, Organisation, Abholort, Ziel, stabil?) oder **Zusatzinfo** (Name, Termin, Abholzeit, Begleitperson, Sauerstoff, Infektion …) – und was sie genau klärt
 - Die Prüfung meldet Fragen ohne Text oder ohne Auswahl und fehlende Pflichtangaben (Abholort, Ziel, Lage, Termin oder Abholzeit)

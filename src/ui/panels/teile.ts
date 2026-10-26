@@ -291,3 +291,16 @@ export function statusMenu(fz: SimFahrzeug, x: number, y: number) {
   }), 0);
 }
 
+
+/** Suchtext normalisieren: klein, ohne „/“, Leerzeichen, Bindestriche (75001 findet 75/001) */
+export function sucheNorm(t: string): string {
+  return t.toLowerCase().replace(/[\s/\-_.]+/g, "");
+}
+
+/** Passt ein Fahrzeug zur Suche (Funkrufname, Wache, Typ)? Mehrere Wörter: alle müssen passen. */
+export function fzPasst(fz: SimFahrzeug, q: string): boolean {
+  const woerter = q.toLowerCase().split(/\s+/).map(sucheNorm).filter(Boolean);
+  if (!woerter.length) return true;
+  const text = [fz.funkrufname, fz.kurzname, fz.stationName, fz.rmTyp, fz.typ ?? ""].map(sucheNorm).join(" ");
+  return woerter.every((w) => text.includes(w));
+}

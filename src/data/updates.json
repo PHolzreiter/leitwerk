@@ -1,5 +1,19 @@
 [
  {
+  "version": "0.76.0",
+  "datum": "2026-10-26",
+  "titel": "Fahrzeugwahl & getrennte Codes",
+  "punkte": [
+   "Codes für Notrufe und für Krankentransporte/Überstellungen getrennt – einzeln wählbar, eigene Ordner",
+   "Eigene Sätze müssen nach dem Update einmalig neu hinzugefügt werden",
+   "Fahrzeugsuche nach Funkrufname (auch ohne „/“), Wache oder Typ",
+   "Transporte: Vorschlagsliste, Alarmieren oder Vormerken, jedes Fahrzeug über die Suche wählbar",
+   "Zu früh am Abholort: das Fahrzeug fragt über Funk – warten oder frei melden",
+   "Mehrfachtransport: weiteren Transport dazugeben, das Fahrzeug fährt die kürzeste Reihenfolge",
+   "Klick auf ein Fahrzeug auf der Karte zeigt ein Info-Fenster, „Zum Einsatz“ wählt ihn in der Liste"
+  ]
+ },
+ {
   "version": "0.75.0",
   "datum": "2026-10-26",
   "titel": "KT-Abfrage frei gestalten",

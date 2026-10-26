@@ -23,7 +23,7 @@ export function standardKtAbfrage(): KtAbfrageFrage[] {
   return KT_FRAGEN.map((f) => ({ id: f.id, text: f.text, aktiv: true }));
 }
 
-let cacheVon: Schema | null | undefined;
+let cacheVon: unknown;
 let cache: { satz: KtSatz; codes: KtCode[]; nach: Map<string, KtCodeDef> } | null = null;
 
 function satzVon(s: Schema | null | undefined): KtSatz | null {
@@ -31,17 +31,20 @@ function satzVon(s: Schema | null | undefined): KtSatz | null {
   return kt && Array.isArray(kt.codes) && kt.codes.length ? kt : null;
 }
 
-/** Aktiver KT-Codesatz: aus dem geladenen Codesatz, sonst der eingebaute */
+/** Aktiver KT-/SEK-Satz (ab v0.76 eigener Satz, getrennt vom RD): eigene Codes und/oder eigene Abfrage, sonst eingebaut */
 export function ktSatz(): KtSatz {
   aktualisieren();
   return cache!.satz;
 }
 
 function aktualisieren(): void {
-  const roh = store.schemaRoh;
+  const roh = store.ktSatzRoh;
   if (cache && cacheVon === roh) return;
   cacheVon = roh;
-  const satz = satzVon(roh) ?? satzVon(standardCodesystem()) ?? { codes: [] };
+  const std = satzVon(standardCodesystem()) ?? { codes: [] };
+  const eigeneCodes = roh?.codes?.length ? (roh.codes as KtCodeDef[]) : null;
+  const eigeneAbfrage = roh?.abfrage?.length ? (roh.abfrage as KtAbfrageFrage[]) : null;
+  const satz: KtSatz = { codes: eigeneCodes ?? std.codes, abfrage: eigeneAbfrage ?? (eigeneCodes ? undefined : std.abfrage) };
   cache = {
     satz,
     codes: satz.codes.map((c) => ({ code: c.code, name: c.name, kapitel: c.kapitel ?? "", gruppe: c.bed.fahrt === "ueberstellung" ? "SEK" : "KT" })),

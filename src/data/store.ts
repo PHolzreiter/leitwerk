@@ -37,7 +37,8 @@ export type StoreBefehl =
   | "removeMany"
   | "clearOwn"
   | "restoreHidden"
-  | "setSchema";
+  | "setSchema"
+  | "setKtSatz";
 
 export class Store {
   private data: Persisted = emptyPersisted();
@@ -91,6 +92,8 @@ export class Store {
           einstellungen: parsed.einstellungen,
           abfrageschema: parsed.abfrageschema,
           codesAufgeraeumt: parsed.codesAufgeraeumt,
+          ktsatz: parsed.ktsatz,
+          codesGetrennt: parsed.codesGetrennt,
         };
         // ältere Speicherstände: neue Felder ergänzen
         for (const v of this.data.eigene.vehicles) v.nachtflug ??= false;
@@ -235,6 +238,34 @@ export class Store {
     this.data.abfrageschema = undefined;
     this.data.eigene.codes = this.data.eigene.codes.filter((c) => c.herkunft === "standard");
     this.data.codesAufgeraeumt = true;
+    this.changed();
+  }
+
+  /** v0.76: wurden RD und KT/SEK schon getrennt (alte gemischte Sätze einmalig entfernt)? */
+  get codesGetrennt(): boolean {
+    return !!this.data.codesGetrennt;
+  }
+
+  /** Einmalig (v0.76): eigene Sätze entfernen – ab jetzt RD und KT/SEK getrennt */
+  codesTrennen(): void {
+    if (this.remote || this.eigeneSicherung) return;
+    this.data.abfrageschema = undefined;
+    this.data.ktsatz = undefined;
+    this.data.eigene.codes = this.data.eigene.codes.filter((c) => c.herkunft === "standard");
+    this.data.codesAufgeraeumt = true;
+    this.data.codesGetrennt = true;
+    this.changed();
+  }
+
+  /** Eigener Satz für Krankentransporte und Überstellungen (null = eingebaut) */
+  get ktSatzRoh(): { name?: string; codes?: unknown[]; abfrage?: unknown[] } | null {
+    const k = this.data.ktsatz as { codes?: unknown[]; abfrage?: unknown[] } | undefined;
+    return k && typeof k === "object" && (Array.isArray(k.codes) || Array.isArray(k.abfrage)) ? k : null;
+  }
+
+  setKtSatz(k: { name?: string; codes?: unknown[]; abfrage?: unknown[] } | null): void {
+    if (this.remote) return this.remote("setKtSatz", [k]);
+    this.data.ktsatz = k ?? undefined;
     this.changed();
   }
 

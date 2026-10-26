@@ -15,7 +15,20 @@ const ENDUNG: &str = "leitwerk";
 const KOPF_BYTES: usize = 16 * 1024;
 
 /// Alle Ordner, die LeitWerk in „Dokumente/LeitWerk“ anlegt
-const ABLAGEN: &[&str] = &["Spielstände", "Abfrageschema", "Codelisten", "Daten", "Fälle", "Töne", "Designs", "Anordnungen"];
+const ABLAGEN: &[&str] = &[
+    "Spielstände",
+    "Abfrageschema",
+    "Codelisten",
+    "Abfrageschema/RD",
+    "Abfrageschema/Krankentransport_Sekundärtransporte",
+    "Codelisten/RD",
+    "Codelisten/Krankentransport_Sekundärtransporte",
+    "Daten",
+    "Fälle",
+    "Töne",
+    "Designs",
+    "Anordnungen",
+];
 
 fn basis(app: &tauri::AppHandle) -> Result<PathBuf, String> {
     let doku = app
@@ -30,7 +43,8 @@ fn unterordner(app: &tauri::AppHandle, name: &str) -> Result<PathBuf, String> {
     if !ABLAGEN.contains(&name) {
         return Err(format!("Unbekannter Ordner {name}"));
     }
-    let dir = basis(app)?.join(name);
+    // Unterordner („Abfrageschema/RD“) Teil für Teil anhängen – auch unter Windows sauber
+    let dir = name.split('/').fold(basis(app)?, |p, teil| p.join(teil));
     fs::create_dir_all(&dir).map_err(|e| format!("Ordner {} nicht anlegbar: {e}", dir.display()))?;
     Ok(dir)
 }

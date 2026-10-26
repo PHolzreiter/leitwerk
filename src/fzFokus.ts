@@ -112,7 +112,10 @@ export function addFzFokus(map: maplibregl.Map, deps: FzFokusDeps): FzFokus {
       const e = sim.einsatz(fz.einsatzId);
       if (e) {
         const c = findCode(e.code ?? undefined);
-        return `<b>${esc(e.nummer)}</b> ${c ? esc(`${c.code} ${c.beschreibung}`) : ""}<br><span class="muted">${esc(e.adresse?.label ?? "")}</span>`;
+        // Ziel: beim Transport das Krankenhaus, sonst der Einsatzort
+        const zumKh = ["zumZO", "amZO"].includes(fz.status) && e.zo;
+        const ziel = zumKh ? `Ziel: ${e.zo!.label}` : `Einsatzort: ${e.adresse?.label ?? "?"}`;
+        return `<b>${esc(e.nummer)}</b> ${c ? esc(`${c.code} ${c.beschreibung}`) : ""}<br><span class="muted">${esc(ziel)}</span>`;
       }
     }
     const ids = fz.kt?.aktiv ? (fz.kt.fahrten[0] ?? []) : [];
@@ -134,7 +137,8 @@ export function addFzFokus(map: maplibregl.Map, deps: FzFokusDeps): FzFokus {
     const rest = fz.fahrt ? Math.max(0, (fz.fahrt.start + fz.fahrt.dauer * 1000 - t) / 60_000) : null;
     const hoehe = flughoehe(fz, t);
     d.innerHTML = `
-      <div class="lw-popup-title">${esc(fz.funkrufname)} <span class="fz-popup-typ">${esc(fz.rmTyp)}</span></div>
+      <div class="lw-popup-title">${esc(fz.funkrufname)} <span class="fz-popup-typ">${esc(fz.typ || fz.rmTyp)}</span></div>
+      <div class="muted small">${esc(fz.stationName || fz.kurzname)}</div>
       <div class="lw-popup-sub"><span class="fz-st" style="background:${esc(st.farbe)}">${fz.status === "alarmWache" || fz.status === "alarmFunk" ? "&nbsp;" : esc(String(st.nummer))}</span> ${esc(st.name)}${fz.blaulicht ? " · mit Sondersignal" : ""}${hoehe > 5 ? ` · in der Luft (${Math.round(hoehe)} m)` : ""}</div>
       <div class="fz-popup-auftrag">${auftragText(fz)}</div>
       ${rest !== null ? `<div class="fz-popup-eta">Ankunft ca. ${hhmm(t + rest * 60_000)} (in ${Math.max(1, Math.round(rest))} min)</div>` : ""}`;
@@ -148,7 +152,8 @@ export function addFzFokus(map: maplibregl.Map, deps: FzFokusDeps): FzFokus {
     if (fz.einsatzId || fz.kt) {
       const b2 = document.createElement("button");
       b2.className = "btn small";
-      b2.textContent = "Auftrag öffnen";
+      b2.textContent = fz.einsatzId ? "Zum Einsatz" : "Zum Transport";
+      b2.dataset.fzOeffnen = "";
       b2.addEventListener("click", () => deps.oeffne(fz));
       knoepfe.appendChild(b2);
     }

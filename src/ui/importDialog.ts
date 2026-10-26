@@ -97,7 +97,7 @@ export async function startImport(defaultKind: Kind, onDone: (kind: Kind) => voi
         onClick: () => {
           if (!result || result.records.length === 0) return false;
           store.upsert(kind, result.records, mode === "ersetzen");
-          ablageSichern(kind === "codes" ? "Codelisten" : "Daten", ablageName(file.name, "csv"), file.text);
+          ablageSichern(kind === "codes" ? "Codelisten/RD" : "Daten", ablageName(file.name, "csv"), file.text);
           toast(`${result.records.length} ${KIND_LABEL[kind]} importiert`);
           onDone(kind);
           return true;
@@ -186,7 +186,7 @@ function schemaImport(file: { name: string; text: string }, onDone: (kind: Kind)
   });
 }
 
-export function schemaUebernehmen(schema: Schema, dateiname: string): void {
+export function schemaUebernehmen(schema: Schema, dateiname: string, sichern = true): void {
   const vorhanden = new Map(store.list("codes").map((c) => [c.code.toUpperCase(), c.id]));
   const codes: Einsatzcode[] = Object.entries(schema.codes).map(([code, c]) => ({
     id: vorhanden.get(code.toUpperCase()) ?? code,
@@ -200,7 +200,7 @@ export function schemaUebernehmen(schema: Schema, dateiname: string): void {
   }));
   store.setSchema(schema);
   store.upsert("codes", codes);
-  ablageSichern("Abfrageschema", ablageName(dateiname, "json"), JSON.stringify(schema));
+  if (sichern) ablageSichern("Abfrageschema/RD", ablageName(dateiname, "json"), JSON.stringify(schema));
   // Einsatzstufen aus der Datei, die es noch nicht gibt
   const neu = (schema.einsatzstufen ?? []).filter((x) => x?.stufe && !store.settings.stufen.some((st) => st.stufe === x.stufe));
   if (neu.length) {

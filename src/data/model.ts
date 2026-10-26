@@ -362,6 +362,10 @@ export interface Persisted {
   abfrageschema?: unknown;
   /** v0.73: alte importierte Codelisten/Abfrageschemas einmalig entfernt (auch die Dateien in Dokumente/LeitWerk) */
   codesAufgeraeumt?: boolean;
+  /** v0.76: eigener Satz für Krankentransporte und Überstellungen ({ codes?, abfrage? }), getrennt vom RD-Abfrageschema */
+  ktsatz?: unknown;
+  /** v0.76: RD und KT/SEK getrennt – alte gemischte Sätze einmalig entfernt */
+  codesGetrennt?: boolean;
 }
 
 export function emptyPersisted(): Persisted {

@@ -128,8 +128,7 @@ export interface KtPlan {
 
 /** Plätze im KTW: 2 Sitzplätze und 1 Liegeplatz (auf dem auch jemand sitzen kann) */
 export function passt(auftraege: KtDaten[]): string | null {
-  if (auftraege.length > 1 && auftraege.some((d) => !!d.sek || (!!d.von?.khId && !!d.nach?.khId)))
-    return "Überstellung: nur ein Patient im Fahrzeug";
+  // Überstellungen ohne Blaulicht dürfen mit anderen fahren (Mehrfachtransport); Blaulicht/Notarzt prüft die Zuteilung
   if (auftraege.length > 1 && auftraege.some((d) => d.infektion)) return "Infektionstransport: nur ein Patient im Fahrzeug";
   let liegend = 0;
   let sitz = 0;

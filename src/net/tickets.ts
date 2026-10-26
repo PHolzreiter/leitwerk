@@ -142,9 +142,9 @@ export interface FortschrittPunkt {
 export const START_FORTSCHRITT: FortschrittPunkt[] = [
   { id: "schema", titel: "Eigenes Codesystem & eigene Schemas", text: "Eingebaute Codeliste mit Abfrage ab der Installation; eigene Codelisten und Abfrageschemas hochladen und wechseln", stand: "fertig", prozent: 100 },
   { id: "kt-codes", titel: "Transport-Codes mit Editor", text: "Codes für Krankentransporte und Überstellungen über Bedingungen, mit Editor und Prüfung", stand: "fertig", prozent: 100 },
-  { id: "fahrzeugsuche", titel: "Suche bei der Fahrzeugwahl", text: "Im Einsatz schnell ein bestimmtes Fahrzeug finden", stand: "geplant", prozent: 0 },
-  { id: "sek-kt", titel: "Fahrzeugwahl bei Überstellungen und Krankentransporten", text: "Vorschlag nach Dienstzeit, Suche, Alarmieren oder Vormerken; Rückfrage per Funk, wenn ein Fahrzeug zu früh dort ist", stand: "geplant", prozent: 0 },
-  { id: "karte-info", titel: "Info-Fenster auf der Karte", text: "Klick auf ein Fahrzeug zeigt Status und Ankunftszeit, ohne die Karte zu verlassen", stand: "geplant", prozent: 0 },
+  { id: "fahrzeugsuche", titel: "Suche bei der Fahrzeugwahl", text: "Im Einsatz schnell ein bestimmtes Fahrzeug finden", stand: "fertig", prozent: 100 },
+  { id: "sek-kt", titel: "Fahrzeugwahl bei Überstellungen und Krankentransporten", text: "Vorschlag nach Dienstzeit, Suche, Alarmieren oder Vormerken; Rückfrage per Funk, wenn ein Fahrzeug zu früh dort ist", stand: "fertig", prozent: 100 },
+  { id: "karte-info", titel: "Info-Fenster auf der Karte", text: "Klick auf ein Fahrzeug zeigt Status und Ankunftszeit, ohne die Karte zu verlassen", stand: "fertig", prozent: 100 },
   { id: "tablet", titel: "Zweitbildschirm am Tablet", text: "Karte, Fahrzeuge und Krankenhäuser zusätzlich am Tablet im WLAN anzeigen", stand: "geplant", prozent: 0 },
   { id: "nah-pilot", titel: "Notarzthubschrauber selbst fliegen", text: "Als Pilot im Multiplayer mitspielen – mit oder ohne Flugsimulator", stand: "arbeit", prozent: 70 },
   { id: "telefon", titel: "Bessere Telefongespräche", text: "Natürlichere Anrufer und genauere Antworten in der Notrufabfrage", stand: "arbeit", prozent: 60 },

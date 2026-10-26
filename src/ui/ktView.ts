@@ -26,9 +26,12 @@ import { codeFehlt, codeInfo, istUeberstellung, ktAbfrage, ktCode, ktCodeDef, kt
 import { artVon as artVonFrage, gespraechsFeld } from "../sim/ktBedingungen";
 import { bedText } from "../sim/ktBedingungen";
 import { distanceM } from "../sim/geo";
-import { addressInput, dienstHtml, typHtml } from "./panels/teile";
+import { addressInput, dienstHtml, fzPasst, statusChip, typHtml } from "./panels/teile";
 import { liveSammler } from "./panels/live";
 import { el, esc, toast } from "./dom";
+
+/** Suchtext der Fahrzeugsuche je Auftrag (bleibt beim Neuaufbau der Disposition) */
+const ktSuche = new Map<string, string>();
 
 function fehler(p: Promise<unknown>): void {
   p.catch((e) => toast(String((e as Error).message ?? e), "error"));
@@ -541,6 +544,7 @@ export function ktMaske(k: KtAuftrag, deps: { flyTo(lat: number, lon: number, z?
   let dispoLauf = 0;
   async function dispoBauen(): Promise<void> {
     const lauf = ++dispoLauf;
+    const hatteFokus = !!document.activeElement?.closest?.(".fz-suche") && dispoBox.contains(document.activeElement);
     dispoBox.innerHTML = `<div class="box-title">Disposition</div>`;
     const fz = k.fz ? sim.state.fahrzeuge[k.fz] : undefined;
     const nef = k.begleit ? sim.state.fahrzeuge[k.begleit] : undefined;
@@ -565,6 +569,14 @@ export function ktMaske(k: KtAuftrag, deps: { flyTo(lat: number, lon: number, z?
         zeile.appendChild(knopf("Vormerkung lösen", "", () => sim.call("ktLoesen", k.id)));
       }
       if (k.status === "unterwegs" && plan?.aktiv) zeile.appendChild(knopf("Storno über Funk", "danger-text", () => sim.call("ktFunkStorno", fz.id), "Fahrzeug ohne Patient bricht alle seine Fahrten ab"));
+      if (plan?.fruehFrage === k.id) {
+        const f = el("div", { class: "kt-frueh" });
+        f.innerHTML = `<b>${esc(fz.funkrufname)}</b> ist zu früh am Abholort – warten oder frei melden? <span class="muted">(auch über Funk)</span>`;
+        const fb = el("span", { class: "row-btns" });
+        fb.append(knopf("Warten", "", () => sim.call("ktFrueh", fz.id, "warten"), "Wartet, bis der Patient fertig ist"), knopf("Frei melden", "", () => sim.call("ktFrueh", fz.id, "frei"), "Fährt zur Dienststelle, Transport wieder undisponiert"));
+        f.appendChild(fb);
+        dispoBox.appendChild(f);
+      }
     }
     if (["offen", "vorgemerkt", "unterwegs", "aufnahme"].includes(k.status)) zeile.appendChild(knopf("Auftrag stornieren", "danger-text", () => sim.call("ktStorno", k.id, "durch Leitstelle")));
     if (zeile.childElementCount) dispoBox.appendChild(zeile);
@@ -578,67 +590,114 @@ export function ktMaske(k: KtAuftrag, deps: { flyTo(lat: number, lon: number, z?
       return;
     }
     const liste = el("div", { class: "kt-vorschlaege" });
+    // Suche über alle Fahrzeuge (Funkrufname auch ohne „/“, Wache, Typ)
+    const suche = el("input", { type: "search", class: "fz-suche", placeholder: "Fahrzeug suchen (z. B. 75001, Krems, SKTW) …" }) as HTMLInputElement;
+    suche.value = ktSuche.get(k.id) ?? "";
+    dispoBox.append(suche, liste);
+    if (hatteFokus) {
+      suche.focus();
+      suche.setSelectionRange(suche.value.length, suche.value.length);
+    }
     liste.innerHTML = `<div class="muted">Fahrzeiten werden berechnet …</div>`;
-    dispoBox.appendChild(liste);
     const vs = await sim.ktVorschlaege(k.id);
     if (lauf !== dispoLauf) return;
-    liste.innerHTML = "";
     const sek = artVon(k.d) === "sek";
+    const blau = codeInfo(k.d.code).sondersignal;
+    let alleVs: KtVorschlag[] | null = null;
     const reihe = (v: KtVorschlag) => {
-      const r = el("div", { class: `kt-vs${v.ersatz ? " ersatz" : ""}` });
+      const r = el("div", { class: `kt-vs${v.ersatz ? " ersatz" : ""}`, "data-kt-fz": v.fz.id });
       const los = v.losSpaetestens ? `los spätestens ${hhmm(v.losSpaetestens)}` : "";
       const zuSpaet = v.losSpaetestens !== null && v.losSpaetestens < sim.state.zeit;
-      r.innerHTML = `<span class="kt-vs-info"><b data-dienstfz="${esc(v.fz.id)}">${esc(v.fz.funkrufname)}</b> <span class="muted">${typHtml(v.fz)}</span>${dienstHtml(v.fz)}${
+      r.innerHTML = `<span class="kt-vs-info">${statusChip(v.fz)} <b data-dienstfz="${esc(v.fz.id)}">${esc(v.fz.funkrufname)}</b> <span class="muted">${typHtml(v.fz)} · ${esc(v.fz.kurzname || v.fz.stationName)}</span>${dienstHtml(v.fz)}${
         v.begleit ? ` + <b data-dienstfz="${esc(v.begleit.id)}">${esc(v.begleit.funkrufname)}</b> <span class="muted">NEF</span>` : ""
       } <span class="kt-eta">${v.sekunden === null ? "?" : `${Math.round(v.sekunden / 60)} min`}</span> <span class="${zuSpaet ? "alert-text" : "muted"}">${esc(los)}</span>${
-        v.hinweis ? ` <span class="muted">· ${esc(v.hinweis)}</span>` : ""
-      }</span>`;
+        v.ersatz ? ` <span class="kt-ersatz-chip">Ersatz</span>` : ""
+      }${v.hinweis ? ` <span class="muted">· ${esc(v.hinweis)}</span>` : ""}</span>`;
       const btns = el("span", { class: "row-btns" });
       const frei = !v.fz.kt && sim.verfuegbar(v.fz);
       const bId = v.begleit?.id ?? null;
-      btns.appendChild(knopf(v.fz.kt ? "Als nächste Fahrt" : "Vormerken", "", () => sim.call("ktVormerken", k.id, v.fz.id, "neu", bId)));
-      if (v.fz.kt && !sek && artVon(k.d) === "kt") btns.appendChild(knopf("Sammelfahrt", "", () => sim.call("ktVormerken", k.id, v.fz.id, "sammel")));
       if (frei)
         btns.appendChild(
-          knopf("Jetzt schicken", "primary", async () => {
-            await sim.call("ktVormerken", k.id, v.fz.id, "neu", bId);
-            await sim.call("ktSchicken", v.fz.id);
-          }),
+          knopf(
+            "Alarmieren",
+            "primary",
+            async () => {
+              await sim.call("ktVormerken", k.id, v.fz.id, "neu", bId);
+              await sim.call("ktSchicken", v.fz.id);
+            },
+            "Fährt sofort los",
+          ),
         );
+      btns.appendChild(knopf(v.fz.kt ? "Als nächste Fahrt" : "Vormerken", "", () => sim.call("ktVormerken", k.id, v.fz.id, "neu", bId), v.fz.kt ? "Nach seinen anderen Fahrten" : "Fährt zur richtigen Zeit selbst los"));
+      // Mehrfachtransport: dazu, solange noch kein Patient an Bord ist (nicht mit Blaulicht oder Notarzt)
+      const plan = v.fz.kt;
+      const anBord = plan?.aktiv && (plan.fahrten[0] ?? []).some((x) => sim.ktAuftrag(x)?.status === "anBord");
+      if (plan && !blau && !bId && !anBord)
+        btns.appendChild(knopf("Mehrfachtransport", "", () => sim.call("ktVormerken", k.id, v.fz.id, "sammel"), "Zusätzlich mitnehmen – das Fahrzeug fährt die kürzeste Reihenfolge"));
       r.appendChild(btns);
       return r;
     };
     // je Fahrzeugtyp höchstens drei, damit z. B. viele Hubschrauber den SNAW nicht verdrängen
     const begrenzt = (l: KtVorschlag[], max: number) => {
       const n = new Map<string, number>();
-      return l.filter((v) => {
-        const c = (n.get(v.fz.rmTyp) ?? 0) + 1;
-        n.set(v.fz.rmTyp, c);
-        return c <= 3;
-      }).slice(0, max);
+      return l
+        .filter((v) => {
+          const c = (n.get(v.fz.rmTyp) ?? 0) + 1;
+          n.set(v.fz.rmTyp, c);
+          return c <= 3;
+        })
+        .slice(0, max);
     };
-    const passend = begrenzt(vs.filter((v) => !v.ersatz), 8);
-    const ersatz = begrenzt(vs.filter((v) => v.ersatz), 8);
-    if (passend.length) {
-      liste.appendChild(el("div", { class: "kt-vs-titel" }, sek ? `Vorschlag (${ktCode(k.d.code)?.name ?? k.d.code})` : "Vorschlag"));
-      for (const v of passend) liste.appendChild(reihe(v));
-    } else {
-      liste.appendChild(el("div", { class: "kt-vs-titel warn" }, sek ? "Kein passendes S-Fahrzeug frei" : "Kein KTW frei"));
-    }
-    if (ersatz.length) {
-      const det = el("details", { class: "kt-ersatz" });
-      // Ersatz gleich zeigen, wenn nichts Passendes rechtzeitig kommt
+    const zeigen = async () => {
+      const q = suche.value.trim();
+      ktSuche.set(k.id, q);
+      liste.innerHTML = "";
+      if (q) {
+        if (!alleVs) {
+          liste.innerHTML = `<div class="muted">Suche …</div>`;
+          alleVs = await sim.ktVorschlaege(k.id, true);
+          if (lauf !== dispoLauf || suche.value.trim() !== q) return;
+          liste.innerHTML = "";
+        }
+        const treffer = alleVs.filter((v) => fzPasst(v.fz, q)).sort((a, b) => (a.sekunden ?? 1e9) - (b.sekunden ?? 1e9));
+        const gefunden = new Set(treffer.map((v) => v.fz.id));
+        for (const v of treffer.slice(0, 30)) liste.appendChild(reihe(v));
+        // im Notfalleinsatz: nur zur Info
+        for (const f of Object.values(sim.state.fahrzeuge)
+          .filter((f) => !gefunden.has(f.id) && fzPasst(f, q))
+          .slice(0, 10)) {
+          const r = el("div", { class: "kt-vs ersatz" });
+          r.innerHTML = `<span class="kt-vs-info">${statusChip(f)} <b>${esc(f.funkrufname)}</b> <span class="muted">${typHtml(f)} · ${esc(f.kurzname || f.stationName)} · ${f.einsatzId ? "im Notfalleinsatz" : "nicht verfügbar"}</span></span>`;
+          liste.appendChild(r);
+        }
+        if (!liste.childElementCount) liste.appendChild(el("div", { class: "muted" }, "Kein Fahrzeug gefunden."));
+        return;
+      }
+      // Vorschlag: passende zuerst (Einsatzmittelvorschlag, dann Fahrzeit), danach Ersatz – eine Liste
+      const passend = begrenzt(vs.filter((v) => !v.ersatz), 8);
+      const ersatz = begrenzt(vs.filter((v) => v.ersatz), 6);
+      liste.appendChild(
+        el(
+          "div",
+          { class: `kt-vs-titel${passend.length ? "" : " warn"}` },
+          passend.length ? (sek ? `Vorschlag (${ktCode(k.d.code)?.name ?? k.d.code})` : "Vorschlag") : sek ? "Kein passendes S-Fahrzeug frei – Ersatz oder suchen" : "Kein KTW frei – Ersatz oder suchen",
+        ),
+      );
       const best = passend[0];
       const zuSpaet = (v: KtVorschlag) => v.losSpaetestens !== null && v.losSpaetestens < sim.state.zeit;
-      const weit = !!best && k.d.sofort && (best.sekunden ?? 1e9) > 30 * 60;
-      if (!passend.length || passend.every(zuSpaet) || weit) det.open = true;
-      if (passend.length && (passend.every(zuSpaet) || weit))
+      if (passend.length && (passend.every(zuSpaet) || (!!best && k.d.sofort && (best.sekunden ?? 1e9) > 30 * 60)))
         liste.appendChild(el("div", { class: "kt-vs-titel warn" }, "Das passende Fahrzeug ist weit weg – Ersatz prüfen"));
-      det.appendChild(el("summary", {}, sek ? "Ersatz aus dem Regelrettungsdienst (nur wenn nötig)" : "Ersatz: RTW (nur wenn nötig)"));
-      for (const v of ersatz) det.appendChild(reihe(v));
-      liste.appendChild(det);
-    }
-    if (!vs.length) liste.appendChild(el("div", { class: "muted" }, "Kein passendes Fahrzeug verfügbar."));
+      for (const v of [...passend, ...ersatz]) liste.appendChild(reihe(v));
+      if (!vs.length) liste.appendChild(el("div", { class: "muted" }, "Kein passendes Fahrzeug verfügbar – über die Suche ist jedes Fahrzeug wählbar."));
+    };
+    suche.addEventListener("input", () => void zeigen());
+    suche.addEventListener("keydown", (ev) => {
+      if (ev.key === "Escape") {
+        suche.value = "";
+        void zeigen();
+      }
+    });
+    await zeigen();
   }
 
   function refresh(): void {
@@ -659,7 +718,7 @@ export function ktMaske(k: KtAuftrag, deps: { flyTo(lat: number, lon: number, z?
     zusammenZeigen();
     const fz: SimFahrzeug | undefined = k.fz ? sim.state.fahrzeuge[k.fz] : undefined;
     const nef = k.begleit ? sim.state.fahrzeuge[k.begleit] : undefined;
-    const pk = JSON.stringify([k.status, k.fz, k.begleit, k.d.von, k.d.nach, k.d.code, k.d.sek, fz?.status, fz?.kt?.fahrten, fz?.kt?.losUm, fz?.kt?.aktiv, nef?.status]);
+    const pk = JSON.stringify([k.status, k.fz, k.begleit, k.d.von, k.d.nach, k.d.code, k.d.sek, fz?.status, fz?.kt?.fahrten, fz?.kt?.losUm, fz?.kt?.aktiv, fz?.kt?.fruehFrage, nef?.status]);
     if (pk !== dispoKey) {
       dispoKey = pk;
       void dispoBauen();

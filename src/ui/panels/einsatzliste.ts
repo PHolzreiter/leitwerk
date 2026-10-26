@@ -308,7 +308,15 @@ function erstellen(ctx: PanelKontext) {
       render();
     }, 400);
   };
-  const aus = [sim.onChange(spaeter), onAuswahl(() => render()), mp.onChange(spaeter)];
+  const aus = [
+    sim.onChange(spaeter),
+    onAuswahl(() => {
+      render();
+      // ausgewählten Eintrag sichtbar machen (z. B. „Zum Einsatz“ im Fahrzeug-Info auf der Karte)
+      liste.querySelector<HTMLElement>(".el-row.sel")?.scrollIntoView({ block: "nearest" });
+    }),
+    mp.onChange(spaeter),
+  ];
   render();
   return {
     el: root,

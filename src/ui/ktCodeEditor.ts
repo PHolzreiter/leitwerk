@@ -2,24 +2,19 @@
  * Editor für KT-/SEK-Codes und die KT-Abfrage (v0.74): Codes frei benennen, Bedingungen wählen,
  * Fragen der Abfrage ein-/ausschalten und umformulieren. Die Prüfung läuft laufend mit:
  * Fehlt etwas fürs Spiel, lässt sich der Satz nur als Entwurf speichern.
- * Gespeichert wird als Codesatz (Dokumente/LeitWerk/Abfrageschema/<Name>.json, mit den RD-Codes des Ausgangssatzes).
+ * Gespeichert wird als KT-/SEK-Satz (ab v0.76 getrennt vom RD): Codelisten/Krankentransport_Sekundärtransporte/<Name>.json
+ * (Codes mit Bedingungen) und Abfrageschema/Krankentransport_Sekundärtransporte/<Name>.json (Fragen der KT-Hotline).
  */
-import type { Schema } from "../abfrage/schema";
-import { store } from "../data/store";
-import { standardCodesystem } from "../data/standard";
 import { ablageName, ablageSpeichern } from "../net/ablage";
 import { KT_BED_KEYS, KT_BEDINGUNGEN, KT_INFOS, KT_KRITERIEN, artVon, bedText, klaertVon, pruefeKtSatz, type KtAbfrageFrage, type KtCodeBed, type KtCodeDef, type KtSatz } from "../sim/ktBedingungen";
 import { ktSatz, standardKtAbfrage } from "../sim/ktCodes";
-import { aktiverSatz, satzAktivieren, satzListe } from "./codesaetze";
+import { ORDNER, aktiverKtSatz, satzAktivieren, satzListe } from "./codesaetze";
 import { confirmDialog, openDialog } from "./dialog";
 import { el, esc, toast } from "./dom";
 
-type Datei = Schema & { kt?: KtSatz; entwurf?: boolean };
-
 /** Editor öffnen – ohne Angabe für den aktiven Satz (beim eingebauten: als neuen eigenen Satz) */
-export function ktEditorOeffnen(opt: { datei?: Datei; name?: string; fertig?: () => void } = {}): void {
-  const basis: Datei = structuredClone(opt.datei ?? ((store.schemaRoh ?? standardCodesystem()) as Datei));
-  const quelle = opt.datei?.kt ?? ktSatz();
+export function ktEditorOeffnen(opt: { satz?: KtSatz; name?: string; fertig?: () => void } = {}): void {
+  const quelle = opt.satz ?? ktSatz();
   const kt: { codes: KtCodeDef[]; abfrage: KtAbfrageFrage[] } = {
     codes: structuredClone(quelle.codes ?? []),
     abfrage: structuredClone(quelle.abfrage?.length ? quelle.abfrage : standardKtAbfrage()),
@@ -31,12 +26,12 @@ export function ktEditorOeffnen(opt: { datei?: Datei; name?: string; fertig?: ()
     while (kt.abfrage.some((f) => f.id === `frage${neueNr}`)) neueNr++;
     return `frage${neueNr}`;
   };
-  const eigenerName = opt.name ?? aktiverSatz();
+  const eigenerName = opt.name ?? aktiverKtSatz();
 
   const body = el("div", { class: "kte" });
   const kopf = el("div", { class: "kte-kopf" });
   const nameIn = el("input", { type: "text", name: "satzname", placeholder: "Name des Codesatzes" }) as HTMLInputElement;
-  nameIn.value = eigenerName ?? "Mein Codesatz";
+  nameIn.value = eigenerName ?? "Meine Transportcodes";
   const nameFeld = el("label", { class: "fld" });
   nameFeld.append(el("span", { class: "fld-label" }, "Name des Codesatzes"), nameIn);
   kopf.appendChild(nameFeld);
@@ -325,24 +320,25 @@ export function ktEditorOeffnen(opt: { datei?: Datei; name?: string; fertig?: ()
   }
 
   const speichern = async (entwurf: boolean): Promise<boolean> => {
-    const name = ablageName(nameIn.value.trim() || "Mein Codesatz");
+    const name = ablageName(nameIn.value.trim() || "Meine Transportcodes");
     if (/^LeitWerk-Codesystem$/i.test(name)) {
       toast("Bitte einen eigenen Namen wählen – das eingebaute System bleibt unverändert", "error");
       return false;
     }
     const r = pruefen();
     if (!entwurf && r.fehler.length) return false;
-    const vorhanden = (await satzListe()).find((x) => x.name.toLowerCase() === name.toLowerCase());
+    const vorhanden = (await satzListe("kt")).find((x) => x.name.toLowerCase() === name.toLowerCase());
     if (vorhanden && vorhanden.name.toLowerCase() !== (eigenerName ?? "").toLowerCase() && !(await confirmDialog("Satz ersetzen?", `Es gibt schon einen Satz „${vorhanden.name}“.`, "Ersetzen"))) return false;
-    const datei: Datei = { ...basis, kt: { codes: kt.codes.filter((c) => c.code || c.name), abfrage: kt.abfrage } };
-    if (datei.name === "LeitWerk-Codesystem") datei.name = name;
-    if (entwurf) datei.entwurf = true;
-    else delete datei.entwurf;
-    await ablageSpeichern("Abfrageschema", `${name}.json`, JSON.stringify(datei));
+    const e = entwurf ? { entwurf: true } : {};
+    await ablageSpeichern(ORDNER.kt.codes, `${name}.json`, JSON.stringify({ ...e, codes: kt.codes.filter((c) => c.code || c.name) }));
+    await ablageSpeichern(ORDNER.kt.abfrage, `${name}.json`, JSON.stringify({ ...e, abfrage: kt.abfrage }));
     if (entwurf) toast(`Entwurf „${name}“ gespeichert – ${r.fehler.length} Problem${r.fehler.length === 1 ? "" : "e"} offen`);
     else {
-      const satz = (await satzListe()).find((x) => x.name.toLowerCase() === name.toLowerCase());
-      if (satz) await satzAktivieren(satz);
+      const satz = (await satzListe("kt")).find((x) => x.name.toLowerCase() === name.toLowerCase());
+      if (satz)
+        await satzAktivieren(satz).catch((err) => {
+          toast(String((err as Error).message ?? err), "error");
+        });
     }
     opt.fertig?.();
     return true;
