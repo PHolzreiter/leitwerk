@@ -607,6 +607,7 @@ pub fn run() {
             sprache::sprache_erkennen,
             sprache::sprache_mikrofone,
             sprache::sprache_aufnahme_start,
+            sprache::funk_aufnahme_start,
             sprache::sprache_pegel,
             sprache::sprache_aufnahme_stopp,
             ton::ton_geraete,

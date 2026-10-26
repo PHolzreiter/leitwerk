@@ -346,10 +346,19 @@ fn base64(b: &[u8]) -> String {
     out
 }
 
-/// Aufnahme starten (läuft, bis sprache_aufnahme_stopp kommt).
-/// funk: Sprechfunk – die Sprache geht zusätzlich laufend in Stücken an das Fenster.
+/// Aufnahme starten (läuft, bis sprache_aufnahme_stopp kommt)
 #[tauri::command]
-pub fn sprache_aufnahme_start(mikro: Option<String>, funk: Option<tauri::ipc::Channel<String>>) -> Result<(), String> {
+pub fn sprache_aufnahme_start(mikro: Option<String>) -> Result<(), String> {
+    aufnahme_starten(mikro, None)
+}
+
+/// Sprechfunk: wie sprache_aufnahme_start, die Sprache geht zusätzlich laufend in Stücken an das Fenster
+#[tauri::command]
+pub fn funk_aufnahme_start(mikro: Option<String>, funk: tauri::ipc::Channel<String>) -> Result<(), String> {
+    aufnahme_starten(mikro, Some(funk))
+}
+
+fn aufnahme_starten(mikro: Option<String>, funk: Option<tauri::ipc::Channel<String>>) -> Result<(), String> {
     let mut a = AUFNAHME.lock().map_err(|_| "Aufnahme blockiert".to_string())?;
     if let Some(alt) = a.take() {
         let _ = alt.stopp.send(());

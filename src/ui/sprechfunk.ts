@@ -346,7 +346,7 @@ export async function sprechStart(ziel: FunkZiel = "leo"): Promise<void> {
     if (s.nativ) {
       const ch = new Channel<string>();
       ch.onmessage = (b64) => stueck(s, b64);
-      await invoke("sprache_aufnahme_start", { mikro: sprachPrefs().mikro || null, funk: ch });
+      await invoke("funk_aufnahme_start", { mikro: sprachPrefs().mikro || null, funk: ch });
     } else await browserAufnahme(s);
   } catch (e) {
     s.abgelehnt = true;

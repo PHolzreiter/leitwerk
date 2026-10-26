@@ -663,7 +663,7 @@ async function start(z: SprachZiel | null, knopf?: HTMLElement): Promise<void> {
       funk = new Channel<string>();
       funk.onmessage = (b64) => f(b64);
     }
-    nativStart = invoke<void>("sprache_aufnahme_start", { mikro: p.mikro || null, funk });
+    nativStart = funk ? invoke<void>("funk_aufnahme_start", { mikro: p.mikro || null, funk }) : invoke<void>("sprache_aufnahme_start", { mikro: p.mikro || null });
     try {
       await nativStart;
     } catch (e) {
