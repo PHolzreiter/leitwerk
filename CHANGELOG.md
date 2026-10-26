@@ -1,5 +1,11 @@
 # Änderungen
 
+## 0.75.0 – KT-Abfrage frei gestalten, SNAW-Code nach Fahrzeug
+- **Abfrage-Editor neu:** Fragen der KT-Hotline einfügen, umformulieren, löschen und in der Reihenfolge verschieben (↑↓ oder ziehen). Bei jeder Frage wählst du die Art – **Code-bestimmend** (Lage, Zeit, Notarzt, Überwachung, Inkubator, Organisation, Abholort, Ziel, stabil?) oder **Zusatzinfo** (Name, Termin, Abholzeit, Begleitperson, Sauerstoff, Infektion …) – und was sie genau klärt
+- Die Prüfung meldet Fragen ohne Text oder ohne Auswahl und fehlende Pflichtangaben (Abholort, Ziel, Lage, Termin oder Abholzeit)
+- In der Aufnahme stehen die Fragen des Codesatzes in ihrer Reihenfolge als Leiste; 🗨 bei einem Feld stellt die erste Frage, die es klärt
+- **SOFORT-Überstellung mit Notarzt:** Schickt man den SNAW (weil er frei und schneller ist), gilt automatisch der SNAW-Code; mit RTW + NEF bzw. Hubschrauber der passende andere. Damit werden alle eingebauten Codes auch automatisch gewählt
+
 ## 0.74.0 – Krankentransport- und Überstellungs-Codes über Bedingungen, mit Editor
 - **KT-/SEK-Codes über Bedingungen:** Was ein Code bedeutet, steht in festen Bedingungen (Organisation, Fahrt, Therapie, Lage, Zeit, Heimtransport, Begleitung, Fahrzeug, Sondersignal, Inkubator). Ein Code ist nur ein frei wählbarer Name mit diesen Bedingungen; aus den Angaben eines Auftrags gilt genau der eine passende Code
 - **Eigene eingebaute KT-/SEK-Codes** (KTR/KTA/KTx-90/93/95 …, SEK-96 …) mit eigener Unterteilung und eigenen Namen. Eigene Codesätze bringen ihre Codes im Abschnitt „kt“ des Abfrageschemas mit

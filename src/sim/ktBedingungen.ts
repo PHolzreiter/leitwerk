@@ -39,11 +39,66 @@ export interface KtCodeDef {
   bed: KtCodeBed;
 }
 
-/** Frage der KT-Abfrage (id = Feld der Aufnahme, text frei) */
+/**
+ * Frage der KT-Abfrage: freier Text; „klaert“ = welche Kriterien (code-bestimmend) bzw. Felder (Zusatzinfo)
+ * die Frage beantwortet. Ältere Sätze ohne „klaert“: die id ist das Feld.
+ */
 export interface KtAbfrageFrage {
   id: string;
   text: string;
   aktiv?: boolean;
+  art?: "code" | "info";
+  klaert?: string[];
+}
+
+/** Code-bestimmende Kriterien, die eine Frage klären kann */
+export const KT_KRITERIEN: Record<string, string> = {
+  von: "Abholort (→ Fahrt, Therapie, Heimtransport)",
+  nach: "Ziel (→ Fahrt, Therapie, Heimtransport)",
+  lage: "Lage (gehend / sitzend / liegend / Rollstuhl)",
+  sofort: "Zeit (geplant / SOFORT)",
+  art: "Organisation (Rotes Kreuz / ASB / egal)",
+  arzt: "Notarzt nötig",
+  monitoring: "Überwachung (Monitor) / beatmet",
+  inkubator: "Inkubator / Kind",
+  stabil: "stabil? (→ Hubschrauber möglich)",
+};
+/** Zusatzinfos (für die Disposition, ändern den Code nicht) */
+export const KT_INFOS: Record<string, string> = {
+  wer: "Wer ruft an",
+  patient: "Name und Alter",
+  grund: "Grund des Transports",
+  termin: "Termin",
+  abholung: "Abholzeit",
+  begleitung: "Begleitperson",
+  sauerstoff: "Sauerstoff",
+  infektion: "Infektion / Isolation",
+  telefon: "Rückrufnummer",
+  zusage: "Bettzusage im Zielkrankenhaus",
+  gewicht: "Gewicht / Schwerlast",
+  zusatz: "Sonstiges (freie Notiz)",
+};
+
+/** Was eine Frage klärt (auch für ältere Sätze, in denen die id das Feld ist) */
+export function klaertVon(f: KtAbfrageFrage): string[] {
+  if (f.klaert) return f.klaert;
+  if (f.id === "zustand") return ["arzt", "monitoring", "stabil", "inkubator"];
+  if (f.id === "zusatz") return ["begleitung", "sauerstoff", "infektion", "zusatz"];
+  return [f.id];
+}
+
+/** Code-bestimmend oder Zusatzinfo */
+export function artVon(f: KtAbfrageFrage): "code" | "info" {
+  return f.art ?? (klaertVon(f).some((k) => k in KT_KRITERIEN) ? "code" : "info");
+}
+
+/** Für das Gespräch: welche Art Frage der Anrufer beantwortet (Feld der Aufnahme) */
+export function gespraechsFeld(f: KtAbfrageFrage): string {
+  const k = klaertVon(f);
+  if (k.length === 1) return k[0];
+  if (k.every((x) => ["arzt", "monitoring", "stabil", "inkubator", "gewicht"].includes(x))) return "zustand";
+  if (k.every((x) => ["begleitung", "sauerstoff", "infektion", "zusatz"].includes(x))) return "zusatz";
+  return k[0];
 }
 
 export interface KtSatz {
@@ -88,6 +143,8 @@ interface Eingabe {
   monitoring: boolean;
   inkubator: boolean;
   flug: boolean;
+  /** SOFORT mit Notarzt: SNAW alarmiert (frei und schneller als RTW mit Notarzt) */
+  snaw?: boolean;
 }
 
 function ausEingabe(e: Eingabe): KtBed {
@@ -112,7 +169,7 @@ function ausEingabe(e: Eingabe): KtBed {
     ...sek,
     lage: e.lage === "rollstuhl" ? "sitzend" : e.lage,
     begleitung: "notarzt",
-    fahrzeug: e.sofort ? (e.flug ? "ith" : "rtw_na") : "snaw",
+    fahrzeug: e.sofort ? (e.flug ? "ith" : e.snaw ? "snaw" : "rtw_na") : "snaw",
     sondersignal: e.sofort ? "ja" : "nein",
     inkubator: ink ? "ja" : "nein",
   });
@@ -130,7 +187,7 @@ export function istUeberstellungDaten(d: KtDaten): boolean {
 }
 
 /** Bedingungen eines Auftrags (null, solange die Lage noch nicht bekannt ist). luftKm = Luftlinie Abholort–Ziel */
-export function bedingungenAus(d: KtDaten, luftKm: number): KtBed | null {
+export function bedingungenAus(d: KtDaten, luftKm: number, fzTyp?: string | null): KtBed | null {
   if (!d.lage) return null;
   const s = d.sek;
   const vonKh = !!d.von?.khId;
@@ -163,7 +220,9 @@ export function bedingungenAus(d: KtDaten, luftKm: number): KtBed | null {
     monitoring: !!s?.monitoring,
     inkubator: !!s?.inkubator,
     // Hubschrauber: weite Strecke und kein Patient, an dem während des Transports dauernd gearbeitet werden muss
-    flug: luftKm > 40 && !s?.instabil,
+    flug: fzTyp ? fzTyp === "ITH" || fzTyp === "NAH" : luftKm > 40 && !s?.instabil,
+    // Antwort B (Paul): SOFORT mit Notarzt fährt mit dem SNAW, wenn der Disponent ihn schickt (frei und schneller)
+    snaw: fzTyp === "SNAW",
   });
 }
 
@@ -202,6 +261,9 @@ export function moeglicheBedingungen(gefragt?: Set<KtBedKey>): KtBed[] {
           add({ ...s, arzt: true, flug });
           if (f("inkubator")) add({ ...s, inkubator: true, flug });
         }
+        // SOFORT mit Notarzt, wenn ein SNAW geschickt wird
+        add({ ...s, arzt: true, snaw: true });
+        if (f("inkubator")) add({ ...s, inkubator: true, snaw: true });
       }
     }
   return [...out.values()];
@@ -269,7 +331,7 @@ export interface KtPruefung {
 /** Welche Bedingungen klärt die (aktive) Abfrage? */
 export function gefragteBedingungen(abfrage: KtAbfrageFrage[]): Set<KtBedKey> {
   const s = new Set<KtBedKey>();
-  for (const f of abfrage) if (f.aktiv !== false) for (const k of FRAGE_KLAERT[f.id] ?? []) s.add(k);
+  for (const f of abfrage) if (f.aktiv !== false) for (const id of klaertVon(f)) for (const k of FRAGE_KLAERT[id] ?? []) s.add(k);
   // Fahrzeug und Sondersignal folgen aus der Begleitung und der Strecke
   if (s.has("begleitung")) s.add("sondersignal");
   return s;
@@ -301,7 +363,13 @@ export function pruefeKtSatz(satz: KtSatz, standardAbfrage: KtAbfrageFrage[]): K
   }
   for (const l of gleich.values()) if (l.length > 1) fehler.push(`Gleiche Bedingungen: ${l.join(", ")} – nur einer davon kann gelten`);
   // Abfrage: Pflichtfragen
-  for (const id of PFLICHT_FRAGEN) if (!abfrage.some((f) => f.id === id && f.aktiv !== false)) fehler.push(`Abfrage: die Frage „${id === "von" ? "Abholort" : id === "nach" ? "Ziel" : "Lage"}“ fehlt – ohne sie geht kein Transport`);
+  const geklaert = new Set(abfrage.filter((f) => f.aktiv !== false).flatMap(klaertVon));
+  for (const id of PFLICHT_FRAGEN) if (!geklaert.has(id)) fehler.push(`Abfrage: keine Frage klärt „${id === "von" ? "Abholort" : id === "nach" ? "Ziel" : "Lage"}“ – ohne das geht kein Transport`);
+  if (!geklaert.has("termin") && !geklaert.has("abholung")) fehler.push("Abfrage: keine Frage klärt „Termin“ oder „Abholzeit“ – ohne Zeit lässt sich nicht planen");
+  abfrage.forEach((f, i) => {
+    if (!f.text.trim()) fehler.push(`Abfrage: Frage Nr. ${i + 1} hat keinen Text`);
+    if (!klaertVon(f).length) fehler.push(`Abfrage: „${f.text.slice(0, 40)}“ – bitte wählen, was die Frage klärt`);
+  });
   // jede mögliche Kombination genau ein Code
   const gefragt = gefragteBedingungen(abfrage);
   const fehlendMap = new Map<string, KtCodeBed>();

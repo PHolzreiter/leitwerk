@@ -1,5 +1,16 @@
 [
  {
+  "version": "0.75.0",
+  "datum": "2026-10-26",
+  "titel": "KT-Abfrage frei gestalten",
+  "punkte": [
+   "Fragen der KT-Hotline einfügen, bearbeiten, löschen und verschieben",
+   "Bei jeder Frage wählen: Code-bestimmend (z. B. liegend, mit Notarzt) oder Zusatzinfo (z. B. Name) – und was sie klärt",
+   "Die Fragen stehen in der Aufnahme in ihrer Reihenfolge bereit",
+   "Dringende Überstellung mit Notarzt: wird der SNAW geschickt, gilt automatisch der SNAW-Code"
+  ]
+ },
+ {
   "version": "0.74.0",
   "datum": "2026-10-26",
   "titel": "Transport-Codes mit Editor",

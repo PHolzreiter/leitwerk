@@ -5846,9 +5846,16 @@ export class Simulation {
   }
 
   /** Code-Vorschlag zu den Angaben (Hubschrauber nur bei weiter Strecke) */
-  ktCodeFuer(d: KtDaten): string | null {
+  ktCodeFuer(d: KtDaten, fzTyp?: string | null): string | null {
     const km = d.von && d.nach ? distanceM(d.von, d.nach) / 1000 : 0;
-    return codeVorschlag(d, km);
+    // nur das gewählte Fahrzeug einer SOFORT-Notarzt-Überstellung beeinflusst den Code (SNAW / Hubschrauber)
+    return codeVorschlag(d, km, fzTyp) ?? (fzTyp ? codeVorschlag(d, km) : null);
+  }
+
+  /** Typ des zugeteilten Fahrzeugs (für den Code bei SOFORT-Notarzt-Überstellungen) */
+  private ktFzTyp(k: KtAuftrag): string | null {
+    const t = k.fz ? this.state.fahrzeuge[k.fz]?.rmTyp : null;
+    return t === "SNAW" || t === "ITH" || t === "NAH" ? t : null;
   }
 
   /** Leeren Auftrag anlegen (z. B. Anruf direkt beim Disponenten) */
@@ -6159,7 +6166,7 @@ export class Simulation {
     // ein Ort ist eine Adresse: Krankentransport, keine Überstellung
     if (!beideKh && k.d.sek && k.d.von && k.d.nach) k.d.sek = null;
     if ("code" in patch) k.d.codeManuell = !!patch.code;
-    if (!k.d.codeManuell) k.d.code = this.ktCodeFuer(k.d);
+    if (!k.d.codeManuell) k.d.code = this.ktCodeFuer(k.d, this.ktFzTyp(k));
     // Entweder Abholzeit oder Termin: die andere Zeit rechnet das Spiel aus
     if ("abholung" in patch) k.d.zeitVorgabe = patch.abholung ? "abholung" : k.d.termin && k.d.zeitVorgabe === "abholung" ? null : k.d.zeitVorgabe;
     if ("termin" in patch) k.d.zeitVorgabe = patch.termin ? "termin" : k.d.abholung && k.d.zeitVorgabe === "termin" ? null : k.d.zeitVorgabe;
@@ -6356,6 +6363,14 @@ export class Simulation {
     if (ziel) ziel.push(k.id);
     else plan.fahrten.push([k.id]);
     k.fz = fz.id;
+    // SOFORT mit Notarzt: das geschickte Fahrzeug (SNAW, Hubschrauber, RTW + NEF) bestimmt den Code
+    if (!k.d.codeManuell && codeInfo(k.d.code).arzt && k.d.sofort) {
+      const neu = this.ktCodeFuer(k.d, this.ktFzTyp(k));
+      if (neu && neu !== k.d.code) {
+        k.d.code = neu;
+        this.ktLog(k, `Code ${neu} (${fz.rmTyp})`);
+      }
+    }
     if (nef) {
       nef.kt = { fahrten: [[k.id]], aktiv: false, halte: [], halt: 0 };
       k.begleit = nef.id;

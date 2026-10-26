@@ -9,7 +9,7 @@ import { standardCodesystem } from "../data/standard";
 import type { Schema } from "../abfrage/schema";
 import { KT_FRAGEN } from "../abfrage/ktGespraech";
 import type { KtDaten } from "./kt";
-import { bedingungenAus, codeSuchen, istUeberstellungDaten, type KtAbfrageFrage, type KtBed, type KtCodeDef, type KtSatz } from "./ktBedingungen";
+import { bedingungenAus, codeSuchen, istUeberstellungDaten, klaertVon, type KtAbfrageFrage, type KtBed, type KtCodeDef, type KtSatz } from "./ktBedingungen";
 
 export interface KtCode {
   code: string;
@@ -67,7 +67,7 @@ export function ktCode(code: string | null | undefined): KtCode | undefined {
   return cache!.codes.find((c) => c.code === code);
 }
 
-/** Fragen der KT-Abfrage (aktiver Satz oder eingebaut) */
+/** Fragen der KT-Abfrage (aktiver Satz oder eingebaut), in ihrer Reihenfolge */
 export function ktAbfrage(): KtAbfrageFrage[] {
   const a = ktSatz().abfrage;
   return a?.length ? a : standardKtAbfrage();
@@ -75,9 +75,11 @@ export function ktAbfrage(): KtAbfrageFrage[] {
 
 /** Text einer Frage der Abfrage (eigener Text des Codesatzes, sonst der eingebaute) */
 export function ktFrageText(id: string): string | null {
-  const f = ktAbfrage().find((x) => x.id === id);
-  if (f && f.aktiv === false) return null;
-  return f?.text ?? standardKtAbfrage().find((x) => x.id === id)?.text ?? null;
+  // erste aktive Frage, die dieses Feld klärt
+  const f = ktAbfrage().find((x) => x.aktiv !== false && klaertVon(x).includes(id));
+  if (f) return f.text;
+  // Feld wird im Satz gar nicht gefragt: kein 🗨
+  return ktSatz().abfrage?.length ? null : (standardKtAbfrage().find((x) => x.id === id)?.text ?? null);
 }
 
 // ---------------------------------------------------------------- Was ein Code verlangt
@@ -138,8 +140,8 @@ export function ktBedingungen(d: KtDaten, luftKm: number): KtBed | null {
  * Der eine Code, dessen Bedingungen zu den Angaben passen. luftKm = Luftlinie Abholort–Ziel (für den Hubschrauber).
  * null, wenn noch zu wenig bekannt ist oder im Codesatz kein (eindeutiger) Code hinterlegt ist.
  */
-export function codeVorschlag(d: KtDaten, luftKm: number): string | null {
-  const b = bedingungenAus(d, luftKm);
+export function codeVorschlag(d: KtDaten, luftKm: number, fzTyp?: string | null): string | null {
+  const b = bedingungenAus(d, luftKm, fzTyp);
   if (!b) return null;
   const r = codeSuchen(ktSatz().codes, b);
   return "code" in r ? r.code.code : null;

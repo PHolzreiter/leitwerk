@@ -22,7 +22,8 @@ import {
   type KtOrt,
   type SekDaten,
 } from "../sim/kt";
-import { codeFehlt, codeInfo, istUeberstellung, ktCode, ktCodeDef, ktCodes, ktFrageText } from "../sim/ktCodes";
+import { codeFehlt, codeInfo, istUeberstellung, ktAbfrage, ktCode, ktCodeDef, ktCodes, ktFrageText } from "../sim/ktCodes";
+import { artVon as artVonFrage, gespraechsFeld } from "../sim/ktBedingungen";
 import { bedText } from "../sim/ktBedingungen";
 import { distanceM } from "../sim/geo";
 import { addressInput, dienstHtml, typHtml } from "./panels/teile";
@@ -242,6 +243,20 @@ export function ktFormular(k: KtAuftrag, stelle: (text: string, f?: KtFrage) => 
     const titel = el("div", { class: "box-title kt-titel" });
     titel.innerHTML = `Auftrag <span class="kt-art-chip ${art}">${art === "sek" ? "Überstellung" : "Krankentransport"}</span>`;
     datenBox.appendChild(titel);
+    // Fragen der Abfrage in ihrer Reihenfolge (eigener Codesatz) – ein Klick stellt die Frage
+    if (k.anruf?.status === "aktiv" && ichFuehre(k)) {
+      const leiste = el("div", { class: "kt-fragenleiste" });
+      ktAbfrage()
+        .filter((q) => q.aktiv !== false && q.text.trim())
+        .forEach((q, i) => {
+          const f = KT_FRAGEN.find((x) => x.id === gespraechsFeld(q));
+          if (!f) return;
+          const b = el("button", { class: `kt-frage-b ${artVonFrage(q)}`, type: "button", title: q.text, "data-kt-frage": q.id }, `${i + 1}. ${q.text}`);
+          b.addEventListener("click", () => void stelle(q.text, f));
+          leiste.appendChild(b);
+        });
+      if (leiste.childElementCount) datenBox.appendChild(leiste);
+    }
     if (art === "kt" && !(k.d.von && k.d.nach))
       datenBox.appendChild(el("div", { class: "kt-hinweis muted" }, "Krankenhaus → Krankenhaus wird automatisch eine Überstellung."));
 

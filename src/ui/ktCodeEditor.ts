@@ -5,11 +5,10 @@
  * Gespeichert wird als Codesatz (Dokumente/LeitWerk/Abfrageschema/<Name>.json, mit den RD-Codes des Ausgangssatzes).
  */
 import type { Schema } from "../abfrage/schema";
-import { KT_FRAGEN } from "../abfrage/ktGespraech";
 import { store } from "../data/store";
 import { standardCodesystem } from "../data/standard";
 import { ablageName, ablageSpeichern } from "../net/ablage";
-import { FRAGE_KLAERT, KT_BED_KEYS, KT_BEDINGUNGEN, PFLICHT_FRAGEN, bedText, pruefeKtSatz, type KtAbfrageFrage, type KtCodeBed, type KtCodeDef, type KtSatz } from "../sim/ktBedingungen";
+import { KT_BED_KEYS, KT_BEDINGUNGEN, KT_INFOS, KT_KRITERIEN, artVon, bedText, klaertVon, pruefeKtSatz, type KtAbfrageFrage, type KtCodeBed, type KtCodeDef, type KtSatz } from "../sim/ktBedingungen";
 import { ktSatz, standardKtAbfrage } from "../sim/ktCodes";
 import { aktiverSatz, satzAktivieren, satzListe } from "./codesaetze";
 import { confirmDialog, openDialog } from "./dialog";
@@ -25,8 +24,13 @@ export function ktEditorOeffnen(opt: { datei?: Datei; name?: string; fertig?: ()
     codes: structuredClone(quelle.codes ?? []),
     abfrage: structuredClone(quelle.abfrage?.length ? quelle.abfrage : standardKtAbfrage()),
   };
-  // Fragen, die es in der Aufnahme gibt, aber im Satz noch fehlen: ausgeschaltet ergänzen
-  for (const f of KT_FRAGEN) if (!kt.abfrage.some((x) => x.id === f.id)) kt.abfrage.push({ id: f.id, text: f.text, aktiv: false });
+  // ab v0.75: jede Frage sagt selbst, was sie klärt; ausgeschaltete Fragen (v0.74) fallen weg
+  kt.abfrage = kt.abfrage.filter((f) => f.aktiv !== false).map((f) => ({ id: f.id, text: f.text, art: artVon(f), klaert: [...klaertVon(f)] }));
+  let neueNr = 1;
+  const neueId = () => {
+    while (kt.abfrage.some((f) => f.id === `frage${neueNr}`)) neueNr++;
+    return `frage${neueNr}`;
+  };
   const eigenerName = opt.name ?? aktiverSatz();
 
   const body = el("div", { class: "kte" });
@@ -177,26 +181,128 @@ export function ktEditorOeffnen(opt: { datei?: Datei; name?: string; fertig?: ()
     liste();
   }
 
+  let offeneFrage: number | null = null;
   function abfrageZeichnen(): void {
     inhalt.appendChild(
-      el("p", { class: "muted small" }, "Diese Fragen stellt die KT-Hotline (🗨 in der Aufnahme). Ausgeschaltete Fragen gibt es im Gespräch nicht – was sie klären würden, gilt dann mit dem Standardwert."),
+      el(
+        "p",
+        { class: "muted small" },
+        "Diese Fragen stellt die KT-Hotline – in dieser Reihenfolge (🗨 in der Aufnahme). Bei jeder Frage wählst du, was sie klärt: „Code-bestimmend“ entscheidet mit über den Code (z. B. liegend, mit Notarzt), „Zusatzinfo“ hilft nur bei der Disposition (z. B. Name).",
+      ),
     );
-    for (const f of kt.abfrage) {
-      const z = el("div", { class: "kte-frage" });
-      const an = el("input", { type: "checkbox", name: `frage-${f.id}` }) as HTMLInputElement;
-      an.checked = f.aktiv !== false;
-      an.addEventListener("change", () => {
-        f.aktiv = an.checked;
-        pruefen();
+    const liste = el("div", { class: "kte-fragen" });
+    const neu = (art: "code" | "info", nach: number) => {
+      kt.abfrage.splice(nach + 1, 0, { id: neueId(), text: "", art, klaert: [] });
+      offeneFrage = nach + 1;
+      neuZeichnen();
+    };
+    const neuZeichnen = () => {
+      inhalt.innerHTML = "";
+      abfrageZeichnen();
+      pruefen();
+    };
+    kt.abfrage.forEach((f, i) => {
+      const art = artVon(f);
+      const z = el("div", { class: `kte-frage ${art}`, "data-frage": f.id });
+      // Reihenfolge
+      const pfeile = el("div", { class: "kte-pfeile" });
+      for (const [sym, d, tip] of [
+        ["↑", -1, "nach oben"],
+        ["↓", 1, "nach unten"],
+      ] as const) {
+        const b = el("button", { class: "btn small icon", type: "button", title: tip, "data-frage-act": d < 0 ? "hoch" : "runter" }, sym) as HTMLButtonElement;
+        b.disabled = i + d < 0 || i + d >= kt.abfrage.length;
+        b.addEventListener("click", () => {
+          const [x] = kt.abfrage.splice(i, 1);
+          kt.abfrage.splice(i + d, 0, x);
+          if (offeneFrage === i) offeneFrage = i + d;
+          neuZeichnen();
+        });
+        pfeile.appendChild(b);
+      }
+      // ziehen
+      z.draggable = true;
+      z.addEventListener("dragstart", (e) => e.dataTransfer?.setData("text/plain", String(i)));
+      z.addEventListener("dragover", (e) => e.preventDefault());
+      z.addEventListener("drop", (e) => {
+        e.preventDefault();
+        const von = Number(e.dataTransfer?.getData("text/plain"));
+        if (!Number.isInteger(von) || von === i) return;
+        const [x] = kt.abfrage.splice(von, 1);
+        kt.abfrage.splice(i, 0, x);
+        neuZeichnen();
       });
-      const t = el("input", { type: "text", value: f.text }) as HTMLInputElement;
+      const nr = el("span", { class: "kte-nr" }, `${i + 1}.`);
+      const t = el("input", { type: "text", name: `frage-text-${f.id}`, placeholder: "Wortlaut der Frage …" }) as HTMLInputElement;
       t.value = f.text;
       t.addEventListener("input", () => (f.text = t.value));
-      const klaert = (FRAGE_KLAERT[f.id] ?? []).map((k) => KT_BEDINGUNGEN[k].label);
-      const info = el("span", { class: "muted small" }, klaert.length ? `klärt: ${klaert.join(", ")}` : PFLICHT_FRAGEN.includes(f.id) ? "nötig fürs Spiel" : "Info für die Disposition");
-      z.append(an, t, info);
-      inhalt.appendChild(z);
-    }
+      t.addEventListener("change", () => pruefen());
+      const chip = el("span", { class: `kte-art ${art}` }, art === "code" ? "Code-bestimmend" : "Zusatzinfo");
+      const liste2 = (art === "code" ? KT_KRITERIEN : KT_INFOS) as Record<string, string>;
+      const kurz = klaertVon(f)
+        .map((k) => (KT_KRITERIEN[k] ?? KT_INFOS[k] ?? k).split(" (")[0])
+        .join(", ");
+      const zusammen = el("span", { class: `muted small kte-klaert${kurz ? "" : " fehlt"}` }, kurz ? `klärt: ${kurz}` : "klärt: – bitte wählen");
+      const bearb = el("button", { class: "btn small icon", type: "button", title: "Bearbeiten", "data-frage-act": "bearbeiten" }, "✎");
+      bearb.addEventListener("click", () => {
+        offeneFrage = offeneFrage === i ? null : i;
+        neuZeichnen();
+      });
+      const weg = el("button", { class: "btn small icon", type: "button", title: "Frage löschen", "data-frage-act": "loeschen" }, "✕");
+      weg.addEventListener("click", () => {
+        kt.abfrage.splice(i, 1);
+        offeneFrage = null;
+        neuZeichnen();
+      });
+      const zeile1 = el("div", { class: "kte-frage-z" });
+      zeile1.append(pfeile, nr, t, chip, bearb, weg);
+      z.append(zeile1, zusammen);
+      if (offeneFrage === i) {
+        const box = el("div", { class: "kte-frage-detail" });
+        // Art
+        const artWahl = el("div", { class: "kt-seg" });
+        for (const [a, l] of [
+          ["code", "Code-bestimmend"],
+          ["info", "Zusatzinfo"],
+        ] as const) {
+          const b = el("button", { class: `kt-seg-b${art === a ? " active" : ""}`, type: "button", "data-frage-art": a }, l);
+          b.addEventListener("click", () => {
+            if (art === a) return;
+            f.art = a;
+            f.klaert = [];
+            neuZeichnen();
+          });
+          artWahl.appendChild(b);
+        }
+        box.append(el("div", { class: "small" }, "Art der Frage"), artWahl, el("div", { class: "small" }, art === "code" ? "Welche Kriterien beantwortet die Frage?" : "Welche Angaben liefert die Frage?"));
+        const haken = el("div", { class: "kte-haken" });
+        for (const [k, l] of Object.entries(liste2)) {
+          const lab = el("label", { class: "chk" });
+          const c = el("input", { type: "checkbox", name: `klaert-${k}` }) as HTMLInputElement;
+          c.checked = klaertVon(f).includes(k);
+          c.addEventListener("change", () => {
+            const s = new Set(klaertVon(f));
+            if (c.checked) s.add(k);
+            else s.delete(k);
+            f.klaert = Object.keys(liste2).filter((x) => s.has(x));
+            neuZeichnen();
+          });
+          lab.append(c, el("span", {}, l));
+          haken.appendChild(lab);
+        }
+        box.appendChild(haken);
+        z.appendChild(box);
+      }
+      liste.appendChild(z);
+    });
+    inhalt.appendChild(liste);
+    const plus = el("div", { class: "row-btns" });
+    const pc = el("button", { class: "btn small", type: "button", "data-frage-neu": "code" }, "+ Code-bestimmende Frage");
+    pc.addEventListener("click", () => neu("code", offeneFrage ?? kt.abfrage.length - 1));
+    const pi = el("button", { class: "btn small", type: "button", "data-frage-neu": "info" }, "+ Zusatzinfo-Frage");
+    pi.addEventListener("click", () => neu("info", offeneFrage ?? kt.abfrage.length - 1));
+    plus.append(pc, pi);
+    inhalt.appendChild(plus);
   }
 
   function zeichnen(): void {
