@@ -115,12 +115,13 @@ const synth: SpeechSynthesis | undefined = typeof window !== "undefined" ? windo
 let stimmenCache: SpeechSynthesisVoice[] = [];
 const stimmenHoerer = new Set<() => void>();
 
-function stimmenLaden(): void {
+function stimmenLaden(melden = true): void {
   if (!synth) return;
   stimmenCache = synth.getVoices().filter((v) => /^de\b|^de[-_]/i.test(v.lang));
-  for (const f of stimmenHoerer) f();
+  // nur bei echten Änderungen (voiceschanged) melden – sonst Endlosschleife, wenn es keine deutschen Stimmen gibt
+  if (melden) for (const f of stimmenHoerer) f();
 }
-synth?.addEventListener?.("voiceschanged", stimmenLaden);
+synth?.addEventListener?.("voiceschanged", () => stimmenLaden());
 stimmenLaden();
 
 /** Name ohne Qualitätszusatz: „Anna (Premium)“ → „anna“ */
@@ -129,7 +130,7 @@ function grundName(v: SpeechSynthesisVoice): string {
 }
 
 export function deutscheStimmen(): SpeechSynthesisVoice[] {
-  if (!stimmenCache.length) stimmenLaden();
+  if (!stimmenCache.length) stimmenLaden(false);
   // Österreich zuerst, dann Premium/Neural; je Stimme nur die beste Qualität
   const gut = (v: SpeechSynthesisVoice) => (/AT/i.test(v.lang) ? 4 : 0) + (/premium|neural|natural|online/i.test(v.name) ? 3 : /enhanced|erweitert/i.test(v.name) ? 2 : 0);
   const beste = new Map<string, SpeechSynthesisVoice>();

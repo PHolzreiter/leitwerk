@@ -6691,7 +6691,8 @@ export class Simulation {
         if (h.art === "ab") {
           this.setStatus(fz, "amBO");
           // mehr als 30 Minuten vor der Abholzeit da: über Funk fragen – warten oder frei melden
-          const bereit = k.fz === fz.id ? (k.d.abholung ?? (k.d.termin ? k.d.termin - 45 * MIN : null)) : null;
+          // SOFORT-Transporte: Patient ist gleich bereit
+          const bereit = k.fz === fz.id && !k.d.sofort ? (k.d.abholung ?? (k.d.termin ? k.d.termin - 45 * MIN : null)) : null;
           if (bereit !== null && bereit - t > 30 * MIN) {
             plan.fruehFrage = k.id;
             const min = Math.round((bereit - t) / MIN);
