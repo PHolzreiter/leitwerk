@@ -1,5 +1,14 @@
 # Änderungen
 
+## 0.73.0 – Eigenes Codesystem, eigene Codesätze, Entwicklungsfortschritt und Changelog
+- **Eingebautes Codesystem ab der Installation:** Codes im gewohnten Aufbau `RD-<Kapitel><Stufe><Nr>` (Stufen O–E), gewohnte Kapitelnummern und Kategorien (ALS rot, ALS orange, ALS gelb, ALS grün, BLS rot, BLS gelb, Telemedizin …) – mit eigener Abfrage, eigenen Namen und eigener Unterteilung. Die Kategorien sind je Kapitel und Stufe ähnlich verteilt wie gewohnt
+- **Hinweis im Menü Einsatzcodes & Abfrage:** Die echten Codes dürfen aus rechtlichen Gründen nicht mitgeliefert werden – eigene können eingebaut werden
+- **Eigene Codes & Abfrageschema:** ein Fenster mit zwei Feldern (Codeliste als CSV, Abfrageschema als JSON), einzeln oder zusammen. Gespeichert in Dokumente/LeitWerk (Codelisten, Abfrageschema); mehrere Sätze, zwischen denen man wechseln kann; das eingebaute System ist immer wählbar. Im Multiplayer gilt der Satz des Hosts
+- **Einmalig mit diesem Update:** bisher importierte Codelisten und Abfrageschemas werden entfernt (auch die Dateien in Dokumente/LeitWerk) – danach gilt das eingebaute System, eigene lassen sich neu hinzufügen. Abfrageschemas werden nicht mehr automatisch aus dem Ordner geladen
+- **Hauptmenü – Entwicklungsfortschritt:** woran gerade gearbeitet wird und was geplant ist, jeweils mit Fortschrittsbalken (live, ohne Update änderbar), dazu „Idee oder Wunsch schicken“ (landet als Ticket)
+- **Hauptmenü – Changelog:** alle Updates kompakt mit Titeln, durchsuchbar
+- Ticket-Dienst: Entwicklungsfortschritt auf der Admin-Seite pflegbar, neue Ticket-Art „Idee/Wunsch“
+
 ## 0.72.0 – Spieler-NAH: Sprechfunk (Teil 3)
 - **Sprechfunk zwischen Pilot und Leitstelle:** Sprechtaste gedrückt halten und sprechen – die Stimme geht live an alle im Spiel (Verzögerung etwa eine halbe Sekunde) und klingt wie über Funk (blechern, kurzes Rauschen beim Loslassen; abschaltbar)
   - **Leitstelle:** eigene **Funktaste F4** (umstellbar unter Einstellungen → Sprache & Mikrofon) oder der Knopf **Sprechfunk** im Funkfenster. Geht auch während eines Telefonats; F2 bleibt für Notruf, KT und den KI-Funk

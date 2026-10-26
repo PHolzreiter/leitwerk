@@ -162,7 +162,7 @@ export function pickTextFile(accept = ".csv,.txt"): Promise<{ name: string; text
 }
 
 /** Erkennt UTF-8 bzw. Windows-1252 (ältere Excel-Exporte). */
-function decodeText(buf: ArrayBuffer): string {
+export function decodeText(buf: ArrayBuffer): string {
   try {
     return new TextDecoder("utf-8", { fatal: true }).decode(buf);
   } catch {

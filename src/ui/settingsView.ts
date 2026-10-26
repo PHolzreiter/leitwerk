@@ -602,7 +602,7 @@ export function createSettingsView(container: HTMLElement, teil: "simulation" | 
     // Eigene Dateien in Dokumente/LeitWerk: Spielstände und alles Importierte
     const ssSec = section(
       "Eigene Dateien & Spielstände",
-      "Spielstände und alles, was du selbst dazugibst (Abfrageschema, Codelisten, Daten, Fälle, Töne, Designs, Anordnungen), liegt zusätzlich als Datei in Dokumente/LeitWerk – je Art in einem eigenen Ordner. Fehlt beim Start das Abfrageschema, wird es von dort wieder geladen.",
+      "Spielstände und alles, was du selbst dazugibst (Abfrageschema, Codelisten, Daten, Fälle, Töne, Designs, Anordnungen), liegt zusätzlich als Datei in Dokumente/LeitWerk – je Art in einem eigenen Ordner. Eigene Codelisten und Abfrageschemas wählst du unter Einsatzcodes & Abfrage.",
     );
     const ssPfad = el("div", { class: "muted small" }, "…");
     void ablageBasis().then((p) => (ssPfad.textContent = p));

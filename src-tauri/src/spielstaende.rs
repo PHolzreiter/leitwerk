@@ -243,6 +243,19 @@ pub fn ablage_lesen(app: tauri::AppHandle, ordner: String, name: String) -> Resu
     fs::read_to_string(&p).map_err(|e| format!("Datei nicht lesbar: {e}"))
 }
 
+/// Löscht eine Datei aus einem Ablage-Ordner (nur einzelne Dateien in den bekannten Ordnern)
+#[tauri::command]
+pub fn ablage_loeschen(app: tauri::AppHandle, ordner: String, name: String) -> Result<(), String> {
+    if !ABLAGEN.contains(&ordner.as_str()) {
+        return Err("Unbekannter Ordner".into());
+    }
+    let p = datei_in(&unterordner(&app, &ordner)?, &name)?;
+    if p.is_file() {
+        fs::remove_file(&p).map_err(|e| format!("Löschen fehlgeschlagen: {e}"))?;
+    }
+    Ok(())
+}
+
 /// Öffnet „Dokumente/LeitWerk“ (oder einen Unterordner) im Finder / Explorer
 #[tauri::command]
 pub fn ablage_zeigen(app: tauri::AppHandle, ordner: Option<String>) -> Result<(), String> {

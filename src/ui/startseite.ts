@@ -28,6 +28,7 @@ import { el, esc, toast } from "./dom";
 import { nimmtRettung } from "./khInfo";
 import { logoMarke, logoSchrift } from "./logo";
 import { mithelfenOeffnen } from "./mithelfen";
+import { changelogOeffnen, fortschrittOeffnen } from "./fortschritt";
 import { hilfeLaden, hilfeLokal, meineTickets, onTickets, ungelesen, type HilfePunkt } from "../net/tickets";
 import { sprachPrefs, sprachStatus } from "./sprache";
 import { spielstaendeOeffnen } from "./spielstaende";
@@ -243,6 +244,10 @@ export function startseiteZeigen(fertig?: () => void, opt: { zurueck?: boolean }
         <button class="st-nav-b" data-act="einstellungen">${ico("zahnrad")}<span>Einstellungen</span></button>
         <button class="st-nav-b" data-act="check">${ico("schild")}<span>Bereitschafts-Check</span></button>
       </nav>
+      <div class="st-nav-zwei">
+        <button class="st-nav-k" data-act="fortschritt">${ico("balken")}<span>Entwicklungs&shy;fortschritt</span></button>
+        <button class="st-nav-k" data-act="changelog">${ico("liste")}<span>Changelog</span></button>
+      </div>
       <section class="st-hilfe">
         <h3>${ico("leute")}Deine Hilfe wird gebraucht</h3>
         <ul class="st-hilfe-liste"></ul>
@@ -692,6 +697,8 @@ export function startseiteZeigen(fertig?: () => void, opt: { zurueck?: boolean }
   meineZaehlen();
   aus.push(onTickets(meineZaehlen));
   $('[data-act="mithelfen"]').addEventListener("click", () => mithelfenOeffnen());
+  $('[data-act="fortschritt"]').addEventListener("click", () => fortschrittOeffnen());
+  $('[data-act="changelog"]').addEventListener("click", () => changelogOeffnen());
   meineKnopf.addEventListener("click", () => mithelfenOeffnen({ reiter: "meine" }));
 
   // ---------------- Zeichnen (Werte aus den Einstellungen; Mitspieler sehen die des Hosts)

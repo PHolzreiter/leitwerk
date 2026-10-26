@@ -7,7 +7,12 @@
 #   ausgesetzt oder schwer erreichbar, /P Polizei verständigt (vom Disponenten markiert)
 # Fragen-IDs und Antwortwerte sind die neutralen Merkmale der LeitWerk-Fallgeschichten (z. B. hoehe = boden).
 import json
+import re
 import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from kategorie_verteilung import VERTEILUNG  # noqa: E402
 
 STUFEN_KAT = {5: "S5 Reanimation", 4: "S4 Notarzt", 3: "S3 Notfall", 2: "S2 Dringend", 1: "S1 Nicht dringend", 0: "S0 Beratung / Weitergabe"}
 MANV = "S4 Mehrere Verletzte"
@@ -839,28 +844,164 @@ ANLEITUNG = """
 Eigenständiges Codesystem des Leitstellen-Spiels LeitWerk (Codes und Abfrage in einer Datei, frei verwendbar).
 Es ist ein Spiel-Codesystem – nicht medizinisch geprüft und nicht für den echten Einsatz gedacht.
 
-Aufbau eines Codes: KK-Sx-NN
-- KK = Kapitel (Hauptbeschwerde), z. B. 18 = Sturz
-- Sx = Dringlichkeitsstufe: S0 Beratung/Weitergabe, S1 nicht dringend, S2 dringend, S3 Notfall (Notfallsanitäter, Blaulicht), S4 Notarzt, S5 Reanimation/höchste Dringlichkeit
-- NN = laufende Nummer innerhalb von Kapitel und Stufe
-- Zusätze: /L liegt über 1 Stunde am Boden, /A Witterung/schwer erreichbar, /M mehrere Verletzte, /P Polizei verständigt
-- KK-S3-00 / KK-S4-00 = vom Disponenten manuell aufgewertet
+Aufbau eines Codes: RD-<Kapitel><Stufe><Nr><Zusatz>, z. B. RD-17B2L
+- Kapitel = Hauptbeschwerde, z. B. 17 = Sturz (Alpinunfälle: ALP-33…)
+- Stufe = Dringlichkeit: O Beratung/Weitergabe, A nicht dringend, B dringend, C Notfall (Notfallsanitäter), D Notarzt, E Reanimation/höchste Dringlichkeit
+- Nr = laufende Nummer innerhalb von Kapitel und Stufe; 0 = vom Disponenten manuell aufgewertet
+- Zusätze: L liegt über 1 Stunde am Boden, A Witterung/schwer erreichbar, M mehrere Verletzte, P Polizei verständigt
+- Kategorie (ALS rot, ALS orange, ALS gelb, ALS grün, BLS rot, BLS gelb, BLS grün, Telemedizin …) bestimmt Fahrzeuge, Notarzt und Sondersignal
 
 Jedes Kapitel hat ein „thema“ (neutrale Hauptbeschwerde, z. B. „sturz“). Fragen-IDs und Antwortwerte sind die neutralen Merkmale der LeitWerk-Fallgeschichten.
 Wer ein eigenes Codesystem bauen will: siehe „Beispiel-Codesystem“ in LeitWerk (Einstellungen → Einsatzcodes & Abfrage) – dort steht eine Anleitung für eine KI.
 """.strip("\n").split("\n")
 
 
+# ---------------------------------------------------------------- Umbau auf das gewohnte Muster (v0.73)
+# Codes RD-<Kapitel><Stufe><Nr><Zusatz>, Stufen-Buchstaben O A B C D E, Kapitelnummern wie gewohnt,
+# Kategorien (ALS rot … BLS grün, Telemedizin …) je Kapitel und Stufe ungefähr so verteilt wie üblich.
+# Namen, Fragen, Unterteilung und Nummern bleiben die eigenen.
+KAP_NEU = {
+    "01": "6", "02": "10", "03": "31", "04": "9", "05": "28", "06": "12", "07": "13", "08": "2", "09": "1", "10": "5",
+    "11": "18", "12": "19", "13": "26", "14": "36", "15": "25", "16": "23", "17": "24", "18": "17", "19": "30", "20": "21",
+    "21": "29", "22": "22", "23": "7", "24": "8", "25": "15", "26": "14", "27": "20", "28": "3", "29": "4", "30": "27",
+    "31": "16", "32": "11", "33": "ALP", "34": "34", "35": "33", "36": "38", "37": "42", "38": "32",
+}
+BUCHSTABE = {0: "O", 1: "A", 2: "B", 3: "C", 4: "D", 5: "E"}
+# Rangfolge der Kategorien (dringendste zuerst) – für die Verteilung innerhalb einer Stufe
+RANG = ["ALS rot", "Großunfall", "ALS orange", "ALS gelb", "BLS/ALS aufwertbar", "ALS grün", "BLS rot", "BLS gelb", "Alpinunfall", "BLS grün", "Akuttransport grün", "Telemedizin", "Weitergabe"]
+# Stufe ohne Vorbild im Kapitel: übliche Verteilung über alle Kapitel
+GESAMT = {}
+for _k in VERTEILUNG.values():
+    for _l, _v in _k.items():
+        for _kat, _n in _v.items():
+            GESAMT.setdefault(_l, {}).setdefault(_kat, 0)
+            GESAMT[_l][_kat] += _n
+# Stufe ohne Vorbild für eine bestimmte Stufe: nächstliegende Kategorie nach Dringlichkeit
+STANDARD_KAT = {"O": "Telemedizin", "A": "BLS gelb", "B": "BLS rot", "C": "ALS grün", "D": "ALS orange", "E": "ALS rot"}
+
+EINSATZSTUFEN_RD = [
+    {"stufe": "ALS rot", "rettungsmittel": "RTW-C>RTW>KTW", "nfs_erforderlich": False, "notarzt": "schnellster", "sondersignal": True, "kategorie": "kritisch", "transport_prozent": 85},
+    {"stufe": "ALS orange", "rettungsmittel": "RTW-C>RTW>KTW", "nfs_erforderlich": False, "notarzt": "nef", "sondersignal": True, "kategorie": "kritisch", "transport_prozent": 85},
+    {"stufe": "ALS gelb", "rettungsmittel": "RTW-C>RTW>KTW", "nfs_erforderlich": True, "notarzt": "nein", "sondersignal": True, "kategorie": "dringend", "transport_prozent": 80},
+    {"stufe": "ALS grün", "rettungsmittel": "RTW>RTW-C>KTW", "nfs_erforderlich": True, "notarzt": "nein", "sondersignal": False, "kategorie": "dringend", "transport_prozent": 75},
+    {"stufe": "BLS rot", "rettungsmittel": "RTW>RTW-C>KTW", "nfs_erforderlich": False, "notarzt": "nein", "sondersignal": True, "kategorie": "dringend", "transport_prozent": 75},
+    {"stufe": "BLS gelb", "rettungsmittel": "RTW>KTW>RTW-C", "nfs_erforderlich": False, "notarzt": "nein", "sondersignal": True, "kategorie": "dringend", "transport_prozent": 70},
+    {"stufe": "BLS grün", "rettungsmittel": "KTW>RTW>RTW-C", "nfs_erforderlich": False, "notarzt": "nein", "sondersignal": False, "kategorie": "stabil", "transport_prozent": 65},
+    {"stufe": "BLS/ALS aufwertbar", "rettungsmittel": "RTW/RTW-C", "nfs_erforderlich": False, "notarzt": "nein", "sondersignal": True, "kategorie": "dringend", "transport_prozent": 75},
+    {"stufe": "Akuttransport grün", "rettungsmittel": "KTW>RTW>RTW-C", "nfs_erforderlich": False, "notarzt": "nein", "sondersignal": False, "kategorie": "stabil", "transport_prozent": 100},
+    {"stufe": "Telemedizin", "rettungsmittel": "KTW>RTW>RTW-C", "nfs_erforderlich": False, "notarzt": "nein", "sondersignal": False, "kategorie": "stabil", "transport_prozent": 30},
+    {"stufe": "Weitergabe", "rettungsmittel": "", "nfs_erforderlich": False, "notarzt": "nein", "sondersignal": False, "kategorie": "stabil", "transport_prozent": 0},
+    {"stufe": "Großunfall", "rettungsmittel": "RTW-C>RTW>KTW", "nfs_erforderlich": False, "notarzt": "schnellster", "sondersignal": True, "kategorie": "kritisch", "transport_prozent": 90},
+    {"stufe": "Alpinunfall", "rettungsmittel": "RTW>RTW-C>KTW", "nfs_erforderlich": False, "notarzt": "schnellster", "sondersignal": True, "kategorie": "dringend", "transport_prozent": 70},
+]
+
+
+def _verteilt(dist, n):
+    """n Kategorien nach der Verteilung dist (dringendste zuerst, anteilig)"""
+    reihe = sorted(dist.items(), key=lambda kv: RANG.index(kv[0]) if kv[0] in RANG else 99)
+    summe = sum(v for _, v in reihe)
+    out = []
+    for i in range(n):
+        q = (i + 0.5) / n * summe
+        acc = 0
+        for kat, v in reihe:
+            acc += v
+            if q <= acc:
+                out.append(kat)
+                break
+    return out
+
+
+def rd_umbau(kapitel, codes):
+    alt = re.compile(r"^(\d{2})-S(\d)-(\d{2})(/([A-Z]))?$")
+    neu_von = {}
+    gruppen = {}  # (kap, buchstabe) -> [alter Basiscode] in Reihenfolge
+    zaehler = {}
+    for c in codes:
+        m = alt.match(c)
+        if not m or m.group(4):
+            continue
+        kap, st, nr = KAP_NEU[m.group(1)], int(m.group(2)), m.group(3)
+        b = BUCHSTABE[st]
+        if nr == "00":
+            n = 0
+        else:
+            zaehler[(kap, b)] = zaehler.get((kap, b), 0) + 1
+            n = zaehler[(kap, b)]
+            gruppen.setdefault((kap, b), []).append(c)
+        pre = "ALP" if kap == "ALP" else "RD"
+        neu_von[c] = f"{pre}-{'33' if kap == 'ALP' else kap}{b}{n}"
+    for c in codes:
+        m = alt.match(c)
+        if m and m.group(4):
+            neu_von[c] = neu_von[c[: -len(m.group(4))]] + m.group(5)
+    # Kategorien
+    kat_von = {}
+    for (kap, b), liste in gruppen.items():
+        dist = VERTEILUNG.get(kap, {}).get(b) or GESAMT.get(b) or {STANDARD_KAT[b]: 1}
+        for c, k in zip(liste, _verteilt(dist, len(liste))):
+            kat_von[c] = k
+    for c, d in codes.items():
+        if c in kat_von:
+            continue
+        m = alt.match(c)
+        if m and m.group(4):
+            kat_von[c] = kat_von.get(c[: -len(m.group(4))]) or STANDARD_KAT[BUCHSTABE[int(m.group(2))]]
+        elif m:  # manuell aufgewertet: häufigste Kategorie der Stufe
+            kap, b = KAP_NEU[m.group(1)], BUCHSTABE[int(m.group(2))]
+            dist = VERTEILUNG.get(kap, {}).get(b) or GESAMT.get(b) or {STANDARD_KAT[b]: 1}
+            kat_von[c] = max(dist.items(), key=lambda kv: kv[1])[0]
+    # mehrere Verletzte bleiben ein Großunfall
+    for c, d in codes.items():
+        if d["kategorie"] == MANV:
+            kat_von[c] = "Großunfall"
+
+    titel_von = {k: K["titel"] for k, K in kapitel.items()}
+
+    def kapname(k_alt):
+        k = KAP_NEU[k_alt]
+        return f"{k} - {titel_von[k_alt]}"
+
+    def umschreiben(x, schluessel=None):
+        if isinstance(x, dict):
+            return {(neu_von.get(k, k) if schluessel == "polizei_kennung" else k): umschreiben(v, k if schluessel != "polizei_kennung" else None) for k, v in x.items()}
+        if isinstance(x, list):
+            return [umschreiben(v, schluessel) for v in x]
+        if isinstance(x, str):
+            if x in neu_von:
+                return neu_von[x]
+            if schluessel == "wechsel_zu_kapitel" and x in KAP_NEU:
+                return KAP_NEU[x]
+            if schluessel == "suffix" and x.startswith("/"):
+                return x[1:]
+        return x
+
+    neu_kapitel = {}
+    for k_alt, K in kapitel.items():
+        K2 = umschreiben(K)
+        K2["kapitel"] = KAP_NEU[k_alt]
+        K2["aufwertung"] = {BUCHSTABE[int(st)]: c for st, c in K2.get("aufwertung", {}).items()}
+        neu_kapitel[KAP_NEU[k_alt]] = K2
+    neu_codes = {}
+    for c, d in codes.items():
+        k_alt = d["kapitel"][:2]
+        neu_codes[neu_von[c]] = {"name": d["name"], "kategorie": kat_von[c], "kapitel": kapname(k_alt)}
+    # Kapitel nach Nummer sortieren (ALP zuletzt)
+    sortiert = dict(sorted(neu_kapitel.items(), key=lambda kv: (kv[0] == "ALP", int(kv[0]) if kv[0].isdigit() else 0)))
+    return sortiert, neu_codes, neu_von
+
+
 def main(ziel):
     kapitel, codes = bauen()
+    kapitel, codes, _ = rd_umbau(kapitel, codes)
     d = {
         "format": "leitwerk-codesystem",
         "version": 1,
         "name": "LeitWerk-Codesystem",
-        "beschreibung": "Eigenständiges Codesystem von LeitWerk: 38 Kapitel, Codes KK-Sx-NN mit Dringlichkeitsstufen S0–S5. Frei verwendbar, nicht für den echten Einsatz.",
+        "beschreibung": "Eigenständiges Codesystem von LeitWerk: 38 Kapitel, Codes im gewohnten Muster RD-<Kapitel><Stufe><Nr> (Stufen O, A, B, C, D, E). Eigene Fragen und Namen, frei verwendbar, nicht für den echten Einsatz.",
         "anleitung_fuer_ki": ANLEITUNG,
-        "stufen": {"muster": "^\\d{2}-S(\\d)", "reihenfolge": ["0", "1", "2", "3", "4", "5"]},
-        "einsatzstufen": EINSATZSTUFEN,
+        "stufen": {"muster": "^[A-Z]+-\\d+([OABCDE])", "reihenfolge": ["O", "A", "B", "C", "D", "E"]},
+        "einsatzstufen": EINSATZSTUFEN_RD,
         "globale_fragen": GLOBAL,
         "kapitel": kapitel,
         "codes": codes,

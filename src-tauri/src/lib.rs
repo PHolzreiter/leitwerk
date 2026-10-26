@@ -576,6 +576,7 @@ pub fn run() {
             spielstaende::ablage_schreiben,
             spielstaende::ablage_liste,
             spielstaende::ablage_lesen,
+            spielstaende::ablage_loeschen,
             spielstaende::ablage_zeigen,
             write_text_file,
             write_zip_file,

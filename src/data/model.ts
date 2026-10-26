@@ -360,6 +360,8 @@ export interface Persisted {
   einstellungen?: unknown;
   /** Importiertes Abfrageschema (Notrufabfrage), siehe abfrage/schema.ts */
   abfrageschema?: unknown;
+  /** v0.73: alte importierte Codelisten/Abfrageschemas einmalig entfernt (auch die Dateien in Dokumente/LeitWerk) */
+  codesAufgeraeumt?: boolean;
 }
 
 export function emptyPersisted(): Persisted {

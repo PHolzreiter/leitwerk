@@ -1172,10 +1172,10 @@ def build_examples() -> None:
         {"id": "poi-3", "name": "Volksschule Musterstadt", "typ": "Schule, Sport", "ort": "Musterstadt", "breitengrad": "48.222000", "laengengrad": "15.628000"},
     ])
     write_csv(EX / "beispiel_einsatzvorlagen.csv", TEMPLATE_COLS, [
-        {"id": "ev-1", "code": "02-S4-03", "adresse": "Obere Landstraße 10, 3500 Krems an der Donau", "breitengrad": "48.410900",
+        {"id": "ev-1", "code": "RD-10D3", "adresse": "Obere Landstraße 10, 3500 Krems an der Donau", "breitengrad": "48.410900",
          "laengengrad": "15.601200", "meldung": "Mann, ca. 60, starke Schmerzen in der Brust, schwitzt stark", "patient_alter": "60",
          "transport": "ja", "hinweis": "Beispielzeile – Koordinaten = tatsächlicher Einsatzort"},
-        {"id": "ev-2", "code": "18-S2-02", "adresse": "Hauptplatz 1, 3550 Langenlois", "breitengrad": "48.473800",
+        {"id": "ev-2", "code": "RD-17B2", "adresse": "Hauptplatz 1, 3550 Langenlois", "breitengrad": "48.473800",
          "laengengrad": "15.680900", "meldung": "Frau auf dem Gehsteig gestürzt, Knöchel tut weh", "patient_alter": "",
          "transport": "", "hinweis": "leeres Alter / Transport = zufällig"},
     ])

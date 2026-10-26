@@ -90,6 +90,7 @@ export class Store {
           eigene: { ...base.eigene, ...(parsed.eigene ?? {}) },
           einstellungen: parsed.einstellungen,
           abfrageschema: parsed.abfrageschema,
+          codesAufgeraeumt: parsed.codesAufgeraeumt,
         };
         // ältere Speicherstände: neue Felder ergänzen
         for (const v of this.data.eigene.vehicles) v.nachtflug ??= false;
@@ -221,6 +222,20 @@ export class Store {
     const roh = istSchema(this.data.abfrageschema) ? this.data.abfrageschema : standardCodesystem();
     const std = standardCodesystem();
     return uebersetzeSchema(roh, roh === std ? null : std);
+  }
+
+  /** Wurden alte importierte Codes/Schemas (v0.73) schon einmalig entfernt? */
+  get codesAufgeraeumt(): boolean {
+    return !!this.data.codesAufgeraeumt;
+  }
+
+  /** Einmalig: importiertes Abfrageschema und importierte Codes entfernen (eingebautes Codesystem gilt) */
+  codesAufraeumen(): void {
+    if (this.remote || this.eigeneSicherung) return;
+    this.data.abfrageschema = undefined;
+    this.data.eigene.codes = this.data.eigene.codes.filter((c) => c.herkunft === "standard");
+    this.data.codesAufgeraeumt = true;
+    this.changed();
   }
 
   setSchema(s: Schema | null): void {

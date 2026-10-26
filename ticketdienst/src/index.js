@@ -8,12 +8,13 @@
  *   GET  /api/hilfe              → offene Punkte „Deine Hilfe wird gebraucht“
  *   POST /api/tickets            → Ticket anlegen  {art, titel, text, daten?, importCsv?, kontakt?, hilfeId?, version?, funkgruppe?, anhaenge?: [{name, inhalt}]}
  *   POST /api/status             → Stand eigener Tickets {tickets: [{nr, geheim}]}
+ *   GET  /api/fortschritt        → Entwicklungsfortschritt (In Arbeit / Geplant, mit Prozent)
  *
  * Alles liegt in EINEM Durable Object (SQLite). Die Admin-Seite (Worker „tickets-admin“) benutzt es über RPC.
  */
 import { DurableObject } from "cloudflare:workers";
 
-export const ARTEN = ["dienststelle", "fahrzeug", "poi", "krankenhaus", "vorschlag", "hilfe"];
+export const ARTEN = ["dienststelle", "fahrzeug", "poi", "krankenhaus", "vorschlag", "hilfe", "idee"];
 export const STATUS = ["eingegangen", "in_arbeit", "rueckfrage", "eingebaut", "erledigt", "abgelehnt"];
 export const GRENZEN = {
   titel: 200,
@@ -37,6 +38,18 @@ const START_HILFE = [
   ["fg-05", "Fahrzeuge NÖ-05 kontrollieren", "Stimmen Funkrufnamen, Typen und Dienstzeiten in Mödling, Bruck an der Leitha, Schwechat und Baden (Nord)?", "fahrzeug"],
   ["fg-06", "Fahrzeuge NÖ-06 kontrollieren", "Stimmen Funkrufnamen, Typen und Dienstzeiten in Wiener Neustadt, Neunkirchen und Baden (Süd)?", "fahrzeug"],
   ["juh-sek", "Sekundärfahrzeuge der Johanniter", "Welche SKTW, SRTW, SNAW und BIT haben die Johanniter in NÖ – mit Funkrufnamen, Dienstzeiten und Standorten (St. Pölten, Wiener Neudorf, Spillern, Zwettl, Stellplätze bei den Kliniken)?", "fahrzeug"],
+];
+
+/** Startliste Entwicklungsfortschritt: [id, titel, text, stand („arbeit“ | „geplant“), prozent] */
+export const START_FORTSCHRITT = [
+  ["schema", "Eigenes Codesystem & eigene Schemas", "Eingebaute Codeliste mit Abfrage ab der Installation; eigene Codelisten und Abfrageschemas hochladen und wechseln", "fertig", 100],
+  ["fahrzeugsuche", "Suche bei der Fahrzeugwahl", "Im Einsatz schnell ein bestimmtes Fahrzeug finden", "geplant", 0],
+  ["sek-kt", "Fahrzeugwahl bei Überstellungen und Krankentransporten", "Vorschlag nach Dienstzeit, Suche, Alarmieren oder Vormerken; Rückfrage per Funk, wenn ein Fahrzeug zu früh dort ist", "geplant", 0],
+  ["karte-info", "Info-Fenster auf der Karte", "Klick auf ein Fahrzeug zeigt Status und Ankunftszeit, ohne die Karte zu verlassen", "geplant", 0],
+  ["tablet", "Zweitbildschirm am Tablet", "Karte, Fahrzeuge und Krankenhäuser zusätzlich am Tablet im WLAN anzeigen", "geplant", 0],
+  ["nah-pilot", "Notarzthubschrauber selbst fliegen", "Als Pilot im Multiplayer mitspielen – mit oder ohne Flugsimulator", "arbeit", 70],
+  ["telefon", "Bessere Telefongespräche", "Natürlichere Anrufer und genauere Antworten in der Notrufabfrage", "arbeit", 60],
+  ["funk", "Überarbeitung des Funksystems", "Funkverkehr mit Fahrzeugen klarer, schneller und realistischer", "geplant", 0],
 ];
 
 const json = (data, status = 200, extra = {}) =>
@@ -63,6 +76,7 @@ export default {
     const store = env.TICKETS.get(env.TICKETS.idFromName("haupt"));
     try {
       if (url.pathname === "/api/hilfe" && request.method === "GET") return json({ punkte: await store.hilfe(false) });
+      if (url.pathname === "/api/fortschritt" && request.method === "GET") return json({ punkte: await store.fortschritt(false) });
       if (url.pathname === "/api/tickets" && request.method === "POST") {
         const laenge = Number(request.headers.get("content-length") ?? 0);
         if (laenge > 8_000_000) return json({ fehler: "Ticket zu groß" }, 413);
@@ -113,6 +127,9 @@ export class TicketStore extends DurableObject {
       id INTEGER PRIMARY KEY AUTOINCREMENT, nr INTEGER NOT NULL, name TEXT NOT NULL, groesse INTEGER NOT NULL, teil INTEGER NOT NULL, inhalt TEXT NOT NULL)`);
     this.sql.exec(`CREATE TABLE IF NOT EXISTS hilfe (
       id TEXT PRIMARY KEY, titel TEXT NOT NULL, text TEXT, art TEXT, reihenfolge INTEGER NOT NULL DEFAULT 0, aktiv INTEGER NOT NULL DEFAULT 1, geaendert INTEGER NOT NULL)`);
+    this.sql.exec(`CREATE TABLE IF NOT EXISTS fortschritt (
+      id TEXT PRIMARY KEY, titel TEXT NOT NULL, text TEXT, stand TEXT NOT NULL DEFAULT 'geplant', prozent INTEGER NOT NULL DEFAULT 0,
+      reihenfolge INTEGER NOT NULL DEFAULT 0, aktiv INTEGER NOT NULL DEFAULT 1, geaendert INTEGER NOT NULL)`);
     this.sql.exec(`CREATE TABLE IF NOT EXISTS rate (ip TEXT NOT NULL, zeit INTEGER NOT NULL)`);
     this.sql.exec(`CREATE TABLE IF NOT EXISTS meta (k TEXT PRIMARY KEY, v TEXT)`);
     const geimpft = this.sql.exec(`SELECT v FROM meta WHERE k = 'hilfe_start'`).toArray();
@@ -120,6 +137,13 @@ export class TicketStore extends DurableObject {
       const t = Date.now();
       START_HILFE.forEach(([id, titel, txt, art], i) => this.sql.exec(`INSERT OR IGNORE INTO hilfe (id, titel, text, art, reihenfolge, aktiv, geaendert) VALUES (?, ?, ?, ?, ?, 1, ?)`, id, titel, txt, art, i, t));
       this.sql.exec(`INSERT INTO meta (k, v) VALUES ('hilfe_start', '1')`);
+    }
+    if (!this.sql.exec(`SELECT v FROM meta WHERE k = 'fortschritt_start'`).toArray().length) {
+      const t = Date.now();
+      START_FORTSCHRITT.forEach(([id, titel, txt, stand, prozent], i) =>
+        this.sql.exec(`INSERT OR IGNORE INTO fortschritt (id, titel, text, stand, prozent, reihenfolge, aktiv, geaendert) VALUES (?, ?, ?, ?, ?, ?, 1, ?)`, id, titel, txt, stand, prozent, i, t),
+      );
+      this.sql.exec(`INSERT INTO meta (k, v) VALUES ('fortschritt_start', '1')`);
     }
   }
 
@@ -129,6 +153,12 @@ export class TicketStore extends DurableObject {
   hilfe(alle) {
     const rows = this.sql.exec(`SELECT id, titel, text, art, reihenfolge, aktiv FROM hilfe ${alle ? "" : "WHERE aktiv = 1"} ORDER BY reihenfolge, titel`).toArray();
     return rows.map((r) => ({ id: r.id, titel: r.titel, text: r.text ?? "", art: r.art ?? "", reihenfolge: r.reihenfolge, aktiv: !!r.aktiv }));
+  }
+
+  /** Entwicklungsfortschritt (alle = auch ausgeblendete, für die Admin-Seite) */
+  fortschritt(alle) {
+    const rows = this.sql.exec(`SELECT id, titel, text, stand, prozent, reihenfolge, aktiv, geaendert FROM fortschritt ${alle ? "" : "WHERE aktiv = 1"} ORDER BY reihenfolge, titel`).toArray();
+    return rows.map((r) => ({ id: r.id, titel: r.titel, text: r.text ?? "", stand: r.stand === "arbeit" ? "arbeit" : r.stand === "fertig" ? "fertig" : "geplant", prozent: r.prozent, reihenfolge: r.reihenfolge, aktiv: !!r.aktiv, geaendert: r.geaendert }));
   }
 
   /** Ticket anlegen (mit Prüfung und Grenze je Stunde) */
@@ -249,6 +279,22 @@ export class TicketStore extends DurableObject {
     this.sql.exec(`DELETE FROM anhaenge WHERE nr = ?`, Number(nr));
     this.sql.exec(`DELETE FROM tickets WHERE nr = ?`, Number(nr));
     return { ok: true };
+  }
+
+  /** Liste Entwicklungsfortschritt ersetzen */
+  fortschrittSpeichern(punkte) {
+    if (!Array.isArray(punkte)) return { fehler: "Liste erwartet" };
+    const t = Date.now();
+    this.sql.exec(`DELETE FROM fortschritt`);
+    punkte.slice(0, 100).forEach((x, i) => {
+      const id = text(x?.id, 60) || `f${t}-${i}`;
+      const titel = text(x?.titel, 200);
+      if (!titel) return;
+      const stand = ["arbeit", "geplant", "fertig"].includes(x?.stand) ? x.stand : "geplant";
+      const prozent = Math.max(0, Math.min(100, Math.round(Number(x?.prozent) || 0)));
+      this.sql.exec(`INSERT OR REPLACE INTO fortschritt (id, titel, text, stand, prozent, reihenfolge, aktiv, geaendert) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, id, titel, text(x?.text, 2000), stand, prozent, i, x?.aktiv === false ? 0 : 1, t);
+    });
+    return { ok: true, punkte: this.fortschritt(true) };
   }
 
   /** Liste „Deine Hilfe wird gebraucht“ ersetzen */

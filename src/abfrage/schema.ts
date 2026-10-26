@@ -302,7 +302,7 @@ export function bestimmeCode(
     const name = schema.codes[code]?.name ?? "";
     const reanimation =
       (istKreislaufstillstand(a) && (EIGENER_KS.test(name) || ksSchnell || thema(kap, schema) === "stillstand") && !/Tote Person|Tod/.test(name)) ||
-      code === "RD-9E2";
+      (code === "RD-9E2" && !istLeitWerkSystem(schema));
     // Bewusstlos: Codes ohne eigene Bewusstlos-Variante werden zum Bewusstlosigkeits-Code (Kapitel 31) nach der Atmung
     const bl = reanimation ? null : bewusstlosCode(schema, kap, code, a);
     if (bl) return { kapitel: kapitelZuThema("bewusstlos", schema) ?? "31", pfad, determinante: bl, code: bl, reanimation, antworten: a };
@@ -313,6 +313,8 @@ export function bestimmeCode(
 
 /** Bewusstloser Patient: 31D1 (agonal/ineffektiv), 31D2 (abnorm), 31D3 (effektiv), 31D4 (unklar) – außer der Code kennt Bewusstlosigkeit schon */
 function bewusstlosCode(schema: Schema, kap: string, code: string, a: Antworten): string | null {
+  // Das eingebaute LeitWerk-Codesystem hat in jedem Kapitel eigene Codes für „reagiert nicht“
+  if (istLeitWerkSystem(schema)) return null;
   const t = thema(kap, schema);
   if (a.bw !== "nein" || t === "bewusstlos" || t === "stillstand") return null;
   const name = schema.codes[code]?.name ?? "";
@@ -326,6 +328,11 @@ function bewusstlosCode(schema: Schema, kap: string, code: string, a: Antworten)
   const nr = a.at === "agonal" || a.at === "keine" ? "D1" : a.at === "abnorm" ? "D2" : a.at === "normal" ? "D3" : "D4";
   const ziel = `${pre}-31${nr}`;
   return schema.codes[ziel] ? ziel : null;
+}
+
+/** Ist das das eingebaute LeitWerk-Codesystem (gleiches Code-Muster, aber eigene Bedeutungen)? */
+export function istLeitWerkSystem(schema: Schema | null | undefined): boolean {
+  return schema?.format === "leitwerk-codesystem" || schema?.name === "LeitWerk-Codesystem";
 }
 
 function suffixVon(K: Kapitel, a: Antworten): string {

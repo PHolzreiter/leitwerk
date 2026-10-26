@@ -37,6 +37,7 @@ const REITER: [Reiter, string][] = [
   ["poi", "Ort (POI)"],
   ["krankenhaus", "Krankenhaus"],
   ["vorschlag", "Vorschlag"],
+  ["idee", "Idee/Wunsch"],
   ["meine", "Meine Tickets"],
 ];
 
@@ -366,9 +367,9 @@ function krankenhausForm(): Formular {
   };
 }
 
-function vorschlagForm(hilfe?: HilfePunkt): Formular {
+function vorschlagForm(hilfe?: HilfePunkt, idee = false): Formular {
   const root = el("div", { class: "form-grid" });
-  const titel = eingabe(hilfe ? hilfe.titel : "Kurz: worum geht es?", "titel");
+  const titel = eingabe(hilfe ? hilfe.titel : idee ? "Kurz: deine Idee oder dein Wunsch" : "Kurz: worum geht es?", "titel");
   if (hilfe) titel.value = `Zu „${hilfe.titel}“`;
   root.append(feld("Titel *", titel, { breit: true }));
   return {
@@ -376,7 +377,7 @@ function vorschlagForm(hilfe?: HilfePunkt): Formular {
     zerstoeren: () => {},
     lesen: () => {
       if (!titel.value.trim()) return "Bitte einen Titel angeben";
-      return { art: hilfe ? "hilfe" : "vorschlag", titel: titel.value.trim() };
+      return { art: hilfe ? "hilfe" : idee ? "idee" : "vorschlag", titel: titel.value.trim() };
     },
   };
 }
@@ -494,7 +495,7 @@ export function mithelfenOeffnen(opt: { reiter?: Reiter; hilfe?: HilfePunkt } = 
     }
     if (opt.hilfe) kopf.innerHTML = `<b>Offener Punkt:</b> ${esc(opt.hilfe.titel)}<div class="small muted">${esc(opt.hilfe.text)}</div>`;
     form =
-      reiter === "fahrzeug" ? fahrzeugForm() : reiter === "dienststelle" ? dienststelleForm() : reiter === "poi" ? poiForm() : reiter === "krankenhaus" ? krankenhausForm() : vorschlagForm(opt.hilfe);
+      reiter === "fahrzeug" ? fahrzeugForm() : reiter === "dienststelle" ? dienststelleForm() : reiter === "poi" ? poiForm() : reiter === "krankenhaus" ? krankenhausForm() : reiter === "idee" ? vorschlagForm(undefined, true) : vorschlagForm(opt.hilfe);
     formOrt.innerHTML = "";
     formOrt.appendChild(form.root);
   };
@@ -514,7 +515,7 @@ export function mithelfenOeffnen(opt: { reiter?: Reiter; hilfe?: HilfePunkt } = 
       toast(r, "error");
       return false;
     }
-    if (r.art === "vorschlag" || r.art === "hilfe" ? !text.value.trim() && !anhaenge.length : false) {
+    if (r.art === "vorschlag" || r.art === "hilfe" || r.art === "idee" ? !text.value.trim() && !anhaenge.length : false) {
       toast("Bitte beschreiben, worum es geht (oder eine Datei anhängen)", "error");
       return false;
     }

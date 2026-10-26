@@ -92,6 +92,12 @@ export async function ablageLesen(ordner: AblageOrdner, name: string): Promise<s
   return new TextDecoder().decode(e.bytes);
 }
 
+/** Datei aus der Ablage löschen */
+export async function ablageLoeschen(ordner: AblageOrdner, name: string): Promise<void> {
+  if (inTauri()) return invoke("ablage_loeschen", { ordner, name });
+  await idb("readwrite", (s) => s.delete(`${ordner}/${name}`));
+}
+
 export async function ablageZeigen(ordner?: AblageOrdner): Promise<void> {
   if (inTauri()) await invoke("ablage_zeigen", { ordner: ordner ?? null });
 }

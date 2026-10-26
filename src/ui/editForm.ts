@@ -252,7 +252,7 @@ export function openEditor(
 
   } else if (kind === "codes") {
     const c = existing as Einsatzcode | undefined;
-    add("code", "Code *", textInput(c?.code ?? "", "z. B. 18-S2-02"));
+    add("code", "Code *", textInput(c?.code ?? "", "z. B. RD-17B2"));
     const kat = textInput(c?.kategorie ?? "", "z. B. ALS rot");
     const dl = el("datalist", { id: "kategorien-liste" });
     for (const k of [...new Set([...store.settings.stufen.map((s) => s.stufe), ...codeKategorien()])]) dl.appendChild(el("option", { value: k }));
@@ -263,7 +263,7 @@ export function openEditor(
     add("kapitel", "Kapitel", textInput(c?.kapitel ?? "", "z. B. 10 - Brustschmerz"), undefined, true);
   } else if (kind === "templates") {
     const t = existing as Einsatzvorlage | undefined;
-    add("code", "Einsatzcode *", textInput(t?.code ?? "", "z. B. 18-S2-02"));
+    add("code", "Einsatzcode *", textInput(t?.code ?? "", "z. B. RD-17B2"));
     add("patient_alter", "Patientenalter", textInput(t?.patientAlter === null || t?.patientAlter === undefined ? "" : String(t.patientAlter), "leer = zufällig"));
     add("adresse", "Adresse (wie vom Anrufer genannt)", textInput(t?.adresse ?? ""), undefined, true);
     add("meldung", "Meldung des Anrufers", textInput(t?.meldung ?? ""), undefined, true);

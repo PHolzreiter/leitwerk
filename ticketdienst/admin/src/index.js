@@ -13,6 +13,8 @@
  *   GET   /api/tickets/:nr/anhang?name=
  *   GET   /api/hilfe             (alle, auch abgeschaltete)
  *   PUT   /api/hilfe             [{id, titel, text, art, aktiv}]
+ *   GET   /api/fortschritt       (alle, auch ausgeblendete)
+ *   PUT   /api/fortschritt       [{id, titel, text, stand, prozent, aktiv}]
  */
 
 const json = (d, status = 200) => new Response(JSON.stringify(d), { status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" } });
@@ -102,6 +104,8 @@ export default {
     if (m && request.method === "DELETE") return json(await store.loesche(Number(m[1])));
     if (url.pathname === "/api/hilfe" && request.method === "GET") return json(await store.hilfe(true));
     if (url.pathname === "/api/hilfe" && request.method === "PUT") return json(await store.hilfeSpeichern(await request.json()));
+    if (url.pathname === "/api/fortschritt" && request.method === "GET") return json(await store.fortschritt(true));
+    if (url.pathname === "/api/fortschritt" && request.method === "PUT") return json(await store.fortschrittSpeichern(await request.json()));
     return json({ fehler: "Nicht gefunden" }, 404);
   },
 };
@@ -122,17 +126,20 @@ main{display:grid;grid-template-columns:minmax(320px,1fr) 2fr;gap:0;height:calc(
 .st-eingegangen{color:var(--blau)}.st-in_arbeit{color:var(--gelb)}.st-rueckfrage{color:#c084fc}.st-eingebaut,.st-erledigt{color:var(--gruen)}.st-abgelehnt{color:var(--rot)}
 pre{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:10px;overflow:auto;white-space:pre-wrap;max-height:340px}
 .feld{display:flex;gap:8px;align-items:center;margin:8px 0;flex-wrap:wrap}textarea{width:100%;min-height:70px}
+.fs-z{display:grid;grid-template-columns:24px 1fr 2fr 110px 120px 54px 30px;gap:6px;margin-bottom:6px;align-items:start}.fs-z input[type=range]{width:100%}.fs-z .pz{font-variant-numeric:tabular-nums;font-size:12px;color:var(--dim)}
 .hilfe-z{display:grid;grid-template-columns:24px 1fr 2fr 110px 60px 30px;gap:6px;margin-bottom:6px;align-items:start}
 @media(max-width:800px){main{grid-template-columns:1fr;height:auto}#liste{max-height:45vh}}
 </style></head><body>
 <header><h1>LeitWerk Tickets</h1>
-<button class="tab an" data-tab="tickets">Tickets</button><button class="tab" data-tab="hilfe">„Deine Hilfe wird gebraucht“</button>
+<button class="tab an" data-tab="tickets">Tickets</button><button class="tab" data-tab="hilfe">„Deine Hilfe wird gebraucht“</button><button class="tab" data-tab="fortschritt">Entwicklungsfortschritt</button>
 <select id="fStatus"><option value="">alle Stände</option><option>eingegangen</option><option value="in_arbeit">in Arbeit</option><option value="rueckfrage">Rückfrage</option><option>eingebaut</option><option>erledigt</option><option>abgelehnt</option></select>
-<select id="fArt"><option value="">alle Arten</option><option>dienststelle</option><option>fahrzeug</option><option>poi</option><option>krankenhaus</option><option>vorschlag</option><option>hilfe</option></select>
+<select id="fArt"><option value="">alle Arten</option><option>dienststelle</option><option>fahrzeug</option><option>poi</option><option>krankenhaus</option><option>vorschlag</option><option>hilfe</option><option value="idee">Idee/Wunsch</option></select>
 <button id="csvAlle">Importdaten der Liste herunterladen</button></header>
 <main id="tickets"><div id="liste"></div><div id="detail"><p class="dim">Ticket links auswählen.</p></div></main>
 <section id="hilfe" hidden style="padding:16px 20px"><p class="dim">Diese Punkte sehen alle in LeitWerk auf der Startseite. Haken weg = ausgeblendet.</p><div id="hl"></div>
 <button id="hNeu">+ Punkt</button> <button class="primaer" id="hSpeichern">Speichern</button> <span id="hInfo" class="dim"></span></section>
+<section id="fortschritt" hidden style="padding:16px 20px"><p class="dim">Diese Liste sehen alle in LeitWerk unter „Entwicklungsfortschritt“ – Änderungen gelten sofort. Haken weg = ausgeblendet; ↑↓ ändert die Reihenfolge.</p><div id="fl"></div>
+<button id="fNeu">+ Punkt</button> <button class="primaer" id="fSpeichern">Speichern</button> <span id="fInfo" class="dim"></span></section>
 <script>
 const $=s=>document.querySelector(s);const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const STAND={eingegangen:"eingegangen",in_arbeit:"in Arbeit",rueckfrage:"Rückfrage",eingebaut:"eingebaut",erledigt:"erledigt",abgelehnt:"abgelehnt"};
@@ -163,6 +170,13 @@ $("#hl").oninput=e=>{const z=e.target.closest(".hilfe-z");if(!z)return;const p=h
 $("#hl").onclick=e=>{if(e.target.dataset.weg!==undefined){hl.splice(Number(e.target.closest(".hilfe-z").dataset.i),1);hilfeZeigen();}};
 $("#hNeu").onclick=()=>{hl.push({id:"p"+Date.now(),titel:"",text:"",art:"fahrzeug",aktiv:true});hilfeZeigen();};
 $("#hSpeichern").onclick=async()=>{const r=await (await fetch("/api/hilfe",{method:"PUT",headers:{"content-type":"application/json"},body:JSON.stringify(hl)})).json();hl=r.punkte??hl;hilfeZeigen();$("#hInfo").textContent="gespeichert";};
-document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("an",x===b));const h=b.dataset.tab==="hilfe";$("#tickets").hidden=h;$("#hilfe").hidden=!h;$("#fStatus").hidden=h;$("#fArt").hidden=h;$("#csvAlle").hidden=h;if(h)hilfeLaden();});
+let fl=[];const STAENDE={arbeit:"in Arbeit",geplant:"geplant",fertig:"fertig"};
+async function fsLaden(){fl=await (await fetch("/api/fortschritt")).json();fsZeigen();}
+function fsZeigen(){$("#fl").innerHTML='<div class="fs-z dim"><span>an</span><span>Titel</span><span>Text</span><span>Stand</span><span>Fertig</span><span></span><span></span></div>'+fl.map((p,i)=>'<div class="fs-z" data-i="'+i+'"><input type="checkbox" data-f="aktiv"'+(p.aktiv?' checked':'')+'><input data-f="titel" value="'+esc(p.titel)+'"><textarea data-f="text">'+esc(p.text)+'</textarea><select data-f="stand">'+Object.entries(STAENDE).map(([k,l])=>'<option value="'+k+'"'+(k===p.stand?' selected':'')+'>'+l+'</option>').join("")+'</select><div><input type="range" min="0" max="100" step="5" data-f="prozent" value="'+(p.prozent||0)+'"><div class="pz">'+(p.prozent||0)+' %</div></div><span><button data-hoch>↑</button><button data-runter>↓</button></span><button data-weg>✕</button></div>').join("");}
+$("#fl").oninput=e=>{const z=e.target.closest(".fs-z");if(!z)return;const p=fl[Number(z.dataset.i)];const f=e.target.dataset.f;p[f]=f==="aktiv"?e.target.checked:f==="prozent"?Number(e.target.value):e.target.value;if(f==="prozent")z.querySelector(".pz").textContent=p.prozent+" %";};
+$("#fl").onclick=e=>{const z=e.target.closest(".fs-z");if(!z)return;const i=Number(z.dataset.i);if(e.target.dataset.weg!==undefined)fl.splice(i,1);else if(e.target.dataset.hoch!==undefined&&i>0)fl.splice(i-1,0,fl.splice(i,1)[0]);else if(e.target.dataset.runter!==undefined&&i<fl.length-1)fl.splice(i+1,0,fl.splice(i,1)[0]);else return;fsZeigen();};
+$("#fNeu").onclick=()=>{fl.push({id:"f"+Date.now(),titel:"",text:"",stand:"geplant",prozent:0,aktiv:true});fsZeigen();};
+$("#fSpeichern").onclick=async()=>{const r=await (await fetch("/api/fortschritt",{method:"PUT",headers:{"content-type":"application/json"},body:JSON.stringify(fl)})).json();fl=r.punkte??fl;fsZeigen();$("#fInfo").textContent="gespeichert";};
+document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("an",x===b));const t=b.dataset.tab;$("#tickets").hidden=t!=="tickets";$("#hilfe").hidden=t!=="hilfe";$("#fortschritt").hidden=t!=="fortschritt";const nt=t!=="tickets";$("#fStatus").hidden=nt;$("#fArt").hidden=nt;$("#csvAlle").hidden=nt;if(t==="hilfe")hilfeLaden();if(t==="fortschritt")fsLaden();});
 laden();
 </script></body></html>`;

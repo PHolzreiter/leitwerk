@@ -18,6 +18,7 @@ import { akutVon } from "../data/klinik";
 import { codesystemDatei } from "../abfrage/codesystem";
 import beispielCodesystem from "../../data/beispiele/beispiel_codesystem.json?raw";
 import { STANDARD_CODESYSTEM_TEXT, standardCodesystem } from "../data/standard";
+import { RECHTLICHER_HINWEIS, aktiverSatz, codesaetzeOeffnen } from "./codesaetze";
 import { zuordnungDialog, zuordnungKurz } from "./zuordnungDialog";
 import { planKurz } from "../sim/dienst";
 import { sim } from "../sim/engine";
@@ -103,16 +104,18 @@ export function createDataView(container: HTMLElement, deps: DataViewDeps): { re
     if (schemaBar.hidden) return;
     const sch = store.schema!;
     const std = store.schemaIstStandard;
-    schemaBar.innerHTML = `<div><b>${std ? "LeitWerk-Codesystem (mitgeliefert)" : `Eigenes Codesystem${sch.name ? `: ${esc(sch.name)}` : ""}`}</b> <span class="muted">· ${Object.keys(sch.kapitel).length} Kapitel · ${Object.keys(sch.codes).length} Codes</span>
+    const satz = aktiverSatz();
+    schemaBar.innerHTML = `<div class="cs-rechtlich klein"><b>Hinweis:</b> ${esc(RECHTLICHER_HINWEIS)}</div>
+      <div><b>${std && !satz ? "LeitWerk-Codesystem (eingebaut)" : `Eigener Codesatz: ${esc(satz ?? sch.name ?? "")}`}</b> <span class="muted">· ${Object.keys(sch.kapitel).length} Kapitel · ${Object.keys(sch.codes).length} Codes</span>
          <div class="muted small">${
            std
-             ? "Eigenständiges Codesystem von LeitWerk (Codes KK-Sx-NN, Stufen S0–S5) – frei verwendbar. Du kannst stattdessen ein eigenes Codesystem (JSON-Datei mit Codes und Abfrage) laden."
-             : "Codes und Abfrage kommen aus deiner Datei. Neue Einsätze kommen als Notruf, den du annimmst und abfragst – der Code ergibt sich aus der Abfrage."
+             ? "Eigenes Codesystem von LeitWerk im gewohnten Aufbau (RD-<Kapitel><Stufe><Nr>, Stufen O–E, Kategorien ALS rot … BLS grün) – frei verwendbar."
+             : "Codes und Abfrage kommen aus deinem Satz. Neue Einsätze kommen als Notruf, den du annimmst und abfragst – der Code ergibt sich aus der Abfrage."
          }</div>${std ? "" : `<div class="small">${zuordnungKurz()}</div>`}</div>`;
     const btns = el("div", { class: "row-btns" });
-    const laden = el("button", { class: "btn small primary" }, std ? "Eigenes Codesystem laden …" : "Anderes laden …");
-    laden.addEventListener("click", () => void startImport("codes", (k) => select(k)));
-    btns.appendChild(laden);
+    const saetze = el("button", { class: "btn small primary", "data-act-codes": "saetze" }, "Eigene Codes & Abfrageschema …");
+    saetze.addEventListener("click", () => codesaetzeOeffnen(() => render()));
+    btns.appendChild(saetze);
     const sp = el("button", { class: "btn small", title: "Codes und Abfrage zusammen als eine JSON-Datei speichern" }, "Als eine Datei speichern …");
     sp.addEventListener("click", async () => {
       const roh = store.schemaRoh ?? standardCodesystem();
@@ -131,23 +134,6 @@ export function createDataView(container: HTMLElement, deps: DataViewDeps): { re
       const zu = el("button", { class: "btn small", title: "Welche Frage deines Codesystems welchem LeitWerk-Merkmal entspricht" }, "Zuordnung …");
       zu.addEventListener("click", () => zuordnungDialog());
       btns.appendChild(zu);
-    }
-    if (!std) {
-      const weg = el("button", { class: "btn small danger-text" }, "Zurück zum LeitWerk-Codesystem");
-      weg.addEventListener("click", async () => {
-        const ok = await confirmDialog(
-          "Eigenes Codesystem entfernen",
-          "Dein Codesystem wird entfernt, dann gilt wieder das mitgelieferte LeitWerk-Codesystem. Deine Codeliste wird ebenfalls entfernt (die Datei kannst du jederzeit wieder laden).",
-          "Entfernen",
-          true,
-        );
-        if (!ok) return;
-        store.setSchema(null);
-        store.removeMany("codes", store.list("codes").filter((c) => c.herkunft !== "standard").map((c) => c.id));
-        toast("Wieder das LeitWerk-Codesystem");
-        render();
-      });
-      btns.appendChild(weg);
     }
     schemaBar.appendChild(btns);
   }

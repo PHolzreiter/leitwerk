@@ -101,6 +101,20 @@ check(j.ok && h.length === 1 && h[0].id === "neu1", "Hilfe-Liste bearbeiten (aus
 r = await mitPw("/");
 { const html = await r.text(); check(r.status === 200 && html.includes("LeitWerk Tickets") && html.includes("[hidden]{display:none!important}"), "Admin-Seite (Reiter schalten wirklich um)"); }
 
+// Entwicklungsfortschritt
+r = await oeffentlich.fetch(anfrage("/api/fortschritt"), env);
+j = await r.json();
+check(r.status === 200 && j.punkte.length === 8 && j.punkte.some((p) => p.stand === "arbeit" && p.prozent > 0) && j.punkte.every((p) => !/notruf n(ö|oe)|leosim|lstsim/i.test(p.titel + p.text)), `Fortschritt: ${j.punkte.length} Punkte, ohne Quellen`);
+r = await mitPw("/api/fortschritt", { method: "PUT", body: [{ id: "a", titel: "Neu A", stand: "arbeit", prozent: 140 }, { id: "b", titel: "Versteckt", stand: "geplant", prozent: 0, aktiv: false }, { id: "c", titel: "Fertig C", stand: "fertig", prozent: 100 }] });
+j = await r.json();
+r = await oeffentlich.fetch(anfrage("/api/fortschritt"), env);
+const fs = (await r.json()).punkte;
+check(j.ok && fs.length === 2 && fs[0].id === "a" && fs[0].prozent === 100 && fs[1].stand === "fertig", "Fortschritt bearbeiten (Prozent begrenzt, ausgeblendete fehlen öffentlich)");
+r = await oeffentlich.fetch(anfrage("/api/tickets", { method: "POST", body: { art: "idee", titel: "Nachtmodus für Funk", text: "wäre fein" }, ip: "7.7.7.7" }), env);
+check(r.status === 200 && (await r.json()).nr > 0, "Idee/Wunsch als Ticket");
+r = await mitPw("/");
+check((await r.text()).includes("Entwicklungsfortschritt"), "Admin-Seite hat den Reiter Entwicklungsfortschritt");
+
 // Access-Token prüfen (mit eigenem Schlüssel)
 const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
 const jwk = { ...(await crypto.subtle.exportKey("jwk", kp.publicKey)), kid: "k1" };

@@ -1,0 +1,980 @@
+[
+ {
+  "version": "0.73.0",
+  "datum": "2026-10-26",
+  "titel": "Eigenes Codesystem & Entwicklungsfortschritt",
+  "punkte": [
+   "LeitWerk bringt ab der Installation ein eigenes Codesystem mit Abfrage mit – im gewohnten Aufbau und mit den gewohnten Kategorien",
+   "Eigene Codeliste und eigenes Abfrageschema hochladen, speichern und jederzeit zwischen mehreren Sätzen wechseln",
+   "Neu im Hauptmenü: Entwicklungsfortschritt mit Fortschrittsbalken – und ein Knopf für deine Ideen und Wünsche",
+   "Neu im Hauptmenü: Changelog mit allen Updates auf einen Blick",
+   "Einmalig werden bisher geladene Codelisten und Abfrageschemas entfernt – eigene lassen sich neu hinzufügen"
+  ]
+ },
+ {
+  "version": "0.72.0",
+  "datum": "2026-10-26",
+  "titel": "Sprechfunk mit echter Stimme",
+  "punkte": [
+   "Pilot und Leitstelle sprechen live über Funk – Sprechtaste halten, die Stimme klingt wie echter Funk",
+   "Ein Kanal für alle: Ist der Funk belegt, gibt es einen kurzen Doppelton und den Hinweis „Funk belegt“",
+   "Gesprochenes erscheint als Text im Funkfenster und im Einsatzprotokoll",
+   "Der Pilot kann im Anflug den RTW am Einsatzort anfunken und bekommt Infos zu Patient und Landemöglichkeit",
+   "Der Pilot hört den übrigen Funkverkehr leise im Hintergrund mit"
+  ]
+ },
+ {
+  "version": "0.71.0",
+  "datum": "2026-10-26",
+  "titel": "Tablet und Funkgerät der H145",
+  "punkte": [
+   "Einsätze erscheinen direkt am Tablet der HPG H145 – mit Alarm, Route und Patientenblatt",
+   "Am Einsatzort liegt der Patient als Figur am Boden, die Crew kniet daneben",
+   "Transportziel, Übergabe an den RTW oder kein Transport direkt am Tablet wählen",
+   "Neuer Status 9 „Alarmiert und quittiert“ zum Bestätigen des Alarms",
+   "Status lässt sich über das Funkgerät in der Mittelkonsole der H145 setzen"
+  ]
+ },
+ {
+  "version": "0.70.1",
+  "datum": "2026-10-25",
+  "titel": "Flugplan direkt ins GTN750",
+  "punkte": [
+   "Flugplan zum Einsatzort und zum Krankenhaus landet automatisch im PMS50 GTN750",
+   "Wegpunkte für Einsatzort, Krankenhaus und Stützpunkt für Direct-To",
+   "Flugplan-Import in den Flugsimulator funktioniert zuverlässiger",
+   "Ruhe im Cockpit: Der Pilot hört keine Notruf- und Leitstellen-Töne mehr"
+  ]
+ },
+ {
+  "version": "0.70.0",
+  "datum": "2026-10-25",
+  "titel": "Mit dem Flugsimulator fliegen",
+  "punkte": [
+   "Verbindung zum Microsoft Flight Simulator 2024 (auch 2020) – der Hubschrauber fliegt live auf der LeitWerk-Karte mit",
+   "Die Leitstelle sieht Flugspur und echte Ankunftszeit des Hubschraubers",
+   "Fliegt ein Pilot, läuft das Spiel in Echtzeit – Zeitraffer erst wieder, wenn alle am Boden sind",
+   "Flugplan zum Einsatzort und zum Krankenhaus-Landeplatz zum Laden im Simulator",
+   "Wetter-Hilfe, damit das Wetter im Simulator zu LeitWerk passt"
+  ]
+ },
+ {
+  "version": "0.69.0",
+  "datum": "2026-10-25",
+  "titel": "Hubschrauber selbst fliegen",
+  "punkte": [
+   "Als Pilot beitreten: Ein Mitspieler übernimmt einen Notarzthubschrauber mit eigenem Piloten-Interface",
+   "Alarmierung mit Ton, Status drückt der Pilot selbst",
+   "Am Einsatzort den Patienten sehen und entscheiden: transportieren, Übergabe an den RTW oder kein Transport",
+   "Übungsflug ohne Flugsimulator, Handy als Statusgerät per QR-Code und Chat mit der Leitstelle",
+   "Fällt der Pilot aus, fliegt der Computer nahtlos weiter"
+  ]
+ },
+ {
+  "version": "0.68.0",
+  "datum": "2026-10-25",
+  "titel": "Schneller abfragen mit Tastatur",
+  "punkte": [
+   "Das Ortungsergebnis erscheint jetzt immer beim Adressfeld",
+   "„Was ist passiert?“: Stichwort tippen, Leertaste stellt die Frage, Enter wählt den obersten Treffer",
+   "Beim Alter steht der Cursor gleich im Zahlenfeld"
+  ]
+ },
+ {
+  "version": "0.67.1",
+  "datum": "2026-10-25",
+  "titel": "Feinschliff Hilfe-Feld",
+  "punkte": [
+   "„Deine Hilfe wird gebraucht“ nutzt den Platz in der linken Leiste besser und lässt sich durchblättern"
+  ]
+ },
+ {
+  "version": "0.67.0",
+  "datum": "2026-10-25",
+  "titel": "Mithelfen mit Tickets",
+  "punkte": [
+   "Neues Feld „Deine Hilfe wird gebraucht“ auf der Startseite mit offenen Fragen",
+   "Fehlende oder falsche Fahrzeuge, Dienststellen, Orte und Krankenhäuser mit fertigen Formularen melden",
+   "Gemeldetes kommt nach Prüfung mit einem Update zu allen Spielern",
+   "„Meine Tickets“ zeigt den Stand deiner Meldungen samt Antwort"
+  ]
+ },
+ {
+  "version": "0.66.0",
+  "datum": "2026-10-25",
+  "titel": "Alle sechs Funkgruppen",
+  "punkte": [
+   "NÖ-01 (Mostviertel · St. Pölten), NÖ-02 (Waldviertel) und NÖ-04 (Weinviertel) sind spielbar",
+   "Damit sind alle sechs Funkgruppen Niederösterreichs auf der Startseite wählbar",
+   "321 neue Fahrzeuge und neue Dienststellen, darunter ein Winterstützpunkt am Hochkar",
+   "Dienstpläne mit geraden/ungeraden Kalenderwochen und Saison"
+  ]
+ },
+ {
+  "version": "0.65.0",
+  "datum": "2026-10-25",
+  "titel": "Notfälle an Bord",
+  "punkte": [
+   "Viele neue Orte am Flughafen Wien: Gates, Terminals, Hangars, Vorfeld und mehr",
+   "Bei Notfällen an Bord oder beim Personal ruft die Flughafen-Leitstelle an",
+   "Angekündigte Notfälle: Fahrzeuge warten am Warteort, bis das Flugzeug gelandet ist",
+   "Das Flugzeug ist auf der Karte beim Anflug, bei der Landung und beim Rollen zu sehen"
+  ]
+ },
+ {
+  "version": "0.64.0",
+  "datum": "2026-10-25",
+  "titel": "Flughafen Wien-Schwechat",
+  "punkte": [
+   "Flughafenambulanz mit eigenem RTW und NAW für Einsätze am Flughafengelände",
+   "Neuer Fahrzeugtyp NAW (Notarztwagen) – RTW-C und NEF in einem",
+   "Sicherheitskontrolle an der Einfahrt kostet Fahrzeugen von außen etwas Zeit",
+   "Health Center und Medical Center am Flughafen als eigene Ziele",
+   "Betriebsfeuerwehr und Polizei am Flughafen als neue Dienststellen"
+  ]
+ },
+ {
+  "version": "0.63.0",
+  "datum": "2026-10-25",
+  "titel": "Schichtwechsel und Vormerken",
+  "punkte": [
+   "Fahrzeuglisten zeigen standardmäßig nur die eigene Funkgruppe – umschaltbar auf alle",
+   "Fahrzeuge fahren nach jedem Auftrag selbstständig zur Dienststelle zurück",
+   "Schichtwechsel findet jetzt auf der Dienststelle statt",
+   "Über die Dienstzeit hinaus: Fahrzeuge vormerken und über Funk fragen statt alarmieren"
+  ]
+ },
+ {
+  "version": "0.62.0",
+  "datum": "2026-10-24",
+  "titel": "NÖ-05 und NÖ-06 spielbar",
+  "punkte": [
+   "Neue Funkgruppen NÖ-05 (Mödling, Bruck/Leitha, Schwechat, Baden Nord) und NÖ-06 (Wr. Neustadt, Neunkirchen, Baden Süd)",
+   "194 neue Fahrzeuge mit Dienstplänen – Rotes Kreuz, Samariterbund und Sozialmedizinischer Dienst",
+   "Neue Dienststellen, u. a. Samariterbund Wiener Neustadt und PVZ Wienerwald"
+  ]
+ },
+ {
+  "version": "0.61.3",
+  "datum": "2026-10-24",
+  "titel": "Ein ACN je Stützpunkt",
+  "punkte": [
+   "An jedem ACN-Stützpunkt steht jetzt genau ein Fahrzeug"
+  ]
+ },
+ {
+  "version": "0.61.2",
+  "datum": "2026-10-24",
+  "titel": "Neue ACN-Funkrufnamen",
+  "punkte": [
+   "Korrigierte Funkrufnamen für die ACN in Bruck an der Leitha und Baden/Leobersdorf"
+  ]
+ },
+ {
+  "version": "0.61.1",
+  "datum": "2026-10-24",
+  "titel": "NEF-Rufnamen im Industrieviertel",
+  "punkte": [
+   "Korrigierte Funkrufnamen für die NEF in Hainburg und Aspang"
+  ]
+ },
+ {
+  "version": "0.61.0",
+  "datum": "2026-10-24",
+  "titel": "Einstellungen im neuen Look",
+  "punkte": [
+   "Einstellungen, Bereitschafts-Check und Rückfragen im Design der Startseite",
+   "Bereitschafts-Check mit Karten und farbigen Symbolen",
+   "Realistisches Wetter ist ohne Internet ausgegraut"
+  ]
+ },
+ {
+  "version": "0.60.0",
+  "datum": "2026-10-24",
+  "titel": "Eigene Dateien an einem Ort",
+  "punkte": [
+   "Alles, was du selbst dazugibst, liegt jetzt geordnet im Ordner Dokumente/LeitWerk",
+   "Beim Start öffnet sich nur das Hauptmenü, weitere Fenster erst mit Spielbeginn",
+   "Startseite im Multiplayer ohne Bildlauf"
+  ]
+ },
+ {
+  "version": "0.59.0",
+  "datum": "2026-10-24",
+  "titel": "Spielstände neu organisiert",
+  "punkte": [
+   "Spielstände als Dateien mit übersichtlicher Liste, Suche, Umbenennen, Export und Import",
+   "Speichern mit eigenem Namen",
+   "Einstellungen neu geordnet und mit Suche, die direkt zur gesuchten Option springt",
+   "Einheitliche Startseite mit gleichen Schaltern und Kacheln"
+  ]
+ },
+ {
+  "version": "0.58.0",
+  "datum": "2026-10-24",
+  "titel": "Echtes Wetter",
+  "punkte": [
+   "Neue Wetter-Option „Realistisch“: das echte Wetter Stunde für Stunde für deine Funkgruppe",
+   "Updates mit großer Fortschrittsanzeige – das laufende Spiel wird vorher gesichert",
+   "Einstellungen und Dialoge im neuen Glas-Design",
+   "Mitspieler sehen die Lobby bis zum Spielstart"
+  ]
+ },
+ {
+  "version": "0.57.0",
+  "datum": "2026-10-24",
+  "titel": "Neue Startseite und Logo",
+  "punkte": [
+   "Startseite bei jedem Programmstart: Funkgruppe, Startzeit, Aufkommen, Wetter und Solo/Multiplayer wählen",
+   "Holografische NÖ-Karte, auf der die gewählte Funkgruppe aufleuchtet",
+   "Bereitschafts-Check zeigt, ob alles funktioniert, und hilft bei Problemen",
+   "Spiel fortsetzen oder Spielstand laden direkt von der Startseite",
+   "Neues Logo in der Kopfzeile und als Programmsymbol"
+  ]
+ },
+ {
+  "version": "0.56.0",
+  "datum": "2026-10-24",
+  "titel": "Flüssige Fahrzeuge",
+  "punkte": [
+   "Fahrzeuge und Besatzungen bewegen sich flüssig über die Karte, auch im Multiplayer",
+   "Mac: Die Mikrofon-Freigabe bleibt jetzt auch über Updates erhalten",
+   "Neues Programmsymbol am Mac",
+   "Ausrückzeiten als Tabelle mit Tag und Nacht nebeneinander"
+  ]
+ },
+ {
+  "version": "0.55.0",
+  "datum": "2026-10-24",
+  "titel": "Wer belegt den Platz?",
+  "punkte": [
+   "Klick auf einen belegten Platz in der Akutversorgung zeigt Einsatz, Fahrzeuge und Buchungsgrund",
+   "Plätze anderer Patienten sind als „Anderer Patient“ gekennzeichnet"
+  ]
+ },
+ {
+  "version": "0.54.0",
+  "datum": "2026-10-24",
+  "titel": "Bewusstsein und Atmung zuerst",
+  "punkte": [
+   "Die Fragen nach Bewusstsein und Atmung kommen jetzt vor dem Grundproblem",
+   "Bewusstlos und keine Atmung: sofortiger Hinweis zur Reanimationsanleitung mit passendem Knopf"
+  ]
+ },
+ {
+  "version": "0.53.0",
+  "datum": "2026-10-23",
+  "titel": "Acute Community Nurse",
+  "punkte": [
+   "Neue Fahrzeugart ACN: Pflegekräfte mit Notfallausbildung an mehreren Standorten in NÖ",
+   "Neue ACN-Einsätze für Akutpflege zu Hause – der Patient bleibt daheim",
+   "ACN unterstützt den Rettungsdienst, wenn ein Notfallsanitäter fehlt, oder kommt als First Responder",
+   "Häufigkeit der ACN-Einsätze einstellbar"
+  ]
+ },
+ {
+  "version": "0.52.0",
+  "datum": "2026-10-23",
+  "titel": "Zu Fuß zum Patienten",
+  "punkte": [
+   "Fahrzeuge halten an der Straße, die Besatzung geht zu Fuß zum Patienten – das kostet Zeit",
+   "Abseits der Straße meldet die Besatzung lange Fußwege per Funk",
+   "Hubschrauber landen am Landeplatz des Krankenhauses; Häuser ohne Landeplatz werden bodengebunden angefahren",
+   "NEF mit Notarzt-Abholung zeigen jetzt den richtigen Status"
+  ]
+ },
+ {
+  "version": "0.51.0",
+  "datum": "2026-10-23",
+  "titel": "Alle NEF in Niederösterreich",
+  "punkte": [
+   "19 neue NEF – jetzt 32 Notarzteinsatzfahrzeuge in ganz NÖ",
+   "Manche NEF holen den Notarzt zuerst im Krankenhaus ab und bringen ihn danach zurück",
+   "Der Umweg ist in der Ankunftszeit eingerechnet"
+  ]
+ },
+ {
+  "version": "0.50.0",
+  "datum": "2026-10-23",
+  "titel": "Rettungszufahrten",
+  "punkte": [
+   "Fahrzeuge fahren über die Rettungseinfahrt der Unikliniken St. Pölten, Krems und Tulln",
+   "Auf der Karte zeigt ein blaues „P“ den Übergabepunkt",
+   "Rettungszufahrten lassen sich für weitere Krankenhäuser selbst festlegen"
+  ]
+ },
+ {
+  "version": "0.49.0",
+  "datum": "2026-10-22",
+  "titel": "Öffnungszeiten und Nachtfälle",
+  "punkte": [
+   "Orte haben Öffnungszeiten – Einsätze passieren dort nur, wenn offen ist",
+   "Österreichische Feiertage sind berücksichtigt",
+   "Fälle können tagsüber, nachts oder rund um die Uhr vorkommen",
+   "Etwa ein Drittel der Krankentransporte kommt jetzt aus Pflegeheimen, Reha-Zentren und Praxen"
+  ]
+ },
+ {
+  "version": "0.48.0",
+  "datum": "2026-10-22",
+  "titel": "Einsätze im Gelände",
+  "punkte": [
+   "Einsätze auf Autobahnen, Landstraßen, in Wald, am Berg, am Ufer und vielen weiteren Stellen ohne Adresse",
+   "Anrufer im Freien beschreiben, wo sie sind – Autobahn-Kilometer und Landstraßen sind in der Adresssuche zu finden",
+   "Hinweise für den Disponenten je Ort, z. B. Oberleitung am Bahnübergang oder Gärgas in der Kellergasse",
+   "Neue Fälle wie Unfall am Bahnübergang, Sturz vom Hochstand oder umgestürzter Traktor"
+  ]
+ },
+ {
+  "version": "0.47.0",
+  "datum": "2026-10-22",
+  "titel": "Jeder Ort hat sein Profil",
+  "punkte": [
+   "Je Ortsart ist festgelegt, wer anruft, wo der Patient ist und welche Partner mitkommen",
+   "Bad ist nicht gleich Badesee: Wasserrettung nur bei offenem Gewässer",
+   "Neue Profile für Bahnhof, Bus, Raststation, Museum, Tierpark, Disco und viele mehr",
+   "Zehn neue Fälle an bestimmten Orten, z. B. Kopfsprung im Freibad oder Biss im Tierpark"
+  ]
+ },
+ {
+  "version": "0.46.0",
+  "datum": "2026-10-22",
+  "titel": "Tausende Orte in ganz NÖ",
+  "punkte": [
+   "Rund 10 700 Orte in ganz Niederösterreich mit feinen Kategorien",
+   "Einsätze passen zum Ort: Alter und Notfall passen zur Einrichtung",
+   "Das NEF rückt realistisch kurz nach dem RTW aus",
+   "Leertaste stellt in der Abfrage die markierte Frage"
+  ]
+ },
+ {
+  "version": "0.45.0",
+  "datum": "2026-10-22",
+  "titel": "Rückruf, Kartensuche und Orte",
+  "punkte": [
+   "Rückruf-Knopf ruft den Anrufer wirklich zurück",
+   "Vorlesen direkt in der Abfrage ein- und ausschalten",
+   "Die meisten Hubschrauber fliegen nur von Sonnenaufgang bis Sonnenuntergang",
+   "Anrufer passen zum Ort – keine Pflegekraft mehr aus einem Privathaus",
+   "Neues Suchfeld in der Karte für Orte, Adressen und Einrichtungen"
+  ]
+ },
+ {
+  "version": "0.44.0",
+  "datum": "2026-10-20",
+  "titel": "Fremde Codesysteme verbessert",
+  "punkte": [
+   "Eigene Codesysteme werden noch besser verstanden – auch mit Fachjargon, Laiensprache oder Abkürzungen",
+   "Umgedrehte und zusammengesetzte Fragen werden richtig zugeordnet",
+   "Neue KI-Vorschläge für unsichere Zuordnungen"
+  ]
+ },
+ {
+  "version": "0.43.0",
+  "datum": "2026-10-20",
+  "titel": "Jedes Codesystem funktioniert",
+  "punkte": [
+   "Eigene Codesysteme mit beliebigen Fragen und Einsatzcodes werden automatisch übersetzt",
+   "Einsatzstufen werden anhand ihres Namens erkannt",
+   "Neue Ansicht „Zuordnung“ zeigt, welche Frage was bedeutet – von Hand korrigierbar"
+  ]
+ },
+ {
+  "version": "0.42.0",
+  "datum": "2026-10-19",
+  "titel": "Weniger, aber bessere Funksprüche",
+  "punkte": [
+   "Das Ersatz-NEF ist nur im Dienst, wenn der Hubschrauber wegen Schlechtwetter nicht fliegen kann",
+   "Lagemeldungen nur noch bei besonderen Umständen oder auf Nachfrage",
+   "Die Besatzung nennt auf Nachfrage Zielkrankenhaus und Verdacht"
+  ]
+ },
+ {
+  "version": "0.41.1",
+  "datum": "2026-10-19",
+  "titel": "Feinschliff Vorlesen",
+  "punkte": [
+   "„2x NEF“ wird jetzt als „zweimal NEF“ vorgelesen"
+  ]
+ },
+ {
+  "version": "0.41.0",
+  "datum": "2026-10-19",
+  "titel": "Funk über die KI",
+  "punkte": [
+   "Funkverkehr wie echt: zuerst der Anruf, dann die Meldung – formuliert von der KI",
+   "Nur ein Funkgespräch gleichzeitig, wichtige Meldungen haben Vorrang",
+   "Fahrzeuge lassen sich mit Funkrufnamen oder Rufnamen anfunken",
+   "Nicht jede Besatzung meldet vollständig – manchmal musst du nachfragen"
+  ]
+ },
+ {
+  "version": "0.40.0",
+  "datum": "2026-10-19",
+  "titel": "Statusänderungen im Blick",
+  "punkte": [
+   "Neuer Reiter „Statusänderungen“ mit jedem Statuswechsel samt Uhrzeit und Grund",
+   "„Aktive Fahrzeuge“ zeigt keine abgemeldeten Fahrzeuge mehr",
+   "Bei der Herzdruckmassage zählt der Anrufer sofort laut mit"
+  ]
+ },
+ {
+  "version": "0.39.0",
+  "datum": "2026-10-19",
+  "titel": "Stimmigere Gespräche",
+  "punkte": [
+   "Die genannte Adresse übernimmt nur, was der Anrufer wirklich gesagt hat",
+   "Anweisungen am Telefon werden besser verstanden",
+   "Anrufer antworten glaubwürdiger und erfinden weniger",
+   "Krankentransport-Gespräche natürlicher und mit realistischeren Terminen"
+  ]
+ },
+ {
+  "version": "0.38.0",
+  "datum": "2026-10-19",
+  "titel": "Neuer Gesprächsablauf",
+  "punkte": [
+   "Das Programm prüft jede Antwort des Anrufers, bevor sie angezeigt oder vorgelesen wird",
+   "Anweisungen werden auf Machbarkeit geprüft und bleiben im Gespräch in Erinnerung",
+   "Die Stimmung des Anrufers verändert sich im Laufe des Gesprächs"
+  ]
+ },
+ {
+  "version": "0.37.0",
+  "datum": "2026-10-19",
+  "titel": "Bessere Krankentransport-Anrufe",
+  "punkte": [
+   "Anrufer an der Krankentransport-Hotline verwechseln liegend und sitzend nicht mehr",
+   "Wer selbst anruft, spricht in der Ich-Form",
+   "Uhrzeiten werden genau so genannt, wie sie ausgemacht sind"
+  ]
+ },
+ {
+  "version": "0.36.0",
+  "datum": "2026-10-19",
+  "titel": "Anrufer klingen echter",
+  "punkte": [
+   "Anrufer widersprechen falschen Zusammenfassungen fast immer",
+   "Keine erfundenen Wegbeschreibungen oder Zeitangaben mehr",
+   "Abwechslungsreichere Bestätigungen und Verabschiedungen",
+   "Viele Fälle von Widersprüchen befreit"
+  ]
+ },
+ {
+  "version": "0.35.0",
+  "datum": "2026-10-18",
+  "titel": "Anrufer widersprechen",
+  "punkte": [
+   "Anrufer korrigieren falsche Zusammenfassungen der Leitstelle",
+   "Fragen wie „Seit wann?“ werden jetzt beantwortet",
+   "Verschlechterungen im Gespräch kennt auch der Anrufer",
+   "Fall-Editor prüft neue Fälle auf Widersprüche"
+  ]
+ },
+ {
+  "version": "0.34.0",
+  "datum": "2026-10-18",
+  "titel": "Testlauf für Notrufe",
+  "punkte": [
+   "Neuer Testlauf im Fall-Editor: Notrufe automatisch durchspielen und auswerten",
+   "Die erste Antwort des Anrufers kommt nach einer natürlichen Pause",
+   "Viele Fälle geprüft und bereinigt"
+  ]
+ },
+ {
+  "version": "0.33.0",
+  "datum": "2026-10-18",
+  "titel": "Schnellere erste Antwort",
+  "punkte": [
+   "Beim Annehmen eines Notrufs ist die erste Antwort fast sofort da",
+   "Frei getippte Fragen werden auch ohne Fragezeichen verstanden",
+   "Profis wie Pflegekräfte und Ärzte reden sachlich und mit Messwerten",
+   "Fälle können auf bestimmte Orte beschränkt werden"
+  ]
+ },
+ {
+  "version": "0.32.1",
+  "datum": "2026-10-18",
+  "titel": "Kürzere Antworten",
+  "punkte": [
+   "Anrufer sagen anfangs nur das Wichtigste – den Rest musst du erfragen",
+   "Wer mit Atemnot selbst anruft, spricht nur in kurzen Fetzen"
+  ]
+ },
+ {
+  "version": "0.32.0",
+  "datum": "2026-10-18",
+  "titel": "Notrufe wie echte Notrufe",
+  "punkte": [
+   "Jeder Anrufer hat eine eigene Persönlichkeit und Sprechweise",
+   "Anrufer wissen nur, was sie im echten Leben wissen würden",
+   "Unterschiedliche Einstiege – manchmal fehlt die Adresse und du musst nachfragen",
+   "Fragen aus der Abfrage klingen gesprochen statt nach Formular"
+  ]
+ },
+ {
+  "version": "0.31.0",
+  "datum": "2026-10-17",
+  "titel": "Fall-Editor",
+  "punkte": [
+   "Eigene Fälle in fünf Schritten schreiben, prüfen und sofort durchspielen",
+   "Ampel zeigt live, ob ein Fall spielbar ist",
+   "Optional einen Entwurf von der KI erstellen lassen",
+   "Fälle als Pakete exportieren und importieren"
+  ]
+ },
+ {
+  "version": "0.30.0",
+  "datum": "2026-10-17",
+  "titel": "Rendezvous mit dem NEF",
+  "punkte": [
+   "Ist das NEF weit weg, fährt der RTW mit dem Patienten los und trifft den Notarzt unterwegs",
+   "Der Treffpunkt ist auf der Karte markiert",
+   "Der RTW storniert das NEF selbst über Funk, wenn kein Notarzt nötig ist"
+  ]
+ },
+ {
+  "version": "0.29.0",
+  "datum": "2026-10-17",
+  "titel": "Fallkatalog",
+  "punkte": [
+   "Jeder Einsatz entsteht aus einem stimmigen Fall – Telefonat, Lagemeldung und Buchung passen zusammen",
+   "16 Fälle mit mehreren Varianten zum Testen",
+   "Notarzt-Bedarf hängt von der Ausbildung der Besatzung vor Ort ab",
+   "Anleitungen am Telefon verbessern den Verlauf"
+  ]
+ },
+ {
+  "version": "0.28.1",
+  "datum": "2026-10-17",
+  "titel": "Hausarzt-Fälle ins nächste Haus",
+  "punkte": [
+   "Leichte Fälle kommen ins nächstgelegene offene Haus – PVZ oder Krankenhaus"
+  ]
+ },
+ {
+  "version": "0.28.0",
+  "datum": "2026-10-17",
+  "titel": "Akutversorgung und PVZ",
+  "punkte": [
+   "Neues Fenster „Akutversorgung“ mit Schockraum, Herzkatheter, CT, Stroke und mehr je Krankenhaus",
+   "Neue Primärversorgungszentren für leichte Fälle zu den Öffnungszeiten",
+   "Zwettl hat jetzt eine Notaufnahme"
+  ]
+ },
+ {
+  "version": "0.27.2",
+  "datum": "2026-10-17",
+  "titel": "Schockräume überarbeitet",
+  "punkte": [
+   "Schockräume je Haus nach Trauma und internistisch getrennt",
+   "Unfallaufnahmen in weiteren Häusern",
+   "Neu: Medizinisches Zentrum Gänserndorf mit Notfallambulanz rund um die Uhr"
+  ]
+ },
+ {
+  "version": "0.27.1",
+  "datum": "2026-10-17",
+  "titel": "Genauere Krankenhaus-Plätze",
+  "punkte": [
+   "Herzkatheter, Stroke Units, Schockräume und Kreißsäle mit realistischeren Platzzahlen",
+   "Thrombektomie nur in den Schlaganfall-Spezialzentren"
+  ]
+ },
+ {
+  "version": "0.27.0",
+  "datum": "2026-10-17",
+  "titel": "Krankenhäuser mit Belegung",
+  "punkte": [
+   "Notaufnahmen, Herzkatheter und Co. haben Öffnungszeiten",
+   "Jedes Haus hat Plätze je Bereich – dein Patient belegt einen davon",
+   "Grundbelegung durch andere Patienten mit Tageskurve",
+   "Neues Fenster „KH-Status“ mit freien Plätzen in der Nähe"
+  ]
+ },
+ {
+  "version": "0.26.0",
+  "datum": "2026-10-16",
+  "titel": "Buchen nach Verdachtsdiagnose",
+  "punkte": [
+   "Krankenhäuser mit Stationen, Ambulanzen und Akut-Abteilungen",
+   "11 neue Krankenhäuser",
+   "Jeder Patient hat eine Verdachtsdiagnose, nach der das passende Haus gebucht wird",
+   "Die Besatzung bucht meist selbst – bei Reanimation fragt sie die Leitstelle"
+  ]
+ },
+ {
+  "version": "0.25.0",
+  "datum": "2026-10-16",
+  "titel": "Feuerwehr, Polizei und Co.",
+  "punkte": [
+   "Hunderte Feuerwehren, Polizeiinspektionen, Berg- und Wasserrettungs-Stützpunkte auf der Karte",
+   "Partner rücken mit echten Fahrzeugen von der nächsten Dienststelle aus",
+   "Bei Gewalt und Waffen warten die Fahrzeuge im Bereitstellungsraum, bis die Polizei gesichert hat",
+   "Die Polizei begleitet bei Bedarf den Transport ins Krankenhaus"
+  ]
+ },
+ {
+  "version": "0.24.0",
+  "datum": "2026-10-16",
+  "titel": "Fahrzeugarten und 3D-Modelle",
+  "punkte": [
+   "Fahrzeugart und Modell getrennt wählbar, mit passenden 3D-Modellen",
+   "Neue Reiter „NEF ÖAMTC“ und „EL“ in den Fahrzeuglisten",
+   "Testweise: Einsätze in Nachbarzonen, zu denen deine Fahrzeuge fahren"
+  ]
+ },
+ {
+  "version": "0.23.0",
+  "datum": "2026-10-16",
+  "titel": "Eigenes LeitWerk-Codesystem",
+  "punkte": [
+   "LeitWerk bringt ein eigenes Codesystem mit 38 Kapiteln und über 500 Einsatzcodes mit",
+   "Neue Spieler können sofort Notrufe abfragen",
+   "Fallgeschichten funktionieren mit jedem Codesystem",
+   "Neue Einsatzstufe „Alpinunfall“"
+  ]
+ },
+ {
+  "version": "0.22.1",
+  "datum": "2026-10-16",
+  "titel": "Schichten in der Liste",
+  "punkte": [
+   "Fahrzeuglisten zeigen die aktuelle Schicht samt Wochenübersicht",
+   "Hubschrauber melden sich bei Flugverbot selbst ab, ihr Ausweich-NEF meldet sich an",
+   "Krankenhäuser und Dienststellen erscheinen in der Orte-Liste"
+  ]
+ },
+ {
+  "version": "0.22.0",
+  "datum": "2026-10-16",
+  "titel": "Ersatz-NEF und Dienstpläne",
+  "punkte": [
+   "Jeder Notarzthubschrauber hat ein ÖAMTC-NEF als Ersatz, wenn er nicht fliegen kann",
+   "Dienstpläne als übersichtliche Wochenansicht",
+   "Filter und Sortierung in allen Listen der Einstellungen",
+   "Orte mit Kategorien – Einsätze passieren an passenden Orten"
+  ]
+ },
+ {
+  "version": "0.21.0",
+  "datum": "2026-10-15",
+  "titel": "Dienstpläne und Schichtwechsel",
+  "punkte": [
+   "Jedes Fahrzeug hat einen Dienstplan mit Schichten und eigenem Team",
+   "RTW klein, groß und RTW-C; KTW-B fährt nie mit Blaulicht",
+   "Ein gemeinsames Einstellungsfenster mit Navigation und Suche",
+   "Anklopf-Ton statt Dauerklingeln während eines Telefonats"
+  ]
+ },
+ {
+  "version": "0.20.0",
+  "datum": "2026-10-15",
+  "titel": "Gespräche, die echt wirken",
+  "punkte": [
+   "Anrufer wiederholen sich nicht mehr und reagieren passend auf Fragen, Anweisungen und Mitteilungen",
+   "Neue Geschichten von Pflegeheim, Hausarzt, Polizei, Bergrettung und mehr",
+   "KI-Modell nach Rechner-Stärke wählen",
+   "Reiter zwischen Fenstern ziehen, Nebel in 3D"
+  ]
+ },
+ {
+  "version": "0.19.0",
+  "datum": "2026-10-15",
+  "titel": "Echte Geschichten",
+  "punkte": [
+   "Jeder Notruf hat eine ausführliche Fallgeschichte – über 70 Alltagsgeschichten",
+   "Anrufer erzählen in eigenen Worten statt in Checklisten-Sätzen",
+   "Geschichten passen zu Jahreszeit, Uhrzeit und Wetter"
+  ]
+ },
+ {
+  "version": "0.18.0",
+  "datum": "2026-10-15",
+  "titel": "Natürlichere Stimmen",
+  "punkte": [
+   "Neue, menschlichere Vorlese-Stimmen, die ohne Internet laufen",
+   "Ausgabegerät für Stimmen und Töne getrennt wählbar",
+   "Mac: deutlich schnellere Spracherkennung"
+  ]
+ },
+ {
+  "version": "0.17.0",
+  "datum": "2026-10-15",
+  "titel": "Alarm-Anzeige und freier Funk",
+  "punkte": [
+   "Alarmierte Fahrzeuge sind farbig hervorgehoben",
+   "Fahrzeuge im Funkfeld frei anrufen – tippen oder sprechen",
+   "Wechselhafteres Wetter",
+   "Vorlesen beginnt schon nach dem ersten Satz"
+  ]
+ },
+ {
+  "version": "0.16.2",
+  "datum": "2026-10-15",
+  "titel": "Mikrofon auf dem Mac",
+  "punkte": [
+   "Mac: LeitWerk darf jetzt das Mikrofon benutzen"
+  ]
+ },
+ {
+  "version": "0.16.1",
+  "datum": "2026-10-15",
+  "titel": "Mikrofon im Programm",
+  "punkte": [
+   "Spracheingabe nimmt jetzt direkt im Programm auf",
+   "Mikrofon-Auswahl zeigt die Namen sofort"
+  ]
+ },
+ {
+  "version": "0.16.0",
+  "datum": "2026-10-15",
+  "titel": "Vorlesen und Spracheingabe",
+  "punkte": [
+   "Anrufer und Funk werden vorgelesen – mit passender Stimme",
+   "Spracheingabe per Sprechtaste, läuft ohne Internet auf deinem Rechner",
+   "Eigene Einstellungsseite für Sprache und Mikrofon"
+  ]
+ },
+ {
+  "version": "0.15.1",
+  "datum": "2026-10-15",
+  "titel": "Neue Alarm-Status",
+  "punkte": [
+   "Neue Status „Alarmiert auf Wache“ und „Alarmiert über Funk“",
+   "Krankentransporte quittieren den Alarm, bevor sie ausrücken"
+  ]
+ },
+ {
+  "version": "0.15.0",
+  "datum": "2026-10-15",
+  "titel": "Funkgruppen und neues Wetter",
+  "punkte": [
+   "Gespielt wird in TETRA-Funkgruppen – zum Start NÖ-03",
+   "Neues Wetter-Fenster mit Prognose, Warnungen und 20 Wetterlagen",
+   "Wetter wirkt auf Fahrzeiten, Einsätze und Hubschrauber; Regen, Schnee und Blitze in 3D",
+   "Eigene Farben und eigene Töne"
+  ]
+ },
+ {
+  "version": "0.14.0",
+  "datum": "2026-10-15",
+  "titel": "Partner und mehr Funk",
+  "punkte": [
+   "Feuerwehr, Polizei, Berg- und Wasserrettung in der Einsatzmaske anfordern",
+   "Mehr Funkmeldungen, dringende Rufe rot markiert",
+   "Abfrage komplett mit der Tastatur bedienbar",
+   "Fehler melden direkt aus dem Programm"
+  ]
+ },
+ {
+  "version": "0.13.4",
+  "datum": "2026-10-14",
+  "titel": "Gespräch exportieren",
+  "punkte": [
+   "Ganzes Gespräch samt Abfrage als Textdatei speichern",
+   "Anrufer widersprechen sich nicht mehr"
+  ]
+ },
+ {
+  "version": "0.13.3",
+  "datum": "2026-10-14",
+  "titel": "Kreislaufstillstand und Wetterprognose",
+  "punkte": [
+   "Kreislaufstillstand wird richtig erkannt und codiert",
+   "Wetterprognose und Wetter, das auf die Notrufe wirkt",
+   "Kompaktere Einsatzliste mit zwei Zeilen pro Einsatz"
+  ]
+ },
+ {
+  "version": "0.13.2",
+  "datum": "2026-10-14",
+  "titel": "Kompakte Masken",
+  "punkte": [
+   "Krankentransporte direkt im Abfrage-Fenster aufnehmen",
+   "Kompaktere KT- und Einsatzmaske",
+   "Abholzeit oder Termin eingeben – das andere rechnet das Spiel aus"
+  ]
+ },
+ {
+  "version": "0.13.1",
+  "datum": "2026-10-14",
+  "titel": "Neues Abfrage-Fenster",
+  "punkte": [
+   "Abfrage-Fenster wie eine echte Notrufabfrage mit Anruf, Gespräch und Fragen nebeneinander",
+   "Adresse direkt in der Abfrage eintragen",
+   "Gehaltene Anrufe im Multiplayer übernehmen"
+  ]
+ },
+ {
+  "version": "0.13.0",
+  "datum": "2026-10-14",
+  "titel": "Neue Oberfläche",
+  "punkte": [
+   "Alle Fenster frei anordnen, auch auf einem zweiten Bildschirm",
+   "Telefon mit Halten, Zurückwechseln und Warteschleife",
+   "Fertige Anordnungen für verschiedene Arbeitsplätze",
+   "Hell- und Dunkelmodus"
+  ]
+ },
+ {
+  "version": "0.12.0",
+  "datum": "2026-10-14",
+  "titel": "Ganz Ostösterreich",
+  "punkte": [
+   "Straßennetze für NÖ, Wien, Burgenland, Oberösterreich und Steiermark",
+   "Alle Akutspitäler in Ostösterreich – insgesamt 96 Häuser",
+   "Schwere Patienten brauchen manchmal den BIT"
+  ]
+ },
+ {
+  "version": "0.11.1",
+  "datum": "2026-10-14",
+  "titel": "Fahrzeuge im Blick",
+  "punkte": [
+   "Fahrzeug anklicken zeigt Status, Auftrag und Route",
+   "Doppelklick: Kamera folgt dem Fahrzeug",
+   "Hubschrauber sind in 3D schon von weitem als Modell sichtbar"
+  ]
+ },
+ {
+  "version": "0.11.0",
+  "datum": "2026-10-14",
+  "titel": "Überstellungen",
+  "punkte": [
+   "Überstellungen zwischen Krankenhäusern – geplant, dringend, mit Notarzt oder Hubschrauber",
+   "Fahrzeugvorschlag passend zur Art der Überstellung",
+   "Neue Krankenhäuser und Fachbereiche"
+  ]
+ },
+ {
+  "version": "0.10.0",
+  "datum": "2026-10-13",
+  "titel": "Krankentransporte",
+  "punkte": [
+   "Neuer Reiter „KT“ mit allen Krankentransporten",
+   "Aufträge per Anruf an der KT-Hotline, Online-Anmeldung oder als Dauerauftrag",
+   "Vormerken, Sammelfahrten und Abziehen für Notfälle",
+   "Wer zu lange wartet, ruft an: „Wo bleibt der Transport?“"
+  ]
+ },
+ {
+  "version": "0.9.0",
+  "datum": "2026-10-13",
+  "titel": "3D-Modelle und neue Fahrzeuge",
+  "punkte": [
+   "Realistische Ausrückzeiten bei Tag und Nacht",
+   "Hubschrauber steigen, sinken und kreisen über dem Einsatzort",
+   "Neue Fahrzeugtypen wie SKTW, SRTW, SNAW, BIT, ITH und BEL",
+   "3D-Fahrzeugmodelle mit Blaulicht und drehendem Rotor"
+  ]
+ },
+ {
+  "version": "0.8.0",
+  "datum": "2026-10-13",
+  "titel": "Funkverkehr",
+  "punkte": [
+   "Fahrzeuge rufen die Leitstelle und melden sich mit Lagemeldungen",
+   "Fahrzeuge selbst anfunken, frei schreiben oder Schnellknöpfe nutzen",
+   "Nachforderungen und Storno über Funk"
+  ]
+ },
+ {
+  "version": "0.7.0",
+  "datum": "2026-10-13",
+  "titel": "Die Lage lebt",
+  "punkte": [
+   "Jeder Notruf hat eine verborgene Lage mit Patienten und Sichtung",
+   "Der Zustand kann sich im Einsatz verschlechtern oder bessern",
+   "Anrufer können sich irren – die Besatzung meldet Abweichungen beim Eintreffen",
+   "Auflösung zeigt, was wirklich los war"
+  ]
+ },
+ {
+  "version": "0.6.2",
+  "datum": "2026-10-13",
+  "titel": "Passendere Anrufer",
+  "punkte": [
+   "Anrufer passen zum Kapitel, z. B. Polizei, Pflegekraft oder eCall",
+   "Die KI bleibt bei der Wahrheit"
+  ]
+ },
+ {
+  "version": "0.6.1",
+  "datum": "2026-10-13",
+  "titel": "Menschlichere Anrufer",
+  "punkte": [
+   "Anrufer sprechen Alltagssprache und antworten kurz",
+   "Auflösung nach dem Gespräch",
+   "Ortung per GPS oder Funkzelle"
+  ]
+ },
+ {
+  "version": "0.6.0",
+  "datum": "2026-10-13",
+  "titel": "KI-Anrufer und Abfrage",
+  "punkte": [
+   "Notrufe klingeln – Gespräch mit einem KI-Anrufer führen",
+   "Der Einsatzcode ergibt sich live aus der Abfrage",
+   "Jeder Anrufer ist anders: ruhig, aufgeregt, im Dialekt …",
+   "Verpasste Anrufer rufen wieder an"
+  ]
+ },
+ {
+  "version": "0.5.1",
+  "datum": "2026-10-13",
+  "titel": "Karte und Multiplayer verbessert",
+  "punkte": [
+   "Übersichtlichere Kartenbedienung und Organisationsfarben",
+   "Host-Rolle im Multiplayer übergeben",
+   "Ping und Verbindungsmeldungen je Spieler"
+  ]
+ },
+ {
+  "version": "0.5.0",
+  "datum": "2026-10-13",
+  "titel": "Multiplayer",
+  "punkte": [
+   "Gemeinsam spielen mit bis zu 6 Spielern per Code",
+   "Rechte je Spieler und Chat zwischen den Disponenten",
+   "Spielstände speichern und laden, automatische Sicherung"
+  ]
+ },
+ {
+  "version": "0.4.2",
+  "datum": "2026-10-13",
+  "titel": "Update-Test",
+  "punkte": [
+   "Test der Update-Funktion direkt aus der App"
+  ]
+ },
+ {
+  "version": "0.4.1",
+  "datum": "2026-10-12",
+  "titel": "Einsatzcodes beim Start",
+  "punkte": [
+   "Beim ersten Start werden fehlende Einsatzcodes zum Import angeboten"
+  ]
+ },
+ {
+  "version": "0.4.0",
+  "datum": "2026-10-12",
+  "titel": "Updates und Kartenpakete",
+  "punkte": [
+   "Programm-Updates direkt in der App",
+   "Karten als Pakete zum Nachladen",
+   "Satellitenbild in der 2D-Karte",
+   "Einsatzcodes als eigene, bearbeitbare Liste"
+  ]
+ },
+ {
+  "version": "0.3.1",
+  "datum": "2026-10-12",
+  "titel": "Die ersten Schritte",
+  "punkte": [
+   "Besetzung je Fahrzeugtyp einstellbar",
+   "KTW fahren auch Einsätze",
+   "Einsatzmittelvorschlag nach Rangfolge und Notarzt-Regel"
+  ]
+ }
+]

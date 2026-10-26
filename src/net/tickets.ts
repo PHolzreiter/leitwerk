@@ -10,7 +10,7 @@ import { toast } from "../ui/dom";
 
 export const TICKET_URL = "https://tickets.leitwerk.workers.dev";
 
-export type TicketArt = "dienststelle" | "fahrzeug" | "poi" | "krankenhaus" | "vorschlag" | "hilfe";
+export type TicketArt = "dienststelle" | "fahrzeug" | "poi" | "krankenhaus" | "vorschlag" | "hilfe" | "idee";
 export type TicketStatus = "eingegangen" | "in_arbeit" | "rueckfrage" | "eingebaut" | "erledigt" | "abgelehnt";
 
 export const ART_LABEL: Record<TicketArt, string> = {
@@ -20,6 +20,7 @@ export const ART_LABEL: Record<TicketArt, string> = {
   krankenhaus: "Krankenhaus",
   vorschlag: "Änderungsvorschlag",
   hilfe: "Antwort auf offenen Punkt",
+  idee: "Idee/Wunsch",
 };
 export const STATUS_LABEL: Record<TicketStatus | "wartet", string> = {
   wartet: "noch nicht gesendet",
@@ -125,6 +126,52 @@ export async function hilfeLaden(): Promise<HilfePunkt[]> {
     /* offline: gespeicherte Liste */
   }
   return hilfeLokal();
+}
+
+// ------------------------------------------------------------------ Entwicklungsfortschritt
+
+export interface FortschrittPunkt {
+  id: string;
+  titel: string;
+  text: string;
+  stand: "arbeit" | "geplant" | "fertig";
+  prozent: number;
+}
+
+/** Ersatzliste, falls der Dienst nicht erreichbar ist (wird bei jedem Update angepasst) */
+export const START_FORTSCHRITT: FortschrittPunkt[] = [
+  { id: "schema", titel: "Eigenes Codesystem & eigene Schemas", text: "Eingebaute Codeliste mit Abfrage ab der Installation; eigene Codelisten und Abfrageschemas hochladen und wechseln", stand: "fertig", prozent: 100 },
+  { id: "fahrzeugsuche", titel: "Suche bei der Fahrzeugwahl", text: "Im Einsatz schnell ein bestimmtes Fahrzeug finden", stand: "geplant", prozent: 0 },
+  { id: "sek-kt", titel: "Fahrzeugwahl bei Überstellungen und Krankentransporten", text: "Vorschlag nach Dienstzeit, Suche, Alarmieren oder Vormerken; Rückfrage per Funk, wenn ein Fahrzeug zu früh dort ist", stand: "geplant", prozent: 0 },
+  { id: "karte-info", titel: "Info-Fenster auf der Karte", text: "Klick auf ein Fahrzeug zeigt Status und Ankunftszeit, ohne die Karte zu verlassen", stand: "geplant", prozent: 0 },
+  { id: "tablet", titel: "Zweitbildschirm am Tablet", text: "Karte, Fahrzeuge und Krankenhäuser zusätzlich am Tablet im WLAN anzeigen", stand: "geplant", prozent: 0 },
+  { id: "nah-pilot", titel: "Notarzthubschrauber selbst fliegen", text: "Als Pilot im Multiplayer mitspielen – mit oder ohne Flugsimulator", stand: "arbeit", prozent: 70 },
+  { id: "telefon", titel: "Bessere Telefongespräche", text: "Natürlichere Anrufer und genauere Antworten in der Notrufabfrage", stand: "arbeit", prozent: 60 },
+  { id: "funk", titel: "Überarbeitung des Funksystems", text: "Funkverkehr mit Fahrzeugen klarer, schneller und realistischer", stand: "geplant", prozent: 0 },
+];
+const LS_FORTSCHRITT = "lw.fortschritt";
+
+/** Fortschritt: frisch vom Dienst, sonst zuletzt gesehene Liste bzw. Ersatzliste */
+export async function fortschrittLaden(): Promise<{ punkte: FortschrittPunkt[]; live: boolean }> {
+  try {
+    const r = await fetch(`${TICKET_URL}/api/fortschritt`, { signal: AbortSignal.timeout(8000) });
+    if (!r.ok) throw new Error(String(r.status));
+    const j = (await r.json()) as { punkte?: FortschrittPunkt[] };
+    if (Array.isArray(j.punkte)) {
+      const punkte = j.punkte.map((p) => ({
+        id: String(p.id),
+        titel: String(p.titel),
+        text: String(p.text ?? ""),
+        stand: p.stand === "arbeit" || p.stand === "fertig" ? p.stand : ("geplant" as const),
+        prozent: Math.max(0, Math.min(100, Number(p.prozent) || 0)),
+      }));
+      schreiben(LS_FORTSCHRITT, punkte);
+      return { punkte, live: true };
+    }
+  } catch {
+    /* offline */
+  }
+  return { punkte: lesen<FortschrittPunkt[] | null>(LS_FORTSCHRITT, null) ?? START_FORTSCHRITT, live: false };
 }
 
 // ------------------------------------------------------------------ Meine Tickets
