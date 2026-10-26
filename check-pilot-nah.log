@@ -43,17 +43,17 @@ computing gzip size...
 [2mdist/[22m[2massets/[22m[32mhintergrund-D-OnAX-s.jpg     [39m[1m[2m  422.99 kB[22m[1m[22m
 [2mdist/[22m[2massets/[22m[32meinsatzstellen-BKMVXWRH.csv  [39m[1m[2m2,885.41 kB[22m[1m[22m
 [2mdist/[22m[2massets/[22m[35mindex-D6oK4zvS.css           [39m[1m[2m  368.59 kB[22m[1m[22m[2m │ gzip:    53.69 kB[22m
-[2mdist/[22m[2massets/[22m[36mindex-B0iEsoR8.js            [39m[1m[2m    0.54 kB[22m[1m[22m[2m │ gzip:     0.26 kB[22m
-[2mdist/[22m[2massets/[22m[36mwebviewWindow-BmjSsnSn.js    [39m[1m[2m    1.78 kB[22m[1m[22m[2m │ gzip:     0.79 kB[22m
-[2mdist/[22m[2massets/[22m[36mwebview-jY8nEVDq.js          [39m[1m[2m    3.34 kB[22m[1m[22m[2m │ gzip:     1.13 kB[22m
-[2mdist/[22m[2massets/[22m[36mwindow-BL7qAczh.js           [39m[1m[2m   13.65 kB[22m[1m[22m[2m │ gzip:     3.38 kB[22m
-[2mdist/[22m[2massets/[22m[36mindex-CaRR7TRB.js            [39m[1m[33m5,101.98 kB[39m[22m[2m │ gzip: 1,403.15 kB[22m
+[2mdist/[22m[2massets/[22m[36mindex-DJ2JAY1F.js            [39m[1m[2m    0.54 kB[22m[1m[22m[2m │ gzip:     0.26 kB[22m
+[2mdist/[22m[2massets/[22m[36mwebviewWindow-CcW6SRtk.js    [39m[1m[2m    1.78 kB[22m[1m[22m[2m │ gzip:     0.79 kB[22m
+[2mdist/[22m[2massets/[22m[36mwebview-BWYbUcPi.js          [39m[1m[2m    3.34 kB[22m[1m[22m[2m │ gzip:     1.13 kB[22m
+[2mdist/[22m[2massets/[22m[36mwindow-CqoWVOpV.js           [39m[1m[2m   13.65 kB[22m[1m[22m[2m │ gzip:     3.38 kB[22m
+[2mdist/[22m[2massets/[22m[36mindex-BmOAHocR.js            [39m[1m[33m5,102.03 kB[39m[22m[2m │ gzip: 1,403.17 kB[22m
 [33m
 (!) Some chunks are larger than 2000 kB after minification. Consider:
 - Using dynamic import() to code-split the application
 - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
 - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.[39m
-[32m✓ built in 4.91s[39m
+[32m✓ built in 6.92s[39m
 ### npx tauri icon app-icon.png
         Appx Creating StoreLogo.png
         Appx Creating Square30x30Logo.png
@@ -124,42 +124,6 @@ computing gzip size...
 [1m[92m      Adding[0m tungstenite v0.24.0 [1m[33m(available: v0.30.0)[0m
 [1m[92m      Adding[0m whisper-rs v0.14.4 [1m[33m(available: v0.16.0)[0m
 [1m[92m   Compiling[0m leitwerk v0.72.0 (/home/runner/work/leitwerk/leitwerk/src-tauri)
-[1m[91merror[E0277][0m[1m: the trait bound `Channel<std::string::String>: serde::Deserialize<'de>` is not satisfied[0m
-   [1m[94m--> [0msrc/sprache.rs:351:1
-    [1m[94m|[0m
-[1m[94m351[0m [1m[94m|[0m   #[tauri::command]
-    [1m[94m|[0m   [1m[91m^^^^^^^^^^^^^^^^^[0m [1m[91mthe trait `Deserialize<'_>` is not implemented for `Channel<std::string::String>`[0m
-    [1m[94m|[0m
-   [1m[94m::: [0msrc/lib.rs:559:25
-    [1m[94m|[0m
-[1m[94m559[0m [1m[94m|[0m           .invoke_handler(tauri::generate_handler![
-    [1m[94m|[0m [1m[94m _________________________-[0m
-[1m[94m560[0m [1m[94m|[0m [1m[94m|[0m             map_read,
-[1m[94m561[0m [1m[94m|[0m [1m[94m|[0m             map_files,
-[1m[94m562[0m [1m[94m|[0m [1m[94m|[0m             store_load,
-[1m[94m...[0m   [1m[94m|[0m
-[1m[94m635[0m [1m[94m|[0m [1m[94m|[0m             app_version
-[1m[94m636[0m [1m[94m|[0m [1m[94m|[0m         ])
-    [1m[94m|[0m [1m[94m|_________-[0m [1m[94min this macro invocation[0m
-    [1m[94m|[0m
-    [1m[94m= [0m[1mnote[0m: for local types consider adding `#[derive(serde::Deserialize)]` to your `Channel<std::string::String>` type
-    [1m[94m= [0m[1mnote[0m: for types from other crates check whether the crate offers a `serde` feature flag
-    [1m[94m= [0m[1mhelp[0m: the following other types implement trait `Deserialize<'de>`:
-              `&'a RawValue` implements `Deserialize<'de>`
-              `&'a [u8]` implements `Deserialize<'de>`
-              `&'a std::path::Path` implements `Deserialize<'de>`
-              `&'a str` implements `Deserialize<'de>`
-              `&'p jsonptr::pointer::Pointer` implements `Deserialize<'de>`
-              `()` implements `Deserialize<'de>`
-              `(T,)` implements `Deserialize<'de>`
-              `(T0, T1)` implements `Deserialize<'de>`
-            and 563 others
-    [1m[94m= [0m[1mnote[0m: required for `std::option::Option<Channel<std::string::String>>` to implement `Deserialize<'_>`
-    [1m[94m= [0m[1mnote[0m: required for `std::option::Option<Channel<std::string::String>>` to implement `CommandArg<'_, tauri_runtime_wry::Wry<EventLoopMessage>>`
-    [1m[94m= [0m[1mnote[0m: the full name for the type has been written to '/home/runner/work/leitwerk/leitwerk/src-tauri/target/debug/deps/leitwerk_lib-ad9fe12dfbef0a1a.long-type-3922061883783756528.txt'
-    [1m[94m= [0m[1mnote[0m: consider using `--verbose` to print the full type name to the console
-    [1m[94m= [0m[1mnote[0m: this error originates in the macro `sprache::__cmd__sprache_aufnahme_start` which comes from the expansion of the macro `tauri::generate_handler` (in Nightly builds, run with -Z macro-backtrace for more info)
-
 [1m[33mwarning[0m[1m: unused import: `cpal::Sample`[0m
    [1m[94m--> [0msrc/sprache.rs:203:5
     [1m[94m|[0m
@@ -168,9 +132,8 @@ computing gzip size...
     [1m[94m|[0m
     [1m[94m= [0m[1mnote[0m: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
 
-[1mFor more information about this error, try `rustc --explain E0277`.[0m
 [1m[33mwarning[0m: `leitwerk` (lib) generated 1 warning
-[1m[91merror[0m: could not compile `leitwerk` (lib) due to 1 previous error; 1 warning emitted
+[1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 4.48s
 ### python3 tools/build_default_data.py
 data/default/dienststellen.csv: 863 Zeilen
 data/default/fahrzeuge.csv: 681 Zeilen
@@ -193,4 +156,4 @@ einsatzstufen.csv: 21 Stufen
 data/codesystem/leitwerk_codesystem.json: 38 Kapitel, 542 Codes
 ### python3 tools/beispiel_codesystem.py data/beispiele/beispiel_codesystem.json
 ### git diff --stat --exit-code data/
-### Ergebnis: 1
+### Ergebnis: 0
