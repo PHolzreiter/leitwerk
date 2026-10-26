@@ -8,6 +8,7 @@
 - **Zu früh am Abholort:** Ist ein Fahrzeug mehr als 30 Minuten vor der Abholzeit dort, funkt es die Leitstelle an – **warten** (bis der Patient fertig ist) oder **frei melden** (zurück zur Dienststelle, der Transport steht wieder undisponiert). Antwort über Funk oder Knopf in der Maske
 - **Mehrfachtransport:** Solange ein Fahrzeug noch keinen Patienten an Bord hat, kann ein weiterer Transport dazu – auch Überstellungen, nicht mit Blaulicht oder Notarzt. Das Fahrzeug fährt die kürzeste Reihenfolge (z. B. beide abholen, dann beide abliefern)
 - **Fahrzeug-Info auf der Karte:** Klick auf ein Fahrzeug zeigt Funkrufname, Typ, Wache, Status, Einsatz mit Ziel und Ankunft – ohne etwas anderes zu öffnen. „Zum Einsatz“ wählt den Einsatz in der Liste der aktuellen Einsätze
+- Behoben: Die Einstellungen konnten hängen bleiben, wenn auf dem Computer keine deutsche Vorlesestimme installiert ist
 
 ## 0.75.0 – KT-Abfrage frei gestalten, SNAW-Code nach Fahrzeug
 - **Abfrage-Editor neu:** Fragen der KT-Hotline einfügen, umformulieren, löschen und in der Reihenfolge verschieben (↑↓ oder ziehen). Bei jeder Frage wählst du die Art – **Code-bestimmend** (Lage, Zeit, Notarzt, Überwachung, Inkubator, Organisation, Abholort, Ziel, stabil?) oder **Zusatzinfo** (Name, Termin, Abholzeit, Begleitperson, Sauerstoff, Infektion …) – und was sie genau klärt

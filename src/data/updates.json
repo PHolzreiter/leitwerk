@@ -10,7 +10,8 @@
    "Transporte: Vorschlagsliste, Alarmieren oder Vormerken, jedes Fahrzeug über die Suche wählbar",
    "Zu früh am Abholort: das Fahrzeug fragt über Funk – warten oder frei melden",
    "Mehrfachtransport: weiteren Transport dazugeben, das Fahrzeug fährt die kürzeste Reihenfolge",
-   "Klick auf ein Fahrzeug auf der Karte zeigt ein Info-Fenster, „Zum Einsatz“ wählt ihn in der Liste"
+   "Klick auf ein Fahrzeug auf der Karte zeigt ein Info-Fenster, „Zum Einsatz“ wählt ihn in der Liste",
+   "Behoben: Einstellungen hängen nicht mehr, wenn keine deutsche Vorlesestimme installiert ist"
   ]
  },
  {
