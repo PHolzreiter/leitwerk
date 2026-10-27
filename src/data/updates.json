@@ -1,5 +1,17 @@
 [
  {
+  "version": "0.80.0",
+  "datum": "2026-10-27",
+  "titel": "Fälle überarbeitet",
+  "punkte": [
+   "Jeder Fall hat Symptom und Dringlichkeit – danach bucht der RTW",
+   "25 neue Notfälle, z. B. Herzrasen, COPD, Pseudokrupp, Bauchschmerzen, Wespenstich, Fieberkrampf, Hitze, Rauferei",
+   "Häufigkeit der Fälle näher an echten Einsatzzahlen",
+   "Überstellungen ins Zentrum nach Öffnungszeiten (z. B. Herzkatheter am Abend zu)",
+   "Krankentransporte: Lage, Sauerstoff und Isolation passen zum Grund"
+  ]
+ },
+ {
   "version": "0.79.0",
   "datum": "2026-10-27",
   "titel": "Kinder in Häuser mit Kinderabteilung",

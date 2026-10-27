@@ -189,17 +189,44 @@ const GRUENDE: Record<string, string[]> = {
   ITS: ["Verlegung nach Intensivaufenthalt"],
 };
 
-/** Einweisungen durch den Hausarzt */
-const EINWEISUNG = [
-  "Verdacht auf Pneumonie – stationäre Aufnahme",
-  "Exsikkose, Allgemeinzustand reduziert",
-  "Harnwegsinfekt mit Verwirrtheit",
-  "Dekompensierte Herzinsuffizienz",
-  "Sturz – Abklärung, nicht mehr mobil",
-  "Erysipel Unterschenkel – i.v. Therapie",
-  "Entgleister Diabetes",
-  "Akute Verwirrtheit – Abklärung",
+/** Einweisungen durch den Hausarzt (Grund → Aufnahme) */
+const EINWEISUNG: [string, string][] = [
+  ["Verdacht auf Pneumonie – stationäre Aufnahme", "INT"],
+  ["Exsikkose, Allgemeinzustand reduziert", "INT"],
+  ["Harnwegsinfekt mit Verwirrtheit", "INT"],
+  ["Dekompensierte Herzinsuffizienz", "INT"],
+  ["Sturz – Abklärung, nicht mehr mobil", "ZNA"],
+  ["Erysipel Unterschenkel – i.v. Therapie", "INT"],
+  ["Entgleister Diabetes", "INT"],
+  ["Akute Verwirrtheit – Abklärung", "ZNA"],
+  ["Zunehmende Gangunsicherheit – Akutgeriatrie", "GER"],
+  ["Gallenkolik – chirurgische Abklärung", "CHI"],
 ];
+
+/** Lage, Sauerstoff und Isolation passend zum Grund (z. B. Nahtentfernung gehfähig, Dekubitus liegend, COPD mit Sauerstoff) */
+const LAGE_NACH_GRUND: [RegExp, [KtLage, number][]][] = [
+  [/nahtentfernung|gipskontrolle|radiusfraktur|katarakt|augen|szintigrafie|schilddrüse/i, [["gehend", 3], ["sitzend", 2]]],
+  [/dekubitus|palliativ|bettlägerig|terminal/i, [["liegend", 1]]],
+  [/hüft|knie-tep|schenkelhals|wirbelkörper|remobilisation|gangunsicher/i, [["sitzend", 3], ["liegend", 2], ["rollstuhl", 1]]],
+];
+const SAUERSTOFF_GRUND = /copd|pneumonie|herzinsuffizienz|bronchial|palliativ|lungen/i;
+const ISOLATION: [string, number][] = [["MRSA", 4], ["3MRGN", 1.5], ["Noro", 1], ["COVID", 1], ["Influenza", 1], ["VRE", 1]];
+/** Wahrscheinlichkeit einer Isolation (Keim) je Grund */
+function infektionsAnteil(grund: string, bereich: string): number {
+  if (/wunde|ulcus|dekubitus|diabetischer fuß/i.test(grund)) return 0.25;
+  if (bereich === "DIA") return 0.08;
+  if (["INT", "GER", "PAL", "ITS"].includes(bereich)) return 0.07;
+  return 0.03;
+}
+/** Lage, Sauerstoff, Isolation und Hinweis zum Grund */
+function zumGrund(grund: string, bereich: string, alter: number, lageStandard: KtLage): { lage: KtLage; sauerstoff: boolean; infektion: boolean; info: string } {
+  const regel = LAGE_NACH_GRUND.find(([re]) => re.test(grund));
+  const lage = regel ? gewichtet(regel[1]) : lageStandard;
+  const sauerstoff = Math.random() < (SAUERSTOFF_GRUND.test(grund) ? 0.55 : ["PUL", "KAR", "PAL"].includes(bereich) ? 0.3 : 0.04);
+  const infektion = Math.random() < infektionsAnteil(grund, bereich);
+  const teile = [pick(INFOS[lage]), sauerstoff ? `Sauerstoff ${pick(["1", "2", "2", "3"])} l/min` : "", infektion ? `Isolation (${gewichtet(ISOLATION)})` : "", alter > 85 && /verwirr|demenz/i.test(grund) ? "dement, braucht Begleitung" : ""];
+  return { lage, sauerstoff, infektion, info: teile.filter(Boolean).join(", ") };
+}
 
 const INFOS: Record<KtLage, string[]> = {
   gehend: ["bis zum Fahrzeug gehfähig", "geht mit Rollator", ""],
@@ -297,13 +324,16 @@ export function zufallsDaten(o: ZufallsOrte, jetzt: number): KtDaten | null {
   if (typ !== "einweisung" && termin > schluss && frueh < schluss) termin = frueh + Math.random() * (schluss - frueh);
   termin = Math.round(termin / 300_000) * 300_000;
   let bereich: string;
+  let einweisung: [string, string] | null = null;
   let kh: Hospital | undefined;
   let von: KtOrt;
   let nach: KtOrt;
   if (typ === "einweisung") {
     // Einweisung durch den Hausarzt: sofort ins nächste Krankenhaus
-    bereich = pick(["ZNA", "ZNA", "INT", "INT", "CHI", "NEU", "GER"]);
-    kh = o.khMit(bereich)[0];
+    einweisung = pick(EINWEISUNG);
+    bereich = einweisung[1];
+    kh = o.khMit(bereich)[0] ?? o.khMit("ZNA")[0];
+    if (kh && !o.khMit(bereich).includes(kh)) bereich = "ZNA";
     if (!kh) return null;
     von = o.heim;
     nach = khOrt(kh, bereich);
@@ -326,8 +356,9 @@ export function zufallsDaten(o: ZufallsOrte, jetzt: number): KtDaten | null {
       nach = o.heim;
     }
   }
-  const lage = lageFuer(alter, bereich);
-  const grund = typ === "einweisung" ? pick(EINWEISUNG) : pick(grundFuer(GRUENDE[bereich] ?? ["Kontrolle"], geschlecht));
+  const grund = einweisung ? einweisung[0] : pick(grundFuer(GRUENDE[bereich] ?? ["Kontrolle"], geschlecht));
+  const zg = zumGrund(grund, bereich, alter, lageFuer(alter, bereich));
+  const lage = zg.lage;
   const sofort = typ === "einweisung";
   // Abholzeit: bei Fahrten zur Ambulanz vor dem Termin (mit etwas mehr Puffer als nötig)
   const abholung = sofort
@@ -344,14 +375,14 @@ export function zufallsDaten(o: ZufallsOrte, jetzt: number): KtDaten | null {
     code: null,
     sofort,
     sek: null,
-    patient: { name: zufallsName(geschlecht), alter, geschlecht, info: pick(INFOS[lage]) },
+    patient: { name: zufallsName(geschlecht), alter, geschlecht, info: zg.info },
     von,
     nach,
     grund,
     lage,
-    begleitung: Math.random() < (alter > 85 ? 0.25 : 0.08),
-    sauerstoff: Math.random() < (["PUL", "KAR", "PAL"].includes(bereich) ? 0.35 : 0.05),
-    infektion: Math.random() < 0.06,
+    begleitung: /dement/.test(zg.info) || Math.random() < (alter > 85 ? 0.25 : 0.08),
+    sauerstoff: zg.sauerstoff,
+    infektion: zg.infektion,
     termin: sofort ? jetzt + rnd(40, 70) * 60_000 : termin,
     abholung: abholung && abholung > jetzt ? abholung : null,
     telefon: zufallsNummer(),
@@ -389,18 +420,20 @@ export function dauerDaten(heim: KtOrt, kh: Hospital, bereich: "DIA" | "STR" | "
     hin = tag0 + rnd(8, 15) * 3_600_000;
     heimZeit = hin + rnd(40, 70) * 60_000;
   }
-  const lage: KtLage = Math.random() < 0.2 ? "liegend" : Math.random() < 0.1 ? "rollstuhl" : "sitzend";
+  const grund = pick(grundFuer(GRUENDE[bereich], geschlecht));
+  const zg = zumGrund(grund, bereich, alter, Math.random() < 0.2 ? "liegend" : Math.random() < 0.1 ? "rollstuhl" : "sitzend");
+  const lage = zg.lage;
   const basis = {
     art: gewichtet<KtArt>([["KTx", 6], ["KTR", 3], ["KTA", 1]]),
     code: null,
     sofort: false,
     sek: null,
-    patient: { name: zufallsName(geschlecht), alter, geschlecht, info: pick(INFOS[lage]) },
-    grund: pick(grundFuer(GRUENDE[bereich], geschlecht)),
+    patient: { name: zufallsName(geschlecht), alter, geschlecht, info: zg.info },
+    grund,
     lage,
     begleitung: false,
-    sauerstoff: Math.random() < 0.05,
-    infektion: Math.random() < 0.04,
+    sauerstoff: zg.sauerstoff,
+    infektion: zg.infektion,
     telefon: zufallsNummer(),
   };
   const ziel = khOrt(kh, bereich);

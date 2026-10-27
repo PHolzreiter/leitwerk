@@ -10,6 +10,7 @@
  * - varianten: Ausgang mit Wahrscheinlichkeit, Zeitleiste (Verlauf, Anrufer meldet sich wieder),
  *   was die Besatzung sieht (Lagemeldung), Notarzt-Bedarf nach Kompetenz, Partner, Krankenhaus.
  */
+import { FAELLE_NEU } from "./faelleNeu";
 import type { Antworten } from "./schema";
 import { tageszeitPasst, type SzenarioVorlage } from "./szenario";
 import type { Atmung, Bewusstsein, Sichtung } from "../sim/lage";
@@ -192,7 +193,7 @@ export const FAELLE: FallVorlage[] = [
     id: "brustschmerz",
     name: "Brustschmerz",
     thema: "brustschmerz",
-    haeufigkeit: 3,
+    haeufigkeit: 5,
     alter: [50, 85],
     orte: ["wohnung", "haus", "garten", "arbeit"],
     stelle: ["[ort=wohnung|haus] im Wohnzimmer", "[ort=wohnung|haus] in der Küche", "[ort=garten] im Garten auf der Bank", "[ort=arbeit] im Büro"],
@@ -348,7 +349,7 @@ export const FAELLE: FallVorlage[] = [
     id: "sturz_huefte",
     name: "Sturz mit Hüftverletzung",
     thema: "sturz",
-    haeufigkeit: 5,
+    haeufigkeit: 6,
     alter: [75, 95],
     geschlecht: "w",
     orte: ["wohnung"],
@@ -419,7 +420,7 @@ export const FAELLE: FallVorlage[] = [
     id: "kreislaufstillstand",
     name: "Kreislaufstillstand",
     thema: "stillstand",
-    haeufigkeit: 1,
+    haeufigkeit: 1.5,
     alter: [45, 85],
     geschlecht: "m",
     orte: ["geschaeft", "wohnung", "sport"],
@@ -611,7 +612,7 @@ export const FAELLE: FallVorlage[] = [
     id: "asthma",
     name: "Asthmaanfall",
     thema: "atemnot",
-    haeufigkeit: 2,
+    haeufigkeit: 1.5,
     alter: [12, 25],
     orte: ["wohnung", "schule", "sport"],
     stelle: ["[ort=wohnung] im Kinderzimmer", "[ort=wohnung] im Wohnzimmer", "[ort=schule] im Klassenzimmer", "[ort=schule] am Gang vor dem Turnsaal", "[ort=sport] in der Garderobe", "[ort=sport] am Spielfeldrand"],
@@ -842,7 +843,7 @@ export const FAELLE: FallVorlage[] = [
     id: "hyperventilation",
     name: "Hyperventilation",
     thema: "atemnot",
-    haeufigkeit: 3,
+    haeufigkeit: 2,
     alter: [15, 40],
     geschlecht: "w",
     orte: ["wohnung", "schule", "arbeit", "lokal"],
@@ -953,7 +954,7 @@ export const FAELLE: FallVorlage[] = [
     hergang: ["{P} hat sich in den Finger geschnitten, das ist ziemlich tief und blutet immer wieder.", "{P} hat sich mit dem Messer tief in den Finger geschnitten, ich glaub, das gehört genäht.", "Ein tiefer Schnitt in den Finger – sobald man loslässt, blutet es wieder."],
     hergangIch: ["Ich hab mich in den Finger geschnitten, ziemlich tief – sobald ich loslass, blutet es wieder."],
     seitMin: [5, 15],
-    fest: { ursache: "trauma", staerke: "schwach", region: "extremitaet", bluter: "nein", blutverduenner: ["ja", "nein"], bw: "ja", at: "normal", anzahl_patienten: "1" },
+    fest: { ursache: "trauma", stelle: "keine", staerke: "schwach", region: "extremitaet", bluter: "nein", blutverduenner: ["ja", "nein"], bw: "ja", at: "normal", anzahl_patienten: "1" },
     details: [
       "Am Zeigefinger, ziemlich tief, so zwei Zentimeter.",
       "[variante!=C] Das Tuch ist rot durchgeblutet, es tropft, wenn man loslässt.",
@@ -984,7 +985,7 @@ export const FAELLE: FallVorlage[] = [
     id: "pflegeheim_fieber",
     name: "Pflegeheim, Fieber",
     thema: "krank",
-    haeufigkeit: 5,
+    haeufigkeit: 3,
     alter: [78, 96],
     orte: ["pflegeheim"],
     stelle: ["im Zimmer auf Station {1|2|3}", "in {seinem} Zimmer, Zimmer {12|14|21|23}", "im Aufenthaltsraum auf der Station"],
@@ -1105,7 +1106,7 @@ export const FAELLE: FallVorlage[] = [
     hergang: ["Da ist einer untergegangen und nicht mehr aufgetaucht!", "Ein Schwimmer ist im See verschwunden, wir finden ihn nicht!"],
     seitMin: [1, 4],
     jahreszeit: ["sommer"],
-    fest: { art: "ertrinken", wo: "untergegangen", ueber6h: "nein", reanimiert: "nein", hws: "nein", deko: "nein", bw: "nein", at: "keine", anzahl_patienten: "1" },
+    fest: { art: "ertrinken", wo: "untergegangen", ueber6h: "nein", reanimiert: "nein", hws: "nein", deko: "nein", tod: "nein", ursache_9: "keine", beobachtet: "ja", bw: "nein", at: "keine", anzahl_patienten: "1" },
     details: ["Das Wasser ist trüb, man sieht nicht bis zum Grund.", "{Er} war vorher beim Grillen, getrunken hat {er} auch was."],
     verlauf: ["Du bist sehr aufgeregt und schaust die ganze Zeit aufs Wasser."],
     varianten: [
@@ -1314,7 +1315,7 @@ export const FAELLE: FallVorlage[] = [
     id: "disco_alkohol",
     name: "Alkoholvergiftung in der Disco",
     thema: "vergiftung",
-    haeufigkeit: 1,
+    haeufigkeit: 1.5,
     alter: [16, 22],
     orte: ["lokal"],
     kategorien: ["disco"],
@@ -1564,6 +1565,8 @@ export const FAELLE: FallVorlage[] = [
       { id: "B", p: 0.3, sichtung: "gelb", lage: "Gehirnerschütterung nach Radsturz, Amnesie", na: "nein", fest: { region: "kopf", fehlstellung: "nein", ohnmacht: "ja" }, symptom: "kopfverletzung", dringlichkeit: 20, buchung: "bu_schweres_sht" },
     ],
   },
+  // weitere Fälle (eigene Datei)
+  ...FAELLE_NEU,
 ];
 
 // ------------------------------------------------------------------ Auswahl

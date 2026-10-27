@@ -7,6 +7,20 @@ import { bereicheVon, type Hospital } from "../data/model";
 import { zufallsName, zufallsNummer } from "../abfrage/anrufer";
 import { distanceM, type LatLon } from "./geo";
 import { khOrt, sekLeer, type KtDaten, type KtLage } from "./kt";
+import { akutJetzt } from "../data/klinik";
+
+/** Bereich am Ziel → Akut-Abteilung (Öffnungszeiten wie bei der Zuweisung) */
+const ZIEL_AKUT: Record<string, string> = {
+  HKL: "ak_herzkatheter",
+  THR: "ak_thrombektomie",
+  NCH: "ak_neurochirurgie",
+  HCH: "ak_herzchirurgie",
+  VER: "ak_verbrennungszentrum",
+  NEO: "ak_neonatologie",
+  PIC: "ak_kinder_intensiv",
+  KIN: "ak_kinder_jugendheilkunde",
+};
+const ZIEL_NAME: Record<string, string> = { HKL: "Herzkatheter", THR: "Thrombektomie", NCH: "Neurochirurgie" };
 
 type Art = "zentrum" | "bett" | "rueck" | "hinzurueck";
 
@@ -120,6 +134,7 @@ function sekAus(f: SekFall, u: SekUmfeld): KtDaten[] | null {
   let nach: Hospital | undefined;
   let vonSt: string | null = null;
   let bettZusatz = "";
+  const sofort = Math.random() < f.sofort;
   if (f.art === "rueck") {
     // Ziel: Haus nahe beim Gebiet; abgebend: ein Zentrum, das das hat (bis 100 km)
     const ziele = u.khs.filter((h) => nahe(h, 35) && hat(h, f.ziel));
@@ -133,19 +148,23 @@ function sekAus(f: SekFall, u: SekUmfeld): KtDaten[] | null {
     if (vonSt === "HKL") vonSt = bereicheVon(von).includes("KAR") ? "KAR" : "INT";
     if (vonSt === "THR") vonSt = "NEU";
   } else {
-    // abgebendes Haus nahe beim Gebiet
-    const abgebend = u.khs.filter((h) => nahe(h, 45) && station(h, f.von) && (f.art === "bett" || !hat(h, f.ziel)));
+    // Akutfall ins Zentrum: zählt, was jetzt offen ist (Herzkatheter nur zu Dienstzeiten, Rad-Tage …)
+    const ak = f.art === "zentrum" && sofort ? ZIEL_AKUT[f.ziel[0]] : undefined;
+    const jetztOffen = (h: Hospital) => !ak || akutJetzt(h, u.jetzt).has(ak);
+    // abgebendes Haus nahe beim Gebiet: kann es nicht – oder kann es gerade nicht
+    const abgebend = u.khs.filter((h) => nahe(h, 45) && station(h, f.von) && (f.art === "bett" || !hat(h, f.ziel) || !jetztOffen(h)));
     von = abgebend.length ? pick(abgebend) : undefined;
     if (!von) return null;
     vonSt = station(von, f.von);
+    if (ak && hat(von, f.ziel) && ZIEL_NAME[f.ziel[0]]) bettZusatz = ` (${ZIEL_NAME[f.ziel[0]]} im Haus derzeit nicht verfügbar)`;
     const ziele = u.khs
-      .filter((h) => h.id !== von!.id && hat(h, f.ziel))
+      .filter((h) => h.id !== von!.id && hat(h, f.ziel) && jetztOffen(h))
       .sort((a, b) => distanceM(a, von!) - distanceM(b, von!));
     if (!ziele.length) return null;
     // meist das nächste passende Haus, manchmal das übernächste (dort ist ein Bett frei)
     const i = ziele.length > 1 && Math.random() < 0.2 ? 1 : 0;
     nach = ziele[i];
-    if (i === 1) bettZusatz = " (im nächstgelegenen Haus kein Bett frei)";
+    if (i === 1) bettZusatz += " (im nächstgelegenen Haus kein Bett frei)";
     if (distanceM(von, nach) > 130_000) return null;
   }
   if (!vonSt) return null;
@@ -159,7 +178,6 @@ function sekAus(f: SekFall, u: SekUmfeld): KtDaten[] | null {
   sek.monitoring = sek.arzt || Math.random() < f.monitoring;
   sek.inkubator = !!f.inkubator;
   sek.instabil = sek.arzt && Math.random() < f.instabil;
-  const sofort = Math.random() < f.sofort;
   // selten: Patient zu schwer für die normale Trage
   sek.bit = !sek.inkubator && alter >= 25 && Math.random() < 0.015;
   sek.zusage = Math.random() < 0.85 ? `Übernahme zugesagt von ${Math.random() < 0.5 ? "OA" : "OÄ"} Dr. ${zufallsName(Math.random() < 0.5 ? "m" : "w").split(" ").pop()}` : "";

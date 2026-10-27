@@ -1,5 +1,14 @@
 # Änderungen
 
+## 0.80.0 – Fälle überarbeitet: Symptom und Dringlichkeit, 25 neue Notfälle, Überstellungen nach Öffnungszeiten
+- **Jeder Fall hat Symptom und Dringlichkeit hinterlegt** (stabil/grün, dringend/gelb, Schockraum/rot). Danach meldet die Besatzung und bucht der RTW. Verschlechtert sich der Patient auf rot, wird hochgestuft
+- **Fall-Editor:** Symptom und Dringlichkeit statt der alten Verdachtsdiagnose; die Prüfung meldet Symptome oder Dringlichkeiten, die es nicht gibt
+- **25 neue Notfälle**, die bisher fehlten: Herzrasen, sehr hoher Blutdruck, Atemnot bei Herzschwäche und bei COPD, Pseudokrupp, Bauchschmerzen, Nierenkolik, Harnverhalt, Wespenstich mit Allergie, Nasenbluten, Bluterbrechen, Verbrühung, Kollaps bei Hitze, Unterkühlung, Fieberkrampf, Kind mit hohem Fieber, älterer Mensch sehr schwach, Schwindel, plötzlich stärkste Kopfschmerzen, Kind vom Klettergerüst, Arbeitsunfall an der Hand, Rauferei, Messerstich, Tabletten genommen, Spritzer ins Auge
+- **Häufigkeit der Fälle** näher an echten Einsatzzahlen (mehr Herz/Kreislauf und Stürze, weniger „Sonstiges“)
+- Kleinere Fehler in zwei Fällen behoben (Schnittwunde, Badesee)
+- **Überstellungen nach Öffnungszeiten:** Akut-Überstellungen ins Zentrum (Herzkatheter, Thrombektomie, Neurochirurgie …) entstehen, wenn das eigene Haus es gerade nicht kann – z. B. Krems am Donnerstagabend ohne Herzkatheter. Ziel ist das nächste Haus, das jetzt offen hat
+- **Krankentransporte passen zum Grund:** Lage (z. B. Nahtentfernung gehfähig, Dekubitus liegend), Sauerstoff mit Menge, Isolation mit Keim (MRSA, Noro …), Einweisungen in die passende Abteilung
+
 ## 0.79.0 – Kinder in Häuser mit Kinderabteilung
 - **Kinder nur in Häuser mit Kinderabteilung:** Für Kinder passt ein Haus nur, wenn es das Nötige auch für Kinder hat – z. B. Unfallambulanz und Kinderabteilung, bei Schädel-Hirn-Trauma Neurochirurgie und Kinderabteilung. Gilt für alle Dringlichkeiten gleich
 - Häuser, die es nur für Erwachsene können, erscheinen als **„⚠ Ausweich – keine Kinderabteilung“** (gestrichelt) und werden nur genommen, wenn kein passendes Haus offen ist
