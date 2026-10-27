@@ -89,7 +89,11 @@ export interface FallVariante {
   transport?: boolean;
   /** Transportverweigerung bei Einstellung „normal“ (nur wache, stabile Patienten) */
   revers?: number;
-  /** Buchung (Verdachtsdiagnose) aus klinik.json */
+  /** Zuweisung: Symptom (ID aus zuweisung.json) – danach bucht der RTW */
+  symptom?: string;
+  /** Dringlichkeit: 10 stabil (grün), 20 dringend (gelb), 30 Schockraum/Intensiv (rot) */
+  dringlichkeit?: 10 | 20 | 30;
+  /** Verdachtsdiagnose aus klinik.json (ältere Fälle; ohne Symptom wird daraus das Symptom abgeleitet) */
   buchung: string;
   /** Patient verstorben (Tod stellt der NA fest) */
   tot?: boolean;
@@ -146,7 +150,7 @@ export const FAELLE: FallVorlage[] = [
         na: "nein",
         verlauf: [{ nachMin: [1.5, 2.5], art: "besserung", at: "normal", sichtung: "gruen", lage: "wach, Fremdkörper ausgehustet, Atemweg frei, Sättigung 98", text: "Es ist draußen! {Er} hat es ausgespuckt, jetzt weint {er} nur noch." }],
         revers: 0.1,
-        buchung: "bu_internistischer_kindernotfall",
+        symptom: "ersticken_durch_fremdkoerper", dringlichkeit: 20, buchung: "bu_internistischer_kindernotfall",
       },
       {
         id: "B",
@@ -156,7 +160,7 @@ export const FAELLE: FallVorlage[] = [
         na: "NFS-NKV",
         naBegleitet: true,
         ohneNa: { nachMin: 15, at: "abnorm", sichtung: "rot", lage: "zunehmend erschöpft, Sättigung fällt auf 84", na: "immer" },
-        buchung: "bu_starkes_nasenbluten_fremdkoerper_hno",
+        symptom: "ersticken_durch_fremdkoerper", dringlichkeit: 20, buchung: "bu_starkes_nasenbluten_fremdkoerper_hno",
       },
       {
         id: "C",
@@ -178,7 +182,7 @@ export const FAELLE: FallVorlage[] = [
             wechselZu: "B",
           },
         ],
-        buchung: "bu_kritisch_krankes_kind",
+        symptom: "ersticken_durch_fremdkoerper", dringlichkeit: 30, buchung: "bu_kritisch_krankes_kind",
       },
     ],
   },
@@ -231,7 +235,7 @@ export const FAELLE: FallVorlage[] = [
         na: "nein",
         naBegleitet: false,
         revers: 0.05,
-        buchung: "bu_acs_ohne_st_hebung_unklarer_thoraxschmer",
+        symptom: "thoraxschmerz_nicht_traumatisch", dringlichkeit: 20, buchung: "bu_acs_ohne_st_hebung_unklarer_thoraxschmer",
       },
       {
         id: "A",
@@ -240,7 +244,7 @@ export const FAELLE: FallVorlage[] = [
         sichtung: "rot",
         lage: "Brustschmerz seit 30 Minuten, kaltschweißig und blass, im EKG Hebungen",
         na: "immer",
-        buchung: "bu_stemi",
+        symptom: "st_hebungsinfarkt_oder_stemi_aequivalent", dringlichkeit: 30, buchung: "bu_stemi",
       },
       {
         id: "B",
@@ -250,7 +254,7 @@ export const FAELLE: FallVorlage[] = [
         lage: "Brustschmerz, kaltschweißig, im EKG Hebungen",
         na: "immer",
         verlauf: [{ nachMin: [10, 20], art: "verschlechterung", bw: "getruebt", at: "abnorm", sichtung: "rot", lage: "Blutdruck 85 zu 50, Puls 40, im EKG Hebungen", text: "{Er} wird ganz grau und ist so komisch weg, {er} redet kaum noch!" }],
-        buchung: "bu_stemi",
+        symptom: "st_hebungsinfarkt_oder_stemi_aequivalent", dringlichkeit: 30, buchung: "bu_stemi",
       },
       {
         id: "C",
@@ -263,9 +267,9 @@ export const FAELLE: FallVorlage[] = [
           { nachMin: [6, 10], art: "verschlechterung", bw: "nein", at: "agonal", sichtung: "rot", text: "{Er} ist umgefallen, {er} antwortet nicht mehr, {er} macht so komische Atemzüge!" },
           { nachMin: [11, 14], art: "besserung", chance: 0.1, mitAnleitung: { typ: "reanimation", chance: 0.4 }, bw: "nein", at: "normal", sichtung: "rot", lage: "nach Reanimation Kreislauf wieder da, bewusstlos, atmet", text: "Das Gerät hat geschockt … {er} atmet wieder!", wechselZu: "C_rosc" },
         ],
-        buchung: "bu_reanimation_mit_rosc",
+        symptom: "reanimation_stemi", dringlichkeit: 30, buchung: "bu_reanimation_mit_rosc",
       },
-      { id: "C_rosc", p: 0, sichtung: "rot", lage: "nach Reanimation Kreislauf wieder da, bewusstlos, atmet", na: "immer", buchung: "bu_reanimation_mit_rosc" },
+      { id: "C_rosc", p: 0, sichtung: "rot", lage: "nach Reanimation Kreislauf wieder da, bewusstlos, atmet", na: "immer", symptom: "reanimation_stemi", dringlichkeit: 30, buchung: "bu_reanimation_mit_rosc" },
     ],
   },
 
@@ -325,7 +329,7 @@ export const FAELLE: FallVorlage[] = [
         lage: "wach, Halbseitenzeichen und Sprachstörung, Beginn vor einer Stunde, Zucker normal, Transport mit Sondersignal zur Stroke Unit",
         na: "nein",
         naBegleitet: false,
-        buchung: "bu_schlaganfall",
+        symptom: "schlaganfall_apss_1_3", dringlichkeit: 20, buchung: "bu_schlaganfall",
       },
       {
         id: "B",
@@ -334,7 +338,7 @@ export const FAELLE: FallVorlage[] = [
         lage: "wach, Halbseitenzeichen und Sprachstörung",
         na: "nein",
         verlauf: [{ nachMin: [8, 15], art: "verschlechterung", bw: "getruebt", at: "abnorm", sichtung: "rot", lage: "eingetrübt, schnarchende Atmung, Halbseitenzeichen", na: "NFS-NKV", text: "Jetzt ist {er} ganz schläfrig, {er} reagiert kaum noch." }],
-        buchung: "bu_schlaganfall_mit_v_a_grossen_gefaessvers",
+        symptom: "schlaganfall_apss_4_9", dringlichkeit: 20, buchung: "bu_schlaganfall_mit_v_a_grossen_gefaessvers",
       },
     ],
   },
@@ -394,7 +398,7 @@ export const FAELLE: FallVorlage[] = [
         na: "nein",
         naBegleitet: false,
         partner: [{ art: "fw", grund: "Tragehilfe, enges Stiegenhaus", blockiert: true }],
-        buchung: "bu_isolierte_extremitaetenverletzung",
+        symptom: "schenkelhalsfraktur", dringlichkeit: 20, buchung: "bu_isolierte_extremitaetenverletzung",
       },
       {
         id: "B",
@@ -405,7 +409,7 @@ export const FAELLE: FallVorlage[] = [
         na: "nein",
         naBegleitet: false,
         partner: [{ art: "fw", grund: "Tragehilfe, enges Stiegenhaus", blockiert: true }],
-        buchung: "bu_isolierte_extremitaetenverletzung",
+        symptom: "schenkelhalsfraktur", dringlichkeit: 20, buchung: "bu_isolierte_extremitaetenverletzung",
       },
     ],
   },
@@ -452,9 +456,9 @@ export const FAELLE: FallVorlage[] = [
           { nachMin: [22, 30], art: "besserung", chance: 0.3, chanceOhneNa: 0.15, bw: "nein", at: "normal", sichtung: "rot", lage: "nach Reanimation Kreislauf wieder da, bewusstlos, beatmet", wechselZu: "rosc" },
           { nachMin: [32, 42], art: "verschlechterung", nurMitNa: true, at: "keine", bw: "nein", sichtung: "rot", lage: "Reanimation erfolglos beendet, Patient verstorben", wechselZu: "tot" },
         ],
-        buchung: "bu_laufende_reanimation_ecpr",
+        symptom: "reanimation_medizinische_ursache", dringlichkeit: 30, buchung: "bu_laufende_reanimation_ecpr",
       },
-      { id: "rosc", p: 0, sichtung: "rot", lage: "nach Reanimation Kreislauf wieder da, bewusstlos, atmet", na: "immer", naBegleitet: true, buchung: "bu_reanimation_mit_rosc" },
+      { id: "rosc", p: 0, sichtung: "rot", lage: "nach Reanimation Kreislauf wieder da, bewusstlos, atmet", na: "immer", naBegleitet: true, symptom: "reanimation_medizinische_ursache", dringlichkeit: 30, buchung: "bu_reanimation_mit_rosc" },
       {
         id: "tot",
         p: 0,
@@ -465,7 +469,7 @@ export const FAELLE: FallVorlage[] = [
         transport: false,
         tot: true,
         partner: [{ art: "pol", grund: "unklare Todesursache" }],
-        buchung: "bu_laufende_reanimation_ecpr",
+        symptom: "reanimation_medizinische_ursache", dringlichkeit: 30, buchung: "bu_laufende_reanimation_ecpr",
       },
     ],
   },
@@ -529,7 +533,7 @@ export const FAELLE: FallVorlage[] = [
           { art: "fw", grund: "Person eingeklemmt", blockiert: true },
           { art: "pol", grund: "Unfallaufnahme und Absicherung" },
         ],
-        buchung: "bu_schweres_thoraxtrauma",
+        symptom: "thoraxverletzung_stumpf", dringlichkeit: 30, buchung: "bu_schweres_thoraxtrauma",
       },
       {
         id: "B",
@@ -542,7 +546,7 @@ export const FAELLE: FallVorlage[] = [
           { art: "fw", grund: "Person eingeklemmt", blockiert: true },
           { art: "pol", grund: "Unfallaufnahme und Absicherung" },
         ],
-        buchung: "bu_polytrauma",
+        symptom: "polytrauma_ohne_sht", dringlichkeit: 30, buchung: "bu_polytrauma",
       },
     ],
   },
@@ -588,7 +592,7 @@ export const FAELLE: FallVorlage[] = [
           { nachMin: [6, 12], art: "besserung", chance: 0, mitAnleitung: { typ: "zucker", chance: 0.4 }, bw: "ja", sichtung: "gruen", lage: "nach Zucker zum Trinken wieder wach und orientiert, Blutzucker 90", na: "nein", text: "Jetzt hat {er} Saft getrunken, {er} wird wieder normal!" },
         ],
         revers: 0.15,
-        buchung: "bu_blutzuckerentgleisung",
+        symptom: "blutzuckerentgleisung", dringlichkeit: 20, buchung: "bu_blutzuckerentgleisung",
       },
       {
         id: "B",
@@ -597,7 +601,7 @@ export const FAELLE: FallVorlage[] = [
         lage: "Hypoglykämie, verwirrt",
         na: "NFS-NKA",
         verlauf: [{ nachMin: [5, 10], art: "verschlechterung", bw: "nein", sichtung: "rot", lage: "bewusstlos, krampft, Blutzucker 28", text: "{Er} reagiert gar nicht mehr, und jetzt zuckt {er}!" }],
-        buchung: "bu_blutzuckerentgleisung",
+        symptom: "blutzuckerentgleisung", dringlichkeit: 20, buchung: "bu_blutzuckerentgleisung",
       },
     ],
   },
@@ -639,7 +643,7 @@ export const FAELLE: FallVorlage[] = [
         lage: "schwerer Asthmaanfall, Sättigung 89, Spray ohne Wirkung",
         na: "RS",
         ohneNa: { nachMin: 15, sichtung: "rot", lage: "zunehmend erschöpft, Sättigung 84", na: "immer" },
-        buchung: "bu_pneumonie_atemnot_copd",
+        symptom: "atemnot", dringlichkeit: 20, buchung: "bu_pneumonie_atemnot_copd",
       },
       {
         id: "B",
@@ -648,7 +652,7 @@ export const FAELLE: FallVorlage[] = [
         lage: "schwerer Asthmaanfall, Sättigung 88",
         na: "RS",
         verlauf: [{ nachMin: [6, 10], art: "verschlechterung", mitAnleitung: { typ: "oberkoerper_hoch", chance: 0.7 }, bw: "getruebt", sichtung: "rot", lage: "erschöpft, kaum Atemgeräusch, Sättigung 82", na: "immer", text: "(nur noch Keuchen und Pfeifen am Telefon)" }],
-        buchung: "bu_pneumonie_atemnot_copd",
+        symptom: "atemnot", dringlichkeit: 20, buchung: "bu_pneumonie_atemnot_copd",
       },
     ],
   },
@@ -689,9 +693,9 @@ export const FAELLE: FallVorlage[] = [
         na: "nein",
         naBegleitet: false,
         verlauf: [{ nachMin: [4, 6], lage: "Geburt vor Eintreffen, Kind wohlauf, Mutter stabil, Nachgeburt ausständig", text: "Da ist der Kopf! … Es ist da, es schreit!" }],
-        buchung: "bu_geburt_wehen",
+        symptom: "drohende_geburt_ueber_ssw_37", dringlichkeit: 20, buchung: "bu_geburt_wehen",
       },
-      { id: "B", p: 0.15, sichtung: "gelb", lage: "Geburt läuft, Kopf sichtbar", na: "RS", buchung: "bu_geburt_wehen" },
+      { id: "B", p: 0.15, sichtung: "gelb", lage: "Geburt läuft, Kopf sichtbar", na: "RS", symptom: "drohende_geburt_ueber_ssw_37", dringlichkeit: 20, buchung: "bu_geburt_wehen" },
       {
         id: "C",
         p: 0.1,
@@ -702,7 +706,7 @@ export const FAELLE: FallVorlage[] = [
           { nachMin: [4, 6], art: "verschlechterung", sichtung: "rot", lage: "Kind geboren, Neugeborenes schlaff, atmet nicht ausreichend", na: "immer", text: "Es ist da … es schreit nicht, es ist ganz schlaff, bewegt sich nicht und ist ganz bläulich-blass!" },
           { nachMin: [8, 10], art: "besserung", chance: 0.3, mitAnleitung: { typ: "geburt", chance: 0.5 }, sichtung: "gelb", lage: "Neugeborenes nach Abtrocknen und Wärmen rosig, schreit", text: "Jetzt schreit es!", wechselZu: "A" },
         ],
-        buchung: "bu_kritisch_krankes_neugeborenes",
+        symptom: "neugeborenenversorgung", dringlichkeit: 20, buchung: "bu_kritisch_krankes_neugeborenes",
       },
     ],
   },
@@ -754,7 +758,7 @@ export const FAELLE: FallVorlage[] = [
         na: "nein",
         naBegleitet: false,
         partner: [{ art: "pol", grund: "Türöffnung und Eigenschutz", blockiert: true, eigenschutz: true }],
-        buchung: "bu_psychische_krise_suizidalitaet",
+        symptom: "suizidalitaet", dringlichkeit: 20, buchung: "bu_psychische_krise_suizidalitaet",
       },
       {
         id: "A2",
@@ -765,7 +769,7 @@ export const FAELLE: FallVorlage[] = [
         na: "nein",
         naBegleitet: false,
         partner: [{ art: "pol", grund: "Türöffnung, Eigenschutz und Unterbringung", blockiert: true, eigenschutz: true, begleitung: true }],
-        buchung: "bu_psychische_krise_suizidalitaet",
+        symptom: "ubg_einweisung", dringlichkeit: 20, buchung: "bu_psychische_krise_suizidalitaet",
       },
       {
         id: "B",
@@ -775,7 +779,7 @@ export const FAELLE: FallVorlage[] = [
         lage: "nach Türöffnung Patient eingetrübt, Ursache unklar, Verdacht auf Vergiftung",
         na: "immer",
         partner: [{ art: "pol", grund: "Türöffnung", blockiert: true }],
-        buchung: "bu_intoxikation",
+        symptom: "vergiftung_oral_iv", dringlichkeit: 30, buchung: "bu_intoxikation",
       },
     ],
   },
@@ -819,7 +823,7 @@ export const FAELLE: FallVorlage[] = [
         verlauf: [{ nachMin: [0.5, 1.5], art: "besserung", bw: "ja", sichtung: "gruen", lage: "wach und orientiert, Kreislaufkollaps, Vitalwerte unauffällig", text: "Jetzt macht {er} die Augen auf … {er} redet!" }],
         naBegleitet: false,
         revers: 0.15,
-        buchung: "bu_exsikkose_synkope_az_verschlechterung",
+        symptom: "kollaps", dringlichkeit: 20, buchung: "bu_exsikkose_synkope_az_verschlechterung",
       },
       {
         id: "R",
@@ -828,7 +832,7 @@ export const FAELLE: FallVorlage[] = [
         lage: "Patient bewusstlos",
         na: "nein",
         verlauf: [{ nachMin: [0.5, 1.5], art: "besserung", bw: "ja", sichtung: "gelb", lage: "wach, nach Synkope im EKG Rhythmusstörung", na: "immer", text: "Jetzt macht {er} die Augen auf … {er} redet!" }],
-        buchung: "bu_instabile_rhythmusstoerung",
+        symptom: "herzrhythmusstoerung", dringlichkeit: 20, buchung: "bu_instabile_rhythmusstoerung",
       },
     ],
   },
@@ -872,9 +876,9 @@ export const FAELLE: FallVorlage[] = [
         naBegleitet: false,
         verlauf: [{ nachMin: [3, 6], art: "besserung", chance: 0.2, mitAnleitung: { typ: "beruhigen", chance: 0.5 }, at: "normal", sichtung: "gruen", lage: "beruhigt, Atmung normal, alle Werte unauffällig", text: "Es wird besser, {er} atmet langsamer." }],
         revers: 0.15,
-        buchung: "bu_hausaerztlich",
+        symptom: "angstsymptomatik", dringlichkeit: 10, buchung: "bu_hausaerztlich",
       },
-      { id: "LE", p: 0.02, sichtung: "rot", lage: "Atemnot, Sättigung 86, Verdacht auf Lungenembolie", na: "immer", buchung: "bu_lungenembolie" },
+      { id: "LE", p: 0.02, sichtung: "rot", lage: "Atemnot, Sättigung 86, Verdacht auf Lungenembolie", na: "immer", symptom: "atemnot", dringlichkeit: 30, buchung: "bu_lungenembolie" },
     ],
   },
 
@@ -914,8 +918,8 @@ export const FAELLE: FallVorlage[] = [
     ],
     verlauf: ["Du traust dich nicht ganz hin. Wenn man dich bittet, gehst du hin und sprichst {ihn} an."],
     varianten: [
-      { id: "A", p: 0.7, sichtung: "gruen", lage: "alkoholisiert, weckbar, unverletzt, Zucker normal", na: "nein", naBegleitet: false, buchung: "bu_intoxikation" },
-      { id: "B", p: 0.1, sichtung: "gruen", lage: "aufgewacht, alkoholisiert, geht selbstständig weg, kein Transport", na: "nein", naBegleitet: false, transport: false, buchung: "bu_intoxikation" },
+      { id: "A", p: 0.7, sichtung: "gruen", lage: "alkoholisiert, weckbar, unverletzt, Zucker normal", na: "nein", naBegleitet: false, symptom: "vergiftung_oral_iv", dringlichkeit: 10, buchung: "bu_intoxikation" },
+      { id: "B", p: 0.1, sichtung: "gruen", lage: "aufgewacht, alkoholisiert, geht selbstständig weg, kein Transport", na: "nein", naBegleitet: false, transport: false, symptom: "vergiftung_oral_iv", dringlichkeit: 10, buchung: "bu_intoxikation" },
       {
         id: "C",
         p: 0.15,
@@ -924,9 +928,9 @@ export const FAELLE: FallVorlage[] = [
         na: "nein",
         naBegleitet: false,
         partner: [{ art: "pol", grund: "Patient aggressiv", blockiert: true, eigenschutz: true }],
-        buchung: "bu_intoxikation",
+        symptom: "vergiftung_oral_iv", dringlichkeit: 10, buchung: "bu_intoxikation",
       },
-      { id: "D", p: 0.05, sichtung: "gelb", lage: "eingetrübt, Blutzucker 35, kein Alkohol", na: "NFS-NKA", buchung: "bu_blutzuckerentgleisung" },
+      { id: "D", p: 0.05, sichtung: "gelb", lage: "eingetrübt, Blutzucker 35, kein Alkohol", na: "NFS-NKA", symptom: "blutzuckerentgleisung", dringlichkeit: 20, buchung: "bu_blutzuckerentgleisung" },
     ],
   },
 
@@ -968,10 +972,10 @@ export const FAELLE: FallVorlage[] = [
         naBegleitet: false,
         verlauf: [{ nachMin: [2, 4], art: "besserung", chance: 0.3, mitAnleitung: { typ: "druck_blutung", chance: 0.7 }, lage: "Schnittverletzung Finger, Blutung gestillt", text: "Jetzt blutet es fast nicht mehr." }],
         revers: 0.05,
-        buchung: "bu_bagatellverletzung",
+        symptom: "handverletzung_ohne_amputation", dringlichkeit: 10, buchung: "bu_bagatellverletzung",
       },
-      { id: "B", p: 0.35, sichtung: "gruen", lage: "Schnittverletzung Finger, Druckverband angelegt", na: "nein", naBegleitet: false, buchung: "bu_bagatellverletzung" },
-      { id: "C", p: 0.05, fest: { staerke: "stark" }, sichtung: "gelb", lage: "tiefe Schnittverletzung, Sehnen und Gefäße betroffen, starke Blutung, abgebunden", na: "RS", buchung: "bu_isolierte_extremitaetenverletzung" },
+      { id: "B", p: 0.35, sichtung: "gruen", lage: "Schnittverletzung Finger, Druckverband angelegt", na: "nein", naBegleitet: false, symptom: "handverletzung_ohne_amputation", dringlichkeit: 10, buchung: "bu_bagatellverletzung" },
+      { id: "C", p: 0.05, fest: { staerke: "stark" }, sichtung: "gelb", lage: "tiefe Schnittverletzung, Sehnen und Gefäße betroffen, starke Blutung, abgebunden", na: "RS", symptom: "handverletzung_ohne_amputation", dringlichkeit: 20, buchung: "bu_isolierte_extremitaetenverletzung" },
     ],
   },
 
@@ -1009,8 +1013,8 @@ export const FAELLE: FallVorlage[] = [
     vorerkrankungen: ["!beginnende Demenz", "Herzschwäche", "Diabetes"],
     verlauf: ["Du bist Pflegekraft, ruhig und sachlich, und verwendest Fachbegriffe."],
     varianten: [
-      { id: "A", p: 0.85, sichtung: "gelb", lage: "Fieber 38,9, Sättigung 91, stabil", na: "nein", naBegleitet: false, buchung: "bu_pneumonie_atemnot_copd" },
-      { id: "B", p: 0.15, fest: { hautfarbe: "ja", dringlichkeit: "geraete", transportart: "liegend" }, sichtung: "rot", lage: "Blutdruck 85 zu 50, Puls 120, sehr schläfrig, Verdacht auf Sepsis", na: "NFS-NKA", buchung: "bu_sepsis" },
+      { id: "A", p: 0.85, sichtung: "gelb", lage: "Fieber 38,9, Sättigung 91, stabil", na: "nein", naBegleitet: false, symptom: "fieber", dringlichkeit: 20, buchung: "bu_pneumonie_atemnot_copd" },
+      { id: "B", p: 0.15, fest: { hautfarbe: "ja", dringlichkeit: "geraete", transportart: "liegend" }, sichtung: "rot", lage: "Blutdruck 85 zu 50, Puls 120, sehr schläfrig, Verdacht auf Sepsis", na: "NFS-NKA", symptom: "sepsis", dringlichkeit: 30, buchung: "bu_sepsis" },
     ],
   },
 
@@ -1042,8 +1046,8 @@ export const FAELLE: FallVorlage[] = [
     ],
     verlauf: ["[selbst=ja] Du stöhnst und klingst dramatisch, bist aber klar im Kopf."],
     varianten: [
-      { id: "A", p: 0.97, sichtung: "gruen", lage: "akuter Rückenschmerz nach Heben, Neurologie unauffällig", na: "nein", naBegleitet: false, revers: 0.12, buchung: "bu_isolierte_extremitaetenverletzung" },
-      { id: "C", p: 0.03, sichtung: "rot", lage: "blass, Blutdruck 90 zu 60, Schmerz in Bauch und Rücken", na: "immer", buchung: "bu_rupturiertes_bauchaortenaneurysma" },
+      { id: "A", p: 0.97, sichtung: "gruen", lage: "akuter Rückenschmerz nach Heben, Neurologie unauffällig", na: "nein", naBegleitet: false, revers: 0.12, symptom: "rueckenschmerzen_nicht_traumatisch_ohne_neurolog", dringlichkeit: 10, buchung: "bu_isolierte_extremitaetenverletzung" },
+      { id: "C", p: 0.03, sichtung: "rot", lage: "blass, Blutdruck 90 zu 60, Schmerz in Bauch und Rücken", na: "immer", symptom: "akutes_abdomen", dringlichkeit: 30, buchung: "bu_rupturiertes_bauchaortenaneurysma" },
     ],
   },
   // ================================================================ Fälle an bestimmten Orten (POIs)
@@ -1075,8 +1079,8 @@ export const FAELLE: FallVorlage[] = [
     details: ["Wir haben {ihn} nicht mehr bewegt, {er} liegt am Rücken.", "Eine Schramme an der Stirn hat {er}, die blutet ein bisschen.", "Getrunken hat {er} nichts, sagen die Freunde."],
     verlauf: ["Du bist ruhig und routiniert, hältst den Kopf ruhig, wenn man dich darum bittet."],
     varianten: [
-      { id: "A", p: 0.75, sichtung: "gelb", lage: "Nackenschmerz nach Kopfsprung, Neurologie unauffällig, HWS immobilisiert", na: "nein", buchung: "bu_isolierte_extremitaetenverletzung" },
-      { id: "B", p: 0.25, sichtung: "rot", lage: "Verdacht auf Halswirbelsäulenverletzung mit Gefühlsstörung an Beinen und Händen", na: "immer", buchung: "bu_wirbelsaeulenverletzung_mit_neurologisch" },
+      { id: "A", p: 0.75, sichtung: "gelb", lage: "Nackenschmerz nach Kopfsprung, Neurologie unauffällig, HWS immobilisiert", na: "nein", symptom: "wirbelsaeulenverletzung_ohne_neurologische_ausfa", dringlichkeit: 20, buchung: "bu_isolierte_extremitaetenverletzung" },
+      { id: "B", p: 0.25, sichtung: "rot", lage: "Verdacht auf Halswirbelsäulenverletzung mit Gefühlsstörung an Beinen und Händen", na: "immer", symptom: "wirbelsaeulenverletzung_mit_neurologischen_ausfa", dringlichkeit: 30, buchung: "bu_wirbelsaeulenverletzung_mit_neurologisch" },
     ],
   },
 
@@ -1115,7 +1119,7 @@ export const FAELLE: FallVorlage[] = [
           { art: "wasser", grund: "Person im Wasser untergegangen", blockiert: true },
           { art: "fw", grund: "Wasserdienst/Taucher", blockiert: true },
         ],
-        buchung: "bu_laufende_reanimation_ecpr",
+        symptom: "ertrinkungsunfall", dringlichkeit: 30, buchung: "bu_laufende_reanimation_ecpr",
       },
     ],
   },
@@ -1141,8 +1145,8 @@ export const FAELLE: FallVorlage[] = [
     fest: { hautfarbe: "ja", herzleiden: ["nein", "ja"], bauchschmerz: "nein", bw: "nein", at: "normal", anzahl_patienten: "1" },
     details: ["{Er} atmet, ganz normal.", "{Er} ist sehr blass.", "{Er} war schon drei Saunagänge drinnen."],
     varianten: [
-      { id: "A", p: 0.85, sichtung: "gelb", lage: "Kreislaufkollaps nach Saunagang", na: "nein", verlauf: [{ nachMin: [0.5, 1.5], art: "besserung", bw: "ja", sichtung: "gruen", lage: "wach, Kreislauf stabil", text: "Jetzt kommt {er} wieder zu sich!" }], naBegleitet: false, buchung: "bu_exsikkose_synkope_az_verschlechterung" },
-      { id: "R", p: 0.15, sichtung: "rot", lage: "bewusstlos, im EKG Rhythmusstörung", na: "immer", buchung: "bu_instabile_rhythmusstoerung" },
+      { id: "A", p: 0.85, sichtung: "gelb", lage: "Kreislaufkollaps nach Saunagang", na: "nein", verlauf: [{ nachMin: [0.5, 1.5], art: "besserung", bw: "ja", sichtung: "gruen", lage: "wach, Kreislauf stabil", text: "Jetzt kommt {er} wieder zu sich!" }], naBegleitet: false, symptom: "kollaps", dringlichkeit: 20, buchung: "bu_exsikkose_synkope_az_verschlechterung" },
+      { id: "R", p: 0.15, sichtung: "rot", lage: "bewusstlos, im EKG Rhythmusstörung", na: "immer", symptom: "herzrhythmusstoerung", dringlichkeit: 30, buchung: "bu_instabile_rhythmusstoerung" },
     ],
   },
 
@@ -1168,8 +1172,8 @@ export const FAELLE: FallVorlage[] = [
     fest: { schwer_pat: "nein", hoehe: "treppe", verletzt: "ja", blutung_stark: "nein", ohnmacht: "nein", aelter6h: "nein", umstand: "oeffentlich", bw: "ja", at: "normal", anzahl_patienten: "1" },
     details: ["Der Zug fährt gleich, {er} will unbedingt mit.", "Ein Mitarbeiter von der ÖBB ist auch schon da."],
     varianten: [
-      { id: "A", p: 0.7, sichtung: "gelb", lage: "Verdacht auf Handgelenksbruch nach Treppensturz", na: "nein", fest: { region: "extremitaet", fehlstellung: "ja" }, buchung: "bu_isolierte_extremitaetenverletzung" },
-      { id: "B", p: 0.3, sichtung: "gelb", lage: "Platzwunde Stirn, Handgelenk geprellt, nimmt Blutverdünner", na: "nein", fest: { region: "mehrere", fehlstellung: "nein", blutverduenner: "ja" }, buchung: "bu_gesichtsschaedelverletzung" },
+      { id: "A", p: 0.7, sichtung: "gelb", lage: "Verdacht auf Handgelenksbruch nach Treppensturz", na: "nein", fest: { region: "extremitaet", fehlstellung: "ja" }, symptom: "handgelenksverletzung", dringlichkeit: 20, buchung: "bu_isolierte_extremitaetenverletzung" },
+      { id: "B", p: 0.3, sichtung: "gelb", lage: "Platzwunde Stirn, Handgelenk geprellt, nimmt Blutverdünner", na: "nein", fest: { region: "mehrere", fehlstellung: "nein", blutverduenner: "ja" }, symptom: "kopfverletzung", dringlichkeit: 20, buchung: "bu_gesichtsschaedelverletzung" },
     ],
   },
 
@@ -1194,8 +1198,8 @@ export const FAELLE: FallVorlage[] = [
     details: ["{Er} hat sich auf die Zunge gebissen, da ist ein bisschen Blut.", "In der Tasche ist ein Ausweis, sonst kenn ich {ihn} nicht."],
     verlauf: ["Du musst nebenbei den Fahrgästen sagen, dass es nicht weitergeht."],
     varianten: [
-      { id: "A", p: 0.85, sichtung: "gelb", lage: "postiktal nach Krampfanfall, bekannte Epilepsie", na: "nein", verlauf: [{ nachMin: [3, 6], art: "besserung", bw: "ja", sichtung: "gruen", lage: "wieder orientiert nach Krampfanfall", text: "{Er} wird wieder klarer und fragt, was los war." }], buchung: "bu_erstmaliger_krampfanfall" },
-      { id: "S", p: 0.15, sichtung: "rot", lage: "erneuter Krampfanfall, Status epilepticus", na: "immer", buchung: "bu_status_epilepticus" },
+      { id: "A", p: 0.85, sichtung: "gelb", lage: "postiktal nach Krampfanfall, bekannte Epilepsie", na: "nein", verlauf: [{ nachMin: [3, 6], art: "besserung", bw: "ja", sichtung: "gruen", lage: "wieder orientiert nach Krampfanfall", text: "{Er} wird wieder klarer und fragt, was los war." }], symptom: "krampfanfall_bekannte_epilepsie", dringlichkeit: 20, buchung: "bu_erstmaliger_krampfanfall" },
+      { id: "S", p: 0.15, sichtung: "rot", lage: "erneuter Krampfanfall, Status epilepticus", na: "immer", symptom: "status_epilepticus", dringlichkeit: 30, buchung: "bu_status_epilepticus" },
     ],
   },
 
@@ -1222,8 +1226,8 @@ export const FAELLE: FallVorlage[] = [
     fest: { herz_vg: ["nein", "unbekannt"], bw: "ja", at: "normal", kaltschweiss: "ja", hautfarbe: ["ja", "nein"], sprachschw: "nein", kokain: "nein", anzahl_patienten: "1" },
     details: ["Der LKW steht ganz hinten auf dem LKW-Parkplatz.", "{Er} raucht viel, sagt {er}."],
     varianten: [
-      { id: "A", p: 0.75, sichtung: "rot", lage: "STEMI der Hinterwand im 12-Kanal-EKG", na: "immer", buchung: "bu_stemi" },
-      { id: "B", p: 0.25, sichtung: "gelb", lage: "unklarer Thoraxschmerz, EKG ohne Hebungen", na: "nein", buchung: "bu_acs_ohne_st_hebung_unklarer_thoraxschmer" },
+      { id: "A", p: 0.75, sichtung: "rot", lage: "STEMI der Hinterwand im 12-Kanal-EKG", na: "immer", symptom: "st_hebungsinfarkt_oder_stemi_aequivalent", dringlichkeit: 30, buchung: "bu_stemi" },
+      { id: "B", p: 0.25, sichtung: "gelb", lage: "unklarer Thoraxschmerz, EKG ohne Hebungen", na: "nein", symptom: "akutes_koronarsyndrom_ohne_oder_unspezifische_st", dringlichkeit: 20, buchung: "bu_acs_ohne_st_hebung_unklarer_thoraxschmer" },
     ],
   },
 
@@ -1249,7 +1253,7 @@ export const FAELLE: FallVorlage[] = [
     stunden: [9, 18],
     fest: { tierart: ["gross", "normal"], angriff_laeuft: "nein", region: "extremitaet", schwer: ["ja", "nein"], blutung_stark: "nein", fehlstellung: "nein", aelter6h: "nein", oberflaechlich: "nein", bw: "ja", at: "normal", anzahl_patienten: "1" },
     details: ["Wir haben ein sauberes Tuch draufgedrückt.", "{Er} weint, ist aber ganz wach.", "Geimpft ist {er}, glaub ich."],
-    varianten: [{ id: "A", p: 1, sichtung: "gelb", lage: "Bissverletzung der Hand, Sehnen fraglich betroffen", na: "nein", naBegleitet: false, buchung: "bu_verletztes_kind" }],
+    varianten: [{ id: "A", p: 1, sichtung: "gelb", lage: "Bissverletzung der Hand, Sehnen fraglich betroffen", na: "nein", naBegleitet: false, symptom: "handverletzung_ohne_amputation", dringlichkeit: 20, buchung: "bu_verletztes_kind" }],
   },
 
   // ---------------------------------------------------------------- Museum: Sturz eines älteren Besuchers
@@ -1274,7 +1278,7 @@ export const FAELLE: FallVorlage[] = [
     stunden: [9, 18],
     fest: { schwer_pat: "nein", hoehe: "treppe", verletzt: "ja", region: "extremitaet", blutung_stark: "nein", fehlstellung: ["ja", "nein"], ohnmacht: "nein", aelter6h: "nein", umstand: "oeffentlich", bw: "ja", at: "normal", anzahl_patienten: "1" },
     details: ["Das Bein schaut ein bisschen nach außen gedreht aus.", "Die Führung ist unterbrochen, die Gruppe wartet."],
-    varianten: [{ id: "A", p: 1, sichtung: "gelb", lage: "Verdacht auf Schenkelhalsbruch nach Treppensturz", na: "nein", buchung: "bu_isolierte_extremitaetenverletzung" }],
+    varianten: [{ id: "A", p: 1, sichtung: "gelb", lage: "Verdacht auf Schenkelhalsbruch nach Treppensturz", na: "nein", symptom: "schenkelhalsfraktur", dringlichkeit: 20, buchung: "bu_isolierte_extremitaetenverletzung" }],
   },
 
   // ---------------------------------------------------------------- Reitanlage: Sturz vom Pferd
@@ -1300,8 +1304,8 @@ export const FAELLE: FallVorlage[] = [
     fest: { schwer_pat: "nein", hoehe: "gross", verletzt: "ja", blutung_stark: "nein", fehlstellung: "nein", aelter6h: "nein", umstand: "keine", bw: "ja", at: "normal", anzahl_patienten: "1" },
     details: ["Das Pferd ist schon angebunden.", "Wir haben {sie} liegen lassen und zugedeckt."],
     varianten: [
-      { id: "A", p: 0.7, sichtung: "gelb", lage: "Rückenprellung nach Sturz vom Pferd, Neurologie unauffällig", na: "nein", fest: { region: "rumpf", ohnmacht: "nein" }, buchung: "bu_isolierte_extremitaetenverletzung" },
-      { id: "B", p: 0.3, sichtung: "rot", lage: "Schädel-Hirn-Trauma nach Sturz vom Pferd, eingetrübt", na: "immer", fest: { region: "mehrere", ohnmacht: "ja" }, verlauf: [{ nachMin: [4, 8], art: "verschlechterung", bw: "getruebt", lage: "zunehmend eingetrübt", text: "{Er} wird so komisch, {er} antwortet nicht mehr richtig!" }], buchung: "bu_schweres_sht" },
+      { id: "A", p: 0.7, sichtung: "gelb", lage: "Rückenprellung nach Sturz vom Pferd, Neurologie unauffällig", na: "nein", fest: { region: "rumpf", ohnmacht: "nein" }, symptom: "wirbelsaeulenverletzung_ohne_neurologische_ausfa", dringlichkeit: 20, buchung: "bu_isolierte_extremitaetenverletzung" },
+      { id: "B", p: 0.3, sichtung: "rot", lage: "Schädel-Hirn-Trauma nach Sturz vom Pferd, eingetrübt", na: "immer", fest: { region: "mehrere", ohnmacht: "ja" }, verlauf: [{ nachMin: [4, 8], art: "verschlechterung", bw: "getruebt", lage: "zunehmend eingetrübt", text: "{Er} wird so komisch, {er} antwortet nicht mehr richtig!" }], symptom: "schaedelhirntrauma", dringlichkeit: 30, buchung: "bu_schweres_sht" },
     ],
   },
 
@@ -1328,8 +1332,8 @@ export const FAELLE: FallVorlage[] = [
     details: ["Wir haben {ihn} auf die Seite gedreht.", "Die Security ist auch da."],
     verlauf: ["Du bist selbst angetrunken, im Hintergrund ist laute Musik."],
     varianten: [
-      { id: "A", p: 0.8, sichtung: "gelb", lage: "Alkoholintoxikation, Atemwege frei", na: "nein", buchung: "bu_intoxikation" },
-      { id: "B", p: 0.2, sichtung: "rot", lage: "Mischintoxikation Alkohol und Tabletten, Atemwege gefährdet", na: "immer", buchung: "bu_intoxikation" },
+      { id: "A", p: 0.8, sichtung: "gelb", lage: "Alkoholintoxikation, Atemwege frei", na: "nein", symptom: "vergiftung_oral_iv", dringlichkeit: 20, buchung: "bu_intoxikation" },
+      { id: "B", p: 0.2, sichtung: "rot", lage: "Mischintoxikation Alkohol und Tabletten, Atemwege gefährdet", na: "immer", symptom: "vergiftung_oral_iv", dringlichkeit: 30, buchung: "bu_intoxikation" },
     ],
   },
   // ================================================================ Fälle an Straßen und im Gelände (unsichtbare Einsatzstellen)
@@ -1357,8 +1361,8 @@ export const FAELLE: FallVorlage[] = [
     details: ["Warnblinkanlage ist an, ein Pannendreieck haben wir aufgestellt.", "Die Autos hinter uns fahren langsam vorbei."],
     verlauf: ["Im Hintergrund hörst du den Verkehr vorbeirauschen."],
     varianten: [
-      { id: "A", p: 0.8, sichtung: "gelb", lage: "Auffahrunfall, Schleudertrauma der Halswirbelsäule, sonst stabil", na: "nein", fest: { hohe_geschw: "nein" }, buchung: "bu_isolierte_extremitaetenverletzung" },
-      { id: "B", p: 0.2, sichtung: "rot", lage: "Auffahrunfall mit hoher Geschwindigkeit, Thoraxtrauma", na: "immer", fest: { hohe_geschw: "ja" }, buchung: "bu_schweres_thoraxtrauma" },
+      { id: "A", p: 0.8, sichtung: "gelb", lage: "Auffahrunfall, Schleudertrauma der Halswirbelsäule, sonst stabil", na: "nein", fest: { hohe_geschw: "nein" }, symptom: "wirbelsaeulenverletzung_ohne_neurologische_ausfa", dringlichkeit: 20, buchung: "bu_isolierte_extremitaetenverletzung" },
+      { id: "B", p: 0.2, sichtung: "rot", lage: "Auffahrunfall mit hoher Geschwindigkeit, Thoraxtrauma", na: "immer", fest: { hohe_geschw: "ja" }, symptom: "thoraxverletzung_stumpf", dringlichkeit: 30, buchung: "bu_schweres_thoraxtrauma" },
     ],
   },
 
@@ -1395,7 +1399,7 @@ export const FAELLE: FallVorlage[] = [
           { art: "fw", grund: "Person eingeklemmt – Bahnunfall, Oberleitung erden", blockiert: true },
           { art: "pol", grund: "Unfall im Bahnbereich" },
         ],
-        buchung: "bu_polytrauma",
+        symptom: "polytrauma_mit_sht", dringlichkeit: 30, buchung: "bu_polytrauma",
       },
     ],
   },
@@ -1422,7 +1426,7 @@ export const FAELLE: FallVorlage[] = [
     fest: { lage: "springen", ubg: "dringend", substanzen: "unbekannt", verwirrt: "unbekannt", ploetzlich: "unbekannt", psych_vorerkrankung: "unbekannt", blutung: "nein", gewalt: "nein", waffen: "nein", selbstverbrennung: "nein", krisenteam: "nein", bw: "ja", at: "normal", anzahl_patienten: "1" },
     details: ["Unten ist der Fluss, ziemlich tief.", "Es bleiben schon Autos stehen."],
     verlauf: ["Du flüsterst fast, damit {er} dich nicht hört. Wenn man dich bittet, sprichst du ruhig mit {ihm}."],
-    varianten: [{ id: "A", p: 1, sichtung: "gelb", lage: "akute Suizidgefahr, Person außen am Brückengeländer", na: "nein", partner: [{ art: "pol", grund: "Suizidgefahr – Verhandlung, Absperrung", blockiert: true, begleitung: true }, { art: "fw", grund: "Sicherung/Sprungpolster" }], buchung: "bu_psychische_krise_suizidalitaet" }],
+    varianten: [{ id: "A", p: 1, sichtung: "gelb", lage: "akute Suizidgefahr, Person außen am Brückengeländer", na: "nein", partner: [{ art: "pol", grund: "Suizidgefahr – Verhandlung, Absperrung", blockiert: true, begleitung: true }, { art: "fw", grund: "Sicherung/Sprungpolster" }], symptom: "suizidalitaet", dringlichkeit: 20, buchung: "bu_psychische_krise_suizidalitaet" }],
   },
 
   // ---------------------------------------------------------------- Kellergasse: Gärgas im Weinkeller
@@ -1456,7 +1460,7 @@ export const FAELLE: FallVorlage[] = [
         lage: "bewusstlos nach CO₂-Exposition im Gärkeller, nach Rettung durch Atemschutztrupp",
         na: "immer",
         partner: [{ art: "fw", grund: "Gärgas im Keller – Atemschutz", blockiert: true, eigenschutz: true }],
-        buchung: "bu_co_vergiftung_tauchunfall",
+        symptom: "vergiftung_inhalativ", dringlichkeit: 30, buchung: "bu_co_vergiftung_tauchunfall",
       },
     ],
   },
@@ -1483,7 +1487,7 @@ export const FAELLE: FallVorlage[] = [
     seitMin: [5, 20],
     fest: { schwer_pat: "nein", hoehe: "gross", verletzt: "ja", region: "mehrere", blutung_stark: "nein", fehlstellung: ["ja", "nein"], ohnmacht: "nein", aelter6h: "nein", umstand: "erschwert", bw: "ja", at: "normal", anzahl_patienten: "1" },
     details: ["Das Gewehr ist entladen und liegt oben am Hochstand.", "Es wird langsam dunkel."],
-    varianten: [{ id: "A", p: 1, sichtung: "gelb", lage: "Sturz aus 3 m, Verdacht auf Wirbelsäulen- und Beinverletzung, im Gelände", na: "immer", buchung: "bu_polytrauma" }],
+    varianten: [{ id: "A", p: 1, sichtung: "gelb", lage: "Sturz aus 3 m, Verdacht auf Wirbelsäulen- und Beinverletzung, im Gelände", na: "immer", symptom: "wirbelsaeulenverletzung_ohne_neurologische_ausfa", dringlichkeit: 20, buchung: "bu_polytrauma" }],
   },
 
   // ---------------------------------------------------------------- Wald: Forstarbeiter unter Baum
@@ -1506,7 +1510,7 @@ export const FAELLE: FallVorlage[] = [
     seitMin: [3, 10],
     fest: { lage: "eingeklemmt", koerperteil: "gross", sicher_betroffen: "ja", schwer_verletzt: "ja", verletzt: "ja", anz_eingeklemmt: "1", anz_verletzt: "1", bw: "ja", at: "normal", anzahl_patienten: "1" },
     details: ["Wir sind mitten im Wald, das Auto steht unten an der Forststraße.", "Blut seh ich nicht viel."],
-    varianten: [{ id: "A", p: 1, sichtung: "rot", lage: "Bein unter Baumstamm eingeklemmt, Unterschenkelfraktur, Schmerz", na: "immer", partner: [{ art: "fw", grund: "Person unter Baum eingeklemmt", blockiert: true }], buchung: "bu_isolierte_extremitaetenverletzung" }],
+    varianten: [{ id: "A", p: 1, sichtung: "rot", lage: "Bein unter Baumstamm eingeklemmt, Unterschenkelfraktur, Schmerz", na: "immer", partner: [{ art: "fw", grund: "Person unter Baum eingeklemmt", blockiert: true }], symptom: "unterschenkelverletzung", dringlichkeit: 30, buchung: "bu_isolierte_extremitaetenverletzung" }],
   },
 
   // ---------------------------------------------------------------- Feld/Weingarten: Traktor umgestürzt
@@ -1529,7 +1533,7 @@ export const FAELLE: FallVorlage[] = [
     seitMin: [3, 10],
     fest: { lage: "unter_fahrzeug", koerperteil: "gross", sicher_betroffen: "ja", schwer_verletzt: "ja", verletzt: "ja", anz_eingeklemmt: "1", anz_verletzt: "1", bw: "ja", at: "abnorm", anzahl_patienten: "1" },
     details: ["Diesel rinnt aus.", "Zum Feld kommt man nur über den Güterweg."],
-    varianten: [{ id: "A", p: 1, sichtung: "rot", lage: "unter Traktor eingeklemmt, Beckenverletzung, Schockzeichen", na: "immer", partner: [{ art: "fw", grund: "Person unter Traktor eingeklemmt", blockiert: true }], buchung: "bu_polytrauma" }],
+    varianten: [{ id: "A", p: 1, sichtung: "rot", lage: "unter Traktor eingeklemmt, Beckenverletzung, Schockzeichen", na: "immer", partner: [{ art: "fw", grund: "Person unter Traktor eingeklemmt", blockiert: true }], symptom: "polytrauma_ohne_sht", dringlichkeit: 30, buchung: "bu_polytrauma" }],
   },
 
   // ---------------------------------------------------------------- Radweg: Sturz eines Radfahrers
@@ -1556,8 +1560,8 @@ export const FAELLE: FallVorlage[] = [
     fest: { schwer_pat: "nein", hoehe: "boden", verletzt: "ja", blutung_stark: "nein", aelter6h: "nein", umstand: "keine", bw: "ja", at: "normal", anzahl_patienten: "1" },
     details: ["Da ist keine Straße in der Nähe, nur der Radweg.", "Das Rad ist kaputt."],
     varianten: [
-      { id: "A", p: 0.7, sichtung: "gelb", lage: "Schlüsselbeinfraktur nach Radsturz", na: "nein", fest: { region: "extremitaet", fehlstellung: "ja", ohnmacht: "nein" }, buchung: "bu_isolierte_extremitaetenverletzung" },
-      { id: "B", p: 0.3, sichtung: "gelb", lage: "Gehirnerschütterung nach Radsturz, Amnesie", na: "nein", fest: { region: "kopf", fehlstellung: "nein", ohnmacht: "ja" }, buchung: "bu_schweres_sht" },
+      { id: "A", p: 0.7, sichtung: "gelb", lage: "Schlüsselbeinfraktur nach Radsturz", na: "nein", fest: { region: "extremitaet", fehlstellung: "ja", ohnmacht: "nein" }, symptom: "schluesselbeinverletzung", dringlichkeit: 20, buchung: "bu_isolierte_extremitaetenverletzung" },
+      { id: "B", p: 0.3, sichtung: "gelb", lage: "Gehirnerschütterung nach Radsturz, Amnesie", na: "nein", fest: { region: "kopf", fehlstellung: "nein", ohnmacht: "ja" }, symptom: "kopfverletzung", dringlichkeit: 20, buchung: "bu_schweres_sht" },
     ],
   },
 ];

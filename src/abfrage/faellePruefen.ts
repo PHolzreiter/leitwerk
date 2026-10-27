@@ -3,6 +3,7 @@
  * Abfrageschema spielbar? (läuft in den Tests und in den Einstellungen → Daten)
  */
 import { buchung } from "../data/klinik";
+import { symptom } from "../data/zuweisung";
 import { alleFaelle, type FallVariante, type FallVorlage } from "./faelle";
 import { bestimmeCode, fragenImAblauf, type Antworten, type Schema } from "./schema";
 import { altersPlausibel, sichtUnbekannt, vorlageFest } from "./szenario";
@@ -24,6 +25,9 @@ function widerspruch(a: Antworten): string | null {
 function varianteSoll(f: FallVorlage, v: FallVariante, out: FallBefund[]): void {
   const add = (fehler: string) => out.push({ fall: f.id, variante: v.id, fehler });
   if (!buchung(v.buchung)) add(`Buchung „${v.buchung}“ gibt es nicht`);
+  const sy = symptom(v.symptom);
+  if (v.symptom && !sy) add(`Symptom „${v.symptom}“ gibt es nicht`);
+  if (sy && v.dringlichkeit && !sy.dringlichkeiten.includes(v.dringlichkeit)) add(`Dringlichkeit ${v.dringlichkeit} gibt es bei „${sy.name}“ nicht`);
   for (const ev of v.verlauf ?? []) {
     if (ev.wechselZu && !f.varianten.some((x) => x.id === ev.wechselZu)) add(`Wechsel zu unbekannter Variante „${ev.wechselZu}“`);
     if (ev.nachMin[0] > ev.nachMin[1]) add("Zeitfenster verkehrt");

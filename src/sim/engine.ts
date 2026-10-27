@@ -2673,9 +2673,13 @@ export class Simulation {
     const diag = this.diagnose(e);
     const l = e.wahr.lage;
     const p0 = l?.patienten[0];
-    const sid = symptomAusDiagnose(diag, `${l?.fall?.kern ?? ""} ${e.meldung?.text ?? ""} ${p0 ? patientText(p0) : ""}`);
+    const fv = this.fallVar(e);
+    // Fall mit hinterlegtem Symptom: das gilt; sonst aus der Verdachtsdiagnose
+    const sid = fv?.symptom && symptom(fv.symptom) ? fv.symptom : symptomAusDiagnose(diag, `${l?.fall?.kern ?? ""} ${e.meldung?.text ?? ""} ${p0 ? patientText(p0) : ""}`);
     const s = symptom(sid)!;
-    const wunsch: Dringlichkeit = p0 ? (istStillstand(p0) || p0.sichtung === "rot" ? 30 : p0.sichtung === "gelb" ? 20 : 10) : this.kritisch(e) ? 30 : 20;
+    const nachSichtung: Dringlichkeit = p0 ? (istStillstand(p0) || p0.sichtung === "rot" ? 30 : p0.sichtung === "gelb" ? 20 : 10) : this.kritisch(e) ? 30 : 20;
+    // hinterlegte Dringlichkeit; hat sich der Patient seither verschlechtert, zählt die höhere
+    const wunsch: Dringlichkeit = fv?.dringlichkeit ? (Math.max(fv.dringlichkeit, p0 && (istStillstand(p0) || p0.sichtung === "rot") ? 30 : 0) as Dringlichkeit) : nachSichtung;
     const alter = p0?.alter ?? e.wahr.patientAlter;
     e.wahr.verdacht = zuweisungId(sid, dringlichkeitFuer(s, wunsch), altersgruppeVon(alter));
     return e.wahr.verdacht;

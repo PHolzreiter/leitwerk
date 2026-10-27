@@ -32,6 +32,7 @@ import type { AnruferTyp, OrtArt, OrtModus } from "../abfrage/szenario";
 import { ERÖFFNUNG, probeGespraech } from "../abfrage/gespraech";
 import { kapitelZuThema, merkmaleAusSchema, merkmaleInSchema, THEMEN, themaLabel } from "../abfrage/themen";
 import { BUCHUNGEN } from "../data/klinik";
+import { DRINGLICHKEITEN, dringlichkeitFuer, symptom, symptomAusDiagnose, SYMPTOME } from "../data/zuweisung";
 import { store } from "../data/store";
 import { pickTextFile, saveTextFile } from "../platform";
 import { sim } from "../sim/engine";
@@ -1041,6 +1042,10 @@ function fensterBauen(): { zeigen(id?: string): void } {
       k.className = `fe-var sicht-${x}`;
       aenderung();
     });
+    const drWahl = auswahl(DRINGLICHKEITEN.map((d) => [d.id, d.name]) as Opt<10 | 20 | 30>, v.dringlichkeit ?? (v.sichtung === "rot" ? 30 : v.sichtung === "gelb" ? 20 : 10), (x) => {
+      v.dringlichkeit = Number(x) as 10 | 20 | 30;
+      aenderung();
+    });
     k.append(
       zeile("Beim Eintreffen", sicht),
       zeile("Lagebild", text(v.lage, (x) => {
@@ -1056,10 +1061,16 @@ function fensterBauen(): { zeigen(id?: string): void } {
         else v.naBegleitet = x === "ja";
         aenderung();
       }, "Standard (rot/Notarzt-Bedarf: ja, gelb: oft, grün: nein)")),
-      zeile("Krankenhaus (Verdacht)", buchungWahl(v.buchung, (x) => {
-        v.buchung = x;
+      zeile("Symptom (Zuweisung)", symptomWahl(v.symptom ?? symptomAusDiagnose(v.buchung), (x) => {
+        v.symptom = x;
+        const sy = symptom(x);
+        if (sy) {
+          v.dringlichkeit = dringlichkeitFuer(sy, v.dringlichkeit ?? (v.sichtung === "rot" ? 30 : v.sichtung === "gelb" ? 20 : 10));
+          drWahl.value = String(v.dringlichkeit);
+        }
         aenderung();
-      })),
+      }), "danach bucht der RTW das Krankenhaus"),
+      zeile("Dringlichkeit", drWahl, "stabil = grün, dringend = gelb, Schockraum/Intensiv = rot"),
       zeile("Transport", [
         haken(v.transport !== false, (x) => {
           if (x) delete v.transport;
@@ -1280,13 +1291,12 @@ function fensterBauen(): { zeigen(id?: string): void } {
     return k;
   }
 
-  function buchungWahl(wert: string, setze: (v: string) => void): HTMLElement {
+  function symptomWahl(wert: string, setze: (v: string) => void): HTMLElement {
     const s = el("select", { class: "fe-buchung" }) as HTMLSelectElement;
-    const kats = [...new Set(BUCHUNGEN.map((b) => b.kategorie))];
-    for (const kat of kats) {
+    for (const kat of [...new Set(SYMPTOME.map((x) => x.kategorie))]) {
       const g = el("optgroup") as HTMLOptGroupElement;
       g.label = kat;
-      for (const b of BUCHUNGEN.filter((x) => x.kategorie === kat).sort((x, y) => x.name.localeCompare(y.name, "de"))) g.appendChild(el("option", { value: b.id }, b.name));
+      for (const x of SYMPTOME.filter((y) => y.kategorie === kat)) g.appendChild(el("option", { value: x.id }, x.name));
       s.appendChild(g);
     }
     s.value = wert;
@@ -1588,7 +1598,6 @@ function fensterBauen(): { zeigen(id?: string): void } {
 
 function kiPrompt(name: string, beschreibung: string): { role: "system" | "user"; content: string }[] {
   const themen = THEMEN.map((t) => `${t.id} (${t.label})`).join(", ");
-  const buchungen = BUCHUNGEN.map((b) => `${b.id} (${b.name})`).join("; ");
   const system = `Du entwirfst Notruf-Fälle für einen Leitstellensimulator in Niederösterreich (Rettungsdienst, Notruf 144). Antworte NUR mit einem JSON-Objekt, ohne Erklärung.
 Aus deinem Entwurf baut das Programm bei jedem Anruf eine neue Fallgeschichte; eine zweite KI spielt dann den Anrufer und darf NUR wissen, was in "geschehen", "details" und den festen Antworten steht. Alles muss deshalb eindeutig und widerspruchsfrei sein.
 
@@ -1610,7 +1619,7 @@ FELDER
 - "seitMin": [von, bis] Minuten seit dem Ereignis
 - "fest": Zustand beim Anruf: { "bw": "ja"|"getruebt"|"nein", "at": "normal"|"abnorm"|"agonal"|"keine" } (bw = wach?, at = Atmung)
 - "ohneSicht": true, wenn der Anrufer den Patienten NICHT sieht (versperrte Tür, nur Telefon mit ihm) – dann kennt er Hautfarbe, Atmung usw. nicht
-- "varianten": 1–3 Ausgänge, zusammen p = 1. Jeder: { "id": "A", "p": 0.8, "sichtung": "gruen"|"gelb"|"rot", "lage": "Lagebild der Besatzung, kurz, fachlich", "na": "nein"|"immer"|"RS"|"NFS-NKV", "buchung": eine ID aus der Liste, optional "fest": {"bw":…, "at":…}, optional "ereignis": { "nachMin": [von, bis], "text": "so meldet es der Anrufer, z. B. {Er} wird ganz blau.", "bw": …, "at": …, "sichtung": …, "lage": … } }
+- "varianten": 1–3 Ausgänge, zusammen p = 1. Jeder: { "id": "A", "p": 0.8, "sichtung": "gruen"|"gelb"|"rot", "lage": "Lagebild der Besatzung, kurz, fachlich", "na": "nein"|"immer"|"RS"|"NFS-NKV", "symptom": eine ID aus der Symptomliste, "dringlichkeit": 10 (stabil, grün) | 20 (dringend, gelb) | 30 (Schockraum/Intensiv, rot), optional "fest": {"bw":…, "at":…}, optional "ereignis": { "nachMin": [von, bis], "text": "so meldet es der Anrufer, z. B. {Er} wird ganz blau.", "bw": …, "at": …, "sichtung": …, "lage": … } }
 
 PLATZHALTER (in geschehen, hergang, details, stelle, verlauf, ereignis.text)
 {P} = die Person aus Sicht des Anrufers („Mein Mann“, „Die Frau“), {er}/{Er}/{ihn}/{ihm}/{sein}/{seine}/{seinem} = Pronomen, {a|b|c} = eines davon zufällig (für Abwechslung – nutze das oft). {rechten|linken} bzw. {rechts|links} ergibt im ganzen Fall dieselbe Seite.
@@ -1624,7 +1633,7 @@ REGELN
 3. Nur, was der Anrufer wirklich wissen kann (ein Passant kennt keine Medikamente; [wissen=nah] für Dinge, die nur Angehörige wissen).
 4. Keine Namen, Adressen, Telefonnummern oder Firmen.
 5. Meist harmlos, selten ernst: der häufigste Ausgang steht zuerst.
-Buchungen: ${buchungen}`;
+Symptome (ID: erlaubte Dringlichkeiten): ${SYMPTOME.map((x) => `${x.id}: ${x.dringlichkeiten.join("/")}`).join("; ")}`;
   return [
     { role: "system", content: system },
     { role: "user", content: `${name ? `Name: ${name}\n` : ""}Beschreibung: ${beschreibung}` },
@@ -1680,6 +1689,12 @@ export function entwurfAusKi(antwort: string, name: string): FallVorlage | null 
       const na = NA_BEDARF.some(([k]) => k === x.na) ? (x.na as NaBedarf) : "nein";
       const buchung = BUCHUNGEN.some((b) => b.id === x.buchung) ? (x.buchung as string) : sichtung === "gruen" ? "bu_hausaerztlich" : "bu_exsikkose_synkope_az_verschlechterung";
       const v: FallVariante = { id: naechsteVarId({ ...f, varianten: vs }), p: typeof x.p === "number" ? Math.max(0, Math.min(1, x.p)) : 0, sichtung, lage: str(x.lage), na, buchung };
+      const sy = symptom(str(x.symptom));
+      if (sy) {
+        v.symptom = sy.id;
+        const dw = Number(x.dringlichkeit);
+        v.dringlichkeit = dringlichkeitFuer(sy, dw === 10 || dw === 20 || dw === 30 ? dw : sichtung === "rot" ? 30 : sichtung === "gelb" ? 20 : 10);
+      }
       const vz = kiZustand(x.fest);
       if (Object.keys(vz).length) v.fest = vz;
       const er = x.ereignis as Record<string, unknown> | undefined;
