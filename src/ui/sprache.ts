@@ -183,8 +183,12 @@ export function sprechText(t: string): string {
     .replace(/\*[^*]*\*/g, " ")
     .replace(/\[[^\]]*\]/g, " ")
     .replace(/[„“"»«]/g, "")
-    // Funkrufnamen sprechen wie am Funk: „75/001“ → „75 1“ (Nullen stumm)
-    .replace(/\b(\d{2,3})\/0*(\d+)\b/g, "$1 $2")
+    // Telefonnummern Ziffer für Ziffer: „0664 123456“ → „0 6 6 4 1 2 3 …“
+    .replace(/(\+43|\b0)[\d /-]{5,}\d/g, (m) => `${m.startsWith("+") ? "plus " : ""}${m.replace(/\D/g, "").split("").join(" ")}`)
+    // Funkrufnamen mit Pause: „69/902“ → „69, 902“; „75/001“ → „75, 1“ (Nullen stumm)
+    .replace(/\b(\d{2,3})\/0*(\d+)\b/g, "$1, $2")
+    // Postleitzahl vor dem Ort: „3481 Fels“ → „34, 81 Fels“
+    .replace(/\b([1-9]\d)(\d{2})(?=\s+(?!(?:Jänner|Januar|Februar|März|April|Mai|Juni|Juli|August|September|Oktober|November|Dezember|Uhr|Euro|Meter|Kilometer|Stück|Patienten|Personen)\b)[A-ZÄÖÜ][a-zäöüß])/g, (_m, a: string, b: string) => (b === "00" ? `${a} hundert` : `${a}, ${b}`))
     .replace(/\s+/g, " ")
     .trim();
 }

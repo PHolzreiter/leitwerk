@@ -1,6 +1,8 @@
 /** Fenster „Spiel“: Spielstand speichern/laden, Multiplayer hosten/beitreten, Spieler und Rechte. */
 import { speichernDialog, spielstaendeOeffnen } from "./spielstaende";
-import { RECHTE_LABEL, STANDARD_RECHTE, meinName, mp, type Spieler } from "../net/mehrspieler";
+import { RECHTE_LABEL, STANDARD_RECHTE, meinName, mp, onInkompatibel, type Spieler } from "../net/mehrspieler";
+import { updateInfo, updateInstallieren } from "./updateDienst";
+import { einstellungenOeffnen } from "./ws/steuerleiste";
 import * as spielstand from "../net/spielstand";
 import { store } from "../data/store";
 import { sim, type Berechtigung } from "../sim/engine";
@@ -299,4 +301,23 @@ export function setupSpielStatus(): void {
   mp.onChange(render);
   store.onChange(render);
   render();
+  // Beitritt abgelehnt: andere Version oder andere Kartenpakete als der Host
+  onInkompatibel((i) => {
+    const body = el("div", { class: "mp-inkompatibel", "data-mp-inkompatibel": "" });
+    body.innerHTML = `<p>${esc(i.text)}.</p><p class="muted small">Damit Fahrzeiten, Karte und Vorschläge bei allen gleich sind, brauchen alle im Spiel dieselbe LeitWerk-Version und dieselben Kartenpakete.</p>`;
+    const aktionen: { label: string; kind?: "primary"; onClick?: () => boolean | void }[] = [{ label: "Schließen" }];
+    if (i.update) {
+      const u = updateInfo();
+      aktionen.push({
+        label: u ? `Update auf ${u.version} installieren` : "Nach Updates suchen",
+        kind: "primary",
+        onClick: () => {
+          if (u) updateInstallieren(u);
+          else einstellungenOeffnen("programm");
+        },
+      });
+    }
+    if (i.pakete.length) aktionen.push({ label: "Kartenpakete öffnen", kind: "primary", onClick: () => einstellungenOeffnen("karten") });
+    openDialog({ title: "Beitreten nicht möglich", body, actions: aktionen });
+  });
 }

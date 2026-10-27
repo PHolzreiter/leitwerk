@@ -30,7 +30,7 @@ import { checkOnStart, ensureGrundpaket } from "./ui/packsView";
 import { setupSpielStatus } from "./ui/spielDialog";
 import { autosaveStarten } from "./net/spielstand";
 import { kiBeimStart } from "./abfrage/ki";
-import { mp } from "./net/mehrspieler";
+import { mp, umgebungPruefen, umgebungSetzen } from "./net/mehrspieler";
 import { istPilot } from "./ui/pilot/modus";
 import { appVersion, onPacksChanged } from "./updates";
 // Fenster (registrieren sich selbst)
@@ -62,7 +62,7 @@ import { hauptfensterStarten, nebenfensterVerbinden, nebenfensterWiederherstelle
 import { anwenden, pers, setzePers } from "./ui/ws/persoenlich";
 import { steuerleisteBauen } from "./ui/ws/steuerleiste";
 import { soundBeobachterStarten } from "./ui/sounds";
-import { funkVorlesenStarten, sprachTest } from "./ui/sprache";
+import { funkVorlesenStarten, sprachTest, sprechText } from "./ui/sprache";
 import { funkStatistik, funkVorleseLaut, sprechStart, sprechStopp } from "./ui/sprechfunk";
 import { dienstHoverEinrichten } from "./ui/dienstWoche";
 import { schemaUebernehmen } from "./ui/importDialog";
@@ -76,7 +76,7 @@ if (location.search.includes("debug")) Object.assign(window, { __lw: { sim, stor
         const { kt, ...rd } = structuredClone(s);
         store.setKtSatz(kt?.codes?.length ? { name: "Test", ...kt } : null);
         schemaUebernehmen(rd as Schema, "test.json");
-      }, faellePruefen: () => faellePruefen(store.schema), fallHinweise, ohneFrageEcho, fuellwortDosis, ohneRollentausch, faelle: { alleFaelle, fallSpeichern, fallLoeschen, fallpaketExport, fallpaketImport, fallAktivSetzen }, fallEditorOeffnen, entwurfAusKi, sprechFrage, systemPrompt, kontext, erinnerung, kiVerlauf, ohnePatientWort, bereinigen, satzEnde, inAtemnot, kiAntwortNeu, kiTest, probe: probeGespraech, vorwaermen, eroeffnen, nachrichtArt, ortKandidaten, testlauf: { auftraegeFuer, ktAuftraege, testlaufAusfuehren, testlaufDateien, testlaufDialog, zipOhneKompression }, kt: { ktPrompt, ktPruefen, ktZusammenfassungFalsch }, anruferAntwort, verstehen: { themenErkennen, antwortKern, antwortPruefen, kernAntwort, schemaFrageZu }, kiPrefsSetzen: setKiPrefs, panelZeigen, funk: { funkPruefen, zerlegen, zusammensetzen, funkSpruchErzeugen, lageWissen }, antwortOhneKi, anruferWaehlen, kh: { akvZustand, AKV_SPALTEN_AK, akutVon }, orte: { poiKategorien, ortGewicht, kategorienFuerOrtArt }, setzePers, stellen: { laden: stellenLaden }, suche: searchAddress, zeiten: { offenUm, istFeiertag, katOffen, katKtOffen }, zufahrt: { lesen: zufahrtLesen, text: zufahrtText, bei: khZufahrtBei }, landeplatz: { lesen: landeplatzLesen }, fuss: { anStrasse, besatzungBei, personenBei }, schemaFkt: { fragenImAblauf, bestimmeCode }, startseite: { zeigen: startseiteZeigen, offen: startseiteOffen }, update: { testen: updateTesten, installieren: updateInstallieren }, spielstaende: spielstandOrdner, ablage: { ...ablage, abgleichen: ablageAbgleichen }, dienstHtml, flughafen, dienst, sel: { waehle, fahrzeugZeigen, auswahl } } });
+      }, faellePruefen: () => faellePruefen(store.schema), fallHinweise, ohneFrageEcho, fuellwortDosis, ohneRollentausch, faelle: { alleFaelle, fallSpeichern, fallLoeschen, fallpaketExport, fallpaketImport, fallAktivSetzen }, fallEditorOeffnen, entwurfAusKi, sprechFrage, systemPrompt, kontext, erinnerung, kiVerlauf, ohnePatientWort, bereinigen, satzEnde, inAtemnot, kiAntwortNeu, kiTest, probe: probeGespraech, vorwaermen, eroeffnen, nachrichtArt, ortKandidaten, testlauf: { auftraegeFuer, ktAuftraege, testlaufAusfuehren, testlaufDateien, testlaufDialog, zipOhneKompression }, kt: { ktPrompt, ktPruefen, ktZusammenfassungFalsch }, anruferAntwort, verstehen: { themenErkennen, antwortKern, antwortPruefen, kernAntwort, schemaFrageZu }, kiPrefsSetzen: setKiPrefs, panelZeigen, funk: { funkPruefen, zerlegen, zusammensetzen, funkSpruchErzeugen, lageWissen }, antwortOhneKi, anruferWaehlen, kh: { akvZustand, AKV_SPALTEN_AK, akutVon }, orte: { poiKategorien, ortGewicht, kategorienFuerOrtArt }, setzePers, stellen: { laden: stellenLaden }, suche: searchAddress, zeiten: { offenUm, istFeiertag, katOffen, katKtOffen }, zufahrt: { lesen: zufahrtLesen, text: zufahrtText, bei: khZufahrtBei }, landeplatz: { lesen: landeplatzLesen }, fuss: { anStrasse, besatzungBei, personenBei }, schemaFkt: { fragenImAblauf, bestimmeCode }, startseite: { zeigen: startseiteZeigen, offen: startseiteOffen }, update: { testen: updateTesten, installieren: updateInstallieren }, spielstaende: spielstandOrdner, ablage: { ...ablage, abgleichen: ablageAbgleichen }, dienstHtml, flughafen, dienst, sel: { waehle, fahrzeugZeigen, auswahl }, mpTest: { umgebungSetzen, umgebungPruefen }, sprechText } });
 
 async function watchGeo(): Promise<void> {
   const out = document.getElementById("geo-status");

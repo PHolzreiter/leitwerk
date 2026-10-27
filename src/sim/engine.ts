@@ -802,6 +802,10 @@ export interface Einsatz {
   fremd?: { zone: string; rtwText?: string };
   /** BIT kam nicht: Besatzung transportiert selbst */
   bitVerzicht?: boolean;
+  /** Wer transportiert bei NAH + RTW: Funkrufname-ID des NAH, "" = der RTW (einmal je Einsatz entschieden) */
+  nahEntscheid?: string;
+  /** seit wann der RTW auf die Entscheidung bzw. das Eintreffen des NAH wartet */
+  nahWartenSeit?: number | null;
   /** zuletzt ins Protokoll geschriebene Abfrage (Erstaufnahme, Änderungen) */
   abfrageStand?: { antworten: Antworten; kapitel: string | null; code: string | null } | null;
   /** alarmierte Partner-Organisationen (Zeitpunkt der Alarmierung) */
@@ -2319,6 +2323,50 @@ export class Simulation {
     }
   }
 
+  /**
+   * Transportiert der NAH dieses Einsatzes den Patienten? Spieler-NAH: der Pilot entscheidet (bis dahin warten).
+   * KI-NAH: bei kritischem Patienten und weitem Weg ins passende Krankenhaus (über 20 km Luftlinie), wenn er fliegen darf –
+   * sonst übergibt der Notarzt an den RTW. „warten“: der NAH ist noch nicht entschieden bzw. noch nicht da.
+   */
+  private nahTransportiert(e: Einsatz, t: number): SimFahrzeug | null | "warten" {
+    if (!e.wahr.transport) return null;
+    const fzs = this.einsatzFz(e);
+    const pilot = fzs.find((x) => x.pilot && fliegt(x));
+    if (pilot) {
+      const p = this.pilotTransport(e);
+      if (p) return p;
+      // Pilot ist am Einsatzort (oder im Anflug) und hat noch nicht entschieden: der RTW wartet (höchstens 20 Minuten)
+      const kritisch = e.wahr.lage?.fall ? this.naBegleitetFall(e) : this.kritisch(e);
+      if (!pilot.pilot?.plan && (pilot.status === "amBO" || (kritisch && ["alarmiert", "zumBO"].includes(pilot.status)))) {
+        e.nahWartenSeit ??= t;
+        if (t - e.nahWartenSeit < 20 * MIN) return "warten";
+      }
+      return null;
+    }
+    if (e.nahEntscheid !== undefined) return (e.nahEntscheid && this.state.fahrzeuge[e.nahEntscheid]) || null;
+    const nah = fzs.find((x) => fliegt(x) && !x.pilot);
+    if (!nah) return null;
+    const naMit = e.wahr.lage?.fall ? this.naBegleitetFall(e) : this.kritisch(e);
+    if (!naMit) {
+      e.nahEntscheid = "";
+      return null;
+    }
+    if (nah.phase !== "vorOrt" && nah.phase !== "warteKH") {
+      // NAH fliegt noch an: kurz auf ihn warten (höchstens 20 Minuten)
+      e.nahWartenSeit ??= t;
+      if (t - e.nahWartenSeit < 20 * MIN && ["ausruecken", "anfahrt", "routing"].includes(nah.phase)) return "warten";
+      e.nahEntscheid = "";
+      return null;
+    }
+    const ort = e.adresse ?? { lat: e.wahr.lat, lon: e.wahr.lon };
+    const kh = e.kh ? store.get("hospitals", e.kh.hospitalId) : this.naechstesKh(ort, this.verdacht(e), this.patientRot(e), (e.wahr.lage?.patienten[0]?.alter ?? 50) < 15);
+    const weit = !!kh && distanceM(ort, kh) > 20_000;
+    const fliegtHin = weit && !this.flugHindernis(nah) && (!kh || khLandung(kh) !== null);
+    e.nahEntscheid = fliegtHin ? nah.id : "";
+    this.log(e, fliegtHin ? `Notarzt ${nah.funkrufname}: Transport mit dem Hubschrauber` : `Notarzt ${nah.funkrufname}: Transport im RTW`);
+    return fliegtHin ? nah : null;
+  }
+
   private kritisch(e: Einsatz): boolean {
     return this.stufeVon(e)?.kategorie === "kritisch";
   }
@@ -2341,9 +2389,15 @@ export class Simulation {
         // ACN statt Notarzt (RS-RTW ohne NFS): fährt mit ins Krankenhaus
         fz.begleitet = true;
         this.log(e, `${fz.funkrufname}: ACN begleitet den Transport`);
-      } else if (rtwMitTransport && (e.wahr.lage?.fall ? naMit : this.kritisch(e)) && fliegt(fz)) {
+      } else if (fliegt(fz) && e.wahr.transport && this.nahTransportiert(e, t) === fz) {
+        // NAH fliegt den Patienten, der RTW übergibt und wird frei
         this.log(e, `${fz.funkrufname}: Patient wird mit dem NAH transportiert`);
         fz.begleitet = true;
+      } else if (fliegt(fz) && rtwMitTransport) {
+        // Notarzt übergibt an den RTW, der RTW transportiert, der NAH wird frei
+        this.log(e, `${fz.funkrufname}: Patient an RTW übergeben, Transport bodengebunden`);
+        this.funk(fz.funkrufname, e.id, "Patient an RTW übergeben, Transport bodengebunden, sind frei", "info");
+        return this.freigeben(fz);
       } else {
         this.log(e, `${fz.funkrufname}: Einsatz beendet`);
         return this.freigeben(fz);
@@ -2351,13 +2405,20 @@ export class Simulation {
       fz.phase = "warteKH";
       fz.phaseEnde = null;
       if (e.kh) this.startTransport(e);
+      else if (fliegt(fz) && e.nahEntscheid === fz.id && !e.khAnfrage) {
+        // NAH fliegt den Patienten (der RTW ist schon frei): Krankenhaus mit Landeplatz buchen bzw. anfragen
+        const p0 = e.wahr.lage?.patienten[0];
+        const anfragen = (p0 && istStillstand(p0)) || (e.wahr.lage?.patienten.length ?? 1) > 1;
+        if (e.wahr.rtwBuchtSelbst && !anfragen) this.bucheKhAuto(e, fz.funkrufname);
+        else {
+          const verdacht = this.verdacht(e);
+          e.verdacht = verdacht;
+          e.khAnfrage = { verdacht, seit: t, von: fz.funkrufname };
+          this.fzRuft(fz, e, "kh", `erbitte KH-Buchung mit Landeplatz, Verdacht ${buchungName(verdacht)}`);
+          this.log(e, `${fz.funkrufname} erbittet KH-Buchung (Verdacht ${buchungName(verdacht)})`);
+        }
+      }
       return;
-    }
-    // Spieler-NAH transportiert den Patienten selbst: der RTW wird frei
-    const nahFliegt = this.pilotTransport(e);
-    if (nahFliegt) {
-      this.log(e, `${fz.funkrufname}: Patient wird mit ${nahFliegt.funkrufname} transportiert`);
-      return this.freigeben(fz);
     }
     // Schwerer Patient: der BIT transportiert; bis er da ist, wartet die Besatzung
     const l = e.wahr.lage;
@@ -2406,6 +2467,17 @@ export class Simulation {
       this.log(e, `${fz.funkrufname}: ${e.wahr.revers ? "Transportverweigerung, Revers unterschrieben" : "kein Transport erforderlich"}`);
       if (e.wahr.revers) this.fzRuft(fz, e, "info", "Patient verweigert den Transport, Revers unterschrieben, wir werden einsatzbereit");
       else this.funk(fz.funkrufname, e.id, "Kein Transport, Patient verbleibt vor Ort", "info");
+      return this.freigeben(fz);
+    }
+    // NAH am Einsatz: transportiert der NAH, übergibt der RTW und wird frei (Spieler-NAH: der Pilot entscheidet)
+    const nah = this.nahTransportiert(e, t);
+    if (nah === "warten") {
+      fz.phaseEnde = t + MIN;
+      return;
+    }
+    if (nah) {
+      this.log(e, `${fz.funkrufname}: Patient an ${nah.funkrufname} übergeben – Transport mit dem Hubschrauber`);
+      this.funk(fz.funkrufname, e.id, `Patient an ${nah.funkrufname} übergeben, sind frei`, "info");
       return this.freigeben(fz);
     }
     fz.phase = "warteKH";
@@ -2734,6 +2806,8 @@ export class Simulation {
   /** Hubschrauber soll in ein Haus ohne Landeplatz: Patient fährt bodengebunden, Hubschrauber ist frei */
   private ohneLandeplatz(fz: SimFahrzeug, e: Einsatz, h: Hospital): boolean {
     if (!fliegt(fz) || khLandung(h) !== null) return false;
+    // kein anderes Fahrzeug mehr für den Transport da: der Hubschrauber fliegt trotzdem hin
+    if (!this.einsatzFz(e).some((x) => x !== fz && this.transportfaehig(x))) return false;
     fz.begleitet = false;
     this.log(e, `${fz.funkrufname}: ${h.kurzname || h.name} hat keinen Hubschrauberlandeplatz – Patient wird bodengebunden transportiert`);
     this.funk(fz.funkrufname, e.id, `${h.kurzname || h.name} hat keinen Landeplatz – Transport bodengebunden, ${fz.funkrufname} frei`, "info");

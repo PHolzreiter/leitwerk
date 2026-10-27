@@ -1,5 +1,17 @@
 [
  {
+  "version": "0.77.0",
+  "datum": "2026-10-27",
+  "titel": "Übergabe NAH/RTW & Vorlesen",
+  "punkte": [
+   "Kritische Patienten: Hubschrauber fliegt bei weitem Weg ins Krankenhaus, sonst fährt der RTW – das andere Fahrzeug wird frei",
+   "Behoben: der RTW fuhr mit zum Krankenhaus, obwohl der Hubschrauber transportierte",
+   "Funkrufnamen, Postleitzahlen und Telefonnummern werden verständlicher vorgelesen",
+   "Multiplayer: Beitreten nur mit gleicher Version und gleichen Kartenpaketen – sonst Hinweis mit Knopf zum Update",
+   "Hauptmenü im Vollbild, danach wieder die gewohnte Fenstergröße"
+  ]
+ },
+ {
   "version": "0.76.0",
   "datum": "2026-10-26",
   "titel": "Fahrzeugwahl & getrennte Codes",

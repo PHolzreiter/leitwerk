@@ -208,6 +208,27 @@ async function pruefen(): Promise<Check[]> {
 let offen: HTMLElement | null = null;
 
 /** Wird die Startseite gerade gezeigt? */
+/** Hauptmenü im Vollbild; danach wieder die Fenstergröße von vorher (nur das Hauptfenster im Programm) */
+let vollbildVonUns = false;
+function vollbildStart(): void {
+  if (!inTauri()) return;
+  void import("@tauri-apps/api/window")
+    .then(async ({ getCurrentWindow }) => {
+      const w = getCurrentWindow();
+      if (w.label !== "main" || (await w.isFullscreen())) return;
+      vollbildVonUns = true;
+      await w.setFullscreen(true);
+    })
+    .catch((e) => console.warn("Vollbild", e));
+}
+function vollbildEnde(): void {
+  if (!inTauri() || !vollbildVonUns) return;
+  vollbildVonUns = false;
+  void import("@tauri-apps/api/window")
+    .then(({ getCurrentWindow }) => getCurrentWindow().setFullscreen(false))
+    .catch((e) => console.warn("Vollbild", e));
+}
+
 export function startseiteOffen(): boolean {
   return !!offen;
 }
@@ -216,6 +237,7 @@ export function startseiteZeigen(fertig?: () => void, opt: { zurueck?: boolean }
   if (offen) return;
   const root = el("div", { class: "st", role: "dialog", "aria-label": "LeitWerk – Startseite" });
   offen = root;
+  vollbildStart();
   const aus: (() => void)[] = [];
   let checks: Check[] = [];
   let modus: "solo" | "multi" = mp.status.rolle === "aus" ? "solo" : "multi";
@@ -602,6 +624,7 @@ export function startseiteZeigen(fertig?: () => void, opt: { zurueck?: boolean }
   const schliessen = () => {
     if (!offen) return;
     offen = null;
+    vollbildEnde();
     root.classList.add("weg");
     aus.forEach((f) => f());
     setTimeout(() => root.remove(), 520);

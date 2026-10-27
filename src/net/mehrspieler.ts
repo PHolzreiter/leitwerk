@@ -10,6 +10,7 @@ import { store, type StoreBefehl } from "../data/store";
 import { aktiveRegionen, REGIONEN } from "../sim/geo";
 import { DeltaBauer, deltaAnwenden, zustandUebernehmen } from "./spiegel";
 import { istPilot } from "../ui/pilot/modus";
+import { appVersion, onPacksChanged, packsLocal, packsManifest } from "../updates";
 import type { Persisted } from "../data/model";
 import {
   berechtigungFuer,
@@ -551,6 +552,14 @@ class Mehrspieler {
         return;
       // ---- Host → Mitspieler
       case "full": {
+        // Gleiche LeitWerk-Version und gleiche Kartenpakete wie der Host – sonst nicht beitreten
+        const passt = umgebungPruefen(m.version as string | undefined, m.pakete as Record<string, string> | undefined);
+        if (passt) {
+          this.verlassen();
+          this.fehler(passt.text);
+          for (const fn of inkompatibelHoerer) fn(passt);
+          return;
+        }
         // Alle brauchen dieselben Straßenpakete, sonst stimmen Fahrzeiten und Vorschläge nicht überein
         const hostReg = ((m.regionen as string[] | undefined) ?? []).filter((r) => r !== "alt");
         const meine = aktiveRegionen().filter((r) => r !== "alt");
@@ -703,7 +712,7 @@ class Mehrspieler {
 
   /** Vollständiger Stand an einen (oder alle) Mitspieler */
   private voll(to?: string): void {
-    this.anAlle({ t: "full", state: sim.state, store: store.snapshot(), spieler: this.spieler, regionen: aktiveRegionen() }, to);
+    this.anAlle({ t: "full", state: sim.state, store: store.snapshot(), spieler: this.spieler, regionen: aktiveRegionen(), version: umgebung.version, pakete: umgebung.pakete }, to);
     if (!to) this.delta.merken();
   }
 
@@ -757,3 +766,89 @@ class Mehrspieler {
 }
 
 export const mp = new Mehrspieler();
+
+// ------------------------------------------------------------------ Version und Kartenpakete
+
+/** eigene Version und installierte Kartenpakete (id → Version) */
+const umgebung: { version: string | null; pakete: Record<string, string> | null } = { version: null, pakete: null };
+async function umgebungLaden(): Promise<void> {
+  try {
+    umgebung.version = await appVersion();
+    const l = await packsLocal();
+    umgebung.pakete = Object.fromEntries(Object.entries(l.installed).map(([id, p]) => [id, p.version]));
+  } catch (e) {
+    console.warn("Pakete", e);
+  }
+  // Namen der Pakete für Hinweise (nur online verfügbar)
+  packsManifest()
+    .then((l) => l.forEach((p) => paketNamen.set(p.id, p.name)))
+    .catch(() => undefined);
+}
+const paketNamen = new Map<string, string>();
+void umgebungLaden();
+onPacksChanged(() => void umgebungLaden());
+
+export interface Inkompatibel {
+  text: string;
+  /** ich muss LeitWerk aktualisieren */
+  update: boolean;
+  /** der Host hat eine neuere Version bzw. ich muss Kartenpakete installieren/aktualisieren */
+  pakete: string[];
+}
+const inkompatibelHoerer = new Set<(i: Inkompatibel) => void>();
+/** Beitritt abgelehnt (andere Version oder Kartenpakete) – die Oberfläche zeigt, was zu tun ist */
+export function onInkompatibel(fn: (i: Inkompatibel) => void): () => void {
+  inkompatibelHoerer.add(fn);
+  return () => inkompatibelHoerer.delete(fn);
+}
+
+/** Versionsnummern vergleichen (-1 älter, 0 gleich, 1 neuer) */
+function vergleich(a: string, b: string): number {
+  const x = a.split(/[.-]/).map((n) => parseInt(n, 10) || 0);
+  const y = b.split(/[.-]/).map((n) => parseInt(n, 10) || 0);
+  for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] ?? 0) !== (y[i] ?? 0)) return (x[i] ?? 0) < (y[i] ?? 0) ? -1 : 1;
+  return 0;
+}
+
+/** null = passt; sonst was nicht passt (ältere Hosts schicken nichts – dann wird nicht geprüft) */
+export function umgebungPruefen(hostVersion: string | undefined, hostPakete: Record<string, string> | undefined): Inkompatibel | null {
+  const ich = umgebung.version;
+  // im Browser (Entwicklung, Tests) gibt es weder Version noch Pakete
+  if (hostVersion === "Browser" || ich === "Browser") return null;
+  if (hostVersion && ich && hostVersion !== ich) {
+    const aelter = vergleich(ich, hostVersion) < 0;
+    return {
+      text: aelter
+        ? `Der Host spielt LeitWerk ${hostVersion}, du hast ${ich} – bitte zuerst aktualisieren`
+        : `Der Host spielt LeitWerk ${hostVersion}, du hast schon ${ich} – der Host muss zuerst aktualisieren`,
+      update: aelter,
+      pakete: [],
+    };
+  }
+  if (!hostPakete || !umgebung.pakete || istPilot()) return null;
+  const fehlt: string[] = [];
+  const alt: string[] = [];
+  const hostAlt: string[] = [];
+  for (const [id, v] of Object.entries(hostPakete)) {
+    const meine = umgebung.pakete[id];
+    if (meine === undefined) fehlt.push(id);
+    else if (meine !== v) (vergleich(meine, v) < 0 ? alt : hostAlt).push(id);
+  }
+  if (!fehlt.length && !alt.length && !hostAlt.length) return null;
+  const teile = [
+    fehlt.length ? `es fehlt: ${fehlt.map(paketName).join(", ")}` : "",
+    alt.length ? `bitte aktualisieren: ${alt.map(paketName).join(", ")}` : "",
+    hostAlt.length ? `beim Host veraltet: ${hostAlt.map(paketName).join(", ")}` : "",
+  ].filter(Boolean);
+  return { text: `Andere Kartenpakete als der Host – ${teile.join(" – ")}`, update: false, pakete: [...fehlt, ...alt] };
+}
+
+function paketName(id: string): string {
+  return paketNamen.get(id) ?? REGIONEN[id.replace(/^strassen[-_]?/, "")] ?? id;
+}
+
+/** nur für Tests: eigene Version und Pakete vorgeben */
+export function umgebungSetzen(version: string | null, pakete: Record<string, string> | null): void {
+  umgebung.version = version;
+  umgebung.pakete = pakete;
+}

@@ -1,5 +1,12 @@
 # Änderungen
 
+## 0.77.0 – Übergabe NAH/RTW, Vorlesen, Multiplayer-Check, Hauptmenü im Vollbild
+- **Übergabe Notarzthubschrauber ↔ RTW:** Bei kritischen Patienten entscheidet der Notarzt am Einsatzort: Ist das passende Krankenhaus weit weg (über 20 km) und darf der Hubschrauber fliegen, fliegt der NAH den Patienten (Krankenhaus mit Landeplatz) und der RTW meldet sich nach der Übergabe frei. Sonst übergibt der Notarzt an den RTW, der RTW transportiert und der NAH ist frei. Beim Spieler-NAH entscheidet der Pilot – der RTW wartet auf seine Entscheidung
+- Behoben: Transportierte der NAH, fuhr der RTW trotzdem mit zum Zielort
+- **Vorlesen:** Funkrufnamen mit Pause („69/902“ → „69 – 902“), Postleitzahlen geteilt („3481“ → „34 – 81“, „3500“ → „35 hundert“), Telefonnummern Ziffer für Ziffer – am Funk und am Telefon
+- **Multiplayer:** Beitreten nur mit derselben LeitWerk-Version und denselben Kartenpaketen wie der Host. Sonst erscheint, was fehlt – mit Knopf zum Update bzw. zu den Kartenpaketen
+- **Hauptmenü im Vollbild**, danach wieder die Fenstergröße von vorher
+
 ## 0.76.0 – RD und KT/SEK getrennt, Fahrzeugsuche, neue Fahrzeugwahl bei Transporten, Fahrzeug-Info auf der Karte
 - **Notruf (RD) und Krankentransport/Überstellung (KT/SEK) getrennt:** eigene Sätze für beide Bereiche, einzeln wählbar (z. B. eigene RD-Codes mit den eingebauten Transportcodes). Ordner in Dokumente/LeitWerk: `Abfrageschema/RD`, `Abfrageschema/Krankentransport_Sekundärtransporte`, `Codelisten/RD`, `Codelisten/Krankentransport_Sekundärtransporte`. Der KT-/SEK-Editor speichert Codes und Abfrage in die KT/SEK-Ordner
 - **Einmalig mit diesem Update:** bisherige eigene Sätze werden entfernt und müssen getrennt neu hinzugefügt werden
