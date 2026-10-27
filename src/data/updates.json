@@ -1,5 +1,17 @@
 [
  {
+  "version": "0.78.0",
+  "datum": "2026-10-27",
+  "titel": "Krankenhaus-Zuweisung nach Symptom",
+  "punkte": [
+   "Notfälle: Symptom, Altersgruppe und Dringlichkeit bestimmen das Krankenhaus",
+   "KH buchen: Symptom suchen, Alter und Dringlichkeit wählen – die drei nächsten passenden Häuser, die gerade aufnehmen",
+   "Schockraum nur für Trauma, nur internistisch oder beides – und was dahinter nötig ist",
+   "Herzkatheter und andere Bereiche mit Wochentagen und Uhrzeiten",
+   "Neues Fenster „KH-Aufnahme“: Zeiten und Symptome je Haus einstellen, mit Herkunft und Lücken-Prüfung"
+  ]
+ },
+ {
   "version": "0.77.0",
   "datum": "2026-10-27",
   "titel": "Übergabe NAH/RTW & Vorlesen",

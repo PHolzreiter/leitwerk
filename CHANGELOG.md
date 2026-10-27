@@ -1,5 +1,15 @@
 # Änderungen
 
+## 0.78.0 – Krankenhaus-Zuweisung nach Symptom, Altersgruppe und Dringlichkeit
+- **Neue Zuweisung bei Notfalleinsätzen** (nicht bei Krankentransporten und Überstellungen): Jeder Patient hat ein **Symptom** (121 Symptome in Gruppen, mit Suchbegriffen), eine **Altersgruppe** (Kleinkind 0–4, Kind 5–17, Erwachsener) und eine **Dringlichkeit** (stabil, dringend, Schockraum/Intensiv)
+- **KH buchen in der Einsatzmaske:** Symptom suchen (auch mit anderen Begriffen, z. B. „Herzinfarkt“) → Altersgruppe → Dringlichkeit (nur die möglichen) → die **drei nächsten passenden Häuser, die gerade aufnehmen**, mit freien Plätzen. Jedes andere Haus bleibt wählbar
+- **Die Besatzung meldet** Symptom und Dringlichkeit über Funk (z. B. „Atemnot, dringend“) und bucht selbst nach denselben Regeln
+- **Schockraum:** Häuser mit Schockraum nur für Trauma oder nur internistisch nehmen nur diese Patienten; kombinierte Schockräume beide. Ein Schockraum-Patient braucht auch, was dahinter nötig ist (z. B. Neurochirurgie bei Schädel-Hirn-Trauma)
+- **Zeiten:** Herzkatheter, Thrombektomie und weitere Bereiche mit Wochentagen und Uhrzeiten (z. B. Krems Mo–Fr 7–15 Uhr, Mittwoch rund um die Uhr; Wiener Herzkatheter tageweise wechselnd; Wr. Neustadt und Eisenstadt im Wechsel)
+- **Neues Fenster „KH-Aufnahme“** (Fenster-Menü oder „Mehr Info“ beim Krankenhaus → „Aufnahme bei Notfällen“): Öffnungszeiten der Akut-Bereiche bearbeiten, je Symptom und Dringlichkeit sehen, ob das Haus aufnimmt, und einzeln ein- oder ausschalten. Jede Einstellung zeigt, woher sie kommt (recherchiert, Annahme, von Paul, von dir geändert), mit „Zurück auf Vorgabe“
+- **Lücken prüfen:** zeigt Symptome, für die im Umkreis von 60 km zu bestimmten Zeiten der Woche kein Haus aufnimmt
+- Im Multiplayer gelten die Einstellungen des Hosts
+
 ## 0.77.0 – Übergabe NAH/RTW, Vorlesen, Multiplayer-Check, Hauptmenü im Vollbild
 - **Übergabe Notarzthubschrauber ↔ RTW:** Bei kritischen Patienten entscheidet der Notarzt am Einsatzort: Ist das passende Krankenhaus weit weg (über 20 km) und darf der Hubschrauber fliegen, fliegt der NAH den Patienten (Krankenhaus mit Landeplatz) und der RTW meldet sich nach der Übergabe frei. Sonst übergibt der Notarzt an den RTW, der RTW transportiert und der NAH ist frei. Beim Spieler-NAH entscheidet der Pilot – der RTW wartet auf seine Entscheidung
 - Behoben: Transportierte der NAH, fuhr der RTW trotzdem mit zum Zielort

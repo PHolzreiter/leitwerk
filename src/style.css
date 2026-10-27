@@ -1089,9 +1089,97 @@ select:focus {
 
 .kh-row {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) minmax(0, 1.3fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 6px;
   align-items: center;
+}
+/* Zuweisung: Symptom → Alter → Dringlichkeit → Häuser */
+.zw-kopf {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 6px;
+  align-items: center;
+  margin: 4px 0;
+}
+.zw-sym {
+  position: relative;
+  min-width: 0;
+}
+.zw-suche {
+  width: 100%;
+  box-sizing: border-box;
+}
+.zw-chip {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.zw-chip .zw-weg {
+  margin-left: auto;
+}
+.zw-liste {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  z-index: 30;
+  max-height: 260px;
+  overflow: auto;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+}
+.zw-treffer {
+  padding: 5px 8px;
+  cursor: pointer;
+}
+.zw-treffer.sel,
+.zw-treffer:hover {
+  background: rgba(80, 140, 255, 0.18);
+}
+.zw-seg {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin: 3px 0;
+}
+.zw-seg .btn.an {
+  outline: 2px solid #4a8cff;
+  font-weight: 700;
+}
+.zw-dring .btn.d30.an {
+  background: #d32f2f;
+  color: #fff;
+}
+.zw-dring .btn.d20.an {
+  background: #f2b600;
+  color: #222;
+}
+.zw-dring .btn.d10.an {
+  background: #2e9d4a;
+  color: #fff;
+}
+.zw-kh {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 5px 0;
+}
+.zw-khk {
+  display: block;
+  padding: 4px 7px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.zw-khk.an {
+  border-color: #4a8cff;
+  background: rgba(80, 140, 255, 0.12);
+}
+.zw-khk.voll {
+  opacity: 0.7;
 }
 .kh-row select {
   min-width: 0;
@@ -3619,3 +3707,151 @@ input.ausr-zahl { width: 64px !important; min-width: 0; }
 .fz-suche { width: 100%; margin: 4px 0 6px; }
 .kt-ersatz-chip { font-size: 10.5px; padding: 0 6px; border-radius: 8px; background: rgba(245, 165, 36, 0.2); }
 .kt-frueh { margin: 6px 0; padding: 6px 8px; border-radius: 6px; border: 1px solid rgba(245, 165, 36, 0.6); background: rgba(245, 165, 36, 0.1); display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+
+/* KH-Aufnahme (Zuweisung je Krankenhaus) */
+.kha {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+  height: 100%;
+  overflow: auto;
+  box-sizing: border-box;
+}
+.kha-kopf {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.kha-kopf select,
+.kha-kopf input {
+  min-width: 0;
+}
+.kha-kh {
+  flex: 1 1 160px;
+}
+.kha-such {
+  flex: 1 1 140px;
+}
+.kha h4 {
+  margin: 6px 0 4px;
+  font-size: 13px;
+}
+.kha-hinweis,
+.kha-tipp {
+  font-size: 11.5px;
+}
+.kha-z {
+  display: grid;
+  grid-template-columns: minmax(110px, 1fr) minmax(140px, 1.6fr) minmax(80px, auto) auto;
+  gap: 6px;
+  align-items: center;
+  padding: 2px 0;
+}
+.kha-plan {
+  min-width: 0;
+}
+.kha-q {
+  font-size: 11px;
+  color: var(--muted, #8a8f98);
+}
+.kha-q.annahme {
+  color: #c98a00;
+}
+.kha-q.eigen {
+  color: #4a8cff;
+  font-weight: 600;
+}
+.kha-leg {
+  font-size: 11.5px;
+  color: var(--muted, #8a8f98);
+  margin-bottom: 4px;
+}
+.kha-kat {
+  font-weight: 700;
+  font-size: 12px;
+  margin: 8px 0 2px;
+  border-bottom: 1px solid var(--line);
+}
+.kha input,
+.kha select {
+  background: var(--panel-2);
+  color: inherit;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 3px 6px;
+  font: inherit;
+}
+.kha-skopf {
+  position: sticky;
+  top: -8px;
+  background: var(--panel);
+  z-index: 1;
+  font-size: 11px;
+  color: #8a8f98;
+  text-align: center;
+}
+.kha-s {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) repeat(3, 56px);
+  gap: 3px;
+  align-items: center;
+  padding: 1px 0;
+}
+.kha-sn {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.kha-c {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  width: 54px;
+  height: 22px;
+  border-radius: 5px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: inherit;
+  font-weight: 700;
+  padding: 0;
+  cursor: pointer;
+}
+.kha-c.leer {
+  border: none;
+  cursor: default;
+}
+.kha-c.ja {
+  background: #2e9d4a;
+  color: #fff;
+}
+.kha-c.zu {
+  background: rgba(46, 157, 74, 0.25);
+}
+.kha-c.ausweich {
+  background: rgba(242, 182, 0, 0.35);
+}
+.kha-c.nein {
+  color: #8a8f98;
+}
+.kha-c.eigen {
+  outline: 2px solid #4a8cff;
+  outline-offset: -2px;
+}
+.kha-leg .kha-c {
+  cursor: default;
+  width: 20px;
+  height: 18px;
+}
+.kha-fuss {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.kha-lz {
+  padding: 2px 0;
+  font-size: 12.5px;
+}
+.kha-ok {
+  color: #2e9d4a;
+}

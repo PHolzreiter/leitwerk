@@ -6,6 +6,7 @@
  */
 import type { Hospital } from "../data/model";
 import type { Schicht } from "./dienst";
+import { istZuweisung, zuweisungRessourcen } from "../data/zuweisung";
 
 export type Ressource =
   | "schockraum_trauma"
@@ -178,6 +179,10 @@ export function belegt(b: BelegungMap | undefined, khId: string, r: Ressource, t
  */
 export function ressourcenFuer(buchung: string | undefined, eignung: "passend" | "ausweich" | "rueckfall", kind: boolean): Ressource[][] {
   const b = buchung ?? "";
+  if (istZuweisung(b)) {
+    const r = zuweisungRessourcen(b, eignung, kind);
+    if (r) return r as Ressource[][];
+  }
   const SCHOCK_T: Ressource[] = ["schockraum_trauma", "schockraum"];
   const SCHOCK_I: Ressource[] = ["schockraum_intern", "schockraum"];
   if (eignung === "ausweich" || eignung === "rueckfall") {

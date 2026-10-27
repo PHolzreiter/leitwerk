@@ -1,0 +1,3870 @@
+{
+ "symptome": [
+  {
+   "id": "drohende_geburt_unter_ssw_37",
+   "kategorie": "Gynäkologie/Geburtshilfe",
+   "name": "Drohende Geburt unter SSW 37",
+   "synonyme": [
+    "Blasensprung",
+    "Entbindung",
+    "Fruchtwasserabgang",
+    "Frühgeburt",
+    "Partus",
+    "Schwangerschaft",
+    "Wehen"
+   ],
+   "dringlichkeiten": [
+    20
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_kreisssaal",
+     "ak_neonatologie"
+    ]
+   ],
+   "s": null,
+   "zeitkritisch": true,
+   "platz": "kreisssaal",
+   "ausweich": null,
+   "kinder": false,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "drohende_geburt_ueber_ssw_37",
+   "kategorie": "Gynäkologie/Geburtshilfe",
+   "name": "Drohende Geburt über SSW 37",
+   "synonyme": [
+    "Blasensprung",
+    "Entbindung",
+    "Fruchtwasserabgang",
+    "Partus",
+    "Schwangerschaft",
+    "Wehen"
+   ],
+   "dringlichkeiten": [
+    10,
+    20
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_kreisssaal"
+    ]
+   ],
+   "s": null,
+   "zeitkritisch": false,
+   "platz": "kreisssaal",
+   "ausweich": null,
+   "kinder": false,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "gynaekologisches_problem",
+   "kategorie": "Gynäkologie/Geburtshilfe",
+   "name": "Gynäkologisches Problem",
+   "synonyme": [
+    "Fremdkörper in Vagina",
+    "Menstruation",
+    "Objekt in Vagina",
+    "Periode",
+    "Regelschmerzen",
+    "Unterleibsschmerzen"
+   ],
+   "dringlichkeiten": [
+    10,
+    20
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_gynaekologie"
+    ]
+   ],
+   "s": null,
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": "intern",
+   "kinder": false,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "neugeborenenversorgung",
+   "kategorie": "Gynäkologie/Geburtshilfe",
+   "name": "Neugeborenenversorgung",
+   "synonyme": [
+    "Geburt",
+    "Neugeborenes",
+    "Säugling"
+   ],
+   "dringlichkeiten": [
+    10,
+    20,
+    30
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_neonatologie"
+    ],
+    [
+     "ak_kinder_jugendheilkunde"
+    ]
+   ],
+   "s": [
+    [
+     "ak_neonatologie"
+    ],
+    [
+     "ak_kinder_intensiv"
+    ]
+   ],
+   "zeitkritisch": true,
+   "platz": null,
+   "ausweich": null,
+   "kinder": false,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "schwangerschaftskomplikationen",
+   "kategorie": "Gynäkologie/Geburtshilfe",
+   "name": "Schwangerschaftskomplikationen",
+   "synonyme": [
+    "BEL",
+    "Eklampsie",
+    "HELLP",
+    "Präeklampsie",
+    "Vaginale Blutung in der Schwangerschaft",
+    "Vorzeitige Wehentätigkeit"
+   ],
+   "dringlichkeiten": [
+    10,
+    20,
+    30
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_kreisssaal"
+    ]
+   ],
+   "s": [
+    [
+     "ak_kreisssaal",
+     "ak_neonatologie"
+    ],
+    [
+     "ak_kreisssaal"
+    ]
+   ],
+   "zeitkritisch": true,
+   "platz": "kreisssaal",
+   "ausweich": null,
+   "kinder": false,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "sexualdelikt_weibliche_patientin",
+   "kategorie": "Gynäkologie/Geburtshilfe",
+   "name": "Sexualdelikt, weibliche Patientin",
+   "synonyme": [
+    "Missbrauch",
+    "Vergewaltigung"
+   ],
+   "dringlichkeiten": [
+    10,
+    20
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_gynaekologie"
+    ]
+   ],
+   "s": null,
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": null,
+   "kinder": false,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "transport_zur_entbindung_ueber_ssw_37",
+   "kategorie": "Gynäkologie/Geburtshilfe",
+   "name": "Transport zur Entbindung über SSW 37",
+   "synonyme": [
+    "Blasensprung",
+    "Fruchtwasserabgang",
+    "Geburt",
+    "Partus",
+    "Schwangerschaft",
+    "Wehen"
+   ],
+   "dringlichkeiten": [
+    10
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_kreisssaal"
+    ]
+   ],
+   "s": null,
+   "zeitkritisch": false,
+   "platz": "kreisssaal",
+   "ausweich": null,
+   "kinder": false,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "vaginale_blutung_keine_schwangerschaft",
+   "kategorie": "Gynäkologie/Geburtshilfe",
+   "name": "Vaginale Blutung (keine Schwangerschaft)",
+   "synonyme": [
+    "Schmierblutungen"
+   ],
+   "dringlichkeiten": [
+    10,
+    20
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_gynaekologie"
+    ]
+   ],
+   "s": null,
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": "intern",
+   "kinder": false,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "fremdkoerper_nase_ohren",
+   "kategorie": "HNO",
+   "name": "Fremdkörper Nase / Ohren",
+   "synonyme": [
+    "Gegenstand",
+    "Gegenstand in Nase",
+    "Gegenstand in Ohr",
+    "Objekt",
+    "Objekt in Nase",
+    "Objekt in Ohr"
+   ],
+   "dringlichkeiten": [
+    10,
+    20
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_hno"
+    ]
+   ],
+   "s": null,
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": "intern",
+   "kinder": false,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "hno_blutung",
+   "kategorie": "HNO",
+   "name": "HNO Blutung",
+   "synonyme": [
+    "Hals Nasen Ohren",
+    "Mandel",
+    "Nachblutung",
+    "Tonsillen",
+    "Tumor Blutung"
+   ],
+   "dringlichkeiten": [
+    10,
+    20,
+    30
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_hno"
+    ]
+   ],
+   "s": [
+    [
+     "ak_hno"
+    ]
+   ],
+   "zeitkritisch": true,
+   "platz": null,
+   "ausweich": null,
+   "kinder": false,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "hno_problem",
+   "kategorie": "HNO",
+   "name": "HNO Problem",
+   "synonyme": [
+    "Hals Nasen Ohren",
+    "Halsschmerzen",
+    "Hörsturz",
+    "Ohrenschmerzen"
+   ],
+   "dringlichkeiten": [
+    10,
+    20
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_hno"
+    ]
+   ],
+   "s": null,
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": "intern",
+   "kinder": false,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "nasenbluten",
+   "kategorie": "HNO",
+   "name": "Nasenbluten",
+   "synonyme": [
+    "Epistaxis",
+    "Unstillbares Nasenbluten"
+   ],
+   "dringlichkeiten": [
+    10,
+    20
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_hno"
+    ]
+   ],
+   "s": null,
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": "intern",
+   "kinder": false,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "tracheostomaproblem",
+   "kategorie": "HNO",
+   "name": "Tracheostomaproblem",
+   "synonyme": [
+    "Kanülenproblem",
+    "Tracheostoma verstopft"
+   ],
+   "dringlichkeiten": [
+    10,
+    20,
+    30
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_hno"
+    ]
+   ],
+   "s": [
+    [
+     "ak_hno",
+     "ak_innere_intensiv"
+    ],
+    [
+     "ak_hno"
+    ]
+   ],
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": null,
+   "kinder": false,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "atemnot",
+   "kategorie": "Atmung/Lunge",
+   "name": "Atemnot",
+   "synonyme": [
+    "Asthma",
+    "Atemwegsinfekt",
+    "Bronchitis",
+    "COPD",
+    "Dyspnoe",
+    "Kehlkopfentzündung",
+    "Laryngitis",
+    "Lungenembolie",
+    "Lungenentzündung",
+    "Pneumonie",
+    "Pseudokrupp",
+    "Respiratorische Insuffizienz"
+   ],
+   "dringlichkeiten": [
+    10,
+    20,
+    30
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_innere_medizin"
+    ],
+    [
+     "ak_notaufnahme"
+    ]
+   ],
+   "s": [
+    [
+     "ak_innere_intensiv"
+    ]
+   ],
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": "intern",
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "ersticken_durch_fremdkoerper",
+   "kategorie": "Atmung/Lunge",
+   "name": "Ersticken durch Fremdkörper",
+   "synonyme": [
+    "Aspiration",
+    "Bolusgeschehen"
+   ],
+   "dringlichkeiten": [
+    10,
+    20,
+    30
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_notaufnahme"
+    ]
+   ],
+   "s": [
+    [
+     "ak_innere_intensiv"
+    ]
+   ],
+   "zeitkritisch": true,
+   "platz": null,
+   "ausweich": null,
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "acs_ohne_ekg_diagnostik",
+   "kategorie": "Herz/Kreislauf",
+   "name": "ACS ohne EKG Diagnostik",
+   "synonyme": [
+    "Akutes Coronarsyndrom",
+    "Akutes Koronarsyndrom",
+    "Brustschmerz kardial"
+   ],
+   "dringlichkeiten": [
+    10,
+    20
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_kardiologie",
+     "ak_notaufnahme"
+    ],
+    [
+     "ak_notaufnahme"
+    ]
+   ],
+   "s": null,
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": "intern",
+   "kinder": false,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "akutes_koronarsyndrom_ohne_oder_unspezifische_st",
+   "kategorie": "Herz/Kreislauf",
+   "name": "Akutes Koronarsyndrom ohne oder unspezifische ST-Strecken-Veränderung",
+   "synonyme": [
+    "ACS",
+    "Akutes Coronarsyndrom",
+    "Akutes Koronarsyndrom",
+    "Herzinfarkt",
+    "MCI",
+    "Myokardinfarkt",
+    "NSTEMI"
+   ],
+   "dringlichkeiten": [
+    20
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_herzkatheter",
+     "ak_kardiologie"
+    ],
+    [
+     "ak_kardiologie"
+    ]
+   ],
+   "s": null,
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": null,
+   "kinder": false,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "allergische_reaktion",
+   "kategorie": "Herz/Kreislauf",
+   "name": "Allergische Reaktion",
+   "synonyme": [
+    "Allergie",
+    "Anaphylaktischer Schock",
+    "Anaphylaxie"
+   ],
+   "dringlichkeiten": [
+    10,
+    20,
+    30
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_notaufnahme"
+    ]
+   ],
+   "s": [
+    [
+     "ak_innere_intensiv"
+    ]
+   ],
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": null,
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "blutung_medizinisch",
+   "kategorie": "Herz/Kreislauf",
+   "name": "Blutung medizinisch",
+   "synonyme": [
+    "Hämoriden",
+    "Hämorrhoiden",
+    "Shuntblutung",
+    "Varizenblutung"
+   ],
+   "dringlichkeiten": [
+    10,
+    20,
+    30
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_notaufnahme"
+    ]
+   ],
+   "s": [
+    [
+     "ak_innere_intensiv",
+     "ak_gastro_endoskopie"
+    ],
+    [
+     "ak_innere_intensiv"
+    ]
+   ],
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": null,
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "herzinsuffizienz",
+   "kategorie": "Herz/Kreislauf",
+   "name": "Herzinsuffizienz",
+   "synonyme": [
+    "Herzschwäche",
+    "Kardiale Dekompensation",
+    "Lungenödem"
+   ],
+   "dringlichkeiten": [
+    10,
+    20,
+    30
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_kardiologie"
+    ],
+    [
+     "ak_innere_medizin"
+    ]
+   ],
+   "s": [
+    [
+     "ak_kardiologie",
+     "ak_innere_intensiv"
+    ],
+    [
+     "ak_innere_intensiv"
+    ]
+   ],
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": null,
+   "kinder": false,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "herzrhythmusstoerung",
+   "kategorie": "Herz/Kreislauf",
+   "name": "Herzrhythmusstörung",
+   "synonyme": [
+    "Bradycardie",
+    "Bradykardie",
+    "Tachycardie",
+    "Tachykardie",
+    "VHF",
+    "Vorhofflimmern"
+   ],
+   "dringlichkeiten": [
+    10,
+    20,
+    30
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_kardiologie"
+    ],
+    [
+     "ak_innere_medizin"
+    ]
+   ],
+   "s": [
+    [
+     "ak_kardiologie",
+     "ak_innere_intensiv"
+    ],
+    [
+     "ak_innere_intensiv"
+    ]
+   ],
+   "zeitkritisch": true,
+   "platz": null,
+   "ausweich": null,
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "kollaps",
+   "kategorie": "Herz/Kreislauf",
+   "name": "Kollaps",
+   "synonyme": [
+    "Bewusstlosigkeit",
+    "Ohnmacht",
+    "Synkope"
+   ],
+   "dringlichkeiten": [
+    10,
+    20
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_notaufnahme"
+    ]
+   ],
+   "s": null,
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": "intern",
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "reanimation_stemi",
+   "kategorie": "Herz/Kreislauf",
+   "name": "Reanimation, STEMI",
+   "synonyme": [
+    "CPR",
+    "Kreislaufstillstand",
+    "Wiederbelebung"
+   ],
+   "dringlichkeiten": [
+    30
+   ],
+   "art": "intern",
+   "o": null,
+   "s": [
+    [
+     "ak_cardiac_arrest_center"
+    ],
+    [
+     "ak_herzkatheter",
+     "ak_innere_intensiv"
+    ]
+   ],
+   "zeitkritisch": true,
+   "platz": "herzkatheter",
+   "ausweich": null,
+   "kinder": false,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "reanimation_medizinische_ursache",
+   "kategorie": "Herz/Kreislauf",
+   "name": "Reanimation, medizinische Ursache",
+   "synonyme": [
+    "CPR",
+    "Kreislaufstillstand",
+    "Wiederbelebung"
+   ],
+   "dringlichkeiten": [
+    30
+   ],
+   "art": "intern",
+   "o": null,
+   "s": [
+    [
+     "ak_cardiac_arrest_center"
+    ],
+    [
+     "ak_innere_intensiv"
+    ]
+   ],
+   "zeitkritisch": true,
+   "platz": null,
+   "ausweich": null,
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "st_hebungsinfarkt_oder_stemi_aequivalent",
+   "kategorie": "Herz/Kreislauf",
+   "name": "ST-Hebungsinfarkt oder STEMI Äquivalent",
+   "synonyme": [
+    "ACS",
+    "Akutes Coronarsyndrom",
+    "Akutes Koronarsyndrom",
+    "Angina Pectoris",
+    "Herzinfarkt",
+    "MCI",
+    "Myocardinfarkt",
+    "OMI",
+    "STEMI"
+   ],
+   "dringlichkeiten": [
+    20,
+    30
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_herzkatheter",
+     "ak_kardiologie"
+    ]
+   ],
+   "s": [
+    [
+     "ak_herzkatheter",
+     "ak_kardiologie"
+    ]
+   ],
+   "zeitkritisch": true,
+   "platz": "herzkatheter",
+   "ausweich": null,
+   "kinder": false,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "thrombose",
+   "kategorie": "Herz/Kreislauf",
+   "name": "Thrombose",
+   "synonyme": [
+    "Beckenvenenthrombose",
+    "Beinvenenthrombose",
+    "Gefäßverschluss venös",
+    "TVT"
+   ],
+   "dringlichkeiten": [
+    10,
+    20
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_innere_medizin"
+    ],
+    [
+     "ak_notaufnahme"
+    ]
+   ],
+   "s": null,
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": "intern",
+   "kinder": false,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "hypertensiver_notfall",
+   "kategorie": "Herz/Kreislauf",
+   "name": "hypertensiver Notfall",
+   "synonyme": [
+    "Blutdruckentgleisung",
+    "Bluthochdruck",
+    "Hypertonie",
+    "RR"
+   ],
+   "dringlichkeiten": [
+    10,
+    20
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_innere_medizin"
+    ],
+    [
+     "ak_notaufnahme"
+    ]
+   ],
+   "s": null,
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": "intern",
+   "kinder": false,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "akutes_abdomen",
+   "kategorie": "Magen/Darm",
+   "name": "Akutes Abdomen",
+   "synonyme": [
+    "Bauchschmerzen",
+    "Darmverschluss",
+    "Ileus"
+   ],
+   "dringlichkeiten": [
+    20,
+    30
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_allgemeinchirurgie"
+    ]
+   ],
+   "s": [
+    [
+     "ak_allgemeinchirurgie",
+     "ak_chirurgische_intensiv"
+    ]
+   ],
+   "zeitkritisch": true,
+   "platz": null,
+   "ausweich": null,
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "bauchschmerzen",
+   "kategorie": "Magen/Darm",
+   "name": "Bauchschmerzen",
+   "synonyme": [
+    "Abdominelle Beschwerden",
+    "Gallenkolik",
+    "Kolik",
+    "Leistenschmerzen",
+    "Nierenkolik",
+    "Unklares Abdomen"
+   ],
+   "dringlichkeiten": [
+    10,
+    20
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_notaufnahme"
+    ]
+   ],
+   "s": null,
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": "intern",
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "gastrointestinale_blutung",
+   "kategorie": "Magen/Darm",
+   "name": "Gastrointestinale Blutung",
+   "synonyme": [
+    "Darmblutung",
+    "GI Blutung",
+    "Magenblutung"
+   ],
+   "dringlichkeiten": [
+    10,
+    20,
+    30
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_gastro_endoskopie"
+    ]
+   ],
+   "s": [
+    [
+     "ak_gastro_endoskopie",
+     "ak_innere_intensiv"
+    ]
+   ],
+   "zeitkritisch": true,
+   "platz": null,
+   "ausweich": null,
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "affenpocken_verdacht_erkrankung",
+   "kategorie": "Sonstige",
+   "name": "Affenpocken Verdacht / Erkrankung",
+   "synonyme": [],
+   "dringlichkeiten": [
+    10,
+    20
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_innere_medizin"
+    ]
+   ],
+   "s": null,
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": "intern",
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "blutzuckerentgleisung",
+   "kategorie": "Sonstige",
+   "name": "Blutzuckerentgleisung",
+   "synonyme": [
+    "Hyperglykämie",
+    "Hypoglykämie"
+   ],
+   "dringlichkeiten": [
+    10,
+    20
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_innere_medizin"
+    ],
+    [
+     "ak_notaufnahme"
+    ]
+   ],
+   "s": null,
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": "intern",
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "entzugssymptomatik",
+   "kategorie": "Sonstige",
+   "name": "Entzugssymptomatik",
+   "synonyme": [
+    "Alkohol",
+    "Drogen",
+    "Medikamente"
+   ],
+   "dringlichkeiten": [
+    10,
+    20
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_sucht_entzug"
+    ],
+    [
+     "ak_innere_medizin"
+    ]
+   ],
+   "s": null,
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": "intern",
+   "kinder": false,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "exsikkose",
+   "kategorie": "Sonstige",
+   "name": "Exsikkose",
+   "synonyme": [
+    "Exikkose",
+    "Exikose",
+    "ausgetrocknet",
+    "dehydriert"
+   ],
+   "dringlichkeiten": [
+    10,
+    20
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_innere_medizin"
+    ],
+    [
+     "ak_notaufnahme"
+    ]
+   ],
+   "s": null,
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": "intern",
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "extremitaetenischaemie",
+   "kategorie": "Sonstige",
+   "name": "Extremitätenischämie",
+   "synonyme": [
+    "Embolie",
+    "Gefäßverschluss",
+    "Kalte Extremität"
+   ],
+   "dringlichkeiten": [
+    10,
+    20
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_gefaesschirurgie"
+    ]
+   ],
+   "s": null,
+   "zeitkritisch": true,
+   "platz": null,
+   "ausweich": null,
+   "kinder": false,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "fieber",
+   "kategorie": "Sonstige",
+   "name": "Fieber",
+   "synonyme": [
+    "Pyrexie",
+    "febril"
+   ],
+   "dringlichkeiten": [
+    10,
+    20
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_notaufnahme"
+    ]
+   ],
+   "s": null,
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": "intern",
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "fieberkrampf",
+   "kategorie": "Sonstige",
+   "name": "Fieberkrampf",
+   "synonyme": [
+    "Infektkrampf"
+   ],
+   "dringlichkeiten": [
+    10,
+    20
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_notaufnahme"
+    ]
+   ],
+   "s": null,
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": "intern",
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "infektionskrankheiten",
+   "kategorie": "Sonstige",
+   "name": "Infektionskrankheiten",
+   "synonyme": [
+    "COVID",
+    "Grippaler Infekt",
+    "Grippe",
+    "Infekt",
+    "Influenza",
+    "Meningitis"
+   ],
+   "dringlichkeiten": [
+    10,
+    20
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_innere_medizin"
+    ]
+   ],
+   "s": null,
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": "intern",
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "kopfschmerzen",
+   "kategorie": "Sonstige",
+   "name": "Kopfschmerzen",
+   "synonyme": [
+    "Cephalaea",
+    "Cephalgie",
+    "Migräneanfall",
+    "Spannungskopfschmerz",
+    "Zephalgie"
+   ],
+   "dringlichkeiten": [
+    10,
+    20
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_neurologie"
+    ],
+    [
+     "ak_notaufnahme"
+    ]
+   ],
+   "s": null,
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": "intern",
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "objekt_verschluckt",
+   "kategorie": "Sonstige",
+   "name": "Objekt verschluckt",
+   "synonyme": [
+    "Batterie",
+    "Baustein",
+    "Fremdkörper",
+    "Gegenstand",
+    "Lego",
+    "Verschlucken"
+   ],
+   "dringlichkeiten": [
+    10,
+    20
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_gastro_endoskopie"
+    ],
+    [
+     "ak_notaufnahme"
+    ]
+   ],
+   "s": null,
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": "intern",
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "rueckenschmerzen_nicht_traumatisch_mit_neurologi",
+   "kategorie": "Sonstige",
+   "name": "Rückenschmerzen nicht-traumatisch mit neurologischen Ausfällen",
+   "synonyme": [
+    "Bandscheibenvorfall",
+    "Discusprolaps",
+    "Lumbago",
+    "Wirbelsäulenschmerzen"
+   ],
+   "dringlichkeiten": [
+    10,
+    20
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_wirbelsaeulenchirurgie"
+    ],
+    [
+     "ak_neurochirurgie"
+    ],
+    [
+     "ak_neurologie"
+    ]
+   ],
+   "s": null,
+   "zeitkritisch": true,
+   "platz": null,
+   "ausweich": null,
+   "kinder": false,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "rueckenschmerzen_nicht_traumatisch_ohne_neurolog",
+   "kategorie": "Sonstige",
+   "name": "Rückenschmerzen nicht-traumatisch ohne neurologische Ausfälle",
+   "synonyme": [
+    "Bandscheibenproblem",
+    "Discusprolaps",
+    "Lumbago",
+    "Wirbelsäulenschmerzen"
+   ],
+   "dringlichkeiten": [
+    10,
+    20
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_notaufnahme"
+    ]
+   ],
+   "s": null,
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": "intern",
+   "kinder": false,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "schwindel",
+   "kategorie": "Sonstige",
+   "name": "Schwindel",
+   "synonyme": [
+    "Drehschwindel",
+    "Schwankschwindel",
+    "Vertigo"
+   ],
+   "dringlichkeiten": [
+    10,
+    20
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_neurologie"
+    ],
+    [
+     "ak_notaufnahme"
+    ]
+   ],
+   "s": null,
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": "intern",
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "sepsis",
+   "kategorie": "Sonstige",
+   "name": "Sepsis",
+   "synonyme": [
+    "Infektion generalisiert"
+   ],
+   "dringlichkeiten": [
+    20,
+    30
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_innere_medizin",
+     "ak_innere_intensiv"
+    ]
+   ],
+   "s": [
+    [
+     "ak_innere_intensiv"
+    ]
+   ],
+   "zeitkritisch": true,
+   "platz": null,
+   "ausweich": null,
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "terminales_zustandsbild",
+   "kategorie": "Sonstige",
+   "name": "Terminales Zustandsbild",
+   "synonyme": [
+    "Präfinalität",
+    "Präterminal",
+    "Sterbephase",
+    "moribund"
+   ],
+   "dringlichkeiten": [
+    10,
+    20
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_innere_medizin"
+    ]
+   ],
+   "s": null,
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": null,
+   "kinder": false,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "thoraxschmerz_nicht_traumatisch",
+   "kategorie": "Sonstige",
+   "name": "Thoraxschmerz - nicht traumatisch",
+   "synonyme": [
+    "Brustschmerzen",
+    "Rippenschmerzen"
+   ],
+   "dringlichkeiten": [
+    10,
+    20
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_kardiologie"
+    ],
+    [
+     "ak_notaufnahme"
+    ]
+   ],
+   "s": null,
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": "intern",
+   "kinder": false,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "uebelkeit_erbrechen",
+   "kategorie": "Sonstige",
+   "name": "Übelkeit/Erbrechen",
+   "synonyme": [
+    "Emesis",
+    "Nausea"
+   ],
+   "dringlichkeiten": [
+    10,
+    20
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_notaufnahme"
+    ]
+   ],
+   "s": null,
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": "intern",
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "inhalationstrauma",
+   "kategorie": "Vergiftungen",
+   "name": "Inhalationstrauma",
+   "synonyme": [],
+   "dringlichkeiten": [
+    10,
+    20,
+    30
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_notaufnahme"
+    ]
+   ],
+   "s": [
+    [
+     "ak_innere_intensiv"
+    ],
+    [
+     "ak_chirurgische_intensiv"
+    ]
+   ],
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": null,
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "vergiftung_inhalativ",
+   "kategorie": "Vergiftungen",
+   "name": "Vergiftung inhalativ",
+   "synonyme": [
+    "CO2",
+    "Dämpfe",
+    "Gift",
+    "Kohlenmonoxid",
+    "Pfefferspray",
+    "Rauchgas",
+    "Reizgas",
+    "Tränengas",
+    "Wasserpfeife"
+   ],
+   "dringlichkeiten": [
+    10,
+    20,
+    30
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_notaufnahme"
+    ]
+   ],
+   "s": [
+    [
+     "ak_druckkammer"
+    ],
+    [
+     "ak_innere_intensiv"
+    ]
+   ],
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": null,
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "vergiftung_oral_iv",
+   "kategorie": "Vergiftungen",
+   "name": "Vergiftung oral/iv",
+   "synonyme": [
+    "Alkohol",
+    "Drogen",
+    "Intoxikation",
+    "Lebensmittel",
+    "Medikamente",
+    "Überdosis"
+   ],
+   "dringlichkeiten": [
+    10,
+    20,
+    30
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_toxikologie"
+    ],
+    [
+     "ak_innere_medizin"
+    ],
+    [
+     "ak_notaufnahme"
+    ]
+   ],
+   "s": [
+    [
+     "ak_toxikologie",
+     "ak_innere_intensiv"
+    ],
+    [
+     "ak_innere_intensiv"
+    ]
+   ],
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": null,
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "bewusstseinsstoerung_gcs_3_8",
+   "kategorie": "Neurologie - Erkrankung",
+   "name": "Bewusstseinsstörung GCS 3-8",
+   "synonyme": [
+    "Bewusstlosigkeit",
+    "Cerebral",
+    "Coma",
+    "Delir",
+    "Hirnblutung",
+    "Koma"
+   ],
+   "dringlichkeiten": [
+    20,
+    30
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_neurochirurgie",
+     "ak_innere_intensiv"
+    ],
+    [
+     "ak_neurologie",
+     "ak_innere_intensiv"
+    ],
+    [
+     "ak_innere_intensiv"
+    ]
+   ],
+   "s": [
+    [
+     "ak_neurochirurgie",
+     "ak_innere_intensiv"
+    ],
+    [
+     "ak_neurologie",
+     "ak_innere_intensiv"
+    ],
+    [
+     "ak_innere_intensiv"
+    ]
+   ],
+   "zeitkritisch": true,
+   "platz": null,
+   "ausweich": null,
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "bewusstseinsstoerung_gcs_9_15",
+   "kategorie": "Neurologie - Erkrankung",
+   "name": "Bewusstseinsstörung GCS 9-15",
+   "synonyme": [
+    "Coma",
+    "Delir",
+    "Koma"
+   ],
+   "dringlichkeiten": [
+    10,
+    20
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_neurologie"
+    ],
+    [
+     "ak_notaufnahme"
+    ]
+   ],
+   "s": null,
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": null,
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "krampfanfall_bekannte_epilepsie",
+   "kategorie": "Neurologie - Erkrankung",
+   "name": "Krampfanfall - bekannte Epilepsie",
+   "synonyme": [],
+   "dringlichkeiten": [
+    10,
+    20
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_neurologie"
+    ],
+    [
+     "ak_notaufnahme"
+    ]
+   ],
+   "s": null,
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": "intern",
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "krampfanfall_erstmalig_unklar",
+   "kategorie": "Neurologie - Erkrankung",
+   "name": "Krampfanfall - erstmalig/unklar",
+   "synonyme": [
+    "Epilepsie"
+   ],
+   "dringlichkeiten": [
+    10,
+    20
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_neurologie"
+    ]
+   ],
+   "s": null,
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": null,
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "status_epilepticus",
+   "kategorie": "Neurologie - Erkrankung",
+   "name": "Status Epilepticus",
+   "synonyme": [
+    "Epilepsie",
+    "Krampfanfall"
+   ],
+   "dringlichkeiten": [
+    20,
+    30
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_neurologie",
+     "ak_innere_intensiv"
+    ]
+   ],
+   "s": [
+    [
+     "ak_neurologie",
+     "ak_innere_intensiv"
+    ],
+    [
+     "ak_innere_intensiv"
+    ]
+   ],
+   "zeitkritisch": true,
+   "platz": null,
+   "ausweich": null,
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "schlaganfall_unvollstaendige_voruebergehende_sym",
+   "kategorie": "Schlaganfall",
+   "name": "Schlaganfall - unvollständige / vorübergehende Symptomatik",
+   "synonyme": [
+    "Cerebral",
+    "Hirnblutung",
+    "Insult",
+    "TIA"
+   ],
+   "dringlichkeiten": [
+    10,
+    20
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_stroke_unit"
+    ],
+    [
+     "ak_neurologie"
+    ]
+   ],
+   "s": null,
+   "zeitkritisch": false,
+   "platz": "stroke_unit",
+   "ausweich": null,
+   "kinder": false,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "schlaganfall_apss_1_3",
+   "kategorie": "Schlaganfall",
+   "name": "Schlaganfall APSS 1-3",
+   "synonyme": [
+    "Cerebral",
+    "Hirnblutung",
+    "Insult",
+    "TIA"
+   ],
+   "dringlichkeiten": [
+    20,
+    30
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_stroke_unit"
+    ]
+   ],
+   "s": [
+    [
+     "ak_stroke_unit"
+    ]
+   ],
+   "zeitkritisch": true,
+   "platz": "stroke_unit",
+   "ausweich": null,
+   "kinder": false,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "schlaganfall_apss_4_9",
+   "kategorie": "Schlaganfall",
+   "name": "Schlaganfall APSS 4-9",
+   "synonyme": [
+    "Cerebral",
+    "Hirnblutung",
+    "Insult"
+   ],
+   "dringlichkeiten": [
+    20,
+    30
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_thrombektomie"
+    ],
+    [
+     "ak_stroke_unit"
+    ]
+   ],
+   "s": [
+    [
+     "ak_thrombektomie"
+    ],
+    [
+     "ak_stroke_unit"
+    ]
+   ],
+   "zeitkritisch": true,
+   "platz": "stroke_unit",
+   "ausweich": null,
+   "kinder": false,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "akut_psychiatrisches_zustandsbild",
+   "kategorie": "Psychiatrie",
+   "name": "Akut psychiatrisches Zustandsbild",
+   "synonyme": [
+    "Affektstörung",
+    "Antriebsstörung",
+    "Depression",
+    "Halluzinationen",
+    "Manie",
+    "Persönlichkeitsstörung",
+    "Schizoaffektive Störung",
+    "Schizophrenie",
+    "Wahn",
+    "psychotisches Zustandsbild"
+   ],
+   "dringlichkeiten": [
+    10,
+    20
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_psychiatrie"
+    ]
+   ],
+   "s": null,
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": null,
+   "kinder": [
+    [
+     "ak_kinder_jugend_psychiatrie"
+    ],
+    [
+     "ak_psychiatrie"
+    ]
+   ],
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "angstsymptomatik",
+   "kategorie": "Psychiatrie",
+   "name": "Angstsymptomatik",
+   "synonyme": [
+    "Erregungszustand",
+    "Panik",
+    "Psychiatrie"
+   ],
+   "dringlichkeiten": [
+    10,
+    20
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_psychiatrie"
+    ],
+    [
+     "ak_notaufnahme"
+    ]
+   ],
+   "s": null,
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": "intern",
+   "kinder": [
+    [
+     "ak_kinder_jugend_psychiatrie"
+    ],
+    [
+     "ak_kinder_jugendheilkunde"
+    ]
+   ],
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "suizidalitaet",
+   "kategorie": "Psychiatrie",
+   "name": "Suizidalität",
+   "synonyme": [
+    "Psychiatrie",
+    "Selbstmordabsichten",
+    "Selbstmordandrohung",
+    "Selbstmordankündigung",
+    "Selbstmordgedanken",
+    "Suizidabsichten",
+    "Suizidandrohung",
+    "Suizidankündigung",
+    "Suizidgedanken"
+   ],
+   "dringlichkeiten": [
+    10,
+    20
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_psychiatrie"
+    ]
+   ],
+   "s": null,
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": null,
+   "kinder": [
+    [
+     "ak_kinder_jugend_psychiatrie"
+    ],
+    [
+     "ak_psychiatrie"
+    ]
+   ],
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "ubg_einweisung",
+   "kategorie": "Psychiatrie",
+   "name": "UbG Einweisung",
+   "synonyme": [
+    "Psychiatrie",
+    "Unterbringung",
+    "Unterbringungsgesetz",
+    "Zwangseinweisung",
+    "psychiatrische Unterbringung",
+    "unfreiwillige Unterbringung",
+    "zwangsweise Unterbringung"
+   ],
+   "dringlichkeiten": [
+    10,
+    20
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_psychiatrie"
+    ]
+   ],
+   "s": null,
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": null,
+   "kinder": [
+    [
+     "ak_kinder_jugend_psychiatrie"
+    ],
+    [
+     "ak_psychiatrie"
+    ]
+   ],
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "augenprobleme",
+   "kategorie": "Sonstige",
+   "name": "Augenprobleme",
+   "synonyme": [
+    "Augenentzündung",
+    "Glaukomanfall",
+    "Sehstörungen",
+    "Sehverlust"
+   ],
+   "dringlichkeiten": [
+    10,
+    20
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_augenheilkunde"
+    ]
+   ],
+   "s": null,
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": "intern",
+   "kinder": false,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "ertrinkungsunfall",
+   "kategorie": "Sonstige",
+   "name": "Ertrinkungsunfall",
+   "synonyme": [
+    "Badeunfall"
+   ],
+   "dringlichkeiten": [
+    10,
+    20,
+    30
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_notaufnahme"
+    ]
+   ],
+   "s": [
+    [
+     "ak_cardiac_arrest_center"
+    ],
+    [
+     "ak_innere_intensiv"
+    ]
+   ],
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": null,
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "erysipel",
+   "kategorie": "Sonstige",
+   "name": "Erysipel",
+   "synonyme": [
+    "Hautinfektion",
+    "Rotlauf"
+   ],
+   "dringlichkeiten": [
+    10,
+    20
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_innere_medizin"
+    ],
+    [
+     "ak_dermatologie"
+    ]
+   ],
+   "s": null,
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": "intern",
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "fremdkoerper_rektal",
+   "kategorie": "Sonstige",
+   "name": "Fremdkörper rektal",
+   "synonyme": [
+    "Anus",
+    "Enddarm",
+    "Gegenstand",
+    "Objekt",
+    "Rektum"
+   ],
+   "dringlichkeiten": [
+    10,
+    20
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_allgemeinchirurgie"
+    ]
+   ],
+   "s": null,
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": null,
+   "kinder": false,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "gelenkbeschwerden_ohne_trauma",
+   "kategorie": "Sonstige",
+   "name": "Gelenkbeschwerden ohne Trauma",
+   "synonyme": [
+    "Arthritis",
+    "Ellbogenschmerzen",
+    "Gelenkschmerzen",
+    "Gelenksentzündung",
+    "Gelenksprobleme",
+    "Hüftschmerzen",
+    "Knieschmerzen",
+    "Schulterschmerzen"
+   ],
+   "dringlichkeiten": [
+    10
+   ],
+   "art": "trauma",
+   "o": [
+    [
+     "ak_unfallchirurgie"
+    ],
+    [
+     "ak_notaufnahme"
+    ]
+   ],
+   "s": null,
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": "trauma",
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "hitzeerschoepfung",
+   "kategorie": "Sonstige",
+   "name": "Hitzeerschöpfung",
+   "synonyme": [
+    "Sonnenstich"
+   ],
+   "dringlichkeiten": [
+    10,
+    20
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_notaufnahme"
+    ]
+   ],
+   "s": null,
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": "intern",
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "hitzschlag",
+   "kategorie": "Sonstige",
+   "name": "Hitzschlag",
+   "synonyme": [],
+   "dringlichkeiten": [
+    20,
+    30
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_notaufnahme"
+    ]
+   ],
+   "s": [
+    [
+     "ak_innere_intensiv"
+    ]
+   ],
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": null,
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "kranke_person",
+   "kategorie": "Sonstige",
+   "name": "Kranke Person",
+   "synonyme": [
+    "Allgemeinzustand reduziert/schlecht",
+    "Austrocknung",
+    "Blut im Stuhl",
+    "Bluthochdruck",
+    "Bluthusten",
+    "Dehydrierung",
+    "Diarrhoe",
+    "Durchfall",
+    "Grippaler Infekt",
+    "Grippe",
+    "Harnwegsinfekt",
+    "Hämoptysen",
+    "Hämoriden",
+    "Hämorrhoiden",
+    "Influenza",
+    "Juckreiz",
+    "Kolik",
+    "Krampf",
+    "Krämpfe",
+    "Meningitis",
+    "Nierenschmerzen",
+    "Obstipation",
+    "Red AZ",
+    "Schluckauf",
+    "Schmerzen",
+    "Schwäche",
+    "Schüttelfrost",
+    "Taubheitsgefühl",
+    "Verstopfung",
+    "Vertigo",
+    "reduzierter Allgemeinzustand",
+    "schlechter Allgemeinzustand",
+    "Ödeme"
+   ],
+   "dringlichkeiten": [
+    10,
+    20
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_notaufnahme"
+    ],
+    [
+     "ak_primaerversorgung"
+    ]
+   ],
+   "s": null,
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": "intern",
+   "kinder": null,
+   "pvz": true,
+   "schock": null
+  },
+  {
+   "id": "kaelteproblem",
+   "kategorie": "Sonstige",
+   "name": "Kälteproblem",
+   "synonyme": [
+    "Hypothermie",
+    "Unterkühlung"
+   ],
+   "dringlichkeiten": [
+    10,
+    20,
+    30
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_notaufnahme"
+    ]
+   ],
+   "s": [
+    [
+     "ak_cardiac_arrest_center"
+    ],
+    [
+     "ak_innere_intensiv"
+    ]
+   ],
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": null,
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "notversorgung_naechstes_kh",
+   "kategorie": "Sonstige",
+   "name": "Notversorgung - nächstes KH",
+   "synonyme": [
+    "Notfallversorgung",
+    "Stabilisierung"
+   ],
+   "dringlichkeiten": [
+    30
+   ],
+   "art": "intern",
+   "o": null,
+   "s": [
+    [
+     "ak_notaufnahme"
+    ],
+    [
+     "ak_unfallchirurgie"
+    ]
+   ],
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": null,
+   "kinder": null,
+   "pvz": false,
+   "schock": "egal"
+  },
+  {
+   "id": "sexualdelikt_maennlicher_patient",
+   "kategorie": "Sonstige",
+   "name": "Sexualdelikt, männlicher Patient",
+   "synonyme": [
+    "Missbrauch",
+    "Vergewaltigung"
+   ],
+   "dringlichkeiten": [
+    10,
+    20
+   ],
+   "art": "trauma",
+   "o": [
+    [
+     "ak_unfallchirurgie"
+    ],
+    [
+     "ak_notaufnahme"
+    ]
+   ],
+   "s": null,
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": null,
+   "kinder": false,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "soziale_indikation",
+   "kategorie": "Sonstige",
+   "name": "Soziale Indikation",
+   "synonyme": [
+    "Pflegeproblem",
+    "Versorgungsproblem"
+   ],
+   "dringlichkeiten": [
+    10
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_innere_medizin"
+    ],
+    [
+     "ak_notaufnahme"
+    ]
+   ],
+   "s": null,
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": null,
+   "kinder": false,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "wunde_nicht_traumatisch",
+   "kategorie": "Sonstige",
+   "name": "Wunde nicht traumatisch",
+   "synonyme": [
+    "Dekubitus",
+    "Diabetischer Fuß",
+    "Gangrän",
+    "Ulcus Cruris",
+    "chronische Wunde"
+   ],
+   "dringlichkeiten": [
+    10,
+    20
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_allgemeinchirurgie"
+    ],
+    [
+     "ak_notaufnahme"
+    ]
+   ],
+   "s": null,
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": "intern",
+   "kinder": false,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "zahnprobleme",
+   "kategorie": "Sonstige",
+   "name": "Zahnprobleme",
+   "synonyme": [
+    "Blutung Zahnextraktion",
+    "Kieferprobleme",
+    "Kieferschmerzen",
+    "Schmerzen",
+    "Zahn ausgefallen",
+    "Zahnfraktur",
+    "Zahnschaden",
+    "Zahnschmerzen",
+    "Zahnverlust",
+    "orofaziale Schwellungen"
+   ],
+   "dringlichkeiten": [
+    10
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_mkg"
+    ],
+    [
+     "ak_notaufnahme"
+    ]
+   ],
+   "s": null,
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": "intern",
+   "kinder": false,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "geraetetauchunfall",
+   "kategorie": "Besonderer Unfallmechanismus",
+   "name": "Gerätetauchunfall",
+   "synonyme": [
+    "Dekompressions-Unfall",
+    "Tauchen"
+   ],
+   "dringlichkeiten": [
+    10,
+    20,
+    30
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_notaufnahme"
+    ]
+   ],
+   "s": [
+    [
+     "ak_druckkammer"
+    ],
+    [
+     "ak_innere_intensiv"
+    ]
+   ],
+   "zeitkritisch": false,
+   "platz": "druckkammer",
+   "ausweich": null,
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "stromunfall",
+   "kategorie": "Besonderer Unfallmechanismus",
+   "name": "Stromunfall",
+   "synonyme": [
+    "Blitz",
+    "Elektro"
+   ],
+   "dringlichkeiten": [
+    10,
+    20,
+    30
+   ],
+   "art": "trauma",
+   "o": [
+    [
+     "ak_unfallchirurgie"
+    ],
+    [
+     "ak_notaufnahme"
+    ]
+   ],
+   "s": [
+    [
+     "ak_unfallchirurgie",
+     "ak_chirurgische_intensiv"
+    ]
+   ],
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": null,
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "verbrennung_unter_10_koerperoberflaeche",
+   "kategorie": "Besonderer Unfallmechanismus",
+   "name": "Verbrennung unter 10% Körperoberfläche",
+   "synonyme": [
+    "Verbrühung",
+    "Verätzung"
+   ],
+   "dringlichkeiten": [
+    10,
+    20
+   ],
+   "art": "trauma",
+   "o": [
+    [
+     "ak_plastische_chirurgie"
+    ],
+    [
+     "ak_unfallchirurgie"
+    ]
+   ],
+   "s": null,
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": "trauma",
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "verbrennung_ueber_10_koerperoberflaeche",
+   "kategorie": "Besonderer Unfallmechanismus",
+   "name": "Verbrennung über 10% Körperoberfläche",
+   "synonyme": [
+    "Verbrühung",
+    "Verätzung"
+   ],
+   "dringlichkeiten": [
+    20,
+    30
+   ],
+   "art": "trauma",
+   "o": [
+    [
+     "ak_verbrennungszentrum"
+    ],
+    [
+     "ak_plastische_chirurgie",
+     "ak_chirurgische_intensiv"
+    ]
+   ],
+   "s": [
+    [
+     "ak_verbrennungszentrum"
+    ],
+    [
+     "ak_plastische_chirurgie",
+     "ak_chirurgische_intensiv"
+    ]
+   ],
+   "zeitkritisch": true,
+   "platz": null,
+   "ausweich": null,
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "amputation_arm_bein_mit_replantationsfaehigem_am",
+   "kategorie": "Extremitäten",
+   "name": "Amputation Arm/Bein mit replantationsfähigem Amputat",
+   "synonyme": [
+    "Armverletzung",
+    "Beinverletzung",
+    "Mikrochirurgische Replantation",
+    "Wiederherstellende Chirurgie"
+   ],
+   "dringlichkeiten": [
+    30
+   ],
+   "art": "trauma",
+   "o": null,
+   "s": [
+    [
+     "ak_plastische_chirurgie",
+     "ak_unfallchirurgie"
+    ],
+    [
+     "ak_unfallchirurgie",
+     "ak_chirurgische_intensiv"
+    ]
+   ],
+   "zeitkritisch": true,
+   "platz": null,
+   "ausweich": null,
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "amputation_finger_zehen_mit_replantationsfaehige",
+   "kategorie": "Extremitäten",
+   "name": "Amputation Finger/Zehen mit replantationsfähigem Amputat",
+   "synonyme": [
+    "Fingerverletzung",
+    "Mikrochirurgische Replantation",
+    "Wiederherstellende Chirurgie",
+    "Zehenverletzung"
+   ],
+   "dringlichkeiten": [
+    20
+   ],
+   "art": "trauma",
+   "o": [
+    [
+     "ak_plastische_chirurgie"
+    ],
+    [
+     "ak_unfallchirurgie"
+    ]
+   ],
+   "s": null,
+   "zeitkritisch": true,
+   "platz": null,
+   "ausweich": null,
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "schulterverletzung",
+   "kategorie": "Extremitäten",
+   "name": "Schulterverletzung",
+   "synonyme": [
+    "Ausrenkung",
+    "Luxation",
+    "Verrenkung"
+   ],
+   "dringlichkeiten": [
+    10,
+    20,
+    30
+   ],
+   "art": "trauma",
+   "o": [
+    [
+     "ak_unfallchirurgie"
+    ]
+   ],
+   "s": [
+    [
+     "ak_unfallchirurgie",
+     "ak_chirurgische_intensiv"
+    ]
+   ],
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": "trauma",
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "augenverletzung",
+   "kategorie": "Kopf/Gesicht",
+   "name": "Augenverletzung",
+   "synonyme": [
+    "Augenverätzung",
+    "Bulbustrauma",
+    "Fremdkörper im Auge",
+    "Penetrierende Augenverletzung",
+    "Verätzung des Auges"
+   ],
+   "dringlichkeiten": [
+    10,
+    20
+   ],
+   "art": "trauma",
+   "o": [
+    [
+     "ak_augenheilkunde"
+    ]
+   ],
+   "s": null,
+   "zeitkritisch": true,
+   "platz": null,
+   "ausweich": null,
+   "kinder": false,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "gesichts_kopfverletzung_augen",
+   "kategorie": "Kopf/Gesicht",
+   "name": "Gesichts-/Kopfverletzung + Augen",
+   "synonyme": [
+    "Gesichtsverletzung",
+    "Kopfverletzung"
+   ],
+   "dringlichkeiten": [
+    10,
+    20
+   ],
+   "art": "trauma",
+   "o": [
+    [
+     "ak_augenheilkunde",
+     "ak_unfallchirurgie"
+    ],
+    [
+     "ak_mkg"
+    ],
+    [
+     "ak_unfallchirurgie"
+    ]
+   ],
+   "s": null,
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": null,
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "kopfverletzung",
+   "kategorie": "Kopf/Gesicht",
+   "name": "Kopfverletzung",
+   "synonyme": [
+    "Commotio cerebri",
+    "Gehirnerschütterung",
+    "Gesichtsverletzung",
+    "Kieferverletzung",
+    "Platzwunde",
+    "RQW",
+    "Rissquetschwunde",
+    "SHT I°"
+   ],
+   "dringlichkeiten": [
+    10,
+    20
+   ],
+   "art": "trauma",
+   "o": [
+    [
+     "ak_unfallchirurgie",
+     "ak_ct"
+    ],
+    [
+     "ak_unfallchirurgie"
+    ]
+   ],
+   "s": null,
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": "trauma",
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "schaedelhirntrauma",
+   "kategorie": "Kopf/Gesicht",
+   "name": "Schädelhirntrauma",
+   "synonyme": [
+    "Kopfschuss",
+    "Kopfverletzung",
+    "SHT II-III"
+   ],
+   "dringlichkeiten": [
+    30
+   ],
+   "art": "trauma",
+   "o": null,
+   "s": [
+    [
+     "ak_neurochirurgie"
+    ]
+   ],
+   "zeitkritisch": true,
+   "platz": null,
+   "ausweich": null,
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "polytrauma_mit_sht",
+   "kategorie": "Mehrfachverletzungen",
+   "name": "Polytrauma mit SHT",
+   "synonyme": [
+    "Mehrfachverletzung",
+    "Verletzungen kombiniert"
+   ],
+   "dringlichkeiten": [
+    30
+   ],
+   "art": "trauma",
+   "o": null,
+   "s": [
+    [
+     "ak_neurochirurgie",
+     "ak_unfallchirurgie",
+     "ak_chirurgische_intensiv"
+    ]
+   ],
+   "zeitkritisch": true,
+   "platz": null,
+   "ausweich": null,
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "polytrauma_ohne_sht",
+   "kategorie": "Mehrfachverletzungen",
+   "name": "Polytrauma ohne SHT",
+   "synonyme": [
+    "Mehrfachverletzung",
+    "Verletzungen kombiniert"
+   ],
+   "dringlichkeiten": [
+    30
+   ],
+   "art": "trauma",
+   "o": null,
+   "s": [
+    [
+     "ak_unfallchirurgie",
+     "ak_chirurgische_intensiv"
+    ]
+   ],
+   "zeitkritisch": true,
+   "platz": null,
+   "ausweich": null,
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "verletzungen_kombiniert",
+   "kategorie": "Mehrfachverletzungen",
+   "name": "Verletzungen kombiniert",
+   "synonyme": [
+    "Mehrfachverletzung"
+   ],
+   "dringlichkeiten": [
+    10,
+    20
+   ],
+   "art": "trauma",
+   "o": [
+    [
+     "ak_unfallchirurgie"
+    ]
+   ],
+   "s": null,
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": "trauma",
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "abdominalverletzung",
+   "kategorie": "Rumpf/Wirbelsäule",
+   "name": "Abdominalverletzung",
+   "synonyme": [
+    "Bauchtrauma"
+   ],
+   "dringlichkeiten": [
+    10,
+    20,
+    30
+   ],
+   "art": "trauma",
+   "o": [
+    [
+     "ak_unfallchirurgie",
+     "ak_allgemeinchirurgie"
+    ]
+   ],
+   "s": [
+    [
+     "ak_allgemeinchirurgie",
+     "ak_chirurgische_intensiv"
+    ]
+   ],
+   "zeitkritisch": true,
+   "platz": null,
+   "ausweich": null,
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "beckenverletzung",
+   "kategorie": "Rumpf/Wirbelsäule",
+   "name": "Beckenverletzung",
+   "synonyme": [],
+   "dringlichkeiten": [
+    10,
+    20,
+    30
+   ],
+   "art": "trauma",
+   "o": [
+    [
+     "ak_unfallchirurgie"
+    ]
+   ],
+   "s": [
+    [
+     "ak_unfallchirurgie",
+     "ak_chirurgische_intensiv"
+    ]
+   ],
+   "zeitkritisch": true,
+   "platz": null,
+   "ausweich": null,
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "halsverletzung",
+   "kategorie": "Rumpf/Wirbelsäule",
+   "name": "Halsverletzung",
+   "synonyme": [
+    "Kehlkopf",
+    "Larynx"
+   ],
+   "dringlichkeiten": [
+    10,
+    20,
+    30
+   ],
+   "art": "trauma",
+   "o": [
+    [
+     "ak_unfallchirurgie"
+    ],
+    [
+     "ak_hno"
+    ]
+   ],
+   "s": [
+    [
+     "ak_hno",
+     "ak_chirurgische_intensiv"
+    ],
+    [
+     "ak_unfallchirurgie",
+     "ak_chirurgische_intensiv"
+    ]
+   ],
+   "zeitkritisch": true,
+   "platz": null,
+   "ausweich": null,
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "hoden_penisverletzung",
+   "kategorie": "Rumpf/Wirbelsäule",
+   "name": "Hoden-/Penisverletzung",
+   "synonyme": [],
+   "dringlichkeiten": [
+    10,
+    20
+   ],
+   "art": "trauma",
+   "o": [
+    [
+     "ak_urologie"
+    ]
+   ],
+   "s": null,
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": null,
+   "kinder": [
+    [
+     "ak_kinderchirurgie"
+    ],
+    [
+     "ak_urologie"
+    ]
+   ],
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "strangulation_erhaengen",
+   "kategorie": "Rumpf/Wirbelsäule",
+   "name": "Strangulation/Erhängen",
+   "synonyme": [
+    "Halsverletzung"
+   ],
+   "dringlichkeiten": [
+    10,
+    20,
+    30
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_notaufnahme"
+    ]
+   ],
+   "s": [
+    [
+     "ak_innere_intensiv"
+    ]
+   ],
+   "zeitkritisch": true,
+   "platz": null,
+   "ausweich": null,
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "thoraxverletzung_penetrierend",
+   "kategorie": "Rumpf/Wirbelsäule",
+   "name": "Thoraxverletzung penetrierend",
+   "synonyme": [
+    "Brustkorb",
+    "Pfählung",
+    "Rippen",
+    "Sternum"
+   ],
+   "dringlichkeiten": [
+    20,
+    30
+   ],
+   "art": "trauma",
+   "o": [
+    [
+     "ak_thoraxchirurgie"
+    ],
+    [
+     "ak_allgemeinchirurgie"
+    ]
+   ],
+   "s": [
+    [
+     "ak_thoraxchirurgie",
+     "ak_chirurgische_intensiv"
+    ],
+    [
+     "ak_unfallchirurgie",
+     "ak_chirurgische_intensiv"
+    ]
+   ],
+   "zeitkritisch": true,
+   "platz": null,
+   "ausweich": null,
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "thoraxverletzung_stumpf",
+   "kategorie": "Rumpf/Wirbelsäule",
+   "name": "Thoraxverletzung stumpf",
+   "synonyme": [
+    "Brustkorb",
+    "Brustkorbverletzung",
+    "Pneumothorax",
+    "Rippen",
+    "Rippenfraktur",
+    "Sternum"
+   ],
+   "dringlichkeiten": [
+    10,
+    20,
+    30
+   ],
+   "art": "trauma",
+   "o": [
+    [
+     "ak_unfallchirurgie"
+    ]
+   ],
+   "s": [
+    [
+     "ak_thoraxchirurgie",
+     "ak_chirurgische_intensiv"
+    ],
+    [
+     "ak_unfallchirurgie",
+     "ak_chirurgische_intensiv"
+    ]
+   ],
+   "zeitkritisch": true,
+   "platz": null,
+   "ausweich": null,
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "wirbelsaeulenverletzung_mit_neurologischen_ausfa",
+   "kategorie": "Rumpf/Wirbelsäule",
+   "name": "Wirbelsäulenverletzung mit neurologischen Ausfällen",
+   "synonyme": [
+    "BWS Trauma",
+    "HWS Trauma",
+    "LWS Trauma",
+    "Rückenschmerzen",
+    "Rückenverletzung"
+   ],
+   "dringlichkeiten": [
+    20,
+    30
+   ],
+   "art": "trauma",
+   "o": [
+    [
+     "ak_wirbelsaeulenchirurgie"
+    ],
+    [
+     "ak_neurochirurgie"
+    ]
+   ],
+   "s": [
+    [
+     "ak_wirbelsaeulenchirurgie"
+    ],
+    [
+     "ak_neurochirurgie"
+    ]
+   ],
+   "zeitkritisch": true,
+   "platz": null,
+   "ausweich": null,
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "wirbelsaeulenverletzung_ohne_neurologische_ausfa",
+   "kategorie": "Rumpf/Wirbelsäule",
+   "name": "Wirbelsäulenverletzung ohne neurologische Ausfälle",
+   "synonyme": [
+    "BWS Trauma",
+    "HWS Trauma",
+    "LWS Trauma",
+    "Rückenschmerzen",
+    "Rückenverletzung"
+   ],
+   "dringlichkeiten": [
+    10,
+    20,
+    30
+   ],
+   "art": "trauma",
+   "o": [
+    [
+     "ak_unfallchirurgie"
+    ]
+   ],
+   "s": [
+    [
+     "ak_unfallchirurgie",
+     "ak_chirurgische_intensiv"
+    ]
+   ],
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": null,
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "erfrierung",
+   "kategorie": "Sonstige",
+   "name": "Erfrierung",
+   "synonyme": [],
+   "dringlichkeiten": [
+    10,
+    20
+   ],
+   "art": "trauma",
+   "o": [
+    [
+     "ak_unfallchirurgie"
+    ]
+   ],
+   "s": null,
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": "trauma",
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "reanimation_traumatische_ursache",
+   "kategorie": "Sonstige",
+   "name": "Reanimation, traumatische Ursache",
+   "synonyme": [
+    "CPR",
+    "Kreislaufstillstand",
+    "Trauma Reanimation",
+    "Wiederbelebung"
+   ],
+   "dringlichkeiten": [
+    30
+   ],
+   "art": "trauma",
+   "o": null,
+   "s": [
+    [
+     "ak_unfallchirurgie",
+     "ak_chirurgische_intensiv"
+    ]
+   ],
+   "zeitkritisch": true,
+   "platz": null,
+   "ausweich": null,
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "schwerwiegender_unfallmechanismus_ohne_offensich",
+   "kategorie": "Sonstige",
+   "name": "Schwerwiegender Unfallmechanismus ohne offensichtliche Verletzung",
+   "synonyme": [],
+   "dringlichkeiten": [
+    20,
+    30
+   ],
+   "art": "trauma",
+   "o": [
+    [
+     "ak_unfallchirurgie"
+    ]
+   ],
+   "s": [
+    [
+     "ak_unfallchirurgie",
+     "ak_chirurgische_intensiv"
+    ]
+   ],
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": null,
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "wunde_weichteilverletzung",
+   "kategorie": "Sonstige",
+   "name": "Wunde / Weichteilverletzung",
+   "synonyme": [
+    "Abschürfung",
+    "Blutung",
+    "Platzwunde",
+    "RQW",
+    "Rissquetschwunde"
+   ],
+   "dringlichkeiten": [
+    10,
+    20,
+    30
+   ],
+   "art": "trauma",
+   "o": [
+    [
+     "ak_unfallchirurgie"
+    ],
+    [
+     "ak_primaerversorgung_unfall"
+    ]
+   ],
+   "s": [
+    [
+     "ak_unfallchirurgie",
+     "ak_chirurgische_intensiv"
+    ]
+   ],
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": "trauma",
+   "kinder": null,
+   "pvz": true,
+   "schock": null
+  },
+  {
+   "id": "ellbogenverletzung",
+   "kategorie": "obere Extremität",
+   "name": "Ellbogenverletzung",
+   "synonyme": [],
+   "dringlichkeiten": [
+    10,
+    20
+   ],
+   "art": "trauma",
+   "o": [
+    [
+     "ak_unfallchirurgie"
+    ]
+   ],
+   "s": [
+    [
+     "ak_unfallchirurgie",
+     "ak_chirurgische_intensiv"
+    ]
+   ],
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": "trauma",
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "handgelenksverletzung",
+   "kategorie": "obere Extremität",
+   "name": "Handgelenksverletzung",
+   "synonyme": [],
+   "dringlichkeiten": [
+    10,
+    20
+   ],
+   "art": "trauma",
+   "o": [
+    [
+     "ak_unfallchirurgie"
+    ]
+   ],
+   "s": [
+    [
+     "ak_unfallchirurgie",
+     "ak_chirurgische_intensiv"
+    ]
+   ],
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": "trauma",
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "handverletzung_ohne_amputation",
+   "kategorie": "obere Extremität",
+   "name": "Handverletzung (ohne Amputation)",
+   "synonyme": [
+    "Fingeramputation ohne replantationsfähiges Amputat",
+    "Fingerverletzung",
+    "Handgelenksverletzung",
+    "Mittelhandverletzung"
+   ],
+   "dringlichkeiten": [
+    10,
+    20,
+    30
+   ],
+   "art": "trauma",
+   "o": [
+    [
+     "ak_unfallchirurgie"
+    ]
+   ],
+   "s": [
+    [
+     "ak_unfallchirurgie",
+     "ak_chirurgische_intensiv"
+    ]
+   ],
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": "trauma",
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "oberarmverletzung",
+   "kategorie": "obere Extremität",
+   "name": "Oberarmverletzung",
+   "synonyme": [
+    "Humerus"
+   ],
+   "dringlichkeiten": [
+    10,
+    20,
+    30
+   ],
+   "art": "trauma",
+   "o": [
+    [
+     "ak_unfallchirurgie"
+    ]
+   ],
+   "s": [
+    [
+     "ak_unfallchirurgie",
+     "ak_chirurgische_intensiv"
+    ]
+   ],
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": "trauma",
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "schluesselbeinverletzung",
+   "kategorie": "obere Extremität",
+   "name": "Schlüsselbeinverletzung",
+   "synonyme": [
+    "Clavicula"
+   ],
+   "dringlichkeiten": [
+    10,
+    20
+   ],
+   "art": "trauma",
+   "o": [
+    [
+     "ak_unfallchirurgie"
+    ]
+   ],
+   "s": [
+    [
+     "ak_unfallchirurgie",
+     "ak_chirurgische_intensiv"
+    ]
+   ],
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": "trauma",
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "unterarmverletzung",
+   "kategorie": "obere Extremität",
+   "name": "Unterarmverletzung",
+   "synonyme": [
+    "Elle",
+    "Radius",
+    "Speiche"
+   ],
+   "dringlichkeiten": [
+    10,
+    20,
+    30
+   ],
+   "art": "trauma",
+   "o": [
+    [
+     "ak_unfallchirurgie"
+    ]
+   ],
+   "s": [
+    [
+     "ak_unfallchirurgie",
+     "ak_chirurgische_intensiv"
+    ]
+   ],
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": "trauma",
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "fussverletzung_ohne_amputation",
+   "kategorie": "untere Extremität",
+   "name": "Fußverletzung (ohne Amputation)",
+   "synonyme": [
+    "Ferse",
+    "Mittelfuß",
+    "Zehe"
+   ],
+   "dringlichkeiten": [
+    10,
+    20,
+    30
+   ],
+   "art": "trauma",
+   "o": [
+    [
+     "ak_unfallchirurgie"
+    ]
+   ],
+   "s": [
+    [
+     "ak_unfallchirurgie",
+     "ak_chirurgische_intensiv"
+    ]
+   ],
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": "trauma",
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "hueftverletzung",
+   "kategorie": "untere Extremität",
+   "name": "Hüftverletzung",
+   "synonyme": [
+    "Luxation"
+   ],
+   "dringlichkeiten": [
+    10,
+    20,
+    30
+   ],
+   "art": "trauma",
+   "o": [
+    [
+     "ak_unfallchirurgie"
+    ]
+   ],
+   "s": [
+    [
+     "ak_unfallchirurgie",
+     "ak_chirurgische_intensiv"
+    ]
+   ],
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": "trauma",
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "knieverletzung",
+   "kategorie": "untere Extremität",
+   "name": "Knieverletzung",
+   "synonyme": [
+    "Kniescheibe",
+    "Luxation",
+    "Patella"
+   ],
+   "dringlichkeiten": [
+    10,
+    20
+   ],
+   "art": "trauma",
+   "o": [
+    [
+     "ak_unfallchirurgie"
+    ]
+   ],
+   "s": [
+    [
+     "ak_unfallchirurgie",
+     "ak_chirurgische_intensiv"
+    ]
+   ],
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": "trauma",
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "oberschenkelverletzung",
+   "kategorie": "untere Extremität",
+   "name": "Oberschenkelverletzung",
+   "synonyme": [
+    "Femur"
+   ],
+   "dringlichkeiten": [
+    10,
+    20,
+    30
+   ],
+   "art": "trauma",
+   "o": [
+    [
+     "ak_unfallchirurgie"
+    ]
+   ],
+   "s": [
+    [
+     "ak_unfallchirurgie",
+     "ak_chirurgische_intensiv"
+    ]
+   ],
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": "trauma",
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "schenkelhalsfraktur",
+   "kategorie": "untere Extremität",
+   "name": "Schenkelhalsfraktur",
+   "synonyme": [
+    "Oberschenkelhalsfraktur"
+   ],
+   "dringlichkeiten": [
+    10,
+    20
+   ],
+   "art": "trauma",
+   "o": [
+    [
+     "ak_unfallchirurgie"
+    ]
+   ],
+   "s": [
+    [
+     "ak_unfallchirurgie",
+     "ak_chirurgische_intensiv"
+    ]
+   ],
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": "trauma",
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "sprunggelenksverletzung",
+   "kategorie": "untere Extremität",
+   "name": "Sprunggelenksverletzung",
+   "synonyme": [
+    "Knöchelverletzung",
+    "Supinationstrauma"
+   ],
+   "dringlichkeiten": [
+    10,
+    20
+   ],
+   "art": "trauma",
+   "o": [
+    [
+     "ak_unfallchirurgie"
+    ]
+   ],
+   "s": [
+    [
+     "ak_unfallchirurgie",
+     "ak_chirurgische_intensiv"
+    ]
+   ],
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": "trauma",
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "unterschenkelverletzung",
+   "kategorie": "untere Extremität",
+   "name": "Unterschenkelverletzung",
+   "synonyme": [
+    "Fibula",
+    "Schienbein",
+    "Tibia",
+    "Wade"
+   ],
+   "dringlichkeiten": [
+    10,
+    20,
+    30
+   ],
+   "art": "trauma",
+   "o": [
+    [
+     "ak_unfallchirurgie"
+    ]
+   ],
+   "s": [
+    [
+     "ak_unfallchirurgie",
+     "ak_chirurgische_intensiv"
+    ]
+   ],
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": "trauma",
+   "kinder": null,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "akutes_skrotum",
+   "kategorie": "Urologie",
+   "name": "Akutes Skrotum",
+   "synonyme": [
+    "Hodentorsion"
+   ],
+   "dringlichkeiten": [
+    20
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_urologie"
+    ]
+   ],
+   "s": null,
+   "zeitkritisch": true,
+   "platz": null,
+   "ausweich": null,
+   "kinder": [
+    [
+     "ak_kinderchirurgie"
+    ],
+    [
+     "ak_urologie"
+    ]
+   ],
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "hoden_penisproblem",
+   "kategorie": "Urologie",
+   "name": "Hoden-/Penisproblem",
+   "synonyme": [],
+   "dringlichkeiten": [
+    10,
+    20
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_urologie"
+    ],
+    [
+     "ak_notaufnahme"
+    ]
+   ],
+   "s": null,
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": "intern",
+   "kinder": false,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "katheterproblem_suprapubischer_katheter",
+   "kategorie": "Urologie",
+   "name": "Katheterproblem - suprapubischer Katheter",
+   "synonyme": [],
+   "dringlichkeiten": [
+    10,
+    20
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_urologie"
+    ],
+    [
+     "ak_notaufnahme"
+    ]
+   ],
+   "s": null,
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": "intern",
+   "kinder": false,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "katheterproblem_transurethraler_katheter",
+   "kategorie": "Urologie",
+   "name": "Katheterproblem - transurethraler Katheter",
+   "synonyme": [],
+   "dringlichkeiten": [
+    10,
+    20
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_urologie"
+    ],
+    [
+     "ak_notaufnahme"
+    ]
+   ],
+   "s": null,
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": "intern",
+   "kinder": false,
+   "pvz": false,
+   "schock": null
+  },
+  {
+   "id": "urologisches_problem",
+   "kategorie": "Urologie",
+   "name": "Urologisches Problem",
+   "synonyme": [
+    "Blasenentzündung",
+    "Blut im Harn/Urin",
+    "Harnverhalt",
+    "Hämaturie",
+    "Schmerzen beim Harnlassen/Urinieren"
+   ],
+   "dringlichkeiten": [
+    10,
+    20
+   ],
+   "art": "intern",
+   "o": [
+    [
+     "ak_urologie"
+    ],
+    [
+     "ak_notaufnahme"
+    ]
+   ],
+   "s": null,
+   "zeitkritisch": false,
+   "platz": null,
+   "ausweich": "intern",
+   "kinder": false,
+   "pvz": false,
+   "schock": null
+  }
+ ]
+}

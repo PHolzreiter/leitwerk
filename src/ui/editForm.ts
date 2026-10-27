@@ -517,6 +517,8 @@ export function openEditor(
         if (alt?.zeiten) h.zeiten = alt.zeiten;
         if (alt?.plaetze) h.plaetze = alt.plaetze;
         if (alt?.aufnahmerad) h.aufnahmerad = alt.aufnahmerad;
+        if (alt?.zuweisungAn) h.zuweisungAn = alt.zuweisungAn;
+        if (alt?.zuweisungAus) h.zuweisungAus = alt.zuweisungAus;
         if (zufahrt) h.zufahrt = zufahrt;
         const lpText = val("landeplatz");
         const landeplatz = landeplatzLesen(lpText);

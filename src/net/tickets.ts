@@ -145,6 +145,7 @@ export const START_FORTSCHRITT: FortschrittPunkt[] = [
   { id: "fahrzeugsuche", titel: "Suche bei der Fahrzeugwahl", text: "Im Einsatz schnell ein bestimmtes Fahrzeug finden", stand: "fertig", prozent: 100 },
   { id: "sek-kt", titel: "Fahrzeugwahl bei Überstellungen und Krankentransporten", text: "Vorschlag nach Dienstzeit, Suche, Alarmieren oder Vormerken; Rückfrage per Funk, wenn ein Fahrzeug zu früh dort ist", stand: "fertig", prozent: 100 },
   { id: "karte-info", titel: "Info-Fenster auf der Karte", text: "Klick auf ein Fahrzeug zeigt Status und Ankunftszeit, ohne die Karte zu verlassen", stand: "fertig", prozent: 100 },
+  { id: "zuweisung", titel: "Krankenhaus-Zuweisung nach Symptom", text: "Symptom, Altersgruppe und Dringlichkeit bestimmen das Krankenhaus; Aufnahme je Haus einstellbar", stand: "fertig", prozent: 100 },
   { id: "tablet", titel: "Zweitbildschirm am Tablet", text: "Karte, Fahrzeuge und Krankenhäuser zusätzlich am Tablet im WLAN anzeigen", stand: "geplant", prozent: 0 },
   { id: "nah-pilot", titel: "Notarzthubschrauber selbst fliegen", text: "Als Pilot im Multiplayer mitspielen – mit oder ohne Flugsimulator", stand: "arbeit", prozent: 70 },
   { id: "telefon", titel: "Bessere Telefongespräche", text: "Natürlichere Anrufer und genauere Antworten in der Notrufabfrage", stand: "arbeit", prozent: 60 },

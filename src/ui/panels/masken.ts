@@ -7,7 +7,8 @@ import { nummerAus } from "../../sim/rufnummer";
 import { PARTNER, PARTNER_ARTEN } from "../../sim/partner";
 import { ortAnStelle } from "../../data/ortProfile";
 import { exportKnopf } from "../gespraechExport";
-import { BUCHUNGEN, buchungName } from "../../data/klinik";
+import { buchungName } from "../../data/klinik";
+import { ALTERSGRUPPEN, altersgruppeVon, DRINGLICHKEITEN, dringlichkeitFuer, symptom, symptomAusDiagnose, symptomSuche, zuweisungId, zuweisungLesen, type Altersgruppe, type Dringlichkeit, type Symptom } from "../../data/zuweisung";
 import { store } from "../../data/store";
 import { findCode, hasCodes, searchCodes, type Einsatzcode } from "../../sim/codes";
 import { infoFreitext, PARTNER_PHASE_TEXT, sim, type Einsatz } from "../../sim/engine";
@@ -311,23 +312,25 @@ export function einsatzMaske(e: Einsatz): { root: HTMLElement; refresh(): void }
   const khBox = el("div", { class: "mask-box" });
   khBox.innerHTML = `<div class="box-title">Krankenhaus · Berufungs- und Zielort</div>`;
   const khInfo = el("div", { class: "kh-info" });
-  // Verdachtsdiagnose (Buchung), nach Bereichen gruppiert
-  const grundSel = el("select", { class: "kh-verdacht", title: "Verdachtsdiagnose" });
-  grundSel.appendChild(el("option", { value: "" }, "– Verdacht wählen –"));
-  for (const kat of [...new Set(BUCHUNGEN.map((b) => b.kategorie))]) {
-    const g = el("optgroup");
-    g.label = kat;
-    for (const b of BUCHUNGEN.filter((x) => x.kategorie === kat)) g.appendChild(el("option", { value: b.id }, `${b.name}${b.zeitkritisch ? " ⏱" : ""}`));
-    grundSel.appendChild(g);
-  }
+  // Zuweisung: Symptom (mit Synonymen) → Altersgruppe → Dringlichkeit → die nächsten passenden Häuser, die jetzt aufnehmen
   const dringChip = el("span", { class: "kh-dring" });
-  const khSel = el("select", { class: "kh-sel" });
-  const btnBook = el("button", { class: "btn small" }, "KH buchen");
-  const khRow = el("div", { class: "kh-row" });
-  khRow.append(dringChip, grundSel, khSel, btnBook);
+  const symFeld = el("div", { class: "zw-sym" });
+  const symIn = el("input", { class: "zw-suche", type: "search", placeholder: "Symptom suchen (z. B. Brustschmerz, Sturz, Atemnot) …" }) as HTMLInputElement;
+  const symChip = el("div", { class: "zw-chip", hidden: "" });
+  const symListe = el("div", { class: "zw-liste", hidden: "" });
+  symFeld.append(symIn, symChip, symListe);
+  const altZeile = el("div", { class: "zw-seg zw-alter" });
+  const drZeile = el("div", { class: "zw-seg zw-dring" });
+  const khKarten = el("div", { class: "zw-kh" });
+  const khSel = el("select", { class: "kh-sel", title: "anderes Krankenhaus wählen" }) as HTMLSelectElement;
+  const btnBook = el("button", { class: "btn small primary" }, "KH buchen");
+  const khRow = el("div", { class: "kh-row zw-row" });
+  khRow.append(khSel, btnBook);
   const boZo = el("div", { class: "muted bozo" });
   const zo = addressInput("Zielort (frei, z. B. für Krankentransport)", (o) => void fehlerZeigen(sim.call("aktualisiere", e.id, { zo: o })));
-  khBox.append(khInfo, khRow, boZo, el("div", { class: "fld-label" }, "Zielort manuell"), zo.root);
+  const zwKopf = el("div", { class: "zw-kopf" });
+  zwKopf.append(dringChip, symFeld);
+  khBox.append(khInfo, zwKopf, altZeile, drZeile, khKarten, khRow, boZo, el("div", { class: "fld-label" }, "Zielort manuell"), zo.root);
   root.appendChild(khBox);
 
   /** Dringlichkeit, wie die Leitstelle sie kennt: nach dem Eintreffen aus der Lage, vorher aus der Einsatzstufe */
@@ -338,52 +341,171 @@ export function einsatzMaske(e: Einsatz): { root: HTMLElement; refresh(): void }
     return k === "kritisch" ? "rot" : k === "dringend" ? "gelb" : "gruen";
   };
   const DRING_TEXT = { rot: "Patient rot", gelb: "Patient gelb", gruen: "Patient grün" };
+  const FARBE_DRING: Record<"rot" | "gelb" | "gruen", Dringlichkeit> = { rot: 30, gelb: 20, gruen: 10 };
+  let zwSym: Symptom | undefined;
+  let zwAlter: Altersgruppe = "erwachsener";
+  let zwDring: Dringlichkeit = 20;
+  let zwGewaehlt = "";
+  /** Zuweisung (oder ältere Diagnose) in die Auswahl übernehmen */
+  const zwSetzen = (id: string | null | undefined) => {
+    if (!id) return;
+    const z = zuweisungLesen(id);
+    if (z) {
+      zwSym = z.s;
+      zwAlter = z.a;
+      zwDring = z.d;
+    } else if (id.startsWith("bu_")) {
+      zwSym = symptom(symptomAusDiagnose(id));
+      if (zwSym) zwDring = dringlichkeitFuer(zwSym, FARBE_DRING[dringlichkeit()]);
+    }
+  };
+  const grundWert = () => (zwSym ? zuweisungId(zwSym.id, zwDring, zwAlter) : "");
+  const zwZeigen = () => {
+    symChip.hidden = !zwSym;
+    symIn.hidden = !!zwSym;
+    symChip.innerHTML = zwSym ? `<b>${esc(zwSym.name)}</b> <span class="muted">${esc(zwSym.kategorie)}</span> <button class="btn small zw-weg" title="anderes Symptom">✕</button>` : "";
+    altZeile.innerHTML = ALTERSGRUPPEN.map((a) => `<button class="btn small${a.id === zwAlter ? " an" : ""}" data-zw-alter="${a.id}" title="${a.text} Jahre">${a.name}</button>`).join("");
+    drZeile.innerHTML = DRINGLICHKEITEN.map((d) => {
+      const erlaubt = !zwSym || zwSym.dringlichkeiten.includes(d.id);
+      return `<button class="btn small d${d.id}${d.id === zwDring && zwSym ? " an" : ""}" data-zw-dring="${d.id}"${erlaubt ? "" : " disabled"}>${d.name}</button>`;
+    }).join("");
+  };
+  const symSuchen = () => {
+    const q = symIn.value.trim();
+    const treffer = q ? symptomSuche(q, 10) : [];
+    symListe.hidden = !treffer.length;
+    symListe.innerHTML = treffer
+      .map((x, i) => {
+        const syn = x.synonyme.filter((y) => q && y.toLowerCase().includes(q.toLowerCase().split(/\s+/)[0])).slice(0, 2);
+        return `<div class="zw-treffer${i === 0 ? " sel" : ""}" data-zw-sym="${esc(x.id)}"><b>${esc(x.name)}</b> <span class="muted">${esc(x.kategorie)}${syn.length ? ` · ${esc(syn.join(", "))}` : ""}</span></div>`;
+      })
+      .join("");
+  };
+  const symWaehlen = (id: string) => {
+    const x = symptom(id);
+    if (!x) return;
+    zwSym = x;
+    zwDring = dringlichkeitFuer(x, FARBE_DRING[dringlichkeit()]);
+    if (e.wahr.lage?.aufgedeckt && e.wahr.lage.patienten[0]) zwAlter = altersgruppeVon(e.wahr.lage.patienten[0].alter);
+    symIn.value = "";
+    symListe.hidden = true;
+    zwZeigen();
+    fillKh(true);
+  };
+  symIn.addEventListener("input", symSuchen);
+  symIn.addEventListener("keydown", (ev) => {
+    const ke = ev as KeyboardEvent;
+    const alle = [...symListe.querySelectorAll<HTMLElement>(".zw-treffer")];
+    const i = alle.findIndex((x) => x.classList.contains("sel"));
+    if (ke.key === "ArrowDown" || ke.key === "ArrowUp") {
+      ke.preventDefault();
+      const n = Math.max(0, Math.min(alle.length - 1, i + (ke.key === "ArrowDown" ? 1 : -1)));
+      alle.forEach((x, j) => x.classList.toggle("sel", j === n));
+    } else if (ke.key === "Enter" && alle[Math.max(0, i)]) {
+      ke.preventDefault();
+      symWaehlen(alle[Math.max(0, i)].dataset.zwSym!);
+    } else if (ke.key === "Escape") symListe.hidden = true;
+  });
+  symListe.addEventListener("mousedown", (ev) => {
+    const t = (ev.target as HTMLElement).closest<HTMLElement>("[data-zw-sym]");
+    if (!t) return;
+    ev.preventDefault();
+    symWaehlen(t.dataset.zwSym!);
+  });
+  symChip.addEventListener("click", (ev) => {
+    if (!(ev.target as HTMLElement).closest(".zw-weg")) return;
+    zwSym = undefined;
+    zwZeigen();
+    fillKh(true);
+    symIn.focus();
+  });
+  altZeile.addEventListener("click", (ev) => {
+    const t = (ev.target as HTMLElement).closest<HTMLElement>("[data-zw-alter]");
+    if (!t) return;
+    zwAlter = t.dataset.zwAlter as Altersgruppe;
+    zwZeigen();
+    fillKh(true);
+  });
+  drZeile.addEventListener("click", (ev) => {
+    const t = (ev.target as HTMLElement).closest<HTMLButtonElement>("[data-zw-dring]");
+    if (!t || t.disabled) return;
+    zwDring = Number(t.dataset.zwDring) as Dringlichkeit;
+    zwZeigen();
+    fillKh(true);
+  });
+
   let khKey = "";
+  const MARKE = { passend: "passend", ausweich: "Ausweich", rueckfall: "Rückfall" } as const;
   const fillKh = (force = false) => {
     const d = dringlichkeit();
-    const key = `${grundSel.value}|${d}|${e.adresse?.lat}|${Math.floor(sim.state.zeit / 60_000)}`;
+    const grund = grundWert();
+    const key = `${grund}|${d}|${e.adresse?.lat}|${Math.floor(sim.state.zeit / 60_000)}`;
     if ((key === khKey || document.activeElement === khSel) && !force) return;
     khKey = key;
     dringChip.className = `kh-dring ${d}`;
     dringChip.textContent = DRING_TEXT[d];
     const pos = e.adresse ?? e.wahr;
-    const kind = (e.wahr.lage?.aufgedeckt ? (e.wahr.lage.patienten[0]?.alter ?? 99) : 99) < 15;
-    const vorschlaege = sim.khFuer(pos, grundSel.value || null, d === "rot", kind);
-    const gezeigt = new Set(vorschlaege.map((v) => v.h.id));
-    const alt = khSel.value;
-    khSel.innerHTML = "";
-    const MARKE = { passend: "passend", ausweich: "Ausweich", rueckfall: "Rückfall" } as const;
-    for (const v of vorschlaege) {
-      const lage = v.zu ? " · zu" : v.voll ? ` · belegt (${v.gesamt}/${v.gesamt})` : v.gesamt ? ` · ${v.frei}/${v.gesamt} frei` : "";
-      khSel.appendChild(el("option", { value: v.h.id, class: `kh-opt ${v.eignung}${v.zu || v.voll ? " nein" : ""}` }, `${v.h.kurzname || v.h.name} (${v.km.toFixed(0)} km) · ${MARKE[v.eignung]}${lage}${v.h.landeplatz === "kein" ? " · kein Hubschrauberlandeplatz" : ""}`));
+    const kind = zwSym ? zwAlter !== "erwachsener" : (e.wahr.lage?.aufgedeckt ? (e.wahr.lage.patienten[0]?.alter ?? 99) : 99) < 15;
+    const rot = zwSym ? zwDring === 30 : d === "rot";
+    const vorschlaege = sim.khFuer(pos, grund || null, rot, kind);
+    // die drei nächsten passenden Häuser, die jetzt aufnehmen
+    const top = vorschlaege.filter((v) => !v.zu).slice(0, 3);
+    if (!zwGewaehlt || force || !top.some((v) => v.h.id === zwGewaehlt)) {
+      const gebucht = e.kh && e.kh.grund === grund ? top.find((v) => v.h.id === e.kh!.hospitalId) : undefined;
+      zwGewaehlt = (gebucht ?? top.find((v) => !v.voll) ?? top[0])?.h.id ?? "";
     }
-    // zuerst ein Haus vorwählen, das offen ist und Platz hat
-    const erstes = vorschlaege.find((v) => !v.zu && !v.voll);
-    // alle anderen bleiben wählbar (grau), nach Entfernung
+    khKarten.innerHTML = !grund
+      ? `<div class="muted">Symptom wählen – dann zeigt die Liste die nächsten passenden Häuser, die jetzt aufnehmen.</div>`
+      : top.length
+        ? top
+            .map((v) => {
+              const lage = v.voll ? `belegt (${v.gesamt}/${v.gesamt})` : v.gesamt ? `${v.frei}/${v.gesamt} frei` : "";
+              return `<label class="zw-khk ${v.eignung}${v.voll ? " voll" : ""}${v.h.id === zwGewaehlt ? " an" : ""}" data-zw-kh="${esc(v.h.id)}"><input type="radio" name="zwkh-${esc(e.id)}"${v.h.id === zwGewaehlt ? " checked" : ""}> <b>${esc(v.h.kurzname || v.h.name)}</b> <span class="muted">${v.km.toFixed(0)} km · ${MARKE[v.eignung]}${lage ? ` · ${lage}` : ""}${v.h.landeplatz === "kein" ? " · kein Hubschrauberlandeplatz" : ""}</span></label>`;
+            })
+            .join("")
+        : `<div class="alert-text">Kein passendes Haus nimmt gerade auf.</div>`;
+    // alle anderen bleiben wählbar
+    const gezeigt = new Set(top.map((v) => v.h.id));
+    khSel.innerHTML = "";
+    khSel.appendChild(el("option", { value: "" }, top.length ? "– anderes Krankenhaus –" : "– Krankenhaus wählen –"));
+    const weitere = vorschlaege.filter((v) => !gezeigt.has(v.h.id));
+    if (weitere.length) {
+      const g = el("optgroup");
+      g.label = "passend, aber zu oder weiter weg";
+      for (const v of weitere) g.appendChild(el("option", { value: v.h.id, class: `kh-opt ${v.eignung}${v.zu || v.voll ? " nein" : ""}` }, `${v.h.kurzname || v.h.name} (${v.km.toFixed(0)} km) · ${MARKE[v.eignung]}${v.zu ? " · zu" : v.voll ? " · belegt" : ""}`));
+      khSel.appendChild(g);
+    }
     const rest = store
       .list("hospitals")
-      .filter((h) => !gezeigt.has(h.id))
+      .filter((h) => !gezeigt.has(h.id) && !weitere.some((v) => v.h.id === h.id))
       .map((h) => ({ h, km: distanceM(pos, h) / 1000 }))
       .filter((x) => x.km < 150)
       .sort((a, b) => a.km - b.km);
     if (rest.length) {
       const g = el("optgroup");
-      g.label = "passt nicht zur Diagnose";
-      for (const { h, km } of rest) g.appendChild(el("option", { value: h.id, class: "kh-opt nein" }, `${h.kurzname || h.name} (${km.toFixed(0)} km)`));
+      g.label = grund ? "passt nicht" : "alle Krankenhäuser";
+      for (const { h, km } of rest) g.appendChild(el("option", { value: h.id, class: `kh-opt${grund ? " nein" : ""}` }, `${h.kurzname || h.name} (${km.toFixed(0)} km)`));
       khSel.appendChild(g);
     }
-    if (!khSel.options.length) khSel.appendChild(el("option", { value: "" }, "kein Krankenhaus gefunden"));
-    if (alt && [...khSel.options].some((o) => o.value === alt) && !force) khSel.value = alt;
-    else if (erstes) khSel.value = erstes.h.id;
   };
-  grundSel.addEventListener("change", () => fillKh(true));
+  khKarten.addEventListener("click", (ev) => {
+    const t = (ev.target as HTMLElement).closest<HTMLElement>("[data-zw-kh]");
+    if (!t) return;
+    zwGewaehlt = t.dataset.zwKh!;
+    khSel.value = "";
+    khKarten.querySelectorAll(".zw-khk").forEach((x) => x.classList.toggle("an", x === t));
+  });
   btnBook.addEventListener("click", () => {
-    if (!khSel.value) return;
-    void fehlerZeigen(sim.call("bucheKh", e.id, khSel.value, grundSel.value));
+    const ziel = khSel.value || zwGewaehlt;
+    if (!ziel) return toast("Bitte ein Krankenhaus wählen", "error");
+    void fehlerZeigen(sim.call("bucheKh", e.id, ziel, grundWert()));
+    khSel.value = "";
     toast("Krankenhaus gebucht");
   });
-  grundSel.value = e.khAnfrage?.verdacht ?? e.verdacht ?? e.kh?.grund ?? "";
-  let letzterVerdacht = grundSel.value;
+  zwSetzen(e.khAnfrage?.verdacht ?? e.verdacht ?? e.kh?.grund);
+  if (!zwSym) zwDring = FARBE_DRING[dringlichkeit()];
+  let letzterVerdacht = e.khAnfrage?.verdacht ?? e.verdacht ?? "";
+  zwZeigen();
   fillKh(true);
 
   // Protokoll
@@ -558,7 +680,9 @@ export function einsatzMaske(e: Einsatz): { root: HTMLElement; refresh(): void }
       const v = e.khAnfrage?.verdacht ?? e.verdacht ?? "";
       if (v && v !== letzterVerdacht) {
         letzterVerdacht = v;
-        grundSel.value = v;
+        zwSetzen(v);
+        zwZeigen();
+        fillKh(true);
       }
       fillKh();
       boZo.innerHTML = `BO: ${esc(e.bo?.label ?? "–")}<br>ZO: ${esc(e.zo?.label ?? "–")}`;

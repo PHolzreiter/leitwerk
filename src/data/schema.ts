@@ -132,7 +132,7 @@ function einrichtungenLesen(text: string): string[] {
 export const COLUMNS: Record<Kind, string[]> = {
   stations: ["id", "name", "organisation", "typ", "ort", "bezirk", "adresse", "breitengrad", "laengengrad", "hinweis"],
   vehicles: ["id", "funkrufname", "kurzname", "kategorie", "typ", "aufbau", "modell", "dienststelle", "aktiv", "nachtflug", "dienstplan", "ersatz_fuer", "na_abholung", "hinweis"],
-  hospitals: ["id", "name", "kurzname", "ort", "breitengrad", "laengengrad", "einrichtungen", "akut_aus", "zeiten", "plaetze", "aufnahmerad", "zufahrt", "landeplatz", "hinweis"],
+  hospitals: ["id", "name", "kurzname", "ort", "breitengrad", "laengengrad", "einrichtungen", "akut_aus", "zeiten", "plaetze", "aufnahmerad", "zufahrt", "landeplatz", "zuweisung_an", "zuweisung_aus", "hinweis"],
   pois: ["id", "name", "typ", "ort", "breitengrad", "laengengrad", "hinweis"],
   templates: ["id", "code", "adresse", "breitengrad", "laengengrad", "meldung", "patient_alter", "transport", "hinweis"],
   codes: ["id", "code", "name", "kategorie", "kapitel", "hinweis"],
@@ -193,6 +193,8 @@ const ALIASES: Record<string, string[]> = {
   bereiche: ["bereiche", "stationenambulanzen"],
   einrichtungen: ["einrichtungen", "stationen", "ambulanzen", "abteilungen"],
   akut_aus: ["akutaus", "akutabgeschaltet", "keineakutaufnahme"],
+  zuweisung_an: ["zuweisungan", "symptomean"],
+  zuweisung_aus: ["zuweisungaus", "symptomeaus"],
   zeiten: ["zeiten", "oeffnungszeiten"],
   plaetze: ["plaetze", "kapazitaet", "kapazitaeten"],
   aufnahmerad: ["aufnahmerad", "aufnahmetage"],
@@ -639,6 +641,9 @@ export function importCsv<K extends Kind>(kind: K, text: string, ctx: ImportCont
           if (zf) h.zufahrt = zf;
           const lp = landeplatzLesen(get("landeplatz"));
           if (lp) h.landeplatz = lp;
+          const zw = (k: string) => get(k).split(",").map((x) => x.trim()).filter((x) => /^[a-z0-9_]+(:(10|20|30))?$/.test(x));
+          if (zw("zuweisung_an").length) h.zuweisungAn = zw("zuweisung_an");
+          if (zw("zuweisung_aus").length) h.zuweisungAus = zw("zuweisung_aus");
           record = h;
         } else {
           id = id || `poi-${slug(name)}`;
@@ -752,6 +757,8 @@ export function exportCsv<K extends Kind>(kind: K, records: KindMap[K][], statio
         v.aufnahmerad = r ? `${r.gruppe} ${r.start} ${r.wechsel} ${r.zyklus}: ${Object.entries(r.einrichtungen).map(([k, x]) => `${k}=${x}`).join(", ")}` : "";
         v.zufahrt = zufahrtText(h.zufahrt);
         v.landeplatz = landeplatzText(h.landeplatz);
+        v.zuweisung_an = (h.zuweisungAn ?? []).join(", ");
+        v.zuweisung_aus = (h.zuweisungAus ?? []).join(", ");
       } else {
         const p = rec as Poi;
         Object.assign(v, { typ: p.typ, ort: p.ort });

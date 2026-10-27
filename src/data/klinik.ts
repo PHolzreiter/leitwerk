@@ -8,6 +8,7 @@
 import daten from "./klinik.json";
 import type { Hospital } from "./model";
 import { belegt, offen, platzFuer, plaetze, ressourcenFuer, type BelegungMap, type Ressource } from "../sim/khStatus";
+import { istZuweisung, zuweisungBuchung, zuweisungLesen, type ZuweisungBuchung } from "./zuweisung";
 
 export type EinrichtungTyp = "station" | "intensiv" | "ambulanz" | "funktionsbereich" | "zentrum";
 export interface Einrichtung {
@@ -56,7 +57,8 @@ export function akutAbteilung(id: string): AkutAbteilung | undefined {
   return E2.get(id);
 }
 export function buchung(id: string | null | undefined): Buchung | undefined {
-  return id ? E3.get(id) : undefined;
+  if (!id) return undefined;
+  return istZuweisung(id) ? zuweisungBuchung(id) : E3.get(id);
 }
 export function buchungName(id: string | null | undefined): string {
   return buchung(id)?.name ?? (id || "");
@@ -125,8 +127,44 @@ export function akutJetzt(h: Hospital, t: number): Set<string> {
 
 export type Eignung = "passend" | "ausweich" | "rueckfall" | null;
 
-function eignungMit(ak: Set<string>, b: Buchung | undefined, rot: boolean): Eignung {
+/** Hat das Haus einen Schockraum dieser Art? (kombinierter zählt für beide; ohne Platzangabe gilt er als kombiniert) */
+export function schockraumArt(h: Hospital, art: "trauma" | "intern"): boolean {
+  if (!(h.einrichtungen ?? []).includes("fb_schockraum")) return false;
+  const p = h.plaetze ?? {};
+  const t = p.schockraum_trauma ?? 0;
+  const i = p.schockraum_intern ?? 0;
+  const k = p.schockraum ?? 0;
+  if (!t && !i) return true;
+  return k > 0 || (art === "trauma" ? t > 0 : i > 0);
+}
+
+/** Eigene Einstellung des Hauses zu dieser Zuweisung: true = nimmt auf, false = nimmt nicht auf, null = nach Abteilungen */
+export function zuweisungSchalter(h: Hospital, b: Buchung | undefined): boolean | null {
+  if (!b || !istZuweisung(b.id)) return null;
+  const z = zuweisungLesen(b.id);
+  if (!z) return null;
+  const keys = [`${z.s.id}:${z.d}`, z.s.id];
+  if (keys.some((k) => h.zuweisungAus?.includes(k))) return false;
+  if (keys.some((k) => h.zuweisungAn?.includes(k))) return true;
+  return null;
+}
+
+/** Eine Notfall-Tür des Hauses ist offen (für eingeschaltete Zuweisungen ohne passende Abteilung) */
+function tuerOffen(h: Hospital, t: number | undefined): boolean {
+  const e = (h.einrichtungen ?? []).filter((x) => ["amb_notaufnahme", "amb_unfall", "amb_kindernotaufnahme", "fb_schockraum", "amb_pvz"].includes(x));
+  if (!e.length) return true;
+  return t === undefined || e.some((x) => offen(h, x, t));
+}
+
+function eignungMit(ak: Set<string>, b: Buchung | undefined, rot: boolean, h?: Hospital, t?: number): Eignung {
   if (!b) return ak.has("ak_notaufnahme") ? "passend" : null;
+  if (h) {
+    const sw = zuweisungSchalter(h, b);
+    if (sw === false) return null;
+    if (sw === true) return tuerOffen(h, t) ? "passend" : null;
+    const zb = b as ZuweisungBuchung;
+    if (zb.schock && !schockraumArt(h, zb.schock)) return null;
+  }
   if (erfuellt(ak, b.optionen)) return "passend";
   if (!b.zeitkritisch && !rot && b.ausweich && erfuellt(ak, AUSWEICH[b.ausweich])) return "ausweich";
   return null;
@@ -138,11 +176,17 @@ function eignungMit(ak: Set<string>, b: Buchung | undefined, rot: boolean): Eign
  * sonst null (Rückfall entscheidet der Aufrufer).
  */
 export function eignung(h: Hospital, b: Buchung | undefined, rot: boolean): Eignung {
-  return eignungMit(akutVon(h), b, rot);
+  return eignungMit(akutVon(h), b, rot, h);
+}
+
+/** Eignung mit schon berechneten offenen Akut-Abteilungen (für Prüfungen über viele Zeitpunkte) */
+export function eignungJetzt(h: Hospital, b: Buchung | undefined, rot: boolean, jetzt: Set<string>, t: number): Eignung {
+  return eignungMit(jetzt, b, rot, h, t);
 }
 
 /** Erste erfüllte Option (0 = bevorzugt) oder -1 */
 export function optionIndex(h: Hospital, b: Buchung): number {
+  if (zuweisungSchalter(h, b) === true) return 0;
   const ak = akutVon(h);
   return b.optionen.findIndex((o) => o.every((x) => ak.has(x)));
 }
@@ -191,8 +235,8 @@ export function khVorschlaege(alle: Hospital[], b: Buchung | undefined, rot: boo
     let voll = false;
     if (t !== undefined) {
       const jetzt = akutJetzt(h, t);
-      zu = e === "rueckfall" ? false : eignungMit(jetzt, b, rot) === null;
-      const p = platzFuer(h, opt?.belegung, ressourcenFuer(b?.id, e, !!opt?.kind), t);
+      zu = e === "rueckfall" ? false : eignungMit(jetzt, b, rot, h, t) === null;
+      const p = platzFuer(h, opt?.belegung, ressourcenFuer(b?.id, e, !!opt?.kind || !!(b as ZuweisungBuchung | undefined)?.kind), t);
       if (p) {
         platz = p.r;
         gesamt = plaetze(h, p.r);
@@ -208,7 +252,7 @@ export function khVorschlaege(alle: Hospital[], b: Buchung | undefined, rot: boo
   const ausweich = mit.filter((x) => x.e === "ausweich" && x.km <= ERREICHBAR_KM).sort((a, c) => a.km - c.km);
   const out: KhVorschlag[] = [...passend.map((x) => info(x.h, "passend", x.km)), ...ausweich.map((x) => info(x.h, "ausweich", x.km))];
   // Hausarzt-Fälle: PVZ und Krankenhaus gleichwertig – das nächste gewinnt
-  if (b && b.optionen.every((alt) => alt.every((a) => a.startsWith("ak_primaerversorgung")))) out.sort((a, c) => a.km - c.km);
+  if (b && (b.optionen.every((alt) => alt.every((a) => a.startsWith("ak_primaerversorgung"))) || (b as ZuweisungBuchung).pvz)) out.sort((a, c) => a.km - c.km);
   // Rückfall, wenn kein passendes Haus offen ist
   if (out.some((v) => !v.zu)) return out;
   const rf = RUECKFALL[b?.kategorie === "Trauma" ? "Trauma" : "sonst"] ?? RUECKFALL.sonst;

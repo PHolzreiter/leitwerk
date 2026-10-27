@@ -12,6 +12,7 @@ import { ACTIVE_CATEGORIES, bereicheVon, khAnkunft, khLandung, type Hospital, ty
 import { bestesKh, buchung, buchungName, eignung as khEignung, khVorschlaege, type KhVorschlag } from "../data/klinik";
 import { grundbelegungTick, platzFuer, RESSOURCE, ressourcenFuer, type BelegungMap } from "./khStatus";
 import { verdachtFuer } from "./verdacht";
+import { altersgruppeVon, dringlichkeitFuer, istZuweisung, symptom, symptomAusDiagnose, zuweisungId, type Dringlichkeit } from "../data/zuweisung";
 import { store } from "../data/store";
 import { streuung } from "../data/schema";
 import { ACN_CODES, allCodes, findCode, hasCodes, istAcnCode, type Einsatzcode } from "./codes";
@@ -738,8 +739,10 @@ export interface Einsatz {
     code: string;
     patientAlter: number;
     transport: boolean;
-    /** Verdachtsdiagnose (Buchungs-ID) – ergibt sich erst beim Patienten */
+    /** Zuweisung (Symptom, Dringlichkeit, Altersgruppe) – ergibt sich erst beim Patienten */
     verdacht?: string;
+    /** Verdachtsdiagnose (Buchungs-ID aus klinik.json), aus der die Zuweisung entsteht */
+    diagnose?: string;
     /** Fallkatalog: Transportverweigerung geprüft bzw. Revers unterschrieben */
     reversGeprueft?: boolean;
     revers?: boolean;
@@ -2664,15 +2667,31 @@ export class Simulation {
 
   /** Verdachtsdiagnose des Einsatzes (einmal festgelegt, sobald die Besatzung beim Patienten war) */
   verdacht(e: Einsatz): string {
-    if (e.wahr.verdacht) return e.wahr.verdacht;
+    if (e.wahr.verdacht && istZuweisung(e.wahr.verdacht)) return e.wahr.verdacht;
+    // ältere Spielstände: dort steht die Diagnose direkt in verdacht
+    if (e.wahr.verdacht && !e.wahr.diagnose) e.wahr.diagnose = e.wahr.verdacht;
+    const diag = this.diagnose(e);
+    const l = e.wahr.lage;
+    const p0 = l?.patienten[0];
+    const sid = symptomAusDiagnose(diag, `${l?.fall?.kern ?? ""} ${e.meldung?.text ?? ""} ${p0 ? patientText(p0) : ""}`);
+    const s = symptom(sid)!;
+    const wunsch: Dringlichkeit = p0 ? (istStillstand(p0) || p0.sichtung === "rot" ? 30 : p0.sichtung === "gelb" ? 20 : 10) : this.kritisch(e) ? 30 : 20;
+    const alter = p0?.alter ?? e.wahr.patientAlter;
+    e.wahr.verdacht = zuweisungId(sid, dringlichkeitFuer(s, wunsch), altersgruppeVon(alter));
+    return e.wahr.verdacht;
+  }
+
+  /** Verdachtsdiagnose aus Fall bzw. Abfrage (Grundlage für Symptom und Dringlichkeit der Zuweisung) */
+  diagnose(e: Einsatz): string {
+    if (e.wahr.diagnose) return e.wahr.diagnose;
     const fv = this.fallVar(e);
-    if (fv) return (e.wahr.verdacht = fv.buchung);
+    if (fv) return (e.wahr.diagnose = fv.buchung);
     const w = e.wahr.abfrage;
     const c = findCode(e.wahr.code);
     const l = e.wahr.lage;
     const p0 = l?.patienten[0];
     const kap = w?.kapitel ?? (c?.gruppe ? String(c.gruppe) : "");
-    e.wahr.verdacht = verdachtFuer({
+    e.wahr.diagnose = verdachtFuer({
       thema: thema(kap),
       antworten: w ? (store.schema ? merkmaleAusSchema(store.schema, w.antworten) : w.antworten) : {},
       name: `${c?.beschreibung ?? ""} ${store.schema?.codes[w?.code ?? e.wahr.code]?.name ?? ""}`,
@@ -2680,7 +2699,7 @@ export class Simulation {
       patient: p0,
       rea: !!p0 && istStillstand(p0),
     });
-    return e.wahr.verdacht;
+    return e.wahr.diagnose;
   }
 
   /** Patient rot (für die Wahl des Krankenhauses)? */
@@ -2706,7 +2725,7 @@ export class Simulation {
   /** Buchung, die das Medical Center selbst erledigt (hausärztlich, Bagatellverletzung) – alles andere wird überstellt */
   private mcReicht(verdacht: string | null | undefined): boolean {
     const b = buchung(verdacht);
-    return !!b && b.optionen.every((alt) => alt.every((a) => a.startsWith("ak_primaerversorgung")));
+    return !!b && (b.optionen.every((alt) => alt.every((a) => a.startsWith("ak_primaerversorgung"))) || !!(b as { pvz?: boolean }).pvz);
   }
 
   /**
@@ -4357,7 +4376,10 @@ export class Simulation {
         lf.ohneNaGeplant = false;
         lf.naMit = undefined;
         e.wahr.transport = nv.transport !== false;
-        if (!e.kh) e.wahr.verdacht = undefined;
+        if (!e.kh) {
+          e.wahr.verdacht = undefined;
+          e.wahr.diagnose = undefined;
+        }
         ereignisseEinplanen(l, nv, t);
       }
     }
@@ -4525,7 +4547,7 @@ export class Simulation {
     const nef = alle.filter((x) => x.kategorie === "NEF" && !x.ersatzFuer && this.verfuegbar(x)).map(km).sort((a, b) => a - b)[0] ?? Infinity;
     const nah = alle.filter((x) => fliegt(x) && this.verfuegbar(x) && !this.flugHindernis(x)).sort((a, b) => km(a) - km(b))[0];
     if (!nah || km(nah) > 80) return null;
-    const zeitkritisch = this.kritisch(e) || /schlaganfall|insult|stroke|polytrauma|schädel|stemi|infarkt|herzinfarkt/i.test(`${e.wahr.verdacht ?? ""} ${e.wahr.lage?.fall?.kern ?? ""}`);
+    const zeitkritisch = this.kritisch(e) || /schlaganfall|insult|stroke|polytrauma|schädel|stemi|infarkt|herzinfarkt/i.test(`${e.wahr.verdacht ? buchungName(e.wahr.verdacht) : ""} ${e.wahr.lage?.fall?.kern ?? ""}`);
     return nef > 25 || (zeitkritisch && nef > 12) ? this.rufname(nah) : null;
   }
 

@@ -11,6 +11,7 @@ import { distanceM } from "../sim/geo";
 import { openDialog } from "./dialog";
 import { el, esc } from "./dom";
 import { registriere } from "./ws/arbeitsplatz";
+import { khAufnahmeOeffnen } from "./khAufnahme";
 
 /** Gruppen der Akut-Abteilungen für die Anzeige */
 const AKUT_GRUPPEN: [string, string[]][] = [
@@ -146,7 +147,15 @@ export function khDetail(h: Hospital): void {
     ${plaetzeHtml ? `<section><h3>Akutaufnahme jetzt</h3><div class="khd-plaetze">${plaetzeHtml}</div></section>` : ""}
     ${akutHtml ? `<section><h3>Akut-Abteilungen</h3>${akutHtml}</section>` : `<section><h3>Akut-Abteilungen</h3><p class="muted">Dieses Haus nimmt keine Rettung auf.</p></section>`}
     <section><h3>Stationen, Ambulanzen und Bereiche</h3>${einrHtml || '<p class="muted">keine Angaben</p>'}</section>`;
-  openDialog({ title: h.name, body, wide: true, actions: [{ label: "Schließen", kind: "primary" }] });
+  openDialog({
+    title: h.name,
+    body,
+    wide: true,
+    actions: [
+      { label: "Aufnahme bei Notfällen …", onClick: () => (khAufnahmeOeffnen(h.id), true) },
+      { label: "Schließen", kind: "primary" },
+    ],
+  });
 }
 
 /** Zu welcher Akut-Abteilung gehören die gezählten Plätze? (Plätze zeigen wir nur, wenn es die Abteilung gibt) */

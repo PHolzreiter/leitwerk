@@ -184,6 +184,10 @@ export interface Hospital extends Base {
   akutAus?: string[];
   /** Öffnungszeiten je Einrichtung (ohne Eintrag: rund um die Uhr) */
   zeiten?: Record<string, Schicht[]>;
+  /** Zuweisung (Notfälle): Symptome, die das Haus trotz Abteilungen nicht nimmt („symptom“ oder „symptom:dringlichkeit“) */
+  zuweisungAus?: string[];
+  /** Zuweisung (Notfälle): Symptome, die das Haus zusätzlich nimmt */
+  zuweisungAn?: string[];
   /** Plätze der Akut-Bereiche (Schockraum, Herzkatheter, Notaufnahme …) */
   plaetze?: Partial<Record<Ressource, number>>;
   /** Aufnahmerad (z. B. Linz): manche Einrichtungen nur am Aufnahmetag offen */
