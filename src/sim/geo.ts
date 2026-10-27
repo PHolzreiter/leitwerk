@@ -116,13 +116,19 @@ export async function travelTimes(to: LatLon, sources: LatLon[]): Promise<(numbe
   }
 }
 
+/**
+ * Nur für automatische Tests im Browser (Falltest, tools/falltest): echte Adressen aus den Adresspaketen statt
+ * „Testgasse“ – nach demselben Verfahren wie address_random/address_search in der App.
+ */
+export const geoTest: { adressen: null | { zufall(bbox: [number, number, number, number], count: number, seed: number): Promise<AddressHit[]>; suche(query: string, limit: number): Promise<AddressHit[]> } } = { adressen: null };
+
 export async function searchAddress(query: string, limit = 12): Promise<AddressHit[]> {
   if (query.trim().length < 2) return [];
   // Straßen-Angaben ohne Hausnummer: „A1 85“ (Autobahn-Kilometer), „B37 Gföhl“
   const strasse = (await stellenSuchen(query, 6)).map((h) => ({ label: h.label, street: h.label, number: "", postcode: "", city: "", lat: h.lat, lon: h.lon, place: false }));
   if (strasse.length) return strasse.slice(0, limit);
-  if (!inTauri()) return browserSearch(query, limit);
-  const treffer = await invoke<AddressHit[]>("address_search", { query, limit });
+  if (!inTauri() && !geoTest.adressen) return browserSearch(query, limit);
+  const treffer = inTauri() ? await invoke<AddressHit[]>("address_search", { query, limit }) : await geoTest.adressen!.suche(query, limit);
   // eigene Orte (POIs wie „Pflegeheim …“, „Volksschule …“) zuerst, wenn der Name passt
   const q = query.trim().toLowerCase();
   const orte = q.length >= 4 ? store.list("pois").filter((p) => p.name.toLowerCase().includes(q)).slice(0, 3) : [];
@@ -131,6 +137,7 @@ export async function searchAddress(query: string, limit = 12): Promise<AddressH
 
 export async function randomAddresses(bbox: [number, number, number, number], count: number): Promise<AddressHit[]> {
   const seed = Math.floor(Math.random() * 2 ** 31) * 2 + 1;
+  if (!inTauri() && geoTest.adressen) return geoTest.adressen.zufall(bbox, count, seed);
   if (!inTauri()) {
     return Array.from({ length: count }, (_, i) => {
       const lon = bbox[0] + Math.random() * (bbox[2] - bbox[0]);

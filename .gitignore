@@ -20,3 +20,6 @@ assets-out/
 
 __pycache__/
 tools/sources/.overpass_cache/
+
+# Ergebnisse des Falltests (tools/falltest)
+falltest-ergebnisse/
