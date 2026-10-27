@@ -1078,6 +1078,24 @@ def build_hospitals() -> list[dict]:
     kav_alle = json.loads((SRC / "kh_kav_betten.json").read_text(encoding="utf-8")) if (SRC / "kh_kav_betten.json").exists() else {}
     MIT_ZEITEN = ["amb_notaufnahme", "amb_pvz", "amb_pvz_unfall", "amb_unfall", "amb_kindernotaufnahme", "amb_psychiatrie_krise", "fb_herzkatheter", "fb_schockraum", "fb_kreisssaal", "fb_druckkammer", "its_stroke_unit", "fb_angiographie"]
 
+    # Zeitregeln der Zuweisung (Recherche 10/2026, Annahmen und Vorgaben – Übersicht im Projekt „Zuweisung – Zeitregeln“):
+    # ersetzen Zeiten bzw. Aufnahmerad des Hauses
+    ZUWEISUNG_ZEITEN = {
+        "kh002": {"zeiten": "fb_herzkatheter: Mo–Fr 07:00–15:00; Mi 07:00–07:00"},
+        "kh004": {"aufnahmerad": "PCI-Ost 2026-01-01 08:00 WE: fb_herzkatheter=W"},
+        "kh005": {"zeiten": "fb_herzkatheter: Mo, Mi, Fr 07:30–19:30; Di 07:30–07:30; Do 07:30–15:30"},
+        "kh009": {"zeiten": "amb_unfall: täglich 08:00–13:00"},
+        "kh023": {"zeiten": "fb_herzkatheter: Sa 08:00–24:00; So 00:00–24:00; Mo 00:00–08:00 | fb_angiographie: Mo, Mi, Fr 08:00–08:00"},
+        "kh024": {"zeiten": "fb_herzkatheter: Do 08:00–08:00"},
+        "kh025": {"zeiten": "amb_psychiatrie_krise: Mo–Fr 08:00–13:00 | fb_herzkatheter: Di 08:00–08:00"},
+        "kh026": {"zeiten": "fb_herzkatheter: Mi 08:00–08:00"},
+        "kh027": {"zeiten": "amb_psychiatrie_krise: Mo–Fr 08:00–12:30 | fb_herzkatheter: Mo–Fr 07:00–15:00"},
+        "kh029": {"zeiten": "fb_herzkatheter: Mo 08:00–08:00 | fb_angiographie: Di, Sa 08:00–08:00"},
+        "kh032": {"zeiten": "fb_angiographie: Do, So 08:00–08:00"},
+        "kh034": {"aufnahmerad": "PCI-Ost 2026-01-01 08:00 WE: fb_herzkatheter=E"},
+        "kh035": {"zeiten": "fb_herzkatheter: Mo–Fr 07:00–15:00"},
+    }
+
     def extra(kid: str, d: dict) -> dict:
         """Öffnungszeiten (nur belegte, nicht rund um die Uhr), Plätze, Aufnahmerad"""
         z = zeiten_alle.get(kid, {})
@@ -1088,7 +1106,9 @@ def build_hospitals() -> list[dict]:
             if e in einr and f and not ist_rund_um_die_uhr(f):
                 zt.append(f"{e}: {zeit_text(f)}")
         pl = plaetze_ableiten(kid, einr, kav_alle.get(kid, {}), z)
-        return {"zeiten": " | ".join(zt), "plaetze": ", ".join(f"{k}={v}" for k, v in pl.items()), "aufnahmerad": z.get("_rad", "")}
+        r = {"zeiten": " | ".join(zt), "plaetze": ", ".join(f"{k}={v}" for k, v in pl.items()), "aufnahmerad": z.get("_rad", "")}
+        r.update(ZUWEISUNG_ZEITEN.get(kid, {}))
+        return r
 
     NOTFALL = {"amb_notaufnahme", "amb_pvz", "amb_pvz_unfall", "amb_unfall", "amb_kindernotaufnahme", "amb_psychiatrie_krise", "fb_schockraum", "its_stroke_unit", "fb_kreisssaal"}
 
