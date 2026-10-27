@@ -159,7 +159,7 @@ function panel(ctx: PanelKontext) {
     const ohne: Hospital = { ...h, zuweisungAn: [], zuweisungAus: [] };
     const kat = [...new Set(SYMPTOME.map((s) => s.kategorie))];
     let html = `<h4>Symptome <span class="muted">– ${esc(WTAG[new Date(t).getDay()])} ${new Date(t).toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" })}</span></h4>
-      <div class="kha-leg"><span class="kha-c ja">✓</span> nimmt auf <span class="kha-c zu">◐</span> nimmt auf, jetzt zu <span class="kha-c ausweich">~</span> nur Ausweich <span class="kha-c nein">–</span> nimmt nicht · <b>Klick</b>: an → aus → wie Abteilungen</div>`;
+      <div class="kha-leg"><span class="kha-c ja">✓</span> nimmt auf <span class="kha-c zu">◐</span> nimmt auf, jetzt zu <span class="kha-c ausweich">~</span> nur Ausweich (Kinder: Haus ohne Kinderabteilung) <span class="kha-c nein">–</span> nimmt nicht · <b>Klick</b>: an → aus → wie Abteilungen</div>`;
     html += `<div class="kha-s kha-skopf"><span></span><span>stabil</span><span>dringend</span><span title="Schockraum/Intensiv">Schock</span></div>`;
     for (const k of kat) {
       const l = SYMPTOME.filter((s) => s.kategorie === k && (!q || `${s.name} ${s.synonyme.join(" ")}`.toLowerCase().includes(q)));
@@ -175,7 +175,7 @@ function panel(ctx: PanelKontext) {
           const offenJetzt = wirk === "ja" && eignungJetzt(h, buchung(id), d === 30, jetzt, t) === "passend";
           const sym = wirk === "ja" ? (offenJetzt ? "✓" : "◐") : wirk === "ausweich" ? "~" : "–";
           const cls = wirk === "ja" ? (offenJetzt ? "ja" : "zu") : wirk;
-          const titel = `${DRINGLICHKEIT_NAME[d]}: ${sw ? `von dir ${sw === "an" ? "eingeschaltet" : "ausgeschaltet"} (Abteilungen: ${auto === "ja" ? "ja" : auto === "ausweich" ? "Ausweich" : "nein"})` : `aus den Abteilungen${wirk === "ja" && !offenJetzt ? " – zu diesem Zeitpunkt zu" : ""}`}`;
+          const titel = `${DRINGLICHKEIT_NAME[d]}: ${sw ? `von dir ${sw === "an" ? "eingeschaltet" : "ausgeschaltet"} (Abteilungen: ${auto === "ja" ? "ja" : auto === "ausweich" ? "Ausweich" : "nein"})` : wirk === "ausweich" && a !== "erwachsener" ? "nur Ausweich – keine Kinderabteilung" : `aus den Abteilungen${wirk === "ja" && !offenJetzt ? " – zu diesem Zeitpunkt zu" : ""}`}`;
           return `<button class="kha-c ${cls}${sw ? " eigen" : ""}" data-sym="${esc(s.id)}" data-d="${d}" title="${esc(titel)}">${sym}</button>`;
         });
         html += `<div class="kha-s"><span class="kha-sn" title="${esc(s.synonyme.join(", "))}">${esc(s.name)}</span>${zellen.join("")}</div>`;

@@ -166,6 +166,8 @@ function eignungMit(ak: Set<string>, b: Buchung | undefined, rot: boolean, h?: H
     if (zb.schock && !schockraumArt(h, zb.schock)) return null;
   }
   if (erfuellt(ak, b.optionen)) return "passend";
+  const ak2 = (b as ZuweisungBuchung).ausweichKind;
+  if (ak2 && erfuellt(ak, ak2)) return "ausweich";
   if (!b.zeitkritisch && !rot && b.ausweich && erfuellt(ak, AUSWEICH[b.ausweich])) return "ausweich";
   return null;
 }

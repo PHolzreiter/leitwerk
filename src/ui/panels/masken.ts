@@ -436,6 +436,8 @@ export function einsatzMaske(e: Einsatz): { root: HTMLElement; refresh(): void }
 
   let khKey = "";
   const MARKE = { passend: "passend", ausweich: "Ausweich", rueckfall: "Rückfall" } as const;
+  /** Kinder in einem Haus ohne Kinder-Abteilung: als Ausweich gekennzeichnet */
+  const marke = (eig: keyof typeof MARKE) => (eig === "ausweich" && zwSym && zwAlter !== "erwachsener" ? "⚠ Ausweich – keine Kinderabteilung" : MARKE[eig]);
   const fillKh = (force = false) => {
     const d = dringlichkeit();
     const grund = grundWert();
@@ -460,7 +462,7 @@ export function einsatzMaske(e: Einsatz): { root: HTMLElement; refresh(): void }
         ? top
             .map((v) => {
               const lage = v.voll ? `belegt (${v.gesamt}/${v.gesamt})` : v.gesamt ? `${v.frei}/${v.gesamt} frei` : "";
-              return `<label class="zw-khk ${v.eignung}${v.voll ? " voll" : ""}${v.h.id === zwGewaehlt ? " an" : ""}" data-zw-kh="${esc(v.h.id)}"><input type="radio" name="zwkh-${esc(e.id)}"${v.h.id === zwGewaehlt ? " checked" : ""}> <b>${esc(v.h.kurzname || v.h.name)}</b> <span class="muted">${v.km.toFixed(0)} km · ${MARKE[v.eignung]}${lage ? ` · ${lage}` : ""}${v.h.landeplatz === "kein" ? " · kein Hubschrauberlandeplatz" : ""}</span></label>`;
+              return `<label class="zw-khk ${v.eignung}${v.voll ? " voll" : ""}${v.h.id === zwGewaehlt ? " an" : ""}" data-zw-kh="${esc(v.h.id)}"><input type="radio" name="zwkh-${esc(e.id)}"${v.h.id === zwGewaehlt ? " checked" : ""}> <b>${esc(v.h.kurzname || v.h.name)}</b> <span class="muted">${v.km.toFixed(0)} km · ${marke(v.eignung)}${lage ? ` · ${lage}` : ""}${v.h.landeplatz === "kein" ? " · kein Hubschrauberlandeplatz" : ""}</span></label>`;
             })
             .join("")
         : `<div class="alert-text">Kein passendes Haus nimmt gerade auf.</div>`;
@@ -472,7 +474,7 @@ export function einsatzMaske(e: Einsatz): { root: HTMLElement; refresh(): void }
     if (weitere.length) {
       const g = el("optgroup");
       g.label = "passend, aber zu oder weiter weg";
-      for (const v of weitere) g.appendChild(el("option", { value: v.h.id, class: `kh-opt ${v.eignung}${v.zu || v.voll ? " nein" : ""}` }, `${v.h.kurzname || v.h.name} (${v.km.toFixed(0)} km) · ${MARKE[v.eignung]}${v.zu ? " · zu" : v.voll ? " · belegt" : ""}`));
+      for (const v of weitere) g.appendChild(el("option", { value: v.h.id, class: `kh-opt ${v.eignung}${v.zu || v.voll ? " nein" : ""}` }, `${v.h.kurzname || v.h.name} (${v.km.toFixed(0)} km) · ${marke(v.eignung)}${v.zu ? " · zu" : v.voll ? " · belegt" : ""}`));
       khSel.appendChild(g);
     }
     const rest = store

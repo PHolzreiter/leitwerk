@@ -1,5 +1,16 @@
 [
  {
+  "version": "0.79.0",
+  "datum": "2026-10-27",
+  "titel": "Kinder in Häuser mit Kinderabteilung",
+  "punkte": [
+   "Kinder kommen nur in Häuser mit Kinderabteilung – dazu, was sonst nötig ist (z. B. Unfall, Neurochirurgie)",
+   "Häuser ohne Kinderabteilung erscheinen als gekennzeichnetes Ausweich-Haus",
+   "Geburt und Schwangerschaft weiter in die Geburtshilfe wie bei Erwachsenen",
+   "Altersgruppen: unter 1 Jahr, 1–17, ab 18"
+  ]
+ },
+ {
   "version": "0.78.0",
   "datum": "2026-10-27",
   "titel": "Krankenhaus-Zuweisung nach Symptom",

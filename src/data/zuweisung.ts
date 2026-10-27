@@ -20,8 +20,8 @@ export const DRINGLICHKEITEN: { id: Dringlichkeit; name: string }[] = [
 export const DRINGLICHKEIT_NAME: Record<Dringlichkeit, string> = { 10: "stabil", 20: "dringend", 30: "Schockraum/Intensiv" };
 
 export const ALTERSGRUPPEN: { id: Altersgruppe; name: string; text: string }[] = [
-  { id: "kleinkind", name: "Kleinkind", text: "0 – 4,99" },
-  { id: "kind", name: "Kind", text: "5 – 17,99" },
+  { id: "kleinkind", name: "Kleinkind/Neugeboren", text: "unter 1" },
+  { id: "kind", name: "Kind", text: "1 – 17" },
   { id: "erwachsener", name: "Erwachsener", text: "18+" },
 ];
 const ALTER_KURZ: Record<Altersgruppe, string> = { kleinkind: "k", kind: "j", erwachsener: "e" };
@@ -60,7 +60,7 @@ export function symptom(id: string | null | undefined): Symptom | undefined {
 /** Altersgruppe aus dem Alter (unbekannt = Erwachsener) */
 export function altersgruppeVon(alter: number | null | undefined): Altersgruppe {
   if (alter === null || alter === undefined || !Number.isFinite(alter)) return "erwachsener";
-  return alter < 5 ? "kleinkind" : alter < 18 ? "kind" : "erwachsener";
+  return alter < 1 ? "kleinkind" : alter < 18 ? "kind" : "erwachsener";
 }
 
 /** Erlaubte Dringlichkeit, die der gewünschten am nächsten liegt (bei Gleichstand die höhere) */
@@ -98,9 +98,13 @@ export type ZuweisungBuchung = Buchung & {
   schock: "trauma" | "intern" | null;
   platz: string | null;
   kind: boolean;
+  /** Kinder: Häuser, die es nur für Erwachsene können (Ausweich, gekennzeichnet) */
+  ausweichKind: string[][] | null;
   pvz: boolean;
   art: "intern" | "trauma";
 };
+
+const KINDER_AK = ["ak_kinder_jugendheilkunde", "ak_kinder_intensiv", "ak_kinderchirurgie", "ak_neonatologie", "ak_kinder_jugend_psychiatrie"];
 
 const cache = new Map<string, ZuweisungBuchung>();
 
@@ -113,18 +117,23 @@ export function zuweisungBuchung(id: string): ZuweisungBuchung | undefined {
   const { s, d, a } = z;
   const kind = a !== "erwachsener";
   let optionen: string[][] = (d === 30 ? (s.s ?? s.o) : (s.o ?? s.s)) ?? [["ak_notaufnahme"]];
-  if (kind && s.kinder !== false) {
-    if (s.kinder) optionen = s.kinder;
-    else {
-      // Kinder: bevorzugt ein Haus mit Kinder-Abteilung, das auch das Nötige dahinter hat (z. B. Neurochirurgie)
-      const mit = (x: string) => optionen.map((alt) => [...new Set([...alt, x])]);
-      if (s.art === "intern") optionen = d === 30 ? [...mit("ak_kinder_intensiv"), ...mit("ak_kinder_jugendheilkunde"), ...optionen] : [...mit("ak_kinder_jugendheilkunde"), ...optionen];
-      else if (d === 30) optionen = [...mit("ak_kinderchirurgie"), ...mit("ak_kinder_intensiv"), ...optionen];
-    }
-  }
   // Schockraum/Intensiv ohne besonderen Platz: Haus braucht einen Schockraum der passenden Art
   const schockraum = d === 30 && !s.platz;
-  if (schockraum) optionen = optionen.map((alt) => (alt.includes("ak_schockraum") ? alt : [...alt, "ak_schockraum"]));
+  const mitSchockraum = (l: string[][]) => (schockraum ? l.map((alt) => (alt.includes("ak_schockraum") ? alt : [...alt, "ak_schockraum"])) : l);
+  let ausweichKind: string[][] | null = null;
+  if (kind && s.kinder !== false) {
+    // Kinder (alle Dringlichkeiten gleich): passend nur mit Kinder-Abteilung – dazu, was sonst nötig ist (z. B. Unfall + Kinder,
+    // Neurochirurgie + Kinder). Häuser, die es nur für Erwachsene können, sind gekennzeichnete Ausweich-Häuser.
+    const basis = s.kinder ? s.kinder : optionen;
+    const istKind = (alt: string[]) => alt.some((x) => KINDER_AK.includes(x));
+    const mit = (x: string) => basis.filter((alt) => !istKind(alt)).map((alt) => [...new Set([...alt, x])]);
+    const eigene = basis.filter(istKind);
+    const intensiv = d === 30 ? (a === "kleinkind" ? [...mit("ak_kinder_intensiv"), ...mit("ak_neonatologie")] : mit("ak_kinder_intensiv")) : [];
+    const kinder = s.art === "trauma" ? [...mit("ak_kinderchirurgie"), ...mit("ak_kinder_jugendheilkunde")] : mit("ak_kinder_jugendheilkunde");
+    ausweichKind = mitSchockraum(basis.filter((alt) => !istKind(alt)));
+    optionen = [...eigene, ...intensiv, ...kinder];
+  }
+  optionen = mitSchockraum(optionen);
   const b: ZuweisungBuchung = {
     id,
     kategorie: s.art === "trauma" ? "Trauma" : s.kategorie,
@@ -135,6 +144,7 @@ export function zuweisungBuchung(id: string): ZuweisungBuchung | undefined {
     schock: schockraum && s.schock !== "egal" ? (s.art === "trauma" ? "trauma" : "intern") : null,
     platz: s.platz,
     kind,
+    ausweichKind: ausweichKind?.length ? ausweichKind : null,
     pvz: s.pvz && d === 10,
     art: s.art,
   };

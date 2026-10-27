@@ -87,7 +87,7 @@
    "zeitkritisch": false,
    "platz": null,
    "ausweich": "intern",
-   "kinder": false,
+   "kinder": null,
    "pvz": false,
    "schock": null
   },
@@ -190,7 +190,7 @@
    "zeitkritisch": false,
    "platz": null,
    "ausweich": null,
-   "kinder": false,
+   "kinder": null,
    "pvz": false,
    "schock": null
   },
@@ -244,7 +244,7 @@
    "zeitkritisch": false,
    "platz": null,
    "ausweich": "intern",
-   "kinder": false,
+   "kinder": null,
    "pvz": false,
    "schock": null
   },
@@ -274,7 +274,7 @@
    "zeitkritisch": false,
    "platz": null,
    "ausweich": "intern",
-   "kinder": false,
+   "kinder": null,
    "pvz": false,
    "schock": null
   },
@@ -308,7 +308,7 @@
    "zeitkritisch": true,
    "platz": null,
    "ausweich": null,
-   "kinder": false,
+   "kinder": null,
    "pvz": false,
    "schock": null
   },
@@ -336,7 +336,7 @@
    "zeitkritisch": false,
    "platz": null,
    "ausweich": "intern",
-   "kinder": false,
+   "kinder": null,
    "pvz": false,
    "schock": null
   },
@@ -362,7 +362,7 @@
    "zeitkritisch": false,
    "platz": null,
    "ausweich": "intern",
-   "kinder": false,
+   "kinder": null,
    "pvz": false,
    "schock": null
   },
@@ -397,7 +397,7 @@
    "zeitkritisch": false,
    "platz": null,
    "ausweich": null,
-   "kinder": false,
+   "kinder": null,
    "pvz": false,
    "schock": null
   },
@@ -503,7 +503,7 @@
    "zeitkritisch": false,
    "platz": null,
    "ausweich": "intern",
-   "kinder": false,
+   "kinder": null,
    "pvz": false,
    "schock": null
   },
@@ -537,7 +537,7 @@
    "zeitkritisch": false,
    "platz": null,
    "ausweich": null,
-   "kinder": false,
+   "kinder": null,
    "pvz": false,
    "schock": null
   },
@@ -645,7 +645,7 @@
    "zeitkritisch": false,
    "platz": null,
    "ausweich": null,
-   "kinder": false,
+   "kinder": null,
    "pvz": false,
    "schock": null
   },
@@ -744,7 +744,7 @@
    "zeitkritisch": true,
    "platz": "herzkatheter",
    "ausweich": null,
-   "kinder": false,
+   "kinder": null,
    "pvz": false,
    "schock": null
   },
@@ -812,7 +812,7 @@
    "zeitkritisch": true,
    "platz": "herzkatheter",
    "ausweich": null,
-   "kinder": false,
+   "kinder": null,
    "pvz": false,
    "schock": null
   },
@@ -843,7 +843,7 @@
    "zeitkritisch": false,
    "platz": null,
    "ausweich": "intern",
-   "kinder": false,
+   "kinder": null,
    "pvz": false,
    "schock": null
   },
@@ -874,7 +874,7 @@
    "zeitkritisch": false,
    "platz": null,
    "ausweich": "intern",
-   "kinder": false,
+   "kinder": null,
    "pvz": false,
    "schock": null
   },
@@ -1051,7 +1051,7 @@
    "zeitkritisch": false,
    "platz": null,
    "ausweich": "intern",
-   "kinder": false,
+   "kinder": null,
    "pvz": false,
    "schock": null
   },
@@ -1109,7 +1109,7 @@
    "zeitkritisch": true,
    "platz": null,
    "ausweich": null,
-   "kinder": false,
+   "kinder": null,
    "pvz": false,
    "schock": null
   },
@@ -1289,7 +1289,7 @@
    "zeitkritisch": true,
    "platz": null,
    "ausweich": null,
-   "kinder": false,
+   "kinder": null,
    "pvz": false,
    "schock": null
   },
@@ -1317,7 +1317,7 @@
    "zeitkritisch": false,
    "platz": null,
    "ausweich": "intern",
-   "kinder": false,
+   "kinder": null,
    "pvz": false,
    "schock": null
   },
@@ -1405,7 +1405,7 @@
    "zeitkritisch": false,
    "platz": null,
    "ausweich": null,
-   "kinder": false,
+   "kinder": null,
    "pvz": false,
    "schock": null
   },
@@ -1434,7 +1434,7 @@
    "zeitkritisch": false,
    "platz": null,
    "ausweich": "intern",
-   "kinder": false,
+   "kinder": null,
    "pvz": false,
    "schock": null
   },
@@ -1774,7 +1774,7 @@
    "zeitkritisch": false,
    "platz": "stroke_unit",
    "ausweich": null,
-   "kinder": false,
+   "kinder": null,
    "pvz": false,
    "schock": null
   },
@@ -1806,7 +1806,7 @@
    "zeitkritisch": true,
    "platz": "stroke_unit",
    "ausweich": null,
-   "kinder": false,
+   "kinder": null,
    "pvz": false,
    "schock": null
   },
@@ -1843,7 +1843,7 @@
    "zeitkritisch": true,
    "platz": "stroke_unit",
    "ausweich": null,
-   "kinder": false,
+   "kinder": null,
    "pvz": false,
    "schock": null
   },
@@ -2027,7 +2027,7 @@
    "zeitkritisch": false,
    "platz": null,
    "ausweich": "intern",
-   "kinder": false,
+   "kinder": null,
    "pvz": false,
    "schock": null
   },
@@ -2118,7 +2118,7 @@
    "zeitkritisch": false,
    "platz": null,
    "ausweich": null,
-   "kinder": false,
+   "kinder": null,
    "pvz": false,
    "schock": null
   },
@@ -2355,7 +2355,7 @@
    "zeitkritisch": false,
    "platz": null,
    "ausweich": null,
-   "kinder": false,
+   "kinder": null,
    "pvz": false,
    "schock": null
   },
@@ -2383,7 +2383,7 @@
    "zeitkritisch": false,
    "platz": null,
    "ausweich": null,
-   "kinder": false,
+   "kinder": null,
    "pvz": false,
    "schock": null
   },
@@ -2415,7 +2415,7 @@
    "zeitkritisch": false,
    "platz": null,
    "ausweich": "intern",
-   "kinder": false,
+   "kinder": null,
    "pvz": false,
    "schock": null
   },
@@ -2451,7 +2451,7 @@
    "zeitkritisch": false,
    "platz": null,
    "ausweich": "intern",
-   "kinder": false,
+   "kinder": null,
    "pvz": false,
    "schock": null
   },
@@ -2711,7 +2711,7 @@
    "zeitkritisch": true,
    "platz": null,
    "ausweich": null,
-   "kinder": false,
+   "kinder": null,
    "pvz": false,
    "schock": null
   },
@@ -3778,7 +3778,7 @@
    "zeitkritisch": false,
    "platz": null,
    "ausweich": "intern",
-   "kinder": false,
+   "kinder": null,
    "pvz": false,
    "schock": null
   },
@@ -3804,7 +3804,7 @@
    "zeitkritisch": false,
    "platz": null,
    "ausweich": "intern",
-   "kinder": false,
+   "kinder": null,
    "pvz": false,
    "schock": null
   },
@@ -3830,7 +3830,7 @@
    "zeitkritisch": false,
    "platz": null,
    "ausweich": "intern",
-   "kinder": false,
+   "kinder": null,
    "pvz": false,
    "schock": null
   },
@@ -3862,7 +3862,7 @@
    "zeitkritisch": false,
    "platz": null,
    "ausweich": "intern",
-   "kinder": false,
+   "kinder": null,
    "pvz": false,
    "schock": null
   }

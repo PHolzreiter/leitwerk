@@ -1,5 +1,12 @@
 # Änderungen
 
+## 0.79.0 – Kinder in Häuser mit Kinderabteilung
+- **Kinder nur in Häuser mit Kinderabteilung:** Für Kinder passt ein Haus nur, wenn es das Nötige auch für Kinder hat – z. B. Unfallambulanz und Kinderabteilung, bei Schädel-Hirn-Trauma Neurochirurgie und Kinderabteilung. Gilt für alle Dringlichkeiten gleich
+- Häuser, die es nur für Erwachsene können, erscheinen als **„⚠ Ausweich – keine Kinderabteilung“** (gestrichelt) und werden nur genommen, wenn kein passendes Haus offen ist
+- Ausnahme: Geburt und Schwangerschaft gehen wie bei Erwachsenen in die Geburtshilfe
+- **Altersgruppen neu:** Kleinkind/Neugeboren (unter 1 Jahr), Kind (1–17), Erwachsener (ab 18)
+- Fenster „KH-Aufnahme“: Mit Altersgruppe „Kind“ zeigt ~ jetzt, wo ein Haus Kinder nur als Ausweich nimmt
+
 ## 0.78.0 – Krankenhaus-Zuweisung nach Symptom, Altersgruppe und Dringlichkeit
 - **Neue Zuweisung bei Notfalleinsätzen** (nicht bei Krankentransporten und Überstellungen): Jeder Patient hat ein **Symptom** (121 Symptome in Gruppen, mit Suchbegriffen), eine **Altersgruppe** (Kleinkind 0–4, Kind 5–17, Erwachsener) und eine **Dringlichkeit** (stabil, dringend, Schockraum/Intensiv)
 - **KH buchen in der Einsatzmaske:** Symptom suchen (auch mit anderen Begriffen, z. B. „Herzinfarkt“) → Altersgruppe → Dringlichkeit (nur die möglichen) → die **drei nächsten passenden Häuser, die gerade aufnehmen**, mit freien Plätzen. Jedes andere Haus bleibt wählbar
