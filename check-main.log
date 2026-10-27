@@ -1,6 +1,6 @@
 ### npm install
 
-added 51 packages, and audited 52 packages in 7s
+added 53 packages, and audited 54 packages in 9s
 
 9 packages are looking for funding
   run `npm fund` for details
@@ -43,17 +43,17 @@ computing gzip size...
 [2mdist/[22m[2massets/[22m[32mhintergrund-D-OnAX-s.jpg     [39m[1m[2m  422.99 kB[22m[1m[22m
 [2mdist/[22m[2massets/[22m[32meinsatzstellen-BKMVXWRH.csv  [39m[1m[2m2,885.41 kB[22m[1m[22m
 [2mdist/[22m[2massets/[22m[35mindex-eImzBt3G.css           [39m[1m[2m  377.36 kB[22m[1m[22m[2m │ gzip:    55.39 kB[22m
-[2mdist/[22m[2massets/[22m[36mindex-CCYTWSdS.js            [39m[1m[2m    0.54 kB[22m[1m[22m[2m │ gzip:     0.26 kB[22m
-[2mdist/[22m[2massets/[22m[36mwebviewWindow-CMiE9xB8.js    [39m[1m[2m    1.78 kB[22m[1m[22m[2m │ gzip:     0.79 kB[22m
-[2mdist/[22m[2massets/[22m[36mwebview-DcvipBiH.js          [39m[1m[2m    3.34 kB[22m[1m[22m[2m │ gzip:     1.13 kB[22m
-[2mdist/[22m[2massets/[22m[36mwindow-cpGZlfKO.js           [39m[1m[2m   14.32 kB[22m[1m[22m[2m │ gzip:     3.56 kB[22m
-[2mdist/[22m[2massets/[22m[36mindex-Dr1dDNBh.js            [39m[1m[33m5,324.16 kB[39m[22m[2m │ gzip: 1,457.16 kB[22m
+[2mdist/[22m[2massets/[22m[36mindex-CjYkHdGl.js            [39m[1m[2m    0.54 kB[22m[1m[22m[2m │ gzip:     0.26 kB[22m
+[2mdist/[22m[2massets/[22m[36mwebviewWindow-C09pO8nF.js    [39m[1m[2m    1.78 kB[22m[1m[22m[2m │ gzip:     0.79 kB[22m
+[2mdist/[22m[2massets/[22m[36mwebview-B9KJ5Tt0.js          [39m[1m[2m    3.34 kB[22m[1m[22m[2m │ gzip:     1.13 kB[22m
+[2mdist/[22m[2massets/[22m[36mwindow-wEsUytWH.js           [39m[1m[2m   14.32 kB[22m[1m[22m[2m │ gzip:     3.56 kB[22m
+[2mdist/[22m[2massets/[22m[36mindex-CO7Rgjka.js            [39m[1m[33m5,324.29 kB[39m[22m[2m │ gzip: 1,457.23 kB[22m
 [33m
 (!) Some chunks are larger than 2000 kB after minification. Consider:
 - Using dynamic import() to code-split the application
 - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
 - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.[39m
-[32m✓ built in 5.97s[39m
+[32m✓ built in 7.72s[39m
 ### npx tauri icon app-icon.png
         Appx Creating StoreLogo.png
         Appx Creating Square30x30Logo.png
@@ -135,8 +135,8 @@ computing gzip size...
 [1m[92m    Checking[0m openssl-probe v0.2.2
 [1m[92m    Checking[0m rustls-native-certs v0.8.5
 [1m[92m    Checking[0m gethostname v1.1.0
-[1m[92m   Compiling[0m sherpa-rs-sys v0.6.8
 [1m[92m    Checking[0m x11rb v0.13.2
+[1m[92m   Compiling[0m sherpa-rs-sys v0.6.8
 [1m[92m    Checking[0m rustls-platform-verifier v0.7.1
 [1m[92m    Checking[0m tempfile v3.27.0
 [1m[92m    Checking[0m global-hotkey v0.8.0
@@ -149,9 +149,9 @@ computing gzip size...
 [1m[92m   Compiling[0m tauri v2.12.5
 [1m[92m   Compiling[0m tauri-macros v2.7.4
 [1m[92m   Compiling[0m tauri-plugin-fs v2.7.1
+[1m[92m   Compiling[0m tauri-plugin-dialog v2.8.3
 [1m[92m   Compiling[0m tauri-plugin-global-shortcut v2.4.1
 [1m[92m   Compiling[0m tauri-plugin-updater v2.14.0
-[1m[92m   Compiling[0m tauri-plugin-dialog v2.8.3
 [1m[92m   Compiling[0m leitwerk v0.80.0 (/home/runner/work/leitwerk/leitwerk/src-tauri)
 [1m[92m    Checking[0m sherpa-rs v0.6.8
 [1m[33mwarning[0m[1m: unused import: `cpal::Sample`[0m
@@ -163,7 +163,7 @@ computing gzip size...
     [1m[94m= [0m[1mnote[0m: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
 
 [1m[33mwarning[0m: `leitwerk` (lib) generated 1 warning
-[1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 16.29s
+[1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 22.28s
 ### python3 tools/build_default_data.py
 data/default/dienststellen.csv: 863 Zeilen
 data/default/fahrzeuge.csv: 681 Zeilen
