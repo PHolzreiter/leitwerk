@@ -204,8 +204,8 @@ export interface Settings {
   schwere?: { harmlos: number; mittel: number; kritisch: number };
   /** wonach die Notfälle verteilt werden: Versorgungsstufe des Codes (Statistik) oder Schwere vor Ort */
   verteilungNach?: "stufe" | "schwere";
-  /** Verteilung nach Versorgungsstufe (Anteile in %), z. B. { "BLS gelb": 19, … } */
-  stufenVerteilung?: Record<string, number>;
+  /** Notfälle je Stunde und Versorgungsstufe für ganz NÖ (je Stufe 24 Werte); fehlt eine Stufe = Statistik 2025 */
+  stufenStunden?: Record<string, number[]>;
   nahGeschwindigkeit: number;
   /** veraltet (bis v0.8), ersetzt durch ausrueck */
   nahStartzeitSek: number;

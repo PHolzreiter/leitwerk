@@ -17,7 +17,8 @@ import { buildAppSection, buildPacksSection } from "./packsView";
 import { buildKiSection } from "./kiView";
 import { el, esc, toast } from "./dom";
 import { abfrageAnsicht, setzeAbfrageAnsicht } from "./abfrageAnsicht";
-import { STUFEN_STANDARD } from "../abfrage/faelle";
+import { STUFEN_INFO, stufenAnteile, stufenKurven } from "../sim/stufenKurven";
+import { stufenKurvenOeffnen } from "./stufenKurvenDialog";
 
 const STATUS_BEDEUTUNG: Record<string, string> = {
   freiWache: "frei auf der Wache",
@@ -190,28 +191,31 @@ export function createSettingsView(container: HTMLElement, teil: "simulation" | 
     const vnSel = el("select", { class: "set-verteilung" }) as HTMLSelectElement;
     for (const [v, l] of [["stufe", "Versorgungsstufe (Statistik)"], ["schwere", "Schwere (harmlos/mittel/kritisch)"]]) vnSel.appendChild(el("option", { value: v }, l));
     vnSel.value = draft.verteilungNach ?? "stufe";
-    const stBox = el("div", { class: "row-btns set-stufen" });
-    const stufen: Record<string, number> = { ...STUFEN_STANDARD, ...(draft.stufenVerteilung ?? {}) };
-    for (const k of Object.keys(STUFEN_STANDARD)) {
-      const i = num(stufen[k], "any");
-      i.style.width = "72px";
-      i.dataset.stufe = k;
-      i.addEventListener("change", () => {
-        stufen[k] = Math.max(0, Number(i.value) || 0);
-        draft.stufenVerteilung = { ...stufen };
-      });
-      const paar = el("span", { class: "set-stufe-paar" });
-      paar.append(el("span", { class: "muted small" }, k), i);
-      paar.style.cssText = "display:inline-flex;align-items:center;justify-content:space-between;gap:6px;width:190px";
-      stBox.appendChild(paar);
-    }
-    const stReset = el("button", { class: "btn small", type: "button" }, "Statistik");
-    stReset.addEventListener("click", () => {
-      draft.stufenVerteilung = undefined;
-      for (const i of stBox.querySelectorAll<HTMLInputElement>("input[data-stufe]")) i.value = String(STUFEN_STANDARD[i.dataset.stufe!]);
-      Object.assign(stufen, STUFEN_STANDARD);
-    });
-    stBox.appendChild(stReset);
+    const stBox = el("div", { class: "set-stufen" });
+    const stZeichnen = () => {
+      stBox.innerHTML = "";
+      const k = stufenKurven(draft.stufenStunden);
+      const anteile = stufenAnteile(k);
+      const tag = Object.values(k).reduce((t, a) => t + a.reduce((x, y) => x + y, 0), 0);
+      const zeilen = el("div", { class: "set-stufen-liste" });
+      for (const s of STUFEN_INFO) {
+        const z = el("span", { class: "set-stufe-paar", "data-stufe": s.name });
+        const p = el("span", { class: "skd-punkt" });
+        p.style.background = s.farbe;
+        const a = anteile[s.name] ?? 0;
+        z.append(p, el("span", { class: "muted small" }, s.name), el("span", { class: "skd-mono small" }, `${a.toFixed(a < 0.1 ? 4 : 1).replace(".", ",")} %`));
+        zeilen.appendChild(z);
+      }
+      const b = el("button", { class: "btn small set-stufen-kurven", type: "button" }, "Kurven bearbeiten …");
+      b.addEventListener("click", () =>
+        stufenKurvenOeffnen(draft.stufenStunden, draft.funkgruppe ?? "NÖ-03", (neu) => {
+          draft.stufenStunden = neu;
+          stZeichnen();
+        }),
+      );
+      stBox.append(zeilen, el("div", { class: "muted small" }, `${Math.round(tag)} Notfälle/Tag in ganz NÖ${draft.stufenStunden ? " (eigene Kurven)" : " (Statistik 2025)"}`), b);
+    };
+    stZeichnen();
     const sichtbar = () => {
       stBox.style.display = vnSel.value === "stufe" ? "" : "none";
       swBox.style.opacity = vnSel.value === "stufe" ? "0.5" : "";
@@ -224,7 +228,7 @@ export function createSettingsView(container: HTMLElement, teil: "simulation" | 
     aGrid.append(
       el("label", { title: "Versorgungsstufe: so viele Notrufe enden in Telemedizin, BLS grün … ALS rot wie in der Statistik (gilt, wenn das Codesystem diese Stufen kennt; sonst zählt die Schwere). Schwere: nach dem Zustand vor Ort." }, "Verteilung der Notfälle nach"),
       vnSel,
-      el("label", { title: "Anteile der Versorgungsstufen in Prozent – „Statistik“ setzt die Werte von 2025" }, "Versorgungsstufen (%)"),
+      el("label", { title: "Wie viele Notfälle je Versorgungsstufe über den Tag kommen – „Kurven bearbeiten“ öffnet die 24 Stunden je Stufe zum Ziehen" }, "Versorgungsstufen"),
       stBox,
     );
     const rvSel = el("select", { class: "set-revers" }) as HTMLSelectElement;

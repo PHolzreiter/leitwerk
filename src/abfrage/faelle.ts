@@ -1644,22 +1644,6 @@ export function fallPaare(
     });
 }
 
-/** Verteilung der Versorgungsstufen (Statistik 2025, Anteile in %) – Standard für „Verteilung nach Versorgungsstufe“ */
-export const STUFEN_STANDARD: Record<string, number> = {
-  Telemedizin: 9.9,
-  "BLS grün": 1.2,
-  "BLS gelb": 19.0,
-  "BLS rot": 14.4,
-  "ALS grün": 17.0,
-  "ALS gelb": 12.6,
-  "ALS orange": 6.9,
-  "ALS rot": 0.7,
-  "BLS/ALS aufwertbar": 8.9,
-  "Akuttransport grün": 8.6,
-  // 5 von 287.303 Einsätzen – noch ohne eigene Fälle; sobald es Großschadensfälle gibt, greift der Anteil
-  Großunfall: 0.0017,
-};
-
 /**
  * Fall und Variante zusammen ziehen: zuerst die Schwere nach der Verteilung (z. B. 35/50/15),
  * dann unter den passenden Fällen nach Häufigkeit × Wahrscheinlichkeit der Variante.

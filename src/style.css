@@ -3948,3 +3948,34 @@ input.ausr-zahl { width: 64px !important; min-width: 0; }
   background: color-mix(in srgb, var(--blue) 20%, transparent);
   color: var(--text);
 }
+
+/* Notfälle je Versorgungsstufe über den Tag (Einstellungen) */
+.dlg:has(.skd) { width: min(1200px, 100%); }
+.skd { --skd-raster: color-mix(in srgb, var(--line) 70%, transparent); --skd-grund: var(--panel); display: flex; flex-direction: column; gap: 12px; }
+.skd-haupt { display: flex; gap: 16px; align-items: flex-start; }
+.skd-liste { width: 280px; flex-shrink: 0; display: flex; flex-direction: column; gap: 2px; }
+.skd-stufe { display: grid; grid-template-columns: 14px 1fr 64px 40px; align-items: center; gap: 8px; min-height: 40px; padding: 0 10px; border: 1px solid transparent; border-radius: 7px; background: transparent; color: inherit; text-align: left; cursor: pointer; font: inherit; font-size: 13px; }
+.skd-stufe.an { background: color-mix(in srgb, var(--line) 35%, transparent); font-weight: 600; }
+.skd-stufe:hover { background: color-mix(in srgb, var(--line) 25%, transparent); }
+.skd-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.skd-pct, .skd-stufe .skd-mono { text-align: right; font-size: 12px; }
+.skd-punkt { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+.skd-punkt.gross { width: 16px; height: 16px; }
+.skd-rechts { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.skd-titel { font-size: 16px; display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; }
+.skd-knoepfe, .skd-stunde { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.skd-stunde { padding: 8px 10px; border-radius: 8px; background: color-mix(in srgb, var(--line) 20%, transparent); }
+.skd-andere { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
+.skd-mono { font-family: ui-monospace, "IBM Plex Mono", monospace; }
+.skd-wert { min-width: 44px; text-align: center; font-weight: 600; }
+.skd-diagramm { position: relative; display: flex; gap: 6px; }
+.skd-yachse { position: relative; width: 30px; flex-shrink: 0; }
+.skd-yachse span { position: absolute; right: 0; transform: translateY(-50%); font-size: 11px; color: var(--muted, #888); font-family: ui-monospace, monospace; }
+.skd-svg { flex: 1; width: 100%; aspect-ratio: 760 / 360; border-left: 1px solid var(--line); border-bottom: 1px solid var(--line); cursor: crosshair; touch-action: none; user-select: none; }
+.skd-xachse { position: relative; height: 16px; margin-left: 36px; }
+.skd-xachse span { position: absolute; transform: translateX(-50%); font-size: 11px; color: var(--muted, #888); font-family: ui-monospace, monospace; }
+.skd-hinweis { margin-top: 2px; }
+@media (max-width: 760px) { .skd-haupt { flex-direction: column; } .skd-liste { width: 100%; } }
+.set-stufen { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.set-stufen-liste { display: grid; grid-template-columns: repeat(2, minmax(180px, 1fr)); gap: 2px 16px; }
+.set-stufe-paar { display: grid; grid-template-columns: 14px 1fr auto; align-items: center; gap: 6px; }

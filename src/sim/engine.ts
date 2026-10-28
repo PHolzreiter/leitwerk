@@ -48,6 +48,7 @@ import { personaWaehlen } from "../abfrage/persona";
 import { alleOrte, kategorienFuerOrtArt, ortGewicht, ortKategorie, poiKategorien } from "../data/orte";
 import { ortAnStelle, ortPartner } from "../data/ortProfile";
 import { ortRegeln } from "../abfrage/ortRegeln";
+import { FUNKGRUPPE_ANTEIL, stufenAnteile, stufenKurven } from "./stufenKurven";
 import { katKtOffen, katOffen, ortArtOffen } from "../data/ortZeiten";
 import { stellen, stellenInGruppe, stellenLaden, stelleBeschreibung, type Einsatzstelle } from "../data/einsatzstellen";
 import { bezugFuer, fuellen, ORT_IM_FREIEN, stimmungAusVerlauf, szenarioBauen, altersPlausibel, sichtUnbekannt, vorlageFest, vorlageWaehlen, type AnruferTyp, type OrtArt, type OrtModus, type Szenario } from "../abfrage/szenario";
@@ -142,7 +143,7 @@ import { FUNKGRUPPEN, funkgruppe, funkgruppeVon, inFunkgruppe, mitteVon, type Fu
 import { echtwetterLaden } from "./echtwetter";
 import { sekZufall } from "./sek";
 import { bedarf, ereignisseEinplanen, istStillstand, lageAusFall, lageErzeugen, lagemeldungText, patientText, rtwBedarf, type Lage } from "./lage";
-import { alleFaelle, anleitungAus, fallPaare, fallVariante, fallUndVariante, fallVorlage, STUFEN_STANDARD, varianteWaehlen, type FallVariante, type FallVorlage } from "../abfrage/faelle";
+import { alleFaelle, anleitungAus, fallPaare, fallVariante, fallUndVariante, fallVorlage, varianteWaehlen, type FallVariante, type FallVorlage } from "../abfrage/faelle";
 import { nachrichtArt } from "../abfrage/runde";
 
 const MIN = 60_000;
@@ -3601,12 +3602,29 @@ export class Simulation {
   private runGenerator(dt: number): void {
     if (!this.settings.generatorAktiv) return;
     const h = new Date(this.state.zeit).getHours();
+    // Verteilung nach Versorgungsstufe: Aufkommen aus den Stufenkurven (ganz NÖ × Anteil der Funkgruppe)
+    if (this.stufenZiel()) {
+      const kurven = stufenKurven(this.settings.stufenStunden);
+      const anteil = FUNKGRUPPE_ANTEIL[this.funkgruppe().id] ?? 1 / 6;
+      const f = AUFKOMMEN_FAKTOR[this.settings.aufkommenStufe ?? "normal"];
+      for (const [stufe, a] of Object.entries(kurven)) {
+        const rate = (a[h] ?? 0) * anteil * f;
+        if (rate > 0 && Math.random() < (rate * dt) / 3_600_000) {
+          this.stufeWunsch = stufe;
+          const k: Kategorie = /rot|orange|großunfall/i.test(stufe) ? "kritisch" : /gelb|aufwertbar/i.test(stufe) ? "dringend" : "stabil";
+          void this.generiere(k).finally(() => {
+            if (this.stufeWunsch === stufe) this.stufeWunsch = null;
+          });
+        }
+      }
+    } else {
     const proStunde = (this.settings.stunden?.[h]?.rd ?? 6) * AUFKOMMEN_FAKTOR[this.settings.aufkommenStufe ?? "normal"];
     const anteile = this.settings.aufkommen;
     const summe = (["stabil", "dringend", "kritisch"] as Kategorie[]).reduce((a, k) => a + Math.max(0, anteile[k] ?? 0), 0) || 1;
     for (const k of ["stabil", "dringend", "kritisch"] as Kategorie[]) {
       const rate = (proStunde * Math.max(0, anteile[k] ?? 0)) / summe;
       if (Math.random() < (rate * dt) / 3_600_000) void this.generiere(k);
+    }
     }
     // ACN: Akutpflege zu Hause, je Standort (dessen ACN gerade Dienst hat) einige pro Tag
     const acnRate = this.settings.acnProTag ?? 2;
@@ -4056,7 +4074,7 @@ export class Simulation {
       const wunsch = this.fallWunsch;
       // ohne Wunsch: zuerst die Versorgungsstufe (bzw. Schwere) nach der Verteilung in den Einstellungen, dann Fall und Variante
       let zielStufe: string | null = null;
-      const nachStufe = !wunsch && stufenZiel ? this.nachStufeZiehen(ctx, schema, stufenZiel) : null;
+      const nachStufe = !wunsch && stufenZiel ? this.nachStufeZiehen(ctx, schema, stufenZiel, this.stufeWunsch) : null;
       if (nachStufe) zielStufe = nachStufe.stufe;
       const gezogen = wunsch ? null : (nachStufe ?? fallUndVariante(ctx, this.settings.schwere ?? { harmlos: 35, mittel: 50, kritisch: 15 }, this.settings.komplikationen ?? "normal", Math.random));
       const f = wunsch ? fallVorlage(wunsch.id) : (gezogen?.f ?? null);
@@ -4096,10 +4114,13 @@ export class Simulation {
    */
   private stufenZiel(): Record<string, number> | null {
     if (this.settings.verteilungNach === "schwere") return null;
-    const ziel = this.settings.stufenVerteilung ?? STUFEN_STANDARD;
+    const ziel = stufenAnteile(stufenKurven(this.settings.stufenStunden));
     const da = new Set(allCodes().map((c) => c.stufe));
     return Object.keys(ziel).filter((k) => da.has(k)).length >= 3 ? ziel : null;
   }
+
+  /** Stufe, die der Generator für den nächsten Notruf gezogen hat (Kurve der aktuellen Stunde) */
+  private stufeWunsch: string | null = null;
 
   private stufenCache: { schema: Schema; anzahl: number; m: Map<string, Record<string, number>> } | null = null;
 
@@ -4129,7 +4150,7 @@ export class Simulation {
   }
 
   /** Versorgungsstufe nach dem Ziel ziehen, dann einen Fall, der dort landet (Häufigkeit × Anteil) */
-  private nachStufeZiehen(ctx: { jahreszeit: string; stunde: number; temp: number; glatt: boolean }, schema: Schema, ziel: Record<string, number>): { f: FallVorlage; v: FallVariante; stufe: string } | null {
+  private nachStufeZiehen(ctx: { jahreszeit: string; stunde: number; temp: number; glatt: boolean }, schema: Schema, ziel: Record<string, number>, erzwungen?: string | null): { f: FallVorlage; v: FallVariante; stufe: string } | null {
     const paare = fallPaare(ctx, this.settings.komplikationen ?? "normal").map((p) => ({ ...p, st: this.stufenSchaetzung(schema, p.f, p.v) }));
     const moeglich = Object.entries(ziel).filter(([k, w]) => w > 0 && paare.some((p) => (p.st[k] ?? 0) > 0));
     const summe = moeglich.reduce((x, [, w]) => x + w, 0);
@@ -4140,6 +4161,8 @@ export class Simulation {
       stufe = k;
       break;
     }
+    // vom Generator vorgegebene Stufe (Kurve der aktuellen Stunde) – wenn es dafür Fälle gibt
+    if (erzwungen && moeglich.some(([k]) => k === erzwungen)) stufe = erzwungen;
     const kand = paare.filter((p) => (p.st[stufe] ?? 0) > 0);
     const ges = kand.reduce((x, p) => x + p.w * p.st[stufe], 0);
     let q = Math.random() * ges;

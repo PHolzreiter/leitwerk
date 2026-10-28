@@ -1,5 +1,11 @@
 # Änderungen
 
+## 0.89.0 – Notfälle je Versorgungsstufe über den Tag
+- **Kurven je Versorgungsstufe:** Einstellungen → Einsatzaufkommen → Versorgungsstufen → „Kurven bearbeiten …“. Links die elf Stufen (Telemedizin … ALS rot, Großunfall) mit Anteil und Notfällen pro Tag, rechts die 24 Stunden der gewählten Stufe als Punkte – nach oben oder unten ziehen, auch über mehrere Stunden „malen“. Dazu Grundniveau ±, Kurve ±10 %, Glätten, Zurücksetzen und „Alle auf Statistik“
+- Die Werte gelten für ganz NÖ (Standard: Zahlen von 2025); im Spiel kommt der Anteil deiner Funkgruppe (z. B. NÖ-03 ≈ 15 %, NÖ-01 ≈ 25 %, NÖ-02 ≈ 10 %), dazu wie bisher ruhig/normal/stressig
+- Damit kommen Notfälle zu jeder Stunde so oft und in der Mischung, wie es die Kurven vorgeben – nachts weniger leichte Einsätze, schwere über den Tag gleichmäßiger
+- Mit „Verteilung nach: Schwere“ gilt wie bisher die Stundentabelle
+
 ## 0.88.0 – Notrufe verteilt nach Versorgungsstufe
 - **Verteilung wie im echten Betrieb 2025:** Notrufe aus dem Fallkatalog enden jetzt so oft in Telemedizin, BLS grün, BLS gelb, BLS rot, ALS grün, ALS gelb, ALS orange, ALS rot, „BLS/ALS aufwertbar“ und Akuttransport grün, wie es 2025 der Fall war (z. B. BLS gelb 19 %, ALS grün 17 %, ALS rot 0,7 %). Auch der Anteil für Großunfälle ist hinterlegt (0,0017 %) – er greift, sobald es Großschadensfälle gibt
 - Einstellbar unter Einstellungen → Einsatzaufkommen → „Verteilung der Notfälle nach“ – Versorgungsstufe (mit den Anteilen, Knopf „Statistik“ setzt sie zurück) oder wie bisher Schwere (harmlos/mittel/kritisch). Kennt das Codesystem diese Stufen nicht, gilt die Schwere

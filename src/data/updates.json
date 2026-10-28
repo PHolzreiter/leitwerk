@@ -1,5 +1,15 @@
 [
  {
+  "version": "0.89.0",
+  "datum": "2026-10-28",
+  "titel": "Kurven je Versorgungsstufe",
+  "punkte": [
+   "Je Versorgungsstufe 24 Stunden als Punkte zum Ziehen",
+   "Werte für ganz NÖ, im Spiel der Anteil deiner Funkgruppe",
+   "Notfälle kommen je Stunde in der Mischung der Kurven"
+  ]
+ },
+ {
   "version": "0.88.0",
   "datum": "2026-10-28",
   "titel": "Verteilung nach Versorgungsstufe",
