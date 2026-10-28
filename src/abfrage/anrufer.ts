@@ -547,7 +547,7 @@ const EMOTION_TEXT: Record<Anrufer["emotion"], string> = {
   aufgeregt:
     "Du bist aufgeregt – das hört man: kurze Sätze, du setzt manchmal neu an („Er … also, er liegt da“), ab und zu ein „Bitte beeilen Sie sich“ oder „Oh Gott“. Klare Anweisungen der Leitstelle beruhigen dich ein bisschen.",
   panisch:
-    "Du bist in Panik – das hört man in JEDER Antwort: Satzfetzen, du fängst Sätze an und brichst ab, oft ein „Bitte, schnell!“ oder „Oh Gott, oh Gott“. Fragen beantwortest du trotzdem, aber kurz und gehetzt. Gibt die Leitstelle klare Anweisungen, wirst du ein bisschen ruhiger und machst mit.",
+    "Du bist in Panik – das hört man in JEDER Antwort: ganz kurze, abgehackte Sätze, du fängst Sätze an und brichst ab, oft ein „Bitte, schnell!“ oder „Oh Gott, oh Gott“. Fragen beantwortest du trotzdem, aber kurz und gehetzt. Gibt die Leitstelle klare Anweisungen, wirst du ein bisschen ruhiger und machst mit.",
 };
 
 function sprachText(x: Anrufer): string {
