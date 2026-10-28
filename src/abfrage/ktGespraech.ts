@@ -34,6 +34,12 @@ export const KT_FRAGEN: KtFrage[] = [
   { id: "infektion", text: "Gibt es eine Infektion oder Isolation?" },
   { id: "zusatz", text: "Gibt es sonst etwas zu beachten – fährt jemand mit, braucht der Patient Sauerstoff, gibt es eine Infektion?" },
   { id: "art", text: "Haben Sie einen Wunsch, mit wem Sie fahren – Rotes Kreuz oder Samariterbund?" },
+  { id: "ktArt", text: "Ist das eine Hinfahrt oder eine Rückfahrt – zur Dialyse, zur Therapie, eine Entlassung?" },
+  { id: "behandlung", text: "Was wird dort gemacht – eine ambulante Behandlung, eine Untersuchung, eine Aufnahme?" },
+  { id: "gehfaehig", text: "Kann der Patient bis zum Fahrzeug selbst gehen?" },
+  { id: "transportmittel", text: "Braucht der Patient während der Fahrt Betreuung – oder reicht ein einfacher Transport?" },
+  { id: "auftrag", text: "Gibt es einen Transportauftrag vom Arzt?" },
+  { id: "kasse", text: "Bei welcher Krankenkasse ist der Patient versichert?" },
   { id: "telefon", text: "Unter welcher Nummer erreichen wir Sie?" },
   // Überstellungen
   { id: "sofort", text: "Wie dringend ist die Überstellung – geplant oder sofort?", sek: true },
@@ -111,6 +117,18 @@ function ktAntwortRoh(k: KtAuftrag, f: KtFrage): string {
       return w.art === "KTR" ? "Am liebsten mit dem Roten Kreuz." : w.art === "KTA" ? "Wenn's geht, mit dem Samariterbund." : "Das ist egal.";
     case "telefon":
       return w.telefon;
+    case "ktArt":
+      return w.ktArt ? `${{ hin: "Eine Hinfahrt", rueck: "Die Rückfahrt", dialyse_hin: "Zur Dialyse hin", dialyse_rueck: "Von der Dialyse zurück", therapie_hin: "Zur Therapie hin", therapie_rueck: "Von der Therapie zurück", einweisung: "Eine Einweisung, der Hausarzt hat sie geschrieben", entlassung: "Eine Entlassung, es geht nach Hause" }[w.ktArt]}.` : zuHause ? "Eine Hinfahrt." : "Die Rückfahrt.";
+    case "behandlung":
+      return w.behandlung ? `${satz(w.behandlung)}` : "Das weiß ich nicht genau.";
+    case "gehfaehig":
+      return w.gehfaehig ? "Ja, bis zum Auto geht's schon." : "Nein, gehen geht nicht.";
+    case "transportmittel":
+      return w.transportmittel === "qualifiziert" ? "Ja, er/sie braucht schon Betreuung unterwegs." : "Nein, ein einfacher Transport reicht.";
+    case "auftrag":
+      return w.auftrag === "einrichtung" ? "Den Transportschein stellen wir aus, der liegt bei uns bereit." : w.auftrag === "ja" ? "Ja, den Transportauftrag hab ich." : "Nein, einen Transportschein hab ich keinen.";
+    case "kasse":
+      return w.kasse ? `${w.kasse === "privat / andere" ? "Privat versichert" : `Bei der ${w.kasse}`}.` : "Das weiß ich nicht.";
     case "sofort":
       if (!w.sek) return w.sofort ? "So bald wie möglich bitte, der Hausarzt hat eine Einweisung geschrieben." : "Zum Termin, das reicht.";
       return w.sofort ? "Sofort bitte, das ist dringend." : "Geplant, das hat ein bisschen Zeit.";
@@ -205,6 +223,12 @@ function fakten(k: KtAuftrag): string {
     `${wer} ${braucht} ${w.sauerstoff ? "Sauerstoff" : "keinen Sauerstoff"}.`,
     w.infektion ? `${wer} ${hat} einen Keim (MRSA) – Isolation nötig.` : "Eine Infektion oder Isolation gibt es nicht.",
     `Wunsch Organisation: ${w.art === "KTR" ? "Rotes Kreuz" : w.art === "KTA" ? "Samariterbund" : "egal"}`,
+    w.ktArt ? `Art der Fahrt: ${{ hin: "Hinfahrt", rueck: "Rückfahrt", dialyse_hin: "Hinfahrt zur Dialyse", dialyse_rueck: "Rückfahrt von der Dialyse", therapie_hin: "Hinfahrt zur Therapie", therapie_rueck: "Rückfahrt von der Therapie", einweisung: "Einweisung durch den Hausarzt", entlassung: "Entlassung nach Hause" }[w.ktArt]}` : "",
+    w.behandlung ? `Behandlung am Ziel: ${w.behandlung}` : "",
+    w.gehfaehig === undefined || w.gehfaehig === null ? "" : `Bis zum Fahrzeug gehen: ${w.gehfaehig ? "geht" : "geht nicht"}`,
+    w.transportmittel ? `Betreuung während der Fahrt: ${w.transportmittel === "qualifiziert" ? "ja, nötig" : "nein, ein einfacher Transport reicht"}` : "",
+    w.auftrag ? `Transportauftrag (Transportschein vom Arzt): ${w.auftrag === "einrichtung" ? "stellt die Einrichtung aus" : w.auftrag}` : "",
+    w.kasse ? `Krankenkasse: ${w.kasse}` : "",
     `Rückrufnummer: ${w.telefon}`,
     ...(w.sek
       ? [
@@ -216,7 +240,9 @@ function fakten(k: KtAuftrag): string {
       : w.sofort
         ? ["Der Hausarzt hat eine Einweisung geschrieben, der Transport soll sofort sein."]
         : []),
-  ].join("\n");
+  ]
+    .filter(Boolean)
+    .join("\n");
 }
 
 /** Uhrzeit der Simulation */

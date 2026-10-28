@@ -16,6 +16,7 @@ import { confirmDialog } from "./dialog";
 import { buildAppSection, buildPacksSection } from "./packsView";
 import { buildKiSection } from "./kiView";
 import { el, esc, toast } from "./dom";
+import { abfrageAnsicht, setzeAbfrageAnsicht } from "./abfrageAnsicht";
 
 const STATUS_BEDEUTUNG: Record<string, string> = {
   freiWache: "frei auf der Wache",
@@ -140,9 +141,14 @@ export function createSettingsView(container: HTMLElement, teil: "simulation" | 
     fa.addEventListener("change", () => (draft.falscheAdresseProzent = Number(fa.value) || 0));
     vGrid.append(el("label", {}, "Anrufer mit falscher Adresse (%)"), fa);
     const rn = el("input", { type: "checkbox" });
-    rn.checked = !!draft.rueckrufNurMitNummer;
-    rn.addEventListener("change", () => (draft.rueckrufNurMitNummer = rn.checked));
-    vGrid.append(el("label", { title: "Ohne aufgenommene Rückrufnummer kann die Leitstelle den Anrufer nicht zurückrufen" }, "Rückruf nur mit aufgenommener Nummer"), rn);
+    rn.checked = !!draft.rueckrufOhneNummer;
+    rn.addEventListener("change", () => (draft.rueckrufOhneNummer = rn.checked));
+    vGrid.append(el("label", { title: "Normal kann die Leitstelle nur zurückrufen, wenn die Rückrufnummer in der Abfrage oder Maske eingetragen ist" }, "Rückruf auch ohne aufgenommene Nummer"), rn);
+    const ansichtSel = el("select", { class: "set-abfrage-ansicht" }) as HTMLSelectElement;
+    ansichtSel.append(el("option", { value: "neu" }, "neu – Notruf Frage für Frage, KT/SEK aufgeräumt"), el("option", { value: "klassisch" }, "bisherige Ansicht"));
+    ansichtSel.value = abfrageAnsicht();
+    ansichtSel.addEventListener("change", () => setzeAbfrageAnsicht(ansichtSel.value === "klassisch" ? "klassisch" : "neu"));
+    vGrid.append(el("label", { title: "Gilt sofort und nur für diesen Rechner" }, "Abfrage-Ansicht"), ansichtSel);
     const kSel = el("select");
     for (const [v, l] of [["ruhig", "ruhig – selten Überraschungen"], ["normal", "normal – etwa jeder 10. Einsatz verändert sich"], ["fordernd", "fordernd – oft Verschlechterungen und Irrtümer"]]) kSel.appendChild(el("option", { value: v }, l));
     kSel.value = draft.komplikationen ?? "normal";

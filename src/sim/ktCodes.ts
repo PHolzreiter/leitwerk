@@ -81,8 +81,9 @@ export function ktFrageText(id: string): string | null {
   // erste aktive Frage, die dieses Feld klärt
   const f = ktAbfrage().find((x) => x.aktiv !== false && klaertVon(x).includes(id));
   if (f) return f.text;
-  // Feld wird im Satz gar nicht gefragt: kein 🗨
-  return ktSatz().abfrage?.length ? null : (standardKtAbfrage().find((x) => x.id === id)?.text ?? null);
+  // Feld wird im Satz gar nicht gefragt: kein 🗨 (die neuen Angaben der Aufnahme fragt man trotzdem mit der eingebauten Frage)
+  const neu = ["ktArt", "behandlung", "gehfaehig", "transportmittel", "auftrag", "kasse"].includes(id);
+  return ktSatz().abfrage?.length && !neu ? null : (standardKtAbfrage().find((x) => x.id === id)?.text ?? null);
 }
 
 // ---------------------------------------------------------------- Was ein Code verlangt

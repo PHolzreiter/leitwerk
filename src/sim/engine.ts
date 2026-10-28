@@ -3133,7 +3133,11 @@ export class Simulation {
       }
     }
     if (patch.code) this.log(e, `Code: ${patch.code}`);
-    if (patch.telefon) this.log(e, `Rückrufnummer: ${patch.telefon}`);
+    if (patch.telefon) {
+      this.log(e, `Rückrufnummer: ${patch.telefon}`);
+      // gleiche Nummer in der Abfrage (Frage nach der Rückrufnummer)
+      if (e.anruf) e.anruf.antworten.rueckrufnummer = patch.telefon;
+    }
     this.emit();
   }
 
@@ -3155,7 +3159,7 @@ export class Simulation {
   rueckruf(id: string): string | null {
     const e = this.einsatz(id);
     if (!e) return null;
-    if (this.settings.rueckrufNurMitNummer && !e.telefon) throw new Error("Keine Rückrufnummer aufgenommen – Rückruf nicht möglich");
+    if (!this.settings.rueckrufOhneNummer && !e.telefon) throw new Error("Keine Rückrufnummer aufgenommen – Rückruf nicht möglich");
     e.rueckrufGemacht = true;
     this.log(e, `Rückruf beim Anrufer: Adresse ${e.wahr.adresse}`);
     this.emit();
@@ -4080,7 +4084,7 @@ export class Simulation {
     const e = this.einsatz(id);
     const a = e?.anruf;
     if (!e || !a) throw new Error("Kein Anruf zu diesem Einsatz");
-    if (a.status === "verpasst" && this.settings.rueckrufNurMitNummer && !e.telefon) throw new Error("Keine Rückrufnummer aufgenommen – Rückruf nicht möglich");
+    if (a.status === "verpasst" && !this.settings.rueckrufOhneNummer && !e.telefon) throw new Error("Keine Rückrufnummer aufgenommen – Rückruf nicht möglich");
     const ich = this.calltaker();
     if (a.status === "gehalten") {
       // Gehaltene Anrufe kann jeder Disponent aufgreifen
@@ -4121,7 +4125,7 @@ export class Simulation {
       }
     } else if (a.status === "beendet") {
       // Leitstelle ruft den Anrufer zurück (Nachfragen nach dem Gespräch)
-      if (this.settings.rueckrufNurMitNummer && !e.telefon) throw new Error("Keine Rückrufnummer aufgenommen – Rückruf nicht möglich");
+      if (!this.settings.rueckrufOhneNummer && !e.telefon) throw new Error("Keine Rückrufnummer aufgenommen – Rückruf nicht möglich");
       this.andereHalten(ich, e.id);
       a.rueckruf = true;
       a.status = "aktiv";
@@ -4209,6 +4213,11 @@ export class Simulation {
     if (frage === "kapitel") a.kapitel = wert === null ? null : String(wert);
     else if (wert === null) delete a.antworten[frage];
     else a.antworten[frage] = wert;
+    // Rückrufnummer aus der Abfrage = Rückrufnummer des Einsatzes (erst damit ist ein Rückruf möglich)
+    if (frage === "rueckrufnummer" && typeof wert === "string" && wert.trim() && wert.trim() !== e.telefon) {
+      e.telefon = wert.trim();
+      this.log(e, `Rückrufnummer: ${e.telefon}`);
+    }
     this.abfrageAuswerten(e);
     this.emit();
   }
@@ -6199,7 +6208,7 @@ export class Simulation {
     const k = this.ktAuftrag(id);
     const a = k?.anruf;
     if (!k || !a) throw new Error("Kein Anruf");
-    if (a.status === "verpasst" && this.settings.rueckrufNurMitNummer && !k.d.telefon) throw new Error("Keine Rückrufnummer aufgenommen – Rückruf nicht möglich");
+    if (a.status === "verpasst" && !this.settings.rueckrufOhneNummer && !k.d.telefon) throw new Error("Keine Rückrufnummer aufgenommen – Rückruf nicht möglich");
     const ich = this.calltaker();
     if (a.status === "gehalten") {
       // Gehaltene Anrufe kann jeder Disponent aufgreifen
@@ -6233,7 +6242,7 @@ export class Simulation {
       }
     } else if (a.status === "beendet") {
       // Leitstelle ruft den Anrufer zurück
-      if (this.settings.rueckrufNurMitNummer && !k.d.telefon) throw new Error("Keine Rückrufnummer aufgenommen – Rückruf nicht möglich");
+      if (!this.settings.rueckrufOhneNummer && !k.d.telefon) throw new Error("Keine Rückrufnummer aufgenommen – Rückruf nicht möglich");
       this.andereHalten(ich, k.id);
       a.rueckruf = true;
       a.status = "aktiv";

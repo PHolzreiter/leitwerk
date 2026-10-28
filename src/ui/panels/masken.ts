@@ -220,7 +220,7 @@ export function einsatzMaske(e: Einsatz): { root: HTMLElement; refresh(): void }
   telIn.addEventListener("input", telTitel);
   telB.addEventListener("click", () => {
     if (!telIn.value.trim()) {
-      telIn.value = nummerAus(e.id, true);
+      telIn.value = e.wahr.abfrage?.anrufer.nummer || nummerAus(e.id, true);
       telTitel();
       void fehlerZeigen(sim.call("aktualisiere", e.id, { telefon: telIn.value }));
       return;

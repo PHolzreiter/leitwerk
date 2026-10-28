@@ -20,8 +20,14 @@ import {
   type KtDaten,
   type KtLage,
   type KtOrt,
+  type KtTransportArt,
   type SekDaten,
+  KT_AUFTRAG_LABEL,
+  KT_BEHANDLUNGEN,
+  KT_KASSEN,
+  KT_TRANSPORTART_LABEL,
 } from "../sim/kt";
+import { abfrageAnsicht } from "./abfrageAnsicht";
 import { codeFehlt, codeInfo, istUeberstellung, ktAbfrage, ktCode, ktCodeDef, ktCodes, ktFrageText } from "../sim/ktCodes";
 import { artVon as artVonFrage, gespraechsFeld } from "../sim/ktBedingungen";
 import { bedText } from "../sim/ktBedingungen";
@@ -29,6 +35,62 @@ import { distanceM } from "../sim/geo";
 import { addressInput, dienstHtml, fzPasst, statusChip, typHtml } from "./panels/teile";
 import { liveSammler } from "./panels/live";
 import { el, esc, toast } from "./dom";
+
+/** Schon gestellte (oder als erledigt markierte) Fragen je Auftrag – für „Nächste Frage“ */
+const ktGefragt = new Map<string, Set<string>>();
+function gefragtVon(id: string): Set<string> {
+  let s = ktGefragt.get(id);
+  if (!s) ktGefragt.set(id, (s = new Set()));
+  return s;
+}
+
+/** Angaben, die nur Krankentransporte haben (nicht bei Überstellungen) */
+const NUR_KT = new Set(["ktArt", "behandlung", "gehfaehig", "transportmittel", "auftrag", "art"]);
+
+/** Ist die Angabe zu dieser Frage schon da (oder wurde gefragt)? */
+function ktFeldFertig(k: KtAuftrag, id: string): boolean {
+  return gefragtVon(k.id).has(id) || ktWertDa(k, id) === true;
+}
+
+/** Steht zu dieser Frage schon ein Wert in der Aufnahme? null = an einem Wert nicht erkennbar (Ja/Nein-Häkchen) */
+function ktWertDa(k: KtAuftrag, id: string): boolean | null {
+  const d = k.d;
+  switch (id) {
+    case "wer":
+      return !!k.anruf?.gespraech.some((m) => m.von === "anrufer") || k.quelle !== "hotline";
+    case "patient":
+      return !!d.patient.name;
+    case "von":
+      return !!d.von;
+    case "nach":
+      return !!d.nach;
+    case "termin":
+    case "abholung":
+      return !!(d.termin || d.abholung);
+    case "grund":
+      return !!d.grund;
+    case "lage":
+      return !!d.lage;
+    case "telefon":
+      return !!d.telefon;
+    case "ktArt":
+      return !!d.ktArt;
+    case "transportmittel":
+      return !!d.transportmittel;
+    case "gehfaehig":
+      return d.gehfaehig !== undefined && d.gehfaehig !== null;
+    case "auftrag":
+      return !!d.auftrag;
+    case "kasse":
+      return !!d.kasse;
+    case "behandlung":
+      return !!d.behandlung;
+    case "zusage":
+      return !!d.sek?.zusage;
+    default:
+      return null;
+  }
+}
 
 /** Suchtext der Fahrzeugsuche je Auftrag (bleibt beim Neuaufbau der Disposition) */
 const ktSuche = new Map<string, string>();
@@ -236,18 +298,25 @@ export function ktFormular(k: KtAuftrag, stelle: (text: string, f?: KtFrage) => 
     const text = ktFrageText(id);
     if (!f || !text || k.anruf?.status !== "aktiv" || !ichFuehre(k)) return null;
     const b = el("button", { class: "frag-knopf", type: "button", title: text }, "🗨");
-    b.addEventListener("click", () => void stelle(text, f));
+    b.addEventListener("click", () => {
+      gefragtVon(k.id).add(id);
+      void stelle(text, f);
+    });
     return b;
   };
   function datenBauen(): void {
     const darf = ["aufnahme", "offen", "vorgemerkt"].includes(k.status) && (!k.anruf || k.anruf.status !== "aktiv" || ichFuehre(k));
     const art = artVon(k.d);
+    const neu = abfrageAnsicht() === "neu";
     datenBox.innerHTML = "";
+    datenBox.classList.toggle("neu", neu);
     const titel = el("div", { class: "box-title kt-titel" });
     titel.innerHTML = `Auftrag <span class="kt-art-chip ${art}">${art === "sek" ? "Überstellung" : "Krankentransport"}</span>`;
     datenBox.appendChild(titel);
+    // Neue Ansicht: statt aller Fragen nur die nächste offene (mit 🗨 und „erledigt“)
+    if (neu && k.anruf?.status === "aktiv" && ichFuehre(k)) datenBox.appendChild(naechsteFrage(art));
     // Fragen der Abfrage in ihrer Reihenfolge (eigener Codesatz) – ein Klick stellt die Frage
-    if (k.anruf?.status === "aktiv" && ichFuehre(k)) {
+    if (!neu && k.anruf?.status === "aktiv" && ichFuehre(k)) {
       const leiste = el("div", { class: "kt-fragenleiste" });
       ktAbfrage()
         .filter((q) => q.aktiv !== false && q.text.trim())
@@ -264,16 +333,31 @@ export function ktFormular(k: KtAuftrag, stelle: (text: string, f?: KtFrage) => 
       datenBox.appendChild(el("div", { class: "kt-hinweis muted" }, "Krankenhaus → Krankenhaus wird automatisch eine Überstellung."));
 
     const grid = el("div", { class: "kt-grid" });
+    /** neue Ansicht: Abschnitte als Karten, jede mit eigenem Raster */
+    const karten = el("div", { class: "kt-karten" });
+    let ziel = grid;
     const deaktiv: (HTMLInputElement | HTMLSelectElement | HTMLButtonElement)[] = [];
     /** Zeile: Beschriftung (mit 🗨-Frage, wenn ein Gespräch läuft) und Feld */
     const zeile = (label: string, id: KtFrage["id"] | null, feld: HTMLElement) => {
       const l = el("div", { class: "kt-lbl" });
+      // neue Ansicht: ✓ = Angabe da, ○ = noch offen
+      if (neu && id && k.status === "aufnahme") {
+        const w = ktWertDa(k, id);
+        const ok = w === null ? gefragtVon(k.id).has(id) : w;
+        l.appendChild(el("span", { class: `kt-mark${ok ? " ok" : ""}`, title: ok ? "erledigt" : "noch offen" }, ok ? "✓" : "○"));
+      }
       l.appendChild(el("span", {}, label));
       const fk = id ? frageKnopf(id) : null;
       if (fk) l.appendChild(fk);
-      grid.append(l, feld);
+      ziel.append(l, feld);
     };
-    const abschnitt = (t: string) => grid.appendChild(el("div", { class: "kt-abschnitt" }, t));
+    const abschnitt = (t: string) => {
+      if (!neu) return void grid.appendChild(el("div", { class: "kt-abschnitt" }, t));
+      const karte = el("div", { class: "kt-karte" });
+      ziel = el("div", { class: "kt-grid" });
+      karte.append(el("div", { class: "kt-karte-titel" }, t), ziel);
+      karten.appendChild(karte);
+    };
     /** Auswahl als Knopfleiste */
     const knopfleiste = <T extends string | boolean>(werte: [T, string, string?][], aktuell: T | null, onSet: (v: T) => void) => {
       const seg = el("div", { class: "kt-seg" });
@@ -306,7 +390,7 @@ export function ktFormular(k: KtAuftrag, stelle: (text: string, f?: KtFrage) => 
     };
 
     // ---- Anrufer
-    abschnitt("Anrufer");
+    abschnitt(neu ? "Anrufer und Patient" : "Anrufer");
     zeile(
       "Wer",
       "wer",
@@ -326,7 +410,7 @@ export function ktFormular(k: KtAuftrag, stelle: (text: string, f?: KtFrage) => 
     zeile("Rückruf", "telefon", rueck);
 
     // ---- Patient
-    abschnitt("Patient");
+    if (!neu) abschnitt("Patient");
     const pat = el("div", { class: "row-btns" });
     const name = text(k.d.patient.name, "Name", (v) => setze({ patient: { ...k.d.patient, name: v } }));
     const alter = el("input", { type: "number", min: "0", max: "120", class: "zahl", placeholder: "Alter" });
@@ -398,7 +482,7 @@ export function ktFormular(k: KtAuftrag, stelle: (text: string, f?: KtFrage) => 
     opts.append(
       haken("Begleitperson", k.d.begleitung, (v) => setze({ begleitung: v })),
       haken("Sauerstoff", k.d.sauerstoff, (v) => setze({ sauerstoff: v })),
-      haken("Infektion/Isolation", k.d.infektion, (v) => setze({ infektion: v })),
+      haken(neu ? "Hygienemaßnahme (Infektion/Isolation)" : "Infektion/Isolation", k.d.infektion, (v) => setze({ infektion: v })),
     );
     zeile("Zusätzlich", "zusatz", opts);
     if (art === "sek") {
@@ -415,6 +499,62 @@ export function ktFormular(k: KtAuftrag, stelle: (text: string, f?: KtFrage) => 
       );
       zeile("Medizinisch", "zustand", bedarf);
       zeile("Übernahme", "zusage", text(s.zusage, "z. B. zugesagt von OA Dr. …", (v) => setzeSek({ zusage: v })));
+    }
+
+    // ---- neue Ansicht: Art des Transports und Abrechnung
+    if (neu) {
+      /** Auswahlliste mit „–“ für noch nicht angegeben */
+      const auswahl = (werte: [string, string][], aktuell: string | null | undefined, onSet: (v: string | null) => void) => {
+        const sel = el("select");
+        sel.appendChild(el("option", { value: "" }, "–"));
+        for (const [v, l] of werte) sel.appendChild(el("option", { value: v }, l));
+        if (aktuell && !werte.some(([v]) => v === aktuell)) sel.appendChild(el("option", { value: aktuell }, aktuell));
+        sel.value = aktuell ?? "";
+        sel.addEventListener("change", () => onSet(sel.value || null));
+        deaktiv.push(sel);
+        return sel;
+      };
+      if (art === "kt") {
+        abschnitt("Transportdaten");
+        zeile("Transportart", "ktArt", auswahl(Object.entries(KT_TRANSPORTART_LABEL), k.d.ktArt, (v) => setze({ ktArt: v as KtTransportArt | null })));
+        zeile("Behandlung", "behandlung", auswahl(KT_BEHANDLUNGEN.map((b) => [b, b]), k.d.behandlung, (v) => setze({ behandlung: v ?? "" })));
+        zeile(
+          "Transportmittel",
+          "transportmittel",
+          knopfleiste<"einfach" | "qualifiziert">(
+            [
+              ["einfach", "einfacher KT"],
+              ["qualifiziert", "qualifizierter KT"],
+            ],
+            k.d.transportmittel ?? null,
+            (v) => setze({ transportmittel: v }),
+          ),
+        );
+        zeile(
+          "Bis zum Fahrzeug",
+          "gehfaehig",
+          knopfleiste<"ja" | "nein">(
+            [
+              ["ja", "gehfähig"],
+              ["nein", "nicht gehfähig"],
+            ],
+            k.d.gehfaehig === true ? "ja" : k.d.gehfaehig === false ? "nein" : null,
+            (v) => setze({ gehfaehig: v === "ja" }),
+          ),
+        );
+      }
+      abschnitt("Abrechnung");
+      if (art === "kt")
+        zeile(
+          "Transportauftrag",
+          "auftrag",
+          knopfleiste<"ja" | "nein" | "einrichtung">(
+            (Object.entries(KT_AUFTRAG_LABEL) as ["ja" | "nein" | "einrichtung", string][]).map(([v, l]) => [v, l]),
+            k.d.auftrag ?? null,
+            (v) => setze({ auftrag: v }),
+          ),
+        );
+      zeile("Krankenkasse", "kasse", auswahl(KT_KASSEN.map((x) => [x, x]), k.d.kasse, (v) => setze({ kasse: v ?? "" })));
     }
 
     // ---- Auftrag: Wunsch und Code
@@ -463,7 +603,7 @@ export function ktFormular(k: KtAuftrag, stelle: (text: string, f?: KtFrage) => 
       const km = k.d.von && k.d.nach ? distanceM(k.d.von, k.d.nach) / 1000 : 0;
       const f = codeFehlt(k.d, km);
       if (f)
-        grid.append(
+        ziel.append(
           el("div", { class: "kt-lbl" }),
           el(
             "div",
@@ -476,7 +616,7 @@ export function ktFormular(k: KtAuftrag, stelle: (text: string, f?: KtFrage) => 
     }
 
     for (const x of deaktiv) x.disabled = !darf;
-    datenBox.appendChild(grid);
+    datenBox.appendChild(neu ? karten : grid);
     if (k.status === "aufnahme") {
       const b = el("button", { class: "btn primary kt-anlegen" }, "Auftrag anlegen");
       b.disabled = !darf;
@@ -486,9 +626,57 @@ export function ktFormular(k: KtAuftrag, stelle: (text: string, f?: KtFrage) => 
   }
 
 
+  /** Neue Ansicht: die nächste offene Frage der Abfrage (Reihenfolge aus dem Codesatz) */
+  function naechsteFrage(art: Art): HTMLElement {
+    const box = el("div", { class: "kt-naechste" });
+    const liste = ktAbfrage()
+      .filter((q) => q.aktiv !== false && q.text.trim())
+      .map((q) => ({ q, id: gespraechsFeld(q) }))
+      .filter((x) => {
+        const f = KT_FRAGEN.find((y) => y.id === x.id);
+        if (!f) return false;
+        if (art === "kt") return !f.sek;
+        return !NUR_KT.has(x.id);
+      });
+    // neue Angaben, die ein eigener Codesatz (noch) nicht fragt, hinten anhängen
+    for (const id of ["ktArt", "behandlung", "gehfaehig", "transportmittel", "auftrag", "kasse"]) {
+      if (art === "sek" && NUR_KT.has(id)) continue;
+      if (liste.some((x) => x.id === id)) continue;
+      const text = ktFrageText(id);
+      if (text) liste.push({ q: { id, text, aktiv: true }, id });
+    }
+    const offen = liste.filter((x) => !ktFeldFertig(k, x.id));
+    const fertig = liste.length - offen.length;
+    const n = offen[0];
+    const kopf = el("div", { class: "kt-naechste-kopf" });
+    kopf.append(el("span", {}, n ? "Nächste Frage" : "Abfrage"), el("span", { class: "muted" }, `${fertig} von ${liste.length} erledigt`));
+    box.appendChild(kopf);
+    if (!n) {
+      box.appendChild(el("div", { class: "kt-naechste-text" }, "✓ Alles gefragt – Angaben prüfen und den Auftrag anlegen."));
+      return box;
+    }
+    const zeile = el("div", { class: "kt-naechste-zeile" });
+    zeile.appendChild(el("div", { class: "kt-naechste-text" }, n.q.text));
+    const f = KT_FRAGEN.find((y) => y.id === n.id)!;
+    const fragen = el("button", { class: "btn small primary", type: "button", title: "Diese Frage stellen" }, "🗨 Fragen");
+    fragen.addEventListener("click", () => {
+      gefragtVon(k.id).add(n.id);
+      void stelle(n.q.text, f);
+    });
+    const ok = el("button", { class: "btn small", type: "button", title: "Als erledigt markieren (schon bekannt oder nicht nötig)" }, "✓ erledigt");
+    ok.addEventListener("click", () => {
+      gefragtVon(k.id).add(n.id);
+      datenKey = "";
+      refresh();
+    });
+    zeile.append(fragen, ok);
+    box.appendChild(zeile);
+    return box;
+  }
+
   function refresh(): void {
     const a = k.anruf;
-    const dk = JSON.stringify([k.d, k.status, a?.status, a?.angenommenVon?.pid]);
+    const dk = JSON.stringify([k.d, k.status, a?.status, a?.angenommenVon?.pid, abfrageAnsicht(), [...gefragtVon(k.id)], a?.gespraech.length]);
     const tippt = document.activeElement instanceof HTMLInputElement || document.activeElement instanceof HTMLSelectElement;
     if (dk !== datenKey && !(tippt && datenBox.contains(document.activeElement))) {
       // Ansicht nicht nach oben springen lassen

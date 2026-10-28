@@ -11,6 +11,7 @@ import { schilderung } from "../../abfrage/anrufer";
 import { patientText } from "../../sim/lage";
 import { antwortLabel, bestimmeCode, fragenImAblauf, istKreislaufstillstand, stufeRang, stufeVonCode, type Frage, type Schema, type Wert } from "../../abfrage/schema";
 import { kapitelZuThema } from "../../abfrage/themen";
+import { gefuehrteAbfrage } from "./notrufGefuehrt";
 
 /** Fragen nach Bewusstsein und Atmung (kommen vor dem Grundproblem) */
 function istBwAt(f: Frage): boolean {
@@ -47,7 +48,7 @@ export interface NotrufTeile {
   dispose(): void;
 }
 
-export function notrufTeile(e: Einsatz): NotrufTeile {
+export function notrufTeile(e: Einsatz, opt: { gefuehrt?: boolean; angezeigt?: () => string } = {}): NotrufTeile {
   const verlauf = el("div", { class: "anruf-verlauf" });
   const live = el("div", { class: "anruf-msg anrufer live", hidden: "" });
   const form = el("form", { class: "anruf-form" });
@@ -72,7 +73,7 @@ export function notrufTeile(e: Einsatz): NotrufTeile {
     vorlesenWrap,
   );
   const codeZeile = el("div", { class: "anruf-code" });
-  const abfrage = el("div", { class: "abfrage" });
+  let abfrage: HTMLElement = el("div", { class: "abfrage" });
   const aufloesung = el("div", { class: "aufloesung" });
 
   const zeigeLive = (text: string | null) => liveZeigen(verlauf, live, e.id, text);
@@ -130,6 +131,51 @@ export function notrufTeile(e: Einsatz): NotrufTeile {
     });
     ortInfo.append(zeigen, nehmen);
   }
+  /** Einsatzort eintragen: Adresse, Karte, Genannte, Ortung (alte und geführte Ansicht) */
+  function ortFeld(): HTMLElement {
+    const a = e.anruf!;
+    const box = el("div", { class: "ort-feld" });
+    // Adresse direkt hier eintragen (geht in die Einsatzmaske)
+    const zeile = el("div", { class: "adr-zeile" });
+    const adr = addressInput("Straße Hausnummer Ort …", (o) => {
+      fehler(sim.call("aktualisiere", e.id, { adresse: o }));
+      karteZeigen(o.lat, o.lon, 15);
+    });
+    if (e.adresse) adr.input.value = e.adresse.label;
+    const karteB = el("button", { class: "btn small", type: "button", title: "Auf der Karte wählen" }, "🗺");
+    karteB.addEventListener("click", async () => {
+      const pkt = await karteWaehlen("Einsatzort anklicken");
+      if (!pkt) return;
+      fehler(sim.call("aktualisiere", e.id, { adresse: { ...pkt, label: `Koordinate ${pkt.lat.toFixed(5)}, ${pkt.lon.toFixed(5)}` } }));
+    });
+    const genannt = el("button", { class: "btn small", type: "button", title: "Was der Anrufer gesagt hat, in die Suche übernehmen" }, "📍 Genannte");
+    const gesagt = gesagteAdresse(e.meldung.adresse, a.gespraech.filter((m) => m.von === "anrufer").map((m) => m.text));
+    genannt.disabled = !gesagt;
+    genannt.title = gesagt ? `Genannte Adresse übernehmen: „${gesagt}“` : "Genannte Adresse – erst wenn der Anrufer eine Straße oder einen Ort gesagt hat";
+    genannt.addEventListener("click", () => {
+      if (!gesagt) return;
+      adr.input.value = gesagt;
+      adr.input.dispatchEvent(new Event("input"));
+      adr.input.focus();
+    });
+    // Handy-Ortung gleich hier, wo die Adresse eingetragen wird
+    const orten = el("button", { class: "btn small", type: "button", title: "Handy-Ortung anfordern (Standort aus dem Netz)" }, "📡 Orten");
+    orten.addEventListener("click", () => fehler(sim.call("ortung", e.id)));
+    ortenKnopf = orten;
+    zeile.append(adr.root, karteB, genannt, orten);
+    box.append(zeile, ortInfo);
+    ortKey = "";
+    return box;
+  }
+
+  /** Zusatz zum Ort = Zusatz der Einsatzmaske */
+  function zusatzFeld(): HTMLInputElement {
+    const inp = el("input", { type: "text", class: "text", placeholder: "Stiege, Stock, Tür, Zufahrt …" });
+    inp.value = e.zusatz;
+    inp.addEventListener("change", () => fehler(sim.call("aktualisiere", e.id, { zusatz: inp.value })));
+    return inp;
+  }
+
   // Nach dem Verlassen eines Eingabefelds aufgeschobene Änderungen nachziehen
   abfrage.addEventListener("focusout", () => setTimeout(refresh, 0));
   function refresh() {
@@ -177,6 +223,11 @@ export function notrufTeile(e: Einsatz): NotrufTeile {
     }
 
     // Abfrage nur neu aufbauen, wenn sich etwas geändert hat (sonst geht der Fokus verloren)
+    if (gef) {
+      gef.refresh();
+      ortungAktualisieren();
+      return;
+    }
     const schluessel = JSON.stringify([a.status, a.kapitel, a.antworten, a.extra, darf, a.angenommenVon?.pid, a.kapitel === "42" ? e.code : null, e.adresse?.label, e.zusatz, a.gespraech.some((m) => m.von === "anrufer")]);
     const tippt = document.activeElement instanceof HTMLInputElement || document.activeElement instanceof HTMLSelectElement;
     if (schluessel !== letzterSchluessel && !(tippt && abfrage.contains(document.activeElement))) {
@@ -308,7 +359,7 @@ export function notrufTeile(e: Einsatz): NotrufTeile {
       }
     }
   };
-  document.addEventListener("keydown", taste);
+  if (!opt.gefuehrt) document.addEventListener("keydown", taste);
   // Maus wie Tastatur: Klick auf eine Antwort beantwortet und geht zur nächsten offenen Frage;
   // Klick sonst auf eine Frage markiert sie. (Erst beim Klick, nicht beim Drücken – sonst verrutschen
   // die Knöpfe unter der Maus und der Klick geht verloren.)
@@ -355,6 +406,16 @@ export function notrufTeile(e: Einsatz): NotrufTeile {
           b.addEventListener("click", () => setze(f.id, wert === o.wert ? null : o.wert));
           opts.appendChild(b);
         }
+        // lange Listen: Suchfeld blendet nicht passende Antworten aus
+        if ((f.optionen ?? []).length > 10) {
+          const such = el("input", { type: "search", class: "opt-suche", placeholder: "Antwort suchen …" });
+          such.disabled = !darf;
+          such.addEventListener("input", () => {
+            const q = such.value.trim().toLowerCase();
+            opts.querySelectorAll<HTMLButtonElement>(".opt").forEach((b) => (b.hidden = !!q && !b.textContent!.toLowerCase().includes(q)));
+          });
+          row.appendChild(such);
+        }
         row.appendChild(opts);
       } else if (f.typ === "zahl") {
         const opts = el("div", { class: "optionen" });
@@ -395,37 +456,7 @@ export function notrufTeile(e: Einsatz): NotrufTeile {
           q.addEventListener("click", () => void stelle(sprechFrage(f, store.schema, a.antworten, { erste: !a.gespraech.some((m) => m.von === "leitstelle") }), f));
           kt.prepend(q);
         }
-        r.appendChild(kt);
-        // Adresse direkt hier eintragen (geht in die Einsatzmaske)
-        const zeile = el("div", { class: "adr-zeile" });
-        const adr = addressInput("Straße Hausnummer Ort …", (o) => {
-          fehler(sim.call("aktualisiere", e.id, { adresse: o }));
-          karteZeigen(o.lat, o.lon, 15);
-        });
-        if (e.adresse) adr.input.value = e.adresse.label;
-        const karteB = el("button", { class: "btn small", type: "button", title: "Auf der Karte wählen" }, "🗺");
-        karteB.addEventListener("click", async () => {
-          const pkt = await karteWaehlen("Einsatzort anklicken");
-          if (!pkt) return;
-          fehler(sim.call("aktualisiere", e.id, { adresse: { ...pkt, label: `Koordinate ${pkt.lat.toFixed(5)}, ${pkt.lon.toFixed(5)}` } }));
-        });
-        const genannt = el("button", { class: "btn small", type: "button", title: "Was der Anrufer gesagt hat, in die Suche übernehmen" }, "📍 Genannte");
-        const gesagt = gesagteAdresse(e.meldung.adresse, a.gespraech.filter((m) => m.von === "anrufer").map((m) => m.text));
-        genannt.disabled = !gesagt;
-        genannt.title = gesagt ? `Genannte Adresse übernehmen: „${gesagt}“` : "Genannte Adresse – erst wenn der Anrufer eine Straße oder einen Ort gesagt hat";
-        genannt.addEventListener("click", () => {
-          if (!gesagt) return;
-          adr.input.value = gesagt;
-          adr.input.dispatchEvent(new Event("input"));
-          adr.input.focus();
-        });
-        // Handy-Ortung gleich hier, wo die Adresse eingetragen wird
-        const orten = el("button", { class: "btn small", type: "button", title: "Handy-Ortung anfordern (Standort aus dem Netz)" }, "📡 Orten");
-        orten.addEventListener("click", () => fehler(sim.call("ortung", e.id)));
-        ortenKnopf = orten;
-        zeile.append(adr.root, karteB, genannt, orten);
-        r.append(zeile, ortInfo);
-        ortKey = "";
+        r.append(kt, ortFeld());
         p1.appendChild(r);
       } else if (f.id === "ort_zusatz" || /zusatz/i.test(f.id)) {
         // Zusatzinfos zum Ort = Zusatz der Einsatzmaske
@@ -436,10 +467,7 @@ export function notrufTeile(e: Einsatz): NotrufTeile {
           q.addEventListener("click", () => void stelle(sprechFrage(f, store.schema, a.antworten, { erste: !a.gespraech.some((m) => m.von === "leitstelle") }), f));
           kt.prepend(q);
         }
-        const inp = el("input", { type: "text", class: "text", placeholder: "Stiege, Stock, Tür, Zufahrt …" });
-        inp.value = e.zusatz;
-        inp.addEventListener("change", () => fehler(sim.call("aktualisiere", e.id, { zusatz: inp.value })));
-        r.append(kt, inp);
+        r.append(kt, zusatzFeld());
         p1.appendChild(r);
       } else p1.appendChild(frageZeile(f));
     }
@@ -472,16 +500,7 @@ export function notrufTeile(e: Einsatz): NotrufTeile {
     // Andere Leitstelle: keine Abfrage, nur den passenden Code wählen
     if (a.kapitel === "42") {
       const sec = abschnitt("4 · Code wählen (keine Abfrage bei Anforderung durch andere Leitstelle)");
-      const opts = el("div", { class: "kapitel-liste" });
-      for (const [code, c] of Object.entries(schema.codes)) {
-        if (!c.kapitel.startsWith("42 ") && !c.kapitel.startsWith("42-")) continue;
-        const b = el("button", { class: `kapitel-opt${e.code === code ? " gewaehlt" : ""}` });
-        b.innerHTML = `<b>${esc(code)}</b> ${esc(c.name)} <span class="muted">· ${esc(c.kategorie)}</span>`;
-        b.disabled = !darf;
-        b.addEventListener("click", () => fehler(sim.call("aktualisiere", e.id, { code })));
-        opts.appendChild(b);
-      }
-      sec.appendChild(opts);
+      sec.appendChild(code42(darf));
       return;
     }
     // Primärabfrage + Kapitelfragen (inkl. Kapitelwechsel); Bewusstsein und Atmung stehen schon oben
@@ -498,9 +517,32 @@ export function notrufTeile(e: Einsatz): NotrufTeile {
     }
 
     // Aufwertung, Zusatzkennung, Polizei
+    const zeile = abschluss(darf);
+    if (zeile) abschnitt("Abschluss").appendChild(zeile);
+  }
+
+  /** Codes von Kapitel 42 (Anforderung durch andere Leitstelle) */
+  function code42(darf: boolean): HTMLElement {
+    const schema = store.schema!;
+    const opts = el("div", { class: "kapitel-liste" });
+    for (const [code, c] of Object.entries(schema.codes)) {
+      if (!c.kapitel.startsWith("42 ") && !c.kapitel.startsWith("42-")) continue;
+      const b = el("button", { class: `kapitel-opt${e.code === code ? " gewaehlt" : ""}`, type: "button" });
+      b.innerHTML = `<b>${esc(code)}</b> ${esc(c.name)} <span class="muted">· ${esc(c.kategorie)}</span>`;
+      b.disabled = !darf;
+      b.addEventListener("click", () => fehler(sim.call("aktualisiere", e.id, { code })));
+      opts.appendChild(b);
+    }
+    return opts;
+  }
+
+  /** Aufwertung, Zusatzkennung, Polizei – null, wenn das Kapitel nichts davon hat */
+  function abschluss(darf: boolean): HTMLElement | null {
+    const a = e.anruf!;
+    const schema = store.schema!;
+    if (!a.kapitel) return null;
     const K = schema.kapitel[a.kapitel];
     const erg = bestimmeCode(schema, a.kapitel, a.antworten);
-    const ex = abschnitt("Abschluss");
     const zeile = el("div", { class: "abfrage-extra" });
     if (K?.aufwertung && Object.keys(K.aufwertung).length) {
       const sel = el("select");
@@ -534,8 +576,7 @@ export function notrufTeile(e: Einsatz): NotrufTeile {
       l.append(cb, el("span", {}, "Polizei"));
       zeile.appendChild(l);
     }
-    if (zeile.childElementCount) ex.appendChild(zeile);
-    else ex.remove();
+    return zeile.childElementCount ? zeile : null;
   }
 
   function kapitelWahl(schema: Schema, darf: boolean, wasPassiert: Frage | null): HTMLElement {
@@ -590,6 +631,21 @@ export function notrufTeile(e: Einsatz): NotrufTeile {
     return box;
   }
 
+  // Neue Ansicht: Frage für Frage, darunter das Protokoll
+  const gef = opt.gefuehrt
+    ? gefuehrteAbfrage({
+        e,
+        stelle,
+        ortFeld: () => ortFeld(),
+        zusatzFeld,
+        angezeigt: opt.angezeigt ?? (() => ""),
+        code42,
+        abschluss,
+        darf: () => istGespraechsfuehrer(e) && (e.anruf?.status === "aktiv" || e.anruf?.status === "gehalten" || e.anruf?.status === "beendet"),
+      })
+    : null;
+  if (gef) abfrage = gef.el;
+
   refresh();
   return {
     verlauf,
@@ -601,6 +657,7 @@ export function notrufTeile(e: Einsatz): NotrufTeile {
     dispose: () => {
       ausLive();
       document.removeEventListener("keydown", taste);
+      gef?.dispose();
     },
   };
 }

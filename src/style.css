@@ -3859,3 +3859,83 @@ input.ausr-zahl { width: 64px !important; min-width: 0; }
 .kha-ok {
   color: #2e9d4a;
 }
+
+/* ---- KT/SEK-Aufnahme, neue Ansicht: Karten statt einer langen Liste */
+.kt-formular.neu .kt-karten {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 10px;
+  align-items: start;
+}
+.kt-karte {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-2);
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.kt-karte-titel {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-dim);
+}
+.kt-formular.neu .kt-lbl {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.kt-mark {
+  flex: none;
+  width: 14px;
+  color: var(--text-dim);
+  font-size: 11px;
+}
+.kt-mark.ok {
+  color: var(--ok);
+  font-weight: 700;
+}
+.kt-naechste {
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--blue);
+  border-radius: 8px;
+  background: var(--panel-2);
+  padding: 8px 12px;
+  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.kt-naechste-kopf {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+}
+.kt-naechste-zeile {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.kt-naechste-text {
+  flex: 1 1 220px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+.opt-suche {
+  width: 100%;
+  margin: 3px 0;
+}
+.kt-formular.neu .kt-grid {
+  grid-template-columns: 136px minmax(0, 1fr);
+}
+.kt-formular.neu .kt-lbl .frag-knopf {
+  margin-left: auto;
+}

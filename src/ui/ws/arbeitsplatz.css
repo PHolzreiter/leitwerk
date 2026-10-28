@@ -3055,3 +3055,234 @@ button.weather.offen {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* ---------------------------------------------------------------- Abfrage: geführte Ansicht (Notruf) */
+
+.gf {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.gf-karte {
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--blue);
+  border-radius: 8px;
+  background: var(--panel-2);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.gf-karte.gf-fertig {
+  border-left-color: var(--ok);
+}
+
+.gf-teil {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+}
+
+.gf-frage-zeile {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.gf-frage {
+  flex: 1;
+  font-size: 18px;
+  font-weight: 650;
+  line-height: 1.3;
+  color: var(--text);
+}
+
+.gf-stellen {
+  flex: none;
+}
+
+.gf-optionen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.gf-optionen.lang {
+  max-height: 260px;
+  overflow: auto;
+}
+
+.gf-optionen-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.gf-opt {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel);
+  color: var(--text);
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.gf-opt:hover:not(:disabled) {
+  border-color: var(--blue);
+}
+
+.gf-opt.gewaehlt {
+  background: var(--blue);
+  border-color: var(--blue);
+  color: #fff;
+}
+
+.gf-opt:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.gf-taste {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  color: var(--text-dim);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.gf-opt.gewaehlt .gf-taste {
+  background: transparent;
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.gf-feld,
+.gf-suche {
+  font-size: 15px;
+  padding: 7px 10px;
+  min-width: 0;
+}
+
+.gf-optionen input.zahl.gf-feld {
+  width: 110px;
+}
+
+.gf-rueckruf,
+.gf-was .row-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.gf-rueckruf .gf-feld {
+  width: 220px;
+}
+
+.gf-was-feld {
+  flex: 1;
+  min-width: 220px;
+}
+
+.gf-hinweis {
+  flex-basis: 100%;
+}
+
+.gf-kapitel {
+  margin-top: 8px;
+  max-height: 240px;
+}
+
+.gf-karte .ort-feld .adr-zeile input {
+  font-size: 15px;
+}
+
+.gf-karte > input.gf-feld,
+.gf-antwort > input.gf-feld {
+  width: 100%;
+}
+
+.gf-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gf-nav .spacer {
+  flex: 1;
+}
+
+.gf-protokoll {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.gf-prot-titel {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.gf-saetze {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.gf-satz {
+  display: flex;
+  gap: 8px;
+  padding: 4px 6px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text);
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.gf-satz:hover {
+  background: var(--panel-2);
+}
+
+.gf-satz.aktiv {
+  background: color-mix(in srgb, var(--blue) 18%, transparent);
+}
+
+.gf-satz.ohne {
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+.gf-nr {
+  flex: none;
+  min-width: 22px;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.gf-alarm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}

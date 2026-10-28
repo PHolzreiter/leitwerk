@@ -19,7 +19,8 @@ import { panelZeigen, registriere, type PanelKontext } from "../ws/arbeitsplatz"
 import { auswahl, karteZeigen, onAuswahl, waehle } from "../ws/auswahl";
 import { onLive, verlaufNachziehen, liveZeigen } from "./live";
 import { notrufTeile, type NotrufTeile } from "./notrufAbfrage";
-import { alleAnrufe, anrufAnnehmen, anrufAuflegen, anrufHalten, istMeins, meinGespraech } from "./telefon";
+import { alleAnrufe, angezeigteNummer, anrufAnnehmen, anrufAuflegen, anrufHalten, istMeins, meinGespraech } from "./telefon";
+import { abfrageAnsicht, onAbfrageAnsicht } from "../abfrageAnsicht";
 
 function fehler(p: Promise<unknown>): void {
   p.catch((e) => toast(String((e as Error).message ?? e), "error"));
@@ -119,7 +120,7 @@ function erstellen(ctx: PanelKontext) {
     }, 250);
   };
   const uhr = window.setInterval(() => nachKlick(() => teil?.refresh()), 1000);
-  const aus = [sim.onChange(spaeter), onAuswahl(() => pruefen()), mp.onChange(spaeter)];
+  const aus = [sim.onChange(spaeter), onAuswahl(() => pruefen()), mp.onChange(spaeter), onAbfrageAnsicht(() => aufbauen())];
   pruefen();
   return {
     el: root,
@@ -284,8 +285,9 @@ function mitteKopf(): { kopf: HTMLElement; welle: HTMLElement; aufz: HTMLElement
 // ---------------------------------------------------------------- Notruf
 
 function notrufAnsicht(root: HTMLElement, e: Einsatz): { refresh(): void; dispose(): void } {
-  const t: NotrufTeile = notrufTeile(e);
-  const telefon = alleAnrufe(true).find((x) => x.id === e.id)?.telefon ?? "";
+  const telefon = angezeigteNummer(e);
+  const gefuehrt = abfrageAnsicht() === "neu";
+  const t: NotrufTeile = notrufTeile(e, { gefuehrt, angezeigt: () => telefon });
 
   // Standort aus dem Netz (Ortung)
   const ortung = el("div", { class: "abf-ortung" });
@@ -367,7 +369,7 @@ function notrufAnsicht(root: HTMLElement, e: Einsatz): { refresh(): void; dispos
   mitte.appendChild(info);
 
   // Rechts: Abfrage
-  const rechts = el("div", { class: "abf-rechts" });
+  const rechts = el("div", { class: `abf-rechts${gefuehrt ? " gefuehrt" : ""}` });
   rechts.append(store.schema ? t.abfrage : el("div", { class: "muted pad" }, "Kein Abfrageschema importiert (Einstellungen → Leitstelle → Einsatzcodes & Abfrage)."));
 
   const grid = el("div", { class: "abf-grid" });

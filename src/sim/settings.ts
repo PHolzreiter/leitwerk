@@ -198,7 +198,8 @@ export interface Settings {
   /** TETRA-Funkgruppe = Einsatzgebiet (z. B. „NÖ-03“) */
   funkgruppe?: string;
   /** Rückruf nur möglich, wenn die Rückrufnummer aufgenommen wurde */
-  rueckrufNurMitNummer?: boolean;
+  /** Rückruf auch ohne aufgenommene Rückrufnummer erlauben (sonst nur mit Nummer) */
+  rueckrufOhneNummer?: boolean;
   nahGeschwindigkeit: number;
   /** veraltet (bis v0.8), ersetzt durch ausrueck */
   nahStartzeitSek: number;
@@ -259,7 +260,7 @@ export function defaultSettings(): Settings {
     verortungRadius: 250,
     falscheAdresseProzent: 15,
     wetterAktiv: true,
-    rueckrufNurMitNummer: false,
+    rueckrufOhneNummer: false,
     funkgruppe: "NÖ-03",
     wetterWechsel: 50,
     jahreszeit: "auto",

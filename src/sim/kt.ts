@@ -68,6 +68,51 @@ export interface KtDaten {
   zeitVorgabe?: "abholung" | "termin" | null;
   /** Rückruf beim Auftraggeber */
   telefon: string;
+  /** Krankentransportart (Hintransport, Rücktransport, Dialyse …) */
+  ktArt?: KtTransportArt | null;
+  /** einfacher oder qualifizierter Krankentransport */
+  transportmittel?: "einfach" | "qualifiziert" | null;
+  /** bis zum Fahrzeug gehfähig */
+  gehfaehig?: boolean | null;
+  /** Transportauftrag (Verordnung) vorhanden */
+  auftrag?: "ja" | "nein" | "einrichtung" | null;
+  /** Krankenkasse */
+  kasse?: string;
+  /** Art der Behandlung am Ziel */
+  behandlung?: string;
+}
+
+export type KtTransportArt = "hin" | "rueck" | "dialyse_hin" | "dialyse_rueck" | "therapie_hin" | "therapie_rueck" | "einweisung" | "entlassung";
+export const KT_TRANSPORTART_LABEL: Record<KtTransportArt, string> = {
+  hin: "Hintransport",
+  rueck: "Rücktransport",
+  dialyse_hin: "Hintransport Dialyse",
+  dialyse_rueck: "Rücktransport Dialyse",
+  therapie_hin: "Hintransport Therapie",
+  therapie_rueck: "Rücktransport Therapie",
+  einweisung: "Einweisung",
+  entlassung: "Entlassung",
+};
+export const KT_AUFTRAG_LABEL: Record<"ja" | "nein" | "einrichtung", string> = { ja: "ja", nein: "nein", einrichtung: "über die Einrichtung" };
+export const KT_KASSEN = ["ÖGK", "BVAEB", "SVS", "KFA", "privat / andere"];
+export const KT_BEHANDLUNGEN = ["ambulante Behandlung", "stationäre Aufnahme", "Dialyse", "Chemo-/Strahlentherapie", "Untersuchung", "andere Behandlung"];
+
+/** Zusatzangaben (Transportart, Transportmittel, Kasse …) passend zu einem erzeugten Auftrag */
+export function ktZusatz(d: KtDaten, typ: "ambulanz" | "heim" | "entlassung" | "einweisung" | "dauer" | "sek"): Partial<KtDaten> {
+  const kasse = gewichtet<string>([["ÖGK", 76], ["BVAEB", 10], ["SVS", 8], ["KFA", 4], ["privat / andere", 2]]);
+  if (typ === "sek") return { kasse };
+  const hin = !!d.nach?.khId && !d.von?.khId;
+  const b = (hin ? d.nach : d.von)?.bereich ?? "";
+  const dialyse = b === "DIA";
+  const therapie = b === "STR" || b === "CHE";
+  const ktArt: KtTransportArt =
+    typ === "einweisung" ? "einweisung" : typ === "entlassung" ? "entlassung" : dialyse ? (hin ? "dialyse_hin" : "dialyse_rueck") : therapie ? (hin ? "therapie_hin" : "therapie_rueck") : hin ? "hin" : "rueck";
+  const behandlung =
+    typ === "einweisung" || typ === "entlassung" ? "stationäre Aufnahme" : dialyse ? "Dialyse" : therapie ? "Chemo-/Strahlentherapie" : /kontrolle|untersuchung|ct|mrt|röntgen|sono/i.test(d.grund) ? "Untersuchung" : "ambulante Behandlung";
+  const qualifiziert = d.lage === "liegend" || d.sauerstoff || d.infektion || d.sofort || /bettlägerig|dekubitus|dement/i.test(d.patient.info);
+  const gehfaehig = d.lage === "gehend" || (d.lage === "sitzend" && /gehfähig/.test(d.patient.info)) || (d.lage === "sitzend" && Math.random() < 0.2);
+  const auftrag = d.von?.khId ? "einrichtung" : Math.random() < 0.85 ? "ja" : "nein";
+  return { ktArt, behandlung, transportmittel: qualifiziert ? "qualifiziert" : "einfach", gehfaehig, auftrag, kasse };
 }
 
 export type KtStatus = "aufnahme" | "offen" | "vorgemerkt" | "unterwegs" | "anBord" | "erledigt" | "storniert";
@@ -370,7 +415,7 @@ export function zufallsDaten(o: ZufallsOrte, jetzt: number): KtDaten | null {
       : Math.random() < 0.5
         ? termin
         : null;
-  return {
+  const d: KtDaten = {
     art,
     code: null,
     sofort,
@@ -387,6 +432,7 @@ export function zufallsDaten(o: ZufallsOrte, jetzt: number): KtDaten | null {
     abholung: abholung && abholung > jetzt ? abholung : null,
     telefon: zufallsNummer(),
   };
+  return { ...d, ...ktZusatz(d, typ) };
 }
 
 /** Gründe, die zum Geschlecht passen (kein Prostatakarzinom bei einer Frau) */
@@ -437,9 +483,14 @@ export function dauerDaten(heim: KtOrt, kh: Hospital, bereich: "DIA" | "STR" | "
     telefon: zufallsNummer(),
   };
   const ziel = khOrt(kh, bereich);
-  return [
+  const paar: [KtDaten, KtDaten] = [
     { ...basis, patient: { ...basis.patient }, von: heim, nach: ziel, termin: hin, abholung: hin - rnd(30, 50) * 60_000 },
     { ...basis, patient: { ...basis.patient }, von: ziel, nach: heim, termin: heimZeit, abholung: heimZeit },
+  ];
+  const z = ktZusatz(paar[0], "dauer");
+  return [
+    { ...paar[0], ...z },
+    { ...paar[1], ...z, ktArt: z.ktArt === "dialyse_hin" ? "dialyse_rueck" : "therapie_rueck", auftrag: "ja" },
   ];
 }
 

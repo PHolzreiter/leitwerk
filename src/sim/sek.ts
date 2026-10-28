@@ -6,7 +6,7 @@
 import { bereicheVon, type Hospital } from "../data/model";
 import { zufallsName, zufallsNummer } from "../abfrage/anrufer";
 import { distanceM, type LatLon } from "./geo";
-import { khOrt, sekLeer, type KtDaten, type KtLage } from "./kt";
+import { khOrt, ktZusatz, sekLeer, type KtDaten, type KtLage } from "./kt";
 import { akutJetzt } from "../data/klinik";
 
 /** Bereich am Ziel → Akut-Abteilung (Öffnungszeiten wie bei der Zuweisung) */
@@ -222,6 +222,7 @@ function sekAus(f: SekFall, u: SekUmfeld): KtDaten[] | null {
     abholung,
     telefon: zufallsNummer(),
   };
+  Object.assign(d, ktZusatz(d, "sek"));
   if (f.art !== "hinzurueck") return [d];
   // Rückfahrt nach der Untersuchung/Behandlung
   const zurueckAb = termin + rnd(60, 150) * 60_000;

@@ -1,5 +1,18 @@
 [
  {
+  "version": "0.82.0",
+  "datum": "2026-10-28",
+  "titel": "Neue Abfrage-Ansicht",
+  "punkte": [
+   "Notruf Frage für Frage, darunter das Protokoll als nummerierte Sätze",
+   "„Was ist passiert?“ schlägt das passende Kapitel vor",
+   "Rückrufnummer: angezeigte und genannte Nummer gleich, Rückruf nur mit Nummer",
+   "KT und Überstellung als übersichtliche Karten mit „nächster Frage“",
+   "Neue KT-Angaben: Transportart, Transportmittel, Krankenkasse u. a.",
+   "Bisherige Ansicht in den Einstellungen wählbar"
+  ]
+ },
+ {
   "version": "0.81.0",
   "datum": "2026-10-28",
   "titel": "Anrufer realistischer",

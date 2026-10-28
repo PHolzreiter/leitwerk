@@ -10,7 +10,7 @@ import { verstummen } from "../sprache";
 import { eroeffnen } from "../../abfrage/gespraech";
 import { KT_FRAGEN, ktFragen } from "../../abfrage/ktGespraech";
 import { mp } from "../../net/mehrspieler";
-import { sim, type Anruf } from "../../sim/engine";
+import { sim, type Anruf, type Einsatz } from "../../sim/engine";
 import { nummerAus } from "../../sim/rufnummer";
 import { istUeberstellung } from "../../sim/ktCodes";
 import { el, esc, toast } from "../dom";
@@ -39,6 +39,11 @@ function fehler(p: Promise<unknown>): void {
   p.catch((e) => toast(String((e as Error).message ?? e), "error"));
 }
 
+/** Nummer, die beim Notruf angezeigt wird – dieselbe, die der Anrufer auf Nachfrage nennt */
+export function angezeigteNummer(e: Einsatz): string {
+  return e.wahr.abfrage?.anrufer.nummer || nummerAus(e.id, true);
+}
+
 /** Aufgenommene Rückrufnummer (aus der Maske) */
 export function rueckrufNummer(x: { art: "rd" | "kt"; id: string }): string {
   return x.art === "rd" ? (sim.einsatz(x.id)?.telefon ?? "") : (sim.ktAuftrag(x.id)?.d.telefon ?? "");
@@ -55,7 +60,7 @@ export function alleAnrufe(mitBeendeten = false): AnrufEintrag[] {
   for (const e of sim.state.einsaetze) {
     const a = e.anruf;
     if (!a || (e.zustand === "abgeschlossen" && a.status !== "beendet") || !zeigen(a)) continue;
-    l.push({ art: "rd", typ: "notruf", id: e.id, nummer: e.nummer, anruf: a, telefon: nummerAus(e.id, true), titel: e.meldung.adresse || "Notruf" });
+    l.push({ art: "rd", typ: "notruf", id: e.id, nummer: e.nummer, anruf: a, telefon: angezeigteNummer(e), titel: e.meldung.adresse || "Notruf" });
   }
   for (const k of sim.state.kt ?? []) {
     const a = k.anruf;
@@ -193,7 +198,7 @@ function erstellen(ctx: PanelKontext) {
     if (a.status === "verpasst") {
       const ohne = !rueckrufNummer(x);
       const b = knopf("Zurückrufen", "primary", () => void anrufAnnehmen(x.art, x.id));
-      if (ohne && sim.settings.rueckrufNurMitNummer) {
+      if (ohne && !sim.settings.rueckrufOhneNummer) {
         b.disabled = true;
         b.title = "Keine Rückrufnummer aufgenommen – Rückruf nicht möglich";
       }

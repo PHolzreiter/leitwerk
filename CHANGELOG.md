@@ -1,5 +1,16 @@
 # Änderungen
 
+## 0.82.0 – Neue Abfrage-Ansicht: Notruf Frage für Frage, KT/SEK aufgeräumt
+- **Notruf Frage für Frage:** Rechts steht immer nur die nächste Frage groß, mit Antwortknöpfen (Tasten 1, 2, 3 …). Leertaste stellt die Frage, Enter überspringt, ↑ geht zurück
+- **Protokoll wie in echt:** Darunter wächst die Abfrage als nummerierte Sätze („1. Er ist wach und reagiert normal.“). Ein Klick auf einen Satz holt die Frage zurück, die Antwort lässt sich ändern
+- **Neue Reihenfolge:** Ort → Rückrufnummer → Wer ruft an / beim Patienten? → Bewusstsein und Atmung → Was ist passiert?
+- **„Was ist passiert?“ wählt das Kapitel:** Die Worte des Anrufers ins Feld schreiben („er ist umgekippt“, „von der Leiter gefallen“) – darunter erscheinen die passenden Kapitel, Enter nimmt das erste
+- **Lange Antwortlisten** (z. B. Hauptbeschwerde bei „Kranke Person“) haben ein Suchfeld
+- **Rückrufnummer:** Die angezeigte Nummer ist jetzt dieselbe, die der Anrufer nennt. „Nummer übernehmen“ trägt sie auch in die Abfrage ein, im Feld fügt ⤵ (oder die Taste Einfg) sie ein. Zurückrufen geht nur mit eingetragener Nummer (abschaltbar in den Einstellungen)
+- **KT und Überstellung aufgeräumt:** Abschnitte als Karten, ✓/○ zeigt, was schon da ist, oben steht nur die nächste offene Frage (🗨 Fragen / ✓ erledigt) statt der langen Fragenleiste
+- **Neue Angaben bei Krankentransporten:** Transportart (Hin-/Rücktransport, Dialyse, Therapie, Einweisung, Entlassung), Behandlung, einfacher oder qualifizierter KT, bis zum Fahrzeug gehfähig, Hygienemaßnahme, Transportauftrag und Krankenkasse – die Anrufer kennen die Antworten
+- **Bisherige Ansicht** bleibt wählbar: Einstellungen → Anrufer und Verlauf → Abfrage-Ansicht
+
 ## 0.81.0 – Anrufer realistischer: kein Dialekt, Alltagssprache, Panik nach Regeln
 - **Kein Dialekt und kein gebrochenes Deutsch mehr** – das klang oft nach Kauderwelsch. Österreichische Alltagswörter („Grüß Gott“, „Stiege“, „Kassa“) bleiben, Atemnot-Pausen und ein „Au“ bei Schmerzen auch
 - **Alltagssprache statt Formular:** Anrufer lesen keine Antwort-Stichworte mehr vor („Andere Substanz“, „drei bis neun Meter“, „Hauptbeschwerde …“), sondern sagen es so, wie Leute es sagen
