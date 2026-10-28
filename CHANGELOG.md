@@ -1,5 +1,17 @@
 # Änderungen
 
+## 0.86.0 – 50 neue Notfälle
+- **50 neue Rettungsdienst-Fälle** aus dem Alltag in Niederösterreich, jeder mit mehreren möglichen Ausgängen (harmlos bis kritisch):
+  - Sturz: Kopfwunde unter Blutverdünner, liegt seit der Nacht am Boden, Leiter, Glatteis, Baby vom Wickeltisch, Gerüst, E-Scooter, Badewanne, versperrte Tür, Stufen beim Heurigen, Rodeln
+  - Verkehr: Motorrad in der Kurve, Fußgänger angefahren, Auffahrunfall, Radfahrer vom Auto erfasst
+  - Arbeit und Freizeit: Knie beim Fußball, Wandern, Kuh im Stall, Kettensäge, Stapler, Hundebiss, Grillunfall, Stromschlag
+  - Herz und Atmung: Herzinfarkt bei der Frau (nur Übelkeit), Lungenembolie, Kollaps im Supermarkt, Herzstillstand am Sportplatz, Palliativpatient daheim, Verschlucken beim Essen, Aortendissektion, Asthma in der Schule
+  - Bauch und krank: Gallenkolik, Magen-Darm-Blutung, Brechdurchfall beim Kleinkind, Harnwegsinfekt mit Verwirrtheit, Dauerkatheter, verwirrte Person aufgefunden
+  - Neuro und Zucker: Überzucker, Epilepsie, Entzugskrampf, TIA, Migräne
+  - Allergie und Vergiftung: Nussallergie, Drogen am Fest, Putzmittel beim Kleinkind, Kohlenmonoxid aus der Therme
+  - Kinder, Schwangerschaft, Psyche, Hitze: Kleinkind im Gartenteich, Blutung in der Schwangerschaft, Panikattacke, Hitzschlag am Bau
+- Manche Fälle kommen nur, wenn es passt: Glatteis bei Glätte, Rodeln im Winter, Hitzschlag bei Hitze, Heuriger, Sportplatz oder Supermarkt an echten Orten
+
 ## 0.85.1 – Cardiac Arrest Center nur bei laufender Reanimation unter 60
 - Ein **Cardiac Arrest Center** wird nur noch bei **laufender Reanimation** und Patienten **unter 60 Jahren** bevorzugt – dann geht es allen anderen Häusern vor
 - Sonst (z. B. nach erfolgreicher Reanimation oder ab 60) zählt das nächste passende Haus – bei Herzinfarkt das nächste mit offenem Herzkatheter
