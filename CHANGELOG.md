@@ -1,7 +1,7 @@
 # Änderungen
 
 ## 0.88.0 – Notrufe verteilt nach Versorgungsstufe
-- **Verteilung wie im echten Betrieb 2025:** Notrufe aus dem Fallkatalog enden jetzt so oft in Telemedizin, BLS grün, BLS gelb, BLS rot, ALS grün, ALS gelb, ALS orange, ALS rot, „BLS/ALS aufwertbar“ und Akuttransport grün, wie es 2025 der Fall war (z. B. BLS gelb 19 %, ALS grün 17 %, ALS rot 0,7 %)
+- **Verteilung wie im echten Betrieb 2025:** Notrufe aus dem Fallkatalog enden jetzt so oft in Telemedizin, BLS grün, BLS gelb, BLS rot, ALS grün, ALS gelb, ALS orange, ALS rot, „BLS/ALS aufwertbar“ und Akuttransport grün, wie es 2025 der Fall war (z. B. BLS gelb 19 %, ALS grün 17 %, ALS rot 0,7 %). Auch der Anteil für Großunfälle ist hinterlegt (0,0017 %) – er greift, sobald es Großschadensfälle gibt
 - Einstellbar unter Einstellungen → Einsatzaufkommen → „Verteilung der Notfälle nach“ – Versorgungsstufe (mit den Anteilen, Knopf „Statistik“ setzt sie zurück) oder wie bisher Schwere (harmlos/mittel/kritisch). Kennt das Codesystem diese Stufen nicht, gilt die Schwere
 - **10 neue Fälle:** Einweisungen durch Hausarzt (Ordination und Hausbesuch), Heimarzt, Telemedizin, Ärztefunkdienst, Dialyse und Facharzt; Sturz vor ein paar Tagen; gestürzt, aber unverletzt und braucht nur Hilfe beim Aufstehen
 

@@ -1656,6 +1656,8 @@ export const STUFEN_STANDARD: Record<string, number> = {
   "ALS rot": 0.7,
   "BLS/ALS aufwertbar": 8.9,
   "Akuttransport grün": 8.6,
+  // 5 von 287.303 Einsätzen – noch ohne eigene Fälle; sobald es Großschadensfälle gibt, greift der Anteil
+  Großunfall: 0.0017,
 };
 
 /**

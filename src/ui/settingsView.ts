@@ -193,8 +193,8 @@ export function createSettingsView(container: HTMLElement, teil: "simulation" | 
     const stBox = el("div", { class: "row-btns set-stufen" });
     const stufen: Record<string, number> = { ...STUFEN_STANDARD, ...(draft.stufenVerteilung ?? {}) };
     for (const k of Object.keys(STUFEN_STANDARD)) {
-      const i = num(stufen[k], "0.1");
-      i.style.width = "64px";
+      const i = num(stufen[k], "any");
+      i.style.width = "72px";
       i.dataset.stufe = k;
       i.addEventListener("change", () => {
         stufen[k] = Math.max(0, Number(i.value) || 0);
