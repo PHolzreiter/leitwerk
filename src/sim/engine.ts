@@ -469,9 +469,11 @@ function alsAnforderung33(schema: Schema, f: Fall): Fall | null {
   const k33 = kapitelZuThema("anforderung_arzt", schema);
   if (!k33) return null;
   const a = f.antworten;
-  const GRUND: Record<string, string> = { brustschmerz: "herz", herz: "herz", atemnot: "atmung", schlaganfall: "neuro", zucker: "bz", blutung: "blutung", sturz: "sturz" };
+  const GRUND: Record<string, string> = { brustschmerz: "herz", herz: "herz", atemnot: "atmung", schlaganfall: "neuro", zucker: "bz", blutung: "blutung", sturz: "sturz", krampf: "neuro", allergie: "atmung", ersticken: "atmung" };
   const t = thema(f.kapitel, schema);
   let grund = GRUND[t] ?? "transport";
+  // wer schlecht Luft kriegt, wird nicht als „nur Transport“ angefordert
+  if (grund === "transport" && a.at === "abnorm") grund = "atmung";
   if (a.bw === "nein" || a.bw === "getruebt") grund = grund === "transport" ? "bewusstsein" : grund;
   if (t === "sturz" && a.umstand && !/boden/.test(String(a.umstand))) grund = "transport";
   const fest: Antworten = { anforderer: "normal", grund };
@@ -765,6 +767,8 @@ export interface Einsatz {
       stimmung?: { stufe: number; verlauf: number; beruhigt: boolean };
       /** genauere Wahrheit, als das Schema abfragen kann (fremdes Codesystem) */
       roh?: Antworten;
+      /** Bewusstsein/Atmung zu Gesprächsbeginn (vor einer Veränderung) – für den Vergleich im Export */
+      antwortenAnfang?: Antworten;
     };
     /** Verborgene Lage: Patienten und ihr Verlauf */
     lage?: Lage;
@@ -3059,7 +3063,7 @@ export class Simulation {
           anrufer.persona = personaWaehlen(
             anrufer,
             { alter: alt, w, vorname: vn, nachname: nn.join(" "), wach: (a.bw ?? "ja") === "ja" || a.bw === "getruebt", sicht: !vorlage.ohneSicht },
-            { ortUnbekannt: false, draussen: !!ortArt && ORT_IM_FREIEN.includes(ortArt), zuhause: !ortArt || ["wohnung", "haus", "garten"].includes(ortArt), oeffentlich: !!ortArt && ["geschaeft", "lokal", "bahnhof", "sport", "freizeit", "schule", "arbeit", "baustelle", "arzt"].includes(ortArt) },
+            { ortUnbekannt: false, heim: ortArt === "pflegeheim", draussen: !!ortArt && ORT_IM_FREIEN.includes(ortArt), zuhause: !ortArt || ["wohnung", "haus", "garten"].includes(ortArt), oeffentlich: !!ortArt && ["geschaeft", "lokal", "bahnhof", "sport", "freizeit", "schule", "arbeit", "baustelle", "arzt"].includes(ortArt) },
             Math.random,
           );
           merkmale.wissen = anrufer.persona.wissen;
@@ -4434,7 +4438,8 @@ export class Simulation {
       if (text && /^\(/.test(text)) {
         if (a.status === "aktiv") a.gespraech.push({ zeit: t, echt: Date.now(), von: "system", text: text.replace(/^\(|\)$/g, "") });
         (w.verlauf ??= []).push(`Am Telefon ist jetzt nur noch zu hören: ${text.replace(/^\(|\)$/g, "")} – du kannst kaum noch sprechen.`);
-        w.antworten = { ...w.antworten, bw: p0.bw, at: p0.at };
+        w.antwortenAnfang ??= { bw: w.antworten.bw, at: w.antworten.at };
+    w.antworten = { ...w.antworten, bw: p0.bw, at: p0.at };
         return;
       }
     } else text = veraenderungText(w.anrufer, p0.geschlecht === "w", p0, besserung, a.status === "beendet");
@@ -4442,10 +4447,12 @@ export class Simulation {
       if (a.status === "aktiv" && w.anrufer.selbst) {
         a.gespraech.push({ zeit: t, echt: Date.now(), von: "system", text: "Der Anrufer antwortet nicht mehr – man hört nur noch Geräusche." });
       }
-      w.antworten = { ...w.antworten, bw: p0.bw, at: p0.at };
+      w.antwortenAnfang ??= { bw: w.antworten.bw, at: w.antworten.at };
+    w.antworten = { ...w.antworten, bw: p0.bw, at: p0.at };
       return;
     }
     // Was der Anrufer jetzt weiß (für die KI und die Abfrage-Antworten) – und was sich verändert hat (die KI reagiert darauf)
+    w.antwortenAnfang ??= { bw: w.antworten.bw, at: w.antworten.at };
     w.antworten = { ...w.antworten, bw: p0.bw, at: p0.at };
     (w.verlauf ??= []).push(text);
     if (a.status === "aktiv") {

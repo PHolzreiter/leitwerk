@@ -181,11 +181,13 @@ function pruefeAntwort(e: Einsatz, frage: string, antwort: string, art: string, 
   const fw = new Set(w(frage));
   // nur echte Echos: die Frage wörtlich zurück (ohne Ja/Nein/neue Angabe) – „Er atmet ganz normal“ auf „Atmet er normal?“ ist eine gute Antwort
   const neu = aw.filter((x) => !fw.has(x));
-  if (art === "frage" && aw.length >= 3 && neu.length === 0 && !/\b(ja|nein|na|jo|nicht|net|kein\w*|\d+)\b/i.test(antwort)) g.push("wiederholt bloß die Frage");
+  if (art === "frage" && aw.length >= 3 && neu.length === 0 && !/\b(ja|nein|na|jo|nicht|net|kein\w*|\d+|eine?|einer|zwei|drei|nur)\b/i.test(antwort)) g.push("wiederholt bloß die Frage");
   // nach der Adresse darf man zweimal fragen
   // Zustand nach „Wie geht's jetzt?“ oder beim Richtigstellen einer Zusammenfassung zu wiederholen, ist normal
   const zustandsfrage = /wie geht|wie schaut|was sehen|wie ist es jetzt|bringt das was|wird es besser|^also:/i.test(frage.trim());
-  if (!zustandsfrage && !/adresse|notfallort|wo genau/i.test(frage) && saetze(antwort).some((s) => schonGesagt(s, frueher))) g.push("sagt etwas zum zweiten Mal");
+  // kurze Sätze, „weiß ich nicht“ und Mitzählen bei der Herzdruckmassage sind keine echten Wiederholungen
+  const zaehlbar = (x: string) => x.split(/\s+/).length >= 5 && !/\d+\s*,\s*\d+/.test(x) && !/^\W*(das )?(weiß ich (nicht|net)|keine ahnung|kann ich nicht sagen)/i.test(x) && !/^\W*wie gesagt\b/i.test(x);
+  if (!zustandsfrage && !/adresse|notfallort|wo genau/i.test(frage) && saetze(antwort).some((s) => zaehlbar(s) && schonGesagt(s, frueher))) g.push("sagt etwas zum zweiten Mal");
   if (art === "mitteilung" && /\b(atmet|bewusst|reagiert)\b/.test(antwort)) g.push("zählt bei einer Mitteilung den Zustand auf");
   if (dauer > 20000) g.push(`langsam (${Math.round(dauer / 1000)} s)`);
   return g;
@@ -261,7 +263,10 @@ async function einGespraech(auftrag: TestAuftrag, nr: number, abbruch: { ja: boo
   const ueberspringen = (f: Frage) =>
     (f.id === "geschlecht" && /schwanger|geburt/.test(thema)) ||
     (/polizei/i.test(f.text) && w.anrufer.art !== "polizei") ||
-    (selbst && ["bw", "geschlecht", "anzahl_patienten", "hautfarbe"].includes(f.id));
+    (selbst && ["bw", "geschlecht", "anzahl_patienten", "hautfarbe", "reanimiert"].includes(f.id)) ||
+    // Schwangerschaft nur bei Frauen im passenden Alter; Lungenkrankheit/Sprechen nicht beim Kleinkind
+    (/schwanger|entbunden/.test(f.id) && (w.szenario ? w.szenario.patient.geschlecht !== "w" || w.szenario.patient.alter < 12 || w.szenario.patient.alter > 55 : false)) ||
+    (["lungenerkrankung", "sprachschw", "tracheostoma"].includes(f.id) && (w.szenario?.patient.alter ?? 99) < 4);
   for (let i = 0; i < 16 && !abbruch.ja; i++) {
     const f = fragenImAblauf(schema, w.kapitel, eingetragen)
       .map((x) => x.frage)

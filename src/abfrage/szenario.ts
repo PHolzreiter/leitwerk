@@ -262,6 +262,8 @@ const KRANKHEITEN: Krankheit[] = [
   { name: "hatte vor ein paar Monaten eine Thrombose im Bein", medikamente: ["Xarelto (Blutverdünner)", "Eliquis (Blutverdünner)"], fakten: { blutverduenner: "ja" }, ab: 999 },
   { name: "Diabetes, spritzt Insulin", medikamente: ["Insulin"], fakten: { diabetiker: "ja" }, ab: 999 },
   { name: "Krebs im Endstadium", medikamente: ["Morphin über eine Schmerzpumpe"], fakten: {}, ab: 999 },
+  { name: "Leberzirrhose", medikamente: ["Entwässerungstabletten"], fakten: {}, ab: 999 },
+  { name: "Magengeschwür", medikamente: ["Pantoloc (Magenschutz)"], fakten: {}, ab: 999 },
 ];
 
 /** Vorerkrankungen passend zu Alter, Vorlage und bereits feststehenden Antworten */
@@ -658,15 +660,15 @@ const FAKT: Record<string, Record<string, string>> = {
   mehrere_verletzte: { ja: "es sind mehrere Personen verletzt", nein: "es ist nur eine Person betroffen" },
   // Protokoll-Antworten in Alltagssprache (sonst liest die KI die Stichworte des Protokolls vor)
   region: {
-    extremitaet: "verletzt ist nur eine Hand, ein Finger, ein Arm oder ein Bein – genau dort, wo es in der Fallakte steht",
-    kopf: "verletzt ist {er} am Kopf bzw. im Gesicht",
-    hals_brust: "verletzt ist {er} am Hals bzw. an der Brust",
-    rumpf: "verletzt ist {er} am Bauch, Rücken, an der Hüfte oder am Oberschenkel – genau dort, wo es in der Fallakte steht",
-    mehrere: "{er} ist an mehreren Stellen verletzt",
+    extremitaet: "betroffen ist nur eine Hand, ein Finger, ein Arm oder ein Bein – genau dort, wo es in der Fallakte steht",
+    kopf: "betroffen ist der Kopf bzw. das Gesicht – so, wie es in der Fallakte steht",
+    hals_brust: "betroffen ist der Hals bzw. die Brust",
+    rumpf: "betroffen ist der Bauch, Rücken, die Hüfte oder der Oberschenkel – genau dort, wo es in der Fallakte steht",
+    mehrere: "betroffen sind mehrere Stellen",
   },
   staerke: { gefaehrlich: "es spritzt bzw. hört trotz Draufdrücken nicht auf", stark: "es blutet stark, die Tücher sind schnell durch", schwach: "es blutet, aber mit Draufdrücken geht es", gering: "es blutet kaum noch" },
-  hoehe: { boden: "{er} ist ebenerdig hingefallen, nicht von irgendwo herunter", treppe: "{er} ist die Treppe hinuntergefallen" },
-  umstand: { keine: "sonst gibt es nichts Besonderes", wetter: "{er} liegt draußen in der Kälte bzw. im Nassen", boden_1: "{er} liegt noch am Boden", boden_2: "{er} liegt noch am Boden", boden_3: "{er} liegt noch am Boden", oeffentlich: "{er} liegt an einem öffentlichen Platz" },
+  hoehe: { boden: "{er} ist nicht tief gefallen – genau so, wie es in der Fallakte steht", treppe: "{er} ist die Stiege hinuntergefallen", gross: "{er} ist ein ganzes Stück heruntergefallen – so hoch, wie es in der Fallakte steht", extrem: "{er} ist sehr tief heruntergefallen" },
+  umstand: { keine: "sonst gibt es nichts Besonderes", erschwert: "man kommt nur schwer zu {ihm} hin – so, wie es in der Fallakte steht", wetter: "{er} liegt draußen in der Kälte bzw. im Nassen", boden_1: "{er} liegt noch am Boden", boden_2: "{er} liegt noch am Boden", boden_3: "{er} liegt noch am Boden", oeffentlich: "{er} liegt an einem öffentlichen Platz" },
   atemweg: { frei: "{er} kriegt wieder normal Luft", teilweise: "{er} hustet und beim Atmen pfeift es, ein bisschen Luft kriegt {er} aber", komplett: "{er} kann weder husten noch atmen noch einen Laut machen" },
   situation: { fruchtwasser: "das Fruchtwasser ist abgegangen, Wehen gibt es noch keine", wehen: "sie hat Wehen", unmittelbar: "die Wehen kommen ganz knapp hintereinander und sie muss schon pressen", kopf: "man sieht schon den Kopf", geboren: "das Baby ist schon da" },
   woran: { suessigkeit: "es war ein Zuckerl", essen: "es war ein Stück Essen", fluessigkeit: "es war etwas zum Trinken", objekt: "es war ein kleiner Gegenstand bzw. ein Spielzeugteil" },
@@ -680,7 +682,92 @@ const FAKT: Record<string, Record<string, string>> = {
     gedanken: "{er} hat gesagt bzw. geschrieben, dass {er} nicht mehr mag – etwas Konkretes hat {er} aber nicht angekündigt",
     absicht: "{er} hat geschrieben bzw. gesagt, dass {er} sich etwas antun will",
   },
-  hauptbeschwerde: { fieber: "vor allem geht es um das Fieber", schwaeche: "vor allem ist {er} so schwach", schwindel: "vor allem ist {ihm} schwindlig" },
+  hauptbeschwerde: {
+    fieber: "vor allem geht es um das Fieber",
+    az: "{er} ist insgesamt in einem schlechten Zustand – so wie in der Fallakte beschrieben",
+    schwaeche: "vor allem ist {er} so schwach",
+    erbrechen: "vor allem muss {er} immer wieder erbrechen",
+    uebelkeit: "vor allem ist {ihm} so übel",
+    schwindel: "vor allem ist {ihm} schwindlig",
+    schmerzen: "vor allem hat {er} Schmerzen – wo, steht in der Fallakte",
+    wasserlassen: "{er} kann kein Wasser lassen",
+    blutdruck: "es geht um den Blutdruck",
+  },
+  // weitere Protokoll-Antworten als Alltagssatz (die genauen Umstände stehen in der Fallakte)
+  substanz: {
+    opiate: "{er} hat Heroin bzw. ein starkes Schmerzmittel genommen",
+    antidepressiva: "{er} hat Tabletten gegen Depressionen genommen",
+    kokain: "{er} hat Kokain bzw. Aufputschmittel genommen",
+    saeure: "{er} hat etwas Ätzendes getrunken",
+    knopfzelle: "{er} hat eine Knopfzelle verschluckt",
+    andere: "was genau {er} genommen hat, steht in der Fallakte – sag es mit deinen Worten",
+  },
+  absicht: { absichtlich: "{er} hat es absichtlich genommen", versehentlich: "es ist aus Versehen passiert", medikationsfehler: "{er} hat sich bei den Tabletten vertan", drogen: "{er} hat Drogen genommen" },
+  viz: { ja: "die Vergiftungsinformation hat gesagt, ihr sollt die Rettung holen", nein: "bei der Vergiftungsinformation hat niemand angerufen", unbekannt: "bei der Vergiftungsinformation hat niemand angerufen" },
+  augen: { schwer: "es ist eine schlimme Augenverletzung – genau so, wie in der Fallakte beschrieben", maessig: "{er} hat einen Schlag aufs Auge bekommen", gering: "{er} hat etwas Kleines im Auge, es ist gerötet", medizinisch: "es war kein Unfall – {er} sieht plötzlich schlecht bzw. das Auge tut weh" },
+  flaeche: { gross: "verbrannt ist eine große Fläche", mittel: "verbrannt ist ungefähr so viel wie zwei, drei Handflächen oder mehr", gering: "verbrannt ist nur eine kleine Stelle", sonnenbrand: "es ist ein Sonnenbrand" },
+  deliktart: { koerperverletzung: "{er} ist bei einer Rauferei bzw. von jemandem geschlagen worden", sexualdelikt: "es war ein sexueller Übergriff", elektroschocker: "{er} ist mit einem Elektroschocker angegriffen worden" },
+  taeter_vor_ort: { ja: "der Täter ist noch da", nein: "der Täter ist weg" },
+  stelle: { keine: "es blutet nicht aus einem Katheter, Shunt oder einer Krampfader", koerperoeffnung: "es blutet aus einem künstlichen Ausgang bzw. Katheter", shunt: "es blutet aus dem Dialyse-Shunt am Arm", krampfader: "es blutet aus einer Krampfader", nach_geburt: "es blutet nach einer Geburt" },
+  krampft: { ja: "{er} krampft gerade noch", mehrere: "{er} hat schon mehrere Anfälle hintereinander gehabt", nein: "{er} krampft jetzt nicht mehr" },
+  puls: { normal: "der Puls fühlt sich normal an", langsam: "der Puls ist ganz langsam", schnell: "das Herz rast, der Puls ist ganz schnell", unbekannt: "den Puls kannst du nicht sagen" },
+  amputation: { ja: "ein Körperteil ist ab – welches, steht in der Fallakte", nein: "abgetrennt ist nichts" },
+  hohe_energie: { ja: "es war ein heftiger Aufprall bzw. eine Maschine mit viel Wucht", nein: "es war kein heftiger Aufprall" },
+  noch_gepfaehlt: { ja: "der Gegenstand steckt noch drin", nein: "es steckt nichts mehr drin" },
+  wunde: { zentral: "die Wunde ist am Kopf, Hals, an der Brust oder am Bauch – genau dort, wo es in der Fallakte steht", peripher: "die Wunde ist an einem Arm oder Bein" },
+  anzahl_wunden: { eine: "es ist eine Wunde", mehrere: "es sind mehrere Wunden" },
+  brennt_noch: { ja: "{er} brennt noch", nein: "es brennt nichts mehr" },
+  atem_schluck: { ja: "{er} kriegt schlecht Luft bzw. kann kaum schlucken", nein: "Atmen und Schlucken geht normal" },
+  symptome: { ja: "{er} hat Ausschlag, Schwellung oder Juckreiz", nein: "{er} hat keine Beschwerden" },
+  vorgeschichte: { ja: "{er} hatte schon einmal eine schwere allergische Reaktion", nein: "so eine schwere Reaktion hatte {er} noch nie" },
+  medikation: { injektion: "{er} hat sich schon die Notfallspritze gegeben", medikamente: "{er} hat schon Tabletten gegen die Allergie genommen", nein: "ein Notfallmedikament hat {er} noch nicht genommen" },
+};
+
+/** Auslöser einer Allergie (Kapitel Allergie verwendet „ursache“ anders als Blutung) */
+const ALLERGIE_URSACHE: Record<string, string> = { schwarm: "{er} ist von vielen Insekten gestochen worden", schlange: "{er} ist von einer Schlange gebissen worden", spinne: "{er} ist von einer Spinne bzw. einem Skorpion gestochen worden", anderes: "ausgelöst hat es das, was in der Fallakte steht (z. B. ein einzelner Stich oder ein Essen)" };
+FAKT.ursache = { ...FAKT.ursache, ...ALLERGIE_URSACHE, medizinisch: "es kommt nicht von einer Verletzung", nein: "es kommt nicht von einem Unfall oder Sturz", alt: "es kommt von einem älteren Unfall bzw. Sturz", frisch: "es kommt von einem Unfall bzw. Sturz gerade eben" };
+Object.assign(FAKT.substanz, { co: "es ist Kohlenmonoxid bzw. ein Abgas", gas: "es riecht nach Gas bzw. es sind Dämpfe – so, wie es in der Fallakte steht", chemisch: "es ist eine Chemikalie", suizid_co: "{er} hat sich absichtlich Abgas bzw. Rauch ausgesetzt" });
+Object.assign(FAKT.lage, {
+  graben: "{er} liegt in einem Graben bzw. einer Grube",
+  gebaeude: "{er} ist in einem eingestürzten Gebäude",
+  lawine: "{er} ist verschüttet",
+  raumenge: "{er} steckt in einer Enge fest",
+  springen: "{er} droht zu springen",
+  gesprungen: "{er} ist gesprungen",
+  erhaengen: "{er} hat sich aufgehängt bzw. versucht es",
+});
+Object.assign(FAKT, {
+  wo: { land: "{er} ist schon aus dem Wasser heraußen", im_wasser: "{er} ist noch im Wasser", gestrandet: "{er} sitzt im Wasser fest", untergegangen: "{er} ist untergegangen – du weißt ungefähr, wo", vermisst: "{er} ist verschwunden, ihr wisst nicht, wo" },
+  tierart: { gross: "es war ein großes Tier", exotisch: "es war ein exotisches bzw. giftiges Tier", hund_mehrere: "es waren mehrere Hunde", normal: "es war ein einzelner Biss bzw. Kratzer" },
+  tod: { nein: "{er} ist nicht eindeutig tot – du weißt nur, dass {er} sich nicht rührt", moeglich: "du weißt nicht, ob {er} noch lebt", offensichtlich: "{er} ist eindeutig tot – so, wie in der Fallakte beschrieben", erwartet: "{er} war schwer krank, damit hat man gerechnet" },
+  ursache_9: { erhaengen: "{er} hat sich aufgehängt", strangulation: "{er} ist gewürgt bzw. stranguliert worden", ersticken: "{er} hat sich verschluckt", keine: "einen Grund dafür siehst du keinen" },
+  beobachtet: { ja: "jemand hat gesehen, wie {er} zusammengebrochen ist", nein: "niemand hat gesehen, wie es passiert ist" },
+  koerperteil: { klein: "eingeklemmt ist nur eine Hand, ein Fuß bzw. ein Finger", mittel: "eingeklemmt ist ein Arm oder Unterschenkel", gross: "eingeklemmt ist ein größerer Teil – so, wie es in der Fallakte steht" },
+  mechanismus: { nein: "sonst war nichts Besonderes beim Unfall", fahrrad: "es war ein Radfahrer beteiligt", motorrad: "es war ein Motorrad beteiligt", fussgaenger: "ein Fußgänger ist angefahren worden", geschleudert: "jemand ist aus dem Auto geschleudert worden", ueberschlag: "das Auto hat sich überschlagen", absturz: "das Auto ist abgestürzt", sinkend: "das Auto ist im Wasser" },
+  grossunfall: { nein: "es ist kein großer Unfall mit vielen Beteiligten", bus: "ein Bus ist beteiligt", zug: "ein Zug ist beteiligt", massen: "es sind sehr viele Verletzte" },
+  verletzte: { ja: "es gibt Verletzte", nein_sicher: "verletzt ist sicher niemand", nein_unsicher: "du glaubst, es ist niemand verletzt, bist dir aber nicht sicher" },
+  grund: { transport: "{er} soll ins Krankenhaus, ist aber nicht akut schlechter geworden", na: "{er} braucht einen Notarzt", nah: "{er} braucht den Hubschrauber", reanimiert: "{er} ist gerade wiederbelebt worden", bewusstsein: "{er} ist plötzlich eingetrübt", atmung: "{er} kriegt akut schlecht Luft", blutung: "{er} blutet stark", herz: "{er} hat akute Herzbeschwerden", neuro: "{er} hat Anzeichen für einen Schlaganfall", bz: "der Zucker ist entgleist", sturz: "{er} ist gestürzt" },
+  anforderer: { normal: "du forderst als Pflege, Ärztin bzw. Arzt vor Ort an" },
+  schmerzort: { oberhalb: "es tut oben im Bauch weh, über dem Nabel", unterhalb: "es tut unten im Bauch weh, unter dem Nabel" },
+  anz_symptome: { eins: "{er} hat nur eine Beschwerde", mehrere: "{er} hat mehrere Beschwerden, z. B. Fieber und Husten" },
+});
+/** „Was ist passiert?“ in mehreren Kapiteln (Werte sind verschieden) */
+FAKT.art = {
+  verbrennung: "{er} hat sich verbrannt bzw. verbrüht – so, wie es in der Fallakte steht",
+  explosion: "es hat eine Explosion gegeben",
+  feuer: "es brennt bzw. hat gebrannt",
+  feuerwerk: "es war ein Feuerwerkskörper",
+  schuss: "{er} ist angeschossen worden",
+  stich: "{er} ist mit einem Messer bzw. etwas Spitzem gestochen worden",
+  pfaehlung: "{er} ist in etwas Spitzes gestürzt, das steckt",
+  hitze: "es kommt von der Hitze",
+  kaelte: "es kommt von der Kälte",
+  ertrinken: "{er} ist im Wasser untergegangen bzw. fast ertrunken",
+  kopfsprung: "{er} ist ins seichte Wasser gesprungen und mit dem Kopf aufgeschlagen",
+  tauchen: "es war ein Tauchunfall",
+  eis: "{er} ist im Eis eingebrochen",
+  fliess: "{er} ist in einen Fluss gefallen",
+  hochwasser: "es ist wegen dem Hochwasser",
 };
 
 export function faktSaetze(z: Antworten, w: boolean): string[] {

@@ -1069,7 +1069,7 @@ export const FAELLE: FallVorlage[] = [
     geschehen: [
       "{P} ist vom Beckenrand mit dem Kopf voraus ins Nichtschwimmerbecken gesprungen – dort ist es nur etwa einen Meter tief.",
       "{Er} ist mit dem Kopf am Boden angeschlagen und ist kurz reglos im Wasser getrieben.",
-      "Der Bademeister hat {ihn} sofort herausgeholt und am Beckenrand flach hingelegt.",
+      "[anrufer_typ!=bademeister] Der Bademeister hat {ihn} sofort herausgeholt und am Beckenrand flach hingelegt.", "[anrufer_typ=bademeister] Du hast {ihn} sofort herausgeholt und am Beckenrand flach hingelegt.",
       "[variante=A] {Er} ist wach, hat Schmerzen im Nacken, kann aber Arme und Beine bewegen.",
       "[variante=B] {Er} ist wach, sagt aber, {er} spürt die Beine nicht richtig und die Finger kribbeln.",
     ],
@@ -1138,7 +1138,7 @@ export const FAELLE: FallVorlage[] = [
     anrufer: ["bademeister", "partner"],
     geschehen: [
       "{P} ist aus der Sauna gekommen, hat sich unter die kalte Dusche gestellt und ist dann zusammengesackt.",
-      "Die Bademeisterin war gleich da, {er} liegt jetzt am Boden mit hochgelagerten Beinen.",
+      "[anrufer_typ!=bademeister] Die Bademeisterin war gleich da, {er} liegt jetzt am Boden mit hochgelagerten Beinen.", "[anrufer_typ=bademeister] Du warst gleich da, {er} liegt jetzt am Boden mit hochgelagerten Beinen.",
       "[variante=A] Nach kurzer Zeit macht {er} die Augen wieder auf.",
     ],
     hergang: ["Ein Gast ist nach der Sauna umgekippt!", "Da ist jemand beim Tauchbecken zusammengebrochen!"],
@@ -1190,7 +1190,7 @@ export const FAELLE: FallVorlage[] = [
     anrufer: ["busfahrer", "passant"],
     geschehen: [
       "{P} ist im Bus gesessen und hat auf einmal zu zucken angefangen, Arme und Beine.",
-      "Der Busfahrer ist bei der Haltestelle stehen geblieben, die anderen Fahrgäste sind ausgestiegen.",
+      "[anrufer_typ!=busfahrer] Der Busfahrer ist bei der Haltestelle stehen geblieben, die anderen Fahrgäste sind ausgestiegen.", "[anrufer_typ=busfahrer] Du bist bei der Haltestelle stehen geblieben, die anderen Fahrgäste sind ausgestiegen.",
       "Nach ungefähr zwei Minuten hat das Zucken aufgehört, jetzt liegt {er} im Gang und ist ganz benommen.",
     ],
     hergang: ["Ein Fahrgast hat bei uns im Bus einen Anfall, er zuckt am ganzen Körper!", "Da krampft wer im Bus!"],
@@ -1246,7 +1246,7 @@ export const FAELLE: FallVorlage[] = [
     anrufer: ["tierpfleger", "eltern"],
     geschehen: [
       "{P} hat durch den Zaun gefüttert und ist von einem {Esel|Damhirsch|Wildschwein} in die Hand gebissen worden.",
-      "Das Tier ist im Gehege, die Tierpflegerin hat das Tor zugemacht.",
+      "[anrufer_typ!=tierpfleger] Das Tier ist im Gehege, die Tierpflegerin hat das Tor zugemacht.", "[anrufer_typ=tierpfleger] Das Tier ist im Gehege, du hast das Tor zugemacht.",
       "Die Hand blutet, man sieht die Bisswunde.",
     ],
     hergang: ["Ein Kind ist im Tierpark gebissen worden, die Hand blutet!"],

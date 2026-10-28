@@ -1,5 +1,19 @@
 # Änderungen
 
+## 0.81.0 – Anrufer realistischer: kein Dialekt, Alltagssprache, Panik nach Regeln
+- **Kein Dialekt und kein gebrochenes Deutsch mehr** – das klang oft nach Kauderwelsch. Österreichische Alltagswörter („Grüß Gott“, „Stiege“, „Kassa“) bleiben, Atemnot-Pausen und ein „Au“ bei Schmerzen auch
+- **Alltagssprache statt Formular:** Anrufer lesen keine Antwort-Stichworte mehr vor („Andere Substanz“, „drei bis neun Meter“, „Hauptbeschwerde …“), sondern sagen es so, wie Leute es sagen
+- **Aufregung nach Regeln:** Eltern und Angehörige bei Lebensgefahr sind panisch (hörbar: Satzfetzen, „Bitte, schnell!“), Passanten aufgeregt oder gefasst, Pflege und Ärzte sachlich, bei Harmlosem bleibt man ruhig – kein „Sie müssen sofort kommen!“ beim Fingerschnitt mehr
+- „Unsicher“ heißt jetzt nur noch unsicher beim Beobachten (Atmung, wie schlimm) – nie bei Adresse, Name oder Alter der Angehörigen
+- Anrufer sprechen zwischendurch kurz mit dem Patienten („Bleib ruhig, ich bin da“) – aber nicht mehr „Die Rettung kommt gleich!“, bevor überhaupt jemand alarmiert ist
+- Wer sonst noch da ist, passt jetzt: keine Schaulustigen im Pflegeheimzimmer, die Mutter des Kindes hat nicht „ihren Sohn“ als Helfer, wenn der Sohn der Patient ist
+- Gefährlicher Ort (Gärgas, Rauch, Strom): der Anrufer geht nicht hin, auch wenn man ihn darum bittet
+- Benommene Patienten (Unterzucker) bekommen auf Anweisung ein paar Schlucke Süßes – nur wer gar nicht reagiert, bekommt nichts
+- Fragen wie „Kann er die Arme normal bewegen?“ werden richtig herum verstanden
+- Beim Einstieg „Hallo? Bin ich bei der Rettung?“ wird die Rückfrage nicht mehr weggebessert; die Adresse geht nicht mehr verloren
+- **Die neuen Fälle aus 0.80 korrigiert** (u. a. Nasenbluten, Wespenstich, Fieberkrampf, Spielplatz, Tabletten, Arbeitsunfall, Rauferei, Augenverätzung, Blutdruck); Bademeister, Busfahrer und Tierpflegerin reden über sich in der Ich-Form
+- Testlauf: passende Fragen je Alter (keine Schwangerschaft bei Kindern), weniger Fehlalarme bei „sagt etwas zum zweiten Mal“, Vorher/Nachher bei Bewusstsein und Atmung im Export
+
 ## 0.80.0 – Fälle überarbeitet: Symptom und Dringlichkeit, 25 neue Notfälle, Überstellungen nach Öffnungszeiten
 - **Jeder Fall hat Symptom und Dringlichkeit hinterlegt** (stabil/grün, dringend/gelb, Schockraum/rot). Danach meldet die Besatzung und bucht der RTW. Verschlechtert sich der Patient auf rot, wird hochgestuft
 - **Fall-Editor:** Symptom und Dringlichkeit statt der alten Verdachtsdiagnose; die Prüfung meldet Symptome oder Dringlichkeiten, die es nicht gibt

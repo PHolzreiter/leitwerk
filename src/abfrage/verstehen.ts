@@ -290,7 +290,7 @@ function minutenAus(a: string): number | null {
  * Widerspricht die Antwort dem, was der Anrufer weiß? Gibt die Gründe zurück (leer = passt).
  * Geprüft wird nur, was sich sicher erkennen lässt – lieber eine Antwort durchlassen als eine gute verwerfen.
  */
-export function antwortPruefen(k: AnrufKontext, themen: Thema[], kern: Kern, antwort: string, frage?: Frage): string[] {
+export function antwortPruefen(k: AnrufKontext, themen: Thema[], kern: Kern, antwort: string, frage?: Frage, gefragt = ""): string[] {
   const a = klein(antwort);
   if (!a || /^\(/.test(a)) return [];
   const g: string[] = [];
@@ -348,8 +348,11 @@ export function antwortPruefen(k: AnrufKontext, themen: Thema[], kern: Kern, ant
       const e = erster(a);
       const sagtJa = /^\W*(ja|jo|genau|stimmt|freilich|schon)\b/.test(e) && !NEG.test(e);
       const sagtNein = /^\W*(nein|na|naa|nö|ne)\b/.test(e) || (NEG.test(e) && !/^\W*(ja|jo)\b/.test(e));
-      if (w === "nein" && sagtJa) g.push(`die richtige Antwort ist „nein“`);
-      if (w === "ja" && sagtNein) g.push(`die richtige Antwort ist „ja“`);
+      // umgekehrt gefragt („Kann er die Arme normal bewegen?“ zum Merkmal „Lähmung“): ja und nein tauschen
+      const umgekehrt = /\b(normal|gleich|gleichmäßig|richtig|wie immer|wie sonst)\b/i.test(gefragt) && !/\bnicht\b|\bkein/i.test(gefragt) && !["atmung_geprueft"].includes(id);
+      const soll = umgekehrt ? (w === "ja" ? "nein" : "ja") : w;
+      if (soll === "nein" && sagtJa) g.push(`die richtige Antwort ist „nein“`);
+      if (soll === "ja" && sagtNein) g.push(`die richtige Antwort ist „ja“`);
     }
   }
   // Ich-Form beim Selbstanrufer
@@ -455,7 +458,13 @@ export function anweisungKern(k: AnrufKontext, text: string): AnweisungKern {
     gesagt.push(ichSage);
     saetze.push(`Das geht nicht: ${grund}.`);
   };
+  // Gefahr am Ort (Gärgas, Rauch, Gas, Strom): der Anrufer geht nicht hin – nur Tür, Beruhigen, Absichern
+  const gefahr = !!sz && ["gefahrstoff", "brand", "strom"].includes(sz.thema) && /keller|gas|rauch|strom|leitung/i.test([...(sz.geschehen ?? []), ...sz.details, sz.stelle].join(" "));
   for (const typ of typen) {
+    if (gefahr && !["tuer", "beruhigen", "absichern"].includes(typ)) {
+      nein(`dort ist es gefährlich (siehe Fallakte) – du gehst nicht hin und wartest auf Feuerwehr und Rettung`, "Da geh ich nicht hin, da unten ist es gefährlich – ich warte auf die Feuerwehr.");
+      continue;
+    }
     if (sz?.ohneSicht && typ !== "tuer" && typ !== "beruhigen") {
       nein(`du kommst nicht zu ${ihm} – du stehst vor der versperrten Tür und siehst ${ihn} nicht`, `Das geht nicht, ich komm ja nicht zu ${ihm} rein – die Tür ist zu.`);
       continue;
@@ -468,7 +477,8 @@ export function anweisungKern(k: AnrufKontext, text: string): AnweisungKern {
         else saetze.push(`Jemand, der da ist (${dabei.replace(/\.$/, "")}), geht zur Tür.`);
         break;
       case "zucker":
-        if (!wach && !ich) nein(`${er} ist nicht richtig wach – einem Menschen, der nicht wach ist, gibt man nichts zu trinken (${er} könnte sich verschlucken)`, `Das geht nicht, ${er} ist ja nicht richtig wach – da kann ich ${ihm} nichts zu trinken geben.`);
+        // benommen, aber schluckt: ein paar Schlucke gehen; wer nicht reagiert, bekommt nichts
+        if (k.wahrheit.bw === "nein" && !ich) nein(`${er} ist nicht richtig wach – einem Menschen, der nicht wach ist, gibt man nichts zu trinken (${er} könnte sich verschlucken)`, `Das geht nicht, ${er} ist ja nicht richtig wach – da kann ich ${ihm} nichts zu trinken geben.`);
         else saetze.push(f("Du gibst {ihm} etwas Süßes zu trinken und sagst, ob {er} schlucken kann.".replace("{er}", er)));
         break;
       case "reanimation":

@@ -282,12 +282,18 @@ export function anruferWaehlen(
   // Gefühlslage: je schlimmer und je näher, desto aufgeregter; Profis bleiben ruhig
   const schlimm = a.bw === "nein" || a.at === "keine" || a.at === "agonal";
   let emotion: Anrufer["emotion"];
+  // Regeln (Paul): Profis sachlich; Eltern und Angehörige bei Lebensgefahr panisch; Passanten mittel; Harmloses ruhig
+  const nahe = ["partner", "eltern", "kind", "fern"].includes(s.typ ?? "");
+  const harmlos = !schlimm && a.bw !== "getruebt" && a.at !== "abnorm";
   if (s.profi) emotion = schlimm ? "gefasst" : "ruhig";
-  else if (s.selbst) emotion = gewichtet([["ruhig", 3], ["gefasst", 3], ["aufgeregt", 2]], rnd);
-  else if (schlimm || kind) emotion = gewichtet([["panisch", 5], ["aufgeregt", 3], ["gefasst", 1]], rnd);
-  else emotion = gewichtet([["ruhig", 2], ["gefasst", 3], ["aufgeregt", 3], ["panisch", 1]], rnd);
+  else if (s.selbst) emotion = harmlos ? gewichtet([["ruhig", 3], ["gefasst", 4]], rnd) : gewichtet([["gefasst", 3], ["aufgeregt", 3]], rnd);
+  else if (schlimm && (nahe || kind)) emotion = gewichtet([["panisch", 6], ["aufgeregt", 3]], rnd);
+  else if (schlimm || kind) emotion = gewichtet([["aufgeregt", 4], ["panisch", 2], ["gefasst", 2]], rnd);
+  else if (harmlos) emotion = gewichtet([["ruhig", 3], ["gefasst", 4], ["aufgeregt", nahe ? 1.5 : 0.5]], rnd);
+  else emotion = gewichtet([["gefasst", 4], ["aufgeregt", nahe ? 4 : 2], ["panisch", nahe ? 1 : 0]], rnd);
 
-  const sprache: Anrufer["sprache"] = s.profi ? (rnd() < 0.1 ? "dialekt" : "hochdeutsch") : gewichtet([["hochdeutsch", 6], ["dialekt", 3], ["gebrochen", 1.5]], rnd);
+  // kein Dialekt, kein gebrochenes Deutsch (Paul, 27./28.10.2026): das Sprachmodell macht daraus Kauderwelsch
+  const sprache = "hochdeutsch" as Anrufer["sprache"];
   const vorname = pick(geschlecht === "w" ? VORNAMEN_W : VORNAMEN_M, rnd);
   return {
     rolle: gendern(s.rolle, geschlecht),
@@ -536,18 +542,18 @@ function lagebild42(org: string, mittel: string, adresse: string, rnd: () => num
 // ------------------------------------------------------------------ Anweisung für das Sprachmodell
 
 const EMOTION_TEXT: Record<Anrufer["emotion"], string> = {
-  ruhig: "Du bist ruhig und sachlich.",
-  gefasst: "Du bist besorgt, aber gefasst und kooperativ.",
-  aufgeregt: "Du bist aufgeregt, redest schnell, wiederholst dich manchmal und unterbrichst dich selbst.",
-  panisch: "Du bist panisch: kurze, abgehackte Sätze, du flehst um schnelle Hilfe, beruhigst dich etwas, wenn die Leitstelle klare Anweisungen gibt.",
+  ruhig: "Du bist ruhig und sachlich. Du drängst nicht („Sie müssen sofort kommen“ sagst du nicht) – es ist für dich kein Drama.",
+  gefasst: "Du bist besorgt, aber gefasst und kooperativ. Du antwortest ordentlich, ohne zu drängen.",
+  aufgeregt:
+    "Du bist aufgeregt – das hört man: kurze Sätze, du setzt manchmal neu an („Er … also, er liegt da“), ab und zu ein „Bitte beeilen Sie sich“ oder „Oh Gott“. Klare Anweisungen der Leitstelle beruhigen dich ein bisschen.",
+  panisch:
+    "Du bist in Panik – das hört man in JEDER Antwort: Satzfetzen, du fängst Sätze an und brichst ab, oft ein „Bitte, schnell!“ oder „Oh Gott, oh Gott“. Fragen beantwortest du trotzdem, aber kurz und gehetzt. Gibt die Leitstelle klare Anweisungen, wirst du ein bisschen ruhiger und machst mit.",
 };
 
 function sprachText(x: Anrufer): string {
-  if (x.sprache === "dialekt")
-    return "Du sprichst ein bisschen niederösterreichisch gefärbt – NUR mit diesen Wörtern: „i“ (ich), „net“ (nicht), „is“ (ist), „a bissl“, „eh“, „jo“ (ja), „na“ (nein), „nix“ – höchstens ein, zwei davon pro Antwort. Alles andere ganz normales, richtiges Deutsch (richtige Verbformen: „er hat sich geschnitten“, nicht „er is sich …“). NIE Schweizer, Berliner oder norddeutsche Formen (kein „isch“, „gsi“, „nee“, „nich“, „ick“, „wat“, „so 'ne“, „so'n“, „un“, „doll“, „gucken“).";
-  if (x.sprache === "gebrochen")
-    return `Deutsch ist nicht deine Muttersprache (du kommst aus ${x.herkunft}). Du sprichst einfaches, gebrochenes Deutsch: kurze Sätze, oft ohne Artikel, Verben manchmal in der Grundform, einfache Wörter („Mann liegt da, nix reden. Bitte schnell kommen!“). Schwierige Wörter verstehst du nicht und fragst nach („Was heißt …?“). Kein österreichischer Dialekt (kein „net“, „is“, „i“, „gell“) – nur einfaches Deutsch.`;
-  return "Du sprichst normales Hochdeutsch (österreichisch, aber kein Dialekt).";
+  // Dialekt und gebrochenes Deutsch gibt es nicht mehr (auch ältere Spielstände sprechen Hochdeutsch)
+  void x;
+  return "Du sprichst normales Hochdeutsch (österreichisch, aber kein Dialekt): keine Wörter wie „i“, „net“, „is“, „nix“, „jo“. Österreichische Alltagswörter wie „Grüß Gott“, „Stiege“, „Kassa“, „Spital“ sind in Ordnung.";
 }
 
 export interface AnrufKontext {
@@ -629,6 +635,8 @@ export function wahrheitText(k: AnrufKontext, f: Frage): string | null {
     const t = fuellen(laieWort(k, f.id, String(wert))!, { w, bezug: "", ort: "", name: "" }, Math.random);
     return k.anrufer.selbst && f.id === "bw" ? "du bist wach, aber dir geht es nicht gut" : t;
   }
+  // „weiß nicht“ als Antwort: so sagt es der Anrufer, nicht als Etikett
+  if (wert === "unbekannt") return "das weißt du nicht";
   // Alltagssatz statt Etikett („muss liegend transportiert werden“ statt „Liegend“)
   const satz = faktSaetze({ [f.id]: wert }, w)[0];
   if (satz) return satz;
@@ -1285,8 +1293,8 @@ export function erinnerung(
   } else if (art === "zusammenfassung") {
     const pr = zusammenfassungPruefen(k, opt.text ?? "");
     if (pr && pr.falsch.length)
-      teile.push(`Die Zusammenfassung der Leitstelle ist FALSCH: ${pr.falsch.join("; ")}. Widersprich sofort (z. B. „${eins(k.anrufer.sprache === "dialekt" ? ["Na, des stimmt net", "Na, na", "Naa", "Nein, nein"] : ["Nein, das stimmt nicht", "Nein", "Nein, Moment", "Nein, nein", "Das stimmt so nicht"])} – …“) und sag in einem Satz, wie es wirklich ist. Auf keinen Fall „Ja“ oder „genau“.`);
-    else if (pr) teile.push(`Die Zusammenfassung stimmt. Bestätige ganz kurz, etwa so: „${eins(k.anrufer.sprache === "dialekt" ? ["Jo, genau so", "Jo", "Passt, so is es", "Stimmt"] : ["Ja", "Stimmt", "Ja, richtig", "Genau so", "Ja, so ist es", "Ja, das stimmt"])}.“ – nichts aufzählen.`);
+      teile.push(`Die Zusammenfassung der Leitstelle ist FALSCH: ${pr.falsch.join("; ")}. Widersprich sofort (z. B. „${eins(["Nein, das stimmt nicht", "Nein", "Nein, Moment", "Nein, nein", "Das stimmt so nicht"])} – …“) und sag in einem Satz, wie es wirklich ist. Auf keinen Fall „Ja“ oder „genau“.`);
+    else if (pr) teile.push(`Die Zusammenfassung stimmt. Bestätige ganz kurz, etwa so: „${eins(["Ja", "Stimmt", "Ja, richtig", "Genau so", "Ja, so ist es", "Ja, das stimmt"])}.“ – nichts aufzählen.`);
     else teile.push(hinweisZurArt(art, laie, jemandDa(k)));
   } else {
     if (art === "anweisung" && opt.kern?.length) teile.push(`So ist es: ${opt.kern.join(" ")} Sag kurz, wie du es machst bzw. warum es nicht geht – genau so, nichts anderes.`);

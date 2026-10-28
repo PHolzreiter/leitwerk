@@ -1,5 +1,17 @@
 [
  {
+  "version": "0.81.0",
+  "datum": "2026-10-28",
+  "titel": "Anrufer realistischer",
+  "punkte": [
+   "Kein Dialekt und kein gebrochenes Deutsch mehr",
+   "Anrufer reden in Alltagssprache statt Formular-Stichworten",
+   "Aufregung passt zur Lage: Eltern in Panik, Pflege sachlich, Harmloses ruhig",
+   "Gefährliche Orte, benommene Patienten und umgekehrte Fragen werden richtig behandelt",
+   "Neue Fälle aus dem letzten Update korrigiert"
+  ]
+ },
+ {
   "version": "0.80.0",
   "datum": "2026-10-27",
   "titel": "Fälle überarbeitet",

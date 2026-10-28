@@ -422,10 +422,12 @@ export async function anruferAntwort(
     // nur die Frage zurückgegeben (kommt beim kleinen Modell vor) → einfache Antwort aus den Fakten
     if (!fertig.trim()) fertig = einfacheAntwort(k, frage, schemaFrage);
     // Prüfen und bei einem Widerspruch einmal neu erzeugen – mit klarer Korrektur
-    const allePruefen = (a: string) => [...(kern ? antwortPruefen(k, themen, kern, a, pruefFrage) : []), ...(anweisung ? anweisungPruefen(anweisung, a) : [])];
+    const allePruefen = (a: string) => [...(kern ? antwortPruefen(k, themen, kern, a, pruefFrage, frage) : []), ...(anweisung ? anweisungPruefen(anweisung, a) : [])];
     // nur eine Gegenfrage statt einer Antwort („Wie lange braucht die Rettung noch?“) → einmal neu
     const nurGegenfrage = (a: string) => art === "frage" && !!a.trim() && a.split(/(?<=[.!?…])\s+/).every((x) => /\?\s*$/.test(x)) && !/was heißt|wie bitte|was meinen sie|wie meinen sie|bitte\?|was\?|wie\?/i.test(a);
-    if (nurGegenfrage(fertig)) {
+    // Einstieg „Hallo? Bin ich bei der Rettung?“ ist gewollt eine Gegenfrage
+    const halloGewollt = ersteAntwort && x.persona?.einstieg === "hallo";
+    if (nurGegenfrage(fertig) && !halloGewollt) {
       const nochmal = verlauf.map((m) => ({ ...m }));
       nochmal[nochmal.length - 1].content += `\n[Korrektur nur für dich: Du hast mit einer Gegenfrage geantwortet. Beantworte zuerst die Frage der Leitstelle – wenn du es nicht weißt, sag das.]`;
       let zweite = "";
@@ -434,7 +436,8 @@ export async function anruferAntwort(
       } catch {
         zweite = "";
       }
-      fertig = zweite.trim() && !nurGegenfrage(zweite) ? zweite : kern?.saetze.length ? kernAntwort(k, themen, kern, pruefFrage) : "Das weiß ich nicht genau.";
+      const nachOrt = /adresse|notfallort|\bwo\b|einsatzort/i.test(frage) && !!k.adresse;
+      fertig = zweite.trim() && !nurGegenfrage(zweite) ? zweite : nachOrt ? `${k.adresse}.` : kern?.saetze.length ? kernAntwort(k, themen, kern, pruefFrage) : "Das weiß ich nicht genau.";
       quelle.nachgebessert = "Gegenfrage statt Antwort";
     }
     if (pruefbar) {

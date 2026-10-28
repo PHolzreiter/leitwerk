@@ -54,7 +54,7 @@ function wert(f: Frage | undefined, w: unknown): string {
 }
 
 /** Tabelle: Frage | eingegeben | Wahrheit */
-function abfrageTabelle(schema: Schema, kapitel: string | null, eingegeben: Antworten, wahr: Antworten | undefined, wahrKap: string | undefined): string[] {
+function abfrageTabelle(schema: Schema, kapitel: string | null, eingegeben: Antworten, wahr: Antworten | undefined, wahrKap: string | undefined, anfang?: Antworten): string[] {
   const fragen = new Map<string, Frage>();
   for (const f of schema.globale_fragen.phase_3_was_ist_passiert ?? []) fragen.set(f.id, f);
   for (const kap of [kapitel, wahrKap]) if (kap) for (const { frage } of fragenImAblauf(schema, kap, kap === wahrKap && wahr ? wahr : eingegeben)) fragen.set(frage.id, frage);
@@ -64,8 +64,11 @@ function abfrageTabelle(schema: Schema, kapitel: string | null, eingegeben: Antw
     const f = fragen.get(id);
     const e = wert(f, eingegeben[id]);
     const w = wert(f, wahr?.[id]);
-    const anders = e !== "–" && w !== "–" && e !== w ? "⚠ abweichend" : "";
-    out.push(`| ${(f?.text ?? id).replace(/\|/g, "/")} | ${e.replace(/\|/g, "/")} | ${w.replace(/\|/g, "/")} | ${anders} |`);
+    // bei Veränderung im Gespräch: was am Anfang galt, zählt auch als richtig
+    const w0 = anfang && id in anfang && anfang[id] !== wahr?.[id] ? wert(f, anfang[id]) : null;
+    const anders = e !== "–" && w !== "–" && e !== w && e !== w0 ? "⚠ abweichend" : "";
+    const wText = w0 ? `${w0} → ${w}` : w;
+    out.push(`| ${(f?.text ?? id).replace(/\|/g, "/")} | ${e.replace(/\|/g, "/")} | ${wText.replace(/\|/g, "/")} | ${anders} |`);
   }
   out.push("");
   return out;
@@ -90,7 +93,7 @@ export function rdExportText(e: Einsatz): string {
     `- Extra: ${a ? JSON.stringify(a.extra) : "–"}`,
     "",
   );
-  if (schema && a) out.push("## Abfrage: eingegeben und Wahrheit", "", ...abfrageTabelle(schema, a.kapitel, a.antworten, w?.antworten, w?.kapitel));
+  if (schema && a) out.push("## Abfrage: eingegeben und Wahrheit", "", ...abfrageTabelle(schema, a.kapitel, a.antworten, w?.antworten, w?.kapitel, w?.antwortenAnfang));
   out.push(
     "## Ort",
     "",

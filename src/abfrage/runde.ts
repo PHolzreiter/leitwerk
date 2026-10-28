@@ -101,7 +101,7 @@ export function hinweisZurArt(art: NachrichtArt, laie: boolean, jemandDa = true)
       return `Die Leitstelle hat dir etwas MITGETEILT, keine Frage gestellt. Reagiere kurz und menschlich darauf${laie ? ` – diesmal: ${w} (in deinen eigenen Worten)` : " (bestätigen, kurz nachfragen, was noch nötig ist)"}. Beschreib jetzt NICHT noch einmal den Zustand des Patienten.`;
     }
     case "abschluss":
-      return `Die Leitstelle beendet das Gespräch. Verabschiede dich kurz in einem Satz, etwa so: „${["Danke, bis gleich", "Okay, danke Ihnen", "Danke – ich warte", "Gut, danke schön", "Danke, ich schau, dass ich sie sehe"][Math.floor(Math.random() * 5)]}.“`;
+      return `Die Leitstelle beendet das Gespräch. Verabschiede dich kurz in einem Satz, etwa so: „${["Danke, bis gleich", "Okay, danke Ihnen", "Danke – ich warte", "Gut, danke schön", "Danke, ich wart auf die Rettung"][Math.floor(Math.random() * 5)]}.“`;
     default:
       return "";
   }

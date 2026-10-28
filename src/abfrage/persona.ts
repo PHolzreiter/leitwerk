@@ -129,7 +129,7 @@ const WOERTER: Record<string, string[]> = {
 export function personaWaehlen(
   x: { rolle: string; selbst: boolean; typ?: AnruferTyp; emotion: "ruhig" | "gefasst" | "aufgeregt" | "panisch"; sprache: string },
   p: { alter: number; w: boolean; vorname: string; nachname: string; wach?: boolean; sicht?: boolean },
-  opt: { ortUnbekannt?: boolean; draussen?: boolean; zuhause?: boolean; oeffentlich?: boolean },
+  opt: { ortUnbekannt?: boolean; draussen?: boolean; zuhause?: boolean; oeffentlich?: boolean; heim?: boolean },
   rnd: Rnd = Math.random,
 ): Persona {
   const wissen = wissenVon(x.typ, x.selbst);
@@ -142,7 +142,7 @@ export function personaWaehlen(
             ["normal", 4],
             ["knapp", x.emotion === "panisch" ? 3 : 2],
             ["gespraechig", alt ? 3 : 1.5],
-            ["unsicher", wissen === "fremd" ? 2 : 1],
+            ["unsicher", wissen === "fremd" ? 1.5 : 0.5],
           ],
           rnd,
         );
@@ -154,7 +154,7 @@ export function personaWaehlen(
       : gewichtet<Einstieg>(
           [
             ["adresse", 5],
-            ["dringend", x.emotion === "panisch" || x.emotion === "aufgeregt" ? 4 : 1],
+            ["dringend", x.emotion === "panisch" ? 5 : x.emotion === "aufgeregt" ? 3 : 0],
             ["problem", x.emotion === "panisch" ? 3 : x.emotion === "aufgeregt" ? 2 : 1],
             ["hallo", stil === "unsicher" ? 2.5 : 0.8],
             ["unvollstaendig", 1.5],
@@ -162,7 +162,7 @@ export function personaWaehlen(
           ],
           rnd,
         );
-  const pool = WOERTER[x.sprache] ?? WOERTER.hochdeutsch;
+  const pool = WOERTER.hochdeutsch;
   const w1 = pick(pool, rnd);
   const w2 = pick(pool.filter((w) => w !== w1), rnd);
   const ihm = p.w ? "ihr" : "ihm";
@@ -170,7 +170,16 @@ export function personaWaehlen(
   const wach = p.wach !== false;
   const sicht = p.sicht !== false;
   // Wer sonst noch da ist – konkret (wichtig für Anweisungen wie „Schicken Sie jemanden zur Tür“)
-  const verwandt = pick(["deine Schwester", "dein Bruder", "deine Tochter", "dein Sohn", "eine Nachbarin"], rnd);
+  // nicht der Patient selbst (Mutter des Kindes: kein „dein Sohn“; Tochter der Patientin: keine „Mutter“)
+  const rolleKl = x.rolle.toLowerCase();
+  const verwandte = /^(mutter|vater)|eltern/.test(rolleKl)
+    ? ["dein Mann", "deine Frau", "die Oma", "eine Nachbarin"].filter((v) => (/^mutter/.test(rolleKl) ? v !== "deine Frau" : v !== "dein Mann"))
+    : /tochter|sohn/.test(rolleKl)
+      ? ["deine Schwester", "dein Bruder", "dein Mann", "eine Nachbarin"]
+      : /ehefrau|ehemann|partner|lebensgef/.test(rolleKl)
+        ? ["deine Tochter", "dein Sohn", "eine Nachbarin"]
+        : ["deine Schwester", "dein Bruder", "deine Tochter", "dein Sohn", "eine Nachbarin"];
+  const verwandt = pick(verwandte, rnd);
   const leute = ["Ein paar Leute stehen herum, einer kniet schon neben " + ihm + ".", "Ein paar Leute stehen herum und schauen.", "Eine zweite Person ist bei dir und hilft."];
   const dabeiListe = !sicht
     ? ["Du stehst allein vor der Tür.", "Ein Nachbar steht mit dir vor der Tür."]
@@ -182,6 +191,8 @@ export function personaWaehlen(
         ? ["Eine Kollegin ist bei " + ihm + ", du telefonierst vom Stationszimmer und gibst Anweisungen an sie weiter.", "Du bist selbst bei " + ihm + ", eine Kollegin hilft dir."]
         : opt.oeffentlich
           ? ["Ein paar Leute stehen herum und schauen.", "Eine Mitarbeiterin von dort hilft dir."]
+          : opt.heim
+            ? ["Eine Pflegerin ist mit dir im Zimmer.", "Du bist allein mit " + ihm + " im Zimmer, die Pflege ist am Gang."]
           : opt.zuhause === false
             ? ["Du bist allein mit " + ihm + ".", "Ein paar Leute stehen herum und schauen."]
             : ["Du bist allein mit " + ihm + " – sonst ist niemand da, der die Tür aufmachen könnte.", `Außer dir ist ${verwandt} da und kann helfen (z. B. die Haustür aufmachen).`, "Du bist allein mit " + ihm + ", das Telefon hast du auf Lautsprecher."];
@@ -198,7 +209,7 @@ export function personaWaehlen(
           "Du fragst einmal zwischendurch, wie lange die Rettung noch braucht.",
         ]
       : [
-          ...(wach && sicht && p.alter >= 3 ? [`Du redest einmal kurz mit ${p.w ? "ihr" : "ihm"}${anrede ? ` („${anrede}, die Rettung kommt gleich!“)` : ""} – aber erst, wenn die Leitstelle gesagt hat, dass die Rettung kommt.`] : []),
+          ...(sicht && p.alter >= 3 ? [`Du sprichst zwischendurch einmal kurz direkt mit ${p.w ? "ihr" : "ihm"}${anrede ? ` („${anrede}, ${wach ? "bleib ruhig, ich bin da" : "hörst du mich? Bitte …"}“)` : ""} – ein kurzer Zuruf, dann redest du wieder mit der Leitstelle.`] : []),
           "Du machst dir hörbar Sorgen und sagst einmal, wie sehr dich das mitnimmt.",
           "Du fragst einmal zwischendurch, wie lange die Rettung noch braucht.",
         ];
@@ -228,7 +239,8 @@ const STIL_TEXT: Record<Redestil, string> = {
   knapp: "Du redest knapp: kurze Antworten, kaum etwas von dir aus.",
   normal: "Du antwortest normal: ein, zwei Sätze, ab und zu ein Gefühl dazu.",
   gespraechig: "Du redest gern und erzählst manchmal ein bisschen mehr, als gefragt war (Nebensächliches, aber nichts, was der Fallakte widerspricht) – lass dich aber von der Leitstelle zurückholen.",
-  unsicher: "Du bist unsicher bei dem, was du beobachtest oder einschätzen sollst („ich glaub“, „ich weiß nicht genau“). Bei deinem Namen, wer du bist, Alter und Geschlecht deiner Angehörigen und bei dem, was du selbst tust, bist du dir sicher.",
+  unsicher:
+    "Du bist unsicher, wenn du etwas beobachten oder einschätzen sollst – vor allem, ob jemand normal atmet, wie schlimm es ist, ob etwas gebrochen ist („ich glaub schon … ich weiß nicht genau“). Ganz sicher bist du dir dagegen bei: Adresse, deinem Namen, wer du bist, Name, Alter und Geschlecht von Angehörigen, was passiert ist und was du selbst gerade tust – da sagst du NIE „ich glaub“.",
 };
 
 /** Zeilen für die Anweisung an die KI */
