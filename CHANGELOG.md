@@ -3,6 +3,7 @@
 ## 0.85.1 – Cardiac Arrest Center nur bei laufender Reanimation unter 60
 - Ein **Cardiac Arrest Center** wird nur noch bei **laufender Reanimation** und Patienten **unter 60 Jahren** bevorzugt – dann geht es allen anderen Häusern vor
 - Sonst (z. B. nach erfolgreicher Reanimation oder ab 60) zählt das nächste passende Haus – bei Herzinfarkt das nächste mit offenem Herzkatheter
+- „NÖ zuerst“ gilt nur für Einsatzorte in Niederösterreich; die Reihenfolge der NÖ-Häuser (passend vor Ausweich, nach Entfernung) bleibt dabei erhalten
 
 ## 0.85.0 – Transport: Notarzt-Entscheidung, NÖ zuerst, Herzkatheter muss offen sein
 - **Eine Transport-Entscheidung pro Einsatz:**
