@@ -1,5 +1,10 @@
 # Änderungen
 
+## 0.88.0 – Notrufe verteilt nach Versorgungsstufe
+- **Verteilung wie im echten Betrieb 2025:** Notrufe aus dem Fallkatalog enden jetzt so oft in Telemedizin, BLS grün, BLS gelb, BLS rot, ALS grün, ALS gelb, ALS orange, ALS rot, „BLS/ALS aufwertbar“ und Akuttransport grün, wie es 2025 der Fall war (z. B. BLS gelb 19 %, ALS grün 17 %, ALS rot 0,7 %)
+- Einstellbar unter Einstellungen → Einsatzaufkommen → „Verteilung der Notfälle nach“ – Versorgungsstufe (mit den Anteilen, Knopf „Statistik“ setzt sie zurück) oder wie bisher Schwere (harmlos/mittel/kritisch). Kennt das Codesystem diese Stufen nicht, gilt die Schwere
+- **10 neue Fälle:** Einweisungen durch Hausarzt (Ordination und Hausbesuch), Heimarzt, Telemedizin, Ärztefunkdienst, Dialyse und Facharzt; Sturz vor ein paar Tagen; gestürzt, aber unverletzt und braucht nur Hilfe beim Aufstehen
+
 ## 0.87.0 – 50 weitere Notfälle, viele davon leicht
 - **27 neue leichte (grüne) Einsätze:** Platzwunde beim Kind, ausgerenkter Arm beim Kleinkind, Schnitt in den Finger, verbrühtes Kind, Ischias, Brechdurchfall, Harnwegsinfekt, Zahnabszess, Glasscherbe im Freibad, Umknicken beim Hallensport, betrunkene Jugendliche, Ohrenschmerzen beim Kind, Verkühlung, Ohnmacht beim Blutabnehmen, Sonne im Freibad, Stechen in der Brust beim Jungen, Wehen-Transport, Schwangerschaftserbrechen, Metallspan im Auge, Bienenstich, Kopf im Turnunterricht, Rippenprellung im Garten, erschöpfter Wanderer, Pflegeheim (aus dem Bett gerutscht, Magensonde), Polizei fordert an (Festgenommener mit Platzwunde, Nackenschmerzen nach Blechschaden)
 - **Weitere neue Fälle:** Pflegeheim (Unterzucker, Lungenentzündung), Telemedizin und Hausarzt fordern an, Kinder (Trampolin, Baby kurz blau, Knopfbatterie, Unterzucker in der Schule, Fieber mit Flecken), Polizei mit psychischer Krise, Schülerin in einer Krise, Berg (Sturz am Steig, Klettersteig), Tauchunfall, Hodenschmerzen, langsamer Puls, Krampfader- und Shuntblutung, Angina pectoris, Rauch nach Küchenbrand, Hitze bei älteren Menschen, Hirnhautentzündung

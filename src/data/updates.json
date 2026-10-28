@@ -1,5 +1,15 @@
 [
  {
+  "version": "0.88.0",
+  "datum": "2026-10-28",
+  "titel": "Verteilung nach Versorgungsstufe",
+  "punkte": [
+   "Notrufe enden so oft in Telemedizin, BLS und ALS grün bis rot wie 2025",
+   "Einstellbar: Versorgungsstufe oder Schwere",
+   "10 neue Fälle: Einweisungen durch Ärzte und Einrichtungen, ältere Stürze, Aufhelfen"
+  ]
+ },
+ {
   "version": "0.87.0",
   "datum": "2026-10-28",
   "titel": "50 weitere Notfälle",

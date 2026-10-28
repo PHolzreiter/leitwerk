@@ -14,6 +14,7 @@ import { FAELLE_NEU } from "./faelleNeu";
 import { FAELLE_SPEZIAL } from "./faelleSpezial";
 import { FAELLE_PAKET1 } from "./faellePaket1";
 import { FAELLE_PAKET2 } from "./faellePaket2";
+import { FAELLE_PAKET3 } from "./faellePaket3";
 import type { Antworten } from "./schema";
 import { tageszeitPasst, type SzenarioVorlage } from "./szenario";
 import type { Atmung, Bewusstsein, Sichtung } from "../sim/lage";
@@ -1580,6 +1581,7 @@ export const FAELLE: FallVorlage[] = [
   ...FAELLE_SPEZIAL,
   ...FAELLE_PAKET1,
   ...FAELLE_PAKET2,
+  ...FAELLE_PAKET3,
 ];
 
 // ------------------------------------------------------------------ Auswahl
@@ -1628,6 +1630,34 @@ export function schwereVon(v: FallVariante): Schwere {
   return d >= 30 ? "kritisch" : d >= 20 ? "mittel" : "harmlos";
 }
 
+/** Alle Fälle mit Ausgang, die jetzt passen (Jahreszeit, Uhrzeit, Wetter), mit Gewicht (Häufigkeit × Wahrscheinlichkeit) */
+export function fallPaare(
+  ctx: { jahreszeit: string; stunde: number; temp: number; glatt: boolean },
+  komplikationen: "ruhig" | "normal" | "fordernd",
+): { f: FallVorlage; v: FallVariante; s: Schwere; w: number }[] {
+  const faktor = komplikationen === "fordernd" ? 2 : komplikationen === "ruhig" ? 0.5 : 1;
+  return alleFaelle()
+    .filter((f) => fallPasst(f, ctx))
+    .flatMap((f) => {
+      const sum = f.varianten.reduce((x, v) => x + Math.max(0, v.p), 0) || 1;
+      return f.varianten.filter((v) => v.p > 0).map((v) => ({ f, v, s: schwereVon(v), w: (f.haeufigkeit * v.p * (kritischeVariante(v) ? faktor : 1)) / sum }));
+    });
+}
+
+/** Verteilung der Versorgungsstufen (Statistik 2025, Anteile in %) – Standard für „Verteilung nach Versorgungsstufe“ */
+export const STUFEN_STANDARD: Record<string, number> = {
+  Telemedizin: 9.9,
+  "BLS grün": 1.2,
+  "BLS gelb": 19.0,
+  "BLS rot": 14.4,
+  "ALS grün": 17.0,
+  "ALS gelb": 12.6,
+  "ALS orange": 6.9,
+  "ALS rot": 0.7,
+  "BLS/ALS aufwertbar": 8.9,
+  "Akuttransport grün": 8.6,
+};
+
 /**
  * Fall und Variante zusammen ziehen: zuerst die Schwere nach der Verteilung (z. B. 35/50/15),
  * dann unter den passenden Fällen nach Häufigkeit × Wahrscheinlichkeit der Variante.
@@ -1638,13 +1668,8 @@ export function fallUndVariante(
   komplikationen: "ruhig" | "normal" | "fordernd",
   rnd: () => number,
 ): { f: FallVorlage; v: FallVariante } | null {
-  const passend = alleFaelle().filter((f) => fallPasst(f, ctx));
-  if (!passend.length) return null;
-  const faktor = komplikationen === "fordernd" ? 2 : komplikationen === "ruhig" ? 0.5 : 1;
-  const paare = passend.flatMap((f) => {
-    const sum = f.varianten.reduce((x, v) => x + Math.max(0, v.p), 0) || 1;
-    return f.varianten.filter((v) => v.p > 0).map((v) => ({ f, v, s: schwereVon(v), w: (f.haeufigkeit * v.p * (kritischeVariante(v) ? faktor : 1)) / sum }));
-  });
+  const paare = fallPaare(ctx, komplikationen);
+  if (!paare.length) return null;
   const klassen = (["harmlos", "mittel", "kritisch"] as Schwere[]).filter((k) => paare.some((p) => p.s === k));
   const gew = klassen.map((k) => [k, Math.max(0, verteilung[k] ?? 0)] as const);
   const summe = gew.reduce((x, [, w]) => x + w, 0);

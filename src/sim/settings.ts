@@ -202,6 +202,10 @@ export interface Settings {
   rueckrufOhneNummer?: boolean;
   /** Verteilung der Notfälle aus dem Fallkatalog nach Schwere (Anteile in %) */
   schwere?: { harmlos: number; mittel: number; kritisch: number };
+  /** wonach die Notfälle verteilt werden: Versorgungsstufe des Codes (Statistik) oder Schwere vor Ort */
+  verteilungNach?: "stufe" | "schwere";
+  /** Verteilung nach Versorgungsstufe (Anteile in %), z. B. { "BLS gelb": 19, … } */
+  stufenVerteilung?: Record<string, number>;
   nahGeschwindigkeit: number;
   /** veraltet (bis v0.8), ersetzt durch ausrueck */
   nahStartzeitSek: number;

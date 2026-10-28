@@ -142,7 +142,7 @@ import { FUNKGRUPPEN, funkgruppe, funkgruppeVon, inFunkgruppe, mitteVon, type Fu
 import { echtwetterLaden } from "./echtwetter";
 import { sekZufall } from "./sek";
 import { bedarf, ereignisseEinplanen, istStillstand, lageAusFall, lageErzeugen, lagemeldungText, patientText, rtwBedarf, type Lage } from "./lage";
-import { anleitungAus, fallVariante, fallUndVariante, fallVorlage, varianteWaehlen, type FallVariante } from "../abfrage/faelle";
+import { alleFaelle, anleitungAus, fallPaare, fallVariante, fallUndVariante, fallVorlage, STUFEN_STANDARD, varianteWaehlen, type FallVariante, type FallVorlage } from "../abfrage/faelle";
 import { nachrichtArt } from "../abfrage/runde";
 
 const MIN = 60_000;
@@ -4051,10 +4051,14 @@ export class Simulation {
     const wetter = this.settings.wetterAktiv;
     const glatt = lage === "eisregen" || (temp < 1 && ["schnee", "regen", "nebel"].includes(lageArt(lage)));
     const ctx = { jahreszeit: jahreszeitVon(this.state.zeit, this.wetterOpt()), stunde: new Date(this.state.zeit).getHours(), temp: wetter ? temp : 15, glatt: wetter && glatt };
+    const stufenZiel = this.stufenZiel();
     for (let i = 0; i < 12; i++) {
       const wunsch = this.fallWunsch;
-      // ohne Wunsch: Schwere nach der Verteilung in den Einstellungen (harmlos/mittel/kritisch), dann Fall und Variante
-      const gezogen = wunsch ? null : fallUndVariante(ctx, this.settings.schwere ?? { harmlos: 35, mittel: 50, kritisch: 15 }, this.settings.komplikationen ?? "normal", Math.random);
+      // ohne Wunsch: zuerst die Versorgungsstufe (bzw. Schwere) nach der Verteilung in den Einstellungen, dann Fall und Variante
+      let zielStufe: string | null = null;
+      const nachStufe = !wunsch && stufenZiel ? this.nachStufeZiehen(ctx, schema, stufenZiel) : null;
+      if (nachStufe) zielStufe = nachStufe.stufe;
+      const gezogen = wunsch ? null : (nachStufe ?? fallUndVariante(ctx, this.settings.schwere ?? { harmlos: 35, mittel: 50, kritisch: 15 }, this.settings.komplikationen ?? "normal", Math.random));
       const f = wunsch ? fallVorlage(wunsch.id) : (gezogen?.f ?? null);
       if (!f) return null;
       const kap = kapitelFuerThema(f.thema, schema);
@@ -4073,6 +4077,8 @@ export class Simulation {
         console.warn("Fallkatalog: kein Code für", f.id, v.id);
         continue;
       }
+      // Code landet in einer anderen Versorgungsstufe als gezogen (zufällige Antworten): noch einmal ziehen
+      if (zielStufe && c.stufe !== zielStufe && i < 8) continue;
       // Geschichte im Pflegeheim, in der Ordination, Schule …: nur, wo es so einen Ort im Gebiet gibt (sonst ein anderer Fall)
       if (!wunsch && ORT_NUR_MIT_POI.includes(ortArt) && !this.poisFuer(ortArt, typeof a.alter === "number" ? a.alter : null, undefined, f.auchGeschlossen).length) continue;
       // Fall an einem bestimmten Ort (Freibad, Bahnhof, Tierpark …): nur, wo es den gibt
@@ -4082,6 +4088,64 @@ export class Simulation {
       return { fall: { kapitel: kap, antworten, code: c.code, vorlage: f.id, ortArt, katalog: { id: f.id, variante: v.id }, ...(Object.keys(roh).length ? { roh } : {}) }, code: c };
     }
     return null;
+  }
+
+  /**
+   * Verteilung nach Versorgungsstufe (Telemedizin … ALS rot): Ziel aus den Einstellungen bzw. der Statistik –
+   * nur, wenn das aktive Codesystem diese Stufen auch kennt (sonst gilt die Schwere harmlos/mittel/kritisch)
+   */
+  private stufenZiel(): Record<string, number> | null {
+    if (this.settings.verteilungNach === "schwere") return null;
+    const ziel = this.settings.stufenVerteilung ?? STUFEN_STANDARD;
+    const da = new Set(allCodes().map((c) => c.stufe));
+    return Object.keys(ziel).filter((k) => da.has(k)).length >= 3 ? ziel : null;
+  }
+
+  private stufenCache: { schema: Schema; anzahl: number; m: Map<string, Record<string, number>> } | null = null;
+
+  /** Geschätzte Versorgungsstufen eines Ausgangs (Anteile 0…1) – wie beim Entstehen gerechnet, je Codesystem gemerkt */
+  private stufenSchaetzung(schema: Schema, f: FallVorlage, v: FallVariante): Record<string, number> {
+    const anzahl = alleFaelle().length;
+    if (!this.stufenCache || this.stufenCache.schema !== schema || this.stufenCache.anzahl !== anzahl) this.stufenCache = { schema, anzahl, m: new Map() };
+    const key = `${f.id}|${v.id}`;
+    const alt = this.stufenCache.m.get(key);
+    if (alt) return alt;
+    const out: Record<string, number> = {};
+    const kap = kapitelFuerThema(f.thema, schema);
+    const N = 4;
+    if (kap)
+      for (let i = 0; i < N; i++) {
+        const a: Antworten = { ...vorlageFest(f, Math.random), ...(v.fest ?? {}) };
+        altersPlausibel({ alter: f.alter, fest: { ...(f.fest ?? {}), ...(v.fest ?? {}) }, anrufer: f.anrufer }, a, Math.random);
+        const ortArt = f.orte[Math.floor(Math.random() * f.orte.length)] ?? "wohnung";
+        ortRegeln(ortArt, f.thema, a, new Set([...Object.keys(f.fest ?? {}), ...Object.keys(v.fest ?? {})]));
+        sichtUnbekannt(schema, kap, f.ohneSicht, a);
+        const erg = bestimmeCode(schema, kap, this.anpassen(schema, merkmaleInSchema(schema, a)).antworten);
+        const k = erg ? findCode(erg.code)?.stufe : undefined;
+        if (k) out[k] = (out[k] ?? 0) + 1 / N;
+      }
+    this.stufenCache.m.set(key, out);
+    return out;
+  }
+
+  /** Versorgungsstufe nach dem Ziel ziehen, dann einen Fall, der dort landet (Häufigkeit × Anteil) */
+  private nachStufeZiehen(ctx: { jahreszeit: string; stunde: number; temp: number; glatt: boolean }, schema: Schema, ziel: Record<string, number>): { f: FallVorlage; v: FallVariante; stufe: string } | null {
+    const paare = fallPaare(ctx, this.settings.komplikationen ?? "normal").map((p) => ({ ...p, st: this.stufenSchaetzung(schema, p.f, p.v) }));
+    const moeglich = Object.entries(ziel).filter(([k, w]) => w > 0 && paare.some((p) => (p.st[k] ?? 0) > 0));
+    const summe = moeglich.reduce((x, [, w]) => x + w, 0);
+    if (!summe) return null;
+    let r = Math.random() * summe;
+    let stufe = moeglich[moeglich.length - 1][0];
+    for (const [k, w] of moeglich) if ((r -= w) <= 0) {
+      stufe = k;
+      break;
+    }
+    const kand = paare.filter((p) => (p.st[stufe] ?? 0) > 0);
+    const ges = kand.reduce((x, p) => x + p.w * p.st[stufe], 0);
+    let q = Math.random() * ges;
+    for (const p of kand) if ((q -= p.w * p.st[stufe]) <= 0) return { f: p.f, v: p.v, stufe };
+    const l = kand[kand.length - 1];
+    return { f: l.f, v: l.v, stufe };
   }
 
   /** Fremdes Codesystem: Wahrheit an die Antwortmöglichkeiten anpassen (das eigene bzw. kompatible bleibt unverändert) */

@@ -17,6 +17,7 @@ import { buildAppSection, buildPacksSection } from "./packsView";
 import { buildKiSection } from "./kiView";
 import { el, esc, toast } from "./dom";
 import { abfrageAnsicht, setzeAbfrageAnsicht } from "./abfrageAnsicht";
+import { STUFEN_STANDARD } from "../abfrage/faelle";
 
 const STATUS_BEDEUTUNG: Record<string, string> = {
   freiWache: "frei auf der Wache",
@@ -185,6 +186,47 @@ export function createSettingsView(container: HTMLElement, teil: "simulation" | 
     swText();
     swBox.appendChild(swSumme);
     aGrid.append(el("label", { title: "Wie viele Notfälle aus dem Fallkatalog harmlos (grün), mittel (gelb) oder kritisch (rot) sind – in Prozent" }, "Schwere der Notfälle (%)"), swBox);
+    // Verteilung nach Versorgungsstufe (Telemedizin … ALS rot) – Standard: Statistik 2025
+    const vnSel = el("select", { class: "set-verteilung" }) as HTMLSelectElement;
+    for (const [v, l] of [["stufe", "Versorgungsstufe (Statistik)"], ["schwere", "Schwere (harmlos/mittel/kritisch)"]]) vnSel.appendChild(el("option", { value: v }, l));
+    vnSel.value = draft.verteilungNach ?? "stufe";
+    const stBox = el("div", { class: "row-btns set-stufen" });
+    const stufen: Record<string, number> = { ...STUFEN_STANDARD, ...(draft.stufenVerteilung ?? {}) };
+    for (const k of Object.keys(STUFEN_STANDARD)) {
+      const i = num(stufen[k], "0.1");
+      i.style.width = "64px";
+      i.dataset.stufe = k;
+      i.addEventListener("change", () => {
+        stufen[k] = Math.max(0, Number(i.value) || 0);
+        draft.stufenVerteilung = { ...stufen };
+      });
+      const paar = el("span", { class: "set-stufe-paar" });
+      paar.append(el("span", { class: "muted small" }, k), i);
+      paar.style.cssText = "display:inline-flex;align-items:center;justify-content:space-between;gap:6px;width:190px";
+      stBox.appendChild(paar);
+    }
+    const stReset = el("button", { class: "btn small", type: "button" }, "Statistik");
+    stReset.addEventListener("click", () => {
+      draft.stufenVerteilung = undefined;
+      for (const i of stBox.querySelectorAll<HTMLInputElement>("input[data-stufe]")) i.value = String(STUFEN_STANDARD[i.dataset.stufe!]);
+      Object.assign(stufen, STUFEN_STANDARD);
+    });
+    stBox.appendChild(stReset);
+    const sichtbar = () => {
+      stBox.style.display = vnSel.value === "stufe" ? "" : "none";
+      swBox.style.opacity = vnSel.value === "stufe" ? "0.5" : "";
+    };
+    vnSel.addEventListener("change", () => {
+      draft.verteilungNach = vnSel.value as Settings["verteilungNach"];
+      sichtbar();
+    });
+    sichtbar();
+    aGrid.append(
+      el("label", { title: "Versorgungsstufe: so viele Notrufe enden in Telemedizin, BLS grün … ALS rot wie in der Statistik (gilt, wenn das Codesystem diese Stufen kennt; sonst zählt die Schwere). Schwere: nach dem Zustand vor Ort." }, "Verteilung der Notfälle nach"),
+      vnSel,
+      el("label", { title: "Anteile der Versorgungsstufen in Prozent – „Statistik“ setzt die Werte von 2025" }, "Versorgungsstufen (%)"),
+      stBox,
+    );
     const rvSel = el("select", { class: "set-revers" }) as HTMLSelectElement;
     for (const [v, l] of [["normal", "normal"], ["selten", "selten"], ["aus", "aus"]]) rvSel.appendChild(el("option", { value: v }, l));
     rvSel.value = draft.revers ?? "normal";
