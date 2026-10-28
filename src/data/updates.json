@@ -1,5 +1,17 @@
 [
  {
+  "version": "0.84.0",
+  "datum": "2026-10-28",
+  "titel": "Anleitungen und besondere Anrufe",
+  "punkte": [
+   "Anrufer reagieren auf Anleitungen wie echt – Herzdruckmassage mit Mitzählen, Ablöse, Erschöpfung",
+   "Pro Fall: was der Anrufer sicher, ungefähr oder gar nicht weiß",
+   "Neue besondere Anrufe: Hosentasche, Scherzanruf, Betrunkene, Taxi, Ärztefunkdienst",
+   "Schwere der Notfälle in den Einstellungen (35/50/15)",
+   "Prüfprogramm und Testlauf melden mehr"
+  ]
+ },
+ {
   "version": "0.83.0",
   "datum": "2026-10-28",
   "titel": "Fragen bleiben stehen",

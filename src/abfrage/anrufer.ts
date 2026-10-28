@@ -2,11 +2,12 @@
  * KI-Anrufer: Wer ruft an (passend zur Lage, mit Zufall), was weiß er, wie spricht er.
  * Erzeugt die Anweisung für das Sprachmodell und einfache Antworten ohne KI.
  */
+import { anleitungAkte, autoAbweichungen } from "./anleitungen";
 import { ortKategorie } from "../data/orte";
 import { ortProfil, PERSONAL } from "../data/ortProfile";
 import { fragtNachZustand, hinweisZurArt, type NachrichtArt } from "./runde";
 import { antwortLabel, frageIndex, type Antworten, type Frage, type Schema } from "./schema";
-import { ist, thema } from "./themen";
+import { ist, merkmaleInSchema, thema } from "./themen";
 import { bezugFuer, fallakte, faktSaetze, fuellen, ORT_IM_FREIEN, SELBSTVERSTAENDLICH, type AnruferTyp, type OrtArt, type OrtModus, type Szenario } from "./szenario";
 import { einstiegHinweis, personaText, type Persona } from "./persona";
 import { frageMitPronomen } from "./sprechfrage";
@@ -63,6 +64,8 @@ const ORT_ANRUFER: Partial<Record<AnruferTyp, OrtArt[]>> = {
   bademeister: ["wasser", "freizeit", "sport"],
   bahnpersonal: ["bahnhof"],
   busfahrer: ["strasse"],
+  taxi: ["strasse", "auto", "landstrasse", "bahnhof"],
+  aerztefunk: ["wohnung", "haus"],
   tierpfleger: ["freizeit"],
   aufsicht: ["freizeit", "geschaeft", "sport", "lokal"],
   rezeption: ["lokal", "freizeit"],
@@ -233,6 +236,8 @@ export function anruferWaehlen(
       tierpfleger: { ort: "", rolle: rnd() < 0.5 ? "Tierpfleger" : "Tierpflegerin", anruferWert: "2", typ: "tierpfleger" },
       aufsicht: { ort: "", rolle: rnd() < 0.5 ? "Mitarbeiter vor Ort" : "Mitarbeiterin vor Ort", anruferWert: "2", typ: "aufsicht" },
       rezeption: { ort: "", rolle: rnd() < 0.6 ? "Mitarbeiterin an der Rezeption" : "Mitarbeiter an der Rezeption", anruferWert: "2", typ: "rezeption" },
+      taxi: { ort: "", rolle: "Taxifahrer", anruferWert: "2", typ: "taxi" },
+      aerztefunk: { ort: "", rolle: "Ärztin/Arzt vom Ärztefunkdienst (Hausbesuch)", anruferWert: "einrichtung", profi: true, typ: "aerztefunk" },
     };
     // Selbst anrufen geht nur wach und mit ausreichender Atmung; der Anrufer muss zum Ort und zum Alter passen
     const altersGerecht = (t: AnruferTyp) => (t === "eltern" ? alter < 30 : t === "kind" ? alter >= 45 : t === "partner" ? alter >= 20 : t === "lehrer" ? alter < 20 : t === "kollege" ? alter >= 16 && alter < 67 : t === "trainer" ? alter < 45 : true);
@@ -321,7 +326,7 @@ function gendern(t: string, g: "m" | "w"): string {
     .replace(/Mitarbeiter\/in/g, g === "w" ? "Mitarbeiterin" : "Mitarbeiter")
     .replace(/Pistenretter\/in/g, g === "w" ? "Pistenretterin" : "Pistenretter")
     .replace(/eine\/n /g, g === "w" ? "eine " : "einen ")
-    .replace(/^(Freund|Passant|Lenker|Arbeitskollege|Nachbar|Bademeister|Trainer|Wirt|Polizist|Lehrer|Mitarbeiter|Begleiter|Busfahrer|Tierpfleger|Ordner|Platzwart|Liftwart)\b(, der)?/, (m, wort: string, der?: string) =>
+    .replace(/^(Freund|Passant|Lenker|Arbeitskollege|Nachbar|Bademeister|Trainer|Wirt|Polizist|Lehrer|Mitarbeiter|Begleiter|Busfahrer|Taxifahrer|Tierpfleger|Ordner|Platzwart|Liftwart)\b(, der)?/, (m, wort: string, der?: string) =>
       g === "w" ? `${wort === "Arbeitskollege" ? "Arbeitskollegin" : `${wort}in`}${der ? ", die" : ""}` : m,
     );
 }
@@ -344,6 +349,8 @@ export function werText(x: Anrufer): string {
     tierpfleger: "Ich arbeite hier im Tierpark.",
     aufsicht: "Ich arbeite hier, ich bin vom Personal.",
     rezeption: "Ich bin von der Rezeption.",
+    taxi: "Ich fahr das Taxi – ich hab einen Fahrgast im Auto.",
+    aerztefunk: "Ich bin vom Ärztefunkdienst, ich bin gerade bei einem Hausbesuch.",
   };
   if (x.typ && fremd[x.typ]) return fremd[x.typ]!;
   if (x.typ === "pflege") return `${x.name}, ich bin ${x.geschlecht === "w" ? "diplomierte Pflegerin" : "diplomierter Pfleger"} hier im Heim.`;
@@ -438,13 +445,14 @@ function sonderAnrufer(
     };
     // Fallgeschichte legt fest, wer anruft (Pflegeheim, Hausarzt, Ordination, Telemedizin)
     if (geschichte?.typen.length && anf === "normal") {
-      let pool = geschichte.typen.filter((x) => ["pflege", "arzt", "ordi"].includes(x));
+      let pool = geschichte.typen.filter((x) => ["pflege", "arzt", "ordi", "aerztefunk"].includes(x));
       if (!einr.heim && pool.some((x) => x !== "pflege")) pool = pool.filter((x) => x !== "pflege");
       const t = pool.length ? pick(pool, rnd) : einr.heim ? "pflege" : "arzt";
       const hausbesuch = !/praxis|pflegeheim/i.test(geschichte.ort);
       if (t === "pflege" && !einr.heim) varianten.normal = ["diplomierte Pflegekraft der mobilen Hauskrankenpflege", "Mobile Hauskrankenpflege", "beim Patienten zu Hause"];
       else if (t === "pflege") varianten.normal = [`diplomierte Pflegekraft im ${heim}, ${station}`, heim, `${heim}, ${station}`];
       else if (t === "arzt") varianten.normal = [`Hausärztin/Hausarzt in ${ort}`, `Ordination in ${ort}`, hausbesuch ? "beim Patienten zu Hause (Hausbesuch)" : "Ordination"];
+      else if (t === "aerztefunk") varianten.normal = ["Ärztin/Arzt vom Ärztefunkdienst (Hausbesuch)", "Ärztefunkdienst 141", "beim Patienten zu Hause (Hausbesuch)"];
       else varianten.normal = [`Ordinationsassistentin der Hausarztpraxis in ${ort}`, `Ordination in ${ort}`, "Ordination"];
     }
     const [rolle, stelle, wo] = varianten[anf] ?? varianten.normal;
@@ -575,6 +583,8 @@ export interface AnrufKontext {
   verlauf?: string[];
   /** was der Anrufer auf Anweisung schon macht */
   massnahmen?: string[];
+  /** schon gegebene Anleitungen und verbrauchte einmalige Abweichungen */
+  anleitungGesagt?: string[];
   /** Fallgeschichte (Hergang, Patient, Umgebung …), falls vorhanden */
   szenario?: Szenario;
 }
@@ -608,7 +618,25 @@ function laieWort(k: AnrufKontext, id: string, wert: string): string | undefined
 }
 
 /** Wahrheit zu einer Frage in Worten (für die KI) */
+/** Wissensstufe des Anrufers zu einer Frage: sicher (Standard), nur ungefähr oder gar nicht */
+export function wissenStufe(k: AnrufKontext, id: string): "sicher" | "ungefaehr" | "unbekannt" {
+  const w = k.szenario?.wissen;
+  if (!w || k.anrufer.selbst) return "sicher";
+  // Merkmal-IDs des Falls → Fragen-IDs des geladenen Schemas
+  const imSchema = (l: string[]) => l.includes(id) || id in merkmaleInSchema(k.schema, Object.fromEntries(l.map((m) => [m, "x"])));
+  if (imSchema(w.unbekannt)) return "unbekannt";
+  if (imSchema(w.ungefaehr)) return "ungefaehr";
+  return "sicher";
+}
+
 export function wahrheitText(k: AnrufKontext, f: Frage): string | null {
+  const stufe = wissenStufe(k, f.id);
+  if (stufe === "unbekannt") return "das weißt du nicht";
+  const t = wahrheitTextSicher(k, f);
+  return t && stufe === "ungefaehr" && t !== "das weißt du nicht" ? `${t} – da bist du dir aber nicht sicher (sag „ich glaub“ bzw. „wahrscheinlich“)` : t;
+}
+
+function wahrheitTextSicher(k: AnrufKontext, f: Frage): string | null {
   const wert = k.wahrheit[f.id];
   if (wert === undefined || wert === null) return null;
   const p = k.anrufer.persona;
@@ -804,6 +832,18 @@ function antwortSaetze(k: AnrufKontext): string {
   const nurFakt: Antworten = {};
   for (const [id, wert] of Object.entries(k.wahrheit)) {
     if (["anrufer", "schilderung", "ort_adresse", "ort_zusatz", "rueckrufnummer", "kapitel"].includes(id)) continue;
+    // Wissensstufen des Falls: weiß der Anrufer das nur ungefähr oder gar nicht?
+    const stufe = wissenStufe(k, id);
+    if (stufe !== "sicher") {
+      const fr = idx.get(id);
+      const frageText = fr ? `„${frageMitPronomen(fr.text, w)}“` : id;
+      if (stufe === "unbekannt") zeilen.push(`- ${frageText}: das weißt du NICHT – sag ehrlich, dass du es nicht weißt`);
+      else {
+        const t = faktSaetze({ [id]: wert }, w)[0] ?? (fr ? wahrheitTextSicher(k, fr) : null);
+        if (t) zeilen.push(`- Nur ungefähr, du bist dir nicht sicher (sag „ich glaub“, „wahrscheinlich“): ${t}`);
+      }
+      continue;
+    }
     // nach einer Veränderung im Gespräch: Antworten zum alten Zustand (Atemweg, Baby, Komplikationen) gelten nicht mehr sicher
     if ((k.verlauf ?? []).length && ["atemweg", "kompl_baby", "komplikationen", "kompl_mutter", "situation", "sprachschw", "verwirrt", "hautfarbe", "kaltschweiss", "ohnmacht"].includes(id)) continue;
     // Fragen, die nur die Polizei beantworten kann
@@ -1001,6 +1041,10 @@ function promptGeschichte(k: AnrufKontext): string {
       ? `GERADE GEÄNDERT (gilt ab jetzt und ist wichtiger als alles oben – darauf reagierst du jetzt, das beschäftigt dich; was oben dem widerspricht, gilt nicht mehr): ${verlauf.join(" / ")}${z && !ich && !/schwanger|geburt/.test(sz.thema) ? ` ${z.replace(/ – daran ändert sich.*$/, "")}.` : ""} Fragt die Leitstelle, wie es jetzt ist, beschreibst du DIESEN neuen Zustand.`
       : "",
     (k.massnahmen ?? []).length ? `WAS DU AUF ANWEISUNG DER LEITSTELLE SCHON MACHST (gilt weiter, bis die Leitstelle etwas anderes sagt): ${k.massnahmen!.join(" ")}` : "",
+    ...((akte) => (akte.length ? [`WENN DICH DIE LEITSTELLE ANLEITET (so ist es bei dir): ${akte.join(" ")}`] : []))(anleitungAkte(sz.anleitung, autoAbweichungen(k), patientW(k))),
+    sz.spezial === "scherz"
+      ? `WICHTIG – DAS IST EIN SCHERZANRUF: Es gibt keinen echten Notfall. Du bist ein Jugendlicher (ca. 13), deine Freunde kichern im Hintergrund, manchmal musst du selbst lachen. Du erfindest absurde Antworten und widersprichst dir, wenn genau nachgefragt wird. Wird die Leitstelle streng (Missbrauch, strafbar, echte Notfälle), sagst du nur noch kleinlaut „Tschuldigung“.`
+      : "",
     `DAS STIMMT SICHER (sag es nur, wenn danach gefragt wird – mit DEINEN Worten, nie Wort für Wort):`,
     zeilen,
     `WIE DU REDEST:`,
@@ -1357,13 +1401,19 @@ export function antwortOhneKi(k: AnrufKontext, frage: Frage): string {
   if (!istBekannt(k.anrufer, frage.id)) return k.anrufer.unbekanntSatz ?? "Das wissen wir nicht.";
   if (LAIE[frage.id] && typeof k.wahrheit[frage.id] === "string") {
     if (k.anrufer.selbst && frage.id === "bw") return "Ja, ich bin wach, aber mir geht's gar nicht gut.";
-    const t = wahrheitText(k, frage);
+    const stufe = wissenStufe(k, frage.id);
+    if (stufe === "unbekannt") return "Das weiß ich nicht.";
+    const t = wahrheitTextSicher(k, frage);
     const wer = k.anrufer.selbst ? "Ich" : patientW(k) ? "Sie" : "Er";
+    if (t && stufe === "ungefaehr") return `Ich glaub, ${wer.toLowerCase() === "ich" ? "ich" : wer.toLowerCase()} ${t} – ganz sicher bin ich nicht.`;
     if (t) return k.anrufer.selbst ? `${t.charAt(0).toUpperCase()}${t.slice(1)}.` : `${wer} ${t}.`;
   }
+  const stufe = wissenStufe(k, frage.id);
+  if (stufe === "unbekannt") return "Das weiß ich nicht.";
   const w = k.wahrheit[frage.id];
   if (w === undefined || w === null) return "Das weiß ich nicht.";
   const label = antwortLabel(frage, w);
+  if (stufe === "ungefaehr" && label !== "Unbekannt" && label !== "unbekannt") return `Ich glaub … ${label.charAt(0).toLowerCase()}${label.slice(1)}, ganz sicher bin ich nicht.`;
   if (label === "Unbekannt" || label === "unbekannt") return "Das weiß ich nicht.";
   return label.replace(/^Ja\b.*/, (m) => (m === "Ja" ? "Ja." : m)).replace(/^Nein$/, "Nein.");
 }

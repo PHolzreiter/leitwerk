@@ -5,7 +5,7 @@
  */
 import { store } from "../data/store";
 import { sim, type Einsatz } from "../sim/engine";
-import { antwortOhneKi, erinnerung, ersterSatzOhneKi, istBekannt, sprachFilter, systemPrompt, zusammenfassungPruefen, type AnrufKontext } from "./anrufer";
+import { antwortOhneKi, erinnerung, werText, ersterSatzOhneKi, istBekannt, sprachFilter, systemPrompt, zusammenfassungPruefen, type AnrufKontext } from "./anrufer";
 import { kiBereit, kiPrefs, kiStatus, type KiNachricht } from "./ki";
 import { kiAntwortNeu, nachrichtArt, ohneVorspann } from "./runde";
 import { inTauri } from "../platform";
@@ -15,6 +15,7 @@ import { ohnePatientWort } from "./sprechfrage";
 import { ist } from "./themen";
 import { buchstabiert, fragtSchreibweise, namensTeil } from "./buchstabieren";
 import { antwortKern, antwortPruefen, anweisungKern, anweisungPruefen, kernAntwort, kernFuerFrage, schemaFrageZu, themenErkennen, themenZuFeld, type AnweisungKern, type Kern, type Thema } from "./verstehen";
+import { ABLOESE, aktiveAbweichungen, BAUSTEINE, fuellePerson, helferDa, LAUTSPRECHER } from "./anleitungen";
 
 /** Welche Schemafragen in diesem Notruf schon gestellt wurden (die Formulierung wechselt) */
 const gefragt = new Map<string, Set<string>>();
@@ -61,6 +62,7 @@ export function kontext(e: Einsatz): AnrufKontext | null {
     szenario: w.szenario,
     verlauf: w.verlauf,
     massnahmen: w.massnahmen,
+    anleitungGesagt: w.anleitungGesagt,
   };
 }
 
@@ -89,6 +91,7 @@ function einfacheAntwort(k: AnrufKontext, frage: string, schemaFrage?: Frage): s
   }
   if (beste) return antwortOhneKi(k, beste);
   const f = frage.toLowerCase();
+  if (/wer (spricht|ruft|ist da|sind sie)|mit wem (spreche|rede)|wie heißen sie/.test(f)) return werText(k.anrufer);
   if (/notfallort|adresse|wo\b|wohin/.test(f)) return k.adresse;
   if (/nummer|erreichbar/.test(f)) return k.anrufer.nummer;
   if (/passiert|was ist|was los/.test(f)) return antwortOhneKi(k, { id: "schilderung", typ: "text", text: frage } as Frage);
@@ -182,6 +185,11 @@ export async function fragen(e: Einsatz, text: string, schemaFrage?: Frage, onTo
     if (antwort) {
       await sim.call("anrufNachricht", e.id, "anrufer", antwort, quelle.wert);
       sprecher.ende(antwort);
+    }
+    // Scherzanruf: nach der Belehrung (oder wenn es zu lange dauert) legt der Anrufer auf
+    if (k.szenario?.spezial === "scherz" && e.anruf?.status === "aktiv") {
+      const fragenBisher = e.anruf.gespraech.filter((m) => m.von === "leitstelle").length;
+      if (BELEHRUNG.test(text) || fragenBisher >= 8) await sim.call("anruferLegtAuf", e.id);
     }
   } finally {
     laufend.delete(e.id);
@@ -323,6 +331,27 @@ export async function anruferAntwort(
       return istBekannt(x, sf.id) ? einfacheAntwort(k, frage, sf) : (x.unbekanntSatz ?? "Das wissen wir nicht.");
     }
   }
+  // Besondere Anrufe ohne Notfall
+  const sp = k.szenario?.spezial;
+  if (sp === "hosentasche") {
+    await pause();
+    return zufallAus(["(nur Rascheln, niemand antwortet)", "(Rascheln … im Hintergrund undeutliche Stimmen)", "(Stoff reibt am Mikrofon, dumpfe Schritte – sonst nichts)", "(gedämpfte Musik, Rascheln)"]);
+  }
+  if (sp === "scherz") {
+    const n = (e.anruf?.gespraech ?? []).filter((m) => m.von === "leitstelle").length;
+    if (BELEHRUNG.test(frage)) {
+      await pause();
+      return zufallAus(["Äh … 'tschuldigung …", "Okay, okay … sorry.", "(Kichern bricht ab) … äh … tschuldigung."]);
+    }
+    if (n >= 8) {
+      await pause();
+      return "(lautes Lachen im Hintergrund) … Tschüss!";
+    }
+    if (!kiBereit()) {
+      await pause();
+      return scherzOhneKi(Math.max(0, n - 1));
+    }
+  }
   // Wer selbst anruft und jetzt bewusstlos ist, kann nicht mehr antworten
   if (x.selbst && (k.wahrheit.bw === "nein" || k.wahrheit.at === "keine" || k.wahrheit.at === "agonal")) {
     await pause();
@@ -350,6 +379,25 @@ export async function anruferAntwort(
     await new Promise((r) => setTimeout(r, 600));
     const erste = (e.anruf?.gespraech ?? []).filter((m) => m.von === "anrufer").length === 0;
     if (erste && frage === ERÖFFNUNG) return ersterSatzOhneKi(k);
+    // Anleitung: Baustein (Abweichungen, Herzdruckmassage mit Mitzählen)
+    if (!schemaFrage && nachrichtArt(frage) === "anweisung" && !x.nurBekannt) {
+      const an = anweisungKern(k, frage);
+      if (an.typen.length) {
+        anweisungMerken(e, an);
+        const reaStart = an.massnahmen.some((m) => /Herzdruckmassage/.test(m));
+        const rz = reaStart || reanimationLaeuft(e, k) ? reaZusatz(e, k, frage, reaStart) : null;
+        const teile = [...an.fest, ...(rz?.fest ?? [])];
+        const rea = reaStart || reanimationLaeuft(e, k);
+        let t = teile.join(" ") || (rea ? "" : "Okay, mach ich.");
+        if (rea && !zaehltMit(t)) t = t ? `${t.replace(/[.!…\s]+$/, "")} … ${zaehlFolge(reaStart)}` : zaehlFolge(reaStart);
+        return t.charAt(0).toUpperCase() + t.slice(1);
+      }
+    }
+    if (!schemaFrage && ["mitteilung", "anweisung"].includes(nachrichtArt(frage)) && reanimationLaeuft(e, k)) {
+      const rz = reaZusatz(e, k, frage, false);
+      const t = `${rz.fest.length ? `${rz.fest.join(" ").replace(/[.!…\s]+$/, "")} … ` : ""}${zaehlFolge()}`;
+      return t.charAt(0).toUpperCase() + t.slice(1);
+    }
     const a = einfacheAntwort(k, frage, schemaFrage);
     return schonGefragt(e.anruf?.gespraech ?? [], frage) ? `Wie gesagt: ${a.charAt(0).toLowerCase()}${a.slice(1)}` : a;
   }
@@ -393,7 +441,12 @@ export async function anruferAntwort(
   // Herzdruckmassage läuft: bei allem außer Fragen wird weiter gedrückt und laut gezählt
   const reaStart = !!anweisung?.massnahmen.some((m) => /Herzdruckmassage/.test(m));
   const reaLaeuft = neu && (reaStart || (reanimationLaeuft(e, k) && (art === "anweisung" || art === "mitteilung")));
-  if (reaLaeuft) kernText = [...(kernText ?? []), "Du drückst weiter auf die Brust und zählst dabei laut weiter („… eins, zwei, drei, vier …“) – du hörst nicht auf."];
+  let reaFest: string[] = [];
+  if (reaLaeuft) {
+    const rz = reaZusatz(e, k, frage, reaStart);
+    reaFest = rz.fest;
+    kernText = [...(kernText ?? []), ...rz.kern, "Du drückst weiter auf die Brust und zählst dabei laut weiter („… eins, zwei, drei, vier …“) – du hörst nicht auf."];
+  }
   const verlauf = kiVerlauf(e, k, frage, hinweisFrage, wiederholtId, kernText, stimmung);
   try {
     const g = e.anruf?.gespraech ?? [];
@@ -456,8 +509,8 @@ export async function anruferAntwort(
         if (zweite.trim() && !allePruefen(zweite).length) {
           fertig = zweite;
           quelle.nachgebessert = `neu erzeugt (${probleme.join("; ")})`;
-        } else if (anweisung?.nichtMachbar.length) {
-          fertig = anweisung.gesagt[0];
+        } else if (anweisung?.fest.length) {
+          fertig = [...anweisung.fest, ...reaFest].join(" ");
           quelle.wert = "fest";
           quelle.nachgebessert = `feste Antwort (${probleme.join("; ")})`;
         } else if (kern && (kern.saetze.length || pruefFrage)) {
@@ -483,8 +536,7 @@ export async function anruferAntwort(
     if (/^[a-zäöü]/.test(fertig)) fertig = fertig.charAt(0).toUpperCase() + fertig.slice(1);
     if (pruefbar) onToken?.(fertig);
     // ausgeführte Anweisungen merken (gelten im weiteren Gespräch)
-    const wa = e.wahr.abfrage;
-    if (anweisung?.massnahmen.length && wa) for (const m of anweisung.massnahmen) if (!(wa.massnahmen ??= []).includes(m)) wa.massnahmen.push(m);
+    if (anweisung) anweisungMerken(e, anweisung);
     return fertig;
   } catch (err) {
     console.warn("KI-Antwort", err);
@@ -534,6 +586,91 @@ export function feinschliff(antwort: string, frage: string, art: string, k: Anru
   }
   void gespraech;
   return t ? t.charAt(0).toUpperCase() + t.slice(1) : t;
+}
+
+/** Ausgeführte Anweisung merken: Maßnahmen (gelten weiter) und verbrauchte Abweichungen */
+function anweisungMerken(e: Einsatz, an: AnweisungKern): void {
+  const wa = e.wahr.abfrage;
+  if (!wa) return;
+  for (const m of an.massnahmen) if (!(wa.massnahmen ??= []).includes(m)) wa.massnahmen.push(m);
+  (wa.anleitungGesagt ??= []).push(...an.benutzt);
+}
+
+/**
+ * Herzdruckmassage am Telefon: was dazukommt, während gedrückt wird – einmal eine Laien-Rückfrage,
+ * Schnappatmung, Lautsprecher, Erschöpfung nach einer Weile, Ablöse (wenn jemand da ist).
+ * kern = für die KI, fest = so sagt es der Anrufer ohne KI.
+ */
+function reaZusatz(e: Einsatz, k: AnrufKontext, frage: string, start: boolean): { kern: string[]; fest: string[] } {
+  const wa = e.wahr.abfrage;
+  const kern: string[] = [];
+  const fest: string[] = [];
+  if (!wa) return { kern, fest };
+  const r = (wa.rea ??= { runden: 0, gesagt: [] });
+  r.runden++;
+  const w = k.szenario ? k.szenario.patient.geschlecht === "w" : k.wahrheit.geschlecht === "w";
+  const f = (t: string) => fuellePerson(t, w);
+  const einmal = (id: string) => (r.gesagt.includes(id) ? false : (r.gesagt.push(id), true));
+  const abw = new Set(aktiveAbweichungen("reanimation", k.szenario?.anleitung, {}).map(([id]) => id));
+  const alt = abw.has("alt") || (k.anrufer.typ === "partner" && (k.patientAlter ?? 0) >= 75);
+  // Lautsprecher (oder Festnetz: Hörer hinlegen)
+  if (LAUTSPRECHER.test(frage) && einmal("lautsprecher")) {
+    if (abw.has("festnetz")) {
+      kern.push("Lautsprecher hast du keinen (Festnetz) – du legst den Hörer neben dich und redest laut.");
+      fest.push("Ich hab kein Handy, ich leg den Hörer neben mich – ich hör Sie eh!");
+    } else {
+      kern.push("Du stellst das Handy auf Lautsprecher und legst es neben dich auf den Boden.");
+      fest.push("Okay, Lautsprecher ist an, das Handy liegt neben mir.");
+    }
+  }
+  // Ablöse
+  if (ABLOESE.test(frage)) {
+    if (helferDa(k) && einmal("abloese")) {
+      kern.push(`Jemand, der da ist (${(k.anrufer.persona?.dabei ?? "").replace(/\.$/, "")}), übernimmt jetzt das Drücken – du sagst kurz, wer, und es wird weiter gezählt.`);
+      fest.push("Okay, wir wechseln – jetzt drückt der andere …");
+    } else if (!helferDa(k)) {
+      kern.push("Es ist niemand da, der dich ablösen kann – du sagst das und drückst weiter.");
+      fest.push("Ich bin allein, da ist niemand … ich mach weiter.");
+    }
+  }
+  // einmal eine typische Rückfrage gleich am Anfang (nicht immer)
+  if (start && Math.random() < 0.35 && einmal("rueckfrage")) {
+    const q = BAUSTEINE.reanimation.rueckfrage ?? [];
+    const t = f(q[Math.floor(Math.random() * q.length)] ?? "");
+    if (t) {
+      kern.push(`Du fragst dabei kurz: „${t}“`);
+      fest.push(t);
+    }
+  }
+  // Schnappatmung: macht Laien unsicher
+  const schnappt = wa.antwortenAnfang?.at === "agonal" || k.wahrheit.at === "agonal";
+  if (schnappt && r.runden >= 2 && einmal("schnapp")) {
+    kern.push(f("{Er} macht zwischendurch so komische, schnappende Atemzüge – du fragst erschrocken, ob du trotzdem weiterdrücken sollst."));
+    fest.push(f("{Er} schnappt manchmal so nach Luft – soll ich trotzdem weiterdrücken?"));
+  }
+  // Erschöpfung nach einer Weile (wer alt ist, früher)
+  if (r.runden >= (alt ? 3 : 6) && einmal("muede")) {
+    kern.push(helferDa(k) ? "Deine Arme werden schwer – du sagst, dass du bald nicht mehr kannst, und drückst weiter (abwechseln könnte jemand, der da ist)." : "Deine Arme werden schwer – du sagst, dass du bald nicht mehr kannst, drückst aber weiter.");
+    fest.push(alt ? "Ich kann bald nicht mehr … ich bin selber nicht mehr so jung …" : "Ich kann bald nicht mehr … meine Arme …");
+  }
+  return { kern, fest };
+}
+
+/** Belehrung beim Scherzanruf („Der Notruf ist für echte Notfälle“, „das ist strafbar“) */
+const BELEHRUNG = /(missbrauch|strafbar|anzeige|blockier|nicht lustig|kein spaß|kein scherz|echte notfälle|leben (retten|kosten)|ich leg (jetzt )?auf|wird verfolgt|nummer (ist )?gespeichert|ihre eltern)/i;
+
+/** Scherzanruf ohne KI: absurde Meldung, Kichern, Widersprüche */
+function scherzOhneKi(n: number): string {
+  const s = [
+    "Hallo, äh … (Kichern im Hintergrund) … mein Freund hat den Kopf in einem Kübel stecken, der kommt nicht mehr raus!",
+    "Äh … in der … Hauptstraße? (Prusten) Nein, warte … Schulgasse!",
+    "(jemand flüstert im Hintergrund: „Sag, dass er blau ist!“) … Er ist ganz blau! Also … der Kübel.",
+    "Ja, voll schlimm … (Lachen) … der atmet, glaub ich …",
+    "Wie alt? … Hundert! (lautes Gelächter im Hintergrund)",
+    "Äh … weiß nicht … (Kichern)",
+    "(Getuschel) … ja … nein … vielleicht?",
+  ];
+  return s[Math.min(n, s.length - 1)] ?? s[s.length - 1];
 }
 
 /** Läuft gerade eine Herzdruckmassage (angeleitet und der Patient ist noch nicht wieder da)? */

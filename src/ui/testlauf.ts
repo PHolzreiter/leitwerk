@@ -5,6 +5,7 @@
  * Am Ende: ZIP mit einem Gesprächsexport je Durchlauf und einer Übersicht mit auffälligen Antworten.
  */
 import { anruferAntwort, ERÖFFNUNG, kontext, testlaufStatus } from "../abfrage/gespraech";
+import { wissenStufe } from "../abfrage/anrufer";
 import { kiBereit, kiPrefs, kiStatus } from "../abfrage/ki";
 import { alleFaelle, fallVorlage, istFallAktiv, type FallVorlage } from "../abfrage/faelle";
 import { nachrichtArt, saetze, schonGesagt } from "../abfrage/runde";
@@ -165,9 +166,24 @@ function zusammenfassung(a: Antworten, g: "m" | "w" | null, selbst: boolean, fal
 }
 
 /** Was an einer Antwort auffällt (für die Übersicht) */
-function pruefeAntwort(e: Einsatz, frage: string, antwort: string, art: string, frueher: string[], quelle: string, dauer: number, profi: boolean, schilderung: boolean): string[] {
+function pruefeAntwort(e: Einsatz, frage: string, antwort: string, art: string, frueher: string[], quelle: string, dauer: number, profi: boolean, schilderung: boolean, sf?: Frage): string[] {
   const g: string[] = [];
   if (!antwort.trim()) return ["leere Antwort"];
+  const wa = e.wahr.abfrage;
+  // Hosentasche: nie ein Wort
+  if (wa?.szenario?.spezial === "hosentasche") return /^\(/.test(antwort.trim()) ? [] : ["Hosentaschenanruf, aber der Anrufer redet"];
+  // Antwort-Etikett der Abfrage vorgelesen („Andere Substanz“, „Drei bis neun Meter“) – so redet niemand
+  if (sf && sf.typ === "single") {
+    const low = antwort.toLowerCase();
+    const et = (sf.optionen ?? []).map((o) => o.label).find((l) => l.split(/\s+/).length >= 3 && !/^(ja|nein|unbekannt|weiß nicht)\b/i.test(l) && low.includes(l.toLowerCase()));
+    if (et) g.push(`liest das Antwort-Etikett vor („${et}“)`);
+  }
+  // Wissensstufe: weiß es laut Fall nicht, sagt es aber
+  if (sf && wa?.szenario?.wissen && kontext(e)) {
+    const st = wissenStufe(kontext(e)!, sf.id);
+    if (st === "unbekannt" && !/weiß (ich )?(nicht|net)|keine ahnung|kann ich nicht sagen|nicht sicher|weiß nicht/i.test(antwort)) g.push("weiß es laut Fall nicht, antwortet aber bestimmt");
+    if (st === "ungefaehr" && !/glaub|wahrscheinlich|vielleicht|nicht (ganz )?sicher|eher|ungefähr|keine ahnung|weiß (ich )?nicht/i.test(antwort)) g.push("weiß es nur ungefähr, klingt aber ganz sicher");
+  }
   if (quelle !== "ki" && !/^\(|^Mmh … ich/.test(antwort)) g.push("feste Antwort statt KI (KI-Fehler?)");
   if (!profi && !e.wahr.abfrage?.anrufer.selbst && /\b(der Patient|die Patientin|den Patienten|dem Patienten)\b/.test(antwort)) g.push("sagt „der Patient“");
   if (/Hinweis|Fallakte|WAS WIRKLICH|Leitstelle:|\[/.test(antwort)) g.push("Anweisung an die KI durchgerutscht");
@@ -229,7 +245,7 @@ async function einGespraech(auftrag: TestAuftrag, nr: number, abbruch: { ja: boo
     a.gespraech.push({ zeit: sim.state.zeit, echt: Date.now(), von: "anrufer", text: ant, quelle: quelle.wert });
     live(`Anrufer: ${ant}`);
     const art = sf ? "frage" : nachrichtArt(text);
-    const gruende = pruefeAntwort(e, text, ant, art, frueher, quelle.nachgebessert ? "ki" : quelle.wert, dauer, profi, sf?.id === "schilderung" || /passiert/.test(text));
+    const gruende = pruefeAntwort(e, text, ant, art, frueher, quelle.nachgebessert ? "ki" : quelle.wert, dauer, profi, sf?.id === "schilderung" || /passiert/.test(text), sf);
     // Widerspruch erkannt und vom Programm behoben – zählt mit, damit man sieht, wie oft die KI danebenlag
     if (quelle.nachgebessert) gruende.push(`vom Programm nachgebessert: ${quelle.nachgebessert}`);
     for (const grund of gruende) auff.push({ frage: text, antwort: ant, grund });
@@ -313,6 +329,17 @@ async function einGespraech(auftrag: TestAuftrag, nr: number, abbruch: { ja: boo
       await frag(mitPronomen(`${anw.typ === "reanimation" ? "Hören Sie auf zu drücken. " : ""}Drehen Sie {ihn} bitte in die stabile Seitenlage und geben Sie {ihm} nichts zu trinken. Atmet {er}?`, g()));
     }
     else await frag(mitPronomen(pick(["Okay. Wie geht's {ihm} jetzt?", "Was sehen Sie jetzt?", "Und, wie ist es jetzt?"]), g()));
+  }
+  // Scherzanruf: belehren (dann legt der Anrufer auf)
+  if (w.szenario?.spezial === "scherz") await frag("Das ist ein Missbrauch des Notrufs und strafbar – Sie blockieren die Leitung für echte Notfälle. Ich lege jetzt auf.");
+  // Stimmung passt zur Lage? (Regeln: Lebensgefahr + Angehörige → aufgeregt/panisch; Harmloses → eher ruhig)
+  {
+    const fall0 = fallVorlage(auftrag.fallId);
+    const v0 = fall0?.varianten.find((x) => x.id === auftrag.variante);
+    const nah = ["partner", "eltern", "kind"].includes(w.anrufer.typ ?? "");
+    const gewollt = (w.szenario?.verlauf ?? []).some((t) => /aufgeregt|panisch|übertreib|ruhig|sachlich|routiniert/.test(t));
+    if (!gewollt && v0?.sichtung === "gruen" && w.anrufer.emotion === "panisch") auff.push({ frage: "–", antwort: "–", grund: "Stimmung passt nicht: Panik bei einem harmlosen Fall" });
+    if (!gewollt && v0?.sichtung === "rot" && nah && !w.anrufer.selbst && w.anrufer.emotion === "ruhig") auff.push({ frage: "–", antwort: "–", grund: "Stimmung passt nicht: Angehörige ganz ruhig bei Lebensgefahr" });
   }
   // 6) Ende – in Lebensgefahr bleibt die Leitstelle am Telefon
   if (kritisch) await frag(selbst ? "Ich bleibe am Telefon, die Rettung ist gleich da." : mitPronomen("Ich bleibe bei Ihnen am Telefon, bis die Rettung da ist. Machen Sie weiter wie besprochen.", g()));

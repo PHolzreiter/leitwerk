@@ -7,6 +7,7 @@
  * zurücksetzen). Eigene Fälle kann jeder anlegen; Fallpakete lassen sich exportieren und importieren.
  * Optional entwirft die KI einen Fall aus einer kurzen Beschreibung – alles bleibt danach von Hand änderbar.
  */
+import { abweichungenVon } from "../abfrage/anleitungen";
 import { ablageName, ablageSichern } from "../net/ablage";
 import {
   alleFaelle,
@@ -85,6 +86,8 @@ const ANRUFER: [AnruferTyp, string][] = [
   ["kollege", "Kollege/in"],
   ["passant", "Passant/in"],
   ["verkauf", "Verkaufspersonal"],
+  ["taxi", "Taxifahrer/in"],
+  ["aerztefunk", "Ärztefunkdienst (Arzt beim Hausbesuch)"],
 ];
 
 const HAEUFIG: [number, string][] = [
@@ -854,7 +857,30 @@ function fensterBauen(): { zeigen(id?: string): void } {
         aenderung();
       }, { lang: true, platzhalter: "z. B. Wenn man dir die Herzdruckmassage erklärt, machst du sie und zählst laut mit.", neu: "+ Hinweis" }), "Regieanweisung für die KI (Du-Form). Die Stimmung würfelt das Spiel – nur festlegen, wenn sie zum Fall gehört."),
     );
-    formular.append(a, h, d);
+    // Anleitungen: was bei diesem Fall anders ist als im allgemeinen Baustein
+    const an = abschnitt("Wenn die Leitstelle anleitet", "Wie Anrufer auf Anleitungen reagieren (Herzdruckmassage mitzählen, Tuch auf die Wunde …), ist allgemein hinterlegt. Hier nur ankreuzen, was bei diesem Fall anders ist. „Alt“, „Bett“ und „Kleinkind“ erkennt das Spiel auch selbst.");
+    for (const [typ, label] of ANLEITUNGEN) {
+      const abw = abweichungenVon(typ);
+      if (!abw.length) continue;
+      const box = el("div", { class: "fe-chips" });
+      for (const [id, name] of abw) {
+        const l = el("label", { class: "chk" });
+        const c = el("input", { type: "checkbox" }) as HTMLInputElement;
+        c.checked = (f.anleitung?.[typ] ?? []).some((x) => x.replace(/^\[[^\]]*\]\s*/, "") === id);
+        c.addEventListener("change", () => {
+          const liste = (f.anleitung?.[typ] ?? []).filter((x) => x.replace(/^\[[^\]]*\]\s*/, "") !== id);
+          if (c.checked) liste.push(id);
+          f.anleitung = { ...(f.anleitung ?? {}), [typ]: liste };
+          if (!liste.length) delete f.anleitung[typ];
+          if (!Object.keys(f.anleitung).length) delete f.anleitung;
+          aenderung();
+        });
+        l.append(c, el("span", {}, name));
+        box.appendChild(l);
+      }
+      an.appendChild(zeile(label, box));
+    }
+    formular.append(a, h, d, an);
   }
 
   // ---- Schritt 3: Abfrage
@@ -972,6 +998,23 @@ function fensterBauen(): { zeigen(id?: string): void } {
           else setze(merkmal(frage, s.value)[1]);
         });
         if (geerbt !== undefined) feld.appendChild(el("span", { class: "fe-hilfe" }, `alle Ausgänge: ${Array.isArray(geerbt) ? geerbt.join(" / ") : String(geerbt)}`));
+      }
+      // Wissensstufe: weiß der Anrufer das sicher, nur ungefähr oder gar nicht? (gilt für alle Ausgänge)
+      if (!variante && frage.id !== "alter" && frage.id !== "geschlecht") {
+        const ws = el("select", { class: "fe-wissen", title: "Was weiß der Anrufer darüber?" }) as HTMLSelectElement;
+        ws.append(el("option", { value: "sicher" }, "Anrufer weiß es"), el("option", { value: "ungefaehr" }, "nur ungefähr"), el("option", { value: "unbekannt" }, "weiß es nicht"));
+        const hat = (l?: string[]) => (l ?? []).some((x) => x.replace(/^\[[^\]]*\]\s*/, "") === key);
+        ws.value = hat(f.wissen?.unbekannt) ? "unbekannt" : hat(f.wissen?.ungefaehr) ? "ungefaehr" : "sicher";
+        ws.addEventListener("change", () => {
+          const ohne = (l?: string[]) => (l ?? []).filter((x) => x.replace(/^\[[^\]]*\]\s*/, "") !== key);
+          const w = { ungefaehr: ohne(f.wissen?.ungefaehr), unbekannt: ohne(f.wissen?.unbekannt) };
+          if (ws.value === "ungefaehr") w.ungefaehr.push(key);
+          if (ws.value === "unbekannt") w.unbekannt.push(key);
+          f.wissen = w.ungefaehr.length || w.unbekannt.length ? w : undefined;
+          if (!f.wissen) delete f.wissen;
+          aenderung();
+        });
+        feld.appendChild(ws);
       }
       void ant;
       z.appendChild(feld);
@@ -1619,6 +1662,8 @@ FELDER
 - "seitMin": [von, bis] Minuten seit dem Ereignis
 - "fest": Zustand beim Anruf: { "bw": "ja"|"getruebt"|"nein", "at": "normal"|"abnorm"|"agonal"|"keine" } (bw = wach?, at = Atmung)
 - "ohneSicht": true, wenn der Anrufer den Patienten NICHT sieht (versperrte Tür, nur Telefon mit ihm) – dann kennt er Hautfarbe, Atmung usw. nicht
+- "wissen" (optional): was der Anrufer nur ungefähr bzw. gar nicht weiß, als Antwort-IDs von "fest", z. B. {"ungefaehr": ["seit"], "unbekannt": ["blutverduenner"]} – sonst weiß er es sicher
+- "anleitung" (optional): was bei Anleitungen anders ist, z. B. {"reanimation": ["alt"], "druck_blutung": ["kein_tuch"]}. Erlaubt: ${ANLEITUNGEN.map(([t]) => `${t}: ${abweichungenVon(t).map(([id]) => id).join("/") || "–"}`).filter((x) => !x.endsWith("–")).join("; ")}
 - "varianten": 1–3 Ausgänge, zusammen p = 1. Jeder: { "id": "A", "p": 0.8, "sichtung": "gruen"|"gelb"|"rot", "lage": "Lagebild der Besatzung, kurz, fachlich", "na": "nein"|"immer"|"RS"|"NFS-NKV", "symptom": eine ID aus der Symptomliste, "dringlichkeit": 10 (stabil, grün) | 20 (dringend, gelb) | 30 (Schockraum/Intensiv, rot), optional "fest": {"bw":…, "at":…}, optional "ereignis": { "nachMin": [von, bis], "text": "so meldet es der Anrufer, z. B. {Er} wird ganz blau.", "bw": …, "at": …, "sichtung": …, "lage": … } }
 
 PLATZHALTER (in geschehen, hergang, details, stelle, verlauf, ereignis.text)
@@ -1677,6 +1722,21 @@ export function entwurfAusKi(antwort: string, name: string): FallVorlage | null 
   const ve = strs(j.vorerkrankungen);
   if (ve.length) f.vorerkrankungen = ve;
   if (j.ohneSicht === true) f.ohneSicht = true;
+  if (j.wissen && typeof j.wissen === "object") {
+    const wj = j.wissen as Record<string, unknown>;
+    const ung = strs(wj.ungefaehr);
+    const unb = strs(wj.unbekannt);
+    if (ung.length || unb.length) f.wissen = { ungefaehr: ung, unbekannt: unb };
+  }
+  // Abweichungen bei Anleitungen (nur bekannte)
+  if (j.anleitung && typeof j.anleitung === "object") {
+    const an: Partial<Record<AnleitungTyp, string[]>> = {};
+    for (const [typ] of ANLEITUNGEN) {
+      const ids = strs((j.anleitung as Record<string, unknown>)[typ]).filter((x) => abweichungenVon(typ).some(([id]) => id === x.replace(/^\[[^\]]*\]\s*/, "")));
+      if (ids.length) an[typ] = ids;
+    }
+    if (Object.keys(an).length) f.anleitung = an;
+  }
   const zust = kiZustand(j.fest);
   if (Object.keys(zust).length) f.fest = { ...(f.fest ?? {}), ...zust };
   f.seitMin = paar(j.seitMin, f.seitMin ?? [5, 30]);

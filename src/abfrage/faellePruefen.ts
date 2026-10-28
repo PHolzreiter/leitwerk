@@ -4,7 +4,8 @@
  */
 import { buchung } from "../data/klinik";
 import { symptom } from "../data/zuweisung";
-import { alleFaelle, type FallVariante, type FallVorlage } from "./faelle";
+import { alleFaelle, type AnleitungTyp, type FallVariante, type FallVorlage } from "./faelle";
+import { abweichungenVon, BAUSTEINE } from "./anleitungen";
 import { bestimmeCode, fragenImAblauf, type Antworten, type Schema } from "./schema";
 import { altersPlausibel, sichtUnbekannt, vorlageFest } from "./szenario";
 import { kapitelZuThema, merkmaleInSchema } from "./themen";
@@ -24,7 +25,14 @@ function widerspruch(a: Antworten): string | null {
 
 function varianteSoll(f: FallVorlage, v: FallVariante, out: FallBefund[]): void {
   const add = (fehler: string) => out.push({ fall: f.id, variante: v.id, fehler });
-  if (!buchung(v.buchung)) add(`Buchung „${v.buchung}“ gibt es nicht`);
+  if (v.buchung && !buchung(v.buchung)) add(`Buchung „${v.buchung}“ gibt es nicht`);
+  if (!v.buchung && !v.symptom && v.transport !== false) add("weder Symptom noch Buchung – der RTW weiß nicht, wohin");
+  // Sichtung und Dringlichkeit müssen zusammenpassen (grün 10, gelb 20, rot 30)
+  if (v.dringlichkeit && ((v.sichtung === "rot" && v.dringlichkeit === 10) || (v.sichtung === "gruen" && v.dringlichkeit === 30))) add(`Sichtung ${v.sichtung} passt nicht zur Dringlichkeit ${v.dringlichkeit}`);
+  if (f.spezial && v.transport !== false) add("besonderer Anruf ohne Notfall, aber mit Transport");
+  const fest = { ...(f.fest ?? {}), ...(v.fest ?? {}) } as Record<string, unknown>;
+  const schw = fest.schwanger;
+  if (f.geschlecht === "m" && (schw === "ja" || (Array.isArray(schw) && schw.includes("ja")))) add("Mann, aber schwanger");
   const sy = symptom(v.symptom);
   if (v.symptom && !sy) add(`Symptom „${v.symptom}“ gibt es nicht`);
   if (sy && v.dringlichkeit && !sy.dringlichkeiten.includes(v.dringlichkeit)) add(`Dringlichkeit ${v.dringlichkeit} gibt es bei „${sy.name}“ nicht`);
@@ -33,6 +41,21 @@ function varianteSoll(f: FallVorlage, v: FallVariante, out: FallBefund[]): void 
     if (ev.nachMin[0] > ev.nachMin[1]) add("Zeitfenster verkehrt");
   }
   if (!v.lage) add("Lagebild fehlt");
+}
+
+/** Abweichungen bei Anleitungen: nur bekannte */
+function anleitungSoll(f: FallVorlage, out: FallBefund[]): void {
+  for (const [typ, ids] of Object.entries(f.anleitung ?? {})) {
+    const bekannt = new Set(abweichungenVon(typ as AnleitungTyp).map(([id]) => id));
+    if (!BAUSTEINE[typ as AnleitungTyp]) {
+      out.push({ fall: f.id, fehler: `Anleitung „${typ}“ gibt es nicht` });
+      continue;
+    }
+    for (const x of ids ?? []) {
+      const id = x.replace(/^\[[^\]]*\]\s*/, "");
+      if (!bekannt.has(id)) out.push({ fall: f.id, fehler: `Abweichung „${id}“ gibt es bei „${typ}“ nicht` });
+    }
+  }
 }
 
 /** Alle Fälle prüfen; mit Schema auch: Kapitel vorhanden, Code ergibt sich, jede Abfragefrage beantwortbar */
@@ -50,6 +73,7 @@ export function faellePruefen(schema: Schema | null, liste: FallVorlage[] = alle
 /** Einen Fall prüfen (auch im Editor, live) */
 export function fallPruefen(f: FallVorlage, schema: Schema | null): FallBefund[] {
   const out: FallBefund[] = [];
+  anleitungSoll(f, out);
   {
     const summe = f.varianten.reduce((s, v) => s + v.p, 0);
     if (Math.abs(summe - 1) > 0.001) out.push({ fall: f.id, fehler: `Wahrscheinlichkeiten ergeben ${Math.round(summe * 100)} % statt 100 %` });
@@ -140,6 +164,18 @@ export function fallHinweise(f: FallVorlage): FallBefund[] {
       if (!BEKANNTE_KEYS.has(b.key) && !/^[a-z_0-9]+$/.test(b.key)) add(`unbekannte Bedingung „[${b.key}…]“ in „${t.slice(0, 50)}…“`);
       if (b.key === "variante") for (const w of b.werte) if (!ids.has(w)) add(`Bedingung nennt den Ausgang „${w}“, den es nicht gibt`);
     }
+  }
+  // Anrufer passen zum Alter?
+  const [amin, amax] = f.alter;
+  if (f.anrufer.includes("eltern") && amin >= 45) add("Eltern als Anrufer, aber der Patient ist mindestens 45");
+  if (f.anrufer.includes("kind") && amax < 30) add("Sohn/Tochter als Anrufer, aber der Patient ist höchstens 30");
+  if (f.anrufer.includes("lehrer") && amin >= 20) add("Lehrer/in als Anrufer, aber der Patient ist erwachsen");
+  if (f.orte.some((o) => o === "schule") && f.tageszeit === "nacht") add("Schule, aber nur nachts");
+  // Wissensstufen: nur Antworten, die der Fall auch kennt
+  const bekannt = new Set([...Object.keys(f.fest ?? {}), ...f.varianten.flatMap((v) => Object.keys(v.fest ?? {})), ...Object.keys(f.extra ?? {}), "seit", "alter", "geschlecht"]);
+  for (const x of [...(f.wissen?.ungefaehr ?? []), ...(f.wissen?.unbekannt ?? [])]) {
+    const id = ohneKlammer(x);
+    if (!bekannt.has(id) && !/^(diabetiker|epilepsie|herz_vg|herzleiden|blutverduenner|vg_schlaganfall|vg_tia|psych_vorerkrankung|aneurysma|bluter|lungenerkrankung|drogen_12h|drogen_welche|kokain|aelter6h)$/.test(id)) add(`Wissensstufe für „${id}“, aber der Fall hat dazu keine Antwort`);
   }
   for (const t of fakten) if (ZEIT.test(ohneKlammer(t))) add(`Zeitangabe im Text „${ohneKlammer(t).slice(0, 60)}…“ – die Zeit kommt aus „seit wann“ (Minuten); sonst widerspricht sie sich`);
   for (const s of f.stelle) if (/\b(stock|stiege|tür \d|hausnummer)\b/i.test(ohneKlammer(s))) add(`Stelle „${ohneKlammer(s)}“ nennt Stockwerk/Tür – das erzeugt das Programm, sonst widerspricht es sich`);

@@ -70,6 +70,7 @@ export function wissenVon(typ: AnruferTyp | undefined, selbst: boolean): Wissen 
     case "telemed":
     case "polizei":
     case "bergrettung":
+    case "aerztefunk":
       return "profi";
     default:
       return "fremd";

@@ -200,6 +200,8 @@ export interface Settings {
   /** Rückruf nur möglich, wenn die Rückrufnummer aufgenommen wurde */
   /** Rückruf auch ohne aufgenommene Rückrufnummer erlauben (sonst nur mit Nummer) */
   rueckrufOhneNummer?: boolean;
+  /** Verteilung der Notfälle aus dem Fallkatalog nach Schwere (Anteile in %) */
+  schwere?: { harmlos: number; mittel: number; kritisch: number };
   nahGeschwindigkeit: number;
   /** veraltet (bis v0.8), ersetzt durch ausrueck */
   nahStartzeitSek: number;
@@ -261,6 +263,7 @@ export function defaultSettings(): Settings {
     falscheAdresseProzent: 15,
     wetterAktiv: true,
     rueckrufOhneNummer: false,
+    schwere: { harmlos: 35, mittel: 50, kritisch: 15 },
     funkgruppe: "NÖ-03",
     wetterWechsel: 50,
     jahreszeit: "auto",

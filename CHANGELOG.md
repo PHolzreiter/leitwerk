@@ -1,5 +1,14 @@
 # Änderungen
 
+## 0.84.0 – Anleitungen, Wissensstufen, besondere Anrufe, Schwere einstellbar
+- **Anleitungen am Telefon wie echt:** Wie Anrufer auf Anleitungen reagieren, ist jetzt einmal allgemein hinterlegt – Herzdruckmassage (erst hinknien, dann drücken und mitzählen, Lautsprecher, Schnappatmung macht unsicher, nach einer Weile werden die Arme schwer, Ablöse, wenn jemand da ist), Blutung, Seitenlage, Fremdkörper, Geburt, Lagerung, Zucker
+- Ein Fall legt nur fest, was bei ihm anders ist: z. B. „Anrufer alt und schwach“, „Patient liegt im Bett“, „traut sich zuerst nicht“, „kein Tuch da“, „Fremdkörper kommt beim 2. Versuch heraus“, „Baby schreit nicht gleich“ – im Fall-Editor unter „Wenn die Leitstelle anleitet“
+- **Was der Anrufer weiß:** je Antwort „weiß es“, „nur ungefähr“ („ich glaub …“) oder „weiß es nicht“ – im Fall-Editor neben jeder Antwort. Passanten wissen z. B. keine Vorerkrankungen
+- **Besondere Anrufe:** Hosentaschenanruf (nur Rascheln), Scherzanruf (nach der Belehrung legt der Anrufer kleinlaut auf), „bewusstlos“ gemeldet – aber betrunken, Rauferei unter Betrunkenen, Ehefrau, deren Mann mit Fieber es „sooo schlecht“ geht, Taxifahrer mit kollabiertem Fahrgast, Ärztefunkdienst vom Hausbesuch
+- **Schwere der Notfälle einstellbar:** Einstellungen → Einsatzaufkommen → „Schwere der Notfälle“ (Standard 35 % harmlos, 50 % mittel, 15 % kritisch)
+- **Bessere Prüfung:** Das Prüfprogramm meldet mehr (Sichtung passt nicht zur Dringlichkeit, unbekannte Abweichungen, Anrufer passt nicht zum Alter …); der Testlauf meldet zusätzlich vorgelesene Antwort-Etiketten, Antworten gegen die Wissensstufe und eine Stimmung, die nicht zur Lage passt
+- Kleiner Fehler im Fall „Reitunfall“ behoben
+
 ## 0.83.0 – Abfrage: Fragen bleiben stehen, Drogen/Medikamente-Frage, sinnvollere Krankentransporte
 - **Notruf-Abfrage:** Beantwortete Fragen bleiben unter der aktuellen stehen – die neueste oben, die erste (Einsatzort) ganz unten. Jede zeigt nur die gewählte Antwort; ein Klick klappt alle Antworten zum Ändern auf
 - Übersprungene Fragen stehen grau mit „nicht gefragt“ dabei und lassen sich nachholen

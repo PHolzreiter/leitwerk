@@ -142,7 +142,7 @@ import { FUNKGRUPPEN, funkgruppe, inFunkgruppe, mitteVon, type Funkgruppe } from
 import { echtwetterLaden } from "./echtwetter";
 import { sekZufall } from "./sek";
 import { bedarf, ereignisseEinplanen, istStillstand, lageAusFall, lageErzeugen, lagemeldungText, patientText, rtwBedarf, type Lage } from "./lage";
-import { anleitungAus, fallVariante, fallVorlage, fallWaehlen, varianteWaehlen, type FallVariante } from "../abfrage/faelle";
+import { anleitungAus, fallVariante, fallUndVariante, fallVorlage, varianteWaehlen, type FallVariante } from "../abfrage/faelle";
 import { nachrichtArt } from "../abfrage/runde";
 
 const MIN = 60_000;
@@ -764,6 +764,10 @@ export interface Einsatz {
       verlauf?: string[];
       /** was der Anrufer auf Anweisung schon macht (Seitenlage, Druck auf die Wunde …) */
       massnahmen?: string[];
+      /** schon gegebene Anleitungen (Art#) und verbrauchte einmalige Abweichungen (Art:id) */
+      anleitungGesagt?: string[];
+      /** Herzdruckmassage: Runden und schon Gesagtes (Rückfrage, Erschöpfung, Schnappatmung, Lautsprecher, Ablöse) */
+      rea?: { runden: number; gesagt: string[] };
       /** Stimmung im Gespräch (0 ruhig … 3 panisch) und wie viele Veränderungen schon eingerechnet sind */
       stimmung?: { stufe: number; verlauf: number; beruhigt: boolean };
       /** genauere Wahrheit, als das Schema abfragen kann (fremdes Codesystem) */
@@ -975,6 +979,7 @@ export const BEFEHLE = {
     "anrufAnnehmen",
     "anrufNachricht",
     "anrufBeenden",
+    "anruferLegtAuf",
     "anrufHalten",
     "abfrageSetze",
     "abfrageExtra",
@@ -4007,11 +4012,13 @@ export class Simulation {
     const ctx = { jahreszeit: jahreszeitVon(this.state.zeit, this.wetterOpt()), stunde: new Date(this.state.zeit).getHours(), temp: wetter ? temp : 15, glatt: wetter && glatt };
     for (let i = 0; i < 12; i++) {
       const wunsch = this.fallWunsch;
-      const f = wunsch ? fallVorlage(wunsch.id) : fallWaehlen(ctx, Math.random);
+      // ohne Wunsch: Schwere nach der Verteilung in den Einstellungen (harmlos/mittel/kritisch), dann Fall und Variante
+      const gezogen = wunsch ? null : fallUndVariante(ctx, this.settings.schwere ?? { harmlos: 35, mittel: 50, kritisch: 15 }, this.settings.komplikationen ?? "normal", Math.random);
+      const f = wunsch ? fallVorlage(wunsch.id) : (gezogen?.f ?? null);
       if (!f) return null;
       const kap = kapitelFuerThema(f.thema, schema);
       if (!kap) continue;
-      const v = (wunsch?.variante ? fallVariante(f, wunsch.variante) : undefined) ?? varianteWaehlen(f, this.settings.komplikationen ?? "normal", Math.random);
+      const v = gezogen?.v ?? (wunsch?.variante ? fallVariante(f, wunsch.variante) : undefined) ?? varianteWaehlen(f, this.settings.komplikationen ?? "normal", Math.random);
       const a: Antworten = { ...vorlageFest(f, Math.random), ...(v.fest ?? {}) };
       altersPlausibel({ alter: f.alter, fest: { ...(f.fest ?? {}), ...(v.fest ?? {}) }, anrufer: f.anrufer }, a, Math.random);
       // erst der Ort, dann die Antworten, die vom Ort abhängen (außerorts schneller als im Ort), dann der Code
@@ -4188,6 +4195,19 @@ export class Simulation {
     a.seit = this.state.zeit;
     a.gespraech.push({ zeit: this.state.zeit, echt: Date.now(), von: "system", text: "Gespräch beendet" });
     this.log(e, "Notrufgespräch beendet");
+    this.abfrageProtokoll(e);
+    this.emit();
+  }
+
+  /** Der Anrufer legt selbst auf (z. B. Scherzanruf nach der Belehrung) */
+  anruferLegtAuf(id: string): void {
+    const e = this.einsatz(id);
+    const a = e?.anruf;
+    if (!e || !a || a.status !== "aktiv") return;
+    a.status = "beendet";
+    a.seit = this.state.zeit;
+    a.gespraech.push({ zeit: this.state.zeit, echt: Date.now(), von: "system", text: "Der Anrufer hat aufgelegt" });
+    this.log(e, "Anrufer hat aufgelegt");
     this.abfrageProtokoll(e);
     this.emit();
   }

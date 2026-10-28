@@ -4,6 +4,7 @@
  * abgeleitet – und die KI bekommt die ganze Fallakte, damit sie jede Frage (auch aus einem
  * anderen Abfrageschema) menschlich und widerspruchsfrei beantworten kann.
  */
+import type { AnleitungTyp } from "./faelle";
 import { ortProfil } from "../data/ortProfile";
 import { frageIndex, type Antworten, type Schema, type Wert } from "./schema";
 
@@ -71,7 +72,9 @@ export type AnruferTyp =
   | "wirt"
   | "telemed"
   | "polizei"
-  | "bergrettung";
+  | "bergrettung"
+  | "taxi"
+  | "aerztefunk";
 
 export interface SzenarioVorlage {
   id: string;
@@ -129,6 +132,12 @@ export interface SzenarioVorlage {
   ohneSicht?: boolean;
   /** Anrufer hat den Patienten nur gefunden (nicht gesehen, wie es angefangen hat): „seit“ = seit dem Finden */
   gefunden?: boolean;
+  /** Abweichungen bei Anleitungen (anleitungen.ts), z. B. { reanimation: ["alt", "[variante=B] bett"] } */
+  anleitung?: Partial<Record<AnleitungTyp, string[]>>;
+  /** Wissensstufen: was der Anrufer nur ungefähr bzw. gar nicht weiß (Merkmal-IDs, Bedingungen erlaubt) – sonst weiß er es sicher */
+  wissen?: { ungefaehr?: string[]; unbekannt?: string[] };
+  /** besonderer Anruf ohne Notfall: Hosentasche (nur Rascheln) oder Scherzanruf */
+  spezial?: "hosentasche" | "scherz";
 }
 
 // ------------------------------------------------------------------ fertige Fallgeschichte
@@ -172,6 +181,12 @@ export interface Szenario {
   /** Antworten auf weitere Schemafragen (auch aus anderen Kapiteln), passend zur Geschichte */
   zusatz: Antworten;
   gefunden?: boolean;
+  /** Abweichungen bei Anleitungen (gilt für diesen Anruf) */
+  anleitung?: Partial<Record<AnleitungTyp, string[]>>;
+  /** Wissensstufen (gilt für diesen Anruf) */
+  wissen?: { ungefaehr: string[]; unbekannt: string[] };
+  /** besonderer Anruf ohne Notfall */
+  spezial?: "hosentasche" | "scherz";
 }
 
 // ------------------------------------------------------------------ Werkzeuge
@@ -628,6 +643,16 @@ export function szenarioBauen(
     ohnePatient: v.ohnePatient ? f(v.ohnePatient) : undefined,
     ohneSicht: v.ohneSicht || undefined,
     gefunden: v.gefunden || undefined,
+    spezial: v.spezial,
+    wissen: v.wissen
+      ? {
+          ungefaehr: (v.wissen.ungefaehr ?? []).filter((d) => passtBedingung(d, alle)).map((d) => ohneBedingung(d).trim()),
+          unbekannt: (v.wissen.unbekannt ?? []).filter((d) => passtBedingung(d, alle)).map((d) => ohneBedingung(d).trim()),
+        }
+      : undefined,
+    anleitung: v.anleitung
+      ? Object.fromEntries(Object.entries(v.anleitung).map(([typ, ids]) => [typ, (ids ?? []).filter((d) => passtBedingung(d, alle)).map((d) => ohneBedingung(d).trim())]))
+      : undefined,
   };
 }
 

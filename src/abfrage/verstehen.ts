@@ -12,6 +12,7 @@
  */
 import { antwortOhneKi, inDuForm, patientW, wahrheitText, zeitText, type AnrufKontext } from "./anrufer";
 import { anleitungAus, type AnleitungTyp } from "./faelle";
+import { aktiveAbweichungen, autoAbweichungen, BAUSTEINE, fuellePerson } from "./anleitungen";
 import { frageIndex, fragenImAblauf, type Frage } from "./schema";
 
 export type Thema =
@@ -385,7 +386,12 @@ export function kernAntwort(k: AnrufKontext, themen: Thema[], kern: Kern, frage?
       .replace(/\bdich\b/g, "mich")
       .replace(/ – (beschreib|biete).*$/, ".")
       .replace(/\(siehe [^)]*\)/g, "");
-  const s = kern.saetze.filter((x) => !/^Beschreib/.test(x)).slice(0, 2).map(ich).join(" ");
+  // „… – da bist du dir aber nicht sicher (sag „ich glaub“ …)“ → „Ich glaub, …“
+  const unsicher = (t: string) => {
+    const m = t.match(/^(.*?) – da bist du dir aber nicht sicher.*$/);
+    return m ? `Ich glaub, ${m[1].charAt(0).toLowerCase()}${m[1].slice(1).replace(/[.\s]+$/, "")} – ganz sicher bin ich nicht.` : t;
+  };
+  const s = kern.saetze.filter((x) => !/^Beschreib/.test(x)).slice(0, 2).map(unsicher).map(ich).join(" ");
   void themen;
   return s || "Das weiß ich nicht genau.";
 }
@@ -432,6 +438,10 @@ export interface AnweisungKern {
   gesagt: string[];
   /** neu gemerkte Maßnahmen */
   massnahmen: string[];
+  /** feste Antwort, wenn es ohne KI gehen muss */
+  fest: string[];
+  /** gemerkte Schritte (Art#, Art:Abweichung) – für einmalige Abweichungen */
+  benutzt: string[];
 }
 
 /** Geht die Anweisung in dieser Lage – und was sagt der Anrufer dazu? */
@@ -453,6 +463,9 @@ export function anweisungKern(k: AnrufKontext, text: string): AnweisungKern {
   const nichtMachbar: string[] = [];
   const gesagt: string[] = [];
   const massnahmen: string[] = [];
+  const fest: string[] = [];
+  const benutzt: string[] = [];
+  const auto = autoAbweichungen(k);
   const nein = (grund: string, ichSage: string) => {
     nichtMachbar.push(grund);
     gesagt.push(ichSage);
@@ -461,6 +474,7 @@ export function anweisungKern(k: AnrufKontext, text: string): AnweisungKern {
   // Gefahr am Ort (Gärgas, Rauch, Gas, Strom): der Anrufer geht nicht hin – nur Tür, Beruhigen, Absichern
   const gefahr = !!sz && ["gefahrstoff", "brand", "strom"].includes(sz.thema) && /keller|gas|rauch|strom|leitung/i.test([...(sz.geschehen ?? []), ...sz.details, sz.stelle].join(" "));
   for (const typ of typen) {
+    const reaNurHinknien = typ === "reanimation" && !/drück|druck|pump|herzdruck|reanim|wiederbeleb|zähl|weiter/.test(text.toLowerCase());
     if (gefahr && !["tuer", "beruhigen", "absichern"].includes(typ)) {
       nein(`dort ist es gefährlich (siehe Fallakte) – du gehst nicht hin und wartest auf Feuerwehr und Rettung`, "Da geh ich nicht hin, da unten ist es gefährlich – ich warte auf die Feuerwehr.");
       continue;
@@ -486,7 +500,6 @@ export function anweisungKern(k: AnrufKontext, text: string): AnweisungKern {
         else if (!/drück|druck|pump|herzdruck|reanim|wiederbeleb|zähl|weiter/.test(text.toLowerCase())) {
           // erst hinknien und Hände auflegen – gedrückt wird, wenn die Leitstelle es sagt
           saetze.push(f("Du kniest dich neben {ihn} und legst die Hände auf die Mitte der Brust – gedrückt wird erst, wenn die Leitstelle es sagt."));
-          continue;
         } else saetze.push("Du legst los: Herzdruckmassage, und du zählst laut mit („eins, zwei, drei …“).");
         break;
       case "seitenlage":
@@ -509,12 +522,32 @@ export function anweisungKern(k: AnrufKontext, text: string): AnweisungKern {
         if (ich && ["reanimation", "seitenlage", "fremdkoerper"].includes(typ)) nein("das kannst du an dir selbst nicht machen", "Das kann ich bei mir selber nicht machen.");
         else saetze.push("Du machst es und sagst kurz, wie, und was du dabei siehst.");
     }
-    if (!nichtMachbar.length) {
+    // Baustein: Abweichungen des Falls bzw. der Lage, und die feste Antwort
+    const vorher = nichtMachbar.length;
+    if (!vorher && !(ich && ["reanimation", "seitenlage", "fremdkoerper"].includes(typ))) {
+      const schon = k.anleitungGesagt ?? [];
+      const mal = schon.filter((x) => x === `${typ}#`).length + 1;
+      benutzt.push(`${typ}#`);
+      const abw = aktiveAbweichungen(typ, sz?.anleitung, auto).filter(([id]) => !reaNurHinknien || id === "bett").filter(([id, a]) => (!a.abMal || mal >= a.abMal) && !(a.einmal && schon.includes(`${typ}:${id}`)));
+      for (const [id, a] of abw) {
+        if (a.einmal) benutzt.push(`${typ}:${id}`);
+        if (a.geht === false) nein(fuellePerson(a.kern, w), fuellePerson(a.sagt, w));
+        else {
+          saetze.push(fuellePerson(a.kern, w));
+          fest.push(fuellePerson(a.sagt, w));
+        }
+      }
+      const b = BAUSTEINE[typ];
+      const reaSchon = typ === "reanimation" && (k.massnahmen ?? []).some((m) => /Herzdruckmassage/.test(m));
+      if (!fest.length && b?.sagt.length && !reaNurHinknien && !reaSchon) fest.push(fuellePerson(b.sagt[Math.floor(Math.random() * b.sagt.length)], w));
+      if (reaNurHinknien && !fest.length) fest.push(fuellePerson("Okay, ich knie mich hin … die Hände sind auf der Brust.", w));
+    }
+    if (!nichtMachbar.length && !reaNurHinknien) {
       const m = MASSNAHME[typ]?.[ich ? 1 : 0];
       if (m) massnahmen.push(f(m));
     }
   }
-  return { typen, saetze, nichtMachbar, gesagt, massnahmen };
+  return { typen, saetze, nichtMachbar, gesagt, massnahmen, fest: nichtMachbar.length ? gesagt : fest, benutzt };
 }
 
 /** Behauptet der Anrufer, eine Anweisung auszuführen, die nicht geht? */

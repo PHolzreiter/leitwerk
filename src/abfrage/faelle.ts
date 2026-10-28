@@ -11,6 +11,7 @@
  *   was die Besatzung sieht (Lagemeldung), Notarzt-Bedarf nach Kompetenz, Partner, Krankenhaus.
  */
 import { FAELLE_NEU } from "./faelleNeu";
+import { FAELLE_SPEZIAL } from "./faelleSpezial";
 import type { Antworten } from "./schema";
 import { tageszeitPasst, type SzenarioVorlage } from "./szenario";
 import type { Atmung, Bewusstsein, Sichtung } from "../sim/lage";
@@ -121,6 +122,7 @@ export const FAELLE: FallVorlage[] = [
     orte: ["wohnung", "haus"],
     stelle: ["[woran=essen] beim Essen am Tisch in der Küche", "[woran!=essen] im Wohnzimmer", "[woran!=essen] im Kinderzimmer"],
     anrufer: ["eltern"],
+    anleitung: { fremdkoerper: ["klein", "[variante=A] kommt_raus"] },
     geschehen: [
       "[woran=suessigkeit] {P} hat {beim Spielen|beim Fernschauen|auf dem Sofa} ein Zuckerl gelutscht und sich plötzlich daran verschluckt.",
       "[woran=essen] {P} hat beim Essen eine ganze Weintraube in den Mund gesteckt und sich verschluckt.",
@@ -217,7 +219,7 @@ export const FAELLE: FallVorlage[] = [
       "[variante!=0] Ich hab so starke Schmerzen in der Brust, es drückt wie ein Stein, und ich schwitz total.",
     ],
     seitMin: [20, 40],
-    fest: { herz_vg: ["nein", "nein", "ja"], kokain: "nein", bw: "ja", at: "normal", sprachschw: "nein", anzahl_patienten: "1" },
+    fest: { herz_vg: ["nein", "nein", "ja"], kokain: "nein", drogen_12h: "medikamente", bw: "ja", at: "normal", sprachschw: "nein", anzahl_patienten: "1" },
     details: [
       "[variante=0] {Er} schwitzt nicht, die Farbe ist normal.",
       "[variante=0] Schlecht ist {ihm} nicht.",
@@ -426,6 +428,7 @@ export const FAELLE: FallVorlage[] = [
     orte: ["geschaeft", "wohnung", "sport"],
     stelle: ["[ort=geschaeft] an der Kassa", "[ort=wohnung] im Wohnzimmer", "[ort=sport] am Spielfeldrand"],
     anrufer: ["passant", "verkauf", "partner", "trainer"],
+    anleitung: { reanimation: ["[anrufer_typ=passant] angst"] },
     geschehen: [
       "[ort=geschaeft] {P} ist an der Kassa gestanden und auf einmal zusammengesackt.",
       "[ort=wohnung] {P} ist {beim Fernsehen|nach dem Abendessen} auf einmal vom Sessel gekippt.",
@@ -562,6 +565,7 @@ export const FAELLE: FallVorlage[] = [
     orte: ["wohnung", "haus", "arbeit"],
     stelle: ["[ort=wohnung|haus] im Wohnzimmer", "[ort=wohnung|haus] in der Küche", "[ort=arbeit] im Büro"],
     anrufer: ["partner", "kollege"],
+    anleitung: { zucker: ["[ort=arbeit] nichts_suesses"] },
     geschehen: [
       "[wissen=nah|bekannt] {P} ist zuckerkrank und spritzt Insulin.",
       "[anrufer_typ=partner] {Er} war am Nachmittag Rad fahren und hat danach kaum was gegessen.",
@@ -669,6 +673,7 @@ export const FAELLE: FallVorlage[] = [
     orte: ["wohnung", "haus"],
     stelle: ["im Schlafzimmer", "im Wohnzimmer", "im Bad"],
     anrufer: ["partner", "selbst"],
+    anleitung: { geburt: ["[variante=B] kopf_sichtbar", "[variante=C] schreit_nicht"] },
     geschehen: [
       "Es ist das zweite Kind, der Termin wäre nächste Woche.",
       "Die Wehen kommen jetzt alle zwei Minuten und sind sehr stark.",
@@ -795,6 +800,7 @@ export const FAELLE: FallVorlage[] = [
     orte: ["geschaeft", "freizeit", "strasse", "arzt"],
     stelle: ["[ort=freizeit] in der Kirche", "[ort=geschaeft] an der Kassa", "[ort=strasse] an der Bushaltestelle", "[ort=arzt] im Wartezimmer"],
     anrufer: ["passant", "verkauf", "eltern", "partner"],
+    wissen: { ungefaehr: ["[anrufer_typ=passant|verkauf] hautfarbe"], unbekannt: ["[anrufer_typ=passant|verkauf] herzleiden"] },
     geschehen: [
       "[ort=freizeit] {P} ist in der Messe nach langem Stehen auf einmal ganz blass geworden und zusammengesackt.",
       "[ort=geschaeft] {P} hat an der Kassa gewartet, ist auf einmal ganz blass geworden und zusammengesackt.",
@@ -895,6 +901,7 @@ export const FAELLE: FallVorlage[] = [
     orte: ["bahnhof", "strasse"],
     stelle: ["auf der Bank beim Bahnhof", "an der Bushaltestelle", "auf einer Parkbank"],
     anrufer: ["passant", "verkauf"],
+    wissen: { unbekannt: ["herzleiden", "diabetiker", "epilepsie"] },
     gefunden: true,
     geschehen: [
       "Du bist {mit dem Hund|auf dem Heimweg von der Arbeit|vom Zug kommend} vorbeigegangen und hast {ihn} auf der Bank liegen gesehen.",
@@ -945,6 +952,7 @@ export const FAELLE: FallVorlage[] = [
     orte: ["wohnung", "haus", "garten"],
     stelle: ["[ort=wohnung|haus] in der Küche", "[ort=garten] im Garten"],
     anrufer: ["selbst", "partner"],
+    anleitung: { druck_blutung: ["[ort=garten] kein_tuch"] },
     geschehen: [
       "[ort=wohnung|haus] {P} hat sich beim Gemüseschneiden mit dem Küchenmesser in den Zeigefinger geschnitten.",
       "[ort=garten] {P} hat sich beim Heckenschneiden mit der Gartenschere in den Finger geschnitten.",
@@ -1224,7 +1232,7 @@ export const FAELLE: FallVorlage[] = [
     hergang: ["Ein LKW-Fahrer hat starke Schmerzen in der Brust, er schwitzt total!"],
     hergangIch: ["Ich hab so einen Druck auf der Brust, das zieht in den Arm, ich steh am Rastplatz."],
     seitMin: [20, 50],
-    fest: { herz_vg: ["nein", "unbekannt"], bw: "ja", at: "normal", kaltschweiss: "ja", hautfarbe: ["ja", "nein"], sprachschw: "nein", kokain: "nein", anzahl_patienten: "1" },
+    fest: { herz_vg: ["nein", "unbekannt"], bw: "ja", at: "normal", kaltschweiss: "ja", hautfarbe: ["ja", "nein"], sprachschw: "nein", kokain: "nein", drogen_12h: ["keine", "medikamente"], anzahl_patienten: "1" },
     details: ["Der LKW steht ganz hinten auf dem LKW-Parkplatz.", "{Er} raucht viel, sagt {er}."],
     varianten: [
       { id: "A", p: 0.75, sichtung: "rot", lage: "STEMI der Hinterwand im 12-Kanal-EKG", na: "immer", symptom: "st_hebungsinfarkt_oder_stemi_aequivalent", dringlichkeit: 30, buchung: "bu_stemi" },
@@ -1303,7 +1311,7 @@ export const FAELLE: FallVorlage[] = [
     hergang: ["Eine Reiterin ist vom Pferd gestürzt und liegt in der Halle!"],
     seitMin: [3, 10],
     fest: { schwer_pat: "nein", hoehe: "gross", verletzt: "ja", blutung_stark: "nein", fehlstellung: "nein", aelter6h: "nein", umstand: "keine", bw: "ja", at: "normal", anzahl_patienten: "1" },
-    details: ["Das Pferd ist schon angebunden.", "Wir haben {sie} liegen lassen und zugedeckt."],
+    details: ["Das Pferd ist schon angebunden.", "Wir haben {ihn} liegen lassen und zugedeckt."],
     varianten: [
       { id: "A", p: 0.7, sichtung: "gelb", lage: "Rückenprellung nach Sturz vom Pferd, Neurologie unauffällig", na: "nein", fest: { region: "rumpf", ohnmacht: "nein" }, symptom: "wirbelsaeulenverletzung_ohne_neurologische_ausfa", dringlichkeit: 20, buchung: "bu_isolierte_extremitaetenverletzung" },
       { id: "B", p: 0.3, sichtung: "rot", lage: "Schädel-Hirn-Trauma nach Sturz vom Pferd, eingetrübt", na: "immer", fest: { region: "mehrere", ohnmacht: "ja" }, verlauf: [{ nachMin: [4, 8], art: "verschlechterung", bw: "getruebt", lage: "zunehmend eingetrübt", text: "{Er} wird so komisch, {er} antwortet nicht mehr richtig!" }], symptom: "schaedelhirntrauma", dringlichkeit: 30, buchung: "bu_schweres_sht" },
@@ -1567,6 +1575,7 @@ export const FAELLE: FallVorlage[] = [
   },
   // weitere Fälle (eigene Datei)
   ...FAELLE_NEU,
+  ...FAELLE_SPEZIAL,
 ];
 
 // ------------------------------------------------------------------ Auswahl
@@ -1580,20 +1589,23 @@ export function fallVariante(f: FallVorlage, id: string): FallVariante | undefin
 }
 
 /** Fall wählen (Häufigkeit, Uhrzeit, Jahreszeit, Wetter) */
+/** Passt der Fall zu Jahreszeit, Uhrzeit und Wetter? */
+function fallPasst(v: FallVorlage, ctx: { jahreszeit: string; stunde: number; temp: number; glatt: boolean }): boolean {
+  if (v.jahreszeit && !v.jahreszeit.includes(ctx.jahreszeit as never)) return false;
+  if (!tageszeitPasst(v.tageszeit, ctx.stunde)) return false;
+  if (v.stunden) {
+    const [a, b] = v.stunden;
+    const drin = a <= b ? ctx.stunde >= a && ctx.stunde < b : ctx.stunde >= a || ctx.stunde < b;
+    if (!drin) return false;
+  }
+  if (v.wetter === "hitze" && ctx.temp < 25) return false;
+  if (v.wetter === "kaelte" && ctx.temp > 3) return false;
+  if (v.wetter === "glatt" && !ctx.glatt) return false;
+  return true;
+}
+
 export function fallWaehlen(ctx: { jahreszeit: string; stunde: number; temp: number; glatt: boolean }, rnd: () => number): FallVorlage | null {
-  const passend = alleFaelle().filter((v) => {
-    if (v.jahreszeit && !v.jahreszeit.includes(ctx.jahreszeit as never)) return false;
-    if (!tageszeitPasst(v.tageszeit, ctx.stunde)) return false;
-    if (v.stunden) {
-      const [a, b] = v.stunden;
-      const drin = a <= b ? ctx.stunde >= a && ctx.stunde < b : ctx.stunde >= a || ctx.stunde < b;
-      if (!drin) return false;
-    }
-    if (v.wetter === "hitze" && ctx.temp < 25) return false;
-    if (v.wetter === "kaelte" && ctx.temp > 3) return false;
-    if (v.wetter === "glatt" && !ctx.glatt) return false;
-    return true;
-  });
+  const passend = alleFaelle().filter((v) => fallPasst(v, ctx));
   if (!passend.length) return null;
   const sum = passend.reduce((s, v) => s + v.haeufigkeit, 0);
   let r = rnd() * sum;
@@ -1602,6 +1614,51 @@ export function fallWaehlen(ctx: { jahreszeit: string; stunde: number; temp: num
     if (r <= 0) return v;
   }
   return passend[passend.length - 1];
+}
+
+export type Schwere = "harmlos" | "mittel" | "kritisch";
+
+/** Schwere einer Variante: Dringlichkeit (10/20/30), sonst die Sichtung (grün/gelb/rot) */
+export function schwereVon(v: FallVariante): Schwere {
+  const d = v.dringlichkeit ?? (v.sichtung === "rot" ? 30 : v.sichtung === "gelb" ? 20 : 10);
+  return d >= 30 ? "kritisch" : d >= 20 ? "mittel" : "harmlos";
+}
+
+/**
+ * Fall und Variante zusammen ziehen: zuerst die Schwere nach der Verteilung (z. B. 35/50/15),
+ * dann unter den passenden Fällen nach Häufigkeit × Wahrscheinlichkeit der Variante.
+ */
+export function fallUndVariante(
+  ctx: { jahreszeit: string; stunde: number; temp: number; glatt: boolean },
+  verteilung: Record<Schwere, number>,
+  komplikationen: "ruhig" | "normal" | "fordernd",
+  rnd: () => number,
+): { f: FallVorlage; v: FallVariante } | null {
+  const passend = alleFaelle().filter((f) => fallPasst(f, ctx));
+  if (!passend.length) return null;
+  const faktor = komplikationen === "fordernd" ? 2 : komplikationen === "ruhig" ? 0.5 : 1;
+  const paare = passend.flatMap((f) => {
+    const sum = f.varianten.reduce((x, v) => x + Math.max(0, v.p), 0) || 1;
+    return f.varianten.filter((v) => v.p > 0).map((v) => ({ f, v, s: schwereVon(v), w: (f.haeufigkeit * v.p * (kritischeVariante(v) ? faktor : 1)) / sum }));
+  });
+  const klassen = (["harmlos", "mittel", "kritisch"] as Schwere[]).filter((k) => paare.some((p) => p.s === k));
+  const gew = klassen.map((k) => [k, Math.max(0, verteilung[k] ?? 0)] as const);
+  const summe = gew.reduce((x, [, w]) => x + w, 0);
+  let klasse: Schwere | null = null;
+  if (summe > 0) {
+    let r = rnd() * summe;
+    for (const [k, w] of gew) if ((r -= w) <= 0) {
+      klasse = k;
+      break;
+    }
+    klasse ??= gew[gew.length - 1][0];
+  }
+  const auswahl = klasse ? paare.filter((p) => p.s === klasse) : paare;
+  const ges = auswahl.reduce((x, p) => x + p.w, 0);
+  let r = rnd() * ges;
+  for (const p of auswahl) if ((r -= p.w) <= 0) return { f: p.f, v: p.v };
+  const l = auswahl[auswahl.length - 1];
+  return l ? { f: l.f, v: l.v } : null;
 }
 
 /** Ist die Variante „kritisch“ (rot oder mit Verschlechterung)? – für die Einstellung „Komplikationen“ */

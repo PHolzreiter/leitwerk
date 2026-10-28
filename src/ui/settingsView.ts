@@ -163,6 +163,28 @@ export function createSettingsView(container: HTMLElement, teil: "simulation" | 
     fkEdit.addEventListener("click", () => fallEditorOeffnen());
     fkBox.append(fkSel, fkEdit);
     aGrid.append(el("label", { title: "Fälle mit stimmigem Telefonat, Verlauf, Notarzt-Bedarf nach Kompetenz und Krankenhaus" }, "Einsätze aus dem Fallkatalog"), fkBox);
+    // Schwere der Notfälle aus dem Fallkatalog (Anteile in %)
+    const schwere = { harmlos: 35, mittel: 50, kritisch: 15, ...(draft.schwere ?? {}) };
+    const swBox = el("div", { class: "row-btns set-schwere" });
+    const swSumme = el("span", { class: "muted small" });
+    const swText = () => {
+      const s = schwere.harmlos + schwere.mittel + schwere.kritisch;
+      swSumme.textContent = s === 100 ? "" : `(zusammen ${s} – wird anteilig gerechnet)`;
+    };
+    for (const [k, l] of [["harmlos", "harmlos"], ["mittel", "mittel"], ["kritisch", "kritisch"]] as const) {
+      const i = num(schwere[k], "5");
+      i.style.width = "64px";
+      i.dataset.schwere = k;
+      i.addEventListener("change", () => {
+        schwere[k] = Math.max(0, Number(i.value) || 0);
+        draft.schwere = { ...schwere };
+        swText();
+      });
+      swBox.append(el("span", { class: "muted small" }, l), i);
+    }
+    swText();
+    swBox.appendChild(swSumme);
+    aGrid.append(el("label", { title: "Wie viele Notfälle aus dem Fallkatalog harmlos (grün), mittel (gelb) oder kritisch (rot) sind – in Prozent" }, "Schwere der Notfälle (%)"), swBox);
     const rvSel = el("select", { class: "set-revers" }) as HTMLSelectElement;
     for (const [v, l] of [["normal", "normal"], ["selten", "selten"], ["aus", "aus"]]) rvSel.appendChild(el("option", { value: v }, l));
     rvSel.value = draft.revers ?? "normal";
