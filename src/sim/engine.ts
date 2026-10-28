@@ -138,7 +138,7 @@ import {
 import { codeInfo, codeVorschlag, istUeberstellung } from "./ktCodes";
 import { amFlughafen, flugPlanen, HEALTH_CENTER, istFlughafenFz, istFlughafenZiel, kontrolleSek, MEDICAL_CENTER, mitKontrolle, NOTFALL_STAND, WARTEORT, type Flug } from "./flughafen";
 import { PARTNER, PARTNER_ANZAHL, partnerArtVonTyp, partnerNoetig, partnerSchonDa, type PartnerArt, type PartnerGrund } from "./partner";
-import { FUNKGRUPPEN, funkgruppe, inFunkgruppe, mitteVon, type Funkgruppe } from "./funkgruppen";
+import { FUNKGRUPPEN, funkgruppe, funkgruppeVon, inFunkgruppe, mitteVon, type Funkgruppe } from "./funkgruppen";
 import { echtwetterLaden } from "./echtwetter";
 import { sekZufall } from "./sek";
 import { bedarf, ereignisseEinplanen, istStillstand, lageAusFall, lageErzeugen, lagemeldungText, patientText, rtwBedarf, type Lage } from "./lage";
@@ -2773,7 +2773,10 @@ export class Simulation {
   khFuer(pos: LatLon, verdacht: string | null | undefined, rot: boolean, kind = false, nurLandeplatz = false, cacVorrang = false): KhVorschlag[] {
     // Medical Center am Flughafen: nur für Patienten vom Gelände (eigene Regel unten)
     const alle = store.list("hospitals").filter((h) => this.khImNetz(h) && h.id !== MEDICAL_CENTER && (!nurLandeplatz || khLandung(h) !== null));
-    const v = noeZuerst(khVorschlaege(alle, buchung(verdacht), rot, (h) => distanceM(pos, h) / 1000, { t: this.state.zeit, belegung: this.state.khBelegung, kind, cacVorrang }));
+    // NÖ zuerst – nur für Einsatzorte in Niederösterreich (in Linz oder Graz gilt das jeweilige Bundesland)
+    const imNoe = !!funkgruppeVon(pos.lat, pos.lon);
+    const roh = khVorschlaege(alle, buchung(verdacht), rot, (h) => distanceM(pos, h) / 1000, { t: this.state.zeit, belegung: this.state.khBelegung, kind, cacVorrang });
+    const v = imNoe ? noeZuerst(roh) : roh;
     // Flughafen (Vorgabe Paul): kritisch → direkt in die passende Klinik; kann es das Health Center allein (offen, Platz frei) → dorthin;
     // sonst ins Medical Center (rund um die Uhr) – was weiter muss, wird von dort überstellt
     if (!amFlughafen(pos) || rot) return v;

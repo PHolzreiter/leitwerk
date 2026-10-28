@@ -293,7 +293,8 @@ export function inNoe(h: Hospital): boolean {
 export function noeZuerst(v: KhVorschlag[]): KhVorschlag[] {
   const ok = (x: KhVorschlag) => x.eignung === "passend" && !x.zu && !x.voll;
   if (!v.some((x) => ok(x) && inNoe(x.h))) return v;
-  return [...v.filter((x) => ok(x) && inNoe(x.h)), ...v.filter((x) => !(ok(x) && inNoe(x.h)))];
+  // Reihenfolge in NÖ bleibt (Eignung, Entfernung) – die Häuser außerhalb rücken nach hinten
+  return [...v.filter((x) => inNoe(x.h)), ...v.filter((x) => !inNoe(x.h))];
 }
 
 /** Ziel für die Besatzung: erstes Haus, das offen ist und einen freien Platz hat (sonst offen, sonst irgendeins) */
