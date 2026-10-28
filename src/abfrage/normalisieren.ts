@@ -268,6 +268,8 @@ const FACHWORTE: Record<string, string> = {
   tracheostoma: "Tracheostoma Kanüle Luftröhrenschnitt",
   herz_vg: "Herzinfarkt Angina Pectoris Herzerkrankung Vorgeschichte",
   kokain: "Kokain Drogen Amphetamine",
+  drogen_12h: "Drogen Medikamente letzten 12 Stunden eingenommen genommen",
+  drogen_welche: "welche Drogen Kokain Amphetamine Cannabis Heroin",
   herzleiden: "Herzleiden Herzerkrankung bekannt",
   bauchschmerz: "Bauchschmerzen Unterbauch",
   tod: "offensichtlich tot Tod erwartet verstorben sichere Todeszeichen|sichere Todeszeichen tot",
@@ -454,9 +456,19 @@ function katalogAus(kat: Schema): Map<string, KatFrage> {
   };
   for (const l of Object.values(kat.globale_fragen ?? {})) for (const f of l) dazu(f, null);
   for (const K of Object.values(kat.kapitel ?? {})) for (const f of K.fragen ?? []) dazu(f, K.thema ?? null);
+  // Merkmale, die das eingebaute Codesystem nicht mehr direkt fragt, die andere Schemas aber kennen
+  for (const [f, th] of ZUSATZ_MERKMALE) if (!m.has(f.id)) th.forEach((t) => dazu(f, t));
   katCache.set(kat, m);
   return m;
 }
+
+/** „Kokain genommen?“ (ja/nein) – seit 0.83 fragt das eigene System „Drogen/Medikamente in 12 h“ + „Welche Drogen?“ */
+const ZUSATZ_MERKMALE: [Frage, string[]][] = [
+  [
+    { id: "kokain", text: "Hat die Person Kokain oder ähnliche Drogen genommen?", typ: "single", optionen: [{ wert: "ja", label: "Ja" }, { wert: "nein", label: "Nein" }, { wert: "unbekannt", label: "Weiß nicht" }] },
+    ["brustschmerz", "herz"],
+  ],
+];
 
 // ------------------------------------------------------------------ Werte zuordnen
 

@@ -131,9 +131,25 @@ export function notrufTeile(e: Einsatz, opt: { gefuehrt?: boolean; angezeigt?: (
     });
     ortInfo.append(zeigen, nehmen);
   }
+  // „📍 Genannte“: wird nach jeder Antwort des Anrufers neu geprüft (auch während man im Feld tippt)
+  let genanntKnopf: HTMLButtonElement | null = null;
+  let genanntKey = "";
+  function genanntJetzt(): string | null {
+    const a = e.anruf;
+    return a ? gesagteAdresse(e.meldung.adresse, a.gespraech.filter((m) => m.von === "anrufer").map((m) => m.text)) : null;
+  }
+  function genanntAktualisieren(): void {
+    if (!genanntKnopf) return;
+    const k = String(e.anruf?.gespraech.length ?? 0);
+    if (k === genanntKey) return;
+    genanntKey = k;
+    const gesagt = genanntJetzt();
+    genanntKnopf.disabled = !gesagt;
+    genanntKnopf.title = gesagt ? `Genannte Adresse übernehmen: „${gesagt}“` : "Genannte Adresse – erst wenn der Anrufer eine Straße oder einen Ort gesagt hat";
+  }
+
   /** Einsatzort eintragen: Adresse, Karte, Genannte, Ortung (alte und geführte Ansicht) */
   function ortFeld(): HTMLElement {
-    const a = e.anruf!;
     const box = el("div", { class: "ort-feld" });
     // Adresse direkt hier eintragen (geht in die Einsatzmaske)
     const zeile = el("div", { class: "adr-zeile" });
@@ -149,10 +165,11 @@ export function notrufTeile(e: Einsatz, opt: { gefuehrt?: boolean; angezeigt?: (
       fehler(sim.call("aktualisiere", e.id, { adresse: { ...pkt, label: `Koordinate ${pkt.lat.toFixed(5)}, ${pkt.lon.toFixed(5)}` } }));
     });
     const genannt = el("button", { class: "btn small", type: "button", title: "Was der Anrufer gesagt hat, in die Suche übernehmen" }, "📍 Genannte");
-    const gesagt = gesagteAdresse(e.meldung.adresse, a.gespraech.filter((m) => m.von === "anrufer").map((m) => m.text));
-    genannt.disabled = !gesagt;
-    genannt.title = gesagt ? `Genannte Adresse übernehmen: „${gesagt}“` : "Genannte Adresse – erst wenn der Anrufer eine Straße oder einen Ort gesagt hat";
+    genanntKnopf = genannt;
+    genanntKey = "";
+    genanntAktualisieren();
     genannt.addEventListener("click", () => {
+      const gesagt = genanntJetzt();
       if (!gesagt) return;
       adr.input.value = gesagt;
       adr.input.dispatchEvent(new Event("input"));
@@ -226,6 +243,7 @@ export function notrufTeile(e: Einsatz, opt: { gefuehrt?: boolean; angezeigt?: (
     if (gef) {
       gef.refresh();
       ortungAktualisieren();
+      genanntAktualisieren();
       return;
     }
     const schluessel = JSON.stringify([a.status, a.kapitel, a.antworten, a.extra, darf, a.angenommenVon?.pid, a.kapitel === "42" ? e.code : null, e.adresse?.label, e.zusatz, a.gespraech.some((m) => m.von === "anrufer")]);
@@ -235,6 +253,7 @@ export function notrufTeile(e: Einsatz, opt: { gefuehrt?: boolean; angezeigt?: (
       abfrageBauen(darf);
     }
     ortungAktualisieren();
+    genanntAktualisieren();
   }
 
   /** Neu aufbauen, ohne dass die Ansicht nach oben springt */

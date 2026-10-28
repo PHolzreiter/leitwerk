@@ -36,6 +36,9 @@ def o(*paare):
 
 JN = o(("ja", "Ja"), ("nein", "Nein"), ("unbekannt", "Weiß nicht"))
 JN2 = o(("ja", "Ja"), ("nein", "Nein"))
+# Drogen/Medikamente in den letzten 12 Stunden; bei „Drogen“ folgt „Welche?“ – nur Kokain ändert den Code
+DROGEN_12H = o(("medikamente", "Medikamente"), ("drogen", "Drogen"), ("keine", "Keine / nein"), ("unbekannt", "Weiß nicht"))
+DROGEN_WELCHE = o(("kokain", "Kokain"), ("amphetamin", "Amphetamine / Speed / Crystal"), ("cannabis", "Cannabis"), ("opiate", "Heroin / Opiate"), ("ecstasy", "Ecstasy / MDMA"), ("andere", "Andere"), ("unbekannt", "Weiß nicht"))
 
 
 def F(id, text, opts=None, typ="single", hinweis=None, wenn=None):
@@ -126,10 +129,11 @@ kap("02", "brustschmerz", "Brustschmerz", ["Brustschmerz", "Druck auf der Brust"
      F("hautfarbe", "Ist die Haut grau oder bläulich?", JN),
      F("sprachschw", "Fällt das Sprechen wegen Atemnot schwer?", JN),
      F("herz_vg", "Hatte die Person schon einmal einen Herzinfarkt oder ist ein Herzleiden bekannt?", JN),
-     F("kokain", "Hat die Person Kokain oder ähnliche Drogen genommen?", JN)],
+     F("drogen_12h", "Hat die Person in den letzten 12 Stunden Drogen oder Medikamente genommen?", DROGEN_12H),
+     F("drogen_welche", "Welche Drogen?", DROGEN_WELCHE, wenn=eq("drogen_12h", "drogen"))],
     [R(GETRUEBT, 4, "Brustschmerz mit Bewusstseinsstörung"),
      R(ANY(ja("kaltschweiss"), ja("hautfarbe"), ja("sprachschw"), eq("at", "abnorm")), 4, "Brustschmerz mit Schockzeichen oder Atemnot"),
-     R(ja("kokain"), 4, "Brustschmerz nach Drogenkonsum"),
+     R(eq("drogen_welche", "kokain"), 4, "Brustschmerz nach Kokain"),
      R(ja("herz_vg"), 3, "Brustschmerz bei bekanntem Herzleiden"),
      R(ge("alter", 35), 3, "Brustschmerz ab 35 Jahren"),
      R(None, 2, "Brustschmerz unter 35 Jahren")])
@@ -284,7 +288,8 @@ kap("12", "herz", "Herzbeschwerden", ["Herzrasen", "Herzstolpern", "Puls", "Defi
      F("hautfarbe", "Ist die Haut grau oder bläulich?", JN),
      F("kaltschweiss", "Ist die Person kaltschweißig?", JN),
      F("herzleiden", "Ist ein Herzleiden bekannt?", JN),
-     F("kokain", "Hat die Person Kokain oder ähnliche Drogen genommen?", JN),
+     F("drogen_12h", "Hat die Person in den letzten 12 Stunden Drogen oder Medikamente genommen?", DROGEN_12H),
+     F("drogen_welche", "Welche Drogen?", DROGEN_WELCHE, wenn=eq("drogen_12h", "drogen")),
      F("puls", "Kennen Sie den Puls?", o(("normal", "Zwischen 50 und 130"), ("langsam", "Unter 50"), ("schnell", "Über 130"), ("unbekannt", "Weiß nicht")))],
     [R(ja("reanimiert"), 4, "Nach Wiederbelebung"),
      R(GETRUEBT, 4, "Herzbeschwerden mit Bewusstseinsstörung"),
@@ -292,7 +297,7 @@ kap("12", "herz", "Herzbeschwerden", ["Herzrasen", "Herzstolpern", "Puls", "Defi
      R(ANY(ja("hautfarbe"), ja("kaltschweiss"), ja("sprachschw"), eq("at", "abnorm")), 4, "Herzbeschwerden mit Schockzeichen oder Atemnot"),
      R(ALL(ja("brustschmerz"), ge("alter", 35)), 3, "Herzbeschwerden mit Brustschmerz"),
      R(eq("puls", "langsam", "schnell"), 3, "Herzbeschwerden, Puls sehr schnell oder langsam"),
-     R(ja("kokain"), 3, "Herzbeschwerden nach Drogenkonsum"),
+     R(eq("drogen_welche", "kokain"), 3, "Herzbeschwerden nach Kokain"),
      R(ja("herzleiden"), 3, "Herzbeschwerden bei bekanntem Herzleiden"),
      R(None, 2, "Herzstolpern / Herzrasen, stabil")])
 

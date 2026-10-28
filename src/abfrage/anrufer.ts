@@ -646,7 +646,7 @@ export function wahrheitText(k: AnrufKontext, f: Frage): string | null {
 }
 
 /** Fragen zur Vorgeschichte – weiß nur, wer den Patienten gut kennt */
-const VORGESCHICHTE = new Set(["diabetiker", "epilepsie", "herz_vg", "herzleiden", "blutverduenner", "vg_schlaganfall", "vg_tia", "psych_vorerkrankung", "aneurysma", "bluter", "lungenerkrankung", "sonderdiagnose", "kokain"]);
+const VORGESCHICHTE = new Set(["diabetiker", "epilepsie", "herz_vg", "herzleiden", "blutverduenner", "vg_schlaganfall", "vg_tia", "psych_vorerkrankung", "aneurysma", "bluter", "lungenerkrankung", "sonderdiagnose", "kokain", "drogen_12h", "drogen_welche"]);
 
 /** Ist der Patient eine Frau? */
 export function patientW(k: AnrufKontext): boolean {

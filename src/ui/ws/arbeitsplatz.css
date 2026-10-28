@@ -3286,3 +3286,58 @@ button.weather.offen {
   align-items: center;
   gap: 8px;
 }
+
+/* beantwortete Fragen unter der aktuellen (0.83) */
+.gf-alte {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.gf-alt {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel-2);
+}
+
+.gf-alt.offen {
+  border-color: var(--blue);
+}
+
+.gf-alt-kopf {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  width: 100%;
+  padding: 6px 10px;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.gf-alt-frage {
+  flex: 1 1 55%;
+  color: var(--text-dim);
+}
+
+.gf-alt-antwort {
+  flex: 1 1 45%;
+  font-weight: 650;
+}
+
+.gf-alt.ohne .gf-alt-antwort {
+  font-weight: 400;
+  font-style: italic;
+  color: var(--text-dim);
+}
+
+.gf-alt.ohne {
+  opacity: 0.75;
+}
+
+.gf-alt > .gf-antwort {
+  padding: 4px 10px 10px;
+}

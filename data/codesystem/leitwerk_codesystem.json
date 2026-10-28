@@ -2918,23 +2918,68 @@
      ]
     },
     {
-     "id": "kokain",
-     "text": "Hat die Person Kokain oder ähnliche Drogen genommen?",
+     "id": "drogen_12h",
+     "text": "Hat die Person in den letzten 12 Stunden Drogen oder Medikamente genommen?",
      "typ": "single",
      "optionen": [
       {
-       "wert": "ja",
-       "label": "Ja"
+       "wert": "medikamente",
+       "label": "Medikamente"
       },
       {
-       "wert": "nein",
-       "label": "Nein"
+       "wert": "drogen",
+       "label": "Drogen"
+      },
+      {
+       "wert": "keine",
+       "label": "Keine / nein"
       },
       {
        "wert": "unbekannt",
        "label": "Weiß nicht"
       }
      ]
+    },
+    {
+     "id": "drogen_welche",
+     "text": "Welche Drogen?",
+     "typ": "single",
+     "optionen": [
+      {
+       "wert": "kokain",
+       "label": "Kokain"
+      },
+      {
+       "wert": "amphetamin",
+       "label": "Amphetamine / Speed / Crystal"
+      },
+      {
+       "wert": "cannabis",
+       "label": "Cannabis"
+      },
+      {
+       "wert": "opiate",
+       "label": "Heroin / Opiate"
+      },
+      {
+       "wert": "ecstasy",
+       "label": "Ecstasy / MDMA"
+      },
+      {
+       "wert": "andere",
+       "label": "Andere"
+      },
+      {
+       "wert": "unbekannt",
+       "label": "Weiß nicht"
+      }
+     ],
+     "anzeigen_wenn": {
+      "q": "drogen_12h",
+      "in": [
+       "drogen"
+      ]
+     }
     }
    ],
    "regeln": [
@@ -3010,9 +3055,9 @@
     {
      "code": "RD-10D4",
      "wenn": {
-      "q": "kokain",
+      "q": "drogen_welche",
       "in": [
-       "ja"
+       "kokain"
       ]
      }
     },
@@ -5316,23 +5361,68 @@
      ]
     },
     {
-     "id": "kokain",
-     "text": "Hat die Person Kokain oder ähnliche Drogen genommen?",
+     "id": "drogen_12h",
+     "text": "Hat die Person in den letzten 12 Stunden Drogen oder Medikamente genommen?",
      "typ": "single",
      "optionen": [
       {
-       "wert": "ja",
-       "label": "Ja"
+       "wert": "medikamente",
+       "label": "Medikamente"
       },
       {
-       "wert": "nein",
-       "label": "Nein"
+       "wert": "drogen",
+       "label": "Drogen"
+      },
+      {
+       "wert": "keine",
+       "label": "Keine / nein"
       },
       {
        "wert": "unbekannt",
        "label": "Weiß nicht"
       }
      ]
+    },
+    {
+     "id": "drogen_welche",
+     "text": "Welche Drogen?",
+     "typ": "single",
+     "optionen": [
+      {
+       "wert": "kokain",
+       "label": "Kokain"
+      },
+      {
+       "wert": "amphetamin",
+       "label": "Amphetamine / Speed / Crystal"
+      },
+      {
+       "wert": "cannabis",
+       "label": "Cannabis"
+      },
+      {
+       "wert": "opiate",
+       "label": "Heroin / Opiate"
+      },
+      {
+       "wert": "ecstasy",
+       "label": "Ecstasy / MDMA"
+      },
+      {
+       "wert": "andere",
+       "label": "Andere"
+      },
+      {
+       "wert": "unbekannt",
+       "label": "Weiß nicht"
+      }
+     ],
+     "anzeigen_wenn": {
+      "q": "drogen_12h",
+      "in": [
+       "drogen"
+      ]
+     }
     },
     {
      "id": "puls",
@@ -5476,9 +5566,9 @@
     {
      "code": "RD-19C3",
      "wenn": {
-      "q": "kokain",
+      "q": "drogen_welche",
       "in": [
-       "ja"
+       "kokain"
       ]
      }
     },
@@ -10698,7 +10788,7 @@
    "kapitel": "10 - Brustschmerz"
   },
   "RD-10D4": {
-   "name": "Brustschmerz nach Drogenkonsum",
+   "name": "Brustschmerz nach Kokain",
    "kategorie": "ALS orange",
    "kapitel": "10 - Brustschmerz"
   },
@@ -11248,7 +11338,7 @@
    "kapitel": "19 - Herzbeschwerden"
   },
   "RD-19C3": {
-   "name": "Herzbeschwerden nach Drogenkonsum",
+   "name": "Herzbeschwerden nach Kokain",
    "kategorie": "ALS gelb",
    "kapitel": "19 - Herzbeschwerden"
   },

@@ -65,6 +65,15 @@ function zumKh(label: string): string {
   return bereich ? `${zu}, ${bereich}` : zu;
 }
 
+/** „Bei uns in der Ordination“ (Anrufer ist dort) oder „Aus der Ordination“ */
+function einrichtungBei(k: KtAuftrag, o: NonNullable<KtDaten["von"]>): string {
+  const art = o.einrichtung ?? "Einrichtung";
+  const r = k.wahr.anrufer.rolle.toLowerCase();
+  const dort = /ordination|assistent|arzt|ärzt|pflege|heim|betreu|einrichtung|reha/.test(r);
+  const wo = art === "Ordination" ? "in der Ordination" : art === "Primärversorgung" ? "im Primärversorgungszentrum" : art === "Betreutes Wohnen" ? "im Betreuten Wohnen" : `im ${art}`;
+  return dort ? `Bei uns ${wo}` : `Abgeholt wird ${wo}`;
+}
+
 function ort(o: KtDaten["von"]): string {
   if (!o) return "weiß ich nicht";
   return o.khId ? `${o.label}` : o.label;
@@ -91,8 +100,10 @@ function ktAntwortRoh(k: KtAuftrag, f: KtFrage): string {
     case "patient":
       return `${w.patient.name}, ${w.patient.alter} Jahre.`;
     case "von":
+      if (w.von?.einrichtung) return `${einrichtungBei(k, w.von)}: ${ort(w.von)}.`;
       return zuHause ? `Bei ${w.patient.geschlecht === "w" ? "ihr" : "ihm"} zu Hause: ${ort(w.von)}.` : `${ort(w.von)}.`;
     case "nach":
+      if (w.nach?.einrichtung) return `Zurück ${w.nach.einrichtung === "Ordination" ? "in die Ordination" : `ins ${w.nach.einrichtung}`}: ${ort(w.nach)}.`;
       return w.nach?.khId ? `${zumKh(w.nach.label)}.` : `Nach Hause: ${ort(w.nach)}.`;
     case "termin":
       return w.termin ? `Um ${hhmm(w.termin)}.` : "Das weiß ich nicht genau.";
@@ -213,8 +224,8 @@ function fakten(k: KtAuftrag): string {
     ich
       ? `Du bist selbst der Patient: ${w.patient.name}, ${w.patient.alter} Jahre${w.patient.info ? ` (${w.patient.info})` : ""}.`
       : `Patient: ${w.patient.name}, ${w.patient.alter} Jahre${w.patient.info ? ` (${w.patient.info})` : ""}`,
-    `Abholort: ${ort(w.von)}${w.von?.khId ? "" : " (Wohnadresse)"}`,
-    `Ziel: ${ort(w.nach)}${w.nach?.bereich ? ` (${bereichName(w.nach.bereich)})` : ""}`,
+    `Abholort: ${ort(w.von)}${w.von?.khId ? "" : w.von?.einrichtung ? ` (${w.von.einrichtung} – nicht die Wohnung des Patienten)` : " (Wohnadresse)"}`,
+    `Ziel: ${ort(w.nach)}${w.nach?.bereich ? ` (${bereichName(w.nach.bereich)})` : w.nach?.einrichtung ? ` (${w.nach.einrichtung})` : ""}`,
     `Termin: ${hhmm(w.termin)}`,
     `gewünschte Abholung: ${w.abholung ? hhmm(w.abholung) : "keine besondere, rechtzeitig"}`,
     `Grund: ${w.grund}`,

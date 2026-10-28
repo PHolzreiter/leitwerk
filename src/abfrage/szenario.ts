@@ -532,6 +532,14 @@ export function szenarioBauen(
   setze("aelter6h", seitMin > 360 ? "ja" : "nein");
   setze("seit", seitMin > 270 ? "ueber" : "unter");
   for (const id of ["diabetiker", "epilepsie", "herz_vg", "herzleiden", "blutverduenner", "vg_schlaganfall", "vg_tia", "psych_vorerkrankung", "aneurysma", "bluter", "kokain"]) setze(id, "nein");
+  // „Drogen oder Medikamente in den letzten 12 Stunden?“ folgt aus Kokain und Vorerkrankungen
+  {
+    const w8 = (id: string) => a[id] ?? zusatz[id];
+    const koks = w8("kokain") === "ja";
+    const medis = ["herz_vg", "herzleiden", "blutverduenner", "diabetiker", "epilepsie", "lungenerkrankung", "psych_vorerkrankung"].some((id) => { const x = w8(id); return x !== undefined && x !== "nein" && x !== "unbekannt"; }) || (typeof a.alter === "number" && a.alter >= 65);
+    setze("drogen_12h", koks ? "drogen" : medis ? "medikamente" : "keine");
+    if (koks) setze("drogen_welche", "kokain");
+  }
   setze("lungenerkrankung", "nein");
   // schwanger nur, wenn die Geschichte davon handelt (sonst verwirrt es nur)
   setze("schwanger", w && /schwanger|geburt/.test(v.thema) ? "ja" : "nein");
@@ -648,6 +656,8 @@ const FAKT: Record<string, Record<string, string>> = {
   sprachschw: { ja: "{Er} kann vor lauter Schnaufen nur einzelne Wörter sagen", nein: "{reden kann {er} normal|{er} redet in ganzen Sätzen|beim Reden muss {er} nicht nach Luft schnappen}" },
   verwirrt: { ja: "{Er} ist durcheinander und weiß nicht recht, wo {er} ist", nein: "{durcheinander ist {er} nicht|{er} weiß, wo {er} ist}" },
   kokain: { ja: "{Er} hat Kokain genommen", nein: "Drogen nimmt {er} keine" },
+  drogen_12h: { medikamente: "in den letzten 12 Stunden hat {er} nur {seine} normalen Medikamente genommen, keine Drogen", drogen: "{Er} hat in den letzten 12 Stunden Drogen genommen", keine: "in den letzten 12 Stunden hat {er} weder Drogen noch Medikamente genommen" },
+  drogen_welche: { kokain: "es war Kokain", amphetamin: "es war Speed bzw. Amphetamin", cannabis: "es war Gras (Cannabis)", opiate: "es war Heroin", ecstasy: "es war Ecstasy", andere: "was genau, steht in der Fallakte" },
   aneurysma: { ja: "{Er} hat ein Aneurysma an der Bauchschlagader", nein: "von einem Aneurysma weißt du nichts" },
   bluter: { ja: "{Er} ist Bluter (eine Krankheit, bei der das Blut schlecht gerinnt)", nein: "eine Blutgerinnungskrankheit hat {er} nicht" },
   transportart: { liegend: "{Er} kann nicht sitzen – {er} muss liegend transportiert werden", sitzend: "{Er} kann sitzen, aber nicht weit gehen", gehend: "{Er} kann selbst gehen", rollstuhl: "{Er} sitzt im eigenen Rollstuhl" },
@@ -784,7 +794,7 @@ export function faktSaetze(z: Antworten, w: boolean): string[] {
 }
 
 /** Antworten, die selbstverständlich „nein“ sind (stehen nicht extra in der Anweisung – die Vorerkrankungen sagen es schon) */
-export const SELBSTVERSTAENDLICH = new Set(["diabetiker", "epilepsie", "herz_vg", "herzleiden", "blutverduenner", "vg_schlaganfall", "vg_tia", "psych_vorerkrankung", "aneurysma", "bluter", "kokain", "lungenerkrankung", "gewalt", "gewalttaetig", "aggressiv", "waffen"]);
+export const SELBSTVERSTAENDLICH = new Set(["diabetiker", "epilepsie", "herz_vg", "herzleiden", "blutverduenner", "vg_schlaganfall", "vg_tia", "psych_vorerkrankung", "aneurysma", "bluter", "kokain", "drogen_12h", "lungenerkrankung", "gewalt", "gewalttaetig", "aggressiv", "waffen"]);
 
 /** Fallakte für die KI (Geheimwissen der Anruferin/des Anrufers) */
 export function fallakte(sz: Szenario, opt: { selbst: boolean; bezug: string; quelle?: "vorort" | "polizei" | "telefon"; fremd?: boolean; hausarztIch?: boolean; vorgeschichte?: "ja" | "teilweise" | "nein"; name?: string; kannAntworten?: boolean }): string {

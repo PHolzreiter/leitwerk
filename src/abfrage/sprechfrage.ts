@@ -80,6 +80,8 @@ const SPRECH: Record<string, { er: string[]; sie?: string[] }> = {
   schmerzort: { er: ["Wo genau tut es {ihm} weh?"], sie: ["Wo genau tut es Ihnen weh?"] },
   ploetzlich_stark: { er: ["Hat der Schmerz ganz plötzlich und extrem stark angefangen, wie ein Schlag?"] },
   kokain: { er: ["Hat {er} Drogen genommen, Kokain zum Beispiel?"] },
+  drogen_12h: { er: ["Hat {er} in den letzten 12 Stunden Drogen oder Medikamente genommen?"], sie: ["Haben Sie in den letzten 12 Stunden Drogen oder Medikamente genommen?"] },
+  drogen_welche: { er: ["Welche Drogen waren das?"], sie: ["Welche Drogen waren das?"] },
   substanzen: { er: ["Hat {er} irgendwelche Tabletten oder Substanzen genommen?"] },
   aggressiv: { er: ["Ist {er} aggressiv oder gewalttätig?"] },
   gewalttaetig: { er: ["Ist {er} aggressiv?", "Ist {er} gewalttätig geworden?"] },

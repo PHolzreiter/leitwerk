@@ -14,7 +14,7 @@ import { bereichName, type KtAuftrag } from "../../sim/kt";
 import { istUeberstellung } from "../../sim/ktCodes";
 import { el, esc, toast } from "../dom";
 import { exportKnopf } from "../gespraechExport";
-import { codeChip, ktFormular, ktFrageStellen } from "../ktView";
+import { codeChip, ktFormular, ktFrageStellen, ortText } from "../ktView";
 import { panelZeigen, registriere, type PanelKontext } from "../ws/arbeitsplatz";
 import { auswahl, karteZeigen, onAuswahl, waehle } from "../ws/auswahl";
 import { onLive, verlaufNachziehen, liveZeigen } from "./live";
@@ -483,7 +483,7 @@ function ktAnsicht(root: HTMLElement, k: KtAuftrag): { refresh(): void; dispose(
     if (ck !== codeKey) {
       codeKey = ck;
       const b = k.d.nach?.bereich ? ` (${bereichName(k.d.nach.bereich)})` : "";
-      codeBox.innerHTML = `${codeChip(k.d.code)}<div class="muted small">${esc(k.d.von?.label ?? "?")} → ${esc(k.d.nach?.label ?? "?")}${esc(b && !k.d.nach?.label.includes(b.slice(2, -1)) ? b : "")}</div>`;
+      codeBox.innerHTML = `${codeChip(k.d.code)}<div class="muted small">${esc(ortText(k.d.von))} → ${esc(ortText(k.d.nach))}${esc(b && !k.d.nach?.label.includes(b.slice(2, -1)) ? b : "")}</div>`;
     }
     if (document.activeElement !== infoFeld && infoFeld.value !== k.d.patient.info) infoFeld.value = k.d.patient.info;
     formular.refresh();

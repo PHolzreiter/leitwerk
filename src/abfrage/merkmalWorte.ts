@@ -146,6 +146,8 @@ export const MERKMAL_WORTE: Record<string, string> = {
   tracheostoma: "Tracheostoma Kanüle im Hals|Luftröhrenschnitt",
   herz_vg: "früherer Herzinfarkt Angina Pectoris|Herzerkrankung bekannt Vorgeschichte Herz",
   kokain: "Kokain Drogen Amphetamine|Drogenkonsum",
+  drogen_12h: "Drogen oder Medikamente in den letzten 12 Stunden|Drogen Medikamente eingenommen",
+  drogen_welche: "welche Drogen|Art der Drogen Kokain Amphetamine",
   herzleiden: "Herzleiden Herzerkrankung bekannt|Herzkrank",
   bauchschmerz: "Bauchschmerzen|Schmerzen im Bauch Unterbauch",
   tod: "offensichtlich tot Tod erwartet|sichere Todeszeichen tot|eindeutig verstorben",

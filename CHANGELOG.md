@@ -1,5 +1,14 @@
 # Änderungen
 
+## 0.83.0 – Abfrage: Fragen bleiben stehen, Drogen/Medikamente-Frage, sinnvollere Krankentransporte
+- **Notruf-Abfrage:** Beantwortete Fragen bleiben unter der aktuellen stehen – die neueste oben, die erste (Einsatzort) ganz unten. Jede zeigt nur die gewählte Antwort; ein Klick klappt alle Antworten zum Ändern auf
+- Übersprungene Fragen stehen grau mit „nicht gefragt“ dabei und lassen sich nachholen
+- Die Satz-Liste in der Abfrage ist weg – das Protokoll steht wie gewohnt beim Einsatz
+- **Ortung** wird auch bei pausiertem Spiel nach ein paar Sekunden fertig
+- **„📍 Genannte“** wird aktiv, sobald der Anrufer die Adresse sagt, und übernimmt nur Straße, Hausnummer, Postleitzahl und Ort
+- **Brustschmerz und Herzbeschwerden:** statt „Kokain genommen?“ jetzt „Drogen oder Medikamente in den letzten 12 Stunden?“ (Medikamente / Drogen / keine), bei Drogen „Welche Drogen?“ – nur Kokain ändert den Code, der Rest steht als Info in der Abfrage
+- **Krankentransporte sinnvoller:** Wohnadressen sind echte Hausadressen; Abholung aus einer Ordination oder einem Pflegeheim ist als solche gekennzeichnet („bei uns in der Ordination“ statt „zu Hause“); Abholort und Ziel sind nie dasselbe Haus; Ziel ist das nächste passende Haus, kein weiter Umweg
+
 ## 0.82.0 – Neue Abfrage-Ansicht: Notruf Frage für Frage, KT/SEK aufgeräumt
 - **Notruf Frage für Frage:** Rechts steht immer nur die nächste Frage groß, mit Antwortknöpfen (Tasten 1, 2, 3 …). Leertaste stellt die Frage, Enter überspringt, ↑ geht zurück
 - **Protokoll wie in echt:** Darunter wächst die Abfrage als nummerierte Sätze („1. Er ist wach und reagiert normal.“). Ein Klick auf einen Satz holt die Frage zurück, die Antwort lässt sich ändern

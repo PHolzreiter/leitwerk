@@ -3939,3 +3939,12 @@ input.ausr-zahl { width: 64px !important; min-width: 0; }
 .kt-formular.neu .kt-lbl .frag-knopf {
   margin-left: auto;
 }
+.kt-einr {
+  flex: none;
+  align-self: center;
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--blue) 20%, transparent);
+  color: var(--text);
+}

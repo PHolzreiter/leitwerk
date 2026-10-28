@@ -26,6 +26,7 @@ import {
   KT_BEHANDLUNGEN,
   KT_KASSEN,
   KT_TRANSPORTART_LABEL,
+  EINRICHTUNG_LABEL,
 } from "../sim/kt";
 import { abfrageAnsicht } from "./abfrageAnsicht";
 import { codeFehlt, codeInfo, istUeberstellung, ktAbfrage, ktCode, ktCodeDef, ktCodes, ktFrageText } from "../sim/ktCodes";
@@ -222,7 +223,10 @@ function ortWahl(wert: KtOrt | null, darf: boolean, nurKh: boolean, onSet: (o: K
   );
 
   // Adresse (mit 📍 „Genannte Adresse übernehmen“)
-  const adr = addressInput("Straße Hausnummer Ort …", (o) => onSet({ lat: o.lat, lon: o.lon, label: o.label }));
+  const adr = addressInput("Straße Hausnummer Ort …", (o) => {
+    const einr = einrichtungBei(o);
+    onSet({ lat: o.lat, lon: o.lon, label: o.label, ...(einr ? { einrichtung: einr } : {}) });
+  });
   if (wert && !wert.khId) adr.input.value = wert.label;
   const adrZeile = el("div", { class: "kt-adr-zeile" });
   const btnGenannt = el("button", { class: "btn small icon", type: "button" }, "📍");
@@ -236,6 +240,7 @@ function ortWahl(wert: KtOrt | null, darf: boolean, nurKh: boolean, onSet: (o: K
     adr.input.focus();
   });
   adrZeile.append(adr.root, btnGenannt);
+  if (wert && !wert.khId && wert.einrichtung) adrZeile.appendChild(el("span", { class: "kt-einr", title: "Abholort/Ziel ist eine Einrichtung, keine Wohnung" }, wert.einrichtung));
 
   const zeigen = () => {
     const kh = modus.value === "kh";
@@ -259,6 +264,19 @@ export async function ktFrageStellen(k: KtAuftrag, text: string, f?: KtFrage): P
   l.fertig();
 }
 
+/** Liegt an der Adresse eine Einrichtung (Ordination, Pflegeheim …)? Dann ihr Wort, sonst null */
+function einrichtungBei(o: { lat: number; lon: number; label: string }): string | null {
+  const l = norm(o.label);
+  const p = store.list("pois").find((x) => EINRICHTUNG_LABEL[x.typ.split(",")[0]] && distanceM(x, o) < 60 && l.includes(norm(x.name).slice(0, 12)));
+  return p ? EINRICHTUNG_LABEL[p.typ.split(",")[0]] : null;
+}
+
+/** „Endoskopie Klosterneuburg (Ordination)“ – Einrichtungen gekennzeichnet */
+export function ortText(o: KtOrt | null | undefined, sonst = "?"): string {
+  if (!o) return sonst;
+  return o.einrichtung ? `${o.label} (${o.einrichtung})` : o.label;
+}
+
 /** Adresse (kein Krankenhaus), die der Anrufer im Gespräch schon genannt hat */
 function genannteAdresse(k: KtAuftrag, wo: "von" | "nach"): string | null {
   const o = k.wahr?.d?.[wo];
@@ -278,7 +296,7 @@ export function ktZusammenfassung(k: KtAuftrag): string {
   const extra = [d.begleitung && "Begleitperson", d.sauerstoff && "O₂", d.infektion && "Infektion"].filter(Boolean).join(" · ");
   const zeit = `${d.abholung ? `Abholung <b>${hhmm(d.abholung)}</b>` : ""}${d.abholung && d.termin ? " · " : ""}${d.termin ? `Termin <b>${hhmm(d.termin)}</b>` : ""}` || `<span class="alert-text">keine Zeit</span>`;
   return `<div class="kt-z1"><span class="kt-art-chip ${art}">${art === "sek" ? "Überstellung" : "Krankentransport"}</span> <b>${esc(d.patient.name || "Patient?")}</b>${d.patient.alter !== null ? ` <span class="muted">${d.patient.alter} J.</span>` : ""} · ${esc(lage)}${d.sofort ? ` <span class="el-sofort">SOFORT</span>` : ""}${sekTags(d)}</div>
-    <div class="kt-z2">${esc(d.von?.label ?? "Abholort?")} → ${esc(d.nach?.label ?? "Ziel?")}</div>
+    <div class="kt-z2">${esc(ortText(d.von, "Abholort?"))} → ${esc(ortText(d.nach, "Ziel?"))}</div>
     <div class="kt-z3">${zeit}${extra ? ` <span class="muted">· ${esc(extra)}</span>` : ""}${d.grund ? ` <span class="muted">· ${esc(d.grund)}</span>` : ""}</div>${
       d.patient.info ? `<div class="kt-z3 muted">Hinweis: ${esc(d.patient.info)}</div>` : ""
     }`;

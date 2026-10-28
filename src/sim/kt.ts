@@ -4,6 +4,7 @@
  */
 import { BEREICHE, type Hospital } from "../data/model";
 import { einrichtung } from "../data/klinik";
+import { distanceM } from "./geo";
 import { zufallsName, zufallsNummer } from "../abfrage/anrufer";
 import type { Anruf, Bearbeiter, Protokoll } from "./engine";
 
@@ -19,7 +20,19 @@ export interface KtOrt {
   /** Krankenhaus und Station/Ambulanz (Kürzel aus BEREICHE) */
   khId?: string;
   bereich?: string;
+  /** Einrichtung (Ordination, Pflegeheim …) statt Wohnadresse – der Name bleibt im label */
+  einrichtung?: string;
 }
+
+/** Wie eine Einrichtung genannt wird (POI-Kategorie → Wort) */
+export const EINRICHTUNG_LABEL: Record<string, string> = {
+  arztpraxis: "Ordination",
+  primaerversorgung: "Primärversorgung",
+  pflegeheim: "Pflegeheim",
+  betreutes_wohnen: "Betreutes Wohnen",
+  behinderteneinrichtung: "Behinderteneinrichtung",
+  reha: "Reha",
+};
 
 /** Zusatzangaben bei Überstellungen (SEK) */
 export interface SekDaten {
@@ -111,7 +124,7 @@ export function ktZusatz(d: KtDaten, typ: "ambulanz" | "heim" | "entlassung" | "
     typ === "einweisung" || typ === "entlassung" ? "stationäre Aufnahme" : dialyse ? "Dialyse" : therapie ? "Chemo-/Strahlentherapie" : /kontrolle|untersuchung|ct|mrt|röntgen|sono/i.test(d.grund) ? "Untersuchung" : "ambulante Behandlung";
   const qualifiziert = d.lage === "liegend" || d.sauerstoff || d.infektion || d.sofort || /bettlägerig|dekubitus|dement/i.test(d.patient.info);
   const gehfaehig = d.lage === "gehend" || (d.lage === "sitzend" && /gehfähig/.test(d.patient.info)) || (d.lage === "sitzend" && Math.random() < 0.2);
-  const auftrag = d.von?.khId ? "einrichtung" : Math.random() < 0.85 ? "ja" : "nein";
+  const auftrag = d.von?.khId || d.von?.einrichtung ? "einrichtung" : Math.random() < 0.85 ? "ja" : "nein";
   return { ktArt, behandlung, transportmittel: qualifiziert ? "qualifiziert" : "einfach", gehfaehig, auftrag, kasse };
 }
 
@@ -390,7 +403,10 @@ export function zufallsDaten(o: ZufallsOrte, jetzt: number): KtDaten | null {
     nach = o.heim;
   } else {
     bereich = gewichtet(AMBULANZ_ZIELE);
-    const auswahl = o.khMit(bereich).slice(0, 3);
+    // eines der nächsten drei Häuser – aber kein weiter Umweg, wenn es das Gleiche in der Nähe gibt
+    const naechste = o.khMit(bereich);
+    const d0 = naechste.length ? distanceM(naechste[0], o.heim) : 0;
+    const auswahl = naechste.slice(0, 3).filter((h) => distanceM(h, o.heim) <= Math.max(d0 * 1.5, d0 + 12_000));
     kh = auswahl.length ? pick(auswahl) : undefined;
     if (!kh) return null;
     if (typ === "ambulanz") {
@@ -401,7 +417,9 @@ export function zufallsDaten(o: ZufallsOrte, jetzt: number): KtDaten | null {
       nach = o.heim;
     }
   }
-  const grund = einweisung ? einweisung[0] : pick(grundFuer(GRUENDE[bereich] ?? ["Kontrolle"], geschlecht));
+  // Abholort und Ziel nie dasselbe Haus (auch keine Einrichtung direkt am Krankenhausgelände)
+  if ((von.khId && von.khId === nach.khId) || distanceM(von, nach) < 300) return null;
+    const grund = einweisung ? einweisung[0] : pick(grundFuer(GRUENDE[bereich] ?? ["Kontrolle"], geschlecht));
   const zg = zumGrund(grund, bereich, alter, lageFuer(alter, bereich));
   const lage = zg.lage;
   const sofort = typ === "einweisung";

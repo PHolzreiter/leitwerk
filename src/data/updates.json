@@ -1,5 +1,17 @@
 [
  {
+  "version": "0.83.0",
+  "datum": "2026-10-28",
+  "titel": "Fragen bleiben stehen",
+  "punkte": [
+   "Beantwortete Fragen bleiben unter der aktuellen stehen, Klick zum Ändern",
+   "Ortung auch in der Pause",
+   "„Genannte“ übernimmt nur die Adresse",
+   "Neue Frage: Drogen oder Medikamente in den letzten 12 Stunden",
+   "Krankentransporte: echte Wohnadressen, Ordinationen gekennzeichnet, nahe Ziele"
+  ]
+ },
+ {
   "version": "0.82.0",
   "datum": "2026-10-28",
   "titel": "Neue Abfrage-Ansicht",

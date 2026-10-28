@@ -122,6 +122,7 @@ import { istZusammengesetzt, wahrheitAnpassen } from "../abfrage/normalisieren";
 import { abfrageBlock, abfrageSaetze } from "../abfrage/protokollText";
 import {
   dauerDaten,
+  EINRICHTUNG_LABEL,
   hhmm,
   hotlineAnrufer,
   khOrt,
@@ -1493,6 +1494,22 @@ export class Simulation {
     for (let i = 0; i < 4; i++) {
       const hits = await randomAddresses([p.lon - dLon, p.lat - dLat, p.lon + dLon, p.lat + dLat], 8);
       const drin = hits.find((h) => inFunkgruppe(g, h.lat, h.lon) && distanceM(h, p) <= radius);
+      if (drin) return drin;
+    }
+    return null;
+  }
+
+  /** Echte Hausadresse (Straße + Hausnummer), nicht direkt bei einem Krankenhaus – für Wohnadressen von KT-Patienten */
+  private istWohnadresse(h: { number: string; place: boolean; lat: number; lon: number }): boolean {
+    if (h.place || !h.number.trim()) return false;
+    return !store.list("hospitals").some((k) => distanceM(k, h) < 300);
+  }
+
+  private async wohnadresseImGebiet(): Promise<Awaited<ReturnType<typeof randomAddresses>>[number] | null> {
+    const g = this.funkgruppe();
+    for (let i = 0; i < 8; i++) {
+      const hits = await randomAddresses(g.bbox, 8);
+      const drin = hits.find((h) => inFunkgruppe(g, h.lat, h.lon) && this.istWohnadresse(h));
       if (drin) return drin;
     }
     return null;
@@ -5863,7 +5880,7 @@ export class Simulation {
     return null;
   }
 
-  /** Handy-Ortung anstoßen; das Ergebnis kommt nach einigen Sekunden (Simulationszeit) */
+  /** Handy-Ortung anstoßen; das Ergebnis kommt nach einigen Sekunden (Spielzeit, spätestens nach ein paar echten Sekunden) */
   ortung(id: string): void {
     const e = this.einsatz(id);
     const a = e?.anruf;
@@ -5873,6 +5890,13 @@ export class Simulation {
     a.ortung = { status: "laeuft", fertigUm: this.state.zeit + rnd(12, 40) * 1000 };
     this.log(e, "Ortung angefordert");
     this.emit();
+    // auch bei pausiertem Spiel: nach ein paar echten Sekunden fertig (läuft das Spiel, kann die Spielzeit schneller sein)
+    const o = a.ortung;
+    setTimeout(() => {
+      if (e.anruf?.ortung !== o || o.status !== "laeuft") return;
+      this.ortungFertig(e);
+      this.emit();
+    }, rnd(4, 9) * 1000);
   }
 
   private ortungFertig(e: Einsatz): void {
@@ -6010,7 +6034,7 @@ export class Simulation {
       d = sekZufall({ mitte, khs, jetzt: this.state.zeit })?.[0] ?? null;
     } else
       for (let i = 0; i < 4 && !d; i++) {
-        const adr = await this.adresseImGebiet();
+        const adr = await this.wohnadresseImGebiet();
         if (!adr) continue;
         const heim: KtOrt = { lat: adr.lat, lon: adr.lon, label: adr.label };
         d = zufallsDaten({ heim, khMit: (b) => this.khMit(b, heim) }, this.state.zeit);
@@ -6052,10 +6076,11 @@ export class Simulation {
   }
 
   /** Neuer zufälliger Krankentransport (online angemeldet oder über die Hotline) */
+  // (Ziele: das nächste passende Haus, siehe khMit – höchstens 70 km)
   async generiereKt(quelle?: "online" | "hotline"): Promise<KtAuftrag | null> {
     let d: KtDaten | null = this.ktVonEinrichtung();
     for (let i = 0; i < 4 && !d; i++) {
-      const adr = await this.adresseImGebiet();
+      const adr = await this.wohnadresseImGebiet();
       if (!adr) continue;
       const heim: KtOrt = { lat: adr.lat, lon: adr.lon, label: adr.label };
       d = zufallsDaten({ heim, khMit: (b) => this.khMit(b, heim) }, this.state.zeit);
@@ -6084,7 +6109,9 @@ export class Simulation {
         break;
       }
       const kat = o.kategorien.find((k) => GEWICHT[k])!;
-      const heim: KtOrt = { lat: o.lat, lon: o.lon, label: `${o.name}${o.ort ? `, ${o.ort}` : ""}` };
+      // Einrichtung mit ihrem echten Namen, aber als Einrichtung gekennzeichnet (nicht „zu Hause“)
+      const heim: KtOrt = { lat: o.lat, lon: o.lon, label: `${o.name}${o.ort ? `, ${o.ort}` : ""}`, einrichtung: EINRICHTUNG_LABEL[kat] ?? "Einrichtung" };
+      if (store.list("hospitals").some((k) => distanceM(k, heim) < 300)) continue;
       const praxis = kat === "arztpraxis" || kat === "primaerversorgung";
       const d = zufallsDaten({ heim, khMit: (b) => this.khMit(b, heim), ...(praxis ? { typ: "einweisung" as const } : {}) }, this.state.zeit);
       if (!d) continue;
@@ -6116,7 +6143,7 @@ export class Simulation {
         if (!mit.length) mit = moeglich.filter((h) => distanceM(h, mitte) < 70_000).sort((x, y) => distanceM(x, mitte) - distanceM(y, mitte)).slice(0, 1);
         const n = Math.round(mit.length * jeKh);
         if (!n) continue;
-        const adressen = (await randomAddresses(g.bbox, n * 3)).filter((a) => inFunkgruppe(g, a.lat, a.lon)).slice(0, n);
+        const adressen = (await randomAddresses(g.bbox, n * 4)).filter((a) => inFunkgruppe(g, a.lat, a.lon) && this.istWohnadresse(a)).slice(0, n);
         for (const a of adressen) {
           const heim: KtOrt = { lat: a.lat, lon: a.lon, label: a.label };
           const kh = mit.slice().sort((x, y) => distanceM(x, heim) - distanceM(y, heim))[0];

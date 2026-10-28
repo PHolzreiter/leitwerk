@@ -1,7 +1,7 @@
 /**
- * Geführte Notruf-Abfrage: immer nur die nächste Frage groß, darunter wächst das Protokoll
- * als nummerierte Sätze („1. Er ist wach und reagiert normal.“). Ein Klick auf einen Satz
- * holt die Frage zurück, die Antwort lässt sich ändern.
+ * Geführte Notruf-Abfrage: die nächste Frage groß, darunter bleiben die beantworteten Fragen stehen
+ * (die neueste oben, die erste ganz unten) – je eine Zeile mit der gewählten Antwort; ein Klick klappt
+ * alle Antworten zum Ändern auf. Das Protokoll als Sätze steht nur beim Einsatz.
  *
  * Reihenfolge: Ort → Rückrufnummer → Wer ruft an → Bewusstsein/Atmung → Was ist passiert (Kapitel)
  * → Primärabfrage und Kapitelfragen → Abschluss.
@@ -9,7 +9,6 @@
  * Tasten: 1–9 Antwort · Leertaste stellt die Frage · Enter weiter/überspringen · ↑ zurück · ↓ vor
  */
 import { sprechFrage } from "../../abfrage/sprechfrage";
-import { antwortSatz } from "../../abfrage/protokollText";
 import { store } from "../../data/store";
 import { antwortLabel, fragenImAblauf, istKreislaufstillstand, type Frage, type Schema, type Wert } from "../../abfrage/schema";
 import { kapitelZuThema } from "../../abfrage/themen";
@@ -135,10 +134,12 @@ export function kapitelZumText(schema: Schema, text: string): { kapitel: string;
 export function gefuehrteAbfrage(ctx: GefuehrtKontext): { el: HTMLElement; refresh(): void; dispose(): void } {
   const { e } = ctx;
   const root = el("div", { class: "gf" });
-  /** ausdrücklich gewählte Frage (Klick ins Protokoll, ↑) – sonst die erste offene */
+  /** ausdrücklich gewählte Frage (↑) – sonst die erste offene */
   let aktuell: string | null = null;
   /** übersprungene Fragen (nur hier in der Ansicht) */
   const uebersprungen = new Set<string>();
+  /** aufgeklappte alte Fragen (alle Antworten sichtbar) */
+  const offen = new Set<string>();
   /** Suche in langen Antwortlisten und im Freitext „Was ist passiert?“ (bleibt beim Neuaufbau) */
   let suche = "";
   let wasText = "";
@@ -210,6 +211,7 @@ export function gefuehrteAbfrage(ctx: GefuehrtKontext): { el: HTMLElement; refre
   /** zur nächsten offenen Frage (nach einer Antwort) */
   function weiter(): void {
     aktuell = null;
+    offen.clear();
     suche = "";
     neu();
   }
@@ -220,29 +222,28 @@ export function gefuehrteAbfrage(ctx: GefuehrtKontext): { el: HTMLElement; refre
     fehler(sim.call("abfrageSetze", e.id, id, wert));
   }
 
-  // ---------------------------------------------------------------- Sätze fürs Protokoll
+  // ---------------------------------------------------------------- gewählte Antwort (kurz)
 
-  function satz(s: Schritt): string {
+  function antwortKurz(s: Schritt): string {
     const a = e.anruf!;
     const schema = store.schema!;
     switch (s.art) {
       case "ort":
-        return `Einsatzort: ${e.adresse?.label ?? "–"}.`;
+        return e.adresse?.label ?? "–";
       case "zusatz":
-        return `Zusatz zum Ort: ${e.zusatz}.`;
+        return e.zusatz;
       case "rueckruf":
-        return `Rückrufnummer: ${e.telefon || String(a.antworten[s.id] ?? "")}.`;
+        return e.telefon || String(a.antworten[s.id] ?? "");
       case "was": {
         const K = a.kapitel ? schema.kapitel[a.kapitel] : null;
         const t = s.frage ? a.antworten[s.frage.id] : null;
         return `Kapitel ${a.kapitel} ${K?.titel ?? ""}${t ? ` – „${t}“` : ""}`;
       }
       case "code42":
-        return `Code ${e.code} gewählt.`;
+        return `Code ${e.code}`;
       default: {
         const f = s.frage!;
-        const w = a.antworten[f.id];
-        return antwortSatz(f, w, a.antworten) ?? `${f.text} ${antwortLabel(f, w)}`;
+        return antwortLabel(f, a.antworten[f.id]);
       }
     }
   }
@@ -298,36 +299,68 @@ export function gefuehrteAbfrage(ctx: GefuehrtKontext): { el: HTMLElement; refre
       root.appendChild(fertig);
     }
 
-    // ---- Protokoll: nummerierte Sätze
-    const prot = el("div", { class: "gf-protokoll" });
-    prot.appendChild(el("div", { class: "gf-prot-titel" }, "Protokoll"));
-    const ol = el("div", { class: "gf-saetze" });
-    let n = 0;
-    for (const x of liste) {
+    // ---- darunter die schon beantworteten (und übersprungenen) Fragen: die neueste oben, die erste ganz unten
+    const alt = el("div", { class: "gf-alte" });
+    for (const x of [...liste].reverse()) {
+      if (x === s) continue;
       const ja = beantwortet(x);
       if (!ja && !uebersprungen.has(x.id)) continue;
-      const zeile = el("button", { class: `gf-satz${x === s ? " aktiv" : ""}${ja ? "" : " ohne"}`, type: "button", title: "Antwort ändern" });
-      zeile.dataset.id = x.id;
-      if (ja) {
-        n++;
-        zeile.append(el("span", { class: "gf-nr" }, `${n}.`), el("span", {}, satz(x)));
-      } else zeile.append(el("span", { class: "gf-nr" }, "–"), el("span", {}, `nicht gefragt: ${x.frage?.text ?? x.teil}`));
-      zeile.addEventListener("click", () => {
-        aktuell = x.id;
-        suche = "";
-        neu();
-      });
-      ol.appendChild(zeile);
+      alt.appendChild(alteFrage(x, ja, darf));
     }
-    if (!n && !ol.childElementCount) ol.appendChild(el("div", { class: "muted small" }, "Noch keine Angaben."));
-    prot.appendChild(ol);
-    root.appendChild(prot);
+    if (alt.childElementCount) root.appendChild(alt);
     fokusSetzen();
   }
 
-  function frageKarte(s: Schritt, liste: Schritt[], darf: boolean, aktiv: boolean): HTMLElement {
+  /** beantwortete Frage: eine Zeile mit der gewählten Antwort; Klick klappt alle Antworten zum Ändern auf */
+  function alteFrage(x: Schritt, ja: boolean, darf: boolean): HTMLElement {
+    const box = el("div", { class: `gf-alt${ja ? "" : " ohne"}${offen.has(x.id) ? " offen" : ""}` });
+    box.dataset.alt = x.id;
+    const kopf = el("button", { class: "gf-alt-kopf", type: "button", title: offen.has(x.id) ? "Zuklappen" : "Antwort ändern" });
+    const text = x.art === "was" ? "Was ist passiert?" : x.art === "code42" ? "Code" : (x.frage?.text ?? x.teil);
+    kopf.append(el("span", { class: "gf-alt-frage" }, text), el("span", { class: "gf-alt-antwort" }, ja ? antwortKurz(x) : "nicht gefragt"));
+    kopf.addEventListener("click", () => {
+      if (offen.has(x.id)) offen.delete(x.id);
+      else offen.add(x.id);
+      neu();
+    });
+    box.appendChild(kopf);
+    if (offen.has(x.id)) {
+      const body = el("div", { class: "gf-antwort" });
+      body.appendChild(antwortFeld(x, darf));
+      box.appendChild(body);
+    }
+    return box;
+  }
+
+  /** Eingabe für eine Frage (aktuelle Karte oder aufgeklappte alte Frage) */
+  function antwortFeld(s: Schritt, darf: boolean): HTMLElement {
     const a = e.anruf!;
     const schema = store.schema!;
+    const f = s.frage;
+    if (s.art === "ort" && f) return ctx.ortFeld(f);
+    if (s.art === "zusatz") {
+      const inp = ctx.zusatzFeld();
+      inp.classList.add("gf-feld");
+      inp.addEventListener("keydown", (ev) => {
+        if (ev.key === "Enter") {
+          ev.preventDefault();
+          inp.dispatchEvent(new Event("change"));
+          if (!inp.value.trim()) uebersprungen.add(s.id);
+          weiter();
+        }
+      });
+      return inp;
+    }
+    if (s.art === "rueckruf") return rueckrufFeld(s, darf);
+    if (s.art === "was") return wasFeld(s, schema, darf);
+    if (s.art === "code42") return ctx.code42(darf);
+    if (f?.typ === "single") return optionen(f, a.antworten[f.id], darf);
+    if (f?.typ === "zahl") return zahlFeld(f, a.antworten[f.id], darf);
+    if (f?.typ === "text") return textFeld(f, a.antworten[f.id], darf);
+    return el("div");
+  }
+
+  function frageKarte(s: Schritt, liste: Schritt[], darf: boolean, aktiv: boolean): HTMLElement {
     const karte = el("div", { class: "gf-karte" });
     karte.dataset.id = s.id;
     const i = liste.indexOf(s);
@@ -347,26 +380,7 @@ export function gefuehrteAbfrage(ctx: GefuehrtKontext): { el: HTMLElement; refre
     if (s.frage?.hinweis) karte.appendChild(el("div", { class: "frage-hinweis" }, s.frage.hinweis));
 
     const body = el("div", { class: "gf-antwort" });
-    const f = s.frage;
-    if (s.art === "ort" && f) body.appendChild(ctx.ortFeld(f));
-    else if (s.art === "zusatz") {
-      const inp = ctx.zusatzFeld();
-      inp.classList.add("gf-feld");
-      inp.addEventListener("keydown", (ev) => {
-        if (ev.key === "Enter") {
-          ev.preventDefault();
-          inp.dispatchEvent(new Event("change"));
-          if (!inp.value.trim()) uebersprungen.add(s.id);
-          weiter();
-        }
-      });
-      body.appendChild(inp);
-    } else if (s.art === "rueckruf") body.appendChild(rueckrufFeld(s, darf));
-    else if (s.art === "was") body.appendChild(wasFeld(s, schema, darf));
-    else if (s.art === "code42") body.appendChild(ctx.code42(darf));
-    else if (f?.typ === "single") body.appendChild(optionen(f, a.antworten[f.id], darf));
-    else if (f?.typ === "zahl") body.appendChild(zahlFeld(f, a.antworten[f.id], darf));
-    else if (f?.typ === "text") body.appendChild(textFeld(f, a.antworten[f.id], darf));
+    body.appendChild(antwortFeld(s, darf));
     karte.appendChild(body);
 
     // ---- unten: zurück / weiter
@@ -562,6 +576,7 @@ export function gefuehrteAbfrage(ctx: GefuehrtKontext): { el: HTMLElement; refre
       if (s.frage && t) fehler(sim.call("abfrageSetze", e.id, s.frage.id, t));
       wasText = "";
       aktuell = null;
+      offen.clear();
       suche = "";
   
       fehler(sim.call("abfrageSetze", e.id, "kapitel", kap));
@@ -671,7 +686,7 @@ export function gefuehrteAbfrage(ctx: GefuehrtKontext): { el: HTMLElement; refre
     const a = e.anruf;
     if (!a) return;
     // nur neu aufbauen, wenn sich eine Antwort (oder die Auswahl) geändert hat – das passiert nicht beim Tippen
-    const k = JSON.stringify([a.status, a.kapitel, a.antworten, a.extra, ctx.darf(), e.adresse?.label, e.zusatz, e.telefon, e.code, aktuell, [...uebersprungen]]);
+    const k = JSON.stringify([a.status, a.kapitel, a.antworten, a.extra, ctx.darf(), e.adresse?.label, e.zusatz, e.telefon, e.code, aktuell, [...uebersprungen], [...offen]]);
     if (k === schluessel) return;
     schluessel = k;
     // Ansicht nicht springen lassen
