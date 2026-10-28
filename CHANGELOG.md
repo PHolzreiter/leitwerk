@@ -1,5 +1,13 @@
 # Änderungen
 
+## 0.85.0 – Transport: Notarzt-Entscheidung, NÖ zuerst, Herzkatheter muss offen sein
+- **Eine Transport-Entscheidung pro Einsatz:**
+  - RTW + NEF und der Patient braucht einen Notarzt: das NEF begleitet den RTW ins Krankenhaus (Konvoi)
+  - RTW + NAH und Notarzt nötig: der Patient wird an den NAH übergeben, der RTW ist frei. Kann der NAH nicht fliegen (Wetter, kein Landeplatz), fährt der Notarzt im RTW mit
+  - RTW + NEF + NAH: ohne Notarzt-Bedarf fährt der RTW allein; sonst RTW mit NEF bodengebunden. Der NAH fliegt nur bei weitem Weg (über 40 km Luftlinie) oder sehr zeitkritisch (Herzinfarkt, Schlaganfall, Polytrauma, nach Reanimation) ab 25 km. Wer nicht gebraucht wird, ist sofort frei
+- **Niederösterreich zuerst:** Rettungstransporte gehen in ein NÖ-Krankenhaus. Wien oder ein anderes Bundesland nur, wenn in NÖ kein passendes Haus offen ist und Platz hat
+- **Herzkatheter muss offen sein:** Bei Herzinfarkt und Reanimation passt ein Haus (auch ein Cardiac Arrest Center) nur, wenn sein Herzkatheter gerade offen ist
+
 ## 0.84.0 – Anleitungen, Wissensstufen, besondere Anrufe, Schwere einstellbar
 - **Anleitungen am Telefon wie echt:** Wie Anrufer auf Anleitungen reagieren, ist jetzt einmal allgemein hinterlegt – Herzdruckmassage (erst hinknien, dann drücken und mitzählen, Lautsprecher, Schnappatmung macht unsicher, nach einer Weile werden die Arme schwer, Ablöse, wenn jemand da ist), Blutung, Seitenlage, Fremdkörper, Geburt, Lagerung, Zucker
 - Ein Fall legt nur fest, was bei ihm anders ist: z. B. „Anrufer alt und schwach“, „Patient liegt im Bett“, „traut sich zuerst nicht“, „kein Tuch da“, „Fremdkörper kommt beim 2. Versuch heraus“, „Baby schreit nicht gleich“ – im Fall-Editor unter „Wenn die Leitstelle anleitet“

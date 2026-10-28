@@ -134,6 +134,9 @@ export function zuweisungBuchung(id: string): ZuweisungBuchung | undefined {
     optionen = [...eigene, ...intensiv, ...kinder];
   }
   optionen = mitSchockraum(optionen);
+  // braucht einen Herzkatheterplatz (STEMI, Reanimation bei STEMI): jedes passende Haus muss den Herzkatheter gerade offen haben –
+  // ein Cardiac Arrest Center ohne offenen Herzkatheter passt nicht
+  if (s.platz === "herzkatheter") optionen = optionen.map((alt) => (alt.includes("ak_herzkatheter") ? alt : [...alt, "ak_herzkatheter"]));
   const b: ZuweisungBuchung = {
     id,
     kategorie: s.art === "trauma" ? "Trauma" : s.kategorie,

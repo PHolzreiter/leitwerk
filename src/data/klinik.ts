@@ -49,6 +49,8 @@ export const EINRICHTUNG_TYP_LABEL: Record<EinrichtungTyp, string> = {
 const E1 = new Map(EINRICHTUNGEN.map((e) => [e.id, e]));
 const E2 = new Map(AKUT.map((a) => [a.id, a]));
 const E3 = new Map(BUCHUNGEN.map((b) => [b.id, b]));
+// Reanimation mit ROSC: das Cardiac Arrest Center passt nur, wenn sein Herzkatheter gerade offen ist
+for (const b of BUCHUNGEN) if (b.id === "bu_reanimation_mit_rosc") b.optionen = b.optionen.map((alt) => (alt.includes("ak_herzkatheter") ? alt : [...alt, "ak_herzkatheter"]));
 
 export function einrichtung(id: string): Einrichtung | undefined {
   return E1.get(id);
@@ -264,6 +266,24 @@ export function khVorschlaege(alle: Hospital[], b: Buchung | undefined, rot: boo
     if (r.length) return [...out, ...r.map((x) => info(x.h, "rueckfall", x.km))];
   }
   return out;
+}
+
+/** Orte außerhalb Niederösterreichs (Wien, Burgenland, Oberösterreich, Steiermark) – für „NÖ zuerst“ */
+const NICHT_NOE = /^(Wien|Eisenstadt|Oberwart|Kittsee|Güssing|Oberpullendorf|Frauenkirchen|Linz|Steyr|Freistadt|Wels|Grieskirchen|Kirchdorf|Vöcklabruck|Gmunden|Bad Ischl|Braunau|Schärding|Ried im Innkreis|Rohrbach|Sierning|Graz|Gratwein|Voitsberg|Kalwang|Leoben|Bruck an der Mur|Mürzzuschlag|Rottenmann|Bad Aussee|Schladming|Judenburg|Knittelfeld|Stolzalpe|Weiz|Feldbach|Fürstenfeld|Hartberg|Deutschlandsberg|Wagna|Bad Radkersburg|Vorau)\b/;
+
+/** Liegt das Krankenhaus in Niederösterreich? */
+export function inNoe(h: Hospital): boolean {
+  return !NICHT_NOE.test(h.ort ?? "");
+}
+
+/**
+ * Rettungseinsätze: zuerst nach NÖ – ein Haus in Wien oder einem anderen Bundesland nur, wenn in NÖ kein passendes Haus
+ * offen ist und Platz hat (Vorgabe Paul, 28.10.2026)
+ */
+export function noeZuerst(v: KhVorschlag[]): KhVorschlag[] {
+  const ok = (x: KhVorschlag) => x.eignung === "passend" && !x.zu && !x.voll;
+  if (!v.some((x) => ok(x) && inNoe(x.h))) return v;
+  return [...v.filter((x) => ok(x) && inNoe(x.h)), ...v.filter((x) => !(ok(x) && inNoe(x.h)))];
 }
 
 /** Ziel für die Besatzung: erstes Haus, das offen ist und einen freien Platz hat (sonst offen, sonst irgendeins) */

@@ -1,5 +1,17 @@
 [
  {
+  "version": "0.85.0",
+  "datum": "2026-10-28",
+  "titel": "Transport und Krankenhaus-Wahl",
+  "punkte": [
+   "RTW + NEF: das NEF begleitet den Transport",
+   "RTW + NAH: Übergabe an den NAH, der RTW wird frei",
+   "RTW + NEF + NAH: NAH nur bei weitem Weg oder sehr zeitkritisch",
+   "Zuerst ein Krankenhaus in NÖ, Wien nur, wenn in NÖ nichts passt",
+   "Herzinfarkt und Reanimation nur in ein Haus mit offenem Herzkatheter"
+  ]
+ },
+ {
   "version": "0.84.0",
   "datum": "2026-10-28",
   "titel": "Anleitungen und besondere Anrufe",

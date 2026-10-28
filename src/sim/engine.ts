@@ -9,7 +9,7 @@ import { fahrzeugZuName, rufnamen } from "./funkname";
 import { aktuelleSchicht, dienstEnde, imDienst, naechsterBeginn, type Schicht } from "./dienst";
 import { nachKlick } from "../klick";
 import { ACTIVE_CATEGORIES, bereicheVon, khAnkunft, khLandung, type Hospital, type Vehicle, type Zufahrt } from "../data/model";
-import { bestesKh, buchung, buchungName, eignung as khEignung, khVorschlaege, type KhVorschlag } from "../data/klinik";
+import { bestesKh, buchung, buchungName, eignung as khEignung, khVorschlaege, noeZuerst, type KhVorschlag } from "../data/klinik";
 import { grundbelegungTick, platzFuer, RESSOURCE, ressourcenFuer, type BelegungMap } from "./khStatus";
 import { verdachtFuer } from "./verdacht";
 import { altersgruppeVon, dringlichkeitFuer, istZuweisung, symptom, symptomAusDiagnose, zuweisungId, type Dringlichkeit } from "../data/zuweisung";
@@ -2380,20 +2380,35 @@ export class Simulation {
       e.nahEntscheid = "";
       return null;
     }
-    if (nah.phase !== "vorOrt" && nah.phase !== "warteKH") {
+    // Ziel und Entscheidung: ohne NEF übernimmt der NAH, wann immer er fliegen kann (der RTW wird frei);
+    // mit NEF fliegt er nur bei weitem Weg (über 40 km Luftlinie) oder sehr zeitkritisch ab 25 km – sonst RTW mit NEF
+    const ort = e.adresse ?? { lat: e.wahr.lat, lon: e.wahr.lon };
+    const kind = (e.wahr.lage?.patienten[0]?.alter ?? 50) < 15;
+    const kh = e.kh ? store.get("hospitals", e.kh.hospitalId) : this.naechstesKh(ort, this.verdacht(e), this.patientRot(e), kind, true);
+    const km = kh ? distanceM(ort, kh) / 1000 : 0;
+    const nef = fzs.find((x) => x.kategorie === "NEF" && !fliegt(x) && x.einsatzId === e.id);
+    const kannFliegen = !this.flugHindernis(nah) && !!kh && khLandung(kh) !== null;
+    const willFliegen = kannFliegen && (!nef || km > 40 || (this.zeitkritisch(e) && km > 25));
+    if ((willFliegen || !nef) && nah.phase !== "vorOrt" && nah.phase !== "warteKH") {
       // NAH fliegt noch an: kurz auf ihn warten (höchstens 20 Minuten)
       e.nahWartenSeit ??= t;
       if (t - e.nahWartenSeit < 20 * MIN && ["ausruecken", "anfahrt", "routing"].includes(nah.phase)) return "warten";
       e.nahEntscheid = "";
       return null;
     }
-    const ort = e.adresse ?? { lat: e.wahr.lat, lon: e.wahr.lon };
-    const kh = e.kh ? store.get("hospitals", e.kh.hospitalId) : this.naechstesKh(ort, this.verdacht(e), this.patientRot(e), (e.wahr.lage?.patienten[0]?.alter ?? 50) < 15);
-    const weit = !!kh && distanceM(ort, kh) > 20_000;
-    const fliegtHin = weit && !this.flugHindernis(nah) && (!kh || khLandung(kh) !== null);
+    const fliegtHin = willFliegen;
     e.nahEntscheid = fliegtHin ? nah.id : "";
-    this.log(e, fliegtHin ? `Notarzt ${nah.funkrufname}: Transport mit dem Hubschrauber` : `Notarzt ${nah.funkrufname}: Transport im RTW`);
+    this.log(e, fliegtHin ? `Notarzt ${nah.funkrufname}: Transport mit dem Hubschrauber` : nef ? `${nef.funkrufname} begleitet bodengebunden, ${nah.funkrufname} wird frei` : `Notarzt ${nah.funkrufname}: Transport im RTW`);
     return fliegtHin ? nah : null;
+  }
+
+  /** sehr zeitkritisch: STEMI, Schlaganfall, Polytrauma, nach Reanimation */
+  private zeitkritisch(e: Einsatz): boolean {
+    const p0 = e.wahr.lage?.patienten[0];
+    if (p0 && istStillstand(p0)) return true;
+    const v = this.verdacht(e);
+    if (buchung(v)?.zeitkritisch) return true;
+    return /schlaganfall|insult|stroke|polytrauma|stemi|infarkt|reanimation|rosc|kreislaufstillstand/i.test(`${v ? buchungName(v) : ""} ${e.wahr.lage?.fall?.kern ?? ""}`);
   }
 
   private kritisch(e: Einsatz): boolean {
@@ -2411,6 +2426,17 @@ export class Simulation {
         });
       // Notarzt fährt mit: kritischer Einsatz oder (beim BIT-Transport) Notarzt nötig
       const naMit = e.wahr.lage?.fall ? this.naBegleitetFall(e) : this.kritisch(e) || (!!e.wahr.lage?.bit && bedarf(e.wahr.lage).na > 0);
+      // NEF und NAH am Einsatz: eine gemeinsame Entscheidung – fliegt der NAH, wird das NEF frei
+      const nahEntscheid = rtwMitTransport && naMit && fz.kategorie === "NEF" && !fliegt(fz) && this.einsatzFz(e).some((x) => fliegt(x)) ? this.nahTransportiert(e, t) : null;
+      if (nahEntscheid === "warten") {
+        fz.phaseEnde = t + MIN;
+        return;
+      }
+      if (nahEntscheid) {
+        this.log(e, `${fz.funkrufname}: Patient wird mit ${nahEntscheid.funkrufname} transportiert, NEF frei`);
+        this.funk(fz.funkrufname, e.id, `Patient an ${nahEntscheid.funkrufname} übergeben, sind frei`, "info");
+        return this.freigeben(fz);
+      }
       if (rtwMitTransport && naMit && fz.kategorie === "NEF") {
         fz.begleitet = true;
         this.log(e, `${fz.funkrufname}: Notarzt begleitet den Transport`);
@@ -2421,6 +2447,11 @@ export class Simulation {
       } else if (fliegt(fz) && e.wahr.transport && this.nahTransportiert(e, t) === fz) {
         // NAH fliegt den Patienten, der RTW übergibt und wird frei
         this.log(e, `${fz.funkrufname}: Patient wird mit dem NAH transportiert`);
+        fz.begleitet = true;
+      } else if (fliegt(fz) && rtwMitTransport && naMit && !this.einsatzFz(e).some((x) => x.kategorie === "NEF" && !fliegt(x))) {
+        // NAH kann nicht fliegen (Wetter, kein Landeplatz) und kein NEF da: der Notarzt fährt im RTW mit, der Hubschrauber kommt nach
+        this.log(e, `${fz.funkrufname}: Notarzt fährt im RTW mit, Transport bodengebunden`);
+        this.funk(fz.funkrufname, e.id, "Transport bodengebunden, Notarzt fährt im RTW mit", "info");
         fz.begleitet = true;
       } else if (fliegt(fz) && rtwMitTransport) {
         // Notarzt übergibt an den RTW, der RTW transportiert, der NAH wird frei
@@ -2742,7 +2773,7 @@ export class Simulation {
   khFuer(pos: LatLon, verdacht: string | null | undefined, rot: boolean, kind = false, nurLandeplatz = false): KhVorschlag[] {
     // Medical Center am Flughafen: nur für Patienten vom Gelände (eigene Regel unten)
     const alle = store.list("hospitals").filter((h) => this.khImNetz(h) && h.id !== MEDICAL_CENTER && (!nurLandeplatz || khLandung(h) !== null));
-    const v = khVorschlaege(alle, buchung(verdacht), rot, (h) => distanceM(pos, h) / 1000, { t: this.state.zeit, belegung: this.state.khBelegung, kind });
+    const v = noeZuerst(khVorschlaege(alle, buchung(verdacht), rot, (h) => distanceM(pos, h) / 1000, { t: this.state.zeit, belegung: this.state.khBelegung, kind }));
     // Flughafen (Vorgabe Paul): kritisch → direkt in die passende Klinik; kann es das Health Center allein (offen, Platz frei) → dorthin;
     // sonst ins Medical Center (rund um die Uhr) – was weiter muss, wird von dort überstellt
     if (!amFlughafen(pos) || rot) return v;
