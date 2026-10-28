@@ -216,6 +216,8 @@ export interface VorschlagOpt {
   t: number;
   belegung?: BelegungMap;
   kind?: boolean;
+  /** laufende Reanimation unter 60 Jahren: ein Cardiac Arrest Center geht vor (Vorgabe Paul) – sonst zählt es wie jedes passende Haus */
+  cacVorrang?: boolean;
 }
 
 /**
@@ -250,9 +252,17 @@ export function khVorschlaege(alle: Hospital[], b: Buchung | undefined, rot: boo
     }
     return { h, eignung: e, km: k, zu, voll, platz, frei, gesamt };
   };
-  const mit = alle.map((h) => ({ h, km: km(h), e: eignung(h, b, rot), o: b ? Math.max(0, optionIndex(h, b)) : 0 }));
+  // Cardiac Arrest Center: nur bei laufender Reanimation unter 60 bevorzugt (dann vor allen anderen), sonst reine Entfernung
+  const cacOpt = !!b && b.optionen.some((alt) => alt.includes("ak_cardiac_arrest_center"));
+  const istCac = (h: Hospital) => !!b && b.optionen.some((alt) => alt.includes("ak_cardiac_arrest_center") && alt.every((x) => akutVon(h).has(x)));
+  const mit = alle.map((h) => ({
+    h,
+    km: km(h),
+    e: eignung(h, b, rot),
+    o: !b ? 0 : cacOpt ? (opt?.cacVorrang && istCac(h) ? 0 : opt?.cacVorrang ? 100 : 0) : Math.max(0, optionIndex(h, b)),
+  }));
   // bevorzugte Option zuerst – eine weitere Option nur, wenn sie deutlich (15 km je Stufe) näher ist
-  const passend = mit.filter((x) => x.e === "passend" && x.km <= ERREICHBAR_KM).sort((a, c) => a.km + a.o * 15 - (c.km + c.o * 15));
+  const passend = mit.filter((x) => x.e === "passend" && x.km <= ERREICHBAR_KM).sort((a, c) => (cacOpt ? a.o - c.o : 0) || a.km + a.o * 15 - (c.km + c.o * 15));
   const ausweich = mit.filter((x) => x.e === "ausweich" && x.km <= ERREICHBAR_KM).sort((a, c) => a.km - c.km);
   const out: KhVorschlag[] = [...passend.map((x) => info(x.h, "passend", x.km)), ...ausweich.map((x) => info(x.h, "ausweich", x.km))];
   // Hausarzt-Fälle: PVZ und Krankenhaus gleichwertig – das nächste gewinnt

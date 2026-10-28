@@ -169,7 +169,7 @@ function uiBefehle(fz: SimFahrzeug, e: Einsatz | undefined): Befehl[] {
 function khVorschlaege(fz: SimFahrzeug, e: Einsatz): Hospital[] {
   const p0 = e.wahr.lage?.patienten[0];
   const kind = (p0?.alter ?? e.wahr.patientAlter ?? 99) < 15;
-  const liste = sim.khFuer(fz, e.wahr.verdacht ?? null, sim.patientRot(e), kind, true);
+  const liste = sim.khFuer(fz, e.wahr.verdacht ?? null, sim.patientRot(e), kind, true, sim.cacVorrang(e));
   return liste.slice(0, 3).map((v) => v.h);
 }
 

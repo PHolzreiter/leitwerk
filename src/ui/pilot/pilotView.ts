@@ -853,7 +853,7 @@ function khListe(fz: SimFahrzeug, e: Einsatz): { h: Hospital; eignung: string | 
   const q = khSuche.trim().toLowerCase();
   const p0 = e.wahr.lage?.patienten[0];
   const kind = (p0?.alter ?? e.wahr.patientAlter ?? 99) < 15;
-  const vorschlag = sim.khFuer(fz, e.wahr.verdacht ?? null, sim.patientRot(e), kind, false);
+  const vorschlag = sim.khFuer(fz, e.wahr.verdacht ?? null, sim.patientRot(e), kind, false, sim.cacVorrang(e));
   const bekannt = new Set(vorschlag.map((v) => v.h.id));
   const alle = [
     ...vorschlag.map((v) => ({ h: v.h, eignung: v.eignung as string | null, km: v.km, zu: v.zu, voll: v.voll })),

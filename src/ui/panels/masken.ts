@@ -449,7 +449,7 @@ export function einsatzMaske(e: Einsatz): { root: HTMLElement; refresh(): void }
     const pos = e.adresse ?? e.wahr;
     const kind = zwSym ? zwAlter !== "erwachsener" : (e.wahr.lage?.aufgedeckt ? (e.wahr.lage.patienten[0]?.alter ?? 99) : 99) < 15;
     const rot = zwSym ? zwDring === 30 : d === "rot";
-    const vorschlaege = sim.khFuer(pos, grund || null, rot, kind);
+    const vorschlaege = sim.khFuer(pos, grund || null, rot, kind, false, sim.cacVorrang(e));
     // die drei nächsten passenden Häuser, die jetzt aufnehmen
     const top = vorschlaege.filter((v) => !v.zu).slice(0, 3);
     if (!zwGewaehlt || force || !top.some((v) => v.h.id === zwGewaehlt)) {

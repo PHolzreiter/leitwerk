@@ -1,5 +1,14 @@
 [
  {
+  "version": "0.85.1",
+  "datum": "2026-10-28",
+  "titel": "Cardiac Arrest Center",
+  "punkte": [
+   "Cardiac Arrest Center nur bei laufender Reanimation unter 60 bevorzugt",
+   "Sonst das nächste passende Haus (bei Herzinfarkt mit offenem Herzkatheter)"
+  ]
+ },
+ {
   "version": "0.85.0",
   "datum": "2026-10-28",
   "titel": "Transport und Krankenhaus-Wahl",

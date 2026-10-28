@@ -2384,7 +2384,7 @@ export class Simulation {
     // mit NEF fliegt er nur bei weitem Weg (über 40 km Luftlinie) oder sehr zeitkritisch ab 25 km – sonst RTW mit NEF
     const ort = e.adresse ?? { lat: e.wahr.lat, lon: e.wahr.lon };
     const kind = (e.wahr.lage?.patienten[0]?.alter ?? 50) < 15;
-    const kh = e.kh ? store.get("hospitals", e.kh.hospitalId) : this.naechstesKh(ort, this.verdacht(e), this.patientRot(e), kind, true);
+    const kh = e.kh ? store.get("hospitals", e.kh.hospitalId) : this.naechstesKh(ort, this.verdacht(e), this.patientRot(e), kind, true, this.cacVorrang(e));
     const km = kh ? distanceM(ort, kh) / 1000 : 0;
     const nef = fzs.find((x) => x.kategorie === "NEF" && !fliegt(x) && x.einsatzId === e.id);
     const kannFliegen = !this.flugHindernis(nah) && !!kh && khLandung(kh) !== null;
@@ -2770,10 +2770,10 @@ export class Simulation {
   }
 
   /** Krankenhäuser zur Verdachtsdiagnose, nach Eignung und Entfernung – mit offen/zu und freien Plätzen */
-  khFuer(pos: LatLon, verdacht: string | null | undefined, rot: boolean, kind = false, nurLandeplatz = false): KhVorschlag[] {
+  khFuer(pos: LatLon, verdacht: string | null | undefined, rot: boolean, kind = false, nurLandeplatz = false, cacVorrang = false): KhVorschlag[] {
     // Medical Center am Flughafen: nur für Patienten vom Gelände (eigene Regel unten)
     const alle = store.list("hospitals").filter((h) => this.khImNetz(h) && h.id !== MEDICAL_CENTER && (!nurLandeplatz || khLandung(h) !== null));
-    const v = noeZuerst(khVorschlaege(alle, buchung(verdacht), rot, (h) => distanceM(pos, h) / 1000, { t: this.state.zeit, belegung: this.state.khBelegung, kind }));
+    const v = noeZuerst(khVorschlaege(alle, buchung(verdacht), rot, (h) => distanceM(pos, h) / 1000, { t: this.state.zeit, belegung: this.state.khBelegung, kind, cacVorrang }));
     // Flughafen (Vorgabe Paul): kritisch → direkt in die passende Klinik; kann es das Health Center allein (offen, Platz frei) → dorthin;
     // sonst ins Medical Center (rund um die Uhr) – was weiter muss, wird von dort überstellt
     if (!amFlughafen(pos) || rot) return v;
@@ -2861,7 +2861,7 @@ export class Simulation {
   private bucheKhAuto(e: Einsatz, von: string): void {
     const verdacht = this.verdacht(e);
     const kind = (e.wahr.lage?.patienten[0]?.alter ?? e.wahr.patientAlter) < 15;
-    const ziel = (this.hubschrauberTransport(e) && this.naechstesKh(e.wahr, verdacht, this.patientRot(e), kind, true)) || this.naechstesKh(e.wahr, verdacht, this.patientRot(e), kind);
+    const ziel = (this.hubschrauberTransport(e) && this.naechstesKh(e.wahr, verdacht, this.patientRot(e), kind, true, this.cacVorrang(e))) || this.naechstesKh(e.wahr, verdacht, this.patientRot(e), kind, false, this.cacVorrang(e));
     if (!ziel) return;
     e.verdacht = verdacht;
     e.kh = { hospitalId: ziel.id, grund: verdacht, durch: "rtw", zeit: this.state.zeit };
@@ -2874,8 +2874,15 @@ export class Simulation {
   }
 
   /** Bestes Krankenhaus zur Verdachtsdiagnose (passend vor Ausweichen, sonst Rückfall) */
-  naechstesKh(pos: LatLon, verdacht: string, rot: boolean, kind = false, nurLandeplatz = false): Hospital | undefined {
-    return bestesKh(this.khFuer(pos, verdacht, rot, kind, nurLandeplatz))?.h;
+  naechstesKh(pos: LatLon, verdacht: string, rot: boolean, kind = false, nurLandeplatz = false, cacVorrang = false): Hospital | undefined {
+    return bestesKh(this.khFuer(pos, verdacht, rot, kind, nurLandeplatz, cacVorrang))?.h;
+  }
+
+  /** Laufende Reanimation bei einem Patienten unter 60: Cardiac Arrest Center geht vor (Vorgabe Paul) */
+  cacVorrang(e: Einsatz | undefined | null): boolean {
+    const p0 = e?.wahr.lage?.patienten[0];
+    if (!p0 || !istStillstand(p0)) return false;
+    return (p0.alter ?? e!.wahr.patientAlter ?? 99) < 60;
   }
 
   /** Transportiert in diesem Einsatz ein Hubschrauber den Patienten? */
@@ -5812,7 +5819,7 @@ export class Simulation {
     out.push({ von: r, art: "antwort", fest: `Hier ${r}, ${werte.length ? werte.join(", ") : "Werte noch nicht erhoben"}, kommen`, frage: "Hier LEO, wie sind die Vitalwerte, kommen", bis });
     const verdacht = this.verdacht(e);
     out.push({ von: r, art: "antwort", fest: `Hier ${r}, Verdacht ${buchungName(verdacht)}, kommen`, frage: "Hier LEO, was habt ihr für einen Verdacht, kommen", bis });
-    const h = this.naechstesKh(e.wahr, verdacht, this.patientRot(e), (p0?.alter ?? 50) < 15);
+    const h = this.naechstesKh(e.wahr, verdacht, this.patientRot(e), (p0?.alter ?? 50) < 15, false, this.cacVorrang(e));
     const vor = this.kritisch(e) ? `, Voranmeldung Notaufnahme: ${ohneVitalwerte(patientText(p0).replace(/ \(.*\)$/, ""))}` : "";
     out.push({ von: r, art: "info", fest: festerSpruch(r, "info", `Patient übernommen, Transport ${h ? `ins ${h.kurzname || h.name}` : "ins Krankenhaus"}, Eintreffen in ca. ${12 + Math.floor(Math.random() * 20)} Minuten${vor}`), bis });
     if (nef) {
@@ -5920,7 +5927,7 @@ export class Simulation {
       if (gebucht) return `${hier}, Ziel ist ${gebucht.kurzname || gebucht.name}, kommen`;
       if (!vorOrt || !e) return `${hier}, sind noch nicht beim Patienten, Ziel noch offen, kommen`;
       const verdacht = this.verdacht(e);
-      const h = this.naechstesKh(e.wahr, verdacht, this.patientRot(e), (e.wahr.lage?.patienten[0]?.alter ?? e.wahr.patientAlter) < 15);
+      const h = this.naechstesKh(e.wahr, verdacht, this.patientRot(e), (e.wahr.lage?.patienten[0]?.alter ?? e.wahr.patientAlter) < 15, false, this.cacVorrang(e));
       return h ? `${hier}, wir würden ins ${h.kurzname || h.name} fahren, kommen` : `${hier}, Ziel noch offen, kommen`;
     }
     if (/zusatzinfo|zur info|beachtet|achtung|hinweis/.test(t)) return `${hier}, Information verstanden, kommen`;
