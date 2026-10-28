@@ -13,6 +13,7 @@
 import { FAELLE_NEU } from "./faelleNeu";
 import { FAELLE_SPEZIAL } from "./faelleSpezial";
 import { FAELLE_PAKET1 } from "./faellePaket1";
+import { FAELLE_PAKET2 } from "./faellePaket2";
 import type { Antworten } from "./schema";
 import { tageszeitPasst, type SzenarioVorlage } from "./szenario";
 import type { Atmung, Bewusstsein, Sichtung } from "../sim/lage";
@@ -1578,6 +1579,7 @@ export const FAELLE: FallVorlage[] = [
   ...FAELLE_NEU,
   ...FAELLE_SPEZIAL,
   ...FAELLE_PAKET1,
+  ...FAELLE_PAKET2,
 ];
 
 // ------------------------------------------------------------------ Auswahl
