@@ -1,5 +1,10 @@
 # Änderungen
 
+## 0.87.0 – 50 weitere Notfälle, viele davon leicht
+- **27 neue leichte (grüne) Einsätze:** Platzwunde beim Kind, ausgerenkter Arm beim Kleinkind, Schnitt in den Finger, verbrühtes Kind, Ischias, Brechdurchfall, Harnwegsinfekt, Zahnabszess, Glasscherbe im Freibad, Umknicken beim Hallensport, betrunkene Jugendliche, Ohrenschmerzen beim Kind, Verkühlung, Ohnmacht beim Blutabnehmen, Sonne im Freibad, Stechen in der Brust beim Jungen, Wehen-Transport, Schwangerschaftserbrechen, Metallspan im Auge, Bienenstich, Kopf im Turnunterricht, Rippenprellung im Garten, erschöpfter Wanderer, Pflegeheim (aus dem Bett gerutscht, Magensonde), Polizei fordert an (Festgenommener mit Platzwunde, Nackenschmerzen nach Blechschaden)
+- **Weitere neue Fälle:** Pflegeheim (Unterzucker, Lungenentzündung), Telemedizin und Hausarzt fordern an, Kinder (Trampolin, Baby kurz blau, Knopfbatterie, Unterzucker in der Schule, Fieber mit Flecken), Polizei mit psychischer Krise, Schülerin in einer Krise, Berg (Sturz am Steig, Klettersteig), Tauchunfall, Hodenschmerzen, langsamer Puls, Krampfader- und Shuntblutung, Angina pectoris, Rauch nach Küchenbrand, Hitze bei älteren Menschen, Hirnhautentzündung
+- Wie oft leichte Einsätze kommen, stellst du unter Einstellungen → Einsatzaufkommen → „Schwere der Notfälle“ ein
+
 ## 0.86.0 – 50 neue Notfälle
 - **50 neue Rettungsdienst-Fälle** aus dem Alltag in Niederösterreich, jeder mit mehreren möglichen Ausgängen (harmlos bis kritisch):
   - Sturz: Kopfwunde unter Blutverdünner, liegt seit der Nacht am Boden, Leiter, Glatteis, Baby vom Wickeltisch, Gerüst, E-Scooter, Badewanne, versperrte Tür, Stufen beim Heurigen, Rodeln
