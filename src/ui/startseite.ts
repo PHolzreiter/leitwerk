@@ -300,9 +300,9 @@ export function startseiteZeigen(fertig?: () => void, opt: { zurueck?: boolean }
         <div class="st-feld"><label>${ico("funk")}Funkgruppe</label><select class="st-fg-sel"></select></div>
         <div class="st-feld"><label>${ico("uhr")}Startzeit</label>
           <div class="st-zeit"><div class="st-seg" data-seg="zeit"><button data-v="jetzt">Jetzt</button><button data-v="fest">Wunschzeit</button></div><input type="datetime-local" class="st-zeit-in"></div></div>
-        <div class="st-feld"><label>${ico("balken")}Einsatzaufkommen</label>
+        <div class="st-feld"><div class="st-feld-kopf"><label>${ico("balken")}Einsatzaufkommen</label><div class="st-seg st-arten" data-seg="arten" title="Welche Einsätze kommen? Ausgeschaltet kommen keine neuen – auch keine vorgemerkten."><button data-v="rd" title="Notfälle (Rettungsdienst)">RD</button><button data-v="kt" title="Krankentransporte">KT</button><button data-v="sek" title="Sekundärtransporte (Überstellungen)">SEK</button><button data-v="acn" title="Akutpflege">ACN</button></div></div>
           <div class="st-seg" data-seg="aufkommen"><button data-v="realistisch" title="Wie in der Wirklichkeit 2025">Realistisch</button><button data-v="standard" title="Etwas mehr und spannender gemischt, mit Spielhilfen">Standard</button><button data-v="stressig" title="Noch mehr und härter">Stressig</button></div>
-          <div class="st-seg st-arten" data-seg="arten" title="Welche Einsätze kommen? Ausgeschaltet kommen keine neuen – auch keine vorgemerkten."><button data-v="rd" title="Notfälle (Rettungsdienst)">RD</button><button data-v="kt" title="Krankentransporte">KT</button><button data-v="sek" title="Sekundärtransporte (Überstellungen)">SEK</button><button data-v="acn" title="Akutpflege">ACN</button></div></div>
+          </div>
         <div class="st-feld"><label>${ico("wolke")}Wetter</label>
           <div class="st-wetter"><div class="st-seg" data-seg="wetter"><button data-v="echt">Realistisch</button><button data-v="normal">Normal</button><button data-v="wechselhaft">Wechselhaft</button><button data-v="fest">Fest</button></div>
           <div class="st-wetter-fest"><select class="st-wetter-lage"></select><input type="number" class="st-wetter-temp" min="-25" max="40"><span>°C</span></div>
