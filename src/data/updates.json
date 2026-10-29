@@ -1,5 +1,13 @@
 [
  {
+  "version": "0.92.1",
+  "datum": "2026-10-29",
+  "titel": "Krankenhaus-Plätze sofort aktuell",
+  "punkte": [
+   "Nach dem Buchen zeigt die KH-Auswahl sofort einen Platz weniger frei"
+  ]
+ },
+ {
   "version": "0.92.0",
   "datum": "2026-10-29",
   "titel": "Großschadensfall",

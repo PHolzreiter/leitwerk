@@ -659,7 +659,9 @@ export function khBuchung(e: Einsatz, opt: { gebucht?: () => void; kompakt?: boo
   const fillKh = (force = false) => {
     const d = dringlichkeit();
     const grund = grundWert();
-    const key = `${grund}|${d}|${e.adresse?.lat}|${Math.floor(sim.state.zeit / 60_000)}`;
+    // neu zeichnen, sobald sich Belegungen ändern (Buchung hier oder bei einem anderen Einsatz)
+    const belegungen = Object.values(sim.state.khBelegung ?? {}).reduce((n, kh) => n + Object.values(kh).reduce((m, l) => m + (l?.length ?? 0), 0), 0);
+    const key = `${grund}|${d}|${e.adresse?.lat}|${Math.floor(sim.state.zeit / 60_000)}|${belegungen}|${e.kh?.hospitalId ?? ""}`;
     if ((key === khKey || document.activeElement === khSel) && !force) return;
     khKey = key;
     dringChip.className = `kh-dring ${d}`;

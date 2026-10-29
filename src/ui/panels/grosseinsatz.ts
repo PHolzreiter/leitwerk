@@ -196,7 +196,8 @@ function grosseinsatz(ctx: PanelKontext) {
         .filter((x) => x.km < 70)
         .sort((a, b) => a.km - b.km)
         .slice(0, 8);
-      const key = JSON.stringify([gs.voraviso, Math.floor(t / 60_000), haeuser.map((x) => x.h.id)]);
+      const belegungen = Object.values(sim.state.khBelegung ?? {}).reduce((n, kh) => n + Object.values(kh).reduce((m, l) => m + (l?.length ?? 0), 0), 0);
+      const key = JSON.stringify([gs.voraviso, Math.floor(t / 60_000), belegungen, haeuser.map((x) => x.h.id)]);
       if (key !== khKey) {
         khKey = key;
         khListe.innerHTML = haeuser

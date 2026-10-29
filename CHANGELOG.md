@@ -1,5 +1,8 @@
 # Änderungen
 
+## 0.92.1 – Krankenhaus-Plätze sofort aktuell
+- Nach dem Buchen zeigt die Krankenhausauswahl sofort einen Platz weniger frei (bisher erst nach bis zu einer Minute) – in der Einsatzmaske, im Buchungs-Pop-up und beim Voraviso im Reiter Großeinsatz
+
 ## 0.92.0 – Großschadensfall
 - **Großschadensfall ab 6 Betroffenen (NF5, NF10, NF30):** erfundene Ereignisse an echten Orten in TETRA NÖ-03 – Auffahrunfall auf einer Bundesstraße (früh), Auffahrunfall am Stauende einer Schnellstraße, Unfall im Tunnel Dürnstein, Brand in einem Mehrparteienhaus (nachts), Explosion bei KremsChem (werktags), Brand in der Messe Tulln (werktags vormittags) und Zug gegen Lkw am Bahnübergang. Jedes Mal anders: Ort (auf Straßen und Strecken), Zahl und Verletzungen der Patienten, Anrufer, Wetter
 - Kommt ab und zu von selbst (aus der Versorgungsstufe Großunfall, nur wenn das Szenario zur Uhrzeit passt) oder über **„+ Test → Großschadensfall auslösen“** (nur der Host)
