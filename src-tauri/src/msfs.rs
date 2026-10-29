@@ -23,6 +23,7 @@ type FnClose = unsafe extern "system" fn(Handle) -> i32;
 type FnAddDef = unsafe extern "system" fn(Handle, u32, *const c_char, *const c_char, u32, f32, u32) -> i32;
 type FnRequest = unsafe extern "system" fn(Handle, u32, u32, u32, u32, u32, u32, u32, u32) -> i32;
 type FnDispatch = unsafe extern "system" fn(Handle, *mut *mut u8, *mut u32) -> i32;
+type FnSetData = unsafe extern "system" fn(Handle, u32, u32, u32, u32, u32, *mut c_void) -> i32;
 
 const DATATYPE_FLOAT64: u32 = 4;
 const UNUSED: u32 = 0xFFFF_FFFF;
@@ -41,6 +42,26 @@ const DEF_CARLS: u32 = 2;
 const REQ_CARLS: u32 = 2;
 const PERIOD_VISUAL_FRAME: u32 = 2;
 const FLAG_CHANGED: u32 = 1;
+/// HPG H145: Verbindung zum CARLS-Funkgerät (wie ein Missionsdienst): lesen 1×/s, schreiben bei Bedarf
+const DEF_HPG: u32 = 3;
+const REQ_HPG: u32 = 3;
+const DEF_TX_DIENST: u32 = 4;
+const DEF_TX_SETUP: u32 = 5;
+const DEF_TX_CARLS: u32 = 6;
+/// Werte für DEF_HPG (Reihenfolge = Reihenfolge der Werte)
+const HPG_WERTE: [&str; 5] = ["L:SERVICE_CONNECTED", "L:INHIBVAR", "L:LIVERY_RESCUETRACK_ID", "L:SERVICE_MODE", "L:DISPATCH_PHASE"];
+
+/// CARLS-Funkgerät verbinden (abschaltbar im Piloten-Interface)
+static CARLS_AN: AtomicBool = AtomicBool::new(true);
+
+#[derive(Serialize, Clone, PartialEq)]
+pub struct CarlsStatus {
+    /// das Funkgerät hat auf das Lebenszeichen geantwortet (L:SERVICE_CONNECTED = 2)
+    verbunden: bool,
+    /// Rohwerte zur Fehlersuche (L:SERVICE_MODE, L:DISPATCH_PHASE)
+    modus: f64,
+    phase: f64,
+}
 
 /// Was gelesen wird (Reihenfolge = Reihenfolge der Werte)
 const WERTE: [(&str, &str); 8] = [
@@ -135,6 +156,7 @@ struct Api {
     add: FnAddDef,
     request: FnRequest,
     dispatch: FnDispatch,
+    set: Option<FnSetData>,
 }
 
 fn laden(p: &Path) -> Result<Api, String> {
@@ -150,8 +172,39 @@ fn laden(p: &Path) -> Result<Api, String> {
         let add = f!(b"SimConnect_AddToDataDefinition\0", FnAddDef);
         let request = f!(b"SimConnect_RequestDataOnSimObject\0", FnRequest);
         let dispatch = f!(b"SimConnect_GetNextDispatch\0", FnDispatch);
-        Ok(Api { _lib: lib, open, close, add, request, dispatch })
+        // Schreiben braucht nur das CARLS-Funkgerät – ohne geht der Rest trotzdem
+        let set = lib.get::<FnSetData>(b"SimConnect_SetDataOnSimObject\0").ok().map(|f| *f);
+        Ok(Api { _lib: lib, open, close, add, request, dispatch, set })
     }
+}
+
+/// Werte (FLOAT64) in eine Definition schreiben
+fn schreiben(api: &Api, h: Handle, def: u32, werte: &[f64]) {
+    let Some(set) = api.set else { return };
+    let mut daten: Vec<f64> = werte.to_vec();
+    unsafe { set(h, def, OBJECT_ID_USER, 0, 0, (8 * daten.len()) as u32, daten.as_mut_ptr() as *mut c_void) };
+}
+
+/// Lebenszeichen fürs CARLS-Funkgerät (wie ein Missionsdienst): Die H145 antwortet auf
+/// L:SERVICE_CONNECTED = 1 mit 2; bleibt es länger als 3 s bei 1, ist die Verbindung weg.
+/// Dazu L:INHIBVAR = 0 und L:LIVERY_RESCUETRACK_ID = 1 (so macht es auch ein Missionsdienst).
+fn carls_dienst(api: &Api, h: Handle, w: &[f64; 5], verbunden: &mut bool, warte: &mut u32) {
+    let [dienst, inhib, livery, _, _] = *w;
+    if inhib != 0.0 || livery != 1.0 {
+        schreiben(api, h, DEF_TX_SETUP, &[0.0, 1.0]);
+    }
+    if dienst == 1.0 {
+        *warte += 1;
+        if *warte > 3 {
+            *verbunden = false;
+        }
+        return;
+    }
+    if dienst == 2.0 {
+        *verbunden = true;
+        *warte = 0;
+    }
+    schreiben(api, h, DEF_TX_DIENST, &[1.0]);
 }
 
 fn u32_bei(b: &[u8], i: usize) -> u32 {
@@ -185,7 +238,22 @@ fn sitzung(api: &Api, app: &AppHandle, stop: &AtomicBool, dll: &Path) -> Result<
     unsafe {
         (api.add)(h, DEF_CARLS, carls.as_ptr(), zahl.as_ptr(), DATATYPE_FLOAT64, 0.0, UNUSED);
         (api.request)(h, REQ_CARLS, DEF_CARLS, OBJECT_ID_USER, PERIOD_VISUAL_FRAME, FLAG_CHANGED, 0, 0, 0);
+        for var in HPG_WERTE {
+            let v = CString::new(var).unwrap();
+            (api.add)(h, DEF_HPG, v.as_ptr(), zahl.as_ptr(), DATATYPE_FLOAT64, 0.0, UNUSED);
+        }
+        (api.request)(h, REQ_HPG, DEF_HPG, OBJECT_ID_USER, PERIOD_SECOND, 0, 0, 0, 0);
+        let dienst = CString::new("L:SERVICE_CONNECTED").unwrap();
+        (api.add)(h, DEF_TX_DIENST, dienst.as_ptr(), zahl.as_ptr(), DATATYPE_FLOAT64, 0.0, UNUSED);
+        for var in ["L:INHIBVAR", "L:LIVERY_RESCUETRACK_ID"] {
+            let v = CString::new(var).unwrap();
+            (api.add)(h, DEF_TX_SETUP, v.as_ptr(), zahl.as_ptr(), DATATYPE_FLOAT64, 0.0, UNUSED);
+        }
+        (api.add)(h, DEF_TX_CARLS, carls.as_ptr(), zahl.as_ptr(), DATATYPE_FLOAT64, 0.0, UNUSED);
     }
+    let mut carls_verbunden = false;
+    let mut carls_warte = 0u32;
+    let mut carls_gemeldet: Option<CarlsStatus> = None;
     status(app, "verbunden", "Mit dem Flugsimulator verbunden", Some(dll));
     let mut letzte = Instant::now();
     let mut ergebnis = Ok(true);
@@ -201,7 +269,28 @@ fn sitzung(api: &Api, app: &AppHandle, stop: &AtomicBool, dll: &Path) -> Result<
                     break;
                 }
                 RECV_SIMOBJECT_DATA if b.len() >= DATEN_AB + 8 && u32_bei(b, 12) == REQ_CARLS => {
-                    let _ = app.emit("msfs-carls", f64_bei(b, DATEN_AB));
+                    let w = f64_bei(b, DATEN_AB);
+                    let n = w.round();
+                    if (1.0..=9.0).contains(&n) {
+                        let _ = app.emit("msfs-carls", n);
+                        // zurücksetzen, damit dieselbe Taste beim nächsten Mal wieder ankommt
+                        if CARLS_AN.load(Ordering::SeqCst) {
+                            schreiben(api, h, DEF_TX_CARLS, &[-1.0]);
+                        }
+                    }
+                }
+                RECV_SIMOBJECT_DATA if b.len() >= DATEN_AB + 8 * HPG_WERTE.len() && u32_bei(b, 12) == REQ_HPG => {
+                    let w: [f64; 5] = std::array::from_fn(|k| f64_bei(b, DATEN_AB + 8 * k));
+                    if CARLS_AN.load(Ordering::SeqCst) {
+                        carls_dienst(api, h, &w, &mut carls_verbunden, &mut carls_warte);
+                    } else {
+                        carls_verbunden = false;
+                    }
+                    let st = CarlsStatus { verbunden: carls_verbunden, modus: w[3], phase: w[4] };
+                    if carls_gemeldet.as_ref() != Some(&st) {
+                        let _ = app.emit("msfs-carls-status", st.clone());
+                        carls_gemeldet = Some(st);
+                    }
                 }
                 RECV_SIMOBJECT_DATA if b.len() >= DATEN_AB + 8 * WERTE.len() && u32_bei(b, 12) == REQ => {
                     letzte = Instant::now();
@@ -276,6 +365,12 @@ pub fn msfs_starten(app: AppHandle, dll: Option<String>) -> Result<String, Strin
         status(&app, "aus", "Verbindung zum Flugsimulator beendet", Some(&p2));
     });
     Ok(pfad.display().to_string())
+}
+
+/// CARLS-Funkgerät der HPG H145 verbinden (Lebenszeichen) – an oder aus
+#[tauri::command]
+pub fn msfs_carls(an: bool) {
+    CARLS_AN.store(an, Ordering::SeqCst);
 }
 
 #[tauri::command]

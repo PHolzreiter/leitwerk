@@ -31,7 +31,7 @@ import { inTauri } from "../../platform";
 import { handyAktionen, handyDialog, handyStand } from "./handy";
 import { hpg, hpgAktualisieren, hpgEinrichten, hpgMissionFuer, hpgStarten, hpgTestNachricht } from "./hpg";
 import { letzterCarls } from "./eingabe";
-import { communityWaehlen, gtn, gtnAn, gtnBereitlegen, gtnSuchen, gtnUmschalten } from "./flugsim";
+import { carlsAn, carlsUmschalten, communityWaehlen, gtn, gtnAn, gtnBereitlegen, gtnSuchen, gtnUmschalten } from "./flugsim";
 import { datenEmpfangen, datenFrisch, dllWaehlen, flugplanSpeichern, flugsim, flugsimAnbinden, flugsimBeenden, flugsimTrennen, flugsimVerbinden, koordText, vorgabe, wetterDialog } from "./flugsim";
 
 // ------------------------------------------------------------------ Hilfen
@@ -585,7 +585,7 @@ function simTeil(fz: SimFahrzeug | undefined): void {
   const p = fz?.pilot;
   const bremse = sim.zeitBremse();
   const daheim = !!fz && distanceM(fz, fz.heim) < 300;
-  const key = `${flugsim.zustand}|${flugsim.text}|${frisch}|${d && frisch ? [Math.round(d.hoehe / 50), Math.round(d.agl / 20), Math.round(d.kurs / 5), Math.round(d.kts), d.am_boden].join(",") : ""}|${p?.zeitOk}|${sim.state.tempo}|${bremse}|${daheim}|${!!fz}|${gtn.paket}|${gtn.fehler}|${gtn.geprueft}|${gtnAn()}|${gtn.ziel}|${hpg.zustand}|${hpg.text}|${hpg.paket}|${hpg.mission}|${letzterCarls}`;
+  const key = `${flugsim.zustand}|${flugsim.text}|${frisch}|${d && frisch ? [Math.round(d.hoehe / 50), Math.round(d.agl / 20), Math.round(d.kurs / 5), Math.round(d.kts), d.am_boden].join(",") : ""}|${p?.zeitOk}|${sim.state.tempo}|${bremse}|${daheim}|${!!fz}|${gtn.paket}|${gtn.fehler}|${gtn.geprueft}|${gtnAn()}|${gtn.ziel}|${hpg.zustand}|${hpg.text}|${hpg.paket}|${hpg.mission}|${letzterCarls}|${JSON.stringify(flugsim.carls)}|${carlsAn()}`;
   teil(".plt-sim", key, (box) => {
     const z = flugsim.zustand;
     const klasse = z === "verbunden" ? (frisch ? "ok" : "warn") : z === "wartet" ? "warn" : z === "aus" ? "" : "fehl";
@@ -626,7 +626,7 @@ function simTeil(fz: SimFahrzeug | undefined): void {
       const g = el("div", { class: "plt-gtn" });
       const klasse = hpg.zustand === "verbunden" ? "ok" : hpg.zustand === "fehler" ? "fehl" : "warn";
       g.innerHTML = `<div class="plt-sim-kopf"><span class="plt-pill ${klasse}">H145-Tablet ${hpg.zustand === "verbunden" ? "verbunden" : hpg.zustand === "fehler" ? "Fehler" : "wartet"}</span></div>
-        <p class="plt-leise plt-klein">${esc(hpg.zustand === "verbunden" ? "Alarm, Route und Patient kommen aufs Tablet (Missions-App)." : hpg.mission ? "Im Tablet: Missions → Library → „LeitWerk Leitstelle“ wählen (nach dem Einrichten einmal REFRESH)." : hpg.text || "Einmal einrichten, dann im Tablet die Mission wählen.")}${letzterCarls ? ` · Funkgerät zuletzt: ${letzterCarls}` : ""}</p>`;
+        <p class="plt-leise plt-klein">${esc(hpg.zustand === "verbunden" ? "Alarm, Route und Patient kommen aufs Tablet (Missions-App)." : hpg.mission ? "Im Tablet: Missions → Library → „LeitWerk Leitstelle“ wählen (nach dem Einrichten einmal REFRESH)." : hpg.text || "Einmal einrichten, dann im Tablet die Mission wählen.")}</p>`;
       if (!hpg.mission) {
         const b = el("button", { class: "plt-b klein" }, "H145 einrichten");
         b.addEventListener("click", () => void hpgEinrichten());
@@ -637,6 +637,18 @@ function simTeil(fz: SimFahrzeug | undefined): void {
         b.addEventListener("click", () => void hpgEinrichten());
         g.appendChild(b);
       }
+      box.appendChild(g);
+    }
+    // HPG H145: CARLS-Funkgerät (Status-Tasten) – verbunden über ein Lebenszeichen wie bei einem Missionsdienst
+    if (z === "verbunden" && (hpg.paket || hpg.zustand === "verbunden" || flugsim.carls?.verbunden)) {
+      const g = el("div", { class: "plt-gtn" });
+      const c = flugsim.carls;
+      const an = carlsAn();
+      const text = !an ? "aus" : c?.verbunden ? "verbunden" : "wartet";
+      g.innerHTML = `<div class="plt-sim-kopf"><span class="plt-pill ${!an ? "" : c?.verbunden ? "ok" : "warn"}">H145-Funkgerät ${text}</span></div>
+        <label class="plt-check-klein"><input type="checkbox" ${an ? "checked" : ""}> CARLS-Funkgerät verbinden (Status-Tasten)</label>
+        <p class="plt-leise plt-klein">${!an ? "Die Status-Tasten am Funkgerät sind aus." : c?.verbunden ? `Die Tasten 1–6 und 9 am Funkgerät setzen den Status${letzterCarls ? ` · zuletzt: ${letzterCarls}` : ""}.` : "Warte auf das Funkgerät der H145 – im Cockpit sitzen, Strom an. Steht am Funkgerät weiter „Connect a mission to begin“, bitte Bescheid geben."}</p>`;
+      g.querySelector("input")!.addEventListener("change", (ev) => carlsUmschalten((ev.target as HTMLInputElement).checked));
       box.appendChild(g);
     }
     // PMS50 GTN750: Flugplan wird automatisch bereitgelegt

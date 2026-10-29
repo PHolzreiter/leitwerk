@@ -165,8 +165,9 @@ export let letzterCarls = 0;
 
 /** Neuer Wert von L:CARLS_RT_BUTTON (aus dem Flugsimulator) */
 export function carlsEmpfangen(w: number): void {
+  // nur die Tasten 1–9 (−1 = zurückgesetzt, 0 = nichts gedrückt)
+  if (!(w >= 1 && w <= 9)) return;
   letzterCarls = w;
-  if (!w) return;
   if (carlsLerner) return carlsLerner(w);
   if (lernt || !ausloesen) return;
   const b = belegung();

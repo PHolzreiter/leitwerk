@@ -1,5 +1,9 @@
 # Änderungen
 
+## 0.92.3 – Spieler-NAH: H145-Funkgerät und Tablet
+- **CARLS-Funkgerät der HPG H145 wird verbunden:** Bisher stand am Funkgerät „Connect a mission to begin“ und die Status-Tasten taten nichts. LeitWerk meldet sich jetzt beim Funkgerät an wie ein Missionsdienst (Lebenszeichen jede Sekunde); danach setzen die Tasten 1–6 und 9 den Status. Auch dieselbe Taste zweimal hintereinander kommt jetzt an. Im Piloten-Interface steht unter „Flugsimulator“, ob das Funkgerät verbunden ist; abschaltbar
+- **H145-Tablet:** keine Fehlermeldung „Command Failed – NotFound“ mehr (die rechte Fußzeile gibt es in der H145 nicht – Status und Einsatznummer stehen links). Das „Mission Briefing“ zeigt jetzt Einsatznummer, Stichwort, Einsatzort, Info und Zielkrankenhaus
+
 ## 0.92.2 – Farbe der Versorgungsstufe im Piloten-Interface
 - Die Versorgungsstufe auf der Einsatzkarte des Piloten hat jetzt dieselbe Farbe wie in der Einsatzliste (bisher immer rot)
 

@@ -1,5 +1,14 @@
 [
  {
+  "version": "0.92.3",
+  "datum": "2026-10-29",
+  "titel": "H145: Funkgerät und Tablet",
+  "punkte": [
+   "Spieler-NAH: Das CARLS-Funkgerät der HPG H145 wird jetzt verbunden – die Status-Tasten im Cockpit setzen den Status",
+   "H145-Tablet: keine Meldung „Command Failed“ mehr, „Mission Briefing“ zeigt die Einsatzdaten"
+  ]
+ },
+ {
   "version": "0.92.2",
   "datum": "2026-10-29",
   "titel": "Stufenfarbe im Piloten-Interface",

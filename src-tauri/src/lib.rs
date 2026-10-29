@@ -627,6 +627,7 @@ pub fn run() {
             handy::handy_stoppen,
             msfs::msfs_starten,
             msfs::msfs_stoppen,
+            msfs::msfs_carls,
             msfs::msfs_dll_suchen,
             gtn::gtn_suchen,
             gtn::gtn_schreiben,

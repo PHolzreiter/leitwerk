@@ -161,8 +161,8 @@ function punktIcon(farbe: string): string {
 function uiBefehle(fz: SimFahrzeug, e: Einsatz | undefined): Befehl[] {
   const st = sim.statusDef(fz.status);
   return [
-    { set_ui: { footer_left_label: "Status", footer_left_value: t(`${st.nummer} ${st.name}`) } },
-    { set_ui: { footer_right_label: e ? "Einsatz" : t(fz.kurzname || fz.funkrufname), footer_right_value: e ? t(e.nummer) : "einsatzbereit" } },
+    // die rechte Fußzeile gibt es in der H145 nicht („NotFound“) – alles links
+    { set_ui: { footer_left_label: t(`Status${e ? ` - ${e.nummer}` : ""}`), footer_left_value: t(`${st.nummer} ${st.name}`) } },
   ];
 }
 
@@ -231,8 +231,29 @@ function entscheidung(fz: SimFahrzeug, e: Einsatz): Befehl {
   return { wait_modal: { title: t("Patient"), text: patientText(e), options: optionen } };
 }
 
-/** Mission für die aktuelle Lage (null = nichts Neues) */
+/** Text für „Mission Briefing“ am Tablet: Einsatzdaten bzw. Bereitschaft */
+function briefing(fz: SimFahrzeug, e: Einsatz | undefined): { text: string }[] {
+  const heli = fz.kurzname || fz.funkrufname;
+  const zeilen: string[] = [];
+  if (!e) {
+    zeilen.push(`${heli} (${fz.funkrufname}), Stuetzpunkt ${fz.stationName}.`, `Status: ${sim.statusDef(fz.status).nummer} ${sim.statusDef(fz.status).name}.`, "Die Alarmierung kommt von der Leitstelle in LeitWerk.");
+  } else {
+    const h = e.kh ? store.get("hospitals", e.kh.hospitalId) : undefined;
+    zeilen.push(`Einsatz ${e.nummer} - ${stichwort(e)}`, `Einsatzort: ${e.adresse?.label ?? "folgt"}`);
+    if (e.infoRtw) zeilen.push(`Info: ${e.infoRtw}`);
+    if (h) zeilen.push(`Zielkrankenhaus: ${h.name}`);
+    zeilen.push(`Status: ${sim.statusDef(fz.status).nummer} ${sim.statusDef(fz.status).name}`);
+  }
+  return zeilen.map((z) => ({ text: t(z) }));
+}
+
+/** Mission für die aktuelle Lage, mit Briefing */
 function missionFuer(fz: SimFahrzeug, e: Einsatz | undefined): { key: string; mission: Mission } {
+  const m = missionRoh(fz, e);
+  return { key: m.key, mission: { ...m.mission, briefing: briefing(fz, e) } };
+}
+
+function missionRoh(fz: SimFahrzeug, e: Einsatz | undefined): { key: string; mission: Mission } {
   const heli = t(fz.kurzname || fz.funkrufname);
   const basis = { aircraft: ["H145"], api_version: 0.1 };
   const st = fz.status;

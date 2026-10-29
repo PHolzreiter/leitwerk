@@ -33,6 +33,8 @@ interface Vorgabe {
   /** PMS50 GTN750: Flugplan automatisch bereitlegen */
   gtnAuto?: boolean;
   wetter?: "leitwerk" | "selbst";
+  /** HPG H145: CARLS-Funkgerät verbinden (Standard an) */
+  carls?: boolean;
 }
 export function vorgabe(): Vorgabe {
   try {
@@ -55,6 +57,8 @@ export const flugsim = {
   dll: null as string | null,
   daten: null as SimDaten | null,
   datenUm: 0,
+  /** HPG H145: CARLS-Funkgerät hat auf das Lebenszeichen geantwortet */
+  carls: null as { verbunden: boolean; modus: number; phase: number } | null,
 };
 
 let hoertZu = false;
@@ -78,6 +82,10 @@ async function zuhoeren(): Promise<void> {
     geaendert();
   });
   await listen<SimDaten>("msfs-daten", (ev) => datenEmpfangen(ev.payload));
+  await listen<{ verbunden: boolean; modus: number; phase: number }>("msfs-carls-status", (ev) => {
+    flugsim.carls = ev.payload;
+    geaendert();
+  });
   await listen<number>("msfs-carls", (ev) => {
     carlsEmpfangen(Number(ev.payload) || 0);
     geaendert();
@@ -112,6 +120,7 @@ export async function flugsimVerbinden(dll?: string): Promise<void> {
   }
   await zuhoeren();
   try {
+    await invoke("msfs_carls", { an: carlsAn() }).catch(() => undefined);
     const pfad = await invoke<string>("msfs_starten", { dll: dll ?? vorgabe().dll ?? null });
     flugsim.dll = pfad;
     vorgabeSetzen({ auto: true, ...(dll ? { dll } : {}) });
@@ -126,6 +135,7 @@ export async function flugsimTrennen(): Promise<void> {
   vorgabeSetzen({ auto: false });
   if (inTauri()) await invoke("msfs_stoppen").catch(() => undefined);
   flugsim.zustand = "aus";
+  flugsim.carls = null;
   flugsim.text = "";
   flugsim.daten = null;
   geaendert();
@@ -135,6 +145,7 @@ export async function flugsimTrennen(): Promise<void> {
 export function flugsimBeenden(): void {
   if (inTauri()) void invoke("msfs_stoppen").catch(() => undefined);
   flugsim.zustand = "aus";
+  flugsim.carls = null;
   flugsim.daten = null;
 }
 
@@ -335,4 +346,16 @@ export function gtnBereitlegen(fz: SimFahrzeug, ziel: { lat: number; lon: number
       gtn.ziel = "";
       geaendert();
     });
+}
+
+/** HPG H145: CARLS-Funkgerät verbinden? */
+export function carlsAn(): boolean {
+  return vorgabe().carls !== false;
+}
+
+export function carlsUmschalten(an: boolean): void {
+  vorgabeSetzen({ carls: an });
+  if (!an) flugsim.carls = null;
+  if (inTauri()) void invoke("msfs_carls", { an }).catch(() => undefined);
+  geaendert();
 }
