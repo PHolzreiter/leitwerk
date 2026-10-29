@@ -1,5 +1,14 @@
 [
  {
+  "version": "0.92.4",
+  "datum": "2026-10-29",
+  "titel": "Nachforderung zählt, was schon unterwegs ist",
+  "punkte": [
+   "Nachforderungen berücksichtigen Fahrzeuge auf Anfahrt und im Bereitstellungsraum",
+   "Sammelfunk der Einsatzleitung klarer"
+  ]
+ },
+ {
   "version": "0.92.3",
   "datum": "2026-10-29",
   "titel": "H145: Funkgerät und Tablet",

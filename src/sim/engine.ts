@@ -673,6 +673,8 @@ export interface FunkGespraech {
 export interface FunkSatz {
   von: string;
   text: string;
+  /** genau so sprechen (nicht von der KI umformulieren) */
+  fest?: boolean;
   aktion?: "nefStorno";
 }
 
@@ -5681,10 +5683,10 @@ export class Simulation {
       const ich = this.rufname(el);
       const namen = ruf.map((x) => this.rufname(x));
       this.fzFunk(el, ruf[0], e, [
-        { von: ich, text: `${namen.join(", ")} von Einsatzleitung, kommen` },
-        ...ruf.map((x) => ({ von: this.rufname(x), text: `Hier ${this.rufname(x)}, kommen` })),
-        { von: ich, text: `Hier Einsatzleitung, ${namen.length > 1 ? "ihr fahrt" : "bitte"} aus dem Bereitstellungsraum zum Einsatzort zu, Meldung bei der Einsatzleitung, kommen` },
-        ...ruf.map((x) => ({ von: this.rufname(x), text: `${this.rufname(x)} verstanden, fahren zu` })),
+        { von: ich, text: `${namen.join(", ")} von Einsatzleitung, kommen`, fest: true },
+        ...ruf.map((x) => ({ von: this.rufname(x), text: `Hier ${this.rufname(x)}, kommen`, fest: true })),
+        { von: ich, text: `Hier Einsatzleitung, ${namen.length > 1 ? "alle genannten Fahrzeuge" : "bitte"} aus dem Bereitstellungsraum zum Einsatzort zufahren, Meldung bei der Einsatzleitung, kommen`, fest: true },
+        ...ruf.map((x) => ({ von: this.rufname(x), text: `${this.rufname(x)} verstanden, fahren zu`, fest: true })),
       ]);
     }
   }
@@ -6429,7 +6431,7 @@ export class Simulation {
         // Funk zwischen zwei Fahrzeugen: Satz für Satz (Anrufe fest, Inhalte formuliert die KI)
         const s = g.ablauf?.shift();
         if (s) {
-          if (istRufSpruch(s.text)) {
+          if (istRufSpruch(s.text) || s.fest) {
             this.spruch(g, s.von, s.text);
             if (s.aktion) this.funkAktion(g.einsatzId ? this.einsatz(g.einsatzId) : undefined, g.an ? this.state.fahrzeuge[g.an.fzId] : undefined, s.aktion);
             g.echtNaechster = jetzt + rnd(2, 4) * 1000;
@@ -6558,10 +6560,15 @@ export class Simulation {
       const fehlt = this.fehlendeKraefte(e);
       for (const n of e.nachforderungen) {
         if (n.erledigt) continue;
-        if ((n.art === "NA" ? fehlt.na : n.art === "RTW" ? fehlt.rtw : fehlt.bit) === 0) {
+        const noch = n.art === "NA" ? fehlt.na : n.art === "RTW" ? fehlt.rtw : fehlt.bit;
+        if (noch === 0) {
           n.erledigt = true;
           this.log(e, `Nachforderung ${NF_NAME[n.art]} erledigt`);
-        } else if (t - n.erinnert > 5 * MIN) {
+          continue;
+        }
+        // was schon alarmiert ist (auch auf Anfahrt bzw. im Bereitstellungsraum), fehlt nicht mehr
+        n.anzahl = noch;
+        if (t - n.erinnert > 5 * MIN) {
           n.erinnert = t;
           const fz = this.einsatzFz(e).find((x) => x.funkrufname === n.von) ?? this.einsatzFz(e)[0];
           if (fz) this.fzRuft(fz, e, "nachforderung", `Nachforderung ${n.art === "RTW" ? `${n.anzahl}× Rettungsmittel` : NF_NAME[n.art]} noch offen, wann können wir damit rechnen`);

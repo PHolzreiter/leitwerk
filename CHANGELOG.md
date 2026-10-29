@@ -1,5 +1,9 @@
 # Änderungen
 
+## 0.92.4 – Nachforderung zählt, was schon unterwegs ist
+- **Nachforderungen** rechnen jetzt mit, was schon alarmiert ist (auf Anfahrt, im Bereitstellungsraum): die Erinnerung nennt nur noch, was wirklich fehlt („noch 3× Rettungsmittel“ statt immer der ersten Zahl), und ist erledigt, sobald genug kommt – auch bei normalen Einsätzen
+- Großeinsatz: der Sammelfunk der Einsatzleitung (Abruf aus dem Bereitstellungsraum) ist jetzt klar und immer gleich formuliert
+
 ## 0.92.3 – Spieler-NAH: H145-Funkgerät und Tablet
 - **CARLS-Funkgerät der HPG H145 wird verbunden:** Bisher stand am Funkgerät „Connect a mission to begin“ und die Status-Tasten taten nichts. LeitWerk meldet sich jetzt beim Funkgerät an wie ein Missionsdienst (Lebenszeichen jede Sekunde); danach setzen die Tasten 1–6 und 9 den Status. Auch dieselbe Taste zweimal hintereinander kommt jetzt an. Im Piloten-Interface steht unter „Flugsimulator“, ob das Funkgerät verbunden ist; abschaltbar
 - **H145-Tablet:** keine Fehlermeldung „Command Failed – NotFound“ mehr (die rechte Fußzeile gibt es in der H145 nicht – Status und Einsatznummer stehen links). Das „Mission Briefing“ zeigt jetzt Einsatznummer, Stichwort, Einsatzort, Info und Zielkrankenhaus
