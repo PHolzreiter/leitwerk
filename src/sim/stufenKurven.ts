@@ -51,12 +51,70 @@ export function standardKurve(name: string): number[] {
   return w.map((x) => Math.round(((proTag * x) / summe) * 100000) / 100000);
 }
 
-/** Kurven aller Stufen (eigene aus den Einstellungen, sonst Standard) – ganz NÖ, Einsätze je Stunde */
-export function stufenKurven(eigene?: Record<string, number[]> | null): Record<string, number[]> {
+/** Voreinstellung des Einsatzaufkommens */
+export type Vorlage = "realistisch" | "standard" | "stressig";
+
+export interface VorlageDef {
+  label: string;
+  /** Menge der Notfälle (× Realität) */
+  rd: number;
+  /** Krankentransporte, Überstellungen, ACN (× Tabelle bzw. Standard) */
+  kt: number;
+  sek: number;
+  acn: number;
+  /** wie stark die Tageskurve geglättet wird (0 = echt, 1 = ganz flach) */
+  flach: number;
+  /** Mischung: Faktor je Versorgungsstufe */
+  mix: Record<string, number>;
+  /** Spielhilfen: schneller Start, keine langen Pausen, Stau-Grenze, fordernder Einsatz alle … Minuten */
+  hilfen: { start: boolean; pauseMin: number; stau: number; forderndMin: number } | null;
+}
+
+export const VORLAGEN: Record<Vorlage, VorlageDef> = {
+  realistisch: { label: "Realistisch", rd: 1, kt: 1, sek: 1, acn: 1, flach: 0, mix: {}, hilfen: null },
+  standard: {
+    label: "Standard",
+    rd: 1.4,
+    kt: 1,
+    sek: 1,
+    acn: 1,
+    flach: 0.35,
+    mix: { Telemedizin: 0.6, "Akuttransport grün": 0.45, "BLS rot": 1.1, "ALS gelb": 1.25, "ALS orange": 1.4, "ALS rot": 2.2 },
+    hilfen: { start: true, pauseMin: 8, stau: 3, forderndMin: 25 },
+  },
+  stressig: {
+    label: "Stressig",
+    rd: 2,
+    kt: 1.3,
+    sek: 1.3,
+    acn: 1.3,
+    flach: 0.6,
+    mix: { Telemedizin: 0.4, "Akuttransport grün": 0.35, "BLS rot": 1.2, "ALS gelb": 1.4, "ALS orange": 1.8, "ALS rot": 4 },
+    hilfen: { start: true, pauseMin: 5, stau: 99, forderndMin: 15 },
+  },
+};
+
+/** Voreinstellung aus den Einstellungen (ältere: ruhig → realistisch, normal → standard) */
+export function vorlageVon(st: { aufkommenStufe?: string }): Vorlage {
+  const v = st.aufkommenStufe;
+  return v === "realistisch" || v === "stressig" ? v : v === "ruhig" ? "realistisch" : "standard";
+}
+
+/** Kurve einer Stufe nach der Voreinstellung: Realität × Menge × Mischung, Tageskurve geglättet – ganz NÖ */
+export function vorlageKurve(name: string, v: Vorlage): number[] {
+  const d = VORLAGEN[v];
+  const echt = standardKurve(name);
+  const mittel = echt.reduce((a, b) => a + b, 0) / 24;
+  const f = d.rd * (d.mix[name] ?? 1);
+  return echt.map((x) => Math.round(((1 - d.flach) * x + d.flach * mittel) * f * 100000) / 100000);
+}
+
+/** Kurven aller Stufen: eigene aus den Einstellungen, sonst nach der Voreinstellung – ganz NÖ, Einsätze je Stunde */
+export function stufenKurven(eigene?: Record<string, number[]> | null, v: Vorlage = "realistisch"): Record<string, number[]> {
   const out: Record<string, number[]> = {};
   for (const s of STUFEN_INFO) {
     const e = eigene?.[s.name];
-    out[s.name] = e && e.length === 24 ? e.map((v) => Math.max(0, Number(v) || 0)) : standardKurve(s.name);
+    out[s.name] = e && e.length === 24 ? e.map((x) => Math.max(0, Number(x) || 0)) : vorlageKurve(s.name, v);
   }
   return out;
 }

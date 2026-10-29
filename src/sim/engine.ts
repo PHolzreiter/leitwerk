@@ -48,7 +48,7 @@ import { personaWaehlen } from "../abfrage/persona";
 import { alleOrte, kategorienFuerOrtArt, ortGewicht, ortKategorie, poiKategorien } from "../data/orte";
 import { ortAnStelle, ortPartner } from "../data/ortProfile";
 import { ortRegeln } from "../abfrage/ortRegeln";
-import { acnKurve, FUNKGRUPPE_ANTEIL, stufenAnteile, stufenKurven } from "./stufenKurven";
+import { acnKurve, FUNKGRUPPE_ANTEIL, stufenAnteile, stufenKurven, VORLAGEN, vorlageVon } from "./stufenKurven";
 import { katKtOffen, katOffen, ortArtOffen } from "../data/ortZeiten";
 import { stellen, stellenInGruppe, stellenLaden, stelleBeschreibung, type Einsatzstelle } from "../data/einsatzstellen";
 import { bezugFuer, fuellen, ORT_IM_FREIEN, stimmungAusVerlauf, szenarioBauen, altersPlausibel, sichtUnbekannt, vorlageFest, vorlageWaehlen, type AnruferTyp, type OrtArt, type OrtModus, type Szenario } from "../abfrage/szenario";
@@ -859,6 +859,8 @@ export interface Funkmeldung {
 export interface SimState {
   zeit: number;
   tempo: number;
+  /** Spielhilfen (Voreinstellung Standard/Stressig): Zeitpunkt des letzten Notrufs bzw. des letzten fordernden Einsatzes */
+  hilfe?: { letzterNotruf: number; letzterFordernd: number };
   laeuft: boolean;
   fahrzeuge: Record<string, SimFahrzeug>;
   einsaetze: Einsatz[];
@@ -1172,7 +1174,6 @@ export function anStrasse(r: Route): Route {
 }
 
 /** Einsatzaufkommen (Startseite): ruhig / normal / stressig */
-export const AUFKOMMEN_FAKTOR = { ruhig: 0.6, normal: 1, stressig: 1.6 } as const;
 
 /** Fahrten, für die ein NEF den Notarzt an Bord braucht */
 const NA_PHASEN = new Set<Phase>(["anfahrt", "bereitstellung", "rendezvous"]);
@@ -3173,6 +3174,15 @@ export class Simulation {
     if (this.fallWunsch?.probe) return e;
     this.log(e, e.anruf ? "Notruf klingelt" : "Notruf eingegangen");
     this.state.einsaetze.unshift(e);
+    if (e.anruf && !e.fremd) {
+      // Spielhilfen: letzter Notruf, letzter fordernder Einsatz
+      if (this.state.hilfe) {
+        this.state.hilfe.letzterNotruf = this.state.zeit;
+        if (/ALS (orange|rot)/.test(e.code ?? "") || /ALS (orange|rot)/.test(findCode(e.wahr.code)?.stufe ?? "")) this.state.hilfe.letzterFordernd = this.state.zeit;
+      }
+      // Zeitraffer: bei einem neuen Notruf zurück auf 1×
+      if (this.settings.tempoBeiNotruf !== false && this.state.tempo > 1) this.state.tempo = 1;
+    }
     this.funk("Notruf", e.id, `Neuer Einsatz ${e.nummer}`, "info");
     this.emit();
     return e;
@@ -3598,49 +3608,88 @@ export class Simulation {
     this.emit();
   }
 
-  /** Neue Notfälle nach dem Aufkommen der aktuellen Stunde (Einstellungen → Aufkommen) */
+  /** Notrufe, die gerade auf Annahme warten (klingelt, gehalten, verpasst) */
+  private notrufeWartend(): number {
+    return this.state.einsaetze.filter((e) => e.anruf && !e.fremd && ["klingelt", "gehalten", "verpasst"].includes(e.anruf.status)).length;
+  }
+
+  private hilfeLaeuft = false;
+
+  /** Notruf in einer bestimmten Versorgungsstufe erzeugen (Generator bzw. Spielhilfe) */
+  private notrufInStufe(stufe: string | null, k?: Kategorie): void {
+    if (stufe) this.stufeWunsch = stufe;
+    const kat: Kategorie = k ?? (stufe && /rot|orange|großunfall/i.test(stufe) ? "kritisch" : stufe && /gelb|aufwertbar/i.test(stufe) ? "dringend" : "stabil");
+    void this.generiere(kat).finally(() => {
+      if (stufe && this.stufeWunsch === stufe) this.stufeWunsch = null;
+    });
+  }
+
+  /** Neue Notfälle nach dem Aufkommen der aktuellen Stunde (Einstellungen → Einsatzaufkommen) */
   private runGenerator(dt: number): void {
     if (!this.settings.generatorAktiv) return;
-    const h = new Date(this.state.zeit).getHours();
-    // Verteilung nach Versorgungsstufe: Aufkommen aus den Stufenkurven (ganz NÖ × Anteil der Funkgruppe)
-    if (this.stufenZiel()) {
-      const kurven = stufenKurven(this.settings.stufenStunden);
-      const anteil = FUNKGRUPPE_ANTEIL[this.funkgruppe().id] ?? 1 / 6;
-      const f = AUFKOMMEN_FAKTOR[this.settings.aufkommenStufe ?? "normal"];
-      for (const [stufe, a] of Object.entries(kurven)) {
-        const rate = (a[h] ?? 0) * anteil * f;
-        if (rate > 0 && Math.random() < (rate * dt) / 3_600_000) {
-          this.stufeWunsch = stufe;
-          const k: Kategorie = /rot|orange|großunfall/i.test(stufe) ? "kritisch" : /gelb|aufwertbar/i.test(stufe) ? "dringend" : "stabil";
-          void this.generiere(k).finally(() => {
-            if (this.stufeWunsch === stufe) this.stufeWunsch = null;
+    const t = this.state.zeit;
+    const h = new Date(t).getHours();
+    const vorlage = vorlageVon(this.settings);
+    const vd = VORLAGEN[vorlage];
+    const stufenModus = !!this.stufenZiel();
+    const kurven = stufenModus ? stufenKurven(this.settings.stufenStunden, vorlage) : null;
+    const anteil = FUNKGRUPPE_ANTEIL[this.funkgruppe().id] ?? 1 / 6;
+    if (this.settings.rdAktiv !== false) {
+      const hilfe = vd.hilfen;
+      const stau = !!hilfe && this.notrufeWartend() >= hilfe.stau;
+      // Notfälle: nach den Stufenkurven (ganz NÖ × Anteil der Funkgruppe) bzw. nach der Stundentabelle × Menge der Voreinstellung
+      if (!stau && kurven) {
+        for (const [stufe, a] of Object.entries(kurven)) {
+          const rate = (a[h] ?? 0) * anteil;
+          if (rate > 0 && Math.random() < (rate * dt) / 3_600_000) this.notrufInStufe(stufe);
+        }
+      } else if (!stau) {
+        const proStunde = (this.settings.stunden?.[h]?.rd ?? 6) * vd.rd;
+        const anteile = this.settings.aufkommen;
+        const summe = (["stabil", "dringend", "kritisch"] as Kategorie[]).reduce((x, k) => x + Math.max(0, anteile[k] ?? 0), 0) || 1;
+        for (const k of ["stabil", "dringend", "kritisch"] as Kategorie[]) {
+          const rate = (proStunde * Math.max(0, anteile[k] ?? 0)) / summe;
+          if (Math.random() < (rate * dt) / 3_600_000) void this.generiere(k);
+        }
+      }
+      // Spielhilfen (Standard, Stressig): schneller Start, keine langen Pausen, ab und zu ein fordernder Einsatz
+      if (hilfe && !stau && !this.hilfeLaeuft) {
+        this.state.hilfe ??= { letzterNotruf: hilfe.start ? t - (hilfe.pauseMin - 1 - Math.random()) * MIN : t, letzterFordernd: t };
+        const hz = this.state.hilfe;
+        const fordernd = t - hz.letzterFordernd > hilfe.forderndMin * MIN;
+        if (fordernd || t - hz.letzterNotruf > hilfe.pauseMin * MIN) {
+          this.hilfeLaeuft = true;
+          hz.letzterNotruf = t;
+          let stufe: string | null = null;
+          if (fordernd) {
+            hz.letzterFordernd = t;
+            stufe = kurven ? (Math.random() < (kurven["ALS rot"]?.[h] ?? 0) / ((kurven["ALS rot"]?.[h] ?? 0) + (kurven["ALS orange"]?.[h] ?? 1)) ? "ALS rot" : "ALS orange") : null;
+          } else if (kurven) {
+            const w = Object.entries(kurven).map(([k, a]) => [k, a[h] ?? 0] as const);
+            let r = Math.random() * w.reduce((x, [, v]) => x + v, 0);
+            stufe = w.find(([, v]) => (r -= v) <= 0)?.[0] ?? null;
+          }
+          if (stufe) this.stufeWunsch = stufe;
+          void this.generiere(fordernd ? "kritisch" : undefined).finally(() => {
+            this.hilfeLaeuft = false;
+            if (stufe && this.stufeWunsch === stufe) this.stufeWunsch = null;
           });
         }
       }
-    } else {
-    const proStunde = (this.settings.stunden?.[h]?.rd ?? 6) * AUFKOMMEN_FAKTOR[this.settings.aufkommenStufe ?? "normal"];
-    const anteile = this.settings.aufkommen;
-    const summe = (["stabil", "dringend", "kritisch"] as Kategorie[]).reduce((a, k) => a + Math.max(0, anteile[k] ?? 0), 0) || 1;
-    for (const k of ["stabil", "dringend", "kritisch"] as Kategorie[]) {
-      const rate = (proStunde * Math.max(0, anteile[k] ?? 0)) / summe;
-      if (Math.random() < (rate * dt) / 3_600_000) void this.generiere(k);
+      // Flughafen Wien (selten): angekündigter Notfall an Bord, Notfall an Bord am Gate, Arbeitsunfall beim Personal
+      if (inFunkgruppe(this.funkgruppe(), NOTFALL_STAND.lat, NOTFALL_STAND.lon)) {
+        for (const [art, proTag] of FLUGHAFEN_PRO_TAG) if (Math.random() < (proTag * vd.rd * dt) / 86_400_000) void this.generiereFlughafen(art);
+      }
+      // Work in Progress: Einsätze in Nachbarzonen
+      if (this.settings.fremdzoneAktiv && Math.random() < ((this.settings.fremdzoneProStunde ?? 1) * dt) / 3_600_000) void this.generiereFremd();
     }
-    }
-    // ACN: Akutpflege zu Hause, je Standort (dessen ACN gerade Dienst hat) einige pro Tag
-    // je Standort und Stunde laut ACN-Kurve (Einstellungen → Einsatzaufkommen), mal ruhig/normal/stressig
-    const acnRate = acnKurve(this.settings)[h] * AUFKOMMEN_FAKTOR[this.settings.aufkommenStufe ?? "normal"];
+    // ACN: Akutpflege zu Hause, je Standort (dessen ACN gerade Dienst hat) laut ACN-Kurve × Voreinstellung
+    const acnRate = this.settings.acnAktiv === false ? 0 : acnKurve(this.settings)[h] * vd.acn;
     if (acnRate > 0) {
       const g = this.funkgruppe();
       const standorte = new Set(Object.values(this.state.fahrzeuge).filter((f) => f.rmTyp === "ACN" && !f.ausserDienst && inFunkgruppe(g, f.heim.lat, f.heim.lon)).map((f) => f.stationId));
       for (const st of standorte) if (Math.random() < (acnRate * dt) / 3_600_000) void this.generiereAcn(st);
     }
-    // Flughafen Wien (selten): angekündigter Notfall an Bord, Notfall an Bord am Gate, Arbeitsunfall beim Personal
-    if (inFunkgruppe(this.funkgruppe(), NOTFALL_STAND.lat, NOTFALL_STAND.lon)) {
-      const f = AUFKOMMEN_FAKTOR[this.settings.aufkommenStufe ?? "normal"];
-      for (const [art, proTag] of FLUGHAFEN_PRO_TAG) if (Math.random() < (proTag * f * dt) / 86_400_000) void this.generiereFlughafen(art);
-    }
-    // Work in Progress: Einsätze in Nachbarzonen
-    if (this.settings.fremdzoneAktiv && Math.random() < ((this.settings.fremdzoneProStunde ?? 1) * dt) / 3_600_000) void this.generiereFremd();
   }
 
   private stumm = 0;
@@ -4115,7 +4164,7 @@ export class Simulation {
    */
   private stufenZiel(): Record<string, number> | null {
     if (this.settings.verteilungNach === "schwere") return null;
-    const ziel = stufenAnteile(stufenKurven(this.settings.stufenStunden));
+    const ziel = stufenAnteile(stufenKurven(this.settings.stufenStunden, vorlageVon(this.settings)));
     const da = new Set(allCodes().map((c) => c.stufe));
     return Object.keys(ziel).filter((k) => da.has(k)).length >= 3 ? ziel : null;
   }
@@ -6321,7 +6370,7 @@ export class Simulation {
     // Daueraufträge für den aktuellen Tag
     const d = new Date(t);
     // ab dem Nachmittag sind auch die Fahrten des nächsten Tages schon bestellt
-    if (this.mode !== "client" && !this.ktDauerLaeuft) {
+    if (this.mode !== "client" && !this.ktDauerLaeuft && this.settings.ktAktiv !== false && this.settings.generatorAktiv) {
       const heute0 = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
       const bis = d.getHours() >= 16 ? new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1).getTime() : heute0;
       const geplant = typeof this.state.ktDauerTag === "number" ? this.state.ktDauerTag : -Infinity;
@@ -6333,9 +6382,10 @@ export class Simulation {
     }
     // Neue Aufträge nach Aufkommen der Stunde
     if (this.settings.generatorAktiv) {
-      const rate = this.settings.stunden?.[d.getHours()]?.kt ?? 0;
+      const vd = VORLAGEN[vorlageVon(this.settings)];
+      const rate = this.settings.ktAktiv === false ? 0 : (this.settings.stunden?.[d.getHours()]?.kt ?? 0) * vd.kt;
       if (Math.random() < (rate * dt) / 3_600_000) void this.generiereKt();
-      const sekRate = this.settings.stunden?.[d.getHours()]?.sek ?? 0;
+      const sekRate = this.settings.sekAktiv === false ? 0 : (this.settings.stunden?.[d.getHours()]?.sek ?? 0) * vd.sek;
       if (Math.random() < (sekRate * dt) / 3_600_000) void this.generiereSek();
     }
     for (const k of this.state.kt ?? []) {

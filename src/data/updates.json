@@ -1,5 +1,16 @@
 [
  {
+  "version": "0.91.0",
+  "datum": "2026-10-29",
+  "titel": "Realistisch, Standard, Stressig",
+  "punkte": [
+   "Aufkommen: Realistisch, Standard (für kurze Runden) oder Stressig",
+   "Spielhilfen: schneller Start, keine langen Pausen, regelmäßig ein fordernder Einsatz",
+   "RD, KT, SEK und ACN einzeln ein-/ausschalten – auch im Spiel",
+   "Zeitraffer springt bei neuem Notruf auf 1×"
+  ]
+ },
+ {
   "version": "0.90.0",
   "datum": "2026-10-29",
   "titel": "Einsatzaufkommen aufgeräumt",

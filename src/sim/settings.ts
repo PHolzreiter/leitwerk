@@ -155,8 +155,15 @@ export interface Settings {
   fremdzoneAktiv?: boolean;
   /** solche Einsätze pro Stunde (ungefähr) */
   fremdzoneProStunde?: number;
-  /** Einsatzaufkommen (Startseite): Faktor auf die Notfälle je Stunde */
-  aufkommenStufe?: "ruhig" | "normal" | "stressig";
+  /** Einsatzaufkommen (Startseite): Voreinstellung realistisch / standard / stressig (ältere: ruhig / normal) */
+  aufkommenStufe?: "realistisch" | "standard" | "stressig" | "ruhig" | "normal";
+  /** welche Einsätze neu entstehen (aus = keine neuen; bestehende bleiben) – fehlt = an */
+  rdAktiv?: boolean;
+  ktAktiv?: boolean;
+  sekAktiv?: boolean;
+  acnAktiv?: boolean;
+  /** Zeitraffer bei einem neuen Notruf auf 1× (Standard an) */
+  tempoBeiNotruf?: boolean;
   /** Startzeit eines neuen Spiels: leer = jetzt, sonst „2026-10-24T08:00“ (Ortszeit) */
   startzeit?: string;
   /** ACN-Einsätze (Akutpflege zu Hause) je ACN-Standort und Tag */

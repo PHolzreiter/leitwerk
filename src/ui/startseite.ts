@@ -5,6 +5,7 @@
  * stellt ein und vergibt die Rechte, Mitspieler sehen alles, können es aber nicht ändern.
  * Alle Werte bleiben im Spiel änderbar (Einstellungen).
  */
+import { vorlageVon } from "../sim/stufenKurven";
 import "./startseite.css";
 import { HINTERGRUND } from "../assets/startseite/bild";
 import funkDaten from "../data/funkgruppen.json";
@@ -300,7 +301,8 @@ export function startseiteZeigen(fertig?: () => void, opt: { zurueck?: boolean }
         <div class="st-feld"><label>${ico("uhr")}Startzeit</label>
           <div class="st-zeit"><div class="st-seg" data-seg="zeit"><button data-v="jetzt">Jetzt</button><button data-v="fest">Wunschzeit</button></div><input type="datetime-local" class="st-zeit-in"></div></div>
         <div class="st-feld"><label>${ico("balken")}Einsatzaufkommen</label>
-          <div class="st-seg" data-seg="aufkommen"><button data-v="ruhig">Ruhig</button><button data-v="normal">Normal</button><button data-v="stressig">Stressig</button></div></div>
+          <div class="st-seg" data-seg="aufkommen"><button data-v="realistisch" title="Wie in der Wirklichkeit 2025">Realistisch</button><button data-v="standard" title="Etwas mehr und spannender gemischt, mit Spielhilfen">Standard</button><button data-v="stressig" title="Noch mehr und härter">Stressig</button></div>
+          <div class="st-seg st-arten" data-seg="arten" title="Welche Einsätze kommen? Ausgeschaltet kommen keine neuen – auch keine vorgemerkten."><button data-v="rd" title="Notfälle (Rettungsdienst)">RD</button><button data-v="kt" title="Krankentransporte">KT</button><button data-v="sek" title="Sekundärtransporte (Überstellungen)">SEK</button><button data-v="acn" title="Akutpflege">ACN</button></div></div>
         <div class="st-feld"><label>${ico("wolke")}Wetter</label>
           <div class="st-wetter"><div class="st-seg" data-seg="wetter"><button data-v="echt">Realistisch</button><button data-v="normal">Normal</button><button data-v="wechselhaft">Wechselhaft</button><button data-v="fest">Fest</button></div>
           <div class="st-wetter-fest"><select class="st-wetter-lage"></select><input type="number" class="st-wetter-temp" min="-25" max="40"><span>°C</span></div>
@@ -378,7 +380,11 @@ export function startseiteZeigen(fertig?: () => void, opt: { zurueck?: boolean }
         if (mp.status.rolle !== "aus") return toast("Erst die Lobby verlassen, dann zurück zu Solo");
         modus = v as "solo" | "multi";
       }
-      else if (seg.dataset.seg === "aufkommen") setzen({ aufkommenStufe: v as Settings["aufkommenStufe"] });
+      else if (seg.dataset.seg === "aufkommen") setzen({ aufkommenStufe: v as Settings["aufkommenStufe"], stufenStunden: undefined });
+      else if (seg.dataset.seg === "arten") {
+        const k = `${v}Aktiv` as "rdAktiv" | "ktAktiv" | "sekAktiv" | "acnAktiv";
+        setzen({ [k]: s()[k] === false });
+      }
       render();
     }),
   );
@@ -426,9 +432,9 @@ export function startseiteZeigen(fertig?: () => void, opt: { zurueck?: boolean }
   wTemp.addEventListener("change", () => setzen({ wetterFestTemp: Math.max(-25, Math.min(40, Number(wTemp.value) || 0)) }));
 
   // ---------------- Schieber der Segmente (gleitet zur gewählten Stelle)
-  root.querySelectorAll<HTMLElement>(".st-seg").forEach((seg) => seg.prepend(el("i", { class: "st-seg-i", "aria-hidden": "true" })));
+  root.querySelectorAll<HTMLElement>(".st-seg:not(.st-arten)").forEach((seg) => seg.prepend(el("i", { class: "st-seg-i", "aria-hidden": "true" })));
   const schieber = () =>
-    root.querySelectorAll<HTMLElement>(".st-seg").forEach((seg) => {
+    root.querySelectorAll<HTMLElement>(".st-seg:not(.st-arten)").forEach((seg) => {
       const i = seg.querySelector<HTMLElement>(".st-seg-i")!;
       const b = seg.querySelector<HTMLElement>("button.an");
       i.style.opacity = b ? "1" : "0";
@@ -739,10 +745,17 @@ export function startseiteZeigen(fertig?: () => void, opt: { zurueck?: boolean }
     const zeitArt = gast ? (st.startzeit ? "fest" : "jetzt") : startzeitArt;
     if (st.startzeit && document.activeElement !== zeitIn) zeitIn.value = st.startzeit;
     zeitIn.hidden = zeitArt !== "fest";
-    const auf = st.aufkommenStufe ?? "normal";
+    const auf = vorlageVon(st);
     const wArt = wetterArt();
     root.querySelectorAll<HTMLButtonElement>(".st-seg button").forEach((b) => {
       const seg = b.closest<HTMLElement>(".st-seg")!.dataset.seg;
+      if (seg === "arten") {
+        const an = st[`${b.dataset.v}Aktiv` as "rdAktiv" | "ktAktiv" | "sekAktiv" | "acnAktiv"] !== false;
+        b.classList.toggle("an", an);
+        b.setAttribute("aria-pressed", String(an));
+        b.disabled = gast;
+        return;
+      }
       const wert = seg === "zeit" ? zeitArt : seg === "wetter" ? wArt : seg === "modus" ? modus : seg === "thema" ? pers().thema : auf;
       b.classList.toggle("an", b.dataset.v === wert);
     });

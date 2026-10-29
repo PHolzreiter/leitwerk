@@ -1,5 +1,16 @@
 # Änderungen
 
+## 0.91.0 – Realistisch, Standard, Stressig
+- **Neue Voreinstellungen fürs Einsatzaufkommen** (Startseite und Einstellungen → Einsatzaufkommen):
+  - **Realistisch:** so viele Notfälle und in der Mischung wie im echten Betrieb 2025
+  - **Standard:** für kürzere Spielrunden – etwas mehr los, gleichmäßiger über den Tag, weniger Telemedizin/Akuttransporte, öfter schwere Einsätze
+  - **Stressig:** deutlich mehr Notfälle (auch mehr KT, Überstellungen und ACN), viel öfter ALS orange und rot
+- **Spielhilfen bei Standard und Stressig:** der erste Notruf kommt gleich, keine langen Pausen ohne Notruf, regelmäßig ein fordernder Einsatz (ALS orange/rot); bei Standard kommen keine neuen Notrufe, solange schon 3 auf Annahme warten
+- Die Zahlen in der Grafik und in der Zeile „am Tag“ passen jetzt zur gewählten Voreinstellung
+- **RD, KT, SEK und ACN einzeln ein-/ausschalten:** auf der Startseite und im Spiel klein in der Steuerleiste (im Mehrspieler nur der Host). Aus heißt: es kommen keine neuen – bestehende bleiben. Auch schon geplante Krankentransporte, die noch nicht erschienen sind, kommen dann nicht mehr
+- **Zeitraffer:** läuft, bis ein neuer Notruf kommt – dann springt die Zeit auf 1×, bis du sie wieder hochstellst (abschaltbar unter Einstellungen → Einsatzaufkommen)
+- „Ruhig/Normal/Stressig“ gibt es nicht mehr; alte Einstellungen werden übernommen (ruhig → Realistisch, normal → Standard)
+
 ## 0.90.0 – Einsatzaufkommen aufgeräumt
 - **Einstellungen → Einsatzaufkommen neu:** oben „Einstellen mit: Grafik | Tabelle“ und „Aufkommen insgesamt: Ruhig | Normal | Stressig“, darunter eine Zeile mit dem Aufkommen deiner Funkgruppe am Tag
 - **Grafik direkt im Reiter** (kein eigenes Fenster mehr): Notfälle je Versorgungsstufe, Krankentransporte, Überstellungen und ACN-Einsätze – je Reihe 24 Stunden als Punkte zum Ziehen. Die Zahlen gelten für deine Funkgruppe

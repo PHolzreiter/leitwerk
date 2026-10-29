@@ -203,6 +203,9 @@ ${IST_HAUPT ? `<button type="button" class="sl-update" hidden title="Neue LeitWe
       </div>
       <time id="clock" class="clock" title="Simulationszeit">--:--:--</time>
       <button id="weather" class="weather" type="button" title="Wetter – klicken für die Prognose">–</button>
+      <div class="sl-arten" role="group" aria-label="Welche Einsätze neu kommen">
+        <button type="button" data-art="rd">RD</button><button type="button" data-art="kt">KT</button><button type="button" data-art="sek">SEK</button><button type="button" data-art="acn">ACN</button>
+      </div>
     </div>
     <div class="sl-gruppe sl-annahme" title="Welche Anrufe nimmst du an? (Klingeln und automatisches Öffnen)">
       <button type="button" class="sl-toggle" data-annahme="notrufe">📞 Notrufe</button>
@@ -284,6 +287,31 @@ ${IST_HAUPT ? `<button type="button" class="sl-update" hidden title="Neue LeitWe
   tempoBtns.forEach((b) => b.addEventListener("click", () => void sim.call("setTempo", Number(b.dataset.tempo)).catch(fehler)));
   sim.onChange(render);
   render();
+
+  // Welche Einsätze neu kommen (RD, KT, SEK, ACN) – ändern darf nur, wer Einstellungen ändern darf (im Mehrspieler der Host)
+  const ARTEN: Record<string, string> = { rd: "Notfälle (RD)", kt: "Krankentransporte (KT)", sek: "Überstellungen (SEK)", acn: "Akutpflege (ACN)" };
+  const artBtns = kopf.querySelectorAll<HTMLButtonElement>("[data-art]");
+  const artenZeigen = () =>
+    artBtns.forEach((b) => {
+      const k = `${b.dataset.art}Aktiv` as "rdAktiv" | "ktAktiv" | "sekAktiv" | "acnAktiv";
+      const an = store.settings[k] !== false;
+      const gast = mp.status.rolle === "client";
+      b.classList.toggle("an", an);
+      b.setAttribute("aria-pressed", String(an));
+      b.disabled = gast;
+      b.title = `${ARTEN[b.dataset.art!]}: ${an ? "es kommen neue" : "aus – es kommen keine neuen (bestehende bleiben)"}${gast ? " · ändern kann nur der Host" : ""}`;
+    });
+  artBtns.forEach((b) =>
+    b.addEventListener("click", () => {
+      const k = `${b.dataset.art}Aktiv` as "rdAktiv" | "ktAktiv" | "sekAktiv" | "acnAktiv";
+      const st = structuredClone(store.settings);
+      st[k] = st[k] === false;
+      store.setSettings(st);
+      artenZeigen();
+    }),
+  );
+  store.onChange(artenZeigen);
+  artenZeigen();
 
   // Anrufannahme
   const annahme = kopf.querySelectorAll<HTMLButtonElement>("[data-annahme]");

@@ -104,6 +104,10 @@ export function createSettingsView(container: HTMLElement, teil: "simulation" | 
     gen.checked = draft.generatorAktiv;
     gen.addEventListener("change", () => (draft.generatorAktiv = gen.checked));
     aGrid.append(el("label", {}, "Einsätze automatisch erzeugen"), gen);
+    const tz = el("input", { type: "checkbox", class: "set-tempo-notruf" }) as HTMLInputElement;
+    tz.checked = draft.tempoBeiNotruf !== false;
+    tz.addEventListener("change", () => (draft.tempoBeiNotruf = tz.checked));
+    aGrid.append(el("label", { title: "Läuft der Zeitraffer (2×, 5×, 10×), stellt ein neuer Notruf ihn auf 1× zurück" }, "Zeitraffer bei neuem Notruf auf 1×"), tz);
     const src = el("select");
     src.append(el("option", { value: "zufall" }, "zufällig (Adressen im Gebiet)"), el("option", { value: "vorlagen" }, "aus Einsatzvorlagen (Reiter Daten)"));
     src.value = draft.generatorQuelle;

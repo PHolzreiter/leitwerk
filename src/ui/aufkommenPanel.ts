@@ -1,12 +1,12 @@
 /**
- * Einstellungen → Einsatzaufkommen: Umschalter Grafik/Tabelle, ruhig/normal/stressig, darunter
+ * Einstellungen → Einsatzaufkommen: Umschalter Grafik/Tabelle, Voreinstellung Realistisch/Standard/Stressig, darunter
  * - Grafik: je Reihe (Notfälle je Versorgungsstufe, Krankentransporte, Überstellungen, ACN) 24 Stunden als Punkte zum Ziehen
  * - Tabelle: die bisherige Stundentabelle und die Schwere harmlos/mittel/kritisch
  * Werte in der Grafik gelten für die gespielte Funkgruppe; die Notfälle werden intern für ganz NÖ gespeichert.
  */
 import { el } from "./dom";
 import { defaultStunden, type Settings } from "../sim/settings";
-import { acnKurve, acnStandard, FUNKGRUPPE_ANTEIL, STUFEN_INFO, standardKurve, stufenKurven } from "../sim/stufenKurven";
+import { acnKurve, acnStandard, FUNKGRUPPE_ANTEIL, STUFEN_INFO, stufenKurven, VORLAGEN, vorlageKurve, vorlageVon, type Vorlage } from "../sim/stufenKurven";
 
 const W = 760;
 const H = 330;
@@ -33,23 +33,25 @@ export function aufkommenBauen(draft: Settings, num: (v: number, step?: string) 
   const fg = draft.funkgruppe ?? "NÖ-03";
   const anteil = FUNKGRUPPE_ANTEIL[fg] ?? 1 / 6;
 
-  // ---------------------------------------------------------------- Reihen
+  // ---------------------------------------------------------------- Reihen (Werte, wie sie im Spiel kommen: mit der Voreinstellung)
+  const vor = (): Vorlage => vorlageVon(draft);
+  const vd = () => VORLAGEN[vor()];
   const notfall = (name: string, farbe: string): Reihe => ({
     id: `rd:${name}`,
     name,
     farbe,
     gruppe: "Notfälle",
     einheit: "Notfälle",
-    get: () => stufenKurven(draft.stufenStunden)[name].map((v) => v * anteil),
+    get: () => stufenKurven(draft.stufenStunden, vor())[name].map((v) => v * anteil),
     set: (a) => {
       const noe = a.map((v) => rund(v / anteil));
-      const std = standardKurve(name);
+      const std = vorlageKurve(name, vor());
       const eigen = { ...(draft.stufenStunden ?? {}) };
       if (noe.some((v, i) => Math.abs(v - std[i]) > 0.000005)) eigen[name] = noe;
       else delete eigen[name];
       draft.stufenStunden = Object.keys(eigen).length ? eigen : undefined;
     },
-    standard: () => standardKurve(name).map((v) => v * anteil),
+    standard: () => vorlageKurve(name, vor()).map((v) => v * anteil),
   });
   const stundenReihe = (id: "kt" | "sek", name: string, farbe: string): Reihe => ({
     id,
@@ -57,9 +59,9 @@ export function aufkommenBauen(draft: Settings, num: (v: number, step?: string) 
     farbe,
     gruppe: "Transporte",
     einheit: "Fahrten",
-    get: () => draft.stunden.map((z) => z[id] ?? 0),
-    set: (a) => a.forEach((v, h) => (draft.stunden[h][id] = rund(v))),
-    standard: () => defaultStunden().map((z) => z[id]),
+    get: () => draft.stunden.map((z) => (z[id] ?? 0) * vd()[id]),
+    set: (a) => a.forEach((v, h) => (draft.stunden[h][id] = rund(v / vd()[id]))),
+    standard: () => defaultStunden().map((z) => z[id] * vd()[id]),
   });
   const reihen: Reihe[] = [
     ...STUFEN_INFO.map((s) => notfall(s.name, s.farbe)),
@@ -71,12 +73,12 @@ export function aufkommenBauen(draft: Settings, num: (v: number, step?: string) 
       farbe: "#c2410c",
       gruppe: "ACN",
       einheit: "Einsätze je Standort",
-      get: () => acnKurve(draft),
+      get: () => acnKurve(draft).map((v) => v * vd().acn),
       set: (a) => {
-        draft.acnStunden = a.map(rund);
+        draft.acnStunden = a.map((v) => rund(v / vd().acn));
         draft.acnProTag = undefined;
       },
-      standard: () => acnStandard(2),
+      standard: () => acnStandard(2).map((v) => v * vd().acn),
     },
   ];
   const reihe = (id: string) => reihen.find((r) => r.id === id)!;
@@ -103,14 +105,16 @@ export function aufkommenBauen(draft: Settings, num: (v: number, step?: string) 
       draft.verteilungNach = v === "tabelle" ? "schwere" : "stufe";
       zeigen();
     }),
-    el("label", { title: "Wie auf der Startseite: ruhig (etwa 60 %), normal oder stressig (etwa 160 %) – gilt für alles" }, "Aufkommen insgesamt"),
+    el("label", { title: "Realistisch: wie in der Wirklichkeit 2025. Standard: etwas mehr und spannender gemischt, nachts nicht leer, mit Spielhilfen (schneller erster Notruf, keine langen Pausen, ab und zu ein fordernder Einsatz). Stressig: noch mehr und härter. Gilt für alles; wie auf der Startseite." }, "Aufkommen"),
     seg(
-      [["ruhig", "Ruhig"], ["normal", "Normal"], ["stressig", "Stressig"]],
-      draft.aufkommenStufe ?? "normal",
+      (Object.keys(VORLAGEN) as Vorlage[]).map((v) => [v, VORLAGEN[v].label] as [string, string]),
+      vor(),
       "auf-stufe",
       (v) => {
         draft.aufkommenStufe = v as Settings["aufkommenStufe"];
-        zusammenfassung();
+        // Voreinstellung gewählt: eigene Notfall-Kurven gelten nicht mehr
+        draft.stufenStunden = undefined;
+        zeigen();
       },
     ),
   );
@@ -119,14 +123,14 @@ export function aufkommenBauen(draft: Settings, num: (v: number, step?: string) 
   const tabelle = el("div", { class: "auf-tabelle" });
   root.append(kopf, info, grafik, tabelle);
 
-  const FAKTOR: Record<string, number> = { ruhig: 0.6, normal: 1, stressig: 1.6 };
   function zusammenfassung(): void {
-    const f = FAKTOR[draft.aufkommenStufe ?? "normal"] ?? 1;
-    const rd = modus() === "grafik" ? reihen.filter((r) => r.gruppe === "Notfälle").reduce((t, r) => t + summe(r.get()), 0) : summe(draft.stunden.map((z) => z.rd));
+    const rd = modus() === "grafik" ? reihen.filter((r) => r.gruppe === "Notfälle").reduce((t, r) => t + summe(r.get()), 0) : summe(draft.stunden.map((z) => z.rd)) * vd().rd;
     const kt = summe(reihe("kt").get());
     const sek = summe(reihe("sek").get());
     const acn = summe(reihe("acn").get());
-    info.textContent = `Funkgruppe ${fg}${modus() === "grafik" ? ` (${fmt(anteil * 100, 1)} % von NÖ)` : ""} · am Tag ≈ ${Math.round(rd * f)} Notfälle, ${Math.round(kt * f)} Krankentransporte, ${Math.round(sek * f)} Überstellungen, ${fmt(acn * f, 1)} ACN-Einsätze je Standort${f !== 1 ? ` (${draft.aufkommenStufe})` : ""}`;
+    const eigen = modus() === "grafik" && draft.stufenStunden ? ` · eigene Notfall-Kurven (auf Basis von „${vd().label}“)` : "";
+    const aus = [draft.rdAktiv === false ? "Notfälle" : "", draft.ktAktiv === false ? "KT" : "", draft.sekAktiv === false ? "Überstellungen" : "", draft.acnAktiv === false ? "ACN" : ""].filter(Boolean);
+    info.textContent = `${vd().label} · Funkgruppe ${fg}${modus() === "grafik" ? ` (${fmt(anteil * 100, 1)} % von NÖ)` : ""} · am Tag ≈ ${Math.round(rd)} Notfälle, ${Math.round(kt)} Krankentransporte, ${Math.round(sek)} Überstellungen, ${fmt(acn, 1)} ACN-Einsätze je Standort${eigen}${aus.length ? ` · ausgeschaltet: ${aus.join(", ")}` : ""}`;
   }
 
   // ---------------------------------------------------------------- Grafik

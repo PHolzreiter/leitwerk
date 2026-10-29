@@ -1043,3 +1043,9 @@
 .st-nav-k .st-ico { width: 17px; height: 17px; flex: none; }
 .st-nav-k span { min-width: 0; hyphens: manual; }
 @media (max-width: 1100px) { .st-nav-zwei { margin-top: 0; } }
+
+/* Welche Einsätze kommen (Notfälle, KT, Überstellungen, ACN): jeder Knopf einzeln an/aus */
+.st-seg.st-arten { margin-top: 6px; height: 34px; gap: 3px; }
+.st-seg.st-arten button { font-size: 12.5px; }
+.st-seg.st-arten button.an { background: linear-gradient(100deg, #1e6af0, #3a8bff) !important; color: #fff; }
+.st-seg.st-arten button:not(.an) { color: var(--st-dim); text-decoration: line-through; }
