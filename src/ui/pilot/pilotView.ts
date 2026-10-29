@@ -19,6 +19,7 @@ import { availableMaps, createMap, type MapHandle } from "../../map";
 import { openDialog } from "../dialog";
 import { el, esc, toast } from "../dom";
 import { logoMarke } from "../logo";
+import { stufeFarbe } from "../panels/teile";
 import { spielen } from "../sounds";
 import { istDunkel } from "../ws/persoenlich";
 import { pilotModusSetzen } from "./modus";
@@ -722,7 +723,7 @@ function einsatzKarte(fz: SimFahrzeug | undefined, e: Einsatz | undefined): void
     const kh = e.kh ? store.get("hospitals", e.kh.hospitalId) : undefined;
     box.insertAdjacentHTML(
       "beforeend",
-      `<div class="plt-einsatz-kopf"><span class="plt-nr">${esc(e.nummer)}</span>${c ? `<span class="plt-stufe">${esc(c.stufe)}</span>` : ""}</div>
+      `<div class="plt-einsatz-kopf"><span class="plt-nr">${esc(e.nummer)}</span>${c ? `<span class="plt-stufe" style="--stufe:${stufeFarbe(c.stufe)}">${esc(c.stufe)}</span>` : ""}</div>
       <div class="plt-stichwort">${esc(stichwort(e))}</div>
       <div class="plt-zeile">${ico("punkt")}<span>${esc(e.adresse?.label ?? "Adresse folgt")}${e.zusatz ? `<small>${esc(e.zusatz)}</small>` : ""}</span></div>
       ${km !== null ? `<div class="plt-zeile">${ico("flug")}<span>${km.toFixed(1).replace(".", ",")} km · ca. ${minuten((km * 1000) / (sim.settings.nahGeschwindigkeit / 3.6))} Flug${ank ? `<small>Ankunft ${esc(ank.ziel)} in ca. ${minuten(ank.min * 60)}</small>` : ""}</span></div>` : ""}

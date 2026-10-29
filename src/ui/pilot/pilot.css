@@ -452,8 +452,10 @@
   font-weight: 700;
   padding: 2px 8px;
   border-radius: 99px;
-  background: rgba(229, 57, 53, 0.14);
-  color: var(--pl-rot);
+  /* Farbe der Versorgungsstufe (wie in der Einsatzliste) */
+  background: color-mix(in srgb, var(--stufe, #e53935) 16%, transparent);
+  color: color-mix(in srgb, var(--stufe, #e53935) 75%, var(--pl-text, currentColor));
+  border: 1px solid color-mix(in srgb, var(--stufe, #e53935) 45%, transparent);
 }
 .plt-stichwort {
   font-size: 17px;

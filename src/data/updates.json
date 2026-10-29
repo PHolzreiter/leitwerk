@@ -1,5 +1,13 @@
 [
  {
+  "version": "0.92.2",
+  "datum": "2026-10-29",
+  "titel": "Stufenfarbe im Piloten-Interface",
+  "punkte": [
+   "Versorgungsstufe beim Piloten in der richtigen Farbe (wie in der Einsatzliste)"
+  ]
+ },
+ {
   "version": "0.92.1",
   "datum": "2026-10-29",
   "titel": "Krankenhaus-Plätze sofort aktuell",

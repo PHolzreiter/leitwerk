@@ -1,5 +1,8 @@
 # Änderungen
 
+## 0.92.2 – Farbe der Versorgungsstufe im Piloten-Interface
+- Die Versorgungsstufe auf der Einsatzkarte des Piloten hat jetzt dieselbe Farbe wie in der Einsatzliste (bisher immer rot)
+
 ## 0.92.1 – Krankenhaus-Plätze sofort aktuell
 - Nach dem Buchen zeigt die Krankenhausauswahl sofort einen Platz weniger frei (bisher erst nach bis zu einer Minute) – in der Einsatzmaske, im Buchungs-Pop-up und beim Voraviso im Reiter Großeinsatz
 
