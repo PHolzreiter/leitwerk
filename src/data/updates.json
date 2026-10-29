@@ -1,5 +1,16 @@
 [
  {
+  "version": "0.90.0",
+  "datum": "2026-10-29",
+  "titel": "Einsatzaufkommen aufgeräumt",
+  "punkte": [
+   "Grafik oder Tabelle umschaltbar, ruhig/normal/stressig oben",
+   "Notfälle, KT, Überstellungen und ACN je Stunde in einer Grafik",
+   "Funkgruppe nur noch auf der Startseite",
+   "Fallkatalog und Quelle unter Notrufe & Anrufer"
+  ]
+ },
+ {
   "version": "0.89.0",
   "datum": "2026-10-28",
   "titel": "Kurven je Versorgungsstufe",

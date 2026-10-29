@@ -3949,33 +3949,49 @@ input.ausr-zahl { width: 64px !important; min-width: 0; }
   color: var(--text);
 }
 
-/* Notfälle je Versorgungsstufe über den Tag (Einstellungen) */
-.dlg:has(.skd) { width: min(1200px, 100%); }
-.skd { --skd-raster: color-mix(in srgb, var(--line) 70%, transparent); --skd-grund: var(--panel); display: flex; flex-direction: column; gap: 12px; }
-.skd-haupt { display: flex; gap: 16px; align-items: flex-start; }
-.skd-liste { width: 280px; flex-shrink: 0; display: flex; flex-direction: column; gap: 2px; }
-.skd-stufe { display: grid; grid-template-columns: 14px 1fr 64px 40px; align-items: center; gap: 8px; min-height: 40px; padding: 0 10px; border: 1px solid transparent; border-radius: 7px; background: transparent; color: inherit; text-align: left; cursor: pointer; font: inherit; font-size: 13px; }
-.skd-stufe.an { background: color-mix(in srgb, var(--line) 35%, transparent); font-weight: 600; }
-.skd-stufe:hover { background: color-mix(in srgb, var(--line) 25%, transparent); }
-.skd-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.skd-pct, .skd-stufe .skd-mono { text-align: right; font-size: 12px; }
-.skd-punkt { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
-.skd-punkt.gross { width: 16px; height: 16px; }
-.skd-rechts { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
-.skd-titel { font-size: 16px; display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; }
-.skd-knoepfe, .skd-stunde { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-.skd-stunde { padding: 8px 10px; border-radius: 8px; background: color-mix(in srgb, var(--line) 20%, transparent); }
-.skd-andere { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
-.skd-mono { font-family: ui-monospace, "IBM Plex Mono", monospace; }
-.skd-wert { min-width: 44px; text-align: center; font-weight: 600; }
-.skd-diagramm { position: relative; display: flex; gap: 6px; }
-.skd-yachse { position: relative; width: 30px; flex-shrink: 0; }
-.skd-yachse span { position: absolute; right: 0; transform: translateY(-50%); font-size: 11px; color: var(--muted, #888); font-family: ui-monospace, monospace; }
-.skd-svg { flex: 1; width: 100%; aspect-ratio: 760 / 360; border-left: 1px solid var(--line); border-bottom: 1px solid var(--line); cursor: crosshair; touch-action: none; user-select: none; }
-.skd-xachse { position: relative; height: 16px; margin-left: 36px; }
-.skd-xachse span { position: absolute; transform: translateX(-50%); font-size: 11px; color: var(--muted, #888); font-family: ui-monospace, monospace; }
-.skd-hinweis { margin-top: 2px; }
-@media (max-width: 760px) { .skd-haupt { flex-direction: column; } .skd-liste { width: 100%; } }
-.set-stufen { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
-.set-stufen-liste { display: grid; grid-template-columns: repeat(2, minmax(180px, 1fr)); gap: 2px 16px; }
-.set-stufe-paar { display: grid; grid-template-columns: 14px 1fr auto; align-items: center; gap: 6px; }
+/* Einstellungen → Einsatzaufkommen (Grafik/Tabelle) */
+.auf { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+.set-grid.auf-kopf { display: flex; align-items: center; gap: 8px 10px; flex-wrap: wrap; }
+.set-grid.auf-kopf > label { font-size: 13px; color: var(--text-dim); }
+.set-grid.auf-kopf > label:nth-of-type(2) { margin-left: auto; }
+.auf-seg { display: inline-flex; border: 1px solid var(--line-2); border-radius: var(--radius); overflow: hidden; background: var(--panel-2); }
+.auf-seg-b { border: 0; background: transparent; color: var(--text-dim); font: inherit; font-size: 13px; padding: 6px 14px; cursor: pointer; min-height: 32px; }
+.auf-seg-b + .auf-seg-b { border-left: 1px solid var(--line-2); }
+.auf-seg-b[aria-pressed="true"] { background: var(--blue); color: #fff; font-weight: 600; }
+.auf-seg-b:hover:not([aria-pressed="true"]) { background: var(--hover); color: var(--text); }
+.auf-info { padding: 6px 10px; border-radius: 6px; background: var(--panel-2); }
+.auf-haupt { display: flex; gap: 14px; align-items: flex-start; }
+.auf-liste { width: 300px; flex-shrink: 0; display: flex; flex-direction: column; gap: 1px; }
+.auf-gruppe { font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-dim); padding: 8px 10px 4px; }
+.auf-gruppe:first-child { padding-top: 0; }
+.auf-reihe { display: grid; grid-template-columns: 12px 1fr 52px 34px; align-items: center; gap: 8px; min-height: 32px; padding: 0 10px; border: 1px solid transparent; border-radius: 6px; background: transparent; color: var(--text); text-align: left; cursor: pointer; font: inherit; font-size: 13px; }
+.auf-reihe:hover { background: var(--hover); }
+.auf-reihe.an { background: var(--sel); font-weight: 600; }
+.auf-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.auf-pct, .auf-reihe .auf-mono { text-align: right; font-size: 12px; }
+.auf-punkt { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+.auf-punkt.gross { width: 14px; height: 14px; }
+.auf-rechts { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.auf-titel { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; font-size: 15px; }
+.auf-knoepfe, .auf-stunde { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.auf-knoepfe select { height: 28px; }
+.auf-stunde { padding: 6px 8px; border-radius: 6px; background: var(--panel-2); }
+.auf-andere { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
+.auf-mono { font-family: ui-monospace, "IBM Plex Mono", monospace; }
+.auf-wert { min-width: 44px; text-align: center; font-weight: 600; }
+.auf-diagramm { display: flex; gap: 6px; }
+.auf-yachse { position: relative; width: 34px; flex-shrink: 0; }
+.auf-yachse span { position: absolute; right: 0; transform: translateY(-50%); font-size: 11px; color: var(--text-dim); font-family: ui-monospace, monospace; }
+.auf-svg { flex: 1; width: 100%; aspect-ratio: 760 / 330; border-left: 1px solid var(--line-2); border-bottom: 1px solid var(--line-2); cursor: crosshair; touch-action: none; user-select: none; }
+.auf-raster { stroke: var(--line); stroke-width: 1; }
+.auf-raster.fein { stroke-width: 0.5; }
+.auf-dot { stroke: var(--panel); stroke-width: 2; }
+.auf-xachse { position: relative; height: 16px; margin-left: 40px; }
+.auf-xachse span { position: absolute; transform: translateX(-50%); font-size: 11px; color: var(--text-dim); font-family: ui-monospace, monospace; }
+.auf-schwere { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+.auf-schwere input { width: 64px; }
+.auf-tabelle input[type="number"] { width: 70px; }
+.auf-rest { margin-top: 4px; padding-top: 12px; border-top: 1px solid var(--line); }
+@media (max-width: 900px) { .auf-haupt { flex-direction: column; } .auf-liste { width: 100%; } }
+.auf-tabelle td:first-child, .auf-tabelle td:nth-child(7) { white-space: nowrap; }
+.auf-seg-b { min-height: 30px; padding: 4px 14px; }

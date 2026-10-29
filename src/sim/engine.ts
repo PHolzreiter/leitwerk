@@ -48,7 +48,7 @@ import { personaWaehlen } from "../abfrage/persona";
 import { alleOrte, kategorienFuerOrtArt, ortGewicht, ortKategorie, poiKategorien } from "../data/orte";
 import { ortAnStelle, ortPartner } from "../data/ortProfile";
 import { ortRegeln } from "../abfrage/ortRegeln";
-import { FUNKGRUPPE_ANTEIL, stufenAnteile, stufenKurven } from "./stufenKurven";
+import { acnKurve, FUNKGRUPPE_ANTEIL, stufenAnteile, stufenKurven } from "./stufenKurven";
 import { katKtOffen, katOffen, ortArtOffen } from "../data/ortZeiten";
 import { stellen, stellenInGruppe, stellenLaden, stelleBeschreibung, type Einsatzstelle } from "../data/einsatzstellen";
 import { bezugFuer, fuellen, ORT_IM_FREIEN, stimmungAusVerlauf, szenarioBauen, altersPlausibel, sichtUnbekannt, vorlageFest, vorlageWaehlen, type AnruferTyp, type OrtArt, type OrtModus, type Szenario } from "../abfrage/szenario";
@@ -3627,11 +3627,12 @@ export class Simulation {
     }
     }
     // ACN: Akutpflege zu Hause, je Standort (dessen ACN gerade Dienst hat) einige pro Tag
-    const acnRate = this.settings.acnProTag ?? 2;
+    // je Standort und Stunde laut ACN-Kurve (Einstellungen → Einsatzaufkommen), mal ruhig/normal/stressig
+    const acnRate = acnKurve(this.settings)[h] * AUFKOMMEN_FAKTOR[this.settings.aufkommenStufe ?? "normal"];
     if (acnRate > 0) {
       const g = this.funkgruppe();
       const standorte = new Set(Object.values(this.state.fahrzeuge).filter((f) => f.rmTyp === "ACN" && !f.ausserDienst && inFunkgruppe(g, f.heim.lat, f.heim.lon)).map((f) => f.stationId));
-      for (const st of standorte) if (Math.random() < (acnRate * dt) / 86_400_000) void this.generiereAcn(st);
+      for (const st of standorte) if (Math.random() < (acnRate * dt) / 3_600_000) void this.generiereAcn(st);
     }
     // Flughafen Wien (selten): angekündigter Notfall an Bord, Notfall an Bord am Gate, Arbeitsunfall beim Personal
     if (inFunkgruppe(this.funkgruppe(), NOTFALL_STAND.lat, NOTFALL_STAND.lon)) {

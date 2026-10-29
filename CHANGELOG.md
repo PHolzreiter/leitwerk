@@ -1,5 +1,13 @@
 # Änderungen
 
+## 0.90.0 – Einsatzaufkommen aufgeräumt
+- **Einstellungen → Einsatzaufkommen neu:** oben „Einstellen mit: Grafik | Tabelle“ und „Aufkommen insgesamt: Ruhig | Normal | Stressig“, darunter eine Zeile mit dem Aufkommen deiner Funkgruppe am Tag
+- **Grafik direkt im Reiter** (kein eigenes Fenster mehr): Notfälle je Versorgungsstufe, Krankentransporte, Überstellungen und ACN-Einsätze – je Reihe 24 Stunden als Punkte zum Ziehen. Die Zahlen gelten für deine Funkgruppe
+- **Tabelle** = die bisherige Methode: Notfälle, KT, Überstellungen und ACN je Stunde als Zahlen, dazu die Schwere harmlos/mittel/kritisch
+- ACN-Einsätze jetzt je Stunde einstellbar (statt nur „pro Tag“); ruhig/normal/stressig gilt auch für sie
+- Darunter nur noch: Einsätze automatisch erzeugen und Einsätze in Nachbarzonen
+- Die Funkgruppe wählt man nur noch auf der Startseite; „Einsätze aus dem Fallkatalog“ und „Quelle“ stehen jetzt unter Notrufe & Anrufer; die doppelten Felder „Anteil stabil/dringend/kritisch“ sind weg
+
 ## 0.89.0 – Notfälle je Versorgungsstufe über den Tag
 - **Kurven je Versorgungsstufe:** Einstellungen → Einsatzaufkommen → Versorgungsstufen → „Kurven bearbeiten …“. Links die elf Stufen (Telemedizin … ALS rot, Großunfall) mit Anteil und Notfällen pro Tag, rechts die 24 Stunden der gewählten Stufe als Punkte – nach oben oder unten ziehen, auch über mehrere Stunden „malen“. Dazu Grundniveau ±, Kurve ±10 %, Glätten, Zurücksetzen und „Alle auf Statistik“
 - Die Werte gelten für ganz NÖ (Standard: Zahlen von 2025); im Spiel kommt der Anteil deiner Funkgruppe (z. B. NÖ-03 ≈ 15 %, NÖ-01 ≈ 25 %, NÖ-02 ≈ 10 %), dazu wie bisher ruhig/normal/stressig

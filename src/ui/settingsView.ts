@@ -11,14 +11,12 @@ import { geoStatus, REGIONEN } from "../sim/geo";
 import { KATEGORIEN, KATEGORIE_LABEL, NOTARZT_LABEL, defaultStufeFuer, stufeRaten, type Kategorie, type NotarztRegel, type Settings } from "../sim/settings";
 import { codeKategorien } from "../sim/codes";
 import { modusVon, WETTER_LABEL, type WetterLage } from "../sim/weather";
-import { FUNKGRUPPEN } from "../sim/funkgruppen";
 import { confirmDialog } from "./dialog";
 import { buildAppSection, buildPacksSection } from "./packsView";
 import { buildKiSection } from "./kiView";
 import { el, esc, toast } from "./dom";
 import { abfrageAnsicht, setzeAbfrageAnsicht } from "./abfrageAnsicht";
-import { STUFEN_INFO, stufenAnteile, stufenKurven } from "../sim/stufenKurven";
-import { stufenKurvenOeffnen } from "./stufenKurvenDialog";
+import { aufkommenBauen } from "./aufkommenPanel";
 
 const STATUS_BEDEUTUNG: Record<string, string> = {
   freiWache: "frei auf der Wache",
@@ -98,22 +96,10 @@ export function createSettingsView(container: HTMLElement, teil: "simulation" | 
     }
     sSec.appendChild(sTab);
 
-    // Spielgebiet
-    const gSec = section("Spielgebiet", "Wo gespielt wird: Einsätze entstehen nur in dieser Funkgruppe, gefunkt wird auf ihr.");
-    const gGrid = el("div", { class: "set-grid" });
-    gSec.appendChild(gGrid);
-
-    // Aufkommen
-    const aSec = section(
-      "Einsatzaufkommen",
-      "Wie viele Notfälle und Krankentransporte kommen. Die Stufe gilt für alles; die genauen Werte je Stunde stehen in der Tabelle darunter.",
-    );
-    const aGrid = el("div", { class: "set-grid" });
-    const stufeSel = el("select", { class: "set-aufkommen-stufe" }) as HTMLSelectElement;
-    for (const [v, l] of [["ruhig", "Ruhig – etwa 60 %"], ["normal", "Normal – wie in der Tabelle"], ["stressig", "Stressig – etwa 160 %"]]) stufeSel.appendChild(el("option", { value: v }, l));
-    stufeSel.value = draft.aufkommenStufe ?? "normal";
-    stufeSel.addEventListener("change", () => (draft.aufkommenStufe = stufeSel.value as Settings["aufkommenStufe"]));
-    aGrid.append(el("label", { title: "Wie auf der Startseite: ruhig, normal oder stressig" }, "Aufkommen insgesamt"), stufeSel);
+    // Aufkommen: Grafik/Tabelle, ruhig/normal/stressig; darunter nur, was die Grafik nicht abdeckt
+    const aSec = section("Einsatzaufkommen", "Wie viele Notfälle, Krankentransporte, Überstellungen und ACN-Einsätze zu welcher Stunde kommen.");
+    aSec.appendChild(aufkommenBauen(draft, num));
+    const aGrid = el("div", { class: "set-grid auf-rest" });
     const gen = el("input", { type: "checkbox" });
     gen.checked = draft.generatorAktiv;
     gen.addEventListener("change", () => (draft.generatorAktiv = gen.checked));
@@ -122,19 +108,7 @@ export function createSettingsView(container: HTMLElement, teil: "simulation" | 
     src.append(el("option", { value: "zufall" }, "zufällig (Adressen im Gebiet)"), el("option", { value: "vorlagen" }, "aus Einsatzvorlagen (Reiter Daten)"));
     src.value = draft.generatorQuelle;
     src.addEventListener("change", () => (draft.generatorQuelle = src.value as Settings["generatorQuelle"]));
-    aGrid.append(el("label", {}, "Quelle"), src);
-    const geb = el("select");
-    for (const g of FUNKGRUPPEN) {
-      const o = el("option", { value: g.id }, `TETRA ${g.id} – ${g.bezirke}${g.verfuegbar ? "" : " (kommt später)"}`);
-      o.disabled = !g.verfuegbar;
-      geb.appendChild(o);
-    }
-    geb.value = draft.funkgruppe ?? "NÖ-03";
-    geb.addEventListener("change", () => (draft.funkgruppe = geb.value));
-    gGrid.append(
-      el("label", { title: "Einsätze entstehen nur in diesen Bezirken, gefunkt wird auf dieser Gruppe. Fahrzeuge von außen kann man trotzdem alarmieren." }, "Funkgruppe (TETRA)"),
-      geb,
-    );
+    const quelleZeile = [el("label", { title: "Woher die Einsätze kommen" }, "Quelle der Einsätze"), src];
     // Anrufer und Verlauf (eigener Abschnitt, gleich nach dem Aufkommen gebaut)
     const vGrid = el("div", { class: "set-grid" });
     const alGrid = el("div", { class: "set-grid" });
@@ -164,73 +138,7 @@ export function createSettingsView(container: HTMLElement, teil: "simulation" | 
     const fkEdit = el("button", { class: "btn small", type: "button", title: "Fälle ansehen, selbst schreiben, prüfen, importieren und exportieren" }, "Fälle bearbeiten …");
     fkEdit.addEventListener("click", () => fallEditorOeffnen());
     fkBox.append(fkSel, fkEdit);
-    aGrid.append(el("label", { title: "Fälle mit stimmigem Telefonat, Verlauf, Notarzt-Bedarf nach Kompetenz und Krankenhaus" }, "Einsätze aus dem Fallkatalog"), fkBox);
-    // Schwere der Notfälle aus dem Fallkatalog (Anteile in %)
-    const schwere = { harmlos: 35, mittel: 50, kritisch: 15, ...(draft.schwere ?? {}) };
-    const swBox = el("div", { class: "row-btns set-schwere" });
-    const swSumme = el("span", { class: "muted small" });
-    const swText = () => {
-      const s = schwere.harmlos + schwere.mittel + schwere.kritisch;
-      swSumme.textContent = s === 100 ? "" : `(zusammen ${s} – wird anteilig gerechnet)`;
-    };
-    for (const [k, l] of [["harmlos", "harmlos"], ["mittel", "mittel"], ["kritisch", "kritisch"]] as const) {
-      const i = num(schwere[k], "5");
-      i.style.width = "64px";
-      i.dataset.schwere = k;
-      i.addEventListener("change", () => {
-        schwere[k] = Math.max(0, Number(i.value) || 0);
-        draft.schwere = { ...schwere };
-        swText();
-      });
-      swBox.append(el("span", { class: "muted small" }, l), i);
-    }
-    swText();
-    swBox.appendChild(swSumme);
-    aGrid.append(el("label", { title: "Wie viele Notfälle aus dem Fallkatalog harmlos (grün), mittel (gelb) oder kritisch (rot) sind – in Prozent" }, "Schwere der Notfälle (%)"), swBox);
-    // Verteilung nach Versorgungsstufe (Telemedizin … ALS rot) – Standard: Statistik 2025
-    const vnSel = el("select", { class: "set-verteilung" }) as HTMLSelectElement;
-    for (const [v, l] of [["stufe", "Versorgungsstufe (Statistik)"], ["schwere", "Schwere (harmlos/mittel/kritisch)"]]) vnSel.appendChild(el("option", { value: v }, l));
-    vnSel.value = draft.verteilungNach ?? "stufe";
-    const stBox = el("div", { class: "set-stufen" });
-    const stZeichnen = () => {
-      stBox.innerHTML = "";
-      const k = stufenKurven(draft.stufenStunden);
-      const anteile = stufenAnteile(k);
-      const tag = Object.values(k).reduce((t, a) => t + a.reduce((x, y) => x + y, 0), 0);
-      const zeilen = el("div", { class: "set-stufen-liste" });
-      for (const s of STUFEN_INFO) {
-        const z = el("span", { class: "set-stufe-paar", "data-stufe": s.name });
-        const p = el("span", { class: "skd-punkt" });
-        p.style.background = s.farbe;
-        const a = anteile[s.name] ?? 0;
-        z.append(p, el("span", { class: "muted small" }, s.name), el("span", { class: "skd-mono small" }, `${a.toFixed(a < 0.1 ? 4 : 1).replace(".", ",")} %`));
-        zeilen.appendChild(z);
-      }
-      const b = el("button", { class: "btn small set-stufen-kurven", type: "button" }, "Kurven bearbeiten …");
-      b.addEventListener("click", () =>
-        stufenKurvenOeffnen(draft.stufenStunden, draft.funkgruppe ?? "NÖ-03", (neu) => {
-          draft.stufenStunden = neu;
-          stZeichnen();
-        }),
-      );
-      stBox.append(zeilen, el("div", { class: "muted small" }, `${Math.round(tag)} Notfälle/Tag in ganz NÖ${draft.stufenStunden ? " (eigene Kurven)" : " (Statistik 2025)"}`), b);
-    };
-    stZeichnen();
-    const sichtbar = () => {
-      stBox.style.display = vnSel.value === "stufe" ? "" : "none";
-      swBox.style.opacity = vnSel.value === "stufe" ? "0.5" : "";
-    };
-    vnSel.addEventListener("change", () => {
-      draft.verteilungNach = vnSel.value as Settings["verteilungNach"];
-      sichtbar();
-    });
-    sichtbar();
-    aGrid.append(
-      el("label", { title: "Versorgungsstufe: so viele Notrufe enden in Telemedizin, BLS grün … ALS rot wie in der Statistik (gilt, wenn das Codesystem diese Stufen kennt; sonst zählt die Schwere). Schwere: nach dem Zustand vor Ort." }, "Verteilung der Notfälle nach"),
-      vnSel,
-      el("label", { title: "Wie viele Notfälle je Versorgungsstufe über den Tag kommen – „Kurven bearbeiten“ öffnet die 24 Stunden je Stufe zum Ziehen" }, "Versorgungsstufen"),
-      stBox,
-    );
+    vGrid.append(el("label", { title: "Fälle mit stimmigem Telefonat, Verlauf, Notarzt-Bedarf nach Kompetenz und Krankenhaus" }, "Einsätze aus dem Fallkatalog"), fkBox, ...quelleZeile);
     const rvSel = el("select", { class: "set-revers" }) as HTMLSelectElement;
     for (const [v, l] of [["normal", "normal"], ["selten", "selten"], ["aus", "aus"]]) rvSel.appendChild(el("option", { value: v }, l));
     rvSel.value = draft.revers ?? "normal";
@@ -240,25 +148,6 @@ export function createSettingsView(container: HTMLElement, teil: "simulation" | 
     rzv.checked = draft.rendezvous !== false;
     rzv.addEventListener("change", () => (draft.rendezvous = rzv.checked));
     alGrid.append(el("label", { title: "Braucht der Patient einen Notarzt und ist das NEF noch mehr als 15 Minuten entfernt, fährt der RTW mit dem Patienten los und trifft das NEF unterwegs" }, "Rendezvous RTW – NEF"), rzv);
-    // ACN: Akutpflege-Einsätze zu Hause
-    const acnRate = el("input", { type: "range", min: "0", max: "8", step: "0.5" }) as HTMLInputElement;
-    acnRate.value = String(draft.acnProTag ?? 2);
-    const acnWert = el("span", { class: "muted small" });
-    const acnText = () => (acnWert.textContent = Number(acnRate.value) ? `ca. ${Number(acnRate.value).toLocaleString("de-AT")} pro Standort und Tag` : "aus");
-    acnText();
-    acnRate.addEventListener("input", () => {
-      draft.acnProTag = Number(acnRate.value);
-      acnText();
-    });
-    const acnZeile = el("div", { class: "fremd-rate" });
-    acnZeile.append(acnRate, acnWert);
-    aGrid.append(el("label", { title: "Pflegerische Einsätze ohne Eile (ACN-Codes), zu denen nur die ACN nach Hause fährt – nur rund um ACN-Standorte" }, "ACN-Einsätze (Akutpflege)"), acnZeile);
-    // Verteilung der Notfälle auf die Kategorien
-    for (const k of KATEGORIEN) {
-      const i = num(draft.aufkommen[k], "0.5");
-      i.addEventListener("change", () => (draft.aufkommen[k as Kategorie] = Number(i.value) || 0));
-      aGrid.append(el("label", {}, `Anteil ${KATEGORIE_LABEL[k]} (Notfälle)`), i);
-    }
     // Work in Progress: Einsätze in Nachbarzonen
     const fzWrap = el("label", { title: "Einsätze knapp außerhalb deiner Funkgruppe, zu denen eigene Fahrzeuge (meist das NEF) fahren – angelegt und disponiert vom Kollegen der Nachbarzone" });
     fzWrap.innerHTML = `Einsätze in Nachbarzonen <span class="wip-badge">Work in Progress</span>`;
@@ -294,7 +183,7 @@ export function createSettingsView(container: HTMLElement, teil: "simulation" | 
       fzRateZeile.hidden = !fzAn.checked;
       fzRateLabel.hidden = !fzAn.checked;
     });
-    gGrid.append(fzWrap, fzAn, fzRateLabel, fzRateZeile);
+    aGrid.append(fzWrap, fzAn, fzRateLabel, fzRateZeile);
     // Krankenhäuser: Grundbelegung (andere Leitstellen, Selbstzuweiser) mit Tageskurve
     const kgAn = el("input", { type: "checkbox" }) as HTMLInputElement;
     kgAn.checked = draft.khGrundAktiv !== false;
@@ -323,35 +212,6 @@ export function createSettingsView(container: HTMLElement, teil: "simulation" | 
     );
     aSec.appendChild(aGrid);
 
-    // Aufkommen je Stunde (Notfälle und Krankentransporte)
-    const tab = el("table", { class: "set-table stunden" });
-    const kopf = `<th>Stunde</th><th>Notfälle / h</th><th>KT / h</th><th>Überstellungen / h</th>`;
-    tab.innerHTML = `<tr>${kopf}<th></th>${kopf}</tr>`;
-    for (let h = 0; h < 12; h++) {
-      const tr = el("tr");
-      for (const st of [h, h + 12]) {
-        const z = draft.stunden[st];
-        const rd = num(z.rd, "0.5");
-        rd.addEventListener("change", () => (z.rd = Math.max(0, Number(rd.value) || 0)));
-        const kt = num(z.kt, "0.5");
-        kt.addEventListener("change", () => (z.kt = Math.max(0, Number(kt.value) || 0)));
-        const sek = num(z.sek ?? 0, "0.1");
-        sek.addEventListener("change", () => (z.sek = Math.max(0, Number(sek.value) || 0)));
-        const td = (x: HTMLElement | string) => {
-          const c = el("td");
-          if (typeof x === "string") c.textContent = x;
-          else c.appendChild(x);
-          tr.appendChild(c);
-        };
-        td(`${String(st).padStart(2, "0")}–${String(st + 1).padStart(2, "0")} Uhr`);
-        td(rd);
-        td(kt);
-        td(sek);
-        if (st === h) td("");
-      }
-      tab.appendChild(tr);
-    }
-    aSec.appendChild(tab);
     const vSec = section("Anrufer und Verlauf", "Wie sich Anrufer und Einsätze verhalten: falsche Adressen, Rückrufe, Verschlechterungen, Transportverweigerung.");
     vSec.appendChild(vGrid);
     const alSec = section("Alarmierung", "Wie alarmiert wird. Welches Rettungsmittel bei welcher Stufe kommt, steht darunter.");

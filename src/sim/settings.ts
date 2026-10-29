@@ -161,6 +161,8 @@ export interface Settings {
   startzeit?: string;
   /** ACN-Einsätze (Akutpflege zu Hause) je ACN-Standort und Tag */
   acnProTag?: number;
+  /** ACN-Einsätze je Standort und Stunde (24 Werte); fehlt = aus acnProTag über den Tag verteilt */
+  acnStunden?: number[];
   /** Krankenhäuser: zufällige Grundbelegung (andere Leitstellen, Selbstzuweiser) */
   khGrundAktiv?: boolean;
   /** Stärke der Grundbelegung (1 = normal, 0–2) */

@@ -67,3 +67,17 @@ export function stufenAnteile(kurven: Record<string, number[]>): Record<string, 
   const ges = Object.values(summen).reduce((x, y) => x + y, 0) || 1;
   return Object.fromEntries(Object.entries(summen).map(([k, s]) => [k, (s / ges) * 100]));
 }
+
+/** ACN-Einsätze: Tagesform (pflegerische Einsätze vor allem tagsüber), Anteil je Stunde */
+const ACN_TAG = [0.012, 0.008, 0.006, 0.006, 0.008, 0.015, 0.03, 0.05, 0.065, 0.075, 0.078, 0.075, 0.068, 0.065, 0.062, 0.06, 0.058, 0.055, 0.05, 0.043, 0.035, 0.028, 0.022, 0.016];
+
+/** Standard: ACN-Einsätze je Standort und Stunde bei „proTag“ Einsätzen am Tag */
+export function acnStandard(proTag = 2): number[] {
+  const s = ACN_TAG.reduce((a, b) => a + b, 0);
+  return ACN_TAG.map((x) => Math.round(((proTag * x) / s) * 100000) / 100000);
+}
+
+/** ACN-Kurve aus den Einstellungen (je Standort, Einsätze je Stunde) */
+export function acnKurve(st: { acnStunden?: number[]; acnProTag?: number }): number[] {
+  return st.acnStunden?.length === 24 ? st.acnStunden.map((v) => Math.max(0, Number(v) || 0)) : acnStandard(st.acnProTag ?? 2);
+}
