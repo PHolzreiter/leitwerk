@@ -6,7 +6,7 @@
  */
 import type { AnleitungTyp } from "./faelle";
 import { ortProfil } from "../data/ortProfile";
-import { frageIndex, type Antworten, type Schema, type Wert } from "./schema";
+import { frageIndex, mehrere, type Antworten, type Schema, type Wert } from "./schema";
 
 // ------------------------------------------------------------------ Vorlagen
 
@@ -567,7 +567,7 @@ export function szenarioBauen(
   setze("gewalttaetig", "nein");
   setze("aggressiv", "nein");
   setze("waffen", "nein");
-  setze("mehrere_verletzte", a.anzahl_patienten === "n" ? "ja" : "nein");
+  setze("mehrere_verletzte", mehrere(a) ? "ja" : "nein");
   // sehr schwer nur bei Erwachsenen
   setze("schwer_pat", alter >= 16 && rnd() < 0.08 ? "ja" : "nein");
   if (sicht) {

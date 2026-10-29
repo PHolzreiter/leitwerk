@@ -10,7 +10,7 @@ import { mp } from "../../net/mehrspieler";
 import { ensureCodes } from "../codesPrompt";
 import { el, esc, toast } from "../dom";
 import { codeChip, sekTags } from "../ktView";
-import { registriere, type PanelKontext } from "../ws/arbeitsplatz";
+import { panelZeigen, registriere, type PanelKontext } from "../ws/arbeitsplatz";
 import { auswahl, onAuswahl, waehle } from "../ws/auswahl";
 import { bearbeiterHtml, stufeFarbe, uhr } from "./teile";
 
@@ -30,6 +30,11 @@ const ANRUF_LAEUFT = ["klingelt", "aktiv", "gehalten", "verpasst"];
 export function einsatzLage(e: Einsatz): Lage {
   if (e.zustand === "abgeschlossen") return "erledigt";
   if (e.anruf && ANRUF_LAEUFT.includes(e.anruf.status)) return "anruf";
+  // Großeinsatz: zu tun, solange der BR fehlt, Buchungen offen sind oder nachgefordert wird
+  if (e.gs && !e.gs.aufgehoben && e.gs.phase !== "alarm") {
+    const kinder = Object.values(e.gs.kinder).map((id) => sim.einsatz(id));
+    return e.gs.brNoetig || e.nachforderungen?.some((n) => !n.erledigt) || kinder.some((k) => k && !k.kh && k.zustand !== "abgeschlossen") ? "dispo" : "vorort";
+  }
   const fz = e.fahrzeuge.map((id) => sim.state.fahrzeuge[id]).filter((f) => f && f.einsatzId === e.id);
   if (!fz.length && e.fremd) return "erledigt";
   if (!e.fremd && (!fz.length || e.nachforderungen?.some((n) => !n.erledigt) || e.khAnfrage || e.adressePruefen)) return "dispo";
@@ -156,6 +161,8 @@ function erstellen(ctx: PanelKontext) {
     // Anrufe, die noch niemand angenommen hat, stehen nur im Telefon
     for (const e of sim.state.einsaetze) {
       if (e.anruf && !e.anruf.angenommenVon && !e.fahrzeuge.length) continue;
+      // Großschaden: die Patienten stehen im Reiter Großeinsatz
+      if (e.gsKind) continue;
       out.push({ art: "rd", id: e.id, lage: einsatzLage(e), zeit: e.erstellt, e });
     }
     for (const k of sim.state.kt ?? []) {
@@ -263,7 +270,7 @@ function erstellen(ctx: PanelKontext) {
           c
             ? `<span class="el-typ rd el-code"><span class="stufe-dot" style="background:${stufeFarbe(c.stufe)}"></span>${esc(c.code)}</span><span class="el-text">${esc(c.beschreibung)}</span>`
             : `<span class="el-typ rd el-code leer">${a ? "Abfrage" : "ohne Code"}</span>`
-        }${e.fremd ? `<span class="el-fremd" title="Einsatz einer anderen Zone – dort disponiert, deine Fahrzeuge fahren mit">Zone ${esc(e.fremd.zone)}</span>` : ""}${warn ? `<span class="warn-dot" title="Rückfrage oder Nachforderung offen">!</span>` : ""}${tel}</div>
+        }${e.gs && !e.gs.aufgehoben ? `<span class="el-gs" title="Großeinsatz – Reiter Großeinsatz">${esc(e.gs.stufe ?? "Großeinsatz")}</span>` : ""}${e.zusammengelegt ? `<span class="el-fremd" title="zweiter Notruf, mit einem anderen Einsatz zusammengelegt">zusammengelegt</span>` : ""}${e.fremd ? `<span class="el-fremd" title="Einsatz einer anderen Zone – dort disponiert, deine Fahrzeuge fahren mit">Zone ${esc(e.fremd.zone)}</span>` : ""}${warn ? `<span class="warn-dot" title="Rückfrage oder Nachforderung offen">!</span>` : ""}${tel}</div>
         <div class="el-z2 muted">${esc(e.adresse?.label ?? (e.meldung.adresse ? `gemeldet: ${e.meldung.adresse}` : "Adresse fehlt"))}</div>
         ${bearbeiterHtml(e)}
       </div>
@@ -360,6 +367,18 @@ function testMenu(anker: HTMLElement, art: Art): void {
   punkt("Überstellung", () => kt(true));
   if (art === "kt") m.prepend(m.children[1]);
   if (art === "sek") m.prepend(m.children[2]);
+  // Großschadensfall (ab 6 Betroffenen) – nur der Host
+  if (mp.status.rolle !== "client") {
+    punkt("💥 Großschadensfall auslösen", async () => {
+      if (!ensureCodes()) return;
+      const id = await sim.call("grossschadenAusloesen").catch((err) => (toast(String(err.message ?? err), "error"), null));
+      for (let i = 0; id && !sim.einsatz(String(id)) && i < 20; i++) await new Promise((x) => setTimeout(x, 100));
+      if (id) {
+        toast("Großschadensfall ausgelöst – der erste Notruf klingelt");
+        panelZeigen("grosseinsatz");
+      }
+    });
+  }
   // KI-Gespräche automatisch durchspielen (wie im Fall-Editor)
   m.appendChild(el("hr"));
   punkt("🧪 Testlauf KI-Gespräche …", async () => {

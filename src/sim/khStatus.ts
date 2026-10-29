@@ -158,7 +158,22 @@ export function zeitenText(plan: Schicht[] | undefined): string {
 export function plaetze(h: Hospital, r: Ressource): number {
   const def = RESSOURCE.get(r)!;
   if (!(h.einrichtungen ?? []).includes(def.einrichtung)) return 0;
-  return Math.max(0, h.plaetze?.[r] ?? 0);
+  const n = Math.max(0, h.plaetze?.[r] ?? 0);
+  // Großschaden: voravisiertes Haus stockt auf 150 % auf (aufgerundet)
+  return voravisiert.has(h.id) ? Math.ceil(n * 1.5) : n;
+}
+
+/** Krankenhäuser mit Voraviso (Großschaden): 150 % der Plätze, keine Selbstzuweiser */
+const voravisiert = new Set<string>();
+
+/** Voraviso aller laufenden Großschäden setzen (von der Simulation bei jedem Schritt) */
+export function voravisoSetzen(ids: Iterable<string>): void {
+  voravisiert.clear();
+  for (const id of ids) voravisiert.add(id);
+}
+
+export function istVoravisiert(id: string): boolean {
+  return voravisiert.has(id);
 }
 
 export interface Belegung {
@@ -280,6 +295,8 @@ export function grundbelegungTick(b: BelegungMap, haeuser: Hospital[], t: number
       // abgelaufene entfernen
       for (let i = liste.length - 1; i >= 0; i--) if (liste[i].bis <= t) liste.splice(i, 1);
       if (!offen(h, def.einrichtung, t)) continue;
+      // voravisiert (Großschaden): keine Selbstzuweiser
+      if (voravisiert.has(h.id)) continue;
       const mittel = (def.dauer[0] + def.dauer[1]) / 2;
       const ziel = Math.min(n, n * 0.6 * k * def.grund);
       const grund = liste.filter((x) => !x.einsatz).length;

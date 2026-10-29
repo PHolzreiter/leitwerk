@@ -61,7 +61,7 @@ function collection(features: Feature[]): FeatureCollection<Point> {
 }
 
 /** Farben der Partner-Organisationen (Dienststellen und Fahrzeuge) */
-export const PARTNER_FARBE: Record<PartnerArt, string> = { fw: "#e53935", pol: "#1e3a8a", berg: "#2e7d32", wasser: "#0097a7" };
+export const PARTNER_FARBE: Record<PartnerArt, string> = { fw: "#e53935", pol: "#1e3a8a", berg: "#2e7d32", wasser: "#0097a7", ki: "#7c3aed" };
 
 function stationFeatures(): FeatureCollection<Point> {
   return collection(
@@ -620,6 +620,9 @@ function incidentFeatures(): FeatureCollection<Point> {
   const out: Feature[] = [];
   for (const e of sim.state.einsaetze) {
     if (!e.adresse || e.zustand === "abgeschlossen") continue;
+    // Großschaden: nur der Bereitstellungsraum dazu (die Patienten liegen am selben Ort)
+    if (e.gsKind) continue;
+    if (e.gs?.br && !e.gs.aufgehoben && e.gs.phase !== "ende") out.push(pointFeature(e.id, e.gs.br.lon, e.gs.br.lat, { name: `BR ${e.nummer}`, color: "#6b7280", sel: 0, br: 1 }));
     out.push(
       pointFeature(e.id, e.adresse.lon, e.adresse.lat, {
         name: e.nummer,

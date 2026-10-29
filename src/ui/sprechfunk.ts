@@ -521,8 +521,29 @@ export function sprechKnopfAnbinden(b: HTMLElement, ziel: () => FunkZiel = () =>
  * Pilot: alles, was seinen Hubschrauber betrifft, normal; den übrigen Funkverkehr leiser (abschaltbar);
  * die Leitstelle nur, wenn sie getippt hat (Gesprochenes kommt ohnehin live).
  */
-export function funkVorleseLaut(g: { fzId: string; an?: { fzId: string } | null; fuehrer: { pid: string } | null }, s: { von: string }): number {
+/** Sprechgruppe Großeinsatz mithören (Häkchen im Reiter „Funk Großeinsatz“) – eigene Gespräche hört man immer */
+let gsMithoeren = (() => {
+  try {
+    return localStorage.getItem("lw-gs-mithoeren") !== "0";
+  } catch {
+    return true;
+  }
+})();
+export function gsMithoerenAn(): boolean {
+  return gsMithoeren;
+}
+export function gsMithoerenSetzen(an: boolean): void {
+  gsMithoeren = an;
+  try {
+    localStorage.setItem("lw-gs-mithoeren", an ? "1" : "0");
+  } catch {
+    /* egal */
+  }
+}
+
+export function funkVorleseLaut(g: { fzId: string; an?: { fzId: string } | null; fuehrer: { pid: string } | null; kanal?: "gs" }, s: { von: string }): number {
   const ich = sim.ich?.pid ?? mp.ich.pid;
+  if (g.kanal === "gs" && !gsMithoeren && !(g.fuehrer && g.fuehrer.pid === ich)) return 0;
   if (!istPilot()) {
     if (s.von === "LEO") return 0;
     return !g.fuehrer || sim.mode === "solo" || g.fuehrer.pid === ich ? 1 : 0;

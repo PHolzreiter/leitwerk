@@ -5,7 +5,7 @@
  *
  * Grundlage ist die Abfrage, wie sie der Calltaker ausgefüllt hat – nicht die Wahrheit.
  */
-import type { Antworten, Frage, Schema } from "./schema";
+import { mehrere, type Antworten, type Frage, type Schema } from "./schema";
 import { merkmalVonFrage, merkmaleAusSchema } from "./themen";
 
 /** Wie der Calltaker den Patienten nennt */
@@ -16,7 +16,7 @@ export function anredeAus(schema: Schema | null, antworten: Antworten): Anrede {
   const a = schema ? merkmaleAusSchema(schema, antworten) : antworten;
   if (a.anrufer === "1") return "sie";
   // mehrere Betroffene: Geschlecht spielt keine Rolle
-  if (a.anzahl_patienten !== undefined && a.anzahl_patienten !== "1") return "neutral";
+  if (a.anzahl_patienten !== undefined && a.anzahl_patienten !== "1" && a.anzahl_patienten !== "unbekannt") return "neutral";
   if (a.geschlecht === "m" || a.geschlecht === "w") return a.geschlecht;
   return "neutral";
 }
@@ -238,6 +238,8 @@ export function sprechFrage(f: Frage, schema: Schema | null, antworten: Antworte
   const def = psych ? SPRECH.lage_psych : SPRECH[m];
   const rnd = opt.zufall ?? Math.random;
   if (m === "ort_adresse" && opt.erste) return "Notruf 144, Rettungsdienst. Wo genau ist der Notfallort?";
+  // mehrere Betroffene: Frage an die Gruppe („Ist jemand bewusstlos …?“)
+  if (f.text_mehrere && mehrere(antworten)) return allgemein(f.text_mehrere, "neutral");
   // Kinder: „Bub oder Mädchen?“
   if (m === "geschlecht" && typeof antworten.alter === "number" && antworten.alter < 14) return "Ist es ein Bub oder ein Mädchen?";
   if (def) {

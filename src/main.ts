@@ -41,6 +41,7 @@ import "./ui/panels/telefon";
 import "./ui/panels/abfrage";
 import "./ui/panels/masken";
 import "./ui/panels/kommunikation";
+import "./ui/panels/grosseinsatz";
 import { AKV_SPALTEN_AK, akvZustand } from "./ui/khInfo";
 import { akutVon } from "./data/klinik";
 import { stellenLaden } from "./data/einsatzstellen";

@@ -1,5 +1,19 @@
 # Änderungen
 
+## 0.92.0 – Großschadensfall
+- **Großschadensfall ab 6 Betroffenen (NF5, NF10, NF30):** erfundene Ereignisse an echten Orten in TETRA NÖ-03 – Auffahrunfall auf einer Bundesstraße (früh), Auffahrunfall am Stauende einer Schnellstraße, Unfall im Tunnel Dürnstein, Brand in einem Mehrparteienhaus (nachts), Explosion bei KremsChem (werktags), Brand in der Messe Tulln (werktags vormittags) und Zug gegen Lkw am Bahnübergang. Jedes Mal anders: Ort (auf Straßen und Strecken), Zahl und Verletzungen der Patienten, Anrufer, Wetter
+- Kommt ab und zu von selbst (aus der Versorgungsstufe Großunfall, nur wenn das Szenario zur Uhrzeit passt) oder über **„+ Test → Großschadensfall auslösen“** (nur der Host)
+- **Mehrere Anrufer:** zu einem Großschaden kommen weitere Notrufe. Ist der Einsatzort derselbe wie bei einem offenen Einsatz, leuchtet in der Einsatzmaske **„Zusammenlegen“** – dann gibt es keinen neuen Einsatz, der Anruf wird beim bestehenden gespeichert
+- **Abfrage bei mehreren Betroffenen:** „Wie viele Personen sind betroffen?“ jetzt mit 1 · 2–5 · 6–10 · 11–30 · mehr als 30 · unbekannt. Ab 2 Betroffenen fallen Alter und Geschlecht weg, Bewusstsein und Atmung werden an die Gruppe gefragt („Ist jemand bewusstlos …?“). Sind mehrere Verletzte bestätigt, fallen die dann unwichtigen Kapitelfragen weg (z. B. Verbrennungsfläche); Fragen zu eingeschlossenen oder eingeklemmten Personen bleiben. Beim Verkehrsunfall kommt „mehrere Rettungsmittel?“ erst, wenn mehrere Verletzte bestätigt sind
+- **Alarmierung:** Vorschlag nach Stufe – Schnelleinsatzgruppe (1 BEL, 2 NEF, 3 RTW) zum Berufungsort, dazu Notarzt- und Rettungsmittel für den Bereitstellungsraum. Alle Fahrzeuge außer der Schnelleinsatzgruppe fahren in den **Bereitstellungsraum** – solange er fehlt, warten sie und das Fenster blinkt. Festlegen per Adresse, auf der Karte oder „Vorschlag übernehmen“
+- **Vor Ort:** das erste Fahrzeug gibt die **Sichtmeldung** und übernimmt die Einsatzleitung, ein paar Minuten später kommt die **Lagemeldung** mit den genauen Zahlen (rot/gelb/grün), Verletzungsmustern und Nachforderung. Ein BEL übernimmt die Einsatzleitung, sobald er da ist
+- **Reiter „Großeinsatz“:** Bereitstellungsraum, Lagemeldung (Sicht- und Lagemeldungen kommen automatisch hinein, du kannst ergänzen), Patientenliste mit Alter und Verletzungsmuster – je Patient **„Buchen“** mit dem normalen Buchungsmenü im Pop-up –, Kräfte am Berufungsort und im Bereitstellungsraum, **Voraviso** an Krankenhäuser (150 % der Plätze, keine Selbstzuweiser bis zum Ende)
+- **Abtransport plant die Einsatzleitung:** rot mit RTW und Notarzt (zeitkritisch mit dem Hubschrauber, wenn er vor Ort ist), gelb mit RTW-C/RTW, grün mit KTW/RTW. Fahrzeuge aus dem Bereitstellungsraum ruft sie selbst per Sammelfunk ab; erst wenn mehr gebraucht wird, als da ist, kommt eine Nachforderung. Am Ende: „alle Patienten abtransportiert“ – der Bereitstellungsraum wird aufgelöst, ein Fahrzeug bleibt, solange die Feuerwehr arbeitet
+- **Funk Großeinsatz:** eigener Reiter für die Sprechgruppe des Großeinsatzes, mit Häkchen „mithören“; der normale Funk bleibt frei
+- **Krisenintervention** als Partner (wie Feuerwehr und Polizei): fährt von zu Hause los, ohne Sondersignal
+- **DispoMobil:** steht bei der Leitstelle der Funkgruppe, wird nie vorgeschlagen. Ist es am Einsatzort, bucht es die Krankenhäuser selbst
+- Stellt sich vor Ort heraus, dass es kein Großschaden ist, wird der Bereitstellungsraum aufgelöst
+
 ## 0.91.0 – Realistisch, Standard, Stressig
 - **Neue Voreinstellungen fürs Einsatzaufkommen** (Startseite und Einstellungen → Einsatzaufkommen):
   - **Realistisch:** so viele Notfälle und in der Mischung wie im echten Betrieb 2025

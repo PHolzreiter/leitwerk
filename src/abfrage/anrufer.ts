@@ -6,7 +6,7 @@ import { anleitungAkte, autoAbweichungen } from "./anleitungen";
 import { ortKategorie } from "../data/orte";
 import { ortProfil, PERSONAL } from "../data/ortProfile";
 import { fragtNachZustand, hinweisZurArt, type NachrichtArt } from "./runde";
-import { antwortLabel, frageIndex, type Antworten, type Frage, type Schema } from "./schema";
+import { antwortLabel, frageFuer, frageIndex, type Antworten, type Frage, type Schema } from "./schema";
 import { ist, merkmaleInSchema, thema } from "./themen";
 import { bezugFuer, fallakte, faktSaetze, fuellen, ORT_IM_FREIEN, SELBSTVERSTAENDLICH, type AnruferTyp, type OrtArt, type OrtModus, type Szenario } from "./szenario";
 import { einstiegHinweis, personaText, type Persona } from "./persona";
@@ -858,7 +858,14 @@ function antwortSaetze(k: AnrufKontext): string {
     if (k.szenario && id in k.szenario.zusatz && (wert === "nein" || wert === "0") && SELBSTVERSTAENDLICH.has(id)) continue;
     // Schwangerschaft nur bei Frauen im passenden Alter
     if (/schwanger|entbunden/.test(id) && (!w || (k.szenario && (k.szenario.patient.alter < 12 || k.szenario.patient.alter > 55)))) continue;
-    const f = idx.get(id);
+    const f0 = idx.get(id);
+    // mehrere Betroffene: Fragen an die Gruppe („Ist jemand bewusstlos …?“)
+    const f = f0 ? frageFuer(f0, k.wahrheit) : f0;
+    if (f && f !== f0 && f.text_mehrere && f.optionen) {
+      const t = wahrheitText(k, f);
+      if (t) zeilen.push(`- Fragt man „${f.text}“, ist die Antwort: ${t}`);
+      continue;
+    }
     if (id === "bw" && wert === "ja" && k.wahrheit.verwirrt === "ja") {
       zeilen.push(`- ${wer} ist wach und redet, aber durcheinander`);
       continue;

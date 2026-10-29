@@ -3,7 +3,7 @@
  * mit der Zeit verändert. Das Programm entscheidet, was passiert – Anrufer und
  * Besatzungen erzählen es nur.
  */
-import type { Antworten } from "../abfrage/schema";
+import { mehrere, type Antworten } from "../abfrage/schema";
 import { ist, thema } from "../abfrage/themen";
 import type { AnleitungTyp, FallVariante, NaBedarf } from "../abfrage/faelle";
 
@@ -120,7 +120,7 @@ export function lageErzeugen(kapitel: string, a: Antworten, jetzt: number, kriti
   const p0 = lage.patienten[0];
 
   // Mehrere Betroffene (laut Anrufer)
-  const n = a.anzahl_patienten === "n" ? 2 + Math.floor(Math.random() * 3) : 1;
+  const n = mehrere(a) ? 2 + Math.floor(Math.random() * 3) : 1;
   lage.gemeldet = n;
   const weitere = (anzahl: number) => {
     for (let i = 0; i < anzahl; i++) {

@@ -24,6 +24,31 @@ export interface Frage {
   optionen?: Option[];
   hinweis?: string | null;
   anzeigen_wenn?: Bedingung | null;
+  /** bei mehreren Betroffenen: Frage an die Gruppe („Ist jemand bewusstlos …?“) und passende Antworttexte */
+  text_mehrere?: string;
+  labels_mehrere?: Record<string, string>;
+}
+
+/** Werte von „Wie viele Personen sind betroffen?“, die mehrere Betroffene bedeuten („n“ = 2–5) */
+export const MEHRERE_WERTE = ["n", "6-10", "11-30", "30+"];
+
+/** Mehrere Betroffene laut Abfrage? */
+export function mehrere(a: Antworten | null | undefined): boolean {
+  const v = a?.anzahl_patienten;
+  return typeof v === "string" && MEHRERE_WERTE.includes(v);
+}
+
+/** Großschaden-Stufe aus der Zahl der Betroffenen (6–10 = NF5, 11–30 = NF10, mehr = NF30) */
+export function nfStufe(a: Antworten | null | undefined): "NF5" | "NF10" | "NF30" | null {
+  const v = a?.anzahl_patienten;
+  return v === "6-10" ? "NF5" : v === "11-30" ? "NF10" : v === "30+" ? "NF30" : null;
+}
+
+/** Frage so, wie sie gestellt wird (bei mehreren Betroffenen an die Gruppe) */
+export function frageFuer(f: Frage, a: Antworten | null | undefined): Frage {
+  if (!mehrere(a) || (!f.text_mehrere && !f.labels_mehrere)) return f;
+  const l = f.labels_mehrere ?? {};
+  return { ...f, text: f.text_mehrere ?? f.text, optionen: f.optionen?.map((o) => (l[o.wert] ? { ...o, label: l[o.wert] } : o)) };
 }
 
 export type Bedingung =
@@ -209,8 +234,89 @@ export function ergaenzeSchema(s: Schema): Schema {
       kap.regeln.splice(pos, 0, ...zurueck);
     }
   }
+  mehrereErgaenzen(p);
   ergaenzt.set(s, p);
   return p;
+}
+
+/** Wann eine Frage bei bestätigt mehreren Verletzten wegfällt (je Thema: Bedingung und Fragen) */
+const WEG_BEI_MEHREREN: { thema: string; wenn: Bedingung; frage: string; weg: string[] }[] = [
+  { thema: "verkehrsunfall", wenn: { q: "anzahl", in: ["n"] }, frage: "anzahl", weg: ["anrufer_selbst", "gering"] },
+  { thema: "brand", wenn: { q: "mehrere_verletzte", in: ["ja"] }, frage: "mehrere_verletzte", weg: ["sprachschw", "gesicht", "flaeche", "aelter6h", "nur_alarm"] },
+  { thema: "gefahrstoff", wenn: { q: "mehrere_verletzte", in: ["ja"] }, frage: "mehrere_verletzte", weg: ["sprachschw"] },
+  { thema: "strom", wenn: { q: "mehrere_verletzte", in: ["ja"] }, frage: "mehrere_verletzte", weg: ["sturz"] },
+  { thema: "stich_schuss", wenn: { q: "mehrere_verletzte", in: ["ja"] }, frage: "mehrere_verletzte", weg: ["wunde", "anzahl_wunden", "blutung_stark", "aelter6h"] },
+  { thema: "gewalt", wenn: { q: "mehrere_verletzte", in: ["ja"] }, frage: "mehrere_verletzte", weg: ["region", "blutung_stark", "fehlstellung", "aelter6h"] },
+  { thema: "hitze_kaelte", wenn: { q: "mehrere_symptome", in: ["ja"] }, frage: "mehrere_symptome", weg: ["hautfarbe", "herz_vg"] },
+];
+
+/** Fragen an die Gruppe, wenn mehrere Personen betroffen sind */
+const GRUPPE: Record<string, { text: string; labels?: Record<string, string> }> = {
+  bw: { text: "Ist jemand bewusstlos oder nicht richtig wach?", labels: { ja: "Nein – alle sind wach und reagieren normal", getruebt: "Ja – jemand ist verwirrt / schläfrig", nein: "Ja – jemand ist bewusstlos", unbekannt: "Unbekannt" } },
+  at: { text: "Hat jemand Atemprobleme oder atmet nicht?", labels: { normal: "Nein – alle atmen normal", abnorm: "Ja – jemand hat Atemnot / Atemgeräusche", agonal: "Ja – jemand atmet kaum / Schnappatmung", keine: "Ja – jemand atmet nicht", unbekannt: "Unbekannt" } },
+  blutung_stark: { text: "Blutet jemand stark (läuft/spritzt, durchtränkt Tücher)?" },
+  tot: { text: "Ist jemand offensichtlich und unzweifelhaft tot?" },
+  schwer_verletzt: { text: "Ist jemand schwer verletzt?" },
+  eingeklemmt: { text: "Ist jemand eingeklemmt?" },
+  brennt_noch: { text: "Brennt jemand noch?" },
+  sprachschw: { text: "Kann jemand nur einzelne Worte sprechen (Sprechpausen zum Atmen)?" },
+  fehlstellung: { text: "Hat jemand eine Fehlstellung / einen offensichtlichen Bruch?" },
+  noch_verbunden: { text: "Ist noch jemand mit der Stromquelle verbunden?" },
+  hautfarbe: { text: "Ist bei jemandem die Hautfarbe verändert (blass-grau, bläulich)?" },
+};
+
+/**
+ * Mehrere Betroffene: „Wie viele Personen sind betroffen?“ in Stufen (die Zahl bestimmt die Großschaden-Stufe),
+ * ab zwei Betroffenen fallen Alter und Geschlecht weg und Fragen gehen an die Gruppe. Betroffen ist nicht verletzt:
+ * erst wenn mehrere Verletzte bestätigt sind, fallen die danach unwichtigen Kapitelfragen weg (Fragen zu
+ * „Person(en)“ – eingeschlossen, eingeklemmt – bleiben immer).
+ */
+function mehrereErgaenzen(p: Schema): void {
+  const prim = p.globale_fragen.phase_4_primaerabfrage ?? [];
+  const anz = prim.find((f) => f.id === "anzahl_patienten");
+  if (!anz || anz.typ !== "single") return;
+  const werte = (anz.optionen ?? []).map((o) => o.wert);
+  if (!werte.includes("1") || !werte.includes("n")) return;
+  anz.optionen = [
+    { wert: "1", label: "Eine" },
+    { wert: "n", label: "2–5" },
+    { wert: "6-10", label: "6–10" },
+    { wert: "11-30", label: "11–30" },
+    { wert: "30+", label: "mehr als 30" },
+    ...(werte.includes("unbekannt") ? [{ wert: "unbekannt", label: "Unbekannt" }] : []),
+  ];
+  const nichtMehrere: Bedingung = { not: { q: "anzahl_patienten", in: MEHRERE_WERTE } };
+  const und = (f: Frage, b: Bedingung) => (f.anzeigen_wenn = f.anzeigen_wenn ? { all: [f.anzeigen_wenn, b] } : b);
+  for (const f of prim) if (f.id === "alter" || f.id === "geschlecht") und(f, nichtMehrere);
+  const gruppe = (f: Frage) => {
+    const g = GRUPPE[f.id];
+    if (!g || f.text_mehrere) return;
+    f.text_mehrere = g.text;
+    if (g.labels) f.labels_mehrere = g.labels;
+  };
+  for (const f of prim) gruppe(f);
+  for (const K of Object.values(p.kapitel)) for (const f of K.fragen) gruppe(f);
+  for (const r of WEG_BEI_MEHREREN) {
+    const kap = kapitelZuThema(r.thema, p);
+    const K = kap ? p.kapitel[kap] : undefined;
+    if (!K) continue;
+    const iFrage = K.fragen.findIndex((f) => f.id === r.frage);
+    if (iFrage < 0) continue;
+    const weg = K.fragen.filter((f) => r.weg.includes(f.id));
+    if (!weg.length) continue;
+    // die Frage nach mehreren Verletzten kommt vor die Fragen, die dann wegfallen
+    const erste = Math.min(...weg.map((f) => K.fragen.indexOf(f)));
+    if (iFrage > erste) {
+      const mit = K.fragen.filter((f, i) => i >= iFrage && (f.id === r.frage || (r.frage === "anzahl" && f.id === "mehrere_rm")));
+      K.fragen = K.fragen.filter((f) => !mit.includes(f));
+      K.fragen.splice(erste, 0, ...mit);
+    }
+    for (const f of weg) und(f, { not: r.wenn });
+  }
+  // Verkehrsunfall: „Werden mehrere Rettungsmittel benötigt?“ erst, wenn mehrere Verletzte bestätigt sind
+  const vu = kapitelZuThema("verkehrsunfall", p);
+  const rm = vu ? p.kapitel[vu]?.fragen.find((f) => f.id === "mehrere_rm") : undefined;
+  if (rm && rm.anzeigen_wenn && "q" in rm.anzeigen_wenn && rm.anzeigen_wenn.q === "anzahl") rm.anzeigen_wenn = { q: "anzahl", in: ["n"] };
 }
 
 export interface Ergebnis {
@@ -371,7 +477,7 @@ export function fragenImAblauf(schema: Schema, kap: string, a: Antworten): { pha
   const out: { phase: string; frage: Frage }[] = [];
   const K = schema.kapitel[kap];
   if (!K) return out;
-  if (K.primaerabfrage) for (const f of schema.globale_fragen.phase_4_primaerabfrage ?? []) out.push({ phase: "Primärabfrage", frage: f });
+  if (K.primaerabfrage) for (const f of schema.globale_fragen.phase_4_primaerabfrage ?? []) if (pruefe(f.anzeigen_wenn, a)) out.push({ phase: "Primärabfrage", frage: f });
   const erg = bestimmeCode(schema, kap, a);
   const pfad = erg?.pfad ?? [kap];
   const gesehen = new Set(out.map((x) => x.frage.id));
@@ -428,7 +534,7 @@ export function stimmigMachen(kap: string, a: Antworten): void {
   };
   const ja = (id: string) => a[id] === "ja";
   // Anzahl der Betroffenen: Primärabfrage und Kapitelfrage gleich
-  if (a.anzahl !== undefined && a.anzahl_patienten !== undefined) a.anzahl = a.anzahl_patienten;
+  if (a.anzahl !== undefined && a.anzahl_patienten !== undefined) a.anzahl = mehrere(a) ? "n" : a.anzahl_patienten;
   if (ist(kap, "verkehrsunfall", "verletzung", "sturz")) {
     const schwer = ja("blutung_stark") || ja("eingeklemmt") || (a.bw !== undefined && a.bw !== "ja") || (a.at !== undefined && a.at !== "normal");
     if (schwer) setze("verletzte", "ja");

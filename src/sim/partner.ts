@@ -6,22 +6,23 @@
 import type { Antworten } from "../abfrage/schema";
 import { thema } from "../abfrage/themen";
 
-export type PartnerArt = "fw" | "pol" | "berg" | "wasser";
+export type PartnerArt = "fw" | "pol" | "berg" | "wasser" | "ki";
 
 export const PARTNER: Record<PartnerArt, { name: string; kurz: string; symbol: string }> = {
   fw: { name: "Feuerwehr", kurz: "FW", symbol: "🚒" },
   pol: { name: "Polizei", kurz: "Pol", symbol: "🚓" },
   berg: { name: "Bergrettung", kurz: "BR", symbol: "⛰" },
   wasser: { name: "Wasserrettung", kurz: "WR", symbol: "🌊" },
+  ki: { name: "Krisenintervention", kurz: "KI", symbol: "🤝" },
 };
 
-export const PARTNER_ARTEN: PartnerArt[] = ["fw", "pol", "berg", "wasser"];
+export const PARTNER_ARTEN: PartnerArt[] = ["fw", "pol", "berg", "wasser", "ki"];
 
 /** Dienststellen-Typ der Organisation */
-export const PARTNER_TYP: Record<PartnerArt, string> = { fw: "Feuerwehr", pol: "Polizei", berg: "Bergrettung", wasser: "Wasserrettung" };
+export const PARTNER_TYP: Record<PartnerArt, string> = { fw: "Feuerwehr", pol: "Polizei", berg: "Bergrettung", wasser: "Wasserrettung", ki: "Krisenintervention" };
 
 /** Fahrzeuge pro Alarmierung */
-export const PARTNER_ANZAHL: Record<PartnerArt, number> = { fw: 3, pol: 3, berg: 1, wasser: 1 };
+export const PARTNER_ANZAHL: Record<PartnerArt, number> = { fw: 3, pol: 3, berg: 1, wasser: 1, ki: 1 };
 
 /** Partner-Art einer Dienststelle (null = Rettungsdienst o. Ä.) */
 export function partnerArtVonTyp(typ: string | undefined): PartnerArt | null {

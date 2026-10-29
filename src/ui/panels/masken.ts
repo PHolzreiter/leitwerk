@@ -31,6 +31,12 @@ export function einsatzMaske(e: Einsatz): { root: HTMLElement; refresh(): void }
   // Anruf: kurzer Hinweis, Gespräch und Abfrage stehen im Abfrage-Fenster
   const anrufHinweis = el("div", { class: "mask-anruf-hinweis" });
   root.appendChild(anrufHinweis);
+  // zweiter Notruf zum selben Einsatzort: zusammenlegen statt neuer Einsatz
+  const zlHinweis = el("div", { class: "mask-zusammen", hidden: "" });
+  root.appendChild(zlHinweis);
+  // Großeinsatz: Bereitstellungsraum (blinkt, solange er fehlt)
+  const gsHinweis = el("div", { class: "mask-gs", hidden: "" });
+  root.appendChild(gsHinweis);
 
   // Meldung
   const meld = el("div", { class: "mask-box meldung" });
@@ -309,6 +315,219 @@ export function einsatzMaske(e: Einsatz): { root: HTMLElement; refresh(): void }
   root.appendChild(alarmBox);
 
   // KH / BO / ZO
+  const khTeil = khBuchung(e);
+  root.appendChild(khTeil.root);
+
+  // Protokoll
+  const protBox = el("div", { class: "mask-box" });
+  protBox.innerHTML = `<div class="box-title">Protokoll</div>`;
+  const prot = el("div", { class: "prot" });
+  protBox.appendChild(prot);
+  root.appendChild(protBox);
+  // Gespräch exportieren (nur bei Einsätzen mit Anruf)
+  const exportZeile = el("div", { class: "mask-export" });
+  exportZeile.appendChild(exportKnopf("rd", () => e.id));
+  exportZeile.hidden = !e.anruf;
+  root.appendChild(exportZeile);
+
+  // ---------- dynamische Teile
+  let suggestions: Awaited<ReturnType<typeof sim.vorschlaege>> = [];
+  const chosen = new Set<string>();
+  let suggestFor = "";
+  let empfohlen = new Set<string>();
+  let gruende: string[] = [];
+
+  const vorschlagKey = () => `${e.adresse?.lat},${e.adresse?.lon},${e.code},${e.fahrzeuge.join("+")}`;
+  async function refreshSuggestions() {
+    if (!e.adresse) {
+      sugg.innerHTML = `<div class="muted">Für Vorschläge zuerst den Einsatzort eingeben.</div>`;
+      return;
+    }
+    const key = vorschlagKey();
+    suggestFor = key;
+    sugg.innerHTML = `<div class="muted">Fahrzeiten werden berechnet …</div>`;
+    const res = await sim.vorschlaege(e.id);
+    if (suggestFor !== key) return;
+    suggestions = res;
+    // Vorauswahl nach Stufe (Rangfolge, NFS, Notarzt; bereits alarmierte zählen mit)
+    chosen.clear();
+    const emp = sim.empfehlung(e.id, res);
+    for (const id of emp.ids) chosen.add(id);
+    empfohlen = new Set(emp.ids);
+    gruende = emp.gruende;
+    // Empfohlene (und Hinweise wie EL ÖBB) zuerst, damit sie nicht aus der Liste fallen
+    const vorne = new Set([...emp.ids, ...(emp.oben ?? [])]);
+    suggestions = [...res.filter((r) => vorne.has(r.fz.id)), ...res.filter((r) => !vorne.has(r.fz.id))];
+    renderSuggestions();
+  }
+
+  function renderSuggestions() {
+    sugg.innerHTML = "";
+    if (gruende.length) {
+      sugg.appendChild(el("div", { class: "sugg-why" }, gruende.join(" · ")));
+    }
+    const q = suche.value.trim();
+    let shown = suggestions.slice(0, 14);
+    if (q) {
+      // Treffer aus allen freien Fahrzeugen (mit Anfahrtszeit), dazu nicht freie mit ihrem Status
+      const frei = new Set(suggestions.map((s) => s.fz.id));
+      shown = [
+        ...suggestions.filter((s) => fzPasst(s.fz, q)),
+        ...Object.values(sim.state.fahrzeuge)
+          .filter((f) => !frei.has(f.id) && fzPasst(f, q))
+          .sort((a, b) => a.funkrufname.localeCompare(b.funkrufname, "de", { numeric: true }))
+          .map((fz) => ({ fz, sekunden: null, hinweis: fz.ausserDienst ? "außer Dienst" : "nicht frei", kt: false })),
+      ].slice(0, 40);
+    }
+    for (const s of shown) {
+      const row = el("label", { class: `sugg-row${s.hinweis ? " blocked" : ""}${empfohlen.has(s.fz.id) ? " rec" : ""}${fzKlassen(s.fz)}` });
+      const cb = el("input", { type: "checkbox" });
+      cb.checked = chosen.has(s.fz.id);
+      cb.disabled = !!s.hinweis;
+      cb.addEventListener("change", () => {
+        if (cb.checked) chosen.add(s.fz.id);
+        else chosen.delete(s.fz.id);
+        knopfText();
+      });
+      row.appendChild(cb);
+      const info = el("span", { class: "sugg-info" });
+      info.innerHTML = `${statusChip(s.fz)} <b data-dienstfz="${esc(s.fz.id)}">${esc(s.fz.funkrufname)}</b> <span class="muted">${typHtml(s.fz)} · ${esc(s.fz.kurzname || s.fz.stationName)}</span> ${crewHtml(s.fz)}${dienstHtml(s.fz)}`;
+      row.appendChild(info);
+      info.insertAdjacentHTML("beforeend", vorgemerktHtml(s.fz));
+      if (s.kt) info.insertAdjacentHTML("beforeend", ` <span class="kt-fz aktiv" title="fährt Krankentransport ohne Patient – wird beim Alarmieren abgezogen, die Transporte sind dann wieder offen">KT – abziehen</span>`);
+      row.appendChild(el("span", { class: "sugg-eta" }, s.hinweis ? s.hinweis : minuten(s.sekunden)));
+      sugg.appendChild(row);
+    }
+    if (shown.length === 0) sugg.appendChild(el("div", { class: "muted" }, q ? "Kein Fahrzeug gefunden." : "Keine freien Fahrzeuge."));
+    knopfText();
+  }
+
+  btnAlarm.addEventListener("click", async () => {
+    if (chosen.size === 0) return toast("Bitte Fahrzeuge auswählen", "error");
+    const hinweise = await sim.call("alarmiere", e.id, [...chosen]).catch((x) => [String(x.message ?? x)]);
+    for (const h of hinweise) toast(h, / vorgemerkt – /.test(h) ? "ok" : "error");
+    void refreshSuggestions();
+  });
+  btnClose.addEventListener("click", () => {
+    void fehlerZeigen(sim.call("schliesse", e.id, e.fahrzeuge.length ? "durch Leitstelle" : "ohne Fahrzeug (z. B. Telemedizin, Beratung)"));
+  });
+
+  // Änderungen anderer Spieler übernehmen (Felder, in denen gerade getippt wird, bleiben)
+  let letzterCode = e.code;
+  const feld = (i: HTMLInputElement | HTMLTextAreaElement, wert: string) => {
+    if (document.activeElement !== i && i.value !== wert) i.value = wert;
+  };
+  const dyn = {
+    refresh() {
+      const an = e.anruf;
+      anrufHinweis.hidden = !an || an.status === "beendet" || e.zustand === "abgeschlossen";
+      const hk = an ? `${an.status}|${an.angenommenVon?.pid}` : "";
+      if (an && anrufHinweis.dataset.k !== hk) {
+        anrufHinweis.dataset.k = hk;
+        const t = { klingelt: "📞 Notruf klingelt", aktiv: "📞 Notrufgespräch läuft", gehalten: "⏸ Anrufer wird gehalten", verpasst: "📵 Verpasster Anruf", beendet: "" }[an.status];
+        anrufHinweis.innerHTML = `<span>${t}${an.angenommenVon && mp.aktiv ? ` · ${esc(an.angenommenVon.pid === mp.ich.pid ? "du" : an.angenommenVon.name)}` : ""}</span>`;
+        const knopf = el("button", { class: "btn small" }, "Abfrage ›");
+        knopf.addEventListener("click", () => {
+          waehle("einsatz", e.id, { maske: false, karte: false });
+          panelZeigen("abfrage");
+        });
+        anrufHinweis.appendChild(knopf);
+      }
+      meld.hidden = !!e.anruf;
+      // gleicher Einsatzort wie ein offener Einsatz der letzten Stunden: zweiter Notruf?
+      const gleich =
+        !e.zusammengelegt && !e.gsKind && e.zustand !== "abgeschlossen" && e.adresse && !e.fahrzeuge.length
+          ? sim.state.einsaetze.find((x) => x !== e && !x.gsKind && !x.zusammengelegt && x.zustand !== "abgeschlossen" && x.adresse && x.erstellt < e.erstellt && sim.state.zeit - x.erstellt < 3 * 3_600_000 && distanceM(x.adresse, e.adresse!) < 300)
+          : undefined;
+      zlHinweis.hidden = !gleich;
+      const zk = gleich ? `${gleich.id}|${gleich.code}` : "";
+      if (gleich && zlHinweis.dataset.k !== zk) {
+        zlHinweis.dataset.k = zk;
+        const gc = findCode(gleich.code ?? undefined);
+        zlHinweis.innerHTML = `<span>🔗 Gleicher Einsatzort wie <b>${esc(gleich.nummer)}</b>${gc ? ` (${esc(gc.code)} ${esc(gc.beschreibung)})` : ""} – zweiter Notruf zum selben Ereignis?</span>`;
+        const zb = el("button", { class: "btn small primary" }, "Zusammenlegen");
+        zb.title = "Kein neuer Einsatz – die Abfrage wird beim bestehenden Einsatz dazugespeichert";
+        zb.addEventListener("click", () => void fehlerZeigen(sim.call("zusammenlegen", e.id, gleich.id).then(() => waehle("einsatz", gleich.id))));
+        zlHinweis.appendChild(zb);
+      }
+      const gs = e.gs && !e.gs.aufgehoben ? e.gs : null;
+      gsHinweis.hidden = !gs;
+      gsHinweis.classList.toggle("blinkt", !!gs && gs.brNoetig && !gs.br);
+      const gk = gs ? `${gs.stufe}|${gs.br?.label ?? ""}|${gs.brNoetig}|${gs.phase}` : "";
+      if (gs && gsHinweis.dataset.k !== gk) {
+        gsHinweis.dataset.k = gk;
+        gsHinweis.innerHTML = `<span>🚨 <b>Großeinsatz${gs.stufe ? ` ${esc(gs.stufe)}` : ""}</b> · ${gs.br ? `🅿 ${esc(gs.br.label)}` : gs.brNoetig ? `<b class="alert-text">Bereitstellungsraum festlegen – Fahrzeuge warten!</b>` : "Bereitstellungsraum noch nicht festgelegt"}</span>`;
+        const gb = el("button", { class: "btn small primary" }, "Großeinsatz ›");
+        gb.addEventListener("click", () => panelZeigen("grosseinsatz"));
+        gsHinweis.appendChild(gb);
+      }
+      zeigeOrtung();
+      if (e.code !== letzterCode) {
+        letzterCode = e.code;
+        showCode();
+      }
+      if (e.adresse) feld(adr.input, e.adresse.label);
+      // Adresse, Code oder Fahrzeuge von einem anderen Spieler geändert: Vorschläge neu berechnen
+      if (e.adresse && vorschlagKey() !== suggestFor) void refreshSuggestions();
+      feld(zusatz, e.zusatz);
+      feld(telIn, e.telefon ?? "");
+      partnerZeigen();
+      feld(infoRtw, e.infoRtw);
+      feld(infoIntern, e.infoIntern);
+      const c = findCode(e.code ?? undefined);
+      head.innerHTML = `<span class="stufe-badge big" style="background:${stufeFarbe(c?.stufe)}">${esc(c?.stufe ?? "ohne Code")}</span>
+        <div><div class="mask-nr">${esc(e.nummer)}</div><div class="muted">Eingang ${uhr(e.erstellt)} · ${Math.round((sim.state.zeit - e.erstellt) / 60000)} min · ${{ neu: "neu", offen: "in Bearbeitung", laufend: "laufend", abgeschlossen: "abgeschlossen" }[e.zustand]}</div></div>`;
+      meld.classList.toggle("alert", e.adressePruefen);
+      // zugeordnete Fahrzeuge + offene Nachforderungen
+      assigned.innerHTML = "";
+      for (const n of e.nachforderungen ?? []) {
+        if (n.erledigt) continue;
+        assigned.appendChild(el("div", { class: "nachforderung" }, `⚠ Nachforderung von ${n.von}: ${n.art === "NA" ? (n.anzahl > 1 ? `${n.anzahl} Notärzte` : "Notarzt") : n.art === "BIT" ? "BIT (Patient zu schwer für die Trage)" : `${n.anzahl} weitere${n.anzahl > 1 ? "" : "s"} Rettungsmittel`}`));
+      }
+      for (const id of e.fahrzeuge) {
+        const fz = sim.state.fahrzeuge[id];
+        if (!fz) continue;
+        const row = el("div", { class: `as-row${fzKlassen(fz)}` });
+        const imEinsatz = fz.einsatzId === e.id;
+        // Großeinsatz: Fahrzeug ist einem Patienten zugeteilt
+        const kind = !imEinsatz && fz.einsatzId ? sim.einsatz(fz.einsatzId) : undefined;
+        const beiPatient = kind?.gsKind?.parent === e.id ? ` (Patient ${kind.gsKind.nr})` : "";
+        const wo = imEinsatz && e.gs && !e.gs.aufgehoben ? (fz.phase === "wartetBR" ? " · im BR" : e.gs.ziel[fz.id] === "br" && fz.phase !== "vorOrt" ? " · zum BR" : "") : "";
+        row.innerHTML = `<span class="as-platz"></span>${statusChip(fz)} <b data-dienstfz="${esc(fz.id)}">${esc(fz.funkrufname)}</b> <span class="muted as-info" title="${esc(sim.statusDef(fz.status).name)}">${typHtml(fz)} · ${esc(sim.statusDef(fz.status).name)}${wo}${imEinsatz ? "" : beiPatient || " (frei)"}</span> ${crewHtml(fz)}${dienstHtml(fz)}`;
+        if (imEinsatz) {
+          const r = el("button", { class: "btn small", title: `${fz.funkrufname} über Funk rufen` }, "📻");
+          r.addEventListener("click", () => {
+            panelZeigen("funk");
+            setTimeout(() => funkRufen(fz.id), 60);
+          });
+          row.appendChild(r);
+          const unterwegs = fz.phase === "ausruecken" || fz.phase === "anfahrt" || fz.phase === "routing";
+          const b = el("button", { class: "btn small" }, unterwegs ? "Storno" : "freigeben");
+          b.title = unterwegs ? "Storno über Funk – Fahrzeug rückt ein" : "Fahrzeug aus dem Einsatz freigeben";
+          b.addEventListener("click", () => void fehlerZeigen(sim.call(unterwegs ? "storno" : "entlasse", fz.id)));
+          row.appendChild(b);
+        }
+        assigned.appendChild(row);
+      }
+      khTeil.refresh();
+      // Protokoll
+      prot.innerHTML = e.protokoll
+        .slice()
+        .reverse()
+        .map((p) => `<div><span class="muted">${uhr(p.zeit)}</span> ${esc(p.text)}${p.von ? ` <span class="prot-von">${esc(p.von)}</span>` : ""}</div>`)
+        .join("");
+      btnAlarm.disabled = e.zustand === "abgeschlossen";
+    },
+  };
+  dyn.refresh();
+  void refreshSuggestions();
+  return { root, refresh: () => dyn.refresh() };
+}
+
+
+
+/** Krankenhaus buchen (Zuweisung: Symptom → Alter → Dringlichkeit → passende Häuser) – auch im Großeinsatz je Patient */
+export function khBuchung(e: Einsatz, opt: { gebucht?: () => void; kompakt?: boolean } = {}): { root: HTMLElement; refresh(): void } {
   const khBox = el("div", { class: "mask-box" });
   khBox.innerHTML = `<div class="box-title">Krankenhaus · Berufungs- und Zielort</div>`;
   const khInfo = el("div", { class: "kh-info" });
@@ -331,7 +550,6 @@ export function einsatzMaske(e: Einsatz): { root: HTMLElement; refresh(): void }
   const zwKopf = el("div", { class: "zw-kopf" });
   zwKopf.append(dringChip, symFeld);
   khBox.append(khInfo, zwKopf, altZeile, drZeile, khKarten, khRow, boZo, el("div", { class: "fld-label" }, "Zielort manuell"), zo.root);
-  root.appendChild(khBox);
 
   /** Dringlichkeit, wie die Leitstelle sie kennt: nach dem Eintreffen aus der Lage, vorher aus der Einsatzstufe */
   const dringlichkeit = (): "rot" | "gelb" | "gruen" => {
@@ -500,7 +718,7 @@ export function einsatzMaske(e: Einsatz): { root: HTMLElement; refresh(): void }
   btnBook.addEventListener("click", () => {
     const ziel = khSel.value || zwGewaehlt;
     if (!ziel) return toast("Bitte ein Krankenhaus wählen", "error");
-    void fehlerZeigen(sim.call("bucheKh", e.id, ziel, grundWert()));
+    void fehlerZeigen(sim.call("bucheKh", e.id, ziel, grundWert()).then(() => opt.gebucht?.()));
     khSel.value = "";
     toast("Krankenhaus gebucht");
   });
@@ -510,198 +728,34 @@ export function einsatzMaske(e: Einsatz): { root: HTMLElement; refresh(): void }
   zwZeigen();
   fillKh(true);
 
-  // Protokoll
-  const protBox = el("div", { class: "mask-box" });
-  protBox.innerHTML = `<div class="box-title">Protokoll</div>`;
-  const prot = el("div", { class: "prot" });
-  protBox.appendChild(prot);
-  root.appendChild(protBox);
-  // Gespräch exportieren (nur bei Einsätzen mit Anruf)
-  const exportZeile = el("div", { class: "mask-export" });
-  exportZeile.appendChild(exportKnopf("rd", () => e.id));
-  exportZeile.hidden = !e.anruf;
-  root.appendChild(exportZeile);
-
-  // ---------- dynamische Teile
-  let suggestions: Awaited<ReturnType<typeof sim.vorschlaege>> = [];
-  const chosen = new Set<string>();
-  let suggestFor = "";
-  let empfohlen = new Set<string>();
-  let gruende: string[] = [];
-
-  const vorschlagKey = () => `${e.adresse?.lat},${e.adresse?.lon},${e.code},${e.fahrzeuge.join("+")}`;
-  async function refreshSuggestions() {
-    if (!e.adresse) {
-      sugg.innerHTML = `<div class="muted">Für Vorschläge zuerst den Einsatzort eingeben.</div>`;
-      return;
-    }
-    const key = vorschlagKey();
-    suggestFor = key;
-    sugg.innerHTML = `<div class="muted">Fahrzeiten werden berechnet …</div>`;
-    const res = await sim.vorschlaege(e.id);
-    if (suggestFor !== key) return;
-    suggestions = res;
-    // Vorauswahl nach Stufe (Rangfolge, NFS, Notarzt; bereits alarmierte zählen mit)
-    chosen.clear();
-    const emp = sim.empfehlung(e.id, res);
-    for (const id of emp.ids) chosen.add(id);
-    empfohlen = new Set(emp.ids);
-    gruende = emp.gruende;
-    // Empfohlene (und Hinweise wie EL ÖBB) zuerst, damit sie nicht aus der Liste fallen
-    const vorne = new Set([...emp.ids, ...(emp.oben ?? [])]);
-    suggestions = [...res.filter((r) => vorne.has(r.fz.id)), ...res.filter((r) => !vorne.has(r.fz.id))];
-    renderSuggestions();
+  if (opt.kompakt) {
+    boZo.hidden = true;
+    zo.root.hidden = true;
+    khBox.querySelectorAll(".fld-label").forEach((x) => ((x as HTMLElement).hidden = true));
   }
-
-  function renderSuggestions() {
-    sugg.innerHTML = "";
-    if (gruende.length) {
-      sugg.appendChild(el("div", { class: "sugg-why" }, gruende.join(" · ")));
+  const refresh = () => {
+    if (e.zo && document.activeElement !== zo.input) zo.input.value = e.zo.label;
+    // KH
+    const h = e.kh ? store.get("hospitals", e.kh.hospitalId) : undefined;
+    khInfo.innerHTML = e.kh
+      ? `<div>Gebucht: <b>${esc(h?.name ?? e.kh.hospitalId)}</b></div><div class="muted">${e.kh.grund ? `Verdacht: ${esc(buchungName(e.kh.grund))} · ` : ""}durch ${e.kh.durch === "rtw" ? "RTW" : e.kh.durch === "nah" ? "NAH (Pilot)" : "Leitstelle"} · ${uhr(e.kh.zeit)}</div>`
+      : e.khAnfrage
+        ? `<div class="alert-text">${esc(e.khAnfrage.von)} erbittet KH-Buchung: <b>Verdacht ${esc(buchungName(e.khAnfrage.verdacht))}</b></div>`
+        : `<div class="muted">Noch kein Krankenhaus gebucht.</div>`;
+    khBox.classList.toggle("alert", !!e.khAnfrage);
+    const v = e.khAnfrage?.verdacht ?? e.verdacht ?? "";
+    if (v && v !== letzterVerdacht) {
+      letzterVerdacht = v;
+      zwSetzen(v);
+      zwZeigen();
+      fillKh(true);
     }
-    const q = suche.value.trim();
-    let shown = suggestions.slice(0, 14);
-    if (q) {
-      // Treffer aus allen freien Fahrzeugen (mit Anfahrtszeit), dazu nicht freie mit ihrem Status
-      const frei = new Set(suggestions.map((s) => s.fz.id));
-      shown = [
-        ...suggestions.filter((s) => fzPasst(s.fz, q)),
-        ...Object.values(sim.state.fahrzeuge)
-          .filter((f) => !frei.has(f.id) && fzPasst(f, q))
-          .sort((a, b) => a.funkrufname.localeCompare(b.funkrufname, "de", { numeric: true }))
-          .map((fz) => ({ fz, sekunden: null, hinweis: fz.ausserDienst ? "außer Dienst" : "nicht frei", kt: false })),
-      ].slice(0, 40);
-    }
-    for (const s of shown) {
-      const row = el("label", { class: `sugg-row${s.hinweis ? " blocked" : ""}${empfohlen.has(s.fz.id) ? " rec" : ""}${fzKlassen(s.fz)}` });
-      const cb = el("input", { type: "checkbox" });
-      cb.checked = chosen.has(s.fz.id);
-      cb.disabled = !!s.hinweis;
-      cb.addEventListener("change", () => {
-        if (cb.checked) chosen.add(s.fz.id);
-        else chosen.delete(s.fz.id);
-        knopfText();
-      });
-      row.appendChild(cb);
-      const info = el("span", { class: "sugg-info" });
-      info.innerHTML = `${statusChip(s.fz)} <b data-dienstfz="${esc(s.fz.id)}">${esc(s.fz.funkrufname)}</b> <span class="muted">${typHtml(s.fz)} · ${esc(s.fz.kurzname || s.fz.stationName)}</span> ${crewHtml(s.fz)}${dienstHtml(s.fz)}`;
-      row.appendChild(info);
-      info.insertAdjacentHTML("beforeend", vorgemerktHtml(s.fz));
-      if (s.kt) info.insertAdjacentHTML("beforeend", ` <span class="kt-fz aktiv" title="fährt Krankentransport ohne Patient – wird beim Alarmieren abgezogen, die Transporte sind dann wieder offen">KT – abziehen</span>`);
-      row.appendChild(el("span", { class: "sugg-eta" }, s.hinweis ? s.hinweis : minuten(s.sekunden)));
-      sugg.appendChild(row);
-    }
-    if (shown.length === 0) sugg.appendChild(el("div", { class: "muted" }, q ? "Kein Fahrzeug gefunden." : "Keine freien Fahrzeuge."));
-    knopfText();
-  }
-
-  btnAlarm.addEventListener("click", async () => {
-    if (chosen.size === 0) return toast("Bitte Fahrzeuge auswählen", "error");
-    const hinweise = await sim.call("alarmiere", e.id, [...chosen]).catch((x) => [String(x.message ?? x)]);
-    for (const h of hinweise) toast(h, / vorgemerkt – /.test(h) ? "ok" : "error");
-    void refreshSuggestions();
-  });
-  btnClose.addEventListener("click", () => {
-    void fehlerZeigen(sim.call("schliesse", e.id, e.fahrzeuge.length ? "durch Leitstelle" : "ohne Fahrzeug (z. B. Telemedizin, Beratung)"));
-  });
-
-  // Änderungen anderer Spieler übernehmen (Felder, in denen gerade getippt wird, bleiben)
-  let letzterCode = e.code;
-  const feld = (i: HTMLInputElement | HTMLTextAreaElement, wert: string) => {
-    if (document.activeElement !== i && i.value !== wert) i.value = wert;
+    fillKh();
+    boZo.innerHTML = `BO: ${esc(e.bo?.label ?? "–")}<br>ZO: ${esc(e.zo?.label ?? "–")}`;
   };
-  const dyn = {
-    refresh() {
-      const an = e.anruf;
-      anrufHinweis.hidden = !an || an.status === "beendet" || e.zustand === "abgeschlossen";
-      const hk = an ? `${an.status}|${an.angenommenVon?.pid}` : "";
-      if (an && anrufHinweis.dataset.k !== hk) {
-        anrufHinweis.dataset.k = hk;
-        const t = { klingelt: "📞 Notruf klingelt", aktiv: "📞 Notrufgespräch läuft", gehalten: "⏸ Anrufer wird gehalten", verpasst: "📵 Verpasster Anruf", beendet: "" }[an.status];
-        anrufHinweis.innerHTML = `<span>${t}${an.angenommenVon && mp.aktiv ? ` · ${esc(an.angenommenVon.pid === mp.ich.pid ? "du" : an.angenommenVon.name)}` : ""}</span>`;
-        const knopf = el("button", { class: "btn small" }, "Abfrage ›");
-        knopf.addEventListener("click", () => {
-          waehle("einsatz", e.id, { maske: false, karte: false });
-          panelZeigen("abfrage");
-        });
-        anrufHinweis.appendChild(knopf);
-      }
-      meld.hidden = !!e.anruf;
-      zeigeOrtung();
-      if (e.code !== letzterCode) {
-        letzterCode = e.code;
-        showCode();
-      }
-      if (e.adresse) feld(adr.input, e.adresse.label);
-      // Adresse, Code oder Fahrzeuge von einem anderen Spieler geändert: Vorschläge neu berechnen
-      if (e.adresse && vorschlagKey() !== suggestFor) void refreshSuggestions();
-      feld(zusatz, e.zusatz);
-      feld(telIn, e.telefon ?? "");
-      partnerZeigen();
-      feld(infoRtw, e.infoRtw);
-      feld(infoIntern, e.infoIntern);
-      if (e.zo) feld(zo.input, e.zo.label);
-      const c = findCode(e.code ?? undefined);
-      head.innerHTML = `<span class="stufe-badge big" style="background:${stufeFarbe(c?.stufe)}">${esc(c?.stufe ?? "ohne Code")}</span>
-        <div><div class="mask-nr">${esc(e.nummer)}</div><div class="muted">Eingang ${uhr(e.erstellt)} · ${Math.round((sim.state.zeit - e.erstellt) / 60000)} min · ${{ neu: "neu", offen: "in Bearbeitung", laufend: "laufend", abgeschlossen: "abgeschlossen" }[e.zustand]}</div></div>`;
-      meld.classList.toggle("alert", e.adressePruefen);
-      // zugeordnete Fahrzeuge + offene Nachforderungen
-      assigned.innerHTML = "";
-      for (const n of e.nachforderungen ?? []) {
-        if (n.erledigt) continue;
-        assigned.appendChild(el("div", { class: "nachforderung" }, `⚠ Nachforderung von ${n.von}: ${n.art === "NA" ? (n.anzahl > 1 ? `${n.anzahl} Notärzte` : "Notarzt") : n.art === "BIT" ? "BIT (Patient zu schwer für die Trage)" : `${n.anzahl} weitere${n.anzahl > 1 ? "" : "s"} Rettungsmittel`}`));
-      }
-      for (const id of e.fahrzeuge) {
-        const fz = sim.state.fahrzeuge[id];
-        if (!fz) continue;
-        const row = el("div", { class: `as-row${fzKlassen(fz)}` });
-        const imEinsatz = fz.einsatzId === e.id;
-        row.innerHTML = `<span class="as-platz"></span>${statusChip(fz)} <b data-dienstfz="${esc(fz.id)}">${esc(fz.funkrufname)}</b> <span class="muted as-info" title="${esc(sim.statusDef(fz.status).name)}">${typHtml(fz)} · ${esc(sim.statusDef(fz.status).name)}${imEinsatz ? "" : " (frei)"}</span> ${crewHtml(fz)}${dienstHtml(fz)}`;
-        if (imEinsatz) {
-          const r = el("button", { class: "btn small", title: `${fz.funkrufname} über Funk rufen` }, "📻");
-          r.addEventListener("click", () => {
-            panelZeigen("funk");
-            setTimeout(() => funkRufen(fz.id), 60);
-          });
-          row.appendChild(r);
-          const unterwegs = fz.phase === "ausruecken" || fz.phase === "anfahrt" || fz.phase === "routing";
-          const b = el("button", { class: "btn small" }, unterwegs ? "Storno" : "freigeben");
-          b.title = unterwegs ? "Storno über Funk – Fahrzeug rückt ein" : "Fahrzeug aus dem Einsatz freigeben";
-          b.addEventListener("click", () => void fehlerZeigen(sim.call(unterwegs ? "storno" : "entlasse", fz.id)));
-          row.appendChild(b);
-        }
-        assigned.appendChild(row);
-      }
-      // KH
-      const h = e.kh ? store.get("hospitals", e.kh.hospitalId) : undefined;
-      khInfo.innerHTML = e.kh
-        ? `<div>Gebucht: <b>${esc(h?.name ?? e.kh.hospitalId)}</b></div><div class="muted">${e.kh.grund ? `Verdacht: ${esc(buchungName(e.kh.grund))} · ` : ""}durch ${e.kh.durch === "rtw" ? "RTW" : e.kh.durch === "nah" ? "NAH (Pilot)" : "Leitstelle"} · ${uhr(e.kh.zeit)}</div>`
-        : e.khAnfrage
-          ? `<div class="alert-text">${esc(e.khAnfrage.von)} erbittet KH-Buchung: <b>Verdacht ${esc(buchungName(e.khAnfrage.verdacht))}</b></div>`
-          : `<div class="muted">Noch kein Krankenhaus gebucht.</div>`;
-      khBox.classList.toggle("alert", !!e.khAnfrage);
-      const v = e.khAnfrage?.verdacht ?? e.verdacht ?? "";
-      if (v && v !== letzterVerdacht) {
-        letzterVerdacht = v;
-        zwSetzen(v);
-        zwZeigen();
-        fillKh(true);
-      }
-      fillKh();
-      boZo.innerHTML = `BO: ${esc(e.bo?.label ?? "–")}<br>ZO: ${esc(e.zo?.label ?? "–")}`;
-      // Protokoll
-      prot.innerHTML = e.protokoll
-        .slice()
-        .reverse()
-        .map((p) => `<div><span class="muted">${uhr(p.zeit)}</span> ${esc(p.text)}${p.von ? ` <span class="prot-von">${esc(p.von)}</span>` : ""}</div>`)
-        .join("");
-      btnAlarm.disabled = e.zustand === "abgeschlossen";
-    },
-  };
-  dyn.refresh();
-  void refreshSuggestions();
-  return { root, refresh: () => dyn.refresh() };
+  refresh();
+  return { root: khBox, refresh };
 }
-
 
 // ---------------------------------------------------------------- Fenster
 

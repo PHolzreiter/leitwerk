@@ -50,8 +50,11 @@ const SCHNELL: [string, (g: FunkGespraech) => string, boolean?][] = [
   ["Funkcheck", () => "Hier LEO, Funkcheck, wie hört ihr mich, kommen"],
 ];
 
-export function createFunkView(root: HTMLElement, deps: { select(einsatzId: string): void }): { refresh(): void; rufen(fzId: string): void; offen(): number } {
+export function createFunkView(root: HTMLElement, deps: { select(einsatzId: string): void }, opt: { kanal?: "gs" | null } = {}): { refresh(): void; rufen(fzId: string): void; offen(): number } {
   root.innerHTML = "";
+  /** Kanal dieses Fensters: normaler Funk oder Großschaden-Sprechgruppe */
+  const gsKanal = opt.kanal ?? null;
+  const meine = () => (sim.state.funkGespraeche ?? []).filter((g) => (g.kanal ?? null) === gsKanal);
   const rufe = el("div", { class: "funk-rufe" });
   const aktiv = el("div", { class: "funk-aktiv", hidden: "" });
   const aktivKopf = el("div", { class: "funk-aktiv-kopf" });
@@ -224,11 +227,11 @@ export function createFunkView(root: HTMLElement, deps: { select(einsatzId: stri
   let letzteRufe = "";
   let fzListe = "";
   function refresh(): void {
-    const fg = `📻 TETRA ${sim.funkgruppe().id}`;
+    const fg = gsKanal ? `📻 Sprechgruppe Großeinsatz (TETRA ${sim.funkgruppe().id})` : `📻 TETRA ${sim.funkgruppe().id}`;
     if (gruppe.textContent !== fg) gruppe.textContent = fg;
-    const alle = sim.state.funkGespraeche ?? [];
+    const alle = meine();
     // Rufende Fahrzeuge – dringende zuerst; nur neu zeichnen, wenn sich etwas geändert hat
-    const belegt = sim.funkKanalBelegt();
+    const belegt = sim.funkKanalBelegt(gsKanal);
     const hoert = funkEmpfang();
     const ich = funkSendeZustand();
     const sendet = sim.state.funkSendet;
@@ -360,10 +363,11 @@ export function createFunkView(root: HTMLElement, deps: { select(einsatzId: stri
         });
         verlauf.appendChild(box);
       }
-      if (!sicht.length) verlauf.innerHTML = `<div class="muted pad">Noch kein Funkverkehr. Fahrzeuge rufen „LEO“, wenn sie etwas melden; du kannst sie auch selbst rufen.</div>`;
+      if (!sicht.length) verlauf.innerHTML = gsKanal ? `<div class="muted pad">Noch kein Funkverkehr in der Sprechgruppe Großeinsatz. Hier funken Einsatzleitung, Bereitstellungsraum und die Fahrzeuge am Großeinsatz.</div>` : `<div class="muted pad">Noch kein Funkverkehr. Fahrzeuge rufen „LEO“, wenn sie etwas melden; du kannst sie auch selbst rufen.</div>`;
     }
     // Statusmeldungen (wie bisher)
-    const st = sim.state.funk.slice(0, 80);
+    const istGs = (id: string | null) => !!id && sim.kanalVon(sim.einsatz(id)) === "gs";
+    const st = sim.state.funk.filter((f) => istGs(f.einsatzId) === !!gsKanal).slice(0, 80);
     const stKey = `${sim.state.funkZaehler}|${st.length}|${st[0]?.zeit}`;
     if (statusTitel.open && statusListe.dataset.k !== stKey) {
       statusListe.dataset.k = stKey;
@@ -386,6 +390,6 @@ export function createFunkView(root: HTMLElement, deps: { select(einsatzId: stri
   return {
     refresh,
     rufen,
-    offen: () => (sim.state.funkGespraeche ?? []).filter((g) => g.status === "ruft" || g.status === "mithoeren" || g.status === "sprechwunsch").length,
+    offen: () => meine().filter((g) => g.status === "ruft" || g.status === "mithoeren" || g.status === "sprechwunsch").length,
   };
 }

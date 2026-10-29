@@ -9,7 +9,7 @@ import { store } from "../../data/store";
 import { fragen, antwortetGerade, kontext } from "../../abfrage/gespraech";
 import { schilderung } from "../../abfrage/anrufer";
 import { patientText } from "../../sim/lage";
-import { antwortLabel, bestimmeCode, fragenImAblauf, istKreislaufstillstand, stufeRang, stufeVonCode, type Frage, type Schema, type Wert } from "../../abfrage/schema";
+import { antwortLabel, bestimmeCode, frageFuer, fragenImAblauf, istKreislaufstillstand, stufeRang, stufeVonCode, type Frage, type Schema, type Wert } from "../../abfrage/schema";
 import { kapitelZuThema } from "../../abfrage/themen";
 import { gefuehrteAbfrage } from "./notrufGefuehrt";
 
@@ -403,7 +403,9 @@ export function notrufTeile(e: Einsatz, opt: { gefuehrt?: boolean; angezeigt?: (
     if (!a || !schema || (a.status !== "aktiv" && a.status !== "gehalten" && a.status !== "beendet")) return;
 
     const setze = (id: string, wert: Wert) => fehler(sim.call("abfrageSetze", e.id, id, wert));
-    const frageZeile = (f: Frage) => {
+    const frageZeile = (f0: Frage) => {
+      // mehrere Betroffene: Frage an die Gruppe
+      const f = frageFuer(f0, a.antworten);
       const row = el("div", { class: "frage" });
       row.dataset.id = f.id;
       row.dataset.typ = f.typ;

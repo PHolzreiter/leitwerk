@@ -110,7 +110,7 @@ export function antwortSatz(f: Frage, wert: Wert, a: Antworten): string | null {
     case "beobachtet":
       return wert === "ja" ? "Der Zusammenbruch wurde beobachtet." : wert === "nein" ? `${pron} wurde so aufgefunden.` : "Unbekannt, ob der Zusammenbruch beobachtet wurde.";
     case "anzahl_patienten":
-      return wert === "1" ? "Eine Person ist betroffen." : wert === "n" ? "MEHRERE Personen sind betroffen." : "Anzahl der Betroffenen unbekannt.";
+      return wert === "1" ? "Eine Person ist betroffen." : wert === "n" ? "MEHRERE Personen sind betroffen (2–5)." : wert === "6-10" ? "MEHRERE Personen sind betroffen (6–10)." : wert === "11-30" ? "VIELE Personen sind betroffen (11–30)." : wert === "30+" ? "SEHR VIELE Personen sind betroffen (mehr als 30)." : "Anzahl der Betroffenen unbekannt.";
   }
   if (f.typ === "text") return satzEnde(`${f.text.replace(/\?.*$/, "").replace(/\s*\(.*?\)\s*/g, " ").trim()}: ${String(wert)}`);
   if (f.typ === "zahl") return satzEnde(`${f.text.replace(/\?$/, "")}: ${label}`);

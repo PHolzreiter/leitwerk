@@ -10,7 +10,7 @@
  */
 import { sprechFrage } from "../../abfrage/sprechfrage";
 import { store } from "../../data/store";
-import { antwortLabel, fragenImAblauf, istKreislaufstillstand, type Frage, type Schema, type Wert } from "../../abfrage/schema";
+import { antwortLabel, frageFuer, fragenImAblauf, istKreislaufstillstand, type Frage, type Schema, type Wert } from "../../abfrage/schema";
 import { kapitelZuThema } from "../../abfrage/themen";
 import { sim, type Einsatz } from "../../sim/engine";
 import { el, esc, toast } from "../dom";
@@ -157,7 +157,8 @@ export function gefuehrteAbfrage(ctx: GefuehrtKontext): { el: HTMLElement; refre
     const dazu = (s: Schritt) => {
       if (ids.has(s.id)) return;
       ids.add(s.id);
-      out.push(s);
+      // mehrere Betroffene: Fragen an die Gruppe
+      out.push(s.frage ? { ...s, frage: frageFuer(s.frage, a.antworten) } : s);
     };
     for (const f of g.phase_1_einsatzort ?? []) {
       if (f.id === "ort_adresse") dazu({ id: f.id, art: "ort", frage: f, teil: "Einsatzort" });
