@@ -140,16 +140,21 @@ export interface FortschrittPunkt {
 
 /** Ersatzliste, falls der Dienst nicht erreichbar ist (wird bei jedem Update angepasst) */
 export const START_FORTSCHRITT: FortschrittPunkt[] = [
-  { id: "schema", titel: "Eigenes Codesystem & eigene Schemas", text: "Eingebaute Codeliste mit Abfrage ab der Installation; eigene Codelisten und Abfrageschemas hochladen und wechseln", stand: "fertig", prozent: 100 },
-  { id: "kt-codes", titel: "Transport-Codes mit Editor", text: "Codes für Krankentransporte und Überstellungen über Bedingungen, mit Editor und Prüfung", stand: "fertig", prozent: 100 },
-  { id: "fahrzeugsuche", titel: "Suche bei der Fahrzeugwahl", text: "Im Einsatz schnell ein bestimmtes Fahrzeug finden", stand: "fertig", prozent: 100 },
-  { id: "sek-kt", titel: "Fahrzeugwahl bei Überstellungen und Krankentransporten", text: "Vorschlag nach Dienstzeit, Suche, Alarmieren oder Vormerken; Rückfrage per Funk, wenn ein Fahrzeug zu früh dort ist", stand: "fertig", prozent: 100 },
-  { id: "karte-info", titel: "Info-Fenster auf der Karte", text: "Klick auf ein Fahrzeug zeigt Status und Ankunftszeit, ohne die Karte zu verlassen", stand: "fertig", prozent: 100 },
-  { id: "zuweisung", titel: "Krankenhaus-Zuweisung nach Symptom", text: "Symptom, Altersgruppe und Dringlichkeit bestimmen das Krankenhaus; Aufnahme je Haus einstellbar", stand: "fertig", prozent: 100 },
+  { id: "nah-pilot", titel: "Notarzthubschrauber selbst fliegen", text: "Als Pilot im Multiplayer mitspielen – mit oder ohne Flugsimulator (MSFS 2024, H145-Tablet und -Funkgerät, Sprechfunk, Großeinsatz). Noch offen: Verlegungsflüge, X-Plane", stand: "arbeit", prozent: 85 },
+  { id: "grossschaden", titel: "Großschadensfall", text: "Ab 6 Betroffenen: Schnelleinsatzgruppe und Bereitstellungsraum in zwei Schritten, Einsatzleitung vor Ort, Patienten einzeln buchen, Voraviso. Noch offen: weitere Einsatzarten (Betreuung, Suche) und Gebiete", stand: "arbeit", prozent: 85 },
+  { id: "telefon", titel: "Bessere Telefongespräche", text: "Natürlichere Anrufer und genauere Antworten in der Notrufabfrage", stand: "arbeit", prozent: 75 },
+  { id: "funk", titel: "Überarbeitung des Funksystems", text: "Funkverkehr mit Fahrzeugen klarer, schneller und realistischer – eigene Sprechgruppe beim Großeinsatz gibt es schon", stand: "arbeit", prozent: 30 },
   { id: "tablet", titel: "Zweitbildschirm am Tablet", text: "Karte, Fahrzeuge und Krankenhäuser zusätzlich am Tablet im WLAN anzeigen", stand: "geplant", prozent: 0 },
-  { id: "nah-pilot", titel: "Notarzthubschrauber selbst fliegen", text: "Als Pilot im Multiplayer mitspielen – mit oder ohne Flugsimulator", stand: "arbeit", prozent: 70 },
-  { id: "telefon", titel: "Bessere Telefongespräche", text: "Natürlichere Anrufer und genauere Antworten in der Notrufabfrage", stand: "arbeit", prozent: 60 },
-  { id: "funk", titel: "Überarbeitung des Funksystems", text: "Funkverkehr mit Fahrzeugen klarer, schneller und realistischer", stand: "geplant", prozent: 0 },
+  { id: "nah-verlegung", titel: "Verlegungsflüge mit dem Hubschrauber", text: "Überstellungen zwischen Krankenhäusern als Auftrag für den Piloten", stand: "geplant", prozent: 0 },
+  { id: "xplane", titel: "X-Plane 12 für Piloten", text: "Hubschrauber auch mit X-Plane 12 fliegen", stand: "geplant", prozent: 0 },
+  { id: "einsatzaufkommen", titel: "Einsatzaufkommen nach Versorgungsstufe", text: "Realistische Verteilung über den Tag, Spielstufen Realistisch, Standard und Stressig", stand: "fertig", prozent: 100 },
+  { id: "notfaelle", titel: "100 neue Notfälle und neue Abfrage-Ansicht", text: "Mehr Abwechslung bei den Notrufen, Fragen bleiben stehen, Anleitungen am Telefon", stand: "fertig", prozent: 100 },
+  { id: "zuweisung", titel: "Krankenhaus-Zuweisung nach Symptom", text: "Symptom, Altersgruppe und Dringlichkeit bestimmen das Krankenhaus; freie Plätze sofort sichtbar", stand: "fertig", prozent: 100 },
+  { id: "fahrzeugsuche", titel: "Fahrzeugwahl mit Suche", text: "Alle verfügbaren Fahrzeuge in einer scrollbaren Liste, auch aus anderen Funkgruppen", stand: "fertig", prozent: 100 },
+  { id: "sek-kt", titel: "Fahrzeugwahl bei Überstellungen und Krankentransporten", text: "Vorschlag nach Dienstzeit, Suche, Alarmieren oder Vormerken", stand: "fertig", prozent: 100 },
+  { id: "karte-info", titel: "Info-Fenster auf der Karte", text: "Klick auf ein Fahrzeug zeigt Status und Ankunftszeit, ohne die Karte zu verlassen", stand: "fertig", prozent: 100 },
+  { id: "kt-codes", titel: "Transport-Codes mit Editor", text: "Codes für Krankentransporte und Überstellungen über Bedingungen, mit Editor und Prüfung", stand: "fertig", prozent: 100 },
+  { id: "schema", titel: "Eigenes Codesystem & eigene Schemas", text: "Eingebaute Codeliste mit Abfrage ab der Installation; eigene Codelisten und Abfrageschemas hochladen und wechseln", stand: "fertig", prozent: 100 },
 ];
 const LS_FORTSCHRITT = "lw.fortschritt";
 

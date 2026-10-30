@@ -104,7 +104,7 @@ r = await mitPw("/");
 // Entwicklungsfortschritt
 r = await oeffentlich.fetch(anfrage("/api/fortschritt"), env);
 j = await r.json();
-check(r.status === 200 && j.punkte.length === 8 && j.punkte.some((p) => p.stand === "arbeit" && p.prozent > 0) && j.punkte.every((p) => !/notruf n(ö|oe)|leosim|lstsim/i.test(p.titel + p.text)), `Fortschritt: ${j.punkte.length} Punkte, ohne Quellen`);
+check(r.status === 200 && j.punkte.length >= 8 && j.punkte.some((p) => p.stand === "arbeit" && p.prozent > 0) && j.punkte.every((p) => !/notruf n(ö|oe)|leosim|lstsim/i.test(p.titel + p.text)), `Fortschritt: ${j.punkte.length} Punkte, ohne Quellen`);
 r = await mitPw("/api/fortschritt", { method: "PUT", body: [{ id: "a", titel: "Neu A", stand: "arbeit", prozent: 140 }, { id: "b", titel: "Versteckt", stand: "geplant", prozent: 0, aktiv: false }, { id: "c", titel: "Fertig C", stand: "fertig", prozent: 100 }] });
 j = await r.json();
 r = await oeffentlich.fetch(anfrage("/api/fortschritt"), env);

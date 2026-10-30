@@ -40,16 +40,27 @@ const START_HILFE = [
   ["juh-sek", "Sekundärfahrzeuge der Johanniter", "Welche SKTW, SRTW, SNAW und BIT haben die Johanniter in NÖ – mit Funkrufnamen, Dienstzeiten und Standorten (St. Pölten, Wiener Neudorf, Spillern, Zwettl, Stellplätze bei den Kliniken)?", "fahrzeug"],
 ];
 
-/** Startliste Entwicklungsfortschritt: [id, titel, text, stand („arbeit“ | „geplant“), prozent] */
+/**
+ * Liste Entwicklungsfortschritt: [id, titel, text, stand („arbeit“ | „geplant“ | „fertig“), prozent].
+ * Wird einmal je FORTSCHRITT_STAND in den Dienst geschrieben (ersetzt dann die Liste) – danach gilt die Admin-Seite.
+ */
+export const FORTSCHRITT_STAND = "2026-10-30";
 export const START_FORTSCHRITT = [
-  ["schema", "Eigenes Codesystem & eigene Schemas", "Eingebaute Codeliste mit Abfrage ab der Installation; eigene Codelisten und Abfrageschemas hochladen und wechseln", "fertig", 100],
-  ["fahrzeugsuche", "Suche bei der Fahrzeugwahl", "Im Einsatz schnell ein bestimmtes Fahrzeug finden", "geplant", 0],
-  ["sek-kt", "Fahrzeugwahl bei Überstellungen und Krankentransporten", "Vorschlag nach Dienstzeit, Suche, Alarmieren oder Vormerken; Rückfrage per Funk, wenn ein Fahrzeug zu früh dort ist", "geplant", 0],
-  ["karte-info", "Info-Fenster auf der Karte", "Klick auf ein Fahrzeug zeigt Status und Ankunftszeit, ohne die Karte zu verlassen", "geplant", 0],
+  ["nah-pilot", "Notarzthubschrauber selbst fliegen", "Als Pilot im Multiplayer mitspielen – mit oder ohne Flugsimulator (MSFS 2024, H145-Tablet und -Funkgerät, Sprechfunk, Großeinsatz). Noch offen: Verlegungsflüge, X-Plane", "arbeit", 85],
+  ["grossschaden", "Großschadensfall", "Ab 6 Betroffenen: Schnelleinsatzgruppe und Bereitstellungsraum in zwei Schritten, Einsatzleitung vor Ort, Patienten einzeln buchen, Voraviso. Noch offen: weitere Einsatzarten (Betreuung, Suche) und Gebiete", "arbeit", 85],
+  ["telefon", "Bessere Telefongespräche", "Natürlichere Anrufer und genauere Antworten in der Notrufabfrage", "arbeit", 75],
+  ["funk", "Überarbeitung des Funksystems", "Funkverkehr mit Fahrzeugen klarer, schneller und realistischer – eigene Sprechgruppe beim Großeinsatz gibt es schon", "arbeit", 30],
   ["tablet", "Zweitbildschirm am Tablet", "Karte, Fahrzeuge und Krankenhäuser zusätzlich am Tablet im WLAN anzeigen", "geplant", 0],
-  ["nah-pilot", "Notarzthubschrauber selbst fliegen", "Als Pilot im Multiplayer mitspielen – mit oder ohne Flugsimulator", "arbeit", 70],
-  ["telefon", "Bessere Telefongespräche", "Natürlichere Anrufer und genauere Antworten in der Notrufabfrage", "arbeit", 60],
-  ["funk", "Überarbeitung des Funksystems", "Funkverkehr mit Fahrzeugen klarer, schneller und realistischer", "geplant", 0],
+  ["nah-verlegung", "Verlegungsflüge mit dem Hubschrauber", "Überstellungen zwischen Krankenhäusern als Auftrag für den Piloten", "geplant", 0],
+  ["xplane", "X-Plane 12 für Piloten", "Hubschrauber auch mit X-Plane 12 fliegen", "geplant", 0],
+  ["einsatzaufkommen", "Einsatzaufkommen nach Versorgungsstufe", "Realistische Verteilung über den Tag, Spielstufen Realistisch, Standard und Stressig", "fertig", 100],
+  ["notfaelle", "100 neue Notfälle und neue Abfrage-Ansicht", "Mehr Abwechslung bei den Notrufen, Fragen bleiben stehen, Anleitungen am Telefon", "fertig", 100],
+  ["zuweisung", "Krankenhaus-Zuweisung nach Symptom", "Symptom, Altersgruppe und Dringlichkeit bestimmen das Krankenhaus; freie Plätze sofort sichtbar", "fertig", 100],
+  ["fahrzeugsuche", "Fahrzeugwahl mit Suche", "Alle verfügbaren Fahrzeuge in einer scrollbaren Liste, auch aus anderen Funkgruppen", "fertig", 100],
+  ["sek-kt", "Fahrzeugwahl bei Überstellungen und Krankentransporten", "Vorschlag nach Dienstzeit, Suche, Alarmieren oder Vormerken", "fertig", 100],
+  ["karte-info", "Info-Fenster auf der Karte", "Klick auf ein Fahrzeug zeigt Status und Ankunftszeit, ohne die Karte zu verlassen", "fertig", 100],
+  ["kt-codes", "Transport-Codes mit Editor", "Codes für Krankentransporte und Überstellungen über Bedingungen, mit Editor und Prüfung", "fertig", 100],
+  ["schema", "Eigenes Codesystem & eigene Schemas", "Eingebaute Codeliste mit Abfrage ab der Installation; eigene Codelisten und Abfrageschemas hochladen und wechseln", "fertig", 100],
 ];
 
 const json = (data, status = 200, extra = {}) =>
@@ -138,12 +149,15 @@ export class TicketStore extends DurableObject {
       START_HILFE.forEach(([id, titel, txt, art], i) => this.sql.exec(`INSERT OR IGNORE INTO hilfe (id, titel, text, art, reihenfolge, aktiv, geaendert) VALUES (?, ?, ?, ?, ?, 1, ?)`, id, titel, txt, art, i, t));
       this.sql.exec(`INSERT INTO meta (k, v) VALUES ('hilfe_start', '1')`);
     }
-    if (!this.sql.exec(`SELECT v FROM meta WHERE k = 'fortschritt_start'`).toArray().length) {
+    // Liste je Stand einmal schreiben (neuer Stand ersetzt die Liste; dazwischen gilt die Admin-Seite)
+    const stand = this.sql.exec(`SELECT v FROM meta WHERE k = 'fortschritt_stand'`).toArray()[0]?.v;
+    if (stand !== FORTSCHRITT_STAND) {
       const t = Date.now();
+      this.sql.exec(`DELETE FROM fortschritt`);
       START_FORTSCHRITT.forEach(([id, titel, txt, stand, prozent], i) =>
         this.sql.exec(`INSERT OR IGNORE INTO fortschritt (id, titel, text, stand, prozent, reihenfolge, aktiv, geaendert) VALUES (?, ?, ?, ?, ?, ?, 1, ?)`, id, titel, txt, stand, prozent, i, t),
       );
-      this.sql.exec(`INSERT INTO meta (k, v) VALUES ('fortschritt_start', '1')`);
+      this.sql.exec(`INSERT OR REPLACE INTO meta (k, v) VALUES ('fortschritt_stand', ?)`, FORTSCHRITT_STAND);
     }
   }
 
