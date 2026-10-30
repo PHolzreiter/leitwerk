@@ -277,13 +277,15 @@ function missionRoh(fz: SimFahrzeug, e: Einsatz | undefined): { key: string; mis
       },
     };
   }
-  const bo: [number, number] = e.adresse ? [e.adresse.lat, e.adresse.lon] : [e.wahr.lat, e.wahr.lon];
+  // Großeinsatz: das Ziel ist zuerst der Bereitstellungsraum (bis die Einsatzleitung abruft)
+  const ziel = sim.pilotBo(fz);
+  const bo: [number, number] = ziel ? [ziel.lat, ziel.lon] : e.adresse ? [e.adresse.lat, e.adresse.lon] : [e.wahr.lat, e.wahr.lon];
   const pat: [number, number] = [e.wahr.lat, e.wahr.lon];
   const h = e.kh ? store.get("hospitals", e.kh.hospitalId) : undefined;
   const hl = h ? (khLandung(h) ?? h) : null;
   const locations: Record<string, unknown> = { accident_site: bo, patient_site: pat, base: heim, ...(hl ? { hospital_helipad: [hl.lat, hl.lon] } : {}) };
   const sw = t(stichwort(e));
-  const adr = t(e.adresse?.label ?? "");
+  const adr = t(ziel?.br ? "Bereitstellungsraum" : (e.adresse?.label ?? ""));
   const karte: Befehl[] = [
     { set_map: { add: { point: { location: "accident_site", id: "lw_bo", icon: punktIcon("#e53935") } } } },
     ...(hl ? [{ set_map: { add: { point: { location: "hospital_helipad", id: "lw_kh", icon: punktIcon("#1e88e5") } } } }] : []),
@@ -331,6 +333,19 @@ function missionRoh(fz: SimFahrzeug, e: Einsatz | undefined): { key: string; mis
     { create_object: { name: "crew", title: "$TITLE Crew", fallback_title: "Airbus H145 ADAC Crew", location: { bearing: 70, dist: 0.004, object: "patient" } } },
     { set: { object: "crew", var: "VAR 1" }, value: 5 },
   ];
+  // Großeinsatz ohne zugeteilten Patienten: warten im BR bzw. am Einsatzort, Abruf zum Einsatzort
+  const gsHinweis = !e.gsKind && e.gs && !e.gs.aufgehoben ? sim.pilotGsHinweis(fz) : null;
+  if (st === "amBO" && gsHinweis) {
+    return {
+      key: `gs|${e.id}|${bo.join(",")}|${gsHinweis.text}`,
+      mission: {
+        ...basis,
+        title: t(`${heli}: ${sw}`),
+        locations,
+        objectives: [{ title: t(gsHinweis.text), commands: [...ui, ...karte, { set_route: "accident_site" }, ...(gsHinweis.abruf ? [{ set_df: { location: "accident_site", freq: 123.45 } }] : [{ set_hover_display: { range: 0 } }]), { set_message: { text: t(gsHinweis.text) } }, { sleep: "forever" }] }],
+      },
+    };
+  }
   if (st === "amBO" && !plan) {
     return {
       key: `bo|${e.id}`,

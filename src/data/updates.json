@@ -1,5 +1,16 @@
 [
  {
+  "version": "0.92.5",
+  "datum": "2026-10-30",
+  "titel": "Spieler-NAH im Großeinsatz",
+  "punkte": [
+   "Pilot fliegt in den Bereitstellungsraum und wird von der Einsatzleitung abgerufen",
+   "Einsatzleitung teilt dem Piloten einen Patienten zu",
+   "Krankenhausliste des Piloten zeigt freie Plätze",
+   "Erinnerung an die Feuerwehr, wenn Patienten erst gerettet werden müssen"
+  ]
+ },
+ {
   "version": "0.92.4",
   "datum": "2026-10-29",
   "titel": "Nachforderung zählt, was schon unterwegs ist",

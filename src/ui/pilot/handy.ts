@@ -101,7 +101,7 @@ export function handyStand(fz: SimFahrzeug | undefined, e: Einsatz | undefined, 
         })
       : [],
     flug: fz ? (f ? `Anhalten (${fz.pilot?.flugZiel ?? "Flug"}, noch ${Math.max(1, Math.round(rest / 60))} min)` : "Übungsflug zum nächsten Ziel") : "",
-    einsatz: e ? { nummer: e.nummer, stichwort: c?.beschreibung ?? e.code ?? (e.meldung?.text ?? "").split(/[.;]/)[0], adresse: e.adresse?.label ?? "", info: e.infoRtw ?? "", ziel: kh ? kh.kurzname || kh.name : "" } : null,
+    einsatz: e ? { nummer: e.nummer, stichwort: c?.beschreibung ?? e.code ?? (e.meldung?.text ?? "").split(/[.;]/)[0], adresse: e.adresse?.label ?? "", info: (fz && sim.pilotGsHinweis(fz)?.text) || (e.infoRtw ?? ""), ziel: kh ? kh.kurzname || kh.name : "" } : null,
     patient: amPatient
       ? [
           ...(l?.fall?.kern ? [l.fall.kern] : []),

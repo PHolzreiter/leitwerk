@@ -126,7 +126,9 @@ export function pilotFliegenNaechstes(): void {
   if (!fz) return;
   if (fz.fahrt) return void befehl(sim.call("pilotFliegen", fz.id, null));
   const e = einsatzVon(fz);
-  const ziel = e && ["alarmWache", "alarmFunk", "alarmiert", "zumBO"].includes(fz.status) ? "bo" : e?.kh && fz.status === "zumZO" ? "zo" : "heim";
+  // Großeinsatz: aus dem Bereitstellungsraum abgerufen → zum Einsatzort
+  const abruf = !!e && fz.phase === "wartetBR" && !!sim.pilotGsHinweis(fz)?.abruf;
+  const ziel = e && (["alarmWache", "alarmFunk", "alarmiert", "zumBO"].includes(fz.status) || abruf) ? "bo" : e?.kh && fz.status === "zumZO" ? "zo" : "heim";
   void befehl(sim.call("pilotFliegen", fz.id, ziel));
 }
 
@@ -554,21 +556,26 @@ function gtnZiel(fz: SimFahrzeug | undefined, e: Einsatz | undefined): void {
   const h = e.kh ? store.get("hospitals", e.kh.hospitalId) : undefined;
   const l = h ? (khLandung(h) ?? h) : null;
   const kh = h && l ? { lat: l.lat, lon: l.lon, name: h.kurzname || h.name } : undefined;
-  const bo = e.adresse ? { lat: e.adresse.lat, lon: e.adresse.lon } : undefined;
+  // Großeinsatz: zuerst der Bereitstellungsraum
+  const z = sim.pilotBo(fz);
+  const bo = z ? { lat: z.lat, lon: z.lon } : undefined;
+  const abruf = fz.phase === "wartetBR" && !!sim.pilotGsHinweis(fz)?.abruf;
   const zumKh = !!kh && (fz.status === "zumZO" || (fz.status === "amBO" && !!plan && (plan.art === "transport" || (plan.art === "uebergabe" && plan.naMit))));
-  const zumBo = !!bo && (["alarmWache", "alarmFunk", "alarmiert", "zumBO"].includes(fz.status) || (fz.status === "amBO" && !zumKh));
-  const ziel = zumKh && kh ? { ...kh, art: "kh" as const } : zumBo && bo ? { ...bo, name: "Einsatzort", art: "bo" as const } : null;
+  const zumBo = !!bo && (["alarmWache", "alarmFunk", "alarmiert", "zumBO"].includes(fz.status) || (fz.status === "amBO" && !zumKh) || abruf);
+  const ziel = zumKh && kh ? { ...kh, art: "kh" as const } : zumBo && bo ? { ...bo, name: z?.label ?? "Einsatzort", art: "bo" as const } : null;
   gtnBereitlegen(fz, ziel, { bo, kh });
 }
 
 /** Koordinaten und Flugplan für Einsatzort und Zielkrankenhaus */
-function navigation(fz: SimFahrzeug, e: Einsatz, kh: Hospital | undefined): string {
+function navigation(fz: SimFahrzeug, kh: Hospital | undefined): string {
   const zeile = (titel: string, lat: number, lon: number, name: string, zusatz = "") => `<div class="plt-nav">
       <div class="plt-nav-text"><b>${esc(titel)}</b><span>${esc(koordText(lat, lon))}</span>${zusatz}</div>
       <div class="plt-nav-knoepfe"><button class="plt-b klein" data-kopie="${lat.toFixed(6)}, ${lon.toFixed(6)}" title="Koordinaten kopieren">Kopieren</button><button class="plt-b klein" data-pln="${lat},${lon}" data-name="${esc(name)}" title="Flugplan für MSFS speichern">${ico("plan")}.pln</button></div>
     </div>`;
   let html = "";
-  if (e.adresse && ["alarmWache", "alarmFunk", "alarmiert", "zumBO", "amBO"].includes(fz.status)) html += zeile("Einsatzort", e.adresse.lat, e.adresse.lon, "Einsatzort");
+  // Großeinsatz: Bereitstellungsraum (bis zum Abruf) statt Einsatzort
+  const z = sim.pilotBo(fz);
+  if (z && ["alarmWache", "alarmFunk", "alarmiert", "zumBO", "amBO"].includes(fz.status)) html += zeile(z.label, z.lat, z.lon, z.label);
   if (kh) {
     const l = khLandung(kh);
     if (l) html += zeile(`Landeplatz ${kh.kurzname || kh.name}`, l.lat, l.lon, kh.kurzname || kh.name, kh.landeplatz && kh.landeplatz !== "kein" ? "" : `<small class="plt-leise">am Haus (kein eigener Landeplatz hinterlegt)</small>`);
@@ -687,7 +694,8 @@ function flug(fz: SimFahrzeug | undefined, e: Einsatz | undefined): void {
   const f = fz?.fahrt;
   const rest = f ? Math.max(0, f.start / 1000 + f.dauer - sim.state.zeit / 1000) : 0;
   const ausSim = datenFrisch();
-  const key = `${fz?.id}|${!!e?.adresse}|${!!e?.kh}|${fz?.pilot?.flugZiel}|${f ? Math.ceil(rest / 30) : -1}|${ausSim}`;
+  const zielBo = fz ? sim.pilotBo(fz) : null;
+  const key = `${fz?.id}|${!!e?.adresse}|${!!e?.kh}|${fz?.pilot?.flugZiel}|${f ? Math.ceil(rest / 30) : -1}|${ausSim}|${zielBo?.label}|${zielBo?.lat}`;
   teil(".plt-flug", key, (box) => {
     if (!fz) return;
     if (ausSim) {
@@ -706,7 +714,8 @@ function flug(fz: SimFahrzeug | undefined, e: Einsatz | undefined): void {
       box.insertAdjacentHTML("beforeend", `<div class="plt-flug-jetzt">${ico("flug")}<div><b>${esc(fz.pilot?.flugZiel ?? "Flug")}</b><small>noch ${minuten(rest)}</small></div></div>`);
       knopf("stopp", "Anhalten", null);
     }
-    knopf("ziel", "Zum Einsatzort", "bo", !!e?.adresse);
+    const z = sim.pilotBo(fz);
+    knopf("ziel", z?.br ? "Zum Bereitstellungsraum" : "Zum Einsatzort", "bo", !!z);
     knopf("kh", "Zum Zielkrankenhaus", "zo", !!e?.kh);
     knopf("haus", "Zum Stützpunkt", "heim");
     const p = el("button", { class: "plt-b voll" });
@@ -720,9 +729,18 @@ function flug(fz: SimFahrzeug | undefined, e: Einsatz | undefined): void {
   });
 }
 
+let letzterGsHinweis: string | null = null;
+
 function einsatzKarte(fz: SimFahrzeug | undefined, e: Einsatz | undefined): void {
   const mitFz = e ? e.fahrzeuge.map((id) => sim.state.fahrzeuge[id]).filter((x): x is SimFahrzeug => !!x && x.einsatzId === e.id) : [];
-  const key = e ? `${e.id}|${e.code}|${e.adresse?.label}|${e.infoRtw}|${e.zusatz}|${e.kh?.hospitalId}|${mitFz.map((x) => x.id + x.status).join(",")}|${Math.round(fz ? distanceM(fz, e.adresse ?? fz) / 500 : 0)}|${fz ? Math.round(sim.pilotAnkunft(fz)?.min ?? -1) : ""}` : "-";
+  // Großeinsatz: was der Pilot gerade tun soll (BR, Abruf, Patient zugeteilt)
+  const gsH = fz && e ? sim.pilotGsHinweis(fz) : null;
+  if (gsH?.abruf && gsH.text !== letzterGsHinweis) {
+    spielen("funkDringend");
+    window.setTimeout(() => spielen("funkDringend"), 900);
+  }
+  letzterGsHinweis = gsH?.text ?? null;
+  const key = e ? `${e.id}|${e.code}|${e.adresse?.label}|${e.infoRtw}|${e.zusatz}|${e.kh?.hospitalId}|${mitFz.map((x) => x.id + x.status).join(",")}|${Math.round(fz ? distanceM(fz, e.adresse ?? fz) / 500 : 0)}|${fz ? Math.round(sim.pilotAnkunft(fz)?.min ?? -1) : ""}|${gsH?.text ?? ""}` : "-";
   teil(".plt-einsatz", key, (box) => {
     box.insertAdjacentHTML("beforeend", `<div class="plt-karte-titel">${ico("ziel")}Einsatz</div>`);
     if (!fz || !e) {
@@ -737,11 +755,12 @@ function einsatzKarte(fz: SimFahrzeug | undefined, e: Einsatz | undefined): void
       "beforeend",
       `<div class="plt-einsatz-kopf"><span class="plt-nr">${esc(e.nummer)}</span>${c ? `<span class="plt-stufe" style="--stufe:${stufeFarbe(c.stufe)}">${esc(c.stufe)}</span>` : ""}</div>
       <div class="plt-stichwort">${esc(stichwort(e))}</div>
+      ${gsH ? `<div class="plt-gs${gsH.abruf ? " abruf" : ""}">${esc(gsH.text)}</div>` : ""}
       <div class="plt-zeile">${ico("punkt")}<span>${esc(e.adresse?.label ?? "Adresse folgt")}${e.zusatz ? `<small>${esc(e.zusatz)}</small>` : ""}</span></div>
       ${km !== null ? `<div class="plt-zeile">${ico("flug")}<span>${km.toFixed(1).replace(".", ",")} km · ca. ${minuten((km * 1000) / (sim.settings.nahGeschwindigkeit / 3.6))} Flug${ank ? `<small>Ankunft ${esc(ank.ziel)} in ca. ${minuten(ank.min * 60)}</small>` : ""}</span></div>` : ""}
-      ${e.infoRtw ? `<div class="plt-info-rtw">${esc(e.infoRtw)}</div>` : ""}
+      ${e.infoRtw && !e.gsKind ? `<div class="plt-info-rtw">${esc(e.infoRtw)}</div>` : ""}
       ${kh ? `<div class="plt-zeile">${ico("kh")}<span>Ziel: <b>${esc(kh.kurzname || kh.name)}</b>${khLandung(kh) ? "" : ` <span class="plt-warn">kein Landeplatz</span>`}</span></div>` : ""}
-      ${navigation(fz, e, kh)}
+      ${navigation(fz, kh)}
       <div class="plt-mit">${mitFz.map((x) => { const st = sim.statusDef(x.status); return `<span class="plt-mit-fz" title="${esc(st.name)}"><i style="background:${st.farbe}"></i>${esc(x.funkrufname)}${x === fz ? " (du)" : ""}</span>`; }).join("")}</div>`,
     );
   });
@@ -762,9 +781,16 @@ function patient(fz: SimFahrzeug | undefined, e: Einsatz | undefined): void {
       box.insertAdjacentHTML("beforeend", `<div class="plt-leer">Was der Patient hat, siehst du am Berufungsort (Status 3).${e.meldung?.text ? `<br><span class="plt-leise">Meldung: ${esc(e.meldung.text)}</span>` : ""}</div>`);
       return;
     }
+    // Großeinsatz: ohne zugeteilten Patienten keine Patientendaten (die Einsatzleitung teilt zu)
+    if (e.gs && !e.gs.aufgehoben) {
+      box.insertAdjacentHTML("beforeend", `<div class="plt-leer">Großeinsatz – die Einsatzleitung teilt dir einen Patienten zu.</div>`);
+      return;
+    }
     const pat = l?.patienten ?? [];
     const verdacht = e.wahr.verdacht ? buchungName(e.wahr.verdacht) : "";
     let html = "";
+    // Großeinsatz-Patient: Verletzungsmuster, wie es die Einsatzleitung gemeldet hat
+    if (e.gsKind) html += `<div class="plt-lagebild">${esc(e.meldung.text)}</div>`;
     if (l?.fall?.kern) html += `<div class="plt-lagebild">${esc(l.fall.kern)}</div>`;
     if (verdacht) html += `<div class="plt-verdacht">Verdacht: <b>${esc(verdacht)}</b></div>`;
     for (const p of pat) {
@@ -794,10 +820,11 @@ let planSeite: "transport" | "uebergabe" | "kein" = "transport";
 let khSuche = "";
 
 function plan(fz: SimFahrzeug | undefined, e: Einsatz | undefined): void {
-  const da = !!fz && !!e && fz.status === "amBO";
+  // Großeinsatz ohne zugeteilten Patienten: noch nichts zu entscheiden
+  const da = !!fz && !!e && fz.status === "amBO" && !(e.gs && !e.gs.aufgehoben);
   const p = fz?.pilot?.plan ?? null;
   const rtw = !!e && e.fahrzeuge.some((id) => { const x = sim.state.fahrzeuge[id]; return !!x && x.einsatzId === e.id && sim.transportfaehig(x); });
-  const key = da && e ? `${e.id}|${JSON.stringify(p)}|${planSeite}|${rtw}|${khSuche}|${e.wahr.verdacht}|${Math.round(sim.state.zeit / 60000)}` : p && e ? `fest|${JSON.stringify(p)}|${fz?.status}` : "-";
+  const key = da && e ? `${e.id}|${JSON.stringify(p)}|${planSeite}|${rtw}|${khSuche}|${e.wahr.verdacht}|${Math.round(sim.state.zeit / 60000)}|${Object.values(sim.state.khBelegung ?? {}).reduce((n, kh) => n + Object.values(kh).reduce((m, l) => m + (l?.length ?? 0), 0), 0)}` : p && e ? `fest|${JSON.stringify(p)}|${fz?.status}` : "-";
   teil(".plt-plan", key, (box) => {
     if (!fz || !e) return;
     if (!da) {
@@ -834,7 +861,7 @@ function plan(fz: SimFahrzeug | undefined, e: Einsatz | undefined): void {
         const b = el("button", { class: `plt-kh${gewaehlt ? " an" : ""}` });
         const flugMin = (k.km * 1000) / (sim.settings.nahGeschwindigkeit / 3.6);
         b.innerHTML = `<span class="plt-kh-name"><b>${esc(k.h.kurzname || k.h.name)}</b><small>${esc(k.h.name)}</small></span>
-          <span class="plt-kh-tags">${k.eignung ? `<span class="plt-tag ${k.eignung}">${k.eignung === "passend" ? "passend" : k.eignung === "ausweich" ? "Ausweich" : "Rückfall"}</span>` : ""}${k.zu ? `<span class="plt-tag warn">zu</span>` : ""}${k.voll ? `<span class="plt-tag warn">voll</span>` : ""}${khLandung(k.h) ? `<span class="plt-tag">Landeplatz</span>` : `<span class="plt-tag warn">kein Landeplatz</span>`}</span>
+          <span class="plt-kh-tags">${k.eignung ? `<span class="plt-tag ${k.eignung}">${k.eignung === "passend" ? "passend" : k.eignung === "ausweich" ? "Ausweich" : "Rückfall"}</span>` : ""}${k.zu ? `<span class="plt-tag warn">zu</span>` : ""}${k.voll ? `<span class="plt-tag warn">voll</span>` : k.frei ? `<span class="plt-tag">${esc(k.frei)}</span>` : ""}${khLandung(k.h) ? `<span class="plt-tag">Landeplatz</span>` : `<span class="plt-tag warn">kein Landeplatz</span>`}</span>
           <span class="plt-kh-km">${k.km.toFixed(0)} km<small>${minuten(flugMin)}</small></span>`;
         b.addEventListener("click", () => setzen({ art: "transport", hospitalId: k.h.id }));
         liste.appendChild(b);
@@ -862,18 +889,18 @@ function plan(fz: SimFahrzeug | undefined, e: Einsatz | undefined): void {
 }
 
 /** Krankenhäuser für die Zielwahl: passende zuerst, dann nach Entfernung; mit Suche alle */
-function khListe(fz: SimFahrzeug, e: Einsatz): { h: Hospital; eignung: string | null; km: number; zu: boolean; voll: boolean }[] {
+function khListe(fz: SimFahrzeug, e: Einsatz): { h: Hospital; eignung: string | null; km: number; zu: boolean; voll: boolean; frei: string }[] {
   const q = khSuche.trim().toLowerCase();
   const p0 = e.wahr.lage?.patienten[0];
   const kind = (p0?.alter ?? e.wahr.patientAlter ?? 99) < 15;
   const vorschlag = sim.khFuer(fz, e.wahr.verdacht ?? null, sim.patientRot(e), kind, false, sim.cacVorrang(e));
   const bekannt = new Set(vorschlag.map((v) => v.h.id));
   const alle = [
-    ...vorschlag.map((v) => ({ h: v.h, eignung: v.eignung as string | null, km: v.km, zu: v.zu, voll: v.voll })),
+    ...vorschlag.map((v) => ({ h: v.h, eignung: v.eignung as string | null, km: v.km, zu: v.zu, voll: v.voll, frei: v.gesamt ? `${v.frei}/${v.gesamt} frei` : "" })),
     ...store
       .list("hospitals")
       .filter((h) => !bekannt.has(h.id))
-      .map((h) => ({ h, eignung: null as string | null, km: distanceM(fz, h) / 1000, zu: false, voll: false })),
+      .map((h) => ({ h, eignung: null as string | null, km: distanceM(fz, h) / 1000, zu: false, voll: false, frei: "" })),
   ];
   if (q) return alle.filter((x) => `${x.h.name} ${x.h.kurzname ?? ""} ${x.h.ort ?? ""}`.toLowerCase().includes(q)).sort((a, b) => a.km - b.km).slice(0, 25);
   return alle.slice(0, 10);
@@ -886,7 +913,9 @@ function funkTeil(fz: SimFahrzeug | undefined, e: Einsatz | undefined): { knoepf
   const ich = funkSendeZustand();
   const hoert = funkEmpfang();
   const sendet = sim.state.funkSendet;
-  const belegt = sim.funkKanalBelegt();
+  // Großeinsatz: der Pilot ist auf der Sprechgruppe des Großeinsatzes
+  const gruppe = sim.kanalVon(e);
+  const belegt = sim.funkKanalBelegt(gruppe);
   const kanal = ich?.art === "sendet"
     ? `Du sprichst${ich.ziel === "rtw" ? " (an den RTW)" : ""} …`
     : ich?.art === "wartet"
@@ -897,7 +926,9 @@ function funkTeil(fz: SimFahrzeug | undefined, e: Einsatz | undefined): { knoepf
           ? `${sendet.von === "LEO" ? `Leitstelle (${sendet.name})` : `${sendet.von} (${sendet.name})`} spricht`
           : belegt
             ? `Funk belegt – ${belegt.funkname} ↔ ${belegt.an?.funkname ?? "LEO"}`
-            : "Funk frei";
+            : gruppe
+              ? "Funk frei (Sprechgruppe Großeinsatz)"
+              : "Funk frei";
   const klasse = ich?.art === "sendet" ? "sendet" : hoert || sendet ? "hoert" : belegt ? "belegt" : "frei";
   teil(".plt-funk-kanal", `${kanal}|${klasse}`, (b) => {
     b.className = `plt-funk-kanal ${klasse}`;
@@ -922,7 +953,7 @@ function funkTeil(fz: SimFahrzeug | undefined, e: Einsatz | undefined): { knoepf
   });
   root?.querySelectorAll<HTMLElement>(".plt-ptt").forEach((x) => x.classList.toggle("an", !!ich && (x.dataset.ptt === "funkRtw") === (ich.ziel === "rtw")));
   // die letzten Funksprüche (alle hören mit)
-  const alle = (sim.state.funkGespraeche ?? []).slice(0, 12);
+  const alle = (sim.state.funkGespraeche ?? []).filter((g) => (g.kanal ?? null) === gruppe).slice(0, 12);
   const zeilen = alle
     .flatMap((g) => g.sprueche.map((x) => ({ ...x, g })))
     .sort((a, b) => a.zeit - b.zeit)
@@ -1086,6 +1117,9 @@ function karteAktualisieren(fz: SimFahrzeug | undefined, e: Einsatz | undefined)
   const kh = e?.kh ? store.get("hospitals", e.kh.hospitalId) : undefined;
   const ziele: GeoJSON.Feature[] = [];
   if (e?.adresse) ziele.push(punkt(e.adresse.lat, e.adresse.lon, { name: "Einsatzort", farbe: "#e53935" }));
+  // Großeinsatz: Bereitstellungsraum
+  const gsE = e?.gsKind ? sim.einsatz(e.gsKind.parent) : e;
+  if (gsE?.gs?.br && !gsE.gs.aufgehoben && gsE.gs.phase !== "ende") ziele.push(punkt(gsE.gs.br.lat, gsE.gs.br.lon, { name: "Bereitstellungsraum", farbe: "#6b7280" }));
   if (kh) ziele.push(punkt(kh.lat, kh.lon, { name: kh.kurzname || kh.name, farbe: "#1e88e5" }));
   if (fz) ziele.push(punkt(fz.heim.lat, fz.heim.lon, { name: "Stützpunkt", farbe: "#2e9d4a" }));
   const zk = JSON.stringify(ziele.map((z) => z.geometry));

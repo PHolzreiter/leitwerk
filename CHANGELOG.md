@@ -1,5 +1,12 @@
 # Änderungen
 
+## 0.92.5 – Spieler-NAH im Großeinsatz
+- **Der Hubschrauber-Pilot macht jetzt beim Großschadensfall mit:** Wird dein NAH zu einem Großeinsatz alarmiert, fliegst du in den Bereitstellungsraum (Knopf „Zum Bereitstellungsraum“, Ziel im GTN und am H145-Tablet, Markierung auf der Karte). Solange der Bereitstellungsraum fehlt, steht das in der Einsatzkarte
+- Ruft die Einsatzleitung dich ab, blinkt der Hinweis mit Ton – du fliegst zum Einsatzort. Dort teilt dir die Einsatzleitung einen Patienten zu (Alter, Verletzungsmuster); danach geht es wie gewohnt mit Transport und Krankenhaus
+- Die Krankenhausliste des Piloten zeigt jetzt die freien Plätze („3/8 frei“) und wird nach jeder Buchung sofort aktuell
+- Der Funk des Piloten läuft im Großeinsatz über die Sprechgruppe Großeinsatz; der Hinweis kommt auch aufs Handy
+- Großeinsatz: Sind Patienten erst nach Rettung durch die Feuerwehr erreichbar und ist noch keine Feuerwehr alarmiert, erinnert die Einsatzleitung daran
+
 ## 0.92.4 – Nachforderung zählt, was schon unterwegs ist
 - **Nachforderungen** rechnen jetzt mit, was schon alarmiert ist (auf Anfahrt, im Bereitstellungsraum): die Erinnerung nennt nur noch, was wirklich fehlt („noch 3× Rettungsmittel“ statt immer der ersten Zahl), und ist erledigt, sobald genug kommt – auch bei normalen Einsätzen
 - Großeinsatz: der Sammelfunk der Einsatzleitung (Abruf aus dem Bereitstellungsraum) ist jetzt klar und immer gleich formuliert
