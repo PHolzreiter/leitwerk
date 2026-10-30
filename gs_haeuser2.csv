@@ -1,0 +1,11 @@
+@type;@id;@lat;@lon;name;healthcare:speciality;emergency;operator;addr:city
+info;2841294128;48.4085753;15.6134995;Göttweigergasse 33 | levels= | building= | type=node;;;;
+info;2841294129;48.4086737;15.6134988;Göttweigergasse 33 | levels= | building= | type=node;;;;
+info;5716631516;48.3211341;16.0721397;Alter Ziegelweg 87a | levels= | building= | type=node;;;;
+info;5716631517;48.3211627;16.0720029;Alter Ziegelweg 87 | levels= | building= | type=node;;;;
+info;5716631518;48.3212037;16.0717696;Alter Ziegelweg 85 | levels= | building= | type=node;;;;
+info;5716631519;48.3214837;16.0710239;Alter Ziegelweg 81 | levels= | building= | type=node;;;;
+info;5716632823;48.3215319;16.0719386;Alter Ziegelweg 85a | levels= | building= | type=node;;;;
+info;5884317077;48.3210092;16.0726104;Alter Ziegelweg 89 | levels= | building= | type=node;;;;
+info;34075049;48.4086305;15.6136079;Göttweigergasse 33 | levels=11 | building=apartments | type=way;;;;
+info;123129890;48.3235451;16.0628224;Alter Ziegelweg 8 | levels= | building=apartments | type=way;;;;

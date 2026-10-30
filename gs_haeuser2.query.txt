@@ -1,0 +1,4 @@
+[out:csv(::type,::id,::lat,::lon,name,"healthcare:speciality",emergency,operator,"addr:city";true;";")][timeout:120];
+area["name"="Tulln an der Donau"]["boundary"="administrative"]->.t; area["name"="Krems an der Donau"]["boundary"="administrative"]->.k;
+( nwr(area.t)["addr:street"="Alter Ziegelweg"]["addr:housenumber"~"^8"]; nwr(area.k)["addr:street"="Göttweigergasse"]["addr:housenumber"~"^33"]; )->.a;
+foreach.a->.x( .x convert info ::id = id(), name = t["addr:street"] + " " + t["addr:housenumber"] + " | levels=" + t["building:levels"] + " | building=" + t["building"] + " | type=" + type(), ::geom = center(geom()); out center; );
