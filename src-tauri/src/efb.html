@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>LeitWerk</title>
+<!--
+  Seite für die LeitWerk-App im EFB-Tablet von MSFS 2024 (läuft im Simulator in einem alten Browser, „Coherent GT“):
+  bewusst einfach – kein CSS-Grid, keine CSS-Variablen, kein calc(), kein gap, JavaScript ohne neuere Schreibweisen.
+-->
+<style>
+  html, body { margin: 0; padding: 0; background: #0e1726; color: #e8eef8; font-family: Arial, Helvetica, sans-serif; }
+  body { padding: 14px 16px; font-size: 17px; }
+  .kopf { display: flex; align-items: center; margin-bottom: 12px; }
+  .kopf .name { flex: 1; }
+  .kopf b { font-size: 22px; display: block; }
+  .kopf small { color: #93a6c0; font-size: 13px; }
+  .verb { font-size: 13px; padding: 5px 10px; border-radius: 12px; background: #3a2d12; color: #f5b13d; }
+  .verb.an { background: #123222; color: #4ade80; }
+  .jetzt { display: flex; align-items: center; padding: 12px 14px; border-radius: 12px; background: #16233a; border-left: 10px solid #666666; margin-bottom: 12px; }
+  .jetzt .n { font-size: 40px; font-weight: bold; width: 54px; text-align: center; margin-right: 12px; }
+  .jetzt .t { font-size: 20px; font-weight: bold; }
+  .alarm { padding: 14px 16px; border-radius: 12px; background: #d32f2f; color: #ffffff; margin-bottom: 12px; font-size: 18px; }
+  .alarm b { display: block; font-size: 24px; margin-bottom: 4px; }
+  .knoepfe { margin: 0 -5px 8px; }
+  .st { display: inline-block; vertical-align: top; width: 31%; margin: 0 1% 10px; height: 92px; border-radius: 12px; border: 2px solid #2a3a57; background: #16233a; color: #e8eef8; font-size: 15px; font-weight: bold; text-align: center; padding-top: 10px; box-sizing: border-box; cursor: pointer; }
+  .st .n { display: block; font-size: 34px; line-height: 40px; }
+  .st.aktiv { color: #ffffff; }
+  .karte { background: #16233a; border: 1px solid #2a3a57; border-radius: 12px; padding: 12px 14px; margin-bottom: 12px; line-height: 1.4; }
+  .karte h3 { margin: 0 0 6px; font-size: 13px; letter-spacing: 1px; text-transform: uppercase; color: #93a6c0; }
+  .karte .gross { font-size: 20px; font-weight: bold; }
+  .hinweis { margin-top: 8px; padding: 8px 10px; border-radius: 8px; background: #3a2d12; color: #ffd27a; }
+  .dim { color: #93a6c0; font-size: 14px; }
+  .versteckt { display: none; }
+</style>
+</head>
+<body>
+<div class="kopf"><div class="name"><b id="heli">LeitWerk</b><small id="unter">verbinde …</small></div><span class="verb" id="verb">offline</span></div>
+<div class="alarm versteckt" id="alarm"></div>
+<div class="jetzt" id="jetzt"><span class="n">–</span><span class="t">kein Hubschrauber</span></div>
+<div class="knoepfe" id="knoepfe"></div>
+<div class="karte versteckt" id="einsatz"></div>
+<div class="karte versteckt" id="patient"></div>
+<p class="dim" id="tipp">LeitWerk-Testversion der EFB-App. Status-Tasten setzen deinen Status wie im Piloten-Interface.</p>
+<script>
+(function () {
+  var letzt = "";
+  function $(id) { return document.getElementById(id); }
+  function esc(s) {
+    return String(s === undefined || s === null ? "" : s).replace(/[&<>"]/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
+    });
+  }
+  function zeige(el, an) { el.className = el.className.replace(/ ?versteckt/g, "") + (an ? "" : " versteckt"); }
+  function verbunden(an) {
+    $("verb").textContent = an ? "verbunden" : "offline";
+    $("verb").className = an ? "verb an" : "verb";
+  }
+  function senden(cmd) {
+    var x = new XMLHttpRequest();
+    x.open("POST", "/befehl");
+    x.onreadystatechange = function () { if (x.readyState === 4) setTimeout(holen, 250); };
+    try { x.send(cmd); } catch (e) { verbunden(false); }
+  }
+  function zeichnen(s) {
+    var k = JSON.stringify(s);
+    if (k === letzt) return;
+    letzt = k;
+    $("heli").textContent = s.heli || "LeitWerk";
+    $("unter").textContent = s.unter || (s.hinweis || "");
+    var j = $("jetzt");
+    j.style.borderLeftColor = (s.status && s.status.farbe) || "#666666";
+    j.innerHTML = s.status
+      ? '<span class="n">' + esc(s.status.nummer) + '</span><span class="t">' + esc(s.status.name) + "</span>"
+      : '<span class="n">–</span><span class="t">' + esc(s.hinweis || "kein Hubschrauber – im Piloten-Interface wählen") + "</span>";
+    var a = $("alarm");
+    zeige(a, !!s.alarm);
+    if (s.alarm) a.innerHTML = "<b>ALARM</b>" + esc(s.alarm) + "<div>Quittieren mit 9, Status 2 beim Abheben</div>";
+    var g = $("knoepfe");
+    g.innerHTML = "";
+    var l = s.knoepfe || [];
+    for (var i = 0; i < l.length; i++) {
+      (function (b) {
+        var el = document.createElement("div");
+        el.className = "st" + (b.aktiv ? " aktiv" : "");
+        el.style.borderColor = b.farbe;
+        if (b.aktiv) el.style.backgroundColor = b.farbe;
+        el.innerHTML = '<span class="n">' + esc(b.nummer) + "</span>" + esc(b.name);
+        el.onclick = function () { senden(b.aktion); };
+        g.appendChild(el);
+      })(l[i]);
+    }
+    var e = $("einsatz");
+    zeige(e, !!s.einsatz);
+    if (s.einsatz) {
+      e.innerHTML = "<h3>Einsatz " + esc(s.einsatz.nummer) + '</h3><div class="gross">' + esc(s.einsatz.stichwort) + "</div><div>" + esc(s.einsatz.adresse) + "</div>" +
+        (s.einsatz.ziel ? "<div>Ziel: <b>" + esc(s.einsatz.ziel) + "</b></div>" : "") +
+        (s.einsatz.info ? '<div class="hinweis">' + esc(s.einsatz.info) + "</div>" : "");
+    }
+    var p = $("patient");
+    zeige(p, !!s.patient);
+    if (s.patient) {
+      var h = "<h3>Patient</h3>";
+      for (var n = 0; n < s.patient.length; n++) h += "<div>" + esc(s.patient[n]) + "</div>";
+      p.innerHTML = h;
+    }
+  }
+  function holen() {
+    var x = new XMLHttpRequest();
+    x.open("GET", "/stand?z=" + Date.now());
+    x.timeout = 2500;
+    x.onreadystatechange = function () {
+      if (x.readyState !== 4) return;
+      if (x.status !== 200) return verbunden(false);
+      try { zeichnen(JSON.parse(x.responseText)); verbunden(true); } catch (e) { verbunden(false); }
+    };
+    try { x.send(); } catch (e) { verbunden(false); }
+  }
+  holen();
+  setInterval(holen, 1000);
+})();
+</script>
+</body>
+</html>

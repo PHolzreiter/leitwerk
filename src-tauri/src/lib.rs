@@ -623,6 +623,7 @@ pub fn run() {
             supertonic::supertonic_loeschen,
             supertonic::supertonic_erzeugen,
             handy::handy_starten,
+            handy::efb_starten,
             handy::handy_stand,
             handy::handy_stoppen,
             msfs::msfs_starten,

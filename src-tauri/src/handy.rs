@@ -3,6 +3,9 @@
 //! Ein kleiner Webserver im Heimnetz: Das Handy öffnet die Seite (QR-Code im Piloten-Interface),
 //! holt sich jede Sekunde den Stand (Status, Einsatz, Patient) und schickt Tastendrücke zurück.
 //! Ohne zusätzliche Bibliotheken – nur einfache HTTP-Anfragen. Zugang nur mit dem Schlüssel aus dem QR-Code.
+//!
+//! Dazu ein zweiter Server nur auf diesem Rechner (127.0.0.1, Port 47900–47905) für die LeitWerk-App im
+//! EFB-Tablet von MSFS 2024: ohne Schlüssel (von außen nicht erreichbar), mit eigener Seite (/efb) und /ping.
 
 use serde::Serialize;
 use sha2::{Digest, Sha256};
@@ -14,7 +17,9 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tauri::{AppHandle, Emitter};
 
 const SEITE: &str = include_str!("handy.html");
+const EFB_SEITE: &str = include_str!("efb.html");
 const PORTS: std::ops::RangeInclusive<u16> = 47_890..=47_899;
+const EFB_PORTS: std::ops::RangeInclusive<u16> = 47_900..=47_905;
 
 #[derive(Serialize, Clone)]
 pub struct HandyInfo {
@@ -29,6 +34,7 @@ struct Server {
 }
 
 static SERVER: Mutex<Option<Server>> = Mutex::new(None);
+static EFB_SERVER: Mutex<Option<u16>> = Mutex::new(None);
 static STAND: Mutex<String> = Mutex::new(String::new());
 
 /// IP-Adresse im Heimnetz (ohne dass ein Paket verschickt wird)
@@ -52,15 +58,17 @@ fn schluessel() -> String {
 }
 
 fn antwort(s: &mut TcpStream, code: &str, typ: &str, body: &[u8]) {
+    // CORS: die EFB-App im Simulator prüft mit /ping, ob LeitWerk läuft
     let kopf = format!(
-        "HTTP/1.1 {code}\r\nContent-Type: {typ}\r\nContent-Length: {}\r\nCache-Control: no-store\r\nConnection: close\r\n\r\n",
+        "HTTP/1.1 {code}\r\nContent-Type: {typ}\r\nContent-Length: {}\r\nCache-Control: no-store\r\nAccess-Control-Allow-Origin: *\r\nConnection: close\r\n\r\n",
         body.len()
     );
     let _ = s.write_all(kopf.as_bytes());
     let _ = s.write_all(body);
 }
 
-fn bearbeiten(mut s: TcpStream, token: &str, app: &AppHandle) {
+/// token = None: Server nur auf diesem Rechner (EFB-App) – ohne Schlüssel
+fn bearbeiten(mut s: TcpStream, token: Option<&str>, app: &AppHandle) {
     let _ = s.set_nonblocking(false);
     let _ = s.set_read_timeout(Some(Duration::from_secs(5)));
     let mut r = BufReader::new(match s.try_clone() {
@@ -85,7 +93,10 @@ fn bearbeiten(mut s: TcpStream, token: &str, app: &AppHandle) {
         }
     }
     let (pfad, abfrage) = ziel.split_once('?').unwrap_or((ziel.as_str(), ""));
-    let ok = abfrage.split('&').any(|p| p == format!("t={token}"));
+    let ok = match token {
+        Some(tk) => abfrage.split('&').any(|p| p == format!("t={tk}")),
+        None => true,
+    };
     if pfad == "/favicon.ico" {
         return antwort(&mut s, "404 Not Found", "text/plain", b"");
     }
@@ -93,7 +104,9 @@ fn bearbeiten(mut s: TcpStream, token: &str, app: &AppHandle) {
         return antwort(&mut s, "403 Forbidden", "text/plain; charset=utf-8", "Kein Zugang – bitte den QR-Code im Piloten-Interface neu scannen.".as_bytes());
     }
     match (methode.as_str(), pfad) {
-        ("GET", "/") => antwort(&mut s, "200 OK", "text/html; charset=utf-8", SEITE.as_bytes()),
+        ("GET", "/") if token.is_some() => antwort(&mut s, "200 OK", "text/html; charset=utf-8", SEITE.as_bytes()),
+        ("GET", "/") | ("GET", "/efb") => antwort(&mut s, "200 OK", "text/html; charset=utf-8", EFB_SEITE.as_bytes()),
+        ("GET", "/ping") => antwort(&mut s, "200 OK", "text/plain; charset=utf-8", b"leitwerk"),
         ("GET", "/stand") => {
             let st = STAND.lock().map(|x| x.clone()).unwrap_or_default();
             let st = if st.is_empty() { "{}".to_string() } else { st };
@@ -143,7 +156,7 @@ pub fn handy_starten(app: AppHandle) -> Result<HandyInfo, String> {
                 Ok((s, _)) => {
                     let t = token.clone();
                     let a = app.clone();
-                    std::thread::spawn(move || bearbeiten(s, &t, &a));
+                    std::thread::spawn(move || bearbeiten(s, Some(&t), &a));
                 }
                 Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => std::thread::sleep(Duration::from_millis(60)),
                 Err(_) => std::thread::sleep(Duration::from_millis(200)),
@@ -152,6 +165,33 @@ pub fn handy_starten(app: AppHandle) -> Result<HandyInfo, String> {
     });
     *g = Some(Server { info: info.clone(), stop });
     Ok(info)
+}
+
+/// Server für die EFB-App im Simulator (nur 127.0.0.1, ohne Schlüssel); gibt den Port zurück
+#[tauri::command]
+pub fn efb_starten(app: AppHandle) -> Result<u16, String> {
+    let mut g = EFB_SERVER.lock().map_err(|e| e.to_string())?;
+    if let Some(p) = *g {
+        return Ok(p);
+    }
+    let mut listener = None;
+    let mut port = 0;
+    for p in EFB_PORTS {
+        if let Ok(l) = TcpListener::bind(("127.0.0.1", p)) {
+            listener = Some(l);
+            port = p;
+            break;
+        }
+    }
+    let listener = listener.ok_or("Kein freier Anschluss für die EFB-App (Port 47900–47905)")?;
+    std::thread::spawn(move || {
+        for s in listener.incoming().flatten() {
+            let a = app.clone();
+            std::thread::spawn(move || bearbeiten(s, None, &a));
+        }
+    });
+    *g = Some(port);
+    Ok(port)
 }
 
 /// Neuer Stand fürs Handy (JSON aus dem Piloten-Interface)

@@ -32,10 +32,32 @@ export function handyAktionen(f: (a: PilotAktion) => void, halten?: (a: PilotAkt
   haltenFn = halten ?? null;
 }
 
+/** Port der EFB-App (Server nur auf diesem Rechner), sobald er läuft */
+export let efbPort: number | null = null;
+
+/** Server für die LeitWerk-App im EFB-Tablet von MSFS 2024 starten (still, nur 127.0.0.1) */
+export async function efbStarten(): Promise<void> {
+  if (!inTauri() || efbPort) return;
+  try {
+    efbPort = await invoke<number>("efb_starten");
+    await hoeren();
+    letzterStand = "";
+  } catch (e) {
+    console.warn("EFB-App", e);
+  }
+}
+
 async function starten(): Promise<HandyInfo> {
   if (!inTauri()) throw new Error("Das Handy geht nur im Programm (nicht im Browser)");
   if (info) return info;
   info = await invoke<HandyInfo>("handy_starten");
+  await hoeren();
+  letzterStand = "";
+  return info;
+}
+
+/** Tastendrücke vom Handy bzw. von der EFB-App (einmal anmelden) */
+async function hoeren(): Promise<void> {
   if (!hoertZu) {
     hoertZu = true;
     await listen<string>("handy-befehl", (ev) => {
@@ -46,8 +68,6 @@ async function starten(): Promise<HandyInfo> {
       if (AKTIONEN.some((x) => x.id === a) && !HALTEN.includes(a)) ausfuehren?.(a);
     });
   }
-  letzterStand = "";
-  return info;
 }
 
 function qrSvg(text: string): string {
@@ -79,7 +99,7 @@ export function handyDialog(): void {
 
 /** Stand fürs Handy (nur wenn der Server läuft und sich etwas geändert hat); funk = Sprechtasten und wer spricht */
 export function handyStand(fz: SimFahrzeug | undefined, e: Einsatz | undefined, funk?: { knoepfe: { aktion: string; name: string }[]; kanal: string; sendet: boolean }): void {
-  if (!info) return;
+  if (!info && !efbPort) return;
   const st = fz ? sim.statusDef(fz.status) : null;
   const alarmiert = !!fz && !!e && ["alarmWache", "alarmFunk", "alarmiert"].includes(fz.status);
   const c = e ? findCode(e.code ?? undefined) : undefined;

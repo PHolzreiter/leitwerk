@@ -1,5 +1,8 @@
 # Änderungen
 
+## 0.93.2 – Vorbereitung für die LeitWerk-App im MSFS-2024-Tablet
+- **Piloten:** Solange das Piloten-Interface offen ist, stellt LeitWerk eine Seite für die LeitWerk-App im EFB-Tablet von MSFS 2024 bereit (Status-Tasten, Einsatz, Patient). Die Seite ist nur auf diesem Rechner erreichbar. Die App selbst ist noch eine Testversion und wird getrennt verteilt
+
 ## 0.93.1 – Zwei weitere Häuser beim Wohnungsbrand
 - Der Brand im Mehrparteienhaus kann jetzt auch in der Göttweigergasse 33 in Krems (Hochhaus, 11 Stockwerke) und im Alten Ziegelweg 8 in Tulln ausbrechen
 

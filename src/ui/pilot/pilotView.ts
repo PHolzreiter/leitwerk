@@ -29,7 +29,7 @@ import { eingabeStarten, eingabeStoppen, handyHalten, tastenDialog } from "./ein
 import { funkEmpfang, funkSendeZustand, onFunkEmpfang, onFunkSenden, sprechKnopfAnbinden, sprechStart, sprechStopp } from "../sprechfunk";
 import { MODELLE, mikrofone, modellLaden, setzeSprache, sprachPrefs, sprachStatus } from "../sprache";
 import { inTauri } from "../../platform";
-import { handyAktionen, handyDialog, handyStand } from "./handy";
+import { efbStarten, handyAktionen, handyDialog, handyStand } from "./handy";
 import { hpg, hpgAktualisieren, hpgEinrichten, hpgMissionFuer, hpgStarten, hpgTestNachricht } from "./hpg";
 import { letzterCarls } from "./eingabe";
 import { carlsAn, carlsUmschalten, communityWaehlen, gtn, gtnAn, gtnBereitlegen, gtnSuchen, gtnUmschalten } from "./flugsim";
@@ -385,6 +385,8 @@ export function pilotOeffnen(): void {
   aus.push(() => window.clearInterval(takt));
   eingabeStarten(pilotAktion, pilotLoslassen);
   handyAktionen(pilotAktion, handyHalten);
+  // LeitWerk-App im EFB-Tablet (MSFS 2024): Server nur auf diesem Rechner
+  void efbStarten();
   flugsimAnbinden(meinFz, () => zeichneAlles());
   if (vorgabe().auto) void flugsimVerbinden();
   void gtnSuchen();

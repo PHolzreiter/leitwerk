@@ -1,5 +1,13 @@
 [
  {
+  "version": "0.93.2",
+  "datum": "2026-10-30",
+  "titel": "Vorbereitung für die Tablet-App im Flugsimulator",
+  "punkte": [
+   "LeitWerk stellt für Piloten eine Seite für das EFB-Tablet von MSFS 2024 bereit (Testversion)"
+  ]
+ },
+ {
   "version": "0.93.1",
   "datum": "2026-10-30",
   "titel": "Zwei weitere Häuser beim Wohnungsbrand",
