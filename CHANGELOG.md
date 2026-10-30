@@ -1,5 +1,10 @@
 # Änderungen
 
+## 0.94.0 – Testmodus für Piloten
+- **Als Pilot beitreten → „Testmodus“:** Du kannst das Piloten-Interface ohne Leitstelle ausprobieren – kein Spielcode, kein Disponent nötig. Das Spiel läuft nur bei dir, im Gebiet deines Stützpunkts, und es kommen keine Einsätze von selbst
+- **Testmenü** im Piloten-Interface: „Einsatz senden“ (ein Notfall mit Notarzt in deinem Gebiet, RTW dazu, dein Hubschrauber wird alarmiert) und „Großeinsatz senden“ (Großschadensfall mit Bereitstellungsraum, du kommst als Notarztmittel in den BR – vorerst nur in TETRA NÖ-03)
+- Dein eigentliches Spiel wird vorher gesichert, der Testmodus wird nicht gespeichert. „Verlassen“ beendet ihn
+
 ## 0.93.2 – Vorbereitung für die LeitWerk-App im MSFS-2024-Tablet
 - **Piloten:** Solange das Piloten-Interface offen ist, stellt LeitWerk eine Seite für die LeitWerk-App im EFB-Tablet von MSFS 2024 bereit (Status-Tasten, Einsatz, Patient). Die Seite ist nur auf diesem Rechner erreichbar. Die App selbst ist noch eine Testversion und wird getrennt verteilt
 

@@ -142,7 +142,7 @@ export function schliessen(): void {
 
 /** Sofort automatisch sichern (z. B. vor einem Update) */
 export async function jetztSichern(): Promise<void> {
-  if (sim.state.einsaetze.length === 0) return;
+  if (sim.state.einsaetze.length === 0 || sim.pilotTest) return;
   await autosaveWrite(JSON.stringify(erstellen()));
 }
 
@@ -150,7 +150,8 @@ let letzteSicherung = "";
 /** Jede Minute sichern, solange es etwas zu sichern gibt */
 export function autosaveStarten(): void {
   window.setInterval(() => {
-    if (sim.state.einsaetze.length === 0) return;
+    // Testmodus für Piloten: nichts sichern (sonst wäre das eigentliche Spiel überschrieben)
+    if (sim.state.einsaetze.length === 0 || sim.pilotTest) return;
     const json = JSON.stringify(erstellen());
     // nur wenn sich etwas geändert hat (gespeichert-Zeit ausgenommen)
     const kern = json.replace(/"gespeichert":\d+,/, "");

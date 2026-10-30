@@ -1331,3 +1331,26 @@
   animation: plt-gs-blink 1s ease-in-out infinite;
 }
 @keyframes plt-gs-blink { 50% { opacity: 0.6; } }
+
+/* Testmodus */
+.plt-testmodus {
+  margin-top: 14px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px dashed var(--pl-rand);
+  background: var(--pl-feld);
+}
+.plt-testmodus b {
+  display: block;
+  margin-bottom: 3px;
+}
+.plt-testmodus span {
+  color: var(--pl-dim);
+  font-size: 13px;
+}
+.plt-b.test {
+  color: var(--pl-warn);
+}
+.plt-testmenue .plt-wahl-k b {
+  font-size: 15px;
+}

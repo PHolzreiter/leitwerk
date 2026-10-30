@@ -1,5 +1,14 @@
 [
  {
+  "version": "0.94.0",
+  "datum": "2026-10-30",
+  "titel": "Testmodus für Piloten",
+  "punkte": [
+   "Piloten-Interface ohne Leitstelle ausprobieren (Als Pilot beitreten → Testmodus)",
+   "Testmenü: Einsatz oder Großeinsatz an den eigenen Hubschrauber senden"
+  ]
+ },
+ {
   "version": "0.93.2",
   "datum": "2026-10-30",
   "titel": "Vorbereitung für die Tablet-App im Flugsimulator",

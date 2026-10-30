@@ -49,6 +49,7 @@ const I: Record<string, string> = {
   handy: `<rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/>`,
   tausch: `<path d="M4 8h13l-3-3M20 16H7l3 3"/>`,
   tuer: `<path d="M14 4h5v16h-5"/><path d="M10 16l4-4-4-4M14 12H4"/>`,
+  test: `<path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3"/><path d="M7 15h10"/>`,
   patient: `<circle cx="12" cy="7" r="3.5"/><path d="M5 21a7 7 0 0 1 14 0"/>`,
   chat: `<path d="M4 5h16v11H9l-5 4z"/>`,
   folgen: `<circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/>`,
@@ -155,7 +156,8 @@ export function pilotBeitrittOeffnen(nachBeitritt?: () => void): void {
     <p>Du fliegst einen Notarzthubschrauber selbst – mit Flugsimulator oder im Übungsflug. Die Leitstelle disponiert dich ganz normal.</p>
     <label>Dein Name<input class="plt-in-name" maxlength="30" placeholder="z. B. Paul"></label>
     <label>Code des Spiels<input class="plt-in-code" inputmode="numeric" maxlength="6" placeholder="6 Ziffern"></label>
-    <p class="plt-leise">Den Code bekommst du vom Host (Multiplayer-Lobby auf seiner Startseite).</p>`;
+    <p class="plt-leise">Den Code bekommst du vom Host (Multiplayer-Lobby auf seiner Startseite).</p>
+    <div class="plt-testmodus"><b>Testmodus (ohne Leitstelle)</b><span>Alles ausprobieren, ohne dass jemand disponiert: das Spiel läuft nur bei dir, Einsätze schickst du dir über das Testmenü selbst. Kein Code nötig.</span></div>`;
   const name = body.querySelector<HTMLInputElement>(".plt-in-name")!;
   const code = body.querySelector<HTMLInputElement>(".plt-in-code")!;
   name.value = meinName();
@@ -165,6 +167,27 @@ export function pilotBeitrittOeffnen(nachBeitritt?: () => void): void {
     body,
     actions: [
       { label: "Abbrechen", kind: "plain" },
+      {
+        label: "Testmodus",
+        kind: "plain",
+        onClick: async () => {
+          try {
+            if (mp.status.rolle === "host") throw new Error("Du bist gerade Host eines Spiels – zuerst das Spiel beenden");
+            if (mp.status.rolle === "client") mp.verlassen();
+            if (name.value.trim()) mp.setName(name.value);
+            // das eigentliche Spiel vorher sichern – der Testmodus beginnt ein eigenes
+            const { jetztSichern } = await import("../../net/spielstand");
+            await jetztSichern().catch(() => undefined);
+            sim.pilotTestStarten({ pid: mp.ich.pid, name: mp.ich.name });
+          } catch (e) {
+            fehler(e);
+            return false;
+          }
+          pilotOeffnen();
+          nachBeitritt?.();
+          return true;
+        },
+      },
       {
         label: "Beitreten",
         kind: "primary",
@@ -222,6 +245,7 @@ function hubschrauberWahl(): void {
       b.addEventListener("click", async () => {
         try {
           await sim.call("pilotUebernehmen", fz.id);
+          sim.pilotTestGebiet(fz.id);
           merkeHeli(fz.id);
           dlg.close();
           zeichneAlles();
@@ -270,6 +294,7 @@ export function pilotOeffnen(): void {
       <div class="plt-status-jetzt"></div>
       <div class="plt-info"></div>
       <div class="plt-knoepfe">
+        <button class="plt-b test" data-act="test" title="Testmodus: Einsatz an dich senden"${sim.pilotTest ? "" : " hidden"}>${ico("test")}<span>Testmenü</span></button>
         <button class="plt-b" data-act="wetter" title="Wetter für den Flugsimulator">${ico("wolke")}<span>Wetter</span></button>
         <button class="plt-b" data-act="handy" title="Handy als Statusgerät">${ico("handy")}<span>Handy</span></button>
         <button class="plt-b" data-act="tasten" title="Tasten und Joystick belegen">${ico("tasten")}<span>Tasten</span></button>
@@ -346,6 +371,7 @@ export function pilotOeffnen(): void {
     hubschrauberWahl();
   });
   $('[data-act="verlassen"]').addEventListener("click", () => void pilotVerlassen());
+  $('[data-act="test"]').addEventListener("click", () => testMenue());
   $('[data-act="folgen"]').addEventListener("click", (ev) => {
     folgen = !folgen;
     (ev.currentTarget as HTMLElement).classList.toggle("an", folgen);
@@ -373,7 +399,7 @@ export function pilotOeffnen(): void {
   aus.push(
     mp.onChange(() => {
       // Spiel verlassen (z. B. Fehler beim Beitritt): zurück zur Startseite
-      if (mp.status.rolle === "aus" && root) {
+      if (mp.status.rolle === "aus" && root && !sim.pilotTest) {
         pilotSchliessen();
         void import("../startseite").then((m) => m.startseiteZeigen());
         return;
@@ -405,11 +431,41 @@ export function pilotOeffnen(): void {
   if (!meinFz()) {
     const warte = () => {
       if (!root) return;
-      if (Object.keys(sim.state.fahrzeuge).length && mp.status.hostDa) hubschrauberWahl();
+      if (Object.keys(sim.state.fahrzeuge).length && (mp.status.hostDa || sim.pilotTest)) hubschrauberWahl();
       else window.setTimeout(warte, 400);
     };
     warte();
   }
+}
+
+/** Testmodus: Einsatz an den eigenen Hubschrauber senden (ohne Leitstelle) */
+function testMenue(): void {
+  const fz = meinFz();
+  const body = el("div", { class: "plt-testmenue" });
+  body.innerHTML = `<p class="plt-leise">Testmodus – das Spiel läuft nur bei dir. Der Einsatz kommt wie vom Disponenten: Notfall in deinem Gebiet, Bodenfahrzeuge dazu, dein Hubschrauber wird alarmiert.</p>`;
+  const knopf = (titel: string, text: string, art: "normal" | "gross") => {
+    const b = el("button", { class: "plt-wahl-k" });
+    b.innerHTML = `<b>${titel}</b><small>${text}</small>`;
+    b.disabled = !fz || !!fz.einsatzId;
+    b.addEventListener("click", async () => {
+      if (!fz) return;
+      b.disabled = true;
+      try {
+        const hinweise = await sim.call("pilotTestEinsatz", fz.id, art);
+        for (const h of hinweise) toast(h, "error");
+        d.close();
+      } catch (e) {
+        fehler(e);
+        b.disabled = false;
+      }
+    });
+    body.appendChild(b);
+  };
+  knopf("Einsatz senden", "ein Notfall in deinem Gebiet (Notarzt nötig), mit RTW", "normal");
+  knopf("Großeinsatz senden", "Großschadensfall mit Bereitstellungsraum – du kommst als Notarztmittel in den BR (vorerst nur TETRA NÖ-03)", "gross");
+  if (!fz) body.insertAdjacentHTML("beforeend", `<p class="plt-warn">Zuerst einen Hubschrauber wählen.</p>`);
+  else if (fz.einsatzId) body.insertAdjacentHTML("beforeend", `<p class="plt-warn">Du bist noch im Einsatz – zuerst frei melden (Status 1 oder 6).</p>`);
+  const d = openDialog({ title: "Testmenü", body, actions: [{ label: "Schließen" }] });
 }
 
 /** Spiel verlassen: Hubschrauber an den Computer zurück, Verbindung trennen, zurück zur Startseite */
@@ -417,7 +473,8 @@ export async function pilotVerlassen(): Promise<void> {
   const fz = meinFz();
   if (fz) await befehl(sim.call("pilotAbgeben", fz.id));
   pilotSchliessen();
-  mp.verlassen();
+  if (sim.pilotTest) sim.pilotTestBeenden();
+  else mp.verlassen();
   const { startseiteZeigen } = await import("../startseite");
   startseiteZeigen();
 }
@@ -477,7 +534,7 @@ function kopf(fz: SimFahrzeug | undefined): void {
     b.innerHTML = `<span class="plt-gross-num">${esc(st.nummer)}</span><span>${esc(st.name)}</span>`;
   });
   const w = sim.state.wetter;
-  const verb = !mp.status.verbunden ? `<span class="plt-pill warn">verbinde …</span>` : !mp.status.hostDa ? `<span class="plt-pill warn">Host nicht da</span>` : `<span class="plt-pill ok">verbunden</span>`;
+  const verb = sim.pilotTest ? `<span class="plt-pill warn">Testmodus</span>` : !mp.status.verbunden ? `<span class="plt-pill warn">verbinde …</span>` : !mp.status.hostDa ? `<span class="plt-pill warn">Host nicht da</span>` : `<span class="plt-pill ok">verbunden</span>`;
   const hind = fz ? sim.flugHindernis(fz) : null;
   teil(".plt-info", `${uhrzeit(sim.state.zeit)}|${w.lage}|${verb}|${hind}|${sim.state.tempo}`, (b) => {
     b.innerHTML = `<span title="Spielzeit">${uhrzeit(sim.state.zeit)}${sim.state.tempo !== 1 ? ` <em>×${sim.state.tempo}</em>` : ""}</span><span>${esc(WETTER_LABEL[w.lage as keyof typeof WETTER_LABEL] ?? String(w.lage))}${hind ? ` · <span class="plt-warn">${esc(hind)}</span>` : ""}</span>${verb}`;
@@ -486,7 +543,11 @@ function kopf(fz: SimFahrzeug | undefined): void {
 
 function warten(fz: SimFahrzeug | undefined): void {
   const box = root!.querySelector<HTMLElement>(".plt-warte")!;
-  const text = !mp.status.verbunden
+  const text = sim.pilotTest
+    ? !fz
+      ? "Testmodus – noch kein Hubschrauber gewählt: oben auf „Wechseln“."
+      : ""
+    : !mp.status.verbunden
     ? "Verbinde mit dem Spiel …"
     : !mp.status.hostDa
       ? mp.status.hostVerlassen

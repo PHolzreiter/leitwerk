@@ -1130,7 +1130,7 @@ export const BEFEHLE = {
   ],
   immer: ["chat", "funkFzAntwort", "funkMensch", "funkMenschText"],
   /** Pilot (Spieler-NAH): jeder darf, geprüft wird, ob er diesen Hubschrauber fliegt */
-  pilot: ["pilotUebernehmen", "pilotAbgeben", "pilotStatus", "pilotPlan", "pilotFliegen", "pilotPosition", "pilotZeit"],
+  pilot: ["pilotUebernehmen", "pilotAbgeben", "pilotStatus", "pilotPlan", "pilotFliegen", "pilotPosition", "pilotZeit", "pilotTestEinsatz"],
 } as const;
 export type Befehl = (typeof BEFEHLE)[keyof typeof BEFEHLE][number];
 export type Berechtigung = "disponieren" | "steuern" | "einstellungen" | "kt";
@@ -1331,6 +1331,10 @@ export class Simulation {
   istOnline: ((pid: string) => boolean) | null = null;
   /** Ich selbst (Name im Multiplayer) */
   ich: Bearbeiter | null = null;
+  /** Testmodus für Piloten: Spiel nur auf diesem Rechner, ohne Leitstelle und ohne eigene Einsätze – Einsätze per Testmenü */
+  pilotTest = false;
+  /** Testmodus: Funkgruppe um den Stützpunkt des Hubschraubers (statt der Einstellung) */
+  private pilotTestFg: string | null = null;
   private listeners = new Set<Listener>();
   private routingBusy = new Set<string>();
   private lastReal = 0;
@@ -1478,7 +1482,7 @@ export class Simulation {
 
   /** Gewählte Funkgruppe (= Einsatzgebiet) */
   funkgruppe(): Funkgruppe {
-    return funkgruppe(this.settings.funkgruppe);
+    return funkgruppe(this.pilotTestFg ?? this.settings.funkgruppe);
   }
 
   /** Zufällige Adresse innerhalb der Funkgruppe (Adressen kommen aus der Box, hier wird genau geprüft) */
@@ -1674,7 +1678,7 @@ export class Simulation {
     if (e?.length && t >= e[0].t && t < e[e.length - 1].t - 6 * STD) return;
     const ganzNeu = !e?.length || t < e[0].t || t >= e[e.length - 1].t + STD;
     this.echtLaedt = true;
-    const g = mitteVon(funkgruppe(this.settings.funkgruppe));
+    const g = mitteVon(this.funkgruppe());
     void echtwetterLaden(g.lat, g.lon, t)
       .then((daten) => {
         this.state.wetterEcht = daten;
@@ -3819,7 +3823,7 @@ export class Simulation {
 
   /** Neue Notfälle nach dem Aufkommen der aktuellen Stunde (Einstellungen → Einsatzaufkommen) */
   private runGenerator(dt: number): void {
-    if (!this.settings.generatorAktiv) return;
+    if (!this.settings.generatorAktiv || this.pilotTest) return;
     const t = this.state.zeit;
     const h = new Date(t).getHours();
     const vorlage = vorlageVon(this.settings);
@@ -7591,7 +7595,7 @@ export class Simulation {
     // Daueraufträge für den aktuellen Tag
     const d = new Date(t);
     // ab dem Nachmittag sind auch die Fahrten des nächsten Tages schon bestellt
-    if (this.mode !== "client" && !this.ktDauerLaeuft && this.settings.ktAktiv !== false && this.settings.generatorAktiv) {
+    if (this.mode !== "client" && !this.ktDauerLaeuft && this.settings.ktAktiv !== false && this.settings.generatorAktiv && !this.pilotTest) {
       const heute0 = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
       const bis = d.getHours() >= 16 ? new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1).getTime() : heute0;
       const geplant = typeof this.state.ktDauerTag === "number" ? this.state.ktDauerTag : -Infinity;
@@ -7602,7 +7606,7 @@ export class Simulation {
       }
     }
     // Neue Aufträge nach Aufkommen der Stunde
-    if (this.settings.generatorAktiv) {
+    if (this.settings.generatorAktiv && !this.pilotTest) {
       const vd = VORLAGEN[vorlageVon(this.settings)];
       const rate = this.settings.ktAktiv === false ? 0 : (this.settings.stunden?.[d.getHours()]?.kt ?? 0) * vd.kt;
       if (Math.random() < (rate * dt) / 3_600_000) void this.generiereKt();
@@ -8452,6 +8456,94 @@ export class Simulation {
     if (!fz.pilot) throw new Error(`${fz.funkrufname} wird vom Computer geflogen – zuerst übernehmen`);
     if (fz.pilot.pid !== this.wer().pid) throw new Error(`${fz.funkrufname} wird von ${fz.pilot.name} geflogen`);
     return fz;
+  }
+
+  /** Testmodus für Piloten starten: neues Spiel nur auf diesem Rechner (ohne Leitstelle, ohne Einsätze von selbst) */
+  pilotTestStarten(ich: Bearbeiter): void {
+    this.pilotTest = true;
+    this.pilotTestFg = null;
+    this.ich = ich;
+    this.neuesSpiel(Date.now());
+  }
+
+  /** Testmodus beenden (zurück zum normalen Spiel ohne Einsätze) */
+  pilotTestBeenden(): void {
+    if (!this.pilotTest) return;
+    this.pilotTest = false;
+    this.pilotTestFg = null;
+    this.pause();
+    this.neu();
+  }
+
+  /** Testmodus: Gebiet = Funkgruppe um den Stützpunkt des gewählten Hubschraubers (wenn spielbar) */
+  pilotTestGebiet(fzId: string): void {
+    const fz = this.state.fahrzeuge[fzId];
+    if (!this.pilotTest || !fz) return;
+    const g = funkgruppeVon(fz.heim.lat, fz.heim.lon);
+    if (g?.verfuegbar) this.pilotTestFg = g.id;
+    this.emit();
+  }
+
+  /**
+   * Testmodus: Einsatz für den eigenen Hubschrauber – wie vom Disponenten: Notfall in der Funkgruppe, Anruf erledigt,
+   * Adresse und Code gesetzt, Bodenfahrzeuge nach Vorschlag und der Hubschrauber alarmiert. „gross“ = Großschadensfall
+   * (SEG zum Berufungsort, Bereitstellungsraum, Kräfte für den BR samt Hubschrauber). Gibt Hinweise zurück.
+   */
+  async pilotTestEinsatz(fzId: string, art: "normal" | "gross"): Promise<string[]> {
+    if (!this.pilotTest) throw new Error("Nur im Testmodus");
+    const fz = this.meinHubschrauber(fzId);
+    if (fz.einsatzId) throw new Error("Du bist noch im Einsatz – zuerst frei melden (Status 1 oder 6)");
+    const ziel = (e: Einsatz) => ({ lat: e.wahr.lat, lon: e.wahr.lon, label: e.wahr.adresse });
+    const ohneAnruf = (e: Einsatz, a?: Record<string, string>) => {
+      if (!e.anruf || e.anruf.status === "beendet") return;
+      this.anrufAnnehmen(e.id);
+      for (const [k, v] of Object.entries(a ?? {})) this.abfrageSetze(e.id, k, v);
+      this.anrufBeenden(e.id);
+    };
+    const boden = (ids: string[]) => ids.filter((id) => { const f = this.state.fahrzeuge[id]; return !!f && !fliegt(f); });
+    if (art === "normal") {
+      let e: Einsatz | null = null;
+      for (let i = 0; i < 12 && !e; i++) {
+        const x = await this.generiere("kritisch");
+        if (!x) continue;
+        // nicht zu nah am Stützpunkt (sonst lohnt der Flug nicht), nicht zu weit
+        const km = distanceM(x.wahr, fz) / 1000;
+        // nur Notfälle, bei denen ein Notarzt alarmiert wird
+        const wc = findCode(x.wahr.code);
+        const na = ((wc && this.stufeDef(wc.stufe)?.notarzt) ?? "nein") !== "nein";
+        if (km >= 8 && km <= 70 && (na || i >= 10)) e = x;
+        else {
+          if (x.anruf) x.anruf.status = "beendet";
+          x.zustand = "abgeschlossen";
+          x.khAnfrage = null;
+        }
+      }
+      if (!e) throw new Error("Kein passender Notfall gefunden – bitte noch einmal");
+      ohneAnruf(e);
+      this.aktualisiere(e.id, { adresse: ziel(e), code: e.wahr.code });
+      const v = await this.vorschlaege(e.id);
+      const emp = boden(this.empfehlung(e.id, v).ids).filter((id) => this.state.fahrzeuge[id]?.kategorie !== "NEF");
+      this.log(e, "Testmodus: Einsatz für den Piloten");
+      return this.alarmiere(e.id, [...emp, fz.id]);
+    }
+    if (this.funkgruppe().id !== "NÖ-03") throw new Error("Großschadensfälle gibt es vorerst nur in TETRA NÖ-03 (Krems, Tulln, Hollabrunn) – dort einen Hubschrauber wählen");
+    const id = await this.grossschadenAusloesen();
+    const e = id ? this.einsatz(id) : undefined;
+    if (!e) throw new Error("Kein Großschadensfall möglich");
+    const anz = String(e.wahr.abfrage?.antworten?.anzahl_patienten ?? "");
+    ohneAnruf(e, { anzahl_patienten: ["6-10", "11-30", "30+"].includes(anz) ? anz : "11-30" });
+    this.aktualisiere(e.id, { adresse: ziel(e), code: e.wahr.code });
+    // Schritt 1: Schnelleinsatzgruppe
+    const v = await this.vorschlaege(e.id);
+    const h: string[] = this.alarmiere(e.id, boden(this.empfehlung(e.id, v).ids));
+    for (const pb of this.partnerBedarf(e)) if (pb.art !== "ki") this.partnerAnfordern(e.id, pb.art);
+    // Bereitstellungsraum, Schritt 2 mit dem eigenen Hubschrauber
+    const br = this.gsBrVorschlag(e.id);
+    if (br) this.gsBr(e.id, br);
+    const v2 = await this.vorschlaege(e.id);
+    h.push(...this.alarmiere(e.id, [...boden(this.empfehlung(e.id, v2).ids), fz.id]));
+    this.log(e, "Testmodus: Großeinsatz für den Piloten");
+    return h;
   }
 
   /** Mitspieler übernimmt einen Hubschrauber (auch Wiedereinstieg nach Verbindungsverlust) */
