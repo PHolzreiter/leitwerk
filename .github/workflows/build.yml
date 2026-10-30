@@ -142,9 +142,12 @@ jobs:
         run: |
           set +e
           if [ -z "$TAURI_SIGNING_PRIVATE_KEY" ]; then echo "::error::Secret TAURI_SIGNING_PRIVATE_KEY fehlt in diesem Repo"; fi
-          # Spracherkennung (whisper.cpp): unter Windows nicht auf die CPU des Build-Servers optimieren
+          # Spracherkennung (whisper.cpp): nicht auf die CPU des Build-Servers optimieren (Windows; macOS 15 baut sonst
+          # mit i8mm-Befehlen, die ältere Macs nicht haben bzw. die der Compiler ohne passendes Ziel ablehnt)
           if [ "$RUNNER_OS" = "Windows" ]; then
             export CMAKE_PROJECT_INCLUDE_BEFORE="$(cygpath -m "$PWD/src-tauri/ggml-portabel.cmake")"
+          else
+            export CMAKE_PROJECT_INCLUDE_BEFORE="$PWD/src-tauri/ggml-portabel.cmake"
           fi
           # Piper (sherpa-onnx) unter Windows als DLL: vorher bauen (lädt das Paket und legt die DLLs neben das Programm),
           # CMAKE_VERBOSE je Lauf neu, damit der Rust-Cache den Download-Schritt nicht überspringt
