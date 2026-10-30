@@ -1,6 +1,6 @@
 ### npm install
 
-added 53 packages, and audited 54 packages in 8s
+added 53 packages, and audited 54 packages in 7s
 
 9 packages are looking for funding
   run `npm fund` for details
@@ -59,7 +59,7 @@ computing gzip size...
 - Using dynamic import() to code-split the application
 - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
 - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.[39m
-[32m✓ built in 7.94s[39m
+[32m✓ built in 5.44s[39m
 ### npx tauri icon app-icon.png
         Appx Creating StoreLogo.png
         Appx Creating Square30x30Logo.png
@@ -137,8 +137,8 @@ computing gzip size...
 [1m[92m  Downloaded[0m rustix v1.1.6
 [1m[92m  Downloaded[0m tauri-plugin-dialog v2.8.4
 [1m[92m  Downloaded[0m tauri-plugin-updater v2.14.1
-[1m[92m  Downloaded[0m utf_types v1.0.0
 [1m[92m  Downloaded[0m utf8_iter v1.1.0
+[1m[92m  Downloaded[0m utf_types v1.0.0
 [1m[92m  Downloaded[0m xattr v1.7.0
 [1m[92m   Compiling[0m log v0.4.35
 [1m[92m   Compiling[0m utf_types v1.0.0
@@ -152,8 +152,8 @@ computing gzip size...
 [1m[92m   Compiling[0m icu_properties v2.4.0
 [1m[92m   Compiling[0m dom_query v0.28.0
 [1m[92m   Compiling[0m idna_adapter v1.2.2
-[1m[92m   Compiling[0m idna v1.1.0
 [1m[92m   Compiling[0m rustix v1.1.6
+[1m[92m   Compiling[0m idna v1.1.0
 [1m[92m   Compiling[0m url v2.5.8
 [1m[92m   Compiling[0m schemars v0.8.22
 [1m[92m   Compiling[0m urlpattern v0.6.0
@@ -165,16 +165,16 @@ computing gzip size...
 [1m[92m    Checking[0m tauri-runtime-wry v2.12.3
 [1m[92m   Compiling[0m xattr v1.7.0
 [1m[92m   Compiling[0m bindgen v0.69.5
-[1m[92m   Compiling[0m tauri-build v2.7.4
 [1m[92m   Compiling[0m tauri-plugin v2.7.2
+[1m[92m   Compiling[0m tauri-build v2.7.4
 [1m[92m   Compiling[0m tauri-codegen v2.7.4
 [1m[92m   Compiling[0m whisper-rs-sys v0.13.1
 [1m[92m   Compiling[0m ureq v2.12.1
 [1m[92m   Compiling[0m tar v0.4.46
 [1m[92m    Checking[0m openssl-probe v0.2.2
-[1m[92m    Checking[0m rustls-native-certs v0.8.5
 [1m[92m    Checking[0m tower-http v0.6.11
 [1m[92m   Compiling[0m sherpa-rs-sys v0.6.8
+[1m[92m    Checking[0m rustls-native-certs v0.8.5
 [1m[92m    Checking[0m gethostname v1.1.0
 [1m[92m   Compiling[0m rfd v0.17.2
 [1m[92m    Checking[0m x11rb v0.13.2
@@ -183,7 +183,6 @@ computing gzip size...
 [1m[92m    Checking[0m global-hotkey v0.8.0
 [1m[92m    Checking[0m tempfile v3.27.0
 [1m[92m    Checking[0m reqwest v0.13.5
-[1m[92m    Checking[0m reqwest v0.12.28
 [1m[92m   Compiling[0m tauri v2.12.5
 [1m[92m   Compiling[0m tauri-plugin-fs v2.7.1
 [1m[92m   Compiling[0m tauri-macros v2.7.4
@@ -191,6 +190,7 @@ computing gzip size...
 [1m[92m   Compiling[0m tauri-plugin-global-shortcut v2.4.1
 [1m[92m   Compiling[0m tauri-plugin-updater v2.14.1
 [1m[92m   Compiling[0m leitwerk v0.94.0 (/home/runner/work/leitwerk/leitwerk/src-tauri)
+[1m[92m    Checking[0m reqwest v0.12.28
 [1m[92m    Checking[0m tungstenite v0.24.0
 [1m[92m    Checking[0m zip v4.6.1 (https://github.com/zip-rs/zip2?tag=v4.6.1#56fa5f6e)
 [1m[92m    Checking[0m sherpa-rs v0.6.8
@@ -204,7 +204,7 @@ computing gzip size...
     [1m[94m= [0m[1mnote[0m: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
 
 [1m[33mwarning[0m: `leitwerk` (lib) generated 1 warning
-[1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 57.98s
+[1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 39.68s
 ### python3 tools/build_default_data.py
 data/default/dienststellen.csv: 863 Zeilen
 data/default/fahrzeuge.csv: 681 Zeilen
