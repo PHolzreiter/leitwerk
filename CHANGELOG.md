@@ -1,5 +1,8 @@
 # Änderungen
 
+## 0.93.1 – Zwei weitere Häuser beim Wohnungsbrand
+- Der Brand im Mehrparteienhaus kann jetzt auch in der Göttweigergasse 33 in Krems (Hochhaus, 11 Stockwerke) und im Alten Ziegelweg 8 in Tulln ausbrechen
+
 ## 0.93.0 – Großschaden in zwei Schritten, Buchung beim Piloten, neuer Reiter Großeinsatz
 - **Alarmierung in zwei Schritten:** Zuerst schlägt das Spiel nur die Schnelleinsatzgruppe vor (1 BEL, 2 NEF, 3 RTW-C/RTW – ohne Hubschrauber, außer du wählst ihn selbst). Alles, was bei dieser ersten Alarmierung dabei ist, fährt direkt zum Berufungsort. Danach kommt Schritt 2: die Kräfte für den Bereitstellungsraum nach Stufe (NF5: 2 Notarztmittel, 3 Rettungsmittel · NF10: 4 und 6 · NF30: 8 und 12, ab NF10 ein weiterer BEL). Dafür muss zuerst der Bereitstellungsraum festgelegt sein – ohne ihn kann nichts in den BR alarmiert werden. Auch bei mehr als 30 Betroffenen kommt jetzt der passende Vorschlag
 - Fehlen Fahrzeuge für einen Schritt, steht im Vorschlag, was fehlt, mit Alternativen (z. B. KTW statt RTW, NEF aus dem Nachbarbezirk)

@@ -1030,6 +1030,9 @@ export const GS_GEBAEUDE: { adresse: string; gemeinde: string; lat: number; lon:
   { adresse: "Wiener Straße 66, 3400 Klosterneuburg", gemeinde: "Klosterneuburg", lat: 48.30261, lon: 16.32956, stockwerke: 5 },
   { adresse: "Kirchengasse 3, 2000 Stockerau", gemeinde: "Stockerau", lat: 48.38454, lon: 16.21125, stockwerke: 5 },
   { adresse: "J.-Widhalm-Straße 13, 2070 Retz", gemeinde: "Retz", lat: 48.74904, lon: 15.95357, stockwerke: 4 },
+  { adresse: "Göttweigergasse 33, 3500 Krems an der Donau", gemeinde: "Krems an der Donau", lat: 48.40863, lon: 15.61361, stockwerke: 11 },
+  // Stockwerke in OSM nicht eingetragen – vorläufig 4
+  { adresse: "Alter Ziegelweg 8, 3430 Tulln an der Donau", gemeinde: "Tulln an der Donau", lat: 48.32355, lon: 16.06282, stockwerke: 4 },
 ];
 
 /** Strecken ohne Oberleitung (Kamptalbahn): Orte entlang der Strecke */
