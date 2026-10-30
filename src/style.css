@@ -1343,6 +1343,27 @@ input[type="color"] {
   line-height: 1.4;
 }
 
+.sugg-fehlt {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--alert-text);
+  background: color-mix(in srgb, var(--alert-text) 9%, transparent);
+  border: 1px solid color-mix(in srgb, var(--alert-text) 35%, transparent);
+  border-radius: 6px;
+  padding: 6px 9px;
+  margin: 0 0 6px;
+}
+
+/* alle verfügbaren Fahrzeuge: scrollbar, etwa 14 Zeilen hoch */
+.sugg-liste {
+  max-height: 380px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 4px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
 .crew-edit {
   display: flex;
   flex-direction: column;

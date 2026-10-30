@@ -1,5 +1,19 @@
 [
  {
+  "version": "0.93.0",
+  "datum": "2026-10-30",
+  "titel": "Großschaden in zwei Schritten, Buchung beim Piloten",
+  "punkte": [
+   "Erst die Schnelleinsatzgruppe, dann die Kräfte für den Bereitstellungsraum nach Stufe",
+   "Bereitstellungsraum muss vor Schritt 2 festgelegt sein; fehlende Fahrzeuge mit Alternativen",
+   "BEL-Regeln, mehrere Kriseninterventions-Fahrzeuge, Wechsel bei verstorbenem Patienten",
+   "Spieler-NAH: Team geht vom Bereitstellungsraum zu Fuß, Buchung wie in der Leitstelle",
+   "Neuer Reiter Großeinsatz (hell und dunkel)",
+   "Scrollbare Fahrzeugliste mit allen verfügbaren Fahrzeugen",
+   "Schockräume nur über Buchungen, „n× privat“ bei Selbstzuweisern"
+  ]
+ },
+ {
   "version": "0.92.5",
   "datum": "2026-10-30",
   "titel": "Spieler-NAH im Großeinsatz",

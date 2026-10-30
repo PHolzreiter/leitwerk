@@ -180,7 +180,22 @@ export interface Belegung {
   bis: number;
   /** Einsatz-ID (Rettungsdienst) oder "" (Grundbelegung) */
   einsatz: string;
+  /** Buchung durch den Rettungsdienst eines anderen Bereichs (Schockraum, PCI …): wer und warum */
+  fremd?: { von: string; grund: string } | null;
 }
+
+/** Diese Plätze belegt nur der Rettungsdienst (keine Selbstzuweiser) – Grundbelegung als Fremdbuchung */
+export const NUR_RD: ReadonlySet<Ressource> = new Set<Ressource>(["schockraum", "schockraum_trauma", "schockraum_intern", "herzkatheter", "ecmo", "stroke_unit", "druckkammer"]);
+
+const FREMD_GRUND: Partial<Record<Ressource, string[]>> = {
+  schockraum: ["Polytrauma", "Reanimation mit ROSC", "Schädel-Hirn-Trauma", "Sepsis mit Schock"],
+  schockraum_trauma: ["Polytrauma", "Schädel-Hirn-Trauma", "Sturz aus Höhe", "Verkehrsunfall, eingeklemmt"],
+  schockraum_intern: ["Reanimation mit ROSC", "Sepsis mit Schock", "Lungenembolie", "Status epilepticus"],
+  herzkatheter: ["STEMI", "NSTEMI, instabil", "Reanimation mit ROSC (PCI)"],
+  ecmo: ["Reanimation – ECMO", "therapierefraktärer Kreislaufstillstand"],
+  stroke_unit: ["Schlaganfall (Lyse)", "Schlaganfall (Thrombektomie)"],
+  druckkammer: ["CO-Vergiftung", "Tauchunfall"],
+};
 /** Belegung: khId → Ressource → Liste */
 export type BelegungMap = Record<string, Partial<Record<Ressource, Belegung[]>>>;
 
@@ -285,7 +300,7 @@ export function tageskurve(t: number): number {
  * Grundbelegung fortschreiben (dt in Minuten): je Haus und Ressource kommen zufällig Patienten dazu,
  * so dass die Auslastung im Mittel bei faktor × Tageskurve × Anteil liegt (Grundwert 60 % der Plätze).
  */
-export function grundbelegungTick(b: BelegungMap, haeuser: Hospital[], t: number, dtMin: number, faktor: number, rnd = Math.random): void {
+export function grundbelegungTick(b: BelegungMap, haeuser: Hospital[], t: number, dtMin: number, faktor: number, rnd = Math.random, fremdVon?: (h: Hospital, r: Ressource) => string | null): void {
   const k = tageskurve(t) * faktor;
   for (const h of haeuser) {
     for (const def of RESSOURCEN) {
@@ -303,7 +318,15 @@ export function grundbelegungTick(b: BelegungMap, haeuser: Hospital[], t: number
       if (grund >= ziel || liste.length >= n) continue;
       // Ankünfte so, dass sich im Mittel „ziel“ Plätze füllen
       const rate = ziel / mittel;
-      if (rnd() < rate * dtMin) liste.push({ bis: t + (def.dauer[0] + rnd() * (def.dauer[1] - def.dauer[0])) * 60_000, einsatz: "" });
+      if (rnd() >= rate * dtMin) continue;
+      const bis = t + (def.dauer[0] + rnd() * (def.dauer[1] - def.dauer[0])) * 60_000;
+      // Schockraum, PCI …: nur der Rettungsdienst eines anderen Bereichs (bzw. ein anderer Hubschrauber) – mit Buchung
+      if (NUR_RD.has(def.id)) {
+        const von = fremdVon?.(h, def.id);
+        if (!von) continue;
+        const g = FREMD_GRUND[def.id] ?? ["Notfall"];
+        liste.push({ bis, einsatz: "", fremd: { von, grund: g[Math.floor(rnd() * g.length)] } });
+      } else liste.push({ bis, einsatz: "" });
     }
   }
 }

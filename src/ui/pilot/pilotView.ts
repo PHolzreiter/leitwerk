@@ -8,6 +8,7 @@ import "./pilot.css";
 import type maplibregl from "maplibre-gl";
 import { store } from "../../data/store";
 import { buchungName } from "../../data/klinik";
+import { ALTERSGRUPPEN, altersgruppeVon, DRINGLICHKEITEN, dringlichkeitFuer, symptom, symptomAusDiagnose, symptomSuche, zuweisungId, zuweisungLesen, type Altersgruppe, type Dringlichkeit, type Symptom } from "../../data/zuweisung";
 import { khLandung, type Hospital } from "../../data/model";
 import { mp, meinName } from "../../net/mehrspieler";
 import { findCode } from "../../sim/codes";
@@ -808,23 +809,62 @@ function patient(fz: SimFahrzeug | undefined, e: Einsatz | undefined): void {
 
 function planText(p: PilotPlan | null | undefined): string {
   if (!p) return "";
-  if (p.art === "transport") {
-    const h = store.get("hospitals", p.hospitalId);
-    return `Transport mit dem NAH ins ${h?.kurzname || h?.name || "Krankenhaus"}`;
-  }
-  if (p.art === "uebergabe") return p.naMit ? "Übergabe an RTW – Notarzt fährt mit" : "Übergabe an RTW";
+  const kh = (id?: string) => {
+    const h = id ? store.get("hospitals", id) : undefined;
+    return h ? ` ins ${h.kurzname || h.name}` : "";
+  };
+  const grund = (g?: string) => (g ? ` (${buchungName(g)})` : "");
+  if (p.art === "transport") return `NAH transportiert${kh(p.hospitalId)}${grund(p.grund)}`;
+  if (p.art === "uebergabe") return p.naMit ? `NA fährt im RTW mit${kh(p.hospitalId)}, NAH fliegt leer nach${grund(p.grund)}` : `RTW fährt allein${kh(p.hospitalId)}${grund(p.grund)}`;
   return p.grund === "revers" ? "Kein Transport – Revers" : p.grund === "tot" ? "Patient verstorben" : "Kein Transport";
 }
 
-let planSeite: "transport" | "uebergabe" | "kein" = "transport";
+/** Auswahl am Berufungsort: wer transportiert (danach die Buchung wie in der Leitstelle) */
+type PlanSeite = "nah" | "rtw" | "naMit" | "kein";
+let planSeite: PlanSeite = "nah";
 let khSuche = "";
+/** Buchung wie in der Leitstelle: Stichwort → Alter → Dringlichkeit → Vorschläge */
+const zw: { fuer: string; sym?: Symptom; alter: Altersgruppe; dring: Dringlichkeit; q: string; mehr: boolean } = { fuer: "", alter: "erwachsener", dring: 20, q: "", mehr: false };
+const SEITEN: { id: PlanSeite; titel: string; text: string }[] = [
+  { id: "nah", titel: "NAH transportiert", text: "Patient fliegt mit uns" },
+  { id: "rtw", titel: "RTW fährt allein", text: "Übergabe an den RTW, Notarzt bleibt beim NAH" },
+  { id: "naMit", titel: "NA im RTW, NAH leer", text: "Notarzt fährt im RTW mit, wir fliegen leer ins selbe Spital" },
+  { id: "kein", titel: "Kein Transport", text: "bleibt vor Ort, Revers oder verstorben" },
+];
+const FARBE_DRING: Record<"rot" | "gelb" | "gruen", Dringlichkeit> = { rot: 30, gelb: 20, gruen: 10 };
+
+/** Buchungs-Auswahl für diesen Einsatz vorbelegen (Verdacht, Alter, Sichtung) */
+function zwVorbelegen(e: Einsatz, pl: PilotPlan | null): void {
+  if (zw.fuer === e.id) return;
+  planSeite = !pl ? "nah" : pl.art === "transport" ? "nah" : pl.art === "uebergabe" ? (pl.naMit ? "naMit" : "rtw") : "kein";
+  khSuche = "";
+  const p0 = e.wahr.lage?.patienten[0];
+  zw.fuer = e.id;
+  zw.q = "";
+  zw.mehr = false;
+  zw.alter = altersgruppeVon(p0?.alter ?? e.wahr.patientAlter);
+  zw.dring = FARBE_DRING[p0?.sichtung ?? "gelb"] ?? 20;
+  zw.sym = undefined;
+  const v = e.kh?.grund ?? e.verdacht ?? e.wahr.verdacht ?? "";
+  const z = zuweisungLesen(v);
+  if (z) {
+    zw.sym = z.s;
+    zw.alter = z.a;
+    zw.dring = z.d;
+  } else if (v.startsWith("bu_")) {
+    zw.sym = symptom(symptomAusDiagnose(v));
+    if (zw.sym) zw.dring = dringlichkeitFuer(zw.sym, zw.dring);
+  }
+}
 
 function plan(fz: SimFahrzeug | undefined, e: Einsatz | undefined): void {
   // Großeinsatz ohne zugeteilten Patienten: noch nichts zu entscheiden
   const da = !!fz && !!e && fz.status === "amBO" && !(e.gs && !e.gs.aufgehoben);
   const p = fz?.pilot?.plan ?? null;
   const rtw = !!e && e.fahrzeuge.some((id) => { const x = sim.state.fahrzeuge[id]; return !!x && x.einsatzId === e.id && sim.transportfaehig(x); });
-  const key = da && e ? `${e.id}|${JSON.stringify(p)}|${planSeite}|${rtw}|${khSuche}|${e.wahr.verdacht}|${Math.round(sim.state.zeit / 60000)}|${Object.values(sim.state.khBelegung ?? {}).reduce((n, kh) => n + Object.values(kh).reduce((m, l) => m + (l?.length ?? 0), 0), 0)}` : p && e ? `fest|${JSON.stringify(p)}|${fz?.status}` : "-";
+  if (da && e) zwVorbelegen(e, p);
+  const belegt = Object.values(sim.state.khBelegung ?? {}).reduce((n, kh) => n + Object.values(kh).reduce((m, l) => m + (l?.length ?? 0), 0), 0);
+  const key = da && e ? `${e.id}|${JSON.stringify(p)}|${planSeite}|${rtw}|${khSuche}|${zw.sym?.id}|${zw.alter}|${zw.dring}|${zw.q}|${zw.mehr}|${Math.round(sim.state.zeit / 60000)}|${belegt}` : p && e ? `fest|${JSON.stringify(p)}|${fz?.status}` : "-";
   teil(".plt-plan", key, (box) => {
     if (!fz || !e) return;
     if (!da) {
@@ -833,18 +873,122 @@ function plan(fz: SimFahrzeug | undefined, e: Einsatz | undefined): void {
     }
     box.insertAdjacentHTML("beforeend", `<div class="plt-karte-titel">Was passiert mit dem Patienten?</div>`);
     if (p) box.insertAdjacentHTML("beforeend", `<div class="plt-plan-fest">${esc(planText(p))}<small>Ändern geht, solange ihr am Berufungsort seid. Dann Status 4 (Transport) oder 6 (frei).</small></div>`);
-    const reiter = el("div", { class: "plt-reiter" });
-    for (const [id, t] of [["transport", "Wir transportieren"], ["uebergabe", "Übergabe an RTW"], ["kein", "Kein Transport"]] as const) {
-      const b = el("button", { class: planSeite === id ? "an" : "" }, t);
+    // ① wer transportiert
+    const wahl = el("div", { class: "plt-wahl4" });
+    for (const s of SEITEN) {
+      const b = el("button", { class: `plt-wahl-k${planSeite === s.id ? " an" : ""}` });
+      b.innerHTML = `<b>${s.titel}</b><small>${s.text}</small>`;
       b.addEventListener("click", () => {
-        planSeite = id;
+        planSeite = s.id;
         plan(fz, e);
       });
-      reiter.appendChild(b);
+      wahl.appendChild(b);
     }
-    box.appendChild(reiter);
+    box.appendChild(wahl);
     const setzen = (pl: PilotPlan) => void befehl(sim.call("pilotPlan", fz.id, pl));
-    if (planSeite === "transport") {
+    if (planSeite === "kein") {
+      for (const [grund, t, u] of [["kein", "Patient bleibt vor Ort", "kein Transport nötig"], ["revers", "Transportverweigerung", "Revers unterschrieben"], ["tot", "Patient verstorben", "Tod durch den Notarzt festgestellt"]] as const) {
+        const b = el("button", { class: `plt-wahl-k${p?.art === "kein" && p.grund === grund ? " an" : ""}` });
+        b.innerHTML = `<b>${t}</b><small>${u}</small>`;
+        b.addEventListener("click", () => setzen({ art: "kein", grund }));
+        box.appendChild(b);
+      }
+      return;
+    }
+    if (planSeite !== "nah" && !rtw) {
+      box.insertAdjacentHTML("beforeend", `<div class="plt-leer">Noch kein RTW im Einsatz – bitte bei der Leitstelle anfordern (Chat).</div>`);
+      return;
+    }
+    // ② Buchung wie in der Leitstelle
+    const bu = el("div", { class: "plt-buchung" });
+    bu.insertAdjacentHTML("beforeend", `<div class="plt-schritt"><span>1</span>Stichwort</div>`);
+    if (zw.sym) {
+      const chip = el("div", { class: "plt-sym-chip" });
+      chip.innerHTML = `<b>${esc(zw.sym.name)}</b><small>${esc(zw.sym.kategorie)}</small>`;
+      const weg = el("button", { class: "plt-x", title: "anderes Stichwort" }, "✕");
+      weg.addEventListener("click", () => {
+        zw.sym = undefined;
+        plan(fz, e);
+        root?.querySelector<HTMLInputElement>(".plt-sym-suche")?.focus();
+      });
+      chip.appendChild(weg);
+      bu.appendChild(chip);
+    } else {
+      const such = el("input", { class: "plt-sym-suche", placeholder: "Stichwort suchen (z. B. Polytrauma, Schlaganfall) …", value: zw.q }) as HTMLInputElement;
+      such.addEventListener("input", () => {
+        zw.q = such.value;
+        const pos = such.selectionStart;
+        plan(fz, e);
+        const neu = root?.querySelector<HTMLInputElement>(".plt-sym-suche");
+        neu?.focus();
+        if (neu && pos !== null) neu.setSelectionRange(pos, pos);
+      });
+      bu.appendChild(such);
+      const treffer = zw.q.trim() ? symptomSuche(zw.q.trim(), 8) : [];
+      if (treffer.length) {
+        const liste = el("div", { class: "plt-sym-liste" });
+        for (const x of treffer) {
+          const b = el("button", { class: "plt-sym" });
+          b.innerHTML = `<b>${esc(x.name)}</b><small>${esc(x.kategorie)}</small>`;
+          b.addEventListener("click", () => {
+            zw.sym = x;
+            zw.q = "";
+            zw.dring = dringlichkeitFuer(x, zw.dring);
+            plan(fz, e);
+          });
+          liste.appendChild(b);
+        }
+        bu.appendChild(liste);
+      } else if (zw.q.trim()) bu.insertAdjacentHTML("beforeend", `<div class="plt-leise plt-klein">Kein Stichwort gefunden.</div>`);
+    }
+    bu.insertAdjacentHTML("beforeend", `<div class="plt-schritt"><span>2</span>Alter</div>`);
+    const alt = el("div", { class: "plt-seg" });
+    for (const a of ALTERSGRUPPEN) {
+      const b = el("button", { class: zw.alter === a.id ? "an" : "", title: `${a.text} Jahre` }, a.name);
+      b.addEventListener("click", () => {
+        zw.alter = a.id;
+        plan(fz, e);
+      });
+      alt.appendChild(b);
+    }
+    bu.appendChild(alt);
+    bu.insertAdjacentHTML("beforeend", `<div class="plt-schritt"><span>3</span>Dringlichkeit</div>`);
+    const dr = el("div", { class: "plt-seg" });
+    for (const d of DRINGLICHKEITEN) {
+      const b = el("button", { class: `d${d.id}${zw.dring === d.id ? " an" : ""}` }, d.name) as HTMLButtonElement;
+      b.disabled = !!zw.sym && !zw.sym.dringlichkeiten.includes(d.id);
+      b.addEventListener("click", () => {
+        zw.dring = d.id;
+        plan(fz, e);
+      });
+      dr.appendChild(b);
+    }
+    bu.appendChild(dr);
+    bu.insertAdjacentHTML("beforeend", `<div class="plt-schritt"><span>4</span>Vorschläge</div>`);
+    const grund = zw.sym ? zuweisungId(zw.sym.id, zw.dring, zw.alter) : "";
+    const buchen = (hId: string) =>
+      setzen(planSeite === "nah" ? { art: "transport", hospitalId: hId, grund: grund || undefined } : { art: "uebergabe", naMit: planSeite === "naMit", hospitalId: hId, grund: grund || undefined });
+    const gewaehlt = p && p.art !== "kein" ? p.hospitalId : undefined;
+    const liste = el("div", { class: "plt-kh-liste" });
+    if (!grund) liste.insertAdjacentHTML("beforeend", `<div class="plt-leise plt-klein">Stichwort wählen – dann zeigt die Liste die passenden Häuser, die jetzt aufnehmen.</div>`);
+    for (const k of khListe(fz, e, grund)) {
+      const b = el("button", { class: `plt-kh${gewaehlt === k.h.id ? " an" : ""}` });
+      const flugMin = (k.km * 1000) / (sim.settings.nahGeschwindigkeit / 3.6);
+      b.innerHTML = `<span class="plt-kh-name"><b>${esc(k.h.kurzname || k.h.name)}</b><small>${esc(k.h.name)}</small></span>
+          <span class="plt-kh-tags">${k.eignung ? `<span class="plt-tag ${k.eignung}">${k.eignung === "passend" ? "passend" : k.eignung === "ausweich" ? "Ausweich" : "Rückfall"}</span>` : ""}${k.zu ? `<span class="plt-tag warn">zu</span>` : ""}${k.voll ? `<span class="plt-tag warn">voll</span>` : k.frei ? `<span class="plt-tag">${esc(k.frei)}</span>` : ""}${planSeite === "nah" ? (khLandung(k.h) ? `<span class="plt-tag">Landeplatz</span>` : `<span class="plt-tag warn">kein Landeplatz</span>`) : ""}</span>
+          <span class="plt-kh-km">${k.km.toFixed(0)} km<small>${planSeite === "nah" ? minuten(flugMin) : "Buchen"}</small></span>`;
+      b.addEventListener("click", () => buchen(k.h.id));
+      liste.appendChild(b);
+    }
+    bu.appendChild(liste);
+    // anderes Haus: Namenssuche über alle
+    const mehr = el("button", { class: "plt-link" }, zw.mehr ? "▾ anderes Krankenhaus" : "▸ anderes Krankenhaus suchen");
+    mehr.addEventListener("click", () => {
+      zw.mehr = !zw.mehr;
+      plan(fz, e);
+    });
+    bu.appendChild(mehr);
+    if (zw.mehr) {
       const such = el("input", { class: "plt-kh-suche", placeholder: "Krankenhaus suchen …", value: khSuche }) as HTMLInputElement;
       such.addEventListener("input", () => {
         khSuche = such.value;
@@ -854,56 +998,35 @@ function plan(fz: SimFahrzeug | undefined, e: Einsatz | undefined): void {
         neu?.focus();
         if (neu && pos !== null) neu.setSelectionRange(pos, pos);
       });
-      box.appendChild(such);
-      const liste = el("div", { class: "plt-kh-liste" });
-      for (const k of khListe(fz, e)) {
-        const gewaehlt = p?.art === "transport" && p.hospitalId === k.h.id;
-        const b = el("button", { class: `plt-kh${gewaehlt ? " an" : ""}` });
-        const flugMin = (k.km * 1000) / (sim.settings.nahGeschwindigkeit / 3.6);
-        b.innerHTML = `<span class="plt-kh-name"><b>${esc(k.h.kurzname || k.h.name)}</b><small>${esc(k.h.name)}</small></span>
-          <span class="plt-kh-tags">${k.eignung ? `<span class="plt-tag ${k.eignung}">${k.eignung === "passend" ? "passend" : k.eignung === "ausweich" ? "Ausweich" : "Rückfall"}</span>` : ""}${k.zu ? `<span class="plt-tag warn">zu</span>` : ""}${k.voll ? `<span class="plt-tag warn">voll</span>` : k.frei ? `<span class="plt-tag">${esc(k.frei)}</span>` : ""}${khLandung(k.h) ? `<span class="plt-tag">Landeplatz</span>` : `<span class="plt-tag warn">kein Landeplatz</span>`}</span>
-          <span class="plt-kh-km">${k.km.toFixed(0)} km<small>${minuten(flugMin)}</small></span>`;
-        b.addEventListener("click", () => setzen({ art: "transport", hospitalId: k.h.id }));
-        liste.appendChild(b);
-      }
-      box.appendChild(liste);
-      box.insertAdjacentHTML("beforeend", `<p class="plt-leise plt-klein">Jedes Ziel wird genehmigt. „passend“ = passt zum Verdacht.</p>`);
-    } else if (planSeite === "uebergabe") {
-      if (!rtw) box.insertAdjacentHTML("beforeend", `<div class="plt-leer">Noch kein RTW im Einsatz – bitte bei der Leitstelle anfordern (Chat).</div>`);
-      for (const [naMit, t, u] of [[false, "Übergabe an RTW", "Notarzt bleibt beim NAH"], [true, "Übergabe – Notarzt fährt im RTW mit", "NAH fliegt leer zum Zielkrankenhaus nach"]] as const) {
-        const b = el("button", { class: `plt-wahl-k${p?.art === "uebergabe" && p.naMit === naMit ? " an" : ""}` });
-        b.innerHTML = `<b>${t}</b><small>${u}</small>`;
-        b.disabled = !rtw;
-        b.addEventListener("click", () => setzen({ art: "uebergabe", naMit }));
-        box.appendChild(b);
-      }
-    } else {
-      for (const [grund, t, u] of [["kein", "Patient bleibt vor Ort", "kein Transport nötig"], ["revers", "Transportverweigerung", "Revers unterschrieben"], ["tot", "Patient verstorben", "Tod durch den Notarzt festgestellt"]] as const) {
-        const b = el("button", { class: `plt-wahl-k${p?.art === "kein" && p.grund === grund ? " an" : ""}` });
-        b.innerHTML = `<b>${t}</b><small>${u}</small>`;
-        b.addEventListener("click", () => setzen({ art: "kein", grund }));
-        box.appendChild(b);
+      bu.appendChild(such);
+      const q = khSuche.trim().toLowerCase();
+      if (q) {
+        const andere = el("div", { class: "plt-kh-liste" });
+        for (const h of store.list("hospitals").filter((h) => `${h.name} ${h.kurzname ?? ""} ${h.ort ?? ""}`.toLowerCase().includes(q)).map((h) => ({ h, km: distanceM(fz, h) / 1000 })).sort((a, b) => a.km - b.km).slice(0, 12)) {
+          const b = el("button", { class: `plt-kh${gewaehlt === h.h.id ? " an" : ""}` });
+          b.innerHTML = `<span class="plt-kh-name"><b>${esc(h.h.kurzname || h.h.name)}</b><small>${esc(h.h.name)}</small></span><span class="plt-kh-tags"></span><span class="plt-kh-km">${h.km.toFixed(0)} km</span>`;
+          b.addEventListener("click", () => buchen(h.h.id));
+          andere.appendChild(b);
+        }
+        bu.appendChild(andere);
       }
     }
+    bu.insertAdjacentHTML("beforeend", `<p class="plt-leise plt-klein">Die Buchung belegt einen Platz im Krankenhaus – wie in der Leitstelle.</p>`);
+    box.appendChild(bu);
   });
 }
 
-/** Krankenhäuser für die Zielwahl: passende zuerst, dann nach Entfernung; mit Suche alle */
-function khListe(fz: SimFahrzeug, e: Einsatz): { h: Hospital; eignung: string | null; km: number; zu: boolean; voll: boolean; frei: string }[] {
-  const q = khSuche.trim().toLowerCase();
-  const p0 = e.wahr.lage?.patienten[0];
-  const kind = (p0?.alter ?? e.wahr.patientAlter ?? 99) < 15;
-  const vorschlag = sim.khFuer(fz, e.wahr.verdacht ?? null, sim.patientRot(e), kind, false, sim.cacVorrang(e));
-  const bekannt = new Set(vorschlag.map((v) => v.h.id));
-  const alle = [
-    ...vorschlag.map((v) => ({ h: v.h, eignung: v.eignung as string | null, km: v.km, zu: v.zu, voll: v.voll, frei: v.gesamt ? `${v.frei}/${v.gesamt} frei` : "" })),
-    ...store
-      .list("hospitals")
-      .filter((h) => !bekannt.has(h.id))
-      .map((h) => ({ h, eignung: null as string | null, km: distanceM(fz, h) / 1000, zu: false, voll: false, frei: "" })),
-  ];
-  if (q) return alle.filter((x) => `${x.h.name} ${x.h.kurzname ?? ""} ${x.h.ort ?? ""}`.toLowerCase().includes(q)).sort((a, b) => a.km - b.km).slice(0, 25);
-  return alle.slice(0, 10);
+/** Krankenhäuser für die Buchung: die nächsten passenden, die jetzt aufnehmen (wie in der Leitstelle) */
+function khListe(fz: SimFahrzeug, e: Einsatz, grund: string): { h: Hospital; eignung: string | null; km: number; zu: boolean; voll: boolean; frei: string }[] {
+  if (!grund) return [];
+  const kind = zw.alter !== "erwachsener";
+  const rot = zw.dring === 30;
+  const pos = planSeite === "nah" ? fz : (e.adresse ?? fz);
+  const v = sim.khFuer(pos, grund, rot, kind, false, sim.cacVorrang(e));
+  return v
+    .filter((x) => !x.zu)
+    .slice(0, 5)
+    .map((x) => ({ h: x.h, eignung: x.eignung as string | null, km: x.km, zu: x.zu, voll: x.voll, frei: x.gesamt ? `${x.frei}/${x.gesamt} frei` : "" }));
 }
 
 // ------------------------------------------------------------------ Sprechfunk

@@ -285,11 +285,12 @@ function akvZelle(h: Hospital, s: (typeof AKV_SPALTEN)[number], t: number): stri
 }
 
 /** Wer belegt die Plätze (Einsatz, beteiligte Fahrzeuge, Buchungsgrund, bis wann) */
-export function belegungListe(h: Hospital, r: Ressource, t: number): { einsatz: string | null; nummer: string; fahrzeuge: string[]; grund: string; bis: number }[] {
+export function belegungListe(h: Hospital, r: Ressource, t: number): { einsatz: string | null; nummer: string; fahrzeuge: string[]; grund: string; bis: number; privat?: boolean; fremd?: boolean }[] {
   const liste = (sim.state.khBelegung?.[h.id]?.[r] ?? []).filter((x) => x.bis > t).sort((a, b) => a.bis - b.bis);
   return liste.map((b) => {
     const e = b.einsatz ? sim.einsatz(b.einsatz) : undefined;
-    if (!e) return { einsatz: null, nummer: "", fahrzeuge: [], grund: "Patient ohne Rettungsdienst (selbst gekommen, anderer Bereich)", bis: b.bis };
+    if (!e && b.fremd) return { einsatz: null, nummer: "", fahrzeuge: [b.fremd.von], grund: b.fremd.grund, bis: b.bis, fremd: true };
+    if (!e) return { einsatz: null, nummer: "", fahrzeuge: [], grund: "selbst gekommen", bis: b.bis, privat: true };
     const prot = e.protokoll.map((p) => p.text).join("\n");
     const fzs = e.fahrzeuge.map((id) => sim.state.fahrzeuge[id]).filter((f) => !!f);
     // am Transport beteiligt: Transportmittel, begleitendes NEF/ACN, Hubschrauber mit Patient
@@ -308,6 +309,14 @@ export function belegungListe(h: Hospital, r: Ressource, t: number): { einsatz: 
   });
 }
 
+/** Selbst gekommene Patienten zusammenfassen („3× privat“), Buchungen einzeln */
+export function belegungZeilen<T extends { privat?: boolean; bis: number }>(l: T[]): (T & { anzahl?: number })[] {
+  const privat = l.filter((x) => x.privat);
+  const rest: (T & { anzahl?: number })[] = l.filter((x) => !x.privat);
+  if (privat.length) rest.push({ ...privat[0], anzahl: privat.length });
+  return rest;
+}
+
 /** Kleines Fenster neben der Zelle: wer belegt die Plätze */
 function belegungZeigen(anker: HTMLElement, h: Hospital, r: Ressource): void {
   document.querySelectorAll(".akv-pop").forEach((x) => x.remove());
@@ -317,12 +326,12 @@ function belegungZeigen(anker: HTMLElement, h: Hospital, r: Ressource): void {
   const def = RESSOURCEN.find((x) => x.id === r);
   pop.innerHTML =
     `<div class="akv-pop-kopf"><b>${esc(h.kurzname || h.name)}</b> · ${esc(def?.name ?? r)}</div>` +
-    (belegungListe(h, r, t)
+    (belegungZeilen(belegungListe(h, r, t))
       .map(
         (x) => `<div class="akv-pop-z">
-          <div>${x.einsatz ? `<b>Einsatz ${esc(x.nummer)}</b>` : "<b>Anderer Patient</b>"} <span class="muted">· frei ca. ${uhr(x.bis)}</span></div>
+          <div>${x.einsatz ? `<b>Einsatz ${esc(x.nummer)}</b>` : x.fremd ? "<b>Fremdbuchung</b> <span class=\"muted\">(anderer Bereich)</span>" : `<b>${x.anzahl ?? 1}× privat</b>`} <span class="muted">· frei ${x.anzahl && x.anzahl > 1 ? "ab" : ""} ca. ${uhr(x.bis)}</span></div>
           ${x.fahrzeuge.length ? `<div>🚑 ${x.fahrzeuge.map(esc).join(", ")}</div>` : ""}
-          <div class="muted">${x.einsatz ? "Buchung: " : ""}${esc(x.grund)}</div>
+          <div class="muted">${x.einsatz || x.fremd ? "Buchung: " : ""}${esc(x.grund)}</div>
         </div>`,
       )
       .join("") || `<div class="muted">Gerade nichts belegt.</div>`);

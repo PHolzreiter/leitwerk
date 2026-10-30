@@ -199,7 +199,7 @@ export function nfAusZahl(n: number): NfStufe {
 export const NF_KRAEFTE: Record<NfStufe, { na: number; rm: number; bel: number }> = {
   NF5: { na: 2, rm: 3, bel: 0 },
   NF10: { na: 4, rm: 6, bel: 1 },
-  NF30: { na: 8, rm: 12, bel: 2 },
+  NF30: { na: 8, rm: 12, bel: 1 },
 };
 /** Schnelleinsatzgruppe (zum Berufungsort) */
 export const SEG = { bel: 1, nef: 2, rtw: 3 };

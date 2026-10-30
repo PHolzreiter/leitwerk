@@ -336,6 +336,7 @@ export function einsatzMaske(e: Einsatz): { root: HTMLElement; refresh(): void }
   let suggestFor = "";
   let empfohlen = new Set<string>();
   let gruende: string[] = [];
+  let fehlt: string[] = [];
 
   const vorschlagKey = () => `${e.adresse?.lat},${e.adresse?.lon},${e.code},${e.fahrzeuge.join("+")}`;
   async function refreshSuggestions() {
@@ -355,6 +356,7 @@ export function einsatzMaske(e: Einsatz): { root: HTMLElement; refresh(): void }
     for (const id of emp.ids) chosen.add(id);
     empfohlen = new Set(emp.ids);
     gruende = emp.gruende;
+    fehlt = emp.fehlt ?? [];
     // Empfohlene (und Hinweise wie EL ÖBB) zuerst, damit sie nicht aus der Liste fallen
     const vorne = new Set([...emp.ids, ...(emp.oben ?? [])]);
     suggestions = [...res.filter((r) => vorne.has(r.fz.id)), ...res.filter((r) => !vorne.has(r.fz.id))];
@@ -366,8 +368,16 @@ export function einsatzMaske(e: Einsatz): { root: HTMLElement; refresh(): void }
     if (gruende.length) {
       sugg.appendChild(el("div", { class: "sugg-why" }, gruende.join(" · ")));
     }
+    if (fehlt.length) {
+      const f = el("div", { class: "sugg-fehlt" });
+      f.innerHTML = `<b>Es fehlen:</b> ${fehlt.map((x) => esc(x)).join("<br>")}`;
+      sugg.appendChild(f);
+    }
+    // alle verfügbaren Fahrzeuge (auch aus anderen Funkgruppen) in einer scrollbaren Liste, Empfohlene oben
+    const box = el("div", { class: "sugg-liste" });
+    sugg.appendChild(box);
     const q = suche.value.trim();
-    let shown = suggestions.slice(0, 14);
+    let shown = suggestions;
     if (q) {
       // Treffer aus allen freien Fahrzeugen (mit Anfahrtszeit), dazu nicht freie mit ihrem Status
       const frei = new Set(suggestions.map((s) => s.fz.id));
@@ -377,7 +387,7 @@ export function einsatzMaske(e: Einsatz): { root: HTMLElement; refresh(): void }
           .filter((f) => !frei.has(f.id) && fzPasst(f, q))
           .sort((a, b) => a.funkrufname.localeCompare(b.funkrufname, "de", { numeric: true }))
           .map((fz) => ({ fz, sekunden: null, hinweis: fz.ausserDienst ? "außer Dienst" : "nicht frei", kt: false })),
-      ].slice(0, 40);
+      ].slice(0, 80);
     }
     for (const s of shown) {
       const row = el("label", { class: `sugg-row${s.hinweis ? " blocked" : ""}${empfohlen.has(s.fz.id) ? " rec" : ""}${fzKlassen(s.fz)}` });
@@ -396,9 +406,9 @@ export function einsatzMaske(e: Einsatz): { root: HTMLElement; refresh(): void }
       info.insertAdjacentHTML("beforeend", vorgemerktHtml(s.fz));
       if (s.kt) info.insertAdjacentHTML("beforeend", ` <span class="kt-fz aktiv" title="fährt Krankentransport ohne Patient – wird beim Alarmieren abgezogen, die Transporte sind dann wieder offen">KT – abziehen</span>`);
       row.appendChild(el("span", { class: "sugg-eta" }, s.hinweis ? s.hinweis : minuten(s.sekunden)));
-      sugg.appendChild(row);
+      box.appendChild(row);
     }
-    if (shown.length === 0) sugg.appendChild(el("div", { class: "muted" }, q ? "Kein Fahrzeug gefunden." : "Keine freien Fahrzeuge."));
+    if (shown.length === 0) box.appendChild(el("div", { class: "muted" }, q ? "Kein Fahrzeug gefunden." : "Keine freien Fahrzeuge."));
     knopfText();
   }
 

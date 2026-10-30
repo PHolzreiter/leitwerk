@@ -4,7 +4,7 @@
  * Dazu der zweite Funk-Reiter für die Sprechgruppe Großeinsatz (mit „mithören“).
  */
 import { store } from "../../data/store";
-import { sim, type Einsatz, type SimFahrzeug } from "../../sim/engine";
+import { sim, type Einsatz, type GsZeile, type SimFahrzeug } from "../../sim/engine";
 import { distanceM } from "../../sim/geo";
 import { gsPatientText, type GsPatient } from "../../sim/grossschaden";
 import { belegt, plaetze, RESSOURCEN, istVoravisiert } from "../../sim/khStatus";
@@ -75,12 +75,16 @@ function grosseinsatz(ctx: PanelKontext) {
 
   const bauen = (e: Einsatz) => {
     body.innerHTML = "";
-    const kopf = el("div", { class: "gs-kopf" });
-    // Bereitstellungsraum
-    const brBox = el("div", { class: "mask-box gs-br" });
+    // Kopf: Stufe, Einsatz, Phase, Zähler
+    const kopf = el("div", { class: "gs-hero" });
+
+    // ① SEG / ② Bereitstellungsraum
+    const alarmBox = el("section", { class: "gs-card gs-alarm" });
+    const segTeil = el("div", { class: "gs-schritt" });
+    const brTeil = el("div", { class: "gs-schritt" });
     const brText = el("div", { class: "gs-br-text" });
     const adr = addressInput("Bereitstellungsraum: Adresse suchen …", (o) => void fehlerZeigen(sim.call("gsBr", e.id, { ...o, label: `Bereitstellungsraum ${o.label}` })));
-    const bKarte = el("button", { class: "btn small", type: "button", title: "Karte zum Einsatzort, dann den Bereitstellungsraum anklicken" }, "🗺 Auf der Karte");
+    const bKarte = el("button", { class: "btn small", type: "button", title: "Karte zum Einsatzort, dann den Bereitstellungsraum anklicken" }, "Auf der Karte");
     bKarte.addEventListener("click", async () => {
       const bo = e.adresse ?? { lat: e.wahr.lat, lon: e.wahr.lon };
       panelZeigen("karte", { nurWennOffen: true });
@@ -93,26 +97,25 @@ function grosseinsatz(ctx: PanelKontext) {
       const v = sim.gsBrVorschlag(e.id);
       if (v) void fehlerZeigen(sim.call("gsBr", e.id, v));
     });
-    const brZeile = el("div", { class: "row-btns gs-br-zeile" });
+    const brZeile = el("div", { class: "gs-br-zeile" });
     brZeile.append(adr.root, bKarte, bVorschlag);
-    brBox.append(el("div", { class: "box-title" }, "Bereitstellungsraum"), brText, brZeile);
-
-    // Lagemeldung
-    const lageBox = el("div", { class: "mask-box gs-lage" });
-    const lage = el("textarea", { class: "gs-lagetext", rows: "6", placeholder: "Sicht- und Lagemeldungen der Einsatzleitung kommen automatisch hierher; du kannst ergänzen." }) as HTMLTextAreaElement;
-    let lageTimer: number | undefined;
-    lage.addEventListener("input", () => {
-      window.clearTimeout(lageTimer);
-      lageTimer = window.setTimeout(() => void fehlerZeigen(sim.call("gsLageText", e.id, lage.value)), 700);
-    });
-    const meldungen = el("div", { class: "gs-meldungen" });
-    lageBox.append(el("div", { class: "box-title" }, "Lagemeldung"), lage, meldungen);
+    const segInhalt = el("div");
+    const brInhalt = el("div");
+    segTeil.append(segInhalt);
+    brTeil.append(brInhalt, brText, brZeile);
+    const zurMaske = el("button", { class: "btn small", type: "button" }, "In der Einsatzmaske alarmieren ›");
+    zurMaske.addEventListener("click", () => waehle("einsatz", e.id));
+    const alarmFuss = el("div", { class: "gs-card-fuss" });
+    alarmFuss.append(el("span", { class: "muted" }, "Der Fahrzeugvorschlag folgt dem aktuellen Schritt."), zurMaske);
+    const schritte = el("div", { class: "gs-schritte" });
+    schritte.append(segTeil, brTeil);
+    alarmBox.append(el("h3", { class: "gs-card-titel" }, "Alarmierung"), schritte, alarmFuss);
 
     // Patienten
-    const patBox = el("div", { class: "mask-box gs-pat" });
+    const patBox = el("section", { class: "gs-card gs-pat" });
     const patKopf = el("div", { class: "gs-pat-kopf" });
     const patListe = el("div", { class: "gs-pat-liste" });
-    patBox.append(el("div", { class: "box-title" }, "Patienten"), patKopf, patListe);
+    patBox.append(el("h3", { class: "gs-card-titel" }, "Patienten"), patKopf, patListe);
     patListe.addEventListener("click", (ev) => {
       const b = (ev.target as HTMLElement).closest<HTMLElement>("[data-buchen]");
       if (!b) return;
@@ -122,15 +125,28 @@ function grosseinsatz(ctx: PanelKontext) {
       if (k && p) buchenDialog(k, `Krankenhaus buchen – ${gsPatientText(p)}`);
     });
 
+    // Lage: Zeitleiste der Meldungen, eigene Notiz
+    const lageBox = el("section", { class: "gs-card gs-lage" });
+    const zeitleiste = el("ol", { class: "gs-zeitleiste" });
+    const notiz = el("input", { class: "gs-notiz", type: "text", placeholder: "Notiz zur Lage ergänzen … (Enter)" }) as HTMLInputElement;
+    notiz.addEventListener("keydown", (ev) => {
+      if (ev.key !== "Enter" || !notiz.value.trim()) return;
+      void fehlerZeigen(sim.call("gsNotiz", e.id, notiz.value));
+      notiz.value = "";
+    });
+    lageBox.append(el("h3", { class: "gs-card-titel" }, "Lage"), zeitleiste, notiz);
+
     // Kräfte
-    const kraftBox = el("div", { class: "mask-box gs-kraefte" });
-    const kraefte = el("div");
-    kraftBox.append(el("div", { class: "box-title" }, "Kräfte"), kraefte);
+    const kraftBox = el("section", { class: "gs-card gs-kraefte" });
+    const kraefte = el("div", { class: "gs-kraefte-spalten" });
+    kraftBox.append(el("h3", { class: "gs-card-titel" }, "Kräfte"), kraefte);
 
     // Voraviso
-    const khBox = el("div", { class: "mask-box gs-kh" });
+    const khBox = el("section", { class: "gs-card gs-kh" });
     const khListe = el("div", { class: "gs-kh-liste" });
-    khBox.append(el("div", { class: "box-title" }, "Krankenhäuser · Voraviso (150 % der Plätze, keine Selbstzuweiser)"), khListe);
+    const khTitel = el("h3", { class: "gs-card-titel" }, "Krankenhäuser · Voraviso");
+    khTitel.appendChild(el("small", {}, "150 % der Plätze, keine Selbstzuweiser"));
+    khBox.append(khTitel, khListe);
     khListe.addEventListener("click", (ev) => {
       const b = (ev.target as HTMLElement).closest<HTMLElement>("[data-voraviso]");
       if (!b) return;
@@ -138,60 +154,87 @@ function grosseinsatz(ctx: PanelKontext) {
     });
 
     const anrufe = el("div", { class: "gs-anrufe muted small" });
-    body.append(kopf, brBox, patBox, lageBox, kraftBox, khBox, anrufe);
+    const raster = el("div", { class: "gs-raster" });
+    raster.append(alarmBox, patBox, lageBox, kraftBox, khBox);
+    body.append(kopf, raster, anrufe);
+
+    const PHASEN: { id: string; name: string }[] = [
+      { id: "alarm", name: "Anfahrt" },
+      { id: "sicht", name: "Sichtmeldung" },
+      { id: "lage", name: "Abtransport" },
+      { id: "ende", name: "Ende" },
+    ];
+    const zeilen = (l: GsZeile[]) =>
+      l
+        .map((z) => {
+          const pct = z.soll ? Math.min(100, Math.round((z.ist / z.soll) * 100)) : 100;
+          const ok = z.ist >= z.soll;
+          return `<div class="gs-soll${ok ? " ok" : ""}"><span class="gs-soll-art">${esc(z.art)}</span><span class="gs-balken"><i style="width:${pct}%"></i></span><span class="gs-soll-zahl">${z.ist}<small>/${z.soll}</small></span></div>`;
+        })
+        .join("");
 
     let khKey = "";
     const refresh = () => {
       const gs = e.gs;
       if (!gs) return;
       const w = e.wahr.gs;
-      const phase = gs.phase === "alarm" ? "Anfahrt" : gs.phase === "sicht" ? "Sichtmeldung – Lageerkundung" : gs.phase === "lage" ? "Lage erkundet – Abtransport läuft" : "alle Patienten abtransportiert";
-      kopf.innerHTML = `<div class="gs-titel"><span class="gs-stufe">${esc(gs.stufe ?? "Großeinsatz")}</span> <b>${esc(e.nummer)}</b> <span class="muted">${esc(e.adresse?.label ?? e.meldung.adresse)}</span></div><div class="muted small">${esc(phase)}${e.zustand === "abgeschlossen" ? " · Einsatz abgeschlossen" : ""}</div>`;
-      kopf.onclick = () => waehle("einsatz", e.id);
-      // BR
-      brBox.classList.toggle("blinkt", gs.brNoetig && !gs.br);
-      brText.innerHTML = gs.br
-        ? `🅿 <b>${esc(gs.br.label)}</b>`
-        : gs.brNoetig
-          ? `<span class="alert-text">Kein Bereitstellungsraum – alarmierte Fahrzeuge warten auf der Dienststelle!</span>`
-          : `<span class="muted">Noch nicht festgelegt. Alles außer der Schnelleinsatzgruppe (1 BEL, 2 NEF, 3 RTW) fährt in den Bereitstellungsraum.</span>`;
-      // Lagemeldung
-      if (document.activeElement !== lage && lage.value !== gs.lageText) lage.value = gs.lageText;
-      meldungen.innerHTML = gs.meldungen
-        .slice(-6)
-        .reverse()
-        .map((m) => `<div class="gs-meldung ${m.art}"><span class="muted">${uhr(m.zeit)}</span> <b>${esc(m.von)}</b> ${esc(m.text)}</div>`)
-        .join("");
-      // Patienten
+      const t = sim.state.zeit;
+      // Kopf
       const pat = (w?.patienten ?? []).filter((p) => gs.gezeigt.includes(p.nr));
       const n = (s: GsPatient["sichtung"]) => pat.filter((p) => p.sichtung === s).length;
+      const lebend = pat.filter((p) => p.sichtung !== "tot");
+      const weg = lebend.filter((p) => { const k = kindVon(e, p.nr); return !!k && (k.zustand === "abgeschlossen" || fzVon(k).some((f) => f.status === "zumZO" || f.status === "amZO")); }).length;
+      const pi = PHASEN.findIndex((x) => x.id === gs.phase);
+      kopf.innerHTML = `<div class="gs-hero-zeile"><span class="gs-stufe">${esc(gs.stufe ?? "Großeinsatz")}</span><div class="gs-hero-titel"><b>${esc(e.nummer)}</b><span>${esc(e.adresse?.label ?? e.meldung.adresse)}</span></div>${e.zustand === "abgeschlossen" ? `<span class="gs-tag">abgeschlossen</span>` : ""}</div>
+        <ol class="gs-phasen">${PHASEN.map((x, i) => `<li class="${i < pi ? "fertig" : i === pi ? "jetzt" : ""}">${x.name}</li>`).join("")}</ol>
+        <div class="gs-zahlen">${(["rot", "gelb", "gruen", "tot"] as const).map((s) => `<div class="gs-zahl ${s}"><b>${gs.phase === "alarm" || gs.phase === "sicht" ? "–" : n(s)}</b><span>${FARBE[s]}</span></div>`).join("")}<div class="gs-zahl weg"><b>${weg}<small>/${lebend.length || "–"}</small></b><span>abtransportiert</span></div></div>`;
+      kopf.onclick = () => waehle("einsatz", e.id);
+      // ① / ②
+      const si = sim.gsSollIst(e);
+      const schritt = si?.schritt ?? "seg";
+      segTeil.className = `gs-schritt${schritt === "seg" ? " aktiv" : " fertig"}`;
+      segInhalt.innerHTML = `<div class="gs-schritt-kopf"><span class="gs-nr-kreis">1</span><b>Schnelleinsatzgruppe</b><span class="muted">→ Berufungsort</span></div>${si ? zeilen(si.seg) : ""}`;
+      const gesperrt = !gs.br;
+      brTeil.className = `gs-schritt${schritt === "br" ? " aktiv" : ""}${gesperrt ? " gesperrt" : ""}${gs.brNoetig && !gs.br ? " blinkt" : ""}`;
+      brInhalt.innerHTML = `<div class="gs-schritt-kopf"><span class="gs-nr-kreis">2</span><b>Bereitstellungsraum</b><span class="muted">${esc(gs.stufe ?? "")} laut Stufe</span></div>${si ? zeilen(si.br) : ""}`;
+      brText.innerHTML = gs.br
+        ? `<span class="gs-br-ort">🅿 ${esc(gs.br.label)}</span>`
+        : `<span class="gs-hinweis">${schritt === "br" ? "Zuerst den Bereitstellungsraum festlegen – erst dann kann in den BR alarmiert werden." : "Festlegen, bevor weitere Kräfte alarmiert werden."}</span>`;
+      brZeile.hidden = !!gs.br && gs.phase !== "alarm";
+      // Patienten
       const nf = (e.nachforderungen ?? []).filter((x) => !x.erledigt);
       patKopf.innerHTML = gs.phase === "alarm" || gs.phase === "sicht"
         ? `<span class="muted">Die Einsatzleitung meldet die Patienten nach der Lagemeldung.</span>`
-        : `<span class="gs-chip rot">${n("rot")} rot</span><span class="gs-chip gelb">${n("gelb")} gelb</span><span class="gs-chip gruen">${n("gruen")} grün</span>${n("tot") ? `<span class="gs-chip tot">${n("tot")} tot</span>` : ""}<span class="muted"> · ${pat.length} von ${w?.patienten.length ?? "?"} gemeldet</span>${nf.length ? `<div class="nachforderung">⚠ Nachforderung: ${nf.map((x) => (x.art === "NA" ? `${x.anzahl} Notarztmittel` : `${x.anzahl} Rettungsmittel`)).join(", ")} in den Bereitstellungsraum</div>` : ""}`;
+        : `<span class="muted">${pat.length} von ${w?.patienten.length ?? "?"} gemeldet</span>${nf.length ? `<div class="gs-nachf">Nachforderung: ${nf.map((x) => (x.art === "NA" ? `${x.anzahl} Notarztmittel` : `${x.anzahl} Rettungsmittel`)).join(", ")} in den Bereitstellungsraum</div>` : ""}`;
       const rang = { rot: 0, gelb: 1, gruen: 2, tot: 3 };
       patListe.innerHTML = pat
         .sort((a, b) => rang[a.sichtung] - rang[b.sichtung] || a.nr - b.nr)
         .map((p) => {
           const k = kindVon(e, p.nr);
           const h = k?.kh ? store.get("hospitals", k.kh.hospitalId) : undefined;
-          const kh = p.sichtung === "tot" ? "" : h ? `<span class="gs-kh-name" title="${esc(h.name)}">🏥 ${esc(h.kurzname || h.name)}</span>` : k && k.zustand !== "abgeschlossen" ? `<button class="btn small${k.khAnfrage ? " primary blinkt" : ""}" data-buchen="${p.nr}">Buchen</button>` : "";
-          return `<div class="gs-p ${p.sichtung}"><span class="gs-nr">${p.nr}</span><span class="gs-chip ${p.sichtung}">${FARBE[p.sichtung]}</span><span class="gs-p-text"><b>ca. ${p.alter} J., ${p.geschlecht === "w" ? "w" : "m"}</b> · ${esc(p.muster)}<br><span class="muted small">${transportText(e, p)}</span></span><span class="gs-p-kh">${kh}</span></div>`;
+          const kh = p.sichtung === "tot" ? "" : h ? `<span class="gs-kh-name" title="${esc(h.name)}">${esc(h.kurzname || h.name)}</span>` : k && k.zustand !== "abgeschlossen" ? `<button class="btn small${k.khAnfrage ? " primary blinkt" : ""}" data-buchen="${p.nr}">Buchen</button>` : "";
+          return `<div class="gs-p ${p.sichtung}"><span class="gs-nr">${p.nr}</span><span class="gs-p-text"><b>ca. ${p.alter} J., ${p.geschlecht === "w" ? "w" : "m"}</b> · ${esc(p.muster)}<small>${transportText(e, p)}</small></span><span class="gs-p-kh">${kh}</span></div>`;
         })
-        .join("") || `<div class="muted small">Noch keine Patienten gemeldet.</div>`;
+        .join("") || `<div class="gs-leer">Noch keine Patienten gemeldet.</div>`;
+      // Lage (neueste oben)
+      zeitleiste.innerHTML = gs.meldungen
+        .slice()
+        .reverse()
+        .map((m) => `<li class="gs-m ${m.art}"><time>${uhr(m.zeit)}</time><div><b>${esc(m.von)}</b>${m.art === "sicht" ? " · Sichtmeldung" : m.art === "lage" ? " · Lagemeldung" : m.art === "nachforderung" ? " · Nachforderung" : m.art === "notiz" ? " · Notiz" : ""}<p>${esc(m.text)}</p></div></li>`)
+        .join("") || `<li class="gs-leer">Sicht- und Lagemeldungen der Einsatzleitung erscheinen hier.</li>`;
       // Kräfte: Berufungsort, Bereitstellungsraum, Anfahrt
       const alle = fzVon(e);
       const bo = alle.filter((f) => f.phase === "vorOrt");
       const br = alle.filter((f) => f.phase === "wartetBR");
       const anf = alle.filter((f) => f.phase !== "vorOrt" && f.phase !== "wartetBR");
-      const liste = (l: SimFahrzeug[]) => l.map((f) => `<span class="gs-fz${f.id === gs.el ? " el" : ""}" title="${f.id === gs.el ? "Einsatzleitung" : esc(f.typ ?? f.rmTyp)}">${esc(f.funkrufname)}${f.id === gs.el ? " (EL)" : ""}</span>`).join(" ") || `<span class="muted">–</span>`;
-      kraefte.innerHTML = `<div><b>Berufungsort:</b> ${liste(bo)}</div><div><b>Bereitstellungsraum:</b> ${liste(br)}</div><div><b>Anfahrt:</b> ${liste(anf)}</div>`;
-      // Krankenhäuser in der Nähe
+      const chips = (l: SimFahrzeug[]) =>
+        l.map((f) => `<span class="gs-fz${f.id === gs.el ? " el" : ""}${f.id === gs.brBel ? " brl" : ""}" title="${esc(f.typ ?? f.rmTyp)}${f.id === gs.el ? " · Einsatzleitung" : f.id === gs.brBel ? " · Leitung Bereitstellungsraum" : ""}"><b>${esc(f.funkrufname)}</b><small>${esc(f.id === gs.el ? "EL" : f.rmTyp)}</small></span>`).join("") || `<span class="gs-leer">–</span>`;
+      kraefte.innerHTML = [["Berufungsort", bo], ["Bereitstellungsraum", br], ["Anfahrt", anf]].map(([name, l]) => `<div class="gs-spalte"><div class="gs-spalte-kopf">${name} <span>${(l as SimFahrzeug[]).length}</span></div><div class="gs-chips">${chips(l as SimFahrzeug[])}</div></div>`).join("");
+      // Krankenhäuser in der Nähe (ohne Primärversorgung)
       const pos = e.adresse ?? { lat: e.wahr.lat, lon: e.wahr.lon };
-      const t = sim.state.zeit;
       const haeuser = store
         .list("hospitals")
-        .filter((h) => sim.khImNetz(h) && (h.einrichtungen ?? []).length)
+        .filter((h) => sim.khImNetz(h) && (h.einrichtungen ?? []).some((x) => x === "amb_notaufnahme" || x === "amb_unfall" || x === "fb_schockraum"))
         .map((h) => ({ h, km: distanceM(pos, h) / 1000 }))
         .filter((x) => x.km < 70)
         .sort((a, b) => a.km - b.km)
@@ -205,12 +248,14 @@ function grosseinsatz(ctx: PanelKontext) {
             let gesamt = 0;
             let frei = 0;
             for (const r of RESSOURCEN) {
+              if (r.id === "pvz") continue;
               const n = plaetze(h, r.id);
               gesamt += n;
               frei += Math.max(0, n - belegt(sim.state.khBelegung, h.id, r.id, t));
             }
             const an = gs.voraviso.includes(h.id) || istVoravisiert(h.id);
-            return `<div class="gs-khz${an ? " an" : ""}"><span><b>${esc(h.kurzname || h.name)}</b> <span class="muted">${km.toFixed(0)} km · ${frei}/${gesamt} frei</span></span><button class="btn small${an ? " primary" : ""}" data-voraviso="${esc(h.id)}" data-an="${an ? "0" : "1"}">${an ? "✓ voravisiert" : "Voraviso"}</button></div>`;
+            const pct = gesamt ? Math.round((frei / gesamt) * 100) : 0;
+            return `<div class="gs-khz${an ? " an" : ""}"><div class="gs-khz-name"><b>${esc(h.kurzname || h.name)}</b><span class="muted">${km.toFixed(0)} km</span></div><div class="gs-khz-frei">${gesamt ? `<span class="gs-balken${pct < 25 ? " knapp" : ""}"><i style="width:${pct}%"></i></span><span>${frei}/${gesamt} frei</span>` : `<span class="muted">keine Platzangaben</span>`}</div><button class="btn small${an ? " primary" : ""}" data-voraviso="${esc(h.id)}" data-an="${an ? "0" : "1"}">${an ? "✓ Voraviso" : "Voraviso"}</button></div>`;
           })
           .join("");
       }

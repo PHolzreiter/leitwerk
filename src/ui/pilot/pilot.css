@@ -713,6 +713,158 @@
   cursor: default;
 }
 
+/* Auswahl am Berufungsort (4 Möglichkeiten) und Buchung wie in der Leitstelle */
+.plt-wahl4 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.plt-wahl4 .plt-wahl-k {
+  margin: 0;
+  padding: 8px 10px;
+}
+.plt-wahl4 .plt-wahl-k b {
+  font-size: 13px;
+}
+.plt-wahl4 .plt-wahl-k small {
+  font-size: 11px;
+  line-height: 1.3;
+}
+.plt-buchung {
+  border-top: 1px solid var(--pl-rand);
+  padding-top: 8px;
+}
+.plt-schritt {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 8px 0 5px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--pl-dim);
+}
+.plt-schritt span {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--pl-feld-hover);
+  color: var(--pl-text);
+  font-size: 10px;
+  letter-spacing: 0;
+}
+.plt-sym-suche {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border-radius: 9px;
+  border: 1px solid var(--pl-rand);
+  background: var(--pl-feld);
+  color: inherit;
+  font: inherit;
+}
+.plt-sym-liste {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 4px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+.plt-sym {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 9px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.plt-sym:hover {
+  background: var(--pl-feld-hover);
+}
+.plt-sym small,
+.plt-sym-chip small {
+  color: var(--pl-dim);
+  font-size: 11px;
+}
+.plt-sym-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 9px;
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid var(--pl-ok);
+}
+.plt-sym-chip small {
+  flex: 1;
+}
+.plt-x {
+  border: none;
+  background: transparent;
+  color: var(--pl-dim);
+  cursor: pointer;
+  font: inherit;
+}
+.plt-seg {
+  display: flex;
+  gap: 4px;
+  padding: 3px;
+  border-radius: 9px;
+  background: var(--pl-feld);
+}
+.plt-seg button {
+  flex: 1;
+  border: none;
+  border-radius: 7px;
+  padding: 6px 4px;
+  background: transparent;
+  color: var(--pl-dim);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.plt-seg button.an {
+  background: var(--pl-karte);
+  color: var(--pl-text);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+}
+.plt-seg button.d30.an {
+  color: var(--pl-rot);
+}
+.plt-seg button.d20.an {
+  color: var(--pl-warn);
+}
+.plt-seg button.d10.an {
+  color: var(--pl-ok);
+}
+.plt-seg button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.plt-link {
+  border: none;
+  background: transparent;
+  color: var(--pl-dim);
+  font: inherit;
+  font-size: 12px;
+  padding: 6px 0;
+  cursor: pointer;
+}
+.plt-link:hover {
+  color: var(--pl-text);
+}
+
 /* Sprechfunk */
 .plt-funk {
   display: flex;

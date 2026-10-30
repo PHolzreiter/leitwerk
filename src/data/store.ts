@@ -313,6 +313,9 @@ export class Store {
     // Ausweich-NEF: eigene Fahrzeuge ohne Angabe (z. B. älterer Import) übernehmen die Zuordnung der Standarddaten
     const stdErsatz = new Map(std.vehicles.filter((v) => v.ersatzFuer).map((v) => [v.funkrufname, v.ersatzFuer!]));
     if (stdErsatz.size) out.vehicles = out.vehicles.map((v) => (v.ersatzFuer === undefined && v.kategorie === "NEF" && stdErsatz.has(v.funkrufname) ? { ...v, ersatzFuer: stdErsatz.get(v.funkrufname) } : v));
+    // Krankenhäuser ohne Platzangaben (eigene Daten aus einer älteren Version): Plätze aus den Standarddaten (gleiche ID)
+    const stdPlaetze = new Map(std.hospitals.filter((h) => h.plaetze && Object.keys(h.plaetze).length).map((h) => [h.id, h.plaetze!]));
+    if (stdPlaetze.size) out.hospitals = out.hospitals.map((h) => (!h.plaetze || !Object.keys(h.plaetze).length) && stdPlaetze.has(h.id) ? { ...h, plaetze: { ...stdPlaetze.get(h.id)! } } : h);
     this.effectiveCache = out;
     return out;
   }

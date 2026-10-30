@@ -308,6 +308,10 @@ export interface SimFahrzeug {
   naZurueck?: boolean;
   /** Besatzung zu Fuß unterwegs (Fahrzeug steht auf der Straße, Patient abseits) */
   fuss?: Fussweg | null;
+  /** Spieler-NAH im Großeinsatz: das Team geht zu Fuß vom Bereitstellungsraum zum Einsatzort (bis) */
+  gsFussBis?: number | null;
+  /** Spieler-NAH im Großeinsatz: der Hubschrauber steht im Bereitstellungsraum, das Team ist am Einsatzort */
+  gsAmBr?: boolean;
   /** eigentliches Ziel der Fahrt (Haus/Patient), wenn das Fahrzeug auf der Straße davor stehen bleibt */
   fussZiel?: LatLon | null;
   /** 3D-Modell (t6hoch, crafter, t6, tiguan, passat, caddy, sprinter_kurz/_lang/_gross, man, ec135) */
@@ -332,9 +336,9 @@ export interface SimFahrzeug {
 /** Was der Pilot am Berufungsort mit dem Patienten vorhat */
 export type PilotPlan =
   /** selbst transportieren, Ziel frei gewählt (wird immer genehmigt) */
-  | { art: "transport"; hospitalId: string }
-  /** Patient an den RTW übergeben (mit oder ohne Notarzt im RTW) */
-  | { art: "uebergabe"; naMit: boolean }
+  | { art: "transport"; hospitalId: string; grund?: string }
+  /** Patient an den RTW übergeben (mit oder ohne Notarzt im RTW); der Pilot kann das Krankenhaus gleich buchen */
+  | { art: "uebergabe"; naMit: boolean; hospitalId?: string; grund?: string }
   /** kein Transport: Patient bleibt vor Ort, Revers oder verstorben */
   | { art: "kein"; grund: "kein" | "revers" | "tot" };
 
@@ -666,7 +670,7 @@ export interface FunkGespraech {
   /** eigener Kanal (Großschaden-Sprechgruppe): belegt den normalen Funk nicht */
   kanal?: "gs";
   /** Großschaden: Meldungen der Einsatzleitung in diesem Gespräch (kommen in den Reiter Großeinsatz, sobald gesagt) */
-  gsMeldungen?: { art: "sicht" | "lage" | "info" | "nachforderung"; text: string }[];
+  gsMeldungen?: { art: "sicht" | "lage" | "info" | "nachforderung" | "notiz"; text: string }[];
 }
 
 /** Satz im Funk zwischen zwei Fahrzeugen; aktion passiert, wenn er gesprochen ist */
@@ -856,7 +860,7 @@ export interface Einsatz {
   /** Großschaden: Ablauf (Bereitstellungsraum, Einsatzleitung, Meldungen, Patienten) */
   gs?: GsLauf | null;
   /** Großschaden: ein Patient als eigener Einsatz (Buchung und Transport; in der Einsatzliste nicht zu sehen) */
-  gsKind?: { parent: string; nr: number; naMit: boolean } | null;
+  gsKind?: { parent: string; nr: number; naMit: boolean; stirbtUm?: number | null } | null;
   /** weiterer Notruf zu einem Großschaden (Einsatz-ID des ersten Notrufs) */
   gsZu?: string | null;
   /** mit diesem Einsatz zusammengelegt (zweiter Anruf zum selben Ereignis) */
@@ -890,6 +894,21 @@ export interface GsWahr {
 }
 
 /** Großschaden: Ablauf am Berufungsort, wie ihn die Leitstelle sieht */
+export interface GsZeile {
+  art: string;
+  soll: number;
+  ist: number;
+}
+
+/** Großschaden: RTW-C/RTW (NAW zählt mit) */
+function gsRtw(f: SimFahrzeug): boolean {
+  return ["RTW-C", "RTW", "NAW"].includes(f.rmTyp);
+}
+/** Großschaden: Notarztmittel (NEF, Hubschrauber, NAW) */
+function gsNaMittel(f: SimFahrzeug): boolean {
+  return f.kategorie === "NEF" || fliegt(f) || f.rmTyp === "NAW";
+}
+
 export interface GsLauf {
   /** Stufe aus der Abfrage bzw. der Lagemeldung */
   stufe: NfStufe | null;
@@ -904,7 +923,7 @@ export interface GsLauf {
   /** BEL hat die Einsatzleitung übernommen */
   bel: boolean;
   phase: "alarm" | "sicht" | "lage" | "ende";
-  meldungen: { zeit: number; von: string; art: "sicht" | "lage" | "info" | "nachforderung"; text: string }[];
+  meldungen: { zeit: number; von: string; art: "sicht" | "lage" | "info" | "nachforderung" | "notiz"; text: string }[];
   /** Lagemeldung (Feld im Reiter Großeinsatz; Meldungen aus dem Funk werden angehängt) */
   lageText: string;
   lageUm: number | null;
@@ -926,6 +945,13 @@ export interface GsLauf {
   letzterTick?: number;
   /** zuletzt an die fehlende Feuerwehr erinnert */
   fwErinnert?: number | null;
+  /** erste Alarmierung (SEG) erfolgt – danach geht alles in den Bereitstellungsraum */
+  segUm?: number | null;
+  /** in den Bereitstellungsraum alarmiert (für Soll/Ist) */
+  brAlarm?: string[];
+  /** zweiter BEL: bleibt im Bereitstellungsraum, bis er leer ist */
+  brBel?: string | null;
+  brLeerSeit?: number | null;
 }
 
 export type FlughafenArt = "landung" | "flugzeug" | "personal";
@@ -1083,6 +1109,7 @@ export const BEFEHLE = {
     "gsBr",
     "gsVoraviso",
     "gsLageText",
+    "gsNotiz",
     "zusammenlegen",
   ],
   steuern: ["start", "pause", "setTempo", "generiere", "grossschadenAusloesen", "setWetter", "wetterUebernehmen", "neuPlanen", "reset", "generiereKt", "generiereSek", "neuesSpiel"],
@@ -2964,7 +2991,18 @@ export class Simulation {
     if (dt < 1 && this.state.khGrundZeit !== undefined) return;
     this.state.khGrundZeit = t;
     const an = this.settings.khGrundAktiv !== false;
-    grundbelegungTick(b, store.list("hospitals"), t, Math.min(dt || 1, 30), an ? (this.settings.khGrundFaktor ?? 1) : 0);
+    grundbelegungTick(b, store.list("hospitals"), t, Math.min(dt || 1, 30), an ? (this.settings.khGrundFaktor ?? 1) : 0, Math.random, (h) => this.fremdBucher(h));
+  }
+
+  /** Wer aus einem anderen Bereich einen Schockraum/PCI-Platz belegt: Rettungsmittel einer anderen Funkgruppe in der Nähe oder ein Hubschrauber */
+  private fremdBucher(h: LatLon): string | null {
+    const fg = this.funkgruppe();
+    const fremd = Object.values(this.state.fahrzeuge).filter((f) => !f.dispoMobil && !f.pilot && !inFunkgruppe(fg, f.heim.lat, f.heim.lon));
+    const boden = fremd.filter((f) => ["RTW", "RTW-C", "NAW"].includes(f.rmTyp) && distanceM(f.heim, h) < 60_000);
+    const heli = fremd.filter((f) => f.rmTyp === "NAH" && distanceM(f.heim, h) < 150_000);
+    const l = heli.length && (Math.random() < 0.3 || !boden.length) ? heli : boden;
+    const f = l[Math.floor(Math.random() * l.length)];
+    return f ? `${f.funkrufname} (${f.typ ?? f.rmTyp})` : null;
   }
 
   /** Platz im gebuchten Krankenhaus belegen (ab Buchung bis Ende der Behandlung) */
@@ -3066,6 +3104,8 @@ export class Simulation {
     fz.blaulicht = false;
     fz.vorOrtSeit = null;
     fz.transportGemeldet = false;
+    fz.gsFussBis = null;
+    fz.gsAmBr = false;
     fz.nachNa = null;
     this.setStatus(fz, "freiFunk");
     if (fz.pilot) {
@@ -3376,9 +3416,20 @@ export class Simulation {
     if (!e.adresse) return ["Bitte zuerst eine Adresse eingeben"];
     if (fahrzeugIds.length) this.abfrageProtokoll(e);
     this.bereitstellungPruefen(e, fahrzeugIds);
+    // Großschaden: erste Alarmierung (SEG) fährt zum Berufungsort, alles danach in den Bereitstellungsraum
+    const gs = this.gsStart(e);
+    const ersteGs = !!gs && !gs.segUm;
+    const gsNeu: string[] = [];
     for (const fid of fahrzeugIds) {
       const fz = this.state.fahrzeuge[fid];
       if (!fz) continue;
+      if (gs && !gs.ziel[fz.id] && fz.einsatzId !== e.id) {
+        const z = this.gsZielFuer(e, fz, ersteGs, gsNeu);
+        if (z === "br" && !gs.br) {
+          hinweise.push(`${fz.funkrufname}: zuerst den Bereitstellungsraum festlegen (Reiter Großeinsatz) – weitere Kräfte fahren in den Bereitstellungsraum`);
+          continue;
+        }
+      }
       const abziehen = this.ktAbziehbar(fz);
       if (!this.verfuegbar(fz) && !abziehen) {
         hinweise.push(`${fz.funkrufname} ist nicht verfügbar`);
@@ -3423,6 +3474,7 @@ export class Simulation {
       fz.phaseEnde = this.state.zeit + sek * 1000;
       fz.alarmUm = this.state.zeit;
       this.log(e, `${fz.funkrufname} alarmiert`);
+      if (gs) gsNeu.push(fz.id);
       // Fahrzeug von außerhalb der Funkgruppe: wechselt für den Einsatz auf unsere Gruppe
       const fg = this.funkgruppe();
       if (!inFunkgruppe(fg, fz.heim.lat, fz.heim.lon)) {
@@ -3430,7 +3482,7 @@ export class Simulation {
         this.funk(fz.funkrufname, e.id, `wechselt auf TETRA ${fg.id}`, "info");
       }
     }
-    this.gsAlarm(e, fahrzeugIds);
+    if (gs) this.gsAlarm(e, gsNeu, ersteGs);
     this.nefNachRtw(e);
     if (e.fahrzeuge.length > 0) e.zustand = "laufend";
     this.emit();
@@ -3558,7 +3610,7 @@ export class Simulation {
    * Bereits alarmierte Fahrzeuge werden berücksichtigt.
    */
   /** ids = vorausgewählt; oben = nur oben in der Liste zeigen (z. B. EL ÖBB, selbst alarmieren) */
-  empfehlung(id: string, liste: Vorschlag[]): { ids: string[]; gruende: string[]; oben?: string[] } {
+  empfehlung(id: string, liste: Vorschlag[]): { ids: string[]; gruende: string[]; oben?: string[]; fehlt?: string[] } {
     const e = this.einsatz(id);
     const stufe = e ? this.stufeVon(e) : undefined;
     if (!e) return { ids: [], gruende: [] };
@@ -5191,40 +5243,52 @@ export class Simulation {
     this.erstelleEinsatz({ lat: adr.lat, lon: adr.lon, adresse: adr.label, code, fall: { kapitel: f.ergebnis.pfad[0], antworten: f.antworten, code: code.code, vorlage: vorlage.id, ortArt: "wohnung" }, patientAlter: alter, vorlageObj: vorlage });
   }
 
-  /** Neu alarmierte Fahrzeuge: Schnelleinsatzgruppe zum Berufungsort, alle anderen in den Bereitstellungsraum */
-  private gsAlarm(e: Einsatz, ids: string[]): void {
-    if (e.gsKind) return;
+  /** Großeinsatz anlegen (bei der ersten Alarmierung, sobald die Stufe bekannt ist bzw. es einer ist) */
+  private gsStart(e: Einsatz): GsLauf | null {
+    if (e.gsKind) return null;
     if (!e.gs) {
       const stufe = nfStufe(e.anruf?.antworten);
-      if (!e.wahr.gs && !stufe) return;
-      e.gs = { stufe, br: null, brNoetig: false, ziel: {}, el: null, bel: false, phase: "alarm", meldungen: [], lageText: "", lageUm: null, gezeigt: [], aufdeckenUm: null, kinder: {}, erreichbar: {}, voraviso: [] };
-      this.log(e, `Großeinsatz${stufe ? ` (${stufe})` : ""}: Schnelleinsatzgruppe zum Berufungsort, weitere Fahrzeuge in den Bereitstellungsraum`);
+      if (!e.wahr.gs && !stufe) return null;
+      e.gs = { stufe, br: null, brNoetig: false, ziel: {}, el: null, bel: false, phase: "alarm", meldungen: [], lageText: "", lageUm: null, gezeigt: [], aufdeckenUm: null, kinder: {}, erreichbar: {}, voraviso: [], brAlarm: [] };
+      // schon vorher alarmierte Fahrzeuge (bevor klar war, dass es ein Großschaden ist) fahren zum Berufungsort
+      for (const fz of this.einsatzFz(e)) e.gs.ziel[fz.id] = "bo";
+      if (this.einsatzFz(e).length) e.gs.segUm = this.state.zeit;
     }
+    return e.gs.aufgehoben ? null : e.gs;
+  }
+
+  /**
+   * Wohin fährt ein neu alarmiertes Fahrzeug? Erste Alarmierung (SEG), EL ÖBB, DispoMobil und der erste BEL
+   * zum Berufungsort; alles andere – auch der zweite BEL – in den Bereitstellungsraum.
+   */
+  private gsZielFuer(e: Einsatz, fz: SimFahrzeug, erste: boolean, dazu: string[] = []): "bo" | "br" {
+    const gs = e.gs!;
+    if (fz.dispoMobil || fz.rmTyp === "EL ÖBB") return "bo";
+    if (fz.rmTyp === "BEL") {
+      const belBo = [...Object.entries(gs.ziel).filter(([, z]) => z === "bo").map(([id]) => id), ...dazu.filter((id) => !gs.ziel[id])].some((id) => this.state.fahrzeuge[id]?.rmTyp === "BEL" && id !== gs.brBel);
+      return belBo ? "br" : "bo";
+    }
+    return erste ? "bo" : "br";
+  }
+
+  /** Neu alarmierte Fahrzeuge: erste Alarmierung zum Berufungsort, alle späteren in den Bereitstellungsraum */
+  private gsAlarm(e: Einsatz, ids: string[], erste: boolean): void {
     const gs = e.gs;
-    if (gs.aufgehoben) return;
+    if (!gs || gs.aufgehoben) return;
+    if (!gs.segUm && ids.length) this.log(e, `Großeinsatz${gs.stufe ? ` (${gs.stufe})` : ""}: Schnelleinsatzgruppe zum Berufungsort – weitere Kräfte in den Bereitstellungsraum`);
     for (const id of ids) {
       const fz = this.state.fahrzeuge[id];
       if (!fz || fz.einsatzId !== e.id || gs.ziel[id]) continue;
-      gs.ziel[id] = this.gsSegFrei(e, fz) ? "bo" : "br";
-      if (gs.ziel[id] === "br") this.log(e, `${fz.funkrufname} in den Bereitstellungsraum${gs.br ? "" : " – Bereitstellungsraum noch festlegen"}`);
+      const z = this.gsZielFuer(e, fz, erste);
+      gs.ziel[id] = z;
+      if (z === "br") {
+        (gs.brAlarm ??= []).push(id);
+        if (fz.rmTyp === "BEL" && !gs.brBel) gs.brBel = id;
+        this.log(e, `${fz.funkrufname} in den Bereitstellungsraum${fz.id === gs.brBel ? " (bleibt dort, bis er leer ist)" : ""}`);
+      }
     }
+    if (ids.length && !gs.segUm) gs.segUm = this.state.zeit;
     if (!gs.br && Object.values(gs.ziel).includes("br")) gs.brNoetig = true;
-  }
-
-  /** Ist in der Schnelleinsatzgruppe (zum Berufungsort) noch Platz für dieses Fahrzeug? */
-  private gsSegFrei(e: Einsatz, fz: SimFahrzeug): boolean {
-    const gs = e.gs!;
-    if (fz.dispoMobil || fz.rmTyp === "EL ÖBB") return true;
-    if (fliegt(fz)) return false;
-    const bo = Object.entries(gs.ziel)
-      .filter(([, z]) => z === "bo")
-      .map(([id]) => this.state.fahrzeuge[id])
-      .filter((x): x is SimFahrzeug => !!x);
-    const rtw = (x: SimFahrzeug) => ["RTW", "RTW-C", "NAW"].includes(x.rmTyp);
-    if (fz.rmTyp === "BEL") return bo.filter((x) => x.rmTyp === "BEL").length < SEG.bel;
-    if (fz.kategorie === "NEF") return bo.filter((x) => x.kategorie === "NEF" && !fliegt(x)).length < SEG.nef;
-    if (rtw(fz)) return bo.filter(rtw).length < SEG.rtw;
-    return false;
   }
 
   /** Bereitstellungsraum festlegen (Adresse, Punkt auf der Karte oder Vorschlag) */
@@ -5278,6 +5342,16 @@ export class Simulation {
     this.emit();
   }
 
+  /** Eigene Notiz der Leitstelle in der Zeitleiste des Großeinsatzes */
+  gsNotiz(id: string, text: string, von = "Leitstelle"): void {
+    const e = this.einsatz(id);
+    const s = text.trim().slice(0, 600);
+    if (!e?.gs || !s) return;
+    e.gs.meldungen.push({ zeit: this.state.zeit, von: von.slice(0, 40), art: "notiz", text: s });
+    e.gs.lageText = `${e.gs.lageText ? `${e.gs.lageText}\n\n` : ""}${hhmm(this.state.zeit)} ${von}: ${s}`;
+    this.emit();
+  }
+
   /** Zweiter Notruf zum selben Ereignis: kein neuer Einsatz – die Abfrage kommt zum bestehenden Einsatz */
   zusammenlegen(id: string, zuId: string): void {
     const e = this.einsatz(id);
@@ -5299,7 +5373,7 @@ export class Simulation {
   private gsUebernehmen(fz: SimFahrzeug, e: Einsatz, p: Einsatz): void {
     fz.einsatzId = p.id;
     if (!p.fahrzeuge.includes(fz.id)) p.fahrzeuge.push(fz.id);
-    if (!p.gs) this.gsAlarm(p, []);
+    this.gsStart(p);
     if (p.gs) p.gs.ziel[fz.id] = "bo";
     if (!e.zusammengelegt) {
       e.zusammengelegt = p.id;
@@ -5469,8 +5543,11 @@ export class Simulation {
       if (gs.phase !== "lage") continue;
       this.gsErreichbar(e, w);
       this.gsAufdecken(e, w, t);
+      this.gsVerstorben(e, w, t);
+      this.gsTeamDa(e, t);
       this.gsZuteilen(e, w, t);
       this.gsAbruf(e, w, t);
+      this.gsBrLeer(e, t);
       this.gsNachfordern(e, t);
       this.gsEndePruefen(e, w, t);
     }
@@ -5611,10 +5688,9 @@ export class Simulation {
             na = frei.find((x) => x.kategorie === "NEF" && !fliegt(x)) ?? frei.find((x) => fliegt(x));
             // der Notarzt der Einsatzleitung geht zum roten Patienten, wenn sonst keiner da ist
             if (!na && elFz && elFz.phase === "vorOrt" && elFz.einsatzId === e.id && this.mitNotarzt(elFz) && !elFz.pilot) na = elFz;
-            // kein Notarzt frei: kurz warten, wenn einer kommt (höchstens 8 Minuten ab Erreichbarkeit)
-            const kommt = this.einsatzFz(e).some((x) => this.mitNotarzt(x) && x.phase !== "vorOrt");
+            // kein Notarzt frei: warten, bis einer kommt (aus dem BR bzw. nachgefordert) – höchstens 8 Minuten ab Erreichbarkeit
             const seit = Math.max(k.erstellt, gs.erreichbar[p.nr] ?? 0);
-            if (!na && kommt && t - seit < 8 * MIN) continue;
+            if (!na && t - seit < 8 * MIN) continue;
           }
         }
       } else if (p.sichtung === "gelb") rm = erstes(["RTW-C"]) ?? erstes(["RTW"]) ?? erstes(["NAW", "SRTW", "SNAW"]) ?? (t - k.erstellt > 10 * MIN ? erstes(["KTW", "SKTW"]) : undefined);
@@ -5644,7 +5720,8 @@ export class Simulation {
         this.funk("Einsatzleitung", k.id, `${this.rufname(fz)}: Patient ${p.nr} übernehmen – ${p.muster}`, "warnung");
       }
     }
-    k.gsKind = { parent: e.id, nr: p.nr, naMit: o.mitNa };
+    // ein kleiner Teil der roten Patienten verstirbt trotz Versorgung noch vor Ort
+    k.gsKind = { parent: e.id, nr: p.nr, naMit: o.mitNa, stirbtUm: p.sichtung === "rot" && Math.random() < 0.08 ? t + rnd(0.3, 0.9) * dauer : null };
     // Hubschrauber nur, wenn er fliegt – sonst fährt der Notarzt im RTW mit
     k.nahEntscheid = o.nah ? o.nah.id : "";
     const wer = fzs.map((f) => f.funkrufname).join(" + ");
@@ -5685,8 +5762,13 @@ export class Simulation {
     gs.abrufUm = t;
     for (const x of ruf) {
       gs.ziel[x.id] = "bo";
-      // Spieler-NAH fliegt selbst: er bekommt den Abruf (Funk und Hinweis im Piloten-Interface)
-      if (x.pilot) continue;
+      // Spieler-NAH: der Hubschrauber bleibt im Bereitstellungsraum, das Team läuft mit der Ausrüstung zum Einsatzort
+      if (x.pilot) {
+        const weg = gs.br && e.adresse ? distanceM(gs.br, e.adresse) * 1.25 : 500;
+        x.gsFussBis = t + Math.max(60, weg / 2.6) * 1000;
+        x.gsAmBr = true;
+        continue;
+      }
       this.setStatus(x, "zumBO");
       this.fahre(x, e.adresse, "anfahrt", true);
     }
@@ -5704,6 +5786,81 @@ export class Simulation {
         ...ki.map((x) => ({ von: this.rufname(x), text: `${this.rufname(x)} verstanden, ${fliegt(x) ? "fliegen" : "fahren"} zu`, fest: true })),
       ]);
     }
+  }
+
+  /**
+   * Patient verstirbt vor Ort (NACA 7): sein Einsatz endet, die Fahrzeuge gehen ohne Meldung zum nächsten Patienten
+   * (sie stehen wieder der Einsatzleitung zur Verfügung).
+   */
+  private gsVerstorben(e: Einsatz, w: GsWahr, t: number): void {
+    const gs = e.gs!;
+    for (const [nr, kid] of Object.entries(gs.kinder)) {
+      const k = this.einsatz(kid);
+      if (!k?.gsKind?.stirbtUm || k.gsKind.stirbtUm > t || k.zustand === "abgeschlossen") continue;
+      const fzs = this.einsatzFz(k);
+      // schon auf dem Weg ins Krankenhaus: zu spät für den Wechsel
+      if (fzs.some((x) => x.phase !== "vorOrt" || x.status === "zumZO")) {
+        k.gsKind.stirbtUm = null;
+        continue;
+      }
+      const p = w.patienten.find((x) => x.nr === Number(nr));
+      if (p) p.sichtung = "tot";
+      k.gsKind.stirbtUm = null;
+      for (const fz of fzs) {
+        fz.einsatzId = e.id;
+        if (!e.fahrzeuge.includes(fz.id)) e.fahrzeuge.push(fz.id);
+        fz.phase = "vorOrt";
+        fz.phaseEnde = null;
+        if (fz.pilot) fz.pilot.plan = null;
+      }
+      // gebuchter Platz wird wieder frei
+      k.kh = null;
+      this.khPlatzBelegen(k);
+      k.zustand = "abgeschlossen";
+      k.khAnfrage = null;
+      this.log(k, "Patient vor Ort verstorben");
+      this.log(e, `Patient ${nr} vor Ort verstorben – ${fzs.map((x) => x.funkrufname).join(" + ") || "Fahrzeuge"} übernehmen den nächsten Patienten`);
+    }
+  }
+
+  /** Team des Spieler-NAH ist zu Fuß am Einsatzort angekommen: ab jetzt gilt es als vor Ort */
+  private gsTeamDa(e: Einsatz, t: number): void {
+    for (const fz of this.einsatzFz(e)) {
+      if (!fz.pilot || !fz.gsFussBis || fz.gsFussBis > t) continue;
+      fz.gsFussBis = null;
+      fz.phase = "vorOrt";
+      fz.phaseEnde = null;
+      fz.vorOrtSeit = t;
+      this.log(e, `${fz.funkrufname}: Team zu Fuß am Einsatzort (Hubschrauber bleibt im Bereitstellungsraum)`);
+    }
+  }
+
+  /** Zweiter BEL im Bereitstellungsraum: ist der BR leer (und kommt nichts mehr), meldet er das der Einsatzleitung und rückt ein */
+  private gsBrLeer(e: Einsatz, t: number): void {
+    const gs = e.gs!;
+    const bel = gs.brBel ? this.state.fahrzeuge[gs.brBel] : undefined;
+    if (!bel || bel.einsatzId !== e.id || bel.phase !== "wartetBR") return;
+    const nochWer = this.einsatzFz(e).some((x) => x !== bel && gs.ziel[x.id] === "br");
+    const nachf = (e.nachforderungen ?? []).some((n) => !n.erledigt);
+    if (nochWer || nachf || (gs.brLeerSeit ??= t) > t - 2 * MIN) {
+      if (nochWer || nachf) gs.brLeerSeit = null;
+      return;
+    }
+    const el = gs.el ? this.state.fahrzeuge[gs.el] : undefined;
+    const ich = this.rufname(bel);
+    if (el && el.einsatzId === e.id && !el.pilot) {
+      const er = this.rufname(el);
+      this.fzFunk(bel, el, e, [
+        { von: ich, text: `Einsatzleitung von ${ich}, kommen`, fest: true },
+        { von: er, text: `Hier Einsatzleitung, kommen`, fest: true },
+        { von: ich, text: `Bereitstellungsraum ist leer, es kommen keine weiteren Kräfte. ${ich} rückt ein, kommen`, fest: true },
+        { von: er, text: `Einsatzleitung verstanden, ende`, fest: true },
+      ]);
+    }
+    gs.meldungen.push({ zeit: t, von: ich, art: "info", text: "Bereitstellungsraum leer – rückt ein" });
+    this.log(e, `${bel.funkrufname}: Bereitstellungsraum leer – rückt ein`);
+    gs.brBel = null;
+    this.freigeben(bel);
   }
 
   /** Nachforderung an die Leitstelle, wenn mehr gebraucht wird als BO, BR und Anfahrt zusammen hergeben */
@@ -5795,38 +5952,85 @@ export class Simulation {
     };
   }
 
-  /** Einsatzmittelvorschlag im Großschaden: SEG zum BO, dazu Notarzt- und Rettungsmittel (und BEL) für den BR */
-  private gsEmpfehlung(e: Einsatz, nf: NfStufe, liste: Vorschlag[]): { ids: string[]; gruende: string[]; oben?: string[] } {
+  /**
+   * Soll/Ist im Großschaden: ① SEG (1 BEL, 2 NEF, 3 RTW-C/RTW) zum Berufungsort, ② Bereitstellungsraum nach Stufe
+   * (Notarztmittel, Rettungsmittel – im Großschaden zählt jedes Rettungsmittel –, weiterer BEL).
+   */
+  gsSollIst(e: Einsatz): { schritt: "seg" | "br"; seg: GsZeile[]; br: GsZeile[] } | null {
+    const gs = e.gs;
+    if (!gs || gs.aufgehoben) return null;
+    const k = NF_KRAEFTE[gs.stufe ?? "NF5"];
+    const fz = (ids: string[]) => ids.map((id) => this.state.fahrzeuge[id]).filter((x): x is SimFahrzeug => !!x);
+    const segFz = fz(Object.entries(gs.ziel).filter(([id, z]) => z === "bo" && !(gs.brAlarm ?? []).includes(id)).map(([id]) => id));
+    const brFz = fz(gs.brAlarm ?? []);
+    const zaehl = (l: SimFahrzeug[], p: (f: SimFahrzeug) => boolean) => l.filter(p).length;
+    const seg: GsZeile[] = [
+      { art: "BEL", soll: SEG.bel, ist: zaehl(segFz, (f) => f.rmTyp === "BEL") },
+      { art: "NEF", soll: SEG.nef, ist: zaehl(segFz, (f) => f.kategorie === "NEF" && !fliegt(f)) },
+      { art: "RTW-C/RTW", soll: SEG.rtw, ist: zaehl(segFz, gsRtw) },
+    ];
+    const br: GsZeile[] = [
+      { art: "Notarztmittel", soll: k.na, ist: zaehl(brFz, gsNaMittel) },
+      { art: "Rettungsmittel", soll: k.rm, ist: zaehl(brFz, (f) => this.transportfaehig(f)) },
+    ];
+    if (k.bel) br.push({ art: "weiterer BEL", soll: k.bel, ist: zaehl(brFz, (f) => f.rmTyp === "BEL") });
+    return { schritt: gs.segUm ? "br" : "seg", seg, br };
+  }
+
+  /** Einsatzmittelvorschlag im Großschaden: ① SEG zum BO (ohne Hubschrauber), danach ② Kräfte für den BR laut Stufe */
+  private gsEmpfehlung(e: Einsatz, nf: NfStufe, liste: Vorschlag[]): { ids: string[]; gruende: string[]; oben?: string[]; fehlt?: string[] } {
     const k = NF_KRAEFTE[nf];
-    const nutzbar = liste.filter((v) => v.sekunden !== null && !v.hinweis && !v.kt && !v.fz.dispoMobil);
-    const dabei = [...this.einsatzFz(e), ...Object.values(e.gs?.kinder ?? {}).flatMap((id) => { const x = this.einsatz(id); return x ? this.einsatzFz(x) : []; })];
+    const nutzbar = liste.filter((v) => v.sekunden !== null && !v.hinweis && !v.kt && !v.fz.dispoMobil && v.fz.einsatzId !== e.id);
+    const zweiter = !!e.gs?.segUm;
     const ids: string[] = [];
-    const nimm = (pruef: (f: SimFahrzeug) => boolean, n: number) => {
-      let hat = dabei.filter(pruef).length + ids.filter((id) => pruef(this.state.fahrzeuge[id])).length;
+    const fehlt: string[] = [];
+    const nimm = (pruef: (f: SimFahrzeug) => boolean, n: number, hat0: number): number => {
+      let hat = hat0 + ids.filter((id) => pruef(this.state.fahrzeuge[id])).length;
       for (const v of nutzbar) {
         if (hat >= n) break;
         if (ids.includes(v.fz.id) || !pruef(v.fz)) continue;
         ids.push(v.fz.id);
         hat++;
       }
+      return Math.max(0, n - hat);
     };
-    const rtw = (f: SimFahrzeug) => ["RTW-C", "RTW", "NAW"].includes(f.rmTyp);
-    const naM = (f: SimFahrzeug) => f.kategorie === "NEF" || fliegt(f) || f.rmTyp === "NAW";
-    // Schnelleinsatzgruppe
-    nimm((f) => f.rmTyp === "BEL", SEG.bel + k.bel);
-    nimm((f) => f.kategorie === "NEF" && !fliegt(f), SEG.nef);
-    nimm(rtw, SEG.rtw);
-    // Bereitstellungsraum: Notarztmittel (auch Hubschrauber), Rettungsmittel (RTW vor KTW)
-    nimm(naM, SEG.nef + k.na);
-    nimm(rtw, SEG.rtw + k.rm);
-    nimm((f) => this.transportfaehig(f), SEG.rtw + k.rm);
-    const gruende = [
-      `${nf}: Schnelleinsatzgruppe zum Berufungsort (${SEG.bel} BEL, ${SEG.nef} NEF, ${SEG.rtw} RTW)`,
-      `Bereitstellungsraum: ${k.na} Notarztmittel, ${k.rm} Rettungsmittel${k.bel ? `, ${k.bel} weiterer BEL` : ""}`,
-      "DispoMobil und Krisenintervention bei Bedarf selbst alarmieren",
-    ];
-    if (!e.gs?.br) gruende.push("Bereitstellungsraum festlegen (Reiter Großeinsatz)");
-    return { ids, gruende };
+    const si = e.gs ? this.gsSollIst(e) : null;
+    const ist = (l: GsZeile[] | undefined, art: string) => l?.find((z) => z.art === art)?.ist ?? 0;
+    const gruende: string[] = [];
+    if (!zweiter) {
+      // ① Schnelleinsatzgruppe – kein Hubschrauber (nur wenn du ihn selbst auswählst)
+      const bel = nimm((f) => f.rmTyp === "BEL", SEG.bel, ist(si?.seg, "BEL"));
+      const nef = nimm((f) => f.kategorie === "NEF" && !fliegt(f), SEG.nef, ist(si?.seg, "NEF"));
+      const rtw = nimm(gsRtw, SEG.rtw, ist(si?.seg, "RTW-C/RTW"));
+      if (bel) fehlt.push(`${bel} BEL – Alternative: Fahrzeug mit NFS als vorläufige Einsatzleitung`);
+      if (nef) fehlt.push(`${nef} NEF – Alternative: NAW oder Notarzthubschrauber (selbst auswählen)`);
+      if (rtw) fehlt.push(`${rtw} RTW – Alternative: KTW oder Fahrzeuge aus Nachbarbezirken (Liste scrollen)`);
+      gruende.push(`${nf} · Schritt ① Schnelleinsatzgruppe zum Berufungsort: ${SEG.bel} BEL, ${SEG.nef} NEF, ${SEG.rtw} RTW-C/RTW`);
+      gruende.push(`danach Schritt ② Bereitstellungsraum: ${k.na} Notarztmittel, ${k.rm} Rettungsmittel${k.bel ? `, ${k.bel} weiterer BEL` : ""}`);
+    } else {
+      // ② Bereitstellungsraum: Notarztmittel (auch Hubschrauber), Rettungsmittel (RTW vor KTW, im Großschaden zählt jedes)
+      // Notarztmittel: bodengebunden zuerst (NEF, NAW), dann Notarzthubschrauber (höchstens zwei im BR)
+      const na0 = ist(si?.br, "Notarztmittel");
+      let na = nimm((f) => (f.kategorie === "NEF" && !fliegt(f)) || f.rmTyp === "NAW", k.na, na0);
+      const nahDa = (e.gs?.brAlarm ?? []).filter((id) => { const f = this.state.fahrzeuge[id]; return !!f && fliegt(f); }).length;
+      for (const v of nutzbar) {
+        if (na <= 0 || nahDa + ids.filter((id) => fliegt(this.state.fahrzeuge[id])).length >= 2) break;
+        if (ids.includes(v.fz.id) || v.fz.rmTyp !== "NAH") continue;
+        ids.push(v.fz.id);
+        na--;
+      }
+      const rm0 = ist(si?.br, "Rettungsmittel");
+      nimm(gsRtw, k.rm, rm0);
+      const rm = nimm((f) => this.transportfaehig(f), k.rm, rm0);
+      const bel = k.bel ? nimm((f) => f.rmTyp === "BEL", k.bel, ist(si?.br, "weiterer BEL")) : 0;
+      if (na) fehlt.push(`${na} Notarztmittel – Alternative: NAW, Hubschrauber oder NEF aus Nachbarbezirken (Liste scrollen)`);
+      if (rm) fehlt.push(`${rm} Rettungsmittel – Alternative: KTW, BKTW bzw. Fahrzeuge aus Nachbarbezirken (Liste scrollen)`);
+      if (bel) fehlt.push(`${bel} BEL – Alternative: aus dem Nachbarbezirk`);
+      gruende.push(`${nf} · Schritt ② Bereitstellungsraum: ${k.na} Notarztmittel, ${k.rm} Rettungsmittel${k.bel ? `, ${k.bel} weiterer BEL` : ""}`);
+      if (!e.gs?.br) gruende.push("Zuerst den Bereitstellungsraum festlegen (Reiter Großeinsatz) – erst dann kann in den BR alarmiert werden");
+    }
+    gruende.push("Krisenintervention und DispoMobil bei Bedarf selbst alarmieren (fahren direkt zum Berufungsort)");
+    return { ids: zweiter && !e.gs?.br ? [] : ids, gruende, fehlt };
   }
 
   // ------------------------------------------------------------------ Partner-Organisationen
@@ -5906,12 +6110,15 @@ export class Simulation {
     const ziel: LatLon = e.adresse ?? e.wahr;
     // Krisenintervention: fährt von zu Hause los (irgendwo im Umkreis von 20 km)
     const st = art === "ki" ? null : this.partnerStation(art, ziel);
-    const heim = st ? { lat: st.lat, lon: st.lon } : versetzt(ziel.lat, ziel.lon, art === "ki" ? rnd(2000, 20000) : rnd(6000, 12000), rnd(0, 360));
-    const kurz = st ? kurzName(st.name, art) : art === "ki" ? "KI-Team" : PARTNER[art].name;
-    const n = PARTNER_ANZAHL[art];
+    const heim0 = st ? { lat: st.lat, lon: st.lon } : versetzt(ziel.lat, ziel.lon, art === "ki" ? rnd(2000, 20000) : rnd(6000, 12000), rnd(0, 360));
+    const kurz = st ? kurzName(st.name, art) : art === "ki" ? "KIT" : PARTNER[art].name;
+    // Krisenintervention: je nach Größe mehrere Leute, jede(r) fährt mit dem eigenen Auto von zu Hause
+    const stufe = e.gs && !e.gs.aufgehoben ? e.gs.stufe : null;
+    const n = art === "ki" ? (stufe === "NF30" ? 5 : stufe === "NF10" ? (Math.random() < 0.5 ? 3 : 4) : stufe === "NF5" ? 2 : 1) : PARTNER_ANZAHL[art];
     this.state.partnerFz ??= [];
     for (let i = 0; i < n; i++) {
       this.state.partnerZaehler = (this.state.partnerZaehler ?? 0) + 1;
+      const heim = art === "ki" && i > 0 ? versetzt(ziel.lat, ziel.lon, rnd(2000, 20000), rnd(0, 360)) : heim0;
       this.state.partnerFz.push({
         id: `p${this.state.partnerZaehler}`,
         art,
@@ -5925,10 +6132,10 @@ export class Simulation {
         blaulicht: false,
         phase: "ausruecken",
         // rücken innerhalb von 2 Minuten aus
-        phaseEnde: t + rnd(0.7, 2) * MIN + i * rnd(5, 20) * 1000,
+        phaseEnde: art === "ki" ? t + rnd(3, 12) * MIN : t + rnd(0.7, 2) * MIN + i * rnd(5, 20) * 1000,
       });
     }
-    this.log(e, `${PARTNER[art].name} alarmiert${st ? ` (${st.name}, ${n} Fahrzeug${n > 1 ? "e" : ""})` : ""}`);
+    this.log(e, `${PARTNER[art].name} alarmiert${st ? ` (${st.name}, ${n} Fahrzeug${n > 1 ? "e" : ""})` : n > 1 ? ` (${n} Fahrzeuge, jeweils von zu Hause)` : ""}`);
     if (art === "pol") this.bereitstellungPruefen(e, []);
     this.emit();
   }
@@ -8441,6 +8648,8 @@ export class Simulation {
         if (!p.plan) return "Zuerst festlegen, was mit dem Patienten passiert";
         if (p.plan.art === "kein") return "Kein Transport gewählt – Status 6, wenn ihr frei seid";
         if (!e.kh) return "Der RTW hat noch kein Zielkrankenhaus – bitte warten";
+        if (this.pilotVersorgtIn(fz) > 0) return `Der Patient wird noch versorgt – noch ca. ${Math.max(1, Math.round(this.pilotVersorgtIn(fz) / MIN))} min`;
+        fz.gsAmBr = false;
         fz.begleitet = p.plan.art === "transport";
         this.setStatus(fz, "zumZO");
         fz.phase = "transport";
@@ -8490,14 +8699,15 @@ export class Simulation {
         const h = store.get("hospitals", plan.hospitalId);
         if (!h) return "Krankenhaus nicht gefunden";
         const verdacht = this.verdacht(e);
+        const grund = plan.grund || verdacht;
         e.wahr.transport = true;
         e.verdacht = verdacht;
-        e.kh = { hospitalId: h.id, grund: verdacht, durch: "nah", zeit: this.state.zeit };
+        e.kh = { hospitalId: h.id, grund, durch: "nah", zeit: this.state.zeit };
         e.zo = { lat: h.lat, lon: h.lon, label: h.name };
         e.khAnfrage = null;
         this.khPlatzBelegen(e);
-        this.log(e, `${name}: Transport mit dem NAH ins ${h.kurzname || h.name} (Verdacht ${buchungName(verdacht)})`);
-        this.funk(name, e.id, `Transport mit NAH: ${h.kurzname || h.name} – Verdacht ${buchungName(verdacht)}`, "info");
+        this.log(e, `${name}: Transport mit dem NAH ins ${h.kurzname || h.name} (${buchungName(grund)})`);
+        this.funk(name, e.id, `Transport mit NAH: ${h.kurzname || h.name} – ${buchungName(grund)}`, "info");
         // RTW, die schon auf das Krankenhaus warten, werden frei – der Patient fliegt
         for (const x of this.einsatzFz(e)) if (x !== fz && this.transportfaehig(x) && x.phase === "warteKH") {
           this.log(e, `${x.funkrufname}: Patient wird mit ${name} transportiert`);
@@ -8510,8 +8720,21 @@ export class Simulation {
         e.wahr.transport = true;
         if (lf) lf.naMit = plan.naMit;
         if (e.gsKind) e.gsKind.naMit = plan.naMit;
-        this.log(e, `${name}: Patient wird an den RTW übergeben${plan.naMit ? ", Notarzt begleitet im RTW" : ""}`);
-        this.funk(name, e.id, `Übergabe an RTW${plan.naMit ? " – Notarzt fährt im RTW mit" : ""}`, "info");
+        // Krankenhaus gleich mitbuchen (wie die Leitstelle)
+        const h = plan.hospitalId ? store.get("hospitals", plan.hospitalId) : undefined;
+        if (plan.hospitalId && !h) return "Krankenhaus nicht gefunden";
+        if (h) {
+          const grund = plan.grund || this.verdacht(e);
+          e.verdacht ??= this.verdacht(e);
+          e.kh = { hospitalId: h.id, grund, durch: "nah", zeit: this.state.zeit };
+          e.zo = { lat: h.lat, lon: h.lon, label: h.name };
+          e.khAnfrage = null;
+          this.khPlatzBelegen(e);
+          this.startTransport(e);
+        }
+        const wohin = h ? ` ins ${h.kurzname || h.name}` : "";
+        this.log(e, `${name}: Patient wird an den RTW übergeben${wohin}${plan.naMit ? ", Notarzt begleitet im RTW, NAH fliegt leer nach" : ""}`);
+        this.funk(name, e.id, `Übergabe an RTW${wohin}${plan.naMit ? " – Notarzt fährt im RTW mit, NAH fliegt leer nach" : ""}`, "info");
         break;
       }
       case "kein": {
@@ -8584,7 +8807,17 @@ export class Simulation {
     if (!e) return null;
     const gs = e.gs && !e.gs.aufgehoben ? e.gs : null;
     if (gs && gs.ziel[fz.id] === "br") return gs.br ? { lat: gs.br.lat, lon: gs.br.lon, label: "Bereitstellungsraum", br: true } : null;
+    // der Hubschrauber steht im Bereitstellungsraum (Team am Einsatzort bzw. beim Patienten)
+    const p = e.gsKind ? this.einsatz(e.gsKind.parent)?.gs : gs;
+    if (fz.gsAmBr && p?.br) return { lat: p.br.lat, lon: p.br.lon, label: "Bereitstellungsraum (Hubschrauber)", br: true };
     return e.adresse ? { lat: e.adresse.lat, lon: e.adresse.lon, label: "Einsatzort", br: false } : null;
+  }
+
+  /** Spieler-NAH beim Großschaden-Patienten: wie lange die Versorgung noch dauert (ms, 0 = fertig) */
+  pilotVersorgtIn(fz: SimFahrzeug): number {
+    const e = fz.einsatzId ? this.einsatz(fz.einsatzId) : undefined;
+    if (!e?.gsKind || fz.phase !== "vorOrt" || fz.phaseEnde === null) return 0;
+    return Math.max(0, fz.phaseEnde - this.state.zeit);
   }
 
   /** Spieler-NAH im Großeinsatz: was er gerade tun soll (für das Piloten-Interface) – null außerhalb eines Großeinsatzes */
@@ -8594,7 +8827,9 @@ export class Simulation {
     if (e.gsKind) {
       const p = this.einsatz(e.gsKind.parent);
       const rtw = this.einsatzFz(e).some((x) => this.transportfaehig(x));
-      return { text: `Großeinsatz ${p?.nummer ?? ""} – Patient ${e.gsKind.nr} zugeteilt: ${e.meldung.text.replace(/^Patient \d+, /, "")}. ${rtw ? "Transport mit dem NAH oder Übergabe an den RTW." : "Transport mit dem NAH."}` };
+      const noch = this.pilotVersorgtIn(fz);
+      const stand = noch > 0 ? `Patient wird versorgt – noch ca. ${Math.max(1, Math.round(noch / MIN))} min, dann ist er ${fz.gsAmBr ? "im Hubschrauber (Bereitstellungsraum)" : "transportbereit"}.` : rtw ? "Versorgt – Transport mit dem NAH oder Übergabe an den RTW." : "Versorgt – der Patient ist im NAH, Transport möglich.";
+      return { text: `Großeinsatz ${p?.nummer ?? ""} – Patient ${e.gsKind.nr}: ${e.meldung.text.replace(/^Patient \d+, /, "")}. ${stand}` };
     }
     const gs = e.gs && !e.gs.aufgehoben ? e.gs : null;
     if (!gs) return null;
@@ -8605,7 +8840,9 @@ export class Simulation {
       if (fz.phase === "wartetBR") return { text: `Großeinsatz${stufe}: Im Bereitstellungsraum – warten, bis die Einsatzleitung abruft.` };
       return { text: `Großeinsatz${stufe}: In den Bereitstellungsraum fliegen (${gs.br.label}), dort Status 3 und auf Abruf warten.` };
     }
-    if (fz.phase === "wartetBR") return { text: `Abruf durch die Einsatzleitung: aus dem Bereitstellungsraum zum Einsatzort fliegen (Status 2, dort Status 3).`, abruf: true };
+    if (fz.phase === "wartetBR" && fz.gsFussBis) return { text: `Abruf durch die Einsatzleitung: dein Team geht zu Fuß zum Einsatzort (noch ca. ${Math.max(1, Math.round((fz.gsFussBis - this.state.zeit) / MIN))} min). Der Hubschrauber bleibt im Bereitstellungsraum.`, abruf: true };
+    if (fz.phase === "wartetBR") return { text: `Abruf durch die Einsatzleitung: zum Einsatzort.`, abruf: true };
+    if (fz.gsAmBr && fz.phase === "vorOrt") return { text: `Großeinsatz${stufe}: Team am Einsatzort – die Einsatzleitung teilt euch einen Patienten zu. Der Hubschrauber steht im Bereitstellungsraum.` };
     if (fz.status === "amBO") return { text: gs.el === fz.id ? `Großeinsatz${stufe}: Du bist als Erster vor Ort und hast die Einsatzleitung.` : `Großeinsatz${stufe}: Am Einsatzort – die Einsatzleitung teilt dir einen Patienten zu.` };
     return { text: `Großeinsatz${stufe}: zum Einsatzort.` };
   }
