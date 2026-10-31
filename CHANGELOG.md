@@ -1,5 +1,8 @@
 # Änderungen
 
+## 0.94.1 – H145-Tablet ohne Fehlermeldung
+- Am H145-Tablet erscheint bei einem Statuswechsel keine Meldung „Command Failed – NotFound“ mehr (die Fußzeile gibt es in der H145 nicht). Der Status steht im Mission Briefing und wird jetzt auch im freien Zustand bei jedem Wechsel aktualisiert
+
 ## 0.94.0 – Testmodus für Piloten
 - **Als Pilot beitreten → „Testmodus“:** Du kannst das Piloten-Interface ohne Leitstelle ausprobieren – kein Spielcode, kein Disponent nötig. Das Spiel läuft nur bei dir, im Gebiet deines Stützpunkts, und es kommen keine Einsätze von selbst
 - **Testmenü** im Piloten-Interface: „Einsatz senden“ (ein Notfall mit Notarzt in deinem Gebiet, RTW dazu, dein Hubschrauber wird alarmiert) und „Großeinsatz senden“ (Großschadensfall mit Bereitstellungsraum, du kommst als Notarztmittel in den BR – vorerst nur in TETRA NÖ-03)

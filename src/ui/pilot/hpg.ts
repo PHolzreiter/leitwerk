@@ -158,12 +158,12 @@ function punktIcon(farbe: string): string {
   return `data:image/svg+xml;base64,${btoa(svg)}`;
 }
 
-function uiBefehle(fz: SimFahrzeug, e: Einsatz | undefined): Befehl[] {
-  const st = sim.statusDef(fz.status);
-  return [
-    // die rechte Fußzeile gibt es in der H145 nicht („NotFound“) – alles links
-    { set_ui: { footer_left_label: t(`Status${e ? ` - ${e.nummer}` : ""}`), footer_left_value: t(`${st.nummer} ${st.name}`) } },
-  ];
+/**
+ * Fußzeile des Tablets: die H145 kennt weder die rechte noch die linke Fußzeile („Command Failed – NotFound“,
+ * getestet 30.10.2026) – Status und Einsatznummer stehen deshalb nur im Mission Briefing und in den Meldungen.
+ */
+function uiBefehle(_fz: SimFahrzeug, _e: Einsatz | undefined): Befehl[] {
+  return [];
 }
 
 function khVorschlaege(fz: SimFahrzeug, e: Einsatz): Hospital[] {
@@ -263,7 +263,7 @@ function missionRoh(fz: SimFahrzeug, e: Einsatz | undefined): { key: string; mis
   if (!e) {
     const daheim = distanceM(fz, fz.heim) < 300;
     return {
-      key: `frei|${daheim}`,
+      key: `frei|${daheim}|${fz.status}`,
       mission: {
         ...basis,
         title: t(`LeitWerk - ${heli}`),
@@ -418,7 +418,7 @@ export function hpgAktualisieren(fz: SimFahrzeug | undefined, e: Einsatz | undef
     return;
   }
   const u = JSON.stringify(ui);
-  if (u !== letzterUi) {
+  if (u !== letzterUi && ui.length) {
     letzterUi = u;
     senden({ exec_commands: ui });
   }
