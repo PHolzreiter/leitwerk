@@ -8,7 +8,7 @@ import { sim, type Einsatz } from "../sim/engine";
 import { antwortOhneKi, erinnerung, werText, ersterSatzOhneKi, istBekannt, sprachFilter, systemPrompt, zusammenfassungPruefen, type AnrufKontext } from "./anrufer";
 import { kiBereit, kiPrefs, kiStatus, type KiNachricht } from "./ki";
 import { kiAntwortNeu, nachrichtArt, ohneVorspann } from "./runde";
-import { liveAktiv, liveFrage, liveSperren, liveSprechen } from "./liveKi";
+import { liveAktiv, liveFrage, liveSperren, liveSprechen, livePrefs, sitzungDa, sitzungFuer, type LiveErgebnis, type SitzungOpt } from "./liveKi";
 import { inTauri } from "../platform";
 import { fragenImAblauf, type Frage } from "./schema";
 import { anruferSagt, satzSprecher } from "../ui/sprache";
@@ -167,12 +167,15 @@ export async function fragen(e: Einsatz, text: string, schemaFrage?: Frage, onTo
     // Cloud-Anrufer (Gemini Live): antwortet direkt mit eigener Stimme
     const art = k.anrufer.art ?? "privat";
     if (liveAktiv() && art !== "ecall" && art !== "leitstelle") {
-      const verlauf = kiVerlauf(e, k, text, schemaFrage, wiederholt);
+      // Anweisung: was dabei herauskommt, bekommt der Anrufer als Hinweis mit
+      const an = !schemaFrage && nachrichtArt(text) === "anweisung" ? anweisungKern(k, text) : null;
+      const verlauf = kiVerlauf(e, k, text, schemaFrage, wiederholt, an?.typen.length ? an.saetze : undefined);
       const letzte = verlauf[verlauf.length - 1].content;
       try {
-        const r = await liveFrage(e, systemFuer(e, k), k.anrufer.geschlecht, letzte, onToken);
+        const r = await liveFrage(liveOpt(e, k), letzte, onToken, text);
         zeitMerken({ frage: text, ersterSatz: r.ersterTon, fertig: r.fertig, modus: "Gemini Live", tokens: r.tokens });
         if (r.text) await sim.call("anrufNachricht", e.id, "anrufer", r.text, "ki");
+        if (r.text) liveNachpruefen(e, k, text, r.text, schemaFrage);
         return;
       } catch (err) {
         // Cloud geht nicht: diese Antwort kommt von der lokalen KI
@@ -866,6 +869,134 @@ function liveFehlerMelden(t: string): void {
   void import("../ui/dom").then((m) => m.toast(`${t} – Antwort kommt von der lokalen KI`, "error"));
 }
 
+/** Einstellungen für die Verbindung eines Notrufs zum Cloud-Anrufer */
+function liveOpt(e: Einsatz, k: AnrufKontext, vorab = false): SitzungOpt {
+  const id = e.id;
+  liveLageBeobachten();
+  return {
+    id,
+    system: systemFuer(e, k),
+    geschlecht: k.anrufer.geschlecht,
+    verlauf: e.anruf?.gespraech ?? [],
+    aktiv: () => {
+      const x = sim.state.einsaetze.find((y) => y.id === id);
+      return !!x?.anruf && (x.anruf.status === "aktiv" || (vorab && x.anruf.status === "klingelt"));
+    },
+    frei: livePrefs().freisprechen,
+    ereignis: (r) => void liveEreignis(id, r),
+  };
+}
+
+/** Antwort, die nicht auf eine Frage per Knopf/Taste kam (Freisprechen oder von sich aus) */
+async function liveEreignis(id: string, r: LiveErgebnis): Promise<void> {
+  const e = sim.state.einsaetze.find((x) => x.id === id);
+  if (!e?.anruf || e.anruf.status !== "aktiv") return;
+  if (r.frage) await sim.call("anrufNachricht", e.id, "leitstelle", r.frage);
+  if (r.text) await sim.call("anrufNachricht", e.id, "anrufer", r.text, "ki");
+  zeitMerken({ frage: r.frage || "(von sich aus)", ersterSatz: r.ersterTon, fertig: r.fertig, modus: r.spontan ? "Gemini Live (von sich aus)" : "Gemini Live (Freisprechen)", tokens: r.tokens });
+  const k = kontext(e);
+  if (k && r.frage && r.text && !r.unterbrochen) liveNachpruefen(e, k, r.frage, r.text);
+}
+
+/**
+ * Nachträglich prüfen, ob die Cloud-Antwort zur Fallakte passt (gesprochen ist sie schon).
+ * Passt sie nicht, bekommt der Anrufer leise eine Korrektur und verbessert sich selbst („Nein, Moment …“).
+ * Anweisungen werden wie bei der lokalen KI gemerkt.
+ */
+function liveNachpruefen(e: Einsatz, k: AnrufKontext, frage: string, antwort: string, schemaFrage?: Frage): void {
+  try {
+    const art = schemaFrage ? "frage" : nachrichtArt(frage);
+    const probleme: string[] = [];
+    let richtig: string[] = [];
+    if (art === "frage") {
+      const grund = schemaFrage ?? freieSchemaFrage(frage);
+      if (!(grund && ["ort_adresse", "schilderung", "anrufer", "rueckrufnummer"].includes(grund.id))) {
+        let themen: Thema[] = [];
+        let kern: Kern | null = null;
+        let pruefFrage: Frage | undefined;
+        if (schemaFrage) {
+          pruefFrage = schemaFrage;
+          themen = themenZuFeld(schemaFrage.id);
+          kern = kernFuerFrage(k, schemaFrage);
+        } else {
+          themen = themenErkennen(frage);
+          if (themen.length) kern = antwortKern(k, themen);
+          else {
+            pruefFrage = schemaFrageZu(k, frage);
+            if (pruefFrage) kern = kernFuerFrage(k, pruefFrage);
+          }
+        }
+        if (kern) {
+          probleme.push(...antwortPruefen(k, themen, kern, antwort, pruefFrage, frage));
+          richtig = kern.saetze;
+        }
+      }
+    } else if (art === "anweisung") {
+      const an = anweisungKern(k, frage);
+      if (an.typen.length) {
+        anweisungMerken(e, an);
+        probleme.push(...anweisungPruefen(an, antwort));
+        richtig = an.saetze;
+      }
+    }
+    if (!probleme.length) return;
+    console.info("[Gemini Live] Korrektur", probleme);
+    sitzungDa(e.id)?.hinweis(
+      `[Korrektur nur für dich, nicht vorlesen: Deine letzte Antwort „${antwort}“ passt nicht zu dem, was wirklich ist – ${probleme.join("; ")}.${richtig.length ? ` Richtig ist: ${richtig.join(" ")}` : ""} Verbessere dich JETZT sofort von selbst, kurz und natürlich, wie ein Mensch, der sich gerade versprochen hat (z. B. „Nein, Moment – …“).]`,
+      true,
+    );
+  } catch (err) {
+    console.warn("Gemini-Prüfung", err);
+  }
+}
+
+/** Lage ändert sich im laufenden Anruf: der Cloud-Anrufer meldet sich von selbst */
+const lageStand = new Map<string, { verlauf: number; massnahmen: number }>();
+let lageBeobachtet = false;
+function liveLageBeobachten(): void {
+  if (lageBeobachtet) return;
+  lageBeobachtet = true;
+  sim.onChange(() => {
+    for (const e of sim.state.einsaetze) {
+      if (e.anruf?.status !== "aktiv") continue;
+      const s = sitzungDa(e.id);
+      if (!s) continue;
+      const k = kontext(e);
+      if (!k) continue;
+      const jetzt = { verlauf: (k.verlauf ?? []).length, massnahmen: (k.massnahmen ?? []).length };
+      const vorher = lageStand.get(e.id);
+      lageStand.set(e.id, jetzt);
+      if (!vorher) continue;
+      if (jetzt.verlauf > vorher.verlauf) {
+        const neu = (k.verlauf ?? []).slice(vorher.verlauf).join(" / ");
+        s.hinweis(`[Nur für dich, nicht vorlesen: GERADE GEÄNDERT – ${neu}. Das ist jetzt so, und es erschreckt bzw. beschäftigt dich. Sag es der Leitstelle JETZT sofort von dir aus – kurz, in deinen Worten, so wie du es gerade siehst.]`, true);
+      } else if (jetzt.massnahmen > vorher.massnahmen) {
+        s.hinweis(`[Nur für dich, nicht vorlesen: Was du jetzt auf Anweisung machst und weiter machst: ${(k.massnahmen ?? []).join(" ")}]`, false);
+      }
+    }
+  });
+}
+
+/** Solo: schon beim Klingeln verbinden, damit die erste Antwort nicht auf den Aufbau wartet */
+export function liveVorwaermen(e: Einsatz): void {
+  if (!liveAktiv() || sitzungDa(e.id)) return;
+  const k = kontext(e);
+  if (!k) return;
+  const art = k.anrufer.art ?? "privat";
+  if (art === "ecall" || art === "leitstelle") return;
+  sitzungFuer(liveOpt(e, k, true));
+}
+
+/** Freisprechen: Verbindung für diesen Anruf; die Stücke vom Mikrofon gehen laufend dorthin */
+export function liveFreisprechen(e: Einsatz): ((b64: string) => void) | null {
+  const k = kontext(e);
+  if (!k || !liveAktiv() || !livePrefs().freisprechen || e.anruf?.status !== "aktiv") return null;
+  const art = k.anrufer.art ?? "privat";
+  if (art === "ecall" || art === "leitstelle") return null;
+  const s = sitzungFuer(liveOpt(e, k));
+  return (b64) => s.stueck(b64);
+}
+
 /**
  * Sprechtaste im Notruf mit Cloud-Anrufer: die Stimme der Leitstelle geht direkt an Gemini (kein Umweg über die
  * Erkennung am Rechner). Was gesagt wurde, kommt als Mitschrift zurück und steht danach im Gespräch.
@@ -873,10 +1004,10 @@ function liveFehlerMelden(t: string): void {
  */
 export function liveSprechStrom(e: Einsatz, onToken?: (t: string) => void, danach?: () => void): { stueck(b64: string): void; ende(): Promise<void>; abbrechen(): void } | null {
   const k = kontext(e);
-  if (!k || !liveAktiv() || laufend.has(e.id) || e.anruf?.status !== "aktiv") return null;
+  if (!k || !liveAktiv() || laufend.has(e.id) || e.anruf?.status !== "aktiv" || livePrefs().freisprechen) return null;
   const art = k.anrufer.art ?? "privat";
   if (art === "ecall" || art === "leitstelle") return null;
-  const s = liveSprechen(e, systemFuer(e, k), k.anrufer.geschlecht, onToken);
+  const s = liveSprechen(liveOpt(e, k), onToken);
   if (!s) return null;
   laufend.add(e.id);
   let zu = false;
@@ -897,6 +1028,7 @@ export function liveSprechStrom(e: Einsatz, onToken?: (t: string) => void, danac
         if (r.text) await sim.call("anrufNachricht", e.id, "anrufer", r.text, "ki");
         zeitMerken({ frage: frage || "(gesprochen)", ersterSatz: r.ersterTon, fertig: r.fertig, modus: "Gemini Live (Sprache)", tokens: r.tokens });
         if (!r.text && !r.frage) void import("../ui/dom").then((m) => m.toast("Nichts verstanden – bitte nochmal.", "error"));
+        if (r.frage && r.text) liveNachpruefen(e, k, r.frage, r.text);
       } catch (err) {
         console.warn("Gemini Live (Sprache)", err);
         liveSperren();

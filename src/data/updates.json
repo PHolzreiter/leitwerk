@@ -1,5 +1,18 @@
 [
  {
+  "version": "0.98.0",
+  "datum": "2026-11-02",
+  "titel": "Cloud-Anrufer wie am echten Telefon",
+  "punkte": [
+   "Freisprechen ohne Sprechtaste",
+   "Anrufer meldet sich von selbst, wenn sich etwas ändert",
+   "Anrufer verbessert sich selbst, wenn etwas nicht stimmt",
+   "Telefon-Anleitungen werden gemerkt",
+   "Telefonklang und Geräusche vom Notfallort",
+   "Krankentransport-Anrufe auch über Gemini"
+  ]
+ },
+ {
   "version": "0.97.1",
   "datum": "2026-11-02",
   "titel": "Sprechtaste beim Cloud-Anrufer",

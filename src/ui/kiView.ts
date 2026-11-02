@@ -83,7 +83,19 @@ export function buildKiSection(sec: HTMLElement, draft: Settings): void {
       cloudTest.disabled = false;
     }
   });
+  const frei = el("input", { type: "checkbox" }) as HTMLInputElement;
+  frei.checked = lp.freisprechen;
+  frei.addEventListener("change", () => setLivePrefs({ freisprechen: frei.checked }));
+  const klangChk = el("input", { type: "checkbox" }) as HTMLInputElement;
+  klangChk.checked = lp.klang;
+  klangChk.addEventListener("change", () => setLivePrefs({ klang: klangChk.checked }));
   cloud.append(el("label", {}, "Anrufer über Gemini Live (Cloud) – spricht mit eigener Stimme"), cloudAn, el("label", {}, "Gemini-Schlüssel"), schl, el("span", {}), (() => { const w = el("span"); w.append(cloudTest, " ", cloudErg); return w; })());
+  cloud.append(
+    el("label", { title: "Das Mikrofon läuft während des Anrufs; der Anrufer erkennt selbst, wann du fertig bist, und du kannst ihm ins Wort fallen. Am besten mit Kopfhörern – sonst hört er sich selbst aus den Lautsprechern." }, "Freisprechen (ohne Sprechtaste, am besten mit Kopfhörern)"),
+    frei,
+    el("label", {}, "Telefonklang und Geräusche vom Notfallort"),
+    klangChk,
+  );
   sec.append(
     el("h4", {}, "Cloud-Anrufer (Test)"),
     el(

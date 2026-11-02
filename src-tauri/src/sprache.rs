@@ -592,7 +592,8 @@ fn aufnahme_starten(mikro: Option<String>, funk: Option<tauri::ipc::Channel<Stri
                         // Sprechfunk: alle 100 ms die neuen Samples als Stücke schicken
                         let mut kod = if pcm16 { Kodierer::Pcm(Pcm16Kodierer::neu(rate)) } else { Kodierer::Funk(FunkKodierer::neu(rate)) };
                         let mut ab = 0usize;
-                        let schluss = std::time::Instant::now() + std::time::Duration::from_secs(120);
+                        // Freisprechen mit dem Cloud-Anrufer läuft so lange wie der Anruf (höchstens eine Stunde)
+                        let schluss = std::time::Instant::now() + std::time::Duration::from_secs(if pcm16 { 3600 } else { 120 });
                         loop {
                             let fertig = match stopp_rx.recv_timeout(std::time::Duration::from_millis(100)) {
                                 Err(std::sync::mpsc::RecvTimeoutError::Timeout) => std::time::Instant::now() >= schluss,

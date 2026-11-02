@@ -515,10 +515,14 @@ export interface LiveStrom {
 }
 
 let liveJetzt: LiveStrom | null = null;
+
+/** Freisprechen (ui/freisprechen.ts): läuft eine Daueraufnahme? Die Sprechtaste unterbricht sie kurz (z. B. für den Funk) */
+export const dauerAufnahme: { laeuft: () => boolean; pause: () => Promise<void>; weiter: () => void } = { laeuft: () => false, pause: async () => undefined, weiter: () => undefined };
+let dauerPausiert = false;
 let liveWeb: { ctx: AudioContext; q: MediaStreamAudioSourceNode; p: ScriptProcessorNode } | null = null;
 
 /** Float-Samples → 16 kHz, 16 Bit, Base64 (Browser-Weg) */
-function pcm16b64(d: Float32Array, rate: number): string {
+export function pcm16b64(d: Float32Array, rate: number): string {
   const x = auf16k(d, rate);
   const u = new Uint8Array(x.length * 2);
   const v = new DataView(u.buffer);
@@ -671,6 +675,15 @@ async function start(z: SprachZiel | null, knopf?: HTMLElement): Promise<void> {
     toast("Gerade gibt es kein Gespräch, in das du sprechen kannst.", "error");
     return;
   }
+  if (dauerAufnahme.laeuft()) {
+    // Freisprechen im Notruf: dort braucht es keine Taste
+    if (z.live) {
+      toast("Freisprechen ist an – einfach reden, ohne Taste.");
+      return;
+    }
+    dauerPausiert = true;
+    await dauerAufnahme.pause();
+  }
   aufnahmeLaeuft = true;
   zielJetzt = z;
   aktuellerKnopf = knopf ?? null;
@@ -812,6 +825,17 @@ function funkStueckEnde(): void {
 }
 
 async function stopp(): Promise<void> {
+  try {
+    await stoppInnen();
+  } finally {
+    if (dauerPausiert && !aufnahmeLaeuft) {
+      dauerPausiert = false;
+      dauerAufnahme.weiter();
+    }
+  }
+}
+
+async function stoppInnen(): Promise<void> {
   if (!aufnahmeLaeuft) return;
   aufnahmeLaeuft = false;
   // nach der Aufnahme (inkl. Nachlauf) den Live-Funk schließen

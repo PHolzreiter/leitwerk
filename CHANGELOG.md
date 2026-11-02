@@ -1,5 +1,14 @@
 # Änderungen
 
+## 0.98.0 – Cloud-Anrufer wie am echten Telefon
+- **Freisprechen** (Einstellungen → KI → Cloud-Anrufer): Während des Anrufs läuft das Mikrofon, du redest einfach – ohne Taste. Der Anrufer merkt selbst, wann du fertig bist, und du kannst ihm ins Wort fallen. Am besten mit Kopfhörern. Die Sprechtaste für den Funk geht weiter und unterbricht das Freisprechen nur kurz
+- **Der Anrufer meldet sich von selbst,** wenn sich am Notfallort etwas ändert („Jetzt atmet er ganz komisch!“)
+- **Prüfung ohne Wartezeit:** Jede Antwort wird nachträglich mit dem Fall verglichen. Passt etwas nicht, verbessert sich der Anrufer selbst („Nein, Moment – …“)
+- **Telefon-Anleitungen** (Herzdruckmassage, Seitenlage, Blutung stillen …) werden auch beim Cloud-Anrufer gemerkt und gelten weiter
+- **Telefonklang:** Die Stimme klingt nach Telefonleitung, dazu leise Geräusche vom Notfallort (Verkehr, Stimmen im Lokal, Wind, Raum) – abschaltbar
+- Im Spiel allein wird schon beim Klingeln verbunden, damit die erste Antwort nicht wartet
+- **Krankentransport-Anrufe** laufen mit Cloud-Anrufer ebenfalls über Gemini
+
 ## 0.97.1 – Sprechtaste beim Cloud-Anrufer
 - In 0.97.0 fehlte im Programm die Aufnahme für den Cloud-Anrufer – die Sprechtaste meldete „Mikrofon nicht verfügbar“. Jetzt geht deine Stimme wie angekündigt direkt an Gemini
 

@@ -11,6 +11,7 @@ import { ohnePatientWort } from "./sprechfrage";
 import { kiBereit, kiPrefs, kiStatus, type KiNachricht } from "./ki";
 import { hinweisZurArt, kiAntwortNeu, nachrichtArt } from "./runde";
 import { anruferSagt, geschlechtAusName, satzSprecher } from "../ui/sprache";
+import { liveAktiv, liveFrage } from "./liveKi";
 
 export interface KtFrage {
   id: keyof KtDaten | "wer" | "patient" | "arzt" | "monitoring" | "stabil" | "inkubator" | "zusage" | "gewicht" | "zusatz" | "zustand";
@@ -547,6 +548,35 @@ export async function ktFragen(k: KtAuftrag, text: string, frage?: KtFrage, onTo
     await sim.call("ktAnrufNachricht", k.id, "leitstelle", text);
     const an = k.wahr?.anrufer;
     const stimme = { geschlecht: geschlechtAusName(`${an?.rolle ?? ""} ${an?.name ?? ""}`), emotion: "ruhig", name: an?.name };
+    // Cloud-Anrufer (Gemini Live): antwortet direkt mit eigener Stimme
+    const art0 = frage ? "frage" : nachrichtArt(text);
+    if (liveAktiv() && art0 !== "abschluss" && !(!frage && fragtSchreibweise(text))) {
+      const hinweise: string[] = [];
+      if (frage) hinweise.push(`Die richtige Antwort ist: ${ktAntwortOhneKi(k, frage)} – sag es in deinen eigenen Worten.`);
+      else if (art0 === "zusammenfassung") hinweise.push(ktZusammenfassungHinweis(k, text));
+      if (ktSelbst(k)) hinweise.push("Du bist selbst der Patient – Ich-Form.");
+      const id = k.id;
+      try {
+        const r = await liveFrage(
+          {
+            id,
+            system: ktPrompt(k),
+            geschlecht: stimme.geschlecht,
+            verlauf: (k.anruf?.gespraech ?? []).slice(0, -1),
+            aktiv: () => (sim.state.kt ?? []).find((x) => x.id === id)?.anruf?.status === "aktiv",
+          },
+          `Leitstelle: ${text}${hinweise.length ? `\n[Hinweis nur für dich, nicht aussprechen: ${hinweise.join(" ")}]` : ""}`,
+          onToken,
+          text,
+        );
+        if (r.text) {
+          await sim.call("ktAnrufNachricht", k.id, "anrufer", r.text, "ki");
+          return;
+        }
+      } catch (err) {
+        console.warn("Gemini Live (KT)", err);
+      }
+    }
     // fertige Sätze schon vorlesen, während die KI noch schreibt (bei fester Antwort: neu, ganz)
     let sprecher = satzSprecher((satz) => anruferSagt(satz, stimme, k.id));
     const sprecherNeu = () => (sprecher = satzSprecher((satz) => anruferSagt(satz, stimme, k.id)));

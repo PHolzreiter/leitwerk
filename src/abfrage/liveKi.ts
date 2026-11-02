@@ -1,11 +1,11 @@
 /**
  * Cloud-Anrufer (Test): Gemini Live von Google mit dem eigenen, kostenlosen Schlüssel des Spielers.
- * Die Leitstelle fragt wie bisher (Knopf, Tippen oder Spracheingabe); Gemini antwortet direkt mit Stimme.
+ * Fragen kommen als Text (Knopf, Tippen), als Sprache mit der Sprechtaste oder – beim Freisprechen –
+ * laufend vom Mikrofon. Gemini antwortet direkt mit Stimme; die Mitschrift kommt ins Gespräch.
  * Der Schlüssel liegt nur auf diesem Rechner (localStorage) und wird nur an Google geschickt.
  */
 import { invoke } from "@tauri-apps/api/core";
 import { inTauri } from "../platform";
-import { sim, type Einsatz } from "../sim/engine";
 import { aufnahmeLaeuftJetzt, sprachPrefs, verstummHoerer } from "../ui/sprache";
 
 const LS = "leitwerk.gemini";
@@ -16,10 +16,14 @@ export interface LivePrefs {
   /** Anrufer über Gemini Live statt der lokalen KI */
   an: boolean;
   schluessel: string;
+  /** ohne Sprechtaste reden – Gemini erkennt selbst, wann du fertig bist */
+  freisprechen: boolean;
+  /** Anruferstimme klingt nach Telefon, dazu Geräusche vom Notfallort */
+  klang: boolean;
 }
 
 export function livePrefs(): LivePrefs {
-  const d: LivePrefs = { an: false, schluessel: "" };
+  const d: LivePrefs = { an: false, schluessel: "", freisprechen: false, klang: true };
   try {
     return { ...d, ...(JSON.parse(localStorage.getItem(LS) ?? "{}") as Partial<LivePrefs>) };
   } catch {
@@ -33,13 +37,21 @@ export function setLivePrefs(p: Partial<LivePrefs>): void {
   } catch {
     /* egal */
   }
-  if (p.an === false || p.schluessel !== undefined) alleSchliessen();
+  if (p.an === false || p.schluessel !== undefined || p.freisprechen !== undefined) alleSchliessen();
+  for (const f of prefsHoerer) f();
 }
+export const prefsHoerer = new Set<() => void>();
 
 /** Soll dieser Anruf über Gemini Live laufen? */
 export function liveAktiv(): boolean {
   const p = livePrefs();
-  return p.an && p.schluessel.trim().length > 10 && typeof WebSocket !== "undefined";
+  return p.an && p.schluessel.trim().length > 10 && typeof WebSocket !== "undefined" && Date.now() >= gesperrtBis;
+}
+
+/** nach einem Fehler eine Weile die lokale KI bzw. Erkennung verwenden */
+let gesperrtBis = 0;
+export function liveSperren(ms = 60000): void {
+  gesperrtBis = Date.now() + ms;
 }
 
 // Stimmen von Gemini (Frauen- und Männerstimmen)
@@ -52,14 +64,28 @@ function stimmeFuer(g: "w" | "m" | undefined, id: string): string {
   return pool[h % pool.length];
 }
 
+export interface LiveErgebnis {
+  /** was der Anrufer gesagt hat */
+  text: string;
+  /** was die Leitstelle gesagt hat (Text oder Mitschrift) */
+  frage: string;
+  ersterTon: number;
+  fertig: number;
+  tokens?: number;
+  /** der Anrufer hat von sich aus gesprochen (Hinweis, Korrektur) */
+  spontan?: boolean;
+  /** die Leitstelle hat ihn unterbrochen */
+  unterbrochen?: boolean;
+}
+
 interface Runde {
   text: string;
-  /** Mitschrift dessen, was die Leitstelle gesagt hat (bei Sprache) */
   frage: string;
-  /** von Google gemeldete Tokens dieser Runde */
   tokens?: number;
   /** Leitstelle hat gesprochen (Mitschrift kann etwas nach der Antwort kommen) */
   audio?: boolean;
+  spontan?: boolean;
+  unterbrochen?: boolean;
   onText?: (t: string) => void;
   fertig: (text: string) => void;
   fehler: (e: Error) => void;
@@ -67,7 +93,43 @@ interface Runde {
   start: number;
 }
 
-/** Wiedergabe: Stücke sammeln und der Reihe nach abspielen (möglichst wenige Lücken) */
+/** Telefonklang: Bandpass 300–3400 Hz (wie eine Telefonleitung) und ein leises Rauschen */
+class Telefonfilter {
+  private hp = { x1: 0, x2: 0, y1: 0, y2: 0 };
+  private tp = { x1: 0, x2: 0, y1: 0, y2: 0 };
+  private kh: number[];
+  private kt: number[];
+  constructor(rate: number) {
+    const koeff = (f: number, hoch: boolean) => {
+      const w = (2 * Math.PI * f) / rate;
+      const a = Math.sin(w) / (2 * 0.707);
+      const c = Math.cos(w);
+      const b0 = hoch ? (1 + c) / 2 : (1 - c) / 2;
+      const b1 = hoch ? -(1 + c) : 1 - c;
+      const a0 = 1 + a;
+      return [b0 / a0, b1 / a0, b0 / a0, (-2 * c) / a0, (1 - a) / a0];
+    };
+    this.kh = koeff(300, true);
+    this.kt = koeff(Math.min(3400, rate / 2 - 100), false);
+  }
+  private stufe(x: number, z: { x1: number; x2: number; y1: number; y2: number }, k: number[]): number {
+    const y = k[0] * x + k[1] * z.x1 + k[2] * z.x2 - k[3] * z.y1 - k[4] * z.y2;
+    z.x2 = z.x1;
+    z.x1 = x;
+    z.y2 = z.y1;
+    z.y1 = y;
+    return y;
+  }
+  verarbeiten(f: Float32Array): Float32Array {
+    for (let i = 0; i < f.length; i++) {
+      const y = this.stufe(this.stufe(f[i], this.hp, this.kh), this.tp, this.kt);
+      f[i] = Math.max(-1, Math.min(1, y * 1.15 + (Math.random() - 0.5) * 0.004));
+    }
+    return f;
+  }
+}
+
+/** Wiedergabe: Stücke sammeln und der Reihe nach abspielen */
 class Wiedergabe {
   private stuecke: Float32Array[] = [];
   private laeuft = false;
@@ -75,14 +137,18 @@ class Wiedergabe {
   private zaehler = 0;
   private ctx: AudioContext | null = null;
   private webZeit = 0;
+  private filter: Telefonfilter | null;
   abgebrochen = false;
-  constructor(private rate: number) {}
+  constructor(private rate: number) {
+    this.filter = livePrefs().klang ? new Telefonfilter(rate) : null;
+  }
 
   dazu(pcm16: Int16Array, rate: number): void {
     if (this.abgebrochen) return;
     this.rate = rate;
     const f = new Float32Array(pcm16.length);
     for (let i = 0; i < pcm16.length; i++) f[i] = pcm16[i] / 32768;
+    this.filter?.verarbeiten(f);
     // ohne eigenes Ausgabegerät lückenlos über WebAudio, sonst über das gewählte Gerät
     if (!inTauri() || !sprachPrefs().geraetStimmen) {
       if (aufnahmeLaeuftJetzt()) return this.stopp();
@@ -142,7 +208,7 @@ class Wiedergabe {
     }
   }
 
-  /** im Browser: lückenlos über WebAudio */
+  /** WebAudio: lückenlos */
   private web(f: Float32Array): void {
     if (!this.ctx) {
       this.ctx = new AudioContext({ sampleRate: this.rate });
@@ -168,12 +234,17 @@ function b64ZuInt16(b64: string): Int16Array {
   return new Int16Array(u.buffer);
 }
 
-export interface LiveErgebnis {
-  text: string;
-  frage: string;
-  ersterTon: number;
-  fertig: number;
-  tokens?: number;
+export interface SitzungOpt {
+  id: string;
+  system: string;
+  geschlecht?: "w" | "m";
+  verlauf: { von: string; text: string }[];
+  /** läuft der Anruf noch? (sonst wird die Verbindung geschlossen) */
+  aktiv: () => boolean;
+  /** Freisprechen: Gemini erkennt selbst, wann die Leitstelle fertig ist */
+  frei?: boolean;
+  /** Antworten, die nicht auf eine Frage per Knopf/Taste kommen (Freisprechen, von sich aus) */
+  ereignis?: (r: LiveErgebnis) => void;
 }
 
 class Sitzung {
@@ -189,13 +260,17 @@ class Sitzung {
   istBereit = false;
   private warteschlange: string[] = [];
   systemText: string;
+  /** Mitschrift beim Freisprechen, bis der Anrufer antwortet */
+  private hoer = "";
+  private hoerEnde = 0;
 
-  constructor(public id: string, system: string, stimme: string, verlauf: { von: string; text: string }[]) {
-    this.systemText = system;
+  constructor(public opt: SitzungOpt) {
+    this.systemText = opt.system;
     this.bereit = new Promise((ja, nein) => {
       this.bereitJa = ja;
       this.bereitNein = nein;
     });
+    this.bereit.catch(() => undefined);
     const ws = new WebSocket(`${URL_BASIS}?key=${encodeURIComponent(livePrefs().schluessel.trim())}`);
     this.ws = ws;
     const zeit = setTimeout(() => this.bereitNein(new Error("Gemini antwortet nicht (Zeitüberschreitung)")), 12000);
@@ -204,12 +279,14 @@ class Sitzung {
         JSON.stringify({
           setup: {
             model: `models/${LIVE_MODELL}`,
-            generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: stimme } } } },
-            systemInstruction: { parts: [{ text: `${system}\nDu sprichst Deutsch mit österreichischer Färbung, wie am Telefon. Du antwortest NUR als Anrufer – Hinweise in eckigen Klammern sind nur für dich und werden nie vorgelesen.\nDU HÖRST DIE LEITSTELLE AM TELEFON: Antworte wie ein Mensch am Telefon – meist ein kurzer Satz, keine Aufzählungen, nichts vorlesen. Deine Stimme passt zu deiner Stimmung (aufgeregt = schneller und höher, panisch = abgehackt, ruhig = gelassen). Hast du die Leitstelle akustisch nicht verstanden oder ergibt die Frage keinen Sinn, frag kurz nach („Wie bitte?“, „Was meinen Sie?“) statt zu raten. Fragt die Leitstelle etwas, das nicht in deinen Angaben steht, sagst du, dass du es nicht weißt.` }] },
+            generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: stimmeFuer(opt.geschlecht, opt.id) } } } },
+            systemInstruction: { parts: [{ text: `${opt.system}\n${ZUSATZ}` }] },
             outputAudioTranscription: {},
             inputAudioTranscription: {},
-            // Sprechtaste: wir sagen selbst, wann die Leitstelle zu reden beginnt und aufhört
-            realtimeInputConfig: { automaticActivityDetection: { disabled: true } },
+            // Sprechtaste: wir sagen selbst, wann die Leitstelle redet; Freisprechen: Gemini erkennt es selbst
+            ...(opt.frei
+              ? { realtimeInputConfig: { automaticActivityDetection: { disabled: false, endOfSpeechSensitivity: "END_SENSITIVITY_LOW", silenceDurationMs: 700 } } }
+              : { realtimeInputConfig: { automaticActivityDetection: { disabled: true } } }),
           },
         }),
       );
@@ -222,65 +299,14 @@ class Sitzung {
       } catch {
         return;
       }
-      if (m.setupComplete) {
-        clearTimeout(zeit);
-        // bisheriges Gespräch nachreichen (z. B. nach einer neuen Verbindung)
-        const turns = verlauf
-          .filter((x) => x.von === "leitstelle" || x.von === "anrufer")
-          .map((x) => ({ role: x.von === "anrufer" ? "model" : "user", parts: [{ text: x.von === "anrufer" ? x.text : `Leitstelle: ${x.text}` }] }));
-        if (turns.length) ws.send(JSON.stringify({ clientContent: { turns, turnComplete: false } }));
-        this.istBereit = true;
-        for (const w of this.warteschlange) ws.send(w);
-        this.warteschlange = [];
-        this.bereitJa();
-        return;
-      }
-      if (m.goAway) {
-        // Verbindung läuft bald ab – nächste Frage baut neu auf
-        this.geschlossen = true;
-        return;
-      }
-      const nutzung = m.usageMetadata as { totalTokenCount?: number } | undefined;
-      if (nutzung?.totalTokenCount && this.runde) this.runde.tokens = nutzung.totalTokenCount;
-      const sc = m.serverContent as
-        | { modelTurn?: { parts?: { inlineData?: { mimeType?: string; data?: string } }[] }; outputTranscription?: { text?: string }; inputTranscription?: { text?: string }; turnComplete?: boolean; interrupted?: boolean }
-        | undefined;
-      if (!sc || !this.runde) return;
-      const r = this.runde;
-      if (sc.inputTranscription?.text) r.frage += sc.inputTranscription.text;
-      for (const p of sc.modelTurn?.parts ?? []) {
-        if (!p.inlineData?.data) continue;
-        const rate = Number(/rate=(\d+)/.exec(p.inlineData.mimeType ?? "")?.[1] ?? 24000);
-        if (!r.ersterTon) r.ersterTon = Date.now() - r.start;
-        if (sprachPrefs().vorlesen) {
-          this.ton ??= new Wiedergabe(rate);
-          this.ton.dazu(b64ZuInt16(p.inlineData.data), rate);
-        }
-      }
-      if (sc.outputTranscription?.text) {
-        r.text += sc.outputTranscription.text;
-        r.onText?.(sc.outputTranscription.text);
-      }
-      if (sc.interrupted) this.ton?.stopp();
-      if (sc.turnComplete) {
-        this.ton?.fertig();
-        this.ausklang = this.ton;
-        this.ton = null;
-        const abschluss = () => {
-          if (this.runde === r) this.runde = null;
-          r.fertig(r.text.replace(/\s+/g, " ").trim());
-        };
-        // die Mitschrift der Leitstelle kommt manchmal erst knapp nach der Antwort
-        if (r.audio && !r.frage.trim()) setTimeout(abschluss, 600);
-        else abschluss();
-      }
+      this.empfangen(m, zeit);
     };
     ws.onerror = () => undefined;
     ws.onclose = (ev) => {
       clearTimeout(zeit);
       this.geschlossen = true;
       const grund = ev.reason ? `: ${ev.reason}` : "";
-      const fehler = new Error(/api key|key not valid|permission|unauth/i.test(ev.reason) ? "Gemini-Schlüssel ungültig – bitte in den Einstellungen prüfen" : /quota|exhausted|rate/i.test(ev.reason) ? "Gratis-Kontingent von Gemini aufgebraucht – später nochmal oder lokale KI verwenden" : `Verbindung zu Gemini beendet (${ev.code}${grund})`);
+      const fehler = new Error(/api key|key not valid|permission|unauth/i.test(ev.reason) ? "Gemini-Schlüssel ungültig – bitte in den Einstellungen prüfen" : /quota|exhausted|rate/i.test(ev.reason) ? "Kontingent von Gemini gerade erschöpft – kurz warten oder lokale KI verwenden" : `Verbindung zu Gemini beendet (${ev.code}${grund})`);
       this.bereitNein(fehler);
       if (this.runde) {
         const r = this.runde;
@@ -291,11 +317,107 @@ class Sitzung {
     };
   }
 
+  private empfangen(m: Record<string, unknown>, zeit: ReturnType<typeof setTimeout>): void {
+    const ws = this.ws!;
+    if (m.setupComplete) {
+      clearTimeout(zeit);
+      // bisheriges Gespräch nachreichen (z. B. nach einer neuen Verbindung)
+      const turns = this.opt.verlauf
+        .filter((x) => x.von === "leitstelle" || x.von === "anrufer")
+        .map((x) => ({ role: x.von === "anrufer" ? "model" : "user", parts: [{ text: x.von === "anrufer" ? x.text : `Leitstelle: ${x.text}` }] }));
+      if (turns.length) ws.send(JSON.stringify({ clientContent: { turns, turnComplete: false } }));
+      this.istBereit = true;
+      for (const w of this.warteschlange) ws.send(w);
+      this.warteschlange = [];
+      this.bereitJa();
+      return;
+    }
+    if (m.goAway) {
+      // Verbindung läuft bald ab – die nächste Frage baut neu auf
+      this.geschlossen = true;
+      return;
+    }
+    const nutzung = m.usageMetadata as { totalTokenCount?: number } | undefined;
+    if (nutzung?.totalTokenCount && this.runde) this.runde.tokens = nutzung.totalTokenCount;
+    const sc = m.serverContent as
+      | { modelTurn?: { parts?: { inlineData?: { mimeType?: string; data?: string } }[] }; outputTranscription?: { text?: string }; inputTranscription?: { text?: string }; turnComplete?: boolean; interrupted?: boolean }
+      | undefined;
+    if (!sc) return;
+    if (sc.inputTranscription?.text) {
+      if (this.runde) this.runde.frage += sc.inputTranscription.text;
+      else {
+        this.hoer += sc.inputTranscription.text;
+        this.hoerEnde = Date.now();
+      }
+    }
+    const spricht = (sc.modelTurn?.parts ?? []).some((p) => p.inlineData?.data) || !!sc.outputTranscription?.text;
+    // Anrufer spricht, ohne dass eine Frage per Knopf/Taste offen ist: Freisprechen oder von sich aus
+    if (spricht && !this.runde && this.opt.ereignis) {
+      const frage = this.hoer;
+      this.hoer = "";
+      const start = this.hoerEnde || Date.now();
+      const runde: Runde = {
+        text: "",
+        frage,
+        start,
+        audio: !!frage || !!this.opt.frei,
+        spontan: !frage,
+        fertig: (t) => this.opt.ereignis?.({ text: t, frage: runde.frage.replace(/\s+/g, " ").trim(), ersterTon: runde.ersterTon ?? 0, fertig: Date.now() - start, tokens: runde.tokens, spontan: runde.spontan && !runde.frage.trim(), unterbrochen: runde.unterbrochen }),
+        fehler: () => undefined,
+      };
+      this.runde = runde;
+    }
+    const r = this.runde;
+    if (!r) return;
+    for (const p of sc.modelTurn?.parts ?? []) {
+      if (!p.inlineData?.data) continue;
+      const rate = Number(/rate=(\d+)/.exec(p.inlineData.mimeType ?? "")?.[1] ?? 24000);
+      if (!r.ersterTon) r.ersterTon = Date.now() - r.start;
+      if (sprachPrefs().vorlesen) {
+        this.ton ??= new Wiedergabe(rate);
+        this.ton.dazu(b64ZuInt16(p.inlineData.data), rate);
+      }
+    }
+    if (sc.outputTranscription?.text) {
+      r.text += sc.outputTranscription.text;
+      r.onText?.(sc.outputTranscription.text);
+    }
+    if (sc.interrupted) {
+      // die Leitstelle redet dazwischen
+      this.ton?.stopp();
+      this.ton = null;
+      r.unterbrochen = true;
+    }
+    if (sc.turnComplete || sc.interrupted) {
+      this.ton?.fertig();
+      this.ausklang = this.ton;
+      this.ton = null;
+      const abschluss = () => {
+        if (this.runde === r) this.runde = null;
+        const t = r.text.replace(/\s+/g, " ").trim();
+        r.fertig(r.unterbrochen && t ? `${t.replace(/[.!?…]*$/, "")} …` : t);
+      };
+      // die Mitschrift der Leitstelle kommt manchmal erst knapp nach der Antwort
+      if (r.audio && !r.frage.trim() && !this.opt.frei) setTimeout(abschluss, 600);
+      else abschluss();
+    }
+  }
+
   /** senden – vor dem Verbindungsaufbau kommt es in die Warteschlange */
   senden(o: unknown): void {
     const t = JSON.stringify(o);
     if (this.istBereit && this.ws?.readyState === WebSocket.OPEN) this.ws.send(t);
     else if (!this.geschlossen) this.warteschlange.push(t);
+  }
+
+  /** Freisprechen: Ton laufend an Gemini */
+  stueck(b64: string): void {
+    this.senden({ realtimeInput: { audio: { data: b64, mimeType: "audio/pcm;rate=16000" } } });
+  }
+
+  /** Nur für den Anrufer: Hinweis (z. B. Lage geändert, Korrektur). sprechen = er soll gleich darauf reagieren */
+  hinweis(text: string, sprechen: boolean): void {
+    this.senden({ clientContent: { turns: [{ role: "user", parts: [{ text }] }], turnComplete: sprechen } });
   }
 
   /** Leitstelle spricht (Sprechtaste): Ton geht direkt an Gemini; ende() schickt ab und wartet auf die Antwort */
@@ -315,13 +437,13 @@ class Sitzung {
       onText,
       start,
       audio: true,
-      fertig: (t) => ja({ text: t, frage: runde.frage.replace(/\s+/g, " ").trim(), ersterTon: runde.ersterTon ?? Date.now() - start, fertig: Date.now() - start, tokens: runde.tokens }),
+      fertig: (t) => ja({ text: t, frage: runde.frage.replace(/\s+/g, " ").trim(), ersterTon: runde.ersterTon ?? Date.now() - start, fertig: Date.now() - start, tokens: runde.tokens, unterbrochen: runde.unterbrochen }),
       fehler: (e) => nein(e),
     };
     this.runde = runde;
     this.senden({ realtimeInput: { activityStart: {} } });
     return {
-      stueck: (b64) => this.senden({ realtimeInput: { audio: { data: b64, mimeType: "audio/pcm;rate=16000" } } }),
+      stueck: (b64) => this.stueck(b64),
       ende: async () => {
         start = Date.now();
         runde.start = start;
@@ -339,7 +461,7 @@ class Sitzung {
     };
   }
 
-  async frage(text: string, onText?: (t: string) => void): Promise<LiveErgebnis> {
+  async frage(text: string, onText?: (t: string) => void, anzeige = text): Promise<LiveErgebnis> {
     await this.bereit;
     if (this.geschlossen || !this.ws || this.ws.readyState !== WebSocket.OPEN) throw new Error("Gemini-Verbindung ist zu");
     this.verstummen();
@@ -347,10 +469,10 @@ class Sitzung {
     return new Promise((ja, nein) => {
       const runde: Runde = {
         text: "",
-        frage: text,
+        frage: anzeige,
         onText,
         start,
-        fertig: (t) => ja({ text: t, frage: text, ersterTon: runde.ersterTon ?? Date.now() - start, fertig: Date.now() - start, tokens: runde.tokens }),
+        fertig: (t) => ja({ text: t, frage: anzeige, ersterTon: runde.ersterTon ?? Date.now() - start, fertig: Date.now() - start, tokens: runde.tokens }),
         fehler: nein,
       };
       this.runde = runde;
@@ -384,6 +506,14 @@ class Sitzung {
   }
 }
 
+/** gilt für alle Cloud-Anrufer zusätzlich zur Anweisung des Falls */
+const ZUSATZ = [
+  "Du sprichst Deutsch mit österreichischer Färbung, wie am Telefon. Du antwortest NUR als Anrufer – Hinweise in eckigen Klammern sind nur für dich und werden nie vorgelesen.",
+  "DU HÖRST DIE LEITSTELLE AM TELEFON: Antworte wie ein Mensch am Telefon – meist ein kurzer Satz, keine Aufzählungen, nichts vorlesen. Deine Stimme passt zu deiner Stimmung (aufgeregt = schneller und höher, panisch = abgehackt, ruhig = gelassen).",
+  "Hast du die Leitstelle akustisch nicht verstanden oder ergibt die Frage keinen Sinn, frag kurz nach („Wie bitte?“, „Was meinen Sie?“) statt zu raten. Fragt die Leitstelle etwas, das nicht in deinen Angaben steht, sagst du, dass du es nicht weißt.",
+  "Redet die Leitstelle dazwischen, hörst du sofort auf und gehst auf das Neue ein.",
+].join("\n");
+
 const sitzungen = new Map<string, Sitzung>();
 
 function alleSchliessen(): void {
@@ -391,48 +521,46 @@ function alleSchliessen(): void {
   sitzungen.clear();
 }
 
-/** Verbindung für einen Anruf (wird wiederverwendet; neu, wenn sie zu ist oder sich die Anweisung geändert hat) */
-function sitzungFuer(e: Einsatz, system: string, geschlecht: "w" | "m" | undefined): Sitzung {
-  const alt = sitzungen.get(e.id);
-  if (alt && !alt.geschlossen && alt.systemText === system) return alt;
+/** Verbindung für einen Anruf (wird wiederverwendet; neu, wenn sie zu ist oder Freisprechen umgeschaltet wurde) */
+export function sitzungFuer(o: SitzungOpt): Sitzung {
+  const alt = sitzungen.get(o.id);
+  if (alt && !alt.geschlossen && !!alt.opt.frei === !!o.frei) {
+    // Anweisung hat sich geändert (z. B. Maßnahme): Gemini bekommt nur den neuen Stand, die Verbindung bleibt
+    if (alt.systemText !== o.system) alt.systemText = o.system;
+    if (o.ereignis) alt.opt.ereignis = o.ereignis;
+    return alt;
+  }
   alt?.schliessen();
   beobachten();
-  const s = new Sitzung(e.id, system, stimmeFuer(geschlecht, e.id), e.anruf?.gespraech ?? []);
-  sitzungen.set(e.id, s);
+  const s = new Sitzung(o);
+  sitzungen.set(o.id, s);
   return s;
 }
 
-/** Schon beim Abheben verbinden, damit die erste Antwort nicht auf den Aufbau wartet */
-export function liveVorbereiten(e: Einsatz, system: string, geschlecht: "w" | "m" | undefined): void {
-  if (!liveAktiv()) return;
-  sitzungFuer(e, system, geschlecht).bereit.catch(() => undefined);
+export function sitzungDa(id: string): Sitzung | null {
+  const s = sitzungen.get(id);
+  return s && !s.geschlossen ? s : null;
 }
 
 /** Frage an den Cloud-Anrufer; die Antwort wird gleich gesprochen, onText zeigt sie live an */
-export async function liveFrage(e: Einsatz, system: string, geschlecht: "w" | "m" | undefined, text: string, onText?: (t: string) => void): Promise<LiveErgebnis> {
-  let s = sitzungFuer(e, system, geschlecht);
+export async function liveFrage(o: SitzungOpt, text: string, onText?: (t: string) => void, anzeige = text): Promise<LiveErgebnis> {
+  let s = sitzungFuer(o);
   try {
-    return await s.frage(text, onText);
+    return await s.frage(text, onText, anzeige);
   } catch (err) {
     // einmal neu verbinden (Verbindung abgelaufen o. Ä.), außer der Schlüssel ist falsch
     if (/Schlüssel|Kontingent/.test(String((err as Error).message))) throw err;
     s.schliessen();
-    sitzungen.delete(e.id);
-    s = sitzungFuer(e, system, geschlecht);
-    return s.frage(text, onText);
+    sitzungen.delete(o.id);
+    s = sitzungFuer({ ...o, verlauf: o.verlauf });
+    return s.frage(text, onText, anzeige);
   }
 }
 
-/** Leitstelle spricht direkt zu Gemini (Sprechtaste); null, wenn die Cloud gerade gesperrt ist */
-export function liveSprechen(e: Einsatz, system: string, geschlecht: "w" | "m" | undefined, onText?: (t: string) => void): { stueck(b64: string): void; ende(): Promise<LiveErgebnis> } | null {
-  if (!liveAktiv() || Date.now() < gesperrtBis) return null;
-  return sitzungFuer(e, system, geschlecht).sprechen(onText);
-}
-
-/** nach einem Fehler eine Weile die eigene Spracherkennung verwenden */
-let gesperrtBis = 0;
-export function liveSperren(ms = 60000): void {
-  gesperrtBis = Date.now() + ms;
+/** Leitstelle spricht mit der Sprechtaste direkt zu Gemini */
+export function liveSprechen(o: SitzungOpt, onText?: (t: string) => void): { stueck(b64: string): void; ende(): Promise<LiveErgebnis> } | null {
+  if (!liveAktiv()) return null;
+  return sitzungFuer(o).sprechen(onText);
 }
 
 /** Anrufer verstummt (z. B. Leitstelle redet dazwischen) */
@@ -442,7 +570,7 @@ export function liveVerstummen(id?: string): void {
 
 /** Verbindung kurz testen (Einstellungen) */
 export async function liveTesten(): Promise<string> {
-  const s = new Sitzung(`test-${Date.now()}`, "Du bist ein freundlicher Mensch am Telefon. Antworte sehr kurz auf Deutsch.", "Kore", []);
+  const s = new Sitzung({ id: `test-${Date.now()}`, system: "Du bist ein freundlicher Mensch am Telefon. Antworte sehr kurz auf Deutsch.", verlauf: [], aktiv: () => true });
   try {
     const r = await s.frage("Sag bitte nur: Verbindung steht.");
     return `${r.text || "(ohne Text)"} – erster Ton nach ${(r.ersterTon / 1000).toFixed(1)} s`;
@@ -451,20 +579,21 @@ export async function liveTesten(): Promise<string> {
   }
 }
 
-// aufgelegt oder beendet: Verbindung schließen (erst bei der ersten Verbindung anmelden – beim Laden ist sim noch nicht da)
+/** Anruf vorbei: Verbindungen schließen (regelmäßig und bei jeder Änderung) */
+export function liveAufraeumen(): void {
+  for (const [id, s] of sitzungen) {
+    if (!s.opt.aktiv()) {
+      s.schliessen();
+      sitzungen.delete(id);
+    }
+  }
+}
+
 let beobachtet = false;
 function beobachten(): void {
   if (beobachtet) return;
   beobachtet = true;
   // Sprechtaste gedrückt oder aufgelegt: Anrufer verstummt sofort
   verstummHoerer.add(() => liveVerstummen());
-  sim.onChange(() => {
-    for (const [id, s] of sitzungen) {
-      const e = sim.state.einsaetze.find((x) => x.id === id);
-      if (!e?.anruf || e.anruf.status !== "aktiv") {
-        s.schliessen();
-        sitzungen.delete(id);
-      }
-    }
-  });
+  setInterval(liveAufraeumen, 2000);
 }
