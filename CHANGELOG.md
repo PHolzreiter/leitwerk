@@ -1,5 +1,11 @@
 # Änderungen
 
+## 0.96.0 – Test: Cloud-Anrufer mit Gemini Live
+- **Neu in Einstellungen → KI: „Cloud-Anrufer (Test)“.** Statt der KI auf deinem Rechner antwortet Gemini Live von Google – mit eigener, natürlicher Stimme und meist schneller. Du brauchst dafür einen kostenlosen Schlüssel von aistudio.google.com („Get API key“), den du dort einträgst; er bleibt nur auf deinem Rechner. „Verbindung testen“ zeigt, ob alles passt
+- Fragen per Knopf, Tippen oder Sprache funktionieren wie bisher. Die Antwort steht als Text im Gespräch und wird gleich gesprochen; drückst du die Sprechtaste, verstummt der Anrufer
+- Ist der Schlüssel falsch, das Tageslimit des Gratis-Zugangs erreicht oder die Verbindung weg, antwortet automatisch die lokale KI – mit einer kurzen Meldung
+- Im Gratis-Zugang darf Google die Gespräche zum Verbessern verwenden. Antwortzeiten stehen wie gewohnt im Gesprächsexport
+
 ## 0.95.1 – KI wieder schnell
 - Der „Denkmodus“ der KI wird jetzt bei allen Modellen abgeschaltet, nicht nur bei Qwen3. Gemma 4 hat vorher vor jeder Antwort still nachgedacht – das dauerte 20 Sekunden und mehr, und oft blieb dann nur eine einfache Ersatzantwort übrig
 - Beim Wechsel des Sprachmodells wird das alte aus dem Speicher genommen. Vorher blieben beide bis zu einer Stunde geladen und haben sich den Grafikspeicher geteilt – dadurch wurde auch das alte Modell langsam

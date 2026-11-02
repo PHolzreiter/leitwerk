@@ -3,6 +3,7 @@
  * Anweisung an die KI, Protokoll) als Textdatei – zum Weitergeben, damit man Gespräche verbessern kann.
  */
 import { antwortZeiten, kontext } from "../abfrage/gespraech";
+import { liveAktiv, LIVE_MODELL } from "../abfrage/liveKi";
 import { erkennZeit, sprachPrefs } from "./sprache";
 import { kiBereit, kiPrefs } from "../abfrage/ki";
 import { ktPrompt } from "../abfrage/ktGespraech";
@@ -31,7 +32,7 @@ function kopf(titel: string, nummer: string, art: string): string[] {
     `- Titel: ${titel}`,
     `- Programmversion: ${version()}`,
     `- Exportiert: ${zeit(Date.now())} (echte Zeit), Spielzeit ${zeit(sim.state.zeit)}`,
-    `- Anrufer-Antworten: ${kiBereit() ? `KI (${kiPrefs().modell})` : "feste Antworten (keine KI)"}`,
+    `- Anrufer-Antworten: ${liveAktiv() ? `Cloud (${LIVE_MODELL}), Rückfall: ` : ""}${kiBereit() ? `KI (${kiPrefs().modell})` : "feste Antworten (keine KI)"}`,
     `- Spielmodus: ${sim.mode}`,
     `- Schnelles Gespräch (Test): ${kiPrefs().schnell ? "ein" : "aus"} · Spracherkennung: ${sprachPrefs().modell}${erkennZeit ? ` (zuletzt ${erkennZeit} ms)` : ""}`,
     ...(antwortZeiten.length

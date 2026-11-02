@@ -1,5 +1,14 @@
 [
  {
+  "version": "0.96.0",
+  "datum": "2026-11-02",
+  "titel": "Test: Cloud-Anrufer mit Gemini Live",
+  "punkte": [
+   "Anrufer über Gemini Live mit eigener Stimme (Einstellungen → KI, kostenloser Schlüssel)",
+   "Fällt die Cloud aus, antwortet automatisch die lokale KI"
+  ]
+ },
+ {
   "version": "0.95.1",
   "datum": "2026-11-02",
   "titel": "KI wieder schnell",

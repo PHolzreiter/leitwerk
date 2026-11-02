@@ -358,7 +358,9 @@ function sagen(text: string, g: "w" | "m", schluessel: string, rate: number, emo
 }
 
 /** Alles Vorlesen sofort beenden (Auflegen, Sprechtaste gedrückt) */
+export const verstummHoerer = new Set<() => void>();
 export function verstummen(): void {
+  for (const f of verstummHoerer) f();
   spricht = 0;
   generation++;
   synth?.cancel();

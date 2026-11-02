@@ -8,6 +8,7 @@ import { sim, type Einsatz } from "../sim/engine";
 import { antwortOhneKi, erinnerung, werText, ersterSatzOhneKi, istBekannt, sprachFilter, systemPrompt, zusammenfassungPruefen, type AnrufKontext } from "./anrufer";
 import { kiBereit, kiPrefs, kiStatus, type KiNachricht } from "./ki";
 import { kiAntwortNeu, nachrichtArt, ohneVorspann } from "./runde";
+import { liveAktiv, liveFrage } from "./liveKi";
 import { inTauri } from "../platform";
 import { fragenImAblauf, type Frage } from "./schema";
 import { anruferSagt, satzSprecher } from "../ui/sprache";
@@ -163,6 +164,22 @@ export async function fragen(e: Einsatz, text: string, schemaFrage?: Frage, onTo
       gefragt.get(e.id)!.add(schemaFrage.id);
     }
     const quelle = { wert: "ki" as "ki" | "fest" };
+    // Cloud-Anrufer (Gemini Live): antwortet direkt mit eigener Stimme
+    const art = k.anrufer.art ?? "privat";
+    if (liveAktiv() && art !== "ecall" && art !== "leitstelle") {
+      const verlauf = kiVerlauf(e, k, text, schemaFrage, wiederholt);
+      const letzte = verlauf[verlauf.length - 1].content;
+      try {
+        const r = await liveFrage(e, systemFuer(e, k), k.anrufer.geschlecht, letzte, onToken);
+        zeitMerken({ frage: text, ersterSatz: r.ersterTon, fertig: r.fertig, modus: "Gemini Live" });
+        if (r.text) await sim.call("anrufNachricht", e.id, "anrufer", r.text, "ki");
+        return;
+      } catch (err) {
+        // Cloud geht nicht: diese Antwort kommt von der lokalen KI
+        console.warn("Gemini Live", err);
+        liveFehlerMelden(String((err as Error).message ?? err));
+      }
+    }
     // fertige Sätze schon vorlesen, während die KI noch schreibt
     const sprecher = satzSprecher((satz) => e.anruf?.status === "aktiv" && anruferSagt(satz, k.anrufer, e.id));
     const start = Date.now();
@@ -838,4 +855,11 @@ function zeitMerken(z: AntwortZeit): void {
   antwortZeiten.push(z);
   if (antwortZeiten.length > 100) antwortZeiten.shift();
   console.info(`[Antwortzeit] ${z.modus}: erster Satz ${z.ersterSatz} ms, fertig ${z.fertig} ms – „${z.frage.slice(0, 40)}“`);
+}
+
+let liveFehlerZuletzt = 0;
+function liveFehlerMelden(t: string): void {
+  if (Date.now() - liveFehlerZuletzt < 20000) return;
+  liveFehlerZuletzt = Date.now();
+  void import("../ui/dom").then((m) => m.toast(`${t} – Antwort kommt von der lokalen KI`, "error"));
 }

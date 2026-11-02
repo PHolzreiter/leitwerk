@@ -1,5 +1,6 @@
 /** Einstellungen → „KI-Anrufer“: Ollama installieren/starten, Modell laden, Test. */
 import { store } from "../data/store";
+import { livePrefs, liveTesten, LIVE_MODELL, setLivePrefs } from "../abfrage/liveKi";
 import { MODELLE, STUFE_LABEL, empfohleneStufe, kiBeenden, kiChat, kiInstallieren, kiModellLaden, kiModellLoeschen, kiPrefs, kiStarten, kiStatus, rechnerRam, setKiPrefs, type KiStatus } from "../abfrage/ki";
 import { inTauri } from "../platform";
 import type { Settings } from "../sim/settings";
@@ -57,6 +58,41 @@ export function buildKiSection(sec: HTMLElement, draft: Settings): void {
   unv.addEventListener("change", () => store.setSettings({ ...store.settings, funkUnvollstaendig: unv.checked }));
   lg.append(el("label", { title: unv.title }, "Funkmeldungen manchmal unvollständig"), unv);
   sec.appendChild(lg);
+
+  // Cloud-Anrufer (Test): Gemini Live mit eigenem Gratis-Schlüssel
+  const lp = livePrefs();
+  const cloud = el("div", { class: "set-grid" });
+  const cloudAn = el("input", { type: "checkbox" }) as HTMLInputElement;
+  cloudAn.checked = lp.an;
+  cloudAn.addEventListener("change", () => setLivePrefs({ an: cloudAn.checked }));
+  const schl = el("input", { type: "password", placeholder: "AIza…", autocomplete: "off", spellcheck: "false" }) as HTMLInputElement;
+  schl.value = lp.schluessel;
+  schl.style.width = "22em";
+  schl.addEventListener("change", () => setLivePrefs({ schluessel: schl.value.trim() }));
+  const cloudTest = el("button", { class: "btn small", type: "button" }, "Verbindung testen");
+  const cloudErg = el("span", { class: "small muted" });
+  cloudTest.addEventListener("click", async () => {
+    setLivePrefs({ schluessel: schl.value.trim() });
+    cloudErg.textContent = "Verbinde …";
+    cloudTest.disabled = true;
+    try {
+      cloudErg.textContent = `✓ ${await liveTesten()}`;
+    } catch (err) {
+      cloudErg.textContent = `✗ ${(err as Error).message ?? err}`;
+    } finally {
+      cloudTest.disabled = false;
+    }
+  });
+  cloud.append(el("label", {}, "Anrufer über Gemini Live (Cloud) – spricht mit eigener Stimme"), cloudAn, el("label", {}, "Gemini-Schlüssel"), schl, el("span", {}), (() => { const w = el("span"); w.append(cloudTest, " ", cloudErg); return w; })());
+  sec.append(
+    el("h4", {}, "Cloud-Anrufer (Test)"),
+    el(
+      "p",
+      { class: "small muted" },
+      `Statt der KI auf deinem Rechner antwortet ${LIVE_MODELL} von Google – meist natürlicher und schneller. Dafür brauchst du einen kostenlosen Schlüssel: auf aistudio.google.com mit einem Google-Konto anmelden → „Get API key“ → „Create API key“ und hier einfügen. Der Schlüssel bleibt nur auf diesem Rechner. Im Gratis-Zugang darf Google die Gespräche zum Verbessern verwenden, und es gibt ein Tageslimit; ist es erreicht oder geht die Verbindung nicht, antwortet automatisch wieder die lokale KI. Fragen per Knopf, Tippen oder Sprache funktionieren wie bisher.`,
+    ),
+    cloud,
+  );
 
   // Sprachmodell nach Rechner-Stärke
   const modell = { value: p.modell };
