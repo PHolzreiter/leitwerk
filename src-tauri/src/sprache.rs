@@ -1,5 +1,6 @@
 //! Spracheingabe: Whisper (whisper.cpp) läuft lokal im Programm – ohne Internet.
 //! Das Sprachmodell wird einmalig von Hugging Face in den Datenordner geladen.
+//! Neu (Test): Parakeet TDT v3 über sherpa-onnx – deutlich schneller auf dem Prozessor, auch ohne Grafikkarte.
 
 use std::path::PathBuf;
 use std::sync::Mutex;
@@ -11,7 +12,91 @@ use tauri::Manager;
 use whisper_rs::{FullParams, SamplingStrategy, WhisperContext, WhisperContextParameters};
 
 /// Bekannte Modelle (Dateiname bei Hugging Face, ggerganov/whisper.cpp)
-const MODELLE: &[&str] = &["ggml-base.bin", "ggml-small.bin", "ggml-large-v3-turbo-q5_0.bin"];
+const MODELLE: &[&str] = &["ggml-base.bin", "ggml-small.bin", "ggml-large-v3-turbo-q5_0.bin", PARAKEET];
+
+/// Parakeet TDT 0.6B v3 (int8, mehrsprachig mit Deutsch) – Paket von sherpa-onnx, entpackt in einen eigenen Ordner
+const PARAKEET: &str = "parakeet-tdt-0.6b-v3";
+const PARAKEET_PAKET: &str = "sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8";
+
+/// geladene Parakeet-Erkennung (bleibt im Speicher)
+static PARAKEET_REC: Mutex<Option<sherpa_rs::transducer::TransducerRecognizer>> = Mutex::new(None);
+
+fn parakeet_da(dir: &std::path::Path) -> bool {
+    let d = dir.join(PARAKEET_PAKET);
+    ["encoder.int8.onnx", "decoder.int8.onnx", "joiner.int8.onnx", "tokens.txt"].iter().all(|f| d.join(f).is_file())
+}
+
+fn modell_da(dir: &std::path::Path, name: &str) -> bool {
+    if name == PARAKEET {
+        parakeet_da(dir)
+    } else {
+        dir.join(name).is_file()
+    }
+}
+
+fn parakeet_laden(dir: &std::path::Path) -> Result<(), String> {
+    let mut g = PARAKEET_REC.lock().map_err(|_| "Spracherkennung ist blockiert".to_string())?;
+    if g.is_some() {
+        return Ok(());
+    }
+    if !parakeet_da(dir) {
+        return Err("Sprachmodell ist noch nicht geladen (Einstellungen → Persönlich → Sprache)".into());
+    }
+    let d = dir.join(PARAKEET_PAKET);
+    let s = |f: &str| d.join(f).to_string_lossy().into_owned();
+    let threads = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(4).clamp(1, 8) as i32;
+    let cfg = sherpa_rs::transducer::TransducerConfig {
+        encoder: s("encoder.int8.onnx"),
+        decoder: s("decoder.int8.onnx"),
+        joiner: s("joiner.int8.onnx"),
+        tokens: s("tokens.txt"),
+        num_threads: threads,
+        sample_rate: 16_000,
+        feature_dim: 80,
+        model_type: "nemo_transducer".to_string(),
+        decoding_method: "greedy_search".to_string(),
+        ..Default::default()
+    };
+    let r = sherpa_rs::transducer::TransducerRecognizer::new(cfg).map_err(|e| format!("Sprachmodell lässt sich nicht laden: {e}"))?;
+    *g = Some(r);
+    Ok(())
+}
+
+fn parakeet_erkennen(dir: PathBuf, audio: Vec<f32>) -> Result<String, String> {
+    parakeet_laden(&dir)?;
+    let mut g = PARAKEET_REC.lock().map_err(|_| "Spracherkennung ist blockiert".to_string())?;
+    let r = g.as_mut().ok_or("Sprachmodell fehlt")?;
+    // kurze Stille davor und danach hilft dem Modell beim ersten und letzten Wort
+    let mut a = vec![0f32; 4800];
+    a.extend_from_slice(&audio);
+    a.extend(std::iter::repeat(0f32).take(4800));
+    Ok(r.transcribe(16_000, &a).trim().to_string())
+}
+
+/// Sprachmodell schon vor dem ersten Sprechen in den Speicher holen (sonst dauert die erste Erkennung länger)
+#[tauri::command]
+pub async fn sprache_vorladen(app: tauri::AppHandle, name: String) -> Result<(), String> {
+    pruefe_name(&name)?;
+    let dir = modell_ordner(&app)?;
+    if !modell_da(&dir, &name) {
+        return Ok(());
+    }
+    tauri::async_runtime::spawn_blocking(move || -> Result<(), String> {
+        if name == PARAKEET {
+            return parakeet_laden(&dir);
+        }
+        let mut k = KONTEXT.lock().map_err(|_| "Spracherkennung ist blockiert".to_string())?;
+        if k.as_ref().map(|(n, _)| n != &name).unwrap_or(true) {
+            let pfad = dir.join(&name);
+            let ctx = WhisperContext::new_with_params(pfad.to_str().ok_or("Ungültiger Pfad")?, WhisperContextParameters::default())
+                .map_err(|e| format!("Sprachmodell lässt sich nicht laden: {e:?}"))?;
+            *k = Some((name, ctx));
+        }
+        Ok(())
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
 
 /// geladenes Modell (Dateiname, Kontext) – bleibt im Speicher, damit die Erkennung schnell startet
 static KONTEXT: Mutex<Option<(String, WhisperContext)>> = Mutex::new(None);
@@ -47,7 +132,7 @@ pub fn sprache_status(app: tauri::AppHandle) -> Result<SpracheStatus, String> {
     let dir = modell_ordner(&app)?;
     let modelle = MODELLE
         .iter()
-        .filter(|m| dir.join(m).is_file())
+        .filter(|m| modell_da(&dir, m))
         .map(|m| m.to_string())
         .collect();
     Ok(SpracheStatus { modelle, ordner: dir.to_string_lossy().into_owned() })
@@ -67,7 +152,11 @@ pub async fn sprache_modell_laden(app: tauri::AppHandle, name: String, on_progre
     let dir = modell_ordner(&app)?;
     let ziel = dir.join(&name);
     let teil = dir.join(format!("{name}.teil"));
-    let url = format!("https://huggingface.co/ggerganov/whisper.cpp/resolve/main/{name}");
+    let url = if name == PARAKEET {
+        format!("https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/{PARAKEET_PAKET}.tar.bz2")
+    } else {
+        format!("https://huggingface.co/ggerganov/whisper.cpp/resolve/main/{name}")
+    };
     let client = reqwest::Client::builder()
         .user_agent(concat!("LeitWerk/", env!("CARGO_PKG_VERSION")))
         .build()
@@ -95,6 +184,24 @@ pub async fn sprache_modell_laden(app: tauri::AppHandle, name: String, on_progre
         let _ = std::fs::remove_file(&teil);
         return Err("Download unvollständig – bitte nochmal versuchen".into());
     }
+    if name == PARAKEET {
+        // Paket entpacken (eigener Ordner im Sprach-Ordner)
+        let d2 = dir.clone();
+        let t2 = teil.clone();
+        tauri::async_runtime::spawn_blocking(move || -> Result<(), String> {
+            let f = std::fs::File::open(&t2).map_err(|e| e.to_string())?;
+            let mut a = tar::Archive::new(bzip2::read::BzDecoder::new(std::io::BufReader::new(f)));
+            a.unpack(&d2).map_err(|e| format!("Entpacken fehlgeschlagen: {e}"))?;
+            Ok(())
+        })
+        .await
+        .map_err(|e| e.to_string())??;
+        let _ = std::fs::remove_file(&teil);
+        if !parakeet_da(&dir) {
+            return Err("Sprachmodell-Paket ist unvollständig".into());
+        }
+        return Ok(());
+    }
     std::fs::rename(&teil, &ziel).map_err(|e| e.to_string())?;
     Ok(())
 }
@@ -108,6 +215,16 @@ pub fn sprache_modell_loeschen(app: tauri::AppHandle, name: String) -> Result<()
             *k = None;
         }
     }
+    if name == PARAKEET {
+        if let Ok(mut g) = PARAKEET_REC.lock() {
+            *g = None;
+        }
+        let d = dir.join(PARAKEET_PAKET);
+        if d.exists() {
+            std::fs::remove_dir_all(d).map_err(|e| e.to_string())?;
+        }
+        return Ok(());
+    }
     let p = dir.join(&name);
     if p.exists() {
         std::fs::remove_file(p).map_err(|e| e.to_string())?;
@@ -116,6 +233,10 @@ pub fn sprache_modell_loeschen(app: tauri::AppHandle, name: String) -> Result<()
 }
 
 fn erkennen_blockierend(pfad: PathBuf, name: String, audio: Vec<f32>, hinweis: String) -> Result<String, String> {
+    if name == PARAKEET {
+        let dir = pfad.parent().map(|p| p.to_path_buf()).ok_or("Ungültiger Pfad")?;
+        return parakeet_erkennen(dir, audio);
+    }
     let mut k = KONTEXT.lock().map_err(|_| "Spracherkennung ist blockiert".to_string())?;
     if k.as_ref().map(|(n, _)| n != &name).unwrap_or(true) {
         *k = None;
@@ -163,7 +284,7 @@ pub async fn sprache_erkennen(app: tauri::AppHandle, request: Request<'_>) -> Re
     pruefe_name(&name)?;
     let hinweis = kopf("x-hinweis").map(|h| url_dekodieren(&h)).unwrap_or_default();
     let pfad = modell_ordner(&app)?.join(&name);
-    if !pfad.is_file() {
+    if !modell_da(&modell_ordner(&app)?, &name) {
         return Err("Sprachmodell ist noch nicht geladen (Einstellungen → Persönlich → Sprache)".into());
     }
     let audio: Vec<f32> = daten.chunks_exact(4).map(|b| f32::from_le_bytes([b[0], b[1], b[2], b[3]])).collect();
@@ -488,7 +609,7 @@ pub async fn sprache_aufnahme_stopp(app: tauri::AppHandle, modell: String, hinwe
     }
     pruefe_name(&modell)?;
     let pfad = modell_ordner(&app)?.join(&modell);
-    if !pfad.is_file() {
+    if !modell_da(&modell_ordner(&app)?, &modell) {
         return Err("Sprachmodell ist noch nicht geladen (Einstellungen → Persönlich → Sprache)".into());
     }
     let text = tauri::async_runtime::spawn_blocking(move || erkennen_blockierend(pfad, modell, audio, hinweis))

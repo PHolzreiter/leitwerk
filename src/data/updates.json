@@ -1,5 +1,16 @@
 [
  {
+  "version": "0.95.0",
+  "datum": "2026-11-02",
+  "titel": "Test: Schnelles Gespräch",
+  "punkte": [
+   "Schalter „Schnelles Gespräch (Test)“: Anrufer spricht ab dem ersten geprüften Satz",
+   "Neue, schnelle Spracherkennung „Parakeet“ zum Ausprobieren",
+   "Neue Sprachmodelle Gemma 4 (E4B, 12B, 26B)",
+   "Zeitmessung im Gesprächsexport zum Vergleichen"
+  ]
+ },
+ {
   "version": "0.94.1",
   "datum": "2026-10-31",
   "titel": "H145-Tablet ohne Fehlermeldung",

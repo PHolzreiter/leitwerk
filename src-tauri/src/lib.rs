@@ -605,6 +605,7 @@ pub fn run() {
             sprache::sprache_status,
             sprache::sprache_modell_laden,
             sprache::sprache_modell_loeschen,
+            sprache::sprache_vorladen,
             sprache::sprache_erkennen,
             sprache::sprache_mikrofone,
             sprache::sprache_aufnahme_start,

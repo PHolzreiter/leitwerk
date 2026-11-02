@@ -86,10 +86,14 @@ onPers(() => {
   document.querySelectorAll<HTMLElement>(".mikro-knopf").forEach((b) => (b.hidden = aus));
 });
 
+/** Dauer der letzten Spracherkennung in ms (Test „Schnelles Gespräch“) */
+export let erkennZeit = 0;
+
 export const MODELLE: { name: string; label: string; mb: number }[] = [
   { name: "ggml-base.bin", label: "Schnell – einfache Erkennung", mb: 148 },
   { name: "ggml-small.bin", label: "Mittel – gute Erkennung", mb: 488 },
   { name: "ggml-large-v3-turbo-q5_0.bin", label: "Beste Erkennung (empfohlen)", mb: 574 },
+  { name: "parakeet-tdt-0.6b-v3", label: "Neu (Test): Parakeet – sehr schnell, auch ohne Grafikkarte", mb: 640 },
 ];
 
 export const TASTEN: [string, string][] = [
@@ -671,6 +675,8 @@ async function start(z: SprachZiel | null, knopf?: HTMLElement): Promise<void> {
     nativStart = funk ? invoke<void>("funk_aufnahme_start", { mikro: p.mikro || null, funk }) : invoke<void>("sprache_aufnahme_start", { mikro: p.mikro || null });
     try {
       await nativStart;
+      // Sprachmodell schon während des Sprechens in den Speicher holen
+      if (p.modell) void invoke("sprache_vorladen", { name: p.modell }).catch(() => undefined);
     } catch (e) {
       nativStart = null;
       aufnahmeLaeuft = false;
@@ -762,7 +768,10 @@ async function stopp(): Promise<void> {
       await st;
       anzeigeZeigen("Erkenne …", "denkt");
       const p = sprachPrefs();
+      const t0 = performance.now();
       const r = await invoke<{ text: string; sekunden: number; pegel: number }>("sprache_aufnahme_stopp", { modell: p.modell, hinweis: z?.hinweis?.() ?? "" }).finally(funkZu);
+      erkennZeit = Math.round(performance.now() - t0);
+      console.info(`[Erkennzeit] ${p.modell}: ${erkennZeit} ms für ${r.sekunden.toFixed(1)} s Sprache`);
       if (r.sekunden < 0.3) {
         anzeigeWeg();
         return;

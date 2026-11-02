@@ -1,5 +1,11 @@
 # Änderungen
 
+## 0.95.0 – Test: Schnelles Gespräch
+- **Neuer Schalter „Schnelles Gespräch (Test)“** (Einstellungen → KI): Der Anrufer beginnt zu sprechen, sobald sein erster Satz geprüft ist – nicht erst, wenn die ganze Antwort fertig ist. Jeder weitere Satz wird ebenfalls geprüft, bevor er zu hören ist; ein Satz, der nicht zum Fall passt, wird nie gesprochen. Ist schon der erste Satz falsch, läuft alles wie bisher (neu erzeugen bzw. feste Antwort). Ausgeschaltet bleibt alles wie gehabt
+- **Neue Spracherkennung zum Ausprobieren:** „Parakeet“ (Einstellungen → Persönlich → Sprache) erkennt deutlich schneller als die bisherigen Modelle, auch auf Rechnern ohne starke Grafikkarte. Das Modell wird beim Sprechen schon in den Speicher geholt, damit die erste Erkennung nicht wartet
+- **Neue Sprachmodelle:** Gemma 4 E4B, Gemma 4 12B und Gemma 4 26B (A4B) – schneller und natürlicher, gut für das schnelle Gespräch
+- **Zeitmessung:** Dauer der Spracherkennung und Zeit bis zum ersten gesprochenen Satz stehen im Gesprächsexport, damit sich alt und neu vergleichen lassen
+
 ## 0.94.1 – H145-Tablet ohne Fehlermeldung
 - Am H145-Tablet erscheint bei einem Statuswechsel keine Meldung „Command Failed – NotFound“ mehr (die Fußzeile gibt es in der H145 nicht). Der Status steht im Mission Briefing und wird jetzt auch im freien Zustand bei jedem Wechsel aktualisiert
 

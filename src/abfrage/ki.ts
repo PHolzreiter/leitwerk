@@ -35,6 +35,10 @@ export const MODELLE: ModellInfo[] = [
   { name: "gemma3:12b", stufe: "mittel", label: "Gemma 3 12B", gb: 8.1, ram: 16, info: "sehr gutes Deutsch, etwas langsamer" },
   { name: "qwen3:32b", stufe: "stark", label: "Qwen3 32B", gb: 20, ram: 32, info: "für starke Rechner (z. B. Mac mit viel Speicher) – am menschlichsten" },
   { name: "gemma3:27b", stufe: "stark", label: "Gemma 3 27B", gb: 17, ram: 32, info: "für starke Rechner – sehr gutes Deutsch" },
+  // neue Generation (Test „Schnelles Gespräch“)
+  { name: "gemma4:e4b-it-qat", stufe: "leicht", label: "Gemma 4 E4B", gb: 6.1, ram: 8, info: "neu – schnell und natürlich, gut für das schnelle Gespräch" },
+  { name: "gemma4:12b-it-qat", stufe: "mittel", label: "Gemma 4 12B", gb: 7.2, ram: 16, info: "neu – sehr gutes Deutsch bei hohem Tempo" },
+  { name: "gemma4:26b-a4b-it-qat", stufe: "stark", label: "Gemma 4 26B (A4B)", gb: 16, ram: 24, info: "neu – großes Modell, aber fast so schnell wie ein kleines" },
 ];
 
 export const STUFE_LABEL: Record<ModellInfo["stufe"], string> = { leicht: "Leicht", standard: "Standard", mittel: "Mittel", stark: "Stark" };
@@ -71,10 +75,12 @@ export interface KiPrefs {
   ablauf: "neu" | "klassisch";
   /** Funk: „ki“ = Besatzungen reden über die KI (Inhalt vom Programm, geprüft); „fest“ = feste Funksprüche wie bis Version 0.40 */
   funk: "ki" | "fest";
+  /** Test: Anrufer beginnt zu sprechen, sobald der erste Satz geprüft ist (statt nach der ganzen Antwort) */
+  schnell: boolean;
 }
 
 export function kiPrefs(): KiPrefs {
-  const d: KiPrefs = { aktiv: true, modell: "qwen3:8b", beenden: false, klingelton: true, ablauf: "neu", funk: "ki" };
+  const d: KiPrefs = { aktiv: true, modell: "qwen3:8b", beenden: false, klingelton: true, ablauf: "neu", funk: "ki", schnell: false };
   try {
     return { ...d, ...(JSON.parse(localStorage.getItem(LS) ?? "{}") as Partial<KiPrefs>) };
   } catch {

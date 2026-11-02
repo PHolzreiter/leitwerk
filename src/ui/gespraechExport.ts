@@ -2,7 +2,8 @@
  * Gespräch exportieren: alles, was zu einem Anruf gehört (Chat, Abfrage, Wahrheit des Anrufers,
  * Anweisung an die KI, Protokoll) als Textdatei – zum Weitergeben, damit man Gespräche verbessern kann.
  */
-import { kontext } from "../abfrage/gespraech";
+import { antwortZeiten, kontext } from "../abfrage/gespraech";
+import { erkennZeit, sprachPrefs } from "./sprache";
 import { kiBereit, kiPrefs } from "../abfrage/ki";
 import { ktPrompt } from "../abfrage/ktGespraech";
 import { systemPrompt } from "../abfrage/anrufer";
@@ -32,6 +33,10 @@ function kopf(titel: string, nummer: string, art: string): string[] {
     `- Exportiert: ${zeit(Date.now())} (echte Zeit), Spielzeit ${zeit(sim.state.zeit)}`,
     `- Anrufer-Antworten: ${kiBereit() ? `KI (${kiPrefs().modell})` : "feste Antworten (keine KI)"}`,
     `- Spielmodus: ${sim.mode}`,
+    `- Schnelles Gespräch (Test): ${kiPrefs().schnell ? "ein" : "aus"} · Spracherkennung: ${sprachPrefs().modell}${erkennZeit ? ` (zuletzt ${erkennZeit} ms)` : ""}`,
+    ...(antwortZeiten.length
+      ? [`- Antwortzeiten (letzte ${Math.min(10, antwortZeiten.length)}): ${antwortZeiten.slice(-10).map((z) => `${z.modus} ${(z.ersterSatz / 1000).toFixed(1)}/${(z.fertig / 1000).toFixed(1)} s`).join(" · ")} (erster Satz/fertig)`]
+      : []),
     "",
   ];
 }

@@ -38,6 +38,7 @@ export function buildKiSection(sec: HTMLElement, draft: Settings): void {
   chk("KI-Anrufer verwenden (sonst einfache Antworten)", p.aktiv, (v) => setKiPrefs({ aktiv: v }));
   chk("Klingelton bei Anrufen", p.klingelton, (v) => setKiPrefs({ klingelton: v }));
   chk("Ollama beim Beenden von LeitWerk schließen", p.beenden, (v) => setKiPrefs({ beenden: v }));
+  chk("Schnelles Gespräch (Test) – Anrufer spricht ab dem ersten geprüften Satz", p.schnell, (v) => setKiPrefs({ schnell: v }));
   // Gesprächsablauf: neu (ab v0.38) oder wie bisher
   const ablauf = el("select") as HTMLSelectElement;
   ablauf.append(el("option", { value: "neu" }, "neu – Frage verstehen, Antwort prüfen, bei Fehlern neu erzeugen"), el("option", { value: "klassisch" }, "klassisch – wie bis Version 0.37"));

@@ -468,18 +468,59 @@ export async function anruferAntwort(
       }
       return feinschliff(f, frage, art, k, g);
     };
-    // Prüfbare Antworten erst nach der Prüfung zeigen bzw. vorlesen (eine falsche soll man nie hören)
-    const t = await kiAntwortNeu(verlauf, frueher, (y) => (pruefbar ? undefined : onToken?.(atemnot ? "" : glatt(y))), { pruefen: !(wiederholtId || schonGefragt(g, frage)), maxSaetze });
-    quelle.wert = "ki";
-    let fertig = nachbearbeiten(t);
-    // nur die Frage zurückgegeben (kommt beim kleinen Modell vor) → einfache Antwort aus den Fakten
-    if (!fertig.trim()) fertig = einfacheAntwort(k, frage, schemaFrage);
     // Prüfen und bei einem Widerspruch einmal neu erzeugen – mit klarer Korrektur
     const allePruefen = (a: string) => [...(kern ? antwortPruefen(k, themen, kern, a, pruefFrage, frage) : []), ...(anweisung ? anweisungPruefen(anweisung, a) : [])];
     // nur eine Gegenfrage statt einer Antwort („Wie lange braucht die Rettung noch?“) → einmal neu
     const nurGegenfrage = (a: string) => art === "frage" && !!a.trim() && a.split(/(?<=[.!?…])\s+/).every((x) => /\?\s*$/.test(x)) && !/was heißt|wie bitte|was meinen sie|wie meinen sie|bitte\?|was\?|wie\?/i.test(a);
     // Einstieg „Hallo? Bin ich bei der Rettung?“ ist gewollt eine Gegenfrage
     const halloGewollt = ersteAntwort && x.persona?.einstieg === "hallo";
+    const gross = (a: string) => (/^[a-zäöü]/.test(a) ? a.charAt(0).toUpperCase() + a.slice(1) : a);
+    // Test „Schnelles Gespräch“: jeder Satz wird geprüft, sobald er fertig ist, und dann gleich gesprochen.
+    // Geprüft wird immer der ganze bisherige Text – der erste Widerspruch hält alles Weitere an.
+    const schnell = kiPrefs().schnell && pruefbar && !atemnot && !reaLaeuft && !(!sf && nachrichtArt(frage) === "zusammenfassung");
+    const t0 = Date.now();
+    let roh = "";
+    let frei = "";
+    let halt = false;
+    let tErst = 0;
+    const freigeben = (stueck: string) => {
+      roh += stueck;
+      if (halt) return;
+      const p = gross(nachbearbeiten(roh).trim());
+      if (!p || !p.startsWith(frei) || allePruefen(p).length) {
+        // schon Gesagtes passt nicht mehr bzw. Widerspruch: nichts mehr freigeben
+        if (frei || allePruefen(p).length) halt = true;
+        return;
+      }
+      if (nurGegenfrage(p) && !halloGewollt) return;
+      const neuTeil = p.slice(frei.length).trim();
+      if (!neuTeil) return;
+      frei = p;
+      if (!tErst) tErst = Date.now() - t0;
+      // Leerzeichen am Ende: der Vorleser spricht einen Satz erst, wenn danach etwas kommt
+      onToken?.(`${neuTeil} `);
+    };
+    // Prüfbare Antworten erst nach der Prüfung zeigen bzw. vorlesen (eine falsche soll man nie hören)
+    const t = await kiAntwortNeu(verlauf, frueher, (y) => {
+      if (schnell) return freigeben(y);
+      if (pruefbar) return;
+      if (!tErst) tErst = Date.now() - t0;
+      onToken?.(atemnot ? "" : glatt(y));
+    }, { pruefen: !(wiederholtId || schonGefragt(g, frage)), maxSaetze });
+    quelle.wert = "ki";
+    let fertig = nachbearbeiten(t);
+    if (schnell && frei) {
+      // schon gesprochen: dabei bleiben, nur noch geprüft Passendes anhängen
+      const ganz = gross(fertig.trim());
+      fertig = !halt && ganz.startsWith(frei) && !allePruefen(ganz).length ? ganz : frei;
+      const rest = fertig.slice(frei.length).trim();
+      if (rest) onToken?.(rest);
+      zeitMerken({ frage, ersterSatz: tErst, fertig: Date.now() - t0, modus: "schnell" });
+      if (anweisung) anweisungMerken(e, anweisung);
+      return fertig;
+    }
+    // nur die Frage zurückgegeben (kommt beim kleinen Modell vor) → einfache Antwort aus den Fakten
+    if (!fertig.trim()) fertig = einfacheAntwort(k, frage, schemaFrage);
     if (nurGegenfrage(fertig) && !halloGewollt) {
       const nochmal = verlauf.map((m) => ({ ...m }));
       nochmal[nochmal.length - 1].content += `\n[Korrektur nur für dich: Du hast mit einer Gegenfrage geantwortet. Beantworte zuerst die Frage der Leitstelle – wenn du es nicht weißt, sag das.]`;
@@ -535,6 +576,7 @@ export async function anruferAntwort(
     // nach dem Weglassen von schon Gesagtem kann der Rest klein anfangen
     if (/^[a-zäöü]/.test(fertig)) fertig = fertig.charAt(0).toUpperCase() + fertig.slice(1);
     if (pruefbar) onToken?.(fertig);
+    zeitMerken({ frage, ersterSatz: pruefbar ? Date.now() - t0 : tErst || Date.now() - t0, fertig: Date.now() - t0, modus: schnell ? "schnell (Rückfall)" : "normal" });
     // ausgeführte Anweisungen merken (gelten im weiteren Gespräch)
     if (anweisung) anweisungMerken(e, anweisung);
     return fertig;
@@ -780,4 +822,20 @@ export async function probeGespraech(e: Einsatz, fragenListe: { text: string; fr
     e.anruf.gespraech.push({ zeit: 0, echt: Date.now(), von: "anrufer", text: a });
     onSatz("anrufer", a);
   }
+}
+
+/** Zeitmessung der Anrufer-Antworten (für den Test „Schnelles Gespräch“) */
+export interface AntwortZeit {
+  frage: string;
+  /** ms bis der erste Satz gezeigt/gesprochen wird */
+  ersterSatz: number;
+  /** ms bis die Antwort fertig ist */
+  fertig: number;
+  modus: string;
+}
+export const antwortZeiten: AntwortZeit[] = [];
+function zeitMerken(z: AntwortZeit): void {
+  antwortZeiten.push(z);
+  if (antwortZeiten.length > 100) antwortZeiten.shift();
+  console.info(`[Antwortzeit] ${z.modus}: erster Satz ${z.ersterSatz} ms, fertig ${z.fertig} ms – „${z.frage.slice(0, 40)}“`);
 }
