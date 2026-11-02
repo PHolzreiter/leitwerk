@@ -504,6 +504,28 @@ export interface SprachZiel {
   hinweis?(): string;
   /** Text nachbearbeiten (z. B. „57 001“ → „57/001“) */
   nachher?(t: string): string;
+  /** Cloud-Anrufer: die Sprache geht direkt (16 kHz, Base64) an die Cloud statt an die Erkennung hier */
+  live?(): LiveStrom | null;
+}
+
+export interface LiveStrom {
+  stueck(b64: string): void;
+  ende(): Promise<void>;
+  abbrechen(): void;
+}
+
+let liveJetzt: LiveStrom | null = null;
+let liveWeb: { ctx: AudioContext; q: MediaStreamAudioSourceNode; p: ScriptProcessorNode } | null = null;
+
+/** Float-Samples → 16 kHz, 16 Bit, Base64 (Browser-Weg) */
+function pcm16b64(d: Float32Array, rate: number): string {
+  const x = auf16k(d, rate);
+  const u = new Uint8Array(x.length * 2);
+  const v = new DataView(u.buffer);
+  for (let i = 0; i < x.length; i++) v.setInt16(i * 2, Math.max(-1, Math.min(1, x[i])) * 32767, true);
+  let s = "";
+  for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode(...u.subarray(i, i + 0x8000));
+  return btoa(s);
 }
 
 const ziele = new Set<SprachZiel>();
@@ -655,6 +677,43 @@ async function start(z: SprachZiel | null, knopf?: HTMLElement): Promise<void> {
   knopf?.classList.add("an");
   verstummen();
   anzeigeZeigen(`Sprich jetzt … (loslassen zum Beenden)`, "hoert");
+  // Cloud-Anrufer: die Stimme geht direkt an die Cloud
+  liveJetzt = z.live?.() ?? null;
+  if (liveJetzt) {
+    anzeigeZeigen("Sprich jetzt … der Anrufer hört direkt zu (loslassen zum Beenden)", "hoert");
+    const ls = liveJetzt;
+    try {
+      if (inTauri()) {
+        const kanal = new Channel<string>();
+        kanal.onmessage = (b64) => ls.stueck(b64);
+        nativStart = invoke<void>("live_aufnahme_start", { mikro: p.mikro || null, kanal });
+        await nativStart;
+        pegelTimer = setInterval(() => {
+          void invoke<number>("sprache_pegel").then((v) => {
+            if (pegel) pegel.style.width = `${Math.min(100, Math.round(v * 400))}%`;
+          });
+        }, 100);
+      } else {
+        const st = await mikroOeffnen();
+        const c = new AudioContext();
+        const q = c.createMediaStreamSource(st);
+        const pr = c.createScriptProcessor(4096, 1, 1);
+        pr.onaudioprocess = (ev) => ls.stueck(pcm16b64(ev.inputBuffer.getChannelData(0), c.sampleRate));
+        q.connect(pr);
+        pr.connect(c.destination);
+        liveWeb = { ctx: c, q, p: pr };
+      }
+    } catch (e) {
+      nativStart = null;
+      liveJetzt = null;
+      ls.abbrechen();
+      aufnahmeLaeuft = false;
+      anzeigeWeg();
+      knopf?.classList.remove("an");
+      toast(`Mikrofon nicht verfügbar: ${(e as Error).message ?? e}`, "error");
+    }
+    return;
+  }
   // Funk im Mehrspieler: die Stimme geht live an alle (wie beim Sprechfunk mit Piloten)
   funkStueck = z.funk && programmWeg() ? (funkHaken.start?.() ?? null) : null;
   if (!programmWeg()) {
@@ -760,6 +819,33 @@ async function stopp(): Promise<void> {
   aktuellerKnopf?.classList.remove("an");
   const z = zielJetzt;
   zielJetzt = null;
+  if (liveJetzt) {
+    const ls = liveJetzt;
+    liveJetzt = null;
+    try {
+      if (pegelTimer) clearInterval(pegelTimer);
+      pegelTimer = null;
+      if (nativStart) {
+        const st = nativStart;
+        nativStart = null;
+        await st;
+        // beendet die Aufnahme (mit kurzem Nachlauf); die letzten Stücke kommen noch über den Kanal
+        await invoke("sprache_aufnahme_stopp", { modell: "", hinweis: "" });
+        await new Promise((r) => setTimeout(r, 60));
+      } else if (liveWeb) {
+        await new Promise((r) => setTimeout(r, 250));
+        liveWeb.q.disconnect();
+        liveWeb.p.disconnect();
+        void liveWeb.ctx.close();
+        liveWeb = null;
+      }
+    } catch (e) {
+      console.warn("Live-Aufnahme", e);
+    }
+    anzeigeWeg();
+    await ls.ende();
+    return;
+  }
   let text = "";
   try {
     if (nativStart) {

@@ -36,7 +36,7 @@ function kopf(titel: string, nummer: string, art: string): string[] {
     `- Spielmodus: ${sim.mode}`,
     `- Schnelles Gespräch (Test): ${kiPrefs().schnell ? "ein" : "aus"} · Spracherkennung: ${sprachPrefs().modell}${erkennZeit ? ` (zuletzt ${erkennZeit} ms)` : ""}`,
     ...(antwortZeiten.length
-      ? [`- Antwortzeiten (letzte ${Math.min(10, antwortZeiten.length)}): ${antwortZeiten.slice(-10).map((z) => `${z.modus} ${(z.ersterSatz / 1000).toFixed(1)}/${(z.fertig / 1000).toFixed(1)} s`).join(" · ")} (erster Satz/fertig)`]
+      ? [`- Antwortzeiten (letzte ${Math.min(10, antwortZeiten.length)}): ${antwortZeiten.slice(-10).map((z) => `${z.modus} ${(z.ersterSatz / 1000).toFixed(1)}/${(z.fertig / 1000).toFixed(1)} s${z.tokens ? ` (${z.tokens} Tokens)` : ""}`).join(" · ")} (erster Satz/fertig)`]
       : []),
     "",
   ];

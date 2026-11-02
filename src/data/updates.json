@@ -1,5 +1,15 @@
 [
  {
+  "version": "0.97.0",
+  "datum": "2026-11-02",
+  "titel": "Cloud-Anrufer hört direkt zu",
+  "punkte": [
+   "Deine Stimme geht mit der Sprechtaste direkt an Gemini – bessere Erkennung, schnellere Antwort",
+   "Anrufer fragt nach, wenn er dich nicht versteht",
+   "Tokens je Antwort im Gesprächsexport"
+  ]
+ },
+ {
   "version": "0.96.0",
   "datum": "2026-11-02",
   "titel": "Test: Cloud-Anrufer mit Gemini Live",

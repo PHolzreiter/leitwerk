@@ -1,5 +1,12 @@
 # Änderungen
 
+## 0.97.0 – Cloud-Anrufer hört direkt zu
+- **Mit Cloud-Anrufer geht deine Stimme jetzt direkt an Gemini:** Sprechtaste halten, reden, loslassen – der Anrufer hört dich wie am Telefon und antwortet gleich. Die Erkennung auf deinem Rechner fällt dabei weg; Gemini versteht gesprochenes Deutsch und Fachwörter deutlich besser
+- Was du gesagt hast, kommt als Mitschrift zurück und steht wie gewohnt im Gespräch. Fragen per Knopf oder Tippen gehen weiter als Text
+- Der Anrufer fragt nach („Wie bitte?“), wenn er dich nicht verstanden hat, statt zu raten, und seine Stimme passt besser zur Stimmung
+- Klappt die Verbindung nicht, nimmt LeitWerk für eine Minute wieder die Erkennung auf deinem Rechner
+- Im Gesprächsexport stehen bei Cloud-Antworten jetzt auch die verbrauchten Tokens
+
 ## 0.96.0 – Test: Cloud-Anrufer mit Gemini Live
 - **Neu in Einstellungen → KI: „Cloud-Anrufer (Test)“.** Statt der KI auf deinem Rechner antwortet Gemini Live von Google – mit eigener, natürlicher Stimme und meist schneller. Du brauchst dafür einen kostenlosen Schlüssel von aistudio.google.com („Get API key“), den du dort einträgst; er bleibt nur auf deinem Rechner. „Verbindung testen“ zeigt, ob alles passt
 - Fragen per Knopf, Tippen oder Sprache funktionieren wie bisher. Die Antwort steht als Text im Gespräch und wird gleich gesprochen; drückst du die Sprechtaste, verstummt der Anrufer

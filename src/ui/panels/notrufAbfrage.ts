@@ -6,7 +6,7 @@ import { gesagteAdresse } from "../../abfrage/adresseGesagt";
 import { sprechFrage } from "../../abfrage/sprechfrage";
 import { mikroAnbinden, setzeSprache, sprachPrefs } from "../sprache";
 import { store } from "../../data/store";
-import { fragen, antwortetGerade, kontext } from "../../abfrage/gespraech";
+import { fragen, antwortetGerade, kontext, liveSprechStrom } from "../../abfrage/gespraech";
 import { schilderung } from "../../abfrage/anrufer";
 import { patientText } from "../../sim/lage";
 import { antwortLabel, bestimmeCode, frageFuer, fragenImAblauf, istKreislaufstillstand, stufeRang, stufeVonCode, type Frage, type Schema, type Wert } from "../../abfrage/schema";
@@ -68,6 +68,17 @@ export function notrufTeile(e: Einsatz, opt: { gefuehrt?: boolean; angezeigt?: (
       aktiv: () => istGespraechsfuehrer(e) && (e.anruf?.status === "aktiv"),
       senden: () => form.requestSubmit(),
       hinweis: () => HINWEIS_NOTRUF,
+      // Cloud-Anrufer: die Stimme geht direkt an den Anrufer (Mitschrift kommt zurück)
+      live: () => {
+        if (!istGespraechsfuehrer(e) || e.anruf?.status !== "aktiv") return null;
+        const l = liveSammler(e.id);
+        const st = liveSprechStrom(e, l.onToken, () => {
+          l.fertig();
+          refresh();
+        });
+        if (!st) l.fertig();
+        return st;
+      },
     }),
     senden,
     vorlesenWrap,

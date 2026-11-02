@@ -8,7 +8,7 @@ import { sim, type Einsatz } from "../sim/engine";
 import { antwortOhneKi, erinnerung, werText, ersterSatzOhneKi, istBekannt, sprachFilter, systemPrompt, zusammenfassungPruefen, type AnrufKontext } from "./anrufer";
 import { kiBereit, kiPrefs, kiStatus, type KiNachricht } from "./ki";
 import { kiAntwortNeu, nachrichtArt, ohneVorspann } from "./runde";
-import { liveAktiv, liveFrage } from "./liveKi";
+import { liveAktiv, liveFrage, liveSperren, liveSprechen } from "./liveKi";
 import { inTauri } from "../platform";
 import { fragenImAblauf, type Frage } from "./schema";
 import { anruferSagt, satzSprecher } from "../ui/sprache";
@@ -171,7 +171,7 @@ export async function fragen(e: Einsatz, text: string, schemaFrage?: Frage, onTo
       const letzte = verlauf[verlauf.length - 1].content;
       try {
         const r = await liveFrage(e, systemFuer(e, k), k.anrufer.geschlecht, letzte, onToken);
-        zeitMerken({ frage: text, ersterSatz: r.ersterTon, fertig: r.fertig, modus: "Gemini Live" });
+        zeitMerken({ frage: text, ersterSatz: r.ersterTon, fertig: r.fertig, modus: "Gemini Live", tokens: r.tokens });
         if (r.text) await sim.call("anrufNachricht", e.id, "anrufer", r.text, "ki");
         return;
       } catch (err) {
@@ -849,12 +849,14 @@ export interface AntwortZeit {
   /** ms bis die Antwort fertig ist */
   fertig: number;
   modus: string;
+  /** von der Cloud gemeldete Tokens */
+  tokens?: number;
 }
 export const antwortZeiten: AntwortZeit[] = [];
 function zeitMerken(z: AntwortZeit): void {
   antwortZeiten.push(z);
   if (antwortZeiten.length > 100) antwortZeiten.shift();
-  console.info(`[Antwortzeit] ${z.modus}: erster Satz ${z.ersterSatz} ms, fertig ${z.fertig} ms – „${z.frage.slice(0, 40)}“`);
+  console.info(`[Antwortzeit]${z.tokens ? ` ${z.tokens} Tokens` : ""} ${z.modus}: erster Satz ${z.ersterSatz} ms, fertig ${z.fertig} ms – „${z.frage.slice(0, 40)}“`);
 }
 
 let liveFehlerZuletzt = 0;
@@ -862,4 +864,46 @@ function liveFehlerMelden(t: string): void {
   if (Date.now() - liveFehlerZuletzt < 20000) return;
   liveFehlerZuletzt = Date.now();
   void import("../ui/dom").then((m) => m.toast(`${t} – Antwort kommt von der lokalen KI`, "error"));
+}
+
+/**
+ * Sprechtaste im Notruf mit Cloud-Anrufer: die Stimme der Leitstelle geht direkt an Gemini (kein Umweg über die
+ * Erkennung am Rechner). Was gesagt wurde, kommt als Mitschrift zurück und steht danach im Gespräch.
+ * null = wie bisher über die eigene Spracherkennung.
+ */
+export function liveSprechStrom(e: Einsatz, onToken?: (t: string) => void, danach?: () => void): { stueck(b64: string): void; ende(): Promise<void>; abbrechen(): void } | null {
+  const k = kontext(e);
+  if (!k || !liveAktiv() || laufend.has(e.id) || e.anruf?.status !== "aktiv") return null;
+  const art = k.anrufer.art ?? "privat";
+  if (art === "ecall" || art === "leitstelle") return null;
+  const s = liveSprechen(e, systemFuer(e, k), k.anrufer.geschlecht, onToken);
+  if (!s) return null;
+  laufend.add(e.id);
+  let zu = false;
+  const fertig = () => {
+    if (zu) return;
+    zu = true;
+    laufend.delete(e.id);
+    danach?.();
+  };
+  return {
+    stueck: (b64) => s.stueck(b64),
+    abbrechen: fertig,
+    ende: async () => {
+      try {
+        const r = await s.ende();
+        const frage = r.frage || (r.text ? "(unverständlich)" : "");
+        if (frage) await sim.call("anrufNachricht", e.id, "leitstelle", frage);
+        if (r.text) await sim.call("anrufNachricht", e.id, "anrufer", r.text, "ki");
+        zeitMerken({ frage: frage || "(gesprochen)", ersterSatz: r.ersterTon, fertig: r.fertig, modus: "Gemini Live (Sprache)", tokens: r.tokens });
+        if (!r.text && !r.frage) void import("../ui/dom").then((m) => m.toast("Nichts verstanden – bitte nochmal.", "error"));
+      } catch (err) {
+        console.warn("Gemini Live (Sprache)", err);
+        liveSperren();
+        void import("../ui/dom").then((m) => m.toast(`${String((err as Error).message ?? err)} – bitte die Frage nochmal stellen (jetzt mit der Erkennung am Rechner)`, "error"));
+      } finally {
+        fertig();
+      }
+    },
+  };
 }
