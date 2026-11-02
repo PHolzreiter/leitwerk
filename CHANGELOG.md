@@ -1,5 +1,8 @@
 # Änderungen
 
+## 0.97.1 – Sprechtaste beim Cloud-Anrufer
+- In 0.97.0 fehlte im Programm die Aufnahme für den Cloud-Anrufer – die Sprechtaste meldete „Mikrofon nicht verfügbar“. Jetzt geht deine Stimme wie angekündigt direkt an Gemini
+
 ## 0.97.0 – Cloud-Anrufer hört direkt zu
 - **Mit Cloud-Anrufer geht deine Stimme jetzt direkt an Gemini:** Sprechtaste halten, reden, loslassen – der Anrufer hört dich wie am Telefon und antwortet gleich. Die Erkennung auf deinem Rechner fällt dabei weg; Gemini versteht gesprochenes Deutsch und Fachwörter deutlich besser
 - Was du gesagt hast, kommt als Mitschrift zurück und steht wie gewohnt im Gespräch. Fragen per Knopf oder Tippen gehen weiter als Text

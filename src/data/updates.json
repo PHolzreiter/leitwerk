@@ -1,5 +1,13 @@
 [
  {
+  "version": "0.97.1",
+  "datum": "2026-11-02",
+  "titel": "Sprechtaste beim Cloud-Anrufer",
+  "punkte": [
+   "Sprechtaste mit Cloud-Anrufer funktioniert jetzt (fehlte in 0.97.0)"
+  ]
+ },
+ {
   "version": "0.97.0",
   "datum": "2026-11-02",
   "titel": "Cloud-Anrufer hört direkt zu",

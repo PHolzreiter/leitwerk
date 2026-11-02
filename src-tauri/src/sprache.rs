@@ -436,6 +436,74 @@ impl FunkKodierer {
     }
 }
 
+/// Cloud-Anrufer: Sprache als 16 kHz, 16 Bit (little-endian), in Stücken zu 100 ms (Base64)
+struct Pcm16Kodierer {
+    schritt: f64,
+    pos: f64,
+    rest: Vec<f32>,
+    puffer: Vec<u8>,
+}
+
+impl Pcm16Kodierer {
+    fn neu(rate: u32) -> Self {
+        Pcm16Kodierer { schritt: rate as f64 / 16000.0, pos: 0.0, rest: Vec::new(), puffer: Vec::with_capacity(3200) }
+    }
+
+    fn daten(&mut self, d: &[f32]) -> Vec<String> {
+        let mut alle = std::mem::take(&mut self.rest);
+        alle.extend_from_slice(d);
+        let halb = (self.schritt / 2.0).max(0.5);
+        let mut p = self.pos;
+        let mut out = Vec::new();
+        while p + halb < alle.len() as f64 {
+            let a = (p - halb + 0.5).floor().max(0.0) as usize;
+            let b = ((p + halb).ceil() as usize).min(alle.len()).max(a + 1).min(alle.len());
+            let n = b.saturating_sub(a).max(1);
+            let s: f32 = alle[a.min(b)..b].iter().sum();
+            let v = ((s / n as f32).clamp(-1.0, 1.0) * 32767.0) as i16;
+            self.puffer.extend_from_slice(&v.to_le_bytes());
+            if self.puffer.len() == 3200 {
+                out.push(base64(&self.puffer));
+                self.puffer.clear();
+            }
+            p += self.schritt;
+        }
+        let ab = ((p - halb).floor().max(0.0) as usize).min(alle.len());
+        self.rest = alle[ab..].to_vec();
+        self.pos = p - ab as f64;
+        out
+    }
+
+    fn ende(&mut self) -> Option<String> {
+        if self.puffer.is_empty() {
+            return None;
+        }
+        let s = base64(&self.puffer);
+        self.puffer.clear();
+        Some(s)
+    }
+}
+
+enum Kodierer {
+    Funk(FunkKodierer),
+    Pcm(Pcm16Kodierer),
+}
+
+impl Kodierer {
+    fn daten(&mut self, d: &[f32]) -> Vec<String> {
+        match self {
+            Kodierer::Funk(k) => k.daten(d),
+            Kodierer::Pcm(k) => k.daten(d),
+        }
+    }
+    fn ende(&mut self) -> Option<String> {
+        match self {
+            Kodierer::Funk(k) => k.ende(),
+            Kodierer::Pcm(k) => k.ende(),
+        }
+    }
+}
+
 fn ulaw(x: f32) -> u8 {
     const BIAS: i32 = 0x84;
     let mut s = (x.clamp(-1.0, 1.0) * 32767.0) as i32;
@@ -470,16 +538,22 @@ fn base64(b: &[u8]) -> String {
 /// Aufnahme starten (läuft, bis sprache_aufnahme_stopp kommt)
 #[tauri::command]
 pub fn sprache_aufnahme_start(mikro: Option<String>) -> Result<(), String> {
-    aufnahme_starten(mikro, None)
+    aufnahme_starten(mikro, None, false)
+}
+
+/// Cloud-Anrufer: die Sprache geht laufend als 16-kHz-Stücke an das Fenster (und von dort an die Cloud)
+#[tauri::command]
+pub fn live_aufnahme_start(mikro: Option<String>, kanal: tauri::ipc::Channel<String>) -> Result<(), String> {
+    aufnahme_starten(mikro, Some(kanal), true)
 }
 
 /// Sprechfunk: wie sprache_aufnahme_start, die Sprache geht zusätzlich laufend in Stücken an das Fenster
 #[tauri::command]
 pub fn funk_aufnahme_start(mikro: Option<String>, funk: tauri::ipc::Channel<String>) -> Result<(), String> {
-    aufnahme_starten(mikro, Some(funk))
+    aufnahme_starten(mikro, Some(funk), false)
 }
 
-fn aufnahme_starten(mikro: Option<String>, funk: Option<tauri::ipc::Channel<String>>) -> Result<(), String> {
+fn aufnahme_starten(mikro: Option<String>, funk: Option<tauri::ipc::Channel<String>>, pcm16: bool) -> Result<(), String> {
     let mut a = AUFNAHME.lock().map_err(|_| "Aufnahme blockiert".to_string())?;
     if let Some(alt) = a.take() {
         let _ = alt.stopp.send(());
@@ -516,7 +590,7 @@ fn aufnahme_starten(mikro: Option<String>, funk: Option<tauri::ipc::Channel<Stri
                 match funk {
                     Some(kanal) => {
                         // Sprechfunk: alle 100 ms die neuen Samples als Stücke schicken
-                        let mut kod = FunkKodierer::neu(rate);
+                        let mut kod = if pcm16 { Kodierer::Pcm(Pcm16Kodierer::neu(rate)) } else { Kodierer::Funk(FunkKodierer::neu(rate)) };
                         let mut ab = 0usize;
                         let schluss = std::time::Instant::now() + std::time::Duration::from_secs(120);
                         loop {
@@ -635,6 +709,17 @@ mod funk_tests {
         assert_eq!(base64(b"Man"), "TWFu");
         assert_eq!(base64(b"Ma"), "TWE=");
         assert_eq!(base64(b"M"), "TQ==");
+    }
+
+    #[test]
+    fn pcm16_stuecke_100ms() {
+        let mut k = Pcm16Kodierer::neu(48000);
+        let mut n = 0;
+        for _ in 0..10 {
+            n += k.daten(&vec![0.1f32; 4800]).len();
+        }
+        let rest = k.ende().map(|_| 1).unwrap_or(0);
+        assert!(n + rest >= 10 && n + rest <= 11, "{n} + {rest}");
     }
 
     #[test]
