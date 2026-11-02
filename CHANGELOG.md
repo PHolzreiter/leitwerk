@@ -1,5 +1,9 @@
 # Änderungen
 
+## 0.95.1 – KI wieder schnell
+- Der „Denkmodus“ der KI wird jetzt bei allen Modellen abgeschaltet, nicht nur bei Qwen3. Gemma 4 hat vorher vor jeder Antwort still nachgedacht – das dauerte 20 Sekunden und mehr, und oft blieb dann nur eine einfache Ersatzantwort übrig
+- Beim Wechsel des Sprachmodells wird das alte aus dem Speicher genommen. Vorher blieben beide bis zu einer Stunde geladen und haben sich den Grafikspeicher geteilt – dadurch wurde auch das alte Modell langsam
+
 ## 0.95.0 – Test: Schnelles Gespräch
 - **Neuer Schalter „Schnelles Gespräch (Test)“** (Einstellungen → KI): Der Anrufer beginnt zu sprechen, sobald sein erster Satz geprüft ist – nicht erst, wenn die ganze Antwort fertig ist. Jeder weitere Satz wird ebenfalls geprüft, bevor er zu hören ist; ein Satz, der nicht zum Fall passt, wird nie gesprochen. Ist schon der erste Satz falsch, läuft alles wie bisher (neu erzeugen bzw. feste Antwort). Ausgeschaltet bleibt alles wie gehabt
 - **Neue Spracherkennung zum Ausprobieren:** „Parakeet“ (Einstellungen → Persönlich → Sprache) erkennt deutlich schneller als die bisherigen Modelle, auch auf Rechnern ohne starke Grafikkarte. Das Modell wird beim Sprechen schon in den Speicher geholt, damit die erste Erkennung nicht wartet

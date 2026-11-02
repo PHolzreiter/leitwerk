@@ -602,6 +602,7 @@ pub fn run() {
             ki::ki_chat,
             ki::rechner_ram,
             ki::ki_modell_loeschen,
+            ki::ki_entladen,
             sprache::sprache_status,
             sprache::sprache_modell_laden,
             sprache::sprache_modell_loeschen,

@@ -1,5 +1,14 @@
 [
  {
+  "version": "0.95.1",
+  "datum": "2026-11-02",
+  "titel": "KI wieder schnell",
+  "punkte": [
+   "Denkmodus bei allen Modellen aus (Gemma 4 war dadurch sehr langsam)",
+   "Beim Modellwechsel wird das alte Modell aus dem Speicher genommen"
+  ]
+ },
+ {
   "version": "0.95.0",
   "datum": "2026-11-02",
   "titel": "Test: Schnelles Gespräch",

@@ -318,19 +318,36 @@ pub async fn ki_chat(
         body["options"]["temperature"] = serde_json::json!(0.4);
     }
     let lang = max_tokens.unwrap_or(110) > 300;
-    // Modelle mit „Denkmodus“: für schnelle Antworten abschalten
-    if model.starts_with("qwen3") || model.starts_with("deepseek-r1") {
-        body["think"] = serde_json::json!(false);
-    }
-    let r = client(Some(Duration::from_secs(if lang { 600 } else { 180 })))?
-        .post(format!("{BASIS}/api/chat"))
-        .json(&body)
-        .send()
-        .await
-        .map_err(|e| format!("KI nicht erreichbar: {e}"))?;
+    // „Denkmodus“ immer abschalten: Ollama lässt Modelle, die denken können (Qwen3, Gemma 4 …), sonst
+    // erst lange still nachdenken – das kostet viele Sekunden und verbraucht die Antwortlänge.
+    body["think"] = serde_json::json!(false);
+    let senden = move |b: &serde_json::Value| {
+        let b = b.clone();
+        async move {
+            client(Some(Duration::from_secs(if lang { 600 } else { 180 })))?
+                .post(format!("{BASIS}/api/chat"))
+                .json(&b)
+                .send()
+                .await
+                .map_err(|e| format!("KI nicht erreichbar: {e}"))
+        }
+    };
+    let mut r = senden(&body).await?;
     if !r.status().is_success() {
         let t = r.text().await.unwrap_or_default();
-        return Err(format!("KI-Fehler: {}", t.chars().take(200).collect::<String>()));
+        // Modell ohne Denkmodus, das den Schalter nicht kennt: nochmal ohne
+        if t.contains("think") {
+            if let Some(o) = body.as_object_mut() {
+                o.remove("think");
+            }
+            r = senden(&body).await?;
+            if !r.status().is_success() {
+                let t = r.text().await.unwrap_or_default();
+                return Err(format!("KI-Fehler: {}", t.chars().take(200).collect::<String>()));
+            }
+        } else {
+            return Err(format!("KI-Fehler: {}", t.chars().take(200).collect::<String>()));
+        }
     }
     let mut s = r.bytes_stream();
     let mut puffer = Vec::new();
@@ -383,6 +400,17 @@ pub fn rechner_ram() -> u64 {
         }
     };
     (bytes as f64 / 1_073_741_824.0).round() as u64
+}
+
+/// Sprachmodell aus dem Speicher nehmen (beim Wechsel, damit zwei Modelle nicht um den Grafikspeicher streiten)
+#[tauri::command]
+pub async fn ki_entladen(name: String) -> Result<(), String> {
+    let _ = client(Some(Duration::from_secs(20)))?
+        .post(format!("{BASIS}/api/generate"))
+        .json(&serde_json::json!({ "model": name, "keep_alive": 0 }))
+        .send()
+        .await;
+    Ok(())
 }
 
 /// Sprachmodell von der Festplatte löschen (Platz sparen)

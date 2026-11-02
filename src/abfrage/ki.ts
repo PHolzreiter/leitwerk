@@ -89,6 +89,9 @@ export function kiPrefs(): KiPrefs {
 }
 
 export function setKiPrefs(p: Partial<KiPrefs>): void {
+  // Modellwechsel: das alte aus dem Speicher nehmen, sonst teilen sich beide den Grafikspeicher und alles wird langsam
+  const alt = kiPrefs().modell;
+  if (inTauri() && p.modell && p.modell !== alt) void invoke("ki_entladen", { name: alt }).catch(() => undefined);
   try {
     localStorage.setItem(LS, JSON.stringify({ ...kiPrefs(), ...p }));
   } catch {
