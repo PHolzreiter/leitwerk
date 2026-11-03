@@ -150,6 +150,8 @@ export async function anrufKiWaehlen(art: "gemini" | "lokal"): Promise<void> {
 /** Erster Start: einmal fragen, wie die Anrufer reden sollen (vor dem ersten Spiel bzw. Beitreten) */
 export function anrufKiErstwahl(): Promise<void> {
   if (livePrefs().gewaehlt) return Promise.resolve();
+  // automatische Tests fragen nur, wenn ausdrücklich gewünscht
+  if (navigator.webdriver && !location.search.includes("erstwahl")) return Promise.resolve();
   return new Promise((resolve) => {
     const body = el("div", { class: "ki-erstwahl" });
     body.appendChild(el("p", {}, "Wie sollen die Anrufer am Telefon reden? Du kannst das jederzeit unter Einstellungen → Anrufe & KI ändern."));
