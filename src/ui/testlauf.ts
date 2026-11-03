@@ -4,7 +4,8 @@
  * die KI antwortet als Anrufer. Nichts davon kommt ins Spiel, nichts wird vorgelesen.
  * Am Ende: ZIP mit einem Gesprächsexport je Durchlauf und einer Übersicht mit auffälligen Antworten.
  */
-import { anruferAntwort, ERÖFFNUNG, kontext, testlaufStatus } from "../abfrage/gespraech";
+import { anruferAntwort, ERÖFFNUNG, kontext, liveAntwort, liveGeeignet, liveNachpruefen, testlaufStatus } from "../abfrage/gespraech";
+import { liveAktiv } from "../abfrage/liveKi";
 import { wissenStufe } from "../abfrage/anrufer";
 import { kiBereit, kiPrefs, kiStatus } from "../abfrage/ki";
 import { alleFaelle, fallVorlage, istFallAktiv, type FallVorlage } from "../abfrage/faelle";
@@ -187,6 +188,7 @@ function pruefeAntwort(e: Einsatz, frage: string, antwort: string, art: string, 
   if (quelle !== "ki" && !/^\(|^Mmh … ich/.test(antwort)) g.push("feste Antwort statt KI (KI-Fehler?)");
   if (!profi && !e.wahr.abfrage?.anrufer.selbst && /\b(der Patient|die Patientin|den Patienten|dem Patienten)\b/.test(antwort)) g.push("sagt „der Patient“");
   if (/Hinweis|Fallakte|WAS WIRKLICH|Leitstelle:|\[/.test(antwort)) g.push("Anweisung an die KI durchgerutscht");
+  if (/medizinische(n)? Beratung|keine Diagnose|ärztlichen Rat|als KI\b|Sprachmodell|bin (nur )?ein (Programm|Computer)/i.test(antwort)) g.push("KI-Hinweis statt Anrufer (Haftungshinweis o. Ä.)");
   const n = saetze(antwort).length;
   if (n > 3 || antwort.split(/\s+/).length > 45) g.push(`lang (${n} Sätze)`);
   // bei Kollaps, Atemnot & Co. IST der Zustand die Schilderung – dort nicht melden
@@ -238,8 +240,23 @@ async function einGespraech(auftrag: TestAuftrag, nr: number, abbruch: { ja: boo
     const frueher = a.gespraech.filter((m) => m.von === "anrufer").map((m) => m.text);
     const quelle: { wert: "ki" | "fest"; nachgebessert?: string } = { wert: "ki" };
     const t0 = Date.now();
-    const ant = await anruferAntwort(e, k, text, sf, undefined, quelle);
-    const dauer = Date.now() - t0;
+    // Cloud-Anrufer an: der Testlauf spricht mit Gemini (Antwort wird nachträglich geprüft, der Anrufer korrigiert sich ggf. selbst)
+    let ant = "";
+    let korrektur: string[] = [];
+    let ersterTon = 0;
+    if (liveAktiv() && liveGeeignet(k)) {
+      try {
+        const r = await liveAntwort(e, k, text, sf);
+        ant = r.text;
+        ersterTon = r.ersterTon;
+        if (ant) korrektur = liveNachpruefen(e, k, text, ant, sf);
+      } catch (err) {
+        console.warn("Testlauf Gemini", err);
+        ant = "";
+      }
+    }
+    if (!ant) ant = await anruferAntwort(e, k, text, sf, undefined, quelle);
+    const dauer = ersterTon || Date.now() - t0;
     zeiten.push(dauer);
     fragen++;
     a.gespraech.push({ zeit: sim.state.zeit, echt: Date.now(), von: "anrufer", text: ant, quelle: quelle.wert });
@@ -248,7 +265,15 @@ async function einGespraech(auftrag: TestAuftrag, nr: number, abbruch: { ja: boo
     const gruende = pruefeAntwort(e, text, ant, art, frueher, quelle.nachgebessert ? "ki" : quelle.wert, dauer, profi, sf?.id === "schilderung" || /passiert/.test(text), sf);
     // Widerspruch erkannt und vom Programm behoben – zählt mit, damit man sieht, wie oft die KI danebenlag
     if (quelle.nachgebessert) gruende.push(`vom Programm nachgebessert: ${quelle.nachgebessert}`);
+    if (korrektur.length) gruende.push(`Widerspruch – Anrufer soll sich selbst korrigieren: ${korrektur.join("; ")}`);
     for (const grund of gruende) auff.push({ frage: text, antwort: ant, grund });
+    // die Selbstkorrektur des Anrufers abwarten, damit sie im Gespräch vor der nächsten Frage steht
+    if (korrektur.length) {
+      const n = a.gespraech.length;
+      for (let i = 0; i < 40 && a.gespraech.length === n; i++) await new Promise((r) => setTimeout(r, 250));
+      const kor = a.gespraech.length > n ? a.gespraech[a.gespraech.length - 1] : null;
+      if (kor) live(`Anrufer (korrigiert sich): ${kor.text}`);
+    }
     return ant;
   };
   const global = (id: string): Frage | undefined => Object.values(schema.globale_fragen).flat().find((f) => f.id === id);

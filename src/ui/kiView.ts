@@ -65,7 +65,7 @@ export function buildKiSection(sec: HTMLElement, draft: Settings): void {
   const cloudAn = el("input", { type: "checkbox" }) as HTMLInputElement;
   cloudAn.checked = lp.an;
   cloudAn.addEventListener("change", () => setLivePrefs({ an: cloudAn.checked }));
-  const schl = el("input", { type: "password", placeholder: "AIza…", autocomplete: "off", spellcheck: "false" }) as HTMLInputElement;
+  const schl = el("input", { type: "password", placeholder: "Schlüssel aus AI Studio", autocomplete: "off", spellcheck: "false" }) as HTMLInputElement;
   schl.value = lp.schluessel;
   schl.style.width = "22em";
   schl.addEventListener("change", () => setLivePrefs({ schluessel: schl.value.trim() }));

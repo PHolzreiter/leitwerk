@@ -1,5 +1,13 @@
 # Änderungen
 
+## 0.98.2 – Cloud-Anrufer nach 45 Testgesprächen verbessert
+- Hängt Gemini einen KI-Hinweis an („Diese Information ersetzt keine ärztliche Beratung …“), verstummt der Anrufer sofort und der Satz fällt aus dem Gespräch
+- Hosentaschenanrufe, eCalls und Anrufe anderer Leitstellen bleiben beim Programm – vorher hat Gemini dort geredet
+- Der Anrufer bestätigt Anweisungen zuerst („Ja, mach ich …“), wiederholt Eigenheiten und „Bitte schnell!“ nicht in jeder Antwort und erfindet keine Personen oder Verletzungen dazu
+- Der automatische Testlauf (Einstellungen → KI) spricht bei eingeschaltetem Cloud-Anrufer mit Gemini und zeigt, wo sich der Anrufer selbst korrigieren musste
+- Anrufende Autolenker heißen „Lenker vor Ort“ (passt auch, wenn kein Unfall war). Junge Diabetiker mit Überzucker spritzen Insulin statt Tabletten zu nehmen
+- Das Schlüssel-Feld erwartet kein bestimmtes Format mehr (neue Schlüssel beginnen nicht immer mit „AIza“)
+
 ## 0.98.1 – Cloud-Anrufer: kleine Korrekturen
 - Mit Cloud-Anrufer bereitet die KI auf deinem Rechner beim Klingeln keine Antwort mehr vor – das hat umsonst gerechnet und den Rechner gebremst
 - Anrufende Autolenker sind jetzt einfach „an der Unfallstelle“: Wer den Unfall selbst verursacht hat, sagt nicht mehr „Ich bin vorbeigekommen und hab's gesehen“

@@ -166,15 +166,9 @@ export async function fragen(e: Einsatz, text: string, schemaFrage?: Frage, onTo
     }
     const quelle = { wert: "ki" as "ki" | "fest" };
     // Cloud-Anrufer (Gemini Live): antwortet direkt mit eigener Stimme
-    const art = k.anrufer.art ?? "privat";
-    if (liveAktiv() && art !== "ecall" && art !== "leitstelle") {
-      // Anweisung: was dabei herauskommt, bekommt der Anrufer als Hinweis mit
-      const an = !schemaFrage && nachrichtArt(text) === "anweisung" ? anweisungKern(k, text) : null;
-      const verlauf = kiVerlauf(e, k, text, schemaFrage, wiederholt, an?.typen.length ? an.saetze : undefined);
-      const letzte = verlauf[verlauf.length - 1].content;
+    if (liveAktiv() && liveGeeignet(k)) {
       try {
-        const r = await liveFrage(liveOpt(e, k), letzte, onToken, text);
-        zeitMerken({ frage: text, ersterSatz: r.ersterTon, fertig: r.fertig, modus: "Gemini Live", tokens: r.tokens });
+        const r = await liveAntwort(e, k, text, schemaFrage, onToken, wiederholt);
         if (r.text) await sim.call("anrufNachricht", e.id, "anrufer", r.text, "ki");
         if (r.text) liveNachpruefen(e, k, text, r.text, schemaFrage);
         return;
@@ -870,17 +864,38 @@ function liveFehlerMelden(t: string): void {
   void import("../ui/dom").then((m) => m.toast(`${t} – Antwort kommt von der lokalen KI`, "error"));
 }
 
+/**
+ * Frage als Text an den Cloud-Anrufer (Knopf, Tippen, Testlauf). Mit dem Hinweis wie bei der lokalen KI
+ * (was zur Frage gehört, bei Anweisungen das Ergebnis). Die Antwort wird gleich gesprochen.
+ */
+export async function liveAntwort(e: Einsatz, k: AnrufKontext, text: string, schemaFrage?: Frage, onToken?: (t: string) => void, wiederholt = false): Promise<LiveErgebnis> {
+  const an = !schemaFrage && nachrichtArt(text) === "anweisung" ? anweisungKern(k, text) : null;
+  const verlauf = kiVerlauf(e, k, text, schemaFrage, wiederholt, an?.typen.length ? an.saetze : undefined);
+  const letzte = verlauf[verlauf.length - 1].content;
+  const r = await liveFrage(liveOpt(e, k), letzte, onToken, text);
+  zeitMerken({ frage: text, ersterSatz: r.ersterTon, fertig: r.fertig, modus: "Gemini Live", tokens: r.tokens });
+  return r;
+}
+
+/** Einsätze mit Cloud-Verbindung (auch Probefälle im Testlauf, die nicht im Spiel stehen) */
+const liveEinsaetze = new Map<string, Einsatz>();
+const einsatzVon = (id: string): Einsatz | undefined => sim.state.einsaetze.find((y) => y.id === id) ?? liveEinsaetze.get(id);
+
 /** Einstellungen für die Verbindung eines Notrufs zum Cloud-Anrufer */
 function liveOpt(e: Einsatz, k: AnrufKontext, vorab = false): SitzungOpt {
   const id = e.id;
+  liveEinsaetze.set(id, e);
   liveLageBeobachten();
   return {
     id,
+    bezug: `${e.anruf?.seit ?? ""}|${k.anrufer.name}|${k.anrufer.nummer ?? ""}`,
     system: systemFuer(e, k),
     geschlecht: k.anrufer.geschlecht,
     verlauf: e.anruf?.gespraech ?? [],
     aktiv: () => {
-      const x = sim.state.einsaetze.find((y) => y.id === id);
+      const x = einsatzVon(id);
+      const ja = !!x?.anruf && (x.anruf.status === "aktiv" || (vorab && x.anruf.status === "klingelt"));
+      if (!ja && x?.anruf?.status !== "klingelt") liveEinsaetze.delete(id);
       return !!x?.anruf && (x.anruf.status === "aktiv" || (vorab && x.anruf.status === "klingelt"));
     },
     frei: livePrefs().freisprechen,
@@ -890,10 +905,14 @@ function liveOpt(e: Einsatz, k: AnrufKontext, vorab = false): SitzungOpt {
 
 /** Antwort, die nicht auf eine Frage per Knopf/Taste kam (Freisprechen oder von sich aus) */
 async function liveEreignis(id: string, r: LiveErgebnis): Promise<void> {
-  const e = sim.state.einsaetze.find((x) => x.id === id);
+  const e = einsatzVon(id);
   if (!e?.anruf || e.anruf.status !== "aktiv") return;
-  if (r.frage) await sim.call("anrufNachricht", e.id, "leitstelle", r.frage);
-  if (r.text) await sim.call("anrufNachricht", e.id, "anrufer", r.text, "ki");
+  const imSpiel = sim.state.einsaetze.includes(e);
+  // Probefall (Testlauf): direkt ins Gespräch schreiben
+  const schreiben = async (von: "leitstelle" | "anrufer", t: string) =>
+    imSpiel ? sim.call("anrufNachricht", e.id, von, t, von === "anrufer" ? "ki" : undefined) : void e.anruf!.gespraech.push({ zeit: sim.state.zeit, echt: Date.now(), von, text: t, ...(von === "anrufer" ? { quelle: "ki" as const } : {}) });
+  if (r.frage) await schreiben("leitstelle", r.frage);
+  if (r.text) await schreiben("anrufer", r.spontan ? `${r.text}` : r.text);
   zeitMerken({ frage: r.frage || "(von sich aus)", ersterSatz: r.ersterTon, fertig: r.fertig, modus: r.spontan ? "Gemini Live (von sich aus)" : "Gemini Live (Freisprechen)", tokens: r.tokens });
   const k = kontext(e);
   if (k && r.frage && r.text && !r.unterbrochen) liveNachpruefen(e, k, r.frage, r.text);
@@ -904,7 +923,7 @@ async function liveEreignis(id: string, r: LiveErgebnis): Promise<void> {
  * Passt sie nicht, bekommt der Anrufer leise eine Korrektur und verbessert sich selbst („Nein, Moment …“).
  * Anweisungen werden wie bei der lokalen KI gemerkt.
  */
-function liveNachpruefen(e: Einsatz, k: AnrufKontext, frage: string, antwort: string, schemaFrage?: Frage): void {
+export function liveNachpruefen(e: Einsatz, k: AnrufKontext, frage: string, antwort: string, schemaFrage?: Frage): string[] {
   try {
     const art = schemaFrage ? "frage" : nachrichtArt(frage);
     const probleme: string[] = [];
@@ -940,14 +959,16 @@ function liveNachpruefen(e: Einsatz, k: AnrufKontext, frage: string, antwort: st
         richtig = an.saetze;
       }
     }
-    if (!probleme.length) return;
+    if (!probleme.length) return [];
     console.info("[Gemini Live] Korrektur", probleme);
     sitzungDa(e.id)?.hinweis(
       `[Korrektur nur für dich, nicht vorlesen: Deine letzte Antwort „${antwort}“ passt nicht zu dem, was wirklich ist – ${probleme.join("; ")}.${richtig.length ? ` Richtig ist: ${richtig.join(" ")}` : ""} Verbessere dich JETZT sofort von selbst, kurz und natürlich, wie ein Mensch, der sich gerade versprochen hat (z. B. „Nein, Moment – …“).]`,
       true,
     );
+    return probleme;
   } catch (err) {
     console.warn("Gemini-Prüfung", err);
+    return [];
   }
 }
 
@@ -958,7 +979,7 @@ function liveLageBeobachten(): void {
   if (lageBeobachtet) return;
   lageBeobachtet = true;
   sim.onChange(() => {
-    for (const e of sim.state.einsaetze) {
+    for (const e of new Set([...sim.state.einsaetze, ...liveEinsaetze.values()])) {
       if (e.anruf?.status !== "aktiv") continue;
       const s = sitzungDa(e.id);
       if (!s) continue;
@@ -983,8 +1004,7 @@ export function liveVorwaermen(e: Einsatz): void {
   if (!liveAktiv() || sitzungDa(e.id)) return;
   const k = kontext(e);
   if (!k) return;
-  const art = k.anrufer.art ?? "privat";
-  if (art === "ecall" || art === "leitstelle") return;
+  if (!liveGeeignet(k)) return;
   sitzungFuer(liveOpt(e, k, true));
 }
 
@@ -992,8 +1012,7 @@ export function liveVorwaermen(e: Einsatz): void {
 export function liveFreisprechen(e: Einsatz): ((b64: string) => void) | null {
   const k = kontext(e);
   if (!k || !liveAktiv() || !livePrefs().freisprechen || e.anruf?.status !== "aktiv") return null;
-  const art = k.anrufer.art ?? "privat";
-  if (art === "ecall" || art === "leitstelle") return null;
+  if (!liveGeeignet(k)) return null;
   const s = sitzungFuer(liveOpt(e, k));
   return (b64) => s.stueck(b64);
 }
@@ -1006,8 +1025,7 @@ export function liveFreisprechen(e: Einsatz): ((b64: string) => void) | null {
 export function liveSprechStrom(e: Einsatz, onToken?: (t: string) => void, danach?: () => void): { stueck(b64: string): void; ende(): Promise<void>; abbrechen(): void } | null {
   const k = kontext(e);
   if (!k || !liveAktiv() || laufend.has(e.id) || e.anruf?.status !== "aktiv" || livePrefs().freisprechen) return null;
-  const art = k.anrufer.art ?? "privat";
-  if (art === "ecall" || art === "leitstelle") return null;
+  if (!liveGeeignet(k)) return null;
   const s = liveSprechen(liveOpt(e, k), onToken);
   if (!s) return null;
   laufend.add(e.id);
@@ -1039,4 +1057,10 @@ export function liveSprechStrom(e: Einsatz, onToken?: (t: string) => void, danac
       }
     },
   };
+}
+
+/** Passt der Anruf für den Cloud-Anrufer? (eCall, andere Leitstellen, Hosentaschenanrufe & Co. bleiben beim Programm) */
+export function liveGeeignet(k: AnrufKontext): boolean {
+  const art = k.anrufer.art ?? "privat";
+  return art !== "ecall" && art !== "leitstelle" && !k.anrufer.nurBekannt && k.szenario?.spezial !== "hosentasche";
 }

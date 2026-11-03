@@ -1,5 +1,16 @@
 [
  {
+  "version": "0.98.2",
+  "datum": "2026-11-03",
+  "titel": "Cloud-Anrufer nach 45 Testgesprächen verbessert",
+  "punkte": [
+   "Kein KI-Haftungshinweis mehr im Gespräch",
+   "Hosentaschenanrufe und eCalls bleiben beim Programm",
+   "Anrufer bestätigt Anweisungen und wiederholt sich weniger",
+   "Testlauf auch mit Gemini"
+  ]
+ },
+ {
   "version": "0.98.1",
   "datum": "2026-11-03",
   "titel": "Cloud-Anrufer: kleine Korrekturen",

@@ -86,6 +86,8 @@ interface Runde {
   audio?: boolean;
   spontan?: boolean;
   unterbrochen?: boolean;
+  /** ab hier nichts mehr abspielen/anzeigen (z. B. ein angehängter Haftungshinweis) */
+  stumm?: boolean;
   onText?: (t: string) => void;
   fertig: (text: string) => void;
   fehler: (e: Error) => void;
@@ -239,6 +241,8 @@ export interface SitzungOpt {
   system: string;
   geschlecht?: "w" | "m";
   verlauf: { von: string; text: string }[];
+  /** Kennung des Anrufs (gleiche Einsatz-Kennung, anderer Anruf → neue Verbindung) */
+  bezug?: string;
   /** läuft der Anruf noch? (sonst wird die Verbindung geschlossen) */
   aktiv: () => boolean;
   /** Freisprechen: Gemini erkennt selbst, wann die Leitstelle fertig ist */
@@ -373,14 +377,21 @@ class Sitzung {
       if (!p.inlineData?.data) continue;
       const rate = Number(/rate=(\d+)/.exec(p.inlineData.mimeType ?? "")?.[1] ?? 24000);
       if (!r.ersterTon) r.ersterTon = Date.now() - r.start;
-      if (sprachPrefs().vorlesen) {
+      if (sprachPrefs().vorlesen && !r.stumm) {
         this.ton ??= new Wiedergabe(rate);
         this.ton.dazu(b64ZuInt16(p.inlineData.data), rate);
       }
     }
-    if (sc.outputTranscription?.text) {
+    if (sc.outputTranscription?.text && !r.stumm) {
       r.text += sc.outputTranscription.text;
-      r.onText?.(sc.outputTranscription.text);
+      // Haftungshinweis o. Ä. hängt das Modell manchmal an – sofort verstummen und abschneiden
+      const k = KI_HINWEIS.exec(r.text);
+      if (k) {
+        r.stumm = true;
+        r.text = r.text.slice(0, k.index).trim();
+        this.ton?.stopp();
+        this.ton = null;
+      } else r.onText?.(sc.outputTranscription.text);
     }
     if (sc.interrupted) {
       // die Leitstelle redet dazwischen
@@ -499,12 +510,15 @@ class Sitzung {
     this.geschlossen = true;
     this.verstummen();
     try {
-      this.ws?.close();
+      this.ws?.close(1000, "Anruf beendet");
     } catch {
       /* egal */
     }
   }
 }
+
+/** angehängte KI-Hinweise („Diese Information ersetzt keine ärztliche Beratung …“) – gehören nicht zum Anrufer */
+export const KI_HINWEIS = /(bitte beachten Sie,? dass|dies (ist|stellt) keine (medizinische|ärztliche)|ersetzt keine|keine (medizinische|ärztliche) (beratung|diagnose)|(medizinische|ärztliche)n? (beratung|rat)|als (ki|sprachmodell)|ich bin (nur )?(eine ki|ein (sprachmodell|programm)))/i;
 
 /** gilt für alle Cloud-Anrufer zusätzlich zur Anweisung des Falls */
 const ZUSATZ = [
@@ -512,6 +526,11 @@ const ZUSATZ = [
   "DU HÖRST DIE LEITSTELLE AM TELEFON: Antworte wie ein Mensch am Telefon – meist ein kurzer Satz, keine Aufzählungen, nichts vorlesen. Deine Stimme passt zu deiner Stimmung (aufgeregt = schneller und höher, panisch = abgehackt, ruhig = gelassen).",
   "Hast du die Leitstelle akustisch nicht verstanden oder ergibt die Frage keinen Sinn, frag kurz nach („Wie bitte?“, „Was meinen Sie?“) statt zu raten. Fragt die Leitstelle etwas, das nicht in deinen Angaben steht, sagst du, dass du es nicht weißt.",
   "Redet die Leitstelle dazwischen, hörst du sofort auf und gehst auf das Neue ein.",
+  "Gibt dir die Leitstelle eine Anweisung, bestätigst du sie zuerst kurz und sagst, dass bzw. wie du es machst („Ja, mach ich …“) – erst danach darfst du etwas fragen.",
+  "Deine Eigenheit (unter DEINE ART), das Reden mit anderen Leuten am Ort und Bitten wie „Bitte schnell!“ kommen höchstens einmal im ganzen Gespräch vor – nicht in jeder Antwort.",
+  "Erfinde keine Personen, Namen, Orte oder Verletzungen, die nicht in deinen Angaben stehen. Steht dort, dass etwas NICHT so ist (z. B. „verbrannt hast du dich nicht“), sagst du das klar.",
+  "Unsicher bist du höchstens bei dem, was du über den Patienten weißt – deine eigene Adresse und deinen Namen kennst du.",
+  "Du bist ein Mensch am Telefon, keine KI: Sag nie etwas über medizinische Beratung, Diagnosen, Haftung oder dass du ein Programm bist, und gib keine Hinweise oder Warnungen am Ende dazu.",
 ].join("\n");
 
 const sitzungen = new Map<string, Sitzung>();
@@ -524,7 +543,7 @@ function alleSchliessen(): void {
 /** Verbindung für einen Anruf (wird wiederverwendet; neu, wenn sie zu ist oder Freisprechen umgeschaltet wurde) */
 export function sitzungFuer(o: SitzungOpt): Sitzung {
   const alt = sitzungen.get(o.id);
-  if (alt && !alt.geschlossen && !!alt.opt.frei === !!o.frei) {
+  if (alt && !alt.geschlossen && !!alt.opt.frei === !!o.frei && alt.opt.bezug === o.bezug) {
     // Anweisung hat sich geändert (z. B. Maßnahme): Gemini bekommt nur den neuen Stand, die Verbindung bleibt
     if (alt.systemText !== o.system) alt.systemText = o.system;
     if (o.ereignis) alt.opt.ereignis = o.ereignis;

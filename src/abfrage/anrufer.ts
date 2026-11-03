@@ -205,7 +205,7 @@ export function anruferWaehlen(
   // Draußen
   add({ ort: "Straße / Gehsteig", rolle: "Passant", anruferWert: "2", typ: "passant" }, draussen ? 5 : 1);
   add({ ort: "Geschäft", rolle: "Mitarbeiterin im Geschäft", anruferWert: "2", geschlecht: "w", typ: "verkauf" }, 0.6);
-  add({ ort: "Straße", rolle: "Lenker an der Unfallstelle", anruferWert: "2", typ: "lenker" }, ist(kapitel, "verkehrsunfall") ? 4 : 0);
+  add({ ort: "Straße", rolle: "Lenker vor Ort", anruferWert: "2", typ: "lenker" }, ist(kapitel, "verkehrsunfall") ? 4 : 0);
 
   // Fallgeschichte: nur passende Anrufer (Ort kommt aus der Geschichte)
   if (geschichte?.typen.length) {
@@ -223,7 +223,7 @@ export function anruferWaehlen(
       kollege: { ort: "", rolle: rnd() < 0.5 ? "Arbeitskollege" : "Arbeitskollegin", anruferWert: "2", typ: "kollege" },
       passant: { ort: "", rolle: rnd() < 0.5 ? "Passant" : "Passantin", anruferWert: "2", typ: "passant" },
       verkauf: { ort: "", rolle: rnd() < 0.6 ? "Mitarbeiterin im Geschäft" : "Mitarbeiter im Geschäft", anruferWert: "2", typ: "verkauf" },
-      lenker: { ort: "", rolle: "Lenker an der Unfallstelle", anruferWert: "2", typ: "lenker" },
+      lenker: { ort: "", rolle: "Lenker vor Ort", anruferWert: "2", typ: "lenker" },
       begleiter: { ort: "", rolle: rnd() < 0.5 ? "Freund, der dabei ist" : "Freundin, die dabei ist", anruferWert: "2", typ: "begleiter" },
       trainer: { ort: "", rolle: "Trainer im Sportverein", anruferWert: "2", geschlecht: "m", typ: "trainer" },
       bademeister: { ort: "", rolle: rnd() < 0.7 ? "Bademeister" : "Bademeisterin", anruferWert: "2", typ: "bademeister" },

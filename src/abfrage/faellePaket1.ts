@@ -1056,6 +1056,7 @@ export const FAELLE_PAKET1: FallVorlage[] = [
     hergang: ["{P} ist Diabetiker, der Zucker ist so hoch, dass das Gerät nur HI anzeigt!", "{P} ist so schlapp und atmet ganz komisch, {er} hat Zucker."],
     seitMin: [180, 720],
     fest: { diabetiker: "ja", verhalten: "ja", gewalttaetig: "nein", bw: "getruebt", at: "abnorm", anzahl_patienten: "1" },
+    vorerkrankungen: ["!Diabetes, spritzt Insulin"],
     details: ["Der Atem riecht komisch süßlich, nach Nagellack.", "Insulin hat {er} weniger gespritzt, weil {er} kaum gegessen hat."],
     varianten: [{ id: "A", p: 1, sichtung: "rot", lage: "diabetische Ketoazidose, BZ über 600, Kussmaul-Atmung, somnolent, exsikkiert", na: "NFS-NKV", symptom: "blutzuckerentgleisung", dringlichkeit: 20, buchung: "bu_blutzuckerentgleisung" }],
   },
