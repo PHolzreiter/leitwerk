@@ -1,5 +1,14 @@
 [
  {
+  "version": "0.98.1",
+  "datum": "2026-11-03",
+  "titel": "Cloud-Anrufer: kleine Korrekturen",
+  "punkte": [
+   "Keine unnötige Vorbereitung der lokalen KI bei Cloud-Anrufen",
+   "Autolenker als Anrufer passen jetzt zum Unfallhergang"
+  ]
+ },
+ {
   "version": "0.98.0",
   "datum": "2026-11-02",
   "titel": "Cloud-Anrufer wie am echten Telefon",

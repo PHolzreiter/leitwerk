@@ -116,7 +116,8 @@ const vorabSchluessel = (e: Einsatz) => `${e.id}:${e.anruf?.versuche ?? 0}:${e.a
 export const testlaufStatus = { aktiv: false };
 
 export function vorwaermen(): void {
-  if (vorabLaeuft || testlaufStatus.aktiv || !kiBereit()) return;
+  // Cloud-Anrufer an: die lokale KI muss nichts vorbereiten (sonst rechnet sie umsonst und bremst den Rechner)
+  if (vorabLaeuft || testlaufStatus.aktiv || !kiBereit() || liveAktiv()) return;
   // alte Einträge (Anruf längst angenommen oder vorbei) wegräumen
   for (const key of vorab.keys()) {
     const e = sim.einsatz(key.split(":")[0]);

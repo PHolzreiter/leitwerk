@@ -1,5 +1,9 @@
 # Änderungen
 
+## 0.98.1 – Cloud-Anrufer: kleine Korrekturen
+- Mit Cloud-Anrufer bereitet die KI auf deinem Rechner beim Klingeln keine Antwort mehr vor – das hat umsonst gerechnet und den Rechner gebremst
+- Anrufende Autolenker sind jetzt einfach „an der Unfallstelle“: Wer den Unfall selbst verursacht hat, sagt nicht mehr „Ich bin vorbeigekommen und hab's gesehen“
+
 ## 0.98.0 – Cloud-Anrufer wie am echten Telefon
 - **Freisprechen** (Einstellungen → KI → Cloud-Anrufer): Während des Anrufs läuft das Mikrofon, du redest einfach – ohne Taste. Der Anrufer merkt selbst, wann du fertig bist, und du kannst ihm ins Wort fallen. Am besten mit Kopfhörern. Die Sprechtaste für den Funk geht weiter und unterbricht das Freisprechen nur kurz
 - **Der Anrufer meldet sich von selbst,** wenn sich am Notfallort etwas ändert („Jetzt atmet er ganz komisch!“)
