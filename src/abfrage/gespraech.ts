@@ -5,7 +5,7 @@
  */
 import { store } from "../data/store";
 import { sim, type Einsatz } from "../sim/engine";
-import { antwortOhneKi, erinnerung, werText, ersterSatzOhneKi, istBekannt, sprachFilter, systemPrompt, zusammenfassungPruefen, type AnrufKontext } from "./anrufer";
+import { antwortOhneKi, EMOTIONEN, panikStufe, stimmKlang, erinnerung, werText, ersterSatzOhneKi, istBekannt, sprachFilter, systemPrompt, zusammenfassungPruefen, type AnrufKontext } from "./anrufer";
 import { kiBereit, kiPrefs, kiStatus, type KiNachricht } from "./ki";
 import { kiAntwortNeu, nachrichtArt, ohneVorspann } from "./runde";
 import { liveAktiv, liveFrage, liveSperren, liveSprechen, livePrefs, sitzungDa, sitzungFuer, type LiveErgebnis, type SitzungOpt } from "./liveKi";
@@ -169,17 +169,18 @@ export async function fragen(e: Einsatz, text: string, schemaFrage?: Frage, onTo
     if (liveAktiv() && liveGeeignet(k)) {
       try {
         const r = await liveAntwort(e, k, text, schemaFrage, onToken, wiederholt);
+        kiQuelleSetzen(e.id, "gemini");
         if (r.text) await sim.call("anrufNachricht", e.id, "anrufer", r.text, "ki");
         if (r.text) liveNachpruefen(e, k, text, r.text, schemaFrage);
         return;
       } catch (err) {
         // Cloud geht nicht: diese Antwort kommt von der lokalen KI
         console.warn("Gemini Live", err);
-        liveFehlerMelden(String((err as Error).message ?? err));
+        liveFehlerMelden(e.id, String((err as Error).message ?? err));
       }
-    }
+    } else kiQuelleSetzen(e.id, kiBereit() ? "lokal" : "fest");
     // fertige Sätze schon vorlesen, während die KI noch schreibt
-    const sprecher = satzSprecher((satz) => e.anruf?.status === "aktiv" && anruferSagt(satz, k.anrufer, e.id));
+    const sprecher = satzSprecher((satz) => e.anruf?.status === "aktiv" && anruferSagt(satz, { ...k.anrufer, emotion: EMOTIONEN[e.wahr.abfrage?.stimmung?.stufe ?? panikStufe(k.anrufer.emotion)] ?? k.anrufer.emotion }, e.id));
     const start = Date.now();
     const fertig = await vorabAntwort(e, text, schemaFrage);
     if (fertig) {
@@ -747,36 +748,42 @@ export function zaehlFolge(vonAnfang = false): string {
   return `${ZAHLEN.slice(start, start + 5).join(", ")} …`;
 }
 
-const STIMMUNGEN = ["ruhig", "gefasst", "aufgeregt", "panisch"] as const;
+const STIMMUNGEN = EMOTIONEN;
 const STIMMUNG_TEXT = [
   "Du bist jetzt ruhiger und sachlich.",
   "Du bist jetzt besorgt, aber gefasst.",
   "Du bist jetzt aufgeregt und redest schneller.",
   "Du bist jetzt panisch: kurze, abgehackte Sätze.",
+  "Du bist jetzt in großer Panik: du schreist fast, wiederholst dich und antwortest nur in Bruchstücken.",
+  "Du bist jetzt völlig außer dir: du schreist und weinst und verstehst die Fragen kaum.",
 ];
+/** Leitstelle beruhigt bestimmt („Hören Sie mir zu!“) */
+const BERUHIGEN = /h(ö|oe)r(en)? sie mir (gut |jetzt )?zu|ganz ruhig|beruhigen sie sich|bleiben sie ruhig|atmen sie (einmal |tief )?durch|ich helfe ihnen|wir schaffen das|ich bin (bei ihnen|da)|hilfe ist (schon )?unterwegs/i;
 
 /**
- * Stimmung im Gespräch: „Die Rettung ist unterwegs“ und klare Anweisungen beruhigen, eine Verschlechterung
- * oder langes Warten ohne Zusage machen unruhiger. Gibt einen Hinweis zurück, wenn sie anders ist als am Anfang.
+ * Stimmung im Gespräch: „Die Rettung ist unterwegs“, klare Anweisungen und bestimmtes Beruhigen helfen,
+ * eine Verschlechterung oder langes Warten ohne Zusage machen unruhiger. Gibt einen Hinweis zurück, wenn sie anders ist als am Anfang.
  */
-function stimmungHinweis(e: Einsatz, k: AnrufKontext, art: string, frage: string, anweisung: AnweisungKern | null): string | undefined {
+export function stimmungHinweis(e: Einsatz, k: AnrufKontext, art: string, frage: string, anweisung: AnweisungKern | null): string | undefined {
   const w = e.wahr.abfrage;
   if (!w || (k.anrufer.art ?? "privat") !== "privat") return undefined;
-  const start = Math.max(0, STIMMUNGEN.indexOf(k.anrufer.emotion));
+  const max = STIMMUNGEN.length - 1;
+  const start = panikStufe(k.anrufer.emotion);
   const s = (w.stimmung ??= { stufe: start, verlauf: 0, beruhigt: false });
   const n = (k.verlauf ?? []).length;
   if (n > s.verlauf) {
-    // Veränderung im Gespräch: bei einer Verschlechterung unruhiger, bei einer Besserung ruhiger
+    // Veränderung im Gespräch: bei einer Verschlechterung deutlich unruhiger, bei einer Besserung ruhiger
     const neu = (k.verlauf ?? []).slice(s.verlauf).join(" ").toLowerCase();
-    s.stufe = /besser|wieder|atmet wieder|draußen|ausgespuckt|schreit|wach/.test(neu) ? Math.max(0, s.stufe - 1) : Math.min(3, s.stufe + 1);
+    s.stufe = /besser|wieder|atmet wieder|draußen|ausgespuckt|schreit|wach/.test(neu) ? Math.max(0, s.stufe - 1) : Math.min(max, s.stufe + (s.stufe >= 2 ? 2 : 1));
     s.verlauf = n;
   }
-  if (art === "mitteilung" && /rettung|unterwegs|kommt|schick|alarmiert|auf dem weg/i.test(frage)) {
+  if (BERUHIGEN.test(frage) && s.stufe >= 3) s.stufe -= s.stufe >= 4 ? 2 : 1;
+  else if (art === "mitteilung" && /rettung|unterwegs|kommt|schick|alarmiert|auf dem weg/i.test(frage)) {
     s.stufe = Math.max(0, s.stufe - 1);
     s.beruhigt = true;
   } else if (anweisung && !anweisung.nichtMachbar.length) s.stufe = Math.max(start >= 3 ? 1 : 0, s.stufe - 1);
   // lange keine Zusage, dass Hilfe kommt: einmal unruhiger
-  else if (!s.beruhigt && (e.anruf?.gespraech ?? []).filter((m) => m.von === "anrufer").length === 9 && s.stufe < 3 && start >= 1) s.stufe += 1;
+  else if (!s.beruhigt && (e.anruf?.gespraech ?? []).filter((m) => m.von === "anrufer").length === 9 && s.stufe < max && start >= 1) s.stufe += 1;
   return s.stufe !== start ? STIMMUNG_TEXT[s.stufe] : undefined;
 }
 
@@ -857,11 +864,24 @@ function zeitMerken(z: AntwortZeit): void {
   console.info(`[Antwortzeit]${z.tokens ? ` ${z.tokens} Tokens` : ""} ${z.modus}: erster Satz ${z.ersterSatz} ms, fertig ${z.fertig} ms – „${z.frage.slice(0, 40)}“`);
 }
 
-let liveFehlerZuletzt = 0;
-function liveFehlerMelden(t: string): void {
-  if (Date.now() - liveFehlerZuletzt < 20000) return;
-  liveFehlerZuletzt = Date.now();
-  void import("../ui/dom").then((m) => m.toast(`${t} – Antwort kommt von der lokalen KI`, "error"));
+/** Wer hat zuletzt geantwortet? (für das kleine Symbol im Anruffenster) */
+export interface KiQuelle {
+  art: "gemini" | "lokal" | "fest";
+  /** Gemini sollte, ist aber ausgefallen */
+  ersatz?: string;
+}
+const kiQuellen = new Map<string, KiQuelle>();
+export const kiQuelleHoerer = new Set<(id: string) => void>();
+export function kiQuelleVon(id: string): KiQuelle | undefined {
+  return kiQuellen.get(id);
+}
+function kiQuelleSetzen(id: string, art: KiQuelle["art"], ersatz?: string): void {
+  kiQuellen.set(id, { art, ersatz });
+  for (const f of kiQuelleHoerer) f(id);
+}
+/** Gemini ausgefallen: kein Popup, nur das Symbol am Rand zeigt „lokal“ mit dem Grund */
+function liveFehlerMelden(id: string, t: string): void {
+  kiQuelleSetzen(id, kiBereit() ? "lokal" : "fest", t);
 }
 
 /**
@@ -869,8 +889,10 @@ function liveFehlerMelden(t: string): void {
  * (was zur Frage gehört, bei Anweisungen das Ergebnis). Die Antwort wird gleich gesprochen.
  */
 export async function liveAntwort(e: Einsatz, k: AnrufKontext, text: string, schemaFrage?: Frage, onToken?: (t: string) => void, wiederholt = false): Promise<LiveErgebnis> {
-  const an = !schemaFrage && nachrichtArt(text) === "anweisung" ? anweisungKern(k, text) : null;
-  const verlauf = kiVerlauf(e, k, text, schemaFrage, wiederholt, an?.typen.length ? an.saetze : undefined);
+  const art = schemaFrage ? "frage" : nachrichtArt(text);
+  const an = art === "anweisung" ? anweisungKern(k, text) : null;
+  const stimmung = stimmungHinweis(e, k, art, text, an?.typen.length ? an : null);
+  const verlauf = kiVerlauf(e, k, text, schemaFrage, wiederholt, an?.typen.length ? an.saetze : undefined, stimmung ? `${stimmung} Lass es auch deine Stimme hören.` : undefined);
   const letzte = verlauf[verlauf.length - 1].content;
   const r = await liveFrage(liveOpt(e, k), letzte, onToken, text);
   zeitMerken({ frage: text, ersterSatz: r.ersterTon, fertig: r.fertig, modus: "Gemini Live", tokens: r.tokens });
@@ -889,7 +911,7 @@ function liveOpt(e: Einsatz, k: AnrufKontext, vorab = false): SitzungOpt {
   return {
     id,
     bezug: `${e.anruf?.seit ?? ""}|${k.anrufer.name}|${k.anrufer.nummer ?? ""}`,
-    system: systemFuer(e, k),
+    system: `${systemFuer(e, k)}\n${stimmKlang(k.anrufer)}`,
     geschlecht: k.anrufer.geschlecht,
     verlauf: e.anruf?.gespraech ?? [],
     aktiv: () => {
@@ -915,7 +937,7 @@ async function liveEreignis(id: string, r: LiveErgebnis): Promise<void> {
   if (r.text) await schreiben("anrufer", r.spontan ? `${r.text}` : r.text);
   zeitMerken({ frage: r.frage || "(von sich aus)", ersterSatz: r.ersterTon, fertig: r.fertig, modus: r.spontan ? "Gemini Live (von sich aus)" : "Gemini Live (Freisprechen)", tokens: r.tokens });
   const k = kontext(e);
-  if (k && r.frage && r.text && !r.unterbrochen) liveNachpruefen(e, k, r.frage, r.text);
+  if (k && r.frage && r.text && !r.unterbrochen) liveNachpruefen(e, k, r.frage, r.text, undefined, true);
 }
 
 /**
@@ -923,9 +945,15 @@ async function liveEreignis(id: string, r: LiveErgebnis): Promise<void> {
  * Passt sie nicht, bekommt der Anrufer leise eine Korrektur und verbessert sich selbst („Nein, Moment …“).
  * Anweisungen werden wie bei der lokalen KI gemerkt.
  */
-export function liveNachpruefen(e: Einsatz, k: AnrufKontext, frage: string, antwort: string, schemaFrage?: Frage): string[] {
+export function liveNachpruefen(e: Einsatz, k: AnrufKontext, frage: string, antwort: string, schemaFrage?: Frage, gesprochen = false): string[] {
   try {
     const art = schemaFrage ? "frage" : nachrichtArt(frage);
+    // gesprochen (Sprechtaste/Freisprechen): Stimmung erst jetzt nachziehen – gilt ab der nächsten Antwort
+    if (gesprochen) {
+      const vorher = e.wahr.abfrage?.stimmung?.stufe;
+      const st = stimmungHinweis(e, k, art, frage, art === "anweisung" ? anweisungKern(k, frage) : null);
+      if (st && e.wahr.abfrage?.stimmung?.stufe !== vorher) sitzungDa(e.id)?.hinweis(`[Nur für dich, nicht vorlesen: ${st} Lass es auch deine Stimme hören.]`, false);
+    }
     const probleme: string[] = [];
     let richtig: string[] = [];
     if (art === "frage") {
@@ -1047,7 +1075,7 @@ export function liveSprechStrom(e: Einsatz, onToken?: (t: string) => void, danac
         if (r.text) await sim.call("anrufNachricht", e.id, "anrufer", r.text, "ki");
         zeitMerken({ frage: frage || "(gesprochen)", ersterSatz: r.ersterTon, fertig: r.fertig, modus: "Gemini Live (Sprache)", tokens: r.tokens });
         if (!r.text && !r.frage) void import("../ui/dom").then((m) => m.toast("Nichts verstanden – bitte nochmal.", "error"));
-        if (r.frage && r.text) liveNachpruefen(e, k, r.frage, r.text);
+        if (r.frage && r.text) liveNachpruefen(e, k, r.frage, r.text, undefined, true);
       } catch (err) {
         console.warn("Gemini Live (Sprache)", err);
         liveSperren();

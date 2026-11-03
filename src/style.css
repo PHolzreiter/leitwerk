@@ -4016,3 +4016,18 @@ input.ausr-zahl { width: 64px !important; min-width: 0; }
 @media (max-width: 900px) { .auf-haupt { flex-direction: column; } .auf-liste { width: 100%; } }
 .auf-tabelle td:first-child, .auf-tabelle td:nth-child(7) { white-space: nowrap; }
 .auf-seg-b { min-height: 30px; padding: 4px 14px; }
+
+/* ---- Anrufe & KI */
+.set-sec.ki-aus { display: none; }
+.ki-modus-wahl button { padding: 6px 14px; }
+.gemini-anleitung ol { margin: 6px 0 8px; padding-left: 22px; }
+.gemini-anleitung li { margin-bottom: 6px; }
+.gemini-schluessel { margin: 8px 0; }
+.gemini-schluessel .row-btns { flex-wrap: wrap; }
+.ki-wahl-karten { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+.ki-wahl-karte { display: flex; flex-direction: column; gap: 6px; text-align: left; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius-md, 8px); background: var(--panel-2); color: var(--text); cursor: pointer; }
+.ki-wahl-karte:hover { border-color: var(--accent, #3a8bff); }
+.ki-wahl-karte b { font-size: 15px; }
+@media (max-width: 640px) { .ki-wahl-karten { grid-template-columns: 1fr; } }
+.ki-quelle { font-size: 11px; color: var(--text-dim); margin-left: auto; white-space: nowrap; }
+.ki-quelle.ersatz { color: var(--warn-text, #b77b00); }

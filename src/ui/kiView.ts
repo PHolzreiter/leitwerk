@@ -1,6 +1,5 @@
 /** Einstellungen → „KI-Anrufer“: Ollama installieren/starten, Modell laden, Test. */
 import { store } from "../data/store";
-import { livePrefs, liveTesten, LIVE_MODELL, setLivePrefs } from "../abfrage/liveKi";
 import { MODELLE, STUFE_LABEL, empfohleneStufe, kiBeenden, kiChat, kiInstallieren, kiModellLaden, kiModellLoeschen, kiPrefs, kiStarten, kiStatus, rechnerRam, setKiPrefs, type KiStatus } from "../abfrage/ki";
 import { inTauri } from "../platform";
 import type { Settings } from "../sim/settings";
@@ -14,39 +13,44 @@ function hatModell(s: KiStatus, name: string): boolean {
   return s.modelle.some((m) => m === name || m.startsWith(name));
 }
 
+/** Spiel-Einstellung (für alle, mit „Speichern“): Notrufe an, Regel für die KI der Mitspieler */
 export function buildKiSection(sec: HTMLElement, draft: Settings): void {
-  // Spieleinstellung (gilt für alle im Spiel, wird mit „Speichern“ übernommen)
   const grid = el("div", { class: "set-grid" });
   const an = el("input", { type: "checkbox" });
   an.checked = draft.anrufe;
   an.addEventListener("change", () => (draft.anrufe = an.checked));
   grid.append(el("label", {}, "Einsätze kommen als Notruf (braucht ein Abfrageschema; mit „Speichern“ unten übernehmen)"), an);
+  const regel = el("select") as HTMLSelectElement;
+  regel.append(
+    el("option", { value: "frei" }, "jeder wählt selbst"),
+    el("option", { value: "gemini" }, "alle Gemini (jeder braucht einen eigenen Schlüssel)"),
+    el("option", { value: "lokal" }, "alle lokal (Ollama)"),
+  );
+  regel.value = draft.kiRegel ?? "frei";
+  regel.addEventListener("change", () => (draft.kiRegel = regel.value as "frei" | "gemini" | "lokal"));
+  grid.append(
+    el("label", { title: "Gilt im Mehrspieler: Wer „alle Gemini“ ohne geprüften Schlüssel beitritt, muss ihn zuerst einrichten. Funksprüche erzeugt immer der Rechner dessen, der das Funkgespräch führt – alle hören denselben Spruch." }, "Anrufer-KI der Mitspieler (mit „Speichern“)"),
+    regel,
+  );
   sec.appendChild(grid);
+}
 
-  // Rechner-Einstellungen (nur dieser Rechner, sofort gültig)
-  sec.appendChild(el("p", { class: "muted small" }, "Die folgenden Punkte gelten nur für diesen Rechner und sofort. Die KI läuft auf dem Rechner dessen, der das Gespräch führt."));
+/** Für alle Anrufer-KIs: Klingelton, Ablauf, Funk */
+export function buildKiAllgemein(sec: HTMLElement): void {
   const p = kiPrefs();
   const lg = el("div", { class: "set-grid" });
   const chk = (label: string, wert: boolean, fn: (v: boolean) => void) => {
     const c = el("input", { type: "checkbox" });
     c.checked = wert;
-    c.addEventListener("change", () => {
-      fn(c.checked);
-      void zeigen();
-    });
+    c.addEventListener("change", () => fn(c.checked));
     lg.append(el("label", {}, label), c);
   };
-  chk("KI-Anrufer verwenden (sonst einfache Antworten)", p.aktiv, (v) => setKiPrefs({ aktiv: v }));
   chk("Klingelton bei Anrufen", p.klingelton, (v) => setKiPrefs({ klingelton: v }));
-  chk("Ollama beim Beenden von LeitWerk schließen", p.beenden, (v) => setKiPrefs({ beenden: v }));
-  chk("Schnelles Gespräch (Test) – Anrufer spricht ab dem ersten geprüften Satz", p.schnell, (v) => setKiPrefs({ schnell: v }));
-  // Gesprächsablauf: neu (ab v0.38) oder wie bisher
   const ablauf = el("select") as HTMLSelectElement;
   ablauf.append(el("option", { value: "neu" }, "neu – Frage verstehen, Antwort prüfen, bei Fehlern neu erzeugen"), el("option", { value: "klassisch" }, "klassisch – wie bis Version 0.37"));
   ablauf.value = p.ablauf;
   ablauf.addEventListener("change", () => setKiPrefs({ ablauf: ablauf.value as "neu" | "klassisch" }));
   lg.append(el("label", {}, "Gesprächsablauf"), ablauf);
-  // Funk über die KI oder feste Funksprüche
   const funk = el("select") as HTMLSelectElement;
   funk.append(el("option", { value: "ki" }, "KI – Besatzungen reden wie echt (Inhalt vom Programm, geprüft)"), el("option", { value: "fest" }, "fest – feste Funksprüche wie bis Version 0.40"));
   funk.value = p.funk;
@@ -58,53 +62,25 @@ export function buildKiSection(sec: HTMLElement, draft: Settings): void {
   unv.addEventListener("change", () => store.setSettings({ ...store.settings, funkUnvollstaendig: unv.checked }));
   lg.append(el("label", { title: unv.title }, "Funkmeldungen manchmal unvollständig"), unv);
   sec.appendChild(lg);
+}
 
-  // Cloud-Anrufer (Test): Gemini Live mit eigenem Gratis-Schlüssel
-  const lp = livePrefs();
-  const cloud = el("div", { class: "set-grid" });
-  const cloudAn = el("input", { type: "checkbox" }) as HTMLInputElement;
-  cloudAn.checked = lp.an;
-  cloudAn.addEventListener("change", () => setLivePrefs({ an: cloudAn.checked }));
-  const schl = el("input", { type: "password", placeholder: "Schlüssel aus AI Studio", autocomplete: "off", spellcheck: "false" }) as HTMLInputElement;
-  schl.value = lp.schluessel;
-  schl.style.width = "22em";
-  schl.addEventListener("change", () => setLivePrefs({ schluessel: schl.value.trim() }));
-  const cloudTest = el("button", { class: "btn small", type: "button" }, "Verbindung testen");
-  const cloudErg = el("span", { class: "small muted" });
-  cloudTest.addEventListener("click", async () => {
-    setLivePrefs({ schluessel: schl.value.trim() });
-    cloudErg.textContent = "Verbinde …";
-    cloudTest.disabled = true;
-    try {
-      cloudErg.textContent = `✓ ${await liveTesten()}`;
-    } catch (err) {
-      cloudErg.textContent = `✗ ${(err as Error).message ?? err}`;
-    } finally {
-      cloudTest.disabled = false;
-    }
-  });
-  const frei = el("input", { type: "checkbox" }) as HTMLInputElement;
-  frei.checked = lp.freisprechen;
-  frei.addEventListener("change", () => setLivePrefs({ freisprechen: frei.checked }));
-  const klangChk = el("input", { type: "checkbox" }) as HTMLInputElement;
-  klangChk.checked = lp.klang;
-  klangChk.addEventListener("change", () => setLivePrefs({ klang: klangChk.checked }));
-  cloud.append(el("label", {}, "Anrufer über Gemini Live (Cloud) – spricht mit eigener Stimme"), cloudAn, el("label", {}, "Gemini-Schlüssel"), schl, el("span", {}), (() => { const w = el("span"); w.append(cloudTest, " ", cloudErg); return w; })());
-  cloud.append(
-    el("label", { title: "Das Mikrofon läuft während des Anrufs; der Anrufer erkennt selbst, wann du fertig bist, und du kannst ihm ins Wort fallen. Am besten mit Kopfhörern – sonst hört er sich selbst aus den Lautsprechern." }, "Freisprechen (ohne Sprechtaste, am besten mit Kopfhörern)"),
-    frei,
-    el("label", {}, "Telefonklang und Geräusche vom Notfallort"),
-    klangChk,
-  );
-  sec.append(
-    el("h4", {}, "Cloud-Anrufer (Test)"),
-    el(
-      "p",
-      { class: "small muted" },
-      `Statt der KI auf deinem Rechner antwortet ${LIVE_MODELL} von Google – meist natürlicher und schneller. Dafür brauchst du einen kostenlosen Schlüssel: auf aistudio.google.com mit einem Google-Konto anmelden → „Get API key“ → „Create API key“ und hier einfügen. Der Schlüssel bleibt nur auf diesem Rechner. Im Gratis-Zugang darf Google die Gespräche zum Verbessern verwenden, und es gibt ein Tageslimit; ist es erreicht oder geht die Verbindung nicht, antwortet automatisch wieder die lokale KI. Fragen per Knopf, Tippen oder Sprache funktionieren wie bisher.`,
-    ),
-    cloud,
-  );
+/** Lokale KI (Ollama): an/aus, Modell nach Rechner-Stärke, Installieren, Testanruf */
+export function buildKiLokal(sec: HTMLElement): void {
+  const p = kiPrefs();
+  const lg = el("div", { class: "set-grid" });
+  const chk = (label: string, wert: boolean, fn: (v: boolean) => void) => {
+    const c = el("input", { type: "checkbox" });
+    c.checked = wert;
+    c.addEventListener("change", () => {
+      fn(c.checked);
+      void zeigen();
+    });
+    lg.append(el("label", {}, label), c);
+  };
+  chk("Lokale KI verwenden (sonst einfache Antworten)", p.aktiv, (v) => setKiPrefs({ aktiv: v }));
+  chk("Ollama beim Beenden von LeitWerk schließen", p.beenden, (v) => setKiPrefs({ beenden: v }));
+  chk("Schnelles Gespräch (Test) – Anrufer spricht ab dem ersten geprüften Satz", p.schnell, (v) => setKiPrefs({ schnell: v }));
+  sec.appendChild(lg);
 
   // Sprachmodell nach Rechner-Stärke
   const modell = { value: p.modell };

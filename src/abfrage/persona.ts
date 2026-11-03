@@ -128,7 +128,7 @@ const WOERTER: Record<string, string[]> = {
 
 /** Persönlichkeit für einen privaten Anrufer (Profis bekommen eine ruhige, knappe) */
 export function personaWaehlen(
-  x: { rolle: string; selbst: boolean; typ?: AnruferTyp; emotion: "ruhig" | "gefasst" | "aufgeregt" | "panisch"; sprache: string },
+  x: { rolle: string; selbst: boolean; typ?: AnruferTyp; emotion: string; sprache: string },
   p: { alter: number; w: boolean; vorname: string; nachname: string; wach?: boolean; sicht?: boolean },
   opt: { ortUnbekannt?: boolean; draussen?: boolean; zuhause?: boolean; oeffentlich?: boolean; heim?: boolean },
   rnd: Rnd = Math.random,
@@ -141,7 +141,7 @@ export function personaWaehlen(
       : gewichtet<Redestil>(
           [
             ["normal", 4],
-            ["knapp", x.emotion === "panisch" ? 3 : 2],
+            ["knapp", ["panisch","sehr_panisch","extrem_panisch"].includes(x.emotion) ? 3 : 2],
             ["gespraechig", alt ? 3 : 1.5],
             ["unsicher", wissen === "fremd" ? 1.5 : 0.5],
           ],
@@ -155,8 +155,8 @@ export function personaWaehlen(
       : gewichtet<Einstieg>(
           [
             ["adresse", 5],
-            ["dringend", x.emotion === "panisch" ? 5 : x.emotion === "aufgeregt" ? 3 : 0],
-            ["problem", x.emotion === "panisch" ? 3 : x.emotion === "aufgeregt" ? 2 : 1],
+            ["dringend", ["panisch","sehr_panisch","extrem_panisch"].includes(x.emotion) ? 5 : x.emotion === "aufgeregt" ? 3 : 0],
+            ["problem", ["panisch","sehr_panisch","extrem_panisch"].includes(x.emotion) ? 3 : x.emotion === "aufgeregt" ? 2 : 1],
             ["hallo", stil === "unsicher" ? 2.5 : 0.8],
             ["unvollstaendig", 1.5],
             ["umschreibung", opt.draussen ? 0.5 : 1.2],

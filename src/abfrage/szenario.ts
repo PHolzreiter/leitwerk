@@ -864,8 +864,10 @@ export function fallakte(sz: Szenario, opt: { selbst: boolean; bezug: string; qu
 }
 
 /** Stimmung des Anrufers aus der Geschichte („Du bist panisch …“) – damit Stimme, Beispiele und Verlauf zusammenpassen */
-export function stimmungAusVerlauf(verlauf: string[]): "ruhig" | "gefasst" | "aufgeregt" | "panisch" | null {
+export function stimmungAusVerlauf(verlauf: string[]): "ruhig" | "gefasst" | "aufgeregt" | "panisch" | "sehr_panisch" | "extrem_panisch" | null {
   const t = verlauf.join(" ").toLowerCase();
+  if (/hysterisch|außer dir|schreist und weinst/.test(t)) return "extrem_panisch";
+  if (/große panik|sehr panisch/.test(t)) return "sehr_panisch";
   if (/panisch|schreist|weinst|verängstigt/.test(t)) return "panisch";
   if (/sehr aufgeregt|geschockt|aufgewühlt|aufgeregt/.test(t)) return "aufgeregt";
   if (/nervös|besorgt|erschrocken|traurig/.test(t)) return "gefasst";

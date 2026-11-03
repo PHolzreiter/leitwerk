@@ -495,8 +495,8 @@ export function createSettingsView(container: HTMLElement, teil: "simulation" | 
     // KI-Anrufer
     buildKiSection(
       section(
-        "Notrufe und KI-Anrufer",
-        "Mit einem Abfrageschema (Einstellungen → Leitstelle → Einsatzcodes & Abfrage) kommen Einsätze als Anruf. Den Anrufer spielt eine KI (Ollama), die auf deinem Rechner läuft – ohne Internet und kostenlos. Ohne KI antwortet der Anrufer mit einfachen Sätzen.",
+        "Notrufe im Spiel",
+        "Für alle im Spiel (mit „Speichern“): Mit einem Abfrageschema (Leitstelle → Einsatzcodes & Abfrage) kommen Einsätze als Anruf. Im Mehrspieler legt der Host hier fest, ob alle dieselbe Anrufer-KI verwenden müssen.",
       ),
       draft,
     );

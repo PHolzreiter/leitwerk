@@ -7,6 +7,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { inTauri } from "../platform";
 import { aufnahmeLaeuftJetzt, sprachPrefs, verstummHoerer } from "../ui/sprache";
+import { store } from "../data/store";
 
 const LS = "leitwerk.gemini";
 export const LIVE_MODELL = "gemini-3.8-live";
@@ -16,6 +17,10 @@ export interface LivePrefs {
   /** Anrufer über Gemini Live statt der lokalen KI */
   an: boolean;
   schluessel: string;
+  /** Schlüssel, der zuletzt erfolgreich getestet wurde (nur zum Vergleich: gekürzt) */
+  geprueft?: string;
+  /** schon einmal gefragt, wie Anrufer reden sollen (erster Start) */
+  gewaehlt?: boolean;
   /** ohne Sprechtaste reden – Gemini erkennt selbst, wann du fertig bist */
   freisprechen: boolean;
   /** Anruferstimme klingt nach Telefon, dazu Geräusche vom Notfallort */
@@ -42,10 +47,34 @@ export function setLivePrefs(p: Partial<LivePrefs>): void {
 }
 export const prefsHoerer = new Set<() => void>();
 
+/** Regel des Hosts im Mehrspieler (frei = jeder wählt selbst) */
+export function kiRegel(): "frei" | "gemini" | "lokal" {
+  return store.settings.kiRegel ?? "frei";
+}
+
+/** Welche Anrufer-KI gilt gerade für mich? (Regel des Hosts vor eigener Wahl) */
+export function anrufKiModus(): "gemini" | "lokal" {
+  const r = kiRegel();
+  if (r !== "frei") return r;
+  return livePrefs().an ? "gemini" : "lokal";
+}
+
+/** Ist ein Schlüssel eingetragen (und – soweit bekannt – geprüft)? */
+export function schluesselDa(): boolean {
+  return livePrefs().schluessel.trim().length > 10;
+}
+export function schluesselGeprueft(): boolean {
+  const p = livePrefs();
+  return schluesselDa() && p.geprueft === kurz(p.schluessel);
+}
+export function kurz(k: string): string {
+  const t = k.trim();
+  return `${t.slice(0, 4)}…${t.slice(-4)}:${t.length}`;
+}
+
 /** Soll dieser Anruf über Gemini Live laufen? */
 export function liveAktiv(): boolean {
-  const p = livePrefs();
-  return p.an && p.schluessel.trim().length > 10 && typeof WebSocket !== "undefined" && Date.now() >= gesperrtBis;
+  return anrufKiModus() === "gemini" && schluesselDa() && typeof WebSocket !== "undefined" && Date.now() >= gesperrtBis;
 }
 
 /** nach einem Fehler eine Weile die lokale KI bzw. Erkennung verwenden */
@@ -249,6 +278,8 @@ export interface SitzungOpt {
   frei?: boolean;
   /** Antworten, die nicht auf eine Frage per Knopf/Taste kommen (Freisprechen, von sich aus) */
   ereignis?: (r: LiveErgebnis) => void;
+  /** nichts abspielen und ohne die Regeln für Anrufer (z. B. nur Mitschrift vom Funk) */
+  stumm?: boolean;
 }
 
 class Sitzung {
@@ -284,7 +315,7 @@ class Sitzung {
           setup: {
             model: `models/${LIVE_MODELL}`,
             generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: stimmeFuer(opt.geschlecht, opt.id) } } } },
-            systemInstruction: { parts: [{ text: `${opt.system}\n${ZUSATZ}` }] },
+            systemInstruction: { parts: [{ text: opt.stumm ? opt.system : `${opt.system}\n${ZUSATZ}` }] },
             outputAudioTranscription: {},
             inputAudioTranscription: {},
             // Sprechtaste: wir sagen selbst, wann die Leitstelle redet; Freisprechen: Gemini erkennt es selbst
@@ -377,7 +408,7 @@ class Sitzung {
       if (!p.inlineData?.data) continue;
       const rate = Number(/rate=(\d+)/.exec(p.inlineData.mimeType ?? "")?.[1] ?? 24000);
       if (!r.ersterTon) r.ersterTon = Date.now() - r.start;
-      if (sprachPrefs().vorlesen && !r.stumm) {
+      if (sprachPrefs().vorlesen && !r.stumm && !this.opt.stumm) {
         this.ton ??= new Wiedergabe(rate);
         this.ton.dazu(b64ZuInt16(p.inlineData.data), rate);
       }
@@ -592,6 +623,7 @@ export async function liveTesten(): Promise<string> {
   const s = new Sitzung({ id: `test-${Date.now()}`, system: "Du bist ein freundlicher Mensch am Telefon. Antworte sehr kurz auf Deutsch.", verlauf: [], aktiv: () => true });
   try {
     const r = await s.frage("Sag bitte nur: Verbindung steht.");
+    setLivePrefs({ geprueft: kurz(livePrefs().schluessel) });
     return `${r.text || "(ohne Text)"} – erster Ton nach ${(r.ersterTon / 1000).toFixed(1)} s`;
   } finally {
     setTimeout(() => s.schliessen(), 4000);
@@ -615,4 +647,116 @@ function beobachten(): void {
   // Sprechtaste gedrückt oder aufgelegt: Anrufer verstummt sofort
   verstummHoerer.add(() => liveVerstummen());
   setInterval(liveAufraeumen, 2000);
+}
+
+// ------------------------------------------------------------------ Funk: Stimmen der Fahrzeuge und Mitschrift
+
+/** alle Stimmen von Gemini Live (im Gratis-Zugang alle verfügbar) */
+export const FUNK_STIMMEN = [
+  "Zephyr", "Puck", "Charon", "Kore", "Fenrir", "Leda", "Orus", "Aoede", "Callirrhoe", "Autonoe",
+  "Enceladus", "Iapetus", "Umbriel", "Algieba", "Despina", "Erinome", "Algenib", "Rasalgethi", "Laomedeia", "Achernar",
+  "Alnilam", "Schedar", "Gacrux", "Pulcherrima", "Achird", "Zubenelgenubi", "Vindemiatrix", "Sadachbia", "Sadaltager", "Sulafat",
+];
+
+/**
+ * Einen Funkspruch mit der Stimme des Fahrzeugs sprechen lassen: eigene, kurze Verbindung.
+ * Der Ton kommt laufend über onTon; am Ende die Mitschrift. Fehler vor dem ersten Ton → Ablehnung (dann übernimmt der Ersatz).
+ */
+export function liveFunkSprechen(o: { stimme: string; system: string; text: string; onTon: (pcm: Int16Array, rate: number) => void; onStart?: () => void }): Promise<{ text: string; ersterTon: number; fertig: number }> {
+  return new Promise((ja, nein) => {
+    if (!liveAktiv()) return nein(new Error("Gemini ist nicht aktiv"));
+    const ws = new WebSocket(`${URL_BASIS}?key=${encodeURIComponent(livePrefs().schluessel.trim())}`);
+    const start = Date.now();
+    let text = "";
+    let erster = 0;
+    let stumm = false;
+    let fertig = false;
+    const zu = (e?: Error) => {
+      if (fertig) return;
+      fertig = true;
+      clearTimeout(uhr);
+      try {
+        ws.close(1000, "Funkspruch fertig");
+      } catch {
+        /* egal */
+      }
+      if (e && !erster) nein(e);
+      else ja({ text: text.replace(/[«»]/g, "").replace(/\s+/g, " ").trim(), ersterTon: erster, fertig: Date.now() - start });
+    };
+    const uhr = setTimeout(() => zu(new Error("Gemini antwortet nicht (Funk)")), 25000);
+    ws.onopen = () =>
+      ws.send(
+        JSON.stringify({
+          setup: {
+            model: `models/${LIVE_MODELL}`,
+            generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: o.stimme } } } },
+            systemInstruction: { parts: [{ text: o.system }] },
+            outputAudioTranscription: {},
+          },
+        }),
+      );
+    ws.onmessage = async (ev) => {
+      const roh = typeof ev.data === "string" ? ev.data : ev.data instanceof Blob ? await ev.data.text() : new TextDecoder().decode(ev.data as ArrayBuffer);
+      let m: Record<string, unknown>;
+      try {
+        m = JSON.parse(roh);
+      } catch {
+        return;
+      }
+      if (m.setupComplete) {
+        ws.send(JSON.stringify({ clientContent: { turns: [{ role: "user", parts: [{ text: o.text }] }], turnComplete: true } }));
+        return;
+      }
+      const sc = m.serverContent as { modelTurn?: { parts?: { inlineData?: { mimeType?: string; data?: string } }[] }; outputTranscription?: { text?: string }; turnComplete?: boolean } | undefined;
+      if (!sc) return;
+      for (const p of sc.modelTurn?.parts ?? []) {
+        if (!p.inlineData?.data || stumm) continue;
+        if (!erster) {
+          erster = Date.now() - start;
+          o.onStart?.();
+        }
+        o.onTon(b64ZuInt16(p.inlineData.data), Number(/rate=(\d+)/.exec(p.inlineData.mimeType ?? "")?.[1] ?? 24000));
+      }
+      if (sc.outputTranscription?.text && !stumm) {
+        text += sc.outputTranscription.text;
+        const k = KI_HINWEIS.exec(text);
+        if (k) {
+          stumm = true;
+          text = text.slice(0, k.index);
+          return zu();
+        }
+      }
+      if (sc.turnComplete) zu();
+    };
+    ws.onerror = () => undefined;
+    ws.onclose = (ev) => zu(new Error(/api key|key not valid|permission|unauth/i.test(ev.reason) ? "Gemini-Schlüssel ungültig" : /quota|exhausted|rate/i.test(ev.reason) ? "Kontingent von Gemini gerade erschöpft" : `Verbindung zu Gemini beendet (${ev.code})`));
+  });
+}
+
+/** Funk mitschreiben: die Sprache (16 kHz, Base64) geht an Gemini, ende() liefert den erkannten Text */
+export function liveMitschrift(): { stueck(b64: string): void; ende(): Promise<string>; abbrechen(): void } | null {
+  if (!liveAktiv()) return null;
+  const s = new Sitzung({
+    id: `funk-${Date.now()}`,
+    system: "Du hörst den Funk einer Rettungsleitstelle in Österreich nur mit. Antworte immer nur mit dem einen Wort: ok.",
+    verlauf: [],
+    aktiv: () => true,
+    stumm: true,
+  });
+  const sp = s.sprechen();
+  return {
+    stueck: (b64) => sp.stueck(b64),
+    ende: async () => {
+      try {
+        const r = await Promise.race([sp.ende(), new Promise<never>((_, nein) => setTimeout(() => nein(new Error("Zeit")), 12000))]);
+        return r.frage;
+      } catch (e) {
+        console.warn("Funk-Mitschrift", e);
+        return "";
+      } finally {
+        setTimeout(() => s.schliessen(), 500);
+      }
+    },
+    abbrechen: () => s.schliessen(),
+  };
 }

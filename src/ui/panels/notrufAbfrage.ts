@@ -6,7 +6,7 @@ import { gesagteAdresse } from "../../abfrage/adresseGesagt";
 import { sprechFrage } from "../../abfrage/sprechfrage";
 import { mikroAnbinden, setzeSprache, sprachPrefs } from "../sprache";
 import { store } from "../../data/store";
-import { fragen, antwortetGerade, kontext, liveSprechStrom } from "../../abfrage/gespraech";
+import { fragen, antwortetGerade, kontext, kiQuelleHoerer, kiQuelleVon, liveSprechStrom } from "../../abfrage/gespraech";
 import { schilderung } from "../../abfrage/anrufer";
 import { patientText } from "../../sim/lage";
 import { antwortLabel, bestimmeCode, frageFuer, fragenImAblauf, istKreislaufstillstand, stufeRang, stufeVonCode, type Frage, type Schema, type Wert } from "../../abfrage/schema";
@@ -60,6 +60,19 @@ export function notrufTeile(e: Einsatz, opt: { gefuehrt?: boolean; angezeigt?: (
   vorlesenChk.checked = sprachPrefs().vorlesen;
   vorlesenChk.addEventListener("change", () => setzeSprache({ vorlesen: vorlesenChk.checked }));
   vorlesenWrap.append(vorlesenChk, " 🔊 Vorlesen");
+  // kleines Symbol: wer spielt den Anrufer gerade (Gemini / lokal / einfache Antworten), bei Ausfall mit Grund
+  const kiBadge = el("span", { class: "ki-quelle" });
+  const kiBadgeZeigen = () => {
+    const q = kiQuelleVon(e.id);
+    kiBadge.hidden = !q;
+    if (!q) return;
+    kiBadge.classList.toggle("ersatz", !!q.ersatz);
+    kiBadge.textContent = q.art === "gemini" ? "☁ Gemini" : q.art === "lokal" ? (q.ersatz ? "⚠ lokal" : "lokal") : q.ersatz ? "⚠ einfache Antworten" : "einfache Antworten";
+    kiBadge.title = q.ersatz ? `Gemini ist gerade nicht erreichbar (${q.ersatz}) – der Anrufer antwortet ${q.art === "lokal" ? "mit der lokalen KI" : "mit einfachen Sätzen"}.` : q.art === "gemini" ? "Der Anrufer spricht über Gemini (Cloud)." : q.art === "lokal" ? "Der Anrufer spricht über die lokale KI." : "Keine KI bereit – der Anrufer antwortet mit einfachen Sätzen.";
+  };
+  kiBadgeZeigen();
+  const kiBadgeHoerer = (id: string) => id === e.id && kiBadgeZeigen();
+  kiQuelleHoerer.add(kiBadgeHoerer);
   form.append(
     eingabe,
     mikroAnbinden({
@@ -82,6 +95,7 @@ export function notrufTeile(e: Einsatz, opt: { gefuehrt?: boolean; angezeigt?: (
     }),
     senden,
     vorlesenWrap,
+    kiBadge,
   );
   const codeZeile = el("div", { class: "anruf-code" });
   let abfrage: HTMLElement = el("div", { class: "abfrage" });
@@ -688,6 +702,7 @@ export function notrufTeile(e: Einsatz, opt: { gefuehrt?: boolean; angezeigt?: (
     refresh,
     dispose: () => {
       ausLive();
+      kiQuelleHoerer.delete(kiBadgeHoerer);
       document.removeEventListener("keydown", taste);
       gef?.dispose();
     },
@@ -722,7 +737,7 @@ function aufloesungHtml(e: Einsatz): string {
   const kapitelOk = a.kapitel === w.kapitel || e.code === w.code || (!!a.kapitel && bestimmeCode(schema, a.kapitel, w.antworten)?.code === w.code);
   zeilen.push(`<div>${ok(kapitelOk)} Kapitel: <b>${esc(w.kapitel)} ${esc(K?.titel ?? "")}</b>${a.kapitel && a.kapitel !== w.kapitel ? ` <span class="muted">(gewählt: ${esc(a.kapitel)})</span>` : ""}</div>`);
   zeilen.push(`<div>${ok(e.code === w.code)} Code: <b>${esc(w.code)}</b> ${esc(wc?.name ?? "")} <span class="muted">${esc(wc?.kategorie ?? "")}${e.code && e.code !== w.code ? ` · eingetragen: ${esc(e.code)}` : ""}</span></div>`);
-  zeilen.push(`<div class="muted">Anrufer: ${esc(w.anrufer.name)}, ${esc(w.anrufer.rolle)} · ${esc(w.anrufer.emotion)} · ${esc(w.anrufer.sprache)}${w.ortUnbekannt ? " · wusste den Ort nicht genau" : ""}</div>`);
+  zeilen.push(`<div class="muted">Anrufer: ${esc(w.anrufer.name)}, ${esc(w.anrufer.rolle)} · ${esc(w.anrufer.emotion.replace("_", " "))}${w.anrufer.stimmungArt ? ` (${esc(w.anrufer.stimmungArt)})` : ""} · ${esc(w.anrufer.sprache)}${w.ortUnbekannt ? " · wusste den Ort nicht genau" : ""}</div>`);
   const tab: string[] = [];
   for (const { frage } of fragenImAblauf(schema, w.kapitel, w.antworten)) {
     const wahr = w.antworten[frage.id];

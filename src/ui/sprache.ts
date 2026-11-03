@@ -251,7 +251,22 @@ export async function ausgabeGeraete(): Promise<string[]> {
   return invoke<string[]>("ton_geraete").catch(() => [] as string[]);
 }
 
-const EMOTION_SPRECHER: Record<string, string> = { ruhig: "neutral", gefasst: "neutral", aufgeregt: "surprised", panisch: "surprised" };
+const EMOTION_SPRECHER: Record<string, string> = {
+  ruhig: "neutral",
+  gefasst: "neutral",
+  aufgeregt: "surprised",
+  panisch: "surprised",
+  sehr_panisch: "surprised",
+  extrem_panisch: "surprised",
+  // besondere Arten (gehen vor)
+  wuetend: "angry",
+  ungeduldig: "angry",
+  betrunken: "drunk",
+  geschockt: "sleepy",
+  verwirrt: "sleepy",
+  beschaemt: "whisper",
+  dramatisch: "surprised",
+};
 
 function piperFuer(g: "w" | "m", schluessel: string, emotion?: string): { name: string; sid: number } | null {
   const da = PIPER_STIMMEN.filter((v) => piperDa.includes(v.name));
@@ -367,15 +382,17 @@ export function verstummen(): void {
   if (inTauri()) void invoke("ton_stopp", { id: "stimme-*" }).catch(() => undefined);
 }
 
-const EMOTION_TEMPO: Record<string, number> = { ruhig: 0.95, gefasst: 1, aufgeregt: 1.1, panisch: 1.2 };
+const EMOTION_TEMPO: Record<string, number> = { ruhig: 0.95, gefasst: 1, aufgeregt: 1.1, panisch: 1.2, sehr_panisch: 1.28, extrem_panisch: 1.35 };
+/** besondere Arten verändern das Tempo zusätzlich */
+const ART_TEMPO: Record<string, number> = { geschockt: 0.85, betrunken: 0.85, verwirrt: 0.88, weinend: 0.92, beschaemt: 0.95, ungeduldig: 1.08, wuetend: 1.05, dramatisch: 1.05 };
 
 /** Anrufer spricht (nur beim Gesprächsführer) */
-export function anruferSagt(text: string, a: { geschlecht?: "m" | "w"; emotion?: string; name?: string; sprache?: string } | null | undefined, id: string): void {
+export function anruferSagt(text: string, a: { geschlecht?: "m" | "w"; emotion?: string; stimmungArt?: string; name?: string; sprache?: string } | null | undefined, id: string): void {
   const p = sprachPrefs();
   if (!p.vorlesen || aufnahmeLaeuft) return;
-  let rate = EMOTION_TEMPO[a?.emotion ?? "gefasst"] ?? 1;
+  let rate = (EMOTION_TEMPO[a?.emotion ?? "gefasst"] ?? 1) * (ART_TEMPO[a?.stimmungArt ?? ""] ?? 1);
   if (a?.sprache === "gebrochen") rate *= 0.9;
-  sagen(text, a?.geschlecht ?? (hash(id) < 0.5 ? "w" : "m"), `${id}|${a?.name ?? ""}`, rate, a?.emotion);
+  sagen(text, a?.geschlecht ?? (hash(id) < 0.5 ? "w" : "m"), `${id}|${a?.name ?? ""}`, rate, a?.stimmungArt && EMOTION_SPRECHER[a.stimmungArt] ? a.stimmungArt : a?.emotion);
 }
 
 /** Geschlecht aus Name/Rolle raten (KT-Anrufer haben nur Name und Rolle) */
@@ -426,7 +443,8 @@ export function satzSprecher(sagen: (satz: string) => void): { token(t: string):
 export function funkSagt(funkname: string, text: string, laut = 1): void {
   const p = sprachPrefs();
   if (!p.funkVorlesen || aufnahmeLaeuft || aufnahmeSperre.funk || laut <= 0) return;
-  sagen(funkAussprache(text), hash(funkname) < 0.3 ? "w" : "m", funkname, 1.08, undefined, laut);
+  // jedes Fahrzeug spricht etwas anders schnell (sonst klingen alle gleich)
+  sagen(funkAussprache(text), hash(funkname) < 0.3 ? "w" : "m", funkname, 0.98 + hash(`${funkname}|tempo`) * 0.2, undefined, laut);
 }
 
 const ZAHL_MAL: Record<string, string> = { "1": "einmal", "2": "zweimal", "3": "dreimal", "4": "viermal", "5": "fünfmal", "6": "sechsmal", "7": "siebenmal", "8": "achtmal", "9": "neunmal", "10": "zehnmal" };
@@ -478,15 +496,23 @@ export function funkVorlesenStarten(sim: { state: { funkGespraeche?: VorleseGesp
       const n = gesehen.get(g.id) ?? 0;
       if (g.sprueche.length > n) {
         gesehen.set(g.id, g.sprueche.length);
-        for (const s of g.sprueche.slice(n)) {
-          if (s.stimme) continue;
+        g.sprueche.slice(n).forEach((s, k) => {
+          if (s.stimme) return;
           const l = laut(g, s);
-          if (l > 0) funkSagt(s.von, s.text, l);
-        }
+          const h = funkVorleseHaken.nimm;
+          // Cloud-Stimme (spricht selbst oder kommt von einem Mitspieler)? Sonst hier vorlesen
+          if (h) void h(g, n + k, s).then((ok) => !ok && l > 0 && funkSagt(s.von, s.text, l));
+          else if (l > 0) funkSagt(s.von, s.text, l);
+        });
       }
     }
   });
 }
+
+/** Funk mit Cloud-Stimmen (ui/funkStimmen.ts): true = dieser Spruch wird schon mit Stimme übertragen */
+export const funkVorleseHaken: { nimm: null | ((g: VorleseGespraech, i: number, s: { von: string; text: string }) => Promise<boolean>) } = { nimm: null };
+/** Funk mitschreiben über die Cloud statt der Erkennung hier (ui/funkStimmen.ts) */
+export const funkHoerHaken: { strom: null | (() => { stueck(b64: string): void; ende(): Promise<string>; abbrechen(): void } | null) } = { strom: null };
 
 // ------------------------------------------------------------ Spracheingabe
 
@@ -515,6 +541,20 @@ export interface LiveStrom {
 }
 
 let liveJetzt: LiveStrom | null = null;
+let hoerJetzt: { ende(): Promise<string> } | null = null;
+
+/** 16 kHz, 16 Bit, Base64 → Float-Samples */
+function pcm16AusB64(b64: string): Float32Array {
+  const t = atob(b64);
+  const n = Math.floor(t.length / 2);
+  const f = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    let v = t.charCodeAt(2 * i) | (t.charCodeAt(2 * i + 1) << 8);
+    if (v >= 0x8000) v -= 0x10000;
+    f[i] = v / 32768;
+  }
+  return f;
+}
 
 /** Freisprechen (ui/freisprechen.ts): läuft eine Daueraufnahme? Die Sprechtaste unterbricht sie kurz (z. B. für den Funk) */
 export const dauerAufnahme: { laeuft: () => boolean; pause: () => Promise<void>; weiter: () => void } = { laeuft: () => false, pause: async () => undefined, weiter: () => undefined };
@@ -692,6 +732,23 @@ async function start(z: SprachZiel | null, knopf?: HTMLElement): Promise<void> {
   anzeigeZeigen(`Sprich jetzt … (loslassen zum Beenden)`, "hoert");
   // Cloud-Anrufer: die Stimme geht direkt an die Cloud
   liveJetzt = z.live?.() ?? null;
+  // Funk mit Cloud-Mitschrift: die Stimme geht an die Cloud (und im Mehrspieler live an alle)
+  if (!liveJetzt && z.funk) {
+    const m = funkHoerHaken.strom?.() ?? null;
+    if (m) {
+      hoerJetzt = m;
+      funkStueck = programmWeg() ? (funkHaken.start?.() ?? null) : null;
+      funkKod = funkStueck ? new FunkKodierer(16000, funkStueck) : null;
+      liveJetzt = {
+        stueck: (b64) => {
+          m.stueck(b64);
+          if (funkKod) funkKod.daten(pcm16AusB64(b64));
+        },
+        ende: async () => undefined,
+        abbrechen: () => m.abbrechen(),
+      };
+    }
+  }
   if (liveJetzt) {
     anzeigeZeigen("Sprich jetzt … der Anrufer hört direkt zu (loslassen zum Beenden)", "hoert");
     const ls = liveJetzt;
@@ -719,6 +776,8 @@ async function start(z: SprachZiel | null, knopf?: HTMLElement): Promise<void> {
     } catch (e) {
       nativStart = null;
       liveJetzt = null;
+      hoerJetzt = null;
+      funkStueckEnde();
       ls.abbrechen();
       aufnahmeLaeuft = false;
       anzeigeWeg();
@@ -867,8 +926,18 @@ async function stoppInnen(): Promise<void> {
       console.warn("Live-Aufnahme", e);
     }
     anzeigeWeg();
-    await ls.ende();
-    return;
+    if (!hoerJetzt) {
+      await ls.ende();
+      return;
+    }
+    // Funk: Mitschrift aus der Cloud, dann wie erkannter Text
+    const m = hoerJetzt;
+    hoerJetzt = null;
+    funkZu();
+    anzeigeZeigen("Erkenne …", "denkt");
+    const t = await m.ende();
+    anzeigeWeg();
+    return textFertig(z, t);
   }
   let text = "";
   try {
@@ -939,7 +1008,12 @@ async function stoppInnen(): Promise<void> {
     return;
   }
   anzeigeWeg();
-  text = text.replace(/\s+/g, " ").trim();
+  textFertig(z, text);
+}
+
+/** erkannten Text ins Eingabefeld (und ggf. abschicken) */
+function textFertig(z: SprachZiel | null, roh: string): void {
+  let text = roh.replace(/\s+/g, " ").trim();
   if (!text || FANTASIE.test(text)) {
     toast("Nichts verstanden – bitte nochmal.", "error");
     return;

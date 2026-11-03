@@ -194,6 +194,8 @@ export interface Settings {
   wetterAktiv: boolean;
   /** Funk: Besatzungen lassen manchmal etwas weg (BEL fast nie, KTW öfter) – man muss nachfragen */
   funkUnvollstaendig?: boolean;
+  /** Mehrspieler: welche Anrufer-KI die Mitspieler verwenden müssen (frei = jeder wählt selbst) */
+  kiRegel?: "frei" | "gemini" | "lokal";
   /** veraltet (bis 0.14): realistisch/wechselhaft/fest – ersetzt durch wetterWechsel */
   wetterModus?: "realistisch" | "wechselhaft" | "fest";
   /** Wetter: 0 = fix (festes Wetter) … 100 = sehr wechselhaft */

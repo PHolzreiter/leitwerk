@@ -2405,6 +2405,14 @@ button.weather.offen {
 .es-quelle[hidden] {
   display: none;
 }
+/* Seite aus mehreren Quellen (z. B. Anrufe & KI): untereinander, gemeinsam scrollen */
+.es-inhalt.es-mehrteilig {
+  overflow: auto;
+}
+.es-inhalt.es-mehrteilig > .es-quelle {
+  position: static;
+  overflow: visible;
+}
 /* Daten: eigene Navigation ausblenden (die Navigation ist links im Fenster) */
 .es-q-daten > .data-layout {
   height: 100%;

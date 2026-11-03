@@ -12,6 +12,37 @@ import { bezugFuer, fallakte, faktSaetze, fuellen, ORT_IM_FREIEN, SELBSTVERSTAEN
 import { einstiegHinweis, personaText, type Persona } from "./persona";
 import { frageMitPronomen } from "./sprechfrage";
 
+/** Panik-Stufen, von ruhig bis außer sich */
+export const EMOTIONEN = ["ruhig", "gefasst", "aufgeregt", "panisch", "sehr_panisch", "extrem_panisch"] as const;
+export type Emotion = (typeof EMOTIONEN)[number];
+/** Stufe 0–5 (unbekannte alte Werte: gefasst) */
+export function panikStufe(e: string | undefined): number {
+  const i = EMOTIONEN.indexOf((e ?? "gefasst") as Emotion);
+  return i < 0 ? 1 : i;
+}
+/** panisch oder schlimmer */
+export function istPanisch(e: string | undefined): boolean {
+  return panikStufe(e) >= 3;
+}
+export const STIMMUNG_ARTEN = ["weinend", "geschockt", "wuetend", "ungeduldig", "beschaemt", "betrunken", "verwirrt", "dramatisch"] as const;
+export type StimmungArt = (typeof STIMMUNG_ARTEN)[number];
+export const STIMMUNG_LABEL: Record<Emotion | StimmungArt, string> = {
+  ruhig: "ruhig",
+  gefasst: "gefasst",
+  aufgeregt: "aufgeregt",
+  panisch: "panisch",
+  sehr_panisch: "sehr panisch",
+  extrem_panisch: "extrem panisch",
+  weinend: "weinend",
+  geschockt: "geschockt",
+  wuetend: "wütend",
+  ungeduldig: "ungeduldig",
+  beschaemt: "beschämt",
+  betrunken: "betrunken",
+  verwirrt: "verwirrt",
+  dramatisch: "übertrieben dramatisch",
+};
+
 export interface Anrufer {
   /** Beziehung zum Patienten, z. B. „Ehefrau“, „Pflegerin im Heim“ */
   rolle: string;
@@ -21,7 +52,9 @@ export interface Anrufer {
   geschlecht: "m" | "w";
   /** Ort der Situation, z. B. „Wohnung“, „Pflegeheim“, „Gehsteig“, „Arztpraxis“ */
   ort: string;
-  emotion: "ruhig" | "gefasst" | "aufgeregt" | "panisch";
+  emotion: Emotion;
+  /** besondere Art der Stimmung (weinend, geschockt, wütend …) – zusätzlich zur Panik-Stufe */
+  stimmungArt?: StimmungArt;
   sprache: "hochdeutsch" | "dialekt" | "gebrochen";
   herkunft?: string;
   schwerhoerig: boolean;
@@ -292,8 +325,8 @@ export function anruferWaehlen(
   const harmlos = !schlimm && a.bw !== "getruebt" && a.at !== "abnorm";
   if (s.profi) emotion = schlimm ? "gefasst" : "ruhig";
   else if (s.selbst) emotion = harmlos ? gewichtet([["ruhig", 3], ["gefasst", 4]], rnd) : gewichtet([["gefasst", 3], ["aufgeregt", 3]], rnd);
-  else if (schlimm && (nahe || kind)) emotion = gewichtet([["panisch", 6], ["aufgeregt", 3]], rnd);
-  else if (schlimm || kind) emotion = gewichtet([["aufgeregt", 4], ["panisch", 2], ["gefasst", 2]], rnd);
+  else if (schlimm && (nahe || kind)) emotion = gewichtet([["panisch", 4], ["sehr_panisch", 4], ["extrem_panisch", 2], ["aufgeregt", 1]], rnd);
+  else if (schlimm || kind) emotion = gewichtet([["aufgeregt", 4], ["panisch", 2], ["sehr_panisch", 1], ["gefasst", 2]], rnd);
   else if (harmlos) emotion = gewichtet([["ruhig", 3], ["gefasst", 4], ["aufgeregt", nahe ? 1.5 : 0.5]], rnd);
   else emotion = gewichtet([["gefasst", 4], ["aufgeregt", nahe ? 4 : 2], ["panisch", nahe ? 1 : 0]], rnd);
 
@@ -549,14 +582,103 @@ function lagebild42(org: string, mittel: string, adresse: string, rnd: () => num
 
 // ------------------------------------------------------------------ Anweisung für das Sprachmodell
 
-const EMOTION_TEXT: Record<Anrufer["emotion"], string> = {
+const EMOTION_TEXT: Record<Emotion, string> = {
   ruhig: "Du bist ruhig und sachlich. Du drängst nicht („Sie müssen sofort kommen“ sagst du nicht) – es ist für dich kein Drama.",
   gefasst: "Du bist besorgt, aber gefasst und kooperativ. Du antwortest ordentlich, ohne zu drängen.",
   aufgeregt:
     "Du bist aufgeregt – das hört man: kurze Sätze, du setzt manchmal neu an („Er … also, er liegt da“), ab und zu ein „Bitte beeilen Sie sich“ oder „Oh Gott“. Klare Anweisungen der Leitstelle beruhigen dich ein bisschen.",
   panisch:
     "Du bist in Panik – das hört man in JEDER Antwort: ganz kurze, abgehackte Sätze, du fängst Sätze an und brichst ab, oft ein „Bitte, schnell!“ oder „Oh Gott, oh Gott“. Fragen beantwortest du trotzdem, aber kurz und gehetzt. Gibt die Leitstelle klare Anweisungen, wirst du ein bisschen ruhiger und machst mit.",
+  sehr_panisch:
+    "Du bist in großer Panik: Du schreist fast, redest durcheinander, wiederholst dich („Bitte, bitte, schnell!“) und fällst der Leitstelle ins Wort. Fragen beantwortest du oft erst, wenn sie nochmal gestellt werden, und dann nur in Bruchstücken. Klare, ruhige Anweisungen helfen dir, dich etwas zu fassen.",
+  extrem_panisch:
+    "Du bist völlig außer dir, hysterisch: Du schreist und weinst, rufst nach der Person („Papa! Papa, sag was!“), verstehst Fragen zuerst kaum und antwortest nur bruchstückhaft oder gar nicht passend. Erst wenn die Leitstelle dich bestimmt beruhigt („Hören Sie mir zu!“, „Atmen Sie einmal durch“), wirst du Schritt für Schritt ansprechbarer und beantwortest einfache Fragen.",
 };
+
+/** Besondere Arten der Stimmung – wie du redest */
+const ART_TEXT: Record<StimmungArt, string> = {
+  weinend: "Du weinst: Man hört dich schluchzen, die Stimme bricht immer wieder, manchmal musst du kurz unterbrechen. Du antwortest trotzdem, so gut es geht.",
+  geschockt: "Du stehst unter Schock: Du redest leise, langsam und monoton, fast teilnahmslos, und brauchst einen Moment, bis du antwortest. Manchmal sagst du einen Satz zweimal („Er liegt da … er liegt einfach da“). Du wirkst ruhiger, als die Lage ist.",
+  wuetend: "Du bist wütend und gereizt: Du schimpfst über die Wartezeit und die vielen Fragen („Was soll die Fragerei, schicken Sie endlich wen!“), antwortest aber am Ende doch. Wenn die Leitstelle erklärt, dass die Rettung schon unterwegs ist, wirst du etwas zugänglicher.",
+  ungeduldig: "Du bist ungeduldig und genervt: kurze Antworten, ab und zu „Ja, ja“ oder „Schicken Sie einfach wen“. Lange Fragereien magst du nicht, du antwortest aber.",
+  beschaemt: "Dir ist die Sache peinlich: Bei heiklen Fragen (Alkohol, Drogen, wie es passiert ist) weichst du aus, druckst herum oder sagst es erst beim zweiten Nachfragen. Alles andere beantwortest du normal.",
+  betrunken: "Du hast selbst getrunken: Du redest etwas verwaschen, langsam, verlierst manchmal den Faden und musst nachdenken. Einfache Fragen beantwortest du, bei Details bist du unsicher.",
+  verwirrt: "Du bist selbst etwas verwirrt: Du verstehst Fragen manchmal falsch, fragst nach oder erzählst etwas anderes. Die Adresse und das Wichtigste weißt du, brauchst aber Zeit.",
+  dramatisch: "Du übertreibst stark: Für dich ist es ein riesiges Drama („Es ist ganz furchtbar!“, „Er stirbt!“), obwohl die Fakten harmlos sind. Auf genaue Fragen antwortest du aber richtig nach der Fallakte.",
+};
+
+/** Stimmung als Text für die KI (Stufe und ggf. besondere Art) */
+export function stimmungText(x: { emotion: string; stimmungArt?: StimmungArt }): string {
+  const stufe = EMOTION_TEXT[x.emotion as Emotion] ?? EMOTION_TEXT.gefasst;
+  return x.stimmungArt ? `${stufe}\n${ART_TEXT[x.stimmungArt]}` : stufe;
+}
+
+/** Nur für Sprachmodelle mit eigener Stimme (Gemini): wie die Stimme klingen soll */
+export function stimmKlang(x: { emotion: string; stimmungArt?: StimmungArt }): string {
+  const st = panikStufe(x.emotion);
+  const klang = [
+    "ruhige, gleichmäßige Stimme, normales Tempo",
+    "besorgte, aber feste Stimme, normales Tempo",
+    "etwas höhere, schnellere Stimme, man hört die Aufregung",
+    "hohe, gehetzte Stimme, schnell, außer Atem, Sätze brechen ab",
+    "sehr laut und schnell, fast schreiend, keuchend, überschlägt sich",
+    "schreiend und weinend, hysterisch, hektisches Atmen, Schluchzen zwischen den Wörtern",
+  ][st];
+  const art: Partial<Record<StimmungArt, string>> = {
+    weinend: "hörbares Schluchzen, brüchige, zitternde Stimme",
+    geschockt: "leise, langsam, monoton, fast tonlos, lange Pausen",
+    wuetend: "laut, gereizt, harte Betonung",
+    ungeduldig: "schnell, kurz angebunden, genervter Ton",
+    beschaemt: "zögerlich, leiser bei heiklen Themen",
+    betrunken: "verwaschen, langsam, leicht lallend",
+    verwirrt: "langsam, unsicher, suchend",
+    dramatisch: "theatralisch, laut, übertrieben aufgeregt",
+  };
+  return `SO KLINGT DEINE STIMME (Sprechweise, nicht vorlesen): ${x.stimmungArt ? `${art[x.stimmungArt]}; ` : ""}${klang}. Bleib die ganze Zeit in dieser Stimme, bis sich deine Stimmung ändert.`;
+}
+
+/**
+ * Stimmung passend zum Fall festlegen (fest nach Fall und Anrufer, mit leichter Schwankung):
+ * Angehörige bei Lebensgefahr oft sehr/extrem panisch, Verursacher und Passanten geschockt, Peinliches beschämt …
+ */
+export function stimmungZumFall(x: Anrufer, f: { thema: string; texte: string; sichtung?: string; alter: number; schlimm: boolean }, rnd: () => number = Math.random): void {
+  if ((x.art ?? "privat") !== "privat") return;
+  const profi = x.persona?.wissen === "profi" || x.typ === "pflege" || x.typ === "arzt";
+  if (profi) {
+    if (rnd() < 0.08) x.stimmungArt = "ungeduldig";
+    return;
+  }
+  const t = f.texte.toLowerCase();
+  const nahe = ["partner", "eltern", "kind", "fern"].includes(x.typ ?? "");
+  const fremd = ["passant", "lenker", "verkauf", "wirt", "bademeister", "begleiter"].includes(x.typ ?? "");
+  const hoch = (min: Emotion) => {
+    if (panikStufe(x.emotion) < panikStufe(min)) x.emotion = min;
+  };
+  // Reanimation, Ersticken: Angehörige außer sich
+  if (/stillstand|ersticken/.test(f.thema) && nahe && !x.selbst) x.emotion = gewichtet([["extrem_panisch", 4], ["sehr_panisch", 4], ["panisch", 2]], rnd);
+  const tot = /\b(tot|verstorben|leblos seit|ganz kalt und steif|steif und kalt)\b/.test(t);
+  const verursacht = /\bdu hast\b[^.]*\b(angefahren|übersehen|umgestoßen|gestoßen|fallen lassen)/.test(t);
+  const rausch = /alkohol|getrunken|betrunken|sekt|vierterl|bier\b|schnaps|drogen|gekifft|joint|tabletten (geschluckt|genommen)/.test(t);
+  let art: StimmungArt | undefined;
+  if (/unangenehm|peinlich|schämt|schämst/.test(t)) art = "beschaemt";
+  else if (tot && !x.selbst) art = rnd() < 0.6 ? "weinend" : "geschockt";
+  else if (verursacht) art = rnd() < 0.55 ? "geschockt" : rnd() < 0.5 ? "weinend" : undefined;
+  else if (rausch && nahe && rnd() < 0.4) art = "beschaemt";
+  else if (rausch && x.typ === "begleiter" && rnd() < 0.3) art = "betrunken";
+  else if (f.schlimm && nahe && !x.selbst && rnd() < 0.25) art = "weinend";
+  else if ((f.schlimm || /verkehrsunfall|gewalt|stich_schuss|eingeklemmt|strom/.test(f.thema)) && fremd && rnd() < 0.35) art = "geschockt";
+  else if (f.sichtung === "gruen" && nahe && !x.selbst) {
+    const r = rnd();
+    art = r < 0.15 ? "dramatisch" : r < 0.27 ? "ungeduldig" : r < 0.32 ? "wuetend" : undefined;
+  } else if (f.sichtung === "gruen" && x.selbst && f.alter >= 80 && rnd() < 0.12) art = "verwirrt";
+  else if (!f.schlimm && rnd() < 0.05) art = "ungeduldig";
+  if (art) x.stimmungArt = art;
+  // passende Stufe zur Art
+  if (art === "geschockt") x.emotion = gewichtet([["gefasst", 3], ["aufgeregt", 1]], rnd);
+  if (art === "dramatisch") hoch(rnd() < 0.5 ? "panisch" : "aufgeregt");
+  if (art === "wuetend" || art === "ungeduldig") x.emotion = panikStufe(x.emotion) > 2 ? "aufgeregt" : x.emotion;
+  if (art === "weinend") hoch("aufgeregt");
+}
 
 function sprachText(x: Anrufer): string {
   // Dialekt und gebrochenes Deutsch gibt es nicht mehr (auch ältere Spielstände sprechen Hochdeutsch)
@@ -920,11 +1042,13 @@ function antwortSaetze(k: AnrufKontext): string {
 }
 
 /** Beispiele nur für den Ton – bewusst ohne Zustand des Patienten (die KI übernimmt sonst die Beschwerden) */
-const BEISPIELE: Record<Anrufer["emotion"], string> = {
+const BEISPIELE: Record<Emotion, string> = {
   ruhig: "„Moment, ich schau … ja, das stimmt.“ / „Nein, das weiß ich nicht.“",
   gefasst: "„Ja, so ist es. Kommen Sie bald?“ / „Nein, das weiß ich nicht genau.“",
   aufgeregt: "„Ich weiß nicht … bitte beeilen Sie sich!“ / „Ja, ja, ich bin eh da!“",
   panisch: "„Bitte schnell – ich weiß nicht, was ich tun soll!“ / „Ja … okay … ich mach's, ich mach's!“",
+  sehr_panisch: "„Bitte, bitte, kommen Sie, schnell, SCHNELL!“ / „Was? … Ja! Ja, er … ich weiß nicht!“",
+  extrem_panisch: "„Oh Gott, oh Gott – sag doch was! Sag was!“ / „Ich … was? … ich kann nicht … BITTE!“",
 };
 
 /** Ich-/Du-Form für Fakten über den Anrufer selbst („Sie hat Asthma“ → „Du hast Asthma“) */
@@ -1074,13 +1198,13 @@ function promptGeschichte(k: AnrufKontext): string {
     `- Auf „Wo ist der Notfallort?“ kommt die Adresse (Straße, Hausnummer, Ort) – sonst nichts.`,
     ich ? `- Du bist selbst betroffen: Du redest IMMER in der Ich-Form über dich („Ich hab …“, nie „er/sie“). Was während einer Ohnmacht war, weißt du nicht. Aufstehen oder herumgehen tust du nur, wenn die Leitstelle es ausdrücklich verlangt und du es in deinem Zustand kannst.` : "",
     ich && (k.wahrheit.sprachschw === "ja" || k.wahrheit.at === "abnorm") ? `- Du kriegst kaum Luft: Du sprichst nur in ganz kurzen Fetzen von zwei, drei Wörtern, mit Pausen dazwischen („Ich … krieg … keine Luft …“). Nie ganze Sätze.` : "",
-    EMOTION_TEXT[x.emotion],
+    stimmungText(x),
     sprachText(x),
     x.schwerhoerig ? "Du hörst schlecht und fragst ab und zu nach („Wie bitte?“)." : "",
     k.versuche > 1 ? `Du hast vorhin schon angerufen und niemand hat abgehoben – das sagst du gleich am Anfang vorwurfsvoll oder verzweifelt.` : "",
     k.rueckrufDurchLeitstelle ? "Die Leitstelle ruft dich zurück, weil dein Anruf vorhin nicht angenommen wurde." : "",
     laie && x.persona ? personaText(x.persona, patientW(k), ich) : "",
-    laie && !profi ? `So ungefähr KANN es klingen (nur der Ton, nicht wörtlich): ${fuellen(BEISPIELE[x.emotion], { w: patientW(k), bezug: "", ort: "", name: "" }, Math.random)}\nNicht so: „Patient männlich, 67 Jahre, wach, ansprechbar, Atmung normal.“` : "",
+    laie && !profi ? `So ungefähr KANN es klingen (nur der Ton, nicht wörtlich): ${fuellen(BEISPIELE[x.emotion] ?? BEISPIELE.gefasst, { w: patientW(k), bezug: "", ort: "", name: "" }, Math.random)}\nNicht so: „Patient männlich, 67 Jahre, wach, ansprechbar, Atmung normal.“` : "",
     profi ? `So ungefähr KANN es klingen (nur der Ton, nicht wörtlich): „Moment, ich schau in die Doku … seit gestern Abend, heute früh 38,6.“ / „Nein, das ist nicht bekannt.“` : "",
   ]
     .filter(Boolean)
@@ -1117,7 +1241,7 @@ export function systemPrompt(k: AnrufKontext): string {
       `Diese Fakten stimmen (nur auf Nachfrage, in Alltagssprache):`,
       faktenText(k),
       ...regelnGemeinsam,
-      EMOTION_TEXT[x.emotion],
+      stimmungText(x),
       sprachText(x),
     ].join("\n");
   }
@@ -1149,7 +1273,7 @@ export function systemPrompt(k: AnrufKontext): string {
     `- Auf „Wo ist der Notfallort?“ kommt die Adresse – sonst nichts.${laie ? " Wenn du panisch bist, darf vorher ein Ausruf kommen wie „Kommen Sie schnell!“." : ""}`,
     x.selbst ? `- Du bist selbst betroffen: Was während einer Ohnmacht war, weißt du nicht; du erzählst nur, wie es dir ging und geht.` : "",
     `- Wenn du etwas nicht weißt, sag das ehrlich. Wenn etwas gefragt wird, das oben nicht steht, antworte passend zur Lage, ohne den Fakten zu widersprechen.`,
-    EMOTION_TEXT[x.emotion],
+    stimmungText(x),
     sprachText(x),
     x.schwerhoerig ? "Du hörst schlecht und fragst ab und zu nach („Wie bitte?“)." : "",
     k.versuche > 1 ? `Du hast vorhin schon angerufen und niemand hat abgehoben – das sagst du gleich am Anfang vorwurfsvoll oder verzweifelt.` : "",
@@ -1308,7 +1432,7 @@ function stilImpuls(k: AnrufKontext, art: NachrichtArt, nr: number): string | nu
     if (p.stil === "gespraechig") return "Erzähl diesmal einen kleinen Nebensatz mehr dazu (nur was zur Fallakte passt).";
     if (p.stil === "unsicher") return "Sag diesmal „ich glaub“ oder „ich weiß nicht genau“ dazu.";
     if (p.stil === "knapp") return "Antworte diesmal besonders kurz – ein paar Wörter.";
-    if (k.anrufer.emotion === "panisch") return "Sag es hastig, mit einem „bitte“ oder einer Wiederholung.";
+    if (istPanisch(k.anrufer.emotion)) return "Sag es hastig, mit einem „bitte“ oder einer Wiederholung.";
   }
   return null;
 }
@@ -1385,7 +1509,7 @@ export function ersterSatzOhneKi(k: AnrufKontext): string {
   if (x.art === "polizei") return `Landesleitzentrale der Polizei, ${x.name}. Eine Streife braucht die Rettung: ${k.adresse}.`;
   if (x.art === "einrichtung") return `${x.stelle}, ${x.name}. Wir bräuchten die Rettung: ${k.adresse}.`;
   const vorher = k.versuche > 1 ? "Ich hab vorhin schon angerufen! " : "";
-  const dringend = x.emotion === "panisch" ? "Schnell, bitte kommen Sie! " : "";
+  const dringend = istPanisch(x.emotion) ? "Schnell, bitte kommen Sie! " : "";
   const ort = k.ortUnbekannt ? `Ich weiß nicht genau … ${k.adresse}.` : `${k.adresse}.`;
   if (k.rueckrufDurchLeitstelle) return `Ja, hallo? Ach, die Rettung … ja, ich hab angerufen. ${dringend}${ort}`;
   return `${vorher}${dringend}${ort}`;

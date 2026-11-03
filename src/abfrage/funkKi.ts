@@ -189,12 +189,14 @@ function sprecherId(g: FunkGespraech, a: FunkAusstehend): string {
   return (Object.values(sim.state.fahrzeuge).find((x) => sim.rufname(x) === a.von) ?? sim.state.fahrzeuge[g.fzId])?.id ?? g.fzId;
 }
 
-function systemText(g: FunkGespraech, a: FunkAusstehend): string {
+function systemText(g: FunkGespraech, a: FunkAusstehend, stimme?: { kopf: string; schluss: string }): string {
   const fz = sim.state.fahrzeuge[sprecherId(g, a)];
   const an = a.an ?? "LEO (die Leitstelle)";
   return [
     `Du bist in einer Trainingssimulation die Besatzung von „${a.von}“ – ${besatzungVon(fz?.id ?? g.fzId)} – im Rettungsdienst Niederösterreich am Funk (TETRA). Du sprichst mit ${an}.`,
-    "Du sagst NUR den Inhalt des Funkspruchs. Den Anfang („Hier …“) und das „kommen“ am Ende setzt das Programm – schreib sie NICHT.",
+    stimme
+      ? `Du SPRICHST am Funk: immer den ganzen Funkspruch – zuerst genau „${stimme.kopf || `Hier ${a.von}`}“, dann der Inhalt, am Ende „${stimme.schluss}“. Sprich zügig, sachlich und ruhig wie eine erfahrene Besatzung, Deutsch mit österreichischer Färbung. Nichts davor und nichts danach, keine Rückfragen, kein Kommentar.`
+      : "Du sagst NUR den Inhalt des Funkspruchs. Den Anfang („Hier …“) und das „kommen“ am Ende setzt das Programm – schreib sie NICHT.",
     "Funksprache: knapp und sachlich wie eine erfahrene Besatzung, Fachbegriffe sind gut (Pat., kreislaufstabil, Thoraxtrauma, Hemiparese, Hebungen im EKG). Ein bis drei kurze Sätze oder Stichworte. Keine Höflichkeitsfloskeln, keine Erklärungen, keine Regieanweisungen.",
     "Regeln: NIEMALS den Namen des Patienten. Keine Messwerte (Sättigung, Blutdruck, Puls …), außer die Leitstelle fragt ausdrücklich danach. Fordere nichts an und storniere nichts, was nicht im Inhalt steht. Zahlen, Uhrzeiten, Orte, Krankenhäuser und Rufnamen genau so übernehmen.",
     `So klingt das (nur der Ton, nicht übernehmen): ${BEISPIELE.map((b) => `„${b}“`).join(" / ")}`,
@@ -253,6 +255,24 @@ export async function funkSpruchErzeugen(g: FunkGespraech, a: FunkAusstehend): P
   }
 }
 
+/** Funkspruch für die Cloud-Stimme: Anweisung und Aufgabe (der Inhalt kommt vom Programm, Gemini formuliert und spricht) */
+export function funkLiveAuftrag(g: FunkGespraech, a: FunkAusstehend): { system: string; text: string } {
+  const { kopf, inhalt, schluss } = zerlegen(a.fest);
+  return {
+    system: systemText(g, a, { kopf, schluss }),
+    text: `${aufgabeText(g, a, inhalt)}\nSprich jetzt den ganzen Funkspruch.`,
+  };
+}
+
+/** gesprochenen Funkspruch prüfen (nur zur Kontrolle – gesagt ist gesagt) */
+export function funkLivePruefen(g: FunkGespraech, a: FunkAusstehend, gesagt: string): string[] {
+  const wissen = a.art === "frage" ? lageWissen(sprecherId(g, a), g.einsatzId, a.frage ?? "") : undefined;
+  return funkPruefen(a.fest, nurInhalt(gesagt, a.von), { frage: a.frage, namen: patientNamen(g.einsatzId), art: a.art, wissen });
+}
+
+/** Cloud-Stimme (ui/funkStimmen.ts): formuliert und spricht den Funkspruch selbst; false = nicht möglich, dann wie bisher */
+export const funkLiveHaken: { erzeugen: null | ((g: FunkGespraech, a: FunkAusstehend) => Promise<boolean>) } = { erzeugen: null };
+
 // ------------------------------------------------------------------ Dienst: formuliert, was ich als Gesprächsführer sagen lassen muss
 
 const laufend = new Set<string>();
@@ -269,8 +289,13 @@ export function funkDienst(ich: string): void {
     const key = `${g.id}:${g.sprueche.length}`;
     if (laufend.has(key)) continue;
     laufend.add(key);
-    void funkSpruchErzeugen(g, a)
-      .then((r) => sim.call("funkFzAntwort", g.id, r.text, r.quelle))
+    const live = funkLiveHaken.erzeugen;
+    void (live ? live(g, a).catch(() => false) : Promise.resolve(false))
+      .then(async (ok) => {
+        if (ok) return;
+        const r = await funkSpruchErzeugen(g, a);
+        await sim.call("funkFzAntwort", g.id, r.text, r.quelle);
+      })
       .catch((err) => console.warn("Funk", err))
       .finally(() => setTimeout(() => laufend.delete(key), 30_000));
   }

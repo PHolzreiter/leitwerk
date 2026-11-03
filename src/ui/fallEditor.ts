@@ -7,6 +7,7 @@
  * zurücksetzen). Eigene Fälle kann jeder anlegen; Fallpakete lassen sich exportieren und importieren.
  * Optional entwirft die KI einen Fall aus einer kurzen Beschreibung – alles bleibt danach von Hand änderbar.
  */
+import { STIMMUNG_LABEL } from "../abfrage/anrufer";
 import { abweichungenVon } from "../abfrage/anleitungen";
 import { ablageName, ablageSichern } from "../net/ablage";
 import {
@@ -1426,11 +1427,11 @@ function fensterBauen(): { zeigen(id?: string): void } {
         const p = x.persona;
         const karte = el("div", { class: "fe-probe" });
         const kopf = el("div", { class: "fe-probe-kopf" });
-        const EMO: Record<string, string> = { ruhig: "ruhig", gefasst: "gefasst", aufgeregt: "aufgeregt", panisch: "panisch" };
+        const EMO: Record<string, string> = STIMMUNG_LABEL;
         const STIL: Record<string, string> = { knapp: "redet knapp", normal: "redet normal", gespraechig: "redet gern", unsicher: "unsicher" };
         const WISSEN: Record<string, string> = { nah: "kennt den Patienten gut", bekannt: "kennt ihn ein bisschen", fremd: "kennt ihn nicht", profi: "Fachkraft" };
         const EIN: Record<string, string> = { adresse: "beginnt mit der Adresse", dringend: "„bitte schnell“", problem: "beginnt mit dem Problem", hallo: "„bin ich richtig?“", unvollstaendig: "vergisst die Gemeinde", umschreibung: "beschreibt das Haus", vorstellung: "stellt sich vor" };
-        kopf.innerHTML = `<b>${esc(x.rolle)}</b> · ${esc(EMO[x.emotion] ?? x.emotion)}${x.sprache !== "hochdeutsch" ? ` · ${x.sprache === "dialekt" ? "Dialekt" : "gebrochenes Deutsch"}` : ""}${p ? ` · ${esc(STIL[p.stil])} · ${esc(WISSEN[p.wissen])} · ${esc(EIN[p.einstieg])}${p.nennt[0] !== "ich" ? ` · sagt „${esc(p.nennt.slice(0, 2).join("“, „"))}“` : ""}` : ""}`;
+        kopf.innerHTML = `<b>${esc(x.rolle)}</b> · ${esc(EMO[x.emotion] ?? x.emotion)}${x.stimmungArt ? `, ${esc(EMO[x.stimmungArt])}` : ""}${x.sprache !== "hochdeutsch" ? ` · ${x.sprache === "dialekt" ? "Dialekt" : "gebrochenes Deutsch"}` : ""}${p ? ` · ${esc(STIL[p.stil])} · ${esc(WISSEN[p.wissen])} · ${esc(EIN[p.einstieg])}${p.nennt[0] !== "ich" ? ` · sagt „${esc(p.nennt.slice(0, 2).join("“, „"))}“` : ""}` : ""}`;
         karte.appendChild(kopf);
         const sz = w.szenario;
         if (sz?.geschehen?.length) karte.appendChild(el("div", { class: "fe-probe-fakten" }, sz.geschehen.join(" ")));

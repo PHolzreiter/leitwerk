@@ -44,12 +44,12 @@ const START_HILFE = [
  * Liste Entwicklungsfortschritt: [id, titel, text, stand („arbeit“ | „geplant“ | „fertig“), prozent].
  * Wird einmal je FORTSCHRITT_STAND in den Dienst geschrieben (ersetzt dann die Liste) – danach gilt die Admin-Seite.
  */
-export const FORTSCHRITT_STAND = "2026-11-02";
+export const FORTSCHRITT_STAND = "2026-11-03";
 export const START_FORTSCHRITT = [
   ["nah-pilot", "Notarzthubschrauber selbst fliegen", "Als Pilot im Multiplayer mitspielen – mit oder ohne Flugsimulator (MSFS 2024, H145-Tablet und -Funkgerät, Sprechfunk, Großeinsatz). Noch offen: Verlegungsflüge, X-Plane", "arbeit", 85],
   ["grossschaden", "Großschadensfall", "Ab 6 Betroffenen: Schnelleinsatzgruppe und Bereitstellungsraum in zwei Schritten, Einsatzleitung vor Ort, Patienten einzeln buchen, Voraviso. Noch offen: weitere Einsatzarten (Betreuung, Suche) und Gebiete", "arbeit", 85],
-  ["telefon", "Bessere Telefongespräche", "Natürlichere Anrufer und genauere Antworten in der Notrufabfrage – im Test: schnelles Gespräch (Anrufer spricht ab dem ersten geprüften Satz) und schnellere Spracherkennung", "arbeit", 80],
-  ["funk", "Überarbeitung des Funksystems", "Funkverkehr mit Fahrzeugen klarer, schneller und realistischer – eigene Sprechgruppe beim Großeinsatz gibt es schon", "arbeit", 30],
+  ["telefon", "Bessere Telefongespräche", "Natürlichere Anrufer und genauere Antworten in der Notrufabfrage – mit Gemini (Cloud, kostenlos) oder lokal, sechs Panikstufen und besondere Stimmungen, alles im Menü „Anrufe & KI“", "arbeit", 90],
+  ["funk", "Überarbeitung des Funksystems", "Funkverkehr mit Fahrzeugen klarer, schneller und realistischer – eigene Sprechgruppe beim Großeinsatz, mit Gemini spricht jedes Fahrzeug mit eigener Stimme (neu bei jedem Schichtwechsel)", "arbeit", 50],
   ["tablet", "Zweitbildschirm am Tablet", "Karte, Fahrzeuge und Krankenhäuser zusätzlich am Tablet im WLAN anzeigen", "geplant", 0],
   ["nah-verlegung", "Verlegungsflüge mit dem Hubschrauber", "Überstellungen zwischen Krankenhäusern als Auftrag für den Piloten", "geplant", 0],
   ["xplane", "X-Plane 12 für Piloten", "Hubschrauber auch mit X-Plane 12 fliegen", "geplant", 0],

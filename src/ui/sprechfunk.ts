@@ -13,7 +13,7 @@ import { sim } from "../sim/engine";
 import { toast } from "./dom";
 import { FUNK_RATE, FunkKodierer, funkDekodieren } from "./funkCodec";
 import { istPilot } from "./pilot/modus";
-import { aufnahmeLaeuftJetzt, aufnahmeSperre, funkHaken, funkNamenGlaetten, sprachPrefs, sprachStatus, sprachTest, verstummen } from "./sprache";
+import { aufnahmeLaeuftJetzt, aufnahmeSperre, funkHaken, funkHoerHaken, funkNamenGlaetten, sprachPrefs, sprachStatus, sprachTest, verstummen } from "./sprache";
 
 export type FunkZiel = "leo" | "rtw";
 
@@ -124,13 +124,33 @@ function belegtTon(): void {
   }
 }
 
+/** angekündigte Funksprüche mit Cloud-Stimme (Gespräch:Spruch) → Zeit; die werden hier nicht vorgelesen */
+const angekuendigt = new Map<string, number>();
+export function funkAngekuendigt(gId: number, i: number): boolean {
+  return angekuendigt.has(`${gId}:${i}`);
+}
+
+/** Lautstärke eines Stroms: KI-Fahrzeuge wie beim Vorlesen (eigene Gespräche laut, fremde gar nicht bzw. leise) */
+function stromLaut(d: Record<string, unknown>, von: string): number {
+  if (typeof d.g !== "number") return 1;
+  if (d.ki && !sprachPrefs().funkVorlesen) return 0;
+  const g = sim.state.funkGespraeche?.find((x) => x.id === d.g);
+  return g ? funkVorleseLaut(g, { von }) : 1;
+}
+
 function empfangen(pid: string, name: string, d: Record<string, unknown>): void {
   const sId = `${pid}:${String(d.s)}`;
+  if (d.k === "v" && typeof d.g === "number") {
+    angekuendigt.set(`${d.g}:${String(d.i)}`, Date.now());
+    if (angekuendigt.size > 200) for (const k of [...angekuendigt.keys()].slice(0, 100)) angekuendigt.delete(k);
+    return;
+  }
   if (d.k === "a" && typeof d.b === "string") {
     const c = audio();
     let st = stroeme.get(sId);
     if (!st) {
       st = { von: String(d.v ?? name), wer: String(d.w ?? name), cursor: c.currentTime + PUFFER, letzte: Date.now(), eingang: kette(c) };
+      st.eingang.gain.value *= stromLaut(d, st.von);
       stroeme.set(sId, st);
       funkStatistik.stroeme++;
       empfangGeaendert();
@@ -197,6 +217,8 @@ interface Sendung {
   bereit: boolean;
   /** schon losgelassen, bevor das Mikrofon lief */
   frueh: boolean;
+  /** Mitschrift über Gemini (statt der Erkennung hier) */
+  mitschrift?: { stueck(b64: string): void; ende(): Promise<string>; abbrechen(): void } | null;
 }
 
 let sendung: Sendung | null = null;
@@ -227,8 +249,25 @@ function schicken(d: Record<string, unknown>): void {
   if (mp.funkSenden(d)) funkStatistik.gesendet++;
 }
 
+/** μ-law-Stück (8 kHz) → 16 kHz, 16 Bit, Base64 (für die Mitschrift) */
+function auf16kB64(b64: string): string {
+  const x = funkDekodieren(b64);
+  const u = new Uint8Array(x.length * 4);
+  const v = new DataView(u.buffer);
+  for (let i = 0; i < x.length; i++) {
+    const a = x[i];
+    const b = i + 1 < x.length ? x[i + 1] : a;
+    v.setInt16(i * 4, Math.round(a * 32767), true);
+    v.setInt16(i * 4 + 2, Math.round(((a + b) / 2) * 32767), true);
+  }
+  let t = "";
+  for (let i = 0; i < u.length; i += 0x8000) t += String.fromCharCode(...u.subarray(i, i + 0x8000));
+  return btoa(t);
+}
+
 function stueck(s: Sendung, b64: string): void {
   if (s.abgelehnt) return;
+  s.mitschrift?.stueck(auf16kB64(b64));
   const d = { k: "a", s: s.id, n: s.n++, v: s.von, w: s.wer, b: b64 };
   if (s.frei) schicken(d);
   else s.warte.push(d);
@@ -321,6 +360,8 @@ export async function sprechStart(ziel: FunkZiel = "leo"): Promise<void> {
     bereit: false,
     frueh: false,
   };
+  // Gemini schreibt mit (die Erkennung hier braucht dann kein Sprachmodell)
+  s.mitschrift = funkHoerHaken.strom?.() ?? null;
   sendung = s;
   sendGeaendert();
   // Freigabe vom Host (Kanal frei?) – die Aufnahme startet gleichzeitig
@@ -370,6 +411,8 @@ export async function sprechStart(ziel: FunkZiel = "leo"): Promise<void> {
 /** Kanal war belegt: Mikrofon aus, nichts gesendet */
 function abgelehntAufraeumen(s: Sendung): void {
   window.clearTimeout(s.uhr);
+  s.mitschrift?.abbrechen();
+  s.mitschrift = null;
   void aufnahmeBeenden(s, false);
   if (sendung === s) sendung = null;
   aufnahmeSperre.funk = false;
@@ -379,6 +422,28 @@ function abgelehntAufraeumen(s: Sendung): void {
 /** Aufnahme beenden; mitText: Text erkennen (sonst nur stoppen) */
 async function aufnahmeBeenden(s: Sendung, mitText: boolean): Promise<string> {
   let text = "";
+  const ms = s.mitschrift;
+  s.mitschrift = null;
+  if (ms && !mitText) ms.abbrechen();
+  // Mitschrift über Gemini: die Aufnahme hier nur beenden
+  if (ms && mitText) {
+    try {
+      if (s.nativ) await invoke("sprache_aufnahme_stopp", { modell: "", hinweis: "" });
+      else if (s.browser) {
+        const b = s.browser;
+        s.browser = undefined;
+        await new Promise((r) => setTimeout(r, 250));
+        b.proz.disconnect();
+        b.kod.ende();
+        void b.ctx.close();
+      }
+    } catch (e) {
+      console.warn("Sprechfunk", e);
+    }
+    text = await ms.ende();
+    if (text.trim()) return text.replace(/\s+/g, " ").trim();
+    return "";
+  }
   try {
     if (s.nativ) {
       if (mitText) {
@@ -463,6 +528,41 @@ funkHaken.start = () => {
   };
   return (b64: string) => schicken({ k: "a", s: id, n: n++, v: "LEO", w: wer, b: b64 });
 };
+
+// ------------------------------------------------------------ Funksprüche der KI-Fahrzeuge mit Cloud-Stimme an alle
+
+/** Funkspruch angekündigt: die anderen lesen ihn nicht selbst vor (die Stimme kommt gleich) */
+export function kiFunkAnkuendigen(gId: number, i: number): void {
+  angekuendigt.set(`${gId}:${i}`, Date.now());
+  schicken({ k: "v", g: gId, i });
+}
+
+/**
+ * Stimme eines KI-Fahrzeugs: geht wie Sprechfunk (8 kHz, μ-law) an alle und wird hier gleich mit Funk-Klang abgespielt.
+ * Jeder Empfänger stellt die Lautstärke selbst ein (eigenes Gespräch laut, fremdes leise oder gar nicht).
+ */
+export function kiFunkStrom(meta: { von: string; gId: number }): { pcm(d: Int16Array, rate: number): void; ende(): void } {
+  const id = `ki${zufall()}`;
+  let n = 0;
+  const ich = sim.ich?.pid ?? mp.ich.pid;
+  let kod: FunkKodierer | null = null;
+  const raus = (d: Record<string, unknown>) => {
+    schicken(d);
+    empfangen(ich, meta.von, d);
+  };
+  return {
+    pcm(d, rate) {
+      kod ??= new FunkKodierer(rate, (b64) => raus({ k: "a", s: id, n: n++, v: meta.von, w: meta.von, g: meta.gId, ki: 1, b: b64 }));
+      const f = new Float32Array(d.length);
+      for (let i = 0; i < d.length; i++) f[i] = d[i] / 32768;
+      kod.daten(f);
+    },
+    ende() {
+      kod?.ende();
+      raus({ k: "e", s: id, n });
+    },
+  };
+}
 
 // ------------------------------------------------------------ Funktaste der Leitstelle
 

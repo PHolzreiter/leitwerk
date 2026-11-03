@@ -1,5 +1,16 @@
 [
  {
+  "version": "0.99.0",
+  "datum": "2026-11-03",
+  "titel": "Anrufe & KI in einem Menü, Stimmungen, Funk mit eigenen Stimmen",
+  "punkte": [
+   "Ein Menü „Anrufe & KI“ mit Schalter Gemini/Lokal und Anleitung",
+   "Frage beim ersten Start, Regel des Hosts im Mehrspieler",
+   "Sechs Panikstufen und besondere Stimmungen, die sich im Gespräch ändern",
+   "Funk: jedes Fahrzeug mit eigener Stimme, neu bei Schichtwechsel"
+  ]
+ },
+ {
   "version": "0.98.2",
   "datum": "2026-11-03",
   "titel": "Cloud-Anrufer nach 45 Testgesprächen verbessert",

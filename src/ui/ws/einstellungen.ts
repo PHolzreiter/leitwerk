@@ -12,8 +12,9 @@ import { createDataView, type DataViewDeps } from "../dataView";
 import { el } from "../dom";
 import { createSettingsView } from "../settingsView";
 import { persoenlichView } from "./persoenlichView";
+import { anrufKiView } from "./anrufKiView";
 
-type Quelle = "persoenlich" | "simulation" | "programm" | "daten";
+type Quelle = "persoenlich" | "simulation" | "programm" | "daten" | "anrufe";
 
 interface Seite {
   id: string;
@@ -25,6 +26,8 @@ interface Seite {
   abschnitte?: string[];
   /** Datenart (Quelle „daten“) */
   art?: Kind;
+  /** weitere Abschnitte aus anderen Quellen auf derselben Seite (darunter) */
+  teile?: { quelle: Quelle; abschnitte: string[] }[];
 }
 
 const GRUPPEN: { id: string; label: string; info: string }[] = [
@@ -42,11 +45,11 @@ const SEITEN: (Seite & { stichworte?: string })[] = [
   { id: "darstellung", gruppe: "platz", label: "Darstellung", info: "Hell/Dunkel, Größe, Bewegungen, Karte und Funkgruppen", quelle: "persoenlich", abschnitte: ["Aussehen", "Funkgruppen auf der Karte"], stichworte: "dunkelmodus nachtmodus thema theme zoom schriftgröße skalierung animation 3d poi grenzen" },
   { id: "farben", gruppe: "platz", label: "Farben", info: "Farbvorlagen, eigene Farben, Statusfarben", quelle: "persoenlich", abschnitte: ["Farben", "Eigene Statusfarben"], stichworte: "farbe akzent kontrast rotes kreuz status hinterlegen" },
   { id: "telefon", gruppe: "platz", label: "Telefon & Töne", info: "Annehmen, Klingeln, Lautstärke, eigene Töne", quelle: "persoenlich", abschnitte: ["Anrufe und Töne", "Eigene Tondateien"], stichworte: "klingelton ton sound lautstärke anklopfen piep funk-piep notruf annehmen hotline audio" },
-  { id: "sprache", gruppe: "platz", label: "Sprache & Mikrofon", info: "Vorlesen, Stimmen, Spracheingabe, Sprechtaste", quelle: "persoenlich", abschnitte: ["Sprache"], stichworte: "mikro mikrofon stimme vorlesen sprechen spracherkennung whisper diktieren push to talk ptt" },
+  { id: "anrufe", gruppe: "platz", label: "Anrufe & KI", info: "Gemini oder lokal, Stimmen, Spracheingabe, Funk", quelle: "anrufe", abschnitte: ["Anrufer-KI", "Gemini (Cloud)", "Lokale KI (Ollama)", "Anrufe und Funk"], teile: [{ quelle: "persoenlich", abschnitte: ["Sprache"] }, { quelle: "simulation", abschnitte: ["Notrufe im Spiel"] }], stichworte: "ki gemini cloud schlüssel key ollama sprachmodell modell qwen gemma anrufer stimme stimmen vorlesen mikro mikrofon sprechen spracherkennung whisper parakeet diktieren push to talk ptt freisprechen funk piper supertonic" },
   { id: "bedienung", gruppe: "platz", label: "Bedienung", info: "Tastenkürzel, Fenster-Anordnung, Einführung, Entwickler", quelle: "persoenlich", abschnitte: ["Tastenkürzel", "Arbeitsplatz", "Einführung", "Entwickler"], stichworte: "tastatur shortcut hotkey taste fenster layout anordnung debug" },
 
   { id: "aufkommen", gruppe: "simulation", label: "Einsatzaufkommen", info: "Notfälle, KT, Überstellungen, ACN je Stunde, Nachbarzonen", quelle: "simulation", abschnitte: ["Einsatzaufkommen"], stichworte: "einsätze pro stunde ruhig normal stressig versorgungsstufe telemedizin bls als kurve grafik tabelle schwere harmlos kritisch krankentransport überstellung acn akutpflege nachbarzone generator"},
-  { id: "ki", gruppe: "simulation", label: "Notrufe & Anrufer", info: "Anrufer, Verlauf, Fallkatalog, KI-Anrufer, Sprachmodell", quelle: "simulation", abschnitte: ["Anrufer und Verlauf", "Notrufe und KI-Anrufer"], stichworte: "fallkatalog fälle quelle vorlagen zufall ki ollama sprachmodell modell qwen gemma anrufer gespräch falsche adresse rückruf komplikation revers verweigerung" },
+  { id: "ki", gruppe: "simulation", label: "Notrufe & Anrufer", info: "Anrufer, Verlauf, Fallkatalog (KI: Mein Platz → Anrufe & KI)", quelle: "simulation", abschnitte: ["Anrufer und Verlauf"], stichworte: "fallkatalog fälle quelle vorlagen zufall anrufer gespräch falsche adresse rückruf komplikation revers verweigerung" },
   { id: "alarmierung", gruppe: "simulation", label: "Alarmierung", info: "Rendezvous, welches Rettungsmittel bei welcher Stufe", quelle: "simulation", abschnitte: ["Alarmierung", "Stufen-Zuordnung"], stichworte: "rettungsmittel stufe nef rtw rendezvous notarzt toleranz vorschlag" },
   { id: "krankenhaus", gruppe: "simulation", label: "Krankenhäuser & KT", info: "Belegung, Dialyse, Bestrahlung, Chemo", quelle: "simulation", abschnitte: ["Krankenhäuser und Daueraufträge"], stichworte: "krankenhaus belegung grundbelegung dialyse bestrahlung chemo daueraufträge krankentransport" },
   { id: "zeiten", gruppe: "simulation", label: "Zeiten", info: "Ausrücken, Fahrzeiten, Verortung", quelle: "simulation", abschnitte: ["Ausrückzeiten", "Fahrzeiten und Verortung"], stichworte: "ausrückzeit fahrzeit sondersignal blaulicht verortung tag nacht" },
@@ -87,7 +90,7 @@ function norm(t: string): string {
 }
 
 /** Alte Einstiegspunkte (Reiter der früheren Fenster) → Seite */
-const ALT: Record<string, string> = { persoenlich: "darstellung", simulation: "aufkommen", programm: "karten", daten: "fahrzeuge", rettungsmittel: "alarmierung" };
+const ALT: Record<string, string> = { sprache: "anrufe", persoenlich: "darstellung", simulation: "aufkommen", programm: "karten", daten: "fahrzeuge", rettungsmittel: "alarmierung" };
 
 export interface EinstellungenFenster {
   overlay: HTMLElement;
@@ -122,7 +125,9 @@ export function einstellungenFenster(deps: DataViewDeps): EinstellungenFenster {
     c.hidden = true;
     inhalt.appendChild(c);
     const v =
-      q === "persoenlich"
+      q === "anrufe"
+        ? anrufKiView(c)
+        : q === "persoenlich"
         ? persoenlichView(c)
         : q === "daten"
           ? createDataView(c, {
@@ -154,13 +159,25 @@ export function einstellungenFenster(deps: DataViewDeps): EinstellungenFenster {
   const titelVon = (s: Element) => s.querySelector(":scope > h3")?.textContent?.trim() ?? "";
 
   /** In der aktiven Quelle nur die Abschnitte der aktiven Seite zeigen */
+  /** alle Abschnitte einer Quelle, die irgendeiner Seite gehören */
+  const bekanntIn = (q: Quelle) => new Set(SEITEN.flatMap((x) => [...(x.quelle === q ? (x.abschnitte ?? []) : []), ...(x.teile ?? []).filter((t) => t.quelle === q).flatMap((t) => t.abschnitte)]));
   function filtern(): void {
     const s = SEITEN.find((x) => x.id === aktiv) ?? weitereSeite(aktiv);
     if (!s || s.quelle === "daten") return;
+    // weitere Teile (andere Quellen) auf derselben Seite
+    for (const t of s.teile ?? []) {
+      const qt = quellen.get(t.quelle);
+      if (!qt) continue;
+      const z = new Set(t.abschnitte);
+      qt.c.querySelectorAll(".set-sec").forEach((sec) => ((sec as HTMLElement).hidden = !z.has(titelVon(sec))));
+      qt.c.querySelector(":scope > .settings > .es-seitenkopf")?.remove();
+      qt.c.querySelectorAll<HTMLElement>(":scope > .settings > .set-hinweis").forEach((h) => (h.hidden = true));
+    }
     const q = quellen.get(s.quelle);
     if (!q) return;
+    q.c.querySelectorAll<HTMLElement>(":scope > .settings > .set-hinweis").forEach((h) => (h.hidden = false));
     const zeigen = new Set(s.abschnitte ?? []);
-    const bekannt = new Set(SEITEN.filter((x) => x.quelle === s.quelle).flatMap((x) => x.abschnitte ?? []));
+    const bekannt = bekanntIn(s.quelle);
     const rest: string[] = [];
     q.c.querySelectorAll(".set-sec").forEach((sec) => {
       const t = titelVon(sec);
@@ -192,9 +209,15 @@ export function einstellungenFenster(deps: DataViewDeps): EinstellungenFenster {
     if (!s) return;
     aktiv = s.id;
     const q = quelle(s.quelle);
-    for (const [k, x] of quellen) x.c.hidden = k !== s.quelle;
+    const teile = (s.teile ?? []).map((t) => quelle(t.quelle));
+    const sichtbar = new Set<Quelle>([s.quelle, ...(s.teile ?? []).map((t) => t.quelle)]);
+    for (const [k, x] of quellen) x.c.hidden = !sichtbar.has(k);
+    // Reihenfolge: Hauptquelle, dann die Teile (untereinander, gemeinsam gescrollt)
+    inhalt.append(q.c, ...teile.map((t) => t.c));
+    inhalt.classList.toggle("es-mehrteilig", teile.length > 0);
     if (s.quelle === "daten" && s.art) q.v.zeigeArt?.(s.art);
     else q.v.refresh();
+    for (const t of teile) t.v.refresh();
     filtern();
     inhalt.scrollTop = 0;
     q.c.scrollTop = 0;
@@ -265,11 +288,11 @@ export function einstellungenFenster(deps: DataViewDeps): EinstellungenFenster {
   function eintraege(): Treffer[] {
     if (eintraegeCache) return eintraegeCache;
     const out: Treffer[] = [];
-    for (const qid of ["persoenlich", "simulation", "programm"] as Quelle[]) {
+    for (const qid of ["anrufe", "persoenlich", "simulation", "programm"] as Quelle[]) {
       const q = quelle(qid);
       q.c.querySelectorAll<HTMLElement>(".set-sec").forEach((sec) => {
         const abschnitt = titelVon(sec);
-        const seite = SEITEN.find((x) => x.quelle === qid && (x.abschnitte ?? []).includes(abschnitt)) ?? weitereSeite(`weitere-${qid}`);
+        const seite = SEITEN.find((x) => (x.quelle === qid && (x.abschnitte ?? []).includes(abschnitt)) || (x.teile ?? []).some((t) => t.quelle === qid && t.abschnitte.includes(abschnitt))) ?? weitereSeite(`weitere-${qid}`);
         if (!seite) return;
         const hinweis = sec.querySelector(":scope > p")?.textContent ?? "";
         out.push({ seite, abschnitt, titel: abschnitt, text: norm(`${abschnitt} ${hinweis}`), ziel: [sec.querySelector<HTMLElement>(":scope > h3") ?? sec] });

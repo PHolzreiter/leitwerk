@@ -363,8 +363,8 @@ async function einGespraech(auftrag: TestAuftrag, nr: number, abbruch: { ja: boo
     const v0 = fall0?.varianten.find((x) => x.id === auftrag.variante);
     const nah = ["partner", "eltern", "kind"].includes(w.anrufer.typ ?? "");
     const gewollt = (w.szenario?.verlauf ?? []).some((t) => /aufgeregt|panisch|übertreib|ruhig|sachlich|routiniert/.test(t));
-    if (!gewollt && v0?.sichtung === "gruen" && w.anrufer.emotion === "panisch") auff.push({ frage: "–", antwort: "–", grund: "Stimmung passt nicht: Panik bei einem harmlosen Fall" });
-    if (!gewollt && v0?.sichtung === "rot" && nah && !w.anrufer.selbst && w.anrufer.emotion === "ruhig") auff.push({ frage: "–", antwort: "–", grund: "Stimmung passt nicht: Angehörige ganz ruhig bei Lebensgefahr" });
+    if (!gewollt && v0?.sichtung === "gruen" && ["panisch", "sehr_panisch", "extrem_panisch"].includes(w.anrufer.emotion) && w.anrufer.stimmungArt !== "dramatisch") auff.push({ frage: "–", antwort: "–", grund: "Stimmung passt nicht: Panik bei einem harmlosen Fall" });
+    if (!gewollt && v0?.sichtung === "rot" && nah && !w.anrufer.selbst && w.anrufer.emotion === "ruhig" && !w.anrufer.stimmungArt) auff.push({ frage: "–", antwort: "–", grund: "Stimmung passt nicht: Angehörige ganz ruhig bei Lebensgefahr" });
   }
   // 6) Ende – in Lebensgefahr bleibt die Leitstelle am Telefon
   if (kritisch) await frag(selbst ? "Ich bleibe am Telefon, die Rettung ist gleich da." : mitPronomen("Ich bleibe bei Ihnen am Telefon, bis die Rettung da ist. Machen Sie weiter wie besprochen.", g()));
@@ -378,7 +378,7 @@ async function einGespraech(auftrag: TestAuftrag, nr: number, abbruch: { ja: boo
   const kopf = [
     `# Testlauf ${nr}: ${fallName} – Ausgang ${auftrag.variante}`,
     "",
-    `- Anrufer: ${w.anrufer.rolle}${p ? ` · ${p.stil} · Einstieg ${p.einstieg} · Wissen ${p.wissen}` : ""} · ${w.anrufer.emotion} · ${w.anrufer.sprache}`,
+    `- Anrufer: ${w.anrufer.rolle}${p ? ` · ${p.stil} · Einstieg ${p.einstieg} · Wissen ${p.wissen}` : ""} · ${w.anrufer.emotion}${w.anrufer.stimmungArt ? ` (${w.anrufer.stimmungArt})` : ""} · ${w.anrufer.sprache}`,
     `- Fragen: ${fragen} · Dauer: ${Math.round((Date.now() - start) / 1000)} s · Antwortzeit Ø ${zeiten.length ? (zeiten.reduce((x, y) => x + y, 0) / zeiten.length / 1000).toFixed(1) : "–"} s`,
     "",
     "## Auffällig",

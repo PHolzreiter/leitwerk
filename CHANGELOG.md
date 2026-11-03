@@ -1,5 +1,16 @@
 # Änderungen
 
+## 0.99.0 – Anrufe & KI in einem Menü, Stimmungen, Funk mit eigenen Stimmen
+- **Neues Menü „Anrufe & KI“** (Einstellungen → Mein Platz): alles zu Anrufer-KI, Stimmen, Spracheingabe und Funk an einer Stelle. Oben ein klarer Schalter **Gemini (Cloud)** oder **Lokal (Ollama)**. Wer Gemini wählt und noch keinen Schlüssel hat, bekommt gleich die Schritt-für-Schritt-Anleitung mit Schlüsselfeld und Test
+- **Beim ersten Start** fragt LeitWerk vor dem ersten Spiel bzw. Beitreten, ob die Anrufer über Gemini oder lokal reden sollen
+- **Mehrspieler:** Der Host legt fest, ob jeder selbst wählt, alle Gemini oder alle lokal verwenden. Verlangt er Gemini, richtet ein Mitspieler ohne Schlüssel ihn zuerst ein – vorher kann er nicht mitspielen
+- Fällt Gemini aus, springt still die lokale KI ein (ohne lokale KI: einfache Antworten). Kein Popup mehr – ein kleines Zeichen am Rand des Gesprächs zeigt, wer gerade antwortet und warum
+- **Stimmungen:** Anrufer sind ruhig, gefasst, aufgeregt, panisch, sehr panisch oder extrem panisch – passend zum Fall mit etwas Zufall. Dazu besondere Arten: weinend, geschockt, wütend, ungeduldig, beschämt, betrunken, verwirrt oder übertrieben dramatisch. Die Stimmung ändert sich im Gespräch: Beruhigst du, wird der Anrufer ruhiger; wird es am Notfallort schlimmer, steigt die Panik. Gilt für Gemini und lokal; Gemini spricht die Stimmung auch hörbar, die lokalen Stimmen ändern Tempo und Klang
+- **Funk mit eigenen Stimmen (Gemini):** Jedes Fahrzeug spricht mit eigener Stimme. Die Stimmen werden bei jedem Schichtwechsel neu verteilt; RTW, NEF und Hubschrauber in der Nähe klingen verschieden. Den Inhalt bestimmt weiter das Programm, Gemini formuliert ihn wie eine Besatzung. Im Mehrspieler hören alle die Stimme über den Funk
+- Funktaste und Funkfenster sind ein Kanal: Ruft die Leitstelle mit der Funktaste ein Bodenfahrzeug („RTW … von LEO“), antwortet die Funk-KI; im laufenden Gespräch mit einem Fahrzeug geht die Funktaste dort hinein
+- Ist kein Sprachmodell geladen, schreibt Gemini den Funk der Leitstelle und der Piloten mit
+- Ohne Gemini spricht jedes Fahrzeug etwas anders schnell, damit nicht alle gleich klingen. „Eintreffen in ca. 1 Minute“ statt „1 Minuten“
+
 ## 0.98.2 – Cloud-Anrufer nach 45 Testgesprächen verbessert
 - Hängt Gemini einen KI-Hinweis an („Diese Information ersetzt keine ärztliche Beratung …“), verstummt der Anrufer sofort und der Satz fällt aus dem Gespräch
 - Hosentaschenanrufe, eCalls und Anrufe anderer Leitstellen bleiben beim Programm – vorher hat Gemini dort geredet

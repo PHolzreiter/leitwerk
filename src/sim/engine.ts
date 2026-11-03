@@ -44,7 +44,7 @@ import {
   type WetterWerte,
 } from "./weather";
 import { bestimmeCode, fallZiehen, kapitelVonCode, nfStufe, wahrheitFuer, type Antworten, type Schema } from "../abfrage/schema";
-import { anruferWaehlen, flughafenAnrufer, ortKandidaten, veraenderungText, zufallsName, type Anrufer } from "../abfrage/anrufer";
+import { anruferWaehlen, flughafenAnrufer, stimmungZumFall, ortKandidaten, veraenderungText, zufallsName, type Anrufer } from "../abfrage/anrufer";
 import { personaWaehlen } from "../abfrage/persona";
 import { alleOrte, kategorienFuerOrtArt, ortGewicht, ortKategorie, poiKategorien } from "../data/orte";
 import { ortAnStelle, ortPartner } from "../data/ortProfile";
@@ -1128,7 +1128,7 @@ export const BEFEHLE = {
     "ktFunkStorno",
     "ktFrueh",
   ],
-  immer: ["chat", "funkFzAntwort", "funkMensch", "funkMenschText"],
+  immer: ["chat", "funkFzAntwort", "funkFzSpricht", "funkMensch", "funkMenschText"],
   /** Pilot (Spieler-NAH): jeder darf, geprüft wird, ob er diesen Hubschrauber fliegt */
   pilot: ["pilotUebernehmen", "pilotAbgeben", "pilotStatus", "pilotPlan", "pilotFliegen", "pilotPosition", "pilotZeit", "pilotTestEinsatz"],
 } as const;
@@ -3310,6 +3310,11 @@ export class Simulation {
         for (const x of ["variante", "wissen", "anrufer_typ", "ort", "ortkat", "selbst"]) delete szenario.zusatz[x];
         const st = stimmungAusVerlauf(szenario.verlauf);
         if (st && privat) anrufer.emotion = st;
+        // Stimmung passend zum Fall (Stufe und besondere Art: weinend, geschockt, beschämt …)
+        if (privat && !st) {
+          const kv = p.fall.katalog ? fallVorlage(p.fall.katalog.id)?.varianten.find((v) => v.id === p.fall!.katalog!.variante) : undefined;
+          stimmungZumFall(anrufer, { thema: `${vorlage.thema} ${vorlage.id}`, texte: [...(szenario.geschehen ?? []), ...(szenario.details ?? []), ...(szenario.verlauf ?? [])].join(" "), sichtung: kv?.sichtung, alter: alt, schlimm: a.bw === "nein" || a.at === "keine" || a.at === "agonal" });
+        }
       }
       e.wahr.abfrage = {
         kapitel: p.fall.kapitel,
@@ -6774,7 +6779,7 @@ export class Simulation {
           const b = buchung(e.kh?.grund ?? e.wahr.verdacht);
           const schock = b?.kategorie === "Trauma" && b.zeitkritisch;
           const vor = krit ? `, Voranmeldung ${schock ? "Schockraum" : "Notaufnahme"}${p0 ? `: ${patientText(p0).replace(/ \(.*\)$/, "")}` : ""}` : "";
-          this.fzRuft(fz, e, "info", `Patient übernommen, Transport ${h ? `ins ${h.kurzname || h.name}` : "ins Krankenhaus"}, Eintreffen in ca. ${min} Minuten${vor}`);
+          this.fzRuft(fz, e, "info", `Patient übernommen, Transport ${h ? `ins ${h.kurzname || h.name}` : "ins Krankenhaus"}, Eintreffen in ca. ${min} Minute${min === 1 ? "" : "n"}${vor}`);
         }
       }
       // nach einem Defekt wieder einsatzbereit
@@ -6925,11 +6930,21 @@ export class Simulation {
   }
 
   /** Funkspruch der Besatzung, den die KI beim Gesprächsführer formuliert hat */
-  funkFzAntwort(id: number, text: string, quelle: "ki" | "fest" = "ki"): void {
+  funkFzAntwort(id: number, text: string, quelle: "ki" | "fest" = "ki", stimme?: boolean): void {
     const g = this.gespraech(id);
     if (!g.ausstehend) return;
+    const n = g.sprueche.length;
     this.ausstehendSprechen(g, text, quelle);
+    // mit Stimme (Cloud) schon übertragen: nicht noch einmal vorlesen
+    if (stimme && g.sprueche.length > n) g.sprueche[n].stimme = true;
     this.emit();
+  }
+
+  /** Die Besatzung spricht gerade (Stimme aus der Cloud läuft): nicht nach der Wartezeit den festen Text nehmen */
+  funkFzSpricht(id: number): void {
+    const g = (this.state.funkGespraeche ?? []).find((x) => x.id === id);
+    if (!g?.ausstehend) return;
+    g.ausstehend.bis = Math.max(g.ausstehend.bis, Date.now() + 30_000);
   }
 
   /** Die Leitstelle schreibt gerade einen Funkspruch: das Gespräch nicht wegen Stille beenden */
@@ -7031,6 +7046,15 @@ export class Simulation {
         }
       }
     } else {
+      // laufendes KI-Gespräch mit einem Bodenfahrzeug, das ich führe: die Funktaste spricht dort hinein (gleicher Kanal)
+      const ki = this.state.funkGespraeche?.find((x) => !x.mensch && !x.an && x.status === "offen" && x.fuehrer?.pid === ich.pid);
+      if (ki && !this.menschGespraech(null, null)) {
+        if (ki.ausstehend) throw new Error(`Funk belegt – ${ki.funkname} spricht gerade`);
+        this.state.funkSendet = { pid: ich.pid, name: ich.name, gId: ki.id, von, seit: jetzt };
+        ki.echtLetzt = jetzt;
+        this.emit();
+        return ki.id;
+      }
       g = this.menschGespraech(null, null);
       if (!g) {
         const piloten = Object.values(this.state.fahrzeuge).filter((f) => f.pilot);
@@ -7055,10 +7079,30 @@ export class Simulation {
   funkMenschText(gId: number, text: string): void {
     const g = this.gespraech(gId);
     const t = text.replace(/\s+/g, " ").trim().slice(0, 500);
-    if (!t || !g.mensch) return;
+    if (!t) return;
     const ich = this.wer();
     const heli = this.pilotVon(ich.pid);
+    // Funktaste im KI-Gespräch mit einem Bodenfahrzeug: wie ein gesprochener Funkspruch im Funkfenster
+    if (!g.mensch) {
+      if (heli || g.status !== "offen" || g.fuehrer?.pid !== ich.pid) return;
+      // ruft einen Piloten: der Kanal ist noch vom Gespräch mit dem Fahrzeug belegt
+      const pilot = /\bvon\s+leo\b/i.test(t) ? fahrzeugZuName(t.split(/\s+von\s+/i)[0], Object.values(this.state.fahrzeuge).filter((f) => f.pilot)) : undefined;
+      if (pilot) throw new Error(`Funk belegt – zuerst das Gespräch mit ${g.funkname} beenden`);
+      this.funkSenden(gId, t, true);
+      return;
+    }
     const von = heli ? this.rufname(heli) : "LEO";
+    // Leitstelle ruft mit der Funktaste ein Bodenfahrzeug („RTW 1 von LEO“): das übernimmt die Funk-KI
+    if (!heli && !g.sprueche.length) {
+      const boden = Object.values(this.state.fahrzeuge).filter((f) => !f.pilot);
+      const ziel = /\bvon\s+leo\b/i.test(t) ? fahrzeugZuName(t.split(/\s+von\s+/i)[0], boden) : undefined;
+      if (ziel) {
+        this.funkSchliessen(g);
+        this.state.funkGespraeche = (this.state.funkGespraeche ?? []).filter((x) => x !== g);
+        this.funkRufen(ziel.id, t, true);
+        return this.emit();
+      }
+    }
     // Leitstelle ruft einen anderen Piloten („C9 von LEO, kommen“): das Gespräch gehört zu ihm
     if (!heli && !g.sprueche.length) {
       const piloten = Object.values(this.state.fahrzeuge).filter((f) => f.pilot);
@@ -7102,7 +7146,7 @@ export class Simulation {
     const vorOrt = rtw.phase === "vorOrt" || rtw.phase === "warteKH" || rtw.phase === "suche";
     const min = rtw.phaseEnde ? Math.max(1, Math.round((rtw.phaseEnde - this.state.zeit) / MIN)) : null;
     if (/\blande|landeplatz|landung|aufsetzen|wo (können|koennen|sollen|dürfen) wir/.test(t)) {
-      if (!vorOrt || !e) return `${hier}, sind selbst noch nicht vor Ort${min ? `, Eintreffen in ca. ${min} Minuten` : ""}, kommen`;
+      if (!vorOrt || !e) return `${hier}, sind selbst noch nicht vor Ort${min ? `, Eintreffen in ca. ${min} Minute${min === 1 ? "" : "n"}` : ""}, kommen`;
       // gleiche Antwort für denselben Einsatz
       let h = 0;
       for (const c of e.id) h = (h * 31 + c.charCodeAt(0)) >>> 0;
@@ -7113,7 +7157,7 @@ export class Simulation {
     }
     if (/status|wo seid|wo bist|eintreff|wie lange|wann seid|position|fahrzeit|seid ihr (schon )?(vor ort|da)/.test(t)) {
       if (vorOrt) return `${hier}, sind vor Ort beim Patienten, kommen`;
-      if (rtw.phase === "anfahrt" || rtw.phase === "ausruecken") return `${hier}, sind auf Anfahrt, Eintreffen in ca. ${min ?? "?"} Minuten, kommen`;
+      if (rtw.phase === "anfahrt" || rtw.phase === "ausruecken") return `${hier}, sind auf Anfahrt, Eintreffen in ca. ${min ?? "?"} Minute${min === 1 ? "" : "n"}, kommen`;
       return `${hier}, sind nicht beim Patienten, kommen`;
     }
     if (/sättigung|spo2|blutdruck|\brr\b|puls|herzfrequenz|blutzucker|\bbz\b|vitalwerte|vitalparameter|temperatur|\bgcs\b|atemfrequenz|werte/.test(t)) {
@@ -7252,7 +7296,7 @@ export class Simulation {
     }
     if (/status|wo seid|wo bist|eintreff|wie lange|wann seid|wann seit|position|fahrzeit/.test(t)) {
       const min = fz.phaseEnde ? Math.max(1, Math.round((fz.phaseEnde - this.state.zeit) / MIN)) : null;
-      if (fz.phase === "anfahrt" || fz.phase === "ausruecken") return `${hier}, sind auf Anfahrt, Eintreffen in ca. ${min ?? "?"} Minuten, kommen`;
+      if (fz.phase === "anfahrt" || fz.phase === "ausruecken") return `${hier}, sind auf Anfahrt, Eintreffen in ca. ${min ?? "?"} Minute${min === 1 ? "" : "n"}, kommen`;
       if (fz.phase === "naAbholung" || fz.phase === "naEinstieg") return `${hier}, holen gerade den Notarzt im ${this.naKh(fz)?.kurzname || "Krankenhaus"} ab, dann direkt zum Einsatzort, kommen`;
       if (vorOrt) return `${hier}, sind vor Ort beim Patienten, kommen`;
       if (fz.phase === "transport") return `${hier}, sind mit Patient auf dem Weg ins Krankenhaus, ca. ${min ?? "?"} Minuten, kommen`;

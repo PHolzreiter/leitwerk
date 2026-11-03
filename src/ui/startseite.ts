@@ -35,6 +35,8 @@ import { sprachPrefs, sprachStatus } from "./sprache";
 import { spielstaendeOeffnen } from "./spielstaende";
 import { onUpdate, updateInfo, updateInstallieren, updateLaeuft } from "./updateDienst";
 import { einstellungenOeffnen } from "./ws/steuerleiste";
+import { anrufKiModus, schluesselDa, schluesselGeprueft } from "../abfrage/liveKi";
+import { anrufKiErstwahl } from "./anrufKi";
 import { pilotBeitrittOeffnen } from "./pilot/pilotView";
 import { istDunkel, onThema, pers, setzePers, type Thema } from "./ws/persoenlich";
 
@@ -179,21 +181,25 @@ async function pruefen(): Promise<Check[]> {
       if (!store.schema) return { stand: "warn", text: "ohne Abfrageschema", hilfe: "Codes sind da, aber kein Abfrageschema: Notrufe kommen ohne Telefonat herein." };
       return { stand: "ok", text: "Bereit" };
     }),
-    mit({ id: "ki", ico: "ki", name: "KI-Anrufer", seite: "ki" }, async () => {
+    mit({ id: "ki", ico: "ki", name: "KI-Anrufer", seite: "anrufe" }, async () => {
+      if (anrufKiModus() === "gemini") {
+        if (!schluesselDa()) return { stand: "warn", text: "Gemini: Schlüssel fehlt", hilfe: "Unter Einstellungen → Anrufe & KI den kostenlosen Schlüssel einrichten." };
+        return schluesselGeprueft() ? { stand: "ok", text: "Gemini bereit" } : { stand: "warn", text: "Gemini: nicht geprüft", hilfe: "Unter Einstellungen → Anrufe & KI den Schlüssel testen." };
+      }
       const p = kiPrefs();
       if (!p.aktiv) return { stand: "aus", text: "ausgeschaltet", hilfe: "Ohne KI antworten die Anrufer mit vorbereiteten Sätzen." };
       const s = await kiStatus();
-      if (!s.installiert) return { stand: "warn", text: "nicht installiert", hilfe: "Ollama ist nicht installiert – unter Einstellungen → KI-Anrufer einrichten." };
+      if (!s.installiert) return { stand: "warn", text: "nicht installiert", hilfe: "Ollama ist nicht installiert – unter Einstellungen → Anrufe & KI einrichten." };
       if (!s.laeuft) return { stand: "warn", text: "startet …", hilfe: "Ollama läuft noch nicht – startet meist von selbst in ein paar Sekunden." };
       if (!s.modelle.some((m) => m === p.modell || m.startsWith(p.modell))) return { stand: "warn", text: "Modell fehlt", hilfe: `Das Sprachmodell „${p.modell}“ ist nicht geladen.` };
       return { stand: "ok", text: "Bereit" };
     }),
-    mit({ id: "sprache", ico: "mikro", name: "Spracheingabe", seite: "sprache" }, async () => {
+    mit({ id: "sprache", ico: "mikro", name: "Spracheingabe", seite: "anrufe" }, async () => {
       const p = sprachPrefs();
       if (!p.eingabe) return { stand: "aus", text: "ausgeschaltet" };
       if (!inTauri()) return { stand: "aus", text: "nur im Programm" };
       const s = await sprachStatus();
-      return s.modelle.includes(p.modell) ? { stand: "ok", text: "Bereit" } : { stand: "warn", text: "Modell fehlt", hilfe: "Das Spracherkennungs-Modell ist noch nicht geladen – unter Einstellungen → Sprache laden." };
+      return s.modelle.includes(p.modell) ? { stand: "ok", text: "Bereit" } : { stand: "warn", text: "Modell fehlt", hilfe: "Das Spracherkennungs-Modell ist noch nicht geladen – unter Einstellungen → Anrufe & KI laden." };
     }),
     mit({ id: "spielstand", ico: "speicher", name: "Speicherstand" }, async () => {
       const i = await spielstand.autosaveInfo();
@@ -584,13 +590,19 @@ export function startseiteZeigen(fertig?: () => void, opt: { zurueck?: boolean }
       const neu = multiFeld.querySelector<HTMLButtonElement>(".st-lobby-neu")!;
       neu.addEventListener("click", () =>
         busy(neu, async () => {
+          await anrufKiErstwahl();
           sim.lobbySetzen(true);
           await mp.hosten(name.value);
           sim.lobbySetzen(true);
         }),
       );
       const bei = multiFeld.querySelector<HTMLButtonElement>(".st-lobby-bei")!;
-      bei.addEventListener("click", () => busy(bei, () => mp.beitreten(code.value, name.value)));
+      bei.addEventListener("click", () =>
+        busy(bei, async () => {
+          await anrufKiErstwahl();
+          await mp.beitreten(code.value, name.value);
+        }),
+      );
       code.addEventListener("keydown", (e) => e.key === "Enter" && bei.click());
       return;
     }
@@ -638,6 +650,7 @@ export function startseiteZeigen(fertig?: () => void, opt: { zurueck?: boolean }
   };
   startKnopf.addEventListener("click", async () => {
     if (binGast()) return;
+    await anrufKiErstwahl();
     const zeit = startzeitArt === "fest" && zeitIn.value ? new Date(zeitIn.value).getTime() : Date.now();
     if (!Number.isFinite(zeit)) return toast("Startzeit verstehe ich nicht", "error");
     startKnopf.disabled = true;
@@ -663,6 +676,7 @@ export function startseiteZeigen(fertig?: () => void, opt: { zurueck?: boolean }
     fortsetzen.querySelector("small")!.textContent = `${new Date(i.gespeichert).toLocaleString("de-AT", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })} · ${i.einsaetze} Einsätze`;
   });
   fortsetzen.addEventListener("click", async () => {
+    await anrufKiErstwahl();
     try {
       await spielstand.autosaveLaden();
       sim.start();
