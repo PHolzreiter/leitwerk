@@ -6,6 +6,8 @@
  *   die Aufnahme läuft dabei schon, damit das erste Wort nicht fehlt.
  * - Nach dem Loslassen erkennt Whisper beim Sprecher den Text → steht im Funkfenster und im Einsatzprotokoll.
  */
+import { funkSprechform } from "../sim/funkErkennung";
+import { funkGlaetten, funkHinweis } from "./funkNamen";
 import { invoke, Channel } from "@tauri-apps/api/core";
 import { inTauri } from "../platform";
 import { mp } from "../net/mehrspieler";
@@ -13,7 +15,7 @@ import { sim } from "../sim/engine";
 import { toast } from "./dom";
 import { FUNK_RATE, FunkKodierer, funkDekodieren } from "./funkCodec";
 import { istPilot } from "./pilot/modus";
-import { aufnahmeLaeuftJetzt, aufnahmeSperre, funkHaken, funkHoerHaken, funkNamenGlaetten, sprachPrefs, sprachStatus, sprachTest, verstummen } from "./sprache";
+import { aufnahmeLaeuftJetzt, aufnahmeSperre, funkHaken, funkHoerHaken, sprachPrefs, sprachStatus, sprachTest, verstummen } from "./sprache";
 
 export type FunkZiel = "leo" | "rtw";
 
@@ -281,8 +283,7 @@ function eigenerRufname(): string {
 /** Fachbegriffe und Rufnamen für die Spracherkennung */
 function hinweis(): string {
   const piloten = Object.values(sim.state.fahrzeuge).filter((f) => f.pilot);
-  const am = Object.values(sim.state.fahrzeuge).slice(0, 50);
-  return `Hier LEO, kommen. Verstanden, Ende. Landeplatz, Einsatzort, Patient. ${[...piloten, ...am].map((f) => sim.rufname(f)).join(", ")}`;
+  return funkHinweis(`Landeplatz, Einsatzort, Patient. ${piloten.map((f) => funkSprechform(sim.rufname(f))).join(", ")}${piloten.length ? ", " : ""}`);
 }
 
 let fensterMikro: { strom: MediaStream; geraet: string } | null = null;
@@ -510,7 +511,7 @@ export async function sprechStopp(): Promise<void> {
   let text = await textP.catch(() => "");
   if (/^(untertitel|vielen dank( für)? (fürs )?zuschauen|copyright|\[?musik\]?|\*.*\*)/i.test(text)) text = "";
   if (text && s.gId !== null) {
-    text = funkNamenGlaetten(text, Object.values(sim.state.fahrzeuge).map((f) => f.funkrufname));
+    text = funkGlaetten(text);
     await sim.call("funkMenschText", s.gId, text).catch((e) => toast(String((e as Error)?.message ?? e), "error"));
   }
 }

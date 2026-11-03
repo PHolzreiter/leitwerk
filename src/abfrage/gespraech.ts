@@ -5,7 +5,7 @@
  */
 import { store } from "../data/store";
 import { sim, type Einsatz } from "../sim/engine";
-import { antwortOhneKi, EMOTIONEN, panikStufe, stimmKlang, erinnerung, werText, ersterSatzOhneKi, istBekannt, sprachFilter, systemPrompt, zusammenfassungPruefen, type AnrufKontext } from "./anrufer";
+import { antwortOhneKi, EMOTIONEN, panikStufe, stimmBild, stimmKlang, erinnerung, werText, ersterSatzOhneKi, istBekannt, sprachFilter, systemPrompt, zusammenfassungPruefen, type AnrufKontext } from "./anrufer";
 import { kiBereit, kiPrefs, kiStatus, type KiNachricht } from "./ki";
 import { kiAntwortNeu, nachrichtArt, ohneVorspann } from "./runde";
 import { liveAktiv, liveFrage, liveSperren, liveSprechen, livePrefs, sitzungDa, sitzungFuer, type LiveErgebnis, type SitzungOpt } from "./liveKi";
@@ -911,7 +911,7 @@ function liveOpt(e: Einsatz, k: AnrufKontext, vorab = false): SitzungOpt {
   return {
     id,
     bezug: `${e.anruf?.seit ?? ""}|${k.anrufer.name}|${k.anrufer.nummer ?? ""}`,
-    system: `${systemFuer(e, k)}\n${stimmKlang(k.anrufer)}`,
+    system: `${systemFuer(e, k)}\n${stimmBild(k.anrufer, id, k.patientAlter ?? undefined)}\n${stimmKlang(k.anrufer)}`,
     geschlecht: k.anrufer.geschlecht,
     verlauf: e.anruf?.gespraech ?? [],
     aktiv: () => {

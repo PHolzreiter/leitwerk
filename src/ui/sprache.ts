@@ -3,6 +3,7 @@
  * Spracheingabe (Taste halten, sprechen, loslassen → Text im Eingabefeld).
  * Erkannt wird lokal mit Whisper im Programm; im Browser (Entwicklung) mit der Erkennung des Browsers.
  */
+import { funkTextGlaetten, zahlenAlsZiffern } from "../sim/funkErkennung";
 import { invoke, Channel } from "@tauri-apps/api/core";
 import { inTauri } from "../platform";
 import { el, toast } from "./dom";
@@ -175,7 +176,7 @@ function stimmeFuer(g: "w" | "m", schluessel: string): { voice: SpeechSynthesisV
   const pool = passend.length ? passend : alle;
   const voice = gewaehlt ?? (pool.length ? pool[Math.floor(hash(schluessel) * pool.length)] : null);
   // gleiche Stimme für Mann und Frau: Tonhöhe verschieben, damit man sie unterscheidet
-  let pitch = 0.92 + hash(schluessel + "p") * 0.16;
+  let pitch = 0.84 + hash(schluessel + "p") * 0.32;
   if (voice && geschlechtVon(voice) !== g) pitch += g === "w" ? 0.25 : -0.25;
   return { voice, pitch: Math.max(0.5, Math.min(1.6, pitch)) };
 }
@@ -312,18 +313,22 @@ function supertonicFuer(g: "w" | "m", schluessel: string): string {
 }
 
 /** Satz mit Piper erzeugen und nacheinander abspielen (der nächste Satz wird schon erzeugt, während einer läuft) */
-function piperSagen(text: string, v: { name: string; sid: number }, rate: number, laut = 1): void {
+/**
+ * ton = Tonhöhe (1 = unverändert): schneller/langsamer abspielen verschiebt die Tonhöhe,
+ * das Sprechtempo wird beim Erzeugen ausgeglichen – so klingt dieselbe Stimme höher oder tiefer.
+ */
+function piperSagen(text: string, v: { name: string; sid: number }, rate: number, laut = 1, ton = 1): void {
   const p = sprachPrefs();
-  imProgrammSagen(invoke<ArrayBuffer>("stimme_erzeugen", { name: v.name, text, sid: v.sid, tempo: Math.max(0.5, Math.min(2, rate * (p.tempo / 100))) }), laut);
+  imProgrammSagen(invoke<ArrayBuffer>("stimme_erzeugen", { name: v.name, text, sid: v.sid, tempo: Math.max(0.5, Math.min(2, (rate * (p.tempo / 100)) / ton)) }), laut, ton);
 }
 
-function supertonicSagen(text: string, stimme: string, rate: number, laut = 1): void {
+function supertonicSagen(text: string, stimme: string, rate: number, laut = 1, ton = 1): void {
   const p = sprachPrefs();
-  imProgrammSagen(invoke<ArrayBuffer>("supertonic_erzeugen", { stimme, text, tempo: Math.max(0.5, Math.min(2, rate * (p.tempo / 100))) }), laut);
+  imProgrammSagen(invoke<ArrayBuffer>("supertonic_erzeugen", { stimme, text, tempo: Math.max(0.5, Math.min(2, (rate * (p.tempo / 100)) / ton)) }), laut, ton);
 }
 
 /** erzeugtes Audio (4 Byte Rate + f32) der Reihe nach auf dem gewählten Gerät abspielen */
-function imProgrammSagen(audio: Promise<ArrayBuffer>, laut = 1): void {
+function imProgrammSagen(audio: Promise<ArrayBuffer>, laut = 1, ton = 1): void {
   const p = sprachPrefs();
   const gen = generation;
   const id = `stimme-${++zaehler}`;
@@ -333,7 +338,7 @@ function imProgrammSagen(audio: Promise<ArrayBuffer>, laut = 1): void {
       if (gen !== generation) return;
       const buf = await audio;
       if (gen !== generation) return;
-      const rate = new DataView(buf).getUint32(0, true);
+      const rate = Math.round(new DataView(buf).getUint32(0, true) * ton);
       await invoke("ton_spielen", new Uint8Array(buf.slice(4)), {
         headers: { "x-rate": String(rate), "x-geraet": encodeURIComponent(p.geraetStimmen), "x-laut": String(Math.max(0, (p.laut / 100) * laut)), "x-id": id },
       });
@@ -346,14 +351,16 @@ function sagen(text: string, g: "w" | "m", schluessel: string, rate: number, emo
   const t = sprechText(text);
   if (!t) return;
   const p = sprachPrefs();
+  // jede Person eine eigene Tonhöhe (± 10 %), damit gleiche Grundstimmen verschieden klingen
+  const ton = 0.9 + hash(`${schluessel}|ton`) * 0.2;
   if (p.stimmeArt === "supertonic" && inTauri() && supertonicDa) {
-    supertonicSagen(t, supertonicFuer(g, schluessel), rate, laut);
+    supertonicSagen(t, supertonicFuer(g, schluessel), rate, laut, ton);
     return;
   }
   if ((p.stimmeArt === "piper" || p.stimmeArt === "supertonic") && inTauri()) {
     const v = piperFuer(g, schluessel, emotion);
     if (v) {
-      piperSagen(t, v, rate, laut);
+      piperSagen(t, v, rate, laut, ton);
       return;
     }
   }
@@ -390,7 +397,8 @@ const ART_TEMPO: Record<string, number> = { geschockt: 0.85, betrunken: 0.85, ve
 export function anruferSagt(text: string, a: { geschlecht?: "m" | "w"; emotion?: string; stimmungArt?: string; name?: string; sprache?: string } | null | undefined, id: string): void {
   const p = sprachPrefs();
   if (!p.vorlesen || aufnahmeLaeuft) return;
-  let rate = (EMOTION_TEMPO[a?.emotion ?? "gefasst"] ?? 1) * (ART_TEMPO[a?.stimmungArt ?? ""] ?? 1);
+  // jeder Anrufer redet von Haus aus etwas schneller oder langsamer
+  let rate = (EMOTION_TEMPO[a?.emotion ?? "gefasst"] ?? 1) * (ART_TEMPO[a?.stimmungArt ?? ""] ?? 1) * (0.92 + hash(`${id}|${a?.name ?? ""}|eigen`) * 0.16);
   if (a?.sprache === "gebrochen") rate *= 0.9;
   sagen(text, a?.geschlecht ?? (hash(id) < 0.5 ? "w" : "m"), `${id}|${a?.name ?? ""}`, rate, a?.stimmungArt && EMOTION_SPRECHER[a.stimmungArt] ? a.stimmungArt : a?.emotion);
 }
@@ -453,6 +461,8 @@ const ZAHL_MAL: Record<string, string> = { "1": "einmal", "2": "zweimal", "3": "
 export function funkAussprache(t: string): string {
   return t
     .replace(/\b(\d+)\s?[x×]\s?(?=[A-ZÄÖÜa-zäöü])/g, (_m, n: string) => `${ZAHL_MAL[n] ?? `${n} mal`} `)
+    // Funkrufnamen wie gesprochen: „75/001“ → „75 1“
+    .replace(/\b(\d{2,3})\/0*(\d+)\b/g, "$1 $2")
     .replace(/\bPat\.?(?=\s|,|$)/g, "Patient")
     .replace(/\bPatin\b/g, "Patientin")
     .replace(/\bSt\.\s?(?=[A-ZÄÖÜ])/g, "Sankt ")
@@ -1013,7 +1023,8 @@ async function stoppInnen(): Promise<void> {
 
 /** erkannten Text ins Eingabefeld (und ggf. abschicken) */
 function textFertig(z: SprachZiel | null, roh: string): void {
-  let text = roh.replace(/\s+/g, " ").trim();
+  // Zahlen immer als Ziffern („eins“ → „1“)
+  let text = zahlenAlsZiffern(roh.replace(/\s+/g, " ").trim());
   if (!text || FANTASIE.test(text)) {
     toast("Nichts verstanden – bitte nochmal.", "error");
     return;
@@ -1093,14 +1104,9 @@ export function testZiel(input: HTMLInputElement): SprachZiel {
 }
 
 /**
- * Funkrufnamen aus gesprochenem Text: „75 1“, „75-001“, „75 Strich 1“ → „75/001“.
- * Mit Namensliste nur, wenn es das Fahrzeug gibt; ohne Liste nur dreistellige Nummern.
+ * Funkrufnamen aus gesprochenem Text: „75 1“, „751“, „75 Strich 1“ → „75/001“, „Neff Krems“ → „NEF Krems“, Zahlwörter als Ziffern.
+ * bevorzugt = Fahrzeuge, die gerade funken (bei ähnlich klingenden Nummern sind die gemeint).
  */
-export function funkNamenGlaetten(t: string, namen?: string[]): string {
-  const set = namen ? new Set(namen.map((n) => n.toLowerCase())) : null;
-  return t.replace(/\b(\d{2,3})(?:\s*(?:schrägstrich|strich|\/|-|–|,|\.)\s*|\s+)(\d{1,3})\b/gi, (ganz, a: string, b: string) => {
-    const kand = `${a}/${b.padStart(3, "0")}`;
-    if (set) return set.has(kand.toLowerCase()) ? kand : ganz;
-    return b.length === 3 ? kand : ganz;
-  });
+export function funkNamenGlaetten(t: string, namen?: string[], bevorzugt?: string[]): string {
+  return funkTextGlaetten(t, namen, bevorzugt);
 }

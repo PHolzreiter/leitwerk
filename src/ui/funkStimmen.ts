@@ -16,6 +16,7 @@ import { sim, type FunkAusstehend, type FunkGespraech, type SimFahrzeug } from "
 import { distanceM } from "../sim/geo";
 import { inTauri } from "../platform";
 import { funkAussprache, funkHoerHaken, funkVorleseHaken, sprachPrefs, sprachStatus } from "./sprache";
+import { funkGlaetten } from "./funkNamen";
 import { funkAngekuendigt, kiFunkAnkuendigen, kiFunkStrom } from "./sprechfunk";
 
 // ------------------------------------------------------------------ Stimmen der Fahrzeuge
@@ -132,6 +133,8 @@ async function ausstehendSprechen(g: FunkGespraech, a: FunkAusstehend): Promise<
       return false;
     }
     if (!frei || !gesagt) gesagt = a.fest;
+    // Mitschrift der Stimme: Zahlen als Ziffern, Rufnamen richtig geschrieben („75 1“ → „75/001“)
+    else gesagt = funkGlaetten(gesagt);
     if (frei) {
       const p = funkLivePruefen(g, a, gesagt);
       if (p.length) console.info(`[Funk-Stimme] ${a.von}: ${p.join("; ")} – gesagt: ${gesagt}`);
@@ -183,7 +186,7 @@ export function funkStimmenStarten(): void {
     if (!stimmeAn() || modellHier) return null;
     const m = liveMitschrift();
     if (!m) return null;
-    return { ...m, ende: async () => (await m.ende()).replace(/\b(leo|loo|lio|lehro)\b/gi, "LEO") };
+    return m;
   };
   const pruefen = () => {
     if (!inTauri()) return;

@@ -638,6 +638,35 @@ export function stimmKlang(x: { emotion: string; stimmungArt?: StimmungArt }): s
 }
 
 /**
+ * Nur für Gemini: wie die Stimme dieses Anrufers grundsätzlich klingt (fest pro Anrufer) –
+ * Alter, Tonlage, Klangfarbe, Grundtempo und Färbung. Damit klingen auch Anrufer mit derselben Grundstimme verschieden.
+ */
+export function stimmBild(x: { name: string; geschlecht: "m" | "w"; sprache: string; herkunft?: string; typ?: string; selbst?: boolean }, id: string, patientAlter?: number): string {
+  let h = 2166136261;
+  const t = `${id}|${x.name}`;
+  for (let i = 0; i < t.length; i++) h = Math.imul(h ^ t.charCodeAt(i), 16777619) >>> 0;
+  const w = (n: number) => {
+    const r = h % n;
+    h = Math.imul(h ^ (h >>> 13), 2246822507) >>> 0;
+    return r;
+  };
+  const altJung = x.typ === "eltern" || x.typ === "lehrer" ? ["jung (Anfang 30)", "mittleres Alter (um 40)"] : x.typ === "kind" || x.typ === "fern" ? ["mittleres Alter (um 45)", "mittleres Alter (um 55)"] : ["jung (Mitte 20)", "jung (Anfang 30)", "mittleres Alter (um 45)", "älter (um 60)", "älter (um 70)", "alt (über 80), etwas brüchig"];
+  let alter = altJung[w(altJung.length)];
+  // ruft der Patient selbst an, passt die Stimme zu seinem Alter
+  if (x.selbst && patientAlter) alter = patientAlter < 18 ? "jugendlich" : patientAlter < 35 ? "jung" : patientAlter < 60 ? "mittleres Alter" : patientAlter < 80 ? "älter" : "alt, etwas brüchig";
+  const lage = ["eher tiefe", "mittlere", "mittlere", "eher hohe"][w(4)];
+  const farbe = ["warme", "raue", "heisere", "helle", "kräftige", "weiche", "leicht nasale", "dünne", "rauchige", "klare"][w(10)];
+  const tempo = ["bedächtig, etwas langsamer", "normales Tempo", "normales Tempo", "flott, etwas schneller"][w(4)];
+  const faerbung =
+    x.sprache === "gebrochen"
+      ? `deutlicher Akzent${x.herkunft ? ` (Herkunft ${x.herkunft})` : ""}`
+      : x.sprache === "dialekt"
+        ? ["deutlicher niederösterreichischer Dialekt", "Wiener Färbung", "breiter ländlicher Dialekt"][w(3)]
+        : ["leichte österreichische Färbung", "fast Hochdeutsch, leicht österreichisch", "österreichische Umgangssprache"][w(3)];
+  return `DEINE STIMME (immer gleich, nicht vorlesen): ${x.geschlecht === "w" ? "Frau" : "Mann"}, ${alter}; ${lage} Stimmlage, ${farbe} Stimme; ${tempo}; ${faerbung}. Die Stimmung (unten) kommt dazu.`;
+}
+
+/**
  * Stimmung passend zum Fall festlegen (fest nach Fall und Anrufer, mit leichter Schwankung):
  * Angehörige bei Lebensgefahr oft sehr/extrem panisch, Verursacher und Passanten geschockt, Peinliches beschämt …
  */

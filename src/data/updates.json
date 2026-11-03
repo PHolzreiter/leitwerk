@@ -1,5 +1,16 @@
 [
  {
+  "version": "0.99.1",
+  "datum": "2026-11-03",
+  "titel": "Funkrufnamen besser erkannt, Zahlen als Ziffern, mehr Anruferstimmen",
+  "punkte": [
+   "Funk-Erkennung: „75 1“, „751“, „Neff Krems“ werden richtig erkannt",
+   "Funkrufnamen gesprochen wie am Funk: „75 1“",
+   "Zahlen immer als Ziffern",
+   "Anrufer klingen viel verschiedener (Gemini und lokal)"
+  ]
+ },
+ {
   "version": "0.99.0",
   "datum": "2026-11-03",
   "titel": "Anrufe & KI in einem Menü, Stimmungen, Funk mit eigenen Stimmen",

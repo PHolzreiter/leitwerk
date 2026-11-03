@@ -4,6 +4,7 @@
  * laufend vom Mikrofon. Gemini antwortet direkt mit Stimme; die Mitschrift kommt ins Gespräch.
  * Der Schlüssel liegt nur auf diesem Rechner (localStorage) und wird nur an Google geschickt.
  */
+import { zahlenAlsZiffern } from "../sim/funkErkennung";
 import { invoke } from "@tauri-apps/api/core";
 import { inTauri } from "../platform";
 import { aufnahmeLaeuftJetzt, sprachPrefs, verstummHoerer } from "../ui/sprache";
@@ -84,11 +85,12 @@ export function liveSperren(ms = 60000): void {
 }
 
 // Stimmen von Gemini (Frauen- und Männerstimmen)
-const STIMMEN_W = ["Kore", "Aoede", "Leda", "Zephyr", "Callirrhoe", "Despina"];
-const STIMMEN_M = ["Puck", "Charon", "Fenrir", "Orus", "Iapetus", "Umbriel"];
+// alle 30 Stimmen, nach Geschlecht (laut Stimmenliste von Google)
+const STIMMEN_W = ["Kore", "Aoede", "Leda", "Zephyr", "Callirrhoe", "Despina", "Autonoe", "Erinome", "Laomedeia", "Achernar", "Gacrux", "Pulcherrima", "Vindemiatrix", "Sulafat"];
+const STIMMEN_M = ["Puck", "Charon", "Fenrir", "Orus", "Iapetus", "Umbriel", "Enceladus", "Algieba", "Algenib", "Rasalgethi", "Alnilam", "Schedar", "Achird", "Zubenelgenubi", "Sadachbia", "Sadaltager"];
 function stimmeFuer(g: "w" | "m" | undefined, id: string): string {
-  let h = 0;
-  for (const c of id) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  let h = 2166136261;
+  for (let i = 0; i < id.length; i++) h = Math.imul(h ^ id.charCodeAt(i), 16777619) >>> 0;
   const pool = g === "m" ? STIMMEN_M : STIMMEN_W;
   return pool[h % pool.length];
 }
@@ -314,7 +316,7 @@ class Sitzung {
         JSON.stringify({
           setup: {
             model: `models/${LIVE_MODELL}`,
-            generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: stimmeFuer(opt.geschlecht, opt.id) } } } },
+            generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: stimmeFuer(opt.geschlecht, `${opt.id}|${opt.bezug ?? ""}`) } } } },
             systemInstruction: { parts: [{ text: opt.stumm ? opt.system : `${opt.system}\n${ZUSATZ}` }] },
             outputAudioTranscription: {},
             inputAudioTranscription: {},
@@ -397,7 +399,7 @@ class Sitzung {
         start,
         audio: !!frage || !!this.opt.frei,
         spontan: !frage,
-        fertig: (t) => this.opt.ereignis?.({ text: t, frage: runde.frage.replace(/\s+/g, " ").trim(), ersterTon: runde.ersterTon ?? 0, fertig: Date.now() - start, tokens: runde.tokens, spontan: runde.spontan && !runde.frage.trim(), unterbrochen: runde.unterbrochen }),
+        fertig: (t) => this.opt.ereignis?.({ text: zahlenAlsZiffern(t), frage: zahlenAlsZiffern(runde.frage.replace(/\s+/g, " ").trim()), ersterTon: runde.ersterTon ?? 0, fertig: Date.now() - start, tokens: runde.tokens, spontan: runde.spontan && !runde.frage.trim(), unterbrochen: runde.unterbrochen }),
         fehler: () => undefined,
       };
       this.runde = runde;
@@ -479,7 +481,7 @@ class Sitzung {
       onText,
       start,
       audio: true,
-      fertig: (t) => ja({ text: t, frage: runde.frage.replace(/\s+/g, " ").trim(), ersterTon: runde.ersterTon ?? Date.now() - start, fertig: Date.now() - start, tokens: runde.tokens, unterbrochen: runde.unterbrochen }),
+      fertig: (t) => ja({ text: zahlenAlsZiffern(t), frage: zahlenAlsZiffern(runde.frage.replace(/\s+/g, " ").trim()), ersterTon: runde.ersterTon ?? Date.now() - start, fertig: Date.now() - start, tokens: runde.tokens, unterbrochen: runde.unterbrochen }),
       fehler: (e) => nein(e),
     };
     this.runde = runde;
@@ -514,7 +516,7 @@ class Sitzung {
         frage: anzeige,
         onText,
         start,
-        fertig: (t) => ja({ text: t, frage: anzeige, ersterTon: runde.ersterTon ?? Date.now() - start, fertig: Date.now() - start, tokens: runde.tokens }),
+        fertig: (t) => ja({ text: zahlenAlsZiffern(t), frage: anzeige, ersterTon: runde.ersterTon ?? Date.now() - start, fertig: Date.now() - start, tokens: runde.tokens }),
         fehler: nein,
       };
       this.runde = runde;

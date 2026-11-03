@@ -2,7 +2,8 @@
  * Funk (rechter Reiter): rufende Fahrzeuge, laufendes Funkgespräch mit Schnellknöpfen,
  * Verlauf aller Funkgespräche (alle Spieler hören mit) und Statusmeldungen.
  */
-import { funkNamenGlaetten, mikroAnbinden, sprachPrefs, tastenName } from "./sprache";
+import { funkGlaetten, funkHinweis } from "./funkNamen";
+import { mikroAnbinden, sprachPrefs, tastenName } from "./sprache";
 import { funkEmpfang, funkSendeZustand, onFunkEmpfang, onFunkSenden, sprechKnopfAnbinden } from "./sprechfunk";
 import { fahrzeugZuName } from "../sim/funkname";
 import { mp } from "../net/mehrspieler";
@@ -63,7 +64,7 @@ export function createFunkView(root: HTMLElement, deps: { select(einsatzId: stri
   const form = el("form", { class: "funk-form" });
   const eingabe = el("input", { type: "text", placeholder: "Funkspruch an das Fahrzeug … (Enter)" });
   const senden = el("button", { class: "btn small primary", type: "submit" }, "Senden");
-  const funkHinweis = () => `Hier LEO, kommen. Verstanden, Ende. ${Object.values(sim.state.fahrzeuge).slice(0, 60).map((f) => sim.rufname(f)).join(", ")}`;
+  const funkHinweisJetzt = () => funkHinweis();
   form.append(
     eingabe,
     mikroAnbinden({
@@ -75,8 +76,8 @@ export function createFunkView(root: HTMLElement, deps: { select(einsatzId: stri
         naechstesGesprochen = !!gesprochen;
         form.requestSubmit();
       },
-      hinweis: funkHinweis,
-      nachher: (t) => funkNamenGlaetten(t, Object.values(sim.state.fahrzeuge).map((f) => f.funkrufname)),
+      hinweis: funkHinweisJetzt,
+      nachher: (t) => funkGlaetten(t),
     }),
     senden,
   );
@@ -86,7 +87,6 @@ export function createFunkView(root: HTMLElement, deps: { select(einsatzId: stri
   const freiInput = el("input", { type: "text", placeholder: "Fahrzeug anfunken, z. B. „75/001 von LEO, kommen“" });
   const rufenInput = el("input", { type: "text", class: "funk-wahl", placeholder: "75/001", list: "funk-fz-liste", title: "Fahrzeug auswählen und rufen" });
   const liste = el("datalist", { id: "funk-fz-liste" });
-  const namen = () => Object.values(sim.state.fahrzeuge).flatMap((f) => [f.funkrufname, sim.rufname(f)]);
   rufenZeile.append(
     freiInput,
     mikroAnbinden({
@@ -98,8 +98,8 @@ export function createFunkView(root: HTMLElement, deps: { select(einsatzId: stri
         naechstesGesprochen = !!gesprochen;
         rufenZeile.requestSubmit();
       },
-      hinweis: funkHinweis,
-      nachher: (t) => funkNamenGlaetten(t, namen()),
+      hinweis: funkHinweisJetzt,
+      nachher: (t) => funkGlaetten(t),
     }),
     el("button", { class: "btn small primary", type: "submit" }, "📻 Rufen"),
     liste,
@@ -182,7 +182,7 @@ export function createFunkView(root: HTMLElement, deps: { select(einsatzId: stri
   });
   /** Rufname bzw. Funkrufname im Text finden (längster Treffer zuerst, „75 1“ zählt als „75/001“, „NEF Tulln“, „C 2“) */
   function fahrzeugIn(text: string) {
-    const t = funkNamenGlaetten(text, namen());
+    const t = funkGlaetten(text);
     // „75/001 von LEO“: der Angerufene steht vor „von“
     const vorVon = t.split(/\s+von\s+/i)[0];
     const alle = Object.values(sim.state.fahrzeuge);
@@ -194,7 +194,7 @@ export function createFunkView(root: HTMLElement, deps: { select(einsatzId: stri
     const gesprochen = naechstesGesprochen;
     naechstesGesprochen = false;
     if (!roh) return;
-    const text = funkNamenGlaetten(roh, namen());
+    const text = funkGlaetten(roh);
     const fz = fahrzeugIn(text);
     if (!fz) return toast("Kein Fahrzeug erkannt – bitte mit Funkrufnamen, z. B. „75/001 von LEO, kommen“", "error");
     freiInput.value = "";

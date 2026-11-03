@@ -1,5 +1,12 @@
 # Änderungen
 
+## 0.99.1 – Funkrufnamen besser erkannt, Zahlen als Ziffern, mehr Anruferstimmen
+- **Funk-Spracherkennung:** „75 1“, „751“, „fünfundsiebzig eins“ oder „sieben fünf null null eins“ werden zu 75/001; „Neff Krems“ oder ein leicht falsch erkannter Ort zu „NEF Krems“, „Christophorus zwei“ zu C2, „Leo“ zu LEO. Klingt eine Nummer ähnlich wie ein Fahrzeug, das gerade funkt („55 1“, aber 75/001 ruft), ist dieses gemeint
+- Die Erkennung bekommt die Rufnamen so, wie sie gesprochen werden („75 1“), die gerade funkenden Fahrzeuge zuerst
+- **Funkrufnamen werden gesprochen wie am Funk:** 75/001 als „75 1“ – auch von den Gemini-Stimmen, ohne „Schrägstrich“ und „null null“
+- **Zahlen immer als Ziffern:** „2 Verletzte“ statt „zwei Verletzte“ – bei Anrufern, Fahrzeugen und in deiner Spracheingabe
+- **Mehr Stimmen bei Anrufern:** Mit Gemini alle 30 Stimmen, dazu bekommt jeder Anrufer ein eigenes Stimmbild (Alter, Stimmlage, Klang, Tempo, Dialekt). Lokal hat jeder Anrufer eine eigene Tonhöhe und ein eigenes Grundtempo
+
 ## 0.99.0 – Anrufe & KI in einem Menü, Stimmungen, Funk mit eigenen Stimmen
 - **Neues Menü „Anrufe & KI“** (Einstellungen → Mein Platz): alles zu Anrufer-KI, Stimmen, Spracheingabe und Funk an einer Stelle. Oben ein klarer Schalter **Gemini (Cloud)** oder **Lokal (Ollama)**. Wer Gemini wählt und noch keinen Schlüssel hat, bekommt gleich die Schritt-für-Schritt-Anleitung mit Schlüsselfeld und Test
 - **Beim ersten Start** fragt LeitWerk vor dem ersten Spiel bzw. Beitreten, ob die Anrufer über Gemini oder lokal reden sollen

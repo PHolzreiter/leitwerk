@@ -5,6 +5,7 @@
  * vom Host an die Mitspieler übertragen werden kann. Alle Eingriffe des Spielers
  * laufen über die öffentlichen Methoden (alarmieren, Adresse setzen, …).
  */
+import { zahlenAlsZiffern } from "./funkErkennung";
 import { fahrzeugZuName, rufnamen } from "./funkname";
 import { aktuelleSchicht, dienstEnde, imDienst, naechsterBeginn, type Schicht } from "./dienst";
 import { nachKlick } from "../klick";
@@ -4550,7 +4551,8 @@ export class Simulation {
     const e = this.einsatz(id);
     if (!e) return;
     const a = this.nurCalltaker(e);
-    const t = text.trim().slice(0, 1500);
+    // Zahlen des Anrufers immer als Ziffern („eins“ → „1“)
+    const t = (von === "anrufer" ? zahlenAlsZiffern(text) : text).trim().slice(0, 1500);
     if (!t) return;
     a.gespraech.push({ zeit: this.state.zeit, echt: Date.now(), von, text: t, wer: von === "leitstelle" ? this.calltaker().name : undefined, quelle });
     if (a.gespraech.length > 200) a.gespraech.splice(1, a.gespraech.length - 200);
@@ -6934,7 +6936,7 @@ export class Simulation {
     const g = this.gespraech(id);
     if (!g.ausstehend) return;
     const n = g.sprueche.length;
-    this.ausstehendSprechen(g, text, quelle);
+    this.ausstehendSprechen(g, zahlenAlsZiffern(text), quelle);
     // mit Stimme (Cloud) schon übertragen: nicht noch einmal vorlesen
     if (stimme && g.sprueche.length > n) g.sprueche[n].stimme = true;
     this.emit();
@@ -7753,7 +7755,8 @@ export class Simulation {
   ktAnrufNachricht(id: string, von: "leitstelle" | "anrufer", text: string, quelle?: "ki" | "fest"): void {
     const a = this.ktAuftrag(id)?.anruf;
     if (!a || a.status !== "aktiv") return;
-    const t = text.trim().slice(0, 1500);
+    // Zahlen des Anrufers immer als Ziffern („eins“ → „1“)
+    const t = (von === "anrufer" ? zahlenAlsZiffern(text) : text).trim().slice(0, 1500);
     if (!t) return;
     a.gespraech.push({ zeit: this.state.zeit, echt: Date.now(), von, text: t, wer: von === "leitstelle" ? this.calltaker().name : undefined, quelle });
     this.emit();

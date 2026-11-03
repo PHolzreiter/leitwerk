@@ -256,11 +256,16 @@ export async function funkSpruchErzeugen(g: FunkGespraech, a: FunkAusstehend): P
 }
 
 /** Funkspruch für die Cloud-Stimme: Anweisung und Aufgabe (der Inhalt kommt vom Programm, Gemini formuliert und spricht) */
+/** Funkrufnamen wie gesprochen: „75/001“ → „75 1“ */
+const gesprochen = (t: string) => t.replace(/\b(\d{2,3})\/0*(\d+)\b/g, "$1 $2");
+
 export function funkLiveAuftrag(g: FunkGespraech, a: FunkAusstehend): { system: string; text: string } {
   const { kopf, inhalt, schluss } = zerlegen(a.fest);
   return {
-    system: systemText(g, a, { kopf, schluss }),
-    text: `${aufgabeText(g, a, inhalt)}\nSprich jetzt den ganzen Funkspruch.`,
+    system: gesprochen(
+      `${systemText(g, a, { kopf, schluss })}\nAussprache: Funkrufnamen wie „75 1“ sprichst du „fünfundsiebzig eins“ – nie „Schrägstrich“ und nie „null null“. „NEF“ sprichst du „Neff“, „RTW“ „er-te-we“, „LEO“ „Le-o“.`,
+    ),
+    text: gesprochen(`${aufgabeText(g, a, inhalt)}\nSprich jetzt den ganzen Funkspruch.`),
   };
 }
 
