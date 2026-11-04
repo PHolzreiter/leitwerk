@@ -1050,3 +1050,4 @@
 .st-seg.st-arten button { font-size: 11px; font-weight: 600; padding: 0 7px; border-radius: 6px; min-width: 0; }
 .st-seg.st-arten button.an { background: linear-gradient(100deg, #1e6af0, #3a8bff) !important; color: #fff; }
 .st-seg.st-arten button:not(.an) { color: var(--st-dim); text-decoration: line-through; }
+.st-check-ruhig .st-check-p { animation: none; }

@@ -1,5 +1,8 @@
 # Änderungen
 
+## 0.100.2 – Startseite: Bereitschafts-Check ohne Flackern
+- Die Symbole des Bereitschafts-Checks blenden nur noch beim ersten Mal ein – vorher sprangen sie bei jedem Klick auf der Startseite (z. B. Wetter) neu an
+
 ## 0.100.1 – Funk: Rufnamen richtig gesprochen, Whisper für den Funk
 - Die Gemini-Stimmen sprechen Funkrufnamen jetzt immer richtig: 69/002 als „neunundsechzig zwei“ (nie mehr „neunundsechzig null null zwei“)
 - Ist Parakeet als Spracherkennung gewählt und ein Whisper-Modell geladen, nimmt der Funk Whisper – Whisper kennt die Rufnamen, Parakeet erkennt Funk schlecht

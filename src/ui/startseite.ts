@@ -512,8 +512,17 @@ export function startseiteZeigen(fertig?: () => void, opt: { zurueck?: boolean }
     if (w) return { k: "warn", t: `Startklar – ${w} Hinweis${w > 1 ? "e" : ""}` };
     return { k: "ok", t: "Alles funktioniert!" };
   };
+  // nur neu zeichnen, wenn sich etwas geändert hat – sonst springt die Einblend-Animation bei jedem Klick neu an
+  let checkStand = "";
+  let checkGezeigt = false;
   const checkZeichnen = () => {
     const z = zusammenfassung();
+    const stand = JSON.stringify([z, checks.map((c) => [c.stand, c.name, c.text])]);
+    if (stand === checkStand) return;
+    checkStand = stand;
+    // eingeblendet wird nur beim ersten Mal (danach ändert sich nur der Inhalt)
+    checkFeld.classList.toggle("st-check-ruhig", checkGezeigt);
+    if (checks.length) checkGezeigt = true;
     checkFeld.innerHTML = `<button class="st-check-kopf" title="Details anzeigen">${ico("schild")}<span class="st-check-titel">Bereitschafts-Check</span><span class="st-pill ${z.k}">${ico(z.k === "ok" ? "ok" : z.k === "pruefe" ? "uhr" : "warn")}${esc(z.t)}</span></button>
       <div class="st-check-punkte">${checks.map((c, i) => `<span class="st-check-p ${c.stand}" style="--d:${i * 0.07}s" title="${esc(c.name)}: ${esc(c.text)}">${ico(c.ico)}</span>`).join("")}<span class="st-check-mehr">Details ›</span></div>`;
   };

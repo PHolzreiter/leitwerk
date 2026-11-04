@@ -1,5 +1,13 @@
 [
  {
+  "version": "0.100.2",
+  "datum": "2026-11-04",
+  "titel": "Startseite: Bereitschafts-Check ohne Flackern",
+  "punkte": [
+   "Symbole des Checks springen nicht mehr bei jedem Klick neu an"
+  ]
+ },
+ {
   "version": "0.100.1",
   "datum": "2026-11-04",
   "titel": "Funk: Rufnamen richtig gesprochen, Whisper für den Funk",
