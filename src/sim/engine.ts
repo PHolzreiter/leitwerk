@@ -7356,8 +7356,8 @@ export class Simulation {
       let h = 0;
       for (const c of e.id) h = (h * 31 + c.charCodeAt(0)) >>> 0;
       const ort = ["auf einer Wiese", "am Sportplatz", "am Parkplatz", "auf einem Feld", "auf einer Wiese"][h % 5];
-      const richtung = ["nördlich", "östlich", "südlich", "westlich"][(h >> 3) % 4];
-      const meter = [50, 80, 100, 150, 200][(h >> 6) % 5];
+      const richtung = ["nördlich", "östlich", "südlich", "westlich"][(h >>> 3) % 4];
+      const meter = [50, 80, 100, 150, 200][(h >>> 6) % 5];
       return `${hier}, Landemöglichkeit ${ort} ca. ${meter} Meter ${richtung} vom Einsatzort, wir weisen euch ein, kommen`;
     }
     if (/status|wo seid|wo bist|eintreff|wie lange|wann seid|position|fahrzeit|seid ihr (schon )?(vor ort|da)/.test(t)) {

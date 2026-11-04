@@ -6,6 +6,7 @@
 - **Sprechgruppe wechseln** mit dem Steuerkreuz links/rechts (sobald es eine Großeinsatz-Gruppe gibt)
 - **Sprechtaste wie ein echter Knopf** (PTT) unter dem Gerät, daneben die Eingabe zum Tippen, darunter der Verlauf. Die Funktaste der Tastatur funktioniert in jedem Reiter
 - **Piloten:** dasselbe Funkgerät und nur noch ein Funk mit einem Knopf. Wen du meinst, sagst du im Spruch: „LEO von C2“ für die Leitstelle, „75/001 von C2“ für ein Fahrzeug an deinem Einsatz; danach ohne Rufnamen weiter
+- Die Antwort des RTW auf „Wo können wir landen?“ nannte manchmal „ca. undefined Meter“ – behoben
 
 ## 0.100.2 – Startseite: Bereitschafts-Check ohne Flackern
 - Die Symbole des Bereitschafts-Checks blenden nur noch beim ersten Mal ein – vorher sprangen sie bei jedem Klick auf der Startseite (z. B. Wetter) neu an
