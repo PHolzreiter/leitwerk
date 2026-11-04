@@ -243,6 +243,21 @@ export function funkTextGlaetten(roh: string, namen?: string[], bevorzugt?: stri
   return t;
 }
 
+/** Zahl als Wort zum Vorsprechen („69“ → „neunundsechzig“, „1“ → „eins“) */
+export function zahlAlsWort(n: number): string {
+  if (n === 0) return "null";
+  const w = ZAHL_WORT_KLANG(n);
+  return n % 100 === 1 ? `${w}s` : w;
+}
+
+/**
+ * Funkrufnamen für eine Stimme ausgeschrieben, damit sie nicht falsch vorgelesen werden:
+ * „Hier 69/002, kommen“ → „Hier neunundsechzig zwei, kommen“ (nie „neunundsechzig null null zwei“).
+ */
+export function rufnamenAlsWorte(t: string): string {
+  return t.replace(/\b(\d{2,3})\/0*(\d{1,3})\b/g, (_m, a: string, b: string) => `${zahlAlsWort(Number(a))} ${zahlAlsWort(Number(b))}`);
+}
+
 /** Rufnamen so, wie sie gesprochen werden („75/001“ → „75 1“) – als Hinweis für die Spracherkennung */
 export function funkSprechform(name: string): string {
   return name.replace(/^(\d{2,3})\/0*(\d+)$/, "$1 $2");

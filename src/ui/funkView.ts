@@ -43,6 +43,15 @@ const HILFE = `<b>Funk – so geht's</b>
 <li>Wer keine Antwort bekommt, ruft nach 30 s wieder, dann nach 1, 3, 6, 12 … Minuten.</li>
 </ul>`;
 
+/** echte Sekunden seit dem ersten Funkspruch mit derselben Spielzeit (in der Pause steht die Spieluhr) */
+function funkVersatz(zeilen: { s: { zeit: number; echt?: number } }[], i: number): number {
+  const z = zeilen[i].s;
+  if (z.echt === undefined) return 0;
+  let j = i;
+  while (j > 0 && zeilen[j - 1].s.zeit === z.zeit && zeilen[j - 1].s.echt !== undefined) j--;
+  return Math.max(0, z.echt - (zeilen[j].s.echt ?? z.echt));
+}
+
 export function createFunkView(root: HTMLElement, deps: { select(einsatzId: string): void }, opt: { kanal?: "gs" | null } = {}): { refresh(): void; rufen(fzId: string): void; offen(): number } {
   root.innerHTML = "";
   /** nur eine Gruppe zeigen (Reiter Großeinsatz) – sonst alle */
@@ -206,11 +215,13 @@ export function createFunkView(root: HTMLElement, deps: { select(einsatzId: stri
       const unten = chat.scrollHeight - chat.scrollTop - chat.clientHeight < 40;
       chat.innerHTML = zeilen.length
         ? zeilen
-            .map(({ s, g }) => {
+            .map(({ s, g }, i) => {
+              // Spielzeit steht (Pause) oder springt: die Funksprüche laufen in echter Zeit – Sekunden seit dem ersten mit gleicher Spielzeit dazu
+              const zeit = s.zeit + funkVersatz(zeilen, i);
               const stumm = (g.kanal === "gs" ? w.stumm.gs : w.stumm.normal) ? " stumm" : "";
               const gsTag = g.kanal === "gs" && nurKanal === undefined ? `<span class="funk-tag">GE</span> ` : "";
               const leo = s.von === "LEO";
-              return `<div class="funk-z ${leo ? "leo" : "fz"}${stumm}" data-g="${g.id}"><span class="muted">${uhr(s.zeit)}</span> ${gsTag}${s.stimme ? `<span title="gesprochen">🎙</span> ` : ""}<b>${esc(s.von)}:</b> ${esc(s.text)}${leo && s.wer && mp.aktiv ? ` <span class="prot-von">${esc(s.wer)}</span>` : ""}</div>`;
+              return `<div class="funk-z ${leo ? "leo" : "fz"}${stumm}" data-g="${g.id}"><span class="muted">${uhr(zeit)}</span> ${gsTag}${s.stimme ? `<span title="gesprochen">🎙</span> ` : ""}<b>${esc(s.von)}:</b> ${esc(s.text)}${leo && s.wer && mp.aktiv ? ` <span class="prot-von">${esc(s.wer)}</span>` : ""}</div>`;
             })
             .join("")
         : `<div class="muted pad">Noch kein Funkverkehr. Fahrzeuge rufen „LEO“, wenn sie etwas melden. Selbst rufen: „75/001 von LEO, kommen“ – tippen oder ${esc(tastenName(sprachPrefs().funkTaste))} halten.</div>`;

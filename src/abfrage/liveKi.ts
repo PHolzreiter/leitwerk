@@ -770,7 +770,7 @@ export function liveMitschrift(): { stueck(b64: string): void; ende(): Promise<s
  * und gibt über eine Funktion den Wortlaut zurück (Rufnamen richtig geschrieben, Zahlen als Ziffern) – spricht nichts.
  * Audio: 16 kHz, 16 Bit, Base64.
  */
-export function liveFunkVerstehen(k: { fahrzeuge: string[]; partner?: string; zuletzt?: string[] }): { stueck(b64: string): void; ende(): Promise<string>; abbrechen(): void } | null {
+export function liveFunkVerstehen(k: { fahrzeuge: string[]; partner?: string; zuletzt?: string[]; orte?: string[] }): { stueck(b64: string): void; ende(): Promise<string>; abbrechen(): void } | null {
   if (!liveAktiv()) return null;
   const ws = new WebSocket(`${URL_BASIS}?key=${encodeURIComponent(livePrefs().schluessel.trim())}`);
   const system = [
@@ -778,6 +778,9 @@ export function liveFunkVerstehen(k: { fahrzeuge: string[]; partner?: string; zu
     "Du hörst EINEN Funkspruch der Leitstelle. Rufe danach IMMER die Funktion funkspruch auf – sprich NICHTS.",
     "text = der Funkspruch Wort für Wort auf Deutsch, nichts dazu, nichts weglassen; Rufnamen in der Schreibweise der Liste (gesprochen „75 1“ = 75/001, „Neff“ = NEF, „Christophorus 2“ = C2), Zahlen als Ziffern.",
     "ziel = Rufname aus der Liste, an den der Spruch geht, oder leer.",
+    "Typische Funksprüche der Leitstelle: „… von LEO, kommen“, „Hier LEO, kommen“, „bitte gebt mir eine Lagemeldung, wenn ihr vor Ort seid“, „wie ist euer Status“, „was ist eure Eintreffzeit“, „Zielkrankenhaus …“, „Zusatzinfo …“, „Storno, rückt ein“, „Notarzt ist alarmiert“, „mitgehört“, „verstanden, Ende“. Die Leitstelle spricht Besatzungen mit „ihr“ an.",
+    "Ist ein Wort undeutlich, nimm das, was am Funk Sinn ergibt (z. B. „vor Ort“ statt „Fort“, „LEO“ statt „liegen“) – erfinde aber nichts dazu.",
+    k.orte?.length ? `Orte und Krankenhäuser in der Nähe: ${k.orte.slice(0, 150).join(", ")}.` : "",
     `Fahrzeuge: ${k.fahrzeuge.slice(0, 250).join(", ")}.`,
     k.partner ? `Laufendes Gespräch mit: ${k.partner}.${k.zuletzt?.length ? ` Zuletzt: ${k.zuletzt.join(" / ")}` : ""}` : "",
   ]

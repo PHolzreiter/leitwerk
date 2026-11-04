@@ -1,5 +1,15 @@
 [
  {
+  "version": "0.100.1",
+  "datum": "2026-11-04",
+  "titel": "Funk: Rufnamen richtig gesprochen, Whisper für den Funk",
+  "punkte": [
+   "Gemini-Stimmen sprechen 69/002 als „neunundsechzig zwei“",
+   "Funk nimmt Whisper statt Parakeet, wenn geladen",
+   "Gemini versteht den Funk besser (Test)"
+  ]
+ },
+ {
   "version": "0.100.0",
   "datum": "2026-11-04",
   "titel": "Funk neu: ein Chat, eine Eingabe, Funkregeln wie am echten Gerät",

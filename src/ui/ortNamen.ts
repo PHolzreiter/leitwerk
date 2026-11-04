@@ -49,21 +49,21 @@ export function orteJetzt(): string[] {
   if (cache && Date.now() - cache.t < 10_000) return cache.liste;
   const alle = orte();
   const out = new Set<string>();
-  // große Orte (viel los)
-  for (const o of [...alle].sort((a, b) => b.n - a.n).slice(0, 80)) out.add(o.name);
-  // Krankenhäuser (Name, Kurzname, Ort)
-  for (const h of store.list("hospitals")) {
-    out.add(h.ort);
-    if (h.kurzname) out.add(h.kurzname);
-  }
-  // in der Nähe der Einsätze und der Fahrzeuge unterwegs
+  // zuerst: in der Nähe der Einsätze und der Fahrzeuge unterwegs
   const punkte: { lat: number; lon: number }[] = [];
   for (const e of sim.state.einsaetze) {
     if (e.zustand === "abgeschlossen" || !e.adresse) continue;
     punkte.push(e.adresse);
   }
   for (const f of Object.values(sim.state.fahrzeuge)) if (f.einsatzId || f.status !== "freiWache") punkte.push({ lat: f.lat, lon: f.lon });
-  for (const o of alle) if (punkte.some((p) => distanceM(p, o) < 12_000)) out.add(o.name);
+  for (const o of [...alle].sort((a, b) => b.n - a.n)) if (punkte.some((p) => distanceM(p, o) < 12_000)) out.add(o.name);
+  // Krankenhäuser (Kurzname, Ort)
+  for (const h of store.list("hospitals")) {
+    if (h.kurzname) out.add(h.kurzname);
+    out.add(h.ort);
+  }
+  // große Orte (viel los)
+  for (const o of [...alle].sort((a, b) => b.n - a.n).slice(0, 80)) out.add(o.name);
   cache = { t: Date.now(), liste: [...out] };
   return cache.liste;
 }

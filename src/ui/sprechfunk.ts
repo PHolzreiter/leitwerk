@@ -253,6 +253,17 @@ interface Sendung {
 let sendung: Sendung | null = null;
 const sendHoerer = new Set<() => void>();
 let modellDa: boolean | null = null;
+let funkModelle: string[] = [];
+
+/**
+ * Modell für den Funk: Whisper kennt die Rufnamen aus dem Hinweis, Parakeet nicht (und erkennt Funk schlecht).
+ * Ist Parakeet gewählt und ein Whisper-Modell da, nimmt der Funk Whisper – das beste vorhandene.
+ */
+function funkModell(da: string[]): string {
+  const gewaehlt = sprachPrefs().modell;
+  if (!/parakeet/i.test(gewaehlt) && da.includes(gewaehlt)) return gewaehlt;
+  return ["ggml-large-v3-turbo-q5_0.bin", "ggml-small.bin", "ggml-base.bin"].find((m) => da.includes(m)) ?? (da.includes(gewaehlt) ? gewaehlt : "");
+}
 let modellHinweis = false;
 
 function sendGeaendert(): void {
@@ -500,9 +511,10 @@ async function aufnahmeBeenden(s: Sendung, mitText: boolean): Promise<string> {
     if (s.nativ) {
       if (mitText) {
         const st = await sprachStatus().catch(() => ({ modelle: [] as string[] }));
-        modellDa = st.modelle.includes(sprachPrefs().modell);
+        funkModelle = st.modelle;
+        modellDa = st.modelle.includes(sprachPrefs().modell) || !!funkModell(st.modelle);
       }
-      const r = await invoke<{ text: string; sekunden: number; pegel: number }>("sprache_aufnahme_stopp", { modell: mitText && modellDa ? sprachPrefs().modell : "", hinweis: hinweis() });
+      const r = await invoke<{ text: string; sekunden: number; pegel: number }>("sprache_aufnahme_stopp", { modell: mitText && modellDa ? funkModell(funkModelle) : "", hinweis: hinweis() });
       text = r.text;
       if (mitText && !modellDa && !modellHinweis) {
         modellHinweis = true;

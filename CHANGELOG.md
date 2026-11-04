@@ -1,5 +1,11 @@
 # Änderungen
 
+## 0.100.1 – Funk: Rufnamen richtig gesprochen, Whisper für den Funk
+- Die Gemini-Stimmen sprechen Funkrufnamen jetzt immer richtig: 69/002 als „neunundsechzig zwei“ (nie mehr „neunundsechzig null null zwei“)
+- Ist Parakeet als Spracherkennung gewählt und ein Whisper-Modell geladen, nimmt der Funk Whisper – Whisper kennt die Rufnamen, Parakeet erkennt Funk schlecht
+- Gemini versteht den Funk (Test): kennt jetzt die üblichen Funksprüche der Leitstelle und die Orte und Krankenhäuser in der Nähe
+- Funk-Chat: Steht die Spieluhr (Pause), zeigen die Funksprüche trotzdem verschiedene Zeiten (sie laufen in echter Zeit)
+
 ## 0.100.0 – Funk neu: ein Chat, eine Eingabe, Funkregeln wie am echten Gerät
 - **Ein Funk-Chat:** Der ganze Funkverkehr (Fahrzeuge, Piloten, Leitstelle, Funk zwischen Fahrzeugen) steht in einem Verlauf, mit **einer** Eingabe. Kein eigenes Fenster mehr pro Gespräch, keine Antworten- und Schnellknöpfe. Was die Fahrzeuge verstehen, steht beim ⓘ neben der Eingabe
 - **Gesprächspartner wie am Funk:** „56/006 von LEO, kommen“ ruft, danach geht alles ohne Rufnamen an 56/006 – bis „Ende“, eine Minute Stille oder bis ein anderes Fahrzeug gerufen wird (z. B. „NEF Hollabrunn, mitgehört?“). Was das erste Fahrzeug noch melden wollte, meldet es später. „Hier LEO, kommen“ antwortet einem rufenden Fahrzeug

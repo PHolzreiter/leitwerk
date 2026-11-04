@@ -17,6 +17,8 @@ import { distanceM } from "../sim/geo";
 import { inTauri } from "../platform";
 import { funkAussprache, funkHoerHaken, funkVorleseHaken, sprachPrefs, sprachStatus } from "./sprache";
 import { funkGlaetten, funkNamenAlle } from "./funkNamen";
+import { rufnamenAlsWorte } from "../sim/funkErkennung";
+import { orteJetzt } from "./ortNamen";
 import { funkAngekuendigt, kiFunkAnkuendigen, kiFunkStrom } from "./sprechfunk";
 
 // ------------------------------------------------------------------ Stimmen der Fahrzeuge
@@ -96,9 +98,9 @@ function stimmeAn(): boolean {
 
 /** Anweisung für wörtliches Sprechen (der Text kommt zwischen « und ») */
 function woertlich(von: string): string {
-  return `Du bist am Funk des Rettungsdienstes in Niederösterreich die Stimme von „${von}“. Du liest Funksprüche vor: Du sprichst GENAU die Worte zwischen den Zeichen « und », Wort für Wort – nichts weglassen, nichts hinzufügen, nichts umstellen, nichts beantworten. Zügig, sachlich und ruhig wie eine erfahrene Besatzung, Deutsch mit österreichischer Färbung.`;
+  return `Du bist am Funk des Rettungsdienstes in Niederösterreich die Stimme von „${rufnamenAlsWorte(von)}“. Du liest Funksprüche vor: Du sprichst GENAU die Worte zwischen den Zeichen « und », Wort für Wort – nichts weglassen, nichts hinzufügen, nichts umstellen, nichts beantworten. Zügig, sachlich und ruhig wie eine erfahrene Besatzung, Deutsch mit österreichischer Färbung.`;
 }
-const zitat = (t: string) => `«${funkAussprache(t)}»`;
+const zitat = (t: string) => `«${funkAussprache(rufnamenAlsWorte(t))}»`;
 
 /** Spruch mit Cloud-Stimme sprechen und an alle schicken; onStart: der erste Ton ist da */
 async function sprechen(gId: number, von: string, fzId: string, system: string, text: string, onStart?: () => void): Promise<string> {
@@ -186,7 +188,7 @@ export function funkStimmenStarten(): void {
     // Test: Gemini versteht den Funk (kennt Fahrzeuge und Gespräch) – auch wenn hier ein Sprachmodell geladen ist
     if (livePrefs().funkVersteher && stimmeAn()) {
       const g = (sim.state.funkGespraeche ?? []).filter((x) => x.status !== "ende" && !x.an).sort((a, b) => (b.echtLetzt ?? 0) - (a.echtLetzt ?? 0))[0];
-      const v = liveFunkVerstehen({ fahrzeuge: [...new Set(funkNamenAlle())], partner: g?.funkname, zuletzt: g?.sprueche.slice(-2).map((x) => `${x.von}: ${x.text}`) });
+      const v = liveFunkVerstehen({ fahrzeuge: [...new Set(funkNamenAlle())], partner: g?.funkname, zuletzt: g?.sprueche.slice(-2).map((x) => `${x.von}: ${x.text}`), orte: orteJetzt() });
       if (v) return v;
     }
     if (!stimmeAn() || modellHier) return null;
