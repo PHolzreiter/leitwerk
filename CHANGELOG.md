@@ -1,5 +1,16 @@
 # Änderungen
 
+## 0.100.0 – Funk neu: ein Chat, eine Eingabe, Funkregeln wie am echten Gerät
+- **Ein Funk-Chat:** Der ganze Funkverkehr (Fahrzeuge, Piloten, Leitstelle, Funk zwischen Fahrzeugen) steht in einem Verlauf, mit **einer** Eingabe. Kein eigenes Fenster mehr pro Gespräch, keine Antworten- und Schnellknöpfe. Was die Fahrzeuge verstehen, steht beim ⓘ neben der Eingabe
+- **Gesprächspartner wie am Funk:** „56/006 von LEO, kommen“ ruft, danach geht alles ohne Rufnamen an 56/006 – bis „Ende“, eine Minute Stille oder bis ein anderes Fahrzeug gerufen wird (z. B. „NEF Hollabrunn, mitgehört?“). Was das erste Fahrzeug noch melden wollte, meldet es später. „Hier LEO, kommen“ antwortet einem rufenden Fahrzeug
+- **Es spricht immer nur einer:** Oben steht, wer gerade spricht. Funktaste halten, während jemand spricht: „Warten …“ – nach seinem Ende-Ton kommt dein Beginn-Ton und du sprichst. Es gibt nur einen Warteplatz (für Leitstelle, Piloten und Fahrzeuge)
+- **Töne des Funkgeräts** vor und nach jedem Funkspruch (nachgebaut nach einem echten TETRA-Gerät), für alle hörbar
+- **Funkregeln:** Kein Fahrzeug ruft, solange mit einem anderen gefunkt wird. Nur bei Reanimation oder Gefahr für die Besatzung: „LEO von …, dringend, kommen“ – auch das erst zwischen zwei Funksprüchen. Wer keine Antwort bekommt, ruft nach 30 Sekunden wieder, dann nach 1, 3, 6, 12 … Minuten
+- **Sprechgruppen:** TETRA-Gruppe und Großeinsatz lassen sich einzeln stumm schalten (der Text bleibt sichtbar). Beim Großeinsatz wählst du, in welcher Gruppe du sprichst. Piloten hören die Gruppe ihres Einsatzes, mit „Alles hören“ alle, und wählen, wo sie sprechen
+- Die Funktaste geht jetzt auch allein (nicht nur im Mehrspieler)
+- **Spracherkennung:** Typische Fehler bei Funkwörtern werden richtiggestellt („Kommann“ → „kommen“, „Heleo“ → „Hier LEO“). Ortsnamen werden bei allen Erkennungen abgeglichen – mit den Orten bei Einsätzen und Fahrzeugen, großen Orten und Krankenhäusern („Gföll“ → „Gföhl“). Die Erkennung bekommt das laufende Gespräch als Hinweis. Pegelanzeige beim Sprechen, Warnung bei zu leisem Mikrofon
+- **Test: Gemini versteht den Funk** (Anrufe & KI → Gemini): Gemini kennt alle Fahrzeuge und das laufende Gespräch und schreibt Rufnamen richtig – statt der Spracherkennung auf dem Rechner
+
 ## 0.99.1 – Funkrufnamen besser erkannt, Zahlen als Ziffern, mehr Anruferstimmen
 - **Funk-Spracherkennung:** „75 1“, „751“, „fünfundsiebzig eins“ oder „sieben fünf null null eins“ werden zu 75/001; „Neff Krems“ oder ein leicht falsch erkannter Ort zu „NEF Krems“, „Christophorus zwei“ zu C2, „Leo“ zu LEO. Klingt eine Nummer ähnlich wie ein Fahrzeug, das gerade funkt („55 1“, aber 75/001 ruft), ist dieses gemeint
 - Die Erkennung bekommt die Rufnamen so, wie sie gesprochen werden („75 1“), die gerade funkenden Fahrzeuge zuerst

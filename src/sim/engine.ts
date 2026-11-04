@@ -587,18 +587,24 @@ export interface FunkSpruch {
   quelle?: "ki" | "fest";
   /** von einem Menschen gesprochen und live übertragen (Sprechfunk) – nicht noch einmal vorlesen */
   stimme?: boolean;
+  /** echte Zeit (ms) – Reihenfolge im Funk-Chat */
+  echt?: number;
 }
 
 /** Wer gerade am Sprechfunk sendet (Sprechtaste gedrückt) */
 export interface FunkSendet {
   pid: string;
   name: string;
-  /** Gespräch, in das gesprochen wird */
-  gId: number;
+  /** Gespräch, in das gesprochen wird (null = Leitstelle spricht frei, der Text entscheidet) */
+  gId: number | null;
   /** Rufname („C2“) bzw. „LEO“ */
   von: string;
   /** echte Zeit (ms) */
   seit: number;
+  /** Sprechgruppe (null = normale TETRA-Gruppe, „gs“ = Großeinsatz) */
+  gruppe?: "gs" | null;
+  /** Ziel des Piloten (Leitstelle oder RTW) */
+  ziel?: "leo" | "rtw";
 }
 
 /**
@@ -661,7 +667,7 @@ export interface FunkGespraech {
   /** wartet, weil telefoniert wird (Hinweiston) */
   wegenTelefon?: boolean;
   /** LEO will rufen (Kanal war belegt): Anruf und gleich danach diese Durchsage */
-  leoRuf?: { text: string; nachricht?: string } | null;
+  leoRuf?: { text: string; nachricht?: string; inhalt?: string } | null;
   /** das Anliegen des Fahrzeugs ist schon durchgegeben */
   anliegenGesagt?: boolean;
   /** Sprechfunk: Menschen sprechen selbst (Pilot ↔ Leitstelle; mit „an“: Pilot ↔ RTW, der RTW antwortet über die KI) */
@@ -672,6 +678,10 @@ export interface FunkGespraech {
   kanal?: "gs";
   /** Großschaden: Meldungen der Einsatzleitung in diesem Gespräch (kommen in den Reiter Großeinsatz, sobald gesagt) */
   gsMeldungen?: { art: "sicht" | "lage" | "info" | "nachforderung" | "notiz"; text: string }[];
+  /** äußerst dringend (Reanimation, Gefahr für die Besatzung): darf zwischen zwei Funksprüchen eines anderen Gesprächs rufen */
+  notfall?: boolean;
+  /** echte Zeit (ms), bis der letzte Funkspruch dieses Gesprächs gesprochen ist (Kanal belegt) */
+  sprichtBis?: number;
 }
 
 /** Satz im Funk zwischen zwei Fahrzeugen; aktion passiert, wenn er gesprochen ist */
@@ -985,6 +995,8 @@ export interface SimState {
   funkGZaehler?: number;
   /** Sprechfunk: wer gerade sendet */
   funkSendet?: FunkSendet | null;
+  /** wartet auf den Kanal (Sprechtaste gedrückt, während jemand spricht) – es gibt nur einen Platz */
+  funkWartet?: FunkSendet | null;
   /** Krankentransporte */
   kt?: KtAuftrag[];
   ktZaehler?: number;
@@ -1102,6 +1114,7 @@ export const BEFEHLE = {
     "funkAntworten",
     "funkMitgehoert",
     "funkRufen",
+    "funkLeo",
     "funkSenden",
     "funkTippt",
     "funkEnde",
@@ -1319,6 +1332,28 @@ function alterFuer(code: Einsatzcode): number {
 }
 
 type Listener = () => void;
+
+/** wie lange ein Funkspruch dauert (ms): Töne und etwa 2,6 Wörter je Sekunde */
+export function funkDauer(text: string): number {
+  return 900 + text.trim().split(/\s+/).length * 380;
+}
+
+/** Ruft ein Fahrzeug und niemand antwortet: nach 30 s wieder, dann nach 1, 3, 6, 12 … Minuten (rufe = bisherige Rufe) */
+export function funkWiederholung(rufe: number): number {
+  const s = [30, 60, 180][rufe - 1] ?? Math.min(1800, 180 * 2 ** (rufe - 3));
+  return s * 1000;
+}
+
+/**
+ * Was ein Ruf außer dem Anruf noch sagt („NEF Hollabrunn, mitgehört?“ → „mitgehört?“); leer = nur der Anruf
+ * („75/001 von LEO, kommen“). namen = Rufnamen des gerufenen Fahrzeugs.
+ */
+export function funkRufInhalt(text: string, namen: string[]): string {
+  let t = ` ${text.toLowerCase()} `;
+  for (const n of namen.filter(Boolean).sort((a, b) => b.length - a.length)) t = t.split(n.toLowerCase()).join(" ");
+  t = t.replace(/\b(von|hier|an|für|frage)\b|\bleo\b|\bkommen\b/g, " ");
+  return /[a-zäöüß]{3,}/i.test(t) ? text : "";
+}
 
 export class Simulation {
   state: SimState;
@@ -6443,8 +6478,11 @@ export class Simulation {
   }
 
   private spruch(g: FunkGespraech, von: string, text: string, wer?: string, quelle?: "ki" | "fest"): void {
-    g.sprueche.push({ zeit: this.state.zeit, von, text, wer, ...(quelle ? { quelle } : {}) });
-    g.echtLetzt = Date.now();
+    const jetzt = Date.now();
+    g.sprueche.push({ zeit: this.state.zeit, von, text, wer, echt: jetzt, ...(quelle ? { quelle } : {}) });
+    g.echtLetzt = jetzt;
+    // ein Fahrzeug spricht (Stimme mit Tönen davor und danach): so lange ist der Kanal belegt
+    if (!wer && von !== "LEO") g.sprichtBis = Math.max(g.sprichtBis ?? 0, jetzt) + funkDauer(text);
     // Inhaltliche Funksprüche stehen auch im Einsatzprotokoll (nicht das reine Rufen)
     const e = g.einsatzId ? this.einsatz(g.einsatzId) : undefined;
     if (e && text && !istRufSpruch(text)) this.log(e, `📻 ${von}: ${text}`);
@@ -6458,6 +6496,45 @@ export class Simulation {
   /** Gespräch, das gerade den Kanal belegt (es kann nur eines je Kanal geben; „gs“ = Großschaden-Sprechgruppe) */
   funkKanalBelegt(kanal: "gs" | null = null): FunkGespraech | undefined {
     return this.state.funkGespraeche?.find((g) => (g.kanal ?? null) === kanal && (["ruft", "leoRuft", "offen", "direkt", "mithoeren", "mensch"].includes(g.status) || !!g.ausstehend));
+  }
+
+  /**
+   * Spricht gerade jemand auf dieser Sprechgruppe (Sprechtaste gedrückt, Fahrzeug spricht oder formuliert gerade)?
+   * Dann darf niemand dazwischen – auch nicht die Leitstelle; gesprochen wird erst nach dem Ende-Ton.
+   */
+  funkKanalSpricht(kanal: "gs" | null = null): boolean {
+    const s = this.state.funkSendet;
+    if (s && (s.gruppe ?? null) === kanal) return true;
+    const jetzt = Date.now();
+    return (this.state.funkGespraeche ?? []).some((g) => (g.kanal ?? null) === kanal && g.status !== "ende" && (!!g.ausstehend || (g.sprichtBis ?? 0) > jetzt));
+  }
+
+  /**
+   * Gespräch wird unterbrochen (LEO ruft ein anderes Fahrzeug, ein Notfall-Ruf kommt dazwischen):
+   * Was das Fahrzeug noch sagen wollte, meldet es später wieder („LEO von …, kommen“); Funk zwischen Fahrzeugen geht danach weiter.
+   */
+  private unterbrechen(g: FunkGespraech): void {
+    const jetzt = Date.now();
+    g.ausstehend = null;
+    g.wartetAufKi = false;
+    if (g.status === "direkt" || g.status === "mithoeren") {
+      g.status = "wartet";
+      g.echtNaechster = jetzt + 15_000;
+      return;
+    }
+    if (g.status === "ruft") {
+      g.status = "wartet";
+      g.echtNaechster = jetzt + funkWiederholung(g.rufe);
+      return;
+    }
+    const nochWas = !!g.anliegen && !g.anliegenGesagt;
+    if (g.status === "offen" && nochWas && !g.mensch) {
+      g.status = "wartet";
+      g.rufe = 0;
+      g.echtNaechster = jetzt + 20_000;
+      return;
+    }
+    if (g.status !== "mensch") this.funkSchliessen(g);
   }
 
   /** Großschaden-Einsätze funken auf einer eigenen Sprechgruppe */
@@ -6587,6 +6664,8 @@ export class Simulation {
     }
     const inhalt = ohneVitalwerte(text);
     const dringend = art === "nachforderung" || /Reanimation|reanimationspflichtig|verschlechtert|Eigenschutz|Defekt/i.test(inhalt);
+    // äußerst dringend: darf zwischen zwei Funksprüchen eines anderen Gesprächs rufen („LEO von …, dringend, kommen“)
+    const notfall = /Reanimation|reanimationspflichtig|Eigenschutz|Gefahr für die Besatzung|bedroht|angegriffen/i.test(inhalt);
     const offen = this.leoGespraech(fz.id);
     if (offen && offen.status === "offen") {
       // schon verbunden: gleich durchgeben (oder nach dem gerade formulierten Satz)
@@ -6601,6 +6680,10 @@ export class Simulation {
       offen.anliegen = offen.anliegen && !offen.anliegenGesagt ? { art: art === "nachforderung" ? art : offen.anliegen.art, text: `${offen.anliegen.text}; ${inhalt}` } : { art, text: inhalt };
       offen.anliegenGesagt = false;
       if (dringend) offen.dringend = true;
+      if (notfall) {
+        offen.notfall = true;
+        if (offen.status === "wartet") offen.echtNaechster = Date.now();
+      }
       if (offen.status === "sprechwunsch") {
         // neuer Grund: wieder rufen
         offen.status = "wartet";
@@ -6612,6 +6695,7 @@ export class Simulation {
     const g = this.neuesGespraech(fz, e, "wartet");
     g.anliegen = { art, text: inhalt };
     g.dringend = dringend;
+    if (notfall) g.notfall = true;
     g.echtNaechster = Date.now();
     if (e) this.log(e, `${fz.funkrufname} möchte funken`);
   }
@@ -6640,8 +6724,8 @@ export class Simulation {
           this.spruch(g, s.von, s.text);
           g.echtNaechster = g.ablauf.length ? jetzt + 2000 : null;
           geaendert = true;
-        } else if (!g.ausstehend && !g.ablauf?.length && this.state.funkSendet?.gId !== g.id && jetzt - (g.echtLetzt ?? jetzt) > 30_000) {
-          // 30 Sekunden Stille: Gespräch ist aus
+        } else if (!g.ausstehend && !g.ablauf?.length && this.state.funkSendet?.gId !== g.id && jetzt - (g.echtLetzt ?? jetzt) > 60_000) {
+          // eine Minute Stille: Gespräch ist aus
           this.funkSchliessen(g);
           geaendert = true;
         }
@@ -6658,6 +6742,15 @@ export class Simulation {
         // das Fahrzeug meldet sich
         g.status = "offen";
         g.echtNaechster = null;
+        const inhalt = g.leoRuf?.inhalt;
+        if (inhalt) {
+          // Ruf mit Inhalt („NEF Hollabrunn, mitgehört?“): gleich die Antwort darauf
+          g.leoRuf = null;
+          const antwort = this.funkVerstehen(g, inhalt);
+          if (antwort !== "") this.ausstehendSetzen(g, { von: g.funkname, art: antwort === null ? "frage" : "antwort", fest: antwort || `Hier ${g.funkname}, verstanden, kommen`, frage: inhalt });
+          geaendert = true;
+          continue;
+        }
         this.spruch(g, g.funkname, funkZufall([`Hier ${g.funkname}, kommen`, `${g.funkname} hört`, `Hier ${g.funkname}, kommen`]));
         const nachricht = g.leoRuf?.nachricht;
         if (nachricht) {
@@ -6688,18 +6781,16 @@ export class Simulation {
           } else this.funkSchliessen(g);
         }
         geaendert = true;
-      } else if (g.status === "offen" && jetzt - (g.echtLetzt ?? jetzt) > 30_000) {
-        // 30 Sekunden Stille: Gespräch ist aus
+      } else if (g.status === "offen" && jetzt - Math.max(g.echtLetzt ?? jetzt, g.sprichtBis ?? 0) > 60_000) {
+        // eine Minute nichts: Gespräch ist aus (danach muss wieder gerufen werden)
         this.funkSchliessen(g);
         geaendert = true;
-      } else if ((g.status === "ruft" || g.status === "mithoeren") && jetzt - (g.echtLetzt ?? jetzt) > 30_000) {
-        // keine Antwort: Kanal frei geben, später nochmal rufen (höchstens dreimal)
-        if (g.rufe >= 3) {
-          if (g.status === "mithoeren") this.funkSchliessen(g);
-          else g.status = "sprechwunsch";
-        } else {
+      } else if ((g.status === "ruft" || g.status === "mithoeren") && jetzt - Math.max(g.echtLetzt ?? jetzt, g.sprichtBis ?? 0) > 12_000) {
+        // keine Antwort: Kanal frei geben, später nochmal rufen (nach 30 s, 1, 3, 6, 12 … Minuten)
+        if (g.status === "mithoeren" && g.rufe >= 3) this.funkSchliessen(g);
+        else {
+          g.echtNaechster = jetzt + (g.status === "mithoeren" ? 30_000 : funkWiederholung(g.rufe));
           g.status = "wartet";
-          g.echtNaechster = jetzt + 1000;
         }
         geaendert = true;
       }
@@ -6714,12 +6805,33 @@ export class Simulation {
         geaendert = true;
       }
     }
+    // Sprechtaste wartet auf den Kanal: nach dem Ende des laufenden Funkspruchs ist sie dran
+    const w = this.state.funkWartet;
+    if (w && !this.funkKanalSpricht(w.gruppe ?? null)) {
+      if (this.mode === "host" && this.istOnline && !this.istOnline(w.pid)) this.state.funkWartet = null;
+      else {
+        this.state.funkWartet = null;
+        this.state.funkSendet = { ...w, seit: jetzt };
+        const g = w.gId !== null ? alle.find((x) => x.id === w.gId) : undefined;
+        if (g) g.echtLetzt = jetzt;
+      }
+      geaendert = true;
+    }
     for (const kanal of [null, "gs"] as const) {
-    if (this.funkKanalBelegt(kanal) || (!kanal && this.state.funkSendet)) continue;
+    // während jemand spricht oder auf den Kanal wartet, ruft niemand
+    if (this.funkKanalSpricht(kanal) || (this.state.funkWartet && (this.state.funkWartet.gruppe ?? null) === kanal)) continue;
+    const belegt = this.funkKanalBelegt(kanal);
+    if (belegt) {
+      // nur ein Notfall (Reanimation, Gefahr für die Besatzung) darf zwischen zwei Funksprüchen dazwischen
+      const notfall = alle.find((g) => g !== belegt && (g.kanal ?? null) === kanal && g.status === "wartet" && g.notfall && (g.echtNaechster ?? 0) <= jetzt && !belegt.notfall);
+      if (!notfall || belegt.status === "mensch") continue;
+      this.unterbrechen(belegt);
+      geaendert = true;
+    }
     {
       const wartend = alle.filter((g) => (g.kanal ?? null) === kanal && (g.status === "wartet" || g.status === "leoWartet") && (g.echtNaechster ?? 0) <= jetzt && !g.wegenNah);
       // LEO zuerst, dann Dringendes, dann wer länger wartet
-      wartend.sort((a, b) => Number(b.status === "leoWartet") - Number(a.status === "leoWartet") || Number(!!b.dringend) - Number(!!a.dringend) || (a.echtSeit ?? 0) - (b.echtSeit ?? 0));
+      wartend.sort((a, b) => Number(!!b.notfall) - Number(!!a.notfall) || Number(b.status === "leoWartet") - Number(a.status === "leoWartet") || Number(!!b.dringend) - Number(!!a.dringend) || (a.echtSeit ?? 0) - (b.echtSeit ?? 0));
       const naechster = wartend[0];
       if (naechster?.status === "leoWartet") {
         naechster.status = "leoRuft";
@@ -6728,7 +6840,7 @@ export class Simulation {
         geaendert = true;
       } else if (naechster) {
         // Fahrzeugfunk in der Großschaden-Sprechgruppe wartet nicht aufs Telefon
-        const sperre = kanal && naechster.an ? false : this.funkWegenTelefon();
+        const sperre = (kanal && naechster.an) || naechster.notfall ? false : this.funkWegenTelefon();
         if (sperre || !this.state.laeuft) {
           // Telefon hat Vorrang (in der Pause ruft auch niemand)
           for (const g of wartend) if (sperre && !g.wegenTelefon) {
@@ -6749,7 +6861,7 @@ export class Simulation {
           } else {
             g.status = "ruft";
             g.rufe++;
-            this.spruch(g, g.funkname, `LEO von ${g.funkname}, kommen`);
+            this.spruch(g, g.funkname, g.notfall ? `LEO von ${g.funkname}, dringend, kommen` : `LEO von ${g.funkname}, kommen`);
             const e = g.einsatzId ? this.einsatz(g.einsatzId) : undefined;
             if (e && g.rufe === 1) this.log(e, `${g.funkname} ruft LEO`);
           }
@@ -6822,36 +6934,51 @@ export class Simulation {
     return g;
   }
 
+  /** Wer spricht, führt das Gespräch (ein Kanal für alle – jeder Disponent darf weiterfunken) */
   private nurFunkfuehrer(g: FunkGespraech): void {
-    const ich = this.calltaker();
-    if (this.mode !== "solo" && g.fuehrer && g.fuehrer.pid !== ich.pid && (this.istOnline?.(g.fuehrer.pid) ?? true) && g.status !== "wartet" && g.status !== "sprechwunsch" && g.status !== "ruft") {
-      throw new Error(`Den Funk mit ${g.funkname} führt ${g.fuehrer.name}`);
-    }
-    g.fuehrer = { ...ich };
+    g.fuehrer = { ...this.calltaker() };
   }
 
-  /** Belegt ein anderes Gespräch den Kanal? Dann Fehlermeldung (nichts wird unterbrochen) */
-  private kanalFrei(fuer: FunkGespraech | null, kanal: "gs" | null = fuer?.kanal ?? null): void {
-    const b = this.funkKanalBelegt(kanal);
-    if (b && b !== fuer) throw new Error(`Funk belegt – ${b.an ? `${b.funkname} und ${b.an.funkname} funken` : `${b.funkname} funkt`} gerade. Bitte warten, bis das Gespräch zu Ende ist.`);
+  /**
+   * Leitstelle will auf dem Kanal sprechen. Spricht gerade jemand, muss sie warten (getippt: Fehlermeldung;
+   * gesprochen war sie ohnehin erst nach dem Ende-Ton dran). Ein anderes laufendes Gespräch wird dabei unterbrochen
+   * (zwischen zwei Funksprüchen) – was das Fahrzeug noch sagen wollte, meldet es später.
+   */
+  private kanalFrei(fuer: FunkGespraech | null, kanal: "gs" | null = fuer?.kanal ?? null, gesprochen = false): void {
+    const s = this.state.funkSendet;
+    const ich = this.calltaker();
+    if (!gesprochen && this.funkKanalSpricht(kanal) && !(s && s.pid === ich.pid)) {
+      const wer = s && (s.gruppe ?? null) === kanal ? s.von : (this.state.funkGespraeche ?? []).find((g) => (g.kanal ?? null) === kanal && g.status !== "ende" && (g.ausstehend || (g.sprichtBis ?? 0) > Date.now()))?.funkname;
+      throw new Error(`Funk belegt – ${wer ?? "es"} spricht gerade. Bitte kurz warten.`);
+    }
+    for (const b of this.state.funkGespraeche ?? []) {
+      if (b === fuer || (b.kanal ?? null) !== kanal || b.mensch) continue;
+      if (["ruft", "leoRuft", "offen", "direkt", "mithoeren"].includes(b.status)) this.unterbrechen(b);
+    }
   }
 
   /** LEO antwortet auf einen Ruf („Hier LEO, kommen“); das Fahrzeug gibt sein Anliegen durch */
-  funkAntworten(id: number): void {
+  /**
+   * LEO antwortet auf einen Ruf („Hier LEO, kommen“) bzw. ruft ein Fahrzeug, das ohnehin etwas melden will;
+   * das Fahrzeug gibt sein Anliegen durch. text = was LEO gesagt bzw. getippt hat.
+   */
+  funkAntworten(id: number, text?: string, gesprochen?: boolean): void {
     const g = this.gespraech(id);
     if (g.status === "mithoeren") return this.funkMitgehoert(id);
     if (!["ruft", "wartet", "sprechwunsch"].includes(g.status)) return;
-    this.kanalFrei(g.status === "ruft" ? g : null, g.kanal ?? null);
+    this.kanalFrei(g, g.kanal ?? null, gesprochen);
     this.nurFunkfuehrer(g);
-    if (g.status !== "ruft") this.spruch(g, g.funkname, `LEO von ${g.funkname}, kommen`);
-    this.spruch(g, "LEO", funkZufall(["Hier LEO, kommen", "LEO hört", "Hier LEO, kommen"]), this.calltaker().name);
+    const ruft = g.status === "ruft";
+    this.spruch(g, "LEO", text?.trim() || (ruft ? funkZufall(["Hier LEO, kommen", "LEO hört", "Hier LEO, kommen"]) : `${g.funkname} von LEO, kommen`), this.calltaker().name);
+    if (gesprochen) g.sprueche[g.sprueche.length - 1].stimme = true;
     g.status = "offen";
     g.wegenTelefon = false;
     g.naechster = null;
+    g.echtNaechster = null;
     if (g.anliegen && !g.anliegenGesagt) {
       g.anliegenGesagt = true;
       this.ausstehendSetzen(g, { von: g.funkname, art: g.anliegen.art, fest: festerSpruch(g.funkname, g.anliegen.art, g.anliegen.text) });
-    }
+    } else if (!ruft) this.spruch(g, g.funkname, funkZufall([`Hier ${g.funkname}, kommen`, `${g.funkname} hört`]));
     this.emit();
   }
 
@@ -6872,22 +6999,31 @@ export class Simulation {
       }
     }
     const offen = this.leoGespraech(fz.id);
+    const t = text?.trim().slice(0, 300) || `${this.rufname(fz)} von LEO, kommen`;
+    const inhalt = funkRufInhalt(t, [fz.funkrufname, this.rufname(fz)]);
     if (offen) {
-      if (["ruft", "wartet", "sprechwunsch"].includes(offen.status)) this.funkAntworten(offen.id);
+      if (["ruft", "wartet", "sprechwunsch"].includes(offen.status)) this.funkAntworten(offen.id, t, stimme);
+      else if (offen.status === "offen" && inhalt && !offen.ausstehend) this.funkSenden(offen.id, t, stimme);
       return offen.id;
     }
-    const id = this.leoRuftAn(fz, text?.trim().slice(0, 300) || `${this.rufname(fz)} von LEO, kommen`);
+    const id = this.leoRuftAn(fz, t, undefined, stimme);
+    const g = this.state.funkGespraeche?.find((x) => x.id === id);
     // gesprochen und live übertragen: nicht noch einmal vorlesen
-    const g = stimme && text ? this.state.funkGespraeche?.find((x) => x.id === id) : undefined;
     const sp = g?.sprueche[g.sprueche.length - 1];
-    if (sp && sp.von === "LEO") sp.stimme = true;
+    if (stimme && text && sp && sp.von === "LEO") sp.stimme = true;
+    // mit Inhalt („NEF Hollabrunn, mitgehört?“): das Fahrzeug antwortet gleich darauf
+    if (g && inhalt && g.leoRuf) g.leoRuf.inhalt = t;
     return id;
   }
 
   /** LEO-Ruf starten bzw. vormerken; nachricht = Durchsage gleich nach der Antwort (Storno …) */
-  private leoRuftAn(fz: SimFahrzeug, text: string, nachricht?: string): number {
+  private leoRuftAn(fz: SimFahrzeug, text: string, nachricht?: string, gesprochen?: boolean): number {
     const e = fz.einsatzId ? (this.einsatz(fz.einsatzId) ?? null) : null;
-    const frei = !this.funkKanalBelegt(this.kanalVon(e));
+    const kanal = this.kanalVon(e);
+    // die Leitstelle selbst: wartet nur, solange jemand spricht – ein laufendes Gespräch wird unterbrochen
+    let frei = !this.funkKanalSpricht(kanal) || !!gesprochen;
+    if (!nachricht && frei) this.kanalFrei(null, kanal, true);
+    else frei = frei && !this.funkKanalBelegt(kanal);
     const g = this.neuesGespraech(fz, e, frei ? "leoRuft" : "leoWartet");
     g.fuehrer = { ...this.calltaker() };
     g.leoRuf = { text, ...(nachricht ? { nachricht } : {}) };
@@ -6907,6 +7043,7 @@ export class Simulation {
     if (g.status === "ende") throw new Error("Das Funkgespräch ist beendet");
     if (g.status !== "offen") throw new Error("Das Fahrzeug hat sich noch nicht gemeldet");
     if (g.ausstehend) throw new Error(`${g.funkname} spricht gerade`);
+    this.kanalFrei(g, g.kanal ?? null, stimme);
     this.nurFunkfuehrer(g);
     this.spruch(g, "LEO", t, this.calltaker().name);
     if (stimme) g.sprueche[g.sprueche.length - 1].stimme = true;
@@ -7006,32 +7143,39 @@ export class Simulation {
    * Leitstelle: ins laufende Gespräch mit einem Piloten, sonst ein neues. Gibt die Gesprächsnummer zurück.
    * Nichts wird unterbrochen: belegt ein anderes Gespräch den Kanal oder spricht jemand, kommt eine Fehlermeldung.
    */
-  funkMensch(an: boolean, ziel: "leo" | "rtw" = "leo"): number | null {
+  funkMensch(an: boolean, ziel: "leo" | "rtw" = "leo", gruppe?: "gs" | null): { id: number | null; wartet: boolean } | null {
     const ich = this.wer();
     const jetzt = Date.now();
     const s = this.state.funkSendet;
     if (!an) {
+      // losgelassen, während noch gewartet wurde: Platz frei geben
+      if (this.state.funkWartet?.pid === ich.pid) {
+        this.state.funkWartet = null;
+        this.emit();
+        return null;
+      }
       if (s && s.pid === ich.pid) {
-        const g = this.state.funkGespraeche?.find((x) => x.id === s.gId);
+        const g = s.gId !== null ? this.state.funkGespraeche?.find((x) => x.id === s.gId) : undefined;
         if (g) g.echtLetzt = jetzt;
         this.state.funkSendet = null;
         this.emit();
       }
-      return s?.gId ?? null;
+      return s && s.pid === ich.pid ? { id: s.gId, wartet: false } : null;
     }
-    if (s && s.pid !== ich.pid) throw new Error(`Funk belegt – ${s.von === "LEO" ? `LEO (${s.name})` : s.von} spricht gerade`);
+    if (s?.pid === ich.pid) return { id: s.gId, wartet: false };
     const heli = this.pilotVon(ich.pid);
     let g: FunkGespraech | undefined;
     let von = "LEO";
+    let kanal: "gs" | null = gruppe ?? null;
     if (heli) {
       von = this.rufname(heli);
       const e = heli.einsatzId ? this.einsatz(heli.einsatzId) : undefined;
+      kanal = gruppe === undefined ? this.kanalVon(e) : gruppe;
       if (ziel === "rtw") {
         const rtw = e ? this.nahRtwPartner(heli, e) : undefined;
         if (!e || !rtw) throw new Error("Kein Bodenfahrzeug bei deinem Einsatz, das du anfunken kannst");
         g = this.menschGespraech(heli.id, rtw.id);
         if (!g) {
-          this.kanalFrei(null, this.kanalVon(e));
           g = this.neuesGespraech(heli, e, "mensch");
           g.mensch = true;
           g.an = { fzId: rtw.id, funkname: this.rufname(rtw) };
@@ -7041,86 +7185,129 @@ export class Simulation {
       } else {
         g = this.menschGespraech(heli.id, null);
         if (!g) {
-          // Großeinsatz: auf der Sprechgruppe des Großeinsatzes
-          this.kanalFrei(null, this.kanalVon(e));
           g = this.neuesGespraech(heli, e ?? null, "mensch");
           g.mensch = true;
         }
       }
-    } else {
-      // laufendes KI-Gespräch mit einem Bodenfahrzeug, das ich führe: die Funktaste spricht dort hinein (gleicher Kanal)
-      const ki = this.state.funkGespraeche?.find((x) => !x.mensch && !x.an && x.status === "offen" && x.fuehrer?.pid === ich.pid);
-      if (ki && !this.menschGespraech(null, null)) {
-        if (ki.ausstehend) throw new Error(`Funk belegt – ${ki.funkname} spricht gerade`);
-        this.state.funkSendet = { pid: ich.pid, name: ich.name, gId: ki.id, von, seit: jetzt };
-        ki.echtLetzt = jetzt;
-        this.emit();
-        return ki.id;
-      }
-      g = this.menschGespraech(null, null);
-      if (!g) {
-        const piloten = Object.values(this.state.fahrzeuge).filter((f) => f.pilot);
-        if (!piloten.length) throw new Error("Kein Pilot im Spiel – die Funktaste ist für den Sprechfunk mit Piloten");
-        const zuletzt = this.state.funkGespraeche?.find((x) => x.mensch && !x.an && piloten.some((p) => p.id === x.fzId));
-        const fz = (zuletzt && this.state.fahrzeuge[zuletzt.fzId]) || piloten[0];
-        const fe = fz.einsatzId ? (this.einsatz(fz.einsatzId) ?? null) : null;
-        this.kanalFrei(null, this.kanalVon(fe));
-        g = this.neuesGespraech(fz, fe, "mensch");
-        g.mensch = true;
-      }
-      g.fuehrer = { ...ich };
+      if (kanal) g.kanal = "gs";
+      else delete g.kanal;
     }
-    this.kanalFrei(g);
-    this.state.funkSendet = { pid: ich.pid, name: ich.name, gId: g.id, von, seit: jetzt };
-    g.echtLetzt = jetzt;
+    // Leitstelle: spricht frei – wem der Funkspruch gilt, entscheidet der Text (funkLeo)
+    const platz: FunkSendet = { pid: ich.pid, name: ich.name, gId: g?.id ?? null, von, seit: jetzt, gruppe: kanal, ziel };
+    if (!this.funkKanalSpricht(kanal) && !(this.state.funkWartet && this.state.funkWartet.pid !== ich.pid)) {
+      this.state.funkSendet = platz;
+      if (g) g.echtLetzt = jetzt;
+      this.emit();
+      return { id: platz.gId, wartet: false };
+    }
+    // jemand spricht: nach seinem Ende-Ton ist man dran – es gibt nur einen Warteplatz
+    const w = this.state.funkWartet;
+    if (w && w.pid !== ich.pid) throw new Error(`Funk belegt – ${w.von === "LEO" ? `LEO (${w.name})` : w.von} wartet schon`);
+    this.state.funkWartet = platz;
     this.emit();
-    return g.id;
+    return { id: platz.gId, wartet: true };
   }
 
   /** Erkannter Text eines Sprechfunk-Spruchs (kommt nach dem Loslassen, von der Spracherkennung des Sprechers) */
-  funkMenschText(gId: number, text: string): void {
-    const g = this.gespraech(gId);
+  funkMenschText(gId: number | null, text: string, gruppe?: "gs" | null): void {
     const t = text.replace(/\s+/g, " ").trim().slice(0, 500);
     if (!t) return;
     const ich = this.wer();
     const heli = this.pilotVon(ich.pid);
-    // Funktaste im KI-Gespräch mit einem Bodenfahrzeug: wie ein gesprochener Funkspruch im Funkfenster
-    if (!g.mensch) {
-      if (heli || g.status !== "offen" || g.fuehrer?.pid !== ich.pid) return;
-      // ruft einen Piloten: der Kanal ist noch vom Gespräch mit dem Fahrzeug belegt
-      const pilot = /\bvon\s+leo\b/i.test(t) ? fahrzeugZuName(t.split(/\s+von\s+/i)[0], Object.values(this.state.fahrzeuge).filter((f) => f.pilot)) : undefined;
-      if (pilot) throw new Error(`Funk belegt – zuerst das Gespräch mit ${g.funkname} beenden`);
-      this.funkSenden(gId, t, true);
+    // Leitstelle: ein Kanal, eine Eingabe – der Text entscheidet, wem er gilt (Pilot oder Fahrzeug)
+    if (!heli) {
+      this.funkLeo(t, gruppe ?? null, true);
       return;
     }
-    const von = heli ? this.rufname(heli) : "LEO";
-    // Leitstelle ruft mit der Funktaste ein Bodenfahrzeug („RTW 1 von LEO“): das übernimmt die Funk-KI
-    if (!heli && !g.sprueche.length) {
-      const boden = Object.values(this.state.fahrzeuge).filter((f) => !f.pilot);
-      const ziel = /\bvon\s+leo\b/i.test(t) ? fahrzeugZuName(t.split(/\s+von\s+/i)[0], boden) : undefined;
-      if (ziel) {
-        this.funkSchliessen(g);
-        this.state.funkGespraeche = (this.state.funkGespraeche ?? []).filter((x) => x !== g);
-        this.funkRufen(ziel.id, t, true);
-        return this.emit();
-      }
-    }
-    // Leitstelle ruft einen anderen Piloten („C9 von LEO, kommen“): das Gespräch gehört zu ihm
-    if (!heli && !g.sprueche.length) {
-      const piloten = Object.values(this.state.fahrzeuge).filter((f) => f.pilot);
-      const fz = fahrzeugZuName(t.split(/\s+von\s+/i)[0], piloten);
-      if (fz && fz.id !== g.fzId) {
-        g.fzId = fz.id;
-        g.funkname = this.rufname(fz);
-        g.einsatzId = fz.einsatzId ?? null;
-      }
-    }
+    if (gId === null) return;
+    const g = this.gespraech(gId);
+    const von = this.rufname(heli);
     this.spruch(g, von, t, ich.name);
     g.sprueche[g.sprueche.length - 1].stimme = true;
     if (g.status === "ende") return this.emit();
-    if (g.an && heli) this.nahRtwHoert(g, t);
+    if (g.an) this.nahRtwHoert(g, t);
     else if (/\b(verstanden|ende|danke)\W*$/i.test(t)) this.funkSchliessen(g);
     this.emit();
+  }
+
+  /**
+   * Funkspruch der Leitstelle (getippt oder gesprochen) auf dem Kanal – EINE Eingabe für alles:
+   * - „56/006 von LEO, kommen“ bzw. „NEF Hollabrunn, mitgehört?“: ruft dieses Fahrzeug (ein anderes Gespräch endet)
+   * - „Hier LEO, kommen“: antwortet dem Fahrzeug, das gerade ruft
+   * - sonst: geht an das Fahrzeug, mit dem gerade gefunkt wird (ohne Rufnamen); „…, Ende“ beendet
+   * Gibt das Gespräch zurück.
+   */
+  funkLeo(text: string, gruppe: "gs" | null = null, gesprochen = false): number | null {
+    const t = text.replace(/\s+/g, " ").trim().slice(0, 500);
+    if (!t) return null;
+    const ich = this.calltaker();
+    const alle = Object.values(this.state.fahrzeuge);
+    const gespr = (this.state.funkGespraeche ?? []).filter((g) => g.status !== "ende");
+    const imKanal = (g: FunkGespraech) => (g.kanal ?? null) === gruppe;
+    // aktueller Gesprächspartner: zuletzt aktives Gespräch der Leitstelle auf dieser Gruppe
+    const partner = gespr.filter((g) => imKanal(g) && !g.an && ["offen", "leoRuft", "mensch"].includes(g.status)).sort((a, b) => (b.echtLetzt ?? 0) - (a.echtLetzt ?? 0))[0];
+    // 1) Ruf an ein Fahrzeug: Name am Anfang („56/006 von LEO …“, „Frage NEF Hollabrunn …“)
+    const kopf = t.replace(/^(frage|an|für)\b[,:]?\s*/i, "");
+    const vorVon = kopf.match(/^(.{1,40}?)\s+von\s+leo\b/i)?.[1];
+    const anfang = kopf.split(/[,.!?]/)[0].split(/\s+/).slice(0, 4).join(" ");
+    let ziel = vorVon ? fahrzeugZuName(vorVon, alle) : undefined;
+    if (!ziel && !/^hier\b/i.test(kopf)) {
+      const z = fahrzeugZuName(anfang, alle);
+      if (z && z.id !== partner?.fzId) ziel = z;
+    }
+    // „Hier LEO, kommen“ (evtl. mit Rufnamen davor): Antwort auf einen Ruf
+    const nurAntwort = /^(?:(.{1,40}?)[,\s]+)?(?:hier\s+leo|leo\s+hört)\W*(?:kommen)?\W*$/i.exec(t);
+    if (nurAntwort) {
+      const wer = nurAntwort[1] ? fahrzeugZuName(nurAntwort[1], alle) : undefined;
+      const rufer = gespr.filter((g) => imKanal(g) && !g.an && (g.status === "ruft" || (g.status === "mensch" && !g.sprueche.some((x) => x.von === "LEO")))).find((g) => !wer || g.fzId === wer.id);
+      if (rufer) {
+        if (rufer.mensch) return this.leoAnPilot(rufer, t, gesprochen);
+        this.funkAntworten(rufer.id, t, gesprochen);
+        return rufer.id;
+      }
+      if (wer) ziel = wer;
+    }
+    // „mitgehört“: auf die Frage aus dem Funk zwischen Fahrzeugen
+    if (/mitgeh[öo]r/i.test(t)) {
+      const mg = gespr.find((g) => imKanal(g) && (g.status === "mithoeren" || (g.status === "wartet" && g.mithoeren && !g.ablauf?.length)) && (!ziel || g.an?.fzId === ziel.id || g.fzId === ziel.id));
+      if (mg) {
+        this.funkMitgehoert(mg.id);
+        return mg.id;
+      }
+    }
+    if (ziel) {
+      if (ziel.pilot) {
+        const g = this.menschGespraech(ziel.id, null) ?? (() => {
+          const e = ziel!.einsatzId ? (this.einsatz(ziel!.einsatzId) ?? null) : null;
+          const n = this.neuesGespraech(ziel!, e, "mensch");
+          n.mensch = true;
+          if (gruppe) n.kanal = "gs";
+          else delete n.kanal;
+          return n;
+        })();
+        return this.leoAnPilot(g, t, gesprochen);
+      }
+      return this.funkRufen(ziel.id, t, gesprochen);
+    }
+    if (partner) {
+      if (partner.mensch) return this.leoAnPilot(partner, t, gesprochen);
+      if (partner.status === "leoRuft") throw new Error(`${partner.funkname} hat sich noch nicht gemeldet`);
+      this.funkSenden(partner.id, t, gesprochen);
+      return partner.id;
+    }
+    void ich;
+    throw new Error("Kein laufendes Funkgespräch – zuerst rufen, z. B. „75/001 von LEO, kommen“");
+  }
+
+  /** Leitstelle spricht mit einem Piloten (Sprechfunk) */
+  private leoAnPilot(g: FunkGespraech, t: string, gesprochen: boolean): number {
+    if (!gesprochen) this.kanalFrei(g, g.kanal ?? null);
+    g.fuehrer = { ...this.calltaker() };
+    this.spruch(g, "LEO", t, this.calltaker().name);
+    if (gesprochen) g.sprueche[g.sprueche.length - 1].stimme = true;
+    if (/\b(verstanden|ende|danke)\W*$/i.test(t)) this.funkSchliessen(g);
+    this.emit();
+    return g.id;
   }
 
   /** Der RTW hört den Piloten: meldet sich auf den Anruf, beantwortet Fragen (Inhalt vom Programm, formuliert von der KI) */

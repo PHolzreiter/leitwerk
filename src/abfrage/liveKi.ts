@@ -26,6 +26,8 @@ export interface LivePrefs {
   freisprechen: boolean;
   /** Anruferstimme klingt nach Telefon, dazu Geräusche vom Notfallort */
   klang: boolean;
+  /** Test: Gemini versteht den Funk (kennt Fahrzeuge und Gespräch) statt der Spracherkennung hier */
+  funkVersteher?: boolean;
 }
 
 export function livePrefs(): LivePrefs {
@@ -760,5 +762,101 @@ export function liveMitschrift(): { stueck(b64: string): void; ende(): Promise<s
       }
     },
     abbrechen: () => s.schliessen(),
+  };
+}
+
+/**
+ * Test: Gemini versteht den Funk der Leitstelle. Gemini bekommt die Fahrzeugliste und das laufende Gespräch
+ * und gibt über eine Funktion den Wortlaut zurück (Rufnamen richtig geschrieben, Zahlen als Ziffern) – spricht nichts.
+ * Audio: 16 kHz, 16 Bit, Base64.
+ */
+export function liveFunkVerstehen(k: { fahrzeuge: string[]; partner?: string; zuletzt?: string[] }): { stueck(b64: string): void; ende(): Promise<string>; abbrechen(): void } | null {
+  if (!liveAktiv()) return null;
+  const ws = new WebSocket(`${URL_BASIS}?key=${encodeURIComponent(livePrefs().schluessel.trim())}`);
+  const system = [
+    "Du bist die Spracherkennung am Funk einer Rettungsleitstelle in Niederösterreich (Rufname der Leitstelle: LEO).",
+    "Du hörst EINEN Funkspruch der Leitstelle. Rufe danach IMMER die Funktion funkspruch auf – sprich NICHTS.",
+    "text = der Funkspruch Wort für Wort auf Deutsch, nichts dazu, nichts weglassen; Rufnamen in der Schreibweise der Liste (gesprochen „75 1“ = 75/001, „Neff“ = NEF, „Christophorus 2“ = C2), Zahlen als Ziffern.",
+    "ziel = Rufname aus der Liste, an den der Spruch geht, oder leer.",
+    `Fahrzeuge: ${k.fahrzeuge.slice(0, 250).join(", ")}.`,
+    k.partner ? `Laufendes Gespräch mit: ${k.partner}.${k.zuletzt?.length ? ` Zuletzt: ${k.zuletzt.join(" / ")}` : ""}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
+  let offen = false;
+  const warte: string[] = [];
+  let fertig: ((t: string) => void) | null = null;
+  let ergebnis: string | null = null;
+  const senden = (o: unknown) => ws.readyState === WebSocket.OPEN && ws.send(JSON.stringify(o));
+  const schluss = (t: string) => {
+    if (ergebnis !== null) return;
+    ergebnis = t;
+    fertig?.(t);
+    try {
+      ws.close(1000, "fertig");
+    } catch {
+      /* egal */
+    }
+  };
+  ws.onopen = () =>
+    senden({
+      setup: {
+        model: `models/${LIVE_MODELL}`,
+        generationConfig: { responseModalities: ["AUDIO"] },
+        systemInstruction: { parts: [{ text: system }] },
+        tools: [{ functionDeclarations: [{ name: "funkspruch", description: "erkannter Funkspruch", parameters: { type: "OBJECT", properties: { text: { type: "STRING" }, ziel: { type: "STRING" } }, required: ["text"] } }] }],
+        inputAudioTranscription: {},
+        realtimeInputConfig: { automaticActivityDetection: { disabled: true } },
+      },
+    });
+  let mitschrift = "";
+  ws.onmessage = async (ev) => {
+    const roh = typeof ev.data === "string" ? ev.data : await (ev.data as Blob).text();
+    let m: Record<string, unknown>;
+    try {
+      m = JSON.parse(roh);
+    } catch {
+      return;
+    }
+    if (m.setupComplete) {
+      offen = true;
+      senden({ realtimeInput: { activityStart: {} } });
+      for (const b of warte.splice(0)) senden({ realtimeInput: { audio: { mimeType: "audio/pcm;rate=16000", data: b } } });
+      return;
+    }
+    const sc = m.serverContent as { inputTranscription?: { text?: string }; turnComplete?: boolean } | undefined;
+    if (sc?.inputTranscription?.text) mitschrift += sc.inputTranscription.text;
+    const tc = m.toolCall as { functionCalls?: { name: string; args?: { text?: string } }[] } | undefined;
+    const t = tc?.functionCalls?.find((f) => f.name === "funkspruch")?.args?.text;
+    if (t) schluss(t.trim());
+    else if (sc?.turnComplete) schluss(mitschrift.trim());
+  };
+  ws.onerror = () => schluss(mitschrift.trim());
+  ws.onclose = () => schluss(mitschrift.trim());
+  return {
+    stueck(b64) {
+      if (offen) senden({ realtimeInput: { audio: { mimeType: "audio/pcm;rate=16000", data: b64 } } });
+      else warte.push(b64);
+    },
+    ende() {
+      return new Promise<string>((ja) => {
+        if (ergebnis !== null) return ja(ergebnis);
+        fertig = ja;
+        const los = () => senden({ realtimeInput: { activityEnd: {} } });
+        if (offen) los();
+        else {
+          const u = setInterval(() => {
+            if (offen || ws.readyState > 1) {
+              clearInterval(u);
+              los();
+            }
+          }, 50);
+        }
+        setTimeout(() => schluss(mitschrift.trim()), 12000);
+      });
+    },
+    abbrechen() {
+      schluss("");
+    },
   };
 }

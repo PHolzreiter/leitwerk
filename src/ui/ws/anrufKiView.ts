@@ -59,6 +59,7 @@ export function anrufKiView(container: HTMLElement): { refresh(): void } {
     };
     chk("Freisprechen (ohne Sprechtaste)", "Das Mikrofon läuft während des Anrufs; der Anrufer erkennt selbst, wann du fertig bist, und du kannst ihm ins Wort fallen. Am besten mit Kopfhörern – sonst hört er sich selbst aus den Lautsprechern.", lp.freisprechen, (v) => setLivePrefs({ freisprechen: v }));
     chk("Telefonklang und Geräusche vom Notfallort", "Die Stimme klingt wie durchs Telefon, dazu leise Verkehr, Stimmen im Lokal, Wind …", lp.klang, (v) => setLivePrefs({ klang: v }));
+    chk("Funk: Gemini versteht den Funk (Test)", "Was du am Funk sagst, versteht Gemini statt der Spracherkennung hier: Es kennt alle Fahrzeuge und das laufende Gespräch und schreibt Rufnamen richtig. Braucht Internet, ca. 1–2 Sekunden nach dem Loslassen.", !!lp.funkVersteher, (v) => setLivePrefs({ funkVersteher: v }));
     g.appendChild(grid);
     g.appendChild(
       el(

@@ -26,7 +26,7 @@ import { istDunkel } from "../ws/persoenlich";
 import { pilotModusSetzen } from "./modus";
 import { AKTIONEN, belegung, kuerzelName, tastenName, type PilotAktion } from "./tasten";
 import { eingabeStarten, eingabeStoppen, handyHalten, tastenDialog } from "./eingabe";
-import { funkEmpfang, funkSendeZustand, onFunkEmpfang, onFunkSenden, sprechKnopfAnbinden, sprechStart, sprechStopp } from "../sprechfunk";
+import { funkEmpfang, funkGruppenSetzen, funkGruppenWahl, funkSendeZustand, gruppeHoerbar, gsGruppeOffen, onFunkEmpfang, onFunkSenden, sprechGruppe, sprechKnopfAnbinden, sprechStart, sprechStopp } from "../sprechfunk";
 import { MODELLE, mikrofone, modellLaden, setzeSprache, sprachPrefs, sprachStatus } from "../sprache";
 import { inTauri } from "../../platform";
 import { efbStarten, handyAktionen, handyDialog, handyStand } from "./handy";
@@ -327,6 +327,7 @@ export function pilotOeffnen(): void {
         <div class="plt-funk">
           <div class="plt-karte-titel">${ico("funk")}Sprechfunk <button class="plt-b klein plt-funk-einst" data-act="funk-einst" title="Mikrofon, Spracherkennung, Mithören">${ico("tasten")}<span>Einstellungen</span></button></div>
           <div class="plt-funk-kanal"></div>
+          <div class="plt-funk-gruppen"></div>
           <div class="plt-funk-knoepfe"></div>
           <div class="plt-funk-verlauf"></div>
         </div>
@@ -1099,13 +1100,15 @@ function funkTeil(fz: SimFahrzeug | undefined, e: Einsatz | undefined): { knoepf
   const ich = funkSendeZustand();
   const hoert = funkEmpfang();
   const sendet = sim.state.funkSendet;
-  // Großeinsatz: der Pilot ist auf der Sprechgruppe des Großeinsatzes
-  const gruppe = sim.kanalVon(e);
+  // Großeinsatz: der Pilot ist auf der Sprechgruppe des Großeinsatzes (bzw. der gewählten)
+  const gruppe = sprechGruppe();
   const belegt = sim.funkKanalBelegt(gruppe);
   const kanal = ich?.art === "sendet"
     ? `Du sprichst${ich.ziel === "rtw" ? " (an den RTW)" : ""} …`
     : ich?.art === "wartet"
-      ? "Kanal wird geprüft …"
+      ? ich.belegt
+        ? "Warten … nach dem Ende-Ton bist du dran"
+        : "Kanal wird geprüft …"
       : hoert
         ? `${hoert.von === "LEO" ? `Leitstelle (${hoert.wer})` : `${hoert.von} (${hoert.wer})`} spricht`
         : sendet
@@ -1119,6 +1122,23 @@ function funkTeil(fz: SimFahrzeug | undefined, e: Einsatz | undefined): { knoepf
   teil(".plt-funk-kanal", `${kanal}|${klasse}`, (b) => {
     b.className = `plt-funk-kanal ${klasse}`;
     b.innerHTML = `<span class="plt-funk-lampe"></span><span>${esc(kanal)}</span>`;
+  });
+  // Sprechgruppen: primär die, zu der er alarmiert ist; „Alles hören“; wo er spricht
+  const w = funkGruppenWahl();
+  const gsDa = gsGruppeOffen() || sim.kanalVon(e) === "gs";
+  teil(".plt-funk-gruppen", JSON.stringify([w.allesHoeren, w.pilotSenden, gsDa, sim.kanalVon(e)]), (b) => {
+    const eig = sim.kanalVon(e) === "gs" ? "Großeinsatz" : `TETRA ${sim.funkgruppe().id}`;
+    b.innerHTML = `<label class="plt-check"><input type="checkbox" class="plt-f-alles" ${w.allesHoeren ? "checked" : ""}> Alles hören <small class="plt-leise">(sonst nur ${esc(eig)})</small></label>${
+      gsDa
+        ? `<label class="plt-klein">Ich spreche in <select class="plt-f-senden"><option value="auto">${esc(eig)} (mein Einsatz)</option><option value="normal">TETRA ${esc(sim.funkgruppe().id)}</option><option value="gs">Großeinsatz</option></select></label>`
+        : ""
+    }`;
+    b.querySelector<HTMLInputElement>(".plt-f-alles")!.addEventListener("change", (ev) => funkGruppenSetzen({ allesHoeren: (ev.target as HTMLInputElement).checked }));
+    const sel = b.querySelector<HTMLSelectElement>(".plt-f-senden");
+    if (sel) {
+      sel.value = w.pilotSenden;
+      sel.addEventListener("change", () => funkGruppenSetzen({ pilotSenden: sel.value as "auto" | "normal" | "gs" }));
+    }
   });
   const rtw = fz && e ? sim.nahRtwPartner(fz, e) : undefined;
   const bel = belegung();
@@ -1139,11 +1159,11 @@ function funkTeil(fz: SimFahrzeug | undefined, e: Einsatz | undefined): { knoepf
   });
   root?.querySelectorAll<HTMLElement>(".plt-ptt").forEach((x) => x.classList.toggle("an", !!ich && (x.dataset.ptt === "funkRtw") === (ich.ziel === "rtw")));
   // die letzten Funksprüche (alle hören mit)
-  const alle = (sim.state.funkGespraeche ?? []).filter((g) => (g.kanal ?? null) === gruppe).slice(0, 12);
+  const alle = (sim.state.funkGespraeche ?? []).filter((g) => gruppeHoerbar(g.kanal) || (!!fz && (g.fzId === fz.id || g.an?.fzId === fz.id))).slice(0, 20);
   const zeilen = alle
-    .flatMap((g) => g.sprueche.map((x) => ({ ...x, g })))
-    .sort((a, b) => a.zeit - b.zeit)
-    .slice(-8);
+    .flatMap((g) => g.sprueche.map((x, i) => ({ ...x, g, t: x.echt ?? (g.echtSeit ?? 0) + i })))
+    .sort((a, b) => a.t - b.t)
+    .slice(-10);
   const mein = fz ? sim.rufname(fz) : "";
   teil(".plt-funk-verlauf", zeilen.map((z) => `${z.g.id}|${z.zeit}|${z.text}`).join(";"), (b) => {
     if (!zeilen.length) {

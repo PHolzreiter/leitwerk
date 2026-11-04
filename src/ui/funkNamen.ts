@@ -1,6 +1,7 @@
 /** Funkrufnamen für die Spracherkennung: Hinweis (wie gesprochen) und Nachbearbeitung mit den Fahrzeugen im Spiel */
 import { sim } from "../sim/engine";
 import { funkSprechform, funkTextGlaetten } from "../sim/funkErkennung";
+import { orteImText } from "./ortNamen";
 
 /** alle Funkrufnamen und Rufnamen („75/001“, „NEF Krems“, „C2“) */
 export function funkNamenAlle(): string[] {
@@ -21,9 +22,14 @@ export function funkNamenAktiv(): string[] {
   });
 }
 
+/** im Text: „75/001“ → „75 1“ */
+function funkSprechformImText(t: string): string {
+  return t.replace(/\b(\d{2,3})\/0*(\d+)\b/g, "$1 $2");
+}
+
 /** gesprochenen Funk richtigstellen (Zahlen, Rufnamen, „Leo“ → „LEO“) */
 export function funkGlaetten(t: string): string {
-  return funkTextGlaetten(t, funkNamenAlle(), funkNamenAktiv());
+  return orteImText(funkTextGlaetten(t, funkNamenAlle(), funkNamenAktiv()));
 }
 
 /**
@@ -37,7 +43,10 @@ export function funkHinweis(extra = ""): string {
   const alle = Object.values(sim.state.fahrzeuge).filter((f) => f.status !== "abgemeldet");
   const rest = [...new Set([...alle.filter((f) => f.status !== "freiWache"), ...alle.filter((f) => f.status === "freiWache")].map((f) => funkSprechform(sim.rufname(f))))].filter((n) => !aktiv.includes(n));
   const beispiel = aktiv[0] ?? "75 1";
-  const schluss = `${extra}${aktiv.join(", ")}${aktiv.length ? ". " : ""}${beispiel} von LEO, kommen. Hier LEO, kommen. Verstanden, Ende.`;
+  // das laufende Gespräch: die letzten Funksprüche (die Erkennung achtet auf das Ende des Hinweises)
+  const g = (sim.state.funkGespraeche ?? []).filter((x) => x.status !== "ende" && x.sprueche.length).sort((a, b) => (b.echtLetzt ?? 0) - (a.echtLetzt ?? 0))[0];
+  const zuletzt = g ? g.sprueche.slice(-2).map((x) => funkSprechformImText(x.text).slice(0, 110)).join(" ") + " " : "";
+  const schluss = `${extra}${aktiv.join(", ")}${aktiv.length ? ". " : ""}${zuletzt}${beispiel} von LEO, kommen. Hier LEO, kommen. Verstanden, Ende.`;
   let vorne = `${rest.join(", ")}. `;
   const platz = 600 - schluss.length;
   if (vorne.length > platz) vorne = vorne.slice(vorne.length - Math.max(0, platz)).replace(/^[^,]*,\s*/, "");

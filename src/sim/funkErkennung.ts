@@ -99,8 +99,40 @@ const ABK: [RegExp, string][] = [
   [/\b(?:n\.?\s?a\.?\s?w\.?|en\s?a\s?we)(?=\s|$|[,.!?-])/gi, "NAW"],
   [/\b(?:a\.?\s?c\.?\s?n\.?|a\s?ce\s?en)(?=\s|$|[,.!?-])/gi, "ACN"],
   [/\b(?:christophorus|christoph|zeh|cee|ce|tse)\s*(?=\d)/gi, "C"],
-  [/\b(?:leo|lio|loo|lehro|leho|léo|lehoh)\b/gi, "LEO"],
+  [/\b(?:hier|hie|he|hia)[\s,]*l+e+o+\b|\bheleo\b|\bhilleo\b|\bhileo\b/gi, "Hier LEO"],
+  [/\b(?:leo|lio|loo|lehro|leho|léo|lehoh|leeo)\b/gi, "LEO"],
 ];
+
+/** übliche Funkwörter: ein ähnlich geschriebenes Wort wird richtiggestellt („Kommann“ → „kommen“) */
+const FUNKWOERTER = [
+  "kommen", "verstanden", "Lagemeldung", "Einsatzort", "Eintreffen", "Notarzt", "Nachforderung", "Rendezvous", "Zielkrankenhaus",
+  "Transport", "Patient", "Patientin", "mitgehört", "Storno", "einrücken", "Funkcheck", "Status", "Voranmeldung", "Schockraum",
+  "Notaufnahme", "Einsatzauftrag", "Zusatzinfo", "Reanimation", "Bereitstellungsraum", "Einsatzleitung", "Landeplatz", "kreislaufstabil",
+  "ansprechbar", "Rettungsmittel", "Notarzteinsatzfahrzeug", "Hubschrauber", "Sichtung", "Vitalwerte", "Sättigung", "Blutdruck", "Blutzucker",
+];
+const FUNKWORT = new Map(FUNKWOERTER.map((w) => [falten(w), w]));
+
+function funkwoerter(t: string): string {
+  return t.replace(/[\p{L}]{5,}/gu, (w) => {
+    const f = falten(w);
+    if (FUNKWORT.has(f)) return w;
+    let best: string | null = null;
+    let bd = 99;
+    let zwei = false;
+    for (const [k, orig] of FUNKWORT) {
+      if (Math.abs(k.length - f.length) > 2 || k[0] !== f[0]) continue;
+      const d = abstand(f, k);
+      if (d < bd) {
+        bd = d;
+        best = orig;
+        zwei = false;
+      } else if (d === bd) zwei = true;
+    }
+    // kurze Wörter nur bei einem Tippfehler, lange (ab 7 Buchstaben) bei zweien
+    if (!best || zwei || bd > (f.length >= 7 ? 2 : 1)) return w;
+    return best;
+  });
+}
 
 interface Nummer {
   name: string;
@@ -116,6 +148,7 @@ export function funkTextGlaetten(roh: string, namen?: string[], bevorzugt?: stri
   const vorne = new Set(bevorzugt ?? []);
   let t = zahlenAlsZiffern(roh);
   for (const [re, ersatz] of ABK) t = t.replace(re, ersatz);
+  t = funkwoerter(t);
   // Ziffer für Ziffer gesprochen: „7 5 1“ → „751“
   t = t.replace(/\b\d(?:\s\d){2,}\b/g, (m) => m.replace(/\s/g, ""));
   // „75 0 0 1“ → „75 001“
@@ -213,4 +246,55 @@ export function funkTextGlaetten(roh: string, namen?: string[], bevorzugt?: stri
 /** Rufnamen so, wie sie gesprochen werden („75/001“ → „75 1“) – als Hinweis für die Spracherkennung */
 export function funkSprechform(name: string): string {
   return name.replace(/^(\d{2,3})\/0*(\d+)$/, "$1 $2");
+}
+
+// ------------------------------------------------------------------ Ortsnamen
+
+/** Kurzform eines Ortsnamens („Krems an der Donau“ → „Krems“, „St. Pölten“ bleibt) */
+export function ortKurz(ort: string): string {
+  return ort.replace(/\s+(an der|an dem|am|im|in der|bei|ob der|unter dem)\s+.+$/i, "").trim();
+}
+
+/**
+ * Ortsnamen im erkannten Text richtigstellen („Gföll“ → „Gföhl“, „Hollabrun“ → „Hollabrunn“).
+ * orte = die Orte, die gerade in Frage kommen (in der Nähe der Fahrzeuge und Einsätze, große Orte, Krankenhäuser) –
+ * nicht alle, sonst wird aus jedem zweiten Wort ein Ort. Nur großgeschriebene Wörter; ein Treffer muss eindeutig sein.
+ */
+export function orteGlaetten(t: string, orte: string[]): string {
+  if (!orte.length) return t;
+  const liste = [...new Set(orte.flatMap((o) => [o, ortKurz(o)]).filter((o) => o.length >= 4))].map((o) => ({ o, w: (o.match(/[\p{L}]+|\d+/gu) ?? []).map(falten) }));
+  const bekannt = new Set(liste.map((x) => x.w.join(" ")));
+  const toks = [...t.matchAll(/[\p{L}]+/gu)].map((m) => ({ roh: m[0], w: falten(m[0]), von: m.index ?? 0, bis: (m.index ?? 0) + m[0].length }));
+  const ersetzen: { von: number; bis: number; o: string }[] = [];
+  for (let i = 0; i < toks.length; i++) {
+    if (ersetzen.length && ersetzen[ersetzen.length - 1].bis > toks[i].von) continue;
+    if (!/^\p{Lu}/u.test(toks[i].roh) || FUNKWORT.has(toks[i].w)) continue;
+    let best: { o: string; k: number; d: number } | null = null;
+    let gleich = false;
+    for (const x of liste) {
+      const k = x.w.length;
+      if (i + k > toks.length) continue;
+      const ist = toks.slice(i, i + k).map((y) => y.w).join(" ");
+      const soll = x.w.join(" ");
+      if (ist === soll) {
+        best = { o: x.o, k, d: 0 };
+        gleich = false;
+        break;
+      }
+      if (bekannt.has(ist) || soll.length < 5 || soll[0] !== ist[0]) continue;
+      // kurze Namen nur nach „in“, „nach“, „aus“ … (sonst wird aus „Leben“ „Leiben“)
+      if (soll.length < 7 && !/\b(in|im|nach|aus|von|bei|richtung|raum|ins|ortsgebiet|gemeinde|uk|lk|klinikum|landesklinikum)\s*$/i.test(t.slice(Math.max(0, toks[i].von - 25), toks[i].von))) continue;
+      const d = abstand(ist, soll);
+      if (d > (soll.length >= 8 ? 2 : 1)) continue;
+      if (!best || d < best.d || (d === best.d && k > best.k)) {
+        gleich = !!best && d === best.d && k === best.k && best.o !== x.o;
+        best = { o: x.o, k, d };
+      } else if (d === best.d && k === best.k && best.o !== x.o) gleich = true;
+    }
+    if (best && best.d > 0 && !gleich) ersetzen.push({ von: toks[i].von, bis: toks[i + best.k - 1].bis, o: best.o });
+    else if (best && best.d === 0) i += best.k - 1;
+  }
+  let out = t;
+  for (const r of ersetzen.reverse()) out = out.slice(0, r.von) + r.o + out.slice(r.bis);
+  return out;
 }

@@ -317,18 +317,18 @@ function supertonicFuer(g: "w" | "m", schluessel: string): string {
  * ton = Tonhöhe (1 = unverändert): schneller/langsamer abspielen verschiebt die Tonhöhe,
  * das Sprechtempo wird beim Erzeugen ausgeglichen – so klingt dieselbe Stimme höher oder tiefer.
  */
-function piperSagen(text: string, v: { name: string; sid: number }, rate: number, laut = 1, ton = 1): void {
+function piperSagen(text: string, v: { name: string; sid: number }, rate: number, laut = 1, ton = 1, fertig?: () => void): void {
   const p = sprachPrefs();
-  imProgrammSagen(invoke<ArrayBuffer>("stimme_erzeugen", { name: v.name, text, sid: v.sid, tempo: Math.max(0.5, Math.min(2, (rate * (p.tempo / 100)) / ton)) }), laut, ton);
+  imProgrammSagen(invoke<ArrayBuffer>("stimme_erzeugen", { name: v.name, text, sid: v.sid, tempo: Math.max(0.5, Math.min(2, (rate * (p.tempo / 100)) / ton)) }), laut, ton, fertig);
 }
 
-function supertonicSagen(text: string, stimme: string, rate: number, laut = 1, ton = 1): void {
+function supertonicSagen(text: string, stimme: string, rate: number, laut = 1, ton = 1, fertig?: () => void): void {
   const p = sprachPrefs();
-  imProgrammSagen(invoke<ArrayBuffer>("supertonic_erzeugen", { stimme, text, tempo: Math.max(0.5, Math.min(2, (rate * (p.tempo / 100)) / ton)) }), laut, ton);
+  imProgrammSagen(invoke<ArrayBuffer>("supertonic_erzeugen", { stimme, text, tempo: Math.max(0.5, Math.min(2, (rate * (p.tempo / 100)) / ton)) }), laut, ton, fertig);
 }
 
 /** erzeugtes Audio (4 Byte Rate + f32) der Reihe nach auf dem gewählten Gerät abspielen */
-function imProgrammSagen(audio: Promise<ArrayBuffer>, laut = 1, ton = 1): void {
+function imProgrammSagen(audio: Promise<ArrayBuffer>, laut = 1, ton = 1, fertig?: () => void): void {
   const p = sprachPrefs();
   const gen = generation;
   const id = `stimme-${++zaehler}`;
@@ -344,27 +344,30 @@ function imProgrammSagen(audio: Promise<ArrayBuffer>, laut = 1, ton = 1): void {
       });
     })
     .catch((e) => console.warn("Piper", e))
-    .finally(() => (spricht = Math.max(0, spricht - 1)));
+    .finally(() => {
+      spricht = Math.max(0, spricht - 1);
+      fertig?.();
+    });
 }
 
-function sagen(text: string, g: "w" | "m", schluessel: string, rate: number, emotion?: string, laut = 1): void {
+function sagen(text: string, g: "w" | "m", schluessel: string, rate: number, emotion?: string, laut = 1, danach?: () => void): void {
   const t = sprechText(text);
-  if (!t) return;
+  if (!t) return danach?.();
   const p = sprachPrefs();
   // jede Person eine eigene Tonhöhe (± 10 %), damit gleiche Grundstimmen verschieden klingen
   const ton = 0.9 + hash(`${schluessel}|ton`) * 0.2;
   if (p.stimmeArt === "supertonic" && inTauri() && supertonicDa) {
-    supertonicSagen(t, supertonicFuer(g, schluessel), rate, laut, ton);
+    supertonicSagen(t, supertonicFuer(g, schluessel), rate, laut, ton, danach);
     return;
   }
   if ((p.stimmeArt === "piper" || p.stimmeArt === "supertonic") && inTauri()) {
     const v = piperFuer(g, schluessel, emotion);
     if (v) {
-      piperSagen(t, v, rate, laut, ton);
+      piperSagen(t, v, rate, laut, ton, danach);
       return;
     }
   }
-  if (!synth) return;
+  if (!synth) return danach?.();
   const u = new SpeechSynthesisUtterance(t);
   const { voice, pitch } = stimmeFuer(g, schluessel);
   if (voice) u.voice = voice;
@@ -373,7 +376,10 @@ function sagen(text: string, g: "w" | "m", schluessel: string, rate: number, emo
   u.rate = Math.max(0.5, Math.min(2, rate * (p.tempo / 100)));
   u.volume = Math.max(0, Math.min(1, (p.laut / 100) * laut));
   spricht++;
-  const fertig = () => (spricht = Math.max(0, spricht - 1));
+  const fertig = () => {
+    spricht = Math.max(0, spricht - 1);
+    danach?.();
+  };
   u.onend = fertig;
   u.onerror = fertig;
   synth.speak(u);
@@ -451,9 +457,30 @@ export function satzSprecher(sagen: (satz: string) => void): { token(t: string):
 export function funkSagt(funkname: string, text: string, laut = 1): void {
   const p = sprachPrefs();
   if (!p.funkVorlesen || aufnahmeLaeuft || aufnahmeSperre.funk || laut <= 0) return;
-  // jedes Fahrzeug spricht etwas anders schnell (sonst klingen alle gleich)
-  sagen(funkAussprache(text), hash(funkname) < 0.3 ? "w" : "m", funkname, 0.98 + hash(`${funkname}|tempo`) * 0.2, undefined, laut);
+  // Töne des Funkgeräts davor und danach
+  const ton = funkTonHaken.ton;
+  let fertig = false;
+  const ende = () => {
+    if (fertig) return;
+    fertig = true;
+    ton?.("ende", laut);
+  };
+  const los = () => {
+    // jedes Fahrzeug spricht etwas anders schnell (sonst klingen alle gleich)
+    sagen(funkAussprache(text), hash(funkname) < 0.3 ? "w" : "m", funkname, 0.98 + hash(`${funkname}|tempo`) * 0.2, undefined, laut, ende);
+    // falls die Stimme kein Ende meldet
+    setTimeout(ende, 2500 + text.split(/\s+/).length * 600);
+  };
+  const vorlauf = ton?.("beginn", laut) ?? 0;
+  if (vorlauf > 0) setTimeout(los, vorlauf);
+  else los();
 }
+
+/** Ortsnamen im erkannten Text richtigstellen (ui/ortNamen.ts, gesetzt in main.ts) */
+export const ortHaken: { glaetten: null | ((t: string) => string) } = { glaetten: null };
+
+/** Töne des Funkgeräts (ui/sprechfunk.ts setzt das): gibt zurück, wie lange der Ton dauert (ms) */
+export const funkTonHaken: { ton: null | ((art: "beginn" | "ende", laut: number) => number) } = { ton: null };
 
 const ZAHL_MAL: Record<string, string> = { "1": "einmal", "2": "zweimal", "3": "dreimal", "4": "viermal", "5": "fünfmal", "6": "sechsmal", "7": "siebenmal", "8": "achtmal", "9": "neunmal", "10": "zehnmal" };
 
@@ -1023,8 +1050,9 @@ async function stoppInnen(): Promise<void> {
 
 /** erkannten Text ins Eingabefeld (und ggf. abschicken) */
 function textFertig(z: SprachZiel | null, roh: string): void {
-  // Zahlen immer als Ziffern („eins“ → „1“)
+  // Zahlen immer als Ziffern („eins“ → „1“), Ortsnamen richtigstellen
   let text = zahlenAlsZiffern(roh.replace(/\s+/g, " ").trim());
+  text = ortHaken.glaetten?.(text) ?? text;
   if (!text || FANTASIE.test(text)) {
     toast("Nichts verstanden – bitte nochmal.", "error");
     return;

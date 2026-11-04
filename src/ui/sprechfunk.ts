@@ -15,7 +15,8 @@ import { sim } from "../sim/engine";
 import { toast } from "./dom";
 import { FUNK_RATE, FunkKodierer, funkDekodieren } from "./funkCodec";
 import { istPilot } from "./pilot/modus";
-import { aufnahmeLaeuftJetzt, aufnahmeSperre, funkHaken, funkHoerHaken, sprachPrefs, sprachStatus, sprachTest, verstummen } from "./sprache";
+import { tonBeginn, tonEnde } from "./funkToene";
+import { aufnahmeLaeuftJetzt, aufnahmeSperre, funkHaken, funkHoerHaken, funkTonHaken, sprachPrefs, sprachStatus, sprachTest, verstummen } from "./sprache";
 
 export type FunkZiel = "leo" | "rtw";
 
@@ -108,6 +109,23 @@ function rauschen(c: AudioContext, ab: number): void {
   s.start(Math.max(ab, c.currentTime));
 }
 
+/** Ton des Funkgeräts hier abspielen (eigene Sprechtaste, vorgelesene Funksprüche); laut 0 = nicht */
+export function funkTon(art: "beginn" | "ende", laut = 1): number {
+  if (laut <= 0) return 0;
+  try {
+    const c = audio();
+    const g = kette(c);
+    g.gain.value *= laut;
+    const bis = art === "beginn" ? tonBeginn(c, g) : tonEnde(c, g);
+    setTimeout(() => g.disconnect(), (bis - c.currentTime) * 1000 + 300);
+    return Math.max(0, (bis - c.currentTime) * 1000);
+  } catch {
+    return 0;
+  }
+}
+
+funkTonHaken.ton = (art, laut) => funkTon(art, laut);
+
 /** kurzer Doppelton: Kanal belegt */
 function belegtTon(): void {
   try {
@@ -134,6 +152,8 @@ export function funkAngekuendigt(gId: number, i: number): boolean {
 
 /** Lautstärke eines Stroms: KI-Fahrzeuge wie beim Vorlesen (eigene Gespräche laut, fremde gar nicht bzw. leise) */
 function stromLaut(d: Record<string, unknown>, von: string): number {
+  // Sprechgruppe stumm geschaltet (bzw. Pilot hört sie nicht)
+  if ("r" in d && !gruppeHoerbar(d.r === "gs" ? "gs" : null)) return 0;
   if (typeof d.g !== "number") return 1;
   if (d.ki && !sprachPrefs().funkVorlesen) return 0;
   const g = sim.state.funkGespraeche?.find((x) => x.id === d.g);
@@ -153,6 +173,8 @@ function empfangen(pid: string, name: string, d: Record<string, unknown>): void 
     if (!st) {
       st = { von: String(d.v ?? name), wer: String(d.w ?? name), cursor: c.currentTime + PUFFER, letzte: Date.now(), eingang: kette(c) };
       st.eingang.gain.value *= stromLaut(d, st.von);
+      // Beginn-Ton des Funkgeräts vor der Stimme
+      st.cursor = tonBeginn(c, st.eingang, st.cursor);
       stroeme.set(sId, st);
       funkStatistik.stroeme++;
       empfangGeaendert();
@@ -176,8 +198,9 @@ function empfangen(pid: string, name: string, d: Record<string, unknown>): void 
     stroeme.delete(sId);
     if (ctx) {
       rauschen(ctx, st.cursor);
+      const bis = tonEnde(ctx, st.eingang, st.cursor + 0.05);
       const weg = st.eingang;
-      setTimeout(() => weg.disconnect(), Math.max(0, (st.cursor - ctx.currentTime) * 1000) + 500);
+      setTimeout(() => weg.disconnect(), Math.max(0, (bis - ctx.currentTime) * 1000) + 500);
     }
     empfangGeaendert();
   }
@@ -221,6 +244,10 @@ interface Sendung {
   frueh: boolean;
   /** Mitschrift über Gemini (statt der Erkennung hier) */
   mitschrift?: { stueck(b64: string): void; ende(): Promise<string>; abbrechen(): void } | null;
+  /** Sprechgruppe (null = normale TETRA-Gruppe, „gs“ = Großeinsatz) */
+  gruppe: "gs" | null | undefined;
+  /** wartet, bis der laufende Funkspruch fertig ist */
+  wartet: boolean;
 }
 
 let sendung: Sendung | null = null;
@@ -232,10 +259,10 @@ function sendGeaendert(): void {
   for (const f of sendHoerer) f();
 }
 
-/** Eigener Sprechfunk: „wartet“ (Freigabe vom Host), „sendet“ oder null */
-export function funkSendeZustand(): { art: "wartet" | "sendet"; ziel: FunkZiel } | null {
+/** Eigener Sprechfunk: „wartet“ (Kanal belegt, nach dem Ende-Ton geht es los), „sendet“ oder null */
+export function funkSendeZustand(): { art: "wartet" | "sendet"; ziel: FunkZiel; belegt: boolean } | null {
   if (!sendung || sendung.abgelehnt) return null;
-  return { art: sendung.frei ? "sendet" : "wartet", ziel: sendung.ziel };
+  return { art: sendung.frei ? "sendet" : "wartet", ziel: sendung.ziel, belegt: sendung.wartet };
 }
 
 export function onFunkSenden(fn: () => void): () => void {
@@ -267,10 +294,23 @@ function auf16kB64(b64: string): string {
   return btoa(t);
 }
 
+/** Pegel des eigenen Mikrofons (0–1, geglättet) und der lauteste Wert der laufenden Sendung */
+let pegel = 0;
+let pegelMax = 0;
+export function funkPegel(): number {
+  return pegel;
+}
+
 function stueck(s: Sendung, b64: string): void {
   if (s.abgelehnt) return;
+  const x = funkDekodieren(b64);
+  let q = 0;
+  for (let i = 0; i < x.length; i++) q += x[i] * x[i];
+  const rms = Math.sqrt(q / Math.max(1, x.length));
+  pegel = Math.max(rms, pegel * 0.6);
+  if (s.frei) pegelMax = Math.max(pegelMax, rms);
   s.mitschrift?.stueck(auf16kB64(b64));
-  const d = { k: "a", s: s.id, n: s.n++, v: s.von, w: s.wer, b: b64 };
+  const d = { k: "a", s: s.id, n: s.n++, v: s.von, w: s.wer, r: s.gruppe ?? null, b: b64 };
   if (s.frei) schicken(d);
   else s.warte.push(d);
 }
@@ -336,12 +376,8 @@ function auf16k(daten: Float32Array, rate: number): Float32Array {
  * Sprechtaste gedrückt. Pilot: ziel „leo“ (Leitstelle) oder „rtw“ (Bodenfahrzeug am Einsatz);
  * Leitstelle: immer „leo“ (spricht mit dem Piloten).
  */
-export async function sprechStart(ziel: FunkZiel = "leo"): Promise<void> {
+export async function sprechStart(ziel: FunkZiel = "leo", gruppe?: "gs" | null): Promise<void> {
   if (sendung) return;
-  if (!mp.aktiv) {
-    toast("Sprechfunk gibt es nur im Mehrspieler", "error");
-    return;
-  }
   if (aufnahmeLaeuftJetzt()) return;
   aufnahmeSperre.funk = true;
   verstummen();
@@ -360,20 +396,35 @@ export async function sprechStart(ziel: FunkZiel = "leo"): Promise<void> {
     nativ: inTauri() && !sprachTest.erkenner,
     bereit: false,
     frueh: false,
+    gruppe: gruppe === undefined ? sprechGruppe() : gruppe,
+    wartet: false,
   };
   // Gemini schreibt mit (die Erkennung hier braucht dann kein Sprachmodell)
   s.mitschrift = funkHoerHaken.strom?.() ?? null;
   sendung = s;
   sendGeaendert();
-  // Freigabe vom Host (Kanal frei?) – die Aufnahme startet gleichzeitig
+  // Freigabe vom Host (Kanal frei?) – die Aufnahme startet gleichzeitig. Spricht gerade jemand:
+  // warten, bis sein Ende-Ton kommt – dann der eigene Beginn-Ton und es geht los
   s.freigabe = sim
-    .call("funkMensch", true, ziel)
-    .then((id) => {
-      if (s.abgelehnt) return;
-      s.gId = id as number;
-      s.frei = true;
-      for (const d of s.warte) schicken(d);
+    .call("funkMensch", true, ziel, s.gruppe)
+    .then(async (r) => {
+      const a = r as { id: number | null; wartet: boolean } | null;
+      if (s.abgelehnt || !a) return;
+      s.gId = a.id;
+      if (a.wartet) {
+        s.wartet = true;
+        sendGeaendert();
+        const ich = sim.ich?.pid ?? mp.ich.pid;
+        while (!s.abgelehnt && !s.los && sim.state.funkSendet?.pid !== ich) await new Promise((ok) => setTimeout(ok, 80));
+        if (s.abgelehnt || s.los) return;
+        s.gId = sim.state.funkSendet?.gId ?? s.gId;
+        s.wartet = false;
+      }
+      // was vor der Freigabe ins Mikrofon kam, geht nicht hinaus
       s.warte = [];
+      pegelMax = 0;
+      funkTon("beginn");
+      s.frei = true;
       sendGeaendert();
     })
     .catch((e) => {
@@ -498,6 +549,22 @@ export async function sprechStopp(): Promise<void> {
     sendGeaendert();
     return;
   }
+  // losgelassen, während noch gewartet wurde: nichts gesendet
+  if (!s.frei) {
+    s.abgelehnt = true;
+    s.mitschrift?.abbrechen();
+    s.mitschrift = null;
+    void aufnahmeBeenden(s, false);
+    await sim.call("funkMensch", false).catch(() => undefined);
+    if (sendung === s) sendung = null;
+    aufnahmeSperre.funk = false;
+    sendGeaendert();
+    return;
+  }
+  funkTon("ende");
+  pegel = 0;
+  // fast nichts angekommen: Mikrofon zu leise oder falsches Gerät
+  if (s.n > 8 && pegelMax < 0.015) toast("Dein Mikrofon ist sehr leise – bitte näher sprechen oder in den Einstellungen das richtige Mikrofon wählen", "error");
   const textP = aufnahmeBeenden(s, true);
   // Kanal nach dem Nachlauf (250 ms) frei geben – die Erkennung läuft danach weiter
   await Promise.race([textP.catch(() => ""), new Promise((r) => setTimeout(r, 450))]);
@@ -510,10 +577,10 @@ export async function sprechStopp(): Promise<void> {
   await sim.call("funkMensch", false).catch(() => undefined);
   let text = await textP.catch(() => "");
   if (/^(untertitel|vielen dank( für)? (fürs )?zuschauen|copyright|\[?musik\]?|\*.*\*)/i.test(text)) text = "";
-  if (text && s.gId !== null) {
+  if (text) {
     text = funkGlaetten(text);
-    await sim.call("funkMenschText", s.gId, text).catch((e) => toast(String((e as Error)?.message ?? e), "error"));
-  }
+    await sim.call("funkMenschText", s.gId, text, s.gruppe ?? null).catch((e) => toast(String((e as Error)?.message ?? e), "error"));
+  } else if (s.n > 3) toast("Funkspruch nicht verstanden – bitte nochmal (oder tippen)", "error");
 }
 
 // ------------------------------------------------------------ Spracheingabe der Leitstelle beim KI-Funk live mitschicken
@@ -572,7 +639,6 @@ window.addEventListener(
   "keydown",
   (ev) => {
     if (istPilot() || ev.code !== sprachPrefs().funkTaste) return;
-    if (!mp.aktiv) return;
     ev.preventDefault();
     if (ev.repeat || tasteUnten) return;
     tasteUnten = true;
@@ -598,11 +664,11 @@ window.addEventListener("blur", () => {
 });
 
 /** Knopf „gedrückt halten zum Sprechen“ */
-export function sprechKnopfAnbinden(b: HTMLElement, ziel: () => FunkZiel = () => "leo"): void {
+export function sprechKnopfAnbinden(b: HTMLElement, ziel: () => FunkZiel = () => "leo", gruppe?: () => "gs" | null): void {
   b.addEventListener("pointerdown", (ev) => {
     ev.preventDefault();
     b.setPointerCapture?.((ev as PointerEvent).pointerId);
-    void sprechStart(ziel());
+    void sprechStart(ziel(), gruppe?.());
     // Loslassen auch merken, wenn der Knopf inzwischen neu gezeichnet wurde
     const los = () => {
       window.removeEventListener("pointerup", los, true);
@@ -622,34 +688,84 @@ export function sprechKnopfAnbinden(b: HTMLElement, ziel: () => FunkZiel = () =>
  * Pilot: alles, was seinen Hubschrauber betrifft, normal; den übrigen Funkverkehr leiser (abschaltbar);
  * die Leitstelle nur, wenn sie getippt hat (Gesprochenes kommt ohnehin live).
  */
-/** Sprechgruppe Großeinsatz mithören (Häkchen im Reiter „Funk Großeinsatz“) – eigene Gespräche hört man immer */
-let gsMithoeren = (() => {
+// ------------------------------------------------------------ Sprechgruppen: hören und sprechen
+
+interface GruppenWahl {
+  /** stumm geschaltete Gruppen (Text bleibt sichtbar, man hört nichts) */
+  stumm: { normal?: boolean; gs?: boolean };
+  /** Leitstelle: in dieser Gruppe wird gesprochen */
+  senden: "gs" | null;
+  /** Pilot: alle Gruppen hören (sonst nur die, zu der er alarmiert ist) */
+  allesHoeren: boolean;
+  /** Pilot: hier spricht er („auto“ = Gruppe seines Einsatzes) */
+  pilotSenden: "auto" | "normal" | "gs";
+}
+let wahl: GruppenWahl = (() => {
+  const std: GruppenWahl = { stumm: {}, senden: null, allesHoeren: false, pilotSenden: "auto" };
   try {
-    return localStorage.getItem("lw-gs-mithoeren") !== "0";
+    const alt = localStorage.getItem("lw-gs-mithoeren") === "0";
+    return { ...std, stumm: { gs: alt }, ...JSON.parse(localStorage.getItem("lw-funk-gruppen") ?? "{}") };
   } catch {
-    return true;
+    return std;
   }
 })();
-export function gsMithoerenAn(): boolean {
-  return gsMithoeren;
+const wahlHoerer = new Set<() => void>();
+export function funkGruppenWahl(): GruppenWahl {
+  return wahl;
 }
-export function gsMithoerenSetzen(an: boolean): void {
-  gsMithoeren = an;
+export function funkGruppenSetzen(teil: Partial<GruppenWahl>): void {
+  wahl = { ...wahl, ...teil, stumm: { ...wahl.stumm, ...(teil.stumm ?? {}) } };
   try {
-    localStorage.setItem("lw-gs-mithoeren", an ? "1" : "0");
+    localStorage.setItem("lw-funk-gruppen", JSON.stringify(wahl));
   } catch {
     /* egal */
   }
+  for (const f of wahlHoerer) f();
+}
+export function onFunkGruppen(fn: () => void): () => void {
+  wahlHoerer.add(fn);
+  return () => wahlHoerer.delete(fn);
+}
+/** gibt es gerade die Sprechgruppe Großeinsatz? */
+export function gsGruppeOffen(): boolean {
+  return sim.state.einsaetze.some((e) => e.zustand !== "abgeschlossen" && sim.kanalVon(e) === "gs") || (sim.state.funkGespraeche ?? []).some((g) => g.kanal === "gs" && g.status !== "ende");
+}
+/** Gruppe des Piloten (die seines Einsatzes) */
+function pilotGruppe(): "gs" | null {
+  const heli = sim.pilotVon(sim.ich?.pid ?? mp.ich.pid);
+  const e = heli?.einsatzId ? sim.einsatz(heli.einsatzId) : undefined;
+  return sim.kanalVon(e);
+}
+/** in welcher Gruppe die eigene Sprechtaste spricht */
+export function sprechGruppe(): "gs" | null {
+  if (istPilot()) return wahl.pilotSenden === "auto" ? pilotGruppe() : wahl.pilotSenden === "gs" ? "gs" : null;
+  return wahl.senden === "gs" && gsGruppeOffen() ? "gs" : null;
+}
+/** hört man diese Gruppe? */
+export function gruppeHoerbar(kanal: "gs" | null | undefined): boolean {
+  const k = kanal ?? null;
+  if (istPilot()) return wahl.allesHoeren || k === pilotGruppe();
+  return !(k === "gs" ? wahl.stumm.gs : wahl.stumm.normal);
+}
+/** alt: Häkchen „mithören“ im Reiter Großeinsatz */
+export function gsMithoerenAn(): boolean {
+  return !wahl.stumm.gs;
+}
+export function gsMithoerenSetzen(an: boolean): void {
+  funkGruppenSetzen({ stumm: { gs: !an } });
 }
 
+/**
+ * Wie laut ein Funkspruch vorgelesen wird (0 = gar nicht). Ein Kanal für alle: jeder hört alles auf den
+ * Gruppen, die er hört. Leitstelle: alle Fahrzeuge; Pilot: was seinen Hubschrauber betrifft laut, den Rest leiser.
+ * Gesprochenes von Menschen kommt ohnehin live (wird nicht vorgelesen).
+ */
 export function funkVorleseLaut(g: { fzId: string; an?: { fzId: string } | null; fuehrer: { pid: string } | null; kanal?: "gs" }, s: { von: string }): number {
   const ich = sim.ich?.pid ?? mp.ich.pid;
-  if (g.kanal === "gs" && !gsMithoeren && !(g.fuehrer && g.fuehrer.pid === ich)) return 0;
-  if (!istPilot()) {
-    if (s.von === "LEO") return 0;
-    return !g.fuehrer || sim.mode === "solo" || g.fuehrer.pid === ich ? 1 : 0;
-  }
-  const heli = sim.pilotVon(ich);
+  if (!gruppeHoerbar(g.kanal)) return 0;
+  if (!istPilot()) return s.von === "LEO" ? 0 : 1;
+  void ich;
+  const heli = sim.pilotVon(sim.ich?.pid ?? mp.ich.pid);
   if (heli && s.von === sim.rufname(heli)) return 0;
   if (heli && (g.fzId === heli.id || g.an?.fzId === heli.id)) return 1;
   const p = sprachPrefs();

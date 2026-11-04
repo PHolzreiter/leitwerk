@@ -1,5 +1,16 @@
 [
  {
+  "version": "0.100.0",
+  "datum": "2026-11-04",
+  "titel": "Funk neu: ein Chat, eine Eingabe, Funkregeln wie am echten Gerät",
+  "punkte": [
+   "Ein Funk-Chat mit einer Eingabe – nach dem Ruf ohne Rufnamen weiterfunken",
+   "Es spricht immer nur einer: Warten bis zum Ende-Ton, Töne wie am TETRA-Gerät",
+   "Dringende Rufe, Wiederholung nach 30 s, 1, 3, 6 … Minuten",
+   "Sprechgruppen stumm schalten, Erkennung von Rufnamen und Orten besser"
+  ]
+ },
+ {
   "version": "0.99.1",
   "datum": "2026-11-03",
   "titel": "Funkrufnamen besser erkannt, Zahlen als Ziffern, mehr Anruferstimmen",

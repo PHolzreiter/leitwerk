@@ -3516,3 +3516,149 @@ button.weather.offen {
   .gs-soll { grid-template-columns: 96px 1fr 44px; }
 }
 .gs-mithoeren { display: flex; align-items: center; gap: 6px; padding: 6px 10px; border-bottom: 1px solid var(--line); }
+
+/* ---------------------------------------------------------------- Funk: ein Chat, eine Eingabe */
+
+.funk-fenster .pl-body:has(> .funk-chat) {
+  overflow: hidden;
+}
+.funk-gruppen {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.funk-gr {
+  border: 1px solid var(--line-2);
+  background: var(--panel-2);
+  color: var(--text);
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.funk-gr.stumm {
+  color: var(--text-dim);
+  opacity: 0.75;
+}
+.funk-senden {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+}
+.funk-lage {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  background: var(--panel-2);
+}
+.funk-lage.spricht {
+  border: 1px solid var(--danger, #c62828);
+}
+.funk-lage.ich {
+  background: var(--danger, #c62828);
+  color: #fff;
+}
+.funk-lage.wartet {
+  border: 1px dashed var(--line-2);
+  color: var(--text-dim);
+}
+.funk-lampe {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--danger, #c62828);
+  animation: klingeln 1s ease-in-out infinite;
+}
+.funk-chat {
+  flex: 1;
+  min-height: 80px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.funk-z {
+  font-size: 13px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.funk-z.leo {
+  background: var(--sel);
+}
+.funk-z.stumm {
+  opacity: 0.5;
+}
+.funk-tag {
+  font-size: 10px;
+  padding: 0 4px;
+  border-radius: 3px;
+  background: var(--panel-2);
+  border: 1px solid var(--line-2);
+}
+.funk-eine {
+  align-items: center;
+}
+.funk-ptt {
+  touch-action: none;
+  user-select: none;
+}
+.funk-ptt.an {
+  background: var(--danger, #c62828);
+  border-color: var(--danger, #c62828);
+  color: #fff;
+}
+.funk-info {
+  position: relative;
+  cursor: help;
+  font-size: 16px;
+  color: var(--text-dim);
+  padding: 0 2px;
+}
+.funk-info-box {
+  display: none;
+  position: absolute;
+  right: 0;
+  bottom: 130%;
+  width: min(380px, 80vw);
+  max-height: 60vh;
+  overflow: auto;
+  z-index: 50;
+  background: var(--panel);
+  border: 1px solid var(--line-2);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+}
+.funk-info-box ul {
+  margin: 4px 0 8px;
+  padding-left: 18px;
+}
+.funk-info:hover .funk-info-box,
+.funk-info:focus .funk-info-box,
+.funk-info:focus-within .funk-info-box {
+  display: block;
+}
+.funk-pegel {
+  display: inline-block;
+  width: 90px;
+  height: 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.3);
+  overflow: hidden;
+  vertical-align: middle;
+}
+.funk-pegel > span {
+  display: block;
+  height: 100%;
+  background: #fff;
+  transition: width 0.1s;
+}

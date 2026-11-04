@@ -10,13 +10,13 @@
  */
 import { funkLiveAuftrag, funkLiveHaken, funkLivePruefen } from "../abfrage/funkKi";
 import { kiPrefs } from "../abfrage/ki";
-import { FUNK_STIMMEN, liveAktiv, liveFunkSprechen, liveMitschrift } from "../abfrage/liveKi";
+import { FUNK_STIMMEN, liveAktiv, liveFunkSprechen, liveFunkVerstehen, liveMitschrift, livePrefs } from "../abfrage/liveKi";
 import { mp } from "../net/mehrspieler";
 import { sim, type FunkAusstehend, type FunkGespraech, type SimFahrzeug } from "../sim/engine";
 import { distanceM } from "../sim/geo";
 import { inTauri } from "../platform";
 import { funkAussprache, funkHoerHaken, funkVorleseHaken, sprachPrefs, sprachStatus } from "./sprache";
-import { funkGlaetten } from "./funkNamen";
+import { funkGlaetten, funkNamenAlle } from "./funkNamen";
 import { funkAngekuendigt, kiFunkAnkuendigen, kiFunkStrom } from "./sprechfunk";
 
 // ------------------------------------------------------------------ Stimmen der Fahrzeuge
@@ -183,6 +183,12 @@ export function funkStimmenStarten(): void {
   funkVorleseHaken.nimm = vorlesenNehmen;
   // Mitschrift über Gemini nur, wenn hier kein Sprachmodell geladen ist (die Erkennung hier kennt die Funkrufnamen besser)
   funkHoerHaken.strom = () => {
+    // Test: Gemini versteht den Funk (kennt Fahrzeuge und Gespräch) – auch wenn hier ein Sprachmodell geladen ist
+    if (livePrefs().funkVersteher && stimmeAn()) {
+      const g = (sim.state.funkGespraeche ?? []).filter((x) => x.status !== "ende" && !x.an).sort((a, b) => (b.echtLetzt ?? 0) - (a.echtLetzt ?? 0))[0];
+      const v = liveFunkVerstehen({ fahrzeuge: [...new Set(funkNamenAlle())], partner: g?.funkname, zuletzt: g?.sprueche.slice(-2).map((x) => `${x.von}: ${x.text}`) });
+      if (v) return v;
+    }
     if (!stimmeAn() || modellHier) return null;
     const m = liveMitschrift();
     if (!m) return null;

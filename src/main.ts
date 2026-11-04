@@ -8,7 +8,7 @@ fehlerLogStarten();
 import { funkDienst, funkLiveAuftrag, funkPruefen, funkSpruchErzeugen, lageWissen, zerlegen, zusammensetzen } from "./abfrage/funkKi";
 import { ohnePatientWort, sprechFrage } from "./abfrage/sprechfrage";
 import { antwortOhneKi, anruferWaehlen, erinnerung, ortKandidaten, stimmBild, systemPrompt } from "./abfrage/anrufer";
-import { setLivePrefs, liveTesten, liveFunkSprechen, liveMitschrift } from "./abfrage/liveKi";
+import { setLivePrefs, liveTesten, liveFunkSprechen, liveFunkVerstehen, liveMitschrift } from "./abfrage/liveKi";
 import { freisprechenStarten } from "./ui/freisprechen";
 import { funkStimme, funkStimmenStarten } from "./ui/funkStimmen";
 import { anrufKiStarten } from "./ui/anrufKi";
@@ -73,7 +73,8 @@ import { hauptfensterStarten, nebenfensterVerbinden, nebenfensterWiederherstelle
 import { anwenden, pers, setzePers } from "./ui/ws/persoenlich";
 import { steuerleisteBauen } from "./ui/ws/steuerleiste";
 import { soundBeobachterStarten } from "./ui/sounds";
-import { funkAussprache, funkVorlesenStarten, sprachTest, sprechText } from "./ui/sprache";
+import { funkAussprache, funkVorlesenStarten, ortHaken, sprachTest, sprechText } from "./ui/sprache";
+import { orteImText, orteJetzt } from "./ui/ortNamen";
 import { khAufnahmeOeffnen, luecken } from "./ui/khAufnahme";
 import { sekZufall } from "./sim/sek";
 import { altersgruppeVon, SYMPTOME, symptomAusDiagnose, symptomSuche, zuweisungBuchung, zuweisungRessourcen } from "./data/zuweisung";
@@ -90,7 +91,7 @@ if (location.search.includes("debug")) Object.assign(window, { __lw: { sim, stor
         const { kt, ...rd } = structuredClone(s);
         store.setKtSatz(kt?.codes?.length ? { name: "Test", ...kt } : null);
         schemaUebernehmen(rd as Schema, "test.json");
-      }, faellePruefen: () => faellePruefen(store.schema), fallHinweise, ohneFrageEcho, fuellwortDosis, ohneRollentausch, faelle: { alleFaelle, fallSpeichern, fallLoeschen, fallpaketExport, fallpaketImport, fallAktivSetzen }, fallEditorOeffnen, entwurfAusKi, sprechFrage, systemPrompt, kontext, erinnerung, kiVerlauf, ohnePatientWort, bereinigen, satzEnde, inAtemnot, kiAntwortNeu, kiTest, probe: probeGespraech, geoTest, vorwaermen, eroeffnen, nachrichtArt, ortKandidaten, testlauf: { auftraegeFuer, ktAuftraege, testlaufAusfuehren, testlaufDateien, testlaufDialog, zipOhneKompression }, kt: { ktPrompt, ktPruefen, ktZusammenfassungFalsch }, anruferAntwort, verstehen: { themenErkennen, antwortKern, antwortPruefen, kernAntwort, schemaFrageZu }, kiPrefsSetzen: setKiPrefs, live: { funkStimme, kiQuelleVon, setLivePrefs, liveTesten, liveFunkSprechen, liveMitschrift, liveSprechStrom, liveFreisprechen }, panelZeigen, funk: { funkPruefen, zerlegen, zusammensetzen, funkSpruchErzeugen, lageWissen, funkGlaetten, funkHinweis, zahlenAlsZiffern, funkAussprache, funkLiveAuftrag, stimmBild }, antwortOhneKi, anruferWaehlen, kh: { akvZustand, AKV_SPALTEN_AK, akutVon }, orte: { poiKategorien, ortGewicht, kategorienFuerOrtArt }, setzePers, stellen: { laden: stellenLaden }, suche: searchAddress, zeiten: { offenUm, istFeiertag, katOffen, katKtOffen }, zufahrt: { lesen: zufahrtLesen, text: zufahrtText, bei: khZufahrtBei }, landeplatz: { lesen: landeplatzLesen }, fuss: { anStrasse, besatzungBei, personenBei }, schemaFkt: { fragenImAblauf, bestimmeCode }, startseite: { zeigen: startseiteZeigen, offen: startseiteOffen }, update: { testen: updateTesten, installieren: updateInstallieren }, spielstaende: spielstandOrdner, ablage: { ...ablage, abgleichen: ablageAbgleichen }, dienstHtml, flughafen, dienst, sel: { waehle, fahrzeugZeigen, auswahl }, mpTest: { umgebungSetzen, umgebungPruefen }, sprechText, sek: { sekZufall }, abfrageAnsichtSetzen: setzeAbfrageAnsicht, kapitelZumText, gesagteAdresse, fragen, ktAntwortOhneKi, fallUndVariante, schwereVon, zuweisung: { altersgruppeVon, khAufnahmeOeffnen, luecken, symptomSuche, zuweisungBuchung, zuweisungRessourcen, symptomAusDiagnose, SYMPTOME }, pilotUi: { oeffnen: () => import("./ui/pilot/pilotView").then((m) => m.pilotOeffnen()) } } });
+      }, faellePruefen: () => faellePruefen(store.schema), fallHinweise, ohneFrageEcho, fuellwortDosis, ohneRollentausch, faelle: { alleFaelle, fallSpeichern, fallLoeschen, fallpaketExport, fallpaketImport, fallAktivSetzen }, fallEditorOeffnen, entwurfAusKi, sprechFrage, systemPrompt, kontext, erinnerung, kiVerlauf, ohnePatientWort, bereinigen, satzEnde, inAtemnot, kiAntwortNeu, kiTest, probe: probeGespraech, geoTest, vorwaermen, eroeffnen, nachrichtArt, ortKandidaten, testlauf: { auftraegeFuer, ktAuftraege, testlaufAusfuehren, testlaufDateien, testlaufDialog, zipOhneKompression }, kt: { ktPrompt, ktPruefen, ktZusammenfassungFalsch }, anruferAntwort, verstehen: { themenErkennen, antwortKern, antwortPruefen, kernAntwort, schemaFrageZu }, kiPrefsSetzen: setKiPrefs, live: { funkStimme, kiQuelleVon, setLivePrefs, liveTesten, liveFunkSprechen, liveFunkVerstehen, liveMitschrift, liveSprechStrom, liveFreisprechen }, panelZeigen, funk: { funkPruefen, zerlegen, zusammensetzen, funkSpruchErzeugen, lageWissen, funkGlaetten, funkHinweis, zahlenAlsZiffern, orteJetzt, orteImText, funkAussprache, funkLiveAuftrag, stimmBild }, antwortOhneKi, anruferWaehlen, kh: { akvZustand, AKV_SPALTEN_AK, akutVon }, orte: { poiKategorien, ortGewicht, kategorienFuerOrtArt }, setzePers, stellen: { laden: stellenLaden }, suche: searchAddress, zeiten: { offenUm, istFeiertag, katOffen, katKtOffen }, zufahrt: { lesen: zufahrtLesen, text: zufahrtText, bei: khZufahrtBei }, landeplatz: { lesen: landeplatzLesen }, fuss: { anStrasse, besatzungBei, personenBei }, schemaFkt: { fragenImAblauf, bestimmeCode }, startseite: { zeigen: startseiteZeigen, offen: startseiteOffen }, update: { testen: updateTesten, installieren: updateInstallieren }, spielstaende: spielstandOrdner, ablage: { ...ablage, abgleichen: ablageAbgleichen }, dienstHtml, flughafen, dienst, sel: { waehle, fahrzeugZeigen, auswahl }, mpTest: { umgebungSetzen, umgebungPruefen }, sprechText, sek: { sekZufall }, abfrageAnsichtSetzen: setzeAbfrageAnsicht, kapitelZumText, gesagteAdresse, fragen, ktAntwortOhneKi, fallUndVariante, schwereVon, zuweisung: { altersgruppeVon, khAufnahmeOeffnen, luecken, symptomSuche, zuweisungBuchung, zuweisungRessourcen, symptomAusDiagnose, SYMPTOME }, pilotUi: { oeffnen: () => import("./ui/pilot/pilotView").then((m) => m.pilotOeffnen()) } } });
 
 async function watchGeo(): Promise<void> {
   const out = document.getElementById("geo-status");
@@ -251,6 +252,7 @@ async function init(): Promise<void> {
     anrufBeobachterStarten();
     soundBeobachterStarten(sim, () => sim.ich?.name ?? mp.ich.name);
     funkVorlesenStarten(sim, funkVorleseLaut);
+    ortHaken.glaetten = orteImText;
     freisprechenStarten();
     funkStimmenStarten();
     anrufKiStarten();

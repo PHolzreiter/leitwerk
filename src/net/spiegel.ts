@@ -97,6 +97,7 @@ export class DeltaBauer {
       lobby: !!st.lobby,
       wetterEchtStand: st.wetterEchtStand ?? null,
       funkSendet: st.funkSendet ?? null,
+      funkWartet: st.funkWartet ?? null,
     };
     const echtKey = st.wetterEcht?.length ? `${st.wetterEcht[0].t}|${st.wetterEcht.length}` : "-";
     if (echtKey !== c.echt) {
@@ -188,6 +189,7 @@ export function deltaAnwenden(d: Nachricht): void {
     lobby: !!d.lobby,
     wetterEchtStand: (d.wetterEchtStand as SimState["wetterEchtStand"]) ?? undefined,
     funkSendet: (d.funkSendet as SimState["funkSendet"]) ?? null,
+    funkWartet: (d.funkWartet as SimState["funkWartet"]) ?? null,
   });
   if (d.wetterEcht !== undefined) st.wetterEcht = (d.wetterEcht as SimState["wetterEcht"]) ?? undefined;
   for (const f of (d.fz as SimFahrzeug[] | undefined) ?? []) {
