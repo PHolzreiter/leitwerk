@@ -7,6 +7,7 @@
  * - Funktaste bzw. 🎙 gedrückt halten: spricht gerade jemand, wartet man bis zu seinem Ende-Ton.
  */
 import { funkGlaetten } from "./funkNamen";
+import { funkGeraetErstellen, gruppenName } from "./funkGeraet";
 import { sprachPrefs, tastenName } from "./sprache";
 import { funkEmpfang, funkPegel, funkGruppenSetzen, funkGruppenWahl, funkSendeZustand, gsGruppeOffen, onFunkEmpfang, onFunkGruppen, onFunkSenden, sprechKnopfAnbinden } from "./sprechfunk";
 import { mp } from "../net/mehrspieler";
@@ -38,7 +39,8 @@ const HILFE = `<b>Funk – so geht's</b>
 </ul>
 <b>Regeln</b>
 <ul>
-<li>Es spricht immer nur einer. Funktaste halten, während jemand spricht: „Warten …“ – nach seinem Ende-Ton bist du dran (nur ein Warteplatz).</li>
+<li>Sprechen: PTT gedrückt halten oder die Funktaste (geht in jedem Reiter). Es spricht immer nur einer – spricht gerade jemand, steht am Display „Warten …“, nach seinem Ende-Ton bist du dran (nur ein Warteplatz).</li>
+<li>Sprechgruppe wechseln (beim Großeinsatz RD-NOE-09): Steuerkreuz links/rechts am Funkgerät.</li>
 <li>Kein Fahrzeug ruft, solange mit einem anderen gefunkt wird – außer „dringend“ (Reanimation, Gefahr für die Besatzung), und auch das erst zwischen zwei Funksprüchen.</li>
 <li>Wer keine Antwort bekommt, ruft nach 30 s wieder, dann nach 1, 3, 6, 12 … Minuten.</li>
 </ul>`;
@@ -61,15 +63,22 @@ export function createFunkView(root: HTMLElement, deps: { select(einsatzId: stri
   const chat = el("div", { class: "funk-chat" });
   const form = el("form", { class: "funk-form funk-eine" });
   const eingabe = el("input", { type: "text", placeholder: "Funkspruch … z. B. „75/001 von LEO, kommen“ (Enter)" });
-  const ptt = el("button", { class: "btn small funk-ptt", type: "button", title: "Gedrückt halten zum Sprechen" }, "🎙");
+  // Sprechtaste wie am echten Gerät (gedrückt halten); die Funktaste der Tastatur geht in jedem Reiter
+  const ptt = el("button", { class: "fg-ptt", type: "button", title: "Gedrückt halten zum Sprechen" }, "PTT");
+  const geraet = funkGeraetErstellen({ nurKanal: opt.kanal === undefined ? undefined : (opt.kanal ?? null) });
   const senden = el("button", { class: "btn small primary", type: "submit" }, "Senden");
   const info = el("span", { class: "funk-info", tabindex: "0" }, "ⓘ");
   const infoBox = el("div", { class: "funk-info-box" });
   infoBox.innerHTML = HILFE;
   info.appendChild(infoBox);
-  form.append(eingabe, ptt, senden, info);
+  form.append(eingabe, senden, info);
   sprechKnopfAnbinden(ptt, () => "leo", () => meineGruppe());
-  root.append(gruppen, lage, chat, form);
+  const unten = el("div", { class: "funk-unten" });
+  unten.append(ptt, form);
+  const titel = el("div", { class: "funk-verlauf-titel" });
+  titel.append(el("span", {}, "Verlauf"), gruppen);
+  void lage;
+  root.append(geraet.el, unten, titel, chat);
   onFunkSenden(() => refresh());
   onFunkEmpfang(() => refresh());
   const ausG = onFunkGruppen(() => refresh());
@@ -162,10 +171,11 @@ export function createFunkView(root: HTMLElement, deps: { select(einsatzId: stri
       html = `<span class="funk-lampe"></span> <b>${esc(sprecher)}</b>`;
       klasse = "spricht";
     }
-    lage.hidden = !html;
-    if (lage.innerHTML !== html) lage.innerHTML = html;
-    lage.className = `funk-lage ${klasse}`;
-    ptt.classList.toggle("an", !!ich);
+    void klasse;
+    void html;
+    geraet.refresh();
+    ptt.classList.toggle("an", ich?.art === "sendet");
+    ptt.classList.toggle("wartet", ich?.art === "wartet");
   }
 
   function gruppenZeigen(): void {
@@ -185,18 +195,8 @@ export function createFunkView(root: HTMLElement, deps: { select(einsatzId: stri
       b.addEventListener("click", () => funkGruppenSetzen({ stumm: { [k]: !stumm } }));
       gruppen.appendChild(b);
     };
-    chip(`TETRA ${sim.funkgruppe().id}`, "normal");
-    if (gs) chip("Großeinsatz", "gs");
-    if (gs) {
-      const sw = el("div", { class: "funk-senden", title: "In dieser Gruppe sprichst du (Eingabe und Funktaste)" });
-      sw.appendChild(el("span", { class: "muted small" }, "Ich spreche in:"));
-      for (const [label, k] of [[sim.funkgruppe().id, null], ["Großeinsatz", "gs"]] as const) {
-        const b = el("button", { class: `btn small${(w.senden === "gs") === (k === "gs") ? " primary" : ""}`, type: "button" }, label);
-        b.addEventListener("click", () => funkGruppenSetzen({ senden: k }));
-        sw.appendChild(b);
-      }
-      gruppen.appendChild(sw);
-    }
+    chip(gruppenName(null), "normal");
+    if (gs) chip(`${gruppenName("gs")} (Großeinsatz)`, "gs");
   }
 
   let letzterChat = "";
@@ -219,7 +219,7 @@ export function createFunkView(root: HTMLElement, deps: { select(einsatzId: stri
               // Spielzeit steht (Pause) oder springt: die Funksprüche laufen in echter Zeit – Sekunden seit dem ersten mit gleicher Spielzeit dazu
               const zeit = s.zeit + funkVersatz(zeilen, i);
               const stumm = (g.kanal === "gs" ? w.stumm.gs : w.stumm.normal) ? " stumm" : "";
-              const gsTag = g.kanal === "gs" && nurKanal === undefined ? `<span class="funk-tag">GE</span> ` : "";
+              const gsTag = g.kanal === "gs" && nurKanal === undefined ? `<span class="funk-tag">09</span> ` : "";
               const leo = s.von === "LEO";
               return `<div class="funk-z ${leo ? "leo" : "fz"}${stumm}" data-g="${g.id}"><span class="muted">${uhr(zeit)}</span> ${gsTag}${s.stimme ? `<span title="gesprochen">🎙</span> ` : ""}<b>${esc(s.von)}:</b> ${esc(s.text)}${leo && s.wer && mp.aktiv ? ` <span class="prot-von">${esc(s.wer)}</span>` : ""}</div>`;
             })

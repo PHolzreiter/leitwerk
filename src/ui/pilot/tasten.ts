@@ -21,7 +21,7 @@ export const AKTIONEN: { id: PilotAktion; name: string; status?: StatusKey }[] =
   { id: "s6", name: "Status 6 – frei über Funk", status: "freiFunk" },
   { id: "fliegen", name: "Übungsflug zum nächsten Ziel / anhalten" },
   { id: "funk", name: "Sprechtaste – Leitstelle (gedrückt halten)" },
-  { id: "funkRtw", name: "Sprechtaste – RTW am Einsatz (gedrückt halten)" },
+  { id: "funkRtw", name: "Sprechtaste – zweite Taste (gedrückt halten)" },
 ];
 
 /** Joystick-Taste: welches Gerät (Name) und welche Taste */

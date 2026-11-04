@@ -1,5 +1,16 @@
 [
  {
+  "version": "0.101.0",
+  "datum": "2026-11-04",
+  "titel": "Das Funkgerät wie im RTW",
+  "punkte": [
+   "Funk-Reiter als Funkgerät mit Display wie im RTW",
+   "Fenster am Display zeigt, wer spricht",
+   "Sprechgruppe mit dem Steuerkreuz wechseln, PTT-Knopf wie echt",
+   "Piloten: ein Funk, ein Knopf"
+  ]
+ },
+ {
   "version": "0.100.2",
   "datum": "2026-11-04",
   "titel": "Startseite: Bereitschafts-Check ohne Flackern",

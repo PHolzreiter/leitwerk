@@ -1,5 +1,12 @@
 # Änderungen
 
+## 0.101.0 – Das Funkgerät wie im RTW
+- **Der Funk-Reiter zeigt jetzt das Funkgerät** wie im RTW. Am Display: TETRA, DISPOZONEN, die Sprechgruppe (RD-NOE-03, beim Großeinsatz RD-NOE-09) und der Status – als Disponent „Frei auf Wache“, als Pilot dein echter Status
+- Spricht jemand, erscheint am Display ein Fenster mit seinem Rufnamen. Sprichst du: „Senden“ mit Pegel, wartest du: „Warten …“
+- **Sprechgruppe wechseln** mit dem Steuerkreuz links/rechts (sobald es eine Großeinsatz-Gruppe gibt)
+- **Sprechtaste wie ein echter Knopf** (PTT) unter dem Gerät, daneben die Eingabe zum Tippen, darunter der Verlauf. Die Funktaste der Tastatur funktioniert in jedem Reiter
+- **Piloten:** dasselbe Funkgerät und nur noch ein Funk mit einem Knopf. Wen du meinst, sagst du im Spruch: „LEO von C2“ für die Leitstelle, „75/001 von C2“ für ein Fahrzeug an deinem Einsatz; danach ohne Rufnamen weiter
+
 ## 0.100.2 – Startseite: Bereitschafts-Check ohne Flackern
 - Die Symbole des Bereitschafts-Checks blenden nur noch beim ersten Mal ein – vorher sprangen sie bei jedem Klick auf der Startseite (z. B. Wetter) neu an
 

@@ -7168,29 +7168,11 @@ export class Simulation {
     let von = "LEO";
     let kanal: "gs" | null = gruppe ?? null;
     if (heli) {
+      // Pilot: EIN Funk – wem der Spruch gilt, entscheidet der Text („LEO von C2“, „75/001 von C2“)
       von = this.rufname(heli);
       const e = heli.einsatzId ? this.einsatz(heli.einsatzId) : undefined;
       kanal = gruppe === undefined ? this.kanalVon(e) : gruppe;
-      if (ziel === "rtw") {
-        const rtw = e ? this.nahRtwPartner(heli, e) : undefined;
-        if (!e || !rtw) throw new Error("Kein Bodenfahrzeug bei deinem Einsatz, das du anfunken kannst");
-        g = this.menschGespraech(heli.id, rtw.id);
-        if (!g) {
-          g = this.neuesGespraech(heli, e, "mensch");
-          g.mensch = true;
-          g.an = { fzId: rtw.id, funkname: this.rufname(rtw) };
-          // die Antworten des RTW formuliert ein Disponent (die KI läuft dort)
-          g.fuehrer = { ...this.funkErzeuger(e) };
-        }
-      } else {
-        g = this.menschGespraech(heli.id, null);
-        if (!g) {
-          g = this.neuesGespraech(heli, e ?? null, "mensch");
-          g.mensch = true;
-        }
-      }
-      if (kanal) g.kanal = "gs";
-      else delete g.kanal;
+      void ziel;
     }
     // Leitstelle: spricht frei – wem der Funkspruch gilt, entscheidet der Text (funkLeo)
     const platz: FunkSendet = { pid: ich.pid, name: ich.name, gId: g?.id ?? null, von, seit: jetzt, gruppe: kanal, ziel };
@@ -7219,8 +7201,9 @@ export class Simulation {
       this.funkLeo(t, gruppe ?? null, true);
       return;
     }
-    if (gId === null) return;
-    const g = this.gespraech(gId);
+    const g = this.pilotGespraech(heli, t, gruppe);
+    if (!g) return;
+    void gId;
     const von = this.rufname(heli);
     this.spruch(g, von, t, ich.name);
     g.sprueche[g.sprueche.length - 1].stimme = true;
@@ -7228,6 +7211,39 @@ export class Simulation {
     if (g.an) this.nahRtwHoert(g, t);
     else if (/\b(verstanden|ende|danke)\W*$/i.test(t)) this.funkSchliessen(g);
     this.emit();
+  }
+
+  /**
+   * Gespräch für den Spruch eines Piloten: „75/001 von C2“ → mit diesem Fahrzeug (muss beim Einsatz sein),
+   * „LEO von C2“ → mit der Leitstelle; ohne Rufnamen weiter mit dem, mit dem er zuletzt gefunkt hat (unter einer Minute).
+   */
+  private pilotGespraech(heli: SimFahrzeug, t: string, gruppe?: "gs" | null): FunkGespraech | null {
+    const e = heli.einsatzId ? (this.einsatz(heli.einsatzId) ?? null) : null;
+    const kanal = gruppe === undefined ? this.kanalVon(e) : gruppe;
+    const neu = (an?: SimFahrzeug) => {
+      const g = this.neuesGespraech(heli, e, "mensch");
+      g.mensch = true;
+      if (an) {
+        g.an = { fzId: an.id, funkname: this.rufname(an) };
+        // die Antworten des Fahrzeugs formuliert ein Disponent (die KI läuft dort)
+        g.fuehrer = { ...this.funkErzeuger(e ?? undefined) };
+      }
+      if (kanal) g.kanal = "gs";
+      else delete g.kanal;
+      return g;
+    };
+    const vor = t.match(/^(.{1,40}?)\s+von\s+/i)?.[1];
+    if (vor && /\bleo\b/i.test(vor)) return this.menschGespraech(heli.id, null) ?? neu();
+    if (vor) {
+      const boden = (e ? this.einsatzFz(e) : []).filter((f) => f.id !== heli.id && !fliegt(f) && !f.pilot);
+      const ziel = fahrzeugZuName(vor, boden);
+      if (ziel) return this.menschGespraech(heli.id, ziel.id) ?? neu(ziel);
+      const sonst = fahrzeugZuName(vor, Object.values(this.state.fahrzeuge).filter((f) => !f.pilot));
+      if (sonst) throw new Error(`${this.rufname(sonst)} ist nicht bei deinem Einsatz – funken geht nur mit Fahrzeugen am selben Einsatz oder mit LEO`);
+    }
+    // ohne Rufnamen: das zuletzt laufende Gespräch des Piloten
+    const zuletzt = (this.state.funkGespraeche ?? []).filter((g) => g.mensch && g.status !== "ende" && g.fzId === heli.id).sort((a, b) => (b.echtLetzt ?? 0) - (a.echtLetzt ?? 0))[0];
+    return zuletzt ?? this.menschGespraech(heli.id, null) ?? neu();
   }
 
   /**

@@ -1354,3 +1354,6 @@
 .plt-testmenue .plt-wahl-k b {
   font-size: 15px;
 }
+.plt-funk-geraet { margin: 4px 0 8px; }
+.plt-funk-knoepfe { display: flex; align-items: center; gap: 12px; margin: 6px 0; }
+.plt-funk-knoepfe .fg-ptt { width: 58px; height: 58px; }

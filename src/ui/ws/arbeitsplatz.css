@@ -3662,3 +3662,227 @@ button.weather.offen {
   background: #fff;
   transition: width 0.1s;
 }
+
+/* ---------------------------------------------------------------- Funkgerät (TETRA-Bedienteil) */
+
+.fg {
+  position: relative;
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+  aspect-ratio: 1320 / 400;
+  container-type: inline-size;
+  user-select: none;
+  flex: 0 0 auto;
+}
+.fg-bild {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 2;
+}
+.fg-display {
+  position: absolute;
+  left: 24.9%;
+  top: 17.6%;
+  width: 28.7%;
+  height: 64%;
+  z-index: 1;
+  background: linear-gradient(180deg, #c9d9f1 0%, #aec4e6 100%);
+  color: #10141c;
+  font-family: "Arial Narrow", "Roboto Condensed", Arial, sans-serif;
+  overflow: hidden;
+}
+.fg-status {
+  position: absolute;
+  left: 3%;
+  top: 2%;
+  display: flex;
+  align-items: flex-end;
+  gap: 0.6cqw;
+  font-size: 1.6cqw;
+  color: #2c8a2c;
+}
+.fg-balken {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 0.2cqw;
+  height: 1.6cqw;
+}
+.fg-balken i {
+  display: block;
+  width: 0.35cqw;
+  background: #2fa52f;
+}
+.fg-balken i:nth-child(1) { height: 30%; }
+.fg-balken i:nth-child(2) { height: 55%; }
+.fg-balken i:nth-child(3) { height: 80%; }
+.fg-balken i:nth-child(4) { height: 100%; }
+.fg-sym { color: #c58a00; font-weight: 700; }
+.fg-zeilen {
+  position: absolute;
+  left: 0;
+  right: 22%;
+  top: 14%;
+  bottom: 4%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  align-items: center;
+}
+.fg-z {
+  font-size: 2.35cqw;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  line-height: 1.1;
+}
+.fg-gruppe {
+  display: flex;
+  align-items: center;
+  gap: 0.4cqw;
+}
+.fg-pfeil {
+  display: none;
+  border: 0;
+  background: none;
+  color: #20406e;
+  font-size: 2.3cqw;
+  line-height: 1;
+  padding: 0 0.2cqw;
+  cursor: pointer;
+}
+.fg.fg-mehr .fg-pfeil { display: inline; }
+.fg-seite {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 22%;
+  background: rgba(120, 155, 205, 0.45);
+  border-left: 1px solid rgba(60, 90, 140, 0.25);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 14%;
+  gap: 18%;
+  font-size: 1.7cqw;
+  font-weight: 700;
+  color: #1c2a40;
+}
+.fg-blatt { font-size: 1.6cqw; opacity: 0.6; }
+.fg-pop {
+  position: absolute;
+  left: 7%;
+  right: 7%;
+  top: 20%;
+  bottom: 14%;
+  background: #f4f7fc;
+  border: 0.25cqw solid #2d5aa0;
+  border-radius: 0.6cqw;
+  box-shadow: 0 0.4cqw 1.2cqw rgba(0, 0, 0, 0.35);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6cqw;
+  z-index: 3;
+}
+.fg-pop[hidden] { display: none; }
+.fg-pop-kopf {
+  font-size: 1.7cqw;
+  font-weight: 700;
+  color: #2d5aa0;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.fg-pop-name {
+  font-size: 3.3cqw;
+  font-weight: 800;
+}
+.fg-pop.ich { border-color: #c62828; }
+.fg-pop.ich .fg-pop-kopf { color: #c62828; }
+.fg-pop.wartet .fg-pop-kopf { color: #a06a00; }
+.fg-pop-pegel {
+  width: 60%;
+  height: 0.7cqw;
+  border-radius: 0.4cqw;
+  background: rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+}
+.fg-pop:not(.ich) .fg-pop-pegel { display: none; }
+.fg-pop-pegel span { display: block; height: 100%; width: 0; background: #c62828; transition: width 0.1s; }
+.fg-kreuz {
+  position: absolute;
+  top: 38%;
+  height: 24%;
+  width: 6%;
+  z-index: 4;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 50%;
+}
+.fg-kreuz.links { left: 59.5%; }
+.fg-kreuz.rechts { left: 66.5%; }
+.fg-kreuz:hover { background: rgba(255, 255, 255, 0.08); }
+.fg-kreuz:active { background: rgba(255, 255, 255, 0.16); }
+
+/* Sprechtaste wie ein echter Gummiknopf */
+.fg-ptt {
+  flex: 0 0 auto;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 2px solid #0c0c0e;
+  background: radial-gradient(circle at 38% 32%, #4a4d55 0%, #2a2c31 45%, #17181b 100%);
+  box-shadow: 0 4px 0 #0a0a0b, 0 6px 12px rgba(0, 0, 0, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.18);
+  color: #e8e8ea;
+  font-weight: 800;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  touch-action: none;
+  user-select: none;
+  position: relative;
+  transition: transform 0.06s, box-shadow 0.06s;
+}
+.fg-ptt::after {
+  content: "";
+  position: absolute;
+  top: 9px;
+  right: 14px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #3a1010;
+}
+.fg-ptt.an {
+  transform: translateY(4px);
+  box-shadow: 0 0 0 #0a0a0b, 0 2px 4px rgba(0, 0, 0, 0.45), inset 0 2px 6px rgba(0, 0, 0, 0.6);
+}
+.fg-ptt.an::after { background: #ff3b30; box-shadow: 0 0 8px #ff3b30; }
+.fg-ptt.wartet::after { background: #f5b400; box-shadow: 0 0 8px #f5b400; }
+.funk-unten {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.funk-unten .funk-eine {
+  flex: 1;
+  min-width: 0;
+}
+.funk-verlauf-titel {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
