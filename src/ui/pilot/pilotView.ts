@@ -1206,6 +1206,8 @@ function funkDialog(): void {
     <label class="plt-check"><input type="checkbox" class="plt-f-vorlesen" ${p.funkVorlesen ? "checked" : ""}> Funk der Fahrzeuge vorlesen (Stimmen des Computers)</label>
     <label class="plt-check"><input type="checkbox" class="plt-f-mit" ${p.mithoeren ? "checked" : ""}> Übrigen Funkverkehr mithören (Fahrzeuge ↔ Leitstelle)</label>
     <label>Lautstärke mitgehörter Funk<input type="range" min="10" max="100" step="5" class="plt-f-mitlaut" value="${p.mithoerenLaut}"></label>
+    <label class="plt-check"><input type="checkbox" class="plt-f-echtd" ${funkGruppenWahl().echteDispos ? "checked" : ""}> Echte Disponenten hören (aus: nur der Text im Verlauf)</label>
+    <label class="plt-check"><input type="checkbox" class="plt-f-echtp" ${funkGruppenWahl().echtePiloten ? "checked" : ""}> Echte Piloten hören (aus: nur der Text im Verlauf)</label>
     <p class="plt-leise plt-klein">Was dich betrifft (Leitstelle an dich, Antworten des RTW), kommt immer in voller Lautstärke. Den Status drückst du weiter selbst – der Funk ändert ihn nicht.</p>`;
   const mikro = body.querySelector<HTMLSelectElement>(".plt-f-mikro")!;
   void mikrofone().then((ms) => {
@@ -1213,6 +1215,10 @@ function funkDialog(): void {
     mikro.value = sprachPrefs().mikro;
   });
   mikro.addEventListener("change", () => setzeSprache({ mikro: mikro.value }));
+  const echtD = body.querySelector<HTMLInputElement>(".plt-f-echtd")!;
+  const echtP = body.querySelector<HTMLInputElement>(".plt-f-echtp")!;
+  echtD.addEventListener("change", () => funkGruppenSetzen({ echteDispos: echtD.checked }));
+  echtP.addEventListener("change", () => funkGruppenSetzen({ echtePiloten: echtP.checked }));
   const modell = body.querySelector<HTMLElement>(".plt-f-modell")!;
   const modellZeigen = async () => {
     if (!inTauri()) {

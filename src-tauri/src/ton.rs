@@ -37,6 +37,10 @@ pub fn ton_geraete() -> Vec<String> {
 fn ausgabe_geraet(name: &str) -> Result<cpal::Device, String> {
     let host = cpal::default_host();
     if !name.is_empty() {
+        // Standardgerät direkt nehmen (cpal 0.15 gibt per Name gewählte Geräte unter macOS nicht frei)
+        if let Some(d) = host.default_output_device().filter(|d| d.name().map(|x| x == name).unwrap_or(false)) {
+            return Ok(d);
+        }
         if let Ok(mut it) = host.output_devices() {
             if let Some(d) = it.find(|d| d.name().map(|x| x == name).unwrap_or(false)) {
                 return Ok(d);
@@ -123,6 +127,7 @@ pub fn spielen_blockierend(samples: Vec<f32>, rate: u32, geraet: &str, laut: f32
     s.play().map_err(|e| format!("Tonausgabe startet nicht: {e}"))?;
     let dauer = std::time::Duration::from_secs_f64(daten.len() as f64 / ziel.max(1) as f64 + 2.0);
     let _ = rx.recv_timeout(dauer);
+    let _ = s.pause();
     drop(s);
     Ok(())
 }

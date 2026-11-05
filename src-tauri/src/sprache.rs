@@ -338,6 +338,11 @@ static PEGEL: AtomicU32 = AtomicU32::new(0);
 fn eingabe_geraet(name: &Option<String>) -> Result<cpal::Device, String> {
     let host = cpal::default_host();
     if let Some(n) = name.as_ref().filter(|n| !n.is_empty()) {
+        // Ist das gewählte Mikrofon das Standardgerät, dieses nehmen: cpal 0.15 hält per Name gewählte
+        // Geräte unter macOS sonst nach dem Schließen offen (oranges Mikrofon-Symbol bleibt)
+        if let Some(d) = host.default_input_device().filter(|d| d.name().map(|x| &x == n).unwrap_or(false)) {
+            return Ok(d);
+        }
         if let Ok(mut it) = host.input_devices() {
             if let Some(d) = it.find(|d| d.name().map(|x| &x == n).unwrap_or(false)) {
                 return Ok(d);
@@ -622,6 +627,8 @@ fn aufnahme_starten(mikro: Option<String>, funk: Option<tauri::ipc::Channel<Stri
                         let _ = stopp_rx.recv_timeout(std::time::Duration::from_secs(120));
                     }
                 }
+                // erst anhalten, dann freigeben: so geht das Mikrofon sicher zu (auch wenn cpal den Strom festhält)
+                let _ = strom.pause();
                 drop(strom);
             }
             Err(e) => {

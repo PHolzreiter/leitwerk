@@ -1,5 +1,9 @@
 # Änderungen
 
+## 0.103.1 – Mikrofon geht wirklich zu
+- **Mikrofon am Mac:** Ein selbst gewähltes Mikrofon blieb nach dem ersten Funkspruch oder Telefonat im Hintergrund offen (oranges Mikrofon-Zeichen). Die Aufnahme wird jetzt vor dem Schließen angehalten, und ist das gewählte Mikrofon das Standard-Mikrofon, wird es direkt als solches geöffnet. Dasselbe gilt für die Tonausgabe auf einem gewählten Lautsprecher
+- **Pilot:** „Echte Disponenten hören“ und „Echte Piloten hören“ gibt es jetzt auch in den Funk-Einstellungen des Piloten
+
 ## 0.103.0 – Funk: Sprechen oder Text, Kanal schneller frei, Mikrofon wieder zu
 - **Sprechen | Text:** Unter der PTT schaltest du um. Beim Sprechen siehst du nur das Funkgerät; im Textmodus kommen die Eingabezeile und der Verlauf dazu (immer offen)
 - **Der Kanal ist gleich nach dem Ende-Ton frei:** Die Stimme eines Fahrzeugs meldet jetzt ihr echtes Ende – vorher blieb der Kanal nach jedem Funkspruch noch eine Weile belegt

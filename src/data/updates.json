@@ -1,5 +1,14 @@
 [
  {
+  "version": "0.103.1",
+  "datum": "2026-11-05",
+  "titel": "Mikrofon geht wirklich zu",
+  "punkte": [
+   "Gewähltes Mikrofon bleibt am Mac nicht mehr offen",
+   "Pilot: echte Disponenten bzw. Piloten stumm schaltbar"
+  ]
+ },
+ {
   "version": "0.103.0",
   "datum": "2026-11-05",
   "titel": "Funk: Sprechen oder Text, Kanal schneller frei, Mikrofon wieder zu",
