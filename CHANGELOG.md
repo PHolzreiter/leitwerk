@@ -1,5 +1,9 @@
 # Änderungen
 
+## 0.109.0 – LeitWerk im Tablet der H145
+- **H145-Tablet:** LeitWerk trägt sich von selbst als Link „LeitWerk“ in die Web-Browser-App des eingebauten Tablets der HPG H145 ein (Community-Ordner wie bei der HPG-Mission). Die bisherigen Links bleiben, eine Sicherung der Originaldatei liegt daneben. Gemeldet wird nur, wenn der Link neu eingetragen wurde (wirkt nach dem nächsten MSFS-Start) oder etwas nicht klappt
+- **Tablet-Seite hoch und quer:** Im Querformat stehen die Statustasten links und Einsatz/Patient rechts; der Code steht im Alarm und beim Einsatz, dazu Entfernung und Ankunft
+
 ## 0.108.0 – Echte Funktöne, „Einsatz rein“
 - **Funktöne aus Aufnahmen:** Beim Drücken der Sprechtaste kommt der Beginn-Ton, beim Loslassen der Ende-Ton – genauso bei allen anderen Funksprüchen
 - **Pilot: zuerst „Einsatz rein“:** Bei einer Alarmierung kommt zuerst dieser Ton, 2–5 Sekunden später die eigentliche Alarmierung mit allen Infos, Alarmbalken und Melder (auch am Handy)

@@ -12,6 +12,7 @@ import { sim, type Einsatz, type SimFahrzeug } from "../../sim/engine";
 import { inTauri } from "../../platform";
 import { openDialog } from "../dialog";
 import { el, esc, toast } from "../dom";
+import { vorgabe } from "./flugsim";
 import { AKTIONEN, HALTEN, type PilotAktion } from "./tasten";
 
 interface HandyInfo {
@@ -48,8 +49,23 @@ export async function efbStarten(): Promise<void> {
     efbPort = await invoke<number>("efb_starten");
     await hoeren();
     letzterStand = "";
+    await tabletLinkPruefen();
   } catch (e) {
     console.warn("EFB-App", e);
+  }
+}
+
+/**
+ * LeitWerk im Tablet der HPG H145: Link „LeitWerk“ in der Web-Browser-App des Tablets – ganz von selbst.
+ * Gemeldet wird nur, wenn er neu eingetragen wurde (wirkt nach dem nächsten MSFS-Start) oder etwas schiefgeht.
+ */
+export async function tabletLinkPruefen(community?: string | null): Promise<void> {
+  if (!inTauri() || !efbPort) return;
+  try {
+    const r = await invoke<boolean | null>("hpg_tablet_link", { community: community ?? vorgabe().community ?? null, port: efbPort });
+    if (r === true) toast("H145-Tablet: „LeitWerk“ im Web-Browser eingetragen – wirkt nach dem nächsten Start von MSFS");
+  } catch (e) {
+    toast(`H145-Tablet: LeitWerk konnte nicht eingetragen werden – ${String((e as Error)?.message ?? e)}`, "error");
   }
 }
 

@@ -641,6 +641,7 @@ pub fn run() {
             hpg::hpg_senden,
             hpg::hpg_einrichten,
             hpg::hpg_suchen,
+            hpg::hpg_tablet_link,
             app_version
         ])
         .build(tauri::generate_context!())

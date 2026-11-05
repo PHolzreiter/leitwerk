@@ -31,16 +31,27 @@
   .hinweis { margin-top: 8px; padding: 8px 10px; border-radius: 8px; background: #3a2d12; color: #ffd27a; }
   .dim { color: #93a6c0; font-size: 14px; }
   .versteckt { display: none; }
+  /* Querformat (z. B. Tablet in der H145 quer): Status links, Einsatz und Patient rechts */
+  .spalte { box-sizing: border-box; }
+  body.quer .links { float: left; width: 40%; padding-right: 12px; }
+  body.quer .rechts { margin-left: 40%; }
+  body.quer .st { width: 48%; height: 78px; }
+  body.quer .st .n { font-size: 28px; line-height: 32px; }
+  .code { font-family: "Courier New", monospace; font-weight: bold; padding: 2px 8px; border-radius: 6px; background: #0e1726; margin-right: 8px; }
 </style>
 </head>
 <body>
 <div class="kopf"><div class="name"><b id="heli">LeitWerk</b><small id="unter">verbinde …</small></div><span class="verb" id="verb">offline</span></div>
 <div class="alarm versteckt" id="alarm"></div>
-<div class="jetzt" id="jetzt"><span class="n">–</span><span class="t">kein Hubschrauber</span></div>
-<div class="knoepfe" id="knoepfe"></div>
-<div class="karte versteckt" id="einsatz"></div>
-<div class="karte versteckt" id="patient"></div>
-<p class="dim" id="tipp">LeitWerk-Testversion der EFB-App. Status-Tasten setzen deinen Status wie im Piloten-Interface.</p>
+<div class="spalte links">
+  <div class="jetzt" id="jetzt"><span class="n">–</span><span class="t">kein Hubschrauber</span></div>
+  <div class="knoepfe" id="knoepfe"></div>
+</div>
+<div class="spalte rechts">
+  <div class="karte versteckt" id="einsatz"></div>
+  <div class="karte versteckt" id="patient"></div>
+  <p class="dim" id="tipp">Status-Tasten setzen deinen Status wie im Piloten-Interface.</p>
+</div>
 <script>
 (function () {
   var letzt = "";
@@ -74,7 +85,7 @@
       : '<span class="n">–</span><span class="t">' + esc(s.hinweis || "kein Hubschrauber – im Piloten-Interface wählen") + "</span>";
     var a = $("alarm");
     zeige(a, !!s.alarm);
-    if (s.alarm) a.innerHTML = "<b>ALARM</b>" + esc(s.alarm) + "<div>Quittieren mit 9, Status 2 beim Abheben</div>";
+    if (s.alarm) a.innerHTML = "<b>ALARM</b>" + (s.alarmCode ? '<span class="code">' + esc(s.alarmCode) + "</span>" : "") + esc(s.alarm) + "<div>Quittieren mit 9, Status 2 beim Abheben</div>";
     var g = $("knoepfe");
     g.innerHTML = "";
     var l = s.knoepfe || [];
@@ -92,7 +103,9 @@
     var e = $("einsatz");
     zeige(e, !!s.einsatz);
     if (s.einsatz) {
-      e.innerHTML = "<h3>Einsatz " + esc(s.einsatz.nummer) + '</h3><div class="gross">' + esc(s.einsatz.stichwort) + "</div><div>" + esc(s.einsatz.adresse) + "</div>" +
+      var e2 = s.einsatz2 || {};
+      e.innerHTML = "<h3>Einsatz " + esc(s.einsatz.nummer) + "</h3>" + (e2.code ? '<div><span class="code">' + esc(e2.code) + "</span>" + esc(e2.stufe || "") + "</div>" : "") + '<div class="gross">' + esc(s.einsatz.stichwort) + "</div><div>" + esc(s.einsatz.adresse) + "</div>" +
+        (e2.km ? '<div class="dim">' + esc(e2.km) + (e2.ankunft ? " · " + esc(e2.ankunft) : "") + "</div>" : "") +
         (s.einsatz.ziel ? "<div>Ziel: <b>" + esc(s.einsatz.ziel) + "</b></div>" : "") +
         (s.einsatz.info ? '<div class="hinweis">' + esc(s.einsatz.info) + "</div>" : "");
     }
@@ -115,6 +128,10 @@
     };
     try { x.send(); } catch (e) { verbunden(false); }
   }
+  // Hoch- oder Querformat (das Tablet kann beides)
+  function format() { document.body.className = window.innerWidth > window.innerHeight * 1.1 ? "quer" : ""; }
+  window.onresize = format;
+  format();
   holen();
   setInterval(holen, 1000);
 })();

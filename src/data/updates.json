@@ -1,5 +1,14 @@
 [
  {
+  "version": "0.109.0",
+  "datum": "2026-11-05",
+  "titel": "LeitWerk im Tablet der H145",
+  "punkte": [
+   "Link im H145-Tablet wird von selbst eingetragen",
+   "Tablet-Seite im Hoch- und Querformat, mit Code"
+  ]
+ },
+ {
   "version": "0.108.0",
   "datum": "2026-11-05",
   "titel": "Echte Funktöne, „Einsatz rein“",

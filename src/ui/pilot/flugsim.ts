@@ -307,6 +307,8 @@ export async function communityWaehlen(): Promise<void> {
   vorgabeSetzen({ community: p });
   gtn.ziel = "";
   await gtnSuchen();
+  // H145-Tablet gleich im neuen Ordner einrichten
+  void import("./handy").then((h) => h.tabletLinkPruefen(p));
 }
 
 export function gtnAn(): boolean {
