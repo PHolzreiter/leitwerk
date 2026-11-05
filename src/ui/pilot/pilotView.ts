@@ -30,6 +30,8 @@ import { funkGeraetErstellen, gruppenName } from "../funkGeraet";
 import { funkEmpfang, funkGruppenSetzen, funkGruppenWahl, funkSendeZustand, funkTon, gruppeHoerbar, gsGruppeOffen, onFunkEmpfang, onFunkSenden, sprechGruppe, sprechKnopfAnbinden, sprechStart, sprechStopp } from "../sprechfunk";
 import { MODELLE, mikrofone, modellLaden, setzeSprache, sprachPrefs, sprachStatus } from "../sprache";
 import { inTauri } from "../../platform";
+import mikroUrl from "../../assets/ptt-mikro.webp?url";
+import { wetterOeffnen } from "../wetterView";
 import { efbStarten, handyAktionen, handyDialog, handyStand } from "./handy";
 import { hpg, hpgAktualisieren, hpgEinrichten, hpgMissionFuer, hpgStarten, hpgTestNachricht } from "./hpg";
 import { letzterCarls } from "./eingabe";
@@ -63,6 +65,7 @@ const I: Record<string, string> = {
   gross: `<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>`,
   haken: `<circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9.5"/>`,
   wind: `<path d="M12 19V5M6 11l6-6 6 6"/>`,
+  zahnrad: `<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>`,
   mikro: `<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>`,
 };
 const ico = (n: string, k = "") => `<svg class="plt-ico ${k}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${I[n] ?? ""}</svg>`;
@@ -369,9 +372,7 @@ export function pilotOeffnen(): void {
       <div class="plt-info"></div>
       <div class="plt-knoepfe">
         <button class="plt-b test" data-act="test" title="Testmodus: Einsatz an dich senden"${sim.pilotTest ? "" : " hidden"}>${ico("test")}<span>Testmenü</span></button>
-        <button class="plt-b" data-act="wetter" title="Wetter für den Flugsimulator">${ico("wolke")}<span>Wetter</span></button>
-        <button class="plt-b" data-act="handy" title="Handy als Statusgerät">${ico("handy")}<span>Handy</span></button>
-        <button class="plt-b" data-act="tasten" title="Tasten und Joystick belegen">${ico("tasten")}<span>Tasten</span></button>
+        <button class="plt-b" data-act="pilot-einst" title="Funk, Tasten, Handy, Flugsimulator">${ico("zahnrad")}<span>Einstellungen</span></button>
         <button class="plt-b" data-act="wechseln" title="Anderen Hubschrauber wählen">${ico("tausch")}<span>Wechseln</span></button>
         <button class="plt-b warn" data-act="verlassen" title="Spiel verlassen">${ico("tuer")}<span>Verlassen</span></button>
       </div>
@@ -385,48 +386,56 @@ export function pilotOeffnen(): void {
         <details class="plt-klapp" data-k="sim" open><summary class="plt-karte-titel">${ico("sim")}Flugsimulator</summary><div class="plt-sim"></div></details>
         <details class="plt-klapp" data-k="flug" open><summary class="plt-karte-titel">${ico("flug")}Übungsflug <span class="plt-leise">ohne Flugsimulator</span></summary><div class="plt-flug"></div></details>
       </section>
+      <div class="plt-griff" data-g="l" title="Breite ändern"></div>
       <section class="plt-mitte">
-        <div class="plt-einsatz"></div>
-        <div class="plt-patient"></div>
-        <div class="plt-plan"></div>
         <div class="plt-funk">
           <div class="plt-karte-titel">${ico("funk")}Sprechfunk
             <button class="plt-b klein plt-funk-vl" data-act="funk-verlauf" title="Die letzten Funksprüche">${ico("liste")}<span>Verlauf</span></button>
             <button class="plt-b klein plt-funk-einst" data-act="funk-einst" title="Mikrofon, Spracherkennung, Mithören">${ico("tasten")}<span>Einstellungen</span></button></div>
           <div class="plt-funk-reihe">
             <div class="plt-funk-geraet"></div>
-            <div class="plt-funk-seite">
-              <div class="plt-funk-knoepfe"></div>
-              <div class="plt-funk-gruppen"></div>
-            </div>
+            <div class="plt-funk-knoepfe"></div>
           </div>
+          <div class="plt-funk-gruppen"></div>
           <div class="plt-funk-kanal" hidden></div>
         </div>
+        <div class="plt-einsatz"></div>
+        <div class="plt-patient"></div>
+        <div class="plt-plan"></div>
         <div class="plt-ev">
           <div class="plt-karte-titel">${ico("liste")}Einsatzverlauf</div>
           <div class="plt-ev-liste"></div>
         </div>
       </section>
+      <div class="plt-griff" data-g="r" title="Breite ändern"></div>
       <section class="plt-rechts">
         <div class="plt-kartebox">
           <div class="plt-karte-titel">${ico("plan")}Karte
-            <button class="plt-b klein plt-karte-gross-b" data-act="karte-gross" title="Karte größer bzw. wieder kleiner">${ico("gross")}<span>Größer</span></button></div>
-          <div class="plt-kartewrap">
-            <div class="plt-map"></div>
-            <div class="plt-map-knoepfe">
-              <button class="plt-b klein an" data-act="folgen" title="Karte folgt dem Hubschrauber">${ico("folgen")}<span>Folgen</span></button>
+            <button class="plt-b klein plt-karte-gross-b" data-act="karte-gross" title="Karte groß öffnen">${ico("gross")}<span>Groß</span></button></div>
+          <div class="plt-kartenplatz">
+            <div class="plt-kartewrap">
+              <div class="plt-map"></div>
+              <div class="plt-map-knoepfe">
+                <button class="plt-b klein an" data-act="folgen" title="Karte folgt dem Hubschrauber">${ico("folgen")}<span>Folgen</span></button>
+              </div>
+              <div class="plt-map-hinweis" hidden>Auf die Karte klicken: dorthin fliegen · Esc bricht ab</div>
             </div>
-            <div class="plt-map-hinweis" hidden>Auf die Karte klicken: dorthin fliegen · Esc bricht ab</div>
           </div>
         </div>
+        <div class="plt-wetter" title="Wetter groß öffnen"></div>
         <div class="plt-chat">
           <div class="plt-karte-titel">${ico("chat")}Chat</div>
           <div class="plt-chat-liste"></div>
           <form class="plt-chat-form"><input class="plt-chat-in" maxlength="500" placeholder="Nachricht an alle …"><button class="plt-b klein primaer">Senden</button></form>
         </div>
-        <div class="plt-wetter"></div>
       </section>
     </main>
+    <div class="plt-karte-pop" hidden>
+      <div class="plt-karte-pop-box">
+        <div class="plt-funk-pop-kopf"><b>${ico("plan")}Karte</b><button class="plt-b klein" data-act="karte-zu" title="Schließen (Esc)">✕</button></div>
+        <div class="plt-karte-pop-platz"></div>
+      </div>
+    </div>
     <div class="plt-funk-pop" hidden>
       <div class="plt-funk-pop-kopf"><b>${ico("funk")}Funkverlauf</b><button class="plt-b klein" data-act="funk-verlauf-zu" title="Schließen">✕</button></div>
       <div class="plt-funk-verlauf"></div>
@@ -436,9 +445,7 @@ export function pilotOeffnen(): void {
   letzterEinsatz = meinFz()?.einsatzId ?? null;
 
   const $ = <T extends HTMLElement = HTMLElement>(s: string) => root!.querySelector(s) as T;
-  $('[data-act="tasten"]').addEventListener("click", () => tastenDialog());
-  $('[data-act="handy"]').addEventListener("click", () => handyDialog());
-  $('[data-act="wetter"]').addEventListener("click", () => wetterDialog());
+  $('[data-act="pilot-einst"]').addEventListener("click", () => einstellungenDialog());
   $('[data-act="funk-einst"]').addEventListener("click", () => funkDialog());
   // Funkverlauf als Fenster (schreiben kann der Pilot nicht – er spricht)
   const pop = $(".plt-funk-pop");
@@ -450,13 +457,14 @@ export function pilotOeffnen(): void {
     }
   });
   $('[data-act="funk-verlauf-zu"]').addEventListener("click", () => (pop.hidden = true));
-  // Karte größer/kleiner
-  $('[data-act="karte-gross"]').addEventListener("click", (ev) => {
-    const gross = root!.classList.toggle("plt-karte-gross");
-    const b = ev.currentTarget as HTMLElement;
-    b.querySelector("span")!.textContent = gross ? "Kleiner" : "Größer";
-    window.setTimeout(() => karte?.map.resize(), 60);
+  // Karte als großes Fenster; Wetter groß
+  $('[data-act="karte-gross"]').addEventListener("click", () => karteGross(true));
+  $('[data-act="karte-zu"]').addEventListener("click", () => karteGross(false));
+  $(".plt-karte-pop").addEventListener("click", (ev) => {
+    if (ev.target === ev.currentTarget) karteGross(false);
   });
+  $(".plt-wetter").addEventListener("click", () => wetterOeffnen());
+  spaltenEinrichten($(".plt-haupt"));
   // auf-/zugeklappte Bereiche links merken
   root.querySelectorAll<HTMLDetailsElement>(".plt-klapp").forEach((d) => {
     try {
@@ -515,6 +523,7 @@ export function pilotOeffnen(): void {
     void befehl(sim.call("chat", t));
   });
   const esc = (e: KeyboardEvent) => {
+    if (e.key === "Escape" && !punktWaehlen && !$(".plt-karte-pop").hidden) karteGross(false);
     if (e.key === "Escape" && punktWaehlen) {
       punktWaehlen = false;
       $(".plt-map-hinweis").hidden = true;
@@ -568,6 +577,102 @@ export function pilotOeffnen(): void {
     };
     warte();
   }
+}
+
+/** Karte groß (als Fenster über allem) bzw. zurück an ihren Platz rechts */
+function karteIstGross(): boolean {
+  return !!root && !root.querySelector<HTMLElement>(".plt-karte-pop")!.hidden;
+}
+function karteGross(gross: boolean): void {
+  if (!root) return;
+  const pop = root.querySelector<HTMLElement>(".plt-karte-pop")!;
+  const wrap = root.querySelector<HTMLElement>(".plt-kartewrap")!;
+  const ziel = root.querySelector<HTMLElement>(gross ? ".plt-karte-pop-platz" : ".plt-kartenplatz")!;
+  if (wrap.parentElement !== ziel) ziel.appendChild(wrap);
+  pop.hidden = !gross;
+  if (!gross && punktWaehlen) {
+    punktWaehlen = false;
+    root.querySelector<HTMLElement>(".plt-map-hinweis")!.hidden = true;
+  }
+  window.setTimeout(() => {
+    karte?.map.resize();
+    karteFolgen(true);
+  }, 30);
+}
+
+/** Spalten links, Mitte, rechts: Breite mit den Griffen dazwischen ändern (wird gemerkt) */
+const SPALTEN = "leitwerk.pilot.spalten";
+function spaltenEinrichten(haupt: HTMLElement): void {
+  let w = { l: 260, r: 520 };
+  try {
+    w = { ...w, ...(JSON.parse(localStorage.getItem(SPALTEN) ?? "{}") as Partial<typeof w>) };
+  } catch {
+    /* Standard */
+  }
+  const setzen = () => {
+    haupt.style.setProperty("--pl-l", `${w.l}px`);
+    haupt.style.setProperty("--pl-r", `${w.r}px`);
+  };
+  setzen();
+  haupt.querySelectorAll<HTMLElement>(".plt-griff").forEach((g) => {
+    g.addEventListener("pointerdown", (ev) => {
+      ev.preventDefault();
+      g.setPointerCapture(ev.pointerId);
+      g.classList.add("zieht");
+      const r = haupt.getBoundingClientRect();
+      const bewegen = (e: PointerEvent) => {
+        const gesamt = r.width;
+        if (g.dataset.g === "l") w.l = Math.round(Math.min(Math.max(e.clientX - r.left, 190), Math.min(460, gesamt - w.r - 420)));
+        else w.r = Math.round(Math.min(Math.max(r.right - e.clientX, 300), Math.min(900, gesamt - w.l - 420)));
+        setzen();
+        karte?.map.resize();
+      };
+      const los = () => {
+        g.classList.remove("zieht");
+        g.removeEventListener("pointermove", bewegen);
+        g.removeEventListener("pointerup", los);
+        g.removeEventListener("pointercancel", los);
+        try {
+          localStorage.setItem(SPALTEN, JSON.stringify(w));
+        } catch {
+          /* egal */
+        }
+      };
+      g.addEventListener("pointermove", bewegen);
+      g.addEventListener("pointerup", los);
+      g.addEventListener("pointercancel", los);
+    });
+    // Doppelklick: Standardbreite
+    g.addEventListener("dblclick", () => {
+      w = { l: 260, r: 520 };
+      setzen();
+      karte?.map.resize();
+      try {
+        localStorage.removeItem(SPALTEN);
+      } catch {
+        /* egal */
+      }
+    });
+  });
+}
+
+/** Einstellungen des Piloten: Funk, Tasten, Handy, Flugsimulator */
+function einstellungenDialog(): void {
+  const body = el("div", { class: "plt-einst" });
+  const d = openDialog({ title: "Einstellungen", body, actions: [{ label: "Schließen" }] });
+  const punkt = (icon: string, titel: string, text: string, f: () => void) => {
+    const b = el("button", { class: "plt-einst-b", type: "button" });
+    b.innerHTML = `${ico(icon, "gross")}<span><b>${titel}</b><small>${text}</small></span>`;
+    b.addEventListener("click", () => {
+      d.close();
+      f();
+    });
+    body.appendChild(b);
+  };
+  punkt("funk", "Sprechfunk", "Mikrofon, Spracherkennung, Lautstärken, Mithören", () => funkDialog());
+  punkt("tasten", "Tasten & Joystick", "Statustasten, Sprechtaste, globale Kürzel, Joystick, Cockpit-Funkgerät", () => tastenDialog());
+  punkt("handy", "Handy als Statusgerät", "Status und Sprechtaste vom Handy (gleiches WLAN)", () => handyDialog());
+  punkt("wolke", "Wetter im Flugsimulator", "Wetter wie in LeitWerk oder selbst einstellen", () => wetterDialog());
 }
 
 /** Testmodus: Einsatz an den eigenen Hubschrauber senden (ohne Leitstelle) */
@@ -928,6 +1033,7 @@ function flug(fz: SimFahrzeug | undefined, e: Einsatz | undefined): void {
     p.addEventListener("click", () => {
       punktWaehlen = true;
       root!.querySelector<HTMLElement>(".plt-map-hinweis")!.hidden = false;
+      karteGross(true);
     });
     box.appendChild(p);
     box.insertAdjacentHTML("beforeend", `<p class="plt-leise plt-klein">Gerade Linie mit Reisegeschwindigkeit (${sim.settings.nahGeschwindigkeit} km/h).</p>`);
@@ -1277,7 +1383,7 @@ function funkTeil(fz: SimFahrzeug | undefined, e: Einsatz | undefined): { knoepf
   const gsDa = gsGruppeOffen() || sim.kanalVon(e) === "gs";
   teil(".plt-funk-gruppen", JSON.stringify([w.allesHoeren, w.pilotSenden, gsDa, sim.kanalVon(e)]), (b) => {
     const eig = gruppenName(sim.kanalVon(e));
-    b.innerHTML = `<label class="plt-check"><input type="checkbox" class="plt-f-alles" ${w.allesHoeren ? "checked" : ""}> Alles hören <small class="plt-leise">(sonst nur ${esc(eig)})</small></label>${
+    b.innerHTML = `<label class="plt-schalter"><input type="checkbox" class="plt-f-alles" ${w.allesHoeren ? "checked" : ""}><span class="plt-schalter-bahn"><i></i></span><span>Alles hören <small class="plt-leise">(sonst nur ${esc(eig)})</small></span></label>${
       gsDa ? `<small class="plt-leise">Sprechgruppe wechseln: Steuerkreuz links/rechts am Funkgerät</small>` : ""
     }`;
     b.querySelector<HTMLInputElement>(".plt-f-alles")!.addEventListener("change", (ev) => funkGruppenSetzen({ allesHoeren: (ev.target as HTMLInputElement).checked }));
@@ -1301,9 +1407,11 @@ function funkTeil(fz: SimFahrzeug | undefined, e: Einsatz | undefined): { knoepf
     for (const k of knoepfe) {
       const a = k.aktion as PilotAktion;
       // Sprechtaste wie am echten Gerät
-      const btn = el("button", { class: "fg-ptt plt-ptt", "data-ptt": a, type: "button" }, "PTT");
+      // Sprechtaste als Handmikrofon; der Hinweis erscheint nur beim Darüberfahren (ohne zu drücken)
+      const btn = el("button", { class: "plt-ptt plt-mikro", "data-ptt": a, type: "button", "aria-label": "Sprechtaste (gedrückt halten)" });
+      btn.innerHTML = `<img src="${mikroUrl}" alt="" draggable="false">`;
       sprechKnopfAnbinden(btn, () => "leo");
-      const info = el("small", { class: "plt-leise" }, `gedrückt halten${hinweis(a) ? ` · ${hinweis(a)}` : ""} – „LEO von …“ für die Leitstelle, „75/001 von …“ für ein Fahrzeug`);
+      const info = el("div", { class: "plt-ptt-tipp" }, `Gedrückt halten zum Sprechen${hinweis(a) ? ` · ${hinweis(a)}` : ""} – „LEO von …“ für die Leitstelle, „75/001 von …“ für ein Fahrzeug`);
       b.append(btn, info);
     }
   });
@@ -1483,7 +1591,10 @@ async function karteStarten(box: HTMLElement): Promise<void> {
       zeichneAlles();
     });
     map.on("click", (ev) => {
-      if (!punktWaehlen) return;
+      if (!punktWaehlen) {
+        if (!karteIstGross()) karteGross(true);
+        return;
+      }
       punktWaehlen = false;
       root?.querySelector<HTMLElement>(".plt-map-hinweis")?.setAttribute("hidden", "");
       const fz = meinFz();

@@ -1,5 +1,13 @@
 # Änderungen
 
+## 0.105.0 – Pilot: Funkgerät oben, Spalten verstellbar, Einstellungen
+- **Funkgerät oben in der Mitte**, darunter Einsatz mit allen Einsatzdaten und der Einsatzverlauf. Rechts Karte, Wetter und Chat – die rechte Spalte ist breiter
+- **Spalten verstellbar:** Die Griffe zwischen links, Mitte und rechts ziehen; die Breite wird gemerkt (Doppelklick: Standard)
+- **Sprechtaste als Handmikrofon** neben dem Funkgerät, so hoch wie das Gerät. Der Hinweis zur Sprechtaste erscheint nur, wenn die Maus darüber schwebt
+- **„Alles hören“** ist ein Schiebeschalter
+- **Karte und Wetter groß:** Ein Klick auf die Karte öffnet sie groß (Esc schließt), ein Klick aufs Wetter öffnet Wetter mit Prognose und Warnungen. „Punkt auf der Karte …“ öffnet die Karte gleich groß
+- **Einstellungen für den Piloten:** Ein Knopf oben bündelt Sprechfunk, Tasten & Joystick, Handy und Wetter im Flugsimulator
+
 ## 0.104.0 – Neue Pilotenansicht, Status wie am Funkgerät
 - **Pilotenansicht neu aufgebaut:** In der Mitte stehen Einsatz, Sprechfunk mit großem Funkgerät und der Einsatzverlauf. Rechts sind eine kleinere Karte (mit „Größer“), der Chat und „Wetter & Hinweise“ (Temperatur, Wind in Knoten, Flughinweise). Flugsimulator und Übungsflug links lassen sich zuklappen
 - **Funkverlauf als Fenster:** Der Knopf „Verlauf“ am Sprechfunk öffnet die letzten Funksprüche. Getippt wird beim Piloten nicht – gefunkt wird mit der Sprechtaste
