@@ -2,6 +2,7 @@
  * Telefon: alle Anrufe (Notruf, KT-Hotline, Überstellung) mit Annehmen, Halten, Zurückwechseln, Auflegen.
  * Beim Annehmen geht das Abfrage-Fenster auf.
  */
+import { funkTon } from "../sprechfunk";
 import { funkGruppenSetzen, funkGruppenWahl } from "../sprechfunk";
 import { istPilot } from "../pilot/modus";
 import { spielen } from "../sounds";
@@ -127,6 +128,8 @@ export function anrufAuflegen(art: AnrufArt, id: string): void {
   verstummen();
   fehler(
     sim.call(art === "rd" ? "anrufBeenden" : "ktAnrufBeenden", id).then(() => {
+      // Notruf (RD) beendet: Ton „Einsatz rein“
+      if (art === "rd") funkTon("einsatzRein");
       // Nach dem Gespräch: Maske nach vorne; steckt die Abfrage bei der Karte, wieder die Karte zeigen
       const d = dock();
       const abf = d?.getPanel("abfrage");

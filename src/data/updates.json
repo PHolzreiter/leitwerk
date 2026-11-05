@@ -1,5 +1,15 @@
 [
  {
+  "version": "0.108.0",
+  "datum": "2026-11-05",
+  "titel": "Echte Funktöne, „Einsatz rein“",
+  "punkte": [
+   "Beginn- und Ende-Ton aus Aufnahmen",
+   "Pilot: erst „Einsatz rein“, dann die Alarmierung",
+   "Ton nach jedem beendeten Notruf"
+  ]
+ },
+ {
   "version": "0.107.0",
   "datum": "2026-11-05",
   "titel": "Pilot: Handy wie ein Funkgerät, Buchen am Handy, Alarmtöne",

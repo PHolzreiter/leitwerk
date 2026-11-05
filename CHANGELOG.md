@@ -1,5 +1,10 @@
 # Änderungen
 
+## 0.108.0 – Echte Funktöne, „Einsatz rein“
+- **Funktöne aus Aufnahmen:** Beim Drücken der Sprechtaste kommt der Beginn-Ton, beim Loslassen der Ende-Ton – genauso bei allen anderen Funksprüchen
+- **Pilot: zuerst „Einsatz rein“:** Bei einer Alarmierung kommt zuerst dieser Ton, 2–5 Sekunden später die eigentliche Alarmierung mit allen Infos, Alarmbalken und Melder (auch am Handy)
+- **Leitstelle:** Nach jedem beendeten Notruf (aufgelegt) kommt ebenfalls „Einsatz rein“
+
 ## 0.107.0 – Pilot: Handy wie ein Funkgerät, Buchen am Handy, Alarmtöne
 - **Handy neu, für das Telefon gemacht:** drei Seiten (Funk, Einsatz, Buchen) zum seitlichen Wischen, oben eine Leiste, auf welcher Seite du bist
 - **Status am Handy als Tastenfeld** wie am Funkgerät (3 × 4 Tasten, Display mit Status und Sprechgruppe). Statustaste ca. 2 Sekunden halten – Ton und Vibration beim Drücken, „düt-düt-düt-düt“ beim Senden

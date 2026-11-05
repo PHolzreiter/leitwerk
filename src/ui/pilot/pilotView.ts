@@ -90,7 +90,30 @@ function meinFz(): SimFahrzeug | undefined {
   return sim.pilotVon(mp.ich.pid);
 }
 
+/**
+ * Neuer Einsatz: zuerst nur der Ton „Einsatz rein“, 2–5 Sekunden später die eigentliche Alarmierung
+ * (Einsatzdaten, Alarmbalken, Melder, Handy). So lange ist der Einsatz in der Ansicht noch nicht da.
+ */
+let vorlauf: { id: string; bis: number } | null = null;
+let vorlaufGesehen: string | null = null;
+
+function vorlaufPruefen(fz: SimFahrzeug | undefined): void {
+  const id = fz?.einsatzId ?? null;
+  if (id && id !== vorlaufGesehen && fz && ["alarmWache", "alarmFunk"].includes(fz.status)) {
+    const ms = 2000 + Math.round(Math.random() * 3000);
+    vorlauf = { id, bis: Date.now() + ms };
+    funkTon("einsatzRein");
+    window.setTimeout(() => zeichneAlles(), ms + 30);
+  }
+  vorlaufGesehen = id;
+}
+
+function imVorlauf(fz: SimFahrzeug | undefined): boolean {
+  return !!vorlauf && !!fz && fz.einsatzId === vorlauf.id && Date.now() < vorlauf.bis;
+}
+
 function einsatzVon(fz: SimFahrzeug | undefined): Einsatz | undefined {
+  if (imVorlauf(fz)) return undefined;
   return fz?.einsatzId ? sim.einsatz(fz.einsatzId) : undefined;
 }
 
@@ -836,6 +859,7 @@ function zeichneAlles(): void {
   if (!root) return;
   const fz = meinFz();
   if (!fz) letztenWiederNehmen();
+  vorlaufPruefen(fz);
   const e = einsatzVon(fz);
   kopf(fz);
   warten(fz);
@@ -899,6 +923,10 @@ function warten(fz: SimFahrzeug | undefined): void {
 
 function alarm(fz: SimFahrzeug | undefined, e: Einsatz | undefined): void {
   const box = root!.querySelector<HTMLElement>(".plt-alarm")!;
+  if (imVorlauf(fz)) {
+    box.hidden = true;
+    return;
+  }
   const neu = fz?.einsatzId ?? null;
   if (neu && neu !== letzterEinsatz && fz && ["alarmWache", "alarmFunk", "alarmiert"].includes(fz.status)) {
     alarmOffen = true;

@@ -1,7 +1,45 @@
 /**
- * Töne des Funkgeräts (wie TETRA): vor jedem Funkspruch ein kurzer Dreifach-Piep (tief, ca. 900 Hz),
- * danach ein hoher kurzer Piep (ca. 1800 Hz). Nachgebaut nach Aufnahmen eines echten Geräts.
+ * Töne des Funkgeräts (wie TETRA): Beginn und Ende jedes Funkspruchs aus Aufnahmen („funk_start“, „funk_over“);
+ * solange die noch nicht geladen sind, nachgebaut (Dreifach-Piep ca. 900 Hz, Ende ca. 1800 Hz).
+ * Dazu der Ton „Einsatz rein“ (vor der Alarmierung des Piloten und nach jedem beendeten Notruf).
  */
+import startUrl from "../assets/funk_start.wav?url";
+import overUrl from "../assets/funk_over.wav?url";
+import reinUrl from "../assets/einsatz_rein.wav?url";
+
+const puffer: { start?: AudioBuffer; over?: AudioBuffer; rein?: AudioBuffer } = {};
+let laden: Promise<void> | null = null;
+
+/** Aufnahmen laden (einmal); AudioBuffer gehen in jedem Audio-Kontext */
+export function funkToeneLaden(): Promise<void> {
+  laden ??= (async () => {
+    const c = new OfflineAudioContext(1, 1, 48000);
+    const holen = async (url: string) => c.decodeAudioData(await (await fetch(url)).arrayBuffer());
+    const [a, b, r] = await Promise.all([holen(startUrl), holen(overUrl), holen(reinUrl)]);
+    puffer.start = a;
+    puffer.over = b;
+    puffer.rein = r;
+  })().catch((e) => console.warn("Funktöne", e));
+  return laden;
+}
+void funkToeneLaden();
+
+/** Aufnahme ab Zeitpunkt abspielen; gibt das Ende zurück */
+function aufnahme(c: BaseAudioContext, ziel: AudioNode, b: AudioBuffer, ab: number, laut: number): number {
+  const src = c.createBufferSource();
+  const g = c.createGain();
+  src.buffer = b;
+  g.gain.value = laut * 1.6;
+  src.connect(g).connect(ziel);
+  src.start(ab);
+  return ab + b.duration;
+}
+
+/** „Einsatz rein“ (Aufnahme); 0, solange nicht geladen */
+export function tonEinsatzRein(c: BaseAudioContext, ziel: AudioNode, ab = c.currentTime, laut = 0.14): number {
+  if (!puffer.rein) return 0;
+  return aufnahme(c, ziel, puffer.rein, Math.max(ab, c.currentTime) + 0.01, laut);
+}
 
 /** Beginn-Ton: drei kurze Pieps (an/aus in Sekunden) */
 const BEGINN: [number, number][] = [
@@ -42,6 +80,7 @@ function piep(c: BaseAudioContext, ziel: AudioNode, hz: number, ab: number, lang
 /** Beginn-Ton ab Zeitpunkt ab (AudioContext-Zeit); gibt das Ende zurück */
 export function tonBeginn(c: BaseAudioContext, ziel: AudioNode, ab = c.currentTime, laut = 0.14): number {
   let t = Math.max(ab, c.currentTime);
+  if (puffer.start) return aufnahme(c, ziel, puffer.start, t, laut) + 0.03;
   for (const [an, aus] of BEGINN) {
     piep(c, ziel, BEGINN_HZ, t, an, laut);
     t += an + aus;
@@ -52,6 +91,7 @@ export function tonBeginn(c: BaseAudioContext, ziel: AudioNode, ab = c.currentTi
 /** Ende-Ton ab Zeitpunkt ab; gibt das Ende zurück */
 export function tonEnde(c: BaseAudioContext, ziel: AudioNode, ab = c.currentTime, laut = 0.14): number {
   const t = Math.max(ab, c.currentTime) + 0.02;
+  if (puffer.over) return aufnahme(c, ziel, puffer.over, t, laut) + 0.04;
   piep(c, ziel, ENDE_HZ, t, ENDE_LANG, laut);
   return t + TON_ENDE_S;
 }
