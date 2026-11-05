@@ -55,3 +55,20 @@ export function tonEnde(c: BaseAudioContext, ziel: AudioNode, ab = c.currentTime
   piep(c, ziel, ENDE_HZ, t, ENDE_LANG, laut);
   return t + TON_ENDE_S;
 }
+
+/** Statustaste gedrückt: ein kurzer Piep (halten, bis der Status durchgeht) */
+export function tonStatusDruck(c: BaseAudioContext, ziel: AudioNode, ab = c.currentTime, laut = 0.14): number {
+  const t = Math.max(ab, c.currentTime) + 0.01;
+  piep(c, ziel, 1200, t, 0.07, laut);
+  return t + 0.1;
+}
+
+/** Status gesendet: schnelles „düt-düt-düt-düt“ */
+export function tonStatusGesendet(c: BaseAudioContext, ziel: AudioNode, ab = c.currentTime, laut = 0.14): number {
+  let t = Math.max(ab, c.currentTime) + 0.01;
+  for (let i = 0; i < 4; i++) {
+    piep(c, ziel, 1600, t, 0.055, laut);
+    t += 0.055 + 0.045;
+  }
+  return t + 0.05;
+}

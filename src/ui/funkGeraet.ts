@@ -1,7 +1,8 @@
 /**
  * Das Funkgerät (TETRA-Bedienteil wie im RTW): Bild des Geräts, dahinter das Display.
  * Display: Netz, Ordner, Sprechgruppe, Status (Dispo: „Frei auf Wache“, Pilot: sein echter Status).
- * Spricht jemand, erscheint über dem Display ein Fenster mit seinem Rufnamen („Senden“ bzw. „Warten …“ beim eigenen).
+ * Spricht jemand, erscheint im Display „Gruppe aktiv“ mit seiner ID („ID: 75001“, Leitstelle 80000) und der Gruppe;
+ * rechts stehen dann „Option“ und „Ordner“ (beim eigenen Spruch „Senden“ bzw. „Warten …“).
  * Bedienbar ist nur das Steuerkreuz links/rechts: Sprechgruppe wechseln (wenn es eine Großeinsatz-Gruppe gibt).
  */
 import geraetUrl from "../assets/funkgeraet.webp?url";
@@ -36,6 +37,24 @@ function wenHoereIch(kanal: Sprechgruppe): string {
   return g.ausstehend?.von ?? [...g.sprueche].reverse().find((x) => x.von !== "LEO")?.von ?? g.funkname;
 }
 
+/** Kennung der Leitstelle am Funkgerät (vorläufig) */
+export const LEO_ID = "80000";
+
+/** eigener Rufname (Pilot: sein Hubschrauber) */
+function eigenerName(): string {
+  const heli = sim.pilotVon(sim.ich?.pid ?? mp.ich.pid);
+  return heli ? sim.rufname(heli) : "LEO";
+}
+
+/** Geräte-ID wie am Display („ID: 75001“): Ziffern des Funkrufnamens, Leitstelle 80000 */
+export function geraetId(rufname: string): string {
+  if (!rufname || /^leo\b/i.test(rufname)) return LEO_ID;
+  const fz = Object.values(sim.state.fahrzeuge).find((f) => f.funkrufname === rufname || sim.rufname(f) === rufname || f.kurzname === rufname);
+  const quelle = fz?.funkrufname ?? rufname;
+  const ziffern = quelle.replace(/\D/g, "");
+  return ziffern || quelle;
+}
+
 export function funkGeraetErstellen(): { el: HTMLElement; refresh(): void } {
   const root = el("div", { class: "fg" });
   root.innerHTML = `
@@ -43,12 +62,12 @@ export function funkGeraetErstellen(): { el: HTMLElement; refresh(): void } {
       <div class="fg-status"><span class="fg-balken"><i></i><i></i><i></i><i></i></span><span class="fg-sym">⇣</span></div>
       <div class="fg-zeilen">
         <div class="fg-z">TETRA</div>
-        <div class="fg-z">DISPOZONEN</div>
+        <div class="fg-z">BOS</div>
         <div class="fg-z fg-gruppe"><button type="button" class="fg-pfeil" data-r="-1" aria-label="Gruppe zurück">‹</button><span></span><button type="button" class="fg-pfeil" data-r="1" aria-label="Gruppe weiter">›</button><i class="fg-lampe" title="In einer anderen Gruppe wird gerade gefunkt"></i></div>
         <div class="fg-z fg-stat"></div>
       </div>
-      <div class="fg-seite"><span>KWlist</span><span class="fg-blatt">▤</span></div>
-      <div class="fg-pop" hidden><div class="fg-pop-kopf"></div><div class="fg-pop-name"></div><div class="fg-pop-pegel"><span></span></div><div class="fg-pop-neben"></div></div>
+      <div class="fg-seite"><span class="fg-seite-o">KWlist</span><span class="fg-blatt">▤</span></div>
+      <div class="fg-pop" hidden><div class="fg-pop-kopf"></div><div class="fg-pop-name"></div><div class="fg-pop-gruppe"></div><div class="fg-pop-pegel"><span></span></div><div class="fg-pop-neben"></div></div>
     </div>
     <img class="fg-bild" src="${geraetUrl}" alt="Funkgerät" draggable="false">
     <button type="button" class="fg-kreuz links" data-r="-1" title="Sprechgruppe wechseln"></button>
@@ -61,6 +80,9 @@ export function funkGeraetErstellen(): { el: HTMLElement; refresh(): void } {
   const popPegel = root.querySelector<HTMLElement>(".fg-pop-pegel span")!;
   const popNeben = root.querySelector<HTMLElement>(".fg-pop-neben")!;
   const lampe = root.querySelector<HTMLElement>(".fg-lampe")!;
+  const popGruppe = root.querySelector<HTMLElement>(".fg-pop-gruppe")!;
+  const seiteO = root.querySelector<HTMLElement>(".fg-seite-o")!;
+  const blatt = root.querySelector<HTMLElement>(".fg-blatt")!;
 
   /** Gruppe, in der gesprochen wird */
   const gruppe = (): Sprechgruppe => sprechGruppe();
@@ -85,13 +107,17 @@ export function funkGeraetErstellen(): { el: HTMLElement; refresh(): void } {
     let wer = "";
     if (ich?.art === "sendet") {
       kopf = "Senden";
-      wer = name;
+      wer = `ID: ${geraetId(istPilot() ? eigenerName() : "LEO")}`;
     } else if (ich?.art === "wartet") {
       kopf = "Warten …";
-      wer = wenHoereIch(k) || name;
+      const w = wenHoereIch(k);
+      wer = w ? `ID: ${geraetId(w)}` : "";
     } else {
-      wer = wenHoereIch(k);
-      if (wer) kopf = "Gruppenruf";
+      const w = wenHoereIch(k);
+      if (w) {
+        kopf = "Gruppe aktiv";
+        wer = `ID: ${geraetId(w)}`;
+      }
     }
     // was in den anderen Gruppen gerade gefunkt wird (kleiner darunter, Lampe neben der Gruppe)
     const neben = sim
@@ -102,12 +128,20 @@ export function funkGeraetErstellen(): { el: HTMLElement; refresh(): void } {
       .map(([x, w]) => `${gruppenName(x).slice(-2)}: ${w}`);
     lampe.classList.toggle("an", neben.length > 0);
     if (!kopf && neben.length) {
-      kopf = "Gruppenruf";
+      kopf = "Gruppe aktiv";
       wer = "";
     }
+    // wie am Gerät: im Fenster unten die Sprechgruppe, rechts „Option“ und „Ordner“
+    const gText = kopf && wer ? name : "";
+    if (popGruppe.textContent !== gText) popGruppe.textContent = gText;
+    const o = kopf ? "Option" : "KWlist";
+    if (seiteO.textContent !== o) seiteO.textContent = o;
+    const bl = kopf ? "Ordner" : "▤";
+    if (blatt.textContent !== bl) blatt.textContent = bl;
     const nebenText = neben.join(" · ");
     if (popNeben.textContent !== nebenText) popNeben.textContent = nebenText;
     pop.hidden = !kopf;
+    root.classList.toggle("fg-aktiv", !!kopf);
     pop.classList.toggle("ich", ich?.art === "sendet");
     pop.classList.toggle("wartet", ich?.art === "wartet");
     if (popKopf.textContent !== kopf) popKopf.textContent = kopf;

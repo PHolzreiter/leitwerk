@@ -1,5 +1,14 @@
 # Änderungen
 
+## 0.104.0 – Neue Pilotenansicht, Status wie am Funkgerät
+- **Pilotenansicht neu aufgebaut:** In der Mitte stehen Einsatz, Sprechfunk mit großem Funkgerät und der Einsatzverlauf. Rechts sind eine kleinere Karte (mit „Größer“), der Chat und „Wetter & Hinweise“ (Temperatur, Wind in Knoten, Flughinweise). Flugsimulator und Übungsflug links lassen sich zuklappen
+- **Funkverlauf als Fenster:** Der Knopf „Verlauf“ am Sprechfunk öffnet die letzten Funksprüche. Getippt wird beim Piloten nicht – gefunkt wird mit der Sprechtaste
+- **Status wie am Funkgerät:** Statustaste drücken gibt einen kurzen Ton; etwa 2 Sekunden halten, dann geht der Status mit „düt-düt-düt-düt“ durch. Früher loslassen: nichts passiert. Gilt für die Knöpfe, die Tastatur und den Joystick; die Tasten im H145-Cockpit und das Handy senden weiter sofort
+- **Display beim Funken:** „Gruppe aktiv“ mit der ID des Sprechenden (z. B. „ID: 75001“, Leitstelle 80000) und der Sprechgruppe, rechts „Option“ und „Ordner“. Die zweite Zeile heißt jetzt „BOS“
+- **Pilot funkt jedes Fahrzeug an:** auch ohne gemeinsamen Einsatz – das Fahrzeug antwortet normal
+- **Hubschrauber wird nicht mehr vergessen:** Nach einem neuen Testmodus, einem Neustart oder wenn der Computer übernommen hat, nimmt die Ansicht deinen letzten Hubschrauber von selbst wieder (wenn er frei ist). „Wechseln“ wählt weiter einen anderen
+- **Nur das Pilotenfenster:** Im Pilotenmodus gehen weitere Fenster zu; als Disponent kommen sie wieder
+
 ## 0.103.1 – Mikrofon geht wirklich zu
 - **Mikrofon am Mac:** Ein selbst gewähltes Mikrofon blieb nach dem ersten Funkspruch oder Telefonat im Hintergrund offen (oranges Mikrofon-Zeichen). Die Aufnahme wird jetzt vor dem Schließen angehalten, und ist das gewählte Mikrofon das Standard-Mikrofon, wird es direkt als solches geöffnet. Dasselbe gilt für die Tonausgabe auf einem gewählten Lautsprecher
 - **Pilot:** „Echte Disponenten hören“ und „Echte Piloten hören“ gibt es jetzt auch in den Funk-Einstellungen des Piloten

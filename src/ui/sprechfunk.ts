@@ -15,7 +15,7 @@ import { sim, type Sprechgruppe } from "../sim/engine";
 import { toast } from "./dom";
 import { FUNK_RATE, FunkKodierer, funkDekodieren } from "./funkCodec";
 import { istPilot } from "./pilot/modus";
-import { tonBeginn, tonEnde } from "./funkToene";
+import { tonBeginn, tonEnde, tonStatusDruck, tonStatusGesendet } from "./funkToene";
 import { aufnahmeLaeuftJetzt, aufnahmeSperre, funkHaken, funkHoerHaken, funkTonHaken, sprachPrefs, sprachStatus, sprachTest, tastenBelegung, verstummen } from "./sprache";
 
 export type FunkZiel = "leo" | "rtw";
@@ -120,13 +120,13 @@ function rauschen(c: AudioContext, ab: number): void {
 }
 
 /** Ton des Funkgeräts hier abspielen (eigene Sprechtaste, vorgelesene Funksprüche); laut 0 = nicht */
-export function funkTon(art: "beginn" | "ende", laut = 1): number {
+export function funkTon(art: "beginn" | "ende" | "statusDruck" | "statusGesendet", laut = 1): number {
   if (laut <= 0) return 0;
   try {
     const c = audio();
     const g = kette(c);
     g.gain.value *= laut;
-    const bis = art === "beginn" ? tonBeginn(c, g) : tonEnde(c, g);
+    const bis = art === "beginn" ? tonBeginn(c, g) : art === "ende" ? tonEnde(c, g) : art === "statusDruck" ? tonStatusDruck(c, g) : tonStatusGesendet(c, g);
     setTimeout(() => g.disconnect(), (bis - c.currentTime) * 1000 + 300);
     return Math.max(0, (bis - c.currentTime) * 1000);
   } catch {

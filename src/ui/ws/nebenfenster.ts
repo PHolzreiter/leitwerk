@@ -14,6 +14,7 @@ import { sim, type Befehl, type SimState } from "../../sim/engine";
 import { toast } from "../dom";
 import { anfrage, beantworten, bus, FENSTER_ID, IST_HAUPT } from "./bus";
 import { setzeFensterOeffner, type FensterBounds } from "./arbeitsplatz";
+import { istPilot, onPilotModus } from "../pilot/modus";
 
 const DELTA_MS = 250;
 const START_KEY = (id: string) => `leitwerk.layout.v2.${id}`;
@@ -25,9 +26,11 @@ const OFFEN_KEY = "leitwerk.fenster";
 const verbunden = new Set<string>();
 /** Programm wird beendet: Liste der offenen Fenster für den nächsten Start behalten */
 let beendet = false;
+/** Pilotenmodus: die Nebenfenster sind weggeräumt (ihre Liste bleibt für danach) */
+let geparkt = false;
 
 function offeneMerken(): void {
-  if (beendet) return;
+  if (beendet || geparkt) return;
   try {
     localStorage.setItem(OFFEN_KEY, JSON.stringify([...verbunden]));
   } catch {
@@ -143,6 +146,22 @@ export function hauptfensterStarten(): void {
     }
   });
 
+  // Pilotenmodus: nur das Piloten-Fenster – Nebenfenster weg, danach wieder wie vorher
+  onPilotModus((an) => {
+    if (an) {
+      if (verbunden.size) {
+        offeneMerken();
+        geparkt = true;
+        bus.senden({ t: "fensterParken" });
+        verbunden.clear();
+      } else geparkt = true;
+      wiederhergestellt = false;
+    } else if (geparkt) {
+      geparkt = false;
+      void nebenfensterWiederherstellen();
+    }
+  });
+
   // Hauptfenster schließt: alle Nebenfenster mit (beim nächsten Start gehen sie wieder auf)
   const alleZu = () => {
     beendet = true;
@@ -161,7 +180,7 @@ export function hauptfensterStarten(): void {
 /** Beim Start: Nebenfenster vom letzten Mal wieder öffnen */
 let wiederhergestellt = false;
 export async function nebenfensterWiederherstellen(): Promise<void> {
-  if (!IST_HAUPT || wiederhergestellt) return;
+  if (!IST_HAUPT || wiederhergestellt || istPilot()) return;
   wiederhergestellt = true;
   let ids: string[] = [];
   try {
@@ -217,6 +236,10 @@ export function nebenfensterVerbinden(): Promise<void> {
         case "fensterSchliessen":
           void fensterSchliessen();
           return;
+        case "fensterParken":
+          // Pilotenmodus im Hauptfenster: zu, die Anordnung bleibt für später
+          void fensterSchliessen(true);
+          return;
       }
     });
     const hallo = () => bus.senden({ t: "hallo" }, "haupt");
@@ -242,10 +265,10 @@ export function startPanels(): string[] {
   }
 }
 
-export async function fensterSchliessen(): Promise<void> {
+export async function fensterSchliessen(anordnungBehalten = false): Promise<void> {
   bus.senden({ t: "bye" });
   try {
-    localStorage.removeItem(START_KEY(FENSTER_ID));
+    if (!anordnungBehalten) localStorage.removeItem(START_KEY(FENSTER_ID));
   } catch {
     /* egal */
   }

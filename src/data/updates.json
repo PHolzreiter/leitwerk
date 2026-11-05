@@ -1,5 +1,19 @@
 [
  {
+  "version": "0.104.0",
+  "datum": "2026-11-05",
+  "titel": "Neue Pilotenansicht, Status wie am Funkgerät",
+  "punkte": [
+   "Pilotenansicht: Funk und Einsatz in der Mitte, Karte rechts",
+   "Funkverlauf als Fenster",
+   "Status 2 Sekunden halten, mit Tönen",
+   "Display: „Gruppe aktiv“ mit ID",
+   "Pilot funkt jedes Fahrzeug an",
+   "Letzter Hubschrauber wird wieder übernommen",
+   "Im Pilotenmodus nur das Pilotenfenster"
+  ]
+ },
+ {
   "version": "0.103.1",
   "datum": "2026-11-05",
   "titel": "Mikrofon geht wirklich zu",

@@ -5,9 +5,12 @@
 import { inTauri } from "../../platform";
 import { openDialog } from "../dialog";
 import { el, esc, toast } from "../dom";
-import { AKTIONEN, belegung, belegungSpeichern, HALTEN, kuerzelAus, kuerzelName, standardBelegung, tastenName, type Belegung, type PilotAktion } from "./tasten";
+import { AKTIONEN, belegung, belegungSpeichern, HALTEN as NUR_FUNK, STATUS_HALTEN, kuerzelAus, kuerzelName, standardBelegung, tastenName, type Belegung, type PilotAktion } from "./tasten";
 
-let ausloesen: ((a: PilotAktion) => void) | null = null;
+/** gehalten werden Sprechtasten und Statustasten */
+const HALTEN: PilotAktion[] = [...NUR_FUNK, ...STATUS_HALTEN];
+
+let ausloesen: ((a: PilotAktion, sofort?: boolean) => void) | null = null;
 let loslassen: ((a: PilotAktion) => void) | null = null;
 let lernt = false;
 /** gerade gedrückte Halte-Aktionen (Sprechtasten) und von wo */
@@ -172,17 +175,18 @@ export function carlsEmpfangen(w: number): void {
   if (lernt || !ausloesen) return;
   const b = belegung();
   const a = (Object.keys(b.carls) as PilotAktion[]).find((k) => b.carls[k] === w);
-  if (a) ausloesen(a);
+  // die Tasten im Cockpit melden kein Loslassen: Status gleich senden
+  if (a) ausloesen(a, true);
 }
 
 // ------------------------------------------------------------------ Start/Stopp
 
 /** Handy: Sprechtaste gedrückt bzw. losgelassen */
 export function handyHalten(a: PilotAktion, an: boolean): void {
-  if (HALTEN.includes(a)) halten(a, "handy", an);
+  if (NUR_FUNK.includes(a)) halten(a, "handy", an);
 }
 
-export function eingabeStarten(f: (a: PilotAktion) => void, los?: (a: PilotAktion) => void): void {
+export function eingabeStarten(f: (a: PilotAktion, sofort?: boolean) => void, los?: (a: PilotAktion) => void): void {
   ausloesen = f;
   loslassen = los ?? null;
   document.addEventListener("keydown", onKey);

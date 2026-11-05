@@ -3929,3 +3929,51 @@ button.weather.offen {
   min-height: 0;
 }
 .funk-text-teil[hidden] { display: none; }
+
+/* Display wie am Gerät, wenn gefunkt wird: „Gruppe aktiv“, ID, Gruppe; rechts Option / Ordner */
+.fg-aktiv .fg-pop {
+  left: 3%;
+  right: 24%;
+  top: 6%;
+  bottom: 6%;
+  justify-content: flex-start;
+  gap: 0;
+  border-radius: 0.3cqw;
+  background: #eef3fb;
+  border-width: 0.18cqw;
+  overflow: hidden;
+}
+.fg-aktiv .fg-pop-kopf {
+  align-self: stretch;
+  text-align: center;
+  padding: 0.5cqw 0;
+  background: #5d6b80;
+  color: #f4f7fc;
+  font-size: 1.9cqw;
+  text-transform: none;
+  letter-spacing: 0.02em;
+}
+.fg-aktiv .fg-pop.ich .fg-pop-kopf { background: #c62828; color: #fff; }
+.fg-aktiv .fg-pop.wartet .fg-pop-kopf { background: #a06a00; color: #fff; }
+.fg-aktiv .fg-pop-name {
+  margin-top: auto;
+  font-size: 2.9cqw;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+}
+.fg-pop-gruppe {
+  font-size: 2.3cqw;
+  font-weight: 800;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  margin-bottom: auto;
+  margin-top: 0.4cqw;
+}
+.fg-pop-gruppe:empty { display: none; }
+.fg-aktiv .fg-pop-pegel { margin-bottom: 0.8cqw; }
+.fg-aktiv .fg-pop-neben { margin-bottom: 0.6cqw; }
+.fg-aktiv .fg-seite {
+  justify-content: space-around;
+  padding-top: 0;
+  gap: 0;
+  font-size: 1.45cqw;
+}
+.fg-aktiv .fg-blatt { opacity: 1; font-size: 1.45cqw; }

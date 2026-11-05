@@ -27,7 +27,7 @@ import { pilotModusSetzen } from "./modus";
 import { AKTIONEN, belegung, kuerzelName, tastenName, type PilotAktion } from "./tasten";
 import { eingabeStarten, eingabeStoppen, handyHalten, tastenDialog } from "./eingabe";
 import { funkGeraetErstellen, gruppenName } from "../funkGeraet";
-import { funkEmpfang, funkGruppenSetzen, funkGruppenWahl, funkSendeZustand, gruppeHoerbar, gsGruppeOffen, onFunkEmpfang, onFunkSenden, sprechGruppe, sprechKnopfAnbinden, sprechStart, sprechStopp } from "../sprechfunk";
+import { funkEmpfang, funkGruppenSetzen, funkGruppenWahl, funkSendeZustand, funkTon, gruppeHoerbar, gsGruppeOffen, onFunkEmpfang, onFunkSenden, sprechGruppe, sprechKnopfAnbinden, sprechStart, sprechStopp } from "../sprechfunk";
 import { MODELLE, mikrofone, modellLaden, setzeSprache, sprachPrefs, sprachStatus } from "../sprache";
 import { inTauri } from "../../platform";
 import { efbStarten, handyAktionen, handyDialog, handyStand } from "./handy";
@@ -59,6 +59,10 @@ const I: Record<string, string> = {
   plan: `<path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/>`,
   zeit: `<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>`,
   funk: `<rect x="6" y="8" width="12" height="14" rx="2"/><path d="M9 8l6-6M9 13h6M9 17h6"/>`,
+  liste: `<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/>`,
+  gross: `<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>`,
+  haken: `<circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9.5"/>`,
+  wind: `<path d="M12 19V5M6 11l6-6 6 6"/>`,
   mikro: `<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>`,
 };
 const ico = (n: string, k = "") => `<svg class="plt-ico ${k}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${I[n] ?? ""}</svg>`;
@@ -135,9 +139,44 @@ export function pilotFliegenNaechstes(): void {
   void befehl(sim.call("pilotFliegen", fz.id, ziel));
 }
 
-export function pilotAktion(a: PilotAktion): void {
+/** Status wie am Funkgerät: Drücken gibt einen kurzen Ton, nach ca. 2 s Halten geht er durch (düt-düt-düt-düt) */
+const STATUS_HALTE_MS = 2000;
+let statusHalt: { s: StatusKey; timer: number } | null = null;
+
+function statusHaltenStart(s: StatusKey): void {
+  if (!meinFz()) return;
+  if (statusHalt) window.clearTimeout(statusHalt.timer);
+  funkTon("statusDruck");
+  const timer = window.setTimeout(() => {
+    statusHalt = null;
+    statusHaltAnzeigen(null);
+    funkTon("statusGesendet");
+    pilotStatusDruecken(s);
+  }, STATUS_HALTE_MS);
+  statusHalt = { s, timer };
+  statusHaltAnzeigen(s);
+}
+
+/** losgelassen: vor der Zeit → nichts passiert (noch einmal drücken) */
+function statusHaltenEnde(s?: StatusKey): void {
+  if (!statusHalt || (s && statusHalt.s !== s)) return;
+  window.clearTimeout(statusHalt.timer);
+  statusHalt = null;
+  statusHaltAnzeigen(null);
+}
+
+function statusHaltAnzeigen(s: StatusKey | null): void {
+  root?.querySelectorAll<HTMLElement>(".plt-st").forEach((b) => b.classList.toggle("haelt", !!s && b.dataset.s === s));
+}
+
+export function pilotAktion(a: PilotAktion, sofort = false): void {
   const def = AKTIONEN.find((x) => x.id === a);
-  if (def?.status) pilotStatusDruecken(def.status);
+  if (def?.status) {
+    if (sofort) {
+      funkTon("statusGesendet");
+      pilotStatusDruecken(def.status);
+    } else statusHaltenStart(def.status);
+  }
   else if (a === "fliegen") pilotFliegenNaechstes();
   else if (a === "funk") void sprechStart("leo");
   else if (a === "funkRtw") void sprechStart("leo");
@@ -145,6 +184,8 @@ export function pilotAktion(a: PilotAktion): void {
 
 /** Sprechtaste losgelassen */
 export function pilotLoslassen(a: PilotAktion): void {
+  const def = AKTIONEN.find((x) => x.id === a);
+  if (def?.status) return statusHaltenEnde(def.status);
   if (a === "funk" || a === "funkRtw") void sprechStopp();
 }
 
@@ -220,6 +261,36 @@ export function pilotBeitrittOeffnen(nachBeitritt?: () => void): void {
 
 // ------------------------------------------------------------------ Hubschrauber wählen
 
+let wahlDlg: { close(): void } | null = null;
+/** „Wechseln“ gedrückt: dann nicht von selbst wieder den letzten nehmen */
+let bewusstAbgegeben = false;
+let wiederLaeuft = false;
+
+/**
+ * Kein Hubschrauber (neues Spiel im Testmodus, Wiedereinstieg nach Verbindungsverlust, Neustart): den zuletzt
+ * geflogenen von selbst wieder übernehmen, wenn er frei ist. Gibt true zurück, wenn das versucht wird.
+ */
+function letztenWiederNehmen(): boolean {
+  if (!root || meinFz() || bewusstAbgegeben || wiederLaeuft) return false;
+  if (!Object.keys(sim.state.fahrzeuge).length || !(mp.status.hostDa || sim.pilotTest)) return false;
+  const id = letzterHeli();
+  const fz = id ? sim.state.fahrzeuge[id] : undefined;
+  if (!fz || sim.pilotHindernis(fz, mp.ich.pid)) return false;
+  wiederLaeuft = true;
+  void sim
+    .call("pilotUebernehmen", fz.id)
+    .then(() => {
+      sim.pilotTestGebiet(fz.id);
+      wahlDlg?.close();
+      wahlDlg = null;
+      toast(`${fz.kurzname || fz.funkrufname} wieder übernommen – „Wechseln“ für einen anderen`);
+      zeichneAlles();
+    })
+    .catch(() => undefined)
+    .finally(() => (wiederLaeuft = false));
+  return true;
+}
+
 function hubschrauberWahl(): void {
   const body = el("div", { class: "plt-wahl" });
   const zeichnen = () => {
@@ -248,6 +319,7 @@ function hubschrauberWahl(): void {
           await sim.call("pilotUebernehmen", fz.id);
           sim.pilotTestGebiet(fz.id);
           merkeHeli(fz.id);
+          bewusstAbgegeben = false;
           dlg.close();
           zeichneAlles();
           // beim ersten Mal: Wetter im Flugsimulator wie LeitWerk oder selbst?
@@ -266,6 +338,7 @@ function hubschrauberWahl(): void {
     if (!body.querySelector(".plt-wahl-liste")) zeichnen();
   });
   const dlg = openDialog({ title: "Hubschrauber wählen", body, wide: true, actions: [{ label: "Später", kind: "plain" }] });
+  wahlDlg = dlg;
 }
 
 // ------------------------------------------------------------------ Ansicht
@@ -309,37 +382,55 @@ export function pilotOeffnen(): void {
       <section class="plt-links">
         <div class="plt-karte-titel">Status</div>
         <div class="plt-status"></div>
-        <div class="plt-karte-titel">${ico("sim")}Flugsimulator</div>
-        <div class="plt-sim"></div>
-        <div class="plt-karte-titel">Übungsflug <span class="plt-leise">ohne Flugsimulator</span></div>
-        <div class="plt-flug"></div>
+        <details class="plt-klapp" data-k="sim" open><summary class="plt-karte-titel">${ico("sim")}Flugsimulator</summary><div class="plt-sim"></div></details>
+        <details class="plt-klapp" data-k="flug" open><summary class="plt-karte-titel">${ico("flug")}Übungsflug <span class="plt-leise">ohne Flugsimulator</span></summary><div class="plt-flug"></div></details>
       </section>
       <section class="plt-mitte">
-        <div class="plt-map"></div>
-        <div class="plt-map-knoepfe">
-          <button class="plt-b klein an" data-act="folgen" title="Karte folgt dem Hubschrauber">${ico("folgen")}<span>Folgen</span></button>
-        </div>
-        <div class="plt-map-hinweis" hidden>Auf die Karte klicken: dorthin fliegen · Esc bricht ab</div>
-      </section>
-      <section class="plt-rechts">
         <div class="plt-einsatz"></div>
         <div class="plt-patient"></div>
         <div class="plt-plan"></div>
         <div class="plt-funk">
-          <div class="plt-karte-titel">${ico("funk")}Sprechfunk <button class="plt-b klein plt-funk-einst" data-act="funk-einst" title="Mikrofon, Spracherkennung, Mithören">${ico("tasten")}<span>Einstellungen</span></button></div>
-          <div class="plt-funk-geraet"></div>
+          <div class="plt-karte-titel">${ico("funk")}Sprechfunk
+            <button class="plt-b klein plt-funk-vl" data-act="funk-verlauf" title="Die letzten Funksprüche">${ico("liste")}<span>Verlauf</span></button>
+            <button class="plt-b klein plt-funk-einst" data-act="funk-einst" title="Mikrofon, Spracherkennung, Mithören">${ico("tasten")}<span>Einstellungen</span></button></div>
+          <div class="plt-funk-reihe">
+            <div class="plt-funk-geraet"></div>
+            <div class="plt-funk-seite">
+              <div class="plt-funk-knoepfe"></div>
+              <div class="plt-funk-gruppen"></div>
+            </div>
+          </div>
           <div class="plt-funk-kanal" hidden></div>
-          <div class="plt-funk-gruppen"></div>
-          <div class="plt-funk-knoepfe"></div>
-          <div class="plt-funk-verlauf"></div>
+        </div>
+        <div class="plt-ev">
+          <div class="plt-karte-titel">${ico("liste")}Einsatzverlauf</div>
+          <div class="plt-ev-liste"></div>
+        </div>
+      </section>
+      <section class="plt-rechts">
+        <div class="plt-kartebox">
+          <div class="plt-karte-titel">${ico("plan")}Karte
+            <button class="plt-b klein plt-karte-gross-b" data-act="karte-gross" title="Karte größer bzw. wieder kleiner">${ico("gross")}<span>Größer</span></button></div>
+          <div class="plt-kartewrap">
+            <div class="plt-map"></div>
+            <div class="plt-map-knoepfe">
+              <button class="plt-b klein an" data-act="folgen" title="Karte folgt dem Hubschrauber">${ico("folgen")}<span>Folgen</span></button>
+            </div>
+            <div class="plt-map-hinweis" hidden>Auf die Karte klicken: dorthin fliegen · Esc bricht ab</div>
+          </div>
         </div>
         <div class="plt-chat">
           <div class="plt-karte-titel">${ico("chat")}Chat</div>
           <div class="plt-chat-liste"></div>
           <form class="plt-chat-form"><input class="plt-chat-in" maxlength="500" placeholder="Nachricht an alle …"><button class="plt-b klein primaer">Senden</button></form>
         </div>
+        <div class="plt-wetter"></div>
       </section>
-    </main>`;
+    </main>
+    <div class="plt-funk-pop" hidden>
+      <div class="plt-funk-pop-kopf"><b>${ico("funk")}Funkverlauf</b><button class="plt-b klein" data-act="funk-verlauf-zu" title="Schließen">✕</button></div>
+      <div class="plt-funk-verlauf"></div>
+    </div>`;
   document.body.appendChild(root);
   sig.clear();
   letzterEinsatz = meinFz()?.einsatzId ?? null;
@@ -349,6 +440,38 @@ export function pilotOeffnen(): void {
   $('[data-act="handy"]').addEventListener("click", () => handyDialog());
   $('[data-act="wetter"]').addEventListener("click", () => wetterDialog());
   $('[data-act="funk-einst"]').addEventListener("click", () => funkDialog());
+  // Funkverlauf als Fenster (schreiben kann der Pilot nicht – er spricht)
+  const pop = $(".plt-funk-pop");
+  $('[data-act="funk-verlauf"]').addEventListener("click", () => {
+    pop.hidden = !pop.hidden;
+    if (!pop.hidden) {
+      const v = $(".plt-funk-verlauf");
+      v.scrollTop = v.scrollHeight;
+    }
+  });
+  $('[data-act="funk-verlauf-zu"]').addEventListener("click", () => (pop.hidden = true));
+  // Karte größer/kleiner
+  $('[data-act="karte-gross"]').addEventListener("click", (ev) => {
+    const gross = root!.classList.toggle("plt-karte-gross");
+    const b = ev.currentTarget as HTMLElement;
+    b.querySelector("span")!.textContent = gross ? "Kleiner" : "Größer";
+    window.setTimeout(() => karte?.map.resize(), 60);
+  });
+  // auf-/zugeklappte Bereiche links merken
+  root.querySelectorAll<HTMLDetailsElement>(".plt-klapp").forEach((d) => {
+    try {
+      if (localStorage.getItem(`leitwerk.pilot.zu.${d.dataset.k}`) === "1") d.open = false;
+    } catch {
+      /* egal */
+    }
+    d.addEventListener("toggle", () => {
+      try {
+        localStorage.setItem(`leitwerk.pilot.zu.${d.dataset.k}`, d.open ? "0" : "1");
+      } catch {
+        /* egal */
+      }
+    });
+  });
   aus.push(onFunkEmpfang(() => zeichneAlles()));
   aus.push(onFunkSenden(() => zeichneAlles()));
   root.addEventListener("click", (ev) => {
@@ -364,10 +487,13 @@ export function pilotOeffnen(): void {
   });
   $('[data-act="wechseln"]').addEventListener("click", async () => {
     const fz = meinFz();
+    // vor dem Abgeben: sonst nimmt die Ansicht ihn gleich wieder
+    bewusstAbgegeben = true;
     if (fz) {
       try {
         await sim.call("pilotAbgeben", fz.id);
       } catch (e) {
+        bewusstAbgegeben = false;
         return fehler(e);
       }
     }
@@ -413,7 +539,8 @@ export function pilotOeffnen(): void {
   const takt = window.setInterval(() => zeichneAlles(), 1000);
   aus.push(() => window.clearInterval(takt));
   eingabeStarten(pilotAktion, pilotLoslassen);
-  handyAktionen(pilotAktion, handyHalten);
+  // Handy: Status gleich (eigenes Gerät, dort tippt man nur)
+  handyAktionen((a) => pilotAktion(a, true), handyHalten);
   // LeitWerk-App im EFB-Tablet (MSFS 2024): Server nur auf diesem Rechner
   void efbStarten();
   flugsimAnbinden(meinFz, () => zeichneAlles());
@@ -434,7 +561,9 @@ export function pilotOeffnen(): void {
   if (!meinFz()) {
     const warte = () => {
       if (!root) return;
-      if (Object.keys(sim.state.fahrzeuge).length && (mp.status.hostDa || sim.pilotTest)) hubschrauberWahl();
+      if (Object.keys(sim.state.fahrzeuge).length && (mp.status.hostDa || sim.pilotTest)) {
+        if (!letztenWiederNehmen()) hubschrauberWahl();
+      }
       else window.setTimeout(warte, 400);
     };
     warte();
@@ -508,6 +637,7 @@ function teil(sel: string, key: string, bauen: (box: HTMLElement) => void): void
 function zeichneAlles(): void {
   if (!root) return;
   const fz = meinFz();
+  if (!fz) letztenWiederNehmen();
   const e = einsatzVon(fz);
   kopf(fz);
   warten(fz);
@@ -519,7 +649,9 @@ function zeichneAlles(): void {
   patient(fz, e);
   plan(fz, e);
   const fk = funkTeil(fz, e);
+  einsatzVerlauf(e);
   chat();
+  wetterTeil(fz);
   karteAktualisieren(fz, e);
   handyStand(fz, e, fk);
   gtnZiel(fz, e);
@@ -595,10 +727,16 @@ function statusKnoepfe(fz: SimFahrzeug | undefined, e: Einsatz | undefined): voi
     for (const a of AKTIONEN.filter((x) => x.status)) {
       const st = sim.statusDef(a.status!);
       const aktiv = fz?.status === a.status;
-      const btn = el("button", { class: `plt-st${aktiv ? " aktiv" : ""}`, style: `--f:${st.farbe}` });
-      btn.innerHTML = `<span class="plt-st-num">${esc(st.nummer)}</span><span class="plt-st-name">${esc(st.name)}</span><kbd>${esc(tastenNameKurz(b.taste[a.id]))}</kbd>`;
+      const btn = el("button", { class: `plt-st${aktiv ? " aktiv" : ""}${statusHalt?.s === a.status ? " haelt" : ""}`, style: `--f:${st.farbe}`, "data-s": a.status!, type: "button", title: "gedrückt halten (ca. 2 Sekunden), bis der Status durchgeht" });
+      btn.innerHTML = `<span class="plt-st-num">${esc(st.nummer)}</span><span class="plt-st-name">${esc(st.name)}</span><kbd>${esc(tastenNameKurz(b.taste[a.id]))}</kbd><i class="plt-st-balken"></i>`;
       btn.disabled = !fz;
-      btn.addEventListener("click", () => pilotStatusDruecken(a.status!));
+      btn.addEventListener("pointerdown", (ev) => {
+        if (ev.button !== 0) return;
+        btn.setPointerCapture?.(ev.pointerId);
+        statusHaltenStart(a.status!);
+      });
+      for (const t of ["pointerup", "pointercancel", "lostpointercapture"]) btn.addEventListener(t, () => statusHaltenEnde(a.status!));
+      btn.addEventListener("contextmenu", (ev) => ev.preventDefault());
       box.appendChild(btn);
     }
     if (fz && ["alarmWache", "alarmFunk", "alarmiert"].includes(fz.status)) {
@@ -1165,7 +1303,7 @@ function funkTeil(fz: SimFahrzeug | undefined, e: Einsatz | undefined): { knoepf
       // Sprechtaste wie am echten Gerät
       const btn = el("button", { class: "fg-ptt plt-ptt", "data-ptt": a, type: "button" }, "PTT");
       sprechKnopfAnbinden(btn, () => "leo");
-      const info = el("small", { class: "plt-leise" }, `gedrückt halten${hinweis(a) ? ` · ${hinweis(a)}` : ""} – „LEO von …“ für die Leitstelle, „75/001 von …“ für ein Fahrzeug am Einsatz`);
+      const info = el("small", { class: "plt-leise" }, `gedrückt halten${hinweis(a) ? ` · ${hinweis(a)}` : ""} – „LEO von …“ für die Leitstelle, „75/001 von …“ für ein Fahrzeug`);
       b.append(btn, info);
     }
   });
@@ -1256,6 +1394,41 @@ function funkDialog(): void {
   an(".plt-f-mit", (x) => setzeSprache({ mithoeren: x.checked }));
   an(".plt-f-mitlaut", (x) => setzeSprache({ mithoerenLaut: Number(x.value) }));
   openDialog({ title: "Sprechfunk", body, actions: [{ label: "Fertig", kind: "primary" }] });
+}
+
+/** Einsatzverlauf: was beim Einsatz passiert ist (neueste oben) */
+function einsatzVerlauf(e: Einsatz | undefined): void {
+  const p = e?.protokoll ?? [];
+  teil(".plt-ev-liste", e ? `${e.id}|${p.length}` : "-", (b) => {
+    if (!e || !p.length) {
+      b.innerHTML = `<div class="plt-ev-leer">${ico("liste", "riesig")}<b>Noch keine Ereignisse</b><span>Sobald ein Einsatz vorliegt, stehen hier alle Ereignisse dazu.</span></div>`;
+      return;
+    }
+    b.innerHTML = p
+      .slice(-60)
+      .reverse()
+      .map((x) => `<div class="plt-ev-z"><span>${esc(uhrzeit(x.zeit))}</span><div>${esc(x.text)}${x.von ? ` <small class="plt-leise">· ${esc(x.von)}</small>` : ""}</div></div>`)
+      .join("");
+  });
+}
+
+/** Wetter (Lage, Temperatur, Wind in Knoten) und Hinweise zum Fliegen */
+function wetterTeil(fz: SimFahrzeug | undefined): void {
+  const w = sim.state.wetter;
+  const temp = Math.round(sim.temperatur());
+  const kt = Math.round((w.wind ?? 0) / 1.852);
+  const hinweise = [fz ? sim.flugHindernis(fz) : null, fz && !fz.nachtflug ? "Nur Tagflug" : null].filter((x): x is string => !!x);
+  const dreh = ((w.richtung ?? 0) + 180) % 360;
+  teil(".plt-wetter", `${w.lage}|${temp}|${kt}|${dreh}|${hinweise.join(";")}`, (b) => {
+    const lage = WETTER_LABEL[w.lage as keyof typeof WETTER_LABEL] ?? String(w.lage);
+    b.innerHTML = `<div class="plt-karte-titel">${ico("wolke")}Wetter &amp; Hinweise</div>
+      <div class="plt-wetter-teile">
+        <div class="plt-wetter-jetzt">${ico("wolke", "riesig")}<div><b>${esc(lage)}</b><span class="plt-wetter-temp">${temp} °C</span><span class="plt-wetter-wind" title="Wind aus ${w.richtung ?? 0}°"><span class="plt-wind-pfeil" style="transform:rotate(${dreh}deg)">${ico("wind")}</span>${kt} kt</span></div></div>
+        <div class="plt-wetter-hinweise">${
+          hinweise.length ? hinweise.map((h) => `<div class="plt-warn">${esc(h)}</div>`).join("") : `${ico("haken", "riesig")}<span>Keine Hinweise</span>`
+        }</div>
+      </div>`;
+  });
 }
 
 function chat(): void {

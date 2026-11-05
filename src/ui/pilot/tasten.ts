@@ -11,6 +11,9 @@ export type PilotAktion = "s9" | "s1" | "s2" | "s3" | "s4" | "s5" | "s6" | "flie
 /** Aktionen, die man gedrückt hält (Sprechtasten) – lösen beim Drücken und beim Loslassen aus */
 export const HALTEN: PilotAktion[] = ["funk", "funkRtw"];
 
+/** Statustasten: wie am Funkgerät gedrückt halten (ca. 2 s), bis der Status durchgeht */
+export const STATUS_HALTEN: PilotAktion[] = ["s9", "s1", "s2", "s3", "s4", "s5", "s6"];
+
 export const AKTIONEN: { id: PilotAktion; name: string; status?: StatusKey }[] = [
   { id: "s9", name: "Quittieren – Alarm angenommen", status: "alarmiert" },
   { id: "s1", name: "Status 1 – frei auf Wache", status: "freiWache" },

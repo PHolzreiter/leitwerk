@@ -7262,7 +7262,7 @@ export class Simulation {
   }
 
   /**
-   * Gespräch für den Spruch eines Piloten: „75/001 von C2“ → mit diesem Fahrzeug (muss beim Einsatz sein),
+   * Gespräch für den Spruch eines Piloten: „75/001 von C2“ → mit diesem Fahrzeug (Einsatz egal, die am Einsatz zuerst),
    * „LEO von C2“ → mit der Leitstelle; ohne Rufnamen weiter mit dem, mit dem er zuletzt gefunkt hat (unter einer Minute).
    */
   private pilotGespraech(heli: SimFahrzeug, t: string, gruppe?: Sprechgruppe): FunkGespraech | null {
@@ -7286,8 +7286,9 @@ export class Simulation {
       const boden = (e ? this.einsatzFz(e) : []).filter((f) => f.id !== heli.id && !fliegt(f) && !f.pilot);
       const ziel = fahrzeugZuName(vor, boden);
       if (ziel) return this.menschGespraech(heli.id, ziel.id) ?? neu(ziel);
-      const sonst = fahrzeugZuName(vor, Object.values(this.state.fahrzeuge).filter((f) => !f.pilot));
-      if (sonst) throw new Error(`${this.rufname(sonst)} ist nicht bei deinem Einsatz – funken geht nur mit Fahrzeugen am selben Einsatz oder mit LEO`);
+      // auch Fahrzeuge ohne gemeinsamen Einsatz: sie antworten ganz normal
+      const sonst = fahrzeugZuName(vor, Object.values(this.state.fahrzeuge).filter((f) => f.id !== heli.id && !f.pilot && !fliegt(f)));
+      if (sonst) return this.menschGespraech(heli.id, sonst.id) ?? neu(sonst);
     }
     // ohne Rufnamen: das zuletzt laufende Gespräch des Piloten
     const zuletzt = (this.state.funkGespraeche ?? []).filter((g) => g.mensch && g.status !== "ende" && g.fzId === heli.id).sort((a, b) => (b.echtLetzt ?? 0) - (a.echtLetzt ?? 0))[0];
