@@ -64,7 +64,7 @@ export function createFunkView(root: HTMLElement, deps: { select(einsatzId: stri
   const form = el("form", { class: "funk-form funk-eine" });
   const eingabe = el("input", { type: "text", placeholder: "Funkspruch … z. B. „75/001 von LEO, kommen“ (Enter)" });
   // Sprechtaste wie am echten Gerät (gedrückt halten); die Funktaste der Tastatur geht in jedem Reiter
-  const ptt = el("button", { class: "fg-ptt", type: "button", title: "Gedrückt halten zum Sprechen" }, "PTT");
+  const ptt = el("button", { class: "fg-ptt", type: "button", title: `Gedrückt halten zum Sprechen – oder die Funktaste ${tastenName(sprachPrefs().funkTaste)} (in jedem Reiter)` }, "PTT");
   const geraet = funkGeraetErstellen({ nurKanal: opt.kanal === undefined ? undefined : (opt.kanal ?? null) });
   const senden = el("button", { class: "btn small primary", type: "submit" }, "Senden");
   const info = el("span", { class: "funk-info", tabindex: "0" }, "ⓘ");

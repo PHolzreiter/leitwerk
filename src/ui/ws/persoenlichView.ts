@@ -488,7 +488,7 @@ export function persoenlichView(container: HTMLElement): { refresh(): void } {
     mikroSel.addEventListener("change", () => setzeSprache({ mikro: mikroSel.value }));
     zeile(spr, "Mikrofon", mikroSel, inTauri() ? "Beim ersten Sprechen fragt der Computer, ob LeitWerk das Mikrofon benutzen darf." : "Die Namen erscheinen erst, nachdem du das Mikrofon einmal freigegeben hast.");
 
-    // Sprechfunk mit Piloten (Spieler-NAH, nur im Mehrspieler)
+    // Funktaste: wie die PTT am Funkgerät, in jedem Reiter
     const funkSel = el("select");
     for (const [code, label] of TASTEN) funkSel.appendChild(el("option", { value: code }, label));
     funkSel.value = sp.funkTaste;
@@ -497,7 +497,7 @@ export function persoenlichView(container: HTMLElement): { refresh(): void } {
       else setzeSprache({ funkTaste: funkSel.value });
       funkSel.value = sprachPrefs().funkTaste;
     });
-    zeile(spr, "Funktaste für Piloten (gedrückt halten)", funkSel, "Sprechfunk mit Mitspielern, die einen Hubschrauber fliegen: deine Stimme geht live an alle im Spiel – auch während du telefonierst.");
+    zeile(spr, "Funktaste (gedrückt halten)", funkSel, "Funken wie mit der PTT am Funkgerät – geht in jedem Reiter. Im Mehrspieler hören alle deine Stimme, auch während du telefonierst.");
     zeile(spr, "Funk-Klang", schalter(sp.klangfilter, (v) => setzeSprache({ klangfilter: v })), "Stimmen am Sprechfunk klingen wie über Funk (blechern, kurzes Rauschen beim Loslassen).");
     const funkLaut = el("input", { type: "range", min: "0", max: "100", step: "5" });
     funkLaut.value = String(sp.funkLaut);
