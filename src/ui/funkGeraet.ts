@@ -132,7 +132,7 @@ export function funkGeraetErstellen(): { el: HTMLElement; refresh(): void } {
       wer = "";
     }
     // wie am Gerät: im Fenster unten die Sprechgruppe, rechts „Option“ und „Ordner“
-    const gText = kopf && wer ? name : "";
+    const gText = kopf && (wer || ich) ? name : "";
     if (popGruppe.textContent !== gText) popGruppe.textContent = gText;
     const o = kopf ? "Option" : "KWlist";
     if (seiteO.textContent !== o) seiteO.textContent = o;
