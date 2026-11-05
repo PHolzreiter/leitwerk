@@ -1,5 +1,11 @@
 # Änderungen
 
+## 0.106.0 – Pilot: Route auf der Karte, ausführliches Wetter
+- **Route auf der Karte:** Der jetzige Abschnitt (zum Einsatzort bzw. Krankenhaus) ist durchgezogen, der weitere Weg gestrichelt. Die Karte zoomt von selbst so weit hinaus, dass Hubschrauber und Route ganz zu sehen sind
+- **Karte füllt die rechte Spalte nach unten**
+- **Wetter ausführlicher und so breit wie die Spalte:** Wind und Böen in Knoten mit Richtung, Sicht, Regenrisiko, QNH, Flugbetrieb, die nächsten 6 Stunden (farbig nach Flugwetter) und ein Hinweis, wann sich das Flugwetter ändert
+- Lange Status passen ins Display des Funkgeräts
+
 ## 0.105.0 – Pilot: Funkgerät oben, Spalten verstellbar, Einstellungen
 - **Funkgerät oben in der Mitte**, darunter Einsatz mit allen Einsatzdaten und der Einsatzverlauf. Rechts Karte, Wetter und Chat – die rechte Spalte ist breiter
 - **Spalten verstellbar:** Die Griffe zwischen links, Mitte und rechts ziehen; die Breite wird gemerkt (Doppelklick: Standard)

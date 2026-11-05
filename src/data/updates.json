@@ -1,5 +1,15 @@
 [
  {
+  "version": "0.106.0",
+  "datum": "2026-11-05",
+  "titel": "Pilot: Route auf der Karte, ausführliches Wetter",
+  "punkte": [
+   "Route eingezeichnet, Karte zeigt alles",
+   "Karte füllt die Spalte nach unten",
+   "Wetter mit Wind, Böen, Sicht, QNH und den nächsten Stunden"
+  ]
+ },
+ {
   "version": "0.105.0",
   "datum": "2026-11-05",
   "titel": "Pilot: Funkgerät oben, Spalten verstellbar, Einstellungen",

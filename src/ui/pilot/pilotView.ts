@@ -32,6 +32,7 @@ import { MODELLE, mikrofone, modellLaden, setzeSprache, sprachPrefs, sprachStatu
 import { inTauri } from "../../platform";
 import mikroUrl from "../../assets/ptt-mikro.webp?url";
 import { wetterOeffnen } from "../wetterView";
+import { flugEingeschraenkt, flugverbot, LAGE, richtungText, symbolFuer } from "../../sim/weather";
 import { efbStarten, handyAktionen, handyDialog, handyStand } from "./handy";
 import { hpg, hpgAktualisieren, hpgEinrichten, hpgMissionFuer, hpgStarten, hpgTestNachricht } from "./hpg";
 import { letzterCarls } from "./eingabe";
@@ -422,7 +423,7 @@ export function pilotOeffnen(): void {
             </div>
           </div>
         </div>
-        <div class="plt-wetter" title="Wetter groß öffnen"></div>
+        <div class="plt-wx" title="Wetter groß öffnen"></div>
         <div class="plt-chat">
           <div class="plt-karte-titel">${ico("chat")}Chat</div>
           <div class="plt-chat-liste"></div>
@@ -463,7 +464,7 @@ export function pilotOeffnen(): void {
   $(".plt-karte-pop").addEventListener("click", (ev) => {
     if (ev.target === ev.currentTarget) karteGross(false);
   });
-  $(".plt-wetter").addEventListener("click", () => wetterOeffnen());
+  $(".plt-wx").addEventListener("click", () => wetterOeffnen());
   spaltenEinrichten($(".plt-haupt"));
   // auf-/zugeklappte Bereiche links merken
   root.querySelectorAll<HTMLDetailsElement>(".plt-klapp").forEach((d) => {
@@ -1520,22 +1521,37 @@ function einsatzVerlauf(e: Einsatz | undefined): void {
   });
 }
 
-/** Wetter (Lage, Temperatur, Wind in Knoten) und Hinweise zum Fliegen */
+/** Wetter für den Piloten: jetzt (Wind und Böen in Knoten, Sicht, QNH, Flugbetrieb), die nächsten Stunden und Hinweise */
 function wetterTeil(fz: SimFahrzeug | undefined): void {
-  const w = sim.state.wetter;
-  const temp = Math.round(sim.temperatur());
-  const kt = Math.round((w.wind ?? 0) / 1.852);
+  const p = sim.wetterPrognose(6);
+  const j = p[0];
+  const kt = (kmh: number) => Math.round(kmh / 1.852);
+  const sicht = (km: number) => (km >= 10 ? "> 10 km" : km >= 1 ? `${Math.round(km)} km` : `${Math.round(km * 1000)} m`);
+  const flug = (x: (typeof p)[number]) => (flugverbot(x.lage, x.wind) ? "nein" : flugEingeschraenkt(x.lage, x.wind) ? "eingeschränkt" : "ja");
   const hinweise = [fz ? sim.flugHindernis(fz) : null, fz && !fz.nachtflug ? "Nur Tagflug" : null].filter((x): x is string => !!x);
-  const dreh = ((w.richtung ?? 0) + 180) % 360;
-  teil(".plt-wetter", `${w.lage}|${temp}|${kt}|${dreh}|${hinweise.join(";")}`, (b) => {
-    const lage = WETTER_LABEL[w.lage as keyof typeof WETTER_LABEL] ?? String(w.lage);
-    b.innerHTML = `<div class="plt-karte-titel">${ico("wolke")}Wetter &amp; Hinweise</div>
-      <div class="plt-wetter-teile">
-        <div class="plt-wetter-jetzt">${ico("wolke", "riesig")}<div><b>${esc(lage)}</b><span class="plt-wetter-temp">${temp} °C</span><span class="plt-wetter-wind" title="Wind aus ${w.richtung ?? 0}°"><span class="plt-wind-pfeil" style="transform:rotate(${dreh}deg)">${ico("wind")}</span>${kt} kt</span></div></div>
-        <div class="plt-wetter-hinweise">${
-          hinweise.length ? hinweise.map((h) => `<div class="plt-warn">${esc(h)}</div>`).join("") : `${ico("haken", "riesig")}<span>Keine Hinweise</span>`
-        }</div>
-      </div>`;
+  // Wetterwechsel in den nächsten Stunden, der das Fliegen ändert
+  const wechsel = p.slice(1).find((x) => flug(x) !== flug(j));
+  if (wechsel) hinweise.push(flug(wechsel) === "nein" ? `ab ca. ${uhrzeit(wechsel.zeit)} kein Flugwetter (${LAGE[wechsel.lage].label})` : flug(wechsel) === "ja" ? `ab ca. ${uhrzeit(wechsel.zeit)} wieder Flugwetter` : `ab ca. ${uhrzeit(wechsel.zeit)} eingeschränkt (${LAGE[wechsel.lage].label})`);
+  const key = JSON.stringify([p.map((x) => [x.lage, Math.round(x.temp), x.wind, x.boeen, x.richtung, x.sicht, x.druck, x.regen, x.nacht, uhrzeit(x.zeit)]), hinweise]);
+  teil(".plt-wx", key, (b) => {
+    const f = flug(j);
+    b.innerHTML = `<div class="plt-karte-titel">${ico("wolke")}Wetter &amp; Hinweise <span class="plt-leise">Klick: Prognose und Warnungen</span></div>
+      <div class="plt-wx-oben">
+        <div class="plt-wx-jetzt"><span class="plt-wx-sym">${symbolFuer(j.lage, j.nacht)}</span><div><b>${esc(LAGE[j.lage].label)}</b><span class="plt-wx-temp">${Math.round(j.temp)} °C</span><small class="plt-leise">gefühlt ${j.gefuehlt} °C</small></div></div>
+        <div class="plt-wx-werte">
+          <div><small>Wind</small><b><span class="plt-wind-pfeil" style="transform:rotate(${(j.richtung + 180) % 360}deg)">${ico("wind")}</span>${kt(j.wind)} kt</b><small>aus ${esc(richtungText(j.richtung))}</small></div>
+          <div><small>Böen</small><b>${kt(j.boeen)} kt</b></div>
+          <div><small>Sicht</small><b>${sicht(j.sicht)}</b></div>
+          <div><small>Regen</small><b>${j.regen} %</b></div>
+          <div><small>QNH</small><b>${j.druck} hPa</b></div>
+          <div><small>Flugbetrieb</small><b class="plt-wx-flug ${f === "ja" ? "ok" : f === "nein" ? "rot" : "gelb"}">${f === "ja" ? "möglich" : f === "nein" ? "kein Flug" : "eingeschränkt"}</b></div>
+        </div>
+      </div>
+      <div class="plt-wx-std">${p
+        .slice(1)
+        .map((x) => `<div class="${flug(x) === "nein" ? "rot" : flug(x) === "eingeschränkt" ? "gelb" : ""}"><small>${uhrzeit(x.zeit)}</small><span>${symbolFuer(x.lage, x.nacht)}</span><b>${Math.round(x.temp)}°</b><small>${kt(x.wind)} kt</small></div>`)
+        .join("")}</div>
+      <div class="plt-wx-hinweise">${hinweise.length ? hinweise.map((h) => `<div class="plt-warn">⚠ ${esc(h)}</div>`).join("") : `<div class="plt-wx-ok">${ico("haken")}Keine Hinweise</div>`}</div>`;
   });
 }
 
@@ -1558,9 +1574,12 @@ async function karteStarten(box: HTMLElement): Promise<void> {
     const map = karte.map;
     map.on("load", () => {
       map.addSource("plt-linie", { type: "geojson", data: leer() });
+      map.addSource("plt-route", { type: "geojson", data: leer() });
       map.addSource("plt-ziele", { type: "geojson", data: leer() });
       map.addSource("plt-heli", { type: "geojson", data: leer() });
-      map.addLayer({ id: "plt-linie", type: "line", source: "plt-linie", paint: { "line-color": "#2f7cf6", "line-width": 3, "line-dasharray": [2, 1.5], "line-opacity": 0.8 } });
+      // Route: weitere Abschnitte (z. B. Einsatzort → Krankenhaus) gestrichelt, der jetzige Abschnitt durchgezogen
+      map.addLayer({ id: "plt-route", type: "line", source: "plt-route", layout: { "line-cap": "round" }, paint: { "line-color": "#8aa4c8", "line-width": 3, "line-dasharray": [1.5, 1.5], "line-opacity": 0.85 } });
+      map.addLayer({ id: "plt-linie", type: "line", source: "plt-linie", layout: { "line-cap": "round" }, paint: { "line-color": "#2f7cf6", "line-width": 4, "line-opacity": 0.95 } });
       map.addLayer({
         id: "plt-ziele",
         type: "circle",
@@ -1638,16 +1657,67 @@ function karteAktualisieren(fz: SimFahrzeug | undefined, e: Einsatz | undefined)
     letzteZiele = zk;
     quelle("plt-ziele")?.setData({ type: "FeatureCollection", features: ziele });
   }
-  const f = fz?.fahrt;
-  const ende = f?.coords[f.coords.length - 1];
-  quelle("plt-linie")?.setData(fz && ende ? { type: "FeatureCollection", features: [{ type: "Feature", geometry: { type: "LineString", coordinates: [[fz.lon, fz.lat], ende] }, properties: {} }] } : leer());
+  const r = fz ? route(fz, e) : [];
+  const linie = (pts: [number, number][]): GeoJSON.FeatureCollection =>
+    pts.length >= 2 ? { type: "FeatureCollection", features: [{ type: "Feature", geometry: { type: "LineString", coordinates: pts }, properties: {} }] } : leer();
+  quelle("plt-linie")?.setData(fz && r.length ? linie([[fz.lon, fz.lat], r[0]]) : leer());
+  quelle("plt-route")?.setData(linie(r));
+  routePunkte = fz ? [[fz.lon, fz.lat], ...r] : [];
   karteFolgen(false);
+  if (location.search.includes("debug")) {
+    (window as unknown as { __pilotKarte: unknown }).__pilotKarte = () => {
+      const b = map.getBounds();
+      return { linie: r.length + (r.length ? 1 : 0), drin: routePunkte.every(([x, y]) => b.contains([x, y])) };
+    };
+  }
 }
+
+/** Route des Hubschraubers: nächstes Ziel, danach (gestrichelt) die weiteren – [lon, lat] */
+function route(fz: SimFahrzeug, e: Einsatz | undefined): [number, number][] {
+  const out: [number, number][] = [];
+  const f = fz.fahrt;
+  const ende = f?.coords[f.coords.length - 1] as [number, number] | undefined;
+  if (ende) out.push([ende[0], ende[1]]);
+  if (!e) return out;
+  const h = e.kh ? store.get("hospitals", e.kh.hospitalId) : undefined;
+  const l = h ? (khLandung(h) ?? h) : null;
+  const kh: [number, number] | null = l ? [l.lon, l.lat] : null;
+  const z = sim.pilotBo(fz);
+  const vorBo = ["alarmWache", "alarmFunk", "alarmiert", "zumBO"].includes(fz.status) || (fz.phase === "wartetBR" && !!sim.pilotGsHinweis(fz)?.abruf);
+  const nah = (a: [number, number] | undefined, b: [number, number]) => !!a && Math.abs(a[0] - b[0]) < 1e-3 && Math.abs(a[1] - b[1]) < 1e-3;
+  if (vorBo && z) {
+    const bo: [number, number] = [z.lon, z.lat];
+    if (!nah(out[out.length - 1], bo)) out.push(bo);
+    if (kh) out.push(kh);
+  } else if (kh && ["amBO", "zumZO"].includes(fz.status) && !nah(out[out.length - 1], kh)) out.push(kh);
+  return out;
+}
+
+/** alle Punkte der Route (für den Ausschnitt der Karte) */
+let routePunkte: [number, number][] = [];
+let letzterAusschnitt = "";
 
 function karteFolgen(sofort: boolean): void {
   const fz = meinFz();
   const map = karte?.map;
   if (!fz || !map || !folgen) return;
+  // mit Ziel: so weit hinaus, dass Hubschrauber und Route ganz zu sehen sind
+  if (routePunkte.length >= 2) {
+    const lons = routePunkte.map((x) => x[0]);
+    const lats = routePunkte.map((x) => x[1]);
+    const bb: [[number, number], [number, number]] = [
+      [Math.min(...lons), Math.min(...lats)],
+      [Math.max(...lons), Math.max(...lats)],
+    ];
+    const key = bb.flat().map((x) => x.toFixed(2)).join(",") + `|${map.getContainer().clientWidth}x${map.getContainer().clientHeight}`;
+    if (!sofort && key === letzterAusschnitt) return;
+    letzterAusschnitt = key;
+    const w = map.getContainer().clientWidth;
+    const pad = Math.max(24, Math.min(70, Math.round(w / 10)));
+    map.fitBounds(bb, { padding: { top: pad + 30, bottom: pad + 24, left: pad + 10, right: pad + 10 }, maxZoom: 11.5, duration: sofort ? 0 : 900 });
+    return;
+  }
+  letzterAusschnitt = "";
   const c = map.getCenter();
   if (!sofort && Math.abs(c.lat - fz.lat) < 1e-5 && Math.abs(c.lng - fz.lon) < 1e-5) return;
   if (sofort) map.jumpTo({ center: [fz.lon, fz.lat], zoom: Math.max(map.getZoom(), 10) });

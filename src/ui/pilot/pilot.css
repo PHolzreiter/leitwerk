@@ -1352,7 +1352,7 @@
 }
 .plt-ev,
 .plt-kartebox,
-.plt-wetter {
+.plt-wx {
   background: var(--pl-karte);
   border: 1px solid var(--pl-rand);
   border-radius: 14px;
@@ -1826,10 +1826,10 @@
   flex: 1;
   min-height: 0;
 }
-.plt-wetter {
+.plt-wx {
   cursor: zoom-in;
 }
-.plt-wetter:hover,
+.plt-wx:hover,
 .plt-kartebox:hover {
   border-color: color-mix(in srgb, var(--pl-akzent) 45%, var(--pl-rand));
 }
@@ -1899,5 +1899,123 @@
   }
   .plt-knoepfe .plt-b span {
     display: none;
+  }
+}
+
+/* Wetter-Karte (rechts) */
+.plt-wx-oben {
+  display: grid;
+  grid-template-columns: minmax(150px, auto) 1fr;
+  gap: 14px;
+  margin-top: 6px;
+  align-items: center;
+}
+.plt-wx-jetzt {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.plt-wx-jetzt > div {
+  display: flex;
+  flex-direction: column;
+}
+.plt-wx-sym {
+  font-size: 38px;
+  line-height: 1;
+}
+.plt-wx-temp {
+  font-size: 24px;
+  font-weight: 700;
+}
+.plt-wx-werte {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 6px;
+}
+.plt-wx-werte > div {
+  display: flex;
+  flex-direction: column;
+  padding: 6px 8px;
+  border-radius: 9px;
+  background: var(--pl-karte-2);
+  min-width: 0;
+}
+.plt-wx-werte small {
+  color: var(--pl-dim);
+  font-size: 11px;
+}
+.plt-wx-werte b {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+.plt-wx-flug.ok { color: var(--pl-ok); }
+.plt-wx-flug.gelb { color: var(--pl-warn); }
+.plt-wx-flug.rot { color: var(--pl-rot); }
+.plt-wx-std {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 4px;
+  margin-top: 10px;
+}
+.plt-wx-std > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 5px 2px;
+  border-radius: 8px;
+  background: var(--pl-karte-2);
+  border-bottom: 3px solid var(--pl-ok);
+}
+.plt-wx-std > div.gelb { border-bottom-color: var(--pl-warn); }
+.plt-wx-std > div.rot { border-bottom-color: var(--pl-rot); }
+.plt-wx-std small {
+  color: var(--pl-dim);
+  font-size: 11px;
+}
+.plt-wx-std span {
+  font-size: 20px;
+}
+.plt-wx-hinweise {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-weight: 600;
+}
+.plt-wx-ok {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--pl-ok);
+}
+
+/* Karte rechts füllt die Höhe nach unten */
+.plt-rechts > .plt-kartebox {
+  flex: 1 1 340px;
+  min-height: 340px;
+  display: flex;
+  flex-direction: column;
+}
+.plt-kartenplatz {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+.plt-kartenplatz > .plt-kartewrap {
+  flex: 1;
+  height: auto;
+  min-height: 280px;
+}
+@media (max-width: 1250px) {
+  .plt-rechts > .plt-kartebox {
+    flex: none;
+    min-height: 0;
+  }
+  .plt-kartenplatz > .plt-kartewrap {
+    height: 340px;
+    flex: none;
+    width: 100%;
   }
 }
