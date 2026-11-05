@@ -292,7 +292,8 @@ export function persoenlichView(container: HTMLElement): { refresh(): void } {
     };
     zeile(t, "Töne", toene, "Für jedes Ereignis eigener Ton und eigene Lautstärke. Eigene Dateien lädst du weiter unten hoch.");
     toeneBauen();
-    void eigeneDateien().then((ds) => {
+    void eigeneDateien().then((alle) => {
+      const ds = alle.filter((d) => d.art !== "alarm");
       dateienListe.push(...ds);
       if (ds.length) toeneBauen();
     });
@@ -611,7 +612,8 @@ export function persoenlichView(container: HTMLElement): { refresh(): void } {
     td.appendChild(hoch);
     const dListe = el("div", { class: "ton-dateien" });
     td.appendChild(dListe);
-    void eigeneDateien().then((ds) => {
+    void eigeneDateien().then((alle) => {
+      const ds = alle.filter((d) => d.art !== "alarm");
       if (!ds.length) {
         dListe.appendChild(el("div", { class: "muted small" }, "Noch keine eigenen Dateien."));
         return;

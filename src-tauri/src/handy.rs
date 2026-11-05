@@ -117,7 +117,7 @@ fn bearbeiten(mut s: TcpStream, token: Option<&str>, app: &AppHandle) {
             if laenge > 0 && r.read_exact(&mut body).is_err() {
                 return antwort(&mut s, "400 Bad Request", "text/plain", b"");
             }
-            let text = String::from_utf8_lossy(&body).trim().chars().take(200).collect::<String>();
+            let text = String::from_utf8_lossy(&body).trim().chars().take(400).collect::<String>();
             if !text.is_empty() {
                 let _ = app.emit("handy-befehl", text);
             }

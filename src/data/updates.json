@@ -1,5 +1,17 @@
 [
  {
+  "version": "0.107.0",
+  "datum": "2026-11-05",
+  "titel": "Pilot: Handy wie ein Funkgerät, Buchen am Handy, Alarmtöne",
+  "punkte": [
+   "Handy: Funk, Einsatz, Buchen zum Wischen",
+   "Status als Tastenfeld, halten mit Ton und Vibration",
+   "Buchen am Handy Schritt für Schritt",
+   "Code und Notrufabfrage beim Einsatz",
+   "Alarmtöne: Melder-Töne und eigene Töne"
+  ]
+ },
+ {
   "version": "0.106.0",
   "datum": "2026-11-05",
   "titel": "Pilot: Route auf der Karte, ausführliches Wetter",

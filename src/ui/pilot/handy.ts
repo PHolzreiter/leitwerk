@@ -25,6 +25,12 @@ let hoertZu = false;
 let letzterStand = "";
 let ausfuehren: ((a: PilotAktion) => void) | null = null;
 let haltenFn: ((a: PilotAktion, an: boolean) => void) | null = null;
+let buchHaken: ((befehl: string) => void) | null = null;
+
+/** Buchen am Handy: Befehle „bu:…“ (Entscheidung, Stichwort, Alter, Dringlichkeit, Krankenhaus) */
+export function handyBuchung(f: (befehl: string) => void): void {
+  buchHaken = f;
+}
 
 /** Wer die Tastendrücke vom Handy ausführt (Piloten-Interface); halten = Sprechtasten (gedrückt/losgelassen) */
 export function handyAktionen(f: (a: PilotAktion) => void, halten?: (a: PilotAktion, an: boolean) => void): void {
@@ -61,6 +67,7 @@ async function hoeren(): Promise<void> {
   if (!hoertZu) {
     hoertZu = true;
     await listen<string>("handy-befehl", (ev) => {
+      if (ev.payload.startsWith("bu:")) return buchHaken?.(ev.payload);
       // Sprechtaste: „funk_an“ / „funk_aus“
       const m = /^(\w+)_(an|aus)$/.exec(ev.payload);
       if (m && HALTEN.includes(m[1] as PilotAktion)) return haltenFn?.(m[1] as PilotAktion, m[2] === "an");
@@ -98,8 +105,19 @@ export function handyDialog(): void {
 }
 
 /** Stand fürs Handy (nur wenn der Server läuft und sich etwas geändert hat); funk = Sprechtasten und wer spricht */
-export function handyStand(fz: SimFahrzeug | undefined, e: Einsatz | undefined, funk?: { knoepfe: { aktion: string; name: string }[]; kanal: string; sendet: boolean }): void {
+export function handyStand(fz: SimFahrzeug | undefined, e: Einsatz | undefined, funk?: { knoepfe: { aktion: string; name: string }[]; kanal: string; sendet: boolean }, mehr?: () => Record<string, unknown>): void {
   if (!info && !efbPort) return;
+  const json = JSON.stringify(handyStandBauen(fz, e, funk, mehr));
+  if (json === letzterStand) return;
+  letzterStand = json;
+  void invoke("handy_stand", { json }).catch((err) => {
+    console.warn("Handy", err);
+    toast("Handy: Stand konnte nicht übergeben werden", "error");
+  });
+}
+
+/** Stand fürs Handy als Objekt (auch für Tests) */
+export function handyStandBauen(fz: SimFahrzeug | undefined, e: Einsatz | undefined, funk?: { knoepfe: { aktion: string; name: string }[]; kanal: string; sendet: boolean }, mehr?: () => Record<string, unknown>): Record<string, unknown> {
   const st = fz ? sim.statusDef(fz.status) : null;
   const alarmiert = !!fz && !!e && ["alarmWache", "alarmFunk", "alarmiert"].includes(fz.status);
   const c = e ? findCode(e.code ?? undefined) : undefined;
@@ -130,12 +148,8 @@ export function handyStand(fz: SimFahrzeug | undefined, e: Einsatz | undefined, 
         ]
       : null,
     funk: funk ?? null,
+    alarmCode: alarmiert && e ? (e.code ?? "") : "",
+    ...(mehr?.() ?? {}),
   };
-  const json = JSON.stringify(stand);
-  if (json === letzterStand) return;
-  letzterStand = json;
-  void invoke("handy_stand", { json }).catch((err) => {
-    console.warn("Handy", err);
-    toast("Handy: Stand konnte nicht übergeben werden", "error");
-  });
+  return stand;
 }

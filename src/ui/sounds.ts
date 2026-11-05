@@ -26,7 +26,9 @@ export const IST_KLINGELTON: Record<SoundEreignis, boolean> = { notruf: true, kt
 export const DATEI_REGELN = {
   klingel: { maxSek: 10, maxBytes: 1_000_000 },
   kurz: { maxSek: 2, maxBytes: 300_000 },
-  formate: ["audio/mpeg", "audio/mp3", "audio/wav", "audio/x-wav", "audio/wave"],
+  /** Alarmtöne des Piloten (Melder) */
+  alarm: { maxSek: 30, maxBytes: 5_000_000 },
+  formate: ["audio/mpeg", "audio/mp3", "audio/wav", "audio/x-wav", "audio/wave", "audio/mp4", "audio/x-m4a", "audio/aac"],
 };
 
 interface Synth {
@@ -149,6 +151,8 @@ export interface EigeneDatei {
   bytes: number;
   sek: number;
   daten: Blob;
+  /** „alarm“ = Alarmton des Piloten (eigene Liste) */
+  art?: "alarm";
 }
 
 const DB = "leitwerk-sounds";
@@ -181,10 +185,11 @@ export async function eigeneDateien(): Promise<EigeneDatei[]> {
 }
 
 /** Datei prüfen und speichern; wirft einen verständlichen Fehler, wenn sie nicht passt */
-export async function dateiHinzufuegen(f: File, fuer: "klingel" | "kurz"): Promise<EigeneDatei> {
+export async function dateiHinzufuegen(f: File, fuer: "klingel" | "kurz" | "alarm"): Promise<EigeneDatei> {
   const regel = DATEI_REGELN[fuer];
   const endung = f.name.toLowerCase().split(".").pop() ?? "";
-  if (!["mp3", "wav"].includes(endung) && !DATEI_REGELN.formate.includes(f.type)) throw new Error(`Falsches Format (${endung || f.type}) – erlaubt sind MP3 und WAV`);
+  const endungen = fuer === "alarm" ? ["mp3", "wav", "m4a", "aac"] : ["mp3", "wav"];
+  if (!endungen.includes(endung) && !DATEI_REGELN.formate.includes(f.type)) throw new Error(`Falsches Format (${endung || f.type}) – erlaubt sind ${fuer === "alarm" ? "MP3, WAV und M4A" : "MP3 und WAV"}`);
   if (f.size > regel.maxBytes) throw new Error(`Zu groß: ${(f.size / 1_000_000).toFixed(2)} MB – erlaubt sind höchstens ${(regel.maxBytes / 1_000_000).toFixed(1)} MB`);
   let sek = 0;
   try {
@@ -194,7 +199,7 @@ export async function dateiHinzufuegen(f: File, fuer: "klingel" | "kurz"): Promi
     throw new Error("Die Datei lässt sich nicht abspielen (beschädigt oder kein MP3/WAV)");
   }
   if (sek > regel.maxSek + 0.05) throw new Error(`Zu lang: ${sek.toFixed(1)} s – erlaubt sind ${regel.maxSek} s`);
-  const d: EigeneDatei = { id: `d${Date.now().toString(36)}${Math.floor(Math.random() * 1e4)}`, name: f.name, typ: f.type || `audio/${endung}`, bytes: f.size, sek, daten: f };
+  const d: EigeneDatei = { id: `d${Date.now().toString(36)}${Math.floor(Math.random() * 1e4)}`, name: f.name, typ: f.type || `audio/${endung}`, bytes: f.size, sek, daten: f, ...(fuer === "alarm" ? { art: "alarm" as const } : {}) };
   await tx("readwrite", (s) => s.put(d));
   dateiCache = null;
   return d;

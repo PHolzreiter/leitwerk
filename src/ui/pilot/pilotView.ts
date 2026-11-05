@@ -21,7 +21,6 @@ import { openDialog } from "../dialog";
 import { el, esc, toast } from "../dom";
 import { logoMarke } from "../logo";
 import { stufeFarbe } from "../panels/teile";
-import { spielen } from "../sounds";
 import { istDunkel } from "../ws/persoenlich";
 import { pilotModusSetzen } from "./modus";
 import { AKTIONEN, belegung, kuerzelName, tastenName, type PilotAktion } from "./tasten";
@@ -32,8 +31,11 @@ import { MODELLE, mikrofone, modellLaden, setzeSprache, sprachPrefs, sprachStatu
 import { inTauri } from "../../platform";
 import mikroUrl from "../../assets/ptt-mikro.webp?url";
 import { wetterOeffnen } from "../wetterView";
+import { ALARM_VORLAGEN, alarmPrefs, alarmPrefsSetzen, alarmStarten, alarmStoppen, alarmtonHinzufuegen, alarmtonSpielen, eigeneAlarmtoene, type AlarmArt } from "./alarmToene";
+import { dateiLoeschen } from "../sounds";
+import { ablageZeigen } from "../../net/ablage";
 import { flugEingeschraenkt, flugverbot, LAGE, richtungText, symbolFuer } from "../../sim/weather";
-import { efbStarten, handyAktionen, handyDialog, handyStand } from "./handy";
+import { efbStarten, handyAktionen, handyBuchung, handyDialog, handyStand, handyStandBauen } from "./handy";
 import { hpg, hpgAktualisieren, hpgEinrichten, hpgMissionFuer, hpgStarten, hpgTestNachricht } from "./hpg";
 import { letzterCarls } from "./eingabe";
 import { carlsAn, carlsUmschalten, communityWaehlen, gtn, gtnAn, gtnBereitlegen, gtnSuchen, gtnUmschalten } from "./flugsim";
@@ -67,6 +69,7 @@ const I: Record<string, string> = {
   haken: `<circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9.5"/>`,
   wind: `<path d="M12 19V5M6 11l6-6 6 6"/>`,
   zahnrad: `<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>`,
+  glocke: `<path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 20a2 2 0 0 0 4 0"/>`,
   mikro: `<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>`,
 };
 const ico = (n: string, k = "") => `<svg class="plt-ico ${k}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${I[n] ?? ""}</svg>`;
@@ -551,6 +554,7 @@ export function pilotOeffnen(): void {
   eingabeStarten(pilotAktion, pilotLoslassen);
   // Handy: Status gleich (eigenes Gerät, dort tippt man nur)
   handyAktionen((a) => pilotAktion(a, true), handyHalten);
+  handyBuchung((b) => handyBuchen(b));
   // LeitWerk-App im EFB-Tablet (MSFS 2024): Server nur auf diesem Rechner
   void efbStarten();
   flugsimAnbinden(meinFz, () => zeichneAlles());
@@ -564,7 +568,22 @@ export function pilotOeffnen(): void {
     },
     geaendert: () => zeichneAlles(),
   });
-  if (location.search.includes("debug")) Object.assign(window, { __pilot: { datenEmpfangen, flugsim, hpgMissionFuer, hpgTestNachricht } });
+  if (location.search.includes("debug"))
+    Object.assign(window, {
+      __pilot: {
+        datenEmpfangen,
+        flugsim,
+        hpgMissionFuer,
+        hpgTestNachricht,
+        // Handy im Test: Stand wie für das Handy, Befehle wie vom Handy
+        handy: () => {
+          const f = meinFz();
+          const e = einsatzVon(f);
+          return handyStandBauen(f, e, funkTeil(f, e), () => handyMehr(f, e));
+        },
+        handyBefehl: (b: string) => (b.startsWith("bu:") ? handyBuchen(b) : pilotAktion(b as PilotAktion, true)),
+      },
+    });
   aus.push(() => eingabeStoppen());
   zeichneAlles();
   // noch kein Hubschrauber: wählen (sobald der Stand vom Host da ist)
@@ -673,7 +692,79 @@ function einstellungenDialog(): void {
   punkt("funk", "Sprechfunk", "Mikrofon, Spracherkennung, Lautstärken, Mithören", () => funkDialog());
   punkt("tasten", "Tasten & Joystick", "Statustasten, Sprechtaste, globale Kürzel, Joystick, Cockpit-Funkgerät", () => tastenDialog());
   punkt("handy", "Handy als Statusgerät", "Status und Sprechtaste vom Handy (gleiches WLAN)", () => handyDialog());
+  punkt("glocke", "Alarmtöne", "Ton für Alarmierung und Abruf, eigene Töne, Lautstärke", () => alarmDialog());
   punkt("wolke", "Wetter im Flugsimulator", "Wetter wie in LeitWerk oder selbst einstellen", () => wetterDialog());
+}
+
+/** Alarmtöne wählen: Alarmierung und Abruf, eigene Töne hochladen, Lautstärke */
+function alarmDialog(): void {
+  const body = el("div", { class: "plt-alarmdlg" });
+  openDialog({ title: "Alarmtöne", body, wide: true, actions: [{ label: "Fertig", kind: "primary", onClick: () => (alarmStoppen(), true) }] });
+  let probe: { stopp(): void } | null = null;
+  const anhoeren = async (q: string) => {
+    probe?.stopp();
+    probe = await alarmtonSpielen(q).catch(() => null);
+  };
+  const zeichnen = async () => {
+    const eigene = await eigeneAlarmtoene();
+    const p = alarmPrefs();
+    const optionen = (wahl: string) =>
+      `<optgroup label="Melder-Töne">${Object.entries(ALARM_VORLAGEN).map(([id, v]) => `<option value="vorlage:${id}"${wahl === `vorlage:${id}` ? " selected" : ""}>${esc(v.name)}</option>`).join("")}</optgroup>${
+        eigene.length ? `<optgroup label="Eigene Töne">${eigene.map((d) => `<option value="datei:${d.id}"${wahl === `datei:${d.id}` ? " selected" : ""}>${esc(d.name)}</option>`).join("")}</optgroup>` : ""
+      }`;
+    body.innerHTML = `
+      <div class="plt-alarm-zeile"><label>Alarmierung<select data-a="alarm">${optionen(p.alarm)}</select></label><button class="btn" data-p="alarm" type="button">▶ Probe</button></div>
+      <div class="plt-alarm-zeile"><label>Abruf aus dem Bereitstellungsraum<select data-a="abruf">${optionen(p.abruf)}</select></label><button class="btn" data-p="abruf" type="button">▶ Probe</button></div>
+      <label class="plt-alarm-laut">Lautstärke Alarm <input type="range" min="0" max="150" step="5" value="${p.laut}"><span>${p.laut} %</span></label>
+      <p class="plt-leise plt-klein">Der Ton wiederholt sich, bis du quittierst (Status 9 oder 2) – höchstens 1 Minute.</p>
+      <b>Eigene Töne</b>
+      <div class="plt-alarm-eigene">${
+        eigene.length
+          ? eigene.map((d) => `<div class="plt-alarm-datei"><b>${esc(d.name)}</b><small>${d.sek.toFixed(1)} s · ${Math.round(d.bytes / 1000)} KB</small><button class="btn small" data-spielen="${d.id}" type="button">▶</button><button class="btn small danger-text" data-weg="${d.id}" type="button">Löschen</button></div>`).join("")
+          : `<p class="plt-leise plt-klein">Noch keine eigenen Töne.</p>`
+      }</div>
+      <div class="plt-alarm-knoepfe"><button class="btn primary" data-act="hoch" type="button">Eigenen Ton hinzufügen …</button>${inTauri() ? `<button class="btn" data-act="ordner" type="button">Ordner öffnen</button>` : ""}<input type="file" accept=".mp3,.wav,.m4a,.aac,audio/*" hidden></div>
+      <p class="plt-leise plt-klein">MP3, WAV oder M4A, bis 30 Sekunden und 5 MB. Eine Kopie liegt in „Dokumente/LeitWerk/Töne“.</p>`;
+    body.querySelectorAll<HTMLSelectElement>("select[data-a]").forEach((sel) =>
+      sel.addEventListener("change", () => {
+        alarmPrefsSetzen({ [sel.dataset.a as AlarmArt]: sel.value });
+        void anhoeren(sel.value);
+      }),
+    );
+    body.querySelectorAll<HTMLButtonElement>("[data-p]").forEach((b) => b.addEventListener("click", () => void anhoeren(alarmPrefs()[b.dataset.p as AlarmArt])));
+    const r = body.querySelector<HTMLInputElement>('input[type="range"]')!;
+    r.addEventListener("input", () => {
+      alarmPrefsSetzen({ laut: Number(r.value) });
+      r.nextElementSibling!.textContent = `${r.value} %`;
+    });
+    r.addEventListener("change", () => void anhoeren(alarmPrefs().alarm));
+    body.querySelectorAll<HTMLButtonElement>("[data-spielen]").forEach((b) => b.addEventListener("click", () => void anhoeren(`datei:${b.dataset.spielen}`)));
+    body.querySelectorAll<HTMLButtonElement>("[data-weg]").forEach((b) =>
+      b.addEventListener("click", async () => {
+        const id = b.dataset.weg!;
+        await dateiLoeschen(id);
+        const p2 = alarmPrefs();
+        for (const a of ["alarm", "abruf"] as AlarmArt[]) if (p2[a] === `datei:${id}`) alarmPrefsSetzen({ [a]: a === "alarm" ? "vorlage:fuenfton" : "vorlage:pager" });
+        void zeichnen();
+      }),
+    );
+    const datei = body.querySelector<HTMLInputElement>('input[type="file"]')!;
+    body.querySelector('[data-act="hoch"]')!.addEventListener("click", () => datei.click());
+    body.querySelector('[data-act="ordner"]')?.addEventListener("click", () => void ablageZeigen("Töne").catch(fehler));
+    datei.addEventListener("change", async () => {
+      const f = datei.files?.[0];
+      datei.value = "";
+      if (!f) return;
+      try {
+        const d = await alarmtonHinzufuegen(f);
+        toast(`„${d.name}“ gespeichert (${d.sek.toFixed(1)} s)`);
+        void zeichnen();
+      } catch (e) {
+        fehler(e);
+      }
+    });
+  };
+  void zeichnen();
 }
 
 /** Testmodus: Einsatz an den eigenen Hubschrauber senden (ohne Leitstelle) */
@@ -718,6 +809,7 @@ export async function pilotVerlassen(): Promise<void> {
 }
 
 export function pilotSchliessen(): void {
+  alarmStoppen();
   flugsimBeenden();
   for (const f of aus) f();
   aus = [];
@@ -759,7 +851,7 @@ function zeichneAlles(): void {
   chat();
   wetterTeil(fz);
   karteAktualisieren(fz, e);
-  handyStand(fz, e, fk);
+  handyStand(fz, e, fk, () => handyMehr(fz, e));
   gtnZiel(fz, e);
   hpgAktualisieren(fz, e);
 }
@@ -810,9 +902,11 @@ function alarm(fz: SimFahrzeug | undefined, e: Einsatz | undefined): void {
   const neu = fz?.einsatzId ?? null;
   if (neu && neu !== letzterEinsatz && fz && ["alarmWache", "alarmFunk", "alarmiert"].includes(fz.status)) {
     alarmOffen = true;
-    spielen("funkDringend");
-    window.setTimeout(() => spielen("funkDringend"), 900);
-    window.setTimeout(() => spielen("funkDringend"), 1800);
+    // Melder: wiederholt sich, bis quittiert (Status 9 oder 2), höchstens 1 Minute
+    alarmStarten("alarm", () => {
+      const f = meinFz();
+      return !!root && !!f && f.einsatzId === neu && ["alarmWache", "alarmFunk"].includes(f.status);
+    });
   }
   letzterEinsatz = neu;
   if (!fz || !e || !["alarmWache", "alarmFunk"].includes(fz.status)) alarmOffen = false;
@@ -822,7 +916,7 @@ function alarm(fz: SimFahrzeug | undefined, e: Einsatz | undefined): void {
   if (box.dataset.k === key) return;
   box.dataset.k = key;
   box.innerHTML = `<div class="plt-alarm-titel">ALARM</div>
-    <div class="plt-alarm-text"><b>${esc(stichwort(e))}</b><span>${esc(e.adresse?.label ?? "Adresse folgt")}</span></div>
+    <div class="plt-alarm-text"><b>${e.code ? `<span class="plt-alarm-code">${esc(e.code)}</span>` : ""}${esc(stichwort(e))}</b><span>${esc(e.adresse?.label ?? "Adresse folgt")}</span></div>
     <div class="plt-alarm-hinweis"><kbd>9</kbd> Quittieren · <kbd>2</kbd> beim Abheben</div>`;
 }
 
@@ -1047,9 +1141,12 @@ function einsatzKarte(fz: SimFahrzeug | undefined, e: Einsatz | undefined): void
   const mitFz = e ? e.fahrzeuge.map((id) => sim.state.fahrzeuge[id]).filter((x): x is SimFahrzeug => !!x && x.einsatzId === e.id) : [];
   // Großeinsatz: was der Pilot gerade tun soll (BR, Abruf, Patient zugeteilt)
   const gsH = fz && e ? sim.pilotGsHinweis(fz) : null;
-  if (gsH?.abruf && gsH.text !== letzterGsHinweis) {
-    spielen("funkDringend");
-    window.setTimeout(() => spielen("funkDringend"), 900);
+  if (gsH?.abruf && gsH.text !== letzterGsHinweis && fz) {
+    // Abruf aus dem Bereitstellungsraum: eigener Ton, bis abgehoben (Status 2) – höchstens 1 Minute
+    alarmStarten("abruf", () => {
+      const f = meinFz();
+      return !!root && !!f && f.phase === "wartetBR" && !!sim.pilotGsHinweis(f)?.abruf && f.status !== "zumBO";
+    });
   }
   letzterGsHinweis = gsH?.text ?? null;
   const key = e ? `${e.id}|${e.code}|${e.adresse?.label}|${e.infoRtw}|${e.zusatz}|${e.kh?.hospitalId}|${mitFz.map((x) => x.id + x.status).join(",")}|${Math.round(fz ? distanceM(fz, e.adresse ?? fz) / 500 : 0)}|${fz ? Math.round(sim.pilotAnkunft(fz)?.min ?? -1) : ""}|${gsH?.text ?? ""}` : "-";
@@ -1065,7 +1162,7 @@ function einsatzKarte(fz: SimFahrzeug | undefined, e: Einsatz | undefined): void
     const kh = e.kh ? store.get("hospitals", e.kh.hospitalId) : undefined;
     box.insertAdjacentHTML(
       "beforeend",
-      `<div class="plt-einsatz-kopf"><span class="plt-nr">${esc(e.nummer)}</span>${c ? `<span class="plt-stufe" style="--stufe:${stufeFarbe(c.stufe)}">${esc(c.stufe)}</span>` : ""}</div>
+      `<div class="plt-einsatz-kopf"><span class="plt-nr">${esc(e.nummer)}</span>${e.code ? `<span class="plt-code">${esc(e.code)}</span>` : `<span class="plt-leise plt-klein">Code folgt</span>`}${c ? `<span class="plt-stufe" style="--stufe:${stufeFarbe(c.stufe)}">${esc(c.stufe)}</span>` : ""}</div>
       <div class="plt-stichwort">${esc(stichwort(e))}</div>
       ${gsH ? `<div class="plt-gs${gsH.abruf ? " abruf" : ""}">${esc(gsH.text)}</div>` : ""}
       <div class="plt-zeile">${ico("punkt")}<span>${esc(e.adresse?.label ?? "Adresse folgt")}${e.zusatz ? `<small>${esc(e.zusatz)}</small>` : ""}</span></div>
@@ -1327,6 +1424,114 @@ function plan(fz: SimFahrzeug | undefined, e: Einsatz | undefined): void {
   });
 }
 
+// ------------------------------------------------------------------ Handy: Einsatz und Buchen
+
+/** Was das Handy zusätzlich braucht: Display, Einsatz (Code, Abfrage) und Buchen (gleicher Stand wie am PC) */
+function handyMehr(fz: SimFahrzeug | undefined, e: Einsatz | undefined): Record<string, unknown> {
+  const c = e ? findCode(e.code ?? undefined) : undefined;
+  const km = fz && e?.adresse ? distanceM(fz, e.adresse) / 1000 : null;
+  const ank = fz ? sim.pilotAnkunft(fz) : null;
+  const kh = e?.kh ? store.get("hospitals", e.kh.hospitalId) : undefined;
+  const mitFz = e ? e.fahrzeuge.map((id) => sim.state.fahrzeuge[id]).filter((x): x is SimFahrzeug => !!x && x.einsatzId === e.id) : [];
+  // letzte Notrufabfrage aus dem Protokoll
+  const block = e ? [...e.protokoll].reverse().find((x) => /^\*\*\* /.test(x.text)) : undefined;
+  const abfrage = block ? block.text.split("\n").slice(1).filter(Boolean) : [];
+  const z = fz ? sim.pilotBo(fz) : null;
+  const einsatz2 = e && fz
+    ? {
+        nummer: e.nummer,
+        code: e.code ?? "",
+        stufe: c?.stufe ?? "",
+        stufeFarbe: c ? stufeFarbe(c.stufe) : "",
+        stichwort: stichwort(e),
+        adresse: e.adresse?.label ?? "Adresse folgt",
+        zusatz: e.zusatz ?? "",
+        km: km !== null ? `${km.toFixed(1).replace(".", ",")} km · ca. ${minuten((km * 1000) / (sim.settings.nahGeschwindigkeit / 3.6))} Flug` : "",
+        ankunft: ank ? `Ankunft ${ank.ziel} in ca. ${minuten(ank.min * 60)}` : "",
+        info: (sim.pilotGsHinweis(fz)?.text ?? "") || (e.gsKind ? "" : (e.infoRtw ?? "")),
+        ziel: kh ? kh.kurzname || kh.name : "",
+        koord: z ? `${z.lat.toFixed(5)}, ${z.lon.toFixed(5)}` : "",
+        mit: mitFz.map((x) => ({ name: x.funkrufname, farbe: sim.statusDef(x.status).farbe, du: x === fz })),
+        abfrage,
+        plan: planText(fz.pilot?.plan),
+      }
+    : null;
+  return {
+    gruppe: gruppenName(sprechGruppe()),
+    einsatz2,
+    buchung: fz && e ? handyBuchungStand(fz, e) : null,
+  };
+}
+
+function handyBuchungStand(fz: SimFahrzeug, e: Einsatz): Record<string, unknown> {
+  const da = fz.status === "amBO" && !(e.gs && !e.gs.aufgehoben);
+  const p = fz.pilot?.plan ?? null;
+  if (!da) return { da: false, plan: planText(p), text: e.gs && !e.gs.aufgehoben && fz.status === "amBO" ? "Großeinsatz – die Einsatzleitung teilt dir einen Patienten zu." : "Buchen geht am Berufungsort (Status 3)." };
+  zwVorbelegen(e, p);
+  const rtw = e.fahrzeuge.some((id) => { const x = sim.state.fahrzeuge[id]; return !!x && x.einsatzId === e.id && sim.transportfaehig(x); });
+  const grund = zw.sym ? zuweisungId(zw.sym.id, zw.dring, zw.alter) : "";
+  const gewaehlt = p && p.art !== "kein" ? p.hospitalId : undefined;
+  return {
+    da: true,
+    plan: planText(p),
+    seite: planSeite,
+    seiten: SEITEN,
+    rtw,
+    kein: p?.art === "kein" ? p.grund ?? "kein" : "",
+    sym: zw.sym ? { id: zw.sym.id, name: zw.sym.name, kat: zw.sym.kategorie } : null,
+    q: zw.q,
+    treffer: !zw.sym && zw.q.trim() ? symptomSuche(zw.q.trim(), 8).map((x) => ({ id: x.id, name: x.name, kat: x.kategorie })) : [],
+    alter: zw.alter,
+    alterListe: ALTERSGRUPPEN.map((a) => ({ id: a.id, name: a.name })),
+    dring: zw.dring,
+    dringListe: DRINGLICHKEITEN.map((d) => ({ id: d.id, name: d.name, aus: !!zw.sym && !zw.sym.dringlichkeiten.includes(d.id) })),
+    kh: grund
+      ? khListe(fz, e, grund).map((k) => ({
+          id: k.h.id,
+          name: k.h.kurzname || k.h.name,
+          lang: k.h.name,
+          km: `${k.km.toFixed(0)} km`,
+          zeit: planSeite === "nah" ? minuten((k.km * 1000) / (sim.settings.nahGeschwindigkeit / 3.6)) : "",
+          tags: [
+            k.eignung ? (k.eignung === "passend" ? "passend" : k.eignung === "ausweich" ? "Ausweich" : "Rückfall") : "",
+            k.voll ? "voll" : k.frei,
+            planSeite === "nah" ? (khLandung(k.h) ? "Landeplatz" : "kein Landeplatz") : "",
+          ].filter(Boolean),
+          an: gewaehlt === k.h.id,
+        }))
+      : [],
+  };
+}
+
+/** Befehl vom Handy: „bu:seite:nah“, „bu:q:Text“, „bu:sym:id“, „bu:symweg“, „bu:alter:kind“, „bu:dring:30“, „bu:kh:id“, „bu:kein:revers“ */
+function handyBuchen(b: string): void {
+  const fz = meinFz();
+  const e = einsatzVon(fz);
+  if (!fz || !e || fz.status !== "amBO") return;
+  zwVorbelegen(e, fz.pilot?.plan ?? null);
+  const [, art, ...rest] = b.split(":");
+  const wert = rest.join(":");
+  const setzen = (pl: PilotPlan) => void befehl(sim.call("pilotPlan", fz.id, pl));
+  if (art === "seite" && SEITEN.some((x) => x.id === wert)) planSeite = wert as PlanSeite;
+  else if (art === "q") zw.q = wert.slice(0, 60);
+  else if (art === "sym") {
+    const x = symptom(wert);
+    if (x) {
+      zw.sym = x;
+      zw.q = "";
+      zw.dring = dringlichkeitFuer(x, zw.dring);
+    }
+  } else if (art === "symweg") zw.sym = undefined;
+  else if (art === "alter" && ALTERSGRUPPEN.some((a) => a.id === wert)) zw.alter = wert as Altersgruppe;
+  else if (art === "dring" && DRINGLICHKEITEN.some((d) => String(d.id) === wert)) zw.dring = Number(wert) as Dringlichkeit;
+  else if (art === "kein" && ["kein", "revers", "tot"].includes(wert)) setzen({ art: "kein", grund: wert as "kein" | "revers" | "tot" });
+  else if (art === "kh" && store.get("hospitals", wert)) {
+    const grund = zw.sym ? zuweisungId(zw.sym.id, zw.dring, zw.alter) : "";
+    setzen(planSeite === "nah" ? { art: "transport", hospitalId: wert, grund: grund || undefined } : { art: "uebergabe", naMit: planSeite === "naMit", hospitalId: wert, grund: grund || undefined });
+  }
+  zeichneAlles();
+}
+
 /** Krankenhäuser für die Buchung: die nächsten passenden, die jetzt aufnehmen (wie in der Leitstelle) */
 function khListe(fz: SimFahrzeug, e: Einsatz, grund: string): { h: Hospital; eignung: string | null; km: number; zu: boolean; voll: boolean; frei: string }[] {
   if (!grund) return [];
@@ -1508,15 +1713,26 @@ function funkDialog(): void {
 /** Einsatzverlauf: was beim Einsatz passiert ist (neueste oben) */
 function einsatzVerlauf(e: Einsatz | undefined): void {
   const p = e?.protokoll ?? [];
+  const offen = new Set([...(root?.querySelectorAll<HTMLDetailsElement>(".plt-ev-abfrage[open]") ?? [])].map((d) => d.dataset.i));
   teil(".plt-ev-liste", e ? `${e.id}|${p.length}` : "-", (b) => {
     if (!e || !p.length) {
       b.innerHTML = `<div class="plt-ev-leer">${ico("liste", "riesig")}<b>Noch keine Ereignisse</b><span>Sobald ein Einsatz vorliegt, stehen hier alle Ereignisse dazu.</span></div>`;
       return;
     }
+    const ab = p.length > 60 ? p.length - 60 : 0;
     b.innerHTML = p
-      .slice(-60)
+      .slice(ab)
+      .map((x, i) => {
+        // Notrufabfrage des Hosts: „*** Erstaufnahme: … ***“ + Zeilen → zum Aufklappen
+        const m = /^\*\*\* (.+?): [^*]*\*\*\*\n?([\s\S]*)$/.exec(x.text);
+        if (m) {
+          const zeilen = m[2].split("\n").filter(Boolean);
+          const n = ab + i;
+          return `<div class="plt-ev-z"><span>${esc(uhrzeit(x.zeit))}</span><details class="plt-ev-abfrage" data-i="${n}"${offen.has(String(n)) ? " open" : ""}><summary><b>Notrufabfrage</b> <small class="plt-leise">${esc(m[1])} · ${zeilen.length} Angaben</small></summary>${zeilen.map((z) => `<div>${esc(z)}</div>`).join("")}</details></div>`;
+        }
+        return `<div class="plt-ev-z"><span>${esc(uhrzeit(x.zeit))}</span><div>${esc(x.text)}${x.von ? ` <small class="plt-leise">· ${esc(x.von)}</small>` : ""}</div></div>`;
+      })
       .reverse()
-      .map((x) => `<div class="plt-ev-z"><span>${esc(uhrzeit(x.zeit))}</span><div>${esc(x.text)}${x.von ? ` <small class="plt-leise">· ${esc(x.von)}</small>` : ""}</div></div>`)
       .join("");
   });
 }

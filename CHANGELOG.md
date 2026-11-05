@@ -1,5 +1,14 @@
 # Änderungen
 
+## 0.107.0 – Pilot: Handy wie ein Funkgerät, Buchen am Handy, Alarmtöne
+- **Handy neu, für das Telefon gemacht:** drei Seiten (Funk, Einsatz, Buchen) zum seitlichen Wischen, oben eine Leiste, auf welcher Seite du bist
+- **Status am Handy als Tastenfeld** wie am Funkgerät (3 × 4 Tasten, Display mit Status und Sprechgruppe). Statustaste ca. 2 Sekunden halten – Ton und Vibration beim Drücken, „düt-düt-düt-düt“ beim Senden
+- **Alarm am Handy:** springt auf „Einsatz“ und vibriert, bis quittiert ist (solange die Seite offen ist)
+- **Einsatz am Handy:** Code, Stufe, Stichwort, Adresse, Flugzeit, Koordinaten zum Kopieren, Fahrzeuge, Notrufabfrage, Patient
+- **Buchen am Handy:** Schritt für Schritt – Entscheidung, Stichwort, Alter, Dringlichkeit, Krankenhaus als große Karten, Bestätigen
+- **Code beim Einsatz und im Alarmbalken** (vom Host); die **Notrufabfrage** steht im Einsatzverlauf zum Aufklappen
+- **Alarmtöne:** typische Melder-Töne zur Auswahl, eigene Töne (MP3, WAV, M4A) mit Kopie in „Dokumente/LeitWerk/Töne“, getrennt für Alarmierung und Abruf aus dem Bereitstellungsraum, eigene Lautstärke. Der Ton wiederholt sich, bis du quittierst (höchstens 1 Minute) – Einstellungen → Alarmtöne
+
 ## 0.106.0 – Pilot: Route auf der Karte, ausführliches Wetter
 - **Route auf der Karte:** Der jetzige Abschnitt (zum Einsatzort bzw. Krankenhaus) ist durchgezogen, der weitere Weg gestrichelt. Die Karte zoomt von selbst so weit hinaus, dass Hubschrauber und Route ganz zu sehen sind
 - **Karte füllt die rechte Spalte nach unten**
