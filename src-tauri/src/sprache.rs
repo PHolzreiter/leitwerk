@@ -636,6 +636,22 @@ fn aufnahme_starten(mikro: Option<String>, funk: Option<tauri::ipc::Channel<Stri
     Ok(())
 }
 
+/// Läuft gerade eine Aufnahme (Mikrofon offen)? Für die Sicherung im Fenster: niemand nimmt auf → schließen
+#[tauri::command]
+pub fn sprache_aufnahme_laeuft() -> bool {
+    AUFNAHME.lock().map(|a| a.is_some()).unwrap_or(false)
+}
+
+/// Mikrofon schließen, ohne etwas zu erkennen (Sicherung: eine Aufnahme ist offen geblieben)
+#[tauri::command]
+pub fn sprache_aufnahme_abbrechen() {
+    let a = AUFNAHME.lock().ok().and_then(|mut a| a.take());
+    if let Some(a) = a {
+        let _ = a.stopp.send(());
+        let _ = a.faden.join();
+    }
+}
+
 /// aktueller Pegel 0–1 (für die Anzeige)
 #[tauri::command]
 pub fn sprache_pegel() -> f32 {

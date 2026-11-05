@@ -539,16 +539,18 @@ export function satzSprecher(sagen: (satz: string) => void): { token(t: string):
 }
 
 /** Fahrzeug spricht am Funk (laut = Anteil der normalen Lautstärke) */
-export function funkSagt(funkname: string, text: string, laut = 1): void {
+export function funkSagt(funkname: string, text: string, laut = 1, melden?: { beginn?: () => void; ende?: () => void }): void {
   const p = sprachPrefs();
   if (!p.funkVorlesen || aufnahmeLaeuft || aufnahmeSperre.funk || laut <= 0) return;
+  melden?.beginn?.();
   // Töne des Funkgeräts davor und danach
   const ton = funkTonHaken.ton;
   let fertig = false;
   const ende = () => {
     if (fertig) return;
     fertig = true;
-    ton?.("ende", laut);
+    const nach = ton?.("ende", laut) ?? 0;
+    if (melden?.ende) setTimeout(melden.ende, nach);
   };
   const los = () => {
     // jedes Fahrzeug spricht etwas anders schnell (sonst klingen alle gleich)
@@ -623,8 +625,10 @@ export function funkVorlesenStarten(sim: { state: { funkGespraeche?: VorleseGesp
           const l = laut(g, s);
           const h = funkVorleseHaken.nimm;
           // Cloud-Stimme (spricht selbst oder kommt von einem Mitspieler)? Sonst hier vorlesen
-          if (h) void h(g, n + k, s).then((ok) => !ok && l > 0 && funkSagt(s.von, s.text, l));
-          else if (l > 0) funkSagt(s.von, s.text, l);
+          // wer das Gespräch führt, meldet, wann die Stimme fertig ist (dann ist der Kanal gleich frei)
+          const melden = { beginn: () => funkVorleseHaken.beginn?.(g), ende: () => funkVorleseHaken.fertig?.(g) };
+          if (h) void h(g, n + k, s).then((ok) => !ok && l > 0 && funkSagt(s.von, s.text, l, melden));
+          else if (l > 0) funkSagt(s.von, s.text, l, melden);
         });
       }
     }
@@ -632,7 +636,11 @@ export function funkVorlesenStarten(sim: { state: { funkGespraeche?: VorleseGesp
 }
 
 /** Funk mit Cloud-Stimmen (ui/funkStimmen.ts): true = dieser Spruch wird schon mit Stimme übertragen */
-export const funkVorleseHaken: { nimm: null | ((g: VorleseGespraech, i: number, s: { von: string; text: string }) => Promise<boolean>) } = { nimm: null };
+export const funkVorleseHaken: {
+  nimm: null | ((g: VorleseGespraech, i: number, s: { von: string; text: string }) => Promise<boolean>);
+  beginn?: (g: VorleseGespraech) => void;
+  fertig?: (g: VorleseGespraech) => void;
+} = { nimm: null };
 /** Funk mitschreiben über die Cloud statt der Erkennung hier (ui/funkStimmen.ts) */
 export const funkHoerHaken: { strom: null | (() => { stueck(b64: string): void; ende(): Promise<string>; abbrechen(): void } | null) } = { strom: null };
 
@@ -1222,4 +1230,29 @@ export function testZiel(input: HTMLInputElement): SprachZiel {
  */
 export function funkNamenGlaetten(t: string, namen?: string[], bevorzugt?: string[]): string {
   return funkTextGlaetten(t, namen, bevorzugt);
+}
+
+// ------------------------------------------------------------ Sicherung: Mikrofon nicht offen lassen
+//
+// Das Programm nimmt nur auf, solange eine Sprechtaste gehalten wird (bzw. beim Freisprechen während des Anrufs).
+// Bleibt eine Aufnahme trotzdem offen (z. B. weil ein Anruf auf ungewöhnliche Art endete), schließt sie diese Sicherung –
+// sonst zeigt macOS dauerhaft das orange Mikrofon-Zeichen.
+if (inTauri()) {
+  let verdacht = 0;
+  setInterval(() => {
+    if (aufnahmeLaeuft || aufnahmeSperre.funk || dauerAufnahme.laeuft()) {
+      verdacht = 0;
+      return;
+    }
+    void invoke<boolean>("sprache_aufnahme_laeuft")
+      .then((laeuft) => {
+        if (!laeuft) return void (verdacht = 0);
+        // zweimal hintereinander offen, obwohl niemand spricht: schließen
+        if (++verdacht < 2) return;
+        verdacht = 0;
+        console.warn("Mikrofon war noch offen, obwohl niemand spricht – geschlossen");
+        void invoke("sprache_aufnahme_abbrechen").catch(() => undefined);
+      })
+      .catch(() => undefined);
+  }, 2500);
 }

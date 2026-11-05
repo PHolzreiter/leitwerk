@@ -512,6 +512,8 @@ export function persoenlichView(container: HTMLElement): { refresh(): void } {
       box.append(sl, wert);
       zeile(spr, "Lautstärke der anderen Funkgruppen", box, "Die Gruppe, in die du sprichst, hörst du voll – die anderen (z. B. Großeinsatz) so laut. Dringende Rufe kommen immer voll.");
     }
+    zeile(spr, "Echte Disponenten hören", schalter(funkGruppenWahl().echteDispos, (v) => funkGruppenSetzen({ echteDispos: v })), "Mehrspieler: die Stimmen der anderen Disponenten am Funk. Aus: du hörst sie nicht, ihre Funksprüche stehen trotzdem im Verlauf.");
+    zeile(spr, "Echte Piloten hören", schalter(funkGruppenWahl().echtePiloten, (v) => funkGruppenSetzen({ echtePiloten: v })), "Mehrspieler: die Stimmen der Mitspieler, die einen Hubschrauber fliegen. Aus: nur der Text im Verlauf.");
     zeile(spr, "Funk-Klang", schalter(sp.klangfilter, (v) => setzeSprache({ klangfilter: v })), "Stimmen am Sprechfunk klingen wie über Funk (blechern, kurzes Rauschen beim Loslassen).");
     const funkLaut = el("input", { type: "range", min: "0", max: "100", step: "5" });
     funkLaut.value = String(sp.funkLaut);

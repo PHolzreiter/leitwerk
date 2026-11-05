@@ -3915,3 +3915,17 @@ button.weather.offen {
 .fg-pop-neben:empty { display: none; }
 .funk-tag.gr-gs { background: #fff1d6; color: #7a4f00; border-color: #e3b45a; }
 .funk-tag.gr-gs2 { background: #e8e1ff; color: #4a2f9a; border-color: #a594e0; }
+.funk-links { display: flex; align-items: center; gap: 12px; }
+.funk-modus { display: inline-flex; gap: 0; }
+.funk-modus .btn { border-radius: 0; }
+.funk-modus .btn:first-child { border-radius: 6px 0 0 6px; }
+.funk-modus .btn:last-child { border-radius: 0 6px 6px 0; }
+.funk-unten { justify-content: space-between; }
+.funk-text-teil {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  min-height: 0;
+}
+.funk-text-teil[hidden] { display: none; }

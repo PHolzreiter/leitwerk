@@ -1144,7 +1144,7 @@ export const BEFEHLE = {
     "ktFunkStorno",
     "ktFrueh",
   ],
-  immer: ["chat", "funkFzAntwort", "funkFzSpricht", "funkMensch", "funkMenschText"],
+  immer: ["chat", "funkFzAntwort", "funkFzSpricht", "funkFzFertig", "funkMensch", "funkMenschText"],
   /** Pilot (Spieler-NAH): jeder darf, geprüft wird, ob er diesen Hubschrauber fliegt */
   pilot: ["pilotUebernehmen", "pilotAbgeben", "pilotStatus", "pilotPlan", "pilotFliegen", "pilotPosition", "pilotZeit", "pilotTestEinsatz"],
 } as const;
@@ -7106,16 +7106,32 @@ export class Simulation {
     if (!g.ausstehend) return;
     const n = g.sprueche.length;
     this.ausstehendSprechen(g, zahlenAlsZiffern(text), quelle);
-    // mit Stimme (Cloud) schon übertragen: nicht noch einmal vorlesen
-    if (stimme && g.sprueche.length > n) g.sprueche[n].stimme = true;
+    // mit Stimme (Cloud) schon übertragen: nicht noch einmal vorlesen; der Ton läuft noch kurz aus – das genaue Ende meldet funkFzFertig
+    if (stimme && g.sprueche.length > n) {
+      g.sprueche[n].stimme = true;
+      g.sprichtBis = Date.now() + 6000;
+    }
     this.emit();
   }
 
   /** Die Besatzung spricht gerade (Stimme aus der Cloud läuft): nicht nach der Wartezeit den festen Text nehmen */
   funkFzSpricht(id: number): void {
     const g = (this.state.funkGespraeche ?? []).find((x) => x.id === id);
-    if (!g?.ausstehend) return;
-    g.ausstehend.bis = Math.max(g.ausstehend.bis, Date.now() + 30_000);
+    if (!g || g.status === "ende" && !g.ausstehend) return;
+    if (g.ausstehend) g.ausstehend.bis = Math.max(g.ausstehend.bis, Date.now() + 30_000);
+    // die Stimme läuft: Kanal belegt, bis funkFzFertig kommt (höchstens 30 s)
+    else g.sprichtBis = Math.max(g.sprichtBis ?? 0, Date.now() + 30_000);
+  }
+
+  /** Die Stimme des Fahrzeugs ist fertig (mit Ende-Ton): der Kanal ist gleich wieder frei */
+  funkFzFertig(id: number): void {
+    const g = (this.state.funkGespraeche ?? []).find((x) => x.id === id);
+    if (!g || g.ausstehend) return;
+    const jetzt = Date.now();
+    if ((g.sprichtBis ?? 0) > jetzt + 150) {
+      g.sprichtBis = jetzt + 150;
+      this.emit();
+    }
   }
 
   /** Die Leitstelle schreibt gerade einen Funkspruch: das Gespräch nicht wegen Stille beenden */

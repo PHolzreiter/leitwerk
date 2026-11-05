@@ -163,7 +163,11 @@ export function funkAngekuendigt(gId: number, i: number): boolean {
 /** Lautstärke eines Stroms: KI-Fahrzeuge wie beim Vorlesen (eigene Gespräche laut, fremde gar nicht bzw. leise) */
 function stromLaut(d: Record<string, unknown>, von: string): number {
   // Sprechgruppe stumm geschaltet (bzw. Pilot hört sie nicht)
-  if (typeof d.g !== "number") return gruppeLaut(d.r === "gs" || d.r === "gs2" ? d.r : null);
+  if (typeof d.g !== "number") {
+    // Stimme eines Mitspielers: Disponent (LEO) oder Pilot – abschaltbar (nur der Ton)
+    if (!d.ki && (von === "LEO" ? !wahl.echteDispos : !wahl.echtePiloten)) return 0;
+    return gruppeLaut(d.r === "gs" || d.r === "gs2" ? d.r : null);
+  }
   if (d.ki && !sprachPrefs().funkVorlesen) return 0;
   const g = sim.state.funkGespraeche?.find((x) => x.id === d.g);
   return g ? funkVorleseLaut(g, { von }) : 1;
@@ -638,7 +642,7 @@ export function kiFunkAnkuendigen(gId: number, i: number): void {
  * Stimme eines KI-Fahrzeugs: geht wie Sprechfunk (8 kHz, μ-law) an alle und wird hier gleich mit Funk-Klang abgespielt.
  * Jeder Empfänger stellt die Lautstärke selbst ein (eigenes Gespräch laut, fremdes leise oder gar nicht).
  */
-export function kiFunkStrom(meta: { von: string; gId: number }): { pcm(d: Int16Array, rate: number): void; ende(): void } {
+export function kiFunkStrom(meta: { von: string; gId: number }): { pcm(d: Int16Array, rate: number): void; ende(): number } {
   const id = `ki${zufall()}`;
   let n = 0;
   const ich = sim.ich?.pid ?? mp.ich.pid;
@@ -654,9 +658,13 @@ export function kiFunkStrom(meta: { von: string; gId: number }): { pcm(d: Int16A
       for (let i = 0; i < d.length; i++) f[i] = d[i] / 32768;
       kod.daten(f);
     },
+    /** gibt zurück, in wie vielen ms die Stimme hier fertig abgespielt ist (mit Ende-Ton) */
     ende() {
       kod?.ende();
+      const st = stroeme.get(`${ich}:${id}`);
+      const rest = st && ctx ? Math.max(0, (st.cursor - ctx.currentTime) * 1000) + 250 : 250;
       raus({ k: "e", s: id, n });
+      return rest;
     },
   };
 }
@@ -748,9 +756,12 @@ interface GruppenWahl {
   mithoerLaut: number;
   /** während eines Telefonats den Funk ganz stumm schalten */
   telefonStumm: boolean;
+  /** Stimmen echter Mitspieler hören (der Text steht trotzdem im Verlauf) */
+  echteDispos: boolean;
+  echtePiloten: boolean;
 }
 let wahl: GruppenWahl = (() => {
-  const std: GruppenWahl = { stumm: {}, senden: null, allesHoeren: false, pilotSenden: "auto", mithoerLaut: 50, telefonStumm: false };
+  const std: GruppenWahl = { stumm: {}, senden: null, allesHoeren: false, pilotSenden: "auto", mithoerLaut: 50, telefonStumm: false, echteDispos: true, echtePiloten: true };
   try {
     const alt = localStorage.getItem("lw-gs-mithoeren") === "0";
     return { ...std, stumm: { gs: alt }, ...JSON.parse(localStorage.getItem("lw-funk-gruppen") ?? "{}") };

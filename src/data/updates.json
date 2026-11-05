@@ -1,5 +1,16 @@
 [
  {
+  "version": "0.103.0",
+  "datum": "2026-11-05",
+  "titel": "Funk: Sprechen oder Text, Kanal schneller frei, Mikrofon wieder zu",
+  "punkte": [
+   "Umschalter Sprechen | Text am Funkgerät",
+   "Kanal gleich nach dem Ende-Ton frei",
+   "Echte Disponenten bzw. Piloten stumm schaltbar",
+   "Mikrofon bleibt nicht mehr offen"
+  ]
+ },
+ {
   "version": "0.102.0",
   "datum": "2026-11-05",
   "titel": "Funk: mehrere Sprechgruppen hören, Tasten frei belegen",

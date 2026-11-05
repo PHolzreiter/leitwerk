@@ -24,7 +24,7 @@ const HILFE = `<b>Das Funkgerät</b>
 <li><b>Sprechen:</b> PTT gedrückt halten – oder die Funktaste (in jedem Reiter, einstellbar unter Einstellungen → Anrufe &amp; KI → Sprache). Am Display steht „Senden“; spricht gerade jemand, „Warten …“ – nach seinem Ende-Ton bist du dran.</li>
 <li><b>Sprechgruppe wechseln:</b> Steuerkreuz links/rechts. Normal ist es RD-NOE-03; bei einem Großeinsatz kommt RD-NOE-09 dazu, bei einem zweiten gleichzeitig RD-NOE-10. Wahlweise hat jede Gruppe eine eigene Funktaste.</li>
 <li><b>Hören:</b> Die Gruppe, in die du sprichst, hörst du voll, die anderen leiser (einstellbar). Die Lampe neben der Gruppe leuchtet, wenn in einer anderen Gruppe gefunkt wird; wer spricht, steht im Fenster am Display. Dringende Rufe hörst du immer voll.</li>
-<li><b>Verlauf</b> aufklappen: dort lassen sich Gruppen stumm schalten (der Text bleibt). Beim Telefonieren den Funk ganz stumm: Schalter im Reiter Telefon.</li>
+<li><b>Sprechen | Text:</b> unter der PTT umschalten. Im Textmodus funkst du per Eingabezeile und siehst den Verlauf – dort lassen sich Gruppen stumm schalten (der Text bleibt). Beim Telefonieren den Funk ganz stumm: Schalter im Reiter Telefon.</li>
 </ul>
 <b>Funken</b>
 <ul>
@@ -74,30 +74,49 @@ export function createFunkView(root: HTMLElement, deps: { select(einsatzId: stri
   const infoBox = el("div", { class: "funk-info-box" });
   infoBox.innerHTML = HILFE;
   info.appendChild(infoBox);
-  form.append(eingabe, senden, info);
+  form.append(eingabe, senden);
   sprechKnopfAnbinden(ptt, () => "leo", () => meineGruppe());
+  // Umschalter Sprechen | Text: beim Sprechen nur Funkgerät und PTT; Text: Eingabezeile und Verlauf (immer offen)
+  const modusBox = el("div", { class: "funk-modus", role: "group" });
+  const mSprechen = el("button", { type: "button", class: "btn small", "data-m": "sprechen" }, "🎙 Sprechen");
+  const mText = el("button", { type: "button", class: "btn small", "data-m": "text" }, "⌨ Text");
+  modusBox.append(mSprechen, mText);
   const unten = el("div", { class: "funk-unten" });
-  unten.append(ptt, form);
-  // Verlauf: zu Beginn zu (kompaktes Fenster), auf Knopfdruck auf
+  const links = el("div", { class: "funk-links" });
+  links.append(ptt, modusBox);
+  unten.append(links, info);
+  const textTeil = el("div", { class: "funk-text-teil" });
   const titel = el("div", { class: "funk-verlauf-titel" });
-  const klapp = el("button", { class: "btn small funk-klapp", type: "button", "aria-expanded": "false" }, "Verlauf ▸");
-  titel.append(klapp, gruppen);
-  const verlaufTeil = el("div", { class: "funk-verlauf-teil", hidden: "" });
-  gruppen.hidden = true;
-  verlaufTeil.append(chat);
-  let offenV = false;
-  klapp.addEventListener("click", () => {
-    offenV = !offenV;
-    verlaufTeil.hidden = !offenV;
-    gruppen.hidden = !offenV;
-    klapp.textContent = offenV ? "Verlauf ▾" : "Verlauf ▸";
-    klapp.setAttribute("aria-expanded", String(offenV));
-    root.classList.toggle("funk-offen", offenV);
+  titel.append(el("span", {}, "Verlauf"), gruppen);
+  textTeil.append(form, titel, chat);
+  let modus: "sprechen" | "text" = (() => {
+    try {
+      return localStorage.getItem("lw-funk-modus") === "text" ? "text" : "sprechen";
+    } catch {
+      return "sprechen";
+    }
+  })();
+  const modusZeigen = () => {
+    textTeil.hidden = modus !== "text";
+    mSprechen.classList.toggle("primary", modus === "sprechen");
+    mText.classList.toggle("primary", modus === "text");
+    root.classList.toggle("funk-offen", modus === "text");
     letzterChat = "";
-    refresh();
-  });
+  };
+  for (const [b, m] of [[mSprechen, "sprechen"], [mText, "text"]] as const)
+    b.addEventListener("click", () => {
+      modus = m;
+      try {
+        localStorage.setItem("lw-funk-modus", m);
+      } catch {
+        /* egal */
+      }
+      modusZeigen();
+      refresh();
+      if (m === "text") eingabe.focus();
+    });
   void lage;
-  root.append(geraet.el, unten, titel, verlaufTeil);
+  root.append(geraet.el, unten, textTeil);
   onFunkSenden(() => refresh());
   onFunkEmpfang(() => refresh());
   const ausG = onFunkGruppen(() => refresh());
@@ -248,6 +267,7 @@ export function createFunkView(root: HTMLElement, deps: { select(einsatzId: stri
     if (g?.einsatzId) deps.select(g.einsatzId);
   });
 
+  modusZeigen();
   refresh();
   return {
     refresh,

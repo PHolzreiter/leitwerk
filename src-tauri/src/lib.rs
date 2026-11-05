@@ -613,6 +613,8 @@ pub fn run() {
             sprache::sprache_aufnahme_start,
             sprache::funk_aufnahme_start,
             sprache::sprache_pegel,
+            sprache::sprache_aufnahme_laeuft,
+            sprache::sprache_aufnahme_abbrechen,
             sprache::sprache_aufnahme_stopp,
             ton::ton_geraete,
             ton::ton_spielen,

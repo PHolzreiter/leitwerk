@@ -1,5 +1,11 @@
 # Änderungen
 
+## 0.103.0 – Funk: Sprechen oder Text, Kanal schneller frei, Mikrofon wieder zu
+- **Sprechen | Text:** Unter der PTT schaltest du um. Beim Sprechen siehst du nur das Funkgerät; im Textmodus kommen die Eingabezeile und der Verlauf dazu (immer offen)
+- **Der Kanal ist gleich nach dem Ende-Ton frei:** Die Stimme eines Fahrzeugs meldet jetzt ihr echtes Ende – vorher blieb der Kanal nach jedem Funkspruch noch eine Weile belegt
+- **Echte Mitspieler stumm schalten:** „Echte Disponenten hören“ und „Echte Piloten hören“ (Einstellungen → Anrufe & KI → Sprache). Aus: du hörst ihre Stimme nicht, ihre Funksprüche stehen weiter im Verlauf
+- **Mikrofon:** Bleibt eine Aufnahme nach einem Funkspruch oder Telefonat offen, schließt LeitWerk sie jetzt nach wenigen Sekunden – das orange Mikrofon-Zeichen am Mac verschwindet wieder
+
 ## 0.102.0 – Funk: mehrere Sprechgruppen hören, Tasten frei belegen
 - **Ein Funkgerät für alle Gruppen:** Der eigene Reiter „Funk Großeinsatz“ fällt weg. Die Gruppe des Großeinsatzes (RD-NOE-09) ist am Funkgerät dabei; ein zweiter gleichzeitiger Großeinsatz funkt auf RD-NOE-10. Mit dem Steuerkreuz wählst du, in welche Gruppe du sprichst
 - **Mehrere Gruppen hören:** Je Gruppe spricht einer, in verschiedenen Gruppen darf gleichzeitig gefunkt werden. Deine Sprechgruppe hörst du voll, die anderen leiser (einstellbar unter Einstellungen → Anrufe & KI → Sprache). Dringende Rufe kommen immer voll. Während du sprichst, sind die anderen Gruppen fast stumm

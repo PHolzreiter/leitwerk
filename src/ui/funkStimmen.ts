@@ -103,15 +103,19 @@ function woertlich(von: string): string {
 const zitat = (t: string) => `«${funkAussprache(rufnamenAlsWorte(t))}»`;
 
 /** Spruch mit Cloud-Stimme sprechen und an alle schicken; onStart: der erste Ton ist da */
-async function sprechen(gId: number, von: string, fzId: string, system: string, text: string, onStart?: () => void): Promise<string> {
+async function sprechen(gId: number, von: string, fzId: string, system: string, text: string, onStart?: () => void): Promise<{ text: string; fertig: () => void }> {
   const strom = kiFunkStrom({ von, gId });
+  let rest = 0;
   try {
     const stimme = funkStimme(fzId);
     const r = await liveFunkSprechen({ stimme, system, text, onTon: (d, rate) => strom.pcm(d, rate), onStart });
     console.info(`[Funk-Stimme] ${von} (${stimme}): erster Ton nach ${r.ersterTon} ms, fertig nach ${r.fertig} ms – ${r.text}`);
-    return r.text;
-  } finally {
+    rest = strom.ende();
+    // sobald die Stimme hier fertig abgespielt ist (mit Ende-Ton), ist der Kanal frei
+    return { text: r.text, fertig: () => setTimeout(() => void sim.call("funkFzFertig", gId).catch(() => undefined), rest) };
+  } catch (e) {
     strom.ende();
+    throw e;
   }
 }
 
@@ -128,8 +132,11 @@ async function ausstehendSprechen(g: FunkGespraech, a: FunkAusstehend): Promise<
     // inzwischen schon gesagt (z. B. fester Text nach der Wartezeit)?
     if (!sim.state.funkGespraeche?.find((x) => x.id === g.id)?.ausstehend) return true;
     let gesagt = "";
+    let fertig = () => undefined as unknown;
     try {
-      gesagt = await sprechen(g.id, a.von, fz.id, auftrag.system, auftrag.text, () => void sim.call("funkFzSpricht", g.id).catch(() => undefined));
+      const r = await sprechen(g.id, a.von, fz.id, auftrag.system, auftrag.text, () => void sim.call("funkFzSpricht", g.id).catch(() => undefined));
+      gesagt = r.text;
+      fertig = r.fertig;
     } catch (e) {
       console.warn("Funk-Stimme", e);
       return false;
@@ -142,6 +149,7 @@ async function ausstehendSprechen(g: FunkGespraech, a: FunkAusstehend): Promise<
       if (p.length) console.info(`[Funk-Stimme] ${a.von}: ${p.join("; ")} – gesagt: ${gesagt}`);
     }
     await sim.call("funkFzAntwort", g.id, gesagt, frei ? "ki" : "fest", true);
+    fertig();
     return true;
   });
   kette = lauf.catch(() => undefined);
@@ -158,7 +166,8 @@ async function vorlesenNehmen(g: { id: number; fzId: string; an?: { fzId: string
     kiFunkAnkuendigen(g.id, i);
     const lauf = kette.then(async () => {
       try {
-        await sprechen(g.id, s.von, fz.id, woertlich(s.von), zitat(s.text));
+        const r = await sprechen(g.id, s.von, fz.id, woertlich(s.von), zitat(s.text), () => void sim.call("funkFzSpricht", g.id).catch(() => undefined));
+        r.fertig();
         return true;
       } catch (e) {
         console.warn("Funk-Stimme", e);
@@ -183,6 +192,13 @@ export function funkStimmenStarten(): void {
   gestartet = true;
   funkLiveHaken.erzeugen = ausstehendSprechen;
   funkVorleseHaken.nimm = vorlesenNehmen;
+  // Stimme hier (ohne Gemini): wer das Gespräch führt, meldet Beginn und Ende – dann ist der Kanal gleich frei
+  funkVorleseHaken.beginn = (g) => {
+    if (ichSpreche(g)) void sim.call("funkFzSpricht", g.id).catch(() => undefined);
+  };
+  funkVorleseHaken.fertig = (g) => {
+    if (ichSpreche(g)) void sim.call("funkFzFertig", g.id).catch(() => undefined);
+  };
   // Mitschrift über Gemini nur, wenn hier kein Sprachmodell geladen ist (die Erkennung hier kennt die Funkrufnamen besser)
   funkHoerHaken.strom = () => {
     // Test: Gemini versteht den Funk (kennt Fahrzeuge und Gespräch) – auch wenn hier ein Sprachmodell geladen ist
