@@ -1,5 +1,17 @@
 [
  {
+  "version": "0.102.0",
+  "datum": "2026-11-05",
+  "titel": "Funk: mehrere Sprechgruppen hören, Tasten frei belegen",
+  "punkte": [
+   "Ein Funkgerät für RD-NOE-03, -09 und -10, Gruppe mit dem Steuerkreuz",
+   "Andere Gruppen leiser mithören, dringende Rufe immer laut",
+   "Funk stumm beim Telefonieren (Schalter im Telefon)",
+   "Tasten frei belegen, eigene Funktaste je Gruppe",
+   "Verlauf zuklappbar"
+  ]
+ },
+ {
   "version": "0.101.0",
   "datum": "2026-11-04",
   "titel": "Das Funkgerät wie im RTW",

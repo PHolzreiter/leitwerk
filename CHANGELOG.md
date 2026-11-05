@@ -1,5 +1,14 @@
 # Änderungen
 
+## 0.102.0 – Funk: mehrere Sprechgruppen hören, Tasten frei belegen
+- **Ein Funkgerät für alle Gruppen:** Der eigene Reiter „Funk Großeinsatz“ fällt weg. Die Gruppe des Großeinsatzes (RD-NOE-09) ist am Funkgerät dabei; ein zweiter gleichzeitiger Großeinsatz funkt auf RD-NOE-10. Mit dem Steuerkreuz wählst du, in welche Gruppe du sprichst
+- **Mehrere Gruppen hören:** Je Gruppe spricht einer, in verschiedenen Gruppen darf gleichzeitig gefunkt werden. Deine Sprechgruppe hörst du voll, die anderen leiser (einstellbar unter Einstellungen → Anrufe & KI → Sprache). Dringende Rufe kommen immer voll. Während du sprichst, sind die anderen Gruppen fast stumm
+- Am Display zeigt eine Lampe neben der Gruppe, dass in einer anderen Gruppe gefunkt wird; im Fenster steht, wer dort spricht (z. B. „09: EL Krems“)
+- **Fahrzeug in einer anderen Gruppe:** Rufst du es in der falschen Gruppe, kommt ein Hinweis und es antwortet nicht – erst wenn du in seiner Gruppe rufst
+- **Telefon:** Neuer Schalter „Funk stumm beim Telefonieren“ im Reiter Telefon
+- **Tasten frei belegen:** Sprechtaste und Funktaste: draufklicken, gewünschte Taste drücken. Wahlweise eigene Funktasten für jede Gruppe (normale Gruppe, RD-NOE-09, RD-NOE-10)
+- **Kompaktes Funkfenster:** Der Verlauf ist zu Beginn zugeklappt und geht mit „Verlauf“ auf. Das ⓘ erklärt das Funkgerät
+
 ## 0.101.0 – Das Funkgerät wie im RTW
 - **Der Funk-Reiter zeigt jetzt das Funkgerät** wie im RTW. Am Display: TETRA, DISPOZONEN, die Sprechgruppe (RD-NOE-03, beim Großeinsatz RD-NOE-09) und der Status – als Disponent „Frei auf Wache“, als Pilot dein echter Status
 - Spricht jemand, erscheint am Display ein Fenster mit seinem Rufnamen. Sprichst du: „Senden“ mit Pegel, wartest du: „Warten …“

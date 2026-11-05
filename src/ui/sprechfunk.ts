@@ -11,12 +11,12 @@ import { funkGlaetten, funkHinweis } from "./funkNamen";
 import { invoke, Channel } from "@tauri-apps/api/core";
 import { inTauri } from "../platform";
 import { mp } from "../net/mehrspieler";
-import { sim } from "../sim/engine";
+import { sim, type Sprechgruppe } from "../sim/engine";
 import { toast } from "./dom";
 import { FUNK_RATE, FunkKodierer, funkDekodieren } from "./funkCodec";
 import { istPilot } from "./pilot/modus";
 import { tonBeginn, tonEnde } from "./funkToene";
-import { aufnahmeLaeuftJetzt, aufnahmeSperre, funkHaken, funkHoerHaken, funkTonHaken, sprachPrefs, sprachStatus, sprachTest, verstummen } from "./sprache";
+import { aufnahmeLaeuftJetzt, aufnahmeSperre, funkHaken, funkHoerHaken, funkTonHaken, sprachPrefs, sprachStatus, sprachTest, tastenBelegung, verstummen } from "./sprache";
 
 export type FunkZiel = "leo" | "rtw";
 
@@ -47,6 +47,9 @@ interface Strom {
   cursor: number;
   letzte: number;
   eingang: GainNode;
+  /** Grundlautstärke (Einstellung) und Kopfdaten – damit die Lautstärke nachgeführt werden kann */
+  basis: number;
+  d: Record<string, unknown>;
 }
 
 const stroeme = new Map<string, Strom>();
@@ -57,10 +60,17 @@ function empfangGeaendert(): void {
 }
 
 /** Wer spricht gerade (Stimme kommt an)? */
-export function funkEmpfang(): { von: string; wer: string } | null {
+export function funkEmpfang(gruppe?: Sprechgruppe): { von: string; wer: string } | null {
   let neu: Strom | null = null;
-  for (const s of stroeme.values()) if (!neu || s.letzte > neu.letzte) neu = s;
+  for (const s of stroeme.values()) if ((gruppe === undefined || stromGruppe(s.d) === gruppe) && (!neu || s.letzte > neu.letzte)) neu = s;
   return neu ? { von: neu.von, wer: neu.wer } : null;
+}
+
+/** Sprechgruppe eines Stroms (Mitspieler schicken sie mit, KI-Stimmen über ihr Gespräch) */
+function stromGruppe(d: Record<string, unknown>): Sprechgruppe {
+  if (d.r === "gs" || d.r === "gs2") return d.r;
+  if (typeof d.g === "number") return sim.state.funkGespraeche?.find((x) => x.id === d.g)?.kanal ?? null;
+  return null;
 }
 
 export function onFunkEmpfang(fn: () => void): () => void {
@@ -153,8 +163,7 @@ export function funkAngekuendigt(gId: number, i: number): boolean {
 /** Lautstärke eines Stroms: KI-Fahrzeuge wie beim Vorlesen (eigene Gespräche laut, fremde gar nicht bzw. leise) */
 function stromLaut(d: Record<string, unknown>, von: string): number {
   // Sprechgruppe stumm geschaltet (bzw. Pilot hört sie nicht)
-  if ("r" in d && !gruppeHoerbar(d.r === "gs" ? "gs" : null)) return 0;
-  if (typeof d.g !== "number") return 1;
+  if (typeof d.g !== "number") return gruppeLaut(d.r === "gs" || d.r === "gs2" ? d.r : null);
   if (d.ki && !sprachPrefs().funkVorlesen) return 0;
   const g = sim.state.funkGespraeche?.find((x) => x.id === d.g);
   return g ? funkVorleseLaut(g, { von }) : 1;
@@ -171,8 +180,9 @@ function empfangen(pid: string, name: string, d: Record<string, unknown>): void 
     const c = audio();
     let st = stroeme.get(sId);
     if (!st) {
-      st = { von: String(d.v ?? name), wer: String(d.w ?? name), cursor: c.currentTime + PUFFER, letzte: Date.now(), eingang: kette(c) };
-      st.eingang.gain.value *= stromLaut(d, st.von);
+      const eingang = kette(c);
+      st = { von: String(d.v ?? name), wer: String(d.w ?? name), cursor: c.currentTime + PUFFER, letzte: Date.now(), eingang, basis: eingang.gain.value, d };
+      st.eingang.gain.value = st.basis * stromLaut(d, st.von);
       // Beginn-Ton des Funkgeräts vor der Stimme
       st.cursor = tonBeginn(c, st.eingang, st.cursor);
       stroeme.set(sId, st);
@@ -208,8 +218,14 @@ function empfangen(pid: string, name: string, d: Record<string, unknown>): void 
 
 mp.onFunk(empfangen);
 
+/** Lautstärke laufender Ströme nachführen (eigene Sprechtaste, Telefon, Sprechgruppe gewechselt) */
+function lautNeu(): void {
+  for (const st of stroeme.values()) st.eingang.gain.value = st.basis * stromLaut(st.d, st.von);
+}
+
 // abgerissene Ströme (Verbindung weg) aufräumen
 setInterval(() => {
+  lautNeu();
   let weg = false;
   for (const [k, s] of stroeme) {
     if (Date.now() - s.letzte > 1500 && (!ctx || s.cursor < ctx.currentTime)) {
@@ -244,8 +260,8 @@ interface Sendung {
   frueh: boolean;
   /** Mitschrift über Gemini (statt der Erkennung hier) */
   mitschrift?: { stueck(b64: string): void; ende(): Promise<string>; abbrechen(): void } | null;
-  /** Sprechgruppe (null = normale TETRA-Gruppe, „gs“ = Großeinsatz) */
-  gruppe: "gs" | null | undefined;
+  /** Sprechgruppe (null = normale Gruppe, „gs“/„gs2“ = Großeinsatz 09/10) */
+  gruppe: Sprechgruppe | undefined;
   /** wartet, bis der laufende Funkspruch fertig ist */
   wartet: boolean;
 }
@@ -267,6 +283,7 @@ function funkModell(da: string[]): string {
 let modellHinweis = false;
 
 function sendGeaendert(): void {
+  lautNeu();
   for (const f of sendHoerer) f();
 }
 
@@ -387,7 +404,7 @@ function auf16k(daten: Float32Array, rate: number): Float32Array {
  * Sprechtaste gedrückt. Pilot: ziel „leo“ (Leitstelle) oder „rtw“ (Bodenfahrzeug am Einsatz);
  * Leitstelle: immer „leo“ (spricht mit dem Piloten).
  */
-export async function sprechStart(ziel: FunkZiel = "leo", gruppe?: "gs" | null): Promise<void> {
+export async function sprechStart(ziel: FunkZiel = "leo", gruppe?: Sprechgruppe): Promise<void> {
   if (sendung) return;
   if (aufnahmeLaeuftJetzt()) return;
   aufnahmeSperre.funk = true;
@@ -646,37 +663,53 @@ export function kiFunkStrom(meta: { von: string; gId: number }): { pcm(d: Int16A
 
 // ------------------------------------------------------------ Funktaste der Leitstelle
 
-let tasteUnten = false;
+let tasteUnten: string | null = null;
+/** welche Sprechgruppe eine Taste meint: Funktaste = die am Funkgerät gewählte, sonst die eigene Taste der Gruppe */
+function tastenGruppe(code: string): Sprechgruppe | undefined | false {
+  const p = sprachPrefs();
+  if (code === p.funkTaste) return undefined;
+  if (p.funkTasteNormal && code === p.funkTasteNormal) return null;
+  if (p.funkTaste09 && code === p.funkTaste09) return "gs";
+  if (p.funkTaste10 && code === p.funkTaste10) return "gs2";
+  return false;
+}
 window.addEventListener(
   "keydown",
   (ev) => {
-    if (istPilot() || ev.code !== sprachPrefs().funkTaste) return;
+    if (istPilot() || tastenBelegung.aktiv) return;
+    const gr = tastenGruppe(ev.code);
+    if (gr === false) return;
     ev.preventDefault();
     if (ev.repeat || tasteUnten) return;
-    tasteUnten = true;
-    void sprechStart("leo");
+    // eigene Taste einer Gruppe, die es gerade nicht gibt (kein Großeinsatz): nichts tun
+    if (gr !== undefined && !sim.offeneGruppen().includes(gr)) {
+      toast(`${sim.sprechgruppeName(gr)} ist gerade nicht in Betrieb`, "error");
+      return;
+    }
+    tasteUnten = ev.code;
+    void sprechStart("leo", gr);
   },
   true,
 );
 window.addEventListener(
   "keyup",
   (ev) => {
-    if (ev.code !== sprachPrefs().funkTaste || !tasteUnten) return;
+    if (ev.code !== tasteUnten) return;
     ev.preventDefault();
-    tasteUnten = false;
+    tasteUnten = null;
     void sprechStopp();
   },
   true,
 );
 window.addEventListener("blur", () => {
   if (tasteUnten) {
-    tasteUnten = false;
+    tasteUnten = null;
     void sprechStopp();
   }
 });
 
 /** Knopf „gedrückt halten zum Sprechen“ */
-export function sprechKnopfAnbinden(b: HTMLElement, ziel: () => FunkZiel = () => "leo", gruppe?: () => "gs" | null): void {
+export function sprechKnopfAnbinden(b: HTMLElement, ziel: () => FunkZiel = () => "leo", gruppe?: () => Sprechgruppe): void {
   b.addEventListener("pointerdown", (ev) => {
     ev.preventDefault();
     b.setPointerCapture?.((ev as PointerEvent).pointerId);
@@ -704,16 +737,20 @@ export function sprechKnopfAnbinden(b: HTMLElement, ziel: () => FunkZiel = () =>
 
 interface GruppenWahl {
   /** stumm geschaltete Gruppen (Text bleibt sichtbar, man hört nichts) */
-  stumm: { normal?: boolean; gs?: boolean };
-  /** Leitstelle: in dieser Gruppe wird gesprochen */
-  senden: "gs" | null;
+  stumm: { normal?: boolean; gs?: boolean; gs2?: boolean };
+  /** Leitstelle: in dieser Gruppe wird gesprochen (Steuerkreuz am Funkgerät) */
+  senden: Sprechgruppe;
   /** Pilot: alle Gruppen hören (sonst nur die, zu der er alarmiert ist) */
   allesHoeren: boolean;
   /** Pilot: hier spricht er („auto“ = Gruppe seines Einsatzes) */
-  pilotSenden: "auto" | "normal" | "gs";
+  pilotSenden: "auto" | "normal" | "gs" | "gs2";
+  /** Lautstärke der Gruppen, in die man gerade nicht spricht (Mithören, %) */
+  mithoerLaut: number;
+  /** während eines Telefonats den Funk ganz stumm schalten */
+  telefonStumm: boolean;
 }
 let wahl: GruppenWahl = (() => {
-  const std: GruppenWahl = { stumm: {}, senden: null, allesHoeren: false, pilotSenden: "auto" };
+  const std: GruppenWahl = { stumm: {}, senden: null, allesHoeren: false, pilotSenden: "auto", mithoerLaut: 50, telefonStumm: false };
   try {
     const alt = localStorage.getItem("lw-gs-mithoeren") === "0";
     return { ...std, stumm: { gs: alt }, ...JSON.parse(localStorage.getItem("lw-funk-gruppen") ?? "{}") };
@@ -733,31 +770,61 @@ export function funkGruppenSetzen(teil: Partial<GruppenWahl>): void {
     /* egal */
   }
   for (const f of wahlHoerer) f();
+  lautNeu();
 }
 export function onFunkGruppen(fn: () => void): () => void {
   wahlHoerer.add(fn);
   return () => wahlHoerer.delete(fn);
 }
-/** gibt es gerade die Sprechgruppe Großeinsatz? */
+const stummKey = (k: Sprechgruppe): "normal" | "gs" | "gs2" => (k === null ? "normal" : k);
+/** gibt es gerade eine Großeinsatz-Gruppe? */
 export function gsGruppeOffen(): boolean {
-  return sim.state.einsaetze.some((e) => e.zustand !== "abgeschlossen" && sim.kanalVon(e) === "gs") || (sim.state.funkGespraeche ?? []).some((g) => g.kanal === "gs" && g.status !== "ende");
+  return sim.offeneGruppen().length > 1;
 }
 /** Gruppe des Piloten (die seines Einsatzes) */
-function pilotGruppe(): "gs" | null {
+function pilotGruppe(): Sprechgruppe {
   const heli = sim.pilotVon(sim.ich?.pid ?? mp.ich.pid);
   const e = heli?.einsatzId ? sim.einsatz(heli.einsatzId) : undefined;
   return sim.kanalVon(e);
 }
 /** in welcher Gruppe die eigene Sprechtaste spricht */
-export function sprechGruppe(): "gs" | null {
-  if (istPilot()) return wahl.pilotSenden === "auto" ? pilotGruppe() : wahl.pilotSenden === "gs" ? "gs" : null;
-  return wahl.senden === "gs" && gsGruppeOffen() ? "gs" : null;
+export function sprechGruppe(): Sprechgruppe {
+  const offen = sim.offeneGruppen();
+  if (istPilot()) {
+    const k = wahl.pilotSenden === "auto" ? pilotGruppe() : wahl.pilotSenden === "normal" ? null : wahl.pilotSenden;
+    return offen.includes(k) ? k : pilotGruppe();
+  }
+  return offen.includes(wahl.senden) ? wahl.senden : null;
 }
-/** hört man diese Gruppe? */
-export function gruppeHoerbar(kanal: "gs" | null | undefined): boolean {
+/** Sprechgruppe am Funkgerät weiterschalten (Steuerkreuz links/rechts) */
+export function sprechGruppeWeiter(richtung: 1 | -1): void {
+  const offen = sim.offeneGruppen();
+  if (offen.length < 2) return;
+  const i = Math.max(0, offen.indexOf(sprechGruppe()));
+  const neu = offen[(i + richtung + offen.length) % offen.length];
+  if (istPilot()) funkGruppenSetzen({ pilotSenden: neu === null ? "normal" : neu });
+  else funkGruppenSetzen({ senden: neu });
+}
+/** hört man diese Gruppe überhaupt? */
+export function gruppeHoerbar(kanal: Sprechgruppe | undefined): boolean {
   const k = kanal ?? null;
   if (istPilot()) return wahl.allesHoeren || k === pilotGruppe();
-  return !(k === "gs" ? wahl.stumm.gs : wahl.stumm.normal);
+  return !wahl.stumm[stummKey(k)];
+}
+/**
+ * Wie laut eine Gruppe gerade ist (0–1): die Sprechgruppe voll, die anderen leiser (Mithören);
+ * während man selbst spricht die anderen kaum; beim Telefonieren auf Wunsch gar nicht.
+ * dringend: ein dringender Ruf ist immer voll zu hören (außer stumm geschaltet).
+ */
+export function gruppeLaut(kanal: Sprechgruppe | undefined, dringend = false): number {
+  const k = kanal ?? null;
+  if (!gruppeHoerbar(k)) return 0;
+  const ich = sim.ich?.pid ?? mp.ich.pid;
+  if (wahl.telefonStumm && sim.telefoniert(ich)) return 0;
+  if (dringend) return 1;
+  const eigen = k === sprechGruppe();
+  if (sendung?.frei) return eigen ? 0 : 0.15;
+  return eigen ? 1 : Math.max(0, Math.min(1, wahl.mithoerLaut / 100));
 }
 /** alt: Häkchen „mithören“ im Reiter Großeinsatz */
 export function gsMithoerenAn(): boolean {
@@ -768,18 +835,17 @@ export function gsMithoerenSetzen(an: boolean): void {
 }
 
 /**
- * Wie laut ein Funkspruch vorgelesen wird (0 = gar nicht). Ein Kanal für alle: jeder hört alles auf den
- * Gruppen, die er hört. Leitstelle: alle Fahrzeuge; Pilot: was seinen Hubschrauber betrifft laut, den Rest leiser.
- * Gesprochenes von Menschen kommt ohnehin live (wird nicht vorgelesen).
+ * Wie laut ein Funkspruch vorgelesen wird (0 = gar nicht). Ein Kanal je Gruppe: jeder hört alles auf den Gruppen,
+ * die er hört (die eigene Sprechgruppe laut, die anderen leiser). Pilot: was seinen Hubschrauber betrifft laut,
+ * den Rest leiser. Gesprochenes von Menschen kommt ohnehin live (wird nicht vorgelesen).
  */
-export function funkVorleseLaut(g: { fzId: string; an?: { fzId: string } | null; fuehrer: { pid: string } | null; kanal?: "gs" }, s: { von: string }): number {
-  const ich = sim.ich?.pid ?? mp.ich.pid;
-  if (!gruppeHoerbar(g.kanal)) return 0;
-  if (!istPilot()) return s.von === "LEO" ? 0 : 1;
-  void ich;
+export function funkVorleseLaut(g: { fzId: string; an?: { fzId: string } | null; fuehrer: { pid: string } | null; kanal?: "gs" | "gs2" }, s: { von: string; text?: string }): number {
+  const grund = gruppeLaut(g.kanal, /\bdringend\b/i.test(s.text ?? ""));
+  if (grund <= 0) return 0;
+  if (!istPilot()) return s.von === "LEO" ? 0 : grund;
   const heli = sim.pilotVon(sim.ich?.pid ?? mp.ich.pid);
   if (heli && s.von === sim.rufname(heli)) return 0;
-  if (heli && (g.fzId === heli.id || g.an?.fzId === heli.id)) return 1;
+  if (heli && (g.fzId === heli.id || g.an?.fzId === heli.id)) return grund;
   const p = sprachPrefs();
-  return p.mithoeren ? Math.max(0, Math.min(1, p.mithoerenLaut / 100)) : 0;
+  return p.mithoeren ? grund * Math.max(0, Math.min(1, p.mithoerenLaut / 100)) : 0;
 }

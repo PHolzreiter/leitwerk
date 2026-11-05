@@ -602,7 +602,7 @@ export interface FunkSendet {
   /** echte Zeit (ms) */
   seit: number;
   /** Sprechgruppe (null = normale TETRA-Gruppe, „gs“ = Großeinsatz) */
-  gruppe?: "gs" | null;
+  gruppe?: Sprechgruppe;
   /** Ziel des Piloten (Leitstelle oder RTW) */
   ziel?: "leo" | "rtw";
 }
@@ -675,7 +675,7 @@ export interface FunkGespraech {
   /** wartet, weil ein Spieler-NAH am Einsatzort ist (dann funkt kein anderes Fahrzeug dieses Einsatzes) */
   wegenNah?: boolean;
   /** eigener Kanal (Großschaden-Sprechgruppe): belegt den normalen Funk nicht */
-  kanal?: "gs";
+  kanal?: "gs" | "gs2";
   /** Großschaden: Meldungen der Einsatzleitung in diesem Gespräch (kommen in den Reiter Großeinsatz, sobald gesagt) */
   gsMeldungen?: { art: "sicht" | "lage" | "info" | "nachforderung" | "notiz"; text: string }[];
   /** äußerst dringend (Reanimation, Gefahr für die Besatzung): darf zwischen zwei Funksprüchen eines anderen Gesprächs rufen */
@@ -921,6 +921,8 @@ function gsNaMittel(f: SimFahrzeug): boolean {
 }
 
 export interface GsLauf {
+  /** eigene Sprechgruppe (RD-NOE-09 bzw. beim zweiten gleichzeitigen Großeinsatz RD-NOE-10) */
+  gruppe?: "gs" | "gs2";
   /** Stufe aus der Abfrage bzw. der Lagemeldung */
   stufe: NfStufe | null;
   /** Bereitstellungsraum (vom Disponenten festgelegt) */
@@ -1354,6 +1356,10 @@ export function funkRufInhalt(text: string, namen: string[]): string {
   t = t.replace(/\b(von|hier|an|für|frage)\b|\bleo\b|\bkommen\b/g, " ");
   return /[a-zäöüß]{3,}/i.test(t) ? text : "";
 }
+
+/** Sprechgruppe: null = normale Gruppe (RD-NOE-xx), „gs“ = Großeinsatz (RD-NOE-09), „gs2“ = zweiter Großeinsatz (RD-NOE-10) */
+export type Sprechgruppe = "gs" | "gs2" | null;
+export const SPRECHGRUPPEN: Sprechgruppe[] = [null, "gs", "gs2"];
 
 export class Simulation {
   state: SimState;
@@ -5295,7 +5301,9 @@ export class Simulation {
     if (!e.gs) {
       const stufe = nfStufe(e.anruf?.antworten);
       if (!e.wahr.gs && !stufe) return null;
-      e.gs = { stufe, br: null, brNoetig: false, ziel: {}, el: null, bel: false, phase: "alarm", meldungen: [], lageText: "", lageUm: null, gezeigt: [], aufdeckenUm: null, kinder: {}, erreichbar: {}, voraviso: [], brAlarm: [] };
+      // Sprechgruppe: RD-NOE-09, ist die schon von einem anderen Großeinsatz belegt, RD-NOE-10
+      const belegt = this.state.einsaetze.some((x) => x !== e && x.gs && !x.gs.aufgehoben && x.zustand !== "abgeschlossen" && (x.gs.gruppe ?? "gs") === "gs");
+      e.gs = { gruppe: belegt ? "gs2" : "gs", stufe, br: null, brNoetig: false, ziel: {}, el: null, bel: false, phase: "alarm", meldungen: [], lageText: "", lageUm: null, gezeigt: [], aufdeckenUm: null, kinder: {}, erreichbar: {}, voraviso: [], brAlarm: [] };
       // schon vorher alarmierte Fahrzeuge (bevor klar war, dass es ein Großschaden ist) fahren zum Berufungsort
       for (const fz of this.einsatzFz(e)) e.gs.ziel[fz.id] = "bo";
       if (this.einsatzFz(e).length) e.gs.segUm = this.state.zeit;
@@ -6470,7 +6478,8 @@ export class Simulation {
       echtSeit: jetzt,
       echtNaechster: null,
     };
-    if (this.kanalVon(e)) g.kanal = "gs";
+    const kv = this.kanalVon(e);
+    if (kv) g.kanal = kv;
     this.state.funkGespraeche.unshift(g);
     if (this.state.funkGespraeche.length > 150) this.state.funkGespraeche.length = 150;
     this.funkUhrAn();
@@ -6494,7 +6503,7 @@ export class Simulation {
   }
 
   /** Gespräch, das gerade den Kanal belegt (es kann nur eines je Kanal geben; „gs“ = Großschaden-Sprechgruppe) */
-  funkKanalBelegt(kanal: "gs" | null = null): FunkGespraech | undefined {
+  funkKanalBelegt(kanal: Sprechgruppe = null): FunkGespraech | undefined {
     return this.state.funkGespraeche?.find((g) => (g.kanal ?? null) === kanal && (["ruft", "leoRuft", "offen", "direkt", "mithoeren", "mensch"].includes(g.status) || !!g.ausstehend));
   }
 
@@ -6502,7 +6511,7 @@ export class Simulation {
    * Spricht gerade jemand auf dieser Sprechgruppe (Sprechtaste gedrückt, Fahrzeug spricht oder formuliert gerade)?
    * Dann darf niemand dazwischen – auch nicht die Leitstelle; gesprochen wird erst nach dem Ende-Ton.
    */
-  funkKanalSpricht(kanal: "gs" | null = null): boolean {
+  funkKanalSpricht(kanal: Sprechgruppe = null): boolean {
     const s = this.state.funkSendet;
     if (s && (s.gruppe ?? null) === kanal) return true;
     const jetzt = Date.now();
@@ -6538,11 +6547,34 @@ export class Simulation {
   }
 
   /** Großschaden-Einsätze funken auf einer eigenen Sprechgruppe */
-  kanalVon(e: Einsatz | null | undefined): "gs" | null {
+  kanalVon(e: Einsatz | null | undefined): Sprechgruppe {
     if (!e) return null;
-    if (e.gsKind) return "gs";
-    if (e.gs && !e.gs.aufgehoben) return "gs";
+    if (e.gsKind) {
+      const p = this.einsatz(e.gsKind.parent);
+      return p?.gs?.gruppe ?? "gs";
+    }
+    if (e.gs && !e.gs.aufgehoben) return e.gs.gruppe ?? "gs";
     return null;
+  }
+
+  /** Sprechgruppe, auf der ein Fahrzeug funkt (die seines Einsatzes) */
+  kanalVonFz(fz: SimFahrzeug): Sprechgruppe {
+    return this.kanalVon(fz.einsatzId ? this.einsatz(fz.einsatzId) : undefined);
+  }
+
+  /** offene Sprechgruppen (die normale immer, dazu laufende Großeinsätze) */
+  offeneGruppen(): Sprechgruppe[] {
+    const offen = new Set<Sprechgruppe>([null]);
+    for (const e of this.state.einsaetze) if (e.zustand !== "abgeschlossen") offen.add(this.kanalVon(e));
+    for (const g of this.state.funkGespraeche ?? []) if (g.status !== "ende" && g.kanal) offen.add(g.kanal);
+    return SPRECHGRUPPEN.filter((k) => offen.has(k));
+  }
+
+  /** Name der Sprechgruppe am Funkgerät („RD-NOE-03“, Großeinsatz „RD-NOE-09“ bzw. „RD-NOE-10“) */
+  sprechgruppeName(k: Sprechgruppe): string {
+    if (k === "gs") return "RD-NOE-09";
+    if (k === "gs2") return "RD-NOE-10";
+    return `RD-NOE-${this.funkgruppe().id.replace(/^N[ÖO]E?-?/i, "")}`;
   }
 
   /** Telefoniert dieser Spieler gerade (Notruf oder KT-Hotline)? Allein: telefoniert überhaupt jemand? */
@@ -6817,7 +6849,7 @@ export class Simulation {
       }
       geaendert = true;
     }
-    for (const kanal of [null, "gs"] as const) {
+    for (const kanal of SPRECHGRUPPEN) {
     // während jemand spricht oder auf den Kanal wartet, ruft niemand
     if (this.funkKanalSpricht(kanal) || (this.state.funkWartet && (this.state.funkWartet.gruppe ?? null) === kanal)) continue;
     const belegt = this.funkKanalBelegt(kanal);
@@ -6944,7 +6976,7 @@ export class Simulation {
    * gesprochen war sie ohnehin erst nach dem Ende-Ton dran). Ein anderes laufendes Gespräch wird dabei unterbrochen
    * (zwischen zwei Funksprüchen) – was das Fahrzeug noch sagen wollte, meldet es später.
    */
-  private kanalFrei(fuer: FunkGespraech | null, kanal: "gs" | null = fuer?.kanal ?? null, gesprochen = false): void {
+  private kanalFrei(fuer: FunkGespraech | null, kanal: Sprechgruppe = fuer?.kanal ?? null, gesprochen = false): void {
     const s = this.state.funkSendet;
     const ich = this.calltaker();
     if (!gesprochen && this.funkKanalSpricht(kanal) && !(s && s.pid === ich.pid)) {
@@ -7143,7 +7175,7 @@ export class Simulation {
    * Leitstelle: ins laufende Gespräch mit einem Piloten, sonst ein neues. Gibt die Gesprächsnummer zurück.
    * Nichts wird unterbrochen: belegt ein anderes Gespräch den Kanal oder spricht jemand, kommt eine Fehlermeldung.
    */
-  funkMensch(an: boolean, ziel: "leo" | "rtw" = "leo", gruppe?: "gs" | null): { id: number | null; wartet: boolean } | null {
+  funkMensch(an: boolean, ziel: "leo" | "rtw" = "leo", gruppe?: Sprechgruppe): { id: number | null; wartet: boolean } | null {
     const ich = this.wer();
     const jetzt = Date.now();
     const s = this.state.funkSendet;
@@ -7166,7 +7198,7 @@ export class Simulation {
     const heli = this.pilotVon(ich.pid);
     let g: FunkGespraech | undefined;
     let von = "LEO";
-    let kanal: "gs" | null = gruppe ?? null;
+    let kanal: Sprechgruppe = gruppe ?? null;
     if (heli) {
       // Pilot: EIN Funk – wem der Spruch gilt, entscheidet der Text („LEO von C2“, „75/001 von C2“)
       von = this.rufname(heli);
@@ -7191,7 +7223,7 @@ export class Simulation {
   }
 
   /** Erkannter Text eines Sprechfunk-Spruchs (kommt nach dem Loslassen, von der Spracherkennung des Sprechers) */
-  funkMenschText(gId: number | null, text: string, gruppe?: "gs" | null): void {
+  funkMenschText(gId: number | null, text: string, gruppe?: Sprechgruppe): void {
     const t = text.replace(/\s+/g, " ").trim().slice(0, 500);
     if (!t) return;
     const ich = this.wer();
@@ -7217,7 +7249,7 @@ export class Simulation {
    * Gespräch für den Spruch eines Piloten: „75/001 von C2“ → mit diesem Fahrzeug (muss beim Einsatz sein),
    * „LEO von C2“ → mit der Leitstelle; ohne Rufnamen weiter mit dem, mit dem er zuletzt gefunkt hat (unter einer Minute).
    */
-  private pilotGespraech(heli: SimFahrzeug, t: string, gruppe?: "gs" | null): FunkGespraech | null {
+  private pilotGespraech(heli: SimFahrzeug, t: string, gruppe?: Sprechgruppe): FunkGespraech | null {
     const e = heli.einsatzId ? (this.einsatz(heli.einsatzId) ?? null) : null;
     const kanal = gruppe === undefined ? this.kanalVon(e) : gruppe;
     const neu = (an?: SimFahrzeug) => {
@@ -7228,7 +7260,7 @@ export class Simulation {
         // die Antworten des Fahrzeugs formuliert ein Disponent (die KI läuft dort)
         g.fuehrer = { ...this.funkErzeuger(e ?? undefined) };
       }
-      if (kanal) g.kanal = "gs";
+      if (kanal) g.kanal = kanal;
       else delete g.kanal;
       return g;
     };
@@ -7253,7 +7285,7 @@ export class Simulation {
    * - sonst: geht an das Fahrzeug, mit dem gerade gefunkt wird (ohne Rufnamen); „…, Ende“ beendet
    * Gibt das Gespräch zurück.
    */
-  funkLeo(text: string, gruppe: "gs" | null = null, gesprochen = false): number | null {
+  funkLeo(text: string, gruppe: Sprechgruppe = null, gesprochen = false): number | null {
     const t = text.replace(/\s+/g, " ").trim().slice(0, 500);
     if (!t) return null;
     const ich = this.calltaker();
@@ -7291,13 +7323,23 @@ export class Simulation {
         return mg.id;
       }
     }
+    // Fahrzeug funkt auf einer anderen Sprechgruppe: der Ruf geht hinaus, aber es hört ihn nicht
+    if (ziel && !ziel.pilot && this.kanalVonFz(ziel) !== gruppe) {
+      const g = this.neuesGespraech(ziel, null, "ende");
+      if (gruppe) g.kanal = gruppe;
+      else delete g.kanal;
+      this.spruch(g, "LEO", t, ich.name);
+      if (gesprochen) g.sprueche[g.sprueche.length - 1].stimme = true;
+      this.emit();
+      throw new Error(`${this.rufname(ziel)} ist auf ${this.sprechgruppeName(this.kanalVonFz(ziel))} – dort rufen (Steuerkreuz am Funkgerät oder Funktaste der Gruppe)`);
+    }
     if (ziel) {
       if (ziel.pilot) {
         const g = this.menschGespraech(ziel.id, null) ?? (() => {
           const e = ziel!.einsatzId ? (this.einsatz(ziel!.einsatzId) ?? null) : null;
           const n = this.neuesGespraech(ziel!, e, "mensch");
           n.mensch = true;
-          if (gruppe) n.kanal = "gs";
+          if (gruppe) n.kanal = gruppe;
           else delete n.kanal;
           return n;
         })();
@@ -7311,7 +7353,6 @@ export class Simulation {
       this.funkSenden(partner.id, t, gesprochen);
       return partner.id;
     }
-    void ich;
     throw new Error("Kein laufendes Funkgespräch – zuerst rufen, z. B. „75/001 von LEO, kommen“");
   }
 

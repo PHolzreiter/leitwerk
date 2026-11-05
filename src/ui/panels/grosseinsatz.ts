@@ -10,8 +10,6 @@ import { gsPatientText, type GsPatient } from "../../sim/grossschaden";
 import { belegt, plaetze, RESSOURCEN, istVoravisiert } from "../../sim/khStatus";
 import { openDialog } from "../dialog";
 import { el, esc } from "../dom";
-import { createFunkView } from "../funkView";
-import { gsMithoerenAn, gsMithoerenSetzen } from "../sprechfunk";
 import { panelZeigen, registriere, type PanelKontext } from "../ws/arbeitsplatz";
 import { IST_HAUPT } from "../ws/bus";
 import { karteWaehlen, karteZeigen, waehle } from "../ws/auswahl";
@@ -294,33 +292,9 @@ function grosseinsatz(ctx: PanelKontext) {
   return { el: root, dispose: () => aus() };
 }
 
-function funkGs(ctx: PanelKontext) {
-  const root = el("div", { class: "pl funk-fenster" });
-  const kopf = el("label", { class: "gs-mithoeren small" });
-  const cb = el("input", { type: "checkbox" }) as HTMLInputElement;
-  cb.checked = gsMithoerenAn();
-  cb.addEventListener("change", () => gsMithoerenSetzen(cb.checked));
-  kopf.append(cb, document.createTextNode(" mithören (Funkverkehr der Sprechgruppe vorlesen)"));
-  const body = el("div", { class: "pl-body" });
-  root.append(kopf, body);
-  const v = createFunkView(body, { select: (id) => waehle("einsatz", id, { maske: false }) }, { kanal: "gs" });
-  let wartet = false;
-  const aus = sim.onChange(() => {
-    if (wartet) return;
-    wartet = true;
-    setTimeout(() => {
-      wartet = false;
-      v.refresh();
-      ctx.setzeBadge(v.offen(), "klingelt");
-    }, 400);
-  });
-  return { el: root, dispose: () => aus() };
-}
-
 registriere({ komponente: "grosseinsatz", titel: "Großeinsatz", info: "Großschadensfall: Bereitstellungsraum, Lagemeldung, Patienten buchen, Voraviso", bereich: "rechts", erstellen: grosseinsatz });
-registriere({ komponente: "funkgs", titel: "Funk Großeinsatz", info: "Sprechgruppe des Großeinsatzes (Einsatzleitung, Bereitstellungsraum), mit „mithören“", bereich: "rechts", erstellen: funkGs });
 
-// Ein Großeinsatz beginnt: beide Reiter gehen auf (einmal je Einsatz)
+// Ein Großeinsatz beginnt: Reiter Großeinsatz und Funk gehen auf (einmal je Einsatz)
 const geoeffnet = new Set<string>();
 sim.onChange(() => {
   if (!IST_HAUPT) return;
@@ -328,7 +302,8 @@ sim.onChange(() => {
     if (!e.gs || e.gs.aufgehoben || e.gsKind || e.zustand === "abgeschlossen" || geoeffnet.has(e.id)) continue;
     geoeffnet.add(e.id);
     setTimeout(() => {
-      panelZeigen("funkgs");
+      // ein Funkgerät für alle Gruppen: die Großeinsatz-Gruppe kommt dort dazu
+      panelZeigen("funk");
       panelZeigen("grosseinsatz");
     }, 50);
   }

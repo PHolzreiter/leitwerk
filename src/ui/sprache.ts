@@ -38,8 +38,12 @@ export interface SprachPrefs {
   stimmeArt: "system" | "piper" | "supertonic";
   /** Ausgabegerät für Stimmen (nur Piper), leer = wie das System */
   geraetStimmen: string;
-  /** Sprechfunk mit Piloten: eigene Taste (gedrückt halten) */
+  /** Funktaste (gedrückt halten): spricht in die am Funkgerät gewählte Sprechgruppe */
   funkTaste: string;
+  /** eigene Funktasten je Sprechgruppe (leer = keine): normale Gruppe, RD-NOE-09, RD-NOE-10 */
+  funkTasteNormal: string;
+  funkTaste09: string;
+  funkTaste10: string;
   /** Sprechfunk: Funk-Klang (blechern, kurzes Rauschen beim Loslassen) */
   klangfilter: boolean;
   /** Lautstärke des Sprechfunks (Stimmen der Mitspieler) 0–100 */
@@ -67,6 +71,9 @@ export const SPRACH_STANDARD: SprachPrefs = {
   stimmeArt: "system",
   geraetStimmen: "",
   funkTaste: "F4",
+  funkTasteNormal: "",
+  funkTaste09: "",
+  funkTaste10: "",
   klangfilter: true,
   funkLaut: 90,
   mithoeren: true,
@@ -111,8 +118,86 @@ export const TASTEN: [string, string][] = [
 ];
 
 export function tastenName(code: string): string {
-  return TASTEN.find(([c]) => c === code)?.[1] ?? code;
+  if (!code) return "–";
+  const fest = TASTEN.find(([c]) => c === code)?.[1];
+  if (fest) return fest;
+  const m = code.match(/^Key([A-Z])$/) ?? code.match(/^Digit(\d)$/);
+  if (m) return m[1];
+  const np = code.match(/^Numpad(.+)$/);
+  if (np) return `Num ${({ Add: "+", Subtract: "−", Multiply: "×", Divide: "÷", Decimal: ",", Enter: "Enter" } as Record<string, string>)[np[1]] ?? np[1]}`;
+  const namen: Record<string, string> = {
+    Space: "Leertaste", Tab: "Tab", CapsLock: "Feststelltaste", ShiftLeft: "linke ⇧", ShiftRight: "rechte ⇧",
+    ControlLeft: istMac ? "linke ⌃ Control" : "linke Strg", AltLeft: istMac ? "linke ⌥ Wahltaste" : "Alt", MetaLeft: istMac ? "linke ⌘" : "Windows", MetaRight: istMac ? "rechte ⌘" : "rechte Windows",
+    Insert: "Einfg", Delete: "Entf", Home: "Pos1", End: "Ende", PageUp: "Bild ↑", PageDown: "Bild ↓", ArrowUp: "↑", ArrowDown: "↓", ArrowLeft: "←", ArrowRight: "→",
+    Minus: "ß", Equal: "´", BracketLeft: "Ü", BracketRight: "+", Semicolon: "Ö", Quote: "Ä", Backslash: "#", Comma: ",", Period: ".", Slash: "-", IntlBackslash: "<", Pause: "Pause", ScrollLock: "Rollen", ContextMenu: "Menü",
+  };
+  return namen[code] ?? code;
 }
+
+/** Tasten, die man nicht belegen kann (Esc bricht ab, Enter/Rücktaste braucht man zum Schreiben) */
+const NICHT_BELEGBAR = new Set(["Escape", "Enter", "Backspace"]);
+
+/**
+ * Feld für eine frei wählbare Taste: draufklicken → „Taste drücken …“ → die nächste Taste wird übernommen.
+ * Esc bricht ab; mit leer = true gibt es ein ✕ zum Entfernen (für zusätzliche Tasten).
+ */
+export function tastenFeld(wert: () => string, setzen: (code: string) => string | null, opt: { leer?: boolean } = {}): HTMLElement {
+  const box = document.createElement("span");
+  box.className = "taste-feld";
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = "btn small taste-feld-b";
+  const zeigen = () => (b.textContent = wert() ? tastenName(wert()) : "keine");
+  zeigen();
+  let warte = false;
+  b.addEventListener("click", () => {
+    if (warte) return;
+    warte = true;
+    tastenBelegung.aktiv = true;
+    b.textContent = "Taste drücken …";
+    b.classList.add("wartet");
+    const fertig = () => {
+      warte = false;
+      setTimeout(() => (tastenBelegung.aktiv = false), 0);
+      b.classList.remove("wartet");
+      window.removeEventListener("keydown", taste, true);
+      window.removeEventListener("mousedown", weg, true);
+      zeigen();
+    };
+    const taste = (ev: KeyboardEvent) => {
+      ev.preventDefault();
+      ev.stopImmediatePropagation();
+      if (ev.code === "Escape" || NICHT_BELEGBAR.has(ev.code)) {
+        if (ev.code !== "Escape") toast(`${ev.code === "Enter" ? "Enter" : "Die Rücktaste"} braucht man zum Schreiben – bitte eine andere Taste`, "error");
+        return fertig();
+      }
+      const fehler = setzen(ev.code);
+      if (fehler) toast(fehler, "error");
+      fertig();
+    };
+    const weg = (ev: MouseEvent) => {
+      if (ev.target !== b) fertig();
+    };
+    window.addEventListener("keydown", taste, true);
+    window.addEventListener("mousedown", weg, true);
+  });
+  box.appendChild(b);
+  if (opt.leer) {
+    const x = document.createElement("button");
+    x.type = "button";
+    x.className = "btn small taste-feld-x";
+    x.title = "Taste entfernen";
+    x.textContent = "✕";
+    x.addEventListener("click", () => {
+      setzen("");
+      zeigen();
+    });
+    box.appendChild(x);
+  }
+  return box;
+}
+/** gerade wird eine Taste belegt: Sprech- und Funktaste reagieren dann nicht */
+export const tastenBelegung = { aktiv: false };
 
 // ------------------------------------------------------------ Vorlesen
 
@@ -1079,7 +1164,7 @@ window.addEventListener(
   "keydown",
   (ev) => {
     const p = sprachPrefs();
-    if (!p.eingabe || ev.code !== p.taste) return;
+    if (tastenBelegung.aktiv || !p.eingabe || ev.code !== p.taste) return;
     ev.preventDefault();
     if (ev.repeat || tasteUnten) return;
     tasteUnten = true;

@@ -2,6 +2,7 @@
  * Telefon: alle Anrufe (Notruf, KT-Hotline, Überstellung) mit Annehmen, Halten, Zurückwechseln, Auflegen.
  * Beim Annehmen geht das Abfrage-Fenster auf.
  */
+import { funkGruppenSetzen, funkGruppenWahl } from "../sprechfunk";
 import { istPilot } from "../pilot/modus";
 import { spielen } from "../sounds";
 import { kiPrefs } from "../../abfrage/ki";
@@ -156,7 +157,10 @@ function erstellen(ctx: PanelKontext) {
   };
   const s1 = schalter("Notrufe", "Ich nehme Notrufe an (Klingeln, Fenster gehen von selbst auf)", () => pers().notrufe, (v) => setzePers({ notrufe: v }));
   const s2 = schalter("KT-Hotline", "Ich nehme die KT-Hotline an (Krankentransporte und Überstellungen)", () => pers().ktHotline, (v) => setzePers({ ktHotline: v }));
-  kopf.append(el("span", { class: "tel-titel" }, "Ich nehme an:"), s1.l, s2.l);
+  // Funk beim Telefonieren ganz stumm (der Text steht trotzdem im Funk-Verlauf)
+  const s3 = schalter("Funk stumm beim Telefonieren", "Während du telefonierst, hörst du den Funk nicht – die Funksprüche stehen trotzdem im Verlauf", () => funkGruppenWahl().telefonStumm, (v) => funkGruppenSetzen({ telefonStumm: v }));
+  s3.l.classList.add("tel-funk-stumm");
+  kopf.append(el("span", { class: "tel-titel" }, "Ich nehme an:"), s1.l, s2.l, s3.l);
   const liste = el("div", { class: "pl-body tel-liste" });
   root.append(kopf, liste);
 

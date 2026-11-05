@@ -9,9 +9,9 @@
 import { funkGlaetten } from "./funkNamen";
 import { funkGeraetErstellen, gruppenName } from "./funkGeraet";
 import { sprachPrefs, tastenName } from "./sprache";
-import { funkEmpfang, funkPegel, funkGruppenSetzen, funkGruppenWahl, funkSendeZustand, gsGruppeOffen, onFunkEmpfang, onFunkGruppen, onFunkSenden, sprechKnopfAnbinden } from "./sprechfunk";
+import { funkEmpfang, funkPegel, funkGruppenSetzen, funkGruppenWahl, funkSendeZustand, onFunkEmpfang, onFunkGruppen, onFunkSenden, sprechGruppe, sprechKnopfAnbinden } from "./sprechfunk";
 import { mp } from "../net/mehrspieler";
-import { sim, type FunkGespraech } from "../sim/engine";
+import { sim, type FunkGespraech, type Sprechgruppe } from "../sim/engine";
 import { el, esc, toast } from "./dom";
 
 function uhr(t: number): string {
@@ -19,28 +19,31 @@ function uhr(t: number): string {
 }
 
 /** Was man am Funk sagen kann (Hilfe beim ⓘ) */
-const HILFE = `<b>Funk – so geht's</b>
+const HILFE = `<b>Das Funkgerät</b>
 <ul>
-<li><b>Rufen:</b> „56/006 von LEO, kommen“ (auch „NEF Krems …“, „C2 …“). Danach ohne Rufnamen weiterfunken – es gilt immer das zuletzt gerufene Fahrzeug.</li>
+<li><b>Sprechen:</b> PTT gedrückt halten – oder die Funktaste (in jedem Reiter, einstellbar unter Einstellungen → Anrufe &amp; KI → Sprache). Am Display steht „Senden“; spricht gerade jemand, „Warten …“ – nach seinem Ende-Ton bist du dran.</li>
+<li><b>Sprechgruppe wechseln:</b> Steuerkreuz links/rechts. Normal ist es RD-NOE-03; bei einem Großeinsatz kommt RD-NOE-09 dazu, bei einem zweiten gleichzeitig RD-NOE-10. Wahlweise hat jede Gruppe eine eigene Funktaste.</li>
+<li><b>Hören:</b> Die Gruppe, in die du sprichst, hörst du voll, die anderen leiser (einstellbar). Die Lampe neben der Gruppe leuchtet, wenn in einer anderen Gruppe gefunkt wird; wer spricht, steht im Fenster am Display. Dringende Rufe hörst du immer voll.</li>
+<li><b>Verlauf</b> aufklappen: dort lassen sich Gruppen stumm schalten (der Text bleibt). Beim Telefonieren den Funk ganz stumm: Schalter im Reiter Telefon.</li>
+</ul>
+<b>Funken</b>
+<ul>
+<li><b>Rufen:</b> „56/006 von LEO, kommen“ (auch „NEF Krems …“, „C2 …“). Danach ohne Rufnamen weiterfunken – es gilt das zuletzt gerufene Fahrzeug.</li>
 <li><b>Antworten,</b> wenn ein Fahrzeug ruft: „Hier LEO, kommen“.</li>
 <li><b>Beenden:</b> „Verstanden, Ende“. Nach einer Minute ohne Funkspruch ist das Gespräch auch aus – dann neu rufen.</li>
 <li>Ein anderes Fahrzeug rufen beendet das laufende Gespräch (z. B. „NEF Hollabrunn, mitgehört?“). Was das erste Fahrzeug noch sagen wollte, meldet es später.</li>
+<li>Ein Fahrzeug, das auf einer anderen Gruppe ist (z. B. beim Großeinsatz auf RD-NOE-09), hört dich dort nicht – du bekommst einen Hinweis.</li>
 </ul>
 <b>Das verstehen die Fahrzeuge</b>
 <ul>
-<li>Lagemeldung anfordern („bitte Lagemeldung“)</li>
-<li>Status / Eintreffzeit („wann seid ihr vor Ort?“)</li>
-<li>Zustand des Patienten, weitere Kräfte („braucht ihr Notarzt?“)</li>
-<li>Vitalwerte (Blutdruck, Sättigung, Blutzucker …), Verdacht</li>
-<li>Zielkrankenhaus nennen oder fragen</li>
-<li>Einsatzauftrag durchgeben („neuer Einsatz …, Code …, Einsatzort …“)</li>
-<li>Zusatzinfo, Polizei/Feuerwehr vor Ort, Storno („Storno, rückt ein“)</li>
+<li>Lagemeldung anfordern, Status / Eintreffzeit, Zustand des Patienten und weitere Kräfte</li>
+<li>Vitalwerte, Verdacht, Zielkrankenhaus nennen oder fragen</li>
+<li>Einsatzauftrag („neuer Einsatz …, Code …, Einsatzort …“), Zusatzinfo, Polizei/Feuerwehr vor Ort, Storno („Storno, rückt ein“)</li>
 <li>Funkcheck („wie hört ihr mich?“), „mitgehört“ beim Funk zwischen Fahrzeugen</li>
 </ul>
 <b>Regeln</b>
 <ul>
-<li>Sprechen: PTT gedrückt halten oder die Funktaste (geht in jedem Reiter). Es spricht immer nur einer – spricht gerade jemand, steht am Display „Warten …“, nach seinem Ende-Ton bist du dran (nur ein Warteplatz).</li>
-<li>Sprechgruppe wechseln (beim Großeinsatz RD-NOE-09): Steuerkreuz links/rechts am Funkgerät.</li>
+<li>Je Gruppe spricht immer nur einer, es gibt nur einen Warteplatz. In verschiedenen Gruppen darf gleichzeitig gefunkt werden.</li>
 <li>Kein Fahrzeug ruft, solange mit einem anderen gefunkt wird – außer „dringend“ (Reanimation, Gefahr für die Besatzung), und auch das erst zwischen zwei Funksprüchen.</li>
 <li>Wer keine Antwort bekommt, ruft nach 30 s wieder, dann nach 1, 3, 6, 12 … Minuten.</li>
 </ul>`;
@@ -54,10 +57,10 @@ function funkVersatz(zeilen: { s: { zeit: number; echt?: number } }[], i: number
   return Math.max(0, z.echt - (zeilen[j].s.echt ?? z.echt));
 }
 
-export function createFunkView(root: HTMLElement, deps: { select(einsatzId: string): void }, opt: { kanal?: "gs" | null } = {}): { refresh(): void; rufen(fzId: string): void; offen(): number } {
+export function createFunkView(root: HTMLElement, deps: { select(einsatzId: string): void }): { refresh(): void; rufen(fzId: string): void; offen(): number } {
   root.innerHTML = "";
-  /** nur eine Gruppe zeigen (Reiter Großeinsatz) – sonst alle */
-  const nurKanal = opt.kanal === undefined ? undefined : (opt.kanal ?? null);
+  /** ein Funkgerät für alle Gruppen */
+  const nurKanal: Sprechgruppe | undefined = undefined;
   const gruppen = el("div", { class: "funk-gruppen" });
   const lage = el("div", { class: "funk-lage", hidden: "" });
   const chat = el("div", { class: "funk-chat" });
@@ -65,7 +68,7 @@ export function createFunkView(root: HTMLElement, deps: { select(einsatzId: stri
   const eingabe = el("input", { type: "text", placeholder: "Funkspruch … z. B. „75/001 von LEO, kommen“ (Enter)" });
   // Sprechtaste wie am echten Gerät (gedrückt halten); die Funktaste der Tastatur geht in jedem Reiter
   const ptt = el("button", { class: "fg-ptt", type: "button", title: `Gedrückt halten zum Sprechen – oder die Funktaste ${tastenName(sprachPrefs().funkTaste)} (in jedem Reiter)` }, "PTT");
-  const geraet = funkGeraetErstellen({ nurKanal: opt.kanal === undefined ? undefined : (opt.kanal ?? null) });
+  const geraet = funkGeraetErstellen();
   const senden = el("button", { class: "btn small primary", type: "submit" }, "Senden");
   const info = el("span", { class: "funk-info", tabindex: "0" }, "ⓘ");
   const infoBox = el("div", { class: "funk-info-box" });
@@ -75,16 +78,32 @@ export function createFunkView(root: HTMLElement, deps: { select(einsatzId: stri
   sprechKnopfAnbinden(ptt, () => "leo", () => meineGruppe());
   const unten = el("div", { class: "funk-unten" });
   unten.append(ptt, form);
+  // Verlauf: zu Beginn zu (kompaktes Fenster), auf Knopfdruck auf
   const titel = el("div", { class: "funk-verlauf-titel" });
-  titel.append(el("span", {}, "Verlauf"), gruppen);
+  const klapp = el("button", { class: "btn small funk-klapp", type: "button", "aria-expanded": "false" }, "Verlauf ▸");
+  titel.append(klapp, gruppen);
+  const verlaufTeil = el("div", { class: "funk-verlauf-teil", hidden: "" });
+  gruppen.hidden = true;
+  verlaufTeil.append(chat);
+  let offenV = false;
+  klapp.addEventListener("click", () => {
+    offenV = !offenV;
+    verlaufTeil.hidden = !offenV;
+    gruppen.hidden = !offenV;
+    klapp.textContent = offenV ? "Verlauf ▾" : "Verlauf ▸";
+    klapp.setAttribute("aria-expanded", String(offenV));
+    root.classList.toggle("funk-offen", offenV);
+    letzterChat = "";
+    refresh();
+  });
   void lage;
-  root.append(geraet.el, unten, titel, chat);
+  root.append(geraet.el, unten, titel, verlaufTeil);
   onFunkSenden(() => refresh());
   onFunkEmpfang(() => refresh());
   const ausG = onFunkGruppen(() => refresh());
 
   /** Gruppe, in der ich spreche */
-  const meineGruppe = (): "gs" | null => (nurKanal !== undefined ? nurKanal : funkGruppenWahl().senden === "gs" && gsGruppeOffen() ? "gs" : null);
+  const meineGruppe = (): Sprechgruppe => sprechGruppe();
 
   /** Gesprächspartner jetzt (zuletzt aktives Gespräch der Leitstelle auf meiner Gruppe) */
   function partner(): FunkGespraech | undefined {
@@ -179,24 +198,19 @@ export function createFunkView(root: HTMLElement, deps: { select(einsatzId: stri
   }
 
   function gruppenZeigen(): void {
-    if (nurKanal !== undefined) {
-      gruppen.hidden = true;
-      return;
-    }
     const w = funkGruppenWahl();
-    const gs = gsGruppeOffen();
-    const key = JSON.stringify([w, gs, sim.funkgruppe().id]);
+    const offen = sim.offeneGruppen();
+    const key = JSON.stringify([w, offen, sim.funkgruppe().id]);
     if (gruppen.dataset.k === key) return;
     gruppen.dataset.k = key;
     gruppen.innerHTML = "";
-    const chip = (name: string, k: "normal" | "gs") => {
+    const chip = (name: string, k: "normal" | "gs" | "gs2") => {
       const stumm = !!w.stumm[k];
       const b = el("button", { class: `funk-gr${stumm ? " stumm" : ""}`, type: "button", title: stumm ? "Stumm – zum Hören klicken (Text bleibt sichtbar)" : "Zum Stummschalten klicken (Text bleibt sichtbar)" }, `${stumm ? "🔇" : "🔊"} ${name}`);
       b.addEventListener("click", () => funkGruppenSetzen({ stumm: { [k]: !stumm } }));
       gruppen.appendChild(b);
     };
-    chip(gruppenName(null), "normal");
-    if (gs) chip(`${gruppenName("gs")} (Großeinsatz)`, "gs");
+    for (const g of offen) chip(g === null ? gruppenName(null) : `${gruppenName(g)} (Großeinsatz)`, g === null ? "normal" : g);
   }
 
   let letzterChat = "";
@@ -218,8 +232,8 @@ export function createFunkView(root: HTMLElement, deps: { select(einsatzId: stri
             .map(({ s, g }, i) => {
               // Spielzeit steht (Pause) oder springt: die Funksprüche laufen in echter Zeit – Sekunden seit dem ersten mit gleicher Spielzeit dazu
               const zeit = s.zeit + funkVersatz(zeilen, i);
-              const stumm = (g.kanal === "gs" ? w.stumm.gs : w.stumm.normal) ? " stumm" : "";
-              const gsTag = g.kanal === "gs" && nurKanal === undefined ? `<span class="funk-tag">09</span> ` : "";
+              const stumm = w.stumm[g.kanal ?? "normal"] ? " stumm" : "";
+              const gsTag = g.kanal ? `<span class="funk-tag gr-${g.kanal}">${gruppenName(g.kanal).slice(-2)}</span> ` : "";
               const leo = s.von === "LEO";
               return `<div class="funk-z ${leo ? "leo" : "fz"}${stumm}" data-g="${g.id}"><span class="muted">${uhr(zeit)}</span> ${gsTag}${s.stimme ? `<span title="gesprochen">🎙</span> ` : ""}<b>${esc(s.von)}:</b> ${esc(s.text)}${leo && s.wer && mp.aktiv ? ` <span class="prot-von">${esc(s.wer)}</span>` : ""}</div>`;
             })

@@ -1,4 +1,5 @@
 /** Einstellungen → Persönlich: Aussehen, Größe, Anrufe, Töne, Kurzbefehle, Statusfarben, Anordnungen. */
+import { funkGruppenSetzen, funkGruppenWahl } from "../sprechfunk";
 import { ablageName, ablageSichern } from "../../net/ablage";
 import { kiPrefs, setKiPrefs } from "../../abfrage/ki";
 import { inTauri, pickTextFile, saveTextFile } from "../../platform";
@@ -33,7 +34,8 @@ import {
   setzeSprache,
   sprachPrefs,
   sprachStatus,
-  TASTEN,
+  tastenFeld,
+  tastenName,
   testZiel,
   vorlesenMoeglich,
   ausgabeGeraete,
@@ -473,11 +475,18 @@ export function persoenlichView(container: HTMLElement): { refresh(): void } {
     }
 
     zeile(spr, "Spracheingabe", schalter(sp.eingabe, (v) => setzeSprache({ eingabe: v })), "🎙 neben den Eingabefeldern gedrückt halten – oder die Sprechtaste.");
-    const tasteSel = el("select");
-    for (const [code, label] of TASTEN) tasteSel.appendChild(el("option", { value: code }, label));
-    tasteSel.value = sp.taste;
-    tasteSel.addEventListener("change", () => setzeSprache({ taste: tasteSel.value }));
-    zeile(spr, "Sprechtaste (gedrückt halten)", tasteSel, "Gesprochen wird ins gerade laufende Gespräch: Notruf vor KT-Hotline vor Funk.");
+    // Tasten frei wählbar: draufklicken, gewünschte Taste drücken
+    type TastenFeld = "taste" | "funkTaste" | "funkTasteNormal" | "funkTaste09" | "funkTaste10";
+    const TASTEN_NAMEN: Record<TastenFeld, string> = { taste: "Sprechtaste", funkTaste: "Funktaste", funkTasteNormal: "Funktaste der normalen Gruppe", funkTaste09: "Funktaste RD-NOE-09", funkTaste10: "Funktaste RD-NOE-10" };
+    const tasteSetzen = (feld: TastenFeld) => (code: string): string | null => {
+      if (code) {
+        const doppelt = (Object.keys(TASTEN_NAMEN) as TastenFeld[]).find((k) => k !== feld && sprachPrefs()[k] === code);
+        if (doppelt) return `${tastenName(code)} ist schon die ${TASTEN_NAMEN[doppelt]} – bitte eine andere Taste`;
+      } else if (feld === "taste" || feld === "funkTaste") return null;
+      setzeSprache({ [feld]: code } as Partial<ReturnType<typeof sprachPrefs>>);
+      return null;
+    };
+    zeile(spr, "Sprechtaste (gedrückt halten)", tastenFeld(() => sprachPrefs().taste, tasteSetzen("taste")), "Draufklicken und die gewünschte Taste drücken. Gesprochen wird ins gerade laufende Gespräch: Notruf vor KT-Hotline.");
     zeile(spr, "Erkannten Text gleich abschicken", schalter(sp.autoSenden, (v) => setzeSprache({ autoSenden: v })), "Aus: der Text steht im Feld und du schickst ihn selbst mit Enter.");
     const mikroSel = el("select");
     mikroSel.appendChild(el("option", { value: "" }, "Standard-Mikrofon"));
@@ -489,15 +498,20 @@ export function persoenlichView(container: HTMLElement): { refresh(): void } {
     zeile(spr, "Mikrofon", mikroSel, inTauri() ? "Beim ersten Sprechen fragt der Computer, ob LeitWerk das Mikrofon benutzen darf." : "Die Namen erscheinen erst, nachdem du das Mikrofon einmal freigegeben hast.");
 
     // Funktaste: wie die PTT am Funkgerät, in jedem Reiter
-    const funkSel = el("select");
-    for (const [code, label] of TASTEN) funkSel.appendChild(el("option", { value: code }, label));
-    funkSel.value = sp.funkTaste;
-    funkSel.addEventListener("change", () => {
-      if (funkSel.value === sprachPrefs().taste) toast("Das ist schon die Sprechtaste der Spracheingabe – bitte eine andere wählen", "error");
-      else setzeSprache({ funkTaste: funkSel.value });
-      funkSel.value = sprachPrefs().funkTaste;
-    });
-    zeile(spr, "Funktaste (gedrückt halten)", funkSel, "Funken wie mit der PTT am Funkgerät – geht in jedem Reiter. Im Mehrspieler hören alle deine Stimme, auch während du telefonierst.");
+    zeile(spr, "Funktaste (gedrückt halten)", tastenFeld(() => sprachPrefs().funkTaste, tasteSetzen("funkTaste")), "Funken wie mit der PTT am Funkgerät – geht in jedem Reiter, in die am Funkgerät gewählte Sprechgruppe. Im Mehrspieler hören alle deine Stimme.");
+    zeile(spr, "Eigene Funktaste: normale Gruppe", tastenFeld(() => sprachPrefs().funkTasteNormal, tasteSetzen("funkTasteNormal"), { leer: true }), "Wahlweise: diese Taste spricht immer in die normale Gruppe (RD-NOE-xx), egal was am Funkgerät gewählt ist.");
+    zeile(spr, "Eigene Funktaste: RD-NOE-09", tastenFeld(() => sprachPrefs().funkTaste09, tasteSetzen("funkTaste09"), { leer: true }), "Wahlweise: spricht immer in die Gruppe des Großeinsatzes (RD-NOE-09).");
+    zeile(spr, "Eigene Funktaste: RD-NOE-10", tastenFeld(() => sprachPrefs().funkTaste10, tasteSetzen("funkTaste10"), { leer: true }), "Wahlweise: spricht immer in die Gruppe des zweiten gleichzeitigen Großeinsatzes (RD-NOE-10).");
+    {
+      const box = el("div", { class: "pers-slider" });
+      const sl = el("input", { type: "range", min: "0", max: "100", step: "5" }) as HTMLInputElement;
+      sl.value = String(funkGruppenWahl().mithoerLaut);
+      const wert = el("span", {}, `${sl.value} %`);
+      sl.addEventListener("input", () => (wert.textContent = `${sl.value} %`));
+      sl.addEventListener("change", () => funkGruppenSetzen({ mithoerLaut: Number(sl.value) }));
+      box.append(sl, wert);
+      zeile(spr, "Lautstärke der anderen Funkgruppen", box, "Die Gruppe, in die du sprichst, hörst du voll – die anderen (z. B. Großeinsatz) so laut. Dringende Rufe kommen immer voll.");
+    }
     zeile(spr, "Funk-Klang", schalter(sp.klangfilter, (v) => setzeSprache({ klangfilter: v })), "Stimmen am Sprechfunk klingen wie über Funk (blechern, kurzes Rauschen beim Loslassen).");
     const funkLaut = el("input", { type: "range", min: "0", max: "100", step: "5" });
     funkLaut.value = String(sp.funkLaut);
