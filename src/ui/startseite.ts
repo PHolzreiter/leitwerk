@@ -7,7 +7,7 @@
  */
 import { vorlageVon } from "../sim/stufenKurven";
 import "./startseite.css";
-import { HINTERGRUND } from "../assets/startseite/bild";
+import "./startseite2.css";
 import funkDaten from "../data/funkgruppen.json";
 import { ACTIVE_CATEGORIES } from "../data/model";
 import { store } from "../data/store";
@@ -29,7 +29,7 @@ import { el, esc, toast } from "./dom";
 import { nimmtRettung } from "./khInfo";
 import { logoMarke, logoSchrift } from "./logo";
 import { mithelfenOeffnen } from "./mithelfen";
-import { changelogOeffnen, fortschrittOeffnen } from "./fortschritt";
+import { UPDATES, changelogOeffnen, fortschrittOeffnen } from "./fortschritt";
 import { hilfeLaden, hilfeLokal, meineTickets, onTickets, ungelesen, type HilfePunkt } from "../net/tickets";
 import { sprachPrefs, sprachStatus } from "./sprache";
 import { spielstaendeOeffnen } from "./spielstaende";
@@ -242,7 +242,7 @@ export function startseiteOffen(): boolean {
 
 export function startseiteZeigen(fertig?: () => void, opt: { zurueck?: boolean } = {}): void {
   if (offen) return;
-  const root = el("div", { class: "st", role: "dialog", "aria-label": "LeitWerk – Startseite" });
+  const root = el("div", { class: "st st2", role: "dialog", "aria-label": "LeitWerk – Startseite" });
   offen = root;
   vollbildStart();
   const aus: (() => void)[] = [];
@@ -260,72 +260,70 @@ export function startseiteZeigen(fertig?: () => void, opt: { zurueck?: boolean }
   const { svg } = karteSvg();
   const version = (document.getElementById("app-version")?.textContent ?? "").trim();
   root.innerHTML = `
-    <div class="st-bild" style="background-image:url('${HINTERGRUND.url}')"></div>
-    <div class="st-schleier"></div>
-    <aside class="st-seite st-glas">
-      <div class="st-marke">${logoMarke(78)}<div>${logoSchrift()}<div class="st-unter">Leitstellensimulator</div></div></div>
-      <nav class="st-nav">
-        <button class="st-nav-b primaer" data-act="neu">${ico("play")}<span>Neue Simulation starten</span>${ico("pfeil", "klein")}</button>
-        ${opt.zurueck ? `<button class="st-nav-b" data-act="zurueck">${ico("pfeil")}<span>Zurück zur Simulation<small>läuft weiter wie bisher</small></span></button>` : ""}
-        <button class="st-nav-b" data-act="fortsetzen" hidden>${ico("fortsetzen")}<span>Spiel fortsetzen<small></small></span></button>
-        <button class="st-nav-b" data-act="laden">${ico("ordner")}<span>Spielstand laden</span></button>
-        <button class="st-nav-b" data-act="pilot">${ico("heli")}<span>Als Pilot beitreten<small>Hubschrauber selbst fliegen</small></span></button>
-        <button class="st-nav-b" data-act="einstellungen">${ico("zahnrad")}<span>Einstellungen</span></button>
-        <button class="st-nav-b" data-act="check">${ico("schild")}<span>Bereitschafts-Check</span></button>
-      </nav>
-      <div class="st-nav-zwei">
-        <button class="st-nav-k" data-act="fortschritt">${ico("balken")}<span>Entwicklungs&shy;fortschritt</span></button>
-        <button class="st-nav-k" data-act="changelog">${ico("liste")}<span>Changelog</span></button>
+    <div class="st2-grund" aria-hidden="true"></div>
+    <header class="st2-kopf">
+      <div class="st2-marke">${logoMarke(44)}<div class="st2-name">${logoSchrift()}<span class="st-wip" title="LeitWerk ist noch in Arbeit">Work in Progress</span></div></div>
+      <div class="st2-kopf-r">
+        <section class="st-check"></section>
+        <div class="st-seg st-thema" data-seg="thema" role="group" aria-label="Darstellung">
+          <button data-v="hell" title="Hell">${ico("sonne")}<span>Hell</span></button><button data-v="dunkel" title="Dunkel">${ico("mond")}<span>Dunkel</span></button><button data-v="system" title="Wie das System">${ico("monitor")}<span>System</span></button>
+        </div>
+        <button class="st2-kopf-b" data-act="einstellungen">${ico("zahnrad")}<span>Einstellungen</span></button>
       </div>
-      <section class="st-hilfe">
+    </header>
+    <main class="st2-haupt">
+      <section class="st2-held">
+        <div class="st-willkommen">Leitstellensimulator · Niederösterreich</div>
+        <h1 class="st2-titel">Leitstelle bei Nacht.<br><span>Deine Schicht beginnt.</span></h1>
+        <p class="st-sub">Realistische Einsatzlagen, echte Abläufe – Notrufe abfragen, Fahrzeuge alarmieren, Krankenhäuser buchen. Allein oder mit bis zu 6 Leuten.</p>
+        <div class="st2-aktionen">
+          <button class="st-start st2-cta">${ico("play")}<span>Neue Simulation starten</span><small class="st-start-info"></small></button>
+          ${opt.zurueck ? `<button class="st2-weiter" data-act="zurueck">${ico("pfeil")}<span><b>Zurück zur Simulation</b><small>läuft weiter wie bisher</small></span></button>` : ""}
+          <button class="st2-weiter" data-act="fortsetzen" hidden>${ico("fortsetzen")}<span><b>Spiel fortsetzen</b><small></small></span></button>
+        </div>
+        <div class="st2-wege">
+          <button class="st2-weg" data-act="laden">${ico("ordner")}<span><b>Spielstand laden</b><small>Gespeicherte Schichten</small></span></button>
+          <button class="st2-weg" data-act="multi">${ico("leute")}<span><b>Multiplayer</b><small>Lobby erstellen oder beitreten</small></span></button>
+          <button class="st2-weg" data-act="pilot">${ico("heli")}<span><b>Als Pilot beitreten</b><small>Hubschrauber selbst fliegen</small></span></button>
+        </div>
+        <section class="st-kacheln"></section>
+      </section>
+      <div class="st-karte-wrap" aria-hidden="false"><div class="st-karte">${svg}</div></div>
+      <aside class="st-rechts">
+        <section class="st-karte-cfg st-glas">
+          <h2>Simulation einstellen</h2>
+          <div class="st-feld"><label>${ico("funk")}Funkgruppe</label><select class="st-fg-sel"></select></div>
+          <div class="st-feld"><label>${ico("uhr")}Startzeit</label>
+            <div class="st-zeit"><div class="st-seg" data-seg="zeit"><button data-v="jetzt">Jetzt</button><button data-v="fest">Wunschzeit</button></div><input type="datetime-local" class="st-zeit-in"></div></div>
+          <div class="st-feld"><div class="st-feld-kopf"><label>${ico("balken")}Einsatzaufkommen</label><div class="st-seg st-arten" data-seg="arten" title="Welche Einsätze kommen? Ausgeschaltet kommen keine neuen – auch keine vorgemerkten."><button data-v="rd" title="Notfälle (Rettungsdienst)">RD</button><button data-v="kt" title="Krankentransporte">KT</button><button data-v="sek" title="Sekundärtransporte (Überstellungen)">SEK</button><button data-v="acn" title="Akutpflege">ACN</button></div></div>
+            <div class="st-seg" data-seg="aufkommen"><button data-v="realistisch" title="Wie in der Wirklichkeit 2025">Realistisch</button><button data-v="standard" title="Etwas mehr und spannender gemischt, mit Spielhilfen">Standard</button><button data-v="stressig" title="Noch mehr und härter">Stressig</button></div>
+            </div>
+          <div class="st-feld"><label>${ico("wolke")}Wetter</label>
+            <div class="st-wetter"><div class="st-seg" data-seg="wetter"><button data-v="echt">Echt</button><button data-v="normal">Simuliert</button><button data-v="wechselhaft">Wechselhaft</button><button data-v="fest">Fest</button></div>
+            <div class="st-wetter-fest"><select class="st-wetter-lage"></select><input type="number" class="st-wetter-temp" min="-25" max="40"><span>°C</span></div>
+            <div class="st-wetter-info st-leise"></div></div></div>
+          <div class="st-feld"><label>${ico("leute")}Spielmodus</label>
+            <div class="st-seg" data-seg="modus"><button data-v="solo">Solo</button><button data-v="multi">Multiplayer</button></div></div>
+        </section>
+        <section class="st-multi st-glas"></section>
+      </aside>
+    </main>
+    <footer class="st2-fuss">
+      <section class="st2-news">
+        <div class="st2-news-kopf"><h3>Neuigkeiten</h3><div><button class="st2-link" data-act="changelog">Alle Änderungen</button><button class="st2-link" data-act="fortschritt">Entwicklungsfortschritt</button></div></div>
+        <div class="st2-news-liste">${UPDATES.slice(0, 3).map((u) => `<button class="st2-news-k" data-act="changelog"><span class="st2-news-v">v${esc(u.version)} · ${esc(u.datum ? new Date(u.datum).toLocaleDateString("de-AT", { day: "numeric", month: "short" }) : "")}</span><b>${esc(u.titel)}</b><small>${esc(u.punkte[0] ?? "")}</small></button>`).join("")}</div>
+      </section>
+      <section class="st-hilfe st2-hilfe">
         <h3>${ico("leute")}Deine Hilfe wird gebraucht</h3>
         <ul class="st-hilfe-liste"></ul>
         <div class="st-hilfe-knoepfe"><button class="st-hilfe-b primaer" data-act="mithelfen">Mithelfen</button><button class="st-hilfe-b" data-act="meine-tickets">Meine Tickets</button></div>
       </section>
       <button class="st-update" hidden>${ico("update")}<span><b>Update verfügbar</b><small></small></span><em>Jetzt laden</em></button>
-      <div class="st-fuss">
-        <div>LeitWerk ${esc(version)}</div>
-        <div class="st-leise">Nur eine Simulation – keine echten Einsätze.</div>
-      </div>
-    </aside>
-    <main class="st-mitte">
-      <section class="st-held">
-        <div class="st-willkommen">Willkommen bei</div>
-        <h1><span class="st-titel">${logoSchrift()}<span class="st-wip" title="LeitWerk ist noch in Arbeit">Work in Progress</span></span></h1>
-        <p class="st-claim">Der Leitstellensimulator<br>für Niederösterreich.</p>
-        <p class="st-sub">Realistische Einsatzlagen. Echte Abläufe.<br>Lernen, üben, erleben.</p>
-      </section>
-      <div class="st-karte-wrap"><div class="st-karte">${svg}</div><div class="st-sockel"></div></div>
-    </main>
-    <aside class="st-rechts">
-      <div class="st-thema-zeile"><div class="st-seg st-thema st-glas" data-seg="thema" role="group" aria-label="Darstellung">
-        <button data-v="hell">${ico("sonne")}Hell</button><button data-v="dunkel">${ico("mond")}Dunkel</button><button data-v="system">${ico("monitor")}System</button>
-      </div></div>
-      <section class="st-karte-cfg st-glas">
-        <h2>Simulation konfigurieren</h2>
-        <div class="st-feld"><label>${ico("funk")}Funkgruppe</label><select class="st-fg-sel"></select></div>
-        <div class="st-feld"><label>${ico("uhr")}Startzeit</label>
-          <div class="st-zeit"><div class="st-seg" data-seg="zeit"><button data-v="jetzt">Jetzt</button><button data-v="fest">Wunschzeit</button></div><input type="datetime-local" class="st-zeit-in"></div></div>
-        <div class="st-feld"><div class="st-feld-kopf"><label>${ico("balken")}Einsatzaufkommen</label><div class="st-seg st-arten" data-seg="arten" title="Welche Einsätze kommen? Ausgeschaltet kommen keine neuen – auch keine vorgemerkten."><button data-v="rd" title="Notfälle (Rettungsdienst)">RD</button><button data-v="kt" title="Krankentransporte">KT</button><button data-v="sek" title="Sekundärtransporte (Überstellungen)">SEK</button><button data-v="acn" title="Akutpflege">ACN</button></div></div>
-          <div class="st-seg" data-seg="aufkommen"><button data-v="realistisch" title="Wie in der Wirklichkeit 2025">Realistisch</button><button data-v="standard" title="Etwas mehr und spannender gemischt, mit Spielhilfen">Standard</button><button data-v="stressig" title="Noch mehr und härter">Stressig</button></div>
-          </div>
-        <div class="st-feld"><label>${ico("wolke")}Wetter</label>
-          <div class="st-wetter"><div class="st-seg" data-seg="wetter"><button data-v="echt">Realistisch</button><button data-v="normal">Normal</button><button data-v="wechselhaft">Wechselhaft</button><button data-v="fest">Fest</button></div>
-          <div class="st-wetter-fest"><select class="st-wetter-lage"></select><input type="number" class="st-wetter-temp" min="-25" max="40"><span>°C</span></div>
-          <div class="st-wetter-info st-leise"></div></div></div>
-        <div class="st-feld"><label>${ico("leute")}Spielmodus</label>
-          <div class="st-seg" data-seg="modus"><button data-v="solo">Solo</button><button data-v="multi">Multiplayer</button></div></div>
-        <button class="st-start">${ico("play")}<span>Neue Simulation starten</span></button>
-        <div class="st-start-info"></div>
-      </section>
-      <section class="st-check st-glas"></section>
-      <section class="st-multi st-glas"></section>
-    </aside>
-    <section class="st-kacheln"></section>
-    <a class="st-nachweis" href="${esc(HINTERGRUND.link)}" target="_blank" rel="noopener">${esc(HINTERGRUND.nachweis)}</a>`;
+    </footer>
+    <div class="st-fuss st2-version"><span>LeitWerk ${esc(version)}</span><span class="st-leise">Nur eine Simulation – keine echten Einsätze.</span></div>`;
   document.body.appendChild(root);
   void appVersion().then((v) => {
-    const f = root.querySelector(".st-fuss div");
+    const f = root.querySelector(".st2-version span");
     if (f && v && v !== "Browser") f.textContent = `LeitWerk v${v}`;
   });
 
@@ -671,12 +669,13 @@ export function startseiteZeigen(fertig?: () => void, opt: { zurueck?: boolean }
       startKnopf.disabled = false;
     }
   });
-  root.querySelector('[data-act="neu"]')!.addEventListener("click", () => {
-    const k = $(".st-karte-cfg");
-    k.classList.remove("blink");
-    void k.offsetWidth;
-    k.classList.add("blink");
-    startKnopf.focus();
+  // Multiplayer: Spielmodus umschalten und zur Lobby
+  $('[data-act="multi"]').addEventListener("click", () => {
+    if (binGast()) return;
+    if (modus === "multi" && mp.status.rolle !== "aus") return toast("Du bist schon in einer Lobby");
+    modus = modus === "multi" ? "solo" : "multi";
+    render();
+    if (modus === "multi") requestAnimationFrame(() => $(".st-multi").scrollIntoView({ behavior: "smooth", block: "nearest" }));
   });
   const fortsetzen = $<HTMLButtonElement>('[data-act="fortsetzen"]');
   void spielstand.autosaveInfo().then((i) => {
@@ -720,17 +719,24 @@ export function startseiteZeigen(fertig?: () => void, opt: { zurueck?: boolean }
   aus.push(onUpdate(updZeigen));
   updZeigen();
   $('[data-act="einstellungen"]').addEventListener("click", () => einstellungenOeffnen());
-  $('[data-act="check"]').addEventListener("click", checkDetails);
 
   // ---------------- Deine Hilfe wird gebraucht (offene Punkte, Tickets)
   const hilfeListe = $(".st-hilfe-liste");
   const hilfeZeigen = (punkte: HilfePunkt[]) => {
     hilfeListe.innerHTML = "";
-    for (const p of punkte) {
+    const ZEIGEN = 3;
+    for (const p of punkte.slice(0, ZEIGEN)) {
       const li = el("li", { title: p.text });
       li.append(el("span", {}, p.titel));
       const b = el("button", { class: "st-hilfe-weiss", "data-hilfe": p.id }, "Ich weiß das");
       b.addEventListener("click", () => mithelfenOeffnen({ hilfe: p }));
+      li.append(b);
+      hilfeListe.appendChild(li);
+    }
+    if (punkte.length > ZEIGEN) {
+      const li = el("li");
+      const b = el("button", { class: "st-hilfe-mehr" }, `+ ${punkte.length - ZEIGEN} weitere`);
+      b.addEventListener("click", () => mithelfenOeffnen());
       li.append(b);
       hilfeListe.appendChild(li);
     }
@@ -750,7 +756,7 @@ export function startseiteZeigen(fertig?: () => void, opt: { zurueck?: boolean }
   aus.push(onTickets(meineZaehlen));
   $('[data-act="mithelfen"]').addEventListener("click", () => mithelfenOeffnen());
   $('[data-act="fortschritt"]').addEventListener("click", () => fortschrittOeffnen());
-  $('[data-act="changelog"]').addEventListener("click", () => changelogOeffnen());
+  root.querySelectorAll('[data-act="changelog"]').forEach((b) => b.addEventListener("click", () => changelogOeffnen()));
   meineKnopf.addEventListener("click", () => mithelfenOeffnen({ reiter: "meine" }));
 
   // ---------------- Zeichnen (Werte aus den Einstellungen; Mitspieler sehen die des Hosts)
@@ -758,6 +764,7 @@ export function startseiteZeigen(fertig?: () => void, opt: { zurueck?: boolean }
     const gast = binGast();
     root.classList.toggle("gast", gast);
     root.classList.toggle("multi-an", modus === "multi");
+    $('[data-act="multi"]').classList.toggle("an", modus === "multi");
     requestAnimationFrame(platzPruefen);
     setTimeout(platzPruefen, 500);
     const st = s();

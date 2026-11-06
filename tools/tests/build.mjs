@@ -49,7 +49,7 @@ const r = await esbuild.build({
   outdir: path.join(out, "assets"),
   entryNames: "index",
   plugins: [raw, url, ersatz],
-  loader: { ".png": "dataurl", ".svg": "dataurl", ".glb": "file" },
+  loader: { ".png": "dataurl", ".svg": "dataurl", ".glb": "file", ".woff": "file", ".woff2": "file" },
   sourcemap: "inline",
   nodePaths: [path.join(root, "node_modules")],
   logLevel: "warning",

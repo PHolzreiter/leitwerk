@@ -112,11 +112,6 @@
   background-clip: text;
   color: transparent;
 }
-.lw-logo-marke path { transform-origin: bottom; animation: st-balken 0.9s var(--st-ease) both; }
-.lw-logo-marke path:nth-child(2) { animation-delay: 0.08s; }
-.lw-logo-marke path:nth-child(3) { animation-delay: 0.16s; }
-.lw-logo-marke path:nth-child(4) { animation-delay: 0.24s; }
-.lw-logo-marke path:nth-child(5) { animation-delay: 0.32s; }
 
 /* ---------------- Seitenleiste */
 .st-seite {

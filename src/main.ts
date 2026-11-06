@@ -22,6 +22,7 @@ import { auftraegeFuer, ktAuftraege, testlaufAusfuehren, testlaufDateien, testla
 import { ktAntwortOhneKi, ktPrompt, ktPruefen, ktZusammenfassungFalsch } from "./abfrage/ktGespraech";
 import { antwortKern, antwortPruefen, kernAntwort, schemaFrageZu, themenErkennen } from "./abfrage/verstehen";
 import { zipOhneKompression } from "./platform";
+import "./ui/schriften.css";
 import "./style.css";
 import "./ui/ws/dockview.css";
 import "./ui/ws/arbeitsplatz.css";

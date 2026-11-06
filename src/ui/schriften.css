@@ -1,0 +1,7 @@
+/* Inter (SIL Open Font License, siehe assets/fonts/LICENSE-Inter.txt) – mitgeliefert, damit es überall gleich aussieht */
+@font-face { font-family: "Inter"; font-weight: 400; font-style: normal; font-display: swap; src: url("../assets/fonts/Inter-Regular.woff") format("woff"); }
+@font-face { font-family: "Inter"; font-weight: 500; font-style: normal; font-display: swap; src: url("../assets/fonts/Inter-Medium.woff") format("woff"); }
+@font-face { font-family: "Inter"; font-weight: 600; font-style: normal; font-display: swap; src: url("../assets/fonts/Inter-SemiBold.woff") format("woff"); }
+@font-face { font-family: "Inter"; font-weight: 700 900; font-style: normal; font-display: swap; src: url("../assets/fonts/Inter-Bold.woff") format("woff"); }
+@font-face { font-family: "Inter Display"; font-weight: 400 600; font-style: normal; font-display: swap; src: url("../assets/fonts/InterDisplay-SemiBold.woff") format("woff"); }
+@font-face { font-family: "Inter Display"; font-weight: 700 900; font-style: normal; font-display: swap; src: url("../assets/fonts/InterDisplay-Bold.woff") format("woff"); }
