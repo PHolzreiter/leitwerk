@@ -1,5 +1,8 @@
 # Änderungen
 
+## 0.113.0 – Meldertöne aus der Entfernung mit Raumhall
+- **„Aus der Entfernung“ klingt jetzt wirklich weiter weg:** räumlicher Hall (Stereo, frühe Reflexionen und Nachhall wie in einem Raum), weniger direkter Klang und gedämpfte Höhen. Grundlage bleibt die Original-Aufnahme
+
 ## 0.112.0 – Meldertöne wieder original, nur bereinigt
 - **Meldertöne:** Wieder die Original-Aufnahmen statt der nachgebauten Töne – jetzt bereinigt: Stille am Anfang und Ende weg, Rauschen und Störgeräusche reduziert, Rumpeln und Zischen gefiltert, Lautstärke angeglichen. Der Klang selbst bleibt wie im Original (nah und aus der Entfernung)
 

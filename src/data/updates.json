@@ -1,5 +1,13 @@
 [
  {
+  "version": "0.113.0",
+  "datum": "2026-11-06",
+  "titel": "Meldertöne aus der Entfernung mit Raumhall",
+  "punkte": [
+   "„Aus der Entfernung“ mit räumlichem Hall und weiter weg"
+  ]
+ },
+ {
   "version": "0.112.0",
   "datum": "2026-11-06",
   "titel": "Meldertöne wieder original, nur bereinigt",
