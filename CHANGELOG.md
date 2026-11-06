@@ -1,5 +1,9 @@
 # Änderungen
 
+## 0.111.0 – Saubere Meldertöne, Probe hört auf
+- **Meldertöne überarbeitet:** RD Prio 1, FW Prio 1, FW Prio 2 und Martinshorn sind jetzt klar und ohne Rauschen nachgebaut (gleiche Tonfolge und Tonhöhen wie die Vorlage), ohne Stille am Anfang und Ende. Die Fassungen „aus der Entfernung“ sind daraus gemacht: dumpfer, mit Hall und leiser
+- **Probe im Alarmton-Dialog hört auf:** Die Probe spielt den Ton einmal, mit „■ Stopp“ lässt sie sich abbrechen, und beim Schließen des Dialogs (Fertig, Esc oder ×) ist sofort Ruhe. Mehrmals schnell gedrückt spielt nur noch eine Probe
+
 ## 0.110.0 – Echte Meldertöne für den Piloten
 - **Neue Alarmtöne aus Aufnahmen:** Melder RD Prio 1, Melder FW Prio 1 und Prio 2 und Martinshorn – jeweils nah und aus der Entfernung (Einstellungen → Alarmtöne, Gruppe „Aufnahmen“)
 - **Standard für die Alarmierung ist jetzt „Melder RD Prio 1“.** Wer schon einen Ton gewählt hatte, behält ihn

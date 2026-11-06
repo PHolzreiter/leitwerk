@@ -31,7 +31,7 @@ import { MODELLE, mikrofone, modellLaden, setzeSprache, sprachPrefs, sprachStatu
 import { inTauri } from "../../platform";
 import mikroUrl from "../../assets/ptt-mikro.webp?url";
 import { wetterOeffnen } from "../wetterView";
-import { ALARM_AUFNAHMEN, ALARM_STANDARD, ALARM_VORLAGEN, alarmPrefs, alarmPrefsSetzen, alarmStarten, alarmStoppen, alarmtonHinzufuegen, alarmtonSpielen, eigeneAlarmtoene, type AlarmArt } from "./alarmToene";
+import { ALARM_AUFNAHMEN, ALARM_STANDARD, ALARM_VORLAGEN, alarmPrefs, alarmPrefsSetzen, alarmStarten, alarmStoppen, alarmtonHinzufuegen, eigeneAlarmtoene, probeLaeuft, probeSpielen, probeStoppen, type AlarmArt } from "./alarmToene";
 import { dateiLoeschen } from "../sounds";
 import { ablageZeigen } from "../../net/ablage";
 import { flugEingeschraenkt, flugverbot, LAGE, richtungText, symbolFuer } from "../../sim/weather";
@@ -722,12 +722,17 @@ function einstellungenDialog(): void {
 /** Alarmtöne wählen: Alarmierung und Abruf, eigene Töne hochladen, Lautstärke */
 function alarmDialog(): void {
   const body = el("div", { class: "plt-alarmdlg" });
-  openDialog({ title: "Alarmtöne", body, wide: true, actions: [{ label: "Fertig", kind: "primary", onClick: () => (alarmStoppen(), true) }] });
-  let probe: { stopp(): void } | null = null;
-  const anhoeren = async (q: string) => {
-    probe?.stopp();
-    probe = await alarmtonSpielen(q).catch(() => null);
-  };
+  openDialog({ title: "Alarmtöne", body, wide: true, actions: [{ label: "Fertig", kind: "primary", onClick: () => (probeStoppen(), true) }] });
+  // Probe läuft nur, solange der Dialog offen ist (egal wie er geschlossen wird)
+  const wache = window.setInterval(() => {
+    const stopKnopf = body.querySelector<HTMLButtonElement>("[data-act=stopp]");
+    if (stopKnopf) stopKnopf.disabled = !probeLaeuft();
+    if (!body.isConnected) {
+      probeStoppen();
+      window.clearInterval(wache);
+    }
+  }, 250);
+  const anhoeren = (q: string) => probeSpielen(q);
   const zeichnen = async () => {
     const eigene = await eigeneAlarmtoene();
     const p = alarmPrefs();
@@ -739,6 +744,7 @@ function alarmDialog(): void {
       <div class="plt-alarm-zeile"><label>Alarmierung<select data-a="alarm">${optionen(p.alarm)}</select></label><button class="btn" data-p="alarm" type="button">▶ Probe</button></div>
       <div class="plt-alarm-zeile"><label>Abruf aus dem Bereitstellungsraum<select data-a="abruf">${optionen(p.abruf)}</select></label><button class="btn" data-p="abruf" type="button">▶ Probe</button></div>
       <label class="plt-alarm-laut">Lautstärke Alarm <input type="range" min="0" max="150" step="5" value="${p.laut}"><span>${p.laut} %</span></label>
+      <div class="plt-alarm-zeile"><span class="plt-leise plt-klein">Die Probe spielt den Ton einmal.</span><button class="btn" data-act="stopp" type="button" disabled>■ Stopp</button></div>
       <p class="plt-leise plt-klein">Der Ton wiederholt sich, bis du quittierst (Status 9 oder 2) – höchstens 1 Minute.</p>
       <b>Eigene Töne</b>
       <div class="plt-alarm-eigene">${
@@ -755,6 +761,7 @@ function alarmDialog(): void {
       }),
     );
     body.querySelectorAll<HTMLButtonElement>("[data-p]").forEach((b) => b.addEventListener("click", () => void anhoeren(alarmPrefs()[b.dataset.p as AlarmArt])));
+    body.querySelector<HTMLButtonElement>("[data-act=stopp]")?.addEventListener("click", () => probeStoppen());
     const r = body.querySelector<HTMLInputElement>('input[type="range"]')!;
     r.addEventListener("input", () => {
       alarmPrefsSetzen({ laut: Number(r.value) });

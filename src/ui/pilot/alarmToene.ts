@@ -225,6 +225,39 @@ export function alarmStarten(art: AlarmArt, weiter: () => boolean): void {
 export function alarmStoppen(): void {
   laufend?.stopp();
   laufend = null;
+  probeStoppen();
+}
+
+// ---------------------------------------------------------------- Probe im Einstellungsdialog
+
+let probe: { stopp(): void } | null = null;
+let probeNr = 0;
+
+/** Ton einmal zur Probe – stoppt eine laufende Probe; gibt die Dauer (s) zurück */
+export async function probeSpielen(quelle: string): Promise<number> {
+  probeStoppen();
+  const nr = ++probeNr;
+  const r = await alarmtonSpielen(quelle).catch(() => null);
+  if (!r) return 0;
+  if (nr !== probeNr) {
+    r.stopp();
+    return 0;
+  }
+  probe = r;
+  window.setTimeout(() => {
+    if (probe === r) probe = null;
+  }, r.dauer * 1000 + 200);
+  return r.dauer;
+}
+
+export function probeStoppen(): void {
+  probeNr++;
+  probe?.stopp();
+  probe = null;
+}
+
+export function probeLaeuft(): boolean {
+  return !!probe;
 }
 
 export function alarmLaeuft(): AlarmArt | null {

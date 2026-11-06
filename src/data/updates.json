@@ -1,5 +1,14 @@
 [
  {
+  "version": "0.111.0",
+  "datum": "2026-11-06",
+  "titel": "Saubere Meldertöne, Probe hört auf",
+  "punkte": [
+   "Meldertöne klar nachgebaut, ohne Stille und Rauschen",
+   "Probe im Alarmton-Dialog mit Stopp, endet beim Schließen"
+  ]
+ },
+ {
   "version": "0.110.0",
   "datum": "2026-11-06",
   "titel": "Echte Meldertöne für den Piloten",
