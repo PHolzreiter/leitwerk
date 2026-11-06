@@ -1,5 +1,8 @@
 # Änderungen
 
+## 0.112.0 – Meldertöne wieder original, nur bereinigt
+- **Meldertöne:** Wieder die Original-Aufnahmen statt der nachgebauten Töne – jetzt bereinigt: Stille am Anfang und Ende weg, Rauschen und Störgeräusche reduziert, Rumpeln und Zischen gefiltert, Lautstärke angeglichen. Der Klang selbst bleibt wie im Original (nah und aus der Entfernung)
+
 ## 0.111.0 – Saubere Meldertöne, Probe hört auf
 - **Meldertöne überarbeitet:** RD Prio 1, FW Prio 1, FW Prio 2 und Martinshorn sind jetzt klar und ohne Rauschen nachgebaut (gleiche Tonfolge und Tonhöhen wie die Vorlage), ohne Stille am Anfang und Ende. Die Fassungen „aus der Entfernung“ sind daraus gemacht: dumpfer, mit Hall und leiser
 - **Probe im Alarmton-Dialog hört auf:** Die Probe spielt den Ton einmal, mit „■ Stopp“ lässt sie sich abbrechen, und beim Schließen des Dialogs (Fertig, Esc oder ×) ist sofort Ruhe. Mehrmals schnell gedrückt spielt nur noch eine Probe

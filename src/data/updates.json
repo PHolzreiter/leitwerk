@@ -1,5 +1,13 @@
 [
  {
+  "version": "0.112.0",
+  "datum": "2026-11-06",
+  "titel": "Meldertöne wieder original, nur bereinigt",
+  "punkte": [
+   "Original-Aufnahmen ohne Stille, Rauschen reduziert"
+  ]
+ },
+ {
   "version": "0.111.0",
   "datum": "2026-11-06",
   "titel": "Saubere Meldertöne, Probe hört auf",
