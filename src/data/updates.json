@@ -1,5 +1,14 @@
 [
  {
+  "version": "0.110.0",
+  "datum": "2026-11-06",
+  "titel": "Echte Meldertöne für den Piloten",
+  "punkte": [
+   "Melder RD/FW und Martinshorn als Aufnahmen",
+   "Standard-Alarm: Melder RD Prio 1"
+  ]
+ },
+ {
   "version": "0.109.0",
   "datum": "2026-11-05",
   "titel": "LeitWerk im Tablet der H145",

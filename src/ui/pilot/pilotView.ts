@@ -31,7 +31,7 @@ import { MODELLE, mikrofone, modellLaden, setzeSprache, sprachPrefs, sprachStatu
 import { inTauri } from "../../platform";
 import mikroUrl from "../../assets/ptt-mikro.webp?url";
 import { wetterOeffnen } from "../wetterView";
-import { ALARM_VORLAGEN, alarmPrefs, alarmPrefsSetzen, alarmStarten, alarmStoppen, alarmtonHinzufuegen, alarmtonSpielen, eigeneAlarmtoene, type AlarmArt } from "./alarmToene";
+import { ALARM_AUFNAHMEN, ALARM_STANDARD, ALARM_VORLAGEN, alarmPrefs, alarmPrefsSetzen, alarmStarten, alarmStoppen, alarmtonHinzufuegen, alarmtonSpielen, eigeneAlarmtoene, type AlarmArt } from "./alarmToene";
 import { dateiLoeschen } from "../sounds";
 import { ablageZeigen } from "../../net/ablage";
 import { flugEingeschraenkt, flugverbot, LAGE, richtungText, symbolFuer } from "../../sim/weather";
@@ -732,7 +732,7 @@ function alarmDialog(): void {
     const eigene = await eigeneAlarmtoene();
     const p = alarmPrefs();
     const optionen = (wahl: string) =>
-      `<optgroup label="Melder-Töne">${Object.entries(ALARM_VORLAGEN).map(([id, v]) => `<option value="vorlage:${id}"${wahl === `vorlage:${id}` ? " selected" : ""}>${esc(v.name)}</option>`).join("")}</optgroup>${
+      `<optgroup label="Aufnahmen">${Object.entries(ALARM_AUFNAHMEN).map(([id, v]) => `<option value="aufnahme:${id}"${wahl === `aufnahme:${id}` ? " selected" : ""}>${esc(v.name)}</option>`).join("")}</optgroup><optgroup label="Melder-Töne (erzeugt)">${Object.entries(ALARM_VORLAGEN).map(([id, v]) => `<option value="vorlage:${id}"${wahl === `vorlage:${id}` ? " selected" : ""}>${esc(v.name)}</option>`).join("")}</optgroup>${
         eigene.length ? `<optgroup label="Eigene Töne">${eigene.map((d) => `<option value="datei:${d.id}"${wahl === `datei:${d.id}` ? " selected" : ""}>${esc(d.name)}</option>`).join("")}</optgroup>` : ""
       }`;
     body.innerHTML = `
@@ -767,7 +767,7 @@ function alarmDialog(): void {
         const id = b.dataset.weg!;
         await dateiLoeschen(id);
         const p2 = alarmPrefs();
-        for (const a of ["alarm", "abruf"] as AlarmArt[]) if (p2[a] === `datei:${id}`) alarmPrefsSetzen({ [a]: a === "alarm" ? "vorlage:fuenfton" : "vorlage:pager" });
+        for (const a of ["alarm", "abruf"] as AlarmArt[]) if (p2[a] === `datei:${id}`) alarmPrefsSetzen({ [a]: ALARM_STANDARD[a] });
         void zeichnen();
       }),
     );

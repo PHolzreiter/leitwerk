@@ -5,6 +5,26 @@
  */
 import { ablageSichern } from "../../net/ablage";
 import { dateiHinzufuegen, eigeneDateien, type EigeneDatei } from "../sounds";
+import rdprio01 from "../../assets/alarm/rdprio01.mp3?url";
+import rdprio01Weit from "../../assets/alarm/rdprio01_distant.mp3?url";
+import fwprio01 from "../../assets/alarm/fwprio01.mp3?url";
+import fwprio01Weit from "../../assets/alarm/fwprio01_distant.mp3?url";
+import fwprio02 from "../../assets/alarm/fwprio02.mp3?url";
+import fwprio02Weit from "../../assets/alarm/fwprio02_distant.mp3?url";
+import martinhorn from "../../assets/alarm/martinhorn.mp3?url";
+import martinhornWeit from "../../assets/alarm/martinhorn_distant.mp3?url";
+
+/** Aufnahmen (von Paul): Melder RD/FW, Martinshorn – je nah und aus der Entfernung */
+export const ALARM_AUFNAHMEN: Record<string, { name: string; url: string }> = {
+  rdprio01: { name: "Melder RD Prio 1", url: rdprio01 },
+  rdprio01_weit: { name: "Melder RD Prio 1 (entfernt)", url: rdprio01Weit },
+  fwprio01: { name: "Melder FW Prio 1", url: fwprio01 },
+  fwprio01_weit: { name: "Melder FW Prio 1 (entfernt)", url: fwprio01Weit },
+  fwprio02: { name: "Melder FW Prio 2", url: fwprio02 },
+  fwprio02_weit: { name: "Melder FW Prio 2 (entfernt)", url: fwprio02Weit },
+  martinhorn: { name: "Martinshorn", url: martinhorn },
+  martinhorn_weit: { name: "Martinshorn (entfernt)", url: martinhornWeit },
+};
 
 export type AlarmArt = "alarm" | "abruf";
 
@@ -34,7 +54,8 @@ export const ALARM_VORLAGEN: Record<string, Vorlage> = {
   dringend: { name: "Dringend (bisheriger Ton)", folge: wdh(3, [[880, 0.16], [0, 0.05], [660, 0.16], [0, 0.05], [880, 0.16], [0, 0.35]]), welle: "sawtooth" },
 };
 
-const STANDARD: Record<AlarmArt, string> = { alarm: "vorlage:fuenfton", abruf: "vorlage:pager" };
+const STANDARD: Record<AlarmArt, string> = { alarm: "aufnahme:rdprio01", abruf: "vorlage:pager" };
+export const ALARM_STANDARD = STANDARD;
 const KEY = "leitwerk.pilot.alarmtoene";
 
 export interface AlarmPrefs {
@@ -98,6 +119,27 @@ export async function alarmtonSpielen(quelle: string, lautProzent = alarmPrefs()
     }
     window.setTimeout(() => g.disconnect(), 100);
   };
+  if (quelle.startsWith("aufnahme:")) {
+    const a = ALARM_AUFNAHMEN[quelle.slice(9)];
+    let b = a ? puffer.get(quelle) : undefined;
+    if (a && !b) {
+      try {
+        b = await c.decodeAudioData(await (await fetch(a.url)).arrayBuffer());
+        puffer.set(quelle, b);
+      } catch {
+        b = undefined;
+      }
+    }
+    if (b) {
+      const src = c.createBufferSource();
+      src.buffer = b;
+      src.connect(g);
+      src.start();
+      quellen.push(src);
+      return { dauer: b.duration, stopp };
+    }
+    quelle = "vorlage:fuenfton";
+  }
   if (quelle.startsWith("datei:")) {
     const id = quelle.slice(6);
     let b = puffer.get(id);

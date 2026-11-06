@@ -1,5 +1,9 @@
 # Änderungen
 
+## 0.110.0 – Echte Meldertöne für den Piloten
+- **Neue Alarmtöne aus Aufnahmen:** Melder RD Prio 1, Melder FW Prio 1 und Prio 2 und Martinshorn – jeweils nah und aus der Entfernung (Einstellungen → Alarmtöne, Gruppe „Aufnahmen“)
+- **Standard für die Alarmierung ist jetzt „Melder RD Prio 1“.** Wer schon einen Ton gewählt hatte, behält ihn
+
 ## 0.109.0 – LeitWerk im Tablet der H145
 - **H145-Tablet:** LeitWerk trägt sich von selbst als Link „LeitWerk“ in die Web-Browser-App des eingebauten Tablets der HPG H145 ein (Community-Ordner wie bei der HPG-Mission). Die bisherigen Links bleiben, eine Sicherung der Originaldatei liegt daneben. Gemeldet wird nur, wenn der Link neu eingetragen wurde (wirkt nach dem nächsten MSFS-Start) oder etwas nicht klappt
 - **Tablet-Seite hoch und quer:** Im Querformat stehen die Statustasten links und Einsatz/Patient rechts; der Code steht im Alarm und beim Einsatz, dazu Entfernung und Ankunft
