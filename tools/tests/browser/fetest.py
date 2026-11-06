@@ -1,0 +1,118 @@
+import subprocess, sys, time, json
+from playwright.sync_api import sync_playwright
+S = sys.argv[1]; DIST = sys.argv[2]
+srv = subprocess.Popen([sys.executable, "-m", "http.server", "8799", "-d", DIST], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+time.sleep(1); fails=0; logs=[]
+def check(ok, w):
+    global fails
+    print(("OK    " if ok else "FEHLER"), w)
+    if not ok: fails+=1
+try:
+    with sync_playwright() as p:
+        b = p.chromium.launch(); ctx = b.new_context(viewport={"width": 1600, "height": 950})
+        ctx.add_init_script("(() => { localStorage.setItem('leitwerk.persoenlich', JSON.stringify({thema: 'hell', einfuehrung: true})); const t = setInterval(() => { if (window.__lw && window.__lw.testAnordnung && document.querySelector('.lw-panel')) { clearInterval(t); setTimeout(() => window.__lw.testAnordnung(), 50); } }, 50); })()")
+        A = ctx.new_page(); A.on("pageerror", lambda e: logs.append(f"PAGEERROR {e}"))
+        A.on("console", lambda m: logs.append(f"CONSOLE {m.text}") if m.type == "error" else None)
+        A.goto("http://localhost:8799/?debug"); A.wait_for_timeout(2000)
+        A.evaluate("async () => window.__lw.codesystemLaden(await (await fetch('/abf_test.json')).json())"); A.wait_for_timeout(1200)
+        A.evaluate("() => { document.querySelectorAll('.gross-overlay').forEach(o => o.hidden = true); const s = window.__lw.sim; s.settings.generatorAktiv = false; s.settings.ktAktiv = false; s.state.naechster = { stabil: 1e15, dringend: 1e15, kritisch: 1e15 }; }")
+        A.click("[data-act=faelle]"); A.wait_for_timeout(800)
+        n = A.locator(".fe-punkt").count()
+        check(n >= 16, f"Liste zeigt die eingebauten Fälle ({n})")
+        A.screenshot(path=f"{S}/fe_leer.png")
+        # eingebauten Fall öffnen: gesperrt
+        A.locator(".fe-punkt", has_text="Schlaganfall").first.click(); A.wait_for_timeout(500)
+        check(A.locator(".fe-form[disabled]").count() == 1 and A.locator(".fe-sperre").count() >= 1, "eingebauter Fall gesperrt")
+        for i, t in enumerate(["Grundlagen", "Anrufer & Hergang", "Abfrage", "Ausgänge", "Prüfen & Testen"]):
+            A.locator(".fe-schritt", has_text=t).click(); A.wait_for_timeout(400)
+            A.screenshot(path=f"{S}/fe_insult_{i+1}.png")
+        check(A.locator(".fe-ampel").inner_text().startswith("✓"), f"Ampel Insult: {A.locator('.fe-ampel').inner_text()}")
+        A.locator(".fe-schritt", has_text="Abfrage").click(); A.wait_for_timeout(400)
+        erg = A.locator(".fe-ergebnis").inner_text(); print("    Abfrage-Ergebnis:", erg)
+        check("Ergebnis" in erg, "Abfrage zeigt Code")
+        nf = A.locator(".fe-frage").count(); check(nf >= 3, f"Fragen der Abfrage ({nf})")
+        # Admin falsch / richtig
+        A.click(".fe .gross-kopf >> text=Admin"); A.wait_for_timeout(300)
+        A.fill(".dlg input[type=password]", "falsch"); A.click(".dlg-foot >> text=Freigeben"); A.wait_for_timeout(300)
+        check(A.locator(".dlg").count() == 1, "falsches Passwort → bleibt gesperrt")
+        A.fill(".dlg input[type=password]", "LeitWerk26"); A.click(".dlg-foot >> text=Freigeben"); A.wait_for_timeout(400)
+        check(A.locator(".fe-form[disabled]").count() == 0, "Admin frei → bearbeitbar")
+        A.locator(".fe-schritt", has_text="Grundlagen").click(); A.wait_for_timeout(300)
+        A.locator(".fe-zeile:has-text('Name') input").first.fill("Schlaganfall (geändert)"); A.wait_for_timeout(300)
+        A.click(".fe-fuss >> text=Speichern"); A.wait_for_timeout(400)
+        ge = A.evaluate("() => window.__lw.faelle.alleFaelle(true).find(f => f.id === 'insult').name")
+        check(ge == "Schlaganfall (geändert)", f"Änderung am eingebauten Fall gespeichert ({ge})")
+        A.click(".fe-fuss >> text=Original wiederherstellen"); A.wait_for_timeout(300); A.click(".dlg-foot >> text=Wiederherstellen"); A.wait_for_timeout(400)
+        ge = A.evaluate("() => window.__lw.faelle.alleFaelle(true).find(f => f.id === 'insult').name")
+        check(ge == "Schlaganfall", f"Original wiederhergestellt ({ge})")
+        A.click(".fe .gross-kopf >> text=Admin"); A.wait_for_timeout(300)  # wieder sperren
+        # neuer Fall
+        A.click("text=+ Neuer Fall"); A.wait_for_timeout(500)
+        A.fill(".dlg .fe-neu input", "Bienenstich im Garten")
+        A.click(".dlg-foot >> text=Leer beginnen"); A.wait_for_timeout(500)
+        A.locator(".fe-zeile:has-text('Thema') select").select_option("allergie"); A.wait_for_timeout(200)
+        A.get_by_role("button", name="Garten", exact=True).click()
+        A.locator(".fe-schritt", has_text="Anrufer").click(); A.wait_for_timeout(300)
+        A.locator(".fe-zeile:has-text('Fakten') textarea").first.fill("{P} ist im Garten von einer Biene in den Hals gestochen worden, {er} ist ganz aufgeregt!")
+        A.locator(".fe-schritt", has_text="Ausgänge").click(); A.wait_for_timeout(300)
+        A.locator(".fe-var").first.locator(".fe-zeile:has-text('Lagebild') textarea").fill("wach, lokale Schwellung am Hals, keine Atemnot")
+        A.click("text=+ Ausgang"); A.wait_for_timeout(300)
+        v2 = A.locator(".fe-var").nth(1)
+        v2.locator(".fe-var-kopf input").fill("10"); v2.locator(".fe-zeile:has-text('Lagebild') textarea").fill("Quaddeln am ganzen Körper, Atemnot, Blutdruck 90 zu 60")
+        v2.locator(".fe-zeile:has-text('Beim Eintreffen') select").select_option("rot")
+        v2.locator(".fe-zeile:has-text('Notarzt') select").first.select_option("immer")
+        A.locator(".fe-var").first.locator(".fe-var-kopf input").fill("90"); A.wait_for_timeout(300)
+        summe = A.locator(".fe-summe").inner_text(); check("100 %" in summe, f"Summe: {summe}")
+        A.locator(".fe-schritt", has_text="Abfrage").click(); A.wait_for_timeout(400)
+        A.screenshot(path=f"{S}/fe_neu_abfrage.png")
+        # alle offenen Fragen mit der ersten Antwort belegen
+        for i in range(12):
+            sels = A.locator(".fe-frage.offen select")
+            if sels.count() == 0: break
+            opts = sels.first.locator("option").all_inner_texts()
+            sels.first.select_option(index=1); A.wait_for_timeout(250)
+        print("    Ergebnis:", A.locator(".fe-ergebnis").inner_text())
+        A.locator(".fe-schritt", has_text="Prüfen").click(); A.wait_for_timeout(400)
+        A.screenshot(path=f"{S}/fe_neu_pruefen.png")
+        print("    Ampel:", A.locator(".fe-ampel").inner_text(), "|", A.locator(".fe-befunde").all_inner_texts() if A.locator(".fe-befunde").count() else "")
+        A.click(".fe-fuss >> text=Fall anlegen"); A.wait_for_timeout(500)
+        A.locator(".fe-schritt", has_text="Prüfen").click(); A.wait_for_timeout(300)
+        A.click("text=▶ 3 Probe-Anrufe"); A.wait_for_timeout(4000)
+        n = A.locator(".fe-probe").count(); print("    Proben:", A.locator(".fe-probe-kopf").all_inner_texts())
+        check(n == 3, f"3 Probe-Anrufe ({n})")
+        A.screenshot(path=f"{S}/fe_proben.png")
+        f = A.evaluate("() => window.__lw.faelle.alleFaelle(true).find(f => f.name === 'Bienenstich im Garten')")
+        check(f is not None and f["id"] == "bienenstich_im_garten" and len(f["varianten"]) == 2, f"neuer Fall gespeichert ({f and f['id']})")
+        check(A.evaluate("() => JSON.parse(localStorage.getItem('leitwerk.faelle')).eigene.length") == 1, "eigene Fälle im Speicher")
+        # Prüfprogramm über alles
+        bef = A.evaluate("() => window.__lw.faellePruefen().filter(b => !/hat keine Antwort/.test(b.fehler))")
+        check(len(bef) == 0, f"Prüfprogramm (harte Befunde): {bef[:3]}")
+        # durchspielen
+        A.locator(".fe-schritt", has_text="Prüfen").click(); A.wait_for_timeout(300)
+        A.click("text=▶ Diesen Fall durchspielen"); A.wait_for_timeout(1500)
+        e = A.evaluate("() => { const e = window.__lw.sim.state.einsaetze[0]; return e ? { fall: e.wahr.lage?.fall?.id, hergang: e.wahr.abfrage?.szenario?.hergang, code: e.wahr.code } : null; }")
+        print("    Einsatz:", e)
+        check(e and e["fall"] == "bienenstich_im_garten", "Durchspielen startet einen Notruf mit dem Fall")
+        check(A.locator(".fe-overlay").is_hidden(), "Editor schließt sich")
+        # Export / Import
+        js = A.evaluate("() => window.__lw.faelle.fallpaketExport(['bienenstich_im_garten', 'insult'])")
+        pk = json.loads(js); check(pk["format"] == "leitwerk-faelle" and len(pk["faelle"]) == 2, "Export als Fallpaket")
+        r = A.evaluate("(t) => window.__lw.faelle.fallpaketImport(t, false)", js)
+        print("    Import:", r)
+        check(r["ersetzt"] == 1 and r["neu"] == 1, "Import: eigener ersetzt, eingebauter ohne Admin als Kopie")
+        ids = A.evaluate("() => window.__lw.faelle.alleFaelle(true).map(f => f.id).filter(i => i.startsWith('insult'))")
+        check("insult_2" in ids, f"Kopie insult_2 ({ids})")
+        r = A.evaluate("() => window.__lw.faelle.fallpaketImport('{\"faelle\":[{\"id\":\"x\"}]}', false)")
+        check(r["neu"] == 0 and len(r["fehler"]) == 1, f"kaputter Fall wird abgelehnt ({r['fehler']})")
+        # ausschalten
+        A.evaluate("() => window.__lw.faelle.fallAktivSetzen('insult_2', false)")
+        check("insult_2" not in A.evaluate("() => window.__lw.faelle.alleFaelle().map(f => f.id)"), "ausgeschalteter Fall nicht im Spiel")
+        # KI-Antwort einlesen (ohne KI: Beispielantwort)
+        ki = A.evaluate("""() => window.__lw.entwurfAusKi('<think>hm</think> Hier: {"name":"Wespe","thema":"allergie","alter":[30,50],"orte":["garten","mond"],"stelle":["auf der Terrasse"],"anrufer":["partner"],"hergang":["{P} ist gestochen worden!"],"varianten":[{"id":"A","p":0.8,"sichtung":"gruen","lage":"lokale Schwellung","na":"nein","buchung":"bu_hausaerztlich"},{"id":"B","p":0.3,"sichtung":"rot","lage":"Atemnot","na":"immer","buchung":"gibtsnicht"}]} fertig', '')""")
+        print("    KI:", json.dumps(ki, ensure_ascii=False)[:300])
+        check(ki and ki["thema"] == "allergie" and ki["orte"] == ["garten"] and len(ki["varianten"]) == 2 and abs(sum(v["p"] for v in ki["varianten"]) - 1) < 0.001 and ki["varianten"][1]["buchung"] != "gibtsnicht", "KI-Entwurf wird geprüft übernommen")
+        check(A.evaluate("() => window.__lw.entwurfAusKi('keine Ahnung', 'x')") is None, "unbrauchbare KI-Antwort → kein Entwurf")
+        b.close()
+finally:
+    srv.terminate()
+print("FEHLER:", fails); print("\n".join(logs[:15]))

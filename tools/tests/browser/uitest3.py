@@ -1,0 +1,45 @@
+import sys, subprocess, time, os
+from playwright.sync_api import sync_playwright
+dist, out = sys.argv[1], sys.argv[2]
+os.makedirs(out, exist_ok=True)
+srv = subprocess.Popen([sys.executable, "-m", "http.server", "8766", "-d", dist], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+time.sleep(1)
+logs = []
+try:
+    with sync_playwright() as p:
+        b = p.chromium.launch()
+        pg = b.new_page(viewport={"width": 1600, "height": 950})
+        pg.on("console", lambda m: logs.append(f"{m.type}: {m.text}") if m.type in ("error","warning") and "404" not in m.text and "GL Driver" not in m.text and "glyph" not in m.text else None)
+        pg.on("pageerror", lambda e: logs.append(f"PAGEERROR: {e}"))
+        pg.goto("http://localhost:8766/")
+        pg.wait_for_timeout(2500)
+        pg.click(".map-message") if pg.is_visible(".map-message") else None
+        pg.click("[data-act=gen]")
+        pg.wait_for_timeout(800)
+        pg.screenshot(path=f"{out}/1_incident.png")
+        pg.fill(".mask .addr input >> nth=0", "Brust")
+        pg.wait_for_timeout(300)
+        pg.click(".mask .addr-list:not([hidden]) .addr-item >> nth=0")
+        pg.wait_for_timeout(300)
+        adr = pg.locator(".mask .addr input").nth(1)
+        adr.fill("Krems")
+        pg.wait_for_timeout(700)
+        pg.click(".mask .addr-list:not([hidden]) .addr-item >> nth=0")
+        pg.wait_for_timeout(1200)
+        pg.screenshot(path=f"{out}/2_mask.png")
+        pg.click("text=Alarmieren")
+        pg.wait_for_timeout(300)
+        pg.click("#sim-play")
+        pg.click("[data-tempo='10']")
+        pg.wait_for_timeout(9000)
+        pg.screenshot(path=f"{out}/3_running.png")
+        pg.click(".rtab[data-tab=funk]")
+        pg.wait_for_timeout(500)
+        pg.screenshot(path=f"{out}/4_funk.png")
+        pg.click(".tab[data-view=settings]")
+        pg.wait_for_timeout(800)
+        pg.screenshot(path=f"{out}/5_settings.png", full_page=True)
+        b.close()
+finally:
+    srv.terminate()
+print("\n".join(logs[:40]))
