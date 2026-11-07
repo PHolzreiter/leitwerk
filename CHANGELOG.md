@@ -1,5 +1,13 @@
 # Änderungen
 
+## 0.114.0 – Neues Hauptmenü
+- **Hauptmenü statt Startseite:** Spiel starten (Solo oder Multiplayer), als Disponent beitreten, als Pilot beitreten und Einstellungen – alles auf einer Seite, ohne Popups. Beim Spielstart verschwindet das Menü
+- **Einstellungen im Menü:** Mein Platz, Spiel & Simulation, Leitstelle, Realismus und Programm. Änderungen gelten sofort, die Suche springt direkt zur Einstellung. Tabellen (Fahrzeuge, Dienststellen, Krankenhäuser, Orte, Vorlagen) lassen sich im Menü bearbeiten
+- **Fortsetzen:** automatische Sicherung und eigene Spielstände mit Umbenennen, Exportieren, Importieren und Löschen
+- **Multiplayer:** Lobby mit Code und Rechten, Beitreten zeigt vorher Leitstelle und Einstellungen des Hosts
+- **Im Spiel:** Klick aufs Logo sichert das Spiel und führt zurück ins Hauptmenü (bis es ein Pausenmenü gibt)
+- Im Menü nicht mehr dabei: Supertonic und Computerstimmen
+
 ## 0.113.0 – Meldertöne aus der Entfernung mit Raumhall
 - **„Aus der Entfernung“ klingt jetzt wirklich weiter weg:** räumlicher Hall (Stereo, frühe Reflexionen und Nachhall wie in einem Raum), weniger direkter Klang und gedämpfte Höhen. Grundlage bleibt die Original-Aufnahme
 
