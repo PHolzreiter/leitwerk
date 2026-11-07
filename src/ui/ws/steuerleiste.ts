@@ -33,7 +33,7 @@ import { karteWaehlen, karteZeigen } from "./auswahl";
 import { fensterSchliessen } from "./nebenfenster";
 import { onPers, pers, setzePers } from "./persoenlich";
 import { logoMarke, logoSchrift } from "../logo";
-import { startseiteZeigen } from "../startseite";
+import { hauptmenueZeigen } from "../hauptmenue";
 import { confirmDialog } from "../dialog";
 import { jetztSichern } from "../../net/spielstand";
 import { onUpdate, updateInfo, updateInstallieren, updateLaeuft } from "../updateDienst";
@@ -251,9 +251,21 @@ ${IST_HAUPT ? `<button type="button" class="sl-update" hidden title="Neue LeitWe
       updateInstallieren();
     });
     const marke = kopf.querySelector<HTMLElement>(".brand")!;
-    const zurStart = () => startseiteZeigen(undefined, { zurueck: true });
-    marke.addEventListener("click", zurStart);
-    marke.addEventListener("keydown", (e) => (e.key === "Enter" || e.key === " ") && zurStart());
+    // Bis es das Pausenmenü gibt: Spiel sichern und beenden, dann das Hauptmenü (weiter geht es über „Fortsetzen“)
+    const zurStart = async () => {
+      const ok = await confirmDialog("Zum Hauptmenü", "Das Spiel wird gesichert und beendet. Weiterspielen kannst du im Hauptmenü unter „Spiel starten → Fortsetzen“.", "Sichern und beenden");
+      if (!ok) return;
+      try {
+        await jetztSichern();
+      } catch (e) {
+        console.warn("Sichern vor dem Hauptmenü", e);
+      }
+      sim.pause();
+      if (mp.status.rolle !== "aus") mp.verlassen();
+      hauptmenueZeigen(undefined, { splash: false });
+    };
+    marke.addEventListener("click", () => void zurStart());
+    marke.addEventListener("keydown", (e) => (e.key === "Enter" || e.key === " ") && void zurStart());
   }
   const play = kopf.querySelector<HTMLButtonElement>("#sim-play")!;
   const weather = kopf.querySelector<HTMLElement>("#weather")!;

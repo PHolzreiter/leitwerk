@@ -566,7 +566,7 @@ export function pilotOeffnen(): void {
       // Spiel verlassen (z. B. Fehler beim Beitritt): zurück zur Startseite
       if (mp.status.rolle === "aus" && root && !sim.pilotTest) {
         pilotSchliessen();
-        void import("../startseite").then((m) => m.startseiteZeigen());
+        void import("../hauptmenue").then((m) => m.hauptmenueZeigen(undefined, { splash: false }));
         return;
       }
       zeichneAlles();
@@ -834,8 +834,8 @@ export async function pilotVerlassen(): Promise<void> {
   pilotSchliessen();
   if (sim.pilotTest) sim.pilotTestBeenden();
   else mp.verlassen();
-  const { startseiteZeigen } = await import("../startseite");
-  startseiteZeigen();
+  const { hauptmenueZeigen } = await import("../hauptmenue");
+  hauptmenueZeigen(undefined, { splash: false });
 }
 
 export function pilotSchliessen(): void {
