@@ -187,7 +187,7 @@ class KopfKnoepfe implements IHeaderActionsRenderer {
 
 let api: DockviewApi | null = null;
 /** v2: Abfrage als eigenes Fenster neben der Karte (0.13.1) */
-const LAYOUT_KEY = `leitwerk.layout.v2.${FENSTER_ID}`;
+export const LAYOUT_KEY = `leitwerk.layout.v2.${FENSTER_ID}`;
 
 export function dock(): DockviewApi | null {
   return api;

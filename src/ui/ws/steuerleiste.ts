@@ -253,7 +253,7 @@ ${IST_HAUPT ? `<button type="button" class="sl-update" hidden title="Neue LeitWe
     const marke = kopf.querySelector<HTMLElement>(".brand")!;
     // Bis es das Pausenmenü gibt: Spiel sichern und beenden, dann das Hauptmenü (weiter geht es über „Fortsetzen“)
     const zurStart = async () => {
-      const ok = await confirmDialog("Zum Hauptmenü", "Das Spiel wird gesichert und beendet. Weiterspielen kannst du im Hauptmenü unter „Spiel starten → Fortsetzen“.", "Sichern und beenden");
+      const ok = await confirmDialog("Zum Hauptmenü", "Das Spiel wird beendet. Laufende Einsätze werden vorher gesichert – weiterspielen kannst du dann im Hauptmenü unter „Spiel starten → Fortsetzen“.", "Sichern und beenden");
       if (!ok) return;
       try {
         await jetztSichern();

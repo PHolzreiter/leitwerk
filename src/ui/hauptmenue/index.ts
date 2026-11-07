@@ -8,6 +8,7 @@ import { Komponente } from "./komponente.js";
 import { ansicht } from "./laufzeit";
 import { anbindungBauen, type Anbindung } from "./anbindung";
 import { pers } from "../ws/persoenlich";
+import { vollbildEnde, vollbildStart } from "../startseite";
 
 let offen: { wurzel: HTMLElement; stil: HTMLStyleElement; k: Komponente; app: Anbindung } | null = null;
 
@@ -18,6 +19,8 @@ export function hauptmenueOffen(): boolean {
 /** Menü zeigen. fertig() läuft, wenn ein Spiel beginnt (Menü schließt sich dann selbst). */
 export function hauptmenueZeigen(fertig?: () => void, opt: { splash?: boolean; seite?: string } = {}): void {
   if (offen) return;
+  // Wie bisher die Startseite: im Programm Vollbild, beim Spielstart wieder die Fenstergröße von vorher
+  vollbildStart();
   const stil = document.createElement("style");
   stil.dataset.hauptmenue = "";
   stil.textContent = css;
@@ -62,6 +65,7 @@ export function hauptmenueSchliessen(spielBeginnt = false): void {
     /* egal */
   }
   o.app.beenden();
+  vollbildEnde();
   o.wurzel.style.transition = "opacity .45s ease";
   o.wurzel.style.opacity = "0";
   setTimeout(() => {

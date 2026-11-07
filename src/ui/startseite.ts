@@ -143,8 +143,8 @@ function karteSvg(): { svg: string; mitte: Record<string, [number, number]> } {
 
 // ------------------------------------------------------------------ Bereitschafts-Check
 
-type CheckStand = "ok" | "warn" | "fehler" | "aus" | "pruefe";
-interface Check {
+export type CheckStand = "ok" | "warn" | "fehler" | "aus" | "pruefe";
+export interface Check {
   id: string;
   ico: string;
   name: string;
@@ -155,7 +155,7 @@ interface Check {
   seite?: string;
 }
 
-async function pruefen(): Promise<Check[]> {
+export async function pruefen(): Promise<Check[]> {
   const out: Check[] = [];
   const mit = async (c: Omit<Check, "stand" | "text">, f: () => Promise<Pick<Check, "stand" | "text" | "hilfe">>) => {
     try {
@@ -217,7 +217,7 @@ let offen: HTMLElement | null = null;
 /** Wird die Startseite gerade gezeigt? */
 /** Hauptmenü im Vollbild; danach wieder die Fenstergröße von vorher (nur das Hauptfenster im Programm) */
 let vollbildVonUns = false;
-function vollbildStart(): void {
+export function vollbildStart(): void {
   if (!inTauri()) return;
   void import("@tauri-apps/api/window")
     .then(async ({ getCurrentWindow }) => {
@@ -228,7 +228,7 @@ function vollbildStart(): void {
     })
     .catch((e) => console.warn("Vollbild", e));
 }
-function vollbildEnde(): void {
+export function vollbildEnde(): void {
   if (!inTauri() || !vollbildVonUns) return;
   vollbildVonUns = false;
   void import("@tauri-apps/api/window")

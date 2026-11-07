@@ -43,7 +43,7 @@ export function vorgabe(): Vorgabe {
     return {};
   }
 }
-function vorgabeSetzen(v: Partial<Vorgabe>): void {
+export function vorgabeSetzen(v: Partial<Vorgabe>): void {
   try {
     localStorage.setItem(SCHLUESSEL, JSON.stringify({ ...vorgabe(), ...v }));
   } catch {

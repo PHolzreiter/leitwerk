@@ -708,3 +708,23 @@ select.l-select.dd-auf{border-color:#3B8BFF}
 .l-mhknoepfe{display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-top:6px}
 .l-mhdanke{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;padding:60px 20px;font-size:14px;color:#C4CAD6}
 .l-mhdanke b{font-size:20px;color:#4CC38A}
+
+.l-okchip.warn{color:#FFB4B6;background:rgba(229,72,77,.12)}
+.l-okchip.warn svg{display:none}
+.l-okchip.laeuft{color:#9AA3B5;background:rgba(154,163,181,.10)}
+.l-okchip.laeuft svg{display:none}
+
+/* Fenster der App (Fall-Editor, KT-Editor, Rückfragen, Meldungen) über dem Hauptmenü zeigen, solange es offen ist */
+.gross-overlay, .dlg-overlay, .toast { z-index: 6000 !important; }
+/* Echte Hubschrauberliste ist länger als im Entwurf: in der Spalte scrollen statt in die Cockpit-Zeile zu laufen */
+.l-col:has(> .l-phelis){min-height:0;overflow:hidden}
+.l-phelis{flex:1 1 0;min-height:0;overflow-y:auto;padding-right:4px;scrollbar-width:thin}
+/* Echte Texte sind länger als die Beispiele im Entwurf: umbrechen statt aus dem Fenster laufen */
+.l-crow{grid-template-columns:18px minmax(0,1fr) auto}
+.l-crow > span:nth-child(2){min-width:0;white-space:normal}
+.l-crow > span:nth-child(2) span{white-space:normal;line-height:1.35}
+.l-hilfe-row{grid-template-columns:minmax(0,1fr) auto}
+.l-hilfe-row > span{min-width:0}
+.l-hilfe-row .l-hint{white-space:normal;line-height:1.4}
+.l-fsitem{min-width:0}
+.l-fsitem > div:last-child{white-space:normal;line-height:1.4}

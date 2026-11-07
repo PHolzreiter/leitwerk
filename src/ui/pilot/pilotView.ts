@@ -133,14 +133,14 @@ async function befehl<T>(p: Promise<T>): Promise<T | undefined> {
 }
 
 const LETZTER = "leitwerk.pilot.letzterHeli";
-function letzterHeli(): string | null {
+export function letzterHeli(): string | null {
   try {
     return localStorage.getItem(LETZTER);
   } catch {
     return null;
   }
 }
-function merkeHeli(id: string): void {
+export function merkeHeli(id: string): void {
   try {
     localStorage.setItem(LETZTER, id);
   } catch {

@@ -18,7 +18,7 @@ import { el, esc, toast } from "./dom";
 import { abfrageAnsicht, setzeAbfrageAnsicht } from "./abfrageAnsicht";
 import { aufkommenBauen } from "./aufkommenPanel";
 
-const STATUS_BEDEUTUNG: Record<string, string> = {
+export const STATUS_BEDEUTUNG: Record<string, string> = {
   freiWache: "frei auf der Wache",
   zumBO: "Anfahrt zum Einsatzort",
   amBO: "am Einsatzort",

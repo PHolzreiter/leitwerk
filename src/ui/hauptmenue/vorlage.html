@@ -826,7 +826,7 @@ select.l-select.dd-auf{border-color:#3B8BFF}
           </div>
         </div></div></div>
       </section>
-      <button class="{{newsCls}}" ref="{{refLog}}" style="width: {{bw.log}};" aria-expanded="{{logExp}}" aria-controls="l-changelog" onClick="{{toggleLog}}"><span style="padding: 2px 8px; border-radius: 999px; background: #FFC72C; color: #111216; font-size: 11px; font-weight: 700;">NEU</span><span style="color: #F5F7FA;">0.113</span><span class="l-ell">Meldertöne aus der Entfernung mit Raumhall</span><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 7.5l3-3 3 3" fill="none" stroke="currentColor" stroke-width="1.6"></path></svg></button>
+      <button class="{{newsCls}}" ref="{{refLog}}" style="width: {{bw.log}};" aria-expanded="{{logExp}}" aria-controls="l-changelog" onClick="{{toggleLog}}"><span style="padding: 2px 8px; border-radius: 999px; background: #FFC72C; color: #111216; font-size: 11px; font-weight: 700;">NEU</span><span style="color: #F5F7FA;">{{neuVersion}}</span><span class="l-ell">{{neuTitel}}</span><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 7.5l3-3 3 3" fill="none" stroke="currentColor" stroke-width="1.6"></path></svg></button>
     </span>
 
     <!-- In Arbeit -->
@@ -857,7 +857,7 @@ select.l-select.dd-auf{border-color:#3B8BFF}
           </div>
         </div></div></div>
       </section>
-      <button class="{{arbBtn}}" ref="{{refArb}}" style="width: {{bw.arbeit}};" aria-expanded="{{arbExp}}" aria-controls="l-arbeit" onClick="{{toggleArb}}">In Arbeit:<span class="l-ell" style="max-width: clamp(90px, 14vw, 260px);">Neue Startseite</span> <span class="l-prog"><i></i></span><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 7.5l3-3 3 3" fill="none" stroke="currentColor" stroke-width="1.6"></path></svg></button>
+      <button class="{{arbBtn}}" ref="{{refArb}}" style="width: {{bw.arbeit}};" aria-expanded="{{arbExp}}" aria-controls="l-arbeit" onClick="{{toggleArb}}">In Arbeit:<span class="l-ell" style="max-width: clamp(90px, 14vw, 260px);">{{arbTitel}}</span> <span class="l-prog"><i style="width: {{arbPz}}%;"></i></span><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 7.5l3-3 3 3" fill="none" stroke="currentColor" stroke-width="1.6"></path></svg></button>
     </span>
 
     <!-- Mithelfen -->
@@ -875,7 +875,7 @@ select.l-select.dd-auf{border-color:#3B8BFF}
               <sc-for list="{{hilfe}}" as="h" hint-placeholder-count="3">
                 <div class="l-hilfe-row"><span><span style="font-size: 14px; font-weight: 600;">{{h.titel}}</span><span class="l-hint">{{h.text}}</span></span><button class="l-ghost sm" onClick="{{h.go}}">Ich weiß das</button></div>
               </sc-for>
-              <sc-if value="{{hilfeMehr}}" hint-placeholder-val="{{true}}"><button class="l-ghost sm" style="margin-top: 6px;" onClick="{{hilfeMehrGo}}">4 weitere anzeigen</button></sc-if>
+              <sc-if value="{{hilfeMehr}}" hint-placeholder-val="{{true}}"><button class="l-ghost sm" style="margin-top: 6px;" onClick="{{hilfeMehrGo}}">{{hilfeMehrText}}</button></sc-if>
             </div>
             <div class="l-fs" style="--i: 2;">
               <div class="l-fsh">Etwas melden</div>
@@ -915,10 +915,10 @@ select.l-select.dd-auf{border-color:#3B8BFF}
           </div>
         </div></div></div>
       </section>
-      <button class="{{hilfeBtn}}" ref="{{refHilfe}}" style="width: {{bw.hilfe}};" aria-expanded="{{hilfeExp}}" aria-controls="l-hilfe" onClick="{{toggleHilfe}}">Mithelfen · <span style="color: #FFC72C;">3 offen</span><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 7.5l3-3 3 3" fill="none" stroke="currentColor" stroke-width="1.6"></path></svg></button>
+      <button class="{{hilfeBtn}}" ref="{{refHilfe}}" style="width: {{bw.hilfe}};" aria-expanded="{{hilfeExp}}" aria-controls="l-hilfe" onClick="{{toggleHilfe}}">Mithelfen · <span style="color: #FFC72C;">{{hilfeAnzahl}} offen</span><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 7.5l3-3 3 3" fill="none" stroke="currentColor" stroke-width="1.6"></path></svg></button>
     </span>
     <span style="position: absolute; right: 0; top: 14px; bottom: 0; display: flex; align-items: center; gap: 24px;">
-      <span><span class="l-disc">Nur eine Simulation – keine echten Einsätze · </span>v0.113.0</span>
+      <span><span class="l-disc">Nur eine Simulation – keine echten Einsätze · </span>{{versionText}}</span>
     </span>
   </footer>
 
@@ -933,14 +933,14 @@ select.l-select.dd-auf{border-color:#3B8BFF}
       <div class="l-enter e1"><div class="{{i0.cls}}">
         <button class="l-nav" aria-expanded="{{i0.exp}}" onClick="{{i0.toggle}}">
           <span class="l-no">01</span>
-          <span><span class="l-label">Spiel starten</span><span class="l-sub">Solo oder Multiplayer · Fortsetzen: gestern 11:35</span></span>
+          <span><span class="l-label">Spiel starten</span><span class="l-sub">{{startSub}}</span></span>
           <svg class="l-arrow" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.2"></path></svg>
         </button>
         <div class="l-drawer"><div class="l-drawer-in"><div class="l-dwrap"><div class="l-dbody">
           <!-- Kopfzeile: Reiter links, Spielmodus rechts (spart eine ganze Zeile) -->
           <div class="l-shead">
             <button class="{{tabNeu}}" onClick="{{goNeu}}">Neues Spiel</button>
-            <button class="{{tabFort}}" onClick="{{goFort}}">Fortsetzen · gestern 11:35</button>
+            <button class="{{tabFort}}" onClick="{{goFort}}">{{fortLabel}}</button>
             <sc-if value="{{isNeu}}" hint-placeholder-val="{{true}}">
               <span class="l-smodus"><span class="l-lab" style="margin: 0;">Spielmodus</span><span class="l-segs"><sc-for list="{{modus}}" as="o" hint-placeholder-count="2"><button class="{{o.cls}}" onClick="{{o.pick}}">{{o.label}}</button></sc-for></span></span>
             </sc-if>
@@ -962,15 +962,15 @@ select.l-select.dd-auf{border-color:#3B8BFF}
                 <div>
                   <p class="l-lab">Startzeit</p>
                   <div class="l-szeit"><div class="l-segs"><sc-for list="{{zeit}}" as="o" hint-placeholder-count="2"><button class="{{o.cls}}" onClick="{{o.pick}}">{{o.label}}</button></sc-for></div>
-                  <sc-if value="{{isWunsch}}" hint-placeholder-val="{{false}}"><button class="l-dt l-in" type="button" data-v="2026-11-07T19:00" aria-label="Wunschzeit wählen"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"></rect><path d="M3.5 10h17M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="2"></path></svg><span>Sa 07.11. · 19:00</span></button></sc-if></div>
+                  <sc-if value="{{isWunsch}}" hint-placeholder-val="{{false}}"><button class="l-dt l-in" type="button" data-v="{{dtWert}}" aria-label="Wunschzeit wählen"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"></rect><path d="M3.5 10h17M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="2"></path></svg><span>{{dtText}}</span></button></sc-if></div>
                 </div>
                 <div>
                   <p class="l-lab">Wetter <span class="l-labx">· {{wetterInfo}}</span></p>
                   <div class="l-segs"><sc-for list="{{wetter}}" as="o" hint-placeholder-count="4"><button class="{{o.cls}}" onClick="{{o.pick}}">{{o.label}}</button></sc-for></div>
                   <sc-if value="{{isFest}}" hint-placeholder-val="{{false}}">
                     <div class="l-in" style="display: flex; gap: 8px; align-items: center; margin-top: 8px;">
-                      <select class="l-select" aria-label="Wetterlage" style="min-width: 0; flex: 1;"><option>klar</option><option>bewölkt</option><option>Regen</option><option>Schnee</option><option>Nebel</option><option>Gewitter</option><option>Glätte</option></select>
-                      <input class="l-num xs" type="number" aria-label="Temperatur" value="18" min="-25" max="40"><span class="l-unit">°C</span>
+                      <select class="l-select" aria-label="Wetterlage" style="min-width: 0; flex: 1;" value="{{wlageVal}}" onChange="{{wlageSet}}"><sc-for list="{{wlageOpts}}" as="o" hint-placeholder-count="7"><option value="{{o}}">{{o}}</option></sc-for></select>
+                      <input class="l-num xs" type="number" aria-label="Temperatur" value="{{wtempVal}}" min="-25" max="40" onChange="{{wtempSet}}"><span class="l-unit">°C</span>
                     </div>
                   </sc-if>
                 </div>
@@ -1006,8 +1006,8 @@ select.l-select.dd-auf{border-color:#3B8BFF}
                   <sc-if value="{{multiDa}}" hint-placeholder-val="{{false}}">
                     <div class="l-in l-slobby">
                       <div class="l-slh">
-                        <span><span class="l-lab" style="display: block; margin: 0;">Deine Lobby · Code <span class="l-pill ok">verbunden</span></span><span class="l-scode">482 913</span></span>
-                        <span style="display: flex; gap: 6px; align-items: center;"><button class="l-icon" aria-label="Code kopieren"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="2"></rect><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" fill="none" stroke="currentColor" stroke-width="2"></path></svg></button><button class="l-ghost sm" onClick="{{lzuAsk}}" title="Lobby schließen – alle Mitspieler werden getrennt">Schließen</button></span>
+                        <span><span class="l-lab" style="display: block; margin: 0;">Deine Lobby · Code <span class="{{lobbyPill}}">{{lobbyZustand}}</span></span><span class="l-scode">{{lobbyCode}}</span></span>
+                        <span style="display: flex; gap: 6px; align-items: center;"><button class="l-icon" aria-label="Code kopieren" onClick="{{lobbyKopieren}}"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="2"></rect><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" fill="none" stroke="currentColor" stroke-width="2"></path></svg></button><button class="l-ghost sm" onClick="{{lzuAsk}}" title="Lobby schließen – alle Mitspieler werden getrennt">Schließen</button></span>
                       </div>
                       <sc-if value="{{lzuFrage}}" hint-placeholder-val="{{false}}">
                         <div class="l-strip rot" style="margin: 0 0 8px;"><span>Lobby schließen? Alle Mitspieler werden getrennt.</span><span class="l-stripb"><button class="l-ghost sm" onClick="{{lzuNein}}">Abbrechen</button><button class="l-ghost sm l-ja" onClick="{{lzuJa}}">Schließen</button></span></div>
@@ -1023,17 +1023,19 @@ select.l-select.dd-auf{border-color:#3B8BFF}
                           <button class="{{p.b3.cls}}" role="checkbox" aria-checked="{{p.b3.on}}" aria-label="{{p.b3.aria}}" title="{{p.b3.aria}}" onClick="{{p.b3.flip}}"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
                         </div>
                       </sc-for>
-                      <div class="l-rrow l-rfrei"><span class="l-rname"><b></b><i>Wartet auf Spieler …</i></span><em>3 von 6</em></div>
+                      <sc-if value="{{lobbyPlatz}}" hint-placeholder-val="{{true}}"><div class="l-rrow l-rfrei"><span class="l-rname"><b></b><i>Wartet auf Spieler …</i></span><em>{{lobbyAnzahl}} von 6</em></div></sc-if>
                     </div>
                   </sc-if>
                 </sc-if>
-                <sc-if value="{{startZeigen}}" hint-placeholder-val="{{true}}"><button class="l-btn" style="margin-top: auto; flex-shrink: 0;">{{startLabel}} <span class="l-kbd">Enter</span></button></sc-if>
+                <sc-if value="{{startFehlerDa}}" hint-placeholder-val="{{false}}"><p class="l-jerr" style="margin: auto 0 0;">{{startFehler}}</p></sc-if>
+                <sc-if value="{{startZeigen}}" hint-placeholder-val="{{true}}"><button class="{{startCls}}" style="margin-top: auto; flex-shrink: 0;" onClick="{{startGo}}">{{startLabel}} <span class="l-kbd">Enter</span></button></sc-if>
               </div>
             </div>
           </sc-if>
           <sc-if value="{{isFort}}" hint-placeholder-val="{{false}}">
             <div class="l-stag" style="display: grid; grid-template-columns: 2fr 1fr; gap: 30px;">
               <div class="l-list2">
+                <sc-if value="{{savesLeer}}" hint-placeholder-val="{{false}}"><p style="margin: 6px 0 0; font-size: 14px; color: #9AA3B5; line-height: 1.5;">Noch keine Spielstände. Sobald im Spiel ein Einsatz läuft, sichert LeitWerk jede Minute automatisch – die Sicherung erscheint dann hier.</p></sc-if>
                 <sc-for list="{{saves}}" as="s" hint-placeholder-count="4">
                   <button class="{{s.cls}}" onClick="{{s.pick}}">
                     <span><span style="display: block; font-size: 15px; font-weight: 600;">{{s.name}}</span><span style="display: block; font-size: 13px; color: #9AA3B5; margin-top: 2px;">{{s.info}}</span></span>
@@ -1050,9 +1052,10 @@ select.l-select.dd-auf{border-color:#3B8BFF}
                 <sc-if value="{{saveDel}}" hint-placeholder-val="{{false}}">
                   <div class="l-strip rot" style="margin: 0;"><span>„{{saveName}}“ löschen? Das lässt sich nicht rückgängig machen.</span><span class="l-stripb"><button class="l-ghost sm" onClick="{{saveDelNein}}">Abbrechen</button><button class="l-ghost sm l-ja" onClick="{{saveDelJa}}">Löschen</button></span></div>
                 </sc-if>
-                <div style="display: flex; gap: 8px; flex-wrap: wrap;"><button class="l-ghost sm" onClick="{{saveRenAuf}}">Umbenennen</button><button class="l-ghost sm">Exportieren …</button><button class="l-ghost sm" onClick="{{saveDelAuf}}">Löschen</button></div>
-                <div style="display: flex; gap: 8px; flex-wrap: wrap;"><button class="l-ghost sm">Spielstand importieren …</button><button class="l-ghost sm">Ordner öffnen</button></div>
-                <button class="l-btn" style="margin-top: auto;">Fortsetzen <span class="l-kbd">Enter</span></button>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;"><button class="l-ghost sm" onClick="{{saveRenAuf}}">Umbenennen</button><button class="l-ghost sm" onClick="{{saveExport}}">Exportieren …</button><button class="l-ghost sm" onClick="{{saveDelAuf}}">Löschen</button></div>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;"><button class="l-ghost sm" onClick="{{saveImport}}">Spielstand importieren …</button><button class="l-ghost sm" onClick="{{saveOrdner}}">Ordner öffnen</button></div>
+                <sc-if value="{{fortFehlerDa}}" hint-placeholder-val="{{false}}"><p class="l-jerr" style="margin: 0;">{{fortFehler}}</p></sc-if>
+                <button class="{{fortCls}}" style="margin-top: auto;" onClick="{{fortGo}}">Fortsetzen <span class="l-kbd">Enter</span></button>
               </div>
             </div>
           </sc-if>
@@ -1093,53 +1096,34 @@ select.l-select.dd-auf{border-color:#3B8BFF}
               </svg>
               <div class="l-jfacts">
                 <span>Code</span><b class="l-jcode2">{{codeShow}}</b>
-                <span>Host</span><b>Paul</b>
-                <span>Funkgruppe</span><b>NÖ-03 · Krems</b>
-                <span>Spielzeit</span><b>22:31 · Nacht</b>
-                <sc-if value="{{jLaeuft}}" hint-placeholder-val="{{true}}"><span>Läuft seit</span><b>1 h 12 min</b></sc-if>
+                <span>Host</span><b>{{sz.host}}</b>
+                <span>Funkgruppe</span><b>{{sz.funkgruppe}}</b>
+                <span>Spielzeit</span><b>{{sz.spielzeit}}</b>
+                <sc-if value="{{jLaeuft}}" hint-placeholder-val="{{true}}"><span>Wetter</span><b>{{sz.wetterJetzt}}</b></sc-if>
                 <sc-if value="{{jWartet}}" hint-placeholder-val="{{false}}"><span>Start</span><b>wenn der Host startet</b></sc-if>
               </div>
             </div>
             <div class="l-col" style="gap: 0; min-width: 0;">
               <p class="l-lab">Einstellungen vom Host</p>
               <div class="l-jset">
-                <div><span>Aufkommen</span><b>Standard</b></div>
-                <div><span>Einsatzarten</span><b>RD · KT · SEK</b></div>
-                <div><span>Wetter</span><b>Echt · Nebel</b></div>
-                <div><span>Jahreszeit</span><b>nach Datum</b></div>
-                <div><span>Als Notruf</span><b>Ein</b></div>
-                <div><span>Anrufer-KI</span><b>Jeder selbst</b></div>
-                <div><span>Einsatzcodes</span><b>Eingebaut</b></div>
-                <div><span>Quelle</span><b>Zufällig</b></div>
-                <div><span>Komplikationen</span><b>Normal</b></div>
-                <div><span>Falsche Adresse</span><b>5 %</b></div>
-                <div><span>Rückruf ohne Nr.</span><b>Aus</b></div>
-                <div><span>Revers</span><b>Normal</b></div>
-                <div><span>Rendezvous</span><b>Ein</b></div>
-                <div><span>Toleranz</span><b>5 min</b></div>
-                <div><span>Sondersignal</span><b>× 0,8</b></div>
-                <div><span>Nachbarzonen</span><b>Aus</b></div>
-                <div><span>KH-Belegung</span><b>100 %</b></div>
-                <div><span>Zeitraffer bei Notruf</span><b>auf 1×</b></div>
+                <sc-for list="{{szSet}}" as="x" hint-placeholder-count="18"><div><span>{{x.k}}</span><b>{{x.v}}</b></div></sc-for>
               </div>
             </div>
             <div class="l-col" style="gap: 0; min-width: 0;">
-              <p class="l-lab">In der Lobby · 3 von 6 <span style="text-transform: none; letter-spacing: 0; font-weight: 500; color: #6B7385; margin-left: 6px;"><span style="color: #FFC72C;">●</span> Host</span></p>
+              <p class="l-lab">In der Lobby · {{szAnzahl}} von 6 <span style="text-transform: none; letter-spacing: 0; font-weight: 500; color: #6B7385; margin-left: 6px;"><span style="color: #FFC72C;">●</span> Host</span></p>
               <div class="l-jplayers">
-                <span class="host" title="Paul · Host · Tisch 1"><b>P</b><i>Paul</i></span>
-                <span title="Lena · Tisch 2"><b>L</b><i>Lena</i></span>
-                <span class="neu" title="Du · Tisch 3"><b>{{jinit}}</b><i>{{jnameShow}}</i></span>
-                <span class="frei" title="Tisch 4–6 frei"><b>+</b><i>3 frei</i></span>
+                <sc-for list="{{szSpieler}}" as="x" hint-placeholder-count="3"><span class="{{x.cls}}" title="{{x.title}}"><b>{{x.ini}}</b><i>{{x.name}}</i></span></sc-for>
+                <sc-if value="{{szFreiDa}}" hint-placeholder-val="{{true}}"><span class="frei" title="Freie Plätze"><b>+</b><i>{{szFrei}} frei</i></span></sc-if>
               </div>
               <div class="l-jsteps">
-                <span><i style="background: #4CC38A;"></i>Verbindung steht · 18 ms</span>
-                <span><i style="background: #4CC38A;"></i>Version passt · 0.113</span>
-                <span><i style="background: #FFC72C;"></i>Mikrofon <button class="l-jlink">testen</button></span>
+                <span><i style="background: {{szVerbDot}};"></i>{{szVerb}}</span>
+                <span><i style="background: #4CC38A;"></i>Version {{versionKurz}}</span>
+                <span><i style="background: {{szMikDot}};"></i>{{szMik}} <button class="l-jlink" onClick="{{mikTest}}">einstellen</button></span>
                 <sc-if value="{{kiOffen}}" hint-placeholder-val="{{false}}"><span class="l-jki"><i style="background: #FFC72C;"></i>Anrufer-KI<span class="l-segs"><sc-for list="{{kiOpts}}" as="o" hint-placeholder-count="2"><button class="{{o.cls}}" onClick="{{o.pick}}">{{o.label}}</button></sc-for></span></span></sc-if>
               </div>
             </div>
             <div class="l-jbottom">
-              <div class="l-jrights" title="Rechte vergibt der Host – sie gelten sofort und können sich im Spiel ändern"><span class="l-lab" style="margin: 0;">Deine Rechte</span><i title="Disponieren">Disponieren</i><i title="KT disponieren">KT</i><i title="Simulation steuern">Steuern</i><i class="aus" title="Einstellungen &amp; Daten – vergibt der Host">Einstellungen</i></div>
+              <div class="l-jrights" title="Rechte vergibt der Host – sie gelten sofort und können sich im Spiel ändern"><span class="l-lab" style="margin: 0;">Deine Rechte</span><sc-for list="{{szRechte}}" as="x" hint-placeholder-count="4"><i class="{{x.cls}}" title="{{x.title}}">{{x.label}}</i></sc-for></div>
                             <button class="{{jBtnCls}}" onClick="{{jBtnGo}}"><span>{{jBtnText}}</span><span class="l-kbd">Enter</span></button>
             </div>
           </div>
@@ -1183,9 +1167,9 @@ select.l-select.dd-auf{border-color:#3B8BFF}
                 </svg>
                 <div class="l-jfacts">
                   <span>Code</span><b class="l-jcode2">{{pcodeShow}}</b>
-                  <span>Leitstelle</span><b>Paul · NÖ-03</b>
-                  <span>Spielzeit</span><b>22:31 · Nacht</b>
-                  <span>Wetter</span><b>6 °C, Nebel</b>
+                  <span>Leitstelle</span><b>{{sz.host}} · {{sz.funkgruppe}}</b>
+                  <span>Spielzeit</span><b>{{sz.spielzeit}}</b>
+                  <span>Wetter</span><b>{{sz.wetterJetzt}}</b>
                   <sc-if value="{{pWartet}}" hint-placeholder-val="{{false}}"><span>Start</span><b>wenn der Host startet</b></sc-if>
                 </div>
               </sc-if>
@@ -1208,13 +1192,10 @@ select.l-select.dd-auf{border-color:#3B8BFF}
             </div>
             <div class="l-col" style="gap: 0; min-width: 0;">
               <sc-if value="{{pMitLst}}" hint-placeholder-val="{{true}}">
-                <p class="l-lab">In der Lobby · 4 von 6 <span style="text-transform: none; letter-spacing: 0; font-weight: 500; color: #6B7385; margin-left: 6px;"><span style="color: #FFC72C;">●</span> Host <span style="color: #9AA3B5; margin-left: 4px;">■</span> Pilot</span></p>
+                <p class="l-lab">In der Lobby · {{szAnzahl}} von 6 <span style="text-transform: none; letter-spacing: 0; font-weight: 500; color: #6B7385; margin-left: 6px;"><span style="color: #FFC72C;">●</span> Host <span style="color: #9AA3B5; margin-left: 4px;">■</span> Pilot</span></p>
                 <div class="l-jplayers">
-                  <span class="host" title="Paul · Host · Disponent"><b>P</b><i>Paul</i></span>
-                  <span title="Lena · Disponentin"><b>L</b><i>Lena</i></span>
-                  <span class="pil" title="Max · Pilot · NAH St. Pölten"><b>M</b><i>Max</i></span>
-                  <span class="neu pil" title="Du · Pilot"><b>{{pinit}}</b><i>{{pnameShow}}</i></span>
-                  <span class="frei" title="2 Plätze frei"><b>+</b><i>2 frei</i></span>
+                  <sc-for list="{{szSpieler}}" as="x" hint-placeholder-count="3"><span class="{{x.cls}}" title="{{x.title}}"><b>{{x.ini}}</b><i>{{x.name}}</i></span></sc-for>
+                  <sc-if value="{{szFreiDa}}" hint-placeholder-val="{{true}}"><span class="frei" title="Freie Plätze"><b>+</b><i>{{szFrei}} frei</i></span></sc-if>
                 </div>
                 <sc-if value="{{pLaeuftF}}" hint-placeholder-val="{{true}}"><span class="l-hint" style="margin-top: auto;">Der Disponent alarmiert dich über Melder und Funk.</span></sc-if>
                 <sc-if value="{{pWartet}}" hint-placeholder-val="{{false}}"><span class="l-hint" style="margin-top: auto; color: #E8DDB8;">Das Spiel ist noch nicht gestartet – deinen Hubschrauber kannst du schon wählen.</span></sc-if>
@@ -1282,7 +1263,7 @@ select.l-select.dd-auf{border-color:#3B8BFF}
                       <div class="{{r.rowCls}}">
                         <span>{{r.label}}<sc-if value="{{r.hasHint}}" hint-placeholder-val="{{false}}"><span class="l-hint">{{r.hint}}</span></sc-if></span>
                         <span class="l-sctl">
-                          <sc-if value="{{r.hasOk}}" hint-placeholder-val="{{false}}"><span class="l-okchip"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>{{r.okText}}</span></sc-if>
+                          <sc-if value="{{r.hasOk}}" hint-placeholder-val="{{false}}"><span class="{{r.okCls}}"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>{{r.okText}}</span></sc-if>
                           <sc-if value="{{r.isInfo}}" hint-placeholder-val="{{false}}"><span class="l-chip"><span style="width: 7px; height: 7px; border-radius: 50%; background: {{r.dot}};"></span>{{r.value}}</span></sc-if>
                           <sc-if value="{{r.isSeg}}" hint-placeholder-val="{{false}}"><span class="l-segs"><sc-for list="{{r.opts}}" as="o" hint-placeholder-count="3"><button class="{{o.cls}}" onClick="{{o.pick}}">{{o.label}}</button></sc-for></span></sc-if>
                           <sc-if value="{{r.isSel}}" hint-placeholder-val="{{false}}"><select class="l-select" aria-label="{{r.label}}" value="{{r.val}}" onChange="{{r.set}}"><sc-for list="{{r.options}}" as="o" hint-placeholder-count="3"><option value="{{o}}">{{o}}</option></sc-for></select></sc-if>

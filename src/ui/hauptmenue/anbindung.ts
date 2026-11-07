@@ -12,6 +12,9 @@ import b32m from "./bilder/bg-32x9-morgen.jpg?url";
 import b32t from "./bilder/bg-32x9-mittag.jpg?url";
 import b32a from "./bilder/bg-32x9-abend.jpg?url";
 import b32n from "./bilder/bg-32x9-nacht.jpg?url";
+import { ablaufBauen } from "./ablauf";
+import { einstellungsBindung } from "./bindung";
+import type { ZeilenQuelle } from "./vertrag";
 
 export interface Rahmen {
   neuZeichnen(): void;
@@ -22,7 +25,17 @@ export type Anbindung = ReturnType<typeof anbindungBauen>;
 
 export function anbindungBauen(r: Rahmen) {
   const aus: (() => void)[] = [];
+  const ablauf = ablaufBauen(r.neuZeichnen, r.schliessen);
+  const einst = einstellungsBindung(r.neuZeichnen);
+  // Seiten mit echten Daten (zeilen.ts) – wird nachgeladen, damit das Menü sofort steht
+  let zeilen: ZeilenQuelle | undefined;
+  let feldWert: ((k: string, v: unknown) => void) | undefined;
+  let zq: { laden(): void; beenden(): void } | undefined;
   return {
+    ablauf,
+    einst,
+    zeilen: ((seite, b) => (zeilen ? zeilen(seite, b) : undefined)) as ZeilenQuelle,
+    feldWert: (k: string, v: unknown) => feldWert?.(k, v),
     logoUrl,
     funkgruppenKarte: karte,
     bilder: {
@@ -30,9 +43,19 @@ export function anbindungBauen(r: Rahmen) {
       "32x9-morgen": b32m, "32x9-mittag": b32t, "32x9-abend": b32a, "32x9-nacht": b32n,
     } as Record<string, string>,
     starten() {
-      /* Beobachter kommen in den folgenden Abschnitten dazu */
+      ablauf.starten();
+      void import("./zeilen").then((m) => {
+        const q = m.zeilenQuelle(r.neuZeichnen);
+        zeilen = q.zeilen;
+        zq = q;
+        feldWert = (m as { feldWert?: (k: string, v: unknown) => void }).feldWert;
+        q.laden();
+        r.neuZeichnen();
+      });
     },
     beenden() {
+      ablauf.beenden();
+      zq?.beenden();
       aus.forEach((f) => f());
     },
     neuZeichnen: r.neuZeichnen,

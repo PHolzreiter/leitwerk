@@ -44,7 +44,7 @@ export interface CodeSatz {
 const LS_AKTIV = "lw.codesatz";
 const basis = (datei: string) => datei.replace(/\.(json|csv|txt)$/i, "");
 
-function aktivMerken(name: string | null): void {
+export function aktivMerken(name: string | null): void {
   try {
     if (name) localStorage.setItem(LS_AKTIV, name);
     else localStorage.removeItem(LS_AKTIV);
@@ -113,14 +113,14 @@ export function eingebautAktivieren(bereich: Bereich = "rd"): void {
 }
 
 /** Codeliste (CSV) lesen; Fehlertext oder Codes */
-function codesLesen(text: string, datei: string) {
+export function codesLesen(text: string, datei: string) {
   const r = importCsv("codes", text, { stations: [], existing: [], herkunft: "import", herkunftDetail: datei });
   if (!r.records.length) return { fehler: `${datei}: keine Codes erkannt (nötig ist die Spalte „Code“, dazu Name, Kategorie, Kapitel)` };
   return { codes: r.records, fehlerZeilen: r.fehler.length };
 }
 
 /** RD-Abfrageschema lesen (ein KT-Teil darin zählt nicht – KT/SEK ist eigener Bereich) */
-function rdSchemaLesen(text: string, datei: string): Schema {
+export function rdSchemaLesen(text: string, datei: string): Schema {
   let roh: unknown;
   try {
     roh = JSON.parse(text);
@@ -188,7 +188,7 @@ export async function satzAktivieren(s: CodeSatz): Promise<void> {
 }
 
 /** Eingebaute KT-/SEK-Codes (für einen Satz, der nur die Abfrage mitbringt) */
-function eingebauteKtCodes(): KtCodeDef[] {
+export function eingebauteKtCodes(): KtCodeDef[] {
   return ((standardCodesystem() as { kt?: { codes?: KtCodeDef[] } }).kt?.codes ?? []) as KtCodeDef[];
 }
 

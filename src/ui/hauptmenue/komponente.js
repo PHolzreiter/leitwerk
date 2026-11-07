@@ -122,20 +122,12 @@ export class Komponente {
     return st.upd || ((this.props.update ?? 'verfügbar') === 'verfügbar' ? 'verfuegbar' : 'aktuell');
   }
   updKlick() {
-    const s = this.updStatus();
-    clearTimeout(this.tu); clearInterval(this.iu);
-    if (s === 'aktuell') {
-      this.setState({ upd: 'suche' });
-      this.tu = setTimeout(() => this.setState({ upd: 'aktuell' }), 1400);
-    } else if (s === 'verfuegbar') {
-      this.setState({ upd: 'laedt', updP: 0 });
-      this.iu = setInterval(() => {
-        const p = ((this.state || {}).updP || 0) + 3;
-        if (p >= 100) { clearInterval(this.iu); this.setState({ upd: 'fertig', updP: 100 }); }
-        else this.setState({ updP: p });
-      }, 90);
-    } else if (s === 'fertig') {
-      this.setState({ upd: 'aktuell', updV: '0.114.0' });
+    const u = this.app.ablauf.update();
+    if (u.zustand === 'verfuegbar') return void this.app.ablauf.updateLaden();
+    if (u.zustand === 'aktuell') {
+      clearTimeout(this.tu);
+      this.setState({ updSuche: true });
+      this.tu = setTimeout(() => this.setState({ updSuche: false }), 1200);
     }
   }
   quitZu() {
@@ -267,8 +259,9 @@ export class Komponente {
     else if (b.dataset.q) { const [hh, mm] = b.dataset.q.split(':'); s.h = +hh; s.mi = +mm; }
     else if (b.dataset.ok) {
       const t = s.tag, WT = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
-      s.btn.dataset.v = t.getFullYear() + '-' + z(t.getMonth() + 1) + '-' + z(t.getDate()) + 'T' + z(s.h) + ':' + z(s.mi);
-      s.btn.lastChild.textContent = WT[t.getDay()] + ' ' + z(t.getDate()) + '.' + z(t.getMonth() + 1) + '. · ' + z(s.h) + ':' + z(s.mi);
+      void WT;
+      // Startzeit gilt sofort (Anzeige kommt beim nächsten Zeichnen)
+      this.wert('startzeit', t.getFullYear() + '-' + z(t.getMonth() + 1) + '-' + z(t.getDate()) + 'T' + z(s.h) + ':' + z(s.mi));
       this.popZu(); s.btn.focus();
       return;
     }
@@ -284,13 +277,15 @@ export class Komponente {
     if (st.keyCap) {
       e.preventDefault(); e.stopPropagation();
       if (['Shift', 'Control', 'Alt', 'Meta'].includes(e.key)) return;
+      if (this.app.einst && this.app.einst.taste(st.keyCap, e)) return this.setState({ keyCap: null });
+      if (this.app.einst && this.app.einst.lesen(st.keyCap) !== undefined) return this.setState({ keyCap: null });
       if (e.key === 'Delete' || e.key === 'Backspace') return this.setState({ ['s_' + st.keyCap]: '–', keyCap: null });
       const n = (e.ctrlKey ? 'Ctrl+' : '') + (e.altKey ? 'Alt+' : '') + (e.shiftKey ? 'Shift+' : '') + (e.key === ' ' ? 'Leertaste' : e.key.length === 1 ? e.key.toUpperCase() : e.key);
       return this.setState({ ['s_' + st.keyCap]: n, keyCap: null });
     }
     if (st.quit) {
       if (this.istEsc(e)) { e.preventDefault(); e.stopPropagation(); this.quitZu(); }
-      else if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); this.setState({ quit: false, beendet: true }); }
+      else if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); this.app.ablauf.programmBeenden().then(ok => { if (!ok) this.setState({ quit: false, beendet: true }); }); }
       return;
     }
     if (!this.istEsc(e)) return;
@@ -327,41 +322,43 @@ export class Komponente {
     this.fokusTimer = setTimeout(() => { const b = this.splashRef && this.splashRef.current; if (b && b.focus) b.focus(); }, 80);
   }
   // Bereitschafts-Check: was zum Spielen fehlt, kommt aus den Einstellungen
-  bereitschaft(st) {
-    const gruen = '#4CC38A', gelb = '#FFC72C', grau = '#9AA3B5';
-    const gem = (st.s_kimodus ?? 'Lokal (Ollama)') === 'Gemini (Cloud)';
-    const keyOk = !!st['ok_gemini:gkey'];
-    const mik = st.s_eingabe ?? true;
-    const z = (kurz, name, text, detail, stufe, g, p, ziel) => ({ kurz, name, text, detail, stufe, g, p, ziel, dot: stufe === 'ok' ? gruen : stufe === 'warn' ? gelb : stufe === 'fehler' ? '#E5484D' : grau });
-    // Zustände wie in der App (startseite.ts → pruefen): ok · warn · fehler · aus
-    return [
-      z('Kartenmaterial', 'Kartenmaterial', 'Bereit', 'Grundpaket Niederösterreich und Gelände geladen', 'ok', 'prog', 'karten', 'Kartenpakete'),
-      z('Straßennetz & Adressen', 'Straßennetz & Adressen', 'Bereit', 'Straßen NÖ und Wien installiert, Fahrzeiten bereit', 'ok', 'prog', 'karten', 'Kartenpakete'),
-      z('Einsatzcodes & Abfrage', 'Einsatzcodes & Abfrage', 'Bereit', 'LeitWerk-Codesystem (eingebaut) · RD und KT/SEK', 'ok', 'daten', 'codes', 'Einsatzcodes'),
-      gem ? (keyOk ? z('KI-Anrufer', 'KI-Anrufer', 'Gemini bereit', 'Gemini · Schlüssel geprüft', 'ok', 'platz', 'anrufe', 'Anrufe & KI')
-                   : z('KI-Anrufer', 'KI-Anrufer', 'Schlüssel fehlt', 'Gemini gewählt, Schlüssel noch nicht eingerichtet – bis dahin spricht die lokale KI', 'warn', 'platz', 'gemini', 'Einrichten'))
-          : z('KI-Anrufer', 'KI-Anrufer', 'Lokal bereit', 'Lokal · gemma3:12b läuft', 'ok', 'platz', 'anrufe', 'Anrufe & KI'),
-      mik ? z('Spracheingabe', 'Spracheingabe', 'Bereit', 'Whisper · Mikrofon: wie das System', 'ok', 'platz', 'mikro', 'Mikrofon & Funk')
-          : z('Spracheingabe', 'Spracheingabe', 'Aus', 'Ausgeschaltet – du tippst statt zu sprechen', 'aus', 'platz', 'mikro', 'Mikrofon & Funk'),
-      z('Stimmen', 'Stimmen', 'Bereit', 'Piper · Anrufer und Funk werden vorgelesen', 'ok', 'platz', 'sprache', 'Sprache & Stimmen'),
-      z('Speicherstand', 'Speicherstand', 'Sicherung 22:26', 'Automatische Sicherung um 22:26', 'ok', 'prog', 'programm', 'Programm')
-    ];
+  // Bereitschafts-Check: Prüfungen der App (startseite.ts → pruefen), Zustände ok · warn · fehler · aus
+  bereitschaft() {
+    const farbe = { ok: '#4CC38A', warn: '#FFC72C', fehler: '#E5484D', aus: '#9AA3B5' };
+    const ziel = { karten: ['prog', 'karten', 'Kartenpakete'], codes: ['daten', 'codes', 'Einsatzcodes'], anrufe: ['platz', 'anrufe', 'Anrufe & KI'] };
+    const liste = this.app.ablauf.checks();
+    if (!liste) return [{ kurz: 'Prüfe …', name: 'Bereitschafts-Check', text: 'wird geprüft …', detail: 'Einen Moment …', stufe: 'aus', g: 'prog', p: 'programm', ziel: '', dot: farbe.aus }];
+    return liste.map(c => {
+      const z = c.name === 'Spracheingabe' ? ['platz', 'mikro', 'Mikrofon & Funk'] : ziel[c.seite] || ['prog', 'programm', 'Programm'];
+      return { kurz: c.name, name: c.name, text: c.text, detail: c.detail, stufe: c.stufe, g: z[0], p: z[1], ziel: z[2], dot: farbe[c.stufe] || farbe.aus };
+    });
   }
-  // Zum Testen: 000000 = kein Spiel mit dem Code, 999999 = Host nicht erreichbar, 1xxxxx = Lobby wartet auf Start, sonst läuft das Spiel
+  // Code prüfen = wirklich beitreten (Fehler erscheinen über den Kästchen)
   codePruefen(w) {
     const st = this.state || {};
     const c = (w === 'j' ? st.code : st.pcode) || '';
-    if (c.length < 6) return;
-    const err = c === '000000' ? 'Kein Spiel mit diesem Code – bitte prüfen'
-      : c === '999999' ? 'Host gerade nicht erreichbar – ist er online?' : null;
-    if (w === 'j') this.setState(err ? { jerr: err } : { jerr: null, joinWeiter: true, codeFocus: false, jdrin: false });
-    else this.setState(err ? { perr: err } : { perr: null, pWeiter: true, ptest: false, pfoc: false, pdrin: false });
+    if (c.length < 6 || st.jLaeuftPruef) return;
+    const name = ((w === 'j' ? st.jname : st.pname) ?? this.app.ablauf.meinName()).trim();
+    const fk = w === 'j' ? 'jerr' : 'perr';
+    if (!name) return this.setState({ [fk]: 'Bitte einen Namen eingeben' });
+    this.setState({ jLaeuftPruef: true, [fk]: null });
+    this.app.ablauf.beitreten(c, name).then(err => {
+      if (w === 'j') this.setState(err ? { jerr: err, jLaeuftPruef: false } : { jerr: null, joinWeiter: true, codeFocus: false, jdrin: false, jLaeuftPruef: false });
+      else this.setState(err ? { perr: err, jLaeuftPruef: false } : { perr: null, pWeiter: true, ptest: false, pfoc: false, jLaeuftPruef: false });
+    });
+  }
+  // Als Disponent: in ein laufendes Spiel sofort, in eine wartende Lobby „Warte auf den Host …“
+  joinRein() {
+    const st = this.state || {};
+    if (st.jdrin) return;
+    const r = this.app.ablauf.alsDisponentRein();
+    if (r === 'wartet') this.setState({ jdrin: true });
   }
   // Suchtreffer: Seite öffnen, zur Einstellung scrollen und sie kurz aufleuchten lassen
   zuTreffer(t) {
     const st = this.state || {};
     const neu = { sg: t.p.gid, sp: t.p.id, q: '', sw: (st.sw || 0) + 1, swLate: false, cfm: null, warn: null, hl: t.rk };
-    if (t.tq) neu['tq_' + t.p.id] = t.tq;
+    if (t.tq) { neu['tq_' + t.p.id] = t.tq; if (this.app.feldWert) this.app.feldWert('tq_' + t.p.id, t.tq); }
     this.setState(neu);
     clearTimeout(this.tHl);
     setTimeout(() => {
@@ -370,6 +367,32 @@ export class Komponente {
       if (box) box.scrollTop = el ? Math.max(0, el.getBoundingClientRect().top - box.getBoundingClientRect().top + box.scrollTop - 60) : 0;
     }, 60);
     this.tHl = setTimeout(() => this.setState({ hl: null }), 2200);
+  }
+  // Einstellungswerte: gebundene Schlüssel kommen aus der App (bindung.ts), alles andere bleibt im Menü-Zustand
+  // Bearbeiten-Seite einer Tabelle: Werte einsammeln und über die Tabelle speichern bzw. löschen
+  editFertig(art) {
+    const e = this.editInfo;
+    if (!e || !e.tab) return;
+    try {
+      if (art === 'loeschen') { if (e.tab.loeschen) e.tab.loeschen(e.z); return; }
+      const werte = e.felder.map(f => {
+        if (f.t === 'info') return f.value;
+        const v = this.wertLesen(f.key, f.def);
+        return f.t === 'tog' ? (v ? 'ja' : 'nein') : String(v ?? '');
+      });
+      if (e.tab.speichern) Promise.resolve(e.tab.speichern(e.z, werte)).catch(err => console.error('Bearbeiten', err));
+    } catch (err) { console.error('Bearbeiten', err); }
+  }
+  wertLesen(k, d) {
+    const a = this.app.einst ? this.app.einst.lesen(k) : undefined;
+    if (a !== undefined) return a;
+    const v = (this.state || {})['s_' + k];
+    return v ?? d;
+  }
+  wert(k, v) {
+    if (this.app.einst && this.app.einst.schreiben(k, v)) return this.setState({});
+    if (this.app.feldWert) this.app.feldWert(k, v);
+    this.setState({ ['s_' + k]: v });
   }
   einstellungOeffnen(sg, sp) {
     clearTimeout(this.t1);
@@ -408,6 +431,8 @@ export class Komponente {
     const cur = (this.state || {}).screen || 'main';
     const oeffnen = () => this.setState(id === 'settings' ? { screen: id, sw: ((this.state || {}).sw || 0) + 1, swLate: true } : { screen: id });
     if (cur === id) return this.setState({ screen: 'main', swapping: false });
+    // Beitreten: Code-Feld gleich bereit zum Tippen
+    if (id === 'join' || id === 'pilot') setTimeout(() => { const el = document.querySelector('.l-item.open .l-codein'); if (el && !(this.state || {}).joinWeiter && !(this.state || {}).pWeiter) el.focus({ preventScroll: true }); }, 450);
     if (cur === 'main') return oeffnen();
     // Wechsel: alter Punkt klappt zu, neuer klappt auf – gleichzeitig
     this.setState({ swapping: true });
@@ -435,6 +460,7 @@ export class Komponente {
     const F = (label, key, ph, hint, x) => ({ t: 'feld', label, key, ph, hint, ...(x || {}) });
     const TON = (label, key, def) => ({ t: 'ton', label, key, def });
     const TAB = (cols, rows, x) => ({ t: 'table', cols, rows, ...(x || {}) });
+    const bausteine = { H, T, S, L, R, N, K, B, I, C, IT, F, TON, TAB };
     const CH = (key) => ({ t: 'chart', key });
     const pct = v => v + ' %';
     const ok = '#4CC38A', grau = '#9AA3B5', gelb = '#FFC72C', blau = '#3B8BFF';
@@ -457,7 +483,7 @@ export class Komponente {
     const TOENE = ['Klingeln klassisch', 'Klingeln modern', 'Telefon leise', 'Piep kurz', 'Doppelpiep', 'Gong', '– aus –'];
     const FG = [['NÖ-01', 'Mostviertel · St. Pölten', '#3B8BFF'], ['NÖ-02', 'Waldviertel', '#4CC38A'], ['NÖ-03', 'Krems · Tulln · Hollabrunn', '#FFC72C'], ['NÖ-04', 'Weinviertel', '#A970FF'], ['NÖ-05', 'Mödling · Bruck · Baden Nord', '#2FB5C4'], ['NÖ-06', 'Wr. Neustadt · Neunkirchen · Baden Süd', '#E5484D']];
     const imp = [B('Import & Export', ['CSV importieren …', 'Exportieren …'], 'Öffnet die Dateiauswahl des Systems')];
-    return [
+    const daten = [
       { id: 'platz', label: 'Mein Platz', scope: 'Nur für diesen Rechner · gilt sofort', pages: [
         { id: 'darstellung', label: 'Darstellung', info: 'Hell/Dunkel, Größe, Karte', kw: 'dunkelmodus nachtmodus thema zoom schriftgröße skalierung animation 3d poi grenzen funkgruppen', rows: [
           S('Farbschema', 'thema', ['Hell', 'Dunkel', 'Wie das System'], 'Dunkel', 'Gilt im Spiel – das Hauptmenü bleibt dunkel'),
@@ -833,6 +859,9 @@ export class Komponente {
         ]}
       ]}
     ];
+    // Seiten mit echten Daten aus der App (zeilen.ts) – sonst die Zeilen aus dem Design
+    if (this.app.zeilen) daten.forEach(g => g.pages.forEach(p => { try { const z = this.app.zeilen(p.id, bausteine); if (z) p.rows = z; } catch (e) { console.error('Hauptmenü-Seite ' + p.id, e); } }));
+    return daten;
   }
   renderVals() {
     const st = this.state || {};
@@ -843,35 +872,47 @@ export class Komponente {
     const item = id => ({ cls: 'l-item' + (s === id ? ' open' : ''), exp: s === id ? 'true' : 'false', toggle: () => this.toggle(id) });
     const seg = (key, opts, def) => opts.map(o => ({ label: o, cls: 'l-seg' + ((st[key] ?? def) === o ? ' on' : ''), pick: () => set(key, o) }));
 
-    // ---------- Spiel starten
+    // ---------- Spiel starten (echte Werte über this.app: Einstellungen in bindung.ts, Abläufe in ablauf.ts)
+    const A = this.app.ablauf;
+    const Vs = (k, d) => this.wertLesen(k, d);
     const noe = st.noe || [];
-    const fgId = st.fg ?? 'NÖ-03';
+    const fgId = Vs('fg', 'NÖ-03') || 'NÖ-03';
     const fgs = noe.map(f => ({
-      id: f.id, d: f.d, cx: f.cx, cy: f.cy + 4,
+      id: f.id, d: f.d, cx: f.cx, cy: Number(f.cy) + 4,
       cls: 'l-fg' + (f.id === fgId ? ' on' : ''), lcls: 'l-fgl' + (f.id === fgId ? ' on' : ''),
       on: f.id === fgId ? 'true' : 'false', aria: 'Funkgruppe ' + f.id + ', ' + f.kurz,
-      pick: () => set('fg', f.id),
-      key: e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); set('fg', f.id); } }
+      pick: () => this.wert('fg', f.id),
+      key: e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.wert('fg', f.id); } }
     }));
     const fgSelRaw = noe.find(f => f.id === fgId);
-    const fgSel = fgSelRaw ? { id: fgSelRaw.id, kurz: fgSelRaw.kurz, bez: fgSelRaw.bez } : { id: fgId, kurz: 'Krems · Tulln · Hollabrunn', bez: 'Krems Stadt und Land, Hollabrunn, Tulln' };
-    const fgsMini = noe.map(f => ({ d: f.d, cls: 'l-fg' + (f.id === 'NÖ-03' ? ' on' : '') }));
-    const wetterWahl = st.wetter ?? 'Echt';
-    const wetterInfo = { Echt: 'Echtes Wetter für die Funkgruppe, Stunde für Stunde', Simuliert: 'Vom Simulator, passend zu Jahreszeit und Uhrzeit', Wechselhaft: 'Ändert sich oft – auch Gewitter, Sturm, Glätte', Fest: 'Bleibt das ganze Spiel gleich' }[wetterWahl];
+    const fgSel = fgSelRaw ? { id: fgSelRaw.id, kurz: fgSelRaw.kurz, bez: fgSelRaw.bez } : { id: fgId, kurz: '', bez: '' };
+    const sz = A.sitzung();
+    const fgsMini = noe.map(f => ({ d: f.d, cls: 'l-fg' + (f.id === sz.fgId ? ' on' : '') }));
+    const wetterWahl = Vs('wetterArt', 'Simuliert');
+    const startzeit = Vs('startzeit', '') || '';
+    const zz = n => String(n).padStart(2, '0');
+    const naechste = new Date(Date.now() + 3600000); naechste.setMinutes(0, 0, 0);
+    const dtStandard = naechste.getFullYear() + '-' + zz(naechste.getMonth() + 1) + '-' + zz(naechste.getDate()) + 'T' + zz(naechste.getHours()) + ':00';
+    const dtText = v => { const t = new Date(v); if (!isFinite(t.getTime())) return v; return ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'][t.getDay()] + ' ' + zz(t.getDate()) + '.' + zz(t.getMonth() + 1) + '. · ' + zz(t.getHours()) + ':' + zz(t.getMinutes()); };
+    const wetterInfo = { Echt: 'Echtes Wetter für die Funkgruppe, Stunde für Stunde', Simuliert: 'Vom Simulator, passend zu Jahreszeit und Uhrzeit', Wechselhaft: 'Ändert sich oft – auch Gewitter, Sturm, Glätte', Fest: 'Bleibt das ganze Spiel gleich' }[wetterWahl] || '';
     const aufTitel = { Realistisch: 'Wie in der Wirklichkeit 2025', Standard: 'Etwas mehr und spannender gemischt, mit Spielhilfen', Stressig: 'Noch mehr und härter' };
-    const arten = [['rd', 'RD', 'Notfälle (Rettungsdienst)', true], ['kt', 'KT', 'Krankentransporte', true], ['sek', 'SEK', 'Sekundärtransporte', true], ['acn', 'ACN', 'Akutpflege', false]];
-    const modus = st.modus ?? 'Solo';
-    // Erstwahl der Anrufer-KI: nur solange noch nie gewählt (in der App: anrufKiErstwahl)
-    const kiOffen = st.s_kimodus === undefined || !!st.kiErst;
+    const arten = [['rd', 'RD', 'Notfälle (Rettungsdienst)', true], ['kt', 'KT', 'Krankentransporte', true], ['sek', 'SEK', 'Sekundärtransporte (Überstellungen)', true], ['acn', 'ACN', 'Akutpflege', true]];
+    const lobbyDa = A.rolle() === 'host';
+    const modus = lobbyDa ? 'Multiplayer' : (st.modus ?? 'Solo');
+    const lobby = A.lobby();
+    // Erstwahl der Anrufer-KI ohne Dialog: solange noch nie gewählt
+    const kiOffen = A.kiErstwahlNoetig() || !!st.kiErst;
+    const hname = st.hname ?? A.meinName();
+    const lobbyNeu = () => {
+      if (!hname.trim() || (kiOffen && !st.kiErst) || st.lobbyLaeuft) return;
+      this.setState({ lobbyLaeuft: true, startFehler: null });
+      A.hosten(hname.trim()).then(f => this.setState({ lobbyLaeuft: false, startFehler: f }));
+    };
     const tab = st.tab || 'neu';
-    const saveSel = st.save ?? 0;
-    const saves = [
-      { name: 'Automatische Sicherung', info: 'NÖ-03 · Spielzeit 22:31 · Nacht', open: '3 offen', when: 'vor 5 Min.' },
-      { name: 'Nachtschicht Krems', info: 'NÖ-03 · Spielzeit 03:12 · mit Lukas', open: '5 offen', when: 'gestern 11:35' },
-      { name: 'Großeinsatz Übung', info: 'NÖ-01 · Spielzeit 14:05', open: '12 offen', when: '03.11.' },
-      { name: 'Test Wr. Neustadt', info: 'NÖ-06 · Spielzeit 08:40', open: '1 offen', when: '01.11.' }
-    ];
-    // Bereitschaft folgt den Einstellungen: Gemini ohne Schlüssel ist ein Hinweis mit „Beheben“
+    const saves = A.saves();
+    const saveSel = Math.min(st.save ?? 0, Math.max(0, saves.length - 1));
+    const umbenennen = () => { const sv = saves[saveSel]; const n = (st.saveRenWert ?? '').trim(); this.setState({ saveRen: false }); if (sv && n && n !== sv.name) A.umbenennen(sv.datei, n).then(f => this.setState({ fortFehler: f })); };
+    // Bereitschafts-Check aus der App
     const bereit = this.bereitschaft(st);
     const checks = bereit.map(b => ({ name: b.kurz, text: b.text, dot: b.dot, tc: b.stufe === 'ok' || b.stufe === 'aus' ? '#9AA3B5' : b.dot, fix: b.stufe === 'warn' || b.stufe === 'fehler', go: () => this.einstellungOeffnen(b.g, b.p) }));
 
@@ -879,12 +920,14 @@ export class Komponente {
     const code = st.code || '';
     const foc = !!st.codeFocus;
     const box = i => ({ ch: code[i] || '', cls: 'l-cbox' + (code[i] ? ' full' : '') + (foc && i === code.length ? ' next' : '') });
+    const lobbyCodeJ = '';
+    const szSpieler = lobby.spieler.map(p => ({ ini: (p.name.trim()[0] || '?').toUpperCase(), name: p.name + (p.ich ? ' (du)' : ''), title: p.name + (p.host ? ' · Host' : '') + (p.pilot ? ' · Pilot ' + p.pilot : ''), cls: [p.host ? 'host' : '', p.ich ? 'neu' : '', p.pilot ? 'pil' : ''].filter(Boolean).join(' ') }));
 
     // ---------- Pilot
     const pcode = st.pcode || '';
     const pbox = i => ({ ch: pcode[i] || '', cls: 'l-cbox' + (pcode[i] ? ' full' : '') + (st.pfoc && i === pcode.length ? ' next' : '') });
-    const helis = [['NAH Krems', 'Gneixendorf', 'Tag und Nacht', true], ['NAH Wr. Neustadt', 'Flugplatz', 'Tag und Nacht', true], ['NAH Ybbsitz', 'Mostviertel', 'nur Tagflug', true], ['NAH St. Pölten', 'Landesklinikum', 'nur Tagflug', false]];
-    const hSel = st.heli ?? 'NAH Krems';
+    const helis = st.pWeiter ? A.helis() : [];
+    const hSel = st.heli ?? ((helis.find(h => h.letzter && !h.grund) || {}).id || null);
 
     // ---------- Einstellungen
     const data = this.settingsData();
@@ -926,15 +969,16 @@ export class Komponente {
         };
         const ding = tab.ding || 'Eintrag';
         const felder = tab.cols.map((c, i) => feld(c, (tab.typen || [])[i] || 'text', zeile[i], i));
-        (tab.extra || []).forEach(([l, typ, def], i) => felder.push(feld(l, typ, st.edit.z >= 0 ? def : '', 'x' + i)));
+        (tab.extra || []).forEach(([l, typ, def], i) => felder.push(feld(l, typ, st.edit.z >= 0 ? (zeile[tab.cols.length + i] ?? def) : '', 'x' + i)));
+        this.editInfo = { tab, felder, z: st.edit.z };
         const neu = st.edit.z < 0;
         all.push({ id: 'bearbeiten', sub: true, parent: quelleP.id, gid: quelleP.gid, glabel: quelleP.glabel, scope: quelleP.scope, label: neu ? (tab.neu || 'Neu') : ding + ' bearbeiten', info: '', kw: '',
-          rows: [...felder, { t: 'btns', label: '', btns: [{ l: neu ? 'Anlegen' : 'Fertig', back: true }, ...(neu ? [{ l: 'Abbrechen', back: true }] : [{ l: 'Löschen', cfm: ding + ' „' + zeile[0] + '“ löschen? Das gilt sofort für alle im Spiel.', back: true }])] }] });
+          rows: [...felder, { t: 'btns', label: '', btns: [{ l: neu ? 'Anlegen' : 'Fertig', back: true, edit: 'speichern' }, ...(neu ? [{ l: 'Abbrechen', back: true }] : [{ l: 'Löschen', cfm: ding + ' „' + zeile[0] + '“ löschen? Das gilt sofort für alle im Spiel.', back: true, edit: 'loeschen' }])] }] });
       }
     }
     const page = all.find(p => p.id === sp) || all[0];
-    const V = (k, d) => st['s_' + k] ?? d;
-    const setV = k => e => this.setState({ ['s_' + k]: (e && e.target) ? e.target.value : e });
+    const V = (k, d) => this.wertLesen(k, d);
+    const setV = k => e => this.wert(k, (e && e.target) ? (e.target.type === 'checkbox' ? e.target.checked : e.target.value) : e);
     const vv = (k, d) => V(k, d);
     const sw1 = () => (st.sw || 0) + 1;
     // Knöpfe: Unterseite, Sprung, Reiter, Rückfrage direkt unter der Zeile, kurze Rückmeldung als Chip
@@ -942,10 +986,23 @@ export class Komponente {
       const o = typeof b === 'string' ? { l: b } : b;
       const id = rk + '#' + bi;
       const tun = () => {
+        if (o.act || o.datei) {
+          const melden = r => this.setState({ ['ok_' + rk]: typeof r === 'string' && r ? r : (o.ok || 'Erledigt'), cfm: null });
+          const fehler = e => this.setState({ ['ok_' + rk]: '⚠ ' + String((e && e.message) || e), cfm: null });
+          if (o.datei) {
+            const f = document.createElement('input'); f.type = 'file'; f.accept = o.datei.accept || ''; f.multiple = !!o.datei.mehrere;
+            f.addEventListener('change', () => { const d = Array.from(f.files || []); if (!d.length) return; this.setState({ ['ok_' + rk]: 'wird geladen …' }); Promise.resolve().then(() => o.datei.f(d)).then(melden, fehler); });
+            f.click();
+            return;
+          }
+          this.setState({ ['ok_' + rk]: 'läuft …', cfm: null });
+          Promise.resolve().then(() => o.act()).then(melden, fehler);
+          if (!o.back) return;
+        }
         if (o.sub) return this.setState({ sp: o.sub, sw: sw1(), swLate: false, cfm: null });
         if (o.go) return this.setState({ sg: o.go[0], sp: o.go[1], q: '', sw: sw1(), swLate: false, cfm: null });
         if (o.tab) { this.toggle('start'); return this.setState({ tab: o.tab }); }
-        if (o.back) return this.setState({ sp: (st.edit && st.edit.p) || page.parent, edit: null, sw: sw1(), swLate: false, cfm: null });
+        if (o.back) { if (o.edit) this.editFertig(o.edit); return this.setState({ sp: (st.edit && st.edit.p) || page.parent, edit: null, sw: sw1(), swLate: false, cfm: null }); }
         if (o.ok) this.setState({ ['ok_' + rk]: o.ok, cfm: null });
       };
       return { label: o.sub ? o.l.replace(/ …$/, '') : o.l, cls: 'l-ghost sm' + (o.sub ? ' l-gsub' : '') + (st.cfm === id ? ' on' : ''), click: () => { if (o.cfm) this.setState({ cfm: st.cfm === id ? null : id }); else tun(); }, cfm: o.cfm, id, tun };
@@ -955,7 +1012,7 @@ export class Komponente {
       const rk = page.id + ':' + (r.key || page.rows.indexOf(r));
       const base = { rk, hlCls: st.hl === rk ? 'l-hl' : '', i: Math.min(idx, 14), label: r.label, hint: r.hint || '', hasHint: !!r.hint, isHead: r.t === 'head', isRow: !['head', 'table', 'chart'].includes(r.t),
         isTog: false, isSeg: false, isSel: false, isRange: false, hasReset: false, isNum: false, isKey: false, isBtns: false, isInfo: false, isColor: false, isTn: false, isStat: false,
-        isFeld: false, isTon: false, isTable: false, isChart: false, hasStrip: false, hasOk: !!st['ok_' + rk], okText: st['ok_' + rk] || '', rowCls: 'l-srow' + (r.label ? '' : ' l-srow-solo') };
+        isFeld: false, isTon: false, isTable: false, isChart: false, hasStrip: false, hasOk: !!st['ok_' + rk], okText: st['ok_' + rk] || '', okCls: 'l-okchip' + (String(st['ok_' + rk] || '').startsWith('⚠') ? ' warn' : String(st['ok_' + rk] || '').endsWith('…') ? ' laeuft' : ''), rowCls: 'l-srow' + (r.label ? '' : ' l-srow-solo') };
       // Rückfrage eines Knopfs in dieser Zeile
       const btns = (r.btns || []).map((b, bi) => knopf(b, rk, bi));
       const offen = btns.find(b => b.cfm && st.cfm === b.id);
@@ -965,17 +1022,17 @@ export class Komponente {
       if (r.t === 'tog') {
         const on = !!V(r.key, r.def);
         const warte = st.warn === rk;
-        const res = { ...base, isTog: true, on: on ? 'true' : 'false', togCls: 'l-tog' + (on ? ' on' : ''), flip: () => { if (!on && r.warn) return this.setState({ warn: warte ? null : rk }); this.setState({ ['s_' + r.key]: !on, warn: null }); } };
-        if (warte) Object.assign(res, { hasStrip: true, stripText: r.warn, stripJa: r.warnJa || 'Einschalten', stripJaGo: () => this.setState({ ['s_' + r.key]: true, warn: null }), stripNein: () => this.setState({ warn: null }), stripCls: 'l-strip gelb' });
+        const res = { ...base, isTog: true, on: on ? 'true' : 'false', togCls: 'l-tog' + (on ? ' on' : ''), flip: () => { if (!on && r.warn) return this.setState({ warn: warte ? null : rk }); this.setState({ warn: null }); this.wert(r.key, !on); } };
+        if (warte) Object.assign(res, { hasStrip: true, stripText: r.warn, stripJa: r.warnJa || 'Einschalten', stripJaGo: () => { this.setState({ warn: null }); this.wert(r.key, true); }, stripNein: () => this.setState({ warn: null }), stripCls: 'l-strip gelb' });
         return res;
       }
-      if (r.t === 'seg') return { ...base, isSeg: true, opts: r.opts.map(o => ({ label: o, cls: 'l-seg' + (V(r.key, r.def) === o ? ' on' : ''), pick: () => this.setState({ ['s_' + r.key]: o }) })) };
-      if (r.t === 'sel') return { ...base, isSel: true, options: r.options, val: V(r.key, r.def), set: setV(r.key) };
-      if (r.t === 'range') { const v = Number(V(r.key, r.def)); return { ...base, isRange: true, min: r.min, max: r.max, step: r.step, val: v, valText: r.fmt(v), set: setV(r.key), hasReset: r.reset !== undefined, resetLabel: 'Auf ' + r.reset + ' % zurücksetzen', reset: () => this.setState({ ['s_' + r.key]: r.reset }) }; }
+      if (r.t === 'seg') return { ...base, isSeg: true, opts: r.opts.map(o => ({ label: o, cls: 'l-seg' + (V(r.key, r.def) === o ? ' on' : ''), pick: () => this.wert(r.key, o) })) };
+      if (r.t === 'sel') return { ...base, isSel: true, options: (this.app.einst && this.app.einst.optionen(r.key)) || r.options, val: V(r.key, r.def), set: setV(r.key) };
+      if (r.t === 'range') { const v = Number(V(r.key, r.def)); return { ...base, isRange: true, min: r.min, max: r.max, step: r.step, val: v, valText: r.fmt(v), set: setV(r.key), hasReset: r.reset !== undefined, resetLabel: 'Auf ' + r.reset + ' % zurücksetzen', reset: () => this.wert(r.key, r.reset) }; }
       if (r.t === 'num') return { ...base, isNum: true, val: V(r.key, r.def), unit: r.unit, step: r.step || 1, set: setV(r.key) };
       if (r.t === 'key') {
         const fang = st.keyCap === r.key;
-        const txt = V(r.key, r.def);
+        const txt = (this.app.einst && this.app.einst.tasteText(r.key)) || V(r.key, r.def);
         return { ...base, isKey: true, keyText: fang ? 'Taste drücken …' : txt, keyCls: 'l-key' + (fang ? ' fang' : ''), keyAria: r.label + ': ' + txt + ' – zum Ändern klicken',
           keyClick: () => this.setState({ keyCap: fang ? null : r.key }),
         };
@@ -983,24 +1040,24 @@ export class Komponente {
       if (r.t === 'btns') return { ...base, ...chip, isBtns: btns.length > 0, btns };
       if (r.t === 'item') {
         const res = { ...base, ...chip, isBtns: btns.length > 0 && !base.hasOk, btns, rowCls: 'l-srow l-sitem' };
-        if (r.tog) { const on = !!V(r.tog[0], r.tog[1]); Object.assign(res, { isTog: true, on: on ? 'true' : 'false', togCls: 'l-tog' + (on ? ' on' : ''), flip: () => this.setState({ ['s_' + r.tog[0]]: !on }) }); }
+        if (r.tog) { const on = !!V(r.tog[0], r.tog[1]); Object.assign(res, { isTog: true, on: on ? 'true' : 'false', togCls: 'l-tog' + (on ? ' on' : ''), flip: () => this.wert(r.tog[0], !on) }); }
         return res;
       }
       if (r.t === 'info') return { ...base, isInfo: true, value: r.value, dot: r.dot || '#9AA3B5' };
       if (r.t === 'color') {
         const res = { ...base, isColor: true, color: V(r.key, r.color), setColor: setV(r.key) };
-        if (r.tog) { const on = !!V(r.tog[0], r.tog[1]); Object.assign(res, { isTog: true, on: on ? 'true' : 'false', togCls: 'l-tog' + (on ? ' on' : ''), flip: () => this.setState({ ['s_' + r.tog[0]]: !on }) }); }
+        if (r.tog) { const on = !!V(r.tog[0], r.tog[1]); Object.assign(res, { isTog: true, on: on ? 'true' : 'false', togCls: 'l-tog' + (on ? ' on' : ''), flip: () => this.wert(r.tog[0], !on) }); }
         return res;
       }
       if (r.t === 'feld') return { ...base, isFeld: true, ftype: r.pw ? 'password' : 'text', ph: r.ph, val: V(r.key, r.def ?? ''), set: setV(r.key), isBtns: btns.length > 0, btns };
-      if (r.t === 'ton') return { ...base, isTon: true, options: r.options, val: V(r.key, r.def), set: setV(r.key), laut: V(r.key + '_l', 70), setLaut: setV(r.key + '_l'), probe: () => this.setState({ ['ok_' + rk]: '▶ ' + V(r.key, r.def) }) };
+      if (r.t === 'ton') return { ...base, isTon: true, options: (this.app.einst && this.app.einst.optionen(r.key)) || r.options, val: V(r.key, r.def), set: setV(r.key), laut: V(r.key + '_l', 70), setLaut: setV(r.key + '_l'), probe: () => this.setState({ ['ok_' + rk]: '▶ ' + V(r.key, r.def) }) };
       if (r.t === 'table') {
         const qq = norm(st['tq_' + page.id] || '');
         const zeilen = r.rows.filter(z => !qq || norm(z.join(' ')).includes(qq));
         return { ...base, isTable: true, cols: r.cols.map((c, ci) => ({ c, cls: ci === 0 ? 'l-th1' : '' })), tcols: 'grid-template-columns: minmax(150px, 1.6fr) repeat(' + (r.cols.length - 1) + ', minmax(70px, 1fr))' + (r.edit ? ' 30px' : ''),
-          trows: zeilen.map(z => ({ cells: z.map((c, ci) => ({ c, cls: ci === 0 ? 'l-td1' : '' })), edit: !!r.edit, go: () => this.setState({ edit: { p: page.id, t: page.rows.indexOf(r), z: r.rows.indexOf(z) }, sp: 'bearbeiten', sw: sw1(), swLate: false, cfm: null }) })), hasEdit: !!r.edit,
-          neuGo: () => this.setState({ edit: { p: page.id, t: page.rows.indexOf(r), z: -1 }, sp: 'bearbeiten', sw: sw1(), swLate: false, cfm: null }),
-          hasTop: !!(r.suche || r.neu || r.anzahl), suche: r.suche || '', hasSuche: !!r.suche, tq: st['tq_' + page.id] || '', setTq: e => this.setState({ ['tq_' + page.id]: e.target.value }),
+          trows: zeilen.map(z => ({ cells: z.slice(0, r.cols.length).map((c, ci) => ({ c, cls: ci === 0 ? 'l-td1' : '' })), edit: !!r.edit, go: () => r.oeffnen ? r.oeffnen(r.rows.indexOf(z)) : this.setState({ edit: { p: page.id, t: page.rows.indexOf(r), z: r.rows.indexOf(z) }, sp: 'bearbeiten', sw: sw1(), swLate: false, cfm: null }) })), hasEdit: !!r.edit,
+          neuGo: () => r.neuOeffnen ? r.neuOeffnen() : this.setState({ edit: { p: page.id, t: page.rows.indexOf(r), z: -1 }, sp: 'bearbeiten', sw: sw1(), swLate: false, cfm: null }),
+          hasTop: !!(r.suche || r.neu || r.anzahl), suche: r.suche || '', hasSuche: !!r.suche, tq: st['tq_' + page.id] || '', setTq: e => { const v = e.target.value; if (this.app.feldWert) this.app.feldWert('tq_' + page.id, v); this.setState({ ['tq_' + page.id]: v }); },
           neu: r.neu || '', hasNeu: !!r.neu, anzahl: r.anzahl || '', thint: r.hint || '', hasThint: !!r.hint, leer: zeilen.length === 0 };
       }
       if (r.t === 'chart') {
@@ -1084,7 +1141,7 @@ export class Komponente {
         return { ...base, isTn: true, a: V(k(0), r.def[0]), b: V(k(1), r.def[1]), c: V(k(2), r.def[2]), d: V(k(3), r.def[3]), setA: setV(k(0)), setB: setV(k(1)), setC: setV(k(2)), setD: setV(k(3)),
           aria1: r.label + ' Tag von', aria2: r.label + ' Tag bis', aria3: r.label + ' Nacht von', aria4: r.label + ' Nacht bis' };
       }
-      if (r.t === 'stat') { const on = !!V(r.key + '_a', r.on); return { ...base, isStat: true, isTog: true, nr: V(r.key + '_n', r.nr), nm: V(r.key + '_m', r.nm), setNr: setV(r.key + '_n'), setNm: setV(r.key + '_m'), color: V(r.key + '_c', r.color), setColor: setV(r.key + '_c'), on: on ? 'true' : 'false', togCls: 'l-tog' + (on ? ' on' : ''), flip: () => this.setState({ ['s_' + r.key + '_a']: !on }), aria1: r.label + ': Nummer', aria2: r.label + ': Bezeichnung', aria3: r.label + ': alarmierbar' }; }
+      if (r.t === 'stat') { const on = !!V(r.key + '_a', r.on); return { ...base, isStat: true, isTog: true, nr: V(r.key + '_n', r.nr), nm: V(r.key + '_m', r.nm), setNr: setV(r.key + '_n'), setNm: setV(r.key + '_m'), color: V(r.key + '_c', r.color), setColor: setV(r.key + '_c'), on: on ? 'true' : 'false', togCls: 'l-tog' + (on ? ' on' : ''), flip: () => this.wert(r.key + '_a', !on), aria1: r.label + ': Nummer', aria2: r.label + ': Bezeichnung', aria3: r.label + ': alarmierbar' }; }
       return base;
     });
     if (rows.length) rows[0].rowCls += ' first';
@@ -1096,6 +1153,7 @@ export class Komponente {
     const stdGo = () => {
       const neu = { cfm: null };
       Object.keys(st).forEach(k => { if (schluessel.some(s => k === 's_' + s || k.startsWith('s_' + s + '_'))) neu[k] = undefined; });
+      if (this.app.einst) schluessel.forEach(s => { this.app.einst.schreiben(s, undefined); ['_0', '_1', '_2', '_3', '_l', '_n', '_m', '_c', '_a'].forEach(x => this.app.einst.schreiben(s + x, undefined)); });
       this.setState(neu);
     };
     const parent = page.sub ? all.find(p => p.id === page.parent) : null;
@@ -1119,17 +1177,17 @@ export class Komponente {
       gruss: tz === 'Nacht' && h >= 17 ? 'Guten Abend' : bgB.gruss,
       datum: jetzt.toLocaleDateString('de-AT', { weekday: 'short', day: 'numeric', month: 'long' }).replace('.,', ','),
       uhr: BILDER[tzWahl] ? bgB.uhr : echteUhr };
-    const us = this.updStatus();
-    const uv = st.updV || '0.113.0';
-    // Update-Größe: geladene und gesamte MB (deutsch formatiert, eine Nachkommastelle)
-    const UPD_MB = 86.4;
-    const mb = (v, ohne) => v.toFixed(1).replace('.', ',') + (ohne ? '' : ' MB');
+    const UPD = this.app.ablauf.update();
+    const us = st.updSuche ? 'suche' : UPD.zustand;
+    const uv = UPD.version || this.app.ablauf.version() || '';
+    const mb = (v, ohne) => (v / 1048576).toFixed(1).replace('.', ',') + (ohne ? '' : ' MB');
+    const updP = UPD.total > 0 ? Math.round(UPD.done / UPD.total * 100) : 0;
     const updMap = {
-      aktuell: { label: 'Aktuell · v' + uv, color: '#4CC38A', aria: 'LeitWerk ist aktuell, Version ' + uv + '. Klicken, um nach Updates zu suchen.' },
+      aktuell: { label: UPD.fehler ? 'Update fehlgeschlagen · erneut' : 'Aktuell' + (uv ? ' · v' + uv : ''), color: UPD.fehler ? '#E5484D' : '#4CC38A', aria: UPD.fehler ? 'Update fehlgeschlagen: ' + UPD.fehler : 'LeitWerk ist aktuell. Klicken, um nach Updates zu suchen.' },
       suche: { label: 'Suche nach Updates …', spin: true, aria: 'Suche nach Updates' },
-      verfuegbar: { label: 'Update 0.114.0 · ' + mb(UPD_MB), color: '#3B8BFF', puls: true, neu: true, aria: 'Update 0.114.0 verfügbar. Klicken zum Herunterladen.' },
-      laedt: { label: mb(UPD_MB * (st.updP || 0) / 100, true) + ' / ' + mb(UPD_MB) + ' · ' + (st.updP || 0) + ' %', spin: true, bar: true, neu: true, aria: 'Update wird geladen' },
-      fertig: { label: 'Neu starten zum Installieren', color: '#FFC72C', neu: true, aria: 'Update geladen. Klicken, um neu zu starten.' }
+      verfuegbar: { label: 'Update ' + uv, color: '#3B8BFF', puls: true, neu: true, aria: 'Update ' + uv + ' verfügbar. Klicken zum Herunterladen und Installieren.' },
+      laedt: { label: UPD.total > 0 ? mb(UPD.done, true) + ' / ' + mb(UPD.total) + ' · ' + updP + ' %' : 'Update wird geladen …', spin: true, bar: true, neu: true, aria: 'Update wird geladen' },
+      fertig: { label: 'Wird installiert – LeitWerk startet neu …', color: '#FFC72C', neu: true, aria: 'Update geladen, LeitWerk startet neu.' }
     };
     const um = updMap[us];
     const fp = st.fp || null;
@@ -1143,14 +1201,16 @@ export class Komponente {
     Object.keys(PANELBREITE).forEach(k => { bw[k] = fp === k ? PANELBREITE[k] + 'px' : (nw[k] ? nw[k] + 'px' : 'auto'); });
     const fortschritt = [];
     let fi = 0;
-    [['In Arbeit', '#3B8BFF', [['Neue Startseite im Launcher-Stil', 62, 'Startbildschirm, Menü mit Aufklappen, Update-Knopf'], ['Einstellungen im neuen Design', 35, 'Gruppen, Suche, alles an einem Ort'], ['Neutrale Namen', 48, 'Organisationen und Marken durch neutrale Namen ersetzen'], ['Realismus-Menü', 20, 'Eigene Codes und Namen lokal laden']]],
-     ['Geplant', '#6B7385', [['Arbeitsplatz neu ordnen', 5, 'Obere Leiste in Gruppen, Reiter-Überlauf, Fenster-Menü'], ['Großschadenslagen', 10, ''], ['ACN-Fahrzeuge', 0, '']]],
-     ['Gerade fertig geworden', '#4CC38A', [['Meldertöne aus echten Aufnahmen', 100, ''], ['LeitWerk im H145-Tablet', 100, ''], ['Handy als Funkgerät', 100, '']]]
-    ].forEach(([titel, c, l]) => {
+    const fpunkte = this.app.ablauf.fortschritt();
+    [['arbeit', 'In Arbeit', '#3B8BFF'], ['geplant', 'Geplant', '#6B7385'], ['fertig', 'Gerade fertig geworden', '#4CC38A']].forEach(([stand, titel, c]) => {
+      const l = fpunkte.filter(x => x.stand === stand);
+      if (!l.length) return;
       fortschritt.push({ isHead: true, isItem: false, label: titel, i: Math.min(fi++, 12) });
-      l.forEach(([t, pz, text]) => fortschritt.push({ isHead: false, isItem: true, titel: t, pz, text, hasText: !!text, c, i: Math.min(fi++, 12) }));
+      l.forEach(x => fortschritt.push({ isHead: false, isItem: true, titel: x.titel, pz: x.prozent, text: x.text, hasText: !!x.text, c, i: Math.min(fi++, 12) }));
     });
+    const arb = fpunkte.find(x => x.stand === 'arbeit');
     const melden = [['FZ', 'Fahrzeug'], ['DS', 'Dienststelle'], ['POI', 'Ort (POI)'], ['KH', 'Krankenhaus'], ['VS', 'Vorschlag'], ['ID', 'Idee/Wunsch']].map(([k, label]) => ({ k, label, go: () => this.setState({ mh: k, mhF: {}, mhFehlt: null }) }));
+    const ART = { FZ: 'fahrzeug', DS: 'dienststelle', POI: 'poi', KH: 'krankenhaus', VS: 'vorschlag', ID: 'idee', HILFE: 'hilfe' };
     // Mithelfen-Formulare wie in der App (mithelfen.ts), aber im Fenster selbst statt als Dialog
     const lage = ['lage', 'Lage', 'Adresse, Ort oder Koordinaten (48.20, 15.63)', true, 'Die Karte zum Anklicken gibt es im Spiel – hier reicht Adresse oder Koordinaten'];
     const FORM = {
@@ -1161,15 +1221,7 @@ export class Komponente {
       VS: { titel: 'Vorschlag', felder: [['text', 'Titel', 'Kurz, worum es geht', true], ['area', 'Beschreibung', 'Was soll anders werden?', true]] },
       ID: { titel: 'Idee oder Wunsch', felder: [['text', 'Titel', 'Kurz, worum es geht', true], ['area', 'Beschreibung', 'Was wünschst du dir?', true]] }
     };
-    const hilfeAlle = [
-      { titel: 'Fahrzeuge NÖ-03 kontrollieren', text: 'Dienstpläne der RTW im Bezirk Krems prüfen' },
-      { titel: 'Krankenhaus Zwettl: Ambulanzzeiten', text: 'Wann sind welche Ambulanzen offen?' },
-      { titel: 'Landeplätze im Waldviertel', text: 'Fehlen Landeplätze bei Krankenhäusern?' },
-      { titel: 'KTW-Dienstzeiten Tulln', text: 'Stimmen die Wochenend-Dienste?' },
-      { titel: 'Pflegeheime im Bezirk Horn', text: 'Fehlen Pflegeheime als Orte?' },
-      { titel: 'NEF Zwettl', text: 'Ist das NEF nachts besetzt?' },
-      { titel: 'Dialyse-Zeiten Krems', text: 'Wann beginnen die Dialyse-Schichten?' }
-    ];
+    const hilfeAlle = this.app.ablauf.hilfe();
     const mhKey = st.mh && st.mh.startsWith('H') ? 'HILFE' : st.mh;
     const mhDef = mhKey === 'HILFE' ? { titel: 'Ich weiß das', frage: (hilfeAlle[Number(st.mh.slice(1))] || {}).titel + ' – ' + (hilfeAlle[Number(st.mh.slice(1))] || {}).text, felder: [['area', 'Deine Antwort', 'Was weißt du darüber?', true], ['text', 'Quelle (optional)', 'z. B. selbst gesehen, Website, Dienstplan']] } : FORM[mhKey];
     const mhF = st.mhF || {};
@@ -1180,28 +1232,12 @@ export class Komponente {
         opts: typ === 'seg' ? x.map(o => ({ label: o, cls: 'l-seg' + (val === o ? ' on' : ''), pick: () => setz(o) })) : [], options: typ === 'sel' ? x : [],
         ph: typeof x === 'string' ? x : '', val, set: e => setz(e.target.value), hint: hint || '', hasHint: !!hint };
     }) : [];
-    const tickets = [
-      { titel: 'Fahrzeug fehlt: 75/014 (RD Gföhl)', wann: 'vor 3 Tagen', st: 'erledigt', c: '#4CC38A' },
-      { titel: 'Idee: Funkverlauf unter dem Funkgerät', wann: 'vor 5 Tagen', st: 'in Arbeit', c: '#3B8BFF' },
-      { titel: 'Krankenhaus korrigieren: UK Krems', wann: 'vor 1 Woche', st: 'offen', c: '#9AA3B5' }
-    ];
-    const changelog = [
-      ['0.113.0', '06.11.', 'Meldertöne aus der Entfernung mit Raumhall', ['„Aus der Entfernung“ mit räumlichem Hall und weiter weg']],
-      ['0.112.0', '06.11.', 'Meldertöne wieder original, nur bereinigt', ['Original-Aufnahmen ohne Stille, Rauschen reduziert']],
-      ['0.111.0', '06.11.', 'Saubere Meldertöne, Probe hört auf', ['Meldertöne klar nachgebaut, ohne Stille und Rauschen', 'Probe im Alarmton-Dialog mit Stopp, endet beim Schließen']],
-      ['0.110.0', '06.11.', 'Echte Meldertöne für den Piloten', ['Melder RD/FW und Martinshorn als Aufnahmen', 'Standard-Alarm: Melder RD Prio 1']],
-      ['0.109.0', '05.11.', 'LeitWerk im Tablet der H145', ['Link im H145-Tablet wird von selbst eingetragen', 'Tablet-Seite im Hoch- und Querformat, mit Code']],
-      ['0.108.0', '05.11.', 'Echte Funktöne, „Einsatz rein“', ['Beginn- und Ende-Ton aus Aufnahmen', 'Pilot: erst „Einsatz rein“, dann die Alarmierung', 'Ton nach jedem beendeten Notruf']],
-      ['0.107.0', '05.11.', 'Pilot: Handy wie ein Funkgerät, Buchen am Handy, Alarmtöne', ['Handy: Funk, Einsatz, Buchen zum Wischen', 'Status als Tastenfeld, halten mit Ton und Vibration', 'Buchen am Handy Schritt für Schritt', 'Code und Notrufabfrage beim Einsatz', 'Alarmtöne: Melder-Töne und eigene Töne']],
-      ['0.106.0', '05.11.', 'Pilot: Route auf der Karte, ausführliches Wetter', ['Route eingezeichnet, Karte zeigt alles', 'Karte füllt die Spalte nach unten', 'Wetter mit Wind, Böen, Sicht, QNH und den nächsten Stunden']],
-      ['0.105.0', '05.11.', 'Pilot: Funkgerät oben, Spalten verstellbar, Einstellungen', ['Funkgerät oben, darunter Einsatz und Verlauf', 'Spalten in der Breite verstellbar', 'Sprechtaste als Handmikrofon, Hinweis beim Darüberfahren', '„Alles hören“ als Schiebeschalter', 'Karte und Wetter per Klick groß', 'Einstellungsmenü für Piloten']],
-      ['0.104.0', '05.11.', 'Neue Pilotenansicht, Status wie am Funkgerät', ['Pilotenansicht: Funk und Einsatz in der Mitte, Karte rechts', 'Funkverlauf als Fenster', 'Status 2 Sekunden halten, mit Tönen', 'Display: „Gruppe aktiv“ mit ID', 'Pilot funkt jedes Fahrzeug an', 'Letzter Hubschrauber wird wieder übernommen']],
-      ['0.103.1', '05.11.', 'Mikrofon geht wirklich zu', ['Gewähltes Mikrofon bleibt am Mac nicht mehr offen', 'Pilot: echte Disponenten bzw. Piloten stumm schaltbar']],
-      ['0.103.0', '05.11.', 'Funk: Sprechen oder Text, Kanal schneller frei', ['Umschalter Sprechen | Text am Funkgerät', 'Kanal gleich nach dem Ende-Ton frei', 'Echte Disponenten bzw. Piloten stumm schaltbar']],
-      ['0.102.0', '05.11.', 'Funk: mehrere Sprechgruppen hören, Tasten frei belegen', ['Ein Funkgerät für RD-NOE-03, -09 und -10, Gruppe mit dem Steuerkreuz', 'Andere Gruppen leiser mithören, dringende Rufe immer laut', 'Tasten frei belegen, eigene Funktaste je Gruppe']],
-      ['0.101.0', '04.11.', 'Das Funkgerät wie im RTW', ['Funk-Reiter als Funkgerät mit Display wie im RTW', 'Fenster am Display zeigt, wer spricht', 'Sprechgruppe mit dem Steuerkreuz wechseln, PTT-Knopf wie echt']]
-    ];
-    const tage = { '06.11.': 'Freitag, 6. November', '05.11.': 'Donnerstag, 5. November', '04.11.': 'Mittwoch, 4. November' };
+    const TST = { eingegangen: ['offen', '#9AA3B5'], wartet: ['wird gesendet', '#9AA3B5'], in_arbeit: ['in Arbeit', '#3B8BFF'], rueckfrage: ['Rückfrage', '#FFC72C'], eingebaut: ['eingebaut', '#4CC38A'], erledigt: ['erledigt', '#4CC38A'], abgelehnt: ['abgelehnt', '#E5484D'] };
+    const tickets = this.app.ablauf.tickets().slice(0, 8).map(t => { const z = TST[t.status] || ['offen', '#9AA3B5']; const tage = Math.floor((Date.now() - t.erstellt) / 86400000); return { titel: t.titel, wann: tage <= 0 ? 'heute' : tage === 1 ? 'gestern' : 'vor ' + tage + ' Tagen', st: z[0], c: z[1] }; });
+    const WT = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
+    const changelog = this.app.ablauf.changelog().slice(0, 30).map(u => { const d = u.datum ? new Date(u.datum) : null; return [u.version, d ? d.toDateString() : '', u.titel, u.punkte, d]; });
+    const tage = {};
+    changelog.forEach(e => { if (e[4]) tage[e[1]] = WT[e[4].getDay()] + ', ' + e[4].getDate() + '. ' + e[4].toLocaleDateString('de-AT', { month: 'long' }); });
     // Neueste zuerst im DOM; die Zeitleiste ist umgedreht (column-reverse), also steht das Neueste unten am Knopf.
     const timeline = [];
     let n = 0;
@@ -1217,7 +1253,7 @@ export class Komponente {
       n++;
     });
     return {
-      upd: { label: um.label, kurz: ({ aktuell: 'Aktuell', suche: 'Suche …', verfuegbar: 'Update', laedt: (st.updP || 0) + ' %', fertig: 'Neustart' })[us], aria: um.aria, spin: !!um.spin, dot: !um.spin, color: um.color || '#9AA3B5', dotCls: 'l-updot' + (um.puls ? ' puls' : ''), bar: !!um.bar, pct: st.updP || 0,
+      upd: { label: um.label, kurz: ({ aktuell: 'Aktuell', suche: 'Suche …', verfuegbar: 'Update', laedt: updP + ' %', fertig: 'Neustart' })[us], aria: um.aria, spin: !!um.spin, dot: !um.spin, color: um.color || '#9AA3B5', dotCls: 'l-updot' + (um.puls ? ' puls' : ''), bar: !!um.bar, pct: updP,
         cls: 'l-upd' + (um.neu ? ' neu' : '') + (um.spin ? ' busy' : '') + (st.fp === 'check' ? ' klein' : ''), go: () => this.updKlick() },
       timeline,
       newsCls: 'l-newsbtn' + (logOpen ? ' on' : ''),
@@ -1227,9 +1263,13 @@ export class Komponente {
       toggleLog: fpT('log'),
       closeLog: () => this.setState({ fp: null }),
       fortschritt, melden, bw,
-      hilfe: hilfeAlle.slice(0, st.hilfeMehr ? 7 : 3).map((h, i) => ({ ...h, go: () => this.setState({ mh: 'H' + i, mhF: {}, mhFehlt: null }) })),
-      hilfeMehr: !st.hilfeMehr, hilfeMehrGo: () => set('hilfeMehr', true),
-      tickets: [...(st.mhNeu || []), ...tickets],
+      hilfe: hilfeAlle.slice(0, st.hilfeMehr ? 99 : 3).map((h, i) => ({ ...h, go: () => this.setState({ mh: 'H' + i, mhF: {}, mhFehlt: null }) })),
+      hilfeMehr: !st.hilfeMehr && hilfeAlle.length > 3, hilfeMehrText: (hilfeAlle.length - 3) + ' weitere anzeigen', hilfeMehrGo: () => set('hilfeMehr', true),
+      tickets,
+      neuVersion: (this.app.ablauf.changelog()[0] || {}).version || '', neuTitel: (this.app.ablauf.changelog()[0] || {}).titel || '',
+      arbTitel: arb ? arb.titel : '–', arbPz: arb ? arb.prozent : 0,
+      hilfeAnzahl: hilfeAlle.length,
+      versionText: this.app.ablauf.version() ? 'v' + this.app.ablauf.version() : '',
       mhUebersicht: !st.mh, mhForm: !!st.mh && st.mh !== 'danke', mhDanke: st.mh === 'danke',
       mhTitel: mhDef ? mhDef.titel : '', mhHatFrage: !!(mhDef && mhDef.frage), mhFrage: mhDef && mhDef.frage ? mhDef.frage : '',
       mhFelder, mhFehlt: !!st.mhFehlt, mhFehltText: st.mhFehlt || '',
@@ -1238,7 +1278,11 @@ export class Komponente {
         const fehlt = mhDef ? mhDef.felder.map((f, i) => f[3] && !String(mhF[i] ?? '').trim() || (f[0] === 'sel' && f[3] && String(mhF[i] ?? f[2][0]).startsWith('–')) ? f[1] : null).filter(Boolean) : [];
         if (fehlt.length) return this.setState({ mhFehlt: 'Bitte ausfüllen: ' + fehlt.join(', ') });
         const titel = mhKey === 'HILFE' ? 'Antwort: ' + mhDef.frage.split(' – ')[0] : mhDef.titel.replace(' melden', '') + ': ' + (mhF[1] || mhF[0] || '');
-        this.setState({ mh: 'danke', mhF: {}, mhNeu: [{ titel, wann: 'gerade eben', st: 'offen', c: '#9AA3B5' }, ...(st.mhNeu || [])] });
+        const daten = {}; mhDef.felder.forEach((f, i) => { daten[f[1]] = mhF[i] ?? (f[0] === 'seg' || f[0] === 'sel' ? f[2][0] : ''); });
+        const text = mhDef.felder.map((f, i) => f[1] + ': ' + (daten[f[1]] || '–')).join('\n');
+        const hilfeId = mhKey === 'HILFE' ? (hilfeAlle[Number(st.mh.slice(1))] || {}).id : undefined;
+        this.setState({ mhFehlt: 'wird gesendet …' });
+        this.app.ablauf.ticket(ART[mhKey], titel, text, daten, hilfeId).then(f => this.setState(f ? { mhFehlt: f } : { mh: 'danke', mhF: {}, mhFehlt: null }));
       },
       fSwap: st.fpSwap ? 'l-fswap' : '',
       navRef: this.navRef, refLog: this.fpRefs.log, refArb: this.fpRefs.arbeit, refHilfe: this.fpRefs.hilfe,
@@ -1263,7 +1307,7 @@ export class Komponente {
       quit: !!st.quit, beendet: !!st.beendet,
       quitRef: this.quitRef = this.quitRef || { current: null },
       quitNein: () => this.quitZu(),
-      quitJa: () => this.setState({ quit: false, beendet: true }),
+      quitJa: () => { this.app.ablauf.programmBeenden().then(ok => { if (!ok) this.setState({ quit: false, beendet: true }); }); },
       neustart: () => { this.geht = false; this.setState({ beendet: false, quit: false, intro: 'splash', screen: 'main', fp: null, zurueck: false }); },
       // nach „Beenden“ erscheint der Schatten erst, wenn das Logo wieder in der Mitte angekommen ist
       haloCls: 'l-halo' + (st.zurueck ? ' spaet' : ''),
@@ -1276,50 +1320,75 @@ export class Komponente {
       goNeu: () => set('tab', 'neu'), goFort: () => set('tab', 'fort'),
       isNeu: tab === 'neu', isFort: tab === 'fort',
       fgs, fgSel, fgsMini,
-      zeit: seg('zeit', ['Jetzt', 'Wunschzeit'], 'Jetzt'), isWunsch: (st.zeit ?? 'Jetzt') === 'Wunschzeit',
-      wetter: seg('wetter', ['Echt', 'Simuliert', 'Wechselhaft', 'Fest'], 'Echt'), isFest: wetterWahl === 'Fest', wetterInfo,
-      aufkommen: ['Realistisch', 'Standard', 'Stressig'].map(o => ({ label: o, title: aufTitel[o], cls: 'l-seg' + ((st.aufk ?? 'Standard') === o ? ' on' : ''), pick: () => set('aufk', o) })),
-      arten: arten.map(([k, l, t, d]) => { const on = st['a_' + k] ?? d; return { label: l, title: t, on: on ? 'true' : 'false', cls: 'l-mini' + (on ? ' on' : ''), flip: () => set('a_' + k, !on) }; }),
-      modus: seg('modus', ['Solo', 'Multiplayer'], 'Solo'), isSolo: modus === 'Solo', isMulti: modus === 'Multiplayer',
+      startSub: 'Solo oder Multiplayer' + (A.fortsetzenText() ? ' · Fortsetzen: ' + A.fortsetzenText() : ''),
+      fortLabel: 'Fortsetzen' + (A.fortsetzenText() ? ' · ' + A.fortsetzenText() : ''),
+      // Startzeit: leer = jetzt, sonst Wunschzeit (Kalender schreibt direkt in die Einstellung)
+      zeit: ['Jetzt', 'Wunschzeit'].map(o => ({ label: o, cls: 'l-seg' + ((startzeit ? 'Wunschzeit' : 'Jetzt') === o ? ' on' : ''), pick: () => { if (o === 'Jetzt') this.wert('startzeit', ''); else if (!startzeit) this.wert('startzeit', dtStandard); } })),
+      isWunsch: !!startzeit, dtWert: startzeit || dtStandard, dtText: dtText(startzeit || dtStandard),
+      wetter: ['Echt', 'Simuliert', 'Wechselhaft', 'Fest'].map(o => ({ label: o, cls: 'l-seg' + (wetterWahl === o ? ' on' : ''), pick: () => this.wert('wetterArt', o) })),
+      isFest: wetterWahl === 'Fest', wetterInfo,
+      wlageOpts: (this.app.einst && this.app.einst.optionen('wlage')) || ['klar'], wlageVal: V('wlage', 'klar'), wlageSet: setV('wlage'),
+      wtempVal: V('wtemp', 18), wtempSet: setV('wtemp'),
+      aufkommen: ['Realistisch', 'Standard', 'Stressig'].map(o => ({ label: o, title: aufTitel[o], cls: 'l-seg' + (V('aufk', 'Standard') === o ? ' on' : ''), pick: () => this.wert('aufk', o) })),
+      arten: arten.map(([k, l, t, d]) => { const on = !!V('a_' + k, d); return { label: l, title: t, on: on ? 'true' : 'false', cls: 'l-mini' + (on ? ' on' : ''), flip: () => this.wert('a_' + k, !on) }; }),
+      modus: ['Solo', 'Multiplayer'].map(o => ({ label: o, cls: 'l-seg' + (modus === o ? ' on' : ''), pick: () => { if (o === 'Solo' && A.rolle() === 'host') return this.setState({ startFehler: 'Erst die Lobby schließen, dann zurück zu Solo' }); this.setState({ modus: o, startFehler: null }); } })),
+      isSolo: modus === 'Solo', isMulti: modus === 'Multiplayer',
       // Lobby-Rechte je Spieler (wie im Spiel): der Host hat alle, Mitspieler starten mit den Standardrechten
-      lobbyRechte: [['host', 'DU', 'Du · Host', '#3B8BFF'], ['lukas', 'LK', 'Lukas', '#FFC72C'], ['max', 'MX', 'Max ✈ NAH', '#6B7385']].map(([pid, ini, name, farbe]) => {
+      lobbyRechte: lobby.spieler.map(p => {
         const R = [['disponieren', 'Disponieren'], ['kt', 'KT disponieren'], ['steuern', 'Simulation steuern'], ['einstellungen', 'Einstellungen & Daten']];
-        const std = { disponieren: true, kt: true, steuern: true, einstellungen: false };
-        const mein = Object.assign({}, std, (st.rechte || {})[pid] || {});
+        const name = p.name + (p.ich ? ' · du' : '') + (p.pilot ? ' ✈ ' + p.pilot : '');
         const boxen = R.map(([k, lab]) => {
-          const on = pid === 'host' || !!mein[k];
-          return { on: String(on), aria: name + ': ' + lab, cls: 'l-cb' + (on ? ' on' : '') + (pid === 'host' ? ' fix' : ''),
-            flip: () => { if (pid === 'host') return; const alle = Object.assign({}, st.rechte || {}); alle[pid] = Object.assign({}, mein, { [k]: !mein[k] }); this.setState({ rechte: alle }); } };
+          const on = p.host || !!p.rechte[k];
+          return { on: String(on), aria: p.name + ': ' + lab, cls: 'l-cb' + (on ? ' on' : '') + (p.host ? ' fix' : ''), flip: () => { if (!p.host) A.setRechte(p.pid, k, !p.rechte[k]); } };
         });
-        return { ini, name, farbe, b0: boxen[0], b1: boxen[1], b2: boxen[2], b3: boxen[3] };
+        return { ini: (p.name.trim()[0] || '?').toUpperCase() + ((p.name.trim().split(/\s+/)[1] || '')[0] || '').toUpperCase(), name, farbe: p.host ? '#3B8BFF' : p.pilot ? '#6B7385' : '#FFC72C', b0: boxen[0], b1: boxen[1], b2: boxen[2], b3: boxen[3] };
       }),
+      lobbyCode: lobby.code ? lobby.code.slice(0, 3) + ' ' + lobby.code.slice(3) : '…',
+      lobbyZustand: lobby.zustand, lobbyPill: 'l-pill ' + (lobby.zustandOk ? 'ok' : 'warn'),
+      lobbyKopieren: () => { try { navigator.clipboard.writeText(lobby.code); this.setState({ startFehler: null }); } catch (e) { /* egal */ } },
+      lobbyAnzahl: lobby.spieler.length, lobbyPlatz: lobby.spieler.length < 6,
       checks,
       startLabel: modus === 'Solo' ? 'Neue Simulation starten' : 'Simulation für alle starten',
+      startCls: 'l-btn' + (st.startLaeuft ? ' off' : ''),
+      startFehlerDa: !!st.startFehler, startFehler: st.startFehler || '',
+      startGo: () => {
+        if (st.startLaeuft) return;
+        if (kiOffen && !st.kiErst && modus === 'Solo') A.kiWaehlen('lokal');
+        this.setState({ startLaeuft: true, startFehler: null });
+        A.neuesSpiel(startzeit).then(f => this.setState({ startLaeuft: false, startFehler: f }));
+      },
       // Multiplayer: zuerst Lobby erstellen (Name, beim ersten Mal die Anrufer-KI), dann gibt es Code und Rechte
-      startZeigen: modus === 'Solo' || !!st.lobby,
-      multiNeu: !st.lobby, multiDa: !!st.lobby,
-      hname: st.hname ?? 'Paul',
+      startZeigen: modus === 'Solo' || lobbyDa,
+      multiNeu: !lobbyDa, multiDa: lobbyDa,
+      hname: st.hname ?? A.meinName(),
       onHname: e => set('hname', (e.target.value || '').slice(0, 30)),
-      hKey: e => { if (e.key === 'Enter') { e.preventDefault(); if ((st.hname ?? 'Paul').trim() && (st.kiErst || !kiOffen)) this.setState({ lobby: true }); } },
+      hKey: e => { if (e.key === 'Enter') { e.preventDefault(); lobbyNeu(); } },
       kiOffen,
-      kiOpts: ['Lokal (Ollama)', 'Gemini (Cloud)'].map(o => ({ label: o.replace(/ \(.*\)/, ''), cls: 'l-seg' + (st.kiErst === o ? ' on' : ''), pick: () => this.setState({ kiErst: o, s_kimodus: o }) })),
-      lobbyBtnCls: 'l-btn' + ((st.hname ?? 'Paul').trim() && (!kiOffen || st.kiErst) ? '' : ' off'),
-      lobbyNeu: () => { if ((st.hname ?? 'Paul').trim() && (!kiOffen || st.kiErst)) this.setState({ lobby: true }); },
+      kiOpts: ['Lokal (Ollama)', 'Gemini (Cloud)'].map(o => ({ label: o.replace(/ \(.*\)/, ''), cls: 'l-seg' + (st.kiErst === o ? ' on' : ''), pick: () => { this.setState({ kiErst: o }); A.kiWaehlen(o.startsWith('Gemini') ? 'gemini' : 'lokal'); } })),
+      lobbyBtnCls: 'l-btn' + (hname.trim() && (!kiOffen || st.kiErst) && !st.lobbyLaeuft ? '' : ' off'),
+      lobbyNeu,
       lzuFrage: !!st.lzu,
-      lzuAsk: () => set('lzu', true), lzuNein: () => set('lzu', false), lzuJa: () => this.setState({ lzu: false, lobby: false }),
+      lzuAsk: () => set('lzu', true), lzuNein: () => set('lzu', false), lzuJa: () => { A.lobbySchliessen(); this.setState({ lzu: false }); },
       // Fortsetzen: Umbenennen und Löschen direkt hier (kein Dialog); die automatische Sicherung kann man nicht umbenennen
-      saves: saves.filter((x, i) => !(st.saveWeg || []).includes(i)).map((x) => { const i = saves.indexOf(x); const name = (st.saveNamen || {})[i] || x.name; return { ...x, name, cls: 'l-save' + (saveSel === i ? ' on' : ''), pick: () => this.setState({ save: i, saveRen: false, saveDel: false }) }; }),
-      saveName: (st.saveNamen || {})[saveSel] || (saves[saveSel] || {}).name || '',
+      savesLeer: !saves.length,
+      saves: saves.map((x, i) => ({ name: x.name, info: x.info, open: x.offen, when: x.wann, cls: 'l-save' + (saveSel === i ? ' on' : ''), pick: () => this.setState({ save: i, saveRen: false, saveDel: false, fortFehler: null }) })),
+      saveName: (saves[saveSel] || {}).name || '',
       saveRen: !!st.saveRen, saveDel: !!st.saveDel,
-      saveRenWert: st.saveRenWert ?? ((st.saveNamen || {})[saveSel] || (saves[saveSel] || {}).name || ''),
+      saveRenWert: st.saveRenWert ?? ((saves[saveSel] || {}).name || ''),
       saveRenSet: e => set('saveRenWert', e.target.value),
-      saveRenAuf: () => { this.setState({ saveRen: true, saveDel: false, saveRenWert: undefined }); setTimeout(() => { const i = document.getElementById('l-sren'); if (i) { i.focus(); i.select(); } }, 0); },
-      saveRenOk: () => this.setState({ saveRen: false, saveNamen: { ...(st.saveNamen || {}), [saveSel]: (st.saveRenWert ?? '').trim() || (saves[saveSel] || {}).name } }),
-      saveRenKey: e => { if (e.key === 'Enter') { e.preventDefault(); this.setState({ saveRen: false, saveNamen: { ...(st.saveNamen || {}), [saveSel]: (st.saveRenWert ?? '').trim() || (saves[saveSel] || {}).name } }); } },
+      saveRenAuf: () => { if (!saves[saveSel] || saves[saveSel].auto) return this.setState({ fortFehler: 'Die automatische Sicherung kann man nicht umbenennen' }); this.setState({ saveRen: true, saveDel: false, saveRenWert: undefined }); setTimeout(() => { const i = document.getElementById('l-sren'); if (i) { i.focus(); i.select(); } }, 0); },
+      saveRenOk: () => umbenennen(),
+      saveRenKey: e => { if (e.key === 'Enter') { e.preventDefault(); umbenennen(); } },
       saveRenNein: () => this.setState({ saveRen: false }),
-      saveDelAuf: () => this.setState({ saveDel: true, saveRen: false }),
+      saveDelAuf: () => { if (!saves[saveSel] || saves[saveSel].auto) return this.setState({ fortFehler: 'Die automatische Sicherung kann man nicht löschen' }); this.setState({ saveDel: true, saveRen: false }); },
       saveDelNein: () => this.setState({ saveDel: false }),
-      saveDelJa: () => { const weg = [...(st.saveWeg || []), saveSel]; const rest = saves.map((x, i) => i).filter(i => !weg.includes(i)); this.setState({ saveDel: false, saveWeg: weg, save: rest[0] ?? 0 }); },
+      saveDelJa: () => { const s = saves[saveSel]; this.setState({ saveDel: false }); if (s) A.loeschen(s.datei).then(f => this.setState({ fortFehler: f, save: 0 })); },
+      saveExport: () => { const s = saves[saveSel]; if (!s || s.auto) return this.setState({ fortFehler: 'Bitte einen gespeicherten Spielstand wählen' }); A.exportieren(s.datei).then(f => this.setState({ fortFehler: f })); },
+      saveImport: () => A.importieren().then(f => this.setState({ fortFehler: f })),
+      saveOrdner: () => A.ordnerOeffnen(),
+      fortFehlerDa: !!st.fortFehler, fortFehler: st.fortFehler || '',
+      fortCls: 'l-btn' + (saves.length && !st.fortLaeuft ? '' : ' off'),
+      fortGo: () => { const s = saves[saveSel]; if (!s || st.fortLaeuft) return; this.setState({ fortLaeuft: true, fortFehler: null }); A.laden(s.datei).then(f => this.setState({ fortLaeuft: false, fortFehler: f })); },
 
       code,
       codeA: [0, 1, 2].map(box), codeB: [3, 4, 5].map(box),
@@ -1327,53 +1396,60 @@ export class Komponente {
       codeFocus: () => set('codeFocus', true), codeBlur: () => set('codeFocus', false),
       codeFull: code.length === 6, codeEmpty: code.length < 6,
       joinEin: !st.joinWeiter, joinInfo: !!st.joinWeiter,
-      jname: st.jname || '',
+      jname: st.jname ?? A.meinName(),
       onJname: e => set('jname', (e.target.value || '').slice(0, 30)),
-      jnameShow: (st.jname || '').trim() || 'Gast',
-      jinit: ((st.jname || '').trim()[0] || 'G').toUpperCase(),
-      kiStatus: (st.s_kimodus ?? '') === 'Gemini (Cloud)' ? 'Gemini' : 'Lokal · bereit',
-      weiterCls: 'l-btn' + (code.length === 6 ? '' : ' off'),
-      // Zum Testen: jeder 6-stellige Code führt zur Leitstelle
+      jnameShow: (st.jname ?? A.meinName()).trim() || 'Gast',
+      jinit: (((st.jname ?? A.meinName()).trim())[0] || 'G').toUpperCase(),
+      weiterCls: 'l-btn' + (code.length === 6 && !st.jLaeuftPruef ? '' : ' off'),
       joinWeiter: () => this.codePruefen('j'),
-      joinKey: e => { if (e.key === 'Enter') { e.preventDefault(); this.codePruefen('j'); } },
-      joinZurueck: () => this.setState({ joinWeiter: false, jdrin: false }),
+      joinKey: e => { if (e.key === 'Enter') { e.preventDefault(); if (st.joinWeiter) this.joinRein(); else this.codePruefen('j'); } },
+      joinZurueck: () => { A.beitrittVerlassen(); this.setState({ joinWeiter: false, jdrin: false }); },
       jErr: !!st.jerr, jLab: st.jerr || 'Code der Leitstelle · 6 Ziffern', jLabCls: 'l-lab' + (st.jerr ? ' l-laberr' : ''), jRole: st.jerr ? 'alert' : 'none', jWrapCls: 'l-codewrap big' + (st.jerr ? ' err' : ''),
-      jWartet: code[0] === '1', jLaeuft: code[0] !== '1',
-      jPill: code[0] === '1' ? 'l-pill warn' : 'l-pill ok', jPillText: code[0] === '1' ? 'wartet auf Start' : 'läuft',
+      jWartet: !sz.laeuft, jLaeuft: sz.laeuft,
       jBtnCls: 'l-btn' + (st.jdrin ? ' off' : ''),
-      jBtnText: st.jdrin ? 'Warte auf den Host …' : code[0] === '1' ? 'Lobby beitreten' : 'Als Disponent beitreten',
-      jBtnGo: () => { if (code[0] === '1') this.setState({ jdrin: true }); },
-      jAendern: st.jdrin ? 'Lobby verlassen' : 'Ändern', pAendern: st.pdrin ? 'Lobby verlassen' : 'Ändern',
-      jDrin: !!st.jdrin, jRaus: () => this.setState({ jdrin: false, joinWeiter: false }),
-      codeShow: code.slice(0, 3) + ' ' + code.slice(3),
+      jBtnText: st.jdrin ? 'Warte auf den Host …' : sz.laeuft ? 'Als Disponent beitreten' : 'Lobby beitreten',
+      jBtnGo: () => this.joinRein(),
+      jAendern: st.jdrin ? 'Lobby verlassen' : 'Ändern', pAendern: st.pWeiter && !st.ptest ? 'Lobby verlassen' : 'Ändern',
+      jDrin: !!st.jdrin, jRaus: () => { A.beitrittVerlassen(); this.setState({ jdrin: false, joinWeiter: false }); },
+      codeShow: (lobbyCodeJ || code).slice(0, 3) + ' ' + (lobbyCodeJ || code).slice(3),
+      sz, szSet: sz.einstellungen.map(([k, v]) => ({ k, v })),
+      szSpieler: szSpieler, szAnzahl: szSpieler.length, szFrei: Math.max(0, 6 - szSpieler.length), szFreiDa: szSpieler.length < 6,
+      szVerb: sz.verbunden ? (sz.hostDa ? 'Verbindung steht' : 'Host nicht da') : 'verbinde …', szVerbDot: sz.verbunden && sz.hostDa ? '#4CC38A' : '#FFC72C',
+      szMik: V('eingabe', true) ? 'Spracheingabe an' : 'Spracheingabe aus', szMikDot: V('eingabe', true) ? '#4CC38A' : '#9AA3B5',
+      mikTest: () => this.einstellungOeffnen('platz', 'mikro'),
+      versionKurz: A.version() || '–',
+      szRechte: [['disponieren', 'Disponieren', 'Disponieren'], ['kt', 'KT', 'KT disponieren'], ['steuern', 'Steuern', 'Simulation steuern'], ['einstellungen', 'Einstellungen', 'Einstellungen & Daten']].map(([k, label, title]) => ({ label, title: title + (sz.rechte[k] ? '' : ' – vergibt der Host'), cls: sz.rechte[k] ? '' : 'aus' })),
 
-      // Pilot: Schritt 1 Code + Name, Schritt 2 Details (zum Testen klappt jeder 6-stellige Code)
+      // Pilot: Schritt 1 Code + Name, Schritt 2 Hubschrauber und Lobby
       pEin: !st.pWeiter, pInfo: !!st.pWeiter,
       pcode, pcodeA: [0, 1, 2].map(pbox), pcodeB: [3, 4, 5].map(pbox),
       onPcode: e => { const v = (e.target.value || '').replace(/\D/g, '').slice(0, 6); this.setState({ pcode: v, perr: null }); if (v.length === 6 && pcode.length < 6) setTimeout(() => { const n = document.getElementById('l-pname'); if (n) n.focus(); }, 0); },
       pcodeFocus: () => set('pfoc', true), pcodeBlur: () => set('pfoc', false),
-      pname: st.pname || '', onPname: e => set('pname', (e.target.value || '').slice(0, 30)),
-      pnameShow: (st.pname || '').trim() || 'Gast',
+      pname: st.pname ?? A.meinName(), onPname: e => set('pname', (e.target.value || '').slice(0, 30)),
+      pnameShow: (st.pname ?? A.meinName()).trim() || 'Gast',
       pWeiterCls: 'l-btn' + (pcode.length === 6 ? '' : ' off'),
       pWeiter: () => this.codePruefen('p'),
       pKey: e => { if (e.key === 'Enter') { e.preventDefault(); this.codePruefen('p'); } },
-      pTest: () => this.setState({ pWeiter: true, ptest: true, perr: null }),
-      pZurueck: () => this.setState({ pWeiter: false, pdrin: false }),
+      pTest: () => { A.pilotTest(st.pname ?? A.meinName()).then(f => this.setState(f ? { perr: f } : { pWeiter: true, ptest: true, perr: null })); },
+      pZurueck: () => { if (!st.ptest) A.beitrittVerlassen(); this.setState({ pWeiter: false, pdrin: false, ptest: false }); },
       pErr: !!st.perr, pLab: st.perr || 'Code des Spiels · 6 Ziffern', pLabCls: 'l-lab' + (st.perr ? ' l-laberr' : ''), pRole: st.perr ? 'alert' : 'none', pWrapCls: 'l-codewrap big' + (st.perr ? ' err' : ''),
-      pWartet: !st.ptest && pcode[0] === '1', pLaeuftF: !st.ptest && pcode[0] !== '1',
-      pBtnCls: 'l-btn' + (st.pdrin ? ' off' : ''),
-      pDrin: !!st.pdrin, pRaus: () => this.setState({ pdrin: false, pWeiter: false }),
-      pBtnGo: () => { if (!st.ptest && pcode[0] === '1') this.setState({ pdrin: true }); },
+      pWartet: !st.ptest && A.pilotWartet(), pLaeuftF: !st.ptest && !A.pilotWartet(),
+      pBtnCls: 'l-btn' + (st.pLaeuft ? ' off' : ''),
+      pDrin: false, pRaus: () => undefined,
+      pBtnGo: () => { if (st.pLaeuft) return; this.setState({ pLaeuft: true }); A.pilotRein(hSel || null).then(f => this.setState({ pLaeuft: false, perr: f })); },
       pilotEinst: () => this.einstellungOeffnen('platz', 'pilot'),
       pMitLst: !st.ptest, pOhneLst: !!st.ptest,
       pTitel: st.ptest ? 'Testmodus · ohne Leitstelle' : 'Leitstelle gefunden',
       pOkStyle: st.ptest ? 'background: #FFC72C; box-shadow: 0 0 0 4px rgba(255,199,44,.18);' : '',
       pcodeShow: pcode.slice(0, 3) + ' ' + pcode.slice(3),
-      pilotStart: st.ptest ? 'Testmodus starten' : st.pdrin ? 'Warte auf den Host …' : pcode[0] === '1' ? 'Lobby beitreten' : 'Als Pilot beitreten',
-      // im Testmodus ist jeder Hubschrauber frei
-      helis: helis.map(([n, b, fl, frei]) => [n, b, fl, frei || !!st.ptest]).map(([n, b, fl, free]) => ({ name: n, base: b, flug: fl, st: free ? (hSel === n ? 'gewählt' : fl === 'nur Tagflug' && !st.ptest ? 'frei · nachts nicht alarmierbar' : 'frei') : 'Max fliegt', c: free ? (hSel === n ? '#3B8BFF' : fl === 'nur Tagflug' && !st.ptest ? '#FFC72C' : '#4CC38A') : '#9AA3B5', cls: 'l-pick' + (!free ? ' busy' : hSel === n ? ' on' : ''), pick: () => { if (free) set('heli', n); } })),
-      simWetter: seg('s_simwx', ['Wie LeitWerk', 'Selbst'], 'Wie LeitWerk'),
-      pinit: ((st.pname || '').trim()[0] || 'G').toUpperCase(),
+      pilotStart: st.ptest ? 'Testmodus starten' : A.pilotWartet() ? 'Lobby beitreten' : 'Als Pilot beitreten',
+      helis: helis.length ? helis.map(h => ({ name: h.name, base: h.base, flug: h.nacht ? 'Tag und Nacht' : 'nur Tagflug',
+        st: h.grund ? h.grund : hSel === h.id ? 'gewählt' : h.hind ? h.hind : h.letzter ? 'zuletzt geflogen' : 'frei',
+        c: h.grund ? '#9AA3B5' : hSel === h.id ? '#3B8BFF' : h.hind ? '#FFC72C' : '#4CC38A',
+        cls: 'l-pick' + (h.grund ? ' busy' : hSel === h.id ? ' on' : ''), pick: () => { if (!h.grund) set('heli', h.id); } }))
+        : [{ name: 'Noch keine Daten vom Host', base: 'einen Moment …', flug: '', st: '', c: '#9AA3B5', cls: 'l-pick busy', pick: () => undefined }],
+      simWetter: ['Wie LeitWerk', 'Selbst'].map(o => ({ label: o, cls: 'l-seg' + (V('simwx', 'Wie LeitWerk') === o ? ' on' : ''), pick: () => this.wert('simwx', o) })),
+      pinit: (((st.pname ?? A.meinName()).trim())[0] || 'G').toUpperCase(),
 
       q: st.q || '',
       onQ: e => set('q', e.target.value),
@@ -1388,7 +1464,7 @@ export class Komponente {
       trefferText: treffer.length === 0 ? '' : treffer.length === 1 ? '1 Treffer' : (treffer.length > 60 ? 'mehr als 60' : treffer.length) + ' Treffer',
       keinTreffer: !!q && treffer.length === 0,
       page: { label: page.label, scope: page.scope, note: page.note || '', hasNote: !!page.note, isSub: !!parent, parentLabel: parent ? parent.label : '',
-        back: () => parent && this.setState({ sp: parent.id, edit: null, sw: (st.sw || 0) + 1, swLate: false, cfm: null }),
+        back: () => parent && (page.id === 'bearbeiten' && this.editInfo && this.editInfo.z >= 0 && this.editFertig('speichern'), this.setState({ sp: parent.id, edit: null, sw: (st.sw || 0) + 1, swLate: false, cfm: null })),
         kannStd: kannStd && !stdOffen, stdOffen, stdAsk: () => this.setState({ cfm: 'std:' + page.id }), stdGo, stdNein: () => this.setState({ cfm: null }) },
       subMerk: (this.subParent = parent ? parent.id : null, ''),
       rows
