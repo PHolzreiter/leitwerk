@@ -1,5 +1,12 @@
 # Änderungen
 
+## 0.114.1 – Hauptmenü nachgeschärft
+- **Einstellungen:** Liste und Inhalt reichen bis zum unteren Rand, nichts wird mehr abgeschnitten
+- **Changelog, In Arbeit, Mithelfen:** klappen so weit auf wie nötig, höchstens bis unter die obere Leiste. „Alle Versionen“ zeigt den ganzen Changelog
+- **Festes Wetter:** Auswahl und Temperatur im selben Stil wie die übrigen Leisten
+- **Code-Eingabe:** kein blauer Rahmen mehr um das ganze Feld
+- **Multiplayer → Solo und Lobby schließen:** Rückfrage nur, wenn Mitspieler in der Lobby sind. Wartende Mitspieler sehen „Der Host hat die Lobby geschlossen“ und kommen zurück zur Code-Eingabe
+
 ## 0.114.0 – Neues Hauptmenü
 - **Hauptmenü statt Startseite:** Spiel starten (Solo oder Multiplayer), als Disponent beitreten, als Pilot beitreten und Einstellungen – alles auf einer Seite, ohne Popups. Beim Spielstart verschwindet das Menü
 - **Einstellungen im Menü:** Mein Platz, Spiel & Simulation, Leitstelle, Realismus und Programm. Änderungen gelten sofort, die Suche springt direkt zur Einstellung. Tabellen (Fahrzeuge, Dienststellen, Krankenhäuser, Orte, Vorlagen) lassen sich im Menü bearbeiten

@@ -728,3 +728,30 @@ select.l-select.dd-auf{border-color:#3B8BFF}
 .l-hilfe-row .l-hint{white-space:normal;line-height:1.4}
 .l-fsitem{min-width:0}
 .l-fsitem > div:last-child{white-space:normal;line-height:1.4}
+/* Einstellungen: Liste und Inhalt reichen bis zum unteren Rand des Fensters (scrollen innen) */
+.l-sbody,.fluid .l-sbody{display:flex;flex-direction:column;overflow:hidden}
+.l-sbody > .l-sstag{flex:1 1 0;min-height:0}
+.l-sstag > .l-sside{max-height:none;min-height:0}
+.l-sinhalt{display:flex;flex-direction:column;min-height:0}
+.l-sinhalt .l-sscroll{flex:1 1 0;min-height:0;max-height:none}
+/* Changelog, In Arbeit, Mithelfen: so hoch wie der Inhalt, höchstens bis knapp unter die obere Leiste */
+.l-log .l-logclip,.fluid .l-log .l-logclip{display:grid;grid-template-rows:0fr;height:auto !important;transition:grid-template-rows .5s cubic-bezier(.65,0,.35,1) 0s}
+.l-log.on .l-logclip,.fluid .l-log.on .l-logclip{grid-template-rows:1fr;height:auto !important;transition:grid-template-rows .55s cubic-bezier(.65,0,.35,1) .2s}
+.fluid .l-fswap .l-log.on .l-logclip,.l-fswap .l-log.on .l-logclip{transition-delay:.8s}
+.l-log .l-logbox{height:auto !important;min-height:0;max-height:calc(100vh - 180px);transform:none !important;transition:none !important;will-change:auto}
+.l-log .l-loginner > .l-sscroll{flex:0 1 auto !important}
+.l-log .l-loginner > .l-tl{flex:0 1 auto}
+.l-log .l-loginner > div:first-child{gap:14px}
+.l-log .l-loginner > div:first-child > div{min-width:0}
+.l-log .l-loginner > div:first-child > button{flex-shrink:0}
+/* Code-Eingabe: kein Rahmen ums ganze Feld – das aktive Kästchen zeigt den Fokus */
+.l-codewrap:focus-within{outline:none !important}
+/* Festes Wetter: Auswahl und Temperatur wie die Leisten darüber */
+.l-wfest .l-select,.l-wfest .l-num{box-sizing:border-box;height:44px;background-color:#111216;border:1px solid #262A35;border-radius:10px;font-size:14px;font-weight:600;color:#E6E9EF}
+.l-wfest .l-select{flex:1;max-width:none;min-width:0;padding:0 36px 0 16px}
+.l-wfest .l-num{width:96px;padding:0 12px;text-align:center}
+.l-wfest .l-select:focus,.l-wfest .l-num:focus{border-color:#3B8BFF;outline:none}
+.l-wfest .l-unit{font-size:14px;color:#9AA3B5}
+.l-wfest .l-select{-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M3 4.5l3 3 3-3' fill='none' stroke='%239AA3B5' stroke-width='1.6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center}
+.l-wfest .l-num{-moz-appearance:textfield}
+.l-wfest .l-num::-webkit-inner-spin-button,.l-wfest .l-num::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}

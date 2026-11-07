@@ -804,8 +804,8 @@ select.l-select.dd-auf{border-color:#3B8BFF}
       <section id="l-changelog" class="{{logCls}}" aria-label="Changelog" style="width: 600px;">
         <div class="l-logclip"><div class="l-logbox"><div class="l-loginner">
           <div style="display: flex; align-items: center; justify-content: space-between; padding: 18px 22px 12px 22px; border-bottom: 1px solid #23262F;">
-            <div><div style="font-size: 18px; font-weight: 600;">Changelog</div><div style="font-size: 13px; color: #9AA3B5; margin-top: 2px;">Neueste unten · nach oben zurück in der Zeit · 152 Versionen</div></div>
-            <button class="l-ghost sm">Alle Versionen</button>
+            <div><div style="font-size: 18px; font-weight: 600;">Changelog</div><div style="font-size: 13px; color: #9AA3B5; margin-top: 2px;">Neueste unten · nach oben zurück in der Zeit · {{logAnzahl}}</div></div>
+            <sc-if value="{{logAlleDa}}" hint-placeholder-val="{{true}}"><button class="l-ghost sm" onClick="{{logAlleKlick}}">{{logAlleText}}</button></sc-if>
           </div>
           <div class="l-tl">
             <sc-for list="{{timeline}}" as="c" hint-placeholder-count="6">
@@ -968,7 +968,7 @@ select.l-select.dd-auf{border-color:#3B8BFF}
                   <p class="l-lab">Wetter <span class="l-labx">· {{wetterInfo}}</span></p>
                   <div class="l-segs"><sc-for list="{{wetter}}" as="o" hint-placeholder-count="4"><button class="{{o.cls}}" onClick="{{o.pick}}">{{o.label}}</button></sc-for></div>
                   <sc-if value="{{isFest}}" hint-placeholder-val="{{false}}">
-                    <div class="l-in" style="display: flex; gap: 8px; align-items: center; margin-top: 8px;">
+                    <div class="l-in l-wfest" style="display: flex; gap: 8px; align-items: center; margin-top: 8px;">
                       <select class="l-select" aria-label="Wetterlage" style="min-width: 0; flex: 1;" value="{{wlageVal}}" onChange="{{wlageSet}}"><sc-for list="{{wlageOpts}}" as="o" hint-placeholder-count="7"><option value="{{o}}">{{o}}</option></sc-for></select>
                       <input class="l-num xs" type="number" aria-label="Temperatur" value="{{wtempVal}}" min="-25" max="40" onChange="{{wtempSet}}"><span class="l-unit">°C</span>
                     </div>
@@ -1010,7 +1010,7 @@ select.l-select.dd-auf{border-color:#3B8BFF}
                         <span style="display: flex; gap: 6px; align-items: center;"><button class="l-icon" aria-label="Code kopieren" onClick="{{lobbyKopieren}}"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="2"></rect><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" fill="none" stroke="currentColor" stroke-width="2"></path></svg></button><button class="l-ghost sm" onClick="{{lzuAsk}}" title="Lobby schließen – alle Mitspieler werden getrennt">Schließen</button></span>
                       </div>
                       <sc-if value="{{lzuFrage}}" hint-placeholder-val="{{false}}">
-                        <div class="l-strip rot" style="margin: 0 0 8px;"><span>Lobby schließen? Alle Mitspieler werden getrennt.</span><span class="l-stripb"><button class="l-ghost sm" onClick="{{lzuNein}}">Abbrechen</button><button class="l-ghost sm l-ja" onClick="{{lzuJa}}">Schließen</button></span></div>
+                        <div class="l-strip rot" style="margin: 0 0 8px;"><span>{{lzuText}}</span><span class="l-stripb"><button class="l-ghost sm" onClick="{{lzuNein}}">Abbrechen</button><button class="l-ghost sm l-ja" onClick="{{lzuJa}}">{{lzuJaText}}</button></span></div>
                       </sc-if>
                     <!-- Rechte je Mitspieler per Häkchen – wie im Spiel: Disponieren · KT disponieren · Simulation steuern · Einstellungen & Daten -->
                       <div class="l-rrow l-rkopf"><span></span><span title="Disponieren">Dispo</span><span title="KT disponieren">KT</span><span title="Simulation steuern">Steuern</span><span title="Einstellungen &amp; Daten">Einst.</span></div>
@@ -1227,7 +1227,7 @@ select.l-select.dd-auf{border-color:#3B8BFF}
           <span><span class="l-label">Einstellungen</span><span class="l-sub">Mein Platz, Simulation, Leitstelle, Realismus, Programm</span></span>
           <svg class="l-arrow" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.2"></path></svg>
         </button>
-        <div class="l-drawer"><div class="l-drawer-in"><div class="l-dwrap"><div class="l-dbody">
+        <div class="l-drawer"><div class="l-drawer-in"><div class="l-dwrap"><div class="l-dbody l-sbody">
           <div style="display: flex; align-items: center; gap: 0; margin-bottom: 12px;">
             <sc-for list="{{sgroups}}" as="g" hint-placeholder-count="5"><button class="{{g.cls}}" onClick="{{g.pick}}">{{g.label}}</button></sc-for>
             <label class="l-ssuche">
@@ -1236,13 +1236,13 @@ select.l-select.dd-auf{border-color:#3B8BFF}
               <sc-if value="{{hatQ}}" hint-placeholder-val="{{false}}"><button class="l-sx" aria-label="Suche leeren" onClick="{{qLeer}}"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"></path></svg></button></sc-if>
             </label>
           </div>
-          <div class="l-stag" style="display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 28px;">
-            <div class="l-list2" style="border-right: 1px solid #23262F; padding-right: 14px; display: flex; flex-direction: column; gap: 2px; max-height: 350px; overflow: auto;">
+          <div class="l-stag l-sstag" style="display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 28px;">
+            <div class="l-list2 l-sside" style="border-right: 1px solid #23262F; padding-right: 14px; display: flex; flex-direction: column; gap: 2px; overflow: auto;">
               <sc-for list="{{spages}}" as="p" hint-placeholder-count="6">
                 <button class="{{p.cls}}" onClick="{{p.pick}}">{{p.label}}<span style="display: block; font-size: 12px; color: #6B7385; font-weight: 400;">{{p.info}}</span></button>
               </sc-for>
                           </div>
-            <div>
+            <div class="l-sinhalt">
               <sc-if value="{{notSuche}}" hint-placeholder-val="{{true}}">
               <sc-if value="{{page.isSub}}" hint-placeholder-val="{{false}}">
                 <button class="l-back" onClick="{{page.back}}"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg>{{page.parentLabel}}</button>

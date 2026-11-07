@@ -1,5 +1,15 @@
 [
  {
+  "version": "0.114.1",
+  "datum": "2026-11-07",
+  "titel": "Hauptmenü nachgeschärft",
+  "punkte": [
+   "Einstellungen nutzen die ganze Höhe, Changelog & Co. so hoch wie nötig",
+   "Festes Wetter passt zum Rest, Code-Eingabe ohne blauen Rahmen",
+   "Zurück zu Solo fragt nur, wenn Mitspieler in der Lobby sind"
+  ]
+ },
+ {
   "version": "0.114.0",
   "datum": "2026-11-07",
   "titel": "Neues Hauptmenü",

@@ -32,6 +32,7 @@ export function ablaufBauen(neuZeichnen: () => void, schliessen: () => void) {
   let updLaden: { done: number; total: number } | null = null;
   let updFehler = "";
   let warteAufStart = false;
+  let beiHostZu: (() => void) | undefined;
 
   async function checksLaden(): Promise<void> {
     try {
@@ -95,6 +96,14 @@ export function ablaufBauen(neuZeichnen: () => void, schliessen: () => void) {
         })
         .catch(() => undefined);
       aus.push(mp.onChange(() => {
+        // Mitspieler: der Host hat die Lobby geschlossen → zurück zur Code-Eingabe
+        if (mp.status.rolle === "client" && mp.status.hostVerlassen) {
+          warteAufStart = false;
+          mp.verlassen();
+          beiHostZu?.();
+          neuZeichnen();
+          return;
+        }
         // Mitspieler: der Host hat das Spiel gestartet → ins Spiel
         if (warteAufStart && mp.status.rolle === "client" && mp.status.hostDa && !sim.state.lobby) {
           warteAufStart = false;
@@ -313,6 +322,10 @@ export function ablaufBauen(neuZeichnen: () => void, schliessen: () => void) {
         ] as [string, string][],
         rechte,
       };
+    },
+    /** Wird gerufen, wenn der Host die Lobby schließt, in der man wartet */
+    onHostZu(f: () => void): void {
+      beiHostZu = f;
     },
     /** Disponent: in ein laufendes Spiel → Menü weg; in eine wartende Lobby → warten, bis der Host startet */
     alsDisponentRein(): "drin" | "wartet" {

@@ -14,6 +14,7 @@ export class Komponente {
     Promise.resolve().then(() => { this._plan = false; if (this._zeichnen) this._zeichnen(); });
   }
   componentDidMount() {
+    this.app.ablauf.onHostZu(() => this.setState({ code: '', ...((this.state || {}).ptest ? {} : { pcode: '' }), joinWeiter: false, jdrin: false, pWeiter: false, pdrin: false, jerr: 'Der Host hat die Lobby geschlossen', perr: (this.state || {}).ptest ? null : 'Der Host hat die Lobby geschlossen' }));
     // Regler-Animation: Auswahlleisten – blaue Markierung gleitet zum neuen Feld; Schalter – Knopf gleitet mit Federung
     this.onTap = e => this.reglerAnim(e);
     document.addEventListener('click', this.onTap, true);
@@ -1235,7 +1236,8 @@ export class Komponente {
     const TST = { eingegangen: ['offen', '#9AA3B5'], wartet: ['wird gesendet', '#9AA3B5'], in_arbeit: ['in Arbeit', '#3B8BFF'], rueckfrage: ['Rückfrage', '#FFC72C'], eingebaut: ['eingebaut', '#4CC38A'], erledigt: ['erledigt', '#4CC38A'], abgelehnt: ['abgelehnt', '#E5484D'] };
     const tickets = this.app.ablauf.tickets().slice(0, 8).map(t => { const z = TST[t.status] || ['offen', '#9AA3B5']; const tage = Math.floor((Date.now() - t.erstellt) / 86400000); return { titel: t.titel, wann: tage <= 0 ? 'heute' : tage === 1 ? 'gestern' : 'vor ' + tage + ' Tagen', st: z[0], c: z[1] }; });
     const WT = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
-    const changelog = this.app.ablauf.changelog().slice(0, 30).map(u => { const d = u.datum ? new Date(u.datum) : null; return [u.version, d ? d.toDateString() : '', u.titel, u.punkte, d]; });
+    const clAlle = this.app.ablauf.changelog();
+    const changelog = (st.logAlle ? clAlle : clAlle.slice(0, 30)).map(u => { const d = u.datum ? new Date(u.datum) : null; return [u.version, d ? d.toDateString() : '', u.titel, u.punkte, d]; });
     const tage = {};
     changelog.forEach(e => { if (e[4]) tage[e[1]] = WT[e[4].getDay()] + ', ' + e[4].getDate() + '. ' + e[4].toLocaleDateString('de-AT', { month: 'long' }); });
     // Neueste zuerst im DOM; die Zeitleiste ist umgedreht (column-reverse), also steht das Neueste unten am Knopf.
@@ -1256,6 +1258,7 @@ export class Komponente {
       upd: { label: um.label, kurz: ({ aktuell: 'Aktuell', suche: 'Suche …', verfuegbar: 'Update', laedt: updP + ' %', fertig: 'Neustart' })[us], aria: um.aria, spin: !!um.spin, dot: !um.spin, color: um.color || '#9AA3B5', dotCls: 'l-updot' + (um.puls ? ' puls' : ''), bar: !!um.bar, pct: updP,
         cls: 'l-upd' + (um.neu ? ' neu' : '') + (um.spin ? ' busy' : '') + (st.fp === 'check' ? ' klein' : ''), go: () => this.updKlick() },
       timeline,
+      logAnzahl: clAlle.length + (clAlle.length === 1 ? ' Version' : ' Versionen'), logAlleText: st.logAlle ? 'Nur neueste' : 'Alle Versionen', logAlleDa: clAlle.length > 30, logAlleKlick: () => this.setState({ logAlle: !st.logAlle }),
       newsCls: 'l-newsbtn' + (logOpen ? ' on' : ''),
       logExp: logOpen ? 'true' : 'false',
       logCls: 'l-log' + (logOpen ? ' on' : ''),
@@ -1331,7 +1334,7 @@ export class Komponente {
       wtempVal: V('wtemp', 18), wtempSet: setV('wtemp'),
       aufkommen: ['Realistisch', 'Standard', 'Stressig'].map(o => ({ label: o, title: aufTitel[o], cls: 'l-seg' + (V('aufk', 'Standard') === o ? ' on' : ''), pick: () => this.wert('aufk', o) })),
       arten: arten.map(([k, l, t, d]) => { const on = !!V('a_' + k, d); return { label: l, title: t, on: on ? 'true' : 'false', cls: 'l-mini' + (on ? ' on' : ''), flip: () => this.wert('a_' + k, !on) }; }),
-      modus: ['Solo', 'Multiplayer'].map(o => ({ label: o, cls: 'l-seg' + (modus === o ? ' on' : ''), pick: () => { if (o === 'Solo' && A.rolle() === 'host') return this.setState({ startFehler: 'Erst die Lobby schließen, dann zurück zu Solo' }); this.setState({ modus: o, startFehler: null }); } })),
+      modus: ['Solo', 'Multiplayer'].map(o => ({ label: o, cls: 'l-seg' + (modus === o ? ' on' : ''), pick: () => { if (o === modus) return; if (o === 'Solo' && A.rolle() === 'host') { if (lobby.spieler.some(x => !x.ich)) return this.setState({ lzu: 'solo', startFehler: null }); A.lobbySchliessen(); } this.setState({ modus: o, startFehler: null, lzu: false }); } })),
       isSolo: modus === 'Solo', isMulti: modus === 'Multiplayer',
       // Lobby-Rechte je Spieler (wie im Spiel): der Host hat alle, Mitspieler starten mit den Standardrechten
       lobbyRechte: lobby.spieler.map(p => {
@@ -1368,7 +1371,8 @@ export class Komponente {
       lobbyBtnCls: 'l-btn' + (hname.trim() && (!kiOffen || st.kiErst) && !st.lobbyLaeuft ? '' : ' off'),
       lobbyNeu,
       lzuFrage: !!st.lzu,
-      lzuAsk: () => set('lzu', true), lzuNein: () => set('lzu', false), lzuJa: () => { A.lobbySchliessen(); this.setState({ lzu: false }); },
+      lzuAsk: () => { if (lobby.spieler.some(x => !x.ich)) return set('lzu', true); A.lobbySchliessen(); this.setState({ lzu: false }); }, lzuNein: () => set('lzu', false), lzuJa: () => { const solo = st.lzu === 'solo'; A.lobbySchliessen(); this.setState(solo ? { lzu: false, modus: 'Solo' } : { lzu: false }); },
+      lzuText: st.lzu === 'solo' ? 'Zurück zu Solo? Die Lobby wird geschlossen und alle Mitspieler werden getrennt.' : 'Lobby schließen? Alle Mitspieler werden getrennt.', lzuJaText: st.lzu === 'solo' ? 'Zu Solo' : 'Schließen',
       // Fortsetzen: Umbenennen und Löschen direkt hier (kein Dialog); die automatische Sicherung kann man nicht umbenennen
       savesLeer: !saves.length,
       saves: saves.map((x, i) => ({ name: x.name, info: x.info, open: x.offen, when: x.wann, cls: 'l-save' + (saveSel === i ? ' on' : ''), pick: () => this.setState({ save: i, saveRen: false, saveDel: false, fortFehler: null }) })),
