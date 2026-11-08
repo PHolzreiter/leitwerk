@@ -156,8 +156,15 @@ jobs:
             (cd src-tauri && cargo build --release -p sherpa-rs-sys 2>&1 | tail -5)
             echo "::notice::DLLs: $(cd src-tauri/target/release 2>/dev/null && ls *.dll 2>/dev/null | tr '\n' ' ')"
           fi
-          npx tauri build --bundles ${{ matrix.bundles }} 2>&1 | tee build.log
-          status=${PIPESTATUS[0]}
+          # Downloads beim Bauen (sherpa-onnx, NSIS/WiX) scheitern manchmal an GitHub-Serverfehlern (502/503/504) –
+          # dann bis zu zweimal nach kurzer Pause neu versuchen
+          for versuch in 1 2 3; do
+            npx tauri build --bundles ${{ matrix.bundles }} 2>&1 | tee build.log
+            status=${PIPESTATUS[0]}
+            [ $status -eq 0 ] && break
+            grep -qiE "status( code)?:? 50[234]|http status: 50[234]|timed out|connection reset" build.log || break
+            [ $versuch -lt 3 ] && { echo "::warning::Download-Fehler beim Bauen (Versuch $versuch) – neuer Versuch in 60 s"; sleep 60; }
+          done
           if [ $status -ne 0 ]; then
             # letzte Zeilen als Anmerkung, damit der Fehler ohne Log-Download lesbar ist
             grep -iE "error|failed|panicked|invalid|password|key" build.log | tail -25 | while IFS= read -r l; do echo "::error::${l:0:300}"; done
