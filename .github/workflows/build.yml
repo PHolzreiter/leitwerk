@@ -158,6 +158,28 @@ jobs:
           python -c "import sys,tarfile; tarfile.open(sys.argv[1]).extractall(sys.argv[2])" "$(cygpath -w "$RUNNER_TEMP/sherpa.tar.bz2")" "$(cygpath -w "$d")"
           ls "$d/$NAME" || true
 
+      - name: Piper-Bibliothek aus dem Zwischenspeicher (macOS)
+        if: runner.os == 'macOS'
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Caches/sherpa-rs
+          key: sherpa-rs-osx-universal2-static-v1.12.9
+
+      - name: Piper-Bibliothek vorladen (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          SUM=d35263d81ecef3f37a0a5acbc4696f721d01e753fe8641bdc352017bdce8eaf0
+          NAME=sherpa-onnx-v1.12.9-osx-universal2-static
+          d="$HOME/Library/Caches/sherpa-rs/aarch64-apple-darwin/$SUM"
+          if [ -d "$d/$NAME" ]; then echo "schon da"; exit 0; fi
+          mkdir -p "$d"
+          curl -fL --retry 15 --retry-delay 30 --retry-all-errors --connect-timeout 30 -o "$RUNNER_TEMP/sherpa.tar.bz2" \
+            "https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.12.9/$NAME.tar.bz2"
+          echo "$SUM  $RUNNER_TEMP/sherpa.tar.bz2" | shasum -a 256 -c -
+          tar -xjf "$RUNNER_TEMP/sherpa.tar.bz2" -C "$d"
+          ls "$d/$NAME" || true
+
       - name: Bauen
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
