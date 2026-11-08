@@ -1,5 +1,10 @@
 # Änderungen
 
+## 0.114.3 – Update-Knopf und Fenster unten
+- **Changelog, In Arbeit, Mithelfen:** erst wird der Reiter breit, dann fährt das Fenster hoch. Beim Schließen fährt erst das Fenster hinunter, dann wird der Reiter schmal
+- **Update-Knopf im Hauptmenü:** schlägt ein Update fehl, steht „Update fehlgeschlagen · erneut“ und darunter der Grund (am Mac mit Hinweis auf den Ordner „Programme“). Ein neuer Versuch sucht selbst noch einmal nach dem Update
+- **„Jetzt suchen“** in den Einstellungen meldet ein gefundenes Update im ganzen Programm
+
 ## 0.114.2 – Weichere Fenster unten
 - **Changelog, In Arbeit, Mithelfen:** das Fenster fährt mit fertigem Inhalt wieder von unten hoch und beim Schließen hinunter – gleichzeitig mit dem Breiter- und Schmalerwerden des Reiters darunter
 - Der Reiter „In Arbeit“ startet beim ersten Öffnen nicht mehr mit falscher Breite

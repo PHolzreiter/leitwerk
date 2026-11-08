@@ -1,5 +1,14 @@
 [
  {
+  "version": "0.114.3",
+  "datum": "2026-11-08",
+  "titel": "Update-Knopf und Fenster unten",
+  "punkte": [
+   "Reiter unten: erst breit, dann fährt das Fenster hoch – beim Schließen umgekehrt",
+   "Update-Knopf zeigt, warum ein Update fehlschlägt, und versucht es erneut"
+  ]
+ },
+ {
   "version": "0.114.2",
   "datum": "2026-11-08",
   "titel": "Weichere Fenster unten",
