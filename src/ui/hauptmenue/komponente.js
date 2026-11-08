@@ -26,12 +26,16 @@ export class Komponente {
     // Esc: Hauptbildschirm → offenes Menü/Fenster schließen, sonst zum Startbildschirm; Startbildschirm → „Spiel verlassen?“
     this.onEsc = e => this.escTaste(e);
     document.addEventListener('keydown', this.onEsc, true);
-    this.tMess = setTimeout(() => this.setState({ nw: this.messen() }), 600);
-    this.uhr = setInterval(() => this.setState({ jetzt: Date.now() }), 30000);
+    // Breite der unteren Reiter neu messen, solange keiner offen ist (Titel/Schriften kommen erst nach dem Start)
+    this.nachmessen = () => { if (!(this.state || {}).fp) this.setState({ nw: this.messen() }); };
+    this.tMess = setTimeout(this.nachmessen, 600);
+    this.tMess2 = setTimeout(this.nachmessen, 2500);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => this.nachmessen());
+    this.uhr = setInterval(() => { this.setState({ jetzt: Date.now() }); this.nachmessen(); }, 30000);
     this.setState({ noe: this.app.funkgruppenKarte });
     this.fokusTimer = setTimeout(() => { const b = this.splashRef && this.splashRef.current; if (b && b.focus) b.focus(); }, 80);
   }
-  componentWillUnmount() { document.removeEventListener('mousedown', this.onPopDown, true); document.removeEventListener('keydown', this.onPopKey, true); this.popZu(); document.removeEventListener('keydown', this.onEsc, true); document.removeEventListener('click', this.onTap, true); clearInterval(this.uhr); clearTimeout(this.t1); clearTimeout(this.t2); clearTimeout(this.fokusTimer); clearTimeout(this.tu); clearInterval(this.iu); }
+  componentWillUnmount() { document.removeEventListener('mousedown', this.onPopDown, true); document.removeEventListener('keydown', this.onPopKey, true); this.popZu(); document.removeEventListener('keydown', this.onEsc, true); document.removeEventListener('click', this.onTap, true); clearInterval(this.uhr); clearTimeout(this.tMess); clearTimeout(this.tMess2); clearTimeout(this.t1); clearTimeout(this.t2); clearTimeout(this.fokusTimer); clearTimeout(this.tu); clearInterval(this.iu); }
   reglerAnim(e) {
     // Regler-Animation. Läuft per Skript, weil die Regler beim Umschalten neu gezeichnet werden (CSS-Übergänge greifen dort nicht).
     const t = e.target && e.target.closest ? e.target.closest('.l-seg, .l-tog') : null;
