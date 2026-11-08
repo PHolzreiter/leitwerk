@@ -134,6 +134,23 @@ jobs:
           security find-identity -v -p codesigning "$KC"
           echo "APPLE_SIGNING_IDENTITY=LeitWerk Codesign" >> "$GITHUB_ENV"
 
+      # Piper (sherpa-onnx) für Windows selbst vorladen – mit Neuversuchen, weil GitHub-Downloads manchmal mit 504 abbrechen.
+      # Das Paket sherpa-rs-sys findet die Dateien dann in seinem Cache-Ordner und lädt nichts mehr.
+      - name: Piper-Bibliothek vorladen (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          SUM=57a0dff63c468ed067c6ffd1a9c9b6f66f4cf73304d44b5f17518010ce2e0977
+          NAME=sherpa-onnx-v1.12.9-win-x64-shared
+          d="$(cygpath -u "$LOCALAPPDATA")/sherpa-rs/x86_64-pc-windows-msvc/$SUM"
+          if [ -d "$d/$NAME" ]; then echo "schon da"; exit 0; fi
+          mkdir -p "$d"
+          curl -fL --retry 8 --retry-delay 20 --retry-all-errors --connect-timeout 30 -o "$RUNNER_TEMP/sherpa.tar.bz2" \
+            "https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.12.9/$NAME.tar.bz2"
+          echo "$SUM  $RUNNER_TEMP/sherpa.tar.bz2" | sha256sum -c -
+          tar -xjf "$RUNNER_TEMP/sherpa.tar.bz2" -C "$d"
+          ls "$d/$NAME" || true
+
       - name: Bauen
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
