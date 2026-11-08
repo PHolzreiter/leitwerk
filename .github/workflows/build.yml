@@ -148,7 +148,7 @@ jobs:
           curl -fL --retry 8 --retry-delay 20 --retry-all-errors --connect-timeout 30 -o "$RUNNER_TEMP/sherpa.tar.bz2" \
             "https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.12.9/$NAME.tar.bz2"
           echo "$SUM  $RUNNER_TEMP/sherpa.tar.bz2" | sha256sum -c -
-          tar -xjf "$RUNNER_TEMP/sherpa.tar.bz2" -C "$d"
+          python -c "import sys,tarfile; tarfile.open(sys.argv[1]).extractall(sys.argv[2])" "$(cygpath -w "$RUNNER_TEMP/sherpa.tar.bz2")" "$(cygpath -w "$d")"
           ls "$d/$NAME" || true
 
       - name: Bauen
