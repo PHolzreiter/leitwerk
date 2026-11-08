@@ -736,18 +736,17 @@ select.l-select.dd-auf{border-color:#3B8BFF}
 .l-sinhalt .l-sscroll{flex:1 1 0;min-height:0;max-height:none}
 /* Changelog, In Arbeit, Mithelfen: so hoch wie der Inhalt, höchstens bis knapp unter die obere Leiste */
 .l-log .l-logclip,.fluid .l-log .l-logclip{display:block;height:auto !important;transition:none !important}
-/* Das ganze Fenster fährt mit fertigem Inhalt von unten hoch und wieder hinunter –
-   gleich lang und gleichzeitig wie das Breiter-/Schmalerwerden des Reiters darunter */
+/* Öffnen: erst wird der Reiter breit, dann fährt das ganze Fenster mit fertigem Inhalt von unten hoch.
+   Schließen: erst fährt das Fenster hinunter, dann wird der Reiter wieder schmal. */
 .l-log .l-logbox,.fluid .l-log .l-logbox{height:auto !important;min-height:0;max-height:calc(100vh - 180px);transform:translateY(101%) !important;transition:transform .45s cubic-bezier(.65,0,.35,1) 0s !important;will-change:transform}
-.l-log.on .l-logbox,.fluid .l-log.on .l-logbox{transform:none !important}
+.l-log.on .l-logbox,.fluid .l-log.on .l-logbox{transform:none !important;transition-delay:.35s !important}
 .l-root .l-log{transition:visibility 0s linear .45s}
 .l-root .l-log.on{transition-delay:0s}
-.l-root .l-newsbtn{transition:background .2s ease .25s,border-color .2s ease .25s,border-radius .2s ease .25s,color .2s ease .25s,width .45s cubic-bezier(.65,0,.35,1) 0s}
-.l-root .l-newsbtn.on{transition:background .15s ease 0s,border-color .15s ease 0s,border-radius .15s ease 0s,color .15s ease 0s,width .45s cubic-bezier(.65,0,.35,1) 0s}
-/* Wechsel zwischen zwei Reitern: altes Fenster und alter Reiter gehen zusammen zu, danach gehen neuer Reiter und neues Fenster zusammen auf */
-.l-root .l-fswap .l-newsbtn{transition-delay:.25s,.25s,.25s,.25s,0s}
+.l-root .l-newsbtn{transition:background .2s ease .45s,border-color .2s ease .45s,border-radius .2s ease .45s,color .2s ease .45s,width .35s cubic-bezier(.65,0,.35,1) .45s}
+.l-root .l-newsbtn.on{transition:background .15s ease 0s,border-color .15s ease 0s,border-radius .15s ease 0s,color .15s ease 0s,width .35s cubic-bezier(.65,0,.35,1) 0s}
+/* Wechsel zwischen zwei Reitern: altes Fenster fährt hinunter, dann wird der alte Reiter schmal und der neue breit (gleichzeitig), dann fährt das neue Fenster hoch */
 .l-root .l-fswap .l-newsbtn.on{transition-delay:.45s}
-.l-fswap .l-log.on .l-logbox,.fluid .l-fswap .l-log.on .l-logbox{transition-delay:.45s !important}
+.l-fswap .l-log.on .l-logbox,.fluid .l-fswap .l-log.on .l-logbox{transition-delay:.8s !important}
 .l-log .l-loginner > .l-sscroll{flex:0 1 auto !important}
 .l-log .l-loginner > .l-tl{flex:0 1 auto}
 .l-log .l-loginner > div:first-child{gap:14px}
