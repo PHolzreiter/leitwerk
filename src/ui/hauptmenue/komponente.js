@@ -1190,7 +1190,7 @@ export class Komponente {
     const updMap = {
       aktuell: { label: UPD.fehler ? 'Update fehlgeschlagen · erneut' : 'Aktuell' + (uv ? ' · v' + uv : ''), color: UPD.fehler ? '#E5484D' : '#4CC38A', aria: UPD.fehler ? 'Update fehlgeschlagen: ' + UPD.fehler : 'LeitWerk ist aktuell. Klicken, um nach Updates zu suchen.' },
       suche: { label: 'Suche nach Updates …', spin: true, aria: 'Suche nach Updates' },
-      verfuegbar: { label: 'Update ' + uv, color: '#3B8BFF', puls: true, neu: true, aria: 'Update ' + uv + ' verfügbar. Klicken zum Herunterladen und Installieren.' },
+      verfuegbar: UPD.fehler ? { label: 'Update fehlgeschlagen · erneut', color: '#E5484D', neu: true, aria: 'Update ' + uv + ' fehlgeschlagen: ' + UPD.fehler + ' – klicken, um es erneut zu versuchen.' } : { label: 'Update ' + uv, color: '#3B8BFF', puls: true, neu: true, aria: 'Update ' + uv + ' verfügbar. Klicken zum Herunterladen und Installieren.' },
       laedt: { label: UPD.total > 0 ? mb(UPD.done, true) + ' / ' + mb(UPD.total) + ' · ' + updP + ' %' : 'Update wird geladen …', spin: true, bar: true, neu: true, aria: 'Update wird geladen' },
       fertig: { label: 'Wird installiert – LeitWerk startet neu …', color: '#FFC72C', neu: true, aria: 'Update geladen, LeitWerk startet neu.' }
     };
@@ -1259,8 +1259,8 @@ export class Komponente {
       n++;
     });
     return {
-      upd: { label: um.label, kurz: ({ aktuell: 'Aktuell', suche: 'Suche …', verfuegbar: 'Update', laedt: updP + ' %', fertig: 'Neustart' })[us], aria: um.aria, spin: !!um.spin, dot: !um.spin, color: um.color || '#9AA3B5', dotCls: 'l-updot' + (um.puls ? ' puls' : ''), bar: !!um.bar, pct: updP,
-        cls: 'l-upd' + (um.neu ? ' neu' : '') + (um.spin ? ' busy' : '') + (st.fp === 'check' ? ' klein' : ''), go: () => this.updKlick() },
+      upd: { label: um.label, kurz: ({ aktuell: 'Aktuell', suche: 'Suche …', verfuegbar: UPD.fehler ? 'Fehler' : 'Update', laedt: updP + ' %', fertig: 'Neustart' })[us], fehler: UPD.fehler ? 'Update fehlgeschlagen: ' + UPD.fehler : '', fehlerDa: !!UPD.fehler && us === 'verfuegbar', aria: um.aria, spin: !!um.spin, dot: !um.spin, color: um.color || '#9AA3B5', dotCls: 'l-updot' + (um.puls ? ' puls' : ''), bar: !!um.bar, pct: updP,
+        cls: 'l-upd' + (um.neu ? ' neu' : '') + (um.spin ? ' busy' : '') + (st.fp === 'check' ? ' klein' : '') + (UPD.fehler && us === 'verfuegbar' ? ' fehl' : ''), go: () => this.updKlick() },
       timeline,
       logAnzahl: clAlle.length + (clAlle.length === 1 ? ' Version' : ' Versionen'), logAlleText: st.logAlle ? 'Nur neueste' : 'Alle Versionen', logAlleDa: clAlle.length > 30, logAlleKlick: () => this.setState({ logAlle: !st.logAlle }),
       newsCls: 'l-newsbtn' + (logOpen ? ' on' : ''),

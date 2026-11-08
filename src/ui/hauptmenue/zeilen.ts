@@ -32,8 +32,8 @@ import { ktCodes, standardKtAbfrage } from "../../sim/ktCodes";
 import { pruefeKtSatz } from "../../sim/ktBedingungen";
 import { sim } from "../../sim/engine";
 import { geoStatus, regionSetzen, searchAddress, REGIONEN, type GeoStatus } from "../../sim/geo";
-import { GRUNDPAKET, appVersion, checkUpdate, formatBytes, installPack, packSize, packsChanged, packsLocal, packsManifest, removePack, type Pack, type PacksLocal, type UpdateInfo } from "../../updates";
-import { updateInfo, updateInstallieren, onUpdate } from "../updateDienst";
+import { GRUNDPAKET, appVersion, formatBytes, installPack, packSize, packsChanged, packsLocal, packsManifest, removePack, type Pack, type PacksLocal, type UpdateInfo } from "../../updates";
+import { updateInfo, updateInstallieren, onUpdate, updateJetztPruefen } from "../updateDienst";
 import { ABLAGE_INFO, ablageBasis, ablageLesen, ablageLoeschen, ablageName, ablageSichern, ablageSpeichern, ablageZeigen, type AblageOrdner } from "../../net/ablage";
 import { ordnerZeigen } from "../../net/spielstandOrdner";
 import { pers, onPers, setzePers } from "../ws/persoenlich";
@@ -1488,7 +1488,7 @@ export function zeilenQuelle(neuZeichnen: () => void): { zeilen: ZeilenQuelle; l
     else {
       const btns: Knopf[] = [
         knopf("Jetzt suchen", async () => {
-          const neu2 = await checkUpdate();
+          const neu2 = await updateJetztPruefen();
           c.update = neu2;
           return neu2 ? `Version ${neu2.version} verfügbar` : "Auf dem neuesten Stand";
         }),

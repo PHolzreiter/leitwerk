@@ -34,14 +34,7 @@ pub struct UpdateProgress {
 /// Prüft, ob eine neuere Version verfügbar ist.
 #[tauri::command]
 pub async fn update_check(app: AppHandle, pending: State<'_, PendingUpdate>) -> Result<Option<UpdateInfo>, String> {
-    let url = format!("https://github.com/{DOWNLOAD_REPO}/releases/latest/download/latest.json");
-    let updater = app
-        .updater_builder()
-        .endpoints(vec![url.parse::<tauri::Url>().map_err(|e| e.to_string())?])
-        .map_err(|e| e.to_string())?
-        .build()
-        .map_err(|e| e.to_string())?;
-    let found = updater.check().await.map_err(|e| format!("Update-Prüfung fehlgeschlagen: {e}"))?;
+    let found = suchen(&app).await?;
     let info = found.as_ref().map(|u| UpdateInfo {
         version: u.version.clone(),
         current: u.current_version.clone(),
@@ -51,6 +44,17 @@ pub async fn update_check(app: AppHandle, pending: State<'_, PendingUpdate>) -> 
     Ok(info)
 }
 
+async fn suchen(app: &AppHandle) -> Result<Option<Update>, String> {
+    let url = format!("https://github.com/{DOWNLOAD_REPO}/releases/latest/download/latest.json");
+    let updater = app
+        .updater_builder()
+        .endpoints(vec![url.parse::<tauri::Url>().map_err(|e| e.to_string())?])
+        .map_err(|e| e.to_string())?
+        .build()
+        .map_err(|e| e.to_string())?;
+    updater.check().await.map_err(|e| format!("Update-Prüfung fehlgeschlagen: {e}"))
+}
+
 /// Lädt das gefundene Update, installiert es und startet das Programm neu.
 #[tauri::command]
 pub async fn update_install(
@@ -58,12 +62,14 @@ pub async fn update_install(
     pending: State<'_, PendingUpdate>,
     on_progress: Channel<UpdateProgress>,
 ) -> Result<(), String> {
-    let update = pending
-        .0
-        .lock()
-        .map_err(|_| "gesperrt".to_string())?
-        .take()
-        .ok_or_else(|| "Kein Update gefunden – bitte erneut prüfen".to_string())?;
+    let vorgemerkt = pending.0.lock().map_err(|_| "gesperrt".to_string())?.take();
+    // Nichts vorgemerkt (z. B. nach einem abgebrochenen Versuch): gleich neu nachsehen
+    let update = match vorgemerkt {
+        Some(u) => u,
+        None => suchen(&app)
+            .await?
+            .ok_or_else(|| "Kein Update gefunden – LeitWerk ist aktuell".to_string())?,
+    };
     let mut done = 0u64;
     let mut last = 0u64;
     update

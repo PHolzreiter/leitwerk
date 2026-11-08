@@ -761,6 +761,7 @@ select.l-select.dd-auf{border-color:#3B8BFF}
       <span class="lang">{{upd.label}}</span><span class="kurz">{{upd.kurz}}</span>
       <sc-if value="{{upd.bar}}" hint-placeholder-val="{{false}}"><span class="l-bar" style="width: {{upd.pct}}%;"></span></sc-if>
     </button>
+    <sc-if value="{{upd.fehlerDa}}" hint-placeholder-val="{{false}}"><span class="l-updfehler" role="alert">{{upd.fehler}}</span></sc-if>
     <span class="l-dpw">
       <button class="{{chkBtn}}" aria-expanded="{{chkExp}}" aria-controls="l-check" onClick="{{toggleCheck}}"><span style="width: 8px; height: 8px; border-radius: 50%; background: {{chkDot}};"></span>{{chkSumme}}<svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.6"></path></svg></button>
       <section id="l-check" class="{{chkCls}}" aria-label="Bereitschafts-Check">

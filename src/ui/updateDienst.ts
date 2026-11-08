@@ -44,6 +44,15 @@ async function pruefen(): Promise<void> {
   }
 }
 
+/** Sofort nachsehen (Knopf „Jetzt suchen“) – das Ergebnis gilt dann überall im Programm */
+export async function updateJetztPruefen(): Promise<UpdateInfo | null> {
+  const u = test ? test.info : inTauri() ? await checkUpdate() : null;
+  const neu = u?.version !== info?.version;
+  info = u;
+  if (neu) melden();
+  return u;
+}
+
 /** Beim Programmstart: sofort und dann alle 15 Minuten nachsehen */
 export function updateDienstStarten(): void {
   if (gestartet) return;

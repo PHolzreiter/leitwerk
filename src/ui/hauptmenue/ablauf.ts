@@ -355,7 +355,7 @@ export function ablaufBauen(neuZeichnen: () => void, schliessen: () => void) {
         if (mp.status.rolle === "host") return "Du bist gerade Host eines Spiels – zuerst die Lobby schließen";
         if (mp.status.rolle === "client") mp.verlassen();
         if (name.trim()) mp.setName(name);
-        await spielstand.jetztSichern().catch(() => undefined);
+        await Promise.race([spielstand.jetztSichern().catch(() => undefined), new Promise((r) => setTimeout(r, 5000))]);
         sim.pilotTestStarten({ pid: mp.ich.pid, name: mp.ich.name });
         neuZeichnen();
         return null;
@@ -399,7 +399,11 @@ export function ablaufBauen(neuZeichnen: () => void, schliessen: () => void) {
           neuZeichnen();
         });
       } catch (e) {
-        updFehler = fehlerText(e);
+        updFehler = fehlerText(e) || "Unbekannter Fehler";
+        // Mac: Programm läuft nicht aus „Programme“ (z. B. direkt aus dem DMG oder Downloads) → kann sich nicht selbst ersetzen
+        if (/read-only|os error 30|permission denied|os error 13|operation not permitted/i.test(updFehler))
+          updFehler += " – LeitWerk bitte in den Ordner „Programme“ ziehen, von dort starten und erneut versuchen.";
+        console.warn("Update", e);
         updLaden = null;
         neuZeichnen();
       }

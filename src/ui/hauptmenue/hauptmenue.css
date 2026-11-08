@@ -764,3 +764,6 @@ select.l-select.dd-auf{border-color:#3B8BFF}
 .l-wfest .l-select{-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M3 4.5l3 3 3-3' fill='none' stroke='%239AA3B5' stroke-width='1.6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center}
 .l-wfest .l-num{-moz-appearance:textfield}
 .l-wfest .l-num::-webkit-inner-spin-button,.l-wfest .l-num::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+/* Update fehlgeschlagen: Grund steht unter der oberen Leiste */
+.l-updfehler{position:absolute;top:calc(100% + 8px);right:var(--gx, 72px);max-width:460px;padding:8px 12px;border:1px solid rgba(229,72,77,.45);border-radius:10px;background:rgba(40,16,18,.92);color:#FFB4B6;font-size:13px;line-height:1.4;white-space:normal;text-align:left;z-index:45}
+.l-upd.fehl,.l-upd.neu.fehl{border-color:rgba(229,72,77,.6) !important;color:#FFB4B6 !important}
