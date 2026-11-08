@@ -136,6 +136,13 @@ jobs:
 
       # Piper (sherpa-onnx) für Windows selbst vorladen – mit Neuversuchen, weil GitHub-Downloads manchmal mit 504 abbrechen.
       # Das Paket sherpa-rs-sys findet die Dateien dann in seinem Cache-Ordner und lädt nichts mehr.
+      - name: Piper-Bibliothek aus dem Zwischenspeicher (Windows)
+        if: runner.os == 'Windows'
+        uses: actions/cache@v4
+        with:
+          path: ~/AppData/Local/sherpa-rs
+          key: sherpa-rs-win-x64-v1.12.9
+
       - name: Piper-Bibliothek vorladen (Windows)
         if: runner.os == 'Windows'
         shell: bash
@@ -145,7 +152,7 @@ jobs:
           d="$(cygpath -u "$LOCALAPPDATA")/sherpa-rs/x86_64-pc-windows-msvc/$SUM"
           if [ -d "$d/$NAME" ]; then echo "schon da"; exit 0; fi
           mkdir -p "$d"
-          curl -fL --retry 8 --retry-delay 20 --retry-all-errors --connect-timeout 30 -o "$RUNNER_TEMP/sherpa.tar.bz2" \
+          curl -fL --retry 15 --retry-delay 30 --retry-all-errors --connect-timeout 30 -o "$RUNNER_TEMP/sherpa.tar.bz2" \
             "https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.12.9/$NAME.tar.bz2"
           echo "$SUM  $RUNNER_TEMP/sherpa.tar.bz2" | sha256sum -c -
           python -c "import sys,tarfile; tarfile.open(sys.argv[1]).extractall(sys.argv[2])" "$(cygpath -w "$RUNNER_TEMP/sherpa.tar.bz2")" "$(cygpath -w "$d")"
