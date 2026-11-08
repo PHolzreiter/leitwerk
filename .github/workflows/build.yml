@@ -143,6 +143,14 @@ jobs:
           path: ~/AppData/Local/sherpa-rs
           key: sherpa-rs-win-x64-v1.12.9
 
+      # Werkzeuge für den Windows-Installer (NSIS), die Tauri sonst bei jedem Build von GitHub lädt
+      - name: Installer-Werkzeuge aus dem Zwischenspeicher (Windows)
+        if: runner.os == 'Windows'
+        uses: actions/cache@v4
+        with:
+          path: ~/AppData/Local/tauri
+          key: tauri-nsis-werkzeuge-v1
+
       - name: Piper-Bibliothek vorladen (Windows)
         if: runner.os == 'Windows'
         shell: bash
