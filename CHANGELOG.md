@@ -1,5 +1,9 @@
 # Änderungen
 
+## 0.114.2 – Weichere Fenster unten
+- **Changelog, In Arbeit, Mithelfen:** das Fenster fährt mit fertigem Inhalt wieder von unten hoch und beim Schließen hinunter – gleichzeitig mit dem Breiter- und Schmalerwerden des Reiters darunter
+- Der Reiter „In Arbeit“ startet beim ersten Öffnen nicht mehr mit falscher Breite
+
 ## 0.114.1 – Hauptmenü nachgeschärft
 - **Einstellungen:** Liste und Inhalt reichen bis zum unteren Rand, nichts wird mehr abgeschnitten
 - **Changelog, In Arbeit, Mithelfen:** klappen so weit auf wie nötig, höchstens bis unter die obere Leiste. „Alle Versionen“ zeigt den ganzen Changelog

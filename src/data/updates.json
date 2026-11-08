@@ -1,5 +1,14 @@
 [
  {
+  "version": "0.114.2",
+  "datum": "2026-11-08",
+  "titel": "Weichere Fenster unten",
+  "punkte": [
+   "Changelog, In Arbeit und Mithelfen fahren wieder von unten hoch und hinunter",
+   "Fenster und Reiter bewegen sich gleichzeitig"
+  ]
+ },
+ {
   "version": "0.114.1",
   "datum": "2026-11-07",
   "titel": "Hauptmenü nachgeschärft",
