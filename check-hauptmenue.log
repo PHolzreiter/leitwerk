@@ -1,6 +1,6 @@
 ### npm install
 
-added 52 packages, and audited 53 packages in 7s
+added 52 packages, and audited 53 packages in 8s
 
 9 packages are looking for funding
   run `npm fund` for details
@@ -79,18 +79,18 @@ computing gzip size...
 [2mdist/[22m[2massets/[22m[32mbg-32x9-abend-DLJpcJQK.jpg           [39m[1m[2m1,159.39 kB[22m[1m[22m
 [2mdist/[22m[2massets/[22m[32meinsatzstellen-BKMVXWRH.csv          [39m[1m[2m2,885.41 kB[22m[1m[22m
 [2mdist/[22m[2massets/[22m[35mindex-BYH7qo7i.css                   [39m[1m[2m  431.32 kB[22m[1m[22m[2m │ gzip:    65.87 kB[22m
-[2mdist/[22m[2massets/[22m[36mdist-js-C7HZW0GJ.js                  [39m[1m[2m    0.54 kB[22m[1m[22m[2m │ gzip:     0.26 kB[22m
-[2mdist/[22m[2massets/[22m[36mwebviewWindow-C6wDPi5Q.js            [39m[1m[2m    1.78 kB[22m[1m[22m[2m │ gzip:     0.79 kB[22m
-[2mdist/[22m[2massets/[22m[36mwebview-Bj0-3waC.js                  [39m[1m[2m    3.34 kB[22m[1m[22m[2m │ gzip:     1.13 kB[22m
-[2mdist/[22m[2massets/[22m[36mwindow-rVCHAT8u.js                   [39m[1m[2m   14.32 kB[22m[1m[22m[2m │ gzip:     3.56 kB[22m
-[2mdist/[22m[2massets/[22m[36mzeilen-eP_Enj_C.js                   [39m[1m[2m   43.16 kB[22m[1m[22m[2m │ gzip:    17.00 kB[22m
-[2mdist/[22m[2massets/[22m[36mindex-B1OymVDU.js                    [39m[1m[33m6,109.76 kB[39m[22m[2m │ gzip: 1,691.49 kB[22m
+[2mdist/[22m[2massets/[22m[36mdist-js-B6wizzTi.js                  [39m[1m[2m    0.54 kB[22m[1m[22m[2m │ gzip:     0.26 kB[22m
+[2mdist/[22m[2massets/[22m[36mwebviewWindow-CAP18SlU.js            [39m[1m[2m    1.78 kB[22m[1m[22m[2m │ gzip:     0.79 kB[22m
+[2mdist/[22m[2massets/[22m[36mwebview-DQFFr8Yn.js                  [39m[1m[2m    3.34 kB[22m[1m[22m[2m │ gzip:     1.14 kB[22m
+[2mdist/[22m[2massets/[22m[36mwindow-CXiPQ6AJ.js                   [39m[1m[2m   14.32 kB[22m[1m[22m[2m │ gzip:     3.56 kB[22m
+[2mdist/[22m[2massets/[22m[36mzeilen-CeBwgN81.js                   [39m[1m[2m   43.16 kB[22m[1m[22m[2m │ gzip:    17.00 kB[22m
+[2mdist/[22m[2massets/[22m[36mindex-nwooFgKE.js                    [39m[1m[33m6,110.84 kB[39m[22m[2m │ gzip: 1,691.79 kB[22m
 [33m
 (!) Some chunks are larger than 2000 kB after minification. Consider:
 - Using dynamic import() to code-split the application
 - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
 - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.[39m
-[32m✓ built in 8.33s[39m
+[32m✓ built in 7.68s[39m
 ### npx tauri icon app-icon.png
         Appx Creating StoreLogo.png
         Appx Creating Square30x30Logo.png
@@ -145,7 +145,7 @@ computing gzip size...
 ### cargo check
 [1m[92m    Updating[0m git repository `https://github.com/zip-rs/zip2`
 [1m[92m    Updating[0m crates.io index
-[1m[92m     Locking[0m 570 packages to highest compatible versions
+[1m[92m     Locking[0m 569 packages to highest compatible versions
 [1m[92m      Adding[0m bzip2 v0.4.4 [1m[33m(available: v0.6.1)[0m
 [1m[92m      Adding[0m cpal v0.15.3 [1m[33m(available: v0.18.2)[0m
 [1m[92m      Adding[0m generic-array v0.14.7 [1m[33m(available: v0.14.9)[0m
@@ -164,10 +164,10 @@ computing gzip size...
 [1m[92m  Downloaded[0m cc v1.11.1
 [1m[92m  Downloaded[0m crc32fast v1.5.4
 [1m[92m  Downloaded[0m brotli-decompressor v6.3.0
-[1m[92m  Downloaded[0m brotli v9.1.1
 [1m[92m  Downloaded[0m flate2 v1.1.11
-[1m[92m  Downloaded[0m jiff v0.2.39
-[1m[92m  Downloaded[0m jiff-core v0.1.2
+[1m[92m  Downloaded[0m brotli v9.1.1
+[1m[92m  Downloaded[0m jiff-core v0.1.3
+[1m[92m  Downloaded[0m jiff v0.2.40
 [1m[92m  Downloaded[0m log v0.4.35
 [1m[92m  Downloaded[0m mime v0.3.18
 [1m[92m  Downloaded[0m openssl-probe v0.2.2
@@ -180,11 +180,12 @@ computing gzip size...
 [1m[92m  Downloaded[0m toml v1.2.1+spec-1.1.0
 [1m[92m  Downloaded[0m toml_datetime v1.1.3+spec-1.1.0
 [1m[92m  Downloaded[0m toml_writer v1.2.0+spec-1.1.0
-[1m[92m  Downloaded[0m utf_types v1.0.0
 [1m[92m  Downloaded[0m utf8_iter v1.1.0
+[1m[92m  Downloaded[0m utf_types v1.0.0
 [1m[92m  Downloaded[0m uuid v1.29.1
 [1m[92m  Downloaded[0m winnow v1.0.5
 [1m[92m  Downloaded[0m xattr v1.7.0
+[1m[92m  Downloaded[0m zeroize_derive v1.5.0
 [1m[92m   Compiling[0m smallvec v1.16.5
 [1m[92m   Compiling[0m cc v1.11.1
 [1m[92m   Compiling[0m log v0.4.35
@@ -193,25 +194,25 @@ computing gzip size...
 [1m[92m   Compiling[0m utf8_iter v1.1.0
 [1m[92m   Compiling[0m icu_collections v2.4.0
 [1m[92m   Compiling[0m parking_lot_core v0.9.12
-[1m[92m   Compiling[0m parking_lot v0.12.5
 [1m[92m   Compiling[0m system-deps v6.2.2
+[1m[92m   Compiling[0m parking_lot v0.12.5
 [1m[92m   Compiling[0m icu_properties v2.4.0
 [1m[92m   Compiling[0m icu_normalizer v2.4.0
-[1m[92m   Compiling[0m winnow v1.0.5
 [1m[92m   Compiling[0m glib-sys v0.18.1
 [1m[92m   Compiling[0m gobject-sys v0.18.0
 [1m[92m   Compiling[0m gio-sys v0.18.1
 [1m[92m   Compiling[0m gdk-sys v0.18.2
-[1m[92m   Compiling[0m toml_parser v1.1.5+spec-1.1.0
+[1m[92m   Compiling[0m winnow v1.0.5
 [1m[92m   Compiling[0m string_cache v0.9.0
+[1m[92m   Compiling[0m serde_spanned v1.1.3
+[1m[92m   Compiling[0m toml_datetime v1.1.3+spec-1.1.0
+[1m[92m   Compiling[0m toml_parser v1.1.5+spec-1.1.0
 [1m[92m   Compiling[0m idna_adapter v1.2.2
 [1m[92m   Compiling[0m idna v1.1.0
-[1m[92m   Compiling[0m toml_datetime v1.1.3+spec-1.1.0
-[1m[92m   Compiling[0m serde_spanned v1.1.3
-[1m[92m   Compiling[0m url v2.5.8
 [1m[92m   Compiling[0m toml_writer v1.2.0+spec-1.1.0
-[1m[92m   Compiling[0m toml v1.2.1+spec-1.1.0
 [1m[92m   Compiling[0m uuid v1.29.1
+[1m[92m   Compiling[0m url v2.5.8
+[1m[92m   Compiling[0m toml v1.2.1+spec-1.1.0
 [1m[92m   Compiling[0m web_atoms v0.2.6
 [1m[92m   Compiling[0m cssparser v0.37.0
 [1m[92m   Compiling[0m cfb v0.14.0
@@ -236,9 +237,9 @@ computing gzip size...
 [1m[92m   Compiling[0m embed-resource v3.0.12
 [1m[92m   Compiling[0m tauri-winres v0.3.7
 [1m[92m   Compiling[0m cargo_toml v1.0.1
+[1m[92m   Compiling[0m flate2 v1.1.11
 [1m[92m    Checking[0m gio v0.18.4
 [1m[92m    Checking[0m cairo-rs v0.18.5
-[1m[92m   Compiling[0m flate2 v1.1.11
 [1m[92m   Compiling[0m soup3-sys v0.5.0
 [1m[92m   Compiling[0m javascriptcore-rs-sys v1.1.1
 [1m[92m   Compiling[0m gtk v0.18.2
@@ -251,13 +252,13 @@ computing gzip size...
 [1m[92m   Compiling[0m tauri-plugin v2.7.2
 [1m[92m   Compiling[0m tauri-build v2.7.4
 [1m[92m   Compiling[0m png v0.18.1
+[1m[92m   Compiling[0m rustls v0.23.46
+[1m[92m   Compiling[0m wry v0.57.1
 [1m[92m    Checking[0m pango v0.18.3
 [1m[92m    Checking[0m gdk-pixbuf v0.18.5
 [1m[92m    Checking[0m soup3 v0.5.0
 [1m[92m    Checking[0m gdk v0.18.2
 [1m[92m   Compiling[0m tauri v2.12.5
-[1m[92m   Compiling[0m wry v0.57.1
-[1m[92m   Compiling[0m rustls v0.23.46
 [1m[92m   Compiling[0m ico v0.6.0
 [1m[92m    Checking[0m rustls-webpki v0.103.16
 [1m[92m    Checking[0m gdkwayland-sys v0.18.2
@@ -278,13 +279,13 @@ computing gzip size...
 [1m[92m   Compiling[0m bzip2 v0.4.4
 [1m[92m    Checking[0m tokio-rustls v0.26.6
 [1m[92m    Checking[0m openssl-probe v0.2.2
-[1m[92m    Checking[0m hyper-rustls v0.27.10
 [1m[92m    Checking[0m rustls-native-certs v0.8.5
+[1m[92m    Checking[0m hyper-rustls v0.27.10
 [1m[92m    Checking[0m tower-http v0.6.11
 [1m[92m   Compiling[0m tauri-plugin-dialog v2.8.4
 [1m[92m   Compiling[0m tauri-plugin-global-shortcut v2.4.1
-[1m[92m   Compiling[0m tauri-plugin-updater v2.14.1
 [1m[92m   Compiling[0m sherpa-rs-sys v0.6.8
+[1m[92m   Compiling[0m tauri-plugin-updater v2.14.1
 [1m[92m    Checking[0m gethostname v1.1.0
 [1m[92m   Compiling[0m rfd v0.17.2
 [1m[92m    Checking[0m x11rb v0.13.2
@@ -296,13 +297,13 @@ computing gzip size...
 [1m[92m   Compiling[0m leitwerk v0.114.1 (/home/runner/work/leitwerk/leitwerk/src-tauri)
 [1m[92m    Checking[0m reqwest v0.12.28
 [1m[92m    Checking[0m tungstenite v0.24.0
+[1m[92m    Checking[0m zip v4.6.1 (https://github.com/zip-rs/zip2?tag=v4.6.1#56fa5f6e)
 [1m[92m    Checking[0m webkit2gtk v2.0.2
 [1m[92m    Checking[0m tao v0.37.2
 [1m[92m    Checking[0m muda v0.20.0
-[1m[92m    Checking[0m zip v4.6.1 (https://github.com/zip-rs/zip2?tag=v4.6.1#56fa5f6e)
 [1m[92m    Checking[0m tauri-runtime v2.12.2
-[1m[92m    Checking[0m sherpa-rs v0.6.8
 [1m[92m    Checking[0m tauri-runtime-wry v2.12.3
+[1m[92m    Checking[0m sherpa-rs v0.6.8
 [1m[92m   Compiling[0m whisper-rs v0.14.4
 [1m[33mwarning[0m[1m: unused import: `cpal::Sample`[0m
    [1m[94m--> [0msrc/sprache.rs:324:5
@@ -313,7 +314,7 @@ computing gzip size...
     [1m[94m= [0m[1mnote[0m: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
 
 [1m[33mwarning[0m: `leitwerk` (lib) generated 1 warning
-[1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 1m 22s
+[1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 1m 15s
 ### python3 tools/build_default_data.py
 data/default/dienststellen.csv: 863 Zeilen
 data/default/fahrzeuge.csv: 681 Zeilen
