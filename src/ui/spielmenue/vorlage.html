@@ -1,0 +1,287 @@
+<div class="sm-r" style="height: {{smH}}px;">
+  <div class="sm-dunkel"></div>
+  <div class="sm-in" style="min-height: {{smH}}px;">
+
+    <div class="sm-kopf">
+      <div>
+        <img src="{{logoUrl}}" alt="LeitWerk" style="width: 176px; height: 46px; display: block;">
+        <div class="sm-label">{{smLabel}}</div>
+      </div>
+      <div class="sm-leiste">
+        <span class="sm-zelle">Spielzeit <b>{{uhr}}</b><sc-if value="{{wetterDa}}" hint-placeholder-val="{{true}}"> · {{wetter}}</sc-if></span>
+        <span class="sm-trenn"></span>
+        <span class="sm-zelle"><span class="sm-dot" style="background: {{zustandFarbe}};"></span>{{zustandText}}</span>
+        <sc-if value="{{pauseDa}}" hint-placeholder-val="{{false}}">
+          <button class="sm-ghost sm-k" onClick="{{pauseKlick}}">{{pauseText}}</button>
+        </sc-if>
+        <span class="sm-trenn"></span>
+        <sc-if value="{{nichtPilot}}" hint-placeholder-val="{{true}}"><span class="sm-zelle">{{einsText}}<sc-if value="{{verpasstDa}}" hint-placeholder-val="{{false}}"> · <span style="color: #FFC72C;">{{verpasstText}}</span></sc-if></span></sc-if><sc-if value="{{istPilot}}" hint-placeholder-val="{{false}}"><span class="sm-zelle">{{pilotText}}</span></sc-if>
+      </div>
+    </div>
+
+    <div class="{{listeCls}}" style="--kh: {{karteH}}px;">
+
+      <sc-if value="{{mpHinweis}}" hint-placeholder-val="{{false}}">
+        <div class="sm-strip sm-gelb" style="max-width: 560px; margin-bottom: 14px;">
+          <span>Im Multiplayer läuft das Spiel weiter, während du hier bist.</span>
+        </div>
+      </sc-if>
+
+      <!-- 01 Weiterspielen -->
+      <div class="{{p1.cls}}">
+        <button class="sm-nav" onClick="{{p1.auf}}" aria-expanded="false">
+          <span class="sm-no">01</span>
+          <span class="sm-tx"><span class="sm-lb">{{p1lb}}</span><span class="sm-sb">{{p1sb}}</span></span>
+          <span class="sm-ar">›</span>
+        </button>
+      </div>
+
+<sc-if value="{{nichtPilot}}" hint-placeholder-val="{{true}}">
+      <!-- 02 Spielstand -->
+      <div class="{{p2.cls}}">
+        <button class="sm-nav" onClick="{{p2.auf}}" aria-expanded="{{p2.exp}}">
+          <span class="sm-no">02</span>
+          <span class="sm-tx"><span class="sm-lb">Spielstand</span><span class="sm-sb">{{p2.sub}}</span></span>
+          <span class="sm-ar">›</span>
+        </button>
+        <div class="sm-lade"><div class="sm-lade-in"><div class="sm-karte">
+            <div class="sm-karte-in sm-zwei">
+              <div>
+                <p class="sm-h3">{{st.speichernTitel}}</p>
+                <label for="sm-name" style="display: block; font-size: 13px; color: #C4CAD6; margin-bottom: 6px;">Name</label>
+                <div class="sm-reihe" style="flex-wrap: nowrap;">
+                  <input id="sm-name" class="sm-feld" value="{{st.name}}" onChange="{{st.setName}}" onKeyDown="{{st.nameKey}}">
+                  <button class="{{st.speichernCls}}" onClick="{{speichern}}">Speichern</button>
+                </div>
+                <sc-if value="{{gespeichertDa}}" hint-placeholder-val="{{false}}">
+                  <div style="margin-top: 10px;"><span class="{{gespeichertCls}}">{{gespeichert}}</span></div>
+                </sc-if>
+                <p style="font-size: 13px; color: #9AA3B5; line-height: 1.5; margin: 10px 0 22px;">{{st.speichernHinweis}}</p>
+                <p class="sm-h3">Automatische Sicherung</p>
+                <div class="sm-zeile sm-erste">
+                  <div><div class="sm-zt">Jede Minute sichern</div><div class="sm-zh">{{st.autoText}}</div></div>
+                  <span class="sm-chip sm-ok">immer an</span>
+                </div>
+              </div>
+              <div>
+                <div class="sm-reihe" style="justify-content: space-between; margin-bottom: 4px;">
+                  <p class="sm-h3" style="margin: 0;">Spielstände</p>
+                  <sc-if value="{{st.ordnerDa}}" hint-placeholder-val="{{true}}"><button class="sm-ghost sm-k" onClick="{{st.ordner}}">Ordner öffnen</button></sc-if>
+                </div>
+                <sc-if value="{{st.ladenGesperrt}}" hint-placeholder-val="{{false}}">
+                  <div class="sm-strip" style="margin: 8px 0;"><span>Laden kann nur der Host. Du kannst dir den Stand als Kopie speichern.</span></div>
+                </sc-if>
+                <sc-if value="{{ladeFrage}}" hint-placeholder-val="{{false}}">
+                  <div class="sm-strip sm-rot" style="margin: 8px 0;">
+                    <span>{{st.ladeText}}</span>
+                    <span class="sm-reihe" style="flex-wrap: nowrap;"><button class="sm-ghost sm-k" onClick="{{ladenNein}}">Abbrechen</button><button class="sm-ghost sm-k sm-ja" onClick="{{ladenJa}}">Laden</button></span>
+                  </div>
+                </sc-if>
+                <sc-if value="{{st.fehlerDa}}" hint-placeholder-val="{{false}}"><div class="sm-strip sm-rot" style="margin: 8px 0;"><span>{{st.fehler}}</span></div></sc-if>
+                <sc-for list="{{saves}}" as="s" hint-placeholder-count="3">
+                  <div class="sm-stand">
+                    <div><div class="sm-sn">{{s.name}}</div><div class="sm-sm2">{{s.info}}</div></div>
+                    <button class="{{st.ladeKnopf}}" onClick="{{s.laden}}">Laden</button>
+                  </div>
+                </sc-for>
+                <sc-if value="{{savesLeer}}" hint-placeholder-val="{{false}}"><p style="font-size: 13px; color: #9AA3B5; line-height: 1.5; margin: 10px 0 0;">Noch keine Spielstände. Sobald ein Einsatz läuft, sichert LeitWerk jede Minute automatisch.</p></sc-if>
+              </div>
+            </div>
+        </div></div></div>
+      </div>
+
+</sc-if>
+<sc-if value="{{istPilot}}" hint-placeholder-val="{{false}}">
+      <!-- 02 Hubschrauber wechseln (nur Pilot) -->
+      <div class="{{p2.cls}}">
+        <button class="sm-nav" onClick="{{p2.auf}}" aria-expanded="{{p2.exp}}">
+          <span class="sm-no">02</span>
+          <span class="sm-tx"><span class="sm-lb">Hubschrauber wechseln</span><span class="sm-sb">{{heliSub}}</span></span>
+          <span class="sm-ar">›</span>
+        </button>
+        <div class="sm-lade"><div class="sm-lade-in"><div class="sm-karte">
+            <div class="sm-karte-in sm-zwei">
+              <div>
+                <p class="sm-h3">Dein Hubschrauber</p>
+                <p style="font-size: 15px; color: #C4CAD6; line-height: 1.55; margin: 0 0 14px;">Wechseln gibt deinen Hubschrauber ab – die Leitstelle disponiert ihn dann wieder selbst, der Computer fliegt ihn. Im Einsatz geht das erst nach Status 1 oder 6.</p>
+                <sc-if value="{{heliFrage}}" hint-placeholder-val="{{false}}"><div class="sm-strip" style="margin-bottom: 12px;"><span>{{heliFrageText}}</span><span class="sm-reihe" style="flex-wrap: nowrap;"><button class="sm-ghost sm-k" onClick="{{heliNein}}">Abbrechen</button><button class="sm-ghost sm-k sm-ja" onClick="{{heliJa}}">Wechseln</button></span></div></sc-if>
+                <sc-if value="{{heliFehlerDa}}" hint-placeholder-val="{{false}}"><div class="sm-strip sm-rot" style="margin-bottom: 12px;"><span>{{heliFehler}}</span></div></sc-if>
+                <p style="font-size: 13px; color: #9AA3B5; margin: 0;">Hubschrauber, die nur bei Tag fliegen, kannst du nachts nehmen – alarmiert werden sie aber erst wieder bei Tag.</p>
+              </div>
+              <div>
+                <p class="sm-h3">Hubschrauber</p>
+                <sc-for list="{{helis}}" as="h" hint-placeholder-count="4"><div class="sm-stand"><div><div class="{{h.nCls}}">{{h.n}}</div><div class="sm-sm2">{{h.info}}</div></div><sc-if value="{{h.waehlbar}}" hint-placeholder-val="{{true}}"><button class="sm-ghost sm-k" onClick="{{h.waehle}}">Übernehmen</button></sc-if><sc-if value="{{h.nichtWaehlbar}}" hint-placeholder-val="{{false}}"><span class="{{h.chipCls}}">{{h.chip}}</span></sc-if></div></sc-for>
+              </div>
+            </div>
+        </div></div></div>
+      </div>
+
+</sc-if>
+      <!-- 03 Einstellungen -->
+      <div class="{{p3.cls}}">
+        <button class="sm-nav" onClick="{{p3.auf}}" aria-expanded="{{p3.exp}}">
+          <span class="sm-no">03</span>
+          <span class="sm-tx"><span class="sm-lb">Einstellungen</span><span class="sm-sb">{{p3.sub}}</span></span>
+          <span class="sm-ar">›</span>
+        </button>
+        <div class="sm-lade"><div class="sm-lade-in"><div class="sm-karte">
+            <div class="sm-karte-in">
+<div class="{{wCls}}" style="width: {{einB}}px; height: {{einH}}px;">
+<!--EINSTELLUNGSSEITEN-->
+<sc-if value="{{toastDa}}" hint-placeholder-val="{{false}}"><div class="ein-toast">{{toast}}</div></sc-if>
+</div>
+            </div>
+        </div></div></div>
+      </div>
+
+      <!-- 04 Multiplayer -->
+      <div class="{{p4.cls}}">
+        <button class="sm-nav" onClick="{{p4.auf}}" aria-expanded="{{p4.exp}}">
+          <span class="sm-no">04</span>
+          <span class="sm-tx"><span class="sm-lb">Multiplayer</span><span class="sm-sb">{{p4.sub}}</span></span>
+          <span class="sm-ar">›</span>
+        </button>
+        <div class="sm-lade"><div class="sm-lade-in"><div class="sm-karte">
+            <div class="sm-karte-in">
+
+              <sc-if value="{{istSolo}}" hint-placeholder-val="{{true}}">
+                <div class="sm-zwei">
+                  <div>
+                    <p class="sm-h3">Mitspieler einladen</p>
+                    <p style="font-size: 15px; color: #C4CAD6; line-height: 1.55; margin: 0 0 18px;">Freunde treten diesem Spiel mit einem 6-stelligen Code bei – als Disponent oder als Pilot. Die Simulation läuft auf deinem Rechner, deine Einsätze bleiben.</p>
+                    <div class="sm-reihe"><button class="{{mp.lobbyCls}}" onClick="{{mp.lobbyAuf}}">{{mp.lobbyText}}</button></div>
+                    <sc-if value="{{mp.fehlerDa}}" hint-placeholder-val="{{false}}"><div class="sm-strip sm-rot" style="margin-top: 12px;"><span>{{mp.fehler}}</span></div></sc-if>
+                  </div>
+                  <div>
+                    <p class="sm-h3">Plätze</p>
+                    <div class="sm-stand"><div><div class="sm-sn">{{mp.ichName}}</div><div class="sm-sm2">{{mp.ichPlatz}}</div></div><span class="sm-chip sm-ok">bereit</span></div>
+                    <div class="sm-stand"><div><div class="sm-sn sm-weg">Freier Platz</div><div class="sm-sm2">Disponent oder Pilot</div></div><span class="sm-chip">offen</span></div>
+                    <div class="sm-stand"><div><div class="sm-sn sm-weg">Freier Platz</div><div class="sm-sm2">Bis zu 6 Spieler</div></div><span class="sm-chip">offen</span></div>
+                  </div>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{istHost}}" hint-placeholder-val="{{false}}">
+                <div>
+                  <div class="sm-reihe" style="justify-content: space-between; margin-bottom: 18px;">
+                    <div class="sm-reihe" style="gap: 18px;">
+                      <div><p class="sm-h3" style="margin-bottom: 6px;">Code</p><div class="sm-code">{{mp.code}}</div></div>
+                      <button class="sm-ghost sm-k" onClick="{{mp.kopieren}}">{{mp.kopierText}}</button>
+                      <span class="{{mp.lobbyChipCls}}">{{mp.lobbyChip}}</span>
+                    </div>
+                    <sc-if value="{{lobbyFrage}}" hint-placeholder-val="{{false}}">
+                      <div class="sm-strip sm-rot">
+                        <span>{{mp.lobbyZuText}}</span>
+                        <span class="sm-reihe" style="flex-wrap: nowrap;"><button class="sm-ghost sm-k" onClick="{{lobbyNein}}">Abbrechen</button><button class="sm-ghost sm-k sm-ja" onClick="{{lobbyZu}}">Lobby schließen</button></span>
+                      </div>
+                    </sc-if>
+                    <sc-if value="{{lobbyKnopf}}" hint-placeholder-val="{{true}}">
+                      <button class="sm-ghost sm-rot" onClick="{{lobbyJa}}">Lobby schließen</button>
+                    </sc-if>
+                  </div>
+                  <sc-if value="{{mp.uebergabeFrage}}" hint-placeholder-val="{{false}}">
+                    <div class="sm-strip" style="margin-bottom: 12px;"><span>{{mp.uebergabeText}}</span><span class="sm-reihe" style="flex-wrap: nowrap;"><button class="sm-ghost sm-k" onClick="{{mp.uebergabeNein}}">Abbrechen</button><button class="sm-ghost sm-k sm-ja" onClick="{{mp.uebergabeJa}}">Übergeben</button></span></div>
+                  </sc-if>
+                  <div style="overflow-x: auto;">
+                    <table class="sm-tab-sp">
+                      <thead><tr><th>Spieler</th><th>Platz</th><th>Verbindung</th><th class="sm-c">Disponieren</th><th class="sm-c">KT</th><th class="sm-c">Simulation steuern</th><th class="sm-c">Einstellungen &amp; Daten</th><th></th></tr></thead>
+                      <tbody>
+                        <sc-for list="{{mp.spieler}}" as="x" hint-placeholder-count="3">
+                          <tr><td><b class="{{x.nameCls}}">{{x.name}}</b><sc-if value="{{x.ich}}" hint-placeholder-val="{{false}}"> <span style="color: #9AA3B5;">(du)</span></sc-if><sc-if value="{{x.host}}" hint-placeholder-val="{{false}}"> <span class="sm-chip sm-gelb" style="margin-left: 6px;">Host</span></sc-if></td><td class="{{x.platzCls}}">{{x.platz}}</td><td><span style="color: {{x.verbFarbe}};">{{x.verb}}</span></td>
+                            <sc-for list="{{x.rechte}}" as="r" hint-placeholder-count="4"><td class="sm-c"><button class="{{r.cls}}" aria-pressed="{{r.an}}" aria-label="{{r.aria}}" onClick="{{r.flip}}">✓</button></td></sc-for>
+                            <td style="text-align: right; white-space: nowrap;"><sc-if value="{{x.uebergebenDa}}" hint-placeholder-val="{{false}}"><button class="sm-ghost sm-k" onClick="{{x.uebergeben}}">Host übergeben</button></sc-if></td></tr>
+                        </sc-for>
+                      </tbody>
+                    </table>
+                  </div>
+                  <p style="font-size: 12px; color: #9AA3B5; margin: 12px 0 0;">Rechte gelten sofort. Wer „Einstellungen &amp; Daten“ hat, darf auch Fahrzeuge, Dienststellen und Krankenhäuser ändern.</p>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{istGast}}" hint-placeholder-val="{{false}}">
+                <div class="sm-zwei">
+                  <div>
+                    <p class="sm-h3">Du spielst mit</p>
+                    <p style="font-size: 15px; color: #C4CAD6; line-height: 1.55; margin: 0 0 6px;">Bei <b style="color: #F5F7FA;">{{mp.host}}</b> · Code {{mp.code}} · {{mp.ichPlatz}}</p>
+                    <p style="font-size: 13px; color: #9AA3B5; margin: 0 0 18px;">{{mp.verbText}}</p>
+                    <sc-if value="{{mp.verlassenFrage}}" hint-placeholder-val="{{false}}"><div class="sm-strip" style="margin-bottom: 12px;"><span>{{mp.verlassenText}}</span><span class="sm-reihe" style="flex-wrap: nowrap;"><button class="sm-ghost sm-k" onClick="{{mp.verlassenNein}}">Abbrechen</button><button class="sm-ghost sm-k sm-ja" onClick="{{mp.verlassenJa}}">Verlassen</button></span></div></sc-if>
+                    <div class="sm-reihe"><button class="sm-ghost sm-rot" onClick="{{mp.verlassen}}">Spiel verlassen</button><sc-if value="{{mp.hostWegDa}}" hint-placeholder-val="{{false}}"><button class="sm-btn" onClick="{{mp.hostUebernehmen}}">Als Host übernehmen</button></sc-if></div>
+                  </div>
+                  <div>
+                    <p class="sm-h3">Deine Rechte</p>
+                    <sc-for list="{{mp.meineRechte}}" as="r" hint-placeholder-count="4"><div class="sm-stand"><div><div class="sm-sn">{{r.name}}</div><div class="sm-sm2">{{r.info}}</div></div><sc-if value="{{r.an}}" hint-placeholder-val="{{true}}"><span class="sm-chip sm-ok">erlaubt</span></sc-if><sc-if value="{{r.angefragt}}" hint-placeholder-val="{{false}}"><span class="sm-chip">angefragt</span></sc-if><sc-if value="{{r.anfragbar}}" hint-placeholder-val="{{false}}"><button class="sm-ghost sm-k" onClick="{{r.anfragen}}">Anfragen</button></sc-if></div></sc-for>
+                  </div>
+                </div>
+              </sc-if>
+
+            </div>
+        </div></div></div>
+      </div>
+
+<sc-if value="{{nichtPilot}}" hint-placeholder-val="{{true}}">
+      <!-- 05 Fälle -->
+      <div class="{{p6.cls}}">
+        <button class="sm-nav" onClick="{{p6.auf}}" aria-expanded="{{p6.exp}}">
+          <span class="sm-no">05</span>
+          <span class="sm-tx"><span class="sm-lb">Fälle</span><span class="sm-sb">{{p6.sub}}</span></span>
+          <span class="sm-ar">›</span>
+        </button>
+        <div class="sm-lade"><div class="sm-lade-in"><div class="sm-karte">
+            <div class="sm-karte-in sm-zwei">
+              <div>
+                <p class="sm-h3">Fall-Editor</p>
+                <p style="font-size: 15px; color: #C4CAD6; line-height: 1.55; margin: 0 0 18px;">Eigene Notrufe und Transporte schreiben: Anrufer, Antworten in der Abfrage, Ort, Patient und was vor Ort passiert. Der Editor prüft, ob der Fall durchspielbar ist.</p>
+                <div class="sm-reihe"><button class="sm-btn" onClick="{{faelle.oeffnen}}">Fall-Editor öffnen</button><button class="sm-ghost" style="height: 44px; padding: 0 18px;" onClick="{{faelle.neu}}">Neuer Fall</button></div>
+                <sc-if value="{{istGast}}" hint-placeholder-val="{{false}}"><p style="font-size: 13px; color: #9AA3B5; line-height: 1.5; margin: 14px 0 0;">Deine Fälle bleiben auf deinem Rechner. Ins laufende Spiel kommen sie nur, wenn der Host sie übernimmt.</p></sc-if>
+                <sc-if value="{{faelle.mehr}}" hint-placeholder-val="{{true}}"><p style="font-size: 13px; color: #9AA3B5; line-height: 1.5; margin: 14px 0 0;">Neue und geänderte Fälle kommen ab dem nächsten passenden Anruf ins Spiel.</p></sc-if>
+              </div>
+              <div>
+                <div class="sm-reihe" style="justify-content: space-between; margin-bottom: 4px;">
+                  <p class="sm-h3" style="margin: 0;">Meine Fälle</p>
+                  <span class="sm-reihe" style="flex-wrap: nowrap;"><button class="sm-ghost sm-k" onClick="{{faelle.importieren}}">Importieren</button><button class="sm-ghost sm-k" onClick="{{faelle.exportieren}}">Exportieren</button></span>
+                </div>
+                <sc-if value="{{faelle.meldungDa}}" hint-placeholder-val="{{false}}"><div style="margin: 6px 0;"><span class="{{faelle.meldungCls}}">{{faelle.meldung}}</span></div></sc-if>
+                <sc-for list="{{faelle.liste}}" as="f" hint-placeholder-count="3"><div class="sm-stand sm-fall" onClick="{{f.oeffnen}}"><div><div class="sm-sn">{{f.name}}</div><div class="sm-sm2">{{f.info}}</div></div><span class="{{f.chipCls}}">{{f.chip}}</span></div></sc-for>
+                <sc-if value="{{faelle.leer}}" hint-placeholder-val="{{false}}"><p style="font-size: 13px; color: #9AA3B5; line-height: 1.5; margin: 10px 0 0;">Noch keine eigenen Fälle. „Neuer Fall“ legt einen an – leer oder als Entwurf der KI.</p></sc-if>
+              </div>
+            </div>
+        </div></div></div>
+      </div>
+
+</sc-if>
+      <!-- 06 Zum Hauptmenü -->
+      <div class="{{p5.cls}}">
+        <button class="sm-nav" onClick="{{p5.auf}}" aria-expanded="{{p5.exp}}">
+          <span class="sm-no">{{nrHm}}</span>
+          <span class="sm-tx"><span class="sm-lb">Zum Hauptmenü</span><span class="sm-sb">{{p5.sub}}</span></span>
+          <span class="sm-ar">›</span>
+        </button>
+        <div class="sm-frage-lade"><div class="sm-frage-in">
+          <div class="{{hm.cls}}">
+            <span>{{hm.text}}</span>
+            <span class="sm-reihe" style="flex-wrap: nowrap;"><button class="sm-ghost sm-k" onClick="{{zu}}">Abbrechen</button><button class="sm-ghost sm-k sm-ja" onClick="{{hm.go}}">{{hm.ja}}</button></span>
+          </div>
+        </div></div>
+      </div>
+
+    </div>
+
+    <div class="{{beendenCls}}" style="margin-top: auto;">
+      <div class="sm-frage-lade"><div class="sm-frage-in">
+        <div class="sm-strip sm-rot">
+          <span>{{beendenText}}</span>
+          <span class="sm-reihe" style="flex-wrap: nowrap;"><button class="sm-ghost sm-k" onClick="{{zu}}">Abbrechen</button><button class="sm-ghost sm-k sm-ja" onClick="{{beendenJa}}">Beenden</button></span>
+        </div>
+      </div></div>
+    </div>
+    <div class="sm-fuss" style="margin-top: 0;">
+      <button class="sm-fuss-b" onClick="{{beenden}}" aria-expanded="{{beendenExp}}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 3v9"></path><path d="M6.4 6.4a8 8 0 1 0 11.2 0"></path></svg>
+        LeitWerk beenden
+      </button>
+      <span><span class="sm-taste">Esc</span>zurück ins Spiel</span>
+      <span>{{versionText}} · Nur eine Simulation – keine echten Einsätze</span>
+    </div>
+
+  </div>
+</div>

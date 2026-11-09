@@ -277,6 +277,13 @@ class Mehrspieler {
     this.sendeRoh({ t: "host-anfrage" });
   }
 
+  /** Mitspieler bittet den Host um ein Recht (Spielmenü: „Anfragen“ / „Recht anfragen“) – der Host bekommt eine Meldung */
+  rechtAnfragen(r: Berechtigung): boolean {
+    if (this.status.rolle !== "client" || !this.status.hostDa) return false;
+    this.sendeRoh({ t: "recht-anfrage", r });
+    return true;
+  }
+
   /** Host gibt die Host-Rolle an einen Mitspieler ab, ohne dass jemand die Verbindung verliert */
   hostUebergeben(pid: string): void {
     if (this.status.rolle !== "host") return;
@@ -742,6 +749,11 @@ class Mehrspieler {
     }
     if (m.t === "host-anfrage") {
       for (const fn of this.anfrageListeners) fn(pid, s?.name ?? name);
+      return;
+    }
+    if (m.t === "recht-anfrage") {
+      const r = String(m.r) as Berechtigung;
+      if (RECHTE_LABEL[r]) this.melden(`${s?.name ?? name} bittet um das Recht „${RECHTE_LABEL[r]}“ – vergeben im Spielmenü unter Multiplayer`);
       return;
     }
     try {

@@ -11,11 +11,10 @@
  * Fenster darunter heraus. Zu: erst hoch, dann wird der Reiter schmal, dann kommen die Beschriftungen zurück.
  */
 import "./kopfleiste.css";
-import { einstellungenFenster, type EinstellungenFenster } from "./einstellungen";
+import { spielmenueEinstellungen, spielmenueEscEinrichten, spielmenueOeffnen } from "../spielmenue";
 import { store } from "../../data/store";
 import { mp } from "../../net/mehrspieler";
 import { sim } from "../../sim/engine";
-import { fallEditorOeffnen } from "../fallEditor";
 import { fehlerBerichtSpeichern } from "../fehlerMelden";
 import { ensureCodes } from "../codesPrompt";
 import { el, esc, toast } from "../dom";
@@ -35,14 +34,11 @@ import {
   woOffen,
 } from "./arbeitsplatz";
 import { FENSTER_ID, IST_HAUPT } from "./bus";
-import { karteWaehlen, karteZeigen } from "./auswahl";
+import { karteWaehlen } from "./auswahl";
 import { fensterSchliessen } from "./nebenfenster";
 import { onPers, pers, setzePers } from "./persoenlich";
 import { logoMarke } from "../logo";
-import { hauptmenueZeigen } from "../hauptmenue";
-import { confirmDialog } from "../dialog";
 import { jetztSichern } from "../../net/spielstand";
-import { oeffneSpielDialog } from "../spielDialog";
 import { mb, onUpdate, updateImHintergrund, updateInfo, updateStand, updateStandZuruecksetzen } from "../updateDienst";
 import {
   anordnungBild,
@@ -59,38 +55,27 @@ import {
   type WetterReiter,
 } from "./kopfleisteInhalt";
 
-// ---------------------------------------------------------------- Einstellungen (ein Fenster für alles)
+// ---------------------------------------------------------------- Einstellungen (im Spielmenü, dieselben Seiten wie im Hauptmenü)
 
-let fenster: EinstellungenFenster | null = null;
-
-/** Ort auf der Karte wählen, während die Einstellungen offen sind (Pop-up kurz ausblenden) */
+/** Ort auf der Karte wählen, während ein Menü offen ist (Spielmenü kurz ausblenden) */
 async function waehlenAusPopup(hinweis: string): Promise<{ lat: number; lon: number } | null> {
-  const offen = fenster && !fenster.overlay.hidden ? fenster : null;
-  if (offen) offen.overlay.hidden = true;
-  const r = await karteWaehlen(hinweis);
-  if (offen) offen.overlay.hidden = false;
-  return r;
-}
-
-function fensterHolen(): EinstellungenFenster {
-  fenster ??= einstellungenFenster({
-    pickOnMap: waehlenAusPopup,
-    showOnMap: (lat, lon) => {
-      fenster?.verstecken();
-      karteZeigen(lat, lon, 14);
-    },
-  });
-  return fenster;
+  const m = document.querySelector<HTMLElement>(".smw-wurzel");
+  if (m) m.style.visibility = "hidden";
+  try {
+    return await karteWaehlen(hinweis);
+  } finally {
+    if (m) m.style.visibility = "";
+  }
 }
 
 /** Einstellungen bei den Daten öffnen (Fahrzeuge, Dienststellen …); seite z. B. „codes“ */
 export function datenOeffnen(seite = "fahrzeuge"): void {
-  fensterHolen().zeigen(seite);
+  spielmenueEinstellungen(seite);
 }
 
-/** Einstellungen öffnen – optional gleich auf einer Seite (z. B. „telefon“, „fahrzeuge“; alte Reiternamen gehen auch) */
+/** Einstellungen öffnen – optional gleich auf einer Seite (z. B. „telefon“, „fahrzeuge“; alte Seitennamen gehen auch) */
 export function einstellungenOeffnen(seite?: string): void {
-  fensterHolen().zeigen(seite);
+  spielmenueEinstellungen(seite);
 }
 
 // ---------------------------------------------------------------- Hilfen
@@ -148,6 +133,7 @@ const ohneAnimation = () => document.documentElement.classList.contains("ohne-an
 
 export function steuerleisteBauen(kopf: HTMLElement): void {
   setzeEditorDeps({ pickOnMap: waehlenAusPopup });
+  if (IST_HAUPT) spielmenueEscEinrichten();
   kopf.className = `kl-leiste${IST_HAUPT ? "" : " kl-zweit-leiste"}`;
   kopf.setAttribute("aria-label", "Kopfleiste");
 
@@ -156,7 +142,7 @@ export function steuerleisteBauen(kopf: HTMLElement): void {
 
   if (IST_HAUPT) {
     kopf.innerHTML = `
-      <div class="kl-anker li" data-lade="spiel"><button type="button" class="kl-marke" data-knopf="spiel" title="Spiel: Einstellungen, Fälle, Spielstand, Hauptmenü" aria-haspopup="true" aria-expanded="false">${logoMarke(28)}<span class="kl-lab kl-marke-lab" data-lab="marke"><span>Leit<span class="kl-werk">Werk</span></span></span>${ic(IC.menue)}</button></div>
+      <div class="kl-anker li" data-lade="spiel"><button type="button" class="kl-marke" data-knopf="spiel" title="Spielmenü: Spielstand, Einstellungen, Multiplayer, Fälle, Hauptmenü (Esc)" aria-haspopup="dialog" aria-expanded="false">${logoMarke(28)}<span class="kl-lab kl-marke-lab" data-lab="marke"><span>Leit<span class="kl-werk">Werk</span></span></span>${ic(IC.menue)}</button></div>
       <div class="kl-gr">
         <button type="button" class="kn sm kl-pause" data-knopf="pause">${ic(IC.pause)}<span class="kl-lab kl-pause-lab" data-lab="pause">Pause</span></button>
         <div class="segs kl-tempo kl-leiste-tempo" role="group" aria-label="Zeitraffer" style="--n:4;--i:0">${TEMPI.map((t) => `<button type="button" class="seg" data-tempo="${t}">${t}×</button>`).join("")}</div>
@@ -450,7 +436,6 @@ export function steuerleisteBauen(kopf: HTMLElement): void {
     else if (k === "mehr") pop.innerHTML = mehrHtml();
     else if (k === "update") pop.innerHTML = updateHtml();
     else if (k === "fehler") pop.innerHTML = fehlerHtml();
-    else if (k === "spiel") pop.innerHTML = spielHtml();
     zeichnen();
   }
 
@@ -610,40 +595,11 @@ export function steuerleisteBauen(kopf: HTMLElement): void {
       <div class="kl-uknopf kl-z" style="--d:3"><button type="button" class="kn sm" data-aktion="zu">Abbrechen</button><button type="button" class="kn sm prim" data-aktion="fehler-speichern">Datei speichern …</button></div>`;
   }
 
-  /*
-   * VORLÄUFIG, bis es das Spielmenü gibt (Entwurf „LeitWerk Spielmenü“): Die Knöpfe Fälle, Einstellungen und
-   * Spiel sind laut Entwurf aus der Leiste weg und kommen ins Spielmenü (Logo bzw. Esc). Bis das gebaut ist,
-   * öffnet das Logo diese kleine Schublade mit denselben Zielen wie bisher.
-   */
-  function spielHtml(): string {
-    let d = 0;
-    return `<div class="kl-pkopf">Spiel</div>
-      ${zeile({ symbol: IC.zahnrad, name: "Einstellungen", info: "Mein Platz, Spiel & Simulation, Leitstelle, Programm", d: d++, attr: ` data-aktion="einstellungen"` })}
-      ${zeile({ symbol: IC.buch, name: "Fälle", info: "Fall-Editor: ansehen, schreiben, prüfen, importieren", d: d++, attr: ` data-aktion="faelle"` })}
-      ${zeile({ symbol: IC.leute, name: "Spielstand & Multiplayer", info: "Speichern, laden, Mitspieler einladen", d: d++, attr: ` data-aktion="spielstand"` })}
-      <div class="kl-trenn"></div>
-      ${zeile({ symbol: IC.tuer, name: "Zum Hauptmenü", info: "Spiel sichern und beenden", d: d++, attr: ` data-aktion="hauptmenue"` })}`;
-  }
-
   // ---------------------------------------------------------------- Bedienen (ein Hörer für alles)
 
   const zuNach = (fn: () => void) => () => {
     schliessen();
     fn();
-  };
-
-  // Bis es das Pausenmenü gibt: Spiel sichern und beenden, dann das Hauptmenü (weiter geht es über „Fortsetzen“)
-  const zurStart = async () => {
-    const ok = await confirmDialog("Zum Hauptmenü", "Das Spiel wird beendet. Laufende Einsätze werden vorher gesichert – weiterspielen kannst du dann im Hauptmenü unter „Spiel starten → Fortsetzen“.", "Sichern und beenden");
-    if (!ok) return;
-    try {
-      await jetztSichern();
-    } catch (e) {
-      console.warn("Sichern vor dem Hauptmenü", e);
-    }
-    sim.pause();
-    if (mp.status.rolle !== "aus") mp.verlassen();
-    hauptmenueZeigen(undefined, { splash: false });
   };
 
   const updateLos = () => {
@@ -666,10 +622,6 @@ export function steuerleisteBauen(kopf: HTMLElement): void {
 
   const aktionen: Record<string, () => void> = {
     zu: () => schliessen(),
-    einstellungen: zuNach(() => einstellungenOeffnen()),
-    faelle: zuNach(() => fallEditorOeffnen()),
-    spielstand: zuNach(() => oeffneSpielDialog()),
-    hauptmenue: zuNach(() => void zurStart()),
     "neues-fenster": zuNach(() => void inEigenesFenster([woOffen("karte") ? "karte-2" : "karte"]).catch(() => undefined)),
     "fenster-zu": zuNach(() => void fensterSchliessen()),
     "spei-auf": () => {
@@ -692,7 +644,7 @@ export function steuerleisteBauen(kopf: HTMLElement): void {
         toast(`Anordnung „${n}“ gespeichert`);
       }, fehler);
     },
-    verwalten: zuNach(() => einstellungenOeffnen("bedienung")),
+    verwalten: zuNach(() => spielmenueEinstellungen("anordnungen")),
     "upd-los": updateLos,
     "upd-zu": () => {
       updateStandZuruecksetzen();
@@ -784,7 +736,11 @@ export function steuerleisteBauen(kopf: HTMLElement): void {
       case "pause":
         return pauseKlick();
       case "status":
-        return oeffneSpielDialog();
+        return spielmenueOeffnen("multiplayer");
+      case "spiel":
+        // Logo: Spielmenü (wie Esc)
+        schliessen();
+        return spielmenueOeffnen();
       default:
         oeffnen(b.dataset.knopf as Lade);
     }
