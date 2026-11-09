@@ -1,0 +1,225 @@
+<div class="{{wCls}}" data-pv="1">
+<header class="pv-kopf">
+  <div class="pv-anker li{{ppR.spiel}}" style="--pw: 300px;">
+  <button class="{{markeCls}}" onClick="{{markeKlick}}" title="Spiel: Einstellungen, Hubschrauber wechseln, Hauptmenü"><span class="pv-logo"></span><sc-if value="{{lang}}"><span class="pv-lab{{e.lang}}" style="--lw: 80px;">Leit<span class="w">Werk</span></span></sc-if><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"></path></svg></button>
+    <sc-if value="{{pop.spiel}}">
+    <div class="pv-pop li{{ppZu}}" style="width: 300px;" role="dialog">
+      <div class="kl-pkopf kl-z">Spiel</div>
+      <sc-for list="{{spielListe}}" as="z"><div class="{{z.cls}}" role="button" tabindex="0" style="--d: {{z.d}};" onClick="{{z.klick}}"><span class="kl-hk"></span><span class="kl-pi"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="{{z.ic}}"></path></svg></span><span class="kl-pt"><div class="kl-pn">{{z.t}}</div><div class="kl-pinfo">{{z.i}}</div></span><span class="kl-pr"></span></div></sc-for>
+    </div>
+    </sc-if>
+  </div>
+  <span class="pv-tr"></span>
+  <span class="pv-heli{{e.heli}}"><b>{{heli.name}}</b><sc-if value="{{heliZeile}}"><span class="pv-lab{{e.zeile}}" style="--lw: 220px;">{{heli.zeile}}</span></sc-if></span>
+  <span class="pv-st" style="background: {{st.f}};" title="{{st.tip}}"><b>{{st.n}}</b><span class="pv-stt">{{st.t}}</span></span>
+  <span class="pv-tr"></span>
+  <span class="pv-uhr" title="Spielzeit">{{uhr}}</span>
+  <div class="pv-anker{{wxReiter}}">
+    <button class="{{wxCls}}" onClick="{{wxKlick}}" title="Wetter, Prognose und Warnungen – dasselbe wie in der Leitstelle"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="{{wx.ic}}"></path></svg>{{wxT}}<span class="{{flugCls}}">{{flugKT}}</span></button>
+    <sc-if value="{{wxOffen}}"><div class="pv-pop pv-wxpop{{wxZu}}" style="--wmax: {{wmax}}px;" role="dialog"></div></sc-if>
+  </div>
+  <span class="pv-platz"></span>
+  <span class="{{zrCls}}" title="{{zrTip}}"><i></i><span><span class="pv-lab{{e.zrA}}" style="--lw: 220px;">{{zrA}}</span>{{zrX}}<span class="pv-lab{{e.zrB}}" style="--lw: 220px;">{{zrB}}</span><span class="pv-lab{{e.zrC}}" style="--lw: 90px;">{{zrC}}</span></span></span>
+  <span class="{{verbCls}}" title="Verbindung zum Spiel"><i></i><span>{{verbT}}<span class="pv-lab{{e.verbL}}" style="--lw: 220px;">{{verbL}}</span></span></span>
+    <sc-if value="{{upd.da}}">
+    <div class="pv-anker re{{ppR.update}}" style="--pw: 380px;">
+      <button class="{{updCls}}" style="--w: {{upd.pct}}%;" onClick="{{updKlick}}" title="{{upd.tip}}"><svg class="ic s" viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"></path></svg><span class="pv-lab{{e.upd}}" style="--lw: 140px;">{{upd.knopf}}</span></button>
+      <sc-if value="{{pop.update}}">
+      <div class="pv-pop re{{ppZu}}" style="width: 380px;" role="dialog">
+        <div class="kl-wk kl-z"><span class="kl-wsym" style="color: var(--akzent-text);"><svg class="ic" viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"></path></svg></span><div><div class="kl-wt">{{upd.titel}}</div><div class="kl-ws">{{upd.unter}}</div></div></div>
+        <sc-if value="{{upd.hatNeu}}"><div class="kl-uneu kl-z" style="--d: 1;"><span class="kl-abs" style="padding: 0 0 4px;">Was ist neu</span><sc-for list="{{upd.neu}}" as="n"><div><i></i>{{n.t}}</div></sc-for></div></sc-if>
+        <sc-if value="{{upd.istLaedt}}"><div class="kl-ulad kl-z" style="--d: 2;"><div class="kl-ubar"><i style="--w: {{upd.pct}}%;"></i></div><span>{{upd.ladT}}</span></div></sc-if>
+        <div class="{{upd.infoCls}}" style="--d: 3;">{{upd.info}}</div>
+        <sc-if value="{{upd.mp}}"><div class="kl-uinfo gelb kl-z" style="--d: 4;"><svg class="ic s" viewBox="0 0 24 24"><path d="M12 3l9 16H3zM12 10v4M12 17h.01"></path></svg><span>{{upd.mpT}}</span></div></sc-if>
+        <sc-if value="{{upd.knoepfe}}"><div class="kl-uknopf kl-z" style="--d: 5;"><button class="kn sm" onClick="{{upd.spaeterKlick}}">{{upd.spaeter}}</button><sc-if value="{{upd.ok}}"><button class="{{upd.okCls}}" onClick="{{updOk}}">{{upd.ok}}</button></sc-if></div></sc-if>
+      </div>
+      </sc-if>
+    </div>
+    </sc-if>
+    <div class="pv-anker re{{ppR.fehler}}" style="--pw: 400px;">
+      <button class="{{fehlerCls}}" onClick="{{fehlerKlick}}" title="Fehler melden"><svg class="ic s" viewBox="0 0 24 24"><path d="M9 8a3 3 0 0 1 6 0M8 10h8v5a4 4 0 0 1-8 0zM12 11v8M4 13h4M16 13h4M5 8.5l3 1.5M19 8.5l-3 1.5M5 19l3-2M19 19l-3-2"></path></svg></button>
+      <sc-if value="{{pop.fehler}}">
+      <div class="pv-pop re{{ppZu}}" style="width: 400px;" role="dialog">
+        <div class="kl-wk kl-z"><span class="kl-wsym"><svg class="ic" viewBox="0 0 24 24"><path d="M9 8a3 3 0 0 1 6 0M8 10h8v5a4 4 0 0 1-8 0zM12 11v8M4 13h4M16 13h4M5 8.5l3 1.5M19 8.5l-3 1.5M5 19l3-2M19 19l-3-2"></path></svg></span><div><div class="kl-wt">Fehler melden</div><div class="kl-ws">Speichert eine Datei für den Entwickler – verschickt wird nichts.</div></div></div>
+        <sc-if value="{{fehlerNeu}}">
+        <label class="kl-flab kl-z" style="--d: 1;">Was ist passiert?<textarea class="feld kl-fta" value="{{fehlerText}}" onInput="{{fehlerTippen}}" placeholder="Was hast du gemacht, und was war falsch? z. B. „Status 4 wurde am Funkgerät nicht übernommen“" aria-label="Was ist passiert?"></textarea></label>
+        <div class="kl-fin kl-z" style="--d: 2;"><span class="kl-abs" style="padding: 0 0 4px;">Kommt in die Datei</span><sc-for list="{{fehlerIn}}" as="f"><div><svg class="ic s" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"></path></svg><span>{{f.t}}<small>{{f.z}}</small></span></div></sc-for></div>
+        <div class="kl-uknopf kl-z" style="--d: 3;"><button class="kn sm" onClick="{{ppZuKlick}}">Abbrechen</button><button class="kn sm prim" onClick="{{fehlerSpeichern}}">Datei speichern …</button></div>
+        </sc-if>
+        <sc-if value="{{fehlerOk}}">
+        <div class="kl-fok kl-z" style="--d: 1;"><svg class="ic" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"></path></svg><div><b>Fehlerbericht gespeichert</b><code>{{fehlerDatei}}</code><span>Schick die Datei an den Entwickler. Danke!</span></div></div>
+        <div class="kl-uknopf kl-z" style="--d: 2;"><button class="kn sm" onClick="{{fehlerNochmal}}">Noch einen melden</button><button class="kn sm prim" onClick="{{ppZuKlick}}">Fertig</button></div>
+        </sc-if>
+      </div>
+      </sc-if>
+    </div>
+</header>
+<div class="pv-band">
+  <sc-if value="{{warte}}"><div class="pv-warte" role="status">{{warte}}</div></sc-if>
+  <sc-if value="{{alarm}}">
+  <div class="pv-alarm" role="alert">
+    <span class="pv-aw">ALARM</span>
+    <span class="pv-at"><b>{{alT}}</b><sc-if value="{{alZ}}"><span class="pv-azi"><b>{{alZB}}</b>{{alZT}}</span></sc-if><span>{{alS}}</span></span>
+    <span class="pv-mel"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z"></path><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"></path></svg>Melder läuft bis 9 oder 2</span>
+    <span class="pv-ak"><button class="kn hell" onClick="{{quitt}}">9 Quittieren</button><button class="kn" onClick="{{abheben}}">2 Abheben</button></span>
+  </div>
+  </sc-if>
+  <div class="pv-phasen" role="list" aria-label="Ablauf"><sc-for list="{{phasen}}" as="p"><div class="{{p.cls}}" role="listitem" title="{{p.tip}}"><i>{{p.i}}</i><span class="pv-pht">{{p.t}}</span></div></sc-for></div>
+</div>
+<main class="{{hauptCls}}" style="--rb: {{rb}}px;">
+  <sc-if value="{{linksSp}}">
+  <div class="pv-sp pv-links">
+    <section class="pv-k"><div class="pv-kk"><span class="lbl">Status</span><span class="pv-hint">gedrückt halten</span></div><div class="pv-ki">
+      <div class="pv-stl"><sc-for list="{{stl}}" as="s"><button class="{{s.cls}}" style="background: {{s.f}};" onPointerDown="{{s.an}}" onPointerUp="{{s.ab}}" onPointerCancel="{{s.ab}}" onContextMenu="{{s.kein}}" title="{{s.tip}}"><b>{{s.n}}</b><span>{{s.t}}</span><kbd>{{s.k}}</kbd></button></sc-for></div>
+    </div></section>
+    <section class="pv-k"><div class="pv-kk"><span class="lbl">Cockpit</span><button class="kn sm leise" onClick="{{einstKlick}}">Einstellungen …</button></div><div class="pv-ki" style="gap: 0;">
+      <sc-for list="{{cockpit}}" as="c">
+        <button class="{{c.cls}}" onClick="{{c.klick}}" aria-expanded="{{c.exp}}"><i style="background: {{c.f}};"></i><span>{{c.t}}</span><em>{{c.z}}</em><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"></path></svg></button>
+        <sc-if value="{{c.auf}}"><div class="pv-cd">
+          <sc-if value="{{c.werte}}"><div class="pv-werte"><div><span>Höhe</span><b>{{c.werte.hoehe}}</b></div><div><span>über Grund</span><b>{{c.werte.agl}}</b></div><div><span>Kurs</span><b>{{c.werte.kurs}}</b></div><div><span>Geschwindigkeit</span><b>{{c.werte.kt}}</b></div></div></sc-if>
+          <span>{{c.d}}</span>
+          <sc-if value="{{c.hinw}}"><span class="pv-hint">{{c.hinw}}</span></sc-if>
+          <sc-if value="{{c.knoepfe}}"><span class="pv-ckk"><sc-for list="{{c.knoepfe}}" as="k"><button class="{{k.cls}}" onClick="{{k.klick}}">{{k.t}}</button></sc-for></span></sc-if>
+        </div></sc-if>
+      </sc-for>
+    </div></section>
+    <section class="pv-k"><div class="pv-kk"><span class="lbl">Übungsflug ohne Simulator</span></div><div class="pv-ki">
+      <span class="pv-hint">{{ueb.text}}</span>
+      <sc-if value="{{ueb.flug}}"><div class="pv-fljetzt"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 16l20-6-20-6 4 6z"></path></svg><span><b>{{ueb.flug.ziel}}</b> · noch {{ueb.flug.rest}}</span></div></sc-if>
+      <sc-if value="{{ueb.knoepfe}}"><div class="pv-ckk"><sc-for list="{{ueb.knoepfe}}" as="k"><button class="{{k.cls}}" onClick="{{k.klick}}">{{k.t}}</button></sc-for></div></sc-if>
+      <span class="pv-hint">{{zeitraffer}}</span>
+      <sc-if value="{{zeitKnopf}}"><span><button class="{{zeitKnopf.cls}}" onClick="{{zeitKnopf.klick}}">{{zeitKnopf.t}}</button></span></sc-if>
+      <sc-if value="{{testKnopf}}"><span><button class="kn sm" onClick="{{testKnopf}}">Testmenü: Einsatz an dich senden …</button></span></sc-if>
+    </div></section>
+  </div>
+  </sc-if>
+  <div class="pv-sp pv-mitte">
+    <sc-if value="{{statusOben}}"><section class="pv-k"><div class="pv-ki"><div class="pv-stl"><sc-for list="{{stl}}" as="s"><button class="{{s.cls}}" style="background: {{s.f}};" onPointerDown="{{s.an}}" onPointerUp="{{s.ab}}" onPointerCancel="{{s.ab}}" onContextMenu="{{s.kein}}" title="{{s.tip}}"><b>{{s.n}}</b><span>{{s.t}}</span><kbd>{{s.k}}</kbd></button></sc-for></div></div></section></sc-if>
+    <div class="pv-next"><div class="pv-nt"><span class="pv-nn">Nächster Schritt</span><b>{{next.t}}</b><p>{{next.d}}</p></div><sc-if value="{{next.eta}}"><div class="pv-eta"><b>{{next.eta}}</b><span>{{next.etaT}}</span></div></sc-if></div>
+    <section class="pv-k"><div class="pv-kk"><span class="lbl">Einsatz</span><sc-if value="{{hatEinsatz}}"><span class="pv-hint">{{ein.nr}}</span></sc-if></div><div class="pv-ki">
+      <sc-if value="{{keinEinsatz}}"><div class="pv-leer"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" style="width: 26px; height: 26px;"><path d="M2 5h18M11 5v3M5 12a4 4 0 0 1 4-4h5a4 4 0 0 1 0 8H9a4 4 0 0 1-4-4zM18 12h4M8 20h9M10 16v4M15 16v4"></path></svg><b>Kein Einsatz</b><span>Warte auf die Alarmierung durch die Leitstelle.</span></div></sc-if>
+      <sc-if value="{{hatEinsatz}}">
+        <div class="pv-einsatz">
+          <div>
+            <div class="pv-code"><sc-if value="{{ein.stufe}}"><span class="stufe" style="background: {{ein.sf}};">{{ein.stufe}}</span></sc-if><b style="font-size: 13px;">{{ein.code}}</b></div>
+            <div class="pv-sw" style="margin-top: 6px;">{{ein.sw}}</div>
+            <sc-if value="{{ein.zi}}"><div class="pv-zi"><b>{{ein.ziB}}</b>{{ein.ziS}}{{ein.ziT}}</div></sc-if>
+            <div class="pv-adr"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s7-6.2 7-11a7 7 0 0 0-14 0c0 4.8 7 11 7 11z"></path><circle cx="12" cy="10" r="2.5"></circle></svg>{{ein.adr}}</div>
+            <sc-if value="{{ein.zusatz}}"><div class="pv-zi">{{ein.zusatz}}</div></sc-if>
+            <sc-if value="{{ein.gsText}}"><div class="pv-gsh">{{ein.gsText}}</div></sc-if>
+          </div>
+          <sc-if value="{{fl.km}}"><div class="pv-fl"><b>{{fl.km}}</b>{{fl.t}}</div></sc-if>
+        </div>
+        <div class="pv-chips"><sc-for list="{{fzs}}" as="f"><span class="pv-fz" style="background: {{f.f}};" title="{{f.tip}}"><b>{{f.s}}</b>{{f.t}}</span></sc-for></div>
+        <sc-for list="{{nav}}" as="n"><div class="pv-nav"><span>{{n.t}}</span><code>{{n.k}}</code><span class="pv-nk"><button class="kn sm" onClick="{{n.kopie}}">Kopieren</button><button class="kn sm" onClick="{{n.pln}}">.pln</button></span><sc-if value="{{n.z}}"><small class="pv-navz">{{n.z}}</small></sc-if></div></sc-for>
+      </sc-if>
+    </div></section>
+    <sc-if value="{{gsBR}}">
+    <section class="pv-k"><div class="pv-kk"><span class="lbl">Großeinsatz · Bereitstellungsraum</span><span class="pv-hint">Sprechgruppe {{gs.gruppe}}</span></div><div class="pv-ki">
+      <sc-if value="{{gs.abruf}}"><div class="pv-abruf" role="alert"><b>ABRUF DURCH DIE EINSATZLEITUNG</b><span>{{gs.abruf.t}}</span><sc-if value="{{gs.abruf.pct}}"><div class="pv-fuss"><i style="--w: {{gs.abruf.pct}}%;"></i></div></sc-if></div></sc-if>
+      <sc-if value="{{gs.zug}}"><div class="pv-zug"><b class="p" style="background: {{gs.zug.f}};">{{gs.zug.p}}</b><span>{{gs.zug.t}}</span></div></sc-if>
+      <sc-if value="{{gs.zahlen}}"><div class="pv-gsz"><sc-for list="{{gs.zahlen}}" as="z"><span><i style="background: {{z.f}};"></i><b>{{z.n}}</b>{{z.t}}</span></sc-for></div></sc-if>
+      <sc-if value="{{gs.det}}">
+      <div class="pv-brw"><sc-for list="{{gs.werte}}" as="w"><div><span>{{w.l}}</span><b>{{w.v}}</b></div></sc-for></div>
+      <sc-if value="{{gs.liste}}"><span class="lbl" style="margin-top: 2px;">Fahrzeuge im BR</span>
+      <div class="pv-brl"><sc-for list="{{gs.liste}}" as="r"><div class="{{r.cls}}" style="--d: {{r.d}};"><i>{{r.nr}}</i><span>{{r.t}}</span><small>{{r.z}}</small></div></sc-for></div></sc-if>
+      </sc-if>
+    </div></section>
+    </sc-if>
+    <sc-if value="{{hatEinsatz}}">
+    <section class="pv-k"><div class="pv-kk"><span class="lbl">Patient</span></div><div class="pv-ki">
+      <sc-if value="{{patZu}}"><span class="pv-hint" style="font-size: 13px;">{{patZuT}}</span></sc-if>
+      <sc-if value="{{patAuf}}">
+        <sc-for list="{{pats}}" as="pat"><div class="pv-pat">
+          <span class="pv-sicht" style="background: {{pat.sf}}; color: {{pat.sc}};">{{pat.s}}</span>
+          <div class="pv-pz"><b>{{pat.t}}</b><sc-if value="{{pat.l}}"><span>{{pat.l}}</span></sc-if>
+            <div class="pv-vit" style="margin-top: 4px;"><sc-for list="{{pat.v}}" as="v"><span class="{{v.c}}">{{v.t}}</span></sc-for></div></div>
+        </div></sc-for>
+        <sc-if value="{{patVerlauf}}"><div class="pv-ver"><sc-for list="{{patVerlauf}}" as="v"><div class="pv-vz"><span>{{v.z}}</span>{{v.t}}</div></sc-for></div></sc-if>
+      </sc-if>
+    </div></section>
+    </sc-if>
+    <sc-if value="{{entscheiden}}">
+    <section class="pv-k"><div class="pv-kk"><span class="lbl">Was passiert mit dem Patienten?</span><span class="pv-hint">Ändern geht, solange ihr am Einsatzort seid</span></div><div class="pv-ki">
+      <div class="pv-ent"><sc-for list="{{wahl}}" as="w"><button class="{{w.cls}}" onClick="{{w.klick}}"><b>{{w.t}}</b><span>{{w.d}}</span></button></sc-for></div>
+      <sc-if value="{{keinWahl}}"><div class="pk-wahl"><sc-for list="{{keinWahl}}" as="w"><button class="{{w.cls}}" onClick="{{w.klick}}">{{w.t}}<small>{{w.s}}</small></button></sc-for></div></sc-if>
+      <sc-if value="{{rtwFehlt}}"><span class="pv-hint" style="font-size: 13px;">Noch kein RTW im Einsatz – bitte bei der Leitstelle anfordern (Funk oder Chat).</span></sc-if>
+      <sc-if value="{{buchen}}">
+      <div class="pk-kopf"><span class="lbl">Krankenhaus</span><sc-if value="{{khGebucht}}"><span class="pill ok">gebucht {{khGebuchtT}}</span></sc-if></div>
+      <div class="pk-schritte">
+        <sc-for list="{{khSchritte}}" as="k">
+          <sc-if value="{{k.fertig}}">
+            <div class="pk-fertig"><span class="n">✓</span><span class="w"><span class="l">{{k.titel}}</span>{{k.wert}}</span><button class="kn sm leise" onClick="{{k.klick}}">Ändern</button></div>
+          </sc-if>
+          <sc-if value="{{k.offen}}">
+            <div class="pk-offen"><span class="n">{{k.nr}}</span>{{k.titel}}</div>
+          </sc-if>
+          <sc-if value="{{k.aktiv}}">
+            <div class="pk-aktiv">
+              <div class="pk-skopf"><span class="n">{{k.nr}}</span>{{k.frage}}</div>
+              <sc-if value="{{k.istAlter}}">
+                <div class="pk-wahl"><sc-for list="{{altW}}" as="w"><button class="{{w.cls}}" onClick="{{w.klick}}">{{w.t}}<small>{{w.s}}</small></button></sc-for></div>
+              </sc-if>
+              <sc-if value="{{k.istSymptom}}">
+                <input class="feld pv-symsuche" value="{{symQ}}" onInput="{{symTippen}}" onKeyDown="{{symTaste}}" placeholder="Symptom suchen (z. B. Polytrauma, Schlaganfall, Atemnot) …" aria-label="Symptom suchen">
+                <sc-if value="{{symHinweis}}"><div class="zeit">{{symHinweis}}</div></sc-if>
+                <div class="pk-chips"><sc-for list="{{symW}}" as="w"><button onClick="{{w.klick}}" title="{{w.kat}}">{{w.t}}</button></sc-for></div>
+              </sc-if>
+              <sc-if value="{{k.istDringlich}}">
+                <div class="pk-wahl"><sc-for list="{{drW}}" as="w"><button class="{{w.cls}}" onClick="{{w.klick}}">{{w.t}}<small>{{w.s}}</small></button></sc-for></div>
+              </sc-if>
+              <sc-if value="{{k.istVorschlag}}">
+                <sc-if value="{{khLeer}}"><span class="pv-hint" style="font-size: 13px;">{{khLeer}}</span></sc-if>
+                <sc-for list="{{khs}}" as="h"><div class="{{h.cls}}" onClick="{{h.klick}}"><span class="{{h.radio}}"></span><div style="min-width: 0;"><b>{{h.n}}</b> <span class="zeit">· {{h.km}}{{h.min}}</span><div class="pk-merk"><sc-for list="{{h.merk}}" as="m"><span class="{{m.c}}">{{m.t}}</span></sc-for></div></div><span class="{{h.freiCls}}">{{h.frei}}</span></div></sc-for>
+                <sc-if value="{{andereAuf}}"><input class="feld" value="{{andereQ}}" onInput="{{andereTippen}}" placeholder="Krankenhaus suchen …" aria-label="Krankenhaus suchen"></sc-if>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                  <button class="kn sm leise" onClick="{{andereKlick}}">{{andereT}}</button><span style="flex: 1;"></span>
+                  <sc-if value="{{buchenT}}"><button class="kn prim sm" onClick="{{buchenKlick}}">{{buchenT}}</button></sc-if>
+                </div>
+              </sc-if>
+            </div>
+          </sc-if>
+        </sc-for>
+      </div>
+      <span class="pv-hint">Die Buchung belegt einen Platz im Krankenhaus – wie in der Leitstelle.</span>
+      </sc-if>
+    </div></section>
+    </sc-if>
+    <sc-if value="{{planT}}"><div class="pv-plan"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" style="color: var(--ok);"><path d="M5 12.5l4.5 4.5L19 7"></path></svg><span>{{planT}}</span></div></sc-if>
+    <section class="pv-k"><div class="pv-kk"><span class="lbl">Einsatzverlauf</span></div><div class="pv-ki"><div class="pv-ver"><sc-for list="{{verlauf}}" as="v"><div class="pv-vz"><span>{{v.z}}</span><sc-if value="{{v.abf}}"><div><button class="{{v.abfCls}}" onClick="{{v.abfKlick}}"><svg class="ic s" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"></path></svg>Notrufabfrage · {{v.abfN}} Angaben <small>{{v.abfArt}}</small></button><sc-if value="{{v.abfAuf}}"><div class="pv-abfl"><sc-for list="{{v.abf}}" as="a"><div style="--d: {{a.d}};">{{a.t}}</div></sc-for></div></sc-if></div></sc-if><sc-if value="{{v.t}}"><div>{{v.t}}<sc-if value="{{v.von}}"><small class="pv-von"> · {{v.von}}</small></sc-if></div></sc-if></div></sc-for></div></div></section>
+    <sc-if value="{{cockpitUnten}}">
+    <section class="pv-k"><div class="pv-kk"><span class="lbl">Cockpit</span><button class="kn sm leise" onClick="{{einstKlick}}">Einstellungen …</button></div><div class="pv-ki" style="gap: 0;">
+      <sc-for list="{{cockpit}}" as="c">
+        <button class="{{c.cls}}" onClick="{{c.klick}}" aria-expanded="{{c.exp}}"><i style="background: {{c.f}};"></i><span>{{c.t}}</span><em>{{c.z}}</em><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"></path></svg></button>
+        <sc-if value="{{c.auf}}"><div class="pv-cd">
+          <sc-if value="{{c.werte}}"><div class="pv-werte"><div><span>Höhe</span><b>{{c.werte.hoehe}}</b></div><div><span>über Grund</span><b>{{c.werte.agl}}</b></div><div><span>Kurs</span><b>{{c.werte.kurs}}</b></div><div><span>Geschwindigkeit</span><b>{{c.werte.kt}}</b></div></div></sc-if>
+          <span>{{c.d}}</span>
+          <sc-if value="{{c.hinw}}"><span class="pv-hint">{{c.hinw}}</span></sc-if>
+          <sc-if value="{{c.knoepfe}}"><span class="pv-ckk"><sc-for list="{{c.knoepfe}}" as="k"><button class="{{k.cls}}" onClick="{{k.klick}}">{{k.t}}</button></sc-for></span></sc-if>
+        </div></sc-if>
+      </sc-for>
+    </div></section>
+    <section class="pv-k"><div class="pv-kk"><span class="lbl">Übungsflug ohne Simulator</span></div><div class="pv-ki">
+      <span class="pv-hint">{{ueb.text}}</span>
+      <sc-if value="{{ueb.flug}}"><div class="pv-fljetzt"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 16l20-6-20-6 4 6z"></path></svg><span><b>{{ueb.flug.ziel}}</b> · noch {{ueb.flug.rest}}</span></div></sc-if>
+      <sc-if value="{{ueb.knoepfe}}"><div class="pv-ckk"><sc-for list="{{ueb.knoepfe}}" as="k"><button class="{{k.cls}}" onClick="{{k.klick}}">{{k.t}}</button></sc-for></div></sc-if>
+      <span class="pv-hint">{{zeitraffer}}</span>
+      <sc-if value="{{zeitKnopf}}"><span><button class="{{zeitKnopf.cls}}" onClick="{{zeitKnopf.klick}}">{{zeitKnopf.t}}</button></span></sc-if>
+      <sc-if value="{{testKnopf}}"><span><button class="kn sm" onClick="{{testKnopf}}">Testmenü: Einsatz an dich senden …</button></span></sc-if>
+    </div></section>
+    </sc-if>
+  </div>
+  <div class="pv-sp pv-rechts" style="overflow: hidden;">
+    <div class="pv-karte">
+      <div class="pv-kartenplatz"></div>
+      <div class="pv-kwerk"><button class="{{folgCls}}" onClick="{{folgen}}">Folgen</button><button class="kn sm" onClick="{{gross}}">Groß</button></div>
+      <sc-if value="{{punktHinweis}}"><div class="pv-khinw">Auf die Karte klicken: dorthin fliegen · Esc bricht ab</div></sc-if>
+      <div class="pv-kleg"><sc-if value="{{gsLeg}}"><span><i style="background: #F5A524;"></i>Bereitstellungsraum</span></sc-if><span><i style="background: #E5484D;"></i>Einsatzort</span><span><i style="background: #3B8BFF;"></i>Krankenhaus</span><span><i style="background: #4CC38A;"></i>Stützpunkt</span></div>
+    </div>
+    <!-- PLATZ FÜR DAS FUNK-FENSTER (rolle="pilot"): beim Zusammenführen mit ew-funk hier die neue Funk-Komponente einhängen
+         (pilotView.ts › funkPlatzFuellen). Bis dahin hängt dort das bisherige Funk-Teil des Piloten. -->
+    <div class="pv-funk" style="height: {{funkH}}px;"></div>
+  </div>
+</main>
+<sc-if value="{{toast}}"><div class="pv-toast">{{toast}}</div></sc-if>
+</div>
