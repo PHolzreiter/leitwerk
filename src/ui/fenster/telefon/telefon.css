@@ -1,0 +1,94 @@
+:where(.k-Telefon) .t-kopf{display:flex;flex-direction:column;gap:8px;padding:10px 16px;border-bottom:1px solid var(--trenner)}
+:where(.k-Telefon) .t-suchz{display:flex;gap:8px;align-items:center}
+:where(.k-Telefon) .t-filter{display:flex;gap:8px;align-items:stretch}
+:where(.k-Telefon) .t-filter .segs{flex:1 1 0;min-width:0}
+:where(.k-Telefon) .t-filter .t-welche{flex:3 1 0;min-width:min(290px,100%)}
+:where(.k-Telefon) .t-filter .t-typ:not(.t-welche){flex:2 1 0}
+/* breit: Filter genau über den beiden Spalten – Trennung in der Mitte */
+@container fenster (min-width: 820px){ :where(.k-Telefon) .t-filter .t-welche,:where(.k-Telefon) .t-filter .t-typ:not(.t-welche){flex:1 1 0} }
+:where(.k-Telefon) .t-filter .t-welche .seg{padding:4px 6px}
+:where(.k-Telefon) .t-filter .t-typ:not(.t-welche) .seg{padding:4px 2px}
+:where(.k-Telefon) .t-filter .seg{flex:1}
+:where(.k-Telefon) .t-such{position:relative;flex:1 1 auto;min-width:0}
+:where(.k-Telefon) .t-such .feld{height:36px}
+:where(.k-Telefon) .t-such .ic{position:absolute;left:10px;top:10px;color:var(--dim)}
+:where(.k-Telefon) .t-such .feld{padding-left:32px}
+/* Zeilen */
+:where(.k-Telefon) .t-liste{display:flex;flex-direction:column;gap:6px}
+:where(.k-Telefon) .t-z{display:grid;grid-template-columns:4px 30px minmax(0,1fr) auto;column-gap:10px;row-gap:8px;align-items:center;padding:9px 10px 9px 0;border-radius:10px;border:1px solid var(--trenner);background:var(--flaeche-2);cursor:pointer;overflow:hidden;}
+@keyframes telefon-rein{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+:where(.k-Telefon) .t-z:hover{border-color:var(--linie)}
+:where(.k-Telefon) .t-z.sel{border-color:var(--akzent)}
+:where(.k-Telefon) .t-bar{align-self:stretch;margin:-9px 0;border-radius:0 3px 3px 0}
+:where(.k-Telefon) .t-z.notruf .t-bar{background:var(--rot)}:where(.k-Telefon) .t-z.kt .t-bar{background:var(--akzent)}:where(.k-Telefon) .t-z.sek .t-bar{background:var(--gelb)}
+:where(.k-Telefon) .t-sym{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--flaeche);color:var(--text-2)}
+:where(.k-Telefon) .t-z.klingelt .t-sym{background:var(--ok-flaeche);color:var(--ok)}
+:where(.k-Telefon) .t-z.aktiv .t-sym{background:var(--ok);color:#0B1A12}
+:where(.k-Telefon) .t-z.gehalten .t-sym{background:var(--gelb-flaeche);color:var(--gelb-text)}
+:where(.k-Telefon) .t-z.verpasst .t-sym{background:var(--rot-flaeche);color:var(--rot-text)}
+:where(.k-Telefon) .t-main{min-width:0}
+:where(.k-Telefon) .t-z1{display:flex;align-items:center;gap:8px;min-width:0}
+:where(.k-Telefon) .artb{display:inline-flex;align-items:center;height:20px;padding:0 7px;border-radius:5px;font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;white-space:nowrap;flex:none}
+:where(.k-Telefon) .artb.notruf{background:var(--rot-flaeche);color:var(--rot-text)}
+:where(.k-Telefon) .artb.kt{background:var(--akzent-flaeche);color:var(--akzent-text)}
+:where(.k-Telefon) .artb.eigen{background:var(--flaeche);color:var(--text-2)}
+:where(.k-Telefon) .t-z.eigen .t-bar{background:var(--dim)}
+:where(.k-Telefon) .artb.sek{background:var(--gelb-flaeche);color:var(--gelb-text)}
+:where(.k-Telefon) .t-nr{font-size:14.5px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+:where(.k-Telefon) .t-z2{font-size:12.5px;color:var(--text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+:where(.k-Telefon) .t-r{display:flex;flex-direction:column;align-items:flex-end;gap:2px;text-align:right}
+:where(.k-Telefon) .t-st{font-size:12px;font-weight:700;white-space:nowrap}
+:where(.k-Telefon) .t-z.klingelt .t-st{color:var(--ok)}
+:where(.k-Telefon) .t-z.aktiv .t-st{color:var(--ok)}
+:where(.k-Telefon) .t-z.gehalten .t-st{color:var(--gelb-text)}
+:where(.k-Telefon) .t-z.verpasst .t-st{color:var(--rot-text)}
+:where(.k-Telefon) .t-z.beendet .t-st{color:var(--dim);font-weight:600}
+:where(.k-Telefon) .t-dauer{font-size:12px;color:var(--dim);font-variant-numeric:tabular-nums}
+:where(.k-Telefon) .t-warn{font-size:11.5px;font-weight:700;color:var(--rot-text);white-space:nowrap}
+:where(.k-Telefon) .t-k{grid-column:3 / -1;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;padding-right:0}
+:where(.k-Telefon) .t-k:empty{display:none}
+:where(.k-Telefon) .t-k .kn .ic{margin-left:-2px}
+:where(.k-Telefon) .kn.ab{background:var(--ok);border-color:var(--ok);color:#0B1A12;font-weight:700}
+:root:not([data-theme="dunkel"]) :where(.k-Telefon) .kn.ab{color:#fff}
+:where(.k-Telefon) .kn.aus{opacity:.45;cursor:not-allowed}
+:where(.k-Telefon) .t-z.klingelt .kn.ab{animation:telefon-wackeln 1.6s ease-in-out infinite}
+@keyframes telefon-wackeln{0%,58%,100%{transform:translateX(0)}62%{transform:translateX(-2px)}66%{transform:translateX(2px)}70%{transform:translateX(-2px)}74%{transform:translateX(2px)}78%{transform:translateX(-1px)}82%{transform:translateX(1px)}86%{transform:translateX(0)}}
+@media (prefers-reduced-motion: reduce){ :where(.k-Telefon) .t-z,:where(.k-Telefon) .t-z.klingelt .kn.ab{animation:none} }
+:where(.k-Telefon) .t-z.beendet{background:transparent}
+:where(.k-Telefon) .t-z.beendet .t-nr{font-weight:600}
+:where(.k-Telefon) .t-leer{padding:18px 8px;text-align:center;color:var(--dim);font-size:12.5px}
+:where(.k-Telefon) .t-hinw{font-size:12px;color:var(--dim)}
+:where(.k-Telefon) .a-verp{order:1}:where(.k-Telefon) .a-zuletzt{order:2}
+:where(.k-Telefon) .t-welche .seg{padding:4px 10px}
+/* nur ein Bereich gewählt: auch breit eine Spalte */
+@container fenster (min-width: 820px){ :where(.k-Telefon) .spalten.eins{display:flex;flex-direction:column;overflow-y:auto}:where(.k-Telefon) .spalten.eins .sp-l,:where(.k-Telefon) .spalten.eins .sp-r{display:contents;overflow:visible;border:0} }
+:where(.k-Telefon) .t-typ .seg{padding:4px 9px}
+:where(.k-Telefon) .t-laeuft{display:flex;align-items:center;gap:10px;margin:10px 16px 0;padding:8px 10px;border-radius:10px;background:var(--ok-flaeche)}
+:where(.k-Telefon) .t-laeuft .pkt{width:8px;height:8px;border-radius:50%;background:var(--ok);flex:none}
+:where(.k-Telefon) .t-z.laeuft{border-color:var(--ok)}
+:where(.k-Telefon) .t-z.laeuft .t-st{color:var(--ok)}
+:where(.k-Telefon) .t-z.laeuft .t-sym{background:var(--ok);color:#0B1A12}
+@container fenster (min-width: 820px){ :where(.k-Telefon) .sp-l > .ab:last-child,:where(.k-Telefon) .sp-r > .ab:last-child{border-bottom:0} }
+/* schmal: Knöpfe nur als Symbol, Zeit unter den Status */
+@container fenster (max-width: 430px){
+  :where(.k-Telefon) .t-z{grid-template-columns:4px 26px minmax(0,1fr) auto;column-gap:8px}
+  :where(.k-Telefon) .t-sym{width:26px;height:26px}
+  :where(.k-Telefon) .t-k .kn .t{display:none}
+  :where(.k-Telefon) .t-k .kn{width:34px;padding:0}
+  :where(.k-Telefon) .t-k .kn.ab .t,:where(.k-Telefon) .t-k .kn.zr .t{display:inline}
+  :where(.k-Telefon) .t-k .kn.ab,:where(.k-Telefon) .t-k .kn.zr{width:auto;padding:0 10px}
+  :where(.k-Telefon) .t-filter{flex-direction:column}
+  :where(.k-Telefon) .t-filter .t-welche{flex:1 1 auto}
+  :where(.k-Telefon) .t-typ .seg{flex:1}
+}
+
+/* ---- Im Spiel: Ergänzungen zum Entwurf ---- */
+:where(.k-Telefon) .fe{border-radius:0;box-shadow:none}
+/* Auflösung nach dem Notruf (was wirklich war) – unter der Zeile aufgeklappt */
+:where(.k-Telefon) .t-aufl{grid-column:3 / -1;cursor:default;font-size:12.5px;line-height:1.45;padding:8px 10px;border-radius:8px;background:var(--flaeche);display:flex;flex-direction:column;gap:6px}
+:where(.k-Telefon) .t-aufl table{border-collapse:collapse;width:100%;font-size:12px}
+:where(.k-Telefon) .t-aufl td,:where(.k-Telefon) .t-aufl th{padding:2px 6px 2px 0;text-align:left;vertical-align:top}
+:where(.k-Telefon) .t-aufl th{color:var(--dim);font-weight:600}
+:where(.k-Telefon) .t-aufl .ok{color:var(--ok)}
+:where(.k-Telefon) .t-aufl .alert-text{color:var(--rot-text)}
+:where(.k-Telefon) .t-aufl .muted{color:var(--dim)}

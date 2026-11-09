@@ -21,7 +21,7 @@ import {
   type WetterLage,
 } from "../../sim/weather";
 import { esc } from "../dom";
-import type { GespeicherteAnordnung } from "./arbeitsplatz";
+import { aufteilungTeile, VORLAGEN, type GespeicherteAnordnung } from "./arbeitsplatz";
 
 // ---------------------------------------------------------------- Symbole (Pfade aus dem Entwurf)
 
@@ -323,52 +323,6 @@ function schirm(ox: number, oy: number, sw: number, sh: number, fs: number[][]):
 }
 const E16 = (fs: number[][]) => schirm(1, 0.5, 72, 41, fs);
 
-/** Aufteilung der Vorlagen – so, wie sie vorlageAnwenden() in arbeitsplatz.ts baut */
-const VORLAGE_BILD: Record<string, Rechteck[]> = {
-  alles: E16([
-    [0, 0, 22, 26],
-    [0, 26, 22, 44],
-    [0, 70, 22, 30],
-    [22, 0, 51, 100],
-    [73, 0, 27, 70],
-    [73, 70, 27, 30],
-  ]),
-  notruf: E16([
-    [0, 0, 22, 30],
-    [0, 30, 22, 70],
-    [22, 0, 48, 55],
-    [22, 55, 48, 45],
-    [70, 0, 30, 70],
-    [70, 70, 30, 30],
-  ]),
-  kt: E16([
-    [0, 0, 27, 18],
-    [0, 18, 27, 82],
-    [27, 0, 40, 68],
-    [27, 68, 24, 32],
-    [51, 68, 16, 32],
-    [67, 0, 33, 100],
-  ]),
-  funk: E16([
-    [0, 0, 26, 50],
-    [0, 50, 26, 50],
-    [26, 0, 36, 55],
-    [26, 55, 36, 45],
-    [62, 0, 38, 100],
-  ]),
-  zwei: [
-    ...schirm(0.5, 10.5, 35.5, 21, [
-      [0, 0, 24, 22],
-      [0, 22, 24, 48],
-      [0, 70, 24, 30],
-      [24, 0, 48, 100],
-      [72, 0, 28, 65],
-      [72, 65, 28, 35],
-    ]),
-    ...schirm(38, 10.5, 35.5, 21, [[0, 0, 100, 100]]),
-  ],
-};
-
 interface GridKnoten {
   type: "branch" | "leaf";
   data: GridKnoten[] | unknown;
@@ -399,8 +353,14 @@ function teile(json: unknown): number[][] {
   return out;
 }
 
+/** Vorschaubild einer Vorlage – aus derselben Aufteilung, mit der vorlageAnwenden() in arbeitsplatz.ts baut */
 export function vorlageBild(id: string): Rechteck[] {
-  return VORLAGE_BILD[id] ?? E16([[0, 0, 100, 100]]);
+  const v = VORLAGEN.find((x) => x.id === id);
+  if (!v) return E16([[0, 0, 100, 100]]);
+  const t = v.schirme.map(aufteilungTeile);
+  if (t.length > 1) return [...schirm(0.5, 10.5, 35.5, 21, t[0]), ...schirm(38, 10.5, 35.5, 21, t[1])];
+  if (v.format === "32:9") return schirm(0.5, 10.5, 73, 21, t[0]);
+  return E16(t[0]);
 }
 
 export function anordnungBild(a: GespeicherteAnordnung): Rechteck[] {

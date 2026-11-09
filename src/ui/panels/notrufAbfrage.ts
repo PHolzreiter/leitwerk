@@ -710,7 +710,7 @@ export function notrufTeile(e: Einsatz, opt: { gefuehrt?: boolean; angezeigt?: (
 }
 
 /** Vergleich: was wirklich war und was eingetragen wurde */
-function aufloesungHtml(e: Einsatz): string {
+export function aufloesungHtml(e: Einsatz): string {
   const schema = store.schema;
   const w = e.wahr.abfrage;
   const a = e.anruf;

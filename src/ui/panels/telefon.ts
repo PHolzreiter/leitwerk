@@ -1,13 +1,11 @@
 /**
- * Telefon: alle Anrufe (Notruf, KT-Hotline, Überstellung) mit Annehmen, Halten, Zurückwechseln, Auflegen.
- * Beim Annehmen geht das Abfrage-Fenster auf.
+ * Telefon: Anrufe aus dem Spiel (Notruf, KT-Hotline, Überstellung) und die Aktionen Annehmen, Halten, Auflegen.
+ * Das Fenster selbst (nur Zurückrufen und Anrufen) steht in src/ui/fenster/telefon; angenommen wird in der Abfrage.
  */
 import { funkTon } from "../sprechfunk";
-import { funkGruppenSetzen, funkGruppenWahl } from "../sprechfunk";
 import { istPilot } from "../pilot/modus";
 import { spielen } from "../sounds";
 import { kiPrefs } from "../../abfrage/ki";
-import { nachKlick } from "../../klick";
 import { verstummen } from "../sprache";
 import { eroeffnen } from "../../abfrage/gespraech";
 import { KT_FRAGEN, ktFragen } from "../../abfrage/ktGespraech";
@@ -15,11 +13,12 @@ import { mp } from "../../net/mehrspieler";
 import { sim, type Anruf, type Einsatz } from "../../sim/engine";
 import { nummerAus } from "../../sim/rufnummer";
 import { istUeberstellung } from "../../sim/ktCodes";
-import { el, esc, toast } from "../dom";
+import { toast } from "../dom";
 import { funkPiepAktualisieren, klingeltonAktualisieren } from "../klingelton";
-import { dock, panelZeigen, registriere, type PanelKontext } from "../ws/arbeitsplatz";
-import { auswahl, onAuswahl, waehle } from "../ws/auswahl";
-import { onPers, pers, setzePers } from "../ws/persoenlich";
+import { dock, panelZeigen, registriere } from "../ws/arbeitsplatz";
+import { waehle } from "../ws/auswahl";
+import { onPers, pers } from "../ws/persoenlich";
+import { telefonFenster } from "../fenster/telefon";
 import { liveSammler } from "./live";
 
 export type AnrufArt = "rd" | "kt";
@@ -35,7 +34,11 @@ export interface AnrufEintrag {
   titel: string;
 }
 
-const TYP_LABEL = { notruf: "Notruf 144", kt: "KT-Hotline", sek: "Überstellung" };
+/** Nehme ich diese Art von Anrufen an? (Filter RD · KT · SEK im Abfrage-Fenster, „Ich nehme an“ in der Kopfleiste) */
+export function nehmeIchAn(typ: "notruf" | "kt" | "sek"): boolean {
+  const p = pers();
+  return typ === "notruf" ? p.notrufe : typ === "kt" ? p.ktHotline : p.ueberstellungen !== false;
+}
 
 function fehler(p: Promise<unknown>): void {
   p.catch((e) => toast(String((e as Error).message ?? e), "error"));
@@ -140,139 +143,13 @@ export function anrufAuflegen(art: AnrufArt, id: string): void {
   );
 }
 
-function mmss(ms: number): string {
-  const s = Math.max(0, Math.round(ms / 1000));
-  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
-}
-
-// ---------------------------------------------------------------- Fenster
-
-function erstellen(ctx: PanelKontext) {
-  const root = el("div", { class: "pl telefon" });
-  const kopf = el("div", { class: "pl-kopf tel-kopf" });
-  const schalter = (label: string, titel: string, wert: () => boolean, setzen: (v: boolean) => void) => {
-    const l = el("label", { class: "schalter", title: titel });
-    const c = el("input", { type: "checkbox" });
-    c.checked = wert();
-    c.addEventListener("change", () => setzen(c.checked));
-    l.append(c, el("span", { class: "schalter-knopf" }), el("span", {}, label));
-    return { l, c };
-  };
-  const s1 = schalter("Notrufe", "Ich nehme Notrufe an (Klingeln, Fenster gehen von selbst auf)", () => pers().notrufe, (v) => setzePers({ notrufe: v }));
-  const s2 = schalter("KT-Hotline", "Ich nehme die KT-Hotline an (Krankentransporte und Überstellungen)", () => pers().ktHotline, (v) => setzePers({ ktHotline: v }));
-  // Funk beim Telefonieren ganz stumm (der Text steht trotzdem im Funk-Verlauf)
-  const s3 = schalter("Funk stumm beim Telefonieren", "Während du telefonierst, hörst du den Funk nicht – die Funksprüche stehen trotzdem im Verlauf", () => funkGruppenWahl().telefonStumm, (v) => funkGruppenSetzen({ telefonStumm: v }));
-  s3.l.classList.add("tel-funk-stumm");
-  kopf.append(el("span", { class: "tel-titel" }, "Ich nehme an:"), s1.l, s2.l, s3.l);
-  const liste = el("div", { class: "pl-body tel-liste" });
-  root.append(kopf, liste);
-
-  function zeile(x: AnrufEintrag): HTMLElement {
-    const a = x.anruf;
-    const meins = istMeins(a);
-    const wer = a.angenommenVon && mp.aktiv && !meins ? ` · ${esc(a.angenommenVon.name)}` : "";
-    const t = sim.state.zeit;
-    const st =
-      a.status === "klingelt"
-        ? `<span class="tel-st klingelt">${a.folge ? "Folgeanruf" : a.versuche > 1 ? `ruft wieder an (${a.versuche}.)` : "klingelt"}</span>`
-        : a.status === "aktiv"
-          ? `<span class="tel-st aktiv">im Gespräch${wer}</span>`
-          : a.status === "gehalten"
-            ? `<span class="tel-st gehalten">gehalten${wer}</span>${a.haltenBis && a.haltenBis - t < 30_000 ? ` <span class="alert-text">legt gleich auf</span>` : ""}`
-            : a.status === "verpasst"
-              ? `<span class="tel-st verpasst">verpasst${a.versuche > 1 ? ` (${a.versuche}×)` : ""}</span>`
-              : `<span class="tel-st beendet">beendet</span>`;
-    const r = el("div", { class: `tel-row typ-${x.typ} st-${a.status}${auswahl().id === x.id ? " sel" : ""}` });
-    r.innerHTML = `
-      <span class="tel-bar"></span>
-      <span class="tel-icon">${a.status === "gehalten" ? "⏸" : a.status === "verpasst" ? "📵" : a.status === "beendet" ? "☎" : "📞"}</span>
-      <div class="tel-main">
-        <div><b>${TYP_LABEL[x.typ]}</b> <span class="muted">${esc(x.telefon)}</span></div>
-        <div class="muted">${esc(x.nummer)} · ${esc(x.titel)}</div>
-      </div>
-      <div class="tel-rechts">${st}<div class="tel-dauer">${a.status === "beendet" ? "" : mmss(t - a.seit)}</div></div>`;
-    const knoepfe = el("div", { class: "tel-knoepfe" });
-    const knopf = (label: string, cls: string, fn: () => void, titel = "") => {
-      const b = el("button", { class: `btn small ${cls}`, title: titel }, label);
-      b.addEventListener("click", (ev) => {
-        ev.stopPropagation();
-        fn();
-      });
-      knoepfe.appendChild(b);
-      return b;
-    };
-    if (a.status === "klingelt") knopf("Annehmen", "primary", () => void anrufAnnehmen(x.art, x.id), "Anruf annehmen (laufendes Gespräch wird gehalten)");
-    if (a.status === "verpasst") {
-      const ohne = !rueckrufNummer(x);
-      const b = knopf("Zurückrufen", "primary", () => void anrufAnnehmen(x.art, x.id));
-      if (ohne && !sim.settings.rueckrufOhneNummer) {
-        b.disabled = true;
-        b.title = "Keine Rückrufnummer aufgenommen – Rückruf nicht möglich";
-      }
-    }
-    if (a.status === "aktiv" && meins) {
-      knopf("Halten", "", () => anrufHalten(x.art, x.id), "Anrufer in die Warteschleife – bei zu langem Warten legt er auf");
-      knopf("Auflegen", "danger-text", () => anrufAuflegen(x.art, x.id));
-    }
-    if (a.status === "gehalten") {
-      if (meins) knopf("Zurückwechseln", "primary", () => void anrufAnnehmen(x.art, x.id), "Gespräch fortsetzen (das laufende wird gehalten)");
-      else knopf("Übernehmen", "primary", () => void anrufAnnehmen(x.art, x.id), "Gehaltenen Anruf aufgreifen und weiterführen");
-      if (meins) knopf("Auflegen", "danger-text", () => anrufAuflegen(x.art, x.id));
-    }
-    if (knoepfe.childElementCount) r.appendChild(knoepfe);
-    r.addEventListener("click", () => {
-      waehle(x.art === "rd" ? "einsatz" : "kt", x.id, { maske: false });
-      if (a.status === "aktiv" || a.status === "gehalten" || a.status === "beendet") panelZeigen("abfrage");
-    });
-    return r;
-  }
-
-  const ORD: Record<string, number> = { klingelt: 0, aktiv: 1, gehalten: 2, verpasst: 3, beendet: 4 };
-  function render(): void {
-    s1.c.checked = pers().notrufe;
-    s2.c.checked = pers().ktHotline;
-    const l = alleAnrufe(true).sort((a, b) => ORD[a.anruf.status] - ORD[b.anruf.status] || a.anruf.seit - b.anruf.seit);
-    liste.innerHTML = "";
-    const laufend = l.filter((x) => x.anruf.status !== "beendet");
-    const beendet = l.filter((x) => x.anruf.status === "beendet").slice(-6).reverse();
-    for (const x of laufend) liste.appendChild(zeile(x));
-    if (!laufend.length) liste.appendChild(el("div", { class: "muted pad tel-leer" }, "Keine Anrufe. Neue Anrufe klingeln hier."));
-    if (beendet.length) {
-      liste.appendChild(el("div", { class: "tel-trenner" }, "Zuletzt"));
-      for (const x of beendet) liste.appendChild(zeile(x));
-    }
-    const klingelt = laufend.filter((x) => x.anruf.status === "klingelt").length;
-    ctx.setzeBadge(klingelt || laufend.filter((x) => x.anruf.status === "gehalten").length, klingelt ? "klingelt" : "warn");
-  }
-
-  let wartet = false;
-  const spaeter = () => {
-    if (wartet) return;
-    wartet = true;
-    setTimeout(() => {
-      wartet = false;
-      render();
-    }, 250);
-  };
-  const uhr = window.setInterval(() => nachKlick(render), 1000);
-  const aus = [sim.onChange(spaeter), onAuswahl(() => render()), onPers(() => render()), mp.onChange(spaeter)];
-  render();
-  return {
-    el: root,
-    dispose: () => {
-      window.clearInterval(uhr);
-      aus.forEach((f) => f());
-    },
-  };
-}
-
 registriere({
   komponente: "telefon",
   titel: "Telefon",
-  info: "Alle Anrufe: annehmen, halten, zurückwechseln",
+  info: "Zurückrufen und anrufen: verpasste und angenommene Anrufe (angenommen wird in der Abfrage)",
   bereich: "links",
   einmalig: true,
-  erstellen,
+  erstellen: (ctx) => telefonFenster(ctx),
 });
 
 // ---------------------------------------------------------------- Klingeln und automatisches Öffnen (nur Hauptfenster)
@@ -292,10 +169,10 @@ export function anrufBeobachterStarten(): void {
     const p = pers();
     const anrufe = alleAnrufe();
     const klingeltNotruf = anrufe.some((x) => x.typ === "notruf" && x.anruf.status === "klingelt");
-    const klingeltKt = anrufe.some((x) => x.typ !== "notruf" && x.anruf.status === "klingelt");
+    const klingeltKt = anrufe.some((x) => x.typ !== "notruf" && x.anruf.status === "klingelt" && nehmeIchAn(x.typ));
     // Während ich telefoniere: kein Dauerklingeln, nur ein kurzer Anklopf-Ton je neuem Anruf
     const telefoniere = !!meinGespraech();
-    klingeltonAktualisieren(!telefoniere && klingeltNotruf && p.notrufe && sim.state.laeuft, !telefoniere && klingeltKt && p.ktHotline && sim.state.laeuft);
+    klingeltonAktualisieren(!telefoniere && klingeltNotruf && p.notrufe && sim.state.laeuft, !telefoniere && klingeltKt && sim.state.laeuft);
     const rufe = (sim.state.funkGespraeche ?? []).filter((g) => g.status === "ruft");
     funkPiepAktualisieren(p.funkTon && rufe.length > 0, rufe.some((g) => g.dringend));
     // Während ich telefoniere: einmal ein kurzer Ton, wenn jemand funken möchte (der Funk wartet aufs Auflegen)
@@ -304,15 +181,15 @@ export function anrufBeobachterStarten(): void {
       funkGemeldet.add(g.id);
       if (telefoniere && p.funkTon && !erstes) spielen("funk");
     }
-    // Neuer Anruf klingelt: Telefon zeigen (wenn ich diese Anrufe annehme)
+    // Neuer Anruf klingelt: Abfrage zeigen (dort wird abgehoben – wenn ich diese Anrufe annehme)
     for (const x of anrufe) {
       const key = `${x.id}:${x.anruf.versuche}:${x.anruf.status === "klingelt" ? x.anruf.seit : ""}`;
       if (x.anruf.status !== "klingelt" || bekannt.has(key)) continue;
       bekannt.add(key);
       if (erstes) continue;
-      const fuerMich = (x.typ === "notruf" && p.notrufe) || (x.typ !== "notruf" && p.ktHotline);
+      const fuerMich = nehmeIchAn(x.typ);
       if (telefoniere && fuerMich && sim.state.laeuft && kiPrefs().klingelton) spielen("anklopfen");
-      if ((x.typ === "notruf" && p.notrufe) || (x.typ !== "notruf" && p.ktHotline)) panelZeigen("telefon");
+      if (fuerMich) panelZeigen("abfrage");
     }
     erstes = false;
   };

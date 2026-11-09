@@ -4743,13 +4743,17 @@ export class Simulation {
     e.abfrageStand = { antworten: { ...a.antworten }, kapitel: a.kapitel, code };
   }
 
-  /** „m 67J B~ A+“ aus der Abfrage vorne in die Info an den RTW schreiben, Freitext bleibt hinter „//“ */
+  /**
+   * „83w B+ A~“ aus der Abfrage vorne in die Info an den RTW schreiben, Freitext bleibt hinter „//“.
+   * Alter und Geschlecht zusammen, B = Bewusstsein, A = Atmung: + normal, ~ erschwert, - nein, ? unklar.
+   */
   private infoAusAbfrage(e: Einsatz, a: Antworten): void {
     const teile: string[] = [];
-    if (a.geschlecht === "m" || a.geschlecht === "w") teile.push(a.geschlecht);
-    if (typeof a.alter === "number") teile.push(`${a.alter}J`);
-    const b: Record<string, string> = { ja: "B+", getruebt: "B~", nein: "B-" };
-    const at: Record<string, string> = { normal: "A+", abnorm: "A~", agonal: "A-", keine: "A-" };
+    const g = a.geschlecht === "m" || a.geschlecht === "w" ? a.geschlecht : "";
+    const alter = typeof a.alter === "number" ? String(a.alter) : "";
+    if (alter || g) teile.push(`${alter}${g}`);
+    const b: Record<string, string> = { ja: "B+", getruebt: "B~", nein: "B-", unbekannt: "B?" };
+    const at: Record<string, string> = { normal: "A+", abnorm: "A~", agonal: "A-", keine: "A-", unbekannt: "A?" };
     if (typeof a.bw === "string" && b[a.bw]) teile.push(b[a.bw]);
     if (typeof a.at === "string" && at[a.at]) teile.push(at[a.at]);
     const neu = teile.join(" ");

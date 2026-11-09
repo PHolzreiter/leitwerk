@@ -144,6 +144,13 @@ export function schliessen(): void {
 export async function jetztSichern(): Promise<void> {
   if (sim.state.einsaetze.length === 0 || sim.pilotTest) return;
   await autosaveWrite(JSON.stringify(erstellen()));
+  sicherungsZeit = Date.now();
+}
+
+/** Zeitpunkt der letzten automatischen Sicherung in diesem Programmlauf (0 = noch keine; für die Fußleiste) */
+let sicherungsZeit = 0;
+export function letzteAutosicherung(): number {
+  return sicherungsZeit;
 }
 
 let letzteSicherung = "";
@@ -157,6 +164,8 @@ export function autosaveStarten(): void {
     const kern = json.replace(/"gespeichert":\d+,/, "");
     if (kern === letzteSicherung) return;
     letzteSicherung = kern;
-    void autosaveWrite(json).catch((e) => console.warn("Automatische Sicherung", e));
+    void autosaveWrite(json)
+      .then(() => (sicherungsZeit = Date.now()))
+      .catch((e) => console.warn("Automatische Sicherung", e));
   }, 60_000);
 }
