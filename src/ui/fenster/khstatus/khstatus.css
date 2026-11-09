@@ -1,0 +1,147 @@
+/* KH-Status-Fenster – CSS aus dem Entwurf „KHStatus.dc.html“ (LeitWerk Arbeitsplatz); jede Regel auf .k-KHStatus begrenzt (der Entwurf hatte allgemeine Klassen wie .chip, .hk), sonst unverändert. */
+:where(.k-KHStatus) .fe{position:relative}
+:where(.k-KHStatus) .inhalt{overflow-y:auto !important}
+:where(.k-KHStatus) .k-kopf{display:flex;flex-direction:column;gap:8px;padding:10px 16px;border-bottom:1px solid var(--trenner)}
+:where(.k-KHStatus) .k-such{position:relative}
+:where(.k-KHStatus) .k-such .ic{position:absolute;left:10px;top:11px;color:var(--dim)}
+:where(.k-KHStatus) .k-such .feld{padding-left:32px;height:36px}
+:where(.k-KHStatus) .k-z2{display:flex;gap:8px;align-items:center;min-width:0}
+:where(.k-KHStatus) .k-land{flex:1 1 auto;min-width:0}
+:where(.k-KHStatus) .chip{all:unset;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;gap:6px;height:32px;padding:0 12px;border-radius:9px;border:1px solid var(--linie);font-size:12px;font-weight:600;color:var(--text-2);cursor:pointer;white-space:nowrap;flex:none;transition:background .2s,border-color .2s,color .2s,transform .12s}
+:where(.k-KHStatus) .chip:hover{border-color:var(--dim)}
+:where(.k-KHStatus) .chip:active{transform:scale(.96)}
+:where(.k-KHStatus) .chip.on{background:var(--akzent);border-color:var(--akzent);color:var(--auf-akzent)}
+:where(.k-KHStatus) .chip:focus-visible{outline:2px solid var(--akzent);outline-offset:2px}
+:where(.k-KHStatus) .chip .ic{width:13px;height:13px}
+@container fenster (max-width: 430px){:where(.k-KHStatus) .k-z2{flex-direction:column;align-items:stretch}
+ }
+:where(.k-KHStatus) .ab{border-bottom:0}
+/* Tabelle */
+:where(.k-KHStatus) .kl{border:1px solid var(--trenner);border-radius:10px;container:kliste / inline-size}
+:where(.k-KHStatus) .kl > :first-child{border-radius:9px 9px 0 0}
+:where(.k-KHStatus) .kl > :last-child{border-radius:0 0 9px 9px}
+:where(.k-KHStatus) .kk,:where(.k-KHStatus) .kz{display:grid;grid-template-columns:var(--kc);column-gap:6px;align-items:center;padding:0 10px}
+:where(.k-KHStatus) .kk{height:30px;background:var(--flaeche-2);font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--dim)}
+:where(.k-KHStatus) .kz{min-height:44px;padding-top:6px;padding-bottom:6px;border-top:1px solid var(--trenner);cursor:pointer;position:relative}
+:where(.k-KHStatus) .kz:first-of-type{border-top:0}
+:where(.k-KHStatus) .kz:hover{background:var(--hover)}
+:where(.k-KHStatus) .kz.ohne{opacity:.6}
+:where(.k-KHStatus) .kz:focus-visible{outline:2px solid var(--akzent);outline-offset:-2px}
+:where(.k-KHStatus) .kn2{min-width:0}
+:where(.k-KHStatus) .kn2 b{display:block;font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+:where(.k-KHStatus) .kn2 .u{display:flex;flex-wrap:wrap;align-items:center;gap:2px 6px;margin-top:2px;font-size:11.5px;color:var(--dim);white-space:nowrap;overflow:hidden}
+:where(.k-KHStatus) .kn2 .u .o{overflow:hidden;text-overflow:ellipsis;min-width:0;max-width:100%}
+:where(.k-KHStatus) .rad{flex:none;font-size:10.5px;font-weight:700;padding:1px 6px;border-radius:4px;background:var(--ok-flaeche);color:var(--ok)}
+:where(.k-KHStatus) .rad.nein{background:var(--gelb-flaeche);color:var(--gelb-text)}
+:where(.k-KHStatus) .km{text-align:right;font-variant-numeric:tabular-nums;font-size:12.5px;font-weight:600;color:var(--text-2);white-space:nowrap}
+:where(.k-KHStatus) .trenn{box-shadow:-7px 0 0 -6px var(--linie)}
+/* Zelle Plätze: frei/gesamt mit Füllstand */
+:where(.k-KHStatus) .pz{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0;padding:3px 0;border-radius:6px}
+:where(.k-KHStatus) .pz-z{font-size:12.5px;font-variant-numeric:tabular-nums;white-space:nowrap;line-height:1.1}
+:where(.k-KHStatus) .pz-z b{font-weight:800}
+:where(.k-KHStatus) .pz-n{color:var(--dim);font-weight:500}
+:where(.k-KHStatus) .pz-bar{display:block;width:100%;max-width:36px;height:3px;border-radius:2px;background:var(--linie);overflow:hidden}
+:where(.k-KHStatus) .pz-bar i{display:block;height:100%;border-radius:2px;transition:width .3s ease}
+:where(.k-KHStatus) .pz.frei b{color:var(--ok)}
+:where(.k-KHStatus) .pz.frei .pz-bar i{background:var(--ok)}
+:where(.k-KHStatus) .pz.knapp b{color:var(--gelb-text)}
+:where(.k-KHStatus) .pz.knapp .pz-bar i{background:var(--gelb)}
+:where(.k-KHStatus) .pz.voll b{color:var(--rot-text)}
+:where(.k-KHStatus) .pz.voll .pz-bar i{background:var(--rot)}
+:where(.k-KHStatus) .pz-t{font-size:12px;font-weight:600}
+:where(.k-KHStatus) .pz.zu .pz-t{color:var(--dim)}
+:where(.k-KHStatus) .pz.leer .pz-t{color:var(--linie)}
+:where(.k-KHStatus) .pz.offen .pz-t{color:var(--ok)}
+:where(.k-KHStatus) .pz.klickbar{cursor:pointer}
+:where(.k-KHStatus) .pz.klickbar:hover{background:var(--flaeche-2);box-shadow:0 0 0 1px var(--linie)}
+/* Zelle Akutversorgung: Symbole */
+:where(.k-KHStatus) .av{display:flex;justify-content:center;min-width:0;padding:4px 0;border-radius:6px}
+:where(.k-KHStatus) .av.klickbar{cursor:pointer}
+:where(.k-KHStatus) .av.klickbar:hover{background:var(--flaeche-2);box-shadow:0 0 0 1px var(--linie)}
+:where(.k-KHStatus) .as-g{display:flex;gap:2px}
+:where(.k-KHStatus) .as-g.alle{display:none}
+:where(.k-KHStatus) .as{display:grid;place-items:center;width:16px;height:16px}
+:where(.k-KHStatus) .as svg{width:16px;height:16px;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+:where(.k-KHStatus) .as.ok{color:var(--ok)}
+:where(.k-KHStatus) .as.voll{color:var(--rot-text)}
+:where(.k-KHStatus) .as.zu{color:var(--dim)}
+:where(.k-KHStatus) .as svg circle{stroke:currentColor}
+:where(.k-KHStatus) .as svg path{stroke:currentColor}
+:where(.k-KHStatus) .as.ok svg circle{fill:var(--ok-flaeche)}
+:where(.k-KHStatus) .as.voll svg circle{fill:var(--rot-flaeche)}
+:where(.k-KHStatus) .legende{display:flex;flex-wrap:wrap;gap:6px 14px;padding:10px 2px 0;font-size:11.5px;color:var(--dim)}
+:where(.k-KHStatus) .legende span{display:inline-flex;align-items:center;gap:5px}
+:where(.k-KHStatus) .leer2{padding:22px 10px;text-align:center;color:var(--dim);font-size:12.5px}
+/* Spaltenkopf: sortieren und Breite ziehen (wie im Fahrzeuge-Fenster) */
+:where(.k-KHStatus) .hk{position:relative;display:flex;align-items:center;justify-content:center;min-width:0;height:100%}
+:where(.k-KHStatus) .hk.li{justify-content:flex-start}
+:where(.k-KHStatus) .hk.re{justify-content:flex-end}
+:where(.k-KHStatus) .sk{all:unset;box-sizing:border-box;position:relative;cursor:pointer;display:inline-flex;align-items:center;max-width:100%;min-width:0;height:22px;border-radius:5px;color:var(--dim);transition:color .15s}
+:where(.k-KHStatus) .sk .skt{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+:where(.k-KHStatus) .sk .pf{position:absolute;right:-12px;top:5px;width:11px;height:11px;stroke-width:2.6;opacity:0;transition:opacity .15s,transform .22s cubic-bezier(.4,0,.2,1)}
+:where(.k-KHStatus) .sk:hover{color:var(--text)}
+:where(.k-KHStatus) .sk:hover .pf{opacity:.45}
+:where(.k-KHStatus) .sk.on{color:var(--text)}
+:where(.k-KHStatus) .sk.on .pf{opacity:1}
+:where(.k-KHStatus) .sk.hoch .pf{transform:rotate(180deg)}
+:where(.k-KHStatus) .hk.re .sk .pf{right:auto;left:-12px}
+:where(.k-KHStatus) .sk:focus-visible{outline:2px solid var(--akzent);outline-offset:1px}
+:where(.k-KHStatus) .spz{position:absolute;z-index:2;top:3px;bottom:3px;right:-8px;width:10px;cursor:col-resize;outline:none}
+:where(.k-KHStatus) .spz::after{content:"";position:absolute;top:3px;bottom:3px;left:4px;width:1px;border-radius:2px;background:var(--trenner);transition:background .15s,width .15s,left .15s}
+:where(.k-KHStatus) .spz:hover::after,:where(.k-KHStatus) .spz:focus-visible::after,:where(.k-KHStatus) .zieht .spz::after{left:3px;width:3px;background:var(--akzent)}
+:where(.k-KHStatus) .zieht,:where(.k-KHStatus) .zieht *{cursor:col-resize !important;user-select:none}
+:where(.k-KHStatus) .greifen,:where(.k-KHStatus) .greifen *{cursor:grabbing !important;user-select:none}
+:where(.k-KHStatus) .hk.greift .sk{opacity:.45}
+:where(.k-KHStatus) .hk.ziel{box-shadow:inset 0 -2px 0 var(--akzent);background:var(--akzent-flaeche);border-radius:5px}
+:where(.k-KHStatus) .kurzL,:where(.k-KHStatus) .langL{display:none}
+:where(.k-KHStatus) .mittelL{display:inline}
+/* Breite der Liste: breit = lange Beschriftungen, schmal = sehr kurze, Akut-Spalten nur ein Symbol */
+@container kliste (min-width: 740px){:where(.k-KHStatus) .kk,:where(.k-KHStatus) .kz{column-gap:8px}
+:where(.k-KHStatus) .mittelL{display:none}
+:where(.k-KHStatus) .langL{display:inline}
+:where(.k-KHStatus) .as-g.alle{display:flex}
+:where(.k-KHStatus) .as-g.eins{display:none}
+
+}
+@container kliste (max-width: 400px){:where(.k-KHStatus) .kk,:where(.k-KHStatus) .kz{column-gap:4px;padding:0 8px}
+:where(.k-KHStatus) .kz{padding-top:5px;padding-bottom:5px}
+:where(.k-KHStatus) .kk{font-size:9.5px;letter-spacing:.02em}
+:where(.k-KHStatus) .kl.akut .kk{height:50px;align-items:end;padding-bottom:6px}
+:where(.k-KHStatus) .kl.akut .hk{align-items:flex-end}
+:where(.k-KHStatus) .kl.akut .hk:not(.li):not(.re) .sk{height:auto}
+:where(.k-KHStatus) .kl.akut .hk:not(.li):not(.re) .skt{writing-mode:vertical-rl;transform:rotate(180deg);overflow:visible}
+:where(.k-KHStatus) .kl.akut .spz{top:auto;height:22px}
+:where(.k-KHStatus) .mittelL{display:none}
+:where(.k-KHStatus) .kurzL{display:inline}
+:where(.k-KHStatus) .kn2 b{font-size:12.5px}
+:where(.k-KHStatus) .kn2 .u{font-size:11px}
+:where(.k-KHStatus) .kn2 .rad{display:none}
+:where(.k-KHStatus) .pz-z{font-size:11.5px}
+:where(.k-KHStatus) .pz-n{display:none}
+:where(.k-KHStatus) .as,:where(.k-KHStatus) .as svg{width:14px;height:14px}
+:where(.k-KHStatus) .km{font-size:11.5px}
+:where(.k-KHStatus) .sk .pf{display:none}
+:where(.k-KHStatus) .sk.on{text-decoration:underline;text-underline-offset:3px}
+
+}
+/* „Wer belegt?“ */
+:where(.k-KHStatus) .pop-schirm{position:absolute;inset:0;z-index:20}
+:where(.k-KHStatus) .pop{position:absolute;z-index:21;width:270px;max-width:calc(100% - 24px);padding:10px 12px;border-radius:10px;background:var(--flaeche);box-shadow:0 0 0 1px var(--linie),0 18px 40px -12px rgba(0,0,0,.6);animation:khstatus-aufgehen .16s cubic-bezier(.2,.8,.2,1)}
+@keyframes khstatus-aufgehen{from{opacity:0;transform:translateY(-4px) scale(.98)}to{opacity:1;transform:none}}
+:where(.k-KHStatus) .pop-k{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+:where(.k-KHStatus) .pop-k .t{flex:1;min-width:0;font-size:12.5px}
+:where(.k-KHStatus) .pop-k .t b{font-weight:700}
+:where(.k-KHStatus) .pop-z{padding:7px 0;border-top:1px solid var(--trenner);font-size:12px;line-height:1.45}
+:where(.k-KHStatus) .pop-z .a b{font-weight:700}
+:where(.k-KHStatus) .pop-z .m,:where(.k-KHStatus) .pop-k .m{color:var(--dim)}
+:where(.k-KHStatus) .toast{position:absolute;z-index:15;left:50%;bottom:16px;transform:translateX(-50%);padding:8px 14px;border-radius:9px;background:var(--text);color:var(--grund);font-size:12.5px;font-weight:600;white-space:nowrap;box-shadow:0 10px 24px -8px rgba(0,0,0,.5)}
+
+
+/* ---------------------------------------------------------------- Im Spiel */
+/* das Fenster ist die Gruppe von dockview: kein eigener Rahmen */
+:where(.k-KHStatus) .fe{border-radius:0;box-shadow:none}
+/* allgemeine Klasse .legende des Spiels (Rahmen oben, untereinander) gilt hier nicht */
+.k-KHStatus .legende{border-top:0;flex-direction:row}
+/* „.ap button{font:inherit}“ der Grundlage überschreibt sonst Schriftgröße/-stärke der Knöpfe aus dem Entwurf */
+.k-KHStatus .chip,.k-KHStatus .seg{font-size:12px;font-weight:600}
+.k-KHStatus .chip:not(.on),.k-KHStatus .seg:not(.on){color:var(--text-2)}

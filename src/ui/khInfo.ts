@@ -3,15 +3,14 @@
  * Zeigt Akut-Abteilungen, Einrichtungen, Öffnungszeiten und freie Plätze – keine Quellen (die stehen in den Einstellungen).
  */
 import type { Hospital } from "../data/model";
-import { store } from "../data/store";
 import { akutAbteilung, akutJetzt, akutVon, buchungName, EINRICHTUNG_TYP_LABEL, EINRICHTUNGEN, type EinrichtungTyp } from "../data/klinik";
 import { aufnahmetag, belegt, MIT_ZEITEN, offen, plaetze, RESSOURCEN, zeitenText, type Ressource } from "../sim/khStatus";
 import { sim } from "../sim/engine";
-import { distanceM } from "../sim/geo";
 import { openDialog } from "./dialog";
 import { el, esc } from "./dom";
 import { registriere } from "./ws/arbeitsplatz";
 import { khAufnahmeOeffnen } from "./khAufnahme";
+import { khStatusFenster } from "./fenster/khstatus";
 
 /** Gruppen der Akut-Abteilungen für die Anzeige */
 const AKUT_GRUPPEN: [string, string[]][] = [
@@ -174,20 +173,21 @@ const RESSOURCE_AK: Record<string, string> = {
   pvz: "ak_primaerversorgung",
 };
 
-// ------------------------------------------------------------------ Fenster „KH-Status“
+// ------------------------------------------------------------------ Fenster „KH-Status“ (Plätze · Akutversorgung)
+// Aussehen und Bedienung aus dem Entwurf – siehe ./fenster/khstatus/. Hier nur die Werte je Zelle (eine Quelle für beide Reiter).
 
 /**
  * Spalten der Plätze-Ansicht. Jede Spalte gehört zu einer Akut-Abteilung (ak): was die Krankenhaus-Übersicht
  * unter „Akut-Abteilungen“ zeigt, steht auch hier – und umgekehrt (eine Quelle für beide Ansichten).
  */
-const SPALTEN: { rs: Ressource[]; n: string; ak: string[] }[] = [
-  { rs: ["notaufnahme"], n: "NFA", ak: ["ak_notaufnahme", "ak_primaerversorgung"] },
-  { rs: ["unfall"], n: "Unfall", ak: ["ak_unfallchirurgie", "ak_primaerversorgung_unfall"] },
-  { rs: ["kindernotaufnahme"], n: "Kinder", ak: ["ak_kinder_jugendheilkunde"] },
-  { rs: ["schockraum", "schockraum_trauma", "schockraum_intern"], n: "Schock", ak: ["ak_schockraum"] },
-  { rs: ["herzkatheter"], n: "PCI", ak: ["ak_herzkatheter"] },
-  { rs: ["stroke_unit"], n: "Stroke", ak: ["ak_stroke_unit"] },
-  { rs: ["kreisssaal"], n: "Kreißsaal", ak: ["ak_kreisssaal"] },
+export const SPALTEN: { k: string; rs: Ressource[]; n: string; ak: string[] }[] = [
+  { k: "nfa", rs: ["notaufnahme"], n: "NFA", ak: ["ak_notaufnahme", "ak_primaerversorgung"] },
+  { k: "unf", rs: ["unfall"], n: "Unfall", ak: ["ak_unfallchirurgie", "ak_primaerversorgung_unfall"] },
+  { k: "kin", rs: ["kindernotaufnahme"], n: "Kinder", ak: ["ak_kinder_jugendheilkunde"] },
+  { k: "sr", rs: ["schockraum", "schockraum_trauma", "schockraum_intern"], n: "Schock", ak: ["ak_schockraum"] },
+  { k: "pci", rs: ["herzkatheter"], n: "PCI", ak: ["ak_herzkatheter"] },
+  { k: "str", rs: ["stroke_unit"], n: "Stroke", ak: ["ak_stroke_unit"] },
+  { k: "krs", rs: ["kreisssaal"], n: "Kreißsaal", ak: ["ak_kreisssaal"] },
 ];
 
 /** Welche der Akut-Abteilungen hat das Haus (in der Reihenfolge der Liste), und ist sie gerade offen? */
@@ -197,56 +197,42 @@ function akDa(h: Hospital, ak: string[], t: number): { id: string; offen: boolea
   return id ? { id, offen: akutJetzt(h, t).has(id) } : null;
 }
 
-/** Mehrere Ressourcen (Schockräume) zusammengefasst */
-function sammelZelle(h: Hospital, sp: (typeof SPALTEN)[number], t: number): string {
+/** Wert einer Plätze-Zelle: [frei, gesamt] · „zu“ · „offen“ (keine Plätze hinterlegt) · null (gibt es nicht); dazu die Ressourcen für „Wer belegt“ */
+export function platzWert(h: Hospital, sp: (typeof SPALTEN)[number], t: number): { v: [number, number] | "zu" | "offen" | null; rs: Ressource[]; titel: string } {
   const ak = akDa(h, sp.ak, t);
-  if (!ak) return `<span class="khp leer">–</span>`;
+  if (!ak) return { v: null, rs: [], titel: "" };
   const name = akutAbteilung(ak.id)?.name ?? ak.id;
-  if (!ak.offen) return `<span class="khp zu" title="${esc(name)}: gerade geschlossen">zu</span>`;
+  if (!ak.offen) return { v: "zu", rs: [], titel: `${name}: gerade geschlossen` };
   const da = ak.id.startsWith("ak_primaerversorgung") ? [] : sp.rs.filter((r) => plaetze(h, r) > 0);
   // Abteilung ohne gezählte Plätze: nur offen/zu (wie in der Übersicht)
-  if (!da.length) return `<span class="khp frei" title="${esc(name)}: offen (keine Plätze hinterlegt)">offen</span>`;
-  if (da.length === 1) return platzZelle(h, da[0], t);
+  if (!da.length) return { v: "offen", rs: [], titel: `${name}: offen (keine Plätze hinterlegt)` };
   const st = da.map((r) => platzStatus(h, r, t));
-  const offenL = st.filter((s) => s.offen);
-  if (!offenL.length) return `<span class="khp zu">zu</span>`;
-  const n = offenL.reduce((a, s) => a + s.n, 0);
-  const frei = offenL.reduce((a, s) => a + s.frei, 0);
-  const art = frei === 0 ? "voll" : frei / n <= 0.25 ? "knapp" : "frei";
-  const titel = da.map((r, i) => `${RESSOURCEN.find((x) => x.id === r)!.name}: ${st[i].offen ? `${st[i].frei}/${st[i].n} frei` : "zu"}`).join("\n");
-  return `<span class="khp ${art}" title="${esc(titel)}"><span class="khp-bar" style="--anteil:${((n - frei) / n) * 100}%"></span><b>${frei}</b>/${n}</span>`;
+  const offenI = da.map((_, i) => i).filter((i) => st[i].offen);
+  if (!offenI.length) return { v: "zu", rs: [], titel: `${name}: gerade geschlossen` };
+  const n = offenI.reduce((a, i) => a + st[i].n, 0);
+  const frei = offenI.reduce((a, i) => a + st[i].frei, 0);
+  const titel = da.length > 1 ? da.map((r, i) => `${RESSOURCEN.find((x) => x.id === r)!.name}: ${st[i].offen ? `${st[i].frei}/${st[i].n} frei` : "zu"}`).join(" · ") : "";
+  return { v: [frei, n], rs: offenI.map((i) => da[i]), titel };
 }
 
 // ------------------------------------------------------------------ Ansicht „Akutversorgung“ (wie die Übersicht der Leitstelle)
 
 type AkvZustand = "ok" | "zu" | "voll";
-const AKV_SYMBOL: Record<AkvZustand, string> = {
-  ok: `<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5"/><path d="M5 8.3l2 2 4-4.3"/></svg>`,
-  zu: `<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5"/><path d="M5 8h6"/></svg>`,
-  voll: `<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5"/><path d="M5.6 5.6l4.8 4.8M10.4 5.6l-4.8 4.8"/></svg>`,
-};
 const AKV_TEXT: Record<AkvZustand, string> = { ok: "verfügbar", zu: "geschlossen", voll: "belegt" };
 
 /** Spalten: Name, Akut-Abteilung(en) (erste vorhandene zählt; Primärversorgung als Ersatz), Ressourcen für die Plätze */
-const AKV_SPALTEN: { n: string; titel: string; ak: string[]; rs?: Ressource[]; einzeln?: boolean; trenn?: boolean }[] = [
-  { n: "SRT", titel: "Schockraum Trauma", ak: ["ak_schockraum"], rs: ["schockraum_trauma", "schockraum"], einzeln: true },
-  { n: "SRI", titel: "Schockraum internistisch", ak: ["ak_schockraum"], rs: ["schockraum_intern", "schockraum"], einzeln: true },
-  { n: "PCI", titel: "Herzkatheter", ak: ["ak_herzkatheter"], rs: ["herzkatheter"] },
-  { n: "CT", titel: "Computertomographie", ak: ["ak_ct"] },
-  { n: "END", titel: "Endoskopie", ak: ["ak_gastro_endoskopie"] },
-  { n: "STROKE", titel: "Stroke Unit", ak: ["ak_stroke_unit"], rs: ["stroke_unit"] },
-  { n: "NFA", titel: "Notaufnahme", ak: ["ak_notaufnahme", "ak_primaerversorgung"], rs: ["notaufnahme"], trenn: true },
-  { n: "UNF", titel: "Unfallaufnahme", ak: ["ak_unfallchirurgie", "ak_primaerversorgung_unfall"], rs: ["unfall"] },
-  { n: "KIND", titel: "Kindernotaufnahme / Kinderabteilung", ak: ["ak_kinder_jugendheilkunde"], rs: ["kindernotaufnahme"], trenn: true },
-  { n: "KRS", titel: "Kreißsaal", ak: ["ak_kreisssaal"], rs: ["kreisssaal"] },
+export const AKV_SPALTEN: { k: string; n: string; titel: string; ak: string[]; rs?: Ressource[]; einzeln?: boolean; trenn?: boolean }[] = [
+  { k: "srt", n: "SRT", titel: "Schockraum Trauma", ak: ["ak_schockraum"], rs: ["schockraum_trauma", "schockraum"], einzeln: true },
+  { k: "sri", n: "SRI", titel: "Schockraum internistisch", ak: ["ak_schockraum"], rs: ["schockraum_intern", "schockraum"], einzeln: true },
+  { k: "pci", n: "PCI", titel: "Herzkatheter", ak: ["ak_herzkatheter"], rs: ["herzkatheter"] },
+  { k: "ct", n: "CT", titel: "Computertomographie", ak: ["ak_ct"] },
+  { k: "end", n: "END", titel: "Endoskopie", ak: ["ak_gastro_endoskopie"] },
+  { k: "str", n: "STROKE", titel: "Stroke Unit", ak: ["ak_stroke_unit"], rs: ["stroke_unit"] },
+  { k: "nfa", n: "NFA", titel: "Notaufnahme", ak: ["ak_notaufnahme", "ak_primaerversorgung"], rs: ["notaufnahme"], trenn: true },
+  { k: "unf", n: "UNF", titel: "Unfallaufnahme", ak: ["ak_unfallchirurgie", "ak_primaerversorgung_unfall"], rs: ["unfall"] },
+  { k: "kind", n: "KIND", titel: "Kindernotaufnahme / Kinderabteilung", ak: ["ak_kinder_jugendheilkunde"], rs: ["kindernotaufnahme"], trenn: true },
+  { k: "krs", n: "KRS", titel: "Kreißsaal", ak: ["ak_kreisssaal"], rs: ["kreisssaal"] },
 ];
-
-function akvFeld(zust: AkvZustand[], titel: string, belegtR?: Ressource): string {
-  const schlimmst: AkvZustand = zust.includes("ok") ? "ok" : zust.includes("voll") ? "voll" : "zu";
-  // belegte Plätze: anklickbar – zeigt, wer sie belegt und warum
-  const klick = belegtR && zust.includes("voll") ? ` data-r="${belegtR}" role="button" tabindex="0"` : "";
-  return `<span class="akv-f ${schlimmst}${klick ? " klickbar" : ""}"${klick} title="${esc(titel)}${klick ? " – klicken: wer belegt" : ""}">${zust.map((z) => `<i class="akv-s ${z}">${AKV_SYMBOL[z]}</i>`).join("")}</span>`;
-}
 
 /** Zustand einer Spalte: null = gibt es dort nicht (für Tests und die Anzeige) */
 export function akvZustand(h: Hospital, n: string, t: number): { ak: string; offen: boolean } | null {
@@ -256,32 +242,39 @@ export function akvZustand(h: Hospital, n: string, t: number): { ak: string; off
 }
 export const AKV_SPALTEN_AK: Record<string, string[]> = Object.fromEntries(AKV_SPALTEN.map((s) => [s.n, s.ak]));
 
-function akvZelle(h: Hospital, s: (typeof AKV_SPALTEN)[number], t: number): string {
+/** Wert einer Akut-Zelle: Symbole (Schockräume einzeln, sonst eines), Hinweis, belegte Ressource (für „Wer belegt“); null = gibt es dort nicht */
+export function akvWert(h: Hospital, s: (typeof AKV_SPALTEN)[number], t: number): { z: AkvZustand[]; titel: string; belegt?: Ressource } | null {
   const ak = akDa(h, s.ak, t);
-  if (!ak) return `<span class="akv-f leer"></span>`;
+  if (!ak) return null;
   const name = akutAbteilung(ak.id)?.name ?? s.titel;
   if (ak.id.startsWith("ak_primaerversorgung")) {
     // Primärversorgung mit gezählten Plätzen (Health Center Flughafen): auch „voll“
     const n = plaetze(h, "pvz");
     const voll = ak.offen && n > 0 && belegt(sim.state.khBelegung, h.id, "pvz", t) >= n;
     const z: AkvZustand = !ak.offen ? "zu" : voll ? "voll" : "ok";
-    return akvFeld([z], `${name} (keine vollwertige ${s.n === "NFA" ? "Notaufnahme" : "Unfallaufnahme"}): ${AKV_TEXT[z]}`, voll ? "pvz" : undefined);
+    return { z: [z], titel: `${name} (keine vollwertige ${s.n === "NFA" ? "Notaufnahme" : "Unfallaufnahme"}): ${AKV_TEXT[z]}`, belegt: voll ? "pvz" : undefined };
   }
   const r = (s.rs ?? []).find((x) => plaetze(h, x) > 0);
   // keine gezählten Plätze: offen/zu wie in der Krankenhaus-Übersicht
   if (!r || !ak.offen) {
     const z: AkvZustand = ak.offen ? "ok" : "zu";
-    return akvFeld([z], `${name}: ${AKV_TEXT[z]}`);
+    return { z: [z], titel: `${name}: ${AKV_TEXT[z]}` };
   }
   const st = platzStatus(h, r, t);
   const titel = `${s.titel}${r === "schockraum" ? " (gemeinsamer Schockraum)" : ""}: ${st.offen ? `${st.frei} von ${st.n} frei` : "geschlossen"}`;
-  if (!st.offen) return akvFeld(s.einzeln ? Array(Math.min(st.n, 3)).fill("zu") : ["zu"], titel);
+  if (!st.offen) return { z: s.einzeln ? Array(Math.min(st.n, 3)).fill("zu") : ["zu"], titel };
   if (s.einzeln) {
     const l: AkvZustand[] = [];
     for (let i = 0; i < Math.min(st.n, 3); i++) l.push(i < st.frei ? "ok" : "voll");
-    return akvFeld(l, titel, r);
+    return { z: l, titel, belegt: r };
   }
-  return akvFeld([st.frei > 0 ? "ok" : "voll"], titel, r);
+  return { z: [st.frei > 0 ? "ok" : "voll"], titel, belegt: r };
+}
+
+/** Aufnahmerad: „ja“ (Aufnahmetag) · „nein“ · leer, mit Hinweis */
+export function radWert(h: Hospital, t: number): { rad: "" | "ja" | "nein"; titel: string } {
+  if (!h.aufnahmerad) return { rad: "", titel: "" };
+  return { rad: aufnahmetag(h.aufnahmerad, t) ? "ja" : "nein", titel: `Wiener Aufnahmerad: ${radText(h, t)}` };
 }
 
 /** Wer belegt die Plätze (Einsatz, beteiligte Fahrzeuge, Buchungsgrund, bis wann) */
@@ -317,156 +310,12 @@ export function belegungZeilen<T extends { privat?: boolean; bis: number }>(l: T
   return rest;
 }
 
-/** Kleines Fenster neben der Zelle: wer belegt die Plätze */
-function belegungZeigen(anker: HTMLElement, h: Hospital, r: Ressource): void {
-  document.querySelectorAll(".akv-pop").forEach((x) => x.remove());
-  const t = jetzt();
-  const uhr = (ms: number) => new Date(ms).toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" });
-  const pop = el("div", { class: "akv-pop", role: "dialog" });
-  const def = RESSOURCEN.find((x) => x.id === r);
-  pop.innerHTML =
-    `<div class="akv-pop-kopf"><b>${esc(h.kurzname || h.name)}</b> · ${esc(def?.name ?? r)}</div>` +
-    (belegungZeilen(belegungListe(h, r, t))
-      .map(
-        (x) => `<div class="akv-pop-z">
-          <div>${x.einsatz ? `<b>Einsatz ${esc(x.nummer)}</b>` : x.fremd ? "<b>Fremdbuchung</b> <span class=\"muted\">(anderer Bereich)</span>" : `<b>${x.anzahl ?? 1}× privat</b>`} <span class="muted">· frei ${x.anzahl && x.anzahl > 1 ? "ab" : ""} ca. ${uhr(x.bis)}</span></div>
-          ${x.fahrzeuge.length ? `<div>🚑 ${x.fahrzeuge.map(esc).join(", ")}</div>` : ""}
-          <div class="muted">${x.einsatz || x.fremd ? "Buchung: " : ""}${esc(x.grund)}</div>
-        </div>`,
-      )
-      .join("") || `<div class="muted">Gerade nichts belegt.</div>`);
-  document.body.appendChild(pop);
-  const rc = anker.getBoundingClientRect();
-  const w = pop.offsetWidth;
-  pop.style.left = `${Math.max(8, Math.min(window.innerWidth - w - 8, rc.left + rc.width / 2 - w / 2))}px`;
-  pop.style.top = `${Math.min(window.innerHeight - pop.offsetHeight - 8, rc.bottom + 6)}px`;
-  const zu = (ev: Event) => {
-    if (ev instanceof KeyboardEvent && ev.key !== "Escape") return;
-    if (ev.type === "mousedown" && pop.contains(ev.target as Node)) return;
-    pop.remove();
-    document.removeEventListener("mousedown", zu, true);
-    document.removeEventListener("keydown", zu, true);
-  };
-  setTimeout(() => {
-    document.addEventListener("mousedown", zu, true);
-    document.addEventListener("keydown", zu, true);
-  }, 0);
-}
-
-function khStatusPanel(ctx: { params: Record<string, unknown>; setzeParams(p: Record<string, unknown>): void; sichtbar(): boolean }, standard: "plaetze" | "akut") {
-  const root = el("div", { class: "khs" });
-  const ansicht = el("div", { class: "khs-ansicht", role: "tablist" });
-  let modus: "plaetze" | "akut" = ctx.params.ansicht === "akut" || ctx.params.ansicht === "plaetze" ? (ctx.params.ansicht as "plaetze" | "akut") : standard;
-  const knopf = (m: "plaetze" | "akut", l: string) => {
-    const b = el("button", { class: "btn small", type: "button", "data-ansicht": m }, l);
-    b.addEventListener("click", () => {
-      modus = m;
-      merken();
-      render();
-    });
-    return b;
-  };
-  ansicht.append(knopf("akut", "Akutversorgung"), knopf("plaetze", "Plätze"));
-  const kopf = el("div", { class: "khs-kopf" });
-  const such = el("input", { type: "search", placeholder: "Krankenhaus suchen …", class: "khs-such" }) as HTMLInputElement;
-  const umkreis = el("select", { class: "khs-umkreis", title: "Umkreis um die Mitte deiner Funkgruppe" }) as HTMLSelectElement;
-  for (const [v, l] of [["40", "bis 40 km"], ["70", "bis 70 km"], ["120", "bis 120 km"], ["0", "alle"]]) umkreis.appendChild(el("option", { value: v }, l));
-  umkreis.value = String(ctx.params.umkreis ?? "70");
-  const nurRettung = el("input", { type: "checkbox" }) as HTMLInputElement;
-  nurRettung.checked = ctx.params.nurRettung !== false;
-  const nrLabel = el("label", { class: "khs-check" });
-  nrLabel.append(nurRettung, document.createTextNode(" nur mit Rettung"));
-  kopf.append(ansicht, such, umkreis, nrLabel);
-  const tabelle = el("div", { class: "khs-tab" });
-  root.append(kopf, tabelle);
-
-  const render = () => {
-    const t = jetzt();
-    const g = sim.funkgruppe();
-    const mitte = { lat: (g.bbox[1] + g.bbox[3]) / 2, lon: (g.bbox[0] + g.bbox[2]) / 2 };
-    const max = Number(umkreis.value);
-    const q = such.value.trim().toLowerCase();
-    const liste = store
-      .list("hospitals")
-      .map((h) => ({ h, km: distanceM(mitte, h) / 1000 }))
-      .filter((x) => (!max || x.km <= max) && (!nurRettung.checked || nimmtRettung(x.h)) && (!q || `${x.h.name} ${x.h.kurzname} ${x.h.ort}`.toLowerCase().includes(q)))
-      .sort((a, b) => a.km - b.km);
-    ansicht.querySelectorAll<HTMLElement>("[data-ansicht]").forEach((b) => b.classList.toggle("primary", b.dataset.ansicht === modus));
-    tabelle.classList.toggle("akv", modus === "akut");
-    if (modus === "akut") {
-      const kopf = `<div class="akv-z akv-head"><span class="akv-name">Krankenhaus</span>${AKV_SPALTEN.map((s) => `<span class="${s.trenn ? "akv-trenn" : ""}" title="${esc(s.titel)}">${s.n}</span>`).join("")}</div>`;
-      tabelle.innerHTML =
-        kopf +
-        (liste
-          .map(
-            ({ h, km }) => `<div class="akv-z" data-kh="${esc(h.id)}" tabindex="0" role="button">
-              <span class="akv-name"><b>${esc(h.kurzname || h.name)}</b><small>${km.toFixed(0)} km</small></span>
-              ${AKV_SPALTEN.map((s) => `<span class="${s.trenn ? "akv-trenn" : ""}">${akvZelle(h, s, t)}</span>`).join("")}
-            </div>`,
-          )
-          .join("") || `<div class="khs-leer">Kein Krankenhaus im gewählten Umkreis.</div>`) +
-        `<div class="akv-legende"><span><i class="akv-s ok">${AKV_SYMBOL.ok}</i> verfügbar</span><span><i class="akv-s voll">${AKV_SYMBOL.voll}</i> belegt</span><span><i class="akv-s zu">${AKV_SYMBOL.zu}</i> geschlossen</span><span>leer = gibt es dort nicht</span></div>`;
-      return;
-    }
-    const kopfZeile = `<div class="khs-z khs-head"><span>Krankenhaus</span>${SPALTEN.map((sp) => `<span>${sp.n}</span>`).join("")}</div>`;
-    tabelle.innerHTML =
-      kopfZeile +
-      (liste
-        .map(
-          ({ h, km }) => `<div class="khs-z" data-kh="${esc(h.id)}" tabindex="0" role="button">
-            <span class="khs-name"><b>${esc(h.kurzname || h.name)}</b><small>${km.toFixed(0)} km${h.aufnahmerad ? (aufnahmetag(h.aufnahmerad, t) ? " · Aufnahmetag" : " · kein Aufnahmetag") : ""}</small></span>
-            ${SPALTEN.map((sp) => `<span>${sammelZelle(h, sp, t)}</span>`).join("")}
-          </div>`,
-        )
-        .join("") || `<div class="khs-leer">Kein Krankenhaus im gewählten Umkreis.</div>`);
-  };
-  const merken = () => ctx.setzeParams({ umkreis: umkreis.value, nurRettung: nurRettung.checked, ansicht: modus });
-  umkreis.addEventListener("change", () => (merken(), render()));
-  nurRettung.addEventListener("change", () => (merken(), render()));
-  such.addEventListener("input", render);
-  const oeffnen = (z: Element | null) => {
-    const id = (z as HTMLElement | null)?.dataset.kh;
-    const h = id ? store.get("hospitals", id) : undefined;
-    if (h) khDetail(h);
-  };
-  // belegte Zelle: Aufschlüsselung statt Krankenhaus-Details
-  const belegtZelle = (ziel: Element): boolean => {
-    const f = ziel.closest<HTMLElement>(".akv-f[data-r]");
-    const id = f?.closest<HTMLElement>("[data-kh]")?.dataset.kh;
-    const h = id ? store.get("hospitals", id) : undefined;
-    if (!f || !h) return false;
-    belegungZeigen(f, h, f.dataset.r as Ressource);
-    return true;
-  };
-  tabelle.addEventListener("click", (e) => {
-    if (belegtZelle(e.target as Element)) return;
-    oeffnen((e.target as Element).closest("[data-kh]"));
-  });
-  tabelle.addEventListener("keydown", (e) => {
-    if ((e as KeyboardEvent).key !== "Enter") return;
-    if (belegtZelle(e.target as Element)) return;
-    oeffnen((e.target as Element).closest("[data-kh]"));
-  });
-  let letzt = 0;
-  const aus = [
-    sim.onChange(() => {
-      const now = performance.now();
-      if (now - letzt < 2000 || !ctx.sichtbar()) return;
-      letzt = now;
-      render();
-    }),
-    store.onChange(render),
-  ];
-  render();
-  return { el: root, dispose: () => aus.forEach((f) => f()), sichtbar: (an: boolean) => an && render() };
-}
-
 registriere({
   komponente: "khstatus",
   titel: "KH-Status",
-  info: "Krankenhäuser in der Nähe: offen oder zu, freie Plätze in Notaufnahme, Schockraum, Herzkatheter, Stroke Unit, Kreißsaal",
+  info: "Krankenhäuser: offen oder zu, freie Plätze in Notaufnahme, Unfall, Kinder, Schockraum, Herzkatheter, Stroke Unit, Kreißsaal",
   bereich: "rechts",
-  erstellen: (ctx) => khStatusPanel(ctx, "plaetze"),
+  erstellen: (ctx) => khStatusFenster(ctx, "plaetze"),
 });
 
 registriere({
@@ -474,5 +323,5 @@ registriere({
   titel: "Akutversorgung",
   info: "Übersicht wie in der Leitstelle: was jedes Krankenhaus hat (Schockraum Trauma/intern, PCI, CT, Endoskopie, Stroke, Notaufnahme, Unfall …) und ob es gerade verfügbar, belegt oder geschlossen ist",
   bereich: "rechts",
-  erstellen: (ctx) => khStatusPanel(ctx, "akut"),
+  erstellen: (ctx) => khStatusFenster(ctx, "akut"),
 });
