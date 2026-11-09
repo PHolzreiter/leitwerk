@@ -1,0 +1,92 @@
+<div class="k-Funk" style="display: contents;">
+<section class="fe">
+  <sc-if value="{{mitKopf}}"><div class="fe-kopf" role="tablist"><sc-for list="{{reiter}}" as="r" hint-placeholder-count="2"><button class="{{r.cls}}" onClick="{{r.klick}}" aria-selected="{{r.an}}" role="tab">{{r.t}}<sc-if value="{{r.hatBdg}}" hint-placeholder-val="{{true}}"><span class="{{r.bdgCls}}" title="{{r.bdgTitel}}">{{r.bdg}}</span></sc-if></button></sc-for></div></sc-if>
+
+  <!-- ===== Funk ===== -->
+  <sc-if value="{{istFunk}}" hint-placeholder-val="{{true}}">
+  <div class="{{fkCls}}">
+    <div class="f-geraet">
+      <!-- Funkgerät wie im Spiel: Bild des Bedienteils, dahinter das Display; bedienbar ist das Steuerkreuz links/rechts -->
+      <div class="{{fgCls}}">
+        <div class="fg-display" role="status" aria-live="polite">
+          <div class="fg-status"><span class="fg-balken"><i></i><i></i><i></i><i></i></span><span class="fg-sym">⇣</span></div>
+          <div class="fg-zeilen">
+            <div class="fg-z">TETRA</div>
+            <div class="fg-z">BOS</div>
+            <div class="fg-z fg-gruppe"><span class="fg-pfeil">‹</span><span>{{gerGruppe}}</span><span class="fg-pfeil">›</span><i class="{{fgLampeCls}}" title="In einer anderen Gruppe wird gerade gefunkt"></i></div>
+            <div class="fg-z fg-stat">{{fgStat}}</div>
+          </div>
+          <div class="fg-seite"><span>{{fgSeiteO}}</span><span class="fg-blatt">{{fgSeiteU}}</span></div>
+          <sc-if value="{{gerFenster}}" hint-placeholder-val="{{false}}"><div class="{{fgPopCls}}"><div class="fg-pop-kopf">{{gerFTitel}}</div><div class="fg-pop-name">{{gerFZeile}}</div><div class="fg-pop-gruppe">{{gerFGruppe}}</div><sc-if value="{{dIch}}" hint-placeholder-val="{{false}}"><div class="fg-pop-pegel"><span class="echt" style="width: {{pegelW}}%;"></span></div></sc-if><sc-if value="{{hatNeben}}" hint-placeholder-val="{{false}}"><div class="fg-pop-neben">{{fgNeben}}</div></sc-if></div></sc-if>
+        </div>
+        <img class="fg-bild" src="{{bildGeraet}}" alt="Funkgerät" draggable="false">
+        <button class="fg-kreuz links" onClick="{{grLinks}}" title="{{kreuzTitel}}" aria-label="Sprechgruppe zurück"></button>
+        <button class="fg-kreuz rechts" onClick="{{grRechts}}" title="{{kreuzTitel}}" aria-label="Sprechgruppe weiter"></button>
+      </div>
+      <!-- Hochformat: Handfunkgerät; Sprechen über die Seitentaste (oder die Funktaste) -->
+      <div class="hh-reihe">
+        <div class="{{hhCls}}">
+          <div class="hh-display" role="status" aria-live="polite">
+            <div class="hh-z1"><span class="fg-balken"><i></i><i></i><i></i><i></i></span><span>TETRA</span></div>
+            <div class="hh-gr"><span class="fg-pfeil">‹</span>{{gerGruppe}}<span class="fg-pfeil">›</span><i class="{{fgLampeCls}}"></i></div>
+            <div class="hh-st">{{fgStat}}</div>
+            <sc-if value="{{gerFenster}}" hint-placeholder-val="{{false}}"><div class="{{hhPopCls}}"><div class="hh-pop-k">{{gerFTitel}}</div><div class="hh-pop-n">{{gerFZeile}}</div><div class="hh-pop-g">{{gerFGruppe}}</div></div></sc-if>
+          </div>
+          <img class="hh-bild" src="{{bildHand}}" alt="Handfunkgerät" draggable="false">
+          <button class="hh-kreuz links" onClick="{{grLinks}}" title="{{kreuzTitel}}" aria-label="Sprechgruppe zurück"></button>
+          <button class="hh-kreuz rechts" onClick="{{grRechts}}" title="{{kreuzTitel}}" aria-label="Sprechgruppe weiter"></button>
+          <button class="{{hhPttCls}}" onPointerDown="{{pttAn}}" aria-pressed="{{pttGedrueckt}}" aria-label="Sprechtaste" title="Seitentaste gedrückt halten zum Sprechen – oder {{taste}}"></button>
+        </div>
+      </div>
+      <div class="steuer">
+        <span class="ptt-hinweis">Sprechen: Seitentaste oder {{taste}} halten · Sprechgruppe: Steuerkreuz ◂ ▸</span>
+        <button class="{{pttCls}}" onPointerDown="{{pttAn}}" aria-pressed="{{pttGedrueckt}}" title="Gedrückt halten zum Sprechen – oder {{taste}} (geht in jedem Fenster)">PTT</button>
+        <div class="segs gleit modus" role="group" aria-label="Sprechen oder Text" style="--i: {{modusIdx}}; --n: 2;"><sc-for list="{{modi}}" as="m" hint-placeholder-count="2"><button class="{{m.cls}}" onClick="{{m.klick}}" aria-pressed="{{m.an}}">{{m.t}}</button></sc-for></div>
+        <span style="flex: 1;"></span>
+        <span class="hilfe-k"><button class="kn sm leise" onClick="{{hilfeKlick}}" aria-expanded="{{hilfeAn}}"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v5M12 8h.01"></path></svg>Funkregeln</button>
+          <sc-if value="{{hilfeOffen}}" hint-placeholder-val="{{false}}"><div class="hilfe" role="dialog" aria-label="Funkregeln">
+            <h4>Sprechen</h4><ul><li>Sprechtaste gedrückt halten – oder die Funktaste {{taste}} (geht in jedem Fenster). Spricht schon jemand in deiner Gruppe, steht „Warten“ – nach seinem Ende-Ton bist du dran.</li><li>{{hGruppen}}</li></ul>
+            <h4>Funken</h4><ul><li>{{hRufen}}</li><li>{{hAntw}}</li><li>Beenden: „Verstanden, Ende“. Nach einer Minute ohne Funkspruch ist das Gespräch auch aus.</li><li>Ein anderes Fahrzeug rufen beendet das laufende Gespräch (z. B. „NEF Krems, mitgehört?“). Was das erste Fahrzeug noch sagen wollte, meldet es später.</li><li>Ein Fahrzeug in einer anderen Gruppe (z. B. beim Großeinsatz) hört dich dort nicht – du bekommst einen Hinweis.</li></ul>
+            <sc-if value="{{istLst}}" hint-placeholder-val="{{true}}"><h4>Das verstehen die Fahrzeuge</h4><ul><li>Lagemeldung, Status und Eintreffzeit, Zustand des Patienten, weitere Kräfte</li><li>Vitalwerte, Verdacht, Zielkrankenhaus</li><li>Einsatzauftrag, Zusatzinfo, Polizei/Feuerwehr vor Ort, Storno</li><li>Funkcheck („wie hört ihr mich?“), „mitgehört“ beim Funk zwischen Fahrzeugen</li></ul></sc-if>
+            <h4>Regeln</h4><ul><li>Je Gruppe spricht immer nur einer. In verschiedenen Gruppen darf gleichzeitig gefunkt werden.</li><li>Kein Fahrzeug ruft, solange gefunkt wird – außer dringend (Reanimation, Gefahr für die Besatzung).</li><li>Ohne Antwort ruft ein Fahrzeug nach 30 s wieder, dann nach 1, 3, 6, 12 … Minuten.</li></ul><h4>Einstellungen</h4><ul><li>Funktaste, eigene Taste je Gruppe, Lautstärke der anderen Gruppen und Funk beim Telefonieren: Einstellungen › Mein Platz › Mikrofon &amp; Funk.</li></ul>
+          </div></sc-if>
+        </span>
+      </div>
+    </div>
+    <sc-if value="{{istText}}" hint-placeholder-val="{{false}}">
+    <div class="f-text">
+      <div class="eing"><input class="feld" ref="{{eingabeRef}}" maxlength="500" value="{{entwurf}}" onInput="{{entwurfEin}}" onKeyDown="{{entwurfTaste}}" placeholder="{{phSpruch}}" aria-label="Funkspruch"><button class="kn prim" onClick="{{funkSenden}}" style="height: 40px;">Senden</button></div>
+      <div class="v-kopf"><span class="lbl">Verlauf</span><span class="gruppen-m"><sc-for list="{{gruppen}}" as="g" hint-placeholder-count="2"><button class="{{g.cls}}" onClick="{{g.ton}}" title="{{g.tonLabel}}" aria-pressed="{{g.stummAn}}"><sc-if value="{{g.laut}}" hint-placeholder-val="{{true}}"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z"></path><path d="M16.5 8.5a5 5 0 0 1 0 7"></path></svg></sc-if><sc-if value="{{g.stumm}}" hint-placeholder-val="{{false}}"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z"></path><path d="M17 9l5 6M22 9l-5 6"></path></svg></sc-if>{{g.name}}<sc-if value="{{g.istGs}}" hint-placeholder-val="{{false}}"><span class="gs">GE</span></sc-if></button></sc-for></span></div>
+      <div class="verlauf" role="log" aria-label="Funkverlauf" ref="{{verlaufRef}}">
+        <sc-for list="{{gespraeche}}" as="g" hint-placeholder-count="4">
+        <div class="{{g.cls}}" onClick="{{g.klick}}" title="{{g.titel}}">
+          <div class="gesp-k"><span class="{{g.tagCls}}">{{g.tag}}</span><span>{{g.mit}}</span><span class="zeit">· {{g.zeit}}</span><sc-if value="{{g.hatEinsatz}}" hint-placeholder-val="{{true}}"><span class="ein">{{g.einsatz}}</span></sc-if></div>
+          <sc-for list="{{g.sprueche}}" as="s" hint-placeholder-count="3">
+            <div class="{{s.cls}}"><span class="t">{{s.zeit}}</span><span class="x"><sc-if value="{{s.gesprochen}}" hint-placeholder-val="{{false}}"><svg class="ic s mic" viewBox="0 0 24 24" aria-label="gesprochen"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5 11a7 7 0 0 0 14 0M12 18v3"></path></svg></sc-if><b>{{s.von}}:</b> {{s.text}}<sc-if value="{{s.hatWer}}" hint-placeholder-val="{{false}}"><span class="wer">({{s.wer}})</span></sc-if></span></div>
+          </sc-for>
+        </div>
+      </sc-for>
+        <sc-if value="{{keinFunk}}" hint-placeholder-val="{{false}}"><div class="leer">Noch kein Funkverkehr. Fahrzeuge rufen die Leitstelle, wenn sie etwas melden. {{leerFunk}}</div></sc-if>
+      </div>
+    </div>
+    </sc-if>
+  </div>
+  </sc-if>
+
+  <!-- ===== Chat ===== -->
+  <sc-if value="{{istChat}}" hint-placeholder-val="{{false}}">
+  <div class="ck">
+    <div class="c-oben"><span class="im">Im Spiel</span><span class="wer"><sc-for list="{{personen}}" as="p" hint-placeholder-count="3"><span class="{{p.cls}}" title="{{p.titel}}"><span class="pkt"></span><span class="pn">{{p.name}}<span class="rolle">{{p.titel}}</span></span></span></sc-for></span></div>
+    <div class="cverlauf" role="log" aria-label="Chat" ref="{{chatRef}}">
+      <sc-for list="{{nachrichten}}" as="m" hint-placeholder-count="4">
+        <div class="{{m.cls}}"><span class="k"><b>{{m.von}}</b> · {{m.zeit}}</span><div class="b">{{m.text}}<sc-if value="{{m.hatBezug}}" hint-placeholder-val="{{false}}"><div><span class="bez" onClick="{{m.bezugKlick}}">{{m.bezug}}</span></div></sc-if></div></div>
+      </sc-for>
+      <sc-if value="{{chatLeer}}" hint-placeholder-val="{{false}}"><div class="leer">{{chatLeerText}}</div></sc-if>
+    </div>
+    <div class="f-unten c-unten"><div class="eing"><input class="feld" ref="{{chatEingabeRef}}" maxlength="500" value="{{chatEntwurf}}" onInput="{{chatEin}}" onKeyDown="{{chatTaste}}" placeholder="{{phChat}}" aria-label="Nachricht"><button class="kn prim" onClick="{{chatSenden}}" style="height: 40px;">Senden</button></div></div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{hatToast}}" hint-placeholder-val="{{false}}"><div class="f-toast einblenden" role="status">{{toast}}</div></sc-if>
+</section>
+</div>
