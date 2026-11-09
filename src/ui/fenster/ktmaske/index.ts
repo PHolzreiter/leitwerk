@@ -186,7 +186,7 @@ export function ktFenster(ctx: PanelKontext, sek: boolean): { el: HTMLElement; d
     const sp = spaetestens ? ` · spätestens ${hhmm(spaetestens)} losschicken` : "";
     if (k.status === "offen") {
       if (sek && d.sofort) baender.push({ art: "rot", text: `Sofort${d.abholung && d.zeitVorgabe === "abholung" ? ` · Patient bereit ${hhmm(d.abholung)}` : d.termin && d.zeitVorgabe === "termin" ? ` · Termin ${hhmm(d.termin)}` : ""}`, knopf: d.von ? "Auf Karte" : "", aktion: "karte" });
-      else if (sek) baender.push({ art: "gelb", text: `Geplant${d.termin ? ` · Termin ${hhmm(d.termin)}` : ""}${sp}`, knopf: d.von ? "Auf Karte" : "", aktion: "karte" });
+      else if (sek) baender.push({ art: "gelb", text: `Geplant${d.termin && d.zeitVorgabe === "termin" ? ` · Termin ${hhmm(d.termin)}` : d.abholung && d.zeitVorgabe === "abholung" ? ` · Abholung ${hhmm(d.abholung)}` : ""}${sp}`, knopf: d.von ? "Auf Karte" : "", aktion: "karte" });
       else baender.push({ art: d.sofort ? "rot" : spaetestens && spaetestens < jetzt + 15 * 60_000 ? "rot" : "gelb", text: `Nicht disponiert${d.sofort ? " · SOFORT" : ""}${sp}`, knopf: d.von ? "Auf Karte" : "", aktion: "karte" });
     }
     if (k.status === "vorgemerkt" && fz)
