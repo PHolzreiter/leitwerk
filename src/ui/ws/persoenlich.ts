@@ -43,6 +43,8 @@ export interface Persoenlich {
   notrufe: boolean;
   /** Ich nehme die KT-Hotline an */
   ktHotline: boolean;
+  /** Ich nehme Überstellungen (SEK) an – Filter im Abfrage-Fenster */
+  ueberstellungen?: boolean;
   /** Lautstärke 0–100 */
   lautstaerke: number;
   /** Funk-Piep, wenn ein Fahrzeug ruft */

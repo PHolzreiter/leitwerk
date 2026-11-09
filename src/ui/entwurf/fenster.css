@@ -11,6 +11,7 @@
   --linie: var(--line);
   --dim: var(--text-dim);
   --akzent: var(--blue);
+  /* --ok kommt schon aus dem Farbschema (style.css); „--ok: var(--ok)“ wäre ein Zirkel und damit ungültig */
 }
 :root[data-theme="dunkel"] .ap,
 .ap.dunkel {
