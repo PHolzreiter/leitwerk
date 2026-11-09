@@ -1,31 +1,23 @@
-/** Eigene Kartenebenen: Dienststellen, Krankenhäuser, POIs. Dazu Kontextmenü und Positionswahl. */
+/**
+ * Eigene Kartenebenen in MapLibre: Funkgruppen-Grenzen, eigene POIs, Fahrtwege (nur bei Auswahl), Besatzung zu Fuß,
+ * Partner-Fahrzeuge, Flugzeuge, Flugspur. Wachen, Krankenhäuser, Partner-Dienststellen, Einsätze und Fahrzeuge
+ * zeichnet das Kartenfenster als eigene Marken (ui/fenster/karte/marken.ts).
+ */
 import maplibregl from "maplibre-gl";
 import type { Feature as GFeature, FeatureCollection, LineString, Point } from "geojson";
-import { anzeigeZeit, besatzungBei, flughoehe, personenBei, positionBei } from "./sim/bewegung";
-import { PARTNER_PHASE_TEXT, sim } from "./sim/engine";
-import { khKurzElement } from "./ui/khInfo";
-import { PARTNER_ANZAHL, partnerArtVonTyp, type PartnerArt } from "./sim/partner";
-import { kategorieLabel, ortKategorie, poiKategorien } from "./data/orte";
-import { ORT_PROFIL } from "./data/ortProfile";
-import { findCode } from "./sim/codes";
+import { anzeigeZeit, besatzungBei, personenBei, positionBei } from "./sim/bewegung";
+import { fliegt, sim } from "./sim/engine";
+import { type PartnerArt } from "./sim/partner";
+import { ortKategorie, poiKategorien } from "./data/orte";
 import { flugPosition } from "./sim/flughafen";
-import { stufeFarbe } from "./ui/panels/teile";
-
-import {
-  ORIGIN_LABEL,
-  type Hospital,
-  type Kind,
-  type Poi,
-  type Station,
-} from "./data/model";
+import { type Station } from "./data/model";
 import { store } from "./data/store";
 import { FUNK_FARBEN, FUNKGRUPPEN } from "./sim/funkgruppen";
 import { onPers, pers } from "./ui/ws/persoenlich";
-import { el, esc } from "./ui/dom";
 
 export const FONT = ["Noto Sans Medium"];
 
-/** Farbe des Punkts je Organisation (Legende im Ebenen-Fenster) */
+/** Farbe je Organisation – nur noch für die Karosserie der 3D-Modelle (keine Legende mehr; die Marken sind neutral) */
 export const ORG_FARBEN: Record<string, string> = {
   "Rotes Kreuz": "#c62828",
   "Arbeiter-Samariter-Bund": "#ef6c00",
@@ -63,67 +55,14 @@ function collection(features: Feature[]): FeatureCollection<Point> {
 /** Farben der Partner-Organisationen (Dienststellen und Fahrzeuge) */
 export const PARTNER_FARBE: Record<PartnerArt, string> = { fw: "#e53935", pol: "#1e3a8a", berg: "#2e7d32", wasser: "#0097a7", ki: "#7c3aed" };
 
-function stationFeatures(): FeatureCollection<Point> {
-  return collection(
-    store.list("stations").filter((s) => !partnerArtVonTyp(s.typ)).map((s) =>
-      pointFeature(s.id, s.lon, s.lat, {
-        name: s.name,
-        color: orgFarbe(s),
-      }),
-    ),
-  );
-}
-
-/** Feuerwehr, Polizei, Berg- und Wasserrettung: eigene, kleine Ebene (erst beim Hineinzoomen) */
-function partnerStationFeatures(): FeatureCollection<Point> {
-  const out: Feature[] = [];
-  for (const s of store.list("stations")) {
-    const art = partnerArtVonTyp(s.typ);
-    if (art) out.push(pointFeature(s.id, s.lon, s.lat, { name: s.name, color: PARTNER_FARBE[art] }));
-  }
-  return collection(out);
-}
-
-/** Punkt P der Rettungszufahrten (wo das Fahrzeug „ins KH“ geht) */
-function zufahrtFeatures(): FeatureCollection<Point> {
-  return collection(
-    store
-      .list("hospitals")
-      .filter((h) => h.zufahrt?.p)
-      .map((h) => pointFeature(`${h.id}-p`, h.zufahrt!.p.lon, h.zufahrt!.p.lat, { name: h.kurzname || h.name })),
-  );
-}
-
-function hospitalFeatures(): FeatureCollection<Point> {
-  return collection(
-    store.list("hospitals").map((h) => pointFeature(h.id, h.lon, h.lat, { name: h.kurzname || h.name })),
-  );
-}
-
 /** Orte, die man schon weiter herausgezoomt sieht (große Einrichtungen, Pflege, Bahnhöfe, Landeplätze) */
 const POI_WICHTIG = new Set(["pflegeheim", "betreutes_wohnen", "behinderteneinrichtung", "bahnhof", "landeplatz", "einkaufszentrum", "freizeitpark", "therme", "skigebiet", "hochschule"]);
-/** Farbe je Gruppe */
-const POI_FARBE: Record<string, string> = {
-  pflege: "#8e44ad",
-  bildung: "#e09f1f",
-  gesundheit: "#c0392b",
-  verkehr: "#34495e",
-  flughafen: "#3d5a80",
-  einkauf: "#2a9d8f",
-  sport: "#2e86de",
-  wasser: "#00a8c6",
-  freizeit: "#27ae60",
-  gastro: "#d35400",
-  arbeit: "#7f6a54",
-  sonstiges: "#6c7a89",
-};
-
 function poiFeatures(): FeatureCollection<Point> {
   return collection(
     store.list("pois").map((p) => {
       const k = poiKategorien(p);
       const gruppe = ortKategorie(k[0])?.gruppe ?? "sonstiges";
-      return pointFeature(p.id, p.lon, p.lat, { name: p.name, wichtig: k.some((x) => POI_WICHTIG.has(x)) ? 1 : 0, farbe: POI_FARBE[gruppe] ?? POI_FARBE.sonstiges });
+      return pointFeature(p.id, p.lon, p.lat, { name: p.name, wichtig: k.some((x) => POI_WICHTIG.has(x)) ? 1 : 0, zeichen: k.includes("landeplatz") ? "lp" : (POI_ZEICHEN[gruppe] ?? "·") });
     }),
   );
 }
@@ -134,18 +73,67 @@ export function poiZoom(): { normal: number; wichtig: number } {
   return { normal: Math.min(z, 24), wichtig: z >= 24 ? 24 : Math.max(0, z - 3) };
 }
 
-export interface DataLayerCallbacks {
-  onEdit(kind: Kind, id: string): void;
-  onCreateAt(kind: Kind, lat: number, lon: number): void;
-}
-
-export const LAYER_GROUPS: Record<"stations" | "hospitals" | "pois", string[]> = {
-  stations: ["lw-partner-stations", "lw-partner-stations-label", "lw-stations", "lw-stations-label"],
-  hospitals: ["lw-hospitals", "lw-hospitals-h", "lw-hospitals-label", "lw-kh-p"],
-  pois: ["lw-pois", "lw-pois-w", "lw-pois-label", "lw-pois-w-label"],
+/** Buchstabe der POI-Marke je Gruppe (Pflegeheim P, Schule S, Bahnhof B …) */
+const POI_ZEICHEN: Record<string, string> = {
+  pflege: "P",
+  bildung: "S",
+  gesundheit: "A",
+  verkehr: "B",
+  flughafen: "F",
+  einkauf: "E",
+  sport: "Sp",
+  wasser: "W",
+  freizeit: "Fz",
+  gastro: "G",
+  arbeit: "I",
+  gelaende: "·",
+  sonstiges: "·",
 };
 
-/** Grenzen der TETRA-Funkgruppen als feine Linien (Farbe und Sichtbarkeit persönlich) */
+/** Marke eines eigenen POI als Bild (wie .poi im Entwurf: türkis, weißer Rand, Schatten) */
+function poiBild(zeichen: string, landeplatz: boolean): ImageData {
+  const pr = 2;
+  const n = 24 * pr;
+  const c = document.createElement("canvas");
+  c.width = c.height = n;
+  const g = c.getContext("2d")!;
+  g.scale(pr, pr);
+  const r = landeplatz ? 9 : 8;
+  g.shadowColor = "rgba(0,0,0,.5)";
+  g.shadowBlur = 4;
+  g.shadowOffsetY = 1;
+  g.beginPath();
+  g.arc(12, 12, r, 0, Math.PI * 2);
+  g.fillStyle = landeplatz ? "#2fae5b" : "#ffffff";
+  g.fill();
+  g.shadowColor = "transparent";
+  g.beginPath();
+  g.arc(12, 12, r - 2, 0, Math.PI * 2);
+  g.fillStyle = landeplatz ? "#ffffff" : "#2a9d8f";
+  g.fill();
+  g.fillStyle = landeplatz ? "#1f7a3f" : "#ffffff";
+  g.font = `900 ${landeplatz ? 10 : zeichen.length > 1 ? 7.5 : 8.5}px Inter, system-ui, sans-serif`;
+  g.textAlign = "center";
+  g.textBaseline = "middle";
+  g.fillText(landeplatz ? "H" : zeichen, 12, 12.5);
+  return g.getImageData(0, 0, n, n);
+}
+
+export interface DataLayerCallbacks {
+  /** Klick auf einen eigenen POI */
+  onPoi(id: string, at: maplibregl.LngLat): void;
+}
+
+export const LAYER_GROUPS: Record<"pois", string[]> = {
+  pois: ["lw-pois", "lw-pois-w"],
+};
+
+/** Name einer Funkgruppe wie am Funkgerät: „NÖ-03“ → „RD-NOE-03“ */
+export function funkgruppenName(id: string): string {
+  return String(id).replace(/^NÖ-/, "RD-NOE-");
+}
+
+/** Grenzen der TETRA-Funkgruppen (Farbe und Sichtbarkeit persönlich); die eigene blau gestrichelt wie im Entwurf */
 function funkFeatures(): FeatureCollection {
   const p = pers();
   const eigene = sim.funkgruppe().id;
@@ -153,18 +141,19 @@ function funkFeatures(): FeatureCollection {
   if (p.funkLinien === false) return { type: "FeatureCollection", features: feats };
   for (const g of FUNKGRUPPEN) {
     if (p.funkGruppen?.[g.id] === false) continue;
-    const farbe = p.funkFarben?.[g.id] ?? FUNK_FARBEN[g.id];
     const eigen = g.id === eigene ? 1 : 0;
+    const farbe = eigen && !p.funkFarben?.[g.id] ? "#3B8BFF" : (p.funkFarben?.[g.id] ?? FUNK_FARBEN[g.id]);
     for (const r of g.ringe) feats.push({ type: "Feature", geometry: { type: "LineString", coordinates: r }, properties: { id: g.id, farbe, eigen } });
     // Beschriftung ungefähr in der Mitte (Mittel aller Punkte)
     const pts = g.ringe.flat();
     const lon = pts.reduce((a, q) => a + q[0], 0) / pts.length;
     const lat = pts.reduce((a, q) => a + q[1], 0) / pts.length;
-    feats.push({ type: "Feature", geometry: { type: "Point", coordinates: [lon, lat] }, properties: { id: g.id, farbe, eigen, label: g.id } });
+    feats.push({ type: "Feature", geometry: { type: "Point", coordinates: [lon, lat] }, properties: { id: g.id, farbe, eigen, label: funkgruppenName(g.id) } });
   }
   return { type: "FeatureCollection", features: feats };
 }
 
+/** Funkgruppen-Grenzen und eigene POIs (Wachen, Krankenhäuser und Partner zeichnet das Kartenfenster selbst) */
 export function addDataLayers(map: maplibregl.Map, cb: DataLayerCallbacks): void {
   map.addSource("lw-funkgruppen", { type: "geojson", data: funkFeatures() });
   map.addLayer({
@@ -174,8 +163,9 @@ export function addDataLayers(map: maplibregl.Map, cb: DataLayerCallbacks): void
     filter: ["==", ["geometry-type"], "LineString"],
     paint: {
       "line-color": ["get", "farbe"],
-      "line-width": ["interpolate", ["linear"], ["zoom"], 6, ["case", ["==", ["get", "eigen"], 1], 1.6, 0.9], 11, ["case", ["==", ["get", "eigen"], 1], 2.6, 1.4]],
-      "line-opacity": ["case", ["==", ["get", "eigen"], 1], 0.75, 0.4],
+      "line-width": ["interpolate", ["linear"], ["zoom"], 6, ["case", ["==", ["get", "eigen"], 1], 1.8, 0.9], 11, ["case", ["==", ["get", "eigen"], 1], 2.5, 1.4]],
+      "line-opacity": ["case", ["==", ["get", "eigen"], 1], 0.9, 0.45],
+      "line-dasharray": [4.8, 3.2],
     },
   });
   map.addLayer({
@@ -184,8 +174,8 @@ export function addDataLayers(map: maplibregl.Map, cb: DataLayerCallbacks): void
     source: "lw-funkgruppen",
     filter: ["==", ["geometry-type"], "Point"],
     maxzoom: 10.5,
-    layout: { "text-field": ["get", "label"], "text-size": 11, "text-font": FONT, "text-allow-overlap": false },
-    paint: { "text-color": ["get", "farbe"], "text-halo-color": "rgba(255,255,255,0.8)", "text-halo-width": 1.2, "text-opacity": ["case", ["==", ["get", "eigen"], 1], 0.85, 0.55] },
+    layout: { "text-field": ["get", "label"], "text-size": 13, "text-font": FONT, "text-allow-overlap": false },
+    paint: { "text-color": ["get", "farbe"], "text-halo-color": "rgba(255,255,255,0.85)", "text-halo-width": 1.6, "text-opacity": ["case", ["==", ["get", "eigen"], 1], 0.95, 0.6] },
   });
   const funkNeu = () => (map.getSource("lw-funkgruppen") as maplibregl.GeoJSONSource | undefined)?.setData(funkFeatures());
   const ausPers = onPers(funkNeu);
@@ -194,32 +184,15 @@ export function addDataLayers(map: maplibregl.Map, cb: DataLayerCallbacks): void
     ausPers();
     ausStoreF();
   });
-  map.addSource("lw-stations", { type: "geojson", data: stationFeatures() });
-  map.addSource("lw-partner-stations", { type: "geojson", data: partnerStationFeatures() });
-  map.addSource("lw-hospitals", { type: "geojson", data: hospitalFeatures() });
-  map.addSource("lw-kh-p", { type: "geojson", data: zufahrtFeatures() });
   map.addSource("lw-pois", { type: "geojson", data: poiFeatures() });
+  for (const z of new Set([...Object.values(POI_ZEICHEN), "lp"])) {
+    const id = `lw-poi-${z}`;
+    if (!map.hasImage(id)) map.addImage(id, poiBild(z, z === "lp"), { pixelRatio: 2 });
+  }
 
   // Orte (POIs): normale erst nah herangezoomt, wichtige schon früher (einstellbar unter Persönlich → Darstellung)
   const pz = poiZoom();
-  const poiKreis = (id: string, wichtig: boolean, minzoom: number) =>
-    map.addLayer({
-      id,
-      type: "circle",
-      source: "lw-pois",
-      minzoom,
-      filter: ["==", ["get", "wichtig"], wichtig ? 1 : 0],
-      // klein und blass – Orte sind Hintergrund, nicht so wichtig wie Dienststellen und Krankenhäuser
-      paint: {
-        "circle-radius": ["interpolate", ["linear"], ["zoom"], 9, 1.2, 13, 2, 16, 3.2, 18, 4.5],
-        "circle-color": ["get", "farbe"],
-        "circle-opacity": 0.55,
-        "circle-stroke-color": "#ffffff",
-        "circle-stroke-opacity": 0.6,
-        "circle-stroke-width": ["interpolate", ["linear"], ["zoom"], 12, 0.3, 16, 0.8],
-      },
-    });
-  const poiText = (id: string, wichtig: boolean, minzoom: number) =>
+  const poiEbene = (id: string, wichtig: boolean, minzoom: number) =>
     map.addLayer({
       id,
       type: "symbol",
@@ -227,292 +200,34 @@ export function addDataLayers(map: maplibregl.Map, cb: DataLayerCallbacks): void
       minzoom,
       filter: ["==", ["get", "wichtig"], wichtig ? 1 : 0],
       layout: {
-        "text-field": ["get", "name"],
-        "text-font": FONT,
-        "text-size": 10,
-        "text-offset": [0, 0.7],
-        "text-anchor": "top",
+        "icon-image": ["concat", "lw-poi-", ["get", "zeichen"]],
+        "icon-allow-overlap": false,
+        "icon-padding": 1,
+        "symbol-sort-key": wichtig ? 0 : 1,
       },
-      paint: { "text-color": "#4a5a60", "text-opacity": 0.8, "text-halo-color": "#ffffff", "text-halo-width": 1.2 },
     });
-  poiKreis("lw-pois", false, pz.normal);
-  poiKreis("lw-pois-w", true, pz.wichtig);
-  poiText("lw-pois-label", false, Math.max(pz.normal, 16));
-  poiText("lw-pois-w-label", true, Math.min(24, Math.max(pz.wichtig + 2, 15)));
+  poiEbene("lw-pois", false, pz.normal);
+  poiEbene("lw-pois-w", true, pz.wichtig);
   const ausPoiZoom = onPers(() => {
     const z = poiZoom();
     if (!map.getLayer("lw-pois")) return;
     map.setLayerZoomRange("lw-pois", z.normal, 24);
     map.setLayerZoomRange("lw-pois-w", z.wichtig, 24);
-    map.setLayerZoomRange("lw-pois-label", Math.min(24, Math.max(z.normal, 16)), 24);
-    map.setLayerZoomRange("lw-pois-w-label", Math.min(24, Math.max(z.wichtig + 2, 15)), 24);
   });
   map.once("remove", ausPoiZoom);
 
-  map.addLayer({
-    id: "lw-hospitals",
-    type: "circle",
-    source: "lw-hospitals",
-    paint: {
-      "circle-radius": ["interpolate", ["linear"], ["zoom"], 6, 2.5, 8.5, 4, 11, 7, 13, 10],
-      "circle-color": ["step", ["zoom"], "#d62828", 8.5, "#ffffff"],
-      "circle-stroke-color": "#d62828",
-      "circle-stroke-width": ["interpolate", ["linear"], ["zoom"], 6, 0.5, 8.5, 1.5, 11, 2.5],
-    },
-  });
-  map.addLayer({
-    id: "lw-hospitals-h",
-    type: "symbol",
-    source: "lw-hospitals",
-    minzoom: 8.5,
-    layout: {
-      "text-field": "H",
-      "text-font": FONT,
-      "text-size": ["interpolate", ["linear"], ["zoom"], 8.5, 7, 13, 13],
-      "text-allow-overlap": true,
-      "text-ignore-placement": true,
-    },
-    paint: { "text-color": "#d62828" },
-  });
-  map.addLayer({
-    id: "lw-hospitals-label",
-    type: "symbol",
-    source: "lw-hospitals",
-    minzoom: 9.5,
-    layout: {
-      "text-field": ["get", "name"],
-      "text-font": FONT,
-      "text-size": 11,
-      "text-offset": [0, 1.3],
-      "text-anchor": "top",
-    },
-    paint: { "text-color": "#9d1c1c", "text-halo-color": "#ffffff", "text-halo-width": 1.5 },
-  });
-
-  // Rettungszufahrt: „P“ erst ganz nah
-  map.addLayer({
-    id: "lw-kh-p",
-    type: "symbol",
-    source: "lw-kh-p",
-    minzoom: 15.5,
-    layout: {
-      "text-field": "P",
-      "text-font": FONT,
-      "text-size": 13,
-      "text-allow-overlap": true,
-      "text-ignore-placement": true,
-    },
-    paint: { "text-color": "#ffffff", "text-halo-color": "#1d4f91", "text-halo-width": 3 },
-  });
-
-  map.addLayer({
-    id: "lw-partner-stations",
-    type: "circle",
-    source: "lw-partner-stations",
-    minzoom: 10.5,
-    paint: {
-      "circle-radius": ["interpolate", ["linear"], ["zoom"], 10.5, 2, 13, 4, 15, 5.5],
-      "circle-color": ["get", "color"],
-      "circle-stroke-color": "#ffffff",
-      "circle-stroke-width": ["interpolate", ["linear"], ["zoom"], 10.5, 0.5, 13, 1],
-      "circle-opacity": 0.85,
-    },
-  });
-  map.addLayer({
-    id: "lw-partner-stations-label",
-    type: "symbol",
-    source: "lw-partner-stations",
-    minzoom: 13,
-    layout: {
-      "text-field": ["get", "name"],
-      "text-font": FONT,
-      "text-size": 10,
-      "text-offset": [0, 0.9],
-      "text-anchor": "top",
-      "text-max-width": 12,
-    },
-    paint: { "text-color": "#374151", "text-halo-color": "#ffffff", "text-halo-width": 1.3 },
-  });
-  map.addLayer({
-    id: "lw-stations",
-    type: "circle",
-    source: "lw-stations",
-    paint: {
-      "circle-radius": ["interpolate", ["linear"], ["zoom"], 6, 1.2, 9, 2.5, 11, 5, 13, 8],
-      "circle-color": ["get", "color"],
-      "circle-stroke-color": "#ffffff",
-      "circle-stroke-width": ["interpolate", ["linear"], ["zoom"], 6, 0.3, 9, 0.8, 11, 1.5],
-    },
-  });
-  map.addLayer({
-    id: "lw-stations-label",
-    type: "symbol",
-    source: "lw-stations",
-    minzoom: 10,
-    layout: {
-      "text-field": ["get", "name"],
-      "text-font": FONT,
-      "text-size": 11,
-      "text-offset": [0, 1.0],
-      "text-anchor": "top",
-      "text-max-width": 12,
-    },
-    paint: { "text-color": "#123b6b", "text-halo-color": "#ffffff", "text-halo-width": 1.5 },
-  });
-
-  // Krankenhäuser über den Dienststellen (Notarztstützpunkte liegen oft direkt am Spital)
-  for (const id of LAYER_GROUPS.hospitals) map.moveLayer(id);
-
-  const ausStore = store.onChange(() => {
-    (map.getSource("lw-stations") as maplibregl.GeoJSONSource | undefined)?.setData(stationFeatures());
-    (map.getSource("lw-partner-stations") as maplibregl.GeoJSONSource | undefined)?.setData(partnerStationFeatures());
-    (map.getSource("lw-hospitals") as maplibregl.GeoJSONSource | undefined)?.setData(hospitalFeatures());
-    (map.getSource("lw-kh-p") as maplibregl.GeoJSONSource | undefined)?.setData(zufahrtFeatures());
-    (map.getSource("lw-pois") as maplibregl.GeoJSONSource | undefined)?.setData(poiFeatures());
-  });
+  const ausStore = store.onChange(() => (map.getSource("lw-pois") as maplibregl.GeoJSONSource | undefined)?.setData(poiFeatures()));
   map.once("remove", ausStore);
 
-  // Klick: Details anzeigen
-  const clickable: [string, Kind][] = [
-    ["lw-stations", "stations"],
-    ["lw-partner-stations", "stations"],
-    ["lw-hospitals", "hospitals"],
-    ["lw-pois", "pois"],
-    ["lw-pois-w", "pois"],
-  ];
-  for (const [layer, kind] of clickable) {
+  for (const layer of LAYER_GROUPS.pois) {
     map.on("click", layer, (e) => {
       if (pickActive) return;
-      const f = e.features?.[0];
-      const id = f?.properties?.lwid as string | undefined;
-      if (!id) return;
-      showDetails(map, kind, id, e.lngLat, cb);
+      const id = e.features?.[0]?.properties?.lwid as string | undefined;
+      if (id) cb.onPoi(id, e.lngLat);
     });
     map.on("mouseenter", layer, () => (map.getCanvas().style.cursor = "pointer"));
     map.on("mouseleave", layer, () => (map.getCanvas().style.cursor = pickActive ? "crosshair" : ""));
   }
-
-  // Rechtsklick: Kontextmenü zum Anlegen
-  map.on("contextmenu", (e) => {
-    if (pickActive) return;
-    openContextMenu(map, e.lngLat, e.point, cb);
-  });
-}
-
-let openPopup: maplibregl.Popup | null = null;
-
-function showDetails(map: maplibregl.Map, kind: Kind, id: string, at: maplibregl.LngLat, cb: DataLayerCallbacks) {
-  openPopup?.remove();
-  const body = el("div", { class: "lw-popup" });
-
-  if (kind === "stations") {
-    const s = store.get("stations", id) as Station | undefined;
-    if (!s) return;
-    const vehicles = store
-      .list("vehicles")
-      .filter((v) => v.dienststelleId === id)
-      .sort((a, b) => a.funkrufname.localeCompare(b.funkrufname, "de"));
-    const pArt = partnerArtVonTyp(s.typ);
-    if (pArt && !vehicles.length) {
-      const unterwegs = (sim.state.partnerFz ?? []).filter((u) => u.station === s.name);
-      body.innerHTML = `
-      <div class="lw-popup-title">${esc(s.name)}</div>
-      <div class="lw-popup-sub">${esc([s.typ, s.ort].filter(Boolean).join(" · "))}</div>
-      <div class="lw-popup-list">${
-        unterwegs.length ? unterwegs.map((u) => `<span class="veh">${esc(u.name)} <small>${esc(PARTNER_PHASE_TEXT[u.phase])}</small></span>`).join("") : "<em>keine Fahrzeuge im Einsatz</em>"
-      }</div>
-      <div class="lw-popup-meta">Alarmierung über den Einsatz (${PARTNER_ANZAHL[pArt]} Fahrzeug${PARTNER_ANZAHL[pArt] > 1 ? "e" : ""}, rückt von der nächsten Dienststelle aus). Quelle: ${ORIGIN_LABEL[s.herkunft]}</div>`;
-    } else body.innerHTML = `
-      <div class="lw-popup-title">${esc(s.name)}</div>
-      <div class="lw-popup-sub">${esc([s.typ, s.organisation, s.ort].filter(Boolean).join(" · "))}</div>
-      <div class="lw-popup-list">${
-        vehicles.length
-          ? vehicles
-              .map((v) => {
-                const fz = sim.state.fahrzeuge[v.id];
-                const st = fz ? sim.statusDef(fz.status) : null;
-                const chip = st ? `<span class="veh-st" style="background:${st.farbe}" title="${esc(st.name)}">${fz && (fz.status === "alarmWache" || fz.status === "alarmFunk") ? "&nbsp;" : esc(st.nummer)}</span>` : "";
-                return `<span class="veh ${v.aktiv ? "" : "inactive"}" data-dienstfz="${esc(v.id)}">${chip}${esc(v.funkrufname)} <small>${esc(fz?.rmTyp ?? v.kategorie)}</small></span>`;
-              })
-              .join("")
-          : "<em>keine Fahrzeuge</em>"
-      }</div>
-      <div class="lw-popup-meta">Quelle: ${ORIGIN_LABEL[s.herkunft]}</div>`;
-  } else if (kind === "hospitals") {
-    const h = store.get("hospitals", id) as Hospital | undefined;
-    if (!h) return;
-    // kurze Übersicht; Details über „Mehr Info“ – Quellen nur in den Einstellungen
-    body.appendChild(
-      khKurzElement(h, () => {
-        openPopup?.remove();
-        cb.onEdit(kind, id);
-      }),
-    );
-    openPopup = new maplibregl.Popup({ maxWidth: "320px" }).setLngLat(at).setDOMContent(body).addTo(map);
-    return;
-  } else {
-    const p = store.get(kind, id) as Poi | undefined;
-    if (!p) return;
-    body.innerHTML = `
-      <div class="lw-popup-title">${esc(p.name)}</div>
-      <div class="lw-popup-sub">${esc(p.ort)}</div>
-      <div class="lw-popup-list">${poiKategorien(p).map((k) => `<span class="dep">${esc(kategorieLabel(k))}</span>`).join("")}</div>${(() => {
-        const h = poiKategorien(p).map((k) => ORT_PROFIL[k]?.hinweis).find(Boolean);
-        return h ? `<div class="lw-popup-hinweis muted small">${esc(h)}</div>` : "";
-      })()}`;
-  }
-  const edit = el("button", { class: "btn small" }, "Bearbeiten");
-  edit.addEventListener("click", () => {
-    openPopup?.remove();
-    cb.onEdit(kind, id);
-  });
-  body.appendChild(edit);
-  openPopup = new maplibregl.Popup({ maxWidth: "340px" }).setLngLat(at).setDOMContent(body).addTo(map);
-}
-
-let menuEl: HTMLElement | null = null;
-
-function closeMenu() {
-  menuEl?.remove();
-  menuEl = null;
-}
-
-function openContextMenu(map: maplibregl.Map, at: maplibregl.LngLat, point: maplibregl.Point, cb: DataLayerCallbacks) {
-  closeMenu();
-  const menu = el("div", { class: "ctx-menu" });
-  const items: [string, () => void][] = [
-    ["Dienststelle hier anlegen", () => cb.onCreateAt("stations", at.lat, at.lng)],
-    ["Krankenhaus hier anlegen", () => cb.onCreateAt("hospitals", at.lat, at.lng)],
-    ["POI hier anlegen", () => cb.onCreateAt("pois", at.lat, at.lng)],
-    [
-      `Koordinaten kopieren (${at.lat.toFixed(5)}, ${at.lng.toFixed(5)})`,
-      () => void navigator.clipboard?.writeText(`${at.lat.toFixed(6)};${at.lng.toFixed(6)}`),
-    ],
-  ];
-  for (const [label, fn] of items) {
-    const b = el("button", {}, label);
-    b.addEventListener("click", () => {
-      closeMenu();
-      fn();
-    });
-    menu.appendChild(b);
-  }
-  const container = map.getContainer();
-  menu.style.left = `${Math.min(point.x, container.clientWidth - 260)}px`;
-  menu.style.top = `${Math.min(point.y, container.clientHeight - 160)}px`;
-  container.appendChild(menu);
-  menuEl = menu;
-  setTimeout(() => {
-    const off = () => {
-      closeMenu();
-      document.removeEventListener("mousedown", handler);
-    };
-    const handler = (ev: MouseEvent) => {
-      if (!menu.contains(ev.target as Node)) off();
-    };
-    document.addEventListener("mousedown", handler);
-    map.once("movestart", off);
-  }, 0);
 }
 
 let pickActive = false;
@@ -520,31 +235,9 @@ let pickActive = false;
 export function pickLaeuft(): boolean {
   return pickActive;
 }
-
-/** Lässt den Benutzer einen Punkt auf der Karte wählen. */
-export function pickLocation(map: maplibregl.Map, hint: string): Promise<{ lat: number; lon: number } | null> {
-  pickActive = true;
-  closeMenu();
-  openPopup?.remove();
-  const banner = el("div", { class: "pick-banner" }, `${hint} – Esc bricht ab`);
-  map.getContainer().appendChild(banner);
-  map.getCanvas().style.cursor = "crosshair";
-  return new Promise((resolve) => {
-    const finish = (v: { lat: number; lon: number } | null) => {
-      pickActive = false;
-      banner.remove();
-      map.getCanvas().style.cursor = "";
-      map.off("click", onClick);
-      document.removeEventListener("keydown", onKey);
-      resolve(v);
-    };
-    const onClick = (e: maplibregl.MapMouseEvent) => finish({ lat: e.lngLat.lat, lon: e.lngLat.lng });
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") finish(null);
-    };
-    map.on("click", onClick);
-    document.addEventListener("keydown", onKey);
-  });
+/** Ort-Wählen an/aus (das Kartenfenster zeigt dazu das Banner) */
+export function setzePick(an: boolean): void {
+  pickActive = an;
 }
 
 export function setGroupVisible(map: maplibregl.Map, group: keyof typeof LAYER_GROUPS, on: boolean) {
@@ -556,10 +249,8 @@ export function setGroupVisible(map: maplibregl.Map, group: keyof typeof LAYER_G
 // ---------------------------------------------------------------- Simulation
 
 
-let selectedIncident: string | null = null;
-
 /** Fahrzeuge, die frei auf ihrer Wache stehen, zeigt die Karte nicht (die Wache zeigt sie beim Anklicken) */
-function daheim(fz: (typeof sim.state.fahrzeuge)[string]): boolean {
+export function daheim(fz: (typeof sim.state.fahrzeuge)[string]): boolean {
   if (fz.einsatzId || fz.phase !== "frei") return false;
   return Math.abs(fz.lat - fz.heim.lat) < 0.0005 && Math.abs(fz.lon - fz.heim.lon) < 0.0005;
 }
@@ -583,24 +274,6 @@ function spurFeatures(): FeatureCollection {
   return { type: "FeatureCollection", features };
 }
 
-function vehicleFeatures(): FeatureCollection<Point> {
-  const t = anzeigeZeit();
-  return collection(
-    Object.values(sim.state.fahrzeuge).filter((fz) => !daheim(fz)).map((fz) => {
-      // zwischen den Simulationsschritten weiterbewegt (sonst springen die Punkte)
-      const [lon, lat] = fz.fahrt ? positionBei(fz, t) : [fz.lon, fz.lat];
-      return pointFeature(fz.id, lon, lat, {
-        name: fz.pilot ? `${fz.funkrufname} · ${fz.pilot.name}` : fz.funkrufname,
-        color: sim.statusDef(fz.status).farbe,
-        nr: fz.status === "alarmWache" || fz.status === "alarmFunk" ? "" : sim.statusDef(fz.status).nummer,
-        nah: fz.kategorie === "NAH" || fz.kategorie === "ITH" ? 1 : 0,
-        ein: fz.einsatzId ? 1 : 0,
-        flug: flughoehe(fz, t) > 5 ? 1 : 0,
-      });
-    }),
-  );
-}
-
 /** Besatzungen zu Fuß bzw. beim Patienten: ein Punkt je Besatzung (weiter weg), ein Punkt je Person (nah) */
 function besatzungFeatures(): FeatureCollection<Point> {
   const t = anzeigeZeit();
@@ -608,34 +281,8 @@ function besatzungFeatures(): FeatureCollection<Point> {
   for (const fz of Object.values(sim.state.fahrzeuge)) {
     const b = besatzungBei(fz, t);
     if (!b) continue;
-    const st = store.get("stations", fz.stationId);
-    const farbe = st ? orgFarbe(st) : "#c62828";
-    out.push(pointFeature(fz.id, b.pos[0], b.pos[1], { einzel: 0, farbe }));
-    personenBei(fz, t).forEach((p, i) => out.push(pointFeature(`${fz.id}-${i}`, p.pos[0], p.pos[1], { einzel: 1, farbe })));
-  }
-  return collection(out);
-}
-
-function incidentFeatures(): FeatureCollection<Point> {
-  const out: Feature[] = [];
-  for (const e of sim.state.einsaetze) {
-    if (!e.adresse || e.zustand === "abgeschlossen") continue;
-    // Großschaden: nur der Bereitstellungsraum dazu (die Patienten liegen am selben Ort)
-    if (e.gsKind) continue;
-    if (e.gs?.br && !e.gs.aufgehoben && e.gs.phase !== "ende") out.push(pointFeature(e.id, e.gs.br.lon, e.gs.br.lat, { name: `BR ${e.nummer}`, color: "#6b7280", sel: 0, br: 1 }));
-    out.push(
-      pointFeature(e.id, e.adresse.lon, e.adresse.lat, {
-        name: e.nummer,
-        color: e.fremd ? "#9aa0a6" : stufeFarbe(findCode(e.code ?? undefined)?.stufe),
-        sel: e.id === selectedIncident ? 1 : 0,
-        br: 0,
-      }),
-    );
-    // Bereitstellungsraum (bis die Polizei den Einsatzort freigibt)
-    if (e.br && !e.boSicher) out.push(pointFeature(e.id, e.br.lon, e.br.lat, { name: `BR ${e.nummer}`, color: "#6b7280", sel: 0, br: 1 }));
-    // Treffpunkt RTW – NEF (bis zur Übergabe)
-    const rv = e.rendezvous;
-    if (rv && rv.status !== "fertig") out.push(pointFeature(e.id, rv.punkt.lon, rv.punkt.lat, { name: `Treffpunkt ${e.nummer}`, color: "#7c3aed", sel: 0, br: 1 }));
+    out.push(pointFeature(fz.id, b.pos[0], b.pos[1], { einzel: 0, ruf: fz.funkrufname }));
+    personenBei(fz, t).forEach((p, i) => out.push(pointFeature(`${fz.id}-${i}`, p.pos[0], p.pos[1], { einzel: 1, ruf: fz.funkrufname })));
   }
   return collection(out);
 }
@@ -704,41 +351,78 @@ function partnerFzFeatures(): FeatureCollection<Point> {
   return collection((sim.state.partnerFz ?? []).map((u) => pointFeature(u.id, u.lon, u.lat, { name: u.name, color: PARTNER_FARBE[u.art], einsatz: u.einsatzId })));
 }
 
-function routeFeatures(): FeatureCollection<LineString> {
+/** Für die Fahrtwege: welche Fahrzeuge gerade gewählt sind (Fahrzeug selbst oder alle eines Einsatzes) und ihre Farbe */
+export interface WegeQuelle {
+  fahrzeuge(): string[];
+  farbe(fzId: string): string;
+}
+
+/**
+ * Fahrtwege nur bei Auswahl: Bodenfahrzeuge entlang der Straße (Rest der Route ab der aktuellen Position),
+ * Hubschrauber in Luftlinie zum Ziel (gestrichelt).
+ */
+function wegeFeatures(q: WegeQuelle | null): FeatureCollection<LineString> {
   const feats: GFeature<LineString>[] = [];
-  for (const fz of Object.values(sim.state.fahrzeuge)) {
-    if (!fz.fahrt || !fz.einsatzId) continue;
-    if (selectedIncident && fz.einsatzId !== selectedIncident) continue;
-    feats.push({ type: "Feature", geometry: { type: "LineString", coordinates: fz.fahrt.coords }, properties: {} });
+  if (!q) return { type: "FeatureCollection", features: feats };
+  const t = anzeigeZeit();
+  for (const id of q.fahrzeuge()) {
+    const fz = sim.state.fahrzeuge[id];
+    const f = fz?.fahrt;
+    if (!fz || !f || t > f.start + f.dauer * 1000 + 1500) continue;
+    const [lon, lat] = positionBei(fz, t);
+    const ziel = f.coords[f.coords.length - 1];
+    const luft = fliegt(fz);
+    let coords: [number, number][];
+    if (luft) coords = [[lon, lat], ziel];
+    else {
+      const el = (t - f.start) / 1000;
+      let i = f.times.findIndex((x) => x >= el);
+      if (i < 0) i = f.coords.length - 1;
+      coords = [[lon, lat], ...f.coords.slice(Math.max(1, i))];
+    }
+    if (coords.length < 2) continue;
+    feats.push({ type: "Feature", geometry: { type: "LineString", coordinates: coords }, properties: { farbe: q.farbe(id), luft: luft ? 1 : 0 } });
   }
   return { type: "FeatureCollection", features: feats };
 }
 
-export function setSelectedIncident(map: maplibregl.Map, id: string | null): void {
-  selectedIncident = id;
-  (map.getSource("lw-incidents") as maplibregl.GeoJSONSource | undefined)?.setData(incidentFeatures());
-  (map.getSource("lw-routes") as maplibregl.GeoJSONSource | undefined)?.setData(routeFeatures());
+export interface SimLayers {
+  /** Fahrtwege neu zeichnen (z. B. nach einer neuen Auswahl) */
+  wegeNeu(): void;
 }
 
-export function addSimLayers(
-  map: maplibregl.Map,
-  cb: { onIncident(id: string): void; onVehicle(id: string): void; onVehicleDbl(id: string): void },
-): void {
-  map.addSource("lw-routes", { type: "geojson", data: routeFeatures() });
+export function addSimLayers(map: maplibregl.Map, cb: { onIncident(id: string): void; wege: WegeQuelle }): SimLayers {
+  map.addSource("lw-routes", { type: "geojson", data: wegeFeatures(cb.wege) });
   map.addSource("lw-pilot-spur", { type: "geojson", data: spurFeatures() });
-  map.addSource("lw-incidents", { type: "geojson", data: incidentFeatures() });
-  map.addSource("lw-vehicles", { type: "geojson", data: vehicleFeatures() });
   map.addSource("lw-partner-fz", { type: "geojson", data: partnerFzFeatures() });
   map.addSource("lw-besatzung", { type: "geojson", data: besatzungFeatures() });
   map.addSource("lw-flugzeuge", { type: "geojson", data: flugzeugFeatures() });
   if (!map.hasImage("lw-flugzeug")) map.addImage("lw-flugzeug", flugzeugBild(), { pixelRatio: 2 });
 
+  // Fahrtweg (Boden): dunkler Rand, darüber die Statusfarbe; Flugweg: Luftlinie, lang gestrichelt
+  map.addLayer({
+    id: "lw-routes-rand",
+    type: "line",
+    source: "lw-routes",
+    filter: ["==", ["get", "luft"], 0],
+    layout: { "line-cap": "round", "line-join": "round" },
+    paint: { "line-color": "#111216", "line-opacity": 0.55, "line-width": 8 },
+  });
   map.addLayer({
     id: "lw-routes",
     type: "line",
     source: "lw-routes",
+    filter: ["==", ["get", "luft"], 0],
     layout: { "line-cap": "round", "line-join": "round" },
-    paint: { "line-color": "#1d6fd8", "line-width": 3, "line-opacity": 0.55, "line-dasharray": [2, 1.5] },
+    paint: { "line-color": ["get", "farbe"], "line-width": 4.5 },
+  });
+  map.addLayer({
+    id: "lw-routes-luft",
+    type: "line",
+    source: "lw-routes",
+    filter: ["==", ["get", "luft"], 1],
+    layout: { "line-cap": "butt", "line-join": "round" },
+    paint: { "line-color": ["get", "farbe"], "line-width": 3, "line-dasharray": [14 / 3, 8 / 3] },
   });
   // Spieler-NAH: geflogene Strecke
   map.addLayer({
@@ -747,31 +431,6 @@ export function addSimLayers(
     source: "lw-pilot-spur",
     layout: { "line-cap": "round", "line-join": "round" },
     paint: { "line-color": ["get", "color"], "line-width": 2.5, "line-opacity": 0.75 },
-  });
-  map.addLayer({
-    id: "lw-incidents",
-    type: "circle",
-    source: "lw-incidents",
-    paint: {
-      "circle-radius": ["case", ["==", ["get", "br"], 1], 6, ["==", ["get", "sel"], 1], 13, 9],
-      "circle-color": ["get", "color"],
-      "circle-stroke-color": ["case", ["==", ["get", "sel"], 1], "#111827", "#ffffff"],
-      "circle-stroke-width": ["case", ["==", ["get", "sel"], 1], 3, 2],
-    },
-  });
-  map.addLayer({
-    id: "lw-incidents-label",
-    type: "symbol",
-    source: "lw-incidents",
-    layout: {
-      "text-field": ["get", "name"],
-      "text-font": FONT,
-      "text-size": 11,
-      "text-offset": [0, 1.4],
-      "text-anchor": "top",
-      "text-allow-overlap": true,
-    },
-    paint: { "text-color": "#7a1010", "text-halo-color": "#ffffff", "text-halo-width": 1.5 },
   });
   // Partner-Fahrzeuge: klein, unter den eigenen Fahrzeugen
   map.addLayer({
@@ -793,24 +452,27 @@ export function addSimLayers(
     layout: { "text-field": ["get", "name"], "text-font": FONT, "text-size": 10, "text-offset": [0, 1], "text-anchor": "top" },
     paint: { "text-color": "#374151", "text-halo-color": "#ffffff", "text-halo-width": 1.3 },
   });
-  // Besatzung zu Fuß: weiter weg ein Punkt, nah je Person ein kleiner Punkt (in 3D ganz nah: Figuren)
-  map.addLayer({
-    id: "lw-besatzung",
-    type: "circle",
-    source: "lw-besatzung",
-    filter: ["==", ["get", "einzel"], 0],
-    minzoom: 13,
-    maxzoom: 16,
-    paint: { "circle-radius": 3.5, "circle-color": "#ffffff", "circle-stroke-color": ["get", "farbe"], "circle-stroke-width": 2 },
-  });
-  map.addLayer({
-    id: "lw-besatzung-einzeln",
-    type: "circle",
-    source: "lw-besatzung",
-    filter: ["==", ["get", "einzel"], 1],
-    minzoom: 16,
-    paint: { "circle-radius": ["interpolate", ["linear"], ["zoom"], 16, 2.2, 19, 4], "circle-color": ["get", "farbe"], "circle-stroke-color": "#ffffff", "circle-stroke-width": 1 },
-  });
+  // Besatzung zu Fuß (wie im Entwurf: kleiner orangener Punkt, dunkler Rand, heller Außenring) – erst ganz nah
+  for (const [id, einzel, min, max] of [["lw-besatzung", 0, 15, 16], ["lw-besatzung-einzeln", 1, 16, 24]] as const) {
+    map.addLayer({
+      id: `${id}-ring`,
+      type: "circle",
+      source: "lw-besatzung",
+      filter: ["==", ["get", "einzel"], einzel],
+      minzoom: min,
+      maxzoom: max,
+      paint: { "circle-radius": 6, "circle-color": "#ffffff", "circle-opacity": 0.9 },
+    });
+    map.addLayer({
+      id,
+      type: "circle",
+      source: "lw-besatzung",
+      filter: ["==", ["get", "einzel"], einzel],
+      minzoom: min,
+      maxzoom: max,
+      paint: { "circle-radius": 3.5, "circle-color": "#EBB36B", "circle-stroke-color": "#111216", "circle-stroke-width": 1.5 },
+    });
+  }
   // Flugzeug mit angekündigtem Notfall (Anflug, Landung, Rollen)
   map.addLayer({
     id: "lw-flugzeuge",
@@ -832,53 +494,6 @@ export function addSimLayers(
     },
     paint: { "text-color": "#1f2937", "text-halo-color": "#ffffff", "text-halo-width": 1.4 },
   });
-  // Schatten unter fliegenden Hubschraubern (zeigt: er ist in der Luft)
-  map.addLayer({
-    id: "lw-vehicles-shadow",
-    type: "circle",
-    source: "lw-vehicles",
-    filter: ["==", ["get", "flug"], 1],
-    paint: {
-      "circle-radius": ["interpolate", ["linear"], ["zoom"], 6, 3, 10, 6, 13, 9],
-      "circle-color": "#000000",
-      "circle-opacity": 0.35,
-      "circle-blur": 0.7,
-      "circle-translate": [6, 9],
-    },
-  });
-  map.addLayer({
-    id: "lw-vehicles",
-    type: "circle",
-    source: "lw-vehicles",
-    paint: {
-      "circle-radius": ["interpolate", ["linear"], ["zoom"], 6, ["case", ["==", ["get", "ein"], 1], 4, 2], 10, ["case", ["==", ["get", "ein"], 1], 7, 5], 13, 10],
-      "circle-color": ["get", "color"],
-      "circle-stroke-color": ["case", ["==", ["get", "nah"], 1], "#111827", "#ffffff"],
-      "circle-stroke-width": ["interpolate", ["linear"], ["zoom"], 6, ["case", ["==", ["get", "flug"], 1], 1.5, 1], 10, ["case", ["==", ["get", "flug"], 1], 3, 2]],
-    },
-  });
-  map.addLayer({
-    id: "lw-vehicles-nr",
-    type: "symbol",
-    source: "lw-vehicles",
-    minzoom: 10,
-    layout: { "text-field": ["get", "nr"], "text-font": FONT, "text-size": 10, "text-allow-overlap": true },
-    paint: { "text-color": "#ffffff" },
-  });
-  map.addLayer({
-    id: "lw-vehicles-label",
-    type: "symbol",
-    source: "lw-vehicles",
-    minzoom: 8,
-    layout: {
-      "text-field": ["get", "name"],
-      "text-font": FONT,
-      "text-size": 11,
-      "text-offset": [0, 1.2],
-      "text-anchor": "top",
-    },
-    paint: { "text-color": "#0b1726", "text-halo-color": "#ffffff", "text-halo-width": 1.6 },
-  });
 
   map.on("click", "lw-flugzeuge", (e) => {
     const id = e.features?.[0]?.properties?.einsatz as string | undefined;
@@ -888,49 +503,32 @@ export function addSimLayers(
     const id = e.features?.[0]?.properties?.einsatz as string | undefined;
     if (id && !pickActive) cb.onIncident(id);
   });
-  map.on("click", "lw-incidents", (e) => {
-    const id = e.features?.[0]?.properties?.lwid as string | undefined;
-    if (id && !pickActive) cb.onIncident(id);
-  });
-  map.on("click", "lw-vehicles", (e) => {
-    const id = e.features?.[0]?.properties?.lwid as string | undefined;
-    if (id && !pickActive) cb.onVehicle(id);
-  });
-  // Doppelklick: heranzoomen und Kamera folgt (statt normalem Doppelklick-Zoom)
-  map.on("dblclick", "lw-vehicles", (e) => {
-    const id = e.features?.[0]?.properties?.lwid as string | undefined;
-    if (!id || pickActive) return;
-    e.preventDefault();
-    cb.onVehicleDbl(id);
-  });
-  for (const l of ["lw-incidents", "lw-vehicles"]) {
+  for (const l of ["lw-flugzeuge", "lw-partner-fz"]) {
     map.on("mouseenter", l, () => (map.getCanvas().style.cursor = "pointer"));
     map.on("mouseleave", l, () => (map.getCanvas().style.cursor = pickActive ? "crosshair" : ""));
   }
 
+  const wegeNeu = () => (map.getSource("lw-routes") as maplibregl.GeoJSONSource | undefined)?.setData(wegeFeatures(cb.wege));
   let last = 0;
   const ausSim = sim.onChange(() => {
     const now = performance.now();
     if (now - last < 300) return;
     last = now;
-    (map.getSource("lw-vehicles") as maplibregl.GeoJSONSource | undefined)?.setData(vehicleFeatures());
     (map.getSource("lw-partner-fz") as maplibregl.GeoJSONSource | undefined)?.setData(partnerFzFeatures());
     (map.getSource("lw-besatzung") as maplibregl.GeoJSONSource | undefined)?.setData(besatzungFeatures());
-    (map.getSource("lw-incidents") as maplibregl.GeoJSONSource | undefined)?.setData(incidentFeatures());
-    (map.getSource("lw-routes") as maplibregl.GeoJSONSource | undefined)?.setData(routeFeatures());
     (map.getSource("lw-pilot-spur") as maplibregl.GeoJSONSource | undefined)?.setData(spurFeatures());
     (map.getSource("lw-flugzeuge") as maplibregl.GeoJSONSource | undefined)?.setData(flugzeugFeatures());
+    wegeNeu();
   });
   map.once("remove", ausSim);
-  // Flüssige Bewegung: fahrende Fahrzeuge ca. 10× pro Sekunde neu zeichnen (nur wenn das Spiel läuft und etwas fährt)
+  // Flüssige Bewegung: Wege und Besatzung ca. 10× pro Sekunde neu (nur wenn das Spiel läuft und etwas fährt)
   const glatt = window.setInterval(() => {
     if (!sim.state.laeuft || document.hidden) return;
-    const t = anzeigeZeit();
-    const faehrt = Object.values(sim.state.fahrzeuge).some((fz) => fz.fahrt && t < fz.fahrt.start + fz.fahrt.dauer * 1000 + 1500);
+    if (cb.wege.fahrzeuge().length) wegeNeu();
     const geht = Object.values(sim.state.fahrzeuge).some((fz) => fz.fuss);
-    if (faehrt) (map.getSource("lw-vehicles") as maplibregl.GeoJSONSource | undefined)?.setData(vehicleFeatures());
     if (geht) (map.getSource("lw-besatzung") as maplibregl.GeoJSONSource | undefined)?.setData(besatzungFeatures());
     if (flugzeugBewegt()) (map.getSource("lw-flugzeuge") as maplibregl.GeoJSONSource | undefined)?.setData(flugzeugFeatures());
   }, 100);
   map.once("remove", () => window.clearInterval(glatt));
+  return { wegeNeu };
 }

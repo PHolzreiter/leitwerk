@@ -287,6 +287,8 @@ export interface Fahrzeug3D {
   aktiv(): boolean;
   /** Fahrzeug unter dem Bildschirmpunkt (für Klicks auf Modelle) */
   treffer(x: number, y: number): string | null;
+  /** Wird das Fahrzeug gerade als Modell gezeichnet? (dann keinen Punkt zeigen) */
+  alsModell(fliegend: boolean): boolean;
 }
 
 const LS = "leitwerk.modelle3d";
@@ -330,7 +332,7 @@ export function addFahrzeug3D(map: maplibregl.Map): Fahrzeug3D {
     }
     if (map.getLayer("lw-vehicles-shadow")) map.setLayerZoomRange("lw-vehicles-shadow", 0, max);
     // Besatzung: in 3D ganz nah als Figuren statt Punkte
-    if (map.getLayer("lw-besatzung-einzeln")) map.setLayerZoomRange("lw-besatzung-einzeln", 16, max);
+    for (const id of ["lw-besatzung-einzeln", "lw-besatzung-einzeln-ring"]) if (map.getLayer(id)) map.setLayerZoomRange(id, 16, max);
     if (map.getLayer("lw-vehicles-label")) {
       map.setLayoutProperty("lw-vehicles-label", "text-anchor", an ? ["step", ["zoom"], "top", ZOOM_MODELLE, "bottom"] : "top");
       map.setLayoutProperty("lw-vehicles-label", "text-offset", an ? ["step", ["zoom"], ["literal", [0, 1.2]], ZOOM_MODELLE, ["literal", [0, -3.2]]] : [0, 1.2]);
@@ -482,10 +484,10 @@ export function addFahrzeug3D(map: maplibregl.Map): Fahrzeug3D {
   };
 
   const hinzufuegen = () => {
-    if (!map.getLayer("lw-fz3d")) map.addLayer(layer, map.getLayer("lw-vehicles-label") ? "lw-vehicles-label" : undefined);
+    if (!map.getLayer("lw-fz3d")) map.addLayer(layer);
     ebenenAnpassen();
   };
-  if (map.isStyleLoaded() && map.getLayer("lw-vehicles")) hinzufuegen();
+  if (map.isStyleLoaded() && map.getLayer("lw-routes")) hinzufuegen();
   else map.once("idle", hinzufuegen);
   map.on("zoomend", () => map.triggerRepaint());
 
@@ -504,6 +506,7 @@ export function addFahrzeug3D(map: maplibregl.Map): Fahrzeug3D {
       ebenenAnpassen();
     },
     aktiv: () => gewuenscht,
+    alsModell: (fliegend) => mode3d && gewuenscht && (map.getZoom() >= ZOOM_MODELLE || (fliegend && map.getZoom() >= ZOOM_FLUG)),
     treffer(x, y) {
       if (!sichtbar()) return null;
       let best: { id: string; d: number } | null = null;

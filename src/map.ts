@@ -84,12 +84,56 @@ function shownSets(available: Set<string>): VectorMap[] {
 
 type Flavor = "light" | "dark";
 
-function setLayers(name: VectorMap, flavor: Flavor): maplibregl.LayerSpecification[] {
-  const set = layers(name, namedFlavor(flavor), { lang: "de" }) as unknown as maplibregl.LayerSpecification[];
+/** Punkte der Basiskarte, die bei „gedämpft“ bleiben (keine Geschäfte, Lokale, Bänke … – nur Orientierung) */
+const POI_RUHIG = ["beach", "forest", "marina", "park", "peak", "zoo", "garden", "aerodrome", "station", "ferry_terminal", "stadium", "university", "townhall", "attraction", "museum", "theatre"];
+
+/** Farbe wie mit CSS-Filter saturate(s) contrast(c) brightness(b) */
+function farbeDaempfen(f: string, s: number, c: number, b: number): string {
+  const m = f.trim().match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
+  const r = f.trim().match(/^rgba?\(([^)]+)\)$/i);
+  let rgb: number[];
+  let a: number | null = null;
+  if (m) {
+    const h = m[1].length === 3 ? m[1].replace(/./g, (x) => x + x) : m[1];
+    rgb = [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16) / 255);
+  } else if (r) {
+    const t = r[1].split(",").map((x) => parseFloat(x));
+    rgb = t.slice(0, 3).map((x) => x / 255);
+    if (t.length > 3) a = t[3];
+  } else return f;
+  const [R, G, B] = rgb;
+  const sat = [
+    (0.213 + 0.787 * s) * R + (0.715 - 0.715 * s) * G + (0.072 - 0.072 * s) * B,
+    (0.213 - 0.213 * s) * R + (0.715 + 0.285 * s) * G + (0.072 - 0.072 * s) * B,
+    (0.213 - 0.213 * s) * R + (0.715 - 0.715 * s) * G + (0.072 + 0.928 * s) * B,
+  ];
+  const aus = sat.map((x) => Math.round(Math.max(0, Math.min(1, ((x - 0.5) * c + 0.5) * b)) * 255));
+  return a === null ? `#${aus.map((x) => x.toString(16).padStart(2, "0")).join("")}` : `rgba(${aus.join(",")},${a})`;
+}
+
+/** Farbsatz der Basiskarte gedämpft (eigene Marken sollen vorne stehen – Befund „Kartenpunkte“) */
+function gedaempft<T>(f: T, dunkel: boolean): T {
+  const [s, c, b] = dunkel ? [0.35, 0.88, 1] : [0.3, 0.85, 1.03];
+  const gehe = (o: unknown): unknown => {
+    if (typeof o === "string") return farbeDaempfen(o, s, c, b);
+    if (o && typeof o === "object") return Object.fromEntries(Object.entries(o as Record<string, unknown>).map(([k, v]) => [k, gehe(v)]));
+    return o;
+  };
+  return gehe(f) as T;
+}
+
+function setLayers(name: VectorMap, flavor: Flavor, ruhig = false): maplibregl.LayerSpecification[] {
+  const fl = ruhig ? gedaempft(namedFlavor(flavor), flavor === "dark") : namedFlavor(flavor);
+  const set = layers(name, fl, { lang: "de" }) as unknown as maplibregl.LayerSpecification[];
   // Hintergrund kommt einmal eigens ganz unten, sonst würde er die gröberen Karten verdecken
   return set
     .filter((l) => l.type !== "background")
-    .map((l) => ({ ...l, id: `${name}-${l.id}` }) as maplibregl.LayerSpecification);
+    .map((l) => {
+      const neu = { ...l, id: `${name}-${l.id}` } as maplibregl.LayerSpecification;
+      // gedämpft: Geschäfte und Lokale der Basiskarte weglassen
+      if (ruhig && l.id === "pois") (neu as { filter?: unknown }).filter = ["all", ["in", ["get", "kind"], ["literal", POI_RUHIG]], [">=", ["zoom"], ["+", ["get", "min_zoom"], 0]]];
+      return neu;
+    });
 }
 
 const BUILDINGS: maplibregl.LayerSpecification = {
@@ -162,7 +206,15 @@ let protocol: Protocol | null = null;
 const geoeffnet = new Map<string, number>();
 let protokollStand = 0;
 
-export function createMap(container: string | HTMLElement, initial: string[], opts: { dunkel?: boolean } = {}): MapHandle {
+export interface MapOptionen {
+  dunkel?: boolean;
+  /** eigene Knöpfe, Maßstab und Quellenhinweis (Kartenfenster) statt der von MapLibre */
+  eigeneBedienung?: boolean;
+  /** Basiskarte gedämpft, ohne Geschäfte und Lokale (Kartenfenster) */
+  ruhig?: boolean;
+}
+
+export function createMap(container: string | HTMLElement, initial: string[], opts: MapOptionen = {}): MapHandle {
   if (!protocol) {
     protocol = new Protocol();
     maplibregl.addProtocol("pmtiles", protocol.tilev4);
@@ -184,7 +236,7 @@ export function createMap(container: string | HTMLElement, initial: string[], op
     // 2D: flach von oben, nicht kippbar (in 3D wird das Kippen freigegeben)
     maxPitch: 0,
     maxBounds: MAX_BOUNDS,
-    attributionControl: { compact: true },
+    attributionControl: opts.eigeneBedienung ? false : { compact: true },
     // Schriftordner liegen ohne Leerzeichen im Programm, damit die
     // Pfade auf allen Systemen gleich funktionieren.
     transformRequest: (url, resourceType) => {
@@ -195,8 +247,10 @@ export function createMap(container: string | HTMLElement, initial: string[], op
     },
   });
 
-  map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
-  map.addControl(new maplibregl.ScaleControl({ unit: "metric" }), "bottom-left");
+  if (!opts.eigeneBedienung) {
+    map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
+    map.addControl(new maplibregl.ScaleControl({ unit: "metric" }), "bottom-left");
+  }
 
   /** Erste Ebene der eigenen Daten (Dienststellen, Fahrzeuge …) – Karten kommen darunter. */
   const firstOwnLayer = (): string | undefined =>
@@ -209,7 +263,7 @@ export function createMap(container: string | HTMLElement, initial: string[], op
 
   const addSet = (name: VectorMap, before: string | undefined) => {
     map.addSource(name, { type: "vector", url: `pmtiles://${name}`, attribution: ATTRIBUTION });
-    for (const l of setLayers(name, flavor)) map.addLayer(l, before);
+    for (const l of setLayers(name, flavor, !!opts.ruhig)) map.addLayer(l, before);
   };
 
   /** Sichtbarkeit nach Modus: Satellit blendet Flächen und Linien aus, Beschriftungen bleiben. */
@@ -244,7 +298,8 @@ export function createMap(container: string | HTMLElement, initial: string[], op
     }
     map.setLayoutProperty("lw-sat-eox", "visibility", satellite ? "visible" : "none");
     map.setLayoutProperty("lw-sat-at", "visibility", satellite ? "visible" : "none");
-    const v3 = mode3d ? "visible" : "none";
+    // Satellitenbild auch in 3D (Gelände darunter); Schummerung und Häuser dann nicht
+    const v3 = mode3d && !satellite ? "visible" : "none";
     for (const id of ["lw-hillshade", "lw-buildings-3d"]) if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", v3);
   };
 
@@ -296,7 +351,7 @@ export function createMap(container: string | HTMLElement, initial: string[], op
 
   const setMode3d = (on: boolean) => {
     mode3d = on;
-    if (on) satellite = false;
+    if (on && !opts.eigeneBedienung) satellite = false;
     applyVisibility();
     if (on) map.setMaxPitch(75);
     if (on && available.has("terrain")) {
@@ -315,7 +370,7 @@ export function createMap(container: string | HTMLElement, initial: string[], op
   };
 
   const setSatellite = (on: boolean) => {
-    if (on && mode3d) setMode3d(false);
+    if (on && mode3d && !opts.eigeneBedienung) setMode3d(false);
     satellite = on;
     applyVisibility();
   };

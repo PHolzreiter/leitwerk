@@ -1,0 +1,50 @@
+<div class="k-Karte">
+  <div class="{{kfCls}}" role="application" aria-label="Karte – ziehen verschiebt, Mausrad zoomt, Rechtsklick: Menü">
+    <!-- Bedienfeld -->
+    <div class="panel" onMouseDown="{{stopp}}" onWheel="{{stopp}}" onContextMenu="{{stopp}}">
+      <div class="karte-k">
+        <label class="such"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"></circle><path d="M20 20l-4.5-4.5"></path></svg><input class="feld" value="{{such}}" onInput="{{suchEin}}" onKeyDown="{{suchTaste}}" onFocus="{{suchFokus}}" onBlur="{{suchWeg}}" placeholder="Ort, Adresse, Einrichtung, Fahrzeug …" aria-label="Auf der Karte suchen"></label>
+        <sc-if value="{{hatTreffer}}"><div class="k-treffer" role="listbox"><sc-for list="{{treffer}}" as="t"><button class="{{t.cls}}" onMouseDown="{{t.klick}}" role="option"><span class="art">{{t.art}}</span><span class="n">{{t.n}}</span><span class="k">{{t.k}}</span></button></sc-for><sc-if value="{{keineTreffer}}"><div class="tr-leer">Nichts gefunden</div></sc-if></div></sc-if>
+        <div class="leiste">
+          <div class="segs gleit" role="group" aria-label="Ansicht" style="--i: {{dimIdx}}; --n: 2;"><sc-for list="{{dims}}" as="d"><button class="{{d.cls}}" onClick="{{d.klick}}" aria-pressed="{{d.an}}" title="{{d.titel}}">{{d.t}}</button></sc-for></div>
+          <div class="segs gleit" role="group" aria-label="Kartenart" style="--i: {{basisIdx}}; --n: 2;"><sc-for list="{{basen}}" as="b"><button class="{{b.cls}}" onClick="{{b.klick}}" aria-pressed="{{b.an}}">{{b.t}}</button></sc-for></div>
+          <button class="{{ebenenCls}}" onClick="{{ebenenKlick}}" aria-expanded="{{ebenenAn}}" title="Ebenen"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l9 5-9 5-9-5z"></path><path d="M3 14l9 5 9-5"></path></svg><span class="t">Ebenen</span></button>
+        </div>
+      </div>
+      <sc-if value="{{ebenenOffen}}">
+        <div class="karte-k k-ebenen" role="group" aria-label="Ebenen">
+          <sc-for list="{{ebenen}}" as="e"><button class="{{e.cls}}" onClick="{{e.klick}}" aria-pressed="{{e.an}}" title="{{e.titel}}"><span class="sw"></span>{{e.t}}<span class="hz">{{e.hz}}</span></button></sc-for>
+          <div class="leg"><sc-for list="{{legende}}" as="l"><span><i style="background: {{l.f}}; border-radius: {{l.r}};"></i>{{l.t}}</span></sc-for></div>
+        </div>
+      </sc-if>
+    </div>
+
+    <div class="knoepfe" onMouseDown="{{stopp}}" onContextMenu="{{stopp}}">
+      <div class="karte-k kgrp"><button class="kk" onClick="{{zoomRein}}" aria-label="Hineinzoomen" title="Hineinzoomen"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></button><button class="kk" onClick="{{zoomRaus}}" aria-label="Herauszoomen" title="Herauszoomen"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"></path></svg></button></div>
+      <div class="karte-k kgrp"><button class="kk" onClick="{{aufEinsatz}}" aria-label="Zum gewählten Einsatz" title="Zum gewählten Einsatz"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v4M12 18v4M2 12h4M18 12h4"></path></svg></button><button class="kk" onClick="{{norden}}" aria-label="Nach Norden ausrichten" title="Nach Norden / Ganze Funkgruppe"><svg class="ic nadel" viewBox="0 0 24 24" aria-hidden="true" style="transform: rotate({{nadel}}deg);"><path d="M12 3l4 9h-8z" fill="currentColor"></path><path d="M12 21l-4-9h8z"></path></svg></button></div>
+    </div>
+
+    <div class="unten"><div class="mass"><span>{{massText}}</span><i style="width: {{massPx}}px;"></i></div><span class="quelle" title="{{quelleTitel}}">{{quelle}}</span></div>
+
+    <sc-if value="{{infoOffen}}">
+      <div class="info" style="left: {{infoX}}px; top: {{infoY}}px; max-height: calc(100% - {{infoY}}px - 8px);" onMouseDown="{{stopp}}" onWheel="{{stopp}}" onContextMenu="{{stopp}}" role="dialog" aria-label="{{infoTitel}}">
+        <div class="info-k"><sc-if value="{{infoHatSt}}"><span class="{{infoStCls}}" style="{{infoStStil}}">{{infoSt}}</span></sc-if><div class="t"><b>{{infoTitel}}</b><div class="u">{{infoUnter}}</div></div><button class="iknopf" onClick="{{infoZu}}" aria-label="Schließen"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button></div>
+        <div class="z"><sc-for list="{{infoZeilen}}" as="z"><div><span class="l" title="{{z.l}}">{{z.l}}</span><span class="w">{{z.w}}</span></div></sc-for></div>
+        <div class="kn-r"><sc-for list="{{infoKnoepfe}}" as="k"><button class="{{k.cls}}" onClick="{{k.klick}}">{{k.t}}</button></sc-for></div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ctxOffen}}">
+      <div class="schirm" onMouseDown="{{ctxZu}}" onContextMenu="{{ctxZuR}}"></div>
+      <div class="ctx" style="left: {{ctxX}}px; top: {{ctxY}}px;" role="menu" onMouseDown="{{stopp}}" onContextMenu="{{ctxZuR}}">
+        <button class="mk" onClick="{{ctxKopieren}}" title="Klick kopiert die Koordinaten">{{ctxKoord}}</button>
+        <sc-for list="{{ctxPunkte}}" as="c"><button class="p" role="menuitem" onClick="{{c.klick}}">{{c.t}}</button></sc-for>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{folgtAn}}"><div class="folgt-chip karte-k" onMouseDown="{{stopp}}"><span class="lampe-f"></span>Kamera folgt <b>{{folgtRuf}}</b><button class="iknopf" onClick="{{folgtAus}}" aria-label="Folgen beenden" title="Folgen beenden (oder Esc, oder Karte selbst verschieben)"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button></div></sc-if>
+    <sc-if value="{{hatMeldung}}"><div class="k-meldung" role="alert" onMouseDown="{{stopp}}"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l9 16H3z"></path><path d="M12 10v4M12 17v.5"></path></svg><span>{{meldungText}}</span><sc-if value="{{meldungKnopf}}"><button class="kn sm" onClick="{{meldungAktion}}">Zu den Kartenpaketen</button></sc-if><button class="iknopf" onClick="{{meldungZu}}" aria-label="Meldung schließen" title="Schließen"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button></div></sc-if>
+    <sc-if value="{{waehlt}}"><div class="waehl-banner" onMouseDown="{{stopp}}"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v4M12 18v4M2 12h4M18 12h4"></path></svg><span><b>{{waehlTitel}}</b> – Klick setzt den Ort · Esc bricht ab</span><button class="kn sm leise" onClick="{{waehlZu}}">Abbrechen</button></div></sc-if>
+    <sc-if value="{{hatToast}}"><div class="k-toast einblenden" role="status">{{toast}}</div></sc-if>
+  </div>
+</div>
