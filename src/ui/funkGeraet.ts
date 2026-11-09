@@ -18,7 +18,7 @@ export function gruppenName(kanal: Sprechgruppe): string {
 }
 
 /** Status-Text des Piloten (Hubschrauber) */
-function pilotStatus(): string {
+export function pilotStatus(): string {
   const heli = sim.pilotVon(sim.ich?.pid ?? mp.ich.pid);
   if (!heli) return "Frei auf Wache";
   if (heli.status === "freiWache") return "Frei auf Wache";
@@ -26,7 +26,7 @@ function pilotStatus(): string {
 }
 
 /** Wer spricht gerade auf dieser Gruppe (Rufname), sonst leer */
-function wenHoereIch(kanal: Sprechgruppe): string {
+export function wenHoereIch(kanal: Sprechgruppe): string {
   const hoert = funkEmpfang(kanal);
   if (hoert) return hoert.von === "LEO" ? "LEO" : hoert.von;
   const s = sim.state.funkSendet;
@@ -41,7 +41,7 @@ function wenHoereIch(kanal: Sprechgruppe): string {
 export const LEO_ID = "80000";
 
 /** eigener Rufname (Pilot: sein Hubschrauber) */
-function eigenerName(): string {
+export function eigenerName(): string {
   const heli = sim.pilotVon(sim.ich?.pid ?? mp.ich.pid);
   return heli ? sim.rufname(heli) : "LEO";
 }

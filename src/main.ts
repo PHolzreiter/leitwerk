@@ -56,7 +56,7 @@ import { stellenLaden } from "./data/einsatzstellen";
 import { istFeiertag, katKtOffen, katOffen, offenUm } from "./data/ortZeiten";
 import { searchAddress } from "./sim/geo";
 import { kategorienFuerOrtArt, ortGewicht, poiKategorien } from "./data/orte";
-import { alleAnrufe, anrufAnnehmen, anrufAuflegen, anrufBeobachterStarten, anrufHalten, istMeins, meinGespraech } from "./ui/panels/telefon";
+import { alleAnrufe, anrufAnnehmen, anrufAuflegen, anrufBeobachterStarten, anrufHalten, istMeins, meinGespraech, nehmeIchAn } from "./ui/panels/telefon";
 import { setzeAbfrageAnsicht } from "./ui/abfrageAnsicht";
 import { gesagteAdresse } from "./abfrage/adresseGesagt";
 import { kapitelZumText } from "./ui/panels/notrufGefuehrt";
@@ -123,8 +123,7 @@ function statusFarbenAnwenden(): void {
 
 function kuerzelEinrichten(): void {
   kuerzelAktion("annehmen", () => {
-    const p = pers();
-    const l = alleAnrufe().filter((x) => x.anruf.status === "klingelt" && (x.typ === "notruf" ? p.notrufe : p.ktHotline));
+    const l = alleAnrufe().filter((x) => x.anruf.status === "klingelt" && nehmeIchAn(x.typ));
     const x = l.find((y) => y.typ === "notruf") ?? l[0];
     if (!x) return false;
     void anrufAnnehmen(x.art, x.id);
@@ -164,7 +163,7 @@ function einfuehrung(): void {
   box.innerHTML = `<b>Neu: frei anordenbare Fenster</b>
     <ul>
       <li>Reiter (z. B. „Funk“) mit der Maus ziehen: daneben, darunter oder als weiterer Reiter ablegen.</li>
-      <li>Ränder zwischen den Fenstern ziehen ändert die Größe. <b>⤢</b> macht ein Fenster groß, <b>⧉</b> schiebt es in ein eigenes Programmfenster (zweiter Bildschirm).</li>
+      <li>Ränder zwischen den Fenstern ziehen ändert die Größe. Rechts im Fensterkopf: <b>Vollbild</b>, <b>In neuem Fenster öffnen</b> (zweiter Bildschirm) und <b>Schließen</b>.</li>
       <li>Geschlossene Fenster holst du oben über <b>Fenster ▾</b> zurück. Fertige Anordnungen gibt es unter <b>Anordnung ▾</b>.</li>
     </ul>`;
   const ok = document.createElement("button");

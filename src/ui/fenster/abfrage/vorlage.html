@@ -1,0 +1,169 @@
+<div class="k-Abfrage" style="display: contents;">
+<section class="fe" tabindex="-1" onKeyDown="{{taste}}" onClick="{{fokus}}" style="outline: none;">
+  <!-- Filter RD · KT · SEK (im Entwurf in der Fensterleiste neben „Abfrage“; die Leiste zeichnet dockview) -->
+  <div class="abf-filterz"><div class="filter" role="group" aria-label="Welche Anrufe angezeigt werden"><span class="filter-l">Anrufe</span><sc-for list="{{filter}}" as="x"><button class="{{x.cls}}" aria-pressed="{{x.an}}" onClick="{{x.klick}}" title="{{x.titel}}">{{x.t}}</button></sc-for></div></div>
+  <div class="{{telCls}}" style="--lb: {{lb}}px;">
+    <!-- Anrufe: vor dem Abheben groß und mittig, danach schmale Leiste mit Namen -->
+    <div class="leiste" aria-label="Anrufe">
+      <div class="sp"></div>
+      <div class="kl-kopf"><span class="lbl">{{klTitel}}</span><span class="zeit kl-hinw">{{klHinweis}}</span></div>
+      <sc-for list="{{klAnrufe}}" as="a">
+        <div class="{{a.cls}}" title="{{a.titel}}">
+          <span class="kl-sym" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"></path></svg></span>
+          <div class="kl-txt">
+            <div class="kl-z1"><span class="{{a.artCls}} kl-lang">{{a.artName}}</span><span class="{{a.artCls}} kl-kurz">{{a.kurz}}</span><span class="kl-wart">{{a.zeit}}</span></div>
+            <div class="nummer">{{a.nummer}}</div>
+            <div class="anruf-d">{{a.info}}</div>
+            <sc-if value="{{a.hatWer}}"><div class="kl-wer"><i></i>{{a.wer}}</div></sc-if>
+          </div>
+          <sc-if value="{{a.hatKnopf}}"><button class="kn kl-ab" onClick="{{a.klick}}" title="{{a.knopfTitel}}"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"></path></svg><span class="t">{{a.knopf}}</span></button></sc-if>
+        </div>
+      </sc-for>
+      <sc-if value="{{keinAnruf}}">
+        <div class="kl-leer"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"></path></svg><b>Kein Anruf</b><span class="zeit">{{leerText}}</span></div>
+      </sc-if>
+      <div class="sp"></div>
+    </div>
+
+    <!-- Breite der Leiste: ziehen (oder Pfeiltasten), Doppelklick = Standard -->
+    <div class="zieher" role="separator" aria-orientation="vertical" aria-label="Breite der Anrufleiste" aria-valuemin="150" aria-valuemax="420" aria-valuenow="{{lb}}" tabindex="0" title="Ziehen ändert die Breite · Doppelklick: Standard" onMouseDown="{{ziehStart}}" onKeyDown="{{ziehTaste}}" onDoubleClick="{{ziehReset}}"></div>
+
+    <!-- Abfrage: geht neben der Leiste auf -->
+    <div class="abfr">
+    <div class="inhalt">
+    <sc-if value="{{istGespraech}}">
+    <!-- Anruf -->
+    <div class="kopf" style="gap: 6px;">
+      <div class="anruf">
+        <div class="anruf-l">
+          <span class="{{artCls}}">{{artName}}</span>
+          <span class="nummer">{{nummer}}</span>
+          <span class="anruf-d">{{anrufInfo}}</span>
+        </div>
+        <span class="live"><i></i>{{dauer}}</span>
+        <button class="{{vcodeCls}}" title="{{vcodeTitel}}" aria-label="{{vcodeTitel}}" onClick="{{vcodeKlick}}">{{ergCode}}</button>
+        <div class="anruf-k">
+          <button class="{{haltenCls}}" aria-label="{{haltenText}}" aria-pressed="{{haltenAn}}" onClick="{{halten}}" title="{{haltenTitel}}"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5v14M15 5v14"></path></svg><span class="t">{{haltenText}}</span></button>
+          <button class="{{stummCls}}" aria-label="Stumm" aria-pressed="{{stummAn}}" onClick="{{stumm}}" title="Mikrofon stumm (für das Sprechen per Mikrofon)"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a3 3 0 0 0-3 3v5a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3z"></path><path d="M5 11a7 7 0 0 0 14 0M12 18v3M4 4l16 16"></path></svg><span class="t">Stumm</span></button>
+        </div>
+      </div>
+      <sc-if value="{{istGehalten}}">
+        <div class="band einblenden" style="background: var(--gelb-flaeche);"><span class="pkt" style="background: var(--gelb);"></span>{{gehaltenText}}<span style="flex: 1;"></span><button class="kn sm" onClick="{{halten}}">Zurückholen</button></div>
+      </sc-if>
+      <sc-for list="{{alarme}}" as="al">
+        <div class="band einblenden abf-alarm"><span class="pkt" style="background: var(--rot);"></span>{{al.text}}<span style="flex: 1;"></span><sc-if value="{{al.hatKnopf}}"><button class="kn sm" onClick="{{al.klick}}">{{al.knopf}}</button></sc-if></div>
+      </sc-for>
+    </div>
+
+    <div class="spalten">
+
+    <div class="sp-l">
+    <!-- Aktuelle Frage -->
+    <div class="ab a-frage">
+      <sc-if value="{{offen}}">
+      <div class="frage-k" aria-live="polite">
+        <div class="f-kopf"><span class="f-teil">{{f.teil}}</span><span class="f-nr">{{f.nr}}</span></div>
+        <div class="f-text">{{f.text}}</div>
+        <sc-if value="{{f.hatHinweis}}"><div class="f-hinweis">{{f.hinweis}}</div></sc-if>
+        <sc-if value="{{f.istWahl}}">
+          <div class="opts" role="group" aria-label="{{f.text}}">
+            <sc-for list="{{f.optionen}}" as="o"><button class="{{o.cls}}" onClick="{{o.klick}}" aria-pressed="{{o.an}}"><span class="tn">{{o.nr}}</span>{{o.t}}</button></sc-for>
+          </div>
+        </sc-if>
+        <sc-if value="{{f.istKapitel}}">
+          <input class="feld f-eing" value="{{f.q}}" onInput="{{f.qEin}}" placeholder="{{f.kapPlatz}}" aria-label="Kapitel suchen">
+          <div class="kap" role="group" aria-label="Kapitel">
+            <sc-for list="{{f.optionen}}" as="o"><button class="{{o.cls}}" onClick="{{o.klick}}" aria-pressed="{{o.an}}" title="{{o.titel}}"><span class="tn">{{o.nr}}</span>{{o.t}}</button></sc-for>
+          </div>
+          <sc-if value="{{f.keinKapitel}}"><div class="zeit" style="padding: 2px 4px;">Kein Kapitel passt – anders schreiben oder die Nummer tippen.</div></sc-if>
+        </sc-if>
+        <sc-if value="{{f.istOrt}}">
+          <div class="suche ortsuche">
+            <div class="suchfeld"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"></circle><path d="M20 20l-4.5-4.5"></path></svg><input class="feld f-eing" value="{{f.q}}" onInput="{{f.qEin}}" placeholder="{{f.ortPlatz}}" aria-label="{{f.text}}"></div>
+            <sc-for list="{{f.gruppen}}" as="gr">
+              <div class="tgruppe">{{gr.t}}</div>
+              <sc-for list="{{gr.items}}" as="it">
+                <button class="{{it.cls}}" onClick="{{it.klick}}">
+                  <span class="tsym"><sc-if value="{{it.org}}"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21V8l8-5 8 5v13M9 21v-6h6v6M12 8v4M10 10h4"></path></svg></sc-if><sc-if value="{{it.adr}}"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6-5.7-6-11a6 6 0 0 1 12 0c0 5.3-6 11-6 11z"></path><circle cx="12" cy="10" r="2"></circle></svg></sc-if><sc-if value="{{it.ruf}}"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"></path></svg></sc-if><sc-if value="{{it.ortung}}"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3"></path></svg></sc-if></span>
+                  <span style="min-width: 0;"><b>{{it.name}}</b><div class="tz">{{it.zeile}}</div></span>
+                  <span class="tr">{{it.rechts}}</span>
+                </button>
+              </sc-for>
+            </sc-for>
+            <sc-if value="{{f.sucht}}"><div class="zeit" style="padding: 6px 4px;">Suche …</div></sc-if>
+            <sc-if value="{{f.keinTreffer}}"><div class="zeit" style="padding: 6px 4px;">Kein Treffer – anders schreiben, auf der Karte wählen oder orten.</div></sc-if>
+            <sc-if value="{{f.hatJetzt}}"><div class="zeit" style="padding: 2px 4px;">Eingetragen: <b>{{f.jetzt}}</b></div></sc-if>
+            <div class="suche-fuss">
+              <button class="kn sm" onClick="{{f.karte}}"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4l-6 2v14l6-2 6 2 6-2V4l-6 2z"></path><path d="M9 4v14M15 6v14"></path></svg>Auf der Karte wählen</button>
+              <sc-if value="{{f.mitOrtung}}"><button class="{{f.ortungCls}}" onClick="{{f.orten}}" title="{{f.ortungTitel}}"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3"></path></svg>{{f.ortungText}}</button></sc-if>
+            </div>
+          </div>
+        </sc-if>
+        <sc-if value="{{f.istEingabe}}">
+          <input class="feld f-eing" value="{{f.wert}}" onInput="{{f.ein}}" placeholder="{{f.platz}}" inputmode="{{f.modus}}" aria-label="{{f.text}}">
+        </sc-if>
+        <div class="f-werk">
+          <button class="{{stellenCls}}" onClick="{{stellen}}" title="Dem Anrufer diese Frage stellen"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"></path></svg>Frage stellen<kbd class="nurbreit">␣</kbd></button>
+          <sc-if value="{{f.mitWeiter}}"><button class="kn sm prim" onClick="{{weiter}}">Weiter<kbd class="nurbreit" style="border-color: currentColor; color: inherit;">↵</kbd></button></sc-if>
+          <span style="flex: 1;"></span>
+          <button class="kn sm leise" onClick="{{zurueck}}">Zurück<kbd class="nurbreit">↑</kbd></button>
+          <button class="kn sm leise" onClick="{{ueberspringen}}">Überspringen<sc-if value="{{f.mitWeiter}}"><kbd class="nurbreit">↓</kbd></sc-if><sc-if value="{{f.ohneWeiter}}"><kbd class="nurbreit">↵</kbd></sc-if></button>
+        </div>
+      </div>
+      </sc-if>
+      <sc-if value="{{fertig}}">
+        <div class="frage-k fertig-k">
+          <span class="f-teil">Abfrage fertig</span>
+          <b>Endgültiger Code: <span class="nr">{{ergCode}}</span></b>
+          <span class="zeit">Code, Zusatzinfo und Ort stehen schon in der {{zielName}} ({{zielEinsatz}}). Unten lassen sich Antworten noch ändern.</span>
+          <button class="kn sm prim" onClick="{{zur}}">{{zurText}}</button>
+        </div>
+      </sc-if>
+    </div>
+
+    <!-- Beantwortet: neueste oben -->
+    <div class="ab a-erl">
+      <div class="ab-kopf"><span class="lbl">Beantwortet · {{anzahlErl}}</span><span class="zeit">Klick zum Ändern</span></div>
+      <div class="erl">
+        <sc-for list="{{erledigt}}" as="e"><button class="{{e.cls}}" onClick="{{e.klick}}"><span style="min-width: 0;"><span class="erl-f" style="display: block;">{{e.text}}</span><span class="erl-a" style="display: block;">{{e.antwort}}</span></span><span class="erl-x">ändern</span></button></sc-for>
+      </div>
+    </div>
+    </div>
+
+    <div class="sp-r">
+    <!-- Gespräch -->
+    <div class="ab a-gespr">
+      <div class="ab-kopf"><span class="lbl">Gespräch</span><span class="abf-gk"><span class="zeit" title="{{kiTitel}}">{{kiText}}</span><sc-if value="{{mitExport}}"><button class="kn sm leise" onClick="{{exportKlick}}" title="Gespräch, Abfrage, Anweisung an die KI und Protokoll als Datei speichern">Exportieren</button></sc-if></span></div>
+      <div class="msgs" ref="{{msgsRef}}">
+        <sc-for list="{{msgs}}" as="m"><div class="{{m.cls}}"><sc-if value="{{m.hatKopf}}"><span class="zt">{{m.wer}} · {{m.t}}</span></sc-if>{{m.x}}</div></sc-for>
+      </div>
+      <div class="frag-ein" ref="{{fragRef}}"></div>
+    </div>
+
+    <!-- Hinweise für die Besatzung -->
+    <div class="ab a-info">
+      <span class="lbl">Hinweise für die Besatzung</span>
+      <label class="info-z">
+        <!-- immer im Baum (nur ein-/ausgeblendet), sonst wird das Eingabefeld beim Tippen ersetzt und verliert den Fokus -->
+        <span class="info-auto" style="{{infoAutoStil}}" title="Kommt automatisch aus der Abfrage: Alter, Geschlecht, Bewusstsein, Atmung">{{infoAuto}}</span>
+        <span class="info-sep" style="{{infoSepStil}}" aria-hidden="true">//</span>
+        <input class="info-ein" value="{{infoText}}" onInput="{{infoEin}}" onBlur="{{infoFertig}}" onKeyDown="{{infoTaste}}" placeholder="{{infoPlatz}}" aria-label="Hinweise für die Besatzung">
+      </label>
+      <span class="zeit">{{infoErkl}}</span>
+    </div>
+    </div>
+
+    </div>
+
+    <!-- Fuß: Auflegen und zur passenden Übersicht (Reiter und Einsatz, auch am anderen Bildschirm) -->
+    <div class="fuss">
+      <button class="kn gefahr" onClick="{{auflegen}}"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 15c5-4 13-4 18 0l-2 3-4-1v-3a12 12 0 0 0-6 0v3l-4 1z"></path></svg>Auflegen</button>
+      <span style="flex: 1;"></span>
+      <button class="kn prim" onClick="{{zur}}">{{zurText}}<svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></button>
+    </div>
+    </sc-if>
+    </div>
+    </div>
+  </div>
+</section>
+</div>

@@ -1,0 +1,72 @@
+<div class="k-Telefon" style="display: contents;">
+<section class="fe">
+  <div class="inhalt">
+
+    <div class="t-kopf">
+      <div class="t-suchz">
+        <label class="t-such"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"></circle><path d="M20 20l-4.5-4.5"></path></svg><input class="feld" value="{{such}}" onInput="{{suchEin}}" onKeyDown="{{suchTaste}}" placeholder="Name, Einsatzcode, Ort oder Nummer – Nummer + Enter ruft an" aria-label="Anrufe suchen oder Nummer anrufen"></label>
+        <sc-if value="{{kannWaehlen}}"><button class="kn zr prim" onClick="{{waehlen}}" title="{{waehlenTitel}}"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"></path></svg>Anrufen</button></sc-if>
+      </div>
+      <div class="t-filter">
+        <div class="segs gleit t-typ t-welche" role="group" aria-label="Welche Anrufe" style="--i: {{welcheIdx}}; --n: 3;"><sc-for list="{{welche}}" as="x"><button class="{{x.cls}}" onClick="{{x.klick}}" aria-pressed="{{x.an}}" title="{{x.titel}}">{{x.t}}</button></sc-for></div>
+        <div class="segs gleit t-typ" role="group" aria-label="Art" style="--i: {{typIdx}}; --n: 4;"><sc-for list="{{typen}}" as="x"><button class="{{x.cls}}" onClick="{{x.klick}}" aria-pressed="{{x.an}}">{{x.t}}</button></sc-for></div>
+      </div>
+    </div>
+    <sc-if value="{{hatLaeuft}}">
+      <div class="t-laeuft einblenden"><span class="pkt"></span><span style="min-width: 0;"><b>{{laeuftText}}</b><span class="t-hinw" style="display: block;">Das Gespräch läuft im Abfrage-Fenster</span></span><span style="flex: 1;"></span><button class="kn sm prim" onClick="{{zurAbfrage}}">Zur Abfrage</button></div>
+    </sc-if>
+
+    <div class="{{spaltenCls}}">
+    <div class="sp-l">
+    <!-- Verpasst: zurückrufen -->
+    <sc-if value="{{zeigVerp}}">
+    <div class="ab a-verp">
+      <div class="ab-kopf"><span class="lbl">Verpasst · {{nVerpListe}}</span><span class="t-hinw">nie angenommen · rufen nach 1–3 min auch selbst wieder an</span></div>
+      <div class="{{listeCls}}">
+        <sc-for list="{{verpasst}}" as="z">
+          <div class="{{z.cls}}" onClick="{{z.oeffnen}}" title="{{z.titel}}">
+            <span class="t-bar"></span>
+            <span class="t-sym" aria-hidden="true"><svg class="ic s" viewBox="0 0 24 24"><path d="{{z.sym}}"></path></svg></span>
+            <div class="t-main">
+              <div class="t-z1"><span class="{{z.artCls}}">{{z.art}}</span><span class="t-nr">{{z.tel}}</span></div>
+              <div class="t-z2">{{z.zeile}}</div>
+            </div>
+            <div class="t-r"><span class="t-st">{{z.st}}</span><span class="t-dauer">{{z.dauer}}</span></div>
+            <div class="t-k"><sc-for list="{{z.knoepfe}}" as="k"><button class="{{k.cls}}" onClick="{{k.klick}}" title="{{k.titel}}" aria-label="{{k.t}}"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="{{k.pfad}}"></path></svg><span class="t">{{k.t}}</span></button></sc-for></div>
+          </div>
+        </sc-for>
+        <sc-if value="{{keinVerp}}"><div class="t-leer">Nichts verpasst.</div></sc-if>
+      </div>
+    </div>
+    </sc-if>
+    </div>
+
+    <div class="sp-r">
+    <!-- Angenommen: alle beendeten Gespräche, Rückruf beim Anrufer -->
+    <sc-if value="{{zeigAng}}">
+    <div class="ab a-zuletzt">
+      <div class="ab-kopf"><span class="lbl">Angenommen · {{nAng}}</span><span class="t-hinw">nochmal anrufen – z. B. um die Adresse zu klären</span></div>
+      <div class="{{listeCls}}">
+        <sc-for list="{{zuletzt}}" as="z">
+          <div class="{{z.cls}}" onClick="{{z.oeffnen}}" title="{{z.titel}}">
+            <span class="t-bar"></span>
+            <span class="t-sym" aria-hidden="true"><svg class="ic s" viewBox="0 0 24 24"><path d="{{z.sym}}"></path></svg></span>
+            <div class="t-main">
+              <div class="t-z1"><span class="{{z.artCls}}">{{z.art}}</span><span class="t-nr">{{z.tel}}</span></div>
+              <div class="t-z2">{{z.zeile}}</div>
+            </div>
+            <div class="t-r"><span class="t-st">{{z.st}}</span><span class="t-dauer">{{z.dauer}}</span></div>
+            <div class="t-k"><sc-for list="{{z.knoepfe}}" as="k"><button class="{{k.cls}}" onClick="{{k.klick}}" title="{{k.titel}}" aria-label="{{k.t}}"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="{{k.pfad}}"></path></svg><span class="t">{{k.t}}</span></button></sc-for></div>
+            <sc-if value="{{z.hatAufl}}"><div class="t-aufl" ref="{{z.auflRef}}" data-id="{{z.id}}" onClick="{{z.stopp}}"></div></sc-if>
+          </div>
+        </sc-for>
+        <sc-if value="{{keinAng}}"><div class="t-leer">Noch keine Gespräche.</div></sc-if>
+      </div>
+    </div>
+    </sc-if>
+    </div>
+    </div>
+
+  </div>
+</section>
+</div>

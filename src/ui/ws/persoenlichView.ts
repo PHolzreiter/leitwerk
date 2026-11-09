@@ -235,6 +235,8 @@ export function persoenlichView(container: HTMLElement): { refresh(): void } {
     const t = section("Anrufe und Töne", "Wer keine Notrufe annimmt, bekommt kein Klingeln und kein automatisch geöffnetes Telefon (z. B. als reiner Funk- oder KT-Disponent).");
     zeile(t, "Ich nehme Notrufe an", schalter(p.notrufe, (v) => setzePers({ notrufe: v })));
     zeile(t, "Ich nehme die KT-Hotline an", schalter(p.ktHotline, (v) => setzePers({ ktHotline: v })));
+    zeile(t, "Ich nehme Überstellungen an", schalter(p.ueberstellungen !== false, (v) => setzePers({ ueberstellungen: v })));
+    zeile(t, "Funk stumm beim Telefonieren", schalter(funkGruppenWahl().telefonStumm, (v) => funkGruppenSetzen({ telefonStumm: v })), "Während du telefonierst, hörst du den Funk nicht – die Funksprüche stehen trotzdem im Verlauf.");
     zeile(t, "Klingelton", schalter(kiPrefs().klingelton, (v) => setKiPrefs({ klingelton: v })));
     const laut = el("div", { class: "pers-slider" });
     const lautS = el("input", { type: "range", min: "0", max: "100", step: "5" });
