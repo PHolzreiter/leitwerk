@@ -2,13 +2,17 @@
  * Hauptmenü (ersetzt die Startseite und das Einstellungsfenster vor dem Spiel).
  * Logik und Vorlage stammen aus dem Design „LeitWerk Hauptmenü“; angebunden wird über anbindung.ts.
  */
-import vorlage from "./vorlage.html?raw";
+import vorlageRoh from "./vorlage.html?raw";
 import css from "./hauptmenue.css?raw";
+import { mitSeiten, seitenCss } from "../einstellungen/vorlage";
 import { Komponente } from "./komponente.js";
 import { ansicht } from "./laufzeit";
 import { anbindungBauen, type Anbindung } from "./anbindung";
 import { pers } from "../ws/persoenlich";
 import { vollbildEnde, vollbildStart } from "../startseite";
+
+// Einstellungsseiten kommen aus einstellungen/ (gemeinsam mit dem Spielmenü)
+const vorlage = mitSeiten(vorlageRoh);
 
 let offen: { wurzel: HTMLElement; stil: HTMLStyleElement; k: Komponente; app: Anbindung } | null = null;
 
@@ -23,7 +27,7 @@ export function hauptmenueZeigen(fertig?: () => void, opt: { splash?: boolean; s
   vollbildStart();
   const stil = document.createElement("style");
   stil.dataset.hauptmenue = "";
-  stil.textContent = css;
+  stil.textContent = css + "\n" + seitenCss;
   document.head.appendChild(stil);
   const wurzel = document.createElement("div");
   wurzel.className = "hm-wurzel";

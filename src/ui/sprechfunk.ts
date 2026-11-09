@@ -760,8 +760,10 @@ interface GruppenWahl {
   pilotSenden: "auto" | "normal" | "gs" | "gs2";
   /** Lautstärke der Gruppen, in die man gerade nicht spricht (Mithören, %) */
   mithoerLaut: number;
-  /** während eines Telefonats den Funk ganz stumm schalten */
+  /** während eines Telefonats den Funk ganz stumm schalten (alt; gilt als „stumm“) */
   telefonStumm: boolean;
+  /** Funk beim Telefonieren: normal, leiser oder stumm (Einstellungen › Mikrofon & Funk); fehlt = leiser */
+  telefon?: "normal" | "leiser" | "stumm";
   /** Stimmen echter Mitspieler hören (der Text steht trotzdem im Verlauf) */
   echteDispos: boolean;
   echtePiloten: boolean;
@@ -837,8 +839,21 @@ export function gruppeLaut(kanal: Sprechgruppe | undefined, dringend = false): n
   const k = kanal ?? null;
   if (!gruppeHoerbar(k)) return 0;
   const ich = sim.ich?.pid ?? mp.ich.pid;
-  if (wahl.telefonStumm && sim.telefoniert(ich)) return 0;
+  const tel = telefonModus();
+  const telefoniert = tel !== "normal" && sim.telefoniert(ich);
+  if (telefoniert && tel === "stumm") return 0;
   if (dringend) return 1;
+  // beim Telefonieren leiser (dringende Rufe bleiben voll)
+  if (telefoniert) return Math.min(k === sprechGruppe() ? 0.35 : 0.15, gruppeLautOhneTelefon(k));
+  const eigen = k === sprechGruppe();
+  if (sendung?.frei) return eigen ? 0 : 0.15;
+  return eigen ? 1 : Math.max(0, Math.min(1, wahl.mithoerLaut / 100));
+}
+/** Funk beim Telefonieren (alter Schalter „stumm“ zählt als stumm) */
+export function telefonModus(): "normal" | "leiser" | "stumm" {
+  return wahl.telefonStumm ? "stumm" : (wahl.telefon ?? "leiser");
+}
+function gruppeLautOhneTelefon(k: Sprechgruppe | null): number {
   const eigen = k === sprechGruppe();
   if (sendung?.frei) return eigen ? 0 : 0.15;
   return eigen ? 1 : Math.max(0, Math.min(1, wahl.mithoerLaut / 100));

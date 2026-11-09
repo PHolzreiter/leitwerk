@@ -325,7 +325,7 @@ const naechsteVarId = (f: FallVorlage) => {
 
 // ------------------------------------------------------------------ Fenster
 
-let offen: { zeigen(id?: string): void } | null = null;
+let offen: { zeigen(id?: string): void; neu(name: string, beschreibung: string, mitKi: boolean): void } | null = null;
 
 /** Fall-Editor öffnen (optional gleich einen Fall) */
 export function fallEditorOeffnen(id?: string): void {
@@ -333,7 +333,13 @@ export function fallEditorOeffnen(id?: string): void {
   offen.zeigen(id);
 }
 
-function fensterBauen(): { zeigen(id?: string): void } {
+/** Neuen Fall beginnen (aus Einstellungen › Fallkatalog › Neuer Fall): leer mit Namen oder als Entwurf der KI */
+export function fallNeuOeffnen(name: string, beschreibung: string, mitKi: boolean): void {
+  offen ??= fensterBauen();
+  offen.neu(name, beschreibung, mitKi);
+}
+
+function fensterBauen(): { zeigen(id?: string): void; neu(name: string, beschreibung: string, mitKi: boolean): void } {
   const overlay = el("div", { class: "gross-overlay fe-overlay", hidden: "" });
   const box = el("div", { class: "gross fe", role: "dialog", "aria-modal": "true" });
   const kopf = el("div", { class: "gross-kopf" });
@@ -1634,6 +1640,21 @@ function fensterBauen(): { zeigen(id?: string): void } {
       overlay.hidden = false;
       if (id && id !== gewaehlt) void waehlen(id);
       else zeichnen();
+    },
+    neu(name, beschreibung, mitKi) {
+      overlay.hidden = false;
+      void (async () => {
+        if (!(await weiterOhneSpeichern())) return;
+        if (mitKi) {
+          await kiStatus().catch(() => null);
+          if (!kiBereit()) toast("Die KI ist nicht bereit – der Fall beginnt leer", "error");
+          else if (beschreibung.trim().length < 15) toast("Für die KI bitte den Fall in ein, zwei Sätzen beschreiben – der Fall beginnt leer", "error");
+          else return void kiEntwurf(name.trim(), beschreibung.trim());
+        }
+        const f = neuerFall();
+        f.name = name.trim();
+        beginne(f);
+      })();
     },
   };
 }

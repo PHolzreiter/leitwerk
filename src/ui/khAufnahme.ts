@@ -16,11 +16,12 @@ import { sim } from "../sim/engine";
 import { distanceM } from "../sim/geo";
 import { el, esc, toast } from "./dom";
 import { panelZeigen, registriere, type PanelKontext } from "./ws/arbeitsplatz";
+import { einstellungenSeite } from "./spielmenue/oeffnen";
 
 const WTAG = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
 
 /** Herkunft der mitgelieferten Zeiten (ohne Eintrag: recherchiert) */
-const ANNAHME = "Annahme";
+export const ANNAHME = "Annahme";
 const VON_PAUL = "von Paul";
 const QUELLE: Record<string, string> = {
   "kh023|fb_herzkatheter": ANNAHME,
@@ -38,7 +39,7 @@ const QUELLE: Record<string, string> = {
   "kh004|fb_herzkatheter": VON_PAUL,
   "kh034|fb_herzkatheter": VON_PAUL,
 };
-function quelleVorgabe(h: Hospital, einr: string): string {
+export function quelleVorgabe(h: Hospital, einr: string): string {
   const q = QUELLE[`${h.id}|${einr}`];
   if (q) return q;
   // Thrombektomie in NÖ rund um die Uhr (Vorgabe Paul)
@@ -47,7 +48,7 @@ function quelleVorgabe(h: Hospital, einr: string): string {
 }
 
 let vorgabeCache: Map<string, Hospital> | null = null;
-function vorgabe(id: string): Hospital | undefined {
+export function vorgabe(id: string): Hospital | undefined {
   vorgabeCache ??= new Map(standardRecords().hospitals.map((h) => [h.id, h]));
   return vorgabeCache.get(id);
 }
@@ -55,12 +56,12 @@ function vorgabe(id: string): Hospital | undefined {
 const gleich = (a: unknown, b: unknown) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
 
 /** Eignung ohne eigene Schalter (wie es sich aus den Abteilungen ergibt) */
-function nachAbteilungen(ohne: Hospital, id: string, d: Dringlichkeit): "ja" | "ausweich" | "nein" {
+export function nachAbteilungen(ohne: Hospital, id: string, d: Dringlichkeit): "ja" | "ausweich" | "nein" {
   const e = eignung(ohne, buchung(id), d === 30);
   return e === "passend" ? "ja" : e === "ausweich" ? "ausweich" : "nein";
 }
 
-function schalter(h: Hospital, sid: string, d: Dringlichkeit): "an" | "aus" | null {
+export function schalter(h: Hospital, sid: string, d: Dringlichkeit): "an" | "aus" | null {
   const k = `${sid}:${d}`;
   if (h.zuweisungAus?.includes(k) || h.zuweisungAus?.includes(sid)) return "aus";
   if (h.zuweisungAn?.includes(k) || h.zuweisungAn?.includes(sid)) return "an";
@@ -70,6 +71,11 @@ function schalter(h: Hospital, sid: string, d: Dringlichkeit): "an" | "aus" | nu
 let naechstesHaus: string | null = null;
 /** Fenster öffnen, ein Haus vorwählen */
 export function khAufnahmeOeffnen(hId?: string): void {
+  // Entwurf 09.11.: KH-Aufnahme ist jetzt eine Seite der Einstellungen (Leitstelle › KH-Aufnahme), kein eigenes Fenster
+  einstellungenSeite("khauf", hId ? { s_kh_haus: hId, kh_luecken: null } : undefined);
+}
+/** altes Fenster (gespeicherte Anordnungen): ein Haus vorwählen */
+export function khAufnahmeFensterOeffnen(hId?: string): void {
   if (hId) naechstesHaus = hId;
   panelZeigen("khaufnahme");
   if (hId) window.dispatchEvent(new CustomEvent("lw-khaufnahme", { detail: hId }));

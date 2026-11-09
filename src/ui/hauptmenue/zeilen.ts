@@ -21,7 +21,7 @@ import {
   type Vehicle,
   type VehicleCategory,
 } from "../../data/model";
-import { detectKind, exportCsv, importCsv, landeplatzLesen, landeplatzText, zufahrtLesen, zufahrtText } from "../../data/schema";
+import { exportCsv, landeplatzLesen, landeplatzText, zufahrtLesen, zufahrtText } from "../../data/schema";
 import { akutAbteilung, AKUT, EINRICHTUNGEN, einrichtung } from "../../data/klinik";
 import { ORT_KATEGORIEN, kategorieLabel, kategorienText, poiKategorien } from "../../data/orte";
 import { planKurz, planLesen } from "../../sim/dienst";
@@ -709,7 +709,7 @@ export function zeilenQuelle(neuZeichnen: () => void): { zeilen: ZeilenQuelle; l
           edit: true,
           ding: "Fall",
           oeffnen: (z: number) => fallEditorOeffnen(ids[z]),
-          neuOeffnen: () => fallEditorOeffnen(),
+          neuZiel: "neuerFall",
           hint: "Stift öffnet den Fall-Editor (Telefonat, Abfrage, Ausgänge, Krankenhaus)",
         },
       ),
@@ -880,28 +880,14 @@ export function zeilenQuelle(neuZeichnen: () => void): { zeilen: ZeilenQuelle; l
     return b.B(
       "Import & Export",
       [
-        dateiKnopf("CSV importieren …", ".csv,.txt,text/csv,text/plain", async (f) => {
-          const text = await dateiText(f);
-          const erkannt = detectKind(text);
-          if (erkannt && erkannt !== kind) throw new Error(`Die Datei enthält ${KIND_LABEL[erkannt]} – bitte dort importieren`);
-          const r = importCsv(kind, text, {
-            stations: store.list("stations"),
-            existing: store.list(kind) as { id: string; name?: string; funkrufname?: string; kurzname?: string; code?: string }[],
-            herkunft: "import",
-            herkunftDetail: f.name,
-          });
-          if (!r.records.length) throw new Error(r.fehler[0] ? `Nichts übernommen – Zeile ${r.fehler[0].zeile}: ${r.fehler[0].meldung}` : "Keine Einträge erkannt");
-          store.upsert(kind, r.records);
-          ablageSichern("Daten", ablageName(f.name, "csv"), text);
-          return `${zahl(r.records.length)} ${KIND_LABEL[kind]} importiert${r.fehler.length ? ` · ${r.fehler.length} Zeilen fehlerhaft (z. B. Zeile ${r.fehler[0].zeile}: ${r.fehler[0].meldung})` : ""}`;
-        }),
+        { l: "CSV importieren …", imp: true } as Knopf,
         knopf("Exportieren …", async () => {
           const csv = exportCsv(kind, store.list(kind), store.list("stations"));
           const p = await saveTextFile(`leitwerk_${KIND_FILE[kind]}.csv`, csv);
           return p ? `${KIND_LABEL[kind]} exportiert` : "Abgebrochen";
         }),
       ],
-      "Öffnet die Dateiauswahl des Systems · Import ergänzt, gleiche Einträge werden aktualisiert",
+      "CSV-Dateien · erst prüfen, dann ergänzen oder ersetzen · Vorlage und Beispiel liegen in Dokumente/LeitWerk",
     );
   }
 
@@ -1058,16 +1044,17 @@ export function zeilenQuelle(neuZeichnen: () => void): { zeilen: ZeilenQuelle; l
     return datenSeite(b, "krankenhaeuser", "hospitals", {
       cols: ["Name", "Kurzname", "Ort"],
       wort: "Krankenhäuser",
+      // Reihenfolge wie im Entwurf: Lage (Karte), Zufahrt, Landeplatz, Einrichtungen (Gruppen), Akut-Bereiche aus, Sprung zur KH-Aufnahme
       zeile: (h) => [
         h.name,
         h.kurzname,
         h.ort,
-        (h.einrichtungen ?? []).map((id) => einrichtung(id)?.name ?? id).join(", "),
-        (h.akutAus ?? []).map((id) => akutAbteilung(id)?.name ?? id).join(", "),
-        h.zeiten && Object.keys(h.zeiten).length ? `${Object.keys(h.zeiten).length} Einrichtungen mit eigenen Zeiten (im Spiel bearbeiten)` : "rund um die Uhr",
+        lageText(h),
         zufahrtText(h.zufahrt),
         landeplatzText(h.landeplatz),
-        lageText(h),
+        (h.einrichtungen ?? []).map((id) => einrichtung(id)?.name ?? id).join(", "),
+        (h.akutAus ?? []).map((id) => akutAbteilung(id)?.name ?? id).join(", "),
+        "",
         h.hinweis ?? "",
       ],
       x: {
@@ -1075,24 +1062,24 @@ export function zeilenQuelle(neuZeichnen: () => void): { zeilen: ZeilenQuelle; l
         neu: "Neues Krankenhaus",
         ding: "Krankenhaus",
         typen: ["text", "text", "text"],
-        extra: [["Einrichtungen", "text", ""], ["Akut aus", "text", ""], ["Zeiten", "fix", ""], ["Zufahrt", "text", ""], ["Landeplatz", "text", ""], ["Lage", "lage", ""], ["Hinweis", "text", ""]],
-        hint: "Einrichtungen und „Akut aus“ mit Komma getrennt, Namen wie im Krankenhaus-Dialog",
+        extra: [["Lage", "lage", ""], ["Rettungszufahrt", "text", ""], ["Hubschrauberlandeplatz", "text", ""], ["Einrichtungen", "einr", ""], ["Akut-Bereiche aus", "text", ""], ["Aufnahme bei Notfällen", "khlink", ""], ["Hinweis", "text", ""]],
+        hint: "„Akut-Bereiche aus“ mit Komma getrennt · Öffnungszeiten der Akut-Bereiche unter KH-Aufnahme",
       },
       bauen: async (alt, w, altW) => {
         const name = w[0].trim();
         if (!name) throw new Error("Bitte einen Namen eingeben");
-        const lage = await lageLesen(w[8], alt, altW?.[8]);
+        const lage = await lageLesen(w[3], alt, altW?.[3]);
         const h: Hospital = { ...(alt ?? {}), ...basisVon(alt, "hospitals", w[9] ?? ""), name, kurzname: w[1].trim(), ort: w[2].trim(), lat: lage.lat, lon: lage.lon };
-        if (!alt || geaendert(w, altW, 3)) h.einrichtungen = namenLesen(w[3], EINR_NACH_NAME, "Einrichtung");
-        if (!alt || geaendert(w, altW, 4)) h.akutAus = namenLesen(w[4], AKUT_NACH_NAME, "Akut-Abteilung");
-        if (!alt || geaendert(w, altW, 6)) {
-          const z = zufahrtLesen(w[6]);
-          if (w[6].trim() && !z) throw new Error("Zufahrt: bitte so angeben: einfahrt=48.41296,15.61544; p=48.41247,15.61458");
+        if (!alt || geaendert(w, altW, 6)) h.einrichtungen = namenLesen(w[6], EINR_NACH_NAME, "Einrichtung");
+        if (!alt || geaendert(w, altW, 7)) h.akutAus = namenLesen(w[7], AKUT_NACH_NAME, "Akut-Abteilung");
+        if (!alt || geaendert(w, altW, 4)) {
+          const z = zufahrtLesen(w[4]);
+          if (w[4].trim() && !z) throw new Error("Zufahrt: bitte so angeben: einfahrt=48.41296,15.61544; p=48.41247,15.61458");
           h.zufahrt = z;
         }
-        if (!alt || geaendert(w, altW, 7)) {
-          const l = landeplatzLesen(w[7]);
-          if (w[7].trim() && !l) throw new Error("Landeplatz: bitte Koordinaten („48.41210,15.61480“) oder „kein“ angeben");
+        if (!alt || geaendert(w, altW, 5)) {
+          const l = landeplatzLesen(w[5]);
+          if (w[5].trim() && !l) throw new Error("Landeplatz: bitte Koordinaten („48.41210,15.61480“) oder „kein“ angeben");
           h.landeplatz = l;
         }
         delete h.abteilungen;
