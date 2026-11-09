@@ -1,0 +1,228 @@
+/* ---------- Einstellungen im Spiel (Spielmenü) ---------- */
+.ein-w{--ein-bg:#171920;position:relative;color:#F5F7FA;font-family:'Inter',system-ui,sans-serif;font-feature-settings:"tnum" 1,"cv11" 1;color-scheme:dark;display:flex;flex-direction:column;min-height:0}
+.ein-w .ein-kopf{display:flex;align-items:center;gap:0;margin-bottom:12px;flex:none;flex-wrap:wrap;row-gap:8px}
+.ein-w .l-stag{flex:1;min-height:0}
+.ein-w .l-stag > *{min-height:0}
+.ein-w .l-list2{max-height:none !important;height:100%;overflow:auto}
+.ein-w .ein-rechts{display:flex;flex-direction:column;min-height:0;height:100%}
+.ein-w .l-sscroll{max-height:none;flex:1;min-height:0}
+.ein-w .l-tab .ein-schloss{display:inline-block;vertical-align:-1px;margin-left:6px;color:#6B7385}
+.ein-zu .l-srow > .l-sctl,.ein-zu .l-tbl,.ein-zu .ei-kh,.ein-zu .ei-fall,.ein-zu .ei-plan,.ein-zu .l-kurve{opacity:.5;pointer-events:none}
+.ein-sperre{margin:4px 0 10px}
+/* gemeinsame Bausteine */
+.ei-chips{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 6px}
+.ei-chip{all:unset;box-sizing:border-box;padding:5px 11px;border:1px solid #2A2F3A;border-radius:999px;font-size:13px;color:#9AA3B5;cursor:pointer;transition:background .18s,color .18s,border-color .18s,transform .12s}
+.ei-chip:hover{border-color:#4A5163;color:#C4CAD6}
+.ei-chip.on{background:rgba(59,139,255,.14);border-color:rgba(59,139,255,.55);color:#F5F7FA}
+.ei-chip:active{transform:scale(.95)}
+.ei-btn{padding:9px 18px;font-size:14px}
+.ei-px{all:unset;display:grid;place-items:center;width:26px;height:26px;border-radius:6px;color:#6B7385;cursor:pointer;flex:none}
+.ei-px:hover{color:#FF7A7E;background:rgba(229,72,77,.1)}
+.ei-q{display:inline-flex;padding:2px 8px;border-radius:999px;font-size:11.5px;font-weight:500;color:#9AA3B5;background:#1E2129;white-space:nowrap}
+.ei-q.du{color:#6AA6FF;background:rgba(59,139,255,.12)}
+.ei-q.ann{color:#FFD866;background:rgba(255,199,44,.10)}
+.ei-q.rot{color:#FF7A7E;background:rgba(229,72,77,.10)}
+.ei-area{padding:9px 0;border-top:1px solid #23262F;display:flex;flex-direction:column;gap:6px;font-size:14px}
+.ei-ta{resize:vertical;line-height:1.45;min-height:60px;font:500 14px Inter,sans-serif}
+/* Karte (Lage) */
+.ei-lage{padding:9px 0 12px;border-top:1px solid #23262F;font-size:14px}
+.ei-lkopf{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:8px;flex-wrap:wrap}
+.ei-lctl{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ei-map{display:block;width:100%;height:170px;border-radius:10px;border:1px solid #2A2F3A;cursor:crosshair}
+/* Einrichtungen */
+.ei-einr{padding:4px 0 8px}
+.ei-eg{border-top:1px solid #1E2129}
+.ei-egk{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:8px;width:100%;padding:9px 2px;cursor:pointer;font-size:14px}
+.ei-egk span{margin-left:auto;font-size:12px;color:#9AA3B5}
+.ei-egk .ei-pf{color:#6B7385;transition:transform .2s}
+.ei-egk .ei-pf.auf{transform:rotate(90deg)}
+/* Dienstplan */
+.ei-plan{padding:4px 0 12px}
+.ei-pvor{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:10px}
+.ei-plbl{font-size:12px;color:#6B7385;margin-right:4px}
+.ei-pkopf,.ei-pschicht{display:grid;grid-template-columns:minmax(0,1fr) 90px 90px 30px;gap:10px;align-items:center}
+.ei-pkopf{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#6B7385;padding:0 0 4px}
+.ei-pschicht{padding:6px 0;border-top:1px solid #1E2129}
+.ei-ptage{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.ei-tag{all:unset;box-sizing:border-box;width:34px;height:28px;display:grid;place-items:center;border-radius:7px;border:1px solid #2A2F3A;font-size:12.5px;font-weight:600;color:#9AA3B5;cursor:pointer;transition:background .18s,color .18s,transform .12s}
+.ei-tag.on{background:#3B8BFF;border-color:#3B8BFF;color:#111216}
+.ei-tag:active{transform:scale(.94)}
+.ei-pwarn{font-style:normal;font-size:12px;color:#FF7A7E;margin-left:6px}
+.ei-pzeit .l-num{width:76px;text-align:center}
+.ei-sonne{display:inline-flex;align-items:center;height:34px;padding:0 8px;border-radius:8px;border:1px solid #2A2F3A;font-size:12px;color:#FFD866;white-space:nowrap}
+.ei-pfuss{display:flex;align-items:center;gap:12px;margin:8px 0 12px;flex-wrap:wrap}
+.ei-psum{font-size:13px;color:#C4CAD6}
+.ei-woche{padding:10px 12px;border-radius:10px;background:#111216;border:1px solid #23262F}
+.ei-wachse{position:relative;height:16px;margin-left:34px;font-size:10.5px;color:#6B7385}
+.ei-wachse span{position:absolute;transform:translateX(-50%)}
+.ei-wachse span:first-child{display:none}
+.ei-wtag{display:grid;grid-template-columns:34px minmax(0,1fr);align-items:center;height:20px;font-size:12px;color:#9AA3B5}
+.ei-wbar{position:relative;height:10px;border-radius:5px;background:#1E2129;overflow:hidden}
+.ei-wbar i{position:absolute;top:0;bottom:0;background:#3B8BFF;border-radius:3px}
+/* KH-Aufnahme */
+.ei-kh{padding:2px 0 10px}
+.ei-khkopf{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.ei-kalt{padding:3px}
+.ei-kalt .l-seg{padding:6px 12px;font-size:13px}
+.ei-kzeit svg{flex:none}
+.ei-otab{grid-template-columns:minmax(130px,1.1fr) minmax(170px,1.6fr) 64px 130px 84px}
+.ei-otab > span{overflow:visible}
+.ei-jz{display:inline-flex;padding:2px 8px;border-radius:999px;font-size:11.5px;font-weight:600}
+.ei-jz.auf{color:#4CC38A;background:rgba(76,195,138,.12)}
+.ei-jz.zu{color:#FFD866;background:rgba(255,199,44,.10)}
+.ei-khsk{max-width:820px;display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-top:14px;padding-bottom:6px}
+.ei-leg{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:#9AA3B5}
+.ei-leg > span{display:inline-flex;align-items:center;gap:6px}
+.ei-leg .ei-z{width:22px;height:22px;font-size:12px;cursor:default}
+.ei-sgrid{display:grid;max-width:820px;grid-template-columns:minmax(180px,1fr) repeat(3,96px);gap:6px;align-items:center;padding:3px 0}
+.ei-skopf{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#6B7385;border-bottom:1px solid #23262F;padding-bottom:6px}
+.ei-skopf span:not(:first-child){text-align:center}
+.ei-sgr{font-size:12px;font-weight:600;color:#9AA3B5;padding:10px 0 2px}
+.ei-sname{font-size:13.5px;color:#C4CAD6}
+.ei-z{all:unset;box-sizing:border-box;display:grid;place-items:center;height:28px;border-radius:7px;font-size:14px;font-weight:700;cursor:pointer;transition:background .18s,transform .12s,box-shadow .18s}
+.ei-z:active{transform:scale(.94)}
+.ei-z svg{fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.ei-z.zu svg path{fill:currentColor;fill-opacity:.35}
+.ei-z.an{background:rgba(76,195,138,.14);color:#4CC38A}
+.ei-z.zu{background:rgba(255,199,44,.12);color:#FFD866}
+.ei-z.aus2{background:#1E2129;color:#9AA3B5}
+.ei-z.nein{background:rgba(229,72,77,.08);color:#FF7A7E}
+.ei-z.eigen{box-shadow:inset 0 0 0 1.5px #3B8BFF}
+.ei-khfuss{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 8px}
+.ei-luecken{padding:10px 12px;border-radius:9px;border:1px solid rgba(255,199,44,.45);background:rgba(255,199,44,.07);font-size:13px;color:#E8DDB8;animation:l-okin .25s cubic-bezier(.2,.8,.2,1)}
+.ei-lz{display:grid;grid-template-columns:130px minmax(0,1fr);gap:4px 12px;padding:6px 0 0}
+.ei-lz em{grid-column:2;font-style:normal;color:#9AA3B5;font-size:12px}
+.ei-lsym{font-weight:600;color:#F5F7FA}
+/* Import */
+.ei-imp{padding:2px 0 8px}
+.ei-idatei{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;border:1px solid #2A2F3A;background:#111216;margin-bottom:6px}
+.ei-idatei svg{color:#9AA3B5;flex:none}
+.ei-idatei b{display:block;font-size:14px;font-weight:600}
+.ei-idatei em{display:block;font-style:normal;font-size:12px;color:#9AA3B5}
+.ei-kacheln{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:8px 0 10px}
+.ei-kachel{padding:10px 12px;border-radius:10px;background:#111216;border:1px solid #23262F}
+.ei-kachel b{display:block;font-size:20px;font-weight:700;letter-spacing:-.01em}
+.ei-kachel span{font-size:12px;color:#9AA3B5}
+.ei-kachel.ok b{color:#4CC38A}.ei-kachel.rot b{color:#FF7A7E}.ei-kachel.gelb b{color:#FFD866}
+.ei-meld{display:grid;grid-template-columns:76px minmax(0,1fr);gap:10px;padding:6px 10px;border-radius:7px;font-size:13px;color:#C4CAD6;background:rgba(255,199,44,.06);margin-bottom:4px}
+.ei-meld.rot{background:rgba(229,72,77,.07)}
+.ei-mz{color:#9AA3B5;font-variant-numeric:tabular-nums}
+.ei-ifuss{display:flex;gap:8px;align-items:center;margin-top:14px}
+/* Zuordnung */
+.ei-zukopf{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:8px}
+.ei-zuf{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:#C4CAD6}
+.ei-ztab{grid-template-columns:minmax(200px,1.6fr) 170px minmax(200px,1.6fr) 130px}
+.ei-ztab > span{overflow:hidden}
+.ei-zsel{min-width:0;width:100%;padding:6px 9px}
+.ei-zant{white-space:normal !important;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;font-size:12.5px;color:#9AA3B5}
+/* Fall-Editor */
+.ei-fall{padding:0 0 4px}
+.ei-fkopf{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:2px 0 10px}
+.ei-finfo{font-size:13px;color:#9AA3B5;margin-right:auto}
+.ei-fung{font-weight:600;color:#FFD866;margin-left:10px}
+.ei-ampel{all:unset;box-sizing:border-box;padding:5px 11px;border-radius:999px;font-size:12.5px;font-weight:600;color:#4CC38A;background:rgba(76,195,138,.12);cursor:pointer}
+.ei-ampel.rot{color:#FF7A7E;background:rgba(229,72,77,.12)}
+.ei-schritte{margin:0 0 12px}
+.ei-schritte .l-seg{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:8px 6px;font-size:13.5px}
+.ei-schritte .l-seg i{font-style:normal;display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;font-size:11px;font-weight:700;background:#262A35;color:#C4CAD6}
+.ei-schritte .l-seg.on i{background:#111216;color:#3B8BFF}
+.ei-nurlesen{pointer-events:none;opacity:.7}
+.ei-fsp{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:4px 32px}
+.ei-fl{display:flex;flex-direction:column;gap:6px;font-size:13px;color:#9AA3B5;padding:7px 0}
+.ei-fl .l-segs{align-self:flex-start;flex-wrap:wrap}
+.ei-fl .l-select{max-width:none}
+.ei-fl > .l-input,.ei-fl > .l-select{color:#F5F7FA}
+.ei-fz{display:flex;align-items:center;gap:8px}
+.ei-f2{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0 16px}
+.ei-fakt{display:flex;gap:6px;align-items:center;margin-bottom:6px}
+.ei-hilfe{all:unset;cursor:pointer;font-size:12.5px;color:#6AA6FF;margin:8px 0 4px;display:inline-block}
+.ei-anl{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:6px 0;border-top:1px solid #1E2129;font-size:13.5px;color:#C4CAD6;flex-wrap:wrap}
+.ei-anl .l-segs{padding:3px}.ei-anl .l-seg{padding:5px 10px;font-size:12.5px}
+.ei-code{font-size:13px;color:#9AA3B5}.ei-code b{color:#F5F7FA}
+.ei-frage{display:grid;grid-template-columns:minmax(0,1fr) 230px 280px;gap:12px;align-items:center;padding:6px 0;border-top:1px solid #1E2129;font-size:13.5px;color:#C4CAD6}
+.ei-frage .l-select{min-width:0;width:100%;padding:7px 10px}
+.ei-wiss{padding:3px}.ei-wiss .l-seg{padding:5px 8px;font-size:12px}
+.ei-summe{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.ei-sum{font-size:13px;font-weight:600;padding:5px 11px;border-radius:999px}
+.ei-sum.ok{color:#4CC38A;background:rgba(76,195,138,.12)}.ei-sum.rot{color:#FF7A7E;background:rgba(229,72,77,.12)}
+.ei-ausg{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}
+.ei-ak{padding:12px 14px;border-radius:12px;border:1px solid #2A2F3A;background:#14161C}
+.ei-akk{display:flex;align-items:center;gap:10px;margin-bottom:2px}
+.ei-akk b{font-size:15px}
+.ei-proz{display:flex;align-items:center;gap:6px;margin-left:auto}
+.ei-sicht{padding:2px 9px;border-radius:5px;font-size:12px;font-weight:700;color:#111216}
+.ei-verlauf{margin-top:6px;padding-top:8px;border-top:1px solid #23262F;display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.ei-vk{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#6B7385}
+.ei-ev{font-size:12.5px;color:#C4CAD6;line-height:1.4}.ei-ev b{color:#F5F7FA;font-weight:600;margin-right:6px}
+.ei-bef{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 10px;border-radius:8px;margin-bottom:5px;font-size:13px;color:#C4CAD6;background:#14161C}
+.ei-bef.rot{background:rgba(229,72,77,.08)}.ei-bef.rot .ei-bsym{color:#FF7A7E}
+.ei-bef.ok .ei-bsym{color:#4CC38A}.ei-bef.info .ei-bsym{color:#6AA6FF}
+.ei-bsym{font-weight:700;text-align:center}
+.ei-dsp{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
+.ei-dsp .l-select{min-width:140px}
+.ei-probe{margin-top:8px;padding:10px 12px;border-radius:10px;background:#14161C;border:1px solid #23262F;animation:l-okin .3s cubic-bezier(.2,.8,.2,1)}
+.ei-ptags{display:flex;gap:6px;flex-wrap:wrap}
+.ei-probe p{margin:8px 0 0;font-size:13.5px;line-height:1.5;color:#C4CAD6}
+.ei-ffuss{position:sticky;bottom:0;z-index:2;display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:14px;padding:10px 0 2px;background:linear-gradient(rgba(23,25,32,0),var(--ein-bg,#171920) 30%)}
+.ei-ta2{min-height:0;resize:none;font-size:13.5px;padding:7px 10px}
+/* Großansicht: Einstellungen über den ganzen Bildschirm (Editoren öffnen von selbst groß) */
+.ein-w.ein-gross{--ein-bg:#14161C;position:fixed;inset:0;z-index:60;width:auto !important;height:auto !important;background:#14161C;padding:22px max(40px,calc((100vw - 1840px) / 2)) 18px;animation:ein-auf .28s cubic-bezier(.2,.8,.2,1)}
+@keyframes ein-auf{from{opacity:0;transform:scale(.985)}to{opacity:1;transform:none}}
+.ein-gross .l-list2{max-height:calc(100vh - 110px) !important}
+.ein-gross .l-sscroll{max-height:calc(100vh - 196px) !important}
+.ein-gtitel{font-size:20px;font-weight:700;letter-spacing:-.01em;margin-right:28px}
+.ein-grk{margin-left:10px}
+/* Niedrige Fläche (Spielmenü auf Bildschirmen bis ca. 1000 px Höhe): alles etwas enger, damit mehr Inhalt sichtbar bleibt */
+.ein-niedrig .ein-kopf{margin-bottom:6px}
+.ein-niedrig .l-tab{padding:5px 2px;font-size:14px}
+.ein-niedrig .l-ssuche{height:32px}
+.ein-niedrig .ein-grk{padding:5px 10px}
+.ein-niedrig h3{font-size:17px !important}
+.ein-niedrig .l-back{margin-bottom:0}
+.ein-niedrig .l-srow{padding:6px 0}
+.ein-niedrig .l-spage{padding:6px 12px}
+.ein-niedrig .l-head{padding:10px 0 3px}
+.ein-niedrig .l-kliste{max-height:190px}
+.ein-niedrig .l-ksvg{height:110px}
+.ein-niedrig .l-kwerk{margin-top:6px}
+.ein-niedrig .l-ktab{max-height:180px}
+.ein-niedrig .ei-sgrid{padding:2px 0}
+.ein-niedrig .ei-z{height:24px}
+/* Kurve Einsatzaufkommen: runde Punkte unabhängig von der Breite, Liste so hoch wie die Grafik */
+.l-kplot{position:relative}
+.l-kdots{position:absolute;inset:0;pointer-events:none}
+.l-kdot{position:absolute;width:8px;height:8px;margin:-4px 0 0 -4px;border-radius:50%;box-shadow:0 0 0 1.5px #111216}
+.l-kdot.on{width:13px;height:13px;margin:-6.5px 0 0 -6.5px;box-shadow:0 0 0 2px #F5F7FA,0 0 0 4px rgba(17,18,22,.8)}
+.l-kgrid{align-items:start}
+.l-kliste{max-height:286px;-webkit-mask-image:linear-gradient(#000 calc(100% - 26px),transparent);mask-image:linear-gradient(#000 calc(100% - 26px),transparent);padding-bottom:18px}
+.l-ktitel{align-items:center}
+.l-ktitel .l-mini{padding:4px 10px;font-size:12px}
+.l-ktitel .l-mini.on{background:rgba(59,139,255,.12);color:#6AA6FF;border-color:rgba(59,139,255,.45)}
+.ein-gross .l-ksvg{height:230px}
+.ein-gross .l-kliste{max-height:346px}
+.ein-niedrig .l-kliste{max-height:216px}
+.ein-w .l-ksvg{overflow:hidden}
+.ein-toast{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);padding:9px 14px;border-radius:10px;background:#1E2129;box-shadow:0 0 0 1px #2A2F3A,0 18px 40px rgba(0,0,0,.5);font-size:13px;z-index:5}
+/* ---------- Ergänzungen beim Einbau ---------- */
+/* Kartenausschnitt: echte Karte statt Skizze */
+.ei-map{position:relative;overflow:hidden;background:#161920}
+.ei-map .maplibregl-ctrl-top-right{transform:scale(.85);transform-origin:top right}
+.ei-marke{display:flex;align-items:center;gap:6px;pointer-events:none}
+.ei-marke i{width:12px;height:12px;border-radius:50%;background:#3B8BFF;border:2px solid #111216;box-shadow:0 0 0 6px rgba(59,139,255,.22)}
+.ei-marke span{font:500 12px Inter,sans-serif;color:#F5F7FA;text-shadow:0 1px 3px rgba(0,0,0,.9);white-space:nowrap}
+.ei-z.leer{cursor:default;background:transparent}
+.ei-pfehler{color:#FFB4B6;margin:0 0 8px}
+.ei-kzeit span{white-space:nowrap}
+/* Einstellungen im Hauptmenü: Schloss in den Reitern */
+.l-tab .ein-schloss{display:inline-block;vertical-align:-1px;margin-left:6px;color:#6B7385}
+.ei-lz > span:only-child{grid-column:1/-1}
+/* Fließend: schmale Einstellungen (Spielmenü in kleinen Fenstern) – Liste schmäler, Raster der KH-Aufnahme ohne feste Mindestbreiten */
+.ein-w{container-type:inline-size}
+@container (max-width:1000px){.ein-w .l-stag{grid-template-columns:180px minmax(0,1fr) !important;gap:18px !important}}
+@container (max-width:700px){.ein-w .l-stag{grid-template-columns:132px minmax(0,1fr) !important;gap:12px !important}.ein-w .l-spage span{display:none !important}}
+.ei-otab{grid-template-columns:minmax(90px,1.1fr) minmax(110px,1.6fr) 56px minmax(0,130px) minmax(0,84px)}
+.ei-otab > span{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.ei-sgrid{grid-template-columns:minmax(110px,1fr) repeat(3,minmax(34px,96px))}
+.ei-sname{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ei-ztab{grid-template-columns:minmax(120px,1.6fr) minmax(110px,170px) minmax(120px,1.6fr) minmax(0,130px)}
+.ei-frage{grid-template-columns:minmax(0,1fr) minmax(120px,230px) minmax(140px,280px)}

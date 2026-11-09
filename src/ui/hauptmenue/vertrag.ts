@@ -17,6 +17,8 @@ export interface Knopf {
   ok?: string;
   /** Aktion. Rückgabe-Text erscheint als Chip; Fehler (throw) als Warn-Chip. */
   act?: () => void | string | Promise<void | string>;
+  /** CSV-Import: öffnet die Unterseite „CSV importieren“ (prüfen, ergänzen oder ersetzen) */
+  imp?: boolean;
   /** Für Dateien: öffnet die Dateiauswahl und ruft datei(f) */
   datei?: { accept: string; mehrere?: boolean; f: (dateien: File[]) => void | string | Promise<void | string> };
 }
@@ -59,6 +61,8 @@ export interface EinstellungsBindung {
   taste(key: string, e: KeyboardEvent): boolean;
   /** Anzeige-Text einer Taste (undefined = Rohwert) */
   tasteText(key: string): string | undefined;
+  /** Ton zur Probe abspielen (Rückgabe: Text für den Chip) */
+  probe?(key: string): string | undefined;
 }
 
 /** Zeilen einer Seite dynamisch aus der App (undefined = Zeilen aus dem Design). */

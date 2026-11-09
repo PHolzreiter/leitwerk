@@ -1,0 +1,110 @@
+                    <sc-if value="{{r.isArea}}" hint-placeholder-val="{{false}}">
+                      <div class="ei-area"><span class="ei-albl">{{r.label}}<sc-if value="{{r.hasHint}}" hint-placeholder-val="{{false}}"><span class="l-hint">{{r.hint}}</span></sc-if></span><textarea class="l-input ei-ta" rows="{{r.zeilen}}" placeholder="{{r.ph}}" aria-label="{{r.label}}" onChange="{{r.set}}">{{r.val}}</textarea></div>
+                    </sc-if>
+                    <sc-if value="{{r.isLage}}" hint-placeholder-val="{{false}}">
+                      <div class="ei-lage">
+                        <div class="ei-lkopf"><span>{{r.label}}<span class="l-hint">Klick in die Karte setzt den Punkt · oder Koordinaten eingeben</span></span><span class="ei-lctl"><sc-if value="{{r.hasOk}}" hint-placeholder-val="{{false}}"><span class="{{r.okCls}}"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>{{r.okText}}</span></sc-if><input class="l-input" type="text" aria-label="{{r.label}}: Koordinaten" value="{{r.val}}" onChange="{{r.set}}" style="width: 190px; padding: 7px 10px;"><sc-if value="{{r.karteDa}}" hint-placeholder-val="{{true}}"><button class="l-ghost sm" onClick="{{r.karte}}">Im Kartenfenster wählen</button></sc-if></span></div>
+                        <div class="ei-map" ref="{{r.kartenRef}}"></div>
+                      </div>
+                    </sc-if>
+                    <sc-if value="{{r.isEinr}}" hint-placeholder-val="{{false}}">
+                      <div class="ei-einr">
+                        <sc-for list="{{r.gruppen}}" as="g" hint-placeholder-count="3">
+                          <div class="ei-eg">
+                            <button class="ei-egk" onClick="{{g.auf}}" aria-expanded="{{g.exp}}"><svg class="{{g.pfCls}}" width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.6"></path></svg><b>{{g.t}}</b><span>{{g.n}}</span></button>
+                            <sc-if value="{{g.offen}}" hint-placeholder-val="{{true}}"><div class="ei-chips"><sc-for list="{{g.e}}" as="e" hint-placeholder-count="5"><button class="{{e.cls}}" aria-pressed="{{e.an}}" onClick="{{e.flip}}">{{e.t}}</button></sc-for></div></sc-if>
+                          </div>
+                        </sc-for>
+                      </div>
+                    </sc-if>
+                    <sc-if value="{{r.isPlan}}" hint-placeholder-val="{{false}}">
+                      <div class="ei-plan">
+                        <sc-if value="{{r.hatPlanFehler}}" hint-placeholder-val="{{false}}"><p class="l-hint ei-pfehler">{{r.planFehler}} – bitte die Schichten neu wählen</p></sc-if>
+                        <div class="ei-pvor"><span class="ei-plbl">Schnell</span><sc-for list="{{r.vorlagen}}" as="v" hint-placeholder-count="4"><button class="l-mini" onClick="{{v.go}}">{{v.t}}</button></sc-for></div>
+                        <div class="ei-pkopf"><span>Tage</span><span>Von</span><span>Bis</span><span></span></div>
+                        <sc-for list="{{r.schichten}}" as="s" hint-placeholder-count="2">
+                          <div class="ei-pschicht">
+                            <span class="ei-ptage"><sc-for list="{{s.tage}}" as="t" hint-placeholder-count="7"><button class="{{t.cls}}" aria-pressed="{{t.an}}" aria-label="{{t.lang}}" onClick="{{t.flip}}">{{t.t}}</button></sc-for><sc-if value="{{s.keinTag}}" hint-placeholder-val="{{false}}"><em class="ei-pwarn">kein Tag gewählt</em></sc-if></span>
+                            <span class="ei-pzeit"><sc-if value="{{s.vonSonne}}" hint-placeholder-val="{{false}}"><span class="ei-sonne">☀ Aufgang</span></sc-if><sc-if value="{{s.vonUhr}}" hint-placeholder-val="{{true}}"><input class="l-num xs" type="text" value="{{s.von}}" aria-label="Von" onChange="{{s.setVon}}"></sc-if></span>
+                            <span class="ei-pzeit"><sc-if value="{{s.bisSonne}}" hint-placeholder-val="{{false}}"><span class="ei-sonne">☀ Untergang</span></sc-if><sc-if value="{{s.bisUhr}}" hint-placeholder-val="{{true}}"><input class="l-num xs" type="text" value="{{s.bis}}" aria-label="Bis" onChange="{{s.setBis}}"></sc-if></span>
+                            <button class="ei-px" aria-label="Schicht entfernen" onClick="{{s.weg}}"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"></path></svg></button>
+                          </div>
+                        </sc-for>
+                        <div class="ei-pfuss"><button class="l-ghost sm" onClick="{{r.plus}}">+ Schicht</button><span class="ei-psum">{{r.summe}}</span></div>
+                        <div class="ei-woche">
+                          <div class="ei-wachse"><span></span><sc-for list="{{r.achse}}" as="a" hint-placeholder-count="5"><span style="left: {{a.x}}%;">{{a.t}}</span></sc-for></div>
+                          <sc-for list="{{r.woche}}" as="w" hint-placeholder-count="7"><div class="ei-wtag"><span>{{w.t}}</span><div class="ei-wbar"><sc-for list="{{w.b}}" as="b" hint-placeholder-count="1"><i style="left: {{b.x}}%; width: {{b.w}}%;" title="{{b.tip}}"></i></sc-for></div></div></sc-for>
+                        </div>
+                      </div>
+                    </sc-if>
+                    <sc-if value="{{r.isKhauf}}" hint-placeholder-val="{{false}}">
+                      <div class="ei-kh">
+                        <div class="ei-khkopf">
+                          <select class="l-select" aria-label="Krankenhaus" value="{{r.haus}}" onChange="{{r.setHaus}}"><sc-for list="{{r.haeuser}}" as="h" hint-placeholder-count="3"><option value="{{h}}">{{h}}</option></sc-for></select>
+                          <span class="l-segs ei-kalt"><sc-for list="{{r.alter}}" as="o" hint-placeholder-count="2"><button class="{{o.cls}}" onClick="{{o.pick}}">{{o.label}}</button></sc-for></span>
+                          <button class="l-ghost sm ei-kzeit l-dt" type="button" data-key="kh_zeit" data-v="{{r.zeitWert}}" aria-label="Zeitpunkt wählen"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2"></circle><path d="M12 7.5V12l3 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg><span>{{r.zeit}}</span></button><sc-if value="{{r.nichtJetzt}}" hint-placeholder-val="{{false}}"><button class="l-ghost sm" onClick="{{r.zeitJetzt}}">Jetzt</button></sc-if>
+                          <input class="l-input" type="search" placeholder="Symptom filtern …" aria-label="Symptom filtern" value="{{r.filter}}" onChange="{{r.setFilter}}" style="width: 200px; padding: 7px 10px; margin-left: auto;">
+                        </div>
+                        <p class="l-hint" style="margin: 2px 0 10px;">Gilt nur für Notfälle. Krankentransporte und Überstellungen richten sich nach den Abteilungen. Im Multiplayer zählen die Daten des Hosts.</p>
+                        <div class="l-head">Öffnungszeiten der Akut-Bereiche</div>
+                        <div class="l-tr l-thead ei-otab"><span>Bereich</span><span>Geöffnet</span><span>Jetzt</span><span>Quelle</span><span></span></div>
+                        <sc-if value="{{r.keineBereiche}}" hint-placeholder-val="{{false}}"><p class="l-hint" style="margin: 6px 0;">Keine Akut-Bereiche mit eigenen Zeiten – alles rund um die Uhr.</p></sc-if>
+                        <sc-for list="{{r.bereiche}}" as="b" hint-placeholder-count="4">
+                          <div class="l-tr ei-otab"><span class="l-td1">{{b.t}}</span><span><input class="l-input" type="text" value="{{b.zeit}}" placeholder="rund um die Uhr" aria-label="{{b.t}}: Öffnungszeiten" onChange="{{b.set}}" style="padding: 6px 9px;"></span><span><span class="{{b.jetztCls}}">{{b.jetzt}}</span></span><span><span class="{{b.qCls}}">{{b.quelle}}</span></span><span><sc-if value="{{b.geaendert}}" hint-placeholder-val="{{false}}"><button class="l-ghost sm" onClick="{{b.vorgabe}}">Vorgabe</button></sc-if></span></div>
+                        </sc-for>
+                        <div class="ei-khsk">
+                          <div class="l-head" style="padding-bottom: 0;">Symptome – {{r.zeitLang}}</div>
+                          <span class="ei-leg"><span><b class="ei-z an"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></b>nimmt auf</span><span><b class="ei-z zu"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4a8 8 0 1 0 0 16zM12 4a8 8 0 0 1 0 16"></path></svg></b>nimmt auf, Bereich jetzt zu</span><span><b class="ei-z aus2"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 13c2.5-3 4.5-3 8 0s5.5 3 8 0"></path></svg></b>nur Ausweich</span><span><b class="ei-z nein"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"></path></svg></b>nimmt nicht auf</span></span>
+                        </div>
+                        <div class="ei-sgrid ei-skopf"><span>Symptom</span><span>stabil</span><span>dringend</span><span>Schock</span></div>
+                        <sc-for list="{{r.symGr}}" as="g" hint-placeholder-count="2">
+                          <div class="ei-sgr">{{g.t}}</div>
+                          <sc-for list="{{g.s}}" as="s" hint-placeholder-count="3">
+                            <div class="ei-sgrid"><span class="ei-sname" title="{{s.syn}}">{{s.t}}</span><sc-for list="{{s.z}}" as="z" hint-placeholder-count="3"><sc-if value="{{z.voll}}" hint-placeholder-val="{{true}}"><button class="{{z.cls}}" title="{{z.tip}}" aria-label="{{z.tip}}" onClick="{{z.klick}}"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="{{z.sym}}"></path></svg></button></sc-if><sc-if value="{{z.leer}}" hint-placeholder-val="{{false}}"><span class="ei-z leer"></span></sc-if></sc-for></div>
+                          </sc-for>
+                        </sc-for>
+                        <p class="l-hint" style="margin-top: 8px;">Klick auf ein Feld wechselt: nimmt auf → nimmt nicht → wie die Abteilungen. Eigene Änderungen haben einen blauen Rand.</p>
+                        <div class="ei-khfuss">
+                          <button class="l-ghost sm" onClick="{{r.luecken}}">Lücken im Umkreis prüfen (eine Woche)</button>
+                          <sc-if value="{{r.kannStd}}" hint-placeholder-val="{{true}}"><button class="{{r.stdCls}}" onClick="{{r.stdFrage}}">Ganzes Haus zurück auf Vorgabe</button></sc-if><sc-if value="{{r.hasOk}}" hint-placeholder-val="{{false}}"><span class="{{r.okCls}}"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>{{r.okText}}</span></sc-if>
+                        </div>
+                        <sc-if value="{{r.stdOffen}}" hint-placeholder-val="{{false}}"><div class="l-strip rot"><span>Alle Zeiten und Symptome von {{r.haus}} auf die Vorgabe zurücksetzen?</span><span class="l-stripb"><button class="l-ghost sm" onClick="{{r.stdNein}}">Abbrechen</button><button class="l-ghost sm l-ja" onClick="{{r.stdGo}}">Zurücksetzen</button></span></div></sc-if>
+                        <sc-if value="{{r.hatLuecken}}" hint-placeholder-val="{{false}}">
+                          <div class="ei-luecken">
+                            <b>Lücken im Umkreis von 60 km ({{r.lueckenN}})</b>
+                            <sc-if value="{{r.keineLuecken}}" hint-placeholder-val="{{false}}"><div class="ei-lz"><span>Keine Lücken – für jedes Symptom ist im Umkreis zu jeder Zeit ein Haus offen.</span></div></sc-if><sc-for list="{{r.lueckenL}}" as="l" hint-placeholder-count="2"><div class="ei-lz"><span class="ei-lsym">{{l.sym}}</span><span>{{l.zeit}}</span><em>{{l.info}}</em></div></sc-for>
+                          </div>
+                        </sc-if>
+                      </div>
+                    </sc-if>
+                    <sc-if value="{{r.isImport}}" hint-placeholder-val="{{false}}">
+                      <div class="ei-imp">
+                        <sc-if value="{{r.keineDatei}}" hint-placeholder-val="{{false}}"><div class="ei-idatei"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h8l4 4v14H6zM14 3v4h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"></path></svg><span><b>{{r.datei}}</b><em>{{r.dateiInfo}}</em></span><span style="margin-left: auto;"><sc-if value="{{r.hasOk}}" hint-placeholder-val="{{false}}"><span class="{{r.okCls}}"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>{{r.okText}}</span></sc-if></span><button class="l-btn ei-btn" onClick="{{r.waehlen}}">Datei wählen …</button></div><div class="ei-ifuss"><button class="l-ghost" onClick="{{r.ab}}">Abbrechen</button></div></sc-if>
+                        <sc-if value="{{r.hatDatei}}" hint-placeholder-val="{{true}}">
+                        <div class="ei-idatei"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h8l4 4v14H6zM14 3v4h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"></path></svg><span><b>{{r.datei}}</b><em>{{r.dateiInfo}}</em></span><span style="margin-left: auto;"><sc-if value="{{r.hasOk}}" hint-placeholder-val="{{false}}"><span class="{{r.okCls}}"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>{{r.okText}}</span></sc-if></span><button class="l-ghost sm" onClick="{{r.andere}}">Andere Datei …</button></div>
+                        <div class="l-srow first"><span>Inhalt<span class="l-hint">Aus den Spalten erkannt – bei Bedarf ändern</span></span><span class="l-sctl"><select class="l-select" aria-label="Inhalt" value="{{r.inhalt}}" onChange="{{r.setInhalt}}"><sc-for list="{{r.inhalte}}" as="o" hint-placeholder-count="3"><option value="{{o}}">{{o}}</option></sc-for></select></span></div>
+                        <div class="ei-kacheln"><sc-for list="{{r.kacheln}}" as="k" hint-placeholder-count="4"><div class="{{k.cls}}"><b>{{k.n}}</b><span>{{k.t}}</span></div></sc-for></div>
+                        <p class="l-hint" style="margin: 0 0 6px;">Erkannte Spalten: {{r.spalten}} · nicht verwendet: {{r.ignoriert}}</p>
+                        <div class="l-srow"><span>Übernehmen als<span class="l-hint">{{r.modusHint}}</span></span><span class="l-sctl"><span class="l-segs"><sc-for list="{{r.modus}}" as="o" hint-placeholder-count="2"><button class="{{o.cls}}" onClick="{{o.pick}}">{{o.label}}</button></sc-for></span></span></div>
+                        <sc-if value="{{r.hatFehler}}" hint-placeholder-val="{{true}}"><div class="l-head">Fehler – diese Zeilen werden nicht übernommen</div></sc-if>
+                        <sc-for list="{{r.fehler}}" as="f" hint-placeholder-count="3"><div class="ei-meld rot"><span class="ei-mz">Zeile {{f.z}}</span><span>{{f.t}}</span></div></sc-for>
+                        <sc-if value="{{r.hatHinweise}}" hint-placeholder-val="{{true}}"><div class="l-head">Hinweise</div></sc-if>
+                        <sc-for list="{{r.hinweise}}" as="f" hint-placeholder-count="2"><div class="ei-meld"><span class="ei-mz">Zeile {{f.z}}</span><span>{{f.t}}</span></div></sc-for>
+                        <div class="ei-ifuss"><button class="l-btn ei-btn" onClick="{{r.ok}}">{{r.okText}}</button><button class="l-ghost" onClick="{{r.ab}}">Abbrechen</button></div>
+                        </sc-if>
+                      </div>
+                    </sc-if>
+                    <sc-if value="{{r.isZuord}}" hint-placeholder-val="{{false}}">
+                      <div class="ei-zu">
+                        <sc-if value="{{r.leer}}" hint-placeholder-val="{{false}}"><p class="l-note">{{r.leerText}}</p><div class="ei-ifuss"><button class="l-btn ei-btn" onClick="{{r.fertig}}">Zurück</button></div></sc-if>
+                        <sc-if value="{{r.nichtLeer}}" hint-placeholder-val="{{true}}">
+                        <div class="ei-zukopf"><button class="l-ghost sm" onClick="{{r.ki}}">KI-Vorschläge für offene und unsichere Fragen</button><label class="ei-zuf"><button class="{{r.nurCls}}" aria-pressed="{{r.nurAn}}" aria-label="Nur offene und unsichere zeigen" onClick="{{r.nurFlip}}"></button>nur offene und unsichere</label><sc-if value="{{r.hasOk}}" hint-placeholder-val="{{false}}"><span class="{{r.okCls}}"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>{{r.okText}}</span></sc-if><span class="l-tblanz" style="margin-left: auto;">{{r.stand}}</span></div>
+                        <div class="l-tr l-thead ei-ztab"><span>Frage im eigenen Schema</span><span>LeitWerk-Merkmal</span><span>Antworten</span><span>Quelle</span></div>
+                        <sc-for list="{{r.zeilen}}" as="z" hint-placeholder-count="4">
+                          <div class="l-tr ei-ztab"><span class="l-td1" title="{{z.frage}}">{{z.frage}}</span><span><select class="l-select ei-zsel" aria-label="Merkmal für {{z.frage}}" value="{{z.merkmal}}" onChange="{{z.setM}}"><sc-for list="{{r.merkmale}}" as="o" hint-placeholder-count="3"><option value="{{o.v}}">{{o.t}}</option></sc-for></select></span><span class="ei-zant">{{z.antw}}</span><span><span class="{{z.qCls}}">{{z.quelle}}</span></span></div>
+                        </sc-for>
+                        <sc-if value="{{r.hatStufen}}" hint-placeholder-val="{{false}}"><div class="l-note" style="margin-top: 12px;">{{r.stufen}}</div></sc-if>
+                        <div class="ei-ifuss"><button class="l-btn ei-btn" onClick="{{r.fertig}}">Fertig</button></div>
+                        </sc-if>
+                      </div>
+                    </sc-if>

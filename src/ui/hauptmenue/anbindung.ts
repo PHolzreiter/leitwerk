@@ -15,6 +15,8 @@ import b32n from "./bilder/bg-32x9-nacht.jpg?url";
 import { ablaufBauen } from "./ablauf";
 import { einstellungsBindung } from "./bindung";
 import type { ZeilenQuelle } from "./vertrag";
+import { zusatzBauen } from "../einstellungen/zusatz";
+import { mp } from "../../net/mehrspieler";
 
 export interface Rahmen {
   neuZeichnen(): void;
@@ -27,6 +29,7 @@ export function anbindungBauen(r: Rahmen) {
   const aus: (() => void)[] = [];
   const ablauf = ablaufBauen(r.neuZeichnen, r.schliessen);
   const einst = einstellungsBindung(r.neuZeichnen);
+  const zusatz = zusatzBauen({ neuZeichnen: r.neuZeichnen });
   // Seiten mit echten Daten (zeilen.ts) – wird nachgeladen, damit das Menü sofort steht
   let zeilen: ZeilenQuelle | undefined;
   let feldWert: ((k: string, v: unknown) => void) | undefined;
@@ -34,6 +37,9 @@ export function anbindungBauen(r: Rahmen) {
   return {
     ablauf,
     einst,
+    zusatz,
+    /** Mitspieler ohne Recht „Einstellungen & Daten“: Spiel & Simulation und Leitstelle nur ansehen */
+    gesperrt: () => mp.status.rolle === "client" && !mp.darf("einstellungen"),
     zeilen: ((seite, b) => (zeilen ? zeilen(seite, b) : undefined)) as ZeilenQuelle,
     feldWert: (k: string, v: unknown) => feldWert?.(k, v),
     logoUrl,

@@ -18,7 +18,8 @@ import { DATEI_REGELN, eigeneDateien, IST_KLINGELTON, spielen, STANDARD_SOUND, V
 import { ausgabeGeraete, mikrofone, setzeSprache, SPRACH_STANDARD, sprachPrefs, tastenName as sprachTastenName, type SprachPrefs } from "../sprache";
 import { kiPrefs, setKiPrefs } from "../../abfrage/ki";
 import { anrufKiModus, livePrefs, setLivePrefs } from "../../abfrage/liveKi";
-import { funkGruppenSetzen, funkGruppenWahl } from "../sprechfunk";
+import { funkGruppenSetzen, funkGruppenWahl, telefonModus } from "../sprechfunk";
+import { ALARM_AUFNAHMEN, ALARM_STANDARD, ALARM_VORLAGEN, alarmPrefs, alarmPrefsSetzen, eigeneAlarmtoene, probeSpielen, type AlarmArt } from "../pilot/alarmToene";
 import { carlsAn, carlsUmschalten, gtnAn, gtnUmschalten, vorgabe, vorgabeSetzen } from "../pilot/flugsim";
 import { belegung, belegungSpeichern, standardBelegung, tastenName as pilotTastenName, type PilotAktion } from "../pilot/tasten";
 import { abfrageAnsicht, setzeAbfrageAnsicht } from "../abfrageAnsicht";
@@ -202,6 +203,35 @@ function kuerzelSetzen(id: KuerzelId, t: string): boolean {
 /**
  * @param geladen wird aufgerufen, sobald Geräte, Mikrofone und eigene Tondateien geladen sind (zum Neuzeichnen)
  */
+/** Alarmtöne des Piloten: Aufnahmen, erzeugte Töne, eigene Dateien (id wie in alarmPrefs) */
+let eigeneAlarm: { id: string; name: string }[] = [];
+function alarmTonListe(): { id: string; name: string }[] {
+  return [
+    ...Object.entries(ALARM_AUFNAHMEN).map(([id, v]) => ({ id: `aufnahme:${id}`, name: v.name })),
+    ...Object.entries(ALARM_VORLAGEN).map(([id, v]) => ({ id: `vorlage:${id}`, name: v.name })),
+    ...eigeneAlarm.map((d) => ({ id: `datei:${d.id}`, name: `${d.name} (eigen)` })),
+  ];
+}
+/** eigene Alarmtöne neu einlesen (nach dem Hinzufügen) */
+export function alarmToeneNeu(): Promise<void> {
+  return eigeneAlarmtoene()
+    .then((d) => void (eigeneAlarm = d.map((x) => ({ id: x.id, name: x.name }))))
+    .catch(() => undefined);
+}
+function alarmEintrag(art: AlarmArt): Eintrag {
+  return {
+    l: () => {
+      const q = alarmPrefs()[art];
+      return alarmTonListe().find((x) => x.id === q)?.name ?? q;
+    },
+    s: (w) => {
+      if (w === undefined) return (alarmPrefsSetzen({ [art]: ALARM_STANDARD[art] }), true);
+      const t = alarmTonListe().find((x) => x.name === w);
+      return t ? (alarmPrefsSetzen({ [art]: t.id }), true) : false;
+    },
+  };
+}
+
 export function einstellungsBindung(geladen?: () => void): EinstellungsBindung {
   // Entscheidungen, die für das neue Hauptmenü gelten (nur ändern, wenn nötig)
   const kp = kiPrefs();
@@ -217,6 +247,7 @@ export function einstellungsBindung(geladen?: () => void): EinstellungsBindung {
       .then((m) => (mikros = m.filter((x) => x.deviceId && x.deviceId !== "default").map((x) => ({ deviceId: x.deviceId, label: x.label || "Mikrofon" }))))
       .catch(() => undefined),
     eigeneDateien().then((d) => (dateien = d)).catch(() => undefined),
+    alarmToeneNeu(),
   ]).then(() => geladen?.());
 
   const geraetOptionen = () => [SYSTEM, ...geraete];
@@ -388,6 +419,18 @@ export function einstellungsBindung(geladen?: () => void): EinstellungsBindung {
       l: () => funkGruppenWahl().mithoerLaut,
       s: (w) => (funkGruppenSetzen({ mithoerLaut: w === undefined ? 50 : grenze(zahl(w, 50), 0, 100) }), true),
     },
+    fTel: {
+      l: () => ({ normal: "Normal", leiser: "Leiser", stumm: "Stumm" })[telefonModus()],
+      s: (w) => {
+        const v = w === undefined ? "leiser" : ({ Normal: "normal", Leiser: "leiser", Stumm: "stumm" } as Record<string, "normal" | "leiser" | "stumm">)[String(w)];
+        return v ? (funkGruppenSetzen({ telefon: v, telefonStumm: false }), true) : false;
+      },
+    },
+    // ---------------- Pilot: Alarmtöne (Aufnahmen, erzeugte Melder-Töne, eigene Dateien)
+    pt_alarm: alarmEintrag("alarm"),
+    pt_abruf: alarmEintrag("abruf"),
+    pt_alarm_l: { l: () => alarmPrefs().laut, s: (w) => (alarmPrefsSetzen({ laut: w === undefined ? 80 : grenze(zahl(w, 80), 0, 100) }), true) },
+    pt_abruf_l: { l: () => alarmPrefs().laut, s: (w) => (alarmPrefsSetzen({ laut: w === undefined ? 80 : grenze(zahl(w, 80), 0, 100) }), true) },
     echteD: { l: () => funkGruppenWahl().echteDispos !== false, s: (w) => (funkGruppenSetzen({ echteDispos: w === undefined ? true : !!w }), true) },
     echteP: { l: () => funkGruppenWahl().echtePiloten !== false, s: (w) => (funkGruppenSetzen({ echtePiloten: w === undefined ? true : !!w }), true) },
     fklang: sprBool("klangfilter"),
@@ -710,6 +753,20 @@ export function einstellungsBindung(geladen?: () => void): EinstellungsBindung {
       if (key === "mic") return mikroOptionen();
       if (key === "wlage") return Object.values(WETTER_LABEL);
       if (TON_KEYS[key]) return tonOptionen(TON_KEYS[key]);
+      if (key === "pt_alarm" || key === "pt_abruf") return alarmTonListe().map((x) => x.name);
+      return undefined;
+    },
+    probe(key) {
+      if (key === "pt_alarm" || key === "pt_abruf") {
+        const q = alarmPrefs()[key === "pt_alarm" ? "alarm" : "abruf"];
+        void probeSpielen(q);
+        return `▶ ${alarmTonListe().find((x) => x.id === q)?.name ?? q}`;
+      }
+      const m = key.match(/^(te_[A-Za-z]+)$/);
+      if (m && TON_KEYS[m[1]]) {
+        const v = this.lesen(key);
+        return `▶ ${String(v ?? "")}`;
+      }
       return undefined;
     },
     taste(key, e) {
