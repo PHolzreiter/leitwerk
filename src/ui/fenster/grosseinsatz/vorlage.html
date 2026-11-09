@@ -1,0 +1,61 @@
+<section class="{{feCls}}">
+  <sc-if value="{{keiner}}"><div class="leerfenster"><div><b>Kein Großeinsatz</b>Ab 6 Betroffenen (NF5) wird ein Einsatz zum Großeinsatz.<br>Dann stehen hier Bereitstellungsraum, Lage, Patienten und Voraviso –<br>das Fenster geht dann von selbst auf.</div></div></sc-if>
+
+  <sc-if value="{{aktiv}}"><div class="{{gsCls}}">
+    <div class="held">
+      <span class="stufe-gs" title="{{stufeTitel}}">{{stufe}}</span>
+      <div class="held-t"><b title="{{titel}}">{{titel}}</b><span title="{{unterTitel}}">{{unterTitel}}</span></div>
+      <div class="fluss" aria-label="Wo die Patienten gerade sind">
+        <div class="{{flBalkenCls}}"><sc-for list="{{fluss}}" as="f"><span class="{{f.cls}}" style="flex-grow: {{f.n}};" title="{{f.titel}}"></span></sc-for><sc-if value="{{flussLeer}}"><span class="fl-leer">Patienten noch nicht gemeldet</span></sc-if></div>
+        <div class="fl-leg"><sc-for list="{{fluss}}" as="f"><span class="{{f.lcls}}"><i></i><b>{{f.n}}</b> {{f.t}}</span></sc-for></div>
+        <div class="meil"><sc-for list="{{meilen}}" as="m"><span class="{{m.cls}}" title="{{m.titel}}"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="{{m.d}}"></path></svg>{{m.t}}<sc-if value="{{m.hatZeit}}"><time>{{m.zeit}}</time></sc-if></span></sc-for></div>
+      </div>
+      <div class="zahlen"><sc-for list="{{zahlen}}" as="z"><div class="{{z.cls}}" title="{{z.titel}}"><b>{{z.w}}<small>{{z.von}}</small></b><span><span class="lang">{{z.n}}</span><span class="kurz">{{z.k}}</span></span></div></sc-for></div>
+    </div>
+
+    <div class="funkhinw" role="note"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="14" rx="2"></rect><path d="M10 7V3M10 11h4M10 14h4"></path></svg><span><b>Funk zu diesem Großeinsatz in Sprechgruppe <span style="white-space: nowrap;">{{gruppe}}</span></b><span class="fh-u"> · am Funkgerät mit dem Steuerkreuz ◂ ▸ wechseln</span></span><button class="kn sm" onClick="{{zumFunk}}">Zum Funk</button></div>
+    <sc-if value="{{tabMode}}"><div class="segs gleit unterreiter" role="tablist" style="--i: {{tabIdx}}; --n: 4;"><sc-for list="{{unter}}" as="u"><button class="{{u.cls}}" onClick="{{u.klick}}" role="tab" aria-selected="{{u.an}}">{{u.t}}<sc-if value="{{u.pk}}"><span class="pk" title="braucht Aufmerksamkeit"></span></sc-if></button></sc-for></div></sc-if>
+
+    <div class="{{rasterCls}}">
+      <sc-for list="{{spalten}}" as="sp"><div class="spalte">
+
+        <sc-if value="{{sp.alarm}}"><section class="karte-gs"><div class="kt">Alarmierung<small>Vorschlag in der Einsatzmaske folgt dem Schritt</small></div><div class="ki">
+          <div class="schritt"><div class="sk2"><span class="nk">1</span><b>Schnelleinsatzgruppe</b><span>→ Berufungsort</span></div><sc-for list="{{seg}}" as="z"><div class="{{z.cls}}"><span class="a">{{z.a}}</span><span class="balken" style="--w: {{z.w}}%;"><i></i></span><span class="z">{{z.ist}}<small>/{{z.soll}}</small></span></div></sc-for></div>
+          <div class="{{brSchrittCls}}"><div class="sk2"><span class="nk">2</span><b>Bereitstellungsraum</b><span>{{stufeLaut}}</span></div><sc-for list="{{brZ}}" as="z"><div class="{{z.cls}}"><span class="a">{{z.a}}</span><span class="balken" style="--w: {{z.w}}%;"><i></i></span><span class="z">{{z.ist}}<small>/{{z.soll}}</small></span></div></sc-for>
+            <sc-if value="{{brGesetzt}}"><div class="br-ort"><span class="p">P</span><span><b>{{brName}}</b> <span>· {{brAbstand}}</span></span><button class="kn sm leise" onClick="{{brAendern}}">Ändern</button></div></sc-if>
+            <sc-if value="{{brFehlt}}"><sc-if value="{{brHinweis}}"><div class="hinweis">Zuerst den Bereitstellungsraum festlegen – erst dann kann in den BR alarmiert werden.</div></sc-if>
+              <div class="br-wahl"><label class="feldz"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"></circle><path d="M20 20l-4-4"></path></svg><input class="feld" placeholder="Adresse suchen …" aria-label="Bereitstellungsraum: Adresse" value="{{adrText}}" onInput="{{adrTipp}}" onKeyDown="{{adrTaste}}" onBlur="{{adrWeg}}"></label><button class="kn sm" onClick="{{brKarte}}" title="Karte zum Einsatzort, dann den Bereitstellungsraum anklicken">Auf der Karte</button><button class="kn sm prim" onClick="{{brVorschlag}}" title="ca. 500 m vom Einsatzort, auf der Seite, von der die Fahrzeuge kommen">Vorschlag übernehmen</button><sc-if value="{{brZurueck}}"><button class="kn sm leise" onClick="{{brBehalten}}">Abbrechen</button></sc-if><sc-if value="{{adrOffen}}"><div class="br-treffer"><sc-for list="{{adrTreffer}}" as="h"><button class="{{h.cls}}" onMouseDown="{{h.klick}}" title="{{h.titel}}">{{h.t}}</button></sc-for><sc-if value="{{adrLeer}}"><div class="leer">{{adrLeerText}}</div></sc-if></div></sc-if></div></sc-if>
+          </div>
+          <div class="kfuss"><span class="anr" title="{{anrufeTitel}}">{{anrufe}}</span><button class="kn sm" onClick="{{zurMaske}}">In der Einsatzmaske alarmieren ›</button></div>
+        </div></section></sc-if>
+
+        <sc-if value="{{sp.kraefte}}"><section class="karte-gs"><div class="kt">Kräfte<small>{{kraefteSumme}}</small></div><div class="ki"><div class="kraefte"><sc-for list="{{kraefte}}" as="k"><div class="ksp"><div class="ksp-k">{{k.n}}<span>{{k.z}}</span></div><div class="chips"><sc-for list="{{k.fz}}" as="f"><span class="{{f.cls}}" title="{{f.titel}}" onClick="{{f.klick}}"><i class="{{f.st}}"></i>{{f.r}}<sc-if value="{{f.hatRolle}}"><span class="rolle">{{f.rolle}}</span></sc-if><sc-if value="{{f.zeigTyp}}"><small>{{f.typ}}</small></sc-if></span></sc-for><sc-if value="{{k.leer}}"><span class="leer3">–</span></sc-if></div></div></sc-for></div></div></section></sc-if>
+
+        <sc-if value="{{sp.pat}}"><section class="karte-gs wachsen"><div class="kt">Patienten<small>{{patInfo}}</small></div><div class="ki" style="flex: 1; padding-left: 0; padding-right: 0;">
+          <sc-if value="{{hatNachf}}"><div class="nachf" style="margin: 0 12px;"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l9 16H3z"></path><path d="M12 10v4M12 17v.5"></path></svg>{{nachf}}</div></sc-if>
+          <div class="pt" style="--cols: {{cols}};">
+            <div class="pk2" role="row"><sc-for list="{{kopf}}" as="k"><div class="{{k.zelle}}"><button class="{{k.cls}}" onClick="{{k.klick}}" aria-sort="{{k.aria}}" title="{{k.titel}}"><span class="skt">{{k.t}}</span><svg class="ic pf" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5"></path></svg></button><sc-if value="{{k.zieh}}"><span class="spz" role="separator" aria-orientation="vertical" aria-label="Spaltenbreite" tabindex="0" title="Ziehen ändert die Spaltenbreite · Doppelklick: Standardbreiten" onMouseDown="{{k.ziehStart}}" onDoubleClick="{{k.reset}}"></span></sc-if></div></sc-for></div>
+            <div class="pzl"><sc-for list="{{pats}}" as="p"><div class="{{p.cls}}" title="{{p.titel}}">
+              <span class="nrk">{{p.nr}}</span>
+              <sc-for list="{{p.zellen}}" as="c"><div class="{{c.wrap}}">
+                <sc-if value="{{c.text}}"><span class="zz"><b>{{c.b}}</b>{{c.t}}<span class="dim">{{c.d}}</span></span></sc-if>
+                <sc-if value="{{c.stand}}"><span class="{{c.stCls}}"><i class="pkt2"></i><span class="zz">{{c.t}}</span></span></sc-if>
+                <sc-if value="{{c.kh}}"><span class="khz"><sc-if value="{{c.hatKh}}"><span class="khn" title="{{c.khLang}}">{{c.khKurz}}</span></sc-if><sc-if value="{{c.buchen}}"><button class="{{c.knCls}}" onClick="{{c.klick}}" title="{{c.knTitel}}">Buchen</button></sc-if><sc-if value="{{c.strich}}"><span class="dim">–</span></sc-if></span></sc-if>
+              </div></sc-for>
+            </div></sc-for><sc-if value="{{keinePat}}"><div class="leer2">Noch keine Patienten gemeldet.<br>Die Einsatzleitung meldet sie nach der Lagemeldung nach und nach.</div></sc-if></div>
+          </div>
+        </div></section></sc-if>
+
+        <sc-if value="{{sp.lage}}"><section class="karte-gs wachsen"><div class="kt">Lage<small>Sicht- und Lagemeldungen kommen aus dem Funk</small></div><div class="ki" style="flex: 1;">
+          <ol class="zeitl" ref="{{zeitlRef}}"><sc-for list="{{meldungen}}" as="m"><li class="{{m.cls}}"><time>{{m.zeit}}</time><div class="zk"><b>{{m.von}}</b><sc-if value="{{m.hatArt}}"><span class="art">{{m.art}}</span></sc-if><sc-if value="{{m.hatText}}"><p>{{m.text}}</p></sc-if><sc-if value="{{m.hatPunkte}}"><dl><sc-for list="{{m.punkte}}" as="q"><dt>{{q.k}}</dt><dd>{{q.v}}</dd></sc-for></dl></sc-if></div></li></sc-for><sc-if value="{{keineMeldung}}"><li class="leer2">Sicht- und Lagemeldungen der Einsatzleitung erscheinen hier.</li></sc-if></ol>
+          <div class="notiz-z"><input class="feld" placeholder="Notiz zur Lage ergänzen … (Enter)" value="{{notizText}}" onInput="{{notizTipp}}" onKeyDown="{{notizTaste}}" aria-label="Notiz zur Lage"><button class="kn sm" onClick="{{notizDazu}}">Dazu</button></div>
+        </div></section></sc-if>
+
+        <sc-if value="{{sp.kh}}"><section class="karte-gs"><div class="kt">Krankenhäuser · Voraviso<small>150 % der Plätze, keine Selbstzuweiser</small></div><div class="ki"><div class="khl"><sc-for list="{{haeuser}}" as="h"><div class="{{h.cls}}" title="{{h.titel}}"><div class="n"><b>{{h.n}}</b><span>{{h.km}}</span></div><div class="f"><sc-if value="{{h.hatPl}}"><span class="{{h.bCls}}" style="--w: {{h.w}}%;"><i></i></span><span><b>{{h.frei}}</b> {{h.ftext}}</span></sc-if><sc-if value="{{h.keinePl}}"><span>keine Platzangaben</span></sc-if></div><button class="{{h.knCls}}" onClick="{{h.klick}}" aria-pressed="{{h.an}}">{{h.knT}}</button></div></sc-for><sc-if value="{{keineKh}}"><div class="leer3">Keine Krankenhäuser mit Notaufnahme in der Nähe.</div></sc-if></div></div></section></sc-if>
+
+      </div></sc-for>
+    </div>
+  </div></sc-if>
+
+  <sc-if value="{{hatToast}}"><div class="toast" role="status">{{toast}}</div></sc-if>
+</section>
