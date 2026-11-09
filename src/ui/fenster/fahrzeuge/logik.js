@@ -96,7 +96,7 @@ export class FahrzeugeLogik extends DCLogic {
       this.setState({ spm: { x: Math.max(6, Math.min(x, sec.offsetWidth - 240)), y: Math.max(6, Math.min(y, sec.offsetHeight - 330)) } }); };
     const zeile = (f) => {
       const frei = !f.auf;
-      return { cls: 'lz fzz s' + f.s + (f.funk ? ' funk' : '') + (sel === f.id ? ' gewaehlt' : ''), stil: f.stil, st: f.nr, ruf: f.ruf, typ: f.typ, wache: f.wache, crew: f.crew,
+      return { cls: 'lz fzz s' + f.s + (f.funk ? ' funk' : '') + (sel === f.id ? ' gewaehlt' : ''), stil: f.stil, id: f.id, eid: f.eid || '', st: f.nr, ruf: f.ruf, typ: f.typ, wache: f.wache, crew: f.crew,
         aussen: !!f.aussen, marken: f.marken, ort: f.nach || f.von || '', ortCls: 'ort2' + (f.nach ? '' : ' nur'), stx: f.stx, von: f.von || '', nach: f.nach || '', hatWeg: !!f.von, hatNach: !!f.nach, codes: f.codes, aufVor: frei ? f.stx : '', aufNr: frei ? '' : f.auf[0], aufText: frei ? '' : f.auf[1], eta: f.eta,
         klick: () => { this.setState({ sel: f.id }); app.klick(f.id); }, folgen: () => { this.setState({ sel: f.id }); app.folgen(f.id); },
         menue: (e) => { if (e && e.preventDefault) e.preventDefault(); if (e && e.stopPropagation) e.stopPropagation(); const sec = e && e.currentTarget && e.currentTarget.closest ? e.currentTarget.closest('.fe') : null; const r = sec ? sec.getBoundingClientRect() : { left: 0, top: 0, width: g.breite }; const z = sec && sec.offsetWidth ? r.width / sec.offsetWidth : 1;

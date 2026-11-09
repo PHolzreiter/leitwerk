@@ -17,6 +17,7 @@ import type { PanelKontext, PanelInstanz } from "../../ws/arbeitsplatz";
 import { fahrzeugZeigen, karteZeigen, waehle } from "../../ws/auswahl";
 import { besetzungDialog, fehlerZeigen, istFunkStatus } from "../../panels/teile";
 import { entwurfEinbinden } from "../../entwurf/einbinden";
+import { hoverMarkieren, markiert, onMarkiert } from "../../ws/markieren";
 import vorlage from "./vorlage.html?raw";
 import css from "./fahrzeuge.css?raw";
 import { FahrzeugeLogik, type FahrzeugeApp, type FzZeile, type LogZeile, type StatusAnzeige } from "./logik.js";
@@ -237,6 +238,7 @@ function zeile(fz: SimFahrzeug, namen: Map<string, string>, sa: Record<string, S
   const pf = pers().statusFarben?.[key];
   return {
     id: fz.id,
+    eid: fz.einsatzId ?? "",
     ruf: fz.funkrufname,
     typ,
     wache,
@@ -345,6 +347,12 @@ export function fahrzeugeFenster(ctx: PanelKontext, ansicht: "alle" | "aktive" |
     },
   };
   const f = entwurfEinbinden(root, "fahrzeuge", vorlage, css, (p) => new FahrzeugeLogik(p), { app });
+  // nach jedem Zeichnen (auch durch Filter, Sortieren …) die Markierung aus der Einsatzliste wieder setzen
+  const zeichneEntwurf = f.k._zeichnen;
+  f.k._zeichnen = () => {
+    zeichneEntwurf?.();
+    markierung(markiert("fahrzeug"));
+  };
 
   /** Zahl am Reiter (Alle: sichtbare Fahrzeuge, Aktive: unterwegs) – auch wenn der Reiter nicht vorne ist */
   function badge(): void {
@@ -356,7 +364,7 @@ export function fahrzeugeFenster(ctx: PanelKontext, ansicht: "alle" | "aktive" |
       if (ansicht === "aktive" && !fzAktiv(fz)) continue;
       n++;
     }
-    ctx.setzeBadge(n || null);
+    ctx.setzeBadge(n || null, "zahl");
   }
   function zeichnen(): void {
     badge();
@@ -367,6 +375,11 @@ export function fahrzeugeFenster(ctx: PanelKontext, ansicht: "alle" | "aktive" |
     veraltet = false;
     app.status = statusAnzeige();
     f.zeichnen();
+  }
+  /** Markieren beim Darüberfahren in der Einsatzliste: nur die Klasse der Zeile umschalten */
+  function markierung(id: string | null): void {
+    root.querySelectorAll(".fzz.mark").forEach((x) => x.classList.remove("mark"));
+    if (id) root.querySelectorAll(`.fzz[data-fz="${CSS.escape(id)}"]`).forEach((x) => x.classList.add("mark"));
   }
   // im ersten Zeichnen war das Panel evtl. noch nicht im Dokument
   requestAnimationFrame(zeichnen);
@@ -381,6 +394,9 @@ export function fahrzeugeFenster(ctx: PanelKontext, ansicht: "alle" | "aktive" |
       }, 500);
     }),
     store.onChange(() => zeichnen()),
+    onMarkiert("fahrzeug", markierung),
+    // Darüberfahren über einen Code markiert den Einsatz in der Einsatzliste
+    hoverMarkieren(root, "data-mkeinsatz", "einsatz"),
   ];
   return {
     el: root,

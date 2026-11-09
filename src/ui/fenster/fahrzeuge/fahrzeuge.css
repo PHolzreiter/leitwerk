@@ -157,3 +157,5 @@
 .k-Fahrzeuge .chip,.k-Fahrzeuge .seg{font-size:12px;font-weight:600}
 .k-Fahrzeuge .mz{font-size:12.5px}.k-Fahrzeuge .mz.akt{font-weight:700}
 .k-Fahrzeuge .chip:not(.on),.k-Fahrzeuge .seg:not(.on){color:var(--text-2)}
+/* gemeinsames Markieren: Fahrer über das Fahrzeug in der Einsatzliste markiert die Zeile hier */
+:where(.k-Fahrzeuge) .lz.fzz.mark{box-shadow:inset 0 0 0 2px var(--akzent);filter:brightness(.94)}

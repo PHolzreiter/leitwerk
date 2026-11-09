@@ -18,6 +18,8 @@ export interface FzZeile {
   stil: string;
   crew: string[];
   auf: [string, string] | null;
+  /** Einsatz (für das Markieren in der Einsatzliste beim Darüberfahren über den Code) */
+  eid: string;
   eta: string;
   etaMin: number | null;
   von: string;
