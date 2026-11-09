@@ -27,11 +27,8 @@ const STIMMEN: &[&str] = &[
 static GELADEN: Mutex<Option<HashMap<String, Arc<Mutex<VitsTts>>>>> = Mutex::new(None);
 
 fn ordner(app: &tauri::AppHandle) -> Result<PathBuf, String> {
-    let dir = app
-        .path()
-        .app_data_dir()
-        .map_err(|e| format!("Datenordner nicht gefunden: {e}"))?
-        .join("stimmen");
+    // in der Beta gemeinsam mit der normalen Version (große Downloads)
+    let dir = crate::beta::gemeinsam(app)?.join("stimmen");
     std::fs::create_dir_all(&dir).map_err(|e| format!("Datenordner nicht anlegbar: {e}"))?;
     Ok(dir)
 }

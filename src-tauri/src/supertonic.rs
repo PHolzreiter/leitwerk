@@ -30,11 +30,8 @@ pub const STIMMEN: &[&str] = &["F1", "F2", "F3", "F4", "F5", "M1", "M2", "M3", "
 const ORT_VERSION: &str = "1.22.0";
 
 fn ordner(app: &tauri::AppHandle) -> Result<PathBuf, String> {
-    let dir = app
-        .path()
-        .app_data_dir()
-        .map_err(|e| format!("Datenordner nicht gefunden: {e}"))?
-        .join("supertonic");
+    // in der Beta gemeinsam mit der normalen Version (große Downloads)
+    let dir = crate::beta::gemeinsam(app)?.join("supertonic");
     std::fs::create_dir_all(dir.join("onnx")).map_err(|e| e.to_string())?;
     std::fs::create_dir_all(dir.join("voice_styles")).map_err(|e| e.to_string())?;
     std::fs::create_dir_all(dir.join("laufzeit")).map_err(|e| e.to_string())?;

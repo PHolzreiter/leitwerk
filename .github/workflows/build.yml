@@ -3,9 +3,13 @@ name: Build
 # Baut das Programm für macOS und Windows. Ist die Version (tauri.conf.json) neu,
 # wird sie in diesem (öffentlichen) Repo als Release veröffentlicht; die installierten
 # Programme bieten sie dann über „Neue Version verfügbar“ an.
+#
+# Zweig „beta“: baut das eigene Programm „LeitWerk Beta“ (tauri.beta.conf.json) und veröffentlicht es als
+# Vorab-Release. Die normale Version prüft nur das neueste (nicht Vorab-)Release und bietet die Beta nie an;
+# die Beta prüft nur den Kanal „beta-kanal“.
 on:
   push:
-    branches: [main]
+    branches: [main, beta]
     paths-ignore:
       - "**.md"
       - ".github/workflows/osm-lookup.yml"
@@ -45,6 +49,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           VERSION="$(jq -r .version src-tauri/tauri.conf.json)"
+          if [ "$GITHUB_REF_NAME" = "beta" ]; then VERSION="$(jq -r .version src-tauri/tauri.beta.conf.json)"; fi
           if [ "${{ github.event_name }}" != "workflow_dispatch" ] && gh release view "v$VERSION" --repo "$DOWNLOAD_REPO" >/dev/null 2>&1; then
             echo "Version $VERSION ist schon veröffentlicht – kein Bau nötig."
             echo "neu=false" >> "$GITHUB_OUTPUT"
@@ -213,7 +218,8 @@ jobs:
           # Downloads beim Bauen (sherpa-onnx, NSIS/WiX) scheitern manchmal an GitHub-Serverfehlern (502/503/504) –
           # dann bis zu zweimal nach kurzer Pause neu versuchen
           for versuch in 1 2 3; do
-            npx tauri build --bundles ${{ matrix.bundles }} 2>&1 | tee build.log
+            BETA=""; [ "$GITHUB_REF_NAME" = "beta" ] && BETA="--config src-tauri/tauri.beta.conf.json"
+            npx tauri build --bundles ${{ matrix.bundles }} $BETA 2>&1 | tee build.log
             status=${PIPESTATUS[0]}
             [ $status -eq 0 ] && break
             grep -qiE "status( code)?:? 50[234]|http status: 50[234]|timed out|connection reset" build.log || break
@@ -306,3 +312,58 @@ jobs:
           while read -r id; do
             gh api -X DELETE "repos/${{ github.repository }}/actions/artifacts/$id" >/dev/null && echo "gelöscht: $id"
           done
+
+  beta:
+    name: Beta veröffentlichen
+    needs: build
+    if: github.ref == 'refs/heads/beta'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: LeitWerk-*
+          path: out
+          merge-multiple: true
+
+      # Vorab-Release (nie „latest“) + Update-Datei im Kanal „beta-kanal“. Die normale Version sieht davon nichts.
+      - name: Als Vorab-Release veröffentlichen
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="$(jq -r .version src-tauri/tauri.beta.conf.json)"
+          TAG="v$VERSION"
+          case "$VERSION" in *-beta*) ;; *) echo "::error::Beta-Version muss „-beta“ enthalten ($VERSION)"; exit 1;; esac
+          if gh release view "$TAG" --repo "$DOWNLOAD_REPO" >/dev/null 2>&1; then
+            echo "Version $VERSION ist schon veröffentlicht – nichts zu tun."
+            exit 0
+          fi
+          # Dateinamen ohne Leerzeichen („LeitWerk Beta_…“ → „LeitWerk-Beta_…“)
+          find out -type f -name '* *' | while read -r f; do mv "$f" "$(dirname "$f")/$(basename "$f" | tr ' ' '-')"; done
+          find out -type f | sort
+          python3 tools/release_notes.py "$VERSION" > notes.md
+          MAC="$(find out -name '*.app.tar.gz' | head -1)"
+          WIN="$(find out -name '*-setup.exe' | head -1)"
+          DMG="$(find out -name '*.dmg' | head -1)"
+          url() { echo "https://github.com/$DOWNLOAD_REPO/releases/download/$TAG/$(basename "$1")"; }
+          jq -n --arg v "$VERSION" --rawfile notes notes.md \
+            --arg macsig "$(cat "$MAC.sig")" --arg macurl "$(url "$MAC")" \
+            --arg winsig "$(cat "$WIN.sig")" --arg winurl "$(url "$WIN")" \
+            --arg date "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            '{version: $v, notes: $notes, pub_date: $date, platforms: {
+               "darwin-aarch64": {signature: $macsig, url: $macurl},
+               "windows-x86_64": {signature: $winsig, url: $winurl}}}' > latest.json
+          cat latest.json
+          gh release create "$TAG" --repo "$DOWNLOAD_REPO" --title "LeitWerk $VERSION" \
+            --notes-file notes.md --prerelease --latest=false \
+            "$MAC" "$WIN" "$DMG"
+          # Kanal: ein festes Vorab-Release, dessen latest.json bei jeder Beta ersetzt wird
+          if ! gh release view beta-kanal --repo "$DOWNLOAD_REPO" >/dev/null 2>&1; then
+            gh release create beta-kanal --repo "$DOWNLOAD_REPO" --title "Beta-Kanal (nur für LeitWerk Beta)" \
+              --notes "Update-Datei für das Programm LeitWerk Beta. Die normale Version verwendet diesen Kanal nicht." \
+              --prerelease --latest=false --target "$GITHUB_SHA"
+          fi
+          gh release upload beta-kanal latest.json --repo "$DOWNLOAD_REPO" --clobber

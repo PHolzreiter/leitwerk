@@ -1,5 +1,15 @@
 [
  {
+  "version": "0.115.0-beta.1",
+  "datum": "2026-11-09",
+  "titel": "Eigenes Programm zum Testen",
+  "punkte": [
+   "Läuft neben der normalen Version, mit eigenen Einstellungen und Spielständen",
+   "Übernimmt beim ersten Start Einstellungen, Spielstände und Fälle",
+   "Kartenpakete und Sprachmodelle werden gemeinsam genutzt"
+  ]
+ },
+ {
   "version": "0.114.3",
   "datum": "2026-11-08",
   "titel": "Update-Knopf und Fenster unten",

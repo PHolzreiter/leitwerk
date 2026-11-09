@@ -45,7 +45,12 @@ pub async fn update_check(app: AppHandle, pending: State<'_, PendingUpdate>) -> 
 }
 
 async fn suchen(app: &AppHandle) -> Result<Option<Update>, String> {
-    let url = format!("https://github.com/{DOWNLOAD_REPO}/releases/latest/download/latest.json");
+    // Normale Version: neuestes Release. Beta: nur der eigene Kanal (Vorab-Releases, die normale Version sieht sie nie)
+    let url = if crate::beta::ist_beta(&app.config().identifier) {
+        format!("https://github.com/{DOWNLOAD_REPO}/releases/download/beta-kanal/latest.json")
+    } else {
+        format!("https://github.com/{DOWNLOAD_REPO}/releases/latest/download/latest.json")
+    };
     let updater = app
         .updater_builder()
         .endpoints(vec![url.parse::<tauri::Url>().map_err(|e| e.to_string())?])

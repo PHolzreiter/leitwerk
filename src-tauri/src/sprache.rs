@@ -102,11 +102,8 @@ pub async fn sprache_vorladen(app: tauri::AppHandle, name: String) -> Result<(),
 static KONTEXT: Mutex<Option<(String, WhisperContext)>> = Mutex::new(None);
 
 fn modell_ordner(app: &tauri::AppHandle) -> Result<PathBuf, String> {
-    let dir = app
-        .path()
-        .app_data_dir()
-        .map_err(|e| format!("Datenordner nicht gefunden: {e}"))?
-        .join("sprache");
+    // in der Beta gemeinsam mit der normalen Version (große Downloads)
+    let dir = crate::beta::gemeinsam(app)?.join("sprache");
     std::fs::create_dir_all(&dir).map_err(|e| format!("Datenordner nicht anlegbar: {e}"))?;
     Ok(dir)
 }

@@ -1,4 +1,5 @@
 mod spielstaende;
+mod beta;
 mod addresses;
 mod gtn;
 mod handy;
@@ -527,6 +528,9 @@ fn write_zip_file(path: String, files: Vec<(String, String)>) -> Result<(), Stri
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    let kontext = tauri::generate_context!();
+    // Beta: beim ersten Start die Einstellungen der normalen Version übernehmen (bevor die Oberfläche startet)
+    beta::erster_start(&kontext.config().identifier);
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
@@ -535,7 +539,9 @@ pub fn run() {
         .setup(|app| {
             let data_dir = app.path().app_data_dir()?;
             let resources = app.path().resolve("maps", BaseDirectory::Resource).ok();
-            let dirs = Arc::new(DataDirs { packs: packs::packs_dir(&data_dir), resources });
+            // Kartenpakete: in der Beta gemeinsam mit der normalen Version (kein zweiter Download)
+            let geteilt = beta::gemeinsam(app.handle()).unwrap_or_else(|_| data_dir.clone());
+            let dirs = Arc::new(DataDirs { packs: packs::packs_dir(&geteilt), resources });
             fs::create_dir_all(&dirs.packs)?;
             // Reste abgebrochener Downloads entfernen
             if let Ok(rd) = fs::read_dir(&dirs.packs) {
@@ -644,7 +650,7 @@ pub fn run() {
             hpg::hpg_tablet_link,
             app_version
         ])
-        .build(tauri::generate_context!())
+        .build(kontext)
         .expect("LeitWerk konnte nicht gestartet werden")
         .run(|_app, event| {
             if let tauri::RunEvent::Exit = event {

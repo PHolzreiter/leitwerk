@@ -1,5 +1,11 @@
 # Änderungen
 
+## 0.115.0-beta.1 – Eigenes Programm zum Testen
+- **Läuft neben der normalen Version:** eigene Einstellungen, Spielstände und Fälle – die normale Version bleibt unverändert und bietet diese Version nicht als Update an
+- **Beim ersten Start** werden Einstellungen, Spielstände und Fälle der normalen Version einmal übernommen
+- **Kartenpakete, Sprach- und Stimmmodelle** werden gemeinsam genutzt – nichts wird doppelt geladen
+- Updates kommen nur innerhalb dieser Testversion
+
 ## 0.114.3 – Update-Knopf und Fenster unten
 - **Changelog, In Arbeit, Mithelfen:** erst wird der Reiter breit, dann fährt das Fenster hoch. Beim Schließen fährt erst das Fenster hinunter, dann wird der Reiter schmal
 - **Update-Knopf im Hauptmenü:** schlägt ein Update fehl, steht „Update fehlgeschlagen · erneut“ und darunter der Grund (am Mac mit Hinweis auf den Ordner „Programme“). Ein neuer Versuch sucht selbst noch einmal nach dem Update
