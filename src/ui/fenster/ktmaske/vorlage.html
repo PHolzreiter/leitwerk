@@ -1,0 +1,212 @@
+<div class="{{wCls}}">
+<section class="fe">
+  <sc-if value="{{leer}}">
+    <div class="inhalt"><div class="ew-leer">{{leerText}}</div></div>
+  </sc-if>
+  <sc-if value="{{da}}">
+  <div class="inhalt">
+
+    <!-- Kopf -->
+    <div class="kopf">
+      <div style="display: flex; align-items: flex-start; gap: 12px;">
+        <div style="flex: 1; min-width: 0;">
+          <div class="titel nr" style="font-size: 17px;">Auftrag {{nummer}}</div>
+          <div class="zeit">{{eingang}}</div>
+        </div>
+      </div>
+      <sc-for list="{{baender}}" as="b">
+        <div class="{{b.cls}}"><span class="pkt" style="background: {{b.farbe}};"></span><span class="band-t">{{b.text}}<sc-if value="{{b.lang}}"><span class="langt">&nbsp;· {{b.lang}}</span></sc-if></span><span style="flex: 1;"></span><sc-if value="{{b.knopf2}}"><button class="kn sm leise" onClick="{{b.klick2}}" title="{{b.titel2}}">{{b.knopf2}}</button></sc-if><sc-if value="{{b.knopf}}"><button class="kn sm leise" onClick="{{b.klick}}" title="{{b.titel}}">{{b.knopf}}</button></sc-if></div>
+      </sc-for>
+    </div>
+
+    <div class="spalten kt">
+
+    <div class="sp-l">
+    <!-- Auftrag (Code + Fahrt) -->
+    <div class="ab a-einsatz">
+      <div class="code">
+        <div class="code-t">
+          <div class="code-stufe"><span class="art">{{art}}</span></div>
+          <div class="code-nr nr">{{code}}</div>
+          <div class="code-n">{{codeText}}</div>
+          <sc-if value="{{codeZusatz}}"><div class="code-d" style="font-size: 13px; color: var(--text-2);">{{codeZusatz}}</div></sc-if>
+          <sc-if value="{{codeHinweis}}"><div class="code-d ew-rot">{{codeHinweis}}</div></sc-if>
+          <sc-if value="{{hatAbfrage}}"><div class="code-a" aria-label="Aus der Abfrage"><sc-for list="{{abfrage}}" as="x"><span class="{{x.cls}}">{{x.t}}</span></sc-for></div></sc-if>
+        </div>
+        <div class="code-k">
+          <span class="aufw">
+            <button class="kn sm" onClick="{{codeKlick}}" aria-expanded="{{codeExp}}">Ändern</button>
+            <sc-if value="{{codeOffen}}">
+              <div class="dd dd-code" role="menu">
+                <input class="feld" value="{{codeSuche}}" placeholder="Code oder Text …" aria-label="Code suchen" onInput="{{codeEingabe}}" onKeyDown="{{codeTaste}}" ref="{{codeRef}}">
+                <div class="dd-liste">
+                  <sc-for list="{{codeTreffer}}" as="c">
+                    <div class="{{c.cls}}" role="menuitem" onMouseDown="{{c.klick}}"><span class="nr dd-c">{{c.code}}</span><span style="flex: 1; min-width: 0;">{{c.text}}</span></div>
+                  </sc-for>
+                  <sc-if value="{{codeLeer}}"><div class="dd-z aus">{{codeLeer}}</div></sc-if>
+                </div>
+              </div>
+            </sc-if>
+          </span>
+        </div>
+      </div>
+      <div class="strecke">
+        <div class="punkt"><span class="marke a" aria-hidden="true">A</span><span class="linie"></span></div>
+        <div class="ort-k">
+          <div class="ort-kopf"><span class="ort-lbl a">Abholort</span><sc-if value="{{hatAbholzeit}}"><span class="ort-zeit">{{abholung}}<small>{{abholLbl}}</small></span></sc-if><span style="flex: 1;"></span><button class="kn sm leise" onClick="{{vonKlick}}">Ändern</button></div>
+          <sc-if value="{{vonZu}}"><div class="ort-adr">{{von}}</div><sc-if value="{{vonInfo}}"><div class="ort-info">{{vonInfo}}</div></sc-if></sc-if>
+          <sc-if value="{{vonOffen}}"><div class="suche">
+            <div class="suchfeld"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"></circle><path d="M20 20l-4.5-4.5"></path></svg><input class="feld" value="{{sv.query}}" placeholder="{{suchPlatz}}" aria-label="Ort suchen – Adresse oder Einrichtung" onInput="{{sv.eingabe}}" onKeyDown="{{sv.taste}}" ref="{{sv.ref}}"></div>
+            <sc-if value="{{sv.hinweis}}"><div class="zeit ew-such-hinweis">{{sv.hinweis}}</div></sc-if>
+            <sc-for list="{{sv.gruppen}}" as="gr">
+              <div class="tgruppe">{{gr.t}}</div>
+              <sc-for list="{{gr.items}}" as="it">
+                <button class="{{it.cls}}" onClick="{{it.klick}}">
+                  <span class="tsym"><sc-if value="{{it.org}}"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21V8l8-5 8 5v13M9 21v-6h6v6M12 8v4M10 10h4"></path></svg></sc-if><sc-if value="{{it.adr}}"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6-5.7-6-11a6 6 0 0 1 12 0c0 5.3-6 11-6 11z"></path><circle cx="12" cy="10" r="2"></circle></svg></sc-if><sc-if value="{{it.ruf}}"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"></path></svg></sc-if></span>
+                  <span style="min-width: 0;"><b>{{it.name}}</b><div class="tz">{{it.zeile}}</div></span>
+                  <span class="tr">{{it.rechts}}</span>
+                </button>
+              </sc-for>
+            </sc-for>
+            <div class="suche-fuss">
+              <button class="kn sm" onClick="{{sv.karte}}"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4l-6 2v14l6-2 6 2 6-2V4l-6 2z"></path><path d="M9 4v14M15 6v14"></path></svg>Auf der Karte wählen</button>
+              <label class="ew-zeitfeld"><span>Abholzeit</span><input class="feld nr" type="time" value="{{abholWert}}" onChange="{{abholSetzen}}" aria-label="Abholzeit"></label>
+              <span style="flex: 1;"></span><button class="kn sm leise" onClick="{{sv.zu}}">Abbrechen</button>
+            </div>
+          </div></sc-if>
+          <sc-if value="{{fahrtText}}"><div class="fahrt">{{fahrtText}}</div></sc-if>
+        </div>
+        <div class="punkt"><span class="marke z" aria-hidden="true">Z</span></div>
+        <div class="ort-k" style="padding-bottom: 2px;">
+          <div class="ort-kopf"><span class="ort-lbl z">Zielort</span><sc-if value="{{hatTermin}}"><span class="ort-zeit">{{termin}}<small>Termin</small></span></sc-if><span style="flex: 1;"></span><button class="kn sm leise" onClick="{{nachKlick}}">Ändern</button></div>
+          <sc-if value="{{nachZu}}"><div class="ort-adr">{{nach}}</div><sc-if value="{{nachInfo}}"><div class="ort-info">{{nachInfo}}</div></sc-if></sc-if>
+          <sc-if value="{{nachOffen}}"><div class="suche">
+            <div class="suchfeld"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"></circle><path d="M20 20l-4.5-4.5"></path></svg><input class="feld" value="{{sn.query}}" placeholder="{{suchPlatz}}" aria-label="Ort suchen – Adresse oder Einrichtung" onInput="{{sn.eingabe}}" onKeyDown="{{sn.taste}}" ref="{{sn.ref}}"></div>
+            <sc-if value="{{sn.hinweis}}"><div class="zeit ew-such-hinweis">{{sn.hinweis}}</div></sc-if>
+            <sc-for list="{{sn.gruppen}}" as="gr">
+              <div class="tgruppe">{{gr.t}}</div>
+              <sc-for list="{{gr.items}}" as="it">
+                <button class="{{it.cls}}" onClick="{{it.klick}}">
+                  <span class="tsym"><sc-if value="{{it.org}}"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21V8l8-5 8 5v13M9 21v-6h6v6M12 8v4M10 10h4"></path></svg></sc-if><sc-if value="{{it.adr}}"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6-5.7-6-11a6 6 0 0 1 12 0c0 5.3-6 11-6 11z"></path><circle cx="12" cy="10" r="2"></circle></svg></sc-if><sc-if value="{{it.ruf}}"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"></path></svg></sc-if></span>
+                  <span style="min-width: 0;"><b>{{it.name}}</b><div class="tz">{{it.zeile}}</div></span>
+                  <span class="tr">{{it.rechts}}</span>
+                </button>
+              </sc-for>
+            </sc-for>
+            <div class="suche-fuss">
+              <button class="kn sm" onClick="{{sn.karte}}"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4l-6 2v14l6-2 6 2 6-2V4l-6 2z"></path><path d="M9 4v14M15 6v14"></path></svg>Auf der Karte wählen</button>
+              <label class="ew-zeitfeld"><span>Termin</span><input class="feld nr" type="time" value="{{terminWert}}" onChange="{{terminSetzen}}" aria-label="Termin"></label>
+              <span style="flex: 1;"></span><button class="kn sm leise" onClick="{{sn.zu}}">Abbrechen</button>
+            </div>
+          </div></sc-if>
+        </div>
+      </div>
+      <sc-if value="{{hatAlarm}}">
+      <div class="alarmiert" aria-label="Alarmierte Fahrzeuge, nach Eintreffzeit">
+        <sc-for list="{{alarmiert}}" as="z">
+          <div class="{{z.cls}}">
+            <span class="stz">{{z.status}}</span>
+            <div style="min-width: 0;"><b class="nr">{{z.ruf}}</b> <span class="fz-ty">{{z.typ}}</span><span class="zeit fz-wa"> · {{z.wache}}</span><div class="zeit">{{z.stText}}<span class="fz-crew"> · {{z.crew}}</span></div></div>
+            <span class="pill blau">{{z.eta}}</span>
+            <span class="fz-kn"><button class="kn sm leise ew-funk" onClick="{{z.funk}}" aria-label="{{z.ruf}} über Funk rufen" title="{{z.ruf}} über Funk rufen"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="14" rx="2"></rect><path d="M10 7V3M10 11h4M10 14h4"></path></svg></button><sc-if value="{{z.kannStorno}}"><button class="kn sm leise fz-storno" onClick="{{z.storno}}" aria-label="Storno {{z.ruf}}" title="{{z.stornoTitel}}"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg><span class="t">Storno</span></button></sc-if></span>
+          </div>
+        </sc-for>
+      </div>
+      </sc-if>
+    </div>
+
+    <!-- Anrufer bzw. Anforderung und Patient (eingegeben im Telefon-Fenster) -->
+    <div class="ab a-partner">
+      <div class="ab-kopf"><span class="lbl">{{patTitel}}</span><button class="kn sm leise" onClick="{{patKlick}}">{{patKnopf}}</button></div>
+      <sc-if value="{{patZu}}">
+        <dl class="kv2" style="margin: 0;">
+          <dt>Patient</dt><dd>{{patient}}</dd>
+          <dt>{{anrLbl}}</dt><dd>{{anrufer}}<sc-if value="{{tel}}"> · <span class="nr">{{tel}}</span></sc-if></dd>
+          <sc-if value="{{grund}}"><dt>Grund</dt><dd>{{grund}}</dd></sc-if>
+          <sc-if value="{{info}}"><dt>Info</dt><dd>{{info}}</dd></sc-if>
+        </dl>
+      </sc-if>
+      <sc-if value="{{patOffen}}">
+        <div class="zwei">
+          <label class="feldl"><span>Patient</span><input class="feld" value="{{fName.wert}}" onFocus="{{fName.fokus}}" onInput="{{fName.ein}}" onBlur="{{fName.fertig}}" onKeyDown="{{fName.taste}}"></label>
+          <label class="feldl"><span>Alter</span><input class="feld nr" inputmode="numeric" value="{{fAlter.wert}}" onFocus="{{fAlter.fokus}}" onInput="{{fAlter.ein}}" onBlur="{{fAlter.fertig}}" onKeyDown="{{fAlter.taste}}"></label>
+          <label class="feldl"><span>Grund</span><input class="feld" value="{{fGrund.wert}}" onFocus="{{fGrund.fokus}}" onInput="{{fGrund.ein}}" onBlur="{{fGrund.fertig}}" onKeyDown="{{fGrund.taste}}"></label>
+          <label class="feldl"><span>Rückruf</span><input class="feld nr" value="{{fTel.wert}}" onFocus="{{fTel.fokus}}" onInput="{{fTel.ein}}" onBlur="{{fTel.fertig}}" onKeyDown="{{fTel.taste}}"></label>
+          <label class="feldl"><span>Krankenkasse</span><input class="feld" value="{{fKasse.wert}}" onFocus="{{fKasse.fokus}}" onInput="{{fKasse.ein}}" onBlur="{{fKasse.fertig}}" onKeyDown="{{fKasse.taste}}"></label>
+          <label class="feldl"><span>Info an die Besatzung</span><input class="feld" value="{{fInfo.wert}}" onFocus="{{fInfo.fokus}}" onInput="{{fInfo.ein}}" onBlur="{{fInfo.fertig}}" onKeyDown="{{fInfo.taste}}"></label>
+        </div>
+      </sc-if>
+    </div>
+
+    <!-- Protokoll -->
+    <div class="ab a-prot" style="border-bottom: 0;">
+      <div class="ab-kopf"><span class="lbl">Protokoll</span><span class="ew-knz"><sc-if value="{{mitExport}}"><button class="kn sm leise" onClick="{{exportKlick}}" title="Gespräch, Abfrage, Anweisung an die KI und Protokoll als Datei speichern">Gespräch exportieren</button></sc-if><sc-if value="{{protMehr}}"><button class="kn sm leise" onClick="{{protKlick}}">{{protKnopf}}</button></sc-if></span></div>
+      <div class="prot"><sc-for list="{{protokoll}}" as="p"><span class="t">{{p.t}}</span><span>{{p.x}}<sc-if value="{{p.von}}"><span class="zeit"> · {{p.von}}</span></sc-if></span></sc-for></div>
+    </div>
+
+    </div>
+    <div class="sp-r">
+    <!-- Fahrzeuge -->
+    <div class="ab a-fz">
+        <div style="display: flex; flex-direction: column; gap: 9px;">
+          <div class="ab-kopf"><span class="lbl">Fahrzeuge<sc-if value="{{fzZahl}}"> <span class="zeit" style="text-transform: none; letter-spacing: 0; font-weight: 500;">· {{fzZahl}}</span></sc-if></span><button class="kn sm" onClick="{{aoKlick}}" aria-expanded="{{aoExp}}"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h11a3 3 0 0 1 3 3v12H7a3 3 0 0 1-3-3z"></path><path d="M8 9h6M8 13h6"></path></svg>Ausrückordnung</button></div>
+          <div class="fz-werk">
+            <div class="segs gleit" role="group" aria-label="Typ" style="flex: 1; --i: {{typIdx}}; --n: {{typN}};"><sc-for list="{{typFilter}}" as="tf"><button class="{{tf.cls}}" onClick="{{tf.klick}}">{{tf.t}}</button></sc-for></div>
+            <button class="{{sucheKnopfCls}}" aria-label="Fahrzeug suchen" onClick="{{sucheKlick}}"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"></circle><path d="M20 20l-4.5-4.5"></path></svg>Suchen</button>
+          </div>
+          <sc-if value="{{sucheOffen}}">
+            <div class="suchfeld ew-fzsuche"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"></circle><path d="M20 20l-4.5-4.5"></path></svg><input class="feld" value="{{fzSuche}}" placeholder="{{fzSuchPlatz}}" aria-label="Fahrzeug suchen" onInput="{{fzSucheEin}}" onKeyDown="{{fzSucheTaste}}" ref="{{fzSucheRef}}"></div>
+          </sc-if>
+          <sc-if value="{{aoOffen}}">
+            <div class="warum">
+              <div style="font-weight: 600; color: var(--text); margin-bottom: 4px;">Ausrückordnung {{code}}</div>
+              <sc-for list="{{ausrueck}}" as="r"><div>{{r}}</div></sc-for>
+            </div>
+          </sc-if>
+          <sc-if value="{{listeHinweis}}"><div class="{{listeHinweisCls}}">{{listeHinweis}}</div></sc-if>
+          <div class="{{vlCls}}" role="table" aria-label="Fahrzeuge" style="--vn: {{vlN}}; --vb: {{vlB}}; --vs: {{vlS}};">
+            <div class="vk-n" role="row"><sc-for list="{{vkN}}" as="k"><div class="{{k.zelle}}"><button class="{{k.cls}}" onClick="{{k.klick}}" aria-sort="{{k.aria}}" title="{{k.titel}}"><span class="skt">{{k.t}}</span><svg class="ic pf" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5"></path></svg></button><sc-if value="{{k.zieh}}"><span class="spz" role="separator" aria-orientation="vertical" aria-label="Spaltenbreite" tabindex="0" title="Ziehen ändert die Spaltenbreite · Doppelklick: Standardbreiten" onMouseDown="{{k.ziehStart}}" onDoubleClick="{{k.reset}}" onKeyDown="{{k.taste}}" onClick="{{k.stopp}}"></span></sc-if></div></sc-for></div><div class="vk-b" role="row"><sc-for list="{{vkB}}" as="k"><div class="{{k.zelle}}"><button class="{{k.cls}}" onClick="{{k.klick}}" aria-sort="{{k.aria}}" title="{{k.titel}}"><span class="skt">{{k.t}}</span><svg class="ic pf" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5"></path></svg></button><sc-if value="{{k.zieh}}"><span class="spz" role="separator" aria-orientation="vertical" aria-label="Spaltenbreite" tabindex="0" title="Ziehen ändert die Spaltenbreite · Doppelklick: Standardbreiten" onMouseDown="{{k.ziehStart}}" onDoubleClick="{{k.reset}}" onKeyDown="{{k.taste}}" onClick="{{k.stopp}}"></span></sc-if></div></sc-for></div><div class="vk-s" role="row"><sc-for list="{{vkS}}" as="k"><div class="{{k.zelle}}"><button class="{{k.cls}}" onClick="{{k.klick}}" aria-sort="{{k.aria}}" title="{{k.titel}}"><span class="skt">{{k.t}}</span><svg class="ic pf" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5"></path></svg></button><sc-if value="{{k.zieh}}"><span class="spz" role="separator" aria-orientation="vertical" aria-label="Spaltenbreite" tabindex="0" title="Ziehen ändert die Spaltenbreite · Doppelklick: Standardbreiten" onMouseDown="{{k.ziehStart}}" onDoubleClick="{{k.reset}}" onKeyDown="{{k.taste}}" onClick="{{k.stopp}}"></span></sc-if></div></sc-for></div>
+            <sc-for list="{{vl}}" as="f">
+              <sc-if value="{{f.trenner}}"><div class="trennz">{{f.trennText}}</div></sc-if>
+              <sc-if value="{{f.fahrzeug}}">
+                <div class="{{f.cls}}" role="row" onClick="{{f.klick}}" title="{{f.titel}}">
+                  <span class="stz">{{f.st}}</span>
+                  <div class="nm"><b>{{f.ruf}}</b></div>
+                  <span class="typ2">{{f.typ}}</span>
+                  <div class="vcrew"><sc-for list="{{f.crew}}" as="q"><span class="{{q.cls}}">{{q.t}}</span></sc-for></div>
+                  <div class="stx"><span class="stt">{{f.stx}}</span><sc-if value="{{f.hatHw}}"><span class="hw">{{f.hinweis}}</span></sc-if></div>
+                  <div class="lst">{{f.von}}</div><div class="ziel">{{f.nach}}</div>
+                  <div class="{{f.ortCls}}">{{f.ort}}</div>
+                  <div class="codes"><sc-for list="{{f.codes}}" as="c"><span class="code1" tabindex="0"><span class="cc">{{c.c}}</span><span class="ct" role="tooltip">{{c.text}}</span></span></sc-for></div>
+                  <div class="vzeit"><span class="eta">{{f.zeit}}</span><sc-if value="{{f.hatLos}}"><span class="{{f.losCls}}">{{f.los}}</span></sc-if></div>
+                </div>
+              </sc-if>
+            </sc-for>
+            <sc-if value="{{vlLeer}}"><div class="trennz ew-vl-leer">{{vlLeer}}</div></sc-if>
+          </div>
+          <sc-if value="{{wieZeigen}}"><div class="wie">
+            <div class="lbl">{{wieTitel}}</div>
+            <div class="segs gleit" role="group" aria-label="Wann fährt es" style="--i: {{wieIdx}}; --n: {{wieN}};"><sc-for list="{{wieWahl}}" as="w"><button class="{{w.cls}}" onClick="{{w.klick}}" title="{{w.titel}}">{{w.t}}</button></sc-for></div>
+            <div class="zeit">{{wieText}}</div>
+          </div></sc-if>
+        </div>
+    </div>
+
+    </div>
+    </div>
+
+    <!-- Fuß -->
+    <div class="fuss">
+      <sc-if value="{{nebenKnopf}}"><button class="kn gefahr neben" onClick="{{neben}}">{{nebenKnopf}}</button></sc-if>
+      <span class="aufw mehr-w">
+        <button class="kn mehr" aria-label="Weitere Aktionen" onClick="{{mehrKlick}}" aria-expanded="{{mehrExp}}"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1"></circle><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle></svg></button>
+        <sc-if value="{{mehrOffen}}"><div class="dd hoch" role="menu"><sc-if value="{{nebenKnopf}}"><div class="dd-z ew-wahl ew-rot" role="menuitem" onMouseDown="{{neben}}">{{nebenKnopf}}</div></sc-if><div class="dd-z ew-wahl" role="menuitem" onMouseDown="{{zurAbfrage}}">Zur Aufnahme (Abfrage)</div></div></sc-if>
+      </span>
+      <span style="flex: 1;" class="neben"></span>
+      <button class="kn" onClick="{{vormerken}}" title="{{vormerkenTitel}}">Vormerken</button>
+      <button class="kn prim" onClick="{{alarmieren}}">{{hauptKnopf}}</button>
+    </div>
+  </div>
+  </sc-if>
+</section>
+</div>

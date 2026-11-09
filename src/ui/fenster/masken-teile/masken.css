@@ -142,3 +142,6 @@
 :where(.ew-maske) .ew-such-hinweis{padding:2px 4px}
 :where(.ew-maske) .ew-fehlt{background:var(--rot-flaeche);color:var(--text)}
 :where(.ew-maske) .kn.ew-aus{opacity:.5}
+/* KT/SEK: Zeit beim Ändern des Abholorts bzw. Zielorts (nur die eingegebene Zeit zählt) */
+:where(.ew-maske) .ew-zeitfeld{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--dim)}
+:where(.ew-maske) .ew-zeitfeld .feld{width:96px;height:28px;padding:0 6px}

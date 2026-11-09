@@ -40,8 +40,11 @@ export function ortKurz(label: string | undefined | null): string {
 export function wacheOrt(fz: SimFahrzeug): string {
   const st = store.get("stations", fz.stationId);
   if (st?.ort) return st.ort;
-  // ohne Ort: Organisationswörter vorne weglassen
-  return (fz.stationName || fz.kurzname || "").replace(/^.*?(Bezirksstelle|Ortsstelle|Stadtstelle|Dienststelle|Luftrettungszentrum|Stützpunkt)\s+/i, "");
+  // ohne Ort: Namen von Organisationen und Dienststellen-Arten vorne weglassen (keine echten Organisationsnamen zeigen)
+  return (fz.stationName || fz.kurzname || "")
+    .replace(/^(ÖAMTC|Österreichisches Rotes Kreuz|Rotes Kreuz|Arbeiter-Samariter-Bund( Österreichs)?|Samariterbund|Johanniter[- ](Unfall-Hilfe|Krankentransport)|Malteser|Grünes Kreuz|Notruf Niederösterreich|ÖBB)\s*/i, "")
+    .replace(/^(Bezirksstelle|Ortsstelle|Stadtstelle|Dienststelle|Rettungsstelle|Luftrettungszentrum|Stützpunkt)\s*/i, "")
+    .trim();
 }
 
 function wache(fz: SimFahrzeug): string {

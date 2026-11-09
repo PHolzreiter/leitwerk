@@ -4,15 +4,15 @@
  * Entwurf (fenster/einsatzmaske, fenster/ktmaske); hier bleibt die Krankenhaus-Buchung für den Großeinsatz.
  */
 import { einsatzFenster } from "../fenster/einsatzmaske";
+import { istSek, ktFenster } from "../fenster/ktmaske";
 import { buchungName } from "../../data/klinik";
 import { ALTERSGRUPPEN, altersgruppeVon, DRINGLICHKEITEN, dringlichkeitFuer, symptom, symptomAusDiagnose, symptomSuche, zuweisungId, zuweisungLesen, type Altersgruppe, type Dringlichkeit, type Symptom } from "../../data/zuweisung";
 import { store } from "../../data/store";
 import { sim, type Einsatz } from "../../sim/engine";
 import { distanceM } from "../../sim/geo";
 import { el, esc, toast } from "../dom";
-import { ktMaske } from "../ktView";
 import { panelZeigen, registriere, type PanelKontext } from "../ws/arbeitsplatz";
-import { auswahl, onAuswahl, waehle } from "../ws/auswahl";
+import { auswahl, onAuswahl } from "../ws/auswahl";
 import { addressInput, fehlerZeigen, uhr } from "./teile";
 
 /** Krankenhaus buchen (Zuweisung: Symptom → Alter → Dringlichkeit → passende Häuser) – auch im Großeinsatz je Patient */
@@ -248,20 +248,17 @@ export function khBuchung(e: Einsatz, opt: { gebucht?: () => void; kompakt?: boo
   return { root: khBox, refresh };
 }
 
-// ---------------------------------------------------------------- Fenster
+// ---------------------------------------------------------------- Fenster (Reiter RD-, KT-, SEK-Übersicht)
 
-/** RD-Übersicht: neue Maske aus dem Entwurf */
-function rdFenster(ctx: PanelKontext) {
-  const f = einsatzFenster(ctx);
+/** Fenster einer Maske: zeigt den gewählten Auftrag der passenden Art (Abwahl lässt den letzten stehen) */
+function maskenFenster(f: { el: HTMLElement; dispose(): void; zeichnen(): void; setzeId(id: string | null): void }, passt: () => string | null, gibt: (id: string) => boolean) {
   let fuer: string | null = null;
   const zeigen = () => {
-    const a = auswahl();
-    const e = a.art === "einsatz" && a.id ? sim.einsatz(a.id) : undefined;
-    // nur wechseln, wenn ein anderer Einsatz gewählt wurde (Abwahl lässt den letzten stehen)
-    if (e && e.id !== fuer) {
-      fuer = e.id;
-      f.setzeId(e.id);
-    } else if (fuer && !sim.einsatz(fuer)) {
+    const neu = passt();
+    if (neu && neu !== fuer) {
+      fuer = neu;
+      f.setzeId(neu);
+    } else if (fuer && !gibt(fuer)) {
       fuer = null;
       f.setzeId(null);
     } else f.zeichnen();
@@ -275,88 +272,49 @@ function rdFenster(ctx: PanelKontext) {
       zeigen();
     }, 300);
   };
-  const aus = [sim.onChange(spaeter), onAuswahl((a) => (a.art === "einsatz" || (!a.art && !a.id)) && zeigen())];
+  const aus = [sim.onChange(spaeter), onAuswahl(() => zeigen())];
   zeigen();
   return { el: f.el, dispose: () => (aus.forEach((x) => x()), f.dispose()) };
 }
 
-
-function maskenFenster(ctx: PanelKontext, art: "einsatz" | "kt") {
-  const root = el("div", { class: "pl maske" });
-  let fuer: string | null = null;
-  let obj: unknown = null;
-  let dyn: { refresh(): void } | null = null;
-
-  const leer = (text: string) => {
-    fuer = null;
-    obj = null;
-    dyn = null;
-    root.innerHTML = `<div class="muted pad mask-leer">${text}</div>`;
-    ctx.setzeTitel(art === "einsatz" ? "Einsatzmaske" : "KT-Maske");
-  };
-
-  const zeigen = () => {
-    const a = auswahl();
-    {
-      const k = a.art === "kt" && a.id ? sim.ktAuftrag(a.id) : undefined;
-      if (!k) {
-        if (!fuer) leer("Einen Krankentransport oder eine Überstellung in der Einsatzliste anklicken.");
-        return;
-      }
-      if (fuer === k.id && obj === k) return dyn?.refresh();
-      fuer = k.id;
-      obj = k;
-      root.innerHTML = "";
-      const m = ktMaske(k, {
-        flyTo: () => undefined,
-        abfrage: (id) => {
-          waehle("kt", id, { maske: false, karte: false });
-          panelZeigen("abfrage");
-        },
-      });
-      root.appendChild(m.root);
-      dyn = m;
-      ctx.setzeTitel(`${k.d.sek || k.d.code?.startsWith("SEK") ? "Überstellung" : "KT"} ${k.nummer}`);
-    }
-  };
-
-  let wartet = false;
-  const spaeter = () => {
-    if (wartet) return;
-    wartet = true;
-    setTimeout(() => {
-      wartet = false;
-      zeigen();
-    }, 400);
-  };
-  const aus = [
-    sim.onChange(spaeter),
-    onAuswahl((a) => {
-      if (a.art === art || (!a.art && !a.id)) zeigen();
-    }),
-  ];
-  zeigen();
-  return { el: root, dispose: () => aus.forEach((f) => f()) };
-}
+const gewaehlterEinsatz = () => {
+  const a = auswahl();
+  return a.art === "einsatz" && a.id && sim.einsatz(a.id) ? a.id : null;
+};
+const gewaehlterAuftrag = (sek: boolean) => {
+  const a = auswahl();
+  const k = a.art === "kt" && a.id ? sim.ktAuftrag(a.id) : undefined;
+  return k && istSek(k) === sek ? k.id : null;
+};
 
 registriere({
   komponente: "einsatz",
   titel: "RD-Übersicht",
   info: "Notfall: Code, Einsatzort, Fahrzeuge alarmieren, Krankenhaus",
   bereich: "rechts",
-  erstellen: (ctx) => rdFenster(ctx),
+  erstellen: (ctx: PanelKontext) => maskenFenster(einsatzFenster(ctx), gewaehlterEinsatz, (id) => !!sim.einsatz(id)),
 });
 
 registriere({
   komponente: "kt",
-  titel: "KT-Maske",
-  info: "Krankentransport oder Überstellung aufnehmen und disponieren",
+  titel: "KT-Übersicht",
+  info: "Krankentransport: Abholort, Zielort, Fahrzeug vormerken oder losschicken",
   bereich: "rechts",
-  erstellen: (ctx) => maskenFenster(ctx, "kt"),
+  erstellen: (ctx: PanelKontext) => maskenFenster(ktFenster(ctx, false), () => gewaehlterAuftrag(false), (id) => !!sim.ktAuftrag(id)),
+});
+
+registriere({
+  komponente: "sek",
+  titel: "SEK-Übersicht",
+  info: "Überstellung zwischen Krankenhäusern: Abholort, Zielort, Sekundärfahrzeug",
+  bereich: "rechts",
+  erstellen: (ctx: PanelKontext) => maskenFenster(ktFenster(ctx, true), () => gewaehlterAuftrag(true), (id) => !!sim.ktAuftrag(id)),
 });
 
 // Auswahl: passende Maske nach vorne holen (nur das Fenster, in dem geklickt wurde)
 onAuswahl((a, opts, hier) => {
   if (!hier || !a.id || opts.maske === false) return;
-  panelZeigen(a.art === "kt" ? "kt" : "einsatz");
+  if (a.art !== "kt") return panelZeigen("einsatz");
+  const k = sim.ktAuftrag(a.id);
+  panelZeigen(k && istSek(k) ? "sek" : "kt");
 });
