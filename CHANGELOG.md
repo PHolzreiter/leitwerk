@@ -1,5 +1,14 @@
 # Änderungen
 
+## 0.115.0-beta.2 – Neue Kopfleiste
+- **Neue Leiste oben:** links das Spiel (Pause, Zeitraffer, Uhr, Wetter, welche Einsätze neu kommen), rechts du (welche Anrufe du annimmst, Fenster, Anordnung, Status, Fehler melden)
+- **Schubladen statt Menüs:** Der angeklickte Knopf wird breit, dann fährt das Fenster darunter heraus; beim Schließen umgekehrt
+- **Passt sich der Breite an:** Beschriftungen klappen weich ein, bei wenig Platz wandert einiges ins „⋯“
+- **Wetter:** Aktuell, Prognose und Warnungen mit Flugbetrieb für den NAH
+- **Fenster und Anordnung:** offene Fenster mit Haken, Vorlagen mit Vorschau, eigene Anordnung direkt speichern
+- **Update und Fehler melden** direkt in der Leiste
+- Einstellungen, Fälle und Spielstand vorerst über einen Klick aufs Logo
+
 ## 0.115.0-beta.1 – Eigenes Programm zum Testen
 - **Läuft neben der normalen Version:** eigene Einstellungen, Spielstände und Fälle – die normale Version bleibt unverändert und bietet diese Version nicht als Update an
 - **Beim ersten Start** werden Einstellungen, Spielstände und Fälle der normalen Version einmal übernommen

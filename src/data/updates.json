@@ -1,5 +1,16 @@
 [
  {
+  "version": "0.115.0-beta.2",
+  "datum": "2026-11-09",
+  "titel": "Neue Kopfleiste",
+  "punkte": [
+   "Neue Leiste oben mit Schubladen für Wetter, Fenster und Anordnung",
+   "Passt sich der Fensterbreite an, ohne zu springen",
+   "Update und Fehler melden direkt in der Leiste",
+   "Einstellungen, Fälle und Spielstand vorerst über das Logo"
+  ]
+ },
+ {
   "version": "0.115.0-beta.1",
   "datum": "2026-11-09",
   "titel": "Eigenes Programm zum Testen",
