@@ -164,7 +164,7 @@ function einfuehrung(): void {
   box.innerHTML = `<b>Neu: frei anordenbare Fenster</b>
     <ul>
       <li>Reiter (z. B. „Funk“) mit der Maus ziehen: daneben, darunter oder als weiterer Reiter ablegen.</li>
-      <li>Ränder zwischen den Fenstern ziehen ändert die Größe. <b>⤢</b> macht ein Fenster groß, <b>⧉</b> schiebt es in ein eigenes Programmfenster (zweiter Bildschirm).</li>
+      <li>Ränder zwischen den Fenstern ziehen ändert die Größe. Rechts im Fensterkopf: <b>Vollbild</b>, <b>In neuem Fenster öffnen</b> (zweiter Bildschirm) und <b>Schließen</b>.</li>
       <li>Geschlossene Fenster holst du oben über <b>Fenster ▾</b> zurück. Fertige Anordnungen gibt es unter <b>Anordnung ▾</b>.</li>
     </ul>`;
   const ok = document.createElement("button");
