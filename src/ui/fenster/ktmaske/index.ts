@@ -5,7 +5,7 @@
 import vorlage from "./vorlage.html?raw";
 import css from "../masken-teile/masken.css?raw";
 import { KtMaskeLogik } from "./logik.js";
-import { entwurfEinbinden, type EntwurfFenster } from "../../entwurf/einbinden";
+import { abfrageBreite, entwurfEinbinden, type EntwurfFenster } from "../../entwurf/einbinden";
 import { gespraechExportieren } from "../../gespraechExport";
 import { store } from "../../../data/store";
 import { sim, type KtVorschlag, type SimFahrzeug } from "../../../sim/engine";
@@ -506,7 +506,7 @@ export function ktFenster(ctx: PanelKontext, sek: boolean): { el: HTMLElement; d
   const kurz = sek ? "SEK" : "KT";
   let titelSchmal: boolean | null = null;
   const titel = () => {
-    const schmal = root.offsetWidth < 430;
+    const schmal = abfrageBreite(root) < 430;
     if (schmal === titelSchmal) return;
     titelSchmal = schmal;
     ctx.setzeTitel(schmal ? kurz : `${kurz}-Übersicht`);

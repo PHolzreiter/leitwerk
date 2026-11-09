@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "LeitWerk Beta",
-  "version": "0.115.0-beta.4",
+  "version": "0.115.0-beta.5",
   "identifier": "at.pholzreiter.leitwerk.beta"
 }

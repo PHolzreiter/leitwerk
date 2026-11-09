@@ -1,5 +1,8 @@
 # Änderungen
 
+## 0.115.0-beta.5 – Skalierung am Mac
+- **Alle Fenster:** Bei skalierter Oberfläche am Mac wählten die Fenster die falsche Ansicht (Spalten im Fahrzeuge-Fenster lagen übereinander). Die Größengrenzen aus dem Entwurf gelten jetzt bei jeder Skalierung
+
 ## 0.115.0-beta.4 – Korrekturen
 - **Fahrzeuge:** Spalten passten bei vergrößerter Oberfläche (Skalierung) nicht zusammen – Status stand über dem Fahrtziel
 - **Fahrzeuge:** Statusnamen wie im Entwurf („Frei auf Wache“ statt „Frei Wache“)

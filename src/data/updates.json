@@ -1,5 +1,13 @@
 [
  {
+  "version": "0.115.0-beta.5",
+  "datum": "2026-11-09",
+  "titel": "Skalierung am Mac",
+  "punkte": [
+   "Fenster zeigen bei skalierter Oberfläche die richtige Ansicht – Fahrzeuge-Spalten liegen nicht mehr übereinander"
+  ]
+ },
+ {
   "version": "0.115.0-beta.4",
   "datum": "2026-11-09",
   "titel": "Korrekturen",

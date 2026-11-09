@@ -32,6 +32,120 @@ export interface EntwurfFenster<K extends DCLogic> {
   entfernen(): void;
 }
 
+/**
+ * Container-Abfragen bei skalierter Oberfläche (WebView am Mac).
+ *
+ * WebKit wertet @container … (min-width: 820px) bei Seitenzoom mit gezoomten Pixeln aus: bei 67 %
+ * sieht ein 1100 px breites Fenster für das CSS wie 740 px aus. Dann wählte das CSS die schmale
+ * Ansicht, die Logik (props.breite) aber die breite – Spalten lagen übereinander, und die Fenster
+ * zeigten nicht die Ansicht aus dem Entwurf. In Chromium tritt das nicht auf (Faktor 1).
+ *
+ * Abhilfe: Faktor messen (Probe mit einer Abfrage bei 1000 px wird verbreitert, bis sie greift)
+ * und die Pixelwerte in allen Container-Abfragen damit umrechnen. Danach gelten die Grenzen aus
+ * dem Entwurf wieder in echten CSS-Pixeln – gleich wie props.breite.
+ */
+function abfrageFaktor(): number {
+  const test = (window as { __lwFaktor?: number }).__lwFaktor; // nur für Tests
+  if (test) return test;
+  const huelle = document.createElement("div");
+  huelle.style.cssText = "position:fixed;left:-20000px;top:0;height:10px;visibility:hidden;pointer-events:none;container:lwprobe / inline-size";
+  const kind = document.createElement("div");
+  kind.className = "lw-probe-k";
+  huelle.appendChild(kind);
+  const st = document.createElement("style");
+  st.dataset.lwProbe = "1";
+  st.textContent = ".lw-probe-k{width:0;height:1px}@container lwprobe (min-width: 1000px){.lw-probe-k{width:7px}}";
+  document.head.appendChild(st);
+  document.body.appendChild(huelle);
+  const greift = (w: number) => {
+    huelle.style.width = `${w}px`;
+    return kind.offsetWidth > 0;
+  };
+  let f = 1;
+  try {
+    if (!greift(1000) || greift(999)) {
+      let lo = 100, hi = 20000;
+      if (greift(lo)) hi = lo;
+      else if (!greift(hi)) lo = hi;
+      while (hi - lo > 1) {
+        const m = Math.floor((lo + hi) / 2);
+        if (greift(m)) hi = m;
+        else lo = m;
+      }
+      f = 1000 / hi;
+    }
+  } finally {
+    huelle.remove();
+    st.remove();
+  }
+  return Math.abs(f - 1) < 0.004 ? 1 : f;
+}
+
+/** ursprünglicher Text je umgeschriebener Regel */
+const original = new WeakMap<CSSRule, string>();
+let faktorJetzt = 1;
+
+function regelnUmrechnen(liste: CSSRuleList, ziel: CSSStyleSheet | CSSGroupingRule, f: number): void {
+  for (let i = 0; i < liste.length; i++) {
+    const r = liste[i];
+    if (typeof CSSContainerRule !== "undefined" && r instanceof CSSContainerRule) {
+      const orig = original.get(r) ?? r.cssText;
+      const k = orig.indexOf("{");
+      const kopf = orig.slice(0, k);
+      const neuKopf = f === 1 ? kopf : kopf.replace(/(\d+(?:\.\d+)?)px/g, (_, n: string) => `${Math.round(Number(n) * f * 100) / 100}px`);
+      const text = neuKopf + orig.slice(k);
+      if (text === r.cssText) continue;
+      try {
+        ziel.deleteRule(i);
+        ziel.insertRule(text, i);
+        original.set(ziel.cssRules[i], orig);
+      } catch (e) {
+        console.warn("Container-Abfrage umrechnen", e);
+      }
+    } else if (r instanceof CSSMediaRule || r instanceof CSSSupportsRule) {
+      regelnUmrechnen(r.cssRules, r, f);
+    }
+  }
+}
+
+function allesUmrechnen(f: number): void {
+  for (const sheet of Array.from(document.styleSheets)) {
+    if ((sheet.ownerNode as HTMLElement | null)?.dataset?.lwProbe) continue;
+    let regeln: CSSRuleList;
+    try {
+      regeln = sheet.cssRules;
+    } catch {
+      continue; // fremde Stylesheets (Schriften) – keine Abfragen
+    }
+    regelnUmrechnen(regeln, sheet, f);
+  }
+}
+
+let geplant = 0;
+/** Faktor neu messen und alle Container-Abfragen anpassen (nur wenn nötig) */
+export function abfragenAnpassen(): void {
+  if (geplant) return;
+  geplant = requestAnimationFrame(() => {
+    geplant = 0;
+    const f = abfrageFaktor();
+    // auch bei gleichem Faktor neu durchgehen: es können neue Stylesheets dazugekommen sein
+    if (f === 1 && faktorJetzt === 1) return;
+    faktorJetzt = f;
+    allesUmrechnen(f);
+  });
+}
+window.addEventListener("resize", abfragenAnpassen);
+new MutationObserver(abfragenAnpassen).observe(document.head, { childList: true });
+abfragenAnpassen();
+
+/** Breite/Höhe eines Fensters in CSS-Pixeln (wie in den Container-Abfragen nach dem Umrechnen) */
+export function abfrageBreite(el: HTMLElement): number {
+  return el.offsetWidth;
+}
+export function abfrageHoehe(el: HTMLElement): number {
+  return el.offsetHeight;
+}
+
 function thema(): "dunkel" | "hell" {
   return document.documentElement.dataset.theme === "dunkel" ? "dunkel" : "hell";
 }
@@ -56,8 +170,8 @@ export function entwurfEinbinden<K extends DCLogic>(
   const wurzel = document.createElement("div");
   wurzel.className = "ap ew-fenster";
   ziel.appendChild(wurzel);
-  // Größe in CSS-Pixeln des Fensters (offsetWidth): bleibt bei UI-Skalierung (zoom) gleich wie die Container-Abfragen im CSS
-  const k = bauen({ ...props, breite: ziel.offsetWidth || 800, hoehe: ziel.offsetHeight || 600, thema: thema() });
+  // Größe so, wie die Container-Abfragen im CSS sie sehen (sonst passt bei Skalierung die Spaltenwahl nicht zum CSS)
+  const k = bauen({ ...props, breite: abfrageBreite(ziel) || 800, hoehe: abfrageHoehe(ziel) || 600, thema: thema() });
   const a = ansicht(vorlage, wurzel);
   let weg = false;
   k._zeichnen = () => {
@@ -69,7 +183,7 @@ export function entwurfEinbinden<K extends DCLogic>(
     }
   };
   const groesse = new ResizeObserver(() => {
-    const b = ziel.offsetWidth, h = ziel.offsetHeight;
+    const b = abfrageBreite(ziel), h = abfrageHoehe(ziel);
     if (!b || !h || (b === k.props.breite && h === k.props.hoehe)) return;
     k.props = { ...k.props, breite: b, hoehe: h };
     k._zeichnen?.();

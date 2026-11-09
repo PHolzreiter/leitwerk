@@ -5,7 +5,7 @@
 import vorlage from "./vorlage.html?raw";
 import css from "../masken-teile/masken.css?raw";
 import { EinsatzmaskeLogik } from "./logik.js";
-import { entwurfEinbinden, type EntwurfFenster } from "../../entwurf/einbinden";
+import { abfrageBreite, entwurfEinbinden, type EntwurfFenster } from "../../entwurf/einbinden";
 import { gesagteAdresse } from "../../../abfrage/adresseGesagt";
 import { nummerAus } from "../../../sim/rufnummer";
 import { PARTNER, PARTNER_ARTEN, type PartnerArt } from "../../../sim/partner";
@@ -645,7 +645,7 @@ export function einsatzFenster(ctx: PanelKontext): { el: HTMLElement; dispose():
 
   let titelSchmal: boolean | null = null;
   const titel = () => {
-    const schmal = root.offsetWidth < 430;
+    const schmal = abfrageBreite(root) < 430;
     if (schmal === titelSchmal) return;
     titelSchmal = schmal;
     ctx.setzeTitel(schmal ? "RD" : "RD-Übersicht");
