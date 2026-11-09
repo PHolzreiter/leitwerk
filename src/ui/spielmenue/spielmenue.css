@@ -121,7 +121,7 @@
 
 /* ---------- Einbau im Spiel ---------- */
 /* Menü liegt über dem Arbeitsplatz: das Spiel scheint unscharf durch (statt des Bilds im Entwurf) */
-.smw-wurzel{position:fixed;inset:0;z-index:4900;overflow:hidden;opacity:0;transition:opacity .22s ease}
+.smw-wurzel{position:fixed;inset:0;width:100vw;height:100vh;z-index:4900;overflow:hidden;opacity:0;transition:opacity .22s ease}
 .smw-wurzel.auf{opacity:1}
 .smw-wurzel.zu{opacity:0;pointer-events:none}
 .smw-wurzel .sm-r{min-height:0;height:100% !important;background:rgba(10,11,14,.35);-webkit-backdrop-filter:blur(14px) saturate(.8);backdrop-filter:blur(14px) saturate(.8)}
@@ -150,3 +150,18 @@ body:has(.smw-wurzel) .gross-overlay,body:has(.smw-wurzel) .dlg-overlay,body:has
 .sm-niedrig .sm-nav{padding:10px 0}
 .sm-niedrig .sm-no{font-size:44px}
 .sm-niedrig .sm-lb{font-size:26px}
+
+/* Eingabefelder der Einstellungen: Regeln des Spiels für input/select hier nicht anwenden */
+.smw-wurzel .l-input,.smw-wurzel .l-select,.smw-wurzel .l-num{box-sizing:border-box;padding:9px 12px;background-color:#111216;border:1px solid #2A2F3A;border-radius:8px;color:#F5F7FA;font:500 14px Inter,sans-serif;box-shadow:none;height:auto}
+.smw-wurzel .l-num{padding:7px 10px}
+.smw-wurzel .l-input::placeholder{color:#6B7385}
+.smw-wurzel .l-input:focus,.smw-wurzel .l-select:focus,.smw-wurzel .l-num:focus{outline:2px solid #3B8BFF;outline-offset:1px;border-color:#2A2F3A}
+.smw-wurzel .sm-feld{background-color:#111216;color:#F5F7FA;border:1px solid #2A2F3A}
+
+/* Spieler-Tabelle als Raster (Zeilen kommen aus einer Liste) – Aussehen wie die Tabelle im Entwurf */
+.sm-tab-sp{display:grid;grid-template-columns:auto auto auto repeat(4,auto) 1fr;font-size:14px;min-width:760px}
+.sm-tab-sp .sm-tr{display:contents}
+.sm-tab-sp .sm-tr > span{padding:10px;border-top:1px solid #23262F;display:flex;align-items:center;white-space:nowrap}
+.sm-tab-sp .sm-th > span{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#9AA3B5;padding:0 10px 8px;border-top:0}
+.sm-tab-sp .sm-c{justify-content:center}
+.sm-tab-sp .sm-tr > span:last-child{justify-content:flex-end}

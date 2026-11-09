@@ -215,3 +215,14 @@
 .ei-kzeit span{white-space:nowrap}
 /* Einstellungen im Hauptmenü: Schloss in den Reitern */
 .l-tab .ein-schloss{display:inline-block;vertical-align:-1px;margin-left:6px;color:#6B7385}
+.ei-lz > span:only-child{grid-column:1/-1}
+/* Fließend: schmale Einstellungen (Spielmenü in kleinen Fenstern) – Liste schmäler, Raster der KH-Aufnahme ohne feste Mindestbreiten */
+.ein-w{container-type:inline-size}
+@container (max-width:1000px){.ein-w .l-stag{grid-template-columns:180px minmax(0,1fr) !important;gap:18px !important}}
+@container (max-width:700px){.ein-w .l-stag{grid-template-columns:132px minmax(0,1fr) !important;gap:12px !important}.ein-w .l-spage span{display:none !important}}
+.ei-otab{grid-template-columns:minmax(90px,1.1fr) minmax(110px,1.6fr) 56px minmax(0,130px) minmax(0,84px)}
+.ei-otab > span{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.ei-sgrid{grid-template-columns:minmax(110px,1fr) repeat(3,minmax(34px,96px))}
+.ei-sname{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ei-ztab{grid-template-columns:minmax(120px,1.6fr) minmax(110px,170px) minmax(120px,1.6fr) minmax(0,130px)}
+.ei-frage{grid-template-columns:minmax(0,1fr) minmax(120px,230px) minmax(140px,280px)}

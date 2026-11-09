@@ -80,7 +80,8 @@ export class SpielmenueKomponente {
     const modus = K.modus;
     const offen = st.offen || null;
     const pilot = modus === 'Pilot';
-    const solo = modus === 'Solo', host = modus === 'Host', gast = modus === 'Mitspieler' || pilot;
+    // Rolle im Multiplayer (der Pilot ist Mitspieler oder fliegt im Übungsflug allein)
+    const solo = K.rolle === 'aus', host = K.rolle === 'host', gast = K.rolle === 'client';
     const irgendwas = !!offen && offen !== 'beenden' && offen !== 'hauptmenue';
     const auf = (k) => () => {
       const neu = offen === k ? null : k;
@@ -97,7 +98,7 @@ export class SpielmenueKomponente {
     const B = Number(this.props.breite) || 1600, H = Number(this.props.hoehe) || 950;
     // Höhe der offenen Karte: alle Punkte gleich hoch wie 03 Einstellungen (Inhalt scrollt), niedrige Fläche enger
     const niedrigM = H < 760;
-    const RAND = niedrigM ? 420 : 528;
+    const RAND = (niedrigM ? 420 : 528) + (K.rolle !== 'aus' ? 55 : 0);
     const karteH = Math.max(220, Math.round(H - RAND));
     const einB = Math.max(320, Math.round(B - 2 * Math.max(B < 900 ? 16 : 72, (B - 1760) / 2) - 52));
     const einH = Math.max(180, karteH - 41);
@@ -174,7 +175,7 @@ export class SpielmenueKomponente {
       toastDa: !!st.toast, toast: st.toast || '',
       zu: () => this.setState({ offen: null, wechsel: false, ladeFrage: false, lobbyFrage: false }),
       listeCls: 'sm-menue sm-liste' + (irgendwas ? ' sm-has-open' : '') + (st.wechsel ? ' sm-wechsel' : '') + (niedrigM ? ' sm-niedrig' : ''),
-      istSolo: solo, istHost: host, istGast: gast && !pilot || (pilot && !solo && !host), mpHinweis: !solo,
+      istSolo: solo, istHost: host, istGast: gast, mpHinweis: !solo,
       uhr: K.uhr, wetter: K.wetter, wetterDa: !!K.wetter,
       zustandText, zustandFarbe,
       pauseDa: host && K.darfSteuern, pauseText: K.laeuft ? 'Für alle pausieren' : 'Weiterlaufen lassen',

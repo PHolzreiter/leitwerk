@@ -183,16 +183,12 @@
                     <div class="sm-strip" style="margin-bottom: 12px;"><span>{{mp.uebergabeText}}</span><span class="sm-reihe" style="flex-wrap: nowrap;"><button class="sm-ghost sm-k" onClick="{{mp.uebergabeNein}}">Abbrechen</button><button class="sm-ghost sm-k sm-ja" onClick="{{mp.uebergabeJa}}">Übergeben</button></span></div>
                   </sc-if>
                   <div style="overflow-x: auto;">
-                    <table class="sm-tab-sp">
-                      <thead><tr><th>Spieler</th><th>Platz</th><th>Verbindung</th><th class="sm-c">Disponieren</th><th class="sm-c">KT</th><th class="sm-c">Simulation steuern</th><th class="sm-c">Einstellungen &amp; Daten</th><th></th></tr></thead>
-                      <tbody>
-                        <sc-for list="{{mp.spieler}}" as="x" hint-placeholder-count="3">
-                          <tr><td><b class="{{x.nameCls}}">{{x.name}}</b><sc-if value="{{x.ich}}" hint-placeholder-val="{{false}}"> <span style="color: #9AA3B5;">(du)</span></sc-if><sc-if value="{{x.host}}" hint-placeholder-val="{{false}}"> <span class="sm-chip sm-gelb" style="margin-left: 6px;">Host</span></sc-if></td><td class="{{x.platzCls}}">{{x.platz}}</td><td><span style="color: {{x.verbFarbe}};">{{x.verb}}</span></td>
-                            <sc-for list="{{x.rechte}}" as="r" hint-placeholder-count="4"><td class="sm-c"><button class="{{r.cls}}" aria-pressed="{{r.an}}" aria-label="{{r.aria}}" onClick="{{r.flip}}">✓</button></td></sc-for>
-                            <td style="text-align: right; white-space: nowrap;"><sc-if value="{{x.uebergebenDa}}" hint-placeholder-val="{{false}}"><button class="sm-ghost sm-k" onClick="{{x.uebergeben}}">Host übergeben</button></sc-if></td></tr>
-                        </sc-for>
-                      </tbody>
-                    </table>
+                    <div class="sm-tab-sp" role="table">
+                      <div class="sm-tr sm-th" role="row"><span>Spieler</span><span>Platz</span><span>Verbindung</span><span class="sm-c">Disponieren</span><span class="sm-c">KT</span><span class="sm-c">Simulation steuern</span><span class="sm-c">Einstellungen &amp; Daten</span><span></span></div>
+                      <sc-for list="{{mp.spieler}}" as="x" hint-placeholder-count="3">
+                        <div class="sm-tr" role="row"><span><b class="{{x.nameCls}}">{{x.name}}</b><sc-if value="{{x.ich}}" hint-placeholder-val="{{false}}"><span style="color: #9AA3B5; margin-left: 4px;">(du)</span></sc-if><sc-if value="{{x.host}}" hint-placeholder-val="{{false}}"> <span class="sm-chip sm-gelb" style="margin-left: 6px;">Host</span></sc-if></span><span class="{{x.platzCls}}">{{x.platz}}</span><span style="color: {{x.verbFarbe}};">{{x.verb}}</span><sc-for list="{{x.rechte}}" as="r" hint-placeholder-count="4"><span class="sm-c"><button class="{{r.cls}}" aria-pressed="{{r.an}}" aria-label="{{r.aria}}" onClick="{{r.flip}}">✓</button></span></sc-for><span style="text-align: right; white-space: nowrap;"><sc-if value="{{x.uebergebenDa}}" hint-placeholder-val="{{false}}"><button class="sm-ghost sm-k" onClick="{{x.uebergeben}}">Host übergeben</button></sc-if></span></div>
+                      </sc-for>
+                    </div>
                   </div>
                   <p style="font-size: 12px; color: #9AA3B5; margin: 12px 0 0;">Rechte gelten sofort. Wer „Einstellungen &amp; Daten“ hat, darf auch Fahrzeuge, Dienststellen und Krankenhäuser ändern.</p>
                 </div>
