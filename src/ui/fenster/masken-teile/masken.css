@@ -1,0 +1,144 @@
+/* Masken (RD-, KT-, SEK-Übersicht): Ergänzungen zu entwurf/fenster.css – aus den Entwürfen „Einsatzmaske“, „KTMaske“, „SEKMaske“.
+   Alle Regeln gelten nur in .ew-maske (gleiche Gewichtung wie im Entwurf über :where). */
+:where(.ew-maske) .art{display:inline-flex;align-items:center;padding:3px 8px;border-radius:5px;font-size:12px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;background:var(--akzent-flaeche);color:var(--akzent-text);white-space:nowrap}
+:where(.ew-maske) .fehlt{border-color:var(--gelb) !important;border-style:dashed !important}
+:where(.ew-maske) .fehlt-pill{font-size:10.5px;font-weight:700;padding:1px 6px;border-radius:4px;background:var(--gelb-flaeche);color:var(--gelb-text);white-space:nowrap}
+:where(.ew-maske) .zwei{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
+:where(.ew-maske) .drei{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+:where(.ew-maske) .feldl{display:flex;flex-direction:column;gap:4px;min-width:0}
+:where(.ew-maske) .feldl > span{font-size:11.5px;font-weight:600;color:var(--dim);display:flex;align-items:center;gap:6px}
+:where(.ew-maske) .chips button.on{background:var(--akzent-flaeche);border-color:var(--akzent);color:var(--text)}
+:where(.ew-maske) .chips button{display:inline-flex;align-items:center;gap:6px}
+:where(.ew-maske) .los{font-size:11px;color:var(--dim);font-weight:500;white-space:nowrap}
+:where(.ew-maske) .los.knapp{color:var(--rot-text);font-weight:600}
+:where(.ew-maske) .wie{display:flex;flex-direction:column;gap:6px;padding:10px;border-radius:10px;background:var(--flaeche-2)}
+/* Strecke Abholung → Ziel */
+:where(.ew-maske) .strecke{display:grid;grid-template-columns:30px minmax(0,1fr);column-gap:10px;padding:2px 0}
+:where(.ew-maske) .punkt{display:flex;flex-direction:column;align-items:center}
+:where(.ew-maske) .marke{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;font-size:12px;font-weight:800;flex:none}
+:where(.ew-maske) .marke.a{background:var(--akzent);color:var(--auf-akzent)}
+:where(.ew-maske) .marke.z{background:var(--gelb);color:#15181c}
+:where(.ew-maske) .linie{flex:1;width:2px;min-height:26px;margin:4px 0;background:repeating-linear-gradient(var(--linie) 0 5px,transparent 5px 9px)}
+:where(.ew-maske) .ort-k{display:flex;flex-direction:column;gap:3px;padding:0 0 10px;min-width:0}
+/* Kopfzeile genau mittig zur Marke A/Z (beide 28 px hoch) */
+:where(.ew-maske) .ort-kopf{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-height:28px}
+:where(.ew-maske) .ort-kopf .kn.sm{height:26px}
+:where(.ew-maske) .ort-lbl{line-height:1}
+:where(.ew-maske) .ort-lbl{font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase}
+:where(.ew-maske) .ort-lbl.a{color:var(--akzent-text)}:where(.ew-maske) .ort-lbl.z{color:var(--gelb-text)}
+:where(.ew-maske) .ort-zeit{font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}
+:where(.ew-maske) .ort-zeit small{font-size:11.5px;font-weight:500;color:var(--dim);margin-left:4px}
+:where(.ew-maske) .ort-adr{font-size:14px;font-weight:600}
+:where(.ew-maske) .ort-info{font-size:12.5px;color:var(--text-2)}
+:where(.ew-maske) .fahrt{font-size:12px;color:var(--dim);padding:0 0 8px}
+:where(.ew-maske) .rueck{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 10px;border-radius:9px;background:var(--flaeche-2);font-size:12.5px}
+:where(.ew-maske) .lk.kt,:where(.ew-maske) .lz.kt{grid-template-columns:22px minmax(0,1.3fr) minmax(0,.8fr) 70px}
+@container fenster (max-width: 430px){
+  :where(.ew-maske) .zwei,:where(.ew-maske) .drei{grid-template-columns:minmax(0,1fr)}
+  :where(.ew-maske) .lk.kt,:where(.ew-maske) .lz.kt{grid-template-columns:22px minmax(0,1fr) 62px}
+}
+/* ---- Fahrzeugliste wie im Fahrzeuge-Fenster: Spalten je nach Breite der Liste, Kopf sortiert (3. Klick = Vorschlag), Spaltenbreiten ziehbar, Besatzung beim Darüberfahren ---- */
+:where(.ew-maske) .liste.vl{container:vliste / inline-size;overflow:visible}
+:where(.ew-maske) .vl > :first-child{border-radius:9px 9px 0 0}
+:where(.ew-maske) .vl > :last-child{border-radius:0 0 9px 9px}
+:where(.ew-maske) .vk-b,:where(.ew-maske) .vk-n,:where(.ew-maske) .vk-s{display:none;gap:8px;align-items:center;padding:0 10px 0 14px;height:30px;background:var(--flaeche-2);font-size:10.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--dim)}
+:where(.ew-maske) .vk-n{display:grid;grid-template-columns:var(--vn)}
+:where(.ew-maske) .lz.vz{grid-template-columns:var(--vn);gap:0 8px;padding:6px 10px 6px 14px;min-height:40px;align-items:center}
+:where(.ew-maske) .lz.vz:hover{z-index:7}
+:where(.ew-maske) .vz .stz,:where(.ew-maske) .vz .lst,:where(.ew-maske) .vz .ziel{display:none}
+:where(.ew-maske) .vz .nm{grid-column:1;grid-row:1;align-self:end;display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+:where(.ew-maske) .vz .nm b{cursor:help}
+:where(.ew-maske) .vz .typ2{grid-column:1;grid-row:2;align-self:start;font-size:11.5px;font-weight:600;color:var(--zeile-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+:where(.ew-maske) .vz .stx{grid-column:2;grid-row:1 / span 2;min-width:0}
+:where(.ew-maske) .vz .stt{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:12px;font-weight:700;line-height:1.3;color:var(--zeile-text)}
+:where(.ew-maske) .vz .hw{display:inline-block;margin-top:2px;font-size:10.5px;font-weight:700;padding:0 6px;border-radius:4px;background:rgba(255,255,255,.55);color:var(--zeile-text);white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+:where(.ew-maske) .vz .ort2,:where(.ew-maske) .vz .lst,:where(.ew-maske) .vz .ziel{min-width:0;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:break-word;hyphens:auto;font-size:12.5px;line-height:1.3}
+:where(.ew-maske) .vz .ort2{grid-column:3;grid-row:1 / span 2;display:-webkit-box;color:var(--zeile-text);font-weight:600}
+:where(.ew-maske) .vz .ort2.nur,:where(.ew-maske) .vz .lst{color:var(--zeile-dim);font-weight:500}
+:where(.ew-maske) .vz .ziel{color:var(--zeile-text);font-weight:600}
+:where(.ew-maske) .vz .codes{grid-column:4;grid-row:1 / span 2;display:flex;flex-direction:column;gap:2px;align-items:flex-start;min-width:0}
+:where(.ew-maske) .vz .code1{position:relative;display:flex;cursor:help;outline:none;max-width:100%;font-size:12.5px;font-weight:700;letter-spacing:.02em;font-variant-numeric:tabular-nums;color:var(--zeile-text);line-height:1.35;white-space:nowrap}
+:where(.ew-maske) .vz .code1 .cc{min-width:0;overflow:hidden;text-overflow:ellipsis}
+:where(.ew-maske) .vz .code1 .ct{display:none;position:absolute;z-index:8;right:calc(100% + 8px);top:50%;transform:translateY(-50%);width:max-content;max-width:210px;white-space:normal;line-height:1.35;padding:6px 9px;border-radius:8px;background:var(--flaeche);color:var(--text);font-weight:600;letter-spacing:0;box-shadow:0 0 0 1px var(--linie),0 10px 24px -8px rgba(0,0,0,.55)}
+:where(.ew-maske) .vz .code1:hover .ct,:where(.ew-maske) .vz .code1:focus-visible .ct{display:block}
+:where(.ew-maske) .vz .vzeit{grid-column:5;grid-row:1 / span 2;display:flex;flex-direction:column;align-items:flex-end;gap:1px;min-width:0;text-align:right}
+:where(.ew-maske) .vz .vzeit .eta{font-weight:700;color:var(--zeile-text)}
+:where(.ew-maske) .vz .vzeit .los{white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+:where(.ew-maske) .vz .vcrew{display:none;position:absolute;z-index:6;left:10px;top:calc(100% - 6px);padding:6px;border-radius:8px;background:var(--flaeche);box-shadow:0 0 0 1px var(--linie),0 10px 24px -8px rgba(0,0,0,.55);gap:4px;pointer-events:none}
+:where(.ew-maske) .vz .vcrew .q{background:var(--flaeche-2);color:var(--text-2)}
+:where(.ew-maske) .vz .nm:hover ~ .vcrew{display:flex}
+:where(.ew-maske) .vz.funk .stt,:where(.ew-maske) .vz.funk .ort2,:where(.ew-maske) .vz.funk .typ2,:where(.ew-maske) .vz.funk .code1,:where(.ew-maske) .vz.funk .lst,:where(.ew-maske) .vz.funk .ziel,:where(.ew-maske) .vz.funk .vzeit .eta{color:var(--funk)}
+:where(.ew-maske) .vl .sk{all:unset;box-sizing:border-box;position:relative;cursor:pointer;display:inline-flex;align-items:center;justify-self:start;max-width:100%;min-width:0;height:22px;border-radius:5px;color:var(--dim);transition:color .15s}
+:where(.ew-maske) .vl .sk .skt{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+:where(.ew-maske) .vl .sk .pf{position:absolute;right:-12px;top:5px;width:11px;height:11px;stroke-width:2.6;opacity:0;transition:opacity .15s,transform .22s cubic-bezier(.4,0,.2,1)}
+:where(.ew-maske) .vl .sk:hover{color:var(--text)}:where(.ew-maske) .vl .sk:hover .pf{opacity:.45}
+:where(.ew-maske) .vl .sk.on{color:var(--text)}:where(.ew-maske) .vl .sk.on .pf{opacity:1}
+:where(.ew-maske) .vl .sk.hoch .pf{transform:rotate(180deg)}
+:where(.ew-maske) .vl .sk.re .pf{right:auto;left:-12px}
+:where(.ew-maske) .vl .sk:focus-visible{outline:2px solid var(--akzent);outline-offset:1px}
+:where(.ew-maske) .vl .hk{position:relative;display:flex;align-items:center;min-width:0;height:100%}:where(.ew-maske) .vl .hk.re{justify-content:flex-end}
+:where(.ew-maske) .vl .spz{position:absolute;z-index:2;top:3px;bottom:3px;right:-9px;width:10px;cursor:col-resize;outline:none}
+:where(.ew-maske) .vl .spz::after{content:"";position:absolute;top:3px;bottom:3px;left:4px;width:1px;border-radius:2px;background:var(--trenner);transition:background .15s,width .15s,left .15s}
+:where(.ew-maske) .vl .spz:hover::after,:where(.ew-maske) .vl .spz:focus-visible::after,:where(.ew-maske) .vl.zieht .spz::after{left:3px;width:3px;background:var(--akzent)}
+:where(.ew-maske) .vl.zieht,:where(.ew-maske) .vl.zieht *{cursor:col-resize !important;user-select:none}
+@container vliste (min-width: 720px){
+  :where(.ew-maske) .vk-n{display:none}:where(.ew-maske) .vk-b{display:grid;grid-template-columns:var(--vb)}
+  :where(.ew-maske) .lz.vz{grid-template-columns:var(--vb)}
+  :where(.ew-maske) .vz .nm{align-self:center}
+  :where(.ew-maske) .vz .typ2{grid-column:2;grid-row:1;align-self:center;font-size:12.5px}
+  :where(.ew-maske) .vz .stx{grid-column:3;grid-row:1}
+  :where(.ew-maske) .vz .ort2{display:none}
+  :where(.ew-maske) .vz .lst{display:-webkit-box;grid-column:4;grid-row:1}:where(.ew-maske) .vz .ziel{display:-webkit-box;grid-column:5;grid-row:1}
+  :where(.ew-maske) .vz .codes{grid-column:6;grid-row:1}:where(.ew-maske) .vz .vzeit{grid-column:7;grid-row:1}
+}
+@container vliste (max-width: 410px){
+  :where(.ew-maske) .vk-n{display:none}:where(.ew-maske) .vk-s{display:grid;grid-template-columns:var(--vs)}
+  :where(.ew-maske) .lz.vz{grid-template-columns:var(--vs)}
+  :where(.ew-maske) .vz .stz{display:block;grid-column:1;grid-row:1 / span 2}
+  :where(.ew-maske) .vz .nm{grid-column:2}:where(.ew-maske) .vz .typ2{grid-column:2;font-size:11px}
+  :where(.ew-maske) .vz .stx{grid-column:3;grid-row:2}:where(.ew-maske) .vz .stt{display:none}
+  :where(.ew-maske) .vz .ort2{grid-column:3;font-size:12px}
+  :where(.ew-maske) .vz.mit-hw .ort2{grid-row:1;-webkit-line-clamp:1}
+  :where(.ew-maske) .vz .codes{display:none}
+  :where(.ew-maske) .vz .vzeit{grid-column:4}
+  :where(.ew-maske) .vz .vcrew{left:30px}
+}
+/* Wurzel der Maske füllt das Fenster */
+.ap .ew-maske{height:100%;min-height:0}
+
+/* ---- Ergänzungen beim Einbau (im Entwurf nicht als Klasse vorhanden, gleiche Formensprache) ---- */
+/* Fenster leer (nichts ausgewählt) */
+:where(.ew-maske) .ew-leer{margin:auto;padding:24px;max-width:320px;text-align:center;color:var(--dim);font-size:13px}
+/* weitere Bänder im Kopf: gelb (Hinweis), rot (dringend), grau (Meldung, abgeschlossen) */
+:where(.ew-maske) .band.gelb{background:var(--gelb-flaeche)}
+:where(.ew-maske) .band.rot{background:var(--rot-flaeche)}
+:where(.ew-maske) .band.grau{background:var(--flaeche-2)}
+:where(.ew-maske) .band .band-t{min-width:0;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+:where(.ew-maske) .band{flex-wrap:nowrap}
+/* niedrig: Kopf in einer Zeile – Bänder füllen den Rest */
+@container fenster (max-height: 760px){:where(.ew-maske) .kopf > .band{flex:1 1 260px}}
+:where(.ew-maske) .ew-rot{color:var(--rot-text)}
+:where(.ew-maske) .ew-info{font-size:12px;line-height:1.4}
+/* Code ändern: Suchfeld und Trefferliste im Ausklapper */
+:where(.ew-maske) .dd-code{width:min(320px,calc(100cqw - 48px));display:flex;flex-direction:column;gap:6px}
+:where(.ew-maske) .dd-liste{max-height:280px;overflow-y:auto;scrollbar-width:thin}
+:where(.ew-maske) .dd-c{min-width:62px}
+:where(.ew-maske) .ew-wahl{cursor:pointer}
+:where(.ew-maske) .dd-z.erster{background:var(--akzent-flaeche)}
+:where(.ew-maske) .dd.hoch{top:auto;bottom:calc(100% + 4px);left:0;right:auto;width:200px}
+:where(.ew-maske) .mehr-w{display:contents}
+/* alarmierte Fahrzeuge: Funk und Storno nebeneinander */
+:where(.ew-maske) .fz-kn{display:flex;gap:2px;align-items:center}
+:where(.ew-maske) .ew-funk{width:28px;padding:0;justify-content:center}
+/* Partner, der laut Lage gebraucht wird */
+:where(.ew-maske) .kn.ew-noetig{border-color:var(--gelb);color:var(--gelb-text)}
+/* Kopfzeilen mit zwei Knöpfen */
+:where(.ew-maske) .ew-knz{display:flex;gap:4px}
+/* Fahrzeugsuche unter dem Typ-Umschalter */
+:where(.ew-maske) .ew-fzsuche .feld{padding-left:32px}
+:where(.ew-maske) .ew-vl-leer{text-transform:none;letter-spacing:0;font-weight:500;font-size:12px}
+:where(.ew-maske) .ew-khfuss{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+:where(.ew-maske) select.feld{appearance:auto}
+:where(.ew-maske) .ew-such-hinweis{padding:2px 4px}
+:where(.ew-maske) .ew-fehlt{background:var(--rot-flaeche);color:var(--text)}
+:where(.ew-maske) .kn.ew-aus{opacity:.5}

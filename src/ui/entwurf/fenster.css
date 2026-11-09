@@ -11,7 +11,7 @@
   --linie: var(--line);
   --dim: var(--text-dim);
   --akzent: var(--blue);
-  --ok: var(--ok);
+  /* --ok kommt unverändert aus style.css (eine Zeile „--ok: var(--ok)“ wäre ein Zirkelbezug und machte alle Grüntöne ungültig) */
 }
 :root[data-theme="dunkel"] .ap,
 .ap.dunkel {
