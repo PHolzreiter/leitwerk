@@ -1,5 +1,10 @@
 # Änderungen
 
+## 0.115.0-beta.4 – Korrekturen
+- **Fahrzeuge:** Spalten passten bei vergrößerter Oberfläche (Skalierung) nicht zusammen – Status stand über dem Fahrtziel
+- **Fahrzeuge:** Statusnamen wie im Entwurf („Frei auf Wache“ statt „Frei Wache“)
+- **Einsatz:** Fahrzeugliste zeigt rund 10 Fahrzeuge, der Rest scrollt; der Spaltenkopf bleibt stehen
+
 ## 0.115.0-beta.3 – Neue Oberfläche komplett
 - **Alle Fenster neu:** Einsatzliste, RD-/KT-/SEK-Übersicht, Abfrage, Telefon, Fahrzeuge, KH-Status, Funk und Chat, Großeinsatz, Karte – so wie im Entwurf, mit echten Daten
 - **Fensterrahmen und Anordnungen:** Reiter mit Zahlen, Knöpfe im Fensterkopf, Vorlagen 16:9, zwei Bildschirme 16:9 und 32:9, Fußleiste

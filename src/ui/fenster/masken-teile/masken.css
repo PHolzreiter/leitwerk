@@ -39,6 +39,9 @@
 }
 /* ---- Fahrzeugliste wie im Fahrzeuge-Fenster: Spalten je nach Breite der Liste, Kopf sortiert (3. Klick = Vorschlag), Spaltenbreiten ziehbar, Besatzung beim Darüberfahren ---- */
 :where(.ew-maske) .liste.vl{container:vliste / inline-size;overflow:visible}
+/* rund 10 Fahrzeuge sichtbar, der Rest scrollt; Spaltenkopf bleibt oben stehen */
+:where(.ew-maske) .liste.vl.liste{max-height:calc(31px + 10.5 * 46px);overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;scrollbar-width:thin}
+:where(.ew-maske) .liste.vl > .vk-b,:where(.ew-maske) .liste.vl > .vk-n,:where(.ew-maske) .liste.vl > .vk-s{position:sticky;top:0;z-index:9}
 :where(.ew-maske) .vl > :first-child{border-radius:9px 9px 0 0}
 :where(.ew-maske) .vl > :last-child{border-radius:0 0 9px 9px}
 :where(.ew-maske) .vk-b,:where(.ew-maske) .vk-n,:where(.ew-maske) .vk-s{display:none;gap:8px;align-items:center;padding:0 10px 0 14px;height:30px;background:var(--flaeche-2);font-size:10.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--dim)}

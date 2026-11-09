@@ -69,11 +69,13 @@ const MENUE_STATUS: StatusKey[] = ["freiWache", "freiFunk", "dienstfahrt", "bere
 function farbe(k: StatusKey): string {
   return pers().statusFarben?.[k] || `var(--s${S_CODE[k]})`;
 }
+/** Statusnamen wie im Entwurf (gleich wie in der Fahrzeugliste der Einsatzmaske) */
+const ST_NAME: Record<string, string> = { 0: "Abgemeldet", 1: "Frei auf Wache", 2: "Zum Berufungsort", 3: "Am Berufungsort", 4: "Zum Zielort", 5: "Am Zielort", 6: "Frei über Funk", 7: "Dienstfahrt", 8: "Bereitschaft", 9: "Alarmiert und quittiert", a: "Alarmiert auf Wache", f: "Alarmiert über Funk" };
 function statusAnzeige(): Record<string, StatusAnzeige> {
   const r: Record<string, StatusAnzeige> = {};
   for (const k of ALLE_STATUS) {
     const d = sim.statusDef(k);
-    r[k] = { nr: d.nummer, name: d.name, farbe: farbe(k), funk: k === "freiFunk" || k === "alarmFunk" };
+    r[k] = { nr: d.nummer, name: ST_NAME[S_CODE[k]] ?? d.name, farbe: farbe(k), funk: k === "freiFunk" || k === "alarmFunk" };
   }
   return r;
 }

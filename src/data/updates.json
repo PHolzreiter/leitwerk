@@ -1,5 +1,15 @@
 [
  {
+  "version": "0.115.0-beta.4",
+  "datum": "2026-11-09",
+  "titel": "Korrekturen",
+  "punkte": [
+   "Fahrzeuge: Spalten bei vergrößerter Oberfläche richtig",
+   "Statusnamen wie im Entwurf",
+   "Fahrzeugliste im Einsatz: rund 10 Fahrzeuge, der Rest scrollt"
+  ]
+ },
+ {
   "version": "0.115.0-beta.3",
   "datum": "2026-11-09",
   "titel": "Neue Oberfläche komplett",

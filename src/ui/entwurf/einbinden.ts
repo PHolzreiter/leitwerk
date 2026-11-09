@@ -56,8 +56,8 @@ export function entwurfEinbinden<K extends DCLogic>(
   const wurzel = document.createElement("div");
   wurzel.className = "ap ew-fenster";
   ziel.appendChild(wurzel);
-  const r0 = ziel.getBoundingClientRect();
-  const k = bauen({ ...props, breite: Math.round(r0.width) || 800, hoehe: Math.round(r0.height) || 600, thema: thema() });
+  // Größe in CSS-Pixeln des Fensters (offsetWidth): bleibt bei UI-Skalierung (zoom) gleich wie die Container-Abfragen im CSS
+  const k = bauen({ ...props, breite: ziel.offsetWidth || 800, hoehe: ziel.offsetHeight || 600, thema: thema() });
   const a = ansicht(vorlage, wurzel);
   let weg = false;
   k._zeichnen = () => {
@@ -69,8 +69,7 @@ export function entwurfEinbinden<K extends DCLogic>(
     }
   };
   const groesse = new ResizeObserver(() => {
-    const r = ziel.getBoundingClientRect();
-    const b = Math.round(r.width), h = Math.round(r.height);
+    const b = ziel.offsetWidth, h = ziel.offsetHeight;
     if (!b || !h || (b === k.props.breite && h === k.props.hoehe)) return;
     k.props = { ...k.props, breite: b, hoehe: h };
     k._zeichnen?.();

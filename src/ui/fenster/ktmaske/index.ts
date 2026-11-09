@@ -506,7 +506,7 @@ export function ktFenster(ctx: PanelKontext, sek: boolean): { el: HTMLElement; d
   const kurz = sek ? "SEK" : "KT";
   let titelSchmal: boolean | null = null;
   const titel = () => {
-    const schmal = root.getBoundingClientRect().width < 430;
+    const schmal = root.offsetWidth < 430;
     if (schmal === titelSchmal) return;
     titelSchmal = schmal;
     ctx.setzeTitel(schmal ? kurz : `${kurz}-Übersicht`);

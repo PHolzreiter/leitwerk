@@ -645,7 +645,7 @@ export function einsatzFenster(ctx: PanelKontext): { el: HTMLElement; dispose():
 
   let titelSchmal: boolean | null = null;
   const titel = () => {
-    const schmal = root.getBoundingClientRect().width < 430;
+    const schmal = root.offsetWidth < 430;
     if (schmal === titelSchmal) return;
     titelSchmal = schmal;
     ctx.setzeTitel(schmal ? "RD" : "RD-Übersicht");
