@@ -12,20 +12,20 @@
   --dauer: 160ms;
 }
 
-/* Hell: weiß/grau, Kontrast NÖ-Blau */
+/* Hell: weiß/grau – Grundfarben wie im Entwurf (Design-System „LeitWerk“) */
 :root,
 :root[data-theme="hell"] {
-  --bg: #e9edf2;
+  --bg: #e6e9ee;
   --panel: #ffffff;
-  --panel-2: #f3f5f8;
+  --panel-2: #f4f6f9;
   --panel-3: #e8ecf1;
-  --line: #d8dee6;
+  --line: #d5dae2;
   --line-2: #c5ced9;
-  --text: #18212c;
-  --text-dim: #5f6b79;
-  --blue: #0b55a8;
+  --text: #111216;
+  --text-dim: #5c6577;
+  --blue: #1f6feb;
   --blue-line: #6f9fd8;
-  --ok: #2b8a57;
+  --ok: #17784a;
   --warn: #b47b00;
   --hover: rgba(11, 85, 168, 0.07);
   --sel: rgba(11, 85, 168, 0.12);
@@ -45,17 +45,17 @@
 
 /* Dunkel: grau, Kontrast NÖ-Gelb und helleres Blau */
 :root[data-theme="dunkel"] {
-  --bg: #0f1114;
-  --panel: #191c21;
-  --panel-2: #20242a;
+  --bg: #0e0f12;
+  --panel: #171920;
+  --panel-2: #1e2129;
   --panel-3: #282d34;
-  --line: #2d3239;
+  --line: #2a2f3a;
   --line-2: #3b424b;
-  --text: #e8ebef;
-  --text-dim: #98a2ad;
-  --blue: #4d93e6;
+  --text: #f5f7fa;
+  --text-dim: #9aa3b5;
+  --blue: #3b8bff;
   --blue-line: var(--blue-line);
-  --ok: #3fb67a;
+  --ok: #4cc38a;
   --warn: #e0a100;
   --hover: rgba(255, 255, 255, 0.05);
   --sel: rgba(77, 147, 230, 0.18);
@@ -67,7 +67,7 @@
   --warn-bg: #3a3020;
   --violet: #8b6cf0;
   --violet-text: var(--violet-text);
-  --input-bg: #121418;
+  --input-bg: #111216;
   --scroll: rgba(255, 255, 255, 0.2);
   --highlight: var(--noe-gelb);
   --highlight-text: #15181c;
