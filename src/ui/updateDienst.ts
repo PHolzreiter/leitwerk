@@ -81,8 +81,68 @@ export function updateTesten(version = "9.9.9", dauerMs = 6000, fehler = false):
   void pruefen();
 }
 
-function mb(b: number): string {
+export function mb(b: number): string {
   return (b / 1_048_576).toLocaleString("de-AT", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+}
+
+// ---------------------------------------------------------------- Laden im Hintergrund (Kopfleiste)
+
+export interface UpdateStand {
+  phase: "laedt" | "fertig" | "fehler";
+  /** geladene und gesamte Bytes (total 0 = unbekannt) */
+  done: number;
+  total: number;
+  fehler?: string;
+}
+
+let stand: UpdateStand | null = null;
+
+/** Stand des Ladens im Hintergrund (null = es wird gerade nichts geladen) */
+export function updateStand(): UpdateStand | null {
+  return stand;
+}
+
+/** Fehlermeldung wegräumen (Schublade „Schließen“) */
+export function updateStandZuruecksetzen(): void {
+  if (stand?.phase !== "fehler") return;
+  stand = null;
+  laeuft = false;
+  melden();
+}
+
+/**
+ * Update im Hintergrund laden und installieren – ohne große Anzeige, man spielt weiter.
+ * Wie beim großen Update gilt: das Programm startet nach dem Installieren von selbst neu.
+ * vorher() läuft vor dem Laden, kurzVorEnde() wenn alles geladen ist (beides: Spiel sichern).
+ */
+export async function updateImHintergrund(vorher?: () => Promise<void>, kurzVorEnde?: () => Promise<void>): Promise<void> {
+  if (!info || (laeuft && stand?.phase !== "fehler")) return;
+  laeuft = true;
+  stand = { phase: "laedt", done: 0, total: 0 };
+  melden();
+  try {
+    await vorher?.();
+  } catch (e) {
+    console.warn("Vor dem Update", e);
+  }
+  let ende = false;
+  const fortschritt = (p: Progress) => {
+    stand = { phase: "laedt", done: p.done, total: p.total };
+    if (p.total > 0 && p.done >= p.total && !ende) {
+      ende = true;
+      // Installieren und Neustart folgen gleich – das Spiel noch einmal sichern
+      void kurzVorEnde?.().catch((e) => console.warn("Sichern vor dem Neustart", e));
+    }
+    melden();
+  };
+  try {
+    await (test ? test.install(fortschritt) : installUpdate(fortschritt));
+    stand = { phase: "fertig", done: stand?.total ?? 0, total: stand?.total ?? 0 };
+    melden();
+  } catch (e) {
+    stand = { phase: "fehler", done: stand?.done ?? 0, total: stand?.total ?? 0, fehler: e instanceof Error ? e.message : String(e) };
+    melden();
+  }
 }
 
 /** Update laden und installieren – mit großer Anzeige. */

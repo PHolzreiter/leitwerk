@@ -65,7 +65,7 @@ export function kuerzelStarten(): void {
       // Esc in einem Feld: nur Feld verlassen
       if (taste === "Escape" && tippt(e)) return;
       // offene Dialoge, Menüs, Kamera-Folgen und Ort-Wählen haben Vorrang (vor allem bei Esc)
-      if (document.querySelector(".dlg-overlay:not([style*='none']), .gross-overlay:not([hidden]), .lw-menu, .ctx-menu, .fz-folgt:not([hidden]), .pick-banner")) return;
+      if (document.querySelector(".dlg-overlay:not([style*='none']), .gross-overlay:not([hidden]), .lw-menu, .kl-pop, .ctx-menu, .fz-folgt:not([hidden]), .pick-banner")) return;
       const fn = aktionen.get(id);
       if (!fn) return;
       const r = fn();

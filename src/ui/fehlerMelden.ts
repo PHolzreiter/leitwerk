@@ -81,12 +81,17 @@ export function fehlerBericht(beschreibung: string): string {
   return out.join("\n");
 }
 
+/** Bericht als Datei speichern (der Benutzer wählt den Ort). Gibt den Pfad zurück, null = abgebrochen. */
+export async function fehlerBerichtSpeichern(beschreibung: string): Promise<string | null> {
+  const stempel = new Date().toISOString().slice(0, 16).replace(/[:T]/g, "-");
+  return saveTextFile(`LeitWerk_Fehlerbericht_${stempel}.md`, fehlerBericht(beschreibung), { name: "Text (Markdown)", extensions: ["md", "txt"] });
+}
+
 export async function fehlerMelden(): Promise<void> {
   const text = await textDialog("Fehler melden", "Was ist passiert? (kurz beschreiben – was du gemacht hast und was falsch war)", "");
   if (text === null) return;
-  const stempel = new Date().toISOString().slice(0, 16).replace(/[:T]/g, "-");
   try {
-    const pfad = await saveTextFile(`LeitWerk_Fehlerbericht_${stempel}.md`, fehlerBericht(text), { name: "Text (Markdown)", extensions: ["md", "txt"] });
+    const pfad = await fehlerBerichtSpeichern(text);
     if (pfad) toast("Fehlerbericht gespeichert – schick die Datei an den Entwickler");
   } catch (err) {
     toast(String((err as Error).message ?? err), "error");

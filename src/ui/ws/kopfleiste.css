@@ -1,0 +1,1559 @@
+/* ================================================================ Kopfleiste (Entwurf „Kopfleiste“, 09.11.)
+ * Aufbau links „Spiel“, rechts „Ich“; Schubladen für Wetter, Fenster, Anordnung, ⋯, Update, Fehler melden.
+ * Die Farben kommen aus dem Farbschema des Spiels (Hell/Dunkel und eigene Farben) – die Namen der Tokens
+ * sind die aus dem Entwurf (--flaeche, --akzent …), damit sich Entwurf und Spiel leicht vergleichen lassen.
+ */
+
+/* ---------------------------------------------------------------- Tokens (aus dem Farbschema abgeleitet) */
+.kl-leiste,
+.kl-leiste .kl-pop {
+  --grund: var(--bg);
+  --flaeche: var(--panel);
+  --flaeche-2: var(--panel-2);
+  --feld: var(--input-bg);
+  --linie: var(--line);
+  --trenner: color-mix(in srgb, var(--line) 70%, var(--panel));
+  --text-2: color-mix(in srgb, var(--text) 62%, var(--text-dim));
+  --dim: var(--text-dim);
+  --akzent: var(--blue);
+  --akzent-flaeche: color-mix(in srgb, var(--blue) 12%, transparent);
+  --ok-flaeche: color-mix(in srgb, var(--ok) 13%, transparent);
+  --rot: var(--accent);
+  --rot-text: var(--alert-text);
+  --rot-flaeche: color-mix(in srgb, var(--accent) 11%, transparent);
+  --gelb-flaeche: color-mix(in srgb, var(--gelb) 13%, transparent);
+  --hover: color-mix(in srgb, var(--text) 6%, transparent);
+  --pop: var(--panel);
+  --pop-rand: var(--line);
+  --kl-ease: cubic-bezier(0.65, 0, 0.35, 1);
+}
+:root[data-theme="dunkel"] .kl-leiste,
+:root[data-theme="dunkel"] .kl-leiste .kl-pop {
+  --kopf: color-mix(in srgb, var(--panel) 55%, var(--bg));
+  --akzent-text: color-mix(in srgb, var(--blue) 75%, #fff);
+  --auf-akzent: #111216;
+  --gelb: #ffc72c;
+  --gelb-text: #ffd866;
+  --pop: color-mix(in srgb, var(--panel) 96%, #fff);
+  --pop-rand: color-mix(in srgb, var(--line) 75%, var(--line-2));
+  --pop-schatten: 0 0 0 1px var(--pop-rand), 0 18px 50px rgba(0, 0, 0, 0.55);
+}
+:root:not([data-theme="dunkel"]) .kl-leiste,
+:root:not([data-theme="dunkel"]) .kl-leiste .kl-pop {
+  --kopf: color-mix(in srgb, var(--panel) 72%, var(--bg));
+  --akzent-text: color-mix(in srgb, var(--blue) 88%, #000);
+  --auf-akzent: #fff;
+  --gelb: #f2b300;
+  --gelb-text: #8a5d00;
+  --pop-schatten: 0 0 0 1px var(--pop-rand), 0 18px 50px rgba(20, 30, 50, 0.18);
+}
+/* eigene Leistenfarbe (Einstellungen › Farben): nur die Leiste, Reiter und Schubladen bleiben im Fensterton */
+:root.leiste-eigen .kl-leiste {
+  --kopf: var(--leiste);
+  --text: var(--leiste-text);
+  --dim: color-mix(in srgb, var(--leiste-text) 68%, var(--leiste));
+  --text-2: color-mix(in srgb, var(--leiste-text) 85%, var(--leiste));
+  --linie: color-mix(in srgb, var(--leiste-text) 24%, var(--leiste));
+  --hover: color-mix(in srgb, var(--leiste-text) 10%, transparent);
+  --feld: color-mix(in srgb, var(--leiste-text) 7%, var(--leiste));
+  color: var(--leiste-text);
+}
+:root {
+  --kl-text-basis: var(--text);
+}
+:root.leiste-eigen .kl-leiste .kl-pop,
+:root.leiste-eigen .kl-leiste .kl-anker.reiter,
+:root.leiste-eigen .kl-leiste .kl-tip {
+  --text: var(--kl-text-basis);
+  --feld: var(--input-bg);
+  --linie: var(--line);
+  --dim: var(--text-dim);
+  --text-2: color-mix(in srgb, var(--kl-text-basis) 62%, var(--text-dim));
+  --hover: color-mix(in srgb, var(--kl-text-basis) 6%, transparent);
+  color: var(--text);
+}
+
+/* Arbeitsfläche bekommt eine eigene Ebene, damit die Schubladen immer über den Fenstern liegen */
+.workspace {
+  isolation: isolate;
+}
+
+/* ---------------------------------------------------------------- Leiste */
+.kl-leiste {
+  position: relative;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 52px;
+  box-sizing: border-box;
+  padding: 0 12px;
+  background: var(--kopf);
+  border-bottom: 1px solid var(--linie);
+  box-shadow: none;
+  min-width: 0;
+  white-space: nowrap;
+  color: var(--text);
+  font-family: "Inter", system-ui, sans-serif;
+  font-feature-settings: "tnum" 1, "cv11" 1;
+  font-size: 13px;
+  line-height: 1.4;
+}
+:where(.kl-leiste) :where(button) {
+  font: inherit;
+  color: inherit;
+}
+.kl-gr {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 0 0 10px;
+  margin-left: 2px;
+  border-left: 1px solid var(--linie);
+  height: 32px;
+  flex: none;
+}
+.kl-gr.erst,
+.kl-gr.ohne-linie {
+  border-left: 0;
+  padding-left: 0;
+  margin-left: 0;
+}
+.kl-leiste > * {
+  flex: none;
+}
+.kl-leiste > .kl-platz {
+  flex: 1 1 0;
+  min-width: 0;
+}
+/* sehr schmal: engere Abstände */
+.kl-leiste.k-eng {
+  gap: 5px;
+  padding: 0 8px;
+}
+.kl-leiste.k-eng .kl-gr {
+  padding-left: 6px;
+  margin-left: 0;
+  gap: 4px;
+}
+.kl-leiste.k-eng .kl-gr.ohne-linie {
+  padding-left: 0;
+}
+.kl-gl {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--dim);
+  margin-right: 1px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.kl-anker {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  border-radius: 9px;
+  transition: min-width 0.38s var(--kl-ease), background 0.2s ease 0.2s, box-shadow 0.2s ease 0.2s, border-radius 0.2s ease 0.2s;
+}
+
+/* ---------------------------------------------------------------- Grundbausteine (aus fenster.css, nur in der Leiste) */
+.kl-leiste .ic {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.kl-leiste .ic.s {
+  width: 14px;
+  height: 14px;
+}
+.kl-leiste .nr {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+.kl-leiste .lbl {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+.kl-leiste .kn {
+  all: unset;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 32px;
+  padding: 0 11px;
+  border: 1px solid var(--linie);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.18s, color 0.18s, border-color 0.18s, transform 0.12s;
+}
+.kl-leiste .kn:hover {
+  border-color: var(--dim);
+}
+.kl-leiste .kn:active {
+  transform: scale(0.96);
+}
+.kl-leiste .kn.sm {
+  height: 28px;
+  padding: 0 9px;
+  font-size: 12px;
+}
+.kl-leiste .kn.prim {
+  background: var(--akzent);
+  border-color: var(--akzent);
+  color: var(--auf-akzent);
+  font-weight: 600;
+}
+.kl-leiste .kn.leise {
+  border-color: transparent;
+  color: var(--text-2);
+}
+.kl-leiste .kn.leise:hover {
+  background: var(--hover);
+}
+.kl-leiste .kn:disabled,
+.kl-leiste .kn.aus {
+  opacity: 0.55;
+  pointer-events: none;
+}
+.kl-leiste :is(.kn, .seg, .kl-ik, .kl-chip, .kl-ann, .kl-marke, .kl-p, .kl-plus):focus-visible {
+  outline: 2px solid var(--akzent);
+  outline-offset: 1px;
+}
+.kl-leiste .feld {
+  box-sizing: border-box;
+  height: 34px;
+  padding: 0 10px;
+  background: var(--feld);
+  border: 1px solid var(--linie);
+  border-radius: 8px;
+  color: var(--text);
+  font: 500 13px "Inter", sans-serif;
+  width: 100%;
+  min-width: 0;
+  outline: none;
+}
+.kl-leiste .feld:focus {
+  border-color: var(--akzent);
+}
+.kl-leiste .feld::placeholder {
+  color: var(--dim);
+}
+.kl-leiste .pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.kl-leiste .pill.blau {
+  background: var(--akzent-flaeche);
+  color: var(--akzent-text);
+}
+/* Umschalter: die Markierung gleitet (Position über --i/--n) – wie im Hauptmenü */
+.kl-leiste .segs {
+  position: relative;
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  background: var(--feld);
+  border: 1px solid var(--linie);
+  border-radius: 9px;
+  box-sizing: border-box;
+}
+.kl-leiste .segs::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  top: 3px;
+  bottom: 3px;
+  left: 3px;
+  width: calc((100% - 6px - (var(--n) - 1) * 2px) / var(--n));
+  border-radius: 6px;
+  background: var(--akzent);
+  transform: translateX(calc(var(--i) * (100% + 2px)));
+  transition: transform 0.26s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.kl-leiste .seg {
+  all: unset;
+  box-sizing: border-box;
+  position: relative;
+  z-index: 1;
+  flex: 1 1 0;
+  min-width: 0;
+  text-align: center;
+  padding: 5px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-2);
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.2s ease 0.06s, transform 0.12s;
+}
+.kl-leiste .seg:active {
+  transform: scale(0.95);
+}
+.kl-leiste .seg.on {
+  color: var(--auf-akzent);
+}
+@media (prefers-reduced-motion: reduce) {
+  .kl-leiste .segs::before {
+    transition: none;
+  }
+}
+
+/* ---------------------------------------------------------------- Marke (Logo → Spielmenü) */
+.kl-marke {
+  all: unset;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 9px 0 5px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--text);
+  flex: none;
+}
+.kl-marke:hover,
+.kl-marke.offen {
+  background: var(--hover);
+}
+.kl-marke .lw-logo-marke {
+  width: 28px;
+  height: 28px;
+  display: block;
+  flex: none;
+}
+.kl-marke .kl-werk {
+  color: var(--akzent-text);
+}
+.kl-marke .ic {
+  color: var(--dim);
+}
+.kl-anker.reiter .kl-marke {
+  background: transparent;
+}
+
+/* ---------------------------------------------------------------- Uhr, Zeitraffer, Wetter */
+.kl-uhr {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  font-variant-numeric: tabular-nums;
+  width: 88px;
+  text-align: center;
+  flex: none;
+}
+.kl-uhr.steht {
+  color: var(--dim);
+}
+.kl-leiste.k-uhr-klein .kl-uhr {
+  width: 58px;
+  font-size: 14px;
+}
+.kl-tempo {
+  width: 150px;
+  flex: none;
+}
+.kl-leiste .kl-tempo .seg {
+  padding: 4px 0;
+  font-size: 12px;
+}
+.kl-tempo.gebremst::before {
+  background: color-mix(in srgb, var(--akzent) 45%, var(--flaeche-2));
+}
+.kl-leiste .kl-tempo-mini {
+  display: none;
+}
+.kl-leiste.k-ohne-tempo .kl-tempo-mini.da {
+  display: inline-flex;
+}
+.kl-wx {
+  position: relative;
+}
+.kl-wx .kl-wpkt {
+  position: absolute;
+  top: 3px;
+  left: 19px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px var(--kopf);
+}
+.kl-wx .kl-wgrad {
+  font-variant-numeric: tabular-nums;
+}
+.kl-leiste .kl-wx.offen,
+.kl-leiste .kn.leise.offen {
+  background: var(--hover);
+  color: var(--text);
+}
+.kn.kl-pause {
+  min-width: 30px;
+}
+.kl-leiste.k-ohne-pausetxt .kn.kl-pause {
+  width: 30px;
+  padding: 0;
+}
+
+/* ---------------------------------------------------------------- Neu: RD/KT/SEK/ACN */
+.kl-chip {
+  all: unset;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 9px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--linie);
+  color: var(--dim);
+  transition: background 0.18s, color 0.18s, border-color 0.18s, transform 0.12s;
+}
+.kl-chip .kl-pkt {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  box-sizing: border-box;
+  transition: background 0.18s;
+}
+.kl-chip.an {
+  color: var(--text);
+  background: var(--akzent-flaeche);
+  border-color: transparent;
+}
+.kl-chip.an .kl-pkt {
+  background: var(--akzent);
+  border-color: var(--akzent);
+}
+.kl-chip:active {
+  transform: scale(0.95);
+}
+.kl-chip.zu {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+.kl-chip.zu:active {
+  transform: none;
+}
+
+/* ---------------------------------------------------------------- Ich nehme an */
+.kl-ich {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 3px 0 0;
+  border-radius: 10px;
+  transition: box-shadow 0.2s, background 0.2s;
+}
+.kl-ich .kl-tel {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  color: var(--text-2);
+}
+.kl-ich.aus {
+  box-shadow: inset 0 0 0 1.5px var(--rot);
+  background: var(--rot-flaeche);
+  padding: 0 3px;
+}
+.kl-ich.aus .kl-tel,
+.kl-ich.aus .kl-gl {
+  color: var(--rot-text);
+}
+.kl-ann {
+  all: unset;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 28px;
+  padding: 0 9px 0 8px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--linie);
+  color: var(--dim);
+  transition: background 0.18s, color 0.18s, transform 0.12s;
+}
+.kl-ann .kl-sch {
+  width: 24px;
+  height: 14px;
+  border-radius: 7px;
+  background: var(--linie);
+  position: relative;
+  flex: none;
+  transition: background 0.2s;
+}
+.kl-ann .kl-sch::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--dim);
+  transition: left 0.2s cubic-bezier(0.4, 0, 0.2, 1), background 0.2s;
+}
+.kl-ann.an {
+  background: var(--ok-flaeche);
+  border-color: transparent;
+  color: var(--text);
+}
+.kl-ann.an .kl-sch {
+  background: var(--ok);
+}
+.kl-ann.an .kl-sch::after {
+  left: 12px;
+  background: #fff;
+}
+.kl-ann:active {
+  transform: scale(0.95);
+}
+
+/* ---------------------------------------------------------------- Rechts: Status, Symbolknöpfe */
+.kl-stat {
+  all: unset;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  font-size: 12px;
+  color: var(--dim);
+  padding: 0 4px;
+  border-radius: 7px;
+  cursor: pointer;
+}
+.kl-stat:hover {
+  background: var(--hover);
+  color: var(--text-2);
+}
+.kl-stat .kl-sp {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ok);
+  flex: none;
+}
+.kl-stat.warn .kl-sp {
+  background: var(--gelb);
+}
+.kl-ik {
+  all: unset;
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  color: var(--text-2);
+  cursor: pointer;
+  flex: none;
+  position: relative;
+}
+.kl-ik:hover,
+.kl-ik.offen {
+  background: var(--hover);
+  color: var(--text);
+}
+.kl-ik .kl-mpkt {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--rot);
+  box-shadow: 0 0 0 2px var(--kopf);
+}
+.kl-zweit {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--dim);
+}
+.kl-zweit b {
+  color: var(--text);
+}
+
+/* ---------------------------------------------------------------- Fließend: was bei wenig Platz wegfällt */
+.kl-leiste.k-ohne-ichlbl .kl-ich-lbl,
+.kl-leiste.k-ohne-stat .kl-stat-lab,
+.kl-leiste.k-ohne-updtxt .kl-upd-lab,
+.kl-leiste.k-fen-ik .kl-fen-lab,
+.kl-leiste.k-ohne-marke .kl-marke-lab,
+.kl-leiste.k-ohne-wxtxt .kl-wx-lab,
+.kl-leiste.k-ohne-pausetxt .kl-pause-lab,
+.kl-leiste.k-ohne-neu .kl-neu,
+.kl-leiste.k-ohne-tempo .kl-leiste-tempo,
+.kl-leiste.k-ohne-ich .kl-ich-gr,
+.kl-leiste:not(.k-mehr) .kl-mehr-anker,
+.kl-leiste:not(.k-update) .kl-upd-anker {
+  display: none !important;
+}
+/* Fenster/Anordnung nur als Symbol */
+.kl-leiste.k-fen-ik .kn.kl-fenk {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border-radius: 8px;
+}
+.kl-leiste.k-ohne-updtxt .kn.kl-upd {
+  width: 30px;
+  padding: 0;
+}
+
+/* ---------------------------------------------------------------- Schublade wie im Hauptmenü
+   1. Der angeklickte Knopf wird in der Leiste so breit wie sein Fenster – die Beschriftungen der anderen klappen
+      dabei weich ein (Breite gleitet auf 0, nichts wird ausgetauscht).
+   2. Dann fährt das Fenster darunter heraus, der Inhalt hängt an der wandernden Unterkante; danach gleiten die Zeilen ein.
+   Zu: erst fährt das Fenster hoch, dann wird der Reiter wieder schmal, dann kommen die Beschriftungen zurück. */
+.kl-lab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: var(--lw, 160px);
+  overflow: hidden;
+  white-space: nowrap;
+  vertical-align: middle;
+  transition: max-width 0.38s var(--kl-ease), opacity 0.25s ease 0.1s, margin 0.38s var(--kl-ease);
+}
+.kl-lab.ein {
+  max-width: 0;
+  opacity: 0;
+  margin-left: -6px;
+  transition: max-width 0.38s var(--kl-ease), opacity 0.15s, margin 0.38s var(--kl-ease);
+}
+.kl-gl.kl-lab.ein {
+  margin-left: 0;
+  margin-right: -6px;
+}
+.kl-anker.reiter {
+  position: relative;
+  z-index: 31;
+  min-width: var(--pw);
+  background: var(--pop);
+  box-shadow: 0 0 0 1px var(--pop-rand);
+  border-radius: 10px 10px 0 0;
+  transition: min-width 0.38s var(--kl-ease), background 0.15s, box-shadow 0.15s, border-radius 0.15s;
+}
+.kl-anker.reiter.re {
+  justify-content: flex-end;
+}
+.kl-anker.reiter::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -3px;
+  height: 4px;
+  background: var(--pop);
+  z-index: 32;
+}
+.kl-anker.reiter .offen {
+  background: transparent !important;
+  color: var(--text);
+}
+.kl-pop {
+  position: absolute;
+  top: 100%;
+  z-index: 30;
+  background: var(--pop);
+  color: var(--text);
+  border-radius: 12px;
+  box-shadow: var(--pop-schatten);
+  padding: 6px;
+  box-sizing: border-box;
+  white-space: normal;
+  max-height: var(--pmax, 900px);
+  max-width: calc(100vw - 16px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: var(--linie) transparent;
+  text-align: left;
+  cursor: default;
+  animation: kl-schub 0.55s var(--kl-ease) 0.32s both;
+}
+.kl-pop.li {
+  left: var(--px, 0px);
+  border-top-left-radius: 0;
+}
+.kl-pop.re {
+  right: var(--px, 0px);
+  border-top-right-radius: 0;
+}
+/* ragt das Fenster über den Reiter hinaus, ist die Ecke dort rund */
+.kl-anker.kapp.re .kl-pop {
+  border-top-left-radius: 12px;
+}
+.kl-anker.kapp.li .kl-pop {
+  border-top-right-radius: 12px;
+}
+.kl-pop.zu {
+  animation: kl-schubzu 0.45s var(--kl-ease) forwards;
+  pointer-events: none;
+}
+/* ohne erneutes Hereinfahren (Inhalt wird nur aufgefrischt) */
+.kl-pop.steht:not(.zu),
+.kl-pop.steht .kl-z,
+.kl-pop.neu-gezeichnet:not(.zu) {
+  animation: none !important;
+}
+@keyframes kl-schub {
+  from {
+    transform: translateY(-100%);
+    clip-path: inset(100% -60px -90px -60px);
+  }
+  to {
+    transform: none;
+    clip-path: inset(0 -60px -90px -60px);
+  }
+}
+@keyframes kl-schubzu {
+  from {
+    transform: none;
+    clip-path: inset(0 -60px -90px -60px);
+  }
+  to {
+    transform: translateY(-100%);
+    clip-path: inset(100% -60px -90px -60px);
+  }
+}
+@keyframes kl-auf {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.kl-pop .kl-z {
+  animation: kl-zeile 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation-delay: calc(var(--d, 0) * 35ms + 640ms);
+}
+.kl-pop.neu-gezeichnet .kl-z {
+  animation-delay: calc(var(--d, 0) * 25ms);
+}
+@keyframes kl-zeile {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .kl-pop,
+  .kl-pop .kl-z,
+  .kl-anker,
+  .kl-lab {
+    animation-duration: 0.01s !important;
+    animation-delay: 0s !important;
+    transition-duration: 0.01s !important;
+  }
+}
+
+/* ---------------------------------------------------------------- Zeilen in den Schubladen */
+.kl-pkopf {
+  padding: 8px 10px 6px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+.kl-pkopf.gr {
+  padding-top: 6px;
+  padding-bottom: 2px;
+  font-size: 10px;
+}
+.kl-trenn {
+  height: 1px;
+  background: var(--trenner);
+  margin: 6px 4px;
+}
+.kl-p {
+  all: unset;
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: 20px 18px minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 9px;
+  width: 100%;
+  min-height: 40px;
+  padding: 5px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--text);
+}
+.kl-p:hover {
+  background: var(--hover);
+}
+.kl-p.klein {
+  min-height: 36px;
+}
+.kl-p .kl-hk {
+  color: var(--akzent-text);
+  display: grid;
+  place-items: center;
+}
+.kl-p .kl-pi {
+  color: var(--text-2);
+  display: grid;
+  place-items: center;
+}
+.kl-p .kl-pt {
+  min-width: 0;
+}
+.kl-p .kl-pn {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+.kl-p .kl-pinfo {
+  font-size: 11.5px;
+  color: var(--dim);
+  line-height: 1.3;
+  margin-top: 1px;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.kl-p .kl-pr {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.kl-p.aus {
+  cursor: default;
+  color: var(--dim);
+}
+.kl-p.aus:hover {
+  background: transparent;
+}
+.kl-p.gefahr .kl-pn,
+.kl-p.gefahr .kl-pi {
+  color: var(--rot-text);
+}
+.kl-wo {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--dim);
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--flaeche-2);
+}
+.kl-wo.hier {
+  color: var(--akzent-text);
+  background: var(--akzent-flaeche);
+}
+.kl-plus {
+  all: unset;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 7px;
+  border-radius: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-2);
+  border: 1px solid var(--linie);
+  cursor: pointer;
+}
+.kl-plus:hover {
+  border-color: var(--dim);
+  color: var(--text);
+}
+.kl-hinw {
+  font-size: 11.5px;
+  color: var(--dim);
+  line-height: 1.35;
+}
+
+/* Anordnung */
+.kl-p.vl {
+  grid-template-columns: 20px 74px minmax(0, 1fr) auto;
+  min-height: 52px;
+}
+.kl-vb {
+  width: 74px;
+  height: 42px;
+  display: block;
+}
+.kl-vb rect {
+  fill: var(--flaeche-2);
+  stroke: color-mix(in srgb, var(--linie) 55%, var(--dim));
+  stroke-width: 1;
+}
+.kl-vb rect.sch {
+  fill: var(--grund);
+  stroke: var(--dim);
+  stroke-width: 1;
+}
+.kl-p.gew .kl-vb rect.sch {
+  stroke: var(--akzent);
+}
+.kl-p.gew,
+.kl-p.gew:hover {
+  background: var(--akzent-flaeche);
+}
+.kl-spei {
+  margin: 4px 4px 2px;
+  padding: 10px;
+  border-radius: 10px;
+  background: var(--flaeche-2);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  animation: kl-zeile 0.2s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.kl-spei .kl-zeile {
+  display: flex;
+  gap: 6px;
+}
+.kl-leiste .kl-spei .feld {
+  height: 32px;
+}
+
+/* Wetter */
+.kl-wpop {
+  width: 452px;
+}
+.kl-wk {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 8px 10px;
+}
+.kl-wk .kl-wsym {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  background: var(--flaeche-2);
+  color: var(--text);
+  flex: none;
+}
+.kl-wk .kl-wt {
+  font-size: 14px;
+  font-weight: 700;
+}
+.kl-wk .kl-ws {
+  font-size: 11.5px;
+  color: var(--dim);
+}
+.kl-flug {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+  margin: 0 4px 8px;
+  padding: 9px 11px;
+  border-radius: 9px;
+  font-size: 12.5px;
+  line-height: 1.35;
+}
+.kl-flug b {
+  font-weight: 700;
+}
+.kl-flug .kl-fz {
+  font-size: 11.5px;
+  opacity: 0.85;
+}
+.kl-flug.ok {
+  background: var(--ok-flaeche);
+}
+.kl-flug.ok .ic {
+  color: var(--ok);
+}
+.kl-flug.gelb {
+  background: var(--gelb-flaeche);
+}
+.kl-flug.gelb .ic {
+  color: var(--gelb-text);
+}
+.kl-flug.rot {
+  background: var(--rot-flaeche);
+}
+.kl-flug.rot .ic {
+  color: var(--rot-text);
+}
+.kl-wsegs {
+  margin: 0 4px 8px;
+}
+.kl-leiste .kl-wsegs .seg {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.kl-wsegs .kl-zahl {
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  box-sizing: border-box;
+  border-radius: 8px;
+  font-size: 10.5px;
+  font-weight: 700;
+  display: inline-grid;
+  place-items: center;
+  background: var(--gelb);
+  color: #111216;
+}
+.kl-winh {
+  max-height: var(--wmax, 470px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0 4px 4px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--linie) transparent;
+}
+.kl-jetzt {
+  display: grid;
+  grid-template-columns: 56px auto minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 6px 6px 12px;
+}
+.kl-jetzt .kl-gsym {
+  width: 56px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: var(--flaeche-2);
+}
+.kl-jetzt .kl-gsym .ic {
+  width: 32px;
+  height: 32px;
+  stroke-width: 1.6;
+}
+.kl-temp {
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+.kl-lage {
+  font-size: 13px;
+  font-weight: 600;
+  margin-top: 4px;
+}
+.kl-satz {
+  font-size: 12px;
+  color: var(--text-2);
+  line-height: 1.4;
+}
+.kl-werte {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--trenner);
+  border-radius: 10px;
+  overflow: hidden;
+  margin: 0 2px 12px;
+}
+.kl-werte > div {
+  background: var(--pop);
+  padding: 7px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.kl-werte span {
+  font-size: 11px;
+  color: var(--dim);
+}
+.kl-werte b {
+  font-size: 13px;
+  font-weight: 600;
+}
+.kl-werte b i {
+  font-style: normal;
+  font-weight: 500;
+  color: var(--dim);
+  font-size: 11.5px;
+}
+.kl-abs {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--dim);
+  padding: 2px 6px 6px;
+}
+.kl-std {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 2px;
+  margin: 0 2px 12px;
+}
+.kl-std > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 6px 0;
+  border-radius: 8px;
+  font-size: 11px;
+  color: var(--dim);
+}
+.kl-std > div b {
+  font-size: 13px;
+  color: var(--text);
+  font-weight: 600;
+}
+.kl-std > div .ic {
+  color: var(--text-2);
+}
+.kl-std > div.fl {
+  background: var(--gelb-flaeche);
+}
+.kl-std > div.fr {
+  background: var(--rot-flaeche);
+}
+.kl-tage {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 4px;
+  margin: 0 2px 8px;
+}
+.kl-tage > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 8px 0;
+  border-radius: 9px;
+  background: var(--flaeche-2);
+  font-size: 11px;
+  color: var(--dim);
+}
+.kl-tage > div b {
+  font-size: 12.5px;
+  color: var(--text);
+  font-weight: 600;
+}
+.kl-tage > div .kl-tn {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+}
+.kl-tab {
+  display: grid;
+  grid-template-columns: 50px 22px minmax(0, 1fr) 34px 68px 46px 94px;
+  align-items: center;
+  column-gap: 6px;
+  font-size: 12px;
+}
+.kl-tab.kopf {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--dim);
+  padding: 0 6px 6px;
+  border-bottom: 1px solid var(--trenner);
+}
+.kl-tab.z {
+  padding: 6px;
+  border-bottom: 1px solid var(--trenner);
+}
+.kl-tab.z.jetzt {
+  background: var(--akzent-flaeche);
+  border-radius: 7px;
+  border-bottom-color: transparent;
+}
+.kl-tab .r {
+  text-align: right;
+}
+.kl-tab .ic {
+  color: var(--text-2);
+}
+.kl-tab.z > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.kl-fm {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.kl-fm.ok {
+  background: var(--ok-flaeche);
+  color: var(--ok);
+}
+.kl-fm.gelb {
+  background: var(--gelb-flaeche);
+  color: var(--gelb-text);
+}
+.kl-fm.rot {
+  background: var(--rot-flaeche);
+  color: var(--rot-text);
+}
+.kl-warn {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  padding: 10px;
+  border-radius: 10px;
+  background: var(--flaeche-2);
+  margin: 0 2px 6px;
+}
+.kl-wst {
+  display: inline-flex;
+  justify-content: center;
+  padding: 3px 0;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #111216;
+}
+.kl-wst.gelb {
+  background: #ffc72c;
+}
+.kl-wst.orange {
+  background: #f2913a;
+}
+.kl-wst.rot {
+  background: #e5484d;
+}
+.kl-warn b {
+  font-size: 13px;
+  font-weight: 600;
+  display: block;
+}
+.kl-warn .kl-wz {
+  font-size: 11.5px;
+  color: var(--dim);
+  margin-top: 2px;
+}
+.kl-warn .kl-wf {
+  font-size: 11.5px;
+  color: var(--text-2);
+  margin-top: 4px;
+  line-height: 1.35;
+}
+.kl-keine {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  padding: 12px;
+  border-radius: 10px;
+  background: var(--ok-flaeche);
+  margin: 0 2px 8px;
+}
+.kl-keine .ic {
+  color: var(--ok);
+}
+.kl-keine b {
+  font-size: 13px;
+}
+.kl-wfuss {
+  font-size: 11px;
+  color: var(--dim);
+  padding: 8px 8px 4px;
+  border-top: 1px solid var(--trenner);
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+/* Mehr (⋯) */
+.kl-mpop {
+  width: 320px;
+}
+.kl-mabs {
+  padding: 8px 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-bottom: 1px solid var(--trenner);
+}
+.kl-mabs:last-child {
+  border-bottom: 0;
+}
+.kl-mabs .kl-mr {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.kl-mabs .kl-gl {
+  margin: 0;
+}
+.kl-mabs .kl-tempo {
+  width: 100%;
+}
+
+/* Spielmenü (vorläufig) */
+.kl-spop {
+  width: 300px;
+}
+
+/* Update und Fehler melden */
+.kl-leiste .kn.kl-upd {
+  color: var(--akzent-text);
+  background: var(--akzent-flaeche);
+  border-color: transparent;
+}
+.kl-leiste .kn.kl-upd.laedt {
+  background: linear-gradient(90deg, var(--akzent-flaeche) var(--w, 0%), transparent var(--w, 0%));
+  box-shadow: inset 0 0 0 1px var(--akzent-flaeche);
+}
+.kl-anker.reiter .kn.kl-upd {
+  background: transparent;
+}
+.kl-upop {
+  width: 380px;
+}
+.kl-fpop {
+  width: 400px;
+}
+.kl-uneu {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 4px 8px 10px;
+  font-size: 12.5px;
+  color: var(--text-2);
+}
+.kl-uneu > div {
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr);
+  gap: 6px;
+  align-items: baseline;
+  line-height: 1.35;
+}
+.kl-uneu i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--akzent);
+  transform: translateY(-2px);
+}
+.kl-ulad {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0 6px 10px;
+  font-size: 12px;
+  color: var(--text-2);
+}
+.kl-ubar {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--flaeche-2);
+  overflow: hidden;
+}
+.kl-ubar i {
+  display: block;
+  height: 100%;
+  width: var(--w, 0%);
+  background: var(--akzent);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+.kl-uinfo {
+  margin: 0 4px 8px;
+  padding: 9px 11px;
+  border-radius: 9px;
+  background: var(--flaeche-2);
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-2);
+}
+.kl-uinfo.gelb {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 8px;
+  background: var(--gelb-flaeche);
+  color: var(--text);
+}
+.kl-uinfo.gelb .ic {
+  color: var(--gelb-text);
+  margin-top: 1px;
+}
+.kl-uinfo.rot {
+  background: var(--rot-flaeche);
+  color: var(--text);
+}
+.kl-uknopf {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 4px;
+}
+.kl-flab {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0 6px 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.kl-leiste .feld.kl-fta {
+  height: 84px;
+  padding: 8px 10px;
+  resize: vertical;
+  font: inherit;
+  font-weight: 400;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.kl-fin {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 8px 10px;
+}
+.kl-fin > div {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 7px;
+  font-size: 12.5px;
+  line-height: 1.35;
+}
+.kl-fin .ic {
+  color: var(--ok);
+}
+.kl-fin small {
+  display: block;
+  color: var(--dim);
+  font-size: 11.5px;
+}
+.kl-fok {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 10px;
+  margin: 0 4px 10px;
+  padding: 12px;
+  border-radius: 10px;
+  background: var(--ok-flaeche);
+}
+.kl-leiste .kl-fok .ic {
+  color: var(--ok);
+  width: 24px;
+  height: 24px;
+}
+.kl-fok b {
+  display: block;
+  font-size: 13.5px;
+}
+.kl-fok code {
+  display: block;
+  font-family: inherit;
+  font-size: 11.5px;
+  margin: 4px 0;
+  color: var(--text-2);
+  word-break: break-all;
+}
+.kl-fok span {
+  font-size: 12px;
+  color: var(--text-2);
+}
+
+/* Hinweis beim Darüberfahren */
+.kl-tip {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 30;
+  background: var(--pop);
+  box-shadow: var(--pop-schatten);
+  border-radius: 9px;
+  padding: 8px 11px;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.35;
+  width: max-content;
+  max-width: 280px;
+  white-space: normal;
+  color: var(--text);
+  text-transform: none;
+  letter-spacing: 0;
+  animation: kl-auf 0.16s both;
+  pointer-events: none;
+}
+.kl-tip b {
+  display: block;
+  margin-bottom: 2px;
+}
+.kl-tip.re {
+  left: auto;
+  right: 0;
+}
+
+/* Messkopie (unsichtbar): misst, wie breit die Leiste in jeder Stufe wäre */
+.kl-leiste.kl-mess {
+  position: fixed !important;
+  left: -100000px;
+  top: 0;
+  width: max-content !important;
+  visibility: hidden;
+  pointer-events: none;
+  contain: layout style;
+}
+.kl-leiste.kl-mess .kl-lab {
+  max-width: none !important;
+}
+.kl-leiste.kl-mess .kl-platz {
+  flex: 0 0 0;
+}
+.kl-leiste.kl-mess *,
+.kl-leiste.kl-mess *::before,
+.kl-leiste.kl-mess *::after {
+  transition: none !important;
+  animation: none !important;
+}

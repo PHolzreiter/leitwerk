@@ -252,8 +252,9 @@ export function oeffneSpielDialog(): void {
 
 /** Knopf oben in der Leiste und Hinweise bei Verbindungsproblemen */
 export function setupSpielStatus(): void {
-  const btn = document.getElementById("btn-spiel") as HTMLButtonElement;
-  btn.addEventListener("click", () => oeffneSpielDialog());
+  // früherer Knopf „Spiel“ in der Leiste; die neue Kopfleiste zeigt den Status selbst (Knopf kann fehlen)
+  const btn = document.getElementById("btn-spiel") as HTMLButtonElement | null;
+  btn?.addEventListener("click", () => oeffneSpielDialog());
 
   const overlay = el("div", { class: "host-weg", hidden: "" });
   document.body.appendChild(overlay);
@@ -263,15 +264,17 @@ export function setupSpielStatus(): void {
   let letzterFehler: string | null = null;
   const render = () => {
     const s = mp.status;
-    btn.classList.toggle("primary", s.rolle !== "aus");
-    btn.classList.toggle("warn", s.rolle !== "aus" && (!s.verbunden || (s.rolle === "client" && !s.hostDa)));
-    const online = mp.spieler.filter((x) => x.online).length;
-    btn.textContent =
-      s.rolle === "aus"
-        ? store.inSession
-          ? "Spiel (Spielstand)"
-          : "Spiel"
-        : `${s.rolle === "host" ? "Host" : "Mitspieler"} · ${s.code} · ${online} Spieler`;
+    if (btn) {
+      btn.classList.toggle("primary", s.rolle !== "aus");
+      btn.classList.toggle("warn", s.rolle !== "aus" && (!s.verbunden || (s.rolle === "client" && !s.hostDa)));
+      const online = mp.spieler.filter((x) => x.online).length;
+      btn.textContent =
+        s.rolle === "aus"
+          ? store.inSession
+            ? "Spiel (Spielstand)"
+            : "Spiel"
+          : `${s.rolle === "host" ? "Host" : "Mitspieler"} · ${s.code} · ${online} Spieler`;
+    }
 
     banner.hidden = !(s.rolle !== "aus" && !s.verbunden);
     banner.textContent = s.rolle === "host" ? "Verbindung zum Server unterbrochen – Spiel pausiert, verbinde neu …" : "Verbindung unterbrochen – verbinde neu …";
