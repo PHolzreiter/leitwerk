@@ -1,0 +1,46 @@
+<div class="k-KHStatus" style="display: contents;">
+<section class="fe">
+  <div class="inhalt">
+    <div class="k-kopf">
+      <label class="k-such"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"></circle><path d="M20 20l-4.5-4.5"></path></svg><input class="feld" value="{{such}}" onInput="{{suchEin}}" placeholder="Name, Ort oder Abteilung …" aria-label="Krankenhaus suchen" title="Mehrere Wörter grenzen ein. Eine Abteilung zeigt nur Häuser, die sie haben."></label>
+      <div class="k-z2">
+        <div class="segs gleit k-land" role="group" aria-label="Bundesland" style="--i: {{landIdx}}; --n: 2;"><sc-for list="{{laender}}" as="u" hint-placeholder-count="2"><button class="{{u.cls}}" onClick="{{u.klick}}" aria-pressed="{{u.an}}">{{u.t}}</button></sc-for></div>
+        <button class="{{rettCls}}" onClick="{{rettKlick}}" aria-pressed="{{rettAn}}" title="Nur Häuser, die Notfallpatienten vom Rettungsdienst aufnehmen"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>nimmt Notfälle</button>
+      </div>
+    </div>
+    <div class="ab">
+      <div class="{{listeCls}}" role="table" aria-label="{{tabTitel}}" style="--kc: {{cols}};">
+        <div class="kk" role="row"><sc-for list="{{kopf}}" as="k" hint-placeholder-count="9"><div class="{{k.zelle}}"><button class="{{k.cls}}" onClick="{{k.klick}}" onMouseDown="{{k.greif}}" aria-sort="{{k.aria}}" title="{{k.titel}}"><span class="skt"><span class="kurzL">{{k.kurz}}</span><span class="mittelL">{{k.t}}</span><span class="langL">{{k.lang}}</span></span><svg class="ic pf" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5"></path></svg></button><sc-if value="{{k.zieh}}" hint-placeholder-val="{{true}}"><span class="spz" role="separator" aria-orientation="vertical" aria-label="Spaltenbreite" tabindex="0" title="Ziehen ändert die Spaltenbreite · Doppelklick: Standardbreiten und -reihenfolge" onMouseDown="{{k.ziehStart}}" onDoubleClick="{{k.reset}}" onKeyDown="{{k.taste}}"></span></sc-if></div></sc-for></div>
+        <sc-for list="{{haeuser}}" as="h" hint-placeholder-count="8">
+          <div class="{{h.cls}}" role="row" tabindex="0" onClick="{{h.klick}}" onKeyDown="{{h.taste}}" title="Klick: Krankenhaus-Übersicht öffnen">
+            <div class="kn2"><b>{{h.kurz}}</b><div class="u"><span class="o">{{h.ort}}</span><sc-if value="{{h.hatRad}}" hint-placeholder-val="{{false}}"><span class="{{h.radCls}}" title="{{h.radTitel}}">{{h.rad}}</span></sc-if></div></div>
+            <sc-for list="{{h.zellen}}" as="z" hint-placeholder-count="7">
+              <div class="{{z.wrap}}"><div class="{{z.cls}}" title="{{z.titel}}" onClick="{{z.klick}}">
+                <sc-if value="{{z.istZahl}}" hint-placeholder-val="{{true}}"><span class="pz-z"><b>{{z.frei}}</b><span class="pz-n">/{{z.n}}</span></span><span class="pz-bar"><i style="width: {{z.anteil}}%;"></i></span></sc-if>
+                <sc-if value="{{z.istText}}" hint-placeholder-val="{{false}}"><span class="pz-t">{{z.text}}</span></sc-if>
+                <sc-if value="{{z.istSym}}" hint-placeholder-val="{{false}}"><span class="as-g alle"><sc-for list="{{z.sym}}" as="y" hint-placeholder-count="1"><i class="{{y.cls}}"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5"></circle><path d="{{y.d}}"></path></svg></i></sc-for></span><span class="as-g eins"><i class="{{z.eins.cls}}"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5"></circle><path d="{{z.eins.d}}"></path></svg></i></span></sc-if>
+              </div></div>
+            </sc-for>
+          </div>
+        </sc-for>
+        <sc-if value="{{keine}}" hint-placeholder-val="{{false}}"><div class="leer2">Kein Krankenhaus passt zu Suche und Filter.</div></sc-if>
+      </div>
+      <sc-if value="{{istAkut}}" hint-placeholder-val="{{false}}">
+        <div class="legende"><sc-for list="{{legende}}" as="l" hint-placeholder-count="4"><span><i class="{{l.cls}}"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5"></circle><path d="{{l.d}}"></path></svg></i>{{l.t}}</span></sc-for><span>leer = gibt es dort nicht</span><span>Klick auf ✕: wer belegt</span></div>
+      </sc-if>
+    </div>
+  </div>
+
+  <!-- Klick auf belegte Plätze: wer belegt sie -->
+  <sc-if value="{{popOffen}}" hint-placeholder-val="{{false}}">
+    <div class="pop-schirm" onClick="{{popZu}}"></div>
+    <div class="pop" role="dialog" aria-label="Wer belegt" style="left: {{popX}}px; top: {{popY}}px;">
+      <div class="pop-k"><span class="t"><b>{{popKh}}</b> <span class="m">· {{popWas}}</span></span><button class="iknopf" aria-label="Schließen" onClick="{{popZu}}"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button></div>
+      <sc-if value="{{popLeer}}" hint-placeholder-val="{{false}}"><div class="pop-z m">Gerade nichts belegt.</div></sc-if>
+      <sc-for list="{{popZeilen}}" as="p" hint-placeholder-count="2">
+        <div class="pop-z"><div class="a"><b>{{p.a}}</b> <span class="m">· {{p.bis}}</span></div><sc-if value="{{p.hatFz}}" hint-placeholder-val="{{true}}"><div>{{p.fz}}</div></sc-if><div class="m">{{p.grund}}</div></div>
+      </sc-for>
+    </div>
+  </sc-if>
+</section>
+</div>

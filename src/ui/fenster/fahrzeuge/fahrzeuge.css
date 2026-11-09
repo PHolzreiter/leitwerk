@@ -1,0 +1,159 @@
+/* Fahrzeuge-Fenster – CSS aus dem Entwurf „Fahrzeuge.dc.html“ (LeitWerk Arbeitsplatz), unverändert übernommen; Anpassungen fürs Spiel am Ende. */
+:where(.k-Fahrzeuge) .fe{position:relative}
+:where(.k-Fahrzeuge) .f-kopf{display:flex;flex-direction:column;gap:8px;padding:10px 16px;border-bottom:1px solid var(--trenner)}
+:where(.k-Fahrzeuge) .f-such{position:relative}
+:where(.k-Fahrzeuge) .f-such .ic{position:absolute;left:10px;top:11px;color:var(--dim)}
+:where(.k-Fahrzeuge) .f-such .feld{padding-left:32px;height:36px}
+:where(.k-Fahrzeuge) .f-z2{display:flex;gap:8px;align-items:center;min-width:0}
+
+:where(.k-Fahrzeuge) .chips2{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;flex:1;min-width:0;mask-image:linear-gradient(90deg,#000 92%,transparent)}
+:where(.k-Fahrzeuge) .chip{all:unset;box-sizing:border-box;display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:999px;border:1px solid var(--linie);font-size:12px;font-weight:600;color:var(--text-2);cursor:pointer;white-space:nowrap;flex:none;transition:background .2s,border-color .2s,color .2s,transform .12s}
+:where(.k-Fahrzeuge) .chip:hover{border-color:var(--dim)}
+:where(.k-Fahrzeuge) .chip:active{transform:scale(.96)}
+:where(.k-Fahrzeuge) .chip .n{font-size:11px;font-weight:700;color:var(--dim);font-variant-numeric:tabular-nums}
+:where(.k-Fahrzeuge) .chip.on{background:var(--akzent);border-color:var(--akzent);color:var(--auf-akzent)}
+:where(.k-Fahrzeuge) .chip.on .n{color:var(--auf-akzent);opacity:.75}
+:where(.k-Fahrzeuge) .chip:focus-visible{outline:2px solid var(--akzent);outline-offset:2px}
+:where(.k-Fahrzeuge) .chip i{width:14px;height:14px;border-radius:3px;display:grid;place-items:center;font-style:normal;font-size:10px;font-weight:800;color:#111216}
+:where(.k-Fahrzeuge) .bereich{flex:none;width:170px}
+:where(.k-Fahrzeuge) .f-gruppe{flex:1 1 auto;min-width:0}
+:where(.k-Fahrzeuge) .f-gruppe .seg{padding:5px 4px}
+
+@container fenster (max-width: 640px){ :where(.k-Fahrzeuge) .f-z2{flex-direction:column;align-items:stretch} :where(.k-Fahrzeuge) .f-z2 .bereich{width:auto} }
+
+:where(.k-Fahrzeuge) .liste2{border:1px solid var(--trenner);border-radius:10px}
+:where(.k-Fahrzeuge) .liste2 > :first-child{border-radius:9px 9px 0 0}
+:where(.k-Fahrzeuge) .liste2 > :last-child,:where(.k-Fahrzeuge) .liste2 > .dst-in:last-child .fzz:last-child{border-radius:0 0 9px 9px}
+
+:where(.k-Fahrzeuge) .inhalt{overflow-y:auto !important}
+:where(.k-Fahrzeuge) .lz.fzz{display:grid;gap:8px;align-items:center;padding:0 10px;min-height:38px;border-top:1px solid var(--trenner);cursor:pointer;position:relative}
+:where(.k-Fahrzeuge) .fzz:first-child{border-top:0}
+:where(.k-Fahrzeuge) .fzz .auf{font-size:12px;color:var(--zeile-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+:where(.k-Fahrzeuge) .fzz .auf b{color:var(--zeile-text);font-weight:700}
+:where(.k-Fahrzeuge) .fzz .crew{display:none;position:absolute;z-index:6;left:36px;top:calc(100% - 6px);padding:6px;border-radius:8px;background:var(--flaeche);box-shadow:0 0 0 1px var(--linie),0 10px 24px -8px rgba(0,0,0,.55);gap:4px;pointer-events:none}
+:where(.k-Fahrzeuge) .fzz .crew .q{background:var(--flaeche-2);color:var(--text-2)}
+:where(.k-Fahrzeuge) .fzz .nm b{cursor:help}
+:where(.k-Fahrzeuge) .fzz .nm:hover ~ .crew{display:flex}
+:where(.k-Fahrzeuge) .fzz:hover{z-index:7}
+:where(.k-Fahrzeuge) .fzz.gewaehlt{box-shadow:inset 3px 0 0 var(--akzent),inset 0 0 0 1px var(--akzent)}
+:where(.k-Fahrzeuge) .aussen{font-size:10.5px;font-weight:700;padding:1px 5px;border-radius:4px;background:rgba(255,255,255,.55);color:var(--zeile-dim);margin-left:4px}
+
+:where(.k-Fahrzeuge) .dst{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--flaeche-2);border-top:1px solid var(--trenner);cursor:pointer;font-size:12.5px;font-weight:700}
+:where(.k-Fahrzeuge) .dst:first-child{border-top:0}
+:where(.k-Fahrzeuge) .dst .ch{transition:transform .25s cubic-bezier(.2,.8,.2,1);color:var(--dim)}
+:where(.k-Fahrzeuge) .dst.zu .ch{transform:rotate(-90deg)}
+:where(.k-Fahrzeuge) .dst .z{margin-left:4px;font-size:12px;font-weight:500;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+:where(.k-Fahrzeuge) .dst-in{display:grid;grid-template-rows:1fr;transition:grid-template-rows .35s cubic-bezier(.65,0,.35,1)}
+:where(.k-Fahrzeuge) .dst-in.zu{grid-template-rows:0fr}
+:where(.k-Fahrzeuge) .dst-in > div{min-height:0;overflow:hidden}
+
+:where(.k-Fahrzeuge) .log{display:grid;grid-template-columns:62px minmax(0,auto) auto 14px auto minmax(0,1fr);gap:8px;align-items:center;padding:7px 10px;border-top:1px solid var(--trenner);font-size:12.5px;cursor:pointer}
+:where(.k-Fahrzeuge) .log:first-child{border-top:0}
+:where(.k-Fahrzeuge) .log:hover{background:var(--hover)}
+:where(.k-Fahrzeuge) .log .t{color:var(--dim);font-variant-numeric:tabular-nums}
+:where(.k-Fahrzeuge) .log .w{color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+:where(.k-Fahrzeuge) .sc{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 4px;box-sizing:border-box;border-radius:5px;font-size:11.5px;font-weight:800;color:#111216}
+:where(.k-Fahrzeuge) .sc.funk{color:var(--funk)}
+:where(.k-Fahrzeuge) .log .pf{color:var(--dim);text-align:center}
+
+:where(.k-Fahrzeuge) .menue-schirm{position:absolute;inset:0;z-index:20}
+:where(.k-Fahrzeuge) .menue{position:absolute;z-index:21;width:220px;padding:6px;border-radius:10px;background:var(--flaeche);box-shadow:0 0 0 1px var(--linie),0 18px 40px -12px rgba(0,0,0,.6);animation:fahrzeuge-aufgehen .16s cubic-bezier(.2,.8,.2,1)}
+@keyframes fahrzeuge-aufgehen{from{opacity:0;transform:scale(.97) translateY(-4px)}to{opacity:1;transform:none}}
+:where(.k-Fahrzeuge) .menue .mk{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);padding:4px 6px 6px}
+:where(.k-Fahrzeuge) .mz{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:8px;width:100%;padding:5px 6px;border-radius:7px;font-size:12.5px;cursor:pointer}
+:where(.k-Fahrzeuge) .mz:hover,:where(.k-Fahrzeuge) .mz:focus-visible{background:var(--hover)}
+:where(.k-Fahrzeuge) .mz.akt{font-weight:700}
+:where(.k-Fahrzeuge) .toast{position:absolute;z-index:15;left:50%;bottom:16px;transform:translateX(-50%);padding:8px 14px;border-radius:9px;background:var(--text);color:var(--grund);font-size:12.5px;font-weight:600;white-space:nowrap;box-shadow:0 10px 24px -8px rgba(0,0,0,.5)}
+:where(.k-Fahrzeuge) .leer2{padding:22px 10px;text-align:center;color:var(--dim);font-size:12.5px}
+:where(.k-Fahrzeuge) .f-hinw{font-size:11.5px;color:var(--dim)}
+@container fenster (max-width: 430px){
+  :where(.k-Fahrzeuge) .f-z2{flex-direction:column;align-items:stretch}
+  :where(.k-Fahrzeuge) .bereich{width:auto}
+  :where(.k-Fahrzeuge) .log{grid-template-columns:54px minmax(0,1fr) auto 12px auto}
+  :where(.k-Fahrzeuge) .log .w{grid-column:2 / -1}
+}
+
+:where(.k-Fahrzeuge) .fzz .stz,:where(.k-Fahrzeuge) .fzz .nm .ty,:where(.k-Fahrzeuge) .fzz .wa,:where(.k-Fahrzeuge) .fzz .auf,:where(.k-Fahrzeuge) .typ2,:where(.k-Fahrzeuge) .lst,:where(.k-Fahrzeuge) .ziel,:where(.k-Fahrzeuge) .ort2,:where(.k-Fahrzeuge) .fzk,:where(.k-Fahrzeuge) .fzk-b,:where(.k-Fahrzeuge) .fzk-s{display:none}
+:where(.k-Fahrzeuge) .stx{font-size:12.5px;font-weight:700;color:var(--zeile-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+:where(.k-Fahrzeuge) .typ2{font-size:12.5px;font-weight:600;color:var(--zeile-dim);white-space:nowrap}
+:where(.k-Fahrzeuge) .lst,:where(.k-Fahrzeuge) .ziel,:where(.k-Fahrzeuge) .ort2{font-size:12.5px;color:var(--zeile-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+:where(.k-Fahrzeuge) .ziel,:where(.k-Fahrzeuge) .ort2{color:var(--zeile-text);font-weight:600}
+:where(.k-Fahrzeuge) .ort2.nur{color:var(--zeile-dim);font-weight:500}
+:where(.k-Fahrzeuge) .fzz.funk .stx,:where(.k-Fahrzeuge) .fzz.funk .lst,:where(.k-Fahrzeuge) .fzz.funk .ziel,:where(.k-Fahrzeuge) .fzz.funk .ort2,:where(.k-Fahrzeuge) .fzz.funk .typ2,:where(.k-Fahrzeuge) .fzz.funk .code1{color:var(--funk)}
+:where(.k-Fahrzeuge) .codes{display:flex;flex-direction:column;gap:2px;align-items:flex-start;min-width:0}
+:where(.k-Fahrzeuge) .code1{position:relative;cursor:help;outline:none;font-size:12.5px;font-weight:700;letter-spacing:.02em;font-variant-numeric:tabular-nums;color:var(--zeile-text);line-height:1.35;white-space:nowrap}
+:where(.k-Fahrzeuge) .code1 .ct{display:none;position:absolute;z-index:8;right:calc(100% + 8px);top:50%;transform:translateY(-50%);white-space:normal;width:max-content;max-width:210px;line-height:1.35;padding:6px 9px;border-radius:8px;background:var(--flaeche);color:var(--text);font-weight:600;letter-spacing:0;box-shadow:0 0 0 1px var(--linie),0 10px 24px -8px rgba(0,0,0,.55)}
+:where(.k-Fahrzeuge) .code1:hover .ct,:where(.k-Fahrzeuge) .code1:focus-visible .ct{display:block}
+:where(.k-Fahrzeuge) .fzk-n,:where(.k-Fahrzeuge) .fzk-b,:where(.k-Fahrzeuge) .fzk-s{gap:8px;align-items:center;padding:0 10px;height:30px;background:var(--flaeche-2);font-size:10.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--dim)}
+:where(.k-Fahrzeuge) .lz.fzz{padding-top:6px;padding-bottom:6px}
+:where(.k-Fahrzeuge) .sk{all:unset;box-sizing:border-box;position:relative;cursor:pointer;display:inline-flex;align-items:center;justify-self:start;max-width:100%;min-width:0;height:22px;border-radius:5px;color:var(--dim);transition:color .15s}
+:where(.k-Fahrzeuge) .sk .skt{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+:where(.k-Fahrzeuge) .sk .pf{position:absolute;right:-12px;top:5px;width:11px;height:11px;stroke-width:2.6;opacity:0;transition:opacity .15s,transform .22s cubic-bezier(.4,0,.2,1)}
+:where(.k-Fahrzeuge) .sk:hover{color:var(--text)}:where(.k-Fahrzeuge) .sk:hover .pf{opacity:.45}
+:where(.k-Fahrzeuge) .sk.on{color:var(--text)}:where(.k-Fahrzeuge) .sk.on .pf{opacity:1}
+:where(.k-Fahrzeuge) .sk.hoch .pf{transform:rotate(180deg)}
+:where(.k-Fahrzeuge) .hk{position:relative;display:flex;align-items:center;min-width:0;height:100%}:where(.k-Fahrzeuge) .hk.re{justify-content:flex-end}
+:where(.k-Fahrzeuge) .spz{position:absolute;z-index:2;top:3px;bottom:3px;right:-9px;width:10px;cursor:col-resize;outline:none}
+:where(.k-Fahrzeuge) .spz::after{content:"";position:absolute;top:3px;bottom:3px;left:4px;width:1px;border-radius:2px;background:var(--trenner);transition:background .15s,width .15s,left .15s}
+:where(.k-Fahrzeuge) .spz:hover::after,:where(.k-Fahrzeuge) .spz:focus-visible::after,:where(.k-Fahrzeuge) .zieht .spz::after{left:3px;width:3px;background:var(--akzent)}
+:where(.k-Fahrzeuge) .zieht,:where(.k-Fahrzeuge) .zieht *{cursor:col-resize !important;user-select:none}:where(.k-Fahrzeuge) .sk.re .pf{right:auto;left:-12px}
+:where(.k-Fahrzeuge) .sk:focus-visible{outline:2px solid var(--akzent);outline-offset:1px}
+:where(.k-Fahrzeuge) .fzz .crew{left:10px}
+
+:where(.k-Fahrzeuge) .lz.fzz,:where(.k-Fahrzeuge) .fzk-n{grid-template-columns:var(--cn)}
+:where(.k-Fahrzeuge) .fzk-n{display:grid}
+:where(.k-Fahrzeuge) .lz.lz.fzz{row-gap:0}
+:where(.k-Fahrzeuge) .fzz .nm{grid-column:var(--g-ruf,1);grid-row:1;align-self:end}:where(.k-Fahrzeuge) .fzz .typ2{display:block;grid-column:var(--g-ruf,1);grid-row:2;align-self:start;font-size:11.5px}:where(.k-Fahrzeuge) .fzz .stx{grid-column:var(--g-status,2);grid-row:1 / span 2;font-size:12px}:where(.k-Fahrzeuge) .fzz .ort2{display:block;grid-column:var(--g-fahrt,3);grid-row:1 / span 2}:where(.k-Fahrzeuge) .fzz .codes{grid-column:var(--g-code,4);grid-row:1 / span 2}:where(.k-Fahrzeuge) .fzz .eta{grid-column:var(--g-eta,5);grid-row:1 / span 2}
+:where(.k-Fahrzeuge) .fzz .stx,:where(.k-Fahrzeuge) .fzz .ort2{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.3}
+:where(.k-Fahrzeuge) .fzz .ort2{display:-webkit-box}
+
+@container fenster (min-width: 820px){
+  :where(.k-Fahrzeuge) .lz.fzz,:where(.k-Fahrzeuge) .fzk-b{grid-template-columns:var(--cb)}
+  :where(.k-Fahrzeuge) .fzk-n{display:none}:where(.k-Fahrzeuge) .fzk-b{display:grid}
+  :where(.k-Fahrzeuge) .fzz .ort2,:where(.k-Fahrzeuge) .fzz .ort2.nur{display:none}
+  :where(.k-Fahrzeuge) .fzz .typ2{grid-column:var(--g-typ,2);grid-row:1;align-self:center;font-size:12.5px}:where(.k-Fahrzeuge) .fzz .nm{align-self:center}:where(.k-Fahrzeuge) .fzz .stx{grid-column:var(--g-status,3);grid-row:1;font-size:12.5px}
+  :where(.k-Fahrzeuge) .fzz .stx{white-space:nowrap;display:block}
+  :where(.k-Fahrzeuge) .fzz .lst{grid-column:var(--g-lst,4);grid-row:1}:where(.k-Fahrzeuge) .fzz .ziel{grid-column:var(--g-ziel,5);grid-row:1}
+  :where(.k-Fahrzeuge) .fzz .lst,:where(.k-Fahrzeuge) .fzz .ziel{display:-webkit-box;white-space:normal;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.3;overflow-wrap:anywhere}:where(.k-Fahrzeuge) .fzz .codes{grid-column:var(--g-code,6);grid-row:1}:where(.k-Fahrzeuge) .fzz .eta{grid-column:var(--g-eta,7);grid-row:1}
+}
+
+@container fenster (max-width: 430px){
+  :where(.k-Fahrzeuge) .lz.fzz,:where(.k-Fahrzeuge) .fzk-s{grid-template-columns:var(--cs)}
+  :where(.k-Fahrzeuge) .lz.fzz{row-gap:1px;padding-top:5px;padding-bottom:5px}
+  :where(.k-Fahrzeuge) .fzk-n{display:none}:where(.k-Fahrzeuge) .fzk-s{display:grid}
+  :where(.k-Fahrzeuge) .fzz .stz{display:block;grid-column:var(--g-status,1);grid-row:1 / span 2}
+  :where(.k-Fahrzeuge) .fzz .nm{grid-column:var(--g-ruf,2);grid-row:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  :where(.k-Fahrzeuge) .fzz .typ2{display:block;grid-column:var(--g-ruf,2);grid-row:2;font-size:11px}
+  :where(.k-Fahrzeuge) .fzz .eta,:where(.k-Fahrzeuge) .fzz .stx{display:none}
+  :where(.k-Fahrzeuge) .fzz .codes{grid-column:var(--g-code,4);grid-row:1 / span 2;align-items:flex-end}
+  :where(.k-Fahrzeuge) .fzz .code1{max-width:84px;display:flex}:where(.k-Fahrzeuge) .fzz .code1 .cc{min-width:0;overflow:hidden;text-overflow:ellipsis}
+  :where(.k-Fahrzeuge) .fzz .ort2{grid-column:var(--g-fahrt,3);grid-row:1 / span 2;font-size:12px;-webkit-line-clamp:2}
+  :where(.k-Fahrzeuge) .fzz .crew{left:30px}
+}
+
+:where(.k-Fahrzeuge) .ohne-ruf .fzz .nm,:where(.k-Fahrzeuge) .ohne-typ .fzz .typ2,:where(.k-Fahrzeuge) .ohne-status .fzz .stx,:where(.k-Fahrzeuge) .ohne-status .fzz .stz,:where(.k-Fahrzeuge) .ohne-lst .fzz .lst,:where(.k-Fahrzeuge) .ohne-ziel .fzz .ziel,:where(.k-Fahrzeuge) .ohne-fahrt .fzz .ort2,:where(.k-Fahrzeuge) .ohne-code .fzz .codes,:where(.k-Fahrzeuge) .ohne-eta .fzz .eta{display:none !important}
+:where(.k-Fahrzeuge) .mz.hk2 .hk-b{display:grid;place-items:center;width:16px;height:16px;border-radius:4px;box-shadow:inset 0 0 0 1.5px var(--linie);flex:none}
+:where(.k-Fahrzeuge) .mz.hk2 .hk-b .ic{width:12px;height:12px;stroke-width:3;opacity:0}
+:where(.k-Fahrzeuge) .mz.hk2.an .hk-b{background:var(--akzent);box-shadow:none;color:var(--auf-akzent)}
+:where(.k-Fahrzeuge) .mz.hk2.an .hk-b .ic{opacity:1}
+:where(.k-Fahrzeuge) .mz small{margin-left:auto;color:var(--dim);font-size:11px}
+:where(.k-Fahrzeuge) .mtr{height:1px;margin:5px 4px;background:var(--trenner)}
+
+/* ---------------------------------------------------------------- Im Spiel */
+/* das Fenster ist die Gruppe von dockview: kein eigener Rahmen */
+:where(.k-Fahrzeuge) .fe{border-radius:0;box-shadow:none}
+/* allgemeine Klasse .crew des Spiels (Rahmen, Schriftgröße) gilt hier nicht */
+.k-Fahrzeuge .fzz .crew{border:0;font-size:12px;color:var(--text);white-space:nowrap}
+/* Marken nach der Funkkennung (von außen, Pilot, Dienst, KT vorgemerkt): nicht umbrechen */
+:where(.k-Fahrzeuge) .fzz .nm .aussen{white-space:nowrap;flex:none}
+/* Marken unter die Funkkennung, wenn sie nicht daneben passen (Zeile wird höher), nie abgeschnitten */
+:where(.k-Fahrzeuge) .fzz .nm{flex-wrap:wrap;row-gap:2px}
+:where(.k-Fahrzeuge) .fzz .nm .aussen{max-width:100%;overflow:hidden;text-overflow:ellipsis;box-sizing:border-box}
+/* „RD-NOE-03“ ist länger als „Tetra 03“ im Entwurf: Umschalter etwas breiter, damit nichts abgeschnitten wird */
+:where(.k-Fahrzeuge) .bereich{width:190px}
+/* Umschalter der Fahrzeuggruppe: im schmalen Fenster nichts überlappen lassen */
+:where(.k-Fahrzeuge) .f-gruppe .seg{overflow:hidden;text-overflow:ellipsis}
+/* „.ap button{font:inherit}“ der Grundlage überschreibt sonst Schriftgröße/-stärke der Knöpfe aus dem Entwurf */
+.k-Fahrzeuge .chip,.k-Fahrzeuge .seg{font-size:12px;font-weight:600}
+.k-Fahrzeuge .mz{font-size:12.5px}.k-Fahrzeuge .mz.akt{font-weight:700}
+.k-Fahrzeuge .chip:not(.on),.k-Fahrzeuge .seg:not(.on){color:var(--text-2)}

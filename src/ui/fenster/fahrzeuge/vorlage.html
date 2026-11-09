@@ -1,0 +1,88 @@
+<div class="k-Fahrzeuge" style="display: contents;">
+<section class="fe">
+  <div class="inhalt">
+
+    <div class="f-kopf">
+      <label class="f-such"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"></circle><path d="M20 20l-4.5-4.5"></path></svg><input class="feld" value="{{such}}" onInput="{{suchEin}}" placeholder="{{suchPlatz}}" aria-label="Fahrzeuge suchen"></label>
+      <div class="f-z2">
+        <sc-if value="{{zeigGruppen}}" hint-placeholder-val="{{true}}"><div class="segs gleit f-gruppe" role="group" aria-label="Fahrzeuggruppe" style="--i: {{gruppeIdx}}; --n: {{gruppeN}};"><sc-for list="{{gruppen}}" as="g" hint-placeholder-count="7"><button class="{{g.cls}}" onClick="{{g.klick}}" aria-pressed="{{g.an}}" title="{{g.titel}}">{{g.t}}</button></sc-for></div></sc-if>
+        <sc-if value="{{zeigNurEinsatz}}" hint-placeholder-val="{{false}}"><button class="{{nurEinsatzCls}}" onClick="{{nurEinsatzKlick}}" aria-pressed="{{nurEinsatzAn}}" style="flex: 1 1 auto; justify-content: center;">nur im Einsatz</button></sc-if>
+        <div class="segs gleit bereich" role="group" aria-label="Funkgruppe" title="Nur Fahrzeuge der aktuellen Funkgruppe oder alle (Hubschrauber immer; Fahrzeuge von außen im eigenen Einsatz mit Vermerk)" style="--i: {{bereichIdx}}; --n: 2;"><sc-for list="{{bereich}}" as="b" hint-placeholder-count="2"><button class="{{b.cls}}" onClick="{{b.klick}}" aria-pressed="{{b.an}}">{{b.t}}</button></sc-for></div>
+      </div>
+      <sc-if value="{{zeigStatus}}" hint-placeholder-val="{{false}}">
+        <div class="chips2" role="group" aria-label="Status"><sc-for list="{{statusChips}}" as="g" hint-placeholder-count="6"><button class="{{g.cls}}" onClick="{{g.klick}}" aria-pressed="{{g.an}}"><sc-if value="{{g.hatFarbe}}" hint-placeholder-val="{{true}}"><i style="background: {{g.farbe}};">{{g.nr}}</i></sc-if>{{g.t}}<span class="n">{{g.n}}</span></button></sc-for></div>
+      </sc-if>
+    </div>
+
+    <div class="ab" style="border-bottom: 0; flex: 1;">
+      <!-- Alle Fahrzeuge: nach Dienststelle, auf- und zuklappbar -->
+      <sc-if value="{{istAlle}}" hint-placeholder-val="{{true}}">
+        <div class="{{listeCls}}" style="--cn: {{colsN}}; --cb: {{colsB}}; --cs: {{colsS}}; {{gVars}}">
+          <div class="fzk-n" role="row" onContextMenu="{{spaltenRechts}}" title="Rechtsklick: Spalten wählen"><sc-for list="{{kopfN}}" as="k" hint-placeholder-count="5"><div class="{{k.zelle}}"><button class="{{k.cls}}" onClick="{{k.klick}}" aria-sort="{{k.aria}}" title="{{k.titel}}"><span class="skt">{{k.t}}</span><svg class="ic pf" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5"></path></svg></button><sc-if value="{{k.zieh}}" hint-placeholder-val="{{true}}"><span class="spz" role="separator" aria-orientation="vertical" aria-label="Spaltenbreite" tabindex="0" title="Ziehen ändert die Spaltenbreite · Doppelklick: Standardbreiten" onMouseDown="{{k.ziehStart}}" onDoubleClick="{{k.reset}}" onKeyDown="{{k.taste}}"></span></sc-if></div></sc-for></div><div class="fzk-b" role="row" onContextMenu="{{spaltenRechts}}" title="Rechtsklick: Spalten wählen"><sc-for list="{{kopfB}}" as="k" hint-placeholder-count="7"><div class="{{k.zelle}}"><button class="{{k.cls}}" onClick="{{k.klick}}" aria-sort="{{k.aria}}" title="{{k.titel}}"><span class="skt">{{k.t}}</span><svg class="ic pf" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5"></path></svg></button><sc-if value="{{k.zieh}}" hint-placeholder-val="{{true}}"><span class="spz" role="separator" aria-orientation="vertical" aria-label="Spaltenbreite" tabindex="0" title="Ziehen ändert die Spaltenbreite · Doppelklick: Standardbreiten" onMouseDown="{{k.ziehStart}}" onDoubleClick="{{k.reset}}" onKeyDown="{{k.taste}}"></span></sc-if></div></sc-for></div><div class="fzk-s" role="row" onContextMenu="{{spaltenRechts}}" title="Rechtsklick: Spalten wählen"><sc-for list="{{kopfS}}" as="k" hint-placeholder-count="4"><div class="{{k.zelle}}"><button class="{{k.cls}}" onClick="{{k.klick}}" aria-sort="{{k.aria}}" title="{{k.titel}}"><span class="skt">{{k.t}}</span><svg class="ic pf" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5"></path></svg></button><sc-if value="{{k.zieh}}" hint-placeholder-val="{{true}}"><span class="spz" role="separator" aria-orientation="vertical" aria-label="Spaltenbreite" tabindex="0" title="Ziehen ändert die Spaltenbreite · Doppelklick: Standardbreiten" onMouseDown="{{k.ziehStart}}" onDoubleClick="{{k.reset}}" onKeyDown="{{k.taste}}"></span></sc-if></div></sc-for></div>
+          <sc-for list="{{dienststellen}}" as="d" hint-placeholder-count="3">
+            <div class="{{d.kopfCls}}" onClick="{{d.klick}}" role="button" aria-expanded="{{d.offen}}"><svg class="ic s ch" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>{{d.name}}<span class="z">{{d.orte}}</span></div>
+            <div class="{{d.inCls}}"><div>
+              <sc-for list="{{d.fz}}" as="f" hint-placeholder-count="3">
+                <div class="{{f.cls}}" style="{{f.stil}}" onClick="{{f.klick}}" onContextMenu="{{f.menue}}" onDoubleClick="{{f.folgen}}" title="Klick: auf der Karte zeigen und Auftrag öffnen · Doppelklick: Kamera folgt · Rechtsklick: Status setzen">
+                  <span class="stz">{{f.st}}</span>
+                  <div class="nm"><b>{{f.ruf}}</b><span class="ty">{{f.typ}}</span><sc-if value="{{f.aussen}}" hint-placeholder-val="{{false}}"><span class="aussen" title="Dienststelle außerhalb der eigenen Funkgruppe – gerade bei einem Einsatz im eigenen Gebiet">von außen</span></sc-if><sc-for list="{{f.marken}}" as="mk" hint-placeholder-count="0"><span class="{{mk.cls}}" title="{{mk.titel}}" data-dienstfz="{{mk.fz}}">{{mk.t}}</span></sc-for></div>
+                  <span class="typ2">{{f.typ}}</span>
+                  <div class="crew"><sc-for list="{{f.crew}}" as="q" hint-placeholder-count="2"><span class="q">{{q}}</span></sc-for></div>
+                  <div class="auf">{{f.aufVor}}<b>{{f.aufNr}}</b> {{f.aufText}}</div>
+                  <div class="stx">{{f.stx}}</div>
+                  <div class="lst">{{f.von}}</div><div class="ziel">{{f.nach}}</div>
+                  <div class="{{f.ortCls}}">{{f.ort}}</div>
+                  <div class="codes"><sc-for list="{{f.codes}}" as="c" hint-placeholder-count="1"><span class="code1" tabindex="0"><span class="cc">{{c.c}}</span><span class="ct" role="tooltip">{{c.text}}</span></span></sc-for></div>
+                  <span class="eta">{{f.eta}}</span>
+                </div>
+              </sc-for>
+            </div></div>
+          </sc-for>
+          <sc-if value="{{keineAlle}}" hint-placeholder-val="{{false}}"><div class="leer2">{{keineAlleText}}</div></sc-if>
+        </div>
+      </sc-if>
+      <!-- Aktive Fahrzeuge: alle, die nicht frei auf der Wache und nicht abgemeldet sind -->
+      <sc-if value="{{istAktive}}" hint-placeholder-val="{{false}}">
+        <div class="{{listeCls}}" style="--cn: {{colsN}}; --cb: {{colsB}}; --cs: {{colsS}}; {{gVars}}">
+          <div class="fzk-n" role="row" onContextMenu="{{spaltenRechts}}" title="Rechtsklick: Spalten wählen"><sc-for list="{{kopfN}}" as="k" hint-placeholder-count="5"><div class="{{k.zelle}}"><button class="{{k.cls}}" onClick="{{k.klick}}" aria-sort="{{k.aria}}" title="{{k.titel}}"><span class="skt">{{k.t}}</span><svg class="ic pf" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5"></path></svg></button><sc-if value="{{k.zieh}}" hint-placeholder-val="{{true}}"><span class="spz" role="separator" aria-orientation="vertical" aria-label="Spaltenbreite" tabindex="0" title="Ziehen ändert die Spaltenbreite · Doppelklick: Standardbreiten" onMouseDown="{{k.ziehStart}}" onDoubleClick="{{k.reset}}" onKeyDown="{{k.taste}}"></span></sc-if></div></sc-for></div><div class="fzk-b" role="row" onContextMenu="{{spaltenRechts}}" title="Rechtsklick: Spalten wählen"><sc-for list="{{kopfB}}" as="k" hint-placeholder-count="7"><div class="{{k.zelle}}"><button class="{{k.cls}}" onClick="{{k.klick}}" aria-sort="{{k.aria}}" title="{{k.titel}}"><span class="skt">{{k.t}}</span><svg class="ic pf" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5"></path></svg></button><sc-if value="{{k.zieh}}" hint-placeholder-val="{{true}}"><span class="spz" role="separator" aria-orientation="vertical" aria-label="Spaltenbreite" tabindex="0" title="Ziehen ändert die Spaltenbreite · Doppelklick: Standardbreiten" onMouseDown="{{k.ziehStart}}" onDoubleClick="{{k.reset}}" onKeyDown="{{k.taste}}"></span></sc-if></div></sc-for></div><div class="fzk-s" role="row" onContextMenu="{{spaltenRechts}}" title="Rechtsklick: Spalten wählen"><sc-for list="{{kopfS}}" as="k" hint-placeholder-count="4"><div class="{{k.zelle}}"><button class="{{k.cls}}" onClick="{{k.klick}}" aria-sort="{{k.aria}}" title="{{k.titel}}"><span class="skt">{{k.t}}</span><svg class="ic pf" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5"></path></svg></button><sc-if value="{{k.zieh}}" hint-placeholder-val="{{true}}"><span class="spz" role="separator" aria-orientation="vertical" aria-label="Spaltenbreite" tabindex="0" title="Ziehen ändert die Spaltenbreite · Doppelklick: Standardbreiten" onMouseDown="{{k.ziehStart}}" onDoubleClick="{{k.reset}}" onKeyDown="{{k.taste}}"></span></sc-if></div></sc-for></div>
+          <sc-for list="{{aktive}}" as="f" hint-placeholder-count="5">
+            <div class="{{f.cls}}" style="{{f.stil}}" onClick="{{f.klick}}" onContextMenu="{{f.menue}}" onDoubleClick="{{f.folgen}}" title="Klick: auf der Karte zeigen und Auftrag öffnen · Doppelklick: Kamera folgt · Rechtsklick: Status setzen">
+              <span class="stz">{{f.st}}</span>
+              <div class="nm"><b>{{f.ruf}}</b><span class="ty">{{f.typ}}</span><span class="wa">{{f.wache}}</span><sc-if value="{{f.aussen}}" hint-placeholder-val="{{false}}"><span class="aussen" title="Dienststelle außerhalb der eigenen Funkgruppe – gerade bei einem Einsatz im eigenen Gebiet">von außen</span></sc-if><sc-for list="{{f.marken}}" as="mk" hint-placeholder-count="0"><span class="{{mk.cls}}" title="{{mk.titel}}" data-dienstfz="{{mk.fz}}">{{mk.t}}</span></sc-for></div>
+              <span class="typ2">{{f.typ}}</span>
+              <div class="crew"><sc-for list="{{f.crew}}" as="q" hint-placeholder-count="2"><span class="q">{{q}}</span></sc-for></div>
+              <div class="auf">{{f.aufVor}}<b>{{f.aufNr}}</b> {{f.aufText}}</div>
+              <div class="stx">{{f.stx}}</div>
+              <div class="lst">{{f.von}}</div><div class="ziel">{{f.nach}}</div>
+              <div class="{{f.ortCls}}">{{f.ort}}</div>
+              <div class="codes"><sc-for list="{{f.codes}}" as="c" hint-placeholder-count="1"><span class="code1" tabindex="0"><span class="cc">{{c.c}}</span><span class="ct" role="tooltip">{{c.text}}</span></span></sc-for></div>
+              <span class="eta">{{f.eta}}</span>
+            </div>
+          </sc-for>
+          <sc-if value="{{keineAktiven}}" hint-placeholder-val="{{false}}"><div class="leer2">{{keineAktivenText}}</div></sc-if>
+        </div>
+      </sc-if>
+      <!-- Statusänderungen: neueste oben -->
+      <sc-if value="{{istLog}}" hint-placeholder-val="{{false}}">
+        <div class="{{logCls}}">
+          <sc-for list="{{log}}" as="l" hint-placeholder-count="6">
+            <div class="log" onClick="{{l.klick}}" title="{{l.titel}}"><span class="t">{{l.zeit}}</span><b>{{l.ruf}}</b><span class="{{l.vonCls}}" style="background: {{l.vonFarbe}};">{{l.von}}</span><span class="pf">→</span><span class="{{l.nachCls}}" style="background: {{l.nachFarbe}};">{{l.nach}}</span><span class="w">{{l.text}}</span></div>
+          </sc-for>
+          <sc-if value="{{keinLog}}" hint-placeholder-val="{{false}}"><div class="leer2">{{keinLogText}}</div></sc-if>
+        </div>
+      </sc-if>
+    </div>
+  </div>
+
+  <!-- Rechtsklick: Status setzen -->
+  <sc-if value="{{spOffen}}" hint-placeholder-val="{{false}}"><div class="menue-schirm" onClick="{{spZu}}" onContextMenu="{{spZu}}"></div><div class="menue" style="left: {{spX}}px; top: {{spY}}px;" role="menu"><div class="mk">Spalten anzeigen</div><sc-for list="{{spMenue}}" as="m" hint-placeholder-count="6"><button class="{{m.cls}}" role="menuitemcheckbox" aria-checked="{{m.an}}" onClick="{{m.klick}}"><span class="hk-b"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></span>{{m.t}}</button></sc-for><div class="mtr"></div><button class="mz" onClick="{{spStandard}}">Standard für diese Breite<small>{{spHinweis}}</small></button></div></sc-if>
+  <sc-if value="{{menueOffen}}" hint-placeholder-val="{{false}}">
+    <div class="menue-schirm" onClick="{{menueZu}}" onContextMenu="{{menueZu}}"></div>
+    <div class="menue" role="menu" style="left: {{menueX}}px; top: {{menueY}}px;">
+      <div class="mk">Status setzen · {{menueRuf}}</div>
+      <sc-for list="{{menueStatus}}" as="m" hint-placeholder-count="8"><button class="{{m.cls}}" role="menuitem" onClick="{{m.klick}}"><span class="{{m.scCls}}" style="background: {{m.farbe}};">{{m.nr}}</span>{{m.name}}</button></sc-for>
+      <sc-if value="{{menueMehr}}" hint-placeholder-val="{{false}}"><div class="mtr"></div><sc-for list="{{menueWeitere}}" as="m" hint-placeholder-count="2"><button class="mz" role="menuitem" onClick="{{m.klick}}">{{m.t}}</button></sc-for></sc-if>
+    </div>
+  </sc-if>
+</section>
+</div>
