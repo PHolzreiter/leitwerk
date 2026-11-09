@@ -1,0 +1,40 @@
+<div class="k-Einsatzliste" style="display: contents;">
+<div class="{{rootCls}}" style="width: 100%; height: 100%;">
+<section class="fe">
+  <div class="e-kopf">
+    <div class="e-z1">
+      <label class="e-such"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"></circle><path d="M20 20l-4-4"></path></svg><input class="feld" placeholder="Suchen: Nummer, Ort, Code, Name …" value="{{q}}" onInput="{{suche}}" aria-label="Einsätze durchsuchen"></label>
+      <div class="mwrap"><button class="kn" onClick="{{neuAuf}}" title="Krankentransport oder Überstellung von Hand anlegen"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Neu</button>
+        <sc-if value="{{neuOffen}}"><div class="menue-schirm" onClick="{{menueZu}}"></div><div class="menue" role="menu"><div class="mkopf">Von Hand anlegen</div><button class="mz" onClick="{{neuKT}}">Krankentransport<small>KT-Maske</small></button><button class="mz" onClick="{{neuSEK}}">Überstellung<small>SEK-Maske</small></button></div></sc-if></div>
+      <div class="mwrap"><button class="kn ik" onClick="{{testAuf}}" aria-label="Test-Einsätze" title="Test-Einsätze erzeugen"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.3"></circle><circle cx="12" cy="12" r="1.3"></circle><circle cx="19" cy="12" r="1.3"></circle></svg></button>
+        <sc-if value="{{testOffen}}"><div class="menue-schirm" onClick="{{menueZu}}"></div><div class="menue" role="menu"><div class="mkopf">Test</div><sc-for list="{{testPunkte}}" as="t"><sc-if value="{{t.tr}}"><div class="mtr"></div></sc-if><button class="{{t.cls}}" onClick="{{t.klick}}">{{t.n}}<small>{{t.h}}</small></button></sc-for></div></sc-if></div>
+    </div>
+    <div class="e-z2">
+      <div class="segs gleit art" role="tablist" style="--i: {{artIdx}}; --n: 4;"><sc-for list="{{arten}}" as="a"><button class="{{a.cls}}" onClick="{{a.klick}}" role="tab" aria-selected="{{a.an}}" title="{{a.titel}}">{{a.t}}<span class="{{a.nCls}}">{{a.n}}</span></button></sc-for></div>
+      <div class="schalter"><button class="{{zuTunCls}}" onClick="{{zuTunKlick}}" aria-pressed="{{zuTunAn}}" title="Nur Einträge, bei denen gerade etwas zu tun ist"><span class="pk"></span>nur zu tun</button><button class="{{erlCls}}" onClick="{{erlKlick}}" aria-pressed="{{erlAn}}"><span class="pk"></span>erledigte</button></div>
+    </div>
+  </div>
+  <div class="e-inhalt">
+    <div class="{{tabCls}}" style="--cols: {{cols}};" onContextMenu="{{rechts}}">
+      <div class="ek" role="row"><sc-for list="{{kopf}}" as="k"><div class="{{k.zelle}}"><button class="{{k.cls}}" onClick="{{k.klick}}" aria-sort="{{k.aria}}" title="{{k.titel}}" tabindex="{{k.tab}}"><span class="skt">{{k.t}}</span><svg class="ic pf" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5"></path></svg></button><sc-if value="{{k.zieh}}"><span class="spz" role="separator" aria-orientation="vertical" aria-label="Spaltenbreite" tabindex="0" title="Ziehen ändert die Spaltenbreite · Doppelklick: Standardbreiten" onMouseDown="{{k.ziehStart}}" onDoubleClick="{{k.reset}}"></span></sc-if></div></sc-for></div>
+      <sc-for list="{{zeilen}}" as="z"><div class="{{z.cls}}" data-id="{{z.id}}" onClick="{{z.klick}}" onDoubleClick="{{z.doppel}}">
+        <sc-for list="{{z.zellen}}" as="c"><div class="zelle">
+          <sc-if value="{{c.lageZ}}"><span class="{{c.cls}}" title="{{c.titel}}"><i></i>{{c.t}}</span></sc-if>
+          <sc-if value="{{c.nr}}"><span class="nrz" title="{{c.titel}}">{{c.t}}<small>{{c.u}}</small></span></sc-if>
+          <sc-if value="{{c.code}}"><span class="codez"><span class="{{c.cdCls}}" style="--stf: {{c.farbe}};" tabindex="0" title="{{c.titel}}"><span class="dot"></span><span class="cdt">{{c.t}}</span><sc-if value="{{c.hatCt}}"><span class="ct">{{c.ct}}</span></sc-if></span></span></sc-if>
+          <sc-if value="{{c.swz}}"><span class="swb"><b class="sw1" title="{{c.t}}">{{c.t}}</b><sc-if value="{{c.hatZi}}"><span class="zi" title="{{c.zi}}">{{c.zi}}</span></sc-if></span></sc-if>
+          <sc-if value="{{c.ortz}}"><span class="{{c.cls}}" title="{{c.t}}">{{c.t}}</span></sc-if>
+          <sc-if value="{{c.zielZ}}"><span class="{{c.wCls}}" title="{{c.wT}}"><span class="zz">{{c.t}}</span></span></sc-if>
+          <sc-if value="{{c.fz}}"><span class="fzl"><sc-for list="{{c.fzl}}" as="f"><span class="{{f.cls}}" title="{{f.titel}}" data-fz="{{f.id}}">{{f.r}}</span></sc-for><sc-if value="{{c.hatRest}}"><span class="rest" tabindex="0">{{c.rest}}<span class="pop" role="tooltip"><span class="pop-k pop-3"><span>Fahrzeug</span><span>Typ</span><span>Ort</span></span><sc-for list="{{c.alle}}" as="f"><span class="pop-z pop-3"><span class="{{f.cls}}" data-fz="{{f.id}}">{{f.r}}</span><span class="pty">{{f.typ}}</span><span class="por">{{f.zu}}</span></span></sc-for></span></span></sc-if><sc-if value="{{c.keinFz}}"><span class="{{c.keinCls}}">{{c.leerT}}</span></sc-if></span></sc-if>
+          <sc-if value="{{c.marken}}"><span class="marken"><sc-for list="{{c.mk}}" as="m"><span class="{{m.cls}}" title="{{m.titel}}"><sc-if value="{{m.wer}}"><span class="wer" style="width: 14px; height: 14px; font-size: 8px;">{{m.ini}}</span></sc-if>{{m.t}}</span></sc-for></span></sc-if>
+          <sc-if value="{{c.mehr}}"><span class="{{c.mehrCls}}" tabindex="0" aria-label="Mehr Infos"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v5M12 8v.5"></path></svg><span class="pop info" role="tooltip"><sc-for list="{{c.info}}" as="q"><span class="pop-i"><span>{{q.k}}</span><b>{{q.v}}</b></span></sc-for><sc-if value="{{c.iFz}}"><span class="pop-k pop-3" style="padding-top: 4px;"><span>Fahrzeug</span><span>Typ</span><span>Ort</span></span><sc-for list="{{c.iFzl}}" as="f"><span class="pop-z pop-3"><span class="{{f.cls}}" data-fz="{{f.id}}">{{f.r}}</span><span class="pty">{{f.typ}}</span><span class="por">{{f.zu}}</span></span></sc-for></sc-if></span></span></sc-if>
+        </div></sc-for>
+      </div></sc-for>
+      <sc-if value="{{leer}}"><div class="leer2">{{leerText}}</div></sc-if>
+    </div>
+  </div>
+  <sc-if value="{{ctxOffen}}"><div class="menue-schirm" onClick="{{ctxZu}}" onContextMenu="{{ctxZu}}"></div><div class="menue sp-menue" style="left: {{ctxX}}px; top: {{ctxY}}px;" role="menu"><div class="mkopf">Spalten anzeigen</div><sc-for list="{{spaltenMenue}}" as="m"><button class="{{m.cls}}" role="menuitemcheckbox" aria-checked="{{m.an}}" onClick="{{m.klick}}"><span class="hk-b"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></span>{{m.t}}</button></sc-for><div class="mtr"></div><button class="mz" onClick="{{ctxStandard}}">Standard für diese Breite<small>{{ctxHinweis}}</small></button></div></sc-if>
+  <sc-if value="{{hatToast}}"><div class="toast" role="status">{{toast}}</div></sc-if>
+</section>
+</div>
+</div>
