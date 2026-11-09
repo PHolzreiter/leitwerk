@@ -3,6 +3,9 @@
  * sieht statt der Leitstelle nur seine eigene Ansicht – Alarmierung, Status, Karte, Patientenblatt am
  * Berufungsort, Entscheidung (Transport / Übergabe / kein Transport) und Übungsflug ohne Flugsimulator.
  * Die Simulation läuft beim Host; alles hier geht als Befehl an ihn (sim.call).
+ *
+ * Aussehen nach dem Entwurf „Pilot“ (LeitWerk Arbeitsplatz, 09.11.): Vorlage, CSS und Logik liegen in
+ * src/ui/fenster/pilot; hier entstehen die Daten (ansichtDaten) und Aktionen dazu.
  */
 import "./pilot.css";
 import type maplibregl from "maplibre-gl";
@@ -15,7 +18,6 @@ import { findCode } from "../../sim/codes";
 import { fliegt, sim, type Einsatz, type PilotPlan, type SimFahrzeug } from "../../sim/engine";
 import { distanceM } from "../../sim/geo";
 import type { StatusKey } from "../../sim/settings";
-import { WETTER_LABEL } from "../../sim/weather";
 import { availableMaps, createMap, type MapHandle } from "../../map";
 import { openDialog } from "../dialog";
 import { el, esc, toast } from "../dom";
@@ -23,23 +25,28 @@ import { logoMarke } from "../logo";
 import { stufeFarbe } from "../panels/teile";
 import { istDunkel } from "../ws/persoenlich";
 import { pilotModusSetzen } from "./modus";
-import { AKTIONEN, belegung, kuerzelName, tastenName, type PilotAktion } from "./tasten";
+import { AKTIONEN, belegung, type PilotAktion } from "./tasten";
 import { eingabeStarten, eingabeStoppen, handyHalten, tastenDialog } from "./eingabe";
-import { funkGeraetErstellen, gruppenName } from "../funkGeraet";
-import { funkEmpfang, funkGruppenSetzen, funkGruppenWahl, funkSendeZustand, funkTon, gruppeHoerbar, gsGruppeOffen, onFunkEmpfang, onFunkSenden, sprechGruppe, sprechKnopfAnbinden, sprechStart, sprechStopp } from "../sprechfunk";
+import { gruppenName } from "../funkGeraet";
+import { funkEmpfang, funkGruppenSetzen, funkGruppenWahl, funkSendeZustand, funkTon, gsGruppeOffen, onFunkEmpfang, onFunkGruppen, onFunkSenden, sprechGruppe, sprechGruppeWeiter, sprechStart, sprechStopp } from "../sprechfunk";
 import { MODELLE, mikrofone, modellLaden, setzeSprache, sprachPrefs, sprachStatus } from "../sprache";
 import { inTauri } from "../../platform";
-import mikroUrl from "../../assets/ptt-mikro.webp?url";
-import { wetterOeffnen } from "../wetterView";
 import { ALARM_AUFNAHMEN, ALARM_STANDARD, ALARM_VORLAGEN, alarmPrefs, alarmPrefsSetzen, alarmStarten, alarmStoppen, alarmtonHinzufuegen, eigeneAlarmtoene, probeLaeuft, probeSpielen, probeStoppen, type AlarmArt } from "./alarmToene";
 import { dateiLoeschen } from "../sounds";
 import { ablageZeigen } from "../../net/ablage";
-import { flugEingeschraenkt, flugverbot, LAGE, richtungText, symbolFuer } from "../../sim/weather";
-import { efbStarten, handyAktionen, handyBuchung, handyDialog, handyStand, handyStandBauen } from "./handy";
+import { flugEingeschraenkt, flugverbot } from "../../sim/weather";
+import { efbStarten, handyAktionen, handyBuchung, handyDialog, handyLaeuft, handyStand, handyStandBauen } from "./handy";
 import { hpg, hpgAktualisieren, hpgEinrichten, hpgMissionFuer, hpgStarten, hpgTestNachricht } from "./hpg";
 import { letzterCarls } from "./eingabe";
 import { carlsAn, carlsUmschalten, communityWaehlen, gtn, gtnAn, gtnBereitlegen, gtnSuchen, gtnUmschalten } from "./flugsim";
 import { datenEmpfangen, datenFrisch, dllWaehlen, flugplanSpeichern, flugsim, flugsimAnbinden, flugsimBeenden, flugsimTrennen, flugsimVerbinden, koordText, vorgabe, wetterDialog } from "./flugsim";
+import { IC, wetterHtml, wetterKurz, wetterSchluessel, type WetterReiter } from "../ws/kopfleisteInhalt";
+import { mb, onUpdate, updateImHintergrund, updateInfo, updateStand, updateStandZuruecksetzen } from "../updateDienst";
+import { fehlerBerichtSpeichern } from "../fehlerMelden";
+import { jetztSichern } from "../../net/spielstand";
+import type { EntwurfFenster } from "../entwurf/einbinden";
+import { pilotAnsichtEinbinden, type PilotApp, type PilotLogik } from "../fenster/pilot";
+import { funkEinbinden, type FunkFenster } from "../fenster/funk";
 
 // ------------------------------------------------------------------ Hilfen
 
@@ -195,8 +202,9 @@ function statusHaltenEnde(s?: StatusKey): void {
   statusHaltAnzeigen(null);
 }
 
-function statusHaltAnzeigen(s: StatusKey | null): void {
-  root?.querySelectorAll<HTMLElement>(".plt-st").forEach((b) => b.classList.toggle("haelt", !!s && b.dataset.s === s));
+
+function statusHaltAnzeigen(_s: StatusKey | null): void {
+  fenster?.zeichnen();
 }
 
 export function pilotAktion(a: PilotAktion, sofort = false): void {
@@ -371,196 +379,89 @@ function hubschrauberWahl(): void {
   wahlDlg = dlg;
 }
 
-// ------------------------------------------------------------------ Ansicht
+// ------------------------------------------------------------------ Ansicht (Entwurf „Pilot“, src/ui/fenster/pilot)
 
 let root: HTMLElement | null = null;
+let fenster: EntwurfFenster<PilotLogik> | null = null;
 let karte: MapHandle | null = null;
+/** Teile, die nicht aus der Vorlage kommen und nach jedem Zeichnen an ihren Platz gehängt werden */
+let kartenEl: HTMLElement | null = null;
+let funkEl: HTMLElement | null = null;
+let grossEl: HTMLElement | null = null;
 let folgen = true;
 let punktWaehlen = false;
 let letzterEinsatz: string | null = null;
 let alarmOffen = false;
 let aus: (() => void)[] = [];
-const sig = new Map<string, string>();
+let wetterReiter: WetterReiter = "aktuell";
+let wetterStand = "";
+let geplant = 0;
 
 export function pilotAktiv(): boolean {
   return !!root;
+}
+
+/** neu zeichnen – gebündelt (die Simulation meldet sich oft mehrmals hintereinander) */
+function planen(): void {
+  if (geplant || !root) return;
+  geplant = requestAnimationFrame(() => {
+    geplant = 0;
+    zeichneAlles();
+  });
 }
 
 /** Piloten-Interface öffnen (nach dem Beitritt) */
 export function pilotOeffnen(): void {
   if (root) return;
   pilotModusSetzen(true);
-  root = el("div", { class: `plt ${istDunkel() ? "dunkel" : "hell"}` });
-  root.innerHTML = `
-    <header class="plt-kopf">
-      <div class="plt-marke">${logoMarke(30)}<span>Pilot</span></div>
-      <div class="plt-heli"></div>
-      <div class="plt-status-jetzt"></div>
-      <div class="plt-info"></div>
-      <div class="plt-knoepfe">
-        <button class="plt-b test" data-act="test" title="Testmodus: Einsatz an dich senden"${sim.pilotTest ? "" : " hidden"}>${ico("test")}<span>Testmenü</span></button>
-        <button class="plt-b" data-act="pilot-einst" title="Funk, Tasten, Handy, Flugsimulator">${ico("zahnrad")}<span>Einstellungen</span></button>
-        <button class="plt-b" data-act="wechseln" title="Anderen Hubschrauber wählen">${ico("tausch")}<span>Wechseln</span></button>
-        <button class="plt-b warn" data-act="verlassen" title="Spiel verlassen">${ico("tuer")}<span>Verlassen</span></button>
-      </div>
-    </header>
-    <div class="plt-alarm" hidden></div>
-    <div class="plt-warte" hidden></div>
-    <main class="plt-haupt">
-      <section class="plt-links">
-        <div class="plt-karte-titel">Status</div>
-        <div class="plt-status"></div>
-        <details class="plt-klapp" data-k="sim" open><summary class="plt-karte-titel">${ico("sim")}Flugsimulator</summary><div class="plt-sim"></div></details>
-        <details class="plt-klapp" data-k="flug" open><summary class="plt-karte-titel">${ico("flug")}Übungsflug <span class="plt-leise">ohne Flugsimulator</span></summary><div class="plt-flug"></div></details>
-      </section>
-      <div class="plt-griff" data-g="l" title="Breite ändern"></div>
-      <section class="plt-mitte">
-        <div class="plt-funk">
-          <div class="plt-karte-titel">${ico("funk")}Sprechfunk
-            <button class="plt-b klein plt-funk-vl" data-act="funk-verlauf" title="Die letzten Funksprüche">${ico("liste")}<span>Verlauf</span></button>
-            <button class="plt-b klein plt-funk-einst" data-act="funk-einst" title="Mikrofon, Spracherkennung, Mithören">${ico("tasten")}<span>Einstellungen</span></button></div>
-          <div class="plt-funk-reihe">
-            <div class="plt-funk-geraet"></div>
-            <div class="plt-funk-knoepfe"></div>
-          </div>
-          <div class="plt-funk-gruppen"></div>
-          <div class="plt-funk-kanal" hidden></div>
-        </div>
-        <div class="plt-einsatz"></div>
-        <div class="plt-patient"></div>
-        <div class="plt-plan"></div>
-        <div class="plt-ev">
-          <div class="plt-karte-titel">${ico("liste")}Einsatzverlauf</div>
-          <div class="plt-ev-liste"></div>
-        </div>
-      </section>
-      <div class="plt-griff" data-g="r" title="Breite ändern"></div>
-      <section class="plt-rechts">
-        <div class="plt-kartebox">
-          <div class="plt-karte-titel">${ico("plan")}Karte
-            <button class="plt-b klein plt-karte-gross-b" data-act="karte-gross" title="Karte groß öffnen">${ico("gross")}<span>Groß</span></button></div>
-          <div class="plt-kartenplatz">
-            <div class="plt-kartewrap">
-              <div class="plt-map"></div>
-              <div class="plt-map-knoepfe">
-                <button class="plt-b klein an" data-act="folgen" title="Karte folgt dem Hubschrauber">${ico("folgen")}<span>Folgen</span></button>
-              </div>
-              <div class="plt-map-hinweis" hidden>Auf die Karte klicken: dorthin fliegen · Esc bricht ab</div>
-            </div>
-          </div>
-        </div>
-        <div class="plt-wx" title="Wetter groß öffnen"></div>
-        <div class="plt-chat">
-          <div class="plt-karte-titel">${ico("chat")}Chat</div>
-          <div class="plt-chat-liste"></div>
-          <form class="plt-chat-form"><input class="plt-chat-in" maxlength="500" placeholder="Nachricht an alle …"><button class="plt-b klein primaer">Senden</button></form>
-        </div>
-      </section>
-    </main>
-    <div class="plt-karte-pop" hidden>
-      <div class="plt-karte-pop-box">
-        <div class="plt-funk-pop-kopf"><b>${ico("plan")}Karte</b><button class="plt-b klein" data-act="karte-zu" title="Schließen (Esc)">✕</button></div>
-        <div class="plt-karte-pop-platz"></div>
-      </div>
-    </div>
-    <div class="plt-funk-pop" hidden>
-      <div class="plt-funk-pop-kopf"><b>${ico("funk")}Funkverlauf</b><button class="plt-b klein" data-act="funk-verlauf-zu" title="Schließen">✕</button></div>
-      <div class="plt-funk-verlauf"></div>
-    </div>`;
+  root = el("div", { class: "plt-ew" });
   document.body.appendChild(root);
-  sig.clear();
   letzterEinsatz = meinFz()?.einsatzId ?? null;
-
-  const $ = <T extends HTMLElement = HTMLElement>(s: string) => root!.querySelector(s) as T;
-  $('[data-act="pilot-einst"]').addEventListener("click", () => einstellungenDialog());
-  $('[data-act="funk-einst"]').addEventListener("click", () => funkDialog());
-  // Funkverlauf als Fenster (schreiben kann der Pilot nicht – er spricht)
-  const pop = $(".plt-funk-pop");
-  $('[data-act="funk-verlauf"]').addEventListener("click", () => {
-    pop.hidden = !pop.hidden;
-    if (!pop.hidden) {
-      const v = $(".plt-funk-verlauf");
-      v.scrollTop = v.scrollHeight;
-    }
+  kartenEl = el("div", { class: "pv-map" });
+  funkEl = funkPlatzBauen();
+  fenster = pilotAnsichtEinbinden(root, { daten: () => ansichtDaten(), a: ansichtAktionen() as unknown as PilotApp["a"] }, nachZeichnen);
+  // Karte groß: als Fenster über allem
+  grossEl = el("div", { class: "ap pv-gross", hidden: "" });
+  grossEl.innerHTML = `<div class="pv-gross-box"><div class="pv-gross-kopf"><b>Karte</b><button type="button" class="kn sm" data-act="karte-zu" title="Schließen (Esc)">Schließen</button></div><div class="pv-gross-platz"></div></div>`;
+  grossEl.addEventListener("click", (ev) => {
+    if (ev.target === grossEl || (ev.target as HTMLElement).closest("[data-act=karte-zu]")) karteGross(false);
   });
-  $('[data-act="funk-verlauf-zu"]').addEventListener("click", () => (pop.hidden = true));
-  // Karte als großes Fenster; Wetter groß
-  $('[data-act="karte-gross"]').addEventListener("click", () => karteGross(true));
-  $('[data-act="karte-zu"]').addEventListener("click", () => karteGross(false));
-  $(".plt-karte-pop").addEventListener("click", (ev) => {
-    if (ev.target === ev.currentTarget) karteGross(false);
-  });
-  $(".plt-wx").addEventListener("click", () => wetterOeffnen());
-  spaltenEinrichten($(".plt-haupt"));
-  // auf-/zugeklappte Bereiche links merken
-  root.querySelectorAll<HTMLDetailsElement>(".plt-klapp").forEach((d) => {
-    try {
-      if (localStorage.getItem(`leitwerk.pilot.zu.${d.dataset.k}`) === "1") d.open = false;
-    } catch {
-      /* egal */
-    }
-    d.addEventListener("toggle", () => {
-      try {
-        localStorage.setItem(`leitwerk.pilot.zu.${d.dataset.k}`, d.open ? "0" : "1");
-      } catch {
-        /* egal */
-      }
-    });
-  });
-  aus.push(onFunkEmpfang(() => zeichneAlles()));
-  aus.push(onFunkSenden(() => zeichneAlles()));
+  root.appendChild(grossEl);
+  // Wetter-Schublade: Reiter Aktuell / Prognose / Warnungen
   root.addEventListener("click", (ev) => {
-    const b = (ev.target as HTMLElement).closest<HTMLElement>("[data-pln],[data-kopie]");
-    const fz = meinFz();
-    if (!b || !fz) return;
-    if (b.dataset.kopie) {
-      void navigator.clipboard?.writeText(b.dataset.kopie).then(() => toast("Koordinaten kopiert"));
-      return;
-    }
-    const [lat, lon] = (b.dataset.pln ?? "").split(",").map(Number);
-    if (Number.isFinite(lat) && Number.isFinite(lon)) void flugplanSpeichern(fz, { lat, lon, name: b.dataset.name ?? "Ziel" }).catch(fehler);
+    const b = (ev.target as HTMLElement).closest<HTMLElement>("[data-wreiter]");
+    if (!b) return;
+    wetterReiter = b.dataset.wreiter as WetterReiter;
+    wetterStand = "";
+    nachZeichnen();
   });
-  $('[data-act="wechseln"]').addEventListener("click", async () => {
-    const fz = meinFz();
-    // vor dem Abgeben: sonst nimmt die Ansicht ihn gleich wieder
-    bewusstAbgegeben = true;
-    if (fz) {
-      try {
-        await sim.call("pilotAbgeben", fz.id);
-      } catch (e) {
-        bewusstAbgegeben = false;
-        return fehler(e);
-      }
-    }
-    hubschrauberWahl();
-  });
-  $('[data-act="verlassen"]').addEventListener("click", () => void pilotVerlassen());
-  $('[data-act="test"]').addEventListener("click", () => testMenue());
-  $('[data-act="folgen"]').addEventListener("click", (ev) => {
-    folgen = !folgen;
-    (ev.currentTarget as HTMLElement).classList.toggle("an", folgen);
-    if (folgen) karteFolgen(true);
-  });
-  $<HTMLFormElement>(".plt-chat-form").addEventListener("submit", (ev) => {
-    ev.preventDefault();
-    const inp = $<HTMLInputElement>(".plt-chat-in");
-    const t = inp.value.trim();
-    if (!t) return;
-    inp.value = "";
-    void befehl(sim.call("chat", t));
-  });
+  // außerhalb einer offenen Schublade klicken: zu
+  const draussen = (ev: MouseEvent) => {
+    const k = fenster?.k;
+    if (!k || !k.offen()) return;
+    const t = ev.target as HTMLElement;
+    if (t.closest?.(".pv-anker.reiter") || t.closest?.(".toast")) return;
+    k.schubladeZu();
+  };
+  document.addEventListener("mousedown", draussen, true);
+  aus.push(() => document.removeEventListener("mousedown", draussen, true));
   const esc = (e: KeyboardEvent) => {
-    if (e.key === "Escape" && !punktWaehlen && !$(".plt-karte-pop").hidden) karteGross(false);
-    if (e.key === "Escape" && punktWaehlen) {
+    if (e.key !== "Escape") return;
+    if (document.querySelector(".dlg-overlay:not([style*='none'])")) return;
+    if (punktWaehlen) {
       punktWaehlen = false;
-      $(".plt-map-hinweis").hidden = true;
-    }
+      planen();
+    } else if (fenster?.k.offen()) fenster.k.schubladeZu();
+    else if (karteIstGross()) karteGross(false);
   };
   document.addEventListener("keydown", esc);
   aus.push(() => document.removeEventListener("keydown", esc));
-
-  void karteStarten($(".plt-map"));
-  aus.push(sim.onChange(() => zeichneAlles()));
+  aus.push(onFunkEmpfang(() => planen()));
+  aus.push(onFunkSenden(() => planen()));
+  aus.push(onFunkGruppen(() => planen()));
+  aus.push(onUpdate(() => planen()));
+  void karteStarten(kartenEl);
+  aus.push(sim.onChange(() => planen()));
   aus.push(
     mp.onChange(() => {
       // Spiel verlassen (z. B. Fehler beim Beitritt): zurück zur Startseite
@@ -569,7 +470,7 @@ export function pilotOeffnen(): void {
         void import("../hauptmenue").then((m) => m.hauptmenueZeigen(undefined, { splash: false }));
         return;
       }
-      zeichneAlles();
+      planen();
     }),
   );
   const takt = window.setInterval(() => zeichneAlles(), 1000);
@@ -580,7 +481,7 @@ export function pilotOeffnen(): void {
   handyBuchung((b) => handyBuchen(b));
   // LeitWerk-App im EFB-Tablet (MSFS 2024): Server nur auf diesem Rechner
   void efbStarten();
-  flugsimAnbinden(meinFz, () => zeichneAlles());
+  flugsimAnbinden(meinFz, () => planen());
   if (vorgabe().auto) void flugsimVerbinden();
   void gtnSuchen();
   void hpgStarten({
@@ -589,7 +490,7 @@ export function pilotOeffnen(): void {
       const f = meinFz();
       if (f) void befehl(sim.call("pilotPlan", f.id, p));
     },
-    geaendert: () => zeichneAlles(),
+    geaendert: () => planen(),
   });
   if (location.search.includes("debug"))
     Object.assign(window, {
@@ -598,13 +499,14 @@ export function pilotOeffnen(): void {
         flugsim,
         hpgMissionFuer,
         hpgTestNachricht,
+        daten: () => ansichtDaten(),
         // Handy im Test: Stand wie für das Handy, Befehle wie vom Handy
         handy: () => {
           const f = meinFz();
           const e = einsatzVon(f);
-          return handyStandBauen(f, e, funkTeil(f, e), () => handyMehr(f, e));
+          return handyStandBauen(f, e, funkPlatzAktualisieren(f, e), () => handyMehr(f, e));
         },
-        handyBefehl: (b: string) => (b.startsWith("bu:") ? handyBuchen(b) : pilotAktion(b as PilotAktion, true)),
+        handyBefehl: (b: string) => (b.startsWith("bu:") || b.startsWith("gr:") ? handyBuchen(b) : pilotAktion(b as PilotAktion, true)),
       },
     });
   aus.push(() => eingabeStoppen());
@@ -615,89 +517,58 @@ export function pilotOeffnen(): void {
       if (!root) return;
       if (Object.keys(sim.state.fahrzeuge).length && (mp.status.hostDa || sim.pilotTest)) {
         if (!letztenWiederNehmen()) hubschrauberWahl();
-      }
-      else window.setTimeout(warte, 400);
+      } else window.setTimeout(warte, 400);
     };
     warte();
   }
 }
 
+/** Nach jedem Zeichnen: Karte, Funk, Logo und Wetter-Inhalt an ihren Platz (die Vorlage kennt sie nicht) */
+function nachZeichnen(): void {
+  if (!root) return;
+  const logo = root.querySelector<HTMLElement>(".pv-logo");
+  if (logo && !logo.firstChild) logo.innerHTML = logoMarke(28);
+  const kp = root.querySelector<HTMLElement>(".pv-kartenplatz");
+  if (kp && kartenEl && !karteIstGross() && kartenEl.parentElement !== kp) {
+    kp.appendChild(kartenEl);
+    window.setTimeout(() => karte?.map.resize(), 30);
+  }
+  const fp = root.querySelector<HTMLElement>(".pv-funk");
+  if (fp && funkEl && funkEl.parentElement !== fp) fp.appendChild(funkEl);
+  // Wetter: dasselbe Fenster wie in der Kopfleiste (Inhalt aus kopfleisteInhalt.ts)
+  const wp = root.querySelector<HTMLElement>(".pv-wxpop");
+  if (wp) {
+    const k = `${wetterReiter}|${wetterSchluessel()}`;
+    if (!wp.firstChild || wp.dataset.k !== k || k !== wetterStand) {
+      const neu = !wp.firstChild;
+      const roll = wp.querySelector<HTMLElement>(".kl-winh")?.scrollTop ?? 0;
+      wetterStand = k;
+      wp.dataset.k = k;
+      if (!neu) wp.classList.add("steht");
+      wp.innerHTML = wetterHtml(wetterReiter, sim.funkgruppe ? String(sim.funkgruppe().id).replace(/^NÖ-/, "RD-NOE-") : "RD-NOE-03").replace('class="segs kl-wsegs"', 'class="segs gleit kl-wsegs"');
+      const w = wp.querySelector<HTMLElement>(".kl-winh");
+      if (w) w.scrollTop = roll;
+    }
+  }
+}
+
 /** Karte groß (als Fenster über allem) bzw. zurück an ihren Platz rechts */
 function karteIstGross(): boolean {
-  return !!root && !root.querySelector<HTMLElement>(".plt-karte-pop")!.hidden;
+  return !!grossEl && !grossEl.hidden;
 }
 function karteGross(gross: boolean): void {
-  if (!root) return;
-  const pop = root.querySelector<HTMLElement>(".plt-karte-pop")!;
-  const wrap = root.querySelector<HTMLElement>(".plt-kartewrap")!;
-  const ziel = root.querySelector<HTMLElement>(gross ? ".plt-karte-pop-platz" : ".plt-kartenplatz")!;
-  if (wrap.parentElement !== ziel) ziel.appendChild(wrap);
-  pop.hidden = !gross;
-  if (!gross && punktWaehlen) {
-    punktWaehlen = false;
-    root.querySelector<HTMLElement>(".plt-map-hinweis")!.hidden = true;
-  }
+  if (!root || !grossEl || !kartenEl) return;
+  grossEl.hidden = !gross;
+  const ziel = gross ? grossEl.querySelector<HTMLElement>(".pv-gross-platz") : root.querySelector<HTMLElement>(".pv-kartenplatz");
+  if (ziel && kartenEl.parentElement !== ziel) ziel.appendChild(kartenEl);
+  if (!gross && punktWaehlen) punktWaehlen = false;
+  planen();
   window.setTimeout(() => {
     karte?.map.resize();
     karteFolgen(true);
   }, 30);
 }
 
-/** Spalten links, Mitte, rechts: Breite mit den Griffen dazwischen ändern (wird gemerkt) */
-const SPALTEN = "leitwerk.pilot.spalten";
-function spaltenEinrichten(haupt: HTMLElement): void {
-  let w = { l: 260, r: 520 };
-  try {
-    w = { ...w, ...(JSON.parse(localStorage.getItem(SPALTEN) ?? "{}") as Partial<typeof w>) };
-  } catch {
-    /* Standard */
-  }
-  const setzen = () => {
-    haupt.style.setProperty("--pl-l", `${w.l}px`);
-    haupt.style.setProperty("--pl-r", `${w.r}px`);
-  };
-  setzen();
-  haupt.querySelectorAll<HTMLElement>(".plt-griff").forEach((g) => {
-    g.addEventListener("pointerdown", (ev) => {
-      ev.preventDefault();
-      g.setPointerCapture(ev.pointerId);
-      g.classList.add("zieht");
-      const r = haupt.getBoundingClientRect();
-      const bewegen = (e: PointerEvent) => {
-        const gesamt = r.width;
-        if (g.dataset.g === "l") w.l = Math.round(Math.min(Math.max(e.clientX - r.left, 190), Math.min(460, gesamt - w.r - 420)));
-        else w.r = Math.round(Math.min(Math.max(r.right - e.clientX, 300), Math.min(900, gesamt - w.l - 420)));
-        setzen();
-        karte?.map.resize();
-      };
-      const los = () => {
-        g.classList.remove("zieht");
-        g.removeEventListener("pointermove", bewegen);
-        g.removeEventListener("pointerup", los);
-        g.removeEventListener("pointercancel", los);
-        try {
-          localStorage.setItem(SPALTEN, JSON.stringify(w));
-        } catch {
-          /* egal */
-        }
-      };
-      g.addEventListener("pointermove", bewegen);
-      g.addEventListener("pointerup", los);
-      g.addEventListener("pointercancel", los);
-    });
-    // Doppelklick: Standardbreite
-    g.addEventListener("dblclick", () => {
-      w = { l: 260, r: 520 };
-      setzen();
-      karte?.map.resize();
-      try {
-        localStorage.removeItem(SPALTEN);
-      } catch {
-        /* egal */
-      }
-    });
-  });
-}
 
 /** Einstellungen des Piloten: Funk, Tasten, Handy, Flugsimulator */
 function einstellungenDialog(): void {
@@ -843,8 +714,17 @@ export function pilotSchliessen(): void {
   flugsimBeenden();
   for (const f of aus) f();
   aus = [];
+  if (geplant) cancelAnimationFrame(geplant);
+  geplant = 0;
+  fenster?.entfernen();
+  fenster = null;
   karte?.map.remove();
   karte = null;
+  kartenEl = null;
+  funkFenster?.entfernen();
+  funkFenster = null;
+  funkEl = null;
+  grossEl = null;
   root?.remove();
   root = null;
   pilotModusSetzen(false);
@@ -852,92 +732,29 @@ export function pilotSchliessen(): void {
 
 // ------------------------------------------------------------------ Zeichnen
 
-/** Teil nur neu bauen, wenn sich sein Inhalt geändert hat (Klicks und Eingaben gehen sonst verloren) */
-function teil(sel: string, key: string, bauen: (box: HTMLElement) => void): void {
-  if (!root) return;
-  const box = root.querySelector<HTMLElement>(sel);
-  if (!box || sig.get(sel) === key) return;
-  sig.set(sel, key);
-  box.innerHTML = "";
-  bauen(box);
-}
-
+/** Was sonst bei jedem Takt passiert (Töne, Handy, GTN, Tablet, Karte) – dann die Ansicht neu zeichnen */
 function zeichneAlles(): void {
   if (!root) return;
   const fz = meinFz();
   if (!fz) letztenWiederNehmen();
   vorlaufPruefen(fz);
   const e = einsatzVon(fz);
-  kopf(fz);
-  warten(fz);
-  alarm(fz, e);
-  statusKnoepfe(fz, e);
-  simTeil(fz);
-  flug(fz, e);
-  einsatzKarte(fz, e);
-  patient(fz, e);
-  plan(fz, e);
-  const fk = funkTeil(fz, e);
-  einsatzVerlauf(e);
-  chat();
-  wetterTeil(fz);
+  alarmPruefen(fz, e);
+  gsAbrufPruefen(fz, e);
+  const fk = funkPlatzAktualisieren(fz, e);
   karteAktualisieren(fz, e);
   handyStand(fz, e, fk, () => handyMehr(fz, e));
   gtnZiel(fz, e);
   hpgAktualisieren(fz, e);
+  fenster?.zeichnen();
 }
 
-function kopf(fz: SimFahrzeug | undefined): void {
-  const st = fz ? sim.statusDef(fz.status) : null;
-  teil(".plt-heli", fz ? `${fz.id}|${fz.funkrufname}` : "-", (b) => {
-    b.innerHTML = fz ? `${ico("heli", "gross")}<div><b>${esc(fz.kurzname || fz.funkrufname)}</b><small>${esc(fz.funkrufname)} · ${esc(fz.stationName)}</small></div>` : `<div><b>Kein Hubschrauber</b><small>Bitte wählen („Wechseln“)</small></div>`;
-  });
-  teil(".plt-status-jetzt", st ? `${st.key}|${st.farbe}` : "-", (b) => {
-    if (!st) return;
-    b.style.setProperty("--f", st.farbe);
-    b.innerHTML = `<span class="plt-gross-num">${esc(st.nummer)}</span><span>${esc(st.name)}</span>`;
-  });
-  const w = sim.state.wetter;
-  const verb = sim.pilotTest ? `<span class="plt-pill warn">Testmodus</span>` : !mp.status.verbunden ? `<span class="plt-pill warn">verbinde …</span>` : !mp.status.hostDa ? `<span class="plt-pill warn">Host nicht da</span>` : `<span class="plt-pill ok">verbunden</span>`;
-  const hind = fz ? sim.flugHindernis(fz) : null;
-  teil(".plt-info", `${uhrzeit(sim.state.zeit)}|${w.lage}|${verb}|${hind}|${sim.state.tempo}`, (b) => {
-    b.innerHTML = `<span title="Spielzeit">${uhrzeit(sim.state.zeit)}${sim.state.tempo !== 1 ? ` <em>×${sim.state.tempo}</em>` : ""}</span><span>${esc(WETTER_LABEL[w.lage as keyof typeof WETTER_LABEL] ?? String(w.lage))}${hind ? ` · <span class="plt-warn">${esc(hind)}</span>` : ""}</span>${verb}`;
-  });
-}
-
-function warten(fz: SimFahrzeug | undefined): void {
-  const box = root!.querySelector<HTMLElement>(".plt-warte")!;
-  const text = sim.pilotTest
-    ? !fz
-      ? "Testmodus – noch kein Hubschrauber gewählt: oben auf „Wechseln“."
-      : ""
-    : !mp.status.verbunden
-    ? "Verbinde mit dem Spiel …"
-    : !mp.status.hostDa
-      ? mp.status.hostVerlassen
-        ? "Der Host hat das Spiel beendet."
-        : "Der Host ist gerade nicht verbunden – sobald er zurück ist, geht es weiter."
-      : sim.state.lobby
-        ? "Warte, bis der Host das Spiel startet. Du kannst deinen Hubschrauber schon wählen."
-        : !fz
-          ? "Noch kein Hubschrauber gewählt – oben auf „Wechseln“."
-          : fz.pilot?.offlineSeit
-            ? "Verbindung unterbrochen – nach einer Minute fliegt der Computer weiter."
-            : "";
-  box.hidden = !text;
-  if (box.textContent !== text) box.textContent = text;
-}
-
-function alarm(fz: SimFahrzeug | undefined, e: Einsatz | undefined): void {
-  const box = root!.querySelector<HTMLElement>(".plt-alarm")!;
-  if (imVorlauf(fz)) {
-    box.hidden = true;
-    return;
-  }
+/** Neuer Einsatz: Melder bis quittiert (Status 9 oder 2), höchstens 1 Minute */
+function alarmPruefen(fz: SimFahrzeug | undefined, e: Einsatz | undefined): void {
+  if (imVorlauf(fz)) return;
   const neu = fz?.einsatzId ?? null;
   if (neu && neu !== letzterEinsatz && fz && ["alarmWache", "alarmFunk", "alarmiert"].includes(fz.status)) {
     alarmOffen = true;
-    // Melder: wiederholt sich, bis quittiert (Status 9 oder 2), höchstens 1 Minute
     alarmStarten("alarm", () => {
       const f = meinFz();
       return !!root && !!f && f.einsatzId === neu && ["alarmWache", "alarmFunk"].includes(f.status);
@@ -945,40 +762,827 @@ function alarm(fz: SimFahrzeug | undefined, e: Einsatz | undefined): void {
   }
   letzterEinsatz = neu;
   if (!fz || !e || !["alarmWache", "alarmFunk"].includes(fz.status)) alarmOffen = false;
-  box.hidden = !alarmOffen || !e;
-  if (box.hidden || !e) return;
-  const key = `${e.id}|${e.code}|${e.adresse?.label}`;
-  if (box.dataset.k === key) return;
-  box.dataset.k = key;
-  box.innerHTML = `<div class="plt-alarm-titel">ALARM</div>
-    <div class="plt-alarm-text"><b>${e.code ? `<span class="plt-alarm-code">${esc(e.code)}</span>` : ""}${esc(stichwort(e))}</b><span>${esc(e.adresse?.label ?? "Adresse folgt")}</span></div>
-    <div class="plt-alarm-hinweis"><kbd>9</kbd> Quittieren · <kbd>2</kbd> beim Abheben</div>`;
 }
 
-function statusKnoepfe(fz: SimFahrzeug | undefined, e: Einsatz | undefined): void {
-  const b = belegung();
-  const key = `${fz?.status}|${!!e}|${fz?.pilot?.plan?.art}|${!!e?.kh}|${JSON.stringify(b.taste)}`;
-  teil(".plt-status", key, (box) => {
-    for (const a of AKTIONEN.filter((x) => x.status)) {
-      const st = sim.statusDef(a.status!);
-      const aktiv = fz?.status === a.status;
-      const btn = el("button", { class: `plt-st${aktiv ? " aktiv" : ""}${statusHalt?.s === a.status ? " haelt" : ""}`, style: `--f:${st.farbe}`, "data-s": a.status!, type: "button", title: "gedrückt halten (ca. 2 Sekunden), bis der Status durchgeht" });
-      btn.innerHTML = `<span class="plt-st-num">${esc(st.nummer)}</span><span class="plt-st-name">${esc(st.name)}</span><kbd>${esc(tastenNameKurz(b.taste[a.id]))}</kbd><i class="plt-st-balken"></i>`;
-      btn.disabled = !fz;
-      btn.addEventListener("pointerdown", (ev) => {
-        if (ev.button !== 0) return;
-        btn.setPointerCapture?.(ev.pointerId);
-        statusHaltenStart(a.status!);
-      });
-      for (const t of ["pointerup", "pointercancel", "lostpointercapture"]) btn.addEventListener(t, () => statusHaltenEnde(a.status!));
-      btn.addEventListener("contextmenu", (ev) => ev.preventDefault());
-      box.appendChild(btn);
-    }
-    if (fz && ["alarmWache", "alarmFunk", "alarmiert"].includes(fz.status)) {
-      const st = sim.statusDef(fz.status);
-      box.insertAdjacentHTML("afterbegin", `<div class="plt-st-alarm" style="--f:${st.farbe}">${esc(st.nummer)} · ${esc(st.name)}</div>`);
-    }
+let letzterGsHinweis: string | null = null;
+/** Abruf aus dem Bereitstellungsraum: eigener Ton, bis abgehoben (Status 2) – höchstens 1 Minute */
+function gsAbrufPruefen(fz: SimFahrzeug | undefined, e: Einsatz | undefined): void {
+  const gsH = fz && e ? sim.pilotGsHinweis(fz) : null;
+  if (gsH?.abruf && gsH.text !== letzterGsHinweis && fz) {
+    alarmStarten("abruf", () => {
+      const f = meinFz();
+      return !!root && !!f && f.phase === "wartetBR" && !!sim.pilotGsHinweis(f)?.abruf && f.status !== "zumBO";
+    });
+  }
+  letzterGsHinweis = gsH?.text ?? null;
+}
+
+// ---- Hilfen für die Ansicht
+
+/** Statusfarben wie im Entwurf (fenster.css: --s1 … --s9) */
+const ST_FARBE: Record<string, string> = { "1": "#CDEFA0", "6": "#CDEFA0", A: "#F3EF7A", F: "#F3EF7A", "9": "#DCC23A", "2": "#F7D98C", "3": "#EBB36B", "4": "#ECD8ED", "5": "#D7AEE2", "7": "#DCDDE1", "8": "#C3E6E1", "0": "#E6E7EA" };
+const stFarbe = (nummer: string) => ST_FARBE[nummer] ?? "#E6E7EA";
+const ST_KURZ: Partial<Record<StatusKey, string>> = { alarmiert: "Quittieren", freiWache: "Frei Wache", zumBO: "Zum BO", amBO: "Am BO", zumZO: "Zum ZO", amZO: "Am ZO", freiFunk: "Frei Funk" };
+const ST_LANG: Partial<Record<StatusKey, string>> = { alarmiert: "Quittieren", freiWache: "Frei auf Wache", zumBO: "Zum Berufungsort", amBO: "Am Berufungsort", zumZO: "Zum Zielort", amZO: "Am Zielort", freiFunk: "Frei über Funk" };
+const SICHT_FARBE: Record<string, [string, string]> = { rot: ["#E5484D", "#fff"], gelb: ["#F5A524", "#15181c"], gruen: ["#4CC38A", "#15181c"], tot: ["#6B7385", "#fff"] };
+const ALARM_ST = ["alarmWache", "alarmFunk", "alarmiert"];
+const mmss = (sek: number) => `${Math.floor(sek / 60)}:${String(Math.floor(sek % 60)).padStart(2, "0")}`;
+const km1 = (m: number) => (m < 1000 ? `${Math.round(m / 10) * 10} m` : `${(m / 1000).toFixed(m < 10000 ? 1 : 0).replace(".", ",")} km`);
+const flugSek = (m: number) => m / (sim.settings.nahGeschwindigkeit / 3.6);
+const gsGruppe = (e: Einsatz | undefined) => gruppenName(sim.kanalVon(e)) || "RD-NOE-09";
+
+/** Zusatzinfo der Leitstelle im Kurzformat: „34m B? A+ // Freitext“ */
+function zusatzInfo(e: Einsatz): { b: string; t: string } {
+  const info = (e.infoRtw ?? "").trim();
+  if (!info) return { b: "", t: "" };
+  const i = info.indexOf("//");
+  if (i >= 0) return { b: info.slice(0, i).trim(), t: info.slice(i + 2).trim() };
+  if (e.infoAuto && info === e.infoAuto) return { b: info, t: "" };
+  return { b: "", t: info };
+}
+
+/** Großeinsatz, zu dem der Hubschrauber gehört (auch als zugeteilter Patient) */
+function gsVon(e: Einsatz | undefined): Einsatz | undefined {
+  if (!e) return undefined;
+  if (e.gsKind) return sim.einsatz(e.gsKind.parent) ?? undefined;
+  return e.gs && !e.gs.aufgehoben ? e : undefined;
+}
+
+/** Ablauf des Großeinsatzes (2. Alarmierung in den Bereitstellungsraum): 0 Alarm … 6 Frei; -1 = kein solcher Ablauf */
+function gsSchritt(fz: SimFahrzeug, e: Einsatz | undefined): number {
+  const p = gsVon(e);
+  if (!p?.gs) return -1;
+  const gs = p.gs;
+  const imBr = gs.ziel[fz.id] === "br" || !!fz.gsAmBr || fz.phase === "wartetBR" || (gs.brAlarm ?? []).includes(fz.id);
+  if (!imBr) return -1;
+  if (e?.gsKind) return fz.status === "amBO" ? 4 : fz.status === "zumZO" || fz.status === "amZO" ? 5 : fz.status === "freiFunk" ? 6 : 4;
+  if (ALARM_ST.includes(fz.status)) return 0;
+  const abruf = !!sim.pilotGsHinweis(fz)?.abruf || (!!fz.gsAmBr && fz.phase === "vorOrt");
+  if (abruf) return 3;
+  if (fz.status === "zumBO") return 1;
+  return 2;
+}
+
+/** Phase im normalen Ablauf: 0 Bereitschaft · 1 Alarm · 2 Anflug · 3 Am Einsatzort · 4 Transport · 5 Am KH · 6 Frei */
+function phaseVon(fz: SimFahrzeug | undefined, e: Einsatz | undefined): number {
+  if (!fz) return 0;
+  const s = fz.status;
+  if (ALARM_ST.includes(s) && e) return 1;
+  if (s === "zumBO") return 2;
+  if (s === "amBO") return 3;
+  if (s === "zumZO") return 4;
+  if (s === "amZO") return 5;
+  if (s === "freiFunk") return 6;
+  return 0;
+}
+
+function verbindung(): { t: string; l: string; gelb: boolean } {
+  if (sim.pilotTest) return { t: "Testmodus", l: "\u00a0· ohne Leitstelle", gelb: true };
+  if (!mp.status.verbunden) return { t: "verbinde …", l: "", gelb: true };
+  if (!mp.status.hostDa) return { t: "Host nicht da", l: "", gelb: true };
+  const host = mp.spieler.find((s) => s.host);
+  const ich = mp.spieler.find((s) => s.pid === mp.ich.pid);
+  return { t: "verbunden", l: `${host ? `\u00a0· Host ${host.name}` : ""}${typeof ich?.ping === "number" ? `\u00a0· ${Math.round(ich.ping)} ms` : ""}`, gelb: false };
+}
+
+function warteText(fz: SimFahrzeug | undefined): string {
+  return sim.pilotTest
+    ? !fz
+      ? "Testmodus – noch kein Hubschrauber gewählt: Logo › Hubschrauber wechseln."
+      : ""
+    : !mp.status.verbunden
+      ? "Verbinde mit dem Spiel …"
+      : !mp.status.hostDa
+        ? mp.status.hostVerlassen
+          ? "Der Host hat das Spiel beendet."
+          : "Der Host ist gerade nicht verbunden – sobald er zurück ist, geht es weiter."
+        : sim.state.lobby
+          ? "Warte, bis der Host das Spiel startet. Du kannst deinen Hubschrauber schon wählen."
+          : !fz
+            ? "Noch kein Hubschrauber gewählt – Logo › Hubschrauber wechseln."
+            : fz.pilot?.offlineSeit
+              ? "Verbindung unterbrochen – nach einer Minute fliegt der Computer weiter."
+              : "";
+}
+
+/** NAH-Fluglage jetzt (wie in der Kopfleiste: Wetter aus = keine Einschränkung) */
+function flugJetzt(): "ok" | "gelb" | "rot" {
+  const j = sim.wetterPrognose(1)[0];
+  if (!sim.settings.wetterAktiv || !j) return "ok";
+  return flugverbot(j.lage, j.wind) ? "rot" : flugEingeschraenkt(j.lage, j.wind) ? "gelb" : "ok";
+}
+
+const SIM_TEXT: Record<string, string> = { aus: "nicht verbunden", keineDll: "SimConnect fehlt", wartet: "wartet", verbunden: "verbunden", getrennt: "getrennt", fehler: "Fehler" };
+const PUNKT = { ok: "#4CC38A", warn: "#F5A524", aus: "#9AA3B5", fehl: "#E5484D" };
+
+interface Knopf {
+  t: string;
+  klick: () => void;
+  prim?: boolean;
+  an?: boolean;
+  aus?: boolean;
+}
+
+/** Cockpit: MSFS, H145-Tablet, H145-Funkgerät, GTN750, Handy – je Zeile aufklappbar */
+function cockpitDaten(fz: SimFahrzeug | undefined): Record<string, unknown>[] {
+  const d = flugsim.daten;
+  const frisch = datenFrisch();
+  const z = flugsim.zustand;
+  const out: Record<string, unknown>[] = [];
+  const msfsKn: Knopf[] = [];
+  if (z === "aus" || z === "fehler" || z === "keineDll" || z === "getrennt") msfsKn.push({ t: "Mit MSFS verbinden", prim: true, klick: () => void flugsimVerbinden() });
+  if (z === "keineDll" || z === "fehler") msfsKn.push({ t: "SimConnect.dll wählen …", klick: () => void dllWaehlen() });
+  if (z === "verbunden" || z === "wartet") msfsKn.push({ t: "Trennen", klick: () => void flugsimTrennen() });
+  out.push({
+    k: "msfs",
+    t: "MSFS",
+    z: z === "verbunden" && !frisch ? "keine Flugdaten" : (SIM_TEXT[z] ?? z),
+    f: z === "verbunden" ? (frisch ? PUNKT.ok : PUNKT.warn) : z === "wartet" ? PUNKT.warn : z === "aus" ? PUNKT.aus : PUNKT.fehl,
+    d:
+      z === "verbunden" && frisch
+        ? "SimConnect verbunden · Position geht 1× pro Sekunde an die Leitstelle."
+        : z === "verbunden"
+          ? "Keine Flugdaten – bist du im Flug (nicht im Menü)?"
+          : flugsim.text || (z === "aus" ? "Nicht verbunden – ohne Flugsimulator geht der Übungsflug." : ""),
+    hinw:
+      z === "keineDll" || z === "fehler"
+        ? "Die Datei kommt mit dem kostenlosen MSFS-SDK (Entwicklermodus › Help › SDK Installer), danach liegt sie unter C:\\MSFS 2024 SDK\\SimConnect SDK\\lib\\SimConnect.dll."
+        : "",
+    werte:
+      d && frisch
+        ? {
+            hoehe: `${Math.round(d.hoehe).toLocaleString("de-AT")} ft`,
+            agl: d.am_boden ? "am Boden" : `${Math.round(d.agl).toLocaleString("de-AT")} ft`,
+            kurs: `${String(Math.round(((d.kurs % 360) + 360) % 360)).padStart(3, "0")}°`,
+            kt: `${Math.round(d.kts)} kt`,
+          }
+        : null,
+    knoepfe: msfsKn,
   });
+  if (hpg.geprueft && (hpg.paket || hpg.zustand === "verbunden")) {
+    const v = hpg.zustand === "verbunden";
+    out.push({
+      k: "tablet",
+      t: "H145-Tablet",
+      z: v ? "verbunden" : hpg.zustand === "fehler" ? "Fehler" : "wartet",
+      f: v ? PUNKT.ok : hpg.zustand === "fehler" ? PUNKT.fehl : PUNKT.warn,
+      d: v ? "Mission „LeitWerk Leitstelle“ läuft · Einsatz, Patient und Krankenhauswahl auch am Tablet." : hpg.mission ? "Im Tablet: Missions › Library › „LeitWerk Leitstelle“ wählen (nach dem Einrichten einmal REFRESH)." : hpg.text || "Einmal einrichten, dann im Tablet die Mission wählen.",
+      knoepfe: !hpg.mission ? [{ t: "H145 einrichten", klick: () => void hpgEinrichten() }] : !v ? [{ t: "Missions-Index neu bauen", klick: () => void hpgEinrichten() }] : [],
+    });
+  }
+  if (z === "verbunden" && (hpg.paket || hpg.zustand === "verbunden" || flugsim.carls?.verbunden)) {
+    const c = flugsim.carls;
+    const an = carlsAn();
+    out.push({
+      k: "carls",
+      t: "H145-Funkgerät",
+      z: !an ? "aus" : c?.verbunden ? "verbunden" : "wartet",
+      f: !an ? PUNKT.aus : c?.verbunden ? PUNKT.ok : PUNKT.warn,
+      d: !an
+        ? "Die Status-Tasten am Funkgerät sind aus."
+        : c?.verbunden
+          ? `Status-Tasten 1–6 und 9 am Funkgerät senden sofort${letzterCarls ? ` · zuletzt: ${letzterCarls}` : ""}`
+          : "Warte auf das Funkgerät der H145 – im Cockpit sitzen, Strom an.",
+      knoepfe: [{ t: an ? "Ausschalten" : "Einschalten", klick: () => carlsUmschalten(!an) }],
+    });
+  }
+  if (gtn.geprueft) {
+    out.push(
+      gtn.paket
+        ? {
+            k: "gtn",
+            t: "GTN750",
+            z: !gtnAn() ? "aus" : gtn.fehler ? "Fehler" : gtn.ziel ? "Flugplan bereit" : "bereit",
+            f: !gtnAn() ? PUNKT.aus : gtn.fehler ? PUNKT.fehl : PUNKT.ok,
+            d: gtn.fehler ? gtn.fehler : gtn.ziel ? "Im GTN: Flight Plan › Menu › Import. Wegpunkte LWBO (Einsatzort), LWKH (Krankenhaus), LWBAS (Stützpunkt)." : "Bei Alarm und nach der Zielwahl liegt der Flugplan im GTN bereit.",
+            knoepfe: [{ t: gtnAn() ? "Automatisch: an" : "Automatisch: aus", an: gtnAn(), klick: () => gtnUmschalten(!gtnAn()) }],
+          }
+        : {
+            k: "gtn",
+            t: "GTN750",
+            z: "nicht gefunden",
+            f: PUNKT.aus,
+            d: `PMS50 GTN750 nicht gefunden${gtn.community ? "" : " (Community-Ordner unbekannt)"}.`,
+            knoepfe: [{ t: "Community-Ordner wählen …", klick: () => void communityWaehlen() }],
+          },
+    );
+  }
+  const h = handyLaeuft();
+  out.push({
+    k: "handy",
+    t: "Handy",
+    z: h ? "bereit" : "nicht gekoppelt",
+    f: h ? PUNKT.ok : PUNKT.aus,
+    d: h ? "Handy als Statusgerät ist bereit – QR-Code noch einmal zeigen über „Koppeln …“." : "Handy als Statusgerät: QR-Code scannen (gleiches WLAN).",
+    knoepfe: [{ t: "Koppeln …", klick: () => handyDialog() }],
+  });
+  void fz;
+  return out;
+}
+
+/** Was die Ansicht zeigt – alles aus dem Spiel (Hubschrauber, Status, Einsatz, Großeinsatz, Patient, Buchung) */
+function ansichtDaten(): Record<string, unknown> {
+  const fz = meinFz();
+  const e = einsatzVon(fz);
+  const t = sim.state.zeit;
+  const st = fz ? sim.statusDef(fz.status) : null;
+  const stN = st ? (st.nummer === "F" ? "A" : st.nummer) : "–";
+  const gi = fz ? gsSchritt(fz, e) : -1;
+  const G = gi >= 0;
+  const pi = phaseVon(fz, e);
+  const gsE = gsVon(e);
+  const gs = gsE?.gs ?? null;
+  const belegung0 = belegung();
+  const c = e ? findCode((gsE ?? e).code ?? undefined) : undefined;
+  const kh = e?.kh ? store.get("hospitals", e.kh.hospitalId) : undefined;
+  const ziel = fz ? sim.pilotBo(fz) : null;
+  const rtw = fz && e && !e.gsKind ? sim.nahRtwPartner(fz, e) : undefined;
+  const frisch = datenFrisch();
+  const p = fz?.pilot ?? null;
+  const daheim = !!fz && distanceM(fz, fz.heim) < 300;
+
+  // ---- Kopf
+  const wk = wetterKurz();
+  const j = sim.wetterPrognose(1)[0];
+  const flug = flugJetzt();
+  const bremse = sim.zeitBremse();
+  const tempo = sim.state.tempo;
+  const ichFliege = !!fz && sim.inDerLuft(fz);
+  const zr =
+    tempo > 1 && bremse
+      ? { a: "Zeitraffer gebremst auf\u00a0", x: "1×", b: ichFliege ? "\u00a0(du fliegst)" : `\u00a0(${bremse})`, c: "\u00a0(gebremst)", gelb: true, tip: `Zeitraffer der Leitstelle ×${tempo} – gebremst auf 1×: ${bremse}` }
+      : { a: "Zeitraffer\u00a0", x: `${tempo}×`, b: "", c: "", gelb: false, tip: "Zeitraffer der Leitstelle" };
+
+  // ---- Status-Tasten
+  const stl = AKTIONEN.filter((a) => a.status).map((a) => {
+    const d = sim.statusDef(a.status!);
+    const aktiv = fz?.status === a.status;
+    return {
+      key: a.status!,
+      n: d.nummer,
+      t: ST_LANG[a.status!] ?? d.name,
+      kurz: ST_KURZ[a.status!] ?? d.name,
+      k: tastenNameKurz(belegung0.taste[a.id]),
+      f: stFarbe(d.nummer),
+      aktiv,
+      halten: statusHalt?.s === a.status,
+      leise: a.status === "alarmiert" && !(fz && ["alarmWache", "alarmFunk"].includes(fz.status)),
+      aus: !fz,
+    };
+  });
+
+  // ---- Phasenleiste
+  const phasen = G
+    ? { titel: ["Alarm", "Anflug BR", "Im Bereitstellungsraum", "Abruf", "Patient", "Transport", "Frei"], kurz: ["Alarm", "Anflug", "Im BR", "Abruf", "Patient", "Transport", "Frei"], i: gi }
+    : { titel: ["Bereitschaft", "Alarm", "Anflug", "Am Einsatzort", "Transport", "Am Krankenhaus", "Frei"], kurz: ["Bereit", "Alarm", "Anflug", "Am Ort", "Transport", "Am KH", "Frei"], i: pi };
+
+  // ---- Entfernung und Flugzeit
+  const zielPos = e ? (ziel ?? e.adresse) : null;
+  const mZiel = fz && zielPos ? distanceM(fz, zielPos) : 0;
+  const ank = fz ? sim.pilotAnkunft(fz) : null;
+  const landung = kh ? (khLandung(kh) ?? kh) : null;
+
+  // ---- Alarm
+  const zi = e ? zusatzInfo(e) : { b: "", t: "" };
+  const gruppeGs = gsGruppe(e);
+  const alarm =
+    alarmOffen && e && fz
+      ? G && gs
+        ? {
+            t: `${gs.stufe ? `GS ${gs.stufe}` : "Großeinsatz"} · Großeinsatz – ${stichwort(gsE!)}`,
+            s: `In den Bereitstellungsraum: ${gs.br?.label ?? "wird noch festgelegt"}${ziel ? ` · ${km1(mZiel)} · ca. ${minuten(flugSek(mZiel))} Flug` : ""} · Sprechgruppe ${gruppeGs}`,
+            ziB: zi.b,
+            ziT: zi.t,
+          }
+        : {
+            t: `${e.code ? `${e.code} · ` : ""}${stichwort(e)}`,
+            s: `${e.adresse?.label ?? "Adresse folgt"}${zielPos ? ` · ${km1(mZiel)} · ca. ${minuten(flugSek(mZiel))} Flug` : ""}${rtw ? ` · mit ${rtw.funkrufname}` : ""}`,
+            ziB: zi.b,
+            ziT: zi.t,
+          }
+      : null;
+
+  // ---- Nächster Schritt
+  const quittiert = fz?.status === "alarmiert";
+  const gtnBereit = gtn.paket && gtnAn() && !!gtn.ziel;
+  const etaFlug = ank ? mmss(ank.min * 60) : "";
+  const plan = p?.plan ?? null;
+  const khName = kh ? kh.kurzname || kh.name : "";
+  let next: Record<string, string> = { t: "Kein Hubschrauber", d: "Wähle deinen Hubschrauber: Logo › Hubschrauber wechseln." };
+  if (fz && G) {
+    const brName = gs?.br?.label ?? "Bereitstellungsraum";
+    const hinweis = sim.pilotGsHinweis(fz);
+    const fussRest = fz.gsFussBis ? Math.max(0, (fz.gsFussBis - t) / 1000) : 0;
+    next = [
+      quittiert
+        ? { t: "Abheben – Ziel ist der Bereitstellungsraum", d: `Nicht direkt zum Unfallort fliegen.${gtnBereit ? " Der Flugplan zum BR liegt im GTN750 bereit." : ""}`, eta: `${minuten(flugSek(mZiel))}`, etaT: "Flug zum BR" }
+        : { t: "Alarm quittieren (9)", d: "Großeinsatz, 2. Alarmierung: Du fliegst in den Bereitstellungsraum, nicht zum Unfallort.", eta: `${minuten(flugSek(mZiel))}`, etaT: "Flug zum BR" },
+      { t: "Landen im Bereitstellungsraum – dann Status 3", d: `${brName}. Funk ab jetzt in der Sprechgruppe ${gruppeGs}.`, eta: fz.fahrt || ichFliege ? mmss(flugSek(mZiel)) : "", etaT: "bis zur Landung" },
+      { t: "Im Bereitstellungsraum auf den Abruf warten", d: "Die Einsatzleitung ruft dich über Funk ab. Nicht selbst zum Einsatzort gehen." },
+      fz.gsFussBis
+        ? { t: "Abruf – Team geht zu Fuß zum Einsatzort", d: "Der Hubschrauber bleibt im Bereitstellungsraum stehen. Bei der Einsatzleitung melden, dort wird euch ein Patient zugeteilt.", eta: mmss(fussRest), etaT: "Fußweg" }
+        : { t: fz.gsAmBr ? "Bei der Einsatzleitung – Patient wird zugeteilt" : "Abruf durch die Einsatzleitung", d: hinweis?.text ?? "Die Einsatzleitung teilt euch einen Patienten zu." },
+      { t: `Patient ${e?.gsKind ? `P-${String(e.gsKind.nr).padStart(2, "0")}` : ""} versorgen, dann entscheiden und buchen`.replace("  ", " "), d: `Status 4 erst, wenn der Patient im Hubschrauber ist.${gs?.voraviso.length ? " Die Einsatzleitung hat ein Voraviso an die Krankenhäuser geschickt." : ""}` },
+      { t: "Landung am Krankenhaus – dann Status 5", d: khName ? `Ziel ${khName}${kh && khLandung(kh) ? "" : " – kein eigener Landeplatz"}.` : "Ziel siehe Buchung.", eta: etaFlug, etaT: "bis zur Landung" },
+      { t: "Rückflug zum Stützpunkt – dort Status 1", d: "Du bist frei über Funk und kannst unterwegs wieder alarmiert werden.", eta: etaFlug, etaT: `bis ${fz.stationName}` },
+    ][gi] as Record<string, string>;
+  } else if (fz) {
+    next = [
+      { t: "Bereitschaft am Stützpunkt", d: "Warte auf die Alarmierung durch die Leitstelle. Der Melder klingelt, sobald ein Einsatz kommt." },
+      quittiert
+        ? { t: "Abheben – dann Status 2", d: gtnBereit ? "Der Flugplan zum Einsatzort liegt im GTN750 bereit." : "Koordinaten unten kopieren oder als .pln laden.", eta: minuten(flugSek(mZiel)), etaT: "Flug zum Einsatzort" }
+        : { t: "Alarm quittieren (9)", d: "Der Melder läuft, bis du 9 oder 2 drückst. Danach abheben und Status 2.", eta: minuten(flugSek(mZiel)), etaT: "Flug zum Einsatzort" },
+      { t: "Landen am Einsatzort – dann Status 3", d: rtw ? `${rtw.funkrufname} ${rtw.status === "amBO" ? "ist schon am Einsatzort" : "ist auf dem Weg"}.` : gsE ? (sim.pilotGsHinweis(fz)?.text ?? "") : "Kein bodengebundenes Rettungsmittel im Einsatz.", eta: etaFlug, etaT: "bis zur Landung" },
+      !plan
+        ? { t: "Entscheiden: Was passiert mit dem Patienten?", d: e?.gs && !e.gs.aufgehoben ? "Die Einsatzleitung teilt dir einen Patienten zu." : "Wähle unten Transport und Krankenhaus. Danach Status 4 (Transport) oder 6 (frei)." }
+        : plan.art === "transport"
+          ? { t: `Transport – dann Status 4`, d: `Patient an Bord? Dann abheben und Status 4 – Ziel ${khName || "laut Buchung"}.` }
+          : plan.art === "uebergabe"
+            ? { t: "Übergabe an den RTW – dann frei (6)", d: plan.naMit ? "Der Notarzt fährt im RTW mit, ihr fliegt leer nach – Status 4, wenn ihr abhebt." : "Der RTW transportiert allein – danach frei über Funk (6)." }
+            : { t: "Kein Transport – frei über Funk (6)", d: "Dann zurück zum Stützpunkt." },
+      { t: "Landung am Krankenhaus – dann Status 5", d: khName ? `Ziel ${khName}${kh && khLandung(kh) ? "" : " – kein eigener Landeplatz, Landung am Haus"}.` : "Ziel siehe Buchung.", eta: etaFlug, etaT: "bis zur Landung" },
+      { t: "Übergabe – dann frei über Funk (6)", d: "Nach der Übergabe meldest du dich frei und fliegst zurück zum Stützpunkt." },
+      { t: "Rückflug zum Stützpunkt – dort Status 1", d: "Du bist frei über Funk und kannst unterwegs wieder alarmiert werden.", eta: etaFlug, etaT: `bis ${fz.stationName}` },
+    ][pi] as Record<string, string>;
+  }
+
+  // ---- Einsatz
+  let ein: Record<string, unknown> | null = null;
+  let fl: Record<string, string> | null = null;
+  const fzs: Record<string, string>[] = [];
+  const nav: Record<string, unknown>[] = [];
+  if (fz && e) {
+    const basis = gsE ?? e;
+    const stufe = gs ? `Großeinsatz${gs.stufe ? ` ${gs.stufe}` : ""}` : (c?.stufe ?? "");
+    ein = {
+      nr: `${e.gsKind ? `Patient P-${String(e.gsKind.nr).padStart(2, "0")} · ` : ""}Nr. ${basis.nummer}${basis.protokoll[0] ? ` · seit ${uhrzeit(basis.protokoll[0].zeit)}` : ""}`,
+      stufe,
+      sf: gs ? "#6E1A1A" : c ? stufeFarbe(c.stufe) : "#6b7280",
+      code: basis.code ?? "Code folgt",
+      sw: stichwort(basis),
+      zi: !!(zi.b || zi.t),
+      ziB: zi.b,
+      ziS: zi.b && zi.t ? " // " : "",
+      ziT: zi.t,
+      adr: G && gs?.br && gi <= 2 ? `BR: ${gs.br.label} · Einsatzort ${basis.adresse?.label ?? ""}` : (basis.adresse?.label ?? "Adresse folgt"),
+      zusatz: e.zusatz ?? "",
+      gsText: !G && gsE ? (sim.pilotGsHinweis(fz)?.text ?? "") : "",
+    };
+    if (G && gi >= 2 && gs?.br && basis.adresse) {
+      const weg = distanceM(gs.br, basis.adresse);
+      fl = { km: km1(weg), t: "BR → Einsatzort zu Fuß" };
+    } else if (fz.status === "zumZO" && landung) fl = { km: km1(distanceM(fz, landung)), t: `ca. ${minuten(flugSek(distanceM(fz, landung)))} zum ${khName}` };
+    else if (zielPos && mZiel > 150) fl = { km: km1(mZiel), t: G ? `ca. ${minuten(flugSek(mZiel))} zum BR` : `ca. ${minuten(flugSek(mZiel))} Flug` };
+    // beteiligte Fahrzeuge (im Großeinsatz: du, Einsatzleitung, Leitung im BR und einige weitere)
+    const alle = (gsE ?? e).fahrzeuge.map((id) => sim.state.fahrzeuge[id]).filter((x): x is SimFahrzeug => !!x && (x.einsatzId === (gsE ?? e).id || x.id === fz.id || (!!e.gsKind && x.einsatzId === e.id)));
+    if (!alle.includes(fz)) alle.unshift(fz);
+    const sortiert = gs ? [fz, ...alle.filter((x) => x.id === gs.el), ...alle.filter((x) => x.id === gs.brBel), ...alle.filter((x) => x !== fz && x.id !== gs.el && x.id !== gs.brBel).slice(0, 4)] : [fz, ...alle.filter((x) => x !== fz)];
+    for (const x of [...new Set(sortiert)]) {
+      const d = sim.statusDef(x.status);
+      fzs.push({ s: d.nummer, f: stFarbe(d.nummer), t: `${x === fz ? x.kurzname || x.funkrufname : x.funkrufname}${x === fz ? " (du)" : gs && x.id === gs.el ? " (EL)" : gs && x.id === gs.brBel ? " (BR)" : ""}`, tip: d.name });
+    }
+    // Koordinaten: Bereitstellungsraum/Einsatzort und Landeplatz am Krankenhaus
+    const zeile = (titel: string, lat: number, lon: number, name: string, zus = "") =>
+      nav.push({ t: titel, k: koordText(lat, lon), kc: `${lat.toFixed(6)}, ${lon.toFixed(6)}`, z: zus, kopie: () => void navigator.clipboard?.writeText(`${lat.toFixed(6)}, ${lon.toFixed(6)}`).then(() => fenster?.k.toast("Koordinaten kopiert")), pln: () => void flugplanSpeichern(fz, { lat, lon, name }).then(() => fenster?.k.toast("Flugplan gespeichert – im MSFS auf der Weltkarte unter „Laden“ öffnen"), fehler) });
+    if (ziel && ["alarmWache", "alarmFunk", "alarmiert", "zumBO", "amBO"].includes(fz.status)) zeile(ziel.label, ziel.lat, ziel.lon, ziel.label);
+    if (kh) {
+      const l = khLandung(kh);
+      if (l) zeile(`Landeplatz ${khName}`, l.lat, l.lon, khName, kh.landeplatz && kh.landeplatz !== "kein" ? "" : "am Haus (kein eigener Landeplatz hinterlegt)");
+    }
+  }
+
+  // ---- Großeinsatz: Bereitstellungsraum, Abruf, Zuteilung
+  let gsD: Record<string, unknown> | null = null;
+  if (fz && G && gs && gsE) {
+    const w = gsE.wahr.gs;
+    const pat = (w?.patienten ?? []).filter((x) => gs.gezeigt.includes(x.nr));
+    const n = (s: string) => pat.filter((x) => x.sichtung === s).length;
+    const lebend = pat.filter((x) => x.sichtung !== "tot");
+    const kindVon = (nr: number) => (gs.kinder[nr] ? sim.einsatz(gs.kinder[nr]) : undefined);
+    const weg = lebend.filter((x) => {
+      const k = kindVon(x.nr);
+      return !!k && (k.zustand === "abgeschlossen" || k.fahrzeuge.some((id) => ["zumZO", "amZO"].includes(sim.state.fahrzeuge[id]?.status ?? "")));
+    }).length;
+    const gezeigt = gs.phase !== "alarm" && gs.phase !== "sicht";
+    const kraefte = gsE.fahrzeuge.map((id) => sim.state.fahrzeuge[id]).filter((x): x is SimFahrzeug => !!x);
+    const imBr = kraefte.filter((x) => x.phase === "wartetBR" && !x.gsFussBis && x.einsatzId === gsE.id);
+    const abgerufen = kraefte.filter((x) => (x.gsFussBis || x.gsAmBr || (x.einsatzId !== gsE.id && gs.ziel[x.id] === "bo")) && (gs.brAlarm ?? []).includes(x.id));
+    const anfahrt = kraefte.filter((x) => gs.ziel[x.id] === "br" && x.phase !== "wartetBR" && x.einsatzId === gsE.id);
+    const liste = [
+      ...abgerufen.map((x) => ({ nr: "–", t: `${x.funkrufname}${x === fz ? " (du)" : ""}`, z: "abgerufen", c: x === fz ? "du weg" : "weg" })),
+      ...imBr.map((x, i) => ({ nr: String(i + 1), t: `${x.funkrufname}${x === fz ? " (du)" : ""}`, z: x === fz ? "wartet – du" : "wartet", c: x === fz ? "du" : "" })),
+      ...anfahrt.slice(0, 4).map((x) => ({ nr: "", t: `${x.funkrufname}${x === fz ? " (du)" : ""}`, z: x.fahrt ? `Anfahrt · ca. ${minuten(Math.max(0, x.fahrt.start / 1000 + x.fahrt.dauer - t / 1000))}` : "Anfahrt", c: x === fz ? "du" : "" })),
+      ...(anfahrt.length > 4 ? [{ nr: "", t: `und ${anfahrt.length - 4} weitere`, z: "Anfahrt", c: "weg" }] : []),
+    ].map((r, d) => ({ ...r, d, cls: "pv-brz" + (r.c ? ` ${r.c}` : "") }));
+    const el2 = gs.el ? sim.state.fahrzeuge[gs.el] : undefined;
+    const brl = gs.brBel ? sim.state.fahrzeuge[gs.brBel] : undefined;
+    const fussPct = (() => {
+      if (!fz.gsFussBis) return 0;
+      const wegM = gs.br && gsE.adresse ? distanceM(gs.br, gsE.adresse) * 1.25 : 500;
+      const dauer = Math.max(60, wegM / 2.6) * 1000;
+      return Math.max(2, Math.min(100, Math.round(((t - (fz.gsFussBis - dauer)) / dauer) * 100)));
+    })();
+    const kind = e?.gsKind ? (w?.patienten ?? []).find((x) => x.nr === e.gsKind!.nr) : undefined;
+    const SN: Record<string, string> = { rot: "rot", gelb: "gelb", gruen: "grün", tot: "tot" };
+    gsD = {
+      br: gi >= 2,
+      gruppe: gruppeGs,
+      abruf: gi === 3 ? { t: sim.pilotGsHinweis(fz)?.text ?? "Abruf durch die Einsatzleitung.", pct: fussPct ? String(fussPct) : "" } : null,
+      zug: e?.gsKind ? { p: `P-${String(e.gsKind.nr).padStart(2, "0")}`, f: SICHT_FARBE[kind?.sichtung ?? "rot"][0], t: `Zugeteilt von der Einsatzleitung${kind ? ` · Sichtung ${SN[kind.sichtung]}` : ""}${kind?.muster ? ` · ${kind.muster}` : ""}` } : null,
+      zahlen: gezeigt
+        ? [
+            { f: "#E5484D", n: String(n("rot")), t: "rot" },
+            { f: "#F5A524", n: String(n("gelb")), t: "gelb" },
+            { f: "#4CC38A", n: String(n("gruen")), t: "grün" },
+            { f: "#6B7385", n: String(n("tot")), t: "tot" },
+            { f: "#3B8BFF", n: `${weg}/${lebend.length}`, t: "abtransportiert" },
+          ]
+        : null,
+      det: gi <= 3,
+      werte: [
+        { l: "Bereitstellungsraum", v: gs.br?.label ?? "wird noch festgelegt" },
+        ...(gs.br && gsE.adresse ? [{ l: "Zum Einsatzort", v: `${km1(distanceM(gs.br, gsE.adresse))} · zu Fuß ca. ${minuten(Math.max(60, (distanceM(gs.br, gsE.adresse) * 1.25) / 2.6))}` }] : []),
+        { l: "Einsatzleitung", v: el2 ? `${el2.funkrufname}${gs.bel ? " · BEL" : ""}` : "noch keine" },
+        { l: "Leitung im BR", v: brl ? brl.funkrufname : "–" },
+      ],
+      liste: liste.length ? liste : null,
+    };
+  }
+
+  // ---- Patient
+  let patZu = "";
+  const pats: Record<string, unknown>[] = [];
+  let patVerlauf: { z: string; t: string }[] = [];
+  if (fz && e) {
+    const am = ["amBO", "zumZO", "amZO"].includes(fz.status);
+    if (G && !e.gsKind) patZu = "Der Patient wird euch von der Einsatzleitung zugeteilt.";
+    else if (!am) patZu = `Was der Patient hat, siehst du am Einsatzort (Status 3).${e.meldung?.text ? ` Meldung: „${e.meldung.text}“` : ""}`;
+    else if (e.gs && !e.gs.aufgehoben) patZu = "Großeinsatz – die Einsatzleitung teilt dir einen Patienten zu.";
+    else {
+      const l = e.wahr.lage;
+      const verdacht = e.wahr.verdacht ? buchungName(e.wahr.verdacht) : "";
+      const BW: Record<string, string> = { ja: "wach", getruebt: "eingetrübt", nein: "bewusstlos" };
+      const AT: Record<string, string> = { normal: "normal", abnorm: "auffällig", agonal: "Schnappatmung", keine: "keine Atmung" };
+      const kind = e.gsKind && gsE ? (gsE.wahr.gs?.patienten ?? []).find((x) => x.nr === e.gsKind!.nr) : undefined;
+      const liste = (l?.patienten ?? []).length ? (l?.patienten ?? []) : kind ? [{ alter: kind.alter, geschlecht: kind.geschlecht, sichtung: kind.sichtung === "tot" ? "rot" : kind.sichtung, bw: kind.bw ?? "ja", at: kind.at ?? "normal" }] : [];
+      for (const x of liste) {
+        const sicht = kind?.sichtung ?? x.sichtung;
+        const [sf, sc] = SICHT_FARBE[sicht] ?? SICHT_FARBE.gelb;
+        const wer = `${x.alter < 14 ? "Kind" : x.geschlecht === "w" ? "Frau" : "Mann"}, ${kind ? "ca. " : ""}${x.alter} J.`;
+        pats.push({
+          s: sicht === "gruen" ? "grün" : sicht,
+          sf,
+          sc,
+          t: `${kind ? `P-${String(kind.nr).padStart(2, "0")} · ` : ""}${wer}${verdacht ? ` · Verdacht: ${verdacht}` : kind ? ` · ${kind.muster}` : ""}`,
+          l: kind ? `${e.meldung.text}` : l?.fall?.kern ? `Lagebild: ${l.fall.kern}` : "",
+          v: [
+            { t: `Bewusstsein: ${BW[x.bw] ?? x.bw}`, c: x.bw === "ja" ? "" : "w" },
+            { t: `Atmung: ${AT[x.at] ?? x.at}`, c: x.at === "normal" ? "" : "w" },
+            ...(l?.bit ? [{ t: "sehr schwer (ca. 150 kg+) – Transport braucht BIT", c: "w" }] : []),
+          ],
+        });
+      }
+      if (!pats.length) patZu = findCode(e.code ?? undefined)?.beschreibung ?? "Keine weiteren Angaben.";
+      patVerlauf = (l?.verlauf ?? []).slice(-3).map((v) => ({ z: uhrzeit(v.zeit), t: v.text }));
+    }
+  }
+
+  // ---- Entscheidung und Krankenhaus
+  const ent = fz && e ? entscheidungDaten(fz, e) : null;
+  const planT = plan && e && fz ? `${planText(plan)}${fz.status === "amBO" ? (plan.art === "transport" || (plan.art === "uebergabe" && plan.naMit) ? " · danach Status 4" : " · danach Status 6") : ""}` : "";
+
+  // ---- Einsatzverlauf (neueste oben); die Notrufabfrage zum Aufklappen
+  const prot = e?.protokoll ?? [];
+  const ab = prot.length > 60 ? prot.length - 60 : 0;
+  const verlauf = prot
+    .slice(ab)
+    .map((x, i) => {
+      const m = /^\*\*\* (.+?): [^*]*\*\*\*\n?([\s\S]*)$/.exec(x.text);
+      if (m) {
+        const zeilen = m[2].split("\n").filter(Boolean);
+        return { z: uhrzeit(x.zeit), key: `${e!.id}-${ab + i}`, abf: zeilen.map((tt, d) => ({ t: tt, d })), abfN: zeilen.length, abfArt: m[1], t: "", von: "" };
+      }
+      return { z: uhrzeit(x.zeit), t: x.text, von: x.von ?? "", abf: null };
+    })
+    .reverse();
+  if (!verlauf.length) verlauf.push({ z: "–", t: "Noch keine Ereignisse – sobald ein Einsatz vorliegt, stehen sie hier.", von: "", abf: null });
+
+  // ---- Übungsflug ohne Flugsimulator
+  const f = fz?.fahrt;
+  const rest = f ? Math.max(0, f.start / 1000 + f.dauer - t / 1000) : 0;
+  const ueb = frisch
+    ? { text: "Aus – die Position kommt aus dem Flugsimulator.", flug: null, knoepfe: [] }
+    : {
+        text: `Ohne Simulator fliegt der Hubschrauber hier eine gerade Linie mit ${sim.settings.nahGeschwindigkeit} km/h.`,
+        flug: f && fz ? { ziel: fz.pilot?.flugZiel ?? "Flug", rest: minuten(rest) } : null,
+        knoepfe: fz
+          ? [
+              ...(f ? [{ t: "Anhalten", klick: () => void befehl(sim.call("pilotFliegen", fz.id, null)) }] : []),
+              { t: ziel?.br ? "Zum Bereitstellungsraum" : "Zum Einsatzort", aus: !ziel, klick: () => void befehl(sim.call("pilotFliegen", fz.id, "bo")) },
+              { t: "Zum Zielkrankenhaus", aus: !e?.kh, klick: () => void befehl(sim.call("pilotFliegen", fz.id, "zo")) },
+              { t: "Zum Stützpunkt", klick: () => void befehl(sim.call("pilotFliegen", fz.id, "heim")) },
+              {
+                t: "Punkt auf der Karte …",
+                klick: () => {
+                  punktWaehlen = true;
+                  karteGross(true);
+                },
+              },
+            ]
+          : [],
+      };
+  // Zeitraffer: mit Flugsimulator nur am Boden, und weg vom Stützpunkt nur mit Zustimmung
+  let zeitraffer = tempo > 1 ? `Leitstelle: Zeitraffer ×${tempo}${bremse ? ` – gebremst auf 1× (${bremse})` : ""}.` : "Leitstelle: kein Zeitraffer.";
+  let zeitKnopf: Record<string, unknown> | null = null;
+  if (fz && p && frisch) {
+    const d = flugsim.daten;
+    if (d && !d.am_boden) zeitraffer = "Zeitraffer aus, solange du fliegst.";
+    else if (daheim) zeitraffer = "Am Stützpunkt: Zeitraffer erlaubt.";
+    else zeitKnopf = { t: p.zeitOk ? "Zeitraffer erlaubt – sperren" : "Zeitraffer erlauben", an: !!p.zeitOk, klick: () => void befehl(sim.call("pilotZeit", fz.id, !p.zeitOk)) };
+  } else if (fz && !frisch) zeitraffer = `Übungsflug: der Zeitraffer läuft mit. ${zeitraffer}`;
+
+  // ---- Update (wie in der Kopfleiste, mit Hinweis für den Piloten)
+  const u = updateInfo();
+  let upd: Record<string, unknown> | null = null;
+  if (u) {
+    const s = updateStand();
+    const lad = s?.phase === "laedt";
+    const fertig = s?.phase === "fertig";
+    const fehl = s?.phase === "fehler";
+    const pct = s && s.total > 0 ? Math.min(100, Math.round((s.done / s.total) * 100)) : 0;
+    const neu = (u.notes ?? "")
+      .split(/\n+/)
+      .map((x) => x.replace(/^\s*[-*•]\s*/, "").trim())
+      .filter(Boolean)
+      .slice(0, 6);
+    const heliName = fz ? fz.kurzname || fz.funkrufname : "Dein Hubschrauber";
+    upd = {
+      da: true,
+      knopf: lad ? `Lädt … ${pct} %` : fertig ? "Startet neu …" : fehl ? "Update fehlgeschlagen" : `Update ${u.version}`,
+      tip: lad ? `Update ${u.version} wird geladen – du fliegst weiter` : `Neue LeitWerk-Version ${u.version}`,
+      titel: lad ? "Update wird geladen" : fertig ? "Update ist installiert" : fehl ? "Update fehlgeschlagen" : `Update ${u.version} verfügbar`,
+      unter: `Du spielst ${u.current} · neu ist ${u.version}`,
+      hatNeu: neu.length > 0,
+      neu: neu.map((x) => ({ t: x })),
+      istLaedt: lad,
+      pct,
+      ladT: s && s.total > 0 ? `Update wird geladen · ${mb(s.done)} von ${mb(s.total)} MB · du spielst weiter` : "Verbinde …",
+      info: fertig
+        ? "LeitWerk startet jetzt neu und ist danach auf der neuen Version."
+        : lad
+          ? "Du kannst weiterspielen. Sobald das Update geladen ist, startet LeitWerk von selbst neu."
+          : fehl
+            ? `Das Update konnte nicht geladen werden: ${s?.fehler ?? "unbekannter Fehler"}`
+            : "LeitWerk lädt die neue Version im Hintergrund, du spielst weiter. Danach wird sie installiert und LeitWerk startet von selbst neu.",
+      infoCls: `kl-uinfo kl-z${fehl ? " rot" : ""}`,
+      mp: mp.status.rolle !== "aus" && !fertig,
+      mpT: `Beim Neustart ist ${heliName} kurz ohne Pilot – die Leitstelle übernimmt ihn, bis du wieder beitrittst. Der Host braucht dieselbe Version.`,
+      knoepfe: !fertig,
+      spaeter: fehl || lad ? "Schließen" : "Später",
+      spaeterAktion: fehl ? () => updateStandZuruecksetzen() : null,
+      ok: fehl ? "Nochmal versuchen" : lad ? "Lädt …" : "Laden und neu starten",
+      okCls: `kn sm prim${lad ? " aus" : ""}`,
+      okAktion: lad ? null : () => void updateImHintergrund(sim.pilotTest ? () => jetztSichern() : undefined),
+    };
+  }
+
+  return {
+    heli: fz ? { name: fz.kurzname || fz.funkrufname, zeile: `${fz.funkrufname} · ${fz.stationName}` } : { name: "Kein Hubschrauber", zeile: "Logo › Hubschrauber wechseln" },
+    st: { n: stN, t: st ? (ST_LANG[st.key] && st.key !== "alarmiert" ? ST_LANG[st.key] : st.name) : "–", f: stFarbe(stN), tip: st ? `Status ${st.nummer} · ${st.name}` : "" },
+    uhr: new Date(t).toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
+    wx: { ic: wk.symbol, lang: `${wk.kurz} ${wk.grad} · Böen ${j?.boeen ?? 0} km/h`, grad: wk.grad, flug },
+    zr,
+    verb: verbindung(),
+    upd,
+    fehlerIn: [
+      ["Programm", "Version, Fenstergröße, Pilotenansicht"],
+      ["Flugsimulator", "Verbindung MSFS, H145-Tablet und -Funkgerät, letzte Position"],
+      ["Letzte Meldungen und Fehler", "die letzten Einträge aus dem Protokoll"],
+      ["Einsatz und Status", "dein Hubschrauber, Status, Patient, Buchung"],
+      ["Einstellungen", "ohne KI-Schlüssel und Zugangsdaten"],
+    ].map(([tt, z]) => ({ t: tt, z })),
+    spiel: [
+      { ic: IC.zahnrad, t: "Einstellungen", i: "Funk, Tasten, Handy, Alarmtöne, Flugsimulator", klick: () => einstellungenDialog() },
+      { ic: "M4 8h13l-3-3M20 16H7l3 3", t: "Hubschrauber wechseln", i: "Einen anderen Hubschrauber übernehmen", klick: () => void wechseln() },
+      ...(sim.pilotTest ? [{ ic: "M9 3h6M10 3v6l-5 9a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3M7 15h10", t: "Testmenü", i: "Einsatz oder Großeinsatz an dich senden", klick: () => testMenue() }] : []),
+      { ic: IC.tuer, t: "Zum Hauptmenü", i: fz ? `${fz.kurzname || fz.funkrufname} geht zurück an die Leitstelle` : "Spiel verlassen", gefahr: true, klick: () => void pilotVerlassen() },
+    ],
+    warte: warteText(fz),
+    alarm,
+    gs: G ? gsD : null,
+    phasen,
+    stl,
+    cockpit: cockpitDaten(fz),
+    ueb,
+    zeitraffer,
+    zeitKnopf,
+    test: sim.pilotTest,
+    next,
+    ein,
+    fl,
+    fzs,
+    nav,
+    patZu,
+    pats,
+    patVerlauf,
+    ent,
+    planT,
+    verlauf,
+    folgen,
+    punktWaehlen,
+  };
+}
+
+/** „Was passiert mit dem Patienten?“ und die Buchung in vier Schritten (Altersgruppe · Symptom · Dringlichkeit · Vorschlag) */
+function entscheidungDaten(fz: SimFahrzeug, e: Einsatz): Record<string, unknown> | null {
+  // Großeinsatz ohne zugeteilten Patienten: noch nichts zu entscheiden
+  if (fz.status !== "amBO" || (e.gs && !e.gs.aufgehoben)) return null;
+  const p = fz.pilot?.plan ?? null;
+  zwVorbelegen(e, p);
+  const rtw = e.fahrzeuge.some((id) => {
+    const x = sim.state.fahrzeuge[id];
+    return !!x && x.einsatzId === e.id && sim.transportfaehig(x);
+  });
+  const setzen = (pl: PilotPlan) => void befehl(sim.call("pilotPlan", fz.id, pl));
+  const neu = () => planen();
+  const grund = zw.sym ? zuweisungId(zw.sym.id, zw.dring, zw.alter) : "";
+  const gebuchtId = p && p.art !== "kein" ? p.hospitalId : undefined;
+  const ALT: Record<Altersgruppe, [string, string]> = { kleinkind: ["Kleinkind", "unter 1 Jahr"], kind: ["Kind", "1 – 17"], erwachsener: ["Erwachsener", "18 +"] };
+  const DR: Record<number, [string, string]> = { 10: ["stabil", "Notaufnahme"], 20: ["dringend", "rasch versorgen"], 30: ["Schockraum", "Intensiv"] };
+  const rtwFehlt = planSeite !== "nah" && planSeite !== "kein" && !rtw;
+  // Symptom: Suche oder Vorschläge aus dem Lagebild
+  const q = zw.q.trim();
+  const vorschlaege: Symptom[] = [];
+  const v = e.verdacht ?? e.wahr.verdacht ?? "";
+  if (v) {
+    const z = zuweisungLesen(v);
+    const s = z?.s ?? (v.startsWith("bu_") ? symptom(symptomAusDiagnose(v)) : undefined);
+    if (s) vorschlaege.push(s);
+  }
+  const treffer = q ? symptomSuche(q, 8) : vorschlaege;
+  const waehleSym = (s: Symptom) => {
+    zw.sym = s;
+    zw.q = "";
+    zw.dring = dringlichkeitFuer(s, zw.dring);
+    zw.schritt = 3;
+    neu();
+  };
+  // Krankenhäuser: passende, die jetzt aufnehmen; „Andere Häuser“: Namenssuche über alle
+  const khs: Record<string, unknown>[] = [];
+  for (const k of khListe(fz, e, grund)) {
+    const fm = k.km * 1000;
+    khs.push({
+      id: k.h.id,
+      n: k.h.kurzname || k.h.name,
+      km: `${k.km.toFixed(0)} km`,
+      min: planSeite === "nah" ? ` · ${minuten(flugSek(fm))} Flug` : "",
+      merk: [
+        ...(k.eignung ? [{ t: k.eignung === "passend" ? "passend" : k.eignung === "ausweich" ? "Ausweich" : "Rückfall", c: k.eignung === "passend" ? "ok" : "gelb" }] : []),
+        ...(planSeite === "nah" ? [khLandung(k.h) ? { t: "Landeplatz", c: "" } : { t: "kein Landeplatz", c: "gelb" }] : []),
+        ...((sim.einsatz((gsVon(e) ?? e).id)?.gs?.voraviso ?? []).includes(k.h.id) ? [{ t: "Voraviso", c: "ok" }] : []),
+      ],
+      frei: k.voll ? "voll" : k.frei || "",
+      freiCls: k.voll ? "pill rot" : k.frei ? (/^0\//.test(k.frei) ? "pill gelb" : "pill ok") : "",
+    });
+  }
+  if (zw.mehr && khSuche.trim()) {
+    const qq = khSuche.trim().toLowerCase();
+    for (const h of store
+      .list("hospitals")
+      .filter((h) => `${h.name} ${h.kurzname ?? ""} ${h.ort ?? ""}`.toLowerCase().includes(qq) && !khs.some((x) => x.id === h.id))
+      .map((h) => ({ h, km: distanceM(fz, h) / 1000 }))
+      .sort((a, b) => a.km - b.km)
+      .slice(0, 8))
+      khs.push({ id: h.h.id, n: h.h.kurzname || h.h.name, km: `${h.km.toFixed(0)} km`, min: planSeite === "nah" ? ` · ${minuten(flugSek(h.km * 1000))} Flug` : "", merk: [{ t: "von Hand gewählt", c: "" }], frei: "", freiCls: "" });
+  }
+  const KT = ["Altersgruppe", "Symptom", "Dringlichkeit", "Vorschlag"];
+  const KF = ["Wie alt ist der Patient?", "Was hat der Patient?", "Wie dringend?", "Passende Krankenhäuser"];
+  const KW = [ALT[zw.alter][0], zw.sym?.name ?? "–", zw.dring === 30 ? "Schockraum / Intensiv" : DR[zw.dring][0], ""];
+  const schritt = Math.min(4, Math.max(1, zw.schritt));
+  return {
+    fuer: e.id,
+    wahl: SEITEN.map((s) => ({ id: s.id, t: s.titel, d: s.text, on: planSeite === s.id, klick: () => ((planSeite = s.id), neu()) })),
+    keinWahl:
+      planSeite === "kein"
+        ? (
+            [
+              ["kein", "Bleibt vor Ort", "kein Transport nötig"],
+              ["revers", "Revers", "Transport verweigert"],
+              ["tot", "Verstorben", "Tod durch den Notarzt festgestellt"],
+            ] as const
+          ).map(([g, tt, s]) => ({ id: g, t: tt, s, on: p?.art === "kein" && p.grund === g, klick: () => setzen({ art: "kein", grund: g }) }))
+        : null,
+    rtwFehlt,
+    buchen: planSeite !== "kein" && !rtwFehlt,
+    gebuchtId: gebuchtId ?? "",
+    gebuchtT: gebuchtId && e.kh?.hospitalId === gebuchtId ? uhrzeit(e.kh.zeit) : "",
+    schritte: [0, 1, 2, 3].map((i) => ({
+      nr: String(i + 1),
+      titel: KT[i],
+      frage: KF[i],
+      wert: KW[i],
+      fertig: i + 1 < schritt,
+      aktiv: i + 1 === schritt,
+      offen: i + 1 > schritt,
+      istAlter: i === 0,
+      istSymptom: i === 1,
+      istDringlich: i === 2,
+      istVorschlag: i === 3,
+      klick: () => ((zw.schritt = i + 1), neu()),
+    })),
+    altW: ALTERSGRUPPEN.map((a) => ({ id: a.id, t: ALT[a.id][0], s: ALT[a.id][1], on: zw.alter === a.id, klick: () => ((zw.alter = a.id), (zw.schritt = zw.sym ? 3 : 2), neu()) })),
+    drW: DRINGLICHKEITEN.map((d) => ({ id: d.id, t: DR[d.id][0], s: DR[d.id][1], on: zw.dring === d.id, aus: !!zw.sym && !zw.sym.dringlichkeiten.includes(d.id), klick: () => ((zw.dring = d.id), (zw.schritt = 4), neu()) })),
+    symQ: zw.q,
+    symHinweis: q ? (treffer.length ? "" : "Kein Symptom gefunden.") : treffer.length ? "Aus dem Lagebild:" : "Symptom eintippen – Treffer erscheinen hier.",
+    symW: treffer.map((s) => ({ id: s.id, t: s.name, kat: s.kategorie, klick: () => waehleSym(s) })),
+    khLeer: !grund ? "Erst das Symptom wählen – dann kommen die passenden Häuser, die jetzt aufnehmen." : !khs.length ? "Kein passendes Haus nimmt gerade auf – „Andere Häuser“ durchsuchen." : "",
+    khs,
+    andereAuf: zw.mehr,
+    andereQ: khSuche,
+  };
+}
+
+/** Aktionen der Ansicht (Knöpfe der Vorlage) */
+function ansichtAktionen(): Record<string, (...x: never[]) => unknown> {
+  const buchen = (hId: string) => {
+    const fz = meinFz();
+    if (!fz) return;
+    const grund = zw.sym ? zuweisungId(zw.sym.id, zw.dring, zw.alter) : "";
+    void befehl(sim.call("pilotPlan", fz.id, planSeite === "nah" ? { art: "transport", hospitalId: hId, grund: grund || undefined } : { art: "uebergabe", naMit: planSeite === "naMit", hospitalId: hId, grund: grund || undefined }));
+  };
+  return {
+    statusAn: (s: StatusKey) => statusHaltenStart(s),
+    statusAb: (s: StatusKey) => statusHaltenEnde(s),
+    sofortStatus: (s: StatusKey) => {
+      funkTon("statusGesendet");
+      pilotStatusDruecken(s);
+    },
+    einstellungen: () => einstellungenDialog(),
+    testMenue: () => testMenue(),
+    folgen: () => {
+      folgen = !folgen;
+      if (folgen) karteFolgen(true);
+      planen();
+    },
+    gross: () => karteGross(!karteIstGross()),
+    symSuche: (q: string) => {
+      zw.q = q.slice(0, 60);
+      planen();
+    },
+    andereSuche: (q: string) => {
+      khSuche = q;
+      planen();
+    },
+    andereUmschalten: () => {
+      zw.mehr = !zw.mehr;
+      planen();
+    },
+    khBuchen: (id: string) => buchen(id),
+    fehlerSpeichern: async (text: string): Promise<string | null> => {
+      try {
+        const pfad = await fehlerBerichtSpeichern(`${text}\n\n${pilotBericht()}`);
+        return pfad ? (pfad.split(/[\\/]/).pop() ?? pfad) : null;
+      } catch (err) {
+        fehler(err);
+        return null;
+      }
+    },
+  } as unknown as Record<string, (...x: never[]) => unknown>;
+}
+
+/** Zusatz im Fehlerbericht: Flugsimulator und eigener Einsatz */
+function pilotBericht(): string {
+  const fz = meinFz();
+  const e = einsatzVon(fz);
+  const d = flugsim.daten;
+  return [
+    "## Pilot",
+    "",
+    `- Hubschrauber: ${fz ? `${fz.funkrufname} (${fz.kurzname || fz.funkrufname}), Status ${sim.statusDef(fz.status).nummer} ${sim.statusDef(fz.status).name}, Phase ${fz.phase}` : "keiner"}`,
+    `- Einsatz: ${e ? `${e.nummer} ${e.code ?? ""} · ${stichwort(e)}${e.gsKind ? ` · Großeinsatz-Patient ${e.gsKind.nr}` : ""}` : "keiner"}`,
+    `- Plan: ${planText(fz?.pilot?.plan) || "–"}`,
+    `- MSFS: ${flugsim.zustand}${flugsim.text ? ` (${flugsim.text})` : ""}${d && datenFrisch() ? ` · ${Math.round(d.hoehe)} ft, ${Math.round(d.kts)} kt, ${d.am_boden ? "am Boden" : "in der Luft"}` : ""}`,
+    `- H145-Tablet: ${hpg.zustand}${hpg.mission ? " · Mission eingerichtet" : ""} · Funkgerät: ${carlsAn() ? (flugsim.carls?.verbunden ? "verbunden" : "wartet") : "aus"}`,
+    `- GTN750: ${gtn.paket ? (gtnAn() ? "an" : "aus") : "nicht gefunden"}${gtn.fehler ? ` (${gtn.fehler})` : ""}`,
+    `- Position: ${fz ? `${fz.lat.toFixed(5)}, ${fz.lon.toFixed(5)}` : "–"}`,
+    "",
+  ].join("\n");
+}
+
+/** „Hubschrauber wechseln“: abgeben, dann wählen */
+async function wechseln(): Promise<void> {
+  const fz = meinFz();
+  // vor dem Abgeben: sonst nimmt die Ansicht ihn gleich wieder
+  bewusstAbgegeben = true;
+  if (fz) {
+    try {
+      await sim.call("pilotAbgeben", fz.id);
+    } catch (e) {
+      bewusstAbgegeben = false;
+      return fehler(e);
+    }
+  }
+  hubschrauberWahl();
 }
 
 function tastenNameKurz(code: string | undefined): string {
@@ -988,6 +1592,7 @@ function tastenNameKurz(code: string | undefined): string {
   if (/^Key[A-Z]$/.test(code)) return code.slice(3);
   return code;
 }
+
 
 /** PMS50 GTN750: Flugplan zum aktuellen Ziel bereitlegen (Einsatzort, nach der Zielwahl das Krankenhaus) */
 function gtnZiel(fz: SimFahrzeug | undefined, e: Einsatz | undefined): void {
@@ -1004,250 +1609,6 @@ function gtnZiel(fz: SimFahrzeug | undefined, e: Einsatz | undefined): void {
   const zumBo = !!bo && (["alarmWache", "alarmFunk", "alarmiert", "zumBO"].includes(fz.status) || (fz.status === "amBO" && !zumKh) || abruf);
   const ziel = zumKh && kh ? { ...kh, art: "kh" as const } : zumBo && bo ? { ...bo, name: z?.label ?? "Einsatzort", art: "bo" as const } : null;
   gtnBereitlegen(fz, ziel, { bo, kh });
-}
-
-/** Koordinaten und Flugplan für Einsatzort und Zielkrankenhaus */
-function navigation(fz: SimFahrzeug, kh: Hospital | undefined): string {
-  const zeile = (titel: string, lat: number, lon: number, name: string, zusatz = "") => `<div class="plt-nav">
-      <div class="plt-nav-text"><b>${esc(titel)}</b><span>${esc(koordText(lat, lon))}</span>${zusatz}</div>
-      <div class="plt-nav-knoepfe"><button class="plt-b klein" data-kopie="${lat.toFixed(6)}, ${lon.toFixed(6)}" title="Koordinaten kopieren">Kopieren</button><button class="plt-b klein" data-pln="${lat},${lon}" data-name="${esc(name)}" title="Flugplan für MSFS speichern">${ico("plan")}.pln</button></div>
-    </div>`;
-  let html = "";
-  // Großeinsatz: Bereitstellungsraum (bis zum Abruf) statt Einsatzort
-  const z = sim.pilotBo(fz);
-  if (z && ["alarmWache", "alarmFunk", "alarmiert", "zumBO", "amBO"].includes(fz.status)) html += zeile(z.label, z.lat, z.lon, z.label);
-  if (kh) {
-    const l = khLandung(kh);
-    if (l) html += zeile(`Landeplatz ${kh.kurzname || kh.name}`, l.lat, l.lon, kh.kurzname || kh.name, kh.landeplatz && kh.landeplatz !== "kein" ? "" : `<small class="plt-leise">am Haus (kein eigener Landeplatz hinterlegt)</small>`);
-    else html += `<div class="plt-nav"><div class="plt-nav-text"><b>${esc(kh.kurzname || kh.name)}</b><span class="plt-warn">kein Hubschrauberlandeplatz</span></div></div>`;
-  }
-  return html ? `<div class="plt-navi">${html}</div>` : "";
-}
-
-const SIM_TEXT: Record<string, string> = { aus: "nicht verbunden", keineDll: "SimConnect fehlt", wartet: "wartet", verbunden: "verbunden", getrennt: "getrennt", fehler: "Fehler" };
-
-function simTeil(fz: SimFahrzeug | undefined): void {
-  const d = flugsim.daten;
-  const frisch = datenFrisch();
-  const p = fz?.pilot;
-  const bremse = sim.zeitBremse();
-  const daheim = !!fz && distanceM(fz, fz.heim) < 300;
-  const key = `${flugsim.zustand}|${flugsim.text}|${frisch}|${d && frisch ? [Math.round(d.hoehe / 50), Math.round(d.agl / 20), Math.round(d.kurs / 5), Math.round(d.kts), d.am_boden].join(",") : ""}|${p?.zeitOk}|${sim.state.tempo}|${bremse}|${daheim}|${!!fz}|${gtn.paket}|${gtn.fehler}|${gtn.geprueft}|${gtnAn()}|${gtn.ziel}|${hpg.zustand}|${hpg.text}|${hpg.paket}|${hpg.mission}|${letzterCarls}|${JSON.stringify(flugsim.carls)}|${carlsAn()}`;
-  teil(".plt-sim", key, (box) => {
-    const z = flugsim.zustand;
-    const klasse = z === "verbunden" ? (frisch ? "ok" : "warn") : z === "wartet" ? "warn" : z === "aus" ? "" : "fehl";
-    box.insertAdjacentHTML("beforeend", `<div class="plt-sim-kopf"><span class="plt-pill ${klasse}">MSFS ${esc(SIM_TEXT[z] ?? z)}</span></div>`);
-    if (flugsim.text && !(z === "verbunden" && frisch)) box.insertAdjacentHTML("beforeend", `<p class="plt-klein ${klasse === "fehl" ? "plt-warn" : "plt-leise"}">${esc(flugsim.text)}</p>`);
-    if (z === "verbunden" && !frisch) box.insertAdjacentHTML("beforeend", `<p class="plt-klein plt-warn">Keine Flugdaten – bist du im Flug (nicht im Menü)?</p>`);
-    if (d && frisch) {
-      box.insertAdjacentHTML(
-        "beforeend",
-        `<div class="plt-sim-werte">
-          <div><small>Höhe</small><b>${Math.round(d.hoehe).toLocaleString("de-AT")} ft</b></div>
-          <div><small>über Grund</small><b>${d.am_boden ? "am Boden" : `${Math.round(d.agl).toLocaleString("de-AT")} ft`}</b></div>
-          <div><small>Kurs</small><b>${String(Math.round(((d.kurs % 360) + 360) % 360)).padStart(3, "0")}°</b></div>
-          <div><small>Geschw.</small><b>${Math.round(d.kts)} kt</b></div>
-        </div>`,
-      );
-    }
-    if (z === "aus" || z === "fehler" || z === "keineDll" || z === "getrennt") {
-      const b = el("button", { class: "plt-b voll primaer" });
-      b.innerHTML = `${ico("sim")}<span>Mit MSFS verbinden</span>`;
-      b.addEventListener("click", () => void flugsimVerbinden());
-      box.appendChild(b);
-    }
-    if (z === "keineDll" || z === "fehler") {
-      const b = el("button", { class: "plt-b voll" });
-      b.innerHTML = `<span>SimConnect.dll wählen …</span>`;
-      b.addEventListener("click", () => void dllWaehlen());
-      box.appendChild(b);
-      box.insertAdjacentHTML("beforeend", `<p class="plt-leise plt-klein">Die Datei kommt mit dem kostenlosen MSFS-SDK: im Simulator den Entwicklermodus einschalten, oben im Menü „Help → SDK Installer“. Danach liegt sie unter <code>C:\MSFS 2024 SDK\SimConnect SDK\lib\SimConnect.dll</code> – LeitWerk findet sie dort von selbst.</p>`);
-    }
-    if (z === "verbunden" || z === "wartet") {
-      const b = el("button", { class: "plt-b voll" }, "Trennen");
-      b.addEventListener("click", () => void flugsimTrennen());
-      box.appendChild(b);
-    }
-    // HPG H145: Tablet (Missions-App) und Funkgerät
-    if (hpg.geprueft && (hpg.paket || hpg.zustand === "verbunden")) {
-      const g = el("div", { class: "plt-gtn" });
-      const klasse = hpg.zustand === "verbunden" ? "ok" : hpg.zustand === "fehler" ? "fehl" : "warn";
-      g.innerHTML = `<div class="plt-sim-kopf"><span class="plt-pill ${klasse}">H145-Tablet ${hpg.zustand === "verbunden" ? "verbunden" : hpg.zustand === "fehler" ? "Fehler" : "wartet"}</span></div>
-        <p class="plt-leise plt-klein">${esc(hpg.zustand === "verbunden" ? "Alarm, Route und Patient kommen aufs Tablet (Missions-App)." : hpg.mission ? "Im Tablet: Missions → Library → „LeitWerk Leitstelle“ wählen (nach dem Einrichten einmal REFRESH)." : hpg.text || "Einmal einrichten, dann im Tablet die Mission wählen.")}</p>`;
-      if (!hpg.mission) {
-        const b = el("button", { class: "plt-b klein" }, "H145 einrichten");
-        b.addEventListener("click", () => void hpgEinrichten());
-        g.appendChild(b);
-      } else if (hpg.zustand !== "verbunden") {
-        const b = el("button", { class: "plt-b klein" }, "Missions-Index neu bauen");
-        b.title = "Falls „LeitWerk Leitstelle“ im Tablet fehlt";
-        b.addEventListener("click", () => void hpgEinrichten());
-        g.appendChild(b);
-      }
-      box.appendChild(g);
-    }
-    // HPG H145: CARLS-Funkgerät (Status-Tasten) – verbunden über ein Lebenszeichen wie bei einem Missionsdienst
-    if (z === "verbunden" && (hpg.paket || hpg.zustand === "verbunden" || flugsim.carls?.verbunden)) {
-      const g = el("div", { class: "plt-gtn" });
-      const c = flugsim.carls;
-      const an = carlsAn();
-      const text = !an ? "aus" : c?.verbunden ? "verbunden" : "wartet";
-      g.innerHTML = `<div class="plt-sim-kopf"><span class="plt-pill ${!an ? "" : c?.verbunden ? "ok" : "warn"}">H145-Funkgerät ${text}</span></div>
-        <label class="plt-check-klein"><input type="checkbox" ${an ? "checked" : ""}> CARLS-Funkgerät verbinden (Status-Tasten)</label>
-        <p class="plt-leise plt-klein">${!an ? "Die Status-Tasten am Funkgerät sind aus." : c?.verbunden ? `Die Tasten 1–6 und 9 am Funkgerät setzen den Status${letzterCarls ? ` · zuletzt: ${letzterCarls}` : ""}.` : "Warte auf das Funkgerät der H145 – im Cockpit sitzen, Strom an. Steht am Funkgerät weiter „Connect a mission to begin“, bitte Bescheid geben."}</p>`;
-      g.querySelector("input")!.addEventListener("change", (ev) => carlsUmschalten((ev.target as HTMLInputElement).checked));
-      box.appendChild(g);
-    }
-    // PMS50 GTN750: Flugplan wird automatisch bereitgelegt
-    if (gtn.geprueft) {
-      const g = el("div", { class: "plt-gtn" });
-      if (gtn.paket) {
-        g.innerHTML = `<label class="plt-check-klein"><input type="checkbox" ${gtnAn() ? "checked" : ""}> GTN750: Flugplan automatisch bereitlegen</label>
-          <p class="plt-leise plt-klein">${gtn.fehler ? `<span class="plt-warn">${esc(gtn.fehler)}</span>` : gtn.ziel ? `Bereit – im GTN: Flight Plan → Menu → Import. Wegpunkte LWBO, LWKH, LWBAS unter Waypoint Info → Import Waypoints.` : "Bei Alarm und nach der Zielwahl liegt der Flugplan im GTN bereit."}</p>`;
-        g.querySelector("input")!.addEventListener("change", (ev) => gtnUmschalten((ev.target as HTMLInputElement).checked));
-      } else {
-        g.innerHTML = `<p class="plt-leise plt-klein">PMS50 GTN750 nicht gefunden${gtn.community ? "" : " (Community-Ordner unbekannt)"}.</p>`;
-        const b = el("button", { class: "plt-b klein" }, "Community-Ordner wählen …");
-        b.addEventListener("click", () => void communityWaehlen());
-        g.appendChild(b);
-      }
-      box.appendChild(g);
-    }
-    // Zeitraffer: mit Flugsimulator nur am Boden, und weg vom Stützpunkt nur mit Zustimmung
-    if (fz && p && frisch) {
-      const zeile = el("div", { class: "plt-zeit" });
-      if (d && !d.am_boden) zeile.innerHTML = `${ico("zeit")}<span>Zeitraffer aus, solange du fliegst</span>`;
-      else if (daheim) zeile.innerHTML = `${ico("zeit")}<span>Am Stützpunkt: Zeitraffer erlaubt</span>`;
-      else {
-        const b = el("button", { class: `plt-b voll${p.zeitOk ? " an" : ""}` });
-        b.innerHTML = `${ico("zeit")}<span>${p.zeitOk ? "Zeitraffer erlaubt – sperren" : "Zeitraffer erlauben"}</span>`;
-        b.addEventListener("click", () => void befehl(sim.call("pilotZeit", fz.id, !p.zeitOk)));
-        zeile.appendChild(b);
-      }
-      box.appendChild(zeile);
-      if (sim.state.tempo > 1) box.insertAdjacentHTML("beforeend", `<p class="plt-leise plt-klein">Leitstelle: Zeitraffer ×${sim.state.tempo}${bremse ? ` – gebremst auf 1× (${esc(bremse)})` : ""}</p>`);
-    }
-  });
-}
-
-function flug(fz: SimFahrzeug | undefined, e: Einsatz | undefined): void {
-  const f = fz?.fahrt;
-  const rest = f ? Math.max(0, f.start / 1000 + f.dauer - sim.state.zeit / 1000) : 0;
-  const ausSim = datenFrisch();
-  const zielBo = fz ? sim.pilotBo(fz) : null;
-  const key = `${fz?.id}|${!!e?.adresse}|${!!e?.kh}|${fz?.pilot?.flugZiel}|${f ? Math.ceil(rest / 30) : -1}|${ausSim}|${zielBo?.label}|${zielBo?.lat}`;
-  teil(".plt-flug", key, (box) => {
-    if (!fz) return;
-    if (ausSim) {
-      box.innerHTML = `<p class="plt-leise plt-klein">Die Position kommt aus dem Flugsimulator – der Übungsflug ist aus.</p>`;
-      return;
-    }
-    const knopf = (icon: string, text: string, ziel: "bo" | "zo" | "heim" | null, an = true) => {
-      const b = el("button", { class: "plt-b voll" });
-      b.innerHTML = `${ico(icon)}<span>${text}</span>`;
-      b.disabled = !an;
-      b.addEventListener("click", () => void befehl(sim.call("pilotFliegen", fz.id, ziel)));
-      box.appendChild(b);
-      return b;
-    };
-    if (f) {
-      box.insertAdjacentHTML("beforeend", `<div class="plt-flug-jetzt">${ico("flug")}<div><b>${esc(fz.pilot?.flugZiel ?? "Flug")}</b><small>noch ${minuten(rest)}</small></div></div>`);
-      knopf("stopp", "Anhalten", null);
-    }
-    const z = sim.pilotBo(fz);
-    knopf("ziel", z?.br ? "Zum Bereitstellungsraum" : "Zum Einsatzort", "bo", !!z);
-    knopf("kh", "Zum Zielkrankenhaus", "zo", !!e?.kh);
-    knopf("haus", "Zum Stützpunkt", "heim");
-    const p = el("button", { class: "plt-b voll" });
-    p.innerHTML = `${ico("punkt")}<span>Punkt auf der Karte …</span>`;
-    p.addEventListener("click", () => {
-      punktWaehlen = true;
-      root!.querySelector<HTMLElement>(".plt-map-hinweis")!.hidden = false;
-      karteGross(true);
-    });
-    box.appendChild(p);
-    box.insertAdjacentHTML("beforeend", `<p class="plt-leise plt-klein">Gerade Linie mit Reisegeschwindigkeit (${sim.settings.nahGeschwindigkeit} km/h).</p>`);
-  });
-}
-
-let letzterGsHinweis: string | null = null;
-
-function einsatzKarte(fz: SimFahrzeug | undefined, e: Einsatz | undefined): void {
-  const mitFz = e ? e.fahrzeuge.map((id) => sim.state.fahrzeuge[id]).filter((x): x is SimFahrzeug => !!x && x.einsatzId === e.id) : [];
-  // Großeinsatz: was der Pilot gerade tun soll (BR, Abruf, Patient zugeteilt)
-  const gsH = fz && e ? sim.pilotGsHinweis(fz) : null;
-  if (gsH?.abruf && gsH.text !== letzterGsHinweis && fz) {
-    // Abruf aus dem Bereitstellungsraum: eigener Ton, bis abgehoben (Status 2) – höchstens 1 Minute
-    alarmStarten("abruf", () => {
-      const f = meinFz();
-      return !!root && !!f && f.phase === "wartetBR" && !!sim.pilotGsHinweis(f)?.abruf && f.status !== "zumBO";
-    });
-  }
-  letzterGsHinweis = gsH?.text ?? null;
-  const key = e ? `${e.id}|${e.code}|${e.adresse?.label}|${e.infoRtw}|${e.zusatz}|${e.kh?.hospitalId}|${mitFz.map((x) => x.id + x.status).join(",")}|${Math.round(fz ? distanceM(fz, e.adresse ?? fz) / 500 : 0)}|${fz ? Math.round(sim.pilotAnkunft(fz)?.min ?? -1) : ""}|${gsH?.text ?? ""}` : "-";
-  teil(".plt-einsatz", key, (box) => {
-    box.insertAdjacentHTML("beforeend", `<div class="plt-karte-titel">${ico("ziel")}Einsatz</div>`);
-    if (!fz || !e) {
-      box.insertAdjacentHTML("beforeend", `<div class="plt-leer">Kein Einsatz. Warte auf die Alarmierung durch die Leitstelle.</div>`);
-      return;
-    }
-    const c = findCode(e.code ?? undefined);
-    const km = e.adresse ? distanceM(fz, e.adresse) / 1000 : null;
-    const ank = sim.pilotAnkunft(fz);
-    const kh = e.kh ? store.get("hospitals", e.kh.hospitalId) : undefined;
-    box.insertAdjacentHTML(
-      "beforeend",
-      `<div class="plt-einsatz-kopf"><span class="plt-nr">${esc(e.nummer)}</span>${e.code ? `<span class="plt-code">${esc(e.code)}</span>` : `<span class="plt-leise plt-klein">Code folgt</span>`}${c ? `<span class="plt-stufe" style="--stufe:${stufeFarbe(c.stufe)}">${esc(c.stufe)}</span>` : ""}</div>
-      <div class="plt-stichwort">${esc(stichwort(e))}</div>
-      ${gsH ? `<div class="plt-gs${gsH.abruf ? " abruf" : ""}">${esc(gsH.text)}</div>` : ""}
-      <div class="plt-zeile">${ico("punkt")}<span>${esc(e.adresse?.label ?? "Adresse folgt")}${e.zusatz ? `<small>${esc(e.zusatz)}</small>` : ""}</span></div>
-      ${km !== null ? `<div class="plt-zeile">${ico("flug")}<span>${km.toFixed(1).replace(".", ",")} km · ca. ${minuten((km * 1000) / (sim.settings.nahGeschwindigkeit / 3.6))} Flug${ank ? `<small>Ankunft ${esc(ank.ziel)} in ca. ${minuten(ank.min * 60)}</small>` : ""}</span></div>` : ""}
-      ${e.infoRtw && !e.gsKind ? `<div class="plt-info-rtw">${esc(e.infoRtw)}</div>` : ""}
-      ${kh ? `<div class="plt-zeile">${ico("kh")}<span>Ziel: <b>${esc(kh.kurzname || kh.name)}</b>${khLandung(kh) ? "" : ` <span class="plt-warn">kein Landeplatz</span>`}</span></div>` : ""}
-      ${navigation(fz, kh)}
-      <div class="plt-mit">${mitFz.map((x) => { const st = sim.statusDef(x.status); return `<span class="plt-mit-fz" title="${esc(st.name)}"><i style="background:${st.farbe}"></i>${esc(x.funkrufname)}${x === fz ? " (du)" : ""}</span>`; }).join("")}</div>`,
-    );
-  });
-}
-
-const BW: Record<string, string> = { ja: "wach", getruebt: "eingetrübt", nein: "bewusstlos" };
-const AT: Record<string, string> = { normal: "normal", abnorm: "auffällig", agonal: "Schnappatmung", keine: "keine Atmung" };
-const SICHT: Record<string, string> = { rot: "rot", gelb: "gelb", gruen: "grün" };
-
-function patient(fz: SimFahrzeug | undefined, e: Einsatz | undefined): void {
-  const da = !!fz && !!e && ["amBO", "zumZO", "amZO"].includes(fz.status);
-  const l = e?.wahr.lage;
-  const key = da && e ? `${e.id}|${JSON.stringify(l?.patienten)}|${l?.fall?.kern}|${e.wahr.verdacht}|${l?.verlauf.length}` : `-${!!e}`;
-  teil(".plt-patient", key, (box) => {
-    if (!e) return;
-    box.insertAdjacentHTML("beforeend", `<div class="plt-karte-titel">${ico("patient")}Patient</div>`);
-    if (!da) {
-      box.insertAdjacentHTML("beforeend", `<div class="plt-leer">Was der Patient hat, siehst du am Berufungsort (Status 3).${e.meldung?.text ? `<br><span class="plt-leise">Meldung: ${esc(e.meldung.text)}</span>` : ""}</div>`);
-      return;
-    }
-    // Großeinsatz: ohne zugeteilten Patienten keine Patientendaten (die Einsatzleitung teilt zu)
-    if (e.gs && !e.gs.aufgehoben) {
-      box.insertAdjacentHTML("beforeend", `<div class="plt-leer">Großeinsatz – die Einsatzleitung teilt dir einen Patienten zu.</div>`);
-      return;
-    }
-    const pat = l?.patienten ?? [];
-    const verdacht = e.wahr.verdacht ? buchungName(e.wahr.verdacht) : "";
-    let html = "";
-    // Großeinsatz-Patient: Verletzungsmuster, wie es die Einsatzleitung gemeldet hat
-    if (e.gsKind) html += `<div class="plt-lagebild">${esc(e.meldung.text)}</div>`;
-    if (l?.fall?.kern) html += `<div class="plt-lagebild">${esc(l.fall.kern)}</div>`;
-    if (verdacht) html += `<div class="plt-verdacht">Verdacht: <b>${esc(verdacht)}</b></div>`;
-    for (const p of pat) {
-      html += `<div class="plt-pat"><span class="plt-sicht ${p.sichtung}">${SICHT[p.sichtung]}</span>
-        <b>${p.alter < 14 ? "Kind" : p.geschlecht === "w" ? "Frau" : "Mann"}, ${p.alter} J.</b>
-        <span>Bewusstsein: ${BW[p.bw] ?? p.bw}</span><span>Atmung: ${AT[p.at] ?? p.at}</span></div>`;
-    }
-    if (!pat.length) html += `<div class="plt-leer">${esc(findCode(e.code ?? undefined)?.beschreibung ?? "Keine weiteren Angaben")}</div>`;
-    if (l?.bit) html += `<div class="plt-warn">Patient sehr schwer (ca. 150 kg+) – Transport braucht BIT</div>`;
-    const verlauf = (l?.verlauf ?? []).slice(-3);
-    if (verlauf.length) html += `<div class="plt-verlauf">${verlauf.map((v) => `<div><span>${uhrzeit(v.zeit)}</span>${esc(v.text)}</div>`).join("")}</div>`;
-    box.insertAdjacentHTML("beforeend", html);
-  });
 }
 
 function planText(p: PilotPlan | null | undefined): string {
@@ -1267,7 +1628,8 @@ type PlanSeite = "nah" | "rtw" | "naMit" | "kein";
 let planSeite: PlanSeite = "nah";
 let khSuche = "";
 /** Buchung wie in der Leitstelle: Stichwort → Alter → Dringlichkeit → Vorschläge */
-const zw: { fuer: string; sym?: Symptom; alter: Altersgruppe; dring: Dringlichkeit; q: string; mehr: boolean } = { fuer: "", alter: "erwachsener", dring: 20, q: "", mehr: false };
+/** Schritt im Assistenten: 1 Altersgruppe · 2 Symptom · 3 Dringlichkeit · 4 Vorschlag (wie in der Einsatzmaske) */
+const zw: { fuer: string; sym?: Symptom; alter: Altersgruppe; dring: Dringlichkeit; q: string; mehr: boolean; schritt: number } = { fuer: "", alter: "erwachsener", dring: 20, q: "", mehr: false, schritt: 1 };
 const SEITEN: { id: PlanSeite; titel: string; text: string }[] = [
   { id: "nah", titel: "NAH transportiert", text: "Patient fliegt mit uns" },
   { id: "rtw", titel: "RTW fährt allein", text: "Übergabe an den RTW, Notarzt bleibt beim NAH" },
@@ -1298,165 +1660,8 @@ function zwVorbelegen(e: Einsatz, pl: PilotPlan | null): void {
     zw.sym = symptom(symptomAusDiagnose(v));
     if (zw.sym) zw.dring = dringlichkeitFuer(zw.sym, zw.dring);
   }
-}
-
-function plan(fz: SimFahrzeug | undefined, e: Einsatz | undefined): void {
-  // Großeinsatz ohne zugeteilten Patienten: noch nichts zu entscheiden
-  const da = !!fz && !!e && fz.status === "amBO" && !(e.gs && !e.gs.aufgehoben);
-  const p = fz?.pilot?.plan ?? null;
-  const rtw = !!e && e.fahrzeuge.some((id) => { const x = sim.state.fahrzeuge[id]; return !!x && x.einsatzId === e.id && sim.transportfaehig(x); });
-  if (da && e) zwVorbelegen(e, p);
-  const belegt = Object.values(sim.state.khBelegung ?? {}).reduce((n, kh) => n + Object.values(kh).reduce((m, l) => m + (l?.length ?? 0), 0), 0);
-  const key = da && e ? `${e.id}|${JSON.stringify(p)}|${planSeite}|${rtw}|${khSuche}|${zw.sym?.id}|${zw.alter}|${zw.dring}|${zw.q}|${zw.mehr}|${Math.round(sim.state.zeit / 60000)}|${belegt}` : p && e ? `fest|${JSON.stringify(p)}|${fz?.status}` : "-";
-  teil(".plt-plan", key, (box) => {
-    if (!fz || !e) return;
-    if (!da) {
-      if (p) box.innerHTML = `<div class="plt-karte-titel">Entscheidung</div><div class="plt-plan-fest">${esc(planText(p))}</div>`;
-      return;
-    }
-    box.insertAdjacentHTML("beforeend", `<div class="plt-karte-titel">Was passiert mit dem Patienten?</div>`);
-    if (p) box.insertAdjacentHTML("beforeend", `<div class="plt-plan-fest">${esc(planText(p))}<small>Ändern geht, solange ihr am Berufungsort seid. Dann Status 4 (Transport) oder 6 (frei).</small></div>`);
-    // ① wer transportiert
-    const wahl = el("div", { class: "plt-wahl4" });
-    for (const s of SEITEN) {
-      const b = el("button", { class: `plt-wahl-k${planSeite === s.id ? " an" : ""}` });
-      b.innerHTML = `<b>${s.titel}</b><small>${s.text}</small>`;
-      b.addEventListener("click", () => {
-        planSeite = s.id;
-        plan(fz, e);
-      });
-      wahl.appendChild(b);
-    }
-    box.appendChild(wahl);
-    const setzen = (pl: PilotPlan) => void befehl(sim.call("pilotPlan", fz.id, pl));
-    if (planSeite === "kein") {
-      for (const [grund, t, u] of [["kein", "Patient bleibt vor Ort", "kein Transport nötig"], ["revers", "Transportverweigerung", "Revers unterschrieben"], ["tot", "Patient verstorben", "Tod durch den Notarzt festgestellt"]] as const) {
-        const b = el("button", { class: `plt-wahl-k${p?.art === "kein" && p.grund === grund ? " an" : ""}` });
-        b.innerHTML = `<b>${t}</b><small>${u}</small>`;
-        b.addEventListener("click", () => setzen({ art: "kein", grund }));
-        box.appendChild(b);
-      }
-      return;
-    }
-    if (planSeite !== "nah" && !rtw) {
-      box.insertAdjacentHTML("beforeend", `<div class="plt-leer">Noch kein RTW im Einsatz – bitte bei der Leitstelle anfordern (Chat).</div>`);
-      return;
-    }
-    // ② Buchung wie in der Leitstelle
-    const bu = el("div", { class: "plt-buchung" });
-    bu.insertAdjacentHTML("beforeend", `<div class="plt-schritt"><span>1</span>Stichwort</div>`);
-    if (zw.sym) {
-      const chip = el("div", { class: "plt-sym-chip" });
-      chip.innerHTML = `<b>${esc(zw.sym.name)}</b><small>${esc(zw.sym.kategorie)}</small>`;
-      const weg = el("button", { class: "plt-x", title: "anderes Stichwort" }, "✕");
-      weg.addEventListener("click", () => {
-        zw.sym = undefined;
-        plan(fz, e);
-        root?.querySelector<HTMLInputElement>(".plt-sym-suche")?.focus();
-      });
-      chip.appendChild(weg);
-      bu.appendChild(chip);
-    } else {
-      const such = el("input", { class: "plt-sym-suche", placeholder: "Stichwort suchen (z. B. Polytrauma, Schlaganfall) …", value: zw.q }) as HTMLInputElement;
-      such.addEventListener("input", () => {
-        zw.q = such.value;
-        const pos = such.selectionStart;
-        plan(fz, e);
-        const neu = root?.querySelector<HTMLInputElement>(".plt-sym-suche");
-        neu?.focus();
-        if (neu && pos !== null) neu.setSelectionRange(pos, pos);
-      });
-      bu.appendChild(such);
-      const treffer = zw.q.trim() ? symptomSuche(zw.q.trim(), 8) : [];
-      if (treffer.length) {
-        const liste = el("div", { class: "plt-sym-liste" });
-        for (const x of treffer) {
-          const b = el("button", { class: "plt-sym" });
-          b.innerHTML = `<b>${esc(x.name)}</b><small>${esc(x.kategorie)}</small>`;
-          b.addEventListener("click", () => {
-            zw.sym = x;
-            zw.q = "";
-            zw.dring = dringlichkeitFuer(x, zw.dring);
-            plan(fz, e);
-          });
-          liste.appendChild(b);
-        }
-        bu.appendChild(liste);
-      } else if (zw.q.trim()) bu.insertAdjacentHTML("beforeend", `<div class="plt-leise plt-klein">Kein Stichwort gefunden.</div>`);
-    }
-    bu.insertAdjacentHTML("beforeend", `<div class="plt-schritt"><span>2</span>Alter</div>`);
-    const alt = el("div", { class: "plt-seg" });
-    for (const a of ALTERSGRUPPEN) {
-      const b = el("button", { class: zw.alter === a.id ? "an" : "", title: `${a.text} Jahre` }, a.name);
-      b.addEventListener("click", () => {
-        zw.alter = a.id;
-        plan(fz, e);
-      });
-      alt.appendChild(b);
-    }
-    bu.appendChild(alt);
-    bu.insertAdjacentHTML("beforeend", `<div class="plt-schritt"><span>3</span>Dringlichkeit</div>`);
-    const dr = el("div", { class: "plt-seg" });
-    for (const d of DRINGLICHKEITEN) {
-      const b = el("button", { class: `d${d.id}${zw.dring === d.id ? " an" : ""}` }, d.name) as HTMLButtonElement;
-      b.disabled = !!zw.sym && !zw.sym.dringlichkeiten.includes(d.id);
-      b.addEventListener("click", () => {
-        zw.dring = d.id;
-        plan(fz, e);
-      });
-      dr.appendChild(b);
-    }
-    bu.appendChild(dr);
-    bu.insertAdjacentHTML("beforeend", `<div class="plt-schritt"><span>4</span>Vorschläge</div>`);
-    const grund = zw.sym ? zuweisungId(zw.sym.id, zw.dring, zw.alter) : "";
-    const buchen = (hId: string) =>
-      setzen(planSeite === "nah" ? { art: "transport", hospitalId: hId, grund: grund || undefined } : { art: "uebergabe", naMit: planSeite === "naMit", hospitalId: hId, grund: grund || undefined });
-    const gewaehlt = p && p.art !== "kein" ? p.hospitalId : undefined;
-    const liste = el("div", { class: "plt-kh-liste" });
-    if (!grund) liste.insertAdjacentHTML("beforeend", `<div class="plt-leise plt-klein">Stichwort wählen – dann zeigt die Liste die passenden Häuser, die jetzt aufnehmen.</div>`);
-    for (const k of khListe(fz, e, grund)) {
-      const b = el("button", { class: `plt-kh${gewaehlt === k.h.id ? " an" : ""}` });
-      const flugMin = (k.km * 1000) / (sim.settings.nahGeschwindigkeit / 3.6);
-      b.innerHTML = `<span class="plt-kh-name"><b>${esc(k.h.kurzname || k.h.name)}</b><small>${esc(k.h.name)}</small></span>
-          <span class="plt-kh-tags">${k.eignung ? `<span class="plt-tag ${k.eignung}">${k.eignung === "passend" ? "passend" : k.eignung === "ausweich" ? "Ausweich" : "Rückfall"}</span>` : ""}${k.zu ? `<span class="plt-tag warn">zu</span>` : ""}${k.voll ? `<span class="plt-tag warn">voll</span>` : k.frei ? `<span class="plt-tag">${esc(k.frei)}</span>` : ""}${planSeite === "nah" ? (khLandung(k.h) ? `<span class="plt-tag">Landeplatz</span>` : `<span class="plt-tag warn">kein Landeplatz</span>`) : ""}</span>
-          <span class="plt-kh-km">${k.km.toFixed(0)} km<small>${planSeite === "nah" ? minuten(flugMin) : "Buchen"}</small></span>`;
-      b.addEventListener("click", () => buchen(k.h.id));
-      liste.appendChild(b);
-    }
-    bu.appendChild(liste);
-    // anderes Haus: Namenssuche über alle
-    const mehr = el("button", { class: "plt-link" }, zw.mehr ? "▾ anderes Krankenhaus" : "▸ anderes Krankenhaus suchen");
-    mehr.addEventListener("click", () => {
-      zw.mehr = !zw.mehr;
-      plan(fz, e);
-    });
-    bu.appendChild(mehr);
-    if (zw.mehr) {
-      const such = el("input", { class: "plt-kh-suche", placeholder: "Krankenhaus suchen …", value: khSuche }) as HTMLInputElement;
-      such.addEventListener("input", () => {
-        khSuche = such.value;
-        const pos = such.selectionStart;
-        plan(fz, e);
-        const neu = root?.querySelector<HTMLInputElement>(".plt-kh-suche");
-        neu?.focus();
-        if (neu && pos !== null) neu.setSelectionRange(pos, pos);
-      });
-      bu.appendChild(such);
-      const q = khSuche.trim().toLowerCase();
-      if (q) {
-        const andere = el("div", { class: "plt-kh-liste" });
-        for (const h of store.list("hospitals").filter((h) => `${h.name} ${h.kurzname ?? ""} ${h.ort ?? ""}`.toLowerCase().includes(q)).map((h) => ({ h, km: distanceM(fz, h) / 1000 })).sort((a, b) => a.km - b.km).slice(0, 12)) {
-          const b = el("button", { class: `plt-kh${gewaehlt === h.h.id ? " an" : ""}` });
-          b.innerHTML = `<span class="plt-kh-name"><b>${esc(h.h.kurzname || h.h.name)}</b><small>${esc(h.h.name)}</small></span><span class="plt-kh-tags"></span><span class="plt-kh-km">${h.km.toFixed(0)} km</span>`;
-          b.addEventListener("click", () => buchen(h.h.id));
-          andere.appendChild(b);
-        }
-        bu.appendChild(andere);
-      }
-    }
-    bu.insertAdjacentHTML("beforeend", `<p class="plt-leise plt-klein">Die Buchung belegt einen Platz im Krankenhaus – wie in der Leitstelle.</p>`);
-    box.appendChild(bu);
-  });
+  // Symptom schon bekannt (Verdacht, Buchung): gleich bei den Vorschlägen beginnen
+  zw.schritt = zw.sym ? 4 : 1;
 }
 
 // ------------------------------------------------------------------ Handy: Einsatz und Buchen
@@ -1495,6 +1700,37 @@ function handyMehr(fz: SimFahrzeug | undefined, e: Einsatz | undefined): Record<
     gruppe: gruppenName(sprechGruppe()),
     einsatz2,
     buchung: fz && e ? handyBuchungStand(fz, e) : null,
+    neu: handyNeu(fz, e),
+  };
+}
+
+/**
+ * Stand fürs neue Handy-Design (Entwurf „Handy“): dieselben Daten wie in der Pilotenansicht – Funktionen fallen beim
+ * Übertragen (JSON) weg, die IDs bleiben für die Befehle („bu:…“, „gr:…“). Die alten Felder bleiben für die EFB-App.
+ */
+function handyNeu(fz: SimFahrzeug | undefined, e: Einsatz | undefined): Record<string, unknown> {
+  const D = ansichtDaten() as Record<string, unknown> & { stl: { key: StatusKey }[] };
+  const gr = sprechGruppe();
+  const aktion = (k: StatusKey) => AKTIONEN.find((a) => a.status === k)?.id ?? "";
+  return {
+    st: D.st,
+    uhr: new Date(sim.state.zeit).toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" }),
+    gruppe: gruppenName(gr) || "RD-NOE-03",
+    gruppeT: gr ? "Sprechgruppe Großeinsatz" : "Sprechgruppe",
+    gruppeWechsel: gsGruppeOffen() || sim.kanalVon(e) !== null,
+    keys: D.stl.map((x) => ({ ...x, aktion: aktion(x.key) })),
+    alarm: D.alarm,
+    ein: D.ein,
+    fl: D.fl,
+    fzs: D.fzs,
+    nav: D.nav,
+    gs: D.gs,
+    patZu: D.patZu,
+    pats: D.pats,
+    ent: D.ent,
+    planT: D.planT,
+    abrufPunkt: !!(D.gs as { abruf?: unknown } | null)?.abruf,
+    amOrtText: fz && e && fz.status !== "amBO" ? (e.gs && !e.gs.aufgehoben ? "Buchen geht, sobald euch die Einsatzleitung einen Patienten zugeteilt hat." : "Buchen geht am Einsatzort (Status 3).") : fz && e && e.gs && !e.gs.aufgehoben ? "Buchen geht, sobald euch die Einsatzleitung einen Patienten zugeteilt hat." : "",
   };
 }
 
@@ -1538,8 +1774,13 @@ function handyBuchungStand(fz: SimFahrzeug, e: Einsatz): Record<string, unknown>
   };
 }
 
-/** Befehl vom Handy: „bu:seite:nah“, „bu:q:Text“, „bu:sym:id“, „bu:symweg“, „bu:alter:kind“, „bu:dring:30“, „bu:kh:id“, „bu:kein:revers“ */
+/** Befehl vom Handy: „bu:schritt:2“, „gr:1“, „bu:seite:nah“, „bu:q:Text“, „bu:sym:id“, „bu:symweg“, „bu:alter:kind“, „bu:dring:30“, „bu:kh:id“, „bu:kein:revers“ */
 function handyBuchen(b: string): void {
+  // Sprechgruppe wechseln (Pfeile am Handy): „gr:1“ / „gr:-1“
+  if (b.startsWith("gr:")) {
+    sprechGruppeWeiter(b === "gr:-1" ? -1 : 1);
+    return zeichneAlles();
+  }
   const fz = meinFz();
   const e = einsatzVon(fz);
   if (!fz || !e || fz.status !== "amBO") return;
@@ -1549,16 +1790,25 @@ function handyBuchen(b: string): void {
   const setzen = (pl: PilotPlan) => void befehl(sim.call("pilotPlan", fz.id, pl));
   if (art === "seite" && SEITEN.some((x) => x.id === wert)) planSeite = wert as PlanSeite;
   else if (art === "q") zw.q = wert.slice(0, 60);
+  else if (art === "schritt" && /^[1-4]$/.test(wert)) zw.schritt = Number(wert);
   else if (art === "sym") {
     const x = symptom(wert);
     if (x) {
       zw.sym = x;
       zw.q = "";
       zw.dring = dringlichkeitFuer(x, zw.dring);
+      zw.schritt = 3;
     }
-  } else if (art === "symweg") zw.sym = undefined;
-  else if (art === "alter" && ALTERSGRUPPEN.some((a) => a.id === wert)) zw.alter = wert as Altersgruppe;
-  else if (art === "dring" && DRINGLICHKEITEN.some((d) => String(d.id) === wert)) zw.dring = Number(wert) as Dringlichkeit;
+  } else if (art === "symweg") {
+    zw.sym = undefined;
+    zw.schritt = 2;
+  } else if (art === "alter" && ALTERSGRUPPEN.some((a) => a.id === wert)) {
+    zw.alter = wert as Altersgruppe;
+    zw.schritt = zw.sym ? 3 : 2;
+  } else if (art === "dring" && DRINGLICHKEITEN.some((d) => String(d.id) === wert)) {
+    zw.dring = Number(wert) as Dringlichkeit;
+    zw.schritt = 4;
+  }
   else if (art === "kein" && ["kein", "revers", "tot"].includes(wert)) setzen({ art: "kein", grund: wert as "kein" | "revers" | "tot" });
   else if (art === "kh" && store.get("hospitals", wert)) {
     const grund = zw.sym ? zuweisungId(zw.sym.id, zw.dring, zw.alter) : "";
@@ -1581,103 +1831,53 @@ function khListe(fz: SimFahrzeug, e: Einsatz, grund: string): { h: Hospital; eig
 }
 
 // ------------------------------------------------------------------ Sprechfunk
+//
+// Rechts unter der Karte (Vorlage: <div class="pv-funk">) hängt das Funk-Fenster des Disponenten mit rolle „pilot“
+// (src/ui/fenster/funk: Funkgerät, Sprechtaste Leertaste, Funkregeln für den Piloten, Chat als Reiter).
+// funkPlatzAktualisieren() gibt ihm den eigenen Status und die Sprechgruppe und liefert den Stand fürs Handy.
 
-/** Kanal (wer spricht), Sprechtasten (gedrückt halten) und die letzten Funksprüche; gibt den Stand fürs Handy zurück */
-let pilotGeraet: { el: HTMLElement; refresh(): void } | null = null;
+let funkFenster: FunkFenster | null = null;
+let funkProps = "";
 
-function funkTeil(fz: SimFahrzeug | undefined, e: Einsatz | undefined): { knoepfe: { aktion: string; name: string }[]; kanal: string; sendet: boolean } {
+function funkPlatzBauen(): HTMLElement {
+  const box = el("div", { class: "pvf-ew" });
+  funkFenster = funkEinbinden(box, { rolle: "pilot", mitKopf: true });
+  funkProps = "";
+  return box;
+}
+
+/** Status und Sprechgruppe ans Funk-Fenster; gibt den Stand fürs Handy zurück (Sprechtaste, wer spricht) */
+function funkPlatzAktualisieren(fz: SimFahrzeug | undefined, e: Einsatz | undefined): { knoepfe: { aktion: string; name: string }[]; kanal: string; sendet: boolean } {
   const ich = funkSendeZustand();
   const hoert = funkEmpfang();
   const sendet = sim.state.funkSendet;
-  // Großeinsatz: der Pilot ist auf der Sprechgruppe des Großeinsatzes (bzw. der gewählten)
   const gruppe = sprechGruppe();
   const belegt = sim.funkKanalBelegt(gruppe);
-  const kanal = ich?.art === "sendet"
-    ? `Du sprichst${ich.ziel === "rtw" ? " (an den RTW)" : ""} …`
-    : ich?.art === "wartet"
-      ? ich.belegt
-        ? "Warten … nach dem Ende-Ton bist du dran"
-        : "Kanal wird geprüft …"
-      : hoert
-        ? `${hoert.von === "LEO" ? `Leitstelle (${hoert.wer})` : `${hoert.von} (${hoert.wer})`} spricht`
-        : sendet
-          ? `${sendet.von === "LEO" ? `Leitstelle (${sendet.name})` : `${sendet.von} (${sendet.name})`} spricht`
-          : belegt
-            ? `Funk belegt – ${belegt.funkname} ↔ ${belegt.an?.funkname ?? "LEO"}`
-            : gruppe
-              ? "Funk frei (Sprechgruppe Großeinsatz)"
+  const kanal =
+    ich?.art === "sendet"
+      ? `Du sprichst in ${gruppenName(gruppe) || "RD-NOE-03"} …`
+      : ich?.art === "wartet"
+        ? ich.belegt
+          ? "Warten … nach dem Ende-Ton bist du dran"
+          : "Kanal wird geprüft …"
+        : hoert
+          ? `${hoert.von === "LEO" ? `LEO (${hoert.wer})` : `${hoert.von} (${hoert.wer})`} spricht`
+          : sendet
+            ? `${sendet.von === "LEO" ? `LEO (${sendet.name})` : `${sendet.von} (${sendet.name})`} spricht`
+            : belegt
+              ? `Funk belegt – ${belegt.funkname} ↔ ${belegt.an?.funkname ?? "LEO"}`
               : "Funk frei";
-  const klasse = ich?.art === "sendet" ? "sendet" : hoert || sendet ? "hoert" : belegt ? "belegt" : "frei";
-  teil(".plt-funk-kanal", `${kanal}|${klasse}`, (b) => {
-    b.className = `plt-funk-kanal ${klasse}`;
-    b.innerHTML = `<span class="plt-funk-lampe"></span><span>${esc(kanal)}</span>`;
-  });
-  // das Funkgerät (wie im RTW): Display mit Gruppe und Status, Fenster „wer spricht“
-  const geraetBox = root?.querySelector<HTMLElement>(".plt-funk-geraet");
-  if (geraetBox && !geraetBox.firstChild) {
-    pilotGeraet = funkGeraetErstellen();
-    geraetBox.appendChild(pilotGeraet.el);
-  }
-  pilotGeraet?.refresh();
-  // Sprechgruppen: primär die, zu der er alarmiert ist; „Alles hören“
-  const w = funkGruppenWahl();
-  const gsDa = gsGruppeOffen() || sim.kanalVon(e) === "gs";
-  teil(".plt-funk-gruppen", JSON.stringify([w.allesHoeren, w.pilotSenden, gsDa, sim.kanalVon(e)]), (b) => {
-    const eig = gruppenName(sim.kanalVon(e));
-    b.innerHTML = `<label class="plt-schalter"><input type="checkbox" class="plt-f-alles" ${w.allesHoeren ? "checked" : ""}><span class="plt-schalter-bahn"><i></i></span><span>Alles hören <small class="plt-leise">(sonst nur ${esc(eig)})</small></span></label>${
-      gsDa ? `<small class="plt-leise">Sprechgruppe wechseln: Steuerkreuz links/rechts am Funkgerät</small>` : ""
-    }`;
-    b.querySelector<HTMLInputElement>(".plt-f-alles")!.addEventListener("change", (ev) => funkGruppenSetzen({ allesHoeren: (ev.target as HTMLInputElement).checked }));
-    const sel = b.querySelector<HTMLSelectElement>(".plt-f-senden");
-    if (sel) {
-      sel.value = w.pilotSenden;
-      sel.addEventListener("change", () => funkGruppenSetzen({ pilotSenden: sel.value as "auto" | "normal" | "gs" }));
-    }
-  });
-  const rtw = fz && e ? sim.nahRtwPartner(fz, e) : undefined;
-  const bel = belegung();
-  const hinweis = (a: PilotAktion) => [bel.taste[a] ? tastenName(bel.taste[a]) : "", bel.globalAn && bel.global[a] ? kuerzelName(bel.global[a]) : "", bel.joy[a] ? "Joystick" : ""].filter(Boolean).join(" · ");
-  // EIN Funk, EIN Knopf: wen er meint, steht im Spruch („LEO von C2“, „75/001 von C2“)
-  void rtw;
   const knoepfe = fz ? [{ aktion: "funk", name: "Funk" }] : [];
-  teil(".plt-funk-knoepfe", `${knoepfe.map((k) => k.name).join("|")}|${hinweis("funk")}|${hinweis("funkRtw")}|${mp.aktiv}`, (b) => {
-    if (!fz) {
-      b.innerHTML = `<p class="plt-leise plt-klein">Erst einen Hubschrauber wählen.</p>`;
-      return;
+  if (funkFenster) {
+    const st = fz ? sim.statusDef(fz.status) : null;
+    const status = st ? `${st.nummer} ${st.name}` : undefined;
+    const gr = (gruppenName(sim.kanalVon(e)) || "RD-NOE-03").replace(/^RD-NOE-/, "");
+    const k = `${status}|${gr}`;
+    if (k !== funkProps) {
+      funkProps = k;
+      funkFenster.props({ status, gruppe: gr });
     }
-    for (const k of knoepfe) {
-      const a = k.aktion as PilotAktion;
-      // Sprechtaste wie am echten Gerät
-      // Sprechtaste als Handmikrofon; der Hinweis erscheint nur beim Darüberfahren (ohne zu drücken)
-      const btn = el("button", { class: "plt-ptt plt-mikro", "data-ptt": a, type: "button", "aria-label": "Sprechtaste (gedrückt halten)" });
-      btn.innerHTML = `<img src="${mikroUrl}" alt="" draggable="false">`;
-      sprechKnopfAnbinden(btn, () => "leo");
-      const info = el("div", { class: "plt-ptt-tipp" }, `Gedrückt halten zum Sprechen${hinweis(a) ? ` · ${hinweis(a)}` : ""} – „LEO von …“ für die Leitstelle, „75/001 von …“ für ein Fahrzeug`);
-      b.append(btn, info);
-    }
-  });
-  root?.querySelectorAll<HTMLElement>(".plt-ptt").forEach((x) => {
-    x.classList.toggle("an", ich?.art === "sendet");
-    x.classList.toggle("wartet", ich?.art === "wartet");
-  });
-  // die letzten Funksprüche (alle hören mit)
-  const alle = (sim.state.funkGespraeche ?? []).filter((g) => gruppeHoerbar(g.kanal) || (!!fz && (g.fzId === fz.id || g.an?.fzId === fz.id))).slice(0, 20);
-  const zeilen = alle
-    .flatMap((g) => g.sprueche.map((x, i) => ({ ...x, g, t: x.echt ?? (g.echtSeit ?? 0) + i })))
-    .sort((a, b) => a.t - b.t)
-    .slice(-10);
-  const mein = fz ? sim.rufname(fz) : "";
-  teil(".plt-funk-verlauf", zeilen.map((z) => `${z.g.id}|${z.zeit}|${z.text}`).join(";"), (b) => {
-    if (!zeilen.length) {
-      b.innerHTML = `<p class="plt-leise plt-klein">Noch kein Funkverkehr. Sprechtaste halten und z. B. „LEO von ${esc(mein || "C2")}, kommen“.</p>`;
-      return;
-    }
-    for (const z of zeilen) {
-      const meins = !!fz && (z.g.fzId === fz.id || z.g.an?.fzId === fz.id);
-      b.insertAdjacentHTML("beforeend", `<div class="plt-funk-z${meins ? " meins" : ""}${z.von === mein ? " ich" : ""}"><span>${esc(uhrzeit(z.zeit))} ${z.stimme ? "🎙 " : ""}<b>${esc(z.von)}</b></span>${esc(z.text)}</div>`);
-    }
-    b.scrollTop = b.scrollHeight;
-  });
+  }
   return { knoepfe, kanal, sendet: ich?.art === "sendet" };
 }
 
@@ -1745,76 +1945,6 @@ function funkDialog(): void {
   openDialog({ title: "Sprechfunk", body, actions: [{ label: "Fertig", kind: "primary" }] });
 }
 
-/** Einsatzverlauf: was beim Einsatz passiert ist (neueste oben) */
-function einsatzVerlauf(e: Einsatz | undefined): void {
-  const p = e?.protokoll ?? [];
-  const offen = new Set([...(root?.querySelectorAll<HTMLDetailsElement>(".plt-ev-abfrage[open]") ?? [])].map((d) => d.dataset.i));
-  teil(".plt-ev-liste", e ? `${e.id}|${p.length}` : "-", (b) => {
-    if (!e || !p.length) {
-      b.innerHTML = `<div class="plt-ev-leer">${ico("liste", "riesig")}<b>Noch keine Ereignisse</b><span>Sobald ein Einsatz vorliegt, stehen hier alle Ereignisse dazu.</span></div>`;
-      return;
-    }
-    const ab = p.length > 60 ? p.length - 60 : 0;
-    b.innerHTML = p
-      .slice(ab)
-      .map((x, i) => {
-        // Notrufabfrage des Hosts: „*** Erstaufnahme: … ***“ + Zeilen → zum Aufklappen
-        const m = /^\*\*\* (.+?): [^*]*\*\*\*\n?([\s\S]*)$/.exec(x.text);
-        if (m) {
-          const zeilen = m[2].split("\n").filter(Boolean);
-          const n = ab + i;
-          return `<div class="plt-ev-z"><span>${esc(uhrzeit(x.zeit))}</span><details class="plt-ev-abfrage" data-i="${n}"${offen.has(String(n)) ? " open" : ""}><summary><b>Notrufabfrage</b> <small class="plt-leise">${esc(m[1])} · ${zeilen.length} Angaben</small></summary>${zeilen.map((z) => `<div>${esc(z)}</div>`).join("")}</details></div>`;
-        }
-        return `<div class="plt-ev-z"><span>${esc(uhrzeit(x.zeit))}</span><div>${esc(x.text)}${x.von ? ` <small class="plt-leise">· ${esc(x.von)}</small>` : ""}</div></div>`;
-      })
-      .reverse()
-      .join("");
-  });
-}
-
-/** Wetter für den Piloten: jetzt (Wind und Böen in Knoten, Sicht, QNH, Flugbetrieb), die nächsten Stunden und Hinweise */
-function wetterTeil(fz: SimFahrzeug | undefined): void {
-  const p = sim.wetterPrognose(6);
-  const j = p[0];
-  const kt = (kmh: number) => Math.round(kmh / 1.852);
-  const sicht = (km: number) => (km >= 10 ? "> 10 km" : km >= 1 ? `${Math.round(km)} km` : `${Math.round(km * 1000)} m`);
-  const flug = (x: (typeof p)[number]) => (flugverbot(x.lage, x.wind) ? "nein" : flugEingeschraenkt(x.lage, x.wind) ? "eingeschränkt" : "ja");
-  const hinweise = [fz ? sim.flugHindernis(fz) : null, fz && !fz.nachtflug ? "Nur Tagflug" : null].filter((x): x is string => !!x);
-  // Wetterwechsel in den nächsten Stunden, der das Fliegen ändert
-  const wechsel = p.slice(1).find((x) => flug(x) !== flug(j));
-  if (wechsel) hinweise.push(flug(wechsel) === "nein" ? `ab ca. ${uhrzeit(wechsel.zeit)} kein Flugwetter (${LAGE[wechsel.lage].label})` : flug(wechsel) === "ja" ? `ab ca. ${uhrzeit(wechsel.zeit)} wieder Flugwetter` : `ab ca. ${uhrzeit(wechsel.zeit)} eingeschränkt (${LAGE[wechsel.lage].label})`);
-  const key = JSON.stringify([p.map((x) => [x.lage, Math.round(x.temp), x.wind, x.boeen, x.richtung, x.sicht, x.druck, x.regen, x.nacht, uhrzeit(x.zeit)]), hinweise]);
-  teil(".plt-wx", key, (b) => {
-    const f = flug(j);
-    b.innerHTML = `<div class="plt-karte-titel">${ico("wolke")}Wetter &amp; Hinweise <span class="plt-leise">Klick: Prognose und Warnungen</span></div>
-      <div class="plt-wx-oben">
-        <div class="plt-wx-jetzt"><span class="plt-wx-sym">${symbolFuer(j.lage, j.nacht)}</span><div><b>${esc(LAGE[j.lage].label)}</b><span class="plt-wx-temp">${Math.round(j.temp)} °C</span><small class="plt-leise">gefühlt ${j.gefuehlt} °C</small></div></div>
-        <div class="plt-wx-werte">
-          <div><small>Wind</small><b><span class="plt-wind-pfeil" style="transform:rotate(${(j.richtung + 180) % 360}deg)">${ico("wind")}</span>${kt(j.wind)} kt</b><small>aus ${esc(richtungText(j.richtung))}</small></div>
-          <div><small>Böen</small><b>${kt(j.boeen)} kt</b></div>
-          <div><small>Sicht</small><b>${sicht(j.sicht)}</b></div>
-          <div><small>Regen</small><b>${j.regen} %</b></div>
-          <div><small>QNH</small><b>${j.druck} hPa</b></div>
-          <div><small>Flugbetrieb</small><b class="plt-wx-flug ${f === "ja" ? "ok" : f === "nein" ? "rot" : "gelb"}">${f === "ja" ? "möglich" : f === "nein" ? "kein Flug" : "eingeschränkt"}</b></div>
-        </div>
-      </div>
-      <div class="plt-wx-std">${p
-        .slice(1)
-        .map((x) => `<div class="${flug(x) === "nein" ? "rot" : flug(x) === "eingeschränkt" ? "gelb" : ""}"><small>${uhrzeit(x.zeit)}</small><span>${symbolFuer(x.lage, x.nacht)}</span><b>${Math.round(x.temp)}°</b><small>${kt(x.wind)} kt</small></div>`)
-        .join("")}</div>
-      <div class="plt-wx-hinweise">${hinweise.length ? hinweise.map((h) => `<div class="plt-warn">⚠ ${esc(h)}</div>`).join("") : `<div class="plt-wx-ok">${ico("haken")}Keine Hinweise</div>`}</div>`;
-  });
-}
-
-function chat(): void {
-  const c = sim.state.chat ?? [];
-  const key = `${c.length}|${c[c.length - 1]?.zeit}`;
-  teil(".plt-chat-liste", key, (box) => {
-    for (const m of c.slice(-30)) box.insertAdjacentHTML("beforeend", `<div class="plt-chat-m${m.von === mp.ich.name ? " ich" : ""}"><span>${esc(m.von)}</span>${esc(m.text)}</div>`);
-    box.scrollTop = box.scrollHeight;
-  });
-}
-
 // ------------------------------------------------------------------ Karte
 
 async function karteStarten(box: HTMLElement): Promise<void> {
@@ -1826,36 +1956,36 @@ async function karteStarten(box: HTMLElement): Promise<void> {
     map.on("load", () => {
       map.addSource("plt-linie", { type: "geojson", data: leer() });
       map.addSource("plt-route", { type: "geojson", data: leer() });
+      map.addSource("plt-fuss", { type: "geojson", data: leer() });
       map.addSource("plt-ziele", { type: "geojson", data: leer() });
       map.addSource("plt-heli", { type: "geojson", data: leer() });
-      // Route: weitere Abschnitte (z. B. Einsatzort → Krankenhaus) gestrichelt, der jetzige Abschnitt durchgezogen
-      map.addLayer({ id: "plt-route", type: "line", source: "plt-route", layout: { "line-cap": "round" }, paint: { "line-color": "#8aa4c8", "line-width": 3, "line-dasharray": [1.5, 1.5], "line-opacity": 0.85 } });
-      map.addLayer({ id: "plt-linie", type: "line", source: "plt-linie", layout: { "line-cap": "round" }, paint: { "line-color": "#2f7cf6", "line-width": 4, "line-opacity": 0.95 } });
+      // Hubschrauber als Pfeil (einfarbig, Farbe = Status)
+      map.addImage("plt-pfeil", pfeilBild(), { sdf: true, pixelRatio: 2 });
+      // Route: nächster Abschnitt gestrichelt, der jetzige Abschnitt durchgezogen (wie im Entwurf)
+      map.addLayer({ id: "plt-route", type: "line", source: "plt-route", layout: { "line-cap": "round" }, paint: { "line-color": "#6AA6FF", "line-width": 2.5, "line-dasharray": [2, 2], "line-opacity": 0.9 } });
+      map.addLayer({ id: "plt-linie", type: "line", source: "plt-linie", layout: { "line-cap": "round" }, paint: { "line-color": "#3B8BFF", "line-width": 4, "line-opacity": 0.95 } });
+      // Großeinsatz: Fußweg vom Bereitstellungsraum zum Einsatzort
+      map.addLayer({ id: "plt-fuss", type: "line", source: "plt-fuss", layout: { "line-cap": "round" }, paint: { "line-color": "#F5A524", "line-width": 3.5, "line-dasharray": [0.6, 2] } });
       map.addLayer({
         id: "plt-ziele",
         type: "circle",
         source: "plt-ziele",
-        paint: { "circle-radius": 9, "circle-color": ["get", "farbe"], "circle-stroke-color": "#ffffff", "circle-stroke-width": 2 },
+        paint: { "circle-radius": 8, "circle-color": ["get", "farbe"], "circle-stroke-color": "#111216", "circle-stroke-width": 2 },
       });
       map.addLayer({
         id: "plt-ziele-text",
         type: "symbol",
         source: "plt-ziele",
-        layout: { "text-field": ["get", "name"], "text-font": ["Noto Sans Medium"], "text-size": 12, "text-offset": [0, 1.4], "text-anchor": "top" },
-        paint: { "text-color": "#111827", "text-halo-color": "#ffffff", "text-halo-width": 1.6 },
+        layout: { "text-field": ["get", "name"], "text-font": ["Noto Sans Medium"], "text-size": 12, "text-offset": [1, 0], "text-anchor": "left" },
+        paint: { "text-color": istDunkel() ? "#C4CAD6" : "#3A4150", "text-halo-color": istDunkel() ? "#111216" : "#ffffff", "text-halo-width": 1.4 },
       });
+      map.addLayer({ id: "plt-heli-hof", type: "circle", source: "plt-heli", paint: { "circle-radius": 17, "circle-color": ["get", "farbe"], "circle-opacity": 0.25 } });
       map.addLayer({
         id: "plt-heli",
-        type: "circle",
-        source: "plt-heli",
-        paint: { "circle-radius": 11, "circle-color": ["get", "farbe"], "circle-stroke-color": "#ffffff", "circle-stroke-width": 3 },
-      });
-      map.addLayer({
-        id: "plt-heli-text",
         type: "symbol",
         source: "plt-heli",
-        layout: { "text-field": ["get", "name"], "text-font": ["Noto Sans Medium"], "text-size": 13, "text-offset": [0, 1.6], "text-anchor": "top", "text-allow-overlap": true },
-        paint: { "text-color": "#0b2a5b", "text-halo-color": "#ffffff", "text-halo-width": 1.8 },
+        layout: { "icon-image": "plt-pfeil", "icon-rotate": ["get", "kurs"], "icon-rotation-alignment": "map", "icon-allow-overlap": true, "icon-ignore-placement": true },
+        paint: { "icon-color": ["get", "farbe"], "icon-halo-color": "#111216", "icon-halo-width": 1.5 },
       });
       karteFolgen(true);
       zeichneAlles();
@@ -1866,18 +1996,51 @@ async function karteStarten(box: HTMLElement): Promise<void> {
         return;
       }
       punktWaehlen = false;
-      root?.querySelector<HTMLElement>(".plt-map-hinweis")?.setAttribute("hidden", "");
+      planen();
       const fz = meinFz();
       if (fz) void befehl(sim.call("pilotFliegen", fz.id, { lat: ev.lngLat.lat, lon: ev.lngLat.lng, label: "Punkt auf der Karte" }));
     });
     map.on("dragstart", () => {
       if (!folgen) return;
       folgen = false;
-      root?.querySelector('[data-act="folgen"]')?.classList.remove("an");
+      planen();
     });
   } catch (e) {
     console.warn("Pilotenkarte", e);
   }
+}
+
+/** Pfeil für den Hubschrauber (weiß, wird über icon-color in der Statusfarbe gezeichnet) */
+function pfeilBild(): ImageData {
+  const n = 44;
+  const c = document.createElement("canvas");
+  c.width = c.height = n;
+  const g = c.getContext("2d")!;
+  g.translate(n / 2, n / 2);
+  g.scale(n / 30, n / 30);
+  g.beginPath();
+  g.moveTo(0, -11);
+  g.lineTo(7, 8);
+  g.lineTo(0, 4);
+  g.lineTo(-7, 8);
+  g.closePath();
+  g.fillStyle = "#fff";
+  g.fill();
+  return g.getImageData(0, 0, n, n);
+}
+
+/** Kurs des Hubschraubers: aus dem Flugsimulator, sonst Richtung zum nächsten Ziel */
+let letzterKurs = 0;
+function kursVon(fz: SimFahrzeug): number {
+  const d = flugsim.daten;
+  if (d && datenFrisch()) return (letzterKurs = Math.round(d.kurs));
+  const r = routePunkte[1];
+  if (r && (Math.abs(r[0] - fz.lon) > 1e-4 || Math.abs(r[1] - fz.lat) > 1e-4)) {
+    const y = Math.sin(((r[0] - fz.lon) * Math.PI) / 180) * Math.cos((r[1] * Math.PI) / 180);
+    const x = Math.cos((fz.lat * Math.PI) / 180) * Math.sin((r[1] * Math.PI) / 180) - Math.sin((fz.lat * Math.PI) / 180) * Math.cos((r[1] * Math.PI) / 180) * Math.cos(((r[0] - fz.lon) * Math.PI) / 180);
+    letzterKurs = Math.round((Math.atan2(y, x) * 180) / Math.PI);
+  }
+  return letzterKurs;
 }
 
 function leer(): GeoJSON.FeatureCollection {
@@ -1894,15 +2057,19 @@ function karteAktualisieren(fz: SimFahrzeug | undefined, e: Einsatz | undefined)
   if (!map || !map.getSource("plt-heli")) return;
   const quelle = (id: string) => map.getSource(id) as maplibregl.GeoJSONSource | undefined;
   const st = fz ? sim.statusDef(fz.status) : null;
-  quelle("plt-heli")?.setData({ type: "FeatureCollection", features: fz ? [punkt(fz.lat, fz.lon, { name: fz.kurzname || fz.funkrufname, farbe: st?.farbe ?? "#2f7cf6" })] : [] });
+  quelle("plt-heli")?.setData({ type: "FeatureCollection", features: fz ? [punkt(fz.lat, fz.lon, { farbe: st ? ST_FARBE[st.nummer] ?? "#3B8BFF" : "#3B8BFF", kurs: kursVon(fz) })] : [] });
   const kh = e?.kh ? store.get("hospitals", e.kh.hospitalId) : undefined;
   const ziele: GeoJSON.Feature[] = [];
-  if (e?.adresse) ziele.push(punkt(e.adresse.lat, e.adresse.lon, { name: "Einsatzort", farbe: "#e53935" }));
-  // Großeinsatz: Bereitstellungsraum
-  const gsE = e?.gsKind ? sim.einsatz(e.gsKind.parent) : e;
-  if (gsE?.gs?.br && !gsE.gs.aufgehoben && gsE.gs.phase !== "ende") ziele.push(punkt(gsE.gs.br.lat, gsE.gs.br.lon, { name: "Bereitstellungsraum", farbe: "#6b7280" }));
-  if (kh) ziele.push(punkt(kh.lat, kh.lon, { name: kh.kurzname || kh.name, farbe: "#1e88e5" }));
-  if (fz) ziele.push(punkt(fz.heim.lat, fz.heim.lon, { name: "Stützpunkt", farbe: "#2e9d4a" }));
+  // Großeinsatz: Bereitstellungsraum (gelb) und Fußweg zum Einsatzort
+  const gsE = gsVon(e);
+  const ort = gsE?.adresse ?? e?.adresse;
+  if (ort) ziele.push(punkt(ort.lat, ort.lon, { name: gsE ? (gsE.adresse?.label ?? "Einsatzort") : "Einsatzort", farbe: "#E5484D" }));
+  const br = gsE?.gs?.br && gsE.gs.phase !== "ende" ? gsE.gs.br : null;
+  if (br) ziele.push(punkt(br.lat, br.lon, { name: "Bereitstellungsraum", farbe: "#F5A524" }));
+  const fuss = !!br && !!ort && !!fz && (!!fz.gsFussBis || !!fz.gsAmBr);
+  quelle("plt-fuss")?.setData(fuss && br && ort ? { type: "FeatureCollection", features: [{ type: "Feature", geometry: { type: "LineString", coordinates: [[br.lon, br.lat], [ort.lon, ort.lat]] }, properties: {} }] } : leer());
+  if (kh) ziele.push(punkt(kh.lat, kh.lon, { name: kh.kurzname || kh.name, farbe: "#3B8BFF" }));
+  if (fz) ziele.push(punkt(fz.heim.lat, fz.heim.lon, { name: "Stützpunkt", farbe: "#4CC38A" }));
   const zk = JSON.stringify(ziele.map((z) => z.geometry));
   if (zk !== letzteZiele) {
     letzteZiele = zk;
@@ -1965,7 +2132,7 @@ function karteFolgen(sofort: boolean): void {
     letzterAusschnitt = key;
     const w = map.getContainer().clientWidth;
     const pad = Math.max(24, Math.min(70, Math.round(w / 10)));
-    map.fitBounds(bb, { padding: { top: pad + 30, bottom: pad + 24, left: pad + 10, right: pad + 10 }, maxZoom: 11.5, duration: sofort ? 0 : 900 });
+    map.fitBounds(bb, { padding: { top: pad + 44, bottom: pad + 50, left: pad + 10, right: pad + 10 }, maxZoom: 11.5, duration: sofort ? 0 : 900 });
     return;
   }
   letzterAusschnitt = "";

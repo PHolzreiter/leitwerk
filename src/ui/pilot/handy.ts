@@ -28,6 +28,11 @@ let ausfuehren: ((a: PilotAktion) => void) | null = null;
 let haltenFn: ((a: PilotAktion, an: boolean) => void) | null = null;
 let buchHaken: ((befehl: string) => void) | null = null;
 
+/** Läuft der Server fürs Handy (QR-Code wurde gezeigt)? */
+export function handyLaeuft(): boolean {
+  return !!info;
+}
+
 /** Buchen am Handy: Befehle „bu:…“ (Entscheidung, Stichwort, Alter, Dringlichkeit, Krankenhaus) */
 export function handyBuchung(f: (befehl: string) => void): void {
   buchHaken = f;
@@ -83,7 +88,8 @@ async function hoeren(): Promise<void> {
   if (!hoertZu) {
     hoertZu = true;
     await listen<string>("handy-befehl", (ev) => {
-      if (ev.payload.startsWith("bu:")) return buchHaken?.(ev.payload);
+      // Buchen und Sprechgruppe wechseln („bu:…“, „gr:1“ / „gr:-1“)
+      if (ev.payload.startsWith("bu:") || ev.payload.startsWith("gr:")) return buchHaken?.(ev.payload);
       // Sprechtaste: „funk_an“ / „funk_aus“
       const m = /^(\w+)_(an|aus)$/.exec(ev.payload);
       if (m && HALTEN.includes(m[1] as PilotAktion)) return haltenFn?.(m[1] as PilotAktion, m[2] === "an");
