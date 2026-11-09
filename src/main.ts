@@ -56,7 +56,7 @@ import { stellenLaden } from "./data/einsatzstellen";
 import { istFeiertag, katKtOffen, katOffen, offenUm } from "./data/ortZeiten";
 import { searchAddress } from "./sim/geo";
 import { kategorienFuerOrtArt, ortGewicht, poiKategorien } from "./data/orte";
-import { alleAnrufe, anrufAnnehmen, anrufAuflegen, anrufBeobachterStarten, anrufHalten, istMeins, meinGespraech } from "./ui/panels/telefon";
+import { alleAnrufe, anrufAnnehmen, anrufAuflegen, anrufBeobachterStarten, anrufHalten, istMeins, meinGespraech, nehmeIchAn } from "./ui/panels/telefon";
 import { setzeAbfrageAnsicht } from "./ui/abfrageAnsicht";
 import { gesagteAdresse } from "./abfrage/adresseGesagt";
 import { kapitelZumText } from "./ui/panels/notrufGefuehrt";
@@ -123,8 +123,7 @@ function statusFarbenAnwenden(): void {
 
 function kuerzelEinrichten(): void {
   kuerzelAktion("annehmen", () => {
-    const p = pers();
-    const l = alleAnrufe().filter((x) => x.anruf.status === "klingelt" && (x.typ === "notruf" ? p.notrufe : p.ktHotline));
+    const l = alleAnrufe().filter((x) => x.anruf.status === "klingelt" && nehmeIchAn(x.typ));
     const x = l.find((y) => y.typ === "notruf") ?? l[0];
     if (!x) return false;
     void anrufAnnehmen(x.art, x.id);
