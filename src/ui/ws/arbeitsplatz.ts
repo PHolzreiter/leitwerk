@@ -509,8 +509,9 @@ function neueId(komponente: string): string {
  * denen es im Entwurf ein Fenster bildet (Funk + Chat, RD/KT-Übersicht, Fahrzeuge-Reiter), dann zu verwandten.
  */
 const NACHBARN: Record<string, string[]> = {
-  einsatz: ["kt", "grosseinsatz", "abfrage"],
-  kt: ["einsatz", "grosseinsatz", "abfrage"],
+  einsatz: ["kt", "sek", "grosseinsatz", "abfrage"],
+  kt: ["einsatz", "sek", "grosseinsatz", "abfrage"],
+  sek: ["kt", "einsatz", "grosseinsatz", "abfrage"],
   grosseinsatz: ["einsatz", "kt", "abfrage"],
   abfrage: ["telefon", "einsatz", "kt"],
   telefon: ["abfrage", "einsatz", "kt", "einsatzliste"],
@@ -650,7 +651,7 @@ const F = (reiter: string[], aktiv?: string, params?: Record<string, Record<stri
 /** Fenster, wie sie im Entwurf heißen */
 const EINSATZLISTE = (params?: Record<string, unknown>) => F(["einsatzliste"], "einsatzliste", params ? { einsatzliste: params } : undefined);
 const FAHRZEUGE = () => F(["fahrzeuge", "aktive", "statuslog"], "aktive");
-const MASKE = (aktiv = "einsatz") => F(["einsatz", "kt"], aktiv);
+const MASKE = (aktiv = "einsatz") => F(["einsatz", "kt", "sek"], aktiv);
 const KARTE = () => F(["karte"]);
 const FUNK = () => F(["funk", "chat"], "funk");
 const ABFRAGE = () => F(["abfrage"]);
