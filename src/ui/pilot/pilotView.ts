@@ -22,6 +22,7 @@ import { availableMaps, createMap, type MapHandle } from "../../map";
 import { openDialog } from "../dialog";
 import { el, esc, toast } from "../dom";
 import { logoMarke } from "../logo";
+import { spielmenue } from "../spielmenue/oeffnen";
 import { stufeFarbe } from "../panels/teile";
 import { istDunkel } from "../ws/persoenlich";
 import { pilotModusSetzen } from "./modus";
@@ -1504,6 +1505,8 @@ function entscheidungDaten(fz: SimFahrzeug, e: Einsatz): Record<string, unknown>
 
 /** Aktionen der Ansicht (Knöpfe der Vorlage) */
 function ansichtAktionen(): Record<string, (...x: never[]) => unknown> {
+  // Logo öffnet das Spielmenü (Modus Pilot: Weiterfliegen, Hubschrauber wechseln, Einstellungen, Zum Hauptmenü)
+  const spielmenueAuf = () => spielmenue();
   const buchen = (hId: string) => {
     const fz = meinFz();
     if (!fz) return;
@@ -1511,6 +1514,7 @@ function ansichtAktionen(): Record<string, (...x: never[]) => unknown> {
     void befehl(sim.call("pilotPlan", fz.id, planSeite === "nah" ? { art: "transport", hospitalId: hId, grund: grund || undefined } : { art: "uebergabe", naMit: planSeite === "naMit", hospitalId: hId, grund: grund || undefined }));
   };
   return {
+    spielmenue: spielmenueAuf,
     statusAn: (s: StatusKey) => statusHaltenStart(s),
     statusAb: (s: StatusKey) => statusHaltenEnde(s),
     sofortStatus: (s: StatusKey) => {

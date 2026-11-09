@@ -108,7 +108,7 @@ export class PilotLogik extends DCLogic {
       wCls: "ap pv" + (B < 760 ? " s1" : "") + (B < 560 || Bk < 300 ? " s2" : ""),
       lang: B >= 1100,
       markeCls: "pv-marke" + (pp === "spiel" ? " offen" : ""),
-      markeKlick: () => { if (pp === "spiel") this.schubladeZu(); else { clearTimeout(this.pt); this.setState({ pp: "spiel", ppZuIst: false, wx: false }); } },
+      markeKlick: () => { const aa = (this.props.app && this.props.app.a) || {}; if (typeof aa.spielmenue === "function") { aa.spielmenue(); return; } if (pp === "spiel") this.schubladeZu(); else { clearTimeout(this.pt); this.setState({ pp: "spiel", ppZuIst: false, wx: false }); } },
       spielListe: D.spiel.map((z, d) => ({ ...z, d, cls: "kl-p kl-z" + (z.gefahr ? " gefahr" : ""), klick: () => { this.schubladeZu(); z.klick(); } })),
       heli: D.heli, heliZeile: B >= 1100 && !!D.heli.zeile,
       st: D.st,

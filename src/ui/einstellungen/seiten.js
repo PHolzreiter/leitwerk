@@ -359,6 +359,7 @@ export class SeitenBasis {
         { id: 'telefon', label: 'Telefon & Töne', info: 'Annehmen, Klingeln, eigene Töne', kw: 'klingelton ton sound lautstärke piep notruf annehmen hotline audio export gespräch', rows: [
           T('Ich nehme Notrufe an', 'notrufe', true, 'Aus: kein Klingeln, kein Telefon (z. B. reiner Funk-Disponent)'),
           T('Ich nehme die KT-Hotline an', 'kthot', true),
+          T('Ich nehme Überstellungen an', 'ueberst', true, 'Sekundärtransporte (SEK) von Krankenhäusern'),
           T('Klingelton bei Anrufen', 'klingel', true),
           R('Lautstärke', 'tlaut', 0, 100, 5, 80, pct),
           T('Funk-Piep, wenn ein Fahrzeug ruft', 'fpiep', true),

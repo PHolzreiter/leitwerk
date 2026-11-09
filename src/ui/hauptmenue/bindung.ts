@@ -358,6 +358,7 @@ export function einstellungsBindung(geladen?: () => void): EinstellungsBindung {
     // ---------------- Telefon & Töne
     notrufe: persBool("notrufe", true),
     kthot: persBool("ktHotline", true),
+    ueberst: persBool("ueberstellungen", true),
     klingel: { l: () => kiPrefs().klingelton, s: (w) => (setKiPrefs({ klingelton: w === undefined ? true : !!w }), true) },
     tlaut: persZahl("lautstaerke", 70, 0, 100),
     fpiep: persBool("funkTon", true),
