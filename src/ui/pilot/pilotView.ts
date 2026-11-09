@@ -25,13 +25,12 @@ import { logoMarke } from "../logo";
 import { stufeFarbe } from "../panels/teile";
 import { istDunkel } from "../ws/persoenlich";
 import { pilotModusSetzen } from "./modus";
-import { AKTIONEN, belegung, kuerzelName, tastenName, type PilotAktion } from "./tasten";
+import { AKTIONEN, belegung, type PilotAktion } from "./tasten";
 import { eingabeStarten, eingabeStoppen, handyHalten, tastenDialog } from "./eingabe";
-import { funkGeraetErstellen, gruppenName } from "../funkGeraet";
-import { funkEmpfang, funkGruppenSetzen, funkGruppenWahl, funkSendeZustand, funkTon, gruppeHoerbar, gsGruppeOffen, onFunkEmpfang, onFunkGruppen, onFunkSenden, sprechGruppe, sprechGruppeWeiter, sprechKnopfAnbinden, sprechStart, sprechStopp } from "../sprechfunk";
+import { gruppenName } from "../funkGeraet";
+import { funkEmpfang, funkGruppenSetzen, funkGruppenWahl, funkSendeZustand, funkTon, gsGruppeOffen, onFunkEmpfang, onFunkGruppen, onFunkSenden, sprechGruppe, sprechGruppeWeiter, sprechStart, sprechStopp } from "../sprechfunk";
 import { MODELLE, mikrofone, modellLaden, setzeSprache, sprachPrefs, sprachStatus } from "../sprache";
 import { inTauri } from "../../platform";
-import mikroUrl from "../../assets/ptt-mikro.webp?url";
 import { ALARM_AUFNAHMEN, ALARM_STANDARD, ALARM_VORLAGEN, alarmPrefs, alarmPrefsSetzen, alarmStarten, alarmStoppen, alarmtonHinzufuegen, eigeneAlarmtoene, probeLaeuft, probeSpielen, probeStoppen, type AlarmArt } from "./alarmToene";
 import { dateiLoeschen } from "../sounds";
 import { ablageZeigen } from "../../net/ablage";
@@ -47,6 +46,7 @@ import { fehlerBerichtSpeichern } from "../fehlerMelden";
 import { jetztSichern } from "../../net/spielstand";
 import type { EntwurfFenster } from "../entwurf/einbinden";
 import { pilotAnsichtEinbinden, type PilotApp, type PilotLogik } from "../fenster/pilot";
+import { funkEinbinden, type FunkFenster } from "../fenster/funk";
 
 // ------------------------------------------------------------------ Hilfen
 
@@ -721,9 +721,10 @@ export function pilotSchliessen(): void {
   karte?.map.remove();
   karte = null;
   kartenEl = null;
+  funkFenster?.entfernen();
+  funkFenster = null;
   funkEl = null;
   grossEl = null;
-  pilotGeraet = null;
   root?.remove();
   root = null;
   pilotModusSetzen(false);
@@ -1831,71 +1832,21 @@ function khListe(fz: SimFahrzeug, e: Einsatz, grund: string): { h: Hospital; eig
 
 // ------------------------------------------------------------------ Sprechfunk
 //
-// PLATZ FÜR DAS FUNK-FENSTER (rolle="pilot"): Rechts unter der Karte (Vorlage: <div class="pv-funk">) kommt laut
-// Entwurf das Funk-Fenster des Disponenten mit rolle="pilot" (Sprechtaste Leertaste, Funkregeln für den Piloten,
-// Chat als Reiter). Das baut ein eigener Auftrag (Zweig ew-funk). Bis zum Zusammenführen hängt hier das bisherige
-// Funk-Teil des Piloten (Funkgerät, Sprechtaste, Gruppen, Verlauf, Chat). Beim Zusammenführen nur
-// funkPlatzBauen() durch die neue Funktion ersetzen (Element mit rolle „pilot“) – funkPlatzAktualisieren() liefert
-// weiter den Stand fürs Handy (Sprechtaste, wer spricht).
+// Rechts unter der Karte (Vorlage: <div class="pv-funk">) hängt das Funk-Fenster des Disponenten mit rolle „pilot“
+// (src/ui/fenster/funk: Funkgerät, Sprechtaste Leertaste, Funkregeln für den Piloten, Chat als Reiter).
+// funkPlatzAktualisieren() gibt ihm den eigenen Status und die Sprechgruppe und liefert den Stand fürs Handy.
 
-let funkSig = new Map<string, string>();
-let pilotGeraet: { el: HTMLElement; refresh(): void } | null = null;
-let funkReiter: "funk" | "chat" = "funk";
+let funkFenster: FunkFenster | null = null;
+let funkProps = "";
 
 function funkPlatzBauen(): HTMLElement {
-  funkSig = new Map();
-  pilotGeraet = null;
-  const box = el("div", { class: "pvf" });
-  box.innerHTML = `
-    <div class="pvf-kopf"><div class="segs gleit pvf-reiter" role="tablist" style="--n:2;--i:0"><button type="button" class="seg on" data-r="funk">Funk</button><button type="button" class="seg" data-r="chat">Chat<span class="pvf-zahl" hidden></span></button></div>
-      <span class="pvf-platz"></span><button type="button" class="kn sm leise" data-act="funk-einst" title="Mikrofon, Spracherkennung, Mithören">Einstellungen …</button></div>
-    <div class="pvf-funk">
-      <div class="pvf-reihe"><div class="pvf-geraet"></div><div class="pvf-ptt"></div></div>
-      <div class="pvf-kanal"></div>
-      <div class="pvf-gruppen"></div>
-      <div class="pvf-verlauf"></div>
-    </div>
-    <div class="pvf-chat" hidden>
-      <div class="pvf-chatliste"></div>
-      <form class="pvf-form"><input class="feld" maxlength="500" placeholder="Nachricht an alle …"><button class="kn sm prim">Senden</button></form>
-    </div>`;
-  box.querySelector('[data-act="funk-einst"]')!.addEventListener("click", () => funkDialog());
-  box.querySelectorAll<HTMLButtonElement>("[data-r]").forEach((b) =>
-    b.addEventListener("click", () => {
-      funkReiter = b.dataset.r as "funk" | "chat";
-      box.querySelectorAll<HTMLElement>("[data-r]").forEach((x) => x.classList.toggle("on", x === b));
-      box.querySelector<HTMLElement>(".pvf-reiter")!.style.setProperty("--i", funkReiter === "funk" ? "0" : "1");
-      box.querySelector<HTMLElement>(".pvf-funk")!.hidden = funkReiter !== "funk";
-      box.querySelector<HTMLElement>(".pvf-chat")!.hidden = funkReiter !== "chat";
-      if (funkReiter === "chat") {
-        mp.ungeleseneChats = 0;
-        const l = box.querySelector<HTMLElement>(".pvf-chatliste")!;
-        l.scrollTop = l.scrollHeight;
-      }
-      planen();
-    }),
-  );
-  box.querySelector<HTMLFormElement>(".pvf-form")!.addEventListener("submit", (ev) => {
-    ev.preventDefault();
-    const inp = box.querySelector<HTMLInputElement>(".pvf-form input")!;
-    const tt = inp.value.trim();
-    if (!tt) return;
-    inp.value = "";
-    void befehl(sim.call("chat", tt));
-  });
+  const box = el("div", { class: "pvf-ew" });
+  funkFenster = funkEinbinden(box, { rolle: "pilot", mitKopf: true });
+  funkProps = "";
   return box;
 }
 
-/** Teil im Funk-Kasten nur neu bauen, wenn sich sein Inhalt geändert hat */
-function funkTeilNeu(sel: string, key: string, bauen: (b: HTMLElement) => void): void {
-  const b = funkEl?.querySelector<HTMLElement>(sel);
-  if (!b || funkSig.get(sel) === key) return;
-  funkSig.set(sel, key);
-  b.innerHTML = "";
-  bauen(b);
-}
-
-/** Kanal (wer spricht), Sprechtaste, Gruppen, Verlauf und Chat; gibt den Stand fürs Handy zurück */
+/** Status und Sprechgruppe ans Funk-Fenster; gibt den Stand fürs Handy zurück (Sprechtaste, wer spricht) */
 function funkPlatzAktualisieren(fz: SimFahrzeug | undefined, e: Einsatz | undefined): { knoepfe: { aktion: string; name: string }[]; kanal: string; sendet: boolean } {
   const ich = funkSendeZustand();
   const hoert = funkEmpfang();
@@ -1917,77 +1868,18 @@ function funkPlatzAktualisieren(fz: SimFahrzeug | undefined, e: Einsatz | undefi
               ? `Funk belegt – ${belegt.funkname} ↔ ${belegt.an?.funkname ?? "LEO"}`
               : "Funk frei";
   const knoepfe = fz ? [{ aktion: "funk", name: "Funk" }] : [];
-  if (!funkEl) return { knoepfe, kanal, sendet: ich?.art === "sendet" };
-  const klasse = ich?.art === "sendet" ? "sendet" : hoert || sendet ? "hoert" : belegt ? "belegt" : "frei";
-  funkTeilNeu(".pvf-kanal", `${kanal}|${klasse}`, (b) => {
-    b.className = `pvf-kanal ${klasse}`;
-    b.innerHTML = `<i></i><span>${esc(kanal)}</span>`;
-  });
-  // das Funkgerät (wie im RTW): Display mit Gruppe und Status
-  const gb = funkEl.querySelector<HTMLElement>(".pvf-geraet");
-  if (gb && !gb.firstChild) {
-    pilotGeraet = funkGeraetErstellen();
-    gb.appendChild(pilotGeraet.el);
-  }
-  pilotGeraet?.refresh();
-  // Sprechgruppen: „Alles hören“
-  const w = funkGruppenWahl();
-  const gsDa = gsGruppeOffen() || sim.kanalVon(e) === "gs";
-  funkTeilNeu(".pvf-gruppen", JSON.stringify([w.allesHoeren, gsDa, sim.kanalVon(e)]), (b) => {
-    const eig = gruppenName(sim.kanalVon(e)) || "RD-NOE-03";
-    b.innerHTML = `<label class="pvf-schalter"><input type="checkbox" ${w.allesHoeren ? "checked" : ""}><span>Alles hören <small>(sonst nur ${esc(eig)})</small></span></label>${gsDa ? `<small>Sprechgruppe wechseln: Pfeile links/rechts am Funkgerät</small>` : ""}`;
-    b.querySelector<HTMLInputElement>("input")!.addEventListener("change", (ev) => funkGruppenSetzen({ allesHoeren: (ev.target as HTMLInputElement).checked }));
-  });
-  const bel = belegung();
-  const hinweis = [bel.taste.funk ? tastenName(bel.taste.funk) : "", bel.globalAn && bel.global.funk ? kuerzelName(bel.global.funk) : "", bel.joy.funk ? "Joystick" : ""].filter(Boolean).join(" · ");
-  funkTeilNeu(".pvf-ptt", `${!!fz}|${hinweis}`, (b) => {
-    if (!fz) {
-      b.innerHTML = `<small>Erst einen Hubschrauber wählen.</small>`;
-      return;
+  if (funkFenster) {
+    const st = fz ? sim.statusDef(fz.status) : null;
+    const status = st ? `${st.nummer} ${st.name}` : undefined;
+    const gr = (gruppenName(sim.kanalVon(e)) || "RD-NOE-03").replace(/^RD-NOE-/, "");
+    const k = `${status}|${gr}`;
+    if (k !== funkProps) {
+      funkProps = k;
+      funkFenster.props({ status, gruppe: gr });
     }
-    const btn = el("button", { class: "pvf-mikro", type: "button", "aria-label": "Sprechtaste (gedrückt halten)", title: `Gedrückt halten zum Sprechen${hinweis ? ` · ${hinweis}` : ""} – „LEO von …“ für die Leitstelle, „75/001 von …“ für ein Fahrzeug` });
-    btn.innerHTML = `<img src="${mikroUrl}" alt="" draggable="false">`;
-    sprechKnopfAnbinden(btn, () => "leo");
-    b.append(btn, el("small", {}, hinweis ? `Sprechtaste: ${hinweis}` : "gedrückt halten"));
-  });
-  funkEl.querySelectorAll<HTMLElement>(".pvf-mikro").forEach((x) => {
-    x.classList.toggle("an", ich?.art === "sendet");
-    x.classList.toggle("wartet", ich?.art === "wartet");
-  });
-  // die letzten Funksprüche (alle hören mit)
-  const alle = (sim.state.funkGespraeche ?? []).filter((g) => gruppeHoerbar(g.kanal) || (!!fz && (g.fzId === fz.id || g.an?.fzId === fz.id))).slice(0, 20);
-  const zeilen = alle
-    .flatMap((g) => g.sprueche.map((x, i) => ({ ...x, g, tt: x.echt ?? (g.echtSeit ?? 0) + i })))
-    .sort((a, b) => a.tt - b.tt)
-    .slice(-12);
-  const mein = fz ? sim.rufname(fz) : "";
-  funkTeilNeu(".pvf-verlauf", zeilen.map((z) => `${z.g.id}|${z.zeit}|${z.text}`).join(";"), (b) => {
-    if (!zeilen.length) {
-      b.innerHTML = `<small>Noch kein Funkverkehr. Sprechtaste halten und z. B. „LEO von ${esc(mein || "C2")}, kommen“.</small>`;
-      return;
-    }
-    for (const z of zeilen) {
-      const meins = !!fz && (z.g.fzId === fz.id || z.g.an?.fzId === fz.id);
-      b.insertAdjacentHTML("beforeend", `<div class="pvf-z${meins ? " meins" : ""}"><span>${esc(uhrzeit(z.zeit))} <b>${esc(z.von)}</b></span>${esc(z.text)}</div>`);
-    }
-    b.scrollTop = b.scrollHeight;
-  });
-  // Chat
-  const cm = sim.state.chat ?? [];
-  funkTeilNeu(".pvf-chatliste", `${cm.length}|${cm[cm.length - 1]?.zeit}`, (b) => {
-    if (!cm.length) b.innerHTML = `<small>Noch keine Nachrichten.</small>`;
-    for (const m of cm.slice(-30)) b.insertAdjacentHTML("beforeend", `<div class="pvf-z${m.von === mp.ich.name ? " meins" : ""}"><span>${esc(uhrzeit(m.zeit))} <b>${esc(m.von)}</b></span>${esc(m.text)}</div>`);
-    b.scrollTop = b.scrollHeight;
-  });
-  if (funkReiter === "chat") mp.ungeleseneChats = 0;
-  const zahl = funkEl.querySelector<HTMLElement>(".pvf-zahl");
-  if (zahl) {
-    zahl.hidden = !mp.ungeleseneChats || funkReiter === "chat";
-    zahl.textContent = String(mp.ungeleseneChats || "");
   }
   return { knoepfe, kanal, sendet: ich?.art === "sendet" };
 }
-
 
 /** Funk-Einstellungen: Mikrofon, Spracherkennung, Lautstärken, Mithören */
 function funkDialog(): void {

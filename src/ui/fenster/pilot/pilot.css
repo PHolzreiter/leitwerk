@@ -361,7 +361,9 @@
 .ap .pv-pop .kl-wsegs.segs{display:flex}
 .ap .pv-sicht{text-transform:uppercase}
 /* bis zum Funk-Fenster mit rolle="pilot": bisheriges Funk-Teil des Piloten im Kasten */
-.ap .pv-funk{background:var(--flaeche);box-shadow:var(--schatten);display:flex;flex-direction:column;min-height:0}
+.ap .pv-funk{display:flex;flex-direction:column;min-height:0}
+.ap .pv-funk>.pvf-ew{flex:1;min-height:0;display:flex;flex-direction:column}
+.ap .pv-funk>.pvf-ew>*{flex:1;min-height:0}
 .ap .pv-pop.steht, .ap .pv-pop.steht .kl-z{animation:none !important}
 .ap .pv-funk{border-radius:12px;overflow:hidden}
 .ap .pvf{display:flex;flex-direction:column;gap:8px;height:100%;min-height:0;padding:10px 12px;box-sizing:border-box}
