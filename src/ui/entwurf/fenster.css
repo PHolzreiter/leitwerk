@@ -50,7 +50,7 @@
   color-scheme: light;
 }
 .ap{box-sizing:border-box;padding:16px;background:var(--grund);color:var(--text);font-family:'Inter',system-ui,sans-serif;font-feature-settings:"tnum" 1,"cv11" 1;font-size:13px;line-height:1.4}
-.ap button{font:inherit;color:inherit}
+:where(.ap) button{font:inherit;color:inherit}
 .fe{background:var(--flaeche);border-radius:12px;box-shadow:var(--schatten);display:flex;flex-direction:column;height:100%;overflow:hidden;container:fenster / size}
 .fe-kopf{display:flex;align-items:center;height:38px;padding:0 6px 0 4px;border-bottom:1px solid var(--trenner);flex:none}
 .tab{all:unset;box-sizing:border-box;display:inline-flex;align-items:center;gap:7px;height:38px;padding:0 10px;font-size:13px;font-weight:600;color:var(--dim);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}

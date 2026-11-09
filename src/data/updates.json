@@ -1,5 +1,16 @@
 [
  {
+  "version": "0.115.0-beta.3",
+  "datum": "2026-11-09",
+  "titel": "Neue Oberfläche komplett",
+  "punkte": [
+   "Alle Fenster neu gestaltet, mit echten Daten",
+   "Spielmenü mit Einstellungen, Spielstand, Multiplayer und Fällen",
+   "Neue Anordnungen für 16:9, zwei Bildschirme und 32:9",
+   "Neue Kartenpunkte, Funk mit LEO, neue Pilotenansicht und neues Handy"
+  ]
+ },
+ {
   "version": "0.115.0-beta.2",
   "datum": "2026-11-09",
   "titel": "Neue Kopfleiste",

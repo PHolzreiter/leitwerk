@@ -1,5 +1,14 @@
 # Änderungen
 
+## 0.115.0-beta.3 – Neue Oberfläche komplett
+- **Alle Fenster neu:** Einsatzliste, RD-/KT-/SEK-Übersicht, Abfrage, Telefon, Fahrzeuge, KH-Status, Funk und Chat, Großeinsatz, Karte – so wie im Entwurf, mit echten Daten
+- **Fensterrahmen und Anordnungen:** Reiter mit Zahlen, Knöpfe im Fensterkopf, Vorlagen 16:9, zwei Bildschirme 16:9 und 32:9, Fußleiste
+- **Spielmenü:** Logo oder Esc – Weiterspielen, Spielstand, Einstellungen (dieselben Seiten wie im Hauptmenü), Multiplayer, Fälle, Zum Hauptmenü
+- **Neue Einstellungsseiten** im Hauptmenü und im Spiel: KH-Aufnahme, Dienstplan-Editor, CSV-Import, Zuordnung, Pilot-Alarmtöne, Funk beim Telefonieren, Überstellungen annehmen
+- **Karte:** neue Kartenpunkte, zusammengefasste Einsätze beim Herauszoomen, Ring bei Sondersignal, Aufnahme-Ring am Krankenhaus
+- **Funk:** Rufname der Leitstelle „LEO“, Funkgeräte wie im Entwurf, Sprechgruppen
+- **Pilot:** neue Pilotenansicht und neues Handy, auch im Großeinsatz (Bereitstellungsraum, Abruf)
+
 ## 0.115.0-beta.2 – Neue Kopfleiste
 - **Neue Leiste oben:** links das Spiel (Pause, Zeitraffer, Uhr, Wetter, welche Einsätze neu kommen), rechts du (welche Anrufe du annimmst, Fenster, Anordnung, Status, Fehler melden)
 - **Schubladen statt Menüs:** Der angeklickte Knopf wird breit, dann fährt das Fenster darunter heraus; beim Schließen umgekehrt
