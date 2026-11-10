@@ -1,5 +1,14 @@
 [
  {
+  "version": "0.115.0-beta.7",
+  "datum": "2026-11-10",
+  "titel": "Schubladen flüssiger",
+  "punkte": [
+   "Schubladen in der Kopfleiste öffnen flüssig, auch beim ersten Mal",
+   "Reiter geht ohne Kerbe ins Fenster über"
+  ]
+ },
+ {
   "version": "0.115.0-beta.6",
   "datum": "2026-11-10",
   "titel": "Ruckeln behoben, Schubladen wie im Hauptmenü",

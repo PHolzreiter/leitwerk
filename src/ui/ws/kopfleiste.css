@@ -686,13 +686,30 @@
   background: transparent !important;
   color: var(--text);
 }
-.kl-pop {
+/* Hülle: schneidet oben an der Unterkante des Reiters ab (seitlich und unten Platz für den Schatten).
+   Darin fährt das Fenster (.kl-pop) nach unten heraus, sein Inhalt (.kl-pin) fährt genau gegenläufig –
+   so steht der Inhalt still und das Fenster wächst von oben nach unten auf, wie die Schublade im Hauptmenü.
+   Nur transform und opacity werden animiert (läuft auf der Grafikkarte, ruckelt nicht). */
+.kl-hb {
   position: absolute;
   top: 100%;
   z-index: 30;
+  overflow: hidden;
+  padding: 0 40px 70px;
+  pointer-events: none;
+}
+.kl-hb.li {
+  left: calc(var(--px, 0px) - 40px);
+}
+.kl-hb.re {
+  right: calc(var(--px, 0px) - 40px);
+}
+.kl-pop {
+  position: relative;
+  pointer-events: auto;
   background: var(--pop);
   color: var(--text);
-  border-radius: 12px;
+  border-radius: var(--rl, 0) var(--rr, 0) 12px 12px;
   box-shadow: var(--pop-schatten);
   padding: 6px;
   box-sizing: border-box;
@@ -705,57 +722,61 @@
   scrollbar-color: var(--linie) transparent;
   text-align: left;
   cursor: default;
-  /* wie die Schublade im Hauptmenü: das Fenster wächst von oben nach unten auf (Inhalt steht still),
-     danach blendet der Inhalt ein */
-  animation: kl-schub 0.5s cubic-bezier(0.65, 0, 0.35, 1) 0.32s both;
+  will-change: transform;
+  animation: kl-schub var(--kl-auf, 0.5s) var(--kl-ease) var(--kl-warte, 0.4s) both;
 }
-.kl-pop > * {
-  animation: kl-inhalt 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) 0.62s both;
+.kl-pin {
+  will-change: transform;
+  animation: kl-gegen var(--kl-auf, 0.5s) var(--kl-ease) var(--kl-warte, 0.4s) both;
 }
-.kl-pop.zu > * {
-  animation: kl-inhaltzu 0.2s ease forwards;
-}
-.kl-pop.li {
-  left: var(--px, 0px);
-  border-top-left-radius: 0;
-}
-.kl-pop.re {
-  right: var(--px, 0px);
-  border-top-right-radius: 0;
-}
-/* ragt das Fenster über den Reiter hinaus, ist die Ecke dort rund */
-.kl-anker.kapp.re .kl-pop {
-  border-top-left-radius: 12px;
-}
-.kl-anker.kapp.li .kl-pop {
-  border-top-right-radius: 12px;
+/* danach blendet der Inhalt ein (wie im Hauptmenü) */
+.kl-pin > * {
+  animation: kl-inhalt 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) calc(var(--kl-warte, 0.4s) + 0.3s) both;
 }
 .kl-pop.zu {
-  animation: kl-schubzu 0.5s cubic-bezier(0.65, 0, 0.35, 1) 0.15s both;
+  animation: kl-schubzu 0.45s var(--kl-ease) 0.12s both;
   pointer-events: none;
+}
+.kl-pop.zu .kl-pin {
+  animation: kl-gegenzu 0.45s var(--kl-ease) 0.12s both;
+}
+.kl-pop.zu .kl-pin > * {
+  animation: kl-inhaltzu 0.16s ease forwards;
 }
 /* ohne erneutes Hereinfahren (Inhalt wird nur aufgefrischt) */
 .kl-pop.steht:not(.zu),
-.kl-pop.steht:not(.zu) > *,
+.kl-pop.steht:not(.zu) .kl-pin,
+.kl-pop.steht:not(.zu) .kl-pin > *,
 .kl-pop.steht .kl-z,
 .kl-pop.neu-gezeichnet:not(.zu),
-.kl-pop.neu-gezeichnet:not(.zu) > * {
+.kl-pop.neu-gezeichnet:not(.zu) .kl-pin,
+.kl-pop.neu-gezeichnet:not(.zu) .kl-pin > * {
   animation: none !important;
 }
 @keyframes kl-schub {
   from {
-    clip-path: inset(0 -60px 100% -60px);
+    transform: translateY(calc(-1 * var(--hh, 400px)));
   }
   to {
-    clip-path: inset(0 -60px -90px -60px);
+    transform: none;
+  }
+}
+@keyframes kl-gegen {
+  from {
+    transform: translateY(var(--hh, 400px));
+  }
+  to {
+    transform: none;
   }
 }
 @keyframes kl-schubzu {
-  from {
-    clip-path: inset(0 -60px -90px -60px);
-  }
   to {
-    clip-path: inset(0 -60px 100% -60px);
+    transform: translateY(calc(-1 * var(--hh, 400px)));
+  }
+}
+@keyframes kl-gegenzu {
+  to {
+    transform: translateY(var(--hh, 400px));
   }
 }
 @keyframes kl-inhalt {
@@ -785,10 +806,7 @@
 }
 .kl-pop .kl-z {
   animation: kl-zeile 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) both;
-  animation-delay: calc(var(--d, 0) * 35ms + 620ms);
-}
-.kl-pop > .kl-z {
-  animation-delay: 0.62s;
+  animation-delay: calc(var(--d, 0) * 30ms + var(--kl-warte, 0.4s) + 0.3s);
 }
 .kl-pop.neu-gezeichnet .kl-z {
   animation-delay: calc(var(--d, 0) * 25ms);
@@ -805,7 +823,8 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .kl-pop,
-  .kl-pop > *,
+  .kl-pin,
+  .kl-pin > *,
   .kl-pop .kl-z,
   .kl-anker,
   .kl-lab {

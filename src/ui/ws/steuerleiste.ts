@@ -190,14 +190,14 @@ export function steuerleisteBauen(kopf: HTMLElement): void {
   let fehlerDatei = "";
   const ankerVon = (k: Lade) => q(`[data-lade="${k}"]`);
   const knopfVon = (k: Lade) => q(`[data-knopf="${k}"]`);
-  const popVon = () => (offen ? q(`[data-lade="${offen}"] > .kl-pop`) : null);
+  const popVon = () => (offen ? q(`[data-lade="${offen}"] > .kl-hb > .kl-pop`) : null);
 
   // ---------------------------------------------------------------- Messen (unsichtbare Kopie)
   let stufen: string[] = [];
   const messKopie = () => {
     const c = kopf.cloneNode(true) as HTMLElement;
     c.removeAttribute("id");
-    c.querySelectorAll(".kl-pop, .kl-tip").forEach((x) => x.remove());
+    c.querySelectorAll(".kl-hb, .kl-pop, .kl-tip").forEach((x) => x.remove());
     c.querySelectorAll(".ein").forEach((x) => x.classList.remove("ein"));
     c.querySelectorAll(".reiter, .kapp").forEach((x) => x.classList.remove("reiter", "kapp"));
     c.setAttribute("aria-hidden", "true");
@@ -300,10 +300,16 @@ export function steuerleisteBauen(kopf: HTMLElement): void {
       if (aR - PW < 8) px = Math.max(aR - (B - 8), aR - PW - 8);
     }
     qa("[data-lab]").forEach((x) => x.classList.toggle("ein", ein.includes(x.dataset.lab!)));
-    anker.style.setProperty("--pw", `${Math.round(pw)}px`);
-    anker.classList.toggle("kapp", pw < PW - 0.5 || px !== 0);
-    pop.style.width = `${PW}px`;
-    pop.style.setProperty("--px", `${Math.round(px)}px`);
+    const rpw = Math.round(pw), rPW = Math.round(PW), rpx = Math.round(px);
+    anker.style.setProperty("--pw", `${rpw}px`);
+    anker.style.setProperty("--px", `${rpx}px`);
+    pop.style.width = `${rPW}px`;
+    // Ecken oben: wo das Fenster genau unter dem Reiter liegt, eckig (geht nahtlos in den Reiter über), sonst rund
+    const buendigNah = rpx === 0;
+    const buendigFern = rpx === 0 && rPW - rpw <= 1;
+    pop.style.setProperty(links ? "--rl" : "--rr", buendigNah ? "0" : "12px");
+    pop.style.setProperty(links ? "--rr" : "--rl", buendigFern ? "0" : "12px");
+    anker.classList.toggle("kapp", !buendigFern);
   }
 
   let geplant = 0;
@@ -331,19 +337,41 @@ export function steuerleisteBauen(kopf: HTMLElement): void {
     offen = k;
     if (k === "anordnung") speichernOffen = false;
     if (k === "fehler" && fehlerDatei) fehlerDatei = "";
-    const pop = el("div", { class: `kl-pop ${anker.classList.contains("li") ? "li" : "re"} ${LADE_CLS[k]}`.trim(), role: "dialog" });
+    const hb = el("div", { class: `kl-hb ${anker.classList.contains("li") ? "li" : "re"}` });
+    const pop = el("div", { class: `kl-pop ${LADE_CLS[k]}`.trim(), role: "dialog" });
     pop.dataset.pop = k;
-    anker.appendChild(pop);
+    hb.appendChild(pop);
+    // erst alles aufbauen und messen (unsichtbar, ohne Bewegung) …
+    pop.style.animationPlayState = "paused";
+    anker.appendChild(hb);
     inhaltBauen(pop, k);
-    anker.classList.add("reiter");
     knopf.classList.add("offen");
     knopf.setAttribute("aria-expanded", "true");
+    const schonEin = new Set(qa(".kl-lab.ein"));
     const c = messKopie();
+    const merkEin = new Map<HTMLElement, boolean>();
     try {
       einklappen(k, c, kopf.clientWidth);
     } finally {
       c.remove();
     }
+    hoeheMerken(pop);
+    // … die Beschriftungen, die einklappen sollen, erst im nächsten Bild – dann laufen Verbreitern und Ausklappen ab
+    // einem fertig gezeichneten Bild los (sonst ruckelt das erste Öffnen)
+    qa(".kl-lab.ein").forEach((x) => {
+      if (schonEin.has(x)) return;
+      merkEin.set(x, true);
+      x.classList.remove("ein");
+    });
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        if (offen !== k || schliesst) return;
+        merkEin.forEach((_, x) => x.classList.add("ein"));
+        anker.classList.add("reiter");
+        pop.style.animationPlayState = "";
+        pop.querySelectorAll<HTMLElement>(".kl-pin, .kl-pin > *, .kl-z").forEach((x) => (x.style.animationPlayState = ""));
+      }),
+    );
     if (k === "fehler") setTimeout(() => pop.querySelector<HTMLTextAreaElement>("textarea")?.focus({ preventScroll: true }), ohneAnimation() ? 0 : 900);
   }
 
@@ -353,6 +381,7 @@ export function steuerleisteBauen(kopf: HTMLElement): void {
     const k = offen;
     const pop = popVon();
     schliesst = true;
+    if (pop) hoeheMerken(pop);
     pop?.classList.add("zu");
     const schnell = ohneAnimation();
     zuTimer = window.setTimeout(
@@ -360,13 +389,13 @@ export function steuerleisteBauen(kopf: HTMLElement): void {
         aufraeumen(k);
         nachTimer = window.setTimeout(() => qa(".kl-lab.ein").forEach((x) => x.classList.remove("ein")), schnell ? 0 : 420);
       },
-      schnell ? 0 : 680,
+      schnell ? 0 : 580,
     );
   }
 
   function aufraeumen(k: Lade): void {
     const anker = ankerVon(k);
-    anker?.querySelector(":scope > .kl-pop")?.remove();
+    anker?.querySelector(":scope > .kl-hb")?.remove();
     anker?.classList.remove("reiter", "kapp");
     const knopf = knopfVon(k);
     knopf?.classList.remove("offen");
@@ -428,15 +457,25 @@ export function steuerleisteBauen(kopf: HTMLElement): void {
   // ---------------------------------------------------------------- Inhalte
 
   function inhaltBauen(pop: HTMLElement, k: Lade): void {
+    let html = "";
     if (k === "wetter") {
       wetterStand = wetterSchluessel();
-      pop.innerHTML = wetterHtml(wetterReiter, gruppenName());
-    } else if (k === "fenster") pop.innerHTML = fensterHtml();
-    else if (k === "anordnung") pop.innerHTML = anordnungHtml();
-    else if (k === "mehr") pop.innerHTML = mehrHtml();
-    else if (k === "update") pop.innerHTML = updateHtml();
-    else if (k === "fehler") pop.innerHTML = fehlerHtml();
+      html = wetterHtml(wetterReiter, gruppenName());
+    } else if (k === "fenster") html = fensterHtml();
+    else if (k === "anordnung") html = anordnungHtml();
+    else if (k === "mehr") html = mehrHtml();
+    else if (k === "update") html = updateHtml();
+    else if (k === "fehler") html = fehlerHtml();
+    // vor dem ersten Bild angehalten (siehe oeffnen)
+    const halt = pop.style.animationPlayState === "paused";
+    pop.innerHTML = `<div class="kl-pin">${html}</div>`;
+    if (halt) pop.querySelectorAll<HTMLElement>(".kl-pin, .kl-pin > *, .kl-z").forEach((x) => (x.style.animationPlayState = "paused"));
     zeichnen();
+  }
+
+  /** Höhe des Fensters für das gegenläufige Herausfahren (Fenster und Inhalt) */
+  function hoeheMerken(pop: HTMLElement): void {
+    pop.style.setProperty("--hh", `${Math.ceil(pop.offsetHeight) + 2}px`);
   }
 
   function fensterHtml(): string {
