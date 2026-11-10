@@ -1,5 +1,15 @@
 [
  {
+  "version": "0.116.0-beta.33",
+  "datum": "2026-11-10",
+  "titel": "X-Plane: Uhrzeit, Wetter, Flugplan",
+  "punkte": [
+   "X-Plane übernimmt Uhrzeit und Wetter von LeitWerk",
+   "Flugplan „LeitWerk“ zum Ziel liegt automatisch in X-Plane",
+   "Hinweise zum Status geben in X-Plane"
+  ]
+ },
+ {
   "version": "0.116.0-beta.32",
   "datum": "2026-11-10",
   "titel": "X-Plane 12, CARLS-Hinweis",

@@ -1,5 +1,11 @@
 # Änderungen
 
+## 0.116.0-beta.33 – X-Plane: Uhrzeit, Wetter, Flugplan
+- **Uhrzeit:** LeitWerk stellt X-Plane auf die Spielzeit (beim Verbinden und wenn sie über eine Minute abweicht, z. B. nach Zeitraffer) – abschaltbar in Pilotenansicht › Cockpit
+- **Wetter:** bei „Wie LeitWerk“ setzt LeitWerk sein Wetter in X-Plane selbst (Wolken, Sicht, Wind und Böen, Niederschlag, Temperatur, Luftdruck, nasse/verschneite Pisten) und passt es an, wenn es sich ändert; bei echtem Wetter in LeitWerk wird X-Plane auf „Real Weather“ gestellt
+- **Flugplan:** bei jedem neuen Ziel (Einsatzort, Bereitstellungsraum, Krankenhaus) liegt der Flugplan „LeitWerk“ in X-Plane unter Output/FMS plans – im GPS/FMS laden; „Flugplan speichern“ schreibt bei X-Plane eine .fms-Datei
+- **Status geben in X-Plane:** Zifferntasten (globale Tasten, auch wenn X-Plane vorne ist) oder Handy-Seite – steht jetzt im Cockpit-Bereich
+
 ## 0.116.0-beta.32 – X-Plane 12, CARLS-Hinweis
 - **X-Plane 12:** LeitWerk sucht jetzt gleichzeitig MSFS und X-Plane 12 (ab 12.1.1, über den eingebauten Webserver von X-Plane – kein Plugin nötig) und verbindet sich mit dem, der läuft. Laufen beide, zählt der, in dem geflogen wird. Position, Höhe, Kurs, Geschwindigkeit, am Boden und Triebwerk kommen 1× pro Sekunde – Karte, Status durch Landung, Ankunftszeiten, Buchen und Großeinsatz funktionieren wie mit MSFS
 - In X-Plane darf „Disable Incoming Traffic“ nicht eingeschaltet sein; das MSFS-Zubehör (H145-Tablet, CARLS, GTN750) wird bei X-Plane ausgeblendet – Tablet über die Handy-Seite (QR-Code)

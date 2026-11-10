@@ -41,7 +41,7 @@ import { efbStarten, tabletApp, tabletAppNeu, tabletAppSetzen, handyAktionen, ha
 import { hpg, hpgAktualisieren, hpgCarlsTest, hpgEinrichten, hpgMissionFuer, hpgStarten, hpgTestNachricht } from "./hpg";
 import { letzterCarls } from "./eingabe";
 import { carlsAn, carlsUmschalten, communityWaehlen, gtn, gtnAn, gtnBereitlegen, gtnSuchen, gtnUmschalten } from "./flugsim";
-import { datenEmpfangen, datenFrisch, dllWaehlen, flugplanSpeichern, flugsim, flugsimAnbinden, flugsimBeenden, flugsimTrennen, flugsimVerbinden, koordText, vorgabe, wetterDialog } from "./flugsim";
+import { datenEmpfangen, datenFrisch, dllWaehlen, flugplanSpeichern, flugsim, flugsimAnbinden, flugsimBeenden, flugsimTrennen, flugsimVerbinden, koordText, vorgabe, wetterDialog, xpAbgleich, xplaneFlugplanBereitlegen, xpZeitUmschalten } from "./flugsim";
 import { IC, wetterHtml, wetterKurz, wetterSchluessel, type WetterReiter } from "../ws/kopfleisteInhalt";
 import { mb, onUpdate, updateImHintergrund, updateInfo, updateStand, updateStandZuruecksetzen } from "../updateDienst";
 import { fehlerBerichtSpeichern } from "../fehlerMelden";
@@ -925,8 +925,31 @@ function cockpitDaten(fz: SimFahrzeug | undefined): Record<string, unknown>[] {
         : null,
     knoepfe: msfsKn,
   });
-  // MSFS-Zubehör (HPG H145, GTN750) gibt es in X-Plane nicht
-  if (xp) return out.concat(cockpitRest(fz).filter((x) => x.k === "handy"));
+  // MSFS-Zubehör (HPG H145, GTN750) gibt es in X-Plane nicht – dafür Uhrzeit, Wetter, Flugplan und Tasten
+  if (xp) {
+    const zeitAn = vorgabe().xpZeit !== false;
+    const wetterLw = (vorgabe().wetter ?? "leitwerk") === "leitwerk";
+    out.push({
+      k: "xpabgleich",
+      t: "X-Plane: Uhrzeit, Wetter, Flugplan",
+      z: xpAbgleich.fehler ? "Fehler" : "läuft",
+      f: xpAbgleich.fehler ? PUNKT.fehl : PUNKT.ok,
+      d: [
+        zeitAn ? xpAbgleich.zeitText || "Uhrzeit wird von LeitWerk übernommen." : "Uhrzeit stellst du in X-Plane selbst ein.",
+        wetterLw ? xpAbgleich.wetterText || "Wetter wird von LeitWerk übernommen." : "Wetter stellst du in X-Plane selbst ein.",
+        xpAbgleich.fmsFehler || (xpAbgleich.fms ? `Flugplan ${xpAbgleich.fms} liegt in X-Plane (Output/FMS plans) – im GPS/FMS laden.` : "Flugplan „LeitWerk“ kommt bei jedem neuen Ziel nach X-Plane (Output/FMS plans)."),
+        xpAbgleich.fehler,
+      ]
+        .filter(Boolean)
+        .join(" "),
+      hinw: "Status geben: Zifferntasten – auch wenn X-Plane vorne ist (globale Tasten, Einstellungen › Tasten) – oder die Handy-Seite. Joystick-Tasten wirken nur, solange LeitWerk im Vordergrund ist.",
+      knoepfe: [
+        { t: zeitAn ? "Uhrzeit: von LeitWerk" : "Uhrzeit: selbst", an: zeitAn, klick: () => xpZeitUmschalten(!zeitAn) },
+        { t: "Wetter …", klick: () => wetterDialog() },
+      ],
+    });
+    return out.concat(cockpitRest(fz).filter((x) => x.k === "handy"));
+  }
   return out.concat(cockpitRest(fz));
 }
 
@@ -1665,6 +1688,7 @@ function gtnZiel(fz: SimFahrzeug | undefined, e: Einsatz | undefined): void {
   const zumBo = !!bo && (["alarmWache", "alarmFunk", "alarmiert", "zumBO"].includes(fz.status) || (fz.status === "amBO" && !zumKh) || abruf);
   const ziel = zumKh && kh ? { ...kh, art: "kh" as const } : zumBo && bo ? { ...bo, name: z?.label ?? "Einsatzort", art: "bo" as const } : null;
   gtnBereitlegen(fz, ziel, { bo, kh });
+  xplaneFlugplanBereitlegen(fz, ziel);
 }
 
 function planText(p: PilotPlan | null | undefined): string {

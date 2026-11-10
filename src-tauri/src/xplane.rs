@@ -64,10 +64,16 @@ fn adresse() -> SocketAddr {
 
 /// Einfaches GET an den Webserver von X-Plane (HTTP/1.1, Connection: close, auch „chunked“)
 fn get(pfad: &str) -> Result<(u16, String), String> {
+    anfrage("GET", pfad, None)
+}
+
+fn anfrage(methode: &str, pfad: &str, rumpf: Option<&str>) -> Result<(u16, String), String> {
     let mut s = TcpStream::connect_timeout(&adresse(), Duration::from_millis(800)).map_err(|e| e.to_string())?;
-    s.set_read_timeout(Some(Duration::from_secs(3))).ok();
+    s.set_read_timeout(Some(Duration::from_secs(5))).ok();
     s.set_write_timeout(Some(Duration::from_secs(3))).ok();
-    write!(s, "GET {pfad} HTTP/1.1\r\nHost: localhost\r\nAccept: application/json\r\nConnection: close\r\n\r\n").map_err(|e| e.to_string())?;
+    let r = rumpf.unwrap_or("");
+    let extra = if rumpf.is_some() { format!("Content-Type: application/json\r\nContent-Length: {}\r\n", r.len()) } else { String::new() };
+    write!(s, "{methode} {pfad} HTTP/1.1\r\nHost: localhost\r\nAccept: application/json\r\n{extra}Connection: close\r\n\r\n{r}").map_err(|e| e.to_string())?;
     let mut roh = Vec::new();
     s.read_to_end(&mut roh).map_err(|e| e.to_string())?;
     antwort_lesen(&roh)
@@ -269,6 +275,57 @@ pub fn xplane_starten(app: AppHandle) {
         }
         status(&app, "aus", "", None);
     });
+}
+
+/// Laufenden Flug in X-Plane ändern (Teil der „Flight Initialization“-Struktur: Uhrzeit, Wetter):
+/// PATCH /api/v3/flight. Fehlertext mit der Antwort von X-Plane.
+#[tauri::command]
+pub async fn xplane_flug(json: String) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let (code, rumpf) = anfrage("PATCH", "/api/v3/flight", Some(&json))?;
+        if code == 200 {
+            Ok(())
+        } else {
+            Err(format!("X-Plane lehnt ab ({code}): {}", rumpf.chars().take(200).collect::<String>()))
+        }
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+/// Ordner von X-Plane 12 (X-Plane schreibt ihn in x-plane_install_12.txt im Benutzerordner)
+fn xplane_ordner() -> Option<std::path::PathBuf> {
+    let mut kandidaten = Vec::new();
+    if let Ok(l) = std::env::var("LOCALAPPDATA") {
+        kandidaten.push(std::path::PathBuf::from(l).join("x-plane_install_12.txt"));
+    }
+    if let Ok(h) = std::env::var("HOME") {
+        let h = std::path::PathBuf::from(h);
+        kandidaten.push(h.join("Library/Preferences/x-plane_install_12.txt"));
+        kandidaten.push(h.join(".x-plane/x-plane_install_12.txt"));
+    }
+    for k in kandidaten {
+        let Ok(text) = std::fs::read_to_string(&k) else { continue };
+        for zeile in text.lines() {
+            let p = std::path::PathBuf::from(zeile.trim());
+            if !zeile.trim().is_empty() && p.join("Output").is_dir() {
+                return Some(p);
+            }
+        }
+    }
+    None
+}
+
+/// Flugplan „<name>.fms“ in X-Plane/Output/FMS plans schreiben; None = X-Plane-Ordner nicht gefunden
+#[tauri::command]
+pub fn xplane_fms(name: String, inhalt: String) -> Result<Option<String>, String> {
+    let Some(x) = xplane_ordner() else { return Ok(None) };
+    let ordner = x.join("Output").join("FMS plans");
+    std::fs::create_dir_all(&ordner).map_err(|e| e.to_string())?;
+    let sauber: String = name.chars().filter(|c| c.is_ascii_alphanumeric() || *c == '_' || *c == '-').collect();
+    let datei = ordner.join(format!("{}.fms", if sauber.is_empty() { "LeitWerk" } else { &sauber }));
+    std::fs::write(&datei, inhalt).map_err(|e| format!("Flugplan nicht schreibbar: {e}"))?;
+    Ok(Some(datei.display().to_string()))
 }
 
 #[tauri::command]

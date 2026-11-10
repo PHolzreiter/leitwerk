@@ -38,6 +38,8 @@ interface Vorgabe {
   carls?: boolean;
   /** HPG H145: App „LeitWerk“ im Tablet eingebaut (Standard aus) */
   tabletApp?: boolean;
+  /** X-Plane 12: Uhrzeit von LeitWerk übernehmen (Standard an) */
+  xpZeit?: boolean;
 }
 export function vorgabe(): Vorgabe {
   try {
@@ -117,6 +119,8 @@ async function zuhoeren(): Promise<void> {
   });
   await listen<SimDaten>("msfs-daten", (ev) => datenEmpfangen(ev.payload, "msfs"));
   await listen<{ zustand: SimZustand; text: string; version: string | null }>("xplane-status", (ev) => {
+    // neu verbunden (oder neuer Flug): Uhrzeit, Wetter und Flugplan neu übergeben
+    if (ev.payload.zustand !== "verbunden" || flugsim.xp.zustand !== "verbunden") xpNeu();
     flugsim.xp = { zustand: ev.payload.zustand, text: ev.payload.text, version: ev.payload.version };
     zusammenfassen();
     geaendert();
@@ -156,6 +160,7 @@ export function datenEmpfangen(d: SimDaten, quelle: Quelle = "test"): void {
   if (flugsim.zustand !== "verbunden" || quelle !== "test") zusammenfassen();
   const fz = fzVon();
   const jetzt = Date.now();
+  if (quelle === "xplane") void xplaneAbgleich(d);
   if (fz && jetzt - letztesSenden >= 900) {
     letztesSenden = jetzt;
     void sim
@@ -298,6 +303,14 @@ export async function flugplanSpeichern(fz: SimFahrzeug, nach: { lat: number; lo
   const fuss = flugsim.daten && datenFrisch() ? flugsim.daten.hoehe : 0;
   const titel = `${fz.kurzname || fz.funkrufname} – ${nach.name}`;
   const datei = ascii(`LeitWerk ${titel}`).replace(/[ .]+/g, "_");
+  if (flugsim.quelle === "xplane") {
+    const inhalt = fmsText({ lat: fz.lat, lon: fz.lon, fuss }, nach);
+    const direkt = inTauri() ? await invoke<string | null>("xplane_fms", { name: datei, inhalt }).catch(() => null) : null;
+    if (direkt) return toast(`Flugplan „${datei}“ in X-Plane (Output/FMS plans) gespeichert – im GPS/FMS laden`);
+    const p2 = await saveTextFile(`${datei}.fms`, inhalt, { name: "X-Plane-Flugplan", extensions: ["fms"] });
+    if (p2) toast("Flugplan gespeichert – nach X-Plane/Output/FMS plans legen und im GPS/FMS laden");
+    return;
+  }
   const pfad = await saveTextFile(`${datei}.pln`, plnText(titel, { lat: fz.lat, lon: fz.lon, fuss }, nach), { name: "MSFS-Flugplan", extensions: ["pln"] });
   if (pfad) toast("Flugplan gespeichert – im MSFS auf der Weltkarte unter „Laden“ öffnen");
 }
@@ -330,7 +343,13 @@ export function wetterDialog(): void {
       ${sim.flugverbotJetzt() ? `<p class="plt-warn">In LeitWerk ist gerade kein Flugbetrieb möglich.</p>` : ""}
       <div class="plt-reiter zwei"><button data-w="leitwerk" class="${wahl === "leitwerk" ? "an" : ""}">Wie LeitWerk</button><button data-w="selbst" class="${wahl === "selbst" ? "an" : ""}">Selbst einstellen</button></div>
       ${
-        wahl === "selbst"
+        flugsim.quelle === "xplane"
+          ? wahl === "selbst"
+            ? `<p>Du stellst das Wetter in X-Plane selbst ein. Achtung: Ob die Leitstelle dich wegen Wetter nicht alarmieren kann, richtet sich weiter nach dem Wetter in LeitWerk.</p>`
+            : echt
+              ? `<p>LeitWerk nutzt <b>echtes Wetter</b> – X-Plane wird auf <b>Real Weather</b> gestellt.</p>`
+              : `<p>LeitWerk stellt sein Wetter in X-Plane <b>selbst ein</b> (Wolken, Sicht, Wind, Niederschlag, Temperatur, Luftdruck) und passt es an, wenn es sich in LeitWerk ändert.</p>`
+          : wahl === "selbst"
           ? `<p>Du stellst das Wetter im MSFS selbst ein. Achtung: Ob die Leitstelle dich wegen Wetter nicht alarmieren kann, richtet sich weiter nach dem Wetter in LeitWerk.</p>`
           : echt
             ? `<p>LeitWerk nutzt <b>echtes Wetter</b>. Im MSFS: <b>Wetter → Live-Wetter</b> einschalten.</p><p class="plt-leise">Beide holen das Wetter aus verschiedenen Quellen – meist ähnlich, aber z. B. die Wolkenuntergrenze kann abweichen.</p>`
@@ -346,7 +365,7 @@ export function wetterDialog(): void {
     );
   };
   zeichnen();
-  openDialog({ title: "Wetter für den Flugsimulator", body, actions: [{ label: "Fertig", kind: "primary" }] });
+  openDialog({ title: "Wetter für den Flugsimulator", body, actions: [{ label: "Fertig", kind: "primary", onClick: () => { xpAbgleich.wetterKey = ""; } }] });
 }
 
 // ------------------------------------------------------------------ PMS50 GTN750: Flugplan automatisch bereitlegen
@@ -426,5 +445,161 @@ export function carlsUmschalten(an: boolean): void {
   vorgabeSetzen({ carls: an });
   if (!an) flugsim.carls = null;
 
+  geaendert();
+}
+
+// ------------------------------------------------------------------ X-Plane 12: Uhrzeit, Wetter, Flugplan
+
+/** Stand des Abgleichs mit X-Plane (für die Anzeige im Cockpit-Bereich) */
+export const xpAbgleich = {
+  zeitSim: 0,
+  zeitReal: 0,
+  wetterKey: "",
+  laeuft: false,
+  fehler: "",
+  pause: 0,
+  zeitText: "",
+  wetterText: "",
+  fms: "",
+  fmsZiel: "",
+  fmsFehler: "",
+};
+
+function xpNeu(): void {
+  xpAbgleich.zeitSim = 0;
+  xpAbgleich.wetterKey = "";
+  xpAbgleich.fmsZiel = "";
+  xpAbgleich.pause = 0;
+}
+
+/** Spielzeit als GMT für X-Plane (Tag im Jahr ab 0, Stunden mit Nachkomma) */
+export function xpZeit(t: number): { day_of_year: number; time_in_24_hours: number } {
+  const d = new Date(t);
+  const tag = Math.floor((Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()) - Date.UTC(d.getUTCFullYear(), 0, 1)) / 86400000);
+  return { day_of_year: tag, time_in_24_hours: +(d.getUTCHours() + d.getUTCMinutes() / 60 + d.getUTCSeconds() / 3600).toFixed(4) };
+}
+
+const NIEDERSCHLAG: Partial<Record<WetterLage, number>> = {
+  niesel: 0.15, leichter_regen: 0.3, regen: 0.55, starkregen: 0.9, gewitter: 0.7, hagel: 0.9, unwetter: 1,
+  schneeregen: 0.5, leichter_schnee: 0.3, schnee: 0.6, starker_schnee: 0.9, eisregen: 0.5,
+};
+
+/** Wetter von LeitWerk als eigenes Wetter für X-Plane (Flight Initialization: weather.definition) */
+export function xpWetter(w: { lage: WetterLage; temp: number; wind: number; boeen: number; richtung: number; sicht: number; druck: number }, lat: number, lon: number, bodenM: number): Record<string, unknown> {
+  const i = LAGE[w.lage];
+  const boden = Math.max(0, bodenM) * 3.28084;
+  const nass = i.art === "regen" || i.art === "schnee" || i.art === "eis";
+  const wolken: Record<string, unknown>[] = [];
+  const schicht = (type: string, cover: number, ab: number, bis: number) => wolken.push({ type, cover_ratio: cover, bases_in_feet_msl: Math.round(boden + ab), tops_in_feet_msl: Math.round(boden + bis) });
+  if (w.lage === "nebel") schicht("stratus", 1, 0, 600);
+  else if (w.lage === "hochnebel") schicht("stratus", 1, 500, 2500);
+  else if (i.art === "gewitter") schicht("cumulunimbus", 0.8, 3000, 30000);
+  else if (i.wolken > 0) {
+    const flach = i.wolken >= 0.85 || nass;
+    schicht(flach ? "stratus" : "cumulus", i.wolken, nass ? 1500 : flach ? 2500 : 4000, nass ? 6000 : flach ? 5500 : 7000);
+  }
+  const kt = w.wind / 1.852;
+  const boe = Math.max(0, (w.boeen - w.wind) / 1.852);
+  const turb = i.heftig ? 0.35 : kt > 15 ? 0.2 : 0.05;
+  const terrain = i.art === "schnee" ? (w.lage === "leichter_schnee" ? "lightly_snowy" : "medium_snowy") : i.art === "eis" ? "lightly_icy" : i.art === "regen" || i.art === "gewitter" ? (w.lage === "niesel" ? "lightly_wet" : w.lage === "starkregen" ? "very_wet" : "medium_wet") : "dry";
+  return {
+    definition: {
+      latitude_in_degrees: +lat.toFixed(4),
+      longitude_in_degrees: +lon.toFixed(4),
+      elevation_in_meters: Math.round(Math.max(0, bodenM)),
+      visibility_in_kilometers: Math.max(0.1, +w.sicht.toFixed(2)),
+      temperature_in_degrees_celsius: Math.round(w.temp),
+      altimeter_setting_in_hpa: Math.round(w.druck),
+      precipitation_ratio: NIEDERSCHLAG[w.lage] ?? 0,
+      clouds: wolken,
+      wind: [
+        { altitude_in_feet_msl: Math.round(boden + 1000), speed_in_knots: Math.round(kt), direction_in_degrees_true: Math.round(w.richtung), gust_increase_in_knots: Math.round(boe), turbulence_ratio: turb },
+        { altitude_in_feet_msl: Math.round(boden + 5000), speed_in_knots: Math.round(kt * 1.4), direction_in_degrees_true: Math.round((w.richtung + 15) % 360), turbulence_ratio: turb / 2 },
+      ],
+    },
+    vertical_speed_in_thermal_in_feet_per_minute: 0,
+    wave_height_in_meters: 0.5,
+    wave_direction_in_degrees: Math.round(w.richtung),
+    terrain_state: terrain,
+    variation_across_region_percentage: 10,
+    evolution_over_time_enum: "static",
+  };
+}
+
+/** Uhrzeit und Wetter von LeitWerk an X-Plane (nur bei Änderung; Uhrzeit, wenn sie über 1 min abweicht) */
+async function xplaneAbgleich(d: SimDaten): Promise<void> {
+  if (!inTauri() || xpAbgleich.laeuft || Date.now() < xpAbgleich.pause) return;
+  const data: Record<string, unknown> = {};
+  if (vorgabe().xpZeit !== false) {
+    const erwartet = xpAbgleich.zeitSim + (Date.now() - xpAbgleich.zeitReal);
+    if (!xpAbgleich.zeitSim || Math.abs(sim.state.zeit - erwartet) > 60_000) data.gmt_time = xpZeit(sim.state.zeit);
+  }
+  let key = "";
+  if ((vorgabe().wetter ?? "leitwerk") === "leitwerk") {
+    const echt = !!sim.settings.wetterEcht;
+    const w = sim.wetterWerte();
+    key = echt ? "echt" : `${w.lage}|${Math.round(w.wind / 10)}|${Math.round(w.richtung / 45)}`;
+    if (key !== xpAbgleich.wetterKey) data.weather = echt ? "use_real_weather" : xpWetter(w, d.lat, d.lon, (d.hoehe - d.agl) / 3.28084);
+  }
+  if (!Object.keys(data).length) return;
+  xpAbgleich.laeuft = true;
+  try {
+    await invoke("xplane_flug", { json: JSON.stringify({ data }) });
+    const uhr = new Date(sim.state.zeit).toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" });
+    if (data.gmt_time) {
+      xpAbgleich.zeitSim = sim.state.zeit;
+      xpAbgleich.zeitReal = Date.now();
+      xpAbgleich.zeitText = `Uhrzeit ${uhr} übernommen`;
+    }
+    if (data.weather) {
+      xpAbgleich.wetterKey = key;
+      xpAbgleich.wetterText = key === "echt" ? "Echtes Wetter (X-Plane: Real Weather)" : `${WETTER_LABEL[sim.wetterWerte().lage]} übernommen (${uhr})`;
+    }
+    xpAbgleich.fehler = "";
+  } catch (e) {
+    xpAbgleich.fehler = String((e as Error)?.message ?? e);
+    xpAbgleich.pause = Date.now() + 60_000;
+  } finally {
+    xpAbgleich.laeuft = false;
+    geaendert();
+  }
+}
+
+/** Flugplan für X-Plane (Format „3 version“, lädt X-Plane 12 weiterhin): Start → Ziel als Koordinaten-Wegpunkte */
+export function fmsText(von: { lat: number; lon: number; fuss: number }, nach: { lat: number; lon: number }): string {
+  const vz = (x: number, n: number) => `${x < 0 ? "-" : "+"}${Math.abs(x).toFixed(3).padStart(n, "0")}`;
+  const zeile = (lat: number, lon: number, fuss: number) => `28 ${vz(lat, 6)}_${vz(lon, 7)} ${Math.round(fuss).toFixed(6)} ${lat.toFixed(6)} ${lon.toFixed(6)}`;
+  return ["I", "3 version", "1", "1", zeile(von.lat, von.lon, von.fuss), zeile(nach.lat, nach.lon, 0), ""].join("\r\n");
+}
+
+/** Spieler fliegt mit X-Plane: Flugplan „LeitWerk“ zum aktuellen Ziel in Output/FMS plans legen */
+export function xplaneFlugplanBereitlegen(fz: SimFahrzeug, ziel: { lat: number; lon: number; name: string; art: "bo" | "kh" } | null): void {
+  if (!inTauri() || flugsim.quelle !== "xplane" || !ziel) return;
+  const key = `${fz.id}|${ziel.art}|${ziel.lat.toFixed(5)},${ziel.lon.toFixed(5)}`;
+  if (key === xpAbgleich.fmsZiel) return;
+  xpAbgleich.fmsZiel = key;
+  const fuss = flugsim.daten && datenFrisch() ? flugsim.daten.hoehe : 0;
+  void invoke<string | null>("xplane_fms", { name: "LeitWerk", inhalt: fmsText({ lat: fz.lat, lon: fz.lon, fuss }, ziel) })
+    .then((pfad) => {
+      if (!pfad) {
+        xpAbgleich.fmsFehler = "X-Plane-Ordner nicht gefunden – Flugplan über „Flugplan speichern“ selbst ablegen.";
+        geaendert();
+        return;
+      }
+      xpAbgleich.fmsFehler = "";
+      xpAbgleich.fms = `„LeitWerk“ zum ${ziel.art === "bo" ? "Einsatzort" : ziel.name}`;
+      toast(`X-Plane: Flugplan „LeitWerk“ zum ${ziel.art === "bo" ? "Einsatzort" : ziel.name} bereit – im GPS/FMS laden`);
+      geaendert();
+    })
+    .catch((e) => {
+      xpAbgleich.fmsFehler = String((e as Error)?.message ?? e);
+      xpAbgleich.fmsZiel = "";
+      geaendert();
+    });
+}
+
+export function xpZeitUmschalten(an: boolean): void {
+  vorgabeSetzen({ xpZeit: an });
+  xpAbgleich.zeitSim = 0;
   geaendert();
 }

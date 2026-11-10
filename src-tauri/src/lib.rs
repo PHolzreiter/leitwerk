@@ -644,6 +644,8 @@ pub fn run() {
             msfs::msfs_dll_suchen,
             xplane::xplane_starten,
             xplane::xplane_stoppen,
+            xplane::xplane_flug,
+            xplane::xplane_fms,
             gtn::gtn_suchen,
             gtn::gtn_schreiben,
             hpg::hpg_starten,
