@@ -1886,7 +1886,7 @@ function tabletDaten(fz: SimFahrzeug | undefined, e: Einsatz | undefined, D: Rec
         ruf: x === fz ? x.kurzname || x.funkrufname : x.funkrufname,
         typ: `${x.rmTyp}${x === fz ? " · du" : ""}`,
         txt: `${d.name}${x.stationName && x !== fz ? ` · ${x.stationName}` : ""}`,
-        eta: r === 0 ? "da" : r < 9e8 ? minuten(r) : "",
+        eta: r > 0 && r < 9e8 ? minuten(r) : "",
         ich: x === fz,
         r,
       };
