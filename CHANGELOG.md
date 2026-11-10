@@ -1,5 +1,9 @@
 # Änderungen
 
+## 0.115.0-beta.8 – Schubladen
+- **Reiter:** bleibt beim Verbreitern rundum rund – eckig wird er erst, wenn das Fenster nach unten aufgeht (beim Schließen umgekehrt)
+- **Inhalt:** erscheint mit dem Fenster, ohne eigenes Einblenden
+
 ## 0.115.0-beta.7 – Schubladen flüssiger
 - **Kopfleiste:** Erst wird der Reiter breit, dann wächst das Fenster daraus nach unten auf – die Bewegung läuft jetzt auf der Grafikkarte und ruckelt auch beim ersten Öffnen nicht mehr
 - **Reiter:** Übergang vom Reiter ins Fenster ohne Kerbe an der Ecke

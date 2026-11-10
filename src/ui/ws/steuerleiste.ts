@@ -383,20 +383,21 @@ export function steuerleisteBauen(kopf: HTMLElement): void {
     schliesst = true;
     if (pop) hoeheMerken(pop);
     pop?.classList.add("zu");
+    ankerVon(k)?.classList.add("schliesst");
     const schnell = ohneAnimation();
     zuTimer = window.setTimeout(
       () => {
         aufraeumen(k);
         nachTimer = window.setTimeout(() => qa(".kl-lab.ein").forEach((x) => x.classList.remove("ein")), schnell ? 0 : 420);
       },
-      schnell ? 0 : 580,
+      schnell ? 0 : 540,
     );
   }
 
   function aufraeumen(k: Lade): void {
     const anker = ankerVon(k);
     anker?.querySelector(":scope > .kl-hb")?.remove();
-    anker?.classList.remove("reiter", "kapp");
+    anker?.classList.remove("reiter", "kapp", "schliesst");
     const knopf = knopfVon(k);
     knopf?.classList.remove("offen");
     knopf?.setAttribute("aria-expanded", "false");

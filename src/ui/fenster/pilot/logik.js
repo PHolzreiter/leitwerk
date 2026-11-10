@@ -18,7 +18,7 @@ export class PilotLogik extends DCLogic {
     if (!S.pp || S.ppZuIst) return;
     clearTimeout(this.pt);
     this.setState({ ppZuIst: true });
-    this.pt = setTimeout(() => this.setState({ pp: "", ppZuIst: false, ppNach: true }), 680);
+    this.pt = setTimeout(() => this.setState({ pp: "", ppZuIst: false, ppNach: true }), 500);
     setTimeout(() => this.setState({ ppNach: false }), 900);
   }
 
@@ -115,7 +115,7 @@ export class PilotLogik extends DCLogic {
       uhr: D.uhr,
       // Wetter: dasselbe Fenster wie in der Kopfleiste (Inhalt zeichnet pilotView nach dem Zeichnen hinein)
       wx: W,
-      wxCls: "pv-wx" + (wxAuf ? " offen" : ""), wxKlick: () => this.wetterUmschalten(), wxZu: S.wxZu ? " zu" : "", wxReiter: wxAuf ? " reiter" : "", wxOffen: wxAuf,
+      wxCls: "pv-wx" + (wxAuf ? " offen" : ""), wxKlick: () => this.wetterUmschalten(), wxZu: S.wxZu ? " zu" : "", wxReiter: wxAuf ? " reiter" + (S.wxZu ? " schliesst" : "") : "", wxOffen: wxAuf,
       flugCls: "pv-flug " + W.flug,
       wxT: Bk >= 1200 ? W.lang : W.grad,
       flugKT: Bk < 640 ? { ok: "✓", gelb: "!", rot: "✕" }[W.flug] : Bk < 900 ? { ok: "Flug ok", gelb: "eingeschränkt", rot: "kein Flug" }[W.flug] : "Flug " + FL[W.flug].replace("kein Flug", "gesperrt"),
@@ -141,7 +141,7 @@ export class PilotLogik extends DCLogic {
       fehlerNochmal: () => this.setState({ fehlerDatei: "", fehlerText: "" }),
       fehlerIn: D.fehlerIn,
       pop: { update: pp === "update", fehler: pp === "fehler", spiel: pp === "spiel" }, ppZu: S.ppZuIst ? " zu" : "", ppZuKlick: () => this.schubladeZu(),
-      ppR: { update: pp === "update" ? " reiter" : "", fehler: pp === "fehler" ? " reiter" : "", spiel: pp === "spiel" ? " reiter" : "" },
+      ppR: (() => { const r = (n) => (pp === n ? " reiter" + (S.ppZuIst ? " schliesst" : "") : ""); return { update: r("update"), fehler: r("fehler"), spiel: r("spiel") }; })(),
       // Hinweis (Verbindung, kein Hubschrauber) und Alarm
       warte: D.warte,
       alarm: !!D.alarm, alT: D.alarm ? D.alarm.t : "", alS: D.alarm ? D.alarm.s : "", alZ: !!(D.alarm && (D.alarm.ziB || D.alarm.ziT)), alZB: D.alarm ? D.alarm.ziB : "", alZT: D.alarm ? (D.alarm.ziB && D.alarm.ziT ? "// " + D.alarm.ziT : D.alarm.ziT) : "",

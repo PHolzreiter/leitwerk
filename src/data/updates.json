@@ -1,5 +1,14 @@
 [
  {
+  "version": "0.115.0-beta.8",
+  "datum": "2026-11-10",
+  "titel": "Schubladen",
+  "punkte": [
+   "Reiter bleibt beim Verbreitern rund, eckig erst beim Aufklappen",
+   "Inhalt erscheint mit dem Fenster"
+  ]
+ },
+ {
   "version": "0.115.0-beta.7",
   "datum": "2026-11-10",
   "titel": "Schubladen flüssiger",

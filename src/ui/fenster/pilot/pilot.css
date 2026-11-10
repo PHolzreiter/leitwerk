@@ -40,8 +40,12 @@
 .ap .pv-verb{max-width:320px;white-space:nowrap;flex:none}
 .ap .pv-heli{flex:none}
 .ap .pv-anker{min-width:0;flex:none;display:flex;align-items:center;border-radius:9px;transition:min-width .38s cubic-bezier(.65,0,.35,1),background .2s ease .2s,box-shadow .2s ease .2s}
-.ap .pv-anker.reiter{z-index:31;min-width:var(--pw,452px);background:var(--pop);box-shadow:0 0 0 1px var(--pop-rand);border-radius:10px 10px 0 0;transition:min-width .38s cubic-bezier(.65,0,.35,1),background .15s,box-shadow .15s}
-.ap .pv-anker.reiter::after{content:"";position:absolute;left:0;right:0;bottom:-3px;height:4px;background:var(--pop);z-index:32}
+.ap .pv-anker.reiter{z-index:31;min-width:var(--pw,452px);background:var(--pop);box-shadow:0 0 0 1px var(--pop-rand);border-radius:10px 10px 0 0;transition:min-width .38s cubic-bezier(.65,0,.35,1),background .15s,box-shadow .15s,border-radius .08s linear .32s}
+.ap .pv-anker.reiter.schliesst{border-radius:10px;transition:min-width .38s cubic-bezier(.65,0,.35,1),background .15s,box-shadow .15s,border-radius .08s linear .45s}
+.ap .pv-anker.reiter::after{content:"";position:absolute;left:0;right:0;bottom:-3px;height:4px;background:var(--pop);z-index:32;animation:pv-strich 0s linear .32s both}
+.ap .pv-anker.reiter.schliesst::after{animation:pv-strichzu 0s linear .45s both}
+@keyframes pv-strich{from{opacity:0}to{opacity:1}}
+@keyframes pv-strichzu{from{opacity:1}to{opacity:0}}
 .ap .pv-anker.reiter .pv-wx, .ap .pv-anker.reiter .pv-ik, .ap .pv-anker.reiter .pv-upd{background:transparent !important;color:var(--text)}
 .ap .pv-anker.re{justify-content:flex-end}
 .ap .pv-pop.re{left:auto;right:0}
@@ -78,9 +82,7 @@
 
 /* wie die Schublade im Hauptmenü: Fenster wächst von oben auf (Inhalt steht still), dann blendet der Inhalt ein; zu: erst Inhalt aus, dann Fenster hoch */
 .ap .pv-pop{box-sizing:border-box;top:100% !important;border-top-right-radius:0;animation:pv-schub .5s cubic-bezier(.65,0,.35,1) .32s both !important}
-.ap .pv-pop>*{animation:pv-inhalt .4s cubic-bezier(.2,.8,.2,1) .62s both}
-.ap .pv-pop.zu{animation:pv-schubzu .5s cubic-bezier(.65,0,.35,1) .15s both !important;pointer-events:none}
-.ap .pv-pop.zu>*{animation:pv-inhaltzu .2s ease forwards}
+.ap .pv-pop.zu{animation:pv-schubzu .45s cubic-bezier(.65,0,.35,1) both !important;pointer-events:none}
 @keyframes pv-schub{from{clip-path:inset(0 -60px 100% -60px)}to{clip-path:inset(0 -60px -90px -60px)}}
 @keyframes pv-schubzu{from{clip-path:inset(0 -60px -90px -60px)}to{clip-path:inset(0 -60px 100% -60px)}}
 @keyframes pv-inhalt{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
@@ -145,8 +147,7 @@
 .ap .kl-keine .ic{color:var(--ok)}
 .ap .kl-wfuss{font-size:11px;color:var(--dim);padding:8px 8px 4px;border-top:1px solid var(--trenner);margin-top:4px;line-height:1.4}
 .ap .kl-hinw{font-size:11.5px;color:var(--dim);line-height:1.35}
-.ap .pv-pop .kl-z{animation:pv-zeile .4s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--d,0) * 35ms + 620ms)}
-.ap .pv-pop>.kl-z{animation-delay:.62s}
+.ap .pv-pop .kl-z{animation:none}
 @keyframes pv-zeile{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
 
 @keyframes pv-auf{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}

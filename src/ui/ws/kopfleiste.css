@@ -666,8 +666,14 @@
   min-width: var(--pw);
   background: var(--pop);
   box-shadow: 0 0 0 1px var(--pop-rand);
+  /* beim Verbreitern rundum rund; erst wenn das Fenster nach unten aufgeht, werden die unteren Ecken eckig */
   border-radius: 10px 10px 0 0;
-  transition: min-width 0.38s var(--kl-ease), background 0.15s, box-shadow 0.15s, border-radius 0.15s;
+  transition: min-width 0.38s var(--kl-ease), background 0.15s, box-shadow 0.15s, border-radius 0.08s linear var(--kl-warte, 0.4s);
+}
+/* zu: erst wenn das Fenster oben ist, werden die Ecken wieder rund */
+.kl-anker.reiter.schliesst {
+  border-radius: 10px;
+  transition: min-width 0.38s var(--kl-ease), background 0.15s, box-shadow 0.15s, border-radius 0.08s linear 0.45s;
 }
 .kl-anker.reiter.re {
   justify-content: flex-end;
@@ -681,7 +687,29 @@
   height: 4px;
   background: var(--pop);
   z-index: 32;
+  /* der Übergang zum Fenster erscheint erst, wenn es nach unten aufgeht */
+  animation: kl-strich 0s linear var(--kl-warte, 0.4s) both;
 }
+.kl-anker.reiter.schliesst::after {
+  animation: kl-strichzu 0s linear 0.45s both;
+}
+@keyframes kl-strich {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes kl-strichzu {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
 .kl-anker.reiter .offen {
   background: transparent !important;
   color: var(--text);
@@ -729,19 +757,12 @@
   will-change: transform;
   animation: kl-gegen var(--kl-auf, 0.5s) var(--kl-ease) var(--kl-warte, 0.4s) both;
 }
-/* danach blendet der Inhalt ein (wie im Hauptmenü) */
-.kl-pin > * {
-  animation: kl-inhalt 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) calc(var(--kl-warte, 0.4s) + 0.3s) both;
-}
 .kl-pop.zu {
-  animation: kl-schubzu 0.45s var(--kl-ease) 0.12s both;
+  animation: kl-schubzu 0.45s var(--kl-ease) both;
   pointer-events: none;
 }
 .kl-pop.zu .kl-pin {
-  animation: kl-gegenzu 0.45s var(--kl-ease) 0.12s both;
-}
-.kl-pop.zu .kl-pin > * {
-  animation: kl-inhaltzu 0.16s ease forwards;
+  animation: kl-gegenzu 0.45s var(--kl-ease) both;
 }
 /* ohne erneutes Hereinfahren (Inhalt wird nur aufgefrischt) */
 .kl-pop.steht:not(.zu),
@@ -805,11 +826,7 @@
   }
 }
 .kl-pop .kl-z {
-  animation: kl-zeile 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) both;
-  animation-delay: calc(var(--d, 0) * 30ms + var(--kl-warte, 0.4s) + 0.3s);
-}
-.kl-pop.neu-gezeichnet .kl-z {
-  animation-delay: calc(var(--d, 0) * 25ms);
+  animation: none;
 }
 @keyframes kl-zeile {
   from {
