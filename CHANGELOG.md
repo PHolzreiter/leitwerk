@@ -1,5 +1,10 @@
 # Änderungen
 
+## 0.116.0-beta.28 – H145: Mission startet von selbst
+- **Mit eingebauter App „LeitWerk“** startet die Mission „LeitWerk Leitstelle“ im Tablet von selbst, sobald LeitWerk läuft und keine andere Mission geladen ist – CARLS-Funkgerät, Briefing und Alarm gehen ohne Umweg über Maps & Missions
+- **Knopf in der App:** „Funkgerät & Tablet verbunden/nicht verbunden“ mit „Verbinden“ (z. B. nach „Abort Mission“ oder wenn LeitWerk später gestartet wurde)
+- Die App wird beim Start von LeitWerk selbst auf den neuen Stand gebracht (Einbauen muss nicht wiederholt werden)
+
 ## 0.116.0-beta.27 – Eigene App im H145-Tablet (Test)
 - **App „LeitWerk“ im Tablet der HPG H145:** Pilotenansicht › Cockpit › „App im H145-Tablet“ › Einbauen (oder Einstellungen › Pilot). Vor dem Start von MSFS einschalten – dann steht beim Start ein eigenes Symbol „LeitWerk“ auf dem Startbildschirm des Tablets. Erste Probe: die App zeigt die LeitWerk-Seite fürs Tablet; die eigentliche Einsatzseite folgt
 - Eingebaut wird nur eine eigene Datei und eine Zeile in tablet.html (Sicherung daneben); „Entfernen“ stellt alles wieder her

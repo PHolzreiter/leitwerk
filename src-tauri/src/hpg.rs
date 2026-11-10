@@ -290,7 +290,7 @@ fn layout_entfernen(paket: &Path, rel: &str) -> Result<(), String> {
 
 /// Inhalt unserer App-Datei (Seite von LeitWerk auf diesem Rechner)
 fn app_js(port: u16) -> String {
-    include_str!("leitwerk-app.js").replace("__URL__", &format!("http://127.0.0.1:{port}/efb"))
+    include_str!("leitwerk-app.js").replace("__URL__", &format!("http://127.0.0.1:{port}/efb")).replace("__MISSION__", &format!("localhost:{PORT}"))
 }
 
 /// Baut die App „LeitWerk“ in das Tablet der H145 ein (an) bzw. wieder aus. Nur eigene Datei + eine Zeile in
@@ -344,7 +344,7 @@ mod tests {
         assert_eq!(tablet_html_neu(&neu, false).unwrap().unwrap(), alt);
         assert!(tablet_html_neu(alt, false).unwrap().is_none());
         assert!(tablet_html_neu("<html></html>", true).is_err());
-        assert!(app_js(47900).contains("http://127.0.0.1:47900/efb") && !app_js(47900).contains("__URL__"));
+        assert!(app_js(47900).contains("http://127.0.0.1:47900/efb") && !app_js(47900).contains("__URL__") && app_js(47900).contains("localhost:40510"));
     }
     #[test]
     fn link_eintragen() {

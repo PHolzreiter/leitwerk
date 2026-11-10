@@ -1,5 +1,14 @@
 [
  {
+  "version": "0.116.0-beta.28",
+  "datum": "2026-11-10",
+  "titel": "H145: Mission startet von selbst",
+  "punkte": [
+   "Mission „LeitWerk Leitstelle“ startet im Tablet von selbst – CARLS geht ohne Umweg über Maps & Missions",
+   "Knopf „Verbinden“ in der App „LeitWerk“"
+  ]
+ },
+ {
   "version": "0.116.0-beta.27",
   "datum": "2026-11-10",
   "titel": "Eigene App im H145-Tablet (Test)",

@@ -37,11 +37,16 @@
   body.quer .rechts { margin-left: 40%; }
   body.quer .st { width: 48%; height: 78px; }
   body.quer .st .n { font-size: 28px; line-height: 32px; }
+  .mission { display: flex; align-items: center; background: #16233a; border: 1px solid #2a3a57; border-radius: 12px; padding: 10px 14px; margin-bottom: 12px; }
+  .mission .t { flex: 1; font-size: 15px; }
+  .mission .t small { display: block; color: #93a6c0; font-size: 13px; }
+  .mission button { font-size: 15px; font-weight: bold; padding: 9px 14px; border-radius: 10px; border: 0; background: #2f6fde; color: #ffffff; cursor: pointer; }
   .code { font-family: "Courier New", monospace; font-weight: bold; padding: 2px 8px; border-radius: 6px; background: #0e1726; margin-right: 8px; }
 </style>
 </head>
 <body>
 <div class="kopf"><div class="name"><b id="heli">LeitWerk</b><small id="unter">verbinde …</small></div><span class="verb" id="verb">offline</span></div>
+<div class="mission versteckt" id="mission"><div class="t"><b id="missionT">Tablet-Mission</b><small id="missionU"></small></div><button id="missionB">Verbinden</button></div>
 <div class="alarm versteckt" id="alarm"></div>
 <div class="spalte links">
   <div class="jetzt" id="jetzt"><span class="n">–</span><span class="t">kein Hubschrauber</span></div>
@@ -127,6 +132,28 @@
       try { zeichnen(JSON.parse(x.responseText)); verbunden(true); } catch (e) { verbunden(false); }
     };
     try { x.send(); } catch (e) { verbunden(false); }
+  }
+  // Im Tablet der H145 (App „LeitWerk“ bzw. Web-App): Mission „LeitWerk Leitstelle“ starten – für CARLS-Funkgerät,
+  // Briefing und Alarm. Das Tablet antwortet mit dem Stand (leitwerk-app.js).
+  if (window.parent && window.parent !== window) {
+    var mStand = null;
+    window.addEventListener("message", function (ev) {
+      var d = ev && ev.data;
+      if (!d || d.leitwerk !== "missionStand") return;
+      mStand = d;
+      zeige($("mission"), true);
+      $("missionT").textContent = d.laeuft ? "Funkgerät & Tablet verbunden" : "Funkgerät & Tablet nicht verbunden";
+      $("missionU").textContent = d.laeuft ? "Mission „LeitWerk Leitstelle“ läuft" : d.andere ? "Im Tablet läuft gerade eine andere Mission" : "Mission „LeitWerk Leitstelle“ starten";
+      $("missionB").style.display = d.laeuft ? "none" : "";
+    });
+    $("missionB").onclick = function () {
+      try { window.parent.postMessage({ leitwerk: "mission" }, "*"); } catch (e) {}
+    };
+    var fragen = function () {
+      try { window.parent.postMessage({ leitwerk: "stand" }, "*"); } catch (e) {}
+    };
+    fragen();
+    setInterval(fragen, 2000);
   }
   // Hoch- oder Querformat (das Tablet kann beides)
   function format() { document.body.className = window.innerWidth > window.innerHeight * 1.1 ? "quer" : ""; }
