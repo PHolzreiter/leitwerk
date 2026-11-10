@@ -144,7 +144,7 @@
       zeige($("mission"), true);
       $("missionT").textContent = d.laeuft ? "Funkgerät & Tablet verbunden" : "Funkgerät & Tablet nicht verbunden";
       $("missionU").textContent = d.laeuft ? "Mission „LeitWerk Leitstelle“ läuft" : d.andere ? "Im Tablet läuft gerade eine andere Mission" : "Mission „LeitWerk Leitstelle“ starten";
-      $("missionB").style.display = d.laeuft ? "none" : "";
+      $("missionB").textContent = d.laeuft ? "Neu verbinden" : "Verbinden";
     });
     $("missionB").onclick = function () {
       try { window.parent.postMessage({ leitwerk: "mission" }, "*"); } catch (e) {}

@@ -200,6 +200,10 @@ const PFEILE_MS = 3000;
 const VORMERK_MS = 1000;
 let letzteAnzeige = "";
 let anzeigeAb = 0;
+let letzteSendung = 0;
+/** auch ohne Änderung regelmäßig neu schicken: das CARLS hört erst ein paar Sekunden nach dem Laden zu (sonst bliebe
+ * „Connect a mission to begin“ stehen, wenn die Mission sehr früh startet – Beta 28, Paul 10.11.) */
+const ANZEIGE_AUFFRISCHEN_MS = 4000;
 
 function carlsTaste(t: string): void {
   if (!carlsAn()) return;
@@ -384,8 +388,9 @@ function carlsTakt(): void {
   if (!fz) return;
   const d = carlsDaten(fz);
   const html = d.Items[0][0];
-  if (html === letzteAnzeige) return;
+  if (html === letzteAnzeige && Date.now() - letzteSendung < ANZEIGE_AUFFRISCHEN_MS) return;
   letzteAnzeige = html;
+  letzteSendung = Date.now();
   senden({ exec_commands: [{ set_carls_radio: d }] });
 }
 

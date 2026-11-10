@@ -1,5 +1,14 @@
 [
  {
+  "version": "0.116.0-beta.29",
+  "datum": "2026-11-10",
+  "titel": "H145: CARLS-Verbindung zuverlässiger",
+  "punkte": [
+   "CARLS bekommt seine Anzeige regelmäßig neu – auch wenn die Mission sehr früh startet",
+   "„Neu einbauen“ für die App im H145-Tablet, „Neu verbinden“ in der App"
+  ]
+ },
+ {
   "version": "0.116.0-beta.28",
   "datum": "2026-11-10",
   "titel": "H145: Mission startet von selbst",

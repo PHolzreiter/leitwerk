@@ -76,6 +76,13 @@ export async function tabletLinkPruefen(community?: string | null): Promise<void
   if (vorgabe().tabletApp) await tabletAppSetzen(true, community, true);
 }
 
+/** App „LeitWerk“ neu einbauen (entfernen und wieder einbauen) – falls etwas hängt */
+export async function tabletAppNeu(): Promise<void> {
+  await tabletAppSetzen(false, null, true);
+  await tabletAppSetzen(true, null, true);
+  if (!tabletApp.fehler) toast("H145-Tablet: App „LeitWerk“ neu eingebaut – wirkt beim nächsten Start von MSFS");
+}
+
 /** Zustand der App „LeitWerk“ im H145-Tablet (für die Anzeige) */
 export const tabletApp = { fehler: "" };
 
@@ -93,7 +100,7 @@ export async function tabletAppSetzen(an: boolean, community?: string | null, st
     tabletApp.fehler = "";
     if (r === null) {
       if (!still) toast("HPG H145 im Community-Ordner nicht gefunden", "error");
-    } else if (r && (!still || an)) {
+    } else if (r && !still) {
       toast(an ? "H145-Tablet: App „LeitWerk“ eingebaut – erscheint beim nächsten Start von MSFS auf dem Startbildschirm" : "H145-Tablet: App „LeitWerk“ entfernt – ab dem nächsten Start von MSFS");
     } else if (!still) {
       toast(an ? "H145-Tablet: App „LeitWerk“ ist schon eingebaut" : "H145-Tablet: App „LeitWerk“ ist nicht eingebaut");

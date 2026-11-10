@@ -36,7 +36,7 @@ import { ALARM_AUFNAHMEN, ALARM_STANDARD, ALARM_VORLAGEN, alarmPrefs, alarmPrefs
 import { dateiLoeschen } from "../sounds";
 import { ablageZeigen } from "../../net/ablage";
 import { flugEingeschraenkt, flugverbot } from "../../sim/weather";
-import { efbStarten, tabletApp, tabletAppSetzen, handyAktionen, handyBuchung, handyDialog, handyLaeuft, handyStand, handyStandBauen } from "./handy";
+import { efbStarten, tabletApp, tabletAppNeu, tabletAppSetzen, handyAktionen, handyBuchung, handyDialog, handyLaeuft, handyStand, handyStandBauen } from "./handy";
 import { hpg, hpgAktualisieren, hpgCarlsTest, hpgEinrichten, hpgMissionFuer, hpgStarten, hpgTestNachricht } from "./hpg";
 import { letzterCarls } from "./eingabe";
 import { carlsAn, carlsUmschalten, communityWaehlen, gtn, gtnAn, gtnBereitlegen, gtnSuchen, gtnUmschalten } from "./flugsim";
@@ -962,7 +962,12 @@ function cockpitDaten(fz: SimFahrzeug | undefined): Record<string, unknown>[] {
         : an
           ? "Symbol „LeitWerk“ auf dem Startbildschirm des Tablets (ab dem nächsten Start von MSFS)."
           : "Baut ein eigenes Symbol „LeitWerk“ ins Tablet ein – am besten vor dem Start von MSFS.",
-      knoepfe: [{ t: an ? "Entfernen" : "Einbauen", klick: () => void tabletAppSetzen(!an).then(() => zeichneAlles()) }],
+      knoepfe: an
+        ? [
+            { t: "Neu einbauen", klick: () => void tabletAppNeu().then(() => zeichneAlles()) },
+            { t: "Entfernen", klick: () => void tabletAppSetzen(false).then(() => zeichneAlles()) },
+          ]
+        : [{ t: "Einbauen", klick: () => void tabletAppSetzen(true).then(() => zeichneAlles()) }],
     });
   }
   if (gtn.geprueft) {

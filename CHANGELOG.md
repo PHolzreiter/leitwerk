@@ -1,5 +1,10 @@
 # Änderungen
 
+## 0.116.0-beta.29 – H145: CARLS-Verbindung zuverlässiger
+- **CARLS:** die Anzeige wird alle paar Sekunden neu geschickt – startet die Mission sehr früh (von selbst beim Start von MSFS), hört das Funkgerät noch nicht zu und blieb bei „Connect a mission to begin“ stehen
+- **App im H145-Tablet:** Knopf „Neu einbauen“ (Pilotenansicht › Cockpit); die App bringt sich beim Start von LeitWerk weiterhin selbst auf den neuen Stand
+- In der App „LeitWerk“: „Neu verbinden“, auch wenn die Mission schon läuft
+
 ## 0.116.0-beta.28 – H145: Mission startet von selbst
 - **Mit eingebauter App „LeitWerk“** startet die Mission „LeitWerk Leitstelle“ im Tablet von selbst, sobald LeitWerk läuft und keine andere Mission geladen ist – CARLS-Funkgerät, Briefing und Alarm gehen ohne Umweg über Maps & Missions
 - **Knopf in der App:** „Funkgerät & Tablet verbunden/nicht verbunden“ mit „Verbinden“ (z. B. nach „Abort Mission“ oder wenn LeitWerk später gestartet wurde)
