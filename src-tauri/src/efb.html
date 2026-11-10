@@ -684,8 +684,8 @@
       var g = null;
       for (var n = 0; n < b.khs.length; n++) if (b.khs[n].id === khWahl) g = b.khs[n];
       if (!g || b.gebuchtId === g.id) return;
-      frageOffen = { t: g.n + " buchen? Der Platz wird belegt – wie in der Leitstelle.", ja: "Buchen", f: function () { senden("bu:kh:" + g.id); } };
-      buchenZeichnen();
+      // ohne Rückfrage buchen (Paul 10.11.2026)
+      senden("bu:kh:" + g.id);
     };
     if ($("fja")) $("fja").onclick = function () { var f = frageOffen.f; frageOffen = null; f(); buchenZeichnen(); };
     if ($("fnein")) $("fnein").onclick = function () { frageOffen = null; buchenZeichnen(); };
