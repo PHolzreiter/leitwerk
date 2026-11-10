@@ -11,14 +11,16 @@
   Karte: Kacheln von basemap.at (CC BY 4.0, „Datenquelle: basemap.at“), nur Österreich.
 -->
 <style>
-  @font-face { font-family: "LWInter"; src: url("/schrift/400.woff") format("woff"); font-weight: 400; }
-  @font-face { font-family: "LWInter"; src: url("/schrift/600.woff") format("woff"); font-weight: 600; }
-  @font-face { font-family: "LWInter"; src: url("/schrift/700.woff") format("woff"); font-weight: 700; }
+  @font-face { font-family: "LWInter"; src: url("/schrift/400.ttf") format("truetype"); font-weight: 400; }
+  @font-face { font-family: "LWInter"; src: url("/schrift/600.ttf") format("truetype"); font-weight: 600; }
+  @font-face { font-family: "LWInter"; src: url("/schrift/700.ttf") format("truetype"); font-weight: 700; }
   html, body { margin: 0; padding: 0; height: 100%; background: #0E0F12; color: #F5F7FA; font-family: "LWInter", Arial, Helvetica, sans-serif; font-size: 14px; overflow: hidden; }
   * { box-sizing: border-box; }
   button { font-family: inherit; color: inherit; }
   .versteckt { display: none !important; }
-  #app { position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
+  /* Ränder frei lassen: oben liegt die Leiste des Tablets (H145: Uhr/Akku, Antippen öffnet ein anderes Menü; EFB: Datum),
+     unten die Symbolleiste des EFB. Gleich in beiden Tablets. */
+  #app { position: absolute; left: 0; top: 46px; right: 0; bottom: 62px; overflow: hidden; border-top: 1px solid #23262F; border-bottom: 1px solid #23262F; }
   /* Kopf */
   .kopf { position: absolute; left: 0; right: 0; top: 0; height: 56px; display: flex; align-items: center; padding: 0 10px 0 14px; background: #13151A; border-bottom: 1px solid #23262F; }
   .kopf .h { flex: 1; min-width: 0; line-height: 1.25; }
@@ -55,10 +57,12 @@
   .alarmb button { margin-left: auto; border: 0; border-radius: 7px; padding: 6px 10px; background: rgba(255,255,255,0.92); color: #B42318; font-weight: 700; font-size: 12.5px; cursor: pointer; }
   .alarmb .q { margin-left: auto; font-size: 12px; font-weight: 600; background: rgba(255,255,255,0.18); padding: 3px 8px; border-radius: 6px; }
   .code { padding: 10px 12px; border-radius: 10px; background: #1E2129; }
-  .stufe { display: inline-block; padding: 3px 8px; border-radius: 5px; font-size: 12px; font-weight: 700; color: #FFFFFF; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 6px; }
-  .code-nr { font-size: 15px; font-weight: 700; letter-spacing: 0.02em; margin-bottom: 1px; }
-  .code-n { font-size: 15px; font-weight: 700; line-height: 1.3; }
-  .code-d { font-size: 13px; color: #C4CAD6; margin-top: 4px; }
+  .code { padding: 12px; }
+  .code-k { margin-bottom: 7px; }
+  .stufe { display: inline-block; padding: 3px 8px; border-radius: 5px; font-size: 12px; font-weight: 700; color: #FFFFFF; text-transform: uppercase; letter-spacing: 0.04em; margin-right: 8px; vertical-align: middle; }
+  .code-nr { display: inline-block; font-size: 14px; font-weight: 700; letter-spacing: 0.03em; color: #C4CAD6; vertical-align: middle; }
+  .code-n { font-size: 17px; font-weight: 700; line-height: 1.3; }
+  .code-d { display: inline-block; font-size: 13.5px; color: #E2E6EE; margin-top: 8px; padding: 4px 9px; border-radius: 6px; background: #2A2E38; }
   .gs { margin-top: 8px; padding: 8px 10px; border-radius: 8px; background: #3a3020; color: #FFD866; font-size: 13px; }
   .reihe { display: flex; align-items: flex-start; margin-top: 10px; }
   .reihe .lbl { width: 72px; flex: none; margin: 3px 0 0; }
@@ -106,16 +110,91 @@
   .hinweis { padding: 9px 11px; border-radius: 9px; background: #1E2129; color: #C4CAD6; font-size: 13.5px; }
   .plan { padding: 9px 11px; border-radius: 9px; background: rgba(76,195,138,0.12); color: #4CC38A; font-size: 13.5px; font-weight: 600; margin-top: 10px; }
   /* Patient */
-  .sicht { display: flex; align-items: center; padding: 11px 14px; border-radius: 10px; color: #FFFFFF; margin-bottom: 10px; }
-  .sicht b { font-size: 20px; letter-spacing: 0.06em; margin-right: 12px; }
-  .pwer { font-size: 17px; font-weight: 700; margin-bottom: 8px; }
-  .zst div { display: inline-block; vertical-align: top; width: 48%; margin: 0 1% 8px 0; background: #1E2129; border-radius: 9px; padding: 8px 10px; }
-  .zst small { display: block; font-size: 10.5px; color: #9AA3B5; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
-  .zst b { font-size: 14px; }
-  .zst b.w { color: #FFD866; }
-  .txt { font-size: 13.5px; color: #C4CAD6; line-height: 1.5; }
-  .verl div { font-size: 13px; color: #C4CAD6; padding: 3px 0; }
-  .verl span { color: #9AA3B5; margin-right: 8px; }
+  .pk { border-radius: 12px; background: #1E2129; overflow: hidden; }
+  .pk-band { display: flex; align-items: center; padding: 8px 12px; font-size: 12.5px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+  .pk-band b { display: inline-block; min-width: 28px; padding: 1px 6px; margin-right: 8px; border-radius: 5px; background: rgba(0,0,0,0.16); text-align: center; font-size: 14px; }
+  .pk-band span { margin-left: auto; text-transform: none; letter-spacing: 0; font-weight: 600; opacity: 0.85; }
+  .pk-in { padding: 12px 12px 13px; }
+  .pk-wer { font-size: 20px; font-weight: 700; line-height: 1.2; }
+  .pk-vd { margin-top: 10px; padding: 9px 11px; border-radius: 9px; background: #262A34; }
+  .pk-vd small, .vit small, .befund small { display: block; font-size: 10.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #9AA3B5; margin-bottom: 2px; }
+  .pk-vd b { font-size: 16px; line-height: 1.3; }
+  .vit { margin: 10px -4px 0; }
+  .vit div { display: inline-block; vertical-align: top; width: 48%; margin: 0 1%; padding: 9px 11px; border-radius: 9px; background: #262A34; }
+  .vit b { font-size: 15px; }
+  .vit i { display: inline-block; width: 9px; height: 9px; border-radius: 5px; margin-right: 7px; vertical-align: 1px; }
+  .befund { margin-top: 12px; }
+  .befund div { position: relative; padding: 6px 0 6px 18px; font-size: 14px; color: #E2E6EE; border-top: 1px solid #262A34; }
+  .befund div:first-of-type { border-top: 0; }
+  .befund div:before { content: ""; position: absolute; left: 3px; top: 13px; width: 6px; height: 6px; border-radius: 3px; background: #9AA3B5; }
+  .empf { margin-top: 10px; padding: 10px 12px; border-radius: 9px; background: rgba(59,139,255,0.14); border: 1px solid rgba(59,139,255,0.35); color: #CFE0FF; font-size: 14px; font-weight: 600; }
+  .empf small { display: block; font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: #7FB0FF; margin-bottom: 2px; }
+  .warn { margin-top: 10px; padding: 9px 11px; border-radius: 9px; background: #3a3020; color: #FFD866; font-size: 13.5px; font-weight: 600; }
+  .ziel { display: flex; align-items: center; padding: 10px 12px; border-radius: 10px; background: #1E2129; }
+  .ziel .w { flex: 1; min-width: 0; font-size: 14.5px; font-weight: 600; }
+  .ziel .w small { display: block; font-size: 12px; color: #9AA3B5; font-weight: 400; }
+  .ziel button { border: 0; border-radius: 8px; padding: 8px 12px; background: #3B8BFF; color: #111216; font-weight: 700; font-size: 13px; cursor: pointer; margin-left: 10px; }
+  .ziel button.aus { background: #20242A; color: #6B7385; }
+  .zitat { padding: 9px 12px; border-left: 3px solid #3A4150; color: #C4CAD6; font-size: 14px; font-style: italic; }
+  .tl div { position: relative; padding: 0 0 12px 22px; font-size: 13.5px; color: #C4CAD6; }
+  .tl div:before { content: ""; position: absolute; left: 4px; top: 5px; width: 8px; height: 8px; border-radius: 4px; background: #3B8BFF; }
+  .tl div:after { content: ""; position: absolute; left: 7px; top: 15px; bottom: -3px; width: 2px; background: #2A2F3A; }
+  .tl div:last-child:after { display: none; }
+  .tl span { display: block; font-size: 12px; color: #9AA3B5; font-weight: 600; }
+  /* Großeinsatz */
+  .gsk { margin-top: 10px; border-radius: 12px; background: #1E2129; overflow: hidden; }
+  .gsk-auf { padding: 11px 12px; background: rgba(59,139,255,0.14); border-bottom: 1px solid rgba(59,139,255,0.3); }
+  .gsk-auf small { display: block; font-size: 10.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #7FB0FF; margin-bottom: 3px; }
+  .gsk-auf b { font-size: 15px; line-height: 1.35; }
+  .gsk-auf.abruf { background: rgba(255,199,44,0.14); border-bottom-color: rgba(255,199,44,0.35); }
+  .gsk-auf.abruf small { color: #FFD866; }
+  .balken { height: 6px; border-radius: 3px; background: #2A2F3A; margin-top: 8px; overflow: hidden; }
+  .balken i { display: block; height: 6px; background: #FFC72C; }
+  .schritte { padding: 10px 12px 2px; white-space: nowrap; overflow: hidden; }
+  .schritte span { display: inline-block; font-size: 11.5px; font-weight: 600; color: #6B7385; margin-right: 4px; }
+  .schritte span:after { content: " ›"; color: #3A4150; }
+  .schritte span:last-child:after { content: ""; }
+  .schritte span.ok { color: #4CC38A; }
+  .schritte span.jetzt { color: #F5F7FA; }
+  .gsw { padding: 6px 12px 10px; }
+  .gsw div { display: flex; padding: 5px 0; font-size: 13.5px; border-top: 1px solid #262A34; }
+  .gsw div:first-child { border-top: 0; }
+  .gsw span { width: 130px; flex: none; color: #9AA3B5; }
+  .gsw b { flex: 1; min-width: 0; font-weight: 600; }
+  .zahlen { margin: 0 -3px; }
+  .zahlen div { display: inline-block; vertical-align: top; width: 18.6%; margin: 0 0.7%; padding: 8px 0 7px; border-radius: 9px; background: #1E2129; text-align: center; border-top: 3px solid #6B7385; }
+  .zahlen b { display: block; font-size: 20px; }
+  .zahlen small { font-size: 11px; color: #9AA3B5; }
+  .wsl div { display: flex; align-items: center; padding: 7px 10px; border-radius: 8px; background: #1E2129; margin-bottom: 5px; font-size: 13.5px; }
+  .wsl div.du { box-shadow: inset 0 0 0 2px #3B8BFF; }
+  .wsl div.weg { opacity: 0.55; }
+  .wsl span { width: 26px; font-weight: 800; color: #9AA3B5; }
+  .wsl b { flex: 1; min-width: 0; }
+  .wsl small { color: #9AA3B5; font-size: 12px; }
+  .meld div { padding: 7px 0; border-top: 1px solid #23262F; font-size: 13.5px; color: #C4CAD6; }
+  .meld div:first-child { border-top: 0; }
+  .meld span { display: inline-block; width: 46px; color: #9AA3B5; font-weight: 600; }
+  /* Fakten vor Ort */
+  .fakt div { display: flex; padding: 7px 0; border-top: 1px solid #262A34; font-size: 14px; }
+  .fakt div:first-of-type { border-top: 0; }
+  .fakt div { display: block; }
+  .fakt span { display: block; color: #9AA3B5; font-size: 12.5px; margin-bottom: 1px; }
+  .fakt b { display: block; font-weight: 600; }
+  .fakt b.w { color: #FFD866; }
+  .fakt div { padding-left: 0; }
+  .fakt div:before { display: none; }
+  .mpat div { display: flex; align-items: center; padding: 7px 10px; border-radius: 8px; background: #262A34; margin-top: 6px; font-size: 13.5px; }
+  .mpat i { width: 10px; height: 10px; border-radius: 5px; margin-right: 9px; }
+  /* Symptom-Suche mit Dropdown */
+  .such { position: relative; margin-bottom: 8px; }
+  .such .feld { margin-bottom: 0; }
+  .dd { display: none; position: absolute; left: 0; right: 0; top: 41px; z-index: 5; max-height: 290px; overflow-y: auto; background: #20242C; border: 1px solid #3B8BFF; border-radius: 0 0 9px 9px; box-shadow: 0 14px 30px rgba(0,0,0,0.5); }
+  .such.offen .feld { border-color: #3B8BFF; border-radius: 8px 8px 0 0; }
+  .such.offen .dd { display: block; }
+  .dd small { display: block; padding: 7px 12px 4px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #9AA3B5; }
+  .dd button { display: block; width: 100%; text-align: left; border: 0; border-top: 1px solid #2A2F3A; background: transparent; color: #F5F7FA; padding: 10px 12px; font-size: 14px; cursor: pointer; }
+  .dd button:hover, .dd button:active { background: rgba(59,139,255,0.16); }
+  .dd .nix { padding: 10px 12px; color: #9AA3B5; font-size: 13.5px; }
   /* Blätter (Buchen, Status) */
   .dunkel { position: absolute; left: 0; right: 0; top: 0; bottom: 0; background: rgba(0,0,0,0.5); }
   .blatt { position: absolute; left: 0; right: 0; bottom: 0; top: 96px; background: #1A1D24; border-radius: 16px 16px 0 0; box-shadow: 0 -1px 0 #2E3340, 0 -20px 50px rgba(0,0,0,0.55); }
@@ -198,6 +277,8 @@
   var frageOffen = null;
   var suchFeld = null;
   var suchTimer = 0;
+  var suchOffen = false;
+  var selbstBuchen = false;
   var navAuf = false;
   var letzt = "";
   var KACHEL = "https://mapsneu.wien.gv.at/basemap/geolandbasemap/normal/google3857/";
@@ -369,6 +450,17 @@
     if (navAuf) { grosseKarte.setzen(t.karte); $("navAlle").className = "nk" + (t.karte && t.karte.alle ? " on" : ""); }
   }
 
+  var GS_SCHRITTE = ["Alarm", "Bereitstellungsraum", "Abruf", "Einsatzort", "Patient"];
+  function gsZeichnen(g) {
+    var h = '<div class="gsk"><div class="gsk-auf' + (g.abruf ? " abruf" : "") + '"><small>' + (g.abruf ? "Abruf durch die Einsatzleitung" : "Dein Auftrag") + "</small><b>" + esc(g.auftrag) + "</b>" +
+      (g.abruf && g.abruf.pct ? '<div class="balken"><i style="width:' + esc(g.abruf.pct) + '%"></i></div>' : "") + "</div>";
+    h += '<div class="schritte">';
+    for (var i = 0; i < GS_SCHRITTE.length; i++) h += '<span class="' + (i < g.schritt ? "ok" : i === g.schritt ? "jetzt" : "") + '">' + (i < g.schritt ? "✓ " : "") + GS_SCHRITTE[i] + "</span>";
+    h += '</div><div class="gsw">';
+    for (i = 0; i < (g.werte || []).length; i++) h += "<div><span>" + esc(g.werte[i].l) + "</span><b>" + esc(g.werte[i].v) + "</b></div>";
+    return h + "</div></div>";
+  }
+
   function transportZeichnen(t) {
     var e = t.ein, h = "", i;
     if (t.alarm) {
@@ -376,13 +468,30 @@
       for (i = 0; i < kn.length; i++) if (kn[i].nummer === "9") q = kn[i];
       h += '<div class="alarmb">ALARM<small>' + esc(t.alarm.zeit) + "</small>" + (t.alarm.quitt ? '<span class="q">Status 9 – quittiert</span>' : q ? '<button data-akt="' + esc(q.aktion) + '">9 Quittieren</button>' : "") + "</div>";
     }
-    h += '<div class="ab"><div class="code">' + (e.stufe ? '<div class="stufe" style="background:' + esc(e.sf) + '">' + esc(e.stufe) + "</div>" : "") +
-      '<div class="code-nr">' + esc(e.code) + '</div><div class="code-n">' + esc(e.sw) + "</div>" + (e.zi ? '<div class="code-d">' + esc(e.zi) + "</div>" : "") + "</div>" +
-      (e.gs ? '<div class="gs">' + esc(e.gs) + "</div>" : "") +
+    h += '<div class="ab"><div class="code">' + '<div class="code-k">' + (e.stufe ? '<span class="stufe" style="background:' + esc(e.sf) + '">' + esc(e.stufe) + "</span>" : "") +
+      '<span class="code-nr">' + esc(e.code) + '</span></div><div class="code-n">' + esc(e.sw) + "</div>" + (e.zi ? '<div class="code-d">' + esc(e.zi) + "</div>" : "") + "</div>" +
+      (e.gs && !t.gs ? '<div class="gs">' + esc(e.gs) + "</div>" : "") +
       '<div class="reihe"><span class="lbl">Ort</span><div class="w"><b>' + esc(e.adr) + "</b></div></div>" +
       (e.zusatz ? '<div class="reihe"><span class="lbl">Zusatz</span><div class="w">' + esc(e.zusatz) + "</div></div>" : "") +
+      (t.gs ? gsZeichnen(t.gs) : "") +
       '<div class="karte klein" id="kk"></div></div>';
+    if (t.gs && t.gs.zahlen) {
+      h += '<div class="ab"><span class="lbl">Lage am Einsatzort</span><div class="zahlen">';
+      for (i = 0; i < t.gs.zahlen.length; i++) h += '<div style="border-top-color:' + esc(t.gs.zahlen[i].f) + '"><b>' + esc(t.gs.zahlen[i].n) + "</b><small>" + esc(t.gs.zahlen[i].t) + "</small></div>";
+      h += "</div></div>";
+    }
+    if (t.gs && t.gs.liste) {
+      h += '<div class="ab"><span class="lbl">Bereitstellungsraum <span>· Reihenfolge des Abrufs</span></span><div class="wsl">';
+      for (i = 0; i < t.gs.liste.length; i++) { var r = t.gs.liste[i]; h += '<div class="' + esc(r.c) + '"><span>' + esc(r.nr) + "</span><b>" + esc(r.t) + "</b><small>" + esc(r.z) + "</small></div>"; }
+      h += "</div></div>";
+    }
+    if (t.gs && t.gs.meld && t.gs.meld.length) {
+      h += '<div class="ab"><span class="lbl">Lagemeldungen <span>· Funk ' + esc(t.gs.gruppe) + '</span></span><div class="meld">';
+      for (i = 0; i < t.gs.meld.length; i++) h += "<div><span>" + esc(t.gs.meld[i].z) + "</span>" + esc(t.gs.meld[i].t) + "</div>";
+      h += "</div></div>";
+    }
     var f = t.fz || [];
+    var a = t.abf || [];
     if (f.length) {
       h += '<div class="ab"><span class="lbl">Alarmierte Fahrzeuge <span>· ' + f.length + "</span></span>";
       for (i = 0; i < f.length; i++) {
@@ -390,16 +499,15 @@
       }
       h += "</div>";
     }
-    var a = t.abf || [];
-    h += '<div class="ab ohne"><span class="lbl">Abfrage' + (a.length ? " <span>· " + a.length + " beantwortet</span>" : "") + "</span>";
-    if (a.length) {
+    if (!t.gs) h += '<div class="ab ohne"><span class="lbl">Abfrage' + (a.length ? " <span>· " + a.length + " beantwortet</span>" : "") + "</span>";
+    if (t.gs) {} else if (a.length) {
       h += '<div class="erl">';
       for (i = 0; i < a.length; i++) h += "<div>" + (a[i].f ? "<small>" + esc(a[i].f) + "</small>" : "") + "<b>" + esc(a[i].a) + "</b></div>";
       h += "</div>";
     } else h += '<div class="hinweis">Keine Notrufabfrage zu diesem Einsatz.</div>';
-    h += "</div>";
+    if (!t.gs) h += "</div>";
     var box = $("transport");
-    var sig = JSON.stringify([t.alarm, e, f, a]);
+    var sig = JSON.stringify([t.alarm, e, f, a, t.gs]);
     if (box.getAttribute("data-sig") !== sig) {
       box.setAttribute("data-sig", sig);
       box.innerHTML = h;
@@ -411,37 +519,60 @@
     if (kleineKarte) kleineKarte.setzen(t.karte);
   }
 
+  var SICHT = { rot: "I", gelb: "II", "grün": "III", tot: "–" };
+  var PUNKT = ["#4CC38A", "#FFC72C", "#FF5A5F"];
   function patientZeichnen(t) {
     var box = $("patient"), h = "", i, j;
     if (!t.pat) {
       h = '<div class="ab ohne"><div class="hinweis">' + esc(t.patZu || "Was der Patient hat, siehst du, sobald ihr beim Patienten seid.") + "</div></div>";
     } else {
       var p = t.pat, l = p.liste || [];
-      h += '<div class="ab">';
       for (i = 0; i < l.length; i++) {
         var x = l[i];
-        h += '<div class="sicht" style="background:' + esc(x.sf) + ";color:" + esc(x.sc || "#FFFFFF") + '"><b>' + esc({ rot: "I", gelb: "II", "grün": "III", tot: "" }[x.s] || "") + "</b>Sichtung " + esc(x.s) + (t.ein && t.ein.code ? " · " + esc(t.ein.code) : "") + "</div>";
-        h += '<div class="pwer">' + esc(x.t) + "</div>";
-        if (x.l) h += '<div class="txt" style="margin-bottom:8px">' + esc(x.l) + "</div>";
-        h += '<div class="zst">';
-        for (j = 0; j < (x.v || []).length; j++) {
-          var v = x.v[j].t, k = v.indexOf(":");
-          h += "<div><small>" + esc(k > 0 ? v.slice(0, k) : "Hinweis") + '</small><b class="' + esc(x.v[j].c) + '">' + esc(k > 0 ? v.slice(k + 1) : v) + "</b></div>";
+        h += '<div class="ab"><div class="pk"><div class="pk-band" style="background:' + esc(x.sf) + ";color:" + esc(x.sc || "#FFFFFF") + '"><b>' + esc(SICHT[x.s] || "") + "</b>Sichtung " + esc(x.s) + "<span>" + esc(x.nr || (l.length > 1 ? "Patient " + (i + 1) : "")) + "</span></div>";
+        h += '<div class="pk-in"><div class="pk-wer">' + esc(x.wer || x.t) + "</div>" + (x.rolle ? '<div class="zeit" style="margin-top:2px">' + esc(x.rolle) + "</div>" : "");
+        if (x.muster) h += '<div class="pk-vd"><small>Verletzungsmuster / Krankheitsbild</small><b>' + esc(x.muster) + "</b></div>";
+        if (x.vd) h += '<div class="pk-vd"><small>Verdacht</small><b>' + esc(x.vd) + "</b></div>";
+        var vit = x.vit || [];
+        if (vit.length) {
+          h += '<div class="vit">';
+          for (j = 0; j < vit.length; j++) h += "<div><small>" + esc(vit[j].k) + '</small><b><i style="background:' + PUNKT[vit[j].g || 0] + '"></i>' + esc(vit[j].w) + "</b></div>";
+          h += "</div>";
         }
-        h += "</div>";
+        // Lagebild in Befund und Empfehlung (Transport …) aufteilen
+        var teile = String(x.lage || "").split(/,\s*/), bef = [], empf = [];
+        for (j = 0; j < teile.length; j++) { var tx = teile[j].replace(/^\s+|\s+$/g, ""); if (!tx) continue;
+          var doppelt = false;
+          for (var v2 = 0; v2 < vit.length; v2++) if (tx.toLowerCase() === String(vit[v2].w).toLowerCase()) doppelt = true;
+          if (doppelt) continue; tx = tx.charAt(0).toUpperCase() + tx.slice(1); if (/transport|klinik|stroke|herzkatheter|schockraum|krankenhaus/i.test(tx)) empf.push(tx); else bef.push(tx); }
+        if (bef.length) { h += '<div class="befund"><small>Befund</small>'; for (j = 0; j < bef.length; j++) h += "<div>" + esc(bef[j]) + "</div>"; h += "</div>"; }
+        if (empf.length) h += '<div class="empf"><small>Empfehlung</small>' + esc(empf.join(" · ")) + "</div>";
+        var fk = x.fakt || [];
+        if (fk.length) {
+          h += '<div class="befund fakt"><small>Vor Ort festgestellt</small>';
+          for (j = 0; j < fk.length; j++) h += "<div><span>" + esc(fk[j].k) + '</span><b class="' + esc(fk[j].c || "") + '">' + esc(fk[j].w) + "</b></div>";
+          h += "</div>";
+        }
+        if (x.fw) h += '<div class="warn">Erst nach Befreiung bzw. Rettung durch die Feuerwehr erreichbar</div>';
+        if (x.bit) h += '<div class="warn">Sehr schwer (ca. 150 kg+) – Transport braucht BIT</div>';
+        if (x.versorgt) h += '<div class="empf"><small>Versorgung</small>' + esc(x.versorgt) + "</div>";
+        h += "</div></div></div>";
       }
-      if (!l.length && p.verdacht) h += '<div class="pwer">Verdacht: ' + esc(p.verdacht) + "</div>";
-      h += "</div>";
-      h += '<div class="ab"><span class="lbl">Transport</span><div class="txt">' + esc(t.plan || "noch nicht entschieden – „Zielort buchen“ im Reiter Transport") + "</div></div>";
-      if (p.meldung) h += '<div class="ab"><span class="lbl">Was ist passiert</span><div class="txt">' + esc(p.meldung) + "</div></div>";
+      if (!l.length) h += '<div class="ab"><div class="pk"><div class="pk-in"><div class="pk-wer">' + esc(p.verdacht ? "Verdacht: " + p.verdacht : "Keine weiteren Angaben") + "</div></div></div></div>";
+      h += '<div class="ab"><span class="lbl">Zielort</span><div class="ziel"><div class="w">' + (t.plan ? esc(t.plan) + "<small>gebucht</small>" : "Noch nicht entschieden<small>Transport und Krankenhaus festlegen</small>") + '</div><button id="patBuchen" class="' + (t.buchenDa ? "" : "aus") + '">' + (t.plan ? "Ändern" : "Zielort buchen") + "</button></div></div>";
+      if (p.meldung) h += '<div class="ab"><span class="lbl">Notruf</span><div class="zitat">„' + esc(p.meldung) + "“</div></div>";
       var vl = p.verlauf || [];
       if (vl.length) {
-        h += '<div class="ab ohne"><span class="lbl">Verlauf</span><div class="verl">';
-        for (i = 0; i < vl.length; i++) h += "<div><span>" + esc(vl[i].z) + "</span>" + esc(vl[i].t) + "</div>";
+        h += '<div class="ab ohne"><span class="lbl">Verlauf</span><div class="tl">';
+        for (i = vl.length - 1; i >= 0; i--) h += "<div><span>" + esc(vl[i].z) + "</span>" + esc(vl[i].t) + "</div>";
         h += "</div></div>";
       }
     }
-    if (box.getAttribute("data-sig") !== h) { box.setAttribute("data-sig", h); box.innerHTML = h; }
+    if (box.getAttribute("data-sig") !== h) {
+      box.setAttribute("data-sig", h);
+      box.innerHTML = h;
+      if ($("patBuchen")) $("patBuchen").onclick = function () { if (((stand.neu || {}).tab || {}).buchenDa) blattAuf("buchen"); };
+    }
   }
 
   // ------------------------------------------------------------ Blätter: Status, Buchen
@@ -471,7 +602,7 @@
     $("blattBox").className = "blatt";
     var b = (stand.neu || {}).ent, bi = $("blattI"), h = "", i, k;
     if (!b) { bi.innerHTML = '<div class="hinweis">Buchen geht, sobald ihr beim Patienten seid.</div>'; bi.setAttribute("data-sig", ""); return; }
-    if (khFuer !== b.fuer) { khFuer = b.fuer; khWahl = ""; }
+    if (khFuer !== b.fuer) { khFuer = b.fuer; khWahl = ""; selbstBuchen = false; }
     var gefunden = false;
     for (i = 0; i < b.khs.length; i++) if (b.khs[i].id === khWahl) gefunden = true;
     if (!gefunden) { khWahl = ""; for (i = 0; i < b.khs.length; i++) if (b.khs[i].id === b.gebuchtId) khWahl = b.gebuchtId; if (!khWahl && b.khs[0]) khWahl = b.khs[0].id; }
@@ -484,7 +615,12 @@
       h += "</div>";
     }
     if (b.rtwFehlt) h += '<div class="hinweis">Noch kein RTW im Einsatz – bitte bei der Leitstelle anfordern.</div>';
-    if (b.buchen) {
+    var zeigSchritte = b.buchen;
+    if (b.rtwWahl) {
+      h += '<span class="lbl" style="margin-top:6px">Wer bucht das Krankenhaus?</span><div class="wahl"><button class="' + (b.rtwWahl.on ? "on" : "") + '" data-bu="rtwbucht"><b>Übergeben – RTW bucht selbst</b><small>' + (b.rtwWahl.on ? "erledigt · RTW sucht das Krankenhaus" : "ihr seid danach frei") + '</small></button><button class="' + (selbstBuchen || b.gebuchtId ? "on" : "") + '" id="selbstB"><b>Selbst buchen</b><small>Krankenhaus für den RTW wählen</small></button></div>';
+      zeigSchritte = b.buchen && (selbstBuchen || !!b.gebuchtId);
+    }
+    if (zeigSchritte) {
       h += '<span class="lbl" style="margin-top:8px">Krankenhaus' + (b.gebuchtId ? ' <span class="pill ok">gebucht ' + esc(b.gebuchtT) + "</span>" : "") + "</span>";
       for (i = 0; i < b.schritte.length; i++) {
         k = b.schritte[i];
@@ -496,9 +632,10 @@
           if (k.istAlter) { h += '<div class="wahl drei">'; for (j = 0; j < b.altW.length; j++) h += '<button class="' + (b.altW[j].on ? "on" : "") + '" data-bu="alter:' + esc(b.altW[j].id) + '"><b>' + esc(b.altW[j].t) + "</b><small>" + esc(b.altW[j].s) + "</small></button>"; h += "</div>"; }
           if (k.istDringlich) { h += '<div class="wahl drei">'; for (j = 0; j < b.drW.length; j++) h += '<button class="' + (b.drW[j].on ? "on" : "") + (b.drW[j].aus ? " aus" : "") + '" data-bu="dring:' + esc(b.drW[j].id) + '"><b>' + esc(b.drW[j].t) + "</b><small>" + esc(b.drW[j].s) + "</small></button>"; h += "</div>"; }
           if (k.istSymptom) {
-            h += '<div id="suchplatz"></div>' + (b.symHinweis ? '<div class="zeit" style="margin-bottom:6px">' + esc(b.symHinweis) + "</div>" : "") + '<div class="chips">';
-            for (j = 0; j < b.symW.length; j++) h += '<button class="kn" data-bu="sym:' + esc(b.symW[j].id) + '">' + esc(b.symW[j].t) + "</button>";
-            h += "</div>";
+            h += '<div class="such' + (suchOffen ? " offen" : "") + '" id="such"><div id="suchplatz"></div><div class="dd">' + (b.symHinweis ? "<small>" + esc(b.symHinweis) + "</small>" : "");
+            for (j = 0; j < b.symW.length; j++) h += '<button data-bu="sym:' + esc(b.symW[j].id) + '">' + esc(b.symW[j].t) + "</button>";
+            if (!b.symW.length && !b.symHinweis) h += '<div class="nix">Kein Symptom gefunden.</div>';
+            h += "</div></div>";
           }
           if (k.istVorschlag) {
             if (b.khLeer) h += '<div class="hinweis" style="margin-bottom:8px">' + esc(b.khLeer) + "</div>";
@@ -526,17 +663,23 @@
         suchFeld.className = "feld";
         suchFeld.placeholder = "Symptom suchen …";
         suchFeld.value = b.symQ || "";
-        suchFeld.oninput = function () { clearTimeout(suchTimer); var f = this; suchTimer = setTimeout(function () { senden("bu:q:" + f.value); }, 300); };
+        suchFeld.oninput = function () { clearTimeout(suchTimer); var f = this; suchOpen(true); suchTimer = setTimeout(function () { senden("bu:q:" + f.value); }, 250); };
+        suchFeld.onfocus = function () { suchOpen(true); };
+        suchFeld.onblur = function () { setTimeout(function () { if (document.activeElement !== suchFeld) suchOpen(false); }, 250); };
       }
       platz.parentNode.replaceChild(suchFeld, platz);
       if (fokus) suchFeld.focus();
     } else suchFeld = null;
     var el = bi.querySelectorAll("[data-bu]");
-    for (i = 0; i < el.length; i++) el[i].onclick = function () { senden("bu:" + this.getAttribute("data-bu")); };
+    for (i = 0; i < el.length; i++) {
+      el[i].onmousedown = function (ev) { if (this.parentNode.className === "dd") ev.preventDefault(); };
+      el[i].onclick = function () { if (this.parentNode.className === "dd") { suchOffen = false; if (suchFeld) suchFeld.blur(); } senden("bu:" + this.getAttribute("data-bu")); };
+    }
     el = bi.querySelectorAll("[data-kein]");
     for (i = 0; i < el.length; i++) el[i].onclick = function () { var id = this.getAttribute("data-kein"); frageOffen = { t: this.getAttribute("data-t") + " – so an die Leitstelle melden?", ja: "Melden", f: function () { senden("bu:kein:" + id); } }; buchenZeichnen(); };
     el = bi.querySelectorAll("[data-kh]");
     for (i = 0; i < el.length; i++) el[i].onclick = function () { khWahl = this.getAttribute("data-kh"); buchenZeichnen(); };
+    if ($("selbstB")) $("selbstB").onclick = function () { selbstBuchen = true; buchenZeichnen(); };
     if ($("khok")) $("khok").onclick = function () {
       var g = null;
       for (var n = 0; n < b.khs.length; n++) if (b.khs[n].id === khWahl) g = b.khs[n];
@@ -547,11 +690,12 @@
     if ($("fja")) $("fja").onclick = function () { var f = frageOffen.f; frageOffen = null; f(); buchenZeichnen(); };
     if ($("fnein")) $("fnein").onclick = function () { frageOffen = null; buchenZeichnen(); };
   }
+  function suchOpen(an) { suchOffen = an; var el = $("such"); if (el) el.className = "such" + (an ? " offen" : ""); }
   $("buchenK").onclick = function () { if (((stand.neu || {}).tab || {}).buchenDa) blattAuf("buchen"); };
 
   // ------------------------------------------------------------ Reiter, Navigation
-  $("segT").onclick = function () { tab = "transport"; zeichnen(stand); };
-  $("segP").onclick = function () { if (((stand.neu || {}).tab || {}).pat || ((stand.neu || {}).tab || {}).ein) { tab = "patient"; zeichnen(stand); } };
+  $("segT").onclick = function () { if (tab !== "transport") $("inh").scrollTop = 0; tab = "transport"; zeichnen(stand); };
+  $("segP").onclick = function () { if (((stand.neu || {}).tab || {}).pat || ((stand.neu || {}).tab || {}).ein) { if (tab !== "patient") $("inh").scrollTop = 0; tab = "patient"; zeichnen(stand); } };
   function navOeffnen() {
     navAuf = true;
     zeige($("nav"), true);

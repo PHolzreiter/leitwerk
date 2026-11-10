@@ -845,6 +845,8 @@ export interface Einsatz {
   nahEntscheid?: string;
   /** seit wann der RTW auf die Entscheidung bzw. das Eintreffen des NAH wartet */
   nahWartenSeit?: number | null;
+  /** RTW hat den Notarzt (auch den Spieler-NAH) storniert – danach bucht er wieder selbst */
+  naStorniert?: boolean;
   /** zuletzt ins Protokoll geschriebene Abfrage (Erstaufnahme, Änderungen) */
   abfrageStand?: { antworten: Antworten; kapitel: string | null; code: string | null } | null;
   /** alarmierte Partner-Organisationen (Zeitpunkt der Alarmierung) */
@@ -2567,6 +2569,8 @@ export class Simulation {
     if (pilot) {
       const p = this.pilotTransport(e);
       if (p) return p;
+      // Spieler-NAH (kein Großeinsatz): der RTW wartet ohne Zeitgrenze, bis der Pilot im Tablet entschieden hat (Paul 10.11.2026)
+      if (!pilot.pilot?.plan && this.spielerNah(e)) return "warten";
       // Pilot ist am Einsatzort (oder im Anflug) und hat noch nicht entschieden: der RTW wartet (höchstens 20 Minuten)
       const kritisch = e.wahr.lage?.fall ? this.naBegleitetFall(e) : this.kritisch(e);
       if (!pilot.pilot?.plan && (pilot.status === "amBO" || (kritisch && ["alarmiert", "zumBO"].includes(pilot.status)))) {
@@ -2752,10 +2756,16 @@ export class Simulation {
       this.startTransport(e);
       return this.rendezvousLos(e, fz);
     }
+    // Spieler-NAH hat an den RTW übergeben (ohne Krankenhaus): der RTW bucht im Anschluss selbst
+    const sn = this.spielerNah(e);
+    if (sn?.pilot?.plan?.art === "uebergabe") {
+      this.bucheKhAuto(e, fz.funkrufname);
+      if (e.kh) return this.rendezvousLos(e, fz);
+    }
     // Die Besatzung bucht selbst – über Funk fragt sie nur bei Reanimation oder mehreren Patienten an
     const p0 = l?.patienten[0];
     const anfragen = (p0 && istStillstand(p0)) || (l?.patienten.length ?? 1) > 1;
-    if (e.wahr.rtwBuchtSelbst && !anfragen) {
+    if (e.wahr.rtwBuchtSelbst && !anfragen && !sn) {
       this.bucheKhAuto(e, fz.funkrufname);
       return this.rendezvousLos(e, fz);
     }
@@ -3124,6 +3134,9 @@ export class Simulation {
 
   private checkKhAnfragen(t: number): void {
     for (const e of this.state.einsaetze) {
+      // Spieler-NAH im Einsatz: niemand bucht von selbst – der Pilot bucht im Tablet (außer er hat an den RTW übergeben)
+      const sn = this.spielerNah(e);
+      if (sn && sn.pilot?.plan?.art !== "uebergabe") continue;
       if (e.khAnfrage && t - e.khAnfrage.seit > (e.gsKind ? 6 : 4) * MIN) {
         this.funk(e.khAnfrage.von, e.id, e.gsKind ? "Keine Buchung – die Einsatzleitung bucht selbst" : "Keine Rückmeldung – buchen selbst", "info");
         this.bucheKhAuto(e, e.khAnfrage.von);
@@ -5080,6 +5093,7 @@ export class Simulation {
     const n = this.rufname(na);
     const grund = "Patient stabil";
     this.log(e, `${r} storniert ${n} (kein Notarzt nötig)`);
+    if (na.pilot) e.naStorniert = true;
     this.fzFunk(
       rtw,
       na,
@@ -8999,6 +9013,15 @@ export class Simulation {
   }
 
   /** Transportiert in diesem Einsatz ein Spieler-NAH den Patienten selbst? */
+  /**
+   * Spieler-NAH, der an diesem Einsatz beteiligt ist (kein Großeinsatz, nicht vom RTW storniert):
+   * solange er da ist, bucht kein Fahrzeug vor Ort von selbst (Paul 10.11.2026).
+   */
+  spielerNah(e: Einsatz): SimFahrzeug | undefined {
+    if ((e.gs && !e.gs.aufgehoben) || e.gsKind || e.naStorniert) return undefined;
+    return this.einsatzFz(e).find((x) => !!x.pilot && fliegt(x) && x.einsatzId === e.id);
+  }
+
   private pilotTransport(e: Einsatz): SimFahrzeug | undefined {
     return this.einsatzFz(e).find((x) => x.pilot?.plan?.art === "transport");
   }

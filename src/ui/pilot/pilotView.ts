@@ -1260,6 +1260,21 @@ function ansichtDaten(): Record<string, unknown> {
           sc,
           t: `${kind ? `P-${String(kind.nr).padStart(2, "0")} · ` : ""}${wer}${verdacht ? ` · Verdacht: ${verdacht}` : kind ? ` · ${kind.muster}` : ""}`,
           l: kind ? `${e.meldung.text}` : l?.fall?.kern ? `Lagebild: ${l.fall.kern}` : "",
+          // für das Tablet einzeln (Patienten-Reiter)
+          nr: kind ? `P-${String(kind.nr).padStart(2, "0")}` : "",
+          wer: `${x.alter < 14 ? "Kind" : x.geschlecht === "w" ? "Frau" : "Mann"}, ${kind ? "ca. " : ""}${x.alter} Jahre`,
+          vd: verdacht || kind?.muster || "",
+          lage: kind ? "" : (l?.fall?.kern ?? ""),
+          vit: [
+            { k: "Bewusstsein", w: BW[x.bw] ?? x.bw, g: x.bw === "ja" ? 0 : x.bw === "getruebt" ? 1 : 2 },
+            { k: "Atmung", w: AT[x.at] ?? x.at, g: x.at === "normal" ? 0 : x.at === "abnorm" ? 1 : 2 },
+          ],
+          bit: !!l?.bit,
+          rolle: kind?.rolle ?? "",
+          muster: kind?.muster ?? "",
+          fw: !!kind?.fw && (gsE?.gs?.erreichbar[kind.nr] ?? 0) > sim.state.zeit,
+          versorgt: kind ? (sim.pilotGsHinweis(fz)?.text ?? "").replace(/^.*?\. (?=Patient wird|Versorgt)/, "") : "",
+          fakt: kind ? [] : wahreFakten(e),
           v: [
             { t: `Bewusstsein: ${BW[x.bw] ?? x.bw}`, c: x.bw === "ja" ? "" : "w" },
             { t: `Atmung: ${AT[x.at] ?? x.at}`, c: x.at === "normal" ? "" : "w" },
@@ -1498,6 +1513,8 @@ function entscheidungDaten(fz: SimFahrzeug, e: Einsatz): Record<string, unknown>
           ).map(([g, tt, s]) => ({ id: g, t: tt, s, on: p?.art === "kein" && p.grund === g, klick: () => setzen({ art: "kein", grund: g }) }))
         : null,
     rtwFehlt,
+    // Übergabe an den RTW: der RTW kann selbst buchen (Tablet: „Übergeben – RTW bucht selbst“ oder „Selbst buchen“)
+    rtwWahl: (planSeite === "rtw" || planSeite === "naMit") && !rtwFehlt ? { on: p?.art === "uebergabe" && !p.hospitalId && !!p.naMit === (planSeite === "naMit") } : null,
     buchen: planSeite !== "kein" && !rtwFehlt,
     gebuchtId: gebuchtId ?? "",
     gebuchtT: gebuchtId && e.kh?.hospitalId === gebuchtId ? uhrzeit(e.kh.zeit) : "",
@@ -1648,7 +1665,7 @@ function planText(p: PilotPlan | null | undefined): string {
   };
   const grund = (g?: string) => (g ? ` (${buchungName(g)})` : "");
   if (p.art === "transport") return `NAH transportiert${kh(p.hospitalId)}${grund(p.grund)}`;
-  if (p.art === "uebergabe") return p.naMit ? `NA fährt im RTW mit${kh(p.hospitalId)}, NAH fliegt leer nach${grund(p.grund)}` : `RTW fährt allein${kh(p.hospitalId)}${grund(p.grund)}`;
+  if (p.art === "uebergabe") return `${p.naMit ? `NA fährt im RTW mit${kh(p.hospitalId)}, NAH fliegt leer nach` : `RTW fährt allein${kh(p.hospitalId)}`}${p.hospitalId ? grund(p.grund) : " – RTW bucht selbst"}`;
   return p.grund === "revers" ? "Kein Transport – Revers" : p.grund === "tot" ? "Patient verstorben" : "Kein Transport";
 }
 
@@ -1778,6 +1795,28 @@ function peilung(a: { lat: number; lon: number }, b: { lat: number; lon: number 
 }
 
 /** Beantwortete Fragen der Notrufabfrage (Frage + Antwort, in der Reihenfolge der Abfrage) */
+/**
+ * Was der Notarzt vor Ort sieht: die wahren Antworten zur Notrufabfrage (nicht die des Anrufers).
+ * Ohne Bewusstsein/Atmung, Alter, Geschlecht und Anzahl (stehen schon oben).
+ */
+function wahreFakten(e: Einsatz): { k: string; w: string; c: string }[] {
+  const w = e.wahr.abfrage;
+  const schema = store.schema;
+  if (!w || !schema) return [];
+  const a = { ...w.antworten, ...(w.roh ?? {}) };
+  const OHNE = new Set(["bw", "at", "alter", "geschlecht", "anzahl_patienten"]);
+  const fragen = new Map<string, Frage>();
+  for (const { frage } of fragenImAblauf(schema, w.kapitel, w.antworten)) fragen.set(frage.id, frage);
+  const out: { k: string; w: string; c: string }[] = [];
+  for (const [id, f] of fragen) {
+    if (OHNE.has(id) || f.typ === "kapitelwahl" || f.typ === "text") continue;
+    const v = a[id];
+    if (v === undefined || v === null || v === "" || v === "unbekannt") continue;
+    out.push({ k: f.text, w: antwortLabel(f, v as string), c: "" });
+  }
+  return out.slice(0, 12);
+}
+
 function abfrageFragen(e: Einsatz): { f: string; a: string }[] {
   const a = e.abfrageStand;
   const schema = store.schema;
@@ -1880,13 +1919,60 @@ function tabletDaten(fz: SimFahrzeug | undefined, e: Einsatz | undefined, D: Rec
   };
   const alarmOffen = ["alarmWache", "alarmFunk", "alarmiert"].includes(fz.status);
   const buchung = handyBuchungStand(fz, e);
+  // Großeinsatz: Auftrag, Schritt, Eckdaten, Lage (Zahlen), Bereitstellungsraum, Lagemeldungen
+  let gsT: Record<string, unknown> | null = null;
+  if (gsE && gs) {
+    const gd = (D.gs ?? null) as { zahlen?: unknown; liste?: { nr: string; t: string; z: string; c: string }[] | null; abruf?: { pct: string } | null } | null;
+    const gi = gsSchritt(fz, e);
+    const hinweis = sim.pilotGsHinweis(fz);
+    const schritt = e.gsKind ? 4 : gi < 0 ? (fz.status === "amBO" ? 3 : 0) : gi === 0 ? 0 : gi <= 2 ? 1 : fz.gsAmBr && fz.phase === "vorOrt" ? 3 : 2;
+    const w = gsE.wahr.gs;
+    const pat = (w?.patienten ?? []).filter((x) => gs.gezeigt.includes(x.nr));
+    const n = (x: string) => String(pat.filter((p) => p.sichtung === x).length);
+    const lebend = pat.filter((x) => x.sichtung !== "tot");
+    const weg = lebend.filter((x) => {
+      const k = gs.kinder[x.nr] ? sim.einsatz(gs.kinder[x.nr]) : undefined;
+      return !!k && (k.zustand === "abgeschlossen" || k.fahrzeuge.some((id) => ["zumZO", "amZO"].includes(sim.state.fahrzeuge[id]?.status ?? "")));
+    }).length;
+    const el2 = gs.el ? sim.state.fahrzeuge[gs.el] : undefined;
+    const brl = gs.brBel ? sim.state.fahrzeuge[gs.brBel] : undefined;
+    gsT = {
+      schritt,
+      gruppe: gsGruppe(e),
+      auftrag: hinweis?.text ?? "Großeinsatz – zum Einsatzort.",
+      abruf: hinweis?.abruf ? { pct: gd?.abruf?.pct ?? "" } : null,
+      werte: [
+        ...(gs.ziel[fz.id] === "br" || gs.br ? [{ l: "Bereitstellungsraum", v: gs.br?.label ?? "wird noch festgelegt" }] : []),
+        ...(gs.br && gsE.adresse ? [{ l: "Zum Einsatzort", v: `${km1(distanceM(gs.br, gsE.adresse))} · zu Fuß ca. ${minuten(Math.max(60, (distanceM(gs.br, gsE.adresse) * 1.25) / 2.6))}` }] : []),
+        { l: "Einsatzleitung", v: el2 ? `${el2.funkrufname}${gs.bel ? " · BEL" : ""}${el2.id === fz.id ? " (du)" : ""}` : "noch keine" },
+        ...(brl ? [{ l: "Leitung im BR", v: brl.funkrufname }] : []),
+        { l: "Sprechgruppe", v: gsGruppe(e) },
+      ],
+      zahlen:
+        gs.phase !== "alarm" && gs.phase !== "sicht"
+          ? [
+              { f: "#E5484D", n: n("rot"), t: "rot" },
+              { f: "#F5A524", n: n("gelb"), t: "gelb" },
+              { f: "#4CC38A", n: n("gruen"), t: "grün" },
+              { f: "#6B7385", n: n("tot"), t: "tot" },
+              { f: "#3B8BFF", n: `${weg}/${lebend.length}`, t: "abtransp." },
+            ]
+          : null,
+      liste: gd?.liste ? gd.liste.map((r) => ({ nr: r.nr, t: r.t, z: r.z, c: String(r.c ?? "").includes("du") ? "du" : String(r.c ?? "").includes("weg") ? "weg" : "" })) : null,
+      meld: gs.meldungen
+        .filter((m) => m.art === "lage" || m.art === "sicht")
+        .slice(-4)
+        .map((m) => ({ z: uhrzeit(m.zeit), t: `${m.von}: ${m.text}` })),
+    };
+  }
   return {
     ...kopf,
     unter: `Einsatz ${e.nummer}`,
     alarm: alarmOffen ? { zeit: uhrzeit(e.protokoll.find((x) => /alarm/i.test(x.text))?.zeit ?? t), quitt: fz.status === "alarmiert" } : null,
     ein,
     fz: fzl.map(({ r: _r, ...x }) => x),
-    abf: abfrageFragen(e),
+    abf: gsT ? [] : abfrageFragen(e),
+    gs: gsT,
     karte,
     buchenDa: !!buchung.da,
     buchenText: buchung.da ? "" : String(buchung.text ?? ""),
@@ -1985,6 +2071,7 @@ function handyBuchen(b: string): void {
     zw.schritt = 4;
   }
   else if (art === "kein" && ["kein", "revers", "tot"].includes(wert)) setzen({ art: "kein", grund: wert as "kein" | "revers" | "tot" });
+  else if (art === "rtwbucht" && (planSeite === "rtw" || planSeite === "naMit")) setzen({ art: "uebergabe", naMit: planSeite === "naMit" });
   else if (art === "kh" && store.get("hospitals", wert)) {
     const grund = zw.sym ? zuweisungId(zw.sym.id, zw.dring, zw.alter) : "";
     setzen(planSeite === "nah" ? { art: "transport", hospitalId: wert, grund: grund || undefined } : { art: "uebergabe", naMit: planSeite === "naMit", hospitalId: wert, grund: grund || undefined });

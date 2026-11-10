@@ -1,5 +1,14 @@
 # Änderungen
 
+## 0.116.0-beta.31 – Tablet: Großeinsatz, Patient, Buchen
+- **Platz für die Leisten der Tablets:** oben bleibt die Leiste des Tablets frei (H145: Uhr/Akku, EFB: Datum), unten die Symbolleiste des EFB – „Zurück“, Kopf und „Zielort buchen“ sind wieder drückbar
+- **Umlaute:** Schrift jetzt als TrueType (woff kam im Tablet nicht an)
+- **Großeinsatz im Tablet:** dein Auftrag (Bereitstellungsraum, Abruf mit Fußweg), Schritte Alarm › Bereitstellungsraum › Abruf › Einsatzort › Patient, Bereitstellungsraum, Weg zum Einsatzort, Einsatzleitung, Leitung im BR, Sprechgruppe, Lage (rot/gelb/grün/tot/abtransportiert), Reihenfolge im Bereitstellungsraum, Lagemeldungen
+- **Patient neu:** Sichtung, Mann/Frau und Alter, Verdacht, Bewusstsein und Atmung mit Ampel, Befund und Empfehlung aus dem Lagebild, „Vor Ort festgestellt“ (die wahren Antworten zur Abfrage), BIT, Notruf, Verlauf; im Großeinsatz Patientennummer, Rolle, Verletzungsmuster, Feuerwehr-Rettung, Versorgungszeit. Zielort buchen direkt aus dem Patienten-Reiter
+- **Symptom-Suche:** Treffer kommen als Dropdown unter dem Feld
+- **Kein automatisches Buchen mit Spieler-NAH:** solange ein Spieler-NAH am Einsatz beteiligt ist, bucht kein Fahrzeug vor Ort von selbst und der RTW wartet ohne Zeitgrenze auf die Entscheidung des Piloten. Ausnahmen: der RTW storniert den Notarzt; Großeinsatz (dort bucht die Einsatzleitung)
+- **Übergabe an den RTW:** nach „RTW fährt allein“ / „NA im RTW“ wählst du „Übergeben – RTW bucht selbst“ (der RTW bucht danach selbst) oder „Selbst buchen“
+
 ## 0.116.0-beta.30 – Tablet: Einsatz-App
 - **Neue Einsatz-App** in beiden Tablets (H145-Tablet und EFB von MSFS) – gleiche Ansicht, nur das H145-Tablet zeigt zusätzlich „Funkgerät & Tablet“
 - Ohne Einsatz: „Kein Alarm“ mit dem aktuellen Status; oben rechts ein Punkt zum Status geben
