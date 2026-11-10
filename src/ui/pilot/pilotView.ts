@@ -29,7 +29,7 @@ import { pilotModusSetzen } from "./modus";
 import { AKTIONEN, belegung, type PilotAktion } from "./tasten";
 import { eingabeStarten, eingabeStoppen, handyHalten, tastenDialog } from "./eingabe";
 import { gruppenName } from "../funkGeraet";
-import { funkEmpfang, funkGruppenSetzen, funkGruppenWahl, funkSendeZustand, funkTon, gsGruppeOffen, onFunkEmpfang, onFunkGruppen, onFunkSenden, sprechGruppe, sprechGruppeWeiter, sprechStart, sprechStopp } from "../sprechfunk";
+import { funkEmpfang, funkGruppenSetzen, funkGruppenWahl, funkSendeZustand, funkTon, onFunkEmpfang, onFunkGruppen, onFunkSenden, sprechGruppe, sprechGruppeWeiter, sprechStart, sprechStopp } from "../sprechfunk";
 import { MODELLE, mikrofone, modellLaden, setzeSprache, sprachPrefs, sprachStatus } from "../sprache";
 import { inTauri } from "../../platform";
 import { ALARM_AUFNAHMEN, ALARM_STANDARD, ALARM_VORLAGEN, alarmPrefs, alarmPrefsSetzen, alarmStarten, alarmStoppen, alarmtonHinzufuegen, eigeneAlarmtoene, probeLaeuft, probeSpielen, probeStoppen, type AlarmArt } from "./alarmToene";
@@ -1724,7 +1724,7 @@ function handyNeu(fz: SimFahrzeug | undefined, e: Einsatz | undefined): Record<s
     uhr: new Date(sim.state.zeit).toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" }),
     gruppe: gruppenName(gr) || "RD-NOE-03",
     gruppeT: gr ? "Sprechgruppe Großeinsatz" : "Sprechgruppe",
-    gruppeWechsel: gsGruppeOffen() || sim.kanalVon(e) !== null,
+    gruppeWechsel: true,
     keys: D.stl.map((x) => ({ ...x, aktion: aktion(x.key) })),
     alarm: D.alarm,
     ein: D.ein,

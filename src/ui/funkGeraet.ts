@@ -3,13 +3,13 @@
  * Display: Netz, Ordner, Sprechgruppe, Status (Dispo: „Frei auf Wache“, Pilot: sein echter Status).
  * Spricht jemand, erscheint im Display „Gruppe aktiv“ mit seiner ID („ID: 75001“, Leitstelle 80000) und der Gruppe;
  * rechts stehen dann „Option“ und „Ordner“ (beim eigenen Spruch „Senden“ bzw. „Warten …“).
- * Bedienbar ist nur das Steuerkreuz links/rechts: Sprechgruppe wechseln (wenn es eine Großeinsatz-Gruppe gibt).
+ * Bedienbar ist nur das Steuerkreuz links/rechts: Sprechgruppe wechseln (eigene, 09, 10).
  */
 import geraetUrl from "../assets/funkgeraet.webp?url";
 import { mp } from "../net/mehrspieler";
 import { sim, type FunkGespraech, type Sprechgruppe } from "../sim/engine";
 import { el, esc } from "./dom";
-import { funkEmpfang, funkPegel, funkSendeZustand, gruppeHoerbar, gsGruppeOffen, sprechGruppe, sprechGruppeWeiter } from "./sprechfunk";
+import { funkEmpfang, funkPegel, funkSendeZustand, gruppeHoerbar, sprechGruppe, sprechGruppeWeiter } from "./sprechfunk";
 import { istPilot } from "./pilot/modus";
 
 /** Name der Sprechgruppe am Gerät („RD-NOE-03“; Großeinsatz RD-NOE-09 bzw. RD-NOE-10) */
@@ -97,8 +97,8 @@ export function funkGeraetErstellen(): { el: HTMLElement; refresh(): void } {
     const k = gruppe();
     const name = gruppenName(k);
     if (gruppeEl.textContent !== name) gruppeEl.textContent = name;
-    const mehr = gsGruppeOffen();
-    root.classList.toggle("fg-mehr", mehr);
+    // Steuerkreuz: immer eigene Gruppe, 09 und 10
+    root.classList.toggle("fg-mehr", true);
     const st = istPilot() ? pilotStatus() : "Frei auf Wache";
     if (statEl.textContent !== st) statEl.textContent = st;
     // Fenster über dem Display: wer spricht (bzw. ich sende / warte)

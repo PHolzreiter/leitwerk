@@ -11,7 +11,7 @@ import { funkGlaetten, funkHinweis } from "./funkNamen";
 import { invoke, Channel } from "@tauri-apps/api/core";
 import { inTauri } from "../platform";
 import { mp } from "../net/mehrspieler";
-import { sim, type Sprechgruppe } from "../sim/engine";
+import { sim, SPRECHGRUPPEN, type Sprechgruppe } from "../sim/engine";
 import { toast } from "./dom";
 import { FUNK_RATE, FunkKodierer, funkDekodieren } from "./funkCodec";
 import { istPilot } from "./pilot/modus";
@@ -807,21 +807,27 @@ function pilotGruppe(): Sprechgruppe {
   const e = heli?.einsatzId ? sim.einsatz(heli.einsatzId) : undefined;
   return sim.kanalVon(e);
 }
+/**
+ * Gruppen am Funkgerät (Steuerkreuz): immer die eigene (Funkgruppe der Leitstelle) und die beiden
+ * Großeinsatz-Gruppen RD-NOE-09 und -10 – auch ohne Großeinsatz (Vorgabe Paul 10.11.2026).
+ */
+export function waehlbareGruppen(): Sprechgruppe[] {
+  return [...SPRECHGRUPPEN];
+}
 /** in welcher Gruppe die eigene Sprechtaste spricht */
 export function sprechGruppe(): Sprechgruppe {
-  const offen = sim.offeneGruppen();
+  const alle = waehlbareGruppen();
   if (istPilot()) {
     const k = wahl.pilotSenden === "auto" ? pilotGruppe() : wahl.pilotSenden === "normal" ? null : wahl.pilotSenden;
-    return offen.includes(k) ? k : pilotGruppe();
+    return alle.includes(k) ? k : pilotGruppe();
   }
-  return offen.includes(wahl.senden) ? wahl.senden : null;
+  return alle.includes(wahl.senden) ? wahl.senden : null;
 }
 /** Sprechgruppe am Funkgerät weiterschalten (Steuerkreuz links/rechts) */
 export function sprechGruppeWeiter(richtung: 1 | -1): void {
-  const offen = sim.offeneGruppen();
-  if (offen.length < 2) return;
-  const i = Math.max(0, offen.indexOf(sprechGruppe()));
-  const neu = offen[(i + richtung + offen.length) % offen.length];
+  const alle = waehlbareGruppen();
+  const i = Math.max(0, alle.indexOf(sprechGruppe()));
+  const neu = alle[(i + richtung + alle.length) % alle.length];
   if (istPilot()) funkGruppenSetzen({ pilotSenden: neu === null ? "normal" : neu });
   else funkGruppenSetzen({ senden: neu });
 }

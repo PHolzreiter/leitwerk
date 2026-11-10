@@ -33,6 +33,7 @@ import {
   onFunkSenden,
   sprechGruppe,
   sprechGruppeWeiter,
+  waehlbareGruppen,
   sprechStart,
   sprechStopp,
 } from "../../sprechfunk";
@@ -236,7 +237,8 @@ export function funkEinbinden(ziel: HTMLElement, props: FunkProps = {}): FunkFen
 
   let modus = modusGemerkt();
   function daten() {
-    const offen = sim.offeneGruppen();
+    // alle wählbaren Gruppen (eigene, 09, 10) – auch ohne Großeinsatz
+    const offen = waehlbareGruppen();
     const meine = sprechGruppe();
     const pl = pilot();
     return {

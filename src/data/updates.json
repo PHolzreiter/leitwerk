@@ -1,5 +1,14 @@
 [
  {
+  "version": "0.116.0-beta.24",
+  "datum": "2026-11-10",
+  "titel": "Sprechgruppen und CARLS wie im Spiel",
+  "punkte": [
+   "Sprechgruppe wechseln geht immer: eigene Gruppe, RD-NOE-09 und RD-NOE-10",
+   "CARLS-Funkgerät der H145 sieht aus wie das Funkgerät im Spiel"
+  ]
+ },
+ {
   "version": "0.116.0-beta.23",
   "datum": "2026-11-10",
   "titel": "H145: eigenes CARLS-Display",

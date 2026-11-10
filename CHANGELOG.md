@@ -1,5 +1,10 @@
 # Änderungen
 
+## 0.116.0-beta.24 – Sprechgruppen und CARLS wie im Spiel
+- **Sprechgruppe wechseln geht immer** (Funkgerät der Leitstelle, Pilotenansicht, Handy, CARLS ◄ ►): eigene Gruppe, RD-NOE-09 und RD-NOE-10 – auch ohne Großeinsatz. Die eigene Gruppe heißt wie die Funkgruppe der Leitstelle (z. B. RD-NOE-01)
+- **CARLS-Funkgerät der H145 wie das Funkgerät im Spiel:** hellblaues TETRA-Display mit Netz-Balken, TETRA / BOS / ‹ Gruppe › / Status und der Leiste „KWlist“; spricht jemand, das Fenster „Gruppe aktiv“ mit „ID: …“ und der Gruppe (eigener Spruch rot „Senden“, „Warten …“ gelb)
+- Größere Schrift im Cockpit, Pfeile als Formen (die Cockpit-Schrift kennt ◀ ▶ nicht)
+
 ## 0.116.0-beta.23 – H145: eigenes CARLS-Display
 - **Eigenes Display am CARLS-Funkgerät** (ganze Fläche, mit Umlauten): oben der Status („Frei auf Wache“), in der Mitte wer gerade funkt („Gruppe aktiv · LEO · ID 80000“, beim eigenen Spruch „Senden“), unten die Sprechgruppe mit ◄ ► – wie das Funkgerät im Spiel. Kleine Lampe, wenn in einer anderen Gruppe gefunkt wird
 - **Status geben wie am echten Gerät:** Ziffer kurz drücken – der Status blinkt 1 Sekunde gelb und geht dann raus. Andere Ziffer = ändern, roter Hörer = abbrechen. Bis der Host bestätigt, steht schon der neue Status mit „wird gesendet“
