@@ -1,5 +1,13 @@
 [
  {
+  "version": "0.115.0-beta.20",
+  "datum": "2026-11-10",
+  "titel": "Hauptmenü auf breiten Bildschirmen",
+  "punkte": [
+   "Leisten oben und unten an den Außenkanten"
+  ]
+ },
+ {
   "version": "0.115.0-beta.19",
   "datum": "2026-11-10",
   "titel": "Logo im Hauptmenü",

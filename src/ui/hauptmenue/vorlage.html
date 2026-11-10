@@ -68,7 +68,7 @@ a{color:#3B8BFF}a:hover{color:#6AA6FF}
 .fluid .l-dropinner > *{flex-shrink:0}
 
 /* Leiste hinter den Punkten oben rechts: vom rechten Rand bis knapp vor „Guten Abend“, Breite folgt dem Inhalt */
-.l-topbar{position:absolute;z-index:45;right:0;top:42px;display:flex;align-items:center;gap:12px;padding:8px var(--gx, 72px) 8px 24px;background:rgba(17,18,22,.72);border:1px solid rgba(42,47,58,.9);border-right:0;border-radius:18px 0 0 18px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 20px 40px -24px rgba(0,0,0,.7);white-space:nowrap}
+.l-topbar{position:absolute;z-index:45;right:0;top:42px;display:flex;align-items:center;gap:12px;padding:8px var(--rand, 72px) 8px 24px;background:rgba(17,18,22,.72);border:1px solid rgba(42,47,58,.9);border-right:0;border-radius:18px 0 0 18px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 20px 40px -24px rgba(0,0,0,.7);white-space:nowrap}
 /* Untere Leiste: nie umbrechen – lange Texte kürzen, Hinweis bei schmalen Fenstern ausblenden */
 .l-fpw{flex-shrink:0}
 .l-ell{display:inline-block;max-width:clamp(110px, 20vw, 340px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:bottom}
@@ -801,7 +801,7 @@ select.l-select.dd-auf{border-color:#3B8BFF}
   </sc-if>
 
   <!-- Untere Leiste -->
-  <footer class="l-enter bottom e6 {{fSwap}}" style="position: absolute; left: var(--gx, 72px); right: var(--gx, 72px); bottom: 28px; display: flex; flex-wrap: nowrap; align-items: center; gap: 24px; padding-top: 14px; border-top: 1px solid #23262F; font-size: 13px; color: #9AA3B5; white-space: nowrap; min-width: 0;">
+  <footer class="l-enter bottom e6 {{fSwap}}" style="position: absolute; left: var(--rand, 72px); right: var(--rand, 72px); bottom: 28px; display: flex; flex-wrap: nowrap; align-items: center; gap: 24px; padding-top: 14px; border-top: 1px solid #23262F; font-size: 13px; color: #9AA3B5; white-space: nowrap; min-width: 0;">
     <!-- Changelog -->
     <span class="l-fpw">
       <section id="l-changelog" class="{{logCls}}" aria-label="Changelog" style="width: 600px;">

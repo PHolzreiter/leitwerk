@@ -1,5 +1,8 @@
 # Änderungen
 
+## 0.115.0-beta.20 – Hauptmenü auf breiten Bildschirmen
+- **Hauptmenü:** Die Leisten oben (Gruß, Update, Bereitschafts-Check) und unten (Neu, In Arbeit, Mithelfen) stehen an den Außenkanten; die Menüpunkte 01–04 bleiben, wo sie sind
+
 ## 0.115.0-beta.19 – Logo im Hauptmenü
 - **Hauptmenü:** Mit Esc zurück zum Startbildschirm wächst das LeitWerk-Logo wieder weich groß (sprang zuletzt ohne Übergang)
 
