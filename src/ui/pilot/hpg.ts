@@ -282,23 +282,24 @@ export function carlsStand(fz: SimFahrzeug): { status: string; statusArt: "" | "
 /** Eigenes Display über der ganzen CARLS-Fläche (470 × 348): Status · wer funkt · Sprechgruppe */
 function carlsHtml(fz: SimFahrzeug): string {
   const d = carlsStand(fz);
-  const gr = d.status.length <= 12 ? 60 : d.status.length <= 16 ? 48 : 38;
+  // im Cockpit (Coherent) wirkt die Schrift etwa halb so groß wie im Browser (Foto Paul 10.11.)
+  const gr = d.status.length <= 12 ? 80 : d.status.length <= 16 ? 68 : 56;
   const stFarbe = d.statusArt === "vormerk" ? "#ffd23f" : "#ffffff";
   const blink = d.statusArt === "vormerk" ? "animation:lwcb .5s step-end infinite;" : "";
-  const warte = d.statusArt === "gesendet" ? `<div style="font-size:24px;color:#9fb3c0;margin-top:4px">wird gesendet</div>` : d.statusArt === "vormerk" ? `<div style="font-size:24px;color:#ffd23f;margin-top:4px">Status ${h(sim.statusDef(carlsVormerk!.status).nummer)} &#8211; roter H&#246;rer = Abbruch</div>` : "";
+  const warte = d.statusArt === "gesendet" ? `<div style="font-size:34px;color:#9fb3c0;margin-top:4px">wird gesendet</div>` : d.statusArt === "vormerk" ? `<div style="font-size:34px;color:#ffd23f;margin-top:4px">Status ${h(sim.statusDef(carlsVormerk!.status).nummer)} &#8211; rot = Abbruch</div>` : "";
   const farbe = d.art === "senden" ? "#ff5a4f" : d.art === "warten" ? "#ffd23f" : "#4cd964";
   const funk = d.kopf
-    ? `<div style="font-size:28px;font-weight:bold;color:${farbe};letter-spacing:1px">${h(d.kopf.toUpperCase())}</div><div style="font-size:40px;margin-top:6px;white-space:nowrap;overflow:hidden">${h(d.wer)}</div>`
-    : `<div style="font-size:28px;color:#4a5a66">&#8211;</div>`;
-  const lampe = `<span style="display:inline-block;width:18px;height:18px;border-radius:9px;margin-left:14px;vertical-align:middle;background:${d.neben ? "#ffb020" : "transparent"}"></span>`;
+    ? `<div style="font-size:40px;font-weight:bold;color:${farbe};letter-spacing:1px">${h(d.kopf.toUpperCase())}</div><div style="font-size:56px;margin-top:6px;white-space:nowrap;overflow:hidden">${h(d.wer)}</div>`
+    : `<div style="font-size:40px;color:#4a5a66">-</div>`;
+  const lampe = `<span style="display:inline-block;width:22px;height:22px;border-radius:11px;margin-left:16px;vertical-align:middle;background:${d.neben ? "#ffb020" : "transparent"}"></span>`;
   const zeile = "position:absolute;left:0;width:470px;height:116px;box-sizing:border-box;padding:14px 20px;display:flex;flex-direction:column;justify-content:center;";
   return (
     `<style>@keyframes lwcb{50%{opacity:.15}}</style>` +
     `<div style="position:absolute;left:-50px;top:0;width:470px;height:348px;background:#06090c;color:#fff;font-family:Roboto,Arial,sans-serif;text-align:left;line-height:1.1;z-index:50;overflow:hidden">` +
     `<div style="${zeile}top:0;border-bottom:2px solid #1f2b33"><div style="font-size:${gr}px;font-weight:bold;color:${stFarbe};white-space:nowrap;overflow:hidden;${blink}">${h(d.status)}</div>${warte}</div>` +
     `<div style="${zeile}top:116px;border-bottom:2px solid #1f2b33;${d.art ? "background:#0d1a12;" : ""}">${funk}</div>` +
-    `<div style="${zeile}top:232px;align-items:center;flex-direction:row;justify-content:center;font-size:44px;font-weight:bold">` +
-    `<span style="color:#6f8796;margin-right:18px">&#9664;</span>${h(d.gruppe)}<span style="color:#6f8796;margin-left:18px">&#9654;</span>${lampe}</div>` +
+    `<div style="${zeile}top:232px;align-items:center;flex-direction:row;justify-content:center;font-size:60px;font-weight:bold">` +
+    `<span style="display:inline-block;width:0;height:0;border-top:18px solid transparent;border-bottom:18px solid transparent;border-right:24px solid #6f8796;margin-right:22px"></span>${h(d.gruppe)}<span style="display:inline-block;width:0;height:0;border-top:18px solid transparent;border-bottom:18px solid transparent;border-left:24px solid #6f8796;margin-left:22px"></span>${lampe}</div>` +
     `</div>`
   );
 }
