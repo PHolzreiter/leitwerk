@@ -27,6 +27,7 @@ import { abfrageAnsicht, setzeAbfrageAnsicht } from "../abfrageAnsicht";
 type Eintrag = { l: () => unknown; s: (w: unknown) => boolean };
 
 const SYSTEM = "Wie das System";
+const WIE_TEL = "Wie am Telefon";
 const AUS = "– aus –";
 
 // ---------------------------------------------------------------- Hilfen
@@ -402,6 +403,13 @@ export function einstellungsBindung(geladen?: () => void): EinstellungsBindung {
         return typeof w === "string" ? (setzeSprache({ geraetStimmen: w }), true) : false;
       },
     },
+    fdev: {
+      l: () => sprachPrefs().geraetFunk || WIE_TEL,
+      s: (w) => {
+        if (w === undefined || w === WIE_TEL || w === "") return (setzeSprache({ geraetFunk: "" }), true);
+        return typeof w === "string" ? (setzeSprache({ geraetFunk: w }), true) : false;
+      },
+    },
     // ---------------- Mikrofon & Funk
     eingabe: sprBool("eingabe"),
     autosend: sprBool("autoSenden"),
@@ -414,6 +422,17 @@ export function einstellungsBindung(geladen?: () => void): EinstellungsBindung {
         if (w === undefined || w === SYSTEM || w === "") return (setzeSprache({ mikro: "" }), true);
         const m = mikros.find((x) => x.label === w);
         return m ? (setzeSprache({ mikro: m.deviceId }), true) : false;
+      },
+    },
+    micFunk: {
+      l: () => {
+        const id = sprachPrefs().mikroFunk;
+        return id ? mikros.find((m) => m.deviceId === id)?.label ?? WIE_TEL : WIE_TEL;
+      },
+      s: (w) => {
+        if (w === undefined || w === WIE_TEL || w === "") return (setzeSprache({ mikroFunk: "" }), true);
+        const m = mikros.find((x) => x.label === w);
+        return m ? (setzeSprache({ mikroFunk: m.deviceId }), true) : false;
       },
     },
     fgLaut: {
@@ -752,6 +771,8 @@ export function einstellungsBindung(geladen?: () => void): EinstellungsBindung {
       if (key === "fv") return fvListe().map(([, v]) => v.name);
       if (key === "tdev" || key === "sdev") return geraetOptionen();
       if (key === "mic") return mikroOptionen();
+      if (key === "micFunk") return [WIE_TEL, ...mikroOptionen().filter((x) => x !== SYSTEM)];
+      if (key === "fdev") return [WIE_TEL, ...geraetOptionen().filter((x) => x !== SYSTEM)];
       if (key === "wlage") return Object.values(WETTER_LABEL);
       if (TON_KEYS[key]) return tonOptionen(TON_KEYS[key]);
       if (key === "pt_alarm" || key === "pt_abruf") return alarmTonListe().map((x) => x.name);

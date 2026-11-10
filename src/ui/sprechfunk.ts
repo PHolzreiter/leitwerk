@@ -369,12 +369,13 @@ let fensterMikro: { strom: MediaStream; geraet: string } | null = null;
 /** Mikrofon im Fenster (bleibt offen, damit das nächste Drücken sofort aufnimmt) */
 async function fensterMikrofon(): Promise<MediaStream> {
   const p = sprachPrefs();
-  if (fensterMikro && fensterMikro.geraet === p.mikro && fensterMikro.strom.getAudioTracks().some((t) => t.readyState === "live")) return fensterMikro.strom;
+  const mik = p.mikroFunk || p.mikro;
+  if (fensterMikro && fensterMikro.geraet === mik && fensterMikro.strom.getAudioTracks().some((t) => t.readyState === "live")) return fensterMikro.strom;
   fensterMikro?.strom.getTracks().forEach((t) => t.stop());
   const strom = await navigator.mediaDevices.getUserMedia({
-    audio: { deviceId: p.mikro ? { exact: p.mikro } : undefined, channelCount: 1, echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+    audio: { deviceId: mik ? { exact: mik } : undefined, channelCount: 1, echoCancellation: true, noiseSuppression: true, autoGainControl: true },
   });
-  fensterMikro = { strom, geraet: p.mikro };
+  fensterMikro = { strom, geraet: mik };
   return strom;
 }
 
@@ -477,7 +478,7 @@ export async function sprechStart(ziel: FunkZiel = "leo", gruppe?: Sprechgruppe)
     if (s.nativ) {
       const ch = new Channel<string>();
       ch.onmessage = (b64) => stueck(s, b64);
-      await invoke("funk_aufnahme_start", { mikro: sprachPrefs().mikro || null, funk: ch });
+      await invoke("funk_aufnahme_start", { mikro: sprachPrefs().mikroFunk || sprachPrefs().mikro || null, funk: ch });
     } else await browserAufnahme(s);
   } catch (e) {
     s.abgelehnt = true;

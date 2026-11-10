@@ -5,7 +5,7 @@
  * vom Host an die Mitspieler übertragen werden kann. Alle Eingriffe des Spielers
  * laufen über die öffentlichen Methoden (alarmieren, Adresse setzen, …).
  */
-import { zahlenAlsZiffern } from "./funkErkennung";
+import { funkSprechform, zahlenAlsZiffern } from "./funkErkennung";
 import { fahrzeugZuName, rufnamen } from "./funkname";
 import { aktuelleSchicht, dienstEnde, imDienst, naechsterBeginn, type Schicht } from "./dienst";
 import { nachKlick } from "../klick";
@@ -1353,7 +1353,12 @@ export function funkWiederholung(rufe: number): number {
 export function funkRufInhalt(text: string, namen: string[]): string {
   let t = ` ${text.toLowerCase()} `;
   for (const n of namen.filter(Boolean).sort((a, b) => b.length - a.length)) t = t.split(n.toLowerCase()).join(" ");
-  t = t.replace(/\b(von|hier|an|für|frage)\b|\bleo\b|\bkommen\b/g, " ");
+  // reiner Anruf („RTW Krems 56/006 von LEO, kommen bitte“) hat keinen Inhalt – sonst meldet sich die Besatzung
+  // gleich mit Lage und Status, obwohl niemand gefragt hat
+  t = t
+    .replace(/[\d/.,;:!?-]+/g, " ")
+    .replace(/\b(von|hier|an|für|frage|bitte|kommen|melden|melde|meldet|hört|hören|hoeren|ruft|rufe|leo|leitstelle|rtw|ktw|nef|nah|sew|btw|rettung|rettungswagen|krankentransport|notarzt|notarztwagen|fahrzeug|wagen|auto|null|eins|zwei|drei|vier|fünf|sechs|sieben|acht|neun|zehn|elf|zwölf|hundert|tausend)\b/g, " ")
+    .replace(/\b[a-zäöüß]*(zig|zehn)\b/g, " ");
   return /[a-zäöüß]{3,}/i.test(t) ? text : "";
 }
 
@@ -7038,7 +7043,7 @@ export class Simulation {
     }
     const offen = this.leoGespraech(fz.id);
     const t = text?.trim().slice(0, 300) || `${this.rufname(fz)} von LEO, kommen`;
-    const inhalt = funkRufInhalt(t, [fz.funkrufname, this.rufname(fz)]);
+    const inhalt = funkRufInhalt(t, [fz.funkrufname, this.rufname(fz), fz.kurzname ?? "", fz.stationName ?? "", funkSprechform(this.rufname(fz))]);
     if (offen) {
       if (["ruft", "wartet", "sprechwunsch"].includes(offen.status)) this.funkAntworten(offen.id, t, stimme);
       else if (offen.status === "offen" && inhalt && !offen.ausstehend) this.funkSenden(offen.id, t, stimme);

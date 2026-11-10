@@ -420,7 +420,8 @@ export class SeitenBasis {
           R('Lautstärke der Stimmen', 'slaut', 0, 100, 5, 85, pct),
           R('Sprechtempo', 'tempo', 70, 140, 5, 100, pct),
           B('Stimmen (Piper)', [{ l: 'Verwalten …', sub: 'piper' }], 'Je mehr geladen, desto abwechslungsreicher – läuft nur lokal', { chip: '3 geladen', dot: ok }),
-          L('Ausgabegerät für Stimmen', 'sdev', ['Wie das System', 'Headset', 'Lautsprecher'], 'Wie das System')
+          L('Ausgabegerät für Stimmen am Telefon', 'sdev', ['Wie das System', 'Headset', 'Lautsprecher'], 'Wie das System', 'Anrufer und KI-Gespräche'),
+          L('Ausgabegerät für Stimmen im Funk', 'fdev', ['Wie am Telefon', 'Headset', 'Lautsprecher'], 'Wie am Telefon', 'Fahrzeuge und Leitstelle im Funk')
         ]},
         { id: 'piper', sub: true, parent: 'sprache', label: 'Stimmen (Piper)', info: 'Laden, anhören, löschen', kw: 'piper stimme laden', rows: [
           IT('Thorsten', 'Mann · 63 MB', 'geladen', ok, { btns: ['▶', { l: 'Löschen', cfm: 'Stimme „Thorsten“ löschen?', ok: 'Gelöscht' }] }),
@@ -434,7 +435,8 @@ export class SeitenBasis {
           T('Spracheingabe', 'eingabe', true, 'Mikrofon neben den Eingabefeldern gedrückt halten'),
           K('Sprechtaste (gedrückt halten)', 'kSprech', 'F9', 'Spricht ins gerade laufende Gespräch'),
           T('Erkannten Text gleich abschicken', 'autosend', true),
-          L('Mikrofon', 'mic', ['Wie das System', 'Headset-Mikrofon', 'MacBook-Mikrofon'], 'Wie das System'),
+          L('Mikrofon fürs Telefon', 'mic', ['Wie das System', 'Headset-Mikrofon', 'MacBook-Mikrofon'], 'Wie das System', 'Spracheingabe und Gespräche mit Anrufern'),
+          L('Mikrofon für den Funk', 'micFunk', ['Wie am Telefon', 'Headset-Mikrofon', 'MacBook-Mikrofon'], 'Wie am Telefon', 'Funktaste und Sprechfunk'),
           B('Erkennung (Whisper)', [{ l: 'Modelle …', sub: 'whisper' }], 'Läuft nur auf deinem Rechner, ohne Internet', { chip: 'Ausgewogen', dot: ok }),
           B('Ausprobieren', [{ l: 'Mikrofon testen', ok: 'Erkannt: „RTW Krems 1, bitte melden“' }], 'Gedrückt halten, sprechen, loslassen'),
           H('Funk'),

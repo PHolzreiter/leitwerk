@@ -38,6 +38,10 @@ export interface SprachPrefs {
   stimmeArt: "system" | "piper" | "supertonic";
   /** Ausgabegerät für Stimmen (nur Piper), leer = wie das System */
   geraetStimmen: string;
+  /** Ausgabegerät für die Stimmen im Funk (Piper/Supertonic), leer = wie die Stimmen am Telefon */
+  geraetFunk: string;
+  /** Mikrofon für den Funk, leer = wie das Mikrofon fürs Telefon */
+  mikroFunk: string;
   /** Funktaste (gedrückt halten): spricht in die am Funkgerät gewählte Sprechgruppe */
   funkTaste: string;
   /** eigene Funktasten je Sprechgruppe (leer = keine): normale Gruppe, RD-NOE-09, RD-NOE-10 */
@@ -70,6 +74,8 @@ export const SPRACH_STANDARD: SprachPrefs = {
   mikro: "",
   stimmeArt: "system",
   geraetStimmen: "",
+  geraetFunk: "",
+  mikroFunk: "",
   funkTaste: "F4",
   funkTasteNormal: "",
   funkTaste09: "",
@@ -402,18 +408,18 @@ function supertonicFuer(g: "w" | "m", schluessel: string): string {
  * ton = Tonhöhe (1 = unverändert): schneller/langsamer abspielen verschiebt die Tonhöhe,
  * das Sprechtempo wird beim Erzeugen ausgeglichen – so klingt dieselbe Stimme höher oder tiefer.
  */
-function piperSagen(text: string, v: { name: string; sid: number }, rate: number, laut = 1, ton = 1, fertig?: () => void): void {
+function piperSagen(text: string, v: { name: string; sid: number }, rate: number, laut = 1, ton = 1, fertig?: () => void, geraet?: string): void {
   const p = sprachPrefs();
-  imProgrammSagen(invoke<ArrayBuffer>("stimme_erzeugen", { name: v.name, text, sid: v.sid, tempo: Math.max(0.5, Math.min(2, (rate * (p.tempo / 100)) / ton)) }), laut, ton, fertig);
+  imProgrammSagen(invoke<ArrayBuffer>("stimme_erzeugen", { name: v.name, text, sid: v.sid, tempo: Math.max(0.5, Math.min(2, (rate * (p.tempo / 100)) / ton)) }), laut, ton, fertig, geraet);
 }
 
-function supertonicSagen(text: string, stimme: string, rate: number, laut = 1, ton = 1, fertig?: () => void): void {
+function supertonicSagen(text: string, stimme: string, rate: number, laut = 1, ton = 1, fertig?: () => void, geraet?: string): void {
   const p = sprachPrefs();
-  imProgrammSagen(invoke<ArrayBuffer>("supertonic_erzeugen", { stimme, text, tempo: Math.max(0.5, Math.min(2, (rate * (p.tempo / 100)) / ton)) }), laut, ton, fertig);
+  imProgrammSagen(invoke<ArrayBuffer>("supertonic_erzeugen", { stimme, text, tempo: Math.max(0.5, Math.min(2, (rate * (p.tempo / 100)) / ton)) }), laut, ton, fertig, geraet);
 }
 
 /** erzeugtes Audio (4 Byte Rate + f32) der Reihe nach auf dem gewählten Gerät abspielen */
-function imProgrammSagen(audio: Promise<ArrayBuffer>, laut = 1, ton = 1, fertig?: () => void): void {
+function imProgrammSagen(audio: Promise<ArrayBuffer>, laut = 1, ton = 1, fertig?: () => void, geraet?: string): void {
   const p = sprachPrefs();
   const gen = generation;
   const id = `stimme-${++zaehler}`;
@@ -425,7 +431,7 @@ function imProgrammSagen(audio: Promise<ArrayBuffer>, laut = 1, ton = 1, fertig?
       if (gen !== generation) return;
       const rate = Math.round(new DataView(buf).getUint32(0, true) * ton);
       await invoke("ton_spielen", new Uint8Array(buf.slice(4)), {
-        headers: { "x-rate": String(rate), "x-geraet": encodeURIComponent(p.geraetStimmen), "x-laut": String(Math.max(0, (p.laut / 100) * laut)), "x-id": id },
+        headers: { "x-rate": String(rate), "x-geraet": encodeURIComponent(geraet ?? p.geraetStimmen), "x-laut": String(Math.max(0, (p.laut / 100) * laut)), "x-id": id },
       });
     })
     .catch((e) => console.warn("Piper", e))
@@ -435,20 +441,20 @@ function imProgrammSagen(audio: Promise<ArrayBuffer>, laut = 1, ton = 1, fertig?
     });
 }
 
-function sagen(text: string, g: "w" | "m", schluessel: string, rate: number, emotion?: string, laut = 1, danach?: () => void): void {
+function sagen(text: string, g: "w" | "m", schluessel: string, rate: number, emotion?: string, laut = 1, danach?: () => void, geraet?: string): void {
   const t = sprechText(text);
   if (!t) return danach?.();
   const p = sprachPrefs();
   // jede Person eine eigene Tonhöhe (± 10 %), damit gleiche Grundstimmen verschieden klingen
   const ton = 0.9 + hash(`${schluessel}|ton`) * 0.2;
   if (p.stimmeArt === "supertonic" && inTauri() && supertonicDa) {
-    supertonicSagen(t, supertonicFuer(g, schluessel), rate, laut, ton, danach);
+    supertonicSagen(t, supertonicFuer(g, schluessel), rate, laut, ton, danach, geraet);
     return;
   }
   if ((p.stimmeArt === "piper" || p.stimmeArt === "supertonic") && inTauri()) {
     const v = piperFuer(g, schluessel, emotion);
     if (v) {
-      piperSagen(t, v, rate, laut, ton, danach);
+      piperSagen(t, v, rate, laut, ton, danach, geraet);
       return;
     }
   }
@@ -554,7 +560,7 @@ export function funkSagt(funkname: string, text: string, laut = 1, melden?: { be
   };
   const los = () => {
     // jedes Fahrzeug spricht etwas anders schnell (sonst klingen alle gleich)
-    sagen(funkAussprache(text), hash(funkname) < 0.3 ? "w" : "m", funkname, 0.98 + hash(`${funkname}|tempo`) * 0.2, undefined, laut, ende);
+    sagen(funkAussprache(text), hash(funkname) < 0.3 ? "w" : "m", funkname, 0.98 + hash(`${funkname}|tempo`) * 0.2, undefined, laut, ende, sprachPrefs().geraetFunk || undefined);
     // falls die Stimme kein Ende meldet
     setTimeout(ende, 2500 + text.split(/\s+/).length * 600);
   };
@@ -935,7 +941,7 @@ async function start(z: SprachZiel | null, knopf?: HTMLElement): Promise<void> {
       funk = new Channel<string>();
       funk.onmessage = (b64) => f(b64);
     }
-    nativStart = funk ? invoke<void>("funk_aufnahme_start", { mikro: p.mikro || null, funk }) : invoke<void>("sprache_aufnahme_start", { mikro: p.mikro || null });
+    nativStart = funk ? invoke<void>("funk_aufnahme_start", { mikro: p.mikroFunk || p.mikro || null, funk }) : invoke<void>("sprache_aufnahme_start", { mikro: p.mikro || null });
     try {
       await nativStart;
       // Sprachmodell schon während des Sprechens in den Speicher holen

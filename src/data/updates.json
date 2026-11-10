@@ -1,5 +1,14 @@
 [
  {
+  "version": "0.115.0-beta.21",
+  "datum": "2026-11-10",
+  "titel": "Funk und Geräte",
+  "punkte": [
+   "Fahrzeuge melden sich beim Anfunken nur mit „hört“",
+   "Mikrofon und Ausgabegerät für Telefon und Funk getrennt einstellbar"
+  ]
+ },
+ {
   "version": "0.115.0-beta.20",
   "datum": "2026-11-10",
   "titel": "Hauptmenü auf breiten Bildschirmen",

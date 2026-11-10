@@ -1,5 +1,9 @@
 # Änderungen
 
+## 0.115.0-beta.21 – Funk und Geräte
+- **Anfunken:** Ein Fahrzeug meldet sich nur mit „… hört“ – Lage und Status gibt die Besatzung erst, wenn du fragst oder wenn sie etwas braucht (auch gesprochene Rufe wie „sechsundfünfzig null null sechs von LEO, kommen“ zählen als reiner Ruf)
+- **Geräte getrennt einstellbar:** Mikrofon fürs Telefon und für den Funk, Ausgabegerät für die Stimmen am Telefon und im Funk (Einstellungen › Mikrofon & Funk bzw. Sprache & Stimmen)
+
 ## 0.115.0-beta.20 – Hauptmenü auf breiten Bildschirmen
 - **Hauptmenü:** Die Leisten oben (Gruß, Update, Bereitschafts-Check) und unten (Neu, In Arbeit, Mithelfen) stehen an den Außenkanten; die Menüpunkte 01–04 bleiben, wo sie sind
 
