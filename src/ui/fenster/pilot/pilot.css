@@ -51,6 +51,14 @@
 .ap .pv-pop.re{left:auto;right:0}
 .ap .pv-ik{all:unset;box-sizing:border-box;display:grid;place-items:center;width:32px;height:32px;border-radius:8px;color:var(--text-2);cursor:pointer;flex:none}
 .ap .pv-ik:hover, .ap .pv-ik.offen{background:var(--hover);color:var(--text)}
+.ap .pv-ckn{all:unset;box-sizing:border-box;position:relative;display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 9px;border-radius:8px;color:var(--text-2);font-size:13px;font-weight:600;cursor:pointer;flex:none;white-space:nowrap}
+.ap .pv-ckn:hover, .ap .pv-ckn.offen{background:var(--hover);color:var(--text)}
+.ap .pv-anker.reiter .pv-ckn{background:transparent !important;color:var(--text)}
+.ap .pv-ckpkt{width:7px;height:7px;border-radius:50%;flex:none}
+.ap .pv-ckab{display:flex;flex-direction:column}
+.ap .pv-ckab + .pv-ckab{border-top:1px solid var(--trenner);margin-top:4px;padding-top:4px}
+.ap .pv-ckab .pv-kk{padding:6px 8px 4px}
+.ap .pv-ckab .pv-ki{padding:0 8px 8px}
 .ap .pv-upd{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 10px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:0;font-family:inherit}
 /* Update und Fehler melden */
 .ap .pv-upd{color:var(--akzent-text) !important;background:var(--akzent-flaeche) !important}

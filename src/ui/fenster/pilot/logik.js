@@ -87,7 +87,7 @@ export class PilotLogik extends DCLogic {
     let funkH = lay === "eins" ? 460 : Math.min(560, Math.max(Math.min(420, Math.round(frei * 0.6)), Math.round(frei * 0.55)));
     // Zwei Spalten im Querformat (z. B. untere Hälfte eines hochkant montierten Bildschirms): wird der Funk-Kasten breiter
     // als hoch, zeigt er das Fahrzeugfunkgerät quer – dann nur so hoch wie nötig, der Rest gehört der Karte.
-    if (lay === "zwei" && rb / funkH > 0.75) funkH = Math.min(funkH, Math.max(340, Math.round(46 + (rb - 24) / 2.8 + 140)));
+    if (lay !== "eins" && rb / funkH > 0.75) funkH = Math.min(funkH, Math.max(340, Math.round(46 + (rb - 24) / 2.8 + 140)));
 
     // ---- Entscheidung und Buchung (Schritt-Assistent wie in der Einsatzmaske)
     const E = D.ent;
@@ -127,7 +127,7 @@ export class PilotLogik extends DCLogic {
       zrA: B < 560 ? "" : B >= 1250 ? Z.a : "", zrX: Z.x, zrB: B >= 1250 ? Z.b : "", zrC: Z.c,
       verbCls: "pv-pill pv-verb" + (D.verb.gelb ? " gelb" : "") + (Bk < 900 ? " ein" : ""), verbT: D.verb.t, verbL: B >= 1100 ? D.verb.l : "",
       e: {
-        upd: pp === "fehler" && B < 1280 ? " ein" : "", lang: Bk < 1200 ? " ein" : "", zeile: Bk < 1200 ? " ein" : "", heli: Bk < 900 ? " ein" : "", verbL: Bk < 1200 ? " ein" : "",
+        upd: (pp === "fehler" || pp === "cockpit") && B < 1280 ? " ein" : "", ck: pp === "cockpit" ? "" : Bk < 1100 ? " ein" : "", lang: Bk < 1200 ? " ein" : "", zeile: Bk < 1200 ? " ein" : "", heli: Bk < 900 ? " ein" : "", verbL: Bk < 1200 ? " ein" : "",
         zrA: Bk < 1250 ? " ein" : "", zrB: Bk < 1250 ? " ein" : "", zrC: Bk < 1250 && Z.c ? "" : " ein",
       },
       // Update
@@ -135,6 +135,10 @@ export class PilotLogik extends DCLogic {
       updCls: "pv-upd kl-upd" + (U && U.istLaedt ? " laedt" : "") + (pp === "update" ? " offen" : ""),
       updKlick: () => { if (pp === "update") this.schubladeZu(); else { clearTimeout(this.pt); this.setState({ pp: "update", ppZuIst: false, wx: false }); } },
       updOk: () => { if (U && U.okAktion) U.okAktion(); },
+      // Cockpit, Simulator und Übungsflug: Schublade oben in der Leiste
+      ckCls: "pv-ckn" + (pp === "cockpit" ? " offen" : ""),
+      ckKlick: () => { if (pp === "cockpit") this.schubladeZu(); else { clearTimeout(this.pt); this.setState({ pp: "cockpit", ppZuIst: false, wx: false }); } },
+      ckPunkt: (D.cockpit[0] && D.cockpit[0].f) || "var(--dim)",
       // Fehler melden
       fehlerCls: "pv-ik" + (pp === "fehler" ? " offen" : ""),
       fehlerKlick: () => { if (pp === "fehler") this.schubladeZu(); else { clearTimeout(this.pt); this.setState({ pp: "fehler", ppZuIst: false, wx: false, fehlerDatei: "" }); } },
@@ -143,13 +147,13 @@ export class PilotLogik extends DCLogic {
       fehlerSpeichern: async () => { const d = await A.fehlerSpeichern(this.state.fehlerText || ""); if (d) this.setState({ fehlerDatei: d, fehlerText: "" }); },
       fehlerNochmal: () => this.setState({ fehlerDatei: "", fehlerText: "" }),
       fehlerIn: D.fehlerIn,
-      pop: { update: pp === "update", fehler: pp === "fehler", spiel: pp === "spiel" }, ppZu: S.ppZuIst ? " zu" : "", ppZuKlick: () => this.schubladeZu(),
-      ppR: (() => { const r = (n) => (pp === n ? " reiter" + (S.ppZuIst ? " schliesst" : "") : ""); return { update: r("update"), fehler: r("fehler"), spiel: r("spiel") }; })(),
+      pop: { update: pp === "update", fehler: pp === "fehler", spiel: pp === "spiel", cockpit: pp === "cockpit" }, ppZu: S.ppZuIst ? " zu" : "", ppZuKlick: () => this.schubladeZu(),
+      ppR: (() => { const r = (n) => (pp === n ? " reiter" + (S.ppZuIst ? " schliesst" : "") : ""); return { update: r("update"), fehler: r("fehler"), spiel: r("spiel"), cockpit: r("cockpit") }; })(),
       // Hinweis (Verbindung, kein Hubschrauber) und Alarm
       warte: D.warte,
       alarm: !!D.alarm, alT: D.alarm ? D.alarm.t : "", alS: D.alarm ? D.alarm.s : "", alZ: !!(D.alarm && (D.alarm.ziB || D.alarm.ziT)), alZB: D.alarm ? D.alarm.ziB : "", alZT: D.alarm ? (D.alarm.ziB && D.alarm.ziT ? "// " + D.alarm.ziT : D.alarm.ziT) : "",
       quitt: () => A.sofortStatus("alarmiert"), abheben: () => A.sofortStatus("zumBO"),
-      phasen, hauptCls: "pv-haupt " + lay, rb, linksSp: lay === "drei", statusOben: lay !== "drei", cockpitUnten: lay !== "drei",
+      phasen, hauptCls: "pv-haupt " + (lay === "drei" ? "zwei" : lay), rb, linksSp: false, statusOben: true, cockpitUnten: false,
       stl, cockpit, einstKlick: () => A.einstellungen(),
       ueb: { ...D.ueb, knoepfe: (D.ueb.knoepfe || []).map((k) => ({ ...k, cls: "kn sm" + (k.aus ? " aus" : "") })) },
       zeitraffer: D.zeitraffer, zeitKnopf: D.zeitKnopf ? { ...D.zeitKnopf, cls: "kn sm" + (D.zeitKnopf.an ? " an" : "") } : null,

@@ -1,5 +1,9 @@
 # Änderungen
 
+## 0.115.0-beta.14 – Pilot: Cockpit in der Leiste
+- **Pilotenansicht:** Cockpit (Flugsimulator, Handy), Einstellungen und Übungsflug sind jetzt eine Schublade „Cockpit“ oben in der Leiste – der Punkt daneben zeigt, ob der Simulator verbunden ist
+- **Mehr Platz:** Ohne die Einrichtungs-Spalte stehen Status, Einsatz und Patient breiter; der Funk ist im Querformat nur so hoch wie nötig
+
 ## 0.115.0-beta.13 – Pilot im Querformat
 - **Pilotenansicht:** In breiten, eher niedrigen Fenstern (z. B. untere Hälfte eines hochkant montierten Bildschirms) ist der Funk nur so hoch wie das Funkgerät – die Karte bekommt den Platz
 

@@ -1,5 +1,14 @@
 [
  {
+  "version": "0.115.0-beta.14",
+  "datum": "2026-11-10",
+  "titel": "Pilot: Cockpit in der Leiste",
+  "punkte": [
+   "Cockpit, Einstellungen und Übungsflug als Schublade oben in der Leiste",
+   "Mehr Platz für Einsatz und Karte"
+  ]
+ },
+ {
   "version": "0.115.0-beta.13",
   "datum": "2026-11-10",
   "titel": "Pilot im Querformat",
