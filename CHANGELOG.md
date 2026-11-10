@@ -1,5 +1,11 @@
 # Änderungen
 
+## 0.116.0-beta.26 – CARLS-Display überarbeitet
+- **Status am CARLS:** nach dem Tastendruck bleibt der alte Status stehen, bis der neue angekommen ist – kein Blinken, keine Farbe (Status geht weiter nach 1 s raus, roter Hörer bricht ab)
+- **Pfeile neben der Sprechgruppe** nur während und kurz nach dem Wechseln
+- **Leiste rechts:** „KWlist“ oben, „Optionen“ unten – auf Höhe der Seitentasten
+- **Optik:** Kopfzeile mit Netz und Uhrzeit (Spielzeit), Trennlinie über dem Status, Fenster „Gruppe aktiv“ mit Schatten und runden Ecken
+
 ## 0.116.0-beta.25 – CARLS-Display im Cockpit
 - **CARLS-Display der H145:** Zeilen und Fenster „Gruppe aktiv“/„Senden“ jetzt fest angeordnet – im Cockpit lagen Zeilen übereinander und „ID: …“ brach um. Schrift wieder in normaler Größe (die Fotos waren schräg aufgenommen, die Schrift war nie zu klein)
 

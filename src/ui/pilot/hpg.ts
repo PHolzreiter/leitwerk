@@ -194,8 +194,9 @@ function carlsEreignisse(): Record<string, unknown> {
 
 /** Status vorgemerkt: geht nach 1 s raus (wie Halten am echten Gerät); andere Ziffer = ändern, roter Hörer = abbrechen */
 let carlsVormerk: { n: number; status: StatusKey; timer: number } | null = null;
-/** gesendet, aber vom Host noch nicht bestätigt: so lange schon den neuen Status zeigen */
-let carlsGesendet: { status: StatusKey; bis: number } | null = null;
+/** Pfeile neben der Gruppe nur beim Wechseln (bis zu diesem Zeitpunkt) */
+let carlsPfeileBis = 0;
+const PFEILE_MS = 3000;
 const VORMERK_MS = 1000;
 let letzteAnzeige = "";
 let anzeigeAb = 0;
@@ -217,13 +218,14 @@ function carlsTaste(t: string): void {
         const v = carlsVormerk;
         carlsVormerk = null;
         if (!v) return;
-        carlsGesendet = { status: v.status, bis: Date.now() + 8000 };
         carlsEmpfangen(v.n);
         carlsTakt();
       }, VORMERK_MS),
     };
   } else if (t === "LEFT" || t === "RIGHT") {
     sprechGruppeWeiter(t === "LEFT" ? -1 : 1);
+    carlsPfeileBis = Date.now() + PFEILE_MS;
+    window.setTimeout(carlsTakt, PFEILE_MS + 50);
   } else if (t === "HANG" && carlsVormerk) {
     window.clearTimeout(carlsVormerk.timer);
     carlsVormerk = null;
@@ -243,24 +245,19 @@ function statusName(st: StatusKey): string {
 /** Was das Display zeigen soll (ohne HTML) – auch für Tests. Inhalt wie das Funkgerät im Spiel (funkGeraet.ts). */
 export function carlsStand(fz: SimFahrzeug): {
   status: string;
-  statusArt: "" | "vormerk" | "gesendet";
+  /** Status vorgemerkt (wird nicht angezeigt – am Display bleibt der alte Status, bis der neue angekommen ist) */
+  vorgemerkt: boolean;
   kopf: string;
   wer: string;
   popGruppe: string;
   art: "" | "aktiv" | "senden" | "warten";
   gruppe: string;
+  pfeile: boolean;
   neben: string;
+  uhr: string;
 } {
-  if (carlsGesendet && (fz.status === carlsGesendet.status || Date.now() > carlsGesendet.bis)) carlsGesendet = null;
-  let status = statusName(fz.status);
-  let statusArt: "" | "vormerk" | "gesendet" = "";
-  if (carlsVormerk) {
-    status = statusName(carlsVormerk.status);
-    statusArt = "vormerk";
-  } else if (carlsGesendet) {
-    status = statusName(carlsGesendet.status);
-    statusArt = "gesendet";
-  }
+  // Vorgabe Paul 10.11.: kein Blinken, keine Farbe – der alte Status bleibt, bis der neue angekommen ist
+  const status = statusName(fz.status);
   const k = sprechGruppe();
   const name = gruppenName(k);
   const ich = funkSendeZustand();
@@ -296,66 +293,72 @@ export function carlsStand(fz: SimFahrzeug): {
     .map(([x, w]) => `${gruppenName(x).slice(-2)}: ${w}`)
     .join(" / ");
   if (!kopf && neben) kopf = "Gruppe aktiv";
-  return { status, statusArt, kopf, wer, popGruppe, art, gruppe: name, neben };
+  const uhr = sim.state.zeit ? new Date(sim.state.zeit).toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" }) : "";
+  return { status, vorgemerkt: !!carlsVormerk, kopf, wer, popGruppe, art, gruppe: name, pfeile: Date.now() < carlsPfeileBis, neben, uhr };
 }
 
 /**
  * Eigenes Display über der ganzen CARLS-Fläche (470 × 348), nachgebaut wie das TETRA-Display des Funkgeräts im
- * Spiel (fenster/funk/funk.css „.fg-…“): hellblau, Netz-Balken, TETRA / BOS / ‹ Gruppe › / Status, rechts die
- * Leiste „KWlist“; spricht jemand, das Fenster „Gruppe aktiv“ mit „ID: …“ und der Gruppe.
- * Cockpit (Coherent, Fotos Paul 10.11.): Flexbox greift dort nicht verlässlich und die Schrift ist schmal und nicht
- * fett – deshalb alles absolut gesetzt (feste Kästen, Text mittig über line-height) und Schriftgrößen 1:1.
+ * Spiel (fenster/funk/funk.css „.fg-…“): hellblau, Kopfzeile mit Netz und Uhr, TETRA / BOS / Gruppe / Status,
+ * rechts die Leiste „KWlist“ / „Optionen“ (auf Höhe der Seitentasten); spricht jemand, das Fenster
+ * „Gruppe aktiv“ mit „ID: …“ und der Gruppe. Pfeile neben der Gruppe nur beim Wechseln.
+ * Cockpit (Coherent, Fotos Paul 10.11.): Flexbox greift dort nicht verlässlich – alles absolut gesetzt (feste
+ * Kästen, Text mittig über line-height); die Schrift ist dort schmaler und nicht fett.
  */
 function carlsHtml(fz: SimFahrzeug): string {
   const d = carlsStand(fz);
-  /** Kasten mit fester Lage, Text einzeilig mittig */
   const box = (x: number, y: number, w: number, hh: number, gr: number, inhalt: string, extra = "") =>
-    `<div style="position:absolute;left:${x}px;top:${y}px;width:${w}px;height:${hh}px;line-height:${hh}px;font-size:${gr}px;text-align:center;white-space:nowrap;overflow:hidden;font-weight:bold;${extra}">${inhalt}</div>`;
+    `<div style="position:absolute;left:${x}px;top:${y}px;width:${w}px;height:${hh}px;line-height:${hh}px;font-size:${gr}px;text-align:center;white-space:nowrap;overflow:hidden;${extra}">${inhalt}</div>`;
   const pfeil = (r: boolean) =>
-    `<span style="display:inline-block;vertical-align:middle;width:0;height:0;border-top:13px solid transparent;border-bottom:13px solid transparent;${r ? "border-left" : "border-right"}:17px solid #20406e;${r ? "margin-left" : "margin-right"}:12px"></span>`;
-  const lampe = d.neben ? `<span style="display:inline-block;vertical-align:middle;width:16px;height:16px;border-radius:8px;margin-left:10px;background:#e08a00;animation:lwcl 1s ease-in-out infinite"></span>` : "";
-  // Netz-Balken unten bündig (absolut)
+    `<span style="display:inline-block;vertical-align:middle;width:0;height:0;border-top:12px solid transparent;border-bottom:12px solid transparent;${r ? "border-left" : "border-right"}:15px solid #2a5ea8;${r ? "margin-left" : "margin-right"}:14px"></span>`;
+  const lampe = d.neben ? `<span style="display:inline-block;vertical-align:middle;width:14px;height:14px;border-radius:7px;margin-left:10px;background:#e08a00;animation:lwcl 1s ease-in-out infinite"></span>` : "";
+  const B = 368; // Breite links neben der Leiste
+  // Kopfzeile: Netz-Balken, Symbol, Uhr
   const balken = [30, 55, 80, 100]
     .map((p, i) => {
-      const hh = Math.round(p * 0.3);
-      return `<div style="position:absolute;left:${14 + i * 12}px;top:${38 - hh}px;width:8px;height:${hh}px;background:#2fa52f"></div>`;
+      const hh = Math.round(p * 0.22);
+      return `<div style="position:absolute;left:${16 + i * 9}px;top:${32 - hh}px;width:6px;height:${hh}px;border-radius:1px;background:#2b9a3a"></div>`;
     })
     .join("");
-  const sym = `<div style="position:absolute;left:66px;top:24px;width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-top:12px solid #c58a00"></div>`;
-  const B = 367; // Breite links neben der Leiste
-  const stGr = d.status.length <= 14 ? 44 : d.status.length <= 17 ? 38 : 33;
-  const stExtra = d.statusArt === "vormerk" ? "color:#a05a00;animation:lwcb .5s step-end infinite;" : "";
-  const aktiv = !!d.kopf;
-  const popFarbe = d.art === "senden" ? "#c62828" : d.art === "warten" ? "#a06a00" : "#5d6b80";
-  const popRand = d.art === "senden" ? "#c62828" : "#2d5aa0";
-  // Fenster „Gruppe aktiv“: 343 × 308 innen
-  const PW = 337;
-  const pop = aktiv
-    ? `<div style="position:absolute;left:12px;top:18px;width:${PW}px;height:306px;z-index:3;border-radius:4px;background:#eef3fb;border:3px solid ${popRand};overflow:hidden">` +
-      box(0, 0, PW, 62, 36, h(d.kopf), `background:${popFarbe};color:#f4f7fc`) +
-      box(0, 92, PW, 70, 56, h(d.wer)) +
-      box(0, 168, PW, 54, d.art === "warten" ? 30 : 42, h(d.popGruppe)) +
-      (d.art === "senden"
-        ? `<div style="position:absolute;left:${Math.round(PW * 0.2)}px;top:236px;width:${Math.round(PW * 0.6)}px;height:12px;border-radius:6px;background:rgba(0,0,0,.12);overflow:hidden"><div style="height:12px;width:70%;background:#c62828;animation:lwcp .45s ease-in-out infinite alternate"></div></div>`
-        : "") +
-      (d.neben ? box(0, 256, PW, 40, 26, h(d.neben), "color:#6a4b00") : "") +
-      `</div>`
-    : "";
-  const leiste =
-    `<div style="position:absolute;left:${B}px;top:0;width:103px;height:348px;background:rgba(120,155,205,.45);border-left:2px solid rgba(60,90,140,.25);color:#1c2a40">` +
-    (aktiv
-      ? box(0, 60, 103, 50, 26, "Option") + box(0, 230, 103, 50, 26, "Ordner")
-      : box(0, 60, 103, 50, 28, "KWlist") + `<div style="position:absolute;left:35px;top:240px;width:34px;height:26px;border-top:4px solid #1c2a40;border-bottom:4px solid #1c2a40;box-sizing:border-box;opacity:.6"></div>`) +
-    `</div>`;
-  return (
-    `<style>@keyframes lwcb{50%{opacity:.15}}@keyframes lwcl{50%{opacity:.45}}@keyframes lwcp{from{width:25%}to{width:85%}}</style>` +
-    `<div style="position:absolute;left:-50px;top:0;width:470px;height:348px;background:linear-gradient(180deg,#c9d9f1 0%,#aec4e6 100%);color:#10141c;font-family:Roboto,Arial,sans-serif;text-align:left;z-index:50;overflow:hidden">` +
+  const sym = `<div style="position:absolute;left:58px;top:16px;width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:10px solid #c58a00"></div>`;
+  const kopf =
+    `<div style="position:absolute;left:0;top:0;width:${B}px;height:42px;border-bottom:1px solid rgba(40,70,120,.22);background:rgba(255,255,255,.25)"></div>` +
     balken +
     sym +
-    box(0, 46, B, 66, 50, "TETRA") +
-    box(0, 112, B, 66, 50, "BOS") +
-    box(0, 180, B, 70, 46, `${pfeil(false)}${h(d.gruppe)}${pfeil(true)}${lampe}`) +
-    box(6, 254, B - 12, 64, stGr, h(d.status), stExtra) +
+    box(B - 110, 0, 96, 42, 26, h(d.uhr), "text-align:right;color:#24364f");
+  const stGr = d.status.length <= 14 ? 42 : d.status.length <= 17 ? 37 : 32;
+  const gruppe = d.pfeile ? `${pfeil(false)}${h(d.gruppe)}${pfeil(true)}${lampe}` : `${h(d.gruppe)}${lampe}`;
+  const aktiv = !!d.kopf;
+  const popFarbe = d.art === "senden" ? "#c62828" : d.art === "warten" ? "#a86f00" : "#56657c";
+  const popRand = d.art === "senden" ? "#c62828" : "#2d5aa0";
+  const PW = 336;
+  const pop = aktiv
+    ? `<div style="position:absolute;left:14px;top:52px;width:${PW + 6}px;height:282px;border-radius:8px;background:rgba(10,25,50,.28)"></div>` +
+      `<div style="position:absolute;left:10px;top:48px;width:${PW}px;height:278px;border-radius:8px;background:#f3f7fd;border:3px solid ${popRand};overflow:hidden">` +
+      box(0, 0, PW, 58, 32, h(d.kopf), `background:${popFarbe};color:#fff;letter-spacing:1px`) +
+      box(0, 84, PW, 70, 54, h(d.wer), "color:#0e1622") +
+      box(0, 156, PW, 50, d.art === "warten" ? 28 : 38, h(d.popGruppe), "color:#24364f") +
+      (d.art === "senden"
+        ? `<div style="position:absolute;left:${Math.round(PW * 0.2)}px;top:222px;width:${Math.round(PW * 0.6)}px;height:10px;border-radius:5px;background:rgba(0,0,0,.12);overflow:hidden"><div style="height:10px;width:70%;background:#c62828;animation:lwcp .45s ease-in-out infinite alternate"></div></div>`
+        : "") +
+      (d.neben ? box(0, 232, PW, 40, 24, h(d.neben), "color:#7a5400") : "") +
+      `</div>`
+    : "";
+  // Leiste rechts: Beschriftung auf Höhe der oberen und unteren Seitentaste
+  const leiste =
+    `<div style="position:absolute;left:${B}px;top:0;width:102px;height:348px;background:linear-gradient(180deg,rgba(128,160,208,.55) 0%,rgba(110,145,198,.6) 100%);border-left:1px solid rgba(40,70,120,.3);color:#16263f">` +
+    `<div style="position:absolute;left:10px;top:174px;width:82px;height:1px;background:rgba(40,70,120,.25)"></div>` +
+    (aktiv ? box(0, 34, 102, 46, 25, "Option") + box(0, 248, 102, 46, 25, "Ordner") : box(0, 34, 102, 46, 26, "KWlist") + box(0, 248, 102, 46, 23, "Optionen")) +
+    `</div>`;
+  return (
+    `<style>@keyframes lwcl{50%{opacity:.4}}@keyframes lwcp{from{width:25%}to{width:85%}}</style>` +
+    `<div style="position:absolute;left:-50px;top:0;width:470px;height:348px;background:linear-gradient(180deg,#d3e1f5 0%,#b6cbea 100%);color:#0f1724;font-family:Roboto,Arial,sans-serif;text-align:left;z-index:50;overflow:hidden">` +
+    kopf +
+    box(0, 54, B, 60, 46, "TETRA", "letter-spacing:2px") +
+    box(0, 114, B, 56, 40, "BOS", "letter-spacing:2px;color:#24364f") +
+    box(0, 180, B, 68, 46, gruppe, "font-weight:bold") +
+    `<div style="position:absolute;left:40px;top:258px;width:${B - 80}px;height:1px;background:rgba(40,70,120,.22)"></div>` +
+    box(8, 266, B - 16, 66, stGr, h(d.status)) +
     leiste +
     pop +
     `</div>`

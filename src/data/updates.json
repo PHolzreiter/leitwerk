@@ -1,5 +1,14 @@
 [
  {
+  "version": "0.116.0-beta.26",
+  "datum": "2026-11-10",
+  "titel": "CARLS-Display überarbeitet",
+  "punkte": [
+   "Status wechselt erst, wenn der neue angekommen ist – ohne Blinken",
+   "Pfeile neben der Gruppe nur beim Wechseln, „Optionen“ unter „KWlist“, Uhrzeit oben"
+  ]
+ },
+ {
   "version": "0.116.0-beta.25",
   "datum": "2026-11-10",
   "titel": "CARLS-Display im Cockpit",
