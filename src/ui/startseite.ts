@@ -236,6 +236,25 @@ export function vollbildEnde(): void {
     .catch((e) => console.warn("Vollbild", e));
 }
 
+/** Vollbild an/aus (F11) – im Hauptfenster */
+export function vollbildUmschalten(): void {
+  if (!inTauri()) return;
+  void import("@tauri-apps/api/window")
+    .then(async ({ getCurrentWindow }) => {
+      const w = getCurrentWindow();
+      const an = await w.isFullscreen();
+      vollbildVonUns = !an;
+      await w.setFullscreen(!an);
+    })
+    .catch((e) => console.warn("Vollbild", e));
+}
+if (typeof window !== "undefined")
+  window.addEventListener("keydown", (e) => {
+    if (e.key !== "F11" || e.repeat) return;
+    e.preventDefault();
+    vollbildUmschalten();
+  });
+
 export function startseiteOffen(): boolean {
   return !!offen;
 }

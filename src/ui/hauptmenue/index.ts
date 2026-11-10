@@ -9,11 +9,12 @@ import { Komponente } from "./komponente.js";
 import { ansicht } from "./laufzeit";
 import { anbindungBauen, type Anbindung } from "./anbindung";
 import { pers } from "../ws/persoenlich";
-import { vollbildEnde, vollbildStart } from "../startseite";
+import { vollbildStart } from "../startseite";
 
 // Einstellungsseiten kommen aus einstellungen/ (gemeinsam mit dem Spielmenü)
 const vorlage = mitSeiten(vorlageRoh);
 
+let schonVollbild = false;
 let offen: { wurzel: HTMLElement; stil: HTMLStyleElement; k: Komponente; app: Anbindung } | null = null;
 
 export function hauptmenueOffen(): boolean {
@@ -24,7 +25,12 @@ export function hauptmenueOffen(): boolean {
 export function hauptmenueZeigen(fertig?: () => void, opt: { splash?: boolean; seite?: string } = {}): void {
   if (offen) return;
   // Wie bisher die Startseite: im Programm Vollbild, beim Spielstart wieder die Fenstergröße von vorher
-  vollbildStart();
+  // Vollbild nur beim ersten Öffnen (Programmstart). Danach bleibt das Fenster, wie es ist – Hauptmenü und Spiel
+  // wechseln im selben Fenster (am Mac: im selben Space), ohne dass ein neues Vollbild-Fenster aufgeht.
+  if (!schonVollbild) {
+    schonVollbild = true;
+    vollbildStart();
+  }
   const stil = document.createElement("style");
   stil.dataset.hauptmenue = "";
   stil.textContent = css + "\n" + seitenCss;
@@ -69,7 +75,7 @@ export function hauptmenueSchliessen(spielBeginnt = false): void {
     /* egal */
   }
   o.app.beenden();
-  vollbildEnde();
+  // kein vollbildEnde(): das Spiel geht im selben Fenster auf
   o.wurzel.style.transition = "opacity .45s ease";
   o.wurzel.style.opacity = "0";
   setTimeout(() => {

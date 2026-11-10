@@ -1,5 +1,9 @@
 # Änderungen
 
+## 0.115.0-beta.12 – Hauptmenü und Spiel im selben Fenster
+- **Fenster:** Vom Hauptmenü ins Spiel (und zurück) wechselt das Programm im selben Fenster – am Mac geht kein neuer Vollbild-Bereich mehr auf. Ein zweites Fenster gibt es nur, wenn du eines öffnest (z. B. zwei Bildschirme)
+- **F11:** Vollbild ein und aus
+
 ## 0.115.0-beta.11 – Karte und Telefonat
 - **Karte:** Einsätze und Transporte zeigen ihren Code erst beim Darüberfahren; ein Klick öffnet sie in der Einsatzansicht
 - **Einrichtungen:** nur noch kleine Punkte ohne Buchstaben; der Name steht erst beim Darüberfahren oder wenn gewählt

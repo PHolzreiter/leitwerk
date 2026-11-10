@@ -1,5 +1,14 @@
 [
  {
+  "version": "0.115.0-beta.12",
+  "datum": "2026-11-10",
+  "titel": "Hauptmenü und Spiel im selben Fenster",
+  "punkte": [
+   "Kein neues Fenster mehr zwischen Hauptmenü und Spiel",
+   "F11 schaltet Vollbild ein und aus"
+  ]
+ },
+ {
   "version": "0.115.0-beta.11",
   "datum": "2026-11-10",
   "titel": "Karte und Telefonat",
