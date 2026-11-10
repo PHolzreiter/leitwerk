@@ -1,5 +1,6 @@
 /**
- * Piloten-Interface: Verbindung zum Flugsimulator (MSFS 2024/2020 über SimConnect, Rust: msfs.rs),
+ * Piloten-Interface: Verbindung zum Flugsimulator – MSFS 2024/2020 über SimConnect (Rust: msfs.rs) und
+ * X-Plane 12 über dessen Webserver (Rust: xplane.rs). Beide werden gleichzeitig gesucht; es zählt der, der fliegt.
  * Flugplan zum Laden in MSFS (.pln) und Wetter-Hilfe.
  */
 import { invoke } from "@tauri-apps/api/core";
@@ -61,7 +62,38 @@ export const flugsim = {
   datenUm: 0,
   /** HPG H145: CARLS-Funkgerät hat auf das Lebenszeichen geantwortet */
   carls: null as { verbunden: boolean; modus: number; phase: number } | null,
+  /** woher die Flugdaten gerade kommen */
+  quelle: null as Quelle | null,
+  /** Zustand je Simulator (die Felder oben sind daraus zusammengesetzt) */
+  ms: { zustand: "aus" as SimZustand, text: "" },
+  xp: { zustand: "aus" as SimZustand, text: "", version: null as string | null },
 };
+
+export type Quelle = "msfs" | "xplane" | "test";
+const letzte: Partial<Record<Quelle, { d: SimDaten; um: number }>> = {};
+
+/** Gesamtzustand aus MSFS und X-Plane (für die Anzeige) */
+function zusammenfassen(): void {
+  const frisch = (q: Quelle) => !!letzte[q] && Date.now() - letzte[q]!.um < 5000;
+  const ms = flugsim.ms, xp = flugsim.xp;
+  if (flugsim.quelle && frisch(flugsim.quelle)) {
+    flugsim.zustand = "verbunden";
+    flugsim.text = flugsim.quelle === "xplane" ? xp.text || "Mit X-Plane 12 verbunden" : flugsim.quelle === "msfs" ? ms.text || "Mit MSFS verbunden" : "Mit dem Flugsimulator verbunden";
+    return;
+  }
+  if (xp.zustand === "verbunden") { flugsim.zustand = "verbunden"; flugsim.text = xp.text; return; }
+  if (ms.zustand === "verbunden") { flugsim.zustand = "verbunden"; flugsim.text = ms.text; return; }
+  // X-Plane läuft, aber noch kein Flug geladen
+  if (xp.zustand === "wartet" && xp.version) { flugsim.zustand = "wartet"; flugsim.text = xp.text; return; }
+  if (xp.zustand === "fehler") { flugsim.zustand = "fehler"; flugsim.text = xp.text; return; }
+  if (ms.zustand === "wartet" || (xp.zustand === "wartet" && ms.zustand !== "fehler")) {
+    flugsim.zustand = "wartet";
+    flugsim.text = ms.zustand === "wartet" ? "Warte auf MSFS oder X-Plane 12" : `Warte auf X-Plane 12${ms.zustand === "keineDll" && !/Windows/.test(ms.text) ? " – für MSFS fehlt die SimConnect.dll" : ""}`;
+    return;
+  }
+  flugsim.zustand = ms.zustand;
+  flugsim.text = ms.text;
+}
 
 let hoertZu = false;
 let fzVon: () => SimFahrzeug | undefined = () => undefined;
@@ -78,12 +110,18 @@ async function zuhoeren(): Promise<void> {
   if (hoertZu) return;
   hoertZu = true;
   await listen<{ zustand: SimZustand; text: string; dll: string | null }>("msfs-status", (ev) => {
-    flugsim.zustand = ev.payload.zustand;
-    flugsim.text = ev.payload.text;
+    flugsim.ms = { zustand: ev.payload.zustand, text: ev.payload.text };
     flugsim.dll = ev.payload.dll;
+    zusammenfassen();
     geaendert();
   });
-  await listen<SimDaten>("msfs-daten", (ev) => datenEmpfangen(ev.payload));
+  await listen<SimDaten>("msfs-daten", (ev) => datenEmpfangen(ev.payload, "msfs"));
+  await listen<{ zustand: SimZustand; text: string; version: string | null }>("xplane-status", (ev) => {
+    flugsim.xp = { zustand: ev.payload.zustand, text: ev.payload.text, version: ev.payload.version };
+    zusammenfassen();
+    geaendert();
+  });
+  await listen<SimDaten>("xplane-daten", (ev) => datenEmpfangen(ev.payload, "xplane"));
   await listen<{ verbunden: boolean; modus: number; phase: number }>("msfs-carls-status", (ev) => {
     flugsim.carls = ev.payload;
     geaendert();
@@ -94,14 +132,28 @@ async function zuhoeren(): Promise<void> {
   });
 }
 
-/** Flugdaten (auch vom Test-Simulator) – höchstens einmal pro Sekunde an den Host */
-export function datenEmpfangen(d: SimDaten): void {
+/**
+ * Welcher Simulator zählt, wenn beide Daten schicken: der, in dem sich das Luftfahrzeug bewegt;
+ * stehen beide, bleibt es beim bisherigen.
+ */
+export function quelleWaehlen(aktuell: Quelle | null, neu: Quelle, jetzt: number, l: Partial<Record<Quelle, { d: SimDaten; um: number }>>): Quelle {
+  if (neu === "test" || !aktuell || aktuell === neu) return neu;
+  const a = l[aktuell];
+  if (!a || jetzt - a.um > 5000) return neu;
+  const bewegt = (x?: { d: SimDaten }) => !!x && (x.d.kts > 5 || !x.d.am_boden);
+  return bewegt(l[neu]) && !bewegt(a) ? neu : aktuell;
+}
+
+/** Flugdaten (MSFS, X-Plane oder Test-Simulator) – höchstens einmal pro Sekunde an den Host */
+export function datenEmpfangen(d: SimDaten, quelle: Quelle = "test"): void {
+  const jetztMs = Date.now();
+  letzte[quelle] = { d, um: jetztMs };
+  const q = quelleWaehlen(flugsim.quelle, quelle, jetztMs, letzte);
+  if (q !== quelle) return;
+  flugsim.quelle = q;
   flugsim.daten = d;
-  flugsim.datenUm = Date.now();
-  if (flugsim.zustand !== "verbunden") {
-    flugsim.zustand = "verbunden";
-    flugsim.text = "Mit dem Flugsimulator verbunden";
-  }
+  flugsim.datenUm = jetztMs;
+  if (flugsim.zustand !== "verbunden" || quelle !== "test") zusammenfassen();
   const fz = fzVon();
   const jetzt = Date.now();
   if (fz && jetzt - letztesSenden >= 900) {
@@ -124,32 +176,44 @@ export async function flugsimVerbinden(dll?: string): Promise<void> {
   try {
     // CARLS läuft über die Tablet-Mission (hpg.ts) – das Lebenszeichen über SimConnect bleibt aus
     await invoke("msfs_carls", { an: false }).catch(() => undefined);
+    // X-Plane 12 wird immer mitgesucht (läuft auch ohne SimConnect.dll)
+    await invoke("xplane_starten").catch(() => undefined);
+    vorgabeSetzen({ auto: true, ...(dll ? { dll } : {}) });
     const pfad = await invoke<string>("msfs_starten", { dll: dll ?? vorgabe().dll ?? null });
     flugsim.dll = pfad;
-    vorgabeSetzen({ auto: true, ...(dll ? { dll } : {}) });
   } catch (e) {
-    flugsim.text = String((e as Error)?.message ?? e);
-    if (flugsim.zustand === "aus") flugsim.zustand = "fehler";
+    flugsim.ms = { zustand: flugsim.ms.zustand === "aus" ? "fehler" : flugsim.ms.zustand, text: String((e as Error)?.message ?? e) };
   }
+  zusammenfassen();
   geaendert();
 }
 
 export async function flugsimTrennen(): Promise<void> {
   vorgabeSetzen({ auto: false });
-  if (inTauri()) await invoke("msfs_stoppen").catch(() => undefined);
+  if (inTauri()) {
+    await invoke("msfs_stoppen").catch(() => undefined);
+    await invoke("xplane_stoppen").catch(() => undefined);
+  }
   flugsim.zustand = "aus";
   flugsim.carls = null;
   flugsim.text = "";
   flugsim.daten = null;
+  flugsim.quelle = null;
+  flugsim.ms = { zustand: "aus", text: "" };
+  flugsim.xp = { zustand: "aus", text: "", version: null };
   geaendert();
 }
 
 /** Programm schließt das Piloten-Interface: Verbindung beenden, Einstellung „automatisch“ bleibt */
 export function flugsimBeenden(): void {
-  if (inTauri()) void invoke("msfs_stoppen").catch(() => undefined);
+  if (inTauri()) {
+    void invoke("msfs_stoppen").catch(() => undefined);
+    void invoke("xplane_stoppen").catch(() => undefined);
+  }
   flugsim.zustand = "aus";
   flugsim.carls = null;
   flugsim.daten = null;
+  flugsim.quelle = null;
 }
 
 export async function dllWaehlen(): Promise<void> {

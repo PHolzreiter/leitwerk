@@ -1,0 +1,303 @@
+//! Brücke zu X-Plane 12 für den Spieler-NAH (Paul 10.11.2026: „egal ob MSFS oder X-Plane läuft“).
+//!
+//! X-Plane 12 hat ab 12.1.1 einen eingebauten Webserver (nur auf diesem Rechner, Standard-Port 8086):
+//! `GET /api/capabilities` (Version), `GET /api/v3/datarefs?filter[name]=…` (ID zum Namen, gilt nur für die
+//! laufende X-Plane-Sitzung) und `GET /api/v3/datarefs/{id}/value` → `{"data": …}`.
+//! Gelesen werden dieselben Werte wie beim MSFS (Position, Höhe, Höhe über Grund, Kurs, Geschwindigkeit,
+//! am Boden, Triebwerk an) – einmal pro Sekunde, als Ereignis „xplane-daten“. Den Zustand meldet „xplane-status“.
+//! Kein Plugin nötig. In X-Plane darf „Disable Incoming Traffic“ nicht eingeschaltet sein (sonst 403).
+//!
+//! Zum Testen: Umgebungsvariable LEITWERK_XPLANE auf „host:port“ einer Attrappe setzen.
+
+use serde::Serialize;
+use std::io::{Read, Write};
+use std::net::{SocketAddr, TcpStream, ToSocketAddrs};
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Mutex};
+use std::time::Duration;
+use tauri::{AppHandle, Emitter};
+
+#[derive(Serialize, Clone)]
+struct XpStatus {
+    zustand: String,
+    text: String,
+    version: Option<String>,
+}
+
+#[derive(Serialize, Clone, Debug, PartialEq)]
+pub struct XpDaten {
+    pub lat: f64,
+    pub lon: f64,
+    pub hoehe: f64,
+    pub agl: f64,
+    pub kurs: f64,
+    pub kts: f64,
+    pub am_boden: bool,
+    pub motor: bool,
+}
+
+/// Datarefs (X-Plane 12): Breite/Länge (Grad), Höhe MSL (m), Höhe über Grund (m), wahrer Kurs (Grad),
+/// Geschwindigkeit über Grund (m/s), am Boden (0/1), Triebwerke laufen (Feld 0/1)
+const NAMEN: [&str; 8] = [
+    "sim/flightmodel/position/latitude",
+    "sim/flightmodel/position/longitude",
+    "sim/flightmodel/position/elevation",
+    "sim/flightmodel/position/y_agl",
+    "sim/flightmodel/position/psi",
+    "sim/flightmodel/position/groundspeed",
+    "sim/flightmodel/failures/onground_any",
+    "sim/flightmodel/engine/ENGN_running",
+];
+
+static LAEUFT: Mutex<Option<Arc<AtomicBool>>> = Mutex::new(None);
+
+fn status(app: &AppHandle, zustand: &str, text: &str, version: Option<&str>) {
+    let _ = app.emit("xplane-status", XpStatus { zustand: zustand.into(), text: text.into(), version: version.map(Into::into) });
+}
+
+fn adresse() -> SocketAddr {
+    std::env::var("LEITWERK_XPLANE")
+        .ok()
+        .and_then(|a| a.to_socket_addrs().ok()?.next())
+        .unwrap_or_else(|| SocketAddr::from(([127, 0, 0, 1], 8086)))
+}
+
+/// Einfaches GET an den Webserver von X-Plane (HTTP/1.1, Connection: close, auch „chunked“)
+fn get(pfad: &str) -> Result<(u16, String), String> {
+    let mut s = TcpStream::connect_timeout(&adresse(), Duration::from_millis(800)).map_err(|e| e.to_string())?;
+    s.set_read_timeout(Some(Duration::from_secs(3))).ok();
+    s.set_write_timeout(Some(Duration::from_secs(3))).ok();
+    write!(s, "GET {pfad} HTTP/1.1\r\nHost: localhost\r\nAccept: application/json\r\nConnection: close\r\n\r\n").map_err(|e| e.to_string())?;
+    let mut roh = Vec::new();
+    s.read_to_end(&mut roh).map_err(|e| e.to_string())?;
+    antwort_lesen(&roh)
+}
+
+fn antwort_lesen(roh: &[u8]) -> Result<(u16, String), String> {
+    let text = String::from_utf8_lossy(roh);
+    let (kopf, rumpf) = text.split_once("\r\n\r\n").ok_or("unvollständige Antwort")?;
+    let code: u16 = kopf.split_whitespace().nth(1).and_then(|c| c.parse().ok()).ok_or("keine HTTP-Antwort")?;
+    let chunked = kopf.to_ascii_lowercase().contains("transfer-encoding: chunked");
+    let rumpf = if chunked { entchunken(rumpf) } else { rumpf.to_string() };
+    Ok((code, rumpf))
+}
+
+fn entchunken(mut r: &str) -> String {
+    let mut out = String::new();
+    loop {
+        let Some((laenge, rest)) = r.split_once("\r\n") else { break };
+        let n = usize::from_str_radix(laenge.trim().split(';').next().unwrap_or("0"), 16).unwrap_or(0);
+        if n == 0 || rest.len() < n {
+            break;
+        }
+        out.push_str(&rest[..n]);
+        r = rest[n..].trim_start_matches("\r\n");
+    }
+    out
+}
+
+fn kodieren(s: &str) -> String {
+    s.bytes()
+        .map(|b| match b {
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => (b as char).to_string(),
+            _ => format!("%{b:02X}"),
+        })
+        .collect()
+}
+
+/// Version aus /api/capabilities (z. B. „12.4.0“); Fehlertext bei 403 (eingehender Verkehr gesperrt)
+fn version() -> Result<Option<String>, String> {
+    let (code, rumpf) = get("/api/capabilities")?;
+    if code == 403 {
+        return Err("X-Plane sperrt die Verbindung – in X-Plane unter Einstellungen „Disable Incoming Traffic“ ausschalten".into());
+    }
+    if code != 200 {
+        return Err(format!("X-Plane antwortet mit {code}"));
+    }
+    let v: serde_json::Value = serde_json::from_str(&rumpf).map_err(|e| e.to_string())?;
+    if !v["api"]["versions"].as_array().is_some_and(|l| l.iter().any(|x| x == "v3" || x == "v2")) {
+        return Err("Diese X-Plane-Version ist zu alt – bitte X-Plane 12 auf den neuesten Stand bringen".into());
+    }
+    Ok(v["x-plane"]["version"].as_str().map(Into::into))
+}
+
+/// IDs der Datarefs (nur gültig, solange X-Plane läuft); None = noch kein Flug geladen
+fn ids() -> Result<Option<Vec<u64>>, String> {
+    let q: Vec<String> = NAMEN.iter().map(|n| format!("filter%5Bname%5D={}", kodieren(n))).collect();
+    let (code, rumpf) = get(&format!("/api/v3/datarefs?{}&fields=id,name", q.join("&")))?;
+    if code == 404 {
+        return Ok(None);
+    }
+    if code != 200 {
+        return Err(format!("X-Plane: Datarefs nicht lesbar ({code})"));
+    }
+    let v: serde_json::Value = serde_json::from_str(&rumpf).map_err(|e| e.to_string())?;
+    let liste = v["data"].as_array().ok_or("X-Plane: unerwartete Antwort")?;
+    let mut out = Vec::new();
+    for n in NAMEN {
+        match liste.iter().find(|x| x["name"] == n).and_then(|x| x["id"].as_u64()) {
+            Some(id) => out.push(id),
+            None => return Ok(None),
+        }
+    }
+    Ok(Some(out))
+}
+
+fn wert(id: u64) -> Result<serde_json::Value, String> {
+    let (code, rumpf) = get(&format!("/api/v3/datarefs/{id}/value"))?;
+    if code != 200 {
+        return Err(format!("Wert {id}: {code}"));
+    }
+    let v: serde_json::Value = serde_json::from_str(&rumpf).map_err(|e| e.to_string())?;
+    Ok(v["data"].clone())
+}
+
+/// Werte (in der Reihenfolge von NAMEN) in die Flugdaten umrechnen
+pub fn umrechnen(w: &[serde_json::Value]) -> Option<XpDaten> {
+    let f = |i: usize| w.get(i).and_then(|x| x.as_f64());
+    let motor = match w.get(7) {
+        Some(serde_json::Value::Array(a)) => a.iter().any(|x| x.as_f64().unwrap_or(0.0) > 0.5),
+        Some(x) => x.as_f64().unwrap_or(0.0) > 0.5,
+        None => false,
+    };
+    let lat = f(0)?;
+    let lon = f(1)?;
+    if !lat.is_finite() || !lon.is_finite() || (lat == 0.0 && lon == 0.0) {
+        return None;
+    }
+    Some(XpDaten {
+        lat,
+        lon,
+        hoehe: f(2).unwrap_or(0.0) * 3.28084,
+        agl: f(3).unwrap_or(0.0) * 3.28084,
+        kurs: f(4).unwrap_or(0.0).rem_euclid(360.0),
+        kts: f(5).unwrap_or(0.0) * 1.943_844,
+        am_boden: f(6).unwrap_or(0.0) > 0.5,
+        motor,
+    })
+}
+
+/// Eine Sitzung: Ok(false) = X-Plane läuft nicht; Ok(true) = war verbunden und ist jetzt weg
+fn sitzung(app: &AppHandle, stop: &AtomicBool) -> Result<bool, String> {
+    let v = match version() {
+        Ok(v) => v,
+        Err(e) if e.contains("Disable") || e.contains("zu alt") || e.contains("antwortet") => return Err(e),
+        Err(_) => return Ok(false),
+    };
+    let name = format!("X-Plane {}", v.as_deref().unwrap_or("12"));
+    let mut ids_jetzt: Option<Vec<u64>> = None;
+    let mut gemeldet = "";
+    while !stop.load(Ordering::SeqCst) {
+        if ids_jetzt.is_none() {
+            ids_jetzt = match ids() {
+                Ok(x) => x,
+                Err(_) => return Ok(true),
+            };
+            if ids_jetzt.is_none() && gemeldet != "kein" {
+                status(app, "wartet", &format!("{name} läuft – Flug laden"), v.as_deref());
+                gemeldet = "kein";
+            }
+        }
+        if let Some(l) = &ids_jetzt {
+            let mut werte = Vec::with_capacity(l.len());
+            let mut ok = true;
+            for id in l {
+                match wert(*id) {
+                    Ok(x) => werte.push(x),
+                    Err(_) => {
+                        ok = false;
+                        break;
+                    }
+                }
+            }
+            if !ok {
+                // X-Plane neu gestartet oder Flug beendet: IDs neu holen (bzw. Verbindung weg)
+                if version().is_err() {
+                    return Ok(true);
+                }
+                ids_jetzt = None;
+                continue;
+            }
+            if let Some(d) = umrechnen(&werte) {
+                if gemeldet != "da" {
+                    status(app, "verbunden", &format!("Mit {name} verbunden"), v.as_deref());
+                    gemeldet = "da";
+                }
+                let _ = app.emit("xplane-daten", d);
+            }
+        }
+        for _ in 0..10 {
+            if stop.load(Ordering::SeqCst) {
+                break;
+            }
+            std::thread::sleep(Duration::from_millis(100));
+        }
+    }
+    Ok(true)
+}
+
+/// Sucht laufend nach X-Plane 12 und liest die Flugdaten (bis xplane_stoppen)
+#[tauri::command]
+pub fn xplane_starten(app: AppHandle) {
+    xplane_stoppen();
+    let stop = Arc::new(AtomicBool::new(false));
+    if let Ok(mut g) = LAEUFT.lock() {
+        *g = Some(stop.clone());
+    }
+    std::thread::spawn(move || {
+        let mut gemeldet = false;
+        while !stop.load(Ordering::SeqCst) {
+            match sitzung(&app, &stop) {
+                Ok(true) => gemeldet = false,
+                Ok(false) => {
+                    if !gemeldet {
+                        status(&app, "wartet", "Warte auf X-Plane 12", None);
+                        gemeldet = true;
+                    }
+                }
+                Err(e) => {
+                    status(&app, "fehler", &e, None);
+                    gemeldet = false;
+                }
+            }
+            for _ in 0..30 {
+                if stop.load(Ordering::SeqCst) {
+                    break;
+                }
+                std::thread::sleep(Duration::from_millis(100));
+            }
+        }
+        status(&app, "aus", "", None);
+    });
+}
+
+#[tauri::command]
+pub fn xplane_stoppen() {
+    if let Ok(mut g) = LAEUFT.lock() {
+        if let Some(s) = g.take() {
+            s.store(true, Ordering::SeqCst);
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn umrechnen_werte() {
+        let w: Vec<serde_json::Value> = serde_json::from_str("[48.2, 16.3, 300.0, 10.0, -90.0, 10.0, 1, [0, 1]]").unwrap();
+        let d = umrechnen(&w).unwrap();
+        assert!((d.hoehe - 984.25).abs() < 0.1 && (d.kurs - 270.0).abs() < 1e-9 && (d.kts - 19.44).abs() < 0.01);
+        assert!(d.am_boden && d.motor);
+        let leer: Vec<serde_json::Value> = serde_json::from_str("[0, 0, 0, 0, 0, 0, 0, [0]]").unwrap();
+        assert!(umrechnen(&leer).is_none());
+    }
+    #[test]
+    fn http_antworten() {
+        let roh = b"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n5\r\n{\"dat\r\n6\r\na\": 1}\r\n0\r\n\r\n";
+        assert_eq!(antwort_lesen(roh).unwrap(), (200, "{\"data\": 1}".to_string()));
+        let roh2 = b"HTTP/1.1 404 Not Found\r\nContent-Length: 2\r\n\r\n{}";
+        assert_eq!(antwort_lesen(roh2).unwrap(), (404, "{}".to_string()));
+        assert_eq!(kodieren("sim/a_b"), "sim%2Fa_b");
+    }
+}

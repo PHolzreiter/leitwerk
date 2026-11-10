@@ -13,6 +13,7 @@ mod stimme;
 mod supertonic;
 mod ton;
 mod updater;
+mod xplane;
 
 use std::collections::HashMap;
 use std::fs::{self, File};
@@ -641,6 +642,8 @@ pub fn run() {
             msfs::msfs_stoppen,
             msfs::msfs_carls,
             msfs::msfs_dll_suchen,
+            xplane::xplane_starten,
+            xplane::xplane_stoppen,
             gtn::gtn_suchen,
             gtn::gtn_schreiben,
             hpg::hpg_starten,

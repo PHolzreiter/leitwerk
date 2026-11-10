@@ -1,5 +1,12 @@
 # Änderungen
 
+## 0.116.0-beta.32 – X-Plane 12, CARLS-Hinweis
+- **X-Plane 12:** LeitWerk sucht jetzt gleichzeitig MSFS und X-Plane 12 (ab 12.1.1, über den eingebauten Webserver von X-Plane – kein Plugin nötig) und verbindet sich mit dem, der läuft. Laufen beide, zählt der, in dem geflogen wird. Position, Höhe, Kurs, Geschwindigkeit, am Boden und Triebwerk kommen 1× pro Sekunde – Karte, Status durch Landung, Ankunftszeiten, Buchen und Großeinsatz funktionieren wie mit MSFS
+- In X-Plane darf „Disable Incoming Traffic“ nicht eingeschaltet sein; das MSFS-Zubehör (H145-Tablet, CARLS, GTN750) wird bei X-Plane ausgeblendet – Tablet über die Handy-Seite (QR-Code)
+- Pilotenansicht › Cockpit: Zeile „Flugsimulator“ bzw. „X-Plane“/„MSFS“, Knopf „Mit Flugsimulator verbinden“
+- **CARLS:** solange keine Mission verbunden ist und LeitWerk läuft, steht im Display „LeitWerk bereit – Tablet: App LeitWerk – dort Verbinden tippen“ (wird mit der App im H145-Tablet eingebaut)
+- **Tablet:** Krankenhaus buchen ohne Rückfrage; bei Fahrzeugen vor Ort kein „da“ mehr – die Minuten stehen nur bei Fahrzeugen, die unterwegs sind
+
 ## 0.116.0-beta.31 – Tablet: Großeinsatz, Patient, Buchen
 - **Platz für die Leisten der Tablets:** oben bleibt die Leiste des Tablets frei (H145: Uhr/Akku, EFB: Datum), unten die Symbolleiste des EFB – „Zurück“, Kopf und „Zielort buchen“ sind wieder drückbar
 - **Umlaute:** Schrift jetzt als TrueType (woff kam im Tablet nicht an)

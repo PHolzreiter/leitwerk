@@ -893,22 +893,25 @@ function cockpitDaten(fz: SimFahrzeug | undefined): Record<string, unknown>[] {
   const z = flugsim.zustand;
   const out: Record<string, unknown>[] = [];
   const msfsKn: Knopf[] = [];
-  if (z === "aus" || z === "fehler" || z === "keineDll" || z === "getrennt") msfsKn.push({ t: "Mit MSFS verbinden", prim: true, klick: () => void flugsimVerbinden() });
-  if (z === "keineDll" || z === "fehler") msfsKn.push({ t: "SimConnect.dll wählen …", klick: () => void dllWaehlen() });
+  const xp = flugsim.quelle === "xplane";
+  if (z === "aus" || z === "fehler" || z === "keineDll" || z === "getrennt") msfsKn.push({ t: "Mit Flugsimulator verbinden", prim: true, klick: () => void flugsimVerbinden() });
+  if (!xp && (flugsim.ms.zustand === "keineDll" || flugsim.ms.zustand === "fehler") && !/Windows/.test(flugsim.ms.text)) msfsKn.push({ t: "SimConnect.dll wählen (MSFS) …", klick: () => void dllWaehlen() });
   if (z === "verbunden" || z === "wartet") msfsKn.push({ t: "Trennen", klick: () => void flugsimTrennen() });
   out.push({
     k: "msfs",
-    t: "MSFS",
+    t: xp ? "X-Plane" : flugsim.quelle === "msfs" ? "MSFS" : "Flugsimulator",
     z: z === "verbunden" && !frisch ? "keine Flugdaten" : (SIM_TEXT[z] ?? z),
     f: z === "verbunden" ? (frisch ? PUNKT.ok : PUNKT.warn) : z === "wartet" ? PUNKT.warn : z === "aus" ? PUNKT.aus : PUNKT.fehl,
     d:
       z === "verbunden" && frisch
-        ? "SimConnect verbunden · Position geht 1× pro Sekunde an die Leitstelle."
+        ? `${xp ? `${flugsim.xp.text || "X-Plane verbunden"}` : "MSFS (SimConnect) verbunden"} · Position geht 1× pro Sekunde an die Leitstelle.`
         : z === "verbunden"
           ? "Keine Flugdaten – bist du im Flug (nicht im Menü)?"
-          : flugsim.text || (z === "aus" ? "Nicht verbunden – ohne Flugsimulator geht der Übungsflug." : ""),
+          : flugsim.text || (z === "aus" ? "Nicht verbunden – LeitWerk sucht MSFS und X-Plane 12. Ohne Flugsimulator geht der Übungsflug." : ""),
     hinw:
-      z === "keineDll" || z === "fehler"
+      flugsim.xp.zustand === "fehler"
+        ? "X-Plane 12 ab Version 12.1.1; in X-Plane darf unter Einstellungen „Disable Incoming Traffic“ nicht eingeschaltet sein."
+        : !xp && (flugsim.ms.zustand === "keineDll" || flugsim.ms.zustand === "fehler") && !/Windows/.test(flugsim.ms.text)
         ? "Die Datei kommt mit dem kostenlosen MSFS-SDK (Entwicklermodus › Help › SDK Installer), danach liegt sie unter C:\\MSFS 2024 SDK\\SimConnect SDK\\lib\\SimConnect.dll."
         : "",
     werte:
@@ -922,6 +925,13 @@ function cockpitDaten(fz: SimFahrzeug | undefined): Record<string, unknown>[] {
         : null,
     knoepfe: msfsKn,
   });
+  // MSFS-Zubehör (HPG H145, GTN750) gibt es in X-Plane nicht
+  if (xp) return out.concat(cockpitRest(fz).filter((x) => x.k === "handy"));
+  return out.concat(cockpitRest(fz));
+}
+
+function cockpitRest(fz: SimFahrzeug | undefined): Record<string, unknown>[] {
+  const out: Record<string, unknown>[] = [];
   if (hpg.geprueft && (hpg.paket || hpg.zustand === "verbunden")) {
     const v = hpg.zustand === "verbunden";
     out.push({
@@ -1607,7 +1617,7 @@ function pilotBericht(): string {
     `- Hubschrauber: ${fz ? `${fz.funkrufname} (${fz.kurzname || fz.funkrufname}), Status ${sim.statusDef(fz.status).nummer} ${sim.statusDef(fz.status).name}, Phase ${fz.phase}` : "keiner"}`,
     `- Einsatz: ${e ? `${e.nummer} ${e.code ?? ""} · ${stichwort(e)}${e.gsKind ? ` · Großeinsatz-Patient ${e.gsKind.nr}` : ""}` : "keiner"}`,
     `- Plan: ${planText(fz?.pilot?.plan) || "–"}`,
-    `- MSFS: ${flugsim.zustand}${flugsim.text ? ` (${flugsim.text})` : ""}${d && datenFrisch() ? ` · ${Math.round(d.hoehe)} ft, ${Math.round(d.kts)} kt, ${d.am_boden ? "am Boden" : "in der Luft"}` : ""}`,
+    `- Flugsimulator (${flugsim.quelle ?? "–"}): ${flugsim.zustand}${flugsim.text ? ` (${flugsim.text})` : ""}${d && datenFrisch() ? ` · ${Math.round(d.hoehe)} ft, ${Math.round(d.kts)} kt, ${d.am_boden ? "am Boden" : "in der Luft"}` : ""}`,
     `- H145-Tablet: ${hpg.zustand}${hpg.mission ? " · Mission eingerichtet" : ""} · Funkgerät: ${carlsAn() ? (hpg.zustand === "verbunden" ? "verbunden" : "wartet") : "aus"}`,
     `- GTN750: ${gtn.paket ? (gtnAn() ? "an" : "aus") : "nicht gefunden"}${gtn.fehler ? ` (${gtn.fehler})` : ""}`,
     `- Position: ${fz ? `${fz.lat.toFixed(5)}, ${fz.lon.toFixed(5)}` : "–"}`,
