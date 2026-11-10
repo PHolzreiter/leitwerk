@@ -179,6 +179,17 @@ export function carlsEmpfangen(w: number): void {
   if (a) ausloesen(a, true);
 }
 
+/** CARLS: wird gerade eine Taste angelernt? (dann jeden Druck sofort weitergeben) */
+export function carlsLernt(): boolean {
+  return !!carlsLerner || lernt;
+}
+
+/** CARLS: welche Aktion liegt auf dieser Ziffer? */
+export function carlsAktion(w: number): PilotAktion | undefined {
+  const b = belegung();
+  return (Object.keys(b.carls) as PilotAktion[]).find((k) => b.carls[k] === w);
+}
+
 // ------------------------------------------------------------------ Start/Stopp
 
 /** Handy: Sprechtaste gedrückt bzw. losgelassen */

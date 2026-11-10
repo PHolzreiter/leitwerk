@@ -1,5 +1,11 @@
 # Änderungen
 
+## 0.116.0-beta.23 – H145: eigenes CARLS-Display
+- **Eigenes Display am CARLS-Funkgerät** (ganze Fläche, mit Umlauten): oben der Status („Frei auf Wache“), in der Mitte wer gerade funkt („Gruppe aktiv · LEO · ID 80000“, beim eigenen Spruch „Senden“), unten die Sprechgruppe mit ◄ ► – wie das Funkgerät im Spiel. Kleine Lampe, wenn in einer anderen Gruppe gefunkt wird
+- **Status geben wie am echten Gerät:** Ziffer kurz drücken – der Status blinkt 1 Sekunde gelb und geht dann raus. Andere Ziffer = ändern, roter Hörer = abbrechen. Bis der Host bestätigt, steht schon der neue Status mit „wird gesendet“
+- **◄ ►** am CARLS wechseln die Sprechgruppe (wenn es eine Großeinsatz-Gruppe gibt)
+- Das Display wird laufend aktualisiert, ohne die Tablet-Mission neu zu laden
+
 ## 0.116.0-beta.22 – Stand der normalen Version 0.115.0 übernommen
 - **Beta enthält jetzt 0.115.0:** CARLS-Funkgerät der H145 über die Tablet-Mission (Status-Tasten und Anzeige) – in der neuen Pilotenansicht unter „Cockpit“
 - Die Beta zählt ab jetzt als 0.116.0-beta, damit sie neuer ist als die normale Version

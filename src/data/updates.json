@@ -1,5 +1,14 @@
 [
  {
+  "version": "0.116.0-beta.23",
+  "datum": "2026-11-10",
+  "titel": "H145: eigenes CARLS-Display",
+  "punkte": [
+   "CARLS-Funkgerät zeigt Status, wer gerade funkt und die Sprechgruppe – wie das Funkgerät im Spiel",
+   "Status-Taste: 1 Sekunde vorgemerkt, dann gesendet; roter Hörer bricht ab, ◄ ► wechselt die Sprechgruppe"
+  ]
+ },
+ {
   "version": "0.116.0-beta.22",
   "datum": "2026-11-10",
   "titel": "Stand von 0.115.0 übernommen",

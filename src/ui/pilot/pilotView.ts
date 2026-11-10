@@ -37,7 +37,7 @@ import { dateiLoeschen } from "../sounds";
 import { ablageZeigen } from "../../net/ablage";
 import { flugEingeschraenkt, flugverbot } from "../../sim/weather";
 import { efbStarten, handyAktionen, handyBuchung, handyDialog, handyLaeuft, handyStand, handyStandBauen } from "./handy";
-import { hpg, hpgAktualisieren, hpgEinrichten, hpgMissionFuer, hpgStarten, hpgTestNachricht } from "./hpg";
+import { hpg, hpgAktualisieren, hpgCarlsTest, hpgEinrichten, hpgMissionFuer, hpgStarten, hpgTestNachricht } from "./hpg";
 import { letzterCarls } from "./eingabe";
 import { carlsAn, carlsUmschalten, communityWaehlen, gtn, gtnAn, gtnBereitlegen, gtnSuchen, gtnUmschalten } from "./flugsim";
 import { datenEmpfangen, datenFrisch, dllWaehlen, flugplanSpeichern, flugsim, flugsimAnbinden, flugsimBeenden, flugsimTrennen, flugsimVerbinden, koordText, vorgabe, wetterDialog } from "./flugsim";
@@ -500,6 +500,7 @@ export function pilotOeffnen(): void {
         flugsim,
         hpgMissionFuer,
         hpgTestNachricht,
+        hpgCarlsTest,
         daten: () => ansichtDaten(),
         // Handy im Test: Stand wie für das Handy, Befehle wie vom Handy
         handy: () => {
@@ -943,7 +944,7 @@ function cockpitDaten(fz: SimFahrzeug | undefined): Record<string, unknown>[] {
       d: !an
         ? "Die Status-Tasten am Funkgerät sind aus."
         : ok
-          ? `Die Tasten 1–6 und 9 am Funkgerät setzen den Status; im Display stehen Status und Einsatz (mit ▲▼ blättern)${letzterCarls ? ` · zuletzt: ${letzterCarls}` : ""}.`
+          ? `Ziffer kurz drücken: Status blinkt 1 s, dann geht er raus (roter Hörer = abbrechen, ◄ ► = Sprechgruppe). Im Display: Status, wer funkt, Sprechgruppe${letzterCarls ? ` · zuletzt: ${letzterCarls}` : ""}.`
           : "Im Tablet der H145: Missions → LeitWerk Leitstelle starten – dann zeigt das Funkgerät Status und Einsatz.",
       knoepfe: [{ t: an ? "Ausschalten" : "Einschalten", klick: () => carlsUmschalten(!an) }],
     });

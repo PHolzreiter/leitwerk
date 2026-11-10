@@ -6,9 +6,11 @@
  * Aufbau der Missionen nach der „H145 Mission System Documentation“ (API 0.1).
  *
  * CARLS-Funkgerät (Mittelkonsole): die Anzeige kommt aus der Mission („set_carls_radio“, LSK/RSK je 3 Texte,
- * Items = Zeilenpaare). Ein Tastendruck am Gerät löst das H-Ereignis MISSION_RADIO_CARLS_<Taste> aus; die
- * Mission fängt es mit „events“ ab und schickt es als remote_notify „carls_<Taste>“ an LeitWerk. Ohne geladene
- * Mission zeigt das Gerät „Connect a mission to begin“.
+ * Items = Zeilenpaare). Das Gerät setzt die Texte als HTML – LeitWerk legt deshalb ein eigenes Display über die
+ * ganze Fläche (Status · wer funkt · Sprechgruppe, wie das Funkgerät im Spiel). Ein Tastendruck löst das
+ * H-Ereignis MISSION_RADIO_CARLS_<Taste> aus (nur kurzes Drücken, kein Halten); die Mission fängt es mit
+ * „events“ ab und schickt es als remote_notify „carls_<Taste>“ an LeitWerk. Ohne geladene Mission zeigt das
+ * Gerät „Connect a mission to begin“.
  */
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
@@ -21,9 +23,12 @@ import { distanceM } from "../../sim/geo";
 import type { StatusKey } from "../../sim/settings";
 import { inTauri } from "../../platform";
 import { toast } from "../dom";
-import { carlsEmpfangen } from "./eingabe";
+import { esc } from "../dom";
+import { eigenerName, geraetId, gruppenName, wenHoereIch } from "../funkGeraet";
+import { funkSendeZustand, gruppeHoerbar, sprechGruppe, sprechGruppeWeiter } from "../sprechfunk";
+import { carlsAktion, carlsEmpfangen, carlsLernt } from "./eingabe";
 import { carlsAn, vorgabe } from "./flugsim";
-import { AKTIONEN, belegung } from "./tasten";
+import { AKTIONEN } from "./tasten";
 
 type Befehl = Record<string, unknown>;
 type Mission = Record<string, unknown>;
@@ -44,11 +49,12 @@ interface Handlungen {
 let handeln: Handlungen | null = null;
 let gestartet = false;
 let letzteMission = "";
-let letzterUi = "";
 /** Krankenhäuser, die zuletzt am Tablet zur Wahl standen (Index → ID) */
 let khAuswahl: string[] = [];
 /** Was zuletzt hätte geschickt werden sollen (für „hello“ nach einer Neuverbindung) */
-let aktuell: { key: string; mission: Mission; ui: Befehl[] } | null = null;
+let aktuell: { key: string; mission: Mission } | null = null;
+/** Hubschrauber des Piloten (für die laufende CARLS-Anzeige) */
+let aktuellFzId: string | null = null;
 
 function senden(obj: unknown): void {
   if (!inTauri() || hpg.zustand !== "verbunden") return;
@@ -60,6 +66,8 @@ export async function hpgStarten(h: Handlungen): Promise<void> {
   handeln = h;
   if (!inTauri() || gestartet) return;
   gestartet = true;
+  // CARLS-Display: wer funkt, ändert sich laufend
+  window.setInterval(carlsTakt, 200);
   await listen<{ zustand: typeof hpg.zustand; text: string }>("hpg-status", (ev) => {
     hpg.zustand = ev.payload.zustand;
     hpg.text = ev.payload.text;
@@ -112,11 +120,10 @@ function nachricht(text: string): void {
   if (m.control_msg === "hello") {
     // H145 hat sich (neu) verbunden: aktuellen Stand schicken
     letzteMission = "";
-    letzterUi = "";
     if (aktuell) {
       senden({ load_mission: aktuell.mission });
       letzteMission = aktuell.key;
-      letzterUi = JSON.stringify(aktuell.ui);
+      anzeigeNachLaden();
     }
     return;
   }
@@ -128,8 +135,7 @@ function nachricht(text: string): void {
   const tag = typeof m.remote_notify === "string" ? m.remote_notify : "";
   if (!tag || !handeln) return;
   if (tag === "quittieren") return handeln.status("alarmiert");
-  const carls = /^carls_(\d)$/.exec(tag);
-  if (carls) return carlsAn() ? carlsEmpfangen(Number(carls[1])) : undefined;
+  if (tag.startsWith("carls_")) return carlsTaste(tag.slice(6));
   if (tag.startsWith("status_")) {
     const s = tag.slice(7) as StatusKey;
     return handeln.status(s);
@@ -169,39 +175,154 @@ function punktIcon(farbe: string): string {
 
 /**
  * Fußzeile des Tablets: die H145 kennt weder die rechte noch die linke Fußzeile („Command Failed – NotFound“,
- * getestet 30.10.2026) – Status und Einsatznummer stehen deshalb im Mission Briefing, in den Meldungen und
- * am CARLS-Funkgerät. Diese Befehle laufen am Anfang jeder Mission und bei Änderungen ohne neue Mission.
+ * getestet 30.10.2026) – Status und Einsatznummer stehen deshalb im Mission Briefing und in den Meldungen.
+ * Am Anfang jeder Mission: das CARLS-Display (danach hält es carlsTakt() aktuell).
  */
-function uiBefehle(fz: SimFahrzeug, e: Einsatz | undefined): Befehl[] {
-  return [{ set_carls_radio: carlsAnzeige(fz, e) }];
+function uiBefehle(fz: SimFahrzeug, _e: Einsatz | undefined): Befehl[] {
+  return [{ set_carls_radio: carlsDaten(fz) }];
 }
 
-/** Tasten am CARLS: jedes Ziffern-Ereignis geht als remote_notify an LeitWerk */
+// ------------------------------------------------------------------ CARLS-Funkgerät
+
+/** Tasten am CARLS: Ziffern, ◄ ► und roter Hörer gehen als remote_notify an LeitWerk */
 function carlsEreignisse(): Record<string, unknown> {
   const ev: Record<string, unknown> = {};
-  for (let n = 0; n <= 9; n++) ev[`MISSION_RADIO_CARLS_${n}`] = { commands: [{ remote_notify: `carls_${n}`, params: [] }] };
+  const tasten = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "LEFT", "RIGHT", "HANG"];
+  for (const k of tasten) ev[`MISSION_RADIO_CARLS_${k}`] = { commands: [{ remote_notify: `carls_${k}`, params: [] }] };
   return ev;
 }
 
-/** CARLS-Anzeige: 3 Zeilenpaare sichtbar (mit ▲▼ blättern), links/rechts je 3 kurze Texte */
-export function carlsAnzeige(fz: SimFahrzeug, e: Einsatz | undefined): { LSK: string[]; RSK: string[]; Items: [string, string][] } {
-  const k = (s: string, n = 26) => t(s).replace(/\n/g, " ").slice(0, n);
-  const st = sim.statusDef(fz.status);
-  const items: [string, string][] = [[k(`Status ${st.nummer} ${st.name}`), k(fz.kurzname || fz.funkrufname)]];
-  if (e) {
-    items.push([k(`${e.nummer} ${stichwort(e)}`), k(sim.pilotBo(fz)?.br ? "Bereitstellungsraum" : (e.adresse?.label ?? "Einsatzort folgt"))]);
-    const h = e.kh ? store.get("hospitals", e.kh.hospitalId) : undefined;
-    if (h) items.push([k("Zielkrankenhaus"), k(h.kurzname || h.name)]);
-  } else items.push([k("Einsatzbereit"), k(`Stuetzpunkt ${fz.stationName}`)]);
-  // welche Taste was macht (Belegung aus dem Tasten-Fenster)
-  const b = belegung().carls;
-  const tasten = AKTIONEN.filter((a) => b[a.id] != null).sort((x, y) => (b[x.id] ?? 0) - (b[y.id] ?? 0));
-  for (const a of tasten) {
-    const s = a.status ? sim.statusDef(a.status) : null;
-    items.push([k(`Taste ${b[a.id]}`), k(s ? (a.id === "s9" ? "Alarm quittieren" : `Status ${s.nummer} ${s.name}`) : a.name)]);
+/** Status vorgemerkt: geht nach 1 s raus (wie Halten am echten Gerät); andere Ziffer = ändern, roter Hörer = abbrechen */
+let carlsVormerk: { n: number; status: StatusKey; timer: number } | null = null;
+/** gesendet, aber vom Host noch nicht bestätigt: so lange schon den neuen Status zeigen */
+let carlsGesendet: { status: StatusKey; bis: number } | null = null;
+const VORMERK_MS = 1000;
+let letzteAnzeige = "";
+let anzeigeAb = 0;
+
+function carlsTaste(t: string): void {
+  if (!carlsAn()) return;
+  if (/^\d$/.test(t)) {
+    const n = Number(t);
+    if (carlsLernt()) return carlsEmpfangen(n);
+    const a = carlsAktion(n);
+    if (!a) return;
+    const st = AKTIONEN.find((x) => x.id === a)?.status;
+    if (!st) return carlsEmpfangen(n);
+    if (carlsVormerk) window.clearTimeout(carlsVormerk.timer);
+    carlsVormerk = {
+      n,
+      status: st,
+      timer: window.setTimeout(() => {
+        const v = carlsVormerk;
+        carlsVormerk = null;
+        if (!v) return;
+        carlsGesendet = { status: v.status, bis: Date.now() + 8000 };
+        carlsEmpfangen(v.n);
+        carlsTakt();
+      }, VORMERK_MS),
+    };
+  } else if (t === "LEFT" || t === "RIGHT") {
+    sprechGruppeWeiter(t === "LEFT" ? -1 : 1);
+  } else if (t === "HANG" && carlsVormerk) {
+    window.clearTimeout(carlsVormerk.timer);
+    carlsVormerk = null;
   }
-  while (items.length < 3) items.push(["", ""]);
-  return { LSK: ["", "", ""], RSK: ["", "", k(`ST ${st.nummer}`, 8)], Items: items };
+  carlsTakt();
+}
+
+/** Text fürs Display: HTML-sicher, Umlaute als Zeichen-Nummern (kommt sicher durchs Tablet) */
+function h(s: string): string {
+  return esc(s).replace(/[^\x20-\x7e]/g, (c) => `&#${c.codePointAt(0)};`).replace(/[{}$]/g, "");
+}
+
+function statusName(st: StatusKey): string {
+  return st === "freiWache" ? "Frei auf Wache" : sim.statusDef(st).name;
+}
+
+/** Was das Display zeigen soll (ohne HTML) – auch für Tests */
+export function carlsStand(fz: SimFahrzeug): { status: string; statusArt: "" | "vormerk" | "gesendet"; kopf: string; wer: string; art: "" | "aktiv" | "senden" | "warten"; gruppe: string; neben: boolean } {
+  if (carlsGesendet && (fz.status === carlsGesendet.status || Date.now() > carlsGesendet.bis)) carlsGesendet = null;
+  let status = statusName(fz.status);
+  let statusArt: "" | "vormerk" | "gesendet" = "";
+  if (carlsVormerk) {
+    status = statusName(carlsVormerk.status);
+    statusArt = "vormerk";
+  } else if (carlsGesendet) {
+    status = statusName(carlsGesendet.status);
+    statusArt = "gesendet";
+  }
+  // wer spricht – wie am Funkgerät im Spiel (funkGeraet.ts)
+  const k = sprechGruppe();
+  const ich = funkSendeZustand();
+  let kopf = "";
+  let wer = "";
+  let art: "" | "aktiv" | "senden" | "warten" = "";
+  if (ich?.art === "sendet") {
+    kopf = "Senden";
+    art = "senden";
+    wer = `ID ${geraetId(eigenerName())}`;
+  } else if (ich?.art === "wartet") {
+    kopf = "Warten";
+    art = "warten";
+    const w = wenHoereIch(k);
+    wer = w ? `${w} · ID ${geraetId(w)}` : "";
+  } else {
+    const w = wenHoereIch(k);
+    if (w) {
+      kopf = "Gruppe aktiv";
+      art = "aktiv";
+      wer = `${w} · ID ${geraetId(w)}`;
+    }
+  }
+  const neben = sim.offeneGruppen().some((x) => x !== k && gruppeHoerbar(x) && !!wenHoereIch(x));
+  return { status, statusArt, kopf, wer, art, gruppe: gruppenName(k), neben };
+}
+
+/** Eigenes Display über der ganzen CARLS-Fläche (470 × 348): Status · wer funkt · Sprechgruppe */
+function carlsHtml(fz: SimFahrzeug): string {
+  const d = carlsStand(fz);
+  const gr = d.status.length <= 12 ? 60 : d.status.length <= 16 ? 48 : 38;
+  const stFarbe = d.statusArt === "vormerk" ? "#ffd23f" : "#ffffff";
+  const blink = d.statusArt === "vormerk" ? "animation:lwcb .5s step-end infinite;" : "";
+  const warte = d.statusArt === "gesendet" ? `<div style="font-size:24px;color:#9fb3c0;margin-top:4px">wird gesendet</div>` : d.statusArt === "vormerk" ? `<div style="font-size:24px;color:#ffd23f;margin-top:4px">Status ${h(sim.statusDef(carlsVormerk!.status).nummer)} &#8211; roter H&#246;rer = Abbruch</div>` : "";
+  const farbe = d.art === "senden" ? "#ff5a4f" : d.art === "warten" ? "#ffd23f" : "#4cd964";
+  const funk = d.kopf
+    ? `<div style="font-size:28px;font-weight:bold;color:${farbe};letter-spacing:1px">${h(d.kopf.toUpperCase())}</div><div style="font-size:40px;margin-top:6px;white-space:nowrap;overflow:hidden">${h(d.wer)}</div>`
+    : `<div style="font-size:28px;color:#4a5a66">&#8211;</div>`;
+  const lampe = `<span style="display:inline-block;width:18px;height:18px;border-radius:9px;margin-left:14px;vertical-align:middle;background:${d.neben ? "#ffb020" : "transparent"}"></span>`;
+  const zeile = "position:absolute;left:0;width:470px;height:116px;box-sizing:border-box;padding:14px 20px;display:flex;flex-direction:column;justify-content:center;";
+  return (
+    `<style>@keyframes lwcb{50%{opacity:.15}}</style>` +
+    `<div style="position:absolute;left:-50px;top:0;width:470px;height:348px;background:#06090c;color:#fff;font-family:Roboto,Arial,sans-serif;text-align:left;line-height:1.1;z-index:50;overflow:hidden">` +
+    `<div style="${zeile}top:0;border-bottom:2px solid #1f2b33"><div style="font-size:${gr}px;font-weight:bold;color:${stFarbe};white-space:nowrap;overflow:hidden;${blink}">${h(d.status)}</div>${warte}</div>` +
+    `<div style="${zeile}top:116px;border-bottom:2px solid #1f2b33;${d.art ? "background:#0d1a12;" : ""}">${funk}</div>` +
+    `<div style="${zeile}top:232px;align-items:center;flex-direction:row;justify-content:center;font-size:44px;font-weight:bold">` +
+    `<span style="color:#6f8796;margin-right:18px">&#9664;</span>${h(d.gruppe)}<span style="color:#6f8796;margin-left:18px">&#9654;</span>${lampe}</div>` +
+    `</div>`
+  );
+}
+
+function carlsDaten(fz: SimFahrzeug): { LSK: string[]; RSK: string[]; Items: [string, string][] } {
+  return { LSK: ["", "", ""], RSK: ["", "", ""], Items: [[carlsHtml(fz), ""], ["", ""], ["", ""]] };
+}
+
+/** nach einer neuen Mission: deren Display ist evtl. schon alt – kurz danach neu schicken */
+function anzeigeNachLaden(): void {
+  letzteAnzeige = "";
+  anzeigeAb = Date.now() + 1500;
+}
+
+/** hält das Display aktuell (Status, wer funkt, Gruppe); schickt nur bei Änderungen */
+function carlsTakt(): void {
+  if (hpg.zustand !== "verbunden" || !aktuellFzId || Date.now() < anzeigeAb) return;
+  const fz = sim.state.fahrzeuge[aktuellFzId];
+  if (!fz) return;
+  const d = carlsDaten(fz);
+  const html = d.Items[0][0];
+  if (html === letzteAnzeige) return;
+  letzteAnzeige = html;
+  senden({ exec_commands: [{ set_carls_radio: d }] });
 }
 
 function khVorschlaege(fz: SimFahrzeug, e: Einsatz): Hospital[] {
@@ -446,26 +567,29 @@ function missionRoh(fz: SimFahrzeug, e: Einsatz | undefined): { key: string; mis
 export function hpgAktualisieren(fz: SimFahrzeug | undefined, e: Einsatz | undefined): void {
   if (!fz) return;
   const { key, mission } = missionFuer(fz, e);
-  const ui = uiBefehle(fz, e);
   const k = `${fz.id}|${key}`;
-  aktuell = { key: k, mission, ui };
+  aktuell = { key: k, mission };
+  aktuellFzId = fz.id;
   if (k !== letzteMission) {
     letzteMission = k;
-    letzterUi = JSON.stringify(ui);
     senden({ load_mission: mission });
+    anzeigeNachLaden();
     return;
   }
-  const u = JSON.stringify(ui);
-  if (u !== letzterUi && ui.length) {
-    letzterUi = u;
-    senden({ exec_commands: ui });
-  }
+  carlsTakt();
 }
 
 /** Für Tests: eine Nachricht, wie sie von der H145 käme */
 export function hpgTestNachricht(text: string): void {
   nachricht(text);
 }
+
+/** Für Tests: CARLS-Taste drücken bzw. was das Display zeigt */
+export const hpgCarlsTest = {
+  taste: (t: string) => carlsTaste(t),
+  stand: (fz: SimFahrzeug) => carlsStand(fz),
+  daten: (fz: SimFahrzeug) => carlsDaten(fz),
+};
 
 /** Für Tests: Mission zur aktuellen Lage */
 export function hpgMissionFuer(fz: SimFahrzeug, e: Einsatz | undefined): Mission {
