@@ -1,5 +1,13 @@
 [
  {
+  "version": "0.115.0-beta.17",
+  "datum": "2026-11-10",
+  "titel": "Netzbetreiber erfunden",
+  "punkte": [
+   "Erfundene Netzbetreiber statt echter Anbieter"
+  ]
+ },
+ {
   "version": "0.115.0-beta.16",
   "datum": "2026-11-10",
   "titel": "Korrekturen",

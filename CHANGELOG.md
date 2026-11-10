@@ -1,5 +1,8 @@
 # Änderungen
 
+## 0.115.0-beta.17 – Netzbetreiber erfunden
+- **Telefon:** Beim Mobilnetz stehen erfundene Netzbetreiber (Alpennetz, Donaufunk, Weitblick Mobil) statt echter Anbieter
+
 ## 0.115.0-beta.16 – Korrekturen
 - **KT:** Steht der Wagen schon beim Patienten, ruft niemand mehr an, wo der Transport bleibt
 - **Fahrzeuge und Karte:** dieselben Statusfarben wie in der Fahrzeugliste der RD-Übersicht

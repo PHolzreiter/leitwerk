@@ -146,12 +146,12 @@ function norm(t: string): string {
     .replace(/str\.?(?=\s|$)/g, "strasse");
 }
 
-/** Netzbetreiber aus der Vorwahl (nur Anzeige) */
+/** Netzbetreiber aus der Vorwahl (nur Anzeige) – erfundene Namen, keine echten Anbieter */
 const NETZ: [RegExp, string][] = [
-  [/^0664/, "A1"],
-  [/^0676|^0650/, "Magenta"],
-  [/^0699|^0660/, "Drei"],
-  [/^0680|^0681|^0688/, "Spusu / sonstige"],
+  [/^0664/, "Alpennetz"],
+  [/^0676|^0650/, "Donaufunk"],
+  [/^0699|^0660/, "Weitblick Mobil"],
+  [/^0680|^0681|^0688/, "Kleinnetz / sonstige"],
 ];
 function quelleText(tel: string): string {
   const mobil = /^06/.test(tel.replace(/\s/g, ""));
