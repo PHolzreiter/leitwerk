@@ -1,5 +1,10 @@
 # Änderungen
 
+## 0.115.0 – H145: CARLS-Funkgerät
+- **Spieler-NAH mit der HPG H145:** das CARLS-Funkgerät in der Mittelkonsole ist mit LeitWerk verbunden, sobald im Tablet die Mission „LeitWerk Leitstelle“ läuft. Die Tasten 1–6 setzen den Status, 9 quittiert den Alarm (Belegung im Tasten-Fenster änderbar)
+- **Anzeige am Funkgerät:** aktueller Status, Einsatznummer mit Stichwort und Einsatzort, Zielkrankenhaus und die Tastenbelegung – mit ▲▼ blättern. Statt „Connect a mission to begin“
+- Das Lebenszeichen über SimConnect (0.92.3) ist nicht mehr nötig und aus
+
 ## 0.114.3 – Update-Knopf und Fenster unten
 - **Changelog, In Arbeit, Mithelfen:** erst wird der Reiter breit, dann fährt das Fenster hoch. Beim Schließen fährt erst das Fenster hinunter, dann wird der Reiter schmal
 - **Update-Knopf im Hauptmenü:** schlägt ein Update fehl, steht „Update fehlgeschlagen · erneut“ und darunter der Grund (am Mac mit Hinweis auf den Ordner „Programme“). Ein neuer Versuch sucht selbst noch einmal nach dem Update

@@ -166,7 +166,7 @@ function joyLernen(abbruch: AbortSignal): Promise<{ geraet: string; taste: numbe
 let carlsLerner: ((w: number) => void) | null = null;
 export let letzterCarls = 0;
 
-/** Neuer Wert von L:CARLS_RT_BUTTON (aus dem Flugsimulator) */
+/** Taste am CARLS-Funkgerät (über die Tablet-Mission, hpg.ts) */
 export function carlsEmpfangen(w: number): void {
   // nur die Tasten 1–9 (−1 = zurückgesetzt, 0 = nichts gedrückt)
   if (!(w >= 1 && w <= 9)) return;
@@ -222,7 +222,7 @@ export function tastenDialog(): void {
       <p class="plt-leise">Klick auf ein Feld und drück dann die gewünschte Taste. <b>Entf</b> löscht die Belegung, <b>Esc</b> bricht ab.</p>
       <label class="plt-check"><input type="checkbox" class="plt-global-an" ${b.globalAn ? "checked" : ""}${inTauri() ? "" : " disabled"}> Globale Tastenkürzel – funktionieren auch, wenn der Flugsimulator im Vordergrund ist${inTauri() ? "" : " (nur im Programm, nicht im Browser)"}</label>
       <table class="plt-tasten-tab"><thead><tr><th>Aktion</th><th>Taste im Fenster</th><th>Global</th><th>Joystick</th><th>H145-Funkgerät</th></tr></thead><tbody></tbody></table>
-      <p class="plt-leise plt-klein">Globale Kürzel brauchen eine Zusatztaste (Strg, Alt, Umschalt) – sonst wären die Ziffern im ganzen System belegt. Joystick: die Taste einmal drücken, während das Feld blinkt. Ob der Joystick auch bei Fokus auf dem Flugsimulator erkannt wird, hängt vom System ab – im Zweifel globale Kürzel oder das Handy nehmen. H145-Funkgerät: die Tasten am CARLS-Funkgerät in der Mittelkonsole der HPG H145 (MSFS muss verbunden sein); anklicken und dann die Taste im Cockpit drücken.</p>`;
+      <p class="plt-leise plt-klein">Globale Kürzel brauchen eine Zusatztaste (Strg, Alt, Umschalt) – sonst wären die Ziffern im ganzen System belegt. Joystick: die Taste einmal drücken, während das Feld blinkt. Ob der Joystick auch bei Fokus auf dem Flugsimulator erkannt wird, hängt vom System ab – im Zweifel globale Kürzel oder das Handy nehmen. H145-Funkgerät: die Ziffertasten am CARLS-Funkgerät in der Mittelkonsole der HPG H145 (im Tablet muss die Mission „LeitWerk Leitstelle“ laufen); anklicken und dann die Taste im Cockpit drücken.</p>`;
     body.querySelector<HTMLInputElement>(".plt-global-an")!.addEventListener("change", (ev) => {
       b = { ...b, globalAn: (ev.target as HTMLInputElement).checked };
     });

@@ -1086,15 +1086,14 @@ function simTeil(fz: SimFahrzeug | undefined): void {
       }
       box.appendChild(g);
     }
-    // HPG H145: CARLS-Funkgerät (Status-Tasten) – verbunden über ein Lebenszeichen wie bei einem Missionsdienst
-    if (z === "verbunden" && (hpg.paket || hpg.zustand === "verbunden" || flugsim.carls?.verbunden)) {
+    // HPG H145: CARLS-Funkgerät (Status-Tasten) – läuft über die Mission „LeitWerk Leitstelle“ im Tablet
+    if (hpg.paket || hpg.zustand === "verbunden") {
       const g = el("div", { class: "plt-gtn" });
-      const c = flugsim.carls;
       const an = carlsAn();
-      const text = !an ? "aus" : c?.verbunden ? "verbunden" : "wartet";
-      g.innerHTML = `<div class="plt-sim-kopf"><span class="plt-pill ${!an ? "" : c?.verbunden ? "ok" : "warn"}">H145-Funkgerät ${text}</span></div>
-        <label class="plt-check-klein"><input type="checkbox" ${an ? "checked" : ""}> CARLS-Funkgerät verbinden (Status-Tasten)</label>
-        <p class="plt-leise plt-klein">${!an ? "Die Status-Tasten am Funkgerät sind aus." : c?.verbunden ? `Die Tasten 1–6 und 9 am Funkgerät setzen den Status${letzterCarls ? ` · zuletzt: ${letzterCarls}` : ""}.` : "Warte auf das Funkgerät der H145 – im Cockpit sitzen, Strom an. Steht am Funkgerät weiter „Connect a mission to begin“, bitte Bescheid geben."}</p>`;
+      const ok = hpg.zustand === "verbunden";
+      g.innerHTML = `<div class="plt-sim-kopf"><span class="plt-pill ${!an ? "" : ok ? "ok" : "warn"}">H145-Funkgerät ${!an ? "aus" : ok ? "verbunden" : "wartet"}</span></div>
+        <label class="plt-check-klein"><input type="checkbox" ${an ? "checked" : ""}> CARLS-Funkgerät: Status-Tasten</label>
+        <p class="plt-leise plt-klein">${!an ? "Die Status-Tasten am Funkgerät sind aus." : ok ? `Die Tasten 1–6 und 9 am Funkgerät setzen den Status; im Display stehen Status und Einsatz (mit ▲▼ blättern)${letzterCarls ? ` · zuletzt: ${letzterCarls}` : ""}.` : "Im Tablet der H145: Missions → LeitWerk Leitstelle starten – dann zeigt das Funkgerät Status und Einsatz."}</p>`;
       g.querySelector("input")!.addEventListener("change", (ev) => carlsUmschalten((ev.target as HTMLInputElement).checked));
       box.appendChild(g);
     }

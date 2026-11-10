@@ -1,5 +1,14 @@
 [
  {
+  "version": "0.115.0",
+  "datum": "2026-11-10",
+  "titel": "H145: CARLS-Funkgerät",
+  "punkte": [
+   "Spieler-NAH in der HPG H145: Status 1–6 und Quittieren über die Tasten am CARLS-Funkgerät",
+   "Das Funkgerät zeigt Status, Einsatz, Zielkrankenhaus und die Tastenbelegung"
+  ]
+ },
+ {
   "version": "0.114.3",
   "datum": "2026-11-08",
   "titel": "Update-Knopf und Fenster unten",
