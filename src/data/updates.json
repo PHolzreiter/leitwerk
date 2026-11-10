@@ -1,5 +1,14 @@
 [
  {
+  "version": "0.115.0-beta.6",
+  "datum": "2026-11-10",
+  "titel": "Ruckeln behoben, Schubladen wie im Hauptmenü",
+  "punkte": [
+   "Programm läuft wieder flüssig",
+   "Schubladen in der Kopfleiste öffnen wie im Hauptmenü"
+  ]
+ },
+ {
   "version": "0.115.0-beta.5",
   "datum": "2026-11-09",
   "titel": "Skalierung am Mac",

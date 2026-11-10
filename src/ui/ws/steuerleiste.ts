@@ -360,7 +360,7 @@ export function steuerleisteBauen(kopf: HTMLElement): void {
         aufraeumen(k);
         nachTimer = window.setTimeout(() => qa(".kl-lab.ein").forEach((x) => x.classList.remove("ein")), schnell ? 0 : 420);
       },
-      schnell ? 0 : 470,
+      schnell ? 0 : 680,
     );
   }
 

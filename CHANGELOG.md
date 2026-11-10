@@ -1,5 +1,9 @@
 # Änderungen
 
+## 0.115.0-beta.6 – Ruckeln behoben, Schubladen wie im Hauptmenü
+- **Ruckeln:** Seit beta.5 hat sich die Messung für die Skalierung selbst immer wieder ausgelöst und das ganze Programm gebremst – behoben
+- **Schubladen in der Kopfleiste und beim Piloten:** öffnen jetzt wie im Hauptmenü – das Fenster wächst von oben nach unten auf, danach blendet der Inhalt ein; beim Schließen umgekehrt
+
 ## 0.115.0-beta.5 – Skalierung am Mac
 - **Alle Fenster:** Bei skalierter Oberfläche am Mac wählten die Fenster die falsche Ansicht (Spalten im Fahrzeuge-Fenster lagen übereinander). Die Größengrenzen aus dem Entwurf gelten jetzt bei jeder Skalierung
 

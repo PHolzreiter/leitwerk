@@ -18,7 +18,7 @@ export class PilotLogik extends DCLogic {
     if (!S.pp || S.ppZuIst) return;
     clearTimeout(this.pt);
     this.setState({ ppZuIst: true });
-    this.pt = setTimeout(() => this.setState({ pp: "", ppZuIst: false, ppNach: true }), 470);
+    this.pt = setTimeout(() => this.setState({ pp: "", ppZuIst: false, ppNach: true }), 680);
     setTimeout(() => this.setState({ ppNach: false }), 900);
   }
 

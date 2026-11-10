@@ -76,10 +76,15 @@
 .ap .kl-fok code{display:block;font-size:11.5px;margin:4px 0;color:var(--text-2);word-break:break-all}
 .ap .kl-fok span{font-size:12px;color:var(--text-2)}
 
-.ap .pv-pop{box-sizing:border-box;top:100% !important;border-top-right-radius:0;animation:pv-schub .55s cubic-bezier(.65,0,.35,1) .32s both !important}
-.ap .pv-pop.zu{animation:pv-schubzu .45s cubic-bezier(.65,0,.35,1) forwards !important;pointer-events:none}
-@keyframes pv-schub{from{transform:translateY(-100%);clip-path:inset(100% -60px -90px -60px)}to{transform:none;clip-path:inset(0 -60px -90px -60px)}}
-@keyframes pv-schubzu{from{transform:none;clip-path:inset(0 -60px -90px -60px)}to{transform:translateY(-100%);clip-path:inset(100% -60px -90px -60px)}}
+/* wie die Schublade im Hauptmenü: Fenster wächst von oben auf (Inhalt steht still), dann blendet der Inhalt ein; zu: erst Inhalt aus, dann Fenster hoch */
+.ap .pv-pop{box-sizing:border-box;top:100% !important;border-top-right-radius:0;animation:pv-schub .5s cubic-bezier(.65,0,.35,1) .32s both !important}
+.ap .pv-pop>*{animation:pv-inhalt .4s cubic-bezier(.2,.8,.2,1) .62s both}
+.ap .pv-pop.zu{animation:pv-schubzu .5s cubic-bezier(.65,0,.35,1) .15s both !important;pointer-events:none}
+.ap .pv-pop.zu>*{animation:pv-inhaltzu .2s ease forwards}
+@keyframes pv-schub{from{clip-path:inset(0 -60px 100% -60px)}to{clip-path:inset(0 -60px -90px -60px)}}
+@keyframes pv-schubzu{from{clip-path:inset(0 -60px -90px -60px)}to{clip-path:inset(0 -60px 100% -60px)}}
+@keyframes pv-inhalt{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+@keyframes pv-inhaltzu{to{opacity:0}}
 
 /* Wetter */
 .ap .kl-wk{display:flex;align-items:center;gap:10px;padding:8px 8px 10px}
@@ -140,7 +145,8 @@
 .ap .kl-keine .ic{color:var(--ok)}
 .ap .kl-wfuss{font-size:11px;color:var(--dim);padding:8px 8px 4px;border-top:1px solid var(--trenner);margin-top:4px;line-height:1.4}
 .ap .kl-hinw{font-size:11.5px;color:var(--dim);line-height:1.35}
-.ap .pv-pop .kl-z{animation:pv-zeile .4s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--d,0) * 35ms + 640ms)}
+.ap .pv-pop .kl-z{animation:pv-zeile .4s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--d,0) * 35ms + 620ms)}
+.ap .pv-pop>.kl-z{animation-delay:.62s}
 @keyframes pv-zeile{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
 
 @keyframes pv-auf{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}

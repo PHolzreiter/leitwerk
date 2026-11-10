@@ -52,10 +52,11 @@ function abfrageFaktor(): number {
   const kind = document.createElement("div");
   kind.className = "lw-probe-k";
   huelle.appendChild(kind);
+  // Stil in der Probe selbst (nicht im <head>, sonst löst der Beobachter unten die Messung immer wieder aus)
   const st = document.createElement("style");
   st.dataset.lwProbe = "1";
   st.textContent = ".lw-probe-k{width:0;height:1px}@container lwprobe (min-width: 1000px){.lw-probe-k{width:7px}}";
-  document.head.appendChild(st);
+  huelle.appendChild(st);
   document.body.appendChild(huelle);
   const greift = (w: number) => {
     huelle.style.width = `${w}px`;
@@ -76,7 +77,6 @@ function abfrageFaktor(): number {
     }
   } finally {
     huelle.remove();
-    st.remove();
   }
   return Math.abs(f - 1) < 0.004 ? 1 : f;
 }
@@ -135,7 +135,10 @@ export function abfragenAnpassen(): void {
   });
 }
 window.addEventListener("resize", abfragenAnpassen);
-new MutationObserver(abfragenAnpassen).observe(document.head, { childList: true });
+// neue Stylesheets (Fenster laden ihr CSS beim ersten Öffnen) – nur Stil-Elemente zählen
+new MutationObserver((liste) => {
+  if (liste.some((m) => Array.from(m.addedNodes).some((n) => n instanceof HTMLStyleElement || n instanceof HTMLLinkElement))) abfragenAnpassen();
+}).observe(document.head, { childList: true });
 abfragenAnpassen();
 
 /** Breite/Höhe eines Fensters in CSS-Pixeln (wie in den Container-Abfragen nach dem Umrechnen) */

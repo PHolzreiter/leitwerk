@@ -705,7 +705,15 @@
   scrollbar-color: var(--linie) transparent;
   text-align: left;
   cursor: default;
-  animation: kl-schub 0.55s var(--kl-ease) 0.32s both;
+  /* wie die Schublade im Hauptmenü: das Fenster wächst von oben nach unten auf (Inhalt steht still),
+     danach blendet der Inhalt ein */
+  animation: kl-schub 0.5s cubic-bezier(0.65, 0, 0.35, 1) 0.32s both;
+}
+.kl-pop > * {
+  animation: kl-inhalt 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) 0.62s both;
+}
+.kl-pop.zu > * {
+  animation: kl-inhaltzu 0.2s ease forwards;
 }
 .kl-pop.li {
   left: var(--px, 0px);
@@ -723,33 +731,46 @@
   border-top-right-radius: 12px;
 }
 .kl-pop.zu {
-  animation: kl-schubzu 0.45s var(--kl-ease) forwards;
+  animation: kl-schubzu 0.5s cubic-bezier(0.65, 0, 0.35, 1) 0.15s both;
   pointer-events: none;
 }
 /* ohne erneutes Hereinfahren (Inhalt wird nur aufgefrischt) */
 .kl-pop.steht:not(.zu),
+.kl-pop.steht:not(.zu) > *,
 .kl-pop.steht .kl-z,
-.kl-pop.neu-gezeichnet:not(.zu) {
+.kl-pop.neu-gezeichnet:not(.zu),
+.kl-pop.neu-gezeichnet:not(.zu) > * {
   animation: none !important;
 }
 @keyframes kl-schub {
   from {
-    transform: translateY(-100%);
-    clip-path: inset(100% -60px -90px -60px);
+    clip-path: inset(0 -60px 100% -60px);
   }
   to {
-    transform: none;
     clip-path: inset(0 -60px -90px -60px);
   }
 }
 @keyframes kl-schubzu {
   from {
-    transform: none;
     clip-path: inset(0 -60px -90px -60px);
   }
   to {
-    transform: translateY(-100%);
-    clip-path: inset(100% -60px -90px -60px);
+    clip-path: inset(0 -60px 100% -60px);
+  }
+}
+@keyframes kl-inhalt {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes kl-inhaltzu {
+  to {
+    opacity: 0;
   }
 }
 @keyframes kl-auf {
@@ -764,7 +785,10 @@
 }
 .kl-pop .kl-z {
   animation: kl-zeile 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) both;
-  animation-delay: calc(var(--d, 0) * 35ms + 640ms);
+  animation-delay: calc(var(--d, 0) * 35ms + 620ms);
+}
+.kl-pop > .kl-z {
+  animation-delay: 0.62s;
 }
 .kl-pop.neu-gezeichnet .kl-z {
   animation-delay: calc(var(--d, 0) * 25ms);
@@ -781,6 +805,7 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .kl-pop,
+  .kl-pop > *,
   .kl-pop .kl-z,
   .kl-anker,
   .kl-lab {
