@@ -1,5 +1,8 @@
 # Änderungen
 
+## 0.116.0-beta.25 – CARLS-Display im Cockpit
+- **CARLS-Display der H145:** Zeilen und Fenster „Gruppe aktiv“/„Senden“ jetzt fest angeordnet – im Cockpit lagen Zeilen übereinander und „ID: …“ brach um. Schrift wieder in normaler Größe (die Fotos waren schräg aufgenommen, die Schrift war nie zu klein)
+
 ## 0.116.0-beta.24 – Sprechgruppen und CARLS wie im Spiel
 - **Sprechgruppe wechseln geht immer** (Funkgerät der Leitstelle, Pilotenansicht, Handy, CARLS ◄ ►): eigene Gruppe, RD-NOE-09 und RD-NOE-10 – auch ohne Großeinsatz. Die eigene Gruppe heißt wie die Funkgruppe der Leitstelle (z. B. RD-NOE-01)
 - **CARLS-Funkgerät der H145 wie das Funkgerät im Spiel:** hellblaues TETRA-Display mit Netz-Balken, TETRA / BOS / ‹ Gruppe › / Status und der Leiste „KWlist“; spricht jemand, das Fenster „Gruppe aktiv“ mit „ID: …“ und der Gruppe (eigener Spruch rot „Senden“, „Warten …“ gelb)

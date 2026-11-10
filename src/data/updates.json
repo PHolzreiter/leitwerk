@@ -1,5 +1,13 @@
 [
  {
+  "version": "0.116.0-beta.25",
+  "datum": "2026-11-10",
+  "titel": "CARLS-Display im Cockpit",
+  "punkte": [
+   "CARLS-Display der H145 sauber angeordnet: nichts überlappt mehr, Schrift passend"
+  ]
+ },
+ {
   "version": "0.116.0-beta.24",
   "datum": "2026-11-10",
   "titel": "Sprechgruppen und CARLS wie im Spiel",
