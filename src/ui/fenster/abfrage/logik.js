@@ -250,7 +250,7 @@ export class AbfrageLogik extends DCLogic {
       artCls: "artb " + art, artName: G ? G.artName : "", nummer: G ? G.nummer : "", anrufInfo: G ? G.anrufInfo : "", dauer: G ? G.dauer : "",
       vcodeCls: "vcode" + (G && G.stand ? " s" + G.stand : "") + (G && G.codeLeer ? " leer" : ""),
       vcodeTitel: G ? G.codeTitel : "", vcodeKlick: () => G && G.codeKlick(),
-      ergCode: G ? G.code : "",
+      ergCode: G ? G.code : "", ergName: G && G.codeName ? G.codeName : "",
       offen: !!cur, fertig: !!G && !cur, f, weiter, taste, fokus, ueberspringen, zurueck, stellen,
       stellenCls: "kn sm" + (cur && cur.stellen && G && G.darf && G.aktiv ? "" : " aus"),
       erledigt, anzahlErl: String(erledigt.length),

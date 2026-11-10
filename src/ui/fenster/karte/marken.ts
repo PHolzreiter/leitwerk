@@ -82,11 +82,9 @@ const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&l
 // ---------------------------------------------------------------- Bausteine (HTML wie im Entwurf)
 
 const PIN_PFAD = "M15 39C15 39 2 23.5 2 14.5A13 13 0 0 1 28 14.5C28 23.5 15 39 15 39Z";
-function pinHtml(farbe: string, buchst: string, nr: string, code: string, gew: boolean): string {
-  return `<div class="pinw${gew ? " gew" : ""}"><svg class="pin" viewBox="0 0 30 40" aria-hidden="true"><path d="${PIN_PFAD}" fill="${farbe}" stroke="#fff" stroke-width="1.6"></path><circle cx="15" cy="14.5" r="${buchst ? 7 : 4.5}" fill="#fff"></circle>${buchst ? `<text x="15" y="18.5" text-anchor="middle" font-size="11" font-weight="900" fill="${farbe}" font-family="Inter,sans-serif">${esc(buchst)}</text>` : ""}</svg><span class="etk"><b>${esc(nr)}</b>${code ? ` ${esc(code)}` : ""}</span></div>`;
+function pinHtml(farbe: string, buchst: string, _nr: string, code: string, gew: boolean): string {
+  return `<div class="pinw${gew ? " gew" : ""}"><svg class="pin" viewBox="0 0 30 40" aria-hidden="true"><path d="${PIN_PFAD}" fill="${farbe}" stroke="#fff" stroke-width="1.6"></path><circle cx="15" cy="14.5" r="${buchst ? 7 : 4.5}" fill="#fff"></circle>${buchst ? `<text x="15" y="18.5" text-anchor="middle" font-size="11" font-weight="900" fill="${farbe}" font-family="Inter,sans-serif">${esc(buchst)}</text>` : ""}</svg>${code ? `<span class="etk">${esc(code)}</span>` : ""}</div>`;
 }
-const HAUS = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-6.5 8 6.5M6.5 9.5V19h11V9.5M10.5 19v-4.5h3V19" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"></path></svg>`;
-const HELIPLATZ = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5v14M17 5v14M7 12h10" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"></path></svg>`;
 const HUBSCHRAUBER = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M4 7h16M9 21h6M12 9a3 3 0 0 1 3 3v4H9v-4a3 3 0 0 1 3-3z" fill="none" stroke="#111216" stroke-width="2.2" stroke-linecap="round"></path></svg>`;
 const tip = (t: string) => `<span class="tip">${esc(t)}</span>`;
 
@@ -287,8 +285,8 @@ export function addMarken(map: maplibregl.Map, deps: MarkenDeps): Marken {
           z: gew ? 8 : 2,
           cls: "",
           html: heli
-            ? `<div class="hw${gew ? " gewaehlt" : ""}">${HELIPLATZ}<span class="wn">${esc(kurz)}</span></div>${tip(`${s.name} · Flugrettung`)}`
-            : `<div class="wa${gew ? " gewaehlt" : ""}">${HAUS}<span class="wn">${esc(kurz)}</span></div>${tip(s.name)}`,
+            ? `<div class="poi hw${gew ? " gewaehlt" : ""}"><span class="wn">${esc(kurz)}</span></div>${tip(`${s.name} · Flugrettung`)}`
+            : `<div class="poi wa${gew ? " gewaehlt" : ""}"><span class="wn">${esc(kurz)}</span></div>${tip(s.name)}`,
         });
       }
     }
@@ -296,10 +294,10 @@ export function addMarken(map: maplibregl.Map, deps: MarkenDeps): Marken {
       for (const h of store.list("hospitals") as Hospital[]) {
         const a = khAufnahme(h, t);
         const gew = sel?.art === "kh" && sel.id === h.id;
-        out.push({ key: `h:${h.id}`, art: "kh", id: h.id, lng: h.lon, lat: h.lat, anker: "center", z: gew ? 8 : 3, cls: "", html: `<div class="khm k${a.art}${gew ? " gewaehlt" : ""}">H</div>${tip(`${h.kurzname || h.name} · ${a.text}`)}` });
+        out.push({ key: `h:${h.id}`, art: "kh", id: h.id, lng: h.lon, lat: h.lat, anker: "center", z: gew ? 8 : 3, cls: "", html: `<div class="poi khm k${a.art}${gew ? " gewaehlt" : ""}"><span class="wn">${esc(h.kurzname || h.name)}</span></div>${tip(`${h.kurzname || h.name} · ${a.text}`)}` });
         if (!ort) continue;
-        if (h.zufahrt?.p) out.push({ key: `z:${h.id}`, art: "zuf", id: h.id, lng: h.zufahrt.p.lon, lat: h.zufahrt.p.lat, anker: "center", z: 2, cls: "", html: `<div class="zuf">P</div>${tip(`Rettungszufahrt ${h.kurzname || h.name}`)}` });
-        if (h.landeplatz && typeof h.landeplatz === "object") out.push({ key: `l:${h.id}`, art: "lp", id: h.id, lng: h.landeplatz.lon, lat: h.landeplatz.lat, anker: "center", z: 2, cls: "", html: `<div class="lp">H</div>${tip(`Landeplatz ${h.kurzname || h.name}`)}` });
+        if (h.zufahrt?.p) out.push({ key: `z:${h.id}`, art: "zuf", id: h.id, lng: h.zufahrt.p.lon, lat: h.zufahrt.p.lat, anker: "center", z: 2, cls: "", html: `<div class="poi zuf"></div>${tip(`Rettungszufahrt ${h.kurzname || h.name}`)}` });
+        if (h.landeplatz && typeof h.landeplatz === "object") out.push({ key: `l:${h.id}`, art: "lp", id: h.id, lng: h.landeplatz.lon, lat: h.landeplatz.lat, anker: "center", z: 2, cls: "", html: `<div class="poi lp"></div>${tip(`Landeplatz ${h.kurzname || h.name}`)}` });
       }
     }
     return out;
@@ -309,7 +307,7 @@ export function addMarken(map: maplibregl.Map, deps: MarkenDeps): Marken {
   const einsaetze = (): Item[] => {
     const out: Item[] = [];
     const a = deps.auswahl();
-    type Pin = { key: string; art: "einsatz" | "kt"; id: string; lng: number; lat: number; farbe: string; gew: boolean; html: string; nr: string };
+    type Pin = { key: string; art: "einsatz" | "kt"; id: string; lng: number; lat: number; farbe: string; gew: boolean; html: string; nr: string; titel: string };
     const pins: Pin[] = [];
     for (const e of sichtbareEinsaetze()) {
       const c = findCode(e.code ?? undefined);
@@ -317,7 +315,7 @@ export function addMarken(map: maplibregl.Map, deps: MarkenDeps): Marken {
       const gew = a.art === "einsatz" && a.id === e.id;
       const nr = kurzNr(e.nummer);
       const t = `Einsatz ${nr}${c ? ` · ${c.beschreibung}` : ""}${e.adresse?.label ? ` · ${e.adresse.label}` : ""}${e.fremd ? ` · Nachbarzone ${e.fremd.zone}` : ""}`;
-      pins.push({ key: `e:${e.id}`, art: "einsatz", id: e.id, lng: e.adresse!.lon, lat: e.adresse!.lat, farbe, gew, nr: `${nr} ${e.code ?? ""}`.trim(), html: pinHtml(farbe, "", nr, e.code ?? "", gew) + tip(t) });
+      pins.push({ key: `e:${e.id}`, art: "einsatz", id: e.id, lng: e.adresse!.lon, lat: e.adresse!.lat, farbe, gew, nr: `${nr} ${e.code ?? ""}`.trim(), html: pinHtml(farbe, "", nr, e.code || nr, gew), titel: t });
       // Bereitstellungsraum (bis die Polizei den Einsatzort freigibt / Großschaden) und Treffpunkt RTW – NEF
       const br = e.gs?.br && !e.gs.aufgehoben && e.gs.phase !== "ende" ? e.gs.br : e.br && !e.boSicher ? e.br : null;
       if (br) out.push({ key: `b:${e.id}`, art: "br", id: e.id, lng: br.lon, lat: br.lat, anker: "center", z: 3, cls: "", html: `<div class="pa br">BR</div>${tip(`Bereitstellungsraum ${nr}`)}` });
@@ -329,7 +327,7 @@ export function addMarken(map: maplibregl.Map, deps: MarkenDeps): Marken {
       const sek = istUeberstellung(k.d);
       const nr = kurzNr(k.nummer, true, sek);
       const code = k.d.code ?? "";
-      pins.push({ key: `k:${k.id}`, art: "kt", id: k.id, lng: k.d.von!.lon, lat: k.d.von!.lat, farbe: KT_FARBE, gew, nr: `${nr} ${code}`.trim(), html: pinHtml(KT_FARBE, "A", nr, code, gew) + tip(`${sek ? "Überstellung" : "Transport"} ${nr} · Abholort ${k.d.von!.label}`) });
+      pins.push({ key: `k:${k.id}`, art: "kt", id: k.id, lng: k.d.von!.lon, lat: k.d.von!.lat, farbe: KT_FARBE, gew, nr: `${nr} ${code}`.trim(), html: pinHtml(KT_FARBE, "", nr, code || nr, gew), titel: `${sek ? "Überstellung" : "Transport"} ${nr} · Abholort ${k.d.von!.label}` });
     }
     // Weit herausgezoomt: nahe Einsätze als Kreis mit Anzahl (Ring in den Stufenfarben); der gewählte bleibt einzeln
     clusterMitglieder = new Map();

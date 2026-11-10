@@ -1,5 +1,10 @@
 # Änderungen
 
+## 0.115.0-beta.11 – Karte und Telefonat
+- **Karte:** Einsätze und Transporte zeigen ihren Code erst beim Darüberfahren; ein Klick öffnet sie in der Einsatzansicht
+- **Einrichtungen:** nur noch kleine Punkte ohne Buchstaben; der Name steht erst beim Darüberfahren oder wenn gewählt
+- **Telefonat:** neben dem Code steht die ausgeschriebene Formulierung
+
 ## 0.115.0-beta.10 – Karte ruhiger, Fenster einzeln herauslösen
 - **In neuem Fenster öffnen:** nimmt nur den aktiven Reiter mit, nicht alle Reiter der Gruppe
 - **Karte:** Einsatz- und Transport-Nadeln kleiner und zurückhaltender, Beschriftung dezenter; zusammengefasste Einsätze als kleiner Kreis mit dünnem Ring

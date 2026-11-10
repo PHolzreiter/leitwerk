@@ -154,6 +154,9 @@
   :where(.k-Abfrage) .anruf-l{flex:1 1 100%}
   :where(.k-Abfrage) .anruf-k{margin-left:auto}
 }
+:where(.k-Abfrage) .vcode{flex:0 1 auto;min-width:0;max-width:min(520px,60%)}
+:where(.k-Abfrage) .vcode b{font-weight:700;flex:none}
+:where(.k-Abfrage) .vcode .vname{min-width:0;overflow:hidden;text-overflow:ellipsis;font-size:12.5px;font-weight:600;letter-spacing:0;opacity:.85}
 :where(.k-Abfrage) .vcode.leer{color:var(--dim);font-weight:600}
 
 :where(.k-Abfrage) .vcode.sa,:where(.k-Abfrage) .vcode.s9,:where(.k-Abfrage) .vcode.s2,:where(.k-Abfrage) .vcode.s3,:where(.k-Abfrage) .vcode.s4,:where(.k-Abfrage) .vcode.s5{border-color:transparent;color:#111216}

@@ -126,9 +126,10 @@
 /* Einsätze: kleine Stecknadel in Stufenfarbe, darunter Nummer + Code (zurückhaltend); gewählt hüpft sie */
 :where(.k-Karte) .pin{display:block;width:19px;height:25px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.35))}
 :where(.k-Karte) .pinw{position:relative;display:flex;flex-direction:column;align-items:center}
-:where(.k-Karte) .etk{position:absolute;top:100%;margin-top:2px;padding:0 4px;border-radius:4px;background:color-mix(in srgb, var(--flaeche) 82%, transparent);font-size:10px;font-weight:600;line-height:15px;white-space:nowrap;color:var(--text-2)}
+:where(.k-Karte) .etk{display:none;position:absolute;top:100%;margin-top:2px;padding:0 4px;border-radius:4px;background:color-mix(in srgb, var(--flaeche) 82%, transparent);font-size:10px;font-weight:600;line-height:15px;white-space:nowrap;color:var(--text-2)}
 :where(.k-Karte) .etk b{font-weight:700;color:var(--text)}
 :where(.k-Karte) .pinw.gew .pin{width:23px;height:30px;animation:karte-hupf 1.2s ease-in-out infinite}
+:where(.k-Karte) .km:hover .etk,:where(.k-Karte) .pinw.gew .etk{display:block}
 :where(.k-Karte) .pinw.gew .etk{background:var(--flaeche);box-shadow:0 0 0 1.5px var(--akzent);color:var(--text)}
 @keyframes karte-hupf{50%{transform:translateY(-3px)}}
 :where(.k-Karte) .km.pinm .tip{bottom:calc(100% + 6px)}
@@ -155,22 +156,21 @@
 :where(.k-Karte) .heli svg{width:14px;height:14px;transform:rotate(var(--r,0deg))}
 :where(.k-Karte) .fzm.gew .heli{box-shadow:0 0 0 3px var(--akzent),0 2px 5px rgba(0,0,0,.5)}
 
-/* Einrichtungen (POIs): alle gleich – kleiner dunkler Kreis, Zeichen in der Farbe der Art.
-   Wache (Haus), Flugrettung (Landeplatz-H), Krankenhaus (H, Aufnahme-Ring), Landeplatz am KH, Rettungszufahrt (P) */
-:where(.k-Karte) .wa,:where(.k-Karte) .hw,:where(.k-Karte) .khm,:where(.k-Karte) .zuf,:where(.k-Karte) .lp{position:relative;display:grid;place-items:center;width:15px;height:15px;box-sizing:border-box;border-radius:50%;background:color-mix(in srgb, var(--flaeche) 92%, transparent);box-shadow:0 0 0 1px color-mix(in srgb, var(--text) 22%, transparent),0 1px 2px rgba(0,0,0,.3);font-size:9px;font-weight:800;line-height:1;font-family:'Inter',system-ui,sans-serif}
-:where(.k-Karte) .wa svg,:where(.k-Karte) .hw svg{width:10px;height:10px}
-:where(.k-Karte) .wa{color:color-mix(in srgb, var(--text) 55%, transparent)}
-:where(.k-Karte) .hw{color:#e0b84a}
-:where(.k-Karte) .khm{color:#e5484d}
-:where(.k-Karte) .lp{color:#4cc38a;width:13px;height:13px;font-size:8px}
-:where(.k-Karte) .zuf{color:#6b9cf0;width:13px;height:13px;font-size:8px}
+/* Einrichtungen (POIs): nur ein kleiner Punkt in der Farbe der Art – Name erst beim Darüberfahren oder wenn gewählt.
+   Wache grau, Flugrettung gelb, Krankenhaus rot (dünner Aufnahme-Ring), Landeplatz grün, Rettungszufahrt blau */
+:where(.k-Karte) .poi{position:relative;width:9px;height:9px;box-sizing:border-box;border-radius:50%;background:var(--pf,#9aa3b5);box-shadow:0 0 0 1.5px color-mix(in srgb, var(--flaeche) 85%, transparent),0 1px 2px rgba(0,0,0,.3)}
+:where(.k-Karte) .poi.wa{--pf:#8b94a6}
+:where(.k-Karte) .poi.hw{--pf:#e0b84a}
+:where(.k-Karte) .poi.khm{--pf:#e5484d;width:10px;height:10px}
+:where(.k-Karte) .poi.lp{--pf:#4cc38a;width:7px;height:7px}
+:where(.k-Karte) .poi.zuf{--pf:#6b9cf0;width:7px;height:7px}
 :where(.k-Karte) .wn{display:none;position:absolute;left:calc(100% + 5px);top:50%;transform:translateY(-50%);padding:0 4px;border-radius:4px;background:color-mix(in srgb, var(--flaeche) 85%, transparent);font-size:10px;font-weight:600;line-height:15px;color:var(--text-2);white-space:nowrap}
-:where(.k-Karte) .zort .wn,:where(.k-Karte) .gewaehlt .wn{display:block}
+:where(.k-Karte) .gewaehlt .wn{display:block}
 /* Aufnahme am Krankenhaus: dünner Ring (grün = nimmt auf, rot gestrichelt = gesperrt) */
-:where(.k-Karte) .khm.kauf::after,:where(.k-Karte) .khm.kzu::after{content:"";position:absolute;inset:-3px;border-radius:50%;border:1.5px solid #4cc38a}
-:where(.k-Karte) .khm.kzu{color:#8a8f99}
+:where(.k-Karte) .khm.kauf::after,:where(.k-Karte) .khm.kzu::after{content:"";position:absolute;inset:-3.5px;border-radius:50%;border:1.5px solid #4cc38a}
+:where(.k-Karte) .poi.khm.kzu{--pf:#8a8f99}
 :where(.k-Karte) .khm.kzu::after{border-color:#e5484d;border-style:dashed}
-:where(.k-Karte) .wa.gewaehlt,:where(.k-Karte) .hw.gewaehlt,:where(.k-Karte) .khm.gewaehlt{box-shadow:0 0 0 2px var(--akzent),0 1px 2px rgba(0,0,0,.3)}
+:where(.k-Karte) .poi.gewaehlt{box-shadow:0 0 0 2px var(--akzent),0 1px 2px rgba(0,0,0,.3)}
 /* Partner (Feuerwehr, Polizei, Wasser-, Bergrettung, Krisenintervention): nur ein kleiner, blasser Punkt – Name beim Darüberfahren */
 :where(.k-Karte) .pd{width:7px;height:7px;border-radius:50%;opacity:.55;box-shadow:0 0 0 1px color-mix(in srgb, var(--flaeche) 80%, transparent)}
 :where(.k-Karte) .km:hover .pd{opacity:1}

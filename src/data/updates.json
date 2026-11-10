@@ -1,5 +1,15 @@
 [
  {
+  "version": "0.115.0-beta.11",
+  "datum": "2026-11-10",
+  "titel": "Karte und Telefonat",
+  "punkte": [
+   "Code auf der Karte erst beim Darüberfahren, Klick öffnet die Einsatzansicht",
+   "Einrichtungen als kleine Punkte",
+   "Telefonat zeigt Code mit Formulierung"
+  ]
+ },
+ {
   "version": "0.115.0-beta.10",
   "datum": "2026-11-10",
   "titel": "Karte ruhiger",

@@ -618,9 +618,11 @@ export function karteFenster(ctx: PanelKontext, editorDeps: () => EditorDeps): P
           markerKlick = performance.now();
           if (pickLaeuft()) return;
           if (art === "einsatz" || art === "kt" || art === "br") {
+            // Klick öffnet den Einsatz bzw. Transport in der Einsatzansicht (Maske nach vorne)
             const a = art === "kt" ? "kt" : "einsatz";
-            waehle(a, id, { karte: false, maske: false });
-            zeigeInfo({ art: a, id });
+            info = null;
+            waehle(a, id, { karte: false, maske: true });
+            zeichnen();
           } else if (art === "fz") {
             if (!sim.state.fahrzeuge[id]) return;
             fokus?.waehle(id);

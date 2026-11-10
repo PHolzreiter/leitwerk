@@ -20,6 +20,7 @@ import { sim, infoFreitext, type Anruf, type Einsatz, type SimFahrzeug } from ".
 import { distanceM, searchAddress, type AddressHit } from "../../../sim/geo";
 import { bereichName, EINRICHTUNG_LABEL, KT_BEHANDLUNGEN, KT_KASSEN, KT_TRANSPORTART_LABEL, sekLeer, type KtAuftrag, type KtDaten, type KtLage, type KtOrt, type KtTransportArt, type SekDaten } from "../../../sim/kt";
 import { istUeberstellung, ktCode, ktFrageText } from "../../../sim/ktCodes";
+import { findCode } from "../../../sim/codes";
 import { toast } from "../../dom";
 import { gespraechExportieren } from "../../gespraechExport";
 import { ktFrageStellen } from "../../ktView";
@@ -97,6 +98,7 @@ export interface GespraechVM {
   aktiv: boolean;
   gehaltenText: string;
   code: string;
+  codeName: string;
   codeLeer: boolean;
   stand: string;
   codeTitel: string;
@@ -494,6 +496,7 @@ function notrufGespraech(e: Einsatz): GespraechVM | null {
     aktiv,
     gehaltenText: `Gehalten – der Anrufer hört die Warteschleife${a.haltenBis ? ` · legt in ca. ${mmss(a.haltenBis - t)} auf` : ""}`,
     code: code || "kein Code",
+    codeName: code ? (c?.name || findCode(code)?.beschreibung || "") : "",
     codeLeer: !code,
     stand,
     codeTitel: code
@@ -980,6 +983,7 @@ function ktGespraech(k: KtAuftrag, x: AnrufEintrag): GespraechVM | null {
     aktiv,
     gehaltenText: `Gehalten – der Anrufer hört die Warteschleife${a.haltenBis ? ` · legt in ca. ${mmss(a.haltenBis - t)} auf` : ""}`,
     code: code || "kein Code",
+    codeName: code ? (ktCode(code)?.name ?? "") : "",
     codeLeer: !code,
     stand,
     codeTitel: code ? `${d.codeManuell ? "Selbst gewählter" : "Vorläufiger"} Code ${code}${ktCode(code)?.name ? ` – ${ktCode(code)!.name}` : ""} · Einsatzmittel: ${standText(stand)} · Klick: zur ${ziel}` : "Der Code ergibt sich aus den Angaben",
