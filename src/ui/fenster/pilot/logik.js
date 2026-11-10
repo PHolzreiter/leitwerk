@@ -84,7 +84,10 @@ export class PilotLogik extends DCLogic {
     const rb = lay === "drei" ? Math.min(640, Math.max(480, Math.round(B * 0.31))) : lay === "zwei" ? Math.max(360, Math.round(B * 0.4)) : B - 16;
     // Funk unter der Karte: wie im Entwurf 55 % (420–560 px); bei niedriger Fläche kleiner, damit die Karte bleibt
     const frei = H - 52 - 50 - 16;
-    const funkH = lay === "eins" ? 460 : Math.min(560, Math.max(Math.min(420, Math.round(frei * 0.6)), Math.round(frei * 0.55)));
+    let funkH = lay === "eins" ? 460 : Math.min(560, Math.max(Math.min(420, Math.round(frei * 0.6)), Math.round(frei * 0.55)));
+    // Zwei Spalten im Querformat (z. B. untere Hälfte eines hochkant montierten Bildschirms): wird der Funk-Kasten breiter
+    // als hoch, zeigt er das Fahrzeugfunkgerät quer – dann nur so hoch wie nötig, der Rest gehört der Karte.
+    if (lay === "zwei" && rb / funkH > 0.75) funkH = Math.min(funkH, Math.max(340, Math.round(46 + (rb - 24) / 2.8 + 140)));
 
     // ---- Entscheidung und Buchung (Schritt-Assistent wie in der Einsatzmaske)
     const E = D.ent;

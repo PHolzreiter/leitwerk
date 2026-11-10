@@ -1,5 +1,8 @@
 # Änderungen
 
+## 0.115.0-beta.13 – Pilot im Querformat
+- **Pilotenansicht:** In breiten, eher niedrigen Fenstern (z. B. untere Hälfte eines hochkant montierten Bildschirms) ist der Funk nur so hoch wie das Funkgerät – die Karte bekommt den Platz
+
 ## 0.115.0-beta.12 – Hauptmenü und Spiel im selben Fenster
 - **Fenster:** Vom Hauptmenü ins Spiel (und zurück) wechselt das Programm im selben Fenster – am Mac geht kein neuer Vollbild-Bereich mehr auf. Ein zweites Fenster gibt es nur, wenn du eines öffnest (z. B. zwei Bildschirme)
 - **F11:** Vollbild ein und aus
