@@ -120,7 +120,8 @@ export async function flugsimVerbinden(dll?: string): Promise<void> {
   }
   await zuhoeren();
   try {
-    await invoke("msfs_carls", { an: carlsAn() }).catch(() => undefined);
+    // CARLS läuft über die Tablet-Mission (hpg.ts) – das Lebenszeichen über SimConnect bleibt aus
+    await invoke("msfs_carls", { an: false }).catch(() => undefined);
     const pfad = await invoke<string>("msfs_starten", { dll: dll ?? vorgabe().dll ?? null });
     flugsim.dll = pfad;
     vorgabeSetzen({ auto: true, ...(dll ? { dll } : {}) });
@@ -358,6 +359,6 @@ export function carlsAn(): boolean {
 export function carlsUmschalten(an: boolean): void {
   vorgabeSetzen({ carls: an });
   if (!an) flugsim.carls = null;
-  if (inTauri()) void invoke("msfs_carls", { an }).catch(() => undefined);
+
   geaendert();
 }

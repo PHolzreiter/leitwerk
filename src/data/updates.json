@@ -1,5 +1,13 @@
 [
  {
+  "version": "0.116.0-beta.22",
+  "datum": "2026-11-10",
+  "titel": "Stand von 0.115.0 übernommen",
+  "punkte": [
+   "CARLS-Funkgerät der H145 auch in der Beta (Cockpit)"
+  ]
+ },
+ {
   "version": "0.115.0-beta.21",
   "datum": "2026-11-10",
   "titel": "Funk und Geräte",
@@ -190,6 +198,15 @@
    "Läuft neben der normalen Version, mit eigenen Einstellungen und Spielständen",
    "Übernimmt beim ersten Start Einstellungen, Spielstände und Fälle",
    "Kartenpakete und Sprachmodelle werden gemeinsam genutzt"
+  ]
+ },
+ {
+  "version": "0.115.0",
+  "datum": "2026-11-10",
+  "titel": "H145: CARLS-Funkgerät",
+  "punkte": [
+   "Spieler-NAH in der HPG H145: Status 1–6 und Quittieren über die Tasten am CARLS-Funkgerät",
+   "Das Funkgerät zeigt Status, Einsatz, Zielkrankenhaus und die Tastenbelegung"
   ]
  },
  {

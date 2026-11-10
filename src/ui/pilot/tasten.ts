@@ -40,7 +40,7 @@ export interface Belegung {
   global: Partial<Record<PilotAktion, string>>;
   globalAn: boolean;
   joy: Partial<Record<PilotAktion, JoyTaste>>;
-  /** HPG H145: Wert von L:CARLS_RT_BUTTON je Aktion (Tasten am CARLS-Funkgerät) */
+  /** HPG H145: Ziffer der Taste am CARLS-Funkgerät je Aktion */
   carls: Partial<Record<PilotAktion, number>>;
 }
 

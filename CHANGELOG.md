@@ -1,5 +1,9 @@
 # Änderungen
 
+## 0.116.0-beta.22 – Stand der normalen Version 0.115.0 übernommen
+- **Beta enthält jetzt 0.115.0:** CARLS-Funkgerät der H145 über die Tablet-Mission (Status-Tasten und Anzeige) – in der neuen Pilotenansicht unter „Cockpit“
+- Die Beta zählt ab jetzt als 0.116.0-beta, damit sie neuer ist als die normale Version
+
 ## 0.115.0-beta.21 – Funk und Geräte
 - **Anfunken:** Ein Fahrzeug meldet sich nur mit „… hört“ – Lage und Status gibt die Besatzung erst, wenn du fragst oder wenn sie etwas braucht (auch gesprochene Rufe wie „sechsundfünfzig null null sechs von LEO, kommen“ zählen als reiner Ruf)
 - **Geräte getrennt einstellbar:** Mikrofon fürs Telefon und für den Funk, Ausgabegerät für die Stimmen am Telefon und im Funk (Einstellungen › Mikrofon & Funk bzw. Sprache & Stimmen)
@@ -95,6 +99,11 @@
 - **Beim ersten Start** werden Einstellungen, Spielstände und Fälle der normalen Version einmal übernommen
 - **Kartenpakete, Sprach- und Stimmmodelle** werden gemeinsam genutzt – nichts wird doppelt geladen
 - Updates kommen nur innerhalb dieser Testversion
+
+## 0.115.0 – H145: CARLS-Funkgerät
+- **Spieler-NAH mit der HPG H145:** das CARLS-Funkgerät in der Mittelkonsole ist mit LeitWerk verbunden, sobald im Tablet die Mission „LeitWerk Leitstelle“ läuft. Die Tasten 1–6 setzen den Status, 9 quittiert den Alarm (Belegung im Tasten-Fenster änderbar)
+- **Anzeige am Funkgerät:** aktueller Status, Einsatznummer mit Stichwort und Einsatzort, Zielkrankenhaus und die Tastenbelegung – mit ▲▼ blättern. Statt „Connect a mission to begin“
+- Das Lebenszeichen über SimConnect (0.92.3) ist nicht mehr nötig und aus
 
 ## 0.114.3 – Update-Knopf und Fenster unten
 - **Changelog, In Arbeit, Mithelfen:** erst wird der Reiter breit, dann fährt das Fenster hoch. Beim Schließen fährt erst das Fenster hinunter, dann wird der Reiter schmal

@@ -4,6 +4,11 @@
  * (Magenta-Linie, Peilzeiger, Schwebeanzeige), am Einsatzort Patient und Crew als Figuren, Patientenblatt
  * und Entscheidung (Transport/Übergabe/kein Transport). Knopfdrücke am Tablet kommen als remote_notify zurück.
  * Aufbau der Missionen nach der „H145 Mission System Documentation“ (API 0.1).
+ *
+ * CARLS-Funkgerät (Mittelkonsole): die Anzeige kommt aus der Mission („set_carls_radio“, LSK/RSK je 3 Texte,
+ * Items = Zeilenpaare). Ein Tastendruck am Gerät löst das H-Ereignis MISSION_RADIO_CARLS_<Taste> aus; die
+ * Mission fängt es mit „events“ ab und schickt es als remote_notify „carls_<Taste>“ an LeitWerk. Ohne geladene
+ * Mission zeigt das Gerät „Connect a mission to begin“.
  */
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
@@ -16,7 +21,9 @@ import { distanceM } from "../../sim/geo";
 import type { StatusKey } from "../../sim/settings";
 import { inTauri } from "../../platform";
 import { toast } from "../dom";
-import { vorgabe } from "./flugsim";
+import { carlsEmpfangen } from "./eingabe";
+import { carlsAn, vorgabe } from "./flugsim";
+import { AKTIONEN, belegung } from "./tasten";
 
 type Befehl = Record<string, unknown>;
 type Mission = Record<string, unknown>;
@@ -121,6 +128,8 @@ function nachricht(text: string): void {
   const tag = typeof m.remote_notify === "string" ? m.remote_notify : "";
   if (!tag || !handeln) return;
   if (tag === "quittieren") return handeln.status("alarmiert");
+  const carls = /^carls_(\d)$/.exec(tag);
+  if (carls) return carlsAn() ? carlsEmpfangen(Number(carls[1])) : undefined;
   if (tag.startsWith("status_")) {
     const s = tag.slice(7) as StatusKey;
     return handeln.status(s);
@@ -160,10 +169,39 @@ function punktIcon(farbe: string): string {
 
 /**
  * Fußzeile des Tablets: die H145 kennt weder die rechte noch die linke Fußzeile („Command Failed – NotFound“,
- * getestet 30.10.2026) – Status und Einsatznummer stehen deshalb nur im Mission Briefing und in den Meldungen.
+ * getestet 30.10.2026) – Status und Einsatznummer stehen deshalb im Mission Briefing, in den Meldungen und
+ * am CARLS-Funkgerät. Diese Befehle laufen am Anfang jeder Mission und bei Änderungen ohne neue Mission.
  */
-function uiBefehle(_fz: SimFahrzeug, _e: Einsatz | undefined): Befehl[] {
-  return [];
+function uiBefehle(fz: SimFahrzeug, e: Einsatz | undefined): Befehl[] {
+  return [{ set_carls_radio: carlsAnzeige(fz, e) }];
+}
+
+/** Tasten am CARLS: jedes Ziffern-Ereignis geht als remote_notify an LeitWerk */
+function carlsEreignisse(): Record<string, unknown> {
+  const ev: Record<string, unknown> = {};
+  for (let n = 0; n <= 9; n++) ev[`MISSION_RADIO_CARLS_${n}`] = { commands: [{ remote_notify: `carls_${n}`, params: [] }] };
+  return ev;
+}
+
+/** CARLS-Anzeige: 3 Zeilenpaare sichtbar (mit ▲▼ blättern), links/rechts je 3 kurze Texte */
+export function carlsAnzeige(fz: SimFahrzeug, e: Einsatz | undefined): { LSK: string[]; RSK: string[]; Items: [string, string][] } {
+  const k = (s: string, n = 26) => t(s).replace(/\n/g, " ").slice(0, n);
+  const st = sim.statusDef(fz.status);
+  const items: [string, string][] = [[k(`Status ${st.nummer} ${st.name}`), k(fz.kurzname || fz.funkrufname)]];
+  if (e) {
+    items.push([k(`${e.nummer} ${stichwort(e)}`), k(sim.pilotBo(fz)?.br ? "Bereitstellungsraum" : (e.adresse?.label ?? "Einsatzort folgt"))]);
+    const h = e.kh ? store.get("hospitals", e.kh.hospitalId) : undefined;
+    if (h) items.push([k("Zielkrankenhaus"), k(h.kurzname || h.name)]);
+  } else items.push([k("Einsatzbereit"), k(`Stuetzpunkt ${fz.stationName}`)]);
+  // welche Taste was macht (Belegung aus dem Tasten-Fenster)
+  const b = belegung().carls;
+  const tasten = AKTIONEN.filter((a) => b[a.id] != null).sort((x, y) => (b[x.id] ?? 0) - (b[y.id] ?? 0));
+  for (const a of tasten) {
+    const s = a.status ? sim.statusDef(a.status) : null;
+    items.push([k(`Taste ${b[a.id]}`), k(s ? (a.id === "s9" ? "Alarm quittieren" : `Status ${s.nummer} ${s.name}`) : a.name)]);
+  }
+  while (items.length < 3) items.push(["", ""]);
+  return { LSK: ["", "", ""], RSK: ["", "", k(`ST ${st.nummer}`, 8)], Items: items };
 }
 
 function khVorschlaege(fz: SimFahrzeug, e: Einsatz): Hospital[] {
@@ -250,7 +288,7 @@ function briefing(fz: SimFahrzeug, e: Einsatz | undefined): { text: string }[] {
 /** Mission für die aktuelle Lage, mit Briefing */
 function missionFuer(fz: SimFahrzeug, e: Einsatz | undefined): { key: string; mission: Mission } {
   const m = missionRoh(fz, e);
-  return { key: m.key, mission: { ...m.mission, briefing: briefing(fz, e) } };
+  return { key: m.key, mission: { ...m.mission, briefing: briefing(fz, e), events: carlsEreignisse() } };
 }
 
 function missionRoh(fz: SimFahrzeug, e: Einsatz | undefined): { key: string; mission: Mission } {

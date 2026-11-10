@@ -931,19 +931,20 @@ function cockpitDaten(fz: SimFahrzeug | undefined): Record<string, unknown>[] {
       knoepfe: !hpg.mission ? [{ t: "H145 einrichten", klick: () => void hpgEinrichten() }] : !v ? [{ t: "Missions-Index neu bauen", klick: () => void hpgEinrichten() }] : [],
     });
   }
-  if (z === "verbunden" && (hpg.paket || hpg.zustand === "verbunden" || flugsim.carls?.verbunden)) {
-    const c = flugsim.carls;
+  // HPG H145: CARLS-Funkgerät (Status-Tasten) – läuft über die Mission „LeitWerk Leitstelle“ im Tablet (v0.115.0)
+  if (hpg.paket || hpg.zustand === "verbunden") {
     const an = carlsAn();
+    const ok = hpg.zustand === "verbunden";
     out.push({
       k: "carls",
       t: "H145-Funkgerät",
-      z: !an ? "aus" : c?.verbunden ? "verbunden" : "wartet",
-      f: !an ? PUNKT.aus : c?.verbunden ? PUNKT.ok : PUNKT.warn,
+      z: !an ? "aus" : ok ? "verbunden" : "wartet",
+      f: !an ? PUNKT.aus : ok ? PUNKT.ok : PUNKT.warn,
       d: !an
         ? "Die Status-Tasten am Funkgerät sind aus."
-        : c?.verbunden
-          ? `Status-Tasten 1–6 und 9 am Funkgerät senden sofort${letzterCarls ? ` · zuletzt: ${letzterCarls}` : ""}`
-          : "Warte auf das Funkgerät der H145 – im Cockpit sitzen, Strom an.",
+        : ok
+          ? `Die Tasten 1–6 und 9 am Funkgerät setzen den Status; im Display stehen Status und Einsatz (mit ▲▼ blättern)${letzterCarls ? ` · zuletzt: ${letzterCarls}` : ""}.`
+          : "Im Tablet der H145: Missions → LeitWerk Leitstelle starten – dann zeigt das Funkgerät Status und Einsatz.",
       knoepfe: [{ t: an ? "Ausschalten" : "Einschalten", klick: () => carlsUmschalten(!an) }],
     });
   }
@@ -1567,7 +1568,7 @@ function pilotBericht(): string {
     `- Einsatz: ${e ? `${e.nummer} ${e.code ?? ""} · ${stichwort(e)}${e.gsKind ? ` · Großeinsatz-Patient ${e.gsKind.nr}` : ""}` : "keiner"}`,
     `- Plan: ${planText(fz?.pilot?.plan) || "–"}`,
     `- MSFS: ${flugsim.zustand}${flugsim.text ? ` (${flugsim.text})` : ""}${d && datenFrisch() ? ` · ${Math.round(d.hoehe)} ft, ${Math.round(d.kts)} kt, ${d.am_boden ? "am Boden" : "in der Luft"}` : ""}`,
-    `- H145-Tablet: ${hpg.zustand}${hpg.mission ? " · Mission eingerichtet" : ""} · Funkgerät: ${carlsAn() ? (flugsim.carls?.verbunden ? "verbunden" : "wartet") : "aus"}`,
+    `- H145-Tablet: ${hpg.zustand}${hpg.mission ? " · Mission eingerichtet" : ""} · Funkgerät: ${carlsAn() ? (hpg.zustand === "verbunden" ? "verbunden" : "wartet") : "aus"}`,
     `- GTN750: ${gtn.paket ? (gtnAn() ? "an" : "aus") : "nicht gefunden"}${gtn.fehler ? ` (${gtn.fehler})` : ""}`,
     `- Position: ${fz ? `${fz.lat.toFixed(5)}, ${fz.lon.toFixed(5)}` : "–"}`,
     "",
