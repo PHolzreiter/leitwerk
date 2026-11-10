@@ -21,6 +21,7 @@ import { anrufKiModus, livePrefs, setLivePrefs } from "../../abfrage/liveKi";
 import { funkGruppenSetzen, funkGruppenWahl, telefonModus } from "../sprechfunk";
 import { ALARM_AUFNAHMEN, ALARM_STANDARD, ALARM_VORLAGEN, alarmPrefs, alarmPrefsSetzen, eigeneAlarmtoene, probeSpielen, type AlarmArt } from "../pilot/alarmToene";
 import { carlsAn, carlsUmschalten, gtnAn, gtnUmschalten, vorgabe, vorgabeSetzen } from "../pilot/flugsim";
+import { tabletAppSetzen } from "../pilot/handy";
 import { belegung, belegungSpeichern, standardBelegung, tastenName as pilotTastenName, type PilotAktion } from "../pilot/tasten";
 import { abfrageAnsicht, setzeAbfrageAnsicht } from "../abfrageAnsicht";
 
@@ -465,6 +466,7 @@ export function einstellungsBindung(geladen?: () => void): EinstellungsBindung {
     },
     gtn: { l: () => gtnAn(), s: (w) => (gtnUmschalten(w === undefined ? true : !!w), true) },
     pcarls: { l: () => carlsAn(), s: (w) => (carlsUmschalten(w === undefined ? true : !!w), true) },
+    ptabletapp: { l: () => !!vorgabe().tabletApp, s: (w) => (void tabletAppSetzen(!!w), true) },
     pglob: {
       l: () => belegung().globalAn,
       s: (w) => (belegungSpeichern({ ...belegung(), globalAn: w === undefined ? standardBelegung().globalAn : !!w }), true),

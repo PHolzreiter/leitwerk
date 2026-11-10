@@ -480,7 +480,8 @@ export class SeitenBasis {
           K('Funk zum RTW', 'pk_funkRtw', 'R'),
           K('Übungsflug starten/anhalten', 'pk_fliegen', 'F'),
           T('Globale Tastenkürzel', 'pglob', true, 'Strg+Umschalt+Taste – funktionieren auch, wenn der Flugsimulator im Vordergrund ist'),
-          T('Status-Tasten am Funkgerät der H145', 'pcarls', true, 'Ziffer kurz drücken: Status nach 1 s, roter Hörer bricht ab')
+          T('Status-Tasten am Funkgerät der H145', 'pcarls', true, 'Ziffer kurz drücken: Status nach 1 s, roter Hörer bricht ab'),
+          T('App „LeitWerk“ im Tablet der H145', 'ptabletapp', false, 'Eigenes Symbol auf dem Startbildschirm des Tablets – vor dem Start von MSFS einschalten')
         ]},
         { id: 'bedienung', label: 'Bedienung', info: 'Tastenkürzel, Anordnung', kw: 'tastatur shortcut hotkey taste fenster layout anordnung debug einführung', rows: [
           H('Tastenkürzel'),

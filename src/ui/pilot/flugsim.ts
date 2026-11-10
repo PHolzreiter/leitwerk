@@ -35,6 +35,8 @@ interface Vorgabe {
   wetter?: "leitwerk" | "selbst";
   /** HPG H145: CARLS-Funkgerät verbinden (Standard an) */
   carls?: boolean;
+  /** HPG H145: App „LeitWerk“ im Tablet eingebaut (Standard aus) */
+  tabletApp?: boolean;
 }
 export function vorgabe(): Vorgabe {
   try {

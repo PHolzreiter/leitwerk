@@ -252,9 +252,100 @@ pub fn hpg_tablet_link(community: Option<String>, port: u16) -> Result<Option<bo
     Ok(Some(true))
 }
 
+// ---------------------------------------------------------------- LeitWerk-App im Tablet der H145
+
+const APP_JS: &str = "html_ui/HPG-H145/js/leitwerk-app.js";
+const TABLET_HTML: &str = "html_ui/HPG-H145/tablet.html";
+const APP_SCRIPT: &str = r#"<script src="/HPG-H145/js/leitwerk-app.js"></script>"#;
+const TABLET_BUNDLE: &str = r#"<script src="/HPG-H145/js/tablet.bundle.js">"#;
+
+/// tablet.html mit bzw. ohne unsere Zeile (vor dem Tablet-Code); None = schon so
+fn tablet_html_neu(alt: &str, an: bool) -> Result<Option<String>, String> {
+    let drin = alt.contains(APP_SCRIPT);
+    if an == drin {
+        return Ok(None);
+    }
+    if !an {
+        return Ok(Some(alt.replace(APP_SCRIPT, "")));
+    }
+    let i = alt.find(TABLET_BUNDLE).ok_or("tablet.html der H145 hat einen unbekannten Aufbau – App nicht eingebaut")?;
+    Ok(Some(format!("{}{}{}", &alt[..i], APP_SCRIPT, &alt[i..])))
+}
+
+/// Datei aus der layout.json des Pakets nehmen
+fn layout_entfernen(paket: &Path, rel: &str) -> Result<(), String> {
+    let datei = paket.join("layout.json");
+    let text = fs::read_to_string(&datei).map_err(|e| format!("layout.json nicht lesbar: {e}"))?;
+    let mut v: serde_json::Value = serde_json::from_str(text.trim_start_matches('\u{feff}')).map_err(|e| format!("layout.json: {e}"))?;
+    let content = v.get_mut("content").and_then(|c| c.as_array_mut()).ok_or("layout.json: kein „content“")?;
+    let norm = |p: &str| p.replace('\\', "/").to_lowercase();
+    let ziel = norm(rel);
+    let vorher = content.len();
+    content.retain(|e| e.get("path").and_then(|p| p.as_str()).map(norm).as_deref() != Some(ziel.as_str()));
+    if content.len() == vorher {
+        return Ok(());
+    }
+    fs::write(&datei, serde_json::to_string_pretty(&v).map_err(|e| e.to_string())? + "\n").map_err(|e| format!("layout.json nicht schreibbar: {e}"))
+}
+
+/// Inhalt unserer App-Datei (Seite von LeitWerk auf diesem Rechner)
+fn app_js(port: u16) -> String {
+    include_str!("leitwerk-app.js").replace("__URL__", &format!("http://127.0.0.1:{port}/efb"))
+}
+
+/// Baut die App „LeitWerk“ in das Tablet der H145 ein (an) bzw. wieder aus. Nur eigene Datei + eine Zeile in
+/// tablet.html (Sicherung tablet.html.vor-leitwerk); wirkt beim nächsten Start von MSFS.
+/// Ergebnis: None = keine H145 gefunden, Some(true) = geändert, Some(false) = war schon so.
+#[tauri::command]
+pub fn hpg_tablet_app(community: Option<String>, port: u16, an: bool) -> Result<Option<bool>, String> {
+    let communities: Vec<PathBuf> = match community.filter(|c| !c.trim().is_empty()) {
+        Some(c) => vec![PathBuf::from(c)],
+        None => crate::gtn::communities(),
+    };
+    let Some(paket) = communities.iter().find_map(|c| h145_in(c)) else { return Ok(None) };
+    let mut geaendert = false;
+    let js = paket.join(APP_JS);
+    if an {
+        let inhalt = app_js(port);
+        if fs::read_to_string(&js).ok().as_deref() != Some(inhalt.as_str()) {
+            fs::write(&js, &inhalt).map_err(|e| format!("App-Datei nicht schreibbar: {e}"))?;
+            layout_nachtragen(&paket, APP_JS, inhalt.len() as u64)?;
+            geaendert = true;
+        }
+    }
+    let html = paket.join(TABLET_HTML);
+    let alt = fs::read_to_string(&html).map_err(|e| format!("tablet.html der H145 nicht lesbar: {e}"))?;
+    if let Some(neu) = tablet_html_neu(&alt, an)? {
+        let sicherung = paket.join("html_ui/HPG-H145/tablet.html.vor-leitwerk");
+        if an && !sicherung.exists() {
+            let _ = fs::write(&sicherung, &alt);
+        }
+        fs::write(&html, &neu).map_err(|e| format!("tablet.html nicht schreibbar: {e}"))?;
+        layout_nachtragen(&paket, TABLET_HTML, neu.len() as u64)?;
+        geaendert = true;
+    }
+    if !an && js.exists() {
+        let _ = fs::remove_file(&js);
+        layout_entfernen(&paket, APP_JS)?;
+        geaendert = true;
+    }
+    Ok(Some(geaendert))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn tablet_app_zeile() {
+        let alt = r#"<script src="/JS/dataStorage.js"></script><script src="/HPG-H145/js/runtime.bundle.js"></script><script src="/HPG-H145/js/tablet.bundle.js"></script><link rel="stylesheet" href="/HPG-H145/css/tablet.css">"#;
+        let neu = tablet_html_neu(alt, true).unwrap().unwrap();
+        assert!(neu.find("leitwerk-app.js").unwrap() < neu.find("tablet.bundle.js").unwrap());
+        assert!(tablet_html_neu(&neu, true).unwrap().is_none());
+        assert_eq!(tablet_html_neu(&neu, false).unwrap().unwrap(), alt);
+        assert!(tablet_html_neu(alt, false).unwrap().is_none());
+        assert!(tablet_html_neu("<html></html>", true).is_err());
+        assert!(app_js(47900).contains("http://127.0.0.1:47900/efb") && !app_js(47900).contains("__URL__"));
+    }
     #[test]
     fn link_eintragen() {
         let alt = r#"{ "Links": [ { "Url": "https://webeye.ivao.aero/", "Title": "IVAO WebEye" } ] }"#;

@@ -648,6 +648,7 @@ pub fn run() {
             hpg::hpg_einrichten,
             hpg::hpg_suchen,
             hpg::hpg_tablet_link,
+            hpg::hpg_tablet_app,
             app_version
         ])
         .build(kontext)

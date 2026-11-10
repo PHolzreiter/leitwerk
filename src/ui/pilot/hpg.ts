@@ -300,7 +300,7 @@ export function carlsStand(fz: SimFahrzeug): {
 /**
  * Eigenes Display über der ganzen CARLS-Fläche (470 × 348), nachgebaut wie das TETRA-Display des Funkgeräts im
  * Spiel (fenster/funk/funk.css „.fg-…“): hellblau, Kopfzeile mit Netz und Uhr, TETRA / BOS / Gruppe / Status,
- * rechts die Leiste „KWlist“ / „Optionen“ (auf Höhe der Seitentasten); spricht jemand, das Fenster
+ * rechts die Leiste „KWlist“ / „Optionen“ (auf Höhe der Seitentasten, bleibt beim Funken gleich); spricht jemand, das Fenster
  * „Gruppe aktiv“ mit „ID: …“ und der Gruppe. Pfeile neben der Gruppe nur beim Wechseln.
  * Cockpit (Coherent, Fotos Paul 10.11.): Flexbox greift dort nicht verlässlich – alles absolut gesetzt (feste
  * Kästen, Text mittig über line-height); die Schrift ist dort schmaler und nicht fett.
@@ -348,7 +348,9 @@ function carlsHtml(fz: SimFahrzeug): string {
   const leiste =
     `<div style="position:absolute;left:${B}px;top:0;width:102px;height:348px;background:linear-gradient(180deg,rgba(128,160,208,.55) 0%,rgba(110,145,198,.6) 100%);border-left:1px solid rgba(40,70,120,.3);color:#16263f">` +
     `<div style="position:absolute;left:10px;top:174px;width:82px;height:1px;background:rgba(40,70,120,.25)"></div>` +
-    (aktiv ? box(0, 34, 102, 46, 25, "Option") + box(0, 248, 102, 46, 25, "Ordner") : box(0, 34, 102, 46, 26, "KWlist") + box(0, 248, 102, 46, 23, "Optionen")) +
+    // bleibt auch beim Funken gleich (Paul 10.11.)
+    box(0, 34, 102, 46, 26, "KWlist") +
+    box(0, 248, 102, 46, 23, "Optionen") +
     `</div>`;
   return (
     `<style>@keyframes lwcl{50%{opacity:.4}}@keyframes lwcp{from{width:25%}to{width:85%}}</style>` +

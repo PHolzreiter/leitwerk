@@ -12,7 +12,7 @@ import { sim, type Einsatz, type SimFahrzeug } from "../../sim/engine";
 import { inTauri } from "../../platform";
 import { openDialog } from "../dialog";
 import { el, esc, toast } from "../dom";
-import { vorgabe } from "./flugsim";
+import { vorgabe, vorgabeSetzen } from "./flugsim";
 import { AKTIONEN, HALTEN, type PilotAktion } from "./tasten";
 
 interface HandyInfo {
@@ -71,6 +71,36 @@ export async function tabletLinkPruefen(community?: string | null): Promise<void
     if (r === true) toast("H145-Tablet: „LeitWerk“ im Web-Browser eingetragen – wirkt nach dem nächsten Start von MSFS");
   } catch (e) {
     toast(`H145-Tablet: LeitWerk konnte nicht eingetragen werden – ${String((e as Error)?.message ?? e)}`, "error");
+  }
+  // eingebaute App aktuell halten (z. B. anderer Port, oder nach einer Neuinstallation der H145 wieder einbauen)
+  if (vorgabe().tabletApp) await tabletAppSetzen(true, community, true);
+}
+
+/** Zustand der App „LeitWerk“ im H145-Tablet (für die Anzeige) */
+export const tabletApp = { fehler: "" };
+
+/**
+ * App „LeitWerk“ ins Tablet der HPG H145 einbauen bzw. entfernen (eigene Datei + eine Zeile in tablet.html).
+ * Wirkt beim nächsten Start von MSFS – deshalb am besten vor dem Start einschalten.
+ */
+export async function tabletAppSetzen(an: boolean, community?: string | null, still = false): Promise<void> {
+  vorgabeSetzen({ tabletApp: an });
+  if (!inTauri()) return;
+  if (!efbPort) await efbStarten();
+  if (!efbPort) return;
+  try {
+    const r = await invoke<boolean | null>("hpg_tablet_app", { community: community ?? vorgabe().community ?? null, port: efbPort, an });
+    tabletApp.fehler = "";
+    if (r === null) {
+      if (!still) toast("HPG H145 im Community-Ordner nicht gefunden", "error");
+    } else if (r && (!still || an)) {
+      toast(an ? "H145-Tablet: App „LeitWerk“ eingebaut – erscheint beim nächsten Start von MSFS auf dem Startbildschirm" : "H145-Tablet: App „LeitWerk“ entfernt – ab dem nächsten Start von MSFS");
+    } else if (!still) {
+      toast(an ? "H145-Tablet: App „LeitWerk“ ist schon eingebaut" : "H145-Tablet: App „LeitWerk“ ist nicht eingebaut");
+    }
+  } catch (e) {
+    tabletApp.fehler = String((e as Error)?.message ?? e);
+    toast(`H145-Tablet: App „LeitWerk“ – ${tabletApp.fehler}`, "error");
   }
 }
 

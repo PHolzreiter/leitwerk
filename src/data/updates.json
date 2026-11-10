@@ -1,5 +1,14 @@
 [
  {
+  "version": "0.116.0-beta.27",
+  "datum": "2026-11-10",
+  "titel": "Eigene App im H145-Tablet (Test)",
+  "punkte": [
+   "Knopf „Einbauen“: App „LeitWerk“ mit eigenem Symbol im Tablet der HPG H145",
+   "CARLS: die Leiste rechts bleibt beim Funken gleich"
+  ]
+ },
+ {
   "version": "0.116.0-beta.26",
   "datum": "2026-11-10",
   "titel": "CARLS-Display überarbeitet",

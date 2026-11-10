@@ -1,5 +1,10 @@
 # Änderungen
 
+## 0.116.0-beta.27 – Eigene App im H145-Tablet (Test)
+- **App „LeitWerk“ im Tablet der HPG H145:** Pilotenansicht › Cockpit › „App im H145-Tablet“ › Einbauen (oder Einstellungen › Pilot). Vor dem Start von MSFS einschalten – dann steht beim Start ein eigenes Symbol „LeitWerk“ auf dem Startbildschirm des Tablets. Erste Probe: die App zeigt die LeitWerk-Seite fürs Tablet; die eigentliche Einsatzseite folgt
+- Eingebaut wird nur eine eigene Datei und eine Zeile in tablet.html (Sicherung daneben); „Entfernen“ stellt alles wieder her
+- **CARLS:** die Leiste rechts („KWlist“ / „Optionen“) bleibt beim Funken gleich
+
 ## 0.116.0-beta.26 – CARLS-Display überarbeitet
 - **Status am CARLS:** nach dem Tastendruck bleibt der alte Status stehen, bis der neue angekommen ist – kein Blinken, keine Farbe (Status geht weiter nach 1 s raus, roter Hörer bricht ab)
 - **Pfeile neben der Sprechgruppe** nur während und kurz nach dem Wechseln
