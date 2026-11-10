@@ -12,7 +12,6 @@ import type { StatusKey } from "../../../sim/settings";
 import { funkgruppe, inFunkgruppe } from "../../../sim/funkgruppen";
 import { store } from "../../../data/store";
 import { toast } from "../../dom";
-import { pers } from "../../ws/persoenlich";
 import type { PanelKontext, PanelInstanz } from "../../ws/arbeitsplatz";
 import { fahrzeugZeigen, karteZeigen, waehle } from "../../ws/auswahl";
 import { besetzungDialog, fehlerZeigen, istFunkStatus } from "../../panels/teile";
@@ -65,9 +64,9 @@ const ALLE_STATUS = Object.keys(S_CODE) as StatusKey[];
 /** von Hand setzbar (wie bisher im Spiel), in der Reihenfolge der Nummern */
 const MENUE_STATUS: StatusKey[] = ["freiWache", "freiFunk", "dienstfahrt", "bereitschaft", "abgemeldet"];
 
-/** eigene Statusfarbe (Einstellungen › Farben › Eigene Statusfarben), sonst die Farbe des Entwurfs */
+/** Statusfarbe wie in der Fahrzeugliste der RD-Übersicht (Farben des Entwurfs) */
 function farbe(k: StatusKey): string {
-  return pers().statusFarben?.[k] || `var(--s${S_CODE[k]})`;
+  return `var(--s${S_CODE[k]})`;
 }
 /** Statusnamen wie im Entwurf (gleich wie in der Fahrzeugliste der Einsatzmaske) */
 const ST_NAME: Record<string, string> = { 0: "Abgemeldet", 1: "Frei auf Wache", 2: "Zum Berufungsort", 3: "Am Berufungsort", 4: "Zum Zielort", 5: "Am Zielort", 6: "Frei über Funk", 7: "Dienstfahrt", 8: "Bereitschaft", 9: "Alarmiert und quittiert", a: "Alarmiert auf Wache", f: "Alarmiert über Funk" };
@@ -237,7 +236,6 @@ function zeile(fz: SimFahrzeug, namen: Map<string, string>, sa: Record<string, S
   const min = eta(fz);
   const typ = fz.typ ?? fz.rmTyp;
   const wache = istHeli(fz) ? fz.kurzname || wacheOrt(fz) : wacheOrt(fz);
-  const pf = pers().statusFarben?.[key];
   return {
     id: fz.id,
     eid: fz.einsatzId ?? "",
@@ -249,7 +247,7 @@ function zeile(fz: SimFahrzeug, namen: Map<string, string>, sa: Record<string, S
     nr: sa[key].nr,
     stx: sa[key].name,
     funk: istFunkStatus(fz),
-    stil: pf ? `background: ${pf};` : "",
+    stil: "",
     crew: fz.besetzung.length ? fz.besetzung.map((p) => p.quali) : ["–"],
     auf,
     eta: min === null ? "" : `${min} min`,

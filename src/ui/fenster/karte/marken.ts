@@ -20,7 +20,6 @@ import { partnerArtVonTyp, PARTNER, type PartnerArt } from "../../../sim/partner
 import { offen, plaetze, belegt } from "../../../sim/khStatus";
 import { nimmtRettung } from "../../khInfo";
 import { stufeFarbe } from "../../panels/teile";
-import { pers } from "../../ws/persoenlich";
 import { daheim } from "../../../mapLayers";
 
 /** Zoomstufen wie im Entwurf: „Übersicht“ (Einsätze zusammengefasst), „Ort“ (Namen, POIs, Partner), „Straße“ */
@@ -45,7 +44,7 @@ const STATUS_HEX: Record<string, string> = {
   abgemeldet: "#E6E7EA",
 };
 export function statusHex(key: string): string {
-  return pers().statusFarben?.[key] || STATUS_HEX[key] || "#E6E7EA";
+  return STATUS_HEX[key] || "#E6E7EA";
 }
 /** Status mit roter Schrift bzw. rotem Rand (über Funk) */
 export function ueberFunk(key: string): boolean {

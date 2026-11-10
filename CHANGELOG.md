@@ -1,5 +1,9 @@
 # Änderungen
 
+## 0.115.0-beta.16 – Korrekturen
+- **KT:** Steht der Wagen schon beim Patienten, ruft niemand mehr an, wo der Transport bleibt
+- **Fahrzeuge und Karte:** dieselben Statusfarben wie in der Fahrzeugliste der RD-Übersicht
+
 ## 0.115.0-beta.15 – Pilot-Test, Abholzeiten, Übersichten
 - **Pilot-Testmodus:** immer Flugwetter (ruhige, klare Lage) und nie nachts – beginnt dann um 10 Uhr
 - **Einsatzliste:** Transporte zeigen ihre Abholzeit direkt unter dem Zustand (bei Terminen ca. 45 min vorher)

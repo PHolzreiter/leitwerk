@@ -7949,7 +7949,10 @@ export class Simulation {
         a.rueckrufUm = null;
       }
       // „Wo bleibt der Transport?“ – wenn das Fahrzeug deutlich zu spät ist
-      if (!k.nachfrage && ["offen", "vorgemerkt", "unterwegs"].includes(k.status) && k.d.termin) {
+      // (nicht, wenn der Wagen schon beim Patienten steht)
+      const kfz = k.fz ? this.state.fahrzeuge[k.fz] : undefined;
+      const schonDa = !!kfz && kfz.status === "amBO" && (kfz.einsatzId === k.id || kfz.kt?.fahrten?.[0]?.[0] === k.id);
+      if (!k.nachfrage && !schonDa && ["offen", "vorgemerkt", "unterwegs"].includes(k.status) && k.d.termin) {
         const soll = k.d.abholung ?? k.d.termin - 30 * MIN;
         if (t > soll + 15 * MIN) {
           k.nachfrage = true;

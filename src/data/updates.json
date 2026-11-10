@@ -1,5 +1,14 @@
 [
  {
+  "version": "0.115.0-beta.16",
+  "datum": "2026-11-10",
+  "titel": "Korrekturen",
+  "punkte": [
+   "Keine Nachfrage mehr, wenn der KTW schon beim Patienten steht",
+   "Statusfarben überall wie in der RD-Übersicht"
+  ]
+ },
+ {
   "version": "0.115.0-beta.15",
   "datum": "2026-11-10",
   "titel": "Pilot-Test, Abholzeiten, Übersichten",
