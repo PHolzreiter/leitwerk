@@ -79,6 +79,8 @@
 :where(.k-Einsatzliste) .zk.gem{font-style:italic;font-weight:500}
 :where(.k-Einsatzliste) .ortt.gem{color:var(--dim);font-style:italic}
 :where(.k-Einsatzliste) .ortt.strich{color:var(--dim)}
+:where(.k-Einsatzliste) .zstw{display:flex;flex-direction:column;gap:1px;min-width:0;max-width:100%}
+:where(.k-Einsatzliste) .zab{padding-left:14px;font-size:11px;font-weight:600;color:var(--text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
 :where(.k-Einsatzliste) .zst{display:inline-flex;align-items:center;gap:6px;max-width:100%;overflow:hidden;font-size:12px;font-weight:600;white-space:nowrap}
 :where(.k-Einsatzliste) .zst i{flex:none;width:8px;height:8px;border-radius:50%;background:var(--lf)}
 :where(.k-Einsatzliste) .zst.dispo{color:var(--rot-text)}

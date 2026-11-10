@@ -1,5 +1,11 @@
 # Änderungen
 
+## 0.115.0-beta.15 – Pilot-Test, Abholzeiten, Übersichten
+- **Pilot-Testmodus:** immer Flugwetter (ruhige, klare Lage) und nie nachts – beginnt dann um 10 Uhr
+- **Einsatzliste:** Transporte zeigen ihre Abholzeit direkt unter dem Zustand (bei Terminen ca. 45 min vorher)
+- **Übersichten:** Wird ein Einsatz oder Transport irgendwo angeklickt, wechselt die vorne liegende Übersicht zur passenden (RD, KT oder SEK)
+- **Pilot-Einstellungen:** öffnen die Einstellungen aus dem Spielmenü (Seite „Pilot & Flugsimulator“) – die Alarmtöne sind dort wählbar
+
 ## 0.115.0-beta.14 – Pilot: Cockpit in der Leiste
 - **Pilotenansicht:** Cockpit (Flugsimulator, Handy), Einstellungen und Übungsflug sind jetzt eine Schublade „Cockpit“ oben in der Leiste – der Punkt daneben zeigt, ob der Simulator verbunden ist
 - **Mehr Platz:** Ohne die Einrichtungs-Spalte stehen Status, Einsatz und Patient breiter; der Funk ist im Querformat nur so hoch wie nötig

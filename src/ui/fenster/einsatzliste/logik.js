@@ -92,7 +92,7 @@ export class EinsatzlisteLogik extends DCLogic {
     const zCode = (e) => ({ ...leerC, code: true, titel: e.code && !nurCode ? e.code : '', t: e.code || (e.lage === 'anruf' ? 'Abfrage' : 'ohne Code'), cdCls: 'cd' + (e.code ? '' : ' leer'), farbe: e.farbe || 'transparent', hatCt: !!e.code && nurCode, ct: e.code ? ctText(e) : '' });
     const info = (e) => [['Nr', e.nrVoll + ' · Eingang ' + e.ein], ['Zustand', LAGE_L[e.lage]], ['Stichwort', e.sw ? e.sw + (e.zi ? ' · ' + e.zi : '') : '–'], ['Berufungsort', e.bo], ['Zielort', e.zo || '–'], ['Hinweis', e.mk.length ? e.mk.map(m => m.t).join(' · ') : '–']].filter(([k]) => k === 'Nr' || k === 'Hinweis' || k === 'Stichwort' || !sicht.includes({ Zustand: 'lage', Berufungsort: 'bo', Zielort: 'zo' }[k])).map(([k, v]) => ({ k, v }));
     const zelle = (c, e) => {
-      if (c.k === 'lage') return { ...leerC, lageZ: true, t: LAGE_T[e.lage], cls: 'zst ' + e.lage + (e.neu ? ' neu' : ''), titel: LAGE_L[e.lage] + (e.neu ? ' – noch nie disponiert' : '') };
+      if (c.k === 'lage') return { ...leerC, lageZ: true, ab: e.abhol || '', t: LAGE_T[e.lage], cls: 'zst ' + e.lage + (e.neu ? ' neu' : ''), titel: LAGE_L[e.lage] + (e.neu ? ' – noch nie disponiert' : '') };
       if (c.k === 'nr') return { ...leerC, nr: true, t: e.nr, u: e.ein, titel: e.nrVoll + ' · Eingang ' + e.ein };
       if (c.k === 'code') return zCode(e);
       if (c.k === 'sw') return { ...leerC, swz: true, t: e.sw || '–', zi: e.zi || '', hatZi: !!e.zi };

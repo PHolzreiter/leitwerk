@@ -35,6 +35,8 @@ export interface ListenEintrag {
   nrVoll: string;
   ein: string;
   lage: ListenLage;
+  /** Abholzeit eines Transports (in der Zustands-Spalte) */
+  abhol?: string;
   neu: boolean;
   code: string;
   farbe: string;

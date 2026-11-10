@@ -11,7 +11,7 @@ import { store } from "../../data/store";
 import { sim, type Einsatz } from "../../sim/engine";
 import { distanceM } from "../../sim/geo";
 import { el, esc, toast } from "../dom";
-import { panelZeigen, registriere, type PanelKontext } from "../ws/arbeitsplatz";
+import { panelZeigen, registriere, reiterPassend, type PanelKontext } from "../ws/arbeitsplatz";
 import { auswahl, onAuswahl } from "../ws/auswahl";
 import { addressInput, fehlerZeigen, uhr } from "./teile";
 
@@ -313,8 +313,10 @@ registriere({
 
 // Auswahl: passende Maske nach vorne holen (nur das Fenster, in dem geklickt wurde)
 onAuswahl((a, opts, hier) => {
-  if (!hier || !a.id || opts.maske === false) return;
-  if (a.art !== "kt") return panelZeigen("einsatz");
-  const k = sim.ktAuftrag(a.id);
-  panelZeigen(k && istSek(k) ? "sek" : "kt");
+  if (!hier || !a.id) return;
+  const k = a.art === "kt" ? sim.ktAuftrag(a.id) : null;
+  const ziel = a.art !== "kt" ? "einsatz" : k && istSek(k) ? "sek" : "kt";
+  // auch ohne „Maske nach vorne“: steht gerade eine andere Übersicht vorne, zur passenden wechseln (RD ↔ KT ↔ SEK)
+  if (opts.maske === false) return reiterPassend(["einsatz", "kt", "sek"], ziel);
+  panelZeigen(ziel);
 });

@@ -22,7 +22,7 @@ import { availableMaps, createMap, type MapHandle } from "../../map";
 import { openDialog } from "../dialog";
 import { el, esc, toast } from "../dom";
 import { logoMarke } from "../logo";
-import { spielmenue } from "../spielmenue/oeffnen";
+import { einstellungenSeite, spielmenue } from "../spielmenue/oeffnen";
 import { stufeFarbe } from "../panels/teile";
 import { istDunkel } from "../ws/persoenlich";
 import { pilotModusSetzen } from "./modus";
@@ -572,7 +572,7 @@ function karteGross(gross: boolean): void {
 
 
 /** Einstellungen des Piloten: Funk, Tasten, Handy, Flugsimulator */
-function einstellungenDialog(): void {
+export function einstellungenDialog(): void {
   const body = el("div", { class: "plt-einst" });
   const d = openDialog({ title: "Einstellungen", body, actions: [{ label: "Schließen" }] });
   const punkt = (icon: string, titel: string, text: string, f: () => void) => {
@@ -1363,7 +1363,7 @@ function ansichtDaten(): Record<string, unknown> {
       ["Einstellungen", "ohne KI-Schlüssel und Zugangsdaten"],
     ].map(([tt, z]) => ({ t: tt, z })),
     spiel: [
-      { ic: IC.zahnrad, t: "Einstellungen", i: "Funk, Tasten, Handy, Alarmtöne, Flugsimulator", klick: () => einstellungenDialog() },
+      { ic: IC.zahnrad, t: "Einstellungen", i: "Funk, Tasten, Handy, Alarmtöne, Flugsimulator", klick: () => einstellungenSeite("pilot") },
       { ic: "M4 8h13l-3-3M20 16H7l3 3", t: "Hubschrauber wechseln", i: "Einen anderen Hubschrauber übernehmen", klick: () => void wechseln() },
       ...(sim.pilotTest ? [{ ic: "M9 3h6M10 3v6l-5 9a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3M7 15h10", t: "Testmenü", i: "Einsatz oder Großeinsatz an dich senden", klick: () => testMenue() }] : []),
       { ic: IC.tuer, t: "Zum Hauptmenü", i: fz ? `${fz.kurzname || fz.funkrufname} geht zurück an die Leitstelle` : "Spiel verlassen", gefahr: true, klick: () => void pilotVerlassen() },
@@ -1521,7 +1521,8 @@ function ansichtAktionen(): Record<string, (...x: never[]) => unknown> {
       funkTon("statusGesendet");
       pilotStatusDruecken(s);
     },
-    einstellungen: () => einstellungenDialog(),
+    // dieselben Einstellungen wie im Spielmenü (Seite „Pilot & Flugsimulator“ mit den Alarmtönen)
+    einstellungen: () => einstellungenSeite("pilot"),
     testMenue: () => testMenue(),
     folgen: () => {
       folgen = !folgen;

@@ -590,6 +590,18 @@ export function panelZeigen(id: string, opts: { lokal?: boolean; nurWennOffen?: 
   panelOeffnen(id.replace(/-\d+$/, ""), { id, params: opts.params });
 }
 
+/**
+ * Liegt eine der Masken (von) gerade vorne in ihrer Gruppe und gehört die Auswahl zu einer anderen Maske (nach) in derselben
+ * Gruppe, wird zu dieser gewechselt – ohne ein anderes Fenster nach vorne zu holen.
+ */
+export function reiterPassend(von: string[], nach: string): void {
+  const p = api?.getPanel(nach);
+  if (!p) return;
+  const vorne = p.group.activePanel;
+  if (!vorne || vorne.id === nach || !von.includes(vorne.id.replace(/-\d+$/, ""))) return;
+  p.api.setActive();
+}
+
 export function panelSchliessen(id: string): void {
   const p = api?.getPanel(id);
   if (p) p.api.close();

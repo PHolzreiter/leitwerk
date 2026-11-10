@@ -19,7 +19,7 @@
       <div class="ek" role="row"><sc-for list="{{kopf}}" as="k"><div class="{{k.zelle}}"><button class="{{k.cls}}" onClick="{{k.klick}}" aria-sort="{{k.aria}}" title="{{k.titel}}" tabindex="{{k.tab}}"><span class="skt">{{k.t}}</span><svg class="ic pf" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5"></path></svg></button><sc-if value="{{k.zieh}}"><span class="spz" role="separator" aria-orientation="vertical" aria-label="Spaltenbreite" tabindex="0" title="Ziehen ändert die Spaltenbreite · Doppelklick: Standardbreiten" onMouseDown="{{k.ziehStart}}" onDoubleClick="{{k.reset}}"></span></sc-if></div></sc-for></div>
       <sc-for list="{{zeilen}}" as="z"><div class="{{z.cls}}" data-id="{{z.id}}" onClick="{{z.klick}}" onDoubleClick="{{z.doppel}}">
         <sc-for list="{{z.zellen}}" as="c"><div class="zelle">
-          <sc-if value="{{c.lageZ}}"><span class="{{c.cls}}" title="{{c.titel}}"><i></i>{{c.t}}</span></sc-if>
+          <sc-if value="{{c.lageZ}}"><span class="zstw"><span class="{{c.cls}}" title="{{c.titel}}"><i></i>{{c.t}}</span><sc-if value="{{c.ab}}"><small class="zab">{{c.ab}}</small></sc-if></span></sc-if>
           <sc-if value="{{c.nr}}"><span class="nrz" title="{{c.titel}}">{{c.t}}<small>{{c.u}}</small></span></sc-if>
           <sc-if value="{{c.code}}"><span class="codez"><span class="{{c.cdCls}}" style="--stf: {{c.farbe}};" tabindex="0" title="{{c.titel}}"><span class="dot"></span><span class="cdt">{{c.t}}</span><sc-if value="{{c.hatCt}}"><span class="ct">{{c.ct}}</span></sc-if></span></span></sc-if>
           <sc-if value="{{c.swz}}"><span class="swb"><b class="sw1" title="{{c.t}}">{{c.t}}</b><sc-if value="{{c.hatZi}}"><span class="zi" title="{{c.zi}}">{{c.zi}}</span></sc-if></span></sc-if>

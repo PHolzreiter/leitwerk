@@ -1696,6 +1696,8 @@ export class Simulation {
   /** Wetter-Einstellungen */
   wetterOpt(): WetterOpt {
     const s = this.settings;
+    // Testmodus des Piloten: immer Flugwetter (feste, ruhige Lage ohne Wechsel)
+    if (this.pilotTest) return { wechsel: 0, jahreszeit: s.jahreszeit ?? "auto", festLage: lageVon("klar"), festTemp: s.wetterFestTemp ?? 15, echt: undefined };
     const alt = s.wetterModus === "fest" ? 0 : s.wetterModus === "wechselhaft" ? 80 : 50;
     return {
       wechsel: Math.max(0, Math.min(100, s.wetterWechsel ?? alt)),
@@ -8775,7 +8777,15 @@ export class Simulation {
     this.pilotTest = true;
     this.pilotTestFg = null;
     this.ich = ich;
-    this.neuesSpiel(Date.now());
+    // nie nachts (sonst darf der Hubschrauber nicht fliegen): dann am selben Tag um 10 Uhr beginnen
+    let start = Date.now();
+    if (istNacht(start, 48.2, 15.62)) {
+      const d = new Date(start);
+      if (d.getHours() >= 12) d.setDate(d.getDate() + 1);
+      d.setHours(10, 0, 0, 0);
+      start = d.getTime();
+    }
+    this.neuesSpiel(start);
   }
 
   /** Testmodus beenden (zurück zum normalen Spiel ohne Einsätze) */

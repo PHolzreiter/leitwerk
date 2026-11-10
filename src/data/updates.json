@@ -1,5 +1,16 @@
 [
  {
+  "version": "0.115.0-beta.15",
+  "datum": "2026-11-10",
+  "titel": "Pilot-Test, Abholzeiten, Übersichten",
+  "punkte": [
+   "Pilot-Testmodus immer mit Flugwetter",
+   "Abholzeit der Transporte in der Einsatzliste",
+   "Übersicht wechselt zur passenden (RD, KT, SEK)",
+   "Alarmtöne in den Pilot-Einstellungen wählbar"
+  ]
+ },
+ {
   "version": "0.115.0-beta.14",
   "datum": "2026-11-10",
   "titel": "Pilot: Cockpit in der Leiste",

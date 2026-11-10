@@ -237,6 +237,14 @@ function rdEintrag(e: Einsatz): Roh {
   return { e: eintrag, g: gruppe(eintrag) - (gs ? 0.5 : 0), kat, zeit: e.erstellt };
 }
 
+/** Abholzeit für die Liste: eingegebene Abholung, sonst aus dem Termin (45 min vorher) – solange nicht abgeholt */
+function abholText(k: KtAuftrag, lage: ListenLage): string | undefined {
+  if (lage === "erledigt" || k.status === "anBord") return undefined;
+  if (k.d.abholung) return `Abholung ${hhmm(k.d.abholung)}`;
+  if (k.d.termin) return `Abholung ~${hhmm(k.d.termin - 45 * 60_000)}`;
+  return undefined;
+}
+
 function ktEintrag(k: KtAuftrag): Roh {
   const sek = istUeberstellung(k.d);
   const f = k.fz ? sim.state.fahrzeuge[k.fz] : undefined;
@@ -288,6 +296,7 @@ function ktEintrag(k: KtAuftrag): Roh {
     nrVoll: k.nummer,
     ein: hhmm(k.eingang),
     lage,
+    abhol: abholText(k, lage),
     neu: k.status === "offen" && !k.fz,
     code: k.d.code ?? "",
     farbe: sek ? SEK_FARBE : KT_FARBE,
