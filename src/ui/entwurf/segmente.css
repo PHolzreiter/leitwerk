@@ -1,0 +1,38 @@
+/* Gleitende Markierung der Auswahlleisten (siehe segmente.ts) – wie .l-segpill im Hauptmenü */
+.segs {
+  position: relative;
+}
+.segpill {
+  position: absolute;
+  z-index: 2;
+  pointer-events: none;
+  overflow: hidden;
+}
+.segclone {
+  position: absolute;
+  display: block;
+}
+.segs > .segpill .seg.segc {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  background: none !important;
+  margin: 0;
+  box-shadow: none;
+  transform: none;
+  transition: none !important;
+}
+/* während des Gleitens: alle Schriften hell, die eigentliche Markierung aus */
+.segs.segsani > .seg {
+  color: var(--text-2) !important;
+  background: transparent !important;
+  transition: none !important;
+}
+.segs.segsani::before {
+  opacity: 0 !important;
+  transition: none !important;
+}
+.segs.segsfix > .seg,
+.segs.segsfix::before {
+  transition: none !important;
+}

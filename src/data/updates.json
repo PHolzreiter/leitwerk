@@ -1,5 +1,13 @@
 [
  {
+  "version": "0.115.0-beta.9",
+  "datum": "2026-11-10",
+  "titel": "Auswahlleisten wie im Hauptmenü",
+  "punkte": [
+   "Markierung gleitet, die Schrift wechselt die Farbe erst unter der Markierung"
+  ]
+ },
+ {
   "version": "0.115.0-beta.8",
   "datum": "2026-11-10",
   "titel": "Schubladen",

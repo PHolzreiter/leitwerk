@@ -26,6 +26,8 @@ import "./ui/schriften.css";
 import "./style.css";
 import "./ui/ws/dockview.css";
 import "./ui/ws/arbeitsplatz.css";
+import { segmenteGleiten } from "./ui/entwurf/segmente";
+segmenteGleiten();
 import "./ui/modern.css";
 import { store } from "./data/store";
 import { anStrasse, khZufahrtBei, sim } from "./sim/engine";

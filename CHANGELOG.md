@@ -1,5 +1,8 @@
 # Änderungen
 
+## 0.115.0-beta.9 – Auswahlleisten wie im Hauptmenü
+- **Alle Auswahlleisten im Spiel** (Tempo, Filter, Reiter in Fenstern, Masken, Pilot): die blaue Markierung gleitet wie im Hauptmenü, und die Schrift wird erst dunkel bzw. hell, wenn die Markierung darunter ist – kein vorzeitiger Farbwechsel mehr
+
 ## 0.115.0-beta.8 – Schubladen
 - **Reiter:** bleibt beim Verbreitern rundum rund – eckig wird er erst, wenn das Fenster nach unten aufgeht (beim Schließen umgekehrt)
 - **Inhalt:** erscheint mit dem Fenster, ohne eigenes Einblenden
