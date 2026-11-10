@@ -79,19 +79,19 @@ computing gzip size...
 [2mdist/[22m[2massets/[22m[32mbg-32x9-abend-DLJpcJQK.jpg           [39m[1m[2m1,159.39 kB[22m[1m[22m
 [2mdist/[22m[2massets/[22m[32meinsatzstellen-BKMVXWRH.csv          [39m[1m[2m2,885.41 kB[22m[1m[22m
 [2mdist/[22m[2massets/[22m[35mindex-1RsdzNem.css                   [39m[1m[2m  475.66 kB[22m[1m[22m[2m │ gzip:    74.68 kB[22m
-[2mdist/[22m[2massets/[22m[36mdist-js-BDt_qHij.js                  [39m[1m[2m    0.54 kB[22m[1m[22m[2m │ gzip:     0.26 kB[22m
-[2mdist/[22m[2massets/[22m[36mwebviewWindow-Dn-OQhF0.js            [39m[1m[2m    1.78 kB[22m[1m[22m[2m │ gzip:     0.79 kB[22m
-[2mdist/[22m[2massets/[22m[36mfussleiste-CXo867ty.js               [39m[1m[2m    2.37 kB[22m[1m[22m[2m │ gzip:     1.19 kB[22m
-[2mdist/[22m[2massets/[22m[36mwebview-BYeeYliX.js                  [39m[1m[2m    3.34 kB[22m[1m[22m[2m │ gzip:     1.14 kB[22m
-[2mdist/[22m[2massets/[22m[36mwindow-DW7X90aI.js                   [39m[1m[2m   14.32 kB[22m[1m[22m[2m │ gzip:     3.56 kB[22m
-[2mdist/[22m[2massets/[22m[36mzeilen-BSzk-Be7.js                   [39m[1m[2m   52.44 kB[22m[1m[22m[2m │ gzip:    20.33 kB[22m
-[2mdist/[22m[2massets/[22m[36mindex-4McIog5O.js                    [39m[1m[33m6,531.60 kB[39m[22m[2m │ gzip: 1,809.00 kB[22m
+[2mdist/[22m[2massets/[22m[36mdist-js-BdxldYEq.js                  [39m[1m[2m    0.54 kB[22m[1m[22m[2m │ gzip:     0.26 kB[22m
+[2mdist/[22m[2massets/[22m[36mwebviewWindow-DmIDdp23.js            [39m[1m[2m    1.78 kB[22m[1m[22m[2m │ gzip:     0.79 kB[22m
+[2mdist/[22m[2massets/[22m[36mfussleiste-CMoy_R-B.js               [39m[1m[2m    2.37 kB[22m[1m[22m[2m │ gzip:     1.19 kB[22m
+[2mdist/[22m[2massets/[22m[36mwebview-Byg1W5oI.js                  [39m[1m[2m    3.34 kB[22m[1m[22m[2m │ gzip:     1.14 kB[22m
+[2mdist/[22m[2massets/[22m[36mwindow-BL-kEc-z.js                   [39m[1m[2m   14.32 kB[22m[1m[22m[2m │ gzip:     3.56 kB[22m
+[2mdist/[22m[2massets/[22m[36mzeilen-DV8AGzUy.js                   [39m[1m[2m   52.44 kB[22m[1m[22m[2m │ gzip:    20.33 kB[22m
+[2mdist/[22m[2massets/[22m[36mindex-B0SLzE66.js                    [39m[1m[33m6,532.21 kB[39m[22m[2m │ gzip: 1,809.22 kB[22m
 [33m
 (!) Some chunks are larger than 2000 kB after minification. Consider:
 - Using dynamic import() to code-split the application
 - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
 - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.[39m
-[32m✓ built in 8.51s[39m
+[32m✓ built in 7.23s[39m
 ### npx tauri icon app-icon.png
         Appx Creating StoreLogo.png
         Appx Creating Square30x30Logo.png
@@ -173,7 +173,7 @@ computing gzip size...
    [1m[94m|[0m     [1m[33m^^^^^^^^^^^^^^[0m
 
 [1m[33mwarning[0m: `leitwerk` (lib) generated 4 warnings (run `cargo fix --lib -p leitwerk` to apply 2 suggestions)
-[1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 5.27s
+[1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 13.74s
 ### python3 tools/build_default_data.py
 data/default/dienststellen.csv: 863 Zeilen
 data/default/fahrzeuge.csv: 681 Zeilen
