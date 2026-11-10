@@ -258,18 +258,61 @@ const APP_JS: &str = "html_ui/HPG-H145/js/leitwerk-app.js";
 const TABLET_HTML: &str = "html_ui/HPG-H145/tablet.html";
 const APP_SCRIPT: &str = r#"<script src="/HPG-H145/js/leitwerk-app.js"></script>"#;
 const TABLET_BUNDLE: &str = r#"<script src="/HPG-H145/js/tablet.bundle.js">"#;
+// Hinweis am CARLS-Funkgerät („in der App Verbinden tippen“), wird mit der App ein- und ausgebaut
+const CARLS_JS: &str = "html_ui/HPG-H145/js/leitwerk-carls.js";
+const CARLS_HTML: &str = "html_ui/HPG-H145/carls.html";
+const CARLS_SCRIPT: &str = r#"<script src="/HPG-H145/js/leitwerk-carls.js"></script>"#;
+const CARLS_BUNDLE: &str = r#"<script src="/HPG-H145/js/carls.bundle.js">"#;
 
 /// tablet.html mit bzw. ohne unsere Zeile (vor dem Tablet-Code); None = schon so
 fn tablet_html_neu(alt: &str, an: bool) -> Result<Option<String>, String> {
-    let drin = alt.contains(APP_SCRIPT);
+    html_mit_zeile(alt, an, APP_SCRIPT, TABLET_BUNDLE).map_err(|_| "tablet.html der H145 hat einen unbekannten Aufbau – App nicht eingebaut".to_string())
+}
+
+/// HTML-Datei der H145 mit bzw. ohne eine eigene Script-Zeile vor dem Code der H145; None = schon so
+fn html_mit_zeile(alt: &str, an: bool, zeile: &str, vor: &str) -> Result<Option<String>, ()> {
+    let drin = alt.contains(zeile);
     if an == drin {
         return Ok(None);
     }
     if !an {
-        return Ok(Some(alt.replace(APP_SCRIPT, "")));
+        return Ok(Some(alt.replace(zeile, "")));
     }
-    let i = alt.find(TABLET_BUNDLE).ok_or("tablet.html der H145 hat einen unbekannten Aufbau – App nicht eingebaut")?;
-    Ok(Some(format!("{}{}{}", &alt[..i], APP_SCRIPT, &alt[i..])))
+    let i = alt.find(vor).ok_or(())?;
+    Ok(Some(format!("{}{}{}", &alt[..i], zeile, &alt[i..])))
+}
+
+/// CARLS-Hinweis ein- bzw. ausbauen (eigene Datei + Zeile in carls.html, Sicherung carls.html.vor-leitwerk).
+/// Fehler hier verhindern die App im Tablet nicht – das CARLS zeigt dann nur den normalen Text.
+fn carls_hinweis(paket: &Path, port: u16, an: bool) -> bool {
+    let mut geaendert = false;
+    let js = paket.join(CARLS_JS);
+    if an {
+        let inhalt = include_str!("leitwerk-carls.js").replace("__PING__", &format!("http://127.0.0.1:{port}/ping"));
+        if fs::read_to_string(&js).ok().as_deref() != Some(inhalt.as_str()) && fs::write(&js, &inhalt).is_ok() {
+            let _ = layout_nachtragen(paket, CARLS_JS, inhalt.len() as u64);
+            geaendert = true;
+        }
+    }
+    let html = paket.join(CARLS_HTML);
+    if let Ok(alt) = fs::read_to_string(&html) {
+        if let Ok(Some(neu)) = html_mit_zeile(&alt, an, CARLS_SCRIPT, CARLS_BUNDLE) {
+            let sicherung = paket.join("html_ui/HPG-H145/carls.html.vor-leitwerk");
+            if an && !sicherung.exists() {
+                let _ = fs::write(&sicherung, &alt);
+            }
+            if fs::write(&html, &neu).is_ok() {
+                let _ = layout_nachtragen(paket, CARLS_HTML, neu.len() as u64);
+                geaendert = true;
+            }
+        }
+    }
+    if !an && js.exists() {
+        let _ = fs::remove_file(&js);
+        let _ = layout_entfernen(paket, CARLS_JS);
+        geaendert = true;
+    }
+    geaendert
 }
 
 /// Datei aus der layout.json des Pakets nehmen
@@ -329,6 +372,9 @@ pub fn hpg_tablet_app(community: Option<String>, port: u16, an: bool) -> Result<
         layout_entfernen(&paket, APP_JS)?;
         geaendert = true;
     }
+    if carls_hinweis(&paket, port, an) {
+        geaendert = true;
+    }
     Ok(Some(geaendert))
 }
 
@@ -344,6 +390,10 @@ mod tests {
         assert_eq!(tablet_html_neu(&neu, false).unwrap().unwrap(), alt);
         assert!(tablet_html_neu(alt, false).unwrap().is_none());
         assert!(tablet_html_neu("<html></html>", true).is_err());
+        let carls = r#"<script src="/JS/dataStorage.js"></script><script src="/HPGH145-Polyfill/pep.js"></script><script src="/HPG-H145/js/runtime.bundle.js"></script><script src="/HPG-H145/js/carls.bundle.js"></script><link rel="stylesheet" href="/HPG-H145/css/carls.css">"#;
+        let c2 = html_mit_zeile(carls, true, CARLS_SCRIPT, CARLS_BUNDLE).unwrap().unwrap();
+        assert!(c2.find("leitwerk-carls.js").unwrap() < c2.find("carls.bundle.js").unwrap());
+        assert_eq!(html_mit_zeile(&c2, false, CARLS_SCRIPT, CARLS_BUNDLE).unwrap().unwrap(), carls);
         assert!(app_js(47900).contains("http://127.0.0.1:47900/efb") && !app_js(47900).contains("__URL__") && app_js(47900).contains("localhost:40510"));
     }
     #[test]
