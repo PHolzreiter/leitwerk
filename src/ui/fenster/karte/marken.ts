@@ -83,10 +83,10 @@ const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&l
 
 const PIN_PFAD = "M15 39C15 39 2 23.5 2 14.5A13 13 0 0 1 28 14.5C28 23.5 15 39 15 39Z";
 function pinHtml(farbe: string, buchst: string, nr: string, code: string, gew: boolean): string {
-  return `<div class="pinw${gew ? " gew" : ""}"><svg class="pin" viewBox="0 0 30 40" aria-hidden="true"><path d="${PIN_PFAD}" fill="${farbe}" stroke="#fff" stroke-width="2.5"></path><circle cx="15" cy="14.5" r="${buchst ? 7 : 5.5}" fill="#fff"></circle>${buchst ? `<text x="15" y="18.5" text-anchor="middle" font-size="11" font-weight="900" fill="${farbe}" font-family="Inter,sans-serif">${esc(buchst)}</text>` : ""}</svg><span class="etk"><b>${esc(nr)}</b>${code ? ` ${esc(code)}` : ""}</span></div>`;
+  return `<div class="pinw${gew ? " gew" : ""}"><svg class="pin" viewBox="0 0 30 40" aria-hidden="true"><path d="${PIN_PFAD}" fill="${farbe}" stroke="#fff" stroke-width="1.6"></path><circle cx="15" cy="14.5" r="${buchst ? 7 : 4.5}" fill="#fff"></circle>${buchst ? `<text x="15" y="18.5" text-anchor="middle" font-size="11" font-weight="900" fill="${farbe}" font-family="Inter,sans-serif">${esc(buchst)}</text>` : ""}</svg><span class="etk"><b>${esc(nr)}</b>${code ? ` ${esc(code)}` : ""}</span></div>`;
 }
-const HAUS = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-6.5 8 6.5M6.5 9.5V19h11V9.5M10.5 19v-4.5h3V19" fill="none" stroke="#111216" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"></path></svg>`;
-const HELIPLATZ = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5v14M17 5v14M7 12h10" fill="none" stroke="#111216" stroke-width="3" stroke-linecap="round"></path></svg>`;
+const HAUS = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-6.5 8 6.5M6.5 9.5V19h11V9.5M10.5 19v-4.5h3V19" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"></path></svg>`;
+const HELIPLATZ = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5v14M17 5v14M7 12h10" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"></path></svg>`;
 const HUBSCHRAUBER = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M4 7h16M9 21h6M12 9a3 3 0 0 1 3 3v4H9v-4a3 3 0 0 1 3-3z" fill="none" stroke="#111216" stroke-width="2.2" stroke-linecap="round"></path></svg>`;
 const tip = (t: string) => `<span class="tip">${esc(t)}</span>`;
 
@@ -271,7 +271,7 @@ export function addMarken(map: maplibregl.Map, deps: MarkenDeps): Marken {
           if (!ort) continue;
           const pm = PARTNER_MARKE[pa];
           const gew = sel?.art === "partner" && sel.id === s.id;
-          out.push({ key: `p:${s.id}`, art: "partner", id: s.id, lng: s.lon, lat: s.lat, anker: "center", z: gew ? 8 : 1, cls: gew ? "gew" : "", html: `<div class="pa ${pm.cls}${gew ? " gewaehlt" : ""}">${esc(pm.z)}</div>${tip(s.name)}` });
+          out.push({ key: `p:${s.id}`, art: "partner", id: s.id, lng: s.lon, lat: s.lat, anker: "center", z: gew ? 8 : 1, cls: gew ? "gew" : "", html: `<div class="pd ${pm.cls}${gew ? " gewaehlt" : ""}"></div>${tip(`${pm.z} · ${s.name}`)}` });
           continue;
         }
         const heli = s.typ === "Luftrettung";

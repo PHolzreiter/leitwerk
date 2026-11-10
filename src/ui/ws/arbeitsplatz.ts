@@ -224,7 +224,10 @@ class KopfKnoepfe implements IHeaderActionsRenderer {
     });
     const raus = knopf(IST_HAUPT ? "In neuem Fenster öffnen" : "Zurück ins Hauptfenster", IST_HAUPT ? SYM.raus : SYM.zurueck);
     raus.addEventListener("click", () => {
-      const ids = p.group.panels.map((x) => x.id);
+      // nur der aktive Reiter, nicht die ganze Gruppe
+      const aktiv = p.group.activePanel ?? p.group.panels[0];
+      const ids = aktiv ? [aktiv.id] : [];
+      if (!ids.length) return;
       if (IST_HAUPT) void inEigenesFenster(ids);
       else zurueckInsHauptfenster(ids);
     });

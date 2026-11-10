@@ -1,5 +1,11 @@
 # Änderungen
 
+## 0.115.0-beta.10 – Karte ruhiger, Fenster einzeln herauslösen
+- **In neuem Fenster öffnen:** nimmt nur den aktiven Reiter mit, nicht alle Reiter der Gruppe
+- **Karte:** Einsatz- und Transport-Nadeln kleiner und zurückhaltender, Beschriftung dezenter; zusammengefasste Einsätze als kleiner Kreis mit dünnem Ring
+- **Einrichtungen:** Wachen, Krankenhäuser, Flugrettung, Landeplätze und Zufahrten mit einheitlichem kleinem Zeichen
+- **Polizei, Feuerwehr und andere Partner:** nur noch kleine, blasse Punkte (Name beim Darüberfahren)
+
 ## 0.115.0-beta.9 – Auswahlleisten wie im Hauptmenü
 - **Alle Auswahlleisten im Spiel** (Tempo, Filter, Reiter in Fenstern, Masken, Pilot): die blaue Markierung gleitet wie im Hauptmenü, und die Schrift wird erst dunkel bzw. hell, wenn die Markierung darunter ist – kein vorzeitiger Farbwechsel mehr
 
