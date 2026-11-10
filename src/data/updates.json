@@ -1,5 +1,15 @@
 [
  {
+  "version": "0.116.0-beta.30",
+  "datum": "2026-11-10",
+  "titel": "Tablet: Einsatz-App",
+  "punkte": [
+   "Einsatz-App in H145-Tablet und EFB: Kein Alarm / Transport | Patient, Karte mit Navigation, alarmierte Fahrzeuge, Abfrage",
+   "„Zielort buchen“ direkt im Tablet – freigeschaltet am Berufungsort beim Patienten",
+   "Umlaute im Tablet richtig"
+  ]
+ },
+ {
   "version": "0.116.0-beta.29",
   "datum": "2026-11-10",
   "titel": "H145: CARLS-Verbindung zuverlässiger",

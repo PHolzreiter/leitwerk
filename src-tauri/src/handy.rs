@@ -18,6 +18,10 @@ use tauri::{AppHandle, Emitter};
 
 const SEITE: &str = include_str!("handy.html");
 const EFB_SEITE: &str = include_str!("efb.html");
+// Schrift fürs Tablet: Coherent GT hat keine Umlaute in der Standardschrift.
+const SCHRIFT_400: &[u8] = include_bytes!("../../src/assets/fonts/Inter-Regular.woff");
+const SCHRIFT_600: &[u8] = include_bytes!("../../src/assets/fonts/Inter-SemiBold.woff");
+const SCHRIFT_700: &[u8] = include_bytes!("../../src/assets/fonts/Inter-Bold.woff");
 const PORTS: std::ops::RangeInclusive<u16> = 47_890..=47_899;
 const EFB_PORTS: std::ops::RangeInclusive<u16> = 47_900..=47_905;
 
@@ -97,6 +101,15 @@ fn bearbeiten(mut s: TcpStream, token: Option<&str>, app: &AppHandle) {
         Some(tk) => abfrage.split('&').any(|p| p == format!("t={tk}")),
         None => true,
     };
+    let schrift = match pfad {
+        "/schrift/400.woff" => Some(SCHRIFT_400),
+        "/schrift/600.woff" => Some(SCHRIFT_600),
+        "/schrift/700.woff" => Some(SCHRIFT_700),
+        _ => None,
+    };
+    if let Some(b) = schrift {
+        return antwort(&mut s, "200 OK", "font/woff", b);
+    }
     if pfad == "/favicon.ico" {
         return antwort(&mut s, "404 Not Found", "text/plain", b"");
     }

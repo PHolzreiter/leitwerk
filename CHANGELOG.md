@@ -1,5 +1,14 @@
 # Änderungen
 
+## 0.116.0-beta.30 – Tablet: Einsatz-App
+- **Neue Einsatz-App** in beiden Tablets (H145-Tablet und EFB von MSFS) – gleiche Ansicht, nur das H145-Tablet zeigt zusätzlich „Funkgerät & Tablet“
+- Ohne Einsatz: „Kein Alarm“ mit dem aktuellen Status; oben rechts ein Punkt zum Status geben
+- Mit Einsatz: Umschalter **Transport | Patient**; Code mit Namen und Kurzzeile (z. B. „78m B~ A~ // bekommt schwer Luft“), Adresse, Zusatz, kleine Karte mit Linie zum Ziel, alarmierte Fahrzeuge in Statusfarbe, beantwortete Fragen der Abfrage
+- **Karte (basemap.at):** antippen öffnet die Navigation – Zoom, Folgen, „Alle Fahrzeuge“; immer sichtbar sind die Fahrzeuge des eigenen Einsatzes und alle NAH
+- **Zielort buchen:** immer zu sehen, ausgegraut bis ihr am Berufungsort beim Patienten seid – dann Auswahl (NAH transportiert, RTW fährt allein, NA im RTW, kein Transport) und Buchung wie überall (Alter → Symptom → Dringlichkeit → Krankenhaus)
+- **Patient:** erscheint gleichzeitig mit dem Buchen – Sichtung, Verdacht, Bewusstsein, Atmung, Verlauf
+- Seite scrollt mit Mausrad und Ziehen; Umlaute werden im Tablet richtig angezeigt
+
 ## 0.116.0-beta.29 – H145: CARLS-Verbindung zuverlässiger
 - **CARLS:** die Anzeige wird alle paar Sekunden neu geschickt – startet die Mission sehr früh (von selbst beim Start von MSFS), hört das Funkgerät noch nicht zu und blieb bei „Connect a mission to begin“ stehen
 - **App im H145-Tablet:** Knopf „Neu einbauen“ (Pilotenansicht › Cockpit); die App bringt sich beim Start von LeitWerk weiterhin selbst auf den neuen Stand

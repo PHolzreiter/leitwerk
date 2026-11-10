@@ -15,6 +15,7 @@ import { ALTERSGRUPPEN, altersgruppeVon, DRINGLICHKEITEN, dringlichkeitFuer, sym
 import { khLandung, type Hospital } from "../../data/model";
 import { mp, meinName } from "../../net/mehrspieler";
 import { findCode } from "../../sim/codes";
+import { antwortLabel, fragenImAblauf, type Frage } from "../../abfrage/schema";
 import { fliegt, sim, type Einsatz, type PilotPlan, type SimFahrzeug } from "../../sim/engine";
 import { distanceM } from "../../sim/geo";
 import type { StatusKey } from "../../sim/settings";
@@ -508,7 +509,7 @@ export function pilotOeffnen(): void {
           const e = einsatzVon(f);
           return handyStandBauen(f, e, funkPlatzAktualisieren(f, e), () => handyMehr(f, e));
         },
-        handyBefehl: (b: string) => (b.startsWith("bu:") || b.startsWith("gr:") ? handyBuchen(b) : pilotAktion(b as PilotAktion, true)),
+        handyBefehl: (b: string) => (b.startsWith("bu:") || b.startsWith("gr:") || b.startsWith("ka:") ? handyBuchen(b) : pilotAktion(b as PilotAktion, true)),
       },
     });
   aus.push(() => eingabeStoppen());
@@ -1758,7 +1759,148 @@ function handyNeu(fz: SimFahrzeug | undefined, e: Einsatz | undefined): Record<s
     ent: D.ent,
     planT: D.planT,
     abrufPunkt: !!(D.gs as { abruf?: unknown } | null)?.abruf,
+    tab: tabletDaten(fz, e, D),
     amOrtText: fz && e && fz.status !== "amBO" ? (e.gs && !e.gs.aufgehoben ? "Buchen geht, sobald euch die Einsatzleitung einen Patienten zugeteilt hat." : "Buchen geht am Einsatzort (Status 3).") : fz && e && e.gs && !e.gs.aufgehoben ? "Buchen geht, sobald euch die Einsatzleitung einen Patienten zugeteilt hat." : "",
+  };
+}
+
+/** Zeilenfarben der Fahrzeuge wie in den Listen der Leitstelle (ganze Zeile in Statusfarbe, Schrift dunkel) */
+const ZEILE_FARBE: Record<string, string> = { "1": "#CDEFA0", "6": "#CDEFA0", A: "#F3EF7A", F: "#F3EF7A", "9": "#DCC23A", "2": "#F7D98C", "3": "#EBB36B", "4": "#ECD8ED", "5": "#D7AEE2", "7": "#DCDDE1", "8": "#C3E6E1", "0": "#E6E7EA" };
+/** Karte im Tablet: alle Fahrzeuge zeigen (Umschalter in der Navigation, „ka:alle:1“) */
+let tabletKarteAlle = false;
+
+/** Peilung in Grad (0 = Norden) */
+function peilung(a: { lat: number; lon: number }, b: { lat: number; lon: number }): number {
+  const r = Math.PI / 180;
+  const y = Math.sin((b.lon - a.lon) * r) * Math.cos(b.lat * r);
+  const x = Math.cos(a.lat * r) * Math.sin(b.lat * r) - Math.sin(a.lat * r) * Math.cos(b.lat * r) * Math.cos((b.lon - a.lon) * r);
+  return (Math.atan2(y, x) / r + 360) % 360;
+}
+
+/** Beantwortete Fragen der Notrufabfrage (Frage + Antwort, in der Reihenfolge der Abfrage) */
+function abfrageFragen(e: Einsatz): { f: string; a: string }[] {
+  const a = e.abfrageStand;
+  const schema = store.schema;
+  if (!a || !schema) {
+    // ohne Abfrage-Stand: die Sätze aus dem Protokoll
+    const block = [...e.protokoll].reverse().find((x) => /^\*\*\* /.test(x.text));
+    return block ? block.text.split("\n").slice(1).filter(Boolean).map((x) => ({ f: "", a: x.replace(/^\d+\./, "") })) : [];
+  }
+  const fragen = new Map<string, Frage>();
+  for (const f of schema.globale_fragen.phase_3_was_ist_passiert ?? []) fragen.set(f.id, f);
+  if (a.kapitel) for (const { frage } of fragenImAblauf(schema, a.kapitel, a.antworten)) fragen.set(frage.id, frage);
+  const out: { f: string; a: string }[] = [];
+  for (const [id, f] of fragen) {
+    const w = a.antworten[id];
+    if (w === undefined || w === null || w === "") continue;
+    out.push({ f: f.text, a: antwortLabel(f, w as string) });
+  }
+  return out;
+}
+
+/**
+ * Stand für die Einsatz-App im Tablet (EFB von MSFS und H145-Tablet, Seite efb.html): Kopf, Alarm, Einsatz,
+ * Karte mit Route und Fahrzeugen, alarmierte Fahrzeuge, Abfrage, Patient. Entwurf „Einsatz-Interface“ (Paul 10.11.2026).
+ */
+function tabletDaten(fz: SimFahrzeug | undefined, e: Einsatz | undefined, D: Record<string, unknown>): Record<string, unknown> {
+  const t = sim.state.zeit;
+  const uhr = new Date(t).toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" });
+  if (!fz) return { uhr, heli: "Kein Hubschrauber", unter: "im Piloten-Interface wählen", ein: null };
+  const st = sim.statusDef(fz.status);
+  const kopf = { uhr, heli: fz.kurzname || fz.funkrufname, st: { n: st.nummer, t: st.name, f: ZEILE_FARBE[st.nummer] ?? st.farbe } };
+  if (!e) return { ...kopf, unter: `${fz.funkrufname} · ${fz.stationName}`, ein: null };
+  const c = findCode(e.code ?? undefined);
+  const zi = zusatzInfo(e);
+  const gsE = gsVon(e);
+  const gs = gsE?.gs ?? null;
+  const ein = {
+    nr: e.nummer,
+    stufe: gs ? `Großeinsatz${gs.stufe ? ` ${gs.stufe}` : ""}` : (c?.stufe ?? ""),
+    sf: gs ? "#6E1A1A" : c ? stufeFarbe(c.stufe) : "#6b7280",
+    code: (gsE ?? e).code ?? "Code folgt",
+    sw: stichwort(gsE ?? e),
+    zi: zi.b && zi.t ? `${zi.b} // ${zi.t}` : zi.b || zi.t,
+    adr: (gsE ?? e).adresse?.label ?? "Adresse folgt",
+    zusatz: e.zusatz ?? "",
+    gs: (D.ein as { gsText?: string } | null)?.gsText ?? "",
+  };
+  // alarmierte Fahrzeuge, nach Eintreffzeit
+  const basis = gsE ?? e;
+  const alle = basis.fahrzeuge.map((id) => sim.state.fahrzeuge[id]).filter((x): x is SimFahrzeug => !!x && (x.einsatzId === basis.id || x.id === fz.id || (!!e.gsKind && x.einsatzId === e.id)));
+  if (!alle.includes(fz)) alle.unshift(fz);
+  const restSek = (x: SimFahrzeug): number => {
+    if (x === fz) {
+      const a = sim.pilotAnkunft(fz);
+      return a ? a.min * 60 : x.status === "amBO" ? 0 : 9e9;
+    }
+    if (x.status === "amBO" || x.status === "amZO") return 0;
+    return x.fahrt ? Math.max(0, x.fahrt.start / 1000 + x.fahrt.dauer - t / 1000) : 9e9;
+  };
+  const fzl = [...new Set(alle)]
+    .map((x) => {
+      const d = sim.statusDef(x.status);
+      const r = restSek(x);
+      return {
+        s: d.nummer,
+        f: ZEILE_FARBE[d.nummer] ?? "#E6E7EA",
+        funk: d.nummer === "F" || d.nummer === "6",
+        ruf: x === fz ? x.kurzname || x.funkrufname : x.funkrufname,
+        typ: `${x.rmTyp}${x === fz ? " · du" : ""}`,
+        txt: `${d.name}${x.stationName && x !== fz ? ` · ${x.stationName}` : ""}`,
+        eta: r === 0 ? "da" : r < 9e8 ? minuten(r) : "",
+        ich: x === fz,
+        r,
+      };
+    })
+    .sort((a, b) => a.r - b.r)
+    .slice(0, gs ? 8 : 20);
+  // Karte: eigener Hubschrauber, Ziel, Fahrzeuge (eigener Einsatz + andere NAH; auf Wunsch alle)
+  const ziel = sim.pilotBo(fz);
+  const kh = e.kh ? store.get("hospitals", e.kh.hospitalId) : undefined;
+  const landung = kh ? khLandung(kh) : null;
+  const zielPunkt = fz.status === "zumZO" && landung ? { lat: landung.lat, lon: landung.lon, t: kh!.kurzname || kh!.name, kh: true } : ziel && ["alarmWache", "alarmFunk", "alarmiert", "zumBO", "amBO"].includes(fz.status) ? { lat: ziel.lat, lon: ziel.lon, t: ziel.label, kh: false } : null;
+  const kurs = flugsim.daten && datenFrisch() ? flugsim.daten.kurs : null;
+  const fahrzeuge = Object.values(sim.state.fahrzeuge)
+    .filter((x) => x.id !== fz.id && Number.isFinite(x.lat))
+    .filter((x) => alle.includes(x) || x.rmTyp === "NAH" || (tabletKarteAlle && !["freiWache", "abgemeldet"].includes(x.status)))
+    .slice(0, 400)
+    .map((x) => {
+      const d = sim.statusDef(x.status);
+      return { lat: +x.lat.toFixed(5), lon: +x.lon.toFixed(5), ruf: x.funkrufname, s: d.nummer, f: ZEILE_FARBE[d.nummer] ?? "#E6E7EA", nah: x.rmTyp === "NAH", ein: alle.includes(x) };
+    });
+  const m = zielPunkt ? distanceM(fz, zielPunkt) : 0;
+  const ank = sim.pilotAnkunft(fz);
+  const karte = {
+    ich: { lat: +fz.lat.toFixed(5), lon: +fz.lon.toFixed(5), kurs: kurs === null ? null : Math.round(kurs), f: ZEILE_FARBE[st.nummer] ?? "#DCC23A" },
+    ziel: zielPunkt,
+    fz: fahrzeuge,
+    alle: tabletKarteAlle,
+    nav: zielPunkt && m > 150 ? { kurs: String(Math.round(peilung(fz, zielPunkt))).padStart(3, "0"), km: km1(m), min: minuten(flugSek(m)), an: ank ? new Date(t + ank.min * 60000).toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" }) : "" } : null,
+    text: fz.status === "amBO" ? "am Einsatzort" : fz.status === "amZO" ? "am Krankenhaus" : "",
+  };
+  const alarmOffen = ["alarmWache", "alarmFunk", "alarmiert"].includes(fz.status);
+  const buchung = handyBuchungStand(fz, e);
+  return {
+    ...kopf,
+    unter: `Einsatz ${e.nummer}`,
+    alarm: alarmOffen ? { zeit: uhrzeit(e.protokoll.find((x) => /alarm/i.test(x.text))?.zeit ?? t), quitt: fz.status === "alarmiert" } : null,
+    ein,
+    fz: fzl.map(({ r: _r, ...x }) => x),
+    abf: abfrageFragen(e),
+    karte,
+    buchenDa: !!buchung.da,
+    buchenText: buchung.da ? "" : String(buchung.text ?? ""),
+    plan: D.planT ?? "",
+    pat: buchung.da
+      ? {
+          liste: D.pats,
+          verlauf: D.patVerlauf,
+          meldung: e.meldung?.text ?? "",
+          verdacht: e.wahr.verdacht ? buchungName(e.wahr.verdacht) : "",
+          ziel: kh ? kh.kurzname || kh.name : "",
+        }
+      : null,
+    patZu: buchung.da ? "" : String(D.patZu ?? ""),
   };
 }
 
@@ -1807,6 +1949,11 @@ function handyBuchen(b: string): void {
   // Sprechgruppe wechseln (Pfeile am Handy): „gr:1“ / „gr:-1“
   if (b.startsWith("gr:")) {
     sprechGruppeWeiter(b === "gr:-1" ? -1 : 1);
+    return zeichneAlles();
+  }
+  // Tablet-Karte: alle Fahrzeuge an/aus („ka:alle:1“ / „ka:alle:0“)
+  if (b.startsWith("ka:alle:")) {
+    tabletKarteAlle = b === "ka:alle:1";
     return zeichneAlles();
   }
   const fz = meinFz();

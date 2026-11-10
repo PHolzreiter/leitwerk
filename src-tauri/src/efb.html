@@ -4,161 +4,611 @@
 <meta charset="utf-8">
 <title>LeitWerk</title>
 <!--
-  Seite für die LeitWerk-App im EFB-Tablet von MSFS 2024 (läuft im Simulator in einem alten Browser, „Coherent GT“):
-  bewusst einfach – kein CSS-Grid, keine CSS-Variablen, kein calc(), kein gap, JavaScript ohne neuere Schreibweisen.
+  Einsatz-App im Tablet (EFB von MSFS 2024 und Cockpit-Tablet der HPG H145) – Entwurf „Einsatz-Interface“ (Paul 10.11.2026).
+  Beide Tablets zeigen diese Seite gleich; nur die H145 antwortet auf {leitwerk:"stand"} (Zeile „Funkgerät & Tablet“).
+  Läuft im Simulator in einem alten Browser („Coherent GT“): kein CSS-Grid, keine CSS-Variablen, kein calc(), kein gap,
+  JavaScript ohne neuere Schreibweisen (var, function, keine Pfeile, keine Vorlagen-Texte).
+  Karte: Kacheln von basemap.at (CC BY 4.0, „Datenquelle: basemap.at“), nur Österreich.
 -->
 <style>
-  html, body { margin: 0; padding: 0; background: #0e1726; color: #e8eef8; font-family: Arial, Helvetica, sans-serif; }
-  body { padding: 14px 16px; font-size: 17px; }
-  .kopf { display: flex; align-items: center; margin-bottom: 12px; }
-  .kopf .name { flex: 1; }
-  .kopf b { font-size: 22px; display: block; }
-  .kopf small { color: #93a6c0; font-size: 13px; }
-  .verb { font-size: 13px; padding: 5px 10px; border-radius: 12px; background: #3a2d12; color: #f5b13d; }
-  .verb.an { background: #123222; color: #4ade80; }
-  .jetzt { display: flex; align-items: center; padding: 12px 14px; border-radius: 12px; background: #16233a; border-left: 10px solid #666666; margin-bottom: 12px; }
-  .jetzt .n { font-size: 40px; font-weight: bold; width: 54px; text-align: center; margin-right: 12px; }
-  .jetzt .t { font-size: 20px; font-weight: bold; }
-  .alarm { padding: 14px 16px; border-radius: 12px; background: #d32f2f; color: #ffffff; margin-bottom: 12px; font-size: 18px; }
-  .alarm b { display: block; font-size: 24px; margin-bottom: 4px; }
-  .knoepfe { margin: 0 -5px 8px; }
-  .st { display: inline-block; vertical-align: top; width: 31%; margin: 0 1% 10px; height: 92px; border-radius: 12px; border: 2px solid #2a3a57; background: #16233a; color: #e8eef8; font-size: 15px; font-weight: bold; text-align: center; padding-top: 10px; box-sizing: border-box; cursor: pointer; }
-  .st .n { display: block; font-size: 34px; line-height: 40px; }
-  .st.aktiv { color: #ffffff; }
-  .karte { background: #16233a; border: 1px solid #2a3a57; border-radius: 12px; padding: 12px 14px; margin-bottom: 12px; line-height: 1.4; }
-  .karte h3 { margin: 0 0 6px; font-size: 13px; letter-spacing: 1px; text-transform: uppercase; color: #93a6c0; }
-  .karte .gross { font-size: 20px; font-weight: bold; }
-  .hinweis { margin-top: 8px; padding: 8px 10px; border-radius: 8px; background: #3a2d12; color: #ffd27a; }
-  .dim { color: #93a6c0; font-size: 14px; }
-  .versteckt { display: none; }
-  /* Querformat (z. B. Tablet in der H145 quer): Status links, Einsatz und Patient rechts */
-  .spalte { box-sizing: border-box; }
-  body.quer .links { float: left; width: 40%; padding-right: 12px; }
-  body.quer .rechts { margin-left: 40%; }
-  body.quer .st { width: 48%; height: 78px; }
-  body.quer .st .n { font-size: 28px; line-height: 32px; }
-  .mission { display: flex; align-items: center; background: #16233a; border: 1px solid #2a3a57; border-radius: 12px; padding: 10px 14px; margin-bottom: 12px; }
-  .mission .t { flex: 1; font-size: 15px; }
-  .mission .t small { display: block; color: #93a6c0; font-size: 13px; }
-  .mission button { font-size: 15px; font-weight: bold; padding: 9px 14px; border-radius: 10px; border: 0; background: #2f6fde; color: #ffffff; cursor: pointer; }
-  .code { font-family: "Courier New", monospace; font-weight: bold; padding: 2px 8px; border-radius: 6px; background: #0e1726; margin-right: 8px; }
+  @font-face { font-family: "LWInter"; src: url("/schrift/400.woff") format("woff"); font-weight: 400; }
+  @font-face { font-family: "LWInter"; src: url("/schrift/600.woff") format("woff"); font-weight: 600; }
+  @font-face { font-family: "LWInter"; src: url("/schrift/700.woff") format("woff"); font-weight: 700; }
+  html, body { margin: 0; padding: 0; height: 100%; background: #0E0F12; color: #F5F7FA; font-family: "LWInter", Arial, Helvetica, sans-serif; font-size: 14px; overflow: hidden; }
+  * { box-sizing: border-box; }
+  button { font-family: inherit; color: inherit; }
+  .versteckt { display: none !important; }
+  #app { position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
+  /* Kopf */
+  .kopf { position: absolute; left: 0; right: 0; top: 0; height: 56px; display: flex; align-items: center; padding: 0 10px 0 14px; background: #13151A; border-bottom: 1px solid #23262F; }
+  .kopf .h { flex: 1; min-width: 0; line-height: 1.25; }
+  .kopf .h b { display: block; font-size: 15px; font-weight: 700; white-space: nowrap; overflow: hidden; }
+  .kopf .h span { font-size: 12px; color: #9AA3B5; white-space: nowrap; }
+  .kopf .uhr { font-size: 20px; font-weight: 600; margin-right: 6px; }
+  .stpkt { width: 40px; height: 40px; border: 0; border-radius: 9px; background: transparent; cursor: pointer; padding: 0; }
+  .stpkt:active { background: #1E2129; }
+  .stpkt i { display: block; width: 13px; height: 13px; border-radius: 7px; margin: 0 auto; box-shadow: 0 0 0 3px rgba(255,255,255,0.08); }
+  .tabv { position: absolute; left: 0; right: 0; top: 56px; height: 40px; display: flex; align-items: center; padding: 0 10px; background: #13151A; border-bottom: 1px solid #23262F; font-size: 12.5px; color: #9AA3B5; }
+  .tabv b { color: #F5F7FA; margin-right: 6px; font-weight: 600; }
+  .tabv button { margin-left: auto; border: 0; border-radius: 8px; padding: 6px 10px; background: #3B8BFF; color: #111216; font-weight: 700; font-size: 12.5px; cursor: pointer; }
+  /* Umschalter Transport | Patient (wie im Menü) */
+  .seg { position: absolute; left: 14px; right: 14px; height: 40px; padding: 3px; border-radius: 10px; background: #111216; border: 1px solid #262A35; }
+  .seg .m { position: absolute; top: 3px; bottom: 3px; left: 3px; width: 49%; border-radius: 8px; background: #3B8BFF; -webkit-transition: left 0.3s; transition: left 0.3s; }
+  .seg .m.r { left: 50.5%; }
+  .seg button { position: relative; float: left; width: 50%; height: 32px; border: 0; background: transparent; font-size: 13.5px; font-weight: 600; color: #C4CAD6; cursor: pointer; }
+  .seg button.on { color: #111216; }
+  .seg .dot { display: inline-block; width: 7px; height: 7px; border-radius: 4px; background: #FFC72C; margin-left: 6px; vertical-align: middle; }
+  /* Inhalt (scrollt; ziehen mit der Maus geht auch) */
+  .inh { position: absolute; left: 0; right: 0; bottom: 0; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
+  .inh.mitknopf { bottom: 70px; }
+  .leer { position: absolute; left: 0; right: 0; top: 0; bottom: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #9AA3B5; text-align: center; padding: 20px; }
+  .leer .t { font-size: 26px; font-weight: 700; color: #F5F7FA; margin-bottom: 6px; }
+  .leer .st { margin-top: 18px; display: inline-block; padding: 6px 14px 6px 6px; border-radius: 9px; color: #111216; font-weight: 700; font-size: 14px; }
+  .leer .st b { display: inline-block; background: rgba(0,0,0,0.12); border-radius: 6px; padding: 2px 8px; margin-right: 8px; font-size: 16px; }
+  .ab { padding: 12px 14px; border-bottom: 1px solid #23262F; }
+  .ab.ohne { border-bottom: 0; }
+  .lbl { display: block; font-size: 10.5px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: #9AA3B5; margin-bottom: 8px; }
+  .lbl span { text-transform: none; letter-spacing: 0; font-weight: 600; }
+  .zeit { font-size: 12px; color: #9AA3B5; }
+  .alarmb { margin: 10px 14px 0; padding: 9px 12px; border-radius: 9px; background: #B42318; color: #FFFFFF; font-weight: 700; font-size: 13.5px; display: flex; align-items: center; }
+  .alarmb small { font-weight: 600; opacity: 0.9; margin-left: 10px; }
+  .alarmb button { margin-left: auto; border: 0; border-radius: 7px; padding: 6px 10px; background: rgba(255,255,255,0.92); color: #B42318; font-weight: 700; font-size: 12.5px; cursor: pointer; }
+  .alarmb .q { margin-left: auto; font-size: 12px; font-weight: 600; background: rgba(255,255,255,0.18); padding: 3px 8px; border-radius: 6px; }
+  .code { padding: 10px 12px; border-radius: 10px; background: #1E2129; }
+  .stufe { display: inline-block; padding: 3px 8px; border-radius: 5px; font-size: 12px; font-weight: 700; color: #FFFFFF; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 6px; }
+  .code-nr { font-size: 15px; font-weight: 700; letter-spacing: 0.02em; margin-bottom: 1px; }
+  .code-n { font-size: 15px; font-weight: 700; line-height: 1.3; }
+  .code-d { font-size: 13px; color: #C4CAD6; margin-top: 4px; }
+  .gs { margin-top: 8px; padding: 8px 10px; border-radius: 8px; background: #3a3020; color: #FFD866; font-size: 13px; }
+  .reihe { display: flex; align-items: flex-start; margin-top: 10px; }
+  .reihe .lbl { width: 72px; flex: none; margin: 3px 0 0; }
+  .reihe .w { flex: 1; min-width: 0; font-size: 13.5px; color: #C4CAD6; }
+  .reihe .w b { color: #F5F7FA; font-size: 15px; }
+  /* Karte */
+  .karte { position: relative; overflow: hidden; background: #DDE3D5; border-radius: 10px; border: 1px solid #2A2F3A; }
+  .karte.klein { height: 170px; margin-top: 12px; cursor: pointer; }
+  .karte .kach { position: absolute; left: 0; top: 0; }
+  .karte .kach img { position: absolute; width: 256px; height: 256px; }
+  .karte .mk { position: absolute; left: 0; top: 0; }
+  .karte .info { position: absolute; left: 8px; top: 8px; background: rgba(17,18,22,0.88); border-radius: 8px; padding: 6px 10px; font-size: 13px; font-weight: 600; color: #F5F7FA; }
+  .karte .info span { color: #9AA3B5; font-weight: 400; }
+  .karte .gross { position: absolute; right: 8px; bottom: 8px; background: rgba(17,18,22,0.88); border-radius: 8px; padding: 6px 10px; font-size: 12.5px; font-weight: 600; color: #F5F7FA; }
+  .karte .quelle { position: absolute; left: 6px; bottom: 5px; font-size: 10px; color: #333333; background: rgba(255,255,255,0.78); padding: 1px 5px; border-radius: 3px; }
+  .m-fz { position: absolute; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 4px; border: 2px solid #111216; }
+  .m-fz.nah { -webkit-transform: rotate(45deg); transform: rotate(45deg); border-radius: 2px; }
+  .m-lbl { position: absolute; margin: -8px 0 0 10px; font-size: 11px; font-weight: 700; color: #111216; white-space: nowrap; text-shadow: 0 0 3px #FFFFFF, 0 0 3px #FFFFFF; }
+  .m-ziel { position: absolute; width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 11px; background: #A61B1B; border: 3px solid #FFFFFF; }
+  .m-ziel.kh { border-radius: 5px; background: #1F6FEB; color: #FFFFFF; font-size: 13px; font-weight: 700; line-height: 16px; text-align: center; }
+  .m-ich { position: absolute; width: 0; height: 0; }
+  .m-ich div { position: absolute; left: -11px; top: -14px; width: 0; height: 0; border-left: 11px solid transparent; border-right: 11px solid transparent; border-bottom: 26px solid #111216; }
+  .m-ich div i { position: absolute; left: -7px; top: 5px; width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent; border-bottom: 17px solid #DCC23A; }
+  .m-ich.rund div { left: -9px; top: -9px; width: 18px; height: 18px; border: 3px solid #111216; border-radius: 9px; }
+  .m-linie { position: absolute; height: 0; border-top: 4px dashed #3B8BFF; -webkit-transform-origin: 0 0; transform-origin: 0 0; }
+  /* Fahrzeuge (ganze Zeile in Statusfarbe, Schrift dunkel) */
+  .fz { display: flex; align-items: center; padding: 7px 10px; border-radius: 9px; margin-bottom: 6px; color: #111216; }
+  .fz .s { width: 24px; flex: none; text-align: center; font-size: 17px; font-weight: 800; }
+  .fz .t { flex: 1; min-width: 0; margin-left: 8px; }
+  .fz .t b { font-size: 14px; }
+  .fz .t .ty { font-size: 11.5px; font-weight: 600; color: #3A4150; margin-left: 4px; }
+  .fz .t .z { display: block; font-size: 12px; color: #3A4150; white-space: nowrap; overflow: hidden; }
+  .fz .e { flex: none; margin-left: 8px; padding: 2px 8px; border-radius: 999px; background: rgba(255,255,255,0.6); color: #174EA6; font-size: 11.5px; font-weight: 600; }
+  .fz.funk, .fz.funk .ty, .fz.funk .z { color: #A3141B; }
+  .fz.ich { box-shadow: inset 0 0 0 2px #3B8BFF; }
+  /* Abfrage: beantwortete Fragen wie im Abfrage-Fenster */
+  .erl { background: #1E2129; border-radius: 10px; padding: 2px 10px; }
+  .erl div { padding: 7px 0; border-top: 1px solid #23262F; }
+  .erl div:first-child { border-top: 0; }
+  .erl small { display: block; font-size: 12px; color: #9AA3B5; }
+  .erl b { display: block; font-size: 13.5px; font-weight: 600; }
+  .knopf { position: absolute; left: 14px; right: 14px; bottom: 12px; height: 48px; border: 0; border-radius: 10px; background: #3B8BFF; color: #111216; font-size: 15px; font-weight: 700; cursor: pointer; }
+  .knopf.aus { background: #20242A; color: #6B7385; cursor: default; }
+  .knopf small { display: block; font-size: 11.5px; font-weight: 500; }
+  .hinweis { padding: 9px 11px; border-radius: 9px; background: #1E2129; color: #C4CAD6; font-size: 13.5px; }
+  .plan { padding: 9px 11px; border-radius: 9px; background: rgba(76,195,138,0.12); color: #4CC38A; font-size: 13.5px; font-weight: 600; margin-top: 10px; }
+  /* Patient */
+  .sicht { display: flex; align-items: center; padding: 11px 14px; border-radius: 10px; color: #FFFFFF; margin-bottom: 10px; }
+  .sicht b { font-size: 20px; letter-spacing: 0.06em; margin-right: 12px; }
+  .pwer { font-size: 17px; font-weight: 700; margin-bottom: 8px; }
+  .zst div { display: inline-block; vertical-align: top; width: 48%; margin: 0 1% 8px 0; background: #1E2129; border-radius: 9px; padding: 8px 10px; }
+  .zst small { display: block; font-size: 10.5px; color: #9AA3B5; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+  .zst b { font-size: 14px; }
+  .zst b.w { color: #FFD866; }
+  .txt { font-size: 13.5px; color: #C4CAD6; line-height: 1.5; }
+  .verl div { font-size: 13px; color: #C4CAD6; padding: 3px 0; }
+  .verl span { color: #9AA3B5; margin-right: 8px; }
+  /* Blätter (Buchen, Status) */
+  .dunkel { position: absolute; left: 0; right: 0; top: 0; bottom: 0; background: rgba(0,0,0,0.5); }
+  .blatt { position: absolute; left: 0; right: 0; bottom: 0; top: 96px; background: #1A1D24; border-radius: 16px 16px 0 0; box-shadow: 0 -1px 0 #2E3340, 0 -20px 50px rgba(0,0,0,0.55); }
+  .blatt.kurz { top: auto; }
+  .blatt .bk { height: 52px; display: flex; align-items: center; padding: 0 16px; border-bottom: 1px solid #23262F; }
+  .blatt .bk b { font-size: 18px; flex: 1; }
+  .blatt .bk button { border: 0; background: transparent; color: #9AA3B5; font-size: 13.5px; font-weight: 600; cursor: pointer; padding: 8px; }
+  .blatt .bi { position: absolute; left: 0; right: 0; top: 52px; bottom: 0; overflow-y: auto; padding: 12px 16px 16px; }
+  .blatt.kurz .bi { position: static; }
+  .wahl { margin: 0 -4px; }
+  .wahl button { display: inline-block; vertical-align: top; width: 48%; margin: 0 1% 8px; text-align: left; border: 1px solid #2A2F3A; border-radius: 10px; padding: 9px 11px; background: #1E2129; cursor: pointer; min-height: 58px; }
+  .wahl button b { display: block; font-size: 14px; }
+  .wahl button small { font-size: 12px; color: #9AA3B5; }
+  .wahl button.on { border-color: #3B8BFF; background: rgba(59,139,255,0.12); }
+  .wahl button.aus { opacity: 0.4; }
+  .wahl.drei button { width: 31.3%; }
+  .fertig { display: flex; align-items: center; padding: 7px 10px; border-radius: 9px; background: #1E2129; margin-bottom: 6px; }
+  .fertig .n { width: 22px; color: #4CC38A; font-weight: 800; }
+  .fertig .w { flex: 1; min-width: 0; font-size: 13.5px; }
+  .fertig .w small { display: block; font-size: 10.5px; color: #9AA3B5; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700; }
+  .kn { border: 1px solid #2A2F3A; border-radius: 7px; background: transparent; color: #C4CAD6; font-size: 12.5px; font-weight: 600; padding: 6px 10px; cursor: pointer; }
+  .offen { padding: 7px 10px; color: #6B7385; font-size: 13.5px; }
+  .offen span, .skopf span { display: inline-block; width: 22px; height: 22px; border-radius: 6px; text-align: center; line-height: 22px; font-size: 12px; font-weight: 700; margin-right: 8px; }
+  .offen span { background: #20242A; }
+  .skopf { font-size: 14px; font-weight: 700; margin: 4px 0 8px; }
+  .skopf span { background: #3B8BFF; color: #111216; }
+  .feld { width: 100%; height: 40px; border: 1px solid #2A2F3A; border-radius: 8px; background: #111216; color: #F5F7FA; padding: 0 10px; font-size: 14px; font-family: inherit; margin-bottom: 8px; }
+  .chips button { display: inline-block; margin: 0 6px 6px 0; }
+  .khk { display: flex; align-items: center; padding: 9px 11px; border: 1px solid #2A2F3A; border-radius: 10px; margin-bottom: 8px; cursor: pointer; }
+  .khk.gew { border-color: #3B8BFF; background: rgba(59,139,255,0.12); }
+  .radio { width: 16px; height: 16px; border-radius: 8px; border: 2px solid #9AA3B5; flex: none; margin-right: 10px; }
+  .radio.an { border-color: #3B8BFF; background: #3B8BFF; box-shadow: inset 0 0 0 3px #1A1D24; }
+  .khk .t { flex: 1; min-width: 0; }
+  .merk span { display: inline-block; font-size: 11.5px; padding: 2px 7px; border-radius: 5px; background: #20242A; color: #C4CAD6; margin: 4px 4px 0 0; }
+  .merk span.ok { background: rgba(76,195,138,0.12); color: #4CC38A; }
+  .pill { padding: 2px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 600; margin-left: 8px; }
+  .pill.ok { background: rgba(76,195,138,0.12); color: #4CC38A; }
+  .pill.gelb { background: rgba(255,199,44,0.1); color: #FFD866; }
+  .pill.rot { background: rgba(229,72,77,0.1); color: #FF7A7E; }
+  .prim { width: 100%; height: 46px; border: 0; border-radius: 10px; background: #3B8BFF; color: #111216; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 6px; }
+  .frage { padding: 12px; border-radius: 10px; background: #20242A; margin-top: 10px; }
+  .frage div { margin-bottom: 10px; font-size: 14px; }
+  .frage button { margin-right: 6px; }
+  .stk button { display: inline-block; vertical-align: top; width: 31.3%; margin: 0 1% 8px; height: 70px; border-radius: 10px; border: 2px solid #2A2F3A; background: #1E2129; font-weight: 700; font-size: 12.5px; cursor: pointer; }
+  .stk button span { display: block; font-size: 24px; line-height: 30px; }
+  /* Navigation (große Karte) */
+  .nav { position: absolute; left: 0; right: 0; top: 0; bottom: 0; background: #0E0F12; }
+  .nav .karte { position: absolute; left: 0; right: 0; top: 52px; bottom: 0; border-radius: 0; border: 0; }
+  .nav .bk { height: 52px; display: flex; align-items: center; padding: 0 10px; background: #13151A; border-bottom: 1px solid #23262F; }
+  .nav .bk b { flex: 1; font-size: 15px; margin-left: 6px; }
+  .nk { border: 1px solid #2A2F3A; border-radius: 8px; background: #1E2129; color: #F5F7FA; font-size: 13px; font-weight: 600; padding: 8px 11px; cursor: pointer; margin-left: 6px; }
+  .nk.on { background: #3B8BFF; color: #111216; border-color: #3B8BFF; }
+  .zoom { position: absolute; right: 10px; top: 64px; }
+  .zoom button { display: block; width: 44px; height: 44px; margin-bottom: 6px; border: 0; border-radius: 9px; background: rgba(17,18,22,0.88); color: #F5F7FA; font-size: 22px; font-weight: 700; cursor: pointer; }
+  .tabzeile { position: absolute; left: 14px; right: 14px; }
 </style>
 </head>
 <body>
-<div class="kopf"><div class="name"><b id="heli">LeitWerk</b><small id="unter">verbinde …</small></div><span class="verb" id="verb">offline</span></div>
-<div class="mission versteckt" id="mission"><div class="t"><b id="missionT">Tablet-Mission</b><small id="missionU"></small></div><button id="missionB">Verbinden</button></div>
-<div class="alarm versteckt" id="alarm"></div>
-<div class="spalte links">
-  <div class="jetzt" id="jetzt"><span class="n">–</span><span class="t">kein Hubschrauber</span></div>
-  <div class="knoepfe" id="knoepfe"></div>
-</div>
-<div class="spalte rechts">
-  <div class="karte versteckt" id="einsatz"></div>
-  <div class="karte versteckt" id="patient"></div>
-  <p class="dim" id="tipp">Status-Tasten setzen deinen Status wie im Piloten-Interface.</p>
+<div id="app">
+  <div class="kopf"><div class="h"><b id="heli">LeitWerk</b><span id="unter">verbinde …</span></div><span class="uhr" id="uhr"></span><button class="stpkt" id="stpkt" aria-label="Status geben"><i id="stfarbe" style="background:#6B7385"></i></button></div>
+  <div class="tabv versteckt" id="tabv"><b id="tabvT">Funkgerät &amp; Tablet</b><span id="tabvU"></span><button id="tabvB">Verbinden</button></div>
+  <div class="seg versteckt" id="seg"><span class="m" id="segm"></span><button id="segT" class="on">Transport</button><button id="segP">Patient<span class="dot versteckt" id="patdot"></span></button></div>
+  <div class="inh" id="inh">
+    <div class="leer" id="leer"><div class="t" id="leerT">Kein Alarm</div><div id="leerU">Neue Einsätze erscheinen hier automatisch.</div><div class="st versteckt" id="leerSt"></div></div>
+    <div id="transport" class="versteckt"></div>
+    <div id="patient" class="versteckt"></div>
+  </div>
+  <button class="knopf versteckt" id="buchenK">Zielort buchen</button>
+  <div id="blatt" class="versteckt"><div class="dunkel" id="blattZu"></div><div class="blatt" id="blattBox"><div class="bk"><b id="blattT">Zielort buchen</b><button id="blattX">Schließen ✕</button></div><div class="bi" id="blattI"></div></div></div>
+  <div id="nav" class="nav versteckt"><div class="bk"><button class="nk" id="navZu">‹ Zurück</button><b id="navT">Navigation</b><button class="nk" id="navAlle">Alle Fahrzeuge</button><button class="nk" id="navFolgen">Folgen</button></div><div class="karte" id="navK"></div><div class="zoom"><button id="zplus">+</button><button id="zminus">−</button></div></div>
 </div>
 <script>
 (function () {
+  var stand = {};
+  var tab = "transport";
+  var patGesehen = "";
+  var blattArt = "";
+  var khWahl = "";
+  var khFuer = "";
+  var frageOffen = null;
+  var suchFeld = null;
+  var suchTimer = 0;
+  var navAuf = false;
   var letzt = "";
+  var KACHEL = "https://mapsneu.wien.gv.at/basemap/geolandbasemap/normal/google3857/";
+
   function $(id) { return document.getElementById(id); }
   function esc(s) {
     return String(s === undefined || s === null ? "" : s).replace(/[&<>"]/g, function (c) {
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
     });
   }
-  function zeige(el, an) { el.className = el.className.replace(/ ?versteckt/g, "") + (an ? "" : " versteckt"); }
-  function verbunden(an) {
-    $("verb").textContent = an ? "verbunden" : "offline";
-    $("verb").className = an ? "verb an" : "verb";
-  }
+  function zeige(el, an) { if (an) el.className = el.className.replace(/ ?versteckt/g, ""); else if (!/versteckt/.test(el.className)) el.className += " versteckt"; }
   function senden(cmd) {
     var x = new XMLHttpRequest();
     x.open("POST", "/befehl");
-    x.onreadystatechange = function () { if (x.readyState === 4) setTimeout(holen, 250); };
-    try { x.send(cmd); } catch (e) { verbunden(false); }
+    x.onreadystatechange = function () { if (x.readyState === 4) setTimeout(holen, 200); };
+    try { x.send(cmd); } catch (e) {}
   }
+
+  // ------------------------------------------------------------ Karte (Kacheln von basemap.at, Norden oben)
+  function Karte(box, klein) {
+    this.box = box; this.klein = klein; this.z = 12; this.lat = 48.4; this.lon = 15.6; this.folgen = true; this.imgs = {};
+    box.innerHTML = '<div class="kach"></div><div class="mk"></div>' + (klein ? '<div class="info"></div><div class="gross">Navigation ›</div>' : '<div class="info versteckt"></div>') + '<div class="quelle">Datenquelle: basemap.at</div>';
+    this.kach = box.childNodes[0]; this.mk = box.childNodes[1]; this.info = box.childNodes[2];
+    var k = this;
+    if (!klein) {
+      var zieh = null;
+      box.onmousedown = function (ev) { zieh = { x: ev.clientX, y: ev.clientY, px: k.px(k.lat, k.lon) }; k.folgen = false; knopfFolgen(); };
+      box.onmousemove = function (ev) {
+        if (!zieh) return;
+        var nx = zieh.px.x - (ev.clientX - zieh.x), ny = zieh.px.y - (ev.clientY - zieh.y);
+        var ll = k.ll(nx, ny); k.lat = ll.lat; k.lon = ll.lon; k.zeichnen();
+      };
+      box.onmouseup = box.onmouseleave = function () { zieh = null; };
+      box.onwheel = function (ev) { k.zoom(ev.deltaY < 0 ? 1 : -1); ev.preventDefault(); };
+    }
+  }
+  Karte.prototype.px = function (lat, lon) {
+    var n = 256 * Math.pow(2, this.z);
+    var s = Math.sin(lat * Math.PI / 180);
+    return { x: (lon + 180) / 360 * n, y: (0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI)) * n };
+  };
+  Karte.prototype.ll = function (x, y) {
+    var n = 256 * Math.pow(2, this.z);
+    var lon = x / n * 360 - 180;
+    var m = Math.PI - 2 * Math.PI * y / n;
+    return { lat: 180 / Math.PI * Math.atan(0.5 * (Math.exp(m) - Math.exp(-m))), lon: lon };
+  };
+  Karte.prototype.zoom = function (d) { this.z = Math.max(7, Math.min(18, this.z + d)); this.zeichnen(); };
+  Karte.prototype.passend = function (a, b) {
+    // Ausschnitt so, dass beide Punkte drin sind
+    var w = this.box.clientWidth || 500, h = this.box.clientHeight || 170;
+    this.lat = (a.lat + b.lat) / 2; this.lon = (a.lon + b.lon) / 2;
+    for (var z = 16; z >= 7; z--) {
+      this.z = z;
+      var p = this.px(a.lat, a.lon), q = this.px(b.lat, b.lon);
+      if (Math.abs(p.x - q.x) < w - 70 && Math.abs(p.y - q.y) < h - 60) break;
+    }
+  };
+  Karte.prototype.zeichnen = function () {
+    var w = this.box.clientWidth, h = this.box.clientHeight;
+    if (!w || !h) return;
+    var c = this.px(this.lat, this.lon);
+    var x0 = c.x - w / 2, y0 = c.y - h / 2;
+    var n = Math.pow(2, this.z);
+    var neu = {};
+    for (var tx = Math.floor(x0 / 256); tx <= Math.floor((x0 + w) / 256); tx++) {
+      for (var ty = Math.floor(y0 / 256); ty <= Math.floor((y0 + h) / 256); ty++) {
+        if (ty < 0 || ty >= n) continue;
+        var key = this.z + "/" + ty + "/" + ((tx % n) + n) % n;
+        var img = this.imgs[key];
+        if (!img) { img = document.createElement("img"); img.src = KACHEL + key + ".png"; img.alt = ""; this.kach.appendChild(img); }
+        img.style.left = Math.round(tx * 256 - x0) + "px"; img.style.top = Math.round(ty * 256 - y0) + "px";
+        neu[key] = img;
+      }
+    }
+    for (var k in this.imgs) if (!neu[k]) this.kach.removeChild(this.imgs[k]);
+    this.imgs = neu;
+    this.x0 = x0; this.y0 = y0;
+    this.marken();
+  };
+  Karte.prototype.pos = function (lat, lon) { var p = this.px(lat, lon); return { x: Math.round(p.x - this.x0), y: Math.round(p.y - this.y0) }; };
+  Karte.prototype.marken = function () {
+    var d = this.daten;
+    if (!d || !d.ich) { this.mk.innerHTML = ""; return; }
+    var h = "", i, p;
+    var ich = this.pos(d.ich.lat, d.ich.lon);
+    if (d.ziel) {
+      var z = this.pos(d.ziel.lat, d.ziel.lon);
+      var dx = z.x - ich.x, dy = z.y - ich.y, len = Math.sqrt(dx * dx + dy * dy), w = Math.atan2(dy, dx) * 180 / Math.PI;
+      h += '<div class="m-linie" style="left:' + ich.x + "px;top:" + ich.y + "px;width:" + Math.round(len) + "px;-webkit-transform:rotate(" + w + "deg);transform:rotate(" + w + 'deg)"></div>';
+    }
+    var fz = d.fz || [];
+    var label = this.z >= 11 || this.klein;
+    for (i = 0; i < fz.length; i++) {
+      p = this.pos(fz[i].lat, fz[i].lon);
+      if (p.x < -20 || p.y < -20 || p.x > this.box.clientWidth + 20 || p.y > this.box.clientHeight + 20) continue;
+      h += '<div class="m-fz' + (fz[i].nah ? " nah" : "") + '" style="left:' + p.x + "px;top:" + p.y + "px;background:" + esc(fz[i].f) + '"></div>';
+      if (label && (fz[i].ein || fz[i].nah || this.z >= 12)) h += '<div class="m-lbl" style="left:' + p.x + "px;top:" + p.y + 'px">' + esc(fz[i].ruf) + "</div>";
+    }
+    if (d.ziel) {
+      p = this.pos(d.ziel.lat, d.ziel.lon);
+      h += '<div class="m-ziel' + (d.ziel.kh ? " kh" : "") + '" style="left:' + p.x + "px;top:" + p.y + 'px">' + (d.ziel.kh ? "H" : "") + "</div>";
+    }
+    var rund = d.ich.kurs === null || d.ich.kurs === undefined;
+    var rot = rund ? "" : "-webkit-transform:rotate(" + d.ich.kurs + "deg);transform:rotate(" + d.ich.kurs + "deg);";
+    h += '<div class="m-ich' + (rund ? " rund" : "") + '" style="left:' + ich.x + "px;top:" + ich.y + "px;" + rot + '"><div>' + (rund ? "" : '<i style="border-bottom-color:' + esc(d.ich.f) + '"></i>') + "</div></div>";
+    this.mk.innerHTML = h;
+    if (this.info) {
+      var nv = d.nav;
+      this.info.innerHTML = nv ? "→ " + esc(nv.kurs) + "° · " + esc(nv.km) + " · " + esc(nv.min) + (nv.an ? " <span>an " + esc(nv.an) + "</span>" : "") : esc(d.text || (d.ziel ? d.ziel.t : ""));
+      zeige(this.info, !!(nv || d.text || (d.ziel && !this.klein)));
+    }
+  };
+  Karte.prototype.setzen = function (d) {
+    this.daten = d;
+    if (!d || !d.ich) return;
+    if (this.klein) {
+      if (d.ziel) this.passend(d.ich, d.ziel); else { this.lat = d.ich.lat; this.lon = d.ich.lon; this.z = 12; }
+    } else if (this.folgen) { this.lat = d.ich.lat; this.lon = d.ich.lon; }
+    this.zeichnen();
+  };
+
+  var kleineKarte = null;
+  var grosseKarte = new Karte($("navK"), false);
+  function knopfFolgen() { $("navFolgen").className = "nk" + (grosseKarte.folgen ? " on" : ""); }
+
+  // ------------------------------------------------------------ Zeichnen
   function zeichnen(s) {
-    var k = JSON.stringify(s);
-    if (k === letzt) return;
-    letzt = k;
-    $("heli").textContent = s.heli || "LeitWerk";
-    $("unter").textContent = s.unter || (s.hinweis || "");
-    var j = $("jetzt");
-    j.style.borderLeftColor = (s.status && s.status.farbe) || "#666666";
-    j.innerHTML = s.status
-      ? '<span class="n">' + esc(s.status.nummer) + '</span><span class="t">' + esc(s.status.name) + "</span>"
-      : '<span class="n">–</span><span class="t">' + esc(s.hinweis || "kein Hubschrauber – im Piloten-Interface wählen") + "</span>";
-    var a = $("alarm");
-    zeige(a, !!s.alarm);
-    if (s.alarm) a.innerHTML = "<b>ALARM</b>" + (s.alarmCode ? '<span class="code">' + esc(s.alarmCode) + "</span>" : "") + esc(s.alarm) + "<div>Quittieren mit 9, Status 2 beim Abheben</div>";
-    var g = $("knoepfe");
-    g.innerHTML = "";
-    var l = s.knoepfe || [];
-    for (var i = 0; i < l.length; i++) {
-      (function (b) {
-        var el = document.createElement("div");
-        el.className = "st" + (b.aktiv ? " aktiv" : "");
-        el.style.borderColor = b.farbe;
-        if (b.aktiv) el.style.backgroundColor = b.farbe;
-        el.innerHTML = '<span class="n">' + esc(b.nummer) + "</span>" + esc(b.name);
-        el.onclick = function () { senden(b.aktion); };
-        g.appendChild(el);
-      })(l[i]);
+    var t = (s.neu || {}).tab || {};
+    $("heli").textContent = t.heli || s.heli || "LeitWerk";
+    $("unter").textContent = t.unter || s.unter || s.hinweis || "";
+    $("uhr").textContent = t.uhr || "";
+    $("stfarbe").style.background = t.st ? t.st.f : "#6B7385";
+    var ein = t.ein;
+    zeige($("seg"), !!ein);
+    zeige($("leer"), !ein);
+    var oben = $("tabv").className.indexOf("versteckt") < 0 ? 96 : 56;
+    $("seg").style.top = (oben + 10) + "px";
+    $("inh").style.top = (ein ? oben + 60 : oben) + "px";
+    if (!ein) {
+      $("leerT").textContent = t.st ? "Kein Alarm" : "Kein Hubschrauber";
+      $("leerU").textContent = t.st ? "Neue Einsätze erscheinen hier automatisch." : (t.unter || "im Piloten-Interface wählen");
+      var ls = $("leerSt");
+      zeige(ls, !!t.st);
+      if (t.st) { ls.style.background = t.st.f; ls.innerHTML = "<b>" + esc(t.st.n) + "</b>" + esc(t.st.t); }
+      zeige($("transport"), false); zeige($("patient"), false); zeige($("buchenK"), false);
+      if (blattArt === "buchen") blattZu();
+      return;
     }
-    var e = $("einsatz");
-    zeige(e, !!s.einsatz);
-    if (s.einsatz) {
-      var e2 = s.einsatz2 || {};
-      e.innerHTML = "<h3>Einsatz " + esc(s.einsatz.nummer) + "</h3>" + (e2.code ? '<div><span class="code">' + esc(e2.code) + "</span>" + esc(e2.stufe || "") + "</div>" : "") + '<div class="gross">' + esc(s.einsatz.stichwort) + "</div><div>" + esc(s.einsatz.adresse) + "</div>" +
-        (e2.km ? '<div class="dim">' + esc(e2.km) + (e2.ankunft ? " · " + esc(e2.ankunft) : "") + "</div>" : "") +
-        (s.einsatz.ziel ? "<div>Ziel: <b>" + esc(s.einsatz.ziel) + "</b></div>" : "") +
-        (s.einsatz.info ? '<div class="hinweis">' + esc(s.einsatz.info) + "</div>" : "");
+    // Reiter
+    if (!t.pat && tab === "patient") tab = "transport";
+    $("segm").className = "m" + (tab === "patient" ? " r" : "");
+    $("segT").className = tab === "transport" ? "on" : "";
+    $("segP").className = tab === "patient" ? "on" : "";
+    var pk = t.pat ? JSON.stringify(t.pat.liste || []) : "";
+    if (tab === "patient") patGesehen = pk;
+    zeige($("patdot"), !!t.pat && pk !== patGesehen);
+    zeige($("transport"), tab === "transport");
+    zeige($("patient"), tab === "patient");
+    zeige($("buchenK"), tab === "transport");
+    $("inh").className = "inh" + (tab === "transport" ? " mitknopf" : "");
+    transportZeichnen(t);
+    patientZeichnen(t);
+    var bk = $("buchenK");
+    bk.className = "knopf" + (t.buchenDa ? "" : " aus") + (tab === "transport" ? "" : " versteckt");
+    bk.innerHTML = t.plan ? "Zielort ändern<small>" + esc(t.plan) + "</small>" : t.buchenDa ? "Zielort buchen ›" : "Zielort buchen<small>" + esc(t.buchenText || "geht am Einsatzort") + "</small>";
+    if (blattArt === "buchen") { if (t.buchenDa) buchenZeichnen(); else blattZu(); }
+    if (blattArt === "status") statusZeichnen();
+    if (navAuf) { grosseKarte.setzen(t.karte); $("navAlle").className = "nk" + (t.karte && t.karte.alle ? " on" : ""); }
+  }
+
+  function transportZeichnen(t) {
+    var e = t.ein, h = "", i;
+    if (t.alarm) {
+      var q = null, kn = stand.knoepfe || [];
+      for (i = 0; i < kn.length; i++) if (kn[i].nummer === "9") q = kn[i];
+      h += '<div class="alarmb">ALARM<small>' + esc(t.alarm.zeit) + "</small>" + (t.alarm.quitt ? '<span class="q">Status 9 – quittiert</span>' : q ? '<button data-akt="' + esc(q.aktion) + '">9 Quittieren</button>' : "") + "</div>";
     }
-    var p = $("patient");
-    zeige(p, !!s.patient);
-    if (s.patient) {
-      var h = "<h3>Patient</h3>";
-      for (var n = 0; n < s.patient.length; n++) h += "<div>" + esc(s.patient[n]) + "</div>";
-      p.innerHTML = h;
+    h += '<div class="ab"><div class="code">' + (e.stufe ? '<div class="stufe" style="background:' + esc(e.sf) + '">' + esc(e.stufe) + "</div>" : "") +
+      '<div class="code-nr">' + esc(e.code) + '</div><div class="code-n">' + esc(e.sw) + "</div>" + (e.zi ? '<div class="code-d">' + esc(e.zi) + "</div>" : "") + "</div>" +
+      (e.gs ? '<div class="gs">' + esc(e.gs) + "</div>" : "") +
+      '<div class="reihe"><span class="lbl">Ort</span><div class="w"><b>' + esc(e.adr) + "</b></div></div>" +
+      (e.zusatz ? '<div class="reihe"><span class="lbl">Zusatz</span><div class="w">' + esc(e.zusatz) + "</div></div>" : "") +
+      '<div class="karte klein" id="kk"></div></div>';
+    var f = t.fz || [];
+    if (f.length) {
+      h += '<div class="ab"><span class="lbl">Alarmierte Fahrzeuge <span>· ' + f.length + "</span></span>";
+      for (i = 0; i < f.length; i++) {
+        h += '<div class="fz' + (f[i].funk ? " funk" : "") + (f[i].ich ? " ich" : "") + '" style="background:' + esc(f[i].f) + '"><span class="s">' + esc(f[i].s) + '</span><div class="t"><b>' + esc(f[i].ruf) + '</b><span class="ty">' + esc(f[i].typ) + '</span><span class="z">' + esc(f[i].txt) + "</span></div>" + (f[i].eta ? '<span class="e">' + esc(f[i].eta) + "</span>" : "") + "</div>";
+      }
+      h += "</div>";
+    }
+    var a = t.abf || [];
+    h += '<div class="ab ohne"><span class="lbl">Abfrage' + (a.length ? " <span>· " + a.length + " beantwortet</span>" : "") + "</span>";
+    if (a.length) {
+      h += '<div class="erl">';
+      for (i = 0; i < a.length; i++) h += "<div>" + (a[i].f ? "<small>" + esc(a[i].f) + "</small>" : "") + "<b>" + esc(a[i].a) + "</b></div>";
+      h += "</div>";
+    } else h += '<div class="hinweis">Keine Notrufabfrage zu diesem Einsatz.</div>';
+    h += "</div>";
+    var box = $("transport");
+    var sig = JSON.stringify([t.alarm, e, f, a]);
+    if (box.getAttribute("data-sig") !== sig) {
+      box.setAttribute("data-sig", sig);
+      box.innerHTML = h;
+      kleineKarte = new Karte($("kk"), true);
+      $("kk").onclick = function () { navOeffnen(); };
+      var akt = box.querySelectorAll("[data-akt]");
+      for (i = 0; i < akt.length; i++) akt[i].onclick = function () { senden(this.getAttribute("data-akt")); };
+    }
+    if (kleineKarte) kleineKarte.setzen(t.karte);
+  }
+
+  function patientZeichnen(t) {
+    var box = $("patient"), h = "", i, j;
+    if (!t.pat) {
+      h = '<div class="ab ohne"><div class="hinweis">' + esc(t.patZu || "Was der Patient hat, siehst du, sobald ihr beim Patienten seid.") + "</div></div>";
+    } else {
+      var p = t.pat, l = p.liste || [];
+      h += '<div class="ab">';
+      for (i = 0; i < l.length; i++) {
+        var x = l[i];
+        h += '<div class="sicht" style="background:' + esc(x.sf) + ";color:" + esc(x.sc || "#FFFFFF") + '"><b>' + esc({ rot: "I", gelb: "II", "grün": "III", tot: "" }[x.s] || "") + "</b>Sichtung " + esc(x.s) + (t.ein && t.ein.code ? " · " + esc(t.ein.code) : "") + "</div>";
+        h += '<div class="pwer">' + esc(x.t) + "</div>";
+        if (x.l) h += '<div class="txt" style="margin-bottom:8px">' + esc(x.l) + "</div>";
+        h += '<div class="zst">';
+        for (j = 0; j < (x.v || []).length; j++) {
+          var v = x.v[j].t, k = v.indexOf(":");
+          h += "<div><small>" + esc(k > 0 ? v.slice(0, k) : "Hinweis") + '</small><b class="' + esc(x.v[j].c) + '">' + esc(k > 0 ? v.slice(k + 1) : v) + "</b></div>";
+        }
+        h += "</div>";
+      }
+      if (!l.length && p.verdacht) h += '<div class="pwer">Verdacht: ' + esc(p.verdacht) + "</div>";
+      h += "</div>";
+      h += '<div class="ab"><span class="lbl">Transport</span><div class="txt">' + esc(t.plan || "noch nicht entschieden – „Zielort buchen“ im Reiter Transport") + "</div></div>";
+      if (p.meldung) h += '<div class="ab"><span class="lbl">Was ist passiert</span><div class="txt">' + esc(p.meldung) + "</div></div>";
+      var vl = p.verlauf || [];
+      if (vl.length) {
+        h += '<div class="ab ohne"><span class="lbl">Verlauf</span><div class="verl">';
+        for (i = 0; i < vl.length; i++) h += "<div><span>" + esc(vl[i].z) + "</span>" + esc(vl[i].t) + "</div>";
+        h += "</div></div>";
+      }
+    }
+    if (box.getAttribute("data-sig") !== h) { box.setAttribute("data-sig", h); box.innerHTML = h; }
+  }
+
+  // ------------------------------------------------------------ Blätter: Status, Buchen
+  function blattAuf(art) { blattArt = art; zeige($("blatt"), true); frageOffen = null; if (art === "buchen") buchenZeichnen(); else statusZeichnen(); }
+  function blattZu() { blattArt = ""; frageOffen = null; suchFeld = null; zeige($("blatt"), false); }
+  $("blattZu").onclick = blattZu;
+  $("blattX").onclick = blattZu;
+  $("stpkt").onclick = function () { if (blattArt === "status") blattZu(); else blattAuf("status"); };
+
+  function statusZeichnen() {
+    $("blattT").textContent = "Status geben";
+    $("blattBox").className = "blatt kurz";
+    var kn = stand.knoepfe || [], h = '<div class="stk">', i;
+    for (i = 0; i < kn.length; i++) h += '<button data-akt="' + esc(kn[i].aktion) + '" style="border-color:' + esc(kn[i].farbe) + (kn[i].aktiv ? ";background:" + esc(kn[i].farbe) + ";color:#111216" : "") + '"><span>' + esc(kn[i].nummer) + "</span>" + esc(kn[i].name) + "</button>";
+    h += "</div>";
+    var bi = $("blattI");
+    if (bi.getAttribute("data-sig") !== h) {
+      bi.setAttribute("data-sig", h);
+      bi.innerHTML = h;
+      var b = bi.querySelectorAll("[data-akt]");
+      for (i = 0; i < b.length; i++) b[i].onclick = function () { senden(this.getAttribute("data-akt")); setTimeout(blattZu, 250); };
     }
   }
+
+  function buchenZeichnen() {
+    $("blattT").textContent = "Zielort buchen";
+    $("blattBox").className = "blatt";
+    var b = (stand.neu || {}).ent, bi = $("blattI"), h = "", i, k;
+    if (!b) { bi.innerHTML = '<div class="hinweis">Buchen geht, sobald ihr beim Patienten seid.</div>'; bi.setAttribute("data-sig", ""); return; }
+    if (khFuer !== b.fuer) { khFuer = b.fuer; khWahl = ""; }
+    var gefunden = false;
+    for (i = 0; i < b.khs.length; i++) if (b.khs[i].id === khWahl) gefunden = true;
+    if (!gefunden) { khWahl = ""; for (i = 0; i < b.khs.length; i++) if (b.khs[i].id === b.gebuchtId) khWahl = b.gebuchtId; if (!khWahl && b.khs[0]) khWahl = b.khs[0].id; }
+    h += '<span class="lbl">Was passiert mit dem Patienten?</span><div class="wahl">';
+    for (i = 0; i < b.wahl.length; i++) h += '<button class="' + (b.wahl[i].on ? "on" : "") + '" data-bu="seite:' + esc(b.wahl[i].id) + '"><b>' + esc(b.wahl[i].t) + "</b><small>" + esc(b.wahl[i].d) + "</small></button>";
+    h += "</div>";
+    if (b.keinWahl) {
+      h += '<div class="wahl drei">';
+      for (i = 0; i < b.keinWahl.length; i++) h += '<button class="' + (b.keinWahl[i].on ? "on" : "") + '" data-kein="' + esc(b.keinWahl[i].id) + '" data-t="' + esc(b.keinWahl[i].t) + '"><b>' + esc(b.keinWahl[i].t) + "</b><small>" + esc(b.keinWahl[i].s) + "</small></button>";
+      h += "</div>";
+    }
+    if (b.rtwFehlt) h += '<div class="hinweis">Noch kein RTW im Einsatz – bitte bei der Leitstelle anfordern.</div>';
+    if (b.buchen) {
+      h += '<span class="lbl" style="margin-top:8px">Krankenhaus' + (b.gebuchtId ? ' <span class="pill ok">gebucht ' + esc(b.gebuchtT) + "</span>" : "") + "</span>";
+      for (i = 0; i < b.schritte.length; i++) {
+        k = b.schritte[i];
+        if (k.fertig) h += '<div class="fertig"><span class="n">✓</span><span class="w"><small>' + esc(k.titel) + "</small>" + esc(k.wert) + '</span><button class="kn" data-bu="schritt:' + esc(k.nr) + '">Ändern</button></div>';
+        else if (k.offen) h += '<div class="offen"><span>' + esc(k.nr) + "</span>" + esc(k.titel) + "</div>";
+        else {
+          h += '<div class="skopf"><span>' + esc(k.nr) + "</span>" + esc(k.frage) + "</div>";
+          var j;
+          if (k.istAlter) { h += '<div class="wahl drei">'; for (j = 0; j < b.altW.length; j++) h += '<button class="' + (b.altW[j].on ? "on" : "") + '" data-bu="alter:' + esc(b.altW[j].id) + '"><b>' + esc(b.altW[j].t) + "</b><small>" + esc(b.altW[j].s) + "</small></button>"; h += "</div>"; }
+          if (k.istDringlich) { h += '<div class="wahl drei">'; for (j = 0; j < b.drW.length; j++) h += '<button class="' + (b.drW[j].on ? "on" : "") + (b.drW[j].aus ? " aus" : "") + '" data-bu="dring:' + esc(b.drW[j].id) + '"><b>' + esc(b.drW[j].t) + "</b><small>" + esc(b.drW[j].s) + "</small></button>"; h += "</div>"; }
+          if (k.istSymptom) {
+            h += '<div id="suchplatz"></div>' + (b.symHinweis ? '<div class="zeit" style="margin-bottom:6px">' + esc(b.symHinweis) + "</div>" : "") + '<div class="chips">';
+            for (j = 0; j < b.symW.length; j++) h += '<button class="kn" data-bu="sym:' + esc(b.symW[j].id) + '">' + esc(b.symW[j].t) + "</button>";
+            h += "</div>";
+          }
+          if (k.istVorschlag) {
+            if (b.khLeer) h += '<div class="hinweis" style="margin-bottom:8px">' + esc(b.khLeer) + "</div>";
+            for (j = 0; j < b.khs.length; j++) {
+              var x = b.khs[j], merk = "";
+              for (var m = 0; m < (x.merk || []).length; m++) merk += '<span class="' + esc(x.merk[m].c) + '">' + esc(x.merk[m].t) + "</span>";
+              h += '<div class="khk' + (x.id === khWahl ? " gew" : "") + '" data-kh="' + esc(x.id) + '"><span class="radio' + (x.id === khWahl ? " an" : "") + '"></span><div class="t"><b>' + esc(x.n) + '</b> <span class="zeit">· ' + esc(x.km) + esc(x.min) + '</span><div class="merk">' + merk + "</div></div>" + (x.frei ? '<span class="' + esc(String(x.freiCls || "").replace(/^.*\b(ok|gelb|rot)\b.*$/, "pill $1")) + '">' + esc(x.frei) + "</span>" : "") + "</div>";
+            }
+            var gew = null;
+            for (j = 0; j < b.khs.length; j++) if (b.khs[j].id === khWahl) gew = b.khs[j];
+            if (gew) h += '<button class="prim" id="khok">' + esc(gew.n) + (b.gebuchtId === gew.id ? " gebucht" : " buchen") + "</button>";
+          }
+        }
+      }
+    }
+    if (frageOffen) h += '<div class="frage"><div>' + esc(frageOffen.t) + '</div><button class="kn" id="fja">' + esc(frageOffen.ja) + '</button><button class="kn" id="fnein">Abbrechen</button></div>';
+    if (bi.getAttribute("data-sig") === h) return;
+    var fokus = document.activeElement === suchFeld;
+    bi.setAttribute("data-sig", h);
+    bi.innerHTML = h;
+    var platz = $("suchplatz");
+    if (platz) {
+      if (!suchFeld) {
+        suchFeld = document.createElement("input");
+        suchFeld.className = "feld";
+        suchFeld.placeholder = "Symptom suchen …";
+        suchFeld.value = b.symQ || "";
+        suchFeld.oninput = function () { clearTimeout(suchTimer); var f = this; suchTimer = setTimeout(function () { senden("bu:q:" + f.value); }, 300); };
+      }
+      platz.parentNode.replaceChild(suchFeld, platz);
+      if (fokus) suchFeld.focus();
+    } else suchFeld = null;
+    var el = bi.querySelectorAll("[data-bu]");
+    for (i = 0; i < el.length; i++) el[i].onclick = function () { senden("bu:" + this.getAttribute("data-bu")); };
+    el = bi.querySelectorAll("[data-kein]");
+    for (i = 0; i < el.length; i++) el[i].onclick = function () { var id = this.getAttribute("data-kein"); frageOffen = { t: this.getAttribute("data-t") + " – so an die Leitstelle melden?", ja: "Melden", f: function () { senden("bu:kein:" + id); } }; buchenZeichnen(); };
+    el = bi.querySelectorAll("[data-kh]");
+    for (i = 0; i < el.length; i++) el[i].onclick = function () { khWahl = this.getAttribute("data-kh"); buchenZeichnen(); };
+    if ($("khok")) $("khok").onclick = function () {
+      var g = null;
+      for (var n = 0; n < b.khs.length; n++) if (b.khs[n].id === khWahl) g = b.khs[n];
+      if (!g || b.gebuchtId === g.id) return;
+      frageOffen = { t: g.n + " buchen? Der Platz wird belegt – wie in der Leitstelle.", ja: "Buchen", f: function () { senden("bu:kh:" + g.id); } };
+      buchenZeichnen();
+    };
+    if ($("fja")) $("fja").onclick = function () { var f = frageOffen.f; frageOffen = null; f(); buchenZeichnen(); };
+    if ($("fnein")) $("fnein").onclick = function () { frageOffen = null; buchenZeichnen(); };
+  }
+  $("buchenK").onclick = function () { if (((stand.neu || {}).tab || {}).buchenDa) blattAuf("buchen"); };
+
+  // ------------------------------------------------------------ Reiter, Navigation
+  $("segT").onclick = function () { tab = "transport"; zeichnen(stand); };
+  $("segP").onclick = function () { if (((stand.neu || {}).tab || {}).pat || ((stand.neu || {}).tab || {}).ein) { tab = "patient"; zeichnen(stand); } };
+  function navOeffnen() {
+    navAuf = true;
+    zeige($("nav"), true);
+    grosseKarte.folgen = true; knopfFolgen();
+    var k = ((stand.neu || {}).tab || {}).karte;
+    grosseKarte.z = 12;
+    grosseKarte.setzen(k);
+    $("navT").textContent = k && k.ziel ? "Ziel: " + k.ziel.t : "Navigation";
+  }
+  $("navZu").onclick = function () { navAuf = false; zeige($("nav"), false); };
+  $("zplus").onclick = function () { grosseKarte.zoom(1); };
+  $("zminus").onclick = function () { grosseKarte.zoom(-1); };
+  $("navFolgen").onclick = function () { grosseKarte.folgen = true; knopfFolgen(); grosseKarte.setzen(((stand.neu || {}).tab || {}).karte); };
+  $("navAlle").onclick = function () { var k = ((stand.neu || {}).tab || {}).karte; senden("ka:alle:" + (k && k.alle ? "0" : "1")); };
+
+  // Ziehen zum Scrollen (VR, Controller, Maus) – zusätzlich zum Mausrad
+  (function () {
+    var box = $("inh"), y0 = 0, s0 = 0, zieht = false, gedrueckt = false;
+    box.addEventListener("mousedown", function (ev) { if (ev.target.tagName === "INPUT") return; gedrueckt = true; zieht = false; y0 = ev.clientY; s0 = box.scrollTop; });
+    window.addEventListener("mousemove", function (ev) { if (!gedrueckt) return; if (Math.abs(ev.clientY - y0) > 6) zieht = true; if (zieht) box.scrollTop = s0 - (ev.clientY - y0); });
+    window.addEventListener("mouseup", function () { gedrueckt = false; setTimeout(function () { zieht = false; }, 0); });
+    box.addEventListener("click", function (ev) { if (zieht) { ev.stopPropagation(); ev.preventDefault(); } }, true);
+  })();
+
+  // ------------------------------------------------------------ Stand holen
   function holen() {
     var x = new XMLHttpRequest();
     x.open("GET", "/stand?z=" + Date.now());
     x.timeout = 2500;
     x.onreadystatechange = function () {
       if (x.readyState !== 4) return;
-      if (x.status !== 200) return verbunden(false);
-      try { zeichnen(JSON.parse(x.responseText)); verbunden(true); } catch (e) { verbunden(false); }
+      if (x.status !== 200) { $("unter").textContent = "LeitWerk nicht erreichbar"; return; }
+      var txt = x.responseText;
+      if (txt === letzt) return;
+      letzt = txt;
+      try { stand = JSON.parse(txt); zeichnen(stand); } catch (e) {}
     };
-    try { x.send(); } catch (e) { verbunden(false); }
+    try { x.send(); } catch (e) {}
   }
-  // Im Tablet der H145 (App „LeitWerk“ bzw. Web-App): Mission „LeitWerk Leitstelle“ starten – für CARLS-Funkgerät,
-  // Briefing und Alarm. Das Tablet antwortet mit dem Stand (leitwerk-app.js).
+
+  // Im Tablet der H145: Mission „LeitWerk Leitstelle“ (CARLS-Funkgerät, Briefing, Alarm). Nur die H145 antwortet (leitwerk-app.js).
   if (window.parent && window.parent !== window) {
-    var mStand = null;
     window.addEventListener("message", function (ev) {
       var d = ev && ev.data;
       if (!d || d.leitwerk !== "missionStand") return;
-      mStand = d;
-      zeige($("mission"), true);
-      $("missionT").textContent = d.laeuft ? "Funkgerät & Tablet verbunden" : "Funkgerät & Tablet nicht verbunden";
-      $("missionU").textContent = d.laeuft ? "Mission „LeitWerk Leitstelle“ läuft" : d.andere ? "Im Tablet läuft gerade eine andere Mission" : "Mission „LeitWerk Leitstelle“ starten";
-      $("missionB").textContent = d.laeuft ? "Neu verbinden" : "Verbinden";
+      zeige($("tabv"), true);
+      $("tabvT").textContent = d.laeuft ? "Funkgerät & Tablet verbunden" : "Funkgerät & Tablet nicht verbunden";
+      $("tabvU").textContent = d.laeuft ? "" : d.andere ? "andere Mission läuft" : "";
+      $("tabvB").textContent = d.laeuft ? "Neu verbinden" : "Verbinden";
+      zeichnen(stand);
     });
-    $("missionB").onclick = function () {
-      try { window.parent.postMessage({ leitwerk: "mission" }, "*"); } catch (e) {}
-    };
-    var fragen = function () {
-      try { window.parent.postMessage({ leitwerk: "stand" }, "*"); } catch (e) {}
-    };
+    $("tabvB").onclick = function () { try { window.parent.postMessage({ leitwerk: "mission" }, "*"); } catch (e) {} };
+    var fragen = function () { try { window.parent.postMessage({ leitwerk: "stand" }, "*"); } catch (e) {} };
     fragen();
-    setInterval(fragen, 2000);
+    setInterval(fragen, 3000);
   }
-  // Hoch- oder Querformat (das Tablet kann beides)
-  function format() { document.body.className = window.innerWidth > window.innerHeight * 1.1 ? "quer" : ""; }
-  window.onresize = format;
-  format();
+  window.onresize = function () { zeichnen(stand); };
   holen();
   setInterval(holen, 1000);
 })();

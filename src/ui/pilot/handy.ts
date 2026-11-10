@@ -126,7 +126,7 @@ async function hoeren(): Promise<void> {
     hoertZu = true;
     await listen<string>("handy-befehl", (ev) => {
       // Buchen und Sprechgruppe wechseln („bu:…“, „gr:1“ / „gr:-1“)
-      if (ev.payload.startsWith("bu:") || ev.payload.startsWith("gr:")) return buchHaken?.(ev.payload);
+      if (ev.payload.startsWith("bu:") || ev.payload.startsWith("gr:") || ev.payload.startsWith("ka:")) return buchHaken?.(ev.payload);
       // Sprechtaste: „funk_an“ / „funk_aus“
       const m = /^(\w+)_(an|aus)$/.exec(ev.payload);
       if (m && HALTEN.includes(m[1] as PilotAktion)) return haltenFn?.(m[1] as PilotAktion, m[2] === "an");
