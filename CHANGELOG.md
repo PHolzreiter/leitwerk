@@ -1,5 +1,8 @@
 # Änderungen
 
+## 0.115.0-beta.19 – Logo im Hauptmenü
+- **Hauptmenü:** Mit Esc zurück zum Startbildschirm wächst das LeitWerk-Logo wieder weich groß (sprang zuletzt ohne Übergang)
+
 ## 0.115.0-beta.18 – Fahrzeugliste ruhig, Hautfarbe
 - **RD-, KT- und SEK-Übersicht:** Die Fahrzeugliste blendet nicht mehr bei jedem Einsatz- oder Filterwechsel neu ein
 - **Abfrage:** „Blass“ allein gilt nicht mehr als veränderte Hautfarbe – nur grau oder bläulich. Anrufer und Frage sind angepasst

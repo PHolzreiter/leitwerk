@@ -714,6 +714,8 @@ select.l-select.dd-auf{border-color:#3B8BFF}
 </style>
 </helmet>
 <div class="{{rootCls}}" style="position: relative; width: {{rootW}}; height: {{rootH}}; min-height: {{rootMinH}}; overflow: hidden; background: #111216; color: #F5F7FA; font-family: 'Inter', system-ui, sans-serif;">
+  <!-- Logo zuerst: bleibt beim Neuzeichnen dasselbe Element (sonst springt es ohne Übergang groß/klein) -->
+  <img class="{{logoCls}}" src="{{logoUrl}}" alt="LeitWerk">
 
   <!-- Karte -->
   <sc-if value="{{isBild}}" hint-placeholder-val="{{false}}">
@@ -1262,6 +1264,5 @@ select.l-select.dd-auf{border-color:#3B8BFF}
   <sc-if value="{{beendet}}" hint-placeholder-val="{{false}}">
     <button class="l-bye" onClick="{{neustart}}"><span>LeitWerk wurde beendet</span><em>Klicken, um neu zu starten</em></button>
   </sc-if>
-  <img class="{{logoCls}}" src="{{logoUrl}}" alt="LeitWerk">
 </div>
 </x-dc>

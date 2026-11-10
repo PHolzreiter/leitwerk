@@ -1,5 +1,13 @@
 [
  {
+  "version": "0.115.0-beta.19",
+  "datum": "2026-11-10",
+  "titel": "Logo im Hauptmenü",
+  "punkte": [
+   "Logo wächst mit Esc wieder weich groß"
+  ]
+ },
+ {
   "version": "0.115.0-beta.18",
   "datum": "2026-11-10",
   "titel": "Fahrzeugliste ruhig, Hautfarbe",
