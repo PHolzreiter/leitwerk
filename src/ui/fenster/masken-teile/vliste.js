@@ -71,7 +71,8 @@ export function vliste(k, eintraege, o) {
     vkB: kopf([['ruf', 'Funkkennung'], ['typ', 'Typ'], ['status', 'Status'], ['lst', 'Letzter Standort'], ['ziel', 'Fahrtziel'], ['code', 'Code'], ['zeit', zeitTitel, true]], 'b'),
     vkS: kopf([['status', 'St'], ['ruf', 'Fahrzeug'], ['fahrt', 'Fahrtziel'], ['zeit', zeitTitel, true]], 's'),
     vlN: cols('n'), vlB: cols('b'), vlS: cols('s'),
-    vlCls: 'liste vl ' + (((st.vsw || 0) + (o.swExtra || 0)) % 2 ? 'swA' : 'swB') + (st.vlZieht ? ' zieht' : ''),
+    // ohne Einblend-Animation: die Liste steht, wenn ein anderer Einsatz oder Filter gewählt wird
+    vlCls: 'liste vl' + (st.vlZieht ? ' zieht' : ''),
   };
 }
 

@@ -538,7 +538,8 @@ export function szenarioBauen(
     .filter((t) => passtBedingung(t, { ...a, variante: a.variante ?? "" }))
     .map((t) => ohneBedingung(t).toLowerCase())
     .join(" ");
-  if (/\b(blass|grau im gesicht|ganz grau|bläulich|blau (im gesicht|an den lippen|anlaufen)|wird blau|ganz blau)/.test(alleTexte)) setze("hautfarbe", "ja");
+  // „blass“ allein ist keine veränderte Hautfarbe – nur grau oder bläulich
+  if (/\b(grau im gesicht|ganz grau|aschgrau|bläulich|blau (im gesicht|an den lippen|anlaufen)|wird blau|ganz blau|lippen (sind )?(ganz )?blau)/.test(alleTexte)) setze("hautfarbe", "ja");
   else if (/rot im gesicht|rot ist [^.]{0,8}im gesicht|hochrot/.test(alleTexte)) setze("hautfarbe", "nein");
   if (/(klatschnass|nass geschwitzt|schwitzt (stark|total|so)|schweißnass|kalter schweiß|kaltschweiß|verschwitzt)/.test(alleTexte)) setze("kaltschweiss", "ja");
   // Anrufer sieht den Patienten nicht: Befunde bleiben offen (keine Zeile in den Fakten)
@@ -676,7 +677,7 @@ const FAKT: Record<string, Record<string, string>> = {
   psych_vorerkrankung: { ja: "{Er} ist wegen Depressionen in Behandlung", nein: "psychisch ist nichts bekannt" },
   lungenerkrankung: { asthma: "{Er} hat Asthma", copd: "{Er} hat COPD, eine Raucherlunge", andere: "{Er} hat eine Lungenkrankheit", nein: "mit der Lunge hat {er} nichts" },
   schwanger: { ja: "{Er} ist schwanger", nein: "schwanger ist sie nicht" },
-  hautfarbe: { ja: "{{Er} ist ganz blass im Gesicht|{Er} schaut ganz blass aus|{Er} ist käsweiß}", nein: "{die Gesichtsfarbe ist normal|blass ist {er} nicht|{er} hat eine normale Farbe}" },
+  hautfarbe: { ja: "{{Er} ist ganz grau im Gesicht|{Er} schaut ganz bläulich aus|die Lippen sind ganz blau}", nein: "{die Gesichtsfarbe ist normal|grau oder blau ist {er} nicht|{er} ist ein bisschen blass, aber nicht grau oder blau|{er} hat eine normale Farbe}" },
   kaltschweiss: { ja: "{{Er} ist kalt und schweißig|die Haut ist kalt und feucht|{er} ist ganz verschwitzt}", nein: "{verschwitzt ist {er} nicht|die Haut ist normal, nicht feucht|{Er} schwitzt nicht}" },
   sprachschw: { ja: "{Er} kann vor lauter Schnaufen nur einzelne Wörter sagen", nein: "{reden kann {er} normal|{er} redet in ganzen Sätzen|beim Reden muss {er} nicht nach Luft schnappen}" },
   verwirrt: { ja: "{Er} ist durcheinander und weiß nicht recht, wo {er} ist", nein: "{durcheinander ist {er} nicht|{er} weiß, wo {er} ist}" },

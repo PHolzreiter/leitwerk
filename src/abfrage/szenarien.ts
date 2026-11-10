@@ -400,7 +400,7 @@ export const SZENARIEN: SzenarioVorlage[] = [
     hergang: ["{P} ist vor mir einfach umgekippt. {Er} war kurz weg, jetzt kommt {er} langsam wieder zu sich."],
     seitMin: [1, 6],
     fest: { bw: ["ja", "getruebt"], at: "normal", hautfarbe: ["ja", "nein"], herzleiden: ["nein", "unbekannt"], anzahl_patienten: "1" },
-    details: ["[hautfarbe=ja] {Er} ist ganz blass und verschwitzt.", "Ich hab {ihm} die Beine hochgelegt.", "{Er} sagt, {er} hat heute noch nichts gegessen."],
+    details: ["[hautfarbe=ja] {Er} ist ganz grau im Gesicht und verschwitzt.", "[hautfarbe=nein] {Er} ist ein bisschen blass und verschwitzt.", "Ich hab {ihm} die Beine hochgelegt.", "{Er} sagt, {er} hat heute noch nichts gegessen."],
     verlauf: ["Du bist eine hilfsbereite fremde Person, ein bisschen aufgeregt."],
   },
   {

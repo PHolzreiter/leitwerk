@@ -37,7 +37,7 @@ const SPRECH: Record<string, { er: string[]; sie?: string[] }> = {
   bw: { er: ["Ist {er} wach? Reagiert {er}, wenn Sie {ihn} ansprechen?", "Ist {er} bei Bewusstsein und ansprechbar?", "Reagiert {er} auf Sie, wenn Sie mit {ihm} reden?"], sie: ["Sind Sie ganz wach, oder ist Ihnen schwindlig oder wird Ihnen schwarz vor Augen?"] },
   at: { er: ["Atmet {er} normal?", "Wie atmet {er}?", "Schauen Sie bitte genau hin: Wie atmet {er}?"], sie: ["Kriegen Sie normal Luft?", "Wie geht's Ihnen mit dem Atmen?"] },
   sprachschw: { er: ["Kann {er} ganze Sätze sprechen, oder nur einzelne Wörter?", "Muss {er} beim Reden nach jedem Wort Luft holen?"], sie: ["Können Sie ganze Sätze sprechen, oder müssen Sie zwischendurch Luft holen?"] },
-  hautfarbe: { er: ["Welche Hautfarbe hat {er} – ist {er} blass, grau oder bläulich?", "Wie schaut {er} im Gesicht aus – blass oder bläulich?"] },
+  hautfarbe: { er: ["Welche Hautfarbe hat {er} – ist {er} grau oder bläulich?", "Wie schaut {er} im Gesicht aus – grau oder bläulich?"] },
   grau: { er: ["Ist die Haut aschfahl oder grau?", "Ist {er} ganz grau im Gesicht?"] },
   kaltschweiss: { er: ["Ist {seine} Haut kalt und feucht?", "Schwitzt {er} kalt?"], sie: ["Ist Ihre Haut kalt und feucht?", "Schwitzen Sie kalt?"] },
   blutung_stark: { er: ["Blutet {er} irgendwo? Wenn ja – wie stark?", "Blutet es stark – läuft oder spritzt es?"] },

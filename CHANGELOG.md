@@ -1,5 +1,9 @@
 # Änderungen
 
+## 0.115.0-beta.18 – Fahrzeugliste ruhig, Hautfarbe
+- **RD-, KT- und SEK-Übersicht:** Die Fahrzeugliste blendet nicht mehr bei jedem Einsatz- oder Filterwechsel neu ein
+- **Abfrage:** „Blass“ allein gilt nicht mehr als veränderte Hautfarbe – nur grau oder bläulich. Anrufer und Frage sind angepasst
+
 ## 0.115.0-beta.17 – Netzbetreiber erfunden
 - **Telefon:** Beim Mobilnetz stehen erfundene Netzbetreiber (Alpennetz, Donaufunk, Weitblick Mobil) statt echter Anbieter
 

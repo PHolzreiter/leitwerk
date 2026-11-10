@@ -262,7 +262,7 @@ const GRUPPE: Record<string, { text: string; labels?: Record<string, string> }> 
   sprachschw: { text: "Kann jemand nur einzelne Worte sprechen (Sprechpausen zum Atmen)?" },
   fehlstellung: { text: "Hat jemand eine Fehlstellung / einen offensichtlichen Bruch?" },
   noch_verbunden: { text: "Ist noch jemand mit der Stromquelle verbunden?" },
-  hautfarbe: { text: "Ist bei jemandem die Hautfarbe verändert (blass-grau, bläulich)?" },
+  hautfarbe: { text: "Ist bei jemandem die Hautfarbe verändert (grau, bläulich)? Nur blass zählt nicht." },
 };
 
 /**

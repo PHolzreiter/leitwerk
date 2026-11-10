@@ -1,5 +1,14 @@
 [
  {
+  "version": "0.115.0-beta.18",
+  "datum": "2026-11-10",
+  "titel": "Fahrzeugliste ruhig, Hautfarbe",
+  "punkte": [
+   "Fahrzeugliste in den Übersichten ohne Einblenden",
+   "Blass ist keine veränderte Hautfarbe mehr"
+  ]
+ },
+ {
   "version": "0.115.0-beta.17",
   "datum": "2026-11-10",
   "titel": "Netzbetreiber erfunden",
