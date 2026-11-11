@@ -231,15 +231,40 @@ pub fn sprache_modell_loeschen(app: tauri::AppHandle, name: String) -> Result<()
 /// Grafikkarte für die Erkennung: true = das Modell läuft auf der Grafikkarte (Vulkan unter Windows, Metal am Mac)
 static GPU_AKTIV: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
+/// Merkzettel neben den Modellen: liegt er beim Start noch da, ist das Programm beim letzten Versuch mit der
+/// Grafikkarte abgestürzt (Treiber) – dann rechnet die Erkennung ab jetzt auf dem Prozessor.
+static GPU_MARKE: Mutex<Option<PathBuf>> = Mutex::new(None);
+
+fn gpu_marke_weg() {
+    if let Ok(mut m) = GPU_MARKE.lock() {
+        if let Some(p) = m.take() {
+            let _ = std::fs::remove_file(p);
+        }
+    }
+}
+
 /// Whisper-Modell laden: zuerst mit Grafikkarte (wenn eingebaut), bei Fehlern auf dem Prozessor
 fn kontext_laden(pfad: &std::path::Path) -> Result<WhisperContext, String> {
     let p = pfad.to_str().ok_or("Ungültiger Pfad")?;
-    if cfg!(any(feature = "gpu-vulkan", target_os = "macos")) {
-        let mut cp = WhisperContextParameters::default();
-        cp.use_gpu(true);
-        if let Ok(ctx) = WhisperContext::new_with_params(p, cp) {
-            GPU_AKTIV.store(true, std::sync::atomic::Ordering::Relaxed);
-            return Ok(ctx);
+    if cfg!(any(feature = "gpu-vulkan", target_os = "macos")) && std::env::var_os("LEITWERK_OHNE_GPU").is_none() {
+        let marke = pfad.with_file_name("grafikkarte-versuch.txt");
+        let abgestuerzt = cfg!(feature = "gpu-vulkan") && marke.exists();
+        if abgestuerzt {
+            eprintln!("Spracherkennung: beim letzten Versuch mit der Grafikkarte abgestürzt – rechne auf dem Prozessor");
+        } else {
+            // die Marke bleibt liegen, bis die erste Erkennung auf der Grafikkarte geklappt hat
+            if cfg!(feature = "gpu-vulkan") && std::fs::write(&marke, "Spracherkennung mit Grafikkarte gestartet").is_ok() {
+                if let Ok(mut m) = GPU_MARKE.lock() {
+                    *m = Some(marke.clone());
+                }
+            }
+            let mut cp = WhisperContextParameters::default();
+            cp.use_gpu(true);
+            if let Ok(ctx) = WhisperContext::new_with_params(p, cp) {
+                GPU_AKTIV.store(true, std::sync::atomic::Ordering::Relaxed);
+                return Ok(ctx);
+            }
+            gpu_marke_weg();
         }
     }
     let mut cp = WhisperContextParameters::default();
@@ -325,6 +350,8 @@ fn erkennen_blockierend(pfad: PathBuf, name: String, audio: Vec<f32>, hinweis: S
         }
     }
     let sicherheit = if zahl > 0 { (summe / zahl as f64).exp() as f32 } else { 0.0 };
+    // erste Erkennung auf der Grafikkarte hat geklappt: kein Absturz zu befürchten
+    gpu_marke_weg();
     Ok(Ergebnis { text: text.trim().to_string(), sicherheit })
 }
 

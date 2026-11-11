@@ -9,7 +9,8 @@ name: Build
 # die Beta prüft nur den Kanal „beta-kanal“.
 on:
   push:
-    branches: [main, beta]
+    # test-*: Probebau (z. B. neue Bibliotheken) – nur Zwischenkopien, nie ein Release
+    branches: [main, beta, "test-*"]
     paths-ignore:
       - "**.md"
       - ".github/workflows/osm-lookup.yml"
@@ -50,6 +51,7 @@ jobs:
         run: |
           VERSION="$(jq -r .version src-tauri/tauri.conf.json)"
           if [ "$GITHUB_REF_NAME" = "beta" ]; then VERSION="$(jq -r .version src-tauri/tauri.beta.conf.json)"; fi
+          case "$GITHUB_REF_NAME" in test-*) echo "Probebau ($GITHUB_REF_NAME) – ohne Release"; echo "neu=true" >> "$GITHUB_OUTPUT"; exit 0;; esac
           if [ "${{ github.event_name }}" != "workflow_dispatch" ] && gh release view "v$VERSION" --repo "$DOWNLOAD_REPO" >/dev/null 2>&1; then
             echo "Version $VERSION ist schon veröffentlicht – kein Bau nötig."
             echo "neu=false" >> "$GITHUB_OUTPUT"
@@ -194,6 +196,17 @@ jobs:
           path: ~/AppData/Local/tauri
           key: tauri-nsis-werkzeuge-v1
 
+      # Spracherkennung auf der Grafikkarte (Vulkan: NVIDIA, AMD und Intel). Zum Bauen braucht whisper.cpp das
+      # Vulkan-SDK (Header, Bibliothek, glslc für die Shader); vulkan-1.dll (Vulkan-Laufzeit) kommt neben das Programm,
+      # damit es auch auf PCs ohne Grafiktreiber mit Vulkan startet – die Erkennung rechnet dann auf dem Prozessor.
+      - name: Vulkan-SDK (Windows)
+        if: runner.os == 'Windows'
+        uses: jakoch/install-vulkan-sdk-action@v1
+        with:
+          vulkan_version: 1.4.309.0
+          install_runtime: true
+          cache: true
+
       - name: Piper-Bibliothek vorladen (Windows)
         if: runner.os == 'Windows'
         shell: bash
@@ -255,9 +268,23 @@ jobs:
           fi
           # Downloads beim Bauen (sherpa-onnx, NSIS/WiX) scheitern manchmal an GitHub-Serverfehlern (502/503/504) –
           # dann bis zu zweimal nach kurzer Pause neu versuchen
+          # Windows: Spracherkennung mit Grafikkarte (Vulkan) und die Vulkan-Laufzeit neben das Programm
+          FEAT=""
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            if [ -n "$VULKAN_SDK" ] && [ -x "$(cygpath -u "$VULKAN_SDK")/Bin/glslc.exe" ]; then
+              FEAT="--features gpu-vulkan"
+              mkdir -p src-tauri/target/release
+              sdk="$(cygpath -u "$VULKAN_SDK")"
+              dll="$(find "$sdk" "$(dirname "$sdk")" -iname vulkan-1.dll -path '*x64*' 2>/dev/null | head -1)"
+              [ -z "$dll" ] && dll="$(find "$sdk" "$(dirname "$sdk")" -iname vulkan-1.dll 2>/dev/null | head -1)"
+              if [ -n "$dll" ]; then cp "$dll" src-tauri/target/release/; echo "::notice::Vulkan-Laufzeit: $dll"; else echo "::error::vulkan-1.dll nicht gefunden"; exit 1; fi
+            else
+              echo "::error::Vulkan-SDK fehlt (VULKAN_SDK=$VULKAN_SDK) – Spracherkennung nur auf dem Prozessor"; exit 1
+            fi
+          fi
           for versuch in 1 2 3; do
             BETA=""; [ "$GITHUB_REF_NAME" = "beta" ] && BETA="--config src-tauri/tauri.beta.conf.json"
-            npx tauri build --bundles ${{ matrix.bundles }} $BETA 2>&1 | tee build.log
+            npx tauri build --bundles ${{ matrix.bundles }} $BETA $FEAT 2>&1 | tee build.log
             status=${PIPESTATUS[0]}
             [ $status -eq 0 ] && break
             grep -qiE "status( code)?:? 50[234]|http status: 50[234]|timed out|connection reset" build.log || break
