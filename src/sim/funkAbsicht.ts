@@ -39,9 +39,12 @@ export function ohneKopf(t: string): string {
     .trim();
 }
 
+/** Sätze, die die Spracherkennung bei Stille oder Rauschen erfindet (aus Untertiteln gelernt) */
+const HALLUZINATION = /untertitel|amara|zuschauen|abonnier|copyright|vielen dank für ihre aufmerksamkeit|bis zum nächsten mal|♪|\[musik\]|\*musik\*/i;
+
 /** Wörter, die im Rettungsdienst-Funk vorkommen – fehlen sie ganz, ist der Spruch vermutlich falsch erkannt */
 const FUNKWORT =
-  /\b(leo|kommen|ende|verstanden|patient\w*|einsatz\w*|lage\w*|storno|notarzt|nef|rtw|nah|krankenhaus|kh|klinik|schockraum|notaufnahme|transport\w*|status|eintreff\w*|minute\w*|unterwegs|alarmiert|alarm|vor ort|wache|frei|fahrt|fahrzeug\w*|feuerwehr|polizei|rendezvous|treffpunkt|ziel\w*|nachforder\w*|bitte|danke|ja|nein|wo|wie|was|wann|hubschrauber|christophorus|werte|sättigung|blutdruck|puls|zustand|verdacht|wiederhol\w*|warten|wartet|rückt|ein|aus|ort|adresse|stock|stiege|tür|landeplatz|lande\w*|übernehm\w*|übergabe|sichtung|rot|gelb|grün|reanimation|kind|mann|frau|jahre|alt|wach|atmung|bewusst\w*|okay|ok)\b/i;
+  /\b(leo|kommen|ende|verstanden|patient\w*|einsatz\w*|lage\w*|storno|notarzt|nef|rtw|nah|krankenhaus|kh|klinik|schockraum|notaufnahme|transport\w*|status|eintreff\w*|minute\w*|unterwegs|alarmiert|alarm|vor ort|wache|frei|fahrt|fahrzeug\w*|feuerwehr|polizei|rendezvous|treffpunkt|ziel\w*|nachforder\w*|bitte|danke|ja|nein|wo|wie|was|wann|hubschrauber|christophorus|werte|sättigung|blutdruck|puls|zustand|verdacht|wiederhol\w*|warten|wartet|rückt|ein|aus|ort|adresse|stock|stiege|tür|landeplatz|lande\w*|übernehm\w*|übergabe|sichtung|rot|gelb|grün|reanimation|kind|mann|frau|jahre|alt|wach|atmung|bewusst\w*|okay|ok|unterstützung|kräfte|hilfe|braucht|benötigt|ihr|euch|seid|fährt|code|schlüssel)\b/i;
 
 /**
  * Absicht eines Funkspruchs der Leitstelle an ein Fahrzeug.
@@ -55,6 +58,10 @@ export function absichtErkennen(text: string, opt: { sicherheit?: number; angesp
   if (QUITTUNG.test(t)) return { art: "quittung" };
   const inhalt = ohneKopf(roh).toLowerCase();
   const sicher = opt.sicherheit ?? 1;
+  // nur „Hier LEO, kommen“ (LEO meldet sich auf einen Anruf): das Fahrzeug spricht weiter
+  if (!inhalt.replace(/\W/g, "")) return { art: "quittung" };
+  // typische Erfindungen der Spracherkennung bei Rauschen oder Stille
+  if (HALLUZINATION.test(inhalt)) return { art: "unklar", grund: "Rauschen erkannt" };
   // sehr unsichere Erkennung oder kein einziges Wort aus dem Funk: nicht raten
   if (sicher < 0.35) return { art: "unklar", grund: `Erkennung unsicher (${Math.round(sicher * 100)} %)` };
   if (!FUNKWORT.test(inhalt) && inhalt.split(/\s+/).length <= 4) return { art: "unklar", grund: "kein Funkwort" };
@@ -70,15 +77,15 @@ export function absichtErkennen(text: string, opt: { sicherheit?: number; angesp
     if (dritter && !/\beuch\b|\beuren?\b|\bihr\b/.test(inhalt)) return { art: "info", thema: "dritteStorno", wer: dritter };
     if (!frage) return { art: "storno" };
   }
-  if (/\blagemeldung\b|\blage\b.*\b(durchgeben|melden|bitte)\b|gebt? mir (eine|die) lage/.test(inhalt)) return { art: "lageAnfordern" };
+  if (/\blagemeldung\b|wie (ist|schaut|sieht) (eure|die|es mit der) lage|\blage\W*$|\blage\b.*\b(durchgeben|melden|bitte)\b|gebt? mir (eine|die) lage/.test(inhalt)) return { art: "lageAnfordern" };
 
   if (frage) {
     if (/sättigung|spo2|blutdruck|\brr\b|puls|herzfrequenz|blutzucker|\bbz\b|vitalwerte|vitalparameter|temperatur|fieber|\bgcs\b|atemfrequenz|\bwerte\b/.test(inhalt)) return { art: "frage", thema: "werte" };
     if (/(fährt|fahrt|kommt|geht).{0,25}(notarzt|nef|na\b).{0,15}mit|(notarzt|nef|na\b).{0,25}(mit|begleit)/.test(inhalt)) return { art: "frage", thema: "naMit" };
     if (/zielkrankenhaus|zielklinik|welche[sr]? (kh|krankenhaus|klinik)|wohin|wo fahrt ihr hin|ins welche/.test(inhalt)) return { art: "frage", thema: "ziel" };
     if (/verdacht|diagnose|was hat (er|sie|der patient|die patientin)/.test(inhalt)) return { art: "frage", thema: "verdacht" };
-    if (/braucht ihr|benötigt ihr|nachforder|noch (was|etwas|kräfte|unterstützung)|weitere kräfte/.test(inhalt)) return { art: "frage", thema: "bedarf" };
     if (/eintreff|wie lange|wann seid|wann seit|ankunft|fahrzeit|wie weit/.test(inhalt)) return { art: "frage", thema: "eintreffen" };
+    if (/braucht ihr|benötigt ihr|nachforder|noch (was|etwas|kräfte|unterstützung)|weitere kräfte/.test(inhalt)) return { art: "frage", thema: "bedarf" };
     if (/status|wo seid|wo bist|position|seid ihr (schon )?(vor ort|da|frei)|was macht ihr/.test(inhalt)) return { art: "frage", thema: "status" };
     if (/patient|zustand|wie geht|reanim|wach|atmet|bewusst|verletzt|lage/.test(inhalt)) return { art: "frage", thema: "patient" };
     if (/funkcheck|wie hört ihr|wie hören sie|verständigung|hört ihr mich/.test(inhalt)) return { art: "frage", thema: "funkcheck" };
@@ -94,9 +101,9 @@ export function absichtErkennen(text: string, opt: { sicherheit?: number; angesp
   }
   if (/(feuerwehr|polizei|bergrettung|wasserrettung).*(vor ort|kommt|unterwegs|alarmiert|angefordert|verständigt)/.test(inhalt)) return { art: "info", thema: "partner" };
   if (/einsatz .*(code|adresse|einsatzort)|neuer einsatz|einsatzauftrag|übernehmt|übernehmen sie|folgeeinsatz|nächster einsatz|anschlusseinsatz/.test(inhalt)) return { art: "einsatz" };
-  if (/zielkrankenhaus|zielklinik|fahrt ins|bringt (ihn|sie|den patienten)|nehmt|transport (ins|nach)/.test(inhalt)) return { art: "info", thema: "ziel" };
+  if (/zielkrankenhaus|zielklinik|(fahrt|fährt|kommt|geht|fliegt) ins|ins (uk|lk|kh|krankenhaus|klinikum|spital)|bringt (ihn|sie|den patienten)|nehmt|transport (ins|nach)/.test(inhalt)) return { art: "info", thema: "ziel" };
   if (/\b(wartet|warten sie|bleibt (vor ort|dort)|bleiben sie)\b/.test(inhalt)) return { art: "info", thema: "warten" };
-  if (/zusatzinfo|zur info|beachtet|achtung|hinweis|information|stock|stiege|türcode|zufahrt|eingang/.test(inhalt)) return { art: "info", thema: "zusatz" };
+  if (/zusatzinfo|zur info|beachtet|achtung|hinweis|information|stock|stiege|türcode|\bcode\b|schlüssel|zufahrt|eingang|hund|aufzug|lift/.test(inhalt)) return { art: "info", thema: "zusatz" };
   // kurze Bestätigungen mit Rufnamen („Hier LEO, alles klar“)
   if (QUITTUNG.test(inhalt)) return { art: "quittung" };
   // längerer, aber unbestimmter Satz mit Funkwörtern: als Information nehmen (wenig sicher erkannt: nachfragen)
