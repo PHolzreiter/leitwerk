@@ -35,6 +35,9 @@ export function funkGlaetten(t: string): string {
  * Funksprüche (die prägen das Thema vor, z. B. „Storno“) und keine langen Ziffernlisten (die führen zu Erfindungen).
  * extra: weitere Namen, die vorkommen sollen (Piloten-Hubschrauber).
  */
+/** Whisper nimmt höchstens 224 Zeichen-Teile (Tokens) als Hinweis – deutsch ca. 3,5 Zeichen je Teil */
+const MAX_HINWEIS = 680;
+
 export function funkHinweis(extra = ""): string {
   const name = (id: string) => {
     const f = sim.state.fahrzeuge[id];
@@ -82,9 +85,11 @@ export function funkHinweis(extra = ""): string {
     `Hier LEO, Storno für euren Einsatz, rückt ein, kommen.`,
     `Wo seid ihr gerade, wie lange noch bis ${ort(1, "Tulln")}? Hier LEO, verstanden, Ende.`,
   ];
+  // höchstens MAX_HINWEIS Zeichen (das Ende zählt am meisten): vorne ganze Sätze weglassen, nie mitten im Wort abschneiden
+  while (saetze.length > 3 && saetze.join(" ").length > MAX_HINWEIS) saetze.shift();
   let t = saetze.join(" ");
-  // weitere Rufnamen nur als kurze Zeile davor (höchstens 600 Zeichen insgesamt, das Ende zählt am meisten)
+  // weitere Rufnamen nur als kurze Zeile davor
   const weitere = wichtig.slice(4, 14).join(", ");
-  if (weitere && weitere.length + t.length + 2 < 600) t = `${weitere}. ${t}`;
-  return t.slice(-600);
+  if (weitere && weitere.length + t.length + 2 < MAX_HINWEIS) t = `${weitere}. ${t}`;
+  return t.length > MAX_HINWEIS ? t.slice(t.indexOf(" ", t.length - MAX_HINWEIS) + 1) : t;
 }

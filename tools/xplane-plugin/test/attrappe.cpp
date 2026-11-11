@@ -1,7 +1,7 @@
 // Nachgebautes X-Plane zum Testen des Plugins unter Linux (Xvfb + Mesa):
 // lädt LeitWerk.xpl, stellt die benutzten XPLM-Funktionen bereit, spielt ein Skript ab und macht Bildschirmfotos.
 //   attrappe <plugin.xpl> <skript.txt> <ausgabeordner>
-// Skript: warte <s> | klick <x> <y> | shell <befehl> | ziehen <x> <y> <dx> <dy> | rad <x> <y> <n> | befehl <name> [halten]
+// Skript: warte <s> | klick <x> <y> | shell <befehl> | ziehen <x> <y> <dx> <dy> | rad <x> <y> <n> | befehl <name> | halten <name> [sekunden]
 //         bild <datei.png> | tippe <text> | vr <0|1> | menue <nr>
 //         geraet <id> <x> <y> (Tippen auf ein Cockpit-Gerät, Bildpunkte links oben) | geraetzieh <id> <x> <y> <dx> <dy>
 //         sim <name> <wert> (boden, volt, avionik) | zeige <dataref>
@@ -447,7 +447,15 @@ int main(int argc, char** argv) {
         if (c->name == nm)
           for (auto& hh : c->h) {
             hh.first(c, xplm_CommandBegin, hh.second);
-            if (w == "halten") warte(0.5);
+            if (w == "halten") {
+              // „halten <name> [sekunden]“: wie X-Plane jeden Rahmen „Continue“, solange die Taste unten ist
+              double sek = 0.5;
+              if (!(z >> sek)) sek = 0.5;
+              for (double t = 0; t < sek; t += 0.1) {
+                warte(0.1);
+                hh.first(c, xplm_CommandContinue, hh.second);
+              }
+            }
             hh.first(c, xplm_CommandEnd, hh.second);
           }
       warte(0.1);

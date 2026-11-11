@@ -230,6 +230,8 @@ pub fn sprache_modell_loeschen(app: tauri::AppHandle, name: String) -> Result<()
 
 /// Grafikkarte für die Erkennung: true = das Modell läuft auf der Grafikkarte (Vulkan unter Windows, Metal am Mac)
 static GPU_AKTIV: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+/// nur für Messungen (tools): Beam-Suche auch auf dem Prozessor
+static BEAM_ERZWINGEN: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
 /// Merkzettel neben den Modellen: liegt er beim Start noch da, ist das Programm beim letzten Versuch mit der
 /// Grafikkarte abgestürzt (Treiber) – dann rechnet die Erkennung ab jetzt auf dem Prozessor.
@@ -311,7 +313,8 @@ fn erkennen_blockierend(pfad: PathBuf, name: String, audio: Vec<f32>, hinweis: S
     let mut state = ctx.create_state().map_err(|e| format!("Spracherkennung startet nicht: {e:?}"))?;
     let gpu = GPU_AKTIV.load(std::sync::atomic::Ordering::Relaxed);
     // mit Grafikkarte gründlicher (mehrere Fassungen vergleichen), auf dem Prozessor schnell
-    let strategie = if gpu { SamplingStrategy::BeamSearch { beam_size: 5, patience: -1.0 } } else { SamplingStrategy::Greedy { best_of: 1 } };
+    let beam = gpu || BEAM_ERZWINGEN.load(std::sync::atomic::Ordering::Relaxed);
+    let strategie = if beam { SamplingStrategy::BeamSearch { beam_size: 5, patience: -1.0 } } else { SamplingStrategy::Greedy { best_of: 1 } };
     let mut p = FullParams::new(strategie);
     let threads = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(4).clamp(1, 8) as i32;
     p.set_n_threads(threads);
@@ -882,6 +885,28 @@ pub async fn sprache_aufnahme_stopp(app: tauri::AppHandle, modell: String, hinwe
 #[cfg(test)]
 mod funk_tests {
     use super::*;
+
+    /// Messung der Spracherkennung (nicht im normalen Testlauf): LW_MESS = Datei mit Zeilen
+    /// „id \t modell \t aufnahme (f32, 48 kHz) \t beam 0/1 \t hinweis“ – Ausgabe je Zeile „id \t sicherheit \t ms \t text“.
+    #[test]
+    #[ignore]
+    fn messung() {
+        let Ok(liste) = std::env::var("LW_MESS") else { return };
+        for z in std::fs::read_to_string(liste).unwrap().lines() {
+            let f: Vec<&str> = z.splitn(5, '\t').collect();
+            if f.len() < 5 {
+                continue;
+            }
+            let roh: Vec<f32> = std::fs::read(f[2]).unwrap().chunks_exact(4).map(|b| f32::from_le_bytes([b[0], b[1], b[2], b[3]])).collect();
+            let audio = auf_16k(&roh, 48000);
+            BEAM_ERZWINGEN.store(f[3] == "1", std::sync::atomic::Ordering::Relaxed);
+            let modell = PathBuf::from(f[1]);
+            let name = modell.file_name().unwrap().to_string_lossy().to_string();
+            let t = std::time::Instant::now();
+            let r = erkennen_blockierend(modell, name, audio, f[4].to_string()).unwrap();
+            println!("MESSUNG\t{}\t{:.3}\t{}\t{}", f[0], r.sicherheit, t.elapsed().as_millis(), r.text);
+        }
+    }
 
     #[test]
     fn umrechnen_ohne_rueckfaltung() {
