@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
+#include <algorithm>
 #include <string>
 #include <vector>
 
@@ -77,7 +78,7 @@ static std::string schriftOrdner, prefDatei;
 static int geo[4] = {0, 0, 0, 0};  // gespeicherte Lage (l, t, r, b) außerhalb von VR
 static int vrGeo[2] = {0, 0};
 static bool startSichtbar = false;
-static XPLMDataRef drVR, drMV, drPJ, drVP, drVolt, drAvionik;
+static XPLMDataRef drVR, drMV, drPJ, drVP, drVolt, drAvionik, drBatterie;
 static double letzteMeldung = -100;
 static int letzterZyklus = -1;
 
@@ -352,6 +353,7 @@ static void taste(XPLMWindowID, char key, XPLMKeyFlags flags, char vkey, void*, 
 // Zeichnen und Tippen kommen in Bildpunkten des Geräts, Ursprung links unten.
 static void geraetZeichnen(void* ref) {
   Schirm& s = *(Schirm*)ref;
+  if (!s.gezeichnet) log(std::string("Ger\xC3\xA4t ") + s.id + ": erstes Bild");
   s.gezeichnet = true;
   ImDrawData* dd = schirmBild(s, s.logW, s.logH);
   imguiZeichnen(dd, 0, (float)s.pxH, s.pxW / s.logW, true);
@@ -391,6 +393,17 @@ static XPLMCursorStatus geraetCursor(int x, int y, void* ref) {
   return xplm_CursorDefault;
 }
 
+// Helligkeit im Cockpit: ohne eigene Angabe nimmt X-Plane Regler × Spannung der Schiene – die EC135 von Rotorsim hat ein
+// eigenes Bordnetz, dort bleibt das 0 und der Bildschirm dunkel (Test 11.11.). Daher: Umgebungshelligkeit, nie ganz dunkel.
+static float geraetHelligkeit(float regler, float umgebung, float spannung, void* ref) {
+  Schirm& s = *(Schirm*)ref;
+  (void)regler;
+  (void)spannung;
+  if (s.art == TETRA && tetraStrom < 0.5f) return 0.f;
+  float h = umgebung > 0 ? umgebung : 1.f;
+  return h < 0.45f ? 0.45f : (h > 1 ? 1.f : h);
+}
+
 static void geraeteErzeugen() {
   xCreateAvionicsEx = (CreateAvionicsEx_f)XPLMFindSymbol("XPLMCreateAvionicsEx");
   xDestroyAvionics = (DestroyAvionics_f)XPLMFindSymbol("XPLMDestroyAvionics");
@@ -408,6 +421,7 @@ static void geraeteErzeugen() {
     d.screenHeight = d.bezelHeight = s->pxH;
     d.drawOnDemand = 1;
     d.drawCallback = geraetZeichnen;
+    d.brightnessCallback = geraetHelligkeit;
     if (s->art == MFD || s->art == TABLET) {
       d.screenTouchCallback = geraetTippen;
       d.screenScrollCallback = geraetRad;
@@ -417,7 +431,7 @@ static void geraeteErzeugen() {
     d.deviceName = (char*)s->name;
     d.refcon = s;
     s->av = xCreateAvionicsEx(&d);
-    if (!s->av) log(std::string("Ger\xC3\xA4t ") + s->id + " nicht angelegt");
+    log(std::string("Ger\xC3\xA4t ") + s->id + (s->av ? " angelegt" : " nicht angelegt"));
   }
 }
 
@@ -495,10 +509,14 @@ static int tetraTaste(XPLMCommandRef, XPLMCommandPhase phase, void* ref) {
 }
 
 static void tetraTakt(float dt) {
-  float volt = 0;
-  if (drVolt) XPLMGetDatavf(drVolt, &volt, 0, 1);
-  bool avionik = drAvionik ? XPLMGetDatai(drAvionik) != 0 : true;
-  bool an = tetraEin && volt > 10 && avionik;
+  // Strom: irgendeine Schiene über 10 V, Avionik oder Batterie an (die EC135 hat ein eigenes Bordnetz – dort zeigen die
+  // X-Plane-Werte nicht immer Strom an; lieber an als tot)
+  float volt[4] = {0, 0, 0, 0};
+  if (drVolt) XPLMGetDatavf(drVolt, volt, 0, 4);
+  float vmax = std::max(std::max(volt[0], volt[1]), std::max(volt[2], volt[3]));
+  bool avionik = drAvionik && XPLMGetDatai(drAvionik) != 0;
+  bool batterie = drBatterie && XPLMGetDatai(drBatterie) != 0;
+  bool an = tetraEin && (vmax > 10 || avionik || batterie);
   if (tetraStrom > 0.5f && !an) {
     for (auto& k : tasten)
       if (k.gedrueckt && k.sonder == 4) netz::senden("funk_aus");
@@ -694,6 +712,12 @@ static float takt(float, float, int, void*) {
     if (ui::zurueck()) tabletApp = 0;
   }
   tetraTakt(dt);
+  static bool warGebunden[4] = {false, false, false, false};
+  for (int i = 0; i < 4; i++) {
+    bool g = gebunden(*GERAETE[i]);
+    if (g != warGebunden[i]) log(std::string("Ger\xC3\xA4t ") + GERAETE[i]->id + (g ? " im Cockpit" : " nicht mehr im Cockpit"));
+    warGebunden[i] = g;
+  }
   if (xAvionicsNeedsDrawing) {
     for (Schirm* s : GERAETE) {
       if (!s->av || jetzt < s->naechstes) continue;
@@ -745,6 +769,7 @@ PLUGIN_API int XPluginStart(char* name, char* sig, char* desc) {
   drVP = XPLMFindDataRef("sim/graphics/view/viewport");
   drVolt = XPLMFindDataRef("sim/cockpit2/electrical/bus_volts");
   drAvionik = XPLMFindDataRef("sim/cockpit/electrical/avionics_on");
+  drBatterie = XPLMFindDataRef("sim/cockpit/electrical/battery_on");
   // Datarefs für die Cockpit-Objekte (auch ohne Gerät-Schnittstelle: Sichtbarkeit)
   datarefs.push_back(intRef("leitwerk/aktiv", &aktivWert));
   datarefs.push_back(XPLMRegisterDataAccessor("leitwerk/tablet/app", xplmType_Int, 1, liesTabletApp, schreibTabletApp, nullptr, nullptr,

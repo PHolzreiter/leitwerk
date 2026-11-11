@@ -1,5 +1,11 @@
 # Änderungen
 
+## 0.116.0-beta.41 – EC135: Bildschirme im Cockpit leuchten
+- **Fehler behoben:** MFD, Klapp-Tablet und TETRA-Funkgerät blieben in der EC135 dunkel. X-Plane rechnet die Helligkeit sonst aus Regler und Bordspannung – die EC135 von Rotorsim hat ein eigenes Bordnetz, dort blieb das 0. Jetzt gibt das Plugin die Helligkeit selbst vor (nach Umgebungslicht, nie ganz dunkel)
+- Funkgerät bekommt Strom, sobald Batterie oder Avionik an ist (vorher nur über die X-Plane-Spannung)
+- Das Plugin schreibt in X-Plane/Log.txt, welche Bildschirme im Cockpit stecken und gezeichnet werden (zur Fehlersuche)
+- X-Plane-Plugin 0.2.1
+
 ## 0.116.0-beta.40 – X-Plane: LeitWerk im EC135-Cockpit, Wetter ohne Ruckeln
 - **EC135 von Rotorsim (X-Plane 12.1+):** LeitWerk lässt sich ins Cockpit einbauen (Pilotenansicht › Cockpit › „X-Plane: EC135-Cockpit“ › Einbauen) – für EC135 V5, EC135 P3 Neu V5 und EC135 V5 - Euronav
   - **Linkes MFD:** zeigt die Einsatz-App, solange LeitWerk läuft (statt der EuroNav-Karte)

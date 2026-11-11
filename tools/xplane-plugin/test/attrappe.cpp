@@ -87,6 +87,7 @@ struct Geraet {
   int x, y;
   float s;
   bool zeichnen = true;
+  bool hell = false;
 };
 static std::vector<Geraet*> geraete;
 // Werte des „Simulators“
@@ -340,6 +341,10 @@ static void bildMalen(bool tauschen = true) {
     glVertex2i(0, 0); glVertex2i(g->p.screenWidth, 0); glVertex2i(g->p.screenWidth, g->p.screenHeight); glVertex2i(0, g->p.screenHeight);
     glEnd();
     if (g->p.drawCallback) g->p.drawCallback(g->p.refcon);
+    if (g->p.brightnessCallback && !g->hell) {
+      g->hell = true;
+      fprintf(stderr, "[attrappe] %s Helligkeit %.2f\n", g->id.c_str(), g->p.brightnessCallback(0, 0.8f, 0, g->p.refcon));
+    }
   }
   glViewport(0, 0, SW, SH);
   glFinish();

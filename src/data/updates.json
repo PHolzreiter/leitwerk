@@ -1,5 +1,14 @@
 [
  {
+  "version": "0.116.0-beta.41",
+  "datum": "2026-11-11",
+  "titel": "EC135: Bildschirme im Cockpit leuchten",
+  "punkte": [
+   "MFD, Klapp-Tablet und Funkgerät waren dunkel – behoben",
+   "Funkgerät läuft mit Batterie oder Avionik"
+  ]
+ },
+ {
   "version": "0.116.0-beta.40",
   "datum": "2026-11-11",
   "titel": "X-Plane: LeitWerk im EC135-Cockpit",
