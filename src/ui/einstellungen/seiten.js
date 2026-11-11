@@ -459,7 +459,7 @@ export class SeitenBasis {
         { id: 'pilot', label: 'Pilot & Flugsimulator', info: 'MSFS, Tablet, Handy, Tasten', kw: 'pilot hubschrauber msfs flugsimulator community tablet h145 gtn750 flugplan handy joystick statustasten globale tastenkürzel wetter', rows: [
           H('Flugsimulator'),
           B('Flugsimulator', [{ l: 'Community-Ordner wählen …', ok: 'LeitWerk-Add-on eingetragen' }], 'Für Position, Status und Tablet – einmal einrichten', { chip: 'MSFS 2024 · wartet', dot: grau }),
-          S('Wetter im Flugsimulator', 'simwx', ['Wie LeitWerk', 'Selbst'], 'Wie LeitWerk', 'Wie LeitWerk: im MSFS „Live-Wetter“ einschalten'),
+          S('Wetter im Flugsimulator', 'simwx', ['Wie LeitWerk', 'Selbst'], 'Wie LeitWerk', 'Wie LeitWerk: MSFS und X-Plane übernehmen Wetter und Uhrzeit von LeitWerk'),
           T('Flugplan für das GTN750', 'gtn', true, 'Route zum Einsatzort bzw. Krankenhaus zum Importieren im GTN'),
           B('H145-Tablet', [{ l: 'Neu eintragen', ok: 'Eingetragen – wirkt nach dem nächsten MSFS-Start' }], 'Alarm, Route und Patient in der Missions-App des Tablets', { chip: 'eingetragen', dot: ok }),
           H('Alarmtöne'),

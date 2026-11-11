@@ -352,10 +352,9 @@ export function wetterDialog(): void {
           : wahl === "selbst"
           ? `<p>Du stellst das Wetter im MSFS selbst ein. Achtung: Ob die Leitstelle dich wegen Wetter nicht alarmieren kann, richtet sich weiter nach dem Wetter in LeitWerk.</p>`
           : echt
-            ? `<p>LeitWerk nutzt <b>echtes Wetter</b>. Im MSFS: <b>Wetter → Live-Wetter</b> einschalten.</p><p class="plt-leise">Beide holen das Wetter aus verschiedenen Quellen – meist ähnlich, aber z. B. die Wolkenuntergrenze kann abweichen.</p>`
-            : `<p>LeitWerk würfelt das Wetter. Im MSFS: <b>Wetter → Voreinstellung</b> wählen:</p>
-               <div class="plt-wetter-tipp">${esc(msfsVorgabe(w.lage))}</div>
-               <p class="plt-leise">Wind im MSFS etwa ${Math.round(w.wind / 1.852)} kt aus ${Math.round(w.richtung)}°. Ändert sich das Wetter in LeitWerk, steht es oben im Interface – dann hier nachsehen.</p>`
+            ? `<p>LeitWerk nutzt <b>echtes Wetter</b> – die LeitWerk-App im EFB schaltet im MSFS <b>Live-Wetter</b> ein.</p><p class="plt-leise">Beide holen das Wetter aus verschiedenen Quellen – meist ähnlich, aber z. B. die Wolkenuntergrenze kann abweichen.</p>`
+            : `<p>LeitWerk stellt sein Wetter im MSFS <b>selbst ein</b> (Wolken, Sicht, Wind, Niederschlag, Temperatur, Luftdruck) – über die LeitWerk-App im EFB-Tablet, ohne dass du sie öffnen musst. Ändert sich das Wetter in LeitWerk, zieht MSFS nach.</p>
+               <p class="plt-leise">Falls es nicht klappt, im MSFS unter Wetter → Voreinstellung von Hand wählen: ${esc(msfsVorgabe(w.lage))}, Wind etwa ${Math.round(w.wind / 1.852)} kt aus ${Math.round(w.richtung)}°.</p>`
       }`;
     body.querySelectorAll<HTMLButtonElement>("[data-w]").forEach((b) =>
       b.addEventListener("click", () => {

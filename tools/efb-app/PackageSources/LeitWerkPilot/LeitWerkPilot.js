@@ -20,7 +20,7 @@
 
   var APP_NAME = 'LeitWerk';
   var INTERNAL_NAME = 'LeitWerkPilot';
-  var VERSION = '0.2.0';
+  var VERSION = '0.2.1';
   var PORTS = [47900, 47901, 47902, 47903, 47904, 47905];
   var SUCHEN_MS = 2500;
 
@@ -320,6 +320,7 @@
       else if (art === 'hoehe') v = /f(ee)?t|foot/.test(u) ? wert * 3.28084 : wert;
       else if (art === 'tempo') v = /km/.test(u) ? wert * 1.852 : /m\/s|mps|meter/.test(u) ? wert * 0.514444 : /mph/.test(u) ? wert * 1.150779 : wert;
       else if (art === 'schnee') v = /cm/.test(u) ? wert * 100 : /in/.test(u) ? wert * 39.37 : wert;
+      else if (art === 'zahl' && u === '%') v = wert * 100; // Anteile 0–1 → Prozent (Bedeckung, Gewitter)
       if (typeof dv.clamp_min === 'number' && v < dv.clamp_min) v = dv.clamp_min;
       if (typeof dv.clamp_max === 'number' && dv.clamp_max > dv.clamp_min && v > dv.clamp_max) v = dv.clamp_max;
       dv.value = v;
