@@ -390,7 +390,7 @@ export function einsatzFenster(ctx: PanelKontext): { el: HTMLElement; dispose():
         const kind = !drin && fz.einsatzId ? sim.einsatz(fz.einsatzId) : undefined;
         const beiPatient = kind?.gsKind?.parent === e.id ? ` (Patient ${kind.gsKind.nr})` : "";
         const wo = drin && gs ? (fz.phase === "wartetBR" ? " · im BR" : gs.ziel[fz.id] === "br" && fz.phase !== "vorOrt" ? " · zum BR" : "") : "";
-        const unterwegs = fz.phase === "ausruecken" || fz.phase === "anfahrt" || fz.phase === "routing";
+        const unterwegs = fz.phase === "ausruecken" || fz.phase === "anfahrt" || fz.phase === "routing" || fz.phase === "suche";
         const eta = drin ? etaText(fz) : { text: beiPatient ? "bei Patient" : "frei", sort: 98 };
         return {
           id: fz.id,
@@ -520,7 +520,7 @@ export function einsatzFenster(ctx: PanelKontext): { el: HTMLElement; dispose():
         case "storno": {
           const fz = sim.state.fahrzeuge[arg[0] as string];
           if (!fz) return false;
-          const unterwegs = fz.phase === "ausruecken" || fz.phase === "anfahrt" || fz.phase === "routing";
+          const unterwegs = fz.phase === "ausruecken" || fz.phase === "anfahrt" || fz.phase === "routing" || fz.phase === "suche";
           await sim.call(unterwegs ? "storno" : "entlasse", fz.id);
           return true;
         }

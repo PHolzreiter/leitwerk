@@ -5223,6 +5223,26 @@ export class Simulation {
     this.funkUhrAn();
   }
 
+  /**
+   * Die Leitstelle (Knopf, nicht gesprochen) hat dem Piloten etwas durchzusagen: „C2 von LEO, kommen“ – meldet er sich,
+   * kommt die Durchsage. Ohne Antwort nach drei Rufen bleibt es beim Eintrag im Einsatz (die Durchsage gilt trotzdem).
+   */
+  private leoRuftPilot(heli: SimFahrzeug, e: Einsatz | null, text: string): void {
+    const offen = this.state.funkGespraeche?.find((g) => g.mensch && g.status !== "ende" && g.fzId === heli.id && !g.an);
+    const g = offen ?? this.neuesGespraech(heli, e, "mensch");
+    g.mensch = true;
+    g.an = null;
+    g.fuehrer = { ...this.calltaker() };
+    const kv = this.kanalVon(e);
+    if (kv) g.kanal = kv;
+    else delete g.kanal;
+    g.rtwWill = { text, versuche: 1 };
+    g.ablauf = [{ von: "LEO", text: `${this.rufname(heli)} von LEO, kommen` }];
+    g.echtNaechster = Date.now();
+    g.echtLetzt = Date.now();
+    this.funkUhrAn();
+  }
+
   /** Warum die Besatzung den Notarzt storniert (aus der Lage, nicht fest „stabil“) */
   private stornoGrund(e: Einsatz): string {
     const p = e.wahr.lage?.patienten[0];
@@ -6940,7 +6960,7 @@ export class Simulation {
         if (g.ausstehend && jetzt >= g.ausstehend.bis) {
           this.ausstehendSprechen(g, g.ausstehend.fest, "fest");
           geaendert = true;
-        } else if (!g.ausstehend && g.ablauf?.length && g.echtNaechster != null && jetzt >= g.echtNaechster) {
+        } else if (!g.ausstehend && g.ablauf?.length && g.echtNaechster != null && jetzt >= g.echtNaechster && !(this.state.funkSendet && (this.state.funkSendet.gruppe ?? null) === (g.kanal ?? null) && this.state.funkSendet.gId !== g.id)) {
           // Pilot ↔ RTW: der RTW meldet sich („Hier 75/001, kommen“)
           const s = g.ablauf.shift()!;
           this.spruch(g, s.von, s.text);
@@ -6950,7 +6970,19 @@ export class Simulation {
           // das Bodenfahrzeug ruft den Piloten, der antwortet nicht: nochmal rufen, nach dem dritten Mal über die Leitstelle
           const rtw = g.an ? this.state.fahrzeuge[g.an.fzId] : undefined;
           const heli = this.state.fahrzeuge[g.fzId];
-          if (!rtw || !heli) this.funkSchliessen(g);
+          if (!g.an && heli) {
+            // LEO ruft den Piloten
+            if (g.rtwWill.versuche < 3) {
+              g.rtwWill.versuche++;
+              g.ablauf = [{ von: "LEO", text: `${this.rufname(heli)} von LEO, kommen` }];
+              g.echtNaechster = jetzt;
+            } else {
+              const e = g.einsatzId ? this.einsatz(g.einsatzId) : undefined;
+              g.rtwWill = null;
+              this.funkSchliessen(g);
+              if (e) this.log(e, `${this.rufname(heli)} über Funk nicht erreicht (Durchsage nur digital)`);
+            }
+          } else if (!rtw || !heli) this.funkSchliessen(g);
           else if (g.rtwWill.versuche < 3) {
             g.rtwWill.versuche++;
             g.ablauf = [{ von: this.rufname(rtw), text: `${this.rufname(heli)} von ${this.rufname(rtw)}, kommen` }];
@@ -7492,6 +7524,15 @@ export class Simulation {
     this.spruch(g, von, t, ich.name);
     g.sprueche[g.sprueche.length - 1].stimme = true;
     if (g.status === "ende") return this.emit();
+    if (!g.an && g.rtwWill && !/\b(ende)\W*$/i.test(t)) {
+      // LEO hat den Piloten gerufen: er meldet sich – jetzt die Durchsage
+      const w = g.rtwWill;
+      g.rtwWill = null;
+      g.ablauf = [{ von: "LEO", text: w.text }];
+      g.echtNaechster = Date.now() + 1500;
+      g.echtLetzt = Date.now();
+      return this.emit();
+    }
     if (g.an) this.nahRtwHoert(g, t);
     else if (/\b(verstanden|ende|danke)\W*$/i.test(t)) this.funkSchliessen(g);
     this.emit();
@@ -7527,7 +7568,9 @@ export class Simulation {
       if (sonst) return this.menschGespraech(heli.id, sonst.id) ?? neu(sonst);
     }
     // ohne Rufnamen: das zuletzt laufende Gespräch des Piloten
-    const zuletzt = (this.state.funkGespraeche ?? []).filter((g) => g.mensch && g.status !== "ende" && g.fzId === heli.id).sort((a, b) => (b.echtLetzt ?? 0) - (a.echtLetzt ?? 0))[0];
+    const zuletzt = (this.state.funkGespraeche ?? [])
+      .filter((g) => g.mensch && g.status !== "ende" && g.fzId === heli.id)
+      .sort((a, b) => Number(!!b.rtwWill) - Number(!!a.rtwWill) || (b.echtLetzt ?? 0) - (a.echtLetzt ?? 0))[0];
     return zuletzt ?? this.menschGespraech(heli.id, null) ?? neu();
   }
 
@@ -7706,8 +7749,15 @@ export class Simulation {
     if (!fz?.einsatzId) return;
     const e = this.einsatz(fz.einsatzId) ?? null;
     if (e) this.log(e, `Storno an ${fz.funkrufname}`);
-    const offen = this.leoGespraech(fz.id);
     const durchsage = `Hier LEO, Storno für euren Einsatz${e ? ` ${e.nummer}` : ""}, kommen`;
+    // Hubschrauber eines Piloten: LEO ruft ihn, die Durchsage kommt erst, wenn er sich meldet (antworten muss er selbst)
+    if (fz.pilot) {
+      this.leoRuftPilot(fz, e, durchsage);
+      this.freigeben(fz);
+      this.emit();
+      return;
+    }
+    const offen = this.leoGespraech(fz.id);
     if (offen && offen.status === "offen" && !offen.ausstehend) {
       this.spruch(offen, "LEO", durchsage, this.calltaker().name);
       offen.leoRuf = { text: "", nachricht: durchsage };

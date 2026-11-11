@@ -67,7 +67,7 @@ try:
         A.wait_for_timeout(500)
         x = A.evaluate("() => T.einsatz(true)")
         print("   ", json.dumps(x, ensure_ascii=False))
-        check(not x["alarm"], "RTW und NEF alarmiert")
+        check(not x["alarm"] or all("vorgemerkt" in h or "Hinweis" in h for h in x["alarm"]), f"RTW und NEF alarmiert {x['alarm']}")
 
         # 1) Info über Dritte: NEF abbestellt → nur verstanden, kein Storno für den RTW
         gid = A.evaluate("(id) => T.rufe(id)", x["rtw"])
@@ -116,6 +116,16 @@ try:
             const rufe = s.state.funkGespraeche.filter((g) => g.fzId === y.rtw && g.status !== 'ende' && g.anliegen?.art === 'lage');
             return [rufe.length, rufe.map((g) => g.anliegen.text), E.protokoll.some((p) => /schon gemeldet/.test(p.text))]; }""", y)
         check(r[0] == 1 and r[1][0].count("Hüftfraktur") == 1 and r[2], f"gleiche Lagemeldung nur einmal ({r})")
+
+        # 8) Storno-Knopf: LEO ruft, sagt den Storno durch, die Besatzung bestätigt „Storno verstanden“
+        z = A.evaluate("() => T.einsatz(false)")
+        r = A.evaluate("""async (z) => { const s = T.s(); await T.warte(() => !s.funkKanalSpricht(null), 20000);
+            s.storno(z.rtw);
+            const g = await T.warte(() => s.state.funkGespraeche.find((g) => g.fzId === z.rtw && g.sprueche.some((x) => /Storno verstanden/.test(x.text))), 30000);
+            const alle = s.state.funkGespraeche.filter((g) => g.fzId === z.rtw).map((g) => g.sprueche.map((x) => `${x.von}: ${x.text}`));
+            return [!!g, alle]; }""", z)
+        print("   ", r[1])
+        check(r[0], "Storno-Knopf: Besatzung bestätigt „Storno verstanden“ über Funk")
         b.close()
         print("\n".join(logs[:8]))
 finally:

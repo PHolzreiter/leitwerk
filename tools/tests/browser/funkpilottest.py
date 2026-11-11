@@ -86,6 +86,26 @@ try:
             const f = s.funkErzeuger(s.einsatz(x.e)); const d = s.disponentenOnline().map((b) => b.name);
             s.mode = altMode; s.onlineSpieler = null; return [f.name, d]; }""", x)
         check(r[0] == "Anna" and r[1] == ["Anna"], f"Funk formuliert der Disponent, nicht der Pilot ({r})")
+        # 5) Storno-Knopf für den Pilot-Hubschrauber: LEO ruft ihn, die Durchsage kommt erst nach seiner Antwort
+        z = A.evaluate("() => T.einsatz()")
+        r = A.evaluate("""async (z) => { const s = T.s(); const h = s.state.fahrzeuge[x0.heli]; return null; }""".replace("x0.heli", "'" + x["heli"] + "'"), z)
+        r = A.evaluate("""async ([z, heli, name]) => { const s = T.s();
+            s.alarmiere(z.e, [heli]);
+            await T.warte(() => !s.funkKanalSpricht(null), 20000);
+            s.storno(heli);
+            await T.schlaf(1500);
+            const vorher = s.state.funkGespraeche.filter((g) => g.fzId === heli && g.status !== 'ende').map((g) => [g.status, g.sprueche.map((x) => `${x.von}: ${x.text}`)]);
+            await T.warte(() => !s.funkKanalSpricht(null), 20000);
+            s.funkMensch(true, 'leo', undefined, 'p5'); s.funkMensch(false, 'leo', undefined, 'p5');
+            s.funkMenschText(null, `Hier ${name}, kommen`);
+            await T.schlaf(2500);
+            const nachher = s.state.funkGespraeche.filter((g) => g.fzId === heli).map((g) => [g.status, g.sprueche.map((x) => `${x.von}: ${x.text}`)]);
+            return [vorher, nachher, s.state.fahrzeuge[heli].einsatzId]; }""", [z, x["heli"], x["heliName"]])
+        print("   vorher:", r[0]); print("   nachher:", r[1])
+        alle = [t for g in r[1] for t in g[1]]
+        check(any("von LEO" in t for t in alle), "LEO ruft den Pilot-Hubschrauber")
+        check(any("Storno" in t and t.startswith("LEO") for t in alle), "Storno-Durchsage an den Piloten")
+        check(not any(t.startswith(x["heliName"] + ":") and "Storno verstanden" in t for t in alle), "kein „Storno verstanden“ vom Computer im Namen des Piloten")
         b.close(); print("\n".join(logs[:8]))
 finally:
     srv.terminate()
