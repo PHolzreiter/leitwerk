@@ -39,6 +39,13 @@ FAELLE = [
     ("Hier LEO, das NEF kommt zu euch, kommen", "info", "naKommt", 0.2),
     ("Hier LEO, wie ist eure Lage?", "lageAnfordern", None, 1),
     ("funkcheck, wie hört ihr mich?", "frage", "funkcheck", 1),
+    # echte Ausgaben der Spracherkennung (Messung 12.11.2026)
+    ("Hier LEO, das NEF Cremes ist, abbestellt. Ihr fahrt alleine weiter, kommen.", "info", "dritteStorno", 1),
+    ("Hier LEO, Christoph Horus 2 ist zu euch unterwegs, Eintreffzeit, 8 Minuten, kommen.", "info", "naKommt", 1),
+    ("Hier LEO, Zielkrankenhaus ist das Universitätsklinikum Krems. Schockraum ist voranmeldet, kommen.", "info", "ziel", 1),
+    ("Hier LEO, warte bitte vor Ort auf den Notarzt, kommen.", "info", "warten", 1),
+    ("Hier LEO, gerade wo mit dem NEF Tulln in Sankt Pölten, kommen.", "info", None, 1),
+    ("Hier LEO, Storno für euch, das NEF Krems fährt weiter, kommen", "storno", None, 1),
 ]
 try:
     with sync_playwright() as p:

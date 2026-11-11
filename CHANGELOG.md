@@ -1,5 +1,31 @@
 # Änderungen
 
+## 0.116.0-beta.42 – Funk: Umbau für Leitstelle und Pilot
+- **Besatzungen verstehen, was LEO will:** auf eine Frage kommt genau diese Antwort, auf eine Information („das NEF ist zu euch alarmiert“) ein „verstanden“, ein Auftrag (Storno, Lagemeldung, Folgeeinsatz) wird ausgeführt. Unverständliches beantworten sie mit „bitte wiederholen“ statt mit einer Lagemeldung
+  - „Das NEF ist abbestellt“ an den RTW ist eine Information über das NEF, kein Storno für den RTW
+  - Dieselbe Lagemeldung kommt nur einmal; fragt LEO nochmal nach: „Lage unverändert“
+  - Freie Antworten der KI beantworten nur die gestellte Frage
+- **Notarzt:** der RTW wartet auf einen alarmierten oder angekündigten Notarzt (höchstens 25 Minuten, ohne Alarmierung 8 Minuten) und meldet das über Funk – erst danach „fahren ohne Notarzt los“. Ein roter Patient braucht einen Notarzt (kein Storno mehr mit „Patient stabil“), der Storno-Grund kommt aus der Lage
+- **Spracherkennung:**
+  - Windows: rechnet auf der Grafikkarte (NVIDIA, AMD, Intel) und dort gründlicher; ohne passende Grafikkarte wie bisher auf dem Prozessor. Stürzt der Grafiktreiber dabei ab, nimmt LeitWerk ab dem nächsten Start den Prozessor
+  - Neuer Hinweis an die Erkennung: ein kurzes Beispiel-Funkgespräch mit den Rufnamen, Orten und Krankenhäusern der laufenden Einsätze – statt langer Rufnamenlisten und früherer Funksprüche (daraus wurde z. B. „abbestellt“ statt „alarmiert“)
+  - Leise Aufnahmen werden angehoben, sauberes Umrechnen der Aufnahme, Sätze, die die Erkennung bei Rauschen erfindet, werden verworfen
+  - **„Mikrofon testen“ funktioniert:** 4 Sekunden sprechen, dann zeigt LeitWerk den erkannten Text, wie sicher, wie schnell und ob die Grafikkarte rechnet (Einstellungen und Pilotenansicht)
+- **Sprechfunk bricht nicht mehr ab:** Funk, Spracheingabe und Freisprechen haben jeweils eigene Aufnahmen und beenden sich nicht mehr gegenseitig; die Mikrofon-Sicherung schließt nur noch vergessene Aufnahmen. Kommt vom Mikrofon nichts mehr an, endet die Sendung mit Hinweis
+  - Angefunkt und die Taste der Spracheingabe gedrückt: geht jetzt in den Funk (statt „kein Gespräch“)
+- **Pilot:**
+  - Niemand spricht mehr für den Spieler-Hubschrauber: der RTW ruft den Piloten und sagt den Storno erst, wenn er sich meldet – ohne Antwort nach drei Rufen bittet er LEO, es weiterzugeben
+  - Sendet ein Pilot oder wartet er auf LEO, ruft kein Computer-Fahrzeug dazwischen; „Hier LEO, kommen“ geht an den Piloten, der gerufen hat
+  - Storno-Knopf für einen Pilot-Hubschrauber: LEO ruft ihn, die Durchsage kommt nach seiner Antwort
+  - Mehrspieler: der Pilot hört die Computer-Fahrzeuge auch ohne eigene Stimmen (die Stimme kommt vom Rechner der Leitstelle)
+  - Sprechtaste am Handy, in X-Plane und am TETRA der EC135: reißt die Verbindung ab, lässt LeitWerk die Taste nach 2,5 s los (X-Plane-Plugin 0.2.2)
+  - Hinweis, wenn der Pilot auf RD-NOE-09/10 spricht, ohne dass dort ein Großeinsatz läuft
+- **Rollenwechsel** (Disponent wird Pilot): seine Funkgespräche übernimmt ein anderer Disponent, die Sätze der Computer-Fahrzeuge formuliert nie ein Pilot, und die Funkpause beim Telefonieren zählt nur Disponenten
+- **Storno-Knopf:** die Besatzung bestätigt „Storno verstanden“ über Funk – jetzt auch während der Suche am Einsatzort
+- **Drei Lautstärke-Regler:** Funkempfang Mitspieler, Funkempfang KI und Funksenden (wie laut du bei den anderen ankommst) – im Hauptmenü, in der Leitstelle und beim Piloten
+- **Freisprechen:** Tippen, Atmen und Rascheln gehen nicht mehr an den Anrufer – er bricht nicht mehr mitten im Satz ab; er reagiert nur auf deutliche Sprache. Lange Anrufe belegen keinen Speicher mehr
+- **Laufendes Protokoll:** je Sitzung eine Datei im Datenordner (Funkverkehr mit erkanntem Text und Sicherheit, wer sendet, Spieler und Rollen, Einsatz-Ereignisse, Statusmeldungen, Warnungen). „Fehler melden“ hängt sie an, dazu Spieler, letzte Statusmeldungen und alle Funkgespräche; die neuesten acht Einsätze kommen vollständig mit
+
 ## 0.116.0-beta.41 – EC135: Bildschirme im Cockpit leuchten
 - **Fehler behoben:** MFD, Klapp-Tablet und TETRA-Funkgerät blieben in der EC135 dunkel. X-Plane rechnet die Helligkeit sonst aus Regler und Bordspannung – die EC135 von Rotorsim hat ein eigenes Bordnetz, dort blieb das 0. Jetzt gibt das Plugin die Helligkeit selbst vor (nach Umgebungslicht, nie ganz dunkel)
 - Funkgerät bekommt Strom, sobald Batterie oder Avionik an ist (vorher nur über die X-Plane-Spannung)

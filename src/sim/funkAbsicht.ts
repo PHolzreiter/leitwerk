@@ -25,8 +25,9 @@ export type Absicht =
 
 /** Fahrzeuge, die im Spruch als Dritte vorkommen können (nicht der Angesprochene) */
 const DRITTE =
-  /\b(nef|notarzt(?:wagen|einsatzfahrzeug)?|na\b|nah\b|naw\b|hubschrauber|christophorus|c\s?\d{1,2}\b|ith\b|rtw(?:-c)?\b|ktw\b|bel\b|einsatzleit\w*|feuerwehr|polizei|bergrettung|wasserrettung|bit\b|\d{2,3}\s?\/\s?\d{1,3}\b)/i;
-const FRAGEWORT = /(^|[\s,])(wie|was|wo|wohin|woher|wann|welche[rsmn]?|wieviel\w*|wie ?viele|warum|wieso|gibt es|habt ihr|hast du|seid ihr|bist du|braucht ihr|brauchts|benötigt ihr|könnt ihr|kannst du|ist der|ist die|ist das|fährt der|fahrt ihr|kommt der|wer)\b/i;
+  /\b(nef|notarzt(?:wagen|einsatzfahrzeug)?|na\b|nah\b|naw\b|hubschrauber|christoph\w*(?:\s?horus)?|c\s?\d{1,2}\b|ith\b|rtw(?:-c)?\b|ktw\b|bel\b|einsatzleit\w*|feuerwehr|polizei|bergrettung|wasserrettung|bit\b|\d{2,3}\s?\/\s?\d{1,3}\b)/i;
+/** Frage: ein Teilsatz beginnt mit einem Fragewort bzw. mit dem Zeitwort („habt ihr …“, „ist der …“) */
+const FRAGEWORT = /(^|[,;.]\s*|\b(und|oder|frage|bitte)\s+)(wie|was|wo|wohin|woher|wann|welche[rsmn]?|wieviel\w*|wie ?viele|warum|wieso|gibt es|habt ihr|hast du|seid ihr|bist du|braucht ihr|brauchts|benötigt ihr|könnt ihr|kannst du|ist der|ist die|ist das|fährt der|fahrt ihr|kommt der|wer)\b/i;
 const QUITTUNG = /^(hier leo,?\s*)?(verstanden|danke|passt|ok(ay)?|alles klar|gut|jawohl|roger|in ordnung|so verstanden|ist gut)\W*(kommen)?\W*$/i;
 
 /** Rufnamen und „Hier LEO“ vom Anfang entfernen: „56/006 von LEO, …“, „Hier LEO, …“ */
@@ -70,11 +71,16 @@ export function absichtErkennen(text: string, opt: { sicherheit?: number; angesp
   const angesprochen = (opt.angesprochen ?? []).map((x) => x.toLowerCase());
   const m = inhalt.match(DRITTE);
   const dritter = m && !angesprochen.some((a) => a && m[0].replace(/\s/g, "").includes(a.replace(/\s/g, "")) ) ? m[0] : undefined;
-  const frage = /\?/.test(roh) || FRAGEWORT.test(` ${inhalt}`);
+  const frage = /\?/.test(roh) || FRAGEWORT.test(inhalt);
 
   // Storno: nur wenn es dem angesprochenen Fahrzeug gilt – „Storno für das NEF“ an den RTW ist eine Information
-  if (/\b(storno|storniert|abbestellt|abbestell\w*|nicht mehr benötigt|nicht mehr erforderlich|abbrechen|brecht ab|einrücken|rückt ein|rücken ein)\b/.test(inhalt)) {
-    if (dritter && !/\beuch\b|\beuren?\b|\bihr\b/.test(inhalt)) return { art: "info", thema: "dritteStorno", wer: dritter };
+  const STORNO = /\b(storno|storniert|abbestellt|abbestell\w*|nicht mehr benötigt|nicht mehr erforderlich|abbrechen|brecht ab|einrücken|rückt ein|rücken ein)\b/;
+  if (STORNO.test(inhalt)) {
+    // der Satz mit dem Storno: nennt er ein anderes Fahrzeug und nicht „euch“, gilt er dem anderen
+    const satz = inhalt.split(/[.;!?]\s*/).find((x) => STORNO.test(x)) ?? inhalt;
+    const dritterImSatz = satz.match(DRITTE)?.[0];
+    const fuerDritten = !!dritterImSatz && !angesprochen.some((a) => a && dritterImSatz.replace(/\s/g, "").includes(a.replace(/\s/g, "")));
+    if (fuerDritten && !/\beuch\b|\beuren?\b|\bihr\b/.test(satz)) return { art: "info", thema: "dritteStorno", wer: dritterImSatz };
     if (!frage) return { art: "storno" };
   }
   if (/\blagemeldung\b|wie (ist|schaut|sieht) (eure|die|es mit der) lage|\blage\W*$|\blage\b.*\b(durchgeben|melden|bitte)\b|gebt? mir (eine|die) lage/.test(inhalt)) return { art: "lageAnfordern" };
@@ -96,13 +102,13 @@ export function absichtErkennen(text: string, opt: { sicherheit?: number; angesp
 
   // Informationen
   if (dritter && /\b(alarmiert|nachalarmiert|unterwegs|kommt|kommen zu euch|zu euch|geschickt|schicke|losgeschickt|eintreffzeit|eintreffen|ist auf dem weg|fliegt|startet)\b/.test(inhalt)) {
-    const na = /\b(nef|notarzt|na\b|nah\b|naw\b|hubschrauber|christophorus|c\s?\d{1,2})\b/i.test(dritter);
+    const na = /\b(nef|notarzt|na\b|nah\b|naw\b|hubschrauber|christoph\w*|c\s?\d{1,2})\b/i.test(dritter);
     return { art: "info", thema: na ? "naKommt" : "kraefteKommen", wer: dritter };
   }
   if (/(feuerwehr|polizei|bergrettung|wasserrettung).*(vor ort|kommt|unterwegs|alarmiert|angefordert|verständigt)/.test(inhalt)) return { art: "info", thema: "partner" };
   if (/einsatz .*(code|adresse|einsatzort)|neuer einsatz|einsatzauftrag|übernehmt|übernehmen sie|folgeeinsatz|nächster einsatz|anschlusseinsatz/.test(inhalt)) return { art: "einsatz" };
   if (/zielkrankenhaus|zielklinik|(fahrt|fährt|kommt|geht|fliegt) ins|ins (uk|lk|kh|krankenhaus|klinikum|spital)|bringt (ihn|sie|den patienten)|nehmt|transport (ins|nach)/.test(inhalt)) return { art: "info", thema: "ziel" };
-  if (/\b(wartet|warten sie|bleibt (vor ort|dort)|bleiben sie)\b/.test(inhalt)) return { art: "info", thema: "warten" };
+  if (/\b(wartet|warte|warten sie|bleibt (vor ort|dort)|bleiben sie)\b/.test(inhalt)) return { art: "info", thema: "warten" };
   if (/zusatzinfo|zur info|beachtet|achtung|hinweis|information|stock|stiege|türcode|\bcode\b|schlüssel|zufahrt|eingang|hund|aufzug|lift/.test(inhalt)) return { art: "info", thema: "zusatz" };
   // kurze Bestätigungen mit Rufnamen („Hier LEO, alles klar“)
   if (QUITTUNG.test(inhalt)) return { art: "quittung" };

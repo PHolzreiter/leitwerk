@@ -1,5 +1,18 @@
 [
  {
+  "version": "0.116.0-beta.42",
+  "datum": "2026-11-12",
+  "titel": "Funk: Umbau für Leitstelle und Pilot",
+  "punkte": [
+   "Besatzungen beantworten genau die Frage – Unverständliches: „bitte wiederholen“ statt Lagemeldung",
+   "RTW wartet auf den alarmierten Notarzt, roter Patient = Notarzt",
+   "Spracherkennung unter Windows auf der Grafikkarte, neuer Hinweis, „Mikrofon testen“ geht",
+   "Sprechfunk bricht nicht mehr ab; niemand spricht für den Spieler-Hubschrauber",
+   "Drei Lautstärke-Regler für den Funk, Freisprechen ohne Selbst-Unterbrechen",
+   "Laufendes Protokoll je Sitzung, im Fehlerbericht dabei"
+  ]
+ },
+ {
   "version": "0.116.0-beta.41",
   "datum": "2026-11-11",
   "titel": "EC135: Bildschirme im Cockpit leuchten",
