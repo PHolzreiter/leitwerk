@@ -1,0 +1,13 @@
+shell cp $TEST/stand-buchen.json $STAND
+shell python3 $TEST/leitwerk_attrappe.py $STAND $AUS/befehle.log 47900 >/dev/null 2>&1 &
+vr 1
+befehl leitwerk/tablet
+warte 3
+befehl leitwerk/zielort
+warte 0.5
+ziehen 230 600 0 -250
+warte 0.4
+bild 50-vr-buchen.png
+menue 3
+warte 0.5
+bild 51-vr-150.png

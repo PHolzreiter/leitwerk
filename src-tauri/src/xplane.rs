@@ -493,3 +493,94 @@ mod tests {
         assert_eq!(kodieren("sim/a_b"), "sim%2Fa_b");
     }
 }
+
+// ------------------------------------------------------------------ Plugin „LeitWerk“ (Tablet in X-Plane, auch in VR)
+
+/// Das Plugin für dieses Betriebssystem (leer, wenn es beim Bauen nicht dabei war)
+const PLUGIN: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/LeitWerk.xpl"));
+const PLUGIN_VERSION: &str = env!("LEITWERK_XP_PLUGIN_VERSION");
+
+#[cfg(target_os = "windows")]
+const PLUGIN_ORDNER: &str = "win_x64";
+#[cfg(target_os = "macos")]
+const PLUGIN_ORDNER: &str = "mac_x64";
+#[cfg(not(any(target_os = "windows", target_os = "macos")))]
+const PLUGIN_ORDNER: &str = "lin_x64";
+
+#[derive(serde::Serialize, Default)]
+pub struct PluginStand {
+    /// X-Plane-Ordner (None = nicht gefunden)
+    ordner: Option<String>,
+    /// Plugin liegt in X-Plane (aktuelle Version)
+    aktuell: bool,
+    /// gerade eingebaut oder erneuert
+    neu: bool,
+    /// X-Plane lief dabei (alte Datei war belegt) – wirkt nach dem nächsten Start
+    neustart: bool,
+    /// In LeitWerk mitgeliefert (sonst kann es nicht eingebaut werden)
+    mitgeliefert: bool,
+    version: String,
+    fehler: Option<String>,
+}
+
+/// Plugin prüfen und (wenn `einbauen`) einbauen bzw. erneuern: X-Plane 12/Resources/plugins/LeitWerk
+/// mit <plattform>/LeitWerk.xpl und schrift/inter-*.ttf. Entfernen mit `entfernen`.
+#[tauri::command]
+pub fn xplane_plugin(einbauen: bool, entfernen: Option<bool>) -> PluginStand {
+    let mut st = PluginStand { mitgeliefert: !PLUGIN.is_empty(), version: PLUGIN_VERSION.into(), ..Default::default() };
+    let Some(x) = xplane_ordner() else { return st };
+    st.ordner = Some(x.display().to_string());
+    let basis = x.join("Resources").join("plugins").join("LeitWerk");
+    let xpl = basis.join(PLUGIN_ORDNER).join("LeitWerk.xpl");
+    if entfernen == Some(true) {
+        // Datei kann belegt sein (X-Plane läuft): dann nur umbenennen, X-Plane lädt sie beim nächsten Start nicht mehr
+        if xpl.exists() && std::fs::remove_file(&xpl).is_err() {
+            let _ = std::fs::rename(&xpl, xpl.with_extension("xpl.alt"));
+            st.neustart = true;
+        }
+        let _ = std::fs::remove_dir_all(basis.join("schrift"));
+        return st;
+    }
+    let vorhanden = std::fs::read(&xpl).ok();
+    st.aktuell = !PLUGIN.is_empty() && vorhanden.as_deref() == Some(PLUGIN);
+    if !einbauen || st.aktuell || PLUGIN.is_empty() {
+        return st;
+    }
+    let schreiben = || -> Result<bool, String> {
+        std::fs::create_dir_all(basis.join(PLUGIN_ORDNER)).map_err(|e| e.to_string())?;
+        std::fs::create_dir_all(basis.join("schrift")).map_err(|e| e.to_string())?;
+        for (n, b) in [("inter-400.ttf", crate::handy::SCHRIFT_400), ("inter-600.ttf", crate::handy::SCHRIFT_600), ("inter-700.ttf", crate::handy::SCHRIFT_700)] {
+            let p = basis.join("schrift").join(n);
+            if std::fs::read(&p).ok().as_deref() != Some(b) {
+                std::fs::write(&p, b).map_err(|e| e.to_string())?;
+            }
+        }
+        // alte, umbenannte Dateien aufräumen (gehen nur, wenn X-Plane sie nicht mehr geladen hat)
+        if let Ok(rd) = std::fs::read_dir(basis.join(PLUGIN_ORDNER)) {
+            for e in rd.flatten() {
+                if e.file_name().to_string_lossy().contains(".alt") {
+                    let _ = std::fs::remove_file(e.path());
+                }
+            }
+        }
+        let mut belegt = false;
+        if std::fs::write(&xpl, PLUGIN).is_err() {
+            // unter Windows ist die geladene Datei gesperrt, umbenennen geht aber
+            let alt = xpl.with_extension(format!("xpl.alt{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0)));
+            std::fs::rename(&xpl, &alt).map_err(|e| format!("Plugin-Datei belegt ({e}) – bitte X-Plane beenden und erneut versuchen"))?;
+            std::fs::write(&xpl, PLUGIN).map_err(|e| e.to_string())?;
+            belegt = true;
+        }
+        let _ = std::fs::write(basis.join("version.txt"), PLUGIN_VERSION);
+        Ok(belegt)
+    };
+    match schreiben() {
+        Ok(belegt) => {
+            st.aktuell = true;
+            st.neu = true;
+            st.neustart = belegt;
+        }
+        Err(e) => st.fehler = Some(format!("X-Plane-Plugin: {e}")),
+    }
+    st
+}

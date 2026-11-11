@@ -28,3 +28,8 @@ falltest-ergebnisse/
 tools/tests/web/
 tools/tests/arbeit/
 tools/tests/browser/__pycache__/
+
+# X-Plane-Plugin (baut GitHub Actions, wird ins Programm gelegt)
+src-tauri/xplane-plugin/
+tools/xplane-plugin/build/
+xpbau/

@@ -1,0 +1,19 @@
+shell cp $TEST/stand-buchen.json $STAND
+shell python3 $TEST/leitwerk_attrappe.py $STAND $AUS/befehle.log 47900 >/dev/null 2>&1 &
+befehl leitwerk/tablet
+warte 3
+befehl leitwerk/zielort
+warte 0.4
+klick 230 581
+warte 0.3
+bild 40-krems-gewaehlt.png
+klick 230 702
+klick 300 432
+warte 0.3
+befehl leitwerk/navigation
+warte 0.3
+klick 50 82
+warte 0.3
+klick 340 86
+warte 0.3
+bild 41-patient-oben.png

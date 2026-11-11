@@ -650,6 +650,7 @@ pub fn run() {
             xplane::xplane_schreiben,
             xplane::xplane_suchen,
             xplane::gtn_gfp,
+            xplane::xplane_plugin,
             gtn::gtn_suchen,
             gtn::gtn_schreiben,
             hpg::hpg_starten,

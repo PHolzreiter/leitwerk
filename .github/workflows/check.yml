@@ -26,7 +26,7 @@ jobs:
       - name: Systempakete
         run: |
           sudo apt-get update -q
-          sudo apt-get install -yq libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libasound2-dev
+          sudo apt-get install -yq libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libasound2-dev libgl-dev
       - name: Prüfen
         run: |
           set -o pipefail
@@ -37,6 +37,8 @@ jobs:
           run npm run build || status=1
           run npx tauri icon app-icon.png || status=1
           (cd src-tauri && run cargo check) || status=1
+          run cmake -S tools/xplane-plugin -B xpbau -DCMAKE_BUILD_TYPE=Release || status=1
+          run cmake --build xpbau -j4 || status=1
           run python3 tools/build_default_data.py || status=1
           run python3 tools/build_stufen.py || status=1
           run python3 tools/leitwerk_codesystem.py data/codesystem/leitwerk_codesystem.json || status=1

@@ -1,5 +1,11 @@
 # Änderungen
 
+## 0.116.0-beta.39 – X-Plane: Tablet als Plugin (auch in VR)
+- **Neues X-Plane-Plugin „LeitWerk“:** die Einsatz-App als Fenster in X-Plane 12 – Einsatz, Großschaden-Ablauf, Patient, Zielort buchen (mit Bildschirmtastatur für die Symptom-Suche), Status geben und Navigation mit Karte. Das Fenster geht **auch in VR** (frei im Raum platzierbar), Größe 100/125/150 % unter Plugins › LeitWerk
+- **Tasten in X-Plane:** „LeitWerk: Status 1–9“, Sprechtaste (halten), Tablet zeigen, Zielort buchen, Navigation – auf Joystick oder VR-Controller legbar; Status geben geht so auch, wenn X-Plane vorne ist
+- LeitWerk baut das Plugin selbst in X-Plane 12 ein (Resources/plugins/LeitWerk) und hält es aktuell; Anzeige und Knöpfe in Pilotenansicht › Cockpit („X-Plane: Tablet (Plugin)“). Läuft X-Plane beim Erneuern, wirkt es nach dem nächsten Start
+- Die Karte im Plugin holt LeitWerk (basemap.at), das Plugin spricht nur mit LeitWerk auf demselben PC
+
 ## 0.116.0-beta.38 – X-Plane: sanfter Wetterwechsel, GTN-Flugplan
 - **X-Plane 12:** Wetterwechsel im laufenden Flug ziehen jetzt sanft auf – über die Region-Wetterwerte von X-Plane, die X-Plane selbst über 1–2 Minuten einblendet, dazu kleine Schritte über die Wechseldauer (Spielzeit, wie bei MSFS). Wolken behalten ihre Höhe und blenden über. Beim Beitreten wird das Wetter weiter sofort gesetzt
 - Test: LeitWerk prüft beim Verbinden, welche Region-Werte es gibt, und schreibt das in xplane-wetter-test.json (Datenordner von LeitWerk); fehlen sie, bleibt es beim sofortigen Wechsel

@@ -44,6 +44,8 @@ interface Vorgabe {
   wxUeb?: number;
   /** MSFS: Wolken beim Wechsel über die Bedeckung oder über die Dichte ein-/ausblenden (Test) */
   wxWolken?: "bedeckung" | "dichte";
+  /** X-Plane 12: Plugin „LeitWerk“ (Tablet-Fenster, auch in VR) automatisch einbauen (Standard an) */
+  xpPlugin?: boolean;
 }
 export function vorgabe(): Vorgabe {
   try {
@@ -641,6 +643,65 @@ export function xplaneFlugplanBereitlegen(fz: SimFahrzeug, ziel: { lat: number; 
       xpAbgleich.fmsZiel = "";
       geaendert();
     });
+}
+
+// ------------------------------------------------------------------ X-Plane-Plugin „LeitWerk“ (Tablet, auch in VR)
+
+interface PluginStand {
+  ordner: string | null;
+  aktuell: boolean;
+  neu: boolean;
+  neustart: boolean;
+  mitgeliefert: boolean;
+  version: string;
+  fehler: string | null;
+}
+
+/** Stand des X-Plane-Plugins: eingebaut? und Lebenszeichen aus X-Plane (alle 10 s, „xp:plugin:…“) */
+export const xpPlugin = {
+  stand: null as PluginStand | null,
+  meldung: null as { version: string; vr: boolean; sichtbar: boolean; zeit: number } | null,
+};
+
+/** Plugin in X-Plane prüfen und (wenn eingeschaltet) einbauen bzw. erneuern – still, meldet nur Neues */
+export async function xplanePluginPruefen(einbauen = vorgabe().xpPlugin !== false, laut = false): Promise<void> {
+  if (!inTauri()) return;
+  try {
+    const st = await invoke<PluginStand>("xplane_plugin", { einbauen, entfernen: null });
+    xpPlugin.stand = st;
+    if (st.fehler) toast(st.fehler, "error");
+    else if (st.neu) toast(st.neustart ? "X-Plane: Tablet-Plugin „LeitWerk“ erneuert – wirkt nach dem nächsten Start von X-Plane" : "X-Plane: Tablet-Plugin „LeitWerk“ eingebaut – in X-Plane unter Plugins › LeitWerk");
+    else if (laut && !st.ordner) toast("X-Plane 12 nicht gefunden (x-plane_install_12.txt)", "error");
+    else if (laut && !st.mitgeliefert) toast("In dieser Version ist das X-Plane-Plugin nicht dabei", "error");
+    else if (laut && st.aktuell) toast("X-Plane: Tablet-Plugin ist aktuell");
+  } catch (e) {
+    console.warn("X-Plane-Plugin", e);
+  }
+}
+
+/** Plugin aus X-Plane entfernen (und nicht mehr automatisch einbauen) */
+export async function xplanePluginEntfernen(): Promise<void> {
+  vorgabeSetzen({ xpPlugin: false });
+  if (!inTauri()) return;
+  try {
+    const st = await invoke<PluginStand>("xplane_plugin", { einbauen: false, entfernen: true });
+    xpPlugin.stand = st;
+    toast(st.neustart ? "X-Plane: Tablet-Plugin entfernt – ab dem nächsten Start von X-Plane" : "X-Plane: Tablet-Plugin entfernt");
+  } catch (e) {
+    toast(`X-Plane-Plugin: ${String((e as Error)?.message ?? e)}`, "error");
+  }
+}
+
+/** Lebenszeichen des Plugins: „xp:plugin:<version>:<vr|2d>:<an|aus>“ */
+export function xpPluginMeldung(text: string): void {
+  const t = text.split(":");
+  if (t[1] !== "plugin") return;
+  xpPlugin.meldung = { version: t[2] ?? "", vr: t[3] === "vr", sichtbar: t[4] === "an", zeit: Date.now() };
+}
+
+/** Plugin meldet sich gerade (letzte 25 s) */
+export function xpPluginDa(): boolean {
+  return !!xpPlugin.meldung && Date.now() - xpPlugin.meldung.zeit < 25000;
 }
 
 export function xpZeitUmschalten(an: boolean): void {

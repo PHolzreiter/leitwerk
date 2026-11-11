@@ -41,7 +41,7 @@ import { efbStarten, tabletApp, tabletAppNeu, tabletAppSetzen, handyAktionen, ha
 import { hpg, hpgAktualisieren, hpgCarlsTest, hpgEinrichten, hpgMissionFuer, hpgStarten, hpgTestNachricht } from "./hpg";
 import { letzterCarls } from "./eingabe";
 import { carlsAn, carlsUmschalten, communityWaehlen, gtn, gtnAn, gtnBereitlegen, gtnSuchen, gtnUmschalten } from "./flugsim";
-import { datenEmpfangen, datenFrisch, dllWaehlen, flugplanSpeichern, flugsim, flugsimAnbinden, flugsimBeenden, flugsimTrennen, flugsimVerbinden, koordText, vorgabe, wetterDialog, msfsWetter, msfsWetterStand, wetterUebergang, xpAbgleich, xplaneFlugplanBereitlegen, xpZeitUmschalten } from "./flugsim";
+import { datenEmpfangen, datenFrisch, dllWaehlen, flugplanSpeichern, flugsim, flugsimAnbinden, flugsimBeenden, flugsimTrennen, flugsimVerbinden, koordText, vorgabe, wetterDialog, msfsWetter, msfsWetterStand, wetterUebergang, vorgabeSetzen, xpAbgleich, xplaneFlugplanBereitlegen, xplanePluginEntfernen, xplanePluginPruefen, xpPlugin, xpPluginDa, xpZeitUmschalten } from "./flugsim";
 import { IC, wetterHtml, wetterKurz, wetterSchluessel, type WetterReiter } from "../ws/kopfleisteInhalt";
 import { mb, onUpdate, updateImHintergrund, updateInfo, updateStand, updateStandZuruecksetzen } from "../updateDienst";
 import { fehlerBerichtSpeichern } from "../fehlerMelden";
@@ -483,6 +483,8 @@ export function pilotOeffnen(): void {
   handyBuchung((b) => handyBuchen(b));
   // LeitWerk-App im EFB-Tablet (MSFS 2024): Server nur auf diesem Rechner
   void efbStarten();
+  // X-Plane 12: Plugin „LeitWerk“ (Tablet-Fenster, auch in VR) einbauen bzw. aktuell halten
+  void xplanePluginPruefen();
   flugsimAnbinden(meinFz, () => planen());
   if (vorgabe().auto) void flugsimVerbinden();
   void gtnSuchen();
@@ -990,10 +992,39 @@ function cockpitDaten(fz: SimFahrzeug | undefined): Record<string, unknown>[] {
       ]
         .filter(Boolean)
         .join(" "),
-      hinw: "Status geben: Zifferntasten – auch wenn X-Plane vorne ist (globale Tasten, Einstellungen › Tasten) – oder die Handy-Seite. Joystick-Tasten wirken nur, solange LeitWerk im Vordergrund ist.",
+      hinw: "Status geben: im Tablet-Plugin, über X-Plane-Tasten „LeitWerk: Status …“, mit den Zifferntasten (globale Tasten, Einstellungen › Tasten) oder auf der Handy-Seite.",
       knoepfe: [
         { t: zeitAn ? "Uhrzeit: von LeitWerk" : "Uhrzeit: selbst", an: zeitAn, klick: () => xpZeitUmschalten(!zeitAn) },
         { t: "Wetter …", klick: () => wetterDialog() },
+      ],
+    });
+    // Tablet in X-Plane: eigenes Plugin (Fenster, auch in VR)
+    const pl = xpPlugin.stand;
+    const pm = xpPluginDa() ? xpPlugin.meldung : null;
+    out.push({
+      k: "xptablet",
+      t: "X-Plane: Tablet (Plugin)",
+      z: pm ? (pm.vr ? "in VR" : "läuft") : pl?.aktuell ? (pl.neustart ? "neu starten" : "eingebaut") : "fehlt",
+      f: pm ? PUNKT.ok : pl?.aktuell ? PUNKT.warn : PUNKT.aus,
+      d: pm
+        ? `Plugin ${pm.version} läuft${pm.vr ? " in VR" : ""} – Tablet ${pm.sichtbar ? "offen" : "zu"}. In X-Plane: Plugins › LeitWerk › Tablet zeigen.`
+        : pl?.aktuell
+          ? pl.neustart
+            ? "Plugin erneuert – wirkt nach dem nächsten Start von X-Plane."
+            : "Plugin ist eingebaut, meldet sich aber nicht – wurde X-Plane danach neu gestartet?"
+          : pl && !pl.mitgeliefert
+            ? "In dieser Version ist das Plugin nicht dabei."
+            : pl?.fehler || "Plugin nicht eingebaut – „Einbauen“ legt es in X-Plane 12/Resources/plugins/LeitWerk.",
+      hinw: "Tasten: in X-Plane unter Einstellungen › Joystick bzw. Tastatur nach „LeitWerk“ suchen – Status 1–9, Sprechtaste (halten), Tablet zeigen, Zielort buchen, Navigation. Das geht auch, wenn X-Plane vorne ist.",
+      knoepfe: [
+        {
+          t: pl?.aktuell ? "Prüfen" : "Einbauen",
+          klick: () => {
+            vorgabeSetzen({ xpPlugin: true });
+            void xplanePluginPruefen(true, true).then(() => zeichneAlles());
+          },
+        },
+        ...(pl?.aktuell ? [{ t: "Entfernen", klick: () => void xplanePluginEntfernen().then(() => zeichneAlles()) }] : []),
       ],
     });
     return out.concat(cockpitRest(fz).filter((x) => x.k === "handy"));

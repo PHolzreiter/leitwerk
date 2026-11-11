@@ -1,0 +1,20 @@
+# Rundgang durch alle Ansichten
+warte 0.5
+befehl leitwerk/tablet
+warte 0.3
+bild 01-nicht-verbunden.png
+shell python3 $TEST/leitwerk_attrappe.py $STAND $AUS/befehle.log 47900 >/dev/null 2>&1 &
+warte 3
+bild 02-leer.png
+shell cp $TEST/stand-einsatz.json $STAND
+warte 2.5
+bild 03-einsatz.png
+ziehen 230 500 0 -350
+warte 0.5
+bild 04-einsatz-gescrollt.png
+klick 430 28
+warte 0.4
+bild 05-status.png
+klick 80 560
+warte 0.5
+bild 06-nach-status.png

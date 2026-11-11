@@ -1,0 +1,62 @@
+# Patient, Buchen mit Suche und Bildschirmtastatur, Krankenhaus, Großschaden, Navigation, VR
+shell cp $TEST/stand-patient.json $STAND
+shell python3 $TEST/leitwerk_attrappe.py $STAND $AUS/befehle.log 47900 >/dev/null 2>&1 &
+befehl leitwerk/tablet
+warte 3
+klick 340 86
+warte 0.5
+bild 10-patient.png
+ziehen 230 600 0 -400
+warte 0.4
+bild 11-patient-unten.png
+klick 120 86
+befehl leitwerk/zielort
+warte 0.5
+bild 12-buchen.png
+klick 230 520
+warte 0.4
+bild 13-buchen-suche.png
+klick 60 600
+klick 160 600
+klick 330 650
+warte 0.6
+bild 14-tastatur-getippt.png
+tippe xyz
+klick 400 770
+warte 0.6
+shell cp $TEST/stand-buchen.json $STAND
+warte 1.5
+bild 15-krankenhaus.png
+ziehen 230 600 0 -300
+warte 0.3
+bild 16-krankenhaus-unten.png
+klick 230 300
+warte 0.3
+klick 230 740
+warte 0.3
+bild 17-gebucht.png
+klick 420 120
+shell cp $TEST/stand-gs.json $STAND
+warte 1.5
+klick 120 86
+warte 0.5
+bild 18-grossschaden.png
+ziehen 230 600 0 -450
+warte 0.3
+bild 19-grossschaden-unten.png
+shell cp $TEST/stand-einsatz.json $STAND
+warte 1.5
+befehl leitwerk/navigation
+warte 0.8
+bild 20-navigation.png
+klick 433 140
+klick 433 140
+ziehen 200 400 -120 60
+warte 0.6
+bild 21-navigation-gezoomt.png
+klick 50 82
+vr 1
+warte 1
+bild 22-vr.png
+halten leitwerk/sprechen
+befehl leitwerk/status_3

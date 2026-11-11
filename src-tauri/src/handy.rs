@@ -20,9 +20,11 @@ const SEITE: &str = include_str!("handy.html");
 const EFB_SEITE: &str = include_str!("efb.html");
 // Schrift fürs Tablet: Coherent GT hat keine Umlaute in der Standardschrift; woff kam im Tablet nicht an –
 // daher Inter als TrueType (aus src/assets/fonts umgewandelt).
-const SCHRIFT_400: &[u8] = include_bytes!("schrift/inter-400.ttf");
-const SCHRIFT_600: &[u8] = include_bytes!("schrift/inter-600.ttf");
-const SCHRIFT_700: &[u8] = include_bytes!("schrift/inter-700.ttf");
+pub(crate) const SCHRIFT_400: &[u8] = include_bytes!("schrift/inter-400.ttf");
+pub(crate) const SCHRIFT_600: &[u8] = include_bytes!("schrift/inter-600.ttf");
+pub(crate) const SCHRIFT_700: &[u8] = include_bytes!("schrift/inter-700.ttf");
+/// Kartenkacheln für das X-Plane-Plugin (das selbst kein HTTPS kann): basemap.at, wie in der Einsatz-App
+const KACHEL_URL: &str = "https://mapsneu.wien.gv.at/basemap/geolandbasemap/normal/google3857/";
 const PORTS: std::ops::RangeInclusive<u16> = 47_890..=47_899;
 const EFB_PORTS: std::ops::RangeInclusive<u16> = 47_900..=47_905;
 
@@ -41,6 +43,42 @@ struct Server {
 static SERVER: Mutex<Option<Server>> = Mutex::new(None);
 static EFB_SERVER: Mutex<Option<u16>> = Mutex::new(None);
 static STAND: Mutex<String> = Mutex::new(String::new());
+static KACHELN: Mutex<Option<std::collections::HashMap<String, Vec<u8>>>> = Mutex::new(None);
+
+/// „/kachel/z/y/x.png“ → Kachel (nur Zahlen, Zoom 5–19); zwischengespeichert, höchstens ~800 Stück
+fn kachel(pfad: &str) -> Option<Vec<u8>> {
+    let rest = pfad.strip_prefix("/kachel/")?.strip_suffix(".png")?;
+    let teile: Vec<u32> = rest.split('/').map(|t| t.parse::<u32>().ok()).collect::<Option<Vec<_>>>()?;
+    let [z, y, x] = teile[..] else { return None };
+    if !(5..=19).contains(&z) || y >= (1 << z) || x >= (1 << z) {
+        return None;
+    }
+    let key = format!("{z}/{y}/{x}");
+    if let Some(b) = KACHELN.lock().ok().and_then(|c| c.as_ref().and_then(|m| m.get(&key).cloned())) {
+        return Some(b);
+    }
+    let url = format!("{KACHEL_URL}{key}.png");
+    let b = tauri::async_runtime::block_on(async move {
+        let c = reqwest::Client::builder()
+            .user_agent(concat!("LeitWerk/", env!("CARGO_PKG_VERSION")))
+            .timeout(Duration::from_secs(8))
+            .build()
+            .ok()?;
+        let r = c.get(url).send().await.ok()?;
+        if !r.status().is_success() {
+            return None;
+        }
+        r.bytes().await.ok().map(|b| b.to_vec())
+    })?;
+    if let Ok(mut c) = KACHELN.lock() {
+        let m = c.get_or_insert_with(Default::default);
+        if m.len() > 800 {
+            m.clear();
+        }
+        m.insert(key, b.clone());
+    }
+    Some(b)
+}
 
 /// IP-Adresse im Heimnetz (ohne dass ein Paket verschickt wird)
 fn lokale_ip() -> String {
@@ -121,6 +159,11 @@ fn bearbeiten(mut s: TcpStream, token: Option<&str>, app: &AppHandle) {
         ("GET", "/") if token.is_some() => antwort(&mut s, "200 OK", "text/html; charset=utf-8", SEITE.as_bytes()),
         ("GET", "/") | ("GET", "/efb") => antwort(&mut s, "200 OK", "text/html; charset=utf-8", EFB_SEITE.as_bytes()),
         ("GET", "/ping") => antwort(&mut s, "200 OK", "text/plain; charset=utf-8", b"leitwerk"),
+        // nur für das X-Plane-Plugin auf diesem Rechner (Server ohne Schlüssel)
+        ("GET", p) if token.is_none() && p.starts_with("/kachel/") => match kachel(p) {
+            Some(b) => antwort(&mut s, "200 OK", "image/png", &b),
+            None => antwort(&mut s, "404 Not Found", "text/plain", b""),
+        },
         ("GET", "/stand") => {
             let st = STAND.lock().map(|x| x.clone()).unwrap_or_default();
             let st = if st.is_empty() { "{}".to_string() } else { st };

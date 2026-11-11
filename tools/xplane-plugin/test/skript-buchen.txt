@@ -1,0 +1,22 @@
+shell cp $TEST/stand-patient.json $STAND
+shell python3 $TEST/leitwerk_attrappe.py $STAND $AUS/befehle.log 47900 >/dev/null 2>&1 &
+befehl leitwerk/tablet
+warte 3
+befehl leitwerk/zielort
+warte 0.4
+klick 344 300
+warte 0.4
+bild 30-selbst.png
+klick 230 462
+warte 0.4
+bild 31-suche.png
+klick 65 652
+klick 189 606
+warte 0.5
+bild 32-getippt.png
+klick 230 361
+warte 0.5
+bild 33-symptom-gewaehlt.png
+shell cp $TEST/stand-buchen.json $STAND
+warte 1.5
+bild 34-krankenhaus.png

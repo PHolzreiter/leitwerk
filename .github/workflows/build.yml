@@ -79,9 +79,40 @@ jobs:
           path: fonts-out
           retention-days: 1
 
+  # X-Plane-Plugin „LeitWerk“ (Tablet-Fenster, auch in VR) – LeitWerk legt es in X-Plane/Resources/plugins
+  xplane:
+    name: X-Plane-Plugin (${{ matrix.name }})
+    needs: version
+    if: needs.version.outputs.neu == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macos
+            runner: macos-15
+            ordner: mac_x64
+          - name: windows
+            runner: windows-latest
+            ordner: win_x64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Bauen
+        shell: bash
+        run: |
+          cmake -S tools/xplane-plugin -B xpbau -DCMAKE_BUILD_TYPE=Release
+          cmake --build xpbau --config Release
+          ls -la xpbau/LeitWerk/${{ matrix.ordner }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: xplane-${{ matrix.name }}
+          path: xpbau/LeitWerk/${{ matrix.ordner }}/LeitWerk.xpl
+          if-no-files-found: error
+          retention-days: 1
+
   build:
     name: Programm (${{ matrix.name }})
-    needs: fonts
+    needs: [fonts, xplane]
     strategy:
       fail-fast: false
       matrix:
@@ -89,9 +120,11 @@ jobs:
           - name: macos
             runner: macos-15
             bundles: app,dmg
+            xp: mac_x64
           - name: windows
             runner: windows-latest
             bundles: nsis
+            xp: win_x64
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v4
@@ -100,6 +133,11 @@ jobs:
         with:
           name: fonts
           path: public
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: xplane-${{ matrix.name }}
+          path: src-tauri/xplane-plugin/${{ matrix.xp }}
 
       - uses: actions/setup-node@v4
         with:
