@@ -1,5 +1,14 @@
 [
  {
+  "version": "0.116.0-beta.38",
+  "datum": "2026-11-11",
+  "titel": "X-Plane: sanfter Wetterwechsel, GTN-Flugplan",
+  "punkte": [
+   "X-Plane: Wetter zieht sanft auf",
+   "GTN 750 (Reality XP): Flugplan LEITWERK.gfp zum Ziel"
+  ]
+ },
+ {
   "version": "0.116.0-beta.37",
   "datum": "2026-11-11",
   "titel": "Wetter in MSFS: Wolken weicher",

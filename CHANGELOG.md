@@ -1,5 +1,10 @@
 # Änderungen
 
+## 0.116.0-beta.38 – X-Plane: sanfter Wetterwechsel, GTN-Flugplan
+- **X-Plane 12:** Wetterwechsel im laufenden Flug ziehen jetzt sanft auf – über die Region-Wetterwerte von X-Plane, die X-Plane selbst über 1–2 Minuten einblendet, dazu kleine Schritte über die Wechseldauer (Spielzeit, wie bei MSFS). Wolken behalten ihre Höhe und blenden über. Beim Beitreten wird das Wetter weiter sofort gesetzt
+- Test: LeitWerk prüft beim Verbinden, welche Region-Werte es gibt, und schreibt das in xplane-wetter-test.json (Datenordner von LeitWerk); fehlen sie, bleibt es beim sofortigen Wechsel
+- **GTN 750/650 (Reality XP):** bei jedem neuen Ziel liegt der Flugplan „LEITWERK.gfp“ im FPLN-Ordner des Garmin-Trainers – im GTN unter Flight Plan → Menu → Catalog → Import
+
 ## 0.116.0-beta.37 – Wetter in MSFS: Wolken weicher
 - EFB-App 0.4.0: **Wolken behalten beim Wechsel ihre Höhe** – sie werden nur dichter oder lockerer. Liegt das neue Wetter auf einer anderen Höhe, blendet die alte Schicht aus und die neue auf einem eigenen Platz ein (statt die Schicht umzubauen)
 - Wolken ändern sich in vielen kleinen Schritten (alle 2,5 s), Wind, Temperatur, Druck und Sicht getrennt davon in eigenen Schritten; weicher Verlauf (am Anfang und Ende langsamer)

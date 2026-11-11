@@ -328,6 +328,141 @@ pub fn xplane_fms(name: String, inhalt: String) -> Result<Option<String>, String
     Ok(Some(datei.display().to_string()))
 }
 
+/// ID eines Datarefs nach Namen (Zwischenspeicher je X-Plane-Sitzung; leert sich, wenn X-Plane neu startet)
+static ID_CACHE: Mutex<Option<std::collections::HashMap<String, u64>>> = Mutex::new(None);
+
+fn dataref_id(name: &str) -> Result<Option<u64>, String> {
+    if let Some(id) = ID_CACHE.lock().ok().and_then(|c| c.as_ref().and_then(|m| m.get(name).copied())) {
+        return Ok(Some(id));
+    }
+    let (code, rumpf) = get(&format!("/api/v3/datarefs?filter%5Bname%5D={}&fields=id,name", kodieren(name)))?;
+    if code == 404 {
+        return Ok(None);
+    }
+    if code != 200 {
+        return Err(format!("X-Plane: {name} nicht lesbar ({code})"));
+    }
+    let v: serde_json::Value = serde_json::from_str(&rumpf).map_err(|e| e.to_string())?;
+    let id = v["data"].as_array().and_then(|l| l.iter().find(|x| x["name"] == name)).and_then(|x| x["id"].as_u64());
+    if let (Some(id), Ok(mut c)) = (id, ID_CACHE.lock()) {
+        c.get_or_insert_with(Default::default).insert(name.to_string(), id);
+    }
+    Ok(id)
+}
+
+/// Werte von Datarefs lesen (Name → Wert; fehlende Namen fehlen im Ergebnis)
+#[tauri::command]
+pub async fn xplane_lesen(namen: Vec<String>) -> Result<serde_json::Map<String, serde_json::Value>, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let mut out = serde_json::Map::new();
+        for n in namen {
+            let Some(id) = dataref_id(&n)? else { continue };
+            let (code, rumpf) = get(&format!("/api/v3/datarefs/{id}/value"))?;
+            if code == 404 {
+                // X-Plane neu gestartet: IDs ungültig
+                if let Ok(mut c) = ID_CACHE.lock() {
+                    *c = None;
+                }
+                continue;
+            }
+            if code == 200 {
+                let v: serde_json::Value = serde_json::from_str(&rumpf).map_err(|e| e.to_string())?;
+                out.insert(n, v["data"].clone());
+            }
+        }
+        Ok(out)
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+/// Datarefs schreiben: (Name, Index oder None für ganzen Wert/Feld, Wert). Ergebnis: Fehler je Name (leer = alles gut)
+#[tauri::command]
+pub async fn xplane_schreiben(werte: Vec<(String, Option<u32>, serde_json::Value)>) -> Result<Vec<String>, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let mut fehler = Vec::new();
+        for (n, index, wert) in werte {
+            let Some(id) = dataref_id(&n)? else {
+                fehler.push(format!("{n}: gibt es nicht"));
+                continue;
+            };
+            let pfad = match index {
+                Some(i) => format!("/api/v3/datarefs/{id}/value?index={i}"),
+                None => format!("/api/v3/datarefs/{id}/value"),
+            };
+            let rumpf = serde_json::json!({ "data": wert }).to_string();
+            let (code, antwort) = anfrage("PATCH", &pfad, Some(&rumpf))?;
+            if code == 404 {
+                if let Ok(mut c) = ID_CACHE.lock() {
+                    *c = None;
+                }
+            }
+            if code != 200 {
+                fehler.push(format!("{n}{}: {code} {}", index.map(|i| format!("[{i}]")).unwrap_or_default(), antwort.chars().take(120).collect::<String>()));
+            }
+        }
+        Ok(fehler)
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+/// Alle Datarefs, deren Name mit `anfang` beginnt (Test: welche Wetter-Werte gibt es in dieser X-Plane-Version?)
+#[tauri::command]
+pub async fn xplane_suchen(anfang: String) -> Result<Vec<String>, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let (code, rumpf) = get("/api/v3/datarefs?fields=name,value_type,is_writable")?;
+        if code != 200 {
+            return Err(format!("X-Plane: Liste nicht lesbar ({code})"));
+        }
+        let v: serde_json::Value = serde_json::from_str(&rumpf).map_err(|e| e.to_string())?;
+        Ok(v["data"]
+            .as_array()
+            .map(|l| {
+                l.iter()
+                    .filter(|x| x["name"].as_str().is_some_and(|n| n.starts_with(&anfang)))
+                    .map(|x| format!("{} ({}{})", x["name"].as_str().unwrap_or(""), x["value_type"].as_str().unwrap_or(""), if x["is_writable"] == true { ", schreibbar" } else { "" }))
+                    .collect()
+            })
+            .unwrap_or_default())
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+/// Ordner, aus denen GTN (Reality XP, Garmin-Trainer) Flugpläne lädt: FPLN im Trainer-Datenordner
+fn gtn_fpln_ordner() -> Vec<std::path::PathBuf> {
+    let mut out = Vec::new();
+    if let Ok(d) = std::env::var("GTNSIMDATA") {
+        out.push(std::path::PathBuf::from(d).join("FPLN"));
+    }
+    let pd = std::env::var("ProgramData").unwrap_or_else(|_| "C:\\ProgramData".into());
+    let pd = std::path::PathBuf::from(pd);
+    out.push(pd.join("Garmin").join("Trainers").join("GTN").join("FPLN"));
+    out.push(pd.join("Garmin").join("GTN Trainer Data").join("GTN").join("FPLN"));
+    out
+}
+
+/// Flugplan „<name>.gfp“ für das GTN 750/650 (Reality XP) schreiben – in jeden vorhandenen FPLN-Ordner.
+/// Ergebnis: geschriebene Pfade (leer = kein GTN-Trainer gefunden)
+#[tauri::command]
+pub fn gtn_gfp(name: String, inhalt: String) -> Result<Vec<String>, String> {
+    let sauber: String = name.chars().filter(|c| c.is_ascii_alphanumeric() || *c == '_').collect::<String>().to_ascii_uppercase();
+    let mut out = Vec::new();
+    for ordner in gtn_fpln_ordner() {
+        // nur dort, wo der Trainer-Ordner (GTN) schon existiert – FPLN selbst darf fehlen
+        let Some(gtn) = ordner.parent() else { continue };
+        if !gtn.is_dir() {
+            continue;
+        }
+        std::fs::create_dir_all(&ordner).map_err(|e| e.to_string())?;
+        let datei = ordner.join(format!("{}.gfp", if sauber.is_empty() { "LEITWERK" } else { &sauber }));
+        std::fs::write(&datei, &inhalt).map_err(|e| format!("GTN-Flugplan nicht schreibbar: {e}"))?;
+        out.push(datei.display().to_string());
+    }
+    Ok(out)
+}
+
 #[tauri::command]
 pub fn xplane_stoppen() {
     if let Ok(mut g) = LAEUFT.lock() {

@@ -309,6 +309,7 @@ export async function flugplanSpeichern(fz: SimFahrzeug, nach: { lat: number; lo
   const datei = ascii(`LeitWerk ${titel}`).replace(/[ .]+/g, "_");
   if (flugsim.quelle === "xplane") {
     const inhalt = fmsText({ lat: fz.lat, lon: fz.lon, fuss }, nach);
+    if (inTauri()) void invoke("gtn_gfp", { name: "LEITWERK", inhalt: gfpText({ lat: fz.lat, lon: fz.lon }, nach) }).catch(() => undefined);
     const direkt = inTauri() ? await invoke<string | null>("xplane_fms", { name: datei, inhalt }).catch(() => null) : null;
     if (direkt) return toast(`Flugplan „${datei}“ in X-Plane (Output/FMS plans) gespeichert – im GPS/FMS laden`);
     const p2 = await saveTextFile(`${datei}.fms`, inhalt, { name: "X-Plane-Flugplan", extensions: ["fms"] });
@@ -482,9 +483,14 @@ export const xpAbgleich = {
   fms: "",
   fmsZiel: "",
   fmsFehler: "",
+  gfp: "",
 };
 
 function xpNeu(): void {
+  xpWx.geprueft = false;
+  xpWx.regionGeht = undefined;
+  xpWx.dauer = 0;
+  xpWx.ist = null;
   xpAbgleich.zeitSim = 0;
   xpAbgleich.wetterKey = "";
   xpAbgleich.fmsZiel = "";
@@ -560,7 +566,20 @@ async function xplaneAbgleich(d: SimDaten): Promise<void> {
     const echt = !!sim.settings.wetterEcht;
     const w = sim.wetterWerte();
     key = echt ? "echt" : `${w.lage}|${Math.round(w.wind / 10)}|${Math.round(w.richtung / 45)}`;
-    if (key !== xpAbgleich.wetterKey) data.weather = echt ? "use_real_weather" : xpWetter(w, d.lat, d.lon, (d.hoehe - d.agl) / 3.28084);
+    const boden = Math.max(0, (d.hoehe - d.agl) / 3.28084);
+    if (key !== xpAbgleich.wetterKey) {
+      const z = xpWerteJetzt();
+      // Wechsel im laufenden Flug: sanft über die Region-Werte (X-Plane blendet selbst über 1–2 min ein)
+      if (!echt && xpWx.ist && z && wetterUebergang.min > 0 && xpWx.regionGeht !== false && xpAbgleich.wetterKey && xpAbgleich.wetterKey !== "echt") {
+        xpUebergangStarten(z, boden);
+        xpAbgleich.wetterKey = key;
+      } else {
+        data.weather = echt ? "use_real_weather" : xpWetter(w, d.lat, d.lon, boden);
+        xpWx.ist = echt ? null : z;
+        xpWx.dauer = 0;
+      }
+    }
+    if (xpWx.dauer > 0) void xpUebergangSchritt(boden);
   }
   if (!Object.keys(data).length) return;
   xpAbgleich.laeuft = true;
@@ -574,6 +593,7 @@ async function xplaneAbgleich(d: SimDaten): Promise<void> {
     }
     if (data.weather) {
       xpAbgleich.wetterKey = key;
+      if (!xpWx.geprueft) void xpRegionPruefen();
       xpAbgleich.wetterText = key === "echt" ? "Echtes Wetter (X-Plane: Real Weather)" : `${WETTER_LABEL[sim.wetterWerte().lage]} übernommen (${uhr})`;
     }
     xpAbgleich.fehler = "";
@@ -600,6 +620,10 @@ export function xplaneFlugplanBereitlegen(fz: SimFahrzeug, ziel: { lat: number; 
   if (key === xpAbgleich.fmsZiel) return;
   xpAbgleich.fmsZiel = key;
   const fuss = flugsim.daten && datenFrisch() ? flugsim.daten.hoehe : 0;
+  // GTN 750/650 (Reality XP): LEITWERK.gfp im FPLN-Ordner des Garmin-Trainers
+  void invoke<string[]>("gtn_gfp", { name: "LEITWERK", inhalt: gfpText({ lat: fz.lat, lon: fz.lon }, ziel) })
+    .then((p) => { xpAbgleich.gfp = p.length ? "GTN: Flugplan „LEITWERK“ bereit (Flight Plan → Menu → Catalog → Import)" : ""; })
+    .catch(() => undefined);
   void invoke<string | null>("xplane_fms", { name: "LeitWerk", inhalt: fmsText({ lat: fz.lat, lon: fz.lon, fuss }, ziel) })
     .then((pfad) => {
       if (!pfad) {
@@ -657,14 +681,14 @@ export function msfsWetter(): Record<string, unknown> | null {
   const w = sim.wetterWerte();
   const i = LAGE[w.lage];
   const nass = i.art === "regen" || i.art === "schnee" || i.art === "eis";
-  const wolken: { ab: number; bis: number; dichte: number; bedeckung: number }[] = [];
-  if (w.lage === "nebel") wolken.push({ ab: 0, bis: 180, dichte: 1, bedeckung: 1 });
-  else if (w.lage === "hochnebel") wolken.push({ ab: 150, bis: 700, dichte: 1, bedeckung: 1 });
+  const wolken: XpWolke[] = [];
+  if (w.lage === "nebel") wolken.push({ ab: 0, bis: 180, dichte: 1, bedeckung: 1, typ: "stratus" });
+  else if (w.lage === "hochnebel") wolken.push({ ab: 150, bis: 700, dichte: 1, bedeckung: 1, typ: "stratus" });
   else if (i.art === "gewitter") {
-    wolken.push({ ab: 900, bis: 9000, dichte: 1, bedeckung: 0.8 });
+    wolken.push({ ab: 900, bis: 9000, dichte: 1, bedeckung: 0.8, typ: "cb" });
   } else if (i.wolken > 0) {
     const flach = i.wolken >= 0.85 || nass;
-    wolken.push({ ab: nass ? 450 : flach ? 750 : 1200, bis: nass ? 1800 : flach ? 1700 : 2100, dichte: nass ? 0.9 : 0.7, bedeckung: i.wolken });
+    wolken.push({ ab: nass ? 450 : flach ? 750 : 1200, bis: nass ? 1800 : flach ? 1700 : 2100, dichte: nass ? 0.9 : 0.7, bedeckung: i.wolken, typ: flach ? "stratus" : "cumulus" });
   }
   const regen = { niesel: 0.5, leichter_regen: 1.5, regen: 4, starkregen: 15, gewitter: 10, hagel: 20, unwetter: 30, schneeregen: 3, leichter_schnee: 1, schnee: 3, starker_schnee: 8, eisregen: 3 } as Partial<Record<WetterLage, number>>;
   return {
@@ -703,4 +727,176 @@ export async function msfsWetterMeldung(roh: string): Promise<void> {
   } catch {
     /* nur Test */
   }
+}
+
+// ------------------------------------------------------------------ X-Plane 12: sanfter Wetterwechsel (Region-Datarefs)
+
+/**
+ * X-Plane blendet Änderungen an sim/weather/region/* selbst über 1–2 Minuten ein (Wolken etwa 1 min).
+ * Dazu wie in MSFS kleine Schritte über die Wechseldauer (Spielzeit). Wolkenschichten behalten ihre Höhe:
+ * gleiche Höhe → am selben Platz ändern, sonst alte Schicht ausblenden und neue auf freiem Platz einblenden.
+ * Beim Beitreten (und wenn Region-Werte fehlen) wird das Wetter weiter über PATCH /flight sofort gesetzt.
+ * Test: Liste der Region-Werte, ihre Startwerte und Fehler gehen in xplane-wetter-test.json.
+ */
+export type XpWolke = { ab: number; bis: number; dichte: number; bedeckung: number; typ?: "stratus" | "cumulus" | "cb" };
+type XpWerte = { temp: number; druck: number; regen: number; gewitter: number; sicht: number; wind: number; boe: number; richtung: number; wolken: (XpWolke | null)[] };
+const XR = "sim/weather/region/";
+const xpWx = {
+  ist: null as XpWerte | null,
+  von: null as XpWerte | null,
+  ziel: null as XpWerte | null,
+  plan: [] as ({ von: XpWolke | null; nach: XpWolke | null } | null)[],
+  start: 0,
+  dauer: 0,
+  letzt: 0,
+  geprueft: false,
+  regionGeht: undefined as boolean | undefined,
+  windHoehen: [] as number[],
+  log: [] as { t: string; zeit: string }[],
+};
+
+async function xpLog(t: string): Promise<void> {
+  xpWx.log.push({ t, zeit: new Date().toISOString() });
+  if (xpWx.log.length > 200) xpWx.log.splice(0, 50);
+  try {
+    const { appDataDir, join } = await import("@tauri-apps/api/path");
+    await invoke("write_text_file", { path: await join(await appDataDir(), "xplane-wetter-test.json"), content: JSON.stringify(xpWx.log, null, 1) });
+  } catch {
+    /* nur Test */
+  }
+}
+
+function xpWerteJetzt(): XpWerte | null {
+  const m = msfsWetter() as (Record<string, unknown> & { wolken?: XpWolke[] }) | null;
+  if (!m || m.echt || m.nurZeit) return null;
+  const w = (m.wolken ?? []).slice(0, 3);
+  return {
+    temp: m.temp as number, druck: m.druck as number, regen: m.regen as number, gewitter: m.gewitter as number, sicht: m.sicht as number,
+    wind: m.wind as number, boe: m.boe as number, richtung: m.richtung as number,
+    wolken: [w[0] ?? null, w[1] ?? null, w[2] ?? null],
+  };
+}
+
+/** Einmal je Verbindung: welche Region-Werte gibt es, was steht drin (Einheiten prüfen) */
+async function xpRegionPruefen(): Promise<void> {
+  xpWx.geprueft = true;
+  try {
+    const liste = await invoke<string[]>("xplane_suchen", { anfang: XR });
+    await xpLog(`Region-Werte in X-Plane (${liste.length}): ${liste.join("; ")}`);
+    const namen = ["cloud_coverage_percent", "cloud_base_msl_m", "cloud_tops_msl_m", "cloud_type", "visibility_reported_sm", "rain_percent", "thunderstorm_percent", "sealevel_pressure_pas", "sealevel_temperature_c", "wind_altitude_msl_m", "wind_speed_msc", "wind_direction_degt", "update_immediately", "change_mode"].map((n) => XR + n);
+    const werte = await invoke<Record<string, unknown>>("xplane_lesen", { namen });
+    await xpLog(`Startwerte: ${JSON.stringify(werte)}`);
+    const alt = werte[XR + "wind_altitude_msl_m"];
+    xpWx.windHoehen = Array.isArray(alt) ? (alt as number[]) : [];
+    const kern = ["cloud_coverage_percent", "cloud_base_msl_m", "cloud_tops_msl_m", "visibility_reported_sm"].map((n) => XR + n);
+    xpWx.regionGeht = kern.every((n) => n in werte);
+    if (!xpWx.regionGeht) await xpLog("Region-Werte fehlen – Wetterwechsel weiter sofort (über PATCH /flight)");
+  } catch (e) {
+    await xpLog(`Prüfen fehlgeschlagen: ${String((e as Error)?.message ?? e)}`);
+  }
+}
+
+function xpUebergangStarten(z: XpWerte, _boden: number): void {
+  const von = xpWx.ist!;
+  xpWx.plan = wolkenPlan(von.wolken, z.wolken);
+  xpWx.von = von;
+  xpWx.ziel = { ...z, wolken: xpWx.plan.map((p) => p?.nach ?? null) };
+  xpWx.start = sim.state.zeit;
+  xpWx.dauer = wetterUebergang.min * 60_000;
+  xpWx.letzt = 0;
+  xpAbgleich.wetterText = `Wechsel zu ${WETTER_LABEL[sim.wetterWerte().lage]} läuft (${wetterUebergang.min} Spielminuten)`;
+  void xpLog(xpAbgleich.wetterText);
+}
+
+function wolkenPlan(V: (XpWolke | null)[], Z: (XpWolke | null)[]): ({ von: XpWolke | null; nach: XpWolke | null } | null)[] {
+  const plan: ({ von: XpWolke | null; nach: XpWolke | null } | null)[] = [null, null, null];
+  const gleich = (a: XpWolke, b: XpWolke) => Math.abs(a.ab - b.ab) < 1 && Math.abs(a.bis - b.bis) < 1;
+  V.forEach((v, i) => { if (v) plan[i] = { von: v, nach: null }; });
+  const offen: XpWolke[] = [];
+  for (const z of Z) {
+    if (!z) continue;
+    const i = plan.findIndex((p) => p && p.von && !p.nach && gleich(p.von, z));
+    if (i >= 0) plan[i]!.nach = z;
+    else offen.push(z);
+  }
+  for (const z of offen) {
+    let i = plan.findIndex((p) => !p);
+    if (i < 0) i = plan.findIndex((p) => p && !p.nach);
+    if (i < 0) break;
+    plan[i] = { von: null, nach: z };
+  }
+  return plan;
+}
+
+const weich = (f: number) => f * f * (3 - 2 * f);
+const lerp = (a: number, b: number, f: number) => a + (b - a) * f;
+
+function xpMischen(a: XpWerte, b: XpWerte, f: number): XpWerte {
+  const d = ((b.richtung - a.richtung + 540) % 360) - 180;
+  const wolken = xpWx.plan.map((p) => {
+    if (!p) return null;
+    if (p.von && p.nach) return { ...p.nach, ab: p.von.ab, bis: p.von.bis, bedeckung: lerp(p.von.bedeckung, p.nach.bedeckung, f) };
+    const L = (p.von ?? p.nach)!;
+    return { ...L, bedeckung: L.bedeckung * (p.von ? 1 - f : f) };
+  });
+  return {
+    temp: lerp(a.temp, b.temp, f), druck: lerp(a.druck, b.druck, f), regen: lerp(a.regen, b.regen, f), gewitter: lerp(a.gewitter, b.gewitter, f),
+    sicht: lerp(a.sicht, b.sicht, f), wind: lerp(a.wind, b.wind, f), boe: lerp(a.boe, b.boe, f), richtung: (a.richtung + d * f + 360) % 360, wolken,
+  };
+}
+
+/** Ein Schritt des Übergangs: höchstens alle 20 s echter Zeit (X-Plane blendet dazwischen selbst ein) */
+async function xpUebergangSchritt(boden: number): Promise<void> {
+  if (!xpWx.von || !xpWx.ziel || Date.now() - xpWx.letzt < 20_000) return;
+  xpWx.letzt = Date.now();
+  const f = Math.max(0, Math.min(1, (sim.state.zeit - xpWx.start) / xpWx.dauer));
+  const w = f >= 1 ? xpWx.ziel : xpMischen(xpWx.von, xpWx.ziel, weich(f));
+  const TYP = { stratus: 1, cumulus: 2, cb: 3 } as const;
+  const werte: [string, number | null, number][] = [[XR + "update_immediately", null, 0]];
+  w.wolken.forEach((L, i) => {
+    werte.push([XR + "cloud_coverage_percent", i, L ? Math.max(0, Math.min(1, L.bedeckung)) : 0]);
+    if (L) {
+      werte.push([XR + "cloud_base_msl_m", i, Math.round(boden + L.ab)], [XR + "cloud_tops_msl_m", i, Math.round(boden + L.bis)]);
+      if (L.typ) werte.push([XR + "cloud_type", i, TYP[L.typ]]);
+    }
+  });
+  werte.push(
+    [XR + "visibility_reported_sm", null, +(w.sicht / 1.609).toFixed(2)],
+    [XR + "rain_percent", null, +Math.min(1, w.regen / 15).toFixed(3)],
+    [XR + "thunderstorm_percent", null, +w.gewitter.toFixed(3)],
+    [XR + "sealevel_pressure_pas", null, Math.round(w.druck * 100)],
+    [XR + "sealevel_temperature_c", null, +w.temp.toFixed(1)],
+  );
+  xpWx.windHoehen.forEach((h, i) => {
+    const ueber = h - boden;
+    if (ueber > 3000) return;
+    werte.push([XR + "wind_speed_msc", i, +(w.wind * 0.514444 * (1 + 0.3 * Math.max(0, ueber) / 3000)).toFixed(2)], [XR + "wind_direction_degt", i, Math.round(w.richtung)]);
+  });
+  try {
+    const fehler = await invoke<string[]>("xplane_schreiben", { werte });
+    xpWx.ist = w;
+    if (fehler.length) await xpLog(`Schritt ${Math.round(f * 100)} %: ${fehler.length} Fehler – ${fehler.slice(0, 6).join(" | ")}`);
+    if (f >= 1) {
+      xpWx.dauer = 0;
+      xpAbgleich.wetterText = `${WETTER_LABEL[sim.wetterWerte().lage]} übernommen (sanfter Wechsel)`;
+      await xpLog(xpAbgleich.wetterText);
+      geaendert();
+    }
+  } catch (e) {
+    xpAbgleich.fehler = String((e as Error)?.message ?? e);
+    geaendert();
+  }
+}
+
+/** Flugplan für das GTN 750/650 (Garmin .gfp, eine Zeile): Start → Ziel als Koordinaten (Grad + Zehntelminuten) */
+export function gfpText(von: { lat: number; lon: number }, nach: { lat: number; lon: number }): string {
+  const teil = (x: number, gradStellen: number, plus: string, minus: string) => {
+    const a = Math.abs(x);
+    let g = Math.floor(a);
+    let m = Math.round((a - g) * 600);
+    if (m >= 600) { g += 1; m -= 600; }
+    return `${x < 0 ? minus : plus}${String(g).padStart(gradStellen, "0")}${String(m).padStart(3, "0")}`;
+  };
+  const k = (p: { lat: number; lon: number }) => `${teil(p.lat, 2, "N", "S")}${teil(p.lon, 3, "E", "W")}`;
+  return `FPN/RI:F:${k(von)}:F:${k(nach)}`;
 }

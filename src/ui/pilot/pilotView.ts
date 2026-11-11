@@ -985,6 +985,7 @@ function cockpitDaten(fz: SimFahrzeug | undefined): Record<string, unknown>[] {
         zeitAn ? xpAbgleich.zeitText || "Uhrzeit wird von LeitWerk übernommen." : "Uhrzeit stellst du in X-Plane selbst ein.",
         wetterLw ? xpAbgleich.wetterText || "Wetter wird von LeitWerk übernommen." : "Wetter stellst du in X-Plane selbst ein.",
         xpAbgleich.fmsFehler || (xpAbgleich.fms ? `Flugplan ${xpAbgleich.fms} liegt in X-Plane (Output/FMS plans) – im GPS/FMS laden.` : "Flugplan „LeitWerk“ kommt bei jedem neuen Ziel nach X-Plane (Output/FMS plans)."),
+        xpAbgleich.gfp,
         xpAbgleich.fehler,
       ]
         .filter(Boolean)
