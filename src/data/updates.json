@@ -1,5 +1,15 @@
 [
  {
+  "version": "0.116.0-beta.36",
+  "datum": "2026-11-11",
+  "titel": "Wetter in MSFS: sanfter Wechsel",
+  "punkte": [
+   "Wetter zieht in MSFS über 10 Spielminuten auf statt umzuspringen",
+   "Übergang und Uhrzeit folgen dem Zeitraffer",
+   "Testmenü: Wechsel sofort / schnell / realistisch"
+  ]
+ },
+ {
   "version": "0.116.0-beta.35",
   "datum": "2026-11-11",
   "titel": "Test: Wetter in MSFS",

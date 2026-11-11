@@ -1836,6 +1836,12 @@ export class Simulation {
     this.emit();
   }
 
+  /** Wie schnell die Spielzeit gerade wirklich läuft (0 = Pause; Spieler-NAH in der Luft bremst auf 1) */
+  wirksamesTempo(): number {
+    if (!this.state.laeuft) return 0;
+    return this.state.tempo > 1 && this.zeitBremse() ? 1 : this.state.tempo;
+  }
+
   setTempo(t: number): void {
     this.state.tempo = t;
     this.emit();

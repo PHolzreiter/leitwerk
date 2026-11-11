@@ -531,7 +531,9 @@ async function xplaneAbgleich(d: SimDaten): Promise<void> {
   const data: Record<string, unknown> = {};
   if (vorgabe().xpZeit !== false) {
     const erwartet = xpAbgleich.zeitSim + (Date.now() - xpAbgleich.zeitReal);
-    if (!xpAbgleich.zeitSim || Math.abs(sim.state.zeit - erwartet) > 60_000) data.gmt_time = xpZeit(sim.state.zeit);
+    // im Zeitraffer läuft LeitWerk schneller als der Simulator: dann öfter nachziehen
+    const grenze = sim.wirksamesTempo() > 1 ? 8_000 : 60_000;
+    if (!xpAbgleich.zeitSim || Math.abs(sim.state.zeit - erwartet) > grenze) data.gmt_time = xpZeit(sim.state.zeit);
   }
   let key = "";
   if ((vorgabe().wetter ?? "leitwerk") === "leitwerk") {
@@ -610,10 +612,15 @@ export function xpZeitUmschalten(an: boolean): void {
  * Wetter-Schnittstelle des Simulators (JS_LISTENER_WEATHER, UpdateTempWeatherPreset). Höhen über Grund (m),
  * Wind in Knoten, Temperatur °C, Druck hPa, Niederschlag mm/h. null = Pilot stellt das Wetter selbst ein.
  */
+/** Wie lange ein Wetterwechsel im Flugsimulator dauert (Spielminuten): normal 10, im Testmenü wählbar (0 = sofort, 2 = schnell) */
+export const wetterUebergang = { min: 10 };
+
 export function msfsWetter(): Record<string, unknown> | null {
   const zeit = vorgabe().xpZeit !== false ? sim.state.zeit : null;
-  if ((vorgabe().wetter ?? "leitwerk") !== "leitwerk") return zeit ? { zeit, nurZeit: true } : null;
-  if (sim.settings.wetterEcht) return { zeit, echt: true };
+  // jetzt = Spielzeit (auch ohne Uhrzeit-Übernahme: der Wetterübergang läuft in Spielzeit, also mit dem Zeitraffer)
+  const basis = { zeit, jetzt: sim.state.zeit, tempo: sim.wirksamesTempo(), ueb: sim.pilotTest ? wetterUebergang.min : 10 };
+  if ((vorgabe().wetter ?? "leitwerk") !== "leitwerk") return zeit ? { ...basis, nurZeit: true } : null;
+  if (sim.settings.wetterEcht) return { ...basis, echt: true };
   const w = sim.wetterWerte();
   const i = LAGE[w.lage];
   const nass = i.art === "regen" || i.art === "schnee" || i.art === "eis";
@@ -628,7 +635,7 @@ export function msfsWetter(): Record<string, unknown> | null {
   }
   const regen = { niesel: 0.5, leichter_regen: 1.5, regen: 4, starkregen: 15, gewitter: 10, hagel: 20, unwetter: 30, schneeregen: 3, leichter_schnee: 1, schnee: 3, starker_schnee: 8, eisregen: 3 } as Partial<Record<WetterLage, number>>;
   return {
-    zeit,
+    ...basis,
     lage: w.lage,
     text: WETTER_LABEL[w.lage],
     temp: Math.round(w.temp),

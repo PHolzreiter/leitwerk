@@ -1,5 +1,11 @@
 # Änderungen
 
+## 0.116.0-beta.36 – Wetter in MSFS: sanfter Wechsel
+- EFB-App 0.3.0: Ändert sich das Wetter in LeitWerk, zieht es in MSFS **schrittweise** auf (Wolken, Regen, Sicht, Wind, Temperatur, Druck) statt umzuspringen – normal über 10 Spielminuten in 20 Schritten. Beim Beitreten wird das Wetter sofort gesetzt
+- Der Übergang läuft in **Spielzeit**: beschleunigt die Leitstelle die Zeit, zieht das Wetter entsprechend schneller auf
+- **Uhrzeit im Zeitraffer:** MSFS und X-Plane werden öfter nachgezogen, wenn LeitWerk schneller läuft; in der Pause wird die Uhr nicht zurückgestellt
+- Testmenü: „Wechsel“ Sofort / Schnell (2 min) / Realistisch (10 min) zum Ausprobieren
+
 ## 0.116.0-beta.35 – Test: Wetter in MSFS
 - **Testmenü der Pilotenansicht:** „Wetter für den Test“ (klar, bewölkt, bedeckt, Regen, Starkregen, Nebel, Hochnebel, Gewitter, Schnee) – zum Ausprobieren der Wetter-Übernahme in MSFS und X-Plane; gilt nur im Testmodus
 - EFB-App 0.2.1: Bedeckung und Gewitter werden in Prozent geschickt (MSFS rechnet dort 0–100)

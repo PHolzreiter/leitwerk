@@ -41,7 +41,7 @@ import { efbStarten, tabletApp, tabletAppNeu, tabletAppSetzen, handyAktionen, ha
 import { hpg, hpgAktualisieren, hpgCarlsTest, hpgEinrichten, hpgMissionFuer, hpgStarten, hpgTestNachricht } from "./hpg";
 import { letzterCarls } from "./eingabe";
 import { carlsAn, carlsUmschalten, communityWaehlen, gtn, gtnAn, gtnBereitlegen, gtnSuchen, gtnUmschalten } from "./flugsim";
-import { datenEmpfangen, datenFrisch, dllWaehlen, flugplanSpeichern, flugsim, flugsimAnbinden, flugsimBeenden, flugsimTrennen, flugsimVerbinden, koordText, vorgabe, wetterDialog, msfsWetter, msfsWetterStand, xpAbgleich, xplaneFlugplanBereitlegen, xpZeitUmschalten } from "./flugsim";
+import { datenEmpfangen, datenFrisch, dllWaehlen, flugplanSpeichern, flugsim, flugsimAnbinden, flugsimBeenden, flugsimTrennen, flugsimVerbinden, koordText, vorgabe, wetterDialog, msfsWetter, msfsWetterStand, wetterUebergang, xpAbgleich, xplaneFlugplanBereitlegen, xpZeitUmschalten } from "./flugsim";
 import { IC, wetterHtml, wetterKurz, wetterSchluessel, type WetterReiter } from "../ws/kopfleisteInhalt";
 import { mb, onUpdate, updateImHintergrund, updateInfo, updateStand, updateStandZuruecksetzen } from "../updateDienst";
 import { fehlerBerichtSpeichern } from "../fehlerMelden";
@@ -717,6 +717,19 @@ function testMenue(): void {
     reihe.appendChild(b);
   }
   wx.appendChild(reihe);
+  // Wie schnell der Simulator zum neuen Wetter wechselt (Spielminuten – läuft mit dem Zeitraffer)
+  wx.insertAdjacentHTML("beforeend", `<p class="plt-leise" style="margin:10px 0 6px"><b>Wechsel</b> – wie schnell das neue Wetter im Flugsimulator aufzieht (in Spielzeit, im Zeitraffer schneller)</p>`);
+  const ueb = el("div", { class: "plt-reiter" });
+  for (const [m, t] of [[0, "Sofort"], [2, "Schnell (2 min)"], [10, "Realistisch (10 min)"]] as [number, string][]) {
+    const b = el("button", { class: wetterUebergang.min === m ? "an" : "", type: "button" });
+    b.textContent = t;
+    b.addEventListener("click", () => {
+      wetterUebergang.min = m;
+      ueb.querySelectorAll("button").forEach((x) => x.classList.toggle("an", x === b));
+    });
+    ueb.appendChild(b);
+  }
+  wx.appendChild(ueb);
   body.appendChild(wx);
   if (!fz) body.insertAdjacentHTML("beforeend", `<p class="plt-warn">Zuerst einen Hubschrauber wählen.</p>`);
   else if (fz.einsatzId) body.insertAdjacentHTML("beforeend", `<p class="plt-warn">Du bist noch im Einsatz – zuerst frei melden (Status 1 oder 6).</p>`);

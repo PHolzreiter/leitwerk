@@ -20,7 +20,7 @@
 
   var APP_NAME = 'LeitWerk';
   var INTERNAL_NAME = 'LeitWerkPilot';
-  var VERSION = '0.2.1';
+  var VERSION = '0.3.0';
   var PORTS = [47900, 47901, 47902, 47903, 47904, 47905];
   var SUCHEN_MS = 2500;
 
@@ -334,19 +334,48 @@
       dv.value = lo + (hi - lo) * a;
     }
 
-    function wetterSetzen(wx) {
-      if (!preset) { einmal('keinpreset', 'fehler: noch keine Voreinstellung vom Simulator bekommen'); return; }
-      if (wx.echt) {
-        var live = 0;
-        if (liste && liste.length) for (var i = 0; i < liste.length; i++) if (liste[i].live) live = i;
-        lst.trigger('CUSTOM_WEATHER_PRESET_CHANGED', live);
-        melden('Echtes Wetter: Live-Wetter im Simulator eingeschaltet');
-        return;
+    // ---- sanfter Übergang: Werte als Zahlen, gemischt nach Fortschritt in SPIELZEIT (läuft mit dem Zeitraffer)
+    var ist = null;          // zuletzt gesendete Werte
+    var von = null, ziel = null, start = 0, dauer = 0, fLetzt = 1, schritte = 20;
+
+    function werteVon(wx) {
+      var w = [];
+      for (var i = 0; i < 3; i++) w.push(wx.wolken && wx.wolken[i] ? { ab: wx.wolken[i].ab, bis: wx.wolken[i].bis, dichte: wx.wolken[i].dichte, bedeckung: wx.wolken[i].bedeckung } : null);
+      return { text: wx.text || wx.lage, temp: wx.temp, druck: wx.druck, regen: wx.regen, schnee: wx.schnee, gewitter: wx.gewitter, sicht: wx.sicht, wind: wx.wind, boe: wx.boe, richtung: wx.richtung, art: wx.art, wolken: w };
+    }
+    function lerp(a, b, f) { return a + (b - a) * f; }
+    function mischen(a, b, f) {
+      var d = ((b.richtung - a.richtung + 540) % 360) - 180; // kürzester Weg (Wind dreht über Nord richtig)
+      var w = [];
+      for (var i = 0; i < 3; i++) {
+        var A = a.wolken[i], B = b.wolken[i];
+        if (!A && !B) { w.push(null); continue; }
+        var A0 = A || { ab: B.ab, bis: B.bis, dichte: B.dichte, bedeckung: 0 };
+        var B0 = B || { ab: A.ab, bis: A.bis, dichte: A.dichte, bedeckung: 0 };
+        w.push({ ab: lerp(A0.ab, B0.ab, f), bis: lerp(A0.bis, B0.bis, f), dichte: lerp(A0.dichte, B0.dichte, f), bedeckung: lerp(A0.bedeckung, B0.bedeckung, f) });
       }
+      return {
+        text: f >= 1 ? b.text : a.text + ' → ' + b.text,
+        temp: lerp(a.temp, b.temp, f), druck: lerp(a.druck, b.druck, f), regen: lerp(a.regen, b.regen, f), schnee: lerp(a.schnee, b.schnee, f),
+        gewitter: lerp(a.gewitter, b.gewitter, f), sicht: lerp(a.sicht, b.sicht, f), wind: lerp(a.wind, b.wind, f), boe: lerp(a.boe, b.boe, f),
+        richtung: (a.richtung + d * f + 360) % 360, art: f >= 0.5 ? b.art : a.art, wolken: w,
+      };
+    }
+
+    function echtSetzen() {
+      var live = 0;
+      if (liste && liste.length) for (var i = 0; i < liste.length; i++) if (liste[i].live) live = i;
+      lst.trigger('CUSTOM_WEATHER_PRESET_CHANGED', live);
+      ist = null;
+      melden('Echtes Wetter: Live-Wetter im Simulator eingeschaltet');
+    }
+
+    function wetterSetzen(wx, wie) {
+      if (!preset) { einmal('keinpreset', 'fehler: noch keine Voreinstellung vom Simulator bekommen'); return; }
       // Live-Wetter läuft: erst auf eine Voreinstellung wechseln, dann ändern
       if (preset.index === 0) {
         var ziel = liste && liste[1] ? liste[1].index : 1;
-        wartetAufPreset = function () { wetterSetzen(wx); };
+        wartetAufPreset = function () { wetterSetzen(wx, wie); };
         lst.trigger('CUSTOM_WEATHER_PRESET_CHANGED', ziel);
         melden('Live-Wetter aus, wechsle auf Voreinstellung ' + ziel);
         return;
@@ -363,6 +392,7 @@
       dunst(s.dvPollution, wx.sicht);
       if (s.sPrecipitationType !== undefined) s.sPrecipitationType = wx.art;
       p.oSettings = s;
+      ist = wx;
       var w = wx.wolken || [];
       var cl = p.tCloudLayers || [];
       for (var c = 0; c < cl.length; c++) {
@@ -393,7 +423,7 @@
       }
       try {
         lst.call('UpdateTempWeatherPreset', p).then(function (antwort) {
-          melden('Wetter gesetzt: ' + (wx.text || wx.lage) + ', ' + wx.temp + ' °C, Wind ' + wx.wind + ' kt aus ' + wx.richtung + '°');
+          melden('Wetter ' + (wie || 'gesetzt') + ': ' + wx.text + ', ' + Math.round(wx.temp) + ' °C, Wind ' + Math.round(wx.wind) + ' kt aus ' + Math.round(wx.richtung) + '°');
           einmal('antwort', 'daten: Antwort auf UpdateTempWeatherPreset', antwort);
           einmal('gesendet', 'daten: gesendete Voreinstellung', p);
         }).catch(function (e) { melden('fehler: Wetter nicht gesetzt', e); });
@@ -426,8 +456,10 @@
         var wx = st && st.neu && st.neu.wx;
         if (!wx) return;
         if (wx.zeit) {
+          // MSFS läuft in Echtzeit weiter; im Zeitraffer von LeitWerk öfter nachziehen, in der Pause nicht zurückstellen
           var erwartet = zeitSoll + (Date.now() - zeitGesetzt);
-          if (!zeitGesetzt || Math.abs(wx.zeit - erwartet) > 60000) zeitSetzen(wx.zeit);
+          var grenze = wx.tempo > 1 ? 5000 : 60000;
+          if (!zeitGesetzt || (wx.tempo !== 0 && Math.abs(wx.zeit - erwartet) > grenze)) zeitSetzen(wx.zeit);
         }
         if (wx.nurZeit) return;
         if (!preset) {
@@ -441,9 +473,28 @@
           return;
         }
         var key = wx.echt ? 'echt' : [wx.lage, Math.round(wx.wind / 5), Math.round(wx.richtung / 30), wx.temp].join('|');
-        if (key === letzt) return;
-        letzt = key;
-        wetterSetzen(wx);
+        var jetzt = wx.jetzt || wx.zeit || 0;
+        if (key !== letzt) {
+          letzt = key;
+          if (wx.echt) { dauer = 0; echtSetzen(); return; }
+          var z = werteVon(wx);
+          if (!ist || !wx.ueb) {
+            // Beitreten (oder „sofort“): gleich ganz setzen
+            dauer = 0; fLetzt = 1; von = z; ziel = z;
+            wetterSetzen(z, 'gesetzt');
+          } else {
+            von = ist; ziel = z; start = jetzt; dauer = wx.ueb * 60000; fLetzt = 0;
+            schritte = wx.ueb <= 3 ? 12 : 20;
+            melden('Übergang zu ' + z.text + ' über ' + wx.ueb + ' Spielminuten (' + schritte + ' Schritte)');
+          }
+        }
+        if (dauer > 0 && fLetzt < 1) {
+          var f = Math.max(0, Math.min(1, (jetzt - start) / dauer));
+          if (f >= 1 || f - fLetzt >= 1 / schritte - 1e-6) {
+            fLetzt = f;
+            wetterSetzen(mischen(von, ziel, f), f >= 1 ? 'fertig' : 'Schritt ' + Math.round(f * 100) + ' %');
+          }
+        }
       };
       try { x.send(); } catch (e) { port = null; }
     }
