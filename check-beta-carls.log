@@ -1,6 +1,6 @@
 ### npm install
 
-added 52 packages, and audited 53 packages in 9s
+added 52 packages, and audited 53 packages in 8s
 
 9 packages are looking for funding
   run `npm fund` for details
@@ -79,20 +79,20 @@ computing gzip size...
 [2mdist/[22m[2massets/[22m[32mbg-32x9-abend-DLJpcJQK.jpg           [39m[1m[2m1,159.39 kB[22m[1m[22m
 [2mdist/[22m[2massets/[22m[32meinsatzstellen-BKMVXWRH.csv          [39m[1m[2m2,885.41 kB[22m[1m[22m
 [2mdist/[22m[2massets/[22m[35mindex-1RsdzNem.css                   [39m[1m[2m  475.66 kB[22m[1m[22m[2m │ gzip:    74.68 kB[22m
-[2mdist/[22m[2massets/[22m[36mdist-js-ITznDDoj.js                  [39m[1m[2m    0.54 kB[22m[1m[22m[2m │ gzip:     0.26 kB[22m
-[2mdist/[22m[2massets/[22m[36mwebviewWindow-BKIv31g8.js            [39m[1m[2m    1.78 kB[22m[1m[22m[2m │ gzip:     0.80 kB[22m
-[2mdist/[22m[2massets/[22m[36mfussleiste-GtGrn3IJ.js               [39m[1m[2m    2.37 kB[22m[1m[22m[2m │ gzip:     1.19 kB[22m
-[2mdist/[22m[2massets/[22m[36mwebview-CXPBNRMR.js                  [39m[1m[2m    3.34 kB[22m[1m[22m[2m │ gzip:     1.14 kB[22m
-[2mdist/[22m[2massets/[22m[36mpath-B1j6vl1F.js                     [39m[1m[2m    3.76 kB[22m[1m[22m[2m │ gzip:     0.91 kB[22m
-[2mdist/[22m[2massets/[22m[36mwindow-iWEG3eqD.js                   [39m[1m[2m   14.32 kB[22m[1m[22m[2m │ gzip:     3.56 kB[22m
-[2mdist/[22m[2massets/[22m[36mzeilen-DvtChSgy.js                   [39m[1m[2m   52.44 kB[22m[1m[22m[2m │ gzip:    20.33 kB[22m
-[2mdist/[22m[2massets/[22m[36mindex-Bwbp0Y6s.js                    [39m[1m[33m6,568.48 kB[39m[22m[2m │ gzip: 1,821.89 kB[22m
+[2mdist/[22m[2massets/[22m[36mdist-js-3FAGTkZU.js                  [39m[1m[2m    0.54 kB[22m[1m[22m[2m │ gzip:     0.26 kB[22m
+[2mdist/[22m[2massets/[22m[36mwebviewWindow-CqoFVT2h.js            [39m[1m[2m    1.78 kB[22m[1m[22m[2m │ gzip:     0.80 kB[22m
+[2mdist/[22m[2massets/[22m[36mfussleiste-32d2Qp1y.js               [39m[1m[2m    2.37 kB[22m[1m[22m[2m │ gzip:     1.19 kB[22m
+[2mdist/[22m[2massets/[22m[36mwebview-D1H9DII-.js                  [39m[1m[2m    3.34 kB[22m[1m[22m[2m │ gzip:     1.14 kB[22m
+[2mdist/[22m[2massets/[22m[36mpath-faoA2fIK.js                     [39m[1m[2m    3.76 kB[22m[1m[22m[2m │ gzip:     0.91 kB[22m
+[2mdist/[22m[2massets/[22m[36mwindow-C1Hj7YBU.js                   [39m[1m[2m   14.32 kB[22m[1m[22m[2m │ gzip:     3.56 kB[22m
+[2mdist/[22m[2massets/[22m[36mzeilen-4RNPAGGM.js                   [39m[1m[2m   52.44 kB[22m[1m[22m[2m │ gzip:    20.33 kB[22m
+[2mdist/[22m[2massets/[22m[36mindex-DCCDffGD.js                    [39m[1m[33m6,568.69 kB[39m[22m[2m │ gzip: 1,821.96 kB[22m
 [33m
 (!) Some chunks are larger than 2000 kB after minification. Consider:
 - Using dynamic import() to code-split the application
 - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
 - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.[39m
-[32m✓ built in 8.83s[39m
+[32m✓ built in 7.27s[39m
 ### npx tauri icon app-icon.png
         Appx Creating StoreLogo.png
         Appx Creating Square30x30Logo.png
@@ -174,7 +174,7 @@ computing gzip size...
    [1m[94m|[0m     [1m[33m^^^^^^^^^^^^^^[0m
 
 [1m[33mwarning[0m: `leitwerk` (lib) generated 4 warnings (run `cargo fix --lib -p leitwerk` to apply 2 suggestions)
-[1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 4.75s
+[1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 4.48s
 ### cmake -S tools/xplane-plugin -B xpbau -DCMAKE_BUILD_TYPE=Release
 -- The CXX compiler identification is GNU 13.3.0
 -- Detecting CXX compiler ABI info
@@ -186,14 +186,14 @@ computing gzip size...
 -- Performing Test CMAKE_HAVE_LIBC_PTHREAD
 -- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
 -- Found Threads: TRUE
--- Configuring done (0.4s)
+-- Configuring done (0.3s)
 -- Generating done (0.0s)
 -- Build files have been written to: /home/runner/work/leitwerk/leitwerk/xpbau
 ### cmake --build xpbau -j4
 [ 10%] Building CXX object CMakeFiles/LeitWerk.dir/src/plugin.cpp.o
 [ 20%] Building CXX object CMakeFiles/LeitWerk.dir/src/ansicht.cpp.o
-[ 30%] Building CXX object CMakeFiles/LeitWerk.dir/src/karte.cpp.o
-[ 40%] Building CXX object CMakeFiles/LeitWerk.dir/src/netz.cpp.o
+[ 30%] Building CXX object CMakeFiles/LeitWerk.dir/src/netz.cpp.o
+[ 40%] Building CXX object CMakeFiles/LeitWerk.dir/src/karte.cpp.o
 [ 50%] Building CXX object CMakeFiles/LeitWerk.dir/src/wetter.cpp.o
 [ 60%] Building CXX object CMakeFiles/LeitWerk.dir/extern/imgui/imgui.cpp.o
 [ 70%] Building CXX object CMakeFiles/LeitWerk.dir/extern/imgui/imgui_draw.cpp.o
