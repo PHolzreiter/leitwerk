@@ -77,6 +77,16 @@ try:
         st = A.evaluate("([e, r]) => { const s = T.s(); return [s.state.fahrzeuge[r].einsatzId === e, s.state.fahrzeuge[r].phase]; }", [x["e"], x["rtw"]])
         check(st[0], f"RTW bleibt am Einsatz ({st[1]})")
 
+        # 1b) gesprochen (über funkLeo wie die Sprechtaste): Rufname des NEF mitten im Satz – die Antwort kommt vom RTW
+        r = A.evaluate("""async ([id, n, nef]) => { const s = T.s(); await T.warte(() => !s.funkKanalSpricht(null), 20000);
+            const vor = T.g(id).sprueche.length;
+            const ziel = s.funkLeo(`Hier LEO, ${n} ist ab Wache zu euch alarmiert, Eintreffzeit 12 Minuten, kommen`, null, true);
+            await T.warte(() => T.g(id).sprueche.length > vor + 1 && !T.g(id).ausstehend, 20000);
+            const nefRuf = s.state.funkGespraeche.some((g) => g.fzId === nef && g.status !== 'ende');
+            return [ziel === id, nefRuf, T.g(id).sprueche.slice(vor).map((x) => `${x.von}: ${x.text}`)]; }""", [gid, x["nefName"], x["nef"]])
+        print("   ", r[2])
+        check(r[0] and not r[1], "Spruch mit erwähntem NEF bleibt im Gespräch mit dem RTW (NEF wird nicht gerufen)")
+
         # 2) Unverständliches → bitte wiederholen
         a = A.evaluate("(id) => T.sage(id, 'moneda')", gid)
         check("wiederhol" in a.lower() or "nochmal" in a.lower(), f"Unverständlich → „{a}“")
