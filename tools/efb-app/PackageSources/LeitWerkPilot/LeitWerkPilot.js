@@ -20,7 +20,7 @@
 
   var APP_NAME = 'LeitWerk';
   var INTERNAL_NAME = 'LeitWerkPilot';
-  var VERSION = '0.3.0';
+  var VERSION = '0.4.0';
   var PORTS = [47900, 47901, 47902, 47903, 47904, 47905];
   var SUCHEN_MS = 2500;
 
@@ -336,7 +336,8 @@
 
     // ---- sanfter Übergang: Werte als Zahlen, gemischt nach Fortschritt in SPIELZEIT (läuft mit dem Zeitraffer)
     var ist = null;          // zuletzt gesendete Werte
-    var von = null, ziel = null, start = 0, dauer = 0, fLetzt = 1, schritte = 20;
+    var zuletztViertel = -1;
+    var von = null, ziel = null, start = 0, dauer = 0, fLetzt = 1, schritte = 20, plan = null, modus = 'bedeckung', fRest = 1;
 
     function werteVon(wx) {
       var w = [];
@@ -344,22 +345,67 @@
       return { text: wx.text || wx.lage, temp: wx.temp, druck: wx.druck, regen: wx.regen, schnee: wx.schnee, gewitter: wx.gewitter, sicht: wx.sicht, wind: wx.wind, boe: wx.boe, richtung: wx.richtung, art: wx.art, wolken: w };
     }
     function lerp(a, b, f) { return a + (b - a) * f; }
-    function mischen(a, b, f) {
+    // weicher Verlauf: am Anfang und am Ende langsamer
+    function weich(f) { return f * f * (3 - 2 * f); }
+    function gleicheHoehe(A, B) { return A && B && Math.abs(A.ab - B.ab) < 1 && Math.abs(A.bis - B.bis) < 1; }
+
+    // Wolkenplan für einen Übergang: jede Schicht behält ihre Höhe. Gleiche Höhe → am selben Platz weich ändern;
+    // sonst blendet die alte Schicht aus und die neue auf einem freien Platz ein (MSFS hat 3 Plätze).
+    function wolkenPlan(V, Z) {
+      var plan = [null, null, null];
+      var frei = [true, true, true];
+      var zOffen = [];
+      var i, k;
+      for (i = 0; i < 3; i++) if (V[i]) { plan[i] = { von: V[i], nach: null }; frei[i] = false; }
+      for (k = 0; k < 3; k++) {
+        if (!Z[k]) continue;
+        var gefunden = -1;
+        for (i = 0; i < 3; i++) if (plan[i] && !plan[i].nach && gleicheHoehe(plan[i].von, Z[k])) { gefunden = i; break; }
+        if (gefunden >= 0) plan[gefunden].nach = Z[k];
+        else zOffen.push(Z[k]);
+      }
+      for (k = 0; k < zOffen.length; k++) {
+        var platz = -1;
+        for (i = 0; i < 3; i++) if (frei[i]) { platz = i; break; }
+        if (platz < 0) {
+          // kein freier Platz: die schwächste ausblendende Schicht ersetzen (selten)
+          for (i = 0; i < 3; i++) if (plan[i] && !plan[i].nach) { platz = i; break; }
+          if (platz < 0) break;
+        }
+        frei[platz] = false;
+        plan[platz] = { von: null, nach: zOffen[k] };
+      }
+      return plan;
+    }
+    function wolkeBei(e, f, modus) {
+      if (!e) return null;
+      var A = e.von, B = e.nach;
+      if (A && B) return { ab: A.ab, bis: A.bis, dichte: lerp(A.dichte, B.dichte, f), bedeckung: lerp(A.bedeckung, B.bedeckung, f) };
+      var L = A || B;
+      var stark = A ? 1 - f : f; // ausblenden bzw. einblenden
+      if (modus === 'dichte') return { ab: L.ab, bis: L.bis, dichte: L.dichte * stark, bedeckung: L.bedeckung };
+      return { ab: L.ab, bis: L.bis, dichte: L.dichte, bedeckung: L.bedeckung * stark };
+    }
+    function mischen(a, b, fRest, fWolken, plan, modus) {
       var d = ((b.richtung - a.richtung + 540) % 360) - 180; // kürzester Weg (Wind dreht über Nord richtig)
       var w = [];
-      for (var i = 0; i < 3; i++) {
-        var A = a.wolken[i], B = b.wolken[i];
-        if (!A && !B) { w.push(null); continue; }
-        var A0 = A || { ab: B.ab, bis: B.bis, dichte: B.dichte, bedeckung: 0 };
-        var B0 = B || { ab: A.ab, bis: A.bis, dichte: A.dichte, bedeckung: 0 };
-        w.push({ ab: lerp(A0.ab, B0.ab, f), bis: lerp(A0.bis, B0.bis, f), dichte: lerp(A0.dichte, B0.dichte, f), bedeckung: lerp(A0.bedeckung, B0.bedeckung, f) });
-      }
+      for (var i = 0; i < 3; i++) w.push(wolkeBei(plan[i], fWolken, modus));
+      var f = fRest;
       return {
-        text: f >= 1 ? b.text : a.text + ' → ' + b.text,
+        text: fWolken >= 1 && fRest >= 1 ? b.text : a.text + ' → ' + b.text,
         temp: lerp(a.temp, b.temp, f), druck: lerp(a.druck, b.druck, f), regen: lerp(a.regen, b.regen, f), schnee: lerp(a.schnee, b.schnee, f),
         gewitter: lerp(a.gewitter, b.gewitter, f), sicht: lerp(a.sicht, b.sicht, f), wind: lerp(a.wind, b.wind, f), boe: lerp(a.boe, b.boe, f),
         richtung: (a.richtung + d * f + 360) % 360, art: f >= 0.5 ? b.art : a.art, wolken: w,
       };
+    }
+    // Ziel-Wolken auf die Plätze des Plans legen (damit der nächste Übergang von dort weitermacht)
+    function zielAufPlaetze(z, plan) {
+      var w = [null, null, null];
+      for (var i = 0; i < 3; i++) if (plan[i] && plan[i].nach) w[i] = plan[i].nach;
+      var r = {};
+      for (var k in z) r[k] = z[k];
+      r.wolken = w;
+      return r;
     }
 
     function echtSetzen() {
@@ -423,7 +469,8 @@
       }
       try {
         lst.call('UpdateTempWeatherPreset', p).then(function (antwort) {
-          melden('Wetter ' + (wie || 'gesetzt') + ': ' + wx.text + ', ' + Math.round(wx.temp) + ' °C, Wind ' + Math.round(wx.wind) + ' kt aus ' + Math.round(wx.richtung) + '°');
+          if (wie) melden('Wetter ' + wie + ': ' + wx.text + ', ' + Math.round(wx.temp) + ' °C, Wind ' + Math.round(wx.wind) + ' kt aus ' + Math.round(wx.richtung) + '°');
+          else if (Math.floor(fLetzt * 4) !== zuletztViertel) { zuletztViertel = Math.floor(fLetzt * 4); melden('Übergang ' + Math.round(fLetzt * 100) + ' %: ' + wx.text); }
           einmal('antwort', 'daten: Antwort auf UpdateTempWeatherPreset', antwort);
           einmal('gesendet', 'daten: gesendete Voreinstellung', p);
         }).catch(function (e) { melden('fehler: Wetter nicht gesetzt', e); });
@@ -483,16 +530,23 @@
             dauer = 0; fLetzt = 1; von = z; ziel = z;
             wetterSetzen(z, 'gesetzt');
           } else {
-            von = ist; ziel = z; start = jetzt; dauer = wx.ueb * 60000; fLetzt = 0;
+            // laufender Übergang: vom gerade gezeigten Zwischenstand weiter
+            von = ist; plan = wolkenPlan(ist.wolken, z.wolken); ziel = zielAufPlaetze(z, plan);
+            start = jetzt; dauer = wx.ueb * 60000; fLetzt = 0; fRest = 0; zuletztViertel = -1;
             schritte = wx.ueb <= 3 ? 12 : 20;
-            melden('Übergang zu ' + z.text + ' über ' + wx.ueb + ' Spielminuten (' + schritte + ' Schritte)');
+            modus = wx.wolkenModus === 'dichte' ? 'dichte' : 'bedeckung';
+            melden('Übergang zu ' + z.text + ' über ' + wx.ueb + ' Spielminuten – Wolken über ' + (modus === 'dichte' ? 'Dichte' : 'Bedeckung') + ', Rest in ' + schritte + ' Schritten');
           }
         }
         if (dauer > 0 && fLetzt < 1) {
           var f = Math.max(0, Math.min(1, (jetzt - start) / dauer));
-          if (f >= 1 || f - fLetzt >= 1 / schritte - 1e-6) {
+          if (f > fLetzt) {
+            // Wolken: bei jeder Abfrage ein kleines Stück (alle 2,5 s); Rest nur in seinen Schritten
+            if (f >= 1 || f - fRest >= 1 / schritte - 1e-6) fRest = f;
             fLetzt = f;
-            wetterSetzen(mischen(von, ziel, f), f >= 1 ? 'fertig' : 'Schritt ' + Math.round(f * 100) + ' %');
+            var m = mischen(von, ziel, weich(fRest), weich(f), plan, modus);
+            if (f >= 1) { m = ziel; plan = null; }
+            wetterSetzen(m, f >= 1 ? 'fertig' : null);
           }
         }
       };
@@ -501,7 +555,7 @@
 
     return {
       start: function () {
-        setInterval(takt, 5000);
+        setInterval(takt, 2500);
         takt();
       },
     };

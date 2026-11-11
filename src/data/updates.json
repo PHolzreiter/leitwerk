@@ -1,5 +1,14 @@
 [
  {
+  "version": "0.116.0-beta.37",
+  "datum": "2026-11-11",
+  "titel": "Wetter in MSFS: Wolken weicher",
+  "punkte": [
+   "Wolken behalten beim Wechsel ihre Höhe und blenden weich über",
+   "Wetterwechsel und Wolken-Art auch im normalen Spiel im Wetter-Dialog wählbar"
+  ]
+ },
+ {
   "version": "0.116.0-beta.36",
   "datum": "2026-11-11",
   "titel": "Wetter in MSFS: sanfter Wechsel",

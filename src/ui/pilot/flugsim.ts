@@ -40,6 +40,10 @@ interface Vorgabe {
   tabletApp?: boolean;
   /** X-Plane 12: Uhrzeit von LeitWerk übernehmen (Standard an) */
   xpZeit?: boolean;
+  /** MSFS: Dauer eines Wetterwechsels in Spielminuten (0 = sofort, Standard 10) */
+  wxUeb?: number;
+  /** MSFS: Wolken beim Wechsel über die Bedeckung oder über die Dichte ein-/ausblenden (Test) */
+  wxWolken?: "bedeckung" | "dichte";
 }
 export function vorgabe(): Vorgabe {
   try {
@@ -354,8 +358,24 @@ export function wetterDialog(): void {
           : echt
             ? `<p>LeitWerk nutzt <b>echtes Wetter</b> – die LeitWerk-App im EFB schaltet im MSFS <b>Live-Wetter</b> ein.</p><p class="plt-leise">Beide holen das Wetter aus verschiedenen Quellen – meist ähnlich, aber z. B. die Wolkenuntergrenze kann abweichen.</p>`
             : `<p>LeitWerk stellt sein Wetter im MSFS <b>selbst ein</b> (Wolken, Sicht, Wind, Niederschlag, Temperatur, Luftdruck) – über die LeitWerk-App im EFB-Tablet, ohne dass du sie öffnen musst. Ändert sich das Wetter in LeitWerk, zieht MSFS nach.</p>
+               <p style="margin:12px 0 6px"><b>Wetterwechsel</b> – wie schnell neues Wetter aufzieht (Spielzeit, im Zeitraffer schneller)</p>
+               <div class="plt-reiter">${[[0, "Sofort"], [2, "Schnell (2 min)"], [10, "Realistisch (10 min)"]].map(([m, t]) => `<button data-ueb="${m}" class="${wetterUebergang.min === m ? "an" : ""}">${t}</button>`).join("")}</div>
+               <p style="margin:12px 0 6px"><b>Wolken beim Wechsel (Test)</b> – was ruhiger aussieht</p>
+               <div class="plt-reiter zwei">${[["bedeckung", "über die Bedeckung"], ["dichte", "über die Dichte"]].map(([m, t]) => `<button data-wolken="${m}" class="${wetterUebergang.wolken === m ? "an" : ""}">${t}</button>`).join("")}</div>
                <p class="plt-leise">Falls es nicht klappt, im MSFS unter Wetter → Voreinstellung von Hand wählen: ${esc(msfsVorgabe(w.lage))}, Wind etwa ${Math.round(w.wind / 1.852)} kt aus ${Math.round(w.richtung)}°.</p>`
       }`;
+    body.querySelectorAll<HTMLButtonElement>("[data-ueb]").forEach((b) =>
+      b.addEventListener("click", () => {
+        wetterUebergang.min = Number(b.dataset.ueb);
+        zeichnen();
+      }),
+    );
+    body.querySelectorAll<HTMLButtonElement>("[data-wolken]").forEach((b) =>
+      b.addEventListener("click", () => {
+        wetterUebergang.wolken = b.dataset.wolken as "bedeckung" | "dichte";
+        zeichnen();
+      }),
+    );
     body.querySelectorAll<HTMLButtonElement>("[data-w]").forEach((b) =>
       b.addEventListener("click", () => {
         vorgabeSetzen({ wetter: b.dataset.w as "leitwerk" | "selbst" });
@@ -612,13 +632,26 @@ export function xpZeitUmschalten(an: boolean): void {
  * Wetter-Schnittstelle des Simulators (JS_LISTENER_WEATHER, UpdateTempWeatherPreset). Höhen über Grund (m),
  * Wind in Knoten, Temperatur °C, Druck hPa, Niederschlag mm/h. null = Pilot stellt das Wetter selbst ein.
  */
-/** Wie lange ein Wetterwechsel im Flugsimulator dauert (Spielminuten): normal 10, im Testmenü wählbar (0 = sofort, 2 = schnell) */
-export const wetterUebergang = { min: 10 };
+/** Wie lange ein Wetterwechsel im Flugsimulator dauert (Spielminuten): Standard 10; wählbar im Wetter-Dialog und im Testmenü */
+export const wetterUebergang = {
+  get min(): number {
+    return vorgabe().wxUeb ?? 10;
+  },
+  set min(m: number) {
+    vorgabeSetzen({ wxUeb: m });
+  },
+  get wolken(): "bedeckung" | "dichte" {
+    return vorgabe().wxWolken ?? "bedeckung";
+  },
+  set wolken(w: "bedeckung" | "dichte") {
+    vorgabeSetzen({ wxWolken: w });
+  },
+};
 
 export function msfsWetter(): Record<string, unknown> | null {
   const zeit = vorgabe().xpZeit !== false ? sim.state.zeit : null;
   // jetzt = Spielzeit (auch ohne Uhrzeit-Übernahme: der Wetterübergang läuft in Spielzeit, also mit dem Zeitraffer)
-  const basis = { zeit, jetzt: sim.state.zeit, tempo: sim.wirksamesTempo(), ueb: sim.pilotTest ? wetterUebergang.min : 10 };
+  const basis = { zeit, jetzt: sim.state.zeit, tempo: sim.wirksamesTempo(), ueb: wetterUebergang.min, wolkenModus: wetterUebergang.wolken };
   if ((vorgabe().wetter ?? "leitwerk") !== "leitwerk") return zeit ? { ...basis, nurZeit: true } : null;
   if (sim.settings.wetterEcht) return { ...basis, echt: true };
   const w = sim.wetterWerte();

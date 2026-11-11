@@ -730,6 +730,18 @@ function testMenue(): void {
     ueb.appendChild(b);
   }
   wx.appendChild(ueb);
+  wx.insertAdjacentHTML("beforeend", `<p class="plt-leise" style="margin:10px 0 6px"><b>Wolken beim Wechsel</b> – ein- und ausblenden über …</p>`);
+  const wo = el("div", { class: "plt-reiter zwei" });
+  for (const [m, t] of [["bedeckung", "Bedeckung"], ["dichte", "Dichte"]] as ["bedeckung" | "dichte", string][]) {
+    const b = el("button", { class: wetterUebergang.wolken === m ? "an" : "", type: "button" });
+    b.textContent = t;
+    b.addEventListener("click", () => {
+      wetterUebergang.wolken = m;
+      wo.querySelectorAll("button").forEach((x) => x.classList.toggle("an", x === b));
+    });
+    wo.appendChild(b);
+  }
+  wx.appendChild(wo);
   body.appendChild(wx);
   if (!fz) body.insertAdjacentHTML("beforeend", `<p class="plt-warn">Zuerst einen Hubschrauber wählen.</p>`);
   else if (fz.einsatzId) body.insertAdjacentHTML("beforeend", `<p class="plt-warn">Du bist noch im Einsatz – zuerst frei melden (Status 1 oder 6).</p>`);

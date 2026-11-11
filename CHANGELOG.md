@@ -1,5 +1,10 @@
 # Änderungen
 
+## 0.116.0-beta.37 – Wetter in MSFS: Wolken weicher
+- EFB-App 0.4.0: **Wolken behalten beim Wechsel ihre Höhe** – sie werden nur dichter oder lockerer. Liegt das neue Wetter auf einer anderen Höhe, blendet die alte Schicht aus und die neue auf einem eigenen Platz ein (statt die Schicht umzubauen)
+- Wolken ändern sich in vielen kleinen Schritten (alle 2,5 s), Wind, Temperatur, Druck und Sicht getrennt davon in eigenen Schritten; weicher Verlauf (am Anfang und Ende langsamer)
+- **Auch im normalen Spiel einstellbar:** Wetter-Dialog (Cockpit › MSFS › „Wetter …“): Wetterwechsel Sofort / Schnell (2 min) / Realistisch (10 min) und „Wolken beim Wechsel“ über die Bedeckung oder über die Dichte (zum Vergleichen). Gleiches im Testmenü
+
 ## 0.116.0-beta.36 – Wetter in MSFS: sanfter Wechsel
 - EFB-App 0.3.0: Ändert sich das Wetter in LeitWerk, zieht es in MSFS **schrittweise** auf (Wolken, Regen, Sicht, Wind, Temperatur, Druck) statt umzuspringen – normal über 10 Spielminuten in 20 Schritten. Beim Beitreten wird das Wetter sofort gesetzt
 - Der Übergang läuft in **Spielzeit**: beschleunigt die Leitstelle die Zeit, zieht das Wetter entsprechend schneller auf
