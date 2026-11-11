@@ -31,7 +31,7 @@ import { AKTIONEN, belegung, type PilotAktion } from "./tasten";
 import { eingabeStarten, eingabeStoppen, handyHalten, tastenDialog } from "./eingabe";
 import { gruppenName } from "../funkGeraet";
 import { funkEmpfang, funkGruppenSetzen, funkGruppenWahl, funkSendeZustand, funkTon, onFunkEmpfang, onFunkGruppen, onFunkSenden, sprechGruppe, sprechGruppeWeiter, sprechStart, sprechStopp } from "../sprechfunk";
-import { MODELLE, mikrofone, modellLaden, setzeSprache, sprachPrefs, sprachStatus } from "../sprache";
+import { MODELLE, mikrofone, mikroTesten, modellLaden, setzeSprache, sprachPrefs, sprachStatus } from "../sprache";
 import { inTauri } from "../../platform";
 import { ALARM_AUFNAHMEN, ALARM_STANDARD, ALARM_VORLAGEN, alarmPrefs, alarmPrefsSetzen, alarmStarten, alarmStoppen, alarmtonHinzufuegen, eigeneAlarmtoene, probeLaeuft, probeSpielen, probeStoppen, type AlarmArt } from "./alarmToene";
 import { dateiLoeschen } from "../sounds";
@@ -2309,6 +2309,7 @@ function funkDialog(): void {
   const body = el("div", { class: "plt-funkdlg" });
   body.innerHTML = `
     <label>Mikrofon<select class="plt-f-mikro"><option value="">Standard-Mikrofon</option></select></label>
+    <div class="plt-f-testzeile"><button type="button" class="btn plt-f-test">Mikrofon testen</button> <span class="plt-leise plt-klein plt-f-testerg">Klicken und 4 Sekunden sprechen</span></div>
     <div class="plt-f-modell"></div>
     <label class="plt-check"><input type="checkbox" class="plt-f-klang" ${p.klangfilter ? "checked" : ""}> Funk-Klang (blechern, kurzes Rauschen beim Loslassen)</label>
     <label>Funkempfang Mitspieler (echte Disponenten und Piloten)<input type="range" min="0" max="150" step="5" class="plt-f-laut" value="${p.funkLaut}"></label>
@@ -2361,6 +2362,16 @@ function funkDialog(): void {
   };
   void modellZeigen();
   const an = (sel: string, f: (x: HTMLInputElement) => void) => body.querySelector<HTMLInputElement>(sel)!.addEventListener("change", (ev) => f(ev.target as HTMLInputElement));
+  const testKnopf = body.querySelector<HTMLButtonElement>(".plt-f-test")!;
+  const testErg = body.querySelector<HTMLElement>(".plt-f-testerg")!;
+  testKnopf.addEventListener("click", () => {
+    testKnopf.disabled = true;
+    testErg.textContent = "Aufnahme läuft – jetzt sprechen …";
+    void mikroTesten()
+      .then((t) => (testErg.textContent = t))
+      .catch((e) => (testErg.textContent = `⚠ ${String((e as Error)?.message ?? e)}`))
+      .finally(() => (testKnopf.disabled = false));
+  });
   an(".plt-f-klang", (x) => setzeSprache({ klangfilter: x.checked }));
   an(".plt-f-laut", (x) => setzeSprache({ funkLaut: Number(x.value) }));
   an(".plt-f-lautki", (x) => setzeSprache({ funkLautKi: Number(x.value) }));

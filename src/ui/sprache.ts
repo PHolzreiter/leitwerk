@@ -1287,6 +1287,48 @@ export async function modellLoeschen(name: string): Promise<void> {
   await invoke("sprache_modell_loeschen", { name });
 }
 
+/**
+ * „Mikrofon testen“ in den Einstellungen: 4 Sekunden aufnehmen (Funk-Mikrofon, sonst das fürs Telefon), erkennen und
+ * zeigen, was ankam – Pegel, erkannter Text, Sicherheit, Dauer und ob die Grafikkarte rechnet.
+ */
+export async function mikroTesten(sekunden = 4): Promise<string> {
+  const p = sprachPrefs();
+  if (aufnahmeLaeuft) throw new Error("Es läuft gerade eine Aufnahme");
+  if (!inTauri()) {
+    const strom = await navigator.mediaDevices.getUserMedia({ audio: { deviceId: p.mikroFunk || p.mikro ? { exact: p.mikroFunk || p.mikro } : undefined } });
+    const c = new AudioContext();
+    const a = c.createAnalyser();
+    c.createMediaStreamSource(strom).connect(a);
+    const d = new Float32Array(a.fftSize);
+    let max = 0;
+    const bis = Date.now() + sekunden * 1000;
+    while (Date.now() < bis) {
+      a.getFloatTimeDomainData(d);
+      let q = 0;
+      for (const x of d) q += x * x;
+      max = Math.max(max, Math.sqrt(q / d.length));
+      await new Promise((r) => setTimeout(r, 50));
+    }
+    strom.getTracks().forEach((t) => t.stop());
+    void c.close();
+    return max < 0.01 ? "⚠ Nichts gehört – Mikrofon prüfen" : `Mikrofon hört dich (Pegel ${Math.min(100, Math.round(max * 300))} %)`;
+  }
+  const id = await invoke<number>("sprache_aufnahme_start", { mikro: p.mikroFunk || p.mikro || null });
+  aufnahmeIds.add(id);
+  try {
+    await new Promise((r) => setTimeout(r, sekunden * 1000));
+    const r = await invoke<{ text: string; sekunden: number; pegel: number; sicherheit: number; ms: number; gpu: boolean }>("sprache_aufnahme_stopp", { modell: p.modell, hinweis: "Hier LEO, kommen. 56/006 von LEO.", id });
+    protokoll("mikroTest", { ...r });
+    const laut = Math.min(100, Math.round(r.pegel * 100));
+    if (r.pegel < 0.02) return `⚠ Fast nichts gehört (Pegel ${laut} %) – richtiges Mikrofon gewählt?`;
+    const t = r.text.trim();
+    if (!t) return `⚠ Gehört (Pegel ${laut} %), aber nichts erkannt – deutlicher oder näher am Mikrofon sprechen`;
+    return `Erkannt: „${t}“ · Sicherheit ${Math.round(r.sicherheit * 100)} % · ${(r.ms / 1000).toFixed(1).replace(".", ",")} s ${r.gpu ? "(Grafikkarte)" : "(Prozessor)"} · Pegel ${laut} %`;
+  } finally {
+    aufnahmeIds.delete(id);
+  }
+}
+
 /** Test in den Einstellungen: Knopf halten, Ergebnis anzeigen */
 export function testZiel(input: HTMLInputElement): SprachZiel {
   return { input, rang: 99, aktiv: () => true, senden: () => undefined, hinweis: () => "Notruf 144, Rettungsdienst." };

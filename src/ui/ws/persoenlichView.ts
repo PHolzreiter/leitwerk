@@ -39,6 +39,7 @@ import {
   testZiel,
   vorlesenMoeglich,
   ausgabeGeraete,
+  mikroTesten,
   piperLaden,
   piperLoeschen,
   piperStatus,
@@ -499,6 +500,21 @@ export function persoenlichView(container: HTMLElement): { refresh(): void } {
     });
     mikroSel.addEventListener("change", () => setzeSprache({ mikro: mikroSel.value }));
     zeile(spr, "Mikrofon", mikroSel, inTauri() ? "Beim ersten Sprechen fragt der Computer, ob LeitWerk das Mikrofon benutzen darf." : "Die Namen erscheinen erst, nachdem du das Mikrofon einmal freigegeben hast.");
+    {
+      const box = el("div", { class: "mikro-test" });
+      const knopf = el("button", { class: "btn", type: "button" }, "Mikrofon testen");
+      const erg = el("span", { class: "leise" }, " Klicken und 4 Sekunden sprechen");
+      knopf.addEventListener("click", () => {
+        knopf.disabled = true;
+        erg.textContent = " Aufnahme läuft – jetzt sprechen …";
+        void mikroTesten()
+          .then((t) => (erg.textContent = ` ${t}`))
+          .catch((e) => (erg.textContent = ` ⚠ ${String((e as Error)?.message ?? e)}`))
+          .finally(() => (knopf.disabled = false));
+      });
+      box.append(knopf, erg);
+      zeile(spr, "Mikrofon testen", box, "Nimmt kurz auf und zeigt, was die Spracherkennung verstanden hat.");
+    }
 
     // Funktaste: wie die PTT am Funkgerät, in jedem Reiter
     zeile(spr, "Funktaste (gedrückt halten)", tastenFeld(() => sprachPrefs().funkTaste, tasteSetzen("funkTaste")), "Funken wie mit der PTT am Funkgerät – geht in jedem Reiter, in die am Funkgerät gewählte Sprechgruppe. Im Mehrspieler hören alle deine Stimme.");

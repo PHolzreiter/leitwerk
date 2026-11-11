@@ -438,7 +438,7 @@ export class SeitenBasis {
           L('Mikrofon fürs Telefon', 'mic', ['Wie das System', 'Headset-Mikrofon', 'MacBook-Mikrofon'], 'Wie das System', 'Spracheingabe und Gespräche mit Anrufern'),
           L('Mikrofon für den Funk', 'micFunk', ['Wie am Telefon', 'Headset-Mikrofon', 'MacBook-Mikrofon'], 'Wie am Telefon', 'Funktaste und Sprechfunk'),
           B('Erkennung (Whisper)', [{ l: 'Modelle …', sub: 'whisper' }], 'Läuft nur auf deinem Rechner, ohne Internet', { chip: 'Ausgewogen', dot: ok }),
-          B('Ausprobieren', [{ l: 'Mikrofon testen', ok: 'Erkannt: „RTW Krems 1, bitte melden“' }], 'Gedrückt halten, sprechen, loslassen'),
+          B('Ausprobieren', [{ l: 'Mikrofon testen', act: () => this.app.zusatz ? this.app.zusatz.mikroTesten() : 'nur im Programm' }], 'Klicken und 4 Sekunden sprechen, z. B. „LEO von 56/006, kommen“'),
           H('Funk'),
           K('Funktaste (gedrückt halten)', 'kFunk', 'F10'),
           K('Eigene Funktaste: normale Gruppe', 'kFunkN', '–'),

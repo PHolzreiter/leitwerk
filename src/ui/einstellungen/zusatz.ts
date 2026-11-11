@@ -29,6 +29,7 @@ import { alarmtonHinzufuegen } from "../pilot/alarmToene";
 import { ablageZeigen } from "../../net/ablage";
 import { alarmToeneNeu } from "../hauptmenue/bindung";
 import { fallNeuOeffnen } from "../fallEditor";
+import { mikroTesten } from "../sprache";
 
 const fehlerText = (e: unknown) => String((e as Error)?.message ?? e).replace(/^Error:\s*/, "");
 const gleich = (a: unknown, b: unknown) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
@@ -362,6 +363,9 @@ export function zusatzBauen(r: ZusatzRahmen) {
         return `${imp.ok.toLocaleString("de-DE")} ${imp.kindLabel} ${ersetzen ? "übernommen (eigene ersetzt)" : "übernommen"}`;
       },
     },
+
+    // ---------------------------------------------------------------- Mikrofon testen (aufnehmen, erkennen, zeigen)
+    mikroTesten: () => mikroTesten(),
 
     // ---------------------------------------------------------------- Pilot: eigener Alarmton
     alarm: {
