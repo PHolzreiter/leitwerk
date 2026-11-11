@@ -1,0 +1,36 @@
+# Cockpit-Geräte: MFD, Klapp-Tablet (Querformat), AviTab-Kachel, TETRA-Funkgerät, Wetter
+shell cp $TEST/stand-cockpit.json $STAND
+shell python3 $TEST/leitwerk_attrappe.py $STAND $AUS/befehle.log 47900 >/dev/null 2>&1 &
+warte 3.5
+zeige leitwerk/aktiv
+zeige leitwerk/tablet/app
+bild 60-cockpit.png
+befehl leitwerk/tablet_app_auf
+warte 0.5
+zeige leitwerk/tablet/app
+bild 61-tablet-app.png
+# Patient im MFD
+geraet mfd 400 110
+warte 0.5
+bild 62-mfd-patient.png
+# Zielort buchen im Tablet
+geraet tablet 200 560
+warte 0.5
+bild 63-tablet-buchen.png
+geraet tablet 980 40
+warte 0.3
+# Funkgerät: Ziffer 3, Gruppe wechseln, Sprechtaste
+befehl leitwerk/tetra/KEY_3
+befehl leitwerk/tetra/turn_right
+halten leitwerk/tetra/CALL
+shell cp $TEST/stand-cockpit2.json $STAND
+warte 2.5
+bild 64-funk-aktiv.png
+# zurück zu AviTab über den Knopf im Tablet
+geraet tablet 60 35
+warte 0.4
+zeige leitwerk/tablet/app
+# Strom weg: Funkgerät dunkel
+sim volt 0
+warte 0.3
+bild 65-strom-aus.png

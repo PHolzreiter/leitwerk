@@ -6,17 +6,17 @@ project(LeitWerkXPlane CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(LEITWERK_PLUGIN_VERSION "0.1.0" CACHE STRING "Version des Plugins")
+set(LEITWERK_PLUGIN_VERSION "0.2.0" CACHE STRING "Version des Plugins")
 
 set(SDK ${CMAKE_CURRENT_SOURCE_DIR}/sdk)
 set(IMGUI ${CMAKE_CURRENT_SOURCE_DIR}/extern/imgui)
 
 add_library(LeitWerk SHARED
-  src/plugin.cpp src/ansicht.cpp src/karte.cpp src/netz.cpp
+  src/plugin.cpp src/ansicht.cpp src/karte.cpp src/netz.cpp src/wetter.cpp
   ${IMGUI}/imgui.cpp ${IMGUI}/imgui_draw.cpp ${IMGUI}/imgui_tables.cpp ${IMGUI}/imgui_widgets.cpp)
 
 target_include_directories(LeitWerk PRIVATE src ${IMGUI} extern/stb ${SDK}/CHeaders/XPLM)
-target_compile_definitions(LeitWerk PRIVATE XPLM200=1 XPLM210=1 XPLM300=1 XPLM301=1 XPLM302=1 XPLM303=1 XPLM400=1 XPLM410=1
+target_compile_definitions(LeitWerk PRIVATE XPLM200=1 XPLM210=1 XPLM300=1 XPLM301=1 XPLM302=1 XPLM303=1 XPLM400=1 XPLM410=1 XPLM411=1 XPLM420=1
   LEITWERK_PLUGIN_VERSION="${LEITWERK_PLUGIN_VERSION}" IMGUI_DISABLE_OBSOLETE_FUNCTIONS IMGUI_DISABLE_DEMO_WINDOWS)
 set_target_properties(LeitWerk PROPERTIES PREFIX "" OUTPUT_NAME "LeitWerk" SUFFIX ".xpl")
 

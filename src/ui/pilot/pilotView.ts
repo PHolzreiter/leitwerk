@@ -38,10 +38,10 @@ import { dateiLoeschen } from "../sounds";
 import { ablageZeigen } from "../../net/ablage";
 import { flugEingeschraenkt, flugverbot, lageVon, type WetterLage } from "../../sim/weather";
 import { efbStarten, tabletApp, tabletAppNeu, tabletAppSetzen, handyAktionen, handyBuchung, handyDialog, handyLaeuft, handyStand, handyStandBauen } from "./handy";
-import { hpg, hpgAktualisieren, hpgCarlsTest, hpgEinrichten, hpgMissionFuer, hpgStarten, hpgTestNachricht } from "./hpg";
+import { carlsStand, hpg, hpgAktualisieren, hpgCarlsTest, hpgEinrichten, hpgMissionFuer, hpgStarten, hpgTestNachricht } from "./hpg";
 import { letzterCarls } from "./eingabe";
 import { carlsAn, carlsUmschalten, communityWaehlen, gtn, gtnAn, gtnBereitlegen, gtnSuchen, gtnUmschalten } from "./flugsim";
-import { datenEmpfangen, datenFrisch, dllWaehlen, flugplanSpeichern, flugsim, flugsimAnbinden, flugsimBeenden, flugsimTrennen, flugsimVerbinden, koordText, vorgabe, wetterDialog, msfsWetter, msfsWetterStand, wetterUebergang, vorgabeSetzen, xpAbgleich, xplaneFlugplanBereitlegen, xplanePluginEntfernen, xplanePluginPruefen, xpPlugin, xpPluginDa, xpZeitUmschalten } from "./flugsim";
+import { datenEmpfangen, datenFrisch, dllWaehlen, flugplanSpeichern, flugsim, flugsimAnbinden, flugsimBeenden, flugsimTrennen, flugsimVerbinden, koordText, vorgabe, wetterDialog, msfsWetter, msfsWetterStand, wetterUebergang, vorgabeSetzen, xpAbgleich, xplaneFlugplanBereitlegen, xplanePluginEntfernen, xplanePluginPruefen, xpPlugin, xpPluginDa, xpZeitUmschalten, ec135, ec135Cockpit } from "./flugsim";
 import { IC, wetterHtml, wetterKurz, wetterSchluessel, type WetterReiter } from "../ws/kopfleisteInhalt";
 import { mb, onUpdate, updateImHintergrund, updateInfo, updateStand, updateStandZuruecksetzen } from "../updateDienst";
 import { fehlerBerichtSpeichern } from "../fehlerMelden";
@@ -986,7 +986,7 @@ function cockpitDaten(fz: SimFahrzeug | undefined): Record<string, unknown>[] {
       d: [
         zeitAn ? xpAbgleich.zeitText || "Uhrzeit wird von LeitWerk übernommen." : "Uhrzeit stellst du in X-Plane selbst ein.",
         wetterLw ? xpAbgleich.wetterText || "Wetter wird von LeitWerk übernommen." : "Wetter stellst du in X-Plane selbst ein.",
-        xpAbgleich.fmsFehler || (xpAbgleich.fms ? `Flugplan ${xpAbgleich.fms} liegt in X-Plane (Output/FMS plans) – im GPS/FMS laden.` : "Flugplan „LeitWerk“ kommt bei jedem neuen Ziel nach X-Plane (Output/FMS plans)."),
+        xpAbgleich.fmsFehler || (xpAbgleich.fms ? `Flugplan ${xpAbgleich.fms} liegt in X-Plane (Output/FMS plans) – im GPS/FMS laden.` : "Flugplan „Leitwerk“ kommt bei jedem neuen Einsatz und Zielort nach X-Plane (Output/FMS plans) und ins GTN – immer derselbe Name, der alte wird überschrieben."),
         xpAbgleich.gfp,
         xpAbgleich.fehler,
       ]
@@ -1007,7 +1007,9 @@ function cockpitDaten(fz: SimFahrzeug | undefined): Record<string, unknown>[] {
       z: pm ? (pm.vr ? "in VR" : "läuft") : pl?.aktuell ? (pl.neustart ? "neu starten" : "eingebaut") : "fehlt",
       f: pm ? PUNKT.ok : pl?.aktuell ? PUNKT.warn : PUNKT.aus,
       d: pm
-        ? `Plugin ${pm.version} läuft${pm.vr ? " in VR" : ""} – Tablet ${pm.sichtbar ? "offen" : "zu"}. In X-Plane: Plugins › LeitWerk › Tablet zeigen.`
+        ? `Plugin ${pm.version} läuft${pm.vr ? " in VR" : ""} – Tablet ${pm.sichtbar ? "offen" : "zu"}. In X-Plane: Plugins › LeitWerk › Tablet zeigen.` +
+          (pm.cockpit.length ? ` Im Cockpit: ${pm.cockpit.map((c) => ({ mfd: "MFD", tablet: "Klapp-Tablet", tetra: "Funkgerät" })[c] ?? c).join(", ")}.` : "") +
+          (pm.wetter ? ` Wetter setzt das Plugin (sanft)${pm.wetterStand && pm.wetterStand !== "-" ? `: ${pm.wetterStand}` : ""}.` : pm.version >= "0.2" ? " Wetter über das Plugin erst ab X-Plane 12.3." : "")
         : pl?.aktuell
           ? pl.neustart
             ? "Plugin erneuert – wirkt nach dem nächsten Start von X-Plane."
@@ -1025,6 +1027,33 @@ function cockpitDaten(fz: SimFahrzeug | undefined): Record<string, unknown>[] {
           },
         },
         ...(pl?.aktuell ? [{ t: "Entfernen", klick: () => void xplanePluginEntfernen().then(() => zeichneAlles()) }] : []),
+      ],
+    });
+    // EC135 (Rotorsim): LeitWerk im Cockpit – MFD links, Kachel/App im Klapp-Tablet, TETRA-Funkgerät
+    const es = ec135.stand;
+    if (!es && !ec135.laeuft) void ec135Cockpit("pruefen");
+    const ecs = es?.flugzeuge ?? [];
+    const drin = ecs.filter((x) => x.zustand === "eingebaut");
+    const offen = ecs.filter((x) => x.zustand !== "eingebaut");
+    out.push({
+      k: "ec135",
+      t: "X-Plane: EC135-Cockpit",
+      z: !es ? "…" : !ecs.length ? "keine EC135" : drin.length === ecs.length ? "eingebaut" : drin.length ? `${drin.length}/${ecs.length} eingebaut` : "nicht eingebaut",
+      f: drin.length && !offen.length ? PUNKT.ok : drin.length ? PUNKT.warn : PUNKT.aus,
+      d: !es
+        ? "Suche die EC135 in X-Plane …"
+        : !es.xplane
+          ? "X-Plane 12 nicht gefunden."
+          : !ecs.length
+            ? "Keine EC135 von Rotorsim in X-Plane/Aircraft gefunden."
+            : ecs
+                .map((x) => `${x.name}: ${x.zustand === "eingebaut" ? x.teile.join(", ") : x.zustand === "veraendert" ? "geändert (Update?) – neu einbauen" : "nicht eingebaut"}${x.hinweis ? ` (${x.hinweis})` : ""}`)
+                .join(" · "),
+      hinw: "Linkes MFD zeigt LeitWerk, solange LeitWerk läuft. Auf dem Klapp-Tablet (AviTab) die Kachel „LeitWerk“ antippen, mit „‹ AviTab“ zurück. TETRA-Funkgerät hinten: Ziffern = Status (wie CARLS), ◄ ► oder Knopf = Sprechgruppe, rote Taste = abbrechen, grüne Taste = Sprechtaste. Braucht X-Plane 12.1 und das Plugin; wirkt beim nächsten Laden des Hubschraubers. „Entfernen“ stellt die Originaldateien wieder her.",
+      knoepfe: [
+        ...(ecs.length ? [{ t: offen.length ? "Einbauen" : "Neu einbauen", klick: () => void ec135Cockpit("einbauen").then(() => zeichneAlles()) }] : []),
+        ...(drin.length ? [{ t: "Entfernen", klick: () => void ec135Cockpit("entfernen").then(() => zeichneAlles()) }] : []),
+        { t: "Suchen", klick: () => void ec135Cockpit("pruefen").then(() => zeichneAlles()) },
       ],
     });
     return out.concat(cockpitRest(fz).filter((x) => x.k === "handy"));
@@ -1891,8 +1920,10 @@ function handyNeu(fz: SimFahrzeug | undefined, e: Einsatz | undefined): Record<s
     gruppe: gruppenName(gr) || "RD-NOE-03",
     gruppeT: gr ? "Sprechgruppe Großeinsatz" : "Sprechgruppe",
     gruppeWechsel: true,
-    // Wetter und Uhrzeit von LeitWerk für MSFS (setzt die EFB-App)
+    // Wetter und Uhrzeit von LeitWerk für MSFS (setzt die EFB-App) und X-Plane (setzt das Plugin)
     wx: msfsWetter(),
+    // TETRA-Funkgerät im X-Plane-Cockpit (Plugin): dieselbe Anzeige wie das CARLS
+    tetra: fz ? carlsStand(fz) : null,
     keys: D.stl.map((x) => ({ ...x, aktion: aktion(x.key) })),
     alarm: D.alarm,
     ein: D.ein,

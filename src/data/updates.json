@@ -1,5 +1,15 @@
 [
  {
+  "version": "0.116.0-beta.40",
+  "datum": "2026-11-11",
+  "titel": "X-Plane: LeitWerk im EC135-Cockpit",
+  "punkte": [
+   "EC135: Einsatz-App im MFD und als App im Klapp-Tablet",
+   "EC135: TETRA-Funkgerät wie das CARLS",
+   "X-Plane: Wetterwechsel ohne Ruckeln, Flugplan immer „Leitwerk“"
+  ]
+ },
+ {
   "version": "0.116.0-beta.39",
   "datum": "2026-11-11",
   "titel": "X-Plane: Tablet als Plugin (auch in VR)",

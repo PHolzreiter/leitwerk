@@ -207,6 +207,15 @@ const ANZEIGE_AUFFRISCHEN_MS = 4000;
 
 function carlsTaste(t: string): void {
   if (!carlsAn()) return;
+  funkGeraetTaste(t);
+}
+
+/**
+ * Taste am Funkgerät im Cockpit – CARLS (MSFS, H145) und TETRA-Gerät (X-Plane, EC135 über das Plugin) verhalten sich
+ * gleich (Paul 11.11.: „das selbe wie CARLS“): Ziffer = Status vormerken, geht nach 1 s raus (andere Ziffer = ändern),
+ * „LEFT“/„RIGHT“ = Sprechgruppe wechseln, „HANG“ = vorgemerkten Status abbrechen.
+ */
+export function funkGeraetTaste(t: string): void {
   if (/^\d$/.test(t)) {
     const n = Number(t);
     if (carlsLernt()) return carlsEmpfangen(n);

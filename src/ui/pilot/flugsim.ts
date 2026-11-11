@@ -308,12 +308,13 @@ ${wp("CUSTA", nach, 0)}
 export async function flugplanSpeichern(fz: SimFahrzeug, nach: { lat: number; lon: number; name: string }): Promise<void> {
   const fuss = flugsim.daten && datenFrisch() ? flugsim.daten.hoehe : 0;
   const titel = `${fz.kurzname || fz.funkrufname} – ${nach.name}`;
-  const datei = ascii(`LeitWerk ${titel}`).replace(/[ .]+/g, "_");
+  // immer derselbe Name (Paul 11.11.): der neue Plan überschreibt den alten
+  const datei = "Leitwerk";
   if (flugsim.quelle === "xplane") {
     const inhalt = fmsText({ lat: fz.lat, lon: fz.lon, fuss }, nach);
-    if (inTauri()) void invoke("gtn_gfp", { name: "LEITWERK", inhalt: gfpText({ lat: fz.lat, lon: fz.lon }, nach) }).catch(() => undefined);
-    const direkt = inTauri() ? await invoke<string | null>("xplane_fms", { name: datei, inhalt }).catch(() => null) : null;
-    if (direkt) return toast(`Flugplan „${datei}“ in X-Plane (Output/FMS plans) gespeichert – im GPS/FMS laden`);
+    if (inTauri()) void invoke("gtn_gfp", { inhalt: gfpText({ lat: fz.lat, lon: fz.lon }, nach) }).catch(() => undefined);
+    const direkt = inTauri() ? await invoke<string | null>("xplane_fms", { inhalt }).catch(() => null) : null;
+    if (direkt) return toast(`Flugplan „Leitwerk“ zum ${nach.name} in X-Plane (Output/FMS plans) – im GPS/FMS laden`);
     const p2 = await saveTextFile(`${datei}.fms`, inhalt, { name: "X-Plane-Flugplan", extensions: ["fms"] });
     if (p2) toast("Flugplan gespeichert – nach X-Plane/Output/FMS plans legen und im GPS/FMS laden");
     return;
@@ -569,7 +570,14 @@ async function xplaneAbgleich(d: SimDaten): Promise<void> {
     const w = sim.wetterWerte();
     key = echt ? "echt" : `${w.lage}|${Math.round(w.wind / 10)}|${Math.round(w.richtung / 45)}`;
     const boden = Math.max(0, (d.hoehe - d.agl) / 3.28084);
-    if (key !== xpAbgleich.wetterKey) {
+    if (key !== xpAbgleich.wetterKey && xpPluginWetter() && !echt && xpAbgleich.wetterKey && xpAbgleich.wetterKey !== "echt") {
+      // Wechsel im laufenden Flug: das Plugin setzt das neue Wetter (X-Plane blendet über 1–2 min ein; kein Ruckeln wie
+      // beim Neuaufbau über PATCH /flight, und anders als die Region-Werte kommt es sicher an – Paul 11.11.)
+      xpAbgleich.wetterKey = key;
+      xpWx.dauer = 0;
+      xpAbgleich.wetterText = `${WETTER_LABEL[w.lage]} – Wechsel über das Plugin (${wetterUebergang.min ? `${wetterUebergang.min} Spielminuten` : "sofort am Boden, in der Luft 1–2 min"})`;
+      void xpLog(xpAbgleich.wetterText);
+    } else if (key !== xpAbgleich.wetterKey) {
       const z = xpWerteJetzt();
       // Wechsel im laufenden Flug: sanft über die Region-Werte (X-Plane blendet selbst über 1–2 min ein)
       if (!echt && xpWx.ist && z && wetterUebergang.min > 0 && xpWx.regionGeht !== false && xpAbgleich.wetterKey && xpAbgleich.wetterKey !== "echt") {
@@ -615,18 +623,18 @@ export function fmsText(von: { lat: number; lon: number; fuss: number }, nach: {
   return ["I", "3 version", "1", "1", zeile(von.lat, von.lon, von.fuss), zeile(nach.lat, nach.lon, 0), ""].join("\r\n");
 }
 
-/** Spieler fliegt mit X-Plane: Flugplan „LeitWerk“ zum aktuellen Ziel in Output/FMS plans legen */
+/** Spieler fliegt mit X-Plane: Flugplan „Leitwerk“ zum aktuellen Ziel in Output/FMS plans legen (überschreibt den alten) */
 export function xplaneFlugplanBereitlegen(fz: SimFahrzeug, ziel: { lat: number; lon: number; name: string; art: "bo" | "kh" } | null): void {
   if (!inTauri() || flugsim.quelle !== "xplane" || !ziel) return;
   const key = `${fz.id}|${ziel.art}|${ziel.lat.toFixed(5)},${ziel.lon.toFixed(5)}`;
   if (key === xpAbgleich.fmsZiel) return;
   xpAbgleich.fmsZiel = key;
   const fuss = flugsim.daten && datenFrisch() ? flugsim.daten.hoehe : 0;
-  // GTN 750/650 (Reality XP): LEITWERK.gfp im FPLN-Ordner des Garmin-Trainers
-  void invoke<string[]>("gtn_gfp", { name: "LEITWERK", inhalt: gfpText({ lat: fz.lat, lon: fz.lon }, ziel) })
-    .then((p) => { xpAbgleich.gfp = p.length ? "GTN: Flugplan „LEITWERK“ bereit (Flight Plan → Menu → Catalog → Import)" : ""; })
+  // GTN 750/650 (Reality XP): Leitwerk.gfp im FPLN-Ordner des Garmin-Trainers
+  void invoke<string[]>("gtn_gfp", { inhalt: gfpText({ lat: fz.lat, lon: fz.lon }, ziel) })
+    .then((p) => { xpAbgleich.gfp = p.length ? "GTN: Flugplan „Leitwerk“ bereit (Flight Plan → Menu → Catalog → Import)" : ""; })
     .catch(() => undefined);
-  void invoke<string | null>("xplane_fms", { name: "LeitWerk", inhalt: fmsText({ lat: fz.lat, lon: fz.lon, fuss }, ziel) })
+  void invoke<string | null>("xplane_fms", { inhalt: fmsText({ lat: fz.lat, lon: fz.lon, fuss }, ziel) })
     .then((pfad) => {
       if (!pfad) {
         xpAbgleich.fmsFehler = "X-Plane-Ordner nicht gefunden – Flugplan über „Flugplan speichern“ selbst ablegen.";
@@ -634,8 +642,8 @@ export function xplaneFlugplanBereitlegen(fz: SimFahrzeug, ziel: { lat: number; 
         return;
       }
       xpAbgleich.fmsFehler = "";
-      xpAbgleich.fms = `„LeitWerk“ zum ${ziel.art === "bo" ? "Einsatzort" : ziel.name}`;
-      toast(`X-Plane: Flugplan „LeitWerk“ zum ${ziel.art === "bo" ? "Einsatzort" : ziel.name} bereit – im GPS/FMS laden`);
+      xpAbgleich.fms = `„Leitwerk“ zum ${ziel.art === "bo" ? "Einsatzort" : ziel.name}`;
+      toast(`X-Plane: Flugplan „Leitwerk“ zum ${ziel.art === "bo" ? "Einsatzort" : ziel.name} bereit – im GPS/FMS laden`);
       geaendert();
     })
     .catch((e) => {
@@ -660,7 +668,19 @@ interface PluginStand {
 /** Stand des X-Plane-Plugins: eingebaut? und Lebenszeichen aus X-Plane (alle 10 s, „xp:plugin:…“) */
 export const xpPlugin = {
   stand: null as PluginStand | null,
-  meldung: null as { version: string; vr: boolean; sichtbar: boolean; zeit: number } | null,
+  meldung: null as {
+    version: string;
+    vr: boolean;
+    sichtbar: boolean;
+    zeit: number;
+    /** X-Plane kann eigene Cockpit-Geräte (ab 12.1) / Wetter von Plugins (ab 12.3) */
+    geraete: boolean;
+    wetter: boolean;
+    /** im geladenen Flugzeug eingebaut: MFD, Klapp-Tablet, Funkgerät */
+    cockpit: string[];
+    /** Stand des Wetters im Plugin („-“, „gesetzt“, „wechsel 40%“, „echt“) */
+    wetterStand: string;
+  } | null,
 };
 
 /** Plugin in X-Plane prüfen und (wenn eingeschaltet) einbauen bzw. erneuern – still, meldet nur Neues */
@@ -696,12 +716,54 @@ export async function xplanePluginEntfernen(): Promise<void> {
 export function xpPluginMeldung(text: string): void {
   const t = text.split(":");
   if (t[1] !== "plugin") return;
-  xpPlugin.meldung = { version: t[2] ?? "", vr: t[3] === "vr", sichtbar: t[4] === "an", zeit: Date.now() };
+  // xp:plugin:<version>:<vr|2d>:<an|aus>[:<kann>:<cockpit>:<wetter>] (ab Plugin 0.2)
+  const kann = (t[5] ?? "").split(",");
+  xpPlugin.meldung = {
+    version: t[2] ?? "",
+    vr: t[3] === "vr",
+    sichtbar: t[4] === "an",
+    zeit: Date.now(),
+    geraete: kann.includes("geraete"),
+    wetter: kann.includes("wetter"),
+    cockpit: (t[6] ?? "").split(",").filter(Boolean),
+    wetterStand: t[7] ?? "",
+  };
+}
+
+// ------------------------------------------------------------------ EC135 (Rotorsim): LeitWerk im Cockpit
+/** Stand des Einbaus je EC135-Ordner in X-Plane (Rust ec135.rs) */
+export type Ec135Flugzeug = { ordner: string; name: string; zustand: "original" | "eingebaut" | "veraendert"; teile: string[]; hinweis: string };
+export type Ec135Stand = { xplane: boolean; flugzeuge: Ec135Flugzeug[]; meldung: string; fehler: string };
+export const ec135 = { stand: null as Ec135Stand | null, laeuft: false };
+
+/**
+ * EC135 im X-Plane-Ordner prüfen bzw. LeitWerk einbauen/entfernen: linkes MFD (statt EuroNav, solange LeitWerk läuft),
+ * Kachel und App auf dem Klapp-Tablet (AviTab), TETRA-Funkgerät. Ohne ordner: alle gefundenen EC135.
+ */
+export async function ec135Cockpit(aktion: "pruefen" | "einbauen" | "entfernen", ordner?: string): Promise<void> {
+  if (!inTauri() || ec135.laeuft) return;
+  ec135.laeuft = true;
+  try {
+    const st = await invoke<Ec135Stand>("ec135_cockpit", { aktion, ordner: ordner ?? null });
+    ec135.stand = st;
+    if (st.fehler) toast(`EC135: ${st.fehler}`, "error");
+    else if (st.meldung) toast(`EC135: ${st.meldung.replace(/\n/g, " · ")} – wirkt beim nächsten Laden des Hubschraubers`);
+  } catch (e) {
+    toast(`EC135: ${String((e as Error)?.message ?? e)}`, "error");
+  } finally {
+    ec135.laeuft = false;
+    geaendert();
+  }
 }
 
 /** Plugin meldet sich gerade (letzte 25 s) */
 export function xpPluginDa(): boolean {
   return !!xpPlugin.meldung && Date.now() - xpPlugin.meldung.zeit < 25000;
+}
+
+/** Das Plugin setzt das Wetter selbst (X-Plane 12.3+): sanft, ohne Neuaufbau – LeitWerk schickt nur noch den Anfang */
+export function xpPluginWetter(): boolean {
+  return xpPluginDa() && !!xpPlugin.meldung?.wetter;
 }
 
 export function xpZeitUmschalten(an: boolean): void {

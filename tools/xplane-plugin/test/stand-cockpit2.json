@@ -1,0 +1,326 @@
+{
+ "heli": "C2",
+ "unter": "Christophorus 2 · Krems",
+ "hinweis": "",
+ "knoepfe": [
+  {
+   "aktion": "s9",
+   "nummer": "9",
+   "name": "Quittiert",
+   "farbe": "#FF8A00",
+   "aktiv": false
+  },
+  {
+   "aktion": "s1",
+   "nummer": "1",
+   "name": "Frei auf Wache",
+   "farbe": "#4CC38A",
+   "aktiv": false
+  },
+  {
+   "aktion": "s2",
+   "nummer": "2",
+   "name": "Zum Berufungsort",
+   "farbe": "#FFC72C",
+   "aktiv": false
+  },
+  {
+   "aktion": "s3",
+   "nummer": "3",
+   "name": "Am Berufungsort",
+   "farbe": "#FF5A5F",
+   "aktiv": true
+  },
+  {
+   "aktion": "s4",
+   "nummer": "4",
+   "name": "Zum Zielort",
+   "farbe": "#3B8BFF",
+   "aktiv": false
+  },
+  {
+   "aktion": "s5",
+   "nummer": "5",
+   "name": "Am Zielort",
+   "farbe": "#A78BFA",
+   "aktiv": false
+  },
+  {
+   "aktion": "s6",
+   "nummer": "6",
+   "name": "Frei über Funk",
+   "farbe": "#2DD4BF",
+   "aktiv": false
+  }
+ ],
+ "neu": {
+  "tab": {
+   "uhr": "14:36",
+   "heli": "C2",
+   "st": {
+    "n": "3",
+    "t": "Am Berufungsort",
+    "f": "#FF5A5F"
+   },
+   "unter": "Einsatz 2611-0412",
+   "alarm": null,
+   "ein": {
+    "nr": "2611-0412",
+    "stufe": "Notarzt",
+    "sf": "#E5484D",
+    "code": "09D01",
+    "sw": "Atem-/Kreislaufstillstand",
+    "zi": "Reanimation läuft // Ersthelfer vor Ort",
+    "adr": "Aggsbach-Dorf, Hauptstraße 12",
+    "zusatz": "Zufahrt über Gasse hinter der Kirche",
+    "gs": ""
+   },
+   "fz": [
+    {
+     "s": "3",
+     "f": "#FF5A5F",
+     "funk": false,
+     "ruf": "C2",
+     "typ": "NAH · du",
+     "txt": "Am Berufungsort",
+     "eta": "",
+     "ich": true
+    },
+    {
+     "s": "3",
+     "f": "#FF5A5F",
+     "funk": false,
+     "ruf": "RK KR 14/RTW",
+     "typ": "RTW",
+     "txt": "Am Berufungsort · Krems",
+     "eta": "",
+     "ich": false
+    }
+   ],
+   "abf": [
+    {
+     "f": "Ist der Patient wach?",
+     "a": "Nein"
+    },
+    {
+     "f": "Atmet der Patient normal?",
+     "a": "Nein – Schnappatmung"
+    },
+    {
+     "f": "Defibrillator vor Ort?",
+     "a": "Ja, AED wird geholt"
+    }
+   ],
+   "gs": null,
+   "karte": {
+    "ich": {
+     "lat": 48.3712,
+     "lon": 15.4189,
+     "kurs": null,
+     "f": "#FF5A5F"
+    },
+    "ziel": {
+     "lat": 48.3712,
+     "lon": 15.4189,
+     "t": "Aggsbach-Dorf, Hauptstraße 12",
+     "kh": false
+    },
+    "fz": [
+     {
+      "lat": 48.38,
+      "lon": 15.45,
+      "ruf": "RK KR 14/RTW",
+      "s": "2",
+      "f": "#FFC72C",
+      "nah": false,
+      "ein": true
+     },
+     {
+      "lat": 48.2,
+      "lon": 16.36,
+      "ruf": "C9",
+      "s": "1",
+      "f": "#4CC38A",
+      "nah": true,
+      "ein": false
+     }
+    ],
+    "alle": false,
+    "nav": null,
+    "text": "am Einsatzort"
+   },
+   "buchenDa": true,
+   "buchenText": "",
+   "plan": "",
+   "pat": {
+    "liste": [
+     {
+      "nr": "",
+      "s": "rot",
+      "sf": "#E5484D",
+      "sc": "#FFFFFF",
+      "wer": "Mann, 67 Jahre",
+      "rolle": "",
+      "muster": "",
+      "vd": "Herzinfarkt (STEMI)",
+      "vit": [
+       {
+        "k": "Bewusstsein",
+        "w": "wach, ansprechbar",
+        "g": 0
+       },
+       {
+        "k": "Atmung",
+        "w": "AF 24/min",
+        "g": 1
+       },
+       {
+        "k": "Kreislauf",
+        "w": "RR 90/60",
+        "g": 2
+       },
+       {
+        "k": "SpO₂",
+        "w": "91 %",
+        "g": 1
+       }
+      ],
+      "lage": "ROSC nach 2 Schocks, Brustschmerz, kaltschweißig, Transport in Herzkatheter-Zentrum",
+      "fakt": [
+       {
+        "k": "12-Kanal-EKG",
+        "w": "ST-Hebungen II, III, aVF",
+        "c": "w"
+       },
+       {
+        "k": "Vorerkrankungen",
+        "w": "Diabetes, Hypertonie",
+        "c": ""
+       }
+      ],
+      "fw": false,
+      "bit": false,
+      "versorgt": "i.v.-Zugang, Heparin, O₂"
+     }
+    ],
+    "verdacht": "",
+    "meldung": "Mein Mann ist umgefallen und atmet nicht mehr richtig!",
+    "verlauf": [
+     {
+      "z": "14:31",
+      "t": "Alarm"
+     },
+     {
+      "z": "14:44",
+      "t": "Ankunft am Einsatzort"
+     },
+     {
+      "z": "14:52",
+      "t": "ROSC nach 2 Schocks"
+     }
+    ]
+   },
+   "patZu": "Was der Patient hat, siehst du, sobald ihr beim Patienten seid."
+  },
+  "ent": {
+   "fuer": "2611-0412",
+   "wahl": [
+    {
+     "id": "transport",
+     "t": "Transport",
+     "d": "ins Krankenhaus",
+     "on": true
+    },
+    {
+     "id": "kein",
+     "t": "Kein Transport",
+     "d": "bleibt vor Ort, Revers, verstorben",
+     "on": false
+    }
+   ],
+   "keinWahl": null,
+   "rtwFehlt": false,
+   "rtwWahl": {
+    "on": false
+   },
+   "buchen": true,
+   "gebuchtId": "",
+   "gebuchtT": "",
+   "schritte": [
+    {
+     "nr": "1",
+     "titel": "Alter",
+     "wert": "Erwachsen",
+     "fertig": true
+    },
+    {
+     "nr": "2",
+     "titel": "Symptom",
+     "frage": "Was ist der Leitbefund?",
+     "istSymptom": true
+    },
+    {
+     "nr": "3",
+     "titel": "Dringlichkeit",
+     "offen": true
+    },
+    {
+     "nr": "4",
+     "titel": "Krankenhaus",
+     "offen": true
+    }
+   ],
+   "altW": [],
+   "drW": [],
+   "symQ": "",
+   "symHinweis": "Vorschläge zum Verdacht",
+   "symW": [
+    {
+     "id": "stemi",
+     "t": "Akutes Koronarsyndrom – STEMI"
+    },
+    {
+     "id": "rea",
+     "t": "Zustand nach Reanimation (ROSC)"
+    },
+    {
+     "id": "brust",
+     "t": "Thoraxschmerz unklar"
+    }
+   ],
+   "khs": [],
+   "khLeer": ""
+  },
+  "tetra": {
+   "status": "Zum Berufungsort",
+   "vorgemerkt": false,
+   "kopf": "Gruppe aktiv",
+   "wer": "ID: 75001",
+   "popGruppe": "RD-NOE-03",
+   "art": "aktiv",
+   "gruppe": "RD-NOE-03",
+   "pfeile": false,
+   "neben": "09: 56/006",
+   "uhr": "14:36"
+  },
+  "wx": {
+   "zeit": 0,
+   "jetzt": 1300000,
+   "tempo": 1,
+   "ueb": 10,
+   "wolkenModus": "bedeckung",
+   "lage": "klar",
+   "text": "Regen",
+   "temp": 14,
+   "druck": 1008,
+   "sicht": 40,
+   "wind": 14,
+   "boe": 8,
+   "richtung": 250,
+   "regen": 0,
+   "schnee": 0,
+   "gewitter": 0,
+   "wolken": []
+  }
+ }
+}

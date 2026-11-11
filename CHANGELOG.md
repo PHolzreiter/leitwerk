@@ -1,5 +1,15 @@
 # Änderungen
 
+## 0.116.0-beta.40 – X-Plane: LeitWerk im EC135-Cockpit, Wetter ohne Ruckeln
+- **EC135 von Rotorsim (X-Plane 12.1+):** LeitWerk lässt sich ins Cockpit einbauen (Pilotenansicht › Cockpit › „X-Plane: EC135-Cockpit“ › Einbauen) – für EC135 V5, EC135 P3 Neu V5 und EC135 V5 - Euronav
+  - **Linkes MFD:** zeigt die Einsatz-App, solange LeitWerk läuft (statt der EuroNav-Karte)
+  - **Klapp-Tablet rechts:** AviTab bleibt; auf der Startseite gibt es die Kachel „LeitWerk“ – antippen öffnet die App im Querformat (Transport und Patient nebeneinander), „‹ AviTab“ führt zurück
+  - **TETRA-Funkgerät** im hinteren Pedestal (3D-Modell vom Kollegen): Anzeige und Tasten wie das CARLS der H145 – Ziffer = Status, ◄ ► oder Knopf = Sprechgruppe, rote Taste = abbrechen, grüne Taste = Sprechtaste; nur mit Avionik-Strom
+  - Die Originaldateien werden gesichert, „Entfernen“ stellt sie wieder her; ein älterer Funkgerät-Einbau wird ersetzt
+- **Wetter in X-Plane 12.3+:** das Plugin setzt das Wetter selbst – X-Plane blendet es über 1–2 Minuten ein, kein Ruckeln mehr beim Wechsel. Sofort gesetzt wird nur am Boden
+- **Flugplan heißt immer „Leitwerk“** (Leitwerk.gfp fürs GTN, Leitwerk.fms für X-Plane, Leitwerk.pln beim Speichern): ein neuer Einsatz oder ein gebuchter Zielort überschreibt den alten; alte „LeitWerk_…“-Pläne werden aufgeräumt
+- X-Plane-Plugin 0.2.0 (SDK 4.3): LeitWerk erneuert es beim Öffnen der Pilotenansicht
+
 ## 0.116.0-beta.39 – X-Plane: Tablet als Plugin (auch in VR)
 - **Neues X-Plane-Plugin „LeitWerk“:** die Einsatz-App als Fenster in X-Plane 12 – Einsatz, Großschaden-Ablauf, Patient, Zielort buchen (mit Bildschirmtastatur für die Symptom-Suche), Status geben und Navigation mit Karte. Das Fenster geht **auch in VR** (frei im Raum platzierbar), Größe 100/125/150 % unter Plugins › LeitWerk
 - **Tasten in X-Plane:** „LeitWerk: Status 1–9“, Sprechtaste (halten), Tablet zeigen, Zielort buchen, Navigation – auf Joystick oder VR-Controller legbar; Status geben geht so auch, wenn X-Plane vorne ist

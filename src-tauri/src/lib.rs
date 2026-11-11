@@ -14,6 +14,7 @@ mod supertonic;
 mod ton;
 mod updater;
 mod xplane;
+mod ec135;
 
 use std::collections::HashMap;
 use std::fs::{self, File};
@@ -651,6 +652,7 @@ pub fn run() {
             xplane::xplane_suchen,
             xplane::gtn_gfp,
             xplane::xplane_plugin,
+            ec135::ec135_cockpit,
             gtn::gtn_suchen,
             gtn::gtn_schreiben,
             hpg::hpg_starten,

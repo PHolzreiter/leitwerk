@@ -3,7 +3,9 @@
 //   attrappe <plugin.xpl> <skript.txt> <ausgabeordner>
 // Skript: warte <s> | klick <x> <y> | shell <befehl> | ziehen <x> <y> <dx> <dy> | rad <x> <y> <n> | befehl <name> [halten]
 //         bild <datei.png> | tippe <text> | vr <0|1> | menue <nr>
-// x/y sind Boxel im Fenster (links oben = 0,0)
+//         geraet <id> <x> <y> (Tippen auf ein Cockpit-Gerät, Bildpunkte links oben) | geraetzieh <id> <x> <y> <dx> <dy>
+//         sim <name> <wert> (boden, volt, avionik) | zeige <dataref>
+// x/y sind Boxel im Fenster (links oben = 0,0). Cockpit-Geräte werden verkleinert unten ins Bild gezeichnet.
 #include <GL/gl.h>
 #include <GL/glx.h>
 #include <X11/Xlib.h>
@@ -28,6 +30,10 @@
 #define XPLM300 1
 #define XPLM301 1
 #define XPLM400 1
+#define XPLM410 1
+#define XPLM411 1
+#define XPLM420 1
+#include "XPLMWeather.h"
 #include "XPLMDataAccess.h"
 #include "XPLMDisplay.h"
 #include "XPLMGraphics.h"
@@ -66,6 +72,38 @@ static std::vector<Menue*> menues;
 static XPLMFlightLoop_f flug = nullptr;
 static void* flugRef = nullptr;
 static double flugNaechst = 0;
+// weitere Flugschleifen (XPLMCreateFlightLoop)
+struct Schleife {
+  XPLMCreateFlightLoop_t p;
+  double naechst;
+  bool an;
+};
+static std::vector<Schleife*> schleifen;
+static int zyklus = 0;
+// Cockpit-Geräte (XPLMCreateAvionicsEx): Lage im Bild (links unten) und Verkleinerung
+struct Geraet {
+  XPLMCreateAvionics_t p;
+  std::string id;
+  int x, y;
+  float s;
+  bool zeichnen = true;
+};
+static std::vector<Geraet*> geraete;
+// Werte des „Simulators“
+static float simVolt[4] = {28, 28, 0, 0};
+static int simAvionik = 1, simBoden = 1;
+static double simLat = 48.4, simLon = 15.6, simHoehe = 250;
+static float simAgl = 0.5f;
+// Datarefs des Plugins
+struct EigenerDr {
+  std::string name;
+  XPLMDataTypeID typ;
+  XPLMGetDatai_f gi;
+  XPLMSetDatai_f si;
+  XPLMGetDataf_f gf;
+  void* r;
+};
+static std::vector<EigenerDr*> eigene;
 
 extern "C" {
 XPLM_API void XPLMDebugString(const char* s) { fprintf(stderr, "[xplm] %s", s); }
@@ -84,6 +122,15 @@ XPLM_API float XPLMGetElapsedTime(void) { return (float)jetzt(); }
 static int drMV, drPJ, drVP;
 XPLM_API XPLMDataRef XPLMFindDataRef(const char* n) {
   if (!strcmp(n, "sim/graphics/VR/enabled")) return (XPLMDataRef)&vr;
+  if (!strcmp(n, "sim/cockpit2/electrical/bus_volts")) return (XPLMDataRef)simVolt;
+  if (!strcmp(n, "sim/cockpit/electrical/avionics_on")) return (XPLMDataRef)&simAvionik;
+  if (!strcmp(n, "sim/flightmodel/failures/onground_any")) return (XPLMDataRef)&simBoden;
+  if (!strcmp(n, "sim/flightmodel/position/latitude")) return (XPLMDataRef)&simLat;
+  if (!strcmp(n, "sim/flightmodel/position/longitude")) return (XPLMDataRef)&simLon;
+  if (!strcmp(n, "sim/flightmodel/position/elevation")) return (XPLMDataRef)&simHoehe;
+  if (!strcmp(n, "sim/flightmodel/position/y_agl")) return (XPLMDataRef)&simAgl;
+  for (EigenerDr* e : eigene)
+    if (e->name == n) return (XPLMDataRef)e;
   if (getenv("ATTRAPPE_OHNE_MATRIX")) return nullptr;
   if (!strcmp(n, "sim/graphics/view/modelview_matrix")) return (XPLMDataRef)&drMV;
   if (!strcmp(n, "sim/graphics/view/projection_matrix")) return (XPLMDataRef)&drPJ;
@@ -91,7 +138,10 @@ XPLM_API XPLMDataRef XPLMFindDataRef(const char* n) {
   return nullptr;
 }
 XPLM_API int XPLMGetDatai(XPLMDataRef d) { return d ? *(int*)d : 0; }
-XPLM_API int XPLMGetDatavf(XPLMDataRef d, float* v, int, int n) {
+XPLM_API double XPLMGetDatad(XPLMDataRef d) { return d ? *(double*)d : 0; }
+XPLM_API float XPLMGetDataf(XPLMDataRef d) { return d ? *(float*)d : 0; }
+XPLM_API int XPLMGetDatavf(XPLMDataRef d, float* v, int o, int n) {
+  if (d == simVolt) { for (int i = 0; i < n && o + i < 4; i++) v[i] = simVolt[o + i]; return n; }
   if (d == &drMV && n >= 16) { glGetFloatv(GL_MODELVIEW_MATRIX, v); return 16; }
   if (d == &drPJ && n >= 16) { glGetFloatv(GL_PROJECTION_MATRIX, v); return 16; }
   return 0;
@@ -171,7 +221,68 @@ XPLM_API void XPLMSetMenuItemName(XPLMMenuID m, int i, const char* n, int) { ((M
 XPLM_API void XPLMCheckMenuItem(XPLMMenuID, int, XPLMMenuCheck) {}
 XPLM_API void XPLMEnableMenuItem(XPLMMenuID, int, int) {}
 XPLM_API void XPLMRemoveMenuItem(XPLMMenuID, int) {}
-XPLM_API void XPLMRegisterFlightLoopCallback(XPLMFlightLoop_f f, float t, void* r) { flug = f; flugRef = r; flugNaechst = jetzt() + t; }
+XPLM_API void XPLMRegisterFlightLoopCallback(XPLMFlightLoop_f f, float t, void* r) { flug = f; flugRef = r; flugNaechst = jetzt() + (t > 0 ? t : 0); }
+XPLM_API int XPLMGetCycleNumber(void) { return zyklus; }
+XPLM_API XPLMFlightLoopID XPLMCreateFlightLoop(XPLMCreateFlightLoop_t* p) {
+  Schleife* s = new Schleife{*p, 0, false};
+  schleifen.push_back(s);
+  return (XPLMFlightLoopID)s;
+}
+XPLM_API void XPLMDestroyFlightLoop(XPLMFlightLoopID f) { ((Schleife*)f)->an = false; }
+XPLM_API void XPLMScheduleFlightLoop(XPLMFlightLoopID f, float t, int) {
+  ((Schleife*)f)->an = true;
+  ((Schleife*)f)->naechst = jetzt() + (t > 0 ? t : 0);
+}
+XPLM_API XPLMDataRef XPLMRegisterDataAccessor(const char* n, XPLMDataTypeID typ, int, XPLMGetDatai_f gi, XPLMSetDatai_f si, XPLMGetDataf_f gf,
+                                              XPLMSetDataf_f, XPLMGetDatad_f, XPLMSetDatad_f, XPLMGetDatavi_f, XPLMSetDatavi_f,
+                                              XPLMGetDatavf_f, XPLMSetDatavf_f, XPLMGetDatab_f, XPLMSetDatab_f, void* r, void*) {
+  EigenerDr* e = new EigenerDr{n, typ, gi, si, gf, r};
+  eigene.push_back(e);
+  return (XPLMDataRef)e;
+}
+XPLM_API void XPLMUnregisterDataAccessor(XPLMDataRef) {}
+}
+
+// ------------------------------------------------------------------ neuere Funktionen (über XPLMFindSymbol)
+static XPLMAvionicsID avNeu(XPLMCreateAvionics_t* p) {
+  Geraet* g = new Geraet;
+  g->p = *p;
+  g->id = p->deviceID;
+  // Lage im Bild (links unten, verkleinert)
+  if (g->id == "leitwerk_mfd") { g->x = 10; g->y = 10; g->s = 0.6f; }
+  else if (g->id == "leitwerk_tablet") { g->x = 380; g->y = 10; g->s = 0.7f; }
+  else if (g->id == "leitwerk_kachel") { g->x = 1100; g->y = 10; g->s = 1.0f; }
+  else { g->x = 380; g->y = 450; g->s = 0.5f; }
+  geraete.push_back(g);
+  fprintf(stderr, "[attrappe] Ger\xC3\xA4t %s %dx%d\n", g->id.c_str(), p->screenWidth, p->screenHeight);
+  return (XPLMAvionicsID)g;
+}
+static void avWeg(XPLMAvionicsID) {}
+static void avZeichnen(XPLMAvionicsID a) { ((Geraet*)a)->zeichnen = true; }
+static int avGebunden(XPLMAvionicsID) { return 1; }
+static int wxSofort = -1;
+static void wxBeginn() {}
+static void wxSetzen(double lat, double lon, double boden, XPLMWeatherInfo_t* w) {
+  fprintf(stderr, "[attrappe] Wetter %.3f %.3f Boden %.0f m: %.1f \xC2\xB0" "C, QNH %.0f hPa, Sicht %.0f m, Regen %.2f, Wind %.1f m/s aus %.0f (B\xC3\xB6" "en %.1f), Wolke %.0f %.2f %.0f\xE2\x80\x93%.0f m, Gr\xC3\xB6\xC3\x9F" "e %d\n",
+          lat, lon, boden, w->temperature_alt, w->pressure_alt / 100, w->visibility, w->precip_rate, w->wind_layers[0].speed, w->wind_layers[0].direction,
+          w->wind_layers[0].gust_speed, w->cloud_layers[0].cloud_type, w->cloud_layers[0].coverage, w->cloud_layers[0].alt_base, w->cloud_layers[0].alt_top, w->structSize);
+}
+static void wxEnde(int inkr, int sofort) {
+  wxSofort = sofort;
+  fprintf(stderr, "[attrappe] Wetter fertig: schrittweise %d, sofort %d\n", inkr, sofort);
+}
+extern "C" {
+XPLM_API void* XPLMFindSymbol(const char* n) {
+  if (getenv("ATTRAPPE_ALT")) return nullptr;  // wie X-Plane 12.0
+  if (!strcmp(n, "XPLMCreateAvionicsEx")) return (void*)avNeu;
+  if (!strcmp(n, "XPLMDestroyAvionics")) return (void*)avWeg;
+  if (!strcmp(n, "XPLMAvionicsNeedsDrawing")) return (void*)avZeichnen;
+  if (!strcmp(n, "XPLMIsAvionicsBound")) return (void*)avGebunden;
+  if (!strcmp(n, "XPLMBeginWeatherUpdate")) return (void*)wxBeginn;
+  if (!strcmp(n, "XPLMEndWeatherUpdate")) return (void*)wxEnde;
+  if (!strcmp(n, "XPLMSetWeatherAtLocation")) return (void*)wxSetzen;
+  return nullptr;
+}
 XPLM_API void XPLMUnregisterFlightLoopCallback(XPLMFlightLoop_f, void*) { flug = nullptr; }
 }
 
@@ -213,6 +324,24 @@ static void bildMalen(bool tauschen = true) {
     glEnd();
     f->p.drawWindowFunc(f, f->p.refcon);
   }
+  // Cockpit-Geräte (verkleinert): Ursprung links unten, Einheiten = Bildpunkte des Geräts
+  for (Geraet* g : geraete) {
+    int w = (int)(g->p.screenWidth * g->s), h = (int)(g->p.screenHeight * g->s);
+    glViewport(g->x, g->y, w, h);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glOrtho(0, g->p.screenWidth, 0, g->p.screenHeight, -1, 1);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    glDisable(GL_SCISSOR_TEST);
+    glDisable(GL_TEXTURE_2D);
+    glColor4f(0, 0, 0, 1);
+    glBegin(GL_QUADS);
+    glVertex2i(0, 0); glVertex2i(g->p.screenWidth, 0); glVertex2i(g->p.screenWidth, g->p.screenHeight); glVertex2i(0, g->p.screenHeight);
+    glEnd();
+    if (g->p.drawCallback) g->p.drawCallback(g->p.refcon);
+  }
+  glViewport(0, 0, SW, SH);
   glFinish();
   if (tauschen) glXSwapBuffers(dpy, win);
 }
@@ -229,11 +358,24 @@ static void foto(const std::string& datei) {
 }
 
 static void takt() {
+  zyklus++;
+  for (Schleife* l : schleifen) {
+    if (!l->an || jetzt() < l->naechst) continue;
+    float n = l->p.callbackFunc(0, 0, 0, l->p.refcon);
+    if (n == 0) l->an = false;
+    else l->naechst = jetzt() + (n > 0 ? n : 0);
+  }
   if (flug && jetzt() >= flugNaechst) {
     float n = flug(0, 0, 0, flugRef);
-    flugNaechst = jetzt() + (n > 0 ? n : 1);
+    flugNaechst = jetzt() + (n > 0 ? n : 0);
   }
   bildMalen();
+}
+
+static Geraet* geraetNach(const std::string& id) {
+  for (Geraet* g : geraete)
+    if (g->id == id || g->id == "leitwerk_" + id) return g;
+  return nullptr;
 }
 
 static void warte(double s) {
@@ -334,6 +476,38 @@ int main(int argc, char** argv) {
       global(f, x, y, gx, gy);
       f->p.handleMouseWheelFunc(f, gx, gy, 0, k, nullptr);
       warte(0.1);
+    } else if (w == "geraet" || w == "geraetzieh") {
+      std::string id;
+      int x, y, dx = 0, dy = 0;
+      z >> id >> x >> y;
+      if (w == "geraetzieh") z >> dx >> dy;
+      Geraet* g = geraetNach(id);
+      if (!g || !g->p.screenTouchCallback) { fprintf(stderr, "[attrappe] Ger\xC3\xA4t %s ohne Tippen\n", id.c_str()); continue; }
+      int H = g->p.screenHeight;
+      if (g->p.screenCursorCallback) g->p.screenCursorCallback(x, H - y, g->p.refcon);
+      takt();
+      g->p.screenTouchCallback(x, H - y, xplm_MouseDown, g->p.refcon);
+      takt(); takt();
+      for (int i = 1; dx | dy ? i <= 12 : false; i++) {
+        g->p.screenTouchCallback(x + dx * i / 12, H - (y + dy * i / 12), xplm_MouseDrag, g->p.refcon);
+        takt();
+      }
+      g->p.screenTouchCallback(x + dx, H - (y + dy), xplm_MouseUp, g->p.refcon);
+      warte(0.2);
+    } else if (w == "sim") {
+      std::string n;
+      double v;
+      z >> n >> v;
+      if (n == "boden") simBoden = (int)v;
+      else if (n == "volt") simVolt[0] = (float)v;
+      else if (n == "avionik") simAvionik = (int)v;
+      else if (n == "lat") simLat = v;
+      warte(0.1);
+    } else if (w == "zeige") {
+      std::string n;
+      z >> n;
+      for (EigenerDr* e : eigene)
+        if (e->name == n) fprintf(stderr, "[attrappe] %s = %g\n", n.c_str(), e->typ == xplmType_Int ? (double)e->gi(e->r) : (double)e->gf(e->r));
     } else if (w == "tippe" && f) {
       std::string t;
       std::getline(z, t);

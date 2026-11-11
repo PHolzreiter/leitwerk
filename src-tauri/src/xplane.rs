@@ -294,7 +294,7 @@ pub async fn xplane_flug(json: String) -> Result<(), String> {
 }
 
 /// Ordner von X-Plane 12 (X-Plane schreibt ihn in x-plane_install_12.txt im Benutzerordner)
-fn xplane_ordner() -> Option<std::path::PathBuf> {
+pub(crate) fn xplane_ordner() -> Option<std::path::PathBuf> {
     let mut kandidaten = Vec::new();
     if let Ok(l) = std::env::var("LOCALAPPDATA") {
         kandidaten.push(std::path::PathBuf::from(l).join("x-plane_install_12.txt"));
@@ -316,15 +316,34 @@ fn xplane_ordner() -> Option<std::path::PathBuf> {
     None
 }
 
-/// Flugplan „<name>.fms“ in X-Plane/Output/FMS plans schreiben; None = X-Plane-Ordner nicht gefunden
+/// Datei mit festem Namen neu schreiben: vorher löschen, damit auch die Schreibweise stimmt
+/// (Windows behält sonst den alten Namen, z. B. „LEITWERK.gfp“ statt „Leitwerk.gfp“)
+fn fest_schreiben(ordner: &std::path::Path, name: &str, alte: &[&str], inhalt: &str) -> Result<std::path::PathBuf, String> {
+    for a in alte.iter().chain(std::iter::once(&name)) {
+        let _ = std::fs::remove_file(ordner.join(a));
+    }
+    let datei = ordner.join(name);
+    std::fs::write(&datei, inhalt).map_err(|e| format!("Flugplan nicht schreibbar: {e}"))?;
+    Ok(datei)
+}
+
+/// Flugplan „Leitwerk.fms“ in X-Plane/Output/FMS plans schreiben (immer derselbe Name: neuer Einsatz oder neues
+/// Ziel überschreibt ihn); alte Pläne von LeitWerk („LeitWerk_….fms“) werden dabei entfernt.
+/// None = X-Plane-Ordner nicht gefunden
 #[tauri::command]
-pub fn xplane_fms(name: String, inhalt: String) -> Result<Option<String>, String> {
+pub fn xplane_fms(inhalt: String) -> Result<Option<String>, String> {
     let Some(x) = xplane_ordner() else { return Ok(None) };
     let ordner = x.join("Output").join("FMS plans");
     std::fs::create_dir_all(&ordner).map_err(|e| e.to_string())?;
-    let sauber: String = name.chars().filter(|c| c.is_ascii_alphanumeric() || *c == '_' || *c == '-').collect();
-    let datei = ordner.join(format!("{}.fms", if sauber.is_empty() { "LeitWerk" } else { &sauber }));
-    std::fs::write(&datei, inhalt).map_err(|e| format!("Flugplan nicht schreibbar: {e}"))?;
+    if let Ok(rd) = std::fs::read_dir(&ordner) {
+        for e in rd.flatten() {
+            let n = e.file_name().to_string_lossy().to_string();
+            if n.starts_with("LeitWerk_") && n.to_ascii_lowercase().ends_with(".fms") {
+                let _ = std::fs::remove_file(e.path());
+            }
+        }
+    }
+    let datei = fest_schreiben(&ordner, "Leitwerk.fms", &["LeitWerk.fms", "LEITWERK.fms"], &inhalt)?;
     Ok(Some(datei.display().to_string()))
 }
 
@@ -443,11 +462,11 @@ fn gtn_fpln_ordner() -> Vec<std::path::PathBuf> {
     out
 }
 
-/// Flugplan „<name>.gfp“ für das GTN 750/650 (Reality XP) schreiben – in jeden vorhandenen FPLN-Ordner.
-/// Ergebnis: geschriebene Pfade (leer = kein GTN-Trainer gefunden)
+/// Flugplan „Leitwerk.gfp“ für das GTN 750/650 und GNS 430/530 (Reality XP) – in jeden vorhandenen FPLN-Ordner.
+/// Immer derselbe Name: ein neuer Einsatz oder ein gebuchter Zielort überschreibt ihn.
+/// Ergebnis: geschriebene Pfade (leer = kein Garmin-Trainer gefunden)
 #[tauri::command]
-pub fn gtn_gfp(name: String, inhalt: String) -> Result<Vec<String>, String> {
-    let sauber: String = name.chars().filter(|c| c.is_ascii_alphanumeric() || *c == '_').collect::<String>().to_ascii_uppercase();
+pub fn gtn_gfp(inhalt: String) -> Result<Vec<String>, String> {
     let mut out = Vec::new();
     for ordner in gtn_fpln_ordner() {
         // nur dort, wo der Trainer-Ordner (GTN) schon existiert – FPLN selbst darf fehlen
@@ -456,8 +475,8 @@ pub fn gtn_gfp(name: String, inhalt: String) -> Result<Vec<String>, String> {
             continue;
         }
         std::fs::create_dir_all(&ordner).map_err(|e| e.to_string())?;
-        let datei = ordner.join(format!("{}.gfp", if sauber.is_empty() { "LEITWERK" } else { &sauber }));
-        std::fs::write(&datei, &inhalt).map_err(|e| format!("GTN-Flugplan nicht schreibbar: {e}"))?;
+        let datei = fest_schreiben(&ordner, "Leitwerk.gfp", &["LEITWERK.gfp", "LeitWerk.gfp"], &inhalt)
+            .map_err(|e| format!("GTN-{e}"))?;
         out.push(datei.display().to_string());
     }
     Ok(out)

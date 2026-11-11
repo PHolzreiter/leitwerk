@@ -28,14 +28,36 @@ static unsigned schriftTex = 0;
 
 static float gr(ImFont* f) { return f->FontSize * ImGui::GetIO().FontGlobalScale; }
 
+static ImFont* fRiesig = nullptr;  // TETRA-Display (große Ziffern/Texte)
+
+void stilSetzen() {
+  ImGuiIO& io = ImGui::GetIO();
+  io.IniFilename = nullptr;
+  io.LogFilename = nullptr;
+  io.FontGlobalScale = 0.5f;  // doppelt gebacken
+  ImGuiStyle& s = ImGui::GetStyle();
+  s.WindowPadding = ImVec2(0, 0);
+  s.WindowRounding = 0;
+  s.WindowBorderSize = 0;
+  s.ChildBorderSize = 0;
+  s.ItemSpacing = ImVec2(8, 0);
+  s.ScrollbarSize = 8;
+  s.ScrollbarRounding = 4;
+  s.DisabledAlpha = 1.0f;
+  s.Colors[ImGuiCol_WindowBg] = ImColor(rgb(fb::GRUND));
+  s.Colors[ImGuiCol_ChildBg] = ImVec4(0, 0, 0, 0);
+  s.Colors[ImGuiCol_Text] = ImColor(rgb(fb::TEXT));
+  s.Colors[ImGuiCol_ScrollbarBg] = ImVec4(0, 0, 0, 0);
+  s.Colors[ImGuiCol_ScrollbarGrab] = ImColor(rgb(fb::RAND));
+  s.Colors[ImGuiCol_ScrollbarGrabHovered] = ImColor(rgb(fb::DUNKELGRAU));
+  s.Colors[ImGuiCol_ScrollbarGrabActive] = ImColor(rgb(fb::GRAU));
+}
+
 void start(const std::string& ordner, TexNeu neu, TexWeg weg) {
   texNeu = neu;
   texWeg = weg;
   karte::start(neu, weg);
   ImGuiIO& io = ImGui::GetIO();
-  io.IniFilename = nullptr;
-  io.LogFilename = nullptr;
-  io.FontGlobalScale = 0.5f;  // doppelt gebacken
   static ImVector<ImWchar> bereiche;
   ImFontGlyphRangesBuilder b;
   static const ImWchar grund[] = {0x0020, 0x00FF, 0x2010, 0x2027, 0x2030, 0x203A, 0x2190, 0x2193, 0x2212, 0x2212, 0x2713, 0x2715, 0x25B2, 0x25BC, 0};
@@ -58,7 +80,7 @@ void start(const std::string& ordner, TexNeu neu, TexWeg weg) {
     ImFontConfig c2;
     c2.SizePixels = 26;
     fN = io.Fonts->AddFontDefault(&c2);
-    fM = fF = fK = fKF = fG = fGG = fUhr = fT = fN;
+    fM = fF = fK = fKF = fG = fGG = fUhr = fT = fRiesig = fN;
   } else {
     fM = laden("inter-600.ttf", 14);
     fF = laden("inter-700.ttf", 14);
@@ -68,6 +90,12 @@ void start(const std::string& ordner, TexNeu neu, TexWeg weg) {
     fGG = laden("inter-700.ttf", 20);
     fUhr = laden("inter-600.ttf", 20);
     fT = laden("inter-700.ttf", 26);
+    // nur Grundzeichen: TETRA-Display
+    static const ImWchar klein[] = {0x0020, 0x00FF, 0x2026, 0x2026, 0};
+    ImFontConfig c3 = cfg;
+    std::string p = ordner + "inter-600.ttf";
+    fRiesig = io.Fonts->AddFontFromFileTTF(p.c_str(), 48 * 2, &c3, klein);
+    if (!fRiesig) fRiesig = fT;
   }
   unsigned char* px;
   int w, h;
@@ -75,23 +103,7 @@ void start(const std::string& ordner, TexNeu neu, TexWeg weg) {
   schriftTex = texNeu(w, h, px);
   io.Fonts->SetTexID((ImTextureID)(uintptr_t)schriftTex);
   io.Fonts->ClearTexData();
-
-  ImGuiStyle& s = ImGui::GetStyle();
-  s.WindowPadding = ImVec2(0, 0);
-  s.WindowRounding = 0;
-  s.WindowBorderSize = 0;
-  s.ChildBorderSize = 0;
-  s.ItemSpacing = ImVec2(8, 0);
-  s.ScrollbarSize = 8;
-  s.ScrollbarRounding = 4;
-  s.DisabledAlpha = 1.0f;
-  s.Colors[ImGuiCol_WindowBg] = ImColor(rgb(fb::GRUND));
-  s.Colors[ImGuiCol_ChildBg] = ImVec4(0, 0, 0, 0);
-  s.Colors[ImGuiCol_Text] = ImColor(rgb(fb::TEXT));
-  s.Colors[ImGuiCol_ScrollbarBg] = ImVec4(0, 0, 0, 0);
-  s.Colors[ImGuiCol_ScrollbarGrab] = ImColor(rgb(fb::RAND));
-  s.Colors[ImGuiCol_ScrollbarGrabHovered] = ImColor(rgb(fb::DUNKELGRAU));
-  s.Colors[ImGuiCol_ScrollbarGrabActive] = ImColor(rgb(fb::GRAU));
+  stilSetzen();
 }
 
 void ende() {
@@ -102,6 +114,7 @@ void ende() {
 
 // ------------------------------------------------------------------ Zustand (wie in efb.html)
 static Json stand;
+// je Bildschirm (Fenster, MFD, Tablet): siehe Zustand in ansicht.h – hier die Arbeitskopie des gerade gezeichneten
 static std::string tab = "transport";
 static std::string patGesehen;
 static std::string blattArt;  // "", "status", "buchen"
@@ -121,9 +134,68 @@ static bool frageOffen = false;
 static karte::Ansicht kleineKarte, grosseKarte;
 static double jetzt = 0;
 static std::string tabZuletzt;
-
 // Ziehen zum Scrollen (VR-Controller, Maus): danach kein Klick
 static bool gezogen = false;
+static unsigned zieht = 0;
+static float ziehS0 = 0;
+static bool zurueckGedrueckt = false;
+
+struct Zustand::Daten {
+  std::string tab = "transport", patGesehen, blattArt, khWahl, khFuer, suchText, tabZuletzt;
+  bool navAuf = false, selbstBuchen = false, suchAktiv = false, suchTextGesetzt = false, suchScrollen = false, frageOffen = false, gezogen = false;
+  double suchSendenUm = 0;
+  Frage frage;
+  karte::Ansicht kleineKarte, grosseKarte;
+  unsigned zieht = 0;
+  float ziehS0 = 0;
+};
+
+Zustand::Zustand() : d(new Daten) {}
+Zustand::~Zustand() { delete d; }
+
+static Zustand* aktiv = nullptr;
+
+static void sichern(Zustand::Daten& z) {
+  z.tab = tab; z.patGesehen = patGesehen; z.blattArt = blattArt; z.khWahl = khWahl; z.khFuer = khFuer; z.suchText = suchText;
+  z.tabZuletzt = tabZuletzt; z.navAuf = navAuf; z.selbstBuchen = selbstBuchen; z.suchAktiv = suchAktiv; z.suchTextGesetzt = suchTextGesetzt;
+  z.suchScrollen = suchScrollen; z.frageOffen = frageOffen; z.gezogen = gezogen; z.suchSendenUm = suchSendenUm; z.frage = frage;
+  z.kleineKarte = kleineKarte; z.grosseKarte = grosseKarte; z.zieht = zieht; z.ziehS0 = ziehS0;
+}
+
+static void laden(const Zustand::Daten& z) {
+  tab = z.tab; patGesehen = z.patGesehen; blattArt = z.blattArt; khWahl = z.khWahl; khFuer = z.khFuer; suchText = z.suchText;
+  tabZuletzt = z.tabZuletzt; navAuf = z.navAuf; selbstBuchen = z.selbstBuchen; suchAktiv = z.suchAktiv; suchTextGesetzt = z.suchTextGesetzt;
+  suchScrollen = z.suchScrollen; frageOffen = z.frageOffen; gezogen = z.gezogen; suchSendenUm = z.suchSendenUm; frage = z.frage;
+  kleineKarte = z.kleineKarte; grosseKarte = z.grosseKarte; zieht = z.zieht; ziehS0 = z.ziehS0;
+}
+
+void zustand(Zustand* z) {
+  if (z == aktiv) return;
+  if (aktiv) sichern(*aktiv->d);
+  aktiv = z;
+  if (z) laden(*z->d);
+}
+
+const Json& standJson() { return stand; }
+
+void standLesen() {
+  std::string neu;
+  if (netz::standNeu(neu)) {
+    Json j;
+    if (JsonLeser(neu).lesen(j)) stand = std::move(j);
+  }
+}
+
+void takt(double jetztZeit) {
+  jetzt = jetztZeit;
+  karte::takt(jetzt);
+}
+
+bool zurueck() {
+  bool z = zurueckGedrueckt;
+  zurueckGedrueckt = false;
+  return z;
+}
 
 static void senden(const std::string& b) { netz::senden(b); }
 
@@ -343,8 +415,7 @@ static void pille(ImDrawList* dl, ImVec2 p, const std::string& t, unsigned farbe
 // Ziehen zum Scrollen im aktuellen Fenster
 static void ziehScroll() {
   ImGuiWindow* w = ImGui::GetCurrentWindow();
-  static ImGuiID zieht = 0;
-  static float s0 = 0;
+  float& s0 = ziehS0;
   if (ImGui::IsMouseClicked(0) && ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows | ImGuiHoveredFlags_AllowWhenBlockedByActiveItem)) {
     zieht = w->ID;
     s0 = w->Scroll.y;
@@ -358,21 +429,30 @@ static void ziehScroll() {
 }
 
 // ------------------------------------------------------------------ Kopf
-static void kopf(float W, const Json& t) {
+static void kopf(float W, const Json& t, bool mitZurueck = false) {
   ImDrawList* dl = ImGui::GetWindowDrawList();
   ImVec2 p = ImGui::GetWindowPos();
+  float x0 = 14;
   dl->AddRectFilled(p, ImVec2(p.x + W, p.y + 56), rgb(fb::KOPF));
   dl->AddLine(ImVec2(p.x, p.y + 55.5f), ImVec2(p.x + W, p.y + 55.5f), rgb(fb::LINIE));
   std::string heli = t["heli"] ? t["heli"].t() : stand["heli"] ? stand["heli"].t() : "LeitWerk";
   std::string unter = !netz::verbunden() ? (netz::port() ? "verbinde …" : "LeitWerk nicht erreichbar")
                       : t["unter"] ? t["unter"].t() : stand["unter"] ? stand["unter"].t() : stand["hinweis"].t();
   std::string uhr = t["uhr"].t();
+  if (mitZurueck) {
+    // Tablet im Cockpit: zurück zu AviTab
+    std::string z = "\xE2\x80\xB9 AviTab";
+    float zw = textGroesse(fM, z).x + 22;
+    ImGui::SetCursorPos(ImVec2(10, 11));
+    if (knopf("##avitab", z, "", rgb(fb::KARTE), rgb(fb::TEXT), zw, 34, fM, false, rgb(fb::RAND), 8)) zurueckGedrueckt = true;
+    x0 = 10 + zw + 12;
+  }
   float rechts = W - 10 - 40;
   float uw = uhr.empty() ? 0 : textGroesse(fUhr, uhr).x;
-  float tw = rechts - uw - 10 - 14;
-  dl->PushClipRect(ImVec2(p.x + 14, p.y), ImVec2(p.x + 14 + tw, p.y + 56), true);
-  textAn(dl, fG, ImVec2(p.x + 14, p.y + 9), rgb(fb::TEXT), heli);
-  textAn(dl, fK, ImVec2(p.x + 14, p.y + 31), rgb(fb::GRAU), unter);
+  float tw = rechts - uw - 10 - x0;
+  dl->PushClipRect(ImVec2(p.x + x0, p.y), ImVec2(p.x + x0 + tw, p.y + 56), true);
+  textAn(dl, fG, ImVec2(p.x + x0, p.y + 9), rgb(fb::TEXT), heli);
+  textAn(dl, fK, ImVec2(p.x + x0, p.y + 31), rgb(fb::GRAU), unter);
   dl->PopClipRect();
   if (!uhr.empty()) textAn(dl, fUhr, ImVec2(p.x + rechts - 6 - uw, p.y + 15), rgb(fb::TEXT), uhr);
   // Statuspunkt: öffnet „Status geben“
@@ -1432,15 +1512,60 @@ static void navZeichnen(float W, float H, const Json& t) {
 }
 
 // ------------------------------------------------------------------ Ein Bild
-void bild(float W, float H, double jetztZeit) {
-  jetzt = jetztZeit;
-  karte::takt(jetzt);
+// Reiter Transport / Patient (Hochformat)
+static void reiterZeichnen(float W, float top, bool ueber, const Json& t, const std::string& pk) {
+  ImVec2 wp = ImGui::GetWindowPos();
+  ImDrawList* dl = ImGui::GetWindowDrawList();
+  ImVec2 s0(wp.x + 14, wp.y + top + 10), s1(wp.x + W - 14, wp.y + top + 50);
+  dl->AddRectFilled(s0, s1, rgb(fb::SCHWARZ), 10);
+  dl->AddRect(s0, s1, rgb(0x262A35), 10);
+  float hw = (s1.x - s0.x - 6) / 2;
+  bool rechts = tab == "patient";
+  ImVec2 m0(s0.x + 3 + (rechts ? hw : 0), s0.y + 3);
+  dl->AddRectFilled(m0, ImVec2(m0.x + hw, s1.y - 3), rgb(fb::BLAU), 8);
+  ImGui::BeginDisabled(ueber);
+  ImGui::SetCursorScreenPos(ImVec2(s0.x + 3, s0.y + 3));
+  if (knopfRoh("##segT", ImVec2(hw, 34))) tab = "transport";
+  ImGui::SameLine(0, 0);
+  if (knopfRoh("##segP", ImVec2(hw, 34)) && (t["pat"] || t["ein"])) tab = "patient";
+  ImGui::EndDisabled();
+  ImVec2 a = textGroesse(fM, "Transport"), b = textGroesse(fM, "Patient");
+  textAn(dl, fM, ImVec2(s0.x + 3 + (hw - a.x) / 2, s0.y + 20 - a.y / 2), rechts ? rgb(fb::TEXT2) : rgb(fb::SCHWARZ), "Transport");
+  float bx = s0.x + 3 + hw + (hw - b.x) / 2;
+  textAn(dl, fM, ImVec2(bx, s0.y + 20 - b.y / 2), rechts ? rgb(fb::SCHWARZ) : rgb(fb::TEXT2), "Patient");
+  if (t["pat"] && pk != patGesehen) dl->AddCircleFilled(ImVec2(bx + b.x + 9, s0.y + 20), 3.5f, rgb(fb::GELB), 12);
+}
+
+// Knopf „Zielort buchen“ unten (x, y = Fenster-Koordinaten)
+static void buchenKnopf(float x, float y, float w, bool ueber, const Json& t) {
+  ImGui::SetCursorPos(ImVec2(x, y));
+  bool da = (bool)t["buchenDa"];
+  std::string titel = t["plan"] ? "Zielort \xC3\xA4ndern" : da ? "Zielort buchen \xE2\x80\xBA" : "Zielort buchen";
+  std::string unter = t["plan"] ? t["plan"].t() : da ? "" : (t["buchenText"] ? t["buchenText"].t() : "geht am Einsatzort");
+  ImGui::BeginDisabled(ueber);
+  if (knopf("##buchenK", titel, unter, da ? rgb(fb::BLAU) : rgb(fb::AUS), da ? rgb(fb::SCHWARZ) : rgb(fb::DUNKELGRAU), w, 48, fF, !da)) blattArt = "buchen";
+  ImGui::EndDisabled();
+}
+
+// Inhalt einer Spalte (Transport oder Patient) als eigener Bereich mit Scrollen
+static void spalte(const char* id, float x, float y, float w, float h, bool ueber, bool patient, const Json& t, bool obenBeginnen) {
+  ImGui::SetCursorPos(ImVec2(x, y));
+  if (obenBeginnen) ImGui::SetNextWindowScroll(ImVec2(0, 0));
+  ImGui::BeginChild(id, ImVec2(w, h), ImGuiChildFlags_None, ueber ? ImGuiWindowFlags_NoMouseInputs : 0);
+  ImGui::BeginDisabled(ueber);
+  breiten.push_back(w);
+  if (patient) patientZeichnen(t);
+  else transportZeichnen(t);
+  breiten.pop_back();
+  luecke(10);
+  ImGui::EndDisabled();
+  if (!ueber) ziehScroll();
+  ImGui::EndChild();
+}
+
+void bild(float W, float H, Art art) {
+  bool quer = art == QUER;
   if (!ImGui::IsMouseDown(0) && !ImGui::IsMouseReleased(0)) gezogen = false;
-  std::string neu;
-  if (netz::standNeu(neu)) {
-    Json j;
-    if (JsonLeser(neu).lesen(j)) stand = std::move(j);
-  }
   if (suchSendenUm && jetzt >= suchSendenUm) {
     senden("bu:q:" + suchText);
     suchSendenUm = 0;
@@ -1453,7 +1578,7 @@ void bild(float W, float H, double jetztZeit) {
   ImGui::Begin("LeitWerk", nullptr,
                ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings |
                    ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoBringToFrontOnFocus);
-  kopf(W, t);
+  kopf(W, t, quer);
   float top = 56;
   const Json& ein = t["ein"];
   bool hatEin = verb && ein.art == Json::Objekt;
@@ -1475,63 +1600,34 @@ void bild(float W, float H, double jetztZeit) {
     const Json* st = t["st"].art == Json::Objekt ? &t["st"] : nullptr;
     leerZeichnen(W, top, H, st ? "Kein Alarm" : "Kein Hubschrauber", st ? "Neue Eins\xC3\xA4tze erscheinen hier automatisch." : (t["unter"] ? t["unter"].t() : "im Piloten-Interface w\xC3\xA4hlen"), st);
   } else {
-    // Reiter Transport / Patient
-    if (!t["pat"] && tab == "patient") tab = "transport";
     std::string pk;
     if (t["pat"]) {
       const Json& l = t["pat"]["liste"];
       for (size_t i = 0; i < l.size(); i++) pk += l[i]["wer"].t() + l[i]["vd"].t() + l[i]["lage"].t() + "|";
     }
-    if (tab == "patient") patGesehen = pk;
-    {
-      ImVec2 wp = ImGui::GetWindowPos();
+    if (quer) {
+      // Querformat (Tablet im Cockpit): Transport links, Patient rechts – beides sichtbar
+      patGesehen = pk;
+      bool neuEin = tabZuletzt != ein["code"].t() + ein["sw"].t();
+      tabZuletzt = ein["code"].t() + ein["sw"].t();
+      float sw = std::floor((W - 1) / 2);
+      float inhTop = top + 4;
+      spalte("##links", 0, inhTop, sw, H - inhTop - 72, ueber, false, t, neuEin);
+      buchenKnopf(14, H - 60, sw - 28, ueber, t);
       ImDrawList* dl = ImGui::GetWindowDrawList();
-      ImVec2 s0(wp.x + 14, wp.y + top + 10), s1(wp.x + W - 14, wp.y + top + 50);
-      dl->AddRectFilled(s0, s1, rgb(fb::SCHWARZ), 10);
-      dl->AddRect(s0, s1, rgb(0x262A35), 10);
-      float hw = (s1.x - s0.x - 6) / 2;
-      bool rechts = tab == "patient";
-      ImVec2 m0(s0.x + 3 + (rechts ? hw : 0), s0.y + 3);
-      dl->AddRectFilled(m0, ImVec2(m0.x + hw, s1.y - 3), rgb(fb::BLAU), 8);
-      ImGui::BeginDisabled(ueber);
-      ImGui::SetCursorScreenPos(ImVec2(s0.x + 3, s0.y + 3));
-      if (knopfRoh("##segT", ImVec2(hw, 34))) tab = "transport";
-      ImGui::SameLine(0, 0);
-      if (knopfRoh("##segP", ImVec2(hw, 34)) && (t["pat"] || t["ein"])) tab = "patient";
-      ImGui::EndDisabled();
-      ImVec2 a = textGroesse(fM, "Transport"), b = textGroesse(fM, "Patient");
-      textAn(dl, fM, ImVec2(s0.x + 3 + (hw - a.x) / 2, s0.y + 20 - a.y / 2), rechts ? rgb(fb::TEXT2) : rgb(fb::SCHWARZ), "Transport");
-      float bx = s0.x + 3 + hw + (hw - b.x) / 2;
-      textAn(dl, fM, ImVec2(bx, s0.y + 20 - b.y / 2), rechts ? rgb(fb::SCHWARZ) : rgb(fb::TEXT2), "Patient");
-      if (t["pat"] && pk != patGesehen) dl->AddCircleFilled(ImVec2(bx + b.x + 9, s0.y + 20), 3.5f, rgb(fb::GELB), 12);
-    }
-    float inhTop = top + 60;
-    bool mitKnopf = tab == "transport";
-    float inhH = H - inhTop - (mitKnopf ? 72 : 0);
-    ImGui::SetCursorPos(ImVec2(0, inhTop));
-    if (tab != tabZuletzt) {
-      // anderer Reiter: oben beginnen
-      ImGui::SetNextWindowScroll(ImVec2(0, 0));
+      ImVec2 wp = ImGui::GetWindowPos();
+      dl->AddLine(ImVec2(wp.x + sw + 0.5f, wp.y + top), ImVec2(wp.x + sw + 0.5f, wp.y + H), rgb(fb::LINIE));
+      spalte("##rechts", sw + 1, inhTop, W - sw - 1, H - inhTop, ueber, true, t, neuEin);
+    } else {
+      if (!t["pat"] && tab == "patient") tab = "transport";
+      if (tab == "patient") patGesehen = pk;
+      reiterZeichnen(W, top, ueber, t, pk);
+      float inhTop = top + 60;
+      bool mitKnopf = tab == "transport";
+      bool neuerReiter = tab != tabZuletzt;
       tabZuletzt = tab;
-    }
-    ImGui::BeginChild("##inh", ImVec2(W, inhH), ImGuiChildFlags_None, ueber ? ImGuiWindowFlags_NoMouseInputs : 0);
-    ImGui::BeginDisabled(ueber);
-    breiten.push_back(W);
-    if (tab == "transport") transportZeichnen(t);
-    else patientZeichnen(t);
-    breiten.pop_back();
-    luecke(10);
-    ImGui::EndDisabled();
-    if (!ueber) ziehScroll();
-    ImGui::EndChild();
-    if (mitKnopf) {
-      ImGui::SetCursorPos(ImVec2(14, H - 60));
-      bool da = (bool)t["buchenDa"];
-      std::string titel = t["plan"] ? "Zielort \xC3\xA4ndern" : da ? "Zielort buchen \xE2\x80\xBA" : "Zielort buchen";
-      std::string unter = t["plan"] ? t["plan"].t() : da ? "" : (t["buchenText"] ? t["buchenText"].t() : "geht am Einsatzort");
-      ImGui::BeginDisabled(ueber);
-      if (knopf("##buchenK", titel, unter, da ? rgb(fb::BLAU) : rgb(fb::AUS), da ? rgb(fb::SCHWARZ) : rgb(fb::DUNKELGRAU), W - 28, 48, fF, !da)) blattArt = "buchen";
-      ImGui::EndDisabled();
+      spalte("##inh", 0, inhTop, W, H - inhTop - (mitKnopf ? 72 : 0), ueber, tab == "patient", t, neuerReiter);
+      if (mitKnopf) buchenKnopf(14, H - 60, W - 28, ueber, t);
     }
   }
   // Blatt (Status geben / Zielort buchen) über allem
@@ -1544,29 +1640,39 @@ void bild(float W, float H, double jetztZeit) {
     ImDrawList* dl = ImGui::GetWindowDrawList();
     ImVec2 wp = ImGui::GetWindowPos();
     dl->AddRectFilled(wp, ImVec2(wp.x + W, wp.y + H), IM_COL32(0, 0, 0, 128));
+    // im Querformat: Blatt mittig in Hochformat-Breite
+    float BW = quer ? std::min(W, 540.f) : W;
+    float bx = (W - BW) / 2;
     bool kbd = willTasten();
     float kh = kbd ? tastaturHoehe() : 0;
     bool kurz = blattArt == "status";
     const Json& kn = stand["knoepfe"];
     float statusH = 52 + 12 + ((kn.size() + 2) / 3) * 78 + 16;
-    float bTop = kurz ? std::max(96.f, H - statusH) : 96;
+    float minTop = quer ? 12.f : 96.f;
+    float bTop = kurz ? std::max(minTop, H - statusH) : minTop;
     // Klick ins Dunkle schließt
     ImGui::SetCursorPos(ImVec2(0, 0));
     if (knopfRoh("##dunkel", ImVec2(W, bTop))) { blattArt.clear(); suchAktiv = false; }
-    ImVec2 b0(wp.x, wp.y + bTop);
-    dl->AddRectFilled(b0, ImVec2(wp.x + W, wp.y + H), rgb(fb::BLATT), 16, ImDrawFlags_RoundCornersTop);
-    dl->AddLine(ImVec2(b0.x + 8, b0.y), ImVec2(b0.x + W - 8, b0.y), rgb(0x2E3340));
+    if (bx > 0) {
+      ImGui::SetCursorPos(ImVec2(0, bTop));
+      if (knopfRoh("##dunkelL", ImVec2(bx, H - bTop))) { blattArt.clear(); suchAktiv = false; }
+      ImGui::SetCursorPos(ImVec2(bx + BW, bTop));
+      if (knopfRoh("##dunkelR", ImVec2(W - bx - BW, H - bTop))) { blattArt.clear(); suchAktiv = false; }
+    }
+    ImVec2 b0(wp.x + bx, wp.y + bTop);
+    dl->AddRectFilled(b0, ImVec2(b0.x + BW, wp.y + H), rgb(fb::BLATT), 16, ImDrawFlags_RoundCornersTop);
+    dl->AddLine(ImVec2(b0.x + 8, b0.y), ImVec2(b0.x + BW - 8, b0.y), rgb(0x2E3340));
     textAn(dl, fGG, ImVec2(b0.x + 16, b0.y + 26 - gr(fGG) / 2), rgb(fb::TEXT), kurz ? "Status geben" : "Zielort buchen");
     std::string zu = "Schlie\xC3\x9F" "en \xC3\x97";
     float zw = textGroesse(fM, zu).x + 16;
-    ImGui::SetCursorScreenPos(ImVec2(b0.x + W - 8 - zw, b0.y + 8));
+    ImGui::SetCursorScreenPos(ImVec2(b0.x + BW - 8 - zw, b0.y + 8));
     if (knopf("##blattx", zu, "", 0, rgb(fb::GRAU), zw, 36, fM)) { blattArt.clear(); suchAktiv = false; }
-    dl->AddLine(ImVec2(b0.x, b0.y + 52), ImVec2(b0.x + W, b0.y + 52), rgb(fb::LINIE));
+    dl->AddLine(ImVec2(b0.x, b0.y + 52), ImVec2(b0.x + BW, b0.y + 52), rgb(fb::LINIE));
     ImGui::SetCursorScreenPos(ImVec2(b0.x, b0.y + 53));
-    ImGui::BeginChild("##blattinh", ImVec2(W, H - bTop - 53 - kh));
+    ImGui::BeginChild("##blattinh", ImVec2(BW, H - bTop - 53 - kh));
     ImGui::SetCursorPos(ImVec2(16, 12));
     ImGui::BeginGroup();
-    breiten.push_back(W - 32);
+    breiten.push_back(BW - 32);
     if (kurz) statusZeichnen();
     else buchenZeichnen();
     breiten.pop_back();
@@ -1574,8 +1680,145 @@ void bild(float W, float H, double jetztZeit) {
     ImGui::EndGroup();
     ziehScroll();
     ImGui::EndChild();
-    if (kbd) tastatur(ImVec2(wp.x, wp.y + H - kh), W);
+    if (kbd) tastatur(ImVec2(wp.x + bx, wp.y + H - kh), BW);
     ImGui::EndChild();
+  }
+  ImGui::End();
+}
+
+// ------------------------------------------------------------------ Kachel „LeitWerk“ im AviTab (wie dessen App-Kacheln)
+void kachel(float W, float H) {
+  ImGui::SetNextWindowPos(ImVec2(0, 0));
+  ImGui::SetNextWindowSize(ImVec2(W, H));
+  ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0, 0, 0, 0));
+  ImGui::Begin("Kachel", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBackground);
+  ImDrawList* dl = ImGui::GetWindowDrawList();
+  // Hintergrund wie die AviTab-Startseite, Kachel etwas heller mit feinem Rand
+  dl->AddRectFilled(ImVec2(0, 0), ImVec2(W, H), IM_COL32(43, 45, 48, 255));
+  dl->AddRectFilled(ImVec2(3, 3), ImVec2(W - 3, H - 3), IM_COL32(52, 55, 59, 255), 4);
+  dl->AddRect(ImVec2(3, 3), ImVec2(W - 3, H - 3), IM_COL32(70, 73, 78, 255), 4);
+  // Symbol: rote Kachel mit weißem Kreuz und „LW“
+  float g = std::min(W, H) * 0.52f;
+  ImVec2 m(W / 2, H * 0.40f);
+  ImVec2 a(m.x - g / 2, m.y - g / 2), b(m.x + g / 2, m.y + g / 2);
+  dl->AddRectFilled(ImVec2(a.x + 2, a.y + 3), ImVec2(b.x + 2, b.y + 3), IM_COL32(0, 0, 0, 90), g * 0.2f);
+  dl->AddRectFilled(a, b, IM_COL32(206, 32, 41, 255), g * 0.2f);
+  dl->AddRectFilled(ImVec2(a.x, a.y), ImVec2(b.x, m.y), IM_COL32(255, 255, 255, 28), g * 0.2f, ImDrawFlags_RoundCornersTop);
+  float k = g * 0.17f;
+  dl->AddRectFilled(ImVec2(m.x - k, a.y + g * 0.16f), ImVec2(m.x + k, b.y - g * 0.16f), IM_COL32(255, 255, 255, 255));
+  dl->AddRectFilled(ImVec2(a.x + g * 0.16f, m.y - k), ImVec2(b.x - g * 0.16f, m.y + k), IM_COL32(255, 255, 255, 255));
+  // Beschriftung wie bei AviTab (weiß, mittig)
+  std::string n = "LeitWerk";
+  float sk = std::max(0.6f, H / 110.f);
+  ImFont* f = fM;
+  float fs = gr(f) * 1.15f * sk;
+  ImVec2 ts = f->CalcTextSizeA(fs, FLT_MAX, 0, n.c_str());
+  dl->AddText(f, fs, ImVec2((W - ts.x) / 2, H * 0.80f - ts.y / 2), IM_COL32(235, 236, 238, 255), n.c_str());
+  ImGui::End();
+  ImGui::PopStyleColor();
+}
+
+// ------------------------------------------------------------------ TETRA-Display (wie das CARLS / Funkgerät im Spiel)
+// Entwurf 470 × 348 (CARLS-Fläche): hellblau, Kopfzeile mit Netz und Uhr, TETRA / BOS / Gruppe / Status, rechts „KWlist“ /
+// „Optionen“; spricht jemand, das Fenster „Gruppe aktiv“ mit „ID: …“ und der Gruppe.
+static void mitte(ImDrawList* dl, ImFont* f, float px, float x, float w, float y, ImU32 c, const std::string& s) {
+  ImVec2 ts = f->CalcTextSizeA(px, FLT_MAX, 0, s.c_str());
+  if (ts.x > w - 4) {
+    px *= (w - 4) / ts.x;
+    ts = f->CalcTextSizeA(px, FLT_MAX, 0, s.c_str());
+  }
+  dl->AddText(f, px, ImVec2(x + (w - ts.x) / 2, y - ts.y / 2), c, s.c_str());
+}
+
+static void dreieck(ImDrawList* dl, float x, float y, bool rechts, ImU32 c) {
+  if (rechts) dl->AddTriangleFilled(ImVec2(x, y - 12), ImVec2(x + 15, y), ImVec2(x, y + 12), c);
+  else dl->AddTriangleFilled(ImVec2(x + 15, y - 12), ImVec2(x, y), ImVec2(x + 15, y + 12), c);
+}
+
+void tetra(float W, float H, bool strom) {
+  ImGui::SetNextWindowPos(ImVec2(0, 0));
+  ImGui::SetNextWindowSize(ImVec2(W, H));
+  ImGui::Begin("TETRA", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBackground);
+  ImDrawList* dl = ImGui::GetWindowDrawList();
+  if (!strom) {
+    dl->AddRectFilled(ImVec2(0, 0), ImVec2(W, H), IM_COL32(6, 8, 10, 255));
+    ImGui::End();
+    return;
+  }
+  // Maßstab: Entwurf 470 breit
+  float s = W / 470.f;
+  auto X = [&](float v) { return v * s; };
+  auto P = [&](float px) { return px * s; };
+  ImFont* f = fRiesig;
+  dl->AddRectFilledMultiColor(ImVec2(0, 0), ImVec2(W, H), IM_COL32(211, 225, 245, 255), IM_COL32(211, 225, 245, 255), IM_COL32(182, 203, 234, 255), IM_COL32(182, 203, 234, 255));
+  const Json& d = stand["neu"]["tetra"];
+  bool verb = netz::verbunden() && d.art == Json::Objekt;
+  float B = 368;
+  // Kopfzeile: Netz-Balken, Symbol, Uhr
+  dl->AddRectFilled(ImVec2(0, 0), ImVec2(X(B), X(42)), IM_COL32(255, 255, 255, 64));
+  dl->AddLine(ImVec2(0, X(42)), ImVec2(X(B), X(42)), IM_COL32(40, 70, 120, 56), X(1));
+  const float pr[4] = {30, 55, 80, 100};
+  for (int i = 0; i < 4; i++) {
+    float hh = std::round(pr[i] * 0.22f);
+    dl->AddRectFilled(ImVec2(X(16 + i * 9), X(32 - hh)), ImVec2(X(22 + i * 9), X(32)), verb ? IM_COL32(43, 154, 58, 255) : IM_COL32(120, 130, 140, 255), X(1));
+  }
+  dl->AddTriangleFilled(ImVec2(X(58), X(16)), ImVec2(X(72), X(16)), ImVec2(X(65), X(26)), IM_COL32(197, 138, 0, 255));
+  std::string uhr = verb ? d["uhr"].t() : "";
+  if (!uhr.empty()) {
+    ImVec2 ts = f->CalcTextSizeA(P(26), FLT_MAX, 0, uhr.c_str());
+    dl->AddText(f, P(26), ImVec2(X(B - 14) - ts.x, X(21) - ts.y / 2), IM_COL32(36, 54, 79, 255), uhr.c_str());
+  }
+  ImU32 dunkel = IM_COL32(15, 23, 36, 255), mittel = IM_COL32(36, 54, 79, 255);
+  mitte(dl, f, P(46), 0, X(B), X(84), dunkel, "TETRA");
+  mitte(dl, f, P(40), 0, X(B), X(142), mittel, "BOS");
+  if (!verb) {
+    mitte(dl, f, P(34), 0, X(B), X(214), dunkel, "LeitWerk");
+    mitte(dl, f, P(24), X(8), X(B - 16), X(299), mittel, netz::verbunden() ? "kein Hubschrauber" : "nicht verbunden");
+  } else {
+    std::string gruppe = d["gruppe"].t();
+    bool pfeile = (bool)d["pfeile"];
+    bool lampe = !d["neben"].t().empty();
+    ImVec2 gs = f->CalcTextSizeA(P(46), FLT_MAX, 0, gruppe.c_str());
+    float gx = (X(B) - gs.x) / 2;
+    dl->AddText(f, P(46), ImVec2(gx, X(214) - gs.y / 2), dunkel, gruppe.c_str());
+    if (pfeile) {
+      dreieck(dl, gx - X(29), X(214), false, IM_COL32(42, 94, 168, 255));
+      dreieck(dl, gx + gs.x + X(14), X(214), true, IM_COL32(42, 94, 168, 255));
+    }
+    if (lampe) dl->AddCircleFilled(ImVec2(gx + gs.x + X(pfeile ? 41 : 17), X(214)), X(7), IM_COL32(224, 138, 0, (int)(155 + 100 * std::fabs(std::sin(jetzt * 3.1)))), 16);
+    dl->AddLine(ImVec2(X(40), X(258)), ImVec2(X(B - 40), X(258)), IM_COL32(40, 70, 120, 56), X(1));
+    std::string st = d["status"].t();
+    float stGr = st.size() <= 14 ? 42 : st.size() <= 17 ? 37 : 32;
+    mitte(dl, f, P(stGr), X(8), X(B - 16), X(299), dunkel, st);
+  }
+  // Leiste rechts
+  dl->AddRectFilledMultiColor(ImVec2(X(B), 0), ImVec2(W, H), IM_COL32(128, 160, 208, 140), IM_COL32(128, 160, 208, 140), IM_COL32(110, 145, 198, 153), IM_COL32(110, 145, 198, 153));
+  dl->AddLine(ImVec2(X(B), 0), ImVec2(X(B), H), IM_COL32(40, 70, 120, 77), X(1));
+  dl->AddLine(ImVec2(X(B + 10), X(174)), ImVec2(X(B + 92), X(174)), IM_COL32(40, 70, 120, 64), X(1));
+  mitte(dl, f, P(26), X(B), X(102), X(57), IM_COL32(22, 38, 63, 255), "KWlist");
+  mitte(dl, f, P(23), X(B), X(102), X(271), IM_COL32(22, 38, 63, 255), "Optionen");
+  // Fenster „Gruppe aktiv“ / „Senden“ / „Warten …“
+  std::string kopfT = verb ? d["kopf"].t() : "";
+  if (!kopfT.empty()) {
+    std::string art = d["art"].t();
+    ImU32 popFarbe = art == "senden" ? IM_COL32(198, 40, 40, 255) : art == "warten" ? IM_COL32(168, 111, 0, 255) : IM_COL32(86, 101, 124, 255);
+    ImU32 popRand = art == "senden" ? IM_COL32(198, 40, 40, 255) : IM_COL32(45, 90, 160, 255);
+    float PW = 336;
+    dl->AddRectFilled(ImVec2(X(14), X(52)), ImVec2(X(14 + PW + 6), X(52 + 282)), IM_COL32(10, 25, 50, 71), X(8));
+    ImVec2 p0(X(10), X(48)), p1(X(10 + PW), X(48 + 278));
+    dl->AddRectFilled(p0, p1, IM_COL32(243, 247, 253, 255), X(8));
+    dl->AddRectFilled(p0, ImVec2(p1.x, p0.y + X(58)), popFarbe, X(8), ImDrawFlags_RoundCornersTop);
+    dl->AddRect(p0, p1, popRand, X(8), 0, X(3));
+    mitte(dl, f, P(32), p0.x, X(PW), p0.y + X(29), IM_COL32(255, 255, 255, 255), kopfT);
+    mitte(dl, f, P(54), p0.x, X(PW), p0.y + X(119), dunkel, d["wer"].t());
+    mitte(dl, f, P(art == "warten" ? 28 : 38), p0.x, X(PW), p0.y + X(181), mittel, d["popGruppe"].t());
+    if (art == "senden") {
+      float bw = PW * 0.6f, bx = 10 + PW * 0.2f;
+      float ph = 0.25f + 0.6f * (0.5f + 0.5f * (float)std::sin(jetzt * 7.0));
+      dl->AddRectFilled(ImVec2(X(bx), p0.y + X(222)), ImVec2(X(bx + bw), p0.y + X(232)), IM_COL32(0, 0, 0, 31), X(5));
+      dl->AddRectFilled(ImVec2(X(bx), p0.y + X(222)), ImVec2(X(bx + bw * ph), p0.y + X(232)), IM_COL32(198, 40, 40, 255), X(5));
+    }
+    if (!d["neben"].t().empty()) mitte(dl, f, P(24), p0.x, X(PW), p0.y + X(252), IM_COL32(122, 84, 0, 255), d["neben"].t());
   }
   ImGui::End();
 }

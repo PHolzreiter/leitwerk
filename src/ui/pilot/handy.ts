@@ -13,6 +13,7 @@ import { inTauri } from "../../platform";
 import { openDialog } from "../dialog";
 import { el, esc, toast } from "../dom";
 import { msfsWetterMeldung, vorgabe, vorgabeSetzen, xpPluginMeldung } from "./flugsim";
+import { funkGeraetTaste } from "./hpg";
 import { AKTIONEN, HALTEN, type PilotAktion } from "./tasten";
 
 interface HandyInfo {
@@ -131,6 +132,8 @@ async function hoeren(): Promise<void> {
       if (ev.payload.startsWith("wx:")) return void msfsWetterMeldung(ev.payload);
       // X-Plane-Plugin „LeitWerk“: Lebenszeichen
       if (ev.payload.startsWith("xp:")) return xpPluginMeldung(ev.payload);
+      // TETRA-Funkgerät im X-Plane-Cockpit (Plugin): „tt:<Taste>“ – wie das CARLS
+      if (ev.payload.startsWith("tt:")) return funkGeraetTaste(ev.payload.slice(3));
       // Sprechtaste: „funk_an“ / „funk_aus“
       const m = /^(\w+)_(an|aus)$/.exec(ev.payload);
       if (m && HALTEN.includes(m[1] as PilotAktion)) return haltenFn?.(m[1] as PilotAktion, m[2] === "an");

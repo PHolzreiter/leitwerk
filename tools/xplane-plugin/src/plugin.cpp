@@ -1,4 +1,5 @@
-// LeitWerk-Plugin für X-Plane 12: die Einsatz-App als Fenster (auch in VR) und Befehle für Status/Sprechtaste.
+// LeitWerk-Plugin für X-Plane 12: die Einsatz-App als Fenster (auch in VR) und im Cockpit (MFD, Klapp-Tablet),
+// TETRA-Funkgerät, Wetter von LeitWerk und Befehle für Status/Sprechtaste.
 // Daten kommen von LeitWerk auf demselben PC (wie bei der EFB-App in MSFS: http://127.0.0.1:47900–47905).
 #include <cfloat>
 #include <cmath>
@@ -7,6 +8,7 @@
 #include <cstdio>
 #include <cstring>
 #include <string>
+#include <vector>
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
@@ -36,8 +38,34 @@
 #define LEITWERK_PLUGIN_VERSION "0.0.0"
 #endif
 
+#include "wetter.h"
+
+// ------------------------------------------------------------------ Bildschirme
+// Jeder Bildschirm hat einen eigenen ImGui-Kontext (gemeinsame Schriften) und einen eigenen Zustand (Reiter, Blatt …).
+enum SchirmArt { FENSTER, MFD, TABLET, KACHEL, TETRA };
+struct Schirm {
+  SchirmArt art;
+  const char* id;    // Gerät im Cockpit (ATTR_cockpit_device …)
+  const char* name;
+  int pxW, pxH;      // Bildpunkte des Geräts
+  float logW, logH;  // logische Größe (Entwurf)
+  ImGuiContext* ctx = nullptr;
+  ui::Zustand z;
+  XPLMAvionicsID av = nullptr;
+  double letztesBild = 0, aktivBis = 0, naechstes = 0;
+  int cursorBild = 0, bildNr = 0;
+  bool gezeichnet = false;  // seit dem Start schon einmal gezeichnet (Gerät steckt im Cockpit)
+};
+
+static Schirm sFenster{FENSTER, nullptr, nullptr, 0, 0, 460, 780};
+// MFD links (EuroNav-Platz, Hochformat ~ 0,83), Klapp-Tablet rechts (AviTab-Fläche 800 × 480), Kachel, Funkgerät-LCD
+static Schirm sMfd{MFD, "leitwerk_mfd", "LeitWerk MFD", 600, 720, 460, 552};
+static Schirm sTablet{TABLET, "leitwerk_tablet", "LeitWerk Tablet", 1000, 600, 800, 480};
+static Schirm sKachel{KACHEL, "leitwerk_kachel", "LeitWerk Kachel", 202, 220, 101, 110};
+static Schirm sTetra{TETRA, "leitwerk_tetra", "LeitWerk TETRA", 1280, 960, 470, 352.5f};
+static Schirm* const GERAETE[] = {&sMfd, &sTablet, &sKachel, &sTetra};
+
 static XPLMWindowID fenster = nullptr;
-static ImGuiContext* ctx = nullptr;
 static bool uiBereit = false;
 static float skala = 1.0f;
 static bool imVR = false;
@@ -49,15 +77,24 @@ static std::string schriftOrdner, prefDatei;
 static int geo[4] = {0, 0, 0, 0};  // gespeicherte Lage (l, t, r, b) außerhalb von VR
 static int vrGeo[2] = {0, 0};
 static bool startSichtbar = false;
-static double letztesBild = 0;
-static int cursorBild = 0, bildNr = 0;
-static XPLMDataRef drVR, drMV, drPJ, drVP;
+static XPLMDataRef drVR, drMV, drPJ, drVP, drVolt, drAvionik;
 static double letzteMeldung = -100;
+static int letzterZyklus = -1;
 
-static const float BREITE = 460, HOEHE = 780;
 static const float GROESSEN[3] = {1.0f, 1.25f, 1.5f};
 
 static void log(const std::string& s) { XPLMDebugString(("LeitWerk: " + s + "\n").c_str()); }
+
+// ------------------------------------------------------------------ Neuere XPLM-Funktionen (erst ab X-Plane 12.1 / 12.3):
+// über XPLMFindSymbol, damit das Plugin auch in älteren Versionen lädt
+typedef XPLMAvionicsID (*CreateAvionicsEx_f)(XPLMCreateAvionics_t*);
+typedef void (*DestroyAvionics_f)(XPLMAvionicsID);
+typedef void (*AvionicsNeedsDrawing_f)(XPLMAvionicsID);
+typedef int (*IsAvionicsBound_f)(XPLMAvionicsID);
+static CreateAvionicsEx_f xCreateAvionicsEx = nullptr;
+static DestroyAvionics_f xDestroyAvionics = nullptr;
+static AvionicsNeedsDrawing_f xAvionicsNeedsDrawing = nullptr;
+static IsAvionicsBound_f xIsAvionicsBound = nullptr;
 
 // ------------------------------------------------------------------ Texturen
 static unsigned texNeu(int w, int h, const unsigned char* rgba) {
@@ -116,11 +153,13 @@ static void projizieren(const float* mv, const float* pj, const int* vp, float x
   oy = vp[1] + (c[1] / c[3] + 1) * 0.5f * vp[3];
 }
 
-static void imguiZeichnen(ImDrawData* dd, int l, int t) {
+// l, t = linke obere Ecke in Zeichen-Koordinaten (y nach oben), k = Bildpunkte je logischer Einheit.
+// glMatrizen: Matrizen aus OpenGL lesen (Geräte im Cockpit) statt aus den Datarefs (Fenster).
+static void imguiZeichnen(ImDrawData* dd, float l, float t, float k, bool glMatrizen) {
   float mv[16], pj[16];
   int vp[4];
   bool ok = false;
-  if (drMV && drPJ && drVP) {
+  if (!glMatrizen && drMV && drPJ && drVP) {
     ok = XPLMGetDatavf(drMV, mv, 0, 16) == 16 && XPLMGetDatavf(drPJ, pj, 0, 16) == 16 && XPLMGetDatavi(drVP, vp, 0, 4) == 4;
     // wie im SDK-Beispiel „window scissoring“: Viewport = (x, y, Breite, Höhe)
     if (ok && (vp[2] <= 0 || vp[3] <= 0)) ok = false;
@@ -137,6 +176,7 @@ static void imguiZeichnen(ImDrawData* dd, int l, int t) {
   GLint alt[4];
   glGetIntegerv(GL_SCISSOR_BOX, alt);
   glDisable(GL_CULL_FACE);
+  glDisable(GL_DEPTH_TEST);
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glEnable(GL_SCISSOR_TEST);
@@ -146,8 +186,8 @@ static void imguiZeichnen(ImDrawData* dd, int l, int t) {
   glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
   glMatrixMode(GL_MODELVIEW);
   glPushMatrix();
-  glTranslatef((float)l, (float)t, 0);
-  glScalef(skala, -skala, 1);
+  glTranslatef(l, t, 0);
+  glScalef(k, -k, 1);
   for (int n = 0; n < dd->CmdListsCount; n++) {
     const ImDrawList* cl = dd->CmdLists[n];
     const ImDrawVert* vb = cl->VtxBuffer.Data;
@@ -161,10 +201,10 @@ static void imguiZeichnen(ImDrawData* dd, int l, int t) {
         cmd.UserCallback(cl, &cmd);
         continue;
       }
-      // Ausschnitt: logisch → Boxel → Bildschirmpixel
+      // Ausschnitt: logisch → Zeichen-Koordinaten → Bildschirmpixel
       float x0, y0, x1, y1;
-      projizieren(mv, pj, vp, l + cmd.ClipRect.x * skala, t - cmd.ClipRect.w * skala, x0, y0);
-      projizieren(mv, pj, vp, l + cmd.ClipRect.z * skala, t - cmd.ClipRect.y * skala, x1, y1);
+      projizieren(mv, pj, vp, l + cmd.ClipRect.x * k, t - cmd.ClipRect.w * k, x0, y0);
+      projizieren(mv, pj, vp, l + cmd.ClipRect.z * k, t - cmd.ClipRect.y * k, x1, y1);
       int sx = (int)floorf(fminf(x0, x1)), sy = (int)floorf(fminf(y0, y1));
       int sw = (int)ceilf(fmaxf(x0, x1)) - sx, sh = (int)ceilf(fmaxf(y0, y1)) - sy;
       if (hatteSchere) {
@@ -186,42 +226,77 @@ static void imguiZeichnen(ImDrawData* dd, int l, int t) {
   glPopAttrib();
 }
 
-static void zeichnen(XPLMWindowID w, void*) {
-  ImGui::SetCurrentContext(ctx);
-  if (!uiBereit) {
-    ui::start(schriftOrdner, texNeu, texWeg);
-    uiBereit = true;
+// Schriften einmal bauen (braucht OpenGL), dann alle Kontexte mit gemeinsamem Atlas anlegen
+static void uiSicherstellen() {
+  if (uiBereit) return;
+  ImGui::SetCurrentContext(sFenster.ctx);
+  ui::start(schriftOrdner, texNeu, texWeg);
+  ImFontAtlas* atlas = ImGui::GetIO().Fonts;
+  for (Schirm* s : GERAETE) {
+    s->ctx = ImGui::CreateContext(atlas);
+    ImGui::SetCurrentContext(s->ctx);
+    ui::stilSetzen();
   }
-  int l, t, r, b;
-  XPLMGetWindowGeometry(w, &l, &t, &r, &b);
-  ImGuiIO& io = ImGui::GetIO();
-  float W = (r - l) / skala, H = (t - b) / skala;
-  if (W < 50 || H < 50) return;
+  uiBereit = true;
+}
+
+// Strom fürs Funkgerät: Avionik an und mehr als 10 V auf der ersten Schiene (wie im Cockpit üblich)
+static bool tetraEin = true;
+static float tetraStrom = 0;
+
+// Ein Bild eines Bildschirms (W, H logisch)
+static ImDrawData* schirmBild(Schirm& s, float W, float H) {
+  uiSicherstellen();
   double jetzt = XPLMGetElapsedTime();
-  io.DeltaTime = letztesBild > 0 && jetzt > letztesBild ? (float)(jetzt - letztesBild) : 1.f / 60.f;
+  int zyklus = XPLMGetCycleNumber();
+  if (zyklus != letzterZyklus) {
+    letzterZyklus = zyklus;
+    ui::takt(jetzt);
+  }
+  ImGui::SetCurrentContext(s.ctx);
+  ui::zustand(&s.z);
+  ImGuiIO& io = ImGui::GetIO();
+  io.DeltaTime = s.letztesBild > 0 && jetzt > s.letztesBild ? (float)(jetzt - s.letztesBild) : 1.f / 60.f;
   if (io.DeltaTime > 0.5f) io.DeltaTime = 0.5f;
-  letztesBild = jetzt;
+  if (io.DeltaTime <= 0) io.DeltaTime = 1.f / 60.f;
+  s.letztesBild = jetzt;
   io.DisplaySize = ImVec2(W, H);
   io.DisplayFramebufferScale = ImVec2(1, 1);
-  bildNr++;
-  if (cursorBild < bildNr - 2 && !io.MouseDown[0]) io.AddMousePosEvent(-FLT_MAX, -FLT_MAX);
+  s.bildNr++;
+  // Maus weg (VR-Strahl / Finger nicht mehr da): kein Hover
+  if (s.cursorBild < s.bildNr - 2 && !io.MouseDown[0]) io.AddMousePosEvent(-FLT_MAX, -FLT_MAX);
   ImGui::NewFrame();
-  ui::bild(W, H, jetzt);
+  switch (s.art) {
+    case FENSTER: ui::bild(W, H, ui::HOCH); break;
+    case MFD: ui::bild(W, H, ui::HOCH); break;
+    case TABLET: ui::bild(W, H, ui::QUER); break;
+    case KACHEL: ui::kachel(W, H); break;
+    case TETRA: ui::tetra(W, H, tetraStrom > 0.5f); break;
+  }
   ImGui::Render();
-  imguiZeichnen(ImGui::GetDrawData(), l, t);
+  return ImGui::GetDrawData();
+}
+
+static void zeichnen(XPLMWindowID w, void*) {
+  int l, t, r, b;
+  XPLMGetWindowGeometry(w, &l, &t, &r, &b);
+  float W = (r - l) / skala, H = (t - b) / skala;
+  if (W < 50 || H < 50) return;
+  ImDrawData* dd = schirmBild(sFenster, W, H);
+  imguiZeichnen(dd, (float)l, (float)t, skala, false);
 }
 
 static void mausAuf(XPLMWindowID w, int x, int y) {
   int l, t, r, b;
   XPLMGetWindowGeometry(w, &l, &t, &r, &b);
-  ImGui::SetCurrentContext(ctx);
+  ImGui::SetCurrentContext(sFenster.ctx);
   ImGui::GetIO().AddMousePosEvent((x - l) / skala, (t - y) / skala);
 }
 
 static int klick(XPLMWindowID w, int x, int y, XPLMMouseStatus st, void*) {
-  if (!ctx) return 1;
+  if (!sFenster.ctx) return 1;
   mausAuf(w, x, y);
-  cursorBild = bildNr;
+  sFenster.cursorBild = sFenster.bildNr;
   ImGuiIO& io = ImGui::GetIO();
   if (st == xplm_MouseDown) {
     io.AddMouseButtonEvent(0, true);
@@ -233,15 +308,15 @@ static int klick(XPLMWindowID w, int x, int y, XPLMMouseStatus st, void*) {
 static int rechtsKlick(XPLMWindowID, int, int, XPLMMouseStatus, void*) { return 1; }
 
 static XPLMCursorStatus cursor(XPLMWindowID w, int x, int y, void*) {
-  if (ctx) {
+  if (sFenster.ctx) {
     mausAuf(w, x, y);
-    cursorBild = bildNr;
+    sFenster.cursorBild = sFenster.bildNr;
   }
   return xplm_CursorDefault;
 }
 
 static int rad(XPLMWindowID w, int x, int y, int achse, int klicks, void*) {
-  if (!ctx) return 1;
+  if (!sFenster.ctx) return 1;
   mausAuf(w, x, y);
   ImGui::GetIO().AddMouseWheelEvent(achse == 1 ? (float)klicks : 0, achse == 0 ? (float)klicks : 0);
   return 1;
@@ -253,6 +328,10 @@ static void taste(XPLMWindowID, char key, XPLMKeyFlags flags, char vkey, void*, 
     return;
   }
   if (!(flags & xplm_DownFlag)) return;
+  if (sFenster.ctx) {
+    ImGui::SetCurrentContext(sFenster.ctx);
+    ui::zustand(&sFenster.z);
+  }
   unsigned char vk = (unsigned char)vkey;
   if (vk == XPLM_VK_BACK) ui::tasteZurueck();
   else if (vk == XPLM_VK_RETURN || vk == XPLM_VK_ENTER || vk == XPLM_VK_ESCAPE) ui::tasteFertig();
@@ -269,6 +348,169 @@ static void taste(XPLMWindowID, char key, XPLMKeyFlags flags, char vkey, void*, 
   }
 }
 
+// ------------------------------------------------------------------ Geräte im Cockpit (X-Plane 12.1+)
+// Zeichnen und Tippen kommen in Bildpunkten des Geräts, Ursprung links unten.
+static void geraetZeichnen(void* ref) {
+  Schirm& s = *(Schirm*)ref;
+  s.gezeichnet = true;
+  ImDrawData* dd = schirmBild(s, s.logW, s.logH);
+  imguiZeichnen(dd, 0, (float)s.pxH, s.pxW / s.logW, true);
+}
+
+static void geraetMaus(Schirm& s, int x, int y) {
+  if (!s.ctx) return;
+  float k = s.pxW / s.logW;
+  ImGui::SetCurrentContext(s.ctx);
+  ImGui::GetIO().AddMousePosEvent(x / k, (s.pxH - y) / k);
+  s.cursorBild = s.bildNr;
+  s.aktivBis = XPLMGetElapsedTime() + 3;
+}
+
+static int geraetTippen(int x, int y, XPLMMouseStatus st, void* ref) {
+  Schirm& s = *(Schirm*)ref;
+  if (!s.ctx) return 1;
+  geraetMaus(s, x, y);
+  ImGuiIO& io = ImGui::GetIO();
+  if (st == xplm_MouseDown) io.AddMouseButtonEvent(0, true);
+  else if (st == xplm_MouseUp) io.AddMouseButtonEvent(0, false);
+  if (xAvionicsNeedsDrawing && s.av) xAvionicsNeedsDrawing(s.av);
+  return 1;
+}
+
+static int geraetRad(int x, int y, int achse, int klicks, void* ref) {
+  Schirm& s = *(Schirm*)ref;
+  if (!s.ctx) return 1;
+  geraetMaus(s, x, y);
+  ImGui::GetIO().AddMouseWheelEvent(achse == 1 ? (float)klicks : 0, achse == 0 ? (float)klicks : 0);
+  return 1;
+}
+
+static XPLMCursorStatus geraetCursor(int x, int y, void* ref) {
+  Schirm& s = *(Schirm*)ref;
+  if (s.ctx) geraetMaus(s, x, y);
+  return xplm_CursorDefault;
+}
+
+static void geraeteErzeugen() {
+  xCreateAvionicsEx = (CreateAvionicsEx_f)XPLMFindSymbol("XPLMCreateAvionicsEx");
+  xDestroyAvionics = (DestroyAvionics_f)XPLMFindSymbol("XPLMDestroyAvionics");
+  xAvionicsNeedsDrawing = (AvionicsNeedsDrawing_f)XPLMFindSymbol("XPLMAvionicsNeedsDrawing");
+  xIsAvionicsBound = (IsAvionicsBound_f)XPLMFindSymbol("XPLMIsAvionicsBound");
+  if (!xCreateAvionicsEx) {
+    log("X-Plane ohne eigene Cockpit-Ger\xC3\xA4te (erst ab 12.1) \xE2\x80\x93 nur das Fenster");
+    return;
+  }
+  for (Schirm* s : GERAETE) {
+    XPLMCreateAvionics_t d;
+    memset(&d, 0, sizeof d);
+    d.structSize = sizeof d;
+    d.screenWidth = d.bezelWidth = s->pxW;
+    d.screenHeight = d.bezelHeight = s->pxH;
+    d.drawOnDemand = 1;
+    d.drawCallback = geraetZeichnen;
+    if (s->art == MFD || s->art == TABLET) {
+      d.screenTouchCallback = geraetTippen;
+      d.screenScrollCallback = geraetRad;
+      d.screenCursorCallback = geraetCursor;
+    }
+    d.deviceID = (char*)s->id;
+    d.deviceName = (char*)s->name;
+    d.refcon = s;
+    s->av = xCreateAvionicsEx(&d);
+    if (!s->av) log(std::string("Ger\xC3\xA4t ") + s->id + " nicht angelegt");
+  }
+}
+
+static void geraeteEntfernen() {
+  for (Schirm* s : GERAETE) {
+    if (s->av && xDestroyAvionics) xDestroyAvionics(s->av);
+    s->av = nullptr;
+  }
+}
+
+static bool gebunden(const Schirm& s) { return s.av && (xIsAvionicsBound ? xIsAvionicsBound(s.av) != 0 : s.gezeichnet); }
+
+// ------------------------------------------------------------------ Datarefs für das Cockpit
+// leitwerk/aktiv: LeitWerk läuft (MFD zeigt dann LeitWerk statt EuroNav, die Kachel erscheint im AviTab)
+// leitwerk/tablet/app: 1 = LeitWerk auf dem Klapp-Tablet, 0 = AviTab
+static int aktivWert = 0;
+static double zuletztVerbunden = -100;
+static int tabletApp = 0;
+static int liesInt(void* ref) { return *(int*)ref; }
+static int liesTabletApp(void*) { return aktivWert ? tabletApp : 0; }
+static void schreibTabletApp(void*, int v) { tabletApp = v ? 1 : 0; }
+static float liesFloat(void* ref) { return *(float*)ref; }
+static int eingebaut = 1;
+
+static std::vector<XPLMDataRef> datarefs;
+
+static XPLMDataRef intRef(const char* name, int* wert) {
+  return XPLMRegisterDataAccessor(name, xplmType_Int, 0, liesInt, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
+                                  nullptr, nullptr, nullptr, nullptr, wert, nullptr);
+}
+static XPLMDataRef floatRef(const std::string& name, float* wert) {
+  return XPLMRegisterDataAccessor(name.c_str(), xplmType_Float, 0, nullptr, nullptr, liesFloat, nullptr, nullptr, nullptr, nullptr,
+                                  nullptr, nullptr, nullptr, nullptr, nullptr, wert, nullptr);
+}
+
+// ------------------------------------------------------------------ TETRA-Funkgerät (Modell vom Kollegen: Tasten, Knopf)
+// Tasten wie beim CARLS (Paul 11.11.): Ziffer = Status (geht nach 1 s), ◄ ► / Knopf = Sprechgruppe, rote Taste = abbrechen.
+// Zusätzlich grüne Taste = Sprechtaste (halten). Die Logik steckt in LeitWerk (Befehl „tt:<Taste>“).
+struct Taste {
+  const char* name;
+  const char* an;    // an LeitWerk beim Drücken
+  int sonder;        // 0 = nichts weiter, 1 = Ein/Aus, 2 = links drehen, 3 = rechts drehen, 4 = Sprechtaste
+  XPLMCommandRef ref = nullptr;
+  float hub = 0;
+  bool gedrueckt = false;
+};
+static Taste tasten[] = {
+    {"KEY_0", "tt:0", 0}, {"KEY_1", "tt:1", 0}, {"KEY_2", "tt:2", 0}, {"KEY_3", "tt:3", 0}, {"KEY_4", "tt:4", 0},
+    {"KEY_5", "tt:5", 0}, {"KEY_6", "tt:6", 0}, {"KEY_7", "tt:7", 0}, {"KEY_8", "tt:8", 0}, {"KEY_9", "tt:9", 0},
+    {"KEY_STAR", nullptr, 0}, {"KEY_HASH", nullptr, 0}, {"SOFT_TOP", nullptr, 0}, {"SOFT_BOTTOM", nullptr, 0},
+    {"MENU", nullptr, 0}, {"NAV_CENTER", nullptr, 0}, {"NAV_UP", nullptr, 0}, {"NAV_DOWN", nullptr, 0},
+    {"NAV_LEFT", "tt:LEFT", 0}, {"NAV_RIGHT", "tt:RIGHT", 0}, {"END_POWER", "tt:HANG", 0}, {"CALL", nullptr, 4},
+    {"EMERGENCY", nullptr, 0}, {"FUNC_0", nullptr, 0}, {"FUNC_1", nullptr, 0}, {"FUNC_2", nullptr, 0},
+    {"DREHKNOPF", nullptr, 1}, {"turn_left", "tt:LEFT", 2}, {"turn_right", "tt:RIGHT", 3},
+};
+static float tetraDrehung = 0, tetraZielwinkel = 0;
+
+static int tetraTaste(XPLMCommandRef, XPLMCommandPhase phase, void* ref) {
+  Taste& k = *(Taste*)ref;
+  if (phase == xplm_CommandBegin) {
+    k.gedrueckt = true;
+    if (k.sonder == 1) tetraEin = !tetraEin;
+    if (k.sonder == 2) tetraZielwinkel -= 15;
+    if (k.sonder == 3) tetraZielwinkel += 15;
+    if (tetraStrom > 0.5f) {
+      if (k.an) netz::senden(k.an);
+      if (k.sonder == 4) netz::senden("funk_an");
+    }
+    if (xAvionicsNeedsDrawing && sTetra.av) xAvionicsNeedsDrawing(sTetra.av);
+  } else if (phase == xplm_CommandEnd) {
+    k.gedrueckt = false;
+    if (k.sonder == 4) netz::senden("funk_aus");
+  }
+  return 0;
+}
+
+static void tetraTakt(float dt) {
+  float volt = 0;
+  if (drVolt) XPLMGetDatavf(drVolt, &volt, 0, 1);
+  bool avionik = drAvionik ? XPLMGetDatai(drAvionik) != 0 : true;
+  bool an = tetraEin && volt > 10 && avionik;
+  if (tetraStrom > 0.5f && !an) {
+    for (auto& k : tasten)
+      if (k.gedrueckt && k.sonder == 4) netz::senden("funk_aus");
+  }
+  tetraStrom = an ? 1.f : 0.f;
+  float f = 1 - expf(-22 * fmaxf(0.f, dt));
+  for (auto& k : tasten) k.hub += ((k.gedrueckt ? 1.f : 0.f) - k.hub) * f;
+  tetraDrehung += (tetraZielwinkel - tetraDrehung) * f;
+  if (tetraDrehung >= 360 && tetraZielwinkel >= 360) { tetraDrehung -= 360; tetraZielwinkel -= 360; }
+  if (tetraDrehung < 0 && tetraZielwinkel < 0) { tetraDrehung += 360; tetraZielwinkel += 360; }
+}
+
 // ------------------------------------------------------------------ Fenster
 static void vrPruefen() {
   bool vr = drVR && XPLMGetDatai(drVR) != 0;
@@ -276,7 +518,7 @@ static void vrPruefen() {
   if (vr) {
     XPLMGetWindowGeometry(fenster, &geo[0], &geo[1], &geo[2], &geo[3]);
     XPLMSetWindowPositioningMode(fenster, xplm_WindowVR, -1);
-    int w = vrGeo[0] > 0 ? vrGeo[0] : (int)(BREITE * skala), h = vrGeo[1] > 0 ? vrGeo[1] : (int)(HOEHE * skala);
+    int w = vrGeo[0] > 0 ? vrGeo[0] : (int)(sFenster.logW * skala), h = vrGeo[1] > 0 ? vrGeo[1] : (int)(sFenster.logH * skala);
     XPLMSetWindowGeometryVR(fenster, w, h);
   } else {
     XPLMGetWindowGeometryVR(fenster, &vrGeo[0], &vrGeo[1]);
@@ -289,7 +531,7 @@ static void vrPruefen() {
 static void lageStandard() {
   int sl, st, sr, sb;
   XPLMGetScreenBoundsGlobal(&sl, &st, &sr, &sb);
-  int w = (int)(BREITE * skala), h = (int)(HOEHE * skala);
+  int w = (int)(sFenster.logW * skala), h = (int)(sFenster.logH * skala);
   if (h > st - sb - 80) h = st - sb - 80;
   geo[2] = sr - 40;
   geo[0] = geo[2] - w;
@@ -356,7 +598,7 @@ struct Befehl {
   const char* text;
   const char* an;   // beim Drücken
   const char* aus;  // beim Loslassen (Sprechtaste)
-  int art;          // 0 = an LeitWerk, 1 = Tablet ein/aus, 2 = Zielort, 3 = Status geben, 4 = Karte
+  int art;          // 0 = an LeitWerk, 1 = Tablet ein/aus, 2 = Zielort, 3 = Status geben, 4 = Karte, 5/6/7 = Cockpit-Tablet LeitWerk um/an/aus
   XPLMCommandRef ref;
 };
 static Befehl befehle[] = {
@@ -373,7 +615,16 @@ static Befehl befehle[] = {
     {"leitwerk/zielort", "LeitWerk: Zielort buchen (Tablet)", nullptr, nullptr, 2, nullptr},
     {"leitwerk/status_geben", "LeitWerk: Status geben (Tablet)", nullptr, nullptr, 3, nullptr},
     {"leitwerk/navigation", "LeitWerk: Navigation (Tablet)", nullptr, nullptr, 4, nullptr},
+    {"leitwerk/tablet_app", "LeitWerk: Klapp-Tablet im Cockpit LeitWerk/AviTab", nullptr, nullptr, 5, nullptr},
+    {"leitwerk/tablet_app_auf", "LeitWerk: Klapp-Tablet im Cockpit \xE2\x86\x92 LeitWerk", nullptr, nullptr, 6, nullptr},
+    {"leitwerk/tablet_app_zu", "LeitWerk: Klapp-Tablet im Cockpit \xE2\x86\x92 AviTab", nullptr, nullptr, 7, nullptr},
 };
+
+static void fensterZustand() {
+  uiSicherstellen();
+  ImGui::SetCurrentContext(sFenster.ctx);
+  ui::zustand(&sFenster.z);
+}
 
 static int befehl(XPLMCommandRef, XPLMCommandPhase phase, void* ref) {
   Befehl& b = *(Befehl*)ref;
@@ -381,10 +632,14 @@ static int befehl(XPLMCommandRef, XPLMCommandPhase phase, void* ref) {
     switch (b.art) {
       case 0: netz::senden(b.an); break;
       case 1: umschalten(); break;
-      case 2: zeigen(true); ImGui::SetCurrentContext(ctx); ui::buchenOeffnen(); break;
-      case 3: zeigen(true); ImGui::SetCurrentContext(ctx); ui::statusOeffnen(); break;
-      case 4: zeigen(true); ImGui::SetCurrentContext(ctx); ui::kartenOeffnen(); break;
+      case 2: zeigen(true); fensterZustand(); ui::buchenOeffnen(); break;
+      case 3: zeigen(true); fensterZustand(); ui::statusOeffnen(); break;
+      case 4: zeigen(true); fensterZustand(); ui::kartenOeffnen(); break;
+      case 5: tabletApp = !tabletApp; break;
+      case 6: tabletApp = 1; break;
+      case 7: tabletApp = 0; break;
     }
+    if (b.art >= 5 && xAvionicsNeedsDrawing && sTablet.av) xAvionicsNeedsDrawing(sTablet.av);
   } else if (phase == xplm_CommandEnd && b.aus) netz::senden(b.aus);
   return 0;
 }
@@ -395,8 +650,8 @@ static void menueKlick(void*, void* item) {
   else if (i >= 10 && i < 13) skalaSetzen(GROESSEN[i - 10]);
   else if (i == 20) {
     if (imVR) {
-      vrGeo[0] = (int)(BREITE * skala);
-      vrGeo[1] = (int)(HOEHE * skala);
+      vrGeo[0] = (int)(sFenster.logW * skala);
+      vrGeo[1] = (int)(sFenster.logH * skala);
       XPLMSetWindowGeometryVR(fenster, vrGeo[0], vrGeo[1]);
     } else {
       lageStandard();
@@ -406,29 +661,68 @@ static void menueKlick(void*, void* item) {
   }
 }
 
+// Wie oft die Geräte neu gezeichnet werden (Sekunden): beim Bedienen flüssig, sonst sparsam
+static double neuZeichnenAlle(const Schirm& s, double jetzt) {
+  switch (s.art) {
+    case MFD:
+    case TABLET: return jetzt < s.aktivBis ? 1.0 / 30 : 0.25;
+    case TETRA: return 0.1;
+    default: return 1.0;
+  }
+}
+
+static double letzterTakt = 0;
 static float takt(float, float, int, void*) {
+  double jetzt = XPLMGetElapsedTime();
+  float dt = letzterTakt > 0 ? (float)(jetzt - letzterTakt) : 0;
+  letzterTakt = jetzt;
+  ui::standLesen();
   vrPruefen();
-  if (ctx) {
-    ImGui::SetCurrentContext(ctx);
+  if (sFenster.ctx && uiBereit) {
+    ImGui::SetCurrentContext(sFenster.ctx);
+    ui::zustand(&sFenster.z);
     bool will = fenster && XPLMGetWindowIsVisible(fenster) && ui::willTasten();
     if (will && !hatFokus) { XPLMTakeKeyboardFocus(fenster); hatFokus = true; }
     if (!will && hatFokus) { XPLMTakeKeyboardFocus(0); hatFokus = false; }
   }
+  // LeitWerk läuft? (kurze Aussetzer überbrücken)
+  if (netz::verbunden()) zuletztVerbunden = jetzt;
+  aktivWert = jetzt - zuletztVerbunden < 10 ? 1 : 0;
+  // „‹ AviTab“ im Cockpit-Tablet gedrückt
+  if (sTablet.ctx) {
+    ImGui::SetCurrentContext(sTablet.ctx);
+    if (ui::zurueck()) tabletApp = 0;
+  }
+  tetraTakt(dt);
+  if (xAvionicsNeedsDrawing) {
+    for (Schirm* s : GERAETE) {
+      if (!s->av || jetzt < s->naechstes) continue;
+      s->naechstes = jetzt + neuZeichnenAlle(*s, jetzt);
+      xAvionicsNeedsDrawing(s->av);
+    }
+  }
   if (menue) XPLMSetMenuItemName(menue, mStatus, netz::verbunden() ? "LeitWerk: verbunden" : "LeitWerk: nicht verbunden", 0);
-  // LeitWerk wissen lassen, dass das Plugin da ist (Anzeige im Cockpit)
-  double jetzt = XPLMGetElapsedTime();
+  // LeitWerk wissen lassen, dass das Plugin da ist (Anzeige im Cockpit): Version, VR, Fenster, was das Plugin kann/zeigt
   if (netz::verbunden() && jetzt - letzteMeldung > 10) {
     letzteMeldung = jetzt;
-    netz::senden(std::string("xp:plugin:") + LEITWERK_PLUGIN_VERSION + ":" + (imVR ? "vr" : "2d") + ":" + (fenster && XPLMGetWindowIsVisible(fenster) ? "an" : "aus"));
+    std::string kann;
+    if (xCreateAvionicsEx) kann += "geraete";
+    if (wetter::moeglich()) kann += kann.empty() ? "wetter" : ",wetter";
+    std::string cockpit;
+    if (gebunden(sMfd)) cockpit += "mfd";
+    if (gebunden(sTablet)) cockpit += cockpit.empty() ? "tablet" : ",tablet";
+    if (gebunden(sTetra)) cockpit += cockpit.empty() ? "tetra" : ",tetra";
+    netz::senden(std::string("xp:plugin:") + LEITWERK_PLUGIN_VERSION + ":" + (imVR ? "vr" : "2d") + ":" + (fenster && XPLMGetWindowIsVisible(fenster) ? "an" : "aus") +
+                 ":" + kann + ":" + cockpit + ":" + wetter::text());
   }
-  return 0.5f;
+  return -1.0f;  // jedes Bild (Tasten-Hub, Neuzeichnen der Geräte)
 }
 
 // ------------------------------------------------------------------ Plugin-Einstieg
 PLUGIN_API int XPluginStart(char* name, char* sig, char* desc) {
   strcpy(name, "LeitWerk");
   strcpy(sig, "at.pholzreiter.leitwerk");
-  strcpy(desc, "LeitWerk: Einsatz-App (Tablet, auch in VR) und Befehle f\xC3\xBCr Status und Sprechtaste.");
+  strcpy(desc, "LeitWerk: Einsatz-App (Fenster, auch VR, und im Cockpit), TETRA-Funkger\xC3\xA4t, Wetter, Befehle f\xC3\xBCr Status und Sprechtaste.");
   XPLMEnableFeature("XPLM_USE_NATIVE_PATHS", 1);
   XPLMEnableFeature("XPLM_USE_NATIVE_WIDGET_WINDOWS", 1);
   char pfad[1024] = {0};
@@ -449,16 +743,31 @@ PLUGIN_API int XPluginStart(char* name, char* sig, char* desc) {
   drMV = XPLMFindDataRef("sim/graphics/view/modelview_matrix");
   drPJ = XPLMFindDataRef("sim/graphics/view/projection_matrix");
   drVP = XPLMFindDataRef("sim/graphics/view/viewport");
+  drVolt = XPLMFindDataRef("sim/cockpit2/electrical/bus_volts");
+  drAvionik = XPLMFindDataRef("sim/cockpit/electrical/avionics_on");
+  // Datarefs für die Cockpit-Objekte (auch ohne Gerät-Schnittstelle: Sichtbarkeit)
+  datarefs.push_back(intRef("leitwerk/aktiv", &aktivWert));
+  datarefs.push_back(XPLMRegisterDataAccessor("leitwerk/tablet/app", xplmType_Int, 1, liesTabletApp, schreibTabletApp, nullptr, nullptr,
+                                              nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr));
+  datarefs.push_back(intRef("leitwerk/tetra/eingebaut", &eingebaut));
+  datarefs.push_back(floatRef("leitwerk/tetra/strom", &tetraStrom));
+  datarefs.push_back(floatRef("leitwerk/tetra/rotation", &tetraDrehung));
+  for (auto& k : tasten) datarefs.push_back(floatRef(std::string("leitwerk/tetra/anim/") + k.name, &k.hub));
+  wetter::start();
   log(std::string("Version ") + LEITWERK_PLUGIN_VERSION + ", Schrift " + schriftOrdner);
   return 1;
 }
 
-PLUGIN_API void XPluginStop(void) {}
+PLUGIN_API void XPluginStop(void) {
+  wetter::stopp();
+  for (auto r : datarefs) XPLMUnregisterDataAccessor(r);
+  datarefs.clear();
+}
 
 PLUGIN_API int XPluginEnable(void) {
   prefLesen();
   IMGUI_CHECKVERSION();
-  ctx = ImGui::CreateContext();
+  sFenster.ctx = ImGui::CreateContext();
   fensterErzeugen();
   menueId = XPLMAppendMenuItem(XPLMFindPluginsMenu(), "LeitWerk", nullptr, 0);
   menue = XPLMCreateMenu("LeitWerk", XPLMFindPluginsMenu(), menueId, menueKlick, nullptr);
@@ -476,8 +785,14 @@ PLUGIN_API int XPluginEnable(void) {
     b.ref = XPLMCreateCommand(b.name, b.text);
     XPLMRegisterCommandHandler(b.ref, befehl, 1, &b);
   }
+  for (auto& k : tasten) {
+    k.ref = XPLMCreateCommand((std::string("leitwerk/tetra/") + k.name).c_str(), (std::string("LeitWerk TETRA: ") + k.name).c_str());
+    XPLMRegisterCommandHandler(k.ref, tetraTaste, 1, &k);
+  }
+  geraeteErzeugen();
   netz::starten();
-  XPLMRegisterFlightLoopCallback(takt, 1.0f, nullptr);
+  wetter::an();
+  XPLMRegisterFlightLoopCallback(takt, -1.0f, nullptr);
   if (startSichtbar) zeigen(true);
   return 1;
 }
@@ -485,8 +800,12 @@ PLUGIN_API int XPluginEnable(void) {
 PLUGIN_API void XPluginDisable(void) {
   prefSchreiben();
   XPLMUnregisterFlightLoopCallback(takt, nullptr);
+  wetter::aus();
   for (auto& b : befehle)
     if (b.ref) XPLMUnregisterCommandHandler(b.ref, befehl, 1, &b);
+  for (auto& k : tasten)
+    if (k.ref) XPLMUnregisterCommandHandler(k.ref, tetraTaste, 1, &k);
+  geraeteEntfernen();
   netz::stoppen();
   if (hatFokus) XPLMTakeKeyboardFocus(0);
   hatFokus = false;
@@ -496,12 +815,17 @@ PLUGIN_API void XPluginDisable(void) {
   menueId = -1;
   if (fenster) XPLMDestroyWindow(fenster);
   fenster = nullptr;
-  if (ctx) {
-    ImGui::SetCurrentContext(ctx);
-    if (uiBereit) ui::ende();
-    ImGui::DestroyContext(ctx);
+  ui::zustand(nullptr);
+  for (Schirm* s : GERAETE) {
+    if (s->ctx) ImGui::DestroyContext(s->ctx);
+    s->ctx = nullptr;
   }
-  ctx = nullptr;
+  if (sFenster.ctx) {
+    ImGui::SetCurrentContext(sFenster.ctx);
+    if (uiBereit) ui::ende();
+    ImGui::DestroyContext(sFenster.ctx);
+  }
+  sFenster.ctx = nullptr;
   uiBereit = false;
 }
 
