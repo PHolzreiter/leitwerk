@@ -1,5 +1,9 @@
 # Änderungen
 
+## 0.116.0-beta.34 – Test: Wetter und Uhrzeit in MSFS
+- **Test:** Die LeitWerk-App im EFB-Tablet (Version 0.2.0) stellt Wetter und Uhrzeit von LeitWerk in MSFS 2024 ein – über die Wetter-Schnittstelle des Simulators (wie das Wettermenü), ohne dass man etwas bedienen muss. Bei echtem Wetter in LeitWerk schaltet sie Live-Wetter ein
+- Rückmeldungen der App stehen in Pilotenansicht › Cockpit („MSFS: Wetter und Uhrzeit (Test)“) und in der Datei msfs-wetter-test.json im LeitWerk-Datenordner
+
 ## 0.116.0-beta.33 – X-Plane: Uhrzeit, Wetter, Flugplan
 - **Uhrzeit:** LeitWerk stellt X-Plane auf die Spielzeit (beim Verbinden und wenn sie über eine Minute abweicht, z. B. nach Zeitraffer) – abschaltbar in Pilotenansicht › Cockpit
 - **Wetter:** bei „Wie LeitWerk“ setzt LeitWerk sein Wetter in X-Plane selbst (Wolken, Sicht, Wind und Böen, Niederschlag, Temperatur, Luftdruck, nasse/verschneite Pisten) und passt es an, wenn es sich ändert; bei echtem Wetter in LeitWerk wird X-Plane auf „Real Weather“ gestellt

@@ -20,7 +20,7 @@
 
   var APP_NAME = 'LeitWerk';
   var INTERNAL_NAME = 'LeitWerkPilot';
-  var VERSION = '0.1.0';
+  var VERSION = '0.2.0';
   var PORTS = [47900, 47901, 47902, 47903, 47904, 47905];
   var SUCHEN_MS = 2500;
 
@@ -235,6 +235,226 @@
     return true;
   }
 
+
+  // ------------------------------------------------------------------ Wetter und Uhrzeit von LeitWerk (Test 0.2.0)
+  // Läuft unabhängig von der Anzeige: sobald das EFB diese Datei lädt (Flugbeginn), nicht erst beim Öffnen der App.
+  // Nutzt die Wetter-Schnittstelle des Simulators wie das Wettermenü (JS_LISTENER_WEATHER, Datei fs-base-ui
+  // html_ui/JS/Services/Weather.js): Liste der Voreinstellungen, aktuelle Voreinstellung (UpdatePreset),
+  // eigenes Wetter (UpdateTempWeatherPreset), Uhrzeit (SET_DATE, SET_ZULU_TIME).
+  // Jede Rückmeldung geht als „wx:…“ an LeitWerk (Anzeige im Cockpit-Bereich + Datei msfs-wetter-test.json).
+  var Wetter = (function () {
+    var port = null;
+    var lst = null;
+    var bereit = false;
+    var liste = null;
+    var preset = null;
+    var zeitDaten = null;
+    var letzt = '';
+    var zeitGesetzt = 0;
+    var zeitSoll = 0;
+    var gemeldet = {};
+    var wartetAufPreset = null;
+    var bereitSeit = 0;
+    var angestossen = false;
+
+    function melden(text, daten) {
+      if (!port) return;
+      var t = 'wx:' + text;
+      if (daten !== undefined) {
+        var j = '';
+        try { j = JSON.stringify(daten); } catch (e) { j = String(daten); }
+        t += '|' + j.slice(0, 14000);
+      }
+      try {
+        var x = new XMLHttpRequest();
+        x.open('POST', 'http://127.0.0.1:' + port + '/befehl');
+        x.send(t);
+      } catch (e) {}
+    }
+    function einmal(key, text, daten) { if (gemeldet[key]) return; gemeldet[key] = 1; melden(text, daten); }
+
+    function portSuchen(fertig) {
+      var offen = PORTS.length, ok = false;
+      PORTS.forEach(function (p) {
+        var x = new XMLHttpRequest();
+        x.open('GET', 'http://127.0.0.1:' + p + '/ping?z=' + Date.now());
+        x.timeout = 1500;
+        x.onreadystatechange = function () {
+          if (x.readyState !== 4) return;
+          offen--;
+          if (!ok && x.status === 200 && String(x.responseText).indexOf('leitwerk') === 0) { ok = true; port = p; fertig(true); }
+          if (offen === 0 && !ok) fertig(false);
+        };
+        try { x.send(); } catch (e) { offen--; if (offen === 0 && !ok) fertig(false); }
+      });
+    }
+
+    function verbinden() {
+      if (lst) return;
+      var reg = window.RegisterViewListener;
+      if (typeof reg !== 'function') { einmal('noreg', 'fehler: RegisterViewListener gibt es im EFB nicht'); return; }
+      try {
+        lst = reg('JS_LISTENER_WEATHER', function () {
+          bereit = true;
+          melden('Wetter-Schnittstelle bereit (EFB-App ' + VERSION + ')');
+          lst.on('SetWeatherList', function (l) { liste = l; einmal('liste', 'daten: Liste der Voreinstellungen', l); });
+          lst.on('UpdatePreset', function (p) {
+            preset = p;
+            einmal('preset', 'daten: aktuelle Voreinstellung', p);
+            if (wartetAufPreset) { var f = wartetAufPreset; wartetAufPreset = null; f(); }
+          });
+          lst.on('ON_GAME_TIME_UPDATED', function (d, gesperrt) { zeitDaten = d; einmal('zeit', 'daten: Uhrzeit im Simulator', { d: d, gesperrt: gesperrt }); });
+          lst.on('OnFlightTimeUpdated', function (d) { zeitDaten = d; einmal('flugzeit', 'daten: Flugzeit', d); });
+          lst.trigger('ASK_WEATHER_LIST');
+        });
+      } catch (e) { lst = null; einmal('regfehler', 'fehler: Wetter-Schnittstelle nicht erreichbar: ' + e); }
+    }
+
+    // Wert in der Einheit setzen, die der Simulator mitliefert (dv = {value, unit, clamp_min, clamp_max})
+    function setzen(dv, wert, art) {
+      if (!dv || typeof dv !== 'object') return;
+      var u = String(dv.unit || '').toLowerCase();
+      var v = wert;
+      if (art === 'temp') v = /kelvin|^k$/.test(u) ? wert + 273.15 : /fahr|^f$/.test(u) ? wert * 9 / 5 + 32 : wert;
+      else if (art === 'druck') v = /inhg|inch/.test(u) ? wert * 0.02953 : /hpa|mbar|millibar/.test(u) ? wert : /pa/.test(u) ? wert * 100 : wert;
+      else if (art === 'hoehe') v = /f(ee)?t|foot/.test(u) ? wert * 3.28084 : wert;
+      else if (art === 'tempo') v = /km/.test(u) ? wert * 1.852 : /m\/s|mps|meter/.test(u) ? wert * 0.514444 : /mph/.test(u) ? wert * 1.150779 : wert;
+      else if (art === 'schnee') v = /cm/.test(u) ? wert * 100 : /in/.test(u) ? wert * 39.37 : wert;
+      if (typeof dv.clamp_min === 'number' && v < dv.clamp_min) v = dv.clamp_min;
+      if (typeof dv.clamp_max === 'number' && dv.clamp_max > dv.clamp_min && v > dv.clamp_max) v = dv.clamp_max;
+      dv.value = v;
+    }
+    // Sichtweite → Dunst (0 = klar … 1 = sehr diesig) im Bereich, den der Simulator erlaubt
+    function dunst(dv, sicht) {
+      if (!dv || typeof dv !== 'object') return;
+      var a = sicht >= 30 ? 0.02 : sicht >= 15 ? 0.12 : sicht >= 8 ? 0.3 : sicht >= 3 ? 0.55 : sicht >= 1 ? 0.75 : 0.9;
+      var lo = typeof dv.clamp_min === 'number' ? dv.clamp_min : 0;
+      var hi = typeof dv.clamp_max === 'number' && dv.clamp_max > lo ? dv.clamp_max : 1;
+      dv.value = lo + (hi - lo) * a;
+    }
+
+    function wetterSetzen(wx) {
+      if (!preset) { einmal('keinpreset', 'fehler: noch keine Voreinstellung vom Simulator bekommen'); return; }
+      if (wx.echt) {
+        var live = 0;
+        if (liste && liste.length) for (var i = 0; i < liste.length; i++) if (liste[i].live) live = i;
+        lst.trigger('CUSTOM_WEATHER_PRESET_CHANGED', live);
+        melden('Echtes Wetter: Live-Wetter im Simulator eingeschaltet');
+        return;
+      }
+      // Live-Wetter läuft: erst auf eine Voreinstellung wechseln, dann ändern
+      if (preset.index === 0) {
+        var ziel = liste && liste[1] ? liste[1].index : 1;
+        wartetAufPreset = function () { wetterSetzen(wx); };
+        lst.trigger('CUSTOM_WEATHER_PRESET_CHANGED', ziel);
+        melden('Live-Wetter aus, wechsle auf Voreinstellung ' + ziel);
+        return;
+      }
+      var p;
+      try { p = JSON.parse(JSON.stringify(preset)); } catch (e) { return; }
+      var s = p.oSettings || {};
+      s.bIsAltitudeAMGL = true;
+      setzen(s.dvMSLGLTemperature, wx.temp, 'temp');
+      setzen(s.dvMSLPressure, wx.druck, 'druck');
+      setzen(s.dvPrecipitation, wx.regen, 'zahl');
+      setzen(s.dvSnowCover, wx.schnee, 'schnee');
+      setzen(s.dvThunderstormRatio, wx.gewitter, 'zahl');
+      dunst(s.dvPollution, wx.sicht);
+      if (s.sPrecipitationType !== undefined) s.sPrecipitationType = wx.art;
+      p.oSettings = s;
+      var w = wx.wolken || [];
+      var cl = p.tCloudLayers || [];
+      for (var c = 0; c < cl.length; c++) {
+        var L = cl[c] || {};
+        var q = w[c];
+        if (q) {
+          setzen(L.dvAltitudeBot, q.ab, 'hoehe');
+          setzen(L.dvAltitudeTop, q.bis, 'hoehe');
+          setzen(L.dvDensityMultiplier, q.dichte, 'zahl');
+          setzen(L.dvCoverageRatio, q.bedeckung, 'zahl');
+        } else {
+          setzen(L.dvCoverageRatio, 0, 'zahl');
+          setzen(L.dvDensityMultiplier, 0, 'zahl');
+        }
+        L.__Type = 'CloudLayerData';
+      }
+      var wl = p.tWindLayers || [];
+      for (var k = 0; k < wl.length; k++) {
+        var W = wl[k] || {};
+        var faktor = k === 0 ? 1 : 1.3;
+        setzen(W.dvSpeed, wx.wind * faktor, 'tempo');
+        if (W.dvAngleRad) W.dvAngleRad.value = (((wx.richtung + (k ? 10 : 0)) % 360) * Math.PI) / 180;
+        if (W.gustWaveData) {
+          if (W.gustWaveData.dvSpeedMultiplier) W.gustWaveData.dvSpeedMultiplier.value = wx.wind > 0 ? Math.min(2, 1 + wx.boe / wx.wind) : 1;
+          if (W.gustWaveData.dvAngleRad) W.gustWaveData.dvAngleRad.value = W.dvAngleRad ? W.dvAngleRad.value : 0;
+        }
+        W.__Type = 'WindLayerData';
+      }
+      try {
+        lst.call('UpdateTempWeatherPreset', p).then(function (antwort) {
+          melden('Wetter gesetzt: ' + (wx.text || wx.lage) + ', ' + wx.temp + ' °C, Wind ' + wx.wind + ' kt aus ' + wx.richtung + '°');
+          einmal('antwort', 'daten: Antwort auf UpdateTempWeatherPreset', antwort);
+          einmal('gesendet', 'daten: gesendete Voreinstellung', p);
+        }).catch(function (e) { melden('fehler: Wetter nicht gesetzt', e); });
+      } catch (e) { melden('fehler: UpdateTempWeatherPreset: ' + e); }
+    }
+
+    function zeitSetzen(ms) {
+      var d = new Date(ms);
+      // Monat wird mitgeschickt wie im Datumsfeld des Wettermenüs; Rückmeldung zeigt, was der Simulator daraus macht
+      lst.trigger('SET_DATE', d.getUTCDate(), d.getUTCMonth() + 1, d.getUTCFullYear());
+      lst.trigger('SET_ZULU_TIME', d.getUTCHours() * 3600 + d.getUTCMinutes() * 60 + d.getUTCSeconds());
+      zeitGesetzt = Date.now();
+      zeitSoll = ms;
+      melden('Uhrzeit gesetzt: ' + d.toISOString().slice(0, 16).replace('T', ' ') + ' UTC');
+      setTimeout(function () { melden('daten: Uhrzeit danach', zeitDaten); }, 3000);
+    }
+
+    function takt() {
+      if (!port) { portSuchen(function (ok) { if (ok) verbinden(); }); return; }
+      verbinden();
+      if (!bereit) return;
+      var x = new XMLHttpRequest();
+      x.open('GET', 'http://127.0.0.1:' + port + '/stand?z=' + Date.now());
+      x.timeout = 2500;
+      x.onreadystatechange = function () {
+        if (x.readyState !== 4) return;
+        if (x.status !== 200) { port = null; return; }
+        var st;
+        try { st = JSON.parse(x.responseText); } catch (e) { return; }
+        var wx = st && st.neu && st.neu.wx;
+        if (!wx) return;
+        if (wx.zeit) {
+          var erwartet = zeitSoll + (Date.now() - zeitGesetzt);
+          if (!zeitGesetzt || Math.abs(wx.zeit - erwartet) > 60000) zeitSetzen(wx.zeit);
+        }
+        if (wx.nurZeit) return;
+        if (!preset) {
+          // keine Voreinstellung bekommen: eine auswählen, damit der Simulator sie schickt
+          if (!bereitSeit) bereitSeit = Date.now();
+          if (Date.now() - bereitSeit > 10000 && !angestossen && liste && liste.length > 1) {
+            angestossen = true;
+            lst.trigger('CUSTOM_WEATHER_PRESET_CHANGED', liste[1].index);
+            melden('noch keine Voreinstellung – wähle Voreinstellung ' + liste[1].index);
+          }
+          return;
+        }
+        var key = wx.echt ? 'echt' : [wx.lage, Math.round(wx.wind / 5), Math.round(wx.richtung / 30), wx.temp].join('|');
+        if (key === letzt) return;
+        letzt = key;
+        wetterSetzen(wx);
+      };
+      try { x.send(); } catch (e) { port = null; }
+    }
+
+    return {
+      start: function () {
+        setInterval(takt, 5000);
+        takt();
+      },
+    };
+  })();
+
   // EFB und diese Datei laden unabhängig voneinander; use() geht erst, wenn das EFB bereit ist (bis ca. 15 s versuchen)
   var VERSUCH_MS = 100;
   var VERSUCHE = 150;
@@ -244,4 +464,5 @@
     if (!ok && n < VERSUCHE) window.setTimeout(function () { anmelden(n + 1); }, VERSUCH_MS);
   }
   anmelden(1);
+  try { Wetter.start(); } catch (e) { /* Test */ }
 })();

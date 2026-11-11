@@ -41,7 +41,7 @@ import { efbStarten, tabletApp, tabletAppNeu, tabletAppSetzen, handyAktionen, ha
 import { hpg, hpgAktualisieren, hpgCarlsTest, hpgEinrichten, hpgMissionFuer, hpgStarten, hpgTestNachricht } from "./hpg";
 import { letzterCarls } from "./eingabe";
 import { carlsAn, carlsUmschalten, communityWaehlen, gtn, gtnAn, gtnBereitlegen, gtnSuchen, gtnUmschalten } from "./flugsim";
-import { datenEmpfangen, datenFrisch, dllWaehlen, flugplanSpeichern, flugsim, flugsimAnbinden, flugsimBeenden, flugsimTrennen, flugsimVerbinden, koordText, vorgabe, wetterDialog, xpAbgleich, xplaneFlugplanBereitlegen, xpZeitUmschalten } from "./flugsim";
+import { datenEmpfangen, datenFrisch, dllWaehlen, flugplanSpeichern, flugsim, flugsimAnbinden, flugsimBeenden, flugsimTrennen, flugsimVerbinden, koordText, vorgabe, wetterDialog, msfsWetter, msfsWetterStand, xpAbgleich, xplaneFlugplanBereitlegen, xpZeitUmschalten } from "./flugsim";
 import { IC, wetterHtml, wetterKurz, wetterSchluessel, type WetterReiter } from "../ws/kopfleisteInhalt";
 import { mb, onUpdate, updateImHintergrund, updateInfo, updateStand, updateStandZuruecksetzen } from "../updateDienst";
 import { fehlerBerichtSpeichern } from "../fehlerMelden";
@@ -950,6 +950,20 @@ function cockpitDaten(fz: SimFahrzeug | undefined): Record<string, unknown>[] {
     });
     return out.concat(cockpitRest(fz).filter((x) => x.k === "handy"));
   }
+  if (flugsim.quelle === "msfs" || flugsim.ms.zustand === "verbunden") {
+    const zeitAn = vorgabe().xpZeit !== false;
+    out.push({
+      k: "msfswetter",
+      t: "MSFS: Wetter und Uhrzeit (Test)",
+      z: msfsWetterStand.text ? "Rückmeldung" : "wartet",
+      f: /fehl|nicht|kein/i.test(msfsWetterStand.text) ? PUNKT.fehl : msfsWetterStand.text ? PUNKT.ok : PUNKT.aus,
+      d: msfsWetterStand.text || "Die LeitWerk-App im EFB-Tablet stellt Wetter und Uhrzeit von LeitWerk in MSFS ein (Test) – noch keine Rückmeldung von der App.",
+      knoepfe: [
+        { t: zeitAn ? "Uhrzeit: von LeitWerk" : "Uhrzeit: selbst", an: zeitAn, klick: () => xpZeitUmschalten(!zeitAn) },
+        { t: "Wetter …", klick: () => wetterDialog() },
+      ],
+    });
+  }
   return out.concat(cockpitRest(fz));
 }
 
@@ -1798,6 +1812,8 @@ function handyNeu(fz: SimFahrzeug | undefined, e: Einsatz | undefined): Record<s
     gruppe: gruppenName(gr) || "RD-NOE-03",
     gruppeT: gr ? "Sprechgruppe Großeinsatz" : "Sprechgruppe",
     gruppeWechsel: true,
+    // Wetter und Uhrzeit von LeitWerk für MSFS (setzt die EFB-App)
+    wx: msfsWetter(),
     keys: D.stl.map((x) => ({ ...x, aktion: aktion(x.key) })),
     alarm: D.alarm,
     ein: D.ein,

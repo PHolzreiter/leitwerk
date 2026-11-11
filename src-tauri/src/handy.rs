@@ -94,7 +94,7 @@ fn bearbeiten(mut s: TcpStream, token: Option<&str>, app: &AppHandle) {
             break;
         }
         if let Some(v) = h.to_ascii_lowercase().strip_prefix("content-length:") {
-            laenge = v.trim().parse().unwrap_or(0).min(4096);
+            laenge = v.trim().parse().unwrap_or(0).min(20000);
         }
     }
     let (pfad, abfrage) = ziel.split_once('?').unwrap_or((ziel.as_str(), ""));
@@ -131,7 +131,10 @@ fn bearbeiten(mut s: TcpStream, token: Option<&str>, app: &AppHandle) {
             if laenge > 0 && r.read_exact(&mut body).is_err() {
                 return antwort(&mut s, "400 Bad Request", "text/plain", b"");
             }
-            let text = String::from_utf8_lossy(&body).trim().chars().take(400).collect::<String>();
+            let roh = String::from_utf8_lossy(&body);
+            // Rückmeldungen der EFB-App zum Wetter (wx:…) dürfen länger sein
+            let max = if roh.trim_start().starts_with("wx:") { 16000 } else { 400 };
+            let text = roh.trim().chars().take(max).collect::<String>();
             if !text.is_empty() {
                 let _ = app.emit("handy-befehl", text);
             }

@@ -603,3 +603,65 @@ export function xpZeitUmschalten(an: boolean): void {
   xpAbgleich.zeitSim = 0;
   geaendert();
 }
+
+// ------------------------------------------------------------------ MSFS 2024: Wetter und Uhrzeit über die EFB-App
+
+/**
+ * Wetter von LeitWerk für MSFS. Die EFB-App (tools/efb-app) liest es aus /stand (neu.wx) und setzt es über die
+ * Wetter-Schnittstelle des Simulators (JS_LISTENER_WEATHER, UpdateTempWeatherPreset). Höhen über Grund (m),
+ * Wind in Knoten, Temperatur °C, Druck hPa, Niederschlag mm/h. null = Pilot stellt das Wetter selbst ein.
+ */
+export function msfsWetter(): Record<string, unknown> | null {
+  const zeit = vorgabe().xpZeit !== false ? sim.state.zeit : null;
+  if ((vorgabe().wetter ?? "leitwerk") !== "leitwerk") return zeit ? { zeit, nurZeit: true } : null;
+  if (sim.settings.wetterEcht) return { zeit, echt: true };
+  const w = sim.wetterWerte();
+  const i = LAGE[w.lage];
+  const nass = i.art === "regen" || i.art === "schnee" || i.art === "eis";
+  const wolken: { ab: number; bis: number; dichte: number; bedeckung: number }[] = [];
+  if (w.lage === "nebel") wolken.push({ ab: 0, bis: 180, dichte: 1, bedeckung: 1 });
+  else if (w.lage === "hochnebel") wolken.push({ ab: 150, bis: 700, dichte: 1, bedeckung: 1 });
+  else if (i.art === "gewitter") {
+    wolken.push({ ab: 900, bis: 9000, dichte: 1, bedeckung: 0.8 });
+  } else if (i.wolken > 0) {
+    const flach = i.wolken >= 0.85 || nass;
+    wolken.push({ ab: nass ? 450 : flach ? 750 : 1200, bis: nass ? 1800 : flach ? 1700 : 2100, dichte: nass ? 0.9 : 0.7, bedeckung: i.wolken });
+  }
+  const regen = { niesel: 0.5, leichter_regen: 1.5, regen: 4, starkregen: 15, gewitter: 10, hagel: 20, unwetter: 30, schneeregen: 3, leichter_schnee: 1, schnee: 3, starker_schnee: 8, eisregen: 3 } as Partial<Record<WetterLage, number>>;
+  return {
+    zeit,
+    lage: w.lage,
+    text: WETTER_LABEL[w.lage],
+    temp: Math.round(w.temp),
+    druck: Math.round(w.druck),
+    sicht: w.sicht,
+    wind: Math.round(w.wind / 1.852),
+    boe: Math.round(Math.max(0, w.boeen - w.wind) / 1.852),
+    richtung: Math.round(w.richtung),
+    regen: regen[w.lage] ?? 0,
+    art: i.art === "schnee" ? "SNOW" : w.lage === "hagel" ? "HAIL" : "RAIN",
+    schnee: i.art === "schnee" ? (w.lage === "starker_schnee" ? 0.15 : 0.05) : 0,
+    gewitter: i.art === "gewitter" ? (w.lage === "gewitter" ? 0.5 : 0.9) : 0,
+    wolken,
+  };
+}
+
+/** Rückmeldungen der EFB-App zum Wetter (Test): werden angezeigt und in msfs-wetter-test.json gespeichert */
+export const msfsWetterStand = { text: "", meldungen: [] as { t: string; zeit: string }[] };
+
+export async function msfsWetterMeldung(roh: string): Promise<void> {
+  const t = roh.replace(/^wx:/, "");
+  msfsWetterStand.meldungen.push({ t, zeit: new Date().toISOString() });
+  if (msfsWetterStand.meldungen.length > 200) msfsWetterStand.meldungen.splice(0, 50);
+  const kurz = t.split("|")[0];
+  if (!kurz.startsWith("daten")) msfsWetterStand.text = kurz.slice(0, 160);
+  geaendert();
+  if (!inTauri()) return;
+  try {
+    const { appDataDir, join } = await import("@tauri-apps/api/path");
+    const pfad = await join(await appDataDir(), "msfs-wetter-test.json");
+    await invoke("write_text_file", { path: pfad, content: JSON.stringify(msfsWetterStand.meldungen, null, 1) });
+  } catch {
+    /* nur Test */
+  }
+}

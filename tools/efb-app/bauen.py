@@ -17,7 +17,7 @@ import zipfile
 HIER = os.path.dirname(os.path.abspath(__file__))
 PAKET = "leitwerk-efb-pilot"
 APP = "LeitWerkPilot"
-VERSION = "0.1.0"
+VERSION = "0.2.0"
 
 
 def filetime(sekunden: float) -> int:
