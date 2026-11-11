@@ -381,8 +381,9 @@ function eigenerRufname(): string {
 
 /** Fachbegriffe und Rufnamen für die Spracherkennung */
 function hinweis(): string {
-  const piloten = Object.values(sim.state.fahrzeuge).filter((f) => f.pilot);
-  return funkHinweis(`Landeplatz, Einsatzort, Patient. ${piloten.map((f) => funkSprechform(sim.rufname(f))).join(", ")}${piloten.length ? ", " : ""}`);
+  // eigener Rufname (Pilot) zuerst – der Rest kommt aus dem laufenden Funk und den Einsätzen
+  const heli = sim.pilotVon(sim.ich?.pid ?? mp.ich.pid);
+  return funkHinweis(heli ? funkSprechform(sim.rufname(heli)) : "");
 }
 
 let fensterMikro: { strom: MediaStream; geraet: string } | null = null;

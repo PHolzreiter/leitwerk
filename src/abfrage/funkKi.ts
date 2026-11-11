@@ -151,6 +151,9 @@ export function funkPruefen(festGanz: string, text: string, opt: { frage?: strin
   const wertGefragt = WERT_FRAGE.test(opt.frage ?? "");
   if (!wertGefragt && MESSWERT.test(text) && !MESSWERT.test(fest)) g.push("Messwerte ungefragt");
   if (opt.art === "frage") {
+    // freie Antwort: nur auf die Frage – nicht die ganze Lage aufsagen
+    if (text.split(/\s+/).length > 28) g.push("zu lang für eine Antwort");
+    if (/lagemeldung/i.test(text) && !/lagemeldung/i.test(opt.frage ?? "")) g.push("Lagemeldung statt Antwort");
     // freie Antwort: keine Zahl, die die Besatzung nicht kennt (erfundene Messwerte, Minuten …)
     if (opt.wissen !== undefined) {
       const bekannt = new Set(zahlenIn(`${opt.wissen} ${opt.frage ?? ""}`));
@@ -210,7 +213,7 @@ function aufgabeText(g: FunkGespraech, a: FunkAusstehend, inhalt: string): strin
       "WAS IHR WISST:",
       lageWissen(sprecherId(g, a), g.einsatzId, a.frage ?? ""),
       `${a.an ? a.an : "Die Leitstelle"} fragt: „${a.frage ?? ""}“`,
-      "Antworte knapp, nur mit dem, was ihr wisst. Was ihr nicht wisst: „noch nicht beurteilbar“ oder „unbekannt“.",
+      "Beantworte NUR genau diese eine Frage – ein kurzer Satz. KEINE Lagemeldung, keine Aufzählung von allem, was ihr wisst, nichts Ungefragtes. Was ihr nicht wisst: „noch nicht beurteilbar“ oder „unbekannt“. Ist die Frage unverständlich: „Frage bitte wiederholen“.",
     ].join("\n");
   }
   return [

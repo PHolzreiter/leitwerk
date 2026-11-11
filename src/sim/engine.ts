@@ -5,6 +5,7 @@
  * vom Host an die Mitspieler übertragen werden kann. Alle Eingriffe des Spielers
  * laufen über die öffentlichen Methoden (alarmieren, Adresse setzen, …).
  */
+import { absichtErkennen } from "./funkAbsicht";
 import { funkSprechform, zahlenAlsZiffern } from "./funkErkennung";
 import { fahrzeugZuName, rufnamen } from "./funkname";
 import { aktuelleSchicht, dienstEnde, imDienst, naechsterBeginn, type Schicht } from "./dienst";
@@ -688,6 +689,8 @@ export interface FunkGespraech {
   notfall?: boolean;
   /** echte Zeit (ms), bis der letzte Funkspruch dieses Gesprächs gesprochen ist (Kanal belegt) */
   sprichtBis?: number;
+  /** wie oft die Besatzung in diesem Gespräch nichts verstanden hat */
+  unklar?: number;
   /** Sprechfunk mit einem Piloten: das Bodenfahrzeug (an) will ihm das sagen, sobald er sich meldet */
   rtwWill?: { text: string; aktion?: FunkAktion; versuche: number } | null;
 }
@@ -868,6 +871,12 @@ export interface Einsatz {
   boSicherUm?: number | null;
   /** Lagemeldung kommt ein paar Minuten nach dem Eintreffen */
   lageGeplant?: { um: number; fzId: string; angefordert: boolean; erstes: boolean } | null;
+  /** die Besatzung wartet mit dem Patienten auf den Notarzt (seit, schon über Funk gemeldet) */
+  naWarten?: { seit: number; gemeldet: boolean } | null;
+  /** zuletzt durchgegebene Lagemeldung (gegen doppeltes Melden derselben Lage) */
+  lageGemeldet?: { fzId: string; text: string; um: number } | null;
+  /** die Besatzung vor Ort wartet auf den Notarzt, den die Leitstelle angekündigt hat (Funk „NEF ist alarmiert“) */
+  naAngekuendigt?: { um: number; wer: string } | null;
   /** zuletzt an fehlende Partner erinnert */
   partnerErinnert?: number;
   /** Rendezvous: RTW fährt dem (zu weit entfernten) NEF entgegen, Treffpunkt unterwegs */
@@ -1096,6 +1105,17 @@ export function ohneVitalwerte(text: string): string {
     .replace(/,\s*,/g, ",")
     .replace(/^\s*,\s*|\s*,\s*$/g, "")
     .trim();
+}
+
+/** Wie ähnlich sind zwei Funksprüche? (Anteil gemeinsamer Wörter, 0–1) */
+export function aehnlich(a: string, b: string): number {
+  const w = (x: string) => new Set(x.toLowerCase().replace(/[^a-zäöüß0-9 ]/g, " ").split(/\s+/).filter((y) => y.length > 2 && !/^(hier|mit|einer|kommen|und|der|die|das|ist|sind|wir)$/.test(y)));
+  const A = w(a);
+  const B = w(b);
+  if (!A.size || !B.size) return 0;
+  let n = 0;
+  for (const x of A) if (B.has(x)) n++;
+  return n / Math.min(A.size, B.size);
 }
 
 function funkZufall<T>(l: T[]): T {
@@ -2753,6 +2773,11 @@ export class Simulation {
       if (e.wahr.revers) this.fzRuft(fz, e, "info", "Patient verweigert den Transport, Revers unterschrieben, wir werden einsatzbereit");
       else this.funk(fz.funkrufname, e.id, "Kein Transport, Patient verbleibt vor Ort", "info");
       return this.freigeben(fz);
+    }
+    // Notarzt angefordert bzw. angekündigt und unterwegs: die Besatzung wartet mit dem Patienten auf ihn
+    if (this.wartetAufNotarzt(fz, e, t)) {
+      fz.phaseEnde = t + MIN;
+      return;
     }
     // NAH am Einsatz: transportiert der NAH, übergibt der RTW und wird frei (Spieler-NAH: der Pilot entscheidet)
     const nah = this.nahTransportiert(e, t);
@@ -5129,6 +5154,56 @@ export class Simulation {
   }
 
   /**
+   * Wartet die Besatzung vor Ort auf den Notarzt? Ja, wenn er nötig ist (Lage bzw. offene Nachforderung) oder die
+   * Leitstelle ihn angekündigt hat – und ein Notarzt zu diesem Einsatz unterwegs ist. Ohne alarmierten Notarzt wartet sie
+   * höchstens 8 Minuten auf die Alarmierung; auf einen anfahrenden höchstens bis er da ist (längstens 25 Minuten).
+   * Danach fährt sie los und meldet das über Funk.
+   */
+  private wartetAufNotarzt(fz: SimFahrzeug, e: Einsatz, t: number): boolean {
+    if (e.gs || e.gsKind || e.fremd || !this.transportfaehig(fz)) return false;
+    const naDa = this.einsatzFz(e).filter((x) => x.id !== fz.id && this.mitNotarzt(x) && ["vorOrt", "warteKH", "treffpunkt"].includes(x.phase));
+    if (naDa.length) {
+      // Notarzt ist da und versorgt noch: warten, bis er entschieden hat (fährt mit oder nicht)
+      if (naDa.some((x) => x.phase === "vorOrt") && (!e.naWarten || t - e.naWarten.seit < 25 * MIN)) {
+        e.naWarten ??= { seit: t, gemeldet: true };
+        return true;
+      }
+      e.naWarten = null;
+      return false;
+    }
+    if (this.mitNotarzt(fz) || e.naStorniert) return false;
+    const offenNa = (e.nachforderungen ?? []).some((n) => n.art === "NA" && !n.erledigt);
+    const noetig = this.bedarfVon(e).na > 0 || offenNa || !!e.naAngekuendigt;
+    if (!noetig) return false;
+    const kommt = this.einsatzFz(e).filter((x) => x.id !== fz.id && this.mitNotarzt(x) && !["vorOrt", "warteKH", "treffpunkt", "transport", "uebergabe", "rueckfahrt"].includes(x.phase));
+    const w = (e.naWarten ??= { seit: t, gemeldet: false });
+    if (kommt.length) {
+      const eta = Math.min(...kommt.map((x) => (x.phaseEnde ? x.phaseEnde - t : 10 * MIN)));
+      if (t - w.seit < 25 * MIN) {
+        if (!w.gemeldet && t - w.seit > 2 * MIN) {
+          w.gemeldet = true;
+          this.log(e, `${fz.funkrufname} wartet auf den Notarzt (${kommt.map((x) => x.funkrufname).join(", ")})`);
+          this.fzRuft(fz, e, "info", `Patient versorgt und transportbereit, warten auf den Notarzt${eta > 0 ? `, er ist in ca. ${Math.max(1, Math.round(eta / MIN))} Minuten da` : ""}`);
+        }
+        return true;
+      }
+    } else if (t - w.seit < 8 * MIN) {
+      // Notarzt nötig, aber (noch) keiner alarmiert: kurz warten, ob die Leitstelle einen schickt
+      if (!w.gemeldet && t - w.seit > 3 * MIN && !offenNa) {
+        w.gemeldet = true;
+        this.fzRuft(fz, e, "nachforderung", "Patient transportbereit, benötigen Notarzt, wann können wir damit rechnen");
+      }
+      return true;
+    }
+    // zu lange: ohne Notarzt los
+    e.naWarten = null;
+    e.naAngekuendigt = null;
+    this.log(e, `${fz.funkrufname} fährt ohne Notarzt los`);
+    this.fzRuft(fz, e, "info", `fahren ohne Notarzt los${kommt.length ? `, ${kommt.map((x) => this.rufname(x)).join(" und ")} bitte direkt ins Krankenhaus` : ""}`);
+    return false;
+  }
+
+  /**
    * Bodenfahrzeug ruft den Hubschrauber eines Piloten („C2 von 69/061, kommen“) und sagt ihm danach text – sobald der
    * Pilot sich meldet (er spricht selbst). Meldet er sich nicht (3 Rufe), bittet das Fahrzeug die Leitstelle, es weiterzugeben.
    */
@@ -6460,6 +6535,8 @@ export class Simulation {
     if (!l || !lf) return false;
     const p0 = l.patienten[0];
     if (istStillstand(p0) || lf.na === "immer") return true;
+    // rot gesichtet (lebensbedrohlich): immer mit Notarzt – auch wenn die Besatzung die Kompetenz hätte (kein Storno)
+    if (p0?.sichtung === "rot") return true;
     if (lf.na === "nein") return false;
     const q = this.kompetenzVorOrt(e);
     return q === null || rang(q) <= rang(lf.na as Quali);
@@ -6802,6 +6879,12 @@ export class Simulation {
       return;
     }
     const inhalt = ohneVitalwerte(text);
+    // dieselbe Lage nicht zweimal melden (z. B. geplante Lagemeldung, nachdem LEO sie schon abgefragt hat)
+    if (e && (art === "lage" || art === "nachforderung") && e.lageGemeldet && e.lageGemeldet.fzId === fz.id && this.state.zeit - e.lageGemeldet.um < 20 * MIN && aehnlich(e.lageGemeldet.text, inhalt) > 0.6) {
+      this.log(e, `${fz.funkrufname}: Lage schon gemeldet – nicht noch einmal`);
+      return;
+    }
+    if (e && (art === "lage" || art === "nachforderung") && /lagemeldung|lage|patient/i.test(inhalt)) e.lageGemeldet = { fzId: fz.id, text: inhalt, um: this.state.zeit };
     const dringend = art === "nachforderung" || /Reanimation|reanimationspflichtig|verschlechtert|Eigenschutz|Defekt/i.test(inhalt);
     // äußerst dringend: darf zwischen zwei Funksprüchen eines anderen Gesprächs rufen („LEO von …, dringend, kommen“)
     const notfall = /Reanimation|reanimationspflichtig|Eigenschutz|Gefahr für die Besatzung|bedroht|angegriffen/i.test(inhalt);
@@ -7228,8 +7311,8 @@ export class Simulation {
       return;
     }
     // noch nicht durchgegebenes Anliegen hängt die Besatzung an
-    let fest = antwort ?? `Hier ${g.funkname}, verstanden, kommen`;
-    if (g.anliegen && !g.anliegenGesagt) {
+    let fest = antwort ?? `Hier ${g.funkname}, dazu können wir noch nichts sagen, kommen`;
+    if (g.anliegen && !g.anliegenGesagt && !/bitte wiederholen|nicht verstanden/i.test(fest)) {
       g.anliegenGesagt = true;
       fest = `${fest.replace(/,?\s*kommen\W*$/i, "")}, außerdem: ${g.anliegen.text}, kommen`;
     }
@@ -7383,11 +7466,19 @@ export class Simulation {
   }
 
   /** Erkannter Text eines Sprechfunk-Spruchs (kommt nach dem Loslassen, von der Spracherkennung des Sprechers) */
-  funkMenschText(gId: number | null, text: string, gruppe?: Sprechgruppe, sicherheit = 1): void {
+  funkMenschText(_gId: number | null, text: string, gruppe?: Sprechgruppe, sicherheit = 1): void {
     const t = text.replace(/\s+/g, " ").trim().slice(0, 500);
     if (!t) return;
     // wie sicher die Spracherkennung war (0–1): sehr unsicher = für die Besatzung „nicht verstanden“
     this.funkSicherheit = sicherheit;
+    try {
+      this.funkMenschTextInnen(t, gruppe);
+    } finally {
+      this.funkSicherheit = 1;
+    }
+  }
+
+  private funkMenschTextInnen(t: string, gruppe?: Sprechgruppe): void {
     const ich = this.wer();
     const heli = this.pilotVon(ich.pid);
     // Leitstelle: ein Kanal, eine Eingabe – der Text entscheidet, wem er gilt (Pilot oder Fahrzeug)
@@ -7397,7 +7488,6 @@ export class Simulation {
     }
     const g = this.pilotGespraech(heli, t, gruppe);
     if (!g) return;
-    void gId;
     const von = this.rufname(heli);
     this.spruch(g, von, t, ich.name);
     g.sprueche[g.sprueche.length - 1].stimme = true;
@@ -7705,74 +7795,124 @@ export class Simulation {
       e.heliFrage = null;
       return ja ? `${hier}, verstanden, warten auf ${h}, kommen` : `${hier}, verstanden, kein Hubschrauber, kommen`;
     }
-    if (/lagemeldung/.test(t)) {
-      if (vorOrt && e) {
-        const l = e.wahr.lage;
-        const fehlt = this.fehlendeKraefte(e);
-        if (l) this.nachfordern(e, fz, fehlt);
-        return `${hier} mit einer Lagemeldung, ${ohneVitalwerte(l ? lagemeldungText(l, e.wahr.abfrage?.kapitel ?? "", fehlt, false) : "Lage entspricht der Meldung")}, kommen`;
+    // Absicht zuerst – geantwortet wird nur auf das, was die Besatzung wirklich verstanden hat
+    const absicht = absichtErkennen(text, { sicherheit: this.funkSicherheit, angesprochen: [g.funkname, fz.funkrufname, this.rufname(fz), fz.kurzname ?? "", fz.stationName ?? ""] });
+    this.funkSicherheit = 1;
+    if (e) this.log(e, `Funk verstanden als: ${absicht.art}${"thema" in absicht ? ` (${absicht.thema})` : ""}${absicht.art === "unklar" ? ` – ${absicht.grund}` : ""}`);
+    const min = fz.phaseEnde ? Math.max(1, Math.round((fz.phaseEnde - this.state.zeit) / MIN)) : null;
+    const patientKurz = () => {
+      const l = e?.wahr.lage;
+      if (!l) return "Patient wird versorgt";
+      return `${l.patienten.length > 1 ? `${l.patienten.length} Patienten, ` : ""}${ohneVitalwerte(patientText(l.patienten[0]).replace(/ \(.*\)$/, ""))}`;
+    };
+    switch (absicht.art) {
+      case "ende":
+      case "quittung":
+        return "";
+      case "unklar":
+        g.unklar = (g.unklar ?? 0) + 1;
+        return `${hier}, ${g.unklar > 1 ? "nicht verstanden, bitte nochmal" : "bitte wiederholen"}, kommen`;
+      case "lageAnfordern": {
+        if (vorOrt && e) {
+          const l = e.wahr.lage;
+          const fehlt = this.fehlendeKraefte(e);
+          if (l) this.nachfordern(e, fz, fehlt);
+          const text2 = ohneVitalwerte(l ? lagemeldungText(l, e.wahr.abfrage?.kapitel ?? "", fehlt, false) : "Lage entspricht der Meldung");
+          // geplante Lagemeldung dieses Fahrzeugs entfällt (sie ist jetzt gesagt)
+          if (e.lageGeplant?.fzId === fz.id) e.lageGeplant = null;
+          const schon = e.lageGemeldet && e.lageGemeldet.fzId === fz.id && aehnlich(e.lageGemeldet.text, text2) > 0.6;
+          e.lageGemeldet = { fzId: fz.id, text: text2, um: this.state.zeit };
+          if (schon) return `${hier}, Lage unverändert, ${patientKurz()}, kommen`;
+          return `${hier} mit einer Lagemeldung, ${text2}, kommen`;
+        }
+        fz.lagemeldungAngefordert = true;
+        return `${hier}, verstanden, Lagemeldung kommt, sobald wir vor Ort sind, kommen`;
       }
-      fz.lagemeldungAngefordert = true;
-      return `${hier}, verstanden, Lagemeldung kommt, sobald wir vor Ort sind, kommen`;
-    }
-    if (/storno|abbrech|einrück|nicht mehr benötigt/.test(t)) {
-      if (fz.einsatzId) {
-        const ev = this.einsatz(fz.einsatzId);
-        if (ev) this.log(ev, `Storno an ${fz.funkrufname} (Funk)`);
-        this.freigeben(fz);
+      case "storno": {
+        if (fz.einsatzId) {
+          const ev = this.einsatz(fz.einsatzId);
+          if (ev) this.log(ev, `Storno an ${fz.funkrufname} (Funk)`);
+          this.freigeben(fz);
+        }
+        return `${hier}, Storno verstanden, rücken ein, kommen`;
       }
-      return `${hier}, Storno verstanden, rücken ein, kommen`;
+      case "einsatz":
+        return fz.einsatzId ? `${hier}, Einsatz verstanden, kommen` : `${hier}, Einsatz verstanden, rücken aus, kommen`;
+      case "info": {
+        if (absicht.thema === "naKommt" && e) {
+          // die Besatzung richtet sich danach: sie wartet mit dem Transport auf den Notarzt
+          e.naAngekuendigt = { um: this.state.zeit, wer: absicht.wer ?? "Notarzt" };
+          const wer = /nef|notarzt|na\b/i.test(absicht.wer ?? "") ? "den Notarzt" : (absicht.wer ?? "den Notarzt");
+          return vorOrt ? `${hier}, verstanden, warten auf ${wer}, kommen` : `${hier}, verstanden, kommen`;
+        }
+        if (absicht.thema === "warten" && e) {
+          e.naAngekuendigt ??= { um: this.state.zeit, wer: "Notarzt" };
+          return `${hier}, verstanden, wir warten, kommen`;
+        }
+        if (absicht.thema === "ziel") return `${hier}, Zielkrankenhaus verstanden, kommen`;
+        if (absicht.thema === "zusatz") return `${hier}, Information verstanden, kommen`;
+        return `${hier}, verstanden, kommen`;
+      }
+      case "frage":
+        switch (absicht.thema) {
+          case "status":
+          case "eintreffen":
+            if (fz.phase === "anfahrt" || fz.phase === "ausruecken") return `${hier}, sind auf Anfahrt, Eintreffen in ca. ${min ?? "?"} Minute${min === 1 ? "" : "n"}, kommen`;
+            if (fz.phase === "naAbholung" || fz.phase === "naEinstieg") return `${hier}, holen gerade den Notarzt im ${this.naKh(fz)?.kurzname || "Krankenhaus"} ab, dann direkt zum Einsatzort, kommen`;
+            if (vorOrt) return `${hier}, sind vor Ort beim Patienten, kommen`;
+            if (fz.phase === "transport") return `${hier}, sind mit Patient auf dem Weg ins Krankenhaus, ca. ${min ?? "?"} Minuten, kommen`;
+            if (fz.phase === "rendezvous") return `${hier}, sind auf dem Weg zum Rendezvous${e?.rendezvous ? ` ${e.rendezvous.punkt.label}` : ""}, ca. ${min ?? "?"} Minuten, kommen`;
+            if (fz.phase === "treffpunkt") return `${hier}, sind am Treffpunkt${e?.rendezvous?.status === "treffen" ? ", Notarzt ist beim Patienten" : ", warten auf das Rendezvous"}, kommen`;
+            if (fz.phase === "uebergabe") return `${hier}, sind bei der Übergabe im Krankenhaus, kommen`;
+            if (fz.phase === "rueckfahrt") return `${hier}, sind frei und auf dem Rückweg zur Dienststelle, kommen`;
+            return `${hier}, sind frei, kommen`;
+          case "werte": {
+            // Messwerte nur auf ausdrückliche Nachfrage – und nur die, die es im Fall gibt
+            if (!vorOrt || !e) return `${hier}, sind noch nicht beim Patienten, kommen`;
+            const kern = e.wahr.lage?.fall?.kern ?? "";
+            const werte = kern.split(/,\s*/).filter((x) => ohneVitalwerte(x) !== x.trim());
+            return werte.length ? `${hier}, ${werte.join(", ")}, kommen` : `${hier}, Werte noch nicht erhoben, kommen`;
+          }
+          case "patient":
+          case "bedarf": {
+            if (!vorOrt || !e) return `${hier}, sind noch nicht vor Ort, kommen`;
+            const fehlt = this.fehlendeKraefte(e);
+            const bedarfText = fehlt.na || fehlt.rtw ? `, ${[fehlt.na && "benötigen Notarzt", fehlt.rtw && rtwBedarf(fehlt.rtw, this.transportfaehig(fz))].filter(Boolean).join(", ")}` : ", keine weiteren Kräfte erforderlich";
+            return absicht.thema === "bedarf" ? `${hier}${bedarfText.replace(/^, /, ", ")}, kommen` : `${hier}, ${patientKurz()}${bedarfText}, kommen`;
+          }
+          case "verdacht": {
+            if (!vorOrt || !e) return `${hier}, sind noch nicht beim Patienten, kommen`;
+            const v = e.kh?.grund ?? e.verdacht ?? this.verdacht(e);
+            return v ? `${hier}, Verdacht ${buchungName(v)}, kommen` : `${hier}, noch nicht beurteilbar, kommen`;
+          }
+          case "naMit": {
+            if (!e) return `${hier}, kein Notarzt bei uns, kommen`;
+            const na = this.einsatzFz(e).find((x) => x.id !== fz.id && this.mitNotarzt(x));
+            if (!na) return `${hier}, kein Notarzt bei uns, ${e.naAngekuendigt ? "warten auf den Notarzt" : "keiner angefordert"}, kommen`;
+            const da = ["vorOrt", "warteKH", "treffpunkt"].includes(na.phase);
+            if (!da) {
+              const m2 = na.phaseEnde ? Math.max(1, Math.round((na.phaseEnde - this.state.zeit) / MIN)) : null;
+              return `${hier}, Notarzt ist noch nicht bei uns${m2 ? `, Eintreffen in ca. ${m2} Minuten` : ""}, kommen`;
+            }
+            return na.begleitet || (this.transportfaehig(fz) && fz.begleitet) ? `${hier}, Notarzt fährt mit, kommen` : `${hier}, Notarzt fährt nicht mit, kommen`;
+          }
+          case "ziel": {
+            const gebucht = e?.kh ? store.get("hospitals", e.kh.hospitalId) : undefined;
+            if (gebucht) return `${hier}, Ziel ist ${gebucht.kurzname || gebucht.name}, kommen`;
+            if (!vorOrt || !e) return `${hier}, sind noch nicht beim Patienten, Ziel noch offen, kommen`;
+            const verdacht = this.verdacht(e);
+            const h = this.naechstesKh(e.wahr, verdacht, this.patientRot(e), (e.wahr.lage?.patienten[0]?.alter ?? e.wahr.patientAlter) < 15, false, this.cacVorrang(e));
+            return h ? `${hier}, wir würden ins ${h.kurzname || h.name} fahren, kommen` : `${hier}, Ziel noch offen, kommen`;
+          }
+          case "funkcheck":
+            return `${hier}, höre euch laut und klar, kommen`;
+          case "landeplatz":
+            return vorOrt ? `${hier}, Landemöglichkeit in der Nähe, wir weisen ein, kommen` : `${hier}, sind selbst noch nicht vor Ort, kommen`;
+          default:
+            // freie Frage: die KI beantwortet genau diese Frage (mit dem, was die Besatzung weiß)
+            return null;
+        }
     }
-    if (/status|wo seid|wo bist|eintreff|wie lange|wann seid|wann seit|position|fahrzeit/.test(t)) {
-      const min = fz.phaseEnde ? Math.max(1, Math.round((fz.phaseEnde - this.state.zeit) / MIN)) : null;
-      if (fz.phase === "anfahrt" || fz.phase === "ausruecken") return `${hier}, sind auf Anfahrt, Eintreffen in ca. ${min ?? "?"} Minute${min === 1 ? "" : "n"}, kommen`;
-      if (fz.phase === "naAbholung" || fz.phase === "naEinstieg") return `${hier}, holen gerade den Notarzt im ${this.naKh(fz)?.kurzname || "Krankenhaus"} ab, dann direkt zum Einsatzort, kommen`;
-      if (vorOrt) return `${hier}, sind vor Ort beim Patienten, kommen`;
-      if (fz.phase === "transport") return `${hier}, sind mit Patient auf dem Weg ins Krankenhaus, ca. ${min ?? "?"} Minuten, kommen`;
-      if (fz.phase === "rendezvous") return `${hier}, sind auf dem Weg zum Rendezvous${e?.rendezvous ? ` ${e.rendezvous.punkt.label}` : ""}, ca. ${min ?? "?"} Minuten, kommen`;
-      if (fz.phase === "treffpunkt") return `${hier}, sind am Treffpunkt${e?.rendezvous?.status === "treffen" ? ", Notarzt ist beim Patienten" : ", warten auf das Rendezvous"}, kommen`;
-      if (fz.phase === "uebergabe") return `${hier}, sind bei der Übergabe im Krankenhaus, kommen`;
-      if (fz.phase === "rueckfahrt") return `${hier}, sind frei und auf dem Rückweg zur Dienststelle, kommen`;
-      return `${hier}, sind frei, kommen`;
-    }
-    // Messwerte nur auf ausdrückliche Nachfrage – und nur die, die es im Fall gibt
-    if (/sättigung|spo2|blutdruck|\brr\b|puls|herzfrequenz|blutzucker|\bbz\b|vitalwerte|vitalparameter|temperatur|fieber|\bgcs\b|atemfrequenz/.test(t)) {
-      if (!vorOrt || !e) return `${hier}, sind noch nicht beim Patienten, kommen`;
-      const kern = e.wahr.lage?.fall?.kern ?? "";
-      const werte = kern.split(/,\s*/).filter((x) => ohneVitalwerte(x) !== x.trim());
-      return werte.length ? `${hier}, ${werte.join(", ")}, kommen` : `${hier}, Werte noch nicht erhoben, kommen`;
-    }
-    if (/patient|zustand|wie geht|reanim|braucht ihr|benötigt ihr|nachforder/.test(t)) {
-      if (!vorOrt || !e) return `${hier}, sind noch nicht vor Ort, kommen`;
-      const l = e.wahr.lage;
-      if (!l) return `${hier}, Patient wird versorgt, Zustand stabil, kommen`;
-      const fehlt = this.fehlendeKraefte(e);
-      const bedarfText = fehlt.na || fehlt.rtw ? `, ${[fehlt.na && "benötigen Notarzt", fehlt.rtw && rtwBedarf(fehlt.rtw, this.transportfaehig(fz))].filter(Boolean).join(", ")}` : ", keine weiteren Kräfte erforderlich";
-      return `${hier}, ${l.patienten.length > 1 ? `${l.patienten.length} Patienten, ` : ""}${ohneVitalwerte(patientText(l.patienten[0]).replace(/ \(.*\)$/, ""))}${bedarfText}, kommen`;
-    }
-    if (/verdacht|diagnose|was hat (er|sie|der patient|die patientin)\b/.test(t)) {
-      if (!vorOrt || !e) return `${hier}, sind noch nicht beim Patienten, kommen`;
-      const v = e.kh?.grund ?? e.verdacht ?? this.verdacht(e);
-      return v ? `${hier}, Verdacht ${buchungName(v)}, kommen` : `${hier}, noch nicht beurteilbar, kommen`;
-    }
-    if (/funkcheck|wie hört ihr|wie hören sie|verständigung/.test(t)) return `${hier}, höre euch laut und klar, kommen`;
-    if (/(feuerwehr|polizei|bergrettung|wasserrettung).*(vor ort|kommt|unterwegs|alarmiert|angefordert)/.test(t)) return `${hier}, verstanden, kommen`;
-    if (/zielkrankenhaus|zielklinik|welches (kh|krankenhaus)|wohin (fahrt|bringt|transportiert)|wo fahrt ihr hin|fahrt ins|bringt (ihn|sie|den patienten)/.test(t)) {
-      // Frage („was wird euer Zielkrankenhaus?“) → Antwort mit dem Ziel; sonst ist es eine Vorgabe von LEO
-      const frage = /\?|\b(was|welche[sr]?|wohin|wo)\b/.test(t);
-      if (!frage) return `${hier}, Zielkrankenhaus verstanden, kommen`;
-      const gebucht = e?.kh ? store.get("hospitals", e.kh.hospitalId) : undefined;
-      if (gebucht) return `${hier}, Ziel ist ${gebucht.kurzname || gebucht.name}, kommen`;
-      if (!vorOrt || !e) return `${hier}, sind noch nicht beim Patienten, Ziel noch offen, kommen`;
-      const verdacht = this.verdacht(e);
-      const h = this.naechstesKh(e.wahr, verdacht, this.patientRot(e), (e.wahr.lage?.patienten[0]?.alter ?? e.wahr.patientAlter) < 15, false, this.cacVorrang(e));
-      return h ? `${hier}, wir würden ins ${h.kurzname || h.name} fahren, kommen` : `${hier}, Ziel noch offen, kommen`;
-    }
-    if (/zusatzinfo|zur info|beachtet|achtung|hinweis/.test(t)) return `${hier}, Information verstanden, kommen`;
-    if (/einsatz .*(code|adresse|einsatzort)|neuer einsatz|einsatzauftrag|übernehmt/.test(t)) {
-      return fz.einsatzId ? `${hier}, Einsatz verstanden, kommen` : `${hier}, Einsatz verstanden, rücken aus, kommen`;
-    }
-    if (/^(hier leo,? )?(verstanden|danke|passt|ok|okay)\W*(kommen)?\W*$/.test(t)) return "";
     return null;
   }
 
