@@ -16,7 +16,8 @@ import { toast } from "./dom";
 import { FUNK_RATE, FunkKodierer, funkDekodieren } from "./funkCodec";
 import { istPilot } from "./pilot/modus";
 import { tonBeginn, tonEinsatzRein, tonEnde, tonStatusDruck, tonStatusGesendet } from "./funkToene";
-import { aufnahmeLaeuftJetzt, aufnahmeSperre, funkHaken, funkHoerHaken, funkTonHaken, sprachPrefs, sprachStatus, sprachTest, tastenBelegung, verstummen } from "./sprache";
+import { aufnahmeIds, aufnahmeLaeuftJetzt, aufnahmeSperre, funkHaken, funkHoerHaken, funkTonHaken, sprachPrefs, sprachStatus, sprachTest, sprechTasteAnFunk, tastenBelegung, verstummen } from "./sprache";
+import { protokoll } from "../protokoll";
 
 export type FunkZiel = "leo" | "rtw";
 
@@ -179,8 +180,22 @@ function stromLaut(d: Record<string, unknown>, von: string): number {
   return g ? funkVorleseLaut(g, { von }) : 1;
 }
 
+/** angekündigte Stimmen, die doch nicht kommen (der Gesprächsführer hat keine Stimme) – dann liest jeder selbst vor */
+const abgesagt = new Set<string>();
+export function funkAbgesagt(gId: number, i: number): boolean {
+  return abgesagt.has(`${gId}:${i}`);
+}
+export function kiFunkAbsagen(gId: number, i: number): void {
+  schicken({ k: "vx", g: gId, i });
+}
+
 function empfangen(pid: string, name: string, d: Record<string, unknown>): void {
   const sId = `${pid}:${String(d.s)}`;
+  if (d.k === "vx" && typeof d.g === "number") {
+    abgesagt.add(`${d.g}:${String(d.i)}`);
+    if (abgesagt.size > 200) for (const k of [...abgesagt].slice(0, 100)) abgesagt.delete(k);
+    return;
+  }
   if (d.k === "v" && typeof d.g === "number") {
     angekuendigt.set(`${d.g}:${String(d.i)}`, Date.now());
     if (angekuendigt.size > 200) for (const k of [...angekuendigt.keys()].slice(0, 100)) angekuendigt.delete(k);
@@ -274,6 +289,11 @@ interface Sendung {
   gruppe: Sprechgruppe | undefined;
   /** wartet, bis der laufende Funkspruch fertig ist */
   wartet: boolean;
+  /** Nummer der Aufnahme im Programm */
+  aufnahmeId: number | null;
+  /** echte Zeit (ms) des letzten Stücks vom Mikrofon */
+  letzteDaten: number;
+  start: number;
 }
 
 let sendung: Sendung | null = null;
@@ -340,6 +360,7 @@ export function funkPegel(): number {
 }
 
 function stueck(s: Sendung, b64: string): void {
+  s.letzteDaten = Date.now();
   if (s.abgelehnt) return;
   const x = funkDekodieren(b64);
   let q = 0;
@@ -416,9 +437,8 @@ function auf16k(daten: Float32Array, rate: number): Float32Array {
  * Leitstelle: immer „leo“ (spricht mit dem Piloten).
  */
 export async function sprechStart(ziel: FunkZiel = "leo", gruppe?: Sprechgruppe): Promise<void> {
-  if (sendung) return;
-  if (aufnahmeLaeuftJetzt()) return;
-  aufnahmeSperre.funk = true;
+  // schon gedrückt bzw. Spracheingabe (Telefon) läuft gerade
+  if (sendung || aufnahmeLaeuftJetzt()) return;
   verstummen();
   const s: Sendung = {
     id: zufall(),
@@ -437,15 +457,25 @@ export async function sprechStart(ziel: FunkZiel = "leo", gruppe?: Sprechgruppe)
     frueh: false,
     gruppe: gruppe === undefined ? sprechGruppe() : gruppe,
     wartet: false,
+    aufnahmeId: null,
+    letzteDaten: Date.now(),
+    start: Date.now(),
   };
   // Gemini schreibt mit (die Erkennung hier braucht dann kein Sprachmodell)
   s.mitschrift = funkHoerHaken.strom?.() ?? null;
   sendung = s;
+  sperreNeu();
   sendGeaendert();
+  protokoll("sendung", { start: s.id, von: s.von, gruppe: s.gruppe ?? "normal", ziel });
+  // Pilot auf einer Großeinsatz-Gruppe ohne Großeinsatz: deutlich sagen (die Leitstelle hört sie nur leise mit)
+  if (istPilot() && s.gruppe && !sim.offeneGruppen().includes(s.gruppe) && Date.now() - gruppeHinweisZuletzt > 60_000) {
+    gruppeHinweisZuletzt = Date.now();
+    toast(`Du sprichst auf ${sim.sprechgruppeName(s.gruppe)} – dort läuft kein Großeinsatz. Zurück zur eigenen Gruppe: Steuerkreuz ◂ ▸ am Funkgerät`, "error");
+  }
   // Freigabe vom Host (Kanal frei?) – die Aufnahme startet gleichzeitig. Spricht gerade jemand:
   // warten, bis sein Ende-Ton kommt – dann der eigene Beginn-Ton und es geht los
   s.freigabe = sim
-    .call("funkMensch", true, ziel, s.gruppe)
+    .call("funkMensch", true, ziel, s.gruppe, s.id)
     .then(async (r) => {
       const a = r as { id: number | null; wartet: boolean } | null;
       if (s.abgelehnt || !a) return;
@@ -453,8 +483,9 @@ export async function sprechStart(ziel: FunkZiel = "leo", gruppe?: Sprechgruppe)
       if (a.wartet) {
         s.wartet = true;
         sendGeaendert();
+        protokoll("sendung", { wartet: s.id });
         const ich = sim.ich?.pid ?? mp.ich.pid;
-        while (!s.abgelehnt && !s.los && sim.state.funkSendet?.pid !== ich) await new Promise((ok) => setTimeout(ok, 80));
+        while (!s.abgelehnt && !s.los && !(sim.state.funkSendet?.pid === ich && (sim.state.funkSendet.sid ?? s.id) === s.id)) await new Promise((ok) => setTimeout(ok, 80));
         if (s.abgelehnt || s.los) return;
         s.gId = sim.state.funkSendet?.gId ?? s.gId;
         s.wartet = false;
@@ -464,13 +495,16 @@ export async function sprechStart(ziel: FunkZiel = "leo", gruppe?: Sprechgruppe)
       pegelMax = 0;
       funkTon("beginn");
       s.frei = true;
+      s.letzteDaten = Date.now();
       sendGeaendert();
+      protokoll("sendung", { frei: s.id, nachMs: Date.now() - s.start });
     })
     .catch((e) => {
       s.abgelehnt = true;
       s.warte = [];
       belegtTon();
       toast(String((e as Error)?.message ?? e), "error");
+      protokoll("sendung", { abgelehnt: s.id, grund: String((e as Error)?.message ?? e) });
       // Mikrofon läuft schon: gleich wieder aus (sonst stoppt es nach dem Start)
       if (s.bereit) abgelehntAufraeumen(s);
     });
@@ -478,25 +512,35 @@ export async function sprechStart(ziel: FunkZiel = "leo", gruppe?: Sprechgruppe)
     if (s.nativ) {
       const ch = new Channel<string>();
       ch.onmessage = (b64) => stueck(s, b64);
-      await invoke("funk_aufnahme_start", { mikro: sprachPrefs().mikroFunk || sprachPrefs().mikro || null, funk: ch });
+      s.aufnahmeId = (await invoke<number>("funk_aufnahme_start", { mikro: sprachPrefs().mikroFunk || sprachPrefs().mikro || null, funk: ch })) ?? null;
+      if (s.aufnahmeId !== null) aufnahmeIds.add(s.aufnahmeId);
     } else await browserAufnahme(s);
   } catch (e) {
     s.abgelehnt = true;
     toast(`Mikrofon nicht verfügbar: ${String((e as Error)?.message ?? e)}`, "error");
+    protokoll("sendung", { fehler: s.id, mikrofon: String((e as Error)?.message ?? e) });
     await s.freigabe;
-    if (s.frei) void sim.call("funkMensch", false).catch(() => undefined);
+    if (s.frei) void sim.call("funkMensch", false, undefined, undefined, s.id).catch(() => undefined);
     if (sendung === s) sendung = null;
-    aufnahmeSperre.funk = false;
+    sperreNeu();
     sendGeaendert();
     return;
   }
   s.bereit = true;
+  s.letzteDaten = Date.now();
   // inzwischen abgelehnt (Kanal belegt): Mikrofon gleich wieder aus
   if (s.abgelehnt) return abgelehntAufraeumen(s);
   // höchstens eine Minute am Stück
-  s.uhr = window.setTimeout(() => sendung === s && void sprechStopp(), 60_000);
+  s.uhr = window.setTimeout(() => sendung === s && void sprechStopp("eine Minute erreicht"), 60_000);
   // schon wieder losgelassen, während das Mikrofon startete?
   if (s.frueh) void sprechStopp();
+}
+
+let gruppeHinweisZuletzt = 0;
+
+/** Sperre für die Spracheingabe: nur solange die Sprechtaste gedrückt ist (nicht während der Erkennung danach) */
+function sperreNeu(): void {
+  aufnahmeSperre.funk = !!sendung;
 }
 
 /** Kanal war belegt: Mikrofon aus, nichts gesendet */
@@ -506,20 +550,25 @@ function abgelehntAufraeumen(s: Sendung): void {
   s.mitschrift = null;
   void aufnahmeBeenden(s, false);
   if (sendung === s) sendung = null;
-  aufnahmeSperre.funk = false;
+  sperreNeu();
   sendGeaendert();
 }
 
-/** Aufnahme beenden; mitText: Text erkennen (sonst nur stoppen) */
-async function aufnahmeBeenden(s: Sendung, mitText: boolean): Promise<string> {
+/** Aufnahme dieser Sendung beenden; mitText: Text erkennen (sonst nur stoppen) */
+async function aufnahmeBeenden(s: Sendung, mitText: boolean): Promise<{ text: string; sicherheit?: number }> {
   let text = "";
   const ms = s.mitschrift;
   s.mitschrift = null;
   if (ms && !mitText) ms.abbrechen();
+  const id = s.aufnahmeId;
+  s.aufnahmeId = null;
+  const fertig = () => {
+    if (id !== null) aufnahmeIds.delete(id);
+  };
   // Mitschrift über Gemini: die Aufnahme hier nur beenden
   if (ms && mitText) {
     try {
-      if (s.nativ) await invoke("sprache_aufnahme_stopp", { modell: "", hinweis: "" });
+      if (s.nativ) await invoke("sprache_aufnahme_stopp", { modell: "", hinweis: "", id }).finally(fertig);
       else if (s.browser) {
         const b = s.browser;
         s.browser = undefined;
@@ -532,8 +581,8 @@ async function aufnahmeBeenden(s: Sendung, mitText: boolean): Promise<string> {
       console.warn("Sprechfunk", e);
     }
     text = await ms.ende();
-    if (text.trim()) return text.replace(/\s+/g, " ").trim();
-    return "";
+    protokoll("erkannt", { wo: "funk", sendung: s.id, text, quelle: "gemini" });
+    return { text: text.trim() ? text.replace(/\s+/g, " ").trim() : "" };
   }
   try {
     if (s.nativ) {
@@ -542,12 +591,15 @@ async function aufnahmeBeenden(s: Sendung, mitText: boolean): Promise<string> {
         funkModelle = st.modelle;
         modellDa = st.modelle.includes(sprachPrefs().modell) || !!funkModell(st.modelle);
       }
-      const r = await invoke<{ text: string; sekunden: number; pegel: number }>("sprache_aufnahme_stopp", { modell: mitText && modellDa ? funkModell(funkModelle) : "", hinweis: hinweis() });
-      text = r.text;
+      const modell = mitText && modellDa ? funkModell(funkModelle) : "";
+      const h = mitText ? hinweis() : "";
+      const r = await invoke<{ text: string; sekunden: number; pegel: number; sicherheit?: number; ms?: number; gpu?: boolean }>("sprache_aufnahme_stopp", { modell, hinweis: h, id }).finally(fertig);
+      if (mitText) protokoll("erkannt", { wo: "funk", sendung: s.id, text: r.text, sicherheit: r.sicherheit, sekunden: r.sekunden, pegel: r.pegel, ms: r.ms, gpu: r.gpu, modell, hinweis: h });
       if (mitText && !modellDa && !modellHinweis) {
         modellHinweis = true;
         toast("Für den Text im Funkfenster das Sprachmodell laden (Funk-Einstellungen bzw. Einstellungen → Sprache)");
       }
+      return { text: r.text, sicherheit: r.sicherheit };
     } else if (s.browser) {
       const b = s.browser;
       s.browser = undefined;
@@ -565,16 +617,19 @@ async function aufnahmeBeenden(s: Sendung, mitText: boolean): Promise<string> {
           o += x.length;
         }
         if (laenge / rate >= 0.3) text = await sprachTest.erkenner(auf16k(alles, rate), hinweis());
+        protokoll("erkannt", { wo: "funk", sendung: s.id, text, quelle: "test" });
       }
     }
   } catch (e) {
-    if (mitText) console.warn("Sprechfunk: Erkennung", e);
+    fertig();
+    console.warn("Sprechfunk", e);
+    protokoll("sendung", { fehler: s.id, beimBeenden: String((e as Error)?.message ?? e) });
   }
-  return text.replace(/\s+/g, " ").trim();
+  return { text };
 }
 
-/** Sprechtaste losgelassen */
-export async function sprechStopp(): Promise<void> {
+/** Sprechtaste losgelassen (grund: warum die Sendung endet, wenn nicht durch Loslassen) */
+export async function sprechStopp(grund?: string): Promise<void> {
   const s = sendung;
   if (!s || s.los) return;
   if (!s.bereit && !s.abgelehnt) {
@@ -583,45 +638,55 @@ export async function sprechStopp(): Promise<void> {
   }
   s.los = true;
   window.clearTimeout(s.uhr);
-  if (s.abgelehnt) {
-    if (sendung === s) sendung = null;
-    aufnahmeSperre.funk = false;
-    sendGeaendert();
-    return;
+  // die Taste ist frei: ein neuer Druck startet gleich eine neue Sendung (die Erkennung dieser läuft weiter)
+  sendung = null;
+  sperreNeu();
+  sendGeaendert();
+  protokoll("sendung", { ende: s.id, dauerMs: Date.now() - s.start, frei: s.frei, abgelehnt: s.abgelehnt, grund });
+  if (grund) {
+    funkTon("ende");
+    belegtTon();
+    toast(`Funk unterbrochen – ${grund}`, "error");
   }
+  if (s.abgelehnt) return;
   // losgelassen, während noch gewartet wurde: nichts gesendet
   if (!s.frei) {
     s.abgelehnt = true;
     s.mitschrift?.abbrechen();
     s.mitschrift = null;
     void aufnahmeBeenden(s, false);
-    await sim.call("funkMensch", false).catch(() => undefined);
-    if (sendung === s) sendung = null;
-    aufnahmeSperre.funk = false;
-    sendGeaendert();
+    await sim.call("funkMensch", false, undefined, undefined, s.id).catch(() => undefined);
     return;
   }
-  funkTon("ende");
+  if (!grund) funkTon("ende");
   pegel = 0;
   // fast nichts angekommen: Mikrofon zu leise oder falsches Gerät
   if (s.n > 8 && pegelMax < 0.015) toast("Dein Mikrofon ist sehr leise – bitte näher sprechen oder in den Einstellungen das richtige Mikrofon wählen", "error");
   const textP = aufnahmeBeenden(s, true);
   // Kanal nach dem Nachlauf (250 ms) frei geben – die Erkennung läuft danach weiter
-  await Promise.race([textP.catch(() => ""), new Promise((r) => setTimeout(r, 450))]);
+  await Promise.race([textP.catch(() => ({ text: "" })), new Promise((r) => setTimeout(r, 450))]);
   await s.freigabe;
   if (s.frei) schicken({ k: "e", s: s.id, n: s.n });
-  if (sendung === s) sendung = null;
-  aufnahmeSperre.funk = false;
-  sendGeaendert();
-  if (!s.frei) return;
-  await sim.call("funkMensch", false).catch(() => undefined);
-  let text = await textP.catch(() => "");
+  await sim.call("funkMensch", false, undefined, undefined, s.id).catch(() => undefined);
+  const r = await textP.catch(() => ({ text: "" }) as { text: string; sicherheit?: number });
+  let text = r.text;
   if (/^(untertitel|vielen dank( für)? (fürs )?zuschauen|copyright|\[?musik\]?|\*.*\*)/i.test(text)) text = "";
   if (text) {
     text = funkGlaetten(text);
-    await sim.call("funkMenschText", s.gId, text, s.gruppe ?? null).catch((e) => toast(String((e as Error)?.message ?? e), "error"));
+    await sim.call("funkMenschText", s.gId, text, s.gruppe ?? null, r.sicherheit ?? 1).catch((e) => toast(String((e as Error)?.message ?? e), "error"));
   } else if (s.n > 3) toast("Funkspruch nicht verstanden – bitte nochmal (oder tippen)", "error");
 }
+
+// Mikrofon liefert nichts mehr, obwohl gesendet wird (Gerät weg, Aufnahme beendet): Sendung beenden statt stumm weiterzusenden
+setInterval(() => {
+  const s = sendung;
+  if (!s || !s.frei || !s.bereit || s.los) return;
+  if (Date.now() - s.letzteDaten > 1500) void sprechStopp("vom Mikrofon kommt nichts mehr an");
+}, 500);
+
+// Spracheingabe-Taste ohne Eingabefeld: spricht in den Funk
+sprechTasteAnFunk.start = () => void sprechStart("leo", istPilot() ? undefined : sprechGruppe());
+sprechTasteAnFunk.stopp = () => void sprechStopp();
 
 // ------------------------------------------------------------ Spracheingabe der Leitstelle beim KI-Funk live mitschicken
 
@@ -885,6 +950,9 @@ export function funkVorleseLaut(g: { fzId: string; an?: { fzId: string } | null;
   const heli = sim.pilotVon(sim.ich?.pid ?? mp.ich.pid);
   if (heli && s.von === sim.rufname(heli)) return 0;
   if (heli && (g.fzId === heli.id || g.an?.fzId === heli.id)) return grund;
+  // Funk zum eigenen Einsatz (z. B. LEO mit dem RTW, zu dem der Pilot fliegt): ebenfalls voll
+  const gE = (g as { einsatzId?: string | null }).einsatzId;
+  if (heli?.einsatzId && gE && gE === heli.einsatzId) return grund;
   const p = sprachPrefs();
   return p.mithoeren ? grund * Math.max(0, Math.min(1, p.mithoerenLaut / 100)) : 0;
 }

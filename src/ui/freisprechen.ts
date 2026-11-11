@@ -9,11 +9,13 @@ import { inTauri } from "../platform";
 import { sim, type Einsatz } from "../sim/engine";
 import { el, toast } from "./dom";
 import { istGespraechsfuehrer } from "./panels/notrufAbfrage";
-import { dauerAufnahme, pcm16b64, sprachPrefs } from "./sprache";
+import { aufnahmeIds, dauerAufnahme, pcm16b64, sprachPrefs } from "./sprache";
 
 // ---------------------------------------------------------------- Freisprechen
 
 let laeuftFuer: string | null = null;
+/** Nummer der Aufnahme im Programm */
+let aufnahmeId: number | null = null;
 let pausiert = false;
 let startet = false;
 let web: { ctx: AudioContext; q: MediaStreamAudioSourceNode; p: ScriptProcessorNode; s: MediaStream } | null = null;
@@ -39,7 +41,8 @@ async function starten(e: Einsatz): Promise<void> {
     if (inTauri()) {
       const kanal = new Channel<string>();
       kanal.onmessage = (b64) => senden(b64);
-      await invoke("live_aufnahme_start", { mikro: sprachPrefs().mikro || null, kanal });
+      aufnahmeId = (await invoke<number>("live_aufnahme_start", { mikro: sprachPrefs().mikro || null, kanal })) ?? null;
+      if (aufnahmeId !== null) aufnahmeIds.add(aufnahmeId);
     } else {
       const s = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
       const ctx = new AudioContext();
@@ -70,7 +73,10 @@ async function beenden(): Promise<void> {
     void web.ctx.close();
     web = null;
   } else if (inTauri()) {
-    await invoke("sprache_aufnahme_stopp", { modell: "", hinweis: "" }).catch(() => undefined);
+    const id = aufnahmeId;
+    aufnahmeId = null;
+    await invoke("sprache_aufnahme_stopp", { modell: "", hinweis: "", id }).catch(() => undefined);
+    if (id !== null) aufnahmeIds.delete(id);
   }
 }
 

@@ -321,8 +321,11 @@ function tastenAlt(s) {
 (() => {
   const b = $("ptt");
   let unten = false;
-  const an = (ev) => { ev.preventDefault(); if (unten) return; unten = true; b.classList.add("an"); b.querySelector("b").textContent = "DU SPRICHST"; vib(20); b.setPointerCapture?.(ev.pointerId); senden("funk_an"); };
-  const aus = () => { if (!unten) return; unten = false; b.classList.remove("an"); b.querySelector("b").textContent = "SPRECHEN"; senden("funk_aus"); };
+  let lebt = null;
+  // solange gedrückt: jede Sekunde ein Lebenszeichen – reißt die Verbindung ab, beendet LeitWerk die Sendung selbst
+  const an = (ev) => { ev.preventDefault(); if (unten) return; unten = true; b.classList.add("an"); b.querySelector("b").textContent = "DU SPRICHST"; vib(20); b.setPointerCapture?.(ev.pointerId); senden("funk_an"); lebt = setInterval(() => senden("funk_halt"), 1000); };
+  const aus = () => { if (!unten) return; unten = false; clearInterval(lebt); lebt = null; b.classList.remove("an"); b.querySelector("b").textContent = "SPRECHEN"; senden("funk_aus"); };
+  document.addEventListener("visibilitychange", () => { if (document.hidden) aus(); });
   b.addEventListener("pointerdown", an);
   b.addEventListener("pointerup", aus);
   b.addEventListener("pointercancel", aus);

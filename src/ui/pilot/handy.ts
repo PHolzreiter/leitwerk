@@ -2,6 +2,7 @@
  * Handy als Statusgerät: Das Programm startet einen kleinen Webserver im Heimnetz (Rust, handy.rs).
  * Hier: QR-Code anzeigen, den Stand fürs Handy schicken und Tastendrücke vom Handy ausführen.
  */
+import { protokoll } from "../../protokoll";
 import qrcode from "qrcode-generator";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
@@ -134,14 +135,48 @@ async function hoeren(): Promise<void> {
       if (ev.payload.startsWith("xp:")) return xpPluginMeldung(ev.payload);
       // TETRA-Funkgerät im X-Plane-Cockpit (Plugin): „tt:<Taste>“ – wie das CARLS
       if (ev.payload.startsWith("tt:")) return funkGeraetTaste(ev.payload.slice(3));
-      // Sprechtaste: „funk_an“ / „funk_aus“
-      const m = /^(\w+)_(an|aus)$/.exec(ev.payload);
-      if (m && HALTEN.includes(m[1] as PilotAktion)) return haltenFn?.(m[1] as PilotAktion, m[2] === "an");
+      // Sprechtaste: „funk_an“ / „funk_aus“, solange gehalten jede Sekunde „funk_halt“ (Lebenszeichen)
+      const m = /^(\w+)_(an|aus|halt)$/.exec(ev.payload);
+      if (m && HALTEN.includes(m[1] as PilotAktion)) return fernTaste(m[1] as PilotAktion, m[2] as "an" | "aus" | "halt");
       const a = ev.payload as PilotAktion;
       if (AKTIONEN.some((x) => x.id === a) && !HALTEN.includes(a)) ausfuehren?.(a);
     });
   }
 }
+
+/**
+ * Sprechtaste von einem Gerät außerhalb des Fensters (Handy, X-Plane-Plugin, TETRA im Cockpit). Neue Geräte schicken beim
+ * Halten jede Sekunde ein Lebenszeichen; bleibt es 2,5 s aus (Verbindung weg, Plugin hängt), endet die Sendung –
+ * sonst würde der Kanal bis zu einer Minute belegt. Ältere Geräte ohne Lebenszeichen funktionieren wie bisher.
+ */
+const fern = new Map<PilotAktion, { seit: number; zuletzt: number; mitLebenszeichen: boolean }>();
+function fernTaste(a: PilotAktion, was: "an" | "aus" | "halt"): void {
+  const jetzt = Date.now();
+  const f = fern.get(a);
+  if (was === "aus") {
+    if (f) fern.delete(a);
+    haltenFn?.(a, false);
+    return;
+  }
+  if (was === "halt") {
+    if (f) {
+      f.zuletzt = jetzt;
+      f.mitLebenszeichen = true;
+    }
+    return;
+  }
+  fern.set(a, { seit: jetzt, zuletzt: jetzt, mitLebenszeichen: false });
+  haltenFn?.(a, true);
+}
+setInterval(() => {
+  const jetzt = Date.now();
+  for (const [a, f] of fern) {
+    if (!f.mitLebenszeichen || jetzt - f.zuletzt < 2500) continue;
+    fern.delete(a);
+    protokoll("sendung", { abbruch: "Sprechtaste am Gerät ohne Lebenszeichen", aktion: a, gehaltenMs: jetzt - f.seit });
+    haltenFn?.(a, false);
+  }
+}, 500);
 
 function qrSvg(text: string): string {
   const q = qrcode(0, "M");

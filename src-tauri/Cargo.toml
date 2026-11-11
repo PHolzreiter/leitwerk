@@ -11,6 +11,10 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 
+[features]
+# Spracherkennung auf der Grafikkarte unter Windows (Vulkan; die CI baut damit, wenn das Vulkan-SDK da ist)
+gpu-vulkan = ["whisper-rs/vulkan"]
+
 [dependencies]
 tauri = { version = "2", features = ["devtools"] }
 tauri-plugin-dialog = "2"

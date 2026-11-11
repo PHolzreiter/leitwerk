@@ -3,6 +3,7 @@
  * Spracheingabe (Taste halten, sprechen, loslassen → Text im Eingabefeld).
  * Erkannt wird lokal mit Whisper im Programm; im Browser (Entwicklung) mit der Erkennung des Browsers.
  */
+import { protokoll } from "../protokoll";
 import { funkTextGlaetten, zahlenAlsZiffern } from "../sim/funkErkennung";
 import { invoke, Channel } from "@tauri-apps/api/core";
 import { inTauri } from "../platform";
@@ -569,6 +570,28 @@ export function funkSagt(funkname: string, text: string, laut = 1, melden?: { be
   else los();
 }
 
+/**
+ * Funkspruch eines Fahrzeugs als Ton erzeugen (gleiche Stimme wie funkSagt), damit ihn der Gesprächsführer an alle
+ * Mitspieler schicken kann – so hört auch ein Pilot ohne eigene Stimmen die Fahrzeuge. null = keine Stimme hier.
+ */
+export async function funkStimmeAudio(funkname: string, text: string): Promise<{ rate: number; pcm: Float32Array } | null> {
+  const p = sprachPrefs();
+  if (!inTauri() || !p.funkVorlesen) return null;
+  const t = sprechText(funkAussprache(text));
+  if (!t) return null;
+  const g = hash(funkname) < 0.3 ? "w" : "m";
+  const ton = 0.9 + hash(`${funkname}|ton`) * 0.2;
+  const tempo = Math.max(0.5, Math.min(2, ((0.98 + hash(`${funkname}|tempo`) * 0.2) * (p.tempo / 100)) / ton));
+  let buf: ArrayBuffer | null = null;
+  if (p.stimmeArt === "supertonic" && supertonicDa) buf = await invoke<ArrayBuffer>("supertonic_erzeugen", { stimme: supertonicFuer(g, funkname), text: t, tempo });
+  else if (p.stimmeArt === "piper" || p.stimmeArt === "supertonic") {
+    const v = piperFuer(g, funkname);
+    if (v) buf = await invoke<ArrayBuffer>("stimme_erzeugen", { name: v.name, text: t, sid: v.sid, tempo });
+  }
+  if (!buf || buf.byteLength < 8) return null;
+  return { rate: Math.round(new DataView(buf).getUint32(0, true) * ton), pcm: new Float32Array(buf.slice(4)) };
+}
+
 /** Ortsnamen im erkannten Text richtigstellen (ui/ortNamen.ts, gesetzt in main.ts) */
 export const ortHaken: { glaetten: null | ((t: string) => string) } = { glaetten: null };
 
@@ -726,7 +749,15 @@ export const sprachTest: { erkenner: null | ((audio: Float32Array, hinweis: stri
 const programmWeg = () => inTauri() || !!sprachTest.erkenner;
 /** Programm nimmt selbst auf (das Fenster darf das Mikrofon auf dem Mac nicht öffnen) */
 const nativ = () => inTauri() && !sprachTest.erkenner;
-let nativStart: Promise<void> | null = null;
+let nativStart: Promise<number> | null = null;
+/** Nummer der eigenen Aufnahme im Programm (Spracheingabe bzw. Cloud-Anrufer) */
+let nativId: number | null = null;
+
+/**
+ * Aufnahmen, die gerade jemand im Fenster führt (Spracheingabe, Sprechfunk, Freisprechen). Die Sicherung schließt nur
+ * Aufnahmen im Programm, die hier niemand kennt – nie eine laufende fremde.
+ */
+export const aufnahmeIds = new Set<number>();
 let pegelTimer: ReturnType<typeof setInterval> | null = null;
 let aufnahmeLaeuft = false;
 
@@ -848,6 +879,12 @@ async function start(z: SprachZiel | null, knopf?: HTMLElement): Promise<void> {
   const p = sprachPrefs();
   if (!p.eingabe || aufnahmeLaeuft || aufnahmeSperre.funk) return;
   if (!z) {
+    // kein Eingabefeld: die Taste spricht in den Funk (z. B. ein Fahrzeug ruft gerade) – statt einer Fehlermeldung
+    if (sprechTasteAnFunk.start) {
+      sprechTasteAnFunk.aktiv = true;
+      sprechTasteAnFunk.start();
+      return;
+    }
     toast("Gerade gibt es kein Gespräch, in das du sprechen kannst.", "error");
     return;
   }
@@ -892,8 +929,9 @@ async function start(z: SprachZiel | null, knopf?: HTMLElement): Promise<void> {
       if (inTauri()) {
         const kanal = new Channel<string>();
         kanal.onmessage = (b64) => ls.stueck(b64);
-        nativStart = invoke<void>("live_aufnahme_start", { mikro: p.mikro || null, kanal });
-        await nativStart;
+        nativStart = invoke<number>("live_aufnahme_start", { mikro: p.mikro || null, kanal });
+        nativId = (await nativStart) ?? null;
+        if (nativId !== null) aufnahmeIds.add(nativId);
         pegelTimer = setInterval(() => {
           void invoke<number>("sprache_pegel").then((v) => {
             if (pegel) pegel.style.width = `${Math.min(100, Math.round(v * 400))}%`;
@@ -941,9 +979,10 @@ async function start(z: SprachZiel | null, knopf?: HTMLElement): Promise<void> {
       funk = new Channel<string>();
       funk.onmessage = (b64) => f(b64);
     }
-    nativStart = funk ? invoke<void>("funk_aufnahme_start", { mikro: p.mikroFunk || p.mikro || null, funk }) : invoke<void>("sprache_aufnahme_start", { mikro: p.mikro || null });
+    nativStart = funk ? invoke<number>("funk_aufnahme_start", { mikro: p.mikroFunk || p.mikro || null, funk }) : invoke<number>("sprache_aufnahme_start", { mikro: p.mikro || null });
     try {
-      await nativStart;
+      nativId = (await nativStart) ?? null;
+      if (nativId !== null) aufnahmeIds.add(nativId);
       // Sprachmodell schon während des Sprechens in den Speicher holen
       if (p.modell) void invoke("sprache_vorladen", { name: p.modell }).catch(() => undefined);
     } catch (e) {
@@ -1019,7 +1058,15 @@ function funkStueckEnde(): void {
   funkHaken.ende?.();
 }
 
+/** Spracheingabe-Taste ohne Eingabefeld → Sprechfunk (ui/sprechfunk.ts setzt start/stopp) */
+export const sprechTasteAnFunk: { start: null | (() => void); stopp: null | (() => void); aktiv: boolean } = { start: null, stopp: null, aktiv: false };
+
 async function stopp(): Promise<void> {
+  if (sprechTasteAnFunk.aktiv) {
+    sprechTasteAnFunk.aktiv = false;
+    sprechTasteAnFunk.stopp?.();
+    return;
+  }
   try {
     await stoppInnen();
   } finally {
@@ -1047,9 +1094,10 @@ async function stoppInnen(): Promise<void> {
       if (nativStart) {
         const st = nativStart;
         nativStart = null;
-        await st;
+        const id = (await st) ?? nativId;
+        nativId = null;
         // beendet die Aufnahme (mit kurzem Nachlauf); die letzten Stücke kommen noch über den Kanal
-        await invoke("sprache_aufnahme_stopp", { modell: "", hinweis: "" });
+        await invoke("sprache_aufnahme_stopp", { modell: "", hinweis: "", id }).finally(() => id !== null && aufnahmeIds.delete(id));
         await new Promise((r) => setTimeout(r, 60));
       } else if (liveWeb) {
         await new Promise((r) => setTimeout(r, 250));
@@ -1082,11 +1130,16 @@ async function stoppInnen(): Promise<void> {
       nativStart = null;
       if (pegelTimer) clearInterval(pegelTimer);
       pegelTimer = null;
-      await st;
+      const id = (await st) ?? nativId;
+      nativId = null;
       anzeigeZeigen("Erkenne …", "denkt");
       const p = sprachPrefs();
       const t0 = performance.now();
-      const r = await invoke<{ text: string; sekunden: number; pegel: number }>("sprache_aufnahme_stopp", { modell: p.modell, hinweis: z?.hinweis?.() ?? "" }).finally(funkZu);
+      const r = await invoke<{ text: string; sekunden: number; pegel: number; sicherheit?: number; ms?: number; gpu?: boolean }>("sprache_aufnahme_stopp", { modell: p.modell, hinweis: z?.hinweis?.() ?? "", id }).finally(() => {
+        funkZu();
+        if (id !== null) aufnahmeIds.delete(id);
+      });
+      protokoll("erkannt", { wo: z?.funk ? "funk-eingabe" : "eingabe", text: r.text, sicherheit: r.sicherheit, sekunden: r.sekunden, pegel: r.pegel, ms: r.ms, gpu: r.gpu, modell: p.modell });
       erkennZeit = Math.round(performance.now() - t0);
       console.info(`[Erkennzeit] ${p.modell}: ${erkennZeit} ms für ${r.sekunden.toFixed(1)} s Sprache`);
       if (r.sekunden < 0.3) {
@@ -1244,20 +1297,16 @@ export function funkNamenGlaetten(t: string, namen?: string[], bevorzugt?: strin
 // Bleibt eine Aufnahme trotzdem offen (z. B. weil ein Anruf auf ungewöhnliche Art endete), schließt sie diese Sicherung –
 // sonst zeigt macOS dauerhaft das orange Mikrofon-Zeichen.
 if (inTauri()) {
-  let verdacht = 0;
+  // Aufnahmen im Programm, die niemand im Fenster kennt (z. B. ein Anruf endete auf ungewöhnliche Art): nach ein paar
+  // Sekunden schließen. Laufende Aufnahmen (Funk, Spracheingabe, Freisprechen) stehen in aufnahmeIds und bleiben offen.
   setInterval(() => {
-    if (aufnahmeLaeuft || aufnahmeSperre.funk || dauerAufnahme.laeuft()) {
-      verdacht = 0;
-      return;
-    }
-    void invoke<boolean>("sprache_aufnahme_laeuft")
-      .then((laeuft) => {
-        if (!laeuft) return void (verdacht = 0);
-        // zweimal hintereinander offen, obwohl niemand spricht: schließen
-        if (++verdacht < 2) return;
-        verdacht = 0;
-        console.warn("Mikrofon war noch offen, obwohl niemand spricht – geschlossen");
-        void invoke("sprache_aufnahme_abbrechen").catch(() => undefined);
+    void invoke<{ id: number; besitz: string; sekunden: number }[]>("sprache_aufnahmen")
+      .then((alle) => {
+        for (const a of alle) {
+          if (aufnahmeIds.has(a.id) || a.sekunden < 4) continue;
+          console.warn(`Mikrofon war noch offen (${a.besitz}, ${Math.round(a.sekunden)} s), obwohl niemand spricht – geschlossen`);
+          void invoke("sprache_aufnahme_abbrechen", { id: a.id }).catch(() => undefined);
+        }
       })
       .catch(() => undefined);
   }, 2500);

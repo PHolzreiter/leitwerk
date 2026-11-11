@@ -15,6 +15,7 @@ mod ton;
 mod updater;
 mod xplane;
 mod ec135;
+mod protokoll;
 
 use std::collections::HashMap;
 use std::fs::{self, File};
@@ -624,6 +625,11 @@ pub fn run() {
             sprache::sprache_aufnahme_laeuft,
             sprache::sprache_aufnahme_abbrechen,
             sprache::sprache_aufnahme_stopp,
+            sprache::sprache_aufnahmen,
+            sprache::sprache_gpu,
+            protokoll::protokoll_schreiben,
+            protokoll::protokoll_lesen,
+            protokoll::protokoll_ordner,
             ton::ton_geraete,
             ton::ton_spielen,
             ton::ton_stopp,

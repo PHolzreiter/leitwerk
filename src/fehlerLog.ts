@@ -2,6 +2,8 @@
  * Fehler und Warnungen mitschreiben (nur im Speicher, die letzten 300) –
  * für „Fehler melden“: eine Datei, die man dem Entwickler schicken kann.
  */
+import { protokoll } from "./protokoll";
+
 export interface LogEintrag {
   zeit: number;
   art: "fehler" | "warnung" | "info";
@@ -27,7 +29,9 @@ function text(args: unknown[]): string {
 }
 
 export function logEintrag(art: LogEintrag["art"], ...args: unknown[]): void {
-  log.push({ zeit: Date.now(), art, text: text(args) });
+  const t = text(args);
+  log.push({ zeit: Date.now(), art, text: t });
+  protokoll("log", { stufe: art, text: t });
   if (log.length > MAX) log.splice(0, log.length - MAX);
 }
 

@@ -15,11 +15,11 @@ import { mp } from "../net/mehrspieler";
 import { sim, type FunkAusstehend, type FunkGespraech, type SimFahrzeug } from "../sim/engine";
 import { distanceM } from "../sim/geo";
 import { inTauri } from "../platform";
-import { funkAussprache, funkHoerHaken, funkVorleseHaken, sprachPrefs, sprachStatus } from "./sprache";
+import { funkAussprache, funkHoerHaken, funkStimmeAudio, funkVorleseHaken, sprachPrefs, sprachStatus } from "./sprache";
 import { funkGlaetten, funkNamenAlle } from "./funkNamen";
 import { rufnamenAlsWorte } from "../sim/funkErkennung";
 import { orteJetzt } from "./ortNamen";
-import { funkAngekuendigt, kiFunkAnkuendigen, kiFunkStrom } from "./sprechfunk";
+import { funkAbgesagt, funkAngekuendigt, kiFunkAbsagen, kiFunkAnkuendigen, kiFunkStrom } from "./sprechfunk";
 
 // ------------------------------------------------------------------ Stimmen der Fahrzeuge
 
@@ -177,10 +177,42 @@ async function vorlesenNehmen(g: { id: number; fzId: string; an?: { fzId: string
     kette = lauf.catch(() => undefined);
     return lauf;
   }
-  // Mitspieler: kündigt der Gesprächsführer die Stimme an?
+  // Mehrspieler ohne Cloud-Stimme: der Gesprächsführer erzeugt die Stimme hier (Piper) und schickt sie an alle –
+  // so hört jeder dieselbe Stimme, auch ein Pilot ohne eigene Stimmen. Klappt das nicht, sagt er ab: dann liest jeder selbst.
+  if (sim.mode !== "solo" && ichSpreche(g) && !fz.pilot) {
+    kiFunkAnkuendigen(g.id, i);
+    const lauf = kette.then(async () => {
+      const a = await funkStimmeAudio(s.von, s.text).catch(() => null);
+      if (!a) {
+        kiFunkAbsagen(g.id, i);
+        return false;
+      }
+      void sim.call("funkFzSpricht", g.id).catch(() => undefined);
+      const strom = kiFunkStrom({ von: s.von, gId: g.id });
+      const stueck = 4096;
+      for (let o = 0; o < a.pcm.length; o += stueck) {
+        const t = a.pcm.subarray(o, o + stueck);
+        const d = new Int16Array(t.length);
+        for (let k = 0; k < t.length; k++) d[k] = Math.max(-32768, Math.min(32767, Math.round(t[k] * 32767)));
+        strom.pcm(d, a.rate);
+      }
+      const rest = strom.ende();
+      setTimeout(() => void sim.call("funkFzFertig", g.id).catch(() => undefined), rest);
+      return true;
+    });
+    kette = lauf.catch(() => undefined);
+    return lauf;
+  }
+  // Mitspieler: kündigt der Gesprächsführer die Stimme an? (dann kommt sie gleich – außer er sagt ab)
   if (sim.mode === "solo" || ichSpreche(g)) return false;
   for (let t = 0; t < 8; t++) {
-    if (funkAngekuendigt(g.id, i)) return true;
+    if (funkAngekuendigt(g.id, i)) {
+      for (let w = 0; w < 40; w++) {
+        if (funkAbgesagt(g.id, i)) return false;
+        await new Promise((r) => setTimeout(r, 100));
+      }
+      return true;
+    }
     await new Promise((r) => setTimeout(r, 100));
   }
   return false;

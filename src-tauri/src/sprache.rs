@@ -88,8 +88,7 @@ pub async fn sprache_vorladen(app: tauri::AppHandle, name: String) -> Result<(),
         let mut k = KONTEXT.lock().map_err(|_| "Spracherkennung ist blockiert".to_string())?;
         if k.as_ref().map(|(n, _)| n != &name).unwrap_or(true) {
             let pfad = dir.join(&name);
-            let ctx = WhisperContext::new_with_params(pfad.to_str().ok_or("Ungültiger Pfad")?, WhisperContextParameters::default())
-                .map_err(|e| format!("Sprachmodell lässt sich nicht laden: {e:?}"))?;
+            let ctx = kontext_laden(&pfad)?;
             *k = Some((name, ctx));
         }
         Ok(())
@@ -229,28 +228,74 @@ pub fn sprache_modell_loeschen(app: tauri::AppHandle, name: String) -> Result<()
     Ok(())
 }
 
-fn erkennen_blockierend(pfad: PathBuf, name: String, audio: Vec<f32>, hinweis: String) -> Result<String, String> {
+/// Grafikkarte für die Erkennung: true = das Modell läuft auf der Grafikkarte (Vulkan unter Windows, Metal am Mac)
+static GPU_AKTIV: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+/// Whisper-Modell laden: zuerst mit Grafikkarte (wenn eingebaut), bei Fehlern auf dem Prozessor
+fn kontext_laden(pfad: &std::path::Path) -> Result<WhisperContext, String> {
+    let p = pfad.to_str().ok_or("Ungültiger Pfad")?;
+    if cfg!(any(feature = "gpu-vulkan", target_os = "macos")) {
+        let mut cp = WhisperContextParameters::default();
+        cp.use_gpu(true);
+        if let Ok(ctx) = WhisperContext::new_with_params(p, cp) {
+            GPU_AKTIV.store(true, std::sync::atomic::Ordering::Relaxed);
+            return Ok(ctx);
+        }
+    }
+    let mut cp = WhisperContextParameters::default();
+    cp.use_gpu(false);
+    let ctx = WhisperContext::new_with_params(p, cp).map_err(|e| format!("Sprachmodell lässt sich nicht laden: {e:?}"))?;
+    GPU_AKTIV.store(false, std::sync::atomic::Ordering::Relaxed);
+    Ok(ctx)
+}
+
+/// Läuft die Erkennung auf der Grafikkarte? (für Einstellungen und Protokoll)
+#[tauri::command]
+pub fn sprache_gpu() -> bool {
+    GPU_AKTIV.load(std::sync::atomic::Ordering::Relaxed)
+}
+
+/// Ergebnis der Erkennung: Text und wie sicher sich das Modell ist (0–1, Mittel der Wort-Wahrscheinlichkeiten)
+struct Ergebnis {
+    text: String,
+    sicherheit: f32,
+}
+
+/// Aufnahme für die Erkennung vorbereiten: leise Aufnahmen anheben (höchstens 8-fach), kurze Stille davor und danach
+fn vorbereiten(audio: &[f32]) -> Vec<f32> {
+    let spitze = audio.iter().fold(0f32, |m, x| m.max(x.abs()));
+    let faktor = if spitze > 0.0005 { (0.8 / spitze).clamp(1.0, 8.0) } else { 1.0 };
+    let mut a = vec![0f32; 3200];
+    a.extend(audio.iter().map(|x| (x * faktor).clamp(-1.0, 1.0)));
+    a.extend(std::iter::repeat(0f32).take(6400));
+    a
+}
+
+fn erkennen_blockierend(pfad: PathBuf, name: String, audio: Vec<f32>, hinweis: String) -> Result<Ergebnis, String> {
     if name == PARAKEET {
         let dir = pfad.parent().map(|p| p.to_path_buf()).ok_or("Ungültiger Pfad")?;
-        return parakeet_erkennen(dir, audio);
+        return parakeet_erkennen(dir, audio).map(|text| Ergebnis { text, sicherheit: 1.0 });
     }
     let mut k = KONTEXT.lock().map_err(|_| "Spracherkennung ist blockiert".to_string())?;
     if k.as_ref().map(|(n, _)| n != &name).unwrap_or(true) {
         *k = None;
-        let pfad_str = pfad.to_str().ok_or("Ungültiger Pfad")?;
-        let ctx = WhisperContext::new_with_params(pfad_str, WhisperContextParameters::default())
-            .map_err(|e| format!("Sprachmodell lässt sich nicht laden: {e:?}"))?;
+        let ctx = kontext_laden(&pfad)?;
         *k = Some((name.clone(), ctx));
     }
     let (_, ctx) = k.as_ref().ok_or("Sprachmodell fehlt")?;
     let mut state = ctx.create_state().map_err(|e| format!("Spracherkennung startet nicht: {e:?}"))?;
-    let mut p = FullParams::new(SamplingStrategy::Greedy { best_of: 1 });
+    let gpu = GPU_AKTIV.load(std::sync::atomic::Ordering::Relaxed);
+    // mit Grafikkarte gründlicher (mehrere Fassungen vergleichen), auf dem Prozessor schnell
+    let strategie = if gpu { SamplingStrategy::BeamSearch { beam_size: 5, patience: -1.0 } } else { SamplingStrategy::Greedy { best_of: 1 } };
+    let mut p = FullParams::new(strategie);
     let threads = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(4).clamp(1, 8) as i32;
     p.set_n_threads(threads);
     p.set_language(Some("de"));
     p.set_translate(false);
     p.set_no_context(true);
     p.set_suppress_blank(true);
+    p.set_suppress_nst(true);
+    p.set_temperature(0.0);
     p.set_print_special(false);
     p.set_print_progress(false);
     p.set_print_realtime(false);
@@ -258,15 +303,29 @@ fn erkennen_blockierend(pfad: PathBuf, name: String, audio: Vec<f32>, hinweis: S
     if !hinweis.is_empty() {
         p.set_initial_prompt(&hinweis);
     }
-    state.full(p, &audio).map_err(|e| format!("Spracherkennung fehlgeschlagen: {e:?}"))?;
+    let a = vorbereiten(&audio);
+    state.full(p, &a).map_err(|e| format!("Spracherkennung fehlgeschlagen: {e:?}"))?;
     let n = state.full_n_segments().map_err(|e| format!("{e:?}"))?;
+    let eot = ctx.token_eot();
     let mut text = String::new();
+    let (mut summe, mut zahl) = (0f64, 0u32);
     for i in 0..n {
         if let Ok(t) = state.full_get_segment_text(i) {
             text.push_str(&t);
         }
+        let nt = state.full_n_tokens(i).unwrap_or(0);
+        for j in 0..nt {
+            let id = state.full_get_token_id(i, j).unwrap_or(eot);
+            if id >= eot {
+                continue;
+            }
+            let pr = state.full_get_token_prob(i, j).unwrap_or(0.0).clamp(1e-4, 1.0);
+            summe += (pr as f64).ln();
+            zahl += 1;
+        }
     }
-    Ok(text.trim().to_string())
+    let sicherheit = if zahl > 0 { (summe / zahl as f64).exp() as f32 } else { 0.0 };
+    Ok(Ergebnis { text: text.trim().to_string(), sicherheit })
 }
 
 /// Erkennt gesprochenen Text. Rohdaten: 16 kHz Mono, f32 little-endian.
@@ -288,7 +347,7 @@ pub async fn sprache_erkennen(app: tauri::AppHandle, request: Request<'_>) -> Re
     if audio.len() < 1600 {
         return Ok(String::new());
     }
-    tauri::async_runtime::spawn_blocking(move || erkennen_blockierend(pfad, name, audio, hinweis))
+    tauri::async_runtime::spawn_blocking(move || erkennen_blockierend(pfad, name, audio, hinweis).map(|e| e.text))
         .await
         .map_err(|e| e.to_string())?
 }
@@ -323,13 +382,20 @@ use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::Arc;
 
 struct Aufnahme {
+    id: u32,
+    /// wer aufnimmt: „eingabe“ (Spracheingabe), „funk“ (Sprechfunk), „live“ (Freisprechen mit dem Cloud-Anrufer)
+    besitz: &'static str,
+    seit: std::time::Instant,
     stopp: std::sync::mpsc::Sender<()>,
     faden: std::thread::JoinHandle<()>,
     daten: Arc<Mutex<Vec<f32>>>,
     rate: u32,
 }
 
-static AUFNAHME: Mutex<Option<Aufnahme>> = Mutex::new(None);
+/// Laufende Aufnahmen: mehrere gleichzeitig (Funk und Freisprechen), jede mit eigener Nummer.
+/// Eine Aufnahme beendet nie still eine andere – beendet wird nur über ihre Nummer.
+static AUFNAHMEN: Mutex<Vec<Aufnahme>> = Mutex::new(Vec::new());
+static NAECHSTE: AtomicU32 = AtomicU32::new(1);
 static PEGEL: AtomicU32 = AtomicU32::new(0);
 
 fn eingabe_geraet(name: &Option<String>) -> Result<cpal::Device, String> {
@@ -539,28 +605,23 @@ fn base64(b: &[u8]) -> String {
 
 /// Aufnahme starten (läuft, bis sprache_aufnahme_stopp kommt)
 #[tauri::command]
-pub fn sprache_aufnahme_start(mikro: Option<String>) -> Result<(), String> {
-    aufnahme_starten(mikro, None, false)
+pub fn sprache_aufnahme_start(mikro: Option<String>) -> Result<u32, String> {
+    aufnahme_starten(mikro, None, false, "eingabe")
 }
 
 /// Cloud-Anrufer: die Sprache geht laufend als 16-kHz-Stücke an das Fenster (und von dort an die Cloud)
 #[tauri::command]
-pub fn live_aufnahme_start(mikro: Option<String>, kanal: tauri::ipc::Channel<String>) -> Result<(), String> {
-    aufnahme_starten(mikro, Some(kanal), true)
+pub fn live_aufnahme_start(mikro: Option<String>, kanal: tauri::ipc::Channel<String>) -> Result<u32, String> {
+    aufnahme_starten(mikro, Some(kanal), true, "live")
 }
 
 /// Sprechfunk: wie sprache_aufnahme_start, die Sprache geht zusätzlich laufend in Stücken an das Fenster
 #[tauri::command]
-pub fn funk_aufnahme_start(mikro: Option<String>, funk: tauri::ipc::Channel<String>) -> Result<(), String> {
-    aufnahme_starten(mikro, Some(funk), false)
+pub fn funk_aufnahme_start(mikro: Option<String>, funk: tauri::ipc::Channel<String>) -> Result<u32, String> {
+    aufnahme_starten(mikro, Some(funk), false, "funk")
 }
 
-fn aufnahme_starten(mikro: Option<String>, funk: Option<tauri::ipc::Channel<String>>, pcm16: bool) -> Result<(), String> {
-    let mut a = AUFNAHME.lock().map_err(|_| "Aufnahme blockiert".to_string())?;
-    if let Some(alt) = a.take() {
-        let _ = alt.stopp.send(());
-        let _ = alt.faden.join();
-    }
+fn aufnahme_starten(mikro: Option<String>, funk: Option<tauri::ipc::Channel<String>>, pcm16: bool, besitz: &'static str) -> Result<u32, String> {
     PEGEL.store(0, Ordering::Relaxed);
     let daten = Arc::new(Mutex::new(Vec::<f32>::with_capacity(48_000 * 20)));
     let (stopp_tx, stopp_rx) = std::sync::mpsc::channel::<()>();
@@ -636,23 +697,65 @@ fn aufnahme_starten(mikro: Option<String>, funk: Option<tauri::ipc::Channel<Stri
     let rate = bereit_rx
         .recv_timeout(std::time::Duration::from_secs(10))
         .map_err(|_| "Mikrofon antwortet nicht".to_string())??;
-    *a = Some(Aufnahme { stopp: stopp_tx, faden, daten, rate });
-    Ok(())
+    let id = NAECHSTE.fetch_add(1, Ordering::Relaxed);
+    AUFNAHMEN
+        .lock()
+        .map_err(|_| "Aufnahme blockiert".to_string())?
+        .push(Aufnahme { id, besitz, seit: std::time::Instant::now(), stopp: stopp_tx, faden, daten, rate });
+    Ok(id)
+}
+
+/// Aufnahme herausnehmen: mit Nummer genau diese, ohne Nummer die neueste Spracheingabe (sonst die neueste überhaupt)
+fn aufnahme_nehmen(id: Option<u32>) -> Option<Aufnahme> {
+    let mut v = AUFNAHMEN.lock().ok()?;
+    let i = match id {
+        Some(id) => v.iter().position(|a| a.id == id)?,
+        None => v.iter().rposition(|a| a.besitz == "eingabe").or_else(|| if v.is_empty() { None } else { Some(v.len() - 1) })?,
+    };
+    Some(v.remove(i))
+}
+
+fn aufnahme_beenden(a: Aufnahme) -> (Vec<f32>, u32) {
+    let _ = a.stopp.send(());
+    let _ = a.faden.join();
+    let roh = a.daten.lock().map(|mut d| std::mem::take(&mut *d)).unwrap_or_default();
+    (roh, a.rate)
+}
+
+#[derive(Serialize)]
+pub struct AufnahmeInfo {
+    id: u32,
+    besitz: String,
+    sekunden: f32,
+}
+
+/// Laufende Aufnahmen (für die Sicherung im Fenster: was niemand mehr kennt, wird geschlossen)
+#[tauri::command]
+pub fn sprache_aufnahmen() -> Vec<AufnahmeInfo> {
+    AUFNAHMEN
+        .lock()
+        .map(|v| v.iter().map(|a| AufnahmeInfo { id: a.id, besitz: a.besitz.to_string(), sekunden: a.seit.elapsed().as_secs_f32() }).collect())
+        .unwrap_or_default()
 }
 
 /// Läuft gerade eine Aufnahme (Mikrofon offen)? Für die Sicherung im Fenster: niemand nimmt auf → schließen
 #[tauri::command]
 pub fn sprache_aufnahme_laeuft() -> bool {
-    AUFNAHME.lock().map(|a| a.is_some()).unwrap_or(false)
+    AUFNAHMEN.lock().map(|v| !v.is_empty()).unwrap_or(false)
 }
 
-/// Mikrofon schließen, ohne etwas zu erkennen (Sicherung: eine Aufnahme ist offen geblieben)
+/// Mikrofon schließen, ohne etwas zu erkennen: mit Nummer genau diese Aufnahme, ohne Nummer alle (Sicherung)
 #[tauri::command]
-pub fn sprache_aufnahme_abbrechen() {
-    let a = AUFNAHME.lock().ok().and_then(|mut a| a.take());
-    if let Some(a) = a {
-        let _ = a.stopp.send(());
-        let _ = a.faden.join();
+pub fn sprache_aufnahme_abbrechen(id: Option<u32>) {
+    let alle: Vec<Aufnahme> = match AUFNAHMEN.lock() {
+        Ok(mut v) => match id {
+            Some(id) => v.iter().position(|a| a.id == id).map(|i| vec![v.remove(i)]).unwrap_or_default(),
+            None => std::mem::take(&mut *v),
+        },
+        Err(_) => Vec::new(),
+    };
+    for a in alle {
+        let _ = aufnahme_beenden(a);
     }
 }
 
@@ -667,55 +770,109 @@ pub struct Erkannt {
     text: String,
     sekunden: f32,
     pegel: f32,
+    /// wie sicher die Erkennung ist (0–1); 1 = unbekannt bzw. sicher
+    sicherheit: f32,
+    /// Dauer der Erkennung (ms) und ob sie auf der Grafikkarte lief
+    ms: u32,
+    gpu: bool,
 }
 
+/// Auf 16 kHz umrechnen – mit Tiefpass (gefenstertes sinc), damit hohe Töne nicht als Störgeräusch zurückfalten
 fn auf_16k(d: &[f32], rate: u32) -> Vec<f32> {
     if rate == 16000 || d.is_empty() {
         return d.to_vec();
     }
     let f = rate as f64 / 16000.0;
     let n = (d.len() as f64 / f) as usize;
+    // Grenzfrequenz knapp unter 8 kHz (bezogen auf die Eingangsrate), beim Hochrechnen keine Dämpfung nötig
+    let fc = (0.92 / f).min(0.92) / 2.0;
+    const HALB: i64 = 24;
+    let sinc = |x: f64| if x.abs() < 1e-9 { 1.0 } else { (std::f64::consts::PI * x).sin() / (std::f64::consts::PI * x) };
+    let breite = if f > 1.0 { (HALB as f64 * f).ceil() as i64 } else { HALB };
+    let len = d.len() as i64;
     (0..n)
         .map(|i| {
             let x = i as f64 * f;
-            let a = x.floor() as usize;
-            let b = (a + 1).min(d.len() - 1);
-            let t = (x - a as f64) as f32;
-            d[a] + (d[b] - d[a]) * t
+            let mitte = x.floor() as i64;
+            let mut s = 0f64;
+            let mut w = 0f64;
+            for k in (mitte - breite + 1)..=(mitte + breite) {
+                if k < 0 || k >= len {
+                    continue;
+                }
+                let t = x - k as f64;
+                let fenster = 0.5 + 0.5 * (std::f64::consts::PI * t / (breite as f64 + 1.0)).cos();
+                let g = 2.0 * fc * sinc(2.0 * fc * t) * fenster;
+                s += d[k as usize] as f64 * g;
+                w += g;
+            }
+            if w.abs() > 1e-9 { (s / w) as f32 } else { 0.0 }
         })
         .collect()
 }
 
-/// Aufnahme beenden und erkennen (modell leer = nur beenden)
+/// Aufnahme beenden und erkennen (modell leer = nur beenden); id = genau diese Aufnahme
 #[tauri::command]
-pub async fn sprache_aufnahme_stopp(app: tauri::AppHandle, modell: String, hinweis: String) -> Result<Erkannt, String> {
+pub async fn sprache_aufnahme_stopp(app: tauri::AppHandle, modell: String, hinweis: String, id: Option<u32>) -> Result<Erkannt, String> {
     // kurz nachlaufen lassen, damit das letzte Wort nicht abgeschnitten wird
     tokio::time::sleep(std::time::Duration::from_millis(250)).await;
-    let a = AUFNAHME.lock().map_err(|_| "Aufnahme blockiert".to_string())?.take();
-    let Some(a) = a else { return Err("Es läuft keine Aufnahme".into()) };
-    let _ = a.stopp.send(());
-    let _ = a.faden.join();
-    let roh = std::mem::take(&mut *a.daten.lock().map_err(|_| "Aufnahme blockiert".to_string())?);
-    let audio = auf_16k(&roh, a.rate);
-    let sekunden = audio.len() as f32 / 16000.0;
-    let pegel = if audio.is_empty() { 0.0 } else { (audio.iter().map(|x| x * x).sum::<f32>() / audio.len() as f32).sqrt() };
+    let Some(a) = aufnahme_nehmen(id) else { return Err("Es läuft keine Aufnahme".into()) };
+    let (roh, rate) = tauri::async_runtime::spawn_blocking(move || aufnahme_beenden(a)).await.map_err(|e| e.to_string())?;
+    let leer = |sekunden: f32, pegel: f32| Erkannt { text: String::new(), sekunden, pegel, sicherheit: 1.0, ms: 0, gpu: false };
+    let sekunden = roh.len() as f32 / rate.max(1) as f32;
+    let pegel = if roh.is_empty() { 0.0 } else { (roh.iter().map(|x| x * x).sum::<f32>() / roh.len() as f32).sqrt() };
     if modell.is_empty() || sekunden < 0.3 || pegel < 0.003 {
-        return Ok(Erkannt { text: String::new(), sekunden, pegel });
+        return Ok(leer(sekunden, pegel));
     }
     pruefe_name(&modell)?;
     let pfad = modell_ordner(&app)?.join(&modell);
     if !modell_da(&modell_ordner(&app)?, &modell) {
         return Err("Sprachmodell ist noch nicht geladen (Einstellungen → Persönlich → Sprache)".into());
     }
-    let text = tauri::async_runtime::spawn_blocking(move || erkennen_blockierend(pfad, modell, audio, hinweis))
-        .await
-        .map_err(|e| e.to_string())??;
-    Ok(Erkannt { text, sekunden, pegel })
+    let start = std::time::Instant::now();
+    let e = tauri::async_runtime::spawn_blocking(move || {
+        let audio = auf_16k(&roh, rate);
+        erkennen_blockierend(pfad, modell, audio, hinweis)
+    })
+    .await
+    .map_err(|e| e.to_string())??;
+    Ok(Erkannt {
+        text: e.text,
+        sekunden,
+        pegel,
+        sicherheit: e.sicherheit,
+        ms: start.elapsed().as_millis() as u32,
+        gpu: GPU_AKTIV.load(Ordering::Relaxed),
+    })
 }
 
 #[cfg(test)]
 mod funk_tests {
     use super::*;
+
+    #[test]
+    fn umrechnen_ohne_rueckfaltung() {
+        // 1 s 440 Hz bei 48 kHz: bleibt nach dem Umrechnen gleich laut; 12 kHz (über der Grenze) wird gedämpft
+        let ton = |hz: f32| (0..48000).map(|i| (2.0 * std::f32::consts::PI * hz * i as f32 / 48000.0).sin() * 0.5).collect::<Vec<f32>>();
+        let rms = |v: &[f32]| (v.iter().map(|x| x * x).sum::<f32>() / v.len() as f32).sqrt();
+        let a = auf_16k(&ton(440.0), 48000);
+        assert!((a.len() as i32 - 16000).abs() <= 1, "{}", a.len());
+        assert!((rms(&a[200..15800]) - 0.3536).abs() < 0.02, "{}", rms(&a));
+        let b = auf_16k(&ton(12000.0), 48000);
+        assert!(rms(&b[200..15800]) < 0.05, "Rückfaltung {}", rms(&b));
+        // 44,1 kHz geht auch
+        let c = auf_16k(&vec![0.25f32; 44100], 44100);
+        assert!((c[8000] - 0.25).abs() < 0.01);
+    }
+
+    #[test]
+    fn vorbereiten_hebt_leise_an() {
+        let v = vorbereiten(&vec![0.05f32; 1600]);
+        assert_eq!(v.len(), 1600 + 3200 + 6400);
+        assert!((v[3200] - 0.4).abs() < 1e-4, "{}", v[3200]);
+        let laut = vorbereiten(&vec![0.9f32; 10]);
+        assert!((laut[3200] - 0.9).abs() < 1e-4);
+    }
 
     #[test]
     fn ulaw_wie_im_fenster() {

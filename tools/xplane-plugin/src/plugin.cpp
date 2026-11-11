@@ -477,6 +477,7 @@ struct Taste {
   XPLMCommandRef ref = nullptr;
   float hub = 0;
   bool gedrueckt = false;
+  float halt = 0;    // letztes Lebenszeichen der gehaltenen Sprechtaste
 };
 static Taste tasten[] = {
     {"KEY_0", "tt:0", 0}, {"KEY_1", "tt:1", 0}, {"KEY_2", "tt:2", 0}, {"KEY_3", "tt:3", 0}, {"KEY_4", "tt:4", 0},
@@ -493,6 +494,7 @@ static int tetraTaste(XPLMCommandRef, XPLMCommandPhase phase, void* ref) {
   Taste& k = *(Taste*)ref;
   if (phase == xplm_CommandBegin) {
     k.gedrueckt = true;
+    k.halt = XPLMGetElapsedTime();
     if (k.sonder == 1) tetraEin = !tetraEin;
     if (k.sonder == 2) tetraZielwinkel -= 15;
     if (k.sonder == 3) tetraZielwinkel += 15;
@@ -501,6 +503,13 @@ static int tetraTaste(XPLMCommandRef, XPLMCommandPhase phase, void* ref) {
       if (k.sonder == 4) netz::senden("funk_an");
     }
     if (xAvionicsNeedsDrawing && sTetra.av) xAvionicsNeedsDrawing(sTetra.av);
+  } else if (phase == xplm_CommandContinue && k.sonder == 4 && tetraStrom > 0.5f) {
+    // grüne Taste gehalten: Lebenszeichen jede Sekunde
+    float jetzt = XPLMGetElapsedTime();
+    if (jetzt - k.halt >= 1.0f) {
+      k.halt = jetzt;
+      netz::senden("funk_halt");
+    }
   } else if (phase == xplm_CommandEnd) {
     k.gedrueckt = false;
     if (k.sonder == 4) netz::senden("funk_aus");
@@ -618,6 +627,7 @@ struct Befehl {
   const char* aus;  // beim Loslassen (Sprechtaste)
   int art;          // 0 = an LeitWerk, 1 = Tablet ein/aus, 2 = Zielort, 3 = Status geben, 4 = Karte, 5/6/7 = Cockpit-Tablet LeitWerk um/an/aus
   XPLMCommandRef ref;
+  float halt = 0;   // letztes Lebenszeichen der gehaltenen Sprechtaste
 };
 static Befehl befehle[] = {
     {"leitwerk/tablet", "LeitWerk: Tablet zeigen/verbergen", nullptr, nullptr, 1, nullptr},
@@ -658,6 +668,16 @@ static int befehl(XPLMCommandRef, XPLMCommandPhase phase, void* ref) {
       case 7: tabletApp = 0; break;
     }
     if (b.art >= 5 && xAvionicsNeedsDrawing && sTablet.av) xAvionicsNeedsDrawing(sTablet.av);
+    b.halt = XPLMGetElapsedTime();
+  } else if (phase == xplm_CommandContinue && b.aus) {
+    // Sprechtaste gehalten: jede Sekunde ein Lebenszeichen („funk_halt“) – fehlt es, beendet LeitWerk die Sendung
+    float jetzt = XPLMGetElapsedTime();
+    if (jetzt - b.halt >= 1.0f) {
+      b.halt = jetzt;
+      std::string h = b.an;
+      size_t u = h.rfind("_an");
+      if (u != std::string::npos) netz::senden((h.substr(0, u) + "_halt").c_str());
+    }
   } else if (phase == xplm_CommandEnd && b.aus) netz::senden(b.aus);
   return 0;
 }
