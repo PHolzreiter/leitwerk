@@ -1,6 +1,6 @@
 ### npm install
 
-added 52 packages, and audited 53 packages in 7s
+added 52 packages, and audited 53 packages in 9s
 
 9 packages are looking for funding
   run `npm fund` for details
@@ -79,20 +79,20 @@ computing gzip size...
 [2mdist/[22m[2massets/[22m[32mbg-32x9-abend-DLJpcJQK.jpg           [39m[1m[2m1,159.39 kB[22m[1m[22m
 [2mdist/[22m[2massets/[22m[32meinsatzstellen-BKMVXWRH.csv          [39m[1m[2m2,885.41 kB[22m[1m[22m
 [2mdist/[22m[2massets/[22m[35mindex-1RsdzNem.css                   [39m[1m[2m  475.66 kB[22m[1m[22m[2m │ gzip:    74.68 kB[22m
-[2mdist/[22m[2massets/[22m[36mdist-js-BT2zVwCv.js                  [39m[1m[2m    0.54 kB[22m[1m[22m[2m │ gzip:     0.26 kB[22m
-[2mdist/[22m[2massets/[22m[36mwebviewWindow-CbESxdip.js            [39m[1m[2m    1.78 kB[22m[1m[22m[2m │ gzip:     0.80 kB[22m
-[2mdist/[22m[2massets/[22m[36mfussleiste-Dxb20sq4.js               [39m[1m[2m    2.37 kB[22m[1m[22m[2m │ gzip:     1.19 kB[22m
-[2mdist/[22m[2massets/[22m[36mwebview-DaQYjKN7.js                  [39m[1m[2m    3.34 kB[22m[1m[22m[2m │ gzip:     1.14 kB[22m
-[2mdist/[22m[2massets/[22m[36mpath-D23SgqI7.js                     [39m[1m[2m    3.76 kB[22m[1m[22m[2m │ gzip:     0.91 kB[22m
-[2mdist/[22m[2massets/[22m[36mwindow-Dbu0Pq3k.js                   [39m[1m[2m   14.32 kB[22m[1m[22m[2m │ gzip:     3.56 kB[22m
-[2mdist/[22m[2massets/[22m[36mzeilen-5zIa8chE.js                   [39m[1m[2m   52.44 kB[22m[1m[22m[2m │ gzip:    20.33 kB[22m
-[2mdist/[22m[2massets/[22m[36mindex-CIxR59-o.js                    [39m[1m[33m6,552.02 kB[39m[22m[2m │ gzip: 1,816.52 kB[22m
+[2mdist/[22m[2massets/[22m[36mdist-js-BCDKOvhh.js                  [39m[1m[2m    0.54 kB[22m[1m[22m[2m │ gzip:     0.26 kB[22m
+[2mdist/[22m[2massets/[22m[36mwebviewWindow-roKrj8By.js            [39m[1m[2m    1.78 kB[22m[1m[22m[2m │ gzip:     0.79 kB[22m
+[2mdist/[22m[2massets/[22m[36mfussleiste-B5zLfTlk.js               [39m[1m[2m    2.37 kB[22m[1m[22m[2m │ gzip:     1.19 kB[22m
+[2mdist/[22m[2massets/[22m[36mwebview-Dmfq-ewq.js                  [39m[1m[2m    3.34 kB[22m[1m[22m[2m │ gzip:     1.13 kB[22m
+[2mdist/[22m[2massets/[22m[36mpath-BIT8YIFX.js                     [39m[1m[2m    3.76 kB[22m[1m[22m[2m │ gzip:     0.91 kB[22m
+[2mdist/[22m[2massets/[22m[36mwindow-DeNWAbiu.js                   [39m[1m[2m   14.32 kB[22m[1m[22m[2m │ gzip:     3.56 kB[22m
+[2mdist/[22m[2massets/[22m[36mzeilen-B7YwxO-K.js                   [39m[1m[2m   52.44 kB[22m[1m[22m[2m │ gzip:    20.33 kB[22m
+[2mdist/[22m[2massets/[22m[36mindex-CiA5-SgJ.js                    [39m[1m[33m6,553.47 kB[39m[22m[2m │ gzip: 1,817.02 kB[22m
 [33m
 (!) Some chunks are larger than 2000 kB after minification. Consider:
 - Using dynamic import() to code-split the application
 - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
 - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.[39m
-[32m✓ built in 8.62s[39m
+[32m✓ built in 9.38s[39m
 ### npx tauri icon app-icon.png
         Appx Creating StoreLogo.png
         Appx Creating Square30x30Logo.png
@@ -174,7 +174,7 @@ computing gzip size...
    [1m[94m|[0m     [1m[33m^^^^^^^^^^^^^^[0m
 
 [1m[33mwarning[0m: `leitwerk` (lib) generated 4 warnings (run `cargo fix --lib -p leitwerk` to apply 2 suggestions)
-[1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 12.01s
+[1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 4.90s
 ### python3 tools/build_default_data.py
 data/default/dienststellen.csv: 863 Zeilen
 data/default/fahrzeuge.csv: 681 Zeilen
