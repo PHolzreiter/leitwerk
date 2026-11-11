@@ -2311,7 +2311,9 @@ function funkDialog(): void {
     <label>Mikrofon<select class="plt-f-mikro"><option value="">Standard-Mikrofon</option></select></label>
     <div class="plt-f-modell"></div>
     <label class="plt-check"><input type="checkbox" class="plt-f-klang" ${p.klangfilter ? "checked" : ""}> Funk-Klang (blechern, kurzes Rauschen beim Loslassen)</label>
-    <label>Lautstärke Sprechfunk (Stimmen der Mitspieler)<input type="range" min="0" max="100" step="5" class="plt-f-laut" value="${p.funkLaut}"></label>
+    <label>Funkempfang Mitspieler (echte Disponenten und Piloten)<input type="range" min="0" max="150" step="5" class="plt-f-laut" value="${p.funkLaut}"></label>
+    <label>Funkempfang KI (Fahrzeuge des Computers)<input type="range" min="0" max="150" step="5" class="plt-f-lautki" value="${p.funkLautKi ?? 100}"></label>
+    <label>Funksenden (wie laut du bei den anderen ankommst)<input type="range" min="0" max="200" step="5" class="plt-f-sende" value="${p.funkSendeLaut ?? 100}"></label>
     <label class="plt-check"><input type="checkbox" class="plt-f-vorlesen" ${p.funkVorlesen ? "checked" : ""}> Funk der Fahrzeuge vorlesen (Stimmen des Computers)</label>
     <label class="plt-check"><input type="checkbox" class="plt-f-mit" ${p.mithoeren ? "checked" : ""}> Übrigen Funkverkehr mithören (Fahrzeuge ↔ Leitstelle)</label>
     <label>Lautstärke mitgehörter Funk<input type="range" min="10" max="100" step="5" class="plt-f-mitlaut" value="${p.mithoerenLaut}"></label>
@@ -2361,6 +2363,8 @@ function funkDialog(): void {
   const an = (sel: string, f: (x: HTMLInputElement) => void) => body.querySelector<HTMLInputElement>(sel)!.addEventListener("change", (ev) => f(ev.target as HTMLInputElement));
   an(".plt-f-klang", (x) => setzeSprache({ klangfilter: x.checked }));
   an(".plt-f-laut", (x) => setzeSprache({ funkLaut: Number(x.value) }));
+  an(".plt-f-lautki", (x) => setzeSprache({ funkLautKi: Number(x.value) }));
+  an(".plt-f-sende", (x) => setzeSprache({ funkSendeLaut: Number(x.value) }));
   an(".plt-f-vorlesen", (x) => setzeSprache({ funkVorlesen: x.checked }));
   an(".plt-f-mit", (x) => setzeSprache({ mithoeren: x.checked }));
   an(".plt-f-mitlaut", (x) => setzeSprache({ mithoerenLaut: Number(x.value) }));

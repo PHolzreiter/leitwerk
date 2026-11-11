@@ -4,9 +4,10 @@
  */
 import { Channel, invoke } from "@tauri-apps/api/core";
 import { liveFreisprechen, liveVorwaermen } from "../abfrage/gespraech";
-import { liveAktiv, livePrefs, prefsHoerer } from "../abfrage/liveKi";
+import { anruferTon, liveAktiv, livePrefs, prefsHoerer } from "../abfrage/liveKi";
 import { inTauri } from "../platform";
 import { sim, type Einsatz } from "../sim/engine";
+import { protokoll } from "../protokoll";
 import { el, toast } from "./dom";
 import { istGespraechsfuehrer } from "./panels/notrufAbfrage";
 import { aufnahmeIds, dauerAufnahme, pcm16b64, sprachPrefs } from "./sprache";
@@ -32,9 +33,62 @@ function anzeigen(an: boolean): void {
   if (anzeige) anzeige.hidden = !an;
 }
 
+/**
+ * Sprach-Tor vor Gemini: Geräusche (Tippen, Atmen, Rascheln, Rest der eigenen Stimme im Kopfhörer) gehen als Stille
+ * hinaus, damit Gemini den Anrufer nicht unterbricht. Spricht der Anrufer gerade, muss die Stimme deutlich lauter sein
+ * als das Grundrauschen und etwas länger dauern; der Anfang wird aus einem kurzen Puffer nachgereicht.
+ */
+export function sprachTor(senden: (b64: string) => void, jetzt: () => number = Date.now, anruferSpricht: () => boolean = () => jetzt() < anruferTon.bis + 300) {
+  let boden = 0.004;
+  let ueber = 0;
+  let offenBis = 0;
+  let durch = 0;
+  let still = 0;
+  const vorlauf: string[] = [];
+  return {
+    stueck(b64: string): void {
+      const roh = atob(b64);
+      const n = roh.length >> 1;
+      if (!n) return;
+      let q = 0;
+      for (let i = 0; i < n; i++) {
+        let v = roh.charCodeAt(2 * i) | (roh.charCodeAt(2 * i + 1) << 8);
+        if (v >= 0x8000) v -= 0x10000;
+        q += (v / 32768) ** 2;
+      }
+      const rms = Math.sqrt(q / n);
+      const ms = (n / 16000) * 1000;
+      // Grundrauschen: fällt schnell, steigt nur langsam (Sprache hebt es kaum)
+      boden = rms < boden ? boden * 0.8 + rms * 0.2 : boden * 0.997 + rms * 0.003;
+      const anrufer = anruferSpricht();
+      const schwelle = anrufer ? Math.max(0.035, boden * 6) : Math.max(0.012, boden * 3);
+      ueber = rms > schwelle ? Math.min(400, ueber + ms) : Math.max(0, ueber - ms);
+      const t = jetzt();
+      if (ueber >= (anrufer ? 250 : 150)) {
+        if (t >= offenBis) for (const v of vorlauf.splice(0)) senden(v);
+        offenBis = t + 700;
+      }
+      if (t < offenBis) {
+        durch++;
+        senden(b64);
+        return;
+      }
+      still++;
+      vorlauf.push(b64);
+      if (vorlauf.length > 4) vorlauf.shift();
+      // Stille (gleich lang) – Gemini merkt so das Ende der Rede
+      senden(btoa("\0".repeat(n * 2)));
+    },
+    zahlen: () => ({ durch, still }),
+  };
+}
+
 async function starten(e: Einsatz): Promise<void> {
-  const senden = liveFreisprechen(e);
-  if (!senden) return;
+  const roh = liveFreisprechen(e);
+  if (!roh) return;
+  const tor = sprachTor(roh);
+  const senden = (b64: string) => tor.stueck(b64);
+  torJetzt = tor;
   startet = true;
   laeuftFuer = e.id;
   try {
@@ -62,9 +116,13 @@ async function starten(e: Einsatz): Promise<void> {
   }
 }
 
+let torJetzt: ReturnType<typeof sprachTor> | null = null;
+
 async function beenden(): Promise<void> {
   if (!laeuftFuer) return;
   laeuftFuer = null;
+  if (torJetzt) protokoll("freisprechen", { ende: true, ...torJetzt.zahlen() });
+  torJetzt = null;
   anzeigen(false);
   if (web) {
     web.q.disconnect();

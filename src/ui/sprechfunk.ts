@@ -13,7 +13,7 @@ import { inTauri } from "../platform";
 import { mp } from "../net/mehrspieler";
 import { sim, SPRECHGRUPPEN, type Sprechgruppe } from "../sim/engine";
 import { toast } from "./dom";
-import { FUNK_RATE, FunkKodierer, funkDekodieren } from "./funkCodec";
+import { FUNK_RATE, FunkKodierer, funkDekodieren, funkVerstaerken } from "./funkCodec";
 import { istPilot } from "./pilot/modus";
 import { tonBeginn, tonEinsatzRein, tonEnde, tonStatusDruck, tonStatusGesendet } from "./funkToene";
 import { aufnahmeIds, aufnahmeLaeuftJetzt, aufnahmeSperre, funkHaken, funkHoerHaken, funkTonHaken, sprachPrefs, sprachStatus, sprachTest, sprechTasteAnFunk, tastenBelegung, verstummen } from "./sprache";
@@ -80,10 +80,10 @@ export function onFunkEmpfang(fn: () => void): () => void {
 }
 
 /** Klangkette eines Stroms: Lautstärke → (Funk-Klang: Bandpass 300–3000 Hz, leicht übersteuert) → Ausgang */
-function kette(c: AudioContext): GainNode {
+function kette(c: AudioContext, ki = false): GainNode {
   const p = sprachPrefs();
   const g = c.createGain();
-  g.gain.value = Math.max(0, Math.min(1.5, p.funkLaut / 100));
+  g.gain.value = Math.max(0, Math.min(1.5, (ki ? (p.funkLautKi ?? 100) : p.funkLaut) / 100));
   if (!p.klangfilter) {
     g.connect(c.destination);
     return g;
@@ -121,7 +121,7 @@ function rauschen(c: AudioContext, ab: number): void {
 }
 
 /** Ton des Funkgeräts hier abspielen (eigene Sprechtaste, vorgelesene Funksprüche); laut 0 = nicht */
-export function funkTon(art: "beginn" | "ende" | "statusDruck" | "statusGesendet" | "einsatzRein", laut = 1): number {
+export function funkTon(art: "beginn" | "ende" | "statusDruck" | "statusGesendet" | "einsatzRein", laut = 1, ki = false): number {
   if (laut <= 0) return 0;
   try {
     const c = audio();
@@ -131,7 +131,7 @@ export function funkTon(art: "beginn" | "ende" | "statusDruck" | "statusGesendet
       g = c.createGain();
       g.gain.value = Math.max(0, Math.min(1.5, sprachPrefs().funkLaut / 100));
       g.connect(c.destination);
-    } else g = kette(c);
+    } else g = kette(c, ki);
     g.gain.value *= laut;
     const bis = art === "beginn" ? tonBeginn(c, g) : art === "ende" ? tonEnde(c, g) : art === "statusDruck" ? tonStatusDruck(c, g) : art === "einsatzRein" ? tonEinsatzRein(c, g) : tonStatusGesendet(c, g);
     setTimeout(() => g.disconnect(), (bis - c.currentTime) * 1000 + 300);
@@ -141,7 +141,8 @@ export function funkTon(art: "beginn" | "ende" | "statusDruck" | "statusGesendet
   }
 }
 
-funkTonHaken.ton = (art, laut) => funkTon(art, laut);
+// Töne zu einem vorgelesenen Funkspruch eines Computer-Fahrzeugs: Lautstärke „Funkempfang KI“
+funkTonHaken.ton = (art, laut) => funkTon(art, laut, true);
 
 /** kurzer Doppelton: Kanal belegt */
 function belegtTon(): void {
@@ -205,7 +206,7 @@ function empfangen(pid: string, name: string, d: Record<string, unknown>): void 
     const c = audio();
     let st = stroeme.get(sId);
     if (!st) {
-      const eingang = kette(c);
+      const eingang = kette(c, !!d.ki);
       st = { von: String(d.v ?? name), wer: String(d.w ?? name), cursor: c.currentTime + PUFFER, letzte: Date.now(), eingang, basis: eingang.gain.value, d };
       st.eingang.gain.value = st.basis * stromLaut(d, st.von);
       // Beginn-Ton des Funkgeräts vor der Stimme
@@ -368,6 +369,9 @@ function stueck(s: Sendung, b64: string): void {
   const rms = Math.sqrt(q / Math.max(1, x.length));
   pegel = Math.max(rms, pegel * 0.6);
   if (s.frei) pegelMax = Math.max(pegelMax, rms);
+  // Funksenden: eigene Lautstärke (was die anderen hören; die Erkennung hier nimmt die Aufnahme selbst)
+  const sende = Math.max(0, Math.min(2, (sprachPrefs().funkSendeLaut ?? 100) / 100));
+  if (Math.abs(sende - 1) > 0.02) b64 = funkVerstaerken(b64, sende);
   s.mitschrift?.stueck(auf16kB64(b64));
   const d = { k: "a", s: s.id, n: s.n++, v: s.von, w: s.wer, r: s.gruppe ?? null, b: b64 };
   if (s.frei) schicken(d);

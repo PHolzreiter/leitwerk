@@ -60,6 +60,19 @@ export function funkDekodieren(b64: string): Float32Array<ArrayBuffer> {
   return out;
 }
 
+/** Stück lauter oder leiser machen (Funksenden-Regler); lauter mit weicher Begrenzung statt hartem Übersteuern */
+export function funkVerstaerken(b64: string, faktor: number): string {
+  const x = funkDekodieren(b64);
+  const b = new Uint8Array(x.length);
+  for (let i = 0; i < x.length; i++) {
+    const v = x[i] * faktor;
+    const a = Math.abs(v);
+    // bis 0,7 unverändert, darüber sanft gegen 1 (kein Klirren bei lauten Stellen)
+    b[i] = ulawByte(a <= 0.7 ? v : Math.sign(v) * (0.7 + 0.3 * Math.tanh((a - 0.7) / 0.3)));
+  }
+  return nachBase64(b);
+}
+
 /**
  * Mikrofon (beliebige Abtastrate) → Stücke à 100 ms (8 kHz, μ-law, Base64).
  * Vor dem Ausdünnen wird gemittelt (einfacher Tiefpass), damit nichts klirrt.

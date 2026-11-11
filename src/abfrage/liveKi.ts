@@ -164,6 +164,9 @@ class Telefonfilter {
   }
 }
 
+/** Bis wann der Anrufer (Gemini) voraussichtlich noch spricht (Date.now()-Zeit) – fürs Freisprechen */
+export const anruferTon = { bis: 0 };
+
 /** Wiedergabe: Stücke sammeln und der Reihe nach abspielen */
 class Wiedergabe {
   private stuecke: Float32Array[] = [];
@@ -181,6 +184,7 @@ class Wiedergabe {
   dazu(pcm16: Int16Array, rate: number): void {
     if (this.abgebrochen) return;
     this.rate = rate;
+    anruferTon.bis = Math.max(anruferTon.bis, Date.now()) + (pcm16.length / Math.max(1, rate)) * 1000;
     const f = new Float32Array(pcm16.length);
     for (let i = 0; i < pcm16.length; i++) f[i] = pcm16[i] / 32768;
     this.filter?.verarbeiten(f);
@@ -200,6 +204,7 @@ class Wiedergabe {
   stopp(): void {
     this.abgebrochen = true;
     this.stuecke = [];
+    anruferTon.bis = 0;
     if (inTauri()) void invoke("ton_stopp", { id: "stimme-live-*" }).catch(() => undefined);
     void this.ctx?.close().catch(() => undefined);
     this.ctx = null;
@@ -324,7 +329,12 @@ class Sitzung {
             inputAudioTranscription: {},
             // Sprechtaste: wir sagen selbst, wann die Leitstelle redet; Freisprechen: Gemini erkennt es selbst
             ...(opt.frei
-              ? { realtimeInputConfig: { automaticActivityDetection: { disabled: false, endOfSpeechSensitivity: "END_SENSITIVITY_LOW", silenceDurationMs: 700 } } }
+              ? {
+                  // Sprechbeginn nur bei deutlicher Sprache (nicht bei Tippen, Atmen, Rascheln) – sonst unterbricht sich der Anrufer
+                  realtimeInputConfig: {
+                    automaticActivityDetection: { disabled: false, startOfSpeechSensitivity: "START_SENSITIVITY_LOW", prefixPaddingMs: 300, endOfSpeechSensitivity: "END_SENSITIVITY_LOW", silenceDurationMs: 700 },
+                  },
+                }
               : { realtimeInputConfig: { automaticActivityDetection: { disabled: true } } }),
           },
         }),

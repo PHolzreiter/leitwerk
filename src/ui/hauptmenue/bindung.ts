@@ -455,7 +455,9 @@ export function einstellungsBindung(geladen?: () => void): EinstellungsBindung {
     echteD: { l: () => funkGruppenWahl().echteDispos !== false, s: (w) => (funkGruppenSetzen({ echteDispos: w === undefined ? true : !!w }), true) },
     echteP: { l: () => funkGruppenWahl().echtePiloten !== false, s: (w) => (funkGruppenSetzen({ echtePiloten: w === undefined ? true : !!w }), true) },
     fklang: sprBool("klangfilter"),
-    sfLaut: sprZahl("funkLaut", 0, 100),
+    sfLaut: sprZahl("funkLaut", 0, 150),
+    sfLautKi: sprZahl("funkLautKi", 0, 150),
+    sfSende: sprZahl("funkSendeLaut", 0, 200),
     // ---------------- Pilot
     simwx: {
       l: () => SIMWX.text(vorgabe().wetter ?? "leitwerk"),

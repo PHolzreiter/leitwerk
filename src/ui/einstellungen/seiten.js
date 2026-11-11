@@ -449,7 +449,9 @@ export class SeitenBasis {
           T('Echte Disponenten hören', 'echteD', true, 'Mehrspieler'),
           T('Echte Piloten hören', 'echteP', true, 'Mehrspieler'),
           T('Funk-Klang', 'fklang', true, 'Blechern, kurzes Rauschen beim Loslassen'),
-          R('Lautstärke Sprechfunk', 'sfLaut', 0, 100, 5, 80, pct)
+          R('Funkempfang Mitspieler', 'sfLaut', 0, 150, 5, 90, pct, 'Stimmen echter Spieler (Disponenten, Piloten) am Funk'),
+          R('Funkempfang KI', 'sfLautKi', 0, 150, 5, 100, pct, 'Fahrzeuge, die der Computer spricht'),
+          R('Funksenden', 'sfSende', 0, 200, 5, 100, pct, 'Wie laut deine Stimme bei den anderen ankommt')
         ]},
         { id: 'whisper', sub: true, parent: 'mikro', label: 'Erkennung (Whisper)', info: 'Modelle', kw: 'whisper spracherkennung modell', rows: [
           IT('Schnell', '140 MB · für jeden Rechner', 'geladen', grau, { btns: [{ l: 'Verwenden', ok: 'Wird verwendet' }] }),

@@ -51,8 +51,12 @@ export interface SprachPrefs {
   funkTaste10: string;
   /** Sprechfunk: Funk-Klang (blechern, kurzes Rauschen beim Loslassen) */
   klangfilter: boolean;
-  /** Lautstärke des Sprechfunks (Stimmen der Mitspieler) 0–100 */
+  /** Funkempfang Mitspieler: Lautstärke der Stimmen echter Spieler am Funk 0–150 */
   funkLaut: number;
+  /** Funkempfang KI: Lautstärke der Computer-Fahrzeuge am Funk 0–150 (100 = wie die Stimmen am Telefon) */
+  funkLautKi: number;
+  /** Funksenden: wie laut die eigene Stimme bei den anderen ankommt 0–200 (100 = unverändert) */
+  funkSendeLaut: number;
   /** Pilot: übrigen Funkverkehr (Fahrzeuge ↔ Leitstelle) mithören */
   mithoeren: boolean;
   /** Pilot: Lautstärke des mitgehörten Funkverkehrs 0–100 (Anteil der normalen Lautstärke) */
@@ -83,6 +87,8 @@ export const SPRACH_STANDARD: SprachPrefs = {
   funkTaste10: "",
   klangfilter: true,
   funkLaut: 90,
+  funkLautKi: 100,
+  funkSendeLaut: 100,
   mithoeren: true,
   mithoerenLaut: 50,
 };
@@ -552,6 +558,9 @@ export function funkSagt(funkname: string, text: string, laut = 1, melden?: { be
   melden?.beginn?.();
   // Töne des Funkgeräts davor und danach
   const ton = funkTonHaken.ton;
+  // Funkempfang KI (eigener Regler); die Töne des Funkgeräts dazu gleich laut
+  const ki = Math.max(0, Math.min(1.5, (p.funkLautKi ?? 100) / 100));
+  if (ki <= 0) return;
   let fertig = false;
   const ende = () => {
     if (fertig) return;
@@ -561,7 +570,7 @@ export function funkSagt(funkname: string, text: string, laut = 1, melden?: { be
   };
   const los = () => {
     // jedes Fahrzeug spricht etwas anders schnell (sonst klingen alle gleich)
-    sagen(funkAussprache(text), hash(funkname) < 0.3 ? "w" : "m", funkname, 0.98 + hash(`${funkname}|tempo`) * 0.2, undefined, laut, ende, sprachPrefs().geraetFunk || undefined);
+    sagen(funkAussprache(text), hash(funkname) < 0.3 ? "w" : "m", funkname, 0.98 + hash(`${funkname}|tempo`) * 0.2, undefined, laut * ki, ende, sprachPrefs().geraetFunk || undefined);
     // falls die Stimme kein Ende meldet
     setTimeout(ende, 2500 + text.split(/\s+/).length * 600);
   };

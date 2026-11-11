@@ -663,9 +663,15 @@ fn aufnahme_starten(mikro: Option<String>, funk: Option<tauri::ipc::Channel<Stri
                                 _ => true,
                             };
                             let neu: Vec<f32> = match d3.lock() {
-                                Ok(v) => {
+                                Ok(mut v) => {
                                     let x = v[ab.min(v.len())..].to_vec();
-                                    ab = v.len();
+                                    // Freisprechen: nur weiterreichen, nichts aufheben (sonst wächst der Speicher über den ganzen Anruf)
+                                    if pcm16 {
+                                        v.clear();
+                                        ab = 0;
+                                    } else {
+                                        ab = v.len();
+                                    }
                                     x
                                 }
                                 Err(_) => Vec::new(),
