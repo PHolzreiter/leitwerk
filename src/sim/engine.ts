@@ -43,6 +43,7 @@ import {
   type WetterLage,
   type WetterOpt,
   type WetterWerte,
+  LAGE,
 } from "./weather";
 import { bestimmeCode, fallZiehen, kapitelVonCode, nfStufe, wahrheitFuer, type Antworten, type Schema } from "../abfrage/schema";
 import { anruferWaehlen, flughafenAnrufer, stimmungZumFall, ortKandidaten, veraenderungText, zufallsName, type Anrufer } from "../abfrage/anrufer";
@@ -1382,6 +1383,8 @@ export class Simulation {
   ich: Bearbeiter | null = null;
   /** Testmodus für Piloten: Spiel nur auf diesem Rechner, ohne Leitstelle und ohne eigene Einsätze – Einsätze per Testmenü */
   pilotTest = false;
+  /** Testmodus: Wetter zum Ausprobieren (Testmenü), sonst immer klar */
+  pilotTestLage: WetterLage | null = null;
   /** Testmodus: Funkgruppe um den Stützpunkt des Hubschraubers (statt der Einstellung) */
   private pilotTestFg: string | null = null;
   private listeners = new Set<Listener>();
@@ -1704,7 +1707,7 @@ export class Simulation {
   wetterOpt(): WetterOpt {
     const s = this.settings;
     // Testmodus des Piloten: immer Flugwetter (feste, ruhige Lage ohne Wechsel)
-    if (this.pilotTest) return { wechsel: 0, jahreszeit: s.jahreszeit ?? "auto", festLage: lageVon("klar"), festTemp: s.wetterFestTemp ?? 15, echt: undefined };
+    if (this.pilotTest) return { wechsel: 0, jahreszeit: s.jahreszeit ?? "auto", festLage: lageVon(this.pilotTestLage ?? "klar"), festTemp: this.pilotTestLage && LAGE[this.pilotTestLage].art === "schnee" ? -3 : (s.wetterFestTemp ?? 15), echt: undefined };
     const alt = s.wetterModus === "fest" ? 0 : s.wetterModus === "wechselhaft" ? 80 : 50;
     return {
       wechsel: Math.max(0, Math.min(100, s.wetterWechsel ?? alt)),
@@ -8798,6 +8801,7 @@ export class Simulation {
   pilotTestStarten(ich: Bearbeiter): void {
     this.pilotTest = true;
     this.pilotTestFg = null;
+    this.pilotTestLage = null;
     this.ich = ich;
     // nie nachts (sonst darf der Hubschrauber nicht fliegen): dann am selben Tag um 10 Uhr beginnen
     let start = Date.now();
@@ -8808,6 +8812,13 @@ export class Simulation {
       start = d.getTime();
     }
     this.neuesSpiel(start);
+  }
+
+  /** Testmodus: Wetter zum Ausprobieren setzen (z. B. für die Wetter-Übernahme in MSFS/X-Plane) */
+  pilotTestWetter(lage: WetterLage): void {
+    if (!this.pilotTest) throw new Error("Nur im Testmodus");
+    this.pilotTestLage = lageVon(lage);
+    this.setWetter(this.pilotTestLage);
   }
 
   /** Testmodus beenden (zurück zum normalen Spiel ohne Einsätze) */

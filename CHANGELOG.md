@@ -1,5 +1,10 @@
 # Änderungen
 
+## 0.116.0-beta.35 – Test: Wetter in MSFS
+- **Testmenü der Pilotenansicht:** „Wetter für den Test“ (klar, bewölkt, bedeckt, Regen, Starkregen, Nebel, Hochnebel, Gewitter, Schnee) – zum Ausprobieren der Wetter-Übernahme in MSFS und X-Plane; gilt nur im Testmodus
+- EFB-App 0.2.1: Bedeckung und Gewitter werden in Prozent geschickt (MSFS rechnet dort 0–100)
+- Texte: Wetter-Dialog und Einstellungen beschreiben jetzt, dass LeitWerk das Wetter selbst setzt
+
 ## 0.116.0-beta.34 – Test: Wetter und Uhrzeit in MSFS
 - **Test:** Die LeitWerk-App im EFB-Tablet (Version 0.2.0) stellt Wetter und Uhrzeit von LeitWerk in MSFS 2024 ein – über die Wetter-Schnittstelle des Simulators (wie das Wettermenü), ohne dass man etwas bedienen muss. Bei echtem Wetter in LeitWerk schaltet sie Live-Wetter ein
 - Rückmeldungen der App stehen in Pilotenansicht › Cockpit („MSFS: Wetter und Uhrzeit (Test)“) und in der Datei msfs-wetter-test.json im LeitWerk-Datenordner

@@ -1,5 +1,14 @@
 [
  {
+  "version": "0.116.0-beta.35",
+  "datum": "2026-11-11",
+  "titel": "Test: Wetter in MSFS",
+  "punkte": [
+   "Testmenü: Wetter zum Ausprobieren wählen",
+   "EFB-App 0.2.1: Wolken und Gewitter richtig"
+  ]
+ },
+ {
   "version": "0.116.0-beta.34",
   "datum": "2026-11-11",
   "titel": "Test: Wetter und Uhrzeit in MSFS",

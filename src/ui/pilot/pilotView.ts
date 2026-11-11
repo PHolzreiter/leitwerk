@@ -36,7 +36,7 @@ import { inTauri } from "../../platform";
 import { ALARM_AUFNAHMEN, ALARM_STANDARD, ALARM_VORLAGEN, alarmPrefs, alarmPrefsSetzen, alarmStarten, alarmStoppen, alarmtonHinzufuegen, eigeneAlarmtoene, probeLaeuft, probeSpielen, probeStoppen, type AlarmArt } from "./alarmToene";
 import { dateiLoeschen } from "../sounds";
 import { ablageZeigen } from "../../net/ablage";
-import { flugEingeschraenkt, flugverbot } from "../../sim/weather";
+import { flugEingeschraenkt, flugverbot, lageVon, type WetterLage } from "../../sim/weather";
 import { efbStarten, tabletApp, tabletAppNeu, tabletAppSetzen, handyAktionen, handyBuchung, handyDialog, handyLaeuft, handyStand, handyStandBauen } from "./handy";
 import { hpg, hpgAktualisieren, hpgCarlsTest, hpgEinrichten, hpgMissionFuer, hpgStarten, hpgTestNachricht } from "./hpg";
 import { letzterCarls } from "./eingabe";
@@ -696,6 +696,28 @@ function testMenue(): void {
   };
   knopf("Einsatz senden", "ein Notfall in deinem Gebiet (Notarzt nötig), mit RTW", "normal");
   knopf("Großeinsatz senden", "Großschadensfall mit Bereitstellungsraum – du kommst als Notarztmittel in den BR (vorerst nur TETRA NÖ-03)", "gross");
+  // Wetter zum Ausprobieren (Übernahme in MSFS/X-Plane testen)
+  const wx = el("div", { class: "plt-test-wetter" });
+  const jetzt = lageVon(sim.state.wetter.lage);
+  wx.innerHTML = `<p class="plt-leise" style="margin:14px 0 6px"><b>Wetter für den Test</b> – LeitWerk stellt es im Flugsimulator ein (Einstellung „Wie LeitWerk“).</p>`;
+  const reihe = el("div", { class: "plt-reiter" });
+  reihe.style.flexWrap = "wrap";
+  for (const [l, t] of [["klar", "Klar"], ["leicht_bewoelkt", "Bewölkt"], ["bedeckt", "Bedeckt"], ["regen", "Regen"], ["starkregen", "Starkregen"], ["nebel", "Nebel"], ["hochnebel", "Hochnebel"], ["gewitter", "Gewitter"], ["schnee", "Schnee"]] as [WetterLage, string][]) {
+    const b = el("button", { class: l === jetzt ? "an" : "", type: "button" });
+    b.textContent = t;
+    b.addEventListener("click", () => {
+      try {
+        sim.pilotTestWetter(l);
+        reihe.querySelectorAll("button").forEach((x) => x.classList.toggle("an", x === b));
+        toast(`Testwetter: ${t} – der Flugsimulator zieht in einigen Sekunden nach`);
+      } catch (e) {
+        fehler(e);
+      }
+    });
+    reihe.appendChild(b);
+  }
+  wx.appendChild(reihe);
+  body.appendChild(wx);
   if (!fz) body.insertAdjacentHTML("beforeend", `<p class="plt-warn">Zuerst einen Hubschrauber wählen.</p>`);
   else if (fz.einsatzId) body.insertAdjacentHTML("beforeend", `<p class="plt-warn">Du bist noch im Einsatz – zuerst frei melden (Status 1 oder 6).</p>`);
   const d = openDialog({ title: "Testmenü", body, actions: [{ label: "Schließen" }] });
