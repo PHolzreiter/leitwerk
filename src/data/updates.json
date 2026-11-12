@@ -1,5 +1,18 @@
 [
  {
+  "version": "0.116.0-beta.43",
+  "datum": "2026-11-12",
+  "titel": "Notarzt, Rendezvous, Geräte und mehr Abwechslung am Funk",
+  "punkte": [
+   "RTW wartet je nach Lage auf den Notarzt, bei ROT danach Rendezvous auf der Strecke",
+   "Storno-Knopf wie Diensthandy – ohne Funkspruch",
+   "„Kein Patient an der Adresse“ nur noch, wenn sie wirklich falsch ist",
+   "Funk abwechslungsreicher, Rückfrage bei unplausiblen Sprüchen",
+   "„Unterbrochen“ auf allen Funkgeräten, Joystick für alle Tasten",
+   "Funk-Aufnahmen zum Nachhören"
+  ]
+ },
+ {
   "version": "0.116.0-beta.42",
   "datum": "2026-11-12",
   "titel": "Funk: Umbau für Leitstelle und Pilot",

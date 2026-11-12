@@ -1,5 +1,24 @@
 # Änderungen
 
+## 0.116.0-beta.43 – Notarzt, Rendezvous, Geräte und mehr Abwechslung am Funk
+- **Notarzt (neue Regeln):**
+  - Ob ein Notarzt nötig ist, weiß die Besatzung erst nach dem Anschauen: Nachforderung und Storno kommen nicht mehr sofort.
+  - Patient ROT und das NEF kommt: Der RTW wartet am Einsatzort 10 Minuten oder so lange, wie er ins geeignete Krankenhaus fahren würde (das Längere). Danach fährt er los und trifft sich mit dem NEF zum **Rendezvous** auf seiner Strecke. Den Treffpunkt machen sich die beiden am Funk aus, wer zuerst da ist, wartet. Das NEF geht dort auf „am BO“ und, wenn der Notarzt mitfährt, auf „zum Zielort“. Liegt das Krankenhaus in der Gegenrichtung (das NEF holt den RTW nie ein), gibt es kein Rendezvous, und der RTW wartet weiter. Bei Großschäden gibt es kein Rendezvous.
+  - Nicht ROT, aber Notarzt nötig: Der RTW wartet, bis das NEF da ist.
+  - Hubschrauber: kein Rendezvous, der RTW wartet, bis er da ist oder ein Storno kommt.
+  - Notarzt nötig, aber keiner alarmiert: Die Besatzung fordert nach und wartet. Sagt LEO „kein Notarzt in Reichweite“, wartet sie noch 10 Minuten und fährt dann ohne Notarzt.
+- **Storno-Knopf** wirkt wie eine Nachricht aufs Diensthandy: Das Fahrzeug ist sofort frei (Frei Wache an der Dienststelle, sonst Frei Funk und Rückfahrt) und meldet sich nicht am Funk. Ein Storno über Funk wird weiter mit „Storno verstanden“ quittiert.
+- **„Kein Patient an der Adresse“** kommt nur noch, wenn die Adresse wirklich falsch ist. Liegt der Patient nur ein Stück weiter (Hinterhaus, Gelände, Nachbarhaus), findet ihn die Besatzung nach kurzer Suche.
+- **KTW zu früh am Abholort:** sagt die Zeit gerundet („wenige Minuten“, „35 Minuten“, „1 Stunde 15 Minuten“). Meldet er sich frei, geht er auf Frei Funk und fährt zur Dienststelle zurück.
+- **Mehr Abwechslung am Funk:**
+  - Jede Besatzung spricht auf ihre Art (knapp, genau, locker, förmlich), und gängige Sätze gibt es in mehreren Fassungen.
+  - Neu: Umweg auf der Anfahrt (Baustelle, Sperre) mit Verspätung, Patient im Hinterhaus angetroffen, Wartezeit bei der Übergabe im Krankenhaus.
+  - Nachfragen bei unplausiblen Sprüchen: Klingt „das NEF ist abbestellt“ direkt nach der eigenen Alarmierung, fragt die Besatzung „verstehe ich richtig …?“. Bei einem unsicher erkannten Storno für sie selbst ebenso.
+- **Funk-Anzeige auf allen Geräten wie am CARLS:** Senden, Warten, Gruppe aktiv und neu **„Unterbrochen“** (mit zwei Tönen), wenn eine Sendung abbricht. Gilt für das Handy (jetzt mit Funk-Fenster im Display), das TETRA in der EC135 (X-Plane-Plugin 0.2.3), das CARLS und das Funkgerät im Spiel.
+- **Joystick für alle Tasten:** Funktaste, eigene Gruppen-Tasten, Spracheingabe, Kürzel und Pilot-Tasten lassen sich auf Joystick, HOTAS oder Controller legen (beim Belegen einfach die Joystick-Taste drücken, das Steuerkreuz zählt mit). Unter Windows auch, wenn LeitWerk nicht vorne ist.
+- **Funk-Aufnahmen zum Nachhören:** Die letzten 30 eigenen Funksprüche liegen mit dem erkannten Text im Protokoll-Ordner. Auf Wunsch (Einstellungen › Mikrofon & Funk) kommen die letzten 10 an „Fehler melden“ mit.
+- **Pilot:** Der Hinweis zur Sprechgruppe kommt nur noch, wenn der Pilot zu einem Großeinsatz alarmiert ist und nicht auf dessen Gruppe spricht.
+
 ## 0.116.0-beta.42 – Funk: Umbau für Leitstelle und Pilot
 - **Besatzungen verstehen, was LEO will:** auf eine Frage kommt genau diese Antwort, auf eine Information („das NEF ist zu euch alarmiert“) ein „verstanden“, ein Auftrag (Storno, Lagemeldung, Folgeeinsatz) wird ausgeführt. Unverständliches beantworten sie mit „bitte wiederholen“ statt mit einer Lagemeldung
   - „Das NEF ist abbestellt“ an den RTW ist eine Information über das NEF, kein Storno für den RTW
