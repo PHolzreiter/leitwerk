@@ -155,6 +155,7 @@ jobs:
         run: npm install
 
       - name: Programmsymbole erzeugen
+        shell: bash
         run: |
           npx tauri icon app-icon.png
           # macOS: eigene Form mit Rand (Symbol-Raster von Apple)
