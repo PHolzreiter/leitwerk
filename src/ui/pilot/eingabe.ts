@@ -3,6 +3,7 @@
  * Flugsimulator vorne ist) und Joystick-Tasten (Gamepad-Schnittstelle des Fensters).
  */
 import { inTauri } from "../../platform";
+import { joystickPads } from "../joystick";
 import { openDialog } from "../dialog";
 import { el, esc, toast } from "../dom";
 import { AKTIONEN, belegung, belegungSpeichern, HALTEN as NUR_FUNK, STATUS_HALTEN, kuerzelAus, kuerzelName, standardBelegung, tastenName, type Belegung, type PilotAktion } from "./tasten";
@@ -118,7 +119,7 @@ let joyTimer: number | undefined;
 const gedrueckt = new Map<string, boolean>();
 
 function joyAbfragen(): void {
-  const pads = navigator.getGamepads?.() ?? [];
+  const pads = joystickPads();
   const b = belegung();
   for (const p of pads) {
     if (!p) continue;
@@ -139,13 +140,13 @@ function joyAbfragen(): void {
 function joyLernen(abbruch: AbortSignal): Promise<{ geraet: string; taste: number } | null> {
   return new Promise((resolve) => {
     const vorher = new Map<string, boolean>();
-    for (const p of navigator.getGamepads?.() ?? []) if (p) p.buttons.forEach((b, i) => vorher.set(`${p.id}#${i}`, b.pressed));
+    for (const p of joystickPads()) if (p) p.buttons.forEach((b, i) => vorher.set(`${p.id}#${i}`, b.pressed));
     const t = window.setInterval(() => {
       if (abbruch.aborted) {
         window.clearInterval(t);
         return resolve(null);
       }
-      for (const p of navigator.getGamepads?.() ?? []) {
+      for (const p of joystickPads()) {
         if (!p) continue;
         for (let i = 0; i < p.buttons.length; i++) {
           const k = `${p.id}#${i}`;
@@ -233,7 +234,7 @@ export function tastenDialog(): void {
       <p class="plt-leise">Klick auf ein Feld und drück dann die gewünschte Taste. <b>Entf</b> löscht die Belegung, <b>Esc</b> bricht ab.</p>
       <label class="plt-check"><input type="checkbox" class="plt-global-an" ${b.globalAn ? "checked" : ""}${inTauri() ? "" : " disabled"}> Globale Tastenkürzel – funktionieren auch, wenn der Flugsimulator im Vordergrund ist${inTauri() ? "" : " (nur im Programm, nicht im Browser)"}</label>
       <table class="plt-tasten-tab"><thead><tr><th>Aktion</th><th>Taste im Fenster</th><th>Global</th><th>Joystick</th><th>H145-Funkgerät</th></tr></thead><tbody></tbody></table>
-      <p class="plt-leise plt-klein">Globale Kürzel brauchen eine Zusatztaste (Strg, Alt, Umschalt) – sonst wären die Ziffern im ganzen System belegt. Joystick: die Taste einmal drücken, während das Feld blinkt. Ob der Joystick auch bei Fokus auf dem Flugsimulator erkannt wird, hängt vom System ab – im Zweifel globale Kürzel oder das Handy nehmen. H145-Funkgerät: die Ziffertasten am CARLS-Funkgerät in der Mittelkonsole der HPG H145 (im Tablet muss die Mission „LeitWerk Leitstelle“ laufen); anklicken und dann die Taste im Cockpit drücken.</p>`;
+      <p class="plt-leise plt-klein">Globale Kürzel brauchen eine Zusatztaste (Strg, Alt, Umschalt) – sonst wären die Ziffern im ganzen System belegt. Joystick: die Taste einmal drücken, während das Feld blinkt. Unter Windows erkennt LeitWerk Joystick-Tasten auch, wenn der Flugsimulator vorne ist; am Mac nur, solange LeitWerk vorne ist. Joystick-Tasten lassen sich auch bei „Taste im Fenster“ und überall in den Einstellungen belegen (Funktaste, Spracheingabe, Kürzel). H145-Funkgerät: die Ziffertasten am CARLS-Funkgerät in der Mittelkonsole der HPG H145 (im Tablet muss die Mission „LeitWerk Leitstelle“ laufen); anklicken und dann die Taste im Cockpit drücken.</p>`;
     body.querySelector<HTMLInputElement>(".plt-global-an")!.addEventListener("change", (ev) => {
       b = { ...b, globalAn: (ev.target as HTMLInputElement).checked };
     });

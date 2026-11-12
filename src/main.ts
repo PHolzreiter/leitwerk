@@ -84,6 +84,7 @@ import { altersgruppeVon, SYMPTOME, symptomAusDiagnose, symptomSuche, zuweisungB
 import { funkStatistik, funkVorleseLaut, gruppeLaut, sprechStart, sprechStopp } from "./ui/sprechfunk";
 import { dienstHoverEinrichten } from "./ui/dienstWoche";
 import { protokollBeobachterStarten } from "./ui/protokollBeobachter";
+import { joystickStarten } from "./ui/joystick";
 import { protokollZeilen } from "./protokoll";
 import { absichtErkennen, ohneKopf } from "./sim/funkAbsicht";
 import { abwandeln } from "./sim/funkVielfalt";
@@ -93,6 +94,7 @@ import { bestimmeCode, fragenImAblauf, type Schema } from "./abfrage/schema";
 import { fallHinweise, faellePruefen } from "./abfrage/faellePruefen";
 dienstHoverEinrichten();
 protokollBeobachterStarten();
+void joystickStarten();
 
 // Für automatische Tests im Browser (…/?debug): Zugriff auf Simulation und Daten
 if (location.search.includes("debug")) Object.assign(window, { __lw: { sim, store, mp, sprachTest, sprechfunk: { statistik: funkStatistik, start: sprechStart, stopp: sprechStopp }, codesystemLaden: (s: Schema & { kt?: { codes?: unknown[]; abfrage?: unknown[] } }) => {

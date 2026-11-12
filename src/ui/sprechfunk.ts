@@ -17,7 +17,7 @@ import { FUNK_RATE, FunkKodierer, funkDekodieren, funkVerstaerken } from "./funk
 import { istPilot } from "./pilot/modus";
 import { tonBeginn, tonEinsatzRein, tonEnde, tonStatusDruck, tonStatusGesendet } from "./funkToene";
 import { aufnahmeIds, aufnahmeLaeuftJetzt, aufnahmeSperre, funkHaken, funkHoerHaken, funkTonHaken, sprachPrefs, sprachStatus, sprachTest, sprechTasteAnFunk, tastenBelegung, verstummen } from "./sprache";
-import { protokoll } from "../protokoll";
+import { aufnahmeSichern, protokoll } from "../protokoll";
 
 export type FunkZiel = "leo" | "rtw";
 
@@ -288,6 +288,8 @@ interface Sendung {
   mitschrift?: { stueck(b64: string): void; ende(): Promise<string>; abbrechen(): void } | null;
   /** Sprechgruppe (null = normale Gruppe, „gs“/„gs2“ = Großeinsatz 09/10) */
   gruppe: Sprechgruppe | undefined;
+  /** gesendete Stücke (μ-law, Base64) – zum Nachhören mit dem erkannten Text */
+  aufzeichnung?: string[];
   /** wartet, bis der laufende Funkspruch fertig ist */
   wartet: boolean;
   /** Nummer der Aufnahme im Programm */
@@ -319,6 +321,13 @@ function sendGeaendert(): void {
 }
 
 /** Eigener Sprechfunk: „wartet“ (Kanal belegt, nach dem Ende-Ton geht es los), „sendet“ oder null */
+/** Sendung wurde abgebrochen (Mikrofon weg, Fern-Taste ohne Lebenszeichen …): kurz „Unterbrochen“ auf allen Geräten */
+let unterbrochenBis = 0;
+let unterbrochenGrund = "";
+export function funkUnterbrochen(): string | null {
+  return Date.now() < unterbrochenBis ? unterbrochenGrund || "Sendung abgebrochen" : null;
+}
+
 export function funkSendeZustand(): { art: "wartet" | "sendet"; ziel: FunkZiel; belegt: boolean } | null {
   if (!sendung || sendung.abgelehnt) return null;
   return { art: sendung.frei ? "sendet" : "wartet", ziel: sendung.ziel, belegt: sendung.wartet };
@@ -373,6 +382,8 @@ function stueck(s: Sendung, b64: string): void {
   const sende = Math.max(0, Math.min(2, (sprachPrefs().funkSendeLaut ?? 100) / 100));
   if (Math.abs(sende - 1) > 0.02) b64 = funkVerstaerken(b64, sende);
   s.mitschrift?.stueck(auf16kB64(b64));
+  // zum Nachhören: höchstens 2 Minuten
+  if ((s.aufzeichnung ??= []).length < 1200) s.aufzeichnung.push(b64);
   const d = { k: "a", s: s.id, n: s.n++, v: s.von, w: s.wer, r: s.gruppe ?? null, b: b64 };
   if (s.frei) schicken(d);
   else s.warte.push(d);
@@ -649,6 +660,13 @@ export async function sprechStopp(grund?: string): Promise<void> {
   }
   s.los = true;
   window.clearTimeout(s.uhr);
+  if (grund && s.frei) {
+    unterbrochenBis = Date.now() + 3500;
+    unterbrochenGrund = grund.length > 28 ? "Sendung abgebrochen" : grund;
+    // zwei kurze Ende-Töne: hörbar, dass die Sendung nicht mehr läuft
+    funkTon("ende");
+    window.setTimeout(() => funkTon("ende"), 260);
+  }
   // die Taste ist frei: ein neuer Druck startet gleich eine neue Sendung (die Erkennung dieser läuft weiter)
   sendung = null;
   sperreNeu();
@@ -682,6 +700,7 @@ export async function sprechStopp(grund?: string): Promise<void> {
   const r = await textP.catch(() => ({ text: "" }) as { text: string; sicherheit?: number });
   let text = r.text;
   if (/^(untertitel|vielen dank( für)? (fürs )?zuschauen|copyright|\[?musik\]?|\*.*\*)/i.test(text)) text = "";
+  if (s.aufzeichnung?.length) aufnahmeSichern(`${s.von}`, s.aufzeichnung, text ? funkGlaetten(text) : "(nichts erkannt)", r.sicherheit);
   if (text) {
     text = funkGlaetten(text);
     await sim.call("funkMenschText", s.gId, text, s.gruppe ?? null, r.sicherheit ?? 1).catch((e) => toast(String((e as Error)?.message ?? e), "error"));

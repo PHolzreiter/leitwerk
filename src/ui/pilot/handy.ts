@@ -3,6 +3,7 @@
  * Hier: QR-Code anzeigen, den Stand fürs Handy schicken und Tastendrücke vom Handy ausführen.
  */
 import { protokoll } from "../../protokoll";
+import { sprechStopp } from "../sprechfunk";
 import qrcode from "qrcode-generator";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
@@ -174,6 +175,8 @@ setInterval(() => {
     if (!f.mitLebenszeichen || jetzt - f.zuletzt < 2500) continue;
     fern.delete(a);
     protokoll("sendung", { abbruch: "Sprechtaste am Gerät ohne Lebenszeichen", aktion: a, gehaltenMs: jetzt - f.seit });
+    // „Unterbrochen“ auf allen Geräten (mit Ton), dann wie Loslassen
+    void sprechStopp("Taste ohne Verbindung");
     haltenFn?.(a, false);
   }
 }, 500);

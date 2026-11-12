@@ -65,6 +65,14 @@
   .hy-lcd .bal { display:inline-flex; align-items:flex-end; gap:2px; margin-right:6px; }
   .hy-lcd .bal i { width:3px; background:#2b8a3e; border-radius:1px; }
   .hy-lcd .gr { text-align:center; font-size:22px; font-weight:800; margin:6px 0 2px; }
+  .hy-pop { position:absolute; left:8px; right:8px; top:26px; bottom:8px; border-radius:9px; background:#f3f7fd; border:2px solid #2d5aa0; box-shadow:0 2px 6px rgba(10,25,50,.3); display:flex; flex-direction:column; align-items:center; overflow:hidden; text-align:center; }
+  .hy-pop[hidden] { display:none; }
+  .hy-pop b { align-self:stretch; padding:4px 0; background:#56657c; color:#fff; font-size:14px; letter-spacing:.06em; }
+  .hy-pop.senden, .hy-pop.unterbrochen { border-color:#c62828; } .hy-pop.senden b, .hy-pop.unterbrochen b { background:#c62828; }
+  .hy-pop.warten b { background:#a86f00; }
+  .hy-pop .w { font-size:19px; font-weight:800; margin-top:6px; color:#0e1622; }
+  .hy-pop .g { font-size:13px; color:#24364f; margin-top:2px; }
+  .hy-pop .n { font-size:11px; color:#7a5400; margin-top:2px; }
   .hy-lcd .hy-st { display:flex; white-space:nowrap; min-height:26px; align-items:center; justify-content:center; gap:8px; font-size:15px; font-weight:700; }
   .hy-lcd .hy-st b { display:grid; place-items:center; min-width:24px; height:24px; border-radius:5px; background:#10141c; color:#c9d9f1; font-size:15px; }
   .hy-lcd .fort { position:absolute; left:0; bottom:0; height:4px; background:#c62828; width:0; }
@@ -198,7 +206,7 @@
 <nav class="hy-tabs" id="tabs"><button class="hy-tab on" data-s="0">Funk</button><button class="hy-tab" data-s="1">Einsatz</button><button class="hy-tab" data-s="2">Buchen</button></nav>
 <main id="seiten">
   <section class="seite" id="s-funk">
-    <div class="hy-lcd" id="lcd"><div class="z1"><span><span class="bal"><i style="height:4px"></i><i style="height:7px"></i><i style="height:10px"></i><i style="height:13px"></i></span>TETRA · BOS</span><span id="uhr"></span></div><div class="gr" id="lcd-gr"></div><div class="hy-st"><b id="lcd-n">–</b><span id="lcd-t"></span></div><i class="fort"></i></div>
+    <div class="hy-lcd" id="lcd"><div class="z1"><span><span class="bal"><i style="height:4px"></i><i style="height:7px"></i><i style="height:10px"></i><i style="height:13px"></i></span>TETRA · BOS</span><span id="uhr"></span></div><div class="gr" id="lcd-gr"></div><div class="hy-st"><b id="lcd-n">–</b><span id="lcd-t"></span></div><i class="fort"></i><div class="hy-pop" id="lcd-pop" hidden><b id="pop-k"></b><span class="w" id="pop-w"></span><span class="g" id="pop-g"></span><span class="n" id="pop-n"></span></div></div>
     <div class="hy-keys" id="tasten"></div>
     <p class="hy-hint">Statustaste ca. 2 Sekunden halten, bis „düt-düt-düt“ kommt.</p>
     <button class="hy-ptt" id="ptt" hidden><b>SPRECHEN</b><small id="ptt-t">gedrückt halten – „LEO von …“</small></button>
@@ -497,6 +505,17 @@ function zeichnen(s) {
   $("lcd-t").textContent = st ? st.t : (s.hinweis || "kein Hubschrauber");
   const keys = n.keys || tastenAlt(s);
   if (!halt && geaendert("tasten", [keys.map((k) => [k.n, k.aktiv, k.aus, k.f]), !!n.alarm])) tastenBauen(keys, !!n.alarm);
+  // Fenster über dem Display wie am CARLS/TETRA: Senden, Warten, Gruppe aktiv, Unterbrochen
+  const tt = n.tetra || {};
+  const pop = $("lcd-pop");
+  pop.hidden = !tt.kopf;
+  if (tt.kopf) {
+    pop.className = "hy-pop " + (tt.art || "");
+    $("pop-k").textContent = tt.kopf;
+    $("pop-w").textContent = tt.wer || "";
+    $("pop-g").textContent = tt.popGruppe || "";
+    $("pop-n").textContent = tt.neben || "";
+  }
   // Sprechtaste und Kanal
   const ptt = $("ptt");
   ptt.hidden = !(s.funk?.knoepfe || []).length;

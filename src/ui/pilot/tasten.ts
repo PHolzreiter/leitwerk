@@ -5,6 +5,7 @@
  * Gespeichert wird pro Rechner (localStorage).
  */
 import type { StatusKey } from "../../sim/settings";
+import { JOY, joyName } from "../joystick";
 
 export type PilotAktion = "s9" | "s1" | "s2" | "s3" | "s4" | "s5" | "s6" | "fliegen" | "funk" | "funkRtw";
 
@@ -92,6 +93,7 @@ export function belegungSpeichern(b: Belegung): void {
 /** Lesbarer Name einer Fenster-Taste („Digit1“ → „1“, „Numpad3“ → „Num 3“, „KeyF“ → „F“) */
 export function tastenName(code: string | undefined): string {
   if (!code) return "–";
+  if (code.startsWith(JOY)) return joyName(code);
   if (/^Digit\d$/.test(code)) return code.slice(5);
   if (/^Numpad\d$/.test(code)) return `Num ${code.slice(6)}`;
   if (/^Key[A-Z]$/.test(code)) return code.slice(3);

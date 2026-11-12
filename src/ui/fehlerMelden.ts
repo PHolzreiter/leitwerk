@@ -4,7 +4,7 @@
  */
 import { store } from "../data/store";
 import { logEintraege } from "../fehlerLog";
-import { protokollFuerBericht, protokollPfad } from "../protokoll";
+import { aufnahmenFuerBericht, protokollFuerBericht, protokollPfad } from "../protokoll";
 import { mp } from "../net/mehrspieler";
 import { inTauri, saveTextFile } from "../platform";
 import { sim } from "../sim/engine";
@@ -12,6 +12,7 @@ import { kiBereit, kiPrefs } from "../abfrage/ki";
 import { textDialog } from "./dialog";
 import { toast } from "./dom";
 import { pers } from "./ws/persoenlich";
+import { sprachPrefs } from "./sprache";
 
 const uhr = (t: number) => new Date(t).toLocaleString("de-AT");
 
@@ -106,7 +107,12 @@ export async function fehlerBerichtSpeichern(beschreibung: string): Promise<stri
   const stempel = new Date().toISOString().slice(0, 16).replace(/[:T]/g, "-");
   // laufendes Protokoll der Sitzung (Funk, Spieler, Einsätze, Warnungen) anhängen
   const prot = await protokollFuerBericht().catch(() => "");
-  const text = `${fehlerBericht(beschreibung)}\n## Protokoll dieser Sitzung${protokollPfad() ? ` (${protokollPfad()})` : ""}\n\n\`\`\`jsonl\n${prot}\n\`\`\`\n`;
+  let text = `${fehlerBericht(beschreibung)}\n## Protokoll dieser Sitzung${protokollPfad() ? ` (${protokollPfad()})` : ""}\n\n\`\`\`jsonl\n${prot}\n\`\`\`\n`;
+  // auf Wunsch (Einstellungen › Mikrofon & Funk): die letzten eigenen Funksprüche zum Nachhören (WAV, Base64)
+  if (sprachPrefs().berichtAufnahmen) {
+    const a = await aufnahmenFuerBericht(10).catch(() => []);
+    if (a.length) text += `\n## Funk-Aufnahmen (letzte ${a.length})\n\n${a.map((x) => `### ${x.name}\nErkannt: ${x.text}\n\n\`\`\`wav-base64\n${x.wavB64}\n\`\`\`\n`).join("\n")}`;
+  }
   return saveTextFile(`LeitWerk_Fehlerbericht_${stempel}.md`, text, { name: "Text (Markdown)", extensions: ["md", "txt"] });
 }
 

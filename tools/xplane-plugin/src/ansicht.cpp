@@ -1801,8 +1801,9 @@ void tetra(float W, float H, bool strom) {
   std::string kopfT = verb ? d["kopf"].t() : "";
   if (!kopfT.empty()) {
     std::string art = d["art"].t();
-    ImU32 popFarbe = art == "senden" ? IM_COL32(198, 40, 40, 255) : art == "warten" ? IM_COL32(168, 111, 0, 255) : IM_COL32(86, 101, 124, 255);
-    ImU32 popRand = art == "senden" ? IM_COL32(198, 40, 40, 255) : IM_COL32(45, 90, 160, 255);
+    bool rot = art == "senden" || art == "unterbrochen";
+    ImU32 popFarbe = rot ? IM_COL32(198, 40, 40, 255) : art == "warten" ? IM_COL32(168, 111, 0, 255) : IM_COL32(86, 101, 124, 255);
+    ImU32 popRand = rot ? IM_COL32(198, 40, 40, 255) : IM_COL32(45, 90, 160, 255);
     float PW = 336;
     dl->AddRectFilled(ImVec2(X(14), X(52)), ImVec2(X(14 + PW + 6), X(52 + 282)), IM_COL32(10, 25, 50, 71), X(8));
     ImVec2 p0(X(10), X(48)), p1(X(10 + PW), X(48 + 278));

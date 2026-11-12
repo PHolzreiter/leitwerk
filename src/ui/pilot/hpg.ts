@@ -25,7 +25,7 @@ import { inTauri } from "../../platform";
 import { toast } from "../dom";
 import { esc } from "../dom";
 import { eigenerName, geraetId, gruppenName, wenHoereIch } from "../funkGeraet";
-import { funkSendeZustand, gruppeHoerbar, sprechGruppe, sprechGruppeWeiter } from "../sprechfunk";
+import { funkSendeZustand, funkUnterbrochen, gruppeHoerbar, sprechGruppe, sprechGruppeWeiter } from "../sprechfunk";
 import { carlsAktion, carlsEmpfangen, carlsLernt } from "./eingabe";
 import { carlsAn, vorgabe } from "./flugsim";
 import { AKTIONEN } from "./tasten";
@@ -263,7 +263,7 @@ export function carlsStand(fz: SimFahrzeug): {
   kopf: string;
   wer: string;
   popGruppe: string;
-  art: "" | "aktiv" | "senden" | "warten";
+  art: "" | "aktiv" | "senden" | "warten" | "unterbrochen";
   gruppe: string;
   pfeile: boolean;
   neben: string;
@@ -277,8 +277,14 @@ export function carlsStand(fz: SimFahrzeug): {
   let kopf = "";
   let wer = "";
   let popGruppe = "";
-  let art: "" | "aktiv" | "senden" | "warten" = "";
-  if (ich?.art === "sendet") {
+  let art: "" | "aktiv" | "senden" | "warten" | "unterbrochen" = "";
+  const weg = funkUnterbrochen();
+  if (!ich && weg) {
+    kopf = "Unterbrochen";
+    art = "unterbrochen";
+    wer = "Sendung beendet";
+    popGruppe = weg;
+  } else if (ich?.art === "sendet") {
     kopf = "Senden";
     art = "senden";
     wer = `ID: ${geraetId(eigenerName())}`;
@@ -342,8 +348,8 @@ function carlsHtml(fz: SimFahrzeug): string {
   const stGr = d.status.length <= 14 ? 42 : d.status.length <= 17 ? 37 : 32;
   const gruppe = d.pfeile ? `${pfeil(false)}${h(d.gruppe)}${pfeil(true)}${lampe}` : `${h(d.gruppe)}${lampe}`;
   const aktiv = !!d.kopf;
-  const popFarbe = d.art === "senden" ? "#c62828" : d.art === "warten" ? "#a86f00" : "#56657c";
-  const popRand = d.art === "senden" ? "#c62828" : "#2d5aa0";
+  const popFarbe = d.art === "senden" || d.art === "unterbrochen" ? "#c62828" : d.art === "warten" ? "#a86f00" : "#56657c";
+  const popRand = d.art === "senden" || d.art === "unterbrochen" ? "#c62828" : "#2d5aa0";
   const PW = 336;
   const pop = aktiv
     ? `<div style="position:absolute;left:14px;top:52px;width:${PW + 6}px;height:282px;border-radius:8px;background:rgba(10,25,50,.28)"></div>` +

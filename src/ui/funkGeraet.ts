@@ -9,7 +9,7 @@ import geraetUrl from "../assets/funkgeraet.webp?url";
 import { mp } from "../net/mehrspieler";
 import { sim, type FunkGespraech, type Sprechgruppe } from "../sim/engine";
 import { el, esc } from "./dom";
-import { funkEmpfang, funkPegel, funkSendeZustand, gruppeHoerbar, sprechGruppe, sprechGruppeWeiter } from "./sprechfunk";
+import { funkEmpfang, funkPegel, funkSendeZustand, funkUnterbrochen, gruppeHoerbar, sprechGruppe, sprechGruppeWeiter } from "./sprechfunk";
 import { istPilot } from "./pilot/modus";
 
 /** Name der Sprechgruppe am Gerät („RD-NOE-03“; Großeinsatz RD-NOE-09 bzw. RD-NOE-10) */
@@ -105,7 +105,11 @@ export function funkGeraetErstellen(): { el: HTMLElement; refresh(): void } {
     const ich = funkSendeZustand();
     let kopf = "";
     let wer = "";
-    if (ich?.art === "sendet") {
+    const weg = funkUnterbrochen();
+    if (!ich && weg) {
+      kopf = "Unterbrochen";
+      wer = weg;
+    } else if (ich?.art === "sendet") {
       kopf = "Senden";
       wer = `ID: ${geraetId(istPilot() ? eigenerName() : "LEO")}`;
     } else if (ich?.art === "wartet") {

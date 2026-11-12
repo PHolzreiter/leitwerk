@@ -451,7 +451,8 @@ export class SeitenBasis {
           T('Funk-Klang', 'fklang', true, 'Blechern, kurzes Rauschen beim Loslassen'),
           R('Funkempfang Mitspieler', 'sfLaut', 0, 150, 5, 90, pct, 'Stimmen echter Spieler (Disponenten, Piloten) am Funk'),
           R('Funkempfang KI', 'sfLautKi', 0, 150, 5, 100, pct, 'Fahrzeuge, die der Computer spricht'),
-          R('Funksenden', 'sfSende', 0, 200, 5, 100, pct, 'Wie laut deine Stimme bei den anderen ankommt')
+          R('Funksenden', 'sfSende', 0, 200, 5, 100, pct, 'Wie laut deine Stimme bei den anderen ankommt'),
+          T('Funk-Aufnahmen an Fehlerberichte anhängen', 'sfAufn', false, 'Die letzten 10 eigenen Funksprüche mit erkanntem Text – zum Prüfen der Spracherkennung')
         ]},
         { id: 'whisper', sub: true, parent: 'mikro', label: 'Erkennung (Whisper)', info: 'Modelle', kw: 'whisper spracherkennung modell', rows: [
           IT('Schnell', '140 MB · für jeden Rechner', 'geladen', grau, { btns: [{ l: 'Verwenden', ok: 'Wird verwendet' }] }),

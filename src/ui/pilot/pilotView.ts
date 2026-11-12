@@ -30,7 +30,7 @@ import { pilotModusSetzen } from "./modus";
 import { AKTIONEN, belegung, type PilotAktion } from "./tasten";
 import { eingabeStarten, eingabeStoppen, handyHalten, tastenDialog } from "./eingabe";
 import { gruppenName } from "../funkGeraet";
-import { funkEmpfang, funkGruppenSetzen, funkGruppenWahl, funkSendeZustand, funkTon, onFunkEmpfang, onFunkGruppen, onFunkSenden, sprechGruppe, sprechGruppeWeiter, sprechStart, sprechStopp } from "../sprechfunk";
+import { funkEmpfang, funkGruppenSetzen, funkGruppenWahl, funkSendeZustand, funkTon, funkUnterbrochen, onFunkEmpfang, onFunkGruppen, onFunkSenden, sprechGruppe, sprechGruppeWeiter, sprechStart, sprechStopp } from "../sprechfunk";
 import { MODELLE, mikrofone, mikroTesten, modellLaden, setzeSprache, sprachPrefs, sprachStatus } from "../sprache";
 import { inTauri } from "../../platform";
 import { ALARM_AUFNAHMEN, ALARM_STANDARD, ALARM_VORLAGEN, alarmPrefs, alarmPrefsSetzen, alarmStarten, alarmStoppen, alarmtonHinzufuegen, eigeneAlarmtoene, probeLaeuft, probeSpielen, probeStoppen, type AlarmArt } from "./alarmToene";
@@ -2275,8 +2275,10 @@ function funkPlatzAktualisieren(fz: SimFahrzeug | undefined, e: Einsatz | undefi
   const sendet = sim.state.funkSendet;
   const gruppe = sprechGruppe();
   const belegt = sim.funkKanalBelegt(gruppe);
-  const kanal =
-    ich?.art === "sendet"
+  const weg = funkUnterbrochen();
+  const kanal = !ich && weg
+    ? `Funk unterbrochen – ${weg}`
+    : ich?.art === "sendet"
       ? `Du sprichst in ${gruppenName(gruppe) || "RD-NOE-03"} …`
       : ich?.art === "wartet"
         ? ich.belegt

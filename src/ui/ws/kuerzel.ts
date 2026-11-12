@@ -1,5 +1,6 @@
 /** Tastenkürzel (einstellbar unter Einstellungen → Persönlich). */
 import { pers, type KuerzelId } from "./persoenlich";
+import { JOY, joyName } from "../joystick";
 
 /** Taste als Text, z. B. „Ctrl+F“, „F1“, „Escape“, „Space“ */
 export function tasteVon(e: KeyboardEvent): string {
@@ -17,6 +18,7 @@ export function tasteVon(e: KeyboardEvent): string {
 
 /** Taste lesbar (Mac: ⌘ statt Strg) */
 export function tasteText(t: string): string {
+  if (t.startsWith(JOY)) return joyName(t);
   const mac = /Mac|iPhone|iPad/.test(navigator.platform);
   return t
     .replace("Ctrl", mac ? "⌘" : "Strg")

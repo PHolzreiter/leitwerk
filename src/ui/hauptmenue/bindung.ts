@@ -458,6 +458,7 @@ export function einstellungsBindung(geladen?: () => void): EinstellungsBindung {
     sfLaut: sprZahl("funkLaut", 0, 150),
     sfLautKi: sprZahl("funkLautKi", 0, 150),
     sfSende: sprZahl("funkSendeLaut", 0, 200),
+    sfAufn: sprBool("berichtAufnahmen"),
     // ---------------- Pilot
     simwx: {
       l: () => SIMWX.text(vorgabe().wetter ?? "leitwerk"),

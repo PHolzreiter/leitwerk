@@ -4,6 +4,7 @@
  * Erkannt wird lokal mit Whisper im Programm; im Browser (Entwicklung) mit der Erkennung des Browsers.
  */
 import { protokoll } from "../protokoll";
+import { JOY, joyName } from "./joystick";
 import { funkTextGlaetten, zahlenAlsZiffern } from "../sim/funkErkennung";
 import { invoke, Channel } from "@tauri-apps/api/core";
 import { inTauri } from "../platform";
@@ -57,6 +58,8 @@ export interface SprachPrefs {
   funkLautKi: number;
   /** Funksenden: wie laut die eigene Stimme bei den anderen ankommt 0–200 (100 = unverändert) */
   funkSendeLaut: number;
+  /** die letzten Funk-Aufnahmen (mit erkanntem Text) an „Fehler melden“ anhängen */
+  berichtAufnahmen: boolean;
   /** Pilot: übrigen Funkverkehr (Fahrzeuge ↔ Leitstelle) mithören */
   mithoeren: boolean;
   /** Pilot: Lautstärke des mitgehörten Funkverkehrs 0–100 (Anteil der normalen Lautstärke) */
@@ -89,6 +92,7 @@ export const SPRACH_STANDARD: SprachPrefs = {
   funkLaut: 90,
   funkLautKi: 100,
   funkSendeLaut: 100,
+  berichtAufnahmen: false,
   mithoeren: true,
   mithoerenLaut: 50,
 };
@@ -132,6 +136,7 @@ export const TASTEN: [string, string][] = [
 
 export function tastenName(code: string): string {
   if (!code) return "–";
+  if (code.startsWith(JOY)) return joyName(code);
   const fest = TASTEN.find(([c]) => c === code)?.[1];
   if (fest) return fest;
   const m = code.match(/^Key([A-Z])$/) ?? code.match(/^Digit(\d)$/);

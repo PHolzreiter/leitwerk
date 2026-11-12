@@ -16,6 +16,7 @@ mod updater;
 mod xplane;
 mod ec135;
 mod protokoll;
+mod joystick;
 
 use std::collections::HashMap;
 use std::fs::{self, File};
@@ -540,6 +541,7 @@ pub fn run() {
         // Piloten-Interface: Status per Tastenkürzel, auch wenn der Flugsimulator vorne ist
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .setup(|app| {
+            joystick::starten(app.handle().clone());
             let data_dir = app.path().app_data_dir()?;
             let resources = app.path().resolve("maps", BaseDirectory::Resource).ok();
             // Kartenpakete: in der Beta gemeinsam mit der normalen Version (kein zweiter Download)
@@ -628,6 +630,9 @@ pub fn run() {
             sprache::sprache_aufnahmen,
             sprache::sprache_gpu,
             protokoll::protokoll_schreiben,
+            protokoll::protokoll_aufnahme,
+            joystick::joystick_nativ,
+            protokoll::protokoll_aufnahmen,
             protokoll::protokoll_lesen,
             protokoll::protokoll_ordner,
             ton::ton_geraete,
