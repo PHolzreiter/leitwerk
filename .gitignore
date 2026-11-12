@@ -33,3 +33,4 @@ tools/tests/browser/__pycache__/
 src-tauri/xplane-plugin/
 tools/xplane-plugin/build/
 xpbau/
+relay/.wrangler/
