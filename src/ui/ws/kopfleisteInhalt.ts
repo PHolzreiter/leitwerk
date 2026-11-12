@@ -358,6 +358,9 @@ export function vorlageBild(id: string): Rechteck[] {
   const v = VORLAGEN.find((x) => x.id === id);
   if (!v) return E16([[0, 0, 100, 100]]);
   const t = v.schirme.map(aufteilungTeile);
+  // hochkant: 9:16 im Vorschaubild (Höhe 41 → Breite 23)
+  if (v.format === "9:16") return schirm(25.5, 0.5, 23, 41, t[0]);
+  if (v.format === "16:9+9:16") return [...schirm(0.5, 10.5, 41, 23, t[0]), ...schirm(46, 0.5, 23, 41, t[1])];
   if (t.length > 1) return [...schirm(0.5, 10.5, 35.5, 21, t[0]), ...schirm(38, 10.5, 35.5, 21, t[1])];
   if (v.format === "32:9") return schirm(0.5, 10.5, 73, 21, t[0]);
   return E16(t[0]);

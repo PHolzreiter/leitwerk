@@ -676,8 +676,8 @@ export interface Vorlage {
   id: string;
   name: string;
   info: string;
-  /** Bildschirmformat (für das Vorschaubild) */
-  format: "16:9" | "32:9";
+  /** Bildschirmformat (für das Vorschaubild); „16:9+9:16“ = Hauptfenster quer, zweiter Bildschirm hochkant */
+  format: "16:9" | "32:9" | "9:16" | "16:9+9:16";
   /** je Bildschirm (Programmfenster) die Aufteilung; der erste ist das Hauptfenster */
   schirme: Aufteilung[];
   /** kurze Beschreibung je Bildschirm (Fußleiste), bei mehreren Bildschirmen */
@@ -716,6 +716,25 @@ export const VORLAGEN: Vorlage[] = [
         [1240, V([620, KARTE()], [358, FUNK()])],
       ),
     ],
+  },
+  // Hochkant gestellter Bildschirm (9:16): zwei Fenster übereinander, jedes in 9:8 (Full HD 1080 × 960, WQHD 1440 × 1280)
+  {
+    id: "hoch",
+    name: "Ein Bildschirm hochkant 9:16",
+    info: "Oben Abfrage und Masken, unten Listen, Karte und Funk – je ein Fenster in 9:8",
+    format: "9:16",
+    schirme: [V([50, F(["abfrage", "einsatz", "kt", "sek", "telefon"], "abfrage")], [50, F(["einsatzliste", "aktive", "fahrzeuge", "karte", "funk", "chat"], "einsatzliste")])],
+  },
+  {
+    id: "quer-hoch",
+    name: "16:9 und hochkant 9:16",
+    info: "Hier Abfrage, Maske und Karte; daneben hochkant Einsatzliste und Fahrzeuge/Funk",
+    format: "16:9+9:16",
+    schirme: [
+      H([1140, V([620, F(["abfrage", "telefon"], "abfrage")], [358, KARTE()])], [756, MASKE()]),
+      V([50, EINSATZLISTE()], [50, F(["aktive", "fahrzeuge", "statuslog", "funk", "chat"], "aktive")]),
+    ],
+    schirmInfo: ["Abfrage, Karte und RD-Übersicht", "Einsatzliste, Fahrzeuge und Funk (hochkant)"],
   },
   {
     id: "notruf",

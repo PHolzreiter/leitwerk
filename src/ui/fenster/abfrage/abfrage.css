@@ -195,13 +195,13 @@
   :where(.k-Abfrage) .filter{margin-left:2px}
 }
 
-@container fenster (min-width: 820px){
+@container fenster (min-width: 760px){
   :where(.k-Abfrage) .spalten{grid-template-columns:minmax(0,1fr) minmax(0,1.3fr)}
   :where(.k-Abfrage) .sp-r{order:-1;border-right:1px solid var(--trenner)}
   :where(.k-Abfrage) .sp-l{border-right:0}
 }
 
-@container fenster (min-width: 820px){
+@container fenster (min-width: 760px){
   :where(.k-Abfrage) .nurbreit{display:inline-grid}
   :where(.k-Abfrage) .sp-r{display:flex !important;flex-direction:column}
   :where(.k-Abfrage) .sp-r .a-gespr{flex:1;min-height:0}
@@ -209,7 +209,7 @@
   :where(.k-Abfrage) .a-erl{border-bottom:0}
 }
 
-@container fenster (max-width: 819px){
+@container fenster (max-width: 759px){
   :where(.k-Abfrage) .a-frage{border-bottom:0}
 }
 @container fenster (max-width: 430px){
@@ -236,7 +236,7 @@
 @keyframes abfrage-cursor{50%{opacity:0}}
 :where(.k-Abfrage) .msgs{overflow-y:auto;overflow-x:hidden;min-height:0;max-height:300px;scrollbar-width:thin;scrollbar-color:var(--linie) transparent;padding-right:2px}
 :where(.k-Abfrage) .msgs-leer{color:var(--dim);font-size:12.5px;padding:4px 0}
-@container fenster (min-width: 820px){
+@container fenster (min-width: 760px){
   :where(.k-Abfrage) .sp-r .a-gespr{min-height:220px}
   :where(.k-Abfrage) .sp-r .a-gespr .msgs{max-height:none}
 }
@@ -293,7 +293,15 @@
 :where(.k-Abfrage) .ff-vor-l{color:var(--dim)}
 :where(.k-Abfrage) .ff-vor-k{font-weight:700;color:var(--akzent);margin-left:4px}
 :where(.k-Abfrage) .a-form{order:2}
-@container fenster (max-width: 819px){
+@container fenster (max-width: 759px){
   /* eine Spalte: das Formular scrollt für sich, das Gespräch bleibt darunter in Reichweite */
   :where(.k-Abfrage) .a-form{flex:none;max-height:440px}
+}
+/* Abfrage schon ab 760 px zweispaltig (9:8 auf Full HD: neben der Anrufleiste bleiben ca. 800 px) */
+@container fenster (min-width: 760px){
+  .k-Abfrage .inhalt{overflow:hidden}
+  .k-Abfrage .spalten{display:grid;flex:1 1 0;min-height:0}
+  .k-Abfrage .sp-l,.k-Abfrage .sp-r{display:block;min-height:0;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:var(--linie) transparent}
+  .k-Abfrage .sp-l:has(.a-form){display:flex;flex-direction:column;overflow:hidden}
+  :where(.k-Abfrage) .a-form{max-height:none}
 }
