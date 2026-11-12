@@ -588,7 +588,11 @@ export function funkSagt(funkname: string, text: string, laut = 1, melden?: { be
  * Funkspruch eines Fahrzeugs als Ton erzeugen (gleiche Stimme wie funkSagt), damit ihn der Gesprächsführer an alle
  * Mitspieler schicken kann – so hört auch ein Pilot ohne eigene Stimmen die Fahrzeuge. null = keine Stimme hier.
  */
+/** Nur für Tests im Web-Build (?debug): künstliche Funkstimme statt Piper, damit der Mehrspieler-Funk prüfbar ist */
+export const testStimme: { audio: null | ((funkname: string, text: string) => { rate: number; pcm: Float32Array } | null) } = { audio: null };
+
 export async function funkStimmeAudio(funkname: string, text: string): Promise<{ rate: number; pcm: Float32Array } | null> {
+  if (testStimme.audio) return testStimme.audio(funkname, text);
   const p = sprachPrefs();
   if (!inTauri() || !p.funkVorlesen) return null;
   const t = sprechText(funkAussprache(text));

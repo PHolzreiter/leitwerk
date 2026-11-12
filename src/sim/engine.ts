@@ -1105,7 +1105,8 @@ export function istRufSpruch(text: string): boolean {
 
 /** Fester Funkspruch einer Besatzung aus dem Inhalt („Hier 75/001 mit einer Lagemeldung, …, kommen“) */
 export function festerSpruch(rufname: string, art: FunkAnliegen, inhalt: string): string {
-  const t = inhalt.replace(/^Lagemeldung:\s*/i, "").replace(/[.,;\s]+$/, "");
+  // „kommen“ steht schon im Inhalt? Nicht doppelt sagen
+  const t = inhalt.replace(/^Lagemeldung:\s*/i, "").replace(/[.,;\s]+$/, "").replace(/[,\s]*\bkommen$/i, "");
   const kopf = /^Lagemeldung:/i.test(inhalt) || art === "lage" ? `Hier ${rufname} mit einer Lagemeldung` : `Hier ${rufname}`;
   return `${kopf}, ${t}, kommen`;
 }

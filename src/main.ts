@@ -78,7 +78,7 @@ import { hauptfensterStarten, nebenfensterVerbinden, nebenfensterWiederherstelle
 import { anwenden, pers, setzePers } from "./ui/ws/persoenlich";
 import { steuerleisteBauen } from "./ui/ws/steuerleiste";
 import { soundBeobachterStarten } from "./ui/sounds";
-import { funkAussprache, funkVorlesenStarten, ortHaken, sprachPrefs as sprachPrefsLesen, sprachTest, sprechText } from "./ui/sprache";
+import { funkAussprache, funkVorlesenStarten, ortHaken, sprachPrefs as sprachPrefsLesen, sprachTest, sprechText, testStimme } from "./ui/sprache";
 import { orteImText, orteJetzt } from "./ui/ortNamen";
 import { khAufnahmeOeffnen, luecken } from "./ui/khAufnahme";
 import { sekZufall } from "./sim/sek";
@@ -99,7 +99,7 @@ protokollBeobachterStarten();
 void joystickStarten();
 
 // Für automatische Tests im Browser (…/?debug): Zugriff auf Simulation und Daten
-if (location.search.includes("debug")) Object.assign(window, { __lw: { sim, store, mp, sprachTest, sprechfunk: { statistik: funkStatistik, start: sprechStart, stopp: sprechStopp }, codesystemLaden: (s: Schema & { kt?: { codes?: unknown[]; abfrage?: unknown[] } }) => {
+if (location.search.includes("debug")) Object.assign(window, { __lw: { sim, store, mp, sprachTest, testStimme, sprechfunk: { statistik: funkStatistik, start: sprechStart, stopp: sprechStopp }, codesystemLaden: (s: Schema & { kt?: { codes?: unknown[]; abfrage?: unknown[] } }) => {
         // Test: ein Satz mit KT-Teil wird wie zwei getrennte Sätze geladen (RD + KT/SEK)
         const { kt, ...rd } = structuredClone(s);
         store.setKtSatz(kt?.codes?.length ? { name: "Test", ...kt } : null);
