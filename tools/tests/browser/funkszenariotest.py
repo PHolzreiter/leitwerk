@@ -102,15 +102,50 @@ try:
         check("verstanden" in a.lower() and ang, f"NA angekündigt → „{a}“, gemerkt: {ang}")
         A.evaluate("(id) => T.sage(id, 'verstanden, Ende')", gid)
 
-        # 5) RTW vor Ort, NEF noch unterwegs: RTW wartet, fährt nicht los
+        # 5) Notarzt-Regeln (Paul 12.11.): nicht ROT → warten ohne Grenze; ROT → 10 min bzw. Fahrzeit ins KH, dann Rendezvous
         r = A.evaluate("""([e, r, n]) => { const s = T.s(); const E = s.einsatz(e); const fz = s.state.fahrzeuge[r]; const nef = s.state.fahrzeuge[n];
-            nef.phase = 'anfahrt'; nef.phaseEnde = s.state.zeit + 6 * 60000;
-            const t = s.state.zeit; const w1 = s.wartetAufNotarzt(fz, E, t);
-            const w2 = s.wartetAufNotarzt(fz, E, t + 3 * 60000);
-            const w3 = s.wartetAufNotarzt(fz, E, t + 26 * 60000);
-            return [w1, w2, w3, E.protokoll.slice(-3).map((p) => p.text)]; }""", [x["e"], x["rtw"], x["nef"]])
-        check(r[0] and r[1], f"RTW wartet auf das NEF ({r[3]})")
-        check(not r[2], "nach 25 Minuten fährt der RTW ohne Notarzt los")
+            const l = E.wahr.lage; l.patienten = [{ ...l.patienten[0], sichtung: 'gelb' }]; E.naAngekuendigt = { um: s.state.zeit, wer: 'NEF' };
+            nef.phase = 'anfahrt'; nef.phaseEnde = s.state.zeit + 60 * 60000; E.naWarten = null; E.rendezvous = null;
+            const t = s.state.zeit;
+            return [s.wartetAufNotarzt(fz, E, t), s.wartetAufNotarzt(fz, E, t + 30 * 60000), s.wartetAufNotarzt(fz, E, t + 90 * 60000), !!E.rendezvous]; }""", [x["e"], x["rtw"], x["nef"]])
+        check(r[0] and r[1] and r[2] and not r[3], f"nicht ROT, NA nötig: RTW wartet ohne Zeitgrenze, kein Rendezvous ({r})")
+
+        def rotFall(richtung):
+            return A.evaluate("""async ([e, r, n, richtung]) => { const s = T.s(); const E = s.einsatz(e); const fz = s.state.fahrzeuge[r]; const nef = s.state.fahrzeuge[n];
+                const l = E.wahr.lage; l.patienten = [{ ...l.patienten[0], sichtung: 'rot' }];
+                E.naWarten = null; E.rendezvous = null; E.naStorniert = false;
+                fz.lat = E.wahr.lat; fz.lon = E.wahr.lon; fz.phase = 'vorOrt';
+                const kh = s.khFuerTransport(E);
+                // NEF: in Richtung KH (auf halbem Weg) bzw. in der Gegenrichtung (20 km hinter dem Einsatzort)
+                const dl = kh.lat - E.wahr.lat, dn = kh.lon - E.wahr.lon, len = Math.hypot(dl, dn) || 1;
+                if (richtung === 'mit') { nef.lat = E.wahr.lat + dl * 0.6 + 0.01; nef.lon = E.wahr.lon + dn * 0.6; }
+                else { nef.lat = E.wahr.lat - dl / len * 0.18; nef.lon = E.wahr.lon - dn / len * 0.27; }
+                nef.phase = 'anfahrt'; nef.phaseEnde = s.state.zeit + 40 * 60000; nef.einsatzId = E.id;
+                const t = s.state.zeit;
+                const grenze = Math.max(10 * 60000, s.khFahrzeit(fz, E));
+                const w1 = s.wartetAufNotarzt(fz, E, t);
+                const w2 = s.wartetAufNotarzt(fz, E, t + grenze - 60000);
+                const w3 = s.wartetAufNotarzt(fz, E, t + grenze + 60000);
+                await T.warte(() => E.naWarten?.rv !== 'rechnet', 10000);
+                const w4 = s.wartetAufNotarzt(fz, E, t + grenze + 2 * 60000);
+                return { w1, w2, w3, w4, rv: E.rendezvous && E.rendezvous.punkt.label, grenzeMin: Math.round(grenze / 60000), kh: kh.name, log: E.protokoll.slice(-2).map((p) => p.text) }; }""", [x["e"], x["rtw"], x["nef"], richtung])
+        r = rotFall("mit")
+        print("   ", r)
+        check(r["w1"] and r["w2"] and r["w3"] and r["grenzeMin"] >= 10, f"ROT: wartet bis zur Grenze ({r['grenzeMin']} min = max(10, Fahrzeit ins {r['kh']}))")
+        check(bool(r["rv"]) and not r["w4"], f"ROT, NEF Richtung KH: Rendezvous {r['rv']} – RTW fährt los")
+        r = rotFall("gegen")
+        print("   ", r)
+        check(not r["rv"] and r["w4"], "ROT, NEF in der Gegenrichtung: kein Rendezvous, RTW wartet weiter")
+        r = A.evaluate("""([e, r, n]) => { const s = T.s(); const E = s.einsatz(e); const fz = s.state.fahrzeuge[r]; const nef = s.state.fahrzeuge[n];
+            nef.einsatzId = null; E.fahrzeuge = E.fahrzeuge.filter((id) => id !== n); E.naWarten = null; E.rendezvous = null; E.naAngekuendigt = null; E.naKeiner = null;
+            const t = s.state.zeit;
+            const a = s.wartetAufNotarzt(fz, E, t), b = s.wartetAufNotarzt(fz, E, t + 40 * 60000);
+            E.naKeiner = { seit: t + 40 * 60000 };
+            const c = s.wartetAufNotarzt(fz, E, t + 45 * 60000), d = s.wartetAufNotarzt(fz, E, t + 51 * 60000);
+            return [a, b, c, d]; }""", [x["e"], x["rtw"], x["nef"]])
+        check(r[0] and r[1] and r[2] and not r[3], f"NA nötig, keiner alarmiert: wartet; nach „kein NA in Reichweite“ noch 10 min, dann los ({r})")
+        a = A.evaluate("(t) => window.__lw.funkAbsicht.absichtErkennen(t, {})", "Hier LEO, kein Notarzt in Reichweite, kommen")
+        check(a.get("thema") == "keinNa", f"„kein Notarzt in Reichweite“ verstanden ({a})")
 
         # 6) roter Patient: Notarzt nötig, Storno des NEF nicht ohne Rückfrage
         r = A.evaluate("""(e) => { const s = T.s(); const E = s.einsatz(e); const l = E.wahr.lage; if (l) l.patienten = [{ nr: 1, geschlecht: 'm', alter: 60, bw: 'nein', at: 'abnorm', sichtung: 'rot' }];
