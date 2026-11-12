@@ -451,7 +451,7 @@ export function einsatzFenster(ctx: PanelKontext): { el: HTMLElement; dispose():
     // ---- Nachforderungen
     const nachforderungen = (e.nachforderungen ?? [])
       .filter((n) => !n.erledigt)
-      .map((n) => `Nachforderung von ${n.von}: ${n.art === "NA" ? (n.anzahl > 1 ? `${n.anzahl} Notärzte` : "Notarzt") : n.art === "BIT" ? "BIT (Patient zu schwer für die Trage)" : `${n.anzahl} weitere${n.anzahl > 1 ? "" : "s"} Rettungsmittel`}`);
+      .map((n) => `Nachforderung von ${n.von}: ${n.art === "NA" ? (n.anzahl > 1 ? `${n.anzahl} Notärzte` : "Notarzt") : n.art === "NFS" ? "NEF oder RTW-C (Notfallsanitäter)" : n.art === "BIT" ? "BIT (Patient zu schwer für die Trage)" : `${n.anzahl} weitere${n.anzahl > 1 ? "" : "s"} Rettungsmittel`}`);
 
     const wer = a?.angenommenVon?.name ?? e.bearbeiter?.name ?? "";
     const verdacht = e.khAnfrage?.verdacht ?? e.verdacht ?? "";

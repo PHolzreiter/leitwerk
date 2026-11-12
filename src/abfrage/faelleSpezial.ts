@@ -22,7 +22,7 @@ export const FAELLE_SPEZIAL: FallVorlage[] = [
     hergang: ["(Rascheln)"],
     seitMin: [0, 1],
     fest: { art: "hilflos", bw: "ja", at: "normal", anzahl_patienten: "1" },
-    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "kein Notfall – Hosentaschenanruf", na: "nein", transport: false, dringlichkeit: 10, buchung: "" }],
+    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "kein Notfall – Hosentaschenanruf", braucht: "RS", transport: false, dringlichkeit: 10, buchung: "" }],
   },
 
   // ---------------------------------------------------------------- Scherzanruf
@@ -46,7 +46,7 @@ export const FAELLE_SPEZIAL: FallVorlage[] = [
     hergang: ["Hallo, äh … (Kichern) … mein Freund hat den Kopf in einem Kübel stecken!"],
     seitMin: [0, 2],
     fest: { art: "hilflos", bw: "ja", at: "normal", anzahl_patienten: "1" },
-    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "kein Notfall – Scherzanruf", na: "nein", transport: false, dringlichkeit: 10, buchung: "" }],
+    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "kein Notfall – Scherzanruf", braucht: "RS", transport: false, dringlichkeit: 10, buchung: "" }],
   },
 
   // ---------------------------------------------------------------- „Bewusstlos“, aber betrunken
@@ -80,8 +80,8 @@ export const FAELLE_SPEZIAL: FallVorlage[] = [
       "Du bist ein bisschen nervös. Erst wenn die Leitstelle dich bittet, ihn laut anzusprechen oder an der Schulter zu rütteln, merkst du: er wird wach, lallt und ist einfach betrunken – das sagst du dann erleichtert.",
     ],
     varianten: [
-      { id: "A", p: 0.85, sichtung: "gelb", wahr: { bw: "getruebt", at: "normal" }, lage: "Alkoholintoxikation, auf Schmerzreiz erweckbar, lallt, Kreislauf stabil, leicht unterkühlt", na: "nein", revers: 0.3, symptom: "bewusstseinsstoerung_gcs_9_15", dringlichkeit: 20, buchung: "bu_intoxikation" },
-      { id: "B", p: 0.15, sichtung: "gelb", wahr: { bw: "getruebt", at: "normal" }, lage: "Alkoholintoxikation mit Kopfplatzwunde am Hinterkopf nach Sturz, eingetrübt", na: "nein", symptom: "kopfverletzung", dringlichkeit: 20, buchung: "bu_schweres_sht" },
+      { id: "A", p: 0.85, sichtung: "gelb", wahr: { bw: "getruebt", at: "normal" }, lage: "Alkoholintoxikation, auf Schmerzreiz erweckbar, lallt, Kreislauf stabil, leicht unterkühlt", braucht: "RS", revers: 0.3, symptom: "bewusstseinsstoerung_gcs_9_15", dringlichkeit: 20, buchung: "bu_intoxikation" },
+      { id: "B", p: 0.15, sichtung: "gelb", wahr: { bw: "getruebt", at: "normal" }, lage: "Alkoholintoxikation mit Kopfplatzwunde am Hinterkopf nach Sturz, eingetrübt", braucht: "RS", symptom: "kopfverletzung", dringlichkeit: 20, buchung: "bu_schweres_sht" },
     ],
   },
 
@@ -114,7 +114,7 @@ export const FAELLE_SPEZIAL: FallVorlage[] = [
       "[anrufer_typ=wirt] Du bist genervt, aber sachlich.",
     ],
     varianten: [
-      { id: "A", p: 1, sichtung: "gelb", lage: "zwei leicht Verletzte, alkoholisiert: Platzwunde Augenbraue, Handprellung; beide orientiert", na: "nein", partner: [{ art: "pol", grund: "Körperverletzung, mehrere Beteiligte", eigenschutz: true }], revers: 0.3, symptom: "gesichts_kopfverletzung_augen", dringlichkeit: 10, buchung: "bu_gesichtsschaedelverletzung" },
+      { id: "A", p: 1, sichtung: "gelb", lage: "zwei leicht Verletzte, alkoholisiert: Platzwunde Augenbraue, Handprellung; beide orientiert", braucht: "RS", partner: [{ art: "pol", grund: "Körperverletzung, mehrere Beteiligte", eigenschutz: true }], revers: 0.3, symptom: "gesichts_kopfverletzung_augen", dringlichkeit: 10, buchung: "bu_gesichtsschaedelverletzung" },
     ],
   },
 
@@ -141,7 +141,7 @@ export const FAELLE_SPEZIAL: FallVorlage[] = [
       "Du bist sehr aufgeregt und übertreibst: für dich ist es ganz schlimm („Es geht ihm sooo schlecht!“, „Er stirbt mir noch!“). Auf genaue Fragen kommt aber heraus: er ist wach, atmet normal, redet normal.",
     ],
     varianten: [
-      { id: "A", p: 1, sichtung: "gruen", lage: "grippaler Infekt, Temperatur 38,6, wach, Kreislauf stabil", na: "nein", revers: 0.4, symptom: "fieber", dringlichkeit: 10, buchung: "bu_pneumonie_atemnot_copd" },
+      { id: "A", p: 1, sichtung: "gruen", lage: "grippaler Infekt, Temperatur 38,6, wach, Kreislauf stabil", braucht: "RS", revers: 0.4, symptom: "fieber", dringlichkeit: 10, buchung: "bu_pneumonie_atemnot_copd" },
     ],
   },
 
@@ -166,8 +166,8 @@ export const FAELLE_SPEZIAL: FallVorlage[] = [
     wissen: { unbekannt: ["herzleiden", "diabetiker", "epilepsie", "blutverduenner"], ungefaehr: ["alter"] },
     details: ["{Er} sagt, {er} war auf dem Weg nach Hause.", "{Er} hat seit dem Frühstück nichts gegessen, sagt {er}."],
     varianten: [
-      { id: "A", p: 0.8, sichtung: "gelb", lage: "Synkope im Sitzen, jetzt wach, Blutdruck 95 zu 60, Puls 54", na: "nein", symptom: "bewusstseinsstoerung_gcs_9_15", dringlichkeit: 20, buchung: "bu_exsikkose_synkope_az_verschlechterung" },
-      { id: "B", p: 0.2, sichtung: "rot", lage: "Synkope bei Bradykardie 35, AV-Block III, kaltschweißig", na: "immer", symptom: "herzrhythmusstoerung", dringlichkeit: 30, buchung: "bu_instabile_rhythmusstoerung" },
+      { id: "A", p: 0.8, sichtung: "gelb", lage: "Synkope im Sitzen, jetzt wach, Blutdruck 95 zu 60, Puls 54", braucht: "RS", symptom: "bewusstseinsstoerung_gcs_9_15", dringlichkeit: 20, buchung: "bu_exsikkose_synkope_az_verschlechterung" },
+      { id: "B", p: 0.2, sichtung: "rot", lage: "Synkope bei Bradykardie 35, AV-Block III, kaltschweißig", braucht: "NA", symptom: "herzrhythmusstoerung", dringlichkeit: 30, buchung: "bu_instabile_rhythmusstoerung" },
     ],
   },
 
@@ -193,7 +193,7 @@ export const FAELLE_SPEZIAL: FallVorlage[] = [
     details: ["Sättigung 89 Prozent ohne Sauerstoff, Temperatur 38,9, Blutdruck 120 zu 70, Puls 104.", "Die Einweisung ist geschrieben.", "Die Tochter ist da und packt die Sachen."],
     verlauf: ["Du bist ruhig und routiniert, du sagst knapp, was du brauchst."],
     varianten: [
-      { id: "A", p: 1, sichtung: "gelb", lage: "Pneumonie, Sättigung 89 %, mit Sauerstoff 94 %, stabil", na: "nein", symptom: "atemnot", dringlichkeit: 20, buchung: "bu_pneumonie_atemnot_copd" },
+      { id: "A", p: 1, sichtung: "gelb", lage: "Pneumonie, Sättigung 89 %, mit Sauerstoff 94 %, stabil", braucht: "RS", symptom: "atemnot", dringlichkeit: 20, buchung: "bu_pneumonie_atemnot_copd" },
     ],
   },
 ];

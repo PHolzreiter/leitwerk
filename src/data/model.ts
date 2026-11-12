@@ -122,7 +122,7 @@ export const FAHRZEUG_TYPEN: { typ: string; kategorie: VehicleCategory; label: s
   { typ: "BIT", kategorie: "BIT", label: "BIT (Schwerlast)" },
   { typ: "BEL", kategorie: "BEL", label: "BEL (Bezirkseinsatzleiter)" },
   { typ: "EL ÖBB", kategorie: "EL ÖBB", label: "EL ÖBB" },
-  { typ: "ACN", kategorie: "ACN", label: "ACN (Acute Community Nurse: DGKP mit NKI, allein im Fahrzeug)" },
+  { typ: "ACN", kategorie: "ACN", label: "ACN (Acute Community Nurse: DGKP mit NKV oder NKI, allein im Fahrzeug)" },
 ];
 
 export const HOSPITAL_FLAGS = [

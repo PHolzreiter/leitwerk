@@ -126,7 +126,7 @@ export function absichtErkennen(text: string, opt: { sicherheit?: number; angesp
 
   // Informationen
   // „kein Notarzt in Reichweite“: die Besatzung fährt nach kurzer Zeit ohne Notarzt
-  if (/\bkein(en)?\s+(notarzt|na|nef|arzt|hubschrauber)\b.{0,30}\b(verfügbar|frei|in reichweite|erreichbar|vorhanden|da|mehr)\b|\b(notarzt|nef|na)\b.{0,20}\bnicht\s+(verfügbar|erreichbar|frei|möglich)\b|\bkeiner\s+(in reichweite|verfügbar|frei)\b|\bohne notarzt\b/.test(inhalt))
+  if (/\bkein(en)?\s+(notarzt|na|nef|arzt|hubschrauber)\b.{0,30}\b(verfügbar|frei|in reichweite|erreichbar|vorhanden|da|mehr)\b|\b(notarzt|nef|na)\b.{0,20}\bnicht\s+(verfügbar|erreichbar|frei|möglich)\b|\bkeiner\s+(in reichweite|verfügbar|frei)\b|\b(nichts|keins|keines)\s+(frei|verfügbar|in reichweite)\b|\bkein(en)?\s+(rtw-?c|nef oder rtw-?c)\b|\bohne notarzt\b/.test(inhalt))
     return { art: "info", thema: "keinNa" };
   if (dritter && /\b(alarmiert|nachalarmiert|unterwegs|kommt|kommen zu euch|zu euch|geschickt|schicke|losgeschickt|eintreffzeit|eintreffen|ist auf dem weg|fliegt|startet)\b/.test(inhalt)) {
     const na = /\b(nef|notarzt|na\b|nah\b|naw\b|hubschrauber|christoph\w*|c\s?\d{1,2})\b/i.test(dritter);

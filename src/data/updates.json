@@ -1,5 +1,18 @@
 [
  {
+  "version": "0.116.0-beta.48",
+  "datum": "2026-11-12",
+  "titel": "Kompetenz je Einsatz: wer reicht, wer kommt, warten oder fahren",
+  "punkte": [
+   "Jeder Fall braucht RS, NFS, NKV, NKI oder Notarzt (alle Fälle neu eingestuft)",
+   "„Reicht nicht immer“: vor Ort wird manchmal noch ein Notarzt nachgefordert",
+   "Nachforderung nach Kompetenz – was auf Zufahrt ist, zählt mit; Frage nach NEF oder RTW-C",
+   "ACN wie ein NEF mit NKV/NKI",
+   "ROT: Rendezvous sofort, wenn das NEF am Weg entgegenkommt, sonst warten oder schneller ins KH",
+   "Stabil: höchstens 30 Minuten warten; auf Hubschrauber immer warten"
+  ]
+ },
+ {
   "version": "0.116.0-beta.47",
   "datum": "2026-11-12",
   "titel": "Funk-Quittungen, Mehrfachtransport als Standard, Rückruf immer",

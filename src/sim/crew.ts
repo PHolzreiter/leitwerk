@@ -131,8 +131,9 @@ export const REGELN: Record<RmTyp, PlatzRegel[]> = {
   "EL ÖBB": [],
   // Bezirkseinsatzleiter: versorgt keine Patienten, koordiniert vor Ort
   BEL: [{ rolle: "Einsatzleiter", gewichte: { NFS: 20, "NFS-NKA": 25, "NFS-NKV": 30, "NFS-NKI": 25 } }],
-  // Acute Community Nurse: diplomierte Pflegekraft (DGKP) mit Notfallkompetenz Intubation, allein im Fahrzeug
-  ACN: [{ rolle: "ACN", gewichte: { "NFS-NKI": 1 } }],
+  // Acute Community Nurse: diplomierte Pflegekraft (DGKP), allein im Fahrzeug – im Spiel wie ein NEF, nur bringt sie
+  // statt eines Notarztes einen NKV bzw. NKI an den Einsatzort (Paul 12.11.2026)
+  ACN: [{ rolle: "ACN", gewichte: { "NFS-NKV": 50, "NFS-NKI": 50 } }],
   Sonstige: [],
 };
 

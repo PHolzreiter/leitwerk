@@ -24,7 +24,12 @@ try:
                 const rtw = frei.filter(f => f.kategorie === 'RTW').sort((a, b) => d(a) - d(b))[0];
                 rtw.besetzung = [{ rolle: 'Fahrer', quali: 'RS' }, { rolle: 'Transportführer', quali: 'NFS' }];
                 const nefs = frei.filter(f => f.kategorie === 'NEF' && !f.ersatzFuer).sort((a, b) => d(a) - d(b));
-                const nef = nefs.find(f => d(f) > weit) ?? nefs[nefs.length - 1];
+                // Beta 48: Rendezvous nur, wenn das NEF am Weg ins Krankenhaus entgegenkommt – also eines zwischen Einsatzort und KH
+                const kh = s.khFuerTransport(e); const dk = (f) => Math.hypot(f.lat - kh.lat, (f.lon - kh.lon) * 0.66) * 111;
+                const umweg = (f) => d(f) + dk(f) - Math.hypot(kh.lat - e.wahr.lat, (kh.lon - e.wahr.lon) * 0.66) * 111;
+                const amWeg = nefs.filter(f => d(f) > weit / 2 && umweg(f) < 6).sort((a, b) => umweg(a) - umweg(b));
+                const nef = (weit >= 30 && amWeg[0]) || nefs.find(f => d(f) > weit) || nefs[nefs.length - 1];
+                nef.naAbholung = null;
                 s.alarmiere(e.id, [rtw.id, nef.id]); s.setTempo(30); s.start(); return { id: e.id, rtw: rtw.funkrufname, nef: nef.funkrufname, km: Math.round(d(nef)) }; }""", [fall, var, nefWeit])
         # 1) Rendezvous: STEMI, NEF weit weg
         info = start("brustschmerz", "A", 30); print("    ", info)
@@ -41,7 +46,7 @@ try:
                 marker = A.evaluate("() => { const m = window.__lw.map; const src = m?.getSource && m.getSource('incidents'); return true; }")
             if rv and z["rv"] and z["rv"]["status"] == "fertig" and any(":transport:" in x for x in z["ph"]): 
                 print("     ", z); break
-        check(rv is not None, "Rendezvous wird vereinbart (NEF > 15 min)")
+        check(rv is not None, "Rendezvous wird vereinbart (NEF kommt am Weg ins KH entgegen)")
         funk = A.evaluate("(id) => (window.__lw.sim.state.funkGespraeche || []).filter(g => g.einsatzId === id && g.an).map(g => g.sprueche.map(s => s.von + ': ' + s.text))", eid)
         print("     Fahrzeugfunk:", json.dumps(funk, ensure_ascii=False)[:600])
         check(any(any("Rendezvous" in s for s in g) for g in funk), "Funk RTW ↔ NEF zum Rendezvous sichtbar")
@@ -67,7 +72,7 @@ try:
             check(nefFrei, "NEF storniert (vom RTW)")
             A.evaluate("(gid) => window.__lw.sim.funkMitgehoert(gid)", g["id"])
             g2 = A.evaluate("(gid) => window.__lw.sim.state.funkGespraeche.find(x => x.id === gid)", g["id"])
-            check(g2["status"] == "ende" and g2["sprueche"][-1]["text"] == "Hier LEO, mitgehört, ENDE", "LEO: mitgehört, ENDE")
+            check(g2["status"] == "ende" and "mitgehört" in g2["sprueche"][-1]["text"] and g2["sprueche"][-1]["von"] == "LEO", "LEO: mitgehört, Ende")
             lageLeo = A.evaluate("(id) => (window.__lw.sim.state.funkGespraeche || []).filter(g => g.einsatzId === id && !g.an).map(g => g.anliegen?.text || '')", eid)
             check(not any("storniert werden" in t for t in lageLeo), "Lagemeldung an LEO ohne Storno-Bitte")
         else:

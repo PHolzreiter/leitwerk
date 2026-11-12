@@ -22,7 +22,7 @@ import { ACN_CODES, allCodes, findCode, hasCodes, istAcnCode, type Einsatzcode }
 import { rendezvousPunkt } from "./rendezvous";
 import { abwandeln } from "./funkVielfalt";
 import { distanceM, erreichbar, flightRoute, geoStatus, randomAddresses, route, searchAddress, travelTimes, type LatLon, type Route } from "./geo";
-import { generiereBesetzung, hatNFS, hoechsteQuali, rang, rmTypVon, type Platz, type Quali, type RmTyp } from "./crew";
+import { generiereBesetzung, hatNFS, hoechsteQuali, rmTypVon, type Platz, type RmTyp } from "./crew";
 import { defaultStufeFuer, raenge, stufeRaten, type Kategorie, type Settings, type StatusKey, type StufeDef } from "./settings";
 import {
   fahrFaktor,
@@ -149,11 +149,17 @@ import { FUNKGRUPPEN, funkgruppe, funkgruppeVon, inFunkgruppe, mitteVon, type Fu
 import { echtwetterLaden } from "./echtwetter";
 import { sekZufall } from "./sek";
 import { bedarf, ereignisseEinplanen, istStillstand, lageAusFall, lageErzeugen, lagemeldungText, patientText, rtwBedarf, type Lage } from "./lage";
-import { alleFaelle, anleitungAus, fallPaare, fallVariante, fallUndVariante, fallVorlage, varianteWaehlen, type FallVariante, type FallVorlage } from "../abfrage/faelle";
+import { alleFaelle, anleitungAus, brauchtAusNa, brauchtVon, fallPaare, fallVariante, fallUndVariante, fallVorlage, kompetenzRang, varianteWaehlen, type FallVariante, type FallVorlage, type Kompetenz } from "../abfrage/faelle";
 import { nachrichtArt } from "../abfrage/runde";
 
 const MIN = 60_000;
-const NF_NAME = { NA: "Notarzt", RTW: "Rettungsmittel", BIT: "BIT (Schwerlasttransport)" } as const;
+/** was die Besatzung funkt, wenn die Maßnahmen ihrer Stufe nicht reichen */
+const MASSNAHME_REICHT_NICHT: Partial<Record<Kompetenz, string>> = {
+  NFS: "Maßnahmen im Rahmen der Notfallkompetenz reichen nicht aus",
+  NKV: "Therapie mit Venenzugang und Medikamenten reicht nicht aus",
+  NKI: "unsere Maßnahmen reichen nicht aus",
+};
+const NF_NAME = { NA: "Notarzt", RTW: "Rettungsmittel", BIT: "BIT (Schwerlasttransport)", NFS: "NEF oder RTW-C (Notfallsanitäter)" } as const;
 /** So lange wartet die Besatzung auf den BIT, dann transportiert sie selbst */
 const BIT_WARTEN = 35 * MIN;
 
@@ -713,7 +719,7 @@ export interface FunkSatz {
 }
 
 export interface Nachforderung {
-  art: "NA" | "RTW" | "BIT";
+  art: "NA" | "RTW" | "BIT" | "NFS";
   anzahl: number;
   seit: number;
   von: string;
@@ -3035,7 +3041,7 @@ export class Simulation {
     if (v?.tot) mit = false;
     else if (p0.sichtung === "rot" || istStillstand(p0)) mit = true;
     else if (v?.naBegleitet !== undefined) mit = v.naBegleitet;
-    else if (lf.na !== "nein") mit = true;
+    else if (this.brauchtJetzt(e) === "NA") mit = true;
     else mit = p0.sichtung === "gelb" ? Math.random() < 0.5 : false;
     lf.naMit = mit;
     return mit;
@@ -3873,13 +3879,13 @@ export class Simulation {
     if (!arzt && rm && this.mitNotarzt(rm)) arzt = rm;
     const nfsFehlt = stufe.nfsErforderlich && rm !== undefined && !hatNFS(rm.besetzung);
     const regel = stufe.notarzt !== "nein" ? stufe.notarzt : nfsFehlt ? "nef" : "nein";
-    // Kein NFS am Rettungsmittel (z. B. nur ein RS-RTW, weil der RTW-C nicht frei ist): eine freie ACN (NKI)
+    // Kein NFS am Rettungsmittel (z. B. nur ein RS-RTW, weil der RTW-C nicht frei ist): eine freie ACN (NKV/NKI)
     // ersetzt den Notarzt, wenn sie nicht später als NEF/NAH da ist – spart Notarztmittel
     if (!arzt && regel === "nef" && stufe.notarzt === "nein" && nfsFehlt && !imEinsatz.some((f) => f.rmTyp === "ACN") && acnFrei) {
       const naSek = Math.min(...nutzbar.filter((v) => v.fz.rmTyp === "NEF" || v.fz.rmTyp === "NAH").map((v) => v.sekunden!), Number.POSITIVE_INFINITY);
       if (acnFrei.sekunden! <= naSek + tol) {
         ids.push(acnFrei.fz.id);
-        gruende.push(`${acnFrei.fz.funkrufname} (ACN, ${min(acnFrei.sekunden!)}): kein NFS am Rettungsmittel – ACN (NKI) statt Notarzt`);
+        gruende.push(`${acnFrei.fz.funkrufname} (ACN, ${min(acnFrei.sekunden!)}): kein NFS am Rettungsmittel – ACN (NKV/NKI) statt Notarzt`);
         arzt = acnFrei.fz;
       }
     }
@@ -4909,6 +4915,7 @@ export class Simulation {
       if (!l || e.zustand === "abgeschlossen") continue;
       this.rendezvousPruefen(e, t);
       this.naEntscheiden(e, t);
+      this.reichtNichtPruefen(e, t);
       for (const ev of l.ereignisse) {
         if (ev.eingetreten || t < ev.um) continue;
         if (l.fall) {
@@ -4962,11 +4969,13 @@ export class Simulation {
       return;
     }
     ev.eingetreten = true;
-    if (ev.nurOhneNa && naDa) return;
+    // „ohne Notarzt“ heißt jetzt: ohne die nötige Kompetenz (z. B. NKV) beim Patienten
+    const versorgt = naDa || this.versorgt(e);
+    if (ev.nurOhneNa && versorgt) return;
     let chance = ev.chance ?? 1;
     const gegeben = ev.mitAnleitung ? lf.anleitungen[ev.mitAnleitung.typ] : undefined;
     if (ev.mitAnleitung && gegeben !== undefined && gegeben <= t) chance = ev.mitAnleitung.chance;
-    else if (ev.chanceOhneNa !== undefined && !naDa) chance = ev.chanceOhneNa;
+    else if (ev.chanceOhneNa !== undefined && !versorgt) chance = ev.chanceOhneNa;
     if (Math.random() >= chance) return;
     const p = l.patienten[0];
     if (!ev.nurText) {
@@ -4981,6 +4990,9 @@ export class Simulation {
         lf.variante = nv.id;
         lf.kern = nv.lage;
         lf.na = nv.na;
+        lf.braucht = brauchtVon(nv);
+        lf.reichtNicht = Math.random() < (nv.reichtNicht ?? 0);
+        lf.reichtNichtUm = null;
         lf.ohneNaGeplant = false;
         lf.naMit = undefined;
         e.wahr.transport = nv.transport !== false;
@@ -4992,7 +5004,8 @@ export class Simulation {
       }
     }
     if (ev.kern) lf.kern = ev.kern;
-    if (ev.na) lf.na = ev.na;
+    if (ev.braucht) lf.braucht = ev.braucht;
+    else if (ev.na) lf.braucht = brauchtAusNa(ev.na);
     l.verlauf.push({ zeit: t, text: `${ev.art === "verschlechterung" ? "Verschlechterung" : "Veränderung"}: ${lf.kern}` });
     this.lageMelden(e, ev.art !== "verschlechterung", t, ev.text, ev.nurText);
   }
@@ -5019,7 +5032,8 @@ export class Simulation {
       const fehlt = this.fehlendeKraefte(e);
       this.nachfordern(e, fz, fehlt);
       const brauchen = [fehlt.na && "Notarzt", fehlt.rtw && `${fehlt.rtw} weitere${fehlt.rtw > 1 ? "" : "s"} Rettungsmittel`, fehlt.bit && "BIT"].filter(Boolean);
-      const zusatz = brauchen.length ? `, benötigen ${brauchen.join(" und ")}` : "";
+      const zusatz = (brauchen.length ? `, benötigen ${brauchen.join(" und ")}` : "") + (!fehlt.na && fehlt.nfs ? ", Frage: ist ein NEF oder RTW-C verfügbar" : "");
+      if (!fehlt.na && fehlt.nfs) brauchen.push("NFS");
       this.fzRuft(this.sprecher(e, fz), e, brauchen.length ? "nachforderung" : "lage", `${text}${zusatz}`);
       if (istStillstand(p0) && fz.phaseEnde !== null) fz.phaseEnde = Math.max(fz.phaseEnde, t + rnd(30, 40) * MIN);
       return;
@@ -5129,7 +5143,10 @@ export class Simulation {
     const fehlt = this.fehlendeKraefte(e);
     // Notarzt nachfordern bzw. stornieren erst, wenn die Besatzung den Patienten angeschaut hat (naEntscheidUm)
     const naJetzt = e.naEntscheidUm == null || this.state.zeit >= e.naEntscheidUm;
-    if (!naJetzt) fehlt.na = 0;
+    if (!naJetzt) {
+      fehlt.na = 0;
+      fehlt.nfs = 0;
+    }
     else if (plan.erstes) {
       e.naEntschieden = true;
       this.naStornoWennUnnoetig(e, fz);
@@ -5138,7 +5155,7 @@ export class Simulation {
     // Lagemeldung nur bei besonderen Umständen (Verkehrsunfall, Brand, mehrere Patienten, Lage ganz anders als gemeldet …),
     // bei Nachforderung oder wenn LEO darum gebeten hat – nicht bei jedem Einsatz
     const abweichung = l.irrtum !== null || angenommenRea !== istStillstand(p0) || l.patienten.length > 1 || ist(kap, "verkehrsunfall", "ecall", "eingeklemmt", "brand", "gefahrstoff", "alpin", "wasser", "strom", "stich_schuss");
-    if ((plan.erstes && (abweichung || fehlt.na > 0 || fehlt.rtw > 0 || fehlt.bit > 0 || partner.length > 0)) || plan.angefordert) {
+    if ((plan.erstes && (abweichung || fehlt.na > 0 || (fehlt.nfs ?? 0) > 0 || fehlt.rtw > 0 || fehlt.bit > 0 || partner.length > 0)) || plan.angefordert) {
       let text = lagemeldungText(l, kap, fehlt, false);
       const da = (Object.keys(e.partnerDa ?? {}) as PartnerArt[]).map((a) => PARTNER[a].name);
       if (da.length) text += `, ${da.join(" und ")} vor Ort`;
@@ -5147,8 +5164,8 @@ export class Simulation {
         e.partnerErinnert = this.state.zeit;
       }
       this.nachfordern(e, fz, fehlt);
-      this.ohneNaEinplanen(e, fehlt.na > 0);
-      const art: FunkAnliegen = fehlt.na || fehlt.rtw || fehlt.bit || partner.length ? "nachforderung" : "lage";
+      this.ohneNaEinplanen(e, fehlt.na > 0 || (fehlt.nfs ?? 0) > 0);
+      const art: FunkAnliegen = fehlt.na || fehlt.nfs || fehlt.rtw || fehlt.bit || partner.length ? "nachforderung" : "lage";
       // Notarzt nötig, kein NEF in der Nähe: Frage nach dem Hubschrauber (LEOs Antwort wird verstanden)
       const heli = fehlt.na > 0 ? this.heliFrageFuer(e) : null;
       if (heli) {
@@ -5164,8 +5181,38 @@ export class Simulation {
   /** NEF/NAH unterwegs, aber kein Notarzt nötig → die Besatzung storniert ihn selbst über Funk (LEO hört mit) */
   private naStornoWennUnnoetig(e: Einsatz, fz: SimFahrzeug): void {
     if (!this.transportfaehig(fz) || this.bedarfVon(e).na !== 0) return;
+    // braucht der Patient eine Kompetenz, die nur der Notarzt bringt (z. B. NKV, aber nur RS da), bleibt er
+    const braucht = this.brauchtJetzt(e);
+    const ohneNa = this.kompetenzMitZufahrt(e, (x) => this.mitNotarzt(x));
+    if (braucht && (ohneNa === null || kompetenzRang(ohneNa) < kompetenzRang(braucht))) return;
     const naUnterwegs = this.einsatzFz(e).filter((x) => (x.kategorie === "NEF" || fliegt(x)) && x.phase !== "vorOrt" && x.phase !== "treffpunkt");
     for (const na of naUnterwegs) this.naStornoFunk(e, this.sprecher(e, fz), na);
+  }
+
+  /**
+   * „Reicht nicht immer“ (Paul 12.11.2026): Ist die passende Kompetenz beim Patienten (z. B. NKV mit Esketamin), zeigt
+   * sich nach einigen Minuten, ob die Maßnahmen reichen. Wenn nicht, fordert die Besatzung einen Notarzt nach.
+   */
+  private reichtNichtPruefen(e: Einsatz, t: number): void {
+    const lf = e.wahr.lage?.fall;
+    if (!lf?.reichtNicht || e.gs || e.gsKind || e.fremd) return;
+    const stufe = brauchtVon(lf);
+    if (stufe === "NA") return;
+    if (lf.reichtNichtUm == null) {
+      const k = this.kompetenzVorOrt(e);
+      if (k && kompetenzRang(k) >= kompetenzRang(stufe) && k !== "NA") lf.reichtNichtUm = t + rnd(5, 10) * MIN;
+      return;
+    }
+    if (t < lf.reichtNichtUm || lf.reichtNichtGemeldet) return;
+    lf.reichtNichtGemeldet = true;
+    if (this.kompetenzVorOrt(e) === "NA") return;
+    const fz = this.einsatzFz(e).find((x) => this.beimPatienten(e, x) && this.transportfaehig(x)) ?? this.einsatzFz(e).find((x) => this.beimPatienten(e, x));
+    if (!fz) return;
+    this.log(e, `${fz.funkrufname}: Maßnahmen reichen nicht aus – Notarzt nötig`);
+    const fehlt = this.fehlendeKraefte(e);
+    if (fehlt.na <= 0) return;
+    this.nachfordern(e, fz, { na: fehlt.na, rtw: 0, bit: 0 });
+    this.fzRuft(this.sprecher(e, fz), e, "nachforderung", `${MASSNAHME_REICHT_NICHT[stufe] ?? "unsere Maßnahmen reichen nicht aus"}, benötigen zusätzlich einen Notarzt`);
   }
 
   /** Zeit für die Notarzt-Entscheidung gekommen (ohne eigene Lagemeldung): nachfordern bzw. stornieren */
@@ -5177,6 +5224,12 @@ export class Simulation {
     if (!fz) return;
     this.naStornoWennUnnoetig(e, fz);
     const fehlt = this.fehlendeKraefte(e);
+    if ((fehlt.nfs ?? 0) > 0 && !(e.nachforderungen ?? []).some((n) => n.art === "NFS" && !n.erledigt)) {
+      this.nachfordern(e, fz, { na: 0, rtw: 0, bit: 0, nfs: 1 });
+      this.ohneNaEinplanen(e, true);
+      this.fzRuft(this.sprecher(e, fz), e, "nachforderung", "Frage: ist ein NEF oder RTW-C verfügbar");
+      return;
+    }
     if (fehlt.na <= 0 || (e.nachforderungen ?? []).some((n) => n.art === "NA" && !n.erledigt)) return;
     this.nachfordern(e, fz, { na: fehlt.na, rtw: 0, bit: 0 });
     this.ohneNaEinplanen(e, true);
@@ -5250,15 +5303,16 @@ export class Simulation {
   }
 
   /**
-   * Wartet die Besatzung vor Ort auf den Notarzt? (Regeln Paul 12.11.2026)
-   * - Notarzt ist da und versorgt noch: warten, bis er entschieden hat.
-   * - Hubschrauber kommt: warten, bis er da ist (oder Storno) – kein Rendezvous.
-   * - NEF kommt, Patient ROT, kein Großschaden: warten, höchstens so lange wie das Längere von 10 Minuten und der Fahrzeit
-   *   ins geeignete Krankenhaus; dann Rendezvous auf der Strecke des RTW. Holt das NEF den RTW nicht ein (Gegenrichtung),
-   *   gibt es kein Rendezvous – dann weiter warten.
-   * - NEF kommt, Patient nicht ROT: warten ohne Zeitgrenze.
-   * - Notarzt nötig, keiner alarmiert: nachfordern und warten; sagt die Leitstelle „kein Notarzt in Reichweite“,
-   *   noch 10 Minuten warten, dann ohne Notarzt los.
+   * Wartet die Besatzung vor Ort auf die nötige Kompetenz (Notarzt, ACN, NFS)? Regeln Paul 12.11.2026 (Beta 48):
+   * - Notarzt ist da und versorgt noch: warten, bis er entschieden hat (höchstens 25 Minuten).
+   * - Kompetenz vor Ort reicht: nicht warten.
+   * - Hubschrauber kommt: immer warten (nur ein Storno beendet das) – kein Rendezvous.
+   * - ROT, NEF kommt am Weg ins Krankenhaus entgegen (Treffpunkt möglich): sofort losfahren, Rendezvous.
+   * - ROT, Einheit nicht am Weg: warten, solange sie höchstens etwa 130 % der Fahrzeit ins Krankenhaus braucht; sonst
+   *   losfahren („wir sind schneller im KH als das NEF bei uns“) – das NEF kann storniert werden.
+   * - nicht ROT: höchstens 30 Minuten warten, dann Rendezvous, wenn ein Treffpunkt am Weg geht, sonst ohne los
+   *   („… kann storniert werden“).
+   * - nichts alarmiert: nachgefordert ist schon; nach 10 Minuten ohne Antwort bzw. nach „keiner verfügbar“ fährt sie los.
    */
   private wartetAufNotarzt(fz: SimFahrzeug, e: Einsatz, t: number): boolean {
     if (e.gs || e.gsKind || e.fremd || !this.transportfaehig(fz)) return false;
@@ -5272,61 +5326,140 @@ export class Simulation {
       return false;
     }
     if (this.mitNotarzt(fz) || e.naStorniert) return false;
-    const offenNa = (e.nachforderungen ?? []).some((n) => n.art === "NA" && !n.erledigt);
-    const noetig = this.bedarfVon(e).na > 0 || offenNa || !!e.naAngekuendigt;
+    // was braucht der Patient? Fälle aus dem Katalog nach Kompetenz, sonst nach dem Notarzt-Bedarf der Lage
+    const braucht: Kompetenz | null = this.brauchtJetzt(e) ?? (this.bedarfVon(e).na > 0 ? "NA" : null);
+    const vorOrt = this.kompetenzVorOrt(e);
+    if (braucht && vorOrt && kompetenzRang(vorOrt) >= kompetenzRang(braucht)) {
+      e.naWarten = null;
+      return false;
+    }
+    const offen = (e.nachforderungen ?? []).some((n) => (n.art === "NA" || n.art === "NFS") && !n.erledigt);
+    const noetig = !!braucht || offen || !!e.naAngekuendigt;
     if (!noetig) return false;
-    const kommt = this.einsatzFz(e).filter((x) => x.id !== fz.id && this.mitNotarzt(x) && !["vorOrt", "warteKH", "treffpunkt", "transport", "uebergabe", "rueckfahrt"].includes(x.phase));
+    const ziel = braucht ?? "NA";
+    // wer bringt die Kompetenz noch? (NEF, Hubschrauber, ACN, RTW-C …)
+    const kommt = this.einsatzFz(e)
+      .filter((x) => x.id !== fz.id && this.kommtNoch(e, x))
+      .filter((x) => {
+        const k = this.kompetenzVon(x);
+        return !!k && kompetenzRang(k) >= kompetenzRang(ziel);
+      });
     const w = (e.naWarten ??= { seit: t, gemeldet: false });
+    const eta = (x: SimFahrzeug) => this.etaZumPatienten(x, e, t);
+    const wen = (x: SimFahrzeug) => (this.mitNotarzt(x) ? "den Notarzt" : x.rmTyp === "ACN" ? "die ACN" : this.rufname(x));
     const melden = () => {
-      if (w.gemeldet || t - w.seit < 2 * MIN) return;
+      if (w.gemeldet || t - w.seit < 2 * MIN || !kommt.length) return;
       w.gemeldet = true;
-      const eta = Math.min(...kommt.map((x) => (x.phaseEnde ? x.phaseEnde - t : 10 * MIN)));
-      this.log(e, `${fz.funkrufname} wartet auf den Notarzt (${kommt.map((x) => x.funkrufname).join(", ")})`);
-      this.fzRuft(fz, e, "info", `Patient versorgt und transportbereit, warten auf den Notarzt${eta > 0 && eta < 120 * MIN ? `, er ist in ca. ${Math.max(1, Math.round(eta / MIN))} Minuten da` : ""}`);
+      const erster = kommt.slice().sort((a, b) => eta(a) - eta(b))[0];
+      const m = eta(erster);
+      this.log(e, `${fz.funkrufname} wartet auf ${kommt.map((x) => x.funkrufname).join(", ")}`);
+      this.fzRuft(fz, e, "info", `Patient versorgt und transportbereit, warten auf ${wen(erster)}${m > 0 && m < 120 * MIN ? `, ${this.mitNotarzt(erster) ? "er ist" : "Eintreffen"} in ca. ${Math.max(1, Math.round(m / MIN))} Minuten${this.mitNotarzt(erster) ? " da" : ""}` : ""}`);
     };
     if (kommt.length) {
-      // Hubschrauber: kein Rendezvous, warten bis er da ist
+      // Hubschrauber: immer warten, bis er da ist (oder storniert wird)
       if (kommt.some((x) => fliegt(x))) {
         melden();
         return true;
       }
-      const nef = kommt.find((x) => x.kategorie === "NEF");
+      const naechste = kommt.slice().sort((a, b) => eta(a) - eta(b))[0];
+      // Rendezvous nur mit einem NEF, das den Notarzt schon an Bord hat (nicht beim Abholen im Krankenhaus)
+      const nef = kommt.find((x) => x.kategorie === "NEF" && !fliegt(x) && x.phase !== "naAbholung" && x.phase !== "naEinstieg");
       const rot = e.wahr.lage?.patienten[0]?.sichtung === "rot";
-      if (nef && rot && this.settings.rendezvous !== false) {
-        const grenze = Math.max(10 * MIN, this.khFahrzeit(fz, e));
+      // Rendezvous steht: der RTW fährt los
+      if (e.rendezvous && e.rendezvous.status === "anfahrt" && e.rendezvous.rtwId === fz.id) {
+        e.naWarten = null;
+        return false;
+      }
+      const rvMoeglich = !!nef && this.settings.rendezvous !== false;
+      if (rot) {
         melden();
-        if (t - w.seit < grenze) return true;
-        // Rendezvous steht: der RTW fährt los
-        if (e.rendezvous && e.rendezvous.status === "anfahrt" && e.rendezvous.rtwId === fz.id) {
-          e.naWarten = null;
-          return false;
-        }
-        // Treffpunkt suchen (einmal); geht keiner, wartet der RTW weiter am Einsatzort
-        if (!w.rv) {
+        // ROT: gleich schauen, ob das NEF am Weg ins Krankenhaus entgegenkommt
+        if (rvMoeglich && !w.rv) {
           w.rv = "rechnet";
-          void this.rendezvousRechnen(e, fz, nef);
+          void this.rendezvousRechnen(e, fz, nef!);
+          return true;
         }
+        if (w.rv === "rechnet") return true;
+        // nicht am Weg: warten, solange die Einheit höchstens etwa 130 % der Fahrzeit ins Krankenhaus braucht
+        const kh = this.khFahrzeit(fz, e);
+        if (!kh || eta(naechste) <= 1.3 * kh) return true;
+        this.losOhne(e, fz, kommt, "schneller");
+        return false;
+      }
+      // nicht ROT: höchstens 30 Minuten warten
+      melden();
+      if (t - w.seit < 30 * MIN) return true;
+      if (rvMoeglich && !w.rv) {
+        w.rv = "rechnet";
+        void this.rendezvousRechnen(e, fz, nef!);
         return true;
       }
-      melden();
-      return true;
+      if (w.rv === "rechnet") return true;
+      this.losOhne(e, fz, kommt, "dreissig");
+      return false;
     }
-    // kein Notarzt alarmiert: nachgefordert wird mit der Notarzt-Entscheidung – warten, bis die Leitstelle einen schickt
+    // niemand kommt: nachgefordert wurde mit der Lagemeldung bzw. Notarzt-Entscheidung
+    const nurNfs = ziel === "NFS";
     if (e.naKeiner) {
       if (t - e.naKeiner.seit < 10 * MIN) return true;
     } else {
-      if (!w.gemeldet && t - w.seit > 3 * MIN && !offenNa) {
+      if (!w.gemeldet && t - w.seit > 3 * MIN && !offen) {
         w.gemeldet = true;
-        this.fzRuft(fz, e, "nachforderung", "Patient transportbereit, benötigen Notarzt, wann können wir damit rechnen");
+        this.fzRuft(fz, e, "nachforderung", nurNfs ? "Patient transportbereit, Frage: ist ein NEF oder RTW-C verfügbar" : "Patient transportbereit, benötigen Notarzt, wann können wir damit rechnen");
       }
-      return true;
+      // keine Antwort, nichts geschickt: nach 10 Minuten ohne los (Paul 12.11.2026: wie bei „keiner verfügbar“)
+      if (t - w.seit < 10 * MIN) return true;
     }
-    // die Leitstelle hat keinen Notarzt: ohne los
+    this.losOhne(e, fz, [], nurNfs ? "ohneNfs" : "ohneNa");
+    return false;
+  }
+
+  /**
+   * Geschätzte Zeit, bis ein Fahrzeug beim Patienten ist (ms): auf Anfahrt das Ende der Fahrt; beim Ausrücken bzw. beim
+   * Abholen des Notarztes im Krankenhaus kommt die Fahrt zum Einsatzort dazu (Luftlinie × 1,35 mit Blaulicht ≈ 70 km/h).
+   */
+  private etaZumPatienten(fz: SimFahrzeug, e: Einsatz, t: number): number {
+    const rest = fz.phaseEnde ? Math.max(0, fz.phaseEnde - t) : 0;
+    const ort: LatLon = e.adresse ?? e.wahr;
+    const fahrt = (von: LatLon) => ((distanceM(von, ort) * 1.35) / (70 / 3.6)) * 1000;
+    switch (fz.phase) {
+      case "anfahrt":
+      case "rendezvous":
+      case "bereitstellung":
+        return rest;
+      case "ausruecken":
+        return rest + fahrt(fz);
+      case "naAbholung":
+        return rest + 3 * MIN + fahrt(this.naKh(fz) ?? fz);
+      case "naEinstieg":
+        return rest + fahrt(this.naKh(fz) ?? fz);
+      default:
+        return fahrt(fz);
+    }
+  }
+
+  /**
+   * Die Besatzung fährt ohne die erwartete Einheit los: schneller im KH als die Einheit bei uns (ROT), nach 30 Minuten
+   * Warten (stabil) oder weil keine kommt. Offene Nachforderungen (NA/NFS) sind damit hinfällig.
+   */
+  private losOhne(e: Einsatz, fz: SimFahrzeug, kommt: SimFahrzeug[], grund: "schneller" | "dreissig" | "ohneNa" | "ohneNfs"): void {
     e.naWarten = null;
     e.naAngekuendigt = null;
-    this.log(e, `${fz.funkrufname} fährt ohne Notarzt los (kein Notarzt in Reichweite)`);
-    this.fzRuft(fz, e, "info", "fahren ohne Notarzt los");
-    return false;
+    for (const n of e.nachforderungen ?? []) if ((n.art === "NA" || n.art === "NFS") && !n.erledigt) n.erledigt = true;
+    const kh = this.khFuerTransport(e);
+    const khName = kh ? kh.kurzname || kh.name : "Krankenhaus";
+    const einheit = kommt.slice().sort((a, b) => (a.phaseEnde ?? 0) - (b.phaseEnde ?? 0))[0];
+    const name = einheit ? (this.mitNotarzt(einheit) && einheit.kategorie === "NEF" ? "das NEF" : this.rufname(einheit)) : "";
+    if (grund === "schneller") {
+      this.log(e, `${fz.funkrufname} fährt los – mit dem Patienten schneller im ${khName} als ${einheit?.funkrufname ?? "die Einheit"} am Einsatzort`);
+      this.fzRuft(fz, e, "info", `wir sind mit dem Patienten schneller im ${khName} als ${name} bei uns, fahren los, ${einheit ? this.rufname(einheit) : "die Einheit"} kann storniert werden`);
+    } else if (grund === "dreissig") {
+      this.log(e, `${fz.funkrufname} fährt nach 30 Minuten Warten ohne ${einheit?.funkrufname ?? "Einheit"} los`);
+      this.fzRuft(fz, e, "info", `warten jetzt seit 30 Minuten, fahren mit dem Patienten ins ${khName} los, ${einheit ? this.rufname(einheit) : "die Einheit"} kann storniert werden`);
+    } else {
+      this.log(e, `${fz.funkrufname} fährt ohne ${grund === "ohneNfs" ? "NEF/RTW-C" : "Notarzt"} los`);
+      this.fzRuft(fz, e, "info", grund === "ohneNfs" ? "fahren jetzt mit dem Patienten los" : "fahren ohne Notarzt los");
+    }
   }
 
   /** Geschätzte Fahrzeit des RTW vom Einsatzort ins geeignete Krankenhaus (gebucht, sonst der Vorschlag der Zuweisung) */
@@ -5376,7 +5509,7 @@ export class Simulation {
     const punkt = rendezvousPunkt(route.coords, route.times.map((x) => x * (this.kritisch(e) ? f : 1)), { lat: nef.lat, lon: nef.lon }, kmhNef * (1 / f));
     if (!punkt) {
       w.rv = "nein";
-      this.log(e, `Kein Rendezvous mit ${nef.funkrufname} möglich (holt den RTW nicht ein) – ${rtw.funkrufname} wartet am Einsatzort`);
+      this.log(e, `Kein Rendezvous mit ${nef.funkrufname} möglich (nicht am Weg ins Krankenhaus)`);
       return;
     }
     const label = this.treffpunktName(punkt, e.adresse ?? e.wahr);
@@ -5435,7 +5568,7 @@ export class Simulation {
     lf.ohneNaGeplant = true;
     const p0 = l.patienten[0];
     const o = v.ohneNa;
-    l.ereignisse.push({ um: this.state.zeit + o.nachMin * MIN, art: "verschlechterung", patient: 1, bw: o.bw ?? p0.bw, at: o.at ?? p0.at, eingetreten: false, sichtung: o.sichtung, kern: o.lage, na: o.na, variante: v.id, nurOhneNa: true });
+    l.ereignisse.push({ um: this.state.zeit + o.nachMin * MIN, art: "verschlechterung", patient: 1, bw: o.bw ?? p0.bw, at: o.at ?? p0.at, eingetreten: false, sichtung: o.sichtung, kern: o.lage, braucht: o.braucht ?? (o.na ? brauchtAusNa(o.na) : undefined), variante: v.id, nurOhneNa: true });
     l.ereignisse.sort((x, y) => x.um - y.um);
   }
 
@@ -6710,29 +6843,71 @@ export class Simulation {
     return e.fahrzeuge.map((id) => this.state.fahrzeuge[id]).filter((x): x is SimFahrzeug => !!x && x.einsatzId === e.id);
   }
 
-  /** Höchste Sanitäter-Qualifikation vor Ort (NKA zählt wie NFS – ohne eigenen Zugang) */
-  private kompetenzVorOrt(e: Einsatz): Quali | null {
-    let best: Quali | null = null;
-    for (const fz of this.einsatzFz(e)) {
-      if (fz.phase !== "vorOrt" && fz.phase !== "warteKH") continue;
-      const q = hoechsteQuali(fz.besetzung);
-      if (q && (best === null || rang(q) > rang(best))) best = q;
-    }
-    return best === "NFS-NKA" ? "NFS" : best;
+  /**
+   * Kompetenz, die ein Fahrzeug an den Patienten bringt (Paul 12.11.2026): Notarzt an Bord → NA, sonst die höchste
+   * Sanitäter-Qualifikation (NKA zählt wie NFS – ohne eigenen Zugang). Die ACN bringt NKV bzw. NKI. Der BEL versorgt nicht.
+   */
+  kompetenzVon(fz: SimFahrzeug): Kompetenz | null {
+    if (fz.rmTyp === "BEL" || fz.rmTyp === "EL ÖBB") return null;
+    if (this.mitNotarzt(fz)) return "NA";
+    const q = hoechsteQuali(fz.besetzung);
+    if (!q || q === "NA" || q === "Pilot") return null;
+    return q === "NFS-NKI" ? "NKI" : q === "NFS-NKV" ? "NKV" : q === "RS" ? "RS" : "NFS";
   }
 
-  /** Braucht der Fall (Katalog) bei dieser Kompetenz einen Notarzt? */
-  private naBedarfFall(e: Einsatz): boolean {
+  private kompetenzMax(fzs: SimFahrzeug[]): Kompetenz | null {
+    let best: Kompetenz | null = null;
+    for (const fz of fzs) {
+      const k = this.kompetenzVon(fz);
+      if (k && (best === null || kompetenzRang(k) > kompetenzRang(best))) best = k;
+    }
+    return best;
+  }
+
+  /** beim Patienten (vor Ort bzw. am Treffpunkt beim Rendezvous) */
+  private beimPatienten(e: Einsatz, fz: SimFahrzeug): boolean {
+    return fz.phase === "vorOrt" || fz.phase === "warteKH" || (fz.phase === "treffpunkt" && e.rendezvous?.status === "treffen");
+  }
+
+  /** Kompetenz beim Patienten */
+  private kompetenzVorOrt(e: Einsatz): Kompetenz | null {
+    return this.kompetenzMax(this.einsatzFz(e).filter((x) => this.beimPatienten(e, x)));
+  }
+
+  /** Fahrzeuge, die für den Patienten noch kommen (alarmiert, auf Anfahrt, holen den Notarzt ab …) */
+  private kommtNoch(e: Einsatz, fz: SimFahrzeug): boolean {
+    return !this.beimPatienten(e, fz) && !["transport", "uebergabe", "rueckfahrt", "frei", "treffpunkt"].includes(fz.phase);
+  }
+
+  /** Kompetenz vor Ort und auf Zufahrt zusammen (ohne = diese Fahrzeuge nicht mitzählen) */
+  private kompetenzMitZufahrt(e: Einsatz, ohne?: (fz: SimFahrzeug) => boolean): Kompetenz | null {
+    return this.kompetenzMax(this.einsatzFz(e).filter((x) => (this.beimPatienten(e, x) || this.kommtNoch(e, x)) && !(ohne && ohne(x))));
+  }
+
+  /**
+   * Was der Patient jetzt vor Ort braucht (Fall aus dem Katalog): Reanimation immer NA; reichen die Maßnahmen der
+   * Stufe nicht (gewürfelt, zeigt sich erst vor Ort), dann NA.
+   */
+  brauchtJetzt(e: Einsatz): Kompetenz | null {
     const l = e.wahr.lage;
     const lf = l?.fall;
-    if (!l || !lf) return false;
-    const p0 = l.patienten[0];
-    if (istStillstand(p0) || lf.na === "immer") return true;
-    // rot gesichtet (lebensbedrohlich): immer mit Notarzt – auch wenn die Besatzung die Kompetenz hätte (kein Storno)
-    if (p0?.sichtung === "rot") return true;
-    if (lf.na === "nein") return false;
-    const q = this.kompetenzVorOrt(e);
-    return q === null || rang(q) <= rang(lf.na as Quali);
+    if (!l || !lf) return null;
+    if (istStillstand(l.patienten[0])) return "NA";
+    if (lf.reichtNicht && lf.reichtNichtUm != null && this.state.zeit >= lf.reichtNichtUm) return "NA";
+    return brauchtVon(lf);
+  }
+
+  /** Ist die nötige Kompetenz beim Patienten? (Fälle ohne Katalog: ein Notarzt, wenn die Lage einen braucht) */
+  private versorgt(e: Einsatz): boolean {
+    const b = this.brauchtJetzt(e);
+    const k = this.kompetenzVorOrt(e);
+    if (!b) return k === "NA";
+    return k !== null && kompetenzRang(k) >= kompetenzRang(b);
+  }
+
+  /** Braucht der Fall (Katalog) einen Notarzt? */
+  private naBedarfFall(e: Einsatz): boolean {
+    return this.brauchtJetzt(e) === "NA";
   }
 
   /** Bedarf an Notärzten und Transportmitteln (Fallkatalog: nach Kompetenz vor Ort) */
@@ -6744,8 +6919,12 @@ export class Simulation {
     return l.fall ? { na: Math.max(b.na, this.naBedarfFall(e) ? 1 : 0), transport: b.transport } : b;
   }
 
-  /** Wie viele Notärzte / transportfähige Fahrzeuge fehlen laut Lage? */
-  fehlendeKraefte(e: Einsatz): { na: number; rtw: number; bit: number } {
+  /**
+   * Wie viele Notärzte / transportfähige Fahrzeuge fehlen laut Lage? nfs = es fehlt nur ein NFS (die Besatzung fragt,
+   * ob ein NEF oder RTW-C verfügbar ist). Reicht die Kompetenz vor Ort und auf Zufahrt nicht, fordert die Besatzung
+   * einen Notarzt nach (Paul 12.11.2026) – kommt stattdessen eine ACN und reicht das, ist die Nachforderung erledigt.
+   */
+  fehlendeKraefte(e: Einsatz): { na: number; rtw: number; bit: number; nfs?: number } {
     if (e.gs && !e.gs.aufgehoben && e.wahr.gs) {
       const f = this.gsFehlt(e);
       return { na: f.na, rtw: f.rtw, bit: 0 };
@@ -6758,14 +6937,24 @@ export class Simulation {
     const na = fz.filter((x) => this.mitNotarzt(x)).length;
     const tr = fz.filter((x) => this.transportfaehig(x)).length;
     const bit = l.bit && !e.bitVerzicht && !fz.some((x) => x.rmTyp === "BIT") ? 1 : 0;
-    return { na: Math.max(0, b.na - na), rtw: Math.max(0, b.transport - tr), bit };
+    let naFehlt = Math.max(0, b.na - na);
+    let nfs = 0;
+    const braucht = l.fall && l.patienten.length === 1 ? this.brauchtJetzt(e) : null;
+    if (braucht && braucht !== "NA" && naFehlt === 0) {
+      const hat = this.kompetenzMitZufahrt(e);
+      if (hat === null || kompetenzRang(hat) < kompetenzRang(braucht)) {
+        if (braucht === "NFS") nfs = 1;
+        else naFehlt = 1;
+      }
+    }
+    return { na: naFehlt, rtw: Math.max(0, b.transport - tr), bit, nfs };
   }
 
-  private nachfordern(e: Einsatz, fz: SimFahrzeug, fehlt: { na: number; rtw: number; bit: number }): void {
+  private nachfordern(e: Einsatz, fz: SimFahrzeug, fehlt: { na: number; rtw: number; bit: number; nfs?: number }): void {
     e.nachforderungen ??= [];
     const t = this.state.zeit;
-    for (const art of ["NA", "RTW", "BIT"] as const) {
-      const n = art === "NA" ? fehlt.na : art === "RTW" ? fehlt.rtw : fehlt.bit;
+    for (const art of ["NA", "RTW", "BIT", "NFS"] as const) {
+      const n = art === "NA" ? fehlt.na : art === "RTW" ? fehlt.rtw : art === "NFS" ? (fehlt.nfs ?? 0) : fehlt.bit;
       if (n <= 0) continue;
       const offen = e.nachforderungen.find((x) => x.art === art && !x.erledigt);
       if (offen) offen.anzahl = Math.max(offen.anzahl, n);
@@ -7377,7 +7566,7 @@ export class Simulation {
       const fehlt = this.fehlendeKraefte(e);
       for (const n of e.nachforderungen) {
         if (n.erledigt) continue;
-        const noch = n.art === "NA" ? fehlt.na : n.art === "RTW" ? fehlt.rtw : fehlt.bit;
+        const noch = n.art === "NA" ? fehlt.na : n.art === "RTW" ? fehlt.rtw : n.art === "NFS" ? (fehlt.nfs ?? 0) : fehlt.bit;
         if (noch === 0) {
           n.erledigt = true;
           this.log(e, `Nachforderung ${NF_NAME[n.art]} erledigt`);
@@ -7388,7 +7577,7 @@ export class Simulation {
         if (t - n.erinnert > 5 * MIN) {
           n.erinnert = t;
           const fz = this.einsatzFz(e).find((x) => x.funkrufname === n.von) ?? this.einsatzFz(e)[0];
-          if (fz) this.fzRuft(fz, e, "nachforderung", `Nachforderung ${n.art === "RTW" ? `${n.anzahl}× Rettungsmittel` : NF_NAME[n.art]} noch offen, wann können wir damit rechnen`);
+          if (fz) this.fzRuft(fz, e, "nachforderung", n.art === "NFS" ? "Frage nochmal: ist ein NEF oder RTW-C verfügbar" : `Nachforderung ${n.art === "RTW" ? `${n.anzahl}× Rettungsmittel` : NF_NAME[n.art]} noch offen, wann können wir damit rechnen`);
         }
       }
     }
@@ -8111,9 +8300,10 @@ export class Simulation {
         if (absicht.thema === "keinNa" && e) {
           e.naKeiner = { seit: this.state.zeit };
           e.naAngekuendigt = null;
-          for (const n of e.nachforderungen ?? []) if (n.art === "NA") n.erledigt = true;
-          this.log(e, `LEO: kein Notarzt in Reichweite – ${fz.funkrufname} fährt nach kurzer Zeit ohne Notarzt`);
-          return vorOrt ? `${hier}, verstanden, kein Notarzt, wir fahren in Kürze ohne Notarzt los, kommen` : `${hier}, verstanden, kommen`;
+          const nurNfs = (e.nachforderungen ?? []).some((n) => n.art === "NFS" && !n.erledigt) && !(e.nachforderungen ?? []).some((n) => n.art === "NA" && !n.erledigt);
+          for (const n of e.nachforderungen ?? []) if (n.art === "NA" || n.art === "NFS") n.erledigt = true;
+          this.log(e, `LEO: ${nurNfs ? "kein NEF oder RTW-C" : "kein Notarzt"} in Reichweite – ${fz.funkrufname} fährt nach kurzer Zeit ohne`);
+          return vorOrt ? `${hier}, verstanden, ${nurNfs ? "wir fahren in Kürze los" : "kein Notarzt, wir fahren in Kürze ohne Notarzt los"}, kommen` : `${hier}, verstanden, kommen`;
         }
         if (absicht.thema === "warten" && e) {
           e.naAngekuendigt ??= { um: this.state.zeit, wer: "Notarzt" };
@@ -8147,7 +8337,7 @@ export class Simulation {
           case "bedarf": {
             if (!vorOrt || !e) return `${hier}, sind noch nicht vor Ort, kommen`;
             const fehlt = this.fehlendeKraefte(e);
-            const bedarfText = fehlt.na || fehlt.rtw ? `, ${[fehlt.na && "benötigen Notarzt", fehlt.rtw && rtwBedarf(fehlt.rtw, this.transportfaehig(fz))].filter(Boolean).join(", ")}` : ", keine weiteren Kräfte erforderlich";
+            const bedarfText = fehlt.na || fehlt.nfs || fehlt.rtw ? `, ${[fehlt.na && "benötigen Notarzt", !fehlt.na && fehlt.nfs && "Frage: ist ein NEF oder RTW-C verfügbar", fehlt.rtw && rtwBedarf(fehlt.rtw, this.transportfaehig(fz))].filter(Boolean).join(", ")}` : ", keine weiteren Kräfte erforderlich";
             return absicht.thema === "bedarf" ? `${hier}${bedarfText.replace(/^, /, ", ")}, kommen` : `${hier}, ${patientKurz()}${bedarfText}, kommen`;
           }
           case "verdacht": {

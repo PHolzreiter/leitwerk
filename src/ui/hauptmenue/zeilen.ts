@@ -43,7 +43,7 @@ import { anrufKiModus, livePrefs, liveTesten, prefsHoerer, schluesselDa, schlues
 import { MODELLE as KI_MODELLE, STUFE_LABEL, empfohleneStufe, kiBeenden, kiChat, kiInstallieren, kiModellLaden, kiModellLoeschen, kiPrefs, kiStarten, kiStatus, rechnerRam, setKiPrefs, type KiStatus } from "../../abfrage/ki";
 import { MODELLE as SPRACH_MODELLE, PIPER_STIMMEN, modellLaden, modellLoeschen, piperLaden, piperLoeschen, piperStatus, probe, setzeSprache, sprachPrefs, sprachStatus } from "../sprache";
 import { LAYOUT_KEY, anordnungAnwenden, anordnungen, anordnungImportieren, anordnungLoeschen, dock, onPanelsGeaendert } from "../ws/arbeitsplatz";
-import { alleFaelle, eingebauterFall, faelleGeaendert, fallpaketExport, fallpaketImport, istFallAktiv, istGeaendert, type FallVorlage } from "../../abfrage/faelle";
+import { alleFaelle, brauchtVon, eingebauterFall, faelleGeaendert, fallpaketExport, fallpaketImport, istFallAktiv, istGeaendert, kompetenzRang, type FallVorlage } from "../../abfrage/faelle";
 import { faellePruefen } from "../../abfrage/faellePruefen";
 import { fallEditorOeffnen } from "../fallEditor";
 import {
@@ -690,10 +690,9 @@ export function zeilenQuelle(neuZeichnen: () => void): { zeilen: ZeilenQuelle; l
     const alle = alleFaelle(true).slice().sort((a, b2) => fallName(a).localeCompare(fallName(b2), "de"));
     const eigene = alle.filter((f) => !eingebauterFall(f.id));
     const notarzt = (f: FallVorlage) => {
-      const na = new Set(f.varianten.map((v) => v.na));
-      if (na.size === 1 && na.has("nein")) return "nein";
-      if (na.size === 1 && na.has("immer")) return "ja";
-      if ([...na].some((x) => x !== "nein" && x !== "immer")) return "nach Kompetenz";
+      const k = new Set(f.varianten.map((v) => brauchtVon(v)));
+      if (k.size === 1 && k.has("NA")) return "ja";
+      if (!k.has("NA")) return [...k].sort((a, b) => kompetenzRang(b) - kompetenzRang(a))[0] === "RS" ? "nein" : `bis ${[...k].sort((a, b) => kompetenzRang(b) - kompetenzRang(a))[0]}`;
       return "teils";
     };
     const herkunft = (f: FallVorlage) => `${eingebauterFall(f.id) ? (istGeaendert(f.id) ? "eingebaut, geändert" : "eingebaut") : "eigener"}${istFallAktiv(f.id) ? "" : " · aus"}`;

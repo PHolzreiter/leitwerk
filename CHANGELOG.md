@@ -1,5 +1,19 @@
 # Änderungen
 
+## 0.116.0-beta.48 – Kompetenz je Einsatz: wer reicht, wer kommt, warten oder fahren
+- **Jeder Fall weiß, welche Kompetenz der Patient braucht:** RS, NFS, NKV, NKI oder Notarzt – nach der Scope-of-Practice-Matrix und den Arzneimittellisten (z. B. Asthma mit Salbutamol: NFS; Unterzucker mit Glukose i.v.: NKV; Herzinfarkt, Lungenödem, Rhythmusstörung: Notarzt). Alle eingebauten Fälle sind neu eingestuft.
+- **„Reicht nicht immer“:** Bei manchen Fällen (z. B. Schmerztherapie, Asthma, Krampfanfall) zeigt sich erst vor Ort nach einigen Minuten, dass die Maßnahmen nicht reichen – dann fordert die Besatzung noch einen Notarzt nach. Ein Notarzt reicht immer.
+- **Nachforderung nach Kompetenz:** Was vor Ort ist und was schon auf Zufahrt ist, zählt zusammen. Reicht es nicht, fordert die Besatzung einen Notarzt an; braucht es nur einen NFS und sind nur RS da, fragt sie „Ist ein NEF oder RTW-C verfügbar?“. Schickst du statt des Notarztes eine ACN und reicht das, ist die Nachforderung erledigt.
+- **ACN wie ein NEF:** Die ACN bringt statt eines Notarztes einen NKV bzw. NKI zum Patienten und zählt dort als Kompetenz.
+- **Storno des Notarztes nur, wenn er nicht gebraucht wird:** Braucht der Patient z. B. einen NKV und ist nur ein RS-RTW da, bleibt das NEF alarmiert.
+- **Warten oder fahren:**
+  - Patient ROT, NEF kommt am Weg ins Krankenhaus entgegen: sofort losfahren, Rendezvous (keine Wartezeit mehr vorher).
+  - ROT, Einheit nicht am Weg: warten, solange sie höchstens etwa 130 % der Fahrzeit ins Krankenhaus braucht; sonst fährt der RTW los und meldet „wir sind schneller im Krankenhaus als das NEF bei uns, NEF kann storniert werden“.
+  - Nicht ROT: höchstens 30 Minuten warten, dann Rendezvous, wenn ein Treffpunkt am Weg möglich ist, sonst ohne los („… kann storniert werden“).
+  - Hubschrauber auf Zufahrt: Es wird immer gewartet (nur ein Storno beendet das).
+  - Niemand geschickt oder „keiner verfügbar“: nach 10 Minuten fährt der RTW ohne los.
+- Fall-Editor: „Braucht vor Ort“ (RS bis Notarzt) und „Reicht nicht immer“ (in %) statt des alten Notarzt-Feldes; eigene Fälle älterer Versionen werden umgerechnet.
+
 ## 0.116.0-beta.47 – Funk-Quittungen, Mehrfachtransport als Standard, Rückruf immer
 - **Funk:** „LEO verstanden“, „Ja, LEO verstanden“, „verstanden“ und ähnliche Bestätigungen werden erkannt – ohne „Funkspruch nicht verstanden“ und ohne „verstanden, kommen“ der Besatzung auf die Quittung.
 - **Storno durch die Besatzung:** Das NEF fragt einmal „frage LEO mitgehört“. Die Antwort darf frei sein („LEO verstanden, Storno fürs NEF Krems, Ende“); einen zweiten Ruf „Storno durch … mitgehört?“ gibt es nicht mehr.

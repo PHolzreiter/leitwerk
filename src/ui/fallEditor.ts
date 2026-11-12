@@ -25,7 +25,8 @@ import {
   type FallEreignis,
   type FallVariante,
   type FallVorlage,
-  type NaBedarf,
+  type Kompetenz,
+  brauchtVon,
 } from "../abfrage/faelle";
 import { fallHinweise, fallPruefen } from "../abfrage/faellePruefen";
 import { kiBereit, kiJson, kiStatus } from "../abfrage/ki";
@@ -111,14 +112,13 @@ const SICHTUNG: [Sichtung, string][] = [
   ["rot", "rot – kritisch"],
 ];
 
-const NA_BEDARF: [NaBedarf, string][] = [
-  ["nein", "kein Notarzt nötig"],
-  ["RS", "Notarzt, wenn nur RS vor Ort"],
-  ["NFS", "Notarzt bis NFS (NKA/NKV/NKI nicht)"],
-  ["NFS-NKA", "Notarzt bis NFS/NKA"],
-  ["NFS-NKV", "Notarzt bis NKV (NKI nicht)"],
-  ["NFS-NKI", "Notarzt bei jeder Kompetenz außer Arzt"],
-  ["immer", "immer Notarzt"],
+/** benötigte Kompetenz vor Ort (Scope-of-Practice-Matrix RK NÖ) */
+const BRAUCHT: [Kompetenz, string][] = [
+  ["RS", "RS – Basismaßnahmen, Transport"],
+  ["NFS", "NFS – Arzneimittelliste 1 (z. B. Salbutamol, Methoxyfluran, Adrenalin i.m.)"],
+  ["NKV", "NKV – Venenzugang, Liste 2 (z. B. Esketamin, Glukose i.v., Urapidil, Infusion)"],
+  ["NKI", "NKI – Intubation"],
+  ["NA", "Notarzt – z. B. Opioide, Katecholamine, NIV, Kardioversion, Pacing"],
 ];
 
 const BW: [Bewusstsein, string][] = [
@@ -313,7 +313,7 @@ function neuerFall(): FallVorlage {
     seitMin: [5, 30],
     fest: {},
     details: [],
-    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "", na: "nein", buchung: "bu_hausaerztlich" }],
+    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "", braucht: "RS", buchung: "bu_hausaerztlich" }],
   };
 }
 
@@ -1059,7 +1059,7 @@ function fensterBauen(): { zeigen(id?: string): void; neu(name: string, beschrei
     for (const v of f.varianten) formular.appendChild(varianteKarte(f, v, sumText));
     const neu = el("button", { class: "btn small primary fe-neu-var", type: "button" }, "+ Ausgang");
     neu.addEventListener("click", () => {
-      f.varianten.push({ id: naechsteVarId(f), p: 0, sichtung: "gelb", lage: "", na: "nein", buchung: f.varianten[0]?.buchung ?? "bu_hausaerztlich" });
+      f.varianten.push({ id: naechsteVarId(f), p: 0, sichtung: "gelb", lage: "", braucht: "RS", buchung: f.varianten[0]?.buchung ?? "bu_hausaerztlich" });
       aenderung();
       zeichnen();
     });
@@ -1102,10 +1102,16 @@ function fensterBauen(): { zeigen(id?: string): void; neu(name: string, beschrei
         v.lage = x;
         aenderung();
       }, "z. B. wach, stabil, Schmerzen in der rechten Hüfte, Bein verkürzt und außenrotiert", true), "so meldet die Besatzung die Lage (ohne Alter/Geschlecht – das kommt automatisch)"),
-      zeile("Notarzt", auswahl(NA_BEDARF, v.na, (x) => {
-        v.na = x;
+      zeile("Braucht vor Ort", auswahl(BRAUCHT, brauchtVon(v), (x) => {
+        v.braucht = x;
+        delete v.na;
         aenderung();
-      }), "nach der Scope-of-Practice-Matrix: wer vor Ort ist, entscheidet, ob ein NA nachgefordert wird"),
+      }), "nach der Scope-of-Practice-Matrix: reicht die Kompetenz vor Ort und auf Zufahrt nicht, fordert die Besatzung einen Notarzt nach (bei NFS: Frage nach NEF oder RTW-C)"),
+      zeile("Reicht nicht immer", zahl(v.reichtNicht !== undefined ? Math.round(v.reichtNicht * 100) : undefined, (x) => {
+        if (!x) delete v.reichtNicht;
+        else v.reichtNicht = Math.max(0, Math.min(100, x)) / 100;
+        aenderung();
+      }, { min: 0, max: 100, step: 5 }), "Chance in %, dass die Maßnahmen dieser Stufe nicht reichen (z. B. Schmerztherapie) – dann fordert die Besatzung vor Ort einen Notarzt nach"),
       zeile("Notarzt fährt mit", auswahl([["ja", "ja"], ["nein", "nein"]] as Opt<"ja" | "nein">, v.naBegleitet === undefined ? undefined : v.naBegleitet ? "ja" : "nein", (x) => {
         if ((x as string) === "") delete v.naBegleitet;
         else v.naBegleitet = x === "ja";
@@ -1291,11 +1297,12 @@ function fensterBauen(): { zeigen(id?: string): void; neu(name: string, beschrei
         else ev.at = y;
         aenderung();
       }, "Atmung gleich"),
-      auswahl(NA_BEDARF, ev.na, (y) => {
-        if ((y as string) === "") delete ev.na;
-        else ev.na = y;
+      auswahl(BRAUCHT, ev.braucht ?? (ev.na ? brauchtVon(ev) : undefined), (y) => {
+        delete ev.na;
+        if ((y as string) === "") delete ev.braucht;
+        else ev.braucht = y;
         aenderung();
-      }, "Notarzt-Bedarf gleich"),
+      }, "Kompetenz gleich"),
     );
     const z3 = el("div", { class: "fe-ereignis-z breit" });
     z3.append(
@@ -1686,7 +1693,7 @@ FELDER
 - "ohneSicht": true, wenn der Anrufer den Patienten NICHT sieht (versperrte Tür, nur Telefon mit ihm) – dann kennt er Hautfarbe, Atmung usw. nicht
 - "wissen" (optional): was der Anrufer nur ungefähr bzw. gar nicht weiß, als Antwort-IDs von "fest", z. B. {"ungefaehr": ["seit"], "unbekannt": ["blutverduenner"]} – sonst weiß er es sicher
 - "anleitung" (optional): was bei Anleitungen anders ist, z. B. {"reanimation": ["alt"], "druck_blutung": ["kein_tuch"]}. Erlaubt: ${ANLEITUNGEN.map(([t]) => `${t}: ${abweichungenVon(t).map(([id]) => id).join("/") || "–"}`).filter((x) => !x.endsWith("–")).join("; ")}
-- "varianten": 1–3 Ausgänge, zusammen p = 1. Jeder: { "id": "A", "p": 0.8, "sichtung": "gruen"|"gelb"|"rot", "lage": "Lagebild der Besatzung, kurz, fachlich", "na": "nein"|"immer"|"RS"|"NFS-NKV", "symptom": eine ID aus der Symptomliste, "dringlichkeit": 10 (stabil, grün) | 20 (dringend, gelb) | 30 (Schockraum/Intensiv, rot), optional "fest": {"bw":…, "at":…}, optional "ereignis": { "nachMin": [von, bis], "text": "so meldet es der Anrufer, z. B. {Er} wird ganz blau.", "bw": …, "at": …, "sichtung": …, "lage": … } }
+- "varianten": 1–3 Ausgänge, zusammen p = 1. Jeder: { "id": "A", "p": 0.8, "sichtung": "gruen"|"gelb"|"rot", "lage": "Lagebild der Besatzung, kurz, fachlich", "braucht": "RS"|"NFS"|"NKV"|"NKI"|"NA" (Kompetenz vor Ort nach der Scope-of-Practice-Matrix: NFS = Arzneimittelliste 1 wie Salbutamol oder Methoxyfluran, NKV = Venenzugang und Liste 2 wie Esketamin, Glukose i.v., Urapidil, NKI = Intubation, NA = Opioide, Katecholamine, NIV, Kardioversion, Reanimation), "symptom": eine ID aus der Symptomliste, "dringlichkeit": 10 (stabil, grün) | 20 (dringend, gelb) | 30 (Schockraum/Intensiv, rot), optional "fest": {"bw":…, "at":…}, optional "ereignis": { "nachMin": [von, bis], "text": "so meldet es der Anrufer, z. B. {Er} wird ganz blau.", "bw": …, "at": …, "sichtung": …, "lage": … } }
 
 PLATZHALTER (in geschehen, hergang, details, stelle, verlauf, ereignis.text)
 {P} = die Person aus Sicht des Anrufers („Mein Mann“, „Die Frau“), {er}/{Er}/{ihn}/{ihm}/{sein}/{seine}/{seinem} = Pronomen, {a|b|c} = eines davon zufällig (für Abwechslung – nutze das oft). {rechten|linken} bzw. {rechts|links} ergibt im ganzen Fall dieselbe Seite.
@@ -1768,9 +1775,9 @@ export function entwurfAusKi(antwort: string, name: string): FallVorlage | null 
     for (const x of j.varianten as Record<string, unknown>[]) {
       if (!x || typeof x !== "object") continue;
       const sichtung = (["gruen", "gelb", "rot"] as Sichtung[]).includes(x.sichtung as Sichtung) ? (x.sichtung as Sichtung) : "gelb";
-      const na = NA_BEDARF.some(([k]) => k === x.na) ? (x.na as NaBedarf) : "nein";
+      const braucht: Kompetenz = BRAUCHT.some(([k]) => k === x.braucht) ? (x.braucht as Kompetenz) : "RS";
       const buchung = BUCHUNGEN.some((b) => b.id === x.buchung) ? (x.buchung as string) : sichtung === "gruen" ? "bu_hausaerztlich" : "bu_exsikkose_synkope_az_verschlechterung";
-      const v: FallVariante = { id: naechsteVarId({ ...f, varianten: vs }), p: typeof x.p === "number" ? Math.max(0, Math.min(1, x.p)) : 0, sichtung, lage: str(x.lage), na, buchung };
+      const v: FallVariante = { id: naechsteVarId({ ...f, varianten: vs }), p: typeof x.p === "number" ? Math.max(0, Math.min(1, x.p)) : 0, sichtung, lage: str(x.lage), braucht, buchung };
       const sy = symptom(str(x.symptom));
       if (sy) {
         v.symptom = sy.id;

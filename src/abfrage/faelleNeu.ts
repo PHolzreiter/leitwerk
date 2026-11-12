@@ -33,8 +33,8 @@ export const FAELLE_NEU: FallVorlage[] = [
     ],
     vorerkrankungen: ["Vorhofflimmern", "hoher Blutdruck"],
     varianten: [
-      { id: "A", p: 0.8, sichtung: "gelb", fest: { brustschmerz: "nein", kaltschweiss: "nein" }, lage: "Tachyarrhythmie bei Vorhofflimmern, Frequenz 150, Blutdruck stabil", na: "NFS-NKA", symptom: "herzrhythmusstoerung", dringlichkeit: 20, buchung: "bu_instabile_rhythmusstoerung" },
-      { id: "B", p: 0.2, sichtung: "rot", fest: { brustschmerz: "ja", kaltschweiss: "ja", hautfarbe: "ja" }, lage: "Tachykardie 180 mit Brustschmerz, Blutdruck 85 zu 50, kaltschweißig", na: "immer", symptom: "herzrhythmusstoerung", dringlichkeit: 30, buchung: "bu_instabile_rhythmusstoerung" },
+      { id: "A", p: 0.8, sichtung: "gelb", fest: { brustschmerz: "nein", kaltschweiss: "nein" }, lage: "Tachyarrhythmie bei Vorhofflimmern, Frequenz 150, Blutdruck stabil", braucht: "NKV", reichtNicht: 0.3, symptom: "herzrhythmusstoerung", dringlichkeit: 20, buchung: "bu_instabile_rhythmusstoerung" },
+      { id: "B", p: 0.2, sichtung: "rot", fest: { brustschmerz: "ja", kaltschweiss: "ja", hautfarbe: "ja" }, lage: "Tachykardie 180 mit Brustschmerz, Blutdruck 85 zu 50, kaltschweißig", braucht: "NA", symptom: "herzrhythmusstoerung", dringlichkeit: 30, buchung: "bu_instabile_rhythmusstoerung" },
     ],
   },
 
@@ -64,8 +64,8 @@ export const FAELLE_NEU: FallVorlage[] = [
     ],
     vorerkrankungen: ["!Herzschwäche", "hoher Blutdruck"],
     varianten: [
-      { id: "A", p: 0.75, sichtung: "gelb", fest: { sprachschw: "ja", hautfarbe: "nein" }, lage: "dekompensierte Herzinsuffizienz, Lungenödem beginnend, Sättigung 88, Blutdruck 170 zu 95", na: "RS", symptom: "herzinsuffizienz", dringlichkeit: 20, buchung: "bu_pneumonie_atemnot_copd" },
-      { id: "B", p: 0.25, sichtung: "rot", fest: { sprachschw: "ja", hautfarbe: "ja" }, lage: "Lungenödem, Sättigung 78, zyanotisch, rasselnde Atmung", na: "immer", symptom: "herzinsuffizienz", dringlichkeit: 30, buchung: "bu_pneumonie_atemnot_copd" },
+      { id: "A", p: 0.75, sichtung: "gelb", fest: { sprachschw: "ja", hautfarbe: "nein" }, lage: "dekompensierte Herzinsuffizienz, Lungenödem beginnend, Sättigung 88, Blutdruck 170 zu 95", braucht: "NKV", reichtNicht: 0.4, symptom: "herzinsuffizienz", dringlichkeit: 20, buchung: "bu_pneumonie_atemnot_copd" },
+      { id: "B", p: 0.25, sichtung: "rot", fest: { sprachschw: "ja", hautfarbe: "ja" }, lage: "Lungenödem, Sättigung 78, zyanotisch, rasselnde Atmung", braucht: "NA", symptom: "herzinsuffizienz", dringlichkeit: 30, buchung: "bu_pneumonie_atemnot_copd" },
     ],
   },
 
@@ -91,8 +91,8 @@ export const FAELLE_NEU: FallVorlage[] = [
     details: ["[ort=wohnung|haus] {Er} hat zuhause Sauerstoff, aber der reicht heute nicht.", "[ort=pflegeheim] {Er} hängt am Sauerstoff, aber der reicht heute nicht.", "{Er} hustet viel, der Auswurf ist grün.", "[wissen=nah] {Er} hat früher viel geraucht."],
     vorerkrankungen: ["!COPD (vom Rauchen)"],
     varianten: [
-      { id: "A", p: 0.8, sichtung: "gelb", fest: { hautfarbe: "nein" }, lage: "exazerbierte COPD, Sättigung 85 unter Heimsauerstoff, Fieber 38,3", na: "RS", symptom: "atemnot", dringlichkeit: 20, buchung: "bu_pneumonie_atemnot_copd" },
-      { id: "B", p: 0.2, sichtung: "rot", fest: { hautfarbe: "ja" }, lage: "schwere COPD-Exazerbation, Sättigung 78, schläfrig, Verdacht auf CO2-Narkose", na: "immer", symptom: "atemnot", dringlichkeit: 30, buchung: "bu_pneumonie_atemnot_copd" },
+      { id: "A", p: 0.8, sichtung: "gelb", fest: { hautfarbe: "nein" }, lage: "exazerbierte COPD, Sättigung 85 unter Heimsauerstoff, Fieber 38,3", braucht: "NFS", symptom: "atemnot", dringlichkeit: 20, buchung: "bu_pneumonie_atemnot_copd" },
+      { id: "B", p: 0.2, sichtung: "rot", fest: { hautfarbe: "ja" }, lage: "schwere COPD-Exazerbation, Sättigung 78, schläfrig, Verdacht auf CO2-Narkose", braucht: "NA", symptom: "atemnot", dringlichkeit: 30, buchung: "bu_pneumonie_atemnot_copd" },
     ],
   },
 
@@ -118,8 +118,8 @@ export const FAELLE_NEU: FallVorlage[] = [
     fest: { lungenerkrankung: "nein", tracheostoma: "nein", sprachschw: "nein", kaltschweiss: "nein", bw: "ja", at: "abnorm", anzahl_patienten: "1" },
     details: ["{Er} hat leichtes Fieber.", "Du hast das Fenster aufgemacht, damit kalte Luft reinkommt.", "{Er} sabbert nicht und kann schlucken."],
     varianten: [
-      { id: "A", p: 0.85, sichtung: "gelb", fest: { hautfarbe: "nein" }, lage: "Pseudokrupp, inspiratorischer Stridor in Ruhe, Sättigung 95", na: "RS", symptom: "atemnot", dringlichkeit: 20, buchung: "bu_internistischer_kindernotfall" },
-      { id: "B", p: 0.15, sichtung: "rot", fest: { hautfarbe: "ja" }, lage: "schwerer Pseudokrupp, ausgeprägte Einziehungen, Sättigung 89, erschöpft", na: "immer", symptom: "atemnot", dringlichkeit: 30, buchung: "bu_kritisch_krankes_kind" },
+      { id: "A", p: 0.85, sichtung: "gelb", fest: { hautfarbe: "nein" }, lage: "Pseudokrupp, inspiratorischer Stridor in Ruhe, Sättigung 95", braucht: "NFS", symptom: "atemnot", dringlichkeit: 20, buchung: "bu_internistischer_kindernotfall" },
+      { id: "B", p: 0.15, sichtung: "rot", fest: { hautfarbe: "ja" }, lage: "schwerer Pseudokrupp, ausgeprägte Einziehungen, Sättigung 89, erschöpft", braucht: "NA", symptom: "atemnot", dringlichkeit: 30, buchung: "bu_kritisch_krankes_kind" },
     ],
   },
 
@@ -144,9 +144,9 @@ export const FAELLE_NEU: FallVorlage[] = [
     fest: { ohnmacht: "nein", aneurysma: "nein", bw: "ja", at: "normal", anzahl_patienten: "1" },
     details: ["[variante=A] {Er} hat leichtes Fieber.", "[variante=B] Es ist auch Durchfall dabei.", "{Er} liegt mit angezogenen Beinen."],
     varianten: [
-      { id: "A", p: 0.5, sichtung: "gelb", fest: { schmerzort: "unterhalb", zerreiss: "nein", grau: "nein" }, lage: "Druckschmerz rechter Unterbauch, Verdacht auf Blinddarmentzündung, Fieber 38,2", na: "nein", symptom: "akutes_abdomen", dringlichkeit: 20, buchung: "bu_akutes_abdomen" },
-      { id: "B", p: 0.45, sichtung: "gruen", fest: { schmerzort: "unterhalb", zerreiss: "nein", grau: "nein" }, lage: "Gastroenteritis, krampfartige Bauchschmerzen, Kreislauf stabil", na: "nein", revers: 0.15, symptom: "bauchschmerzen", dringlichkeit: 10, buchung: "bu_akutes_abdomen" },
-      { id: "C", p: 0.05, sichtung: "rot", fest: { schmerzort: "oberhalb", zerreiss: "ja", grau: "ja" }, lage: "reißender Bauch- und Rückenschmerz, Blutdruck 85 zu 50, pulsierende Resistenz, Verdacht auf rupturiertes Aortenaneurysma", na: "immer", symptom: "akutes_abdomen", dringlichkeit: 30, buchung: "bu_rupturiertes_bauchaortenaneurysma" },
+      { id: "A", p: 0.5, sichtung: "gelb", fest: { schmerzort: "unterhalb", zerreiss: "nein", grau: "nein" }, lage: "Druckschmerz rechter Unterbauch, Verdacht auf Blinddarmentzündung, Fieber 38,2", braucht: "RS", symptom: "akutes_abdomen", dringlichkeit: 20, buchung: "bu_akutes_abdomen" },
+      { id: "B", p: 0.45, sichtung: "gruen", fest: { schmerzort: "unterhalb", zerreiss: "nein", grau: "nein" }, lage: "Gastroenteritis, krampfartige Bauchschmerzen, Kreislauf stabil", braucht: "RS", revers: 0.15, symptom: "bauchschmerzen", dringlichkeit: 10, buchung: "bu_akutes_abdomen" },
+      { id: "C", p: 0.05, sichtung: "rot", fest: { schmerzort: "oberhalb", zerreiss: "ja", grau: "ja" }, lage: "reißender Bauch- und Rückenschmerz, Blutdruck 85 zu 50, pulsierende Resistenz, Verdacht auf rupturiertes Aortenaneurysma", braucht: "NA", symptom: "akutes_abdomen", dringlichkeit: 30, buchung: "bu_rupturiertes_bauchaortenaneurysma" },
     ],
   },
 
@@ -171,7 +171,7 @@ export const FAELLE_NEU: FallVorlage[] = [
     fest: { ursache: "nein", zerreiss: "nein", aneurysma: "nein", ohnmacht: "nein", grau: "nein", bw: "ja", at: "normal", anzahl_patienten: "1" },
     details: ["Das Wasserlassen brennt ein bisschen.", "{Er} ist ganz blass vor Schmerz."],
     varianten: [
-      { id: "A", p: 1, sichtung: "gelb", lage: "kolikartige Flankenschmerzen rechts, Verdacht auf Nierenkolik, Kreislauf stabil", na: "nein", symptom: "urologisches_problem", dringlichkeit: 20, buchung: "bu_nierenkolik_harnverhalt_hodentorsion" },
+      { id: "A", p: 1, sichtung: "gelb", lage: "kolikartige Flankenschmerzen rechts, Verdacht auf Nierenkolik, Kreislauf stabil", braucht: "NFS", reichtNicht: 0.4, symptom: "urologisches_problem", dringlichkeit: 20, buchung: "bu_nierenkolik_harnverhalt_hodentorsion" },
     ],
   },
 
@@ -193,7 +193,7 @@ export const FAELLE_NEU: FallVorlage[] = [
     fest: { hauptbeschwerde: "wasserlassen", verwirrt: "nein", sonderdiagnose: "nein", bw: "ja", at: "normal", anzahl_patienten: "1" },
     details: ["[wissen=nah] {Er} hat eine vergrößerte Prostata.", "{Er} ist unruhig, sonst geht es ihm gut."],
     varianten: [
-      { id: "A", p: 1, sichtung: "gruen", lage: "Harnverhalt, Blase prall gefüllt, Kreislauf stabil", na: "nein", symptom: "urologisches_problem", dringlichkeit: 10, buchung: "bu_nierenkolik_harnverhalt_hodentorsion" },
+      { id: "A", p: 1, sichtung: "gruen", lage: "Harnverhalt, Blase prall gefüllt, Kreislauf stabil", braucht: "RS", symptom: "urologisches_problem", dringlichkeit: 10, buchung: "bu_nierenkolik_harnverhalt_hodentorsion" },
     ],
   },
 
@@ -219,8 +219,8 @@ export const FAELLE_NEU: FallVorlage[] = [
     fest: { ursache: "anderes", symptome: "ja", vorgeschichte: ["nein", "unbekannt"], medikation: "nein", bw: "ja", anzahl_patienten: "1" },
     details: ["Es juckt furchtbar.", "Ein Notfallset hat {er} nicht."],
     varianten: [
-      { id: "A", p: 0.8, sichtung: "gruen", fest: { atem_schluck: "nein", sprachschw: "nein", at: "normal" }, lage: "Urtikaria nach Wespenstich, Kreislauf stabil, keine Atemnot", na: "nein", symptom: "allergische_reaktion", dringlichkeit: 10, buchung: "bu_anaphylaxie" },
-      { id: "B", p: 0.2, sichtung: "rot", fest: { atem_schluck: "ja", sprachschw: "ja", at: "abnorm" }, lage: "Anaphylaxie nach Wespenstich, Gesichtsschwellung, Stridor, Blutdruck 80 zu 50", na: "immer", symptom: "allergische_reaktion", dringlichkeit: 30, buchung: "bu_anaphylaxie" },
+      { id: "A", p: 0.8, sichtung: "gruen", fest: { atem_schluck: "nein", sprachschw: "nein", at: "normal" }, lage: "Urtikaria nach Wespenstich, Kreislauf stabil, keine Atemnot", braucht: "RS", symptom: "allergische_reaktion", dringlichkeit: 10, buchung: "bu_anaphylaxie" },
+      { id: "B", p: 0.2, sichtung: "rot", fest: { atem_schluck: "ja", sprachschw: "ja", at: "abnorm" }, lage: "Anaphylaxie nach Wespenstich, Gesichtsschwellung, Stridor, Blutdruck 80 zu 50", braucht: "NA", symptom: "allergische_reaktion", dringlichkeit: 30, buchung: "bu_anaphylaxie" },
     ],
   },
 
@@ -242,8 +242,8 @@ export const FAELLE_NEU: FallVorlage[] = [
     details: ["[wissen=nah] {Er} nimmt Blutverdünner wegen dem Herz.", "Kaltes Tuch in den Nacken hat nichts geholfen."],
     vorerkrankungen: ["hoher Blutdruck", "Vorhofflimmern"],
     varianten: [
-      { id: "A", p: 0.85, sichtung: "gruen", fest: { staerke: "schwach" }, lage: "Epistaxis unter Blutverdünnung, Kreislauf stabil, Blutdruck 180 zu 95", na: "nein", symptom: "nasenbluten", dringlichkeit: 10, buchung: "bu_starkes_nasenbluten_fremdkoerper_hno" },
-      { id: "B", p: 0.15, sichtung: "gelb", fest: { staerke: "stark" }, lage: "starke posteriore Epistaxis, Puls 110", na: "RS", symptom: "nasenbluten", dringlichkeit: 20, buchung: "bu_starkes_nasenbluten_fremdkoerper_hno" },
+      { id: "A", p: 0.85, sichtung: "gruen", fest: { staerke: "schwach" }, lage: "Epistaxis unter Blutverdünnung, Kreislauf stabil, Blutdruck 180 zu 95", braucht: "RS", symptom: "nasenbluten", dringlichkeit: 10, buchung: "bu_starkes_nasenbluten_fremdkoerper_hno" },
+      { id: "B", p: 0.15, sichtung: "gelb", fest: { staerke: "stark" }, lage: "starke posteriore Epistaxis, Puls 110", braucht: "NKV", reichtNicht: 0.2, symptom: "nasenbluten", dringlichkeit: 20, buchung: "bu_starkes_nasenbluten_fremdkoerper_hno" },
     ],
   },
 
@@ -264,8 +264,8 @@ export const FAELLE_NEU: FallVorlage[] = [
     details: ["[wissen=nah] {Er} trinkt viel Alkohol.", "[wissen=nah] Der Stuhl war die letzten Tage schwarz."],
     vorerkrankungen: ["Leberzirrhose", "Magengeschwür"],
     varianten: [
-      { id: "A", p: 0.6, sichtung: "gelb", lage: "Hämatemesis, Kreislauf noch stabil, Puls 105", na: "NFS-NKV", symptom: "gastrointestinale_blutung", dringlichkeit: 20, buchung: "bu_obere_gi_blutung" },
-      { id: "B", p: 0.4, sichtung: "rot", fest: { hautfarbe: "ja", kaltschweiss: "ja" }, lage: "massive obere GI-Blutung, Blutdruck 80 zu 50, Puls 130, Verdacht auf Varizenblutung", na: "immer", symptom: "gastrointestinale_blutung", dringlichkeit: 30, buchung: "bu_obere_gi_blutung" },
+      { id: "A", p: 0.6, sichtung: "gelb", lage: "Hämatemesis, Kreislauf noch stabil, Puls 105", braucht: "NKV", reichtNicht: 0.3, symptom: "gastrointestinale_blutung", dringlichkeit: 20, buchung: "bu_obere_gi_blutung" },
+      { id: "B", p: 0.4, sichtung: "rot", fest: { hautfarbe: "ja", kaltschweiss: "ja" }, lage: "massive obere GI-Blutung, Blutdruck 80 zu 50, Puls 130, Verdacht auf Varizenblutung", braucht: "NA", symptom: "gastrointestinale_blutung", dringlichkeit: 30, buchung: "bu_obere_gi_blutung" },
     ],
   },
 
@@ -290,8 +290,8 @@ export const FAELLE_NEU: FallVorlage[] = [
     fest: { art: "verbrennung", brennt_noch: "nein", eingeschlossen: "nein", mehrere_verletzte: "nein", sprachschw: "nein", gesicht: "nein", aelter6h: "nein", nur_alarm: "nein", bw: "ja", at: "normal", anzahl_patienten: "1" },
     details: ["Die Haut ist rot und hat Blasen.", "{Er} weint vor Schmerz."],
     varianten: [
-      { id: "A", p: 0.75, sichtung: "gruen", fest: { flaeche: "gering" }, lage: "Verbrühung 2. Grades Unterarm, ca. 3 % Körperoberfläche", na: "nein", symptom: "verbrennung_unter_10_koerperoberflaeche", dringlichkeit: 10, buchung: "bu_leichte_verbrennung" },
-      { id: "B", p: 0.25, sichtung: "gelb", fest: { flaeche: "mittel" }, lage: "Verbrühung 2. Grades Brust und Arm, ca. 12 % Körperoberfläche, starke Schmerzen", na: "immer", symptom: "verbrennung_ueber_10_koerperoberflaeche", dringlichkeit: 20, buchung: "bu_schwere_verbrennung" },
+      { id: "A", p: 0.75, sichtung: "gruen", fest: { flaeche: "gering" }, lage: "Verbrühung 2. Grades Unterarm, ca. 3 % Körperoberfläche", braucht: "RS", symptom: "verbrennung_unter_10_koerperoberflaeche", dringlichkeit: 10, buchung: "bu_leichte_verbrennung" },
+      { id: "B", p: 0.25, sichtung: "gelb", fest: { flaeche: "mittel" }, lage: "Verbrühung 2. Grades Brust und Arm, ca. 12 % Körperoberfläche, starke Schmerzen", braucht: "NKV", reichtNicht: 0.4, symptom: "verbrennung_ueber_10_koerperoberflaeche", dringlichkeit: 20, buchung: "bu_schwere_verbrennung" },
     ],
   },
 
@@ -313,8 +313,8 @@ export const FAELLE_NEU: FallVorlage[] = [
     fest: { art: "hitze", mehrere_symptome: "nein", herz_vg: ["ja", "nein"], bw: "getruebt", at: "normal", anzahl_patienten: "1" },
     details: ["{Er} hat heute kaum etwas getrunken.", "[ort=wohnung|haus|pflegeheim] Drinnen hat es über 30 Grad.", "[ort=garten] {Er} war stundenlang in der prallen Sonne.", "[variante=B] Die Haut ist knallrot und glühend heiß."],
     varianten: [
-      { id: "A", p: 0.8, sichtung: "gelb", fest: { hautfarbe: "nein" }, lage: "Exsikkose bei Hitze, verwirrt, Temperatur 38,6, Blutdruck 100 zu 60", na: "nein", symptom: "hitzeerschoepfung", dringlichkeit: 20, buchung: "bu_exsikkose_synkope_az_verschlechterung" },
-      { id: "B", p: 0.2, sichtung: "rot", fest: { hautfarbe: "ja" }, lage: "Hitzschlag, Temperatur 40,5, somnolent, Blutdruck 85 zu 50", na: "immer", symptom: "hitzschlag", dringlichkeit: 30, buchung: "bu_exsikkose_synkope_az_verschlechterung" },
+      { id: "A", p: 0.8, sichtung: "gelb", fest: { hautfarbe: "nein" }, lage: "Exsikkose bei Hitze, verwirrt, Temperatur 38,6, Blutdruck 100 zu 60", braucht: "RS", symptom: "hitzeerschoepfung", dringlichkeit: 20, buchung: "bu_exsikkose_synkope_az_verschlechterung" },
+      { id: "B", p: 0.2, sichtung: "rot", fest: { hautfarbe: "ja" }, lage: "Hitzschlag, Temperatur 40,5, somnolent, Blutdruck 85 zu 50", braucht: "NKV", reichtNicht: 0.3, symptom: "hitzschlag", dringlichkeit: 30, buchung: "bu_exsikkose_synkope_az_verschlechterung" },
     ],
   },
 
@@ -337,7 +337,7 @@ export const FAELLE_NEU: FallVorlage[] = [
     fest: { art: "kaelte", mehrere_symptome: "nein", herz_vg: "nein", hautfarbe: "ja", bw: "getruebt", at: "normal", anzahl_patienten: "1" },
     details: ["Die Haustür ist offen gestanden.", "{Er} kann nicht sagen, wie lange {er} schon liegt."],
     varianten: [
-      { id: "A", p: 1, sichtung: "gelb", lage: "Hypothermie, Temperatur 33,5, verlangsamt, nach Sturz längere Liegezeit", na: "RS", symptom: "kaelteproblem", dringlichkeit: 20, buchung: "bu_exsikkose_synkope_az_verschlechterung" },
+      { id: "A", p: 1, sichtung: "gelb", lage: "Hypothermie, Temperatur 33,5, verlangsamt, nach Sturz längere Liegezeit", braucht: "NFS", symptom: "kaelteproblem", dringlichkeit: 20, buchung: "bu_exsikkose_synkope_az_verschlechterung" },
     ],
   },
 
@@ -362,8 +362,8 @@ export const FAELLE_NEU: FallVorlage[] = [
     fest: { krampft: "nein", atmung_geprueft: "ja", epilepsie: "nein", atypisch: "unbekannt", schwanger: "nein", diabetiker: "nein", vergiftung: "nein", vg_schlaganfall: "nein", bw: "getruebt", at: "normal", anzahl_patienten: "1" },
     details: ["Das Fieber war zuletzt 39,8.", "So etwas hatte {er} noch nie – es ist das erste Mal."],
     varianten: [
-      { id: "A", p: 0.9, sichtung: "gelb", lage: "postiktal nach einfachem Fieberkrampf, Temperatur 39,6, wird wieder wacher", na: "RS", verlauf: [{ nachMin: [8, 15], art: "besserung", bw: "ja", sichtung: "gelb", lage: "wieder wach, weinerlich, Temperatur 39,4", text: "Jetzt schaut {er} wieder und weint!" }], symptom: "fieberkrampf", dringlichkeit: 20, buchung: "bu_internistischer_kindernotfall" },
-      { id: "B", p: 0.1, sichtung: "rot", fest: { krampft: "mehrere" }, lage: "erneuter Krampfanfall, krampft seit über 5 Minuten", na: "immer", symptom: "status_epilepticus", dringlichkeit: 30, buchung: "bu_kritisch_krankes_kind" },
+      { id: "A", p: 0.9, sichtung: "gelb", lage: "postiktal nach einfachem Fieberkrampf, Temperatur 39,6, wird wieder wacher", braucht: "NFS", verlauf: [{ nachMin: [8, 15], art: "besserung", bw: "ja", sichtung: "gelb", lage: "wieder wach, weinerlich, Temperatur 39,4", text: "Jetzt schaut {er} wieder und weint!" }], symptom: "fieberkrampf", dringlichkeit: 20, buchung: "bu_internistischer_kindernotfall" },
+      { id: "B", p: 0.1, sichtung: "rot", fest: { krampft: "mehrere" }, lage: "erneuter Krampfanfall, krampft seit über 5 Minuten", braucht: "NFS", reichtNicht: 0.4, symptom: "status_epilepticus", dringlichkeit: 30, buchung: "bu_kritisch_krankes_kind" },
     ],
   },
 
@@ -384,7 +384,7 @@ export const FAELLE_NEU: FallVorlage[] = [
     fest: { anz_symptome: "mehrere", brust: "nein", sprachschw: "nein", hautfarbe: "nein", hochrisiko: "nein", bw: "ja", at: "normal", anzahl_patienten: "1" },
     details: ["{Er} hustet auch.", "Ausschlag hat {er} keinen.", "Die Kinderärztin hat heute zu."],
     varianten: [
-      { id: "A", p: 1, sichtung: "gruen", lage: "fieberhafter Infekt, Temperatur 39,8, trinkt wenig, Kreislauf stabil", na: "nein", revers: 0.2, symptom: "fieber", dringlichkeit: 10, buchung: "bu_internistischer_kindernotfall" },
+      { id: "A", p: 1, sichtung: "gruen", lage: "fieberhafter Infekt, Temperatur 39,8, trinkt wenig, Kreislauf stabil", braucht: "RS", revers: 0.2, symptom: "fieber", dringlichkeit: 10, buchung: "bu_internistischer_kindernotfall" },
     ],
   },
 
@@ -409,8 +409,8 @@ export const FAELLE_NEU: FallVorlage[] = [
     details: ["Der Hausarzt war vorgestern da.", "{Er} geht seit gestern kaum aufs Klo."],
     vorerkrankungen: ["beginnende Demenz", "Diabetes", "Herzschwäche"],
     varianten: [
-      { id: "A", p: 0.75, sichtung: "gruen", lage: "Allgemeinzustandsverschlechterung, Exsikkose, Kreislauf stabil", na: "nein", revers: 0.1, symptom: "exsikkose", dringlichkeit: 10, buchung: "bu_exsikkose_synkope_az_verschlechterung" },
-      { id: "B", p: 0.25, sichtung: "gelb", fest: { at: "abnorm" }, lage: "Fieber 38,9, Atemfrequenz 26, Sättigung 90, Verdacht auf Pneumonie", na: "nein", symptom: "fieber", dringlichkeit: 20, buchung: "bu_pneumonie_atemnot_copd" },
+      { id: "A", p: 0.75, sichtung: "gruen", lage: "Allgemeinzustandsverschlechterung, Exsikkose, Kreislauf stabil", braucht: "RS", revers: 0.1, symptom: "exsikkose", dringlichkeit: 10, buchung: "bu_exsikkose_synkope_az_verschlechterung" },
+      { id: "B", p: 0.25, sichtung: "gelb", fest: { at: "abnorm" }, lage: "Fieber 38,9, Atemfrequenz 26, Sättigung 90, Verdacht auf Pneumonie", braucht: "RS", symptom: "fieber", dringlichkeit: 20, buchung: "bu_pneumonie_atemnot_copd" },
     ],
   },
 
@@ -431,8 +431,8 @@ export const FAELLE_NEU: FallVorlage[] = [
     fest: { hauptbeschwerde: "schwindel", verwirrt: "nein", sonderdiagnose: "nein", bw: "ja", at: "normal", anzahl_patienten: "1" },
     details: ["Sprechen und Bewegen geht normal.", "Kopfweh hat {er} keines."],
     varianten: [
-      { id: "A", p: 0.9, sichtung: "gruen", lage: "Drehschwindel mit Übelkeit, neurologisch unauffällig, Kreislauf stabil", na: "nein", revers: 0.15, symptom: "schwindel", dringlichkeit: 10, buchung: "bu_hausaerztlich" },
-      { id: "B", p: 0.1, sichtung: "gelb", lage: "Schwindel mit Gangunsicherheit und Doppelbildern, Verdacht auf Hirnstamminsult", na: "nein", symptom: "schlaganfall_apss_1_3", dringlichkeit: 20, buchung: "bu_schlaganfall" },
+      { id: "A", p: 0.9, sichtung: "gruen", lage: "Drehschwindel mit Übelkeit, neurologisch unauffällig, Kreislauf stabil", braucht: "RS", revers: 0.15, symptom: "schwindel", dringlichkeit: 10, buchung: "bu_hausaerztlich" },
+      { id: "B", p: 0.1, sichtung: "gelb", lage: "Schwindel mit Gangunsicherheit und Doppelbildern, Verdacht auf Hirnstamminsult", braucht: "RS", symptom: "schlaganfall_apss_1_3", dringlichkeit: 20, buchung: "bu_schlaganfall" },
     ],
   },
 
@@ -453,8 +453,8 @@ export const FAELLE_NEU: FallVorlage[] = [
     fest: { ploetzlich_stark: "ja", sprachstoerung: "nein", taubheit: "nein", laehmung: "nein", fast_gesicht: "nein", fast_arm: "nein", fast_sprache: "nein", seit: "unter", at: "normal", anzahl_patienten: "1" },
     details: ["Der Nacken ist steif.", "{Er} hatte so etwas noch nie."],
     varianten: [
-      { id: "A", p: 0.7, sichtung: "gelb", fest: { bw: "ja", verhalten: "nein" }, lage: "Vernichtungskopfschmerz, Meningismus, Verdacht auf Subarachnoidalblutung, wach", na: "immer", symptom: "kopfschmerzen", dringlichkeit: 20, buchung: "bu_intrakranielle_blutung" },
-      { id: "B", p: 0.3, sichtung: "rot", fest: { bw: "getruebt", verhalten: "ja" }, lage: "Kopfschmerz, zunehmend schläfrig und verwirrt, GCS 13, Verdacht auf Subarachnoidalblutung", na: "immer", symptom: "bewusstseinsstoerung_gcs_9_15", dringlichkeit: 20, buchung: "bu_intrakranielle_blutung" },
+      { id: "A", p: 0.7, sichtung: "gelb", fest: { bw: "ja", verhalten: "nein" }, lage: "Vernichtungskopfschmerz, Meningismus, Verdacht auf Subarachnoidalblutung, wach", braucht: "NA", symptom: "kopfschmerzen", dringlichkeit: 20, buchung: "bu_intrakranielle_blutung" },
+      { id: "B", p: 0.3, sichtung: "rot", fest: { bw: "getruebt", verhalten: "ja" }, lage: "Kopfschmerz, zunehmend schläfrig und verwirrt, GCS 13, Verdacht auf Subarachnoidalblutung", braucht: "NA", symptom: "bewusstseinsstoerung_gcs_9_15", dringlichkeit: 20, buchung: "bu_intrakranielle_blutung" },
     ],
   },
 
@@ -475,7 +475,7 @@ export const FAELLE_NEU: FallVorlage[] = [
     fest: { schwer_pat: "nein", hoehe: "boden", verletzt: "ja", region: "extremitaet", blutung_stark: "nein", fehlstellung: "ja", ohnmacht: "nein", aelter6h: "nein", umstand: "keine", bw: "ja", at: "normal", anzahl_patienten: "1" },
     details: ["Am Kopf hat {er} sich nicht angeschlagen.", "Blut sieht man keines."],
     varianten: [
-      { id: "A", p: 1, sichtung: "gelb", lage: "Unterarmfraktur mit Fehlstellung, Durchblutung und Sensibilität erhalten", na: "nein", symptom: "unterarmverletzung", dringlichkeit: 20, buchung: "bu_verletztes_kind" },
+      { id: "A", p: 1, sichtung: "gelb", lage: "Unterarmfraktur mit Fehlstellung, Durchblutung und Sensibilität erhalten", braucht: "NFS", reichtNicht: 0.2, symptom: "unterarmverletzung", dringlichkeit: 20, buchung: "bu_verletztes_kind" },
     ],
   },
 
@@ -500,8 +500,8 @@ export const FAELLE_NEU: FallVorlage[] = [
     fest: { region: "extremitaet", fehlstellung: "nein", aelter6h: "nein", hohe_energie: "nein", bw: "ja", at: "normal", anzahl_patienten: "1" },
     details: ["[selbst=nein] Ein Kollege drückt einen Verband drauf.", "[selbst=ja] Du drückst ein Tuch drauf.", "[variante=B] Der Finger liegt noch bei der Säge."],
     varianten: [
-      { id: "A", p: 0.8, sichtung: "gelb", fest: { amputation: "nein", blutung_stark: "ja" }, lage: "tiefe Schnittverletzung Hand, Beugesehne fraglich, Blutung mit Druckverband gestillt", na: "nein", symptom: "handverletzung_ohne_amputation", dringlichkeit: 20, buchung: "bu_isolierte_extremitaetenverletzung" },
-      { id: "B", p: 0.2, sichtung: "gelb", fest: { amputation: "ja", blutung_stark: "ja" }, lage: "Amputation Zeigefinger, Amputat geborgen und gekühlt, Blutung gestillt", na: "nein", symptom: "amputation_finger_zehen_mit_replantationsfaehige", dringlichkeit: 20, buchung: "bu_amputationsverletzung" },
+      { id: "A", p: 0.8, sichtung: "gelb", fest: { amputation: "nein", blutung_stark: "ja" }, lage: "tiefe Schnittverletzung Hand, Beugesehne fraglich, Blutung mit Druckverband gestillt", braucht: "RS", symptom: "handverletzung_ohne_amputation", dringlichkeit: 20, buchung: "bu_isolierte_extremitaetenverletzung" },
+      { id: "B", p: 0.2, sichtung: "gelb", fest: { amputation: "ja", blutung_stark: "ja" }, lage: "Amputation Zeigefinger, Amputat geborgen und gekühlt, Blutung gestillt", braucht: "RS", symptom: "amputation_finger_zehen_mit_replantationsfaehige", dringlichkeit: 20, buchung: "bu_amputationsverletzung" },
     ],
   },
 
@@ -525,8 +525,8 @@ export const FAELLE_NEU: FallVorlage[] = [
     fest: { deliktart: "koerperverletzung", taeter_vor_ort: "nein", region: "kopf", blutung_stark: "nein", fehlstellung: "nein", aelter6h: "nein", mehrere_verletzte: "nein", at: "normal", anzahl_patienten: "1" },
     details: ["{Er} ist betrunken.", "Die Polizei ist noch nicht da.", "Der Täter ist weg."],
     varianten: [
-      { id: "A", p: 0.8, sichtung: "gruen", fest: { bw: "ja" }, lage: "Platzwunde Augenbraue, Nasenbluten, alkoholisiert, orientiert", na: "nein", partner: [{ art: "pol", grund: "Körperverletzung" }], revers: 0.25, symptom: "gesichts_kopfverletzung_augen", dringlichkeit: 10, buchung: "bu_gesichtsschaedelverletzung" },
-      { id: "B", p: 0.2, sichtung: "gelb", fest: { bw: "getruebt", ohnmacht: "ja" }, lage: "Schädelprellung mit kurzer Bewusstlosigkeit, Amnesie, alkoholisiert", na: "nein", partner: [{ art: "pol", grund: "Körperverletzung" }], symptom: "kopfverletzung", dringlichkeit: 20, buchung: "bu_schweres_sht" },
+      { id: "A", p: 0.8, sichtung: "gruen", fest: { bw: "ja" }, lage: "Platzwunde Augenbraue, Nasenbluten, alkoholisiert, orientiert", braucht: "RS", partner: [{ art: "pol", grund: "Körperverletzung" }], revers: 0.25, symptom: "gesichts_kopfverletzung_augen", dringlichkeit: 10, buchung: "bu_gesichtsschaedelverletzung" },
+      { id: "B", p: 0.2, sichtung: "gelb", fest: { bw: "getruebt", ohnmacht: "ja" }, lage: "Schädelprellung mit kurzer Bewusstlosigkeit, Amnesie, alkoholisiert", braucht: "RS", partner: [{ art: "pol", grund: "Körperverletzung" }], symptom: "kopfverletzung", dringlichkeit: 20, buchung: "bu_schweres_sht" },
     ],
   },
 
@@ -547,7 +547,7 @@ export const FAELLE_NEU: FallVorlage[] = [
     fest: { art: "stich", tot: "nein", selbst: "nein", noch_gepfaehlt: "nein", wunde: "zentral", anzahl_wunden: "eine", aelter6h: "nein", blutung_stark: "ja", mehrere_verletzte: "nein", polizei: "ja", hautfarbe: "ja", kaltschweiss: "ja", bw: "ja", at: "normal", anzahl_patienten: "1" },
     details: ["Der Täter ist weg, aber du weißt nicht, wohin.", "Die Wunde ist auf der linken Seite vom Bauch."],
     varianten: [
-      { id: "A", p: 1, sichtung: "rot", lage: "Stichverletzung linker Oberbauch, Blutdruck 90 zu 60, Puls 120", na: "immer", partner: [{ art: "pol", grund: "Messerangriff, Täter flüchtig", eigenschutz: true }], symptom: "abdominalverletzung", dringlichkeit: 30, buchung: "bu_abdominaltrauma" },
+      { id: "A", p: 1, sichtung: "rot", lage: "Stichverletzung linker Oberbauch, Blutdruck 90 zu 60, Puls 120", braucht: "NA", partner: [{ art: "pol", grund: "Messerangriff, Täter flüchtig", eigenschutz: true }], symptom: "abdominalverletzung", dringlichkeit: 30, buchung: "bu_abdominaltrauma" },
     ],
   },
 
@@ -569,8 +569,8 @@ export const FAELLE_NEU: FallVorlage[] = [
     details: ["Die leere Packung liegt daneben.", "[wissen=nah] {Er} ist wegen Depressionen in Behandlung."],
     vorerkrankungen: ["!Depressionen"],
     varianten: [
-      { id: "A", p: 0.7, sichtung: "gelb", fest: { bw: "getruebt" }, lage: "Mischintoxikation Benzodiazepine und Alkohol in suizidaler Absicht, somnolent, Atemwege frei", na: "NFS-NKV", symptom: "vergiftung_oral_iv", dringlichkeit: 20, buchung: "bu_intoxikation" },
-      { id: "B", p: 0.3, sichtung: "rot", fest: { bw: "nein" }, lage: "Mischintoxikation, nur auf Schmerzreiz reagierend, GCS 7, Atemwege gefährdet", na: "immer", symptom: "vergiftung_oral_iv", dringlichkeit: 30, buchung: "bu_intoxikation" },
+      { id: "A", p: 0.7, sichtung: "gelb", fest: { bw: "getruebt" }, lage: "Mischintoxikation Benzodiazepine und Alkohol in suizidaler Absicht, somnolent, Atemwege frei", braucht: "NKV", reichtNicht: 0.3, symptom: "vergiftung_oral_iv", dringlichkeit: 20, buchung: "bu_intoxikation" },
+      { id: "B", p: 0.3, sichtung: "rot", fest: { bw: "nein" }, lage: "Mischintoxikation, nur auf Schmerzreiz reagierend, GCS 7, Atemwege gefährdet", braucht: "NA", symptom: "vergiftung_oral_iv", dringlichkeit: 30, buchung: "bu_intoxikation" },
     ],
   },
 
@@ -591,7 +591,7 @@ export const FAELLE_NEU: FallVorlage[] = [
     fest: { augen: "schwer", bw: "ja", at: "normal", anzahl_patienten: "1" },
     details: ["Auf der Flasche steht ätzend.", "{Er} kann das Auge kaum aufmachen."],
     varianten: [
-      { id: "A", p: 1, sichtung: "gelb", lage: "Verätzung rechtes Auge mit alkalischem Reiniger, gespült, starke Schmerzen", na: "nein", symptom: "augenverletzung", dringlichkeit: 20, buchung: "bu_augenverletzung" },
+      { id: "A", p: 1, sichtung: "gelb", lage: "Verätzung rechtes Auge mit alkalischem Reiniger, gespült, starke Schmerzen", braucht: "RS", symptom: "augenverletzung", dringlichkeit: 20, buchung: "bu_augenverletzung" },
     ],
   },
   // ---------------------------------------------------------------- Bluthochdruck
@@ -616,8 +616,8 @@ export const FAELLE_NEU: FallVorlage[] = [
     details: ["[wissen=nah] {Er} hat die Blutdrucktabletten die letzten Tage vergessen.", "Gemessen wurde zweimal, beide Male über 200."],
     vorerkrankungen: ["!hoher Blutdruck"],
     varianten: [
-      { id: "A", p: 0.85, sichtung: "gruen", fest: { brustschmerz: "nein" }, lage: "Blutdruck 215 zu 110, Kopfschmerz, neurologisch unauffällig, keine Organzeichen", na: "nein", revers: 0.2, symptom: "hypertensiver_notfall", dringlichkeit: 10, buchung: "bu_hypertensiver_notfall" },
-      { id: "B", p: 0.15, sichtung: "gelb", fest: { brustschmerz: "ja" }, lage: "Blutdruck 230 zu 125 mit Sehstörung und Brustenge, hypertensiver Notfall", na: "immer", symptom: "hypertensiver_notfall", dringlichkeit: 20, buchung: "bu_hypertensiver_notfall" },
+      { id: "A", p: 0.85, sichtung: "gruen", fest: { brustschmerz: "nein" }, lage: "Blutdruck 215 zu 110, Kopfschmerz, neurologisch unauffällig, keine Organzeichen", braucht: "RS", revers: 0.2, symptom: "hypertensiver_notfall", dringlichkeit: 10, buchung: "bu_hypertensiver_notfall" },
+      { id: "B", p: 0.15, sichtung: "gelb", fest: { brustschmerz: "ja" }, lage: "Blutdruck 230 zu 125 mit Sehstörung und Brustenge, hypertensiver Notfall", braucht: "NKV", reichtNicht: 0.3, symptom: "hypertensiver_notfall", dringlichkeit: 20, buchung: "bu_hypertensiver_notfall" },
     ],
   },
 ];

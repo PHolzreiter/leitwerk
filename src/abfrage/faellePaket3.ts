@@ -29,7 +29,7 @@ export const FAELLE_PAKET3: FallVorlage[] = [
     fest: { anforderer: "normal", grund: "transport", dringlichkeit: "ohne", transportart: ["sitzend", "gehend"], bw: "ja", at: "normal", anzahl_patienten: "1" },
     details: ["Sättigung 93 Prozent, Fieber 38,4.", "Die Gattin begleitet {ihn}."],
     verlauf: ["Du bist ruhig und sachlich, die Ordination ist voll."],
-    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "ambulant erworbene Pneumonie, Sättigung 93, Kreislauf stabil – Einweisung", na: "nein", symptom: "fieber", dringlichkeit: 10, buchung: "bu_pneumonie_atemnot_copd" }],
+    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "ambulant erworbene Pneumonie, Sättigung 93, Kreislauf stabil – Einweisung", braucht: "RS", symptom: "fieber", dringlichkeit: 10, buchung: "bu_pneumonie_atemnot_copd" }],
   },
 
   // ---------------------------------------------------------------- Hausarzt: Hausbesuch, kann nicht mehr gehen
@@ -53,7 +53,7 @@ export const FAELLE_PAKET3: FallVorlage[] = [
     fest: { anforderer: "normal", grund: "transport", dringlichkeit: "ohne", transportart: "liegend", bw: "ja", at: "normal", anzahl_patienten: "1" },
     details: ["Die Tochter ist da und sperrt auf.", "Blutdruck 105 zu 60, Puls 90."],
     verlauf: ["Du bist ruhig und routiniert."],
-    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "Exsikkose mit Nierenfunktionsverschlechterung, stabil – Einweisung liegend", na: "nein", symptom: "exsikkose", dringlichkeit: 10, buchung: "bu_exsikkose_synkope_az_verschlechterung" }],
+    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "Exsikkose mit Nierenfunktionsverschlechterung, stabil – Einweisung liegend", braucht: "RS", symptom: "exsikkose", dringlichkeit: 10, buchung: "bu_exsikkose_synkope_az_verschlechterung" }],
   },
 
   // ---------------------------------------------------------------- Pflegeheim: Heimarzt weist ein
@@ -76,7 +76,7 @@ export const FAELLE_PAKET3: FallVorlage[] = [
     fest: { anforderer: "normal", grund: "transport", dringlichkeit: "ohne", transportart: ["liegend", "rollstuhl"], bw: "ja", at: "normal", anzahl_patienten: "1" },
     details: ["Die Einweisung und der Pflegebrief liegen bereit.", "Die Angehörigen sind informiert."],
     verlauf: ["Du bist ruhig und sachlich, du hast die Dokumentation vor dir."],
-    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "Einweisung aus dem Pflegeheim, Patient stabil", na: "nein", symptom: "kranke_person", dringlichkeit: 10, buchung: "bu_exsikkose_synkope_az_verschlechterung" }],
+    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "Einweisung aus dem Pflegeheim, Patient stabil", braucht: "RS", symptom: "kranke_person", dringlichkeit: 10, buchung: "bu_exsikkose_synkope_az_verschlechterung" }],
   },
 
   // ---------------------------------------------------------------- Telemedizin: Transport zur Abklärung
@@ -99,7 +99,7 @@ export const FAELLE_PAKET3: FallVorlage[] = [
     fest: { anforderer: "telemed", grund: "transport", dringlichkeit: "ohne", transportart: ["sitzend", "gehend"], bw: "ja", at: "normal", anzahl_patienten: "1" },
     details: ["Eine Rückrufnummer vom Patienten habe ich.", "Der Patient ist allein, sperrt aber selbst auf."],
     verlauf: ["Du bist ruhig und sachlich."],
-    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "Verdacht auf Appendizitis, Kreislauf stabil, Schmerz mäßig", na: "nein", symptom: "bauchschmerzen", dringlichkeit: 10, buchung: "bu_akutes_abdomen" }],
+    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "Verdacht auf Appendizitis, Kreislauf stabil, Schmerz mäßig", braucht: "RS", symptom: "bauchschmerzen", dringlichkeit: 10, buchung: "bu_akutes_abdomen" }],
   },
 
   // ---------------------------------------------------------------- Ärztefunkdienst: Transport, kein Notfall
@@ -123,7 +123,7 @@ export const FAELLE_PAKET3: FallVorlage[] = [
     fest: { anforderer: "141", grund: "transport", dringlichkeit: "ohne", transportart: ["liegend", "sitzend"], bw: "ja", at: "normal", anzahl_patienten: "1" },
     details: ["Die Einweisung ist geschrieben.", "Der Sohn bleibt bis zum Eintreffen."],
     verlauf: ["Du bist ruhig und routiniert, du hast noch weitere Visiten."],
-    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "Einweisung durch den Ärztefunkdienst, Patient stabil", na: "nein", symptom: "kranke_person", dringlichkeit: 10, buchung: "bu_exsikkose_synkope_az_verschlechterung" }],
+    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "Einweisung durch den Ärztefunkdienst, Patient stabil", braucht: "RS", symptom: "kranke_person", dringlichkeit: 10, buchung: "bu_exsikkose_synkope_az_verschlechterung" }],
   },
 
   // ---------------------------------------------------------------- Dialysestation: Patient muss ins Krankenhaus
@@ -147,7 +147,7 @@ export const FAELLE_PAKET3: FallVorlage[] = [
     fest: { anforderer: "normal", grund: "transport", dringlichkeit: "ohne", transportart: "sitzend", bw: "ja", at: "normal", anzahl_patienten: "1" },
     details: ["Blutdruck 130 zu 70, Fieber 38,2.", "Der Befund liegt bei."],
     verlauf: ["Du bist ruhig und sachlich."],
-    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "Verdacht auf Shuntinfekt, Fieber, Kreislauf stabil – Einweisung", na: "nein", symptom: "fieber", dringlichkeit: 10, buchung: "bu_hyperkaliaemie_akutes_nierenversagen" }],
+    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "Verdacht auf Shuntinfekt, Fieber, Kreislauf stabil – Einweisung", braucht: "RS", symptom: "fieber", dringlichkeit: 10, buchung: "bu_hyperkaliaemie_akutes_nierenversagen" }],
   },
 
   // ---------------------------------------------------------------- Facharzt: Augenarzt schickt ins Krankenhaus
@@ -171,7 +171,7 @@ export const FAELLE_PAKET3: FallVorlage[] = [
     fest: { anforderer: "normal", grund: "transport", dringlichkeit: "ohne", transportart: ["sitzend", "gehend", "rollstuhl"], bw: "ja", at: "normal", anzahl_patienten: "1" },
     details: ["Die Überweisung ist geschrieben.", "{Er} wartet im Warteraum."],
     verlauf: ["Du bist freundlich und sachlich."],
-    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "Überweisung vom Facharzt, Patient stabil", na: "nein", symptom: "kranke_person", dringlichkeit: 10, buchung: "bu_hausaerztlich" }],
+    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "Überweisung vom Facharzt, Patient stabil", braucht: "RS", symptom: "kranke_person", dringlichkeit: 10, buchung: "bu_hausaerztlich" }],
   },
 
   // ---------------------------------------------------------------- Hausarzt: dringend, aber kein Notarzt
@@ -195,7 +195,7 @@ export const FAELLE_PAKET3: FallVorlage[] = [
     fest: { anforderer: "normal", grund: "transport", dringlichkeit: "sofort", transportart: ["sitzend", "gehend"], bw: "ja", at: "normal", anzahl_patienten: "1" },
     details: ["Ein Zugang liegt.", "Der Befund wird mitgegeben."],
     verlauf: ["Du bist ruhig und sachlich."],
-    varianten: [{ id: "A", p: 1, sichtung: "gelb", lage: "dringliche Einweisung vom Hausarzt, Patient stabil", na: "nein", symptom: "kranke_person", dringlichkeit: 20, buchung: "bu_exsikkose_synkope_az_verschlechterung" }],
+    varianten: [{ id: "A", p: 1, sichtung: "gelb", lage: "dringliche Einweisung vom Hausarzt, Patient stabil", braucht: "RS", symptom: "kranke_person", dringlichkeit: 20, buchung: "bu_exsikkose_synkope_az_verschlechterung" }],
   },
 
   // ================================================================ STÜRZE, DIE SCHON LÄNGER HER SIND
@@ -220,7 +220,7 @@ export const FAELLE_PAKET3: FallVorlage[] = [
     seitMin: [600, 1440],
     fest: { schwer_pat: "nein", hoehe: "boden", verletzt: "ja", region: "extremitaet", blutung_stark: "nein", fehlstellung: "nein", ohnmacht: "nein", aelter6h: "ja", umstand: "keine", bw: "ja", at: "normal", anzahl_patienten: "1" },
     details: ["Der Arm ist blau verfärbt.", "Zum Hausarzt kommt {er} allein nicht."],
-    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "Schulterprellung nach Sturz vor drei Tagen, Verdacht auf Humeruskopffraktur, Kreislauf stabil", na: "nein", revers: 0.3, symptom: "schulterverletzung", dringlichkeit: 10, buchung: "bu_isolierte_extremitaetenverletzung" }],
+    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "Schulterprellung nach Sturz vor drei Tagen, Verdacht auf Humeruskopffraktur, Kreislauf stabil", braucht: "RS", revers: 0.3, symptom: "schulterverletzung", dringlichkeit: 10, buchung: "bu_isolierte_extremitaetenverletzung" }],
   },
 
   // ---------------------------------------------------------------- Gestürzt, unverletzt, braucht Hilfe zum Aufstehen
@@ -244,6 +244,6 @@ export const FAELLE_PAKET3: FallVorlage[] = [
     fest: { schwer_pat: ["nein", "ja"], hoehe: "boden", verletzt: "nein", region: "extremitaet", blutung_stark: "nein", fehlstellung: "nein", ohnmacht: "nein", aelter6h: "nein", umstand: "boden_1", bw: "ja", at: "normal", anzahl_patienten: "1" },
     details: ["Höchstens am {Knie|Ellbogen} ist eine kleine Rötung, sonst ist nichts.", "{Er} sitzt am Boden an den Kasten gelehnt.", "{Er} redet ganz normal."],
     verlauf: ["[selbst=ja] Es ist dir peinlich, dass du anrufen musst."],
-    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "Sturz ohne Verletzung, Aufhelfen, Patient verbleibt zu Hause", na: "nein", revers: 0.8, symptom: "soziale_indikation", dringlichkeit: 10, buchung: "bu_hausaerztlich" }],
+    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "Sturz ohne Verletzung, Aufhelfen, Patient verbleibt zu Hause", braucht: "RS", revers: 0.8, symptom: "soziale_indikation", dringlichkeit: 10, buchung: "bu_hausaerztlich" }],
   },
 ];

@@ -5,7 +5,7 @@
  */
 import { mehrere, type Antworten } from "../abfrage/schema";
 import { ist, thema } from "../abfrage/themen";
-import type { AnleitungTyp, FallVariante, NaBedarf } from "../abfrage/faelle";
+import { brauchtAusNa, brauchtVon, type AnleitungTyp, type FallVariante, type Kompetenz, type NaBedarf } from "../abfrage/faelle";
 
 export type Bewusstsein = "ja" | "getruebt" | "nein";
 export type Atmung = "normal" | "abnorm" | "agonal" | "keine";
@@ -31,6 +31,8 @@ export interface LageEreignis {
   sichtung?: Sichtung;
   kern?: string;
   na?: NaBedarf;
+  /** benötigte Kompetenz ab diesem Ereignis */
+  braucht?: Kompetenz;
   wechselZu?: string;
   text?: string;
   /** gehört zu dieser Variante (wechselt die Variante, entfällt es) */
@@ -50,7 +52,15 @@ export interface LageFall {
   id: string;
   variante: string;
   kern: string;
-  na: NaBedarf;
+  /** veraltet (Spielstände vor Beta 48) – neu: braucht */
+  na?: NaBedarf;
+  /** benötigte Kompetenz vor Ort (RS, NFS, NKV, NKI, NA) */
+  braucht?: Kompetenz;
+  /** gewürfelt: die Maßnahmen dieser Stufe reichen nicht – zeigt sich vor Ort, dann braucht es einen NA */
+  reichtNicht?: boolean;
+  /** so lange versorgt die Besatzung mit der passenden Kompetenz, bis sich zeigt, dass es nicht reicht */
+  reichtNichtUm?: number | null;
+  reichtNichtGemeldet?: boolean;
   /** Anleitungen am Telefon: Typ → Zeitpunkt */
   anleitungen: Partial<Record<AnleitungTyp, number>>;
   /** Verschlechterung ohne NA ist schon eingeplant */
@@ -180,7 +190,7 @@ export function lageAusFall(fallId: string, v: FallVariante, a: Antworten, jetzt
     ereignisse: [],
     aufgedeckt: false,
     verlauf: [],
-    fall: { id: fallId, variante: v.id, kern: v.lage, na: v.na, anleitungen: {} },
+    fall: { id: fallId, variante: v.id, kern: v.lage, braucht: brauchtVon(v), reichtNicht: Math.random() < (v.reichtNicht ?? 0), anleitungen: {} },
   };
   ereignisseEinplanen(lage, v, jetzt);
   return lage;
@@ -200,7 +210,7 @@ export function ereignisseEinplanen(l: Lage, v: FallVariante, start: number): vo
       eingetreten: false,
       sichtung: ev.sichtung,
       kern: ev.lage,
-      na: ev.na,
+      braucht: ev.braucht ?? (ev.na ? brauchtAusNa(ev.na) : undefined),
       wechselZu: ev.wechselZu,
       text: ev.text,
       variante: v.id,
@@ -252,7 +262,7 @@ export function bedarf(l: Lage): { na: number; transport: number } {
 }
 
 /** Lagemeldung der Besatzung (Funkstil, ohne „Hier …“/„kommen“) */
-export function lagemeldungText(l: Lage, kapitel: string, fehlt: { na: number; rtw: number; bit?: number }, naStorno: boolean): string {
+export function lagemeldungText(l: Lage, kapitel: string, fehlt: { na: number; rtw: number; bit?: number; nfs?: number }, naStorno: boolean): string {
   const teile: string[] = [];
   const p0 = l.patienten[0];
   if (l.patienten.length > 1) {
@@ -270,6 +280,8 @@ export function lagemeldungText(l: Lage, kapitel: string, fehlt: { na: number; r
     teile.push(`${l.irrtum === "keineRea" ? "keine Reanimation, " : ""}Patient ${bw}, ${at}`);
   }
   if (fehlt.na > 0) teile.push(fehlt.na === 1 ? "benötigen Notarzt" : `benötigen ${fehlt.na} Notärzte`);
+  // nur eine NFS-Maßnahme, Besatzung nur RS: Frage nach NEF oder RTW-C (Paul 12.11.2026)
+  else if ((fehlt.nfs ?? 0) > 0) teile.push("Frage: ist ein NEF oder RTW-C verfügbar");
   if (fehlt.rtw > 0) teile.push(rtwBedarf(fehlt.rtw));
   if (fehlt.bit) teile.push(`Patient ca. ${150 + Math.round(Math.random() * 8) * 10} kg, mit unserer Trage nicht transportierbar, benötigen BIT`);
   if (naStorno) teile.push("Notarzt nicht erforderlich, kann storniert werden");

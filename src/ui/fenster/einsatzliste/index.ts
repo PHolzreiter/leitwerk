@@ -164,7 +164,7 @@ function bearbeiterMarke(b: Einsatz["bearbeiter"]): ListenMarke[] {
   return [MK(ich ? "du" : b.name, "", `${ich ? "Du bearbeitest" : b.name + " bearbeitet"} diesen Einsatz`, { ini: initialen(b.name) })];
 }
 
-const NF_TEXT: Record<string, string> = { NA: "Notarzt", RTW: "RTW", BIT: "BIT" };
+const NF_TEXT: Record<string, string> = { NA: "Notarzt", RTW: "RTW", BIT: "BIT", NFS: "NEF/RTW-C" };
 
 // ---------------------------------------------------------------- Einträge
 
@@ -190,7 +190,7 @@ function rdEintrag(e: Einsatz): Roh {
     if (k?.khAnfrage && k.zustand !== "abgeschlossen") mk.push(MK("KH-Anfrage", "blau", `Patient ${nr} wartet auf ein Krankenhaus`, { blink: true, dringend: true }));
   if (e.khAnfrage) mk.push(MK("KH-Anfrage", "blau", `${e.khAnfrage.von} bittet um eine Krankenhaus-Buchung`, { blink: true, dringend: true }));
   for (const n of e.nachforderungen ?? [])
-    if (!n.erledigt) mk.push(MK(`Nachforderung ${n.anzahl > 1 ? n.anzahl + " " : ""}${NF_TEXT[n.art] ?? n.art}`, "gelb", `Besatzung ${n.von} fordert ${n.art === "NA" ? "einen Notarzt" : n.anzahl > 1 ? n.anzahl + " × " + n.art : n.art} nach`, { blink: true, dringend: true }));
+    if (!n.erledigt) mk.push(MK(`Nachforderung ${n.anzahl > 1 ? n.anzahl + " " : ""}${NF_TEXT[n.art] ?? n.art}`, "gelb", `Besatzung ${n.von} fordert ${n.art === "NA" ? "einen Notarzt" : n.art === "NFS" ? "ein NEF oder einen RTW-C (Notfallsanitäter) an" : n.anzahl > 1 ? n.anzahl + " × " + n.art : n.art} nach`, { blink: true, dringend: true }));
   if (e.adressePruefen && lage !== "erledigt") mk.push(MK("Adresse prüfen", "rot", "Die Adresse stimmt vermutlich nicht – bitte prüfen", { blink: true, dringend: true }));
   if (lage !== "erledigt") mk.push(...anrufMarken(e.anruf, false));
   if (e.zusammengelegt) mk.push(MK("zusammengelegt", "", "zweiter Notruf, mit einem anderen Einsatz zusammengelegt"));

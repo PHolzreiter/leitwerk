@@ -29,7 +29,7 @@ export const FAELLE_PAKET2: FallVorlage[] = [
     details: ["Du drückst ein Geschirrtuch drauf.", "{Er} redet ganz normal und will schon wieder spielen.", "Erbrochen hat {er} nicht."],
     verlauf: ["Du bist aufgeregt wegen dem vielen Blut, beruhigst dich aber, wenn man dir sagt, was du tun sollst."],
     anleitung: { druck_blutung: [] },
-    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "Platzwunde Stirn 2 cm, Kind wach und orientiert, keine Bewusstlosigkeit", na: "nein", revers: 0.3, symptom: "gesichts_kopfverletzung_augen", dringlichkeit: 10, buchung: "bu_verletztes_kind" }],
+    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "Platzwunde Stirn 2 cm, Kind wach und orientiert, keine Bewusstlosigkeit", braucht: "RS", revers: 0.3, symptom: "gesichts_kopfverletzung_augen", dringlichkeit: 10, buchung: "bu_verletztes_kind" }],
   },
 
   // ---------------------------------------------------------------- Arm beim Hochziehen ausgerenkt
@@ -52,7 +52,7 @@ export const FAELLE_PAKET2: FallVorlage[] = [
     fest: { amputation: "nein", region: "extremitaet", blutung_stark: "nein", fehlstellung: "nein", aelter6h: "nein", hohe_energie: "nein", bw: "ja", at: "normal", anzahl_patienten: "1" },
     details: ["Die Finger bewegt {er}.", "{Er} hält den Arm am Bauch, leicht abgewinkelt."],
     verlauf: ["Du machst dir Vorwürfe und fragst, ob du etwas kaputt gemacht hast."],
-    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "Verdacht auf Radiusköpfchen-Subluxation (Chassaignac), sonst unauffällig", na: "nein", revers: 0.3, symptom: "ellbogenverletzung", dringlichkeit: 10, buchung: "bu_verletztes_kind" }],
+    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "Verdacht auf Radiusköpfchen-Subluxation (Chassaignac), sonst unauffällig", braucht: "RS", revers: 0.3, symptom: "ellbogenverletzung", dringlichkeit: 10, buchung: "bu_verletztes_kind" }],
   },
 
   // ---------------------------------------------------------------- Finger in der Brotmaschine
@@ -77,8 +77,8 @@ export const FAELLE_PAKET2: FallVorlage[] = [
     details: ["Der Finger lässt sich bewegen.", "Schwindlig ist {ihm} nicht."],
     anleitung: { druck_blutung: [] },
     varianten: [
-      { id: "A", p: 0.8, sichtung: "gruen", fest: { amputation: "nein" }, lage: "Schnittverletzung Zeigefinger, Blutung mit Druckverband gestillt, Sensibilität intakt", na: "nein", revers: 0.4, symptom: "handverletzung_ohne_amputation", dringlichkeit: 10, buchung: "bu_bagatellverletzung" },
-      { id: "B", p: 0.2, sichtung: "gruen", fest: { amputation: "ja" }, lage: "Fingerkuppenamputation Zeigefinger, Amputat gesichert, Blutung gestillt", na: "nein", symptom: "handverletzung_ohne_amputation", dringlichkeit: 10, buchung: "bu_isolierte_extremitaetenverletzung" },
+      { id: "A", p: 0.8, sichtung: "gruen", fest: { amputation: "nein" }, lage: "Schnittverletzung Zeigefinger, Blutung mit Druckverband gestillt, Sensibilität intakt", braucht: "RS", revers: 0.4, symptom: "handverletzung_ohne_amputation", dringlichkeit: 10, buchung: "bu_bagatellverletzung" },
+      { id: "B", p: 0.2, sichtung: "gruen", fest: { amputation: "ja" }, lage: "Fingerkuppenamputation Zeigefinger, Amputat gesichert, Blutung gestillt", braucht: "RS", symptom: "handverletzung_ohne_amputation", dringlichkeit: 10, buchung: "bu_isolierte_extremitaetenverletzung" },
     ],
   },
 
@@ -106,7 +106,7 @@ export const FAELLE_PAKET2: FallVorlage[] = [
     details: ["Die abgetrennten Finger liegen noch beim Spalter.", "Die Maschine ist aus."],
     verlauf: ["Wenn die Leitstelle sagt, ihr sollt die Finger in ein sauberes Sackerl und das in Eiswasser geben, macht ihr das."],
     anleitung: { druck_blutung: [] },
-    varianten: [{ id: "A", p: 1, sichtung: "gelb", lage: "subtotale Amputation Zeige- und Mittelfinger rechts, Amputate gesichert, Blutung mit Druckverband kontrolliert", na: "NFS-NKA", symptom: "amputation_finger_zehen_mit_replantationsfaehige", dringlichkeit: 20, buchung: "bu_amputationsverletzung" }],
+    varianten: [{ id: "A", p: 1, sichtung: "gelb", lage: "subtotale Amputation Zeige- und Mittelfinger rechts, Amputate gesichert, Blutung mit Druckverband kontrolliert", braucht: "NKV", reichtNicht: 0.2, symptom: "amputation_finger_zehen_mit_replantationsfaehige", dringlichkeit: 20, buchung: "bu_amputationsverletzung" }],
   },
 
   // ---------------------------------------------------------------- Teetasse über das Kind
@@ -130,8 +130,8 @@ export const FAELLE_PAKET2: FallVorlage[] = [
     details: ["{Er} schreit sehr.", "Du hältst den Arm unter lauwarmes Wasser."],
     verlauf: ["Wenn die Leitstelle sagt, nicht zu lang und nicht eiskalt kühlen und das Kind warm halten, machst du das."],
     varianten: [
-      { id: "A", p: 0.75, sichtung: "gruen", fest: { flaeche: "gering" }, lage: "Verbrühung 2. Grades Unterarm, ca. 3 % KOF, Kind sonst unauffällig", na: "nein", symptom: "verbrennung_unter_10_koerperoberflaeche", dringlichkeit: 10, buchung: "bu_verletztes_kind" },
-      { id: "B", p: 0.25, sichtung: "gelb", fest: { flaeche: "mittel" }, lage: "Verbrühung 2. Grades Schulter, Arm und Brust, ca. 9 % KOF, Kleinkind", na: "NFS-NKA", symptom: "verbrennung_unter_10_koerperoberflaeche", dringlichkeit: 20, buchung: "bu_schwere_verbrennung" },
+      { id: "A", p: 0.75, sichtung: "gruen", fest: { flaeche: "gering" }, lage: "Verbrühung 2. Grades Unterarm, ca. 3 % KOF, Kind sonst unauffällig", braucht: "RS", symptom: "verbrennung_unter_10_koerperoberflaeche", dringlichkeit: 10, buchung: "bu_verletztes_kind" },
+      { id: "B", p: 0.25, sichtung: "gelb", fest: { flaeche: "mittel" }, lage: "Verbrühung 2. Grades Schulter, Arm und Brust, ca. 9 % KOF, Kleinkind", braucht: "NKV", reichtNicht: 0.3, symptom: "verbrennung_unter_10_koerperoberflaeche", dringlichkeit: 20, buchung: "bu_schwere_verbrennung" },
     ],
   },
 
@@ -155,7 +155,7 @@ export const FAELLE_PAKET2: FallVorlage[] = [
     seitMin: [600, 2400],
     fest: { ursache: "nein", zerreiss: "nein", aneurysma: "nein", ohnmacht: "nein", grau: "nein", bw: "ja", at: "normal", anzahl_patienten: "1" },
     details: ["Die Schmerztabletten helfen nicht mehr.", "Der Hausarzt hat Urlaub."],
-    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "Lumboischialgie ohne neurologische Ausfälle, Patient immobil vor Schmerzen", na: "nein", revers: 0.3, symptom: "rueckenschmerzen_nicht_traumatisch_ohne_neurolog", dringlichkeit: 10, buchung: "bu_hausaerztlich" }],
+    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "Lumboischialgie ohne neurologische Ausfälle, Patient immobil vor Schmerzen", braucht: "RS", revers: 0.3, symptom: "rueckenschmerzen_nicht_traumatisch_ohne_neurolog", dringlichkeit: 10, buchung: "bu_hausaerztlich" }],
   },
 
   // ---------------------------------------------------------------- Brechdurchfall Erwachsener
@@ -179,7 +179,7 @@ export const FAELLE_PAKET2: FallVorlage[] = [
     seitMin: [600, 1440],
     fest: { hauptbeschwerde: "erbrechen", verwirrt: "nein", sonderdiagnose: "nein", bw: "ja", at: "normal", anzahl_patienten: "1" },
     details: ["Blut ist nicht dabei.", "In der Familie haben es die Kinder auch schon gehabt."],
-    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "Gastroenteritis mit leichter Exsikkose, Blutdruck 110 zu 70, Puls 96", na: "nein", revers: 0.4, symptom: "uebelkeit_erbrechen", dringlichkeit: 10, buchung: "bu_exsikkose_synkope_az_verschlechterung" }],
+    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "Gastroenteritis mit leichter Exsikkose, Blutdruck 110 zu 70, Puls 96", braucht: "RS", revers: 0.4, symptom: "uebelkeit_erbrechen", dringlichkeit: 10, buchung: "bu_exsikkose_synkope_az_verschlechterung" }],
   },
 
   // ---------------------------------------------------------------- Harnwegsinfekt
@@ -204,7 +204,7 @@ export const FAELLE_PAKET2: FallVorlage[] = [
     seitMin: [240, 720],
     fest: { anz_symptome: "mehrere", brust: "nein", sprachschw: "nein", hautfarbe: "nein", hochrisiko: "nein", bw: "ja", at: "normal", anzahl_patienten: "1" },
     details: ["Gemessen hat sie 38,7.", "Der Hausarzt hat zu."],
-    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "Verdacht auf Pyelonephritis, Fieber 38,7, Kreislauf stabil", na: "nein", revers: 0.4, symptom: "fieber", dringlichkeit: 10, buchung: "bu_nierenkolik_harnverhalt_hodentorsion" }],
+    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "Verdacht auf Pyelonephritis, Fieber 38,7, Kreislauf stabil", braucht: "RS", revers: 0.4, symptom: "fieber", dringlichkeit: 10, buchung: "bu_nierenkolik_harnverhalt_hodentorsion" }],
   },
 
   // ---------------------------------------------------------------- Zahnabszess
@@ -228,7 +228,7 @@ export const FAELLE_PAKET2: FallVorlage[] = [
     seitMin: [600, 2400],
     fest: { hauptbeschwerde: "schmerzen", verwirrt: "nein", sonderdiagnose: "nein", bw: "ja", at: "normal", anzahl_patienten: "1" },
     details: ["Leichtes Fieber hat {er}.", "Atmen geht normal."],
-    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "dentogener Abszess Unterkiefer, Kieferklemme, Atemwege frei", na: "nein", revers: 0.5, symptom: "zahnprobleme", dringlichkeit: 10, buchung: "bu_hausaerztlich" }],
+    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "dentogener Abszess Unterkiefer, Kieferklemme, Atemwege frei", braucht: "RS", revers: 0.5, symptom: "zahnprobleme", dringlichkeit: 10, buchung: "bu_hausaerztlich" }],
   },
 
   // ---------------------------------------------------------------- Glasscherbe im Freibad
@@ -252,7 +252,7 @@ export const FAELLE_PAKET2: FallVorlage[] = [
     seitMin: [3, 15],
     fest: { amputation: "nein", region: "extremitaet", blutung_stark: "nein", fehlstellung: "nein", aelter6h: "nein", hohe_energie: "nein", bw: "ja", at: "normal", anzahl_patienten: "1" },
     details: ["Der Bademeister hat schon einen Verband gemacht.", "Die Scherbe ist draußen."],
-    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "Schnittwunde Fußsohle 4 cm, Blutung gestillt, keine Fremdkörper sichtbar", na: "nein", revers: 0.3, symptom: "wunde_weichteilverletzung", dringlichkeit: 10, buchung: "bu_bagatellverletzung" }],
+    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "Schnittwunde Fußsohle 4 cm, Blutung gestillt, keine Fremdkörper sichtbar", braucht: "RS", revers: 0.3, symptom: "wunde_weichteilverletzung", dringlichkeit: 10, buchung: "bu_bagatellverletzung" }],
   },
 
   // ---------------------------------------------------------------- Volleyball: Finger / Knöchel
@@ -274,7 +274,7 @@ export const FAELLE_PAKET2: FallVorlage[] = [
     seitMin: [5, 20],
     fest: { amputation: "nein", region: "extremitaet", blutung_stark: "nein", fehlstellung: "nein", aelter6h: "nein", hohe_energie: "nein", bw: "ja", at: "normal", anzahl_patienten: "1" },
     details: ["Eis ist drauf, der Fuß ist hochgelagert."],
-    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "Sprunggelenksdistorsion, Fraktur nicht auszuschließen", na: "nein", revers: 0.4, symptom: "sprunggelenksverletzung", dringlichkeit: 10, buchung: "bu_isolierte_extremitaetenverletzung" }],
+    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "Sprunggelenksdistorsion, Fraktur nicht auszuschließen", braucht: "RS", revers: 0.4, symptom: "sprunggelenksverletzung", dringlichkeit: 10, buchung: "bu_isolierte_extremitaetenverletzung" }],
   },
 
   // ---------------------------------------------------------------- Jugendlicher betrunken, hilflos
@@ -299,7 +299,7 @@ export const FAELLE_PAKET2: FallVorlage[] = [
     fest: { absicht: "versehentlich", substanz: "andere", viz: "nein", hautfarbe: "nein", aggressiv: "nein", waffen: "nein", bw: "getruebt", at: "normal", anzahl_patienten: "1" },
     details: ["Die Eltern wissen nichts davon.", "Drogen hat {er} keine genommen, sagen die Freunde."],
     anleitung: { seitenlage: [] },
-    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "Alkoholintoxikation bei Jugendlicher, erweckbar, Schutzreflexe vorhanden, BZ normal", na: "nein", symptom: "vergiftung_oral_iv", dringlichkeit: 10, buchung: "bu_intoxikation" }],
+    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "Alkoholintoxikation bei Jugendlicher, erweckbar, Schutzreflexe vorhanden, BZ normal", braucht: "RS", symptom: "vergiftung_oral_iv", dringlichkeit: 10, buchung: "bu_intoxikation" }],
   },
 
   // ---------------------------------------------------------------- Ohrenschmerzen beim Kind
@@ -324,7 +324,7 @@ export const FAELLE_PAKET2: FallVorlage[] = [
     fest: { hauptbeschwerde: "schmerzen", verwirrt: "nein", sonderdiagnose: "nein", bw: "ja", at: "normal", anzahl_patienten: "1" },
     details: ["Ein Fieberzäpfchen habt ihr gegeben.", "Aus dem Ohr rinnt nichts."],
     verlauf: ["Du bist müde und unsicher, ob das ein Notfall ist."],
-    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "Verdacht auf Otitis media, Fieber 38,3, Kind wach, trinkt", na: "nein", revers: 0.5, symptom: "hno_problem", dringlichkeit: 10, buchung: "bu_internistischer_kindernotfall" }],
+    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "Verdacht auf Otitis media, Fieber 38,3, Kind wach, trinkt", braucht: "RS", revers: 0.5, symptom: "hno_problem", dringlichkeit: 10, buchung: "bu_internistischer_kindernotfall" }],
   },
 
   // ---------------------------------------------------------------- Verkühlung beim älteren Menschen
@@ -348,7 +348,7 @@ export const FAELLE_PAKET2: FallVorlage[] = [
     fest: { anz_symptome: "mehrere", brust: "nein", sprachschw: "nein", hautfarbe: "nein", hochrisiko: "nein", bw: "ja", at: "normal", anzahl_patienten: "1" },
     details: ["Gemessen habt ihr 38,1.", "Getrunken hat {er} heute nur wenig."],
     vorerkrankungen: ["hoher Blutdruck", "Diabetes"],
-    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "grippaler Infekt, Sättigung 95, Kreislauf stabil, leicht exsikkiert", na: "nein", revers: 0.5, symptom: "infektionskrankheiten", dringlichkeit: 10, buchung: "bu_hausaerztlich" }],
+    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "grippaler Infekt, Sättigung 95, Kreislauf stabil, leicht exsikkiert", braucht: "RS", revers: 0.5, symptom: "infektionskrankheiten", dringlichkeit: 10, buchung: "bu_hausaerztlich" }],
   },
 
   // ---------------------------------------------------------------- Ohnmacht beim Blutabnehmen
@@ -372,7 +372,7 @@ export const FAELLE_PAKET2: FallVorlage[] = [
     seitMin: [2, 10],
     fest: { hautfarbe: "ja", herzleiden: "nein", bauchschmerz: "nein", bw: "ja", at: "normal", anzahl_patienten: "1" },
     details: ["Die Beine sind hochgelagert.", "Am Kopf hat {er} sich nicht angeschlagen.", "{Er} ist noch etwas blass."],
-    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "vasovagale Synkope, wach und orientiert, Kreislauf stabil", na: "nein", revers: 0.7, symptom: "kollaps", dringlichkeit: 10, buchung: "bu_exsikkose_synkope_az_verschlechterung" }],
+    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "vasovagale Synkope, wach und orientiert, Kreislauf stabil", braucht: "RS", revers: 0.7, symptom: "kollaps", dringlichkeit: 10, buchung: "bu_exsikkose_synkope_az_verschlechterung" }],
   },
 
   // ---------------------------------------------------------------- Hitze im Freibad
@@ -397,7 +397,7 @@ export const FAELLE_PAKET2: FallVorlage[] = [
     seitMin: [10, 40],
     fest: { art: "hitze", mehrere_symptome: "ja", hautfarbe: "nein", herz_vg: "nein", bw: "ja", at: "normal", anzahl_patienten: "1" },
     details: ["{Er} liegt jetzt im Schatten.", "Trinken mag {er} schon."],
-    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "Hitzeerschöpfung, Kind wach, trinkt, Temperatur 37,9", na: "nein", revers: 0.6, symptom: "hitzeerschoepfung", dringlichkeit: 10, buchung: "bu_internistischer_kindernotfall" }],
+    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "Hitzeerschöpfung, Kind wach, trinkt, Temperatur 37,9", braucht: "RS", revers: 0.6, symptom: "hitzeerschoepfung", dringlichkeit: 10, buchung: "bu_internistischer_kindernotfall" }],
   },
 
   // ---------------------------------------------------------------- Brustschmerz beim Jungen (muskulär)
@@ -421,7 +421,7 @@ export const FAELLE_PAKET2: FallVorlage[] = [
     seitMin: [120, 360],
     fest: { kaltschweiss: "nein", hautfarbe: "nein", sprachschw: "nein", herz_vg: "nein", kokain: "nein", drogen_12h: "keine", bw: "ja", at: "normal", anzahl_patienten: "1" },
     details: ["Schwitzen tut {er} nicht.", "{Er} raucht nicht."],
-    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "thorakaler Schmerz, bewegungs- und druckabhängig, EKG unauffällig – muskulär", na: "nein", revers: 0.6, symptom: "thoraxschmerz_nicht_traumatisch", dringlichkeit: 10, buchung: "bu_acs_ohne_st_hebung_unklarer_thoraxschmer" }],
+    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "thorakaler Schmerz, bewegungs- und druckabhängig, EKG unauffällig – muskulär", braucht: "RS", revers: 0.6, symptom: "thoraxschmerz_nicht_traumatisch", dringlichkeit: 10, buchung: "bu_acs_ohne_st_hebung_unklarer_thoraxschmer" }],
   },
 
   // ---------------------------------------------------------------- Wehen, Transport zur Geburt
@@ -445,7 +445,7 @@ export const FAELLE_PAKET2: FallVorlage[] = [
     seitMin: [60, 180],
     fest: { ssw: 39, mehrlinge: "nein", situation: "wehen", kompl_baby: "nein", kompl_mutter: "nein", blutung_stark: "nein", komplikationen: "nein", bw: "ja", at: "normal", anzahl_patienten: "1" },
     details: ["Es ist das erste Kind.", "Die Tasche fürs Krankenhaus ist gepackt.", "Der Mutter-Kind-Pass liegt bereit."],
-    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "Eröffnungsphase, 39. SSW, Wehen alle 10 Minuten, Fruchtblase intakt", na: "nein", symptom: "transport_zur_entbindung_ueber_ssw_37", dringlichkeit: 10, buchung: "bu_geburt_wehen" }],
+    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "Eröffnungsphase, 39. SSW, Wehen alle 10 Minuten, Fruchtblase intakt", braucht: "RS", symptom: "transport_zur_entbindung_ueber_ssw_37", dringlichkeit: 10, buchung: "bu_geburt_wehen" }],
   },
 
   // ---------------------------------------------------------------- Schwangerschaftserbrechen
@@ -469,7 +469,7 @@ export const FAELLE_PAKET2: FallVorlage[] = [
     fest: { ssw: 9, mehrlinge: "unbekannt", situation: "unbekannt", kompl_baby: "nein", kompl_mutter: "nein", blutung_stark: "nein", komplikationen: "ja", bw: "ja", at: "normal", anzahl_patienten: "1" },
     wissen: { unbekannt: ["mehrlinge"] },
     details: ["Bluten tut sie nicht.", "Bauchschmerzen hat sie keine."],
-    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "Hyperemesis gravidarum, 9. SSW, exsikkiert, Kreislauf stabil", na: "nein", symptom: "schwangerschaftskomplikationen", dringlichkeit: 10, buchung: "bu_gynaekologischer_notfall" }],
+    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "Hyperemesis gravidarum, 9. SSW, exsikkiert, Kreislauf stabil", braucht: "RS", symptom: "schwangerschaftskomplikationen", dringlichkeit: 10, buchung: "bu_gynaekologischer_notfall" }],
   },
 
   // ---------------------------------------------------------------- Polizei: Festnahme mit Platzwunde
@@ -495,7 +495,7 @@ export const FAELLE_PAKET2: FallVorlage[] = [
     fest: { problem: "gering", bw: "ja", at: "normal", anzahl_patienten: "1" },
     details: ["Die Streife bleibt bei ihm.", "Bewusstlos war er nicht."],
     verlauf: ["Du bist ruhig und sachlich."],
-    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "Platzwunde Augenbraue 2 cm, alkoholisiert, GCS 15, polizeiliche Begleitung", na: "nein", revers: 0.3, partner: [{ art: "pol", grund: "Festnahme", begleitung: true }], symptom: "gesichts_kopfverletzung_augen", dringlichkeit: 10, buchung: "bu_gesichtsschaedelverletzung" }],
+    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "Platzwunde Augenbraue 2 cm, alkoholisiert, GCS 15, polizeiliche Begleitung", braucht: "RS", revers: 0.3, partner: [{ art: "pol", grund: "Festnahme", begleitung: true }], symptom: "gesichts_kopfverletzung_augen", dringlichkeit: 10, buchung: "bu_gesichtsschaedelverletzung" }],
   },
 
   // ---------------------------------------------------------------- Polizei: Unfall, eine Person mit Schmerzen
@@ -519,7 +519,7 @@ export const FAELLE_PAKET2: FallVorlage[] = [
     fest: { problem: "gering", bw: "ja", at: "normal", anzahl_patienten: "1" },
     details: ["Die Autos stehen am Pannenstreifen.", "Andere Verletzte gibt es nicht."],
     verlauf: ["Du bist ruhig und sachlich."],
-    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "HWS-Distorsion nach Auffahrunfall, neurologisch unauffällig", na: "nein", revers: 0.4, symptom: "wirbelsaeulenverletzung_ohne_neurologische_ausfa", dringlichkeit: 10, buchung: "bu_bagatellverletzung" }],
+    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "HWS-Distorsion nach Auffahrunfall, neurologisch unauffällig", braucht: "RS", revers: 0.4, symptom: "wirbelsaeulenverletzung_ohne_neurologische_ausfa", dringlichkeit: 10, buchung: "bu_bagatellverletzung" }],
   },
 
   // ---------------------------------------------------------------- Metallspan im Auge
@@ -544,7 +544,7 @@ export const FAELLE_PAKET2: FallVorlage[] = [
     fest: { augen: "maessig", bw: "ja", at: "normal", anzahl_patienten: "1" },
     details: ["Gerieben hat {er} schon.", "Ausgewaschen habt ihr mit Wasser."],
     verlauf: ["Wenn die Leitstelle sagt, nicht reiben und das Auge zulassen, sagt ihr das {ihm}."],
-    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "Hornhautfremdkörper rechts, Visus leicht reduziert, keine perforierende Verletzung erkennbar", na: "nein", revers: 0.4, symptom: "augenverletzung", dringlichkeit: 10, buchung: "bu_augenverletzung" }],
+    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "Hornhautfremdkörper rechts, Visus leicht reduziert, keine perforierende Verletzung erkennbar", braucht: "RS", revers: 0.4, symptom: "augenverletzung", dringlichkeit: 10, buchung: "bu_augenverletzung" }],
   },
 
   // ---------------------------------------------------------------- Bienenstich beim Kind
@@ -568,7 +568,7 @@ export const FAELLE_PAKET2: FallVorlage[] = [
     seitMin: [5, 20],
     fest: { ursache: "anderes", atem_schluck: "nein", sprachschw: "nein", vorgeschichte: "nein", symptome: "nein", medikation: "nein", bw: "ja", at: "normal", anzahl_patienten: "1" },
     details: ["Den Stachel habt ihr rausgezogen.", "Eine Allergie ist nicht bekannt.", "Ausschlag am Körper hat {er} keinen."],
-    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "lokale Reaktion nach Bienenstich, keine Allgemeinreaktion", na: "nein", revers: 0.7, symptom: "allergische_reaktion", dringlichkeit: 10, buchung: "bu_hausaerztlich" }],
+    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "lokale Reaktion nach Bienenstich, keine Allgemeinreaktion", braucht: "RS", revers: 0.7, symptom: "allergische_reaktion", dringlichkeit: 10, buchung: "bu_hausaerztlich" }],
   },
 
   // ---------------------------------------------------------------- Kopf angeschlagen im Turnunterricht
@@ -591,7 +591,7 @@ export const FAELLE_PAKET2: FallVorlage[] = [
     seitMin: [5, 20],
     fest: { schwer_pat: "nein", hoehe: "boden", verletzt: "ja", region: "kopf", blutung_stark: "nein", fehlstellung: "nein", ohnmacht: "nein", aelter6h: "nein", umstand: "keine", bw: "ja", at: "normal", anzahl_patienten: "1" },
     details: ["Die Eltern sind verständigt.", "Übel ist {ihm} ein bisschen."],
-    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "Kopfprellung, Beule frontal, GCS 15, keine Amnesie, leichte Übelkeit", na: "nein", revers: 0.4, symptom: "kopfverletzung", dringlichkeit: 10, buchung: "bu_verletztes_kind" }],
+    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "Kopfprellung, Beule frontal, GCS 15, keine Amnesie, leichte Übelkeit", braucht: "RS", revers: 0.4, symptom: "kopfverletzung", dringlichkeit: 10, buchung: "bu_verletztes_kind" }],
   },
 
   // ---------------------------------------------------------------- Rippenprellung im Garten
@@ -616,7 +616,7 @@ export const FAELLE_PAKET2: FallVorlage[] = [
     seitMin: [20, 90],
     fest: { schwer_pat: "nein", hoehe: "boden", verletzt: "ja", region: "hals_brust", blutung_stark: "nein", fehlstellung: "nein", ohnmacht: "nein", aelter6h: "nein", umstand: "keine", bw: "ja", at: "normal", anzahl_patienten: "1" },
     details: ["Am Kopf hat {er} sich nicht angeschlagen.", "Blutverdünner nimmt {er} keine."],
-    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "Thoraxprellung links, Verdacht auf Rippenfraktur, Sättigung 97, kein Pneumothorax-Hinweis", na: "nein", revers: 0.4, symptom: "thoraxverletzung_stumpf", dringlichkeit: 10, buchung: "bu_isolierte_extremitaetenverletzung" }],
+    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "Thoraxprellung links, Verdacht auf Rippenfraktur, Sättigung 97, kein Pneumothorax-Hinweis", braucht: "RS", revers: 0.4, symptom: "thoraxverletzung_stumpf", dringlichkeit: 10, buchung: "bu_isolierte_extremitaetenverletzung" }],
   },
 
   // ---------------------------------------------------------------- Erschöpft am Schneeberg
@@ -642,7 +642,7 @@ export const FAELLE_PAKET2: FallVorlage[] = [
     seitMin: [20, 60],
     fest: { alpin: "hilfe", verletzt: "nein", bw: "ja", at: "normal", anzahl_patienten: "1" },
     details: ["Ihr seht die Hütte von hier aus.", "Es wird in zwei Stunden dunkel.", "Ein Krampf im Oberschenkel kommt immer wieder."],
-    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "Erschöpfung beim Bergwandern, Kreislauf stabil, Bergung durch die Bergrettung", na: "nein", partner: [{ art: "berg", grund: "Bergung eines erschöpften Wanderers", blockiert: true }], revers: 0.5, symptom: "kranke_person", dringlichkeit: 10, buchung: "bu_exsikkose_synkope_az_verschlechterung" }],
+    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "Erschöpfung beim Bergwandern, Kreislauf stabil, Bergung durch die Bergrettung", braucht: "RS", partner: [{ art: "berg", grund: "Bergung eines erschöpften Wanderers", blockiert: true }], revers: 0.5, symptom: "kranke_person", dringlichkeit: 10, buchung: "bu_exsikkose_synkope_az_verschlechterung" }],
   },
 
   // ================================================================ PFLEGEHEIM
@@ -670,7 +670,7 @@ export const FAELLE_PAKET2: FallVorlage[] = [
     wissen: { unbekannt: ["ohnmacht"] },
     details: ["Höchstens am {Knie|Ellbogen} ist eine kleine Rötung, sonst ist nichts.", "Sie ist dement, aber so wie immer.", "Wir haben sie ins Bett zurückgelegt.", "Vitalwerte: Blutdruck 140 zu 80, Puls 76."],
     verlauf: ["Du bist ruhig und sachlich, du hast die Pflegedokumentation vor dir."],
-    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "Sturz aus dem Bett, Hüftprellung, keine Fraktur-Zeichen, Antikoagulation – Abklärung im Krankenhaus", na: "nein", symptom: "hueftverletzung", dringlichkeit: 10, buchung: "bu_isolierte_extremitaetenverletzung" }],
+    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "Sturz aus dem Bett, Hüftprellung, keine Fraktur-Zeichen, Antikoagulation – Abklärung im Krankenhaus", braucht: "RS", symptom: "hueftverletzung", dringlichkeit: 10, buchung: "bu_isolierte_extremitaetenverletzung" }],
   },
 
   // ---------------------------------------------------------------- PEG-Sonde draußen
@@ -692,7 +692,7 @@ export const FAELLE_PAKET2: FallVorlage[] = [
     seitMin: [20, 120],
     fest: { hauptbeschwerde: "transport", verwirrt: "ja", sonderdiagnose: "nein", bw: "ja", at: "normal", anzahl_patienten: "1" },
     details: ["Wir haben einen sterilen Verband drauf.", "{Er} ist bettlägerig."],
-    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "dislozierte PEG-Sonde, Stoma reizlos, Patient stabil – liegender Transport", na: "nein", symptom: "kranke_person", dringlichkeit: 10, buchung: "bu_hausaerztlich" }],
+    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "dislozierte PEG-Sonde, Stoma reizlos, Patient stabil – liegender Transport", braucht: "RS", symptom: "kranke_person", dringlichkeit: 10, buchung: "bu_hausaerztlich" }],
   },
 
   // ---------------------------------------------------------------- Unterzucker im Heim
@@ -715,7 +715,7 @@ export const FAELLE_PAKET2: FallVorlage[] = [
     fest: { diabetiker: "ja", verhalten: "ja", gewalttaetig: "nein", bw: "getruebt", at: "normal", anzahl_patienten: "1" },
     details: ["Schlucken kann {er} nicht sicher.", "Glukagon haben wir im Haus nicht."],
     anleitung: { zucker: [] },
-    varianten: [{ id: "A", p: 1, sichtung: "gelb", lage: "Hypoglykämie 38 mg/dl unter Insulin, somnolent, nach Glukose i.v. wach", na: "nein", revers: 0.4, symptom: "blutzuckerentgleisung", dringlichkeit: 20, buchung: "bu_blutzuckerentgleisung" }],
+    varianten: [{ id: "A", p: 1, sichtung: "gelb", lage: "Hypoglykämie 38 mg/dl unter Insulin, somnolent, nach Glukose i.v. wach", braucht: "NKV", revers: 0.4, symptom: "blutzuckerentgleisung", dringlichkeit: 20, buchung: "bu_blutzuckerentgleisung" }],
   },
 
   // ---------------------------------------------------------------- Lungenentzündung im Heim
@@ -740,8 +740,8 @@ export const FAELLE_PAKET2: FallVorlage[] = [
     details: ["Fieber 38,9.", "Der Hausarzt hat telefonisch die Einweisung gemacht.", "Eine Patientenverfügung gibt es nicht."],
     vorerkrankungen: ["Demenz", "Herzschwäche"],
     varianten: [
-      { id: "A", p: 0.75, sichtung: "gelb", lage: "Pneumonie, Sättigung 92 mit 2 Litern Sauerstoff, Blutdruck 120 zu 70", na: "nein", symptom: "atemnot", dringlichkeit: 20, buchung: "bu_pneumonie_atemnot_copd" },
-      { id: "B", p: 0.25, sichtung: "rot", fest: { bw: "getruebt" }, lage: "Pneumonie mit Sepsis, Blutdruck 85 zu 50, somnolent, Sättigung 86", na: "immer", symptom: "sepsis", dringlichkeit: 30, buchung: "bu_sepsis" },
+      { id: "A", p: 0.75, sichtung: "gelb", lage: "Pneumonie, Sättigung 92 mit 2 Litern Sauerstoff, Blutdruck 120 zu 70", braucht: "RS", symptom: "atemnot", dringlichkeit: 20, buchung: "bu_pneumonie_atemnot_copd" },
+      { id: "B", p: 0.25, sichtung: "rot", fest: { bw: "getruebt" }, lage: "Pneumonie mit Sepsis, Blutdruck 85 zu 50, somnolent, Sättigung 86", braucht: "NA", symptom: "sepsis", dringlichkeit: 30, buchung: "bu_sepsis" },
     ],
   },
 
@@ -765,7 +765,7 @@ export const FAELLE_PAKET2: FallVorlage[] = [
     fest: { anforderer: "telemed", grund: "transport", dringlichkeit: "ohne", transportart: "liegend", bw: "ja", at: "normal", anzahl_patienten: "1" },
     details: ["Vitalwerte laut Pflege: Blutdruck 105 zu 60, Puls 92, Fieber 37,8.", "Eine Bettzusage braucht es nicht, Notaufnahme."],
     verlauf: ["Du bist ruhig und sachlich."],
-    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "Allgemeinzustandsverschlechterung, Exsikkose, leichtes Fieber, stabil", na: "nein", symptom: "exsikkose", dringlichkeit: 10, buchung: "bu_exsikkose_synkope_az_verschlechterung" }],
+    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "Allgemeinzustandsverschlechterung, Exsikkose, leichtes Fieber, stabil", braucht: "RS", symptom: "exsikkose", dringlichkeit: 10, buchung: "bu_exsikkose_synkope_az_verschlechterung" }],
   },
 
   // ================================================================ KINDER
@@ -791,7 +791,7 @@ export const FAELLE_PAKET2: FallVorlage[] = [
     seitMin: [3, 10],
     fest: { schwer_pat: "nein", hoehe: "treppe", verletzt: "ja", region: "extremitaet", blutung_stark: "nein", fehlstellung: "ja", ohnmacht: "nein", aelter6h: "nein", umstand: "keine", bw: "ja", at: "normal", anzahl_patienten: "1" },
     details: ["Die Finger kann {er} bewegen.", "Du hast den Arm auf einen Polster gelegt."],
-    varianten: [{ id: "A", p: 1, sichtung: "gelb", lage: "Unterarmfraktur mit Fehlstellung, Durchblutung und Sensibilität intakt, Kind", na: "NFS-NKA", symptom: "unterarmverletzung", dringlichkeit: 20, buchung: "bu_verletztes_kind" }],
+    varianten: [{ id: "A", p: 1, sichtung: "gelb", lage: "Unterarmfraktur mit Fehlstellung, Durchblutung und Sensibilität intakt, Kind", braucht: "NKV", symptom: "unterarmverletzung", dringlichkeit: 20, buchung: "bu_verletztes_kind" }],
   },
 
   // ---------------------------------------------------------------- Säugling: kurz blau
@@ -814,7 +814,7 @@ export const FAELLE_PAKET2: FallVorlage[] = [
     fest: { lungenerkrankung: "nein", tracheostoma: "nein", sprachschw: "nein", kaltschweiss: "nein", hautfarbe: "nein", bw: "ja", at: "normal", anzahl_patienten: "1" },
     details: ["{Er} hat davor gespuckt.", "Fieber hat {er} keines."],
     verlauf: ["Du bist völlig aufgelöst und hast Angst, dass es wieder passiert."],
-    varianten: [{ id: "A", p: 1, sichtung: "gelb", lage: "kurzes Ereignis mit Zyanose und Hypotonie beim Säugling (BRUE), jetzt unauffällig, stationäre Abklärung", na: "NFS-NKV", symptom: "atemnot", dringlichkeit: 20, buchung: "bu_kritisch_krankes_neugeborenes" }],
+    varianten: [{ id: "A", p: 1, sichtung: "gelb", lage: "kurzes Ereignis mit Zyanose und Hypotonie beim Säugling (BRUE), jetzt unauffällig, stationäre Abklärung", braucht: "NA", symptom: "atemnot", dringlichkeit: 20, buchung: "bu_kritisch_krankes_neugeborenes" }],
   },
 
   // ---------------------------------------------------------------- Knopfzelle verschluckt
@@ -836,7 +836,7 @@ export const FAELLE_PAKET2: FallVorlage[] = [
     fest: { absicht: "versehentlich", substanz: "knopfzelle", viz: "ja", hautfarbe: "nein", aggressiv: "nein", waffen: "nein", bw: "ja", at: "normal", anzahl_patienten: "1" },
     wissen: { ungefaehr: ["substanz"] },
     details: ["Die Batterie ist so groß wie ein Cent.", "Speicheln tut {er} nicht."],
-    varianten: [{ id: "A", p: 1, sichtung: "gelb", lage: "Verdacht auf verschluckte Knopfzelle, Kind asymptomatisch – Röntgen und endoskopische Entfernung dringend", na: "nein", symptom: "objekt_verschluckt", dringlichkeit: 20, buchung: "bu_internistischer_kindernotfall" }],
+    varianten: [{ id: "A", p: 1, sichtung: "gelb", lage: "Verdacht auf verschluckte Knopfzelle, Kind asymptomatisch – Röntgen und endoskopische Entfernung dringend", braucht: "RS", symptom: "objekt_verschluckt", dringlichkeit: 20, buchung: "bu_internistischer_kindernotfall" }],
   },
 
   // ---------------------------------------------------------------- Kind mit Diabetes in der Schule
@@ -860,7 +860,7 @@ export const FAELLE_PAKET2: FallVorlage[] = [
     fest: { diabetiker: "ja", verhalten: "ja", gewalttaetig: "nein", bw: "ja", at: "normal", anzahl_patienten: "1" },
     details: ["Traubenzucker ist in {seiner} Schultasche.", "Die Eltern sind verständigt."],
     anleitung: { zucker: [] },
-    varianten: [{ id: "A", p: 1, sichtung: "gelb", lage: "Hypoglykämie 45 mg/dl, nach oraler Glukose gebessert, Kind wach", na: "nein", revers: 0.6, symptom: "blutzuckerentgleisung", dringlichkeit: 20, buchung: "bu_internistischer_kindernotfall" }],
+    varianten: [{ id: "A", p: 1, sichtung: "gelb", lage: "Hypoglykämie 45 mg/dl, nach oraler Glukose gebessert, Kind wach", braucht: "RS", revers: 0.6, symptom: "blutzuckerentgleisung", dringlichkeit: 20, buchung: "bu_internistischer_kindernotfall" }],
   },
 
   // ---------------------------------------------------------------- Fieber mit Ausschlag (Meningokokken)
@@ -882,7 +882,7 @@ export const FAELLE_PAKET2: FallVorlage[] = [
     seitMin: [240, 600],
     fest: { anz_symptome: "mehrere", brust: "nein", sprachschw: "nein", hautfarbe: "ja", hochrisiko: "nein", bw: "getruebt", at: "normal", anzahl_patienten: "1" },
     details: ["Fieber 39,8, das Zäpfchen hat nicht geholfen.", "{Er} hat kalte Hände und Füße."],
-    varianten: [{ id: "A", p: 1, sichtung: "rot", lage: "Verdacht auf Meningokokkensepsis, Petechien, Fieber 39,8, Rekapillarisierung 4 Sekunden, somnolent", na: "immer", symptom: "sepsis", dringlichkeit: 30, buchung: "bu_kritisch_krankes_kind" }],
+    varianten: [{ id: "A", p: 1, sichtung: "rot", lage: "Verdacht auf Meningokokkensepsis, Petechien, Fieber 39,8, Rekapillarisierung 4 Sekunden, somnolent", braucht: "NA", symptom: "sepsis", dringlichkeit: 30, buchung: "bu_kritisch_krankes_kind" }],
   },
 
   // ================================================================ ORDINATION / POLIZEI / BERG / WASSER
@@ -910,7 +910,7 @@ export const FAELLE_PAKET2: FallVorlage[] = [
     fest: { anforderer: "normal", grund: "herz", dringlichkeit: "sofort", transportart: "liegend", bw: "ja", at: "normal", anzahl_patienten: "1" },
     details: ["Blutdruck 130 zu 80, Puls 70, Sättigung 95.", "Der Patient ist wach und schwitzt."],
     verlauf: ["Du bist ruhig und sachlich."],
-    varianten: [{ id: "A", p: 1, sichtung: "rot", lage: "STEMI, im Hausarzt-EKG gesichert, medikamentös vorbehandelt, Kreislauf stabil", na: "immer", symptom: "st_hebungsinfarkt_oder_stemi_aequivalent", dringlichkeit: 30, buchung: "bu_stemi" }],
+    varianten: [{ id: "A", p: 1, sichtung: "rot", lage: "STEMI, im Hausarzt-EKG gesichert, medikamentös vorbehandelt, Kreislauf stabil", braucht: "NA", symptom: "st_hebungsinfarkt_oder_stemi_aequivalent", dringlichkeit: 30, buchung: "bu_stemi" }],
   },
 
   // ---------------------------------------------------------------- Polizei: psychische Krise
@@ -934,7 +934,7 @@ export const FAELLE_PAKET2: FallVorlage[] = [
     extra: { verwirrt: "ja", psych_vorerkrankung: "unbekannt" },
     details: ["Aggressiv ist sie nicht, aber sehr unruhig.", "Waffen gibt es keine.", "Ein Amtsarzt hat sie schon gesehen."],
     verlauf: ["Du bist ruhig und sachlich."],
-    varianten: [{ id: "A", p: 1, sichtung: "gelb", lage: "akute Psychose mit Verfolgungsideen, kooperativ, somatisch unauffällig – Unterbringung, Polizei begleitet", na: "nein", partner: [{ art: "pol", grund: "Unterbringung", begleitung: true }], symptom: "ubg_einweisung", dringlichkeit: 20, buchung: "bu_psychische_krise_suizidalitaet" }],
+    varianten: [{ id: "A", p: 1, sichtung: "gelb", lage: "akute Psychose mit Verfolgungsideen, kooperativ, somatisch unauffällig – Unterbringung, Polizei begleitet", braucht: "RS", partner: [{ art: "pol", grund: "Unterbringung", begleitung: true }], symptom: "ubg_einweisung", dringlichkeit: 20, buchung: "bu_psychische_krise_suizidalitaet" }],
   },
 
   // ---------------------------------------------------------------- Suizidgedanken bei Jugendlichem (Schule)
@@ -959,7 +959,7 @@ export const FAELLE_PAKET2: FallVorlage[] = [
     wissen: { unbekannt: ["psych_vorerkrankung"] },
     details: ["Die Eltern sind verständigt und kommen.", "Jemand bleibt die ganze Zeit bei {ihm}."],
     verlauf: ["Du bist besorgt und vorsichtig, du willst nichts falsch machen."],
-    varianten: [{ id: "A", p: 1, sichtung: "gelb", lage: "Jugendliche mit Suizidgedanken, keine Selbstverletzung, keine Intoxikation, kooperativ – kinder- und jugendpsychiatrische Abklärung", na: "nein", symptom: "suizidalitaet", dringlichkeit: 20, buchung: "bu_psychische_krise_kind_jugendlicher" }],
+    varianten: [{ id: "A", p: 1, sichtung: "gelb", lage: "Jugendliche mit Suizidgedanken, keine Selbstverletzung, keine Intoxikation, kooperativ – kinder- und jugendpsychiatrische Abklärung", braucht: "RS", symptom: "suizidalitaet", dringlichkeit: 20, buchung: "bu_psychische_krise_kind_jugendlicher" }],
   },
 
   // ---------------------------------------------------------------- Hohe Wand: Sturz am Steig
@@ -985,8 +985,8 @@ export const FAELLE_PAKET2: FallVorlage[] = [
     fest: { alpin: "absturz", bw: "ja", at: "normal", anzahl_patienten: "1" },
     details: ["Mit dem Auto kommt man hier nicht hin.", "Das Handy hat schlechten Empfang."],
     varianten: [
-      { id: "A", p: 0.65, sichtung: "gelb", fest: { verletzt: "ja" }, lage: "Sprunggelenksverletzung im alpinen Gelände, Bergung durch Bergrettung", na: "nein", partner: [{ art: "berg", grund: "Bergung aus dem Steig", blockiert: true }], symptom: "sprunggelenksverletzung", dringlichkeit: 20, buchung: "bu_isolierte_extremitaetenverletzung" },
-      { id: "B", p: 0.35, sichtung: "rot", fest: { verletzt: "ja" }, lage: "Absturz über Felsstufe, Verdacht auf Beckenfraktur und SHT, Hubschrauberbergung", na: "immer", partner: [{ art: "berg", grund: "Bergung aus dem Steig", blockiert: true }], symptom: "polytrauma_mit_sht", dringlichkeit: 30, buchung: "bu_polytrauma" },
+      { id: "A", p: 0.65, sichtung: "gelb", fest: { verletzt: "ja" }, lage: "Sprunggelenksverletzung im alpinen Gelände, Bergung durch Bergrettung", braucht: "RS", partner: [{ art: "berg", grund: "Bergung aus dem Steig", blockiert: true }], symptom: "sprunggelenksverletzung", dringlichkeit: 20, buchung: "bu_isolierte_extremitaetenverletzung" },
+      { id: "B", p: 0.35, sichtung: "rot", fest: { verletzt: "ja" }, lage: "Absturz über Felsstufe, Verdacht auf Beckenfraktur und SHT, Hubschrauberbergung", braucht: "NA", partner: [{ art: "berg", grund: "Bergung aus dem Steig", blockiert: true }], symptom: "polytrauma_mit_sht", dringlichkeit: 30, buchung: "bu_polytrauma" },
     ],
   },
 
@@ -1012,7 +1012,7 @@ export const FAELLE_PAKET2: FallVorlage[] = [
     seitMin: [5, 20],
     fest: { alpin: "seil", verletzt: "ja", bw: "ja", at: "normal", anzahl_patienten: "1" },
     details: ["Er ist gesichert.", "Er hat einen Helm auf.", "Unter euch ist es sehr steil."],
-    varianten: [{ id: "A", p: 1, sichtung: "gelb", lage: "Oberarmfraktur nach Sturz ins Klettersteigset, Taubergung mit Hubschrauber", na: "immer", partner: [{ art: "berg", grund: "Bergung aus dem Klettersteig", blockiert: true }], symptom: "oberarmverletzung", dringlichkeit: 20, buchung: "bu_isolierte_extremitaetenverletzung" }],
+    varianten: [{ id: "A", p: 1, sichtung: "gelb", lage: "Oberarmfraktur nach Sturz ins Klettersteigset, Taubergung mit Hubschrauber", braucht: "NA", partner: [{ art: "berg", grund: "Bergung aus dem Klettersteig", blockiert: true }], symptom: "oberarmverletzung", dringlichkeit: 20, buchung: "bu_isolierte_extremitaetenverletzung" }],
   },
 
   // ---------------------------------------------------------------- Tauchunfall
@@ -1039,8 +1039,8 @@ export const FAELLE_PAKET2: FallVorlage[] = [
     fest: { art: "tauchen", wo: "land", ueber6h: "nein", reanimiert: "nein", hws: "nein", deko: "ja", bw: "ja", anzahl_patienten: "1" },
     details: ["Sauerstoff aus dem Tauchkoffer bekommt {er} schon.", "Der Tauchcomputer hat eine Warnung gezeigt."],
     varianten: [
-      { id: "A", p: 0.7, sichtung: "gelb", fest: { at: "normal" }, lage: "Dekompressionskrankheit Typ 1 mit Gelenkschmerzen und Parästhesien – Druckkammer", na: "NFS-NKV", symptom: "geraetetauchunfall", dringlichkeit: 20, buchung: "bu_co_vergiftung_tauchunfall" },
-      { id: "B", p: 0.3, sichtung: "rot", fest: { at: "abnorm" }, lage: "Dekompressionskrankheit Typ 2 mit Paraparese und Dyspnoe – Druckkammer, Hubschrauber", na: "immer", symptom: "geraetetauchunfall", dringlichkeit: 30, buchung: "bu_co_vergiftung_tauchunfall" },
+      { id: "A", p: 0.7, sichtung: "gelb", fest: { at: "normal" }, lage: "Dekompressionskrankheit Typ 1 mit Gelenkschmerzen und Parästhesien – Druckkammer", braucht: "NKV", symptom: "geraetetauchunfall", dringlichkeit: 20, buchung: "bu_co_vergiftung_tauchunfall" },
+      { id: "B", p: 0.3, sichtung: "rot", fest: { at: "abnorm" }, lage: "Dekompressionskrankheit Typ 2 mit Paraparese und Dyspnoe – Druckkammer, Hubschrauber", braucht: "NA", symptom: "geraetetauchunfall", dringlichkeit: 30, buchung: "bu_co_vergiftung_tauchunfall" },
     ],
   },
 
@@ -1067,7 +1067,7 @@ export const FAELLE_PAKET2: FallVorlage[] = [
     seitMin: [20, 90],
     fest: { hauptbeschwerde: "schmerzen", verwirrt: "nein", sonderdiagnose: "nein", bw: "ja", at: "normal", anzahl_patienten: "1" },
     details: ["Fieber hat er keines.", "Gestoßen hat er sich nicht."],
-    varianten: [{ id: "A", p: 1, sichtung: "gelb", lage: "Verdacht auf Hodentorsion, akutes Skrotum seit unter einer Stunde – dringend urologisch", na: "nein", symptom: "akutes_skrotum", dringlichkeit: 20, buchung: "bu_nierenkolik_harnverhalt_hodentorsion" }],
+    varianten: [{ id: "A", p: 1, sichtung: "gelb", lage: "Verdacht auf Hodentorsion, akutes Skrotum seit unter einer Stunde – dringend urologisch", braucht: "RS", symptom: "akutes_skrotum", dringlichkeit: 20, buchung: "bu_nierenkolik_harnverhalt_hodentorsion" }],
   },
 
   // ---------------------------------------------------------------- Langsamer Puls (Schrittmacher)
@@ -1092,8 +1092,8 @@ export const FAELLE_PAKET2: FallVorlage[] = [
     details: ["[wissen=nah] {Er} nimmt einen Betablocker und was fürs Herz.", "Einen Schrittmacher hat {er} nicht."],
     vorerkrankungen: ["!Vorhofflimmern", "hoher Blutdruck"],
     varianten: [
-      { id: "A", p: 0.7, sichtung: "gelb", fest: { hautfarbe: "nein" }, lage: "Bradykardie 38 unter Betablocker, Blutdruck 110 zu 60, symptomatisch Schwindel", na: "NFS-NKA", symptom: "herzrhythmusstoerung", dringlichkeit: 20, buchung: "bu_instabile_rhythmusstoerung" },
-      { id: "B", p: 0.3, sichtung: "rot", fest: { hautfarbe: "ja" }, lage: "AV-Block III mit Frequenz 30, Blutdruck 75 zu 40, Synkope", na: "immer", symptom: "herzrhythmusstoerung", dringlichkeit: 30, buchung: "bu_instabile_rhythmusstoerung" },
+      { id: "A", p: 0.7, sichtung: "gelb", fest: { hautfarbe: "nein" }, lage: "Bradykardie 38 unter Betablocker, Blutdruck 110 zu 60, symptomatisch Schwindel", braucht: "NKV", reichtNicht: 0.3, symptom: "herzrhythmusstoerung", dringlichkeit: 20, buchung: "bu_instabile_rhythmusstoerung" },
+      { id: "B", p: 0.3, sichtung: "rot", fest: { hautfarbe: "ja" }, lage: "AV-Block III mit Frequenz 30, Blutdruck 75 zu 40, Synkope", braucht: "NA", symptom: "herzrhythmusstoerung", dringlichkeit: 30, buchung: "bu_instabile_rhythmusstoerung" },
     ],
   },
 
@@ -1119,7 +1119,7 @@ export const FAELLE_PAKET2: FallVorlage[] = [
     details: ["Du drückst ein Handtuch drauf."],
     anleitung: { druck_blutung: [] },
     verlauf: ["Wenn man dir sagt, das Bein hochzulagern und fest draufzudrücken, machst du das und sagst dann: es blutet viel weniger."],
-    varianten: [{ id: "A", p: 1, sichtung: "gelb", lage: "Varizenblutung Unterschenkel, mit Hochlagerung und Druckverband gestillt, Kreislauf stabil", na: "nein", revers: 0.3, symptom: "blutung_medizinisch", dringlichkeit: 20, buchung: "bu_bagatellverletzung" }],
+    varianten: [{ id: "A", p: 1, sichtung: "gelb", lage: "Varizenblutung Unterschenkel, mit Hochlagerung und Druckverband gestillt, Kreislauf stabil", braucht: "RS", revers: 0.3, symptom: "blutung_medizinisch", dringlichkeit: 20, buchung: "bu_bagatellverletzung" }],
   },
 
   // ---------------------------------------------------------------- Dialyse-Shunt blutet
@@ -1143,8 +1143,8 @@ export const FAELLE_PAKET2: FallVorlage[] = [
     details: ["Du drückst mit dem Finger auf die Stelle."],
     anleitung: { druck_blutung: [] },
     varianten: [
-      { id: "A", p: 0.75, sichtung: "gelb", fest: { staerke: "stark" }, lage: "Shuntnachblutung nach Dialyse, mit Druck kontrollierbar, Kreislauf stabil", na: "nein", symptom: "blutung_medizinisch", dringlichkeit: 20, buchung: "bu_hyperkaliaemie_akutes_nierenversagen" },
-      { id: "B", p: 0.25, sichtung: "rot", fest: { staerke: "gefaehrlich" }, lage: "arterielle Shuntblutung, Blutdruck 85 zu 50, Kompression notwendig", na: "immer", symptom: "blutung_medizinisch", dringlichkeit: 30, buchung: "bu_hyperkaliaemie_akutes_nierenversagen" },
+      { id: "A", p: 0.75, sichtung: "gelb", fest: { staerke: "stark" }, lage: "Shuntnachblutung nach Dialyse, mit Druck kontrollierbar, Kreislauf stabil", braucht: "RS", symptom: "blutung_medizinisch", dringlichkeit: 20, buchung: "bu_hyperkaliaemie_akutes_nierenversagen" },
+      { id: "B", p: 0.25, sichtung: "rot", fest: { staerke: "gefaehrlich" }, lage: "arterielle Shuntblutung, Blutdruck 85 zu 50, Kompression notwendig", braucht: "NA", symptom: "blutung_medizinisch", dringlichkeit: 30, buchung: "bu_hyperkaliaemie_akutes_nierenversagen" },
     ],
   },
 
@@ -1171,7 +1171,7 @@ export const FAELLE_PAKET2: FallVorlage[] = [
     details: ["[wissen=nah] {Er} hat zwei Stents.", "Schwitzen tut {er} nicht."],
     vorerkrankungen: ["!koronare Herzkrankheit, zwei Stents"],
     anleitung: { oberkoerper_hoch: [] },
-    varianten: [{ id: "A", p: 1, sichtung: "gelb", lage: "instabile Angina pectoris bei bekannter KHK, EKG ohne ST-Hebung, Schmerz nach Nitro rückläufig", na: "NFS-NKA", symptom: "acs_ohne_ekg_diagnostik", dringlichkeit: 20, buchung: "bu_acs_ohne_st_hebung_unklarer_thoraxschmer" }],
+    varianten: [{ id: "A", p: 1, sichtung: "gelb", lage: "instabile Angina pectoris bei bekannter KHK, EKG ohne ST-Hebung, Schmerz nach Nitro rückläufig", braucht: "NKV", symptom: "acs_ohne_ekg_diagnostik", dringlichkeit: 20, buchung: "bu_acs_ohne_st_hebung_unklarer_thoraxschmer" }],
   },
 
   // ---------------------------------------------------------------- Topf in Brand, Rauch
@@ -1194,7 +1194,7 @@ export const FAELLE_PAKET2: FallVorlage[] = [
     seitMin: [3, 15],
     fest: { art: "feuer", brennt_noch: "nein", eingeschlossen: "nein", mehrere_verletzte: "nein", sprachschw: "nein", gesicht: "nein", flaeche: "gering", aelter6h: "nein", nur_alarm: "nein", bw: "ja", at: "normal", anzahl_patienten: "1" },
     details: ["Die Fenster sind offen.", "Alle sind jetzt draußen im Stiegenhaus."],
-    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "Rauchgasexposition, leichter Reizhusten, Sättigung 97, keine Verbrennung", na: "nein", revers: 0.5, partner: [{ art: "fw", grund: "Küchenbrand, Kontrolle und Belüftung" }], symptom: "inhalationstrauma", dringlichkeit: 10, buchung: "bu_co_vergiftung_tauchunfall" }],
+    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "Rauchgasexposition, leichter Reizhusten, Sättigung 97, keine Verbrennung", braucht: "RS", revers: 0.5, partner: [{ art: "fw", grund: "Küchenbrand, Kontrolle und Belüftung" }], symptom: "inhalationstrauma", dringlichkeit: 10, buchung: "bu_co_vergiftung_tauchunfall" }],
   },
 
   // ---------------------------------------------------------------- Hitze: alter Mensch ausgetrocknet
@@ -1219,7 +1219,7 @@ export const FAELLE_PAKET2: FallVorlage[] = [
     fest: { hauptbeschwerde: "schwaeche", verwirrt: "ja", sonderdiagnose: "nein", bw: "ja", at: "normal", anzahl_patienten: "1" },
     details: ["In der Wohnung hat es 31 Grad.", "{Er} nimmt Wassertabletten."],
     vorerkrankungen: ["Herzschwäche", "Demenz (leicht)"],
-    varianten: [{ id: "A", p: 1, sichtung: "gelb", lage: "Exsikkose bei Hitze, Blutdruck 100 zu 60, Puls 104, verwirrt, Temperatur 37,9", na: "nein", symptom: "exsikkose", dringlichkeit: 20, buchung: "bu_exsikkose_synkope_az_verschlechterung" }],
+    varianten: [{ id: "A", p: 1, sichtung: "gelb", lage: "Exsikkose bei Hitze, Blutdruck 100 zu 60, Puls 104, verwirrt, Temperatur 37,9", braucht: "RS", symptom: "exsikkose", dringlichkeit: 20, buchung: "bu_exsikkose_synkope_az_verschlechterung" }],
   },
 
   // ---------------------------------------------------------------- Kopfschmerz mit Fieber und Nackensteife
@@ -1243,8 +1243,8 @@ export const FAELLE_PAKET2: FallVorlage[] = [
     fest: { ploetzlich_stark: "nein", sprachstoerung: "nein", taubheit: "nein", laehmung: "nein", fast_gesicht: "nein", fast_arm: "nein", fast_sprache: "nein", seit: "ueber", at: "normal", anzahl_patienten: "1" },
     details: ["Fieber 39,6.", "Erbrochen hat {er} zweimal."],
     varianten: [
-      { id: "A", p: 0.6, sichtung: "gelb", fest: { verhalten: "nein", bw: "ja" }, lage: "Verdacht auf Meningitis, Fieber 39,6, Meningismus, wach und orientiert", na: "NFS-NKA", symptom: "fieber", dringlichkeit: 20, buchung: "bu_sepsis" },
-      { id: "B", p: 0.4, sichtung: "rot", fest: { verhalten: "ja", bw: "getruebt" }, lage: "Verdacht auf bakterielle Meningitis mit Bewusstseinstrübung, GCS 12, Fieber 40", na: "immer", symptom: "sepsis", dringlichkeit: 30, buchung: "bu_sepsis" },
+      { id: "A", p: 0.6, sichtung: "gelb", fest: { verhalten: "nein", bw: "ja" }, lage: "Verdacht auf Meningitis, Fieber 39,6, Meningismus, wach und orientiert", braucht: "NKV", symptom: "fieber", dringlichkeit: 20, buchung: "bu_sepsis" },
+      { id: "B", p: 0.4, sichtung: "rot", fest: { verhalten: "ja", bw: "getruebt" }, lage: "Verdacht auf bakterielle Meningitis mit Bewusstseinstrübung, GCS 12, Fieber 40", braucht: "NA", symptom: "sepsis", dringlichkeit: 30, buchung: "bu_sepsis" },
     ],
   },
 ];
