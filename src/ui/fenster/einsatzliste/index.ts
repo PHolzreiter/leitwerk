@@ -365,7 +365,8 @@ async function test(art: string, filter = "alle"): Promise<void> {
     if (e) waehle("einsatz", e.id);
     else toast("Kein Einsatz erzeugt – Adressen noch nicht geladen?", "error");
   } else if (art === "kt" || art === "sek") {
-    const k = await (art === "sek" ? sim.call("generiereSek") : sim.call("generiereKt")).catch((err) => (toast(String(err.message ?? err), "error"), null));
+    // Test-Aufträge kommen immer als Anruf über die KT-Hotline (Paul 11.11.2026)
+    const k = await (art === "sek" ? sim.call("generiereSek", "hotline") : sim.call("generiereKt", "hotline")).catch((err) => (toast(String(err.message ?? err), "error"), null));
     if (k) await warten(() => !!sim.ktAuftrag(k.id));
     if (k) waehle("kt", k.id);
     else toast("Kein Auftrag erzeugt – sind Krankenhäuser mit Stationen vorhanden?", "error");
