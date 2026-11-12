@@ -7,6 +7,7 @@
  * Gilt für jeden Einsatz – auch für künftige und selbst erstellte Fälle.
  * Läuft beim Gesprächsführer (wer das Gespräch begonnen bzw. den Ruf beantwortet hat).
  */
+import { besatzungsArt } from "../sim/funkVielfalt";
 import { rufnamenAlsWorte } from "../sim/funkErkennung";
 import { ohneVitalwerte, sim, type FunkAusstehend, type FunkGespraech } from "../sim/engine";
 import { patientText } from "../sim/lage";
@@ -201,6 +202,7 @@ function systemText(g: FunkGespraech, a: FunkAusstehend, stimme?: { kopf: string
     stimme
       ? `Du SPRICHST am Funk: immer den ganzen Funkspruch – zuerst genau „${stimme.kopf || `Hier ${a.von}`}“, dann der Inhalt, am Ende „${stimme.schluss}“. Sprich zügig, sachlich und ruhig wie eine erfahrene Besatzung, Deutsch mit österreichischer Färbung. Nichts davor und nichts danach, keine Rückfragen, kein Kommentar.`
       : "Du sagst NUR den Inhalt des Funkspruchs. Den Anfang („Hier …“) und das „kommen“ am Ende setzt das Programm – schreib sie NICHT.",
+    `Diese Besatzung spricht ${besatzungsArt(fz?.id ?? g.fzId).text}. Formuliere jedes Mal ein wenig anders – nicht immer dieselben Wendungen.`,
     "Funksprache: knapp und sachlich wie eine erfahrene Besatzung, Fachbegriffe sind gut (Pat., kreislaufstabil, Thoraxtrauma, Hemiparese, Hebungen im EKG). Ein bis drei kurze Sätze oder Stichworte. Keine Höflichkeitsfloskeln, keine Erklärungen, keine Regieanweisungen.",
     "Regeln: NIEMALS den Namen des Patienten. Keine Messwerte (Sättigung, Blutdruck, Puls …), außer die Leitstelle fragt ausdrücklich danach. Fordere nichts an und storniere nichts, was nicht im Inhalt steht. Zahlen, Uhrzeiten, Orte, Krankenhäuser und Rufnamen genau so übernehmen.",
     `So klingt das (nur der Ton, nicht übernehmen): ${BEISPIELE.map((b) => `„${b}“`).join(" / ")}`,

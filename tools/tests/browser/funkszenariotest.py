@@ -73,7 +73,10 @@ try:
         gid = A.evaluate("(id) => T.rufe(id)", x["rtw"])
         print("   ", A.evaluate("(id) => T.text(id)", gid))
         a = A.evaluate("([id, n]) => T.sage(id, `Hier LEO, das ${n} ist abbestellt, kommen`)", [gid, x["nefName"]])
-        check("verstanden" in a.lower() and "lage" not in a.lower(), f"Information über das NEF → „{a}“")
+        # eben erst alarmiert: die Besatzung fragt zurück (Plausibilität), LEO bestätigt
+        check("verstehe ich richtig" in a.lower() and "lage" not in a.lower(), f"Information über das eben alarmierte NEF → Rückfrage „{a}“")
+        a = A.evaluate("(id) => T.sage(id, 'Hier LEO, ja richtig, kommen')", gid)
+        check("verstanden" in a.lower() or "alles klar" in a.lower(), f"nach „ja richtig“ → „{a}“")
         st = A.evaluate("([e, r]) => { const s = T.s(); return [s.state.fahrzeuge[r].einsatzId === e, s.state.fahrzeuge[r].phase]; }", [x["e"], x["rtw"]])
         check(st[0], f"RTW bleibt am Einsatz ({st[1]})")
 
@@ -162,15 +165,24 @@ try:
             return [rufe.length, rufe.map((g) => g.anliegen.text), E.protokoll.some((p) => /schon gemeldet/.test(p.text))]; }""", y)
         check(r[0] == 1 and r[1][0].count("Hüftfraktur") == 1 and r[2], f"gleiche Lagemeldung nur einmal ({r})")
 
-        # 8) Storno-Knopf: LEO ruft, sagt den Storno durch, die Besatzung bestätigt „Storno verstanden“
+        # 8) Storno-Knopf (Diensthandy): Fahrzeug sofort frei, KEIN Funkspruch; Storno über Funk → „Storno verstanden“
         z = A.evaluate("() => T.einsatz(false)")
-        r = A.evaluate("""async (z) => { const s = T.s(); await T.warte(() => !s.funkKanalSpricht(null), 20000);
-            s.storno(z.rtw);
-            const g = await T.warte(() => s.state.funkGespraeche.find((g) => g.fzId === z.rtw && g.sprueche.some((x) => /Storno verstanden/.test(x.text))), 30000);
-            const alle = s.state.funkGespraeche.filter((g) => g.fzId === z.rtw).map((g) => g.sprueche.map((x) => `${x.von}: ${x.text}`));
-            return [!!g, alle]; }""", z)
-        print("   ", r[1])
-        check(r[0], "Storno-Knopf: Besatzung bestätigt „Storno verstanden“ über Funk")
+        r = A.evaluate("""async (z) => { const s = T.s(); const vor = s.state.funkGespraeche.filter((g) => g.fzId === z.rtw).length;
+            s.storno(z.rtw); await T.schlaf(3000);
+            const fz = s.state.fahrzeuge[z.rtw];
+            return [s.state.funkGespraeche.filter((g) => g.fzId === z.rtw).length - vor, fz.einsatzId, fz.status, fz.phase]; }""", z)
+        check(r[0] == 0 and not r[1] and r[2] in ("freiFunk", "freiWache"), f"Storno-Knopf: frei ({r[2]}, {r[3]}) ohne Funkspruch ({r[0]} Gespräche)")
+        z = A.evaluate("() => T.einsatz(false)")
+        A.evaluate("(z) => { const s = T.s(); s.state.fahrzeuge[z.rtw].alarmiertUm = s.state.zeit - 10 * 60000; }", z)
+        gid2 = A.evaluate("(id) => T.rufe(id)", z["rtw"])
+        a = A.evaluate("(id) => T.sage(id, 'Hier LEO, Storno für euch, kommen')", gid2)
+        check("storno" in a.lower() and "verstanden" in a.lower(), f"Storno über Funk → „{a}“")
+        # KTW zu früh: Dauer gesprochen
+        r = A.evaluate("() => [5, 2, 37, 61, 354].map((m) => window.__lw.dauerGesprochen(m))")
+        check(r == ["5 Minuten", "wenige Minuten", "35 Minuten", "1 Stunde", "6 Stunden"], f"Dauer gesprochen: {r}")
+        # Abwechslung am Funk: verschiedene Fassungen, Inhalt bleibt
+        r = A.evaluate("() => { const v = new Set(); for (let i = 0; i < 40; i++) v.add(window.__lw.abwandeln('bitte wiederholen', 'fz-genau-' + (i % 3), i / 40)); return [...v]; }")
+        check(len(r) >= 2 and all("wiederhol" in x or "nochmal" in x for x in r), f"„bitte wiederholen“ in {len(r)} Fassungen: {r}")
         b.close()
         print("\n".join(logs[:8]))
 finally:

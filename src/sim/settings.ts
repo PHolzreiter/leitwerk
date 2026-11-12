@@ -189,6 +189,8 @@ export interface Settings {
   toleranzMin: number;
   /** Abstand in Metern, ab dem eine eingegebene Adresse als falsch verortet gilt */
   verortungRadius: number;
+  /** feste Funksprüche abwechseln (mehrere Fassungen derselben Wendung) */
+  funkVielfalt?: boolean;
   /** Anteil der Anrufer, die eine falsche/ungenaue Adresse nennen (%) */
   falscheAdresseProzent: number;
   wetterAktiv: boolean;

@@ -472,10 +472,16 @@ export async function sprechStart(ziel: FunkZiel = "leo", gruppe?: Sprechgruppe)
   sperreNeu();
   sendGeaendert();
   protokoll("sendung", { start: s.id, von: s.von, gruppe: s.gruppe ?? "normal", ziel });
-  // Pilot auf einer Großeinsatz-Gruppe ohne Großeinsatz: deutlich sagen (die Leitstelle hört sie nur leise mit)
-  if (istPilot() && s.gruppe && !sim.offeneGruppen().includes(s.gruppe) && Date.now() - gruppeHinweisZuletzt > 60_000) {
-    gruppeHinweisZuletzt = Date.now();
-    toast(`Du sprichst auf ${sim.sprechgruppeName(s.gruppe)} – dort läuft kein Großeinsatz. Zurück zur eigenen Gruppe: Steuerkreuz ◂ ▸ am Funkgerät`, "error");
+  // Pilot zu einem Großeinsatz alarmiert, spricht aber nicht auf dessen Gruppe: Hinweis (sonst nie – die Gruppe
+  // zu wählen ist Sache des Spielers, Paul 12.11.2026)
+  if (istPilot() && Date.now() - gruppeHinweisZuletzt > 60_000) {
+    const heli = sim.pilotVon(sim.ich?.pid ?? "");
+    const e = heli?.einsatzId ? sim.einsatz(heli.einsatzId) : null;
+    const gsGruppe = e && (e.gs || e.gsKind || e.gsZu) ? sim.kanalVon(e) : null;
+    if (gsGruppe && (s.gruppe ?? null) !== gsGruppe) {
+      gruppeHinweisZuletzt = Date.now();
+      toast(`Dein Großeinsatz läuft auf ${sim.sprechgruppeName(gsGruppe)} – dorthin wechseln: Steuerkreuz ◂ ▸ am Funkgerät`, "error");
+    }
   }
   // Freigabe vom Host (Kanal frei?) – die Aufnahme startet gleichzeitig. Spricht gerade jemand:
   // warten, bis sein Ende-Ton kommt – dann der eigene Beginn-Ton und es geht los

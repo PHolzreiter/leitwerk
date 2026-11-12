@@ -20,6 +20,7 @@ import { store } from "../data/store";
 import { streuung } from "../data/schema";
 import { ACN_CODES, allCodes, findCode, hasCodes, istAcnCode, type Einsatzcode } from "./codes";
 import { rendezvousPunkt } from "./rendezvous";
+import { abwandeln } from "./funkVielfalt";
 import { distanceM, erreichbar, flightRoute, geoStatus, randomAddresses, route, searchAddress, travelTimes, type LatLon, type Route } from "./geo";
 import { generiereBesetzung, hatNFS, hoechsteQuali, rang, rmTypVon, type Platz, type Quali, type RmTyp } from "./crew";
 import { defaultStufeFuer, raenge, stufeRaten, type Kategorie, type Settings, type StatusKey, type StufeDef } from "./settings";
@@ -247,6 +248,8 @@ export function modellVon(v: Pick<Vehicle, "funkrufname" | "modell">, rmTyp: RmT
 }
 
 export interface SimFahrzeug {
+  /** wann dieses Fahrzeug zuletzt alarmiert wurde (Spielzeit; Plausibilität am Funk) */
+  alarmiertUm?: number | null;
   id: string;
   funkrufname: string;
   kurzname: string;
@@ -639,6 +642,8 @@ export type FunkAnliegen = "lage" | "nachforderung" | "storno" | "kh" | "adresse
 
 /** Funkgespräch zwischen LEO und einem Fahrzeug (bzw. zwischen zwei Fahrzeugen, LEO hört mit) */
 export interface FunkGespraech {
+  /** die Besatzung hat zurückgefragt („verstehe ich richtig, …?“) – die nächste Antwort von LEO bestätigt oder verneint */
+  rueckfrage?: { art: "storno" | "dritteStorno"; wer?: string } | null;
   id: number;
   fzId: string;
   funkname: string;
@@ -2300,6 +2305,16 @@ export class Simulation {
       if (kreis) Object.assign(fz.fahrt, { kreisAb: kreis.kreisAb, landungAb: kreis.landungAb });
       fz.phase = phase;
       fz.phaseEnde = this.state.zeit + fz.fahrt.dauer * 1000;
+      // ab und zu: Zufahrt gesperrt, Umweg (die Besatzung meldet die Verspätung)
+      const ev = phase === "anfahrt" && !fliegt(fz) && fz.einsatzId ? this.einsatz(fz.einsatzId) : undefined;
+      if (ev && !ev.gs && !ev.gsKind && fz.fahrt.dauer > 6 * 60 && this.settings.funkVielfalt !== false && Math.random() < 0.03) {
+        const plus = Math.round(rnd(2, 5));
+        fz.phaseEnde += plus * MIN;
+        fz.fahrt.dauer += plus * 60;
+        fz.fahrt.times = fz.fahrt.times.map((x, i, a) => x + (plus * 60 * i) / Math.max(1, a.length - 1));
+        const grund = pick(["Baustelle", "Unfall auf der Strecke", "Straße gesperrt", "Bahnschranken geschlossen", "starker Verkehr"]);
+        this.fzRuft(fz, ev, "info", `${grund}, Eintreffen verzögert sich um ca. ${plus} Minuten`);
+      }
       this.emit();
     });
   }
@@ -2474,7 +2489,11 @@ export class Simulation {
         // großes Gelände, Nachbarhaus), findet die Besatzung ihn nach kurzer Suche – „bitte Adresse prüfen“ nur, wenn
         // die Adresse wirklich falsch ist (Paul 12.11.2026: kam viel zu oft)
         const nahGenug = d <= this.settings.verortungRadius || (!e.meldung?.adresseFalsch && d <= Math.max(600, this.settings.verortungRadius * 2.4));
-        if (nahGenug && d > this.settings.verortungRadius) this.log(e, `${fz.funkrufname}: Patient nach kurzer Suche gefunden (ca. ${Math.round(d / 10) * 10} m entfernt)`);
+        if (nahGenug && d > this.settings.verortungRadius) {
+          this.log(e, `${fz.funkrufname}: Patient nach kurzer Suche gefunden (ca. ${Math.round(d / 10) * 10} m entfernt)`);
+          if (this.settings.funkVielfalt !== false && Math.random() < 0.25)
+            this.fzRuft(fz, e, "info", `zur Info: Patient im ${pick(["Hinterhaus", "Nachbarhaus", "Innenhof", "hinteren Teil des Geländes", "Nebengebäude"])} angetroffen, sind beim Patienten`);
+        }
         if (!nahGenug) {
           fz.phase = "suche";
           fz.phaseEnde = null;
@@ -2569,6 +2588,13 @@ export class Simulation {
         if (e?.kh?.hospitalId === MEDICAL_CENTER && this.transportfaehig(fz)) this.mcUeberstellung(e);
         fz.phase = "uebergabe";
         fz.phaseEnde = t + rnd(8, 18) * MIN;
+        // manchmal: Notaufnahme voll, Wartezeit bei der Übergabe
+        if (e && this.transportfaehig(fz) && !e.gs && !e.gsKind && !this.kritisch(e) && this.settings.funkVielfalt !== false && Math.random() < 0.08) {
+          const warte = Math.round(rnd(10, 25) / 5) * 5;
+          fz.phaseEnde += warte * MIN;
+          const kh = e.kh ? store.get("hospitals", e.kh.hospitalId) : undefined;
+          this.fzRuft(fz, e, "info", `warten im ${kh?.kurzname || kh?.name || "Krankenhaus"} auf die Übernahme, Aufnahme ist voll, dauert ca. ${warte} Minuten`);
+        }
         break;
       }
       case "uebergabe": {
@@ -3602,6 +3628,7 @@ export class Simulation {
       }
       fz.ueberzeitFuer = null;
       fz.einsatzId = e.id;
+      fz.alarmiertUm = this.state.zeit;
       if (!e.fahrzeuge.includes(fz.id)) e.fahrzeuge.push(fz.id);
       const sek = this.ausrueckSek(fz, false);
       const aufWache = fz.status === "freiWache" || (fz.status === "bereitschaft" && fz.phase !== "rueckfahrt");
@@ -6164,6 +6191,7 @@ export class Simulation {
       k.gsKind.stirbtUm = null;
       for (const fz of fzs) {
         fz.einsatzId = e.id;
+        fz.alarmiertUm = this.state.zeit;
         if (!e.fahrzeuge.includes(fz.id)) e.fahrzeuge.push(fz.id);
         fz.phase = "vorOrt";
         fz.phaseEnde = null;
@@ -6798,6 +6826,11 @@ export class Simulation {
       const e = g.einsatzId ? this.einsatz(g.einsatzId) : undefined;
       if (e) this.log(e, `(nicht gefunkt – ${von} wird von einem Spieler geflogen: ${text})`);
       return;
+    }
+    // feste Sätze der Fahrzeuge: gängige Wendungen abwechseln (KI-Sätze formuliert die KI selbst)
+    if (!wer && von !== "LEO" && quelle !== "ki" && this.settings.funkVielfalt !== false) {
+      const sp = Object.values(this.state.fahrzeuge).find((f) => this.rufname(f) === von || f.funkrufname === von);
+      if (sp) text = abwandeln(text, sp.id, Math.random());
     }
     const jetzt = Date.now();
     g.sprueche.push({ zeit: this.state.zeit, von, text, wer, echt: jetzt, ...(quelle ? { quelle } : {}) });
@@ -7909,6 +7942,7 @@ export class Simulation {
     const vorher = { fz: [...e.fahrzeuge], eid: fz.einsatzId };
     if (!e.fahrzeuge.includes(fz.id)) e.fahrzeuge.push(fz.id);
     fz.einsatzId = e.id;
+    fz.alarmiertUm = this.state.zeit;
     const fehlt = this.fehlendeKraefte(e);
     e.fahrzeuge = vorher.fz;
     fz.einsatzId = vorher.eid;
@@ -7971,6 +8005,24 @@ export class Simulation {
       e.heliFrage = null;
       return ja ? `${hier}, verstanden, warten auf ${h}, kommen` : `${hier}, verstanden, kein Hubschrauber, kommen`;
     }
+    // Rückfrage der Besatzung („verstehe ich richtig …?“): LEO bestätigt oder verneint
+    if (g.rueckfrage) {
+      const rf = g.rueckfrage;
+      g.rueckfrage = null;
+      const nein = /\b(nein|negativ|falsch|kein storno|nicht storniert|nicht abbestellt)\b/.test(t);
+      const ja = !nein && /\b(ja|jawohl|richtig|korrekt|genau|positiv|bestätigt|stimmt|so ist es|affirmativ)\b/.test(t);
+      if (ja && rf.art === "storno") {
+        if (fz.einsatzId) {
+          const ev = this.einsatz(fz.einsatzId);
+          if (ev) this.log(ev, `Storno an ${fz.funkrufname} (Funk, nach Rückfrage)`);
+          this.freigeben(fz);
+        }
+        return `${hier}, Storno verstanden, rücken ein, kommen`;
+      }
+      if (ja) return `${hier}, verstanden, ${rf.wer ? `${rf.wer} storniert, ` : ""}kommen`;
+      if (nein) return rf.art === "storno" ? `${hier}, verstanden, kein Storno, wir bleiben dran, kommen` : `${hier}, verstanden, kommen`;
+    }
+    const sicherheitJetzt = this.funkSicherheit;
     // Absicht zuerst – geantwortet wird nur auf das, was die Besatzung wirklich verstanden hat
     const absicht = absichtErkennen(text, { sicherheit: this.funkSicherheit, angesprochen: [g.funkname, fz.funkrufname, this.rufname(fz), fz.kurzname ?? "", fz.stationName ?? ""] });
     this.funkSicherheit = 1;
@@ -8005,6 +8057,11 @@ export class Simulation {
         return `${hier}, verstanden, Lagemeldung kommt, sobald wir vor Ort sind, kommen`;
       }
       case "storno": {
+        // Plausibilität: eben erst alarmiert und die Erkennung war unsicher → lieber nachfragen
+        if (fz.einsatzId && sicherheitJetzt < 0.75 && fz.alarmiertUm != null && this.state.zeit - fz.alarmiertUm < 5 * MIN) {
+          g.rueckfrage = { art: "storno" };
+          return `${hier}, verstehe ich richtig, Storno für uns, kommen`;
+        }
         if (fz.einsatzId) {
           const ev = this.einsatz(fz.einsatzId);
           if (ev) this.log(ev, `Storno an ${fz.funkrufname} (Funk)`);
@@ -8020,6 +8077,18 @@ export class Simulation {
           e.naAngekuendigt = { um: this.state.zeit, wer: absicht.wer ?? "Notarzt" };
           const wer = /nef|notarzt|na\b/i.test(absicht.wer ?? "") ? "den Notarzt" : (absicht.wer ?? "den Notarzt");
           return vorOrt ? `${hier}, verstanden, warten auf ${wer}, kommen` : `${hier}, verstanden, kommen`;
+        }
+        if (absicht.thema === "naKommt" && e && this.einsatzFz(e).some((x) => x.id !== fz.id && this.mitNotarzt(x) && x.phase === "vorOrt"))
+          return `${hier}, Notarzt ist schon bei uns, kommen`;
+        if (absicht.thema === "dritteStorno" && e) {
+          // Plausibilität: das genannte Fahrzeug wurde eben erst zu diesem Einsatz alarmiert → nachfragen
+          const wer = absicht.wer ?? "";
+          const kurz = wer.replace(/\s/g, "").toLowerCase();
+          const frisch = this.einsatzFz(e).some((x) => x.id !== fz.id && x.alarmiertUm != null && this.state.zeit - x.alarmiertUm < 5 * MIN && (!kurz || [x.funkrufname, this.rufname(x), x.kategorie, x.stationName ?? ""].some((n) => n && (n.replace(/\s/g, "").toLowerCase().includes(kurz) || kurz.includes(n.replace(/\s/g, "").toLowerCase())))));
+          if (frisch) {
+            g.rueckfrage = { art: "dritteStorno", wer: wer.toUpperCase() === wer ? wer : wer.replace(/^\w/, (c) => c.toUpperCase()) };
+            return `${hier}, verstehe ich richtig, ${wer || "das Fahrzeug"} ist abbestellt, kommen`;
+          }
         }
         if (absicht.thema === "keinNa" && e) {
           e.naKeiner = { seit: this.state.zeit };
