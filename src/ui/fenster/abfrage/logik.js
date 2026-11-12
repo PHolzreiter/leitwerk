@@ -148,6 +148,78 @@ export class AbfrageLogik extends DCLogic {
       if (t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return;
       halteFokus(e.currentTarget);
     };
+    // ---- KT-Hotline und Überstellung: Formular mit allen Feldern
+    const istForm = !!G && !!G.formular;
+    let formGruppen = [];
+    let formStand = "";
+    if (istForm) {
+      const fw = ps.fw || {};
+      const fq = ps.fq || {};
+      const setFw = (sid, v) => set({ fw: { ...(this.per(id).fw || {}), [sid]: v } });
+      const setFq = (sid, v) => set({ fq: { ...(this.per(id).fq || {}), [sid]: v } });
+      const gruppen = [];
+      let beantwortet = 0;
+      for (const s of S) {
+        if (s.antwort !== undefined && s.antwort !== null) beantwortet++;
+        let g = gruppen[gruppen.length - 1];
+        if (!g || g.t !== s.teil) { g = { t: s.teil, felder: [] }; gruppen.push(g); }
+        const offen = s.antwort === undefined;
+        const x = {
+          id: s.id, text: s.text,
+          cls: "ff" + (offen ? " offen" : "") + (s.vorschlag ? " mitvor" : ""),
+          frageCls: "ff-frage" + (s.stellen && G.darf && G.aktiv ? "" : " aus"),
+          fragen: () => { if (s.stellen && G.darf && G.aktiv) s.stellen(); },
+          istWahl: s.typ === "wahl" || s.typ === "mehr", istEingabe: s.typ === "eingabe", istOrt: s.typ === "ort",
+          hatVorschlag: !!s.vorschlag, vorschlag: s.vorschlag ? s.vorschlag.text : "",
+          nehmen: () => { if (G.darf && s.vorschlag) s.vorschlag.nehmen(); },
+          optionen: [], wert: "", platz: "", q: "", treffer: [], sucht: false, hatJetzt: false, jetzt: "",
+        };
+        if (s.typ === "wahl") x.optionen = s.optionen.map((o, i) => { const an = (s.an || []).includes(i); return { t: o, an: an ? "true" : "false", cls: "ff-opt" + (an ? " on" : ""), klick: () => { if (G.darf) s.waehlen(i); } }; });
+        if (s.typ === "mehr") {
+          x.optionen = s.optionen.map((o, i) => { const an = (s.an || []).includes(i); return { t: o, an: an ? "true" : "false", cls: "ff-opt" + (an ? " on" : ""), klick: () => { if (G.darf) s.umschalten(i); } }; });
+          const nichts = s.antwort === "nichts";
+          if (!(s.an || []).length) x.optionen.push({ t: "nichts davon", an: nichts ? "true" : "false", cls: "ff-opt leise" + (nichts ? " on" : ""), klick: () => { if (G.darf) { s.mehrFertig(); this.setState({}); } } });
+        }
+        if (s.typ === "eingabe") {
+          x.wert = fw[s.id] !== undefined ? fw[s.id] : s.wert || "";
+          x.platz = s.platz || "eintippen – Enter übernimmt";
+          x.ein = (e) => setFw(s.id, e && e.target ? e.target.value : "");
+          const fertig = () => {
+            const v = (this.per(id).fw || {})[s.id];
+            if (v === undefined || !G.darf) return;
+            if (v.trim() && v.trim() !== (s.wert || "").trim()) { if (s.eingeben(v.trim()) === false) return; }
+            setFw(s.id, undefined);
+          };
+          x.fertig = fertig;
+          x.taste = (e) => {
+            if (!e) return;
+            if (e.key === "Enter") { e.preventDefault(); fertig(); }
+            else if (e.key === "Insert" && s.einfuegen) { e.preventDefault(); setFw(s.id, s.einfuegen()); }
+          };
+        }
+        if (s.typ === "ort") {
+          const q = fq[s.id] || "";
+          x.q = q;
+          x.platz = s.antwort ? "ändern – Adresse oder Einrichtung eintippen" : s.ortPlatz || "Adresse oder Einrichtung eintippen";
+          x.hatJetzt = !!s.antwort; x.jetzt = s.antwort || "";
+          x.qEin = (e) => setFq(s.id, e && e.target ? e.target.value : "");
+          let erster = null;
+          if (q.trim()) {
+            const r = s.treffer(q);
+            const items = r.gruppen.flatMap((gr) => gr.items).slice(0, 6);
+            erster = items[0] || null;
+            x.sucht = r.laedt && !items.length;
+            x.treffer = items.map((o, i) => ({ cls: "treffer" + (i === 0 ? " erster" : ""), name: o.name, zeile: o.zeile, rechts: i === 0 ? "Enter" : o.rechts || "", klick: () => { if (!G.darf) return; o.nehmen(); setFq(s.id, ""); } }));
+          }
+          x.taste = (e) => { if (e && e.key === "Enter") { e.preventDefault(); if (erster && G.darf) { erster.nehmen(); setFq(s.id, ""); } } else if (e && e.key === "Escape") setFq(s.id, ""); };
+          x.karte = () => { if (G.darf && s.karte) s.karte(); };
+        }
+        g.felder.push(x);
+      }
+      formGruppen = gruppen;
+      formStand = beantwortet + " von " + S.length + " ausgefüllt";
+    }
+
     const ersterKlingelt = calls.find((c) => c.s === "klingelt" && sichtbarF(c));
     function sichtbarF(c) { return mein(c) || (app.filter()[KEY[c.art]] !== false); }
     const taste = (e) => {
@@ -161,6 +233,8 @@ export class AbfrageLogik extends DCLogic {
         if (k === " " && !imFeld && ersterKlingelt) { e.preventDefault(); app.abheben(ersterKlingelt.id); this.setState({ aktuell: ersterKlingelt.id }); }
         return;
       }
+      // Formular: Tasten gehören den Feldern
+      if (istForm) return;
       if (!cur) {
         if (k === "ArrowUp" && !imFeld) { e.preventDefault(); zurueck(); }
         return;
@@ -251,6 +325,10 @@ export class AbfrageLogik extends DCLogic {
       vcodeCls: "vcode" + (G && G.stand ? " s" + G.stand : "") + (G && G.codeLeer ? " leer" : ""),
       vcodeTitel: G ? G.codeTitel : "", vcodeKlick: () => G && G.codeKlick(),
       ergCode: G ? G.code : "", ergName: G && G.codeName ? G.codeName : "",
+      istForm, nichtForm: !istForm, formGruppen, formStand,
+      formVorschlaege: istForm && (G.vorschlaegeN || 0) > 0 && G.darf,
+      formVorschlaegeText: istForm && G.vorschlaegeN ? (G.vorschlaegeN === 1 ? "1 Angabe übernehmen" : G.vorschlaegeN + " Angaben übernehmen") : "",
+      formAlleNehmen: () => { if (G && G.darf && G.alleVorschlaege) G.alleVorschlaege(); },
       offen: !!cur, fertig: !!G && !cur, f, weiter, taste, fokus, ueberspringen, zurueck, stellen,
       stellenCls: "kn sm" + (cur && cur.stellen && G && G.darf && G.aktiv ? "" : " aus"),
       erledigt, anzahlErl: String(erledigt.length),

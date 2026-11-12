@@ -84,6 +84,8 @@ export interface Schritt {
   karte?(): Promise<boolean>;
   ortung?: { text: string; titel: string; aus: boolean; wichtig: boolean; klick(): void } | null;
   stellen?: (() => void) | null;
+  /** Formular (KT/SEK): was der Anrufer schon gesagt hat – zum Übernehmen */
+  vorschlag?: { text: string; nehmen(): void } | null;
 }
 
 export interface GespraechVM {
@@ -104,6 +106,10 @@ export interface GespraechVM {
   codeTitel: string;
   codeKlick(): void;
   alarme: { text: string; knopf?: string; klick?: () => void }[];
+  /** KT/SEK: alle Felder als Formular (statt einer Frage nach der anderen) */
+  formular?: boolean;
+  vorschlaegeN?: number;
+  alleVorschlaege?: () => void;
   schritte: Schritt[];
   msgs: { von: "ls" | "anr" | "sys"; wer: string; t: string; x: string; live?: boolean }[];
   kiText: string;
@@ -737,6 +743,97 @@ function genanntKt(k: KtAuftrag, wo: "von" | "nach"): KtOrt | null {
   return strasse && gesagt.includes(strasse) ? o : null;
 }
 
+/**
+ * Vorschläge für das Formular: Was der Anrufer im Gespräch schon gesagt hat. Nur Angaben, die im Gesagten
+ * wirklich vorkommen (Name, Uhrzeit, Stichwörter …) – übernommen wird der Wert, den der Anrufer gemeint hat.
+ */
+function ktVorschlaege(k: KtAuftrag, sek: boolean, setze: (p: Partial<KtDaten>) => void): Record<string, { text: string; nehmen(): void }> {
+  const w = k.wahr?.d;
+  const d = k.d;
+  const out: Record<string, { text: string; nehmen(): void }> = {};
+  if (!w) return out;
+  const gesagt = ` ${(k.anruf?.gespraech ?? []).filter((m) => m.von === "anrufer").map((m) => norm(m.text)).join(" ")} `;
+  if (gesagt.trim().length < 3) return out;
+  const hat = (re: RegExp) => re.test(gesagt);
+  const vor = (id: string, text: string, nehmen: () => void) => (out[id] = { text, nehmen });
+  // Name und Alter
+  const nn = norm(w.patient.name).split(/\s+/).filter((x) => x.length >= 3);
+  const nameGesagt = nn.length > 0 && nn.some((x) => gesagt.includes(x));
+  const alterGesagt = w.patient.alter !== null && new RegExp(`\\b${w.patient.alter}\\b`).test(gesagt);
+  if ((nameGesagt && norm(d.patient.name) !== norm(w.patient.name)) || (alterGesagt && d.patient.alter !== w.patient.alter)) {
+    const name = nameGesagt ? w.patient.name : d.patient.name;
+    const alter = alterGesagt ? w.patient.alter : d.patient.alter;
+    vor("pat", `${name || "?"}${alter !== null ? `, ${alter}` : ""}`, () => setze({ patient: { ...d.patient, name, alter } }));
+  }
+  if (w.patient.geschlecht && d.patient.geschlecht !== w.patient.geschlecht && (w.patient.geschlecht === "w" ? hat(/\b(frau|sie ist|ihr|ihre|patientin|mutter|oma|tochter)\b/) : hat(/\b(herr|herrn|er ist|sein|seine|patient|vater|opa|sohn)\b/)))
+    vor("geschl", w.patient.geschlecht === "w" ? "weiblich" : "männlich", () => setze({ patient: { ...d.patient, geschlecht: w.patient.geschlecht } }));
+  // Orte
+  for (const wo of ["von", "nach"] as const) {
+    const g = genanntKt(k, wo);
+    if (g && (!d[wo] || distanceM(d[wo]!, g) > 50)) vor(wo, g.label, () => setze({ [wo]: g } as Partial<KtDaten>));
+  }
+  // Uhrzeit: genannte Zeit passt zu Abholung bzw. Termin
+  const zeitGesagt = (t: number | null) => {
+    if (!t) return false;
+    const z = new Date(t);
+    const h = z.getHours();
+    const m = z.getMinutes();
+    const mm = String(m).padStart(2, "0");
+    return new RegExp(`\\b${h}[:. ]${mm}\\b|\\b${h} uhr( ${m || ""})?\\b`.replace("( )?", "")).test(gesagt);
+  };
+  const zeitArt: "abholung" | "termin" | null = zeitGesagt(w.abholung) ? "abholung" : zeitGesagt(w.termin) ? "termin" : null;
+  if (zeitArt && d[zeitArt] !== w[zeitArt]) vor("zeit", `${hm(w[zeitArt])} (${zeitArt === "termin" ? "Termin" : "Abholzeit"})`, () => setze({ [zeitArt]: w[zeitArt] } as Partial<KtDaten>));
+  if (!sek && zeitArt && !d.zeitVorgabe && !d.abholung && !d.termin) vor("zeitart", zeitArt === "termin" ? "Termin" : "Abholzeit", () => setze({ [zeitArt]: w[zeitArt] } as Partial<KtDaten>));
+  // Dringlichkeit, Grund
+  if (sek && w.sofort && !d.sofort && hat(/sofort|dringend|so schnell|gleich|eilig/)) vor("dring", "sofort", () => setze({ sofort: true }));
+  const grundWort = norm(w.grund).split(/[^a-z0-9]+/).filter((x) => x.length >= 5);
+  if (w.grund && norm(d.grund) !== norm(w.grund) && grundWort.some((x) => gesagt.includes(x))) vor("grund", w.grund, () => setze({ grund: w.grund }));
+  // Medizinisches (Überstellung)
+  const ws = w.sek;
+  const s0 = d.sek ?? sekLeer();
+  if (sek && ws) {
+    if (ws.arzt && !s0.arzt && hat(/notarzt|arztbegleit|mit arzt/)) vor("begl", "Notarzt", () => setze({ sek: { ...s0, arzt: true, monitoring: false } }));
+    else if (ws.monitoring && !ws.arzt && !s0.monitoring && hat(/monitor|uberwach/)) vor("begl", "Überwachung", () => setze({ sek: { ...s0, monitoring: true } }));
+    if (ws.instabil && !s0.instabil && hat(/instabil|kritisch|verschlechter/)) vor("stabil", "instabil", () => setze({ sek: { ...s0, instabil: true } }));
+  }
+  // Was während der Fahrt nötig ist
+  const zus: [string, boolean, boolean, RegExp, Partial<KtDaten> | ((s: SekDaten) => Partial<SekDaten>)][] = [
+    ["beatmet", !!ws?.beatmet, s0.beatmet, /beatm|intubiert|respirator/, () => ({ beatmet: true })],
+    ["O₂", w.sauerstoff, d.sauerstoff, /sauerstoff|\bo2\b|o zwei/, { sauerstoff: true }],
+    ["Infektion / Isolation", w.infektion, d.infektion, /infekt|isolat|mrsa|keim|noro|covid|corona/, { infektion: true }],
+    ["Inkubator / Kind", !!ws?.inkubator, s0.inkubator, /inkubator|fruhchen|neugeboren/, () => ({ inkubator: true })],
+    ["BIT nötig", !!ws?.bit, !!s0.bit, /schwerlast|\bkilo\b|\bkg\b|sehr schwer|adipos/, () => ({ bit: true })],
+    ["Begleitperson", w.begleitung, d.begleitung, /begleit|fahrt mit|mitfahren|kommt mit/, { begleitung: true }],
+  ];
+  const neu = zus.filter(([, wahr, ist, re]) => wahr && !ist && hat(re));
+  if (neu.length)
+    vor("zus", neu.map(([t]) => t).join(", "), () => {
+      let p: Partial<KtDaten> = {};
+      let sp: Partial<SekDaten> = {};
+      for (const [, , , , x] of neu) typeof x === "function" ? (sp = { ...sp, ...x(s0) }) : (p = { ...p, ...x });
+      setze({ ...p, ...(Object.keys(sp).length ? { sek: { ...s0, ...sp } } : {}) });
+    });
+  // Lage
+  const LAGE_RE: Record<KtLage, RegExp> = { liegend: /liegend|liegen|trage|bettlagerig/, sitzend: /sitzend|sitzen|tragstuhl/, rollstuhl: /rollstuhl|rolli/, gehend: /gehen|geht selbst|gehfahig|zu fuss/ };
+  if (w.lage && d.lage !== w.lage && LAGE_RE[w.lage]?.test(gesagt)) vor("lage", { gehend: "gehfähig", rollstuhl: "Rollstuhl", sitzend: sek ? "sitzend" : "Tragstuhl", liegend: "liegend" }[w.lage], () => setze({ lage: w.lage }));
+  // KT: Transportdaten, Kasse, Nummer
+  if (!sek) {
+    if (w.behandlung && d.behandlung !== w.behandlung && norm(w.behandlung).split(/[^a-z]+/).some((x) => x.length >= 5 && gesagt.includes(x.slice(0, 6)))) vor("behandlung", w.behandlung, () => setze({ behandlung: w.behandlung }));
+    if (w.ktArt && d.ktArt !== w.ktArt && (/dialyse/.test(w.ktArt) ? hat(/dialyse/) : /therapie/.test(w.ktArt) ? hat(/therapie|chemo|strahl/) : w.ktArt === "einweisung" ? hat(/einweis|aufnahme/) : w.ktArt === "entlassung" ? hat(/entlass|nach hause|heim/) : false))
+      vor("ktArt", KT_TRANSPORTART_LABEL[w.ktArt], () => setze({ ktArt: w.ktArt }));
+    if (w.auftrag && d.auftrag !== w.auftrag && w.auftrag !== "nein" && hat(/transportschein|transportauftrag|verordnung|zuweisung|schein/)) vor("auftrag", w.auftrag === "ja" ? "ja" : "über die Einrichtung", () => setze({ auftrag: w.auftrag }));
+    if (w.gehfaehig !== null && w.gehfaehig !== undefined && d.gehfaehig !== w.gehfaehig && (w.gehfaehig ? hat(/geht selbst|kann gehen|gehfahig/) : hat(/kann nicht gehen|nicht gehfahig|bettlagerig|rollstuhl/)))
+      vor("gehfaehig", w.gehfaehig ? "gehfähig" : "nicht gehfähig", () => setze({ gehfaehig: w.gehfaehig }));
+  }
+  if (w.kasse && d.kasse !== w.kasse) {
+    const kn = norm(w.kasse.split(" ")[0]);
+    if (kn.length >= 3 && gesagt.includes(kn)) vor("kasse", w.kasse, () => setze({ kasse: w.kasse }));
+  }
+  const ziffern = (t: string) => t.replace(/\D/g, "");
+  if (w.telefon && ziffern(d.telefon) !== ziffern(w.telefon) && ziffern(w.telefon).length >= 6 && ziffern(gesagt).includes(ziffern(w.telefon).slice(-6))) vor("rueck", w.telefon, () => setze({ telefon: w.telefon }));
+  return out;
+}
+
 function ktGespraech(k: KtAuftrag, x: AnrufEintrag): GespraechVM | null {
   const a = k.anruf;
   if (!a) return null;
@@ -958,6 +1055,10 @@ function ktGespraech(k: KtAuftrag, x: AnrufEintrag): GespraechVM | null {
     }),
   );
 
+  // Formular: Vorschläge aus dem Gesagten an die Felder hängen
+  const vs = darf ? ktVorschlaege(k, sek, setze) : {};
+  for (const sx of S) sx.vorschlag = vs[sx.id] ?? null;
+
   const code = d.code ?? "";
   const fz = [k.fz, k.begleit].map((id) => (id ? sim.state.fahrzeuge[id] : null)).filter((f): f is SimFahrzeug => !!f);
   const stand = standVon(fz);
@@ -989,6 +1090,9 @@ function ktGespraech(k: KtAuftrag, x: AnrufEintrag): GespraechVM | null {
     codeTitel: code ? `${d.codeManuell ? "Selbst gewählter" : "Vorläufiger"} Code ${code}${ktCode(code)?.name ? ` – ${ktCode(code)!.name}` : ""} · Einsatzmittel: ${standText(stand)} · Klick: zur ${ziel}` : "Der Code ergibt sich aus den Angaben",
     codeKlick: zur,
     alarme: [],
+    formular: true,
+    vorschlaegeN: Object.keys(vs).length,
+    alleVorschlaege: () => Object.values(vs).forEach((v) => v.nehmen()),
     schritte: S,
     msgs: msgsAus(a, k.id),
     kiText: kiBereit() ? "Anrufer: KI" : "feste Antworten",

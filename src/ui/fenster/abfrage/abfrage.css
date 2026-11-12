@@ -261,3 +261,39 @@
 :root:not([data-theme="dunkel"]) :where(.k-Abfrage) .kn.kl-ab{color:#fff}
 :where(.k-Abfrage) .kl.gehalten .kn.kl-ab,:where(.k-Abfrage) .kl.gehalten.fremd .kn.kl-ab{color:var(--text)}
 :where(.k-Abfrage) .vcode.sa,:where(.k-Abfrage) .vcode.s9,:where(.k-Abfrage) .vcode.s2,:where(.k-Abfrage) .vcode.s3,:where(.k-Abfrage) .vcode.s4,:where(.k-Abfrage) .vcode.s5{color:#111216}
+
+/* KT-Hotline und Überstellung: Formular */
+:where(.k-Abfrage) .a-form{display:flex;flex-direction:column;gap:2px;overflow:auto;min-height:0;flex:1}
+:where(.k-Abfrage) .ff-kopf{display:flex;align-items:center;gap:8px;justify-content:space-between;padding-bottom:4px}
+:where(.k-Abfrage) .ff-gruppe{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);padding:10px 2px 3px}
+:where(.k-Abfrage) .ff{display:flex;flex-direction:column;gap:5px;padding:7px 8px;border:1px solid var(--trenner);border-radius:9px;background:var(--flaeche)}
+:where(.k-Abfrage) .ff.offen{border-color:var(--linie)}
+:where(.k-Abfrage) .ff.offen .ff-l{color:var(--text)}
+:where(.k-Abfrage) .ff.mitvor{border-color:var(--akzent)}
+:where(.k-Abfrage) .ff-z1{display:flex;align-items:center;gap:8px}
+:where(.k-Abfrage) .ff-l{flex:1;min-width:0;font-size:12.5px;font-weight:600;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+:where(.k-Abfrage) .ff-frage{all:unset;box-sizing:border-box;width:24px;height:24px;flex:none;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:700;border:1px solid var(--linie);color:var(--akzent);cursor:pointer}
+:where(.k-Abfrage) .ff-frage:hover{background:var(--akzent-flaeche);border-color:var(--akzent)}
+:where(.k-Abfrage) .ff-frage:focus-visible{outline:2px solid var(--akzent);outline-offset:2px}
+:where(.k-Abfrage) .ff-frage.aus{opacity:.35;cursor:default}
+:where(.k-Abfrage) .ff-opts{display:flex;flex-wrap:wrap;gap:5px}
+:where(.k-Abfrage) .ff-opt{all:unset;box-sizing:border-box;padding:4px 10px;min-height:28px;display:inline-flex;align-items:center;border:1px solid var(--linie);border-radius:7px;font-size:12.5px;font-weight:600;cursor:pointer}
+:where(.k-Abfrage) .ff-opt:hover{border-color:var(--akzent)}
+:where(.k-Abfrage) .ff-opt:focus-visible{outline:2px solid var(--akzent);outline-offset:2px}
+:where(.k-Abfrage) .ff-opt.on{border-color:var(--akzent);background:var(--akzent-flaeche)}
+:where(.k-Abfrage) .ff-opt.leise{font-weight:500;color:var(--dim)}
+:where(.k-Abfrage) .ff-ein{height:30px;font-size:13px}
+:where(.k-Abfrage) .ff-ort{display:flex;flex-direction:column;gap:4px}
+:where(.k-Abfrage) .ff-ortz{display:flex;gap:6px}
+:where(.k-Abfrage) .ff-ortz .ff-ein{flex:1;min-width:0}
+:where(.k-Abfrage) .ff-jetzt{font-size:13px;font-weight:600}
+:where(.k-Abfrage) .ff-vor{all:unset;box-sizing:border-box;align-self:flex-start;max-width:100%;padding:3px 9px;border-radius:7px;background:var(--akzent-flaeche);font-size:12.5px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+:where(.k-Abfrage) .ff-vor:hover{outline:1px solid var(--akzent)}
+:where(.k-Abfrage) .ff-vor:focus-visible{outline:2px solid var(--akzent)}
+:where(.k-Abfrage) .ff-vor-l{color:var(--dim)}
+:where(.k-Abfrage) .ff-vor-k{font-weight:700;color:var(--akzent);margin-left:4px}
+:where(.k-Abfrage) .a-form{order:2}
+@container fenster (max-width: 819px){
+  /* eine Spalte: das Formular scrollt für sich, das Gespräch bleibt darunter in Reichweite */
+  :where(.k-Abfrage) .a-form{flex:none;max-height:440px}
+}

@@ -58,6 +58,44 @@
     <div class="spalten">
 
     <div class="sp-l">
+    <!-- KT-Hotline und Überstellung: alle Angaben als Formular, „?“ fragt den Anrufer, Vorschläge aus dem Gesagten -->
+    <sc-if value="{{istForm}}">
+    <div class="ab a-form">
+      <div class="ff-kopf">
+        <span class="lbl">Angaben · {{formStand}}</span>
+        <sc-if value="{{formVorschlaege}}"><button class="kn sm prim" onClick="{{formAlleNehmen}}" title="Alles übernehmen, was der Anrufer schon gesagt hat">{{formVorschlaegeText}}</button></sc-if>
+      </div>
+      <sc-for list="{{formGruppen}}" as="g">
+        <div class="ff-gruppe">{{g.t}}</div>
+        <sc-for list="{{g.felder}}" as="x">
+          <div class="{{x.cls}}">
+            <div class="ff-z1">
+              <span class="ff-l" title="{{x.text}}">{{x.text}}</span>
+              <button class="{{x.frageCls}}" onClick="{{x.fragen}}" title="Dem Anrufer diese Frage stellen" aria-label="Frage stellen: {{x.text}}">?</button>
+            </div>
+            <sc-if value="{{x.istWahl}}">
+              <div class="ff-opts" role="group" aria-label="{{x.text}}"><sc-for list="{{x.optionen}}" as="o"><button class="{{o.cls}}" aria-pressed="{{o.an}}" onClick="{{o.klick}}">{{o.t}}</button></sc-for></div>
+            </sc-if>
+            <sc-if value="{{x.istEingabe}}">
+              <input class="feld ff-ein" value="{{x.wert}}" onInput="{{x.ein}}" onBlur="{{x.fertig}}" onKeyDown="{{x.taste}}" placeholder="{{x.platz}}" aria-label="{{x.text}}">
+            </sc-if>
+            <sc-if value="{{x.istOrt}}">
+              <div class="ff-ort">
+                <sc-if value="{{x.hatJetzt}}"><div class="ff-jetzt">{{x.jetzt}}</div></sc-if>
+                <div class="ff-ortz"><input class="feld ff-ein" value="{{x.q}}" onInput="{{x.qEin}}" onKeyDown="{{x.taste}}" placeholder="{{x.platz}}" aria-label="{{x.text}}"><button class="kn sm" onClick="{{x.karte}}" title="Auf der Karte wählen">Karte</button></div>
+                <sc-for list="{{x.treffer}}" as="it"><button class="{{it.cls}}" onClick="{{it.klick}}"><span style="min-width: 0;"><b>{{it.name}}</b><div class="tz">{{it.zeile}}</div></span><span class="tr">{{it.rechts}}</span></button></sc-for>
+                <sc-if value="{{x.sucht}}"><div class="zeit">Suche …</div></sc-if>
+              </div>
+            </sc-if>
+            <sc-if value="{{x.hatVorschlag}}">
+              <button class="ff-vor" onClick="{{x.nehmen}}" title="Hat der Anrufer gesagt – übernehmen"><span class="ff-vor-l">Anrufer:</span> {{x.vorschlag}} <span class="ff-vor-k">übernehmen</span></button>
+            </sc-if>
+          </div>
+        </sc-for>
+      </sc-for>
+    </div>
+    </sc-if>
+    <sc-if value="{{nichtForm}}">
     <!-- Aktuelle Frage -->
     <div class="ab a-frage">
       <sc-if value="{{offen}}">
@@ -128,6 +166,7 @@
         <sc-for list="{{erledigt}}" as="e"><button class="{{e.cls}}" onClick="{{e.klick}}"><span style="min-width: 0;"><span class="erl-f" style="display: block;">{{e.text}}</span><span class="erl-a" style="display: block;">{{e.antwort}}</span></span><span class="erl-x">ändern</span></button></sc-for>
       </div>
     </div>
+    </sc-if>
     </div>
 
     <div class="sp-r">
