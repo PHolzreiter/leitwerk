@@ -122,6 +122,8 @@ export function ktFenster(ctx: PanelKontext, sek: boolean): { el: HTMLElement; d
     const los = v.losSpaetestens ? `spätestens ${hhmm(v.losSpaetestens)}` : "";
     const blau = codeInfo(k.d.code).sondersignal;
     const anBord = !!p?.aktiv && (p.fahrten[0] ?? []).some((x) => sim.ktAuftrag(x)?.status === "anBord");
+    // ein NEF fährt nie selbst, nur als Notarzt-Begleitung zu einem Transportfahrzeug
+    if (fz.rmTyp === "NEF") opt = { ...opt, begleit: true };
     return {
       id: fz.id,
       status: statusNr(fz),
@@ -280,20 +282,22 @@ export function ktFenster(ctx: PanelKontext, sek: boolean): { el: HTMLElement; d
             return c2 <= 3;
           }).slice(0, max);
         };
-        const pass = begrenzt(v.liste.filter((x) => !x.ersatz && !zugeteilt.has(x.fz.id)), 10);
-        const ersatz = begrenzt(v.liste.filter((x) => x.ersatz && !zugeteilt.has(x.fz.id)), 8);
-        // Begleit-Fahrzeuge (NEF) einzeln, nicht als „RTW + NEF“
+        const pass = begrenzt(v.liste.filter((x) => !x.ersatz && !x.nurBegleit && !zugeteilt.has(x.fz.id)), 10);
+        const ersatz = begrenzt(v.liste.filter((x) => x.ersatz && !x.nurBegleit && !zugeteilt.has(x.fz.id)), 8);
+        // Begleit-Fahrzeuge (NEF) einzeln, nicht als „RTW + NEF“ – dazu alle freien NEF in der Nähe
         const begleiter = new Map<string, KtVorschlag>();
         for (const x of [...pass, ...ersatz]) if (x.begleit && !begleiter.has(x.begleit.id)) begleiter.set(x.begleit.id, { ...x, fz: x.begleit, begleit: null, sekunden: null, hinweis: null });
+        for (const x of v.liste) if (x.nurBegleit && !zugeteilt.has(x.fz.id) && !begleiter.has(x.fz.id)) begleiter.set(x.fz.id, x);
         if (sek) {
           const alle = [...pass, ...ersatz];
           const gruppen: [string, KtVorschlag[]][] = [
             ["Sekundärfahrzeuge", alle.filter((x) => SEK_FZ.includes(x.fz.rmTyp))],
             [d.sofort ? "Hubschrauber – nur spontan" : "Hubschrauber", alle.filter((x) => FLUG.includes(x.fz.rmTyp))],
             [d.sofort ? "Regelrettungsdienst" : "Regelrettungsdienst – nur wenn nötig", alle.filter((x) => !SEK_FZ.includes(x.fz.rmTyp) && !FLUG.includes(x.fz.rmTyp))],
+            ["Notarzt-Begleitung (NEF) – zusätzlich zum Transportfahrzeug", []],
           ];
           for (const [t, l] of gruppen) {
-            const nefs = t.startsWith("Regel") ? [...begleiter.values()].filter((b) => !l.some((x) => x.fz.id === b.fz.id)) : [];
+            const nefs = t.startsWith("Notarzt") ? [...begleiter.values()].filter((b) => !alle.some((x) => x.fz.id === b.fz.id)) : [];
             if (!l.length && !nefs.length) continue;
             liste.push({ trenner: true, trennText: t });
             for (const x of l) liste.push(eintrag(x, true, k));

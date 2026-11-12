@@ -15,6 +15,7 @@ import { ALTERSGRUPPEN, altersgruppeVon, DRINGLICHKEITEN, dringlichkeitFuer, sym
 import { khLandung, type Hospital } from "../../data/model";
 import { mp, meinName } from "../../net/mehrspieler";
 import { findCode } from "../../sim/codes";
+import { ktCode } from "../../sim/ktCodes";
 import { antwortLabel, fragenImAblauf, type Frage } from "../../abfrage/schema";
 import { fliegt, sim, type Einsatz, type PilotPlan, type SimFahrzeug } from "../../sim/engine";
 import { distanceM } from "../../sim/geo";
@@ -173,6 +174,9 @@ export function pilotFliegenNaechstes(): void {
   if (!fz) return;
   if (fz.fahrt) return void befehl(sim.call("pilotFliegen", fz.id, null));
   const e = einsatzVon(fz);
+  // Überstellung: zum aktuellen Halt (Abholort bzw. Ziel)
+  const kt = !e ? sim.pilotKt(fz) : null;
+  if (kt) return void befehl(sim.call("pilotFliegen", fz.id, kt.art === "ab" ? "bo" : "zo"));
   // Großeinsatz: aus dem Bereitstellungsraum abgerufen → zum Einsatzort
   const abruf = !!e && fz.phase === "wartetBR" && !!sim.pilotGsHinweis(fz)?.abruf;
   const ziel = e && (["alarmWache", "alarmFunk", "alarmiert", "zumBO"].includes(fz.status) || abruf) ? "bo" : e?.kh && fz.status === "zumZO" ? "zo" : "heim";
@@ -806,6 +810,20 @@ function zeichneAlles(): void {
 /** Neuer Einsatz: Melder bis quittiert (Status 9 oder 2), höchstens 1 Minute */
 function alarmPruefen(fz: SimFahrzeug | undefined, e: Einsatz | undefined): void {
   if (imVorlauf(fz)) return;
+  // Überstellung (KT/SEK) zählt wie ein Einsatz: eigener Schlüssel je Fahrt
+  const ktFahrt = fz && !fz.einsatzId && fz.kt?.aktiv ? `kt:${(fz.kt.fahrten[0] ?? []).join(",")}` : null;
+  if (ktFahrt && ktFahrt !== letzterEinsatz && fz && ["alarmWache", "alarmFunk"].includes(fz.status)) {
+    alarmOffen = true;
+    alarmStarten("alarm", () => {
+      const f = meinFz();
+      return !!root && !!f && !f.einsatzId && !!f.kt?.aktiv && ["alarmWache", "alarmFunk"].includes(f.status);
+    });
+  }
+  if (ktFahrt) {
+    letzterEinsatz = ktFahrt;
+    if (!["alarmWache", "alarmFunk"].includes(fz!.status)) alarmOffen = false;
+    return;
+  }
   const neu = fz?.einsatzId ?? null;
   if (neu && neu !== letzterEinsatz && fz && ["alarmWache", "alarmFunk", "alarmiert"].includes(fz.status)) {
     alarmOffen = true;
@@ -1183,7 +1201,7 @@ function ansichtDaten(): Record<string, unknown> {
   // ---- Alarm
   const zi = e ? zusatzInfo(e) : { b: "", t: "" };
   const gruppeGs = gsGruppe(e);
-  const alarm =
+  let alarm: Record<string, string> | null =
     alarmOffen && e && fz
       ? G && gs
         ? {
@@ -1407,7 +1425,7 @@ function ansichtDaten(): Record<string, unknown> {
   // ---- Einsatzverlauf (neueste oben); die Notrufabfrage zum Aufklappen
   const prot = e?.protokoll ?? [];
   const ab = prot.length > 60 ? prot.length - 60 : 0;
-  const verlauf = prot
+  let verlauf = prot
     .slice(ab)
     .map((x, i) => {
       const m = /^\*\*\* (.+?): [^*]*\*\*\*\n?([\s\S]*)$/.exec(x.text);
@@ -1497,6 +1515,63 @@ function ansichtDaten(): Record<string, unknown> {
       okCls: `kn sm prim${lad ? " aus" : ""}`,
       okAktion: lad ? null : () => void updateImHintergrund(sim.pilotTest ? () => jetztSichern() : undefined),
     };
+  }
+
+  // ---- Überstellung (KT/SEK) statt Notfalleinsatz
+  const kt = fz && !e ? sim.pilotKt(fz) : null;
+  if (fz && kt) {
+    const k = kt.k;
+    const d = k.d;
+    const c = ktCode(d.code)?.name ?? "";
+    const zeit = d.zeitVorgabe === "termin" && d.termin ? `Termin ${uhrzeit(d.termin)}` : d.abholung ? `Abholung ${uhrzeit(d.abholung)}` : d.sofort ? "sofort" : "";
+    const weg = distanceM(fz, kt.ziel);
+    const vonN = d.von?.label ?? "Abholort";
+    const nachN = d.nach?.label ?? "Ziel";
+    if (alarmOffen) alarm = { t: `${d.code ? `${d.code} · ` : ""}Überstellung ${k.nummer}`, s: `${vonN} → ${nachN} · ${km1(weg)} · ca. ${minuten(flugSek(weg))} Flug`, ziB: "", ziT: "" };
+    const quitt = fz.status === "alarmiert";
+    const eta = ank ? mmss(ank.min * 60) : "";
+    next =
+      ALARM_ST.includes(fz.status)
+        ? quitt
+          ? { t: "Abheben – dann Status 2", d: `Ziel ist der Abholort: ${vonN}.`, eta: minuten(flugSek(weg)), etaT: "Flug zum Abholort" }
+          : { t: "Alarm quittieren (9)", d: "Überstellung – der Melder läuft, bis du 9 oder 2 drückst.", eta: minuten(flugSek(weg)), etaT: "Flug zum Abholort" }
+        : fz.status === "zumBO"
+          ? { t: "Landen am Abholort – dann Status 3", d: vonN, eta, etaT: "bis zur Landung" }
+          : fz.status === "amBO"
+            ? { t: "Patient übernehmen – dann Status 4", d: `Patient an Bord? Dann abheben und Status 4 – Ziel ${nachN}.` }
+            : fz.status === "zumZO"
+              ? { t: "Landen am Ziel – dann Status 5", d: nachN, eta, etaT: "bis zur Landung" }
+              : { t: "Übergabe – dann frei über Funk (6)", d: "Nach der Übergabe meldest du dich frei und fliegst zurück zum Stützpunkt." };
+    phasen.i = ALARM_ST.includes(fz.status) ? 1 : phaseVon(fz, undefined);
+    ein = {
+      nr: `Überstellung ${k.nummer}${zeit ? ` · ${zeit}` : ""}`,
+      stufe: d.sofort ? "Sekundär · sofort" : "Sekundär",
+      sf: d.sofort ? "#B4232A" : "#2F6FB5",
+      code: d.code ?? "Code folgt",
+      sw: c || d.grund || "Überstellung",
+      zi: false,
+      ziB: "",
+      ziS: "",
+      ziT: "",
+      adr: `${vonN} → ${nachN}`,
+      zusatz: [d.patient.name, d.patient.alter !== null && d.patient.alter !== undefined ? `${d.patient.alter} J.` : "", d.grund, d.patient.info].filter(Boolean).join(" · "),
+      gsText: kt.alle.length > 1 ? `Mehrfachtransport: ${kt.alle.length} Patienten` : "",
+    };
+    fl = weg > 150 ? { km: km1(weg), t: `ca. ${minuten(flugSek(weg))} ${kt.art === "ab" ? "zum Abholort" : "zum Ziel"}` } : null;
+    fzs.push({ s: sim.statusDef(fz.status).nummer, f: stFarbe(sim.statusDef(fz.status).nummer), t: `${fz.kurzname || fz.funkrufname} (du)`, tip: sim.statusDef(fz.status).name });
+    const zeile = (titel: string, o: { lat: number; lon: number }, name: string) =>
+      nav.push({ t: titel, k: koordText(o.lat, o.lon), kc: `${o.lat.toFixed(6)}, ${o.lon.toFixed(6)}`, z: "", kopie: () => void navigator.clipboard?.writeText(`${o.lat.toFixed(6)}, ${o.lon.toFixed(6)}`).then(() => fenster?.k.toast("Koordinaten kopiert")), pln: () => void flugplanSpeichern(fz, { lat: o.lat, lon: o.lon, name }).then(() => fenster?.k.toast("Flugplan gespeichert – im MSFS auf der Weltkarte unter „Laden“ öffnen"), fehler) });
+    zeile(kt.art === "ab" ? "Abholort" : "Ziel", kt.ziel, kt.ziel.label);
+    if (kt.art === "ab" && d.nach) {
+      const h = d.nach.khId ? store.get("hospitals", d.nach.khId) : undefined;
+      const l = h ? (khLandung(h) ?? h) : d.nach;
+      zeile("Ziel", l, nachN);
+    }
+    verlauf = k.protokoll
+      .slice(-40)
+      .map((x) => ({ z: uhrzeit(x.zeit), t: x.text, von: x.von ?? "", abf: null }))
+      .reverse() as typeof verlauf;
+    patZu = `${d.patient.name || "Patient"}${d.lage ? ` · ${d.lage}` : ""}${d.sek?.beatmet ? " · beatmet" : ""}${d.sek?.instabil ? " · instabil" : ""}${d.sek?.arzt ? " · mit Notarzt" : ""}${d.infektion ? " · Infektion" : ""}`;
   }
 
   return {
@@ -1765,6 +1840,14 @@ function tastenNameKurz(code: string | undefined): string {
 
 /** PMS50 GTN750: Flugplan zum aktuellen Ziel bereitlegen (Einsatzort, nach der Zielwahl das Krankenhaus) */
 function gtnZiel(fz: SimFahrzeug | undefined, e: Einsatz | undefined): void {
+  // Überstellung: Abholort bzw. Ziel
+  const kt = fz && !e ? sim.pilotKt(fz) : null;
+  if (fz && kt) {
+    const z = { lat: kt.ziel.lat, lon: kt.ziel.lon, name: kt.ziel.label, art: kt.art === "ab" ? ("bo" as const) : ("kh" as const) };
+    gtnBereitlegen(fz, z, kt.art === "ab" ? { bo: z } : { kh: z });
+    xplaneFlugplanBereitlegen(fz, z);
+    return;
+  }
   if (!fz || !e) return;
   const plan = fz.pilot?.plan;
   const h = e.kh ? store.get("hospitals", e.kh.hospitalId) : undefined;
@@ -1975,7 +2058,56 @@ function tabletDaten(fz: SimFahrzeug | undefined, e: Einsatz | undefined, D: Rec
   if (!fz) return { uhr, heli: "Kein Hubschrauber", unter: "im Piloten-Interface wählen", ein: null };
   const st = sim.statusDef(fz.status);
   const kopf = { uhr, heli: fz.kurzname || fz.funkrufname, st: { n: st.nummer, t: st.name, f: ZEILE_FARBE[st.nummer] ?? st.farbe } };
-  if (!e) return { ...kopf, unter: `${fz.funkrufname} · ${fz.stationName}`, ein: null };
+  if (!e) {
+    const kt = sim.pilotKt(fz);
+    if (!kt) return { ...kopf, unter: `${fz.funkrufname} · ${fz.stationName}`, ein: null };
+    // Überstellung (KT/SEK): Einsatz-Seite mit Abholort und Ziel, ohne Buchen
+    const k = kt.k;
+    const d = k.d;
+    const De = (D.ein ?? {}) as Record<string, string>;
+    const m = distanceM(fz, kt.ziel);
+    const ank = sim.pilotAnkunft(fz);
+    const kurs = flugsim.daten && datenFrisch() ? flugsim.daten.kurs : null;
+    const zielPunkt = fz.status === "amBO" || fz.status === "amZO" ? null : { lat: kt.ziel.lat, lon: kt.ziel.lon, t: kt.ziel.label, kh: kt.art === "an" };
+    const alarmOffen = ["alarmWache", "alarmFunk", "alarmiert"].includes(fz.status);
+    const ja = (b?: boolean) => (b ? "ja" : "");
+    const abf = [
+      { f: "Patient", a: [d.patient.name, d.patient.alter !== null && d.patient.alter !== undefined ? `${d.patient.alter} Jahre` : ""].filter(Boolean).join(", ") },
+      { f: "Grund", a: d.grund },
+      { f: "Abholort", a: d.von?.label ?? "" },
+      { f: "Ziel", a: d.nach?.label ?? "" },
+      { f: "Zeit", a: d.zeitVorgabe === "termin" && d.termin ? `Termin ${uhrzeit(d.termin)}` : d.abholung ? `Abholung ${uhrzeit(d.abholung)}` : d.sofort ? "sofort" : "" },
+      { f: "Lage", a: d.lage ?? "" },
+      { f: "Notarzt", a: ja(d.sek?.arzt) },
+      { f: "Beatmet", a: ja(d.sek?.beatmet) },
+      { f: "Instabil", a: ja(d.sek?.instabil) },
+      { f: "Infektion", a: ja(d.infektion) },
+      { f: "Sauerstoff", a: ja(d.sauerstoff) },
+      { f: "Hinweis", a: d.patient.info },
+    ].filter((x) => x.a);
+    return {
+      ...kopf,
+      unter: `Überstellung ${k.nummer}`,
+      alarm: alarmOffen ? { zeit: uhrzeit(k.protokoll.filter((x) => /alarmiert/.test(x.text)).pop()?.zeit ?? t), quitt: fz.status === "alarmiert" } : null,
+      ein: { nr: k.nummer, stufe: De.stufe ?? "Sekundär", sf: De.sf ?? "#2F6FB5", code: d.code ?? "Code folgt", sw: De.sw ?? "Überstellung", zi: d.grund ?? "", adr: `${d.von?.label ?? "Abholort"} → ${d.nach?.label ?? "Ziel"}`, zusatz: De.zusatz ?? "", gs: De.gsText ?? "" },
+      fz: [{ s: st.nummer, f: ZEILE_FARBE[st.nummer] ?? "#E6E7EA", funk: st.nummer === "6", ruf: fz.kurzname || fz.funkrufname, typ: `${fz.rmTyp} · du`, txt: st.name, eta: ank ? minuten(ank.min * 60) : "", ich: true }],
+      abf,
+      gs: null,
+      karte: {
+        ich: { lat: +fz.lat.toFixed(5), lon: +fz.lon.toFixed(5), kurs: kurs === null ? null : Math.round(kurs), f: ZEILE_FARBE[st.nummer] ?? "#DCC23A" },
+        ziel: zielPunkt,
+        fz: [],
+        alle: tabletKarteAlle,
+        nav: zielPunkt && m > 150 ? { kurs: String(Math.round(peilung(fz, zielPunkt))).padStart(3, "0"), km: km1(m), min: minuten(flugSek(m)), an: ank ? new Date(t + ank.min * 60000).toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" }) : "" } : null,
+        text: fz.status === "amBO" ? "am Abholort" : fz.status === "amZO" ? "am Ziel" : "",
+      },
+      buchenDa: false,
+      buchenText: "Überstellung – das Ziel steht fest, kein Buchen nötig.",
+      plan: "",
+      pat: null,
+      patZu: String(D.patZu ?? ""),
+    };
+  }
   const c = findCode(e.code ?? undefined);
   const zi = zusatzInfo(e);
   const gsE = gsVon(e);
@@ -2476,6 +2608,14 @@ function karteAktualisieren(fz: SimFahrzeug | undefined, e: Einsatz | undefined)
   const fuss = !!br && !!ort && !!fz && (!!fz.gsFussBis || !!fz.gsAmBr);
   quelle("plt-fuss")?.setData(fuss && br && ort ? { type: "FeatureCollection", features: [{ type: "Feature", geometry: { type: "LineString", coordinates: [[br.lon, br.lat], [ort.lon, ort.lat]] }, properties: {} }] } : leer());
   if (kh) ziele.push(punkt(kh.lat, kh.lon, { name: kh.kurzname || kh.name, farbe: "#3B8BFF" }));
+  // Überstellung: Abholort (rot) und Ziel (blau)
+  const kt = fz && !e ? sim.pilotKt(fz) : null;
+  if (kt) {
+    const d = kt.k.d;
+    if (d.von && kt.art === "ab") ziele.push(punkt(kt.ziel.lat, kt.ziel.lon, { name: d.von.label ?? "Abholort", farbe: "#E5484D" }));
+    const n = kt.art === "an" ? kt.ziel : d.nach;
+    if (n) ziele.push(punkt(n.lat, n.lon, { name: d.nach?.label ?? "Ziel", farbe: "#3B8BFF" }));
+  }
   if (fz) ziele.push(punkt(fz.heim.lat, fz.heim.lon, { name: "Stützpunkt", farbe: "#4CC38A" }));
   const zk = JSON.stringify(ziele.map((z) => z.geometry));
   if (zk !== letzteZiele) {
@@ -2503,6 +2643,14 @@ function route(fz: SimFahrzeug, e: Einsatz | undefined): [number, number][] {
   const f = fz.fahrt;
   const ende = f?.coords[f.coords.length - 1] as [number, number] | undefined;
   if (ende) out.push([ende[0], ende[1]]);
+  const kt = !e ? sim.pilotKt(fz) : null;
+  if (kt) {
+    const nah2 = (a: [number, number] | undefined, b: [number, number]) => !!a && Math.abs(a[0] - b[0]) < 1e-3 && Math.abs(a[1] - b[1]) < 1e-3;
+    const z: [number, number] = [kt.ziel.lon, kt.ziel.lat];
+    if (!nah2(out[out.length - 1], z) && fz.status !== "amBO" && fz.status !== "amZO") out.push(z);
+    if (kt.art === "ab" && kt.k.d.nach) out.push([kt.k.d.nach.lon, kt.k.d.nach.lat]);
+    return out;
+  }
   if (!e) return out;
   const h = e.kh ? store.get("hospitals", e.kh.hospitalId) : undefined;
   const l = h ? (khLandung(h) ?? h) : null;

@@ -503,6 +503,26 @@ function missionRoh(fz: SimFahrzeug, e: Einsatz | undefined): { key: string; mis
   const plan = fz.pilot?.plan ?? null;
   const ui = uiBefehle(fz, e);
   const heim: [number, number] = [fz.heim.lat, fz.heim.lon];
+  // Überstellung (KT/SEK): Route zum Abholort bzw. Ziel
+  const kt = !e ? sim.pilotKt(fz) : null;
+  if (kt) {
+    const ziel: [number, number] = [kt.ziel.lat, kt.ziel.lon];
+    const text = t(`${kt.art === "ab" ? "Abholort" : "Ziel"}: ${kt.ziel.label}`);
+    return {
+      key: `kt|${kt.k.id}|${kt.art}|${st}`,
+      mission: {
+        ...basis,
+        title: t(`LeitWerk - ${heli} - Ueberstellung ${kt.k.nummer}`),
+        locations: { base: heim, accident_site: ziel },
+        objectives: [
+          {
+            title: t(kt.art === "ab" ? "Ueberstellung - zum Abholort" : "Ueberstellung - zum Ziel"),
+            commands: [...ui, { set_map: { add: { point: { location: "accident_site", id: "lw_bo", icon: punktIcon(kt.art === "ab" ? "#e53935" : "#1e88e5") } } } }, { set_route: "accident_site" }, { set_df: { location: "accident_site", freq: 123.45 } }, { set_message: { text } }, { sleep: "forever" }],
+          },
+        ],
+      },
+    };
+  }
   if (!e) {
     const daheim = distanceM(fz, fz.heim) < 300;
     return {

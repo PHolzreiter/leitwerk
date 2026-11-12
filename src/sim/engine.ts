@@ -397,6 +397,8 @@ export interface KtVorschlag {
   /** nur Ersatz (Regelrettungsdienst), wenn nichts Passendes frei ist */
   ersatz: boolean;
   rang: number;
+  /** NEF: fährt nur als Notarzt-Begleitung zu einem Transportfahrzeug mit */
+  nurBegleit?: boolean;
 }
 
 export interface Vorschlag {
@@ -8704,7 +8706,8 @@ export class Simulation {
       const z = info.inkubator ? 8 : info.arzt ? (info.flug ? 7 : 6) : info.monitoring ? 6 : 3;
       const ith: Wahl = { typen: ["ITH"], ersatz: false, hinweis: "Intensivtransporthubschrauber" };
       const nah: Wahl = { typen: ["NAH"], ersatz: false, hinweis: "Hubschrauber" };
-      const mitNef: Wahl = { typen: ["SRTW", "RTW", "RTW-C"], nef: true, ersatz: true, hinweis: "mit NEF" };
+      // Notarzt-Überstellung bodengebunden: Transportfahrzeug + NEF (Paul 12.11.2026: RTW(-C), SRTW oder KTW mit NEF)
+      const mitNef: Wahl = { typen: ["SRTW", "RTW", "RTW-C", "KTW"], nef: true, ersatz: true, hinweis: "mit NEF" };
       if (z <= 3) {
         w.push({ typen: ["SKTW"], ersatz: false });
         w.push({ typen: ["KTW", "SRTW", "RTW", "RTW-C"], ersatz: true, hinweis: "kein SKTW frei" });
@@ -8745,13 +8748,16 @@ export class Simulation {
     }
     // bestes freies NEF für Paare
     let nef: { fz: SimFahrzeug; sek: number } | null = null;
-    if (w.some((x) => x.nef)) {
+    const nefListe: { fz: SimFahrzeug; sek: number }[] = [];
+    if (w.some((x) => x.nef) || info.gruppe === "SEK") {
       const nefs = Object.values(this.state.fahrzeuge).filter((f) => f.rmTyp === "NEF" && this.verfuegbar(f) && !f.kt);
       const nu = nefs.map((f) => this.naUmweg(f));
       const nz = await travelTimes(von, nefs.map((f, i) => nu[i]?.start ?? { lat: f.lat, lon: f.lon }));
       nefs.forEach((f, i) => {
         const s = nz[i] === null ? null : (nz[i]! + (nu[i]?.sek ?? 0)) * faktor + this.ausrueckSek(f, true);
-        if (s !== null && (!nef || s < nef.sek)) nef = { fz: f, sek: s };
+        if (s === null) return;
+        nefListe.push({ fz: f, sek: s });
+        if (w.some((x) => x.nef) && (!nef || s < nef.sek)) nef = { fz: f, sek: s };
       });
     }
     const out: KtVorschlag[] = [];
@@ -8777,6 +8783,10 @@ export class Simulation {
       else if (fz.kt) hinweise.push(`vorgemerkt (${fz.kt.fahrten.flat().length})`);
       out.push({ fz, begleit, sekunden: sek, hinweis: hinweise.join(" · ") || null, losSpaetestens: soll && sek !== null ? soll - sek * 1000 : null, ersatz: wahl.ersatz, rang: wahl === anders ? 99 : w.indexOf(wahl) });
     }
+    // Überstellung: freie NEF zum Dazu-Alarmieren (Notarzt-Begleitung zu jedem bodengebundenen Transportfahrzeug)
+    if (info.gruppe === "SEK" && !alle_)
+      for (const n of nefListe.sort((a, b) => a.sek - b.sek).slice(0, 4))
+        out.push({ fz: n.fz, begleit: null, sekunden: n.sek, hinweis: "Notarzt-Begleitung", losSpaetestens: null, ersatz: true, rang: 98, nurBegleit: true });
     return out.sort((a, b) => Number(a.ersatz) - Number(b.ersatz) || (a.ersatz ? 0 : a.rang - b.rang) || (a.sekunden ?? 1e9) - (b.sekunden ?? 1e9));
   }
 
@@ -8796,8 +8806,10 @@ export class Simulation {
     if (fz.einsatzId) throw new Error(`${fz.funkrufname} ist in einem Notfalleinsatz`);
     const hindernis = this.flugHindernis(fz);
     if (hindernis) throw new Error(`${fz.funkrufname}: ${hindernis}`);
+    if (fz.rmTyp === "NEF") throw new Error("Das NEF fährt nur als Notarzt-Begleitung mit – bitte zusätzlich ein Transportfahrzeug wählen");
     const nef = begleitId ? this.state.fahrzeuge[begleitId] : undefined;
     if (begleitId && (!nef || nef.einsatzId || nef.kt)) throw new Error("Das NEF ist nicht mehr frei");
+    if (nef && fliegt(fz)) throw new Error(`${fz.funkrufname} fliegt – ohne NEF-Begleitung`);
     if (k.fz) this.ktAusPlan(k);
     const plan = (fz.kt ??= { fahrten: [], aktiv: false, halte: [], halt: 0 });
     let ziel: string[] | null = null;
@@ -9078,6 +9090,17 @@ export class Simulation {
     this.setStatus(fz, aufWache ? "alarmWache" : "alarmFunk");
     fz.fahrt = null;
     fz.phase = "ausruecken";
+    if (fz.pilot) {
+      // Spieler-Hubschrauber: Melder wie beim Notfall, der Pilot quittiert und fliegt selbst
+      fz.pilot.flugZiel = null;
+      fz.quittUm = null;
+      fz.phaseEnde = null;
+      for (const id of plan.fahrten[0] ?? []) {
+        const k = this.ktAuftrag(id);
+        if (k) this.ktLog(k, `${fz.funkrufname} (Pilot ${fz.pilot.name}) alarmiert`);
+      }
+      return;
+    }
     // KT auf der Wache: nach ca. 20 s „Alarmiert und quittiert“, danach Ausrücken
     fz.quittUm = aufWache ? this.state.zeit + rnd(15, 25) * 1000 : null;
     fz.phaseEnde = Math.max(this.state.zeit + sek * 1000, fz.quittUm ? fz.quittUm + rnd(10, 30) * 1000 : 0);
@@ -9099,6 +9122,8 @@ export class Simulation {
     const plan = fz.kt!;
     // Halte von stornierten oder übergebenen Transporten überspringen
     while (plan.halt < plan.halte.length && !this.ktHaltGilt(fz, plan.halte[plan.halt])) plan.halt++;
+    // Spieler-Hubschrauber: der Pilot fliegt selbst und meldet den Status selbst
+    if (fz.pilot) return;
     if (plan.halt >= plan.halte.length) return this.ktFahrtFertig(fz, false);
     const h = plan.halte[plan.halt];
     const k = this.ktAuftrag(h.kt)!;
@@ -9594,6 +9619,13 @@ export class Simulation {
     const t = this.state.zeit;
     if (!PILOT_STATUS.includes(s)) return "Diesen Status setzt die Leitstelle";
     if (fz.status === s) return null;
+    // Überstellung bzw. Krankentransport (kein Notfalleinsatz)
+    if (!e && fz.kt?.aktiv) {
+      const r = this.pilotKtStatus(fz, s);
+      if (r) return r;
+      this.emit();
+      return null;
+    }
     switch (s) {
       case "alarmiert":
         // Quittieren: Alarm angenommen – jetzt wird eingestiegen und der Rotor gestartet, Status 2 kommt beim Abheben
@@ -9683,6 +9715,116 @@ export class Simulation {
     }
     fz.phaseEnde = null;
     this.emit();
+    return null;
+  }
+
+  /** Spieler-Hubschrauber mit Überstellung: aktueller Halt (Abholort oder Ziel) mit Auftrag und Landepunkt */
+  pilotKt(fz: SimFahrzeug): { k: KtAuftrag; art: "ab" | "an"; ziel: LatLon & { label: string }; alle: KtAuftrag[] } | null {
+    const plan = fz.kt;
+    if (!plan?.aktiv || fz.einsatzId) return null;
+    let i = plan.halt;
+    while (i < plan.halte.length && !this.ktHaltGilt(fz, plan.halte[i])) i++;
+    const h = plan.halte[i];
+    const k = h ? this.ktAuftrag(h.kt) : undefined;
+    const alle = (plan.fahrten[0] ?? []).map((x) => this.ktAuftrag(x)).filter((x): x is KtAuftrag => !!x);
+    if (!h || !k) return null;
+    const o = h.art === "ab" ? k.d.von : k.d.nach;
+    if (!o) return null;
+    const kh = o.khId ? store.get("hospitals", o.khId) : undefined;
+    const l = kh ? (khLandung(kh) ?? kh) : o;
+    return { k, art: h.art, ziel: { lat: l.lat, lon: l.lon, label: o.label ?? (kh ? kh.kurzname || kh.name : "") }, alle };
+  }
+
+  /** Status des Piloten bei einer Überstellung: 9 quittieren, 2 Abflug, 3 am Abholort, 4 Patient an Bord, 5 am Ziel, 6 frei */
+  private pilotKtStatus(fz: SimFahrzeug, s: StatusKey): string | null {
+    const plan = fz.kt!;
+    while (plan.halt < plan.halte.length && !this.ktHaltGilt(fz, plan.halte[plan.halt])) plan.halt++;
+    const h = plan.halte[plan.halt];
+    const k = h ? this.ktAuftrag(h.kt) : undefined;
+    const name = fz.funkrufname;
+    switch (s) {
+      case "alarmiert":
+        if (!["alarmWache", "alarmFunk"].includes(fz.status)) return "Quittieren geht nur direkt nach der Alarmierung";
+        this.setStatus(fz, "alarmiert");
+        if (k) this.ktLog(k, `${name}: Alarm quittiert`);
+        break;
+      case "zumBO":
+        if (!h || !k) return "Kein Abholort offen";
+        if (h.art !== "ab") return "Der Patient ist schon an Bord – Status 4 (zum Zielort)";
+        this.setStatus(fz, "zumBO");
+        fz.phase = "ktFahrt";
+        this.ktLog(k, `${name}: Abflug zum Abholort`);
+        break;
+      case "amBO":
+        if (!h || !k || h.art !== "ab") return "Kein Abholort offen";
+        this.setStatus(fz, "amBO");
+        fz.phase = "ktHalt";
+        this.ktLog(k, `${name}: am Abholort gelandet`);
+        break;
+      case "zumZO": {
+        if (!h || !k) return "Kein Zielort offen";
+        if (h.art === "ab") {
+          if (fz.status !== "amBO") return "Zuerst am Abholort landen (Status 3)";
+          k.status = "anBord";
+          this.ktLog(k, `${name}: Patient an Bord`);
+          plan.halt++;
+          while (plan.halt < plan.halte.length && !this.ktHaltGilt(fz, plan.halte[plan.halt])) plan.halt++;
+          // noch ein Patient abzuholen (Mehrfachtransport): weiter zum nächsten Abholort
+          if (plan.halte[plan.halt]?.art === "ab") {
+            this.setStatus(fz, "zumBO");
+            fz.phase = "ktFahrt";
+            break;
+          }
+        } else if (fz.status !== "amBO" && fz.status !== "amZO") return null;
+        this.setStatus(fz, "zumZO");
+        fz.phase = "ktFahrt";
+        fz.blaulicht = (plan.fahrten[0] ?? []).some((x) => codeInfo(this.ktAuftrag(x)?.d.code).sondersignal);
+        break;
+      }
+      case "amZO":
+        if (!h || !k || h.art !== "an") return "Zuerst den Patienten aufnehmen (Status 4)";
+        if (fz.status !== "zumZO") return "Zuerst Status 4 (zum Zielort)";
+        this.setStatus(fz, "amZO");
+        fz.phase = "ktHalt";
+        fz.blaulicht = false;
+        this.ktLog(k, `${name}: am Zielort gelandet`);
+        break;
+      case "freiFunk": {
+        if (fz.status !== "amZO" || !h || !k || h.art !== "an") return "Zuerst den Transport abschließen (Status 5 am Zielort) – oder die Leitstelle storniert";
+        // alle Patienten für diesen Zielort übergeben
+        const hier = plan.halte[plan.halt];
+        const ort = (x: { kt: string; art: "ab" | "an" }) => this.ktAuftrag(x.kt)?.d.nach;
+        const o0 = ort(hier);
+        for (const x of plan.halte.slice(plan.halt)) {
+          const kk = this.ktAuftrag(x.kt);
+          const o = ort(x);
+          if (x.art !== "an" || !kk || kk.status !== "anBord" || !o || !o0 || distanceM(o, o0) > 600) continue;
+          kk.status = "erledigt";
+          this.ktLog(kk, `${name}: am Ziel übergeben`);
+        }
+        plan.halt++;
+        while (plan.halt < plan.halte.length && !this.ktHaltGilt(fz, plan.halte[plan.halt])) plan.halt++;
+        if (plan.halt < plan.halte.length) {
+          // noch ein Patient an Bord bzw. abzuholen
+          const n = plan.halte[plan.halt];
+          this.setStatus(fz, n.art === "ab" ? "zumBO" : "zumZO");
+          fz.phase = "ktFahrt";
+          break;
+        }
+        plan.fahrten.shift();
+        plan.halte = [];
+        plan.halt = 0;
+        fz.blaulicht = false;
+        this.setStatus(fz, "freiFunk");
+        fz.phase = "frei";
+        if (plan.fahrten.length) this.ktFahrtStarten(fz, false);
+        else fz.kt = null;
+        break;
+      }
+      default:
+        return "Zuerst den Transport abschließen (Status 6 nach der Übergabe)";
+    }
+    fz.phaseEnde = null;
     return null;
   }
 
@@ -9779,6 +9921,11 @@ export class Simulation {
       if (!z) return e?.gs && !e.gs.aufgehoben && !e.gs.br ? "Bereitstellungsraum ist noch nicht festgelegt" : "Kein Einsatzort";
       p = z;
       label = z.label;
+    } else if (ziel === "zo" && !e && this.pilotKt(fz)) {
+      // Überstellung: Ziel des aktuellen Halts
+      const z = this.pilotKt(fz)!;
+      p = z.ziel;
+      label = z.ziel.label;
     } else if (ziel === "zo") {
       const h = e?.kh ? store.get("hospitals", e.kh.hospitalId) : undefined;
       if (!h) return "Kein Zielkrankenhaus";
@@ -9805,7 +9952,10 @@ export class Simulation {
    */
   pilotBo(fz: SimFahrzeug): (LatLon & { label: string; br: boolean }) | null {
     const e = fz.einsatzId ? this.einsatz(fz.einsatzId) : undefined;
-    if (!e) return null;
+    if (!e) {
+      const kt = this.pilotKt(fz);
+      return kt ? { ...kt.ziel, label: kt.art === "ab" ? `Abholort ${kt.ziel.label}` : `Ziel ${kt.ziel.label}`, br: false } : null;
+    }
     const gs = e.gs && !e.gs.aufgehoben ? e.gs : null;
     if (gs && gs.ziel[fz.id] === "br") return gs.br ? { lat: gs.br.lat, lon: gs.br.lon, label: "Bereitstellungsraum", br: true } : null;
     // der Hubschrauber steht im Bereitstellungsraum (Team am Einsatzort bzw. beim Patienten)
@@ -9906,7 +10056,11 @@ export class Simulation {
     const e = fz.einsatzId ? this.einsatz(fz.einsatzId) : undefined;
     let z: LatLon | null = null;
     let ziel = "";
-    if (e && ["alarmWache", "alarmFunk", "alarmiert", "zumBO"].includes(fz.status) && e.adresse) {
+    const kt = e ? null : this.pilotKt(fz);
+    if (kt && ["alarmWache", "alarmFunk", "alarmiert", "zumBO", "zumZO"].includes(fz.status)) {
+      z = kt.ziel;
+      ziel = kt.ziel.label;
+    } else if (e && ["alarmWache", "alarmFunk", "alarmiert", "zumBO"].includes(fz.status) && e.adresse) {
       z = e.adresse;
       ziel = "Einsatzort";
     } else if (e?.kh && fz.status === "zumZO") {
