@@ -1,5 +1,19 @@
 # Änderungen
 
+## 0.116.0-beta.46 – Überstellungen als Formular, Pilot-SEK, eigene Titelleiste, Hochkant-Bildschirm
+- **KT-Hotline und Überstellung als Formular:** Alle Angaben stehen auf einen Blick (Anrufer, Patient, Abholort, Zielort, Zeit, Grund, Transport, Abrechnung, Rückrufnummer) und lassen sich in beliebiger Reihenfolge ausfüllen. Das **„?“** an jedem Feld stellt dem Anrufer die passende Frage. Was der Anrufer schon gesagt hat, steht als **Vorschlag** am Feld („Anrufer: Johann Hofer, 84 – übernehmen“); oben übernimmt ein Knopf alle Vorschläge auf einmal.
+- **Überstellung an einen echten Piloten:** Der Pilot wird alarmiert (Melder wie beim Notfall) und fliegt selbst: 9 quittieren, 2 Abflug, 3 am Abholort, 4 Patient an Bord, 5 am Ziel, 6 frei. Abholort und Ziel stehen in der Pilotenansicht, im Tablet, auf der Karte, im GTN/Flugplan und im H145-Tablet; das Protokoll des Auftrags zeigt jeden Schritt.
+- **Überstellung mit mehreren Fahrzeugen:** Zu RTW, RTW-C, SRTW und KTW lässt sich ein NEF als Notarzt-Begleitung dazu alarmieren. Freie NEF stehen in der Liste in einer eigenen Gruppe; ein NEF fährt nur als Begleitung, nie allein.
+- **Status 8 (Bereitschaft) für Piloten:** nur nach Status 1 oder 6, rein zur Anzeige (weiß) – alarmiert wird ganz normal.
+- **Eigene Titelleiste statt Vollbild:** Unter Windows sitzen Minimieren, Maximieren und Schließen rechts in der Kopfleiste, unter macOS die Ampelknöpfe links. Die Kopfleiste zieht das Fenster, Doppelklick maximiert. Das Hauptmenü öffnet maximiert statt im Vollbild (F11 schaltet weiter Vollbild).
+- **Hochkant gestellter Bildschirm (9:16):** neue Anordnungen „Ein Bildschirm hochkant 9:16“ (oben Abfrage und Masken, unten Listen, Karte und Funk) und „16:9 und hochkant 9:16“. Jedes Fenster ist für 9:8 geprüft (Full HD 1080 × 960, WQHD 1440 × 1280); die Abfrage zeigt schon ab dieser Breite Gespräch und Angaben nebeneinander.
+- **Bezirk Baden** gehört ganz zur Funkgruppe NÖ-05 (mit allen Dienststellen und Fahrzeugen dort).
+- **Tablet und Handy:** „Kein Transport“ (bleibt vor Ort, Revers, verstorben) wird ohne Rückfrage gemeldet, ohne Funkspruch.
+- **Neues Programmsymbol** im LeitWerk-Logo (Bildschirme, Tisch, Person); auch als Symbol im Browser-Reiter.
+- KI (Ollama) startet im Hintergrund ohne eigenes Fenster.
+- Test-Aufträge (KT/SEK) kommen immer als Anruf über die KT-Hotline.
+- X-Plane-Plugin 0.2.4: Befehl für Status 8.
+
 ## 0.116.0-beta.45 – Fehler melden als Ticket, Hubschrauber wünschen
 - **Fehler melden schickt ein Ticket** (Kopfleiste und Pilotenansicht): Beschreibung, Fehlerbericht, Protokoll der Sitzung (Log-Datei) und – wenn eingeschaltet – die Funk-Aufnahmen gehen direkt an das LeitWerk-Team, auf Wunsch mit Screenshots („Bilder anhängen …“). Danach steht das Ticket mit Nummer unter Mithelfen › Meine Tickets, dort kommen auch Stand und Antwort. Ohne Verbindung oder auf Wunsch weiter „Als Datei …“.
 - **Eingebundene Hubschrauber** im Fenster Einrichtung: je Simulator, was im Cockpit eingebaut ist (HPG H145 in MSFS 2024, Rotorsim EC135 in X-Plane 12) und was für jedes Flugzeug gilt (EFB-App, Plugin-Tablet, GTN) – mit „bei dir installiert“.

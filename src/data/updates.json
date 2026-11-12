@@ -1,5 +1,20 @@
 [
  {
+  "version": "0.116.0-beta.46",
+  "datum": "2026-11-12",
+  "titel": "Überstellungen als Formular, Pilot-SEK, eigene Titelleiste, Hochkant-Bildschirm",
+  "punkte": [
+   "KT-Hotline und Überstellung als Formular mit „?“ je Feld und Vorschlägen aus dem Gesagten",
+   "Überstellungen an echte Piloten: Alarm, Status 9–6, Abholort und Ziel im Cockpit",
+   "Überstellung mit NEF-Begleitung zu RTW, SRTW oder KTW",
+   "Status 8 für Piloten",
+   "Eigene Titelleiste statt Vollbild",
+   "Anordnungen für hochkant gestellte Bildschirme (9:16, je Fenster 9:8)",
+   "Bezirk Baden ganz in NÖ-05",
+   "Neues Programmsymbol"
+  ]
+ },
+ {
   "version": "0.116.0-beta.45",
   "datum": "2026-11-12",
   "titel": "Fehler melden als Ticket, Hubschrauber wünschen",
