@@ -36,7 +36,7 @@ try:
         A.goto("http://localhost:8923/?debug"); A.wait_for_timeout(2500)
         A.evaluate("async () => { await window.__lw.codesystemLaden(await (await fetch('/abf_test.json')).json()); }")
         A.evaluate(HILFE)
-        A.evaluate("() => { const s = T.s(); s.funkFestNach = 600; s.settings.rate = 0; s.start(); s.setTempo(1); }")
+        A.evaluate("() => { const s = T.s(); const d = new Date(s.state.zeit); d.setHours(10, 0, 0, 0); s.state.zeit = d.getTime(); s.funkFestNach = 600; s.settings.rate = 0; s.start(); s.setTempo(1); }")
         x = A.evaluate("() => T.einsatz()")
         print("   ", json.dumps(x, ensure_ascii=False))
         r = A.evaluate("(x) => { const s = T.s(); s.pilotUebernehmen(x.heli); return [s.alarmiere(x.e, [x.rtw, x.heli]), !!s.state.fahrzeuge[x.heli].pilot]; }", x)

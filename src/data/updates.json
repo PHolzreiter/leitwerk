@@ -1,5 +1,21 @@
 [
  {
+  "version": "0.116.0-beta.47",
+  "datum": "2026-11-12",
+  "titel": "Funk-Quittungen, Mehrfachtransport als Standard, Rückruf immer",
+  "punkte": [
+   "„LEO verstanden“ und andere Quittungen werden erkannt",
+   "Storno durch die Besatzung: kein zweiter „mitgehört“-Ruf",
+   "Weniger Funk: Transportmeldung nur ohne Buchung, Verzögerung erst ab 10 Minuten",
+   "Zurückrufen geht immer, auch ohne Nummer",
+   "KT blinken nur, wenn sie bald abzuholen sind; „sofort“ ohne Termin",
+   "„Zusätzlich mitnehmen“ als Standard mit Platzprüfung",
+   "Info-Zeile an die Fahrzeuge nachträglich änderbar",
+   "Karte: nur der Restweg, dünn und strichliert",
+   "Stornierte Fahrzeuge grau und unten, Besatzung beim Darüberfahren"
+  ]
+ },
+ {
   "version": "0.116.0-beta.46",
   "datum": "2026-11-12",
   "titel": "Überstellungen als Formular, Pilot-SEK, eigene Titelleiste, Hochkant-Bildschirm",

@@ -1,5 +1,22 @@
 # Änderungen
 
+## 0.116.0-beta.47 – Funk-Quittungen, Mehrfachtransport als Standard, Rückruf immer
+- **Funk:** „LEO verstanden“, „Ja, LEO verstanden“, „verstanden“ und ähnliche Bestätigungen werden erkannt – ohne „Funkspruch nicht verstanden“ und ohne „verstanden, kommen“ der Besatzung auf die Quittung.
+- **Storno durch die Besatzung:** Das NEF fragt einmal „frage LEO mitgehört“. Die Antwort darf frei sein („LEO verstanden, Storno fürs NEF Krems, Ende“); einen zweiten Ruf „Storno durch … mitgehört?“ gibt es nicht mehr.
+- **Weniger Funk:** Die Meldung „Patient übernommen, Transport ins …“ kommt nur noch, wenn das Krankenhaus noch nicht gebucht ist. Verzögerungen auf der Anfahrt werden erst ab 10 Minuten gefunkt.
+- **Spracherkennung:** Der Beispieltext für die Erkennung enthält keine Sätze mehr, aus denen sie Funksprüche der Leitstelle erfunden hat („verstanden, warten ab“).
+- **Zurückrufen geht immer** – im Telefon, in der Einsatzmaske und überall sonst, auch ohne eingetragene Rückrufnummer. Die Einstellung „Rückruf auch ohne aufgenommene Nummer“ entfällt.
+- **Anrufer** fragen nur noch selten „Wie lange dauert es?“ (etwa jeder fünfte, eher die besorgten).
+- **KT/SEK:** In der Einsatzliste blinken nur Fahrten, die sofort oder in der nächsten Stunde abzuholen sind. Fahrten mit „sofort“ lassen sich ohne Termin oder Abholzeit anlegen und disponieren.
+- **Mehrfachtransport:** Hat das Fahrzeug noch eine Fahrt, ist „Zusätzlich mitnehmen“ vorausgewählt. Ist kein Platz (Liegeplatz belegt, Infektion, Blaulicht, Notarzt), ist der Knopf ausgegraut, der Grund steht beim Darüberfahren und beim Antippen, und „Als nächste Fahrt“ ist gewählt.
+- **Überstellung:** Diagnose und Transportgrund stehen automatisch im Hinweis für die Besatzung.
+- **Abgemeldete und außer Dienst stehende Fahrzeuge** werden für KT und Überstellungen nicht mehr vorgeschlagen.
+- **Info an die Fahrzeuge:** Die ganze Zeile („83w B+ A~ // …“) lässt sich in der Einsatzmaske nachträglich ändern; danach schreibt die Abfrage nicht mehr hinein.
+- **Karte:** Bei einem gewählten Fahrzeug bzw. Einsatz steht nur noch der Weg, der noch zu fahren ist – dünn und strichliert. Die schon geflogene Strecke von Spieler-Hubschraubern wird nicht mehr gezeigt.
+- **Alarmierte Fahrzeuge:** Stornierte bzw. freigegebene Fahrzeuge sind grau hinterlegt und stehen ganz unten (Status bleibt sichtbar). Die Besatzung erscheint beim Darüberfahren über den Funkrufnamen – auch in der KT- und SEK-Übersicht.
+- **Abfrage:** Die gerade gesprochene Zeile des Anrufers bricht in der Blase um. Im SEK-Formular ist die Trefferliste der Ortssuche wieder richtig dargestellt.
+- Fester Funkspruch ohne doppeltes „kommen“.
+
 ## 0.116.0-beta.46 – Überstellungen als Formular, Pilot-SEK, eigene Titelleiste, Hochkant-Bildschirm
 - **KT-Hotline und Überstellung als Formular:** Alle Angaben stehen auf einen Blick (Anrufer, Patient, Abholort, Zielort, Zeit, Grund, Transport, Abrechnung, Rückrufnummer) und lassen sich in beliebiger Reihenfolge ausfüllen. Das **„?“** an jedem Feld stellt dem Anrufer die passende Frage. Was der Anrufer schon gesagt hat, steht als **Vorschlag** am Feld („Anrufer: Johann Hofer, 84 – übernehmen“); oben übernimmt ein Knopf alle Vorschläge auf einmal.
 - **Überstellung an einen echten Piloten:** Der Pilot wird alarmiert (Melder wie beim Notfall) und fliegt selbst: 9 quittieren, 2 Abflug, 3 am Abholort, 4 Patient an Bord, 5 am Ziel, 6 frei. Abholort und Ziel stehen in der Pilotenansicht, im Tablet, auf der Karte, im GTN/Flugplan und im H145-Tablet; das Protokoll des Auftrags zeigt jeden Schritt.
