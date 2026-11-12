@@ -439,7 +439,7 @@ function buchenZeichnen(s) {
     if (fokus) suchFeld.focus();
   } else suchFeld = null;
   box.querySelectorAll("[data-seite]").forEach((x) => x.addEventListener("click", () => { vib(15); senden("bu:seite:" + x.dataset.seite); }));
-  box.querySelectorAll("[data-kein]").forEach((x) => x.addEventListener("click", () => fragen(x.dataset.t, "Kein Transport – so an die Leitstelle melden?", "Melden", () => senden("bu:kein:" + x.dataset.kein))));
+  box.querySelectorAll("[data-kein]").forEach((x) => x.addEventListener("click", () => senden("bu:kein:" + x.dataset.kein)));
   box.querySelectorAll("[data-schritt]").forEach((x) => x.addEventListener("click", () => { vib(10); senden("bu:schritt:" + x.dataset.schritt); }));
   box.querySelectorAll("[data-sym]").forEach((x) => x.addEventListener("click", () => { vib(15); suchFeld?.blur(); senden("bu:sym:" + x.dataset.sym); }));
   box.querySelectorAll("[data-alter]").forEach((x) => x.addEventListener("click", () => { vib(15); senden("bu:alter:" + x.dataset.alter); }));

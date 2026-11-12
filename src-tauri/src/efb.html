@@ -676,7 +676,7 @@
       el[i].onclick = function () { if (this.parentNode.className === "dd") { suchOffen = false; if (suchFeld) suchFeld.blur(); } senden("bu:" + this.getAttribute("data-bu")); };
     }
     el = bi.querySelectorAll("[data-kein]");
-    for (i = 0; i < el.length; i++) el[i].onclick = function () { var id = this.getAttribute("data-kein"); frageOffen = { t: this.getAttribute("data-t") + " – so an die Leitstelle melden?", ja: "Melden", f: function () { senden("bu:kein:" + id); } }; buchenZeichnen(); };
+    for (i = 0; i < el.length; i++) el[i].onclick = function () { senden("bu:kein:" + this.getAttribute("data-kein")); };
     el = bi.querySelectorAll("[data-kh]");
     for (i = 0; i < el.length; i++) el[i].onclick = function () { khWahl = this.getAttribute("data-kh"); buchenZeichnen(); };
     if ($("selbstB")) $("selbstB").onclick = function () { selbstBuchen = true; buchenZeichnen(); };
