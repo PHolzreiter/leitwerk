@@ -34,3 +34,4 @@ src-tauri/xplane-plugin/
 tools/xplane-plugin/build/
 xpbau/
 relay/.wrangler/
+tools/tests/browser/x/
