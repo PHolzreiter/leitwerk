@@ -1402,6 +1402,16 @@ export function funkRufInhalt(text: string, namen: string[]): string {
 export type Sprechgruppe = "gs" | "gs2" | null;
 export const SPRECHGRUPPEN: Sprechgruppe[] = [null, "gs", "gs2"];
 
+/** Dauer so, wie man sie am Funk sagt: „wenige Minuten“, „10 Minuten“, „1 Stunde 15 Minuten“ (statt „354 Minuten“) */
+export function dauerGesprochen(min: number): string {
+  if (min < 5) return "wenige Minuten";
+  if (min < 60) return `${Math.round(min / 5) * 5} Minuten`;
+  const v = Math.round(min / 15) * 15;
+  const h = Math.floor(v / 60);
+  const m = v % 60;
+  return `${h} ${h === 1 ? "Stunde" : "Stunden"}${m ? ` ${m} Minuten` : ""}`;
+}
+
 /** altes Rendezvous (RTW fährt ab 15 min NEF-Entfernung gleich los) – abgeschaltet */
 const rendezvousAlt = false as boolean;
 
@@ -2460,7 +2470,12 @@ export class Simulation {
         this.setStatus(fz, "amBO");
         if (!e.adresse) return;
         const d = distanceM(e.adresse, e.wahr);
-        if (d > this.settings.verortungRadius) {
+        // Stimmt die Adresse (Anrufer hat sie richtig genannt) und liegt der Patient nur ein Stück weiter (Hinterhaus,
+        // großes Gelände, Nachbarhaus), findet die Besatzung ihn nach kurzer Suche – „bitte Adresse prüfen“ nur, wenn
+        // die Adresse wirklich falsch ist (Paul 12.11.2026: kam viel zu oft)
+        const nahGenug = d <= this.settings.verortungRadius || (!e.meldung?.adresseFalsch && d <= Math.max(600, this.settings.verortungRadius * 2.4));
+        if (nahGenug && d > this.settings.verortungRadius) this.log(e, `${fz.funkrufname}: Patient nach kurzer Suche gefunden (ca. ${Math.round(d / 10) * 10} m entfernt)`);
+        if (!nahGenug) {
           fz.phase = "suche";
           fz.phaseEnde = null;
           if (!e.adressePruefen) {
@@ -2470,7 +2485,7 @@ export class Simulation {
           }
         } else {
           fz.phase = "vorOrt";
-          fz.phaseEnde = t + rnd(10, 22) * MIN;
+          fz.phaseEnde = t + rnd(10, 22) * MIN + (d > this.settings.verortungRadius ? rnd(1, 3) * MIN : 0);
           fz.vorOrtSeit = t;
           fz.zwischenGemeldet = false;
           // Großschaden: die Einsatzleitung teilt die Patienten zu
@@ -5361,26 +5376,6 @@ export class Simulation {
     this.funkUhrAn();
   }
 
-  /**
-   * Die Leitstelle (Knopf, nicht gesprochen) hat dem Piloten etwas durchzusagen: „C2 von LEO, kommen“ – meldet er sich,
-   * kommt die Durchsage. Ohne Antwort nach drei Rufen bleibt es beim Eintrag im Einsatz (die Durchsage gilt trotzdem).
-   */
-  private leoRuftPilot(heli: SimFahrzeug, e: Einsatz | null, text: string): void {
-    const offen = this.state.funkGespraeche?.find((g) => g.mensch && g.status !== "ende" && g.fzId === heli.id && !g.an);
-    const g = offen ?? this.neuesGespraech(heli, e, "mensch");
-    g.mensch = true;
-    g.an = null;
-    g.fuehrer = { ...this.calltaker() };
-    const kv = this.kanalVon(e);
-    if (kv) g.kanal = kv;
-    else delete g.kanal;
-    g.rtwWill = { text, versuche: 1 };
-    g.ablauf = [{ von: "LEO", text: `${this.rufname(heli)} von LEO, kommen` }];
-    g.echtNaechster = Date.now();
-    g.echtLetzt = Date.now();
-    this.funkUhrAn();
-  }
-
   /** Warum die Besatzung den Notarzt storniert (aus der Lage, nicht fest „stabil“) */
   private stornoGrund(e: Einsatz): string {
     const p = e.wahr.lage?.patienten[0];
@@ -7882,25 +7877,18 @@ export class Simulation {
   }
 
   /** Storno an ein Fahrzeug: es rückt sofort ein, die Durchsage geht über Funk, sobald der Kanal frei ist */
+  /**
+   * Storno-Knopf (Paul 12.11.2026): wie eine Nachricht aufs Diensthandy – das Fahrzeug wird sofort frei (Frei Wache,
+   * wenn es an der Dienststelle steht, sonst Frei Funk und Rückfahrt) und meldet sich NICHT am Funk. Ein Storno über
+   * Funk („Storno für euch“) quittiert die Besatzung dagegen mit „Storno verstanden“ (funkVerstehen).
+   */
   storno(fzId: string): void {
     const fz = this.state.fahrzeuge[fzId];
     if (!fz?.einsatzId) return;
     const e = this.einsatz(fz.einsatzId) ?? null;
-    if (e) this.log(e, `Storno an ${fz.funkrufname}`);
-    const durchsage = `Hier LEO, Storno für euren Einsatz${e ? ` ${e.nummer}` : ""}, kommen`;
-    // Hubschrauber eines Piloten: LEO ruft ihn, die Durchsage kommt erst, wenn er sich meldet (antworten muss er selbst)
-    if (fz.pilot) {
-      this.leoRuftPilot(fz, e, durchsage);
-      this.freigeben(fz);
-      this.emit();
-      return;
-    }
-    const offen = this.leoGespraech(fz.id);
-    if (offen && offen.status === "offen" && !offen.ausstehend) {
-      this.spruch(offen, "LEO", durchsage, this.calltaker().name);
-      offen.leoRuf = { text: "", nachricht: durchsage };
-      this.ausstehendSetzen(offen, { von: offen.funkname, art: "antwort", fest: `Hier ${offen.funkname}, Storno verstanden, rücken ein, kommen`, frage: durchsage });
-    } else this.leoRuftAn(fz, `${this.rufname(fz)} von LEO, kommen`, durchsage);
+    if (e) this.log(e, `Storno an ${fz.funkrufname} (Diensthandy)`);
+    // ein laufender Ruf von LEO an dieses Fahrzeug wird hinfällig
+    for (const g of this.state.funkGespraeche ?? []) if (g.fzId === fz.id && g.status === "leoRuft") this.funkSchliessen(g);
     this.freigeben(fz);
     this.emit();
   }
@@ -8819,10 +8807,11 @@ export class Simulation {
     this.ktAusPlan(k);
     k.status = "offen";
     this.ktLog(k, `${fz.funkrufname} meldet sich frei (zu früh) – Transport undisponiert`);
-    // weitere Transporte des Fahrzeugs: gleich weiter, sonst ist es frei
+    // weitere Transporte des Fahrzeugs: gleich weiter, sonst frei – es steht am Abholort, also Frei Funk und zurück zur Wache
     if (fz.kt?.aktiv && fz.phase === "ktHalt") this.ktNaechsterHalt(fz);
+    else if (!fz.kt && !["rueckfahrt", "routing"].includes(fz.phase)) this.freigeben(fz);
     this.emit();
-    return fz.kt ? "verstanden, fahren weiter zum nächsten Transport" : "verstanden, sind frei und fahren zur Dienststelle";
+    return fz.kt ? "verstanden, fahren weiter zum nächsten Transport" : "verstanden, frei über Funk, fahren zurück zur Dienststelle";
   }
 
   /** Vorgemerktes Fahrzeug losschicken (ein begleitendes NEF fährt mit los) */
@@ -9074,9 +9063,9 @@ export class Simulation {
           const bereit = k.fz === fz.id && !k.d.sofort ? (k.d.abholung ?? (k.d.termin ? k.d.termin - 45 * MIN : null)) : null;
           if (bereit !== null && bereit - t > 30 * MIN) {
             plan.fruehFrage = k.id;
-            const min = Math.round((bereit - t) / MIN);
-            this.ktLog(k, `${fz.funkrufname} am Abholort – ${min} Minuten zu früh, fragt: warten oder frei melden`);
-            this.fzRuft(fz, null, "info", `sind am Abholort für ${k.d.patient.name || k.nummer}, Patient ist erst um ${hhmm(bereit)} fertig, wir sind ${min} Minuten zu früh, sollen wir warten oder uns frei melden`);
+            const zuFrueh = dauerGesprochen(Math.round((bereit - t) / MIN));
+            this.ktLog(k, `${fz.funkrufname} am Abholort – ${zuFrueh} zu früh, fragt: warten oder frei melden`);
+            this.fzRuft(fz, null, "info", `sind am Abholort für ${k.d.patient.name || k.nummer}, Patient ist erst um ${hhmm(bereit)} fertig, wir sind ${zuFrueh} zu früh, sollen wir warten oder uns frei melden`);
           }
           const heim = !k.d.von?.khId;
           const min = sek
