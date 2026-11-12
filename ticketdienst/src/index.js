@@ -14,7 +14,7 @@
  */
 import { DurableObject } from "cloudflare:workers";
 
-export const ARTEN = ["dienststelle", "fahrzeug", "poi", "krankenhaus", "vorschlag", "hilfe", "idee"];
+export const ARTEN = ["dienststelle", "fahrzeug", "poi", "krankenhaus", "vorschlag", "hilfe", "idee", "hubschrauber", "fehler"];
 export const STATUS = ["eingegangen", "in_arbeit", "rueckfrage", "eingebaut", "erledigt", "abgelehnt"];
 export const GRENZEN = {
   titel: 200,
@@ -27,6 +27,15 @@ export const GRENZEN = {
   gesamtBytes: 5_000_000,
   proStunde: 20,
 };
+/** Fehlerberichte bringen Bericht, Protokoll, Funk-Aufnahmen und Bilder mit – dafür größere Grenzen */
+export const GRENZEN_FEHLER = { anhaenge: 16, dateiBytes: 3_000_000, gesamtBytes: 14_000_000 };
+/** Textdateien (als Text) und Bilder/Aufnahmen (als Base64) */
+export const TEXT_ENDUNG = /\.(txt|csv|md|jsonl|json|log)$/i;
+export const BINAER_ENDUNG = /\.(png|jpe?g|webp|wav)$/i;
+export const MIME = { png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", webp: "image/webp", wav: "audio/wav" };
+/** Größe der Daten hinter einem Base64-Text */
+const b64Bytes = (s) => Math.floor((s.replace(/=+$/, "").length * 3) / 4);
+
 /** SQLite im Durable Object speichert höchstens 2 MB je Wert – Anhänge werden in Teile zerlegt */
 const TEIL = 400_000; // Zeichen – auch bei 4 Byte je Zeichen unter 2 MB
 
@@ -90,7 +99,7 @@ export default {
       if (url.pathname === "/api/fortschritt" && request.method === "GET") return json({ punkte: await store.fortschritt(false) });
       if (url.pathname === "/api/tickets" && request.method === "POST") {
         const laenge = Number(request.headers.get("content-length") ?? 0);
-        if (laenge > 8_000_000) return json({ fehler: "Ticket zu groß" }, 413);
+        if (laenge > 20_000_000) return json({ fehler: "Ticket zu groß" }, 413);
         let body;
         try {
           body = await request.json();
@@ -195,20 +204,23 @@ export class TicketStore extends DurableObject {
     const importCsv = text(b.importCsv, GRENZEN.importCsv);
     // Anhänge: nur .txt und .csv, als Text
     const anh = Array.isArray(b.anhaenge) ? b.anhaenge : [];
-    if (anh.length > GRENZEN.anhaenge) return { fehler: `Höchstens ${GRENZEN.anhaenge} Anhänge` };
+    const g = art === "fehler" ? GRENZEN_FEHLER : GRENZEN;
+    if (anh.length > g.anhaenge) return { fehler: `Höchstens ${g.anhaenge} Anhänge` };
     let gesamt = 0;
     const dateien = [];
     for (const a of anh) {
       const name = text(a?.name, 120).replace(/[\\/:*?"<>|]/g, "_");
-      if (!/\.(txt|csv)$/i.test(name)) return { fehler: `Nur .txt- und .csv-Dateien erlaubt (${name || "ohne Namen"})` };
+      const binaer = BINAER_ENDUNG.test(name);
+      if (!binaer && !TEXT_ENDUNG.test(name)) return { fehler: `Nur Text (.txt, .csv, .md, .log), Bilder (.png, .jpg) und .wav erlaubt (${name || "ohne Namen"})` };
       const inhalt = typeof a?.inhalt === "string" ? a.inhalt : "";
-      if (inhalt.includes("\u0000")) return { fehler: `${name} ist keine Textdatei` };
-      const bytes = new TextEncoder().encode(inhalt).length;
-      if (bytes > GRENZEN.dateiBytes) return { fehler: `${name} ist größer als 2 MB` };
+      if (binaer && !/^[A-Za-z0-9+/]*={0,2}$/.test(inhalt)) return { fehler: `${name}: ungültige Daten` };
+      if (!binaer && inhalt.includes("\u0000")) return { fehler: `${name} ist keine Textdatei` };
+      const bytes = binaer ? b64Bytes(inhalt) : new TextEncoder().encode(inhalt).length;
+      if (bytes > g.dateiBytes) return { fehler: `${name} ist größer als ${g.dateiBytes / 1_000_000} MB` };
       gesamt += bytes;
       dateien.push({ name, inhalt, bytes });
     }
-    if (gesamt > GRENZEN.gesamtBytes) return { fehler: "Anhänge zusammen größer als 5 MB" };
+    if (gesamt > g.gesamtBytes) return { fehler: `Anhänge zusammen größer als ${g.gesamtBytes / 1_000_000} MB` };
     const geheim = [...crypto.getRandomValues(new Uint8Array(16))].map((x) => x.toString(16).padStart(2, "0")).join("");
     const nr = this.sql
       .exec(

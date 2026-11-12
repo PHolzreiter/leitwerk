@@ -141,11 +141,25 @@ export class PilotLogik extends DCLogic {
       ckPunkt: (D.cockpit[0] && D.cockpit[0].f) || "var(--dim)",
       // Fehler melden
       fehlerCls: "pv-ik" + (pp === "fehler" ? " offen" : ""),
-      fehlerKlick: () => { if (pp === "fehler") this.schubladeZu(); else { clearTimeout(this.pt); this.setState({ pp: "fehler", ppZuIst: false, wx: false, fehlerDatei: "" }); } },
-      fehlerNeu: !S.fehlerDatei, fehlerOk: !!S.fehlerDatei, fehlerDatei: S.fehlerDatei || "",
+      fehlerKlick: () => { if (pp === "fehler") this.schubladeZu(); else { clearTimeout(this.pt); this.setState({ pp: "fehler", ppZuIst: false, wx: false, fehlerDatei: "", fehlerNr: 0 }); } },
+      fehlerNeu: !S.fehlerDatei && !S.fehlerNr, fehlerOk: !!S.fehlerDatei, fehlerDatei: S.fehlerDatei || "",
+      fehlerTicket: !!S.fehlerNr, fehlerNr: S.fehlerNr ? "#" + S.fehlerNr : "",
+      fehlerFehl: !!S.fehlerFehl, fehlerFehlText: (S.fehlerFehl || "") + " – du kannst den Bericht stattdessen als Datei speichern.",
+      fehlerBilderText: (S.fehlerBilder || []).length ? "Bilder ändern …" : "Bilder anhängen …",
+      fehlerBilderDa: !!(S.fehlerBilder || []).length, fehlerBilderInfo: (S.fehlerBilder || []).map((b) => b.name).join(", "),
+      fehlerBilder: async () => { const l = await A.bilderWaehlen(); this.setState({ fehlerBilder: l }); },
+      fehlerSendenCls: "kn sm prim" + (S.fehlerLaeuft ? " aus" : ""), fehlerSendenText: S.fehlerLaeuft ? "Sende …" : "Senden",
+      fehlerSenden: async () => {
+        if (this.state.fehlerLaeuft) return;
+        const text = this.state.fehlerText || "";
+        if (!text.trim()) return this.setState({ fehlerFehl: "Bitte kurz beschreiben, was passiert ist" });
+        this.setState({ fehlerLaeuft: true, fehlerFehl: "" });
+        const r = await A.fehlerSenden(text, this.state.fehlerBilder || []);
+        this.setState(r.nr ? { fehlerLaeuft: false, fehlerNr: r.nr, fehlerText: "", fehlerBilder: [] } : { fehlerLaeuft: false, fehlerFehl: "Nicht gesendet: " + (r.fehler || "unbekannt") });
+      },
       fehlerText: S.fehlerText || "", fehlerTippen: (ev) => { this.state.fehlerText = ev.target.value; },
-      fehlerSpeichern: async () => { const d = await A.fehlerSpeichern(this.state.fehlerText || ""); if (d) this.setState({ fehlerDatei: d, fehlerText: "" }); },
-      fehlerNochmal: () => this.setState({ fehlerDatei: "", fehlerText: "" }),
+      fehlerSpeichern: async () => { const d = await A.fehlerSpeichern(this.state.fehlerText || ""); if (d) this.setState({ fehlerDatei: d, fehlerText: "", fehlerFehl: "" }); },
+      fehlerNochmal: () => this.setState({ fehlerDatei: "", fehlerNr: 0, fehlerText: "", fehlerBilder: [], fehlerFehl: "" }),
       fehlerIn: D.fehlerIn,
       pop: { update: pp === "update", fehler: pp === "fehler", spiel: pp === "spiel", cockpit: pp === "cockpit" }, ppZu: S.ppZuIst ? " zu" : "", ppZuKlick: () => this.schubladeZu(),
       ppR: (() => { const r = (n) => (pp === n ? " reiter" + (S.ppZuIst ? " schliesst" : "") : ""); return { update: r("update"), fehler: r("fehler"), spiel: r("spiel"), cockpit: r("cockpit") }; })(),

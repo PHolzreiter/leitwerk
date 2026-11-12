@@ -59,6 +59,21 @@ await fehlt({ ...ticket, anhaenge: [{ name: "gross.csv", inhalt: "y".repeat(GREN
 await fehlt({ ...ticket, anhaenge: Array.from({ length: 6 }, (_, i) => ({ name: `d${i}.txt`, inhalt: "x" })) }, "mehr als 5 Anhänge");
 await fehlt({ ...ticket, anhaenge: [1, 2, 3].map((i) => ({ name: `d${i}.txt`, inhalt: "z".repeat(1_900_000) })) }, "zusammen über 5 MB");
 
+// Hubschrauber-Wunsch mit Bild, Fehlerbericht mit größeren Anhängen
+const png = Buffer.from([0x89, 0x50, 0x4e, 0x47, 1, 2, 3, 250, 0]).toString("base64");
+r = await oeffentlich.fetch(anfrage("/api/tickets", { method: "POST", body: { art: "hubschrauber", titel: "Hubschrauber-Wunsch: Test", daten: { simulator: "MSFS 2024" }, anhaenge: [{ name: "bild.png", inhalt: png }] }, ip: "7.7.7.7" }), env);
+j = await r.json();
+const hubNr = j.nr;
+check(r.status === 200 && j.nr > 1, `Hubschrauber-Wunsch mit Bild angelegt (#${j.nr})`);
+await fehlt({ art: "hubschrauber", titel: "x", anhaenge: [{ name: "bild.png", inhalt: "kein base64!" }] }, "Bild mit ungültigen Daten");
+const gross = "a".repeat(2_500_000);
+r = await oeffentlich.fetch(anfrage("/api/tickets", { method: "POST", body: { art: "fehler", titel: "Fehler: Test", text: "geht nicht", anhaenge: [{ name: "fehlerbericht.md", inhalt: gross }, { name: "protokoll.jsonl", inhalt: gross }, { name: "funk.wav", inhalt: png }] }, ip: "7.7.7.8" }), env);
+j = await r.json();
+const fehlerNr = j.nr;
+check(r.status === 200 && j.nr > 1, `Fehler-Ticket mit 2,5-MB-Anhängen angelegt (#${j.nr})`);
+await fehlt({ art: "vorschlag", titel: "x", anhaenge: [{ name: "gross.md", inhalt: gross }] }, "2,5 MB außerhalb von Fehler-Tickets");
+await fehlt({ art: "fehler", titel: "x", anhaenge: Array.from({ length: 6 }, (_, i) => ({ name: `p${i}.log`, inhalt: gross })) }, "Fehler-Ticket über 14 MB");
+
 // Grenze je Stunde
 let letzter = 0;
 for (let i = 0; i < GRENZEN.proStunde + 2; i++) letzter = (await oeffentlich.fetch(anfrage("/api/tickets", { method: "POST", body: { art: "vorschlag", titel: `T${i}` }, ip: "5.5.5.5" }), env)).status;
@@ -88,6 +103,11 @@ check(j.daten?.name === "Freibad Testort" && j.import_csv.includes("freibad") &&
 r = await mitPw("/api/tickets/1/anhang?name=notiz.txt");
 const t = await r.text();
 check(t.length === 1_500_000, `großer Anhang wieder zusammengesetzt (${t.length} Zeichen)`);
+r = await mitPw(`/api/tickets/${hubNr}/anhang?name=bild.png&ansehen=1`);
+const bin = new Uint8Array(await r.arrayBuffer());
+check(r.headers.get("content-type") === "image/png" && bin.length === 9 && bin[7] === 250 && /inline/.test(r.headers.get("content-disposition")), "Bild als echte Datei (Vorschau)");
+r = await mitPw(`/api/tickets/${fehlerNr}/anhang?name=fehlerbericht.md`);
+check((await r.text()).length === 2_500_000, "Fehlerbericht wieder zusammengesetzt");
 r = await mitPw("/api/tickets/1", { method: "PATCH", body: { status: "eingebaut", version: "0.67.0", antwort: "Danke, ist drin!" } });
 check((await r.json()).ok, "Stand setzen");
 r = await oeffentlich.fetch(anfrage("/api/status", { method: "POST", body: { tickets: [{ nr: eins.nr, geheim: eins.geheim }] } }), env);

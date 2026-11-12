@@ -180,9 +180,96 @@ pub fn efb_app(community: Option<String>, aktion: String) -> EfbStand {
     efb_app_aktion(ziel(community), &aktion)
 }
 
+// ---------------------------------------------------------------- Hubschrauber-Wunsch: Angaben aus dem Ordner
+
+#[derive(Serialize, Clone, Debug, Default)]
+pub struct FlugzeugInfo {
+    /// "MSFS" | "X-Plane" | "" (nicht erkannt)
+    pub simulator: String,
+    /// Paket- bzw. Ordnername
+    pub paket: String,
+    pub name: String,
+    pub hersteller: String,
+    pub version: String,
+    /// was gelesen wurde (manifest.json bzw. Name der .acf)
+    pub quelle: String,
+}
+
+fn acf_wert(text: &str, schluessel: &str) -> String {
+    text.lines()
+        .find_map(|z| z.strip_prefix("P ").and_then(|r| r.strip_prefix(schluessel)).and_then(|r| r.strip_prefix(' ')))
+        .map(|v| v.trim().to_string())
+        .unwrap_or_default()
+}
+
+/// Liest Name, Hersteller und Version eines Flugzeugs aus seinem Ordner: MSFS-Paket (manifest.json) oder
+/// X-Plane-Flugzeug (.acf). Es wird nur gelesen; mitgeschickt werden nur diese Angaben.
+pub fn flugzeug_info(ordner: &Path) -> Result<FlugzeugInfo, String> {
+    if !ordner.is_dir() {
+        return Err("Ordner nicht gefunden".into());
+    }
+    let paket = ordner.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default();
+    let m = ordner.join("manifest.json");
+    if m.is_file() {
+        let t = fs::read_to_string(&m).map_err(|e| format!("manifest.json: {e}"))?;
+        let v: serde_json::Value = serde_json::from_str(t.trim_start_matches('\u{feff}')).map_err(|e| format!("manifest.json: {e}"))?;
+        let s = |k: &str| v.get(k).and_then(|x| x.as_str()).unwrap_or("").trim().to_string();
+        let hersteller = [s("manufacturer"), s("creator")].into_iter().filter(|x| !x.is_empty()).collect::<Vec<_>>().join(" / ");
+        return Ok(FlugzeugInfo { simulator: "MSFS".into(), paket, name: s("title"), hersteller, version: s("package_version"), quelle: "manifest.json".into() });
+    }
+    let mut acfs: Vec<PathBuf> = fs::read_dir(ordner)
+        .map_err(|e| e.to_string())?
+        .flatten()
+        .map(|e| e.path())
+        .filter(|p| p.extension().map(|x| x.eq_ignore_ascii_case("acf")).unwrap_or(false))
+        .collect();
+    acfs.sort();
+    if let Some(acf) = acfs.first() {
+        let b = fs::read(acf).map_err(|e| e.to_string())?;
+        let t = String::from_utf8_lossy(&b[..b.len().min(4_000_000)]).to_string();
+        let mut name = acf_wert(&t, "acf/_name");
+        if name.is_empty() {
+            name = acf_wert(&t, "acf/_descrip");
+        }
+        let hersteller = [acf_wert(&t, "acf/_studio"), acf_wert(&t, "acf/_author")].into_iter().filter(|x| !x.is_empty()).collect::<Vec<_>>().join(" / ");
+        return Ok(FlugzeugInfo {
+            simulator: "X-Plane".into(),
+            paket,
+            name,
+            hersteller,
+            version: acf_wert(&t, "acf/_version"),
+            quelle: acf.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default(),
+        });
+    }
+    Err("Weder manifest.json (MSFS-Paket) noch .acf-Datei (X-Plane-Flugzeug) in diesem Ordner".into())
+}
+
+/// Hubschrauber-Wunsch: Angaben aus dem gewählten Ordner lesen
+#[tauri::command]
+pub fn flugzeug_lesen(ordner: String) -> Result<FlugzeugInfo, String> {
+    flugzeug_info(Path::new(&ordner))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn flugzeug_aus_ordner() {
+        let d = std::env::temp_dir().join(format!("lw-fz-test-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&d);
+        let m = d.join("hpg-airbus-h145");
+        fs::create_dir_all(&m).unwrap();
+        fs::write(m.join("manifest.json"), r#"{"title":"Airbus H145","creator":"HPG","manufacturer":"Airbus","package_version":"1.4.2"}"#).unwrap();
+        let i = flugzeug_info(&m).unwrap();
+        assert_eq!((i.simulator.as_str(), i.paket.as_str(), i.name.as_str(), i.hersteller.as_str(), i.version.as_str()), ("MSFS", "hpg-airbus-h145", "Airbus H145", "Airbus / HPG", "1.4.2"));
+        let x = d.join("EC 135 V5");
+        fs::create_dir_all(&x).unwrap();
+        fs::write(x.join("ec135.acf"), "I\n1200 version\nACF\nP acf/_author Rotorsim\nP acf/_name EC135 V5\nP acf/_studio Rotorsim Team\n").unwrap();
+        let i = flugzeug_info(&x).unwrap();
+        assert_eq!((i.simulator.as_str(), i.name.as_str(), i.hersteller.as_str(), i.quelle.as_str()), ("X-Plane", "EC135 V5", "Rotorsim Team / Rotorsim", "ec135.acf"));
+        assert!(flugzeug_info(&d).is_err());
+        let _ = fs::remove_dir_all(&d);
+    }
     #[test]
     fn version() {
         assert_eq!(version_aus_js("  var APP_NAME = 'x';\n  var VERSION = '0.4.0';\n"), "0.4.0");

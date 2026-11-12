@@ -15,7 +15,8 @@ import { spielmenueEinstellungen, spielmenueEscEinrichten, spielmenueOeffnen } f
 import { store } from "../../data/store";
 import { mp } from "../../net/mehrspieler";
 import { sim } from "../../sim/engine";
-import { fehlerBerichtSpeichern } from "../fehlerMelden";
+import { bilderWaehlen, fehlerBerichtSpeichern, fehlerTicketSenden } from "../fehlerMelden";
+import { sprachPrefs } from "../sprache";
 import { ensureCodes } from "../codesPrompt";
 import { el, esc, toast } from "../dom";
 import { setzeEditorDeps } from "../panels/karte";
@@ -188,6 +189,11 @@ export function steuerleisteBauen(kopf: HTMLElement): void {
   let speichernOffen = false;
   let fehlerText = "";
   let fehlerDatei = "";
+  /** Fehler-Ticket: Nummer nach dem Senden, Bilder, läuft, Fehlertext */
+  let fehlerNr = 0;
+  let fehlerBilder: { name: string; inhalt: string }[] = [];
+  let fehlerLaeuft = false;
+  let fehlerFehl = "";
   const ankerVon = (k: Lade) => q(`[data-lade="${k}"]`);
   const knopfVon = (k: Lade) => q(`[data-knopf="${k}"]`);
   const popVon = () => (offen ? q(`[data-lade="${offen}"] > .kl-hb > .kl-pop`) : null);
@@ -336,7 +342,10 @@ export function steuerleisteBauen(kopf: HTMLElement): void {
     window.clearTimeout(nachTimer);
     offen = k;
     if (k === "anordnung") speichernOffen = false;
-    if (k === "fehler" && fehlerDatei) fehlerDatei = "";
+    if (k === "fehler" && (fehlerDatei || fehlerNr)) {
+      fehlerDatei = "";
+      fehlerNr = 0;
+    }
     const hb = el("div", { class: `kl-hb ${anker.classList.contains("li") ? "li" : "re"}` });
     const pop = el("div", { class: `kl-pop ${LADE_CLS[k]}`.trim(), role: "dialog" });
     pop.dataset.pop = k;
@@ -403,9 +412,12 @@ export function steuerleisteBauen(kopf: HTMLElement): void {
     knopf?.setAttribute("aria-expanded", "false");
     if (offen === k) offen = null;
     schliesst = false;
-    if (k === "fehler" && fehlerDatei) {
+    if (k === "fehler" && (fehlerDatei || fehlerNr)) {
       fehlerDatei = "";
+      fehlerNr = 0;
       fehlerText = "";
+      fehlerBilder = [];
+      fehlerFehl = "";
     }
   }
 
@@ -618,7 +630,10 @@ export function steuerleisteBauen(kopf: HTMLElement): void {
   }
 
   function fehlerHtml(): string {
-    const kopfZ = `<div class="kl-wk kl-z"><span class="kl-wsym">${ic(IC.kaefer, "ic")}</span><div><div class="kl-wt">Fehler melden</div><div class="kl-ws">Speichert eine Datei für den Entwickler – verschickt wird nichts.</div></div></div>`;
+    const kopfZ = `<div class="kl-wk kl-z"><span class="kl-wsym">${ic(IC.kaefer, "ic")}</span><div><div class="kl-wt">Fehler melden</div><div class="kl-ws">Geht als Ticket an das LeitWerk-Team – mit Bericht und Protokoll.</div></div></div>`;
+    if (fehlerNr)
+      return `${kopfZ}<div class="kl-fok kl-z" style="--d:1">${ic(IC.haken, "ic")}<div><b>Ticket #${fehlerNr} gesendet</b><span>Danke! Stand und Antwort siehst du unter Mithelfen › Meine Tickets.</span></div></div>
+        <div class="kl-uknopf kl-z" style="--d:2"><button type="button" class="kn sm" data-aktion="fehler-nochmal">Noch einen melden</button><button type="button" class="kn sm prim" data-aktion="zu">Fertig</button></div>`;
     if (fehlerDatei)
       return `${kopfZ}<div class="kl-fok kl-z" style="--d:1">${ic(IC.haken, "ic")}<div><b>Fehlerbericht gespeichert</b><code>${esc(fehlerDatei)}</code><span>Schick die Datei an den Entwickler. Danke!</span></div></div>
         <div class="kl-uknopf kl-z" style="--d:2"><button type="button" class="kn sm" data-aktion="fehler-nochmal">Noch einen melden</button><button type="button" class="kn sm prim" data-aktion="zu">Fertig</button></div>`;
@@ -626,13 +641,16 @@ export function steuerleisteBauen(kopf: HTMLElement): void {
       ["Programm", `Version, Fenstergröße, Spielmodus${mp.aktiv ? ", Mitspieler" : ""}`],
       ["Letzte Meldungen und Fehler", "die letzten Einträge aus dem Protokoll"],
       ["Spielzustand", "Uhrzeit, Einsätze, Fahrzeuge, offene Funkgespräche"],
-      ["Letzte 5 Einsätze und der letzte Funk", "gekürzt"],
+      ["Letzte Einsätze und der letzte Funk", "gekürzt"],
+      ["Protokoll dieser Sitzung", "Log-Datei: Funk, Spieler, Einsätze, Warnungen"],
       ["Einstellungen", "Leitstelle und eigene – ohne KI-Schlüssel"],
+      ...(sprachPrefs().berichtAufnahmen ? ([["Funk-Aufnahmen", "deine letzten Funksprüche zum Anhören"]] as [string, string][]) : []),
     ];
     return `${kopfZ}
       <label class="kl-flab kl-z" style="--d:1">Was ist passiert?<textarea class="feld kl-fta" data-fehler-text placeholder="Was hast du gemacht, und was war falsch? z. B. „RTW fährt nach Status 4 nicht ins Krankenhaus“" aria-label="Was ist passiert?">${esc(fehlerText)}</textarea></label>
-      <div class="kl-fin kl-z" style="--d:2"><span class="kl-abs" style="padding:0 0 4px">Kommt in die Datei</span>${IN.map(([t, z]) => `<div>${ic(IC.haken)}<span>${esc(t)}<small>${esc(z)}</small></span></div>`).join("")}</div>
-      <div class="kl-uknopf kl-z" style="--d:3"><button type="button" class="kn sm" data-aktion="zu">Abbrechen</button><button type="button" class="kn sm prim" data-aktion="fehler-speichern">Datei speichern …</button></div>`;
+      <div class="kl-fin kl-z" style="--d:2"><span class="kl-abs" style="padding:0 0 4px">Kommt ins Ticket</span>${IN.map(([t, z]) => `<div>${ic(IC.haken)}<span>${esc(t)}<small>${esc(z)}</small></span></div>`).join("")}${fehlerBilder.length ? `<div>${ic(IC.haken)}<span>${fehlerBilder.length} ${fehlerBilder.length === 1 ? "Bild" : "Bilder"}<small>${esc(fehlerBilder.map((b) => b.name).join(", "))}</small></span></div>` : ""}</div>
+      ${fehlerFehl ? `<div class="kl-uinfo rot kl-z" style="--d:3">${esc(fehlerFehl)} – du kannst den Bericht stattdessen als Datei speichern.</div>` : ""}
+      <div class="kl-uknopf kl-z" style="--d:3"><button type="button" class="kn sm" data-aktion="fehler-bilder">${fehlerBilder.length ? "Bilder ändern …" : "Bilder anhängen …"}</button><button type="button" class="kn sm" data-aktion="fehler-speichern">Als Datei …</button><button type="button" class="kn sm prim${fehlerLaeuft ? " aus" : ""}" data-aktion="fehler-senden"${fehlerLaeuft ? " disabled" : ""}>${fehlerLaeuft ? "Sende …" : "Senden"}</button></div>`;
   }
 
   // ---------------------------------------------------------------- Bedienen (ein Hörer für alles)
@@ -647,6 +665,27 @@ export function steuerleisteBauen(kopf: HTMLElement): void {
       () => jetztSichern(),
       () => jetztSichern(),
     );
+  };
+
+  const fehlerSenden = async () => {
+    if (fehlerLaeuft) return;
+    if (!fehlerText.trim()) {
+      fehlerFehl = "Bitte kurz beschreiben, was passiert ist";
+      return inhaltNeu();
+    }
+    fehlerLaeuft = true;
+    fehlerFehl = "";
+    inhaltNeu();
+    try {
+      const r = await fehlerTicketSenden(fehlerText, { bilder: fehlerBilder });
+      if ("nr" in r) fehlerNr = r.nr;
+      else fehlerFehl = `Nicht gesendet: ${r.fehler}`;
+    } catch (err) {
+      fehlerFehl = String((err as Error).message ?? err);
+    } finally {
+      fehlerLaeuft = false;
+      inhaltNeu();
+    }
   };
 
   const fehlerSpeichern = async () => {
@@ -691,8 +730,17 @@ export function steuerleisteBauen(kopf: HTMLElement): void {
       schliessen();
     },
     "fehler-speichern": () => void fehlerSpeichern(),
+    "fehler-senden": () => void fehlerSenden(),
+    "fehler-bilder": () =>
+      void bilderWaehlen().then((l) => {
+        fehlerBilder = l;
+        inhaltNeu();
+      }),
     "fehler-nochmal": () => {
       fehlerDatei = "";
+      fehlerNr = 0;
+      fehlerBilder = [];
+      fehlerFehl = "";
       fehlerText = "";
       inhaltNeu();
       popVon()?.querySelector<HTMLTextAreaElement>("textarea")?.focus();

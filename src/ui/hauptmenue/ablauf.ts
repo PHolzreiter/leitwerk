@@ -383,6 +383,8 @@ export function ablaufBauen(neuZeichnen: () => void, schliessen: () => void) {
     /** Einrichtung für MSFS und X-Plane: wie viel offen ist, Fenster öffnen */
     einrichtung: () => einrichtungOffen(),
     einrichtungZeigen: () => einrichtungDialog(),
+    /** Hubschrauber-Wunsch: Formular mit Modell, Hersteller, Bezugsquelle (Dialog über dem Hauptmenü) */
+    hubschrauberWunsch: () => void import("../mithelfen").then((m) => m.mithelfenOeffnen({ reiter: "hubschrauber", oben: true })),
 
     // ------------------------------------------------ Update
     update() {

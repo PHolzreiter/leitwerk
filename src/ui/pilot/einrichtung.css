@@ -41,3 +41,11 @@
   .ew-z, .ew-z:not(:has(.ew-cb)) { grid-template-columns: auto 1fr; }
   .ew-ak { grid-column: 1 / -1; justify-content: flex-start; }
 }
+.ew-hs { padding: 8px 12px 4px; border-top: 1px solid var(--line); }
+.ew-gr h3 + .ew-hs { border-top: 0; }
+.ew-hs-sim { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 4px; }
+.ew-hz { display: grid; grid-template-columns: 84px 1fr; gap: 8px; padding: 5px 0; align-items: start; }
+.ew-tag { font-size: 11px; font-weight: 600; text-align: center; padding: 2px 6px; border-radius: 999px; background: var(--panel-3); color: var(--text-dim); margin-top: 1px; }
+.ew-tag.voll { background: color-mix(in srgb, var(--blue) 16%, transparent); color: var(--blue); }
+.ew-bei { font-size: 11px; font-weight: 600; color: var(--ok); margin-left: 4px; }
+.ew-hfuss { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border-top: 1px solid var(--line); background: var(--panel-2); }

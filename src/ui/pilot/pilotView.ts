@@ -45,7 +45,7 @@ import { carlsAn, carlsUmschalten, communityWaehlen, gtn, gtnAn, gtnBereitlegen,
 import { datenEmpfangen, datenFrisch, dllWaehlen, flugplanSpeichern, flugsim, flugsimAnbinden, flugsimBeenden, flugsimTrennen, flugsimVerbinden, koordText, vorgabe, wetterDialog, msfsWetter, msfsWetterStand, wetterUebergang, xpAbgleich, xplaneFlugplanBereitlegen, xpPlugin, xpPluginDa, xpZeitUmschalten } from "./flugsim";
 import { IC, wetterHtml, wetterKurz, wetterSchluessel, type WetterReiter } from "../ws/kopfleisteInhalt";
 import { mb, onUpdate, updateImHintergrund, updateInfo, updateStand, updateStandZuruecksetzen } from "../updateDienst";
-import { fehlerBerichtSpeichern } from "../fehlerMelden";
+import { bilderWaehlen, fehlerBerichtSpeichern, fehlerTicketSenden } from "../fehlerMelden";
 import { jetztSichern } from "../../net/spielstand";
 import type { EntwurfFenster } from "../entwurf/einbinden";
 import { pilotAnsichtEinbinden, type PilotApp, type PilotLogik } from "../fenster/pilot";
@@ -1511,6 +1511,7 @@ function ansichtDaten(): Record<string, unknown> {
       ["Programm", "Version, Fenstergröße, Pilotenansicht"],
       ["Flugsimulator", "Verbindung MSFS, H145-Tablet und -Funkgerät, letzte Position"],
       ["Letzte Meldungen und Fehler", "die letzten Einträge aus dem Protokoll"],
+      ["Protokoll dieser Sitzung", "Log-Datei: Funk, Einsätze, Warnungen"],
       ["Einsatz und Status", "dein Hubschrauber, Status, Patient, Buchung"],
       ["Einstellungen", "ohne KI-Schlüssel und Zugangsdaten"],
     ].map(([tt, z]) => ({ t: tt, z })),
@@ -1697,6 +1698,15 @@ function ansichtAktionen(): Record<string, (...x: never[]) => unknown> {
       planen();
     },
     khBuchen: (id: string) => buchen(id),
+    /** Fehlerbericht als Ticket: Nummer oder Fehlertext */
+    fehlerSenden: async (text: string, bilder: { name: string; inhalt: string }[]): Promise<{ nr?: number; fehler?: string }> => {
+      try {
+        return await fehlerTicketSenden(text, { zusatz: pilotBericht(), bilder });
+      } catch (err) {
+        return { fehler: String((err as Error)?.message ?? err) };
+      }
+    },
+    bilderWaehlen: () => bilderWaehlen(),
     fehlerSpeichern: async (text: string): Promise<string | null> => {
       try {
         const pfad = await fehlerBerichtSpeichern(`${text}\n\n${pilotBericht()}`);

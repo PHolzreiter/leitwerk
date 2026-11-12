@@ -1,12 +1,14 @@
 /**
- * „Fehler melden“: speichert eine Datei mit Version, letzten Fehlermeldungen, Einstellungen
- * und einer Zusammenfassung des Spielzustands.
+ * „Fehler melden“: schickt den Bericht (Version, letzte Fehlermeldungen, Einstellungen, Spielzustand),
+ * das Protokoll der Sitzung, auf Wunsch die Funk-Aufnahmen und Bilder als Ticket an das LeitWerk-Team.
+ * Ohne Verbindung (oder auf Wunsch) als Datei speichern.
  */
 import { store } from "../data/store";
 import { logEintraege } from "../fehlerLog";
 import { aufnahmenFuerBericht, protokollFuerBericht, protokollPfad } from "../protokoll";
 import { mp } from "../net/mehrspieler";
 import { inTauri, saveTextFile } from "../platform";
+import { GRENZEN_FEHLER, bytes, dateiAlsAnhang, ticketSchicken } from "../net/tickets";
 import { sim } from "../sim/engine";
 import { kiBereit, kiPrefs } from "../abfrage/ki";
 import { textDialog } from "./dialog";
@@ -120,9 +122,88 @@ export async function fehlerMelden(): Promise<void> {
   const text = await textDialog("Fehler melden", "Was ist passiert? (kurz beschreiben – was du gemacht hast und was falsch war)", "");
   if (text === null) return;
   try {
+    const r = await fehlerTicketSenden(text);
+    if ("nr" in r) return toast(`Danke! Fehler-Ticket #${r.nr} ist angekommen – Antwort unter „Meine Tickets“.`);
+    toast(`Ticket nicht gesendet (${r.fehler}) – bitte als Datei speichern`, "error");
     const pfad = await fehlerBerichtSpeichern(text);
-    if (pfad) toast("Fehlerbericht gespeichert – schick die Datei an den Entwickler");
+    if (pfad) toast("Fehlerbericht gespeichert");
   } catch (err) {
     toast(String((err as Error).message ?? err), "error");
   }
+}
+
+// ------------------------------------------------------------------ als Ticket
+
+/** Text auf höchstens n Bytes kürzen – vom Anfang her (das Neueste steht am Ende) */
+function hinten(t: string, n: number): string {
+  if (bytes(t) <= n) return t;
+  let r = t.slice(-Math.floor(n / 2));
+  while (bytes(r) > n) r = r.slice(Math.floor(r.length / 10));
+  const z = r.indexOf("\n");
+  return `(gekürzt – ältere Zeilen weggelassen)\n${z >= 0 ? r.slice(z + 1) : r}`;
+}
+
+/** Bilder wählen (Screenshots) – für das Fehler-Ticket */
+export function bilderWaehlen(): Promise<{ name: string; inhalt: string }[]> {
+  return new Promise((ok) => {
+    const i = document.createElement("input");
+    i.type = "file";
+    i.multiple = true;
+    i.accept = ".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp";
+    i.addEventListener("change", async () => {
+      const l: { name: string; inhalt: string }[] = [];
+      for (const f of Array.from(i.files ?? [])) {
+        if (f.size > GRENZEN_FEHLER.dateiBytes) {
+          toast(`${f.name}: größer als ${GRENZEN_FEHLER.dateiBytes / 1_000_000} MB`, "error");
+          continue;
+        }
+        l.push(await dateiAlsAnhang(f));
+      }
+      ok(l.slice(0, 5));
+    });
+    i.click();
+  });
+}
+
+/**
+ * Fehlerbericht als Ticket schicken: Beschreibung als Text, dazu Anhänge fehlerbericht.md, protokoll.jsonl,
+ * Funk-Aufnahmen (wenn eingeschaltet) und Bilder – innerhalb der Grenzen des Ticket-Dienstes (ältestes Protokoll fällt weg).
+ */
+export async function fehlerTicketSenden(beschreibung: string, opt: { zusatz?: string; bilder?: { name: string; inhalt: string }[] } = {}): Promise<{ nr: number } | { fehler: string }> {
+  const G = GRENZEN_FEHLER;
+  const rest = G.dateiBytes - 50_000;
+  const bilder = (opt.bilder ?? []).slice(0, 5).map((b, i) => ({ name: `bild-${i + 1}.${(b.name.match(/\.(png|jpe?g|webp)$/i)?.[1] ?? "png").toLowerCase()}`, inhalt: b.inhalt }));
+  const anh: { name: string; inhalt: string }[] = [];
+  anh.push({ name: "fehlerbericht.md", inhalt: hinten(`${fehlerBericht(beschreibung)}${opt.zusatz ? `\n${opt.zusatz}\n` : ""}`, rest) });
+  const prot = await protokollFuerBericht(rest).catch(() => "");
+  if (prot) anh.push({ name: "protokoll.jsonl", inhalt: hinten(prot, rest) });
+  const groesse = (a: { name: string; inhalt: string }) => (/\.(png|jpe?g|webp|wav)$/i.test(a.name) ? (a.inhalt.length * 3) / 4 : bytes(a.inhalt));
+  let summe = anh.reduce((n, a) => n + groesse(a), 0) + bilder.reduce((n, a) => n + groesse(a), 0);
+  if (sprachPrefs().berichtAufnahmen) {
+    const a = await aufnahmenFuerBericht(10).catch(() => []);
+    const texte: string[] = [];
+    // neueste zuerst, solange Platz ist
+    for (const x of [...a].reverse()) {
+      const g = (x.wavB64.length * 3) / 4;
+      if (anh.length + bilder.length >= G.anhaenge - 1 || summe + g > G.gesamtBytes - 200_000 || g > G.dateiBytes) continue;
+      const name = `funk-${x.name.replace(/[^\w.-]+/g, "_").replace(/\.wav$/i, "")}.wav`;
+      anh.push({ name, inhalt: x.wavB64 });
+      texte.push(`${name}: ${x.text}`);
+      summe += g;
+    }
+    if (texte.length) anh.push({ name: "funk-erkannt.txt", inhalt: texte.join("\n") });
+  }
+  anh.push(...bilder);
+  const erste = (beschreibung.trim().split("\n")[0] || "ohne Beschreibung").slice(0, 90);
+  const version = (document.getElementById("app-version")?.textContent ?? "").trim().replace(/^v/, "");
+  const r = await ticketSchicken({
+    art: "fehler",
+    titel: `Fehler: ${erste}`,
+    text: beschreibung.trim().slice(0, 8000) || undefined,
+    version,
+    funkgruppe: store.settings.funkgruppe,
+    anhaenge: anh,
+  });
+  if (r.ergebnis === "gesendet") return { nr: r.nr };
+  return { fehler: r.ergebnis === "fehler" ? r.fehler : "Ticket-Dienst nicht erreichbar" };
 }

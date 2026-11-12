@@ -66,11 +66,16 @@
       <button class="{{fehlerCls}}" onClick="{{fehlerKlick}}" title="Fehler melden"><svg class="ic s" viewBox="0 0 24 24"><path d="M9 8a3 3 0 0 1 6 0M8 10h8v5a4 4 0 0 1-8 0zM12 11v8M4 13h4M16 13h4M5 8.5l3 1.5M19 8.5l-3 1.5M5 19l3-2M19 19l-3-2"></path></svg></button>
       <sc-if value="{{pop.fehler}}">
       <div class="pv-pop re{{ppZu}}" style="width: 400px;" role="dialog">
-        <div class="kl-wk kl-z"><span class="kl-wsym"><svg class="ic" viewBox="0 0 24 24"><path d="M9 8a3 3 0 0 1 6 0M8 10h8v5a4 4 0 0 1-8 0zM12 11v8M4 13h4M16 13h4M5 8.5l3 1.5M19 8.5l-3 1.5M5 19l3-2M19 19l-3-2"></path></svg></span><div><div class="kl-wt">Fehler melden</div><div class="kl-ws">Speichert eine Datei für den Entwickler – verschickt wird nichts.</div></div></div>
+        <div class="kl-wk kl-z"><span class="kl-wsym"><svg class="ic" viewBox="0 0 24 24"><path d="M9 8a3 3 0 0 1 6 0M8 10h8v5a4 4 0 0 1-8 0zM12 11v8M4 13h4M16 13h4M5 8.5l3 1.5M19 8.5l-3 1.5M5 19l3-2M19 19l-3-2"></path></svg></span><div><div class="kl-wt">Fehler melden</div><div class="kl-ws">Geht als Ticket an das LeitWerk-Team – mit Bericht und Protokoll.</div></div></div>
         <sc-if value="{{fehlerNeu}}">
         <label class="kl-flab kl-z" style="--d: 1;">Was ist passiert?<textarea class="feld kl-fta" value="{{fehlerText}}" onInput="{{fehlerTippen}}" placeholder="Was hast du gemacht, und was war falsch? z. B. „Status 4 wurde am Funkgerät nicht übernommen“" aria-label="Was ist passiert?"></textarea></label>
-        <div class="kl-fin kl-z" style="--d: 2;"><span class="kl-abs" style="padding: 0 0 4px;">Kommt in die Datei</span><sc-for list="{{fehlerIn}}" as="f"><div><svg class="ic s" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"></path></svg><span>{{f.t}}<small>{{f.z}}</small></span></div></sc-for></div>
-        <div class="kl-uknopf kl-z" style="--d: 3;"><button class="kn sm" onClick="{{ppZuKlick}}">Abbrechen</button><button class="kn sm prim" onClick="{{fehlerSpeichern}}">Datei speichern …</button></div>
+        <div class="kl-fin kl-z" style="--d: 2;"><span class="kl-abs" style="padding: 0 0 4px;">Kommt ins Ticket</span><sc-for list="{{fehlerIn}}" as="f"><div><svg class="ic s" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"></path></svg><span>{{f.t}}<small>{{f.z}}</small></span></div></sc-for><sc-if value="{{fehlerBilderDa}}"><div><svg class="ic s" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"></path></svg><span>Bilder<small>{{fehlerBilderInfo}}</small></span></div></sc-if></div>
+        <sc-if value="{{fehlerFehl}}"><div class="kl-uinfo rot kl-z" style="--d: 3;">{{fehlerFehlText}}</div></sc-if>
+        <div class="kl-uknopf kl-z" style="--d: 3;"><button class="kn sm" onClick="{{fehlerBilder}}">{{fehlerBilderText}}</button><button class="kn sm" onClick="{{fehlerSpeichern}}">Als Datei …</button><button class="{{fehlerSendenCls}}" onClick="{{fehlerSenden}}">{{fehlerSendenText}}</button></div>
+        </sc-if>
+        <sc-if value="{{fehlerTicket}}">
+        <div class="kl-fok kl-z" style="--d: 1;"><svg class="ic" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"></path></svg><div><b>Ticket {{fehlerNr}} gesendet</b><span>Danke! Stand und Antwort siehst du unter Mithelfen › Meine Tickets.</span></div></div>
+        <div class="kl-uknopf kl-z" style="--d: 2;"><button class="kn sm" onClick="{{fehlerNochmal}}">Noch einen melden</button><button class="kn sm prim" onClick="{{ppZuKlick}}">Fertig</button></div>
         </sc-if>
         <sc-if value="{{fehlerOk}}">
         <div class="kl-fok kl-z" style="--d: 1;"><svg class="ic" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"></path></svg><div><b>Fehlerbericht gespeichert</b><code>{{fehlerDatei}}</code><span>Schick die Datei an den Entwickler. Danke!</span></div></div>

@@ -1,5 +1,11 @@
 # Änderungen
 
+## 0.116.0-beta.45 – Fehler melden als Ticket, Hubschrauber wünschen
+- **Fehler melden schickt ein Ticket** (Kopfleiste und Pilotenansicht): Beschreibung, Fehlerbericht, Protokoll der Sitzung (Log-Datei) und – wenn eingeschaltet – die Funk-Aufnahmen gehen direkt an das LeitWerk-Team, auf Wunsch mit Screenshots („Bilder anhängen …“). Danach steht das Ticket mit Nummer unter Mithelfen › Meine Tickets, dort kommen auch Stand und Antwort. Ohne Verbindung oder auf Wunsch weiter „Als Datei …“.
+- **Eingebundene Hubschrauber** im Fenster Einrichtung: je Simulator, was im Cockpit eingebaut ist (HPG H145 in MSFS 2024, Rotorsim EC135 in X-Plane 12) und was für jedes Flugzeug gilt (EFB-App, Plugin-Tablet, GTN) – mit „bei dir installiert“.
+- **Hubschrauber wünschen:** neues Formular (Einrichtung, Mithelfen und Hauptmenü › Mithelfen) mit Simulator, Hersteller, Modell wie im Simulator, Variante, Version, Bezugsquelle mit Link, Preis, Paketname, was eingebaut werden soll, was das Modell schon an Bord hat und ob man testen kann. „Aus Ordner lesen …“ füllt Name, Hersteller, Version und Paketname aus dem Ordner des Hubschraubers.
+- **Mithelfen:** Bilder (.png, .jpg) als Anhang.
+
 ## 0.116.0-beta.44 – Einrichtung für MSFS und X-Plane an einer Stelle
 - **Neues Fenster „Einrichtung“** im Hauptmenü unter Pilot und in der Pilotenansicht (Cockpit, ganz oben): Für MSFS 2024 und X-Plane 12 steht je Teil, ob es aktuell ist (✓), ein Update braucht (↑), fehlt (✗), optional ist (○), nach einem Neustart des Simulators wirkt (↻) oder nicht nötig ist (–, eingeklappt). „Alles einrichten“ erledigt alles Offene mit einem Klick.
 - **EFB-App „LeitWerk“ für MSFS 2024:** LeitWerk baut sie selbst in den Community-Ordner ein und hält sie aktuell – kein Kopieren von Hand mehr. „Entfernen“ nimmt sie wieder heraus, danach baut LeitWerk sie nicht mehr von selbst ein.

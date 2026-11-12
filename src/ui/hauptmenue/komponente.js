@@ -316,7 +316,7 @@ export class Komponente {
       l.forEach(x => fortschritt.push({ isHead: false, isItem: true, titel: x.titel, pz: x.prozent, text: x.text, hasText: !!x.text, c, i: Math.min(fi++, 12) }));
     });
     const arb = fpunkte.find(x => x.stand === 'arbeit');
-    const melden = [['FZ', 'Fahrzeug'], ['DS', 'Dienststelle'], ['POI', 'Ort (POI)'], ['KH', 'Krankenhaus'], ['VS', 'Vorschlag'], ['ID', 'Idee/Wunsch']].map(([k, label]) => ({ k, label, go: () => this.setState({ mh: k, mhF: {}, mhFehlt: null }) }));
+    const melden = [['FZ', 'Fahrzeug'], ['DS', 'Dienststelle'], ['POI', 'Ort (POI)'], ['KH', 'Krankenhaus'], ['VS', 'Vorschlag'], ['ID', 'Idee/Wunsch'], ['HS', 'Hubschrauber']].map(([k, label]) => ({ k, label, go: () => (k === 'HS' ? this.app.ablauf.hubschrauberWunsch() : this.setState({ mh: k, mhF: {}, mhFehlt: null })) }));
     const ART = { FZ: 'fahrzeug', DS: 'dienststelle', POI: 'poi', KH: 'krankenhaus', VS: 'vorschlag', ID: 'idee', HILFE: 'hilfe' };
     // Mithelfen-Formulare wie in der App (mithelfen.ts), aber im Fenster selbst statt als Dialog
     const lage = ['lage', 'Lage', 'Adresse, Ort oder Koordinaten (48.20, 15.63)', true, 'Die Karte zum Anklicken gibt es im Spiel – hier reicht Adresse oder Koordinaten'];

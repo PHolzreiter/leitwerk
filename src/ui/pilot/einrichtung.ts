@@ -14,6 +14,7 @@ import { el, esc, toast } from "../dom";
 import { communityWaehlen, dllWaehlen, ec135, ec135Cockpit, gtn, gtnSuchen, vorgabe, vorgabeSetzen, xplanePluginEntfernen, xplanePluginPruefen, xpPlugin, type Ec135Flugzeug } from "./flugsim";
 import { efbPort, efbStarten, tabletAppSetzen } from "./handy";
 import { hpgEinrichten } from "./hpg";
+import { EINGEBUNDEN, type Eingebunden } from "./hubschrauber";
 
 export type Zustand = "ok" | "update" | "fehlt" | "optional" | "unnoetig" | "neustart" | "fehler" | "pruefe";
 
@@ -438,6 +439,25 @@ function koerper(): HTMLElement {
     if (rest.length) h += `<details class="ew-rest"><summary>Nicht nötig (${rest.length})</summary>${rest.map((e) => `<div class="ew-z z-unnoetig"><span class="ew-st">–</span><div class="ew-in"><div class="ew-t">${esc(e.titel)}</div><div class="ew-d">${esc(e.text)}</div></div><div class="ew-ak">${e.aktionen.map(knopf).join("")}</div></div>`).join("")}</details>`;
     h += "</section>";
   }
+  // Info: welche Hubschrauber LeitWerk je Simulator eingebunden hat
+  const da = (x: Eingebunden): boolean | null =>
+    x.id === "h145" ? !!st.h145?.h145 : x.id === "ec135" ? (ec135.stand?.flugzeuge ?? []).some((f) => f.vorschlag) : x.id === "gtn" ? !!gtn.paket : x.id === "efb" ? !!st.efb?.installiert : x.id === "xpplugin" ? !!xpPlugin.stand?.aktuell : null;
+  klicks.push(async () => {
+    const m = await import("../mithelfen");
+    m.mithelfenOeffnen({ reiter: "hubschrauber", oben: true });
+  });
+  const wunsch = klicks.length - 1;
+  h += `<section class="ew-gr ew-heli"><h3>Eingebundene Hubschrauber</h3>${(["MSFS 2024", "X-Plane 12"] as const)
+    .map(
+      (sim) =>
+        `<div class="ew-hs"><div class="ew-hs-sim">${sim}</div>${EINGEBUNDEN.filter((x) => x.sim === sim)
+          .map((x) => {
+            const d = da(x);
+            return `<div class="ew-hz"><span class="ew-tag ${x.stufe}">${x.stufe === "voll" ? "im Cockpit" : "für alle"}</span><div class="ew-in"><div class="ew-t">${esc(x.modell)} <span class="ew-w">${esc(x.hersteller)}</span>${d ? ' <span class="ew-bei">✓ bei dir installiert</span>' : ""}</div><div class="ew-d">${esc(x.was)}</div></div></div>`;
+          })
+          .join("")}</div>`,
+    )
+    .join("")}<div class="ew-hfuss"><span class="ew-text">Dein Hubschrauber fehlt? Schreib uns, welches Modell – mit Hersteller und Link, damit klar ist, welches gemeint ist.</span><button class="btn plain ew-btn" data-k="${wunsch}">Hubschrauber wünschen …</button></div></section>`;
   wurzel.innerHTML = h;
   wurzel.addEventListener("click", (ev) => {
     const b = (ev.target as HTMLElement).closest<HTMLElement>("[data-k]");

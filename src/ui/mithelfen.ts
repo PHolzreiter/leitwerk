@@ -15,6 +15,8 @@ import {
   alleGelesen,
   anhaengePruefen,
   bytes,
+  dateiAlsAnhang,
+  BINAER_ENDUNG,
   meineTickets,
   onTickets,
   standAbgleichen,
@@ -29,8 +31,10 @@ import { planText, type Schicht } from "../sim/dienst";
 import { openDialog, type DialogHandle } from "./dialog";
 import { dienstplanEditor } from "./dienstplanEditor";
 import { el, esc, toast } from "./dom";
+import { inTauri } from "../platform";
+import { BEZUG, EINGEBUNDEN, WUNSCH_TEILE } from "./pilot/hubschrauber";
 
-type Reiter = Exclude<TicketArt, "hilfe"> | "meine";
+export type Reiter = Exclude<TicketArt, "hilfe" | "fehler"> | "meine";
 const REITER: [Reiter, string][] = [
   ["fahrzeug", "Fahrzeug"],
   ["dienststelle", "Dienststelle"],
@@ -38,6 +42,7 @@ const REITER: [Reiter, string][] = [
   ["krankenhaus", "Krankenhaus"],
   ["vorschlag", "Vorschlag"],
   ["idee", "Idee/Wunsch"],
+  ["hubschrauber", "Hubschrauber"],
   ["meine", "Meine Tickets"],
 ];
 
@@ -382,6 +387,118 @@ function vorschlagForm(hilfe?: HilfePunkt, idee = false): Formular {
   };
 }
 
+// ------------------------------------------------------------------ Hubschrauber-Wunsch
+
+function hubschrauberForm(): Formular {
+  const root = el("div", { class: "form-grid" });
+  const info = el("div", { class: "fld wide mh-heli-info" });
+  info.innerHTML = `<b>Schon eingebunden:</b> ${EINGEBUNDEN.filter((x) => x.stufe === "voll")
+    .map((x) => `${esc(x.modell)} von ${esc(x.hersteller.replace(/ \(.*\)$/, ""))} (${esc(x.sim)})`)
+    .join(" · ")}. Mit jedem anderen Hubschrauber geht LeitWerk über ${esc("das EFB (MSFS) bzw. das Plugin-Tablet (X-Plane)")} – hier wünschst du dir den Einbau ins Cockpit.`;
+  const sim = auswahl([["", "– bitte wählen –"], ["MSFS 2024", "MSFS 2024"], ["MSFS 2020", "MSFS 2020"], ["X-Plane 12", "X-Plane 12"], ["X-Plane 11", "X-Plane 11"]], "simulator");
+  const hersteller = eingabe("z. B. HPG, Rotorsim, Cowansim, Hype Performance Group", "hersteller");
+  const modell = eingabe("genau wie im Hangar bzw. Flugzeugmenü, z. B. „Airbus H135 (HEMS)“", "modell");
+  const variante = eingabe("z. B. HEMS, Polizei, mit EuroNav – falls es mehrere gibt", "variante");
+  const bezug = auswahl(BEZUG, "bezug");
+  const link = eingabe("https://… (Seite des Modells im Shop bzw. auf flightsim.to)", "link");
+  const preis = auswahl([["", "– bitte wählen –"], ["kostenlos", "kostenlos"], ["kostenpflichtig", "kostenpflichtig"]], "preisart");
+  const preisWert = eingabe("z. B. 39,99 €", "preis");
+  const version = eingabe("z. B. 1.4.2", "version");
+  const paket = eingabe("z. B. hpg-airbus-h145 bzw. Ordner unter X-Plane/Aircraft", "paket");
+  const vorhanden = eingabe("z. B. AviTab, eigenes EFB, Funkgerät TRT800, GTN 750", "vorhanden");
+  const gps = eingabe("z. B. GTN 750, GNS 430, eigenes FMS", "gps");
+  const testen = auswahl([["", "– bitte wählen –"], ["ja", "Ja, ich habe das Modell und teste gerne"], ["nein", "Nein"]], "testen");
+  const teile = el("div", { class: "mh-teile" });
+  for (const [k, t] of WUNSCH_TEILE) {
+    const l = el("label", { class: "mh-teil" });
+    const c = el("input", { type: "checkbox", value: k }) as HTMLInputElement;
+    l.append(c, el("span", {}, t));
+    teile.appendChild(l);
+  }
+  const ordnerInfo = el("span", { class: "fld-hint" }, "Liest Name, Hersteller, Version und Paketname aus dem Ordner des Hubschraubers (manifest.json bzw. .acf). Mitgeschickt werden nur diese Angaben.");
+  const ordnerKnopf = el("button", { class: "btn small", type: "button" }, "Aus Ordner lesen …");
+  let gelesen: Record<string, string> | undefined;
+  ordnerKnopf.addEventListener("click", async () => {
+    if (!inTauri()) return toast("Geht nur im Programm", "error");
+    const { open } = await import("@tauri-apps/plugin-dialog");
+    const p = await open({ directory: true, multiple: false, title: "Ordner des Hubschraubers wählen (Community-Paket bzw. X-Plane/Aircraft/…)" });
+    if (typeof p !== "string") return;
+    try {
+      const { invoke } = await import("@tauri-apps/api/core");
+      const i = await invoke<{ simulator: string; paket: string; name: string; hersteller: string; version: string; quelle: string }>("flugzeug_lesen", { ordner: p });
+      gelesen = { ...i };
+      if (i.name) modell.value = i.name;
+      if (i.hersteller) hersteller.value = i.hersteller;
+      if (i.version) version.value = i.version;
+      if (i.paket) paket.value = i.paket;
+      if (i.simulator === "X-Plane" && !sim.value) sim.value = "X-Plane 12";
+      if (i.simulator === "MSFS" && !sim.value) sim.value = "MSFS 2024";
+      ordnerInfo.textContent = `Gelesen aus ${i.quelle}: ${[i.name, i.hersteller, i.version].filter(Boolean).join(" · ") || "keine Angaben"} – bitte prüfen und ergänzen.`;
+    } catch (e) {
+      toast(String((e as Error)?.message ?? e), "error");
+    }
+  });
+  const ordnerZeile = el("div", { class: "fld wide" });
+  ordnerZeile.append(el("span", { class: "fld-label" }, "Angaben aus dem Ordner (freiwillig)"), ordnerKnopf, ordnerInfo);
+  root.append(
+    info,
+    ...(inTauri() ? [ordnerZeile] : []),
+    feld("Simulator *", sim),
+    feld("Hersteller / Entwickler *", hersteller),
+    feld("Modell *", modell, { breit: true, hinweis: "So, wie es im Simulator heißt – damit klar ist, welches Modell gemeint ist" }),
+    feld("Variante", variante),
+    feld("Version", version),
+    feld("Wo bekommt man es? *", bezug),
+    feld("Link", link, { hinweis: "Pflicht, außer beim Marketplace" }),
+    feld("Preis", preis),
+    feld("Betrag", preisWert),
+    feld("Paket- bzw. Ordnername", paket, { breit: true }),
+  );
+  const teileFeld = el("div", { class: "fld wide" });
+  teileFeld.append(el("span", { class: "fld-label" }, "Was soll LeitWerk einbauen? *"), teile);
+  root.append(
+    teileFeld,
+    feld("Was hat das Modell schon an Bord?", vorhanden, { hinweis: "Tablet, EFB, Funkgerät, Navi" }),
+    feld("Welches GPS/Navi?", gps),
+    feld("Kannst du testen?", testen),
+    el("p", { class: "fld wide muted small" }, "Screenshots vom Cockpit (Tablet, Funkgerät, Bildschirme) helfen sehr – unten als .png oder .jpg anhängen."),
+  );
+  return {
+    root,
+    zerstoeren: () => {},
+    lesen: () => {
+      const gewaehlt = Array.from(teile.querySelectorAll<HTMLInputElement>("input:checked")).map((c) => c.value);
+      if (!sim.value) return "Bitte den Simulator wählen";
+      if (!hersteller.value.trim()) return "Bitte den Hersteller angeben";
+      if (!modell.value.trim()) return "Bitte das Modell angeben (wie im Simulator)";
+      if (!bezug.value) return "Bitte angeben, wo man das Modell bekommt";
+      if (bezug.value !== "marketplace" && !/^https?:\/\/\S+\.\S+/.test(link.value.trim())) return "Bitte den Link zum Modell angeben (https://…)";
+      if (!gewaehlt.length) return "Bitte wählen, was LeitWerk einbauen soll";
+      const titel = `Hubschrauber-Wunsch: ${hersteller.value.trim()} ${modell.value.trim()}${variante.value.trim() ? ` (${variante.value.trim()})` : ""} – ${sim.value}`;
+      return {
+        art: "hubschrauber",
+        titel: titel.slice(0, 200),
+        daten: {
+          simulator: sim.value,
+          hersteller: hersteller.value.trim(),
+          modell: modell.value.trim(),
+          variante: variante.value.trim() || undefined,
+          version: version.value.trim() || undefined,
+          bezug: BEZUG.find((b) => b[0] === bezug.value)?.[1],
+          link: link.value.trim() || undefined,
+          preis: preis.value ? `${preis.value}${preisWert.value.trim() ? ` (${preisWert.value.trim()})` : ""}` : undefined,
+          paket: paket.value.trim() || undefined,
+          einbauen: gewaehlt.map((k) => WUNSCH_TEILE.find((t) => t[0] === k)?.[1] ?? k),
+          vorhanden: vorhanden.value.trim() || undefined,
+          gps: gps.value.trim() || undefined,
+          testen: testen.value || undefined,
+          ausOrdner: gelesen,
+        },
+      };
+    },
+  };
+}
+
 // ------------------------------------------------------------------ Meine Tickets
 
 function meineHtml(): string {
@@ -405,7 +522,7 @@ function meineHtml(): string {
 let offen: DialogHandle | null = null;
 
 /** Mithelfen-Dialog öffnen. art = Startreiter, hilfe = offener Punkt, zu dem geantwortet wird */
-export function mithelfenOeffnen(opt: { reiter?: Reiter; hilfe?: HilfePunkt } = {}): void {
+export function mithelfenOeffnen(opt: { reiter?: Reiter; hilfe?: HilfePunkt; oben?: boolean } = {}): void {
   offen?.close();
   const body = el("div", { class: "mh" });
   const reiterLeiste = el("div", { class: "mh-reiter", role: "tablist" });
@@ -417,12 +534,12 @@ export function mithelfenOeffnen(opt: { reiter?: Reiter; hilfe?: HilfePunkt } = 
 
   // gemeinsame Felder
   const text = el("textarea", { rows: "4", name: "text", maxlength: String(GRENZEN.text), placeholder: "Was weißt du? Woher (z. B. Dienstplan der Dienststelle, eigene Erfahrung)?" }) as HTMLTextAreaElement;
-  const datei = el("input", { type: "file", multiple: "", accept: ".txt,.csv,text/plain,text/csv", name: "anhaenge" }) as HTMLInputElement;
+  const datei = el("input", { type: "file", multiple: "", accept: ".txt,.csv,.png,.jpg,.jpeg,.webp,text/plain,text/csv,image/png,image/jpeg,image/webp", name: "anhaenge" }) as HTMLInputElement;
   const dateiListe = el("div", { class: "mh-dateien small" });
   const kontakt = eingabe("freiwillig – z. B. Name oder Forum-Name", "kontakt");
   gemeinsam.append(
     feld("Beschreibung", text, { breit: true }),
-    feld("Dateien anhängen (.txt, .csv)", datei, { breit: true, hinweis: `Höchstens ${GRENZEN.anhaenge} Dateien, je 2 MB, zusammen 5 MB` }),
+    feld("Dateien anhängen (.txt, .csv, Bilder .png/.jpg)", datei, { breit: true, hinweis: `Höchstens ${GRENZEN.anhaenge} Dateien, je 2 MB, zusammen 5 MB` }),
     dateiListe,
     feld("Kontakt (freiwillig)", kontakt, { breit: true }),
     el("p", { class: "fld wide muted small" }, "Geht nur an das LeitWerk-Team und wird nicht in dein Spiel übernommen. Was davon stimmt, kommt mit einem der nächsten Updates für alle."),
@@ -433,7 +550,7 @@ export function mithelfenOeffnen(opt: { reiter?: Reiter; hilfe?: HilfePunkt } = 
     dateiListe.innerHTML = "";
     anhaenge.forEach((a, i) => {
       const z = el("div", { class: "mh-datei" });
-      z.append(el("span", {}, `${a.name} (${Math.ceil(bytes(a.inhalt) / 1024)} KB)`));
+      z.append(el("span", {}, `${a.name} (${Math.ceil((BINAER_ENDUNG.test(a.name) ? (a.inhalt.length * 3) / 4 : bytes(a.inhalt)) / 1024)} KB)`));
       const x = el("button", { class: "btn small", type: "button" }, "entfernen");
       x.addEventListener("click", () => {
         anhaenge.splice(i, 1);
@@ -446,15 +563,15 @@ export function mithelfenOeffnen(opt: { reiter?: Reiter; hilfe?: HilfePunkt } = 
   datei.addEventListener("change", async () => {
     const neu = [...anhaenge];
     for (const f of Array.from(datei.files ?? [])) {
-      if (!/\.(txt|csv)$/i.test(f.name)) {
-        toast(`${f.name}: nur .txt- oder .csv-Dateien`, "error");
+      if (!/\.(txt|csv)$/i.test(f.name) && !BINAER_ENDUNG.test(f.name)) {
+        toast(`${f.name}: nur .txt-, .csv- oder Bild-Dateien (.png, .jpg)`, "error");
         continue;
       }
       if (f.size > GRENZEN.dateiBytes) {
         toast(`${f.name}: größer als 2 MB`, "error");
         continue;
       }
-      neu.push({ name: f.name, inhalt: await f.text() });
+      neu.push(await dateiAlsAnhang(f));
     }
     datei.value = "";
     const f = anhaengePruefen(neu);
@@ -495,9 +612,10 @@ export function mithelfenOeffnen(opt: { reiter?: Reiter; hilfe?: HilfePunkt } = 
     }
     if (opt.hilfe) kopf.innerHTML = `<b>Offener Punkt:</b> ${esc(opt.hilfe.titel)}<div class="small muted">${esc(opt.hilfe.text)}</div>`;
     form =
-      reiter === "fahrzeug" ? fahrzeugForm() : reiter === "dienststelle" ? dienststelleForm() : reiter === "poi" ? poiForm() : reiter === "krankenhaus" ? krankenhausForm() : reiter === "idee" ? vorschlagForm(undefined, true) : vorschlagForm(opt.hilfe);
+      reiter === "fahrzeug" ? fahrzeugForm() : reiter === "dienststelle" ? dienststelleForm() : reiter === "poi" ? poiForm() : reiter === "krankenhaus" ? krankenhausForm() : reiter === "idee" ? vorschlagForm(undefined, true) : reiter === "hubschrauber" ? hubschrauberForm() : vorschlagForm(opt.hilfe);
     formOrt.innerHTML = "";
     formOrt.appendChild(form.root);
+    text.placeholder = reiter === "hubschrauber" ? "Was ist an diesem Hubschrauber besonders (z. B. HEMS-Ausstattung, eigenes Tablet)? Was soll LeitWerk dort anzeigen?" : "Was weißt du? Woher (z. B. Dienstplan der Dienststelle, eigene Erfahrung)?";
   };
   for (const [r, label] of REITER) {
     const b = el("button", { type: "button", class: "mh-reiter-b", "data-r": r }, label);
@@ -569,6 +687,11 @@ export function mithelfenOeffnen(opt: { reiter?: Reiter; hilfe?: HilfePunkt } = 
     ],
   });
   dlg.root.parentElement?.classList.add("mh-dlg");
+  // aus dem Hauptmenü bzw. der Einrichtung: über deren Ebene
+  if (opt.oben) {
+    const ov = dlg.root.closest<HTMLElement>(".dlg-overlay");
+    if (ov) ov.style.zIndex = "6100";
+  }
   offen = dlg;
   const aus = onTickets(() => {
     if (reiter === "meine" && body.isConnected) meineZeigen();

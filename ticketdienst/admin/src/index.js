@@ -94,7 +94,16 @@ export default {
       const name = url.searchParams.get("name") ?? "";
       const inhalt = await store.anhang(Number(m[1]), name);
       if (inhalt === null) return json({ fehler: "nicht gefunden" }, 404);
-      return new Response(inhalt, { headers: { "content-type": "text/plain; charset=utf-8", "content-disposition": `attachment; filename="${name.replace(/"/g, "")}"`, "x-content-type-options": "nosniff" } });
+      const datei = name.replace(/"/g, "");
+      const art = url.searchParams.has("ansehen") ? "inline" : "attachment";
+      // Bilder und Aufnahmen liegen als Base64 – als echte Datei ausliefern (Vorschau im Ticket)
+      const endung = (name.match(/\.([a-z0-9]+)$/i)?.[1] ?? "").toLowerCase();
+      const mime = { png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", webp: "image/webp", wav: "audio/wav" }[endung];
+      if (mime) {
+        const bin = Uint8Array.from(atob(inhalt), (c) => c.charCodeAt(0));
+        return new Response(bin, { headers: { "content-type": mime, "content-disposition": `${art}; filename="${datei}"`, "x-content-type-options": "nosniff", "cache-control": "private, max-age=3600" } });
+      }
+      return new Response(inhalt, { headers: { "content-type": "text/plain; charset=utf-8", "content-disposition": `${art}; filename="${datei}"`, "x-content-type-options": "nosniff" } });
     }
     if (m && request.method === "GET") {
       const t = await store.ticket(Number(m[1]));
@@ -133,7 +142,7 @@ pre{background:var(--panel);border:1px solid var(--line);border-radius:6px;paddi
 <header><h1>LeitWerk Tickets</h1>
 <button class="tab an" data-tab="tickets">Tickets</button><button class="tab" data-tab="hilfe">„Deine Hilfe wird gebraucht“</button><button class="tab" data-tab="fortschritt">Entwicklungsfortschritt</button>
 <select id="fStatus"><option value="">alle Stände</option><option>eingegangen</option><option value="in_arbeit">in Arbeit</option><option value="rueckfrage">Rückfrage</option><option>eingebaut</option><option>erledigt</option><option>abgelehnt</option></select>
-<select id="fArt"><option value="">alle Arten</option><option>dienststelle</option><option>fahrzeug</option><option>poi</option><option>krankenhaus</option><option>vorschlag</option><option>hilfe</option><option value="idee">Idee/Wunsch</option></select>
+<select id="fArt"><option value="">alle Arten</option><option>dienststelle</option><option>fahrzeug</option><option>poi</option><option>krankenhaus</option><option>vorschlag</option><option>hilfe</option><option value="idee">Idee/Wunsch</option><option value="hubschrauber">Hubschrauber-Wunsch</option><option value="fehler">Fehler</option></select>
 <button id="csvAlle">Importdaten der Liste herunterladen</button></header>
 <main id="tickets"><div id="liste"></div><div id="detail"><p class="dim">Ticket links auswählen.</p></div></main>
 <section id="hilfe" hidden style="padding:16px 20px"><p class="dim">Diese Punkte sehen alle in LeitWerk auf der Startseite. Haken weg = ausgeblendet.</p><div id="hl"></div>
@@ -153,7 +162,7 @@ $("#detail").innerHTML='<h2>#'+t.nr+' '+esc(t.titel)+'</h2><div class="dim">'+es
 (t.kontakt?'<p><b>Kontakt:</b> '+esc(t.kontakt)+'</p>':'')+(t.text?'<h3>Beschreibung</h3><pre>'+esc(t.text)+'</pre>':'')+
 (t.daten?'<h3>Angaben</h3><pre>'+esc(JSON.stringify(t.daten,null,2))+'</pre>':'')+
 (t.import_csv?'<h3>Importdaten (LeitWerk)</h3><pre>'+esc(t.import_csv)+'</pre><button id="csv1">Als CSV herunterladen</button>':'')+
-(t.anhaenge.length?'<h3>Anhänge</h3>'+t.anhaenge.map(a=>'<div><a style="color:var(--blau)" href="/api/tickets/'+t.nr+'/anhang?name='+encodeURIComponent(a.name)+'">'+esc(a.name)+'</a> <span class="dim">'+Math.ceil(a.groesse/1024)+' KB</span></div>').join(""):'')+
+(t.anhaenge.length?'<h3>Anhänge</h3>'+t.anhaenge.map(a=>{const u="/api/tickets/"+t.nr+"/anhang?name="+encodeURIComponent(a.name);const bild=/\.(png|jpe?g|webp)$/i.test(a.name),ton=/\.wav$/i.test(a.name);return '<div class="anh"><a style="color:var(--blau)" href="'+u+'">'+esc(a.name)+'</a> <span class="dim">'+Math.ceil(a.groesse/1024)+' KB</span>'+(bild||ton?'':' · <a style="color:var(--blau)" target="_blank" href="'+u+'&ansehen=1">ansehen</a>')+(bild?'<br><a target="_blank" href="'+u+'&ansehen=1"><img src="'+u+'&ansehen=1" style="max-width:100%;max-height:320px;margin-top:4px;border-radius:6px;border:1px solid #2a2f3a"></a>':'')+(ton?'<br><audio controls preload="none" src="'+u+'&ansehen=1" style="margin-top:4px;width:100%"></audio>':'')+'</div>';}).join(""):'')+
 '<h3>Stand</h3><div class="feld"><select id="dStatus">'+Object.entries(STAND).map(([k,v])=>'<option value="'+k+'"'+(k===t.status?' selected':'')+'>'+v+'</option>').join("")+'</select><input id="dVersion" placeholder="Version, z. B. 0.67.0" value="'+esc(t.version??"")+'"></div>'+
 '<textarea id="dAntwort" placeholder="Antwort an den Nutzer (sieht er unter „Meine Tickets“)">'+esc(t.antwort??"")+'</textarea><div class="feld"><button class="primaer" id="dSpeichern">Speichern</button><button id="dLoeschen">Ticket löschen</button><span id="dInfo" class="dim"></span></div>';
 if($("#csv1"))$("#csv1").onclick=()=>speichernDatei("ticket-"+t.nr+".csv",t.import_csv);

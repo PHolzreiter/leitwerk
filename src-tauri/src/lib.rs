@@ -675,6 +675,7 @@ pub fn run() {
             hpg::hpg_tablet_app,
             hpg::hpg_tablet_stand,
             einrichtung::efb_app,
+            einrichtung::flugzeug_lesen,
             app_version
         ])
         .build(kontext)

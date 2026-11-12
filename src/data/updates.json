@@ -1,5 +1,17 @@
 [
  {
+  "version": "0.116.0-beta.45",
+  "datum": "2026-11-12",
+  "titel": "Fehler melden als Ticket, Hubschrauber wünschen",
+  "punkte": [
+   "Fehler melden schickt ein Ticket mit Bericht, Log-Datei, Funk-Aufnahmen und Bildern",
+   "Antwort und Stand unter Mithelfen › Meine Tickets",
+   "Einrichtung zeigt die eingebundenen Hubschrauber je Simulator",
+   "Neues Formular „Hubschrauber wünschen“ mit „Aus Ordner lesen“",
+   "Bilder als Anhang bei Mithelfen"
+  ]
+ },
+ {
   "version": "0.116.0-beta.44",
   "datum": "2026-11-12",
   "titel": "Einrichtung für MSFS und X-Plane an einer Stelle",

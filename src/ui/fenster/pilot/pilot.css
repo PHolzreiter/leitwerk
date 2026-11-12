@@ -73,6 +73,7 @@
 .ap .kl-ubar i{display:block;height:100%;width:var(--w);background:var(--akzent);border-radius:3px}
 .ap .kl-uinfo{margin:0 4px 8px;padding:9px 11px;border-radius:9px;background:var(--flaeche-2);font-size:12px;line-height:1.4;color:var(--text-2)}
 .ap .kl-uinfo.gelb{display:grid;grid-template-columns:18px minmax(0,1fr);gap:8px;background:var(--gelb-flaeche);color:var(--text)}
+.ap .kl-uinfo.rot{background:var(--rot-flaeche);color:var(--text)}
 .ap .kl-uinfo.gelb .ic{color:var(--gelb-text);margin-top:1px}
 .ap .kl-uknopf{display:flex;justify-content:flex-end;gap:6px;padding:4px}
 .ap .kl-uknopf .aus{opacity:.55;pointer-events:none}

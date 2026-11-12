@@ -10,7 +10,7 @@ import { toast } from "../ui/dom";
 
 export const TICKET_URL = "https://tickets.leitwerk.workers.dev";
 
-export type TicketArt = "dienststelle" | "fahrzeug" | "poi" | "krankenhaus" | "vorschlag" | "hilfe" | "idee";
+export type TicketArt = "dienststelle" | "fahrzeug" | "poi" | "krankenhaus" | "vorschlag" | "hilfe" | "idee" | "hubschrauber" | "fehler";
 export type TicketStatus = "eingegangen" | "in_arbeit" | "rueckfrage" | "eingebaut" | "erledigt" | "abgelehnt";
 
 export const ART_LABEL: Record<TicketArt, string> = {
@@ -21,6 +21,8 @@ export const ART_LABEL: Record<TicketArt, string> = {
   vorschlag: "Änderungsvorschlag",
   hilfe: "Antwort auf offenen Punkt",
   idee: "Idee/Wunsch",
+  hubschrauber: "Hubschrauber-Wunsch",
+  fehler: "Fehler",
 };
 export const STATUS_LABEL: Record<TicketStatus | "wartet", string> = {
   wartet: "noch nicht gesendet",
@@ -34,7 +36,22 @@ export const STATUS_LABEL: Record<TicketStatus | "wartet", string> = {
 
 /** Grenzen wie im Ticket-Dienst */
 export const GRENZEN = { anhaenge: 5, dateiBytes: 2_000_000, gesamtBytes: 5_000_000, text: 8000 };
+/** Fehlerberichte: Bericht, Protokoll, Funk-Aufnahmen und Bilder */
+export const GRENZEN_FEHLER = { anhaenge: 16, dateiBytes: 3_000_000, gesamtBytes: 14_000_000, text: 8000 };
 export const ANHANG_ENDUNG = /\.(txt|csv)$/i;
+/** Bilder und Aufnahmen gehen als Base64 (der Dienst erkennt sie an der Endung) */
+export const BILD_ENDUNG = /\.(png|jpe?g|webp)$/i;
+export const BINAER_ENDUNG = /\.(png|jpe?g|webp|wav)$/i;
+const TEXT_ENDUNG = /\.(txt|csv|md|jsonl|json|log)$/i;
+
+/** Datei (z. B. aus einem Datei-Feld) als Anhang lesen – Bilder als Base64 */
+export async function dateiAlsAnhang(f: File): Promise<{ name: string; inhalt: string }> {
+  if (!BINAER_ENDUNG.test(f.name)) return { name: f.name, inhalt: await f.text() };
+  const b = new Uint8Array(await f.arrayBuffer());
+  let s = "";
+  for (let i = 0; i < b.length; i += 0x8000) s += String.fromCharCode(...b.subarray(i, i + 0x8000));
+  return { name: f.name, inhalt: btoa(s) };
+}
 
 export interface HilfePunkt {
   id: string;
@@ -222,7 +239,8 @@ async function senden(e: TicketEingabe): Promise<{ nr: number; geheim: string; s
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(e),
-      signal: AbortSignal.timeout(30_000),
+      // große Fehlerberichte brauchen bei langsamer Leitung länger
+      signal: AbortSignal.timeout(e.art === "fehler" || (e.anhaenge ?? []).some((a) => BINAER_ENDUNG.test(a.name)) ? 180_000 : 30_000),
     });
     const j = (await r.json().catch(() => ({}))) as { nr?: number; geheim?: string; status?: TicketStatus; fehler?: string };
     if (r.ok && j.nr && j.geheim) return { nr: j.nr, geheim: j.geheim, status: j.status ?? "eingegangen" };
@@ -240,6 +258,8 @@ async function senden(e: TicketEingabe): Promise<{ nr: number; geheim: string; s
 export async function ticketSchicken(e: TicketEingabe): Promise<{ ergebnis: "gesendet"; nr: number } | { ergebnis: "wartet" } | { ergebnis: "fehler"; fehler: string }> {
   const r = await senden(e);
   if ("fehler" in r && r.endgueltig) return { ergebnis: "fehler", fehler: r.fehler };
+  // Fehlerberichte und Bilder sind für die Warteschlange (Browser-Speicher) zu groß
+  if ("fehler" in r && (e.art === "fehler" || (e.anhaenge ?? []).some((a) => BINAER_ENDUNG.test(a.name)))) return { ergebnis: "fehler", fehler: `${r.fehler} – bitte später noch einmal senden` };
   const t: MeinTicket = { id: `t${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`, art: e.art, titel: e.titel, erstellt: Date.now(), status: "wartet" };
   if ("nr" in r) Object.assign(t, { nr: r.nr, geheim: r.geheim, status: r.status });
   else t.eingabe = e;
@@ -323,16 +343,18 @@ export function bytes(s: string): number {
   return new TextEncoder().encode(s).length;
 }
 
-/** Anhänge prüfen: nur .txt/.csv, höchstens 5, je 2 MB, zusammen 5 MB */
-export function anhaengePruefen(liste: { name: string; inhalt: string }[]): string | null {
-  if (liste.length > GRENZEN.anhaenge) return `Höchstens ${GRENZEN.anhaenge} Dateien`;
+/** Anhänge prüfen: Text (.txt, .csv; bei Fehlern auch .md/.log), Bilder; Anzahl und Größe wie im Ticket-Dienst */
+export function anhaengePruefen(liste: { name: string; inhalt: string }[], art?: TicketArt): string | null {
+  const g = art === "fehler" ? GRENZEN_FEHLER : GRENZEN;
+  if (liste.length > g.anhaenge) return `Höchstens ${g.anhaenge} Dateien`;
   let summe = 0;
   for (const a of liste) {
-    if (!ANHANG_ENDUNG.test(a.name)) return `${a.name}: nur .txt- oder .csv-Dateien`;
-    const b = bytes(a.inhalt);
-    if (b > GRENZEN.dateiBytes) return `${a.name}: größer als 2 MB`;
+    const bin = BINAER_ENDUNG.test(a.name);
+    if (!bin && !(art === "fehler" ? TEXT_ENDUNG : ANHANG_ENDUNG).test(a.name)) return `${a.name}: nur .txt-, .csv- oder Bild-Dateien (.png, .jpg)`;
+    const b = bin ? Math.floor((a.inhalt.replace(/=+$/, "").length * 3) / 4) : bytes(a.inhalt);
+    if (b > g.dateiBytes) return `${a.name}: größer als ${g.dateiBytes / 1_000_000} MB`;
     summe += b;
   }
-  if (summe > GRENZEN.gesamtBytes) return "Alle Dateien zusammen größer als 5 MB";
+  if (summe > g.gesamtBytes) return `Alle Dateien zusammen größer als ${g.gesamtBytes / 1_000_000} MB`;
   return null;
 }

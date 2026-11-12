@@ -3610,6 +3610,9 @@ input.ausr-zahl { width: 64px !important; min-width: 0; }
 .mh-treffer-b { text-align: left; font: inherit; font-size: 12.5px; padding: 4px 8px; border: 1px solid var(--line); border-radius: 6px; background: transparent; color: inherit; cursor: pointer; }
 .mh-dienst summary { cursor: pointer; font-size: 13px; margin-bottom: 6px; }
 .mh-dateien { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 4px; }
+.mh-heli-info { padding: 8px 10px; border-radius: 8px; background: rgba(47, 124, 246, 0.08); border: 1px solid rgba(47, 124, 246, 0.3); font-size: 13px; line-height: 1.45; }
+.mh-teile { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+.mh-teil { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; }
 .mh-datei { display: flex; align-items: center; gap: 8px; }
 .mh-meine { display: flex; flex-direction: column; gap: 8px; }
 .mh-ticket { padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; display: flex; flex-direction: column; gap: 4px; }
