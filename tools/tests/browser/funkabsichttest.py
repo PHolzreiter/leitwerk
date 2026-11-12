@@ -48,6 +48,7 @@ FAELLE = [
     ("Hier LEO, bitte gib mir eine Lage Meldung, kommen.", "lageAnfordern", None, 1),
     ("Hier LEO, das NEF ist storniert, ihr seid auch storniert, kommen", "storno", None, 1),
     ("Hier LEO, ihr seid storniert, kommen", "storno", None, 1),
+    ("Hier LEO, wird der Notarzt mit ins Krankenhaus kommen.", "frage", "naMit", 1),
     ("Hier LEO, gerade wo mit dem NEF Tulln in Sankt Pölten, kommen.", "info", None, 1),
     ("Hier LEO, Storno für euch, das NEF Krems fährt weiter, kommen", "storno", None, 1),
 ]

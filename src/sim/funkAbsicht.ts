@@ -27,7 +27,7 @@ export type Absicht =
 const DRITTE =
   /\b(nef|notarzt(?:wagen|einsatzfahrzeug)?|na\b|nah\b|naw\b|hubschrauber|christoph\w*(?:\s?horus)?|c\s?\d{1,2}\b|ith\b|rtw(?:-c)?\b|ktw\b|bel\b|einsatzleit\w*|feuerwehr|polizei|bergrettung|wasserrettung|bit\b|\d{2,3}\s?\/\s?\d{1,3}\b)/i;
 /** Frage: ein Teilsatz beginnt mit einem Fragewort bzw. mit dem Zeitwort („habt ihr …“, „ist der …“) */
-const FRAGEWORT = /(^|[,;.]\s*|\b(und|oder|frage|bitte)\s+)(wie|was|wo|wohin|woher|wann|welche[rsmn]?|wieviel\w*|wie ?viele|warum|wieso|gibt es|habt ihr|hast du|seid ihr|bist du|braucht ihr|brauchts|benötigt ihr|könnt ihr|kannst du|ist der|ist die|ist das|fährt der|fahrt ihr|kommt der|wer)\b/i;
+const FRAGEWORT = /(^|[,;.]\s*|\b(und|oder|frage|bitte)\s+)(wie|was|wo|wohin|woher|wann|welche[rsmn]?|wieviel\w*|wie ?viele|warum|wieso|gibt es|habt ihr|hast du|seid ihr|bist du|braucht ihr|brauchts|benötigt ihr|könnt ihr|kannst du|ist der|ist die|ist das|fährt der|fährt die|fahrt ihr|kommt der|kommt die|wird der|wird die|wird das|werdet ihr|soll der|sollen wir|könnt ihr|kann der|muss der|geht der|wer)\b/i;
 const QUITTUNG = /^(hier leo,?\s*)?(verstanden|danke|passt|ok(ay)?|alles klar|gut|jawohl|roger|in ordnung|so verstanden|ist gut)\W*(kommen)?\W*$/i;
 
 /** Rufnamen und „Hier LEO“ vom Anfang entfernen: „56/006 von LEO, …“, „Hier LEO, …“ */
