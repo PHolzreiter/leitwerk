@@ -37,11 +37,12 @@ import { ALARM_AUFNAHMEN, ALARM_STANDARD, ALARM_VORLAGEN, alarmPrefs, alarmPrefs
 import { dateiLoeschen } from "../sounds";
 import { ablageZeigen } from "../../net/ablage";
 import { flugEingeschraenkt, flugverbot, lageVon, type WetterLage } from "../../sim/weather";
-import { efbStarten, tabletApp, tabletAppNeu, tabletAppSetzen, handyAktionen, handyBuchung, handyDialog, handyLaeuft, handyStand, handyStandBauen } from "./handy";
+import { einrichtungAuto, einrichtungBeobachten, einrichtungDialog, einrichtungOffen } from "./einrichtung";
+import { efbStarten, handyAktionen, handyBuchung, handyDialog, handyLaeuft, handyStand, handyStandBauen } from "./handy";
 import { carlsStand, hpg, hpgAktualisieren, hpgCarlsTest, hpgEinrichten, hpgMissionFuer, hpgStarten, hpgTestNachricht } from "./hpg";
 import { letzterCarls } from "./eingabe";
 import { carlsAn, carlsUmschalten, communityWaehlen, gtn, gtnAn, gtnBereitlegen, gtnSuchen, gtnUmschalten } from "./flugsim";
-import { datenEmpfangen, datenFrisch, dllWaehlen, flugplanSpeichern, flugsim, flugsimAnbinden, flugsimBeenden, flugsimTrennen, flugsimVerbinden, koordText, vorgabe, wetterDialog, msfsWetter, msfsWetterStand, wetterUebergang, vorgabeSetzen, xpAbgleich, xplaneFlugplanBereitlegen, xplanePluginEntfernen, xplanePluginPruefen, xpPlugin, xpPluginDa, xpZeitUmschalten, ec135, ec135Cockpit } from "./flugsim";
+import { datenEmpfangen, datenFrisch, dllWaehlen, flugplanSpeichern, flugsim, flugsimAnbinden, flugsimBeenden, flugsimTrennen, flugsimVerbinden, koordText, vorgabe, wetterDialog, msfsWetter, msfsWetterStand, wetterUebergang, xpAbgleich, xplaneFlugplanBereitlegen, xpPlugin, xpPluginDa, xpZeitUmschalten } from "./flugsim";
 import { IC, wetterHtml, wetterKurz, wetterSchluessel, type WetterReiter } from "../ws/kopfleisteInhalt";
 import { mb, onUpdate, updateImHintergrund, updateInfo, updateStand, updateStandZuruecksetzen } from "../updateDienst";
 import { fehlerBerichtSpeichern } from "../fehlerMelden";
@@ -483,8 +484,9 @@ export function pilotOeffnen(): void {
   handyBuchung((b) => handyBuchen(b));
   // LeitWerk-App im EFB-Tablet (MSFS 2024): Server nur auf diesem Rechner
   void efbStarten();
-  // X-Plane 12: Plugin „LeitWerk“ (Tablet-Fenster, auch in VR) einbauen bzw. aktuell halten
-  void xplanePluginPruefen();
+  // Einrichtung (EFB-App, X-Plane-Plugin, H145, EC135) prüfen und aktuell halten
+  void einrichtungAuto();
+  aus.push(einrichtungBeobachten(() => zeichneAlles()));
   flugsimAnbinden(meinFz, () => planen());
   if (vorgabe().auto) void flugsimVerbinden();
   void gtnSuchen();
@@ -941,6 +943,19 @@ function cockpitDaten(fz: SimFahrzeug | undefined): Record<string, unknown>[] {
   const frisch = datenFrisch();
   const z = flugsim.zustand;
   const out: Record<string, unknown>[] = [];
+  const ew = einrichtungOffen();
+  out.push({
+    k: "einrichtung",
+    t: "Einrichtung",
+    z: !ew.geprueft ? "prüfe …" : ew.laeuft ? "läuft …" : ew.offen ? `${ew.offen} offen` : "alles eingerichtet",
+    f: !ew.geprueft || ew.laeuft ? PUNKT.aus : ew.offen ? PUNKT.warn : PUNKT.ok,
+    d: !ew.geprueft
+      ? "LeitWerk sieht nach, was in MSFS und X-Plane eingebaut ist …"
+      : ew.offen
+        ? `${ew.offen} ${ew.offen === 1 ? "Punkt ist" : "Punkte sind"} noch offen (EFB-App, Plugin, H145, EC135 …) – „Einrichten …“ zeigt was und baut es mit einem Klick ein.`
+        : `EFB-App, X-Plane-Plugin und gewählte Hubschrauber sind auf dem Stand dieser Version.${ew.neustart ? " Manches wirkt erst nach dem nächsten Start des Simulators." : ""}`,
+    knoepfe: [{ t: "Einrichten …", prim: ew.offen > 0, klick: () => einrichtungDialog() }],
+  });
   const msfsKn: Knopf[] = [];
   const xp = flugsim.quelle === "xplane";
   if (z === "aus" || z === "fehler" || z === "keineDll" || z === "getrennt") msfsKn.push({ t: "Mit Flugsimulator verbinden", prim: true, klick: () => void flugsimVerbinden() });
@@ -1018,43 +1033,7 @@ function cockpitDaten(fz: SimFahrzeug | undefined): Record<string, unknown>[] {
             ? "In dieser Version ist das Plugin nicht dabei."
             : pl?.fehler || "Plugin nicht eingebaut – „Einbauen“ legt es in X-Plane 12/Resources/plugins/LeitWerk.",
       hinw: "Tasten: in X-Plane unter Einstellungen › Joystick bzw. Tastatur nach „LeitWerk“ suchen – Status 1–9, Sprechtaste (halten), Tablet zeigen, Zielort buchen, Navigation. Das geht auch, wenn X-Plane vorne ist.",
-      knoepfe: [
-        {
-          t: pl?.aktuell ? "Prüfen" : "Einbauen",
-          klick: () => {
-            vorgabeSetzen({ xpPlugin: true });
-            void xplanePluginPruefen(true, true).then(() => zeichneAlles());
-          },
-        },
-        ...(pl?.aktuell ? [{ t: "Entfernen", klick: () => void xplanePluginEntfernen().then(() => zeichneAlles()) }] : []),
-      ],
-    });
-    // EC135 (Rotorsim): LeitWerk im Cockpit – MFD links, Kachel/App im Klapp-Tablet, TETRA-Funkgerät
-    const es = ec135.stand;
-    if (!es && !ec135.laeuft) void ec135Cockpit("pruefen");
-    const ecs = es?.flugzeuge ?? [];
-    const drin = ecs.filter((x) => x.zustand === "eingebaut");
-    const offen = ecs.filter((x) => x.zustand !== "eingebaut");
-    out.push({
-      k: "ec135",
-      t: "X-Plane: EC135-Cockpit",
-      z: !es ? "…" : !ecs.length ? "keine EC135" : drin.length === ecs.length ? "eingebaut" : drin.length ? `${drin.length}/${ecs.length} eingebaut` : "nicht eingebaut",
-      f: drin.length && !offen.length ? PUNKT.ok : drin.length ? PUNKT.warn : PUNKT.aus,
-      d: !es
-        ? "Suche die EC135 in X-Plane …"
-        : !es.xplane
-          ? "X-Plane 12 nicht gefunden."
-          : !ecs.length
-            ? "Keine EC135 von Rotorsim in X-Plane/Aircraft gefunden."
-            : ecs
-                .map((x) => `${x.name}: ${x.zustand === "eingebaut" ? x.teile.join(", ") : x.zustand === "veraendert" ? "geändert (Update?) – neu einbauen" : "nicht eingebaut"}${x.hinweis ? ` (${x.hinweis})` : ""}`)
-                .join(" · "),
-      hinw: "Linkes MFD zeigt LeitWerk, solange LeitWerk läuft. Auf dem Klapp-Tablet (AviTab) die Kachel „LeitWerk“ antippen, mit „‹ AviTab“ zurück. TETRA-Funkgerät hinten: Ziffern = Status (wie CARLS), ◄ ► oder Knopf = Sprechgruppe, rote Taste = abbrechen, grüne Taste = Sprechtaste. Braucht X-Plane 12.1 und das Plugin; wirkt beim nächsten Laden des Hubschraubers. „Entfernen“ stellt die Originaldateien wieder her.",
-      knoepfe: [
-        ...(ecs.length ? [{ t: offen.length ? "Einbauen" : "Neu einbauen", klick: () => void ec135Cockpit("einbauen").then(() => zeichneAlles()) }] : []),
-        ...(drin.length ? [{ t: "Entfernen", klick: () => void ec135Cockpit("entfernen").then(() => zeichneAlles()) }] : []),
-        { t: "Suchen", klick: () => void ec135Cockpit("pruefen").then(() => zeichneAlles()) },
-      ],
+      knoepfe: pm ? [] : [{ t: "Einrichtung …", klick: () => einrichtungDialog() }],
     });
     return out.concat(cockpitRest(fz).filter((x) => x.k === "handy"));
   }
@@ -1085,7 +1064,7 @@ function cockpitRest(fz: SimFahrzeug | undefined): Record<string, unknown>[] {
       z: v ? "verbunden" : hpg.zustand === "fehler" ? "Fehler" : "wartet",
       f: v ? PUNKT.ok : hpg.zustand === "fehler" ? PUNKT.fehl : PUNKT.warn,
       d: v ? "Mission „LeitWerk Leitstelle“ läuft · Einsatz, Patient und Krankenhauswahl auch am Tablet." : hpg.mission ? "Im Tablet: Missions › Library › „LeitWerk Leitstelle“ wählen (nach dem Einrichten einmal REFRESH)." : hpg.text || "Einmal einrichten, dann im Tablet die Mission wählen.",
-      knoepfe: !hpg.mission ? [{ t: "H145 einrichten", klick: () => void hpgEinrichten() }] : !v ? [{ t: "Missions-Index neu bauen", klick: () => void hpgEinrichten() }] : [],
+      knoepfe: !hpg.mission ? [{ t: "Einrichtung …", klick: () => einrichtungDialog() }] : !v ? [{ t: "Missions-Index neu bauen", klick: () => void hpgEinrichten() }] : [],
     });
   }
   // HPG H145: CARLS-Funkgerät (Status-Tasten) – läuft über die Mission „LeitWerk Leitstelle“ im Tablet (v0.115.0)
@@ -1103,27 +1082,6 @@ function cockpitRest(fz: SimFahrzeug | undefined): Record<string, unknown>[] {
           ? `Ziffer kurz drücken: nach 1 s geht der Status raus (roter Hörer = abbrechen, ◄ ► = Sprechgruppe). Im Display: Status, wer funkt, Sprechgruppe${letzterCarls ? ` · zuletzt: ${letzterCarls}` : ""}.`
           : "Im Tablet der H145: Missions → LeitWerk Leitstelle starten – dann zeigt das Funkgerät Status und Einsatz.",
       knoepfe: [{ t: an ? "Ausschalten" : "Einschalten", klick: () => carlsUmschalten(!an) }],
-    });
-  }
-  // HPG H145: eigene App „LeitWerk“ im Tablet (vor dem Start von MSFS einbauen)
-  if (hpg.paket) {
-    const an = !!vorgabe().tabletApp;
-    out.push({
-      k: "tabletapp",
-      t: "App im H145-Tablet",
-      z: tabletApp.fehler ? "Fehler" : an ? "eingebaut" : "aus",
-      f: tabletApp.fehler ? PUNKT.fehl : an ? PUNKT.ok : PUNKT.aus,
-      d: tabletApp.fehler
-        ? tabletApp.fehler
-        : an
-          ? "Symbol „LeitWerk“ auf dem Startbildschirm des Tablets (ab dem nächsten Start von MSFS)."
-          : "Baut ein eigenes Symbol „LeitWerk“ ins Tablet ein – am besten vor dem Start von MSFS.",
-      knoepfe: an
-        ? [
-            { t: "Neu einbauen", klick: () => void tabletAppNeu().then(() => zeichneAlles()) },
-            { t: "Entfernen", klick: () => void tabletAppSetzen(false).then(() => zeichneAlles()) },
-          ]
-        : [{ t: "Einbauen", klick: () => void tabletAppSetzen(true).then(() => zeichneAlles()) }],
     });
   }
   if (gtn.geprueft) {

@@ -1,5 +1,13 @@
 # Änderungen
 
+## 0.116.0-beta.44 – Einrichtung für MSFS und X-Plane an einer Stelle
+- **Neues Fenster „Einrichtung“** im Hauptmenü unter Pilot und in der Pilotenansicht (Cockpit, ganz oben): Für MSFS 2024 und X-Plane 12 steht je Teil, ob es aktuell ist (✓), ein Update braucht (↑), fehlt (✗), optional ist (○), nach einem Neustart des Simulators wirkt (↻) oder nicht nötig ist (–, eingeklappt). „Alles einrichten“ erledigt alles Offene mit einem Klick.
+- **EFB-App „LeitWerk“ für MSFS 2024:** LeitWerk baut sie selbst in den Community-Ordner ein und hält sie aktuell – kein Kopieren von Hand mehr. „Entfernen“ nimmt sie wieder heraus, danach baut LeitWerk sie nicht mehr von selbst ein.
+- **Beim Start von LeitWerk** werden eigene Teile (EFB-App, X-Plane-Plugin) eingebaut bzw. aktualisiert, die Mission der H145 angelegt und schon Eingebautes in fremden Hubschraubern (App im H145-Tablet, EC135) auf den neuen Stand gebracht.
+- **EC135 (X-Plane):** Auswahl je Hubschrauber; vorgeschlagen sind EC 135 V5, EC 135 P3 Neu V5 und EC 135 V5 - Euronav, andere Hubschrauber mit EC135-Cockpit bleiben unberührt. Nach einem Update des Hubschraubers baut LeitWerk ihn von selbst neu um.
+- **SimConnect:** fehlt die Datei, steht in der Einrichtung, wie man sie mit dem MSFS-SDK bekommt.
+- Pilotenansicht: Die Zeilen zum Einbauen (Tablet-App H145, EC135-Cockpit) sind ins Fenster „Einrichtung“ gewandert; im Cockpit bleiben die Live-Anzeigen. Im Hauptmenü zeigt der Knopf „Einrichtung“ den echten Stand statt der Beispiel-Anzeigen „Simulator“ und „Tablet“.
+
 ## 0.116.0-beta.43 – Notarzt, Rendezvous, Geräte und mehr Abwechslung am Funk
 - **Notarzt (neue Regeln):**
   - Ob ein Notarzt nötig ist, weiß die Besatzung erst nach dem Anschauen: Nachforderung und Storno kommen nicht mehr sofort.

@@ -378,6 +378,37 @@ pub fn hpg_tablet_app(community: Option<String>, port: u16, an: bool) -> Result<
     Ok(Some(geaendert))
 }
 
+#[derive(Serialize)]
+pub struct HpgTabletStand {
+    /// H145 gefunden
+    pub h145: bool,
+    /// Mission „LeitWerk Leitstelle“ angelegt
+    pub mission: bool,
+    /// Link „LeitWerk“ in der Web-Browser-App (mit diesem Port)
+    pub link: bool,
+    /// App „LeitWerk“ im Tablet eingebaut
+    pub app: bool,
+    /// App-Datei entspricht dieser LeitWerk-Version (und diesem Port)
+    pub app_aktuell: bool,
+}
+
+/// Was von LeitWerk in der H145 eingebaut ist (nur lesen)
+#[tauri::command]
+pub fn hpg_tablet_stand(community: Option<String>, port: u16) -> HpgTabletStand {
+    let communities: Vec<PathBuf> = match community.filter(|c| !c.trim().is_empty()) {
+        Some(c) => vec![PathBuf::from(c)],
+        None => crate::gtn::communities(),
+    };
+    let Some(paket) = communities.iter().find_map(|c| h145_in(c)) else {
+        return HpgTabletStand { h145: false, mission: false, link: false, app: false, app_aktuell: false };
+    };
+    let url = format!("http://127.0.0.1:{port}/efb");
+    let link = matches!(fs::read_to_string(paket.join(BROWSER_DATEI)).ok().map(|a| browser_json_mit_link(Some(&a), &url)), Some(Ok((_, false))));
+    let app = fs::read_to_string(paket.join(TABLET_HTML)).map(|t| t.contains(APP_SCRIPT)).unwrap_or(false) && paket.join(APP_JS).exists();
+    let app_aktuell = app && fs::read_to_string(paket.join(APP_JS)).ok().as_deref() == Some(app_js(port).as_str());
+    HpgTabletStand { h145: true, mission: paket.join("hpgmission").join("LeitWerk Leitstelle.json").exists(), link, app, app_aktuell }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

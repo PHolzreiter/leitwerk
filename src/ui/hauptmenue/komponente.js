@@ -548,6 +548,15 @@ export class Komponente {
       pDrin: false, pRaus: () => undefined,
       pBtnGo: () => { if (st.pLaeuft) return; this.setState({ pLaeuft: true }); A.pilotRein(hSel || null).then(f => this.setState({ pLaeuft: false, perr: f })); },
       pilotEinst: () => this.einstellungOeffnen('platz', 'pilot'),
+      ...(() => {
+        const e = A.einrichtung();
+        return {
+          pEinrText: !e.geprueft ? 'Einrichtung …' : e.laeuft ? 'Einrichtung läuft …' : e.offen ? `Einrichtung · ${e.offen} offen` : 'Einrichtung ✓',
+          pEinrDot: 'background: ' + (!e.geprueft || e.laeuft ? '#9AA3B5' : e.offen ? '#FFC72C' : '#4CC38A') + ';',
+          pEinrTitel: 'MSFS und X-Plane: was LeitWerk einbaut (EFB-App, Plugin, H145, EC135) – Stand und Updates' + (e.neustart ? ' · wirkt teils erst nach Neustart des Simulators' : ''),
+          pEinr: () => A.einrichtungZeigen(),
+        };
+      })(),
       pMitLst: !st.ptest, pOhneLst: !!st.ptest,
       pTitel: st.ptest ? 'Testmodus · ohne Leitstelle' : 'Leitstelle gefunden',
       pOkStyle: st.ptest ? 'background: #FFC72C; box-shadow: 0 0 0 4px rgba(255,199,44,.18);' : '',

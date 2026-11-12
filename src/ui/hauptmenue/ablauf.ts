@@ -16,6 +16,7 @@ import { installUpdate, appVersion } from "../../updates";
 import { fortschrittLaden, hilfeLaden, hilfeLokal, meineTickets, onTickets, ticketSchicken, type FortschrittPunkt, type TicketArt } from "../../net/tickets";
 import { livePrefs, setLivePrefs, schluesselGeprueft } from "../../abfrage/liveKi";
 import { letzterHeli, merkeHeli, pilotOeffnen } from "../pilot/pilotView";
+import { einrichtungBeobachten, einrichtungDialog, einrichtungOffen } from "../pilot/einrichtung";
 import { WETTER_LABEL } from "../../sim/weather";
 import { funkgruppe } from "../../sim/funkgruppen";
 
@@ -120,6 +121,7 @@ export function ablaufBauen(neuZeichnen: () => void, schliessen: () => void) {
       }));
       aus.push(onUpdate(() => neuZeichnen()));
       aus.push(onTickets(() => neuZeichnen()));
+      aus.push(einrichtungBeobachten(() => neuZeichnen()));
     },
     beenden(): void {
       aus.forEach((f) => f());
@@ -378,6 +380,9 @@ export function ablaufBauen(neuZeichnen: () => void, schliessen: () => void) {
       }
     },
     pilotWartet: () => mp.status.rolle === "client" && !!sim.state.lobby,
+    /** Einrichtung für MSFS und X-Plane: wie viel offen ist, Fenster öffnen */
+    einrichtung: () => einrichtungOffen(),
+    einrichtungZeigen: () => einrichtungDialog(),
 
     // ------------------------------------------------ Update
     update() {

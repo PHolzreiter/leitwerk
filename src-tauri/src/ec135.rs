@@ -38,6 +38,24 @@ const EINGEBAUT: &str = "leitwerk/tetra/eingebaut";
 /// Kachel „LeitWerk“ auf der AviTab-Startseite: zweiter Platz in der zweiten Reihe (neben „About“), in AviTab-Punkten
 /// (800 × 480, links oben = 0,0) – nach dem Bildschirmfoto der Startseite (Paul 11.11.)
 const KACHEL: (f64, f64, f64, f64) = (116.0, 163.0, 214.0, 271.0);
+/// Hochzählen, wenn sich der Umbau ändert (zusätzlich zählt der Inhalt der mitgelieferten Dateien)
+const EINBAU_VERSION: &str = "1";
+/// Ordnernamen (klein, ohne Leerzeichen), die LeitWerk vorschlägt
+const VORSCHLAG: [&str; 3] = ["ec135v5", "ec135p3neuv5", "ec135v5-euronav"];
+
+/// Stand des Umbaus dieser LeitWerk-Version (steht nach dem Einbau in .leitwerk-ec135/version.txt)
+fn einbau_stand() -> String {
+    let mut b = EINBAU_VERSION.as_bytes().to_vec();
+    b.extend_from_slice(TETRA_OBJ_GZ);
+    b.extend_from_slice(COCKPIT_GZ);
+    b.extend_from_slice(ATLAS);
+    format!("{EINBAU_VERSION}-{}", &sha(&b)[..12])
+}
+
+fn vorgeschlagen(name: &str) -> bool {
+    let n: String = name.to_lowercase().chars().filter(|c| !c.is_whitespace() && *c != '_').collect();
+    VORSCHLAG.contains(&n.as_str())
+}
 
 #[derive(Serialize, Clone, Debug, Default)]
 pub struct Ec135Flugzeug {
@@ -48,6 +66,10 @@ pub struct Ec135Flugzeug {
     /// was eingebaut ist bzw. eingebaut würde: „MFD“, „Tablet“, „Funkgerät“
     pub teile: Vec<String>,
     pub hinweis: String,
+    /// eingebaut und auf dem Stand dieser LeitWerk-Version
+    pub aktuell: bool,
+    /// einer der drei EC135, die LeitWerk von sich aus vorschlägt
+    pub vorschlag: bool,
 }
 
 #[derive(Serialize, Clone, Debug, Default)]
@@ -703,6 +725,7 @@ fn einbauen(ordner: &Path) -> Result<(Vec<String>, String), String> {
         }
         liste.insert(rel.clone(), (alt.as_ref().map(|a| sha(a)), sha(neu)));
     }
+    std::fs::write(tmp.join("version.txt"), einbau_stand()).map_err(|e| e.to_string())?;
     std::fs::write(tmp.join("liste.json"), serde_json::to_vec_pretty(&liste).map_err(|e| e.to_string())?).map_err(|e| e.to_string())?;
     let _ = std::fs::remove_dir_all(&sich);
     std::fs::rename(&tmp, &sich).map_err(|e| format!("Sicherung: {e}"))?;
@@ -740,13 +763,9 @@ fn flugzeug(ordner: &Path) -> Ec135Flugzeug {
             }
         }
     }
-    Ec135Flugzeug {
-        ordner: ordner.display().to_string(),
-        name: ordner.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default(),
-        zustand: z,
-        teile,
-        hinweis,
-    }
+    let name = ordner.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default();
+    let aktuell = z == "eingebaut" && std::fs::read_to_string(ordner.join(SICHERUNG).join("version.txt")).map(|v| v.trim() == einbau_stand()).unwrap_or(false);
+    Ec135Flugzeug { ordner: ordner.display().to_string(), vorschlag: vorgeschlagen(&name), name, zustand: z, teile, hinweis, aktuell }
 }
 
 fn stand_fuer(wurzel: Option<PathBuf>) -> Ec135Stand {
@@ -754,7 +773,8 @@ fn stand_fuer(wurzel: Option<PathBuf>) -> Ec135Stand {
     Ec135Stand { xplane: true, flugzeuge: suchen(&w.join("Aircraft")).iter().map(|o| flugzeug(o)).collect(), ..Default::default() }
 }
 
-/// EC135 im X-Plane-Ordner: aktion = "pruefen" | "einbauen" | "entfernen"; ordner = ein Flugzeug (sonst alle)
+/// EC135 im X-Plane-Ordner: aktion = "pruefen" | "einbauen" | "aktualisieren" | "entfernen"; ordner = ein Flugzeug (sonst alle).
+/// „aktualisieren“ geht auch nach einem Update des Hubschraubers: geänderte Dateien bleiben, wie sie sind, und werden neu umgebaut.
 #[tauri::command]
 pub fn ec135_cockpit(aktion: String, ordner: Option<String>) -> Ec135Stand {
     let wurzel = crate::xplane::xplane_ordner();
@@ -774,7 +794,11 @@ pub fn ec135_cockpit(aktion: String, ordner: Option<String>) -> Ec135Stand {
             fehler.push(format!("{name}: kein EC135-Cockpit"));
             continue;
         }
-        let r = if aktion == "einbauen" {
+        let r = if aktion == "aktualisieren" {
+            let (z, _) = zustand(&o);
+            let vorher = if z == "veraendert" { zurueck(&o, false).map(|_| ()) } else { Ok(()) };
+            vorher.and_then(|_| einbauen(&o)).map(|(t, h)| format!("{name}: aktualisiert ({}){}", t.join(", "), if h.is_empty() { String::new() } else { format!(" – {h}") }))
+        } else if aktion == "einbauen" {
             einbauen(&o).map(|(t, h)| format!("{name}: {}{}", if t.is_empty() { "nichts".into() } else { t.join(", ") }, if h.is_empty() { String::new() } else { format!(" ({h})") }))
         } else {
             zurueck(&o, false).map(|(da, gelassen)| {
@@ -811,6 +835,11 @@ mod tests {
         assert!(panel_umbauen("TRIS 0 10", 234).is_none());
     }
 
+    #[test]
+    fn vorschlag_namen() {
+        assert!(vorgeschlagen("EC 135 V5") && vorgeschlagen("EC 135 P3 Neu V5") && vorgeschlagen("EC 135 V5 - Euronav"));
+        assert!(!vorgeschlagen("H135") && !vorgeschlagen("EC 135 V4"));
+    }
     #[test]
     fn acf_alter_platz() {
         let a = "P _obja/65/_v10_att_file_stl motorola_mxm600/MXM600.obj\n";

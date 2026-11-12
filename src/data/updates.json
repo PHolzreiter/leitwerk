@@ -1,5 +1,17 @@
 [
  {
+  "version": "0.116.0-beta.44",
+  "datum": "2026-11-12",
+  "titel": "Einrichtung für MSFS und X-Plane an einer Stelle",
+  "punkte": [
+   "Fenster „Einrichtung“: je Teil aktuell, Update, fehlt oder nicht nötig – „Alles einrichten“ mit einem Klick",
+   "EFB-App für MSFS 2024 baut LeitWerk selbst ein und hält sie aktuell",
+   "Beim Start: eigene Teile einbauen, Eingebautes in H145 und EC135 aktuell halten",
+   "EC135: Auswahl je Hubschrauber, die drei bekannten vorgeschlagen",
+   "Im Hauptmenü unter Pilot und in der Pilotenansicht"
+  ]
+ },
+ {
   "version": "0.116.0-beta.43",
   "datum": "2026-11-12",
   "titel": "Notarzt, Rendezvous, Geräte und mehr Abwechslung am Funk",

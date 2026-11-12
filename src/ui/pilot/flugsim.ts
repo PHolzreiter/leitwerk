@@ -46,6 +46,10 @@ interface Vorgabe {
   wxWolken?: "bedeckung" | "dichte";
   /** X-Plane 12: Plugin „LeitWerk“ (Tablet-Fenster, auch in VR) automatisch einbauen (Standard an) */
   xpPlugin?: boolean;
+  /** MSFS 2024: EFB-App „LeitWerk“ automatisch einbauen und aktualisieren (Standard an; aus nach „Entfernen“) */
+  efbApp?: boolean;
+  /** X-Plane 12: welche EC135 LeitWerk bekommen (Ordner → ja/nein; sonst die drei vorgeschlagenen) */
+  ec135Wahl?: Record<string, boolean>;
 }
 export function vorgabe(): Vorgabe {
   try {
@@ -732,7 +736,7 @@ export function xpPluginMeldung(text: string): void {
 
 // ------------------------------------------------------------------ EC135 (Rotorsim): LeitWerk im Cockpit
 /** Stand des Einbaus je EC135-Ordner in X-Plane (Rust ec135.rs) */
-export type Ec135Flugzeug = { ordner: string; name: string; zustand: "original" | "eingebaut" | "veraendert"; teile: string[]; hinweis: string };
+export type Ec135Flugzeug = { ordner: string; name: string; zustand: "original" | "eingebaut" | "veraendert"; teile: string[]; hinweis: string; aktuell: boolean; vorschlag: boolean };
 export type Ec135Stand = { xplane: boolean; flugzeuge: Ec135Flugzeug[]; meldung: string; fehler: string };
 export const ec135 = { stand: null as Ec135Stand | null, laeuft: false };
 
@@ -740,7 +744,7 @@ export const ec135 = { stand: null as Ec135Stand | null, laeuft: false };
  * EC135 im X-Plane-Ordner prüfen bzw. LeitWerk einbauen/entfernen: linkes MFD (statt EuroNav, solange LeitWerk läuft),
  * Kachel und App auf dem Klapp-Tablet (AviTab), TETRA-Funkgerät. Ohne ordner: alle gefundenen EC135.
  */
-export async function ec135Cockpit(aktion: "pruefen" | "einbauen" | "entfernen", ordner?: string): Promise<void> {
+export async function ec135Cockpit(aktion: "pruefen" | "einbauen" | "aktualisieren" | "entfernen", ordner?: string): Promise<void> {
   if (!inTauri() || ec135.laeuft) return;
   ec135.laeuft = true;
   try {

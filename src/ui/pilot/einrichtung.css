@@ -1,0 +1,43 @@
+/* Einrichtung für MSFS und X-Plane (Dialog, Hauptmenü › Pilot und Pilotenansicht) */
+.ew { display: flex; flex-direction: column; gap: 14px; font-size: 13px; }
+.ew-kopf { display: flex; flex-direction: column; gap: 4px; }
+.ew-sum { font-size: 15px; font-weight: 700; }
+.ew-sum.offen { color: var(--warn-text); }
+.ew-sum.fertig { color: var(--ok); }
+.ew-neu { font-weight: 500; color: var(--blue); font-size: 13px; }
+.ew-text, .ew-dim { color: var(--text-dim); line-height: 1.45; }
+.ew-dim { font-weight: 500; }
+.ew-gr { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.ew-gr h3 { margin: 0; padding: 9px 12px; font-size: 13px; letter-spacing: .02em; background: var(--panel-2); border-bottom: 1px solid var(--line); }
+.ew-gr.aus h3 { color: var(--text-dim); }
+.ew-z { display: grid; grid-template-columns: auto 22px 1fr auto; align-items: start; gap: 8px; padding: 9px 12px; border-top: 1px solid var(--line); }
+.ew-gr h3 + .ew-z { border-top: 0; }
+.ew-z.unter { padding-left: 30px; }
+.ew-z:not(:has(.ew-cb)) { grid-template-columns: 22px 1fr auto; }
+.ew-st { width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px; background: var(--panel-3); color: var(--text-dim); }
+.z-ok .ew-st { background: color-mix(in srgb, var(--ok) 16%, transparent); color: var(--ok); }
+.z-update .ew-st, .z-fehlt .ew-st { background: var(--warn-bg); color: var(--warn-text); }
+.z-fehler .ew-st { background: var(--alert-bg); color: var(--alert-text); }
+.z-neustart .ew-st { background: color-mix(in srgb, var(--blue) 16%, transparent); color: var(--blue); }
+.ew-in { min-width: 0; }
+.ew-t { font-weight: 600; }
+.ew-w { font-weight: 500; font-size: 11px; color: var(--text-dim); margin-left: 4px; }
+.z-update .ew-w, .z-fehlt .ew-w { color: var(--warn-text); }
+.z-fehler .ew-w { color: var(--alert-text); }
+.z-ok .ew-w { color: var(--ok); }
+.z-neustart .ew-w { color: var(--blue); }
+.ew-d { color: var(--text-dim); line-height: 1.4; margin-top: 2px; overflow-wrap: anywhere; }
+.ew-h { margin-top: 4px; font-size: 12px; line-height: 1.4; color: var(--text-dim); border-left: 2px solid var(--line-2); padding-left: 8px; }
+.z-unnoetig .ew-t { color: var(--text-dim); font-weight: 500; }
+.ew-ak { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.ew-btn { padding: 4px 10px; font-size: 12px; white-space: nowrap; }
+.ew-cb { all: unset; box-sizing: border-box; width: 18px; height: 18px; margin-top: 2px; border-radius: 4px; border: 1.5px solid var(--line-2); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; color: #fff; }
+.ew-cb.an { background: var(--blue); border-color: var(--blue); }
+.ew-cb:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+.ew-rest { border-top: 1px solid var(--line); }
+.ew-rest summary { cursor: pointer; padding: 7px 12px; color: var(--text-dim); font-size: 12px; }
+.ew-rest .ew-z { opacity: .75; }
+@media (max-width: 560px) {
+  .ew-z, .ew-z:not(:has(.ew-cb)) { grid-template-columns: auto 1fr; }
+  .ew-ak { grid-column: 1 / -1; justify-content: flex-start; }
+}

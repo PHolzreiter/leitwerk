@@ -15,6 +15,7 @@ mod ton;
 mod updater;
 mod xplane;
 mod ec135;
+mod einrichtung;
 mod protokoll;
 mod joystick;
 
@@ -672,6 +673,8 @@ pub fn run() {
             hpg::hpg_suchen,
             hpg::hpg_tablet_link,
             hpg::hpg_tablet_app,
+            hpg::hpg_tablet_stand,
+            einrichtung::efb_app,
             app_version
         ])
         .build(kontext)

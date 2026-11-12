@@ -1156,7 +1156,7 @@ select.l-select.dd-auf{border-color:#3B8BFF}
                 <input id="l-pname" class="l-input big" type="text" maxlength="30" placeholder="Dein Name" aria-label="Dein Name" value="{{pname}}" onChange="{{onPname}}" onKeyDown="{{pKey}}">
                 <button class="{{pWeiterCls}}" onClick="{{pWeiter}}">Weiter <span class="l-kbd">Enter</span></button>
               </div>
-              <p class="l-jfoot"><button class="l-jlast" onClick="{{pTest}}"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2"></path></svg>Ohne Leitstelle testen</button></p>
+              <p class="l-jfoot"><button class="l-pc btn" style="margin-right: 10px;" title="{{pEinrTitel}}" onClick="{{pEinr}}"><i style="{{pEinrDot}}"></i>{{pEinrText}}</button><button class="l-jlast" onClick="{{pTest}}"><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2"></path></svg>Ohne Leitstelle testen</button></p>
             </div>
           </sc-if>
           <!-- Schritt 2: Leitstelle · Hubschrauber · Lobby, unten Cockpit-Status und Start -->
@@ -1211,8 +1211,7 @@ select.l-select.dd-auf{border-color:#3B8BFF}
             <div class="l-jbottom">
               <div class="l-pcock">
                 <span class="l-lab" style="margin: 0;">Cockpit</span>
-                <button class="l-pc btn" title="Flugsimulator · MSFS 2024 · wartet auf Start – Einstellungen öffnen" onClick="{{pilotEinst}}"><i style="background: #9AA3B5;"></i>Simulator</button>
-                <button class="l-pc btn" title="H145-Tablet · eingetragen – Einstellungen öffnen" onClick="{{pilotEinst}}"><i style="background: #4CC38A;"></i>Tablet</button>
+                <button class="l-pc btn" title="{{pEinrTitel}}" onClick="{{pEinr}}"><i style="{{pEinrDot}}"></i>{{pEinrText}}</button>
                 <button class="l-pc btn" title="Handy als Statusgerät · gleiches WLAN" onClick="{{pilotEinst}}">Handy koppeln</button>
                 <button class="l-pc btn" title="Statustasten, Sprechtaste, Joystick, globale Kürzel" onClick="{{pilotEinst}}">Funk &amp; Tasten</button>
               </div>

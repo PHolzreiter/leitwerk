@@ -8,6 +8,7 @@ Aufruf: python3 tools/efb-app/bauen.py <ziel.zip>
 """
 import json
 import os
+import re
 import shutil
 import sys
 import tempfile
@@ -17,7 +18,9 @@ import zipfile
 HIER = os.path.dirname(os.path.abspath(__file__))
 PAKET = "leitwerk-efb-pilot"
 APP = "LeitWerkPilot"
-VERSION = "0.4.0"
+# Version steht nur in der App-Datei (LeitWerk liest sie von dort, wenn es die App selbst einbaut)
+with open(os.path.join(HIER, "PackageSources", APP, APP + ".js"), encoding="utf-8") as _f:
+    VERSION = re.search(r"var VERSION = '([^']+)'", _f.read()).group(1)
 
 
 def filetime(sekunden: float) -> int:

@@ -283,4 +283,6 @@ async function init(): Promise<void> {
 
 void init().then(() => {
   if (IST_HAUPT) setTimeout(() => void checkOnStart(), 2500);
+  // Einrichtung für MSFS und X-Plane: eigene Teile einbauen und aktuell halten (still, nur unter Tauri)
+  if (IST_HAUPT) setTimeout(() => void import("./ui/pilot/einrichtung").then((m) => m.einrichtungAuto()).catch((e) => console.warn("Einrichtung", e)), 4000);
 });

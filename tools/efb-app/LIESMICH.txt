@@ -1,32 +1,25 @@
-LeitWerk Pilot – App für das EFB-Tablet von MSFS 2024 (Testversion 0.1.0)
-==========================================================================
+LeitWerk Pilot – App für das EFB-Tablet von MSFS 2024
+=====================================================
 
-Was die App kann (Test):
-- zeigt im EFB-Tablet deinen Hubschrauber, den Status, den Einsatz (Stichwort, Ort,
-  Hinweise beim Großeinsatz, Zielkrankenhaus) und den Patienten
-- Status-Tasten (1–6, 9) setzen deinen Status wie im Piloten-Interface
+Normalerweise braucht man diese Dateien nicht: LeitWerk baut die App selbst in den
+Community-Ordner ein und hält sie aktuell (Hauptmenü › Pilot › Einrichtung oder in der
+Pilotenansicht). Nach dem Einbau oder einem Update einmal MSFS neu starten.
+
+Was die App kann:
+- zeigt im EFB-Tablet jedes Flugzeugs die Einsatz-App von LeitWerk (Status, Einsatz,
+  Patient, Zielort, Navigation)
+- setzt Wetter und Uhrzeit von LeitWerk, sobald der Flug geladen ist
 
 Voraussetzung:
-- LeitWerk ab Version 0.93.2 läuft auf DEMSELBEN Rechner wie MSFS 2024,
-  und das Piloten-Interface ist offen (Hubschrauber gewählt).
+- LeitWerk läuft auf DEMSELBEN Rechner wie MSFS 2024, das Piloten-Interface ist offen.
 
-Variante 1 – einfach (zuerst probieren)
+Von Hand einbauen (nur falls LeitWerk den Community-Ordner nicht findet)
 1. MSFS 2024 schließen.
-2. Den Ordner  community\leitwerk-efb-pilot  in deinen Community-Ordner kopieren
-   (bei dir: D:\MSFS2024 Community\Community).
-3. MSFS 2024 starten, Flug beginnen, EFB-Tablet öffnen (im Cockpit oder über die Toolbar).
-4. In der App-Liste des Tablets „LeitWerk“ suchen und öffnen.
+2. Den Ordner  community\leitwerk-efb-pilot  in den Community-Ordner kopieren.
+3. MSFS 2024 starten, Flug beginnen, EFB-Tablet öffnen, App „LeitWerk“ wählen.
 
-Variante 2 – nur wenn die App bei Variante 1 nicht auftaucht
-(braucht den Developer Mode und einmal das SDK)
-1. Den Ordner aus Variante 1 wieder aus dem Community-Ordner löschen.
-2. In MSFS 2024: Optionen → Allgemein → Entwickler → Developer Mode EIN.
-3. Toolbar oben: File → Open project… → projekt\LeitWerkEfbProjekt.xml
-4. Im Project Editor „Build All In Project“ (vor dem Flug), dann Flug starten.
-
-Bitte notieren:
-- Erscheint die App (Variante 1 oder 2)?
-- Steht „verbunden“ oben rechts, und siehst du Hubschrauber und Status?
-- Gehen die Status-Tasten?
-- Am Bildschirm: Ist das Tablet in der H145 eingebaut oder nur als Fenster?
-- In VR: Ist das Tablet brauchbar (Größe, Klicken mit dem Controller)?
+Nur wenn die App so nicht auftaucht (braucht den Developer Mode):
+1. Den Ordner wieder aus dem Community-Ordner löschen.
+2. MSFS 2024: Optionen → Allgemein → Entwickler → Developer Mode EIN.
+3. Toolbar: File → Open project… → projekt\LeitWerkEfbProjekt.xml
+4. Im Project Editor „Build All In Project“, dann Flug starten.
