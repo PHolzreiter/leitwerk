@@ -77,7 +77,8 @@ export function funkHinweis(extra = ""): string {
     `Funkverkehr Rettungsdienst Niederösterreich, Sprechgruppe ${gruppe}.`,
     `${n(0, "75 1")} von LEO, kommen. Hier ${n(0, "75 1")}, kommen.`,
     `Hier LEO, ${n(1, "NEF Tulln")} ist ab Wache mit einer Eintreffzeit von 12 Minuten zu euch alarmiert, kommen.`,
-    `Hier ${n(0, "75 1")}, verstanden, warten auf ${n(1, "NEF Tulln")}, kommen.`,
+    // (Paul 12.11.: kein „verstanden, warten auf …“ mehr – die Erkennung hat daraus Sätze der Leitstelle erfunden)
+    `Hier ${n(0, "75 1")}, Einsatzort erreicht, kommen. LEO verstanden, Ende.`,
     `LEO von ${n(2, "56 6")}, kommen. Hier LEO, kommen.`,
     `Hier ${n(2, "56 6")} mit einer Lagemeldung, ein Patient, wach, Atmung normal, benötigen Notarzt, kommen.`,
     `Hier LEO, Notarzt kommt, Rendezvous in ${ort(0, "Krems")}, kommen.`,

@@ -120,10 +120,6 @@ export function createSettingsView(container: HTMLElement, teil: "simulation" | 
     const fa = num(draft.falscheAdresseProzent);
     fa.addEventListener("change", () => (draft.falscheAdresseProzent = Number(fa.value) || 0));
     vGrid.append(el("label", {}, "Anrufer mit falscher Adresse (%)"), fa);
-    const rn = el("input", { type: "checkbox" });
-    rn.checked = !!draft.rueckrufOhneNummer;
-    rn.addEventListener("change", () => (draft.rueckrufOhneNummer = rn.checked));
-    vGrid.append(el("label", { title: "Normal kann die Leitstelle nur zurückrufen, wenn die Rückrufnummer in der Abfrage oder Maske eingetragen ist" }, "Rückruf auch ohne aufgenommene Nummer"), rn);
     const ansichtSel = el("select", { class: "set-abfrage-ansicht" }) as HTMLSelectElement;
     ansichtSel.append(el("option", { value: "neu" }, "neu – Notruf Frage für Frage, KT/SEK aufgeräumt"), el("option", { value: "klassisch" }, "bisherige Ansicht"));
     ansichtSel.value = abfrageAnsicht();

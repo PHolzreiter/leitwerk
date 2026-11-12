@@ -30,6 +30,11 @@ export function crewListe(fz: SimFahrzeug): string[] {
   return fz.besetzung.map((p) => p.quali);
 }
 
+/** Besatzung als Kärtchen (wie in der Vorschlagsliste) – für das Darüberfahren bei alarmierten Fahrzeugen */
+export function crewKaertchen(fz: SimFahrzeug): { t: string; cls: string }[] {
+  return crewListe(fz).map((q) => ({ t: q, cls: "q" + (q === "NA" ? " na" : /^NFS/.test(q) ? " hoch" : "") }));
+}
+
 /** Ort kurz: „Hauptplatz 8, 3542 Gföhl“ → „Hauptplatz 8, Gföhl“ */
 export function ortKurz(label: string | undefined | null): string {
   if (!label) return "";

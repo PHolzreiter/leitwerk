@@ -1072,7 +1072,8 @@ function ktGespraech(k: KtAuftrag, x: AnrufEintrag): GespraechVM | null {
     panelZeigen("kt");
   };
   const g = d.patient.geschlecht ?? "";
-  const auto = d.patient.alter !== null || g ? `${d.patient.alter ?? ""}${g}` : "";
+  // Überstellung: Diagnose und Transportgrund gehören automatisch zum Hinweis an die Besatzung (Paul 12.11.2026)
+  const auto = [d.patient.alter !== null || g ? `${d.patient.alter ?? ""}${g}` : "", sek ? d.grund : ""].filter(Boolean).join(" // ");
   return {
     id: k.id,
     art,

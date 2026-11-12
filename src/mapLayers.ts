@@ -399,22 +399,23 @@ export function addSimLayers(map: maplibregl.Map, cb: { onIncident(id: string): 
   map.addSource("lw-flugzeuge", { type: "geojson", data: flugzeugFeatures() });
   if (!map.hasImage("lw-flugzeug")) map.addImage("lw-flugzeug", flugzeugBild(), { pixelRatio: 2 });
 
-  // Fahrtweg (Boden): dunkler Rand, darüber die Statusfarbe; Flugweg: Luftlinie, lang gestrichelt
+  // Nur der noch zu fahrende Weg, dünn und strichliert (Paul 12.11.2026) – nur bei Auswahl (Fahrzeug oder sein Einsatz).
+  // Boden: entlang der Straße mit schmalem dunklem Rand; Flug: Luftlinie, länger gestrichelt
   map.addLayer({
     id: "lw-routes-rand",
     type: "line",
     source: "lw-routes",
     filter: ["==", ["get", "luft"], 0],
     layout: { "line-cap": "round", "line-join": "round" },
-    paint: { "line-color": "#111216", "line-opacity": 0.55, "line-width": 8 },
+    paint: { "line-color": "#111216", "line-opacity": 0.35, "line-width": 4 },
   });
   map.addLayer({
     id: "lw-routes",
     type: "line",
     source: "lw-routes",
     filter: ["==", ["get", "luft"], 0],
-    layout: { "line-cap": "round", "line-join": "round" },
-    paint: { "line-color": ["get", "farbe"], "line-width": 4.5 },
+    layout: { "line-cap": "butt", "line-join": "round" },
+    paint: { "line-color": ["get", "farbe"], "line-width": 2.5, "line-dasharray": [2.4, 1.6] },
   });
   map.addLayer({
     id: "lw-routes-luft",
@@ -422,14 +423,14 @@ export function addSimLayers(map: maplibregl.Map, cb: { onIncident(id: string): 
     source: "lw-routes",
     filter: ["==", ["get", "luft"], 1],
     layout: { "line-cap": "butt", "line-join": "round" },
-    paint: { "line-color": ["get", "farbe"], "line-width": 3, "line-dasharray": [14 / 3, 8 / 3] },
+    paint: { "line-color": ["get", "farbe"], "line-width": 2.2, "line-dasharray": [4, 2.5] },
   });
-  // Spieler-NAH: geflogene Strecke
+  // Spieler-NAH: die schon geflogene Strecke wird in der Leitstelle nicht mehr gezeigt (nur der Weg, der noch kommt)
   map.addLayer({
     id: "lw-pilot-spur",
     type: "line",
     source: "lw-pilot-spur",
-    layout: { "line-cap": "round", "line-join": "round" },
+    layout: { "line-cap": "round", "line-join": "round", visibility: "none" },
     paint: { "line-color": ["get", "color"], "line-width": 2.5, "line-opacity": 0.75 },
   });
   // Partner-Fahrzeuge: klein, unter den eigenen Fahrzeugen

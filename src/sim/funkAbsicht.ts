@@ -29,6 +29,14 @@ const DRITTE =
 /** Frage: ein Teilsatz beginnt mit einem Fragewort bzw. mit dem Zeitwort („habt ihr …“, „ist der …“) */
 const FRAGEWORT = /(^|[,;.]\s*|\b(und|oder|frage|bitte)\s+)(wie|was|wo|wohin|woher|wann|welche[rsmn]?|wieviel\w*|wie ?viele|warum|wieso|gibt es|habt ihr|hast du|seid ihr|bist du|braucht ihr|brauchts|benötigt ihr|könnt ihr|kannst du|ist der|ist die|ist das|fährt der|fährt die|fahrt ihr|kommt der|kommt die|wird der|wird die|wird das|werdet ihr|soll der|sollen wir|könnt ihr|kann der|muss der|geht der|wer)\b/i;
 const QUITTUNG = /^(hier leo,?\s*)?(verstanden|danke|passt|ok(ay)?|alles klar|gut|jawohl|roger|in ordnung|so verstanden|ist gut)\W*(kommen)?\W*$/i;
+/** Wörter einer reinen Bestätigung („Ja, LEO verstanden“, „LEO hat verstanden, danke“, „verstanden, LEO Ende“) */
+const QUITT_WORT = /\b(verstanden|danke|passt|ok(ay)?|alles klar|jawohl|roger|in ordnung|ist gut|gut|alles)\b/i;
+const QUITT_FUELL = /\b(ja|jo|hier|leo|von|so|hat|haben|habe|wir|ich|auch|soweit|verstanden|danke|dir|euch|schön|sehr|passt|ok|okay|alles|klar|jawohl|roger|in|ordnung|ist|gut|ende|kommen|over|gerne)\b/gi;
+/** reine Bestätigung der Leitstelle: nur Füllwörter und mindestens ein Bestätigungswort */
+export function istQuittung(t: string): boolean {
+  if (!QUITT_WORT.test(t) || /\?/.test(t)) return false;
+  return !t.replace(QUITT_FUELL, "").replace(/[\W_]/g, "");
+}
 
 /** Rufnamen und „Hier LEO“ vom Anfang entfernen: „56/006 von LEO, …“, „Hier LEO, …“ */
 export function ohneKopf(t: string): string {
@@ -56,7 +64,10 @@ export function absichtErkennen(text: string, opt: { sicherheit?: number; angesp
   const t = roh.toLowerCase();
   if (!t) return { art: "unklar", grund: "leer" };
   if (/\bende\W*$/.test(t) && t.length < 40) return { art: "ende" };
-  if (QUITTUNG.test(t)) return { art: "quittung" };
+  if (QUITTUNG.test(t) || istQuittung(t)) return { art: "quittung" };
+  // „verstanden, warten ab“ / „verstanden, wartet“: Bestätigung einer Meldung der Besatzung, keine neue Information
+  if (/^(ja,?\s*)?(hier\s+)?(leo,?\s*)?(hat\s+)?verstanden\b/.test(t) && !/\?/.test(t) && t.replace(/^.*?verstanden\W*/, "").replace(/\b(kommen|ende)\W*$/, "").trim().split(/\s+/).filter(Boolean).length <= 2 && !DRITTE.test(t) && !/storno|storniert/.test(t))
+    return { art: "quittung" };
   const inhalt = ohneKopf(roh).toLowerCase();
   const sicher = opt.sicherheit ?? 1;
   // nur „Hier LEO, kommen“ (LEO meldet sich auf einen Anruf): das Fahrzeug spricht weiter

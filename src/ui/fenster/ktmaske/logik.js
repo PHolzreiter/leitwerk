@@ -67,10 +67,13 @@ export class KtMaskeLogik extends MaskeBasis {
 
     // ---- Fahrzeug mit laufender Fahrt: wann fährt es?
     const plan = tr && tr.plan;
-    const wieWahlRoh = plan ? WIE.filter(([id]) => (id !== 'jetzt' || !plan.aktiv) && (id !== 'sammel' || plan.sammelOk)) : [];
-    const wie = plan ? (wieWahlRoh.some(([id]) => id === S.wie) ? S.wie : 'naechste') : 'neu';
+    // „Zusätzlich mitnehmen“ ist vorausgewählt; ohne Platz ausgegraut (mit Grund) und „Als nächste Fahrt“ gewählt
+    const wieWahlRoh = plan ? WIE.filter(([id]) => id !== 'jetzt' || !plan.aktiv) : [];
+    const darf = (id) => id !== 'sammel' || plan.sammelOk;
+    const wie = plan ? (wieWahlRoh.some(([id]) => id === S.wie) && darf(S.wie) ? S.wie : plan.sammelOk ? 'sammel' : 'naechste') : 'neu';
     const wieIdx = Math.max(0, wieWahlRoh.findIndex(([id]) => id === wie));
-    const wieWahl = wieWahlRoh.map(([id, t]) => ({ t, cls: 'seg' + (id === wie ? ' on' : ''), klick: () => this.setState({ wie: id }), titel: id === 'jetzt' ? 'Fährt sofort los – die vorgemerkten Fahrten danach' : id === 'naechste' ? 'Nach seinen anderen Fahrten' : 'Zusätzlich mitnehmen – das Fahrzeug fährt die kürzeste Reihenfolge' }));
+    const keinPlatz = plan && !plan.sammelOk ? 'Zusätzlich mitnehmen geht nicht: ' + (plan.sammelGrund || 'kein Platz') : '';
+    const wieWahl = wieWahlRoh.map(([id, t]) => ({ t, cls: 'seg' + (id === wie ? ' on' : '') + (darf(id) ? '' : ' aus'), klick: () => (darf(id) ? this.setState({ wie: id }) : app.hinweis(keinPlatz)), titel: !darf(id) ? keinPlatz : id === 'jetzt' ? 'Fährt sofort los – die vorgemerkten Fahrten danach' : id === 'naechste' ? 'Nach seinen anderen Fahrten' : 'Zusätzlich mitnehmen – das Fahrzeug fährt die kürzeste Reihenfolge' }));
     const wieText = plan ? (wie === 'jetzt' ? plan.textJetzt : wie === 'sammel' ? plan.textSammel : plan.textNaechste) : '';
 
     // ---- Hauptknopf

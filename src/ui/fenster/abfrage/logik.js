@@ -209,7 +209,7 @@ export class AbfrageLogik extends DCLogic {
             const items = r.gruppen.flatMap((gr) => gr.items).slice(0, 6);
             erster = items[0] || null;
             x.sucht = r.laedt && !items.length;
-            x.treffer = items.map((o, i) => ({ cls: "treffer" + (i === 0 ? " erster" : ""), name: o.name, zeile: o.zeile, rechts: i === 0 ? "Enter" : o.rechts || "", klick: () => { if (!G.darf) return; o.nehmen(); setFq(s.id, ""); } }));
+            x.treffer = items.map((o, i) => ({ cls: "treffer ohne-sym" + (i === 0 ? " erster" : ""), name: o.name, zeile: o.zeile, rechts: i === 0 ? "Enter" : o.rechts || "", klick: () => { if (!G.darf) return; o.nehmen(); setFq(s.id, ""); } }));
           }
           x.taste = (e) => { if (e && e.key === "Enter") { e.preventDefault(); if (erster && G.darf) { erster.nehmen(); setFq(s.id, ""); } } else if (e && e.key === "Escape") setFq(s.id, ""); };
           x.karte = () => { if (G.darf && s.karte) s.karte(); };

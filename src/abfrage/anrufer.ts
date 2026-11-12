@@ -1218,7 +1218,7 @@ function promptGeschichte(k: AnrufKontext): string {
     laie && !ich && !profi ? `- „Der Patient“ sagst du nie – du sagst „${er}“ oder wie du ${ihn} sonst nennst.` : "",
     `- Formuliere jede Antwort neu, fang nicht immer gleich an und sag nichts zweimal. Du fasst nichts zusammen und fragst nicht zurück, ob du richtig verstanden hast.`,
     `- Fasst die Leitstelle zusammen („Also: … richtig?“), vergleichst du JEDEN Teil mit der Fallakte. Stimmt etwas nicht, widersprichst du sofort („Nein, nein – …“) und sagst, wie es wirklich ist. Weißt du es nicht, sagst du das. Nur wenn alles stimmt, bestätigst du kurz.`,
-    `- Teilt dir die Leitstelle nur etwas mit (z. B. „Die Rettung ist unterwegs“), reagierst du kurz wie ein Mensch – erleichtert, mit einem Danke oder mit der Frage, wie lange es dauert. Du wiederholst die Durchsage nicht und zählst den Zustand nicht auf.`,
+    `- Teilt dir die Leitstelle nur etwas mit (z. B. „Die Rettung ist unterwegs“), reagierst du kurz wie ein Mensch – erleichtert oder mit einem Danke${x.persona?.fragtDauer ? " (einmal im Gespräch darfst du fragen, wie lange es ungefähr dauert)" : ". Du fragst NICHT, wie lange es dauert"}. Du wiederholst die Durchsage nicht und zählst den Zustand nicht auf.`,
     `- Die Leitstelle sprichst du mit „Sie“ an – nie mit „du“ oder „ihr“.`,
     `- Wer nicht richtig wach ist, bekommt von dir nichts zu essen oder zu trinken.`,
     `- Der Zustand bleibt so, wie in der Fallakte beschrieben – außer es steht oben „GERADE GEÄNDERT“.`,

@@ -313,7 +313,6 @@ export function ablaufBauen(neuZeichnen: () => void, schliessen: () => void) {
           ["Quelle", st.generatorQuelle === "vorlagen" ? "Vorlagen" : "Zufällig"],
           ["Komplikationen", { ruhig: "Ruhig", normal: "Normal", fordernd: "Fordernd" }[st.komplikationen ?? "normal"]],
           ["Falsche Adresse", `${st.falscheAdresseProzent ?? 0} %`],
-          ["Rückruf ohne Nr.", ja(st.rueckrufOhneNummer, false)],
           ["Revers", { normal: "Normal", selten: "Selten", aus: "Aus" }[st.revers ?? "normal"]],
           ["Rendezvous", ja(st.rendezvous)],
           ["Toleranz", `${st.toleranzMin} min`],

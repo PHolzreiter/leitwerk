@@ -148,3 +148,11 @@
 /* KT/SEK: Zeit beim Ändern des Abholorts bzw. Zielorts (nur die eingegebene Zeit zählt) */
 :where(.ew-maske) .ew-zeitfeld{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--dim)}
 :where(.ew-maske) .ew-zeitfeld .feld{width:96px;height:28px;padding:0 6px}
+/* Alarmierte Fahrzeuge: Besatzung beim Darüberfahren über den Funkrufnamen (wie in der Vorschlagsliste) */
+:where(.ew-maske) .alarmiert .fz{position:relative}
+:where(.ew-maske) .alarmiert .fz:hover{z-index:7}
+:where(.ew-maske) .alarmiert .fz .nr{cursor:help}
+:where(.ew-maske) .alarmiert .fz .vcrew{display:none;position:absolute;z-index:6;left:34px;top:calc(100% - 6px);padding:6px;border-radius:8px;background:var(--flaeche);box-shadow:0 0 0 1px var(--linie),0 10px 24px -8px rgba(0,0,0,.55);gap:4px;pointer-events:none}
+:where(.ew-maske) .alarmiert .fz .nr:hover ~ .vcrew{display:flex}
+/* storniert bzw. aus dem Einsatz freigegeben: grau hinterlegt (Status bleibt sichtbar), ganz unten */
+.ew-maske .alarmiert .fz.weg{background:var(--flaeche-2);opacity:.8}

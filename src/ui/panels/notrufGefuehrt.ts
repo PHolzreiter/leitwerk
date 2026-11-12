@@ -543,7 +543,6 @@ export function gefuehrteAbfrage(ctx: GefuehrtKontext): { el: HTMLElement; refre
     b.disabled = !darf;
     b.addEventListener("click", einfuegen);
     box.append(inp, b);
-    if (!e.telefon) box.appendChild(el("div", { class: "muted small gf-hinweis" }, "Ohne Rückrufnummer ist kein Rückruf möglich."));
     return box;
   }
 

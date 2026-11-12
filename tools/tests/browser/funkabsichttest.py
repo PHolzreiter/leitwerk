@@ -51,6 +51,15 @@ FAELLE = [
     ("Hier LEO, wird der Notarzt mit ins Krankenhaus kommen.", "frage", "naMit", 1),
     ("Hier LEO, gerade wo mit dem NEF Tulln in Sankt Pölten, kommen.", "info", None, 1),
     ("Hier LEO, Storno für euch, das NEF Krems fährt weiter, kommen", "storno", None, 1),
+    # Bestätigungen (Paul 12.11.2026: „LEO verstanden“ wurde nicht erkannt)
+    ("LEO verstanden", "quittung", None, 1),
+    ("Ja, LEO verstanden.", "quittung", None, 1),
+    ("Ja LEO hat verstanden, danke", "quittung", None, 0.5),
+    ("verstanden", "quittung", None, 0.5),
+    ("Hier LEO, verstanden, warten ab.", "quittung", None, 1),
+    ("Okay, danke dir", "quittung", None, 1),
+    ("Hier LEO, verstanden, das NEF Krems kommt zu euch, kommen", "info", "naKommt", 1),
+    ("Hier LEO, verstanden, ihr seid storniert, kommen", "storno", None, 1),
 ]
 try:
     with sync_playwright() as p:

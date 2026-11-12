@@ -15,7 +15,7 @@ import { buchungName } from "../../../data/klinik";
 import { altersgruppeVon, DRINGLICHKEIT_NAME, dringlichkeitFuer, symptom, symptomAusDiagnose, symptomSuche, zuweisungId, zuweisungLesen, type Altersgruppe, type Dringlichkeit, type Symptom } from "../../../data/zuweisung";
 import { store } from "../../../data/store";
 import { allCodes, findCode, hasCodes, searchCodes } from "../../../sim/codes";
-import { infoFreitext, PARTNER_PHASE_TEXT, sim, type Einsatz, type SimFahrzeug, type Vorschlag } from "../../../sim/engine";
+import { PARTNER_PHASE_TEXT, sim, type Einsatz, type SimFahrzeug, type Vorschlag } from "../../../sim/engine";
 import { mp } from "../../../net/mehrspieler";
 import { distanceM, searchAddress } from "../../../sim/geo";
 import { KATEGORIE_LABEL } from "../../../sim/settings";
@@ -24,7 +24,7 @@ import { pers } from "../../ws/persoenlich";
 import { panelZeigen, type PanelKontext } from "../../ws/arbeitsplatz";
 import { funkRufen, karteWaehlen, karteZeigen, waehle } from "../../ws/auswahl";
 import { fzPasst, stufeFarbe, uhr } from "../../panels/teile";
-import { codesVon, crewListe, fahrtzielText, fzTyp, minText, ortSuchen, restMin, standortText, statusNr, statusText, wacheOrt, zeilenKlasse, type OrtGruppe, type OrtTreffer } from "../masken-teile/daten";
+import { codesVon, crewKaertchen, crewListe, fahrtzielText, fzTyp, minText, ortSuchen, restMin, standortText, statusNr, statusText, wacheOrt, zeilenKlasse, type OrtGruppe, type OrtTreffer } from "../masken-teile/daten";
 
 type Wahl = { alter: Altersgruppe; sym: string | null; dring: Dringlichkeit };
 type St = Record<string, unknown> & { fzSuche?: string; symSuche?: string; khWahl?: Wahl };
@@ -394,15 +394,17 @@ export function einsatzFenster(ctx: PanelKontext): { el: HTMLElement; dispose():
         const eta = drin ? etaText(fz) : { text: beiPatient ? "bei Patient" : "frei", sort: 98 };
         return {
           id: fz.id,
-          cls: zeilenKlasse("fz", fz),
+          // storniert bzw. freigegeben: grau hinterlegt und ganz unten, der Status bleibt sichtbar (Paul 12.11.2026)
+          cls: zeilenKlasse("fz", fz) + (drin ? "" : " weg"),
           status: statusNr(fz),
           ruf: fz.funkrufname,
           typ: fzTyp(fz),
           wache: wacheOrt(fz),
           stText: `${statusText(fz)}${wo}${drin ? "" : beiPatient || " (frei)"}`,
           crew: crewListe(fz).join(" · "),
+          crewQ: crewKaertchen(fz),
           eta: eta.text,
-          sort: eta.sort,
+          sort: drin ? eta.sort : 1000 + eta.sort,
           kannStorno: drin,
           stornoText: unterwegs ? "Storno" : "Freigeben",
           stornoTitel: unterwegs ? "Storno über Funk – Fahrzeug rückt ein" : "Fahrzeug aus dem Einsatz freigeben",
@@ -483,12 +485,12 @@ export function einsatzFenster(ctx: PanelKontext): { el: HTMLElement; dispose():
       ortungTitel: o?.status === "laeuft" ? "Ortung läuft …" : a?.status === "klingelt" ? "Erst nach dem Annehmen" : "Handy-Ortung anfordern",
       zusatz: e.zusatz,
       telefon: e.telefon ?? "",
-      rueckTitel: !(e.telefon ?? "").trim() ? "Rufnummer des Anrufers übernehmen" : a ? "Anrufer zurückrufen" : e.rueckrufGemacht ? "Anrufer hat die Adresse bestätigt" : "Rückruf beim Anrufer (Adresse bestätigen)",
+      rueckTitel: a ? "Anrufer zurückrufen" : e.rueckrufGemacht ? "Anrufer hat die Adresse bestätigt" : "Rückruf beim Anrufer (Adresse bestätigen)",
       nachforderungen,
       alarmiert,
       partner,
       partnerInfo,
-      infoFrei: e.infoAuto ? infoFreitext(e.infoRtw, e.infoAuto) : e.infoRtw,
+      infoFrei: e.infoRtw,
       intern: e.infoIntern,
       protokoll: e.protokoll.map((p) => ({ t: uhr(p.zeit), x: p.text, von: p.von ?? "" })),
       mitExport: !!a && pers().exportKnopf !== false,
@@ -586,9 +588,9 @@ export function einsatzFenster(ctx: PanelKontext): { el: HTMLElement; dispose():
           await gespraechExportieren("rd", e.id);
           return true;
         case "infoFz": {
-          const frei = String(arg[0] ?? "").trim();
-          const auto = e.infoAuto ?? "";
-          await sim.call("aktualisiere", e.id, { infoRtw: auto ? (frei ? `${auto} // ${frei}` : auto) : frei });
+          // die ganze Zeile „83w B+ A~ // …“ ist änderbar (Paul 12.11.2026)
+          const wert = String(arg[0] ?? "").trim();
+          if (wert !== e.infoRtw) await sim.call("aktualisiere", e.id, { infoRtw: wert });
           return true;
         }
         case "aktualisiere":
@@ -596,10 +598,8 @@ export function einsatzFenster(ctx: PanelKontext): { el: HTMLElement; dispose():
           return true;
         case "rueckruf": {
           const tel = (e.telefon ?? "").trim();
-          if (!tel) {
-            await sim.call("aktualisiere", e.id, { telefon: e.wahr.abfrage?.anrufer.nummer || nummerAus(e.id, true) });
-            return true;
-          }
+          // ohne eingetragene Nummer: die angezeigte Nummer übernehmen und trotzdem zurückrufen (Paul 12.11.2026)
+          if (!tel) await sim.call("aktualisiere", e.id, { telefon: e.wahr.abfrage?.anrufer.nummer || nummerAus(e.id, true) });
           if (e.anruf) {
             if (e.anruf.status === "aktiv") {
               toast("Das Gespräch läuft bereits");

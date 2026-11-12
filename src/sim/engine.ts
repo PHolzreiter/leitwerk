@@ -5,7 +5,7 @@
  * vom Host an die Mitspieler übertragen werden kann. Alle Eingriffe des Spielers
  * laufen über die öffentlichen Methoden (alarmieren, Adresse setzen, …).
  */
-import { absichtErkennen } from "./funkAbsicht";
+import { absichtErkennen, istQuittung } from "./funkAbsicht";
 import { funkSprechform, zahlenAlsZiffern } from "./funkErkennung";
 import { fahrzeugZuName, rufnamen } from "./funkname";
 import { aktuelleSchicht, dienstEnde, imDienst, naechsterBeginn, type Schicht } from "./dienst";
@@ -837,6 +837,8 @@ export interface Einsatz {
   infoRtw: string;
   /** automatisch aus der Abfrage (Geschlecht, Alter, B, A) – steht vorne in infoRtw */
   infoAuto?: string;
+  /** der Disponent hat die ganze Zeile („83w B+ A~ // …“) selbst geändert: die Abfrage schreibt nicht mehr hinein */
+  infoManuell?: boolean;
   infoIntern: string;
   bo: Ort | null;
   zo: Ort | null;
@@ -2311,12 +2313,17 @@ export class Simulation {
       // ab und zu: Zufahrt gesperrt, Umweg (die Besatzung meldet die Verspätung)
       const ev = phase === "anfahrt" && !fliegt(fz) && fz.einsatzId ? this.einsatz(fz.einsatzId) : undefined;
       if (ev && !ev.gs && !ev.gsKind && fz.fahrt.dauer > 6 * 60 && this.settings.funkVielfalt !== false && Math.random() < 0.03) {
-        const plus = Math.round(rnd(2, 5));
+        // meist ein paar Minuten (gefunkt wird das nicht), selten eine Sperre mit großem Umweg
+        const gross = Math.random() < 0.2;
+        const plus = Math.round(gross ? rnd(10, 15) : rnd(2, 5));
         fz.phaseEnde += plus * MIN;
         fz.fahrt.dauer += plus * 60;
         fz.fahrt.times = fz.fahrt.times.map((x, i, a) => x + (plus * 60 * i) / Math.max(1, a.length - 1));
-        const grund = pick(["Baustelle", "Unfall auf der Strecke", "Straße gesperrt", "Bahnschranken geschlossen", "starker Verkehr"]);
-        this.fzRuft(fz, ev, "info", `${grund}, Eintreffen verzögert sich um ca. ${plus} Minuten`);
+        // gemeldet wird erst ab 10 Minuten (Paul 12.11.: für 3 Minuten funkt niemand)
+        if (plus >= 10) {
+          const grund = pick(["Unfall auf der Strecke, Straße gesperrt", "Straße gesperrt, großräumige Umleitung", "Brückensperre, Umweg"]);
+          this.fzRuft(fz, ev, "info", `${grund}, Eintreffen verzögert sich um ca. ${plus} Minuten`);
+        }
       }
       this.emit();
     });
@@ -2518,9 +2525,9 @@ export class Simulation {
           }
           // manchmal: schwierige Zufahrt / Hausnummer schlecht auffindbar
           if (Math.random() < 0.06 && this.transportfaehig(fz)) {
+            // kurze Verzögerung – wird nicht gefunkt (erst ab 10 Minuten)
             const plus = rnd(2, 4);
             fz.phaseEnde += plus * MIN;
-            this.fzRuft(fz, e, "info", `Zufahrt schwierig, Hausnummer schlecht auffindbar, Patientenkontakt verzögert sich um ca. ${Math.round(plus)} Minuten`);
           }
           if (fz.rmTyp === "BIT") fz.phaseEnde = t + rnd(20, 35) * MIN; // Schwerlast: Umlagern dauert
           if (istAcnCode(e.wahr.code)) {
@@ -3531,6 +3538,11 @@ export class Simulation {
     const e = this.einsatz(id);
     if (!e) return;
     const adresseNeu = patch.adresse && (!e.adresse || distanceM(patch.adresse, e.adresse) > 5);
+    // die ganze Info-Zeile von Hand geändert (auch den automatischen Teil vorne): ab jetzt gehört sie dem Disponenten
+    if (patch.infoRtw !== undefined && e.infoAuto && !patch.infoRtw.startsWith(e.infoAuto)) {
+      e.infoManuell = true;
+      e.infoAuto = "";
+    }
     Object.assign(e, patch);
     if (patch.code !== undefined) e.codeQuelle = "dispo";
     if (e.zustand === "neu") e.zustand = "offen";
@@ -3568,7 +3580,6 @@ export class Simulation {
   rueckruf(id: string): string | null {
     const e = this.einsatz(id);
     if (!e) return null;
-    if (!this.settings.rueckrufOhneNummer && !e.telefon) throw new Error("Keine Rückrufnummer aufgenommen – Rückruf nicht möglich");
     e.rueckrufGemacht = true;
     this.log(e, `Rückruf beim Anrufer: Adresse ${e.wahr.adresse}`);
     this.emit();
@@ -4647,7 +4658,6 @@ export class Simulation {
     const e = this.einsatz(id);
     const a = e?.anruf;
     if (!e || !a) throw new Error("Kein Anruf zu diesem Einsatz");
-    if (a.status === "verpasst" && !this.settings.rueckrufOhneNummer && !e.telefon) throw new Error("Keine Rückrufnummer aufgenommen – Rückruf nicht möglich");
     const ich = this.calltaker();
     if (a.status === "gehalten") {
       // Gehaltene Anrufe kann jeder Disponent aufgreifen
@@ -4688,7 +4698,6 @@ export class Simulation {
       }
     } else if (a.status === "beendet") {
       // Leitstelle ruft den Anrufer zurück (Nachfragen nach dem Gespräch)
-      if (!this.settings.rueckrufOhneNummer && !e.telefon) throw new Error("Keine Rückrufnummer aufgenommen – Rückruf nicht möglich");
       this.andereHalten(ich, e.id);
       a.rueckruf = true;
       a.status = "aktiv";
@@ -4875,7 +4884,7 @@ export class Simulation {
     if (typeof a.at === "string" && at[a.at]) teile.push(at[a.at]);
     const neu = teile.join(" ");
     const alt = e.infoAuto ?? "";
-    if (neu === alt) return;
+    if (neu === alt || e.infoManuell) return;
     const frei = infoFreitext(e.infoRtw, alt);
     e.infoAuto = neu;
     e.infoRtw = neu && frei ? `${neu} // ${frei}` : neu || frei;
@@ -7043,12 +7052,13 @@ export class Simulation {
   }
 
   /** LEO bestätigt, dass sie den Funk zwischen zwei Fahrzeugen mitgehört hat */
-  funkMitgehoert(id: number): void {
+  funkMitgehoert(id: number, text?: string, gesprochen?: boolean): void {
     const g = this.gespraech(id);
     if (g.status !== "mithoeren" && g.status !== "direkt" && !(g.status === "wartet" && g.mithoeren && !g.ablauf?.length)) return;
     this.nurFunkfuehrer(g);
     if (g.status === "direkt") return;
-    this.spruch(g, "LEO", "Hier LEO, mitgehört, Ende", this.calltaker().name);
+    this.spruch(g, "LEO", text?.trim() || "Hier LEO, mitgehört, Ende", this.calltaker().name);
+    if (gesprochen && text) g.sprueche[g.sprueche.length - 1].stimme = true;
     this.funkSchliessen(g);
     this.emit();
   }
@@ -7219,8 +7229,11 @@ export class Simulation {
         if (!g.ablauf?.length && !g.ausstehend) {
           if (g.mithoeren) {
             g.status = "mithoeren";
-            g.rufe = 1;
-            this.spruch(g, g.mithoeren.von, g.mithoeren.text);
+            // hat das Fahrzeug schon gefragt („frage LEO mitgehört, kommen“), wartet es nur auf die Antwort – kein
+            // zweiter Ruf an LEO (Paul 12.11.2026); ohne Antwort ist das Gespräch nach einer halben Minute aus
+            const gefragt = /mitgeh[öo]r/i.test(g.sprueche[g.sprueche.length - 1]?.text ?? "");
+            g.rufe = gefragt ? 3 : 1;
+            if (!gefragt) this.spruch(g, g.mithoeren.von, g.mithoeren.text);
           } else this.funkSchliessen(g);
         }
         geaendert = true;
@@ -7228,7 +7241,7 @@ export class Simulation {
         // eine Minute nichts: Gespräch ist aus (danach muss wieder gerufen werden)
         this.funkSchliessen(g);
         geaendert = true;
-      } else if ((g.status === "ruft" || g.status === "mithoeren") && jetzt - Math.max(g.echtLetzt ?? jetzt, g.sprichtBis ?? 0) > 12_000) {
+      } else if ((g.status === "ruft" || g.status === "mithoeren") && jetzt - Math.max(g.echtLetzt ?? jetzt, g.sprichtBis ?? 0) > (g.status === "mithoeren" && g.rufe >= 3 ? 30_000 : 12_000)) {
         // keine Antwort: Kanal frei geben, später nochmal rufen (nach 30 s, 1, 3, 6, 12 … Minuten)
         if (g.status === "mithoeren" && g.rufe >= 3) this.funkSchliessen(g);
         else {
@@ -7335,15 +7348,15 @@ export class Simulation {
         fz.zwischenGemeldet = true;
         this.fzRuft(fz, e, "info", `Zwischenmeldung: Versorgung dauert noch an, voraussichtlich ${Math.round((fz.phaseEnde - t) / MIN)} Minuten`);
       }
-      // Transport: Ankündigung mit Voranmeldung (kritisch immer, sonst manchmal)
+      // Transport: Ankündigung nur, wenn noch keine Buchung da ist (Paul 12.11.: Status 4 und Buchung sagen es schon)
       if (e && fz.phase === "transport" && !fz.transportGemeldet && fz.phaseEnde && this.transportfaehig(fz) && !e.gsKind) {
         fz.transportGemeldet = true;
         const krit = this.kritisch(e);
-        if (krit || Math.random() < 0.3) {
-          const h = e.kh ? store.get("hospitals", e.kh.hospitalId) : undefined;
+        if (!e.kh) {
+          const h = this.khFuerTransport(e);
           const min = Math.max(1, Math.round((fz.phaseEnde - t) / MIN));
           const p0 = e.wahr.lage?.patienten[0];
-          const b = buchung(e.kh?.grund ?? e.wahr.verdacht);
+          const b = buchung(e.verdacht ?? e.wahr.verdacht);
           const schock = b?.kategorie === "Trauma" && b.zeitkritisch;
           const vor = krit ? `, Voranmeldung ${schock ? "Schockraum" : "Notaufnahme"}${p0 ? `: ${patientText(p0).replace(/ \(.*\)$/, "")}` : ""}` : "";
           this.fzRuft(fz, e, "info", `Patient übernommen, Transport ${h ? `ins ${h.kurzname || h.name}` : "ins Krankenhaus"}, Eintreffen in ca. ${min} Minute${min === 1 ? "" : "n"}${vor}`);
@@ -7792,11 +7805,13 @@ export class Simulation {
       }
       if (wer) ziel = wer;
     }
-    // „mitgehört“: auf die Frage aus dem Funk zwischen Fahrzeugen
-    if (/mitgeh[öo]r/i.test(t)) {
+    // „mitgehört“: auf die Frage aus dem Funk zwischen Fahrzeugen – auch „LEO verstanden, Storno fürs NEF Krems, Ende“
+    // (Paul 12.11.2026), solange gerade ein Fahrzeug auf diese Antwort wartet
+    {
       const mg = gespr.find((g) => imKanal(g) && (g.status === "mithoeren" || (g.status === "wartet" && g.mithoeren && !g.ablauf?.length)) && (!ziel || g.an?.fzId === ziel.id || g.fzId === ziel.id));
-      if (mg) {
-        this.funkMitgehoert(mg.id);
+      const antwort = /mitgeh[öo]r/i.test(t) || (mg?.status === "mithoeren" && !/\?/.test(t) && (/\b(verstanden|storno|storniert|ende|passt|danke|alles klar|okay|ok)\b/i.test(t) || istQuittung(t)));
+      if (mg && antwort) {
+        this.funkMitgehoert(mg.id, t, gesprochen);
         return mg.id;
       }
     }
@@ -8530,7 +8545,6 @@ export class Simulation {
     const k = this.ktAuftrag(id);
     const a = k?.anruf;
     if (!k || !a) throw new Error("Kein Anruf");
-    if (a.status === "verpasst" && !this.settings.rueckrufOhneNummer && !k.d.telefon) throw new Error("Keine Rückrufnummer aufgenommen – Rückruf nicht möglich");
     const ich = this.calltaker();
     if (a.status === "gehalten") {
       // Gehaltene Anrufe kann jeder Disponent aufgreifen
@@ -8564,7 +8578,6 @@ export class Simulation {
       }
     } else if (a.status === "beendet") {
       // Leitstelle ruft den Anrufer zurück
-      if (!this.settings.rueckrufOhneNummer && !k.d.telefon) throw new Error("Keine Rückrufnummer aufgenommen – Rückruf nicht möglich");
       this.andereHalten(ich, k.id);
       a.rueckruf = true;
       a.status = "aktiv";
@@ -8652,7 +8665,8 @@ export class Simulation {
       !k.d.patient.name && "Name",
       !k.d.von && "Abholort",
       !k.d.nach && "Ziel",
-      !k.d.termin && !k.d.abholung && "Termin oder Abholzeit",
+      // sofort: die Abholzeit ist egal (Paul 12.11.2026)
+      !k.d.sofort && !codeInfo(k.d.code).sofort && !k.d.termin && !k.d.abholung && "Termin oder Abholzeit",
       !k.d.lage && "Transportart (gehfähig/Tragstuhl/liegend)",
       !k.d.code && "Code",
     ].filter(Boolean);
@@ -8683,8 +8697,9 @@ export class Simulation {
     const von = k?.d.von;
     if (!k || !von) return [];
     const info = codeInfo(k.d.code);
+    // abgemeldete und außer Dienst stehende Fahrzeuge fallen ganz weg (Paul 12.11.2026)
     let alle = Object.values(this.state.fahrzeuge).filter(
-      (f) => !f.einsatzId && !istFlughafenFz(f) && (this.verfuegbar(f) || f.kt || (f.ausserDienst && f.phase === "frei" && !(f.defektBis && f.defektBis > this.state.zeit))),
+      (f) => !f.einsatzId && !istFlughafenFz(f) && !f.ausserDienst && f.status !== "abgemeldet" && (this.verfuegbar(f) || f.kt),
     );
     // Fahrzeit vom Abholort zum Ziel (für „los spätestens“ und die Hubschrauber-Frage)
     let fahrzeit = 0;
@@ -8692,7 +8707,7 @@ export class Simulation {
     const soll = k.d.abholung ?? (k.d.termin ? k.d.termin - fahrzeit * 1000 - 15 * MIN : null);
     // nur Fahrzeuge, die zur Abholzeit laut Dienstplan im Dienst sind (auch solche, die erst später anfangen)
     const um = Math.max(this.state.zeit, soll ?? this.state.zeit);
-    const imDienst = new Set(alle.filter((f) => this.imDienstUm(f, um) && (!f.ausserDienst || um > this.state.zeit + 5 * MIN)).map((f) => f.id));
+    const imDienst = new Set(alle.filter((f) => this.imDienstUm(f, um)).map((f) => f.id));
     if (!alle_) alle = alle.filter((f) => imDienst.has(f.id));
 
     // Welche Typen passen (Vorschlag), welche nur als Ersatz; Paare = mit NEF
@@ -8797,6 +8812,24 @@ export class Simulation {
    * (Sammelfahrt; auch zur laufenden, solange noch kein Patient an Bord ist).
    * begleitId: NEF, das mitfährt (Notarzt-Überstellung mit RTW/SRTW)
    */
+  /**
+   * Geht „Zusätzlich mitnehmen“ (Mehrfachtransport) mit diesem Fahrzeug? null = ja, sonst der Grund
+   * (dieselben Prüfungen wie ktVormerken mit modus „sammel“, inkl. Platz im Fahrzeug)
+   */
+  ktSammelGrund(id: string, fzId: string, begleitId?: string | null): string | null {
+    const k = this.ktAuftrag(id);
+    const fz = this.state.fahrzeuge[fzId];
+    const plan = fz?.kt;
+    if (!k || !fz || !plan?.fahrten.length) return "keine andere Fahrt";
+    const letzte = plan.fahrten[plan.fahrten.length - 1].filter((x) => x !== k.id);
+    if (!letzte.length) return "keine andere Fahrt";
+    const laufend = plan.aktiv && plan.fahrten.length === 1;
+    if (laufend && letzte.some((x) => this.ktAuftrag(x)?.status === "anBord")) return "es ist schon ein Patient an Bord";
+    if (letzte.some((x) => this.ktAuftrag(x)?.begleit) || begleitId || k.begleit) return "Notarzt-Überstellung: kein Mehrfachtransport";
+    if ([...letzte.map((x) => this.ktAuftrag(x)?.d.code), k.d.code].some((c) => codeInfo(c).sondersignal)) return "Fahrt mit Blaulicht: kein Mehrfachtransport";
+    return passt([...letzte.map((x) => this.ktAuftrag(x)?.d), k.d].filter((x): x is KtDaten => !!x));
+  }
+
   async ktVormerken(id: string, fzId: string, modus: "neu" | "sammel" = "neu", begleitId?: string | null): Promise<void> {
     const k = this.ktAuftrag(id);
     const fz = this.state.fahrzeuge[fzId];

@@ -107,6 +107,7 @@
 .seg{all:unset;box-sizing:border-box;flex:1;text-align:center;padding:5px 8px;font-size:12px;font-weight:600;color:var(--text-2);border-radius:6px;cursor:pointer;white-space:nowrap}
 .seg.on{background:var(--akzent);color:var(--auf-akzent)}
 .seg.rot.on{background:#a61b1b;color:#fff}
+.seg.aus{opacity:.4;cursor:not-allowed}
 .kh{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 10px;border-radius:9px;border:1px solid var(--trenner)}
 .kh.gew{border-color:var(--akzent);background:var(--akzent-flaeche)}
 .radio{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--dim);flex:none}
@@ -231,6 +232,7 @@
 .tgruppe{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);padding:6px 4px 2px}
 .treffer{all:unset;box-sizing:border-box;display:grid;grid-template-columns:26px minmax(0,1fr) auto;gap:8px;align-items:center;padding:6px;border-radius:8px;cursor:pointer;width:100%}
 .treffer:hover,.treffer.erster{background:var(--akzent-flaeche)}
+.treffer.ohne-sym{grid-template-columns:minmax(0,1fr) auto}
 .treffer .tsym{width:26px;height:26px;border-radius:7px;display:grid;place-items:center;background:var(--flaeche-2);color:var(--text-2)}
 .treffer b{font-size:13px}
 .treffer b mark{background:none;color:var(--akzent-text);font-weight:800}

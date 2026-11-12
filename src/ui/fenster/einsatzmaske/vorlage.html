@@ -99,7 +99,7 @@
         <sc-for list="{{alarmiert}}" as="z">
           <div class="{{z.cls}}" title="{{z.titel}}">
             <span class="stz">{{z.status}}</span>
-            <div style="min-width: 0;"><b class="nr">{{z.ruf}}</b> <span class="fz-ty">{{z.typ}}</span><span class="zeit fz-wa"> · {{z.wache}}</span><div class="zeit">{{z.stText}}<span class="fz-crew"> · {{z.crew}}</span></div></div>
+            <div style="min-width: 0;"><b class="nr">{{z.ruf}}</b><div class="vcrew"><sc-for list="{{z.crewQ}}" as="q"><span class="{{q.cls}}">{{q.t}}</span></sc-for></div> <span class="fz-ty">{{z.typ}}</span><span class="zeit fz-wa"> · {{z.wache}}</span><div class="zeit">{{z.stText}}<span class="fz-crew"> · {{z.crew}}</span></div></div>
             <span class="pill blau">{{z.eta}}</span>
             <span class="fz-kn"><button class="kn sm leise ew-funk" onClick="{{z.funk}}" aria-label="{{z.ruf}} über Funk rufen" title="{{z.ruf}} über Funk rufen"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="14" rx="2"></rect><path d="M10 7V3M10 11h4M10 14h4"></path></svg></button><sc-if value="{{z.kannStorno}}"><button class="kn sm leise fz-storno" onClick="{{z.storno}}" aria-label="{{z.stornoText}} {{z.ruf}}" title="{{z.stornoTitel}}"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg><span class="t">{{z.stornoText}}</span></button></sc-if></span>
           </div>

@@ -524,7 +524,6 @@ export class SeitenBasis {
           S('Anrufer-KI im Multiplayer', 'kimp', ['Jeder selbst', 'Alle Gemini', 'Alle lokal'], 'Jeder selbst', 'Wer ohne passende KI beitritt, richtet sie beim Beitreten ein'),
           H('Anrufer und Verlauf'),
           R('Anrufer mit falscher Adresse', 'falsch', 0, 30, 1, 5, pct),
-          T('Rückruf auch ohne aufgenommene Nummer', 'rueck', false),
           S('Komplikationen', 'kompl', ['Ruhig', 'Normal', 'Fordernd'], 'Normal', 'Verschlechterung, Irrtum des Anrufers, mehr Betroffene'),
           S('Transportverweigerung (Revers)', 'revers', ['Normal', 'Selten', 'Aus'], 'Normal'),
           B('Fallkatalog', [{ l: 'Fälle …', sub: 'faelle' }], 'Ansehen, selbst schreiben, prüfen, importieren', { chip: '214 Fälle', dot: ok })

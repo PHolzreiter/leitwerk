@@ -67,7 +67,6 @@ const vorherStatus = new Map<string, "verpasst" | "beendet">();
 function zeilen(): TelZeile[] {
   const t = sim.state.zeit;
   const l: TelZeile[] = [];
-  const darfOhne = !!sim.settings.rueckrufOhneNummer;
   for (const e of sim.state.einsaetze) {
     const a = e.anruf;
     if (!a) continue;
@@ -89,7 +88,7 @@ function zeilen(): TelZeile[] {
       rueckruf: a.rueckruf,
       wer: a.angenommenVon?.name ?? "",
       versuche: a.versuche,
-      ohneNummer: !e.telefon && !darfOhne,
+      ohneNummer: false,
       zeile: [`Einsatz ${e.nummer}`, was, ort].filter(Boolean).join(" · "),
       dauer: s === "verpasst" ? `vor ${mmss(t - a.seit)}${a.rueckrufUm ? ` · ruft in ca. ${Math.max(1, Math.round((a.rueckrufUm - t) / 60_000))} min wieder an` : ""}` : s === "laeuft" ? mmss(t - a.seit) : `${hm(beginn(a))} · ${mmss(ende(a) - beginn(a))} min`,
       suche: [tel, e.nummer, `einsatz ${e.nummer}`, e.code, c?.name, ort, "notruf 144", "rd"].filter(Boolean).join(" ").toLowerCase(),
@@ -118,7 +117,7 @@ function zeilen(): TelZeile[] {
       rueckruf: a.rueckruf,
       wer: a.angenommenVon?.name ?? "",
       versuche: a.versuche,
-      ohneNummer: !k.d.telefon && !darfOhne,
+      ohneNummer: false,
       zeile: [name || `Auftrag ${k.nummer}`, was, ort].filter(Boolean).join(" · "),
       dauer: s === "verpasst" ? `vor ${mmss(t - a.seit)}${a.rueckrufUm ? ` · ruft in ca. ${Math.max(1, Math.round((a.rueckrufUm - t) / 60_000))} min wieder an` : ""}` : s === "laeuft" ? mmss(t - a.seit) : `${hm(beginn(a))} · ${mmss(ende(a) - beginn(a))} min`,
       suche: [tel, name, k.nummer, `auftrag ${k.nummer}`, k.d.code, k.d.grund, ort, sek ? "überstellung sek" : "kt-hotline kt"].filter(Boolean).join(" ").toLowerCase(),

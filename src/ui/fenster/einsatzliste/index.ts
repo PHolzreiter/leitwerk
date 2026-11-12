@@ -245,6 +245,13 @@ function abholText(k: KtAuftrag, lage: ListenLage): string | undefined {
   return undefined;
 }
 
+/** sofort oder Abholung (bzw. Termin − 45 min) innerhalb der nächsten Stunde; ohne Zeitangabe ebenfalls */
+function bald(k: KtAuftrag): boolean {
+  if (k.d.sofort) return true;
+  const ab = k.d.abholung ?? (k.d.termin ? k.d.termin - 45 * 60_000 : null);
+  return ab == null || ab <= sim.state.zeit + 60 * 60_000;
+}
+
 function ktEintrag(k: KtAuftrag): Roh {
   const sek = istUeberstellung(k.d);
   const f = k.fz ? sim.state.fahrzeuge[k.fz] : undefined;
@@ -278,7 +285,7 @@ function ktEintrag(k: KtAuftrag): Roh {
   if (info.flug) tags.push("Flug");
   const p = k.d.patient;
   const wer = `${p.alter ?? ""}${p.geschlecht ?? ""}`;
-  const rest = [...tags, p.info || k.d.grund].filter(Boolean).join(", ");
+  const rest = [...tags, ...(sek ? [k.d.grund, p.info] : [p.info || k.d.grund])].filter(Boolean).join(", ");
   const zi = wer && rest ? `${wer} // ${rest}` : wer || rest;
   const sw = ktCode(k.d.code)?.name ?? (k.d.ktArt ? KT_TRANSPORTART_LABEL[k.d.ktArt] : "") ?? "";
   const fzl: ListenFahrzeug[] = [];
@@ -297,7 +304,8 @@ function ktEintrag(k: KtAuftrag): Roh {
     ein: hhmm(k.eingang),
     lage,
     abhol: abholText(k, lage),
-    neu: k.status === "offen" && !k.fz,
+    // blinkt nur, was sofort oder in der nächsten Stunde abzuholen ist (Paul 12.11.2026)
+    neu: k.status === "offen" && !k.fz && bald(k),
     code: k.d.code ?? "",
     farbe: sek ? SEK_FARBE : KT_FARBE,
     stufe: sek ? "Überstellung" : "Krankentransport",

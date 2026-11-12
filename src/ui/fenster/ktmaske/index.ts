@@ -18,7 +18,7 @@ import { pers } from "../../ws/persoenlich";
 import { panelZeigen, type PanelKontext } from "../../ws/arbeitsplatz";
 import { funkRufen, karteWaehlen, karteZeigen, waehle } from "../../ws/auswahl";
 import { fzPasst } from "../../panels/teile";
-import { codesVon, crewListe, fahrtzielText, fzTyp, kmText, minText, ortSuchen, restMin, standortText, statusNr, statusText, wacheOrt, zeilenKlasse, type OrtGruppe } from "../masken-teile/daten";
+import { codesVon, crewKaertchen, crewListe, fahrtzielText, fzTyp, kmText, minText, ortSuchen, restMin, standortText, statusNr, statusText, wacheOrt, zeilenKlasse, type OrtGruppe } from "../masken-teile/daten";
 
 const QUELLE: Record<KtAuftrag["quelle"], string> = { hotline: "KT-Hotline", online: "Online-Anmeldung", dauer: "Dauerauftrag", manuell: "von Hand" };
 const LAGE: Record<string, string> = { gehend: "gehfähig", sitzend: "Tragstuhl", liegend: "liegend", rollstuhl: "Rollstuhl" };
@@ -148,7 +148,9 @@ export function ktFenster(ctx: PanelKontext, sek: boolean): { el: HTMLElement; d
         p && p.fahrten.length && frei
           ? {
               aktiv: p.aktiv,
-              sammelOk: !blau && !opt.begleit && !anBord && !(k.begleit ?? null),
+              // „Zusätzlich mitnehmen“ ist Standard – geht es nicht (Platz, Blaulicht, Notarzt …), steht hier warum
+              sammelGrund: opt.begleit ? "Notarzt-Begleitung" : blau ? "Fahrt mit Blaulicht: kein Mehrfachtransport" : anBord ? "es ist schon ein Patient an Bord" : sim.ktSammelGrund(k.id, fz.id),
+              sammelOk: !blau && !opt.begleit && !anBord && !(k.begleit ?? null) && !sim.ktSammelGrund(k.id, fz.id),
               titel: `${fz.funkrufname} hat noch ${n === 1 ? "eine Fahrt" : `${n} Fahrten`}${p.aktiv ? "" : p.losUm ? ` (vorgemerkt ab ${hhmm(p.losUm)})` : " (vorgemerkt)"}`,
               textNaechste: "Fährt nach seinen anderen Fahrten zur Abholung. Vormerken genügt – es rückt zur richtigen Zeit selbst aus.",
               textJetzt: "Fährt sofort los – die schon vorgemerkten Fahrten zuerst, dieser Auftrag danach.",
@@ -245,6 +247,7 @@ export function ktFenster(ctx: PanelKontext, sek: boolean): { el: HTMLElement; d
           wache: wacheOrt(f),
           stText: istNef ? `Notarzt-Begleitung · ${statusText(f)}` : vorgemerkt ? (nr > 0 ? `als ${nr + 1}. Fahrt vorgemerkt` : "vorgemerkt") : k.status === "anBord" ? "Patient an Bord" : statusText(f),
           crew: crewListe(f).join(" · "),
+          crewQ: crewKaertchen(f),
           eta: vorgemerkt && !aktiv ? (p?.losUm ? `ab ${hhmm(p.losUm)}` : "vorgemerkt") : r !== null ? `in ${r} min` : k.status === "anBord" ? "an Bord" : "unterwegs",
           sort: r ?? 99,
           kannStorno: !istNef && k.status !== "anBord" && (vorgemerkt || aktiv),

@@ -31,6 +31,8 @@ export interface Persona {
   medsUngefaehr: boolean;
   /** wer sonst noch da ist */
   dabei: string;
+  /** fragt, wie lange die Rettung braucht (Paul 12.11.2026: nur etwa jeder fünfte Anrufer, eher die besorgten) */
+  fragtDauer?: boolean;
 }
 
 type Rnd = () => number;
@@ -202,17 +204,15 @@ export function personaWaehlen(
   // mit dem Patienten reden: Partner und Eltern beim Vornamen, Kinder sagen „Mama“/„Papa“
   const anrede = /tochter|sohn|kind/i.test(x.rolle) ? (p.w ? "Mama" : "Papa") : /partner|ehe|frau|mann|mutter|vater|freund/i.test(x.rolle) ? p.vorname : "";
   const eigenheiten: string[] = x.selbst
-    ? ["Du stöhnst zwischendurch kurz („Au …“), antwortest aber trotzdem.", "Du fragst einmal zwischendurch, wie lange die Rettung noch braucht.", "Du entschuldigst dich einmal, dass du so lästig bist."]
+    ? ["Du stöhnst zwischendurch kurz („Au …“), antwortest aber trotzdem.", "Du entschuldigst dich einmal, dass du so lästig bist."]
     : wissen === "fremd"
       ? [
           ...(andereDa && sicht ? ["Du redest einmal kurz mit den anderen Leuten, die dabei sind (z. B. dass jemand eine Decke holen soll)."] : []),
           "Du entschuldigst dich einmal, weil du nicht weißt, was du tun sollst.",
-          "Du fragst einmal zwischendurch, wie lange die Rettung noch braucht.",
         ]
       : [
           ...(sicht && p.alter >= 3 ? [`Du sprichst zwischendurch einmal kurz direkt mit ${p.w ? "ihr" : "ihm"}${anrede ? ` („${anrede}, ${wach ? "bleib ruhig, ich bin da" : "hörst du mich? Bitte …"}“)` : ""} – ein kurzer Zuruf, dann redest du wieder mit der Leitstelle.`] : []),
           "Du machst dir hörbar Sorgen und sagst einmal, wie sehr dich das mitnimmt.",
-          "Du fragst einmal zwischendurch, wie lange die Rettung noch braucht.",
         ];
   const eigenheitenProfi = [
     "Bei Werten und Vorgeschichte schaust du kurz in die Dokumentation („Moment, ich schau in die Doku …“) und sagst dann gleich den Wert.",
@@ -233,6 +233,8 @@ export function personaWaehlen(
     kenntVorgeschichte,
     medsUngefaehr: wissen === "nah" && !x.selbst && p.alter >= 18 && rnd() < 0.45,
     dabei,
+    // besorgte Anrufer (unsicher, Angehörige, selbst betroffen) fragen öfter – im Schnitt etwa jeder fünfte
+    fragtDauer: wissen !== "profi" && rnd() < (stil === "unsicher" || wissen === "nah" || x.selbst ? 0.3 : 0.1),
   };
 }
 
