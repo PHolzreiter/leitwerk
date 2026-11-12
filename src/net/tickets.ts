@@ -96,8 +96,8 @@ const START_HILFE: HilfePunkt[] = [
   ["fg-02", "Fahrzeuge NÖ-02 kontrollieren", "Stimmen Funkrufnamen, Typen und Dienstzeiten in Gmünd, Waidhofen/Thaya, Horn und Zwettl?"],
   ["fg-03", "Fahrzeuge NÖ-03 kontrollieren", "Stimmen Funkrufnamen, Typen und Dienstzeiten in Krems, Tulln und Hollabrunn?"],
   ["fg-04", "Fahrzeuge NÖ-04 kontrollieren", "Stimmen Funkrufnamen, Typen und Dienstzeiten in Mistelbach, Gänserndorf und Korneuburg?"],
-  ["fg-05", "Fahrzeuge NÖ-05 kontrollieren", "Stimmen Funkrufnamen, Typen und Dienstzeiten in Mödling, Bruck an der Leitha, Schwechat und Baden (Nord)?"],
-  ["fg-06", "Fahrzeuge NÖ-06 kontrollieren", "Stimmen Funkrufnamen, Typen und Dienstzeiten in Wiener Neustadt, Neunkirchen und Baden (Süd)?"],
+  ["fg-05", "Fahrzeuge NÖ-05 kontrollieren", "Stimmen Funkrufnamen, Typen und Dienstzeiten in Mödling, Bruck an der Leitha, Schwechat und Baden?"],
+  ["fg-06", "Fahrzeuge NÖ-06 kontrollieren", "Stimmen Funkrufnamen, Typen und Dienstzeiten in Wiener Neustadt und Neunkirchen?"],
   ["juh-sek", "Sekundärfahrzeuge der Johanniter", "Welche SKTW, SRTW, SNAW und BIT haben die Johanniter in NÖ – mit Funkrufnamen, Dienstzeiten und Standorten (St. Pölten, Wiener Neudorf, Spillern, Zwettl, Stellplätze bei den Kliniken)?"],
 ].map(([id, titel, text]) => ({ id, titel, text, art: "fahrzeug" }));
 

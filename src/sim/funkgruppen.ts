@@ -23,8 +23,8 @@ const BEZIRKE: Record<FunkgruppeId, string> = {
   "NÖ-02": "Gmünd, Waidhofen/Thaya, Zwettl, Horn",
   "NÖ-03": "Krems Stadt und Land, Hollabrunn, Tulln",
   "NÖ-04": "Mistelbach, Gänserndorf, Korneuburg",
-  "NÖ-05": "Bruck an der Leitha, Mödling, Baden (Nord)",
-  "NÖ-06": "Wiener Neustadt Stadt und Land, Neunkirchen, Baden (Süd)",
+  "NÖ-05": "Bruck an der Leitha, Mödling, Baden",
+  "NÖ-06": "Wiener Neustadt Stadt und Land, Neunkirchen",
 };
 
 /** Standardfarben wie auf der Funkgruppen-Karte */

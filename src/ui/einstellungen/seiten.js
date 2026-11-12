@@ -316,7 +316,7 @@ export class SeitenBasis {
       ['nicht im Dienst', 'st12', '0', 'Abgemeldet', '#6b7280', false]
     ];
     const TOENE = ['Klingeln klassisch', 'Klingeln modern', 'Telefon leise', 'Piep kurz', 'Doppelpiep', 'Gong', '– aus –'];
-    const FG = [['NÖ-01', 'Mostviertel · St. Pölten', '#3B8BFF'], ['NÖ-02', 'Waldviertel', '#4CC38A'], ['NÖ-03', 'Krems · Tulln · Hollabrunn', '#FFC72C'], ['NÖ-04', 'Weinviertel', '#A970FF'], ['NÖ-05', 'Mödling · Bruck · Baden Nord', '#2FB5C4'], ['NÖ-06', 'Wr. Neustadt · Neunkirchen · Baden Süd', '#E5484D']];
+    const FG = [['NÖ-01', 'Mostviertel · St. Pölten', '#3B8BFF'], ['NÖ-02', 'Waldviertel', '#4CC38A'], ['NÖ-03', 'Krems · Tulln · Hollabrunn', '#FFC72C'], ['NÖ-04', 'Weinviertel', '#A970FF'], ['NÖ-05', 'Mödling · Bruck · Baden', '#2FB5C4'], ['NÖ-06', 'Wr. Neustadt · Neunkirchen', '#E5484D']];
     const imp = [B('Import & Export', [{ l: 'CSV importieren …', imp: true }, 'Exportieren …'], 'CSV-Dateien · Vorlage und Beispiel liegen in Dokumente/LeitWerk')];
     const daten = [
       { id: 'platz', label: 'Mein Platz', scope: 'Nur für diesen Rechner · gilt sofort', pages: [
