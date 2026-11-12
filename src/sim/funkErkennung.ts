@@ -98,8 +98,10 @@ const ABK: [RegExp, string][] = [
   [/\b(?:k\.?\s?t\.?\s?w\.?|ka\s?te\s?we)(?=\s|$|[,.!?-])/gi, "KTW"],
   [/\b(?:n\.?\s?a\.?\s?w\.?|en\s?a\s?we)(?=\s|$|[,.!?-])/gi, "NAW"],
   [/\b(?:a\.?\s?c\.?\s?n\.?|a\s?ce\s?en)(?=\s|$|[,.!?-])/gi, "ACN"],
-  [/\b(?:christophorus|christoph|zeh|cee|ce|tse)\s*(?=\d)/gi, "C"],
-  [/\b(?:hier|hie|he|hia)[\s,]*l+e+o+\b|\bheleo\b|\bhilleo\b|\bhileo\b/gi, "Hier LEO"],
+  [/\b(?:christoph\s?horus|christopherus|christophorus|christoph|zeh|cee|ce|tse)\s*(?=\d)/gi, "C"],
+  [/\b(?:hier|hie|he|hia)[\s,]*l+e+o+\b|\bheleo\b|\bhilleo\b|\bhileo\b|^\s*ihr[\s,]+leo\b/gi, "Hier LEO"],
+  // „Rendezvous“ (gesprochen „Rondewu“) – so schreibt es die Erkennung oft
+  [/\b(?:rodeo|rondewu|randewu|radewu|rendewu|rondevu|randevu|rendevu|rendez\s?vous|rande\s?wu|ronde\s?wu)(?=\s+(?:mit|in|bei|am|an|um|ist|beim)\b)/gi, "Rendezvous"],
   [/\b(?:leo|lio|loo|lehro|leho|léo|lehoh|leeo)\b/gi, "LEO"],
 ];
 

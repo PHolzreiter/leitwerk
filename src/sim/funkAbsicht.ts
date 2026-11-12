@@ -76,14 +76,27 @@ export function absichtErkennen(text: string, opt: { sicherheit?: number; angesp
   // Storno: nur wenn es dem angesprochenen Fahrzeug gilt – „Storno für das NEF“ an den RTW ist eine Information
   const STORNO = /\b(storno|storniert|abbestellt|abbestell\w*|nicht mehr benötigt|nicht mehr erforderlich|abbrechen|brecht ab|einrücken|rückt ein|rücken ein)\b/;
   if (STORNO.test(inhalt)) {
-    // der Satz mit dem Storno: nennt er ein anderes Fahrzeug und nicht „euch“, gilt er dem anderen
-    const satz = inhalt.split(/[.;!?]\s*/).find((x) => STORNO.test(x)) ?? inhalt;
-    const dritterImSatz = satz.match(DRITTE)?.[0];
-    const fuerDritten = !!dritterImSatz && !angesprochen.some((a) => a && dritterImSatz.replace(/\s/g, "").includes(a.replace(/\s/g, "")));
-    if (fuerDritten && !/\beuch\b|\beuren?\b|\bihr\b/.test(satz)) return { art: "info", thema: "dritteStorno", wer: dritterImSatz };
-    if (!frage) return { art: "storno" };
+    // Wem gilt der Storno? Steht vor dem Storno-Wort (im selben Satz) ein anderes Fahrzeug und dazwischen kein
+    // „euch/ihr“, gilt er dem anderen („das NEF Krems ist, abbestellt, ihr fahrt weiter“). Gilt eines der Storno-Wörter
+    // niemand anderem, ist es ein Storno für das angesprochene Fahrzeug.
+    const istSelbst = (x: string) => angesprochen.some((a) => a && x.replace(/\s/g, "").includes(a.replace(/\s/g, "")));
+    let fremd: string | undefined;
+    let eigen = false;
+    for (const satz of inhalt.split(/[.;!?]\s*/)) {
+      const re = new RegExp(STORNO.source, "g");
+      for (let m = re.exec(satz); m; m = re.exec(satz)) {
+        const davor = satz.slice(0, m.index);
+        const treffer = [...davor.matchAll(new RegExp(DRITTE.source, "gi"))].filter((d) => !istSelbst(d[0]));
+        const letzter = treffer[treffer.length - 1];
+        const zwischen = letzter ? davor.slice((letzter.index ?? 0) + letzter[0].length) : davor;
+        if (letzter && !/\beuch\b|\beuren?\b|\bihr\b/.test(zwischen)) fremd ??= letzter[0];
+        else eigen = true;
+      }
+    }
+    if (!eigen && fremd) return { art: "info", thema: "dritteStorno", wer: fremd };
+    if (!frage && eigen) return { art: "storno" };
   }
-  if (/\blagemeldung\b|wie (ist|schaut|sieht) (eure|die|es mit der) lage|\blage\W*$|\blage\b.*\b(durchgeben|melden|bitte)\b|gebt? mir (eine|die) lage/.test(inhalt)) return { art: "lageAnfordern" };
+  if (/\blage\s?meldung\b|wie (ist|schaut|sieht) (eure|die|es mit der) lage|\blage\W*$|\blage\b.*\b(durchgeben|melden|bitte)\b|gebt? mir (eine|die) lage/.test(inhalt)) return { art: "lageAnfordern" };
 
   if (frage) {
     if (/sättigung|spo2|blutdruck|\brr\b|puls|herzfrequenz|blutzucker|\bbz\b|vitalwerte|vitalparameter|temperatur|fieber|\bgcs\b|atemfrequenz|\bwerte\b/.test(inhalt)) return { art: "frage", thema: "werte" };
