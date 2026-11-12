@@ -40,7 +40,7 @@ const STATUS_HEX: Record<string, string> = {
   zumZO: "#ECD8ED",
   amZO: "#D7AEE2",
   dienstfahrt: "#DCDDE1",
-  bereitschaft: "#C3E6E1",
+  bereitschaft: "#FFFFFF",
   abgemeldet: "#E6E7EA",
 };
 export function statusHex(key: string): string {

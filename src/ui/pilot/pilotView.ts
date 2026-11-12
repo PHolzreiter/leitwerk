@@ -834,10 +834,10 @@ function gsAbrufPruefen(fz: SimFahrzeug | undefined, e: Einsatz | undefined): vo
 // ---- Hilfen für die Ansicht
 
 /** Statusfarben wie im Entwurf (fenster.css: --s1 … --s9) */
-const ST_FARBE: Record<string, string> = { "1": "#CDEFA0", "6": "#CDEFA0", A: "#F3EF7A", F: "#F3EF7A", "9": "#DCC23A", "2": "#F7D98C", "3": "#EBB36B", "4": "#ECD8ED", "5": "#D7AEE2", "7": "#DCDDE1", "8": "#C3E6E1", "0": "#E6E7EA" };
+const ST_FARBE: Record<string, string> = { "1": "#CDEFA0", "6": "#CDEFA0", A: "#F3EF7A", F: "#F3EF7A", "9": "#DCC23A", "2": "#F7D98C", "3": "#EBB36B", "4": "#ECD8ED", "5": "#D7AEE2", "7": "#DCDDE1", "8": "#FFFFFF", "0": "#E6E7EA" };
 const stFarbe = (nummer: string) => ST_FARBE[nummer] ?? "#E6E7EA";
-const ST_KURZ: Partial<Record<StatusKey, string>> = { alarmiert: "Quittieren", freiWache: "Frei Wache", zumBO: "Zum BO", amBO: "Am BO", zumZO: "Zum ZO", amZO: "Am ZO", freiFunk: "Frei Funk" };
-const ST_LANG: Partial<Record<StatusKey, string>> = { alarmiert: "Quittieren", freiWache: "Frei auf Wache", zumBO: "Zum Berufungsort", amBO: "Am Berufungsort", zumZO: "Zum Zielort", amZO: "Am Zielort", freiFunk: "Frei über Funk" };
+const ST_KURZ: Partial<Record<StatusKey, string>> = { alarmiert: "Quittieren", freiWache: "Frei Wache", zumBO: "Zum BO", amBO: "Am BO", zumZO: "Zum ZO", amZO: "Am ZO", freiFunk: "Frei Funk", bereitschaft: "Bereit" };
+const ST_LANG: Partial<Record<StatusKey, string>> = { alarmiert: "Quittieren", freiWache: "Frei auf Wache", zumBO: "Zum Berufungsort", amBO: "Am Berufungsort", zumZO: "Zum Zielort", amZO: "Am Zielort", freiFunk: "Frei über Funk", bereitschaft: "Bereitschaft" };
 const SICHT_FARBE: Record<string, [string, string]> = { rot: ["#E5484D", "#fff"], gelb: ["#F5A524", "#15181c"], gruen: ["#4CC38A", "#15181c"], tot: ["#6B7385", "#fff"] };
 const ALARM_ST = ["alarmWache", "alarmFunk", "alarmiert"];
 const mmss = (sek: number) => `${Math.floor(sek / 60)}:${String(Math.floor(sek % 60)).padStart(2, "0")}`;
@@ -1910,7 +1910,7 @@ function handyNeu(fz: SimFahrzeug | undefined, e: Einsatz | undefined): Record<s
 }
 
 /** Zeilenfarben der Fahrzeuge wie in den Listen der Leitstelle (ganze Zeile in Statusfarbe, Schrift dunkel) */
-const ZEILE_FARBE: Record<string, string> = { "1": "#CDEFA0", "6": "#CDEFA0", A: "#F3EF7A", F: "#F3EF7A", "9": "#DCC23A", "2": "#F7D98C", "3": "#EBB36B", "4": "#ECD8ED", "5": "#D7AEE2", "7": "#DCDDE1", "8": "#C3E6E1", "0": "#E6E7EA" };
+const ZEILE_FARBE: Record<string, string> = { "1": "#CDEFA0", "6": "#CDEFA0", A: "#F3EF7A", F: "#F3EF7A", "9": "#DCC23A", "2": "#F7D98C", "3": "#EBB36B", "4": "#ECD8ED", "5": "#D7AEE2", "7": "#DCDDE1", "8": "#FFFFFF", "0": "#E6E7EA" };
 /** Karte im Tablet: alle Fahrzeuge zeigen (Umschalter in der Navigation, „ka:alle:1“) */
 let tabletKarteAlle = false;
 

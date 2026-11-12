@@ -381,7 +381,7 @@ export interface PilotSimDaten {
 export const PILOT_SIM_FRISCH_MS = 10_000;
 
 /** Status, die der Pilot selbst drückt (Ziffern wie beim RTW) */
-export const PILOT_STATUS: StatusKey[] = ["alarmiert", "zumBO", "amBO", "zumZO", "amZO", "freiFunk", "freiWache"];
+export const PILOT_STATUS: StatusKey[] = ["alarmiert", "zumBO", "amBO", "zumZO", "amZO", "freiFunk", "freiWache", "bereitschaft"];
 
 /** Nach so langer Zeit ohne Verbindung übernimmt der Computer den Hubschrauber wieder */
 export const PILOT_OFFLINE_MS = 60_000;
@@ -9666,6 +9666,13 @@ export class Simulation {
           this.setStatus(fz, "freiFunk");
           fz.phase = "frei";
         }
+        break;
+      case "bereitschaft":
+        // Status 8 (Paul 12.11.2026): nur aus Frei Wache bzw. Frei Funk; rein zur Anzeige – alarmiert wird ganz normal
+        if (e) return "Zuerst Status 6 (Einsatz beenden)";
+        if (fz.status !== "freiWache" && fz.status !== "freiFunk") return "Status 8 geht nur nach Status 1 oder 6";
+        this.setStatus(fz, "bereitschaft");
+        fz.phase = "frei";
         break;
       case "freiWache":
         if (e) return "Zuerst Status 6 (Einsatz beenden)";

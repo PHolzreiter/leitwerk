@@ -62,6 +62,28 @@ fn app_pfad() -> Option<PathBuf> {
     }
 }
 
+/// Das Programm `ollama` selbst (für `ollama serve`): neben der App bzw. im App-Paket, sonst aus dem PATH
+fn serve_pfad() -> Option<PathBuf> {
+    #[cfg(target_os = "windows")]
+    {
+        let base = std::env::var_os("LOCALAPPDATA").map(PathBuf::from)?;
+        let p = base.join("Programs").join("Ollama").join("ollama.exe");
+        if p.exists() {
+            return Some(p);
+        }
+    }
+    #[cfg(target_os = "macos")]
+    {
+        if let Some(app) = app_pfad() {
+            let p = app.join("Contents").join("Resources").join("ollama");
+            if p.exists() {
+                return Some(p);
+            }
+        }
+    }
+    None
+}
+
 fn cli_vorhanden() -> bool {
     let mut c = Command::new("ollama");
     c.arg("--version");
@@ -119,23 +141,29 @@ pub async fn ki_starten() -> Result<(), String> {
     if version().await.is_some() {
         return Ok(());
     }
-    let gestartet = if let Some(app) = app_pfad() {
-        #[cfg(target_os = "macos")]
-        {
-            Command::new("open").arg("-g").arg("-a").arg(&app).spawn().is_ok()
+    // Nur den Dienst starten (`ollama serve`), nicht die Ollama-App: neuere Fassungen öffnen sonst ein eigenes
+    // Fenster bzw. ein Popup. Der Dienst liegt neben der App (Windows: ollama.exe, Mac: im App-Paket).
+    let cli = serve_pfad();
+    let mut c = Command::new(cli.as_deref().unwrap_or(std::path::Path::new("ollama")));
+    c.arg("serve");
+    c.stdin(std::process::Stdio::null()).stdout(std::process::Stdio::null()).stderr(std::process::Stdio::null());
+    versteckt(&mut c);
+    let mut gestartet = c.spawn().is_ok();
+    // Rückfall: die App (ohne Vordergrund)
+    if !gestartet {
+        if let Some(app) = app_pfad() {
+            #[cfg(target_os = "macos")]
+            {
+                gestartet = Command::new("open").arg("-g").arg("-j").arg("-a").arg(&app).spawn().is_ok();
+            }
+            #[cfg(not(target_os = "macos"))]
+            {
+                let mut c = Command::new(&app);
+                versteckt(&mut c);
+                gestartet = c.spawn().is_ok();
+            }
         }
-        #[cfg(not(target_os = "macos"))]
-        {
-            let mut c = Command::new(&app);
-            versteckt(&mut c);
-            c.spawn().is_ok()
-        }
-    } else {
-        let mut c = Command::new("ollama");
-        c.arg("serve");
-        versteckt(&mut c);
-        c.spawn().is_ok()
-    };
+    }
     if !gestartet {
         return Err("Ollama konnte nicht gestartet werden – ist es installiert?".into());
     }
@@ -152,6 +180,8 @@ pub fn ollama_beenden() {
     #[cfg(target_os = "macos")]
     {
         let _ = Command::new("osascript").args(["-e", "quit app \"Ollama\""]).output();
+        // den von LeitWerk gestarteten Dienst (ollama serve) ebenfalls beenden
+        let _ = Command::new("pkill").args(["-f", "ollama serve"]).output();
     }
     #[cfg(target_os = "windows")]
     {

@@ -309,7 +309,7 @@ export class SeitenBasis {
       ['am Zielort / Übergabe', 'st5', '5', 'am Zielort', '#3949ab', false],
       ['frei, unterwegs', 'st6', '6', 'Frei Funk', '#7cc576', true],
       ['Dienstfahrt (alarmierbar)', 'st7', '7', 'Dienstfahrt', '#8d6e63', true],
-      ['Bereitschaft (alarmierbar)', 'st8', '8', 'Bereitschaft', '#26a69a', true],
+      ['Bereitschaft (alarmierbar)', 'st8', '8', 'Bereitschaft', '#ffffff', true],
       ['alarmiert auf der Wache', 'st9', 'A', 'Alarmiert auf Wache', '#c62828', false],
       ['alarmiert über Funk', 'st10', 'F', 'Alarmiert über Funk', '#f4511e', false],
       ['alarmiert, rückt aus', 'st11', '9', 'Alarmiert und quittiert', '#e53935', false],

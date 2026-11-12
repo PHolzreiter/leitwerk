@@ -638,6 +638,7 @@ static Befehl befehle[] = {
     {"leitwerk/status_4", "LeitWerk: Status 4 \xE2\x80\x93 zum Zielort", "s4", nullptr, 0, nullptr},
     {"leitwerk/status_5", "LeitWerk: Status 5 \xE2\x80\x93 am Zielort", "s5", nullptr, 0, nullptr},
     {"leitwerk/status_6", "LeitWerk: Status 6 \xE2\x80\x93 frei \xC3\xBC" "ber Funk", "s6", nullptr, 0, nullptr},
+    {"leitwerk/status_8", "LeitWerk: Status 8 \xE2\x80\x93 Bereitschaft", "s8", nullptr, 0, nullptr},
     {"leitwerk/sprechen", "LeitWerk: Sprechtaste Leitstelle (halten)", "funk_an", "funk_aus", 0, nullptr},
     {"leitwerk/sprechen_2", "LeitWerk: zweite Sprechtaste (halten)", "funkRtw_an", "funkRtw_aus", 0, nullptr},
     {"leitwerk/zielort", "LeitWerk: Zielort buchen (Tablet)", nullptr, nullptr, 2, nullptr},

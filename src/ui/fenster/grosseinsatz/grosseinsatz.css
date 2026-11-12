@@ -216,7 +216,7 @@
 /* ---- Ergänzungen für das Spiel (nicht im Entwurf) */
 .ap.ew-fenster .gs-ew{position:relative;border-radius:0;box-shadow:none}
 /* Statuspunkt der Fahrzeuge in allen Statusfarben (Entwurf: nur 1–4) */
-.gs-ew .fzc i.s0{background:var(--s0)}.gs-ew .fzc i.s5{background:var(--s5)}.gs-ew .fzc i.s6{background:var(--s6)}.gs-ew .fzc i.s7{background:var(--s7)}.gs-ew .fzc i.s8{background:var(--s8)}.gs-ew .fzc i.s9{background:var(--s9)}.gs-ew .fzc i.sa{background:var(--sa)}.gs-ew .fzc i.sf{background:var(--sf)}
+.gs-ew .fzc i.s0{background:var(--s0)}.gs-ew .fzc i.s5{background:var(--s5)}.gs-ew .fzc i.s6{background:var(--s6)}.gs-ew .fzc i.s7{background:var(--s7)}.gs-ew .fzc i.s8{background:var(--s8);box-shadow:inset 0 0 0 1px #B8BFCC}.gs-ew .fzc i.s9{background:var(--s9)}.gs-ew .fzc i.sa{background:var(--sa)}.gs-ew .fzc i.sf{background:var(--sf)}
 /* Treffer der Adresssuche (Bereitstellungsraum) */
 .gs-ew .br-treffer{flex:1 1 100%;min-width:0;max-height:220px;overflow:auto;padding:4px;border-radius:9px;background:var(--flaeche);box-shadow:0 0 0 1px var(--linie),0 14px 30px -10px rgba(0,0,0,.5);animation:gs-rein .18s ease both}
 .gs-ew .br-treffer button{all:unset;box-sizing:border-box;display:block;width:100%;padding:6px 8px;border-radius:6px;font-size:12.5px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}

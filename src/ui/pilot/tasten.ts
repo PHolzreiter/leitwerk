@@ -7,13 +7,13 @@
 import type { StatusKey } from "../../sim/settings";
 import { JOY, joyName } from "../joystick";
 
-export type PilotAktion = "s9" | "s1" | "s2" | "s3" | "s4" | "s5" | "s6" | "fliegen" | "funk" | "funkRtw";
+export type PilotAktion = "s9" | "s1" | "s2" | "s3" | "s4" | "s5" | "s6" | "s8" | "fliegen" | "funk" | "funkRtw";
 
 /** Aktionen, die man gedrückt hält (Sprechtasten) – lösen beim Drücken und beim Loslassen aus */
 export const HALTEN: PilotAktion[] = ["funk", "funkRtw"];
 
 /** Statustasten: wie am Funkgerät gedrückt halten (ca. 2 s), bis der Status durchgeht */
-export const STATUS_HALTEN: PilotAktion[] = ["s9", "s1", "s2", "s3", "s4", "s5", "s6"];
+export const STATUS_HALTEN: PilotAktion[] = ["s9", "s1", "s2", "s3", "s4", "s5", "s6", "s8"];
 
 export const AKTIONEN: { id: PilotAktion; name: string; status?: StatusKey }[] = [
   { id: "s9", name: "Quittieren – Alarm angenommen", status: "alarmiert" },
@@ -23,6 +23,7 @@ export const AKTIONEN: { id: PilotAktion; name: string; status?: StatusKey }[] =
   { id: "s4", name: "Status 4 – zum Zielort", status: "zumZO" },
   { id: "s5", name: "Status 5 – am Zielort", status: "amZO" },
   { id: "s6", name: "Status 6 – frei über Funk", status: "freiFunk" },
+  { id: "s8", name: "Status 8 – Bereitschaft (nach 1 oder 6, alarmierbar)", status: "bereitschaft" },
   { id: "fliegen", name: "Übungsflug zum nächsten Ziel / anhalten" },
   { id: "funk", name: "Sprechtaste – Leitstelle (gedrückt halten)" },
   { id: "funkRtw", name: "Sprechtaste – zweite Taste (gedrückt halten)" },
@@ -49,7 +50,7 @@ const SCHLUESSEL = "leitwerk.pilot.tasten";
 
 export function standardBelegung(): Belegung {
   return {
-    taste: { s9: "Digit9", s1: "Digit1", s2: "Digit2", s3: "Digit3", s4: "Digit4", s5: "Digit5", s6: "Digit6", fliegen: "KeyF", funk: "Space", funkRtw: "KeyR" },
+    taste: { s9: "Digit9", s1: "Digit1", s2: "Digit2", s3: "Digit3", s4: "Digit4", s5: "Digit5", s6: "Digit6", s8: "Digit8", fliegen: "KeyF", funk: "Space", funkRtw: "KeyR" },
     global: {
       s1: "CommandOrControl+Shift+1",
       s2: "CommandOrControl+Shift+2",
@@ -57,6 +58,7 @@ export function standardBelegung(): Belegung {
       s4: "CommandOrControl+Shift+4",
       s5: "CommandOrControl+Shift+5",
       s6: "CommandOrControl+Shift+6",
+      s8: "CommandOrControl+Shift+8",
       s9: "CommandOrControl+Shift+9",
       funk: "CommandOrControl+Shift+F",
       funkRtw: "CommandOrControl+Shift+R",
@@ -64,7 +66,7 @@ export function standardBelegung(): Belegung {
     globalAn: true,
     joy: {},
     // Vermutung: die Taste liefert ihre Ziffer – sonst im Tasten-Fenster anlernen
-    carls: { s1: 1, s2: 2, s3: 3, s4: 4, s5: 5, s6: 6, s9: 9 },
+    carls: { s1: 1, s2: 2, s3: 3, s4: 4, s5: 5, s6: 6, s8: 8, s9: 9 },
   };
 }
 
