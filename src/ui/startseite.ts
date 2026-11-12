@@ -215,25 +215,28 @@ export async function pruefen(): Promise<Check[]> {
 let offen: HTMLElement | null = null;
 
 /** Wird die Startseite gerade gezeigt? */
-/** Hauptmenü im Vollbild; danach wieder die Fenstergröße von vorher (nur das Hauptfenster im Programm) */
-let vollbildVonUns = false;
+/**
+ * Hauptmenü: Fenster maximiert (seit Beta 46 mit eigener Titelleiste statt Vollbild); danach wieder die
+ * Fenstergröße von vorher (nur das Hauptfenster im Programm)
+ */
+let maxVonUns = false;
 export function vollbildStart(): void {
   if (!inTauri()) return;
   void import("@tauri-apps/api/window")
     .then(async ({ getCurrentWindow }) => {
       const w = getCurrentWindow();
-      if (w.label !== "main" || (await w.isFullscreen())) return;
-      vollbildVonUns = true;
-      await w.setFullscreen(true);
+      if (w.label !== "main" || (await w.isFullscreen()) || (await w.isMaximized())) return;
+      maxVonUns = true;
+      await w.maximize();
     })
-    .catch((e) => console.warn("Vollbild", e));
+    .catch((e) => console.warn("Maximieren", e));
 }
 export function vollbildEnde(): void {
-  if (!inTauri() || !vollbildVonUns) return;
-  vollbildVonUns = false;
+  if (!inTauri() || !maxVonUns) return;
+  maxVonUns = false;
   void import("@tauri-apps/api/window")
-    .then(({ getCurrentWindow }) => getCurrentWindow().setFullscreen(false))
-    .catch((e) => console.warn("Vollbild", e));
+    .then(({ getCurrentWindow }) => getCurrentWindow().unmaximize())
+    .catch((e) => console.warn("Maximieren", e));
 }
 
 /** Vollbild an/aus (F11) – im Hauptfenster */
@@ -243,7 +246,6 @@ export function vollbildUmschalten(): void {
     .then(async ({ getCurrentWindow }) => {
       const w = getCurrentWindow();
       const an = await w.isFullscreen();
-      vollbildVonUns = !an;
       await w.setFullscreen(!an);
     })
     .catch((e) => console.warn("Vollbild", e));

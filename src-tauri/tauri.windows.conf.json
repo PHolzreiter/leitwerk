@@ -4,5 +4,20 @@
     "resources": {
       "target/release/*.dll": "./"
     }
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "LeitWerk",
+        "width": 1440,
+        "height": 900,
+        "minWidth": 960,
+        "minHeight": 600,
+        "dragDropEnabled": false,
+        "backgroundThrottling": "disabled",
+        "decorations": false
+      }
+    ]
   }
 }

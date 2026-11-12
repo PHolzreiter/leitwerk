@@ -1,0 +1,14 @@
+/* Eigene Titelleiste (Windows): Fensterknöpfe rechts oben über der Kopfleiste */
+.lw-titel{position:fixed;top:0;right:0;z-index:2147483000;display:flex;height:52px;color:var(--text,#E8EAF0);-webkit-user-select:none;user-select:none}
+.lw-titel-k{all:unset;box-sizing:border-box;width:46px;height:100%;display:grid;place-items:center;cursor:default;color:inherit;transition:background .12s}
+.lw-titel-k svg{width:11px;height:11px;fill:none;stroke:currentColor;stroke-width:1.1;stroke-linecap:round;stroke-linejoin:round}
+.lw-titel-k:hover{background:color-mix(in srgb,currentColor 12%,transparent)}
+.lw-titel-k:active{background:color-mix(in srgb,currentColor 20%,transparent)}
+.lw-titel-k:focus-visible{outline:2px solid var(--akzent,#3B8BFF);outline-offset:-2px}
+.lw-titel-k.zu:hover{background:#C42B1C;color:#fff}
+.lw-titel-k.zu:active{background:#A32517;color:#fff}
+/* Platz für die Knöpfe in den Kopfleisten */
+html.tl-win .kl-leiste:not(.kl-zweit-leiste),html.tl-win .ap .pv-kopf,html.tl-win .st2-kopf{padding-right:150px}
+/* macOS: die Ampelknöpfe des Systems liegen links in der Kopfleiste */
+html.tl-mac .kl-leiste:not(.kl-zweit-leiste),html.tl-mac .ap .pv-kopf,html.tl-mac .st2-kopf{padding-left:84px}
+html.tl-win .l-topbar{top:58px}
