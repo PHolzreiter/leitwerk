@@ -1,6 +1,6 @@
 ### npm install
 
-added 52 packages, and audited 53 packages in 8s
+added 52 packages, and audited 53 packages in 9s
 
 9 packages are looking for funding
   run `npm fund` for details
@@ -18,10 +18,10 @@ Run `npm audit` for details.
 
 [36mvite v6.4.6 [32mbuilding for production...[36m[39m
 transforming...
-[32m✓[39m 320 modules transformed.
+[32m✓[39m 321 modules transformed.
 rendering chunks...
 [33m[plugin vite:reporter] 
-(!) /home/runner/work/leitwerk/leitwerk/node_modules/@tauri-apps/plugin-dialog/dist-js/index.js is dynamically imported by /home/runner/work/leitwerk/leitwerk/src/ui/pilot/flugsim.ts, /home/runner/work/leitwerk/leitwerk/src/ui/pilot/flugsim.ts but also statically imported by /home/runner/work/leitwerk/leitwerk/src/net/spielstandOrdner.ts, /home/runner/work/leitwerk/leitwerk/src/platform.ts, dynamic import will not move module into another chunk.
+(!) /home/runner/work/leitwerk/leitwerk/node_modules/@tauri-apps/plugin-dialog/dist-js/index.js is dynamically imported by /home/runner/work/leitwerk/leitwerk/src/ui/mithelfen.ts, /home/runner/work/leitwerk/leitwerk/src/ui/pilot/flugsim.ts, /home/runner/work/leitwerk/leitwerk/src/ui/pilot/flugsim.ts but also statically imported by /home/runner/work/leitwerk/leitwerk/src/net/spielstandOrdner.ts, /home/runner/work/leitwerk/leitwerk/src/platform.ts, dynamic import will not move module into another chunk.
 [39m
 [33m[plugin vite:reporter] 
 (!) /home/runner/work/leitwerk/leitwerk/node_modules/@tauri-apps/api/event.js is dynamically imported by /home/runner/work/leitwerk/leitwerk/src/ui/ws/bus.ts but also statically imported by /home/runner/work/leitwerk/leitwerk/node_modules/@tauri-apps/api/webview.js, /home/runner/work/leitwerk/leitwerk/node_modules/@tauri-apps/api/webviewWindow.js, /home/runner/work/leitwerk/leitwerk/node_modules/@tauri-apps/api/window.js, /home/runner/work/leitwerk/leitwerk/src/ui/joystick.ts, /home/runner/work/leitwerk/leitwerk/src/ui/pilot/flugsim.ts, /home/runner/work/leitwerk/leitwerk/src/ui/pilot/handy.ts, /home/runner/work/leitwerk/leitwerk/src/ui/pilot/hpg.ts, dynamic import will not move module into another chunk.
@@ -81,21 +81,22 @@ computing gzip size...
 [2mdist/[22m[2massets/[22m[32mbg-32x9-mittag-Cqk08wEM.jpg          [39m[1m[2m1,150.58 kB[22m[1m[22m
 [2mdist/[22m[2massets/[22m[32mbg-32x9-abend-DLJpcJQK.jpg           [39m[1m[2m1,159.39 kB[22m[1m[22m
 [2mdist/[22m[2massets/[22m[32meinsatzstellen-BKMVXWRH.csv          [39m[1m[2m2,885.41 kB[22m[1m[22m
-[2mdist/[22m[2massets/[22m[35mindex-LKdItqdU.css                   [39m[1m[2m  478.37 kB[22m[1m[22m[2m │ gzip:    75.24 kB[22m
-[2mdist/[22m[2massets/[22m[36mdist-js-xydvdjSP.js                  [39m[1m[2m    0.54 kB[22m[1m[22m[2m │ gzip:     0.26 kB[22m
-[2mdist/[22m[2massets/[22m[36mwebviewWindow-D-jbP2Sj.js            [39m[1m[2m    1.78 kB[22m[1m[22m[2m │ gzip:     0.79 kB[22m
-[2mdist/[22m[2massets/[22m[36mfussleiste-Bnh3qdbT.js               [39m[1m[2m    2.37 kB[22m[1m[22m[2m │ gzip:     1.19 kB[22m
-[2mdist/[22m[2massets/[22m[36mwebview-DnrXkMS8.js                  [39m[1m[2m    3.34 kB[22m[1m[22m[2m │ gzip:     1.13 kB[22m
-[2mdist/[22m[2massets/[22m[36mpath-Z4H2b6qI.js                     [39m[1m[2m    3.76 kB[22m[1m[22m[2m │ gzip:     0.92 kB[22m
-[2mdist/[22m[2massets/[22m[36mwindow-C0cFijKj.js                   [39m[1m[2m   14.32 kB[22m[1m[22m[2m │ gzip:     3.56 kB[22m
-[2mdist/[22m[2massets/[22m[36mzeilen-Ciu9qy6Y.js                   [39m[1m[2m   52.44 kB[22m[1m[22m[2m │ gzip:    20.33 kB[22m
-[2mdist/[22m[2massets/[22m[36mindex-0JMob1vK.js                    [39m[1m[33m6,621.78 kB[39m[22m[2m │ gzip: 1,841.45 kB[22m
+[2mdist/[22m[2massets/[22m[35mindex-CrZRHIdC.css                   [39m[1m[2m  479.43 kB[22m[1m[22m[2m │ gzip:    75.41 kB[22m
+[2mdist/[22m[2massets/[22m[36mdist-js-DHusHgbB.js                  [39m[1m[2m    0.54 kB[22m[1m[22m[2m │ gzip:     0.26 kB[22m
+[2mdist/[22m[2massets/[22m[36mwebviewWindow-Bfg4bFkY.js            [39m[1m[2m    1.78 kB[22m[1m[22m[2m │ gzip:     0.79 kB[22m
+[2mdist/[22m[2massets/[22m[36mfussleiste-eiutfX5f.js               [39m[1m[2m    2.37 kB[22m[1m[22m[2m │ gzip:     1.19 kB[22m
+[2mdist/[22m[2massets/[22m[36mwebview-BXXv9RGl.js                  [39m[1m[2m    3.34 kB[22m[1m[22m[2m │ gzip:     1.13 kB[22m
+[2mdist/[22m[2massets/[22m[36mpath-DmJ73Maw.js                     [39m[1m[2m    3.76 kB[22m[1m[22m[2m │ gzip:     0.92 kB[22m
+[2mdist/[22m[2massets/[22m[36mwindow-B_yelpCw.js                   [39m[1m[2m   14.32 kB[22m[1m[22m[2m │ gzip:     3.56 kB[22m
+[2mdist/[22m[2massets/[22m[36mmithelfen-BsU3u0-k.js                [39m[1m[2m   20.10 kB[22m[1m[22m[2m │ gzip:     8.05 kB[22m
+[2mdist/[22m[2massets/[22m[36mzeilen-DmtaGzZa.js                   [39m[1m[2m   52.44 kB[22m[1m[22m[2m │ gzip:    20.33 kB[22m
+[2mdist/[22m[2massets/[22m[36mindex-UPbGHDv-.js                    [39m[1m[33m6,634.67 kB[39m[22m[2m │ gzip: 1,846.25 kB[22m
 [33m
 (!) Some chunks are larger than 2000 kB after minification. Consider:
 - Using dynamic import() to code-split the application
 - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
 - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.[39m
-[32m✓ built in 8.31s[39m
+[32m✓ built in 8.85s[39m
 ### npx tauri icon app-icon.png
         Appx Creating StoreLogo.png
         Appx Creating Square30x30Logo.png
@@ -185,7 +186,7 @@ computing gzip size...
   [1m[94m= [0m[1mnote[0m: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
 
 [1m[33mwarning[0m: `leitwerk` (lib) generated 5 warnings (run `cargo fix --lib -p leitwerk` to apply 2 suggestions)
-[1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 14.04s
+[1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 29.62s
 ### cmake -S tools/xplane-plugin -B xpbau -DCMAKE_BUILD_TYPE=Release
 -- The CXX compiler identification is GNU 13.3.0
 -- Detecting CXX compiler ABI info
@@ -197,7 +198,7 @@ computing gzip size...
 -- Performing Test CMAKE_HAVE_LIBC_PTHREAD
 -- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
 -- Found Threads: TRUE
--- Configuring done (3.8s)
+-- Configuring done (2.2s)
 -- Generating done (0.0s)
 -- Build files have been written to: /home/runner/work/leitwerk/leitwerk/xpbau
 ### cmake --build xpbau -j4
