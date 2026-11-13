@@ -4,6 +4,7 @@
  */
 import { store } from "../data/store";
 import { normKey } from "../data/schema";
+import { codeGesperrt } from "../abfrage/schema";
 
 export interface Einsatzcode {
   code: string;
@@ -58,7 +59,10 @@ export function allCodes(): Einsatzcode[] {
   });
   // ACN-Codes gibt es immer (sofern eine eigene Codeliste geladen ist und sie nicht selbst enthält)
   if (cache.length) for (const c of ACN_CODES) if (!cache.some((x) => x.code === c.code)) cache.push(c);
+  // alle Codes bleiben auffindbar (ergibt die Abfrage doch einmal so einen); in Listen und Fällen kommen gesperrte nicht vor
   byCode = new Map(cache.map((c) => [c.code, c]));
+  const schema = store.schema;
+  cache = cache.filter((c) => !codeGesperrt(schema, c.code));
   return cache;
 }
 

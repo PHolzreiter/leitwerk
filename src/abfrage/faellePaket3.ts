@@ -79,28 +79,6 @@ export const FAELLE_PAKET3: FallVorlage[] = [
     varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "Einweisung aus dem Pflegeheim, Patient stabil", braucht: "RS", symptom: "kranke_person", dringlichkeit: 10, buchung: "bu_exsikkose_synkope_az_verschlechterung" }],
   },
 
-  // ---------------------------------------------------------------- Telemedizin: Transport zur Abklärung
-  {
-    id: "telemed_einweisung_bauch",
-    name: "Telemedizin: Bauchschmerzen zur Abklärung",
-    thema: "anforderung_arzt",
-    haeufigkeit: 2,
-    alter: [25, 85],
-    orte: ["wohnung", "haus"],
-    stelle: ["zu Hause im Wohnzimmer"],
-    anrufer: ["telemed"],
-    geschehen: [
-      "Du bist Ärztin/Arzt der Telemedizin und hast gerade mit {P} telefoniert.",
-      "{Er} hat seit dem Vormittag Bauchschmerzen rechts unten, leichtes Fieber, kein Erbrechen.",
-      "Das gehört heute im Krankenhaus angeschaut, aber nicht mit Blaulicht.",
-    ],
-    hergang: ["Telemedizin, ich brauche einen Transport zur Abklärung, Verdacht auf Blinddarm, kein Notfall."],
-    seitMin: [20, 60],
-    fest: { anforderer: "telemed", grund: "transport", dringlichkeit: "ohne", transportart: ["sitzend", "gehend"], bw: "ja", at: "normal", anzahl_patienten: "1" },
-    details: ["Eine Rückrufnummer vom Patienten habe ich.", "Der Patient ist allein, sperrt aber selbst auf."],
-    verlauf: ["Du bist ruhig und sachlich."],
-    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "Verdacht auf Appendizitis, Kreislauf stabil, Schmerz mäßig", braucht: "RS", symptom: "bauchschmerzen", dringlichkeit: 10, buchung: "bu_akutes_abdomen" }],
-  },
 
   // ---------------------------------------------------------------- Ärztefunkdienst: Transport, kein Notfall
   {
@@ -120,7 +98,7 @@ export const FAELLE_PAKET3: FallVorlage[] = [
     ],
     hergang: ["Ärztefunkdienst, ich brauche einen Transport für einen Patienten, Einweisung, kein Notfall."],
     seitMin: [20, 60],
-    fest: { anforderer: "141", grund: "transport", dringlichkeit: "ohne", transportart: ["liegend", "sitzend"], bw: "ja", at: "normal", anzahl_patienten: "1" },
+    fest: { anforderer: "normal", grund: "transport", dringlichkeit: "ohne", transportart: ["liegend", "sitzend"], bw: "ja", at: "normal", anzahl_patienten: "1" },
     details: ["Die Einweisung ist geschrieben.", "Der Sohn bleibt bis zum Eintreffen."],
     verlauf: ["Du bist ruhig und routiniert, du hast noch weitere Visiten."],
     varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "Einweisung durch den Ärztefunkdienst, Patient stabil", braucht: "RS", symptom: "kranke_person", dringlichkeit: 10, buchung: "bu_exsikkose_synkope_az_verschlechterung" }],

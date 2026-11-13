@@ -745,28 +745,6 @@ export const FAELLE_PAKET2: FallVorlage[] = [
     ],
   },
 
-  // ---------------------------------------------------------------- Telemedizin fordert an
-  {
-    id: "telemed_heim_az",
-    name: "Telemedizin: Heimbewohner soll abgeklärt werden",
-    thema: "anforderung_arzt",
-    haeufigkeit: 1.5,
-    alter: [78, 98],
-    orte: ["pflegeheim"],
-    stelle: ["im Pflegeheim, im Zimmer"],
-    anrufer: ["telemed"],
-    geschehen: [
-      "Du bist Ärztin/Arzt der Telemedizin und hast gerade mit der Pflege im Heim telefoniert.",
-      "{P} ist seit zwei Tagen deutlich schwächer, trinkt kaum und ist heute verwirrter als sonst.",
-      "Akut lebensbedrohlich ist es nicht, aber es gehört heute im Krankenhaus abgeklärt.",
-    ],
-    hergang: ["Telemedizin, ich brauche einen Transport für einen Heimbewohner zur Abklärung, Verschlechterung des Allgemeinzustands."],
-    seitMin: [30, 120],
-    fest: { anforderer: "telemed", grund: "transport", dringlichkeit: "ohne", transportart: "liegend", bw: "ja", at: "normal", anzahl_patienten: "1" },
-    details: ["Vitalwerte laut Pflege: Blutdruck 105 zu 60, Puls 92, Fieber 37,8.", "Eine Bettzusage braucht es nicht, Notaufnahme."],
-    verlauf: ["Du bist ruhig und sachlich."],
-    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "Allgemeinzustandsverschlechterung, Exsikkose, leichtes Fieber, stabil", braucht: "RS", symptom: "exsikkose", dringlichkeit: 10, buchung: "bu_exsikkose_synkope_az_verschlechterung" }],
-  },
 
   // ================================================================ KINDER
 

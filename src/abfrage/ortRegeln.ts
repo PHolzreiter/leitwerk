@@ -5,11 +5,16 @@
 import type { Antworten } from "./schema";
 import type { OrtArt } from "./szenario";
 
+/** Traumatische Themen: dort wird nach einem Arbeitsunfall gefragt (wie ARBEITSUNFALL_THEMEN im Abfrageschema) */
+const ARBEITSUNFALL = ["sturz", "verletzung", "blutung", "eingeklemmt", "strom", "brand", "verkehrsunfall", "tierbiss", "wasser", "stich_schuss", "auge"];
+
 export function ortRegeln(ortArt: OrtArt | undefined, thema: string, a: Antworten, fest: Set<string>, rnd: () => number = Math.random): void {
   if (!ortArt) return;
   const setze = (id: string, w: string) => {
     if (!fest.has(id)) a[id] = w;
   };
+  // Arbeitsunfall: an der Arbeit bzw. auf der Baustelle
+  if (ARBEITSUNFALL.includes(thema)) setze("arbeitsunfall", ortArt === "arbeit" || ortArt === "baustelle" ? "ja" : "nein");
   if (thema === "verkehrsunfall") {
     if (ortArt === "landstrasse" || ortArt === "autobahn") {
       setze("hohe_geschw", rnd() < 0.85 ? "ja" : "unbekannt");

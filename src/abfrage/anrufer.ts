@@ -67,8 +67,10 @@ export interface Anrufer {
   stelle?: string;
   /** fertige Meldung (andere Leitstelle, eCall-Ansage), vom Programm erzeugt */
   meldung?: string;
-  /** eCall: ob jemand im Fahrzeug antwortet */
+  /** eCall: ob jemand im Fahrzeug (bzw. an der Uhr) antwortet */
   sprachkontakt?: boolean;
+  /** automatische Unfallmeldung: vom Auto (eCall) oder von einer Smartwatch */
+  quelle?: "auto" | "uhr";
   /** andere Leitstelle (Flughafen): nur diese Abfrage-Felder sind bekannt, sonst „unbekanntSatz“ */
   nurBekannt?: string[];
   unbekanntSatz?: string;
@@ -261,8 +263,10 @@ export function anruferWaehlen(
       trainer: { ort: "", rolle: "Trainer im Sportverein", anruferWert: "2", geschlecht: "m", typ: "trainer" },
       bademeister: { ort: "", rolle: rnd() < 0.7 ? "Bademeister" : "Bademeisterin", anruferWert: "2", typ: "bademeister" },
       wirt: { ort: "", rolle: rnd() < 0.5 ? "Wirt" : "Kellnerin", anruferWert: "2", typ: "wirt" },
-      telemed: { ort: "", rolle: "Ärztin/Arzt der Telemedizin", anruferWert: "einrichtung", profi: true, typ: "telemed" },
-      polizei: { ort: "", rolle: rnd() < 0.5 ? "Polizist" : "Polizistin", anruferWert: "2", profi: true, typ: "polizei" },
+      hotline: { ort: "", rolle: "Mitarbeiter/in der Gesundheitshotline (diplomierte Pflegekraft)", anruferWert: "hotline", profi: true, typ: "hotline" },
+      pistenrettung: { ort: "", rolle: "Pistenretter/in", anruferWert: "piste", profi: true, typ: "pistenrettung" },
+      // ruft die Polizei an, ist das „Wer ruft an? – Polizei“ (dann „-Polizei“ im Code)
+      polizei: { ort: "", rolle: rnd() < 0.5 ? "Polizist" : "Polizistin", anruferWert: "polizei", profi: true, typ: "polizei" },
       bergrettung: { ort: "", rolle: "Einsatzleiter der Bergrettung", anruferWert: "einrichtung", geschlecht: "m", profi: true, typ: "bergrettung" },
       bahnpersonal: { ort: "", rolle: rnd() < 0.6 ? "Mitarbeiter der ÖBB" : "Mitarbeiterin der ÖBB", anruferWert: "2", typ: "bahnpersonal" },
       busfahrer: { ort: "", rolle: rnd() < 0.7 ? "Busfahrer" : "Busfahrerin", anruferWert: "2", typ: "busfahrer" },
@@ -366,9 +370,9 @@ function gendern(t: string, g: "m" | "w"): string {
 
 /** „Ich bin …“ für die Frage „Wer ruft an?“ */
 export function werText(x: Anrufer): string {
+  if (x.art === "ecall") return !x.sprachkontakt ? "…" : x.quelle === "uhr" ? `${x.name}, mir gehört die Uhr.` : x.selbst ? `${x.name}, ich sitz im Auto, ich bin ${x.geschlecht === "w" ? "die Fahrerin" : "der Fahrer"}.` : `${x.name}, ich sitz ${x.geschlecht === "w" ? "als Beifahrerin" : "als Beifahrer"} im Auto.`;
   if (x.selbst) return `${x.name.split(" ")[0]} ${x.name.split(" ").slice(1).join(" ")} – ich ruf für mich selber an, mir geht's nicht gut.`;
   const r = x.rolle.split(";")[0].split("(")[0].trim();
-  if (x.art === "ecall") return x.sprachkontakt ? `Ich sitz im Auto, ich bin ${x.geschlecht === "w" ? "die Fahrerin" : "der Fahrer"}.` : "(keine Antwort)";
   if (x.art && x.art !== "privat") return `${x.stelle ? `${x.stelle}, ` : ""}${x.name}${x.art === "polizei" ? " – ich rufe für unsere Streife vor Ort an" : ""}.`;
   // Fremde sagen nicht „Ich bin der Passant“, sondern wie sie dazugekommen sind
   const fremd: Partial<Record<AnruferTyp, string>> = {
@@ -424,6 +428,50 @@ function ortVon(adresse: string): string {
 const FAHRZEUGE = ["BMW X5", "VW Golf", "Skoda Octavia", "Audi A4", "VW Passat", "Mercedes C-Klasse", "Ford Focus", "Toyota Yaris", "Seat Leon", "Dacia Duster", "VW Transporter", "Renault Clio"];
 const FARBEN = ["schwarz", "weiß", "silber", "grau", "blau", "rot", "dunkelgrün"];
 
+/** Kfz-Kennzeichen wie in Niederösterreich (Bezirk, Zahl, Buchstaben) */
+const BEZIRKE_KZ = ["KR", "KS", "ME", "MI", "TU", "ZT", "GF", "HL", "HO", "LF", "P", "PL", "WB", "NK", "BN", "MD", "AM", "SB", "GD", "WY"];
+function kennzeichen(rnd: () => number): string {
+  const b = "ABCDEFGHKLMNPRSTUVWXYZ";
+  return `${pick(BEZIRKE_KZ, rnd)} ${100 + Math.floor(rnd() * 900)} ${b[Math.floor(rnd() * b.length)]}${b[Math.floor(rnd() * b.length)]}`;
+}
+
+/**
+ * Ansage der automatischen Unfallmeldung (eine Computerstimme, keine Rückfragen):
+ * Auto (eCall: Fahrzeug, Kennzeichen, Antrieb, was die Sensoren erkannt haben, Insassen laut Gurt, Fahrtrichtung)
+ * oder Smartwatch (Sturz erkannt, reagiert nicht). Die Position kommt automatisch mit.
+ */
+export function ecallMeldung(a: Antworten, quelle: "auto" | "uhr", insassen: number, g: "m" | "w", rnd: () => number = Math.random): { text: string; fahrzeug: string } {
+  const mech = String(a.mechanismus ?? "nein");
+  if (quelle === "uhr") {
+    const wer = g === "w" ? "Die Trägerin" : "Der Träger";
+    const was = mech === "geschleudert" ? "mit hoher Geschwindigkeit schwer gestürzt" : mech === "absturz" ? "aus großer Höhe gestürzt" : "schwer gestürzt";
+    return {
+      text: `Automatische Notfallmeldung einer Smartwatch. ${wer} dieser Uhr ist ${was} und hat auf die Uhr nicht reagiert. Die Position wird übermittelt. Die Sprachverbindung zur Uhr wird hergestellt …`,
+      fahrzeug: "",
+    };
+  }
+  const modell = typeof a.ecall_fahrzeug === "string" ? a.ecall_fahrzeug : pick(FAHRZEUGE, rnd);
+  const farbe = pick(FARBEN, rnd);
+  const antrieb = pick(["Benzin", "Diesel", "Diesel", "Elektro", "Hybrid"], rnd);
+  const manuell = a.ecall_ausloesung === "manuell";
+  const erkannt = manuell
+    ? "Der Notruf wurde manuell über die SOS-Taste ausgelöst"
+    : mech === "ueberschlag"
+      ? "Ein Fahrzeugüberschlag wurde erkannt, die Airbags haben ausgelöst"
+      : mech === "absturz"
+        ? "Ein Absturz mit starkem Höhenverlust wurde erkannt, die Airbags haben ausgelöst"
+        : mech === "fussgaenger" || mech === "fahrrad"
+          ? "Ein Aufprall an der Fahrzeugfront wurde erkannt, der Fußgängerschutz hat ausgelöst"
+          : a.verletzte === "keine" || a.verletzte === "leicht"
+            ? "Ein Aufprall wurde erkannt"
+            : "Ein schwerer Aufprall wurde erkannt, die Airbags haben ausgelöst";
+  const richtung = pick(["Norden", "Süden", "Osten", "Westen", "Nordosten", "Südwesten"], rnd);
+  return {
+    text: `Automatischer Notruf. Dies ist eine automatische Unfallmeldung eines ${modell}, Farbe ${farbe}, Kennzeichen ${kennzeichen(rnd)}, Antrieb ${antrieb}. ${erkannt}. Laut Gurtsensor ${insassen === 1 ? "eine Person" : `${insassen} Personen`} im Fahrzeug. Fahrtrichtung ${richtung}. Die Position wird übermittelt. Die Sprachverbindung zum Fahrzeug wird hergestellt …`,
+    fahrzeug: `${modell}, ${farbe}`,
+  };
+}
+
 function sonderAnrufer(
   kapitel: string,
   a: Antworten,
@@ -471,11 +519,11 @@ function sonderAnrufer(
         rnd() < pflegeAnteil
           ? [`diplomierte Pflegekraft im ${heim}, ${station}`, heim, `${heim}, ${station}`]
           : [`Hausärztin/Hausarzt in ${ort}`, `Ordination in ${ort}`, einr.heim ? `${heim} (Visite)` : "beim Patienten zu Hause (Hausbesuch)"],
-      telemed: ["Ärztin/Arzt der telefonischen Gesundheitsberatung (Telemedizin)", "Telemedizin", "Telemedizin-Zentrale (der Patient ist zu Hause)"],
-      "141": ["Ärztin/Arzt vom Ärztefunkdienst 141", "Ärztefunkdienst 141", "141-Callcenter (der Patient ist zu Hause)"],
-      ecn: ["Mitarbeiter/in der Gesundheitshotline 1450", "Gesundheitshotline 1450", "1450-Callcenter"],
-      schi: ["Pistenretter/in am Schigebiet", "Pistenrettung", "Piste"],
+      // Gesundheitshotline: eigenes medizinisches Personal am Telefon, nicht beim Patienten
+      ecn: ["Mitarbeiter/in der Gesundheitshotline (diplomierte Pflegekraft)", "Gesundheitshotline", "Gesundheitshotline (der Patient ist zu Hause)"],
+      schi: ["Pistenretter/in im Schigebiet", "Pistenrettung", "auf der Piste beim Patienten"],
     };
+    const wertVon: Record<string, string> = { normal: "einrichtung", ecn: "hotline", schi: "piste" };
     // Fallgeschichte legt fest, wer anruft (Pflegeheim, Hausarzt, Ordination, Telemedizin)
     if (geschichte?.typen.length && anf === "normal") {
       let pool = geschichte.typen.filter((x) => ["pflege", "arzt", "ordi", "aerztefunk"].includes(x));
@@ -485,11 +533,11 @@ function sonderAnrufer(
       if (t === "pflege" && !einr.heim) varianten.normal = ["diplomierte Pflegekraft der mobilen Hauskrankenpflege", "Mobile Hauskrankenpflege", "beim Patienten zu Hause"];
       else if (t === "pflege") varianten.normal = [`diplomierte Pflegekraft im ${heim}, ${station}`, heim, `${heim}, ${station}`];
       else if (t === "arzt") varianten.normal = [`Hausärztin/Hausarzt in ${ort}`, `Ordination in ${ort}`, hausbesuch ? "beim Patienten zu Hause (Hausbesuch)" : "Ordination"];
-      else if (t === "aerztefunk") varianten.normal = ["Ärztin/Arzt vom Ärztefunkdienst (Hausbesuch)", "Ärztefunkdienst 141", "beim Patienten zu Hause (Hausbesuch)"];
+      else if (t === "aerztefunk") varianten.normal = ["Ärztin/Arzt vom Ärztefunkdienst (Hausbesuch)", "Ärztefunkdienst", "beim Patienten zu Hause (Hausbesuch)"];
       else varianten.normal = [`Ordinationsassistentin der Hausarztpraxis in ${ort}`, `Ordination in ${ort}`, "Ordination"];
     }
     const [rolle, stelle, wo] = varianten[anf] ?? varianten.normal;
-    return basis({ art: "einrichtung", rolle, anruferWert: "einrichtung", stelle, ort: wo, emotion: "ruhig", ...(rolle.startsWith("Ordinationsassistentin") ? { geschlecht: "w" as const } : {}) });
+    return basis({ art: "einrichtung", rolle, anruferWert: wertVon[anf] ?? "einrichtung", stelle, ort: wo, emotion: "ruhig", typ: anf === "ecn" ? "hotline" : anf === "schi" ? "pistenrettung" : undefined, ...(rolle.startsWith("Ordinationsassistentin") ? { geschlecht: "w" as const } : {}) });
   }
   if (ist(kapitel, "anforderung_ls")) {
     const org = gewichtet<[string, string, string]>(
@@ -497,11 +545,10 @@ function sonderAnrufer(
         [["Bezirksalarmzentrale der Feuerwehr", "Feuerwehr", "feuerwehr"], 5],
         [["Einsatzleitstelle der Bergrettung", "Bergrettung", "berg"], 2],
         [["Einsatzleitstelle der Wasserrettung", "Wasserrettung", "wasser"], 1.5],
-        [["Rettungsleitstelle des Nachbarbundeslandes", "Nachbarleitstelle", "ls"], 1],
       ],
       rnd,
     );
-    const mittel = String(a.mittel ?? "rtw");
+    const mittel = a.mittel === "na" ? "na" : "rtw";
     return basis({
       art: "leitstelle",
       rolle: `Disponent/in der ${org[0]}`,
@@ -514,18 +561,32 @@ function sonderAnrufer(
   }
   if (ist(kapitel, "ecall")) {
     const kontakt = a.sprachkontakt === "ja";
-    const insassen = 1 + Math.floor(rnd() * 3);
-    const richtung = pick(["Nord", "Süd", "Ost", "West", "Nordost", "Südwest"], rnd);
-    const fz = `${pick(FAHRZEUGE, rnd)}, ${pick(FARBEN, rnd)}`;
+    const quelle = a.ecall_quelle === "uhr" ? "uhr" : "auto";
+    const insassen = typeof a.ecall_insassen === "number" ? a.ecall_insassen : 1 + Math.floor(rnd() * 3);
+    // spricht die verunfallte Person selbst (Uhr; allein im Auto)? Sonst redet jemand anderer im Auto
+    const selbst = quelle === "uhr" || insassen === 1;
+    const pg: "m" | "w" = a.geschlecht === "w" ? "w" : a.geschlecht === "m" ? "m" : rnd() < 0.5 ? "w" : "m";
+    const g: "m" | "w" = selbst ? pg : a.ecall_sprecher === "w" || a.ecall_sprecher === "m" ? a.ecall_sprecher : rnd() < 0.5 ? "w" : "m";
+    const meldung = ecallMeldung(a, quelle, insassen, pg, rnd);
     return basis({
       art: "ecall",
-      rolle: kontakt ? `Insasse des verunfallten Fahrzeugs (${fz})` : "automatische Unfallmeldung",
+      rolle:
+        quelle === "uhr"
+          ? `${g === "w" ? "Trägerin" : "Träger"} der Smartwatch, die den Notruf ausgelöst hat`
+          : !kontakt
+            ? "automatische Unfallmeldung"
+            : selbst
+              ? `${g === "w" ? "Lenkerin" : "Lenker"} des verunfallten Fahrzeugs (${meldung.fahrzeug}), allein im Auto`
+              : `${g === "w" ? "Insassin" : "Insasse"} des verunfallten Fahrzeugs (${meldung.fahrzeug})`,
       anruferWert: "system",
-      stelle: "eCall",
-      ort: "im verunfallten Fahrzeug",
+      stelle: quelle === "uhr" ? "Smartwatch" : "eCall",
+      ort: quelle === "uhr" ? "am Unfallort" : "im verunfallten Fahrzeug",
       emotion: kontakt ? pick(["gefasst", "aufgeregt"] as const, rnd) : "ruhig",
+      geschlecht: g,
       sprachkontakt: kontakt,
-      meldung: `Automatische Unfallmeldung. Auslösung: ${pick(["Airbag", "Airbag", "Aufprallsensor", "manuell (SOS-Taste)"], rnd)}. Fahrzeug: ${fz}. Fahrtrichtung: ${richtung}. Insassen laut Gurtsensor: ${insassen}. Position: ${adresse}. ${kontakt ? "Sprachverbindung wird hergestellt." : "Sprachverbindung: keine Antwort."}`,
+      selbst: kontakt && selbst,
+      quelle,
+      meldung: meldung.text,
     });
   }
   return null;
@@ -556,28 +617,39 @@ export function flughafenAnrufer(meldung: string, nurBekannt: string[], unbekann
   };
 }
 
-/** Kurz-Lagebild einer anderen Leitstelle (ohne Abfrage) */
+/**
+ * Kurz-Lagebild von Feuerwehr, Berg- oder Wasserrettung: sie sind wegen etwas anderem ausgerückt (oder bergen jemanden)
+ * und brauchen jetzt doch den Rettungsdienst – einen RTW oder einen Notarzt.
+ */
 function lagebild42(org: string, mittel: string, adresse: string, rnd: () => number): string {
-  const schwer = mittel === "na" || mittel === "nah";
+  const schwer = mittel === "na";
   const lagen: Record<string, [string[], string[]]> = {
     feuerwehr: [
-      ["PKW gegen PKW, zwei Personen leicht verletzt, beide gehfähig", "Brand in einem Wohnhaus, eine Person mit Rauchgasverdacht", "PKW von der Fahrbahn abgekommen, Lenker leicht verletzt"],
-      ["PKW gegen Baum, eine Person eingeklemmt, ansprechbar", "PKW gegen PKW, unbekannte Anzahl an Betroffenen, ein Fahrzeug im Vollbrand", "Wohnungsbrand, eine Person bewusstlos aus der Wohnung gerettet", "LKW gegen PKW, Lenker eingeklemmt, schwer verletzt"],
+      [
+        "Wir sind wegen einer Türöffnung vor Ort, in der Wohnung liegt eine ältere Frau am Boden, sie ist wach, die Hüfte tut ihr weh",
+        "wir sind wegen eines Kellerbrands ausgerückt, ein Bewohner hat Rauch eingeatmet und hustet, sonst geht es ihm gut",
+        "wir räumen nach dem Sturm auf, ein Anrainer ist dabei von der Leiter gefallen, der Unterarm ist verletzt",
+        "wir bergen ein Fahrzeug nach einem Blechschaden, der Lenker klagt jetzt doch über Nackenschmerzen",
+      ],
+      [
+        "Wir sind wegen einer Türöffnung vor Ort, der Mann in der Wohnung reagiert nicht, er atmet aber",
+        "wir haben bei einem Wohnungsbrand eine Person bewusstlos aus der Wohnung gerettet",
+        "wir sind zu einem technischen Einsatz gerufen worden, ein Arbeiter ist unter eine Maschine geraten und schwer verletzt",
+        "wir bergen ein Fahrzeug, der Lenker ist plötzlich zusammengebrochen und reagiert kaum",
+      ],
     ],
     berg: [
-      ["Wanderer mit Knöchelverletzung, nicht mehr gehfähig, wird von der Bergrettung zur Forststraße gebracht", "Mountainbiker gestürzt, Handgelenk verletzt"],
-      ["Wanderer abgestürzt, ca. 20 Meter, ansprechbar, starke Schmerzen", "Kletterer abgestürzt, Bewusstsein getrübt", "Paragleiter abgestürzt, Rückenverletzung"],
+      ["Wir bringen einen Wanderer mit einer Knöchelverletzung zur Forststraße, er kann nicht mehr gehen", "ein Mountainbiker ist gestürzt, das Handgelenk ist verletzt, wir bringen ihn ins Tal"],
+      ["ein Wanderer ist ca. 20 Meter abgestürzt, er ist ansprechbar, hat starke Schmerzen", "ein Kletterer ist abgestürzt, das Bewusstsein ist getrübt", "ein Paragleiter ist abgestürzt, Verdacht auf Rückenverletzung"],
     ],
     wasser: [
-      ["Badegast mit Schnittverletzung am Fuß", "Kind aus dem Wasser geholt, wach, hat Wasser geschluckt"],
-      ["Person aus dem Wasser gezogen, bewusstlos, Reanimation durch Wasserrettung läuft", "Badeunfall nach Kopfsprung, kann Beine nicht bewegen"],
+      ["ein Badegast hat sich am Fuß tief geschnitten", "wir haben ein Kind aus dem Wasser geholt, es ist wach, hat Wasser geschluckt"],
+      ["wir haben eine Person aus dem Wasser gezogen, bewusstlos, wir reanimieren", "Badeunfall nach einem Kopfsprung, er kann die Beine nicht bewegen"],
     ],
-    ls: [["Patient für Transport ins Krankenhaus, Grenzgebiet", "verletzte Person nach Sturz, Grenzgebiet"], ["Verkehrsunfall im Grenzgebiet, eine Person schwer verletzt", "Reanimation im Grenzgebiet, unsere Kräfte sind länger unterwegs"]],
   };
   const [leicht, ernst] = lagen[org] ?? lagen.feuerwehr;
   const lage = pick(schwer ? ernst : leicht, rnd);
-  const bedarf: Record<string, string> = { ktw: "einen Transport", rtw: "einen RTW", na: "einen Notarzt und einen RTW", nah: "den Notarzthubschrauber" };
-  return `Einsatzort: ${adresse}. Lage: ${lage}. Wir brauchen ${bedarf[mittel] ?? "den Rettungsdienst"}.`;
+  return `Einsatzort: ${adresse}. Lage: ${lage.charAt(0).toUpperCase()}${lage.slice(1)}. Wir brauchen ${schwer ? "einen Notarzt" : "einen RTW"}.`;
 }
 
 // ------------------------------------------------------------------ Anweisung für das Sprachmodell
@@ -920,7 +992,7 @@ function bezugVon(x: Anrufer, w: boolean): string {
 
 /** Vom Programm geschriebene Kernaussage auf „Was ist passiert?“ (passt immer zu den Fakten) */
 export function schilderung(k: AnrufKontext): string {
-  if (k.szenario && (!k.anrufer.art || ["privat", "einrichtung", "polizei"].includes(k.anrufer.art))) {
+  if (k.szenario && (!k.anrufer.art || ["privat", "einrichtung", "polizei", "ecall"].includes(k.anrufer.art))) {
     const t = k.anrufer.selbst && k.szenario.hergangIch ? k.szenario.hergangIch : k.szenario.hergang;
     // die ersten ein, zwei Sätze – so erzählt man es am Telefon
     const saetze = t.match(/[^.!?…]+[.!?…]+/g) ?? [t];
@@ -1141,13 +1213,17 @@ function promptGeschichte(k: AnrufKontext): string {
   const ich = x.selbst;
   // Pflegekräfte, Ärzte, Polizei: Profis – sachlich, mit Fachwörtern und Messwerten
   const profi = !ich && x.persona?.wissen === "profi";
-  const telefon = /telemed|141|1450|gesundheitshotline/i.test(`${x.rolle} ${x.stelle ?? ""}`);
+  const telefon = /gesundheitshotline/i.test(`${x.rolle} ${x.stelle ?? ""}`);
   const quelle: "vorort" | "polizei" | "telefon" = art === "polizei" ? "polizei" : telefon ? "telefon" : "vorort";
   const er = patientW(k) ? "sie" : "er";
   const ihn = patientW(k) ? "sie" : "ihn";
   const gemeinde = (k.adresse.split(",").pop() ?? "").replace(/^\s*\d{4}\s*/, "").trim();
   const wer = sz.ohnePatient
     ? "Du rufst an, weil du etwas beobachtet hast bzw. weil dir etwas passiert ist (siehe Fallakte)."
+    : art === "ecall"
+      ? x.quelle === "uhr"
+        ? `Deine Smartwatch hat nach deinem Unfall automatisch die Rettung verständigt – du hast das gar nicht selbst gemacht. Jetzt hörst du die Leitstelle über die Uhr und redest mit ihr. ${ich ? "Du bist selbst die verunfallte Person." : ""}`
+        : `Dein Auto hat nach dem Unfall automatisch die Rettung verständigt (eCall) – du hast das nicht selbst gemacht. Jetzt hörst du die Leitstelle über die Freisprechanlage im Auto und redest mit ihr. Du bist ${x.rolle}.${ich ? " Du bist selbst die verletzte Person." : ""}`
     : ich
     ? "Du bist selbst der Patient."
     : art === "polizei"
@@ -1243,7 +1319,7 @@ function promptGeschichte(k: AnrufKontext): string {
 export function systemPrompt(k: AnrufKontext): string {
   const x = k.anrufer;
   const art = x.art ?? "privat";
-  if (k.szenario && (art === "privat" || art === "einrichtung" || art === "polizei")) return promptGeschichte(k);
+  if (k.szenario && (art === "privat" || art === "einrichtung" || art === "polizei" || (art === "ecall" && x.sprachkontakt))) return promptGeschichte(k);
   const regelnGemeinsam = [
     `- Pro Antwort nur das, wonach gefragt wurde. Meist ein, höchstens zwei kurze Sätze. Sag nichts, was du schon gesagt hast, und fasst nie selbst zusammen.`,
     `- Teilt dir die Leitstelle etwas mit („Die Rettung ist unterwegs“), reagierst du kurz darauf (Danke, kurze Rückfrage) – ohne den Zustand des Patienten aufzuzählen.`,

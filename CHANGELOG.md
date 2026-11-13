@@ -1,5 +1,20 @@
 # Änderungen
 
+## 0.116.0-beta.49 – Sonderanrufer: wer anruft, bestimmt die Abfrage
+- **„Wer ruft an?“ kennt jetzt alle besonderen Anrufer:** Arzt / Pflege / Einrichtung, Gesundheitshotline, Pistenrettung, Polizei, Feuerwehr / Berg- / Wasserrettung und automatische Unfallmeldung (Auto / Uhr). Das passende Kapitel wird automatisch gewählt („automatisch, weil …“), ein anderes Kapitel wählen überstimmt es. Die Frage „Wer fordert an?“ entfällt.
+- **Antworten mit 10 oder mehr Möglichkeiten:** Nummer eintippen, Enter wählt (z. B. „10“ + Enter). Bis 9 genügt wie bisher ein Tastendruck.
+- **Arzt / Pflege / Einrichtung:** Wach? Atmet? Dann der Grund der Anforderung, beim Transport Dringlichkeit und Transportart. Einen eigenen Hubschrauber-Code gibt es nicht mehr – „Notarzt“, der Disponent entscheidet, was er schickt.
+- **Gesundheitshotline (eigenes medizinisches Personal am Telefon):** eine Frage „Was wird angefordert?“ (Liegendtransport ohne Dringlichkeit, Liegendtransport sofort, sofort mit Geräten/Maßnahmen, Notarzt) und das Feld „Die gemeldeten Symptome sind:“, das mit der Abfrage an die Besatzung geht.
+- **Pistenrettung:** „Was wird angefordert?“ – Transport (Dringlichkeit, Transportart; gehend nur ohne Dringlichkeit) oder Notarzt.
+- **Feuerwehr, Berg- und Wasserrettung:** sie schildern kurz die Lage und brauchen einen RTW oder einen Notarzt – nur noch diese zwei Codes.
+- **Automatische Unfallmeldung:** Zuerst kommt die Computer-Ansage (Fahrzeug, Kennzeichen, Antrieb, was die Sensoren erkannt haben, Insassen laut Gurtsensor, Fahrtrichtung) bzw. die Meldung einer Smartwatch; die Position ist sofort auf der Karte. Danach ist man mit dem Auto bzw. der Uhr verbunden und redet mit den Leuten – meldet sich niemand, bleibt es still („…“). Fehlalarme gibt es auch: Sagen die Leute, dass sie keine Rettung brauchen, kann man einfach auflegen. Neue Fälle für alle Codes der automatischen Unfallmeldung.
+- **Polizei:** Ruft die Polizei an, ist „Anforderung durch die Polizei“ vorgewählt; wählt man ein anderes Kapitel, kommt die Polizei-Kennung automatisch dazu, wo es sie gibt. Die Frage „Braucht es die Polizei?“ am Ende der Abfrage entfällt.
+- **Neue Frage „Handelt es sich um einen Arbeitsunfall?“** bei Unfällen und Verletzungen (Sturz, Verkehrsunfall, Verletzung, Verbrennung, Stich, Strom, Wasser …). Ja heißt: die Polizei kommt mit. Am Code ändert das nichts.
+- **Telefonarzt und Ärztefunkdienst-Callcenter gibt es nicht mehr.** Ein Arzt beim Hausbesuch ruft als „Arzt / Pflege / Einrichtung“ an.
+- **Codes, die als Weitergabe gekennzeichnet sind** (z. B. erwarteter Tod, offensichtlich tote Person, Verkehrsunfall ohne Verletzte), kommen in keinem Fall mehr vor und stehen in keiner Liste – außer bei der automatischen Unfallmeldung.
+- **Neue Fälle:** Gesundheitshotline (Atemnot, Fieber, Brustschmerz) und Pistenrettung (Schisturz, Oberschenkel, Kollision mit Kopfverletzung).
+- **Fahrzeuge-Fenster:** Status und Fahrtziel lagen bei skalierter Oberfläche übereinander – jetzt stehen sie bei jeder Größe in eigenen Spalten.
+
 ## 0.116.0-beta.48 – Kompetenz je Einsatz: wer reicht, wer kommt, warten oder fahren
 - **Jeder Fall weiß, welche Kompetenz der Patient braucht:** RS, NFS, NKV, NKI oder Notarzt – nach der Scope-of-Practice-Matrix und den Arzneimittellisten (z. B. Asthma mit Salbutamol: NFS; Unterzucker mit Glukose i.v.: NKV; Herzinfarkt, Lungenödem, Rhythmusstörung: Notarzt). Alle eingebauten Fälle sind neu eingestuft.
 - **„Reicht nicht immer“:** Bei manchen Fällen (z. B. Schmerztherapie, Asthma, Krampfanfall) zeigt sich erst vor Ort nach einigen Minuten, dass die Maßnahmen nicht reichen – dann fordert die Besatzung noch einen Notarzt nach. Ein Notarzt reicht immer.

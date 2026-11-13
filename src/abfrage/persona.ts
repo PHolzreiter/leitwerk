@@ -69,7 +69,8 @@ export function wissenVon(typ: AnruferTyp | undefined, selbst: boolean): Wissen 
     case "pflege":
     case "arzt":
     case "ordi":
-    case "telemed":
+    case "hotline":
+    case "pistenrettung":
     case "polizei":
     case "bergrettung":
     case "aerztefunk":

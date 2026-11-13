@@ -70,7 +70,8 @@ export type AnruferTyp =
   | "aufsicht"
   | "rezeption"
   | "wirt"
-  | "telemed"
+  | "hotline"
+  | "pistenrettung"
   | "polizei"
   | "bergrettung"
   | "taxi"
@@ -484,6 +485,8 @@ export function bezugFuer(anruferRolle: string, selbst: boolean, w: boolean, alt
   if (/ehemann|ehefrau|lebensgef|partner/.test(r)) return w ? "meine Frau" : "mein Mann";
   if (/^mutter|^vater/.test(r)) return w ? "meine Tochter" : "mein Sohn";
   if (/tochter|sohn/.test(r)) return w ? "meine Mutter" : "mein Vater";
+  if (/hotline|mobilen hauskranken/.test(r)) return w ? "eine Patientin" : "ein Patient";
+  if (/insass|beifahr/.test(r)) return w ? "die Lenkerin" : "der Lenker";
   if (/pflege/.test(r)) return w ? "eine Bewohnerin" : "ein Bewohner";
   if (/arzt|ärzt|ordination/.test(r)) return w ? "eine Patientin" : "ein Patient";
   if (/lehrer/.test(r)) return w ? "eine Schülerin" : "ein Schüler";

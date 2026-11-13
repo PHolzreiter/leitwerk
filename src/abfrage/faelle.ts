@@ -12,6 +12,7 @@
  */
 import { FAELLE_NEU } from "./faelleNeu";
 import { FAELLE_SPEZIAL } from "./faelleSpezial";
+import { FAELLE_SONDER } from "./faelleSonder";
 import { FAELLE_PAKET1 } from "./faellePaket1";
 import { FAELLE_PAKET2 } from "./faellePaket2";
 import { FAELLE_PAKET3 } from "./faellePaket3";
@@ -1619,6 +1620,7 @@ export const FAELLE: FallVorlage[] = [
   // weitere Fälle (eigene Datei)
   ...FAELLE_NEU,
   ...FAELLE_SPEZIAL,
+  ...FAELLE_SONDER,
   ...FAELLE_PAKET1,
   ...FAELLE_PAKET2,
   ...FAELLE_PAKET3,

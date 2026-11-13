@@ -613,15 +613,6 @@ export function notrufTeile(e: Einsatz, opt: { gefuehrt?: boolean; angezeigt?: (
       sel.addEventListener("change", () => fehler(sim.call("abfrageExtra", e.id, { zusatz: sel.value || null })));
       zeile.appendChild(sel);
     }
-    if (K?.polizei_kennung && Object.keys(K.polizei_kennung).length) {
-      const l = el("label", { class: "chk" });
-      const cb = el("input", { type: "checkbox" });
-      cb.checked = a.extra.polizei;
-      cb.disabled = !darf;
-      cb.addEventListener("change", () => fehler(sim.call("abfrageExtra", e.id, { polizei: cb.checked })));
-      l.append(cb, el("span", {}, "Polizei"));
-      zeile.appendChild(l);
-    }
     return zeile.childElementCount ? zeile : null;
   }
 

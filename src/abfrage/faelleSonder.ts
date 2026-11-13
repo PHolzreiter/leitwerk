@@ -1,0 +1,456 @@
+/**
+ * Sonderanrufer (Beta 49): automatische Unfallmeldung (Auto/eCall und Smartwatch), Gesundheitshotline und Pistenrettung.
+ *
+ * Automatische Unfallmeldung: zuerst die Computer-Ansage (Fahrzeug, Kennzeichen, was die Sensoren erkannt haben,
+ * Insassen laut Gurt) mit automatisch übermittelter Position, danach die Sprachverbindung ins Auto bzw. zur Uhr –
+ * dort redet man mit den Leuten, oder es bleibt still („…“). Fehlalarme: die Leute sagen ausdrücklich, dass sie
+ * keine Rettung brauchen – auflegen genügt (hinschicken geht auch, dann bleibt der Patient vor Ort).
+ * Zusätzliche Antworten nur für die Ansage: ecall_quelle (auto/uhr), ecall_insassen, ecall_ausloesung (manuell).
+ */
+import type { FallVorlage } from "./faelle";
+
+const AUTO = { ecall_quelle: "auto" };
+
+export const FAELLE_SONDER: FallVorlage[] = [
+  // ================================================================ AUTOMATISCHE UNFALLMELDUNG – AUTO
+
+  // ---------------------------------------------------------------- Auffahrunfall, man redet mit dem Lenker
+  {
+    id: "ecall_auffahrunfall",
+    name: "Automatische Unfallmeldung: Auffahrunfall",
+    thema: "ecall",
+    haeufigkeit: 3,
+    alter: [20, 75],
+    orte: ["landstrasse", "strasse", "autobahn"],
+    stelle: ["im Auto am Straßenrand"],
+    wo: ["auf der Straße bei {ort}"],
+    anrufer: ["lenker"],
+    geschehen: [
+      "Ihr seid zu zweit im Auto. Vor euch hat jemand plötzlich gebremst, du bist aufgefahren – nicht schnell, aber es hat ordentlich gekracht.",
+      "Das Auto hat von selbst die Rettung angerufen, ihr habt nichts gedrückt.",
+      "[variante=A] Dir tut der Nacken weh, deine Beifahrerin hat Schmerzen an der Schulter vom Gurt. Sonst geht es euch gut, ihr seid beide wach und steigt gleich aus.",
+      "[variante=B] Deine Beifahrerin hat sich am Armaturenbrett den Unterarm angeschlagen, der ist geschwollen und sie kann ihn kaum bewegen. Dir geht es gut.",
+      "[variante=C] Dein Beifahrer ist mit dem Kopf gegen die Seitenscheibe geknallt. Er redet, aber er fragt immer wieder, was passiert ist – du weißt nicht, wie schlimm das ist.",
+    ],
+    hergang: ["Wir sind aufgefahren, das Auto hat von selber angerufen.", "Ja, hallo … wir hatten einen Unfall, ich bin hinten draufgefahren."],
+    seitMin: [1, 3],
+    fest: { ...AUTO, ecall_insassen: 2, sprachkontakt: "ja", lebensbedrohung: "nein", mechanismus: "nein", anzahl_patienten: "1", bw: "ja", at: "normal" },
+    details: ["Das andere Auto ist weitergefahren bzw. steht vorne, dort ist niemand verletzt.", "Aus dem Motorraum dampft es ein bisschen, es brennt nicht.", "Ihr steht mit der Warnblinkanlage am Fahrbahnrand."],
+    varianten: [
+      { id: "A", p: 0.45, sichtung: "gruen", fest: { verletzte: "leicht" }, lage: "HWS-Distorsion und Gurtprellung nach Auffahrunfall, beide stabil", braucht: "RS", symptom: "wirbelsaeulenverletzung_ohne_neurologische_ausfa", dringlichkeit: 10, buchung: "bu_bagatellverletzung" },
+      { id: "B", p: 0.35, sichtung: "gelb", fest: { verletzte: "eine" }, lage: "Unterarmfraktur der Beifahrerin, Kreislauf stabil", braucht: "NFS", symptom: "unterarmverletzung", dringlichkeit: 20, buchung: "bu_isolierte_extremitaetenverletzung" },
+      { id: "C", p: 0.2, sichtung: "gelb", fest: { verletzte: "unbekannt" }, lage: "Gehirnerschütterung mit Amnesie beim Beifahrer, sonst stabil", braucht: "RS", symptom: "kopfverletzung", dringlichkeit: 20, buchung: "bu_gesichtsschaedelverletzung" },
+    ],
+  },
+
+  // ---------------------------------------------------------------- Mehrere Verletzte
+  {
+    id: "ecall_mehrere",
+    name: "Automatische Unfallmeldung: mehrere Verletzte",
+    thema: "ecall",
+    haeufigkeit: 1.5,
+    alter: [20, 70],
+    orte: ["landstrasse", "strasse"],
+    stelle: ["auf der Kreuzung", "auf der Landstraße"],
+    wo: ["auf der Landstraße bei {ort}, an einer Kreuzung"],
+    anrufer: ["lenker"],
+    geschehen: [
+      "Ein anderes Auto hat euch die Vorfahrt genommen, ihr seid seitlich zusammengekracht. Das Auto hat von selbst die Rettung angerufen.",
+      "[variante=A] Ihr seid zu dritt im Auto. Deine Frau hat Schmerzen im Brustkorb vom Gurt, dein Sohn hinten hat eine Platzwunde an der Stirn. Alle sind wach. Im anderen Auto sitzt nur der Lenker, der ist schon ausgestiegen und sagt, ihm fehlt nichts.",
+      "[variante=B] Ihr seid zu dritt im Auto, alle verletzt: Deine Frau hat Schmerzen im Brustkorb, dein Sohn blutet an der Stirn, du selbst hast Schmerzen im Knie. Im anderen Auto sitzen zwei Personen, die eine hält sich den Arm, die andere sitzt noch drin und jammert.",
+    ],
+    hergang: ["Wir hatten einen Unfall, uns hat einer die Vorfahrt genommen, da sind mehrere verletzt!"],
+    seitMin: [1, 3],
+    fest: { ...AUTO, ecall_insassen: 3, sprachkontakt: "ja", lebensbedrohung: "nein", mechanismus: "nein", anzahl_patienten: "n", bw: "ja", at: "normal" },
+    details: ["Beide Autos stehen auf der Kreuzung.", "Es läuft etwas Kühlwasser aus, es brennt nicht."],
+    varianten: [
+      { id: "A", p: 0.6, sichtung: "gelb", fest: { verletzte: "mehrere_1" }, lage: "zwei leicht Verletzte (Gurtprellung, Platzwunde), stabil", braucht: "RS", symptom: "thoraxverletzung_stumpf", dringlichkeit: 20, buchung: "bu_bagatellverletzung" },
+      { id: "B", p: 0.4, sichtung: "gelb", fest: { verletzte: "mehrere_n" }, lage: "fünf Verletzte in zwei Fahrzeugen, alle wach, mehrere Rettungswagen nötig", braucht: "NFS", symptom: "thoraxverletzung_stumpf", dringlichkeit: 20, buchung: "bu_schweres_thoraxtrauma" },
+    ],
+  },
+
+  // ---------------------------------------------------------------- Niemand antwortet
+  {
+    id: "ecall_stille",
+    name: "Automatische Unfallmeldung: niemand antwortet",
+    thema: "ecall",
+    haeufigkeit: 2,
+    alter: [20, 80],
+    orte: ["landstrasse", "autobahn"],
+    stelle: ["im Auto neben der Fahrbahn"],
+    wo: ["auf der Landstraße bei {ort}"],
+    anrufer: ["lenker"],
+    geschehen: ["Das Auto ist von der Fahrbahn abgekommen und frontal gegen einen Baum geprallt. Im Auto sitzt nur der Lenker. Niemand antwortet über die Freisprechanlage."],
+    hergang: ["…"],
+    seitMin: [1, 2],
+    fest: { ...AUTO, ecall_insassen: 1, sprachkontakt: "nein", bw: "unbekannt", at: "unbekannt", anzahl_patienten: "unbekannt" },
+    varianten: [
+      { id: "A", p: 0.6, sichtung: "rot", wahr: { bw: "nein", at: "abnorm" }, lage: "Frontalaufprall gegen Baum, Lenker bewusstlos, Atmung schnarchend, Verdacht auf schweres SHT", braucht: "NA", symptom: "polytrauma_mit_sht", dringlichkeit: 30, buchung: "bu_polytrauma" },
+      { id: "B", p: 0.4, sichtung: "gelb", wahr: { bw: "getruebt", at: "normal" }, lage: "Lenkerin benommen und unter Schock, kann nicht sprechen, Prellungen", braucht: "NFS", symptom: "schwerwiegender_unfallmechanismus_ohne_offensich", dringlichkeit: 20, buchung: "bu_schweres_sht" },
+    ],
+  },
+
+  // ---------------------------------------------------------------- Überschlag
+  {
+    id: "ecall_ueberschlag",
+    name: "Automatische Unfallmeldung: Fahrzeugüberschlag",
+    thema: "ecall",
+    haeufigkeit: 1.5,
+    alter: [18, 60],
+    orte: ["landstrasse", "feldweg"],
+    stelle: ["im Feld neben der Straße, das Auto liegt am Dach"],
+    wo: ["auf der Landstraße bei {ort}, das Auto liegt im Feld"],
+    anrufer: ["begleiter"],
+    geschehen: [
+      "Ihr seid in einer Kurve von der Straße abgekommen, das Auto hat sich überschlagen und liegt jetzt am Dach im Feld. Das Auto hat von selbst die Rettung angerufen.",
+      "Du bist {der} Beifahrer{in} und hängst noch im Gurt, dir tut nur die Schulter weh.",
+      "[variante=A] Der Lenker hängt auch im Gurt, er redet mit dir und sagt, sein Rücken tut ihm weh, er traut sich nicht zu bewegen.",
+      "[variante=B] Der Lenker blutet am Kopf und ist ganz benommen, er redet nur wirres Zeug.",
+    ],
+    hergang: ["Wir haben uns überschlagen, wir liegen am Dach!"],
+    seitMin: [1, 3],
+    fest: { ...AUTO, ecall_insassen: 2, sprachkontakt: "ja", lebensbedrohung: "nein", mechanismus: "ueberschlag", verletzte: "eine", anzahl_patienten: "1", at: "normal" },
+    details: ["Es riecht nach Benzin, es brennt aber nicht.", "Die Türen gehen vermutlich auf, ihr habt es noch nicht probiert."],
+    varianten: [
+      { id: "A", p: 0.6, sichtung: "gelb", fest: { bw: "ja" }, lage: "Überschlag, Lenker mit Verdacht auf Wirbelsäulenverletzung, neurologisch unauffällig", braucht: "NKV", symptom: "wirbelsaeulenverletzung_ohne_neurologische_ausfa", dringlichkeit: 20, buchung: "bu_polytrauma" },
+      { id: "B", p: 0.4, sichtung: "rot", fest: { bw: "getruebt" }, lage: "Überschlag, Lenker mit SHT, GCS 12, Kopfplatzwunde", braucht: "NA", symptom: "schaedelhirntrauma", dringlichkeit: 30, buchung: "bu_schweres_sht" },
+    ],
+  },
+
+  // ---------------------------------------------------------------- Eingeklemmt
+  {
+    id: "ecall_eingeklemmt",
+    name: "Automatische Unfallmeldung: Lenker eingeklemmt",
+    thema: "ecall",
+    haeufigkeit: 1.5,
+    alter: [20, 75],
+    orte: ["landstrasse", "autobahn"],
+    stelle: ["im Auto, frontal gegen einen LKW"],
+    wo: ["auf der Landstraße bei {ort}"],
+    anrufer: ["lenker"],
+    geschehen: [
+      "Du warst allein im Auto und bist frontal mit einem Lastwagen zusammengestoßen. Das Auto hat von selbst die Rettung angerufen.",
+      "Deine Beine sind im Fußraum eingeklemmt, du kommst nicht raus. Die Tür geht nicht auf.",
+      "[variante=A] Das rechte Bein tut höllisch weh, sonst bist du ganz klar.",
+      "[variante=B] Dir ist schwindlig und kalt, du kriegst schlecht Luft, die Brust tut weh.",
+    ],
+    hergang: ["Ich bin eingeklemmt, ich komm nicht raus! Ein LKW ist mir reingefahren."],
+    hergangIch: ["Ich bin eingeklemmt, ich komm nicht raus! Ein LKW ist mir reingefahren."],
+    seitMin: [1, 3],
+    fest: { ...AUTO, ecall_insassen: 1, sprachkontakt: "ja", lebensbedrohung: "nein", mechanismus: "eingeklemmt", verletzte: "eine", anzahl_patienten: "1", bw: "ja" },
+    details: ["Der LKW-Fahrer ist ausgestiegen und steht neben dem Auto, ihm fehlt nichts.", "Es brennt nicht."],
+    varianten: [
+      { id: "A", p: 0.6, sichtung: "rot", fest: { at: "normal" }, lage: "eingeklemmt im Fußraum, Unterschenkelfraktur rechts, Kreislauf stabil", braucht: "NA", symptom: "unterschenkelverletzung", dringlichkeit: 30, buchung: "bu_polytrauma", partner: [{ art: "fw", grund: "Person eingeklemmt", blockiert: true }] },
+      { id: "B", p: 0.4, sichtung: "rot", fest: { at: "abnorm" }, lage: "eingeklemmt, Thoraxtrauma mit Atemnot, Schock beginnend", braucht: "NA", symptom: "thoraxverletzung_stumpf", dringlichkeit: 30, buchung: "bu_schweres_thoraxtrauma", partner: [{ art: "fw", grund: "Person eingeklemmt", blockiert: true }] },
+    ],
+  },
+
+  // ---------------------------------------------------------------- Fußgänger, Radfahrer, Motorrad
+  {
+    id: "ecall_kollision",
+    name: "Automatische Unfallmeldung: Fußgänger, Radfahrer oder Motorrad",
+    thema: "ecall",
+    haeufigkeit: 2,
+    alter: [15, 80],
+    orte: ["strasse", "landstrasse"],
+    stelle: ["auf der Straße vor dem Auto"],
+    wo: ["auf der Straße bei {ort}"],
+    anrufer: ["lenker"],
+    geschehen: [
+      "Das Auto hat von selbst die Rettung angerufen. Du bist {der} Lenker{in}, dir selbst ist nichts passiert.",
+      "[variante=A] Ein Fußgänger ist plötzlich zwischen parkenden Autos auf die Straße gelaufen, du hast ihn erwischt. Er liegt vor dem Auto, ist wach und jammert, das Bein tut ihm weh.",
+      "[variante=B] Du hast beim Abbiegen einen Radfahrer übersehen. Er ist über die Motorhaube gerollt und liegt jetzt auf der Straße, er ist wach, blutet am Kopf, der Helm ist kaputt.",
+      "[variante=C] Ein Motorradfahrer ist dir beim Überholen frontal hineingefahren. Er liegt auf der Straße, ist wach und schreit vor Schmerzen, das Becken und die Beine tun ihm weh.",
+    ],
+    hergang: ["Ich hab jemanden angefahren! Er liegt auf der Straße!"],
+    seitMin: [1, 3],
+    fest: { ...AUTO, ecall_insassen: 1, sprachkontakt: "ja", lebensbedrohung: "nein", verletzte: "eine", anzahl_patienten: "1" },
+    details: ["Andere Leute sind schon da und kümmern sich.", "Du stehst mit der Warnblinkanlage mitten auf der Straße."],
+    varianten: [
+      { id: "A", p: 0.4, sichtung: "gelb", fest: { mechanismus: "fussgaenger", bw: "ja", at: "normal" }, lage: "Fußgänger angefahren, Unterschenkelfraktur, wach, stabil", braucht: "NFS", symptom: "unterschenkelverletzung", dringlichkeit: 20, buchung: "bu_isolierte_extremitaetenverletzung" },
+      { id: "B", p: 0.35, sichtung: "gelb", fest: { mechanismus: "fahrrad", bw: "ja", at: "normal" }, lage: "Radfahrer nach Kollision, Kopfplatzwunde, Gehirnerschütterung, stabil", braucht: "RS", symptom: "kopfverletzung", dringlichkeit: 20, buchung: "bu_gesichtsschaedelverletzung" },
+      { id: "C", p: 0.25, sichtung: "rot", fest: { mechanismus: "motorrad", bw: "ja", at: "normal" }, lage: "Motorradfahrer nach Frontalkollision, Beckenfraktur, Schock beginnend", braucht: "NA", symptom: "beckenverletzung", dringlichkeit: 30, buchung: "bu_polytrauma" },
+    ],
+  },
+
+  // ---------------------------------------------------------------- Absturz über die Böschung
+  {
+    id: "ecall_absturz",
+    name: "Automatische Unfallmeldung: Auto über die Böschung gestürzt",
+    thema: "ecall",
+    haeufigkeit: 1,
+    alter: [20, 80],
+    orte: ["landstrasse", "berg"],
+    stelle: ["unten in der Böschung neben der Straße"],
+    wo: ["auf der Bergstraße oberhalb von {ort}, das Auto liegt unten in der Böschung"],
+    anrufer: ["lenker"],
+    geschehen: [
+      "Du warst allein im Auto und bist in einer Kurve über den Rand gekommen, das Auto ist etwa zehn Meter die Böschung hinuntergestürzt und an einem Baum hängen geblieben. Das Auto hat von selbst die Rettung angerufen.",
+      "Von der Straße aus sieht man dich nicht.",
+      "[variante=A] Dir tut der Rücken weh und das linke Handgelenk, du bist ganz klar.",
+      "[variante=B] Dir ist übel und du blutest am Kopf, das Atmen tut weh.",
+    ],
+    hergang: ["Ich bin mit dem Auto über die Böschung runter, ich häng da unten!"],
+    hergangIch: ["Ich bin mit dem Auto über die Böschung runter, ich häng da unten!"],
+    seitMin: [1, 3],
+    fest: { ...AUTO, ecall_insassen: 1, sprachkontakt: "ja", lebensbedrohung: "nein", mechanismus: "absturz", verletzte: "eine", anzahl_patienten: "1", bw: "ja" },
+    details: ["Das Auto steht schief, du traust dich nicht auszusteigen.", "Es ist niemand anderer da."],
+    varianten: [
+      { id: "A", p: 0.6, sichtung: "gelb", fest: { at: "normal" }, lage: "Absturz mit dem Pkw, Handgelenksfraktur, Rückenschmerz ohne neurologische Ausfälle", braucht: "NFS", symptom: "wirbelsaeulenverletzung_ohne_neurologische_ausfa", dringlichkeit: 20, buchung: "bu_polytrauma", partner: [{ art: "fw", grund: "Fahrzeug in der Böschung – Sicherung und Bergung", blockiert: true }] },
+      { id: "B", p: 0.4, sichtung: "rot", fest: { at: "abnorm" }, lage: "Absturz mit dem Pkw, Thoraxtrauma und SHT, Schock beginnend", braucht: "NA", symptom: "polytrauma_mit_sht", dringlichkeit: 30, buchung: "bu_polytrauma", partner: [{ art: "fw", grund: "Fahrzeug in der Böschung – Sicherung und Bergung", blockiert: true }] },
+    ],
+  },
+
+  // ---------------------------------------------------------------- Lenker reagiert nicht – Beifahrerin redet
+  {
+    id: "ecall_lenker_bewusstlos",
+    name: "Automatische Unfallmeldung: Lenker reagiert nicht",
+    thema: "ecall",
+    haeufigkeit: 1.5,
+    alter: [45, 85],
+    geschlecht: "m",
+    orte: ["landstrasse", "strasse", "autobahn"],
+    stelle: ["im Auto an der Leitschiene"],
+    wo: ["auf der Straße bei {ort}"],
+    anrufer: ["partner"],
+    geschehen: [
+      "Ihr seid gegen die Leitschiene geprallt, das Auto hat von selbst die Rettung angerufen. Du bist die Beifahrerin, dir ist nichts passiert.",
+      "[variante=A] Dein Mann sitzt am Steuer und reagiert nicht, auch wenn du ihn rüttelst. Er atmet aber.",
+      "[variante=B] Dein Mann sitzt am Steuer, reagiert nicht und schnappt nur ganz selten nach Luft. Er ist ganz grau im Gesicht. Kurz vor dem Unfall hat er gesagt, ihm ist schlecht.",
+      "[variante=C] Dein Mann ist wach, aber er blutet ganz stark aus einer Wunde am Hals, das Blut läuft durch deine Finger. Du weißt nicht, wie schlimm das ist.",
+    ],
+    hergang: ["Mein Mann reagiert nicht! Wir sind gegen die Leitschiene!", "Bitte schnell, mein Mann blutet so stark!"],
+    seitMin: [1, 2],
+    fest: { ...AUTO, ecall_insassen: 2, ecall_sprecher: "w", sprachkontakt: "ja", mechanismus: "nein", verletzte: "eine", anzahl_patienten: "1" },
+    details: ["Das Auto steht am Pannenstreifen bzw. Fahrbahnrand.", "Du sitzt noch im Auto neben ihm."],
+    varianten: [
+      { id: "A", p: 0.45, sichtung: "rot", fest: { bw: "nein", at: "normal", lebensbedrohung: "unbekannt" }, lage: "bewusstloser Lenker nach Anprall, Atmung vorhanden, Verdacht auf SHT", braucht: "NA", symptom: "schaedelhirntrauma", dringlichkeit: 30, buchung: "bu_schweres_sht" },
+      { id: "B", p: 0.25, sichtung: "rot", fest: { bw: "nein", at: "agonal", lebensbedrohung: "ja" }, lage: "Kreislaufstillstand am Steuer (vermutlich Herzinfarkt vor dem Unfall), Schnappatmung", braucht: "NA", symptom: "reanimation_medizinische_ursache", dringlichkeit: 30, buchung: "bu_laufende_reanimation_ecpr" },
+      { id: "C", p: 0.3, sichtung: "rot", fest: { bw: "ja", at: "normal", lebensbedrohung: "ja" }, lage: "starke Blutung am Hals durch Glassplitter, Schock beginnend", braucht: "NA", symptom: "polytrauma_ohne_sht", dringlichkeit: 30, buchung: "bu_polytrauma" },
+    ],
+  },
+
+  // ---------------------------------------------------------------- SOS-Taste aus Versehen (Fehlalarm)
+  {
+    id: "ecall_sos_versehen",
+    name: "Automatische Unfallmeldung: SOS-Taste aus Versehen (Fehlalarm)",
+    thema: "ecall",
+    haeufigkeit: 1.5,
+    alter: [25, 80],
+    orte: ["strasse", "landstrasse", "autobahn"],
+    stelle: ["im Auto"],
+    wo: ["auf der Straße bei {ort}"],
+    anrufer: ["lenker"],
+    geschehen: [
+      "Du bist beim Fahren mit dem Ärmel an die SOS-Taste im Dachhimmel gekommen. Es ist KEIN Unfall passiert, niemand ist verletzt.",
+      "Du sagst klar, dass alles in Ordnung ist und du keine Rettung brauchst, und entschuldigst dich.",
+    ],
+    hergang: ["Entschuldigung, das war ein Versehen – ich hab die Taste erwischt, es ist nichts passiert."],
+    hergangIch: ["Entschuldigung, das war ein Versehen – ich hab die Taste erwischt, es ist nichts passiert."],
+    seitMin: [0, 1],
+    fest: { ...AUTO, ecall_insassen: 1, ecall_ausloesung: "manuell", sprachkontakt: "ja", lebensbedrohung: "nein", mechanismus: "nein", verletzte: "keine", anzahl_patienten: "1", bw: "ja", at: "normal" },
+    details: ["Du fährst ganz normal weiter bzw. bist kurz stehen geblieben."],
+    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "Fehlalarm – SOS-Taste versehentlich gedrückt, niemand verletzt, keine Rettung gewünscht", braucht: "RS", transport: false, dringlichkeit: 10, buchung: "" }],
+  },
+
+  // ================================================================ AUTOMATISCHE UNFALLMELDUNG – SMARTWATCH
+
+  // ---------------------------------------------------------------- Motorrad: über den Lenker geschleudert
+  {
+    id: "ecall_uhr_motorrad",
+    name: "Smartwatch-Unfallmeldung: Motorradsturz",
+    thema: "ecall",
+    haeufigkeit: 1,
+    alter: [18, 65],
+    geschlecht: "m",
+    orte: ["landstrasse"],
+    jahreszeit: ["fruehling", "sommer", "herbst"],
+    tageszeit: "tag",
+    stelle: ["in der Wiese neben der Landstraße"],
+    wo: ["auf der Landstraße bei {ort}, in einer Kurve"],
+    anrufer: ["selbst"],
+    geschehen: [
+      "Du bist allein mit dem Motorrad unterwegs, bist in der Kurve weggerutscht und über den Lenker in die Wiese geschleudert worden. Deine Uhr hat von selbst die Rettung angerufen.",
+      "Du liegst in der Wiese, der Helm ist noch auf.",
+      "[variante=A] Die rechte Schulter tut höllisch weh, den Arm kannst du nicht bewegen. Sonst bist du klar.",
+      "[variante=B] Du kriegst schlecht Luft, die rechte Seite vom Brustkorb tut bei jedem Atemzug weh. Du redest nur stoßweise.",
+    ],
+    hergang: ["Ich bin mit dem Motorrad gestürzt … ich lieg in der Wiese …"],
+    hergangIch: ["Ich bin mit dem Motorrad gestürzt … ich lieg in der Wiese …"],
+    seitMin: [1, 3],
+    fest: { ecall_quelle: "uhr", ecall_insassen: 1, sprachkontakt: "ja", lebensbedrohung: "nein", mechanismus: "geschleudert", verletzte: "eine", anzahl_patienten: "1", bw: "ja" },
+    details: ["Das Motorrad liegt auf der Straße.", "Andere Fahrzeuge waren nicht beteiligt.", "Von der Straße sieht man dich vielleicht nicht gleich."],
+    varianten: [
+      { id: "A", p: 0.6, sichtung: "gelb", fest: { at: "normal" }, lage: "Motorradsturz, Schulterluxation bzw. Klavikulafraktur rechts, stabil", braucht: "NFS", symptom: "schulterverletzung", dringlichkeit: 20, buchung: "bu_isolierte_extremitaetenverletzung" },
+      { id: "B", p: 0.4, sichtung: "rot", fest: { at: "abnorm" }, lage: "Motorradsturz, Thoraxtrauma mit Verdacht auf Pneumothorax, Sättigung 88", braucht: "NA", symptom: "thoraxverletzung_stumpf", dringlichkeit: 30, buchung: "bu_schweres_thoraxtrauma" },
+    ],
+  },
+
+  // ---------------------------------------------------------------- Sturz erkannt, aber alles gut (Fehlalarm)
+  {
+    id: "ecall_uhr_fehlalarm",
+    name: "Smartwatch-Unfallmeldung: Sturz, aber unverletzt (Fehlalarm)",
+    thema: "ecall",
+    haeufigkeit: 2,
+    alter: [25, 80],
+    orte: ["strasse", "natur", "wald", "sport"],
+    stelle: ["[ort=strasse] am Gehsteig", "[ort=natur] am Wanderweg", "[ort=wald] am Waldweg", "[ort=sport] am Sportplatz"],
+    wo: ["am Weg bei {ort}"],
+    anrufer: ["selbst"],
+    geschehen: [
+      "Du bist beim {Laufen|Wandern|Radfahren} gestolpert bzw. hingefallen, und deine Uhr hat das für einen schweren Sturz gehalten und von selbst die Rettung angerufen – du hast den Countdown nicht bemerkt.",
+      "Dir ist NICHTS passiert, höchstens ein aufgeschürftes Knie. Du sagst klar, dass du keine Rettung brauchst, und entschuldigst dich für den Fehlalarm.",
+    ],
+    hergang: ["Oh – das war die Uhr! Mir geht's gut, ich bin nur hingefallen, ich brauch keine Rettung."],
+    hergangIch: ["Oh – das war die Uhr! Mir geht's gut, ich bin nur hingefallen, ich brauch keine Rettung."],
+    seitMin: [0, 2],
+    fest: { ecall_quelle: "uhr", ecall_insassen: 1, sprachkontakt: "ja", lebensbedrohung: "nein", mechanismus: "nein", verletzte: "keine", anzahl_patienten: "1", bw: "ja", at: "normal" },
+    details: ["Du gehst gleich weiter nach Hause."],
+    varianten: [{ id: "A", p: 1, sichtung: "gruen", lage: "Fehlalarm der Smartwatch – gestürzt, unverletzt, keine Rettung gewünscht", braucht: "RS", transport: false, dringlichkeit: 10, buchung: "" }],
+  },
+
+  // ================================================================ GESUNDHEITSHOTLINE (medizinisches Personal am Telefon)
+
+  {
+    id: "hotline_atemnot",
+    name: "Gesundheitshotline: Atemnot bei COPD",
+    thema: "anforderung_arzt",
+    haeufigkeit: 1.5,
+    alter: [60, 90],
+    orte: ["wohnung", "haus"],
+    stelle: ["zu Hause im Wohnzimmer"],
+    anrufer: ["hotline"],
+    geschehen: [
+      "Du bist diplomierte Pflegekraft bei der Gesundheitshotline und hast gerade mit {P} telefoniert.",
+      "{Er} hat COPD, seit gestern mehr Atemnot, heute kommt {er} kaum mehr durch die Wohnung. Das Messgerät zu Hause zeigt eine Sättigung von 88.",
+      "Du forderst einen Transport an, sofort, mit Sauerstoff und Überwachung.",
+    ],
+    hergang: ["Gesundheitshotline – ich brauche einen Transport für einen Patienten mit COPD und zunehmender Atemnot, sofort, mit Sauerstoff."],
+    seitMin: [10, 30],
+    fest: { anforderer: "ecn", ecn_anf: "geraete", bw: "ja", at: "abnorm", anzahl_patienten: "1" },
+    details: ["Die Haustür sperrt der Patient selbst auf.", "Eine Rückrufnummer vom Patienten hast du.", "Fieber hat er keines angegeben."],
+    varianten: [{ id: "A", p: 1, sichtung: "gelb", lage: "exazerbierte COPD, Sättigung 88 unter Raumluft, Atemfrequenz 26", braucht: "NFS", symptom: "atemnot", dringlichkeit: 20, buchung: "bu_pneumonie_atemnot_copd" }],
+  },
+  {
+    id: "hotline_fieber",
+    name: "Gesundheitshotline: Fieber, kommt nicht mehr aus dem Bett",
+    thema: "anforderung_arzt",
+    haeufigkeit: 2,
+    alter: [70, 95],
+    orte: ["wohnung", "haus"],
+    stelle: ["zu Hause im Schlafzimmer"],
+    anrufer: ["hotline"],
+    geschehen: [
+      "Du bist diplomierte Pflegekraft bei der Gesundheitshotline. Die Tochter von {P} hat angerufen: {er} hat seit zwei Tagen Fieber um 38,5, trinkt kaum und kommt allein nicht mehr aus dem Bett.",
+      "Akut lebensbedrohlich ist es nicht, aber es gehört heute im Krankenhaus abgeklärt – liegend.",
+    ],
+    hergang: ["Gesundheitshotline – ich bräuchte einen Liegendtransport für eine ältere Patientin mit Fieber, sie kommt nicht mehr aus dem Bett."],
+    seitMin: [20, 60],
+    fest: { anforderer: "ecn", bw: "ja", at: "normal", anzahl_patienten: "1" },
+    details: ["Die Tochter ist bei {ihm} und sperrt auf.", "Vorerkrankungen laut Tochter: Diabetes und Nierenschwäche."],
+    varianten: [
+      { id: "A", p: 0.6, sichtung: "gruen", fest: { ecn_anf: "ohne" }, lage: "Exsikkose bei Harnwegsinfekt, Kreislauf stabil", braucht: "RS", symptom: "exsikkose", dringlichkeit: 10, buchung: "bu_exsikkose_synkope_az_verschlechterung" },
+      { id: "B", p: 0.4, sichtung: "gelb", fest: { ecn_anf: "sofort" }, lage: "fieberhafter Infekt, Verdacht auf beginnende Sepsis, Blutdruck 100/60", braucht: "RS", symptom: "fieber", dringlichkeit: 20, buchung: "bu_sepsis" },
+    ],
+  },
+  {
+    id: "hotline_brustschmerz",
+    name: "Gesundheitshotline: Brustschmerz – Notarzt",
+    thema: "anforderung_arzt",
+    haeufigkeit: 1,
+    alter: [45, 85],
+    orte: ["wohnung", "haus"],
+    stelle: ["zu Hause im Wohnzimmer"],
+    anrufer: ["hotline"],
+    geschehen: [
+      "Du bist diplomierte Pflegekraft bei der Gesundheitshotline und hast gerade mit {P} telefoniert.",
+      "Seit einer guten Stunde Druck auf der Brust, der in den linken Arm zieht, dazu Übelkeit und Schweiß. {Er} hatte vor Jahren schon einen Herzinfarkt.",
+      "Du forderst einen Notarzt an.",
+    ],
+    hergang: ["Gesundheitshotline – ich brauche einen Notarzt, Patient mit Brustschmerz, Verdacht auf Herzinfarkt."],
+    seitMin: [50, 120],
+    fest: { anforderer: "ecn", ecn_anf: "na", bw: "ja", at: "normal", anzahl_patienten: "1" },
+    details: ["Die Ehefrau ist bei {ihm} und sperrt auf.", "Eine Rückrufnummer vom Patienten hast du."],
+    varianten: [{ id: "A", p: 1, sichtung: "rot", lage: "akutes Koronarsyndrom, Hebungen in II, III, aVF", braucht: "NA", symptom: "st_hebungsinfarkt_oder_stemi_aequivalent", dringlichkeit: 30, buchung: "bu_stemi" }],
+  },
+
+  // ================================================================ PISTENRETTUNG
+
+  {
+    id: "piste_sturz",
+    name: "Pistenrettung: Schisturz, Transport",
+    thema: "anforderung_arzt",
+    haeufigkeit: 2,
+    alter: [10, 70],
+    orte: ["berg"],
+    jahreszeit: ["winter"],
+    tageszeit: "tag",
+    stelle: ["auf der Piste beim Lift", "bei der Talstation"],
+    wo: ["im Schigebiet oberhalb von {ort}, bei der Talstation"],
+    anrufer: ["pistenrettung"],
+    geschehen: [
+      "Du bist bei der Pistenrettung und hast {P} nach einem Sturz versorgt und zur Talstation gebracht.",
+      "[variante=A] {Er} hat sich das Knie verdreht, Verdacht auf Bänderriss, {er} kann nicht auftreten. Du brauchst einen Transport, sofort, liegend.",
+      "[variante=B] {Er} ist auf die Hand gefallen, das Handgelenk ist geschwollen. Transport ohne Eile, {er} kann sitzen.",
+      "[variante=C] {Er} hat sich den Daumen verletzt, sonst nichts. Transport ohne Eile, {er} geht selbst.",
+      "[variante=D] {Er} hat Schmerzen im Unterschenkel, der Schuh ist schon ausgezogen. Sofort, sitzend geht.",
+    ],
+    hergang: ["Pistenrettung – wir brauchen einen Transport von der Talstation, Schisturz."],
+    seitMin: [15, 40],
+    fest: { anforderer: "schi", schi_anf: "transport", bw: "ja", at: "normal", anzahl_patienten: "1" },
+    details: ["Ihr wartet in der Pistenrettungshütte bei der Talstation.", "Die Zufahrt zur Talstation ist geräumt."],
+    varianten: [
+      { id: "A", p: 0.35, sichtung: "gelb", fest: { dringlichkeit: "sofort", transportart: "liegend" }, lage: "Knietrauma nach Schisturz, Verdacht auf Kreuzbandriss", braucht: "RS", symptom: "knieverletzung", dringlichkeit: 20, buchung: "bu_isolierte_extremitaetenverletzung" },
+      { id: "B", p: 0.3, sichtung: "gruen", fest: { dringlichkeit: "ohne", transportart: "sitzend" }, lage: "Verdacht auf distale Radiusfraktur, stabil", braucht: "RS", symptom: "handgelenksverletzung", dringlichkeit: 10, buchung: "bu_isolierte_extremitaetenverletzung" },
+      { id: "C", p: 0.15, sichtung: "gruen", fest: { dringlichkeit: "ohne", transportart: "gehend" }, lage: "Schidaumen, sonst unverletzt", braucht: "RS", symptom: "handverletzung_ohne_amputation", dringlichkeit: 10, buchung: "bu_bagatellverletzung" },
+      { id: "D", p: 0.2, sichtung: "gelb", fest: { dringlichkeit: "sofort", transportart: "sitzend" }, lage: "Verdacht auf Unterschenkelfraktur (Schischuhrand), stabil, geschient", braucht: "NFS", symptom: "unterschenkelverletzung", dringlichkeit: 20, buchung: "bu_isolierte_extremitaetenverletzung" },
+    ],
+  },
+  {
+    id: "piste_oberschenkel",
+    name: "Pistenrettung: Oberschenkel, sofort mit Überwachung",
+    thema: "anforderung_arzt",
+    haeufigkeit: 1,
+    alter: [15, 75],
+    orte: ["berg"],
+    jahreszeit: ["winter"],
+    tageszeit: "tag",
+    stelle: ["auf der Piste, mit dem Akja zur Talstation gebracht"],
+    wo: ["im Schigebiet oberhalb von {ort}, bei der Talstation"],
+    anrufer: ["pistenrettung"],
+    geschehen: [
+      "Du bist bei der Pistenrettung. {P} ist mit hoher Geschwindigkeit gestürzt, Verdacht auf Oberschenkelbruch, starke Schmerzen, {er} ist blass und kaltschweißig.",
+      "Ihr habt {ihn} mit dem Akja zur Talstation gebracht. Du brauchst einen Transport sofort, mit Monitor und Schmerztherapie.",
+    ],
+    hergang: ["Pistenrettung – sofortiger Transport mit Überwachung, Verdacht auf Oberschenkelfraktur."],
+    seitMin: [15, 30],
+    fest: { anforderer: "schi", schi_anf: "transport", dringlichkeit: "geraete", bw: "ja", at: "normal", anzahl_patienten: "1" },
+    details: ["Der Kreislauf ist noch stabil, Puls 110.", "Ihr seid in der Pistenrettungshütte bei der Talstation."],
+    varianten: [
+      { id: "A", p: 0.7, sichtung: "gelb", fest: { transportart: "liegend" }, lage: "Oberschenkelschaftfraktur nach Schisturz, Puls 110, starke Schmerzen", braucht: "NKV", symptom: "oberschenkelverletzung", dringlichkeit: 20, buchung: "bu_isolierte_extremitaetenverletzung" },
+      { id: "B", p: 0.3, sichtung: "gelb", fest: { transportart: "sitzend" }, lage: "Schulterluxation mit starken Schmerzen nach Schisturz", braucht: "NKV", symptom: "schulterverletzung", dringlichkeit: 20, buchung: "bu_isolierte_extremitaetenverletzung" },
+    ],
+  },
+  {
+    id: "piste_kollision_na",
+    name: "Pistenrettung: Kollision mit Kopfverletzung – Notarzt",
+    thema: "anforderung_arzt",
+    haeufigkeit: 1,
+    alter: [10, 70],
+    orte: ["berg"],
+    jahreszeit: ["winter"],
+    tageszeit: "tag",
+    stelle: ["auf der Piste, mittlerer Hang"],
+    wo: ["im Schigebiet oberhalb von {ort}, auf der Piste"],
+    anrufer: ["pistenrettung"],
+    geschehen: [
+      "Du bist bei der Pistenrettung. Zwei Schifahrer sind zusammengestoßen, {P} ist mit dem Kopf auf die Piste geprallt.",
+      "{Er} ist eingetrübt, reagiert nur verzögert und hat einmal erbrochen. Du forderst einen Notarzt an.",
+    ],
+    hergang: ["Pistenrettung – wir brauchen einen Notarzt, Kollision auf der Piste, Kopfverletzung, eingetrübt."],
+    seitMin: [5, 15],
+    fest: { anforderer: "schi", schi_anf: "na", bw: "getruebt", at: "normal", anzahl_patienten: "1" },
+    details: ["Der andere Schifahrer ist unverletzt.", "Ihr seid mitten am Hang, mit dem Akja zur Talstation dauert es zehn Minuten."],
+    varianten: [{ id: "A", p: 1, sichtung: "rot", lage: "SHT nach Kollision auf der Piste, GCS 12, Erbrechen", braucht: "NA", symptom: "schaedelhirntrauma", dringlichkeit: 30, buchung: "bu_schweres_sht" }],
+  },
+];

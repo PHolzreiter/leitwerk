@@ -144,7 +144,7 @@ export class FahrzeugeLogik extends DCLogic {
       bereich: [[app.bereichName(), false], ['Alle', true]].map(([tx, a]) => ({ t: tx, an: bereichAlle === a ? 'true' : 'false', cls: 'seg' + (bereichAlle === a ? ' on' : ''), klick: () => { neu({ bereichAlle: a }); app.bereichGeaendert && setTimeout(app.bereichGeaendert, 0); } })), bereichIdx: bereichAlle ? '1' : '0',
       statusChips,
       istAlle: ansicht === 'alle', istAktive: ansicht === 'aktive', istLog: ansicht === 'log',
-      listeCls: 'liste2 ' + (sw % 2 ? 'swA' : 'swB') + (st.zieht ? ' zieht' : '') + KEYS[lay].filter(k => !sichtK(lay).includes(k)).map(k => ' ohne-' + k + (k === 'ruf' && lay !== 'b' ? ' ohne-typ' : '')).join(''), logCls: 'liste2 ' + (sw % 2 ? 'swA' : 'swB'),
+      listeCls: 'liste2 lay-' + lay + ' ' + (sw % 2 ? 'swA' : 'swB') + (st.zieht ? ' zieht' : '') + KEYS[lay].filter(k => !sichtK(lay).includes(k)).map(k => ' ohne-' + k + (k === 'ruf' && lay !== 'b' ? ' ohne-typ' : '')).join(''), logCls: 'liste2 ' + (sw % 2 ? 'swA' : 'swB'),
       dienststellen, aktive: ansicht === 'aktive' ? sortiere(aktiveRoh).map(zeile) : [],
       keineAlle: ansicht === 'alle' && reihen.length === 0, keineAlleText: fz.length ? 'Nichts passt zum Filter.' : 'Keine Fahrzeuge – unter Einstellungen → Leitstelle → Fahrzeuge anlegen.',
       kopfN: kopf([['ruf', 'Fahrzeug'], ['status', 'Status'], ['fahrt', 'Fahrtziel'], ['code', 'Code'], ['eta', 'Ankunft', true]], 'n'),

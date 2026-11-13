@@ -90,6 +90,8 @@ const ANRUFER: [AnruferTyp, string][] = [
   ["verkauf", "Verkaufspersonal"],
   ["taxi", "Taxifahrer/in"],
   ["aerztefunk", "Ärztefunkdienst (Arzt beim Hausbesuch)"],
+  ["hotline", "Gesundheitshotline (nicht beim Patienten)"],
+  ["pistenrettung", "Pistenrettung"],
 ];
 
 const HAEUFIG: [number, string][] = [

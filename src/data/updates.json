@@ -1,5 +1,19 @@
 [
  {
+  "version": "0.116.0-beta.49",
+  "datum": "2026-11-13",
+  "titel": "Sonderanrufer: wer anruft, bestimmt die Abfrage",
+  "punkte": [
+   "„Wer ruft an?“ mit Einrichtung, Gesundheitshotline, Pistenrettung, Polizei, Feuerwehr/Berg-/Wasserrettung und automatischer Unfallmeldung – das Kapitel kommt automatisch, überstimmen geht",
+   "Ab 10 Antworten: Nummer eintippen, Enter wählt",
+   "Gesundheitshotline: „Was wird angefordert?“ und „Die gemeldeten Symptome sind:“; Pistenrettung: Transport oder Notarzt; Feuerwehr: RTW oder Notarzt",
+   "Automatische Unfallmeldung: Ansage mit Kennzeichen, Position sofort, dann Gespräch ins Auto bzw. zur Uhr – oder Stille; auch Fehlalarme",
+   "Polizei-Kennung nur, wenn die Polizei anruft; neue Frage „Arbeitsunfall?“ bei Unfällen",
+   "Kein Telefonarzt, keine Hubschrauber-Codes, keine Weitergabe-Codes mehr in Fällen",
+   "Fahrzeuge-Fenster: Status und Fahrtziel überlagern sich nicht mehr"
+  ]
+ },
+ {
   "version": "0.116.0-beta.48",
   "datum": "2026-11-12",
   "titel": "Kompetenz je Einsatz: wer reicht, wer kommt, warten oder fahren",

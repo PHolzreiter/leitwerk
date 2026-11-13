@@ -48,7 +48,7 @@ import {
   type WetterWerte,
   LAGE,
 } from "./weather";
-import { bestimmeCode, fallZiehen, kapitelVonCode, nfStufe, wahrheitFuer, type Antworten, type Schema } from "../abfrage/schema";
+import { bestimmeCode, codeGesperrt, fallZiehen, kapitelFuerAnrufer, kapitelVonCode, nfStufe, wahrheitFuer, type Antworten, type Schema } from "../abfrage/schema";
 import { anruferWaehlen, flughafenAnrufer, stimmungZumFall, ortKandidaten, veraenderungText, zufallsName, type Anrufer } from "../abfrage/anrufer";
 import { personaWaehlen } from "../abfrage/persona";
 import { alleOrte, kategorienFuerOrtArt, ortGewicht, ortKategorie, poiKategorien } from "../data/orte";
@@ -507,7 +507,7 @@ function alsAnforderung33(schema: Schema, f: Fall): Fall | null {
     fest.transportart = a.bw === "ja" && a.at === "normal" ? "sitzend" : "liegend";
   }
   const z = fallZiehen(schema, k33, Math.random, 0, fest);
-  if (!z || z.ergebnis.pfad[0] !== k33) return null;
+  if (!z || z.ergebnis.pfad[0] !== k33 || codeGesperrt(schema, z.ergebnis.code)) return null;
   return { ...f, kapitel: k33, antworten: z.antworten, code: z.ergebnis.code };
 }
 
@@ -764,6 +764,10 @@ export interface Anruf {
   /** Antworten der Abfrage (vom Calltaker angeklickt) */
   antworten: Antworten;
   kapitel: string | null;
+  /** Kapitel kam automatisch aus „Wer ruft an?“ (Grund für den Hinweis); null = selbst gewählt */
+  kapitelAuto?: string | null;
+  /** „Wer ruft an?“-Wert, aus dem das Kapitel automatisch kam */
+  kapitelVor?: string | null;
   extra: { aufwertung: string | null; zusatz: string | null; polizei: boolean };
   /** vorläufiger Code und Reanimationshinweis aus der Abfrage */
   ergebnis: { code: string; reanimation: boolean } | null;
@@ -3447,6 +3451,17 @@ export class Simulation {
           e.wahr.code = neu.code;
         }
       }
+      // Ruft die Polizei an, gehört „-Polizei“ zum richtigen Code (wo es ihn gibt) – und sie ist schon dort
+      if (anrufer.anruferWert === "polizei" && !ist(p.fall.kapitel, "anforderung_polizei")) {
+        const erg = bestimmeCode(schema, p.fall.kapitel, { ...p.fall.antworten, anrufer: "polizei" });
+        if (erg && erg.code !== p.fall.code && findCode(erg.code)) {
+          p.fall = { ...p.fall, code: erg.code };
+          e.wahr.code = erg.code;
+        }
+        (e.partner ??= {}).pol = this.state.zeit;
+        (e.partnerDa ??= {}).pol = this.state.zeit;
+        e.boSicher = this.state.zeit;
+      }
       let szenario: Szenario | undefined;
       if (vorlage) {
         const a = wahr(p.fall);
@@ -3517,6 +3532,12 @@ export class Simulation {
         extra: { aufwertung: null, zusatz: null, polizei: false },
         ergebnis: null,
       };
+      // Automatische Unfallmeldung: die Position (GPS) kommt mit der Meldung
+      if (e.wahr.abfrage.anrufer.art === "ecall") {
+        const radius = Math.round(rnd(5, 25));
+        const pos = versetzt(e.wahr.lat, e.wahr.lon, Math.random() * radius * 0.6, rnd(0, 360));
+        e.anruf.ortung = { status: "fertig", fertigUm: this.state.zeit, lat: pos.lat, lon: pos.lon, radius, art: "automatisch übermittelt (GPS)" };
+      }
     }
     // Probe aus dem Fall-Editor: nur die Wahrheit bauen, nicht ins Spiel nehmen
     if (this.fallWunsch?.probe) return e;
@@ -4074,7 +4095,7 @@ export class Simulation {
   private fremdLaeuft = false;
 
   /**
-   * ACN-Einsatz (Akutpflege zu Hause): kommt über die Gesundheitsberatung 1450 schon mit ACN-Code herein,
+   * ACN-Einsatz (Akutpflege zu Hause): kommt über die Gesundheitshotline schon mit ACN-Code herein,
    * Adresse im Umkreis des ACN-Standorts, meist ältere Patienten. Keine zeitliche Dringlichkeit.
    */
   async generiereAcn(stationId?: string): Promise<Einsatz | null> {
@@ -4107,7 +4128,7 @@ export class Simulation {
       lon: adr.lon,
       adresse: label,
       code,
-      meldung: `Gesundheitsberatung 1450: ${code.beschreibung}. ${w ? "Patientin" : "Patient"} ca. ${alter} Jahre, zu Hause. Keine zeitliche Dringlichkeit.`,
+      meldung: `Gesundheitshotline: ${code.beschreibung}. ${w ? "Patientin" : "Patient"} ca. ${alter} Jahre, zu Hause. Keine zeitliche Dringlichkeit.`,
       patientAlter: alter,
       transport: false,
     });
@@ -4115,7 +4136,7 @@ export class Simulation {
     e.bo = e.adresse;
     e.code = code.code;
     e.codeQuelle = "abfrage";
-    this.log(e, `Von der Gesundheitsberatung 1450 übernommen (${code.code})`);
+    this.log(e, `Von der Gesundheitshotline übernommen (${code.code})`);
     this.emit();
     return e;
   }
@@ -4298,6 +4319,7 @@ export class Simulation {
         if (
           f &&
           c &&
+          !codeGesperrt(schema, c.code) &&
           passt(c.stufe) &&
           plausibel(f.ergebnis.pfad[0], f.antworten, name) &&
           (!wetter || passtZumWetter(f.ergebnis.pfad[0], f.antworten, name, temp, lage)) &&
@@ -4431,7 +4453,7 @@ export class Simulation {
       if (!kap) continue;
       const f = fallZiehen(schema, kap, Math.random, 0.04);
       const c = f ? findCode(f.ergebnis.code) : undefined;
-      if (!f || !c) continue;
+      if (!f || !c || codeGesperrt(schema, c.code)) continue;
       const st = this.stufeDef(c.stufe);
       const alter = typeof f.antworten.alter === "number" ? f.antworten.alter : null;
       // angekündigte Landung nur bei echten Notfällen; Personal ist erwachsen; an Bord eher keine Kleinkinder allein
@@ -4523,6 +4545,8 @@ export class Simulation {
         console.warn("Fallkatalog: kein Code für", f.id, v.id);
         continue;
       }
+      // „Weitergabe“-Codes (und andere gesperrte) kommen in keinem Fall vor
+      if (codeGesperrt(schema, erg.code)) continue;
       // Code landet in einer anderen Versorgungsstufe als gezogen (zufällige Antworten): noch einmal ziehen
       if (zielStufe && c.stufe !== zielStufe && i < 8) continue;
       // Geschichte im Pflegeheim, in der Ordination, Schule …: nur, wo es so einen Ort im Gebiet gibt (sonst ein anderer Fall)
@@ -4802,9 +4826,13 @@ export class Simulation {
     const e = this.einsatz(id);
     if (!e) return;
     const a = this.nurCalltaker(e);
-    if (frage === "kapitel") a.kapitel = wert === null ? null : String(wert);
-    else if (wert === null) delete a.antworten[frage];
+    if (frage === "kapitel") {
+      a.kapitel = wert === null ? null : String(wert);
+      a.kapitelAuto = null;
+    } else if (wert === null) delete a.antworten[frage];
     else a.antworten[frage] = wert;
+    // „Wer ruft an?“: Sonderanrufer wählen das Kapitel automatisch (überstimmen geht, dann bleibt es)
+    if (frage === "anrufer" || frage === "kapitel") this.kapitelAusAnrufer(e, a);
     // Rückrufnummer aus der Abfrage = Rückrufnummer des Einsatzes (erst damit ist ein Rückruf möglich)
     if (frage === "rueckrufnummer" && typeof wert === "string" && wert.trim() && wert.trim() !== e.telefon) {
       e.telefon = wert.trim();
@@ -4812,6 +4840,34 @@ export class Simulation {
     }
     this.abfrageAuswerten(e);
     this.emit();
+  }
+
+  /** Kapitel zum Anrufer (Einrichtung, Hotline, Pistenrettung, Polizei, Feuerwehr …, automatische Unfallmeldung) */
+  private kapitelAusAnrufer(e: Einsatz, a: Anruf): void {
+    const schema = store.schema;
+    if (!schema) return;
+    const x = kapitelFuerAnrufer(schema, a.antworten.anrufer);
+    // selbst gewähltes Kapitel bleibt (ist es das des Anrufers, gelten dessen Vorbelegungen)
+    if (a.kapitel && !a.kapitelAuto) {
+      if (x && x.kapitel === a.kapitel) for (const [k, v] of Object.entries(x.vor)) if (a.antworten[k] === undefined) a.antworten[k] = v;
+      return;
+    }
+    // vorbelegte Antworten des vorigen Sonderanrufers zurücknehmen
+    const vorher = a.kapitelAuto ? kapitelFuerAnrufer(schema, a.kapitelVor ?? null) : null;
+    for (const k of Object.keys(vorher?.vor ?? {})) delete a.antworten[k];
+    if (!x) {
+      if (a.kapitelAuto) {
+        a.kapitel = null;
+        a.kapitelAuto = null;
+        a.kapitelVor = null;
+      }
+      return;
+    }
+    a.kapitel = x.kapitel;
+    a.kapitelAuto = x.grund;
+    a.kapitelVor = String(a.antworten.anrufer);
+    for (const [k, v] of Object.entries(x.vor)) a.antworten[k] = v;
+    this.log(e, `Kapitel ${x.kapitel} automatisch gewählt (${x.grund})`);
   }
 
   abfrageExtra(id: string, extra: Partial<Anruf["extra"]>): void {

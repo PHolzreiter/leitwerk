@@ -38,7 +38,7 @@ try:
           for (const f of Object.values(s.state.fahrzeuge)) if (f.rmTyp === 'ACN') f.einsatzId = 'x';
           const e2 = await s.generiereAcn(); const emp2 = e2 ? s.empfehlung(e2.id, await s.vorschlaege(e2.id)) : null;
           return { code: e.code, meldung: e.meldung.text, ids: emp.ids.map(id => s.state.fahrzeuge[id].rmTyp), dauer, phase1, transport: e.wahr.transport, kh: e.kh, zustand: e.zustand, warten: emp2 && { ids: emp2.ids, g: emp2.gruende.join(' ') }, fg: s.settings.funkgruppe }; }""")
-        check(not r.get("fehlt") and r["code"].startswith("ACN-O") and "1450" in r["meldung"] and r["ids"] == ["ACN"], f"ACN-Einsatz über 1450 mit ACN-Code, Vorschlag nur die ACN ({r.get('code')}, {r.get('ids')}, {r.get('fg')})")
+        check(not r.get("fehlt") and r["code"].startswith("ACN-O") and "Gesundheitshotline" in r["meldung"] and r["ids"] == ["ACN"], f"ACN-Einsatz über die Gesundheitshotline mit ACN-Code, Vorschlag nur die ACN ({r.get('code')}, {r.get('ids')}, {r.get('fg')})")
         check(r.get("phase1") == "vorOrt" and 30 <= r["dauer"] <= 60.5 and r["transport"] is False and r["kh"] is None and r["zustand"] == "abgeschlossen", f"ACN 30–60 min vor Ort, Patient bleibt zu Hause ({r.get('dauer')}, {r.get('zustand')})")
         check(r.get("warten") and r["warten"]["ids"] == [] and "wartet" in r["warten"]["g"], f"Keine ACN frei: Einsatz wartet ({r.get('warten')})")
         # KTW statt ACN: nimmt den Patienten mit

@@ -14,7 +14,7 @@ import { fragen, kiQuelleVon } from "../../../abfrage/gespraech";
 import { kiBereit } from "../../../abfrage/ki";
 import { KT_FRAGEN } from "../../../abfrage/ktGespraech";
 import { kapitelZuThema } from "../../../abfrage/themen";
-import { antwortLabel, bestimmeCode, frageFuer, fragenImAblauf, istKreislaufstillstand, stufeRang, stufeVonCode, type Frage, type Schema, type Wert } from "../../../abfrage/schema";
+import { ableitenIn, antwortLabel, bestimmeCode, codeGesperrt, frageFuer, fragenImAblauf, istKreislaufstillstand, optionenFuer, stufeRang, stufeVonCode, type Frage, type Schema, type Wert } from "../../../abfrage/schema";
 import { mp } from "../../../net/mehrspieler";
 import { sim, infoFreitext, type Anruf, type Einsatz, type SimFahrzeug } from "../../../sim/engine";
 import { distanceM, searchAddress, type AddressHit } from "../../../sim/geo";
@@ -385,7 +385,8 @@ function notrufGespraech(e: Einsatz): GespraechVM | null {
     const w = a.antworten[f.id];
     const offen = w === undefined || w === null;
     if (f.typ === "single") {
-      const opts = f.optionen ?? [];
+      // nur Antworten, die hier passen (z. B. Pistenrettung: gehend nur ohne Dringlichkeit)
+      const opts = optionenFuer(f, a.kapitel ? ableitenIn(schema, a.kapitel, { ...a.antworten }) : a.antworten);
       return schritt({
         id: f.id, teil, text: f.text, typ: "wahl", hinweis: f.hinweis ?? undefined,
         antwort: offen ? undefined : antwortLabel(f, w),
@@ -454,9 +455,7 @@ function notrufGespraech(e: Einsatz): GespraechVM | null {
     for (const f of p3) if (!istWer(f) && f.typ !== "text" && f.typ !== "kapitelwahl") dazu(frageSchritt(f, "Was ist passiert?"));
     const was = p3.find((f) => f.typ === "text") ?? null;
     dazu(kapitelSchritt(e, schema, was, frageStellen(was)));
-    if (a.kapitel === "42") {
-      dazu(code42Schritt(e, schema, aktiv ? () => stelle("Welches Einsatzmittel brauchen Sie, und wohin?") : null));
-    } else if (a.kapitel) {
+    if (a.kapitel) {
       for (const { phase, frage } of fragenImAblauf(schema, a.kapitel, a.antworten)) {
         if (ids.has(frage.id)) continue;
         dazu(frageSchritt(frage, phase === "Primärabfrage" ? "Primärabfrage" : `Kapitel ${a.kapitel} · ${schema.kapitel[a.kapitel]?.titel ?? phase}`));
@@ -560,7 +559,7 @@ function ortSchrittNotruf(e: Einsatz, f: Frage, _stelle: unknown, stellen: (() =
       }
       if (o?.status === "fertig" && o.lat != null && o.lon != null && !q.trim()) {
         const lat = o.lat, lon = o.lon;
-        ruf.push({ name: `Handy-Ortung ±${o.radius} m`, zeile: `${o.art ?? "Ortung"} · ${lat.toFixed(5)}, ${lon.toFixed(5)}`, typ: "ortung", nehmen: () => nehmen({ lat, lon, label: `Ortung ±${o.radius} m (${lat.toFixed(5)}, ${lon.toFixed(5)})` }) });
+        ruf.push({ name: `${/^automatisch/.test(o.art ?? "") ? "Übermittelte Position" : "Handy-Ortung"} ±${o.radius} m`, zeile: `${o.art ?? "Ortung"} · ${lat.toFixed(5)}, ${lon.toFixed(5)}`, typ: "ortung", nehmen: () => nehmen({ lat, lon, label: `Ortung ±${o.radius} m (${lat.toFixed(5)}, ${lon.toFixed(5)})` }) });
       }
       if (ruf.length) gruppen.push({ t: "Vom Anrufer genannt", items: ruf });
       let laedt = false;
@@ -602,7 +601,9 @@ function kapitelSchritt(e: Einsatz, schema: Schema, was: Frage | null, stellen: 
     text: "Was ist genau passiert?",
     hinweis: "Kapitel (Hauptbeschwerde) wählen",
     typ: "kapitel",
-    antwort: a.kapitel ? `${a.kapitel} · ${K?.titel ?? ""}${txt ? ` – „${txt}“` : ""}` : undefined,
+    // automatisch aus „Wer ruft an?“ – ein anderes Kapitel wählen überstimmt
+    ...(a.kapitel && a.kapitelAuto ? { hinweis: `Automatisch gewählt, weil ${a.kapitelAuto} – ein anderes Kapitel wählen überstimmt` } : {}),
+    antwort: a.kapitel ? `${a.kapitel} · ${K?.titel ?? ""}${a.kapitelAuto ? " (automatisch)" : ""}${txt ? ` – „${txt}“` : ""}` : undefined,
     stellen,
     kapitel: (q) => {
       const s = q.trim();
@@ -626,27 +627,7 @@ function kapitelSchritt(e: Einsatz, schema: Schema, was: Frage | null, stellen: 
   });
 }
 
-/** Anforderung durch andere Leitstelle: keine Abfrage, nur den Code wählen */
-function code42Schritt(e: Einsatz, schema: Schema, stellen: (() => void) | null): Schritt {
-  const codes = Object.entries(schema.codes).filter(([, c]) => c.kapitel.startsWith("42 ") || c.kapitel.startsWith("42-"));
-  return schritt({
-    id: "__code42",
-    teil: "Code wählen (Anforderung durch andere Leitstelle)",
-    text: "Welcher Code?",
-    hinweis: "Keine Abfrage bei Anforderung durch eine andere Leitstelle",
-    typ: "kapitel",
-    kapPlatz: "Code oder Stichwort tippen – Enter wählt den ersten Treffer",
-    antwort: e.code ? `${e.code} ${schema.codes[e.code]?.name ?? ""}` : undefined,
-    stellen,
-    kapitel: (q) => {
-      const n = norm(q.trim());
-      return codes.filter(([code, c]) => !n || norm(`${code} ${c.name} ${c.kategorie}`).includes(n)).map(([code, c]) => ({ nr: code, t: `${c.name} · ${c.kategorie}`, an: e.code === code }));
-    },
-    kapitelNehmen: (nr) => fehler(sim.call("aktualisiere", e.id, { code: nr })),
-  });
-}
-
-/** Aufwertung, Zusatzkennung, Polizei */
+/** Aufwertung und Zusatzkennung („-Polizei“ kommt automatisch, wenn die Polizei anruft) */
 function abschlussSchritte(e: Einsatz, schema: Schema): Schritt[] {
   const a = e.anruf!;
   const b = best(e.id);
@@ -675,7 +656,7 @@ function abschlussSchritte(e: Einsatz, schema: Schema): Schritt[] {
       );
     }
   }
-  const zus = erg ? (K.zusatzkennungen?.[erg.determinante] ?? []) : [];
+  const zus = (erg ? (K.zusatzkennungen?.[erg.determinante] ?? []) : []).filter((c) => !codeGesperrt(schema, c));
   if (zus.length) {
     const w = a.extra.zusatz;
     out.push(
@@ -687,21 +668,6 @@ function abschlussSchritte(e: Einsatz, schema: Schema): Schritt[] {
         waehlen: (i) => {
           b.set("__zusatz", "1");
           extra({ zusatz: i === 0 ? null : zus[i - 1] });
-        },
-      }),
-    );
-  }
-  if (K.polizei_kennung && Object.keys(K.polizei_kennung).length) {
-    const w = a.extra.polizei;
-    out.push(
-      schritt({
-        id: "__polizei", teil: "Abschluss", text: "Braucht es die Polizei?", typ: "wahl",
-        antwort: w ? "ja" : b.has("__polizei") ? "nein" : undefined,
-        optionen: ["nein", "ja"],
-        an: [w ? 1 : b.has("__polizei") ? 0 : -1].filter((i) => i >= 0),
-        waehlen: (i) => {
-          b.set("__polizei", "1");
-          extra({ polizei: i === 1 });
         },
       }),
     );

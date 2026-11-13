@@ -335,9 +335,10 @@ export async function anruferAntwort(
     await pause();
     return ersterSatzOhneKi(k);
   }
+  // automatische Unfallmeldung: meldet sich niemand, bleibt es still („…“ = gewollt, kein technisches Problem)
   if (x.art === "ecall" && !x.sprachkontakt) {
     await pause();
-    return "(keine Antwort – im Hintergrund nur Geräusche aus dem Fahrzeug)";
+    return "…";
   }
   // Flughafen-Leitstelle (nicht beim Patienten): Abfragefragen fix – Gemeldetes aus der Wahrheit, sonst „nicht gemeldet“
   if (x.nurBekannt && !(ersteAntwort && frage === ERÖFFNUNG)) {

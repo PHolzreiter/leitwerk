@@ -90,7 +90,7 @@ export function partnerNoetig(kapitel: string | null | undefined, a: Antworten, 
   if (/aggressiv|gewalttätig/i.test(n) || a.aggressiv === "ja" || a.gewalt === "ja" || a.gewalttaetig === "ja" || a.waffen === "ja") add("pol", "Gewalt/Waffen – Eigenschutz", { eigenschutz: true, blockiert: true, begleitung: true });
   if (t === "psych" || /Suizid|UBG|Unterbringung|Psychiatrie/i.test(n)) add("pol", "Psychiatrie/Suizidgefahr (ggf. Unterbringung)", { begleitung: true });
   if (vu) add("pol", "Verkehrsunfall");
-  if (UNFALL.includes(t) && (ort.ortArt === "arbeit" || ort.ortArt === "baustelle")) add("pol", "Arbeitsunfall");
+  if ((UNFALL.includes(t) && (ort.ortArt === "arbeit" || ort.ortArt === "baustelle")) || a.arbeitsunfall === "ja") add("pol", "Arbeitsunfall");
   if (UNFALL.includes(t) && (ort.ortArt === "strasse" || ort.ortArt === "bahnhof")) add("pol", "Unfall im öffentlichen Raum");
   if (t === "stillstand" && (a.tod === "offensichtlich" || a.tod === "moeglich")) add("pol", "Todesfall");
   if (t === "anforderung_polizei") add("pol", "Anforderung durch die Polizei");

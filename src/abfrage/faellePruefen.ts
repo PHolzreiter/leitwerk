@@ -100,6 +100,8 @@ export function fallPruefen(f: FallVorlage, schema: Schema | null): FallBefund[]
         }
         for (const { frage } of fragenImAblauf(schema, kap, ant)) {
           if (frage.typ === "text" || frage.typ === "kapitelwahl") continue;
+          // Arbeitsunfall ergibt sich aus dem Ort (an der Arbeit, auf der Baustelle)
+          if (frage.id === "arbeitsunfall") continue;
           if (["alter", "geschlecht", "anzahl_patienten", "bw", "at"].includes(frage.id) && ant[frage.id] !== undefined) continue;
           if (ant[frage.id] === undefined) {
             const msg = `Frage „${frage.id}“ (${frage.text}) hat keine Antwort`;

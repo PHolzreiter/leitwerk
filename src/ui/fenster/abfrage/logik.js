@@ -53,7 +53,7 @@ export class AbfrageLogik extends DCLogic {
     if (!cur) cur = S.find((s) => !erledigtS(s)) || null;
     const idx = cur ? S.indexOf(cur) : -1;
     // Antwort gegeben: zur nächsten offenen Frage (die Daten kommen kurz danach aus dem Spiel)
-    const weiterNach = (s) => set({ cur: undefined, eben: { ...eben, [s.id]: Date.now() }, skip: skip.filter((x) => x !== s.id), eing: undefined, q: "" });
+    const weiterNach = (s) => set({ cur: undefined, eben: { ...eben, [s.id]: Date.now() }, skip: skip.filter((x) => x !== s.id), eing: undefined, q: "", zahl: "" });
     const anzeige = (s) => (s.antwort === null || (s.antwort === undefined && skip.includes(s.id)) ? "übersprungen" : s.antwort === undefined ? "…" : s.antwort || "–");
 
     let f = { teil: "", nr: "", text: "", hinweis: "", hatHinweis: false, istWahl: false, istKapitel: false, istEingabe: false, istOrt: false, mitWeiter: false, ohneWeiter: true, optionen: [], wert: "", gruppen: [] };
@@ -89,8 +89,12 @@ export class AbfrageLogik extends DCLogic {
         });
       }
       const mitWeiter = cur.typ === "mehr" || cur.typ === "eingabe" || cur.typ === "ort";
+      // ab 10 Antworten: Nummer eintippen, Enter wählt (bis 9 genügt ein Tastendruck)
+      const vieleOpt = (cur.typ === "wahl" || cur.typ === "mehr") && optionen.length >= 10;
+      const zahlH = vieleOpt ? (ps.zahl ? "Nr. " + ps.zahl + (optionen[Number(ps.zahl) - 1] ? " „" + optionen[Number(ps.zahl) - 1].t + "“" : " gibt es nicht") + " – Enter wählt" : "Nummer eintippen, Enter wählt") : "";
+      const hinw = [cur.hinweis || "", zahlH].filter(Boolean).join(" · ");
       f = {
-        teil: cur.teil, nr: "Frage " + (idx + 1) + " von " + S.length, text: cur.text, hinweis: cur.hinweis || "", hatHinweis: !!cur.hinweis,
+        teil: cur.teil, nr: "Frage " + (idx + 1) + " von " + S.length, text: cur.text, hinweis: hinw, hatHinweis: !!hinw, vieleOpt,
         istWahl: cur.typ === "wahl" || cur.typ === "mehr", istKapitel: cur.typ === "kapitel", istEingabe: cur.typ === "eingabe", istOrt: cur.typ === "ort",
         mitWeiter, ohneWeiter: !mitWeiter, optionen, gruppen, keinTreffer, sucht, keinKapitel,
         wert: ps.eing !== undefined ? ps.eing : cur.wert || "",
@@ -241,7 +245,14 @@ export class AbfrageLogik extends DCLogic {
       }
       const istFrageFeld = imFeld && e.target.classList && e.target.classList.contains("f-eing");
       if (k === "Insert" && istFrageFeld && cur.einfuegen) { e.preventDefault(); set({ eing: cur.einfuegen() }); return; }
-      if (k === "Enter") { if (imFeld && !istFrageFeld) return; e.preventDefault(); if (cur.typ === "wahl") ueberspringen(); else weiter(); return; }
+      if (k === "Enter") {
+        if (imFeld && !istFrageFeld) return;
+        e.preventDefault();
+        if (f.istWahl && ps.zahl) { const o = f.optionen[Number(ps.zahl) - 1]; set({ zahl: "" }); if (o) o.klick(); return; }
+        if (cur.typ === "wahl") ueberspringen(); else weiter();
+        return;
+      }
+      if (f.vieleOpt && !imFeld && (k === "Backspace" || k === "Escape") && ps.zahl) { e.preventDefault(); set({ zahl: k === "Escape" ? "" : ps.zahl.slice(0, -1) }); return; }
       if (imFeld && !istFrageFeld) return;
       const feldDa = cur.typ === "eingabe" || cur.typ === "kapitel" || cur.typ === "ort";
       const getippt = cur.typ === "eingabe" ? f.wert || "" : ps.q || "";
@@ -255,7 +266,12 @@ export class AbfrageLogik extends DCLogic {
       if (k === " " && !(feldDa && getippt)) { e.preventDefault(); stellen(); return; }
       if (k === "ArrowUp") { e.preventDefault(); zurueck(); return; }
       if (k === "ArrowDown") { e.preventDefault(); ueberspringen(); return; }
-      if (/^[1-9]$/.test(k) && f.istWahl) { const o = f.optionen[Number(k) - 1]; if (o) { e.preventDefault(); o.klick(); } return; }
+      if (/^[0-9]$/.test(k) && f.istWahl) {
+        if (f.vieleOpt) { e.preventDefault(); set({ zahl: ((ps.zahl || "") + k).replace(/^0+/, "").slice(-2) }); return; }
+        const o = k === "0" ? null : f.optionen[Number(k) - 1];
+        if (o) { e.preventDefault(); o.klick(); }
+        return;
+      }
       if (feldDa && k.length === 1) {
         // Tippen geht automatisch in die Textzeile
         e.preventDefault();
