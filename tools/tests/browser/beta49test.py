@@ -27,7 +27,7 @@ try:
         werte = [x.split("=")[0] for x in r]
         check(werte == ["1", "2", "3", "einrichtung", "hotline", "piste", "polizei", "ls", "system"], "„Wer ruft an?“ mit allen Sonderanrufern")
         r = A.evaluate("""() => { const S = window.__lw.store.schema; const f = window.__lw.schemaFkt.kapitelFuerAnrufer; return ['einrichtung','hotline','piste','polizei','ls','system','2'].map((w) => { const x = f(S, w); return x ? x.kapitel + ':' + JSON.stringify(x.vor) : null; }); }""")
-        check(r == ['33:{"anforderer":"normal"}', '33:{"anforderer":"ecn"}', '33:{"anforderer":"schi"}', "38:{}", '42:{"von":"org"}', "34:{}", None], f"Kapitel je Anrufer {r}")
+        check(r == ['33:{"anforderer":"normal"}', '33:{"anforderer":"ecn","anzahl_patienten":"1"}', '33:{"anforderer":"schi"}', "38:{}", '42:{"von":"org"}', "34:{}", None], f"Kapitel je Anrufer {r}")
 
         # ---- 2) Kapitel 33: keine Frage „Wer fordert an?“, kein Telefonarzt/141, kein Hubschrauber
         r = A.evaluate("""() => { const S = window.__lw.store.schema; const K = S.kapitel['33']; const anf = K.fragen.find((f) => f.id === 'anforderer'); const g = K.fragen.find((f) => f.id === 'grund');

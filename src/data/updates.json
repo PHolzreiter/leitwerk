@@ -1,5 +1,15 @@
 [
  {
+  "version": "0.116.0-beta.50",
+  "datum": "2026-11-13",
+  "titel": "Anzahl der Patienten zuerst",
+  "punkte": [
+   "„Wie viele Personen?“ direkt nach „Wer ruft an?“, vor Bewusstsein und Atmung – bei mehreren: „Gibt es dort jemanden, der …“",
+   "Fahrzeuge-Fenster: kein großer Hinweis mehr über der Liste",
+   "macOS: Fensterknöpfe überdecken das Logo nicht mehr"
+  ]
+ },
+ {
   "version": "0.116.0-beta.49",
   "datum": "2026-11-13",
   "titel": "Sonderanrufer: wer anruft, bestimmt die Abfrage",

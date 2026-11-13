@@ -451,13 +451,16 @@ function notrufGespraech(e: Einsatz): GespraechVM | null {
       else dazu(frageSchritt(f, "Rückrufnummer"));
     }
     for (const f of p3.filter(istWer)) dazu(frageSchritt(f, "Anrufer"));
+    // Wie viele Patienten? – vor Bewusstsein und Atmung (bei mehreren gehen diese Fragen an alle: „Gibt es dort jemanden, der …“);
+    // die Gesundheitshotline fordert immer für einen Patienten an
+    for (const f of p4) if (f.id === "anzahl_patienten" && a.antworten.anrufer !== "hotline") dazu(frageSchritt(f, "Patienten"));
     for (const f of p4.filter(istBwAt)) dazu(frageSchritt(f, "Bewusstsein und Atmung"));
     for (const f of p3) if (!istWer(f) && f.typ !== "text" && f.typ !== "kapitelwahl") dazu(frageSchritt(f, "Was ist passiert?"));
     const was = p3.find((f) => f.typ === "text") ?? null;
     dazu(kapitelSchritt(e, schema, was, frageStellen(was)));
     if (a.kapitel) {
       for (const { phase, frage } of fragenImAblauf(schema, a.kapitel, a.antworten)) {
-        if (ids.has(frage.id)) continue;
+        if (ids.has(frage.id) || (frage.id === "anzahl_patienten" && a.antworten.anrufer === "hotline")) continue;
         dazu(frageSchritt(frage, phase === "Primärabfrage" ? "Primärabfrage" : `Kapitel ${a.kapitel} · ${schema.kapitel[a.kapitel]?.titel ?? phase}`));
       }
       for (const s of abschlussSchritte(e, schema)) dazu(s);

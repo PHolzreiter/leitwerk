@@ -1,5 +1,10 @@
 # Änderungen
 
+## 0.116.0-beta.50 – Anzahl der Patienten zuerst
+- **„Wie viele Personen?“ kommt jetzt direkt nach „Wer ruft an?“** – vor Bewusstsein und Atmung. Bei mehreren lauten die beiden Fragen „Gibt es dort jemanden, der nicht bei vollem Bewusstsein ist?“ und „Gibt es dort jemanden, der nicht normal atmet?“ (es zählt der Schlimmste). Die Frage kommt bei allen Anrufern, außer bei der Gesundheitshotline (immer ein Patient).
+- **Fahrzeuge-Fenster:** Bleibt die Maus auf einem Fahrzeug, legt sich kein großer Hinweis mehr über die Liste. Was Klick, Doppelklick und Rechtsklick machen, steht jetzt am Spaltenkopf.
+- **macOS:** Die Fensterknöpfe (Ampel) überdecken das Logo nicht mehr – auch nicht, wenn die Programmgröße kleiner eingestellt ist.
+
 ## 0.116.0-beta.49 – Sonderanrufer: wer anruft, bestimmt die Abfrage
 - **„Wer ruft an?“ kennt jetzt alle besonderen Anrufer:** Arzt / Pflege / Einrichtung, Gesundheitshotline, Pistenrettung, Polizei, Feuerwehr / Berg- / Wasserrettung und automatische Unfallmeldung (Auto / Uhr). Das passende Kapitel wird automatisch gewählt („automatisch, weil …“), ein anderes Kapitel wählen überstimmt es. Die Frage „Wer fordert an?“ entfällt.
 - **Antworten mit 10 oder mehr Möglichkeiten:** Nummer eintippen, Enter wählt (z. B. „10“ + Enter). Bis 9 genügt wie bisher ein Tastendruck.

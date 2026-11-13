@@ -185,6 +185,8 @@ let letzterZoom = 1;
 function zoomSetzen(z: number): void {
   if (z === letzterZoom) return;
   letzterZoom = z;
+  // für Platz, der in Bildschirm-Pixeln gilt (macOS-Ampelknöpfe skalieren nicht mit)
+  document.documentElement.style.setProperty("--ui-zoom", String(z));
   if (inTauri()) {
     void import("@tauri-apps/api/webview")
       .then((w) => w.getCurrentWebview().setZoom(z))

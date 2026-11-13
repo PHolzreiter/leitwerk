@@ -10,5 +10,6 @@
 /* Platz für die Knöpfe in den Kopfleisten */
 html.tl-win .kl-leiste:not(.kl-zweit-leiste),html.tl-win .ap .pv-kopf,html.tl-win .st2-kopf{padding-right:150px}
 /* macOS: die Ampelknöpfe des Systems liegen links in der Kopfleiste */
-html.tl-mac .kl-leiste:not(.kl-zweit-leiste),html.tl-mac .ap .pv-kopf,html.tl-mac .st2-kopf{padding-left:84px}
+/* Die Ampelknöpfe skalieren nicht mit der Größe (Zoom) des Programms – Platz in Bildschirm-Pixeln freihalten */
+html.tl-mac .kl-leiste:not(.kl-zweit-leiste),html.tl-mac .ap .pv-kopf,html.tl-mac .st2-kopf{padding-left:calc(90px / var(--ui-zoom, 1))}
 html.tl-win .l-topbar{top:58px}

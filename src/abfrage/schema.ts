@@ -261,7 +261,8 @@ const NIE: Bedingung = { q: "__nie", in: ["1"] };
  */
 export const ANRUFER_KAPITEL: Record<string, { thema: string; vor?: Antworten; grund: string }> = {
   einrichtung: { thema: "anforderung_arzt", vor: { anforderer: "normal" }, grund: "Arzt, Pflege oder Einrichtung fordert an" },
-  hotline: { thema: "anforderung_arzt", vor: { anforderer: "ecn" }, grund: "die Gesundheitshotline fordert an" },
+  // die Hotline fordert immer für einen Patienten an (die Anzahl wird nicht gefragt)
+  hotline: { thema: "anforderung_arzt", vor: { anforderer: "ecn", anzahl_patienten: "1" }, grund: "die Gesundheitshotline fordert an" },
   piste: { thema: "anforderung_arzt", vor: { anforderer: "schi" }, grund: "die Pistenrettung fordert an" },
   polizei: { thema: "anforderung_polizei", grund: "die Polizei fordert an" },
   ls: { thema: "anforderung_ls", vor: { von: "org" }, grund: "Feuerwehr, Berg- oder Wasserrettung fordert an" },
@@ -492,8 +493,8 @@ const WEG_BEI_MEHREREN: { thema: string; wenn: Bedingung; frage: string; weg: st
 
 /** Fragen an die Gruppe, wenn mehrere Personen betroffen sind */
 const GRUPPE: Record<string, { text: string; labels?: Record<string, string> }> = {
-  bw: { text: "Ist jemand bewusstlos oder nicht richtig wach?", labels: { ja: "Nein – alle sind wach und reagieren normal", getruebt: "Ja – jemand ist verwirrt / schläfrig", nein: "Ja – jemand ist bewusstlos", unbekannt: "Unbekannt" } },
-  at: { text: "Hat jemand Atemprobleme oder atmet nicht?", labels: { normal: "Nein – alle atmen normal", abnorm: "Ja – jemand hat Atemnot / Atemgeräusche", agonal: "Ja – jemand atmet kaum / Schnappatmung", keine: "Ja – jemand atmet nicht", unbekannt: "Unbekannt" } },
+  bw: { text: "Gibt es dort jemanden, der nicht bei vollem Bewusstsein ist?", labels: { ja: "Nein – alle sind wach und reagieren normal", getruebt: "Ja – jemand ist verwirrt / schläfrig", nein: "Ja – jemand ist bewusstlos", unbekannt: "Unbekannt" } },
+  at: { text: "Gibt es dort jemanden, der nicht normal atmet?", labels: { normal: "Nein – alle atmen normal", abnorm: "Ja – jemand hat Atemnot / Atemgeräusche", agonal: "Ja – jemand atmet kaum / Schnappatmung", keine: "Ja – jemand atmet nicht", unbekannt: "Unbekannt" } },
   blutung_stark: { text: "Blutet jemand stark (läuft/spritzt, durchtränkt Tücher)?" },
   tot: { text: "Ist jemand offensichtlich und unzweifelhaft tot?" },
   schwer_verletzt: { text: "Ist jemand schwer verletzt?" },
