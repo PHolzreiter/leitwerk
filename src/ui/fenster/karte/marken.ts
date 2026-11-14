@@ -384,6 +384,22 @@ export function addMarken(map: maplibregl.Map, deps: MarkenDeps): Marken {
         : `<div class="${cls}"><span class="fzp" style="background:${farbe}">${faehrt ? `<i class="dir" style="--r:${Math.round(dreh)}deg"></i>` : ""}</span><span class="fzn">${esc(fz.funkrufname)}</span></div>${tip(tipT)}`;
       out.push({ key: `f:${fz.id}`, art: "fz", id: fz.id, lng, lat, anker: "center", z: gew ? 9 : 5, cls: "", html });
     }
+    // Großschaden: Fahrzeug, das ein NAH-Team bzw. den Patienten zwischen Bereitstellungsraum und Einsatzort bringt
+    // (keine Ressource, wie ein KTW mit dem Rufnamen des Hubschraubers, nur während der Fahrt)
+    for (const sh of sim.state.gsShuttles ?? []) {
+      const f = sh.fahrt;
+      if (!f || t < f.start || t > f.start + f.dauer * 1000) continue;
+      const pseudo = sh as unknown as SimFahrzeug;
+      const [lng, lat] = positionBei(pseudo, t);
+      const r = richtungBei(pseudo, t);
+      if (r !== null) richtung.set(sh.id, r);
+      const dreh = ((richtung.get(sh.id) ?? 0) - bearing + 360) % 360;
+      const fz = sim.state.fahrzeuge[sh.fzId];
+      const gew = !!fz && (selFz === fz.id || (a.art === "einsatz" && !!a.id && sh.einsatzId === a.id));
+      const tipT = `${sh.name} · Fahrzeug zwischen Bereitstellungsraum und Einsatzort · Status 3`;
+      const html = `<div class="fzm sonder${gew ? " gew" : ""}"><span class="fzp" style="background:${statusHex("amBO")}"><i class="dir" style="--r:${Math.round(dreh)}deg"></i></span><span class="fzn">${esc(sh.name)}</span></div>${tip(tipT)}`;
+      out.push({ key: `s:${sh.id}`, art: "fz", id: sh.fzId, lng, lat, anker: "center", z: gew ? 9 : 5, cls: "", html });
+    }
     return out;
   };
 
@@ -437,7 +453,7 @@ export function addMarken(map: maplibregl.Map, deps: MarkenDeps): Marken {
   const glatt = window.setInterval(() => {
     if (!sim.state.laeuft || document.hidden) return;
     const t = anzeigeZeit();
-    const faehrt = Object.values(sim.state.fahrzeuge).some((fz) => fz.fahrt && t < fz.fahrt.start + fz.fahrt.dauer * 1000 + 1500);
+    const faehrt = Object.values(sim.state.fahrzeuge).some((fz) => fz.fahrt && t < fz.fahrt.start + fz.fahrt.dauer * 1000 + 1500) || (sim.state.gsShuttles ?? []).some((x) => x.fahrt && t < x.fahrt.start + x.fahrt.dauer * 1000 + 1500);
     if (!faehrt) return;
     dyn = [...dyn.filter((i) => i.art !== "fz"), ...fahrzeuge()];
     zeichnen();

@@ -1,5 +1,19 @@
 [
  {
+  "version": "0.116.0-beta.52",
+  "datum": "2026-11-14",
+  "titel": "Großschaden: Abruf nach Bedarf, NAH im Bereitstellungsraum, Stufe änderbar",
+  "punkte": [
+   "Großeinsatz schon mit der Antwort 6–10 / 11–30 / mehr als 30 Patienten",
+   "Stufe NF5/NF10/NF30 im Reiter änderbar – Balken zeigen, was fehlt bzw. zu viel ist",
+   "Voraviso: alle Krankenhäuser, Suche, sortierbar, „Vorinformieren“",
+   "Abruf aus dem BR nach Bedarf (Notarzt ja/nein wie bei normalen Fällen) mit Sammelruf",
+   "BR = Status 3; NAH bleibt im BR, ein Fahrzeug bringt das Team; NAH transportiert statt RTW + NEF",
+   "Spieler-NAH bekommt einen Patienten und kann von der Leitstelle umgeteilt werden",
+   "Telefon-Reiter: Abfrage beendeter Notrufe ändern (auch fremde)"
+  ]
+ },
+ {
   "version": "0.116.0-beta.51",
   "datum": "2026-11-14",
   "titel": "Automatische Unfallmeldung: erst die Maschine, dann der Mensch",

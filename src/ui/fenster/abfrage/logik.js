@@ -35,6 +35,10 @@ export class AbfrageLogik extends DCLogic {
     const calls = app.anrufe();
     const mein = (c) => c.mein && (c.s === "aktiv" || c.s === "gehalten");
     // gezeigt wird mein Gespräch: das zuletzt gewählte, sonst das laufende, sonst ein gehaltenes
+    // Nachbearbeitung (aus dem Telefon-Reiter): gleich zeigen, solange kein eigenes Gespräch läuft
+    const nachId = app.nachbearbeitung ? app.nachbearbeitung() : null;
+    if (nachId && this._nach !== nachId) { this._nach = nachId; if (!calls.some((c) => c.mein && !c.nach && c.s === "aktiv")) st.aktuell = nachId; }
+    if (!nachId) this._nach = null;
     let curCall = calls.find((c) => c.id === st.aktuell && mein(c)) || calls.find((c) => mein(c) && c.s === "aktiv") || calls.find(mein) || null;
     const G = curCall ? app.gespraech(curCall.id) : null;
     if (!G) curCall = null;
@@ -369,6 +373,7 @@ export class AbfrageLogik extends DCLogic {
       haltenCls: "kn sm" + (gehalten ? " halt-an" : ""), halten,
       stummAn: app.stumm() ? "true" : "false", stummCls: "kn sm" + (app.stumm() ? " stumm-an" : ""), stumm: () => app.stummSetzen(!app.stumm()),
       auflegen: () => curCall && app.auflegen(curCall.id),
+      auflegenText: curCall && curCall.nach ? "Fertig" : "Auflegen", istNach: !!(curCall && curCall.nach), nichtNach: !(curCall && curCall.nach),
     };
   }
 }

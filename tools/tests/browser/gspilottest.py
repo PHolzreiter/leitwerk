@@ -50,7 +50,7 @@ try:
         tx = A.locator(".plt-gs").first.inner_text() if A.locator(".plt-gs").count() else ""
         check("Bereitstellungsraum" in tx, f"Piloten-Interface zeigt den Hinweis ({tx[:60]})")
         check(A.locator(".plt-plan .plt-kh").count() == 0, "keine Patienten-Entscheidung, solange kein Patient zugeteilt ist")
-        # Abruf: das Team geht zu Fuß, der Hubschrauber bleibt im BR
+        # Abruf: ein Fahrzeug bringt das Team, der Hubschrauber bleibt im BR
         r = A.evaluate("""async (a) => { const s = window.__lw.sim; const f = s.state.fahrzeuge[a.fz]; const e = s.einsatz(a.id); const g = window.__gs;
             for (let i = 0; i < 300 && e.gs.ziel[f.id] !== 'bo'; i++) await g.schritt(15000);
             const h = s.pilotGsHinweis(f); const pos = [f.lat, f.lon];
@@ -59,7 +59,7 @@ try:
             return { ziel: e.gs.ziel[f.id], h, bewegt: Math.abs(pos[0] - f.lat) + Math.abs(pos[1] - f.lon) > 1e-6, kind: !!k?.gsKind, nr: k?.gsKind?.nr, sicht: k?.wahr.lage?.patienten[0].sichtung, el: e.gs.el === f.id, amBr: f.gsAmBr,
               versorgt: s.pilotVersorgtIn(f), h2: s.pilotGsHinweis(f)?.text, nav: s.pilotBo(f)?.label }; }""", {"id": eid, "fz": fid})
         print("   ", json.dumps(r, ensure_ascii=False)[:700])
-        check(r["ziel"] == "bo" and r["h"] and r["h"].get("abruf") and "zu Fuß" in r["h"]["text"], "Abruf: Team geht zu Fuß zum Einsatzort")
+        check(r["ziel"] == "bo" and r["h"] and r["h"].get("abruf") and "Fahrzeug" in r["h"]["text"], "Abruf: Team wird mit einem Fahrzeug zum Einsatzort gebracht")
         check(not r["bewegt"] and r["amBr"], "Hubschrauber bleibt im Bereitstellungsraum stehen")
         check(not r["el"], "Spieler-NAH übernimmt keine Einsatzleitung")
         check(r["kind"] and r["sicht"] == "rot", f"Einsatzleitung teilt dem NAH-Team einen roten Patienten zu ({r['nr']})")

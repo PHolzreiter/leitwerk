@@ -5,6 +5,14 @@
 /* Kopf: Stufe, Einsatz, Phasen, Zähler */
 .gs-ew .held{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;padding:12px 14px;border-bottom:1px solid var(--trenner);flex:none}
 .gs-ew .stufe-gs{flex:none;display:grid;place-items:center;height:40px;min-width:58px;padding:0 10px;border-radius:9px;background:var(--rot-flaeche);color:var(--rot-text);font-size:17px;font-weight:900;letter-spacing:.02em;box-shadow:inset 0 0 0 1.5px var(--rot)}
+/* Stufe NF5/NF10/NF30: die Abfrage wählt vor, Klick ändert */
+.gs-ew .stufen{flex:none;display:flex;gap:3px;padding:3px;border-radius:10px;background:var(--rot-flaeche);box-shadow:inset 0 0 0 1.5px var(--rot)}
+.gs-ew .stufen.offen{background:var(--linie);box-shadow:inset 0 0 0 1.5px var(--trenner)}
+.gs-ew .stb{all:unset;box-sizing:border-box;cursor:pointer;display:grid;place-items:center;height:34px;min-width:48px;padding:0 8px;border-radius:7px;color:var(--rot-text);font-size:14px;font-weight:800;letter-spacing:.02em;opacity:.55;transition:background .15s,opacity .15s,color .15s}
+.gs-ew .stufen.offen .stb{color:var(--text-2)}
+.gs-ew .stb:hover{opacity:.9}
+.gs-ew .stb.on{opacity:1;background:var(--rot);color:#fff;cursor:default}
+.gs-ew .stb:focus-visible{outline:2px solid var(--akzent);outline-offset:1px}
 .gs-ew .held-t{display:flex;flex-direction:column;min-width:0;flex:1 1 220px}
 .gs-ew .held-t b{font-size:15px;font-weight:800;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .gs-ew .held-t span{font-size:12.5px;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -67,7 +75,12 @@
 .gs-ew .sk2 .nk{display:grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--akzent-flaeche);color:var(--akzent-text);font-size:11px;font-weight:800;flex:none}
 .gs-ew .sk2 b{font-weight:700}
 .gs-ew .sk2 > span:last-child{color:var(--dim);font-size:12px;margin-left:auto;white-space:nowrap}
-.gs-ew .soll{display:grid;grid-template-columns:minmax(0,1fr) minmax(60px,1.2fr) 44px;align-items:center;gap:10px;font-size:12.5px}
+.gs-ew .soll{display:grid;grid-template-columns:minmax(0,1fr) minmax(60px,1.2fr) 44px 64px;align-items:center;gap:10px;font-size:12.5px}
+.gs-ew .soll .dz{font-size:11.5px;font-weight:700;white-space:nowrap;text-align:right}
+.gs-ew .soll .dz.fehlt{color:var(--gelb-text)}
+.gs-ew .soll .dz.viel{color:var(--akzent-text)}
+.gs-ew .soll .dz.ok{color:var(--ok)}
+.gs-ew .soll.viel .balken i{background:var(--akzent)}
 .gs-ew .soll .a{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text-2)}
 .gs-ew .balken{position:relative;height:6px;border-radius:999px;background:var(--linie);overflow:hidden}
 .gs-ew .balken i{position:absolute;left:0;top:0;bottom:0;width:var(--w);border-radius:999px;background:var(--gelb);transition:width .5s cubic-bezier(.4,0,.2,1)}
@@ -160,7 +173,21 @@
 .gs-ew .notiz-z .feld{height:32px}
 .gs-ew .anrufe{font-size:11.5px;color:var(--dim);padding:0 2px}
 /* Voraviso */
-.gs-ew .khl{display:flex;flex-direction:column;gap:2px}
+.gs-ew .khl{display:flex;flex-direction:column;gap:2px;max-height:392px;overflow-y:auto;overscroll-behavior:contain;margin-right:-6px;padding-right:6px}
+.gs-ew .khsuch{position:relative;display:block;margin-bottom:6px}
+.gs-ew .khsuch .ic{position:absolute;left:9px;top:8px;color:var(--dim)}
+.gs-ew .khsuch .feld{width:100%;padding-left:30px;box-sizing:border-box}
+.gs-ew .khk{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(70px,1fr) auto;gap:10px;align-items:center;padding:0 8px 4px;font-size:11.5px;font-weight:600;border-bottom:1px solid var(--trenner);margin-bottom:4px}
+.gs-ew .khk .sk{justify-self:start}
+.gs-ew .khk .sk:last-child{justify-self:end;margin-right:12px}
+/* Spieler-NAH: Patient wählen */
+.gs-ew .spnah{display:flex;flex-direction:column;gap:6px;margin:0 12px 8px}
+.gs-ew .spr{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:7px 10px;border-radius:8px;background:var(--akzent-flaeche);font-size:12.5px}
+.gs-ew .spn{display:flex;flex-direction:column;min-width:0;flex:1 1 160px}
+.gs-ew .spn b{font-weight:700}
+.gs-ew .spn span{font-size:11px;color:var(--dim)}
+.gs-ew .spr select{flex:2 1 220px;min-width:0;max-width:100%}
+.gs-ew .spfest{font-weight:600;color:var(--akzent-text)}
 .gs-ew .khr{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(70px,1fr) auto;gap:10px;align-items:center;padding:6px 8px;border-radius:8px;transition:background .2s}
 .gs-ew .khr.an{background:var(--akzent-flaeche)}
 .gs-ew .khr .n{display:flex;flex-direction:column;min-width:0}
@@ -189,7 +216,7 @@
 /* klein: Kopf kompakter */
 @container fenster (max-width: 700px){
   .gs-ew .held{gap:8px 10px;padding:10px 12px}
-  .gs-ew .stufe-gs{height:34px;min-width:48px;font-size:15px}
+  .gs-ew .stb{height:30px;min-width:42px;font-size:13px}
   .gs-ew .fluss{order:4;flex:1 1 100%;max-width:none;min-width:0}
   .gs-ew .zahlen{order:3;flex:1 1 100%}
   .gs-ew .zl{flex:1;min-width:0;height:40px;padding:0 4px}
@@ -205,6 +232,7 @@
   .gs-ew .kraefte{grid-template-columns:minmax(0,1fr)}
   .gs-ew .unterreiter .seg{font-size:11px;padding:5px 4px}
   .gs-ew .khr{grid-template-columns:minmax(0,1fr) auto}
+  .gs-ew .khk{grid-template-columns:minmax(0,1fr) auto auto}
   .gs-ew .khr .f{grid-column:1 / -1;order:3}
 }
 @container fenster (max-height: 700px){

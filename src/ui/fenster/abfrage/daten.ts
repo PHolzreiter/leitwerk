@@ -41,6 +41,8 @@ export interface AnrufVM {
   art: ArtA;
   s: "klingelt" | "aktiv" | "gehalten";
   mein: boolean;
+  /** Nachbearbeitung: Abfrage eines beendeten Notrufs ändern (aus dem Telefon-Reiter) */
+  nach?: boolean;
   artName: string;
   nummer: string;
   info: string;
@@ -268,7 +270,29 @@ export function anrufListe(): AnrufVM[] {
   const l = alleAnrufe().filter((x) => x.anruf.status === "klingelt" || x.anruf.status === "aktiv" || x.anruf.status === "gehalten");
   // Notrufe immer oben, sonst nach Eingang
   l.sort((a, b) => (a.typ === "notruf" ? 0 : 1) - (b.typ === "notruf" ? 0 : 1) || a.anruf.seit - b.anruf.seit);
-  return l.map((x) => anrufVM(x, t));
+  const vm = l.map((x) => anrufVM(x, t));
+  const n = nachbearbeitung();
+  if (n) vm.push({ id: n.id, art: "notruf", s: "aktiv", mein: true, nach: true, artName: ART_NAME.notruf, nummer: angezeigteNummer(n), info: `Abfrage ändern · Einsatz ${n.nummer}`, titel: `Nachbearbeitung · Einsatz ${n.nummer}`, zeit: "Nachbearbeitung", wer: n.anruf?.angenommenVon?.name ? `aufgenommen von ${n.anruf.angenommenVon.name}` : "Abfrage ändern" });
+  return vm;
+}
+
+// ---------------------------------------------------------------- Nachbearbeitung (Telefon-Reiter → Abfrage ändern)
+
+let nachId: string | null = null;
+const nachHoerer = new Set<() => void>();
+/** Abfrage eines beendeten Notrufs zum Ändern öffnen (null beendet die Nachbearbeitung) – auch für Einsätze anderer Disponenten */
+export function abfrageNachbearbeiten(id: string | null): void {
+  nachId = id;
+  for (const f of nachHoerer) f();
+}
+export function beiNachbearbeitung(f: () => void): () => void {
+  nachHoerer.add(f);
+  return () => nachHoerer.delete(f);
+}
+/** Einsatz in Nachbearbeitung (nur solange sein Notruf beendet ist) */
+export function nachbearbeitung(): Einsatz | null {
+  const e = nachId ? sim.einsatz(nachId) : undefined;
+  return e?.anruf?.status === "beendet" ? e : null;
 }
 
 function anrufVM(x: AnrufEintrag, t: number): AnrufVM {
@@ -352,14 +376,15 @@ function istWer(f: Frage): boolean {
   return f.typ === "single" && (f.id === "anrufer" || /wer ruft|beim patient|sind sie (selbst|der patient)/i.test(f.text));
 }
 
-function notrufGespraech(e: Einsatz): GespraechVM | null {
+function notrufGespraech(e: Einsatz, nach = false): GespraechVM | null {
   const a = e.anruf;
   const schema = store.schema;
   if (!a) return null;
   const t = sim.state.zeit;
-  const ich = istGespraechsfuehrer(e);
-  const darf = ich && (a.status === "aktiv" || a.status === "gehalten");
-  const aktiv = darf && a.status === "aktiv";
+  // Nachbearbeitung: Antworten ändern geht (auch fremde Einsätze), fragen nicht – der Anrufer ist nicht mehr am Telefon
+  const ich = nach || istGespraechsfuehrer(e);
+  const darf = ich && (nach ? a.status === "beendet" : a.status === "aktiv" || a.status === "gehalten");
+  const aktiv = !nach && darf && a.status === "aktiv";
   const telefon = angezeigteNummer(e);
   const b = best(e.id);
   const setze = (fid: string, w: Wert) => fehler(sim.call("abfrageSetze", e.id, fid, w));
@@ -1092,6 +1117,8 @@ function einrBei(o: { lat: number; lon: number; label: string }): string | null 
 
 /** Gespräch zu einem Anruf (nur meine Gespräche: aktiv oder gehalten) */
 export function gespraechZu(id: string): GespraechVM | null {
+  const n = nachbearbeitung();
+  if (n && n.id === id) return notrufGespraech(n, true);
   const x = alleAnrufe().find((y) => y.id === id);
   if (!x || !istMeinGespraech(x.anruf) || (x.anruf.status !== "aktiv" && x.anruf.status !== "gehalten")) return null;
   if (x.art === "rd") {

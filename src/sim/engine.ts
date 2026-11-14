@@ -321,10 +321,14 @@ export interface SimFahrzeug {
   naZurueck?: boolean;
   /** Besatzung zu Fuß unterwegs (Fahrzeug steht auf der Straße, Patient abseits) */
   fuss?: Fussweg | null;
-  /** Spieler-NAH im Großeinsatz: das Team geht zu Fuß vom Bereitstellungsraum zum Einsatzort (bis) */
+  /** NAH im Großeinsatz: das Team wird vom Bereitstellungsraum zum Einsatzort gebracht (Ankunft um) */
   gsFussBis?: number | null;
-  /** Spieler-NAH im Großeinsatz: der Hubschrauber steht im Bereitstellungsraum, das Team ist am Einsatzort */
+  /** NAH im Großeinsatz: der Hubschrauber steht im Bereitstellungsraum, das Team ist am Einsatzort */
   gsAmBr?: boolean;
+  /** Computer-NAH im Großeinsatz: Patient ist (mit dem Fahrzeug) beim Hubschrauber im Bereitstellungsraum */
+  gsPatBr?: boolean;
+  /** Spieler-NAH im Sammelruf der Einsatzleitung: Gespräch, in dem er sich melden soll */
+  gsRufOffen?: number | null;
   /** eigentliches Ziel der Fahrt (Haus/Patient), wenn das Fahrzeug auf der Straße davor stehen bleibt */
   fussZiel?: LatLon | null;
   /** 3D-Modell (t6hoch, crafter, t6, tiguan, passat, caddy, sprinter_kurz/_lang/_gross, man, ec135) */
@@ -707,6 +711,12 @@ export interface FunkGespraech {
   unklar?: number;
   /** Sprechfunk mit einem Piloten: das Bodenfahrzeug (an) will ihm das sagen, sobald er sich meldet */
   rtwWill?: { text: string; aktion?: FunkAktion; versuche: number } | null;
+  /** Sammelruf: wartet auf die Meldung des Spieler-NAH (bis echte Zeit) */
+  gsWarte?: { fzId: string; bis: number } | null;
+  /** Sammelruf: diese Spieler-NAH haben sich nicht gemeldet – werden danach einzeln gerufen */
+  gsVerpasst?: string[];
+  /** Einzelruf an einen Spieler-NAH nach dem Sammelruf (nicht noch einmal) */
+  gsNachruf?: boolean;
 }
 
 /** Satz im Funk zwischen zwei Fahrzeugen; aktion passiert, wenn er gesprochen ist */
@@ -716,6 +726,8 @@ export interface FunkSatz {
   /** genau so sprechen (nicht von der KI umformulieren) */
   fest?: boolean;
   aktion?: FunkAktion;
+  /** Sammelruf: hier soll sich der Spieler-NAH (Fahrzeug-ID) selbst melden – ca. 10 s warten */
+  wartePilot?: string;
 }
 
 export interface Nachforderung {
@@ -915,7 +927,7 @@ export interface Einsatz {
   /** Großschaden: Ablauf (Bereitstellungsraum, Einsatzleitung, Meldungen, Patienten) */
   gs?: GsLauf | null;
   /** Großschaden: ein Patient als eigener Einsatz (Buchung und Transport; in der Einsatzliste nicht zu sehen) */
-  gsKind?: { parent: string; nr: number; naMit: boolean; stirbtUm?: number | null } | null;
+  gsKind?: { parent: string; nr: number; naMit: boolean; stirbtUm?: number | null; naNoetig?: boolean; naWartet?: number | null } | null;
   /** weiterer Notruf zu einem Großschaden (Einsatz-ID des ersten Notrufs) */
   gsZu?: string | null;
   /** mit diesem Einsatz zusammengelegt (zweiter Anruf zum selben Ereignis) */
@@ -1009,6 +1021,26 @@ export interface GsLauf {
   /** zweiter BEL: bleibt im Bereitstellungsraum, bis er leer ist */
   brBel?: string | null;
   brLeerSeit?: number | null;
+  /** Stufe, die die Abfrage zuletzt vorgeschlagen hat (ändert sich die Antwort, gilt wieder die Abfrage) */
+  stufeAbfrage?: NfStufe | null;
+  /** braucht der Patient einen Notarzt? (je Patient einmal aus dem Fallkatalog bestimmt) */
+  naBedarf?: Record<number, boolean>;
+  /** Disponent hat dem Spieler-NAH (noch vor dem Eintreffen) einen Patienten zugewiesen: Fahrzeug → Patient */
+  pilotWunsch?: Record<string, number>;
+}
+
+/** Großschaden: Fahrzeug, das ein NAH-Team (bzw. den Patienten) zwischen Bereitstellungsraum und Einsatzort bringt – keine Ressource */
+export interface GsShuttle {
+  id: string;
+  fzId: string;
+  /** Rufname des Hubschraubers */
+  name: string;
+  einsatzId: string;
+  lat: number;
+  lon: number;
+  fahrt: Fahrt | null;
+  /** Ankunft (Spielzeit, ms) */
+  bis: number;
 }
 
 export type FlughafenArt = "landung" | "flugzeug" | "personal";
@@ -1038,6 +1070,8 @@ export interface SimState {
   funkZaehler: number;
   chat?: ChatNachricht[];
   funkGespraeche?: FunkGespraech[];
+  /** Großschaden: Fahrzeuge zwischen Bereitstellungsraum und Einsatzort (nur während der Fahrt) */
+  gsShuttles?: GsShuttle[];
   funkGZaehler?: number;
   /** Sprechfunk: wer gerade sendet */
   funkSendet?: FunkSendet | null;
@@ -1180,6 +1214,8 @@ export const BEFEHLE = {
     "partnerAnfordern",
     "gsBr",
     "gsVoraviso",
+    "gsStufe",
+    "gsSpielerPatient",
     "gsLageText",
     "gsNotiz",
     "zusammenlegen",
@@ -2458,9 +2494,10 @@ export class Simulation {
         fz.fahrt = null;
         if (!e) return this.freigeben(fz);
         if (e.gs && !e.gs.aufgehoben && e.gs.ziel[fz.id] === "br") {
-          // Großschaden: warten im Bereitstellungsraum, bis die Einsatzleitung abruft
+          // Großschaden: warten im Bereitstellungsraum (Status 3), bis die Einsatzleitung abruft
           fz.phase = "wartetBR";
           fz.phaseEnde = null;
+          this.setStatus(fz, "amBO");
           this.log(e, `${fz.funkrufname} im Bereitstellungsraum`);
           this.funk(this.rufname(fz), e.id, "im Bereitstellungsraum eingetroffen", "status");
           break;
@@ -2558,7 +2595,7 @@ export class Simulation {
       case "vorOrt": {
         if (!e) return this.freigeben(fz);
         // Großschaden: am Berufungsort bis zur Zuteilung an einen Patienten (bzw. bis zum Ende)
-        if (e.gs && !e.gs.aufgehoben) {
+        if (e.gs && !e.gs.aufgehoben && e.wahr.gs) {
           if (e.gs.phase === "ende") return this.freigeben(fz);
           fz.phaseEnde = null;
           break;
@@ -2730,6 +2767,19 @@ export class Simulation {
   }
 
   private entscheideTransport(fz: SimFahrzeug, e: Einsatz, t: number): void {
+    if (e.gsKind) {
+      const fzs = this.einsatzFz(e);
+      // Großschaden: ohne Transportmittel wartet, wer beim Patienten ist (Notarzt zuerst da)
+      if (!fzs.some((x) => this.transportfaehig(x) || (fliegt(x) && e.nahEntscheid === x.id))) {
+        fz.phaseEnde = t + MIN;
+        return;
+      }
+      // braucht der Patient einen Notarzt, wartet der RTW auf ihn (höchstens 10 Minuten)
+      if (e.gsKind.naNoetig && !fzs.some((x) => this.mitNotarzt(x)) && t - (e.gsKind.naWartet ??= t) < 10 * MIN) {
+        fz.phaseEnde = t + MIN;
+        return;
+      }
+    }
     if (!this.transportfaehig(fz)) {
       // NEF/NAH: begleitet bei kritischen Transporten, sonst frei
       const rtwMitTransport =
@@ -2748,8 +2798,8 @@ export class Simulation {
       }
       if (nahEntscheid) {
         this.log(e, `${fz.funkrufname}: Patient wird mit ${nahEntscheid.funkrufname} transportiert, NEF frei`);
-        this.funk(fz.funkrufname, e.id, `Patient an ${nahEntscheid.funkrufname} übergeben, sind frei`, "info");
-        return this.freigeben(fz);
+        if (!e.gsKind) this.funk(fz.funkrufname, e.id, `Patient an ${nahEntscheid.funkrufname} übergeben, sind frei`, "info");
+        return this.fertigBeimPatienten(fz, e);
       }
       if (rtwMitTransport && naMit && fz.kategorie === "NEF") {
         fz.begleitet = true;
@@ -2759,6 +2809,17 @@ export class Simulation {
         fz.begleitet = true;
         this.log(e, `${fz.funkrufname}: ACN begleitet den Transport`);
       } else if (fliegt(fz) && e.wahr.transport && this.nahTransportiert(e, t) === fz) {
+        // Großschaden: der Hubschrauber steht im Bereitstellungsraum – ein Fahrzeug bringt Patient und Team hin
+        const par = e.gsKind && fz.gsAmBr && !fz.pilot && !fz.gsPatBr ? this.einsatz(e.gsKind.parent) : undefined;
+        if (par?.gs?.br && e.adresse) {
+          fz.gsPatBr = true;
+          fz.phaseEnde = t + MIN;
+          this.log(e, `${fz.funkrufname}: Patient wird zum Hubschrauber in den Bereitstellungsraum gebracht`);
+          this.gsShuttleFahrt(fz, par, e.adresse, par.gs.br, (bis) => {
+            if (fz.einsatzId === e.id && fz.phase === "vorOrt") fz.phaseEnde = bis;
+          });
+          return;
+        }
         // NAH fliegt den Patienten, der RTW übergibt und wird frei
         this.log(e, `${fz.funkrufname}: Patient wird mit dem NAH transportiert`);
         fz.begleitet = true;
@@ -2770,11 +2831,11 @@ export class Simulation {
       } else if (fliegt(fz) && rtwMitTransport) {
         // Notarzt übergibt an den RTW, der RTW transportiert, der NAH wird frei
         this.log(e, `${fz.funkrufname}: Patient an RTW übergeben, Transport bodengebunden`);
-        this.funk(fz.funkrufname, e.id, "Patient an RTW übergeben, Transport bodengebunden, sind frei", "info");
-        return this.freigeben(fz);
+        if (!e.gsKind) this.funk(fz.funkrufname, e.id, "Patient an RTW übergeben, Transport bodengebunden, sind frei", "info");
+        return this.fertigBeimPatienten(fz, e);
       } else {
         this.log(e, `${fz.funkrufname}: Einsatz beendet`);
-        return this.freigeben(fz);
+        return this.fertigBeimPatienten(fz, e);
       }
       fz.phase = "warteKH";
       fz.phaseEnde = null;
@@ -2857,8 +2918,9 @@ export class Simulation {
     }
     if (nah) {
       this.log(e, `${fz.funkrufname}: Patient an ${nah.funkrufname} übergeben – Transport mit dem Hubschrauber`);
-      this.funk(fz.funkrufname, e.id, `Patient an ${nah.funkrufname} übergeben, sind frei`, "info");
-      return this.freigeben(fz);
+      // Großschaden: der RTW bekommt von der Einsatzleitung einen neuen Patienten
+      if (!e.gsKind) this.funk(fz.funkrufname, e.id, `Patient an ${nah.funkrufname} übergeben, sind frei`, "info");
+      return this.fertigBeimPatienten(fz, e);
     }
     fz.phase = "warteKH";
     fz.phaseEnde = null;
@@ -3285,6 +3347,8 @@ export class Simulation {
     fz.transportGemeldet = false;
     fz.gsFussBis = null;
     fz.gsAmBr = false;
+    fz.gsPatBr = false;
+    fz.gsRufOffen = null;
     fz.nachNa = null;
     this.setStatus(fz, "freiFunk");
     if (fz.pilot) {
@@ -4677,6 +4741,8 @@ export class Simulation {
     if (!a) throw new Error("Kein Anruf zu diesem Einsatz");
     const ich = this.calltaker();
     if (a.status === "klingelt" || a.status === "verpasst") throw new Error("Bitte zuerst den Anruf annehmen");
+    // nach dem Gespräch darf jeder Disponent die Abfrage ändern (Telefon-Reiter → Abfrage)
+    if (a.status === "beendet") return a;
     if (a.angenommenVon && a.angenommenVon.pid !== ich.pid && this.mode !== "solo") {
       throw new Error(`Das Gespräch führt ${a.angenommenVon.name}`);
     }
@@ -4844,6 +4910,7 @@ export class Simulation {
       this.log(e, `Rückrufnummer: ${e.telefon}`);
     }
     this.abfrageAuswerten(e);
+    if (frage === "anzahl_patienten" || frage === "sprachkontakt" || frage === "anrufer") this.gsAusAbfrage(e);
     this.emit();
   }
 
@@ -4894,12 +4961,14 @@ export class Simulation {
       return;
     }
     const erg = bestimmeCode(schema, a.kapitel, a.antworten, a.extra);
+    const vorErg = a.ergebnis?.code ?? null;
     a.ergebnis = erg ? { code: erg.code, reanimation: erg.reanimation } : null;
     // Nach der Erstaufnahme: ändert sich der Code, kommt die geänderte Abfrage ins Protokoll
     const st = e.abfrageStand;
     if (st && erg && erg.code !== st.code) this.abfrageProtokoll(e, true);
-    // Selbst gewählter Code bleibt; die Abfrage zeigt ihren Vorschlag nur an
-    if (e.codeQuelle === "dispo") return;
+    // Selbst gewählter Code bleibt; die Abfrage zeigt ihren Vorschlag nur an – außer die Abfrage wird nach dem
+    // Gespräch geändert (Telefon-Reiter): dann gilt der neue Code
+    if (e.codeQuelle === "dispo" && !(a.status === "beendet" && erg && erg.code !== vorErg)) return;
     if (erg && erg.code !== e.code && findCode(erg.code)) {
       const vorher = e.code;
       e.code = erg.code;
@@ -5830,7 +5899,7 @@ export class Simulation {
     this.erstelleEinsatz({ lat: adr.lat, lon: adr.lon, adresse: adr.label, code, fall: { kapitel: f.ergebnis.pfad[0], antworten: f.antworten, code: code.code, vorlage: vorlage.id, ortArt: "wohnung" }, patientAlter: alter, vorlageObj: vorlage });
   }
 
-  /** Großeinsatz anlegen (bei der ersten Alarmierung, sobald die Stufe bekannt ist bzw. es einer ist) */
+  /** Großeinsatz anlegen (mit der Antwort auf „Wie viele Patienten?“ bzw. bei der ersten Alarmierung) */
   private gsStart(e: Einsatz): GsLauf | null {
     if (e.gsKind) return null;
     if (!e.gs) {
@@ -5838,12 +5907,58 @@ export class Simulation {
       if (!e.wahr.gs && !stufe) return null;
       // Sprechgruppe: RD-NOE-09, ist die schon von einem anderen Großeinsatz belegt, RD-NOE-10
       const belegt = this.state.einsaetze.some((x) => x !== e && x.gs && !x.gs.aufgehoben && x.zustand !== "abgeschlossen" && (x.gs.gruppe ?? "gs") === "gs");
-      e.gs = { gruppe: belegt ? "gs2" : "gs", stufe, br: null, brNoetig: false, ziel: {}, el: null, bel: false, phase: "alarm", meldungen: [], lageText: "", lageUm: null, gezeigt: [], aufdeckenUm: null, kinder: {}, erreichbar: {}, voraviso: [], brAlarm: [] };
+      e.gs = { gruppe: belegt ? "gs2" : "gs", stufe, stufeAbfrage: stufe, br: null, brNoetig: false, ziel: {}, el: null, bel: false, phase: "alarm", meldungen: [], lageText: "", lageUm: null, gezeigt: [], aufdeckenUm: null, kinder: {}, erreichbar: {}, voraviso: [], brAlarm: [] };
       // schon vorher alarmierte Fahrzeuge (bevor klar war, dass es ein Großschaden ist) fahren zum Berufungsort
       for (const fz of this.einsatzFz(e)) e.gs.ziel[fz.id] = "bo";
       if (this.einsatzFz(e).length) e.gs.segUm = this.state.zeit;
     }
     return e.gs.aufgehoben ? null : e.gs;
+  }
+
+  /**
+   * Abfrage geändert: mit der Antwort 6–10 / 11–30 / über 30 Patienten wird der Einsatz sofort zum Großeinsatz
+   * (Stufe aus der Abfrage, im Reiter änderbar); wird die Antwort vor der ersten Alarmierung kleiner, ist er wieder normal.
+   */
+  private gsAusAbfrage(e: Einsatz): void {
+    if (e.gsKind || e.zusammengelegt || e.zustand === "abgeschlossen") return;
+    const stufe = nfStufe(e.anruf?.antworten);
+    if (!stufe) {
+      const gs = e.gs;
+      if (gs && !gs.aufgehoben && !gs.segUm && !this.einsatzFz(e).length && !gs.br) {
+        e.gs = null;
+        this.log(e, "Kein Großeinsatz mehr (Anzahl der Patienten geändert)");
+      }
+      return;
+    }
+    const neu = !e.gs;
+    const gs = this.gsStart(e);
+    if (!gs) return;
+    if (neu) {
+      this.log(e, `Großeinsatz ${stufe} angelegt (Anzahl der Patienten aus der Abfrage)`);
+      // schon jemand beim Patienten und es ist doch kein Großschaden: die Besatzung meldet es gleich
+      const da = this.einsatzFz(e).find((x) => x.phase === "vorOrt" && !x.pilot);
+      if (!e.wahr.gs && da) {
+        gs.aufgehoben = true;
+        const n = e.wahr.lage?.patienten.length ?? 1;
+        this.funk(this.rufname(da), e.id, `kein Großschaden, ${n} Patient${n > 1 ? "en" : ""}`, "info");
+        this.log(e, "Kein Großschaden – laut Besatzung vor Ort");
+      }
+    } else if (gs.stufeAbfrage !== stufe) {
+      gs.stufeAbfrage = stufe;
+      if (gs.stufe !== stufe) this.log(e, `Großeinsatz: Stufe ${stufe} (Abfrage geändert)`);
+      gs.stufe = stufe;
+    }
+  }
+
+  /** Stufe des Großeinsatzes ändern (Reiter Großeinsatz): mehr Kräfte bzw. „zu viel“ – alarmierte Fahrzeuge bleiben */
+  gsStufe(id: string, stufe: NfStufe): void {
+    const e = this.einsatz(id);
+    if (!e?.gs || e.gs.aufgehoben) throw new Error("Kein Großeinsatz");
+    if (!(stufe in NF_KRAEFTE)) throw new Error("Unbekannte Stufe");
+    if (e.gs.stufe === stufe) return;
+    this.log(e, `Großeinsatz: Stufe ${e.gs.stufe ?? "offen"} → ${stufe} (Leitstelle)`);
+    e.gs.stufe = stufe;
+    this.emit();
   }
 
   /**
@@ -6075,22 +6190,57 @@ export class Simulation {
     this.gsMelden(el, e, brauchen ? "nachforderung" : "lage", text, "lage");
   }
 
-  /** Hat der Patient schon ein Transportmittel (bzw. fliegt mit dem Hubschrauber, ist schon weg)? */
-  private gsVersorgt(e: Einsatz, nr: number): boolean {
+  /**
+   * Braucht der Patient einen Notarzt? Wie bei den normalen Fällen (nicht nur rot): eine Variante aus dem Fallkatalog mit
+   * derselben Verdachtsdiagnose und Sichtung – deren Kompetenz, dazu die Chance, dass die Maßnahmen nicht reichen.
+   * Je Patient einmal bestimmt; zeitkritische (Hubschrauber) und bewusstlose Patienten immer.
+   */
+  private gsNaBedarf(e: Einsatz, p: GsPatient): boolean {
+    const gs = e.gs;
+    if (!gs) return p.sichtung === "rot";
+    const m = (gs.naBedarf ??= {});
+    if (m[p.nr] !== undefined) return m[p.nr];
+    let na: boolean;
+    if (p.nah || p.bw === "nein") na = true;
+    else {
+      const alle = alleFaelle().flatMap((f) => f.varianten).filter((v) => v.buchung === p.diagnose && v.p > 0 && !v.tot);
+      const gleich = alle.filter((v) => v.sichtung === p.sichtung);
+      if (!gleich.length && p.sichtung === "rot") na = true;
+      else if (!alle.length) na = false;
+      else {
+        const l = gleich.length ? gleich : alle;
+        let r = Math.random() * l.reduce((a, v) => a + v.p, 0);
+        const v = l.find((x) => (r -= x.p) <= 0) ?? l[l.length - 1];
+        na = brauchtVon(v) === "NA" || Math.random() < (v.reichtNicht ?? 0);
+      }
+    }
+    m[p.nr] = na;
+    return na;
+  }
+
+  /** Ist der Transport geregelt (Rettungsmittel, NAH, der fliegt, bzw. Spieler-NAH, der nicht übergibt – oder schon weg)? */
+  private gsTrHat(e: Einsatz, nr: number): boolean {
     const k = this.einsatz(e.gs?.kinder[nr] ?? "");
     if (!k) return false;
     if (k.zustand === "abgeschlossen") return true;
-    return this.einsatzFz(k).some((x) => this.transportfaehig(x) || (fliegt(x) && k.nahEntscheid === x.id));
+    return this.einsatzFz(k).some((x) => this.transportfaehig(x) || (fliegt(x) && k.nahEntscheid === x.id && (!x.pilot || !x.pilot.plan || x.pilot.plan.art === "transport")));
   }
 
-  /** Hat der (rote) Patient einen Notarzt? */
+  /** Hat der Patient einen Notarzt? */
   private gsNaHat(e: Einsatz, nr: number): boolean {
     const k = this.einsatz(e.gs?.kinder[nr] ?? "");
     if (!k) return false;
     return k.zustand === "abgeschlossen" || this.einsatzFz(k).some((x) => this.mitNotarzt(x));
   }
 
-  /** Was fehlt für den Abtransport (Rettungsmittel) und die roten Patienten (Notarztmittel)? Zählt BO, BR und Anfahrt */
+  /** Hat der Patient alles, was er braucht (Transport und – wenn er einen braucht – Notarzt)? */
+  private gsVersorgt(e: Einsatz, nr: number): boolean {
+    const p = e.wahr.gs?.patienten.find((x) => x.nr === nr);
+    if (!p || p.sichtung === "tot") return true;
+    return this.gsTrHat(e, nr) && (!this.gsNaBedarf(e, p) || this.gsNaHat(e, nr));
+  }
+
+  /** Was fehlt für den Abtransport (Rettungsmittel) und die Patienten, die einen Notarzt brauchen? Zählt BO, BR und Anfahrt */
   private gsFehlt(e: Einsatz): { rtw: number; na: number } {
     const gs = e.gs;
     const w = e.wahr.gs;
@@ -6099,13 +6249,17 @@ export class Simulation {
     const fz = this.einsatzFz(e).filter((x) => !x.dispoMobil);
     const tr = fz.filter((x) => this.transportfaehig(x)).length;
     const na = fz.filter((x) => this.mitNotarzt(x)).length;
-    const rot = offen.filter((p) => p.sichtung === "rot" && !this.gsNaHat(e, p.nr)).length;
-    return { rtw: Math.max(0, offen.length - tr), na: Math.max(0, rot - na) };
+    const ohneTr = offen.filter((p) => !this.gsTrHat(e, p.nr));
+    const ohneNa = offen.filter((p) => this.gsNaBedarf(e, p) && !this.gsNaHat(e, p.nr)).length;
+    // ein NAH, der fliegt, transportiert einen Notarzt-Patienten selbst
+    const nah = Math.min(fz.filter((x) => fliegt(x) && (x.pilot || !this.flugHindernis(x))).length, ohneTr.filter((p) => this.gsNaBedarf(e, p)).length);
+    return { rtw: Math.max(0, ohneTr.length - tr - nah), na: Math.max(0, ohneNa - na) };
   }
 
   /** Großschäden: Anrufe, Lagemeldung, Patienten, Abtransport, Abruf aus dem BR, Nachforderung, Ende; Voraviso */
   private gsTick(t: number): void {
     const vor: string[] = [];
+    if (this.state.gsShuttles?.length) this.state.gsShuttles = this.state.gsShuttles.filter((x) => x.bis > t);
     for (const e of this.state.einsaetze) {
       if (e.gsKind || e.gsZu || e.zustand === "abgeschlossen") continue;
       const w = e.wahr.gs;
@@ -6242,58 +6396,114 @@ export class Simulation {
     this.log(k, `Patient ${p.nr} im Großeinsatz ${e.nummer}: ${gsPatientText(p)}`);
   }
 
+  /** Reihenfolge der Patienten: rot, gelb, grün; wer einen Notarzt braucht und zeitkritisch ist, zuerst */
+  private gsReihe(e: Einsatz, l: GsPatient[]): GsPatient[] {
+    const rang = { rot: 0, gelb: 1, gruen: 2, tot: 3 };
+    return [...l].sort((a, b) => rang[a.sichtung] - rang[b.sichtung] || Number(this.gsNaBedarf(e, b)) - Number(this.gsNaBedarf(e, a)) || Number(!!b.nah) - Number(!!a.nah) || a.nr - b.nr);
+  }
+
   /**
-   * Abtransport planen (Einsatzleitung, ressourcensparend): rot mit RTW-C/RTW und Notarzt (zeitkritisch: Hubschrauber),
-   * gelb mit RTW-C/RTW, grün mit KTW/RTW. Der Einsatzleiter selbst bleibt, bis der BEL übernimmt.
+   * Was der Patient braucht, aus diesen Fahrzeugen (der Reihe nach): Notarzt und Transport → NAW, (zeitkritisch) NAH, der
+   * fliegt, RTW + NEF, NAH, der fliegt, RTW + NAH, der nicht fliegt; nur Notarzt → NEF, NAH; nur Transport → nach Sichtung
+   * (RS- und NKV-RTW gleich). teil: auch nur einen Teil (RTW ohne Notarzt bzw. Notarzt ohne RTW). mitPilot: Spieler-NAH zuerst.
+   */
+  private gsWahl(p: GsPatient, need: { tr: boolean; na: boolean }, frei: SimFahrzeug[], o: { teil: boolean; ktw: boolean; mitPilot?: boolean }): SimFahrzeug[] {
+    const typ = (l: string[]) => frei.find((x) => l.includes(x.rmTyp));
+    const nef = () => frei.find((x) => x.kategorie === "NEF" && !fliegt(x));
+    const pilot = () => (o.mitPilot ? frei.find((x) => !!x.pilot && fliegt(x)) : undefined);
+    const heli = () => pilot() ?? frei.find((x) => fliegt(x) && !x.pilot && !this.flugHindernis(x));
+    const heliSteht = () => frei.find((x) => fliegt(x) && !x.pilot);
+    const rtw = () => typ(["RTW-C", "RTW"]) ?? typ(["SRTW"]);
+    const trFuer = () =>
+      p.sichtung === "gruen" ? (typ(["KTW", "SKTW"]) ?? typ(["RTW", "RTW-C"]) ?? typ(["SRTW", "NAW", "SNAW"])) : (rtw() ?? typ(["NAW", "SNAW"]) ?? (o.ktw ? typ(["KTW", "SKTW"]) : undefined));
+    if (need.na && need.tr) {
+      const pl = pilot();
+      if (pl) return [pl];
+      const naw = typ(["NAW", "SNAW"]);
+      if (naw) return [naw];
+      const h = heli();
+      if (h && p.nah) return [h];
+      const r = rtw();
+      const n = nef();
+      if (r && n) return [r, n];
+      if (h) return [h];
+      const hs = heliSteht();
+      if (r && hs) return [r, hs];
+      if (!o.teil) return [];
+      if (r) return [r];
+      const nur = n ?? hs;
+      if (nur) return [nur];
+      const t = trFuer();
+      return t ? [t] : [];
+    }
+    if (need.na) {
+      const n = nef() ?? heli() ?? heliSteht();
+      return n ? [n] : [];
+    }
+    if (need.tr) {
+      const t = trFuer();
+      return t ? [t] : [];
+    }
+    return [];
+  }
+
+  /**
+   * Abtransport planen (Einsatzleitung, ressourcensparend): jeder Patient bekommt, was er braucht – Notarzt nach dem Muster der
+   * normalen Fälle, NAH statt RTW + NEF (transportiert selbst, ein RTW beim Patienten wird frei). Zuerst der Spieler-NAH:
+   * sein Patient (Wunsch der Leitstelle, sonst rot oder gelb ohne Notarzt, eher die jüngeren). Der Einsatzleiter bleibt, bis der BEL übernimmt.
    */
   private gsZuteilen(e: Einsatz, w: GsWahr, t: number): void {
     const gs = e.gs!;
     const elFz = gs.el ? this.state.fahrzeuge[gs.el] : undefined;
-    // Spieler-NAH: nur, wenn er am Einsatzort gelandet ist (Status 3) – zugeteilt wird er wie ein Notarztmittel
+    // Spieler-NAH: nur, wenn sein Team am Einsatzort ist (Status 3)
     const vorOrt = this.einsatzFz(e).filter((x) => x.phase === "vorOrt" && !x.dispoMobil && x.rmTyp !== "BEL" && x.rmTyp !== "EL ÖBB" && (!x.pilot || (fliegt(x) && x.status === "amBO")));
     // der Einsatzleiter transportiert erst, wenn sonst niemand mehr kommt
     const nochWer = this.einsatzFz(e).some((x) => x !== elFz && this.transportfaehig(x) && x.phase !== "vorOrt");
     let frei = vorOrt.filter((x) => x !== elFz || gs.bel || (!nochWer && !vorOrt.some((y) => y !== elFz && this.transportfaehig(y))));
-    const rang = { rot: 0, gelb: 1, gruen: 2, tot: 3 };
-    const offen = gs.gezeigt
-      .map((nr) => w.patienten.find((p) => p.nr === nr))
-      .filter((p): p is GsPatient => !!p && p.sichtung !== "tot" && !this.gsVersorgt(e, p.nr) && (gs.erreichbar[p.nr] ?? Infinity) <= t)
-      .sort((a, b) => rang[a.sichtung] - rang[b.sichtung] || a.nr - b.nr);
-    const erstes = (typen: string[]) => frei.find((x) => typen.includes(x.rmTyp));
-    for (const p of offen) {
+    const offen = () =>
+      this.gsReihe(
+        e,
+        gs.gezeigt
+          .map((nr) => w.patienten.find((p) => p.nr === nr))
+          .filter((p): p is GsPatient => !!p && p.sichtung !== "tot" && !this.gsVersorgt(e, p.nr) && (gs.erreichbar[p.nr] ?? Infinity) <= t),
+      );
+    for (const pl of frei.filter((x) => x.pilot)) {
+      const wunsch = gs.pilotWunsch?.[pl.id];
+      let p = wunsch !== undefined ? w.patienten.find((x) => x.nr === wunsch && x.sichtung !== "tot" && !!gs.kinder[x.nr]) : undefined;
+      if (wunsch !== undefined && (p || !w.patienten.some((x) => x.nr === wunsch && x.sichtung !== "tot"))) delete gs.pilotWunsch![pl.id];
+      p ??= offen()
+        .filter((x) => (x.sichtung === "rot" || x.sichtung === "gelb") && !this.gsNaHat(e, x.nr))
+        .sort((a, b) => Number(this.gsNaBedarf(e, b)) - Number(this.gsNaBedarf(e, a)) || a.alter - b.alter)[0];
+      if (!p) continue;
+      this.gsPilotZu(e, pl, p);
+      frei = frei.filter((x) => x !== pl);
+    }
+    frei = frei.filter((x) => !x.pilot);
+    for (const p of offen()) {
       const k = this.einsatz(gs.kinder[p.nr] ?? "");
       if (!k) continue;
-      let rm: SimFahrzeug | undefined;
-      let na: SimFahrzeug | undefined;
-      let nah: SimFahrzeug | undefined;
-      if (p.sichtung === "rot") {
-        // zeitkritisch und ein Hubschrauber vor Ort, der fliegen darf: er fliegt den Patienten
-        const heli = frei.find((x) => fliegt(x) && !this.flugHindernis(x));
-        if (p.nah && heli) nah = heli;
-        else {
-          rm = erstes(["NAW"]) ?? erstes(["RTW-C"]) ?? erstes(["RTW"]) ?? erstes(["SNAW", "SRTW"]);
-          if (!rm) continue;
-          if (!this.mitNotarzt(rm)) {
-            na = frei.find((x) => x.kategorie === "NEF" && !fliegt(x)) ?? frei.find((x) => fliegt(x));
-            // der Notarzt der Einsatzleitung geht zum roten Patienten, wenn sonst keiner da ist
-            if (!na && elFz && elFz.phase === "vorOrt" && elFz.einsatzId === e.id && this.mitNotarzt(elFz) && !elFz.pilot) na = elFz;
-            // kein Notarzt frei: warten, bis einer kommt (aus dem BR bzw. nachgefordert) – höchstens 8 Minuten ab Erreichbarkeit
-            const seit = Math.max(k.erstellt, gs.erreichbar[p.nr] ?? 0);
-            if (!na && t - seit < 8 * MIN) continue;
-          }
-        }
-      } else if (p.sichtung === "gelb") rm = erstes(["RTW-C"]) ?? erstes(["RTW"]) ?? erstes(["NAW", "SRTW", "SNAW"]) ?? (t - k.erstellt > 10 * MIN ? erstes(["KTW", "SKTW"]) : undefined);
-      else rm = erstes(["KTW", "SKTW"]) ?? erstes(["RTW"]) ?? erstes(["RTW-C"]) ?? erstes(["SRTW", "NAW", "SNAW"]);
-      const fzs = [rm, na, nah].filter((x): x is SimFahrzeug => !!x);
+      const naB = this.gsNaBedarf(e, p);
+      const need = { tr: !this.gsTrHat(e, p.nr), na: naB && !this.gsNaHat(e, p.nr) };
+      const seit = Math.max(k.erstellt, gs.erreichbar[p.nr] ?? 0);
+      // Notarzt-Patient: bis zu 8 Minuten auf Notarzt und Transport gemeinsam warten, danach auch nur einen Teil
+      const teil = !need.na || !need.tr || t - seit >= 8 * MIN || this.einsatzFz(k).length > 0;
+      const fzs = this.gsWahl(p, need, frei, { teil, ktw: t - k.erstellt > 10 * MIN });
+      // der Notarzt der Einsatzleitung geht zum Patienten, wenn sonst keiner da ist
+      if (need.na && !fzs.some((x) => this.mitNotarzt(x)) && t - seit >= 8 * MIN && elFz && elFz.phase === "vorOrt" && elFz.einsatzId === e.id && this.mitNotarzt(elFz) && !elFz.pilot && !frei.includes(elFz)) fzs.push(elFz);
       if (!fzs.length) continue;
-      this.gsZuweisen(e, k, p, fzs, { mitNa: !!na || !!nah || (!!rm && this.mitNotarzt(rm)), nah });
+      this.gsZuweisen(e, k, p, fzs, naB);
       frei = frei.filter((x) => !fzs.includes(x));
     }
   }
 
-  private gsZuweisen(e: Einsatz, k: Einsatz, p: GsPatient, fzs: SimFahrzeug[], o: { mitNa: boolean; nah?: SimFahrzeug }): void {
+  /**
+   * Fahrzeuge zum Patienten. Kommt ein NAH (fliegt, kein Spieler) dazu, transportiert er: ein RTW, der schon beim Patienten
+   * ist, übergibt und bekommt im Einsatz einen neuen Patienten. Kommt sonst etwas dazu, dauert die Versorgung noch etwas.
+   */
+  private gsZuweisen(e: Einsatz, k: Einsatz, p: GsPatient, fzs: SimFahrzeug[], naB: boolean): void {
     const t = this.state.zeit;
-    const dauer = (p.sichtung === "rot" ? rnd(10, 18) : p.sichtung === "gelb" ? rnd(6, 12) : rnd(4, 8)) * MIN;
+    const schon = this.einsatzFz(k).filter((x) => !fzs.includes(x));
+    const dauer = (schon.length ? rnd(4, 8) : p.sichtung === "rot" ? rnd(10, 18) : p.sichtung === "gelb" ? rnd(6, 12) : rnd(4, 8)) * MIN;
     for (const fz of fzs) {
       fz.einsatzId = k.id;
       if (!k.fahrzeuge.includes(fz.id)) k.fahrzeuge.push(fz.id);
@@ -6303,77 +6513,201 @@ export class Simulation {
       fz.zwischenGemeldet = true;
       fz.begleitet = false;
       fz.fuss = null;
+      fz.gsPatBr = false;
       // Spieler-NAH: neue Entscheidung für diesen Patienten
       if (fz.pilot) {
         fz.pilot.plan = null;
         this.funk("Einsatzleitung", k.id, `${this.rufname(fz)}: Patient ${p.nr} übernehmen – ${p.muster}`, "warnung");
       }
     }
+    const heli = fzs.find((x) => fliegt(x) && (x.pilot || !this.flugHindernis(x)));
+    if (heli) k.nahEntscheid = heli.id;
+    else if (k.nahEntscheid && !this.einsatzFz(k).some((x) => x.id === k.nahEntscheid)) k.nahEntscheid = undefined;
+    if (k.nahEntscheid === undefined) k.nahEntscheid = "";
+    for (const x of schon) {
+      if (x.phase !== "vorOrt" || x.phaseEnde === null) continue;
+      // transportiert der (Computer-)NAH, übergibt der RTW nach kurzer Zeit; sonst gemeinsam weiter
+      if (heli && !heli.pilot && this.transportfaehig(x)) x.phaseEnde = t + rnd(2, 4) * MIN;
+      else x.phaseEnde = Math.max(x.phaseEnde, t + dauer);
+    }
+    const mitNa = this.einsatzFz(k).some((x) => this.mitNotarzt(x));
     // ein kleiner Teil der roten Patienten verstirbt trotz Versorgung noch vor Ort
-    k.gsKind = { parent: e.id, nr: p.nr, naMit: o.mitNa, stirbtUm: p.sichtung === "rot" && Math.random() < 0.08 ? t + rnd(0.3, 0.9) * dauer : null };
-    // Hubschrauber nur, wenn er fliegt – sonst fährt der Notarzt im RTW mit
-    k.nahEntscheid = o.nah ? o.nah.id : "";
+    const stirbt = k.gsKind?.stirbtUm !== undefined ? k.gsKind.stirbtUm : p.sichtung === "rot" && Math.random() < 0.08 ? t + rnd(0.3, 0.9) * dauer : null;
+    k.gsKind = { parent: e.id, nr: p.nr, naMit: naB && mitNa, naNoetig: naB, naWartet: k.gsKind?.naWartet ?? null, stirbtUm: stirbt };
     const wer = fzs.map((f) => f.funkrufname).join(" + ");
-    this.log(e, `Patient ${p.nr} (${{ rot: "rot", gelb: "gelb", gruen: "grün", tot: "tot" }[p.sichtung]}): ${wer}${o.nah ? " – Transport mit dem Hubschrauber" : ""}`);
-    this.log(k, `${wer} übernimmt den Patienten`);
+    this.log(e, `Patient ${p.nr} (${{ rot: "rot", gelb: "gelb", gruen: "grün", tot: "tot" }[p.sichtung]}): ${wer}${schon.length ? " kommt dazu" : ""}${heli && !heli.pilot ? " – Transport mit dem Hubschrauber" : ""}`);
+    this.log(k, `${wer} ${schon.length ? "kommt dazu" : "übernimmt den Patienten"}`);
   }
 
-  /** Abruf aus dem Bereitstellungsraum: die Einsatzleitung ruft so viele Fahrzeuge, wie für die offenen Patienten fehlen */
+  /** Spieler-NAH übernimmt diesen Patienten (der bisherige bekommt eine andere Ressource; ein anderer Notarzt dort wird frei) */
+  private gsPilotZu(e: Einsatz, pl: SimFahrzeug, p: GsPatient): void {
+    const gs = e.gs!;
+    const k = this.einsatz(gs.kinder[p.nr] ?? "");
+    if (!k) return;
+    const alt = pl.einsatzId && pl.einsatzId !== e.id ? this.einsatz(pl.einsatzId) : undefined;
+    if (alt === k) return;
+    if (alt?.gsKind) {
+      if (alt.nahEntscheid === pl.id) alt.nahEntscheid = undefined;
+      alt.gsKind.naMit = false;
+      this.log(alt, `${pl.funkrufname} wechselt zu Patient ${p.nr} (Leitstelle)`);
+      this.log(e, `Patient ${alt.gsKind.nr}: ${pl.funkrufname} wechselt zu Patient ${p.nr} – Patient ${alt.gsKind.nr} bekommt eine andere Ressource`);
+      // was dort noch steht, wartet auf den neuen Notarzt bzw. Transport
+      for (const x of this.einsatzFz(alt)) if (x !== pl && x.phase === "vorOrt" && x.phaseEnde !== null) x.phaseEnde = Math.max(x.phaseEnde, this.state.zeit + 3 * MIN);
+    }
+    for (const x of this.einsatzFz(k)) if (x !== pl && this.mitNotarzt(x) && !this.transportfaehig(x)) this.gsInPool(x, k, true);
+    this.gsZuweisen(e, k, p, [pl], this.gsNaBedarf(e, p));
+  }
+
+  /**
+   * Leitstelle weist dem Spieler-NAH (im Reiter Großeinsatz) einen anderen Patienten zu – solange der Pilot noch keinen
+   * Zielort gebucht hat; sofortiger Wechsel. Ist sein Team noch nicht am Einsatzort, gilt es beim Eintreffen.
+   */
+  gsSpielerPatient(id: string, fzId: string, nr: number): void {
+    const e = this.einsatz(id);
+    const gs = e?.gs;
+    if (!e || !gs || gs.aufgehoben) throw new Error("Kein Großeinsatz");
+    const fz = this.state.fahrzeuge[fzId];
+    if (!fz?.pilot) throw new Error("Kein Spieler-NAH");
+    const kid = fz.einsatzId ? this.einsatz(fz.einsatzId) : undefined;
+    if (fz.einsatzId !== e.id && kid?.gsKind?.parent !== e.id) throw new Error(`${fz.funkrufname} ist nicht bei diesem Großeinsatz`);
+    if (fz.pilot.plan?.art === "transport" || fz.status === "zumZO" || fz.status === "amZO") throw new Error(`${fz.funkrufname} hat schon einen Zielort gebucht`);
+    const p = e.wahr.gs?.patienten.find((x) => x.nr === nr);
+    if (!p || p.sichtung === "tot") throw new Error("Patient nicht gefunden");
+    const k = this.einsatz(gs.kinder[nr] ?? "");
+    if (k && (k.zustand === "abgeschlossen" || this.einsatzFz(k).some((x) => x.status === "zumZO" || x.status === "amZO"))) throw new Error(`Patient ${nr} ist schon unterwegs ins Krankenhaus`);
+    const da = !!k && fz.status === "amBO" && !fz.gsFussBis && (fz.phase === "vorOrt" || fz.einsatzId !== e.id);
+    if (!da) {
+      (gs.pilotWunsch ??= {})[fz.id] = nr;
+      this.log(e, `${fz.funkrufname}: Patient ${nr} vorgemerkt (Leitstelle) – sobald das Team am Einsatzort ist`);
+      this.emit();
+      return;
+    }
+    if (gs.pilotWunsch) delete gs.pilotWunsch[fz.id];
+    this.gsPilotZu(e, fz, p);
+    this.emit();
+  }
+
+  /** Fahrzeug ist beim Patienten fertig (übergeben, Notarzt nicht mehr nötig): zurück zur Einsatzleitung für den nächsten */
+  private gsInPool(fz: SimFahrzeug, k: Einsatz, still = false): void {
+    const e = k.gsKind ? this.einsatz(k.gsKind.parent) : undefined;
+    if (!e?.gs || e.gs.aufgehoben || e.gs.phase === "ende" || e.zustand === "abgeschlossen") return this.freigeben(fz);
+    if (k.nahEntscheid === fz.id) k.nahEntscheid = undefined;
+    fz.einsatzId = e.id;
+    if (!e.fahrzeuge.includes(fz.id)) e.fahrzeuge.push(fz.id);
+    e.gs.ziel[fz.id] = "bo";
+    fz.phase = "vorOrt";
+    fz.phaseEnde = null;
+    fz.begleitet = false;
+    fz.fahrt = null;
+    fz.gsPatBr = false;
+    if (fz.pilot) fz.pilot.plan = null;
+    if (fz.status !== "amBO") this.setStatus(fz, "amBO");
+    if (!still) this.log(e, `${fz.funkrufname}: Patient ${k.gsKind?.nr ?? ""} übergeben – wieder bei der Einsatzleitung`);
+  }
+
+  /** Fertig beim Patienten: im Großschaden zurück zur Einsatzleitung, sonst frei */
+  private fertigBeimPatienten(fz: SimFahrzeug, e: Einsatz): void {
+    if (e.gsKind) this.gsInPool(fz, e);
+    else this.freigeben(fz);
+  }
+
+  /**
+   * Fahrzeug zwischen Bereitstellungsraum und Einsatzort (NAH-Team hin bzw. Patient zum Hubschrauber): keine Ressource,
+   * auf der Karte wie ein KTW mit dem Rufnamen des Hubschraubers, nur während der Fahrt; Fahrzeit wie ein RTW.
+   */
+  private gsShuttleFahrt(fz: SimFahrzeug, e: Einsatz, von: LatLon, nach: LatLon, fertig: (bis: number) => void): void {
+    const t0 = this.state.zeit;
+    const id = `gs-shuttle-${fz.id}`;
+    this.state.gsShuttles = (this.state.gsShuttles ?? []).filter((x) => x.id !== id);
+    fertig(t0 + Math.max(60, (distanceM(von, nach) * 1.35) / (45 / 3.6) / this.settings.sondersignalFaktor) * 1000);
+    void this.strassenRoute(von, nach)
+      .then((r) => {
+        const wf = this.settings.wetterAktiv ? fahrFaktor(this.state.wetter.lage, this.temperatur()) : 1;
+        const f = this.settings.sondersignalFaktor * wf;
+        const jetzt = this.state.zeit;
+        const dauer = Math.max(30, r.duration * f);
+        const sh: GsShuttle = { id, fzId: fz.id, name: fz.funkrufname, einsatzId: e.id, lat: von.lat, lon: von.lon, fahrt: { coords: r.coords, times: r.times.map((x) => x * f), start: jetzt, dauer, blau: true }, bis: jetzt + dauer * 1000 };
+        this.state.gsShuttles = [...(this.state.gsShuttles ?? []).filter((x) => x.id !== id), sh];
+        fertig(sh.bis);
+        this.emit();
+      })
+      .catch(() => undefined);
+  }
+
+  /** NAH abgerufen: der Hubschrauber bleibt im Bereitstellungsraum (Status 3), ein Fahrzeug bringt das Team zum Einsatzort */
+  private gsTeamZumBo(e: Einsatz, x: SimFahrzeug): void {
+    const von = e.gs?.br ?? { lat: x.lat, lon: x.lon };
+    if (!e.adresse) return;
+    x.gsAmBr = true;
+    this.gsShuttleFahrt(x, e, von, e.adresse, (bis) => {
+      if (x.einsatzId === e.id && x.gsAmBr && x.phase === "wartetBR") x.gsFussBis = bis;
+    });
+  }
+
+  /**
+   * Abruf aus dem Bereitstellungsraum: die Einsatzleitung ruft für die offenen Patienten, was sie am ehesten brauchen
+   * (Notarzt ja/nein wie bei normalen Einsätzen, RS- und NKV-RTW gleich) – zuerst zählt, was schon da ist bzw. kommt.
+   * Sammelruf: „75/001, 75/002, NEF Krems von Einsatzleiter, kommen“ → jeder meldet sich → „bitte zum Berufungsort zufahren“.
+   */
   private gsAbruf(e: Einsatz, w: GsWahr, t: number): void {
     const gs = e.gs!;
     if (!e.adresse || (gs.abrufUm && t - gs.abrufUm < 90_000)) return;
     const alle = this.einsatzFz(e);
-    // (ein abgerufener Spieler-NAH steht noch im BR, bis er abhebt – er zählt schon als „kommt“)
-    const imBr = alle.filter((x) => x.phase === "wartetBR" && gs.ziel[x.id] !== "bo");
-    if (!imBr.length) return;
-    const kommt = (x: SimFahrzeug) => x.phase === "vorOrt" || (gs.ziel[x.id] === "bo" && (x.phase !== "wartetBR" || !!x.pilot));
-    const offen = w.patienten.filter((p) => p.sichtung !== "tot" && !this.gsVersorgt(e, p.nr));
-    const trDa = alle.filter((x) => this.transportfaehig(x) && kommt(x)).length;
-    const naDa = alle.filter((x) => this.mitNotarzt(x) && kommt(x)).length;
-    const rot = offen.filter((p) => p.sichtung === "rot" && !this.gsNaHat(e, p.nr)).length;
-    let brauchT = Math.min(4, offen.length - trDa);
-    let brauchN = Math.min(3, rot - naDa);
+    let br = alle.filter((x) => x.phase === "wartetBR" && gs.ziel[x.id] !== "bo" && !x.gsFussBis);
+    if (!br.length) return;
+    // noch keinem Patienten zugeteilt: am Einsatzort bzw. auf dem Weg dorthin
+    let pool = alle.filter((x) => !x.dispoMobil && x.rmTyp !== "BEL" && x.rmTyp !== "EL ÖBB" && x.id !== gs.el && (x.phase === "vorOrt" || (gs.ziel[x.id] === "bo" && (x.phase !== "wartetBR" || !!x.gsFussBis))));
+    const offen = this.gsReihe(e, w.patienten.filter((p) => p.sichtung !== "tot" && !this.gsVersorgt(e, p.nr)));
     const ruf: SimFahrzeug[] = [];
-    // zuerst die passenden Fahrzeuge: RTW-C/RTW vor KTW
-    const ordnung = (x: SimFahrzeug) => (x.rmTyp === "RTW-C" || x.rmTyp === "NAW" ? 0 : x.rmTyp === "RTW" ? 1 : 2);
-    for (const x of [...imBr].sort((a, b) => ordnung(a) - ordnung(b))) {
-      if (this.transportfaehig(x)) {
-        if (brauchT <= 0) continue;
-        ruf.push(x);
-        brauchT--;
-        if (this.mitNotarzt(x)) brauchN--;
-      } else if (this.mitNotarzt(x) && brauchN > 0) {
-        ruf.push(x);
-        brauchN--;
-      }
+    for (const p of offen) {
+      if (ruf.length >= 6) break;
+      const need = { tr: !this.gsTrHat(e, p.nr), na: this.gsNaBedarf(e, p) && !this.gsNaHat(e, p.nr) };
+      const gilt = (l: SimFahrzeug[]) => {
+        for (const x of l) {
+          if (this.transportfaehig(x) || (fliegt(x) && need.na && (x.pilot || !this.flugHindernis(x)))) need.tr = false;
+          if (this.mitNotarzt(x)) need.na = false;
+        }
+      };
+      const da = this.gsWahl(p, need, pool, { teil: true, ktw: true, mitPilot: true });
+      pool = pool.filter((x) => !da.includes(x));
+      gilt(da);
+      if (!need.tr && !need.na) continue;
+      const neu = this.gsWahl(p, need, br, { teil: true, ktw: true, mitPilot: true });
+      br = br.filter((x) => !neu.includes(x));
+      ruf.push(...neu);
     }
     if (!ruf.length) return;
     gs.abrufUm = t;
     for (const x of ruf) {
       gs.ziel[x.id] = "bo";
-      // Spieler-NAH: der Hubschrauber bleibt im Bereitstellungsraum, das Team läuft mit der Ausrüstung zum Einsatzort
-      if (x.pilot) {
-        const weg = gs.br && e.adresse ? distanceM(gs.br, e.adresse) * 1.25 : 500;
-        x.gsFussBis = t + Math.max(60, weg / 2.6) * 1000;
-        x.gsAmBr = true;
-        continue;
-      }
-      this.setStatus(x, "zumBO");
-      this.fahre(x, e.adresse, "anfahrt", true);
+      // NAH: der Hubschrauber bleibt im Bereitstellungsraum, ein Fahrzeug bringt das Team – alle bleiben Status 3
+      if (fliegt(x)) this.gsTeamZumBo(e, x);
+      else this.fahre(x, e.adresse, "anfahrt", true);
     }
     this.log(e, `Abruf aus dem Bereitstellungsraum: ${ruf.map((x) => x.funkrufname).join(", ")}`);
     const el = gs.el ? this.state.fahrzeuge[gs.el] : undefined;
-    if (el && !el.pilot) {
-      const ich = this.rufname(el);
-      const namen = ruf.map((x) => this.rufname(x));
-      // Piloten antworten selbst (Sprechfunk) – für sie spricht das Programm nicht
-      const ki = ruf.filter((x) => !x.pilot);
-      this.fzFunk(el, ki[0] ?? ruf[0], e, [
-        { von: ich, text: `${namen.join(", ")} von Einsatzleitung, kommen`, fest: true },
-        ...ki.map((x) => ({ von: this.rufname(x), text: `Hier ${this.rufname(x)}, kommen`, fest: true })),
-        { von: ich, text: `Hier Einsatzleitung, ${namen.length > 1 ? "alle genannten Fahrzeuge" : "bitte"} aus dem Bereitstellungsraum zum Einsatzort ${ruf.some((x) => fliegt(x)) ? "zufahren bzw. zufliegen" : "zufahren"}, Meldung bei der Einsatzleitung, kommen`, fest: true },
-        ...ki.map((x) => ({ von: this.rufname(x), text: `${this.rufname(x)} verstanden, ${fliegt(x) ? "fliegen" : "fahren"} zu`, fest: true })),
-      ]);
+    if (el && !el.pilot && el.einsatzId === e.id) this.gsSammelruf(e, el, ruf);
+  }
+
+  /** Sammelruf der Einsatzleitung: jeder meldet sich der Reihe nach (ein Spieler-NAH selbst – ca. 10 s), dann der Auftrag */
+  private gsSammelruf(e: Einsatz, el: SimFahrzeug, ruf: SimFahrzeug[], nachruf = false): void {
+    const ich = this.rufname(el);
+    const g = this.fzFunk(el, ruf.find((x) => !x.pilot) ?? ruf[0], e, [
+      { von: ich, text: `${ruf.map((x) => this.rufname(x)).join(", ")} von Einsatzleiter, kommen`, fest: true },
+      ...ruf.map((x): FunkSatz => (x.pilot ? { von: this.rufname(x), text: "", wartePilot: x.id } : { von: this.rufname(x), text: `Hier ${this.rufname(x)}, kommen`, fest: true })),
+      { von: ich, text: `Hier Einsatzleiter, bitte ${ruf.length > 1 ? "alle " : ""}zum Berufungsort zufahren`, fest: true },
+    ]);
+    if (g && nachruf) g.gsNachruf = true;
+  }
+
+  /** Spieler-NAH hat sich im Sammelruf nicht gemeldet: danach einzeln noch einmal rufen */
+  private gsNachrufen(g: FunkGespraech, ids: string[]): void {
+    const e = g.einsatzId ? this.einsatz(g.einsatzId) : undefined;
+    const el = this.state.fahrzeuge[g.fzId];
+    if (!e || !el) return;
+    for (const id of ids) {
+      const x = this.state.fahrzeuge[id];
+      if (x?.pilot && x.einsatzId === e.id) this.gsSammelruf(e, el, [x], true);
     }
   }
 
@@ -6413,15 +6747,16 @@ export class Simulation {
     }
   }
 
-  /** Team des Spieler-NAH ist zu Fuß am Einsatzort angekommen: ab jetzt gilt es als vor Ort */
+  /** NAH-Team ist (mit dem Fahrzeug aus dem Bereitstellungsraum) am Einsatzort: ab jetzt gilt es als vor Ort (Status 3) */
   private gsTeamDa(e: Einsatz, t: number): void {
     for (const fz of this.einsatzFz(e)) {
-      if (!fz.pilot || !fz.gsFussBis || fz.gsFussBis > t) continue;
+      if (!fz.gsFussBis || fz.gsFussBis > t) continue;
       fz.gsFussBis = null;
       fz.phase = "vorOrt";
       fz.phaseEnde = null;
       fz.vorOrtSeit = t;
-      this.log(e, `${fz.funkrufname}: Team zu Fuß am Einsatzort (Hubschrauber bleibt im Bereitstellungsraum)`);
+      if (fz.status !== "amBO") this.setStatus(fz, "amBO");
+      this.log(e, `${fz.funkrufname}: Team am Einsatzort (Hubschrauber bleibt im Bereitstellungsraum)`);
     }
   }
 
@@ -7268,13 +7603,13 @@ export class Simulation {
    * Funk von Fahrzeug zu Fahrzeug (z. B. RTW storniert das NEF): läuft von selbst ab, LEO hört mit.
    * Wartet wie jeder andere, bis der Kanal frei ist. mithoeren: am Ende fragt dieses Fahrzeug „LEO mitgehört?“.
    */
-  private fzFunk(von: SimFahrzeug, an: SimFahrzeug, e: Einsatz, saetze: FunkSatz[], mithoeren?: { von: string; text: string }): void {
+  private fzFunk(von: SimFahrzeug, an: SimFahrzeug, e: Einsatz, saetze: FunkSatz[], mithoeren?: { von: string; text: string }): FunkGespraech | null {
     if (e.fremd) {
       for (const s of saetze) {
-        this.log(e, `${s.von} (Funk der Zone ${e.fremd.zone}): ${s.text}`);
+        if (s.text) this.log(e, `${s.von} (Funk der Zone ${e.fremd.zone}): ${s.text}`);
         if (s.aktion) this.funkAktion(e, an, s.aktion);
       }
-      return;
+      return null;
     }
     const g = this.neuesGespraech(von, e, "wartet");
     g.an = { fzId: an.id, funkname: this.rufname(an) };
@@ -7282,6 +7617,7 @@ export class Simulation {
     g.mithoeren = mithoeren ?? null;
     g.dringend = true;
     g.echtNaechster = Date.now();
+    return g;
   }
 
   /** Was ein Funkspruch zwischen Fahrzeugen auslöst */
@@ -7465,7 +7801,25 @@ export class Simulation {
       } else if (g.status === "direkt" && g.echtNaechster != null && jetzt >= g.echtNaechster) {
         // Funk zwischen zwei Fahrzeugen: Satz für Satz (Anrufe fest, Inhalte formuliert die KI)
         const s = g.ablauf?.shift();
-        if (s) {
+        if (s?.wartePilot) {
+          // Sammelruf: der Spieler-NAH meldet sich selbst – ca. 10 s warten, sonst weiter (danach einzeln)
+          const pf = this.state.fahrzeuge[s.wartePilot];
+          if (pf?.pilot && !g.gsWarte) {
+            g.gsWarte = { fzId: pf.id, bis: jetzt + 10_000 };
+            pf.gsRufOffen = g.id;
+          }
+          if (pf?.pilot && g.gsWarte && pf.gsRufOffen === g.id && jetzt < g.gsWarte.bis) {
+            g.ablauf!.unshift(s);
+            g.echtNaechster = jetzt + 400;
+            continue;
+          }
+          if (pf && pf.gsRufOffen === g.id) {
+            pf.gsRufOffen = null;
+            if (!g.gsNachruf) (g.gsVerpasst ??= []).push(pf.id);
+          }
+          g.gsWarte = null;
+          g.echtNaechster = jetzt + rnd(1.5, 3) * 1000;
+        } else if (s) {
           if (istRufSpruch(s.text) || s.fest) {
             this.spruch(g, s.von, s.text);
             if (s.aktion) this.funkAktion(g.einsatzId ? this.einsatz(g.einsatzId) : undefined, g.an ? this.state.fahrzeuge[g.an.fzId] : undefined, s.aktion);
@@ -7484,7 +7838,11 @@ export class Simulation {
             const gefragt = /mitgeh[öo]r/i.test(g.sprueche[g.sprueche.length - 1]?.text ?? "");
             g.rufe = gefragt ? 3 : 1;
             if (!gefragt) this.spruch(g, g.mithoeren.von, g.mithoeren.text);
-          } else this.funkSchliessen(g);
+          } else {
+            const nach = g.gsVerpasst;
+            this.funkSchliessen(g);
+            if (nach?.length) this.gsNachrufen(g, nach);
+          }
         }
         geaendert = true;
       } else if (g.status === "offen" && jetzt - Math.max(g.echtLetzt ?? jetzt, g.sprichtBis ?? 0) > 60_000) {
@@ -7949,6 +8307,17 @@ export class Simulation {
     if (!heli) {
       this.funkLeo(t, gruppe ?? null, true);
       return;
+    }
+    // Sammelruf der Einsatzleitung: der Pilot meldet sich („Hier Christophorus 2, kommen“)
+    if (heli.gsRufOffen != null) {
+      const sg = (this.state.funkGespraeche ?? []).find((x) => x.id === heli.gsRufOffen && x.status === "direkt");
+      heli.gsRufOffen = null;
+      if (sg) {
+        this.spruch(sg, this.rufname(heli), t, ich.name);
+        sg.sprueche[sg.sprueche.length - 1].stimme = true;
+        sg.echtLetzt = Date.now();
+        return this.emit();
+      }
     }
     const g = this.pilotGespraech(heli, t, gruppe);
     if (!g) return;
@@ -10137,9 +10506,9 @@ export class Simulation {
         this.log(e, `${name}: Transport mit dem NAH ins ${h.kurzname || h.name} (${buchungName(grund)})`);
         this.funk(name, e.id, `Transport mit NAH: ${h.kurzname || h.name} – ${buchungName(grund)}`, "info");
         // RTW, die schon auf das Krankenhaus warten, werden frei – der Patient fliegt
-        for (const x of this.einsatzFz(e)) if (x !== fz && this.transportfaehig(x) && x.phase === "warteKH") {
+        for (const x of this.einsatzFz(e)) if (x !== fz && this.transportfaehig(x) && (x.phase === "warteKH" || (e.gsKind && x.phase === "vorOrt"))) {
           this.log(e, `${x.funkrufname}: Patient wird mit ${name} transportiert`);
-          this.freigeben(x);
+          this.fertigBeimPatienten(x, e);
         }
         break;
       }
@@ -10264,7 +10633,7 @@ export class Simulation {
       const p = this.einsatz(e.gsKind.parent);
       const rtw = this.einsatzFz(e).some((x) => this.transportfaehig(x));
       const noch = this.pilotVersorgtIn(fz);
-      const stand = noch > 0 ? `Patient wird versorgt – noch ca. ${Math.max(1, Math.round(noch / MIN))} min, dann ist er ${fz.gsAmBr ? "im Hubschrauber (Bereitstellungsraum)" : "transportbereit"}.` : rtw ? "Versorgt – Transport mit dem NAH oder Übergabe an den RTW." : "Versorgt – der Patient ist im NAH, Transport möglich.";
+      const stand = noch > 0 ? `Patient wird versorgt – noch ca. ${Math.max(1, Math.round(noch / MIN))} min, dann ist er transportbereit.` : rtw ? "Versorgt – Transport mit dem NAH (Zielort buchen, dann abfliegen) oder Übergabe an den RTW." : `Versorgt – Zielort buchen, dann abfliegen${fz.gsAmBr ? " (der Patient ist beim Hubschrauber im Bereitstellungsraum)" : ""}.`;
       return { text: `Großeinsatz ${p?.nummer ?? ""} – Patient ${e.gsKind.nr}: ${e.meldung.text.replace(/^Patient \d+, /, "")}. ${stand}` };
     }
     const gs = e.gs && !e.gs.aufgehoben ? e.gs : null;
@@ -10276,7 +10645,7 @@ export class Simulation {
       if (fz.phase === "wartetBR") return { text: `Großeinsatz${stufe}: Im Bereitstellungsraum – warten, bis die Einsatzleitung abruft.` };
       return { text: `Großeinsatz${stufe}: In den Bereitstellungsraum fliegen (${gs.br.label}), dort Status 3 und auf Abruf warten.` };
     }
-    if (fz.phase === "wartetBR" && fz.gsFussBis) return { text: `Abruf durch die Einsatzleitung: dein Team geht zu Fuß zum Einsatzort (noch ca. ${Math.max(1, Math.round((fz.gsFussBis - this.state.zeit) / MIN))} min). Der Hubschrauber bleibt im Bereitstellungsraum.`, abruf: true };
+    if (fz.phase === "wartetBR" && fz.gsFussBis) return { text: `Abruf durch die Einsatzleitung: dein Team wird mit einem Fahrzeug zum Einsatzort gebracht (noch ca. ${Math.max(1, Math.round((fz.gsFussBis - this.state.zeit) / MIN))} min). Der Hubschrauber bleibt im Bereitstellungsraum (Status 3).`, abruf: true };
     if (fz.phase === "wartetBR") return { text: `Abruf durch die Einsatzleitung: zum Einsatzort.`, abruf: true };
     if (fz.gsAmBr && fz.phase === "vorOrt") return { text: `Großeinsatz${stufe}: Team am Einsatzort – die Einsatzleitung teilt euch einen Patienten zu. Der Hubschrauber steht im Bereitstellungsraum.` };
     if (fz.status === "amBO") return { text: gs.el === fz.id ? `Großeinsatz${stufe}: Du bist als Erster vor Ort und hast die Einsatzleitung.` : `Großeinsatz${stufe}: Am Einsatzort – die Einsatzleitung teilt dir einen Patienten zu.` };

@@ -16,7 +16,7 @@ export class GrosseinsatzLogik extends DCLogic {
     const feCls = 'fe gs-ew' + (st.zieht ? ' zieht' : '');
     if (!d) return { feCls, keiner: true, aktiv: false, hatToast: !!st.toast, toast: st.toast || '' };
     // anderer Großeinsatz: eigene Eingaben zurücksetzen
-    if (this._fuer !== d.id) { this._fuer = d.id; Object.assign(st, { aendern: false, adr: '', treffer: null, notiz: '' }); }
+    if (this._fuer !== d.id) { this._fuer = d.id; Object.assign(st, { aendern: false, adr: '', treffer: null, notiz: '', khSuche: '' }); }
 
     const vor = d.vor;
     const PAT = d.pats;
@@ -44,7 +44,11 @@ export class GrosseinsatzLogik extends DCLogic {
     const tl = tw >= 620 ? 'b' : tw >= 400 ? 'n' : 's';
 
     // ---- Alarmierung
-    const soll = (z) => ({ a: z.a, ist: z.ist, soll: z.soll, w: z.soll ? Math.min(100, Math.round(z.ist / z.soll * 100)) : 100, cls: 'soll' + (z.ist >= z.soll ? ' ok' : '') });
+    // je Fahrzeugtyp: was fehlt – und nach dem Runterstufen, was zu viel ist (alarmierte Fahrzeuge bleiben)
+    const soll = (z) => { const fehlt = z.soll - z.ist; const viel = z.ist - z.soll;
+      return { a: z.a, ist: z.ist, soll: z.soll, w: z.soll ? Math.min(100, Math.round(z.ist / z.soll * 100)) : 100, cls: 'soll' + (viel > 0 ? ' ok viel' : z.ist >= z.soll ? ' ok' : ''),
+        dt: fehlt > 0 ? 'fehlt ' + fehlt : viel > 0 ? viel + ' zu viel' : '✓', dCls: 'dz' + (fehlt > 0 ? ' fehlt' : viel > 0 ? ' viel' : ' ok'),
+        titel: z.a + ': ' + z.ist + ' von ' + z.soll + (fehlt > 0 ? ' – es fehlen ' + fehlt : viel > 0 ? ' – ' + viel + ' mehr als die Stufe braucht (bleiben alarmiert)' : '') }; };
     const seg = d.seg.map(soll);
     const brZ = d.brZ.map(soll);
 
@@ -122,11 +126,29 @@ export class GrosseinsatzLogik extends DCLogic {
     const notizText = st.notiz || '';
     const notizDazu = () => { const t = (this.state.notiz || '').trim(); if (!t) return; app.notiz(t); this.setState({ notiz: '' }); };
 
-    // ---- Voraviso
-    const haeuser = d.haeuser.map(h => { const an = h.an; const w = h.ges ? Math.round(h.frei / h.ges * 100) : 0;
+    // ---- Voraviso: alle Krankenhäuser, nach Nähe (ca. 8 sichtbar, scrollt), Suche, Spalten sortierbar
+    const khQ = (st.khSuche || '').trim().toLowerCase();
+    const khSort = st.khSort || 'km', khAuf = st.khAuf !== undefined ? st.khAuf : true;
+    const KHW = { n: (h) => h.n.toLowerCase(), km: (h) => h.kmZahl, frei: (h) => -h.frei };
+    const khListe = d.haeuser.filter(h => !khQ || khQ.split(/\s+/).every(w => h.such.includes(w))).slice().sort((x, y) => { const a = KHW[khSort](x), b = KHW[khSort](y); const r = a < b ? -1 : a > b ? 1 : 0; return khAuf ? r : -r; });
+    const khKopf = [['n', 'Krankenhaus'], ['km', 'Entfernung'], ['frei', 'freie Plätze']].map(([k, t]) => ({ t, titel: 'Nach ' + t + ' sortieren', cls: 'sk' + (khSort === k ? ' on' + (khAuf ? '' : ' hoch') : ''), aria: khSort === k ? (khAuf ? 'ascending' : 'descending') : 'none',
+      klick: () => this.setState(khSort === k ? { khAuf: !khAuf } : { khSort: k, khAuf: true }) }));
+    const haeuser = khListe.map(h => { const an = h.an; const w = h.ges ? Math.round(h.frei / h.ges * 100) : 0;
       return { cls: 'khr' + (an ? ' an' : ''), n: h.n, titel: h.lang, km: h.km + (an ? ' · Voraviso' : ''), frei: h.frei + '/' + h.ges, ftext: an ? 'frei (150 %)' : 'frei', w, bCls: 'balken' + (w < 25 ? ' knapp' : ''), hatPl: h.ges > 0, keinePl: !h.ges,
-        an: an ? 'true' : 'false', knCls: 'kn sm' + (an ? ' prim' : ''), knT: an ? '✓ Voraviso' : 'Voraviso',
-        klick: () => { app.voraviso(h.id, !an); zeige(an ? h.n + ': Voraviso zurückgenommen' : h.n + ': Voraviso gesendet – 150 % der Plätze'); } }; });
+        an: an ? 'true' : 'false', knCls: 'kn sm' + (an ? ' prim' : ''), knT: an ? '✓ vorinformiert' : 'Vorinformieren',
+        klick: () => { app.voraviso(h.id, !an); zeige(an ? h.n + ': Voraviso zurückgenommen' : h.n + ': vorinformiert – 150 % der Plätze'); } }; });
+    const nVor = d.haeuser.filter(h => h.an).length;
+
+    // ---- Spieler-NAH: Patient wählen (sofortiger Wechsel, bis ein Zielort gebucht ist)
+    const wahlbar = PAT.filter(p => p.s !== 'tot' && p.st !== 'fahrt' && p.st !== 'kh');
+    const spieler = (d.spieler || []).map(s => {
+      const akt = s.wunsch !== null && s.wunsch !== undefined ? s.wunsch : s.nr;
+      const opts = (akt === null || akt === undefined ? [{ v: '', t: '– Patient wählen –' }] : []).concat(wahlbar.map(p => ({ v: String(p.nr), t: 'Patient ' + p.nr + ' · ' + S_NAME[p.s] + ' · ca. ' + p.a + ' J. · ' + p.m })));
+      const pz = PAT.find(p => p.nr === s.nr);
+      return { r: s.r, wo: s.wo + (s.wunsch !== null && s.wunsch !== undefined && s.wunsch !== s.nr ? ' · Patient ' + s.wunsch + ' vorgemerkt' : ''), frei: !s.zo, fest: s.zo, festT: pz ? 'Patient ' + pz.nr + ' · Zielort gebucht' : 'Zielort gebucht',
+        wert: akt === null || akt === undefined ? '' : String(akt), opts,
+        wahl: (e) => { const v = e && e.target ? e.target.value : ''; if (!v) return; app.spielerPatient(s.id, Number(v)); zeige(s.r + ': Patient ' + v); } };
+    });
 
     // Patientenfluss: wo die Patienten gerade sind (gleichzeitig in verschiedenen Stadien)
     const FL = [['wartet', 'warten'], ['fw', 'Feuerwehr rettet'], ['versorgt', 'in Versorgung'], ['bereit', 'transportbereit'], ['fahrt', 'Transport'], ['imkh', 'im Krankenhaus']];
@@ -139,7 +161,10 @@ export class GrosseinsatzLogik extends DCLogic {
     const adrTreffer = (treffer || []).map((h, i) => ({ t: h.label, titel: h.label, cls: i === erst ? 'erst' : '', klick: (ev) => { if (ev && ev.preventDefault) ev.preventDefault(); waehle(h); } }));
     return {
       feCls, keiner: false, aktiv: true, gsCls: 'gs',
-      stufe: d.stufe, stufeLaut: d.stufeOffen ? 'Stufe noch offen' : d.stufe + ' laut Stufe', stufeTitel: d.stufeTitel, titel: d.titel, unterTitel: d.unterTitel, gruppe: d.gruppe,
+      stufe: d.stufe, stufenCls: 'stufen' + (d.stufeOffen ? ' offen' : ''),
+      stufen: d.stufen.map(x => ({ s: x.s, an: x.an ? 'true' : 'false', cls: 'stb' + (x.an ? ' on' : ''), titel: x.an ? 'Aktuelle Stufe' : 'Auf ' + x.s + ' ändern – mehr Kräfte bzw. „zu viel“ (alarmierte Fahrzeuge bleiben)',
+        klick: () => { if (x.an) return; app.stufe(x.s); zeige('Stufe ' + x.s + ' – Alarmierung zeigt, was fehlt bzw. zu viel ist'); } })),
+      stufeLaut: d.stufeOffen ? 'Stufe noch offen' : d.stufe + ' laut Stufe', stufeTitel: d.stufeTitel, titel: d.titel, unterTitel: d.unterTitel, gruppe: d.gruppe,
       fluss, flussLeer, flBalkenCls: 'fl-balken' + (flussLeer ? ' leer' : ''), meilen,
       zahlen,
       tabMode: lay === 'tabs', tabIdx,
@@ -169,7 +194,9 @@ export class GrosseinsatzLogik extends DCLogic {
       cols, kopf, pats, keinePat: !pats.length,
       meldungen, zeitlRef: this.zeitlRef, keineMeldung: !meldungen.length, notizText, notizTipp: (e) => this.setState({ notiz: e && e.target ? e.target.value : '' }),
       notizTaste: (e) => { if (e && e.key === 'Enter') notizDazu(); }, notizDazu,
-      haeuser, keineKh: !haeuser.length,
+      haeuser, keineKh: !haeuser.length, keineKhText: khQ ? 'Kein Krankenhaus gefunden.' : 'Keine Krankenhäuser im Netz.',
+      khInfo: (nVor ? nVor + ' vorinformiert · ' : '') + '150 % der Plätze, keine Selbstzuweiser', khKopf, khSuche: st.khSuche || '', khTipp: (e) => this.setState({ khSuche: e && e.target ? e.target.value : '' }),
+      spieler, hatSpieler: spieler.length > 0,
       zumFunk: () => { app.zumFunk(); zeige('Funk-Fenster: Sprechgruppe ' + d.gruppe + ' gewählt'); },
       hatToast: !!st.toast, toast: st.toast || '',
     };

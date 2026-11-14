@@ -15,6 +15,7 @@ import { istUeberstellung, ktCode } from "../../../sim/ktCodes";
 import { nummerAus } from "../../../sim/rufnummer";
 import { el } from "../../dom";
 import { aufloesungHtml } from "../../panels/notrufAbfrage";
+import { abfrageNachbearbeiten } from "../abfrage/daten";
 import { angezeigteNummer, anrufAnnehmen, istMeins } from "../../panels/telefon";
 import { panelZeigen, type PanelInstanz, type PanelKontext } from "../../ws/arbeitsplatz";
 import { auswahl, onAuswahl, waehle } from "../../ws/auswahl";
@@ -141,7 +142,15 @@ export function telefonFenster(ctx: PanelKontext): PanelInstanz {
       if (a?.status === "verpasst" || a?.status === "beendet") vorherStatus.set(id, a.status);
       void anrufAnnehmen(rd ? "rd" : "kt", id);
     },
-    oeffnen: (id: string) => waehle(sim.einsatz(id) ? "einsatz" : "kt", id, { maske: false }),
+    oeffnen: (id: string) => {
+      const e = sim.einsatz(id);
+      waehle(e ? "einsatz" : "kt", id, { maske: false });
+      // beendeter Notruf (auch von anderen aufgenommen): Abfrage zum Ändern öffnen
+      if (e?.anruf?.status === "beendet") {
+        abfrageNachbearbeiten(id);
+        panelZeigen("abfrage");
+      }
+    },
     zurAbfrage: () => panelZeigen("abfrage"),
   };
   const f = entwurfEinbinden(root, "telefon", vorlage, css, (p) => new TelefonLogik(p), { app });

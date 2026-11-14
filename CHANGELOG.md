@@ -1,5 +1,16 @@
 # Änderungen
 
+## 0.116.0-beta.52 – Großschaden: Abruf nach Bedarf, NAH im Bereitstellungsraum, Stufe änderbar
+- **Großeinsatz schon mit der Antwort auf „Wie viele Patienten?“:** 6–10, 11–30 oder mehr als 30 legt den Großeinsatz sofort an (NF5/NF10/NF30) – nicht erst bei der ersten Alarmierung. Wird die Antwort vor der Alarmierung kleiner, ist es wieder ein normaler Einsatz.
+- **Stufe im Reiter Großeinsatz änderbar:** Oben stehen NF5, NF10 und NF30 – die Abfrage wählt vor, ein Klick ändert. Die Balken zeigen je Fahrzeugtyp, was fehlt, und nach dem Runterstufen, was zu viel ist (alarmierte Fahrzeuge bleiben).
+- **Voraviso wie beim Alarmieren:** alle Krankenhäuser nach Entfernung, etwa acht sichtbar, die Liste scrollt; Suchfeld, Spalten sortierbar; Knopf „Vorinformieren“ (150 % der Plätze wie bisher).
+- **Notarzt nach Bedarf:** Ob ein Patient einen Notarzt braucht, entscheidet dasselbe Muster wie bei den normalen Fällen – nicht nur die Sichtung rot. RS- und NKV-RTW zählen im Großschaden gleich.
+- **Abruf aus dem Bereitstellungsraum:** Die Einsatzleitung ruft für jeden offenen Patienten, was er am ehesten braucht, und zählt zuerst, was schon da ist. Sammelruf: „75/001, 75/002, NEF Krems von Einsatzleiter, kommen“ – jeder meldet sich der Reihe nach – „Hier Einsatzleiter, bitte zum Berufungsort zufahren“. Ein Spieler-NAH meldet sich selbst; tut er das nicht innerhalb von etwa 10 Sekunden, geht es weiter und er wird danach einzeln gerufen.
+- **Bereitstellungsraum = Status 3:** Jedes Fahrzeug gibt dort Status 3 und bleibt dabei – auch auf der Fahrt zum Einsatzort –, bis es wirklich transportiert.
+- **Hubschrauber bleiben im Bereitstellungsraum:** Ein Fahrzeug bringt das NAH-Team zum Einsatzort (auf der Karte mit dem Rufnamen des Hubschraubers, nur während der Fahrt). Der NAH transportiert, wo sonst RTW und NEF gemeinsam fahren würden; ist schon ein RTW beim Patienten, übergibt er und bekommt einen neuen Patienten. Beim Computer-NAH bringt das Fahrzeug den Patienten zum Hubschrauber, beim Spieler-NAH geht es direkt los, sobald der Zielort gebucht ist.
+- **Patient für den Spieler-NAH:** Beim Eintreffen bekommt er einen roten oder gelben Patienten (eher die jüngeren). In der Patientenübersicht kann die Leitstelle ihm einen anderen zuweisen, solange er keinen Zielort gebucht hat – der Wechsel gilt sofort, der bisherige Patient bekommt eine andere Ressource.
+- **Abfrage nach dem Gespräch ändern:** Im Telefon-Reiter öffnet ein Klick auf einen beendeten Notruf die Abfrage (auch Notrufe, die jemand anderer aufgenommen hat). Ändert sich der Code, steht er gleich in der Einsatzmaske; alarmierte Fahrzeuge bleiben, der Vorschlag zeigt, was fehlt. Mit „Fertig“ ist die Nachbearbeitung zu.
+
 ## 0.116.0-beta.51 – Automatische Unfallmeldung: erst die Maschine, dann der Mensch
 - **Die Ansage der automatischen Unfallmeldung spricht eine Computerstimme:** zuerst ein Signalton, dann immer dieselbe gleichmäßige, leicht blecherne Stimme; das Kennzeichen wird Buchstabe für Buchstabe gelesen. Danach meldet sich die Person im Auto bzw. an der Uhr mit ihrer eigenen Stimme – auch über die Cloud-Stimmen.
 - **„Hören Sie mich?“ kommt gleich nach „Wer ruft an?“.** Meldet sich niemand, sind Anzahl, Bewusstsein, Atmung, Alter und Geschlecht automatisch „unbekannt“ und werden übersprungen.

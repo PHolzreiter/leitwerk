@@ -7,7 +7,7 @@
 import vorlage from "./vorlage.html?raw";
 import css from "./abfrage.css?raw";
 import { AbfrageLogik } from "./logik.js";
-import { anrufListe, beiSuchErgebnis, gespraechZu, nehmeIchAn, type AnrufVM, type GespraechVM } from "./daten";
+import { abfrageNachbearbeiten, anrufListe, beiNachbearbeitung, beiSuchErgebnis, gespraechZu, nachbearbeitung, nehmeIchAn, type AnrufVM, type GespraechVM } from "./daten";
 import { entwurfEinbinden } from "../../entwurf/einbinden";
 import { nachKlick } from "../../../klick";
 import { mikroAnbinden } from "../../sprache";
@@ -115,12 +115,16 @@ export function abfrageFenster(ctx: PanelKontext): PanelInstanz {
     },
     halten: (id: string) => {
       const x = anrufListe().find((y) => y.id === id);
+      if (x?.nach) return;
       anrufHalten(x?.art === "notruf" ? "rd" : "kt", id);
     },
     auflegen: (id: string) => {
       const x = anrufListe().find((y) => y.id === id);
+      // Nachbearbeitung: „Fertig“ schließt sie
+      if (x?.nach) return abfrageNachbearbeiten(null);
       anrufAuflegen(x?.art === "notruf" ? "rd" : "kt", id);
     },
+    nachbearbeitung: () => nachbearbeitung()?.id ?? null,
     lb: () => lb,
     lbSetzen: (n: number) => {
       lb = n;
@@ -220,7 +224,7 @@ export function abfrageFenster(ctx: PanelKontext): PanelInstanz {
     }, 120);
   };
   const uhr = window.setInterval(() => nachKlick(zeichnen), 1000);
-  const aus = [sim.onChange(spaeter), mp.onChange(spaeter), onPers(spaeter), onLive(() => spaeter())];
+  const aus = [sim.onChange(spaeter), mp.onChange(spaeter), onPers(spaeter), onLive(() => spaeter()), beiNachbearbeitung(() => zeichnen())];
   zeichnen();
   return {
     el: root,

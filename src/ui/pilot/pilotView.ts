@@ -1234,11 +1234,11 @@ function ansichtDaten(): Record<string, unknown> {
         ? { t: "Abheben – Ziel ist der Bereitstellungsraum", d: `Nicht direkt zum Unfallort fliegen.${gtnBereit ? " Der Flugplan zum BR liegt im GTN750 bereit." : ""}`, eta: `${minuten(flugSek(mZiel))}`, etaT: "Flug zum BR" }
         : { t: "Alarm quittieren (9)", d: "Großeinsatz, 2. Alarmierung: Du fliegst in den Bereitstellungsraum, nicht zum Unfallort.", eta: `${minuten(flugSek(mZiel))}`, etaT: "Flug zum BR" },
       { t: "Landen im Bereitstellungsraum – dann Status 3", d: `${brName}. Funk ab jetzt in der Sprechgruppe ${gruppeGs}.`, eta: fz.fahrt || ichFliege ? mmss(flugSek(mZiel)) : "", etaT: "bis zur Landung" },
-      { t: "Im Bereitstellungsraum auf den Abruf warten", d: "Die Einsatzleitung ruft dich über Funk ab. Nicht selbst zum Einsatzort gehen." },
+      { t: "Im Bereitstellungsraum auf den Abruf warten", d: "Die Einsatzleitung ruft im Sammelruf über Funk ab – melde dich selbst („Hier …, kommen“). Nicht selbst zum Einsatzort gehen." },
       fz.gsFussBis
-        ? { t: "Abruf – Team geht zu Fuß zum Einsatzort", d: "Der Hubschrauber bleibt im Bereitstellungsraum stehen. Bei der Einsatzleitung melden, dort wird euch ein Patient zugeteilt.", eta: mmss(fussRest), etaT: "Fußweg" }
+        ? { t: "Abruf – ein Fahrzeug bringt das Team zum Einsatzort", d: "Der Hubschrauber bleibt im Bereitstellungsraum stehen (Status 3). Bei der Einsatzleitung melden, dort wird euch ein Patient zugeteilt.", eta: mmss(fussRest), etaT: "bis zum Einsatzort" }
         : { t: fz.gsAmBr ? "Bei der Einsatzleitung – Patient wird zugeteilt" : "Abruf durch die Einsatzleitung", d: hinweis?.text ?? "Die Einsatzleitung teilt euch einen Patienten zu." },
-      { t: `Patient ${e?.gsKind ? `P-${String(e.gsKind.nr).padStart(2, "0")}` : ""} versorgen, dann entscheiden und buchen`.replace("  ", " "), d: `Status 4 erst, wenn der Patient im Hubschrauber ist.${gs?.voraviso.length ? " Die Einsatzleitung hat ein Voraviso an die Krankenhäuser geschickt." : ""}` },
+      { t: `Patient ${e?.gsKind ? `P-${String(e.gsKind.nr).padStart(2, "0")}` : ""} versorgen, dann entscheiden und buchen`.replace("  ", " "), d: `Nach dem Buchen gleich aus dem Bereitstellungsraum abfliegen (Status 4).${gs?.voraviso.length ? " Die Einsatzleitung hat ein Voraviso an die Krankenhäuser geschickt." : ""}` },
       { t: "Landung am Krankenhaus – dann Status 5", d: khName ? `Ziel ${khName}${kh && khLandung(kh) ? "" : " – kein eigener Landeplatz"}.` : "Ziel siehe Buchung.", eta: etaFlug, etaT: "bis zur Landung" },
       { t: "Rückflug zum Stützpunkt – dort Status 1", d: "Du bist frei über Funk und kannst unterwegs wieder alarmiert werden.", eta: etaFlug, etaT: `bis ${fz.stationName}` },
     ][gi] as Record<string, string>;
@@ -1286,7 +1286,7 @@ function ansichtDaten(): Record<string, unknown> {
     };
     if (G && gi >= 2 && gs?.br && basis.adresse) {
       const weg = distanceM(gs.br, basis.adresse);
-      fl = { km: km1(weg), t: "BR → Einsatzort zu Fuß" };
+      fl = { km: km1(weg), t: "BR → Einsatzort mit dem Fahrzeug" };
     } else if (fz.status === "zumZO" && landung) fl = { km: km1(distanceM(fz, landung)), t: `ca. ${minuten(flugSek(distanceM(fz, landung)))} zum ${khName}` };
     else if (zielPos && mZiel > 150) fl = { km: km1(mZiel), t: G ? `ca. ${minuten(flugSek(mZiel))} zum BR` : `ca. ${minuten(flugSek(mZiel))} Flug` };
     // beteiligte Fahrzeuge (im Großeinsatz: du, Einsatzleitung, Leitung im BR und einige weitere)
@@ -1357,7 +1357,7 @@ function ansichtDaten(): Record<string, unknown> {
       det: gi <= 3,
       werte: [
         { l: "Bereitstellungsraum", v: gs.br?.label ?? "wird noch festgelegt" },
-        ...(gs.br && gsE.adresse ? [{ l: "Zum Einsatzort", v: `${km1(distanceM(gs.br, gsE.adresse))} · zu Fuß ca. ${minuten(Math.max(60, (distanceM(gs.br, gsE.adresse) * 1.25) / 2.6))}` }] : []),
+        ...(gs.br && gsE.adresse ? [{ l: "Zum Einsatzort", v: `${km1(distanceM(gs.br, gsE.adresse))} · ein Fahrzeug bringt das Team` }] : []),
         { l: "Einsatzleitung", v: el2 ? `${el2.funkrufname}${gs.bel ? " · BEL" : ""}` : "noch keine" },
         { l: "Leitung im BR", v: brl ? brl.funkrufname : "–" },
       ],
@@ -2203,7 +2203,7 @@ function tabletDaten(fz: SimFahrzeug | undefined, e: Einsatz | undefined, D: Rec
       abruf: hinweis?.abruf ? { pct: gd?.abruf?.pct ?? "" } : null,
       werte: [
         ...(gs.ziel[fz.id] === "br" || gs.br ? [{ l: "Bereitstellungsraum", v: gs.br?.label ?? "wird noch festgelegt" }] : []),
-        ...(gs.br && gsE.adresse ? [{ l: "Zum Einsatzort", v: `${km1(distanceM(gs.br, gsE.adresse))} · zu Fuß ca. ${minuten(Math.max(60, (distanceM(gs.br, gsE.adresse) * 1.25) / 2.6))}` }] : []),
+        ...(gs.br && gsE.adresse ? [{ l: "Zum Einsatzort", v: `${km1(distanceM(gs.br, gsE.adresse))} · ein Fahrzeug bringt das Team` }] : []),
         { l: "Einsatzleitung", v: el2 ? `${el2.funkrufname}${gs.bel ? " · BEL" : ""}${el2.id === fz.id ? " (du)" : ""}` : "noch keine" },
         ...(brl ? [{ l: "Leitung im BR", v: brl.funkrufname }] : []),
         { l: "Sprechgruppe", v: gsGruppe(e) },
@@ -2503,7 +2503,7 @@ async function karteStarten(box: HTMLElement): Promise<void> {
       // Route: nächster Abschnitt gestrichelt, der jetzige Abschnitt durchgezogen (wie im Entwurf)
       map.addLayer({ id: "plt-route", type: "line", source: "plt-route", layout: { "line-cap": "round" }, paint: { "line-color": "#6AA6FF", "line-width": 2.5, "line-dasharray": [2, 2], "line-opacity": 0.9 } });
       map.addLayer({ id: "plt-linie", type: "line", source: "plt-linie", layout: { "line-cap": "round" }, paint: { "line-color": "#3B8BFF", "line-width": 4, "line-opacity": 0.95 } });
-      // Großeinsatz: Fußweg vom Bereitstellungsraum zum Einsatzort
+      // Großeinsatz: Weg des Teams vom Bereitstellungsraum zum Einsatzort (Fahrzeug)
       map.addLayer({ id: "plt-fuss", type: "line", source: "plt-fuss", layout: { "line-cap": "round" }, paint: { "line-color": "#F5A524", "line-width": 3.5, "line-dasharray": [0.6, 2] } });
       map.addLayer({
         id: "plt-ziele",
@@ -2599,7 +2599,7 @@ function karteAktualisieren(fz: SimFahrzeug | undefined, e: Einsatz | undefined)
   quelle("plt-heli")?.setData({ type: "FeatureCollection", features: fz ? [punkt(fz.lat, fz.lon, { farbe: st ? ST_FARBE[st.nummer] ?? "#3B8BFF" : "#3B8BFF", kurs: kursVon(fz) })] : [] });
   const kh = e?.kh ? store.get("hospitals", e.kh.hospitalId) : undefined;
   const ziele: GeoJSON.Feature[] = [];
-  // Großeinsatz: Bereitstellungsraum (gelb) und Fußweg zum Einsatzort
+  // Großeinsatz: Bereitstellungsraum (gelb) und Weg des Teams zum Einsatzort
   const gsE = gsVon(e);
   const ort = gsE?.adresse ?? e?.adresse;
   if (ort) ziele.push(punkt(ort.lat, ort.lon, { name: gsE ? (gsE.adresse?.label ?? "Einsatzort") : "Einsatzort", farbe: "#E5484D" }));

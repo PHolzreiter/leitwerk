@@ -77,6 +77,7 @@ function buchenDialog(k: Einsatz, titel: string): void {
 }
 
 const SOLL_NAME: Record<string, string> = { "weiterer BEL": "BEL (Leitung BR)" };
+const STUFEN = ["NF5", "NF10", "NF30"] as const;
 const zeilen = (l: GsZeile[] | undefined) => (l ?? []).map((z) => ({ a: SOLL_NAME[z.art] ?? z.art, ist: z.ist, soll: z.soll }));
 
 /** Bereitstellungsraum: Name und Abstand aus dem gespeicherten Ort */
@@ -180,15 +181,13 @@ function daten(e: Einsatz) {
     { t: "alle abtransportiert", zeit: z(gs.ende), ok: ende },
     { t: "BR aufgelöst", zeit: z(gs.ende), ok: ende && !!gs.br },
   ];
-  // Krankenhäuser in der Nähe mit Notaufnahme/Unfall/Schockraum
+  // alle Krankenhäuser, nach Nähe zum Einsatzort (die Liste im Fenster zeigt ca. 8, scrollt, sucht und sortiert)
   const pos = e.adresse ?? { lat: e.wahr.lat, lon: e.wahr.lon };
   const haeuser = store
     .list("hospitals")
-    .filter((h) => sim.khImNetz(h) && (h.einrichtungen ?? []).some((x) => x === "amb_notaufnahme" || x === "amb_unfall" || x === "fb_schockraum"))
+    .filter((h) => sim.khImNetz(h))
     .map((h) => ({ h, km: distanceM(pos, h) / 1000 }))
-    .filter((x) => x.km < 70)
     .sort((a, b) => a.km - b.km)
-    .slice(0, 8)
     .map(({ h, km }) => {
       let ges = 0;
       let frei = 0;
@@ -198,7 +197,19 @@ function daten(e: Einsatz) {
         ges += n;
         frei += Math.max(0, n - belegt(sim.state.khBelegung, h.id, r.id, t));
       }
-      return { id: h.id, n: h.kurzname || h.name, lang: h.name, km: `${km.toFixed(0)} km`, frei, ges, an: gs.voraviso.includes(h.id) || istVoravisiert(h.id) };
+      const na = (h.einrichtungen ?? []).some((x) => x === "amb_notaufnahme" || x === "amb_unfall" || x === "fb_schockraum");
+      return { id: h.id, n: h.kurzname || h.name, lang: `${h.name}${h.ort ? `, ${h.ort}` : ""}${na ? "" : " · keine Notaufnahme"}`, such: `${h.name} ${h.kurzname ?? ""} ${h.ort ?? ""}`.toLowerCase(), km: `${km < 10 ? km.toFixed(1).replace(".", ",") : km.toFixed(0)} km`, kmZahl: km, frei, ges, an: gs.voraviso.includes(h.id) || istVoravisiert(h.id) };
+    });
+  // Spieler-NAH in diesem Großeinsatz: welcher Patient (die Leitstelle kann umteilen, bis ein Zielort gebucht ist)
+  const spieler = alle
+    .filter((f) => !!f.pilot && f.einsatzId !== null)
+    .map((f) => {
+      const k = f.einsatzId ? sim.einsatz(f.einsatzId) : undefined;
+      const nr = k?.gsKind?.parent === e.id ? k.gsKind.nr : null;
+      const wunsch = gs.pilotWunsch?.[f.id] ?? null;
+      const zo = f.pilot?.plan?.art === "transport" || f.status === "zumZO" || f.status === "amZO";
+      const wo = f.gsFussBis ? "Team wird zum Einsatzort gebracht" : f.phase === "wartetBR" ? "im Bereitstellungsraum" : f.status === "amBO" ? "am Einsatzort" : "im Anflug";
+      return { id: f.id, r: f.funkrufname, nr, wunsch, zo, wo };
     });
   const weitere = e.weitereAnrufe ?? [];
   const lebend = (w?.patienten ?? []).filter((p) => p.sichtung !== "tot").length;
@@ -207,8 +218,9 @@ function daten(e: Einsatz) {
     id: e.id,
     nummer: e.nummer,
     stufe: gs.stufe ?? "GS",
+    stufen: STUFEN.map((x) => ({ s: x, an: gs.stufe === x })),
     stufeOffen: !gs.stufe,
-    stufeTitel: gs.stufe ? "Stufe nach Zahl der Betroffenen" : "Stufe noch offen (kommt mit der Lagemeldung)",
+    stufeTitel: gs.stufe ? "Stufe nach Zahl der Betroffenen (Abfrage bzw. Lagemeldung) – Klick ändert sie" : "Stufe noch offen – Klick legt sie fest",
     titel: (!vor || gs.phase === "sicht") && w?.art ? w.art : code?.beschreibung ?? "Großeinsatz",
     unterTitel: `${e.adresse?.label ?? e.meldung.adresse} · seit ${uhr(e.erstellt)}${e.zustand === "abgeschlossen" ? " · abgeschlossen" : ""}`,
     gruppe: sim.sprechgruppeName(gs.gruppe ?? "gs"),
@@ -226,6 +238,7 @@ function daten(e: Einsatz) {
     meldungen,
     meilen,
     haeuser,
+    spieler,
   };
 }
 
@@ -289,6 +302,14 @@ export function grosseinsatzFenster(ziel: HTMLElement, opt: { titel(t: string): 
     voraviso: (khId: string, an: boolean) => {
       const e = aktuell();
       if (e) void fehlerZeigen(sim.call("gsVoraviso", e.id, khId, an));
+    },
+    stufe: (s: string) => {
+      const e = aktuell();
+      if (e && (STUFEN as readonly string[]).includes(s)) void fehlerZeigen(sim.call("gsStufe", e.id, s as (typeof STUFEN)[number]));
+    },
+    spielerPatient: (fzId: string, nr: number) => {
+      const e = aktuell();
+      if (e) void fehlerZeigen(sim.call("gsSpielerPatient", e.id, fzId, nr));
     },
     fahrzeug: (id: string) => fahrzeugZeigen(id),
   };

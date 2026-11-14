@@ -59,7 +59,7 @@ export class TelefonLogik extends DCLogic {
         id: c.id, cls: "t-z " + c.art + " " + c.s + (sel === c.id ? " sel" : ""), art: KEY[c.art], artCls: "artb " + c.art, tel: c.tel,
         zeile: c.zeile, st: stT, dauer: c.dauer, sym, knoepfe,
         hatAufl: !!auf[c.id] && c.mitAufl, auflRef: this.auflRef(c.id), stopp,
-        titel: ART[c.art] + " · Klick wählt den " + (c.art === "notruf" ? "Einsatz" : "Auftrag"), oeffnen: () => app.oeffnen(c.id),
+        titel: ART[c.art] + (c.art === "notruf" && c.s === "beendet" ? " · Klick öffnet die Abfrage zum Ändern" : " · Klick wählt den " + (c.art === "notruf" ? "Einsatz" : "Auftrag")), oeffnen: () => app.oeffnen(c.id),
       };
     };
     const passt = (c) => (typ === "Alle" || KEY[c.art] === typ) && (!such || (istNummer ? c.tel.replace(/\D/g, "").includes(ziffern) : c.suche.includes(such)));
