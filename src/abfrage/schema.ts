@@ -96,7 +96,7 @@ export interface Schema {
   version: number;
   /** "leitwerk-codesystem": Codes und Abfrage in einer Datei */
   format?: string;
-  /** Name des Codesystems (z. B. „Notruf NÖ – AMPDS“) */
+  /** Name des Codesystems (z. B. „Leitstelle – AMPDS“) */
   name?: string;
   beschreibung?: string;
   /** Anleitung für eine KI, die ein neues Codesystem erstellt (wird vom Spiel nicht ausgewertet) */

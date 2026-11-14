@@ -7,6 +7,7 @@
  * Aussehen nach dem Entwurf „Pilot“ (LeitWerk Arbeitsplatz, 09.11.): Vorlage, CSS und Logik liegen in
  * src/ui/fenster/pilot; hier entstehen die Daten (ansichtDaten) und Aktionen dazu.
  */
+import { statusFarbeNr } from "../statusFarben";
 import "./pilot.css";
 import type maplibregl from "maplibre-gl";
 import { store } from "../../data/store";
@@ -852,8 +853,9 @@ function gsAbrufPruefen(fz: SimFahrzeug | undefined, e: Einsatz | undefined): vo
 // ---- Hilfen für die Ansicht
 
 /** Statusfarben wie im Entwurf (fenster.css: --s1 … --s9) */
-const ST_FARBE: Record<string, string> = { "1": "#CDEFA0", "6": "#CDEFA0", A: "#F3EF7A", F: "#F3EF7A", "9": "#DCC23A", "2": "#F7D98C", "3": "#EBB36B", "4": "#ECD8ED", "5": "#D7AEE2", "7": "#DCDDE1", "8": "#FFFFFF", "0": "#E6E7EA" };
-const stFarbe = (nummer: string) => ST_FARBE[nummer] ?? "#E6E7EA";
+/** Statusfarben wie überall im Programm (eigene → Leitstelle → Entwurf) */
+const ST_FARBE: Record<string, string> = new Proxy({} as Record<string, string>, { get: (_t, n) => (typeof n === "string" ? statusFarbeNr(n) : undefined) });
+const stFarbe = (nummer: string) => statusFarbeNr(nummer);
 const ST_KURZ: Partial<Record<StatusKey, string>> = { alarmiert: "Quittieren", freiWache: "Frei Wache", zumBO: "Zum BO", amBO: "Am BO", zumZO: "Zum ZO", amZO: "Am ZO", freiFunk: "Frei Funk", bereitschaft: "Bereit" };
 const ST_LANG: Partial<Record<StatusKey, string>> = { alarmiert: "Quittieren", freiWache: "Frei auf Wache", zumBO: "Zum Berufungsort", amBO: "Am Berufungsort", zumZO: "Zum Zielort", amZO: "Am Zielort", freiFunk: "Frei über Funk", bereitschaft: "Bereitschaft" };
 const SICHT_FARBE: Record<string, [string, string]> = { rot: ["#E5484D", "#fff"], gelb: ["#F5A524", "#15181c"], gruen: ["#4CC38A", "#15181c"], tot: ["#6B7385", "#fff"] };
@@ -1993,7 +1995,7 @@ function handyNeu(fz: SimFahrzeug | undefined, e: Einsatz | undefined): Record<s
 }
 
 /** Zeilenfarben der Fahrzeuge wie in den Listen der Leitstelle (ganze Zeile in Statusfarbe, Schrift dunkel) */
-const ZEILE_FARBE: Record<string, string> = { "1": "#CDEFA0", "6": "#CDEFA0", A: "#F3EF7A", F: "#F3EF7A", "9": "#DCC23A", "2": "#F7D98C", "3": "#EBB36B", "4": "#ECD8ED", "5": "#D7AEE2", "7": "#DCDDE1", "8": "#FFFFFF", "0": "#E6E7EA" };
+const ZEILE_FARBE = ST_FARBE;
 /** Karte im Tablet: alle Fahrzeuge zeigen (Umschalter in der Navigation, „ka:alle:1“) */
 let tabletKarteAlle = false;
 
@@ -2057,7 +2059,10 @@ function tabletDaten(fz: SimFahrzeug | undefined, e: Einsatz | undefined, D: Rec
   const uhr = new Date(t).toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" });
   if (!fz) return { uhr, heli: "Kein Hubschrauber", unter: "im Piloten-Interface wählen", ein: null };
   const st = sim.statusDef(fz.status);
-  const kopf = { uhr, heli: fz.kurzname || fz.funkrufname, st: { n: st.nummer, t: st.name, f: ZEILE_FARBE[st.nummer] ?? st.farbe } };
+  // Sprechgruppe, in der er spricht – 09/10 ohne Großeinsatz als Warnung
+  const sg = sprechGruppe();
+  const gr = { n: (gruppenName(sg) || "RD-NOE-03").replace(/^RD-NOE-/, ""), warn: sg !== null && !sim.gsGruppeAktiv(sg) };
+  const kopf = { uhr, heli: fz.kurzname || fz.funkrufname, st: { n: st.nummer, t: st.name, f: ZEILE_FARBE[st.nummer] ?? st.farbe }, gr };
   if (!e) {
     const kt = sim.pilotKt(fz);
     if (!kt) return { ...kopf, unter: `${fz.funkrufname} · ${fz.stationName}`, ein: null };
@@ -2369,7 +2374,7 @@ function funkPlatzBauen(): HTMLElement {
 }
 
 /** Status und Sprechgruppe ans Funk-Fenster; gibt den Stand fürs Handy zurück (Sprechtaste, wer spricht) */
-function funkPlatzAktualisieren(fz: SimFahrzeug | undefined, e: Einsatz | undefined): { knoepfe: { aktion: string; name: string }[]; kanal: string; sendet: boolean } {
+function funkPlatzAktualisieren(fz: SimFahrzeug | undefined, _e: Einsatz | undefined): { knoepfe: { aktion: string; name: string }[]; kanal: string; sendet: boolean } {
   const ich = funkSendeZustand();
   const hoert = funkEmpfang();
   const sendet = sim.state.funkSendet;
@@ -2391,18 +2396,23 @@ function funkPlatzAktualisieren(fz: SimFahrzeug | undefined, e: Einsatz | undefi
             : belegt
               ? `Funk belegt – ${belegt.funkname} ↔ ${belegt.an?.funkname ?? "LEO"}`
               : "Funk frei";
+  // Sprechgruppe immer dabei; 09/10 ohne Großeinsatz deutlich (Tablet, Handy, Pilotenansicht)
+  const grName = gruppenName(gruppe) || "RD-NOE-03";
+  const falsch = gruppe !== null && !sim.gsGruppeAktiv(gruppe);
+  const kanalText = falsch ? `⚠ ${grName}: kein Großeinsatz – Leitstelle in ${gruppenName(null)} · ${kanal}` : ich?.art === "sendet" || weg ? kanal : `${grName} · ${kanal}`;
   const knoepfe = fz ? [{ aktion: "funk", name: "Funk" }] : [];
   if (funkFenster) {
     const st = fz ? sim.statusDef(fz.status) : null;
     const status = st ? `${st.nummer} ${st.name}` : undefined;
-    const gr = (gruppenName(sim.kanalVon(e)) || "RD-NOE-03").replace(/^RD-NOE-/, "");
+    // die Gruppe, in der er wirklich spricht (nicht die des Einsatzes)
+    const gr = grName.replace(/^RD-NOE-/, "");
     const k = `${status}|${gr}`;
     if (k !== funkProps) {
       funkProps = k;
       funkFenster.props({ status, gruppe: gr });
     }
   }
-  return { knoepfe, kanal, sendet: ich?.art === "sendet" };
+  return { knoepfe, kanal: kanalText, sendet: ich?.art === "sendet" };
 }
 
 /** Funk-Einstellungen: Mikrofon, Spracherkennung, Lautstärken, Mithören */

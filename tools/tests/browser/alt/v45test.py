@@ -1,7 +1,7 @@
 # v0.45: Hubschrauber-Dienstzeiten, NEF-Ausrücken, Rückruf, Funk-Tippen, Anrufer passt zum Ort, Kreißsaal, Kartensuche, Abfrage-Tasten
 import subprocess, sys, time, csv
 from playwright.sync_api import sync_playwright
-S = sys.argv[1]; DIST = sys.argv[2]; REPO = __import__("os").path.abspath(__import__("os").path.join(__import__("os").path.dirname(__file__), "../../.."))
+S = sys.argv[1]; DIST = sys.argv[2]; REPO = __import__("os").path.abspath(__import__("os").path.join(__import__("os").path.dirname(__file__), "../../../.."))
 fails = 0; logs = []
 def check(ok, w):
     global fails

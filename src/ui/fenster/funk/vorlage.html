@@ -5,6 +5,7 @@
   <!-- ===== Funk ===== -->
   <sc-if value="{{istFunk}}" hint-placeholder-val="{{true}}">
   <div class="{{fkCls}}">
+    <sc-if value="{{hatGrWarn}}" hint-placeholder-val="{{false}}"><div class="f-grwarn" role="alert"><b>Achtung Sprechgruppe</b><span>{{grWarn}}</span></div></sc-if>
     <div class="f-geraet">
       <!-- Funkgerät wie im Spiel: Bild des Bedienteils, dahinter das Display; bedienbar ist das Steuerkreuz links/rechts -->
       <div class="{{fgCls}}">

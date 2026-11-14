@@ -27,6 +27,9 @@
   .kopf .h b { display: block; font-size: 15px; font-weight: 700; white-space: nowrap; overflow: hidden; }
   .kopf .h span { font-size: 12px; color: #9AA3B5; white-space: nowrap; }
   .kopf .uhr { font-size: 20px; font-weight: 600; margin-right: 6px; }
+  .kopf .gr { font-size: 13px; font-weight: 800; padding: 3px 7px; border-radius: 6px; margin-right: 8px; background: #23262F; color: #DDE2EC; }
+  .kopf .gr.warn { background: #FFC72C; color: #111216; }
+  .kopf .gr.leer { display: none; }
   .stpkt { width: 40px; height: 40px; border: 0; border-radius: 9px; background: transparent; cursor: pointer; padding: 0; }
   .stpkt:active { background: #1E2129; }
   .stpkt i { display: block; width: 13px; height: 13px; border-radius: 7px; margin: 0 auto; box-shadow: 0 0 0 3px rgba(255,255,255,0.08); }
@@ -254,7 +257,7 @@
 </head>
 <body>
 <div id="app">
-  <div class="kopf"><div class="h"><b id="heli">LeitWerk</b><span id="unter">verbinde …</span></div><span class="uhr" id="uhr"></span><button class="stpkt" id="stpkt" aria-label="Status geben"><i id="stfarbe" style="background:#6B7385"></i></button></div>
+  <div class="kopf"><div class="h"><b id="heli">LeitWerk</b><span id="unter">verbinde …</span></div><span class="gr leer" id="gr"></span><span class="uhr" id="uhr"></span><button class="stpkt" id="stpkt" aria-label="Status geben"><i id="stfarbe" style="background:#6B7385"></i></button></div>
   <div class="tabv versteckt" id="tabv"><b id="tabvT">Funkgerät &amp; Tablet</b><span id="tabvU"></span><button id="tabvB">Verbinden</button></div>
   <div class="seg versteckt" id="seg"><span class="m" id="segm"></span><button id="segT" class="on">Transport</button><button id="segP">Patient<span class="dot versteckt" id="patdot"></span></button></div>
   <div class="inh" id="inh">
@@ -411,6 +414,11 @@
     $("heli").textContent = t.heli || s.heli || "LeitWerk";
     $("unter").textContent = t.unter || s.unter || s.hinweis || "";
     $("uhr").textContent = t.uhr || "";
+    // Sprechgruppe: 09/10 ohne Großeinsatz gelb mit Warnzeichen
+    var gr = t.gr;
+    $("gr").textContent = gr ? (gr.warn ? "\u26A0 " : "") + gr.n : "";
+    $("gr").className = "gr" + (!gr ? " leer" : gr.warn ? " warn" : "");
+    $("gr").title = gr && gr.warn ? "Sprechgruppe RD-NOE-" + gr.n + ": dort läuft kein Großeinsatz" : "Sprechgruppe";
     $("stfarbe").style.background = t.st ? t.st.f : "#6B7385";
     var ein = t.ein;
     zeige($("seg"), !!ein);

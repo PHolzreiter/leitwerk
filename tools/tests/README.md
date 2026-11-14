@@ -16,8 +16,9 @@ npx tsc --noEmit -p tools/tests/tsconfig.check.json  # Typprüfung
 ```
 
 ## Hinweise
-- Namensschema: `v<version>test.py` = Tests zur jeweiligen Version; `*test13.py` usw. = Themen-Tests (Funk, Lage, SEK …).
-- Alte Tests können durch spätere Änderungen veralten; `alle.sh` enthält die zuletzt grünen.
-- Zeitabhängig/wackelig: `pilottest_modus` (abends Schichtwechsel), `gspilottest`, `sektest13`.
-- Manche ältere Tests erwarten Hilfsdateien im Arbeitsordner (1. Argument); fehlen sie, den Test anpassen oder überspringen.
+- `alle.sh` ist die aktuelle Reihe (Stand Beta 53, grün). Trotz festem Zufall hängen einige Abläufe an echter Zeit (Funk, Großschaden): `beta52test` verfehlt unter Last gelegentlich einen Punkt (z. B. „Fahrt BR → BO“, wenn gerade kein Fahrzeug diese Fahrt macht) – dann einzeln wiederholen. Neue Tests heißen `beta<nr>test.py`; Themen-Tests z. B. `funkpilottest`, `kompetenztest`, `faelletest`.
+- **Fester Zufall:** jeder Test öffnet die App mit `?debug&seed=N` (Math.random wird dann durch einen festen Zufall ersetzt, `window.__lwSeed` zeigt den Seed) und setzt nach Bedarf `sim.setWetter('klar')`, damit Hubschrauber nicht wegen Wetter abgemeldet sind.
+- `browser/alt/`: ältere Tests (bis 0.113) für die alte Oberfläche (Panels statt Fenster) – nicht mehr in der Reihe, viele scheitern an der neuen Oberfläche. Nur als Nachschlagewerk; bei Bedarf einzeln auf die neue Oberfläche umstellen und zurück nach `browser/` holen.
+- `gstest.py` bleibt in `browser/`, weil `beta52test` und `gspilottest` seine Hilfsfunktionen (`HELFER`) lesen. `gstest` und `gspilottest` prüfen zum Teil noch die alte Oberfläche (diese Teile scheitern) und sind deshalb nicht in der Reihe.
+- Manche Tests erwarten Hilfsdateien im Arbeitsordner (1. Argument); fehlen sie, den Test anpassen oder überspringen.
 - Debug-Zugänge im Build mit `?debug`: `window.__lw`, `window.__pilot`, `window.__pilotKarte()`.

@@ -1,5 +1,19 @@
 [
  {
+  "version": "0.116.0-beta.53",
+  "datum": "2026-11-14",
+  "titel": "Eigene Statusfarben überall, Orte der Dienststellen, Alter realistisch",
+  "punkte": [
+   "Eigene Statusfarben in allen Fenstern, auf Karte/3D, Pilotenansicht, Tablet und Handy",
+   "Fehlende Orte bei 21 Dienststellen ergänzt",
+   "Pilot in RD-NOE-09/10 ohne Großeinsatz: deutlicher Hinweis (Funkgerät, Funk-Fenster, Tablet)",
+   "Alter realistisch: Angehörige genau, Unbeteiligte schätzen ±3–5 Jahre, Besatzung meldet das echte",
+   "KT-/SEK-Formular: „Alle Angaben übernehmen“ verliert den Namen nicht mehr",
+   "Aufgeräumt: alte Fenster entfernt, Großschaden-Abläufe in eigener Datei (Verhalten gleich)",
+   "Tests mit festem Zufall; Build wieder mit aktueller Rust-Version"
+  ]
+ },
+ {
   "version": "0.116.0-beta.52",
   "datum": "2026-11-14",
   "titel": "Großschaden: Abruf nach Bedarf, NAH im Bereitstellungsraum, Stufe änderbar",

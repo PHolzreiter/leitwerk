@@ -1,5 +1,15 @@
 # Änderungen
 
+## 0.116.0-beta.53 – Eigene Statusfarben überall, Orte der Dienststellen, Alter realistisch
+- **Eigene Statusfarben gelten jetzt überall:** in allen Fenstern (Einsatzliste, Fahrzeuge, Übersichten, Großeinsatz, Abfrage), auf der Karte und in 3D, in der Pilotenansicht, am Tablet und am Handy. Reihenfolge: eigene Farbe → Farbe der Leitstelle im Statusmodell → Standard. In den Einstellungen zeigt „Standard“ die Farbe, die ohne eigene Wahl gilt; wer genau diese wählt, hat wieder keine eigene Farbe.
+- **Orte der Dienststellen ergänzt:** Bei 21 Dienststellen (Rettungsleitstellen, Stützpunkte, Feuerwehr-Bezirkskommanden, Polizei) fehlte der Ort – jetzt haben alle einen.
+- **Pilot in RD-NOE-09/10 ohne Großeinsatz:** Umschalten bleibt frei, aber man sieht es deutlich – im Funkgerät der Pilotenansicht steht „⚠ RD-NOE-09: kein Großeinsatz – Leitstelle in …“, im Funk-Fenster ein gelber Hinweis, am Tablet ein gelbes Gruppen-Kästchen. Funkt der Pilot dort, bekommt die Leitstelle einmal pro Minute einen Hinweis im Funk.
+- **Alter realistisch:** Wer den Patienten kennt (Angehörige, Pflege, Arzt …) oder selbst Patient ist, nennt das genaue Alter. Passanten und andere Unbeteiligte schätzen ein paar Jahre daneben (3–5 Jahre, bei Kindern genau, ohne über 18/35/65 zu springen). Die Besatzung meldet vor Ort das echte Alter.
+- **Krankentransport-/Überstellungs-Formular:** „Alle Angaben übernehmen“ übernimmt jetzt Name, Alter und Geschlecht zusammen – vorher ging bei einer Patientin der Name verloren, weil „weiblich“ ihn überschrieb (dasselbe bei Begleitung und „instabil“ in der Überstellung).
+- **Aufgeräumt:** alte, nicht mehr verwendete Fenster und Teile der früheren Oberfläche entfernt; die Großschaden-Abläufe liegen in einer eigenen Datei – am Verhalten ändert sich nichts.
+- **Tests:** feste Zufallsfolge und klares Wetter, damit Tests nicht zufällig scheitern; ältere Tests der alten Oberfläche aussortiert.
+- **Build:** wieder mit der aktuellen Rust-Version statt einer festgehaltenen.
+
 ## 0.116.0-beta.52 – Großschaden: Abruf nach Bedarf, NAH im Bereitstellungsraum, Stufe änderbar
 - **Großeinsatz schon mit der Antwort auf „Wie viele Patienten?“:** 6–10, 11–30 oder mehr als 30 legt den Großeinsatz sofort an (NF5/NF10/NF30) – nicht erst bei der ersten Alarmierung. Wird die Antwort vor der Alarmierung kleiner, ist es wieder ein normaler Einsatz.
 - **Stufe im Reiter Großeinsatz änderbar:** Oben stehen NF5, NF10 und NF30 – die Abfrage wählt vor, ein Klick ändert. Die Balken zeigen je Fahrzeugtyp, was fehlt, und nach dem Runterstufen, was zu viel ist (alarmierte Fahrzeuge bleiben).
@@ -901,13 +911,13 @@
 - An jedem ACN-Stützpunkt steht nur noch ein Fahrzeug: die zweite Einheit in Stockerau (80/007) und in Baden/Leobersdorf (80/009) entfallen
 - ACN gibt es damit in St. Pölten (80/003), Stockerau (80/006), Waidhofen an der Thaya (80/004), Bruck an der Leitha (80/008), Baden/Leobersdorf (80/002) und Haag (80/005)
 
-## 0.61.2 – ACN-Funkrufnamen laut LEOSIM
+## 0.61.2 – ACN-Funkrufnamen geprüft
 - ACN Bruck an der Leitha heißt jetzt **80/008** (vorher geschätzt 80/001)
-- ACN Baden/Leobersdorf behält 80/002 (jetzt laut LEOSIM statt geschätzt) und bekommt eine **zweite Einheit 80/009** – im Funk heißen beide dann nach dem Funkrufnamen, damit sie eindeutig bleiben
+- ACN Baden/Leobersdorf behält 80/002 (jetzt geprüft statt geschätzt) und bekommt eine **zweite Einheit 80/009** – im Funk heißen beide dann nach dem Funkrufnamen, damit sie eindeutig bleiben
 
 ## 0.61.1 – NEF-Funkrufnamen im Industrieviertel
 - NEF Hainburg heißt jetzt **53/699** (vorher geschätzt 53/499), NEF Aspang **65/098** (vorher geschätzt 65/499)
-- NEF Baden 52/099, Mödling 64/099, Neunkirchen 65/099 und Schwechat 77/099 bleiben gleich, gelten aber nicht mehr als geschätzt (Hinweis „Funkrufname laut LEOSIM“)
+- NEF Baden 52/099, Mödling 64/099, Neunkirchen 65/099 und Schwechat 77/099 bleiben gleich, gelten aber nicht mehr als geschätzt (Hinweis „Funkrufname geprüft“)
 
 ## 0.61.0 – Einstellungen und Dialoge im neuen Design
 - Einstellungen, Bereitschafts-Check und alle Rückfragen sehen jetzt aus wie die Startseite und die Spielstände: dunkelblaues Glas (bzw. hell), gleiche Rundungen, Auswahllisten, Schalter und Knöpfe im Blauverlauf, Navigation wie die Startseiten-Leiste, Abschnitte als Karten
@@ -1537,7 +1547,7 @@ Grundlage: der Testlauf mit 420 Gesprächen (alle Fälle, qwen3:8b), Gespräch f
 **Daten**
 - Zwettl hat eine Notaufnahme (laut Übersicht Akutversorgung)
 
-## 0.27.2 – NÖ-Krankenhäuser nach der Akutversorgungs-Übersicht von Notruf NÖ
+## 0.27.2 – NÖ-Krankenhäuser nach der Akutversorgungs-Übersicht
 - Schockräume je Haus wie in der Übersicht: Trauma (SRT), internistisch (SRI) oder beides in einem Raum. St. Pölten 2 internistisch + 1 Trauma; nur Trauma: Korneuburg; nur internistisch: Melk, Mödling, Neunkirchen, Stockerau, Waidhofen/Thaya
 - Kein Schockraum mehr in Hainburg und Klosterneuburg
 - Unfallaufnahme jetzt auch in Gmünd, Hainburg, Hollabrunn, Klosterneuburg und Waidhofen/Thaya (eine Unfallaufnahme reicht für Unfallpatienten, auch ohne eigene Unfallabteilung)

@@ -8,6 +8,7 @@
  *
  * Nur was im Bildausschnitt liegt, wird als Marke angelegt (sonst wären es über tausend Elemente).
  */
+import { statusFarbe } from "../../statusFarben";
 import maplibregl from "maplibre-gl";
 import type { Hospital, Station } from "../../../data/model";
 import { store } from "../../../data/store";
@@ -28,23 +29,9 @@ export const ZOOM_STRASSE = 15;
 
 // ---------------------------------------------------------------- Farben
 
-/** Statusfarben des Entwurfs (gleich in Hell und Dunkel); eigene Statusfarben aus den Einstellungen gehen vor */
-const STATUS_HEX: Record<string, string> = {
-  freiWache: "#CDEFA0",
-  freiFunk: "#CDEFA0",
-  alarmWache: "#F3EF7A",
-  alarmFunk: "#F3EF7A",
-  alarmiert: "#DCC23A",
-  zumBO: "#F7D98C",
-  amBO: "#EBB36B",
-  zumZO: "#ECD8ED",
-  amZO: "#D7AEE2",
-  dienstfahrt: "#DCDDE1",
-  bereitschaft: "#FFFFFF",
-  abgemeldet: "#E6E7EA",
-};
+/** Statusfarbe – überall dieselbe (eigene → Leitstelle → Entwurf, siehe ui/statusFarben.ts) */
 export function statusHex(key: string): string {
-  return STATUS_HEX[key] || "#E6E7EA";
+  return statusFarbe(key);
 }
 /** Status mit roter Schrift bzw. rotem Rand (über Funk) */
 export function ueberFunk(key: string): boolean {

@@ -12,7 +12,7 @@ try:
     with sync_playwright() as p:
         b = p.chromium.launch(); ctx = b.new_context(viewport={"width": 1500, "height": 950}); ctx.add_init_script(INIT)
         A = ctx.new_page(); A.on("pageerror", lambda e: logs.append(str(e)))
-        A.goto("http://localhost:8797/?debug"); A.wait_for_timeout(2000)
+        A.goto("http://localhost:8797/?debug&seed=8797"); A.wait_for_timeout(2000)
         A.evaluate("async () => window.__lw.codesystemLaden(await (await fetch('/abf_test.json')).json())"); A.wait_for_timeout(800)
         r = A.evaluate("""async () => { const s = window.__lw.sim; const w = (ms) => new Promise(r => setTimeout(r, ms)); s.settings.generatorAktiv = false; s.state.laeuft = true; s.funkFestNach = 1000;
           const heli = Object.values(s.state.fahrzeuge).find(f => f.funkrufname === '99/002'); const rtw = Object.values(s.state.fahrzeuge).find(f => f.funkrufname === '75/001');

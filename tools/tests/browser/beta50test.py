@@ -15,7 +15,7 @@ try:
     with sync_playwright() as p:
         b = p.chromium.launch(); A = b.new_page(viewport={"width": 1600, "height": 1000}); logs = []
         A.on("pageerror", lambda e: logs.append(str(e)))
-        A.goto("http://localhost:8950/?debug"); A.wait_for_timeout(2500)
+        A.goto("http://localhost:8950/?debug&seed=8950"); A.wait_for_timeout(2500)
         for privat in (False, True):
             name = "AMPDS" if privat else "LeitWerk"
             if privat:

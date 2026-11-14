@@ -18,7 +18,7 @@ try:
         A = ctx.new_page(); logs = []
         A.on("pageerror", lambda e: logs.append(str(e)))
         A.add_init_script("localStorage.setItem('leitwerk.persoenlich', JSON.stringify({thema: 'hell', einfuehrung: true}))")
-        A.goto("http://localhost:8947/?debug"); A.wait_for_timeout(2500)
+        A.goto("http://localhost:8947/?debug&seed=8947"); A.wait_for_timeout(2500)
         A.evaluate("async () => { await window.__lw.codesystemLaden(await (await fetch('/abf_test.json')).json()); }")
         A.evaluate("() => { const st = structuredClone(window.__lw.store.settings); st.generatorAktiv = false; window.__lw.store.setSettings(st); window.__lw.kiPrefsSetzen({ aktiv: false }); }")
         A.evaluate(f"() => {{ const s={J}; const d=new Date(s.state.zeit); d.setHours(10,0,0,0); s.state.zeit=d.getTime(); s.settings.rate=0; s.settings.ktAktiv=false; s.funkFestNach=600; s.call('start'); s.call('setTempo', 1); }}")

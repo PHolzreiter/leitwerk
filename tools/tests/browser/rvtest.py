@@ -12,7 +12,7 @@ try:
         b = p.chromium.launch(); ctx = b.new_context(viewport={"width": 1600, "height": 950})
         ctx.add_init_script("(() => { localStorage.setItem('leitwerk.persoenlich', JSON.stringify({thema: 'hell', einfuehrung: true})); const t = setInterval(() => { if (window.__lw && window.__lw.testAnordnung && document.querySelector('.lw-panel')) { clearInterval(t); setTimeout(() => window.__lw.testAnordnung(), 50); } }, 50); })()")
         A = ctx.new_page(); A.on("pageerror", lambda e: logs.append(f"PAGEERROR {e}"))
-        A.goto("http://localhost:8798/?debug"); A.wait_for_timeout(2000)
+        A.goto("http://localhost:8798/?debug&seed=8798"); A.wait_for_timeout(2000)
         A.evaluate("async () => window.__lw.codesystemLaden(await (await fetch('/abf_test.json')).json())"); A.wait_for_timeout(1200)
         A.evaluate("() => { const s = window.__lw.sim; s.settings.generatorAktiv = false; s.settings.ktAktiv = false; s.settings.khGrundAktiv = false; s.state.naechster = { stabil: 1e15, dringend: 1e15, kritisch: 1e15 }; }")
         def start(fall, var, nefWeit):

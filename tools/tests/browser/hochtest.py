@@ -24,7 +24,7 @@ try:
             A = ctx.new_page(); logs = []
             A.on("pageerror", lambda e: logs.append(str(e)))
             A.add_init_script("localStorage.setItem('leitwerk.persoenlich', JSON.stringify({thema: 'hell', einfuehrung: true}))")
-            A.goto("http://localhost:8935/?debug"); A.wait_for_timeout(2500)
+            A.goto("http://localhost:8935/?debug&seed=8935"); A.wait_for_timeout(2500)
             A.evaluate("() => { const st = structuredClone(window.__lw.store.settings); st.generatorAktiv = false; window.__lw.store.setSettings(st); window.__lw.kiPrefsSetzen({ aktiv: false }); }")
             A.evaluate("async () => { const L = window.__lw; await L.vorlage(L.dock && 0); }")
             idx = A.evaluate("() => ['ein','zwei','breit','hoch'].indexOf('hoch')")

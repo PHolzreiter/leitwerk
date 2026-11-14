@@ -60,10 +60,10 @@ try:
     with sync_playwright() as p:
         b = p.chromium.launch(); A = b.new_page(); logs = []
         A.on("pageerror", lambda e: logs.append(str(e)))
-        A.goto("http://localhost:8922/?debug"); A.wait_for_timeout(2500)
+        A.goto("http://localhost:8922/?debug&seed=5"); A.wait_for_timeout(2500)
         A.evaluate("async () => { await window.__lw.codesystemLaden(await (await fetch('/abf_test.json')).json()); }")
         A.evaluate(HILFE)
-        A.evaluate("() => { const s = T.s(); s.funkFestNach = 600; s.settings.rate = 0; s.start(); s.setTempo(1); }")
+        A.evaluate("() => { const s = T.s(); s.setWetter('klar'); s.funkFestNach = 600; s.settings.rate = 0; s.start(); s.setTempo(1); }")
         A.wait_for_timeout(500)
         x = A.evaluate("() => T.einsatz(true)")
         print("   ", json.dumps(x, ensure_ascii=False))

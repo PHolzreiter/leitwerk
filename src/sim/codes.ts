@@ -17,7 +17,7 @@ export interface Einsatzcode {
 }
 
 /**
- * ACN-Codes (Acute Community Nurse): eigene LeitWerk-Codes – die echten Bezeichnungen bei Notruf NÖ sind
+ * ACN-Codes (Acute Community Nurse): eigene LeitWerk-Codes – die echten Bezeichnungen der Leitstelle sind
  * nicht öffentlich. Wie dort steht „ACN-“ statt „RD-“ davor, Omega-Ebene („O“): keine zeitliche Dringlichkeit,
  * nur die ACN fährt zum Patienten nach Hause.
  */

@@ -134,6 +134,7 @@ export class FunkLogik extends DCLogic {
       dIch: ich === "sendet",
       pegelW: String(an.pegel || 0),
       gerGruppe: grd ? grd.name : "",
+      hatGrWarn: !!an.warnung, grWarn: an.warnung || "",
       gerFenster: !!an.kopf,
       gerFTitel: an.kopf || "",
       gerFZeile: an.zeile || "",

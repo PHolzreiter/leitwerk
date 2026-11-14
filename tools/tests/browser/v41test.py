@@ -11,7 +11,7 @@ try:
     with sync_playwright() as p:
         b = p.chromium.launch(); A = b.new_page(viewport={"width": 1700, "height": 1000}); A.on("pageerror", lambda e: logs.append(f"PAGEERROR {e}"))
         A.add_init_script("try { localStorage.setItem('lw.abfrageAnsicht','klassisch') } catch (e) {}")
-        A.goto("http://localhost:8821/?debug"); A.wait_for_timeout(2500)
+        A.goto("http://localhost:8821/?debug&seed=8821"); A.wait_for_timeout(2500)
         A.evaluate("async () => window.__lw.codesystemLaden(await (await fetch('/abf_test.json')).json())"); A.wait_for_timeout(1200)
         A.evaluate("() => { document.querySelectorAll('.gross-overlay').forEach(o => o.hidden = true); const s = window.__lw.sim; s.settings.generatorAktiv = false; s.settings.ktAktiv = false; s.state.naechster = { stabil: 1e15, dringend: 1e15, kritisch: 1e15 }; s.funkFestNach = 1500; }")
         # 1) Rufnamen

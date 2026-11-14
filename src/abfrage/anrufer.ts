@@ -1666,3 +1666,21 @@ export function antwortOhneKi(k: AnrufKontext, frage: Frage): string {
   if (label === "Unbekannt" || label === "unbekannt") return "Das weiß ich nicht.";
   return label.replace(/^Ja\b.*/, (m) => (m === "Ja" ? "Ja." : m)).replace(/^Nein$/, "Nein.");
 }
+
+/** Anrufer, die das Alter des Patienten genau kennen (Familie, Pflege, Ärzte, der Patient selbst) */
+const KENNT_ALTER = new Set(["partner", "kind", "eltern", "fern", "pflege", "arzt", "ordi", "lehrer", "aerztefunk", "hotline"]);
+/**
+ * Alter, das der Anrufer nennt (Paul 14.11.2026 „realistisch“): wer den Patienten kennt, sagt es genau; wer ihn nicht
+ * kennt, schätzt ein paar Jahre daneben (±3–5). Kinder bleiben genau, und die Schätzung bleibt auf derselben Seite
+ * der üblichen Altersgrenzen (18, 35, 65) – die Besatzung meldet später das echte Alter.
+ */
+export function alterGeschaetzt(echt: number, a: { typ?: string; selbst?: boolean }, zufall: () => number = Math.random): number {
+  if (!Number.isFinite(echt) || echt < 18 || a.selbst || KENNT_ALTER.has(a.typ ?? "")) return echt;
+  const d = Math.round(3 + zufall() * 2) * (zufall() < 0.5 ? -1 : 1);
+  let x = Math.round(echt + d);
+  for (const g of [18, 35, 65]) {
+    if (echt >= g && x < g) x = g;
+    if (echt < g && x >= g) x = g - 1;
+  }
+  return Math.max(18, Math.min(99, x));
+}

@@ -17,7 +17,7 @@ try:
     with sync_playwright() as p:
         b = p.chromium.launch(); A = b.new_page(viewport={"width": 1600, "height": 1000}); logs = []
         A.on("pageerror", lambda e: logs.append(str(e)))
-        A.goto("http://localhost:8949/?debug"); A.wait_for_timeout(2500)
+        A.goto("http://localhost:8949/?debug&seed=8949"); A.wait_for_timeout(2500)
         A.evaluate("async () => { await window.__lw.codesystemLaden(await (await fetch('/abf_test.json')).json()); }")
         A.evaluate("() => { const s = window.__lw.sim; const d = new Date(s.state.zeit); d.setHours(10, 0, 0, 0); s.state.zeit = d.getTime(); s.settings.generatorAktiv = false; s.settings.ktAktiv = false; s.settings.rate = 0; s.state.naechster = { stabil: 1e15, dringend: 1e15, kritisch: 1e15 }; }")
 

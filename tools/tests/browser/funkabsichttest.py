@@ -65,7 +65,7 @@ try:
     with sync_playwright() as p:
         b = p.chromium.launch(); A = b.new_page(); logs = []
         A.on("pageerror", lambda e: logs.append(str(e)))
-        A.goto("http://localhost:8921/?debug"); A.wait_for_timeout(2500)
+        A.goto("http://localhost:8921/?debug&seed=8921"); A.wait_for_timeout(2500)
         for (t, art, thema, sicher) in FAELLE:
             r = A.evaluate("([t, s]) => window.__lw.funkAbsicht.absichtErkennen(t, { sicherheit: s, angesprochen: ['56/006', '56 6', 'RTW Tulln'] })", [t, sicher])
             ok = r["art"] == art and (thema is None or r.get("thema") == thema)

@@ -25,7 +25,7 @@ try:
         ctx.route("https://tickets.leitwerk.workers.dev/**", lambda r: r.abort())
         A = ctx.new_page(); A.on("pageerror", lambda e: logs.append(str(e)))
         A.add_init_script("localStorage.setItem('leitwerk.persoenlich', JSON.stringify({thema: 'dunkel', einfuehrung: true}))")
-        A.goto("http://localhost:8883/?debug"); A.wait_for_timeout(2500)
+        A.goto("http://localhost:8883/?debug&seed=8883"); A.wait_for_timeout(2500)
         A.evaluate("() => { const st = structuredClone(window.__lw.store.settings); st.generatorAktiv = false; st.ktAktiv = false; window.__lw.store.setSettings(st); window.__lw.kiPrefsSetzen({ aktiv: false }); window.__lw.sim.settings.khGrundAktiv = false; window.__lw.sim.state.khBelegung = {}; }")
         # --- alle eingebauten Fälle: Symptom und Dringlichkeit hinterlegt, Prüfung ohne Fehler
         r = A.evaluate("""() => { const f = window.__lw.faelle.alleFaelle(); const ohne = []; let n = 0;

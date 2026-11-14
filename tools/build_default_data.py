@@ -78,7 +78,7 @@ def organisation_of(name: str, operator: str = "") -> str:
     s = (name + " " + operator).lower()
     for key, org in [
         ("samariter", "Arbeiter-Samariter-Bund"), ("johanniter", "Johanniter"), ("öamtc", "ÖAMTC"),
-        ("öatmc", "ÖAMTC"), ("christophorus", "ÖAMTC"), ("notruf n", "Notruf NÖ"), ("öbb", "ÖBB"),
+        ("öatmc", "ÖAMTC"), ("christophorus", "ÖAMTC"), ("notruf n", "Leitstelle"), ("öbb", "ÖBB"),
         ("malteser", "Malteser"), ("rotes kreuz", "Rotes Kreuz"), ("rk/asb", "Rotes Kreuz / ASB"),
     ]:
         if key in s:
@@ -210,7 +210,24 @@ def build_stations() -> tuple[list[dict], dict[str, str]]:
                 "typ": r["typ"], "ort": r["ort"], "bezirk": "", "adresse": "",
                 "breitengrad": r["lat"], "laengengrad": r["lon"], "hinweis": r.get("hinweis") or "Quelle: OpenStreetMap",
             })
+    # Neutrale Namen (keine echten Organisationsnamen der Leitstelle) und Orte, die in den Quellen fehlen (Beta 53: aus der Lage bzw. recherchiert)
+    for x in stations:
+        x["name"] = x["name"].replace("Notruf Niederösterreich", "Rettungsleitstelle")
+        if x["organisation"] in ("Notruf NÖ", ""):
+            if x["typ"] == "Leitstelle":
+                x["organisation"] = "Leitstelle"
+        if not x["ort"] and x["id"] in ORT_ERGAENZUNG:
+            x["ort"] = ORT_ERGAENZUNG[x["id"]]
     return stations, name_to_id
+
+
+ORT_ERGAENZUNG = {
+    "p1528091": "Ybbsitz", "p1496919": "Krems an der Donau (Gneixendorf)", "p1528090": "Wien", "p1528092": "Wiener Neustadt",
+    "p1538387": "Spillern", "p1538382": "St. Pölten", "p1533837": "St. Pölten", "p1533832": "Stockerau", "p1533830": "St. Pölten",
+    "p1537993": "Krems an der Donau", "p1537990": "Tulln an der Donau", "fw-node11496657793": "Marchegg", "fw-node12676061982": "Groß-Siegharts",
+    "pol-node13891641473": "Bad Fischau-Brunn", "pol-node6665560123": "Haidershofen", "pol-node10670137673": "Persenbeug", "pol-node9641964181": "Scheibbs",
+    "pol-node428751182": "St. Veit an der Gölsen", "pol-node4572125608": "Ybbs an der Donau", "pol-node11489407646": "Schwechat (Flughafen Wien)", "pol-node4921781726": "Amstetten",
+}
 
 
 # Dienststellen NÖ-05/NÖ-06 (Recherche 10/2026)
@@ -489,7 +506,7 @@ def nef_noe(vehicles: list[dict], stations: list[dict]) -> None:
 
 
 def acn_noe(vehicles: list[dict], stations: list[dict]) -> None:
-    """ACN (Acute Community Nurse, Notruf NÖ): 6 Standorte (Land NÖ, 08.10.2026), je Standort genau ein Fahrzeug, je eine DGKP mit
+    """ACN (Acute Community Nurse, Leitstelle): 6 Standorte (Land NÖ, 08.10.2026), je Standort genau ein Fahrzeug, je eine DGKP mit
     Notfallsanitäter-Ausbildung allein im PKW. Funkrufnamen 80/xxx – Pauls Daten, öffentlich zugängliche Daten oder geschätzt."""
     st_ids = {x["id"] for x in stations}
     nach_funk = {re.sub(r"\s*ACN$", "", v["funkrufname"].strip()): v for v in vehicles if "ACN" in v["funkrufname"].upper()}
@@ -905,7 +922,7 @@ def _lade(name: str) -> dict:
 OESG = _lade("kh_oesg.json")
 ZAHLEN = _lade("kh_zahlen.json")
 SCHOCK = _lade("kh_schockraum.json")
-# Übersicht „Akutversorgung“ Notruf NÖ (Angabe Paul): SRT/SRI je Haus, Zahl = Anzahl Zeichen
+# Übersicht „Akutversorgung“ der Leitstelle (Angabe Paul): SRT/SRI je Haus, Zahl = Anzahl Zeichen
 AKUTV = _lade("kh_akutversorgung_noe.json")
 # Thrombektomie (neurologisches Spezialzentrum / Schlaganfall-Interventionszentrum) laut RSG bzw. Website
 THROMBEKTOMIE = {"kh001", "kh003", "kh004", "kh023", "kh029", "kh032", "kh046", "kh063"}

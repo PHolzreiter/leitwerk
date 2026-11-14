@@ -4,6 +4,7 @@
  * Asynchrone Daten (Status, Listen) werden in laden() einmal geholt, zwischengespeichert und nach jeder Aktion aufgefrischt.
  * Im Hauptmenü gibt es keine Dialoge: Rückfragen über cfm, Ergebnisse als Chip (Rückgabe-Text bzw. throw).
  */
+import { statusFarbeStandard } from "../statusFarben";
 import { FARBEN, type Bausteine, type Knopf, type Zeile, type ZeilenQuelle } from "./vertrag";
 import { decodeText, inTauri, saveTextFile } from "../../platform";
 import { store } from "../../data/store";
@@ -276,7 +277,7 @@ export function zeilenQuelle(neuZeichnen: () => void): { zeilen: ZeilenQuelle; l
   // ---------------- Farben → Statusfarben
   function statusfarben(b: Bausteine): Zeile[] {
     return [
-      ...store.settings.status.map((s, i) => b.C(`${s.nummer} – ${s.name}`, "sf_st" + (i + 1), s.farbe, bedeutung(s.key))),
+      ...store.settings.status.map((s, i) => b.C(`${s.nummer} – ${s.name}`, "sf_st" + (i + 1), statusFarbeStandard(s.key), bedeutung(s.key))),
       b.B("", [knopf("Farben der Leitstelle verwenden", () => (setzePers({ statusFarben: {} }), "Zurückgesetzt"), { cfm: "Eigene Statusfarben verwerfen?" })]),
     ];
   }

@@ -201,7 +201,9 @@ export function funkEinbinden(ziel: HTMLElement, props: FunkProps = {}): FunkFen
       .filter(([, w]) => !!w)
       .map(([x, w]) => `${gruppenName(x).slice(-2)}: ${w}`);
     const pegel = ich?.art === "sendet" ? Math.min(100, Math.round(Math.sqrt(funkPegel()) * 260)) : 0;
-    return { kopf, zeile, gruppe, neben: neben.join(" · "), lampe: neben.length > 0, pegel };
+    // 09/10 ohne Großeinsatz: deutlich zeigen (Wechsel bleibt frei – Paul 14.11.2026)
+    const warnung = k !== null && !sim.gsGruppeAktiv(k) ? `Du bist in ${name} – dort läuft kein Großeinsatz. Die Leitstelle funkt in ${gruppenName(null)}.` : "";
+    return { kopf, zeile, gruppe, neben: neben.join(" · "), lampe: neben.length > 0, pegel, warnung };
   }
 
   // ---------------------------------------------------------------- Chat

@@ -145,15 +145,16 @@ jobs:
         with:
           node-version: 22
 
-      # Rust 1.99.1 fest (Beta 47): mit Rust 1.100 (12.11.2026, neues build-dir-Layout) findet sherpa-rs-sys
-      # target/*/deps nicht mehr („Failed to copy … cargs.dll / libonnxruntime.so“)
-      - uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: "1.99.1"
+      # Rust stable (seit Beta 53). Seit Rust 1.100 (neues build-dir-Layout) legt Cargo target/<profil>/deps nicht mehr an;
+      # sherpa-rs-sys kopiert seine Bibliotheken trotzdem dorthin („Failed to copy … deps/…“) → Ordner vorher anlegen (Schritt unten)
+      - uses: dtolnay/rust-toolchain@stable
 
       - uses: swatinem/rust-cache@v2
         with:
           workspaces: "./src-tauri -> target"
+      - name: Ordner für sherpa-rs (Rust ab 1.100)
+        shell: bash
+        run: mkdir -p src-tauri/target/debug/deps src-tauri/target/release/deps
 
       - name: Abhängigkeiten
         run: npm install

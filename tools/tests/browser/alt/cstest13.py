@@ -16,7 +16,7 @@ try:
         A.goto("http://localhost:8787/?debug"); A.wait_for_timeout(1500)
         A.click("[data-act=einstellungen]"); A.click(".es-punkt[data-seite=codes]"); A.wait_for_timeout(400)
         with A.expect_file_chooser() as fc: A.click(".schema-bar >> text=Eigenes Codesystem laden")
-        fc.value.set_files(__import__("os").path.join(__import__("os").path.dirname(__import__("os").path.abspath(__file__)),"../../../data/beispiele/beispiel_codesystem.json")); A.wait_for_timeout(1000)
+        fc.value.set_files(__import__("os").path.join(__import__("os").path.dirname(__import__("os").path.abspath(__file__)),"../../../../data/beispiele/beispiel_codesystem.json")); A.wait_for_timeout(1000)
         r = A.evaluate("() => { const s=window.__lw.store; return [s.schema?.name, s.list('codes').length, s.settings.stufen.map(x=>x.stufe)]; }")
         print("   ", r)
         check(r[0] == "Beispiel-Codesystem (LeitWerk)" and r[1] == 23 and "S4 Notarzt" in r[2], "Beispiel geladen, Einsatzstufen angelegt")

@@ -746,15 +746,44 @@ function genanntKt(k: KtAuftrag, wo: "von" | "nach"): KtOrt | null {
  * Vorschläge für das Formular: Was der Anrufer im Gespräch schon gesagt hat. Nur Angaben, die im Gesagten
  * wirklich vorkommen (Name, Uhrzeit, Stichwörter …) – übernommen wird der Wert, den der Anrufer gemeint hat.
  */
-function ktVorschlaege(k: KtAuftrag, sek: boolean, setze: (p: Partial<KtDaten>) => void): Record<string, { text: string; nehmen(): void }> {
+/**
+ * Alle Vorschläge auf einmal: jeder Vorschlag setzt Patient bzw. Überstellungsdaten aus demselben Stand – nacheinander
+ * gesetzt, überschreibt z. B. „weiblich“ den gerade übernommenen Namen. Darum: Änderungen sammeln und je Feld zusammenführen.
+ */
+function vorschlaegeZusammen(d: KtDaten, vs: Record<string, { text: string; nehmen(): void; teil?: Partial<KtDaten> }>): Partial<KtDaten> {
+  const neu: Partial<KtDaten> = {};
+  const n = neu as Record<string, unknown>;
+  for (const v of Object.values(vs)) {
+    for (const [key, val] of Object.entries(v.teil ?? {})) {
+      if ((key === "patient" || key === "sek") && val && typeof val === "object") {
+        const alt = (key === "sek" ? (d.sek ?? sekLeer()) : d.patient) as unknown as Record<string, unknown>;
+        const basis = { ...((n[key] as Record<string, unknown>) ?? alt) };
+        for (const [f, x] of Object.entries(val as Record<string, unknown>)) if (x !== alt[f]) basis[f] = x;
+        n[key] = basis;
+      } else n[key] = val;
+    }
+  }
+  return neu;
+}
+
+function ktVorschlaege(k: KtAuftrag, sek: boolean, setzeAussen: (p: Partial<KtDaten>) => void): Record<string, { text: string; nehmen(): void; teil?: Partial<KtDaten> }> {
+  let setze = setzeAussen;
   const w = k.wahr?.d;
   const d = k.d;
-  const out: Record<string, { text: string; nehmen(): void }> = {};
+  const out: Record<string, { text: string; nehmen(): void; teil?: Partial<KtDaten> }> = {};
   if (!w) return out;
   const gesagt = ` ${(k.anruf?.gespraech ?? []).filter((m) => m.von === "anrufer").map((m) => norm(m.text)).join(" ")} `;
   if (gesagt.trim().length < 3) return out;
   const hat = (re: RegExp) => re.test(gesagt);
-  const vor = (id: string, text: string, nehmen: () => void) => (out[id] = { text, nehmen });
+  // nehmen() ruft setze genau einmal – den Teil merken, damit „alle übernehmen“ ihn zusammenführen kann
+  const vor = (id: string, text: string, nehmen: () => void) => {
+    let teil: Partial<KtDaten> | undefined;
+    const fang = setze;
+    out[id] = { text, nehmen };
+    setze = (p) => (teil = p);
+    try { nehmen(); } finally { setze = fang; }
+    out[id].teil = teil;
+  };
   // Name und Alter
   const nn = norm(w.patient.name).split(/\s+/).filter((x) => x.length >= 3);
   const nameGesagt = nn.length > 0 && nn.some((x) => gesagt.includes(x));
@@ -1092,7 +1121,7 @@ function ktGespraech(k: KtAuftrag, x: AnrufEintrag): GespraechVM | null {
     alarme: [],
     formular: true,
     vorschlaegeN: Object.keys(vs).length,
-    alleVorschlaege: () => Object.values(vs).forEach((v) => v.nehmen()),
+    alleVorschlaege: () => setze(vorschlaegeZusammen(d, vs)),
     schritte: S,
     msgs: msgsAus(a, k.id),
     kiText: kiBereit() ? "Anrufer: KI" : "feste Antworten",

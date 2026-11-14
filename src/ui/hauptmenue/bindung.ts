@@ -3,6 +3,7 @@
  * lesen/schreiben arbeiten in der Darstellung des Menüs (Auswahl-Text, Zahl, „#rrggbb“, Anzeigetext einer Taste);
  * geschrieben wird sofort (kein Speichern-Knopf), undefined = Standard.
  */
+import { STATUS_ENTWURF, statusFarbeStandard } from "../statusFarben";
 import type { EinstellungsBindung } from "./vertrag";
 import { store } from "../../data/store";
 import { sim } from "../../sim/engine";
@@ -658,14 +659,16 @@ export function einstellungsBindung(geladen?: () => void): EinstellungsBindung {
       const def = () => set().status[i];
       if (!def()) return undefined;
       return {
-        l: () => hex6(pers().statusFarben[def().key], hex6(def().farbe, "#888888")),
+        l: () => hex6(pers().statusFarben[def().key], hex6(statusFarbeStandard(def().key), "#888888")),
         s: (w) => {
           const f = { ...pers().statusFarben };
           if (w === undefined) delete f[def().key];
           else {
             const c = hex(w);
             if (!c) return false;
-            f[def().key] = c;
+            // gleich wie Leitstelle/Entwurf → keine eigene Farbe
+            if (c.toLowerCase() === statusFarbeStandard(def().key).toLowerCase()) delete f[def().key];
+            else f[def().key] = c;
           }
           setzePers({ statusFarben: f });
           return true;
@@ -682,10 +685,13 @@ export function einstellungsBindung(geladen?: () => void): EinstellungsBindung {
       if (feld === "m") return { l: () => set().status[i].name, s: (w) => simSetzen((s) => (s.status[i].name = w === undefined ? std.name : String(w))) };
       if (feld === "c")
         return {
-          l: () => hex6(set().status[i].farbe, std.farbe),
+          // die alte Standardfarbe zählt als „nicht geändert“ → angezeigt wird die Farbe des Entwurfs (wie im Spiel)
+          l: () => hex6(statusFarbeStandard(set().status[i].key), std.farbe),
           s: (w) => {
             const c = w === undefined ? std.farbe : hex(w);
-            return c ? simSetzen((s) => (s.status[i].farbe = c)) : false;
+            if (!c) return false;
+            const gleichEntwurf = c.toLowerCase() === (STATUS_ENTWURF[set().status[i].key] ?? "").toLowerCase();
+            return simSetzen((s) => (s.status[i].farbe = gleichEntwurf ? std.farbe : c));
           },
         };
       return { l: () => !!set().status[i].verfuegbar, s: (w) => simSetzen((s) => (s.status[i].verfuegbar = w === undefined ? std.verfuegbar : !!w)) };

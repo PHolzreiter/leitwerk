@@ -31,7 +31,7 @@ LAUF = r"""([art, anrufer]) => {
 try:
     with sync_playwright() as p:
         b = p.chromium.launch(); A = b.new_page()
-        A.goto("http://localhost:8924/?debug"); A.wait_for_timeout(2500)
+        A.goto("http://localhost:8924/?debug&seed=8924"); A.wait_for_timeout(2500)
         r = A.evaluate(LAUF, ["tippen", True]); print("   ", r)
         check(r["raus"] >= r["rein"] - 1 and r["tippen"] == 0 and r["rausch"] == 0, "Tippen während der Anrufer spricht: geht als Stille hinaus (keine Unterbrechung)")
         r = A.evaluate(LAUF, ["sprache", True]); print("   ", r)

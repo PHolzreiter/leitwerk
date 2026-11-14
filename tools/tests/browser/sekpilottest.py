@@ -13,7 +13,7 @@ try:
     with sync_playwright() as p:
         b = p.chromium.launch(); A = b.new_page(); logs = []
         A.on("pageerror", lambda e: logs.append(str(e)))
-        A.goto("http://localhost:8931/?debug"); A.wait_for_timeout(2000)
+        A.goto("http://localhost:8931/?debug&seed=8931"); A.wait_for_timeout(2000)
         A.evaluate(f"() => {{ const s={J}; const d=new Date(s.state.zeit); d.setHours(10,0,0,0); s.state.zeit=d.getTime(); s.settings.rate=0; s.settings.ktAktiv=false; }}")
         A.evaluate(f"() => {J}.call('start')"); A.wait_for_timeout(800); A.evaluate(f"() => {J}.call('pause')")
 

@@ -2,7 +2,8 @@
 import subprocess, sys, time, json
 from playwright.sync_api import sync_playwright
 S = sys.argv[1]; DIST = sys.argv[2]
-HELFER = open(S + '/gstest.py').read().split('HELFER = """')[1].split('"""')[0]
+import os
+HELFER = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'gstest.py')).read().split('HELFER = """')[1].split('"""')[0]
 srv = subprocess.Popen([sys.executable, "-m", "http.server", "8895", "-d", DIST], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 time.sleep(1); fails = 0; logs = []
 def check(ok, w):
@@ -11,7 +12,7 @@ def check(ok, w):
 try:
     with sync_playwright() as p:
         b = p.chromium.launch(); A = b.new_page(); A.on("pageerror", lambda e: logs.append(f"PAGEERROR {e}"))
-        A.goto("http://localhost:8895/?debug"); A.wait_for_timeout(2500)
+        A.goto("http://localhost:8895/?debug&seed=8895"); A.wait_for_timeout(2500)
         A.evaluate("() => { const st = structuredClone(window.__lw.store.settings); st.generatorAktiv = false; st.ktAktiv = false; st.acnAktiv = false; st.tempoBeiNotruf = false; window.__lw.store.setSettings(st); }")
         A.evaluate("async () => window.__lw.codesystemLaden(await (await fetch('/abf_test.json')).json())"); A.wait_for_timeout(1200)
         A.evaluate(HELFER)

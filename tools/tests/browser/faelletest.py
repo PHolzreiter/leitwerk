@@ -15,7 +15,7 @@ try:
         ctx.add_init_script("(() => { localStorage.setItem('leitwerk.persoenlich', JSON.stringify({thema: 'hell', einfuehrung: true})); const t = setInterval(() => { if (window.__lw && window.__lw.testAnordnung && document.querySelector('.lw-panel')) { clearInterval(t); setTimeout(() => window.__lw.testAnordnung(), 50); } }, 50); })()")
         A = ctx.new_page(); A.on("pageerror", lambda e: logs.append(f"PAGEERROR {e}"))
         A.on("console", lambda m: logs.append(f"CONSOLE {m.text}") if m.type in ("warning", "error") and "Fallkatalog" in m.text else None)
-        A.goto("http://localhost:8797/?debug"); A.wait_for_timeout(2000)
+        A.goto("http://localhost:8797/?debug&seed=7"); A.wait_for_timeout(2000)
         A.evaluate("async () => window.__lw.codesystemLaden(await (await fetch('/abf_test.json')).json())"); A.wait_for_timeout(1200)
         A.evaluate("() => { const s = window.__lw.sim; s.settings.generatorAktiv = false; s.settings.ktAktiv = false; s.settings.khGrundAktiv = false; s.state.naechster = { stabil: 1e15, dringend: 1e15, kritisch: 1e15 }; }")
         # 1) Prüfprogramm
@@ -50,6 +50,8 @@ try:
         # 4) Ablauf: Fall mit Kompetenz (Asthma A: NA nur bei RS)
         def ablauf(fall, var, quali, mitNef=False, sek=120, anfordern=False):
             eid = A.evaluate("""async ([fall, v, q, nef, anf]) => { const s = window.__lw.sim; const e = await s.generiereFall(fall, v); e.anruf.status = 'beendet';
+                // die Kompetenz-Regel prüfen, nicht den Zufall „reicht nicht immer“
+                if (e.wahr.lage && e.wahr.lage.fall) e.wahr.lage.fall.reichtNicht = false;
                 s.aktualisiere(e.id, { adresse: { lat: e.wahr.lat, lon: e.wahr.lon, label: e.wahr.adresse }, code: e.wahr.code });
                 const frei = Object.values(s.state.fahrzeuge).filter(f => s.verfuegbar(f));
                 const d = (f) => Math.hypot(f.lat - e.wahr.lat, f.lon - e.wahr.lon);

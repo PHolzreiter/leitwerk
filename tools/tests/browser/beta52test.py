@@ -24,7 +24,7 @@ try:
         b = p.chromium.launch(); ctx = b.new_context(viewport={"width": 1700, "height": 1000})
         ctx.add_init_script("(() => { localStorage.setItem('leitwerk.persoenlich', JSON.stringify({thema: 'hell', einfuehrung: true})); })()")
         A = ctx.new_page(); A.on("pageerror", lambda e: logs.append(f"PAGEERROR {e}"))
-        A.goto("http://localhost:8952/?debug"); A.wait_for_timeout(2500)
+        A.goto("http://localhost:8952/?debug&seed=8952"); A.wait_for_timeout(2500)
         A.evaluate("() => { const st = structuredClone(window.__lw.store.settings); st.generatorAktiv = false; st.ktAktiv = false; st.acnAktiv = false; st.tempoBeiNotruf = false; window.__lw.store.setSettings(st); }")
         A.evaluate("async () => window.__lw.codesystemLaden(await (await fetch('/abf_test.json')).json())"); A.wait_for_timeout(1200)
         A.evaluate(HELFER)

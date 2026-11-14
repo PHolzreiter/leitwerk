@@ -1,4 +1,6 @@
+import "./testZufall";
 import { funkGlaetten, funkHinweis } from "./ui/funkNamen";
+import { statusFarbe, statusFarbenStarten } from "./ui/statusFarben";
 import { zahlenAlsZiffern } from "./sim/funkErkennung";
 import { fehlerLogStarten } from "./fehlerLog";
 import { dienstHtml } from "./ui/panels/teile";
@@ -124,14 +126,14 @@ async function watchGeo(): Promise<void> {
   }
 }
 
-/** Eigene Statusfarben (persönlich) über die Farben der Leitstelle legen */
+/** Statusfarben überall gleich: eigene (persönlich) → Leitstelle (Statusmodell) → Entwurf – siehe ui/statusFarben.ts */
 function statusFarbenAnwenden(): void {
   const orig = sim.statusDef.bind(sim);
   sim.statusDef = ((k) => {
     const d = orig(k);
-    const f = pers().statusFarben[d.key];
-    return f ? { ...d, farbe: f } : d;
+    return { ...d, farbe: statusFarbe(d.key) };
   }) as typeof sim.statusDef;
+  statusFarbenStarten();
 }
 
 function kuerzelEinrichten(): void {

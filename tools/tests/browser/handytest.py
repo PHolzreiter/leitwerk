@@ -23,7 +23,7 @@ try:
     with sync_playwright() as p:
         b = p.chromium.launch()
         A = b.new_page(viewport={"width": 1500, "height": 950}); A.on("pageerror", lambda e: logs.append(f"A {e}"))
-        A.goto("http://localhost:8921/?debug"); A.wait_for_timeout(2500)
+        A.goto("http://localhost:8921/?debug&seed=8921"); A.wait_for_timeout(2500)
         A.evaluate("async () => window.__lw.codesystemLaden(await (await fetch('/abf_test.json')).json())"); A.wait_for_timeout(800)
         A.evaluate("() => window.__lw.startseite && window.__lw.startseite.zeigen()"); A.wait_for_timeout(800)
         A.locator('[data-act="pilot"]').first.click(); A.wait_for_timeout(500)

@@ -24,7 +24,7 @@ export const ORG_FARBEN: Record<string, string> = {
   Johanniter: "#7b1fa2",
   Malteser: "#5d4037",
   "ÖAMTC (Flugrettung)": "#f9a825",
-  "Notruf NÖ / Leitstelle": "#1565c0",
+  Leitstelle: "#1565c0",
   ÖBB: "#37474f",
   Sonstige: "#607d8b",
 };
@@ -37,7 +37,7 @@ export function orgFarbe(s: Pick<Station, "organisation" | "typ">): string {
   if (o.includes("malteser")) return ORG_FARBEN.Malteser;
   if (o.includes("öamtc") || o.includes("oeamtc") || o.includes("öatmc") || s.typ === "Luftrettung") return ORG_FARBEN["ÖAMTC (Flugrettung)"];
   if (o.includes("öbb") || o.includes("oebb")) return ORG_FARBEN["ÖBB"];
-  if (o.includes("notruf") || s.typ === "Leitstelle") return ORG_FARBEN["Notruf NÖ / Leitstelle"];
+  if (o.includes("leitstelle") || s.typ === "Leitstelle") return ORG_FARBEN.Leitstelle;
   return ORG_FARBEN.Sonstige;
 }
 
@@ -471,7 +471,7 @@ export function addSimLayers(map: maplibregl.Map, cb: { onIncident(id: string): 
       filter: ["==", ["get", "einzel"], einzel],
       minzoom: min,
       maxzoom: max,
-      paint: { "circle-radius": 3.5, "circle-color": "#EBB36B", "circle-stroke-color": "#111216", "circle-stroke-width": 1.5 },
+      paint: { "circle-radius": 3.5, "circle-color": sim.statusDef("amBO").farbe, "circle-stroke-color": "#111216", "circle-stroke-width": 1.5 },
     });
   }
   // Flugzeug mit angekündigtem Notfall (Anflug, Landung, Rollen)

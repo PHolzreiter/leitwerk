@@ -17,7 +17,7 @@ try:
         A = ctx.new_page(); logs = []
         A.on("pageerror", lambda e: logs.append(str(e)))
         A.add_init_script("localStorage.setItem('leitwerk.persoenlich', JSON.stringify({thema: 'hell', einfuehrung: true}))")
-        A.goto("http://localhost:8933/?debug"); A.wait_for_timeout(2500)
+        A.goto("http://localhost:8933/?debug&seed=8933"); A.wait_for_timeout(2500)
         A.evaluate("() => { const st = structuredClone(window.__lw.store.settings); st.generatorAktiv = false; window.__lw.store.setSettings(st); window.__lw.kiPrefsSetzen({ aktiv: false }); }")
         A.evaluate(f"() => {{ const s={J}; const d=new Date(s.state.zeit); d.setHours(9,0,0,0); s.state.zeit=d.getTime(); s.call('start'); }}")
         for art in ["kt", "sek"]:
@@ -50,7 +50,11 @@ try:
                 A.locator(".a-form .ff-kopf .kn").click(); A.wait_for_timeout(800)
                 d = A.evaluate(f"(id) => {{ const k={J}.ktAuftrag(id); return [k.d.patient.name, k.d.von && k.d.von.label, k.d.abholung || k.d.termin]; }}", kid)
                 print("    übernommen:", d)
-                check(A.locator(".a-form .ff-vor").count() == 0, f"{art}: alle Vorschläge übernommen")
+                for _ in range(30):
+                    if A.locator(".a-form .ff-vor").count() == 0: break
+                    A.wait_for_timeout(100)
+                rest = A.evaluate("() => [...document.querySelectorAll('.a-form .ff-vor')].map(x => x.innerText.replace(/\\s+/g, ' '))")
+                check(not rest, f"{art}: alle Vorschläge übernommen {rest}")
             # Eingabe direkt im Feld
             feld = A.locator(".a-form .ff", has_text="Grund").first.locator(".ff-ein")
             if feld.count():

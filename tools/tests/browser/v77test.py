@@ -39,7 +39,7 @@ try:
         ctx.route("https://tickets.leitwerk.workers.dev/**", lambda r: r.abort())
         A = ctx.new_page(); A.on("pageerror", lambda e: logs.append(str(e)))
         A.add_init_script("localStorage.setItem('leitwerk.persoenlich', JSON.stringify({thema: 'dunkel', einfuehrung: true}))")
-        A.goto("http://localhost:8878/?debug"); A.wait_for_timeout(2500)
+        A.goto("http://localhost:8878/?debug&seed=8878"); A.wait_for_timeout(2500)
         A.evaluate("() => { const st = structuredClone(window.__lw.store.settings); st.generatorAktiv = false; st.ktAktiv = false; window.__lw.store.setSettings(st); window.__lw.kiPrefsSetzen({ aktiv: false }); }")
         # --- Vorlesen
         t = A.evaluate("() => ['Hier 69/902, kommen', 'Hauptstraße 5, 3481 Fels am Wagram', 'Rückruf 0664 1234567', 'in 3500 Krems', 'um 1500 Uhr'].map(window.__lw.sprechText)")
