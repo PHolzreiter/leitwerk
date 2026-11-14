@@ -451,6 +451,11 @@ function notrufGespraech(e: Einsatz): GespraechVM | null {
       else dazu(frageSchritt(f, "Rückrufnummer"));
     }
     for (const f of p3.filter(istWer)) dazu(frageSchritt(f, "Anrufer"));
+    // automatische Unfallmeldung: zuerst „Hören Sie mich?“ – ohne Sprachkontakt lassen sich Anzahl, Bewusstsein und Atmung nicht klären
+    if (a.antworten.anrufer === "system" && a.kapitel) {
+      const sk = schema.kapitel[a.kapitel]?.fragen.find((f) => f.id === "sprachkontakt");
+      if (sk) dazu(frageSchritt(sk, "Sprachverbindung"));
+    }
     // Wie viele Patienten? – vor Bewusstsein und Atmung (bei mehreren gehen diese Fragen an alle: „Gibt es dort jemanden, der …“);
     // die Gesundheitshotline fordert immer für einen Patienten an
     for (const f of p4) if (f.id === "anzahl_patienten" && a.antworten.anrufer !== "hotline") dazu(frageSchritt(f, "Patienten"));

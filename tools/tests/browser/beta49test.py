@@ -106,7 +106,7 @@ try:
         for k, v in r.items(): print("     ", k, v)
         soll = {"ecall_auffahrunfall/A": "RD-34A1", "ecall_auffahrunfall/B": "RD-34B1", "ecall_auffahrunfall/C": "RD-34B5", "ecall_mehrere/A": "RD-34B2", "ecall_mehrere/B": "RD-34B3",
                 "ecall_stille/A": "RD-34B4", "ecall_stille/B": "RD-34B4", "ecall_ueberschlag/A": "RD-34D1m", "ecall_eingeklemmt/A": "RD-34D1l", "ecall_kollision/A": "RD-34D1j", "ecall_kollision/B": "RD-34D1h",
-                "ecall_kollision/C": "RD-34D1i", "ecall_absturz/A": "RD-34D1n", "ecall_lenker_bewusstlos/A": "RD-34D2", "ecall_lenker_bewusstlos/B": "RD-34D3", "ecall_lenker_bewusstlos/C": "RD-34D4",
+                "ecall_kollision/C": "RD-34D1i", "ecall_kollision/D": "RD-34B1", "ecall_absturz/A": "RD-34D1n", "ecall_lenker_bewusstlos/A": "RD-34D2", "ecall_lenker_bewusstlos/B": "RD-34D3", "ecall_lenker_bewusstlos/C": "RD-34D4",
                 "ecall_sos_versehen/A": "RD-34O1", "ecall_uhr_motorrad/A": "RD-34D1k", "ecall_uhr_fehlalarm/A": "RD-34O1", "hotline_atemnot/A": "RD-33B3-LowCode", "hotline_brustschmerz/A": "RD-33C7-LowCode",
                 "piste_sturz/A": "RD-33A3-SCHI", "piste_sturz/B": "RD-33O2-SCHI", "piste_sturz/C": "RD-33O1-SCHI", "piste_sturz/D": "RD-33A2-SCHI", "piste_oberschenkel/A": "RD-33B3-SCHI", "piste_oberschenkel/B": "RD-33B2-SCHI", "piste_kollision_na/A": "RD-33C7-SCHI"}
         for k, c in soll.items():

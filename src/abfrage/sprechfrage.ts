@@ -227,6 +227,23 @@ function allgemein(text: string, an: Anrede): string {
   return t;
 }
 
+/**
+ * Automatische Unfallmeldung: man redet mit irgendwem im Auto bzw. an der Uhr – ob das der Verletzte ist, weiß man
+ * anfangs nicht. Darum „Sie“ für die Person am Telefon und „die verletzte Person“ statt „der Patient“.
+ */
+const SPRECH_ECALL: Record<string, string[]> = {
+  sprachkontakt: ["Hallo, hier ist die Rettungsleitstelle. Hören Sie mich?", "Hallo, hier ist der Rettungsdienst – können Sie mich hören?"],
+  verletzte: ["Sind Sie verletzt? Ist sonst noch jemand verletzt?", "Ist jemand verletzt – Sie selbst oder jemand anderer?"],
+  anzahl_patienten: ["Wie viele Personen sind verletzt?", "Wie viele Verletzte gibt es?"],
+  bw: ["Ist die verletzte Person wach und reagiert sie normal?", "Ist die verletzte Person bei Bewusstsein?"],
+  at: ["Atmet die verletzte Person normal?", "Wie atmet die verletzte Person?"],
+  alter: ["Wie alt ist die verletzte Person ungefähr?"],
+  geschlecht: ["Ist die verletzte Person ein Mann oder eine Frau?"],
+  mechanismus: ["Was genau ist passiert? Ist ein Fußgänger, ein Radfahrer oder ein Motorrad beteiligt, hat sich ein Auto überschlagen oder ist jemand eingeklemmt?"],
+};
+/** Fragen, die beim eCall immer so gestellt werden (auch wenn Geschlecht oder Anzahl schon feststehen) */
+const ECALL_IMMER = new Set(["sprachkontakt", "verletzte", "anzahl_patienten", "mechanismus"]);
+
 /** Schlüssel (Merkmal) einer Frage */
 function merkmal(schema: Schema | null, f: Frage): string {
   return schema ? merkmalVonFrage(schema, f.id) : f.id;
@@ -244,6 +261,9 @@ export function sprechFrage(f: Frage, schema: Schema | null, antworten: Antworte
   const def = psych ? SPRECH.lage_psych : SPRECH[m];
   const rnd = opt.zufall ?? Math.random;
   if (m === "ort_adresse" && opt.erste) return "Notruf 144, Rettungsdienst. Wo genau ist der Notfallort?";
+  // automatische Unfallmeldung: an die Person am Telefon, über „die verletzte Person“
+  const ecall = (schema ? merkmaleAusSchema(schema, antworten) : antworten).anrufer === "system";
+  if (ecall && SPRECH_ECALL[m] && (ECALL_IMMER.has(m) || (an === "neutral" && !mehrere(antworten)))) return SPRECH_ECALL[m][Math.floor(rnd() * SPRECH_ECALL[m].length)];
   // mehrere Betroffene: Frage an die Gruppe („Ist jemand bewusstlos …?“)
   if (f.text_mehrere && mehrere(antworten)) return allgemein(f.text_mehrere, "neutral");
   // Kinder: „Bub oder Mädchen?“

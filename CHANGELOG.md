@@ -1,5 +1,12 @@
 # Änderungen
 
+## 0.116.0-beta.51 – Automatische Unfallmeldung: erst die Maschine, dann der Mensch
+- **Die Ansage der automatischen Unfallmeldung spricht eine Computerstimme:** zuerst ein Signalton, dann immer dieselbe gleichmäßige, leicht blecherne Stimme; das Kennzeichen wird Buchstabe für Buchstabe gelesen. Danach meldet sich die Person im Auto bzw. an der Uhr mit ihrer eigenen Stimme – auch über die Cloud-Stimmen.
+- **„Hören Sie mich?“ kommt gleich nach „Wer ruft an?“.** Meldet sich niemand, sind Anzahl, Bewusstsein, Atmung, Alter und Geschlecht automatisch „unbekannt“ und werden übersprungen.
+- **Fragen per Leertaste passen zum Gespräch mit dem Auto:** „Hallo, hier ist die Rettungsleitstelle. Hören Sie mich?“, „Sind Sie verletzt? Ist sonst noch jemand verletzt?“, „Wie viele Personen sind verletzt?“, „Ist die verletzte Person wach …?“, „Wie alt ist die verletzte Person ungefähr?“.
+- **Wer verletzt ist, hängt vom Fall ab:** der angefahrene Fußgänger, Radfahrer oder Motorradfahrer, beide (Radfahrer und Lenkerin mit Glassplittern) oder nur der Lenker (ausgewichen, gegen einen Baum). Die Person am Telefon hat ihr eigenes Alter – „Wie alt sind Sie?“ beantwortet sie mit ihrem, nach dem Verletzten gefragt schätzt sie dessen Alter.
+- **Unter Schock:** Manche Lenker sagen zuerst nur „Ich hatte einen Unfall“ – dass ein Fußgänger oder Motorradfahrer beteiligt ist, kommt erst, wenn man nachfragt.
+
 ## 0.116.0-beta.50 – Anzahl der Patienten zuerst
 - **„Wie viele Personen?“ kommt jetzt direkt nach „Wer ruft an?“** – vor Bewusstsein und Atmung. Bei mehreren lauten die beiden Fragen „Gibt es dort jemanden, der nicht bei vollem Bewusstsein ist?“ und „Gibt es dort jemanden, der nicht normal atmet?“ (es zählt der Schlimmste). Die Frage kommt bei allen Anrufern, außer bei der Gesundheitshotline (immer ein Patient).
 - **Fahrzeuge-Fenster:** Bleibt die Maus auf einem Fahrzeug, legt sich kein großer Hinweis mehr über die Liste. Was Klick, Doppelklick und Rechtsklick machen, steht jetzt am Spaltenkopf.

@@ -69,6 +69,8 @@ export interface Anrufer {
   meldung?: string;
   /** eCall: ob jemand im Fahrzeug (bzw. an der Uhr) antwortet */
   sprachkontakt?: boolean;
+  /** Alter der Person am Telefon, wenn sie nicht selbst der Patient ist (automatische Unfallmeldung) */
+  alter?: number;
   /** automatische Unfallmeldung: vom Auto (eCall) oder von einer Smartwatch */
   quelle?: "auto" | "uhr";
   /** andere Leitstelle (Flughafen): nur diese Abfrage-Felder sind bekannt, sonst „unbekanntSatz“ */
@@ -370,7 +372,7 @@ function gendern(t: string, g: "m" | "w"): string {
 
 /** „Ich bin …“ für die Frage „Wer ruft an?“ */
 export function werText(x: Anrufer): string {
-  if (x.art === "ecall") return !x.sprachkontakt ? "…" : x.quelle === "uhr" ? `${x.name}, mir gehört die Uhr.` : x.selbst ? `${x.name}, ich sitz im Auto, ich bin ${x.geschlecht === "w" ? "die Fahrerin" : "der Fahrer"}.` : `${x.name}, ich sitz ${x.geschlecht === "w" ? "als Beifahrerin" : "als Beifahrer"} im Auto.`;
+  if (x.art === "ecall") return !x.sprachkontakt ? "…" : x.quelle === "uhr" ? `${x.name}, mir gehört die Uhr.` : /allein im Auto/.test(x.rolle) ? `${x.name}, ich sitz im Auto, ich bin ${x.geschlecht === "w" ? "die Fahrerin" : "der Fahrer"}.` : `${x.name}, ich sitz ${x.geschlecht === "w" ? "als Beifahrerin" : "als Beifahrer"} im Auto.`;
   if (x.selbst) return `${x.name.split(" ")[0]} ${x.name.split(" ").slice(1).join(" ")} – ich ruf für mich selber an, mir geht's nicht gut.`;
   const r = x.rolle.split(";")[0].split("(")[0].trim();
   if (x.art && x.art !== "privat") return `${x.stelle ? `${x.stelle}, ` : ""}${x.name}${x.art === "polizei" ? " – ich rufe für unsere Streife vor Ort an" : ""}.`;
@@ -563,19 +565,24 @@ function sonderAnrufer(
     const kontakt = a.sprachkontakt === "ja";
     const quelle = a.ecall_quelle === "uhr" ? "uhr" : "auto";
     const insassen = typeof a.ecall_insassen === "number" ? a.ecall_insassen : 1 + Math.floor(rnd() * 3);
-    // spricht die verunfallte Person selbst (Uhr; allein im Auto)? Sonst redet jemand anderer im Auto
-    const selbst = quelle === "uhr" || insassen === 1;
+    // Ist die Person am Telefon (bzw. an der Uhr) selbst der Patient? Fall-Angabe ecall_selbst; sonst: Uhr oder
+    // allein im Auto – außer ein Fußgänger, Radfahrer oder Motorrad wurde angefahren (dann ist das der Patient)
+    const andere = ["fussgaenger", "fahrrad", "motorrad"].includes(String(a.mechanismus));
+    const selbst = a.ecall_selbst === "ja" ? true : a.ecall_selbst === "nein" ? false : quelle === "uhr" || (insassen === 1 && !andere);
     const pg: "m" | "w" = a.geschlecht === "w" ? "w" : a.geschlecht === "m" ? "m" : rnd() < 0.5 ? "w" : "m";
     const g: "m" | "w" = selbst ? pg : a.ecall_sprecher === "w" || a.ecall_sprecher === "m" ? a.ecall_sprecher : rnd() < 0.5 ? "w" : "m";
-    const meldung = ecallMeldung(a, quelle, insassen, pg, rnd);
+    const meldung = ecallMeldung(a, quelle, insassen, selbst ? pg : g, rnd);
+    // eigenes Alter der Person am Telefon (ist sie nicht der Patient)
+    const eigenAlter = selbst ? undefined : typeof a.ecall_sprecher_alter === "number" ? a.ecall_sprecher_alter : 20 + Math.floor(rnd() * 55);
     return basis({
+      ...(eigenAlter !== undefined ? { alter: eigenAlter } : {}),
       art: "ecall",
       rolle:
         quelle === "uhr"
           ? `${g === "w" ? "Trägerin" : "Träger"} der Smartwatch, die den Notruf ausgelöst hat`
           : !kontakt
             ? "automatische Unfallmeldung"
-            : selbst
+            : insassen === 1
               ? `${g === "w" ? "Lenkerin" : "Lenker"} des verunfallten Fahrzeugs (${meldung.fahrzeug}), allein im Auto`
               : `${g === "w" ? "Insassin" : "Insasse"} des verunfallten Fahrzeugs (${meldung.fahrzeug})`,
       anruferWert: "system",
@@ -1221,9 +1228,15 @@ function promptGeschichte(k: AnrufKontext): string {
   const wer = sz.ohnePatient
     ? "Du rufst an, weil du etwas beobachtet hast bzw. weil dir etwas passiert ist (siehe Fallakte)."
     : art === "ecall"
-      ? x.quelle === "uhr"
-        ? `Deine Smartwatch hat nach deinem Unfall automatisch die Rettung verständigt – du hast das gar nicht selbst gemacht. Jetzt hörst du die Leitstelle über die Uhr und redest mit ihr. ${ich ? "Du bist selbst die verunfallte Person." : ""}`
-        : `Dein Auto hat nach dem Unfall automatisch die Rettung verständigt (eCall) – du hast das nicht selbst gemacht. Jetzt hörst du die Leitstelle über die Freisprechanlage im Auto und redest mit ihr. Du bist ${x.rolle}.${ich ? " Du bist selbst die verletzte Person." : ""}`
+      ? `${
+          x.quelle === "uhr"
+            ? "Deine Smartwatch hat nach dem Unfall automatisch die Rettung verständigt – du hast das gar nicht selbst gemacht. Jetzt hörst du die Leitstelle über die Uhr und redest mit ihr."
+            : `Dein Auto hat nach dem Unfall automatisch die Rettung verständigt (eCall) – du hast das nicht selbst gemacht. Jetzt hörst du die Leitstelle über die Freisprechanlage im Auto und redest mit ihr. Du bist ${x.rolle}.`
+        } Vorher hat das System eine automatische Ansage abgespielt (Computerstimme) – das warst NICHT du; du meldest dich jetzt zum ersten Mal.${
+          ich
+            ? " Du bist selbst die verletzte Person."
+            : ` Du bist ${x.alter ?? 40} Jahre alt (fragt man nach DEINEM Alter – „Wie alt sind Sie?“ –, sagst du das). Die verletzte Person, um die es geht, ist ${typeof k.wahrheit.ecall_patient === "string" ? k.wahrheit.ecall_patient : bz} – fragt die Leitstelle nach „dem Patienten“ oder „der verletzten Person“ (Alter, wach, Atmung …), ist ${er === "sie" ? "sie" : "er"} gemeint; ihr Alter kennst du nicht genau, du schätzt es. Fragt man, ob DU verletzt bist, antwortest du nach der Fallakte (steht dort nichts, bist du unverletzt). Solange noch nicht geklärt ist, wer verletzt ist, darfst du kurz klarstellen („Mir fehlt nichts, aber …“).`
+        }`
     : ich
     ? "Du bist selbst der Patient."
     : art === "polizei"

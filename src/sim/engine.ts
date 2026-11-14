@@ -4833,6 +4833,11 @@ export class Simulation {
     else a.antworten[frage] = wert;
     // „Wer ruft an?“: Sonderanrufer wählen das Kapitel automatisch (überstimmen geht, dann bleibt es)
     if (frage === "anrufer" || frage === "kapitel") this.kapitelAusAnrufer(e, a);
+    // automatische Unfallmeldung ohne Sprachkontakt: Anzahl, Bewusstsein, Atmung, Alter und Geschlecht sind unbekannt
+    if (frage === "sprachkontakt" && wert === "nein" && store.schema) {
+      for (const f of store.schema.globale_fragen.phase_4_primaerabfrage ?? [])
+        if (["anzahl_patienten", "bw", "at", "alter", "geschlecht"].includes(f.id) && a.antworten[f.id] === undefined && (f.typ === "zahl" || f.optionen?.some((o) => o.wert === "unbekannt"))) a.antworten[f.id] = "unbekannt";
+    }
     // Rückrufnummer aus der Abfrage = Rückrufnummer des Einsatzes (erst damit ist ein Rückruf möglich)
     if (frage === "rueckrufnummer" && typeof wert === "string" && wert.trim() && wert.trim() !== e.telefon) {
       e.telefon = wert.trim();

@@ -11,7 +11,7 @@ import { kiAntwortNeu, nachrichtArt, ohneVorspann } from "./runde";
 import { liveAktiv, liveFrage, liveSperren, liveSprechen, livePrefs, sitzungDa, sitzungFuer, type LiveErgebnis, type SitzungOpt } from "./liveKi";
 import { inTauri } from "../platform";
 import { fragenImAblauf, type Frage } from "./schema";
-import { anruferSagt, satzSprecher } from "../ui/sprache";
+import { anruferSagt, satzSprecher, systemAnsage } from "../ui/sprache";
 import { ohnePatientWort } from "./sprechfrage";
 import { ist } from "./themen";
 import { buchstabiert, fragtSchreibweise, namensTeil } from "./buchstabieren";
@@ -165,6 +165,15 @@ export async function fragen(e: Einsatz, text: string, schemaFrage?: Frage, onTo
       gefragt.get(e.id)!.add(schemaFrage.id);
     }
     const quelle = { wert: "ki" as "ki" | "fest" };
+    // automatische Unfallmeldung: zuerst die Ansage des Systems (Computerstimme), erst danach redet ein Mensch
+    if (k.anrufer.art === "ecall" && k.anrufer.meldung && !e.anruf?.gespraech.some((m) => m.von === "anrufer")) {
+      kiQuelleSetzen(e.id, "fest");
+      await new Promise((r) => setTimeout(r, 700));
+      onToken?.(k.anrufer.meldung);
+      if (e.anruf?.status === "aktiv") systemAnsage(k.anrufer.meldung, e.id);
+      await sim.call("anrufNachricht", e.id, "anrufer", k.anrufer.meldung, "fest");
+      return;
+    }
     // Cloud-Anrufer (Gemini Live): antwortet direkt mit eigener Stimme
     if (liveAktiv() && liveGeeignet(k)) {
       try {
@@ -1041,7 +1050,7 @@ export function liveVorwaermen(e: Einsatz): void {
 export function liveFreisprechen(e: Einsatz): ((b64: string) => void) | null {
   const k = kontext(e);
   if (!k || !liveAktiv() || !livePrefs().freisprechen || e.anruf?.status !== "aktiv") return null;
-  if (!liveGeeignet(k)) return null;
+  if (!liveGeeignet(k) || ansageOffen(e, k)) return null;
   const s = sitzungFuer(liveOpt(e, k));
   return (b64) => s.stueck(b64);
 }
@@ -1054,7 +1063,7 @@ export function liveFreisprechen(e: Einsatz): ((b64: string) => void) | null {
 export function liveSprechStrom(e: Einsatz, onToken?: (t: string) => void, danach?: () => void): { stueck(b64: string): void; ende(): Promise<void>; abbrechen(): void } | null {
   const k = kontext(e);
   if (!k || !liveAktiv() || laufend.has(e.id) || e.anruf?.status !== "aktiv" || livePrefs().freisprechen) return null;
-  if (!liveGeeignet(k)) return null;
+  if (!liveGeeignet(k) || ansageOffen(e, k)) return null;
   const s = liveSprechen(liveOpt(e, k), onToken);
   if (!s) return null;
   laufend.add(e.id);
@@ -1089,7 +1098,13 @@ export function liveSprechStrom(e: Einsatz, onToken?: (t: string) => void, danac
 }
 
 /** Passt der Anruf für den Cloud-Anrufer? (eCall, andere Leitstellen, Hosentaschenanrufe & Co. bleiben beim Programm) */
+/** automatische Unfallmeldung, deren Ansage noch nicht lief (die kommt immer fest, nie von der Cloud) */
+function ansageOffen(e: Einsatz, k: AnrufKontext): boolean {
+  return k.anrufer.art === "ecall" && !e.anruf?.gespraech.some((m) => m.von === "anrufer");
+}
+
 export function liveGeeignet(k: AnrufKontext): boolean {
   const art = k.anrufer.art ?? "privat";
-  return art !== "ecall" && art !== "leitstelle" && !k.anrufer.nurBekannt && k.szenario?.spezial !== "hosentasche";
+  // automatische Unfallmeldung: nach der Ansage redet ein Mensch – aber nur, wenn sich jemand meldet
+  return (art !== "ecall" || !!k.anrufer.sprachkontakt) && art !== "leitstelle" && !k.anrufer.nurBekannt && k.szenario?.spezial !== "hosentasche";
 }

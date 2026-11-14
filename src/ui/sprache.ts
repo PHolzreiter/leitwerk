@@ -431,7 +431,7 @@ function supertonicSagen(text: string, stimme: string, rate: number, laut = 1, t
 }
 
 /** erzeugtes Audio (4 Byte Rate + f32) der Reihe nach auf dem gewählten Gerät abspielen */
-function imProgrammSagen(audio: Promise<ArrayBuffer>, laut = 1, ton = 1, fertig?: () => void, geraet?: string): void {
+function imProgrammSagen(audio: Promise<ArrayBuffer>, laut = 1, ton = 1, fertig?: () => void, geraet?: string, wandeln?: (pcm: Float32Array, rate: number) => Float32Array): void {
   const p = sprachPrefs();
   const gen = generation;
   const id = `stimme-${++zaehler}`;
@@ -439,8 +439,16 @@ function imProgrammSagen(audio: Promise<ArrayBuffer>, laut = 1, ton = 1, fertig?
   kette = kette
     .then(async () => {
       if (gen !== generation) return;
-      const buf = await audio;
+      let buf = await audio;
       if (gen !== generation) return;
+      if (wandeln) {
+        const r0 = new DataView(buf).getUint32(0, true);
+        const neu = wandeln(new Float32Array(buf.slice(4)), r0);
+        const out = new ArrayBuffer(4 + neu.length * 4);
+        new DataView(out).setUint32(0, r0, true);
+        new Float32Array(out, 4).set(neu);
+        buf = out;
+      }
       const rate = Math.round(new DataView(buf).getUint32(0, true) * ton);
       await invoke("ton_spielen", new Uint8Array(buf.slice(4)), {
         headers: { "x-rate": String(rate), "x-geraet": encodeURIComponent(geraet ?? p.geraetStimmen), "x-laut": String(Math.max(0, (p.laut / 100) * laut)), "x-id": id },
@@ -510,6 +518,69 @@ export function anruferSagt(text: string, a: { geschlecht?: "m" | "w"; emotion?:
   let rate = (EMOTION_TEMPO[a?.emotion ?? "gefasst"] ?? 1) * (ART_TEMPO[a?.stimmungArt ?? ""] ?? 1) * (0.92 + hash(`${id}|${a?.name ?? ""}|eigen`) * 0.16);
   if (a?.sprache === "gebrochen") rate *= 0.9;
   sagen(text, a?.geschlecht ?? (hash(id) < 0.5 ? "w" : "m"), `${id}|${a?.name ?? ""}`, rate, a?.stimmungArt && EMOTION_SPRECHER[a.stimmungArt] ? a.stimmungArt : a?.emotion);
+}
+
+/**
+ * Ansage eines Computersystems (automatische Unfallmeldung): Signalton, dann immer dieselbe gleichmäßige
+ * Stimme, leicht „blechern“ (Ringmodulation) – so hört man sofort, dass kein Mensch spricht.
+ */
+export function systemAnsage(text: string, _id?: string): void {
+  const p = sprachPrefs();
+  if (!p.vorlesen || aufnahmeLaeuft) return;
+  // Kennzeichen Buchstabe für Buchstabe: „KS 790 ER“ → „K S, 7 9 0, E R“
+  const t = sprechText(text.replace(/Kennzeichen ([A-Z]{1,3}) (\d+) ([A-Z]{1,3})/g, (_m, a: string, n: string, b: string) => `Kennzeichen ${a.split("").join(" ")}, ${n.split("").join(" ")}, ${b.split("").join(" ")}`));
+  if (!t) return;
+  const schluessel = "system-ansage";
+  const roboter = (pcm: Float32Array, rate: number): Float32Array => {
+    // Signalton (zwei Töne), kurze Pause, dann die Stimme mit Ringmodulation
+    const ton = (hz: number, ms: number) => Array.from({ length: Math.round((rate * ms) / 1000) }, (_, i) => 0.25 * Math.sin((2 * Math.PI * hz * i) / rate) * Math.min(1, i / 200, (Math.round((rate * ms) / 1000) - i) / 200));
+    const stille = (ms: number) => new Array(Math.round((rate * ms) / 1000)).fill(0);
+    const vorne = [...ton(1046, 160), ...stille(70), ...ton(784, 240), ...stille(350)];
+    const out = new Float32Array(vorne.length + pcm.length);
+    out.set(vorne);
+    for (let i = 0; i < pcm.length; i++) out[vorne.length + i] = pcm[i] * (0.65 + 0.35 * Math.sin((2 * Math.PI * 55 * i) / rate));
+    return out;
+  };
+  if (p.stimmeArt === "supertonic" && inTauri() && supertonicDa) {
+    imProgrammSagen(invoke<ArrayBuffer>("supertonic_erzeugen", { stimme: "F3", text: t, tempo: 0.95 }), 1, 1, undefined, undefined, roboter);
+    return;
+  }
+  if ((p.stimmeArt === "piper" || p.stimmeArt === "supertonic") && inTauri()) {
+    const v = piperFuer("w", schluessel);
+    if (v) {
+      imProgrammSagen(invoke<ArrayBuffer>("stimme_erzeugen", { name: v.name, text: t, sid: v.sid, tempo: 0.95 }), 1, 1, undefined, undefined, roboter);
+      return;
+    }
+  }
+  // Systemstimme: Signalton über den Browser, dann tief und gleichmäßig
+  try {
+    const ctx = new AudioContext();
+    const piep = (hz: number, ab: number, dauer: number) => {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.frequency.value = hz;
+      g.gain.setValueAtTime(0.0001, ctx.currentTime + ab);
+      g.gain.exponentialRampToValueAtTime(0.2, ctx.currentTime + ab + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + ab + dauer);
+      o.connect(g).connect(ctx.destination);
+      o.start(ctx.currentTime + ab);
+      o.stop(ctx.currentTime + ab + dauer + 0.02);
+    };
+    piep(1046, 0, 0.16);
+    piep(784, 0.23, 0.24);
+    setTimeout(() => void ctx.close().catch(() => undefined), 1500);
+  } catch {
+    /* ohne Ton */
+  }
+  if (!synth) return;
+  const u = new SpeechSynthesisUtterance(t);
+  const { voice } = stimmeFuer("w", schluessel);
+  if (voice) u.voice = voice;
+  u.lang = voice?.lang ?? "de-AT";
+  u.pitch = 0.6;
+  u.rate = 0.92 * (p.tempo / 100);
+  u.volume = Math.max(0, Math.min(1, p.laut / 100));
+  setTimeout(() => synth.speak(u), 650);
 }
 
 /** Geschlecht aus Name/Rolle raten (KT-Anrufer haben nur Name und Rolle) */

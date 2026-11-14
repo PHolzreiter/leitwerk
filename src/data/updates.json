@@ -1,5 +1,17 @@
 [
  {
+  "version": "0.116.0-beta.51",
+  "datum": "2026-11-14",
+  "titel": "Automatische Unfallmeldung: erst die Maschine, dann der Mensch",
+  "punkte": [
+   "Ansage mit Signalton und Computerstimme, danach spricht die Person im Auto bzw. an der Uhr",
+   "„Hören Sie mich?“ gleich nach „Wer ruft an?“ – ohne Antwort sind Anzahl, Bewusstsein und Atmung unbekannt",
+   "Leertaste-Fragen beim eCall: „Sind Sie verletzt?“, „die verletzte Person“ …",
+   "Wer verletzt ist, hängt vom Fall ab (der andere, beide oder nur der Lenker); der Anrufer hat sein eigenes Alter",
+   "Manche stehen unter Schock und erzählen erst auf Nachfrage, was genau passiert ist"
+  ]
+ },
+ {
   "version": "0.116.0-beta.50",
   "datum": "2026-11-13",
   "titel": "Anzahl der Patienten zuerst",
