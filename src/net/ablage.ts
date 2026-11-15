@@ -21,7 +21,8 @@ export type AblageOrdner =
   | "Fälle"
   | "Töne"
   | "Designs"
-  | "Anordnungen";
+  | "Anordnungen"
+  | "Namen";
 
 export const ABLAGE_INFO: Record<AblageOrdner, string> = {
   Abfrageschema: "eigene Abfrageschemas (in RD und Krankentransport_Sekundärtransporte)",
@@ -35,6 +36,7 @@ export const ABLAGE_INFO: Record<AblageOrdner, string> = {
   Töne: "eigene Klingel- und Signaltöne",
   Designs: "Farb-Designs",
   Anordnungen: "Fenster-Anordnungen",
+  Namen: "Namens-Ersetzungen „neutral;eigen“ (CSV) – mit Vorlage",
 };
 
 export interface AblageDatei {

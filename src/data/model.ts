@@ -372,6 +372,8 @@ export interface Persisted {
   codesGetrennt?: boolean;
   /** v0.116 (Beta 56): Namens-Ersetzungen „neutral → eigen“ (Realismus), siehe data/namen.ts */
   namen?: { neutral: string; eigen: string }[];
+  /** Datei der aktiven Namens-Ersetzungen in Dokumente/LeitWerk/Namen (wird beim Start neu eingelesen) */
+  namenDatei?: string;
 }
 
 export function emptyPersisted(): Persisted {

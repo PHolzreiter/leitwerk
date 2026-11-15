@@ -17,6 +17,7 @@ import csv
 import json
 import math
 import re
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -1286,12 +1287,40 @@ def neutral_daten(stations: list[dict], vehicles: list[dict], hospitals: list[di
         x["name"] = neutral(x.get("name", ""), abk=False)
 
 
+def namen_datei(pfad: str, vorher: dict, stations: list[dict], vehicles: list[dict], pois: list[dict]) -> None:
+    """Private Namensdatei „neutral;eigen“ (echte Namen aus den Quellen) – nur auf Wunsch, nie ins Repository.
+    Ganze Namen, die eindeutig zurückführen, plus die Organisationen als Wort."""
+    paare: dict[str, set[str]] = {}
+    def merke(neu: str, alt: str) -> None:
+        if neu and alt and neu != re.sub(r"\s{2,}", " ", alt).strip():
+            paare.setdefault(neu, set()).add(alt)
+    for x in stations:
+        merke(x["name"], vorher["st"].get(x["id"], ""))
+    for x in vehicles:
+        merke(x.get("kurzname", ""), vorher["fz"].get(x["id"], ""))
+    for x in pois:
+        alt = vorher["poi"].get(x["id"], "")
+        if alt != "Rotes Kreuz":  # Wegkreuze bleiben Wegkreuze
+            merke(x.get("name", ""), alt)
+    zeilen = ["# LeitWerk – Namens-Ersetzungen mit echten Namen (privat, nicht weitergeben ohne Erlaubnis)", "neutral;eigen",
+              "# Organisationen", "Rettungsdienst;Rotes Kreuz", "Rettungswache;Samariterbund", "Krankentransport;Johanniter", "Luftrettung;ÖAMTC",
+              "# Ganze Namen (Dienststellen, Hubschrauber, Orte)"]
+    for neu in sorted(paare):
+        if len(paare[neu]) == 1:
+            zeilen.append(f"{neu};{next(iter(paare[neu]))}")
+    Path(pfad).write_text("\n".join(zeilen) + "\n", encoding="utf-8-sig")
+    print(f"Namensdatei: {pfad} ({len(zeilen)} Zeilen)")
+
+
 def main() -> None:
     stations, name_to_id = build_stations()
     vehicles = build_vehicles(stations, name_to_id)
     hospitals = build_hospitals()
     pois = build_pois()
+    vorher = {"st": {x["id"]: x["name"] for x in stations}, "fz": {x["id"]: x.get("kurzname", "") for x in vehicles}, "poi": {x["id"]: x.get("name", "") for x in pois}}
     neutral_daten(stations, vehicles, hospitals, pois)
+    if "--namen" in sys.argv:
+        namen_datei(sys.argv[sys.argv.index("--namen") + 1], vorher, stations, vehicles, pois)
     write_csv(OUT / "dienststellen.csv", STATION_COLS, stations)
     write_csv(OUT / "fahrzeuge.csv", VEHICLE_COLS, vehicles)
     write_csv(OUT / "krankenhaeuser.csv", HOSPITAL_COLS, hospitals)

@@ -662,8 +662,11 @@ export class SeitenBasis {
           H('Eigene Codes & Abfrage – Krankentransport & Überstellung (KT/SEK)'),
           IT('LeitWerk-Transportcodes (eingebaut)', 'Codes für KT und Überstellungen (KT…, SEK-…), mit KT-Abfrage – immer verfügbar', 'aktiv', ok),
           B('Eigenen KT/SEK-Satz', [{ l: 'Codes & Abfrage bearbeiten', sub: 'ktEditor' }, { l: 'Hochladen', sub: 'satzKt' }], 'Neuer Satz auf Basis des aktiven, oder Dateien hochladen'),
-          H('Namen und Bilder'),
-          B('Namens-Ersetzungen', ['CSV laden …', 'Vorlage speichern …'], 'neutral;eigen – z. B. „Rettungsdienst;…“, „NAH 2;…“ (Dienststellen, Organisationen, Hubschrauber)'),
+          H('Namens-Ersetzungen – Dokumente/LeitWerk/Namen'),
+          IT('Neutrale Namen (eingebaut)', 'Rettungsdienst, Rettungswache, Krankentransport, Luftrettung, NAH 2 … – immer verfügbar', 'aktiv', ok),
+          IT('Vorlage_Namen.csv', 'Vorlage mit allen neutralen Namen – rechts eintragen, unter neuem Namen speichern · Dokumente/LeitWerk/Namen', '', '', { btns: [{ l: 'Verwenden', ok: 'Ersetzungen aktiv' }] }),
+          B('Eigene Namen', ['CSV laden …', 'Ordner öffnen', 'Neu einlesen'], 'neutral;eigen – Datei wird nach Dokumente/LeitWerk/Namen kopiert; dort auch direkt bearbeiten, dann „Verwenden“'),
+          H('Bilder und Funkrufnamen'),
           B('Funkrufnamen', ['CSV laden …']),
           B('Logos & Fahrzeugbilder', ['Dateien laden …'], 'PNG oder SVG'),
           B('Vorlage-Dateien', ['Ordner öffnen'], 'Mit neutralen Beispielwerten · Ablage in Dokumente/LeitWerk')

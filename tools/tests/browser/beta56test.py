@@ -72,6 +72,21 @@ try:
         check(r["ruf"] in (None, "C2"), f"Rufname des Hubschraubers bleibt C2 ({r['ruf']})")
         check(r["zurueck"] > 100 and r["heliZurueck"] == "NAH 2", "Entfernen: wieder neutrale Namen")
 
+        # ---- Beta 57: Ordner Dokumente/LeitWerk/Namen (im Browser: Browser-Speicher) – Vorlage, aktive Datei neu einlesen
+        r = A.evaluate("""async () => { const L = window.__lw, ab = L.ablage, st = L.store;
+            await ab.abgleichen(true); const l = (await ab.ablageListe('Namen')).map((d) => d.datei);
+            const vorlage = await ab.ablageLesen('Namen', 'Vorlage_Namen.csv');
+            await ab.ablageSpeichern('Namen', 'Meine.csv', 'neutral;eigen\\nRettungsdienst;Orga A\\n');
+            st.setNamen([{ neutral: 'Rettungsdienst', eigen: 'Orga A' }], 'Meine.csv'); const vor = st.namenDatei;
+            await ab.ablageSpeichern('Namen', 'Meine.csv', 'neutral;eigen\\nRettungsdienst;Orga B\\nNAH 2;Heli B\\n');
+            await ab.abgleichen(true);
+            const nach = st.namen.map((x) => x.eigen); const orga = st.list('stations').filter((x) => x.organisation === 'Orga B').length;
+            st.setNamen(null); return { l, vorlageZeilen: vorlage.split('\\n').length, rd: /^Rettungsdienst;$/m.test(vorlage), nah: /^NAH 2;$/m.test(vorlage), echt: /Rotes Kreuz|Christophorus|Samariter/.test(vorlage), vor, nach, orga, datei: st.namenDatei }; }""")
+        print("    ", r)
+        check("Vorlage_Namen.csv" in r["l"] and r["rd"] and r["nah"] and r["vorlageZeilen"] > 100 and not r["echt"], "Ordner „Namen“: Vorlage mit allen neutralen Namen (ohne echte Namen)")
+        check(r["vor"] == "Meine.csv" and r["nach"] == ["Orga B", "Heli B"] and r["orga"] > 100, "aktive Datei wird beim Start neu eingelesen (im Ordner bearbeitet)")
+        check(r["datei"] is None, "neutrale Namen: keine aktive Datei")
+
         # ---- Endegrund: Revers / Belassung / Tod ohne Funk, Storno durch Leitstelle, Übergabe, von Hand
         r = A.evaluate("""async () => { const s = __t.s(); const out = {};
             const lauf = async (was) => { const e = await __t.einsatz(); const fz = __t.rtw([], e.wahr); s.alarmiere(e.id, [fz.id]);

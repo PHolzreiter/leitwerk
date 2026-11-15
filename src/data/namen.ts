@@ -13,9 +13,6 @@ export const NEUTRALE_NAMEN: [string, string][] = [
   ["Rettungswache", "zweite Organisation des Rettungsdienstes"],
   ["Krankentransport", "Organisation für Krankentransporte"],
   ["Luftrettung", "Organisation der Notarzthubschrauber"],
-  ["Luftrettungsstützpunkt NAH 2", "Stützpunkt eines Hubschraubers (ebenso NAH 9, 10, 15, 16, 17, 18)"],
-  ["NAH 2", "Name eines Hubschraubers (ebenso NAH 9, 10, 15, 16, 17, 18)"],
-  ["Rettungsleitstelle", "Leitstelle"],
 ];
 
 const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -38,10 +35,20 @@ export function namenLesen(text: string): NamensRegel[] {
   return out;
 }
 
-/** Vorlage-Datei mit den neutralen Namen */
-export function namenVorlage(): string {
-  const zeilen = ["# LeitWerk – Namens-Ersetzungen: rechts neben dem Strichpunkt den eigenen Namen eintragen", "neutral;eigen"];
-  for (const [n, w] of NEUTRALE_NAMEN) zeilen.push(`# ${w}`, `${n};`);
+/** Name der Vorlage im Ordner Dokumente/LeitWerk/Namen */
+export const NAMEN_VORLAGE = "Vorlage_Namen.csv";
+
+/** Vorlage-Datei: Organisationen, dazu alle Dienststellen des Rettungsdienstes und der Luftrettung sowie die Hubschrauber
+ *  (rechts leer – wer will, trägt dort den eigenen Namen ein; leere Zeilen werden nicht angewendet) */
+export function namenVorlage(daten?: { stations: { name: string; organisation: string }[]; vehicles: { kurzname: string; kategorie: string }[] }): string {
+  const zeilen = ["# LeitWerk – Namens-Ersetzungen: rechts neben dem Strichpunkt den eigenen Namen eintragen, leere Zeilen gelten nicht", "neutral;eigen", "# Organisationen (gelten als Wort in allen Namen)"];
+  for (const [n] of NEUTRALE_NAMEN) zeilen.push(`${n};`);
+  if (daten) {
+    const heli = [...new Set(daten.vehicles.filter((v) => v.kurzname && /^(NAH|ITH)$/.test(v.kategorie)).map((v) => v.kurzname))].sort((a, b) => a.localeCompare(b, "de", { numeric: true }));
+    if (heli.length) zeilen.push("# Hubschrauber", ...heli.map((h) => `${h};`));
+    const st = [...new Set(daten.stations.filter((x) => ["Rettungsdienst", "Luftrettung", "Leitstelle"].includes(x.organisation)).map((x) => x.name))].sort((a, b) => a.localeCompare(b, "de"));
+    if (st.length) zeilen.push("# Dienststellen (ganzer Name)", ...st.map((x) => `${x};`));
+  }
   return zeilen.join("\n") + "\n";
 }
 

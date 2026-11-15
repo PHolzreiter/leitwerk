@@ -15,7 +15,7 @@ Im Reiter **Daten** gibt es je Datenart: **Neu**, **CSV importieren**, **Exporti
 - **Format:** Semikolon oder Komma, UTF-8 oder Excel-Standard. Spaltennamen werden auch in anderen Schreibweisen erkannt (z. B. `Breitengrad`/`lat`, `Funkrufname`/`Rufname`, `POI-ID`, `Unit-ID`).
 - **Fahrzeuge** verweisen über die Spalte `dienststelle` auf die ID **oder den Namen** einer Dienststelle. Deshalb zuerst die Dienststellen importieren.
 - **Kategorie** RTW, NEF, NAH, KTW oder Sonstige. Fehlt sie, wird sie aus dem Fahrzeugtyp abgeleitet. Zum Start fahren nur RTW, NEF und NAH.
-- **Funkrufnamen:** RTW/KTW `75/001`, NEF `75/099`, NAH `99/002` (Christophorus 2).
+- **Funkrufnamen:** RTW/KTW `75/001`, NEF `75/099`, NAH `99/002` (am Funk „C2“).
 - **Krankenhaus-Abteilungen:** Spalten mit `ja` / `nein`.
 - Jede Zeile wird geprüft; fehlerhafte Zeilen werden mit Zeilennummer und Grund angezeigt und nicht übernommen. Einträge, die es schon gibt (gleiche ID, gleicher Name bzw. Funkrufname), werden aktualisiert statt verdoppelt.
 

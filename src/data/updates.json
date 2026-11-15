@@ -1,5 +1,15 @@
 [
  {
+  "version": "0.116.0-beta.57",
+  "datum": "2026-11-15",
+  "titel": "Ordner für eigene Namen",
+  "punkte": [
+   "Neuer Ordner Dokumente/LeitWerk/Namen – Namens-Dateien wie die Codelisten: Verwenden, Löschen, Ordner öffnen",
+   "Vorlage mit allen neutralen Namen liegt im Ordner",
+   "Die aktive Datei wird bei jedem Start neu eingelesen – direkt im Ordner bearbeitbar"
+  ]
+ },
+ {
   "version": "0.116.0-beta.56",
   "datum": "2026-11-15",
   "titel": "Neutrale Namen, Storno/Endegrund, nur noch Standardfarben",

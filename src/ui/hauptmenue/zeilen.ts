@@ -35,7 +35,7 @@ import { sim } from "../../sim/engine";
 import { geoStatus, regionSetzen, searchAddress, REGIONEN, type GeoStatus } from "../../sim/geo";
 import { GRUNDPAKET, appVersion, formatBytes, installPack, packSize, packsChanged, packsLocal, packsManifest, removePack, type Pack, type PacksLocal, type UpdateInfo } from "../../updates";
 import { updateInfo, updateInstallieren, onUpdate, updateJetztPruefen } from "../updateDienst";
-import { ABLAGE_INFO, ablageBasis, ablageLesen, ablageLoeschen, ablageName, ablageSichern, ablageSpeichern, ablageZeigen, type AblageOrdner } from "../../net/ablage";
+import { ABLAGE_INFO, ablageBasis, ablageListe, ablageLesen, ablageLoeschen, ablageName, ablageSichern, ablageSpeichern, ablageZeigen, type AblageDatei, type AblageOrdner } from "../../net/ablage";
 import { ordnerZeigen } from "../../net/spielstandOrdner";
 import { pers, onPers, setzePers } from "../ws/persoenlich";
 import { STATUS_BEDEUTUNG } from "../settingsView";
@@ -64,7 +64,8 @@ import {
 } from "../codesaetze";
 import { ktEditorOeffnen } from "../ktCodeEditor";
 import { pruefeCodesystem } from "../../abfrage/codesystem";
-import { namenLesen as ersetzungenLesen, namenVorlage } from "../../data/namen";
+import { NAMEN_VORLAGE, namenLesen as ersetzungenLesen, namenVorlage } from "../../data/namen";
+import { standardRecords } from "../../data/standard";
 import type { Schema } from "../../abfrage/schema";
 import type { Einsatzcode } from "../../data/model";
 
@@ -117,6 +118,7 @@ export function zeilenQuelle(neuZeichnen: () => void): { zeilen: ZeilenQuelle; l
     piper?: string[];
     whisper?: string[];
     saetze?: Record<Bereich, CodeSatz[]>;
+    namen?: AblageDatei[];
     packs?: Pack[] | null;
     packsFehler?: string;
     local?: PacksLocal | null;
@@ -164,6 +166,20 @@ export function zeilenQuelle(neuZeichnen: () => void): { zeilen: ZeilenQuelle; l
   const whisperLaden = async () => {
     if (!tauri) return;
     c.whisper = (await sprachStatus().catch(() => ({ modelle: [] as string[], ordner: "" }))).modelle;
+    neu();
+  };
+  const namenLaden = async () => {
+    try {
+      let l = await ablageListe("Namen");
+      // Vorlage immer im Ordner (neu geschrieben, falls sie fehlt)
+      if (!l.some((d) => d.datei === NAMEN_VORLAGE)) {
+        await ablageSpeichern("Namen", NAMEN_VORLAGE, namenVorlage(standardRecords()));
+        l = await ablageListe("Namen");
+      }
+      c.namen = l.filter((d) => /\.(csv|txt)$/i.test(d.datei)).sort((a, b) => (a.datei === NAMEN_VORLAGE ? -1 : b.datei === NAMEN_VORLAGE ? 1 : a.datei.localeCompare(b.datei, "de")));
+    } catch {
+      c.namen = [];
+    }
     neu();
   };
   const saetzeLaden = async () => {
@@ -1301,18 +1317,64 @@ export function zeilenQuelle(neuZeichnen: () => void): { zeilen: ZeilenQuelle; l
   const NOCH_NICHT = "Kommt mit dem Realismus-Paket";
   /** Namens-Ersetzungen: echte Namen per Datei (die eingebauten Daten sind neutral) */
   function namenZeilen(b: Bausteine): Zeile[] {
-    const n = store.namen;
-    const laden = dateiKnopf("CSV laden …", ".csv,.txt,text/csv,text/plain", async (f) => {
-      const r = ersetzungenLesen(await dateiText(f));
-      if (!r.length) throw new Error("Keine Ersetzungen gefunden (Zeilen „neutral;eigen“)");
-      store.setNamen(r);
-      return `${zahl(r.length)} Ersetzungen geladen`;
-    });
-    const vorlage = knopf("Vorlage speichern …", async () => ((await saveTextFile("leitwerk_namen.csv", namenVorlage())) ? "Gespeichert" : "Abgebrochen"));
-    const weg = knopf("Entfernen", () => (store.setNamen(null), "Wieder neutrale Namen"), { cfm: "Alle Namens-Ersetzungen entfernen?" });
-    return [
-      b.B("Namens-Ersetzungen", n.length ? [laden, vorlage, weg] : [laden, vorlage], "neutral;eigen – z. B. „Rettungsdienst;…“, „NAH 2;…“ (Dienststellen, Organisationen, Hubschrauber)", n.length ? { chip: `${zahl(n.length)} aktiv`, dot: OK } : undefined),
-    ];
+    const aktiv = store.namen.length ? (store.namenDatei ?? "") : null;
+    const out: Zeile[] = [b.H("Namens-Ersetzungen – Dokumente/LeitWerk/Namen")];
+    out.push(
+      b.IT("Neutrale Namen (eingebaut)", "Rettungsdienst, Rettungswache, Krankentransport, Luftrettung, NAH 2 … – immer verfügbar", aktiv === null ? "aktiv" : "", aktiv === null ? OK : "", {
+        btns: aktiv === null ? [] : [knopf("Verwenden", () => (store.setNamen(null), "Wieder neutrale Namen"), {}, namenLaden)],
+      }),
+    );
+    const liste = c.namen;
+    if (!liste) out.push(b.IT("Eigene Dateien", "Dokumente/LeitWerk/Namen", PRUEFT, GRAU));
+    else {
+      for (const d of liste) {
+        const istAktiv = aktiv !== null && aktiv.toLowerCase() === d.datei.toLowerCase();
+        const vorlage = d.datei === NAMEN_VORLAGE;
+        const btns: Knopf[] = [];
+        if (!istAktiv) btns.push(knopf("Verwenden", () => namenVerwenden(d.datei), {}, namenLaden));
+        if (!vorlage)
+          btns.push(
+            knopf(
+              "Löschen",
+              async () => {
+                await ablageLoeschen("Namen", d.datei);
+                if (istAktiv) store.setNamen(null);
+                return "Gelöscht";
+              },
+              { cfm: `„${d.datei}“ wird aus Dokumente/LeitWerk/Namen gelöscht.` },
+              namenLaden,
+            ),
+          );
+        const info = istAktiv ? `${zahl(store.namen.length)} Ersetzungen` : vorlage ? "Vorlage mit allen neutralen Namen – rechts eintragen, unter neuem Namen speichern" : "CSV „neutral;eigen“";
+        out.push(b.IT(d.datei, `${info} · Dokumente/LeitWerk/Namen`, istAktiv ? "aktiv" : "", istAktiv ? OK : "", { btns }));
+      }
+    }
+    const laden = dateiKnopf(
+      "CSV laden …",
+      ".csv,.txt,text/csv,text/plain",
+      async (f) => {
+        const text = await dateiText(f);
+        const r = ersetzungenLesen(text);
+        if (!r.length) throw new Error("Keine Ersetzungen gefunden (Zeilen „neutral;eigen“, rechts ausgefüllt)");
+        const name = ablageName(f.name, "csv");
+        await ablageSpeichern("Namen", name, text);
+        store.setNamen(r, name);
+        return `${zahl(r.length)} Ersetzungen aktiv – „${name}“ in Dokumente/LeitWerk/Namen`;
+      },
+      namenLaden,
+    );
+    const btns: Knopf[] = [laden];
+    if (tauri) btns.push(knopf("Ordner öffnen", () => ablageZeigen("Namen")));
+    btns.push(knopf("Neu einlesen", () => namenLaden().then(() => "Eingelesen")));
+    out.push(b.B("Eigene Namen", btns, "neutral;eigen – Datei wird nach Dokumente/LeitWerk/Namen kopiert; dort auch direkt bearbeiten, dann „Verwenden“"));
+    return out;
+  }
+  /** Namensdatei aus dem Ordner lesen und aktivieren */
+  async function namenVerwenden(datei: string): Promise<string> {
+    const r = ersetzungenLesen(await ablageLesen("Namen", datei));
+    if (!r.length) throw new Error(datei === NAMEN_VORLAGE ? "Die Vorlage ist noch leer – rechts die eigenen Namen eintragen" : "Keine Ersetzungen in der Datei (rechte Spalte leer?)");
+    store.setNamen(r, datei);
+    return `${zahl(r.length)} Ersetzungen aktiv`;
   }
   function realismus(b: Bausteine): Zeile[] {
     const spaeter = (l: string) => knopf(l, () => NOCH_NICHT);
@@ -1323,8 +1385,8 @@ export function zeilenQuelle(neuZeichnen: () => void): { zeilen: ZeilenQuelle; l
       b.H("Eigene Codes & Abfrage – Krankentransport & Überstellung (KT/SEK)"),
       ...satzZeilen(b, "kt"),
       b.B("Eigenen KT/SEK-Satz", [{ l: "Codes & Abfrage bearbeiten", sub: "ktEditor" }, { l: "Hochladen", sub: "satzKt" }], "Neuer Satz auf Basis des aktiven, oder Dateien hochladen"),
-      b.H("Namen und Bilder"),
       ...namenZeilen(b),
+      b.H("Bilder und Funkrufnamen"),
       b.B("Funkrufnamen", [spaeter("CSV laden …")], "noch nicht wirksam"),
       b.B("Logos & Fahrzeugbilder", [spaeter("Dateien laden …")], "PNG oder SVG · noch nicht wirksam"),
       b.B("Vorlage-Dateien", tauri ? [knopf("Ordner öffnen", () => ablageZeigen())] : [], "Ablage in Dokumente/LeitWerk", tauri ? undefined : { chip: NUR_PROGRAMM, dot: GRAU }),
@@ -1561,6 +1623,7 @@ export function zeilenQuelle(neuZeichnen: () => void): { zeilen: ZeilenQuelle; l
       void piperLaden2();
       void whisperLaden();
       void saetzeLaden();
+      void namenLaden();
       void packsLaden();
       void programmLaden();
     },

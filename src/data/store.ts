@@ -97,6 +97,7 @@ export class Store {
           ktsatz: parsed.ktsatz,
           codesGetrennt: parsed.codesGetrennt,
           namen: Array.isArray(parsed.namen) ? parsed.namen : undefined,
+          namenDatei: typeof parsed.namenDatei === "string" ? parsed.namenDatei : undefined,
         };
         // ältere Speicherstände: neue Felder ergänzen
         for (const v of this.data.eigene.vehicles) v.nachtflug ??= false;
@@ -283,9 +284,15 @@ export class Store {
     return this.data.namen ?? [];
   }
 
-  setNamen(n: NamensRegel[] | null): void {
-    if (this.remote) return this.remote("setNamen", [n]);
+  /** Datei der aktiven Namens-Ersetzungen (Dokumente/LeitWerk/Namen) */
+  get namenDatei(): string | null {
+    return this.data.namen?.length ? (this.data.namenDatei ?? null) : null;
+  }
+
+  setNamen(n: NamensRegel[] | null, datei?: string | null): void {
+    if (this.remote) return this.remote("setNamen", [n, datei ?? null]);
     this.data.namen = n && n.length ? n : undefined;
+    this.data.namenDatei = n && n.length && datei ? datei : undefined;
     this.changed();
   }
 

@@ -1,5 +1,10 @@
 # Änderungen
 
+## 0.116.0-beta.57 – Ordner für eigene Namen
+- **Neuer Ordner „Dokumente/LeitWerk/Namen“** – wie bei den Codelisten: Namens-Dateien („neutral;eigen“) liegen dort, eine geladene Datei wird hineinkopiert. Unter Einstellungen › Realismus › Namens-Ersetzungen steht jede Datei mit „Verwenden“ und „Löschen“, dazu die eingebauten neutralen Namen, „Ordner öffnen“ und „Neu einlesen“.
+- **Vorlage im Ordner:** „Vorlage_Namen.csv“ listet alle neutralen Namen (Organisationen, Hubschrauber, Dienststellen) mit leerer rechter Spalte – ausfüllen, unter eigenem Namen speichern, verwenden. Leere Zeilen gelten nicht.
+- **Direkt im Ordner bearbeiten:** Die aktive Datei wird bei jedem Start neu eingelesen (und mit „Verwenden“ sofort).
+
 ## 0.116.0-beta.56 – Neutrale Namen, Storno/Endegrund, nur noch Standardfarben
 - **Neutrale Namen:** Die eingebauten Daten enthalten keine echten Organisationsnamen mehr – Dienststellen heißen „Rettungsdienst …“, „Rettungswache …“ bzw. „Krankentransport …“, die Hubschrauber „NAH 2“, „NAH 9“ … mit ihrem „NEF Luftrettung“. Am Funk bleiben die Rufnamen gleich (C2 …), und die Spracherkennung versteht weiter auch die gewohnten Namen.
 - **Eigene Namen per Datei:** Einstellungen › Realismus › Namen und Bilder › Namens-Ersetzungen – eine CSV-Datei „neutral;eigen“ laden (z. B. „Rettungsdienst;…“, „NAH 2;…“), dann gelten die eigenen Namen für Dienststellen, Organisationen, Hubschrauber und Orte. „Vorlage speichern …“ legt eine Datei mit allen neutralen Namen an, „Entfernen“ stellt die neutralen Namen wieder her. Im Mehrspieler gelten die Namen des Hosts.

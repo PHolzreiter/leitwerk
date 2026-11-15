@@ -28,6 +28,7 @@ const ABLAGEN: &[&str] = &[
     "Töne",
     "Designs",
     "Anordnungen",
+    "Namen",
 ];
 
 fn basis(app: &tauri::AppHandle) -> Result<PathBuf, String> {
