@@ -100,7 +100,7 @@ try:
         r = A.evaluate("""() => { const s = __t.s(); return { sport: s.treffpunktName({ lat: 48.396745, lon: 15.585355 }, { lat: 48.4, lon: 15.6 }), ort: s.treffpunktName({ lat: 48.3935, lon: 15.574 }, { lat: 48.4, lon: 15.6 }) }; }""")
         print("    ", r)
         check(r["sport"] == "beim Sportplatz Mautern", "Treffpunkt am Sportplatz: „beim Sportplatz Mautern“")
-        check(r["ort"].startswith(("in ", "bei ", "beim ")) and len(r["ort"]) < 40, "Treffpunkt sonst als kurzer Ortsbegriff")
+        check(r["ort"].startswith(("in ", "bei ", "beim ", "am ", "auf der ")) and len(r["ort"]) < 70, "Treffpunkt sonst als kurzer Ortsbegriff")
 
         # ---- mehrere Patienten: ein Transportfahrzeug bleibt, bis das nächste da ist
         r = A.evaluate("""async () => { const s = __t.s(); const e = await __t.einsatz(); const l = e.wahr.lage;

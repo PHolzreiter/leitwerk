@@ -153,7 +153,7 @@ export function typHtml(fz: SimFahrzeug): string {
 
 /**
  * Hinweis vor Dienstende: eine Stunde vorher ein dezentes Uhr-Symbol, 30 Minuten vorher deutlicher.
- * Außer Dienst: „außer Dienst bis …“.
+ * Laut Dienstplan nicht im Dienst: nur Status „Abgemeldet“ (keine eigene Marke).
  */
 export function dienstHtml(fz: SimFahrzeug): string {
   const t = sim.state.zeit;
@@ -166,11 +166,8 @@ export function dienstHtml(fz: SimFahrzeug): string {
     ? ` <span class="dienst-ueber" title="${fz.wechselOffen === "ende" ? "Dienstende vorbei – meldet sich ab, sobald das Fahrzeug auf der Dienststelle ist" : "Schichtwechsel fällig – das neue Team übernimmt auf der Dienststelle"}. Alarmieren nur nach Anfunken (Vormerken).">${fz.wechselOffen === "ende" ? "Dienstende – fährt heim" : "Wechsel ausständig"}</span>${vorgem && vorgem.zustand !== "abgeschlossen" ? ` <span class="dienst-vorgemerkt" title="Für ${esc(vorgem.nummer)} vorgemerkt – zuerst anfunken und fragen, ob sie den Einsatz noch übernehmen">vorgemerkt ${esc(vorgem.nummer)} – anfunken</span>` : ""}`
     : "";
   if (fz.wechselOffen) return ueber;
-  if (fz.ausserDienst) {
-    const b = fz.dienstBeginn;
-    const tag = b && new Date(b).toDateString() !== new Date(t).toDateString() ? `${["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"][new Date(b).getDay()]} ` : "";
-    return ` <span class="dienst-aus" title="Laut Dienstplan nicht im Dienst${b ? ` – Dienstbeginn ${tag}${hhmm(b)}` : ""}">außer Dienst${b ? ` bis ${tag}${hhmm(b)}` : ""}</span>`;
-  }
+  // laut Dienstplan nicht im Dienst: das zeigt der Status „Abgemeldet“ – keine eigene Marke (Paul 15.11.2026)
+  if (fz.ausserDienst) return "";
   // aktuelle Schicht immer sichtbar; kurz vor Dienstende hervorgehoben. Länger darüber: Wochenübersicht
   const plan = sim.dienstplanVon(fz.id);
   const w = aktuelleSchicht(plan, t, fz.heim);

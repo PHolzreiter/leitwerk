@@ -1,5 +1,14 @@
 [
  {
+  "version": "0.116.0-beta.55",
+  "datum": "2026-11-15",
+  "titel": "Abgemeldet statt „außer Dienst“, genauere Treffpunkte",
+  "punkte": [
+   "Fahrzeuge laut Dienstplan nicht im Dienst stehen überall auf „Abgemeldet“ (auch nach „Neues Spiel“)",
+   "Treffpunkte und Standort: Merkmal, Kreisverkehr, kleine Ortschaft, größere Orte mit Straße, Freiland mit Straße"
+  ]
+ },
+ {
   "version": "0.116.0-beta.54",
   "datum": "2026-11-15",
   "titel": "Funk: neue Lagen – Standort, Verlegen, Abziehen, Rendezvous, Voranmeldung",

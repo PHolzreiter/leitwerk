@@ -136,7 +136,7 @@ export function ktFenster(ctx: PanelKontext, sek: boolean): { el: HTMLElement; d
       fahrt: !frei ? "–" : v.sekunden === null ? "–" : flug ? `Flug ${minText(v.sekunden)}` : minText(v.sekunden),
       los: opt.begleit ? "Notarzt-Begleitung" : los || v.hinweis || "",
       losCls: `los${v.losSpaetestens !== null && v.losSpaetestens < jetzt + 5 * 60_000 ? " knapp" : ""}`,
-      hinweis: n ? `noch ${n} Fahrt${n > 1 ? "en" : ""}` : fz.wechselOffen ? (fz.wechselOffen === "ende" ? "Dienstende" : "Wechsel ausständig") : fz.ausserDienst ? "außer Dienst" : "",
+      hinweis: n ? `noch ${n} Fahrt${n > 1 ? "en" : ""}` : fz.wechselOffen ? (fz.wechselOffen === "ende" ? "Dienstende" : "Wechsel ausständig") : "",
       cls: zeilenKlasse("lz", fz),
       frei,
       gruppe: gruppeVon(fz, sek),

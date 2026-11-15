@@ -1,5 +1,9 @@
 # Änderungen
 
+## 0.116.0-beta.55 – Abgemeldet statt „außer Dienst“, genauere Treffpunkte
+- **Außer Dienst = Abgemeldet:** Fahrzeuge, die laut Dienstplan nicht im Dienst sind, stehen überall auf Status 0 „Abgemeldet“ – auch in „Alle Fahrzeuge“. Die eigene Marke „außer Dienst“ gibt es nicht mehr. Behoben: Nach „Neues Spiel“ standen solche Fahrzeuge fälschlich auf „Frei auf Wache“ (auch in älteren Spielständen wird das jetzt richtiggestellt).
+- **Treffpunkte und Standort genauer:** Am Funk weiter einfache Begriffe, aber nie nur ein größerer Ort wie Krems. Reihenfolge: Merkmal in der Nähe („beim Sportplatz Mautern“), Kreisverkehr bzw. Kreuzung, kleine Ortschaft („in Schönberg“), größerer Ort mit Straße oder Merkmal („in Krems, Wiener Straße“), im Freiland die Straße („auf der B37 zwischen Moritzreith und Großmotten“).
+
 ## 0.116.0-beta.54 – Funk: neue Lagen (Standort, Verlegen, Abziehen, Rendezvous, Voranmeldung)
 - **Standort fragen und halten:** „Frage Standort“ bzw. „wo ist gerade euer genauer Standort“ – die Besatzung antwortet mit einfachen Begriffen („befinden uns gerade in Mautern auf Höhe Sportplatz“). „Bitte Standort halten“ bzw. „am aktuellen Standort warten“: ein freies Fahrzeug bleibt höchstens 10 Minuten stehen, danach fährt es weiter wie vorher; der Status bleibt.
 - **Verlegen zur Gebietsabdeckung:** „Standort wechseln auf die Dienststelle Langenlois“ bzw. „verlagert euren Standort nach Rohrendorf zum Sportplatz“ – das Fahrzeug fährt hin und steht dort frei über Funk (Status 6), bis es einen Auftrag erledigt hat (danach zurück zur eigenen Dienststelle) oder „wieder zur Heimatdienststelle“ hört.

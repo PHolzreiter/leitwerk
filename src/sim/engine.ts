@@ -21,7 +21,7 @@ import { store } from "../data/store";
 import { streuung } from "../data/schema";
 import { ACN_CODES, allCodes, findCode, hasCodes, istAcnCode, type Einsatzcode } from "./codes";
 import { rendezvousPunkt } from "./rendezvous";
-import { khImText, naechsterOrt, standortText, treffpunktWort, zielImText } from "./funkOrte";
+import { khImText, naechsterOrt, standortText, treffpunktGenau, treffpunktWort, zielImText } from "./funkOrte";
 import { abwandeln } from "./funkVielfalt";
 import { distanceM, erreichbar, flightRoute, geoStatus, randomAddresses, route, searchAddress, travelTimes, type LatLon, type Route } from "./geo";
 import { generiereBesetzung, hatNFS, hoechsteQuali, rmTypVon, type Platz, type RmTyp } from "./crew";
@@ -2177,6 +2177,11 @@ export class Simulation extends GsKern {
         continue;
       }
       if (key === fz.schicht) {
+        // laut Dienstplan nicht im Dienst, aber nicht abgemeldet (ältere Spielstände): abmelden
+        if (!key && fz.ausserDienst && fz.status !== "abgemeldet" && this.dienstfrei(fz) && !(fz.kt?.fahrten.length ?? 0)) {
+          this.abmeldenDienst(fz, false);
+          geaendert = true;
+        }
         if (fz.wechselOffen) {
           fz.wechselOffen = null;
           geaendert = true;
@@ -5838,7 +5843,12 @@ export class Simulation extends GsKern {
       this.log(e, `Kein Rendezvous mit ${nef.funkrufname} möglich (nicht am Weg ins Krankenhaus)`);
       return;
     }
-    const label = this.treffpunktName(punkt, e.adresse ?? e.wahr);
+    // am Funk ein einfacher, aber genauer Begriff (größere Orte mit Straße – Paul 15.11.2026)
+    const label = await treffpunktGenau(punkt);
+    if (e.naWarten !== w || rtw.einsatzId !== e.id || nef.einsatzId !== e.id) {
+      if (e.naWarten === w) w.rv = null;
+      return;
+    }
     e.rendezvous = { rtwId: rtw.id, nefId: nef.id, punkt: { ...punkt, label }, status: "anfahrt", bis: null };
     w.rv = null;
     this.log(e, `Rendezvous ${rtw.funkrufname} – ${nef.funkrufname}: ${label}`);
@@ -9258,7 +9268,7 @@ export class Simulation extends GsKern {
   pilotHindernis(fz: SimFahrzeug, pid: string): string | null {
     if (!fliegt(fz)) return "Nur Hubschrauber können geflogen werden";
     if (fz.pilot && fz.pilot.pid !== pid) return `wird schon von ${fz.pilot.name} geflogen`;
-    if (fz.ausserDienst) return "nicht im Dienst";
+    if (fz.ausserDienst) return "abgemeldet (laut Dienstplan nicht im Dienst)";
     if (fz.ersatzFuer) return "Ersatz-NEF";
     return null;
   }
@@ -10043,6 +10053,14 @@ export class Simulation extends GsKern {
         fahrt: null,
         begleitet: false,
         kt: null,
+        // Dienstplan neu ansehen (sonst blieb „außer Dienst“ mit Status „Frei auf Wache“ stehen – Paul 15.11.2026)
+        ausserDienst: false,
+        schicht: undefined,
+        wechselOffen: null,
+        ueberzeitFuer: null,
+        standort: null,
+        flugAbgemeldet: false,
+        defektBis: null,
       });
     }
     this.planGenerator(true);

@@ -206,8 +206,7 @@ export function einsatzFenster(ctx: PanelKontext): { el: HTMLElement; dispose():
       (!frei ? "" : v.hinweis) ||
       (v.kt ? "KT – abziehen" : "") ||
       (p && !p.aktiv && p.fahrten.length ? `KT ab ${p.losUm ? new Date(p.losUm).toTimeString().slice(0, 5) : "?"}` : "") ||
-      (fz.wechselOffen ? (fz.wechselOffen === "ende" ? "Dienstende" : "Wechsel ausständig") : "") ||
-      (fz.ausserDienst ? "außer Dienst" : "");
+      (fz.wechselOffen ? (fz.wechselOffen === "ende" ? "Dienstende" : "Wechsel ausständig") : "");
     return {
       id: fz.id,
       status: statusNr(fz),
@@ -425,7 +424,7 @@ export function einsatzFenster(ctx: PanelKontext): { el: HTMLElement; dispose():
         .filter((f) => !freiIds.has(f.id) && fzPasst(f, q))
         .sort((x, y) => x.funkrufname.localeCompare(y.funkrufname, "de", { numeric: true }))
         .slice(0, 60)
-        .map((fz) => fzEintrag({ fz, sekunden: null, hinweis: fz.ausserDienst ? "außer Dienst" : "nicht frei" }, false));
+        .map((fz) => fzEintrag({ fz, sekunden: null, hinweis: fz.status === "abgemeldet" ? "abgemeldet" : "nicht frei" }, false));
     } else if (v) {
       liste = v.liste.slice(0, Math.max(30, v.empfohlen.length)).map((x) => fzEintrag(x, true));
       const ort = e.adresse;
