@@ -34,6 +34,8 @@ export interface Frage {
   /** bei mehreren Betroffenen: Frage an die Gruppe („Ist jemand bewusstlos …?“) und passende Antworttexte */
   text_mehrere?: string;
   labels_mehrere?: Record<string, string>;
+  /** wird immer gefragt, auch wenn der Code schon feststeht (wichtig für Besatzung, Partner, Eigenschutz) */
+  immer?: boolean;
 }
 
 /** Werte von „Wie viele Personen sind betroffen?“, die mehrere Betroffene bedeuten („n“ = 2–5) */
@@ -243,6 +245,7 @@ export function ergaenzeSchema(s: Schema): Schema {
     }
   }
   mehrereErgaenzen(p);
+  ablaufVerbessern(p);
   sonderAnruferErgaenzen(p);
   arbeitsunfallErgaenzen(p);
   gesperrtErgaenzen(p);
@@ -300,6 +303,9 @@ export function ableitenIn(schema: Schema | null | undefined, kap: string, a: An
     if (a.anforderer === "schi" && (a.schi_anf === "transport" || a.schi_anf === "na")) setze({ grund: a.schi_anf });
   }
   if (t === "anforderung_ls" && schema?.kapitel[kap]?.fragen.some((f) => f.id === "von" && f.optionen?.some((o) => o.wert === "org"))) setze({ von: "org" });
+  // „Wie viele Patienten?“ (Verkehrsunfall) beantwortet schon die Primärabfrage (Beta 59)
+  if (a.anzahl === undefined && a.anzahl_patienten !== undefined && a.anzahl_patienten !== null && a.anzahl_patienten !== "unbekannt" && schema?.kapitel[kap]?.fragen.some((f) => f.id === "anzahl" && f.optionen?.some((o) => o.wert === "1") && f.optionen?.some((o) => o.wert === "n")))
+    a.anzahl = mehrere(a) ? "n" : "1";
   return a;
 }
 
@@ -560,6 +566,132 @@ function mehrereErgaenzen(p: Schema): void {
   if (rm && rm.anzeigen_wenn && "q" in rm.anzeigen_wenn && rm.anzeigen_wenn.q === "anzahl") rm.anzeigen_wenn = { q: "anzahl", in: ["n"] };
 }
 
+// ------------------------------------------------------------------ Abfrage einengen (Beta 59)
+
+/**
+ * Fragen, die auch bei feststehendem Code gestellt werden: Partner (Feuerwehr, Polizei), Eigenschutz, Anleitung,
+ * Tragehilfe, Liegedauer – sie ändern den Code nicht, aber den Einsatz.
+ */
+export const IMMER_FRAGEN = new Set([
+  "eingeklemmt", "eingeschlossen", "gefahrgut", "andere_gefahren", "brennt_noch", "angriff_laeuft", "noch_verbunden", "strom_an",
+  "taeter_vor_ort", "aggressiv", "gewalt", "gewalttaetig", "waffen", "selbstverbrennung", "tuer", "arbeitsunfall", "tod",
+  "umstand", "schwer_pat", "sprachkontakt", "noch_gepfaehlt", "wo",
+]);
+
+/**
+ * Ablauf der Kapitelfragen (Paul 15.11.2026): Folgefragen nur, wenn sie passen; doppelte Fragen zur Anzahl fallen weg.
+ * Ändert nur, wann eine Frage kommt – Codes und Regeln bleiben gleich.
+ */
+function ablaufVerbessern(p: Schema): void {
+  const und = (f: Frage | undefined, b: Bedingung) => {
+    if (f) f.anzeigen_wenn = f.anzeigen_wenn ? { all: [f.anzeigen_wenn, b] } : b;
+  };
+  const frage = (K: Kapitel, id: string) => K.fragen.find((f) => f.id === id);
+  const hinter = (K: Kapitel, id: string, nach: string) => {
+    const f = frage(K, id);
+    const i = K.fragen.findIndex((x) => x.id === nach);
+    if (!f || i < 0) return;
+    K.fragen = K.fragen.filter((x) => x !== f);
+    K.fragen.splice(K.fragen.findIndex((x) => x.id === nach) + 1, 0, f);
+  };
+  // Mehrere Verletzte bzw. Anzahl der Patienten: bei einer betroffenen Person nicht noch einmal fragen
+  const einer: Bedingung = { not: { q: "anzahl_patienten", in: ["1"] } };
+  for (const K of Object.values(p.kapitel)) {
+    und(frage(K, "mehrere_verletzte"), einer);
+    const anz = frage(K, "anzahl");
+    if (anz?.optionen?.some((o) => o.wert === "1") && anz.optionen.some((o) => o.wert === "n")) und(anz, { not: { q: "anzahl_patienten", in: ["1", ...MEHRERE_WERTE] } });
+  }
+  // Verbrennung/Brand: „nur Brandalarm?“ gleich nach der Ursache; „brennt noch“ und „eingeschlossen“ nur bei Feuer/Explosion
+  const kb = kapitelZuThema("brand", p);
+  const B = kb ? p.kapitel[kb] : undefined;
+  const art = B ? frage(B, "art") : undefined;
+  if (B && art?.optionen) {
+    const feuer = art.optionen.map((o) => o.wert).filter((w) => /explosion|feuer|brand|detonation/i.test(w));
+    if (feuer.length) {
+      const istFeuer: Bedingung = { q: "art", in: feuer };
+      und(frage(B, "brennt_noch"), istFeuer);
+      und(frage(B, "eingeschlossen"), istFeuer);
+      const na = frage(B, "nur_alarm");
+      if (na) {
+        und(na, istFeuer);
+        hinter(B, "nur_alarm", "art");
+        const keinAlarm: Bedingung = { not: { q: "nur_alarm", in: ["ja"] } };
+        for (const id of ["brennt_noch", "mehrere_verletzte", "sprachschw", "gesicht", "flaeche", "aelter6h"]) und(frage(B, id), keinAlarm);
+      }
+    }
+  }
+  // Sturz: Verletzungsdetails nur, wenn der Patient verletzt ist
+  const ks = kapitelZuThema("sturz", p);
+  const S = ks ? p.kapitel[ks] : undefined;
+  if (S && frage(S, "verletzt")) {
+    hinter(S, "verletzt", "hoehe");
+    for (const id of ["region", "blutung_stark", "fehlstellung"]) und(frage(S, id), { not: { q: "verletzt", in: ["nein"] } });
+  }
+  for (const K of Object.values(p.kapitel)) for (const f of K.fragen) if (IMMER_FRAGEN.has(f.id)) f.immer = true;
+}
+
+const OFFEN = Symbol("offen");
+type Drei = boolean | typeof OFFEN;
+
+/** Bedingung mit noch offenen Fragen: true/false, wenn es nicht mehr auf sie ankommt, sonst OFFEN */
+function pruefe3(c: Bedingung | null | undefined, a: Antworten, offen: Set<string>): Drei {
+  if (!c) return true;
+  if ("all" in c) {
+    const r = c.all.map((x) => pruefe3(x, a, offen));
+    return r.includes(false) ? false : r.includes(OFFEN) ? OFFEN : true;
+  }
+  if ("any" in c) {
+    const r = c.any.map((x) => pruefe3(x, a, offen));
+    return r.includes(true) ? true : r.includes(OFFEN) ? OFFEN : false;
+  }
+  if ("not" in c) {
+    const r = pruefe3(c.not, a, offen);
+    return r === OFFEN ? OFFEN : !r;
+  }
+  if ("abgeleitet" in c) return ["fast_gesicht", "fast_arm", "fast_sprache"].some((id) => offen.has(id)) ? OFFEN : pruefe(c, a);
+  return offen.has(c.q) ? OFFEN : pruefe(c, a);
+}
+
+/** Steht der Code dieses Kapitels fest, egal wie die offenen Fragen beantwortet werden? */
+function codeFest(schema: Schema, K: Kapitel, a: Antworten, offen: Set<string>): boolean {
+  const ks = K.kreislaufstillstand;
+  if (K.primaerabfrage && ks && (offen.has("bw") || offen.has("at"))) return false;
+  if (K.primaerabfrage && ks?.code && istKreislaufstillstand(a)) return true;
+  for (const r of K.regeln) {
+    const w = pruefe3(r.wenn, a, offen);
+    if (w === false) continue;
+    if (w === OFFEN) return false;
+    if (r.code || r.wechsel_zu_kapitel) return true;
+    const m = r.code_nach_antwort;
+    if (m) {
+      const ids = m.frage ? [m.frage] : (m.fragen ?? []);
+      if (ids.some((id) => offen.has(id))) return false;
+      const key = m.frage ? String(a[m.frage]) : ids.map((f) => String(a[f])).join("|");
+      if (key in m.zuordnung) return true;
+    }
+  }
+  void schema;
+  return true;
+}
+
+/** Fragen, die den Code nicht bestimmen, ihn aber trotzdem verändern (Zusatz-Buchstabe), samt ihren Voraussetzungen */
+function nochNoetig(K: Kapitel): Set<string> {
+  const out = new Set<string>();
+  const sammle = (c: Bedingung | null | undefined) => {
+    if (!c) return;
+    if ("all" in c) c.all.forEach(sammle);
+    else if ("any" in c) c.any.forEach(sammle);
+    else if ("not" in c) sammle(c.not);
+    else if ("abgeleitet" in c) ["fast_gesicht", "fast_arm", "fast_sprache"].forEach((x) => out.add(x));
+    else out.add(c.q);
+  };
+  for (const r of K.suffix?.regeln ?? []) sammle(r.wenn);
+  for (const f of K.fragen) if (f.immer) out.add(f.id);
+  // Voraussetzungen (anzeigen_wenn) der nötigen Fragen
+  for (let i = 0; i < 3; i++) for (const f of K.fragen) if (out.has(f.id)) sammle(f.anzeigen_wenn);
+  return out;
+}
+
 export interface Ergebnis {
   /** Kapitel, in dem der Code bestimmt wurde (nach evtl. Wechseln) */
   kapitel: string;
@@ -717,7 +849,7 @@ export function kapitelVonCode(schema: Schema, code: string): string | null {
 }
 
 /** Fragen, die im Ablauf gestellt werden (Primärabfrage + Kapitelfragen inkl. Wechsel) */
-export function fragenImAblauf(schema: Schema, kap: string, a: Antworten): { phase: string; frage: Frage }[] {
+export function fragenImAblauf(schema: Schema, kap: string, a: Antworten, opt: { alle?: boolean } = {}): { phase: string; frage: Frage }[] {
   const out: { phase: string; frage: Frage }[] = [];
   const K = schema.kapitel[kap];
   if (!K) return out;
@@ -725,11 +857,26 @@ export function fragenImAblauf(schema: Schema, kap: string, a: Antworten): { pha
   const erg = bestimmeCode(schema, kap, a);
   const pfad = erg?.pfad ?? [kap];
   const gesehen = new Set(out.map((x) => x.frage.id));
+  const b = erg?.antworten ?? a;
+  const beantwortet = (id: string) => a[id] !== undefined && a[id] !== null;
   for (const p of pfad) {
     const KK = schema.kapitel[p];
     if (!KK) continue;
-    for (const f of sichtbareFragen(KK, erg?.antworten ?? a, schema)) {
-      if (gesehen.has(f.id)) continue;
+    const sicht = sichtbareFragen(KK, b, schema);
+    // Einengen (Beta 59): steht der Code fest, fallen die offenen Fragen weg, die ihn nicht mehr ändern
+    let weg: Set<string> | null = null;
+    if (!opt.alle) {
+      const abg = ableitenIn(schema, p, { ...b });
+      const offen = new Set<string>();
+      for (const f of KK.fragen) if (abg[f.id] === undefined || abg[f.id] === null) offen.add(f.id);
+      if (KK.primaerabfrage) for (const f of schema.globale_fragen.phase_4_primaerabfrage ?? []) if ((abg[f.id] === undefined || abg[f.id] === null) && pruefe(f.anzeigen_wenn, abg)) offen.add(f.id);
+      if (codeFest(schema, KK, abg, offen)) {
+        const noetig = nochNoetig(KK);
+        weg = new Set(KK.fragen.filter((f) => !beantwortet(f.id) && !noetig.has(f.id)).map((f) => f.id));
+      }
+    }
+    for (const f of sicht) {
+      if (gesehen.has(f.id) || weg?.has(f.id)) continue;
       gesehen.add(f.id);
       out.push({ phase: `Kapitel ${p} – ${KK.titel}`, frage: f });
     }
@@ -760,6 +907,8 @@ function zufallsAntwort(f: Frage, rnd: () => number, alter: number, pUnbekannt: 
   const opts = alle.filter((o) => o.wert !== "unbekannt");
   if (!opts.length) return (alle[0] ?? f.optionen[0]).wert;
   const jaNein = opts.length === 2 && opts.some((o) => o.wert === "ja") && opts.some((o) => o.wert === "nein");
+  // „nur Brandalarm“ ist selten (sonst fielen die Patientenfragen zu oft weg)
+  if (jaNein && f.id === "nur_alarm") return rnd() < 0.06 ? "ja" : "nein";
   if (jaNein) return rnd() < 0.68 ? "nein" : "ja";
   return zufall(opts, rnd).wert;
 }
@@ -782,6 +931,13 @@ export function stimmigMachen(kap: string, a: Antworten): void {
   const ja = (id: string) => a[id] === "ja";
   // Anzahl der Betroffenen: Primärabfrage und Kapitelfrage gleich
   if (a.anzahl !== undefined && a.anzahl_patienten !== undefined) a.anzahl = mehrere(a) ? "n" : a.anzahl_patienten;
+  // mehrere Verletzte gibt es nur bei mehreren Betroffenen (Beta 59: bei einer Person wird nicht mehr gefragt)
+  if (ja("mehrere_verletzte") && a.anzahl_patienten === "1") a.anzahl_patienten = "n";
+  // „nur Brandalarm ohne bekannte Verletzte“ passt nicht zu einem Patienten mit Beschwerden
+  if (ja("nur_alarm") && (ja("brennt_noch") || ja("mehrere_verletzte") || (a.bw !== undefined && a.bw !== "ja" && a.bw !== "unbekannt") || (a.at !== undefined && a.at !== "normal" && a.at !== "unbekannt")))
+    a.nur_alarm = "nein";
+  // nicht verletzt (Sturz): keine Verletzungsdetails
+  if (a.verletzt === "nein" && (ja("blutung_stark") || ja("fehlstellung"))) a.verletzt = "ja";
   if (ist(kap, "verkehrsunfall", "verletzung", "sturz")) {
     const schwer = ja("blutung_stark") || ja("eingeklemmt") || (a.bw !== undefined && a.bw !== "ja") || (a.at !== undefined && a.at !== "normal");
     if (schwer) setze("verletzte", "ja");
@@ -859,6 +1015,22 @@ export function fallZiehen(
   }
   if (a.alter === undefined) a.alter = alter;
   stimmig();
+  // Antworten auf Fragen, die nach den übrigen Antworten gar nicht gestellt würden, fallen weg (Beta 59) – sonst
+  // ergäbe die Wahrheit einen Code, den keine Abfrage erreicht (z. B. „nicht verletzt“, aber Kopfverletzung)
+  for (let runde = 0; runde < 4; runde++) {
+    let weg = false;
+    for (const p of bestimmeCode(schema, kap, a)?.pfad ?? [kap]) {
+      const KK = schema.kapitel[p];
+      if (!KK) continue;
+      const b = ableitenIn(schema, p, { ...a });
+      for (const f of KK.fragen)
+        if (a[f.id] !== undefined && fest[f.id] === undefined && f.anzeigen_wenn && !pruefe(f.anzeigen_wenn, b)) {
+          delete a[f.id];
+          weg = true;
+        }
+    }
+    if (!weg) break;
+  }
   const ergebnis = bestimmeCode(schema, kap, a);
   return ergebnis ? { antworten: ergebnis.antworten, ergebnis } : null;
 }

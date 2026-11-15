@@ -499,7 +499,7 @@ kap("22", "eingeklemmt", "Eingeklemmt / verschüttet", ["eingeklemmt", "verschü
 
 kap("23", "brand", "Verbrennung / Brand / Explosion", ["Verbrennung", "verbrüht", "Brand", "Feuer", "Explosion"],
     [F("art", "Was ist passiert?", o(("verbrennung", "Verbrennung / Verbrühung"), ("explosion", "Explosion"), ("feuer", "Brand in einem Gebäude oder Fahrzeug"), ("feuerwerk", "Feuerwerkskörper"))),
-     F("brennt_noch", "Brennt die Person noch?", JN2),
+     F("brennt_noch", "Brennt die Person oder ihre Kleidung noch?", JN2),
      F("eingeschlossen", "Sind Menschen im Feuer eingeschlossen?", JN),
      F("mehrere_verletzte", "Sind mehrere Menschen verletzt?", JN),
      F("sprachschw", "Ist die Stimme heiser oder fällt das Atmen schwer (Rauch eingeatmet)?", JN),

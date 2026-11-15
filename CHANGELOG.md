@@ -1,5 +1,12 @@
 # Änderungen
 
+## 0.116.0-beta.59 – Abfrage engt ein
+- **Einengen statt abarbeiten:** Steht der Code fest, fallen die restlichen Kapitelfragen weg – es sei denn, sie sind für den Einsatz wichtig (Feuerwehr, Polizei, Eigenschutz, Anleitung, Tragehilfe, Liegedauer, Schlaganfall-Test und Zeitfenster). Im Schnitt kommen etwa 35–45 % weniger Kapitelfragen; der Code ist derselbe wie mit allen Fragen.
+- **Folgefragen nur, wenn sie passen:** Bei Verbrennungen kommen „Brennt die Person noch?“ und „Personen eingeschlossen?“ nur bei Feuer oder Explosion, nicht bei einer Verbrühung. „Nur Brandalarm ohne bekannte Verletzte?“ kommt gleich nach der Ursache – dann entfallen die Patientenfragen. Beim Sturz kommen Körperregion, Blutung und Fehlstellung nur, wenn der Patient verletzt ist.
+- **Keine doppelten Fragen:** „Sind mehrere Personen verletzt?“ kommt nicht, wenn nur eine Person betroffen ist; „Wie viele Patienten?“ beim Verkehrsunfall nur, wenn die Primärabfrage die Anzahl nicht kennt.
+- **Formulierungen:** u. a. „Brennt die Person oder ihre Kleidung noch?“ und ganze Sätze bei den Schlaganfall-Fragen.
+- Zufällige Fälle sind in sich stimmiger (keine Antworten auf Fragen, die nach den übrigen Antworten gar nicht gestellt würden).
+
 ## 0.116.0-beta.58 – Fehleinsatz als Endegrund, Piloten wählen den Endegrund
 - **Endegrund „Fehleinsatz“:** Findet die Besatzung keinen Patienten, steht bei allen Fahrzeugen des Einsatzes „Fehleinsatz“. In der Einsatzmaske ist er wie die anderen Gründe wählbar.
 - **Spieler-NAH wählt den Endegrund:** Bei „Kein Transport“ wählt der Pilot direkt einen der Endegründe – „Untersuchung/Behandlung ohne Transport“, „Patient verweigert Mitfahrt“, „NACA 7: Patient verstorben“ oder „Fehleinsatz“. Das gilt im Piloten-Fenster, im EFB, am Handy, im Tablet der H145 und im X-Plane-Plugin. Am Einsatzort lässt sich der Grund noch ändern; wählt der Pilot danach doch einen Transport, fällt er weg.

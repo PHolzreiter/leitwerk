@@ -1,5 +1,16 @@
 [
  {
+  "version": "0.116.0-beta.59",
+  "datum": "2026-11-15",
+  "titel": "Abfrage engt ein",
+  "punkte": [
+   "Steht der Code fest, fallen Kapitelfragen weg, die ihn nicht mehr ändern – einsatzwichtige Fragen bleiben",
+   "Brand: „brennt noch“/„eingeschlossen“ nur bei Feuer, „nur Brandalarm?“ gleich nach der Ursache; Sturz: Verletzungsdetails nur, wenn verletzt",
+   "Keine doppelte Frage nach der Anzahl der Verletzten",
+   "Klarere Formulierungen"
+  ]
+ },
+ {
   "version": "0.116.0-beta.58",
   "datum": "2026-11-15",
   "titel": "Fehleinsatz als Endegrund, Piloten wählen den Endegrund",

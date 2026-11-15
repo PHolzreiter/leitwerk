@@ -1974,7 +1974,7 @@
     },
     {
      "id": "brennt_noch",
-     "text": "Brennt die Person noch?",
+     "text": "Brennt die Person oder ihre Kleidung noch?",
      "typ": "single",
      "optionen": [
       {
