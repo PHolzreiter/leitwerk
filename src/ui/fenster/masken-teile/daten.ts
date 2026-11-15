@@ -47,8 +47,9 @@ export function wacheOrt(fz: SimFahrzeug): string {
   if (st?.ort) return st.ort;
   // ohne Ort: Namen von Organisationen und Dienststellen-Arten vorne weglassen (keine echten Organisationsnamen zeigen)
   return (fz.stationName || fz.kurzname || "")
-    .replace(/^(ÖAMTC|Österreichisches Rotes Kreuz|Rotes Kreuz|Arbeiter-Samariter-Bund( Österreichs)?|Samariterbund|Johanniter[- ](Unfall-Hilfe|Krankentransport)|Malteser|Grünes Kreuz|Rettungsleitstelle|ÖBB)\s*/i, "")
-    .replace(/^(Bezirksstelle|Ortsstelle|Stadtstelle|Dienststelle|Rettungsstelle|Luftrettungszentrum|Stützpunkt)\s*/i, "")
+    // (auch mit eigenen Namen aus Realismus › Namens-Ersetzungen: alles vor der Art der Dienststelle fällt weg)
+    .replace(/^.*?\b(Bezirksstelle|Ortsstelle|Stadtstelle|Dienststelle|Rettungsstelle|Luftrettungszentrum|Luftrettungsstützpunkt|Stützpunkt)\s+/i, "")
+    .replace(/^(Rettungsdienst|Rettungswache|Krankentransport|Rettungsleitstelle|ÖBB)\s+/i, "")
     .trim();
 }
 

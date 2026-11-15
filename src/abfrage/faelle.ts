@@ -44,7 +44,7 @@ export type AnleitungTyp =
 export type NaBedarf = "nein" | "immer" | "RS" | "NFS" | "NFS-NKA" | "NFS-NKV" | "NFS-NKI";
 
 /**
- * Welche Kompetenz der Patient vor Ort braucht (Paul 12.11.2026, nach der Scope-of-Practice-Matrix RK NÖ):
+ * Welche Kompetenz der Patient vor Ort braucht (Paul 12.11.2026, nach der Scope-of-Practice-Matrix für NÖ):
  * RS (Basismaßnahmen), NFS (Arzneimittelliste 1: z. B. Salbutamol, Methoxyfluran, Adrenalin i.m.), NKV (Venenzugang,
  * Liste 2: z. B. Esketamin, Glukose i.v., Urapidil, Infusion), NKI (Intubation), NA (alles für Sanitäter Gesperrte:
  * Opioide, Katecholamine, NIV, Kardioversion, Pacing …). NKA zählt wie NFS.

@@ -2,7 +2,7 @@
  * Rufnamen am Funk (wie sich ein Fahrzeug meldet bzw. wie man es ruft):
  * - normal der Funkrufname („75/001“)
  * - Dienststelle/Ortsstelle mit nur einem Fahrzeug: Fahrzeugart + Ort („RTW Spitz“, „KTW Gföhl“)
- * - Hubschrauber: „C2“, „C33“; Ersatz-NEF des Hubschraubers: „NEF ÖAMTC 2“
+ * - Hubschrauber: „C2“, „C33“; Ersatz-NEF des Hubschraubers: „NEF Luftrettung 2“
  * - NEF: „NEF Tulln“; Einsatzleiter: „BEL Krems“, „ÖBB Einsatzleiter Krems“; ACN: „ACN St. Pölten“
  * Gilt für jedes Fahrzeug, das in den Stammdaten angelegt wird.
  */
@@ -17,18 +17,20 @@ export interface FunkFz {
   ersatzFuer?: string | null;
 }
 
-/** Ort aus dem Namen der Dienststelle („Rotes Kreuz Ortsstelle Gföhl“ → „Gföhl“) */
+/** Ort aus dem Namen der Dienststelle („Rettungsdienst Ortsstelle Gföhl“ → „Gföhl“) */
 export function ortAusDienststelle(name: string): string {
-  const m = name.match(/(?:Bezirksstelle|Ortsstelle|Dienststelle|Notarztstützpunkt|Stützpunkt|Leitstelle|Krankentransport|Samariterbund|Samariter-Bund|Rettungswache|Wache)\s+(.+)$/i);
+  const m = name.match(/(?:Bezirksstelle|Ortsstelle|Dienststelle|Notarztstützpunkt|Stützpunkt|Leitstelle|Krankentransport|Rettungswache|Wache)\s+(.+)$/i);
   if (m) return m[1].trim();
   const w = name.trim().split(/\s+/);
   return w.slice(-1)[0] ?? name;
 }
 
-/** Hubschraubernummer aus „Christophorus 10“ bzw. „99/010“ */
+/** Hubschraubernummer aus dem Funkrufnamen („99/010“) bzw. dem Kurznamen („NAH 10“, auch mit eigenen Namen) */
 function cNummer(fz: FunkFz | undefined): string | null {
   if (!fz) return null;
-  const m = (fz.kurzname ?? "").match(/Christophorus\s*(\d+)/i) ?? fz.stationName.match(/Christophorus\s*(\d+)/i);
+  const n0 = fz.funkrufname.match(/^99\/0*(\d+)$/);
+  if (n0) return n0[1];
+  const m = (fz.kurzname ?? "").match(/(\d+)\s*$/) ?? fz.stationName.match(/NAH\s*(\d+)\s*$/i);
   if (m) return m[1];
   const n = fz.funkrufname.match(/^99\/0*(\d+)$/);
   return n ? n[1] : null;
@@ -47,7 +49,7 @@ export function rufname(fz: FunkFz, alle: FunkFz[]): string {
   if (fz.ersatzFuer) {
     const nah = alle.find((x) => x.funkrufname === fz.ersatzFuer || x.kurzname === fz.ersatzFuer);
     const c = cNummer(nah) ?? (fz.ersatzFuer.match(/(\d+)$/)?.[1]?.replace(/^0+/, "") ?? null);
-    return c ? `NEF ÖAMTC ${c}` : fz.funkrufname;
+    return c ? `NEF Luftrettung ${c}` : fz.funkrufname;
   }
   if (typ === "BEL") return fz.kurzname?.trim() || `BEL ${ort}`;
   if (/^EL ÖBB/i.test(fz.rmTyp) || /^EL ÖBB/i.test(fz.funkrufname)) return `ÖBB Einsatzleiter ${ortAusDienststelle(fz.stationName)}`.trim();

@@ -1182,19 +1182,19 @@ def build_hospitals() -> list[dict]:
 
 def build_examples() -> None:
     write_csv(EX / "beispiel_dienststellen.csv", STATION_COLS, [
-        {"id": "ws-01", "name": "Rotes Kreuz Musterstadt", "organisation": "Rotes Kreuz", "typ": "Rettungsdienst",
+        {"id": "ws-01", "name": "Rettungsdienst Musterstadt", "organisation": "Rettungsdienst", "typ": "Rettungsdienst",
          "ort": "Musterstadt", "bezirk": "Musterbezirk", "adresse": "Hauptplatz 1", "breitengrad": "48.200000",
          "laengengrad": "15.600000", "hinweis": "Beispielzeile"},
-        {"id": "ws-02", "name": "Notarztstützpunkt Musterstadt", "organisation": "Rotes Kreuz", "typ": "Notarztstützpunkt",
+        {"id": "ws-02", "name": "Notarztstützpunkt Musterstadt", "organisation": "Rettungsdienst", "typ": "Notarztstützpunkt",
          "ort": "Musterstadt", "bezirk": "Musterbezirk", "adresse": "Spitalgasse 5", "breitengrad": "48.205000",
          "laengengrad": "15.610000", "hinweis": ""},
     ])
     write_csv(EX / "beispiel_fahrzeuge.csv", VEHICLE_COLS, [
         {"id": "", "funkrufname": "75/001", "kurzname": "", "kategorie": "RTW", "typ": "RTW-C", "dienststelle": "ws-01", "aktiv": "ja"},
-        {"id": "", "funkrufname": "75/002", "kurzname": "", "kategorie": "RTW", "typ": "RTW", "dienststelle": "Rotes Kreuz Musterstadt", "aktiv": "ja",
+        {"id": "", "funkrufname": "75/002", "kurzname": "", "kategorie": "RTW", "typ": "RTW", "dienststelle": "Rettungsdienst Musterstadt", "aktiv": "ja",
          "hinweis": "Dienststelle darf auch per Name angegeben werden"},
         {"id": "", "funkrufname": "75/099", "kurzname": "NEF Musterstadt", "kategorie": "NEF", "typ": "NEF", "dienststelle": "ws-02", "aktiv": "ja"},
-        {"id": "", "funkrufname": "99/002", "kurzname": "Christophorus 2", "kategorie": "NAH", "typ": "NAH", "dienststelle": "ÖAMTC Christophorus 2", "aktiv": "ja", "nachtflug": "nein"},
+        {"id": "", "funkrufname": "99/002", "kurzname": "NAH 2", "kategorie": "NAH", "typ": "NAH", "dienststelle": "Luftrettungsstützpunkt NAH 2", "aktiv": "ja", "nachtflug": "nein"},
     ])
     write_csv(EX / "beispiel_krankenhaeuser.csv", HOSPITAL_COLS, [
         {"id": "kh-x1", "name": "Klinikum Musterstadt", "kurzname": "KL Musterstadt", "ort": "Musterstadt",
@@ -1221,14 +1221,81 @@ def build_examples() -> None:
         write_csv(EX / f"vorlage_{name}.csv", cols, [])
 
 
+# ---------------------------------------------------------------- Neutrale Namen
+# Paul 15.11.2026: keine echten Organisationsnamen im Spiel. Die Quellen behalten ihre Namen, ausgeliefert wird neutral;
+# wer echte Namen will, lädt sie im Menü Realismus › Namens-Ersetzungen (CSV neutral;eigen).
+NEUTRAL_ORG = {
+    "Rotes Kreuz": "Rettungsdienst", "Österreichisches Rotes Kreuz": "Rettungsdienst", "Rotes Kreuz / ASB": "Rettungsdienst",
+    "Arbeiter-Samariter-Bund": "Rettungsdienst", "Johanniter": "Rettungsdienst", "ÖAMTC": "Luftrettung",
+}
+NEUTRAL_REGELN = [
+    # Quellenangaben mit Organisationsseiten („(roteskreuz.at)“ …) fallen weg
+    (r"\s*\([^()]*(?:roteskreuz|samariterbund|johanniter|oeamtc|christophorus|malteser)[^()]*\)", ""),
+    (r"\S*(?:roteskreuz|samariterbund|johanniter|oeamtc|christophorus)\.(?:at|net|org|com)\S*", ""),
+    (r"ÖAMTC Luftrettungszentrum Christophorus (\d+)", r"Luftrettungsstützpunkt NAH \1"),
+    (r"ÖAMTC Luftrettungszentrum", "Luftrettungszentrum"),
+    (r"ÖAMTC Luftrettungstation", "Luftrettungsstation"),
+    (r"ÖAMTC Christophorus (\d+)", r"Luftrettungsstützpunkt NAH \1"),
+    (r"Christophorus (\d+)", r"NAH \1"),
+    (r"ÖAMTC-NEF", "Luftrettungs-NEF"),
+    (r"NEF ÖAMTC", "NEF Luftrettung"),
+    (r"ÖAMTC-Flugrettung", "Flugrettung"),
+    (r"ÖAMTC-Fahrtechnikzentrum", "Fahrtechnikzentrum"),
+    (r"ÖAMTC Ring", "Motorsport-Ring"),
+    (r"ÖAMTC ", ""),
+    (r"ÖAMTC", "Luftrettung"),
+    (r"Österreichisches Rotes Kreuz", "Rettungsdienst"),
+    (r"Roten Kreuzes", "Rettungsdienstes"),
+    (r"Roten Kreuz", "Rettungsdienst"),
+    (r"Rotes Kreuz", "Rettungsdienst"),
+    (r"Arbeiter[- ]Samariter[- ]?[Bb]und( Österreichs)?", "Rettungswache"),
+    (r"Samariter-?[Bb]und", "Rettungswache"),
+    (r"Johanniter-Unfall-Hilfe", "Krankentransport"),
+    (r"Johanniter-Krankentransport", "Krankentransport"),
+    (r"Johanniter", "Krankentransport"),
+]
+# nur in Dienststellen und Fahrzeugen (bei POIs heißt „RK“ auch einmal etwas anderes)
+NEUTRAL_ABK = [(r"\bRK/ASB\b", "RD"), (r"\bRK-", "RD-"), (r"\bRK\b", "RD"), (r"\bASB\b", "RD")]
+
+
+def neutral(text: str, abk: bool = True) -> str:
+    t = text or ""
+    for a, b in NEUTRAL_REGELN + (NEUTRAL_ABK if abk else []):
+        t = re.sub(a, b, t)
+    return re.sub(r"\s{2,}", " ", t).strip()
+
+
+def neutral_daten(stations: list[dict], vehicles: list[dict], hospitals: list[dict], pois: list[dict]) -> None:
+    for x in stations:
+        if x.get("organisation") in NEUTRAL_ORG:
+            x["organisation"] = NEUTRAL_ORG[x["organisation"]]
+        for k in ("name", "organisation", "hinweis", "adresse"):
+            if x.get(k):
+                x[k] = neutral(x[k])
+    for x in vehicles:
+        for k in ("kurzname", "typ", "hinweis", "dienstplan"):
+            if x.get(k):
+                x[k] = neutral(x[k])
+    for x in hospitals:
+        for k in ("hinweis", "landeplatz", "zufahrt"):
+            if x.get(k):
+                x[k] = neutral(x[k], abk=False)
+    for x in pois:
+        if x.get("name") == "Rotes Kreuz":
+            x["name"] = "Wegkreuz"
+        x["name"] = neutral(x.get("name", ""), abk=False)
+
+
 def main() -> None:
     stations, name_to_id = build_stations()
     vehicles = build_vehicles(stations, name_to_id)
     hospitals = build_hospitals()
+    pois = build_pois()
+    neutral_daten(stations, vehicles, hospitals, pois)
     write_csv(OUT / "dienststellen.csv", STATION_COLS, stations)
     write_csv(OUT / "fahrzeuge.csv", VEHICLE_COLS, vehicles)
     write_csv(OUT / "krankenhaeuser.csv", HOSPITAL_COLS, hospitals)
-    write_csv(OUT / "pois.csv", POI_COLS, build_pois())
+    write_csv(OUT / "pois.csv", POI_COLS, pois)
     write_csv(OUT / "einsatzvorlagen.csv", TEMPLATE_COLS, [])
     build_examples()
 

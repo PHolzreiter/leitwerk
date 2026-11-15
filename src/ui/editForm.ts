@@ -122,7 +122,7 @@ export function openEditor(
   if (kind === "vehicles") {
     const v = existing as Vehicle | undefined;
     add("funkrufname", "Funkrufname *", textInput(v?.funkrufname ?? "", "z. B. 75/001"), "RTW/KTW: 75/001 · NEF: 75/099 · NAH: 99/002");
-    add("kurzname", "Kurzname", textInput(v?.kurzname ?? "", "z. B. Christophorus 2"));
+    add("kurzname", "Kurzname", textInput(v?.kurzname ?? "", "z. B. NAH 2"));
     // Fahrzeugart; ein zweites Feld nur, wo es etwas zu unterscheiden gibt (RTW / RTW groß / RTW-C …)
     const katStart = v?.kategorie === "EL ÖBB" ? "BEL" : (v?.kategorie ?? "RTW");
     add(
@@ -140,7 +140,7 @@ export function openEditor(
         case "KTW":
           return /^KTW-?B$/.test(t) ? "ktwb" : "ktw";
         case "NEF":
-          return /ÖAMTC|OEAMTC/.test(t) || v?.ersatzFuer ? "nef_oeamtc" : "nef";
+          return /luftrettung/i.test(t) || v?.ersatzFuer ? "nef_oeamtc" : "nef";
         case "BEL":
           return v?.kategorie === "EL ÖBB" ? "el_oebb" : "bel";
         default:
@@ -282,7 +282,7 @@ export function openEditor(
     if (kind === "stations") {
       const s = existing as Station | undefined;
       add("typ", "Typ", selectInput(STATION_TYPES.map((t) => [t, t]), s?.typ ?? "Rettungsdienst"));
-      add("organisation", "Organisation", textInput(s?.organisation ?? "", "z. B. Rotes Kreuz"));
+      add("organisation", "Organisation", textInput(s?.organisation ?? "", "z. B. Rettungsdienst"));
       add("ort", "Ort", textInput(s?.ort ?? ""));
       add("bezirk", "Bezirk", textInput(s?.bezirk ?? ""));
       add("adresse", "Adresse", textInput(s?.adresse ?? ""), undefined, true);

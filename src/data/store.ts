@@ -10,6 +10,7 @@ import { partnerArtVonTyp } from "../sim/partner";
 import { einrichtungenAusAlt } from "./klinik";
 import { categoryFromType, streuung } from "./schema";
 import { loadStore, saveStore } from "../platform";
+import { namenErsetzer, type NamensRegel } from "./namen";
 import {
   emptyPersisted,
   KINDS,
@@ -38,7 +39,8 @@ export type StoreBefehl =
   | "clearOwn"
   | "restoreHidden"
   | "setSchema"
-  | "setKtSatz";
+  | "setKtSatz"
+  | "setNamen";
 
 export class Store {
   private data: Persisted = emptyPersisted();
@@ -94,6 +96,7 @@ export class Store {
           codesAufgeraeumt: parsed.codesAufgeraeumt,
           ktsatz: parsed.ktsatz,
           codesGetrennt: parsed.codesGetrennt,
+          namen: Array.isArray(parsed.namen) ? parsed.namen : undefined,
         };
         // ältere Speicherstände: neue Felder ergänzen
         for (const v of this.data.eigene.vehicles) v.nachtflug ??= false;
@@ -275,6 +278,17 @@ export class Store {
     this.changed();
   }
 
+  /** Namens-Ersetzungen (Realismus › Namen und Bilder) */
+  get namen(): NamensRegel[] {
+    return this.data.namen ?? [];
+  }
+
+  setNamen(n: NamensRegel[] | null): void {
+    if (this.remote) return this.remote("setNamen", [n]);
+    this.data.namen = n && n.length ? n : undefined;
+    this.changed();
+  }
+
   get standardAktiv(): boolean {
     return this.data.standardAktiv;
   }
@@ -316,6 +330,13 @@ export class Store {
     // Krankenhäuser ohne Platzangaben (eigene Daten aus einer älteren Version): Plätze aus den Standarddaten (gleiche ID)
     const stdPlaetze = new Map(std.hospitals.filter((h) => h.plaetze && Object.keys(h.plaetze).length).map((h) => [h.id, h.plaetze!]));
     if (stdPlaetze.size) out.hospitals = out.hospitals.map((h) => (!h.plaetze || !Object.keys(h.plaetze).length) && stdPlaetze.has(h.id) ? { ...h, plaetze: { ...stdPlaetze.get(h.id)! } } : h);
+    // Namens-Ersetzungen: eigene Namen statt der neutralen (Dienststellen, Fahrzeug-Kurznamen, Orte)
+    const ersetze = namenErsetzer(this.data.namen);
+    if (ersetze) {
+      out.stations = out.stations.map((st) => ({ ...st, name: ersetze(st.name), organisation: ersetze(st.organisation) }));
+      out.vehicles = out.vehicles.map((v) => (v.kurzname ? { ...v, kurzname: ersetze(v.kurzname) } : v));
+      out.pois = out.pois.map((p) => ({ ...p, name: ersetze(p.name) }));
+    }
     this.effectiveCache = out;
     return out;
   }

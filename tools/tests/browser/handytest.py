@@ -28,7 +28,7 @@ try:
         A.evaluate("() => window.__lw.startseite && window.__lw.startseite.zeigen()"); A.wait_for_timeout(800)
         A.locator('[data-act="pilot"]').first.click(); A.wait_for_timeout(500)
         A.locator(".dlg-foot button", has_text="Testmodus").click(); A.wait_for_timeout(2500)
-        if A.locator(".plt-wahl-b").count(): A.locator(".plt-wahl-b", has_text="Christophorus 2").first.click(); A.wait_for_timeout(800)
+        if A.locator(".plt-wahl-b").count(): A.locator(".plt-wahl-b", has_text="NAH 2").first.click(); A.wait_for_timeout(800)
         while A.locator(".dlg").count(): A.keyboard.press("Escape"); A.wait_for_timeout(200)
         A.evaluate("() => { const s = window.__lw.sim; s.state.wetter.lage = 'klar'; s.state.wetter.wind = 10; const f = Object.values(s.state.fahrzeuge).find(x => x.pilot); f.flugAbgemeldet = false; s.setStatus(f, 'freiWache'); s.emit(); }")
         ctx = b.new_context(viewport={"width": 390, "height": 844}, has_touch=True, is_mobile=True, device_scale_factor=2)

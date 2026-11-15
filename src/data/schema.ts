@@ -216,8 +216,7 @@ export function normKey(s: string): string {
 export function normName(s: string): string {
   return (
     normKey(s.replace(/bezirkstelle/gi, "bezirksstelle").replace(/sankt/gi, "st").replace(/öatmc/gi, "öamtc"))
-      // Luftrettung: „ÖAMTC Christophorus 2“ = „ÖAMTC Luftrettungszentrum Christophorus 2“,
-      // „ÖAMTC Christophorus Luftrettungszentrum Ost“ = „ÖAMTC Luftrettungszentrum Ost“
+      // Luftrettung: „<Organisation> <Name> 2“ = „<Organisation> Luftrettungszentrum <Name> 2“ (Wortreihenfolge egal)
       .replace(/luftrettungszentrum/g, "")
       .replace(/christophorusost$/, "ost")
   );
@@ -424,7 +423,7 @@ export function einRtwCJeDienststelle(fz: Vehicle[]): number {
 function uebernimmVorhandenes(v: Vehicle, alt: Partial<Vehicle> | undefined, spalten: (string | null)[]): void {
   if (!alt) return;
   const hat = (c: string) => spalten.includes(c);
-  // Hubschrauber: in der Datei „Christophorus 2“, bei uns „99/002“ mit Kurzname
+  // Hubschrauber: in der Datei mit Namen und Nummer, bei uns „99/002“ mit Kurzname
   if (alt.funkrufname && alt.kurzname && normKey(alt.kurzname) === normKey(v.funkrufname) && normKey(alt.funkrufname) !== normKey(v.funkrufname)) {
     v.kurzname = v.funkrufname;
     v.funkrufname = alt.funkrufname;

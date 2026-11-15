@@ -46,7 +46,8 @@ const REITER: [Reiter, string][] = [
   ["meine", "Meine Tickets"],
 ];
 
-const ORGANISATIONEN = ["Rotes Kreuz", "Arbeiter-Samariter-Bund", "Johanniter", "Malteser", "Grünes Kreuz", "ÖAMTC", "Feuerwehr", "Polizei", "Bergrettung", "Wasserrettung", "Sonstige"];
+// keine echten Organisationsnamen (Paul 15.11.2026) – nur die Art des Dienstes
+const ORGANISATIONEN = ["Rettungsdienst", "Krankentransport", "Luftrettung", "Feuerwehr", "Polizei", "Bergrettung", "Wasserrettung", "Sonstige"];
 const STELLEN_TYPEN = ["Rettungsdienst", "Notarztstützpunkt", "Luftrettung", "Stellplatz (nur Fahrzeuge)", "Feuerwehr", "Polizei", "Bergrettung", "Wasserrettung", "Sonstige"];
 
 /** CSV-Wert ohne Trennzeichen und Zeilenumbrüche */
@@ -279,7 +280,7 @@ function fahrzeugForm(): Formular {
 
 function dienststelleForm(): Formular {
   const root = el("div", { class: "form-grid" });
-  const name = eingabe("z. B. Rotes Kreuz Ortsstelle Musterdorf", "name");
+  const name = eingabe("z. B. Rettungsdienst Ortsstelle Musterdorf", "name");
   const org = auswahl(ORGANISATIONEN.map((o) => [o, o]), "organisation");
   const typ = auswahl(STELLEN_TYPEN.map((o) => [o, o]), "typ");
   const adr = eingabe("Straße Hausnummer, PLZ Ort", "adresse");

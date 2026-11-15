@@ -67,7 +67,7 @@ export class EinsatzmaskeLogik extends MaskeBasis {
     };
 
     // ---- alarmierte Fahrzeuge, nach Eintreffzeit
-    const alarmiert = d.alarmiert.map(z => ({ ...z, funk: () => tun('funk', z.id), storno: () => tun('storno', z.id) }));
+    const alarmiert = d.alarmiert.map(z => ({ ...z, funk: () => tun('funk', z.id), storno: () => tun('storno', z.id), endeWahl: (ev) => tun('ende', z.id, ev && ev.target ? ev.target.value : '') }));
 
     // ---- Code ändern / aufwerten
     const codeOffen = !!S.codeOffen;

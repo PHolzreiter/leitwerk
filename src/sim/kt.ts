@@ -11,7 +11,7 @@ import type { Anruf, Bearbeiter, Protokoll } from "./engine";
 export type KtArt = "KTR" | "KTA" | "KTx";
 export type KtLage = "sitzend" | "liegend" | "gehend" | "rollstuhl";
 export const KT_LAGE_LABEL: Record<KtLage, string> = { gehend: "gehfähig", sitzend: "Tragstuhl (sitzend)", liegend: "liegend", rollstuhl: "eigener Rollstuhl" };
-export const KT_ART_LABEL: Record<KtArt, string> = { KTR: "KTR – Rotes Kreuz gewünscht", KTA: "KTA – ASB gewünscht", KTx: "KTx – egal" };
+export const KT_ART_LABEL: Record<KtArt, string> = { KTR: "KTR – Organisation 1 gewünscht", KTA: "KTA – Organisation 2 gewünscht", KTx: "KTx – egal" };
 
 export interface KtOrt {
   lat: number;
@@ -369,7 +369,8 @@ export function neueDaten(): KtDaten {
 export function zufallsDaten(o: ZufallsOrte, jetzt: number): KtDaten | null {
   const geschlecht: "m" | "w" = Math.random() < 0.5 ? "w" : "m";
   const alter = Math.round(Math.min(98, Math.max(18, rnd(45, 95) + (Math.random() < 0.15 ? -25 : 0))));
-  const art: KtArt = gewichtet([["KTx", 6], ["KTR", 3], ["KTA", 1]]);
+  // keine Organisations-Wünsche mehr (keine echten Organisationen im Spiel, Paul 15.11.2026)
+  const art: KtArt = "KTx";
   const typ = o.typ ?? gewichtet<"ambulanz" | "heim" | "entlassung" | "einweisung">([["ambulanz", 4], ["heim", 3], ["entlassung", 3], ["einweisung", 0.8]]);
   // Vorlauf: sofort, 1–3 h oder später am Tag
   const vorlaufMin = gewichtet<() => number>([[() => rnd(70, 120), 4], [() => rnd(120, 240), 4], [() => rnd(240, 480), 2]])();
@@ -488,7 +489,7 @@ export function dauerDaten(heim: KtOrt, kh: Hospital, bereich: "DIA" | "STR" | "
   const zg = zumGrund(grund, bereich, alter, Math.random() < 0.2 ? "liegend" : Math.random() < 0.1 ? "rollstuhl" : "sitzend");
   const lage = zg.lage;
   const basis = {
-    art: gewichtet<KtArt>([["KTx", 6], ["KTR", 3], ["KTA", 1]]),
+    art: "KTx" as KtArt,
     code: null,
     sofort: false,
     sek: null,

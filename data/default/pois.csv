@@ -1459,7 +1459,7 @@ poi-n9356736862;Schlossruine Zeißing;ausflugsziel;Maria Laach am Jauerling;48.3
 poi-w29303411;Schloss Mitterau;ausflugsziel;Markersdorf-Haindorf;48.200555;15.479641;© OpenStreetMap · OSM w29303411
 poi-n385142368;Einhornhöhle;ausflugsziel;Markt Piesting;47.857310;16.089754;© OpenStreetMap · OSM n385142368
 poi-n632407116;Karolinenruhe;ausflugsziel;Markt Piesting;47.855460;16.135800;© OpenStreetMap · OSM n632407116
-poi-n1683170533;Rotes Kreuz;ausflugsziel;Markt Piesting;47.861095;16.126396;© OpenStreetMap · OSM n1683170533
+poi-n1683170533;Wegkreuz;ausflugsziel;Markt Piesting;47.861095;16.126396;© OpenStreetMap · OSM n1683170533
 poi-n312578021;Karpartenblick;ausflugsziel;Matzen-Raggendorf;48.402021;16.713126;© OpenStreetMap · OSM n312578021
 poi-r6501382;Schloss Raggendorf;ausflugsziel;Matzen-Raggendorf;48.394495;16.657337;© OpenStreetMap · OSM r6501382
 poi-w139981940;Janaburg;ausflugsziel;Mautern an der Donau;48.392617;15.579553;© OpenStreetMap · OSM w139981940
@@ -2394,7 +2394,7 @@ poi-w1344783918;Wohnmobilstellplatz Kirchberg an der Pielach;campingplatz;Kirchb
 poi-w85681172;Camping Kleinzell;campingplatz;Kleinzell;47.979024;15.730108;© OpenStreetMap · OSM w85681172
 poi-w8654617;Donaupark Camping Klosterneuburg;campingplatz;Klosterneuburg;48.310919;16.328363;© OpenStreetMap · OSM w8654617
 poi-w407475794;Wohnmobilstellplatz am Bahnhof Kritzendorf;campingplatz;Klosterneuburg;48.335248;16.299169;© OpenStreetMap · OSM w407475794
-poi-w24778521;ÖAMTC Donaupark Camping;campingplatz;Krems an der Donau;48.403462;15.592464;© OpenStreetMap · OSM w24778521
+poi-w24778521;Donaupark Camping;campingplatz;Krems an der Donau;48.403462;15.592464;© OpenStreetMap · OSM w24778521
 poi-w1267026260;Jugend-Gruppenlagerplatz;campingplatz;Krumau am Kamp;48.591084;15.451910;© OpenStreetMap · OSM w1267026260
 poi-w92230664;Seecamping Krumau;campingplatz;Krumau am Kamp;48.589437;15.453936;© OpenStreetMap · OSM w92230664
 poi-w996094707;Stellplatz Krumbach;campingplatz;Krumbach;47.516006;16.197989;© OpenStreetMap · OSM w996094707
@@ -6277,8 +6277,8 @@ poi-w136850291;Flugplatz Stockerau;landeplatz;Stockerau;48.410729;16.192531;© O
 poi-r11064299;Fliegerhorst Leopold Figl;landeplatz;Tulln an der Donau;48.326552;16.122460;© OpenStreetMap · OSM r11064299 · Pos. Parkplatz
 poi-w134949451;Flugplatz Wiener Neustadt Ost (LOAN);landeplatz;Wiener Neustadt;47.841648;16.258431;© OpenStreetMap · OSM w134949451 · Pos. Parkplatz
 poi-w1188625781;Militärflugplatz Wiener Neustadt West (LOXN);landeplatz;Wiener Neustadt;47.829503;16.228275;© OpenStreetMap · OSM w1188625781 · Pos. Parkplatz
-poi-w1181462445;ÖAMTC Luftrettungstation Wiener Neustadt;landeplatz;Wiener Neustadt;47.845505;16.252014;© OpenStreetMap · OSM w1181462445
-poi-w344476330;ÖAMTC Luftrettungstation Ybbsitz;landeplatz;Ybbsitz;47.969279;14.939628;© OpenStreetMap · OSM w344476330
+poi-w1181462445;Luftrettungsstation Wiener Neustadt;landeplatz;Wiener Neustadt;47.845505;16.252014;© OpenStreetMap · OSM w1181462445
+poi-w344476330;Luftrettungsstation Ybbsitz;landeplatz;Ybbsitz;47.969279;14.939628;© OpenStreetMap · OSM w344476330
 poi-w63670837;Mittelschule Albrechtsberg;mittelschule;Albrechtsberg an der Großen Krems;48.443257;15.376611;© OpenStreetMap · OSM w63670837
 poi-w446739425;NMS Alland;mittelschule;Alland;48.056508;16.077878;© OpenStreetMap · OSM w446739425
 poi-n412782812;Mittelschule Allhartsberg;mittelschule;Allhartsberg;48.026685;14.793031;© OpenStreetMap · OSM n412782812
@@ -6541,7 +6541,7 @@ poi-w233915618;MSC Kirchschlag;motorsport;Kirchschlag in der Buckligen Welt;47.4
 poi-n13250549926;Gokartbahn;motorsport;Langenlois;48.510586;15.629751;© OpenStreetMap · OSM n13250549926
 poi-w561331698;UMTC Langenlois-Mittelberg;motorsport;Langenlois;48.502501;15.587122;© OpenStreetMap · OSM w561331698
 poi-w601333593;trialhof.at;motorsport;Lunz am See;47.839169;15.002408;© OpenStreetMap · OSM w601333593
-poi-n305644993;ÖAMTC Ring;motorsport;Melk;48.214143;15.329361;© OpenStreetMap · OSM n305644993
+poi-n305644993;Motorsport-Ring;motorsport;Melk;48.214143;15.329361;© OpenStreetMap · OSM n305644993
 poi-w112883132;Motocross Egelsee;motorsport;Pyhra;48.179798;15.670712;© OpenStreetMap · OSM w112883132 · Name ergänzt
 poi-w1117837250;Freizeitzentrum Retz;motorsport;Retz;48.750530;15.944628;© OpenStreetMap · OSM w1117837250 (+w1117837251)
 poi-n13266562801;Speedworld-Kart;motorsport;Rohrau;48.034336;16.826636;© OpenStreetMap · OSM n13266562801
@@ -6552,7 +6552,7 @@ poi-w1215784690;Trial Pottenbrunn;motorsport;St. Pölten;48.221888;15.698898;© 
 poi-w781581564;ÖMRC St. Pölten;motorsport;St. Pölten;48.181635;15.663450;© OpenStreetMap · OSM w781581564
 poi-w809272289;Kartbahn Stetteldorf;motorsport;Stetteldorf am Wagram;48.426099;16.012082;© OpenStreetMap · OSM w809272289
 poi-w737112787;Motocross Stockerau;motorsport;Stockerau;48.407044;16.187301;© OpenStreetMap · OSM w737112787
-poi-w30751629;ÖAMTC-Fahrtechnikzentrum;motorsport;Teesdorf;47.961494;16.272931;© OpenStreetMap · OSM w30751629 · Pos. Parkplatz
+poi-w30751629;Fahrtechnikzentrum;motorsport;Teesdorf;47.961494;16.272931;© OpenStreetMap · OSM w30751629 · Pos. Parkplatz
 poi-w1451099112;Motocross Sittendorf am Kreuzriegel;motorsport;Wienerwald;48.076679;16.169242;© OpenStreetMap · OSM w1451099112
 poi-w35214875;Motocross Wolkersdorf;motorsport;Wolkersdorf im Weinviertel;48.399390;16.525785;© OpenStreetMap · OSM w35214875
 poi-w737519953;MSV Wölbling;motorsport;Wölbling;48.324612;15.628208;© OpenStreetMap · OSM w737519953

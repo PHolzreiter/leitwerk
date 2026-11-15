@@ -101,7 +101,7 @@ export const AUSFUEHRUNGEN: Partial<Record<VehicleCategory, { id: string; label:
   ],
   NEF: [
     { id: "nef", label: "NEF (VW T6)", typ: "NEF" },
-    { id: "nef_oeamtc", label: "NEF ÖAMTC (VW Tiguan)", typ: "NEF ÖAMTC" },
+    { id: "nef_oeamtc", label: "NEF Luftrettung (VW Tiguan)", typ: "NEF Luftrettung" },
   ],
 };
 
@@ -113,7 +113,7 @@ export const FAHRZEUG_TYPEN: { typ: string; kategorie: VehicleCategory; label: s
   { typ: "KTW-B", kategorie: "KTW", label: "KTW-B (Zivildienst – ohne Blaulicht)" },
   { typ: "NAW", kategorie: "NAW", label: "NAW (Notarztwagen: RTW-C mit Notarzt an Bord)" },
   { typ: "NEF", kategorie: "NEF", label: "NEF" },
-  { typ: "NEF ÖAMTC", kategorie: "NEF", label: "NEF ÖAMTC (Ausweich-NEF am Hubschrauberstützpunkt)" },
+  { typ: "NEF Luftrettung", kategorie: "NEF", label: "NEF Luftrettung (Ausweich-NEF am Hubschrauberstützpunkt)" },
   { typ: "NAH", kategorie: "NAH", label: "NAH (Notarzthubschrauber)" },
   { typ: "ITH", kategorie: "ITH", label: "ITH (Intensivtransport-Hubschrauber)" },
   { typ: "SKTW", kategorie: "SKTW", label: "SKTW" },
@@ -370,6 +370,8 @@ export interface Persisted {
   ktsatz?: unknown;
   /** v0.76: RD und KT/SEK getrennt – alte gemischte Sätze einmalig entfernt */
   codesGetrennt?: boolean;
+  /** v0.116 (Beta 56): Namens-Ersetzungen „neutral → eigen“ (Realismus), siehe data/namen.ts */
+  namen?: { neutral: string; eigen: string }[];
 }
 
 export function emptyPersisted(): Persisted {

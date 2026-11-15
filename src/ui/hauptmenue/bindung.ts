@@ -267,8 +267,6 @@ export function einstellungsBindung(geladen?: () => void): EinstellungsBindung {
     [15, "ab Zoom 15"],
     [16, "ab Zoom 16 (Straße)"],
   ];
-  /** Farbvorlagen im Menü (nur neutrale Vorlagen) */
-  const fvListe = () => Object.entries(FARB_VORLAGEN).filter(([id]) => id !== "rotkreuz");
 
   const FE: Record<string, "akzent" | "leiste" | "hintergrund" | "fenster" | "warn"> = { fe_akz: "akzent", fe_lei: "leiste", fe_bg: "hintergrund", fe_fen: "fenster", fe_warn: "warn" };
   const FE_CSS: Record<string, string> = { akzent: "--blue", leiste: "--panel", hintergrund: "--bg", fenster: "--panel", warn: "--accent" };
@@ -281,7 +279,7 @@ export function einstellungsBindung(geladen?: () => void): EinstellungsBindung {
     const modus = istDunkel() ? "dunkel" : "hell";
     const eigen = p.farben[modus]?.[feld];
     if (hex(eigen)) return hex(eigen)!;
-    const basis = (FARB_VORLAGEN[p.farbVorlage ?? "noe"] ?? FARB_VORLAGEN.noe)[modus] as Record<string, string | undefined>;
+    const basis = FARB_VORLAGEN.noe[modus] as Record<string, string | undefined>;
     if (hex(basis[feld])) return hex(basis[feld])!;
     let css = "";
     try {
@@ -330,18 +328,6 @@ export function einstellungsBindung(geladen?: () => void): EinstellungsBindung {
     },
     fglinien: persBool("funkLinien", true),
     // ---------------- Farben
-    fv: {
-      l: () => {
-        const id = pers().farbVorlage ?? "noe";
-        return (fvListe().find(([k]) => k === id) ?? ["noe", FARB_VORLAGEN.noe])[1].name;
-      },
-      s: (w) => {
-        const id = w === undefined ? "noe" : fvListe().find(([, v]) => v.name === w)?.[0];
-        if (!id) return false;
-        setzePers({ farbVorlage: id, farben: { hell: {}, dunkel: {} } });
-        return true;
-      },
-    },
     falarm: {
       l: () => hex6(pers().fzAlarmFarbe, "#fff3c4"),
       s: (w) => {
@@ -780,7 +766,6 @@ export function einstellungsBindung(geladen?: () => void): EinstellungsBindung {
       }
     },
     optionen(key) {
-      if (key === "fv") return fvListe().map(([, v]) => v.name);
       if (key === "tdev" || key === "sdev") return geraetOptionen();
       if (key === "mic") return mikroOptionen();
       if (key === "micFunk") return [WIE_TEL, ...mikroOptionen().filter((x) => x !== SYSTEM)];

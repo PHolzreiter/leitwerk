@@ -34,7 +34,7 @@ export const KT_FRAGEN: KtFrage[] = [
   { id: "sauerstoff", text: "Braucht der Patient Sauerstoff?" },
   { id: "infektion", text: "Gibt es eine Infektion oder Isolation?" },
   { id: "zusatz", text: "Gibt es sonst etwas zu beachten – fährt jemand mit, braucht der Patient Sauerstoff, gibt es eine Infektion?" },
-  { id: "art", text: "Haben Sie einen Wunsch, mit wem Sie fahren – Rotes Kreuz oder Samariterbund?" },
+  { id: "art", text: "Haben Sie einen Wunsch, mit welcher Organisation Sie fahren?" },
   { id: "ktArt", text: "Ist das eine Hinfahrt oder eine Rückfahrt – zur Dialyse, zur Therapie, eine Entlassung?" },
   { id: "behandlung", text: "Was wird dort gemacht – eine ambulante Behandlung, eine Untersuchung, eine Aufnahme?" },
   { id: "gehfaehig", text: "Kann der Patient bis zum Fahrzeug selbst gehen?" },
@@ -126,7 +126,7 @@ function ktAntwortRoh(k: KtAuftrag, f: KtFrage): string {
     case "infektion":
       return w.infektion ? "Ja, Isolation – MRSA." : "Nein, nichts bekannt.";
     case "art":
-      return w.art === "KTR" ? "Am liebsten mit dem Roten Kreuz." : w.art === "KTA" ? "Wenn's geht, mit dem Samariterbund." : "Das ist egal.";
+      return w.art === "KTx" ? "Das ist egal." : "Am liebsten mit der Organisation, mit der ich sonst auch fahre.";
     case "telefon":
       return w.telefon;
     case "ktArt":
@@ -234,7 +234,7 @@ function fakten(k: KtAuftrag): string {
     w.begleitung ? "Eine Begleitperson fährt mit." : "Es fährt niemand mit.",
     `${wer} ${braucht} ${w.sauerstoff ? "Sauerstoff" : "keinen Sauerstoff"}.`,
     w.infektion ? `${wer} ${hat} einen Keim (MRSA) – Isolation nötig.` : "Eine Infektion oder Isolation gibt es nicht.",
-    `Wunsch Organisation: ${w.art === "KTR" ? "Rotes Kreuz" : w.art === "KTA" ? "Samariterbund" : "egal"}`,
+    `Wunsch Organisation: ${w.art === "KTx" ? "egal" : "die gewohnte Organisation"}`,
     w.ktArt ? `Art der Fahrt: ${{ hin: "Hinfahrt", rueck: "Rückfahrt", dialyse_hin: "Hinfahrt zur Dialyse", dialyse_rueck: "Rückfahrt von der Dialyse", therapie_hin: "Hinfahrt zur Therapie", therapie_rueck: "Rückfahrt von der Therapie", einweisung: "Einweisung durch den Hausarzt", entlassung: "Entlassung nach Hause" }[w.ktArt]}` : "",
     w.behandlung ? `Behandlung am Ziel: ${w.behandlung}` : "",
     w.gehfaehig === undefined || w.gehfaehig === null ? "" : `Bis zum Fahrzeug gehen: ${w.gehfaehig ? "geht" : "geht nicht"}`,

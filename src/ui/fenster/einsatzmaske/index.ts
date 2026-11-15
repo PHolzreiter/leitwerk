@@ -15,7 +15,7 @@ import { buchungName } from "../../../data/klinik";
 import { altersgruppeVon, DRINGLICHKEIT_NAME, dringlichkeitFuer, symptom, symptomAusDiagnose, symptomSuche, zuweisungId, zuweisungLesen, type Altersgruppe, type Dringlichkeit, type Symptom } from "../../../data/zuweisung";
 import { store } from "../../../data/store";
 import { allCodes, findCode, hasCodes, searchCodes } from "../../../sim/codes";
-import { PARTNER_PHASE_TEXT, sim, type Einsatz, type SimFahrzeug, type Vorschlag } from "../../../sim/engine";
+import { ENDEGRUND_TEXT, PARTNER_PHASE_TEXT, sim, type Einsatz, type Endegrund, type SimFahrzeug, type Vorschlag } from "../../../sim/engine";
 import { mp } from "../../../net/mehrspieler";
 import { distanceM, searchAddress } from "../../../sim/geo";
 import { KATEGORIE_LABEL } from "../../../sim/settings";
@@ -405,6 +405,10 @@ export function einsatzFenster(ctx: PanelKontext): { el: HTMLElement; dispose():
           eta: eta.text,
           sort: drin ? eta.sort : 1000 + eta.sort,
           kannStorno: drin,
+          // Storno/Endegrund (Paul 15.11.2026): sobald das Fahrzeug nicht mehr im Einsatz ist – änderbar
+          endeZeigen: !drin && !gs && !e.gsKind,
+          ende: e.endegrund?.[fz.id] ?? "",
+          endeOpts: [{ v: "", t: "mit Transport" }, ...(Object.keys(ENDEGRUND_TEXT) as Endegrund[]).map((k) => ({ v: k, t: ENDEGRUND_TEXT[k] }))].map((o) => ({ ...o, sel: o.v === (e.endegrund?.[fz.id] ?? "") })),
           stornoText: unterwegs ? "Storno" : "Freigeben",
           stornoTitel: unterwegs ? "Storno über Funk – Fahrzeug rückt ein" : "Fahrzeug aus dem Einsatz freigeben",
           titel: "",
@@ -525,6 +529,9 @@ export function einsatzFenster(ctx: PanelKontext): { el: HTMLElement; dispose():
           await sim.call(unterwegs ? "storno" : "entlasse", fz.id);
           return true;
         }
+        case "ende":
+          await sim.call("endegrundSetzen", e.id, arg[0] as string, ((arg[1] as string) || null) as Endegrund | null);
+          return true;
         case "funk":
           panelZeigen("funk");
           setTimeout(() => funkRufen(arg[0] as string), 60);

@@ -114,7 +114,7 @@ const SICHTUNG: [Sichtung, string][] = [
   ["rot", "rot – kritisch"],
 ];
 
-/** benötigte Kompetenz vor Ort (Scope-of-Practice-Matrix RK NÖ) */
+/** benötigte Kompetenz vor Ort (Scope-of-Practice-Matrix für NÖ) */
 const BRAUCHT: [Kompetenz, string][] = [
   ["RS", "RS – Basismaßnahmen, Transport"],
   ["NFS", "NFS – Arzneimittelliste 1 (z. B. Salbutamol, Methoxyfluran, Adrenalin i.m.)"],

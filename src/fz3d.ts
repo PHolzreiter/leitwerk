@@ -111,7 +111,7 @@ const LKW: Quader[] = [
   ...raeder(1.0, 2.4, -2.3, 0.45),
 ];
 
-/** VW Tiguan (SUV): NEF ÖAMTC */
+/** VW Tiguan (SUV): NEF der Luftrettung */
 const TIGUAN: Quader[] = [
   q(0, 0, 0.8, 1.85, 4.5, 0.9, "karosserie"),
   q(0, -0.3, 1.45, 1.72, 2.6, 0.45, "glas"),

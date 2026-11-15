@@ -1,12 +1,12 @@
 ﻿id;funkrufname;kurzname;kategorie;typ;aufbau;modell;dienststelle;aktiv;nachtflug;dienstplan;ersatz_fuer;na_abholung;hinweis
-nah-99010;99/010;Christophorus 10;NAH;NAH;;;air-c10;ja;nein;täglich Sonnenaufgang–Sonnenuntergang;;;nur tagsüber (Sonnenaufgang bis Sonnenuntergang)
-nef-99910;99/910;;NEF;NEF ÖAMTC;;;air-c10;ja;nein;24/7;99/010;;ÖAMTC-NEF, nur angemeldet, wenn der Hubschrauber nicht fliegen kann
-nah-99016;99/016;Christophorus 16;NAH;NAH;;;air-c16;ja;nein;täglich Sonnenaufgang–Sonnenuntergang;;;nur tagsüber (Sonnenaufgang bis Sonnenuntergang)
-nef-99916;99/916;;NEF;NEF ÖAMTC;;;air-c16;ja;nein;24/7;99/016;;ÖAMTC-NEF, nur angemeldet, wenn der Hubschrauber nicht fliegen kann
-nah-99017;99/017;Christophorus 17;NAH;NAH;;;air-c17;ja;ja;24/7;;;rund um die Uhr, mit Nachtflug
-nef-99917;99/917;;NEF;NEF ÖAMTC;;;air-c17;ja;nein;24/7;99/017;;ÖAMTC-NEF, nur angemeldet, wenn der Hubschrauber nicht fliegen kann
-nah-99018;99/018;Christophorus 18;NAH;NAH;;;air-c18;ja;nein;täglich Sonnenaufgang–Sonnenuntergang;;;nur tagsüber (Sonnenaufgang bis Sonnenuntergang)
-nef-99918;99/918;;NEF;NEF ÖAMTC;;;air-c18;ja;nein;24/7;99/018;;ÖAMTC-NEF, nur angemeldet, wenn der Hubschrauber nicht fliegen kann
+nah-99010;99/010;NAH 10;NAH;NAH;;;air-c10;ja;nein;täglich Sonnenaufgang–Sonnenuntergang;;;nur tagsüber (Sonnenaufgang bis Sonnenuntergang)
+nef-99910;99/910;;NEF;NEF Luftrettung;;;air-c10;ja;nein;24/7;99/010;;Luftrettungs-NEF, nur angemeldet, wenn der Hubschrauber nicht fliegen kann
+nah-99016;99/016;NAH 16;NAH;NAH;;;air-c16;ja;nein;täglich Sonnenaufgang–Sonnenuntergang;;;nur tagsüber (Sonnenaufgang bis Sonnenuntergang)
+nef-99916;99/916;;NEF;NEF Luftrettung;;;air-c16;ja;nein;24/7;99/016;;Luftrettungs-NEF, nur angemeldet, wenn der Hubschrauber nicht fliegen kann
+nah-99017;99/017;NAH 17;NAH;NAH;;;air-c17;ja;ja;24/7;;;rund um die Uhr, mit Nachtflug
+nef-99917;99/917;;NEF;NEF Luftrettung;;;air-c17;ja;nein;24/7;99/017;;Luftrettungs-NEF, nur angemeldet, wenn der Hubschrauber nicht fliegen kann
+nah-99018;99/018;NAH 18;NAH;NAH;;;air-c18;ja;nein;täglich Sonnenaufgang–Sonnenuntergang;;;nur tagsüber (Sonnenaufgang bis Sonnenuntergang)
+nef-99918;99/918;;NEF;NEF Luftrettung;;;air-c18;ja;nein;24/7;99/018;;Luftrettungs-NEF, nur angemeldet, wenn der Hubschrauber nicht fliegen kann
 vie77898;77/898;RTW Flughafen;RTW;RTW;klein;;btf-flughafen-wien;ja;nein;"täglich 05:00–14:00; täglich 14:00–23:00";;;Flughafenambulanz (Betriebsfeuerwehr) – fährt nur am Flughafengelände · Daten aus öffentlich zugänglichen Quellen, ungeprüft
 vie77899;77/899;NAW Flughafen;NAW;NAW;groß;;btf-flughafen-wien;ja;nein;"täglich 06:00–18:00; täglich 18:00–06:00";;;Flughafenambulanz (Betriebsfeuerwehr) – fährt nur am Flughafengelände · Daten aus öffentlich zugänglichen Quellen, ungeprüft
 n55001;55/001;;RTW;RTW-C;groß;;nef-st-gmuend;ja;nein;24/7;;;"Bezirksstelle Gmünd derzeit übergangsweise Hans-Czettel-Str. 10 (Neubau Weitraer Str. 54); Reformkarte: RTW-C-Standort (Plan 2027) · Daten ungeprüft (öffentlich zugänglich, 10/2026)"
@@ -19,14 +19,14 @@ nef-55099;55/099;;NEF;NEF;;;nef-st-gmuend;ja;nein;24/7;;;Notarzt am Stützpunkt
 n55119;55/119;;BEL;BEL;;;nef-st-gmuend;ja;nein;24/7;;;Bezirksstelle Gmünd derzeit übergangsweise Hans-Czettel-Str. 10 (Neubau Weitraer Str. 54) · Daten ungeprüft (öffentlich zugänglich, 10/2026)
 nef-64099;64/099;;NEF;NEF;;;nef-st-moedling;ja;nein;24/7;;;Funkrufname aus öffentlich zugänglichen Daten · Notarzt am Stützpunkt
 napn1;APN1;;NEF;NEF;;;neu-pvz-wienerwald;ja;nein;täglich 08:00–23:00;;;APN1: DGKP/Notfallsanitäter NKV + Notarzt, als NEF geführt · Daten ungeprüft (öffentlich zugänglich, 10/2026)
-n68017;68/017;;RTW;RTW;klein;;neu-rk-hochkar;ja;nein;Nov–Apr täglich 09:00–16:30;;;ergänzt: saisonaler RTW Hochkar (Nov.–Apr., RK Scheibbs) · Daten ungeprüft (öffentlich zugänglich, 10/2026)
+n68017;68/017;;RTW;RTW;klein;;neu-rk-hochkar;ja;nein;Nov–Apr täglich 09:00–16:30;;;ergänzt: saisonaler RTW Hochkar (Nov.–Apr., RD Scheibbs) · Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n54407;54/407;;RTW;RTW;klein;;neu-rk-leopoldsdorf;ja;nein;täglich 06:00–22:00;;;"Dienstzeit korrigiert: RTW mit 16 h Einsatzbereitschaft (meinbezirk 10/2023); Funkrufname unsicher (andere Leitstellen: 54/406) · Daten ungeprüft (öffentlich zugänglich, 10/2026)"
 n54409;54/409;;KTW;KTW;;;neu-rk-leopoldsdorf;ja;nein;Mo–Fr 06:00–14:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n54802;54/802;;RTW;RTW;klein;;neu-rk-marchegg;ja;nein;24/7;;;Marchegg ist seit 1.1.2021 Dienststelle der Bezirksstelle Gänserndorf-Marchegg · Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n54804;54/804;;KTW;KTW;;;neu-rk-marchegg;ja;nein;Mo–Fr 06:00–18:00;;;Marchegg ist seit 1.1.2021 Dienststelle der Bezirksstelle Gänserndorf-Marchegg · Daten ungeprüft (öffentlich zugänglich, 10/2026)
-n62641;62/641;;RTW;RTW;klein;;neu-rk-muenichreith;ja;nein;Mo–Fr 06:00–18:00;;;RK Pöggstall: Münichreith hat einen RTW · Daten ungeprüft (öffentlich zugänglich, 10/2026)
+n62641;62/641;;RTW;RTW;klein;;neu-rk-muenichreith;ja;nein;Mo–Fr 06:00–18:00;;;RD Pöggstall: Münichreith hat einen RTW · Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n65603;65/603;;RTW;RTW-C;groß;;osm101647581;ja;nein;24/7;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
-n67403;67/403;;RTW;RTW;klein;;osm11098048659;ja;nein;täglich 06:00–16:00;;;RK Herzogenburg: Oberwölbling täglich besetzt (Wochenende ergänzt) · Daten ungeprüft (öffentlich zugänglich, 10/2026)
+n67403;67/403;;RTW;RTW;klein;;osm11098048659;ja;nein;täglich 06:00–16:00;;;RD Herzogenburg: Oberwölbling täglich besetzt (Wochenende ergänzt) · Daten ungeprüft (öffentlich zugänglich, 10/2026)
 nef-70199;70/199;;NEF;NEF;;;osm11101232755;ja;nein;täglich 19:00–07:00;;;NEF-141 (Ärztefunkdienst 141), nur nachts · Funkrufname aus öffentlich zugänglichen Daten · Notarzt am Stützpunkt
 n54007;54/007;;KTW;KTW;;;osm11101980459;ja;nein;Mo–Fr 00:00–24:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n54406;54/406;;KTW;KTW;;;osm11101980459;ja;nein;Mo–Fr 06:00–18:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
@@ -38,8 +38,8 @@ n54611;54/611;;KTW;KTW-B;;;osm11724481791;ja;nein;Mo–Fr 06:00–18:00;;;"Hohen
 n64405;64/405;;RTW;RTW;klein;;osm1196072375;ja;nein;24/7;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n61381;61/381;;RTW;RTW;klein;;osm1196072377;ja;nein;24/7;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n61384;61/384;;KTW;KTW-B;;;osm1196072377;ja;nein;Mo–Fr 06:00–18:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
-n72383;72/383;;KTW;KTW-B;;;osm1196072381;ja;nein;täglich 07:00–17:00;;;ASB Groß Gerungs: der eine KTW · Daten ungeprüft (öffentlich zugänglich, 10/2026)
-n72386;72/386;;RTW;RTW;klein;;osm1196072381;ja;nein;täglich 07:00–19:00;;;ASB Groß Gerungs hat 2 RTW, 1 KTW, 2 BKTW (meinbezirk 08/2025) – als RTW geführt · Daten ungeprüft (öffentlich zugänglich, 10/2026)
+n72383;72/383;;KTW;KTW-B;;;osm1196072381;ja;nein;täglich 07:00–17:00;;;RD Groß Gerungs: der eine KTW · Daten ungeprüft (öffentlich zugänglich, 10/2026)
+n72386;72/386;;RTW;RTW;klein;;osm1196072381;ja;nein;täglich 07:00–19:00;;;RD Groß Gerungs hat 2 RTW, 1 KTW, 2 BKTW (meinbezirk 08/2025) – als RTW geführt · Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n72388;72/388;;RTW;RTW-C;groß;;osm1196072381;ja;nein;24/7;;;"Reformkarte/Landtag: RTW-C-Standort Groß Gerungs; NEF-Stützpunkt schließt 1.4.2027 · Daten ungeprüft (öffentlich zugänglich, 10/2026)"
 nef-72399;72/399;;NEF;NEF;;;osm1196072381;ja;nein;täglich 17:00–06:00;;;NEF-141 (Ärztefunkdienst 141), nur nachts · Funkrufname geschätzt · Notarzt am Stützpunkt
 n74056;74/056;;RTW;RTW;klein;;osm1196072386;ja;nein;täglich 05:00–21:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
@@ -92,15 +92,15 @@ n62405;62/405;;KTW;KTW-B;;;osm129902910;ja;nein;Mo–Fr 06:00–18:00;;;Daten un
 n62408;62/408;;KTW;KTW;;;osm129902910;ja;nein;Mo–Fr 18:00–06:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n62410;62/410;;KTW;KTW;;;osm129902910;ja;nein;Mo–Fr 06:00–14:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n62413;62/413;;KTW;KTW-B;;;osm129902910;ja;nein;Mo–Fr 06:00–18:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
-nef-62499;62/499;;NEF;NEF;;;osm129902910;ja;nein;24/7;;;RK/ASB geteilt · Notarzt am Stützpunkt
-n51602;51/602;;RTW;RTW-C;groß;;osm1299947976;ja;nein;24/7;;;RK Haag: RTW-C rund um die Uhr (roteskreuz.at) · Daten ungeprüft (öffentlich zugänglich, 10/2026)
+nef-62499;62/499;;NEF;NEF;;;osm129902910;ja;nein;24/7;;;RD geteilt · Notarzt am Stützpunkt
+n51602;51/602;;RTW;RTW-C;groß;;osm1299947976;ja;nein;24/7;;;RD Haag: RTW-C rund um die Uhr · Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n51611;51/611;;KTW;KTW-B;;;osm1299947976;ja;nein;Mo–Fr 07:00–19:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
-n51612;51/612;;KTW;KTW-B;;;osm1299947976;ja;nein;Mo–Fr 06:00–14:00;;;RK Haag: KTW, auch als RTW einsetzbar, Mo–Fr tags · Daten ungeprüft (öffentlich zugänglich, 10/2026)
-n51613;51/613;;KTW;KTW-B;;;osm1299947976;ja;nein;Mo–Fr 06:00–14:00;;;RK Haag: KTW, auch als RTW einsetzbar, Mo–Fr tags · Daten ungeprüft (öffentlich zugänglich, 10/2026)
-acn-80005;80/005;;ACN;ACN;;;osm1299947976;ja;nein;24/7;;;ACN Haag · Funkrufname geschätzt · seit 01.06.2024 beim Roten Kreuz Haag – Dienstzeit heute nicht belegt (beim Start nicht rund um die Uhr)
+n51612;51/612;;KTW;KTW-B;;;osm1299947976;ja;nein;Mo–Fr 06:00–14:00;;;RD Haag: KTW, auch als RTW einsetzbar, Mo–Fr tags · Daten ungeprüft (öffentlich zugänglich, 10/2026)
+n51613;51/613;;KTW;KTW-B;;;osm1299947976;ja;nein;Mo–Fr 06:00–14:00;;;RD Haag: KTW, auch als RTW einsetzbar, Mo–Fr tags · Daten ungeprüft (öffentlich zugänglich, 10/2026)
+acn-80005;80/005;;ACN;ACN;;;osm1299947976;ja;nein;24/7;;;ACN Haag · Funkrufname geschätzt · seit 01.06.2024 beim Rettungsdienst Haag – Dienstzeit heute nicht belegt (beim Start nicht rund um die Uhr)
 n71005;71/005;;RTW;RTW;klein;;osm13058478179;ja;nein;Fr 19:00–05:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
-n76052;76/052;;RTW;RTW-C;groß;;osm134870838;ja;nein;24/7;;;"RK Waidhofen: RTW rund um die Uhr an jeder Dienststelle; Reformkarte: RTW-C-Standort (Plan 2027) · Daten ungeprüft (öffentlich zugänglich, 10/2026)"
-n62631;62/631;;RTW;RTW;klein;;osm134962509;ja;nein;24/7;;;RK Pöggstall: RTW rund um die Uhr (korrigiert) · Daten ungeprüft (öffentlich zugänglich, 10/2026)
+n76052;76/052;;RTW;RTW-C;groß;;osm134870838;ja;nein;24/7;;;"RD Waidhofen: RTW rund um die Uhr an jeder Dienststelle; Reformkarte: RTW-C-Standort (Plan 2027) · Daten ungeprüft (öffentlich zugänglich, 10/2026)"
+n62631;62/631;;RTW;RTW;klein;;osm134962509;ja;nein;24/7;;;RD Pöggstall: RTW rund um die Uhr (korrigiert) · Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n63601;63/601;;RTW;RTW-C;groß;;osm135302467;ja;nein;24/7;;;RTW-C-Standort laut Reformkarte (Plan 2027) · Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n63612;63/612;;KTW;KTW-B;;;osm135302467;ja;nein;Mo–Fr 06:00–18:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n63613;63/613;;KTW;KTW-B;;;osm135302467;ja;nein;Mo–Fr 06:00–18:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
@@ -179,7 +179,7 @@ n52384;52/384;;RTW;RTW;klein;;osm156175529;ja;nein;24/7;;;Daten ungeprüft (öff
 n52385;52/385;;KTW;KTW-B;;;osm156175529;ja;nein;Mo–Sa 06:00–18:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n73022;73/022;;RTW;RTW;klein;;osm158045025;ja;nein;Mo–Fr 06:00–18:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n73011;73/011;;RTW;RTW;klein;;osm159312843;ja;nein;24/7;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
-n51401;51/401;;RTW;RTW-C;groß;;osm166614744;ja;nein;24/7;;;"Achtung: RK St. Valentin übersiedelt nach St. Pantaleon (Ringstraße 13) – Koordinaten prüfen; Reformkarte: RTW-C-Standort (Plan 2027) · Daten ungeprüft (öffentlich zugänglich, 10/2026)"
+n51401;51/401;;RTW;RTW-C;groß;;osm166614744;ja;nein;24/7;;;"Achtung: RD St. Valentin übersiedelt nach St. Pantaleon (Ringstraße 13) – Koordinaten prüfen; Reformkarte: RTW-C-Standort (Plan 2027) · Daten ungeprüft (öffentlich zugänglich, 10/2026)"
 n51402;51/402;;KTW;KTW;;;osm166614744;ja;nein;Mo–Fr 06:00–18:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n51413;51/413;;KTW;KTW-B;;;osm166614744;ja;nein;Mo–Fr 06:00–14:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n51414;51/414;;KTW;KTW-B;;;osm166614744;ja;nein;Mo–Fr 06:00–14:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
@@ -189,10 +189,10 @@ n65612;65/612;;KTW;KTW-B;;;osm169323881;ja;nein;Mo–Fr 06:00–14:00;;;Daten un
 n65613;65/613;;RTW;RTW;klein;;osm169323881;ja;nein;Mo–Fr 06:00–18:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n65614;65/614;;KTW;KTW;;;osm169323881;ja;nein;Mo–Fr 06:00–16:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n72402;72/402;;KTW;KTW-B;;;osm179340895;ja;nein;Mo–Fr 06:00–15:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
-n72403;72/403;;RTW;RTW-C;groß;;osm179340895;ja;nein;24/7;;;"Allentsteig: RTW rund um die Uhr (RK); RTW-C-Standort laut Reformkarte · Daten ungeprüft (öffentlich zugänglich, 10/2026)"
+n72403;72/403;;RTW;RTW-C;groß;;osm179340895;ja;nein;24/7;;;"Allentsteig: RTW rund um die Uhr (RD); RTW-C-Standort laut Reformkarte · Daten ungeprüft (öffentlich zugänglich, 10/2026)"
 n72404;72/404;;KTW;KTW-B;;;osm179340895;ja;nein;Mo–Fr 07:00–15:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n72405;72/405;;KTW;KTW;;;osm179340895;ja;nein;Mo–Fr 07:00–16:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
-n68001;68/001;;RTW;RTW-C;groß;;osm184211548;ja;nein;24/7;;;"RK Scheibbs: RTW-C bestätigt; Reformkarte: RTW-C-Standort (Plan 2027) · Daten ungeprüft (öffentlich zugänglich, 10/2026)"
+n68001;68/001;;RTW;RTW-C;groß;;osm184211548;ja;nein;24/7;;;"RD Scheibbs: RTW-C bestätigt; Reformkarte: RTW-C-Standort (Plan 2027) · Daten ungeprüft (öffentlich zugänglich, 10/2026)"
 n68002;68/002;;KTW;KTW-B;;;osm184211548;ja;nein;"täglich 06:00–16:00; täglich 18:00–06:00";;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n68011;68/011;;KTW;KTW-B;;;osm184211548;ja;nein;Mo–Fr 10:00–20:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n68012;68/012;;KTW;KTW-B;;;osm184211548;ja;nein;Mo–Fr 06:00–14:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
@@ -213,7 +213,7 @@ nef-54499;54/499;;NEF;NEF;;;osm184596475;ja;nein;24/7;;;Notarzt am Stützpunkt
 n59071;59/071;;RTW;RTW-C;groß;;osm19869923;ja;nein;24/7;;;RTW-C-Standort laut Reformkarte (Plan 2027) – Symbol nördlich von Wien, wahrscheinlich Gerasdorf · Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n59072;59/072;;KTW;KTW-B;;;osm19869923;ja;nein;Mo–Fr 06:00–14:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n68015;68/015;;KTW;KTW-B;;;osm202274841;ja;nein;Mo–Fr 06:00–14:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
-n68061;68/061;;RTW;RTW-C;groß;;osm202274841;ja;nein;24/7;;;"RK Scheibbs: RTW-C bestätigt; Reformkarte: RTW-C-Standort (Plan 2027) · Daten ungeprüft (öffentlich zugänglich, 10/2026)"
+n68061;68/061;;RTW;RTW-C;groß;;osm202274841;ja;nein;24/7;;;"RD Scheibbs: RTW-C bestätigt; Reformkarte: RTW-C-Standort (Plan 2027) · Daten ungeprüft (öffentlich zugänglich, 10/2026)"
 n64003;64/003;;RTW;RTW;klein;;osm206877885;ja;nein;"täglich 18:00–00:00; Mo–Fr 06:00–18:00; Sa, So 08:00–18:00";;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n67361;67/361;;KTW;KTW-B;;;osm214323136;ja;nein;Mo–Fr 06:00–16:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n67362;67/362;;KTW;KTW-B;;;osm214323136;ja;nein;Mo–Fr 06:00–18:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
@@ -230,7 +230,7 @@ n67324;67/324;;KTW;KTW-B;;;osm233220983;ja;nein;"Mo–Fr 18:00–06:00; Mo–Sa 
 n67325;67/325;;RTW;RTW-C;groß;;osm233220983;ja;nein;24/7;;;Reformkarte: kein eigenes RTW-C-Symbol in Altlengbach – RTW-C unsicher · Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n62406;62/406;;RTW;RTW;klein;;osm238053127;ja;nein;24/7;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n65005;65/005;;RTW;RTW-C;groß;;osm239829785;ja;nein;24/7;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
-n66001;66/001;;RTW;RTW-C;groß;;osm26299582;ja;nein;24/7;;;Reformkarte: ein RTW-C-Symbol in Purkersdorf (RK oder ASB) · Daten ungeprüft (öffentlich zugänglich, 10/2026)
+n66001;66/001;;RTW;RTW-C;groß;;osm26299582;ja;nein;24/7;;;Reformkarte: ein RTW-C-Symbol in Purkersdorf (RD oder RD) · Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n66003;66/003;;KTW;KTW;;;osm26299582;ja;nein;"Mo–Fr 06:00–14:00; Mo, Mi, Do 18:00–06:00";;;6:00–14:00. Mo, Di, Mi, Do, Fr. · Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n66004;66/004;;KTW;KTW-B;;;osm26299582;ja;nein;Mo–Fr 06:00–18:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n66011;66/011;;KTW;KTW-B;;;osm26299582;ja;nein;Mo–Fr 06:00–16:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
@@ -257,7 +257,7 @@ n53613;53/613;;KTW;KTW;;;osm26806369;ja;nein;Di, Do 10:00–20:00;;;Daten ungepr
 n53614;53/614;;KTW;KTW-B;;;osm26806369;ja;nein;"Mo, Mi, Fr 05:30–15:30; Di, Do, Sa 06:00–16:00";;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n53615;53/615;;KTW;KTW-B;;;osm26806369;ja;nein;Mo–Fr 06:00–16:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 nef-53699;53/699;;NEF;NEF;;;osm26806369;ja;nein;24/7;;;Funkrufname aus öffentlich zugänglichen Daten · Notarzt am Stützpunkt
-n62601;62/601;;RTW;RTW-C;groß;;osm268319830;ja;nein;24/7;;;"RK Pöggstall: RTW-C rund um die Uhr bestätigt; Reformkarte: RTW-C-Standort (Plan 2027) · Daten ungeprüft (öffentlich zugänglich, 10/2026)"
+n62601;62/601;;RTW;RTW-C;groß;;osm268319830;ja;nein;24/7;;;"RD Pöggstall: RTW-C rund um die Uhr bestätigt; Reformkarte: RTW-C-Standort (Plan 2027) · Daten ungeprüft (öffentlich zugänglich, 10/2026)"
 n62612;62/612;;KTW;KTW-B;;;osm268319830;ja;nein;Mo–Fr 06:00–14:00;;;6:00–18:00. Mo, Di, Mi, Do, Fr. · Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n62613;62/613;;KTW;KTW-B;;;osm268319830;ja;nein;"täglich 08:00–06:00; Mo–Fr 06:00–18:00";;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n62623;62/623;;BEL;BEL;;;osm268319830;ja;nein;täglich 07:00–19:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
@@ -269,11 +269,11 @@ n64008;64/008;;RTW;RTW;klein;;osm29216693;ja;nein;24/7;;;Daten ungeprüft (öffe
 n67331;67/331;;KTW;KTW-B;;;osm294406371;ja;nein;Mo–Fr 07:00–19:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n67332;67/332;;KTW;KTW-B;;;osm294406371;ja;nein;Mo–Fr 07:00–19:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n67333;67/333;;RTW;RTW;klein;;osm294406371;ja;nein;24/7;;;Reformkarte: künftig RTW-C-Standort · Daten ungeprüft (öffentlich zugänglich, 10/2026)
-n67334;67/334;;KTW;KTW;;;osm294406371;ja;nein;Mo–Fr 08:00–18:00;;;ergänzt: KTW 67/334 im ASB-Fuhrpark Eichgraben · Daten ungeprüft (öffentlich zugänglich, 10/2026)
+n67334;67/334;;KTW;KTW;;;osm294406371;ja;nein;Mo–Fr 08:00–18:00;;;ergänzt: KTW 67/334 im RD-Fuhrpark Eichgraben · Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n71003;71/003;;RTW;RTW;klein;;osm297700145;ja;nein;24/7;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n71004;71/004;;RTW;RTW;klein;;osm297700145;ja;nein;Mo–Fr 06:00–22:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n71011;71/011;;KTW;KTW-B;;;osm297700145;ja;nein;Mo–Fr 06:00–16:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
-n73020;73/020;;KTW;KTW-B;;;osm298274837;ja;nein;Mo, Mi 07:00–19:00;;;Ortsstelle Hofstetten-Grünau besteht laut RK – aktiv gelassen · Daten ungeprüft (öffentlich zugänglich, 10/2026)
+n73020;73/020;;KTW;KTW-B;;;osm298274837;ja;nein;Mo, Mi 07:00–19:00;;;Ortsstelle Hofstetten-Grünau besteht laut RD – aktiv gelassen · Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n63022;63/022;;RTW;RTW;klein;;osm30164441;ja;nein;24/7;;;"Ortsstelle Kreuzstetten belegt; 24/7 fraglich (rein ehrenamtlich, ca. 10.000 Std./Jahr); Reformkarte: kein RTW-C in Kreuzstetten · Daten ungeprüft (öffentlich zugänglich, 10/2026)"
 n71401;71/401;;RTW;RTW-C;groß;;osm30512121;ja;nein;24/7;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n71404;71/404;;RTW;RTW;klein;;osm30512121;ja;nein;täglich 06:00–18:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
@@ -290,12 +290,12 @@ n53006;53/006;;KTW;KTW;;;osm30557227;ja;nein;Mo–Fr 06:00–15:00;;;Daten ungep
 n53011;53/011;;KTW;KTW-B;;;osm30557227;ja;nein;Mo–Fr 08:00–18:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n53012;53/012;;KTW;KTW;;;osm30557227;ja;nein;Mo–Fr 09:00–19:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n53022;53/022;;BEL;BEL;;;osm30557227;ja;nein;24/7;;;Dienstzeit unbekannt – rund um die Uhr angenommen · Daten ungeprüft (öffentlich zugänglich, 10/2026)
-acn-80008;80/008;;ACN;ACN;;;osm30557227;ja;nein;24/7;;;ACN Bruck an der Leitha · Funkrufname aus öffentlich zugänglichen Daten · erster ACN-Standort (Pilot seit 18.05.2020), am Rettungsstützpunkt des Roten Kreuzes
+acn-80008;80/008;;ACN;ACN;;;osm30557227;ja;nein;24/7;;;ACN Bruck an der Leitha · Funkrufname aus öffentlich zugänglichen Daten · erster ACN-Standort (Pilot seit 18.05.2020), am Rettungsstützpunkt des Rettungsdienstes
 n59061;59/061;;RTW;RTW-C;groß;;osm30652964;ja;nein;24/7;;;RTW-C-Standort laut Reformkarte (Plan 2027) · Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n59062;59/062;;KTW;KTW-B;;;osm30652964;ja;nein;Mo–Fr 06:00–18:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
-n59063;59/063;;KTW;KTW;;;osm30652964;ja;nein;Mo–Fr 06:00–16:00;;;ergänzt: RK Korneuburg nennt 2 KTW in Stockerau · Daten ungeprüft (öffentlich zugänglich, 10/2026)
+n59063;59/063;;KTW;KTW;;;osm30652964;ja;nein;Mo–Fr 06:00–16:00;;;ergänzt: RD Korneuburg nennt 2 KTW in Stockerau · Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n77060;77/060;;RTW;RTW;klein;;osm306795959;ja;nein;Mo–Fr 06:00–18:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
-n62005;62/005;;RTW;RTW;klein;;osm3195902571;ja;nein;"Sa, So 07:00–19:00; Sa, So 19:00–07:00";;;Wochenendnacht ergänzt: Raum Mank (Kilb/Texing) hat laut RK einen RTW rund um die Uhr · Daten ungeprüft (öffentlich zugänglich, 10/2026)
+n62005;62/005;;RTW;RTW;klein;;osm3195902571;ja;nein;"Sa, So 07:00–19:00; Sa, So 19:00–07:00";;;Wochenendnacht ergänzt: Raum Mank (Kilb/Texing) hat laut RD einen RTW rund um die Uhr · Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n59051;59/051;;RTW;RTW-C;groß;;osm332658678;ja;nein;24/7;;;RTW-C-Standort laut Reformkarte (Plan 2027) · Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n59052;59/052;;KTW;KTW-B;;;osm332658678;ja;nein;Mo–Fr 06:00–14:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n52441;52/441;;RTW;RTW-C;groß;;osm338055144;ja;nein;24/7;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
@@ -347,8 +347,8 @@ n65021;65/021;;KTW;KTW-B;;;osm466387055;ja;nein;Mo–Fr 06:00–14:00;;;Daten un
 n65023;65/023;;RTW;RTW;klein;;osm466387055;ja;nein;24/7;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 nef-65098;65/098;;NEF;NEF;;;osm466387055;ja;nein;24/7;;;Funkrufname aus öffentlich zugänglichen Daten · Notarzt am Stützpunkt
 n77050;77/050;;RTW;RTW;klein;;osm475957537;ja;nein;täglich 06:00–18:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
-n62651;62/651;;RTW;RTW;klein;;osm514604510;ja;nein;24/7;;;RK Pöggstall: RTW rund um die Uhr (korrigiert) · Daten ungeprüft (öffentlich zugänglich, 10/2026)
-n68071;68/071;;RTW;RTW;klein;;osm528735256;ja;nein;24/7;;;RK Scheibbs: Wieselburg ist RTW-NÖ (kein RTW-C) · Daten ungeprüft (öffentlich zugänglich, 10/2026)
+n62651;62/651;;RTW;RTW;klein;;osm514604510;ja;nein;24/7;;;RD Pöggstall: RTW rund um die Uhr (korrigiert) · Daten ungeprüft (öffentlich zugänglich, 10/2026)
+n68071;68/071;;RTW;RTW;klein;;osm528735256;ja;nein;24/7;;;RD Scheibbs: Wieselburg ist RTW-NÖ (kein RTW-C) · Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n68072;68/072;;KTW;KTW;;;osm528735256;ja;nein;Mo–Fr 06:00–14:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n73021;73/021;;RTW;RTW;klein;;osm5322076812;ja;nein;täglich 07:00–06:00;;;"19:00–7:00. Sa, So; 7:00–19:00. Mi, Sa · Daten ungeprüft (öffentlich zugänglich, 10/2026)"
 n65502;65/502;;RTW;RTW;klein;;osm541686569;ja;nein;Mo–Fr 06:00–16:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
@@ -375,15 +375,15 @@ n51019;51/019;;KTW;KTW-B;;;osm591992316;ja;nein;Mo–Fr 06:00–18:00;;;Daten un
 nef-51099;51/099;;NEF;NEF;;;osm591992316;ja;nein;24/7;;kh006;Funkrufname geschätzt · Notarzt wird im Krankenhaus abgeholt
 acn-80002;80/002;;ACN;ACN;;;osm621328687;ja;nein;24/7;;;ACN Baden/Leobersdorf · Funkrufname aus öffentlich zugänglichen Daten · Standort lt. OpenStreetMap
 n65019;65/019;;RTW;RTW;klein;;osm627333473;ja;nein;"Sa, So 08:00–20:00; Mo–Fr 06:00–18:00";;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
-n55402;55/402;;RTW;RTW-C;groß;;osm6310071;ja;nein;24/7;;;RK Litschau Fuhrpark: RTW-C bestätigt · Daten ungeprüft (öffentlich zugänglich, 10/2026)
-n55403;55/403;;RTW;RTW;klein;;osm6310071;ja;nein;täglich 06:00–14:00;;;RK Litschau Fuhrpark: RTW (korrigiert) · Daten ungeprüft (öffentlich zugänglich, 10/2026)
-n55404;55/404;;RTW;RTW;klein;;osm6310071;ja;nein;ungerade KW Mo–Sa 06:00–14:00;;;RK Litschau Fuhrpark: RTW (korrigiert) · Daten ungeprüft (öffentlich zugänglich, 10/2026)
-n55405;55/405;;KTW;KTW-B;;;osm6310071;ja;nein;Mo–Fr 07:00–16:00;;;RK Litschau Fuhrpark: KTW bestätigt · Daten ungeprüft (öffentlich zugänglich, 10/2026)
+n55402;55/402;;RTW;RTW-C;groß;;osm6310071;ja;nein;24/7;;;RD Litschau Fuhrpark: RTW-C bestätigt · Daten ungeprüft (öffentlich zugänglich, 10/2026)
+n55403;55/403;;RTW;RTW;klein;;osm6310071;ja;nein;täglich 06:00–14:00;;;RD Litschau Fuhrpark: RTW (korrigiert) · Daten ungeprüft (öffentlich zugänglich, 10/2026)
+n55404;55/404;;RTW;RTW;klein;;osm6310071;ja;nein;ungerade KW Mo–Sa 06:00–14:00;;;RD Litschau Fuhrpark: RTW (korrigiert) · Daten ungeprüft (öffentlich zugänglich, 10/2026)
+n55405;55/405;;KTW;KTW-B;;;osm6310071;ja;nein;Mo–Fr 07:00–16:00;;;RD Litschau Fuhrpark: KTW bestätigt · Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n77006;77/006;;RTW;RTW;klein;;osm633425355;ja;nein;Mo–Fr 06:00–18:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n77030;77/030;;RTW;RTW-C;groß;;osm633425355;ja;nein;24/7;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n64402;64/402;;RTW;RTW-C;groß;;osm636074300;ja;nein;24/7;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n62002;62/002;;RTW;RTW-C;groß;;osm637982095;ja;nein;Mo–Fr 00:00–24:00;;;Reformkarte: RTW-C-Standort (Plan 2027) · Daten ungeprüft (öffentlich zugänglich, 10/2026)
-n76062;76/062;;RTW;RTW-C;groß;;osm769415688;ja;nein;24/7;;;"RK Waidhofen: RTW rund um die Uhr an jeder Dienststelle; Reformkarte: RTW-C-Standort (Plan 2027) · Daten ungeprüft (öffentlich zugänglich, 10/2026)"
+n76062;76/062;;RTW;RTW-C;groß;;osm769415688;ja;nein;24/7;;;"RD Waidhofen: RTW rund um die Uhr an jeder Dienststelle; Reformkarte: RTW-C-Standort (Plan 2027) · Daten ungeprüft (öffentlich zugänglich, 10/2026)"
 n51119;51/119;;BEL;BEL;;;osm769615713;ja;nein;Fr–So 00:00–24:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n51801;51/801;;RTW;RTW-C;groß;;osm769615713;ja;nein;24/7;;;Reformkarte: RTW-C-Standort (Plan 2027) · Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n51802;51/802;;RTW;RTW;klein;;osm769615713;ja;nein;"täglich 06:00–18:00; Sa, So 18:00–06:00";;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
@@ -413,7 +413,7 @@ n61331;61/331;;KTW;KTW-B;;;osm8460332190;ja;nein;Mo–Fr 06:00–18:00;;;Daten u
 n61334;61/334;;KTW;KTW-B;;;osm8460332190;ja;nein;Mo–Fr 06:00–18:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n67381;67/381;;KTW;KTW-B;;;osm8460412540;ja;nein;Mo–Fr 06:00–18:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n67382;67/382;;KTW;KTW;;;osm8460412540;ja;nein;Mo–Sa 06:00–18:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
-n67383;67/383;;RTW;RTW-C;groß;;osm8460412540;ja;nein;24/7;;;ASB Frankenfels: RTW-C seit 06/2026, rund um die Uhr (Funkrufname 67/383 oder 67/382 offen) · Daten ungeprüft (öffentlich zugänglich, 10/2026)
+n67383;67/383;;RTW;RTW-C;groß;;osm8460412540;ja;nein;24/7;;;RD Frankenfels: RTW-C seit 06/2026, rund um die Uhr (Funkrufname 67/383 oder 67/382 offen) · Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n62331;62/331;;KTW;KTW-B;;;osm8460443947;ja;nein;Mo–Fr 06:00–12:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n62332;62/332;;KTW;KTW;;;osm8460443947;ja;nein;Mo–Fr 06:00–18:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n62333;62/333;;RTW;RTW;klein;;osm8460443947;ja;nein;24/7;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
@@ -422,7 +422,7 @@ n65382;65/382;;KTW;KTW;;;osm889408875;ja;nein;Mo–Fr 06:00–14:00;;;Daten unge
 n65383;65/383;;RTW;RTW-C;groß;;osm889408875;ja;nein;24/7;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n65385;65/385;;RTW;RTW;klein;;osm889408875;ja;nein;Mo–Fr 06:00–18:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n65387;65/387;;KTW;KTW-B;;;osm889408875;ja;nein;Mo–Fr 06:00–16:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
-n76001;76/001;;RTW;RTW-C;groß;;osm90045647;ja;nein;24/7;;;"RK Waidhofen: RTW rund um die Uhr an jeder Dienststelle; Reformkarte: RTW-C-Standort (Plan 2027) · Daten ungeprüft (öffentlich zugänglich, 10/2026)"
+n76001;76/001;;RTW;RTW-C;groß;;osm90045647;ja;nein;24/7;;;"RD Waidhofen: RTW rund um die Uhr an jeder Dienststelle; Reformkarte: RTW-C-Standort (Plan 2027) · Daten ungeprüft (öffentlich zugänglich, 10/2026)"
 n76009;76/009;;RTW;RTW;klein;;osm90045647;ja;nein;Mo–Fr 06:00–18:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n76011;76/011;;KTW;KTW;;;osm90045647;ja;nein;Mo–Fr 06:00–14:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n76012;76/012;;KTW;KTW-B;;;osm90045647;ja;nein;Mo–Fr 08:00–18:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
@@ -430,8 +430,8 @@ n76013;76/013;;KTW;KTW-B;;;osm90045647;ja;nein;Mo–Fr 18:00–06:00;;;18:00–6
 n76014;76/014;;KTW;KTW;;;osm90045647;ja;nein;Mo–Fr 06:00–18:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n76015;76/015;;KTW;KTW;;;osm90045647;ja;nein;Mo–Fr 06:00–18:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 nef-76099;76/099;;NEF;NEF;;;osm90045647;ja;nein;24/7;;kh019;Funkrufname geschätzt · Notarzt wird im Krankenhaus abgeholt
-n73441;73/441;;RTW;RTW;klein;;osm9331737062;ja;nein;"täglich 07:00–19:00; Sa, So 19:00–07:00";;;ergänzt: RK-Ortsstelle Karlstetten-Neidling besteht · Daten ungeprüft (öffentlich zugänglich, 10/2026)
-n68051;68/051;;RTW;RTW-C;groß;;osm961085969;ja;nein;24/7;;;"RK Scheibbs: RTW-C bestätigt; Reformkarte: RTW-C-Standort (Plan 2027) · Daten ungeprüft (öffentlich zugänglich, 10/2026)"
+n73441;73/441;;RTW;RTW;klein;;osm9331737062;ja;nein;"täglich 07:00–19:00; Sa, So 19:00–07:00";;;ergänzt: RD-Ortsstelle Karlstetten-Neidling besteht · Daten ungeprüft (öffentlich zugänglich, 10/2026)
+n68051;68/051;;RTW;RTW-C;groß;;osm961085969;ja;nein;24/7;;;"RD Scheibbs: RTW-C bestätigt; Reformkarte: RTW-C-Standort (Plan 2027) · Daten ungeprüft (öffentlich zugänglich, 10/2026)"
 n68052;68/052;;KTW;KTW-B;;;osm961085969;ja;nein;Mo–Fr 06:00–16:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n52601;52/601;;KTW;KTW;;;osm999006737;ja;nein;täglich 06:00–20:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n52602;52/602;;RTW;RTW;klein;;osm999006737;ja;nein;24/7;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
@@ -465,8 +465,8 @@ p818888;75/030;BEL Krems;BEL;BEL;;;p1496914;ja;nein;24/7;;;
 p791349;75/099;;NEF;NEF;;;p1496914;ja;nein;24/7;;kh002;Notarzt wird im Krankenhaus abgeholt
 p791352;75/051;;RTW;RTW;klein;;p1496917;ja;nein;24/7;;;
 p791351;75/071;;RTW;RTW-C;groß;;p1496918;ja;nein;24/7;;;
-p791353;99/002;Christophorus 2;NAH;NAH;;;p1496919;ja;ja;24/7;;;rund um die Uhr, mit Nachtflug
-p816732;99/902;;NEF;NEF ÖAMTC;;;p1496919;ja;nein;24/7;99/002;;ÖAMTC-NEF, nur angemeldet, wenn der Hubschrauber nicht fliegen kann
+p791353;99/002;NAH 2;NAH;NAH;;;p1496919;ja;ja;24/7;;;rund um die Uhr, mit Nachtflug
+p816732;99/902;;NEF;NEF Luftrettung;;;p1496919;ja;nein;24/7;99/002;;Luftrettungs-NEF, nur angemeldet, wenn der Hubschrauber nicht fliegen kann
 p792147;60/001;;RTW;RTW-C;groß;;p1497833;ja;nein;24/7;;;
 p792149;60/002;;KTW;KTW-B;;;p1497833;ja;nein;Mo–Fr 07:00–19:00;;;
 p816102;60/012;;KTW;KTW;;;p1497833;ja;nein;Mo–Fr 07:00–15:00;;;
@@ -517,13 +517,13 @@ p816631;57/201;;KTW;KTW-B;;;p1528064;ja;nein;"Mo–Fr 06:00–19:00; Sa 06:00–
 p816641;57/203;;KTW;KTW-B;;;p1528064;ja;nein;Mo–Fr 06:00–16:00;;;
 p814722;57/204;;RTW;RTW-C;groß;;p1528064;ja;nein;24/7;;;
 p816636;57/205;;KTW;KTW;;;p1528064;ja;nein;Mo–Fr 06:00–16:00;;;
-p814731;99/009;Christophorus 9;NAH;NAH;;;p1528090;ja;nein;täglich Sonnenaufgang–Sonnenuntergang;;;nur tagsüber (Sonnenaufgang bis Sonnenuntergang)
-nef-99909;99/909;;NEF;NEF ÖAMTC;;;p1528090;ja;nein;24/7;99/009;;ÖAMTC-NEF, nur angemeldet, wenn der Hubschrauber nicht fliegen kann
-p814732;99/015;Christophorus 15;NAH;NAH;;;p1528091;ja;nein;täglich Sonnenaufgang–Sonnenuntergang;;;nur tagsüber (Sonnenaufgang bis Sonnenuntergang)
-nef-99915;99/915;;NEF;NEF ÖAMTC;;;p1528091;ja;nein;24/7;99/015;;ÖAMTC-NEF, nur angemeldet, wenn der Hubschrauber nicht fliegen kann
-p814733;99/003;Christophorus 3;NAH;NAH;;;p1528092;ja;nein;täglich Sonnenaufgang–Sonnenuntergang;;;nur tagsüber (Sonnenaufgang bis Sonnenuntergang)
-p814734;99/033;Christophorus 33;ITH;ITH;;;p1528092;ja;nein;täglich Sonnenaufgang–Sonnenuntergang;;;nur tagsüber (Sonnenaufgang bis Sonnenuntergang)
-nef-99903;99/903;;NEF;NEF ÖAMTC;;;p1528092;ja;nein;24/7;99/003;;ÖAMTC-NEF, nur angemeldet, wenn der Hubschrauber nicht fliegen kann
+p814731;99/009;NAH 9;NAH;NAH;;;p1528090;ja;nein;täglich Sonnenaufgang–Sonnenuntergang;;;nur tagsüber (Sonnenaufgang bis Sonnenuntergang)
+nef-99909;99/909;;NEF;NEF Luftrettung;;;p1528090;ja;nein;24/7;99/009;;Luftrettungs-NEF, nur angemeldet, wenn der Hubschrauber nicht fliegen kann
+p814732;99/015;NAH 15;NAH;NAH;;;p1528091;ja;nein;täglich Sonnenaufgang–Sonnenuntergang;;;nur tagsüber (Sonnenaufgang bis Sonnenuntergang)
+nef-99915;99/915;;NEF;NEF Luftrettung;;;p1528091;ja;nein;24/7;99/015;;Luftrettungs-NEF, nur angemeldet, wenn der Hubschrauber nicht fliegen kann
+p814733;99/003;NAH 3;NAH;NAH;;;p1528092;ja;nein;täglich Sonnenaufgang–Sonnenuntergang;;;nur tagsüber (Sonnenaufgang bis Sonnenuntergang)
+p814734;99/033;NAH 33;ITH;ITH;;;p1528092;ja;nein;täglich Sonnenaufgang–Sonnenuntergang;;;nur tagsüber (Sonnenaufgang bis Sonnenuntergang)
+nef-99903;99/903;;NEF;NEF Luftrettung;;;p1528092;ja;nein;24/7;99/003;;Luftrettungs-NEF, nur angemeldet, wenn der Hubschrauber nicht fliegen kann
 p814738;56/006;;RTW;RTW;klein;;p1528094;ja;nein;24/7;;;
 p815569;56/007;;RTW;RTW-C;groß;;p1528094;ja;nein;24/7;;;
 p814739;56/008;;RTW;RTW;klein;;p1528094;ja;nein;Mo–Fr 06:00–16:00;;;
@@ -607,10 +607,10 @@ n67004;67/004;;KTW;KTW-B;;;p1528810;ja;nein;Mo–Fr 06:00–18:00;;;Daten ungepr
 n67005;67/005;;KTW;KTW-B;;;p1528810;ja;nein;Mo–Fr 06:00–18:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n67006;67/006;;KTW;KTW;;;p1528810;ja;nein;Mo–Fr 06:00–14:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n67039;67/039;;BEL;BEL;;;p1528810;ja;nein;24/7;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
-p815558;67/099;;NEF;NEF;;;p1528810;ja;nein;24/7;;;RK/ASB geteilt · Notarzt am Stützpunkt
-p814730;66/099;;NEF;NEF;;;p1528824;ja;nein;24/7;;;RK/ASB geteilt · Notarzt am Stützpunkt
+p815558;67/099;;NEF;NEF;;;p1528810;ja;nein;24/7;;;RD geteilt · Notarzt am Stützpunkt
+p814730;66/099;;NEF;NEF;;;p1528824;ja;nein;24/7;;;RD geteilt · Notarzt am Stützpunkt
 n66381;66/381;;KTW;KTW;;;p1528824;ja;nein;Mo–Fr 07:00–19:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
-n66383;66/383;;KTW;KTW-B;;;p1528824;ja;nein;Mo–Fr 07:00–19:00;;;ASB Purkersdorf: neuer KTW 66/383 (NÖN 06/2026) · Daten ungeprüft (öffentlich zugänglich, 10/2026)
+n66383;66/383;;KTW;KTW-B;;;p1528824;ja;nein;Mo–Fr 07:00–19:00;;;RD Purkersdorf: neuer KTW 66/383 (NÖN 06/2026) · Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n66386;66/386;;KTW;KTW-B;;;p1528824;ja;nein;Mo–Fr 06:00–18:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 p815565;66/390;;RTW;RTW-C;groß;;p1528824;ja;nein;24/7;;;
 p816067;73/002;;RTW;RTW-C;groß;;p1533827;ja;nein;24/7;;;
@@ -639,11 +639,11 @@ n73336;73/336;;KTW;KTW-B;;;p1533829;ja;nein;"Mo–Fr 08:00–16:00; Mo–Fr 18:0
 n73338;73/338;;KTW;KTW-B;;;p1533829;ja;nein;Mo–Fr 06:00–18:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n73339;73/339;;KTW;KTW-B;;;p1533829;ja;nein;Mo–Fr 06:00–18:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
 n73340;73/340;;KTW;KTW-B;;;p1533829;ja;nein;Mo–Fr 06:00–16:00;;;Daten ungeprüft (öffentlich zugänglich, 10/2026)
-n73341;73/341;;RTW;RTW;klein;;p1533829;ja;nein;Mo–Sa 08:00–20:00;;;ergänzt: RTW 73/341 im ASB-Fuhrpark (samariterbund.net) · Daten ungeprüft (öffentlich zugänglich, 10/2026)
+n73341;73/341;;RTW;RTW;klein;;p1533829;ja;nein;Mo–Sa 08:00–20:00;;;ergänzt: RTW 73/341 im RD-Fuhrpark · Daten ungeprüft (öffentlich zugänglich, 10/2026)
 p816072;73/342;;RTW;RTW-C;groß;;p1533829;ja;nein;24/7;;;
 p816073;73/343;;RTW;RTW;klein;;p1533829;ja;nein;Mo–Fr 06:00–18:00;;;
 n73344;73/344;;KTW;KTW-B;;;p1533829;ja;nein;Mo–Fr 06:00–14:00;;;6:00–18:00. Mo, Di, Mi, Do, Fr. · Daten ungeprüft (öffentlich zugänglich, 10/2026)
-p816071;73/099;;NEF;NEF;;;p1533830;ja;nein;24/7;;;RK/ASB geteilt · Notarzt am Stützpunkt
+p816071;73/099;;NEF;NEF;;;p1533830;ja;nein;24/7;;;RD geteilt · Notarzt am Stützpunkt
 p816093;80/006;;ACN;ACN;;;p1533832;ja;nein;24/7;;;ACN Stockerau · Stützpunkt in der Leitstelle Stockerau
 p816086;80/003;;ACN;ACN;;;p1533837;ja;nein;24/7;;;ACN St. Pölten
 n70001;70/001;;RTW;RTW;klein;;p1533839;ja;nein;24/7;;;im offiziellen Fuhrpark Waidhofen/Thaya · Daten ungeprüft (öffentlich zugänglich, 10/2026)

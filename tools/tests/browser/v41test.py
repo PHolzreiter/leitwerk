@@ -18,7 +18,7 @@ try:
         r = A.evaluate("""() => { const s = window.__lw.sim; const f = (n) => { const x = Object.values(s.state.fahrzeuge).find(v => v.funkrufname === n); return x ? s.rufname(x) : '?'; };
           return { a: f('75/001'), gfoehl: f('75/051'), spitz: f('75/071'), c2: f('99/002'), c33: f('99/033'), oeamtc: f('99/902'), nefTulln: f('69/099'), bel: f('75/030'), oebb: f('EL ÖBB Tulln'), kirchberg: f('69/061') }; }""")
         print("   ", r)
-        check(r == {"a": "75/001", "gfoehl": "RTW Gföhl", "spitz": "RTW Spitz", "c2": "C2", "c33": "C33", "oeamtc": "NEF ÖAMTC 2", "nefTulln": "NEF Tulln", "bel": "BEL Krems", "oebb": "ÖBB Einsatzleiter Tulln", "kirchberg": "69/061"}, "Rufnamen nach Pauls Regeln")
+        check(r == {"a": "75/001", "gfoehl": "RTW Gföhl", "spitz": "RTW Spitz", "c2": "C2", "c33": "C33", "oeamtc": "NEF Luftrettung 2", "nefTulln": "NEF Tulln", "bel": "BEL Krems", "oebb": "ÖBB Einsatzleiter Tulln", "kirchberg": "69/061"}, "Rufnamen nach Pauls Regeln")
         # 2) Prüfen
         r = A.evaluate("""() => { const P = window.__lw.funk.funkPruefen; const fest = 'Hier 75/001 mit einer Lagemeldung, Mann 67, Thoraxtrauma, benötigen Notarzt, Frage: ist der C2 verfügbar, kommen';
           return { gut: P(fest, 'Pat. männlich 67 mit Thoraxtrauma, wir bräuchten einen Notarzt. Frage, ist der C2 verfügbar', {}),

@@ -185,6 +185,16 @@ function infoKurz(text: string): string {
   return t.replace(/^\w/, (c) => c.toLowerCase());
 }
 
+/** Storno/Endegrund je Fahrzeug (Paul 15.11.2026) – steht bei den erledigten Einsätzen, leer = mit Transport */
+export type Endegrund = "uebergabe" | "storno" | "revers" | "belassung" | "verstorben";
+export const ENDEGRUND_TEXT: Record<Endegrund, string> = {
+  uebergabe: "Übergabe an anderes Einsatzmittel",
+  storno: "Storno durch Leitstelle",
+  revers: "Patient verweigert Mitfahrt",
+  belassung: "Untersuchung/Behandlung ohne Transport",
+  verstorben: "NACA 7: Patient verstorben",
+};
+
 /** Partner nur als Bitte (Krisenintervention, Berg-/Wasserrettung ohne die es auch geht): einmal fragen, keine Folgen */
 function partnerNurBitte(x: PartnerGrund): boolean {
   return x.art === "ki" || ((x.art === "berg" || x.art === "wasser") && !x.blockiert);
@@ -240,7 +250,7 @@ function fzArt(v: Vehicle, rmTyp: RmTyp): { typ: string; gross: boolean; ohneBla
   const gross = v.aufbau ? v.aufbau === "gross" : rmTyp === "RTW-C";
   const ersatzFuer = v.ersatzFuer?.trim() || undefined;
   return {
-    typ: istKtwB ? "KTW-B" : rmTyp === "RTW-C" ? "RTW-C" : rmTyp === "RTW" ? "RTW" : rmTyp === "NEF" && ersatzFuer ? "NEF ÖAMTC" : typ,
+    typ: istKtwB ? "KTW-B" : rmTyp === "RTW-C" ? "RTW-C" : rmTyp === "RTW" ? "RTW" : rmTyp === "NEF" && ersatzFuer ? "NEF Luftrettung" : typ,
     gross,
     ohneBlaulicht: istKtwB,
     ersatzFuer,
@@ -258,7 +268,7 @@ export function modellVon(v: Pick<Vehicle, "funkrufname" | "modell">, rmTyp: RmT
     case "KTW":
       return v.modell === "t6hoch" || v.modell === "sprinter_kurz" ? v.modell : zufall("t6hoch", "sprinter_kurz");
     case "NEF":
-      return ersatzFuer || /ÖAMTC|OEAMTC/i.test(typ) ? "tiguan" : "t6";
+      return ersatzFuer || /luftrettung/i.test(typ) ? "tiguan" : "t6";
     case "BEL":
       return v.modell === "passat" || v.modell === "t6" ? v.modell : zufall("passat", "t6");
     case "EL ÖBB":
@@ -957,6 +967,8 @@ export interface Einsatz {
   partnerErinnert?: number;
   /** Partner-Nachforderung über Funk: wann zuletzt erinnert, wie oft (Polizei/Feuerwehr, Paul 15.11.2026) */
   partnerNf?: Partial<Record<PartnerArt, { erinnert: number; n: number }>>;
+  /** Storno/Endegrund je Fahrzeug (Fahrzeug-ID → Grund) – automatisch gesetzt, vom Disponenten änderbar */
+  endegrund?: Record<string, Endegrund>;
   /** mehrere Patienten: so viele Transportfahrzeuge sind schon mit einem Patienten abgefahren */
   abfahrten?: number;
   /** Nachforderung eines KTW (Patient verschlechtert sich im Krankentransport): was gebraucht wird */
@@ -1264,6 +1276,7 @@ export const BEFEHLE = {
     "gsLageText",
     "gsNotiz",
     "zusammenlegen",
+    "endegrundSetzen",
   ],
   steuern: ["start", "pause", "setTempo", "generiere", "grossschadenAusloesen", "setWetter", "wetterUebernehmen", "neuPlanen", "reset", "generiereKt", "generiereSek", "neuesSpiel"],
   kt: [
@@ -1556,6 +1569,8 @@ export class Simulation extends GsKern {
   private routingBusy = new Set<string>();
   /** Warnung „funkt in 09/10 ohne Großeinsatz“ höchstens einmal pro Minute je Hubschrauber */
   private grWarnUm = new Map<string, number>();
+  /** Storno/Endegrund vom Disponenten gesetzt (Einsatz|Fahrzeug) */
+  private endegrundVonHand = new Set<string>();
   /** laufende Nummer der Fahrt je Fahrzeug – eine ältere Routenberechnung wird verworfen */
   private fahrtNr = new Map<string, number>();
   /** Abziehen läuft: dieser Einsatz bleibt offen, auch wenn kein Fahrzeug mehr dran ist */
@@ -2734,6 +2749,7 @@ export class Simulation extends GsKern {
         this.fzRuft(fz, e, "info", `${grund}, rücken ein${andere.length ? `, ${andere.map((x) => this.rufname(x)).join(" und ")} kann storniert werden` : ""}`);
         for (const x of andere) {
           this.log(e, `Storno an ${x.funkrufname} (Fehleinsatz)`);
+          this.endegrund(e, x, "storno");
           this.freigeben(x);
         }
         this.freigeben(fz);
@@ -2934,6 +2950,7 @@ export class Simulation extends GsKern {
       }
       if (nahEntscheid) {
         this.log(e, `${fz.funkrufname}: Patient wird mit ${nahEntscheid.funkrufname} transportiert, NEF frei`);
+        this.endegrund(e, fz, "uebergabe");
         if (!e.gsKind) this.funk(fz.funkrufname, e.id, `Patient an ${nahEntscheid.funkrufname} übergeben, sind frei`, "info");
         return this.fertigBeimPatienten(fz, e);
       }
@@ -2967,10 +2984,13 @@ export class Simulation extends GsKern {
       } else if (fliegt(fz) && rtwMitTransport) {
         // Notarzt übergibt an den RTW, der RTW transportiert, der NAH wird frei
         this.log(e, `${fz.funkrufname}: Patient an RTW übergeben, Transport bodengebunden`);
+        this.endegrund(e, fz, "uebergabe");
         if (!e.gsKind) this.funk(fz.funkrufname, e.id, "Patient an RTW übergeben, Transport bodengebunden, sind frei", "info");
         return this.fertigBeimPatienten(fz, e);
       } else {
         this.log(e, `${fz.funkrufname}: Einsatz beendet`);
+        // Notarzt übergibt an den RTW bzw. kein Transport (Revers, Belassung, verstorben)
+        this.endegrund(e, fz, e.wahr.transport ? "uebergabe" : this.fallVar(e)?.tot ? "verstorben" : e.wahr.revers ? "revers" : "belassung");
         return this.fertigBeimPatienten(fz, e);
       }
       fz.phase = "warteKH";
@@ -2999,6 +3019,7 @@ export class Simulation extends GsKern {
       if (bit && (bit.phase === "vorOrt" || bit.phase === "warteKH")) {
         this.log(e, `${fz.funkrufname}: Patient wird vom BIT ${bit.funkrufname} transportiert`);
         this.funk(fz.funkrufname, e.id, `Patient an BIT ${bit.funkrufname} übergeben`, "info");
+        this.endegrund(e, fz, "uebergabe");
         return this.freigeben(fz);
       }
       const nf = e.nachforderungen?.find((n) => n.art === "BIT");
@@ -3022,8 +3043,9 @@ export class Simulation extends GsKern {
         fz.phaseEnde = t + 3 * MIN;
         return;
       }
+      // Paul 14./15.11.2026: nicht über Funk – steht als Storno/Endegrund beim erledigten Einsatz
       this.log(e, `${fz.funkrufname}: Patient verstorben, Todesfeststellung durch den Notarzt`);
-      this.fzRuft(fz, e, "info", "Patient verstorben, Tod durch den Notarzt festgestellt, kein Transport, wir werden einsatzbereit");
+      this.endegrund(e, fz, "verstorben");
       return this.freigeben(fz);
     }
     if (fvar?.revers && e.wahr.transport && !e.wahr.reversGeprueft) {
@@ -3036,9 +3058,9 @@ export class Simulation extends GsKern {
       }
     }
     if (!e.wahr.transport) {
+      // Paul 14./15.11.2026: Revers und Belassung nicht über Funk – stehen als Storno/Endegrund beim erledigten Einsatz
       this.log(e, `${fz.funkrufname}: ${e.wahr.revers ? "Transportverweigerung, Revers unterschrieben" : "kein Transport erforderlich"}`);
-      if (e.wahr.revers) this.fzRuft(fz, e, "info", "Patient verweigert den Transport, Revers unterschrieben, wir werden einsatzbereit");
-      else this.funk(fz.funkrufname, e.id, "Kein Transport, Patient verbleibt vor Ort", "info");
+      this.endegrund(e, fz, e.wahr.revers ? "revers" : "belassung");
       return this.freigeben(fz);
     }
     // Notarzt angefordert bzw. angekündigt und unterwegs: die Besatzung wartet mit dem Patienten auf ihn
@@ -3054,6 +3076,7 @@ export class Simulation extends GsKern {
     }
     if (nah) {
       this.log(e, `${fz.funkrufname}: Patient an ${nah.funkrufname} übergeben – Transport mit dem Hubschrauber`);
+      this.endegrund(e, fz, "uebergabe");
       // Großschaden: der RTW bekommt von der Einsatzleitung einen neuen Patienten
       if (!e.gsKind) this.funk(fz.funkrufname, e.id, `Patient an ${nah.funkrufname} übergeben, sind frei`, "info");
       return this.fertigBeimPatienten(fz, e);
@@ -4016,7 +4039,29 @@ export class Simulation extends GsKern {
     if (!fz || !fz.einsatzId) return;
     const e = this.einsatz(fz.einsatzId);
     if (e) this.log(e, `${fz.funkrufname} durch Leitstelle freigegeben`);
+    if (e && !fz.begleitet && ["ausruecken", "anfahrt", "routing", "suche", "vorOrt", "bereitstellung", "wartetBR", "rendezvous", "naAbholung", "naEinstieg"].includes(fz.phase)) this.endegrund(e, fz, "storno");
     this.freigeben(fz);
+    this.emit();
+  }
+
+  /** Storno/Endegrund eines Fahrzeugs (automatisch; überschreibt nichts, was der Disponent gesetzt hat) */
+  protected endegrund(e: Einsatz | null | undefined, fz: SimFahrzeug, g: Endegrund): void {
+    if (!e || e.gsKind || (e.gs && !e.gs.aufgehoben)) return;
+    e.endegrund ??= {};
+    if (e.endegrund[fz.id] && this.endegrundVonHand.has(`${e.id}|${fz.id}`)) return;
+    e.endegrund[fz.id] = g;
+  }
+
+  /** Disponent setzt bzw. ändert den Storno/Endegrund (leer = mit Transport) */
+  endegrundSetzen(eId: string, fzId: string, g: Endegrund | null): void {
+    const e = this.einsatz(eId);
+    if (!e) return;
+    e.endegrund ??= {};
+    if (g && g in ENDEGRUND_TEXT) e.endegrund[fzId] = g;
+    else delete e.endegrund[fzId];
+    this.endegrundVonHand.add(`${e.id}|${fzId}`);
+    const fz = this.state.fahrzeuge[fzId];
+    this.log(e, `Storno/Endegrund ${fz?.funkrufname ?? fzId}: ${g ? ENDEGRUND_TEXT[g] : "mit Transport"}`);
     this.emit();
   }
 
@@ -6623,6 +6668,7 @@ export class Simulation extends GsKern {
   private funkAktion(e: Einsatz | undefined, an: SimFahrzeug | undefined, aktion: FunkSatz["aktion"], g?: FunkGespraech): void {
     if (aktion === "nefStorno" && e && an && an.einsatzId === e.id) {
       this.log(e, `Storno an ${an.funkrufname} durch die Besatzung vor Ort`);
+      this.endegrund(e, an, "storno");
       this.freigeben(an);
     }
     // Storno an den Hubschrauber eines Piloten: hat er geantwortet, gilt der Storno (der Pilot fliegt selbst weiter)
@@ -6631,6 +6677,7 @@ export class Simulation extends GsKern {
       if (heli && heli.einsatzId === e.id) {
         e.naStorniert = true;
         this.log(e, `Storno an ${heli.funkrufname} durch ${g.an?.funkname ?? "die Besatzung vor Ort"} (Sprechfunk mit dem Piloten)`);
+        this.endegrund(e, heli, "storno");
         this.freigeben(heli);
       }
     }
@@ -7340,7 +7387,7 @@ export class Simulation extends GsKern {
       this.funkLeo(t, gruppe ?? null, true);
       return;
     }
-    // Sammelruf der Einsatzleitung: der Pilot meldet sich („Hier Christophorus 2, kommen“)
+    // Sammelruf der Einsatzleitung: der Pilot meldet sich („Hier C2, kommen“)
     if (heli.gsRufOffen != null) {
       const sg = (this.state.funkGespraeche ?? []).find((x) => x.id === heli.gsRufOffen && x.status === "direkt");
       heli.gsRufOffen = null;
@@ -7593,6 +7640,7 @@ export class Simulation extends GsKern {
     if (!fz?.einsatzId) return;
     const e = this.einsatz(fz.einsatzId) ?? null;
     if (e) this.log(e, `Storno an ${fz.funkrufname} (Diensthandy)`);
+    this.endegrund(e, fz, "storno");
     // ein laufender Ruf von LEO an dieses Fahrzeug wird hinfällig
     for (const g of this.state.funkGespraeche ?? []) if (g.fzId === fz.id && g.status === "leoRuft") this.funkSchliessen(g);
     this.freigeben(fz);
@@ -7688,6 +7736,7 @@ export class Simulation extends GsKern {
         if (fz.einsatzId) {
           const ev = this.einsatz(fz.einsatzId);
           if (ev) this.log(ev, `Storno an ${fz.funkrufname} (Funk, nach Rückfrage)`);
+          this.endegrund(ev, fz, "storno");
           this.freigeben(fz);
         }
         return `${hier}, Storno verstanden, rücken ein, kommen`;
@@ -7738,6 +7787,7 @@ export class Simulation extends GsKern {
         if (fz.einsatzId) {
           const ev = this.einsatz(fz.einsatzId);
           if (ev) this.log(ev, `Storno an ${fz.funkrufname} (Funk)`);
+          this.endegrund(ev, fz, "storno");
           this.freigeben(fz);
         }
         return `${hier}, Storno verstanden, rücken ein, kommen`;
@@ -7949,6 +7999,7 @@ export class Simulation extends GsKern {
     const bleiben = e ? this.einsatzFz(e).filter((x) => x.id !== fz.id) : [];
     if (e) {
       this.log(e, `${fz.funkrufname} abgezogen (Funk)${bleiben.length ? "" : " – Einsatz braucht ein neues Fahrzeug"}`);
+      this.endegrund(e, fz, "storno");
       this.abzugOffen = e.id;
     }
     try {
@@ -9813,10 +9864,16 @@ export class Simulation extends GsKern {
         e.wahr.transport = false;
         if (plan.grund === "revers") e.wahr.revers = true;
         const text = plan.grund === "revers" ? "Transportverweigerung, Revers unterschrieben" : plan.grund === "tot" ? "Patient verstorben, Tod durch den Notarzt festgestellt" : "kein Transport erforderlich";
+        // nicht über Funk (Paul 14./15.11.2026) – Storno/Endegrund beim Einsatz
         this.log(e, `${name}: ${text}`);
-        this.funk(name, e.id, text, "info");
+        const g: Endegrund = plan.grund === "revers" ? "revers" : plan.grund === "tot" ? "verstorben" : "belassung";
+        this.endegrund(e, fz, g);
         // RTW, die auf ein Krankenhaus warten, werden frei
-        for (const x of this.einsatzFz(e)) if (x !== fz && this.transportfaehig(x) && x.phase === "warteKH") this.freigeben(x);
+        for (const x of this.einsatzFz(e))
+          if (x !== fz && this.transportfaehig(x) && x.phase === "warteKH") {
+            this.endegrund(e, x, g);
+            this.freigeben(x);
+          }
         break;
       }
       default:

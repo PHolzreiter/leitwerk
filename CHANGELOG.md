@@ -1,5 +1,13 @@
 # Änderungen
 
+## 0.116.0-beta.56 – Neutrale Namen, Storno/Endegrund, nur noch Standardfarben
+- **Neutrale Namen:** Die eingebauten Daten enthalten keine echten Organisationsnamen mehr – Dienststellen heißen „Rettungsdienst …“, „Rettungswache …“ bzw. „Krankentransport …“, die Hubschrauber „NAH 2“, „NAH 9“ … mit ihrem „NEF Luftrettung“. Am Funk bleiben die Rufnamen gleich (C2 …), und die Spracherkennung versteht weiter auch die gewohnten Namen.
+- **Eigene Namen per Datei:** Einstellungen › Realismus › Namen und Bilder › Namens-Ersetzungen – eine CSV-Datei „neutral;eigen“ laden (z. B. „Rettungsdienst;…“, „NAH 2;…“), dann gelten die eigenen Namen für Dienststellen, Organisationen, Hubschrauber und Orte. „Vorlage speichern …“ legt eine Datei mit allen neutralen Namen an, „Entfernen“ stellt die neutralen Namen wieder her. Im Mehrspieler gelten die Namen des Hosts.
+- **Storno/Endegrund:** Bei jedem Fahrzeug eines Einsatzes steht, wie es für dieses Fahrzeug geendet hat – „Übergabe an anderes Einsatzmittel“, „Storno durch Leitstelle“, „Patient verweigert Mitfahrt“ (Revers), „Untersuchung/Behandlung ohne Transport“ (Belassung) oder „NACA 7: Patient verstorben“; leer heißt „mit Transport“. Das Spiel trägt den Grund selbst ein, in der Einsatzmaske lässt er sich je Fahrzeug ändern. Erledigte Einsätze zeigen ihn in der Einsatzliste.
+- **Revers, Belassung und Tod nicht mehr über Funk:** Die Besatzung meldet das nicht mehr am Funk – es steht als Endegrund beim Einsatz.
+- **Farbvorlagen entfernt:** Es gibt nur noch das Standard-Farbschema; eigene Farben (Statusfarben, Design) bleiben einstellbar.
+- **Krankentransport:** Der Wunsch nach einer bestimmten Organisation fällt weg.
+
 ## 0.116.0-beta.55 – Abgemeldet statt „außer Dienst“, genauere Treffpunkte
 - **Außer Dienst = Abgemeldet:** Fahrzeuge, die laut Dienstplan nicht im Dienst sind, stehen überall auf Status 0 „Abgemeldet“ – auch in „Alle Fahrzeuge“. Die eigene Marke „außer Dienst“ gibt es nicht mehr. Behoben: Nach „Neues Spiel“ standen solche Fahrzeuge fälschlich auf „Frei auf Wache“ (auch in älteren Spielständen wird das jetzt richtiggestellt).
 - **Treffpunkte und Standort genauer:** Am Funk weiter einfache Begriffe, aber nie nur ein größerer Ort wie Krems. Reihenfolge: Merkmal in der Nähe („beim Sportplatz Mautern“), Kreisverkehr bzw. Kreuzung, kleine Ortschaft („in Schönberg“), größerer Ort mit Straße oder Merkmal („in Krems, Wiener Straße“), im Freiland die Straße („auf der B37 zwischen Moritzreith und Großmotten“).
@@ -515,7 +523,7 @@
 - **Test: Gemini versteht den Funk** (Anrufe & KI → Gemini): Gemini kennt alle Fahrzeuge und das laufende Gespräch und schreibt Rufnamen richtig – statt der Spracherkennung auf dem Rechner
 
 ## 0.99.1 – Funkrufnamen besser erkannt, Zahlen als Ziffern, mehr Anruferstimmen
-- **Funk-Spracherkennung:** „75 1“, „751“, „fünfundsiebzig eins“ oder „sieben fünf null null eins“ werden zu 75/001; „Neff Krems“ oder ein leicht falsch erkannter Ort zu „NEF Krems“, „Christophorus zwei“ zu C2, „Leo“ zu LEO. Klingt eine Nummer ähnlich wie ein Fahrzeug, das gerade funkt („55 1“, aber 75/001 ruft), ist dieses gemeint
+- **Funk-Spracherkennung:** „75 1“, „751“, „fünfundsiebzig eins“ oder „sieben fünf null null eins“ werden zu 75/001; „Neff Krems“ oder ein leicht falsch erkannter Ort zu „NEF Krems“, „Hubschrauber zwei“ zu C2, „Leo“ zu LEO. Klingt eine Nummer ähnlich wie ein Fahrzeug, das gerade funkt („55 1“, aber 75/001 ruft), ist dieses gemeint
 - Die Erkennung bekommt die Rufnamen so, wie sie gesprochen werden („75 1“), die gerade funkenden Fahrzeuge zuerst
 - **Funkrufnamen werden gesprochen wie am Funk:** 75/001 als „75 1“ – auch von den Gemini-Stimmen, ohne „Schrägstrich“ und „null null“
 - **Zahlen immer als Ziffern:** „2 Verletzte“ statt „zwei Verletzte“ – bei Anrufern, Fahrzeugen und in deiner Spracheingabe
@@ -871,7 +879,7 @@
 - „Deine Hilfe wird gebraucht“ nutzt den Platz in der linken Leiste bis zur Versionsangabe; bei wenigen Punkten bleibt das Feld kleiner, bei vielen kann man in der Liste blättern
 
 ## 0.67.0 – Mithelfen: Daten melden mit Tickets
-- **„Deine Hilfe wird gebraucht“ auf der Startseite:** offene Punkte, bei denen Wissen fehlt (zum Start: Fahrzeuge je Funkgruppe kontrollieren, Sekundärfahrzeuge der Johanniter). Mit „Ich weiß das“ direkt antworten
+- **„Deine Hilfe wird gebraucht“ auf der Startseite:** offene Punkte, bei denen Wissen fehlt (zum Start: Fahrzeuge je Funkgruppe kontrollieren, Sekundärfahrzeuge des Krankentransport-Dienstes). Mit „Ich weiß das“ direkt antworten
 - **Mithelfen:** fehlende oder falsche Fahrzeuge, Dienststellen, Orte (POIs) und Krankenhäuser melden – mit fertigen Formularen:
   - Fahrzeug: Dienststelle aus der Liste, Funkrufname, Typ und (wenn bekannt) Dienstzeiten
   - Dienststelle, Ort und Krankenhaus: Lage über Adresssuche, Koordinaten oder Klick in die Karte
@@ -884,9 +892,9 @@
 ## 0.66.0 – Alle sechs Funkgruppen spielbar
 - **NÖ-01 (Mostviertel · St. Pölten), NÖ-02 (Waldviertel) und NÖ-04 (Weinviertel) sind spielbar** – auf der Startseite sind jetzt alle sechs Funkgruppen wählbar
 - **321 neue Fahrzeuge** aus öffentlich zugänglichen Daten (ungeprüft, im Hinweis jedes Fahrzeugs vermerkt): NÖ-01 177, NÖ-02 55, NÖ-04 89 – RTW-C, RTW, KTW und BEL; mit Rotkreuz-Fuhrparklisten, Presse und der Reformkarte abgeglichen
-- Neue Dienststellen: Rotes Kreuz Münichreith, Winterstützpunkt Hochkar, Dienststelle Marchegg, Dienststelle Leopoldsdorf im Marchfelde
+- Neue Dienststellen: Rettungsdienst Münichreith, Winterstützpunkt Hochkar, Dienststelle Marchegg, Dienststelle Leopoldsdorf im Marchfelde
 - **Dienstpläne mit Kalenderwochen und Saison:** Fahrzeuge, die nur in geraden oder ungeraden Kalenderwochen fahren, sind nur dann im Dienst; der RTW am Hochkar nur von November bis April. Im Dienstplan steht das z. B. als „gerade KW Mo–Fr 06:00–14:00“ oder „Nov–Apr täglich 09:00–16:30“
-- Korrekturen: NEF Raabs heißt 70/199 (RK-Fuhrpark), NEF Groß Gerungs ist von 17 bis 6 Uhr im Dienst, 58/002 ist der RTW-C der Ortsstelle Geras
+- Korrekturen: NEF Raabs heißt 70/199 (RD-Fuhrpark), NEF Groß Gerungs ist von 17 bis 6 Uhr im Dienst, 58/002 ist der RTW-C der Ortsstelle Geras
 
 ## 0.65.0 – Flughafen: Orte und angekündigte Notfälle an Bord
 - **Neue Orte am Flughafen Wien** (aus OpenStreetMap, eigene Gruppe „Flughafen“ auf der Karte):
@@ -921,8 +929,8 @@
 
 ## 0.62.0 – NÖ-05 und NÖ-06 spielbar
 - **Neue Funkgruppen:** NÖ-05 (Mödling, Bruck an der Leitha, Schwechat, Baden Nord) und NÖ-06 (Wiener Neustadt, Neunkirchen, Baden Süd) sind auf der Startseite wählbar – mit eigenen Einsätzen und Funk
-- **194 neue Fahrzeuge** in beiden Gruppen: 52 RTW, 17 RTW-C, 118 KTW, 6 Bezirkseinsatzleiter, 1 NEF (APN1, PVZ Wienerwald) – mit Dienstplänen; Rotes Kreuz, Samariterbund, Sozialmedizinischer Dienst
-- Neue Dienststellen: Samariterbund Wiener Neustadt, SMD Aspang, PVZ Wienerwald Breitenfurt; „Rotes Kreuz“ in Himberg heißt jetzt Ortsstelle Himberg
+- **194 neue Fahrzeuge** in beiden Gruppen: 52 RTW, 17 RTW-C, 118 KTW, 6 Bezirkseinsatzleiter, 1 NEF (APN1, PVZ Wienerwald) – mit Dienstplänen; Rettungsdienst, Rettungswache, Sozialmedizinischer Dienst
+- Neue Dienststellen: Rettungswache Wiener Neustadt, SMD Aspang, PVZ Wienerwald Breitenfurt; „Rettungsdienst“ in Himberg heißt jetzt Ortsstelle Himberg
 - Die Daten sind öffentlich zugänglich, aber noch nicht geprüft – im Hinweis jedes Fahrzeugs vermerkt
 
 ## 0.61.3 – Ein ACN je Stützpunkt
@@ -1035,7 +1043,7 @@
 - Neu: Amstetten, Waidhofen/Ybbs, Waidhofen/Thaya, Mödling, Gmünd, Baden, Scheibbs, Wiener Neustadt, Lilienfeld, Neunkirchen, Aspang, Schwechat, Hainburg, Ybbs-Persenbeug, Groß-Enzersdorf, Gänserndorf, Pöggstall, Raabs, Groß Gerungs
 - Pöggstall nur nachts 18–6 Uhr; Aspang rund um die Uhr
 - NEF-141 Raabs und Groß Gerungs: 19–7 Uhr, besetzt vom Ärztefunkdienst 141, Stützpunkte heißen „Ärztefunkdienst 141 …“ – werden wie ein normales NEF alarmiert
-- Purkersdorf, Neulengbach, Ybbs-Persenbeug und St. Pölten: RK/ASB geteilt
+- Purkersdorf, Neulengbach, Ybbs-Persenbeug und St. Pölten: RD geteilt
 - Funkrufnamen ohne Beleg sind im Hinweis als „geschätzt“ markiert
 
 **Notarzt im Krankenhaus abholen** (Krems, Tulln, Horn, Zwettl, Waidhofen/Ybbs, Amstetten)
@@ -1195,7 +1203,7 @@ Ziel: Ein gutes Telefonat, dessen Code zum Geschehen vor Ort passt – mit jedem
 **Geprüft mit einem selbst gebauten fremden Schema** (eigene Formulierungen, umgedrehte Fragen, Codes „NF-S1-05“, Kategorien „Prio 1–4“): 40 von 40 Fragen richtig zugeordnet, alle 42 Fälle bekommen einen Code; bei 27 von 42 Fällen gleiche Dringlichkeit wie mit deinem Schema, sonst eine Stufe daneben (wo dem Testschema Kapitel fehlen)
 
 ## 0.42.0 – Ersatz-NEF nur bei Schlechtwetter, Lagemeldung nur mit Grund
-**Ersatz-NEF (NEF ÖAMTC)**
+**Ersatz-NEF (NEF Luftrettung)**
 - Ist nur im Dienst, wenn sein Hubschrauber im Dienst ist, aber wegen des **Wetters** nicht fliegen kann
 - Nacht ist kein Grund: Ein Hubschrauber, der nur bei Tag fliegt, hat in der Nacht kein Ersatz-NEF
 
@@ -1224,7 +1232,7 @@ Der Sprechfunk läuft jetzt wie echt – nach dem Prinzip „Das Programm denkt,
 - RTW und NEF funken beim Rendezvous bzw. beim NEF-Storno miteinander – nach denselben Regeln, LEO hört mit
 
 **Rufnamen**
-- Normal der Funkrufname (75/001); Dienststelle mit nur einem Fahrzeug: „RTW Gföhl“, „RTW Spitz“; Hubschrauber „C2“, „C33“; Ersatz-NEF „NEF ÖAMTC 2“; NEF „NEF Tulln“; „BEL Krems“; „ÖBB Einsatzleiter Tulln“; vorbereitet: „ACN St. Pölten“
+- Normal der Funkrufname (75/001); Dienststelle mit nur einem Fahrzeug: „RTW Gföhl“, „RTW Spitz“; Hubschrauber „C2“, „C33“; Ersatz-NEF „NEF Luftrettung 2“; NEF „NEF Tulln“; „BEL Krems“; „ÖBB Einsatzleiter Tulln“; vorbereitet: „ACN St. Pölten“
 - Anfunken geht mit Funkrufname oder Rufname („NEF Tulln von LEO, kommen“, „C 2“)
 
 **Was die Besatzung sagt**
@@ -1628,15 +1636,15 @@ Grundlage: der Testlauf mit 420 Gesprächen (alle Fälle, qwen3:8b), Gespräch f
 - Etwa 5–10 Minuten nach dem Eintreffen der Polizei meldet die Polizei-Leitstelle per Funk „Einsatzort gesichert“ – dann fährt der Rettungsdienst zu und es läuft ein normaler Einsatz
 - Ein Polizeifahrzeug begleitet den Transport ins Krankenhaus und fährt nach der Übergabe wieder
 
-## 0.24.0 – Fahrzeugarten und -modelle, Reiter NEF ÖAMTC und EL, Einsätze in Nachbarzonen (Work in Progress)
+## 0.24.0 – Fahrzeugarten und -modelle, Reiter NEF Luftrettung und EL, Einsätze in Nachbarzonen (Work in Progress)
 **Fahrzeuge**
-- Im Fahrzeug-Fenster wählst du zuerst die Fahrzeugart (RTW, KTW, NEF, EL …). Ein zweites Feld kommt nur, wo es etwas zu unterscheiden gibt: RTW / RTW groß (Crafter, kein C) / RTW-C, KTW / KTW-B, NEF / NEF ÖAMTC, BEL / EL ÖBB. Beim KTW und BEL zusätzlich das Fahrzeug (oder „zufällig“). Die Felder „Fahrzeugtyp“ und „Fahrzeuggröße“ sind weg
-- Passende 3D-Modelle: NEF = VW T6, NEF ÖAMTC = VW Tiguan, KTW = VW T6 Hochdach oder Mercedes Sprinter kurz, BEL = VW Passat oder T6, EL ÖBB = VW Caddy, SKTW = Sprinter lang, SRTW/SNAW = Sprinter groß, BIT = MAN TGL mit Koffer
+- Im Fahrzeug-Fenster wählst du zuerst die Fahrzeugart (RTW, KTW, NEF, EL …). Ein zweites Feld kommt nur, wo es etwas zu unterscheiden gibt: RTW / RTW groß (Crafter, kein C) / RTW-C, KTW / KTW-B, NEF / NEF Luftrettung, BEL / EL ÖBB. Beim KTW und BEL zusätzlich das Fahrzeug (oder „zufällig“). Die Felder „Fahrzeugtyp“ und „Fahrzeuggröße“ sind weg
+- Passende 3D-Modelle: NEF = VW T6, NEF Luftrettung = VW Tiguan, KTW = VW T6 Hochdach oder Mercedes Sprinter kurz, BEL = VW Passat oder T6, EL ÖBB = VW Caddy, SKTW = Sprinter lang, SRTW/SNAW = Sprinter groß, BIT = MAN TGL mit Koffer
 - KTW: 30 % normale KTW, 70 % KTW-B (auch bei bereits importierten Fahrzeugen)
-- Die Ausweich-NEFs heißen jetzt „NEF ÖAMTC“
+- Die Ausweich-NEFs heißen jetzt „NEF Luftrettung“
 
 **Fahrzeuglisten**
-- Neue Reiter „NEF ÖAMTC“ (die Ausweich-NEFs, nicht mehr unter „NEF“) und „EL“ (BEL und EL ÖBB, mit Filter „nur BEL“ / „nur EL ÖBB“)
+- Neue Reiter „NEF Luftrettung“ (die Ausweich-NEFs, nicht mehr unter „NEF“) und „EL“ (BEL und EL ÖBB, mit Filter „nur BEL“ / „nur EL ÖBB“)
 - „Nachtflug“ steht nicht mehr in den Listen – die Dienstzeiten sind ja sichtbar
 
 **Einsätze in Nachbarzonen (Work in Progress, standardmäßig aus)**
@@ -1668,9 +1676,9 @@ Grundlage: der Testlauf mit 420 Gesprächen (alle Fälle, qwen3:8b), Gespräch f
 
 ## 0.22.0 – Ersatz-NEF, lesbare Dienstpläne, Filter, Orte mit Kategorien, Codesystem in einer Datei
 **Fahrzeuge und Dienststellen**
-- Jeder Notarzthubschrauber (nicht der ITH) hat ein **ÖAMTC-NEF** am selben Stützpunkt (99/002 → 99/902, 99/003 → 99/903 …). Es meldet sich nur an, wenn der Hubschrauber im Dienst ist, aber nicht fliegen kann (Wetter, Nacht ohne Nachtflug) – mit derselben Besatzung ohne Pilot. Kann wieder geflogen werden, meldet es sich nach dem laufenden Einsatz ab. Im Fahrzeug-Dialog unter „Ersatz für Hubschrauber“ einstellbar
-- Stützpunkte heißen jetzt „ÖAMTC Luftrettungszentrum Christophorus 2“ usw. (C3/C33: „ÖAMTC Luftrettungszentrum Ost“); eigene Listen mit den alten Namen passen weiterhin
-- In den Listen im Spiel steht beim Fahrzeug der ausgeschriebene Name (z. B. „Christophorus 2“) statt der Dienststelle
+- Jeder Notarzthubschrauber (nicht der ITH) hat ein **Luftrettungs-NEF** am selben Stützpunkt (99/002 → 99/902, 99/003 → 99/903 …). Es meldet sich nur an, wenn der Hubschrauber im Dienst ist, aber nicht fliegen kann (Wetter, Nacht ohne Nachtflug) – mit derselben Besatzung ohne Pilot. Kann wieder geflogen werden, meldet es sich nach dem laufenden Einsatz ab. Im Fahrzeug-Dialog unter „Ersatz für Hubschrauber“ einstellbar
+- Stützpunkte heißen jetzt „Luftrettungszentrum“ mit Nummer (C3/C33: „Luftrettungszentrum Ost“); eigene Listen mit den alten Namen passen weiterhin
+- In den Listen im Spiel steht beim Fahrzeug der ausgeschriebene Name (z. B. „C2“) statt der Dienststelle
 - 99/033 ist der ITH; „Quelle: Paul (Nord-NÖ)“ ist aus den Daten verschwunden
 
 **Dienstpläne lesbar**
@@ -1789,7 +1797,7 @@ Grundlage: der Testlauf mit 420 Gesprächen (alle Fälle, qwen3:8b), Gespräch f
 - 20 feinere Wetterlagen, von klar über Dunst, Nebel und Hochnebel, Niesel, Regen und Starkregen bis Schneeregen, Schneefall, starker Schneefall, gefrierender Regen, Gewitter, Gewitter mit Hagel und Unwetter – dazu Wind mit Böen; alles passend zu Jahreszeit, Tageszeit und Temperatur (unter 0 °C wird es glatt)
 - Wetter wirkt mehr: Schnee, Glätte und Starkregen verlängern die Fahrzeit, Sturm bringt mehr Verletzungen und Unfälle; Hubschrauber fliegen bei Gewitter, Nebel, Hochnebel, starkem Schneefall und Böen ab 90 km/h nicht – Glatteis stört sie nicht
 - Wetter in der 3D-Ansicht: ganz leichter Regen, Schnee, Hagel, Dunst und Nebel, bei Gewitter kurze Blitze; unter Persönlich abschaltbar
-- Eigene Farben: Vorlagen (NÖ Blau-Gelb, Rotes Kreuz, Neutral Grau, Nachtschicht, Hoher Kontrast) und eigene Farben für Akzent, Menüleiste, Hintergrund, Fenster und Warnfarbe – getrennt für hell und dunkel; als Design-Datei speichern und laden
+- Eigene Farben: Vorlagen (NÖ Blau-Gelb, Rettungsdienst, Neutral Grau, Nachtschicht, Hoher Kontrast) und eigene Farben für Akzent, Menüleiste, Hintergrund, Fenster und Warnfarbe – getrennt für hell und dunkel; als Design-Datei speichern und laden
 - Eigene Töne: für Notruf, KT-Hotline, Funkruf, dringenden Funkruf, Chat und Warnungen je ein Ton mit eigener Lautstärke und ▶ zum Probehören; eigene MP3/WAV-Dateien hochladen (Klingelton bis 10 s und 1 MB, kurze Töne bis 2 s und 300 KB)
 
 ## 0.14.0 – Partner-Organisationen, mehr Funk, Abfrage mit Tastatur
@@ -1882,7 +1890,7 @@ Grundlage: der Testlauf mit 420 Gesprächen (alle Fälle, qwen3:8b), Gespräch f
 - KTW, die einen Krankentransport ohne Patient fahren, stehen beim Notfall in der Liste („KT – abziehen“) und können alarmiert werden; ihre Transporte sind dann wieder offen
 - Krankenhäuser: neue Bereiche Neonatologie, Kinderintensiv, Herzchirurgie, Verbrennungszentrum, Neurointervention (Thrombektomie); neue Häuser LK Mauer, LK Allentsteig, UK Hochegg, Hanusch, Klinik Penzing, Speising, Göttlicher Heiland, KUK Linz (Neuromed, Kinder), Ordensklinikum Linz (BHS, Elisabethinen), Steyr, Freistadt
 - Einstellungen: Überstellungen je Stunde (Standard ca. 10 am Tag im Gebiet), Chemotherapie-Patienten mit fixem Termin
-- Behoben: SKTW, SRTW, SNAW, BIT, ITH (C33), BEL und EL ÖBB waren in den Standarddaten nicht aktiv; Christophorus 2 und 9 fliegen nachts
+- Behoben: SKTW, SRTW, SNAW, BIT, ITH (C33), BEL und EL ÖBB waren in den Standarddaten nicht aktiv; C2 und 9 fliegen nachts
 - KT-Maske passt in die schmale rechte Spalte
 
 ## 0.10.0 – „Wollen Sie sitzen oder liegen?“ – Krankentransporte
@@ -1900,7 +1908,7 @@ Grundlage: der Testlauf mit 420 Gesprächen (alle Fälle, qwen3:8b), Gespräch f
 ## 0.9.0 – Fahrzeuge realistischer, 3D-Modelle
 - Ausrückzeiten (Einstellungen → Ausrückzeiten): bodengebunden tagsüber 0,5–2 min, nachts 2–10 min; Hubschrauber tagsüber 2–5 min, nachts 5–10 min; Tag = 5–22 Uhr; frei unterwegs (Status Funk) nach ca. 10 Sekunden; Bereitschaft + 5 min
 - Hubschrauber fliegen: steigen nach dem Start, sinken vor der Landung, kreisen 1–3 Mal über Einsatzorten (nicht über Krankenhäusern und Landeplätzen); in 2D zeigt ein Schatten, dass er in der Luft ist
-- Neue Fahrzeugtypen: SKTW, SRTW, SNAW, BIT, ITH (Intensivtransporthubschrauber), BEL und EL ÖBB – mit Besetzungsregeln; werden aus der Fahrzeugliste erkannt (z. B. Johanniter 79/xxx)
+- Neue Fahrzeugtypen: SKTW, SRTW, SNAW, BIT, ITH (Intensivtransporthubschrauber), BEL und EL ÖBB – mit Besetzungsregeln; werden aus der Fahrzeugliste erkannt (z. B. Krankentransport-Dienst 79/xxx)
 - Sekundärfahrzeuge werden nur vorgeschlagen, wenn kein passendes Primärfahrzeug verfügbar ist; BIT und ITH nur von Hand
 - BEL wird bei Großeinsätzen mit vorgeschlagen (ab 3 Rettungsmitteln oder bei schweren Verkehrsunfällen, Bränden usw.) und ist vor Ort Ansprechpartner am Funk; EL ÖBB bei Unfällen an Bahngleisen
 - 3D-Fahrzeugmodelle in der 3D-Ansicht (ab Zoomstufe 16): einfache Formen nach Fahrzeugtyp (T6 Hochdach, Crafter, T6 Bus, Passat, LKW, EC135), in der Farbe der Organisation, Blaulicht blinkt bei Sondersignal und am Einsatzort, Hubschrauber mit drehendem Rotor; beim Herauszoomen wieder Punkte; abschaltbar unter „Ebenen“
@@ -1962,7 +1970,7 @@ Grundlage: der Testlauf mit 420 Gesprächen (alle Fälle, qwen3:8b), Gespräch f
 - 3D ist ausgegraut, solange das Paket „Gelände (3D)“ fehlt – mit Hinweis und Link zu den Kartenpaketen
 - Satellitenbild: Orts- und Straßennamen hell mit dunklem Rand, gut lesbar
 - Ebenen-Liste einklappbar, mit Farblegende
-- Dienststellen in der Farbe ihrer Organisation (Rotes Kreuz, ASB, Johanniter, ÖAMTC …); Fahrzeuge auf der Wache werden nicht mehr einzeln angezeigt, ein Klick auf die Wache zeigt sie mit Status
+- Dienststellen in der Farbe ihrer Organisation; Fahrzeuge auf der Wache werden nicht mehr einzeln angezeigt, ein Klick auf die Wache zeigt sie mit Status
 - Unterwegs steht bei jedem Fahrzeug der Funkrufname
 - Multiplayer: Host-Rolle übergeben bzw. anfragen, ohne dass jemand die Verbindung verliert
 - Multiplayer: Antwortzeit (Ping) je Spieler, Meldung wenn jemand die Verbindung verliert oder zurückkommt

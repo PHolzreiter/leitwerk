@@ -5,7 +5,7 @@
  */
 import { store } from "../../../data/store";
 import { findCode } from "../../../sim/codes";
-import { sim, type Einsatz, type SimFahrzeug } from "../../../sim/engine";
+import { ENDEGRUND_TEXT, sim, type Einsatz, type Endegrund, type SimFahrzeug } from "../../../sim/engine";
 import { ortKurz } from "../../../sim/funkErkennung";
 import { hhmm, sekLeer, KT_TRANSPORTART_LABEL, type KtAuftrag, type KtOrt } from "../../../sim/kt";
 import { codeInfo, istUeberstellung, ktCode } from "../../../sim/ktCodes";
@@ -194,6 +194,12 @@ function rdEintrag(e: Einsatz): Roh {
   if (e.adressePruefen && lage !== "erledigt") mk.push(MK("Adresse prüfen", "rot", "Die Adresse stimmt vermutlich nicht – bitte prüfen", { blink: true, dringend: true }));
   if (lage !== "erledigt") mk.push(...anrufMarken(e.anruf, false));
   if (e.zusammengelegt) mk.push(MK("zusammengelegt", "", "zweiter Notruf, mit einem anderen Einsatz zusammengelegt"));
+  // Storno/Endegrund (Paul 15.11.2026): was den Einsatz beendet hat – je Fahrzeug in der Einsatzmaske änderbar
+  if (lage === "erledigt" && e.endegrund) {
+    const g = Object.values(e.endegrund);
+    const haupt = (["verstorben", "revers", "belassung"] as Endegrund[]).find((x) => g.includes(x)) ?? (!e.kh && g.length && g.every((x) => x === "storno") ? "storno" : null);
+    if (haupt) mk.push(MK(ENDEGRUND_TEXT[haupt], "", "Storno/Endegrund – je Fahrzeug in der Einsatzmaske änderbar"));
+  }
   if (e.fremd) mk.push(MK(`Zone ${e.fremd.zone}`, "", "Einsatz einer anderen Zone – dort disponiert, deine Fahrzeuge fahren mit"));
   if (e.zustand !== "abgeschlossen") mk.push(...bearbeiterMarke(e.bearbeiter));
   const offenNf = !!e.nachforderungen?.some((n) => !n.erledigt);

@@ -64,6 +64,7 @@ import {
 } from "../codesaetze";
 import { ktEditorOeffnen } from "../ktCodeEditor";
 import { pruefeCodesystem } from "../../abfrage/codesystem";
+import { namenLesen as ersetzungenLesen, namenVorlage } from "../../data/namen";
 import type { Schema } from "../../abfrage/schema";
 import type { Einsatzcode } from "../../data/model";
 
@@ -1298,6 +1299,21 @@ export function zeilenQuelle(neuZeichnen: () => void): { zeilen: ZeilenQuelle; l
   }
 
   const NOCH_NICHT = "Kommt mit dem Realismus-Paket";
+  /** Namens-Ersetzungen: echte Namen per Datei (die eingebauten Daten sind neutral) */
+  function namenZeilen(b: Bausteine): Zeile[] {
+    const n = store.namen;
+    const laden = dateiKnopf("CSV laden …", ".csv,.txt,text/csv,text/plain", async (f) => {
+      const r = ersetzungenLesen(await dateiText(f));
+      if (!r.length) throw new Error("Keine Ersetzungen gefunden (Zeilen „neutral;eigen“)");
+      store.setNamen(r);
+      return `${zahl(r.length)} Ersetzungen geladen`;
+    });
+    const vorlage = knopf("Vorlage speichern …", async () => ((await saveTextFile("leitwerk_namen.csv", namenVorlage())) ? "Gespeichert" : "Abgebrochen"));
+    const weg = knopf("Entfernen", () => (store.setNamen(null), "Wieder neutrale Namen"), { cfm: "Alle Namens-Ersetzungen entfernen?" });
+    return [
+      b.B("Namens-Ersetzungen", n.length ? [laden, vorlage, weg] : [laden, vorlage], "neutral;eigen – z. B. „Rettungsdienst;…“, „NAH 2;…“ (Dienststellen, Organisationen, Hubschrauber)", n.length ? { chip: `${zahl(n.length)} aktiv`, dot: OK } : undefined),
+    ];
+  }
   function realismus(b: Bausteine): Zeile[] {
     const spaeter = (l: string) => knopf(l, () => NOCH_NICHT);
     return [
@@ -1308,7 +1324,7 @@ export function zeilenQuelle(neuZeichnen: () => void): { zeilen: ZeilenQuelle; l
       ...satzZeilen(b, "kt"),
       b.B("Eigenen KT/SEK-Satz", [{ l: "Codes & Abfrage bearbeiten", sub: "ktEditor" }, { l: "Hochladen", sub: "satzKt" }], "Neuer Satz auf Basis des aktiven, oder Dateien hochladen"),
       b.H("Namen und Bilder"),
-      b.B("Namens-Ersetzungen", [spaeter("CSV laden …")], "neutral;eigen – Organisationen, Leitstelle, Dienststellen, Hubschrauber · noch nicht wirksam"),
+      ...namenZeilen(b),
       b.B("Funkrufnamen", [spaeter("CSV laden …")], "noch nicht wirksam"),
       b.B("Logos & Fahrzeugbilder", [spaeter("Dateien laden …")], "PNG oder SVG · noch nicht wirksam"),
       b.B("Vorlage-Dateien", tauri ? [knopf("Ordner öffnen", () => ablageZeigen())] : [], "Ablage in Dokumente/LeitWerk", tauri ? undefined : { chip: NUR_PROGRAMM, dot: GRAU }),

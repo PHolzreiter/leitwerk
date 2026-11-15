@@ -12,7 +12,8 @@ import { einrichtung } from "../data/klinik";
 import type { KtArt, KtDaten, KtLage } from "./kt";
 
 export const KT_BEDINGUNGEN = {
-  org: { label: "Organisation", werte: { rk: "Rotes Kreuz", asb: "ASB", egal: "egal" } },
+  // keine echten Organisationen (Paul 15.11.2026) – Zufallsfälle fragen nicht mehr danach (immer „egal“)
+  org: { label: "Organisation", werte: { rk: "Organisation 1", asb: "Organisation 2", egal: "egal" } },
   fahrt: { label: "Fahrt", werte: { zum_kh: "zum Krankenhaus / Arzt", therapie: "zur Therapie", heim: "Heimtransport", ueberstellung: "Überstellung (Krankenhaus → Krankenhaus)" } },
   therapie: { label: "Therapie", werte: { keine: "keine", chemo: "Chemotherapie", strahlen: "Strahlentherapie", dialyse: "Dialyse" } },
   lage: { label: "Lage", werte: { gehend: "gehend", sitzend: "sitzend (Tragstuhl)", liegend: "liegend", rollstuhl: "eigener Rollstuhl" } },
@@ -57,7 +58,7 @@ export const KT_KRITERIEN: Record<string, string> = {
   nach: "Ziel (→ Fahrt, Therapie, Heimtransport)",
   lage: "Lage (gehend / sitzend / liegend / Rollstuhl)",
   sofort: "Zeit (geplant / SOFORT)",
-  art: "Organisation (Rotes Kreuz / ASB / egal)",
+  art: "Organisation (1 / 2 / egal)",
   arzt: "Notarzt nötig",
   monitoring: "Überwachung (Monitor) / beatmet",
   inkubator: "Inkubator / Kind",

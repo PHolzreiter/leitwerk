@@ -18,26 +18,21 @@ import { onPers, pers } from "./ui/ws/persoenlich";
 export const FONT = ["Noto Sans Medium"];
 
 /** Farbe je Organisation – nur noch für die Karosserie der 3D-Modelle (keine Legende mehr; die Marken sind neutral) */
+// neutral (Paul 15.11.2026): keine echten Organisationen – Farbe nach Art des Dienstes
 export const ORG_FARBEN: Record<string, string> = {
-  "Rotes Kreuz": "#c62828",
-  "Arbeiter-Samariter-Bund": "#ef6c00",
-  Johanniter: "#7b1fa2",
-  Malteser: "#5d4037",
-  "ÖAMTC (Flugrettung)": "#f9a825",
+  Rettungsdienst: "#c62828",
+  Luftrettung: "#f9a825",
   Leitstelle: "#1565c0",
   ÖBB: "#37474f",
   Sonstige: "#607d8b",
 };
 
 export function orgFarbe(s: Pick<Station, "organisation" | "typ">): string {
-  const o = s.organisation.toLowerCase();
-  if (o.includes("rotes kreuz")) return ORG_FARBEN["Rotes Kreuz"];
-  if (o.includes("samariter") || o === "asb") return ORG_FARBEN["Arbeiter-Samariter-Bund"];
-  if (o.includes("johanniter")) return ORG_FARBEN.Johanniter;
-  if (o.includes("malteser")) return ORG_FARBEN.Malteser;
-  if (o.includes("öamtc") || o.includes("oeamtc") || o.includes("öatmc") || s.typ === "Luftrettung") return ORG_FARBEN["ÖAMTC (Flugrettung)"];
+  const o = (s.organisation ?? "").toLowerCase();
+  if (s.typ === "Luftrettung" || o.includes("luftrettung") || o.includes("flugrettung")) return ORG_FARBEN.Luftrettung;
   if (o.includes("öbb") || o.includes("oebb")) return ORG_FARBEN["ÖBB"];
   if (o.includes("leitstelle") || s.typ === "Leitstelle") return ORG_FARBEN.Leitstelle;
+  if (s.typ === "Rettungsdienst" || s.typ === "Notarztstützpunkt" || o.includes("rettung")) return ORG_FARBEN.Rettungsdienst;
   return ORG_FARBEN.Sonstige;
 }
 

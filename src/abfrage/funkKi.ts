@@ -24,7 +24,7 @@ function besatzungVon(fzId: string): string {
   const fz = sim.state.fahrzeuge[fzId];
   if (!fz) return "Besatzung eines Rettungsmittels";
   const t = fz.rmTyp.toUpperCase();
-  if (t === "BEL") return "Bezirkseinsatzleiter (BEL) des Roten Kreuzes";
+  if (t === "BEL") return "Bezirkseinsatzleiter (BEL) des Rettungsdienstes";
   if (t === "ACN") return "Acute Community Nurse (diplomierte Pflegekraft mit Notfallsanitäter-Ausbildung und Notfallkompetenz Intubation, allein im Fahrzeug)";
   if (/ÖBB/.test(t)) return "Einsatzleiter der ÖBB";
   if (t === "NAH" || t === "ITH") return "Notarzt-Hubschrauber (Notarzt, Flugretter, Pilot)";
@@ -170,7 +170,7 @@ export function funkPruefen(festGanz: string, text: string, opt: { frage?: strin
   for (const [neu, imFest] of ERFUNDEN) if (neu.test(text) && !imFest.test(fest)) g.push(`erfunden: ${neu.source.match(/\(([a-z|]+)\)\\b/)?.[1]?.split("|")[0] ?? "Anforderung"}`);
   // Zahlen (Minuten, Anzahl, Hausnummern …) und Namen bleiben
   // Funkrufnamen („75/001“) und Hubschrauber („C2“) zählen nicht als Zahl
-  const ohneRufnamen = (x: string) => x.replace(/\b\d{2,3}\/\d{3}\b/g, "").replace(/\bC\s?\d+\b/gi, "").replace(/\bÖAMTC \d+\b/g, "");
+  const ohneRufnamen = (x: string) => x.replace(/\b\d{2,3}\/\d{3}\b/g, "").replace(/\bC\s?\d+\b/gi, "").replace(/\bLuftrettung \d+\b/g, "");
   const zahlenFest = zahlenIn(ohneRufnamen(fest)).filter((z) => z > 0);
   const zahlenText = new Set(zahlenIn(ohneRufnamen(text)));
   for (const z of zahlenFest) if (!zahlenText.has(z)) g.push(`Zahl ${z} fehlt`);

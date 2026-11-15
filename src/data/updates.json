@@ -1,5 +1,17 @@
 [
  {
+  "version": "0.116.0-beta.56",
+  "datum": "2026-11-15",
+  "titel": "Neutrale Namen, Storno/Endegrund, nur noch Standardfarben",
+  "punkte": [
+   "Keine echten Organisationsnamen mehr in den eingebauten Daten – Hubschrauber heißen „NAH 2“ …, Rufnamen bleiben",
+   "Eigene Namen per Datei: Realismus › Namens-Ersetzungen (CSV „neutral;eigen“, mit Vorlage)",
+   "Storno/Endegrund je Fahrzeug (Übergabe, Storno durch Leitstelle, Revers, Belassung, NACA 7) – in der Einsatzmaske änderbar, in der Einsatzliste sichtbar",
+   "Revers, Belassung und Tod nicht mehr über Funk",
+   "Farbvorlagen entfernt – nur noch das Standard-Farbschema"
+  ]
+ },
+ {
   "version": "0.116.0-beta.55",
   "datum": "2026-11-15",
   "titel": "Abgemeldet statt „außer Dienst“, genauere Treffpunkte",
@@ -1359,8 +1371,8 @@
   "titel": "NÖ-05 und NÖ-06 spielbar",
   "punkte": [
    "Neue Funkgruppen NÖ-05 (Mödling, Bruck/Leitha, Schwechat, Baden Nord) und NÖ-06 (Wr. Neustadt, Neunkirchen, Baden Süd)",
-   "194 neue Fahrzeuge mit Dienstplänen – Rotes Kreuz, Samariterbund und Sozialmedizinischer Dienst",
-   "Neue Dienststellen, u. a. Samariterbund Wiener Neustadt und PVZ Wienerwald"
+   "194 neue Fahrzeuge mit Dienstplänen – Rettungsdienst, Rettungswachen und Sozialmedizinischer Dienst",
+   "Neue Dienststellen, u. a. Rettungswache Wiener Neustadt und PVZ Wienerwald"
   ]
  },
  {
@@ -1829,7 +1841,7 @@
   "titel": "Fahrzeugarten und 3D-Modelle",
   "punkte": [
    "Fahrzeugart und Modell getrennt wählbar, mit passenden 3D-Modellen",
-   "Neue Reiter „NEF ÖAMTC“ und „EL“ in den Fahrzeuglisten",
+   "Neue Reiter „NEF Luftrettung“ und „EL“ in den Fahrzeuglisten",
    "Testweise: Einsätze in Nachbarzonen, zu denen deine Fahrzeuge fahren"
   ]
  },
@@ -1859,7 +1871,7 @@
   "datum": "2026-10-16",
   "titel": "Ersatz-NEF und Dienstpläne",
   "punkte": [
-   "Jeder Notarzthubschrauber hat ein ÖAMTC-NEF als Ersatz, wenn er nicht fliegen kann",
+   "Jeder Notarzthubschrauber hat ein Luftrettungs-NEF als Ersatz, wenn er nicht fliegen kann",
    "Dienstpläne als übersichtliche Wochenansicht",
    "Filter und Sortierung in allen Listen der Einstellungen",
    "Orte mit Kategorien – Einsätze passieren an passenden Orten"

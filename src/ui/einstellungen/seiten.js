@@ -335,10 +335,9 @@ export class SeitenBasis {
           ...FG.map(([id, kurz, c]) => C(id + (id === 'NÖ-03' ? ' (deine)' : ''), 'fgc_' + id, c, kurz, ['fgo_' + id, true])),
           B('', [{ l: 'Standardfarben', cfm: 'Alle Funkgruppen wieder einblenden und die Standardfarben verwenden?', ok: 'Zurückgesetzt' }])
         ]},
-        { id: 'farben', label: 'Farben', info: 'Vorlagen, Statusfarben, Design', kw: 'farbe akzent kontrast status hinterlegen vorlage design datei', rows: [
-          L('Farbvorlage', 'fv', ['NÖ Blau-Gelb', 'Neutral Grau', 'Nachtschicht (gedämpft)', 'Hoher Kontrast'], 'NÖ Blau-Gelb', 'Die Schrift passt sich an, damit sie lesbar bleibt'),
+        { id: 'farben', label: 'Farben', info: 'Statusfarben, eigene Farben, Design', kw: 'farbe akzent kontrast status hinterlegen design datei', rows: [
           B('Einzelne Farben', [{ l: 'Anpassen …', sub: 'farbenEigen' }], 'Akzent, Leiste, Flächen, Warnung'),
-          B('Design als Datei', [{ l: 'Speichern …', ok: 'Gespeichert in Dokumente/LeitWerk/Designs' }, 'Laden …'], 'Vorlage und eigene Farben – zum Teilen mit Freunden'),
+          B('Design als Datei', [{ l: 'Speichern …', ok: 'Gespeichert in Dokumente/LeitWerk/Designs' }, 'Laden …'], 'Eigene Farben – zum Teilen mit Freunden'),
           H('Fahrzeuge'),
           B('Eigene Statusfarben', [{ l: 'Bearbeiten …', sub: 'statusfarben' }], 'Nur für deine Anzeige'),
           C('Alarmierte Fahrzeuge hinterlegen', 'falarm', '#FFF3C4', '„Alarmiert auf Wache“ und „Alarmiert über Funk“'),
@@ -350,7 +349,7 @@ export class SeitenBasis {
           C('Hintergrund', 'fe_bg', '#111216'),
           C('Fenster', 'fe_fen', '#171A21'),
           C('Warnung', 'fe_warn', '#E5484D', 'Verpasste Anrufe, Nachforderungen'),
-          B('', [{ l: 'Eigene Farben zurücksetzen', cfm: 'Alle eigenen Farben verwerfen und wieder die Farbvorlage verwenden?', ok: 'Zurückgesetzt' }])
+          B('', [{ l: 'Eigene Farben zurücksetzen', cfm: 'Alle eigenen Farben verwerfen und wieder die Standardfarben verwenden?', ok: 'Zurückgesetzt' }])
         ]},
         { id: 'statusfarben', sub: true, parent: 'farben', label: 'Eigene Statusfarben', info: 'Nur für deine Anzeige', kw: 'status farbe', note: 'Nummer und Bedeutung der Status legt die Leitstelle fest (Leitstelle → Statusmodell). Hier änderst du nur, wie sie bei dir aussehen.', rows: [
           ...STATUS.map(([label, key, nr, nm, c]) => C(nr + ' – ' + nm, 'sf_' + key, c, label)),
@@ -664,7 +663,7 @@ export class SeitenBasis {
           IT('LeitWerk-Transportcodes (eingebaut)', 'Codes für KT und Überstellungen (KT…, SEK-…), mit KT-Abfrage – immer verfügbar', 'aktiv', ok),
           B('Eigenen KT/SEK-Satz', [{ l: 'Codes & Abfrage bearbeiten', sub: 'ktEditor' }, { l: 'Hochladen', sub: 'satzKt' }], 'Neuer Satz auf Basis des aktiven, oder Dateien hochladen'),
           H('Namen und Bilder'),
-          B('Namens-Ersetzungen', ['CSV laden …'], 'neutral;eigen – Organisationen, Leitstelle, Dienststellen, Hubschrauber'),
+          B('Namens-Ersetzungen', ['CSV laden …', 'Vorlage speichern …'], 'neutral;eigen – z. B. „Rettungsdienst;…“, „NAH 2;…“ (Dienststellen, Organisationen, Hubschrauber)'),
           B('Funkrufnamen', ['CSV laden …']),
           B('Logos & Fahrzeugbilder', ['Dateien laden …'], 'PNG oder SVG'),
           B('Vorlage-Dateien', ['Ordner öffnen'], 'Mit neutralen Beispielwerten · Ablage in Dokumente/LeitWerk')

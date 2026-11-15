@@ -1,5 +1,5 @@
 /**
- * Farben persönlich: Vorlagen (NÖ, Rotes Kreuz, Neutral, Nachtschicht, Kontrast) und eigene Farben,
+ * Farben persönlich: Standard-Farbschema und eigene Farben,
  * jeweils für Hell und Dunkel. Abgeleitete Töne (Hover, Auswahl, Schrift auf Farbe) werden berechnet,
  * damit alles lesbar bleibt.
  */
@@ -16,28 +16,9 @@ export const FELD_LABEL: Record<Exclude<FarbFeld, "text" | "hervor">, string> = 
 
 type Satz = Partial<Record<FarbFeld, string>>;
 
+/** Nur noch das Standard-Farbschema (Paul 15.11.2026: keine Farbvorlagen mehr) – eigene Farben gehen weiter */
 export const VORLAGEN: Record<string, { name: string; hell: Satz; dunkel: Satz }> = {
-  noe: { name: "NÖ Blau-Gelb", hell: {}, dunkel: {} },
-  rotkreuz: {
-    name: "Rotes Kreuz",
-    hell: { akzent: "#c8102e", leiste: "#c8102e", hervor: "#c8102e", warn: "#e0301e" },
-    dunkel: { akzent: "#ff5c64", leiste: "#3a0f14", hervor: "#ff5c64", warn: "#ff6b5a" },
-  },
-  grau: {
-    name: "Neutral Grau",
-    hell: { akzent: "#475569", leiste: "#e2e8f0", hervor: "#334155", hintergrund: "#eef1f4" },
-    dunkel: { akzent: "#94a3b8", leiste: "#1e2530", hervor: "#cbd5e1", hintergrund: "#111418" },
-  },
-  nacht: {
-    name: "Nachtschicht (gedämpft)",
-    hell: { akzent: "#8a6d3b", leiste: "#efe9df", hervor: "#8a6d3b", hintergrund: "#e7e1d6", fenster: "#f5f1ea", text: "#2a241c" },
-    dunkel: { akzent: "#c08a3e", leiste: "#14110d", hervor: "#c08a3e", hintergrund: "#0b0a08", fenster: "#16130f", text: "#d9cfbf", warn: "#d0563f" },
-  },
-  kontrast: {
-    name: "Hoher Kontrast",
-    hell: { akzent: "#0033cc", leiste: "#000000", hervor: "#0033cc", hintergrund: "#ffffff", fenster: "#ffffff", text: "#000000", warn: "#d00000" },
-    dunkel: { akzent: "#ffd400", leiste: "#000000", hervor: "#ffd400", hintergrund: "#000000", fenster: "#000000", text: "#ffffff", warn: "#ff4040" },
-  },
+  noe: { name: "Standard", hell: {}, dunkel: {} },
 };
 
 function rgb(hex: string): [number, number, number] {
@@ -65,7 +46,8 @@ const FELDER_CSS = ["--blue", "--blue-line", "--hover", "--sel", "--highlight", 
 /** Farben auf die Seite anwenden (aufgerufen bei jeder Änderung und beim Wechsel Hell/Dunkel) */
 export function farbenAnwenden(vorlage: string, eigene: { hell: Satz; dunkel: Satz }, dunkel: boolean): void {
   const r = document.documentElement;
-  const basis = VORLAGEN[vorlage] ?? VORLAGEN.noe;
+  void vorlage; // früher Farbvorlagen – es gibt nur noch das Standard-Schema
+  const basis = VORLAGEN.noe;
   const f: Satz = { ...(dunkel ? basis.dunkel : basis.hell), ...(dunkel ? eigene.dunkel : eigene.hell) };
   for (const v of FELDER_CSS) r.style.removeProperty(v);
   const setze = (n: string, w: string) => r.style.setProperty(n, w);

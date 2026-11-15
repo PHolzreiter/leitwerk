@@ -156,3 +156,6 @@
 :where(.ew-maske) .alarmiert .fz .nr:hover ~ .vcrew{display:flex}
 /* storniert bzw. aus dem Einsatz freigegeben: grau hinterlegt (Status bleibt sichtbar), ganz unten */
 .ew-maske .alarmiert .fz.weg{background:var(--flaeche-2);opacity:.8}
+
+/* Storno/Endegrund je Fahrzeug (Paul 15.11.2026) */
+:where(.ew-maske) .alarmiert .ew-ende{grid-column:1/-1;width:100%;height:28px;font-size:12px;margin-top:4px}
