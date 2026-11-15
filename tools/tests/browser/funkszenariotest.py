@@ -28,7 +28,7 @@ window.T = {
     const e = await s.generiere("kritisch");
     s.anrufAnnehmen(e.id); s.anrufBeenden(e.id);
     s.aktualisiere(e.id, { adresse: { lat: e.wahr.lat, lon: e.wahr.lon, label: e.wahr.adresse } });
-    const fz = Object.values(s.state.fahrzeuge).filter((f) => f.phase === "frei" && !f.pilot && !f.funkrufname.startsWith("77/8"));
+    const fz = Object.values(s.state.fahrzeuge).filter((f) => f.phase === "frei" && s.verfuegbar(f) && !f.ausserDienst && !f.wechselOffen && !f.pilot && !f.funkrufname.startsWith("77/8"));
     const nah = (f) => Math.hypot(f.lat - e.wahr.lat, f.lon - e.wahr.lon);
     const rtw = fz.filter((f) => f.kategorie === "RTW").sort((a, b) => nah(a) - nah(b))[0];
     const nef = fz.filter((f) => f.kategorie === "NEF").sort((a, b) => nah(a) - nah(b))[0];

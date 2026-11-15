@@ -111,6 +111,7 @@ const FUNKWOERTER = [
   "Transport", "Patient", "Patientin", "mitgehört", "Storno", "einrücken", "Funkcheck", "Status", "Voranmeldung", "Schockraum",
   "Notaufnahme", "Einsatzauftrag", "Zusatzinfo", "Reanimation", "Bereitstellungsraum", "Einsatzleitung", "Landeplatz", "kreislaufstabil",
   "ansprechbar", "Rettungsmittel", "Notarzteinsatzfahrzeug", "Hubschrauber", "Sichtung", "Vitalwerte", "Sättigung", "Blutdruck", "Blutzucker",
+  "Standort", "Gebietsabdeckung", "Heimatdienststelle", "Dienststelle", "verlagert", "Herzkatheter", "Krisenintervention",
 ];
 const FUNKWORT = new Map(FUNKWOERTER.map((w) => [falten(w), w]));
 

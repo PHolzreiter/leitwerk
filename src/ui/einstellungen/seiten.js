@@ -573,12 +573,13 @@ export class SeitenBasis {
             ['ACN', 'ACN', 'nein', 'nein', 'nein', 'Stabil', '0 %']
           ], { edit: true, ding: 'Stufe', typen: ['text', 'text', 'tog', ['sel', ['nein', 'NEF bevorzugt', 'schnellstes (NEF/NAH)']], 'tog', ['sel', ['Stabil', 'Dringend', 'Kritisch']], 'num'], hint: '„>“ trennt die Ränge, „/“ heißt gleichwertig. Ein schlechter passendes Rettungsmittel kommt nur, wenn das bessere mehr als die Toleranz länger braucht.' })
         ]},
-        { id: 'krankenhaus', label: 'Krankenhäuser & KT', info: 'Belegung, Daueraufträge', kw: 'krankenhaus belegung grundbelegung dialyse bestrahlung chemo daueraufträge', rows: [
+        { id: 'krankenhaus', label: 'Krankenhäuser & KT', info: 'Belegung, Daueraufträge', kw: 'krankenhaus belegung grundbelegung dialyse bestrahlung chemo daueraufträge krankentransport verschlechterung ktw nef', rows: [
           T('Grundbelegung durch andere Patienten', 'khg', true, 'Vormittags viel, nachts kaum'),
           R('Stärke der Grundbelegung', 'khgF', 10, 200, 10, 100, pct, '', undefined, { when: v => !!v('khg', true) }),
           N('Dialyse-Patienten je Krankenhaus mit Dialyse', 'dia', 6, 'pro Tag'),
           N('Bestrahlungs-Patienten je Krankenhaus', 'strahl', 3, 'pro Tag'),
-          N('Chemotherapie-Patienten mit fixem Termin', 'chemo', 1, 'pro Tag')
+          N('Chemotherapie-Patienten mit fixem Termin', 'chemo', 1, 'pro Tag'),
+          R('Krankentransport: Patient verschlechtert sich', 'ktVerschl', 0, 10, 0.5, 1, v => String(v).replace('.', ',') + ' %', 'Der KTW fordert dann ein NEF bzw. „NEF oder RTW-C“ nach')
         ]},
         { id: 'zeiten', label: 'Zeiten', info: 'Ausrücken, Fahrzeiten', kw: 'ausrückzeit fahrzeit sondersignal blaulicht verortung tag nacht bereitschaft', rows: [
           H('Ausrückzeiten (Alarm bis Abfahrt, in Minuten)'),

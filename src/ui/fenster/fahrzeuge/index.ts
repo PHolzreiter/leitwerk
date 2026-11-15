@@ -152,6 +152,7 @@ function orte(fz: SimFahrzeug): { von: string; nach: string } {
   switch (fz.phase) {
     case "frei":
       if (!fz.fahrt && daheim) stand = wache;
+      else if (!fz.fahrt && fz.standort?.ziel && fz.standort.art === "verlegt") stand = fz.standort.ziel.funk;
       break;
     case "ausruecken":
       stand = daheim ? wache : "";
@@ -174,7 +175,7 @@ function orte(fz: SimFahrzeug): { von: string; nach: string } {
       stand = kh;
       break;
     case "rueckfahrt":
-      nach = wache;
+      nach = fz.standort?.unterwegs && fz.standort.ziel ? fz.standort.ziel.funk : wache;
       break;
     case "ktFahrt":
       nach = ktHalt(fz);

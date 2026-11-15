@@ -515,6 +515,7 @@ export function einstellungsBindung(geladen?: () => void): EinstellungsBindung {
       (s, v) => (s.revers = v ?? "normal"),
     ),
     rdv: simBool("rendezvous", true),
+    ktVerschl: simZahl("ktVerschlechterungProzent", 1, 0, 10),
     tol: simZahl("toleranzMin", STD.toleranzMin, 0),
     khg: simBool("khGrundAktiv", true),
     khgF: {

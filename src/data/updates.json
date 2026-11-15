@@ -1,5 +1,20 @@
 [
  {
+  "version": "0.116.0-beta.54",
+  "datum": "2026-11-15",
+  "titel": "Funk: neue Lagen – Standort, Verlegen, Abziehen, Rendezvous, Voranmeldung",
+  "punkte": [
+   "Standort fragen und halten (höchstens 10 Minuten), Verlegen zur Gebietsabdeckung, zurück zur Heimatdienststelle",
+   "Abziehen und umdisponieren, solange kein Zielort gebucht ist; Krankenhaus während des Transports ändern",
+   "Zeitfragen (wann frei, wann im Krankenhaus); Infos werden mit Inhalt quittiert",
+   "Rendezvous machen NEF und RTW über Funk selbst aus – einfacher Treffpunkt am Funk",
+   "Nachforderung von Polizei/Feuerwehr, Erinnern nach 5 und dann alle 10 Minuten; Spezialkräfte nur als Bitte",
+   "Mehrere Patienten: ein Fahrzeug bleibt, bis der letzte Patient abtransportiert ist",
+   "Voranmeldung bei Polytrauma, Herzinfarkt, Schlaganfall; seltene Fehleinsätze",
+   "KTW fordert bei Verschlechterung ein NEF bzw. „NEF oder RTW-C“ an (einstellbar)"
+  ]
+ },
+ {
   "version": "0.116.0-beta.53",
   "datum": "2026-11-14",
   "titel": "Eigene Statusfarben überall, Orte der Dienststellen, Alter realistisch",

@@ -1,5 +1,19 @@
 # Änderungen
 
+## 0.116.0-beta.54 – Funk: neue Lagen (Standort, Verlegen, Abziehen, Rendezvous, Voranmeldung)
+- **Standort fragen und halten:** „Frage Standort“ bzw. „wo ist gerade euer genauer Standort“ – die Besatzung antwortet mit einfachen Begriffen („befinden uns gerade in Mautern auf Höhe Sportplatz“). „Bitte Standort halten“ bzw. „am aktuellen Standort warten“: ein freies Fahrzeug bleibt höchstens 10 Minuten stehen, danach fährt es weiter wie vorher; der Status bleibt.
+- **Verlegen zur Gebietsabdeckung:** „Standort wechseln auf die Dienststelle Langenlois“ bzw. „verlagert euren Standort nach Rohrendorf zum Sportplatz“ – das Fahrzeug fährt hin und steht dort frei über Funk (Status 6), bis es einen Auftrag erledigt hat (danach zurück zur eigenen Dienststelle) oder „wieder zur Heimatdienststelle“ hört.
+- **Abziehen und umdisponieren:** „Der aktuelle Einsatz ist ein Storno für euch, für euch geht's weiter Richtung …“, „bitte Navi neustarten, ihr bekommt einen anderen Einsatz“ oder „euren Einsatz übernimmt …“ – geht, solange noch kein Zielort gebucht ist. Der alte Einsatz bleibt offen und braucht ein anderes Fahrzeug.
+- **Krankenhaus ändern:** „Bitte fahrt ins UK St. Pölten“ während des Transports – neue Route, neue Buchung, Quittung mit Eintreffzeit.
+- **Zeitfragen:** „Wann seid ihr wieder frei?“ und „Wann seid ihr im Krankenhaus?“ werden aus dem echten Stand beantwortet. Infos (z. B. aus Folgeanrufen) quittiert die Besatzung mit dem Inhalt.
+- **Rendezvous:** NEF und RTW machen es über Funk direkt miteinander aus (der Disponent hört mit) – am Funk ein einfacher Treffpunkt („beim Sportplatz Mautern“, „in Mautern“), der genaue Punkt bleibt im Spiel.
+- **Nachforderungen:** Polizei bzw. Feuerwehr fordert die Besatzung an, wenn sie gebraucht und noch nicht alarmiert sind. Kommt nichts, meldet sie sich nach 5 Minuten wieder, danach alle 10 Minuten (auch bei Notarzt und weiteren RTW). Krisenintervention und nicht unbedingt nötige Berg- oder Wasserrettung sind nur eine Bitte – ohne Folgen, wenn niemand kommt.
+- **Mehrere Patienten:** Solange noch Patienten am Einsatzort sind, bleibt immer ein Fahrzeug dort; erst mit dem letzten Patienten fährt auch das letzte Fahrzeug.
+- **Voranmeldung:** Bei Polytrauma, Herzinfarkt und Schlaganfall bittet die Besatzung etwa jedes zweite Mal die Leitstelle, im Krankenhaus voranzumelden (Schockraum, Herzkatheter, Stroke Unit) – gebucht heißt vorangemeldet. Ohne Rückmeldung fragt sie nach und meldet nach 5 Minuten selbst an.
+- **Fehleinsatz:** Selten ist am Einsatzort kein Patient – die Besatzung sucht kurz, meldet es über Funk und rückt ein.
+- **Krankentransport:** Verschlechtert sich der Patient, fordert der KTW ein NEF bzw. „NEF oder RTW-C“ nach den Kompetenz-Regeln an. Wie oft, ist einstellbar (Einstellungen › Krankenhäuser & KT, Standard 1 von 100).
+- Behoben: Eine ältere Routenberechnung konnte eine neue Fahrt überschreiben (z. B. Rückfahrt nach einer Alarmierung).
+
 ## 0.116.0-beta.53 – Eigene Statusfarben überall, Orte der Dienststellen, Alter realistisch
 - **Eigene Statusfarben gelten jetzt überall:** in allen Fenstern (Einsatzliste, Fahrzeuge, Übersichten, Großeinsatz, Abfrage), auf der Karte und in 3D, in der Pilotenansicht, am Tablet und am Handy. Reihenfolge: eigene Farbe → Farbe der Leitstelle im Statusmodell → Standard. In den Einstellungen zeigt „Standard“ die Farbe, die ohne eigene Wahl gilt; wer genau diese wählt, hat wieder keine eigene Farbe.
 - **Orte der Dienststellen ergänzt:** Bei 21 Dienststellen (Rettungsleitstellen, Stützpunkte, Feuerwehr-Bezirkskommanden, Polizei) fehlte der Ort – jetzt haben alle einen.

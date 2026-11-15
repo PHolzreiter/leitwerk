@@ -148,6 +148,7 @@ export function fahrtziel(fz: SimFahrzeug): string {
     const ziel = halt ? sim.ktAuftrag(halt.kt) : k;
     return (halt?.art === "an" ? ziel?.d.nach?.label : ziel?.d.von?.label) ?? k.d.nach?.label ?? "";
   }
+  if (fz.fahrt && fz.phase === "rueckfahrt" && fz.standort?.unterwegs && fz.standort.ziel) return fz.standort.ziel.funk;
   if (fz.fahrt && fz.phase === "rueckfahrt") return fz.stationName ? `Wache ${fz.stationName.replace(/^Wache\s+/, "")}` : "Wache";
   return "";
 }

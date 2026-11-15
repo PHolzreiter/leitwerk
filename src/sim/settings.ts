@@ -178,6 +178,8 @@ export interface Settings {
   komplikationen: "ruhig" | "normal" | "fordernd";
   /** Einsätze aus dem Fallkatalog: aus, gemischt (mit den bisherigen Fallgeschichten) oder nur Katalog */
   fallKatalog?: "aus" | "gemischt" | "nur";
+  /** Krankentransport: so viele Prozent der Patienten verschlechtern sich unterwegs – der KTW fordert ein NEF bzw. „NEF oder RTW-C“ nach (Standard 1) */
+  ktVerschlechterungProzent?: number;
   /** Transportverweigerung (Revers): aus, selten (halb so oft) oder normal */
   revers?: "aus" | "selten" | "normal";
   /** Rendezvous RTW–NEF, wenn das NEF noch mehr als 15 Minuten entfernt ist (Standard an) */

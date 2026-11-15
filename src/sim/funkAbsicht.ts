@@ -10,7 +10,7 @@
  * Reine Funktionen ohne Spielzustand – getestet in tools/tests (funkAbsichtTest).
  */
 
-export type FrageThema = "status" | "eintreffen" | "werte" | "patient" | "verdacht" | "ziel" | "naMit" | "bedarf" | "funkcheck" | "landeplatz" | "sonst";
+export type FrageThema = "status" | "eintreffen" | "werte" | "patient" | "verdacht" | "ziel" | "naMit" | "bedarf" | "funkcheck" | "landeplatz" | "standort" | "frei" | "imKh" | "sonst";
 export type InfoThema = "naKommt" | "kraefteKommen" | "partner" | "zusatz" | "ziel" | "warten" | "dritteStorno" | "keinNa" | "sonst";
 
 export type Absicht =
@@ -19,6 +19,14 @@ export type Absicht =
   | { art: "storno" }
   | { art: "lageAnfordern" }
   | { art: "einsatz" }
+  /** Einsatz an ein anderes Fahrzeug, dieses bekommt gleich einen neuen (Paul 15.11.: „Storno für euch, für euch geht's weiter Richtung …“) */
+  | { art: "abziehen" }
+  /** freies Fahrzeug: am aktuellen Standort warten (höchstens 10 Minuten) */
+  | { art: "halten" }
+  /** Standort wechseln (Gebietsabdeckung): auf eine andere Dienststelle bzw. an einen Ort */
+  | { art: "verlegen" }
+  /** zurück zur eigenen Dienststelle */
+  | { art: "heim" }
   | { art: "frage"; thema: FrageThema }
   | { art: "info"; thema: InfoThema; wer?: string }
   | { art: "unklar"; grund: string };
@@ -53,7 +61,7 @@ const HALLUZINATION = /untertitel|amara|zuschauen|abonnier|copyright|vielen dank
 
 /** Wörter, die im Rettungsdienst-Funk vorkommen – fehlen sie ganz, ist der Spruch vermutlich falsch erkannt */
 const FUNKWORT =
-  /\b(leo|kommen|ende|verstanden|patient\w*|einsatz\w*|lage\w*|storno|notarzt|nef|rtw|nah|krankenhaus|kh|klinik|schockraum|notaufnahme|transport\w*|status|eintreff\w*|minute\w*|unterwegs|alarmiert|alarm|vor ort|wache|frei|fahrt|fahrzeug\w*|feuerwehr|polizei|rendezvous|treffpunkt|ziel\w*|nachforder\w*|bitte|danke|ja|nein|wo|wie|was|wann|hubschrauber|christophorus|werte|sättigung|blutdruck|puls|zustand|verdacht|wiederhol\w*|warten|wartet|rückt|ein|aus|ort|adresse|stock|stiege|tür|landeplatz|lande\w*|übernehm\w*|übergabe|sichtung|rot|gelb|grün|reanimation|kind|mann|frau|jahre|alt|wach|atmung|bewusst\w*|okay|ok|unterstützung|kräfte|hilfe|braucht|benötigt|ihr|euch|seid|fährt|code|schlüssel)\b/i;
+  /\b(leo|kommen|ende|verstanden|patient\w*|einsatz\w*|lage\w*|storno|notarzt|nef|rtw|nah|krankenhaus|kh|klinik|schockraum|notaufnahme|transport\w*|status|eintreff\w*|minute\w*|unterwegs|alarmiert|alarm|vor ort|wache|frei|fahrt|fahrzeug\w*|feuerwehr|polizei|rendezvous|treffpunkt|ziel\w*|nachforder\w*|bitte|danke|ja|nein|wo|wie|was|wann|hubschrauber|christophorus|werte|standort|navi|dienststelle|gebietsabdeckung|heimatdienststelle|sättigung|blutdruck|puls|zustand|verdacht|wiederhol\w*|warten|wartet|rückt|ein|aus|ort|adresse|stock|stiege|tür|landeplatz|lande\w*|übernehm\w*|übergabe|sichtung|rot|gelb|grün|reanimation|kind|mann|frau|jahre|alt|wach|atmung|bewusst\w*|okay|ok|unterstützung|kräfte|hilfe|braucht|benötigt|ihr|euch|seid|fährt|code|schlüssel)\b/i;
 
 /**
  * Absicht eines Funkspruchs der Leitstelle an ein Fahrzeug.
@@ -83,6 +91,17 @@ export function absichtErkennen(text: string, opt: { sicherheit?: number; angesp
   const m = inhalt.match(DRITTE);
   const dritter = m && !angesprochen.some((a) => a && m[0].replace(/\s/g, "").includes(a.replace(/\s/g, "")) ) ? m[0] : undefined;
   const frage = /\?/.test(roh) || FRAGEWORT.test(inhalt);
+
+  // Standort (Paul 15.11.2026): fragen, halten, verlegen, zurück – und Abziehen („Storno für euch, für euch geht's weiter …“)
+  const GEHT = /\bgeht(?:'?s| es)\b/;
+  if (/\bnavi\s?neu\s?(starten|start)|\bnavi neustart\w*|\banderen einsatz\b|\bneuen einsatz geschickt\b|\beuren einsatz übernimmt\b|\bübernimmt euren einsatz\b|\bwoanders hin\b|\bziehen? euch ab\b|\bwerdet abgezogen\b|\bseid abgezogen\b/.test(inhalt) || (GEHT.test(inhalt) && /\b(für euch|ihr)\b/.test(inhalt) && /\bgeht(?:'?s| es) (bitte )?(weiter|woanders)\b/.test(inhalt) && !/\b(krankenhaus|kh|klinik\w*|spital)\b/.test(inhalt)))
+    return { art: "abziehen" };
+  if (/\b(heimat ?dienststelle|heimatwache|eigenen? (dienststelle|wache)|zurück (zur|auf die|in die) (eigene |eure )?(dienststelle|wache)|wieder (zur|auf die|in die) (eigene |eure )?(dienststelle|wache))\b/.test(inhalt) && /\b(zurück\w*|wieder|wechseln|fahrt|fahren|einrücken|rückt)\b/.test(inhalt))
+    return { art: "heim" };
+  if (/\bstandort halten\b|\bstandort beibehalten\b|\bam (aktuellen|jetzigen|derzeitigen) standort (warten|bleiben|stehen|halten)\b|\b(bleibt|wartet|steht) (bitte )?(am|an eurem|auf eurem) (aktuellen |jetzigen )?standort\b/.test(inhalt)) return { art: "halten" };
+  if (/\bverlag\w*\b|\bverleg\w*\b|\bgebietsabdeckung\b|\bstandort\b.{0,40}\b(wechseln|wechselt|nach|auf die|zur|zum)\b|\bin bereitschaft nach\b/.test(inhalt)) return { art: "verlegen" };
+  if (/^standort\W*$/.test(inhalt) || /\bfrage,? standort\b|\bwo (ist|befindet sich) (gerade |denn |jetzt )?(euer|dein|ihr) (genauer |aktueller |jetziger |momentaner )?standort\b|\b(euer|eure) (genaue[rn]? |aktuelle[rn]? )?(standort|position)\b|\bwo (seid|befindet) (ihr|euch) (gerade|jetzt|momentan|genau)\b/.test(inhalt))
+    return { art: "frage", thema: "standort" };
 
   // Storno: nur wenn es dem angesprochenen Fahrzeug gilt – „Storno für das NEF“ an den RTW ist eine Information
   const STORNO = /\b(storno|storniert|abbestellt|abbestell\w*|nicht mehr benötigt|nicht mehr erforderlich|abbrechen|brecht ab|einrücken|rückt ein|rücken ein)\b/;
@@ -114,6 +133,8 @@ export function absichtErkennen(text: string, opt: { sicherheit?: number; angesp
     if (/(fährt|fahrt|kommt|geht).{0,25}(notarzt|nef|na\b).{0,15}mit|(notarzt|nef|na\b).{0,25}(mit|begleit)/.test(inhalt)) return { art: "frage", thema: "naMit" };
     if (/zielkrankenhaus|zielklinik|welche[sr]? (kh|krankenhaus|klinik)|wohin|wo fahrt ihr hin|ins welche/.test(inhalt)) return { art: "frage", thema: "ziel" };
     if (/verdacht|diagnose|was hat (er|sie|der patient|die patientin)/.test(inhalt)) return { art: "frage", thema: "verdacht" };
+    if (/wann (seid|seit|werdet) ihr (wieder )?(frei|einsatzbereit|fertig)|wann (wieder )?einsatzbereit|wie lange (braucht ihr|dauert(?:'?s| es)) noch(?!.{0,30}\b(einsatzort|bo\b|vor ort|bei (ihm|ihr|dem patienten)|dort|da\b|ins?\b|zum\b|zur\b|nach\b|bis\b))/.test(inhalt)) return { art: "frage", thema: "frei" };
+    if (/\bwann\b.{0,30}\bim (kh|krankenhaus|spital|klinikum|uk|lk)\b|eintreffen im (kh|krankenhaus|spital|klinikum)/.test(inhalt)) return { art: "frage", thema: "imKh" };
     if (/eintreff|wie lange|wann seid|wann seit|ankunft|fahrzeit|wie weit/.test(inhalt)) return { art: "frage", thema: "eintreffen" };
     if (/braucht ihr|benötigt ihr|nachforder|noch (was|etwas|kräfte|unterstützung)|weitere kräfte/.test(inhalt)) return { art: "frage", thema: "bedarf" };
     if (/status|wo seid|wo bist|position|seid ihr (schon )?(vor ort|da|frei)|was macht ihr/.test(inhalt)) return { art: "frage", thema: "status" };
@@ -136,7 +157,7 @@ export function absichtErkennen(text: string, opt: { sicherheit?: number; angesp
   if (/einsatz .*(code|adresse|einsatzort)|neuer einsatz|einsatzauftrag|übernehmt|übernehmen sie|folgeeinsatz|nächster einsatz|anschlusseinsatz/.test(inhalt)) return { art: "einsatz" };
   if (/zielkrankenhaus|zielklinik|(fahrt|fährt|kommt|geht|fliegt) ins|ins (uk|lk|kh|krankenhaus|klinikum|spital)|bringt (ihn|sie|den patienten)|nehmt|transport (ins|nach)/.test(inhalt)) return { art: "info", thema: "ziel" };
   if (/\b(wartet|warte|warten sie|bleibt (vor ort|dort)|bleiben sie)\b/.test(inhalt)) return { art: "info", thema: "warten" };
-  if (/zusatzinfo|zur info|beachtet|achtung|hinweis|information|stock|stiege|türcode|\bcode\b|schlüssel|zufahrt|eingang|hund|aufzug|lift/.test(inhalt)) return { art: "info", thema: "zusatz" };
+  if (/zusatzinfo|zur info|beachtet|achtung|hinweis|information|stock|stiege|türcode|\bcode\b|schlüssel|zufahrt|eingang|hund|aufzug|lift|\blaut (dem )?(anrufer\w*|angehörigen|polizei|feuerwehr|nachbar\w*)\b|folgeanruf|anrufer (meldet|sagt|hat)|\bpatient(in)? (ist )?jetzt\b|\bneue info/.test(inhalt)) return { art: "info", thema: "zusatz" };
   // kurze Bestätigungen mit Rufnamen („Hier LEO, alles klar“)
   if (QUITTUNG.test(inhalt)) return { art: "quittung" };
   // längerer, aber unbestimmter Satz mit Funkwörtern: als Information nehmen (wenig sicher erkannt: nachfragen)

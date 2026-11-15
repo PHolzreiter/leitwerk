@@ -5,7 +5,7 @@
  * vom Host an die Mitspieler übertragen werden kann. Alle Eingriffe des Spielers
  * laufen über die öffentlichen Methoden (alarmieren, Adresse setzen, …).
  */
-import { absichtErkennen, istQuittung } from "./funkAbsicht";
+import { ohneKopf, absichtErkennen, istQuittung } from "./funkAbsicht";
 import { funkSprechform, zahlenAlsZiffern } from "./funkErkennung";
 import { fahrzeugZuName, rufnamen } from "./funkname";
 import { aktuelleSchicht, dienstEnde, imDienst, naechsterBeginn, type Schicht } from "./dienst";
@@ -21,6 +21,7 @@ import { store } from "../data/store";
 import { streuung } from "../data/schema";
 import { ACN_CODES, allCodes, findCode, hasCodes, istAcnCode, type Einsatzcode } from "./codes";
 import { rendezvousPunkt } from "./rendezvous";
+import { khImText, naechsterOrt, standortText, treffpunktWort, zielImText } from "./funkOrte";
 import { abwandeln } from "./funkVielfalt";
 import { distanceM, erreichbar, flightRoute, geoStatus, randomAddresses, route, searchAddress, travelTimes, type LatLon, type Route } from "./geo";
 import { generiereBesetzung, hatNFS, hoechsteQuali, rmTypVon, type Platz, type RmTyp } from "./crew";
@@ -161,6 +162,33 @@ const MASSNAHME_REICHT_NICHT: Partial<Record<Kompetenz, string>> = {
   NKI: "unsere Maßnahmen reichen nicht aus",
 };
 const NF_NAME = { NA: "Notarzt", RTW: "Rettungsmittel", BIT: "BIT (Schwerlasttransport)", NFS: "NEF oder RTW-C (Notfallsanitäter)" } as const;
+
+/**
+ * Information der Leitstelle in Kurzform für die Quittung („Hier LEO, zur Info, laut Anrufer ist der Patient jetzt bewusstlos,
+ * kommen“ → „laut Anrufer ist der Patient jetzt bewusstlos“) – aus Sicht der Besatzung („ihr/euch“ → „wir/uns“).
+ */
+function infoKurz(text: string): string {
+  let t = ohneKopf(text.replace(/\s+/g, " ").trim())
+    .replace(/^(zur info(rmation)?|info|hinweis|achtung|zusatzinfo(rmation)?|nachtrag|bitte beachten?|beachtet)\b[,:]?\s*/i, "")
+    .replace(/[.!]+$/, "")
+    .trim();
+  t = t.split(/(?<=[.!?])\s+/)[0] ?? t;
+  const w = t.split(/\s+/);
+  if (w.length > 16) t = w.slice(0, 16).join(" ");
+  t = ` ${t} `
+    .replace(/ ihr /gi, " wir ")
+    .replace(/ euch /gi, " uns ")
+    .replace(/ eure /gi, " unsere ")
+    .replace(/ euer /gi, " unser ")
+    .replace(/ euren /gi, " unseren ")
+    .trim();
+  return t.replace(/^\w/, (c) => c.toLowerCase());
+}
+
+/** Partner nur als Bitte (Krisenintervention, Berg-/Wasserrettung ohne die es auch geht): einmal fragen, keine Folgen */
+function partnerNurBitte(x: PartnerGrund): boolean {
+  return x.art === "ki" || ((x.art === "berg" || x.art === "wasser") && !x.blockiert);
+}
 /** So lange wartet die Besatzung auf den BIT, dann transportiert sie selbst */
 const BIT_WARTEN = 35 * MIN;
 
@@ -340,6 +368,12 @@ export interface SimFahrzeug {
   dispoMobil?: boolean;
   /** Spieler-NAH: wird von einem Mitspieler geflogen (das Programm wartet auf seine Status und Entscheidungen) */
   pilot?: PilotInfo | null;
+  /**
+   * Standort auf Anweisung der Leitstelle (Paul 15.11.2026): „halten“ = am aktuellen Ort warten (höchstens bis), danach
+   * weiter wie vorher; „verlegt“ = zur Gebietsabdeckung an einem anderen Ort bzw. einer anderen Dienststelle, bis zum
+   * nächsten erledigten Auftrag oder „zurück zur Dienststelle“; „richtung“ = nach dem Abziehen in Richtung des nächsten Einsatzes.
+   */
+  standort?: { art: "halten" | "verlegt" | "richtung"; ziel?: (LatLon & { label: string; funk: string }) | null; bis?: number | null; unterwegs?: boolean; danach?: { art: "verlegt"; ziel: LatLon & { label: string; funk: string } } | null } | null;
   /** Krankentransport-Plan (vorgemerkte bzw. laufende Fahrten) */
   kt?: (KtPlan & {
     reinigen?: boolean;
@@ -738,6 +772,8 @@ export interface Nachforderung {
   von: string;
   erinnert: number;
   erledigt: boolean;
+  /** so oft schon erinnert (Paul 15.11.2026: nach 5 Minuten, danach alle 10 Minuten) */
+  erinnerungen?: number;
 }
 
 export interface ChatNachricht {
@@ -816,6 +852,8 @@ export interface Einsatz {
     /** Fallkatalog: Transportverweigerung geprüft bzw. Revers unterschrieben */
     reversGeprueft?: boolean;
     revers?: boolean;
+    /** Fehleinsatz (Paul 15.11.2026): am Einsatzort kein Patient – Grund für den Funkspruch */
+    fehleinsatz?: string | null;
     /** veraltet (ältere Spielstände) */
     abteilung?: string;
     rtwBuchtSelbst: boolean;
@@ -868,7 +906,7 @@ export interface Einsatz {
   /** grund = Buchung (Verdachtsdiagnose, ID aus klinik.json) */
   kh: { hospitalId: string; grund: string; durch: "dispo" | "rtw" | "nah"; zeit: number } | null;
   /** Besatzung bittet um Buchung und nennt die Verdachtsdiagnose */
-  khAnfrage: { verdacht: string; seit: number; von: string } | null;
+  khAnfrage: { verdacht: string; seit: number; von: string; voranmeldung?: string | null; erinnert?: boolean } | null;
   /** von der Besatzung genannte Verdachtsdiagnose (sichtbar) */
   verdacht?: string | null;
   rueckrufGemacht: boolean;
@@ -917,6 +955,12 @@ export interface Einsatz {
   naAngekuendigt?: { um: number; wer: string } | null;
   /** zuletzt an fehlende Partner erinnert */
   partnerErinnert?: number;
+  /** Partner-Nachforderung über Funk: wann zuletzt erinnert, wie oft (Polizei/Feuerwehr, Paul 15.11.2026) */
+  partnerNf?: Partial<Record<PartnerArt, { erinnert: number; n: number }>>;
+  /** mehrere Patienten: so viele Transportfahrzeuge sind schon mit einem Patienten abgefahren */
+  abfahrten?: number;
+  /** Nachforderung eines KTW (Patient verschlechtert sich im Krankentransport): was gebraucht wird */
+  ktHilfe?: { braucht: "NA" | "NFS"; ktwId: string; ktId: string } | null;
   /** Rendezvous: RTW fährt dem (zu weit entfernten) NEF entgegen, Treffpunkt unterwegs */
   rendezvous?: { rtwId: string; nefId: string; punkt: Ort; status: "anfahrt" | "treffen" | "fertig"; bis?: number | null } | null;
   /** Besatzung hat gefragt, ob der Hubschrauber verfügbar ist (Rufname, z. B. „C2“) – LEOs Antwort wird verstanden */
@@ -1512,6 +1556,12 @@ export class Simulation extends GsKern {
   private routingBusy = new Set<string>();
   /** Warnung „funkt in 09/10 ohne Großeinsatz“ höchstens einmal pro Minute je Hubschrauber */
   private grWarnUm = new Map<string, number>();
+  /** laufende Nummer der Fahrt je Fahrzeug – eine ältere Routenberechnung wird verworfen */
+  private fahrtNr = new Map<string, number>();
+  /** Abziehen läuft: dieser Einsatz bleibt offen, auch wenn kein Fahrzeug mehr dran ist */
+  private abzugOffen: string | null = null;
+  /** mehrere Patienten: „bleibt am Einsatzort“ schon protokolliert */
+  private bleibtGeloggt = new Set<string>();
   private lastReal = 0;
   private timer: number | undefined;
 
@@ -1996,6 +2046,7 @@ export class Simulation extends GsKern {
     this.gsTick(t);
     this.khTick(t);
     this.checkKhAnfragen(t);
+    this.standortTick(t);
     this.anrufeTick(t);
     this.lageTick(t);
     this.funkTick(t);
@@ -2180,6 +2231,11 @@ export class Simulation extends GsKern {
    *  Bereitschaft an einem anderen Ort bleibt stehen, außer ein Wechsel ist fällig. */
   private heimWennFrei(fz: SimFahrzeug, wechsel = false): void {
     if (fz.phase !== "frei" || fz.einsatzId || fz.kt || fliegt(fz) || fz.ersatzFuer || this.routingBusy.has(fz.id)) return;
+    // auf Anweisung der Leitstelle woanders (halten, verlegt): bleibt – nur zum Schichtwechsel heim
+    if (fz.standort) {
+      if (!wechsel) return;
+      fz.standort = null;
+    }
     if (distanceM(fz, fz.heim) < 80) return;
     if (fz.status === "bereitschaft" && !wechsel) return;
     if (fz.status !== "freiFunk" && fz.status !== "bereitschaft") return;
@@ -2345,6 +2401,9 @@ export class Simulation extends GsKern {
       }
     }
     this.routingBusy.add(fz.id);
+    // jede neue Fahrt (bzw. Halten) macht eine noch laufende Routenberechnung ungültig
+    const nr = (this.fahrtNr.get(fz.id) ?? 0) + 1;
+    this.fahrtNr.set(fz.id, nr);
     fz.phase = "routing";
     // KTW-B (Zivildienst) fährt nie mit Blaulicht
     if (fz.ohneBlaulicht) sondersignal = false;
@@ -2363,6 +2422,7 @@ export class Simulation extends GsKern {
     const p: Promise<Route> =
       fliegt(fz) ? Promise.resolve(flightRoute(von, ziel, this.settings.nahGeschwindigkeit)) : this.strassenRoute(von, ziel);
     void p.then((r) => {
+      if (this.fahrtNr.get(fz.id) !== nr) return;
       this.routingBusy.delete(fz.id);
       // inzwischen hat ein Pilot übernommen: er fliegt selbst
       if (fz.pilot) return;
@@ -2581,6 +2641,11 @@ export class Simulation extends GsKern {
             this.log(e, `${fz.funkrufname}: kein Patient an der angegebenen Adresse`);
             this.fzRuft(fz, e, "adresse", "kein Patient an der angegebenen Adresse, bitte Adresse prüfen");
           }
+        } else if (e.wahr.fehleinsatz && !e.gs && !e.gsKind) {
+          // Fehleinsatz: kurz suchen, dann über Funk melden und einrücken
+          fz.phase = "suche";
+          fz.phaseEnde = t + rnd(3, 6) * MIN;
+          this.log(e, `${fz.funkrufname}: kein Patient an der Adresse – suchen`);
         } else {
           fz.phase = "vorOrt";
           fz.phaseEnde = t + rnd(10, 22) * MIN + (d > this.settings.verortungRadius ? rnd(1, 3) * MIN : 0);
@@ -2606,7 +2671,7 @@ export class Simulation extends GsKern {
             else if (this.transportfaehig(fz) && !this.einsatzFz(e).some((x) => x.rmTyp === "ACN")) e.wahr.transport = true;
           }
           this.eintreffenLage(fz, e);
-          this.ktHilfeDa(e);
+          this.ktHilfeDa(e, fz);
           const p0 = e.wahr.lage?.patienten[0];
           if (p0 && istStillstand(p0)) fz.phaseEnde = t + rnd(30, 45) * MIN;
           // Fahrzeug steht auf der Straße: zu Fuß zum Patienten
@@ -2627,11 +2692,12 @@ export class Simulation extends GsKern {
         if (warten.length) {
           fz.phaseEnde = t + 2 * MIN;
           const fehlen = warten.filter((x) => !e.partner?.[x.art]);
-          if (!e.partnerErinnert || t - e.partnerErinnert > 6 * MIN) {
+          // gefragt bzw. erinnert wird über partnerNachforderungTick (nach 5, dann alle 10 Minuten)
+          if (e.partnerErinnert == null) {
             e.partnerErinnert = t;
             if (fehlen.length) {
               this.log(e, `${fz.funkrufname} wartet auf ${fehlen.map((x) => PARTNER[x.art].name).join(", ")}`);
-              this.fzRuft(this.sprecher(e, fz), e, "nachforderung", `benötigen weiterhin ${fehlen.map((x) => `${PARTNER[x.art].name} (${x.grund})`).join(" und ")}, ohne können wir nicht weiterarbeiten`);
+              this.fzRuft(this.sprecher(e, fz), e, "nachforderung", `benötigen ${fehlen.map((x) => `${PARTNER[x.art].name} (${x.grund})`).join(" und ")}, ohne können wir nicht weiterarbeiten`);
             } else this.log(e, `${fz.funkrufname} wartet auf ${warten.map((x) => PARTNER[x.art].name).join(", ")} (unterwegs)`);
           }
           break;
@@ -2649,6 +2715,25 @@ export class Simulation extends GsKern {
       }
       case "warteKH":
         break;
+      case "suche": {
+        // Fehleinsatz: nach der Suche melden, alle Fahrzeuge des Einsatzes werden frei
+        if (!e?.wahr.fehleinsatz) {
+          fz.phaseEnde = null;
+          break;
+        }
+        const grund = e.wahr.fehleinsatz;
+        e.wahr.fehleinsatz = null;
+        e.wahr.transport = false;
+        this.log(e, `${fz.funkrufname}: Fehleinsatz – ${grund}`);
+        const andere = this.einsatzFz(e).filter((x) => x.id !== fz.id && !x.pilot);
+        this.fzRuft(fz, e, "info", `${grund}, rücken ein${andere.length ? `, ${andere.map((x) => this.rufname(x)).join(" und ")} kann storniert werden` : ""}`);
+        for (const x of andere) {
+          this.log(e, `Storno an ${x.funkrufname} (Fehleinsatz)`);
+          this.freigeben(x);
+        }
+        this.freigeben(fz);
+        break;
+      }
       case "rendezvous": {
         if (!e) return this.freigeben(fz);
         this.amTreffpunkt(fz, e, t);
@@ -2707,6 +2792,21 @@ export class Simulation extends GsKern {
           fz.naAnBord = false;
           if (!fz.ausserDienst && !(fz.defektBis && t < fz.defektBis)) this.setStatus(fz, "bereitschaft");
           this.fahre(fz, fz.heim, "rueckfahrt", false);
+          break;
+        }
+        // Verlegung bzw. Richtung nach dem Abziehen: dort frei über Funk stehen bleiben (Paul 15.11.2026)
+        if (fz.standort?.unterwegs && fz.standort.ziel) {
+          const st = fz.standort;
+          fz.phase = "frei";
+          fz.phaseEnde = null;
+          fz.lat = st.ziel!.lat;
+          fz.lon = st.ziel!.lon;
+          st.unterwegs = false;
+          if (st.art === "richtung") {
+            st.art = "halten";
+            st.bis = t + 10 * MIN;
+            st.danach = null;
+          }
           break;
         }
         fz.phase = "frei";
@@ -2781,6 +2881,15 @@ export class Simulation extends GsKern {
     const v = this.verdacht(e);
     if (buchung(v)?.zeitkritisch) return true;
     return /schlaganfall|insult|stroke|polytrauma|stemi|infarkt|reanimation|rosc|kreislaufstillstand/i.test(`${v ? buchungName(v) : ""} ${e.wahr.lage?.fall?.kern ?? ""}`);
+  }
+
+  /** Braucht der Fall eine Voranmeldung (Polytrauma, Herzinfarkt, Schlaganfall)? Dann wofür – sonst null */
+  private voranmeldungArt(e: Einsatz, verdacht: string): string | null {
+    const text = `${verdacht ? buchungName(verdacht) : ""} ${e.wahr.lage?.fall?.kern ?? ""}`;
+    if (/polytrauma|schädel-?hirn|\bsht\b|schwerverletzt/i.test(text)) return "Schockraum";
+    if (/stemi|herzinfarkt|myokardinfarkt|\bacs\b|infarkt/i.test(text) && !/hirninfarkt/i.test(text)) return "Herzkatheter";
+    if (/schlaganfall|insult|stroke|hirninfarkt/i.test(text)) return "Stroke Unit";
+    return null;
   }
 
   private kritisch(e: Einsatz): boolean {
@@ -2960,6 +3069,20 @@ export class Simulation extends GsKern {
     // Die Besatzung bucht selbst – über Funk fragt sie nur bei Reanimation oder mehreren Patienten an
     const p0 = l?.patienten[0];
     const anfragen = (p0 && istStillstand(p0)) || (l?.patienten.length ?? 1) > 1;
+    // Voranmeldung (Paul 15.11.2026): bei Polytrauma, Herzinfarkt und Schlaganfall etwa jedes zweite Mal – die Besatzung
+    // bittet die Leitstelle, im Krankenhaus anzumelden (gebucht = vorangemeldet); sonst bucht sie selbst
+    const vor = e.wahr.rtwBuchtSelbst && !anfragen && !sn && !e.gs && !e.gsKind ? this.voranmeldungArt(e, verdacht) : null;
+    if (vor && Math.random() < 0.5) {
+      const kh = this.khFuerTransport(e);
+      const min = Math.max(1, Math.round(this.khFahrzeit(fz, e) / MIN));
+      const p0v = l?.patienten[0];
+      const wer = p0v ? (p0v.alter < 14 ? `Kind ${p0v.alter} Jahre` : `${p0v.geschlecht === "w" ? "Frau" : "Mann"} ${p0v.alter}`) : "";
+      e.verdacht = verdacht;
+      e.khAnfrage = { verdacht, seit: t, von: fz.funkrufname, voranmeldung: kh?.id ?? null };
+      this.log(e, `${fz.funkrufname} bittet um Voranmeldung ${vor}${kh ? ` im ${kh.kurzname || kh.name}` : ""}`);
+      this.fzRuft(fz, e, "kh", `bitte Voranmeldung ${vor}${kh ? ` im ${kh.kurzname || kh.name}` : ""}${wer ? `, ${wer}` : ""}, Verdacht ${buchungName(verdacht)}, Eintreffen in ca. ${min} Minuten`);
+      return this.rendezvousLos(e, fz);
+    }
     if (e.wahr.rtwBuchtSelbst && !anfragen && !sn) {
       this.bucheKhAuto(e, fz.funkrufname);
       return this.rendezvousLos(e, fz);
@@ -3032,6 +3155,9 @@ export class Simulation extends GsKern {
 
   /** Name des Treffpunkts: nächster Ort in der Nähe, sonst Richtung und Entfernung vom Einsatzort */
   private treffpunktName(p: LatLon, bo: LatLon): string {
+    // Paul 15.11.2026: am Funk ein einfacher Begriff („beim Sportplatz Mautern“, „in Mautern“)
+    const wort = treffpunktWort(p);
+    if (wort !== "am Weg") return wort;
     let best: { ort: string; d: number } | null = null;
     for (const o of alleOrte()) {
       if (!o.ort) continue;
@@ -3334,6 +3460,21 @@ export class Simulation extends GsKern {
       // Spieler-NAH im Einsatz: niemand bucht von selbst – der Pilot bucht im Tablet (außer er hat an den RTW übergeben)
       const sn = this.spielerNah(e);
       if (sn && sn.pilot?.plan?.art !== "uebergabe") continue;
+      // Voranmeldung: nach ca. 2½ Minuten nachfragen, nach 5 Minuten meldet die Besatzung selbst an
+      if (e.khAnfrage && "voranmeldung" in e.khAnfrage) {
+        const a = e.khAnfrage;
+        if (!a.erinnert && t - a.seit > 2.5 * MIN) {
+          a.erinnert = true;
+          const fz = Object.values(this.state.fahrzeuge).find((x) => x.funkrufname === a.von);
+          const kh = a.voranmeldung ? store.get("hospitals", a.voranmeldung) : undefined;
+          if (fz) this.fzRuft(fz, e, "kh", `Frage, ist die Voranmeldung${kh ? ` im ${kh.kurzname || kh.name}` : ""} schon erfolgt`);
+        }
+        if (t - a.seit > 5 * MIN) {
+          this.funk(a.von, e.id, "Keine Rückmeldung – melden selbst an", "info");
+          this.bucheKhAuto(e, a.von);
+        }
+        continue;
+      }
       if (e.khAnfrage && t - e.khAnfrage.seit > (e.gsKind ? 6 : 4) * MIN) {
         this.funk(e.khAnfrage.von, e.id, e.gsKind ? "Keine Buchung – die Einsatzleitung bucht selbst" : "Keine Rückmeldung – buchen selbst", "info");
         this.bucheKhAuto(e, e.khAnfrage.von);
@@ -3347,11 +3488,26 @@ export class Simulation extends GsKern {
     const h = store.get("hospitals", e.kh.hospitalId);
     if (!h) return;
     const rv = e.rendezvous && e.rendezvous.status !== "fertig" ? e.rendezvous : null;
+    // mehrere Patienten (Paul 15.11.2026): solange noch Patienten am Einsatzort sind, bleibt immer ein Fahrzeug dort –
+    // nur mit dem letzten Patienten fährt auch das letzte Fahrzeug
+    const mehrere = !e.gs && !e.gsKind && (e.wahr.lage?.patienten.length ?? 1) > 1;
+    const einheiten = mehrere ? this.bedarfVon(e).transport : 0;
     for (const id of e.fahrzeuge) {
       const fz = this.state.fahrzeuge[id];
       if (!fz || fz.phase !== "warteKH") continue;
       // Rendezvous: erst zum Treffpunkt
       if (rv && (id === rv.rtwId || id === rv.nefId)) continue;
+      if (mehrere && this.transportfaehig(fz)) {
+        const rest = einheiten - (e.abfahrten ?? 0);
+        const vorOrt = this.einsatzFz(e).filter((x) => x.id !== fz.id && this.transportfaehig(x) && (x.phase === "warteKH" || x.phase === "vorOrt"));
+        // fährt es, bleiben noch Patienten – dann muss ein anderes Transportfahrzeug vor Ort sein
+        if (rest > 1 && !vorOrt.length) {
+          if (!this.bleibtGeloggt.has(`${e.id}|${fz.id}`)) this.log(e, `${fz.funkrufname} bleibt am Einsatzort – noch ${rest - 1} Patient${rest - 1 === 1 ? "" : "en"} ohne Transport`);
+          this.bleibtGeloggt.add(`${e.id}|${fz.id}`);
+          continue;
+        }
+        e.abfahrten = (e.abfahrten ?? 0) + 1;
+      }
       if (this.ohneLandeplatz(fz, e, h)) continue;
       this.setStatus(fz, "zumZO");
       this.fahre(fz, h, "transport", this.kritisch(e));
@@ -3372,6 +3528,8 @@ export class Simulation extends GsKern {
     fz.gsPatBr = false;
     fz.gsRufOffen = null;
     fz.nachNa = null;
+    // nach einem erledigten Auftrag zurück zur eigenen Dienststelle (auch aus einer Verlegung, Paul 15.11.2026)
+    fz.standort = null;
     this.setStatus(fz, "freiFunk");
     if (fz.pilot) {
       // Spieler-NAH: bleibt, wo er ist – der Pilot fliegt selbst zurück und drückt dort Status 1
@@ -3391,6 +3549,7 @@ export class Simulation extends GsKern {
   }
 
   protected pruefeAbschluss(e: Einsatz): void {
+    if (this.abzugOffen === e.id) return;
     // Großschaden: erst, wenn alle Patienten abtransportiert sind
     if (e.wahr.gs && e.gs && !e.gs.aufgehoben && e.gs.phase !== "ende" && !e.gsZu) return;
     const aktiv = Object.values(this.state.fahrzeuge).some((f) => f.einsatzId === e.id);
@@ -3589,6 +3748,19 @@ export class Simulation extends GsKern {
         e.wahr.lage = lageAusFall(fv.id, fvar, store.schema ? merkmaleAusSchema(store.schema, wahr(p.fall)) : wahr(p.fall), this.state.zeit);
         e.wahr.transport = fvar.transport !== false;
       } else e.wahr.lage = lageErzeugen(p.fall.kapitel, wahr(p.fall), this.state.zeit, kritisch, this.settings.komplikationen ?? "normal");
+      // Fehleinsatz (Paul 15.11.2026, selten): am Einsatzort ist kein Patient – die Besatzung meldet es über Funk
+      {
+        const l0 = e.wahr.lage;
+        const p0 = l0.patienten[0];
+        const fk = { ruhig: 0.5, normal: 1, fordernd: 1.5 }[this.settings.komplikationen ?? "normal"] ?? 1;
+        if (l0.patienten.length === 1 && p0 && !istStillstand(p0) && p0.sichtung !== "rot" && !fvar?.tot && !istAcnCode(p.fall.code) && Math.random() < 0.02 * fk)
+          e.wahr.fehleinsatz = pick([
+            "kein Patient angetroffen, laut Nachbarn ist er schon selbst ins Krankenhaus gefahren",
+            "Einsatzort abgesucht, kein Patient auffindbar, der Anrufer ist nicht mehr vor Ort",
+            "kein Patient angetroffen, laut Angehörigen schon mit dem Taxi zum Hausarzt",
+            "kein Patient vor Ort, laut Passanten ist die Person selbstständig weggegangen",
+          ]);
+      }
       // Alter: die Lage (Besatzung) kennt das echte; wer den Patienten nicht kennt, schätzt am Telefon ein paar Jahre daneben
       const echt = e.wahr.lage.patienten.length === 1 ? e.wahr.lage.patienten[0].alter : null;
       if (echt !== null && e.wahr.abfrage && typeof e.wahr.abfrage.antworten.alter === "number") {
@@ -3749,6 +3921,7 @@ export class Simulation extends GsKern {
         this.funk(fz.funkrufname, e.id, "Krankentransport abgebrochen – übernehmen Notfall", "info");
       }
       fz.ueberzeitFuer = null;
+      fz.standort = null;
       fz.einsatzId = e.id;
       fz.alarmiertUm = this.state.zeit;
       if (!e.fahrzeuge.includes(fz.id)) e.fahrzeuge.push(fz.id);
@@ -5305,9 +5478,16 @@ export class Simulation extends GsKern {
       let text = lagemeldungText(l, kap, fehlt, false);
       const da = (Object.keys(e.partnerDa ?? {}) as PartnerArt[]).map((a) => PARTNER[a].name);
       if (da.length) text += `, ${da.join(" und ")} vor Ort`;
-      if (partner.length) {
-        text += `, benötigen ${partner.map((x) => `${PARTNER[x.art].name} (${x.grund})`).join(" und ")}`;
+      const noetig = partner.filter((x) => !partnerNurBitte(x));
+      const bitte = partner.filter((x) => partnerNurBitte(x));
+      if (noetig.length) {
+        text += `, benötigen ${noetig.map((x) => `${PARTNER[x.art].name} (${x.grund})`).join(" und ")}`;
         e.partnerErinnert = this.state.zeit;
+      }
+      // Spezialkräfte nur als Bitte (Paul 15.11.2026): schickt der Disponent nichts, passiert nichts
+      if (bitte.length) {
+        text += `, Frage, ${bitte.length === 1 ? `ist eine ${PARTNER[bitte[0].art].name}` : `sind ${bitte.map((x) => PARTNER[x.art].name).join(" und ")}`} möglich (${bitte.map((x) => x.grund).join(", ")})`;
+        this.log(e, `${fz.funkrufname} bittet um ${bitte.map((x) => PARTNER[x.art].name).join(", ")} (ohne Folgen, wenn nicht)`);
       }
       this.nachfordern(e, fz, fehlt);
       this.ohneNaEinplanen(e, fehlt.na > 0 || (fehlt.nfs ?? 0) > 0);
@@ -5663,14 +5843,30 @@ export class Simulation extends GsKern {
     w.rv = null;
     this.log(e, `Rendezvous ${rtw.funkrufname} – ${nef.funkrufname}: ${label}`);
     this.fahre(nef, punkt, "rendezvous", true);
-    const r = this.rufname(this.sprecher(e, rtw));
+    const sp = this.sprecher(e, rtw);
+    const r = this.rufname(sp);
     const n = this.rufname(nef);
-    this.fzFunk(this.sprecher(e, rtw), nef, e, [
-      { von: r, text: `${n} von ${r}, kommen` },
-      { von: n, text: `Hier ${n}, kommen` },
-      { von: r, text: `Hier ${r}, fahren mit dem Patienten Richtung ${kh.kurzname || kh.name} los, Rendezvous ${label}, kommen` },
-      { von: n, text: `Hier ${n}, Rendezvous ${label} verstanden, Ende` },
-    ]);
+    // Paul 15.11.2026: das machen die Fahrzeuge untereinander aus – am Funk ein einfacher Begriff, der genaue Punkt bleibt im System
+    if (Math.random() < 0.5) {
+      // das NEF fragt nach dem Standort und schlägt den Treffpunkt vor
+      this.fzFunk(nef, sp, e, [
+        { von: n, text: `${r} von ${n}, kommen` },
+        { von: r, text: `Hier ${r}, kommen` },
+        { von: n, text: `Hier ${n}, Frage, wo ist gerade euer Standort?` },
+        { von: r, text: `Hier ${r}, befinden uns gerade ${standortText(rtw)}, kommen` },
+        { von: n, text: `Hier ${n}, verstanden, dann bitte um Rendezvous ${label}, kommen` },
+        { von: r, text: `Hier ${r}, Rendezvous ${label} verstanden, kommen` },
+        { von: n, text: `Hier ${n}, Ende` },
+      ]);
+    } else {
+      this.fzFunk(sp, nef, e, [
+        { von: r, text: `${n} von ${r}, kommen` },
+        { von: n, text: `Hier ${n}, kommen` },
+        { von: r, text: `Hier ${r}, fahren mit dem Patienten Richtung ${kh.kurzname || kh.name} los, Frage, Rendezvous ${label} möglich, kommen` },
+        { von: n, text: `Hier ${n}, Rendezvous ${label} möglich, kommen` },
+        { von: r, text: `Hier ${r}, verstanden, Ende` },
+      ]);
+    }
     this.emit();
   }
 
@@ -6105,12 +6301,20 @@ export class Simulation extends GsKern {
       return { na: f.na, rtw: f.rtw, bit: 0 };
     }
     if (e.gsKind) return { na: 0, rtw: 0, bit: 0 };
+    // Nachforderung eines KTW: gebraucht wird nur die Kompetenz (NEF bzw. NEF oder RTW-C), transportiert wird trotzdem
+    if (e.ktHilfe) {
+      const fz = this.einsatzFz(e);
+      const naDa = fz.some((x) => this.mitNotarzt(x));
+      const nfsDa = naDa || fz.some((x) => x.rmTyp === "RTW-C" || hatNFS(x.besetzung));
+      return { na: e.ktHilfe.braucht === "NA" && !naDa ? 1 : 0, rtw: 0, bit: 0, nfs: e.ktHilfe.braucht === "NFS" && !nfsDa ? 1 : 0 };
+    }
     const l = e.wahr.lage;
     if (!l) return { na: 0, rtw: 0, bit: 0 };
     const b = this.bedarfVon(e);
     const fz = this.einsatzFz(e);
     const na = fz.filter((x) => this.mitNotarzt(x)).length;
-    const tr = fz.filter((x) => this.transportfaehig(x)).length;
+    // mehrere Patienten: wer schon mit einem Patienten abgefahren ist, zählt weiter mit (auch wenn er wieder frei ist)
+    const tr = (e.abfahrten ?? 0) + fz.filter((x) => this.transportfaehig(x) && !(e.abfahrten && (x.phase === "transport" || x.phase === "uebergabe" || x.status === "zumZO" || x.status === "amZO"))).length;
     const bit = l.bit && !e.bitVerzicht && !fz.some((x) => x.rmTyp === "BIT") ? 1 : 0;
     let naFehlt = Math.max(0, b.na - na);
     let nfs = 0;
@@ -6778,12 +6982,45 @@ export class Simulation extends GsKern {
         }
         // was schon alarmiert ist (auch auf Anfahrt bzw. im Bereitstellungsraum), fehlt nicht mehr
         n.anzahl = noch;
-        if (t - n.erinnert > 5 * MIN) {
+        // Paul 15.11.2026: nach 5 Minuten erinnern, danach alle 10 Minuten (solange nichts alarmiert wird)
+        if (t - n.erinnert > ((n.erinnerungen ?? 0) === 0 ? 5 : 10) * MIN) {
           n.erinnert = t;
-          const fz = this.einsatzFz(e).find((x) => x.funkrufname === n.von) ?? this.einsatzFz(e)[0];
-          if (fz) this.fzRuft(fz, e, "nachforderung", n.art === "NFS" ? "Frage nochmal: ist ein NEF oder RTW-C verfügbar" : `Nachforderung ${n.art === "RTW" ? `${n.anzahl}× Rettungsmittel` : NF_NAME[n.art]} noch offen, wann können wir damit rechnen`);
+          n.erinnerungen = (n.erinnerungen ?? 0) + 1;
+          const fz = this.einsatzFz(e).find((x) => x.funkrufname === n.von) ?? Object.values(this.state.fahrzeuge).find((x) => x.funkrufname === n.von) ?? this.einsatzFz(e)[0];
+          const wer = n.art === "RTW" ? (n.anzahl === 1 ? "der weitere RTW" : `die ${n.anzahl} weiteren RTW`) : n.art === "NA" ? "der Notarzt" : n.art === "BIT" ? "der BIT" : "";
+          if (fz) this.fzRuft(fz, e, "nachforderung", n.art === "NFS" ? "Frage nochmal: ist ein NEF oder RTW-C verfügbar" : `Frage, ist ${wer} schon unterwegs, Nachforderung noch offen`);
         }
       }
+    }
+    this.partnerNachforderungTick(t);
+  }
+
+  /**
+   * Polizei bzw. Feuerwehr nachgefordert, aber nicht alarmiert (Paul 15.11.2026): die Besatzung meldet sich nach 5 Minuten
+   * wieder, danach alle 10 Minuten. Bitten (Krisenintervention, nicht nötige Berg-/Wasserrettung) nur einmal – ohne Folgen.
+   */
+  private partnerNachforderungTick(t: number): void {
+    for (const e of this.state.einsaetze) {
+      if (e.zustand === "abgeschlossen" || e.gs || e.gsKind || e.fremd || e.partnerErinnert == null) continue;
+      const fehlt = this.partnerFehlt(e).filter((x) => !partnerNurBitte(x));
+      if (!fehlt.length) continue;
+      const fz = this.einsatzFz(e).find((x) => this.beimPatienten(e, x) || x.phase === "suche");
+      if (!fz) continue;
+      e.partnerNf ??= {};
+      const faellig = fehlt.filter((x) => {
+        const nf = (e.partnerNf![x.art] ??= { erinnert: e.partnerErinnert ?? t, n: 0 });
+        return t - nf.erinnert > (nf.n === 0 ? 5 : 10) * MIN;
+      });
+      if (!faellig.length) continue;
+      for (const x of faellig) {
+        const nf = e.partnerNf![x.art]!;
+        nf.erinnert = t;
+        nf.n++;
+      }
+      e.partnerErinnert = t;
+      const blockiert = faellig.some((x) => x.blockiert);
+      this.log(e, `${fz.funkrufname} fragt nach ${faellig.map((x) => PARTNER[x.art].name).join(", ")}`);
+      this.fzRuft(this.sprecher(e, fz), e, "nachforderung", `Frage, ${faellig.length === 1 ? `ist die ${PARTNER[faellig[0].art].name}` : `sind ${faellig.map((x) => PARTNER[x.art].name).join(" und ")}`} schon unterwegs, benötigen ${faellig.map((x) => `${PARTNER[x.art].name} (${x.grund})`).join(" und ")}${blockiert ? ", ohne können wir nicht weiterarbeiten" : ""}`);
     }
   }
 
@@ -7497,6 +7734,42 @@ export class Simulation extends GsKern {
       }
       case "einsatz":
         return fz.einsatzId ? `${hier}, Einsatz verstanden, kommen` : `${hier}, Einsatz verstanden, rücken aus, kommen`;
+      case "abziehen": {
+        // Paul 15.11.2026: geht bis Status 4 – solange das Fahrzeug noch keinen Zielort gebucht hat
+        if (!fz.einsatzId) {
+          this.standortHalten(fz);
+          return `${hier}, verstanden, warten auf den neuen Einsatz, kommen`;
+        }
+        const ev = this.einsatz(fz.einsatzId);
+        if (["transport", "uebergabe"].includes(fz.phase) || (ev?.kh && this.transportfaehig(fz) && ["warteKH", "rendezvous", "treffpunkt"].includes(fz.phase)) || fz.begleitet)
+          return `${hier}, haben den Patienten schon übernommen, Zielort ist gebucht, Abziehen nicht möglich, kommen`;
+        const ziel = /\b(richtung|nach|weiter)\b/i.test(text) ? zielImText(text, fz) : null;
+        this.abziehen(fz, ziel);
+        return `${hier}, verstanden, Einsatz abgegeben${ziel ? `, fahren ${ziel.wohin.replace(/^auf die /, "Richtung ").replace(/^nach /, "Richtung ")}` : ""}, warten auf den neuen Einsatz, kommen`;
+      }
+      case "halten": {
+        if (fz.einsatzId && e) {
+          // im Einsatz heißt „warten“ wie bisher: auf den Notarzt bzw. die Leitstelle warten
+          e.naAngekuendigt ??= { um: this.state.zeit, wer: "Notarzt" };
+          return `${hier}, verstanden, wir warten, kommen`;
+        }
+        if (fz.kt?.aktiv) return `${hier}, sind im Krankentransport, Standort halten nicht möglich, kommen`;
+        if (this.aufWache(fz)) return `${hier}, stehen auf der Dienststelle, bleiben hier, kommen`;
+        this.standortHalten(fz);
+        return `${hier}, verstanden, halten Standort ${standortText(fz)}, kommen`;
+      }
+      case "verlegen": {
+        if (fz.einsatzId || fz.kt?.aktiv) return `${hier}, sind noch im Einsatz, Standortwechsel erst danach möglich, kommen`;
+        const ziel = zielImText(text, fz);
+        if (!ziel) return `${hier}, Ziel nicht verstanden, bitte wiederholen, kommen`;
+        if (distanceM(ziel, fz.heim) < 300) return this.zurueckHeim(fz, hier);
+        this.verlegen(fz, ziel);
+        return `${hier}, verstanden, verlegen Standort ${ziel.wohin}, melden uns frei Funk, kommen`;
+      }
+      case "heim": {
+        if (fz.einsatzId || fz.kt?.aktiv) return `${hier}, verstanden, nach dem Einsatz zurück zur Dienststelle, kommen`;
+        return this.zurueckHeim(fz, hier);
+      }
       case "info": {
         if (absicht.thema === "naKommt" && e) {
           // die Besatzung richtet sich danach: sie wartet mit dem Transport auf den Notarzt
@@ -7528,8 +7801,21 @@ export class Simulation extends GsKern {
           e.naAngekuendigt ??= { um: this.state.zeit, wer: "Notarzt" };
           return `${hier}, verstanden, wir warten, kommen`;
         }
-        if (absicht.thema === "ziel") return `${hier}, Zielkrankenhaus verstanden, kommen`;
-        if (absicht.thema === "zusatz") return `${hier}, Information verstanden, kommen`;
+        if (absicht.thema === "ziel") {
+          // Krankenhaus ändern (Paul 15.11.2026): neue Route, alter Platz frei, neuer gebucht
+          const h = e ? khImText(text) : null;
+          if (h && e && this.transportfaehig(fz) && ["transport", "warteKH"].includes(fz.phase) && e.kh?.hospitalId !== h.id) {
+            const min = this.khAendern(e, h);
+            return `${hier}, verstanden, fahren ins ${h.kurzname || h.name}${min ? `, Eintreffen in ca. ${min} Minute${min === 1 ? "" : "n"}` : ""}, kommen`;
+          }
+          if (h && e?.kh?.hospitalId === h.id) return `${hier}, verstanden, fahren ins ${h.kurzname || h.name}, kommen`;
+          return `${hier}, Zielkrankenhaus verstanden, kommen`;
+        }
+        if (absicht.thema === "zusatz") {
+          // Infos (auch aus Folgeanrufen) quittiert die Besatzung mit dem Inhalt – ohne weitere Folgen (Paul 15.11.2026)
+          const inhalt = infoKurz(text);
+          return inhalt ? `${hier}, verstanden, ${inhalt}, kommen` : `${hier}, Information verstanden, kommen`;
+        }
         return `${hier}, verstanden, kommen`;
       }
       case "frage":
@@ -7545,6 +7831,25 @@ export class Simulation extends GsKern {
             if (fz.phase === "uebergabe") return `${hier}, sind bei der Übergabe im Krankenhaus, kommen`;
             if (fz.phase === "rueckfahrt") return `${hier}, sind frei und auf dem Rückweg zur Dienststelle, kommen`;
             return `${hier}, sind frei, kommen`;
+          case "standort":
+            return `${hier}, befinden uns gerade ${standortText(fz, this.fahrtRichtung(fz))}${this.phaseKurz(fz, e)}, kommen`;
+          case "frei": {
+            const m = this.minutenBisFrei(fz, e);
+            if (m === 0) return `${hier}, sind frei, kommen`;
+            if (m === null) return `${hier}, sind auf Anfahrt, Eintreffen in ca. ${min ?? "?"} Minute${min === 1 ? "" : "n"}, wann wir frei sind, ist noch offen, kommen`;
+            return `${hier}, voraussichtlich in ca. ${m} Minuten wieder frei, kommen`;
+          }
+          case "imKh": {
+            const kh = e ? this.khFuerTransport(e) : undefined;
+            const name = kh ? kh.kurzname || kh.name : "Krankenhaus";
+            if (fz.phase === "transport") return `${hier}, Eintreffen im ${name} in ca. ${min ?? "?"} Minute${min === 1 ? "" : "n"}, kommen`;
+            if (e && (vorOrt || fz.phase === "rendezvous" || fz.phase === "treffpunkt") && this.transportfaehig(fz)) {
+              const rest = fz.phaseEnde ? Math.max(0, fz.phaseEnde - this.state.zeit) : 5 * MIN;
+              return `${hier}, sind noch beim Patienten, im ${name} in ca. ${Math.max(1, Math.round((rest + this.khFahrzeit(fz, e)) / MIN))} Minuten, kommen`;
+            }
+            if (fz.phase === "uebergabe") return `${hier}, sind bereits im ${name} bei der Übergabe, kommen`;
+            return `${hier}, haben keinen Transport, kommen`;
+          }
           case "werte": {
             // Messwerte nur auf ausdrückliche Nachfrage – und nur die, die es im Fall gibt
             if (!vorOrt || !e) return `${hier}, sind noch nicht beim Patienten, kommen`;
@@ -7593,6 +7898,160 @@ export class Simulation extends GsKern {
         }
     }
     return null;
+  }
+
+  // ------------------------------------------------------------------ Standort (Paul 15.11.2026)
+
+  /** Freies Fahrzeug hält am aktuellen Standort – höchstens 10 Minuten, danach weiter wie vorher (Status bleibt) */
+  private standortHalten(fz: SimFahrzeug, minuten = 10): void {
+    const t = this.state.zeit;
+    this.position(fz, t);
+    const vorher = fz.standort?.art === "verlegt" && fz.standort.unterwegs && fz.standort.ziel ? { art: "verlegt" as const, ziel: fz.standort.ziel } : null;
+    if (fz.standort?.art === "verlegt" && !fz.standort.unterwegs) return; // steht schon am Verlegungsort
+    this.routingBusy.delete(fz.id);
+    this.fahrtNr.set(fz.id, (this.fahrtNr.get(fz.id) ?? 0) + 1);
+    fz.fahrt = null;
+    fz.phase = "frei";
+    fz.phaseEnde = null;
+    fz.standort = { art: "halten", bis: t + minuten * MIN, danach: vorher };
+  }
+
+  /** Zur Gebietsabdeckung an einen anderen Ort bzw. auf eine andere Dienststelle (Status 6, bis zum nächsten Auftrag) */
+  private verlegen(fz: SimFahrzeug, ziel: LatLon & { label: string; funk: string }): void {
+    this.position(fz, this.state.zeit);
+    fz.standort = { art: "verlegt", ziel: { lat: ziel.lat, lon: ziel.lon, label: ziel.label, funk: ziel.funk }, unterwegs: true };
+    if (fz.status !== "freiFunk") this.setStatus(fz, "freiFunk");
+    this.fahre(fz, ziel, "rueckfahrt", false);
+  }
+
+  /** Zurück zur eigenen Dienststelle („dann mit Frei Wache bestätigen“) */
+  private zurueckHeim(fz: SimFahrzeug, hier: string): string {
+    fz.standort = null;
+    if (this.aufWache(fz)) return `${hier}, stehen bereits auf der Dienststelle, kommen`;
+    this.position(fz, this.state.zeit);
+    this.fahre(fz, fz.heim, "rueckfahrt", false);
+    return `${hier}, verstanden, fahren zurück zur Dienststelle, melden uns mit Frei Wache, kommen`;
+  }
+
+  /** Abziehen: das Fahrzeug gibt seinen Einsatz ab und wartet (bzw. fährt in Richtung) auf den neuen Einsatz */
+  private abziehen(fz: SimFahrzeug, ziel: (LatLon & { label: string; funk: string }) | null): void {
+    const e = fz.einsatzId ? this.einsatz(fz.einsatzId) : undefined;
+    const bleiben = e ? this.einsatzFz(e).filter((x) => x.id !== fz.id) : [];
+    if (e) {
+      this.log(e, `${fz.funkrufname} abgezogen (Funk)${bleiben.length ? "" : " – Einsatz braucht ein neues Fahrzeug"}`);
+      this.abzugOffen = e.id;
+    }
+    try {
+      this.freigeben(fz);
+    } finally {
+      this.abzugOffen = null;
+    }
+    if (e && !bleiben.length && e.zustand !== "abgeschlossen") e.zustand = "offen";
+    if (ziel) {
+      this.position(fz, this.state.zeit);
+      fz.standort = { art: "richtung", ziel: { lat: ziel.lat, lon: ziel.lon, label: ziel.label, funk: ziel.funk }, unterwegs: true };
+      this.fahre(fz, ziel, "rueckfahrt", false);
+    } else this.standortHalten(fz);
+  }
+
+  /** Krankenhaus während des Transports ändern: neue Buchung (alter Platz frei), alle Transportfahrzeuge fahren um */
+  private khAendern(e: Einsatz, h: Hospital): number | null {
+    const grund = e.kh?.grund ?? e.verdacht ?? this.verdacht(e);
+    const warten = this.einsatzFz(e).some((x) => x.phase === "warteKH");
+    if (!e.kh && warten) {
+      this.bucheKh(e.id, h.id, grund);
+    } else {
+      e.kh = { hospitalId: h.id, grund, durch: "dispo", zeit: this.state.zeit };
+      e.zo = { lat: h.lat, lon: h.lon, label: h.name };
+      e.khAnfrage = null;
+      this.log(e, `Zielkrankenhaus geändert (Funk): ${h.name}`);
+      this.khPlatzBelegen(e);
+      for (const x of this.einsatzFz(e)) if (x.phase === "transport") this.fahre(x, h, "transport", this.kritisch(e));
+      this.startTransport(e);
+    }
+    const fz = this.einsatzFz(e).find((x) => this.transportfaehig(x));
+    return fz ? Math.max(1, Math.round(((distanceM(fz, h) * 1.35) / ((this.kritisch(e) ? 70 : 55) / 3.6)) / 60)) : null;
+  }
+
+  /** Wohin das Fahrzeug gerade fährt (Ortsname am Ende der Fahrt) */
+  private fahrtRichtung(fz: SimFahrzeug): string | null {
+    const c = fz.fahrt?.coords?.[fz.fahrt.coords.length - 1];
+    if (!c) return null;
+    return naechsterOrt({ lat: c[1], lon: c[0] }, 6000)?.ort ?? null;
+  }
+
+  /** Kurzer Zusatz zum Standort: was das Fahrzeug gerade tut */
+  private phaseKurz(fz: SimFahrzeug, e: Einsatz | undefined): string {
+    switch (fz.phase) {
+      case "ausruecken":
+      case "anfahrt":
+        return ", sind auf Anfahrt zum Einsatzort";
+      case "vorOrt":
+      case "warteKH":
+      case "suche":
+        return ", sind beim Patienten";
+      case "transport": {
+        const kh = e ? this.khFuerTransport(e) : undefined;
+        return `, mit Patient auf dem Weg ins ${kh ? kh.kurzname || kh.name : "Krankenhaus"}`;
+      }
+      case "uebergabe":
+        return ", bei der Übergabe im Krankenhaus";
+      case "rueckfahrt":
+        return fz.standort?.unterwegs ? `, unterwegs ${fz.standort.art === "verlegt" ? "zum neuen Standort" : "Richtung neuer Einsatz"}` : ", frei auf der Rückfahrt zur Dienststelle";
+      case "frei":
+        return fz.standort?.art === "halten" ? ", halten Standort" : fz.standort?.art === "verlegt" ? ", stehen frei Funk am Verlegungsort" : "";
+      default:
+        return "";
+    }
+  }
+
+  /** In wie vielen Minuten ist das Fahrzeug voraussichtlich frei? 0 = jetzt frei, null = noch nicht absehbar (Anfahrt) */
+  private minutenBisFrei(fz: SimFahrzeug, e: Einsatz | undefined): number | null {
+    if (!fz.einsatzId || !e) return 0;
+    const t = this.state.zeit;
+    const rest = fz.phaseEnde ? Math.max(0, fz.phaseEnde - t) : 5 * MIN;
+    const uebergabe = 12 * MIN;
+    let ms: number;
+    switch (fz.phase) {
+      case "ausruecken":
+      case "anfahrt":
+      case "naAbholung":
+      case "naEinstieg":
+        return null;
+      case "vorOrt":
+      case "warteKH":
+      case "suche":
+      case "rendezvous":
+      case "treffpunkt":
+        ms = this.transportfaehig(fz) && e.wahr.transport ? rest + this.khFahrzeit(fz, e) + uebergabe : rest;
+        break;
+      case "transport":
+        ms = rest + uebergabe;
+        break;
+      case "uebergabe":
+        ms = rest;
+        break;
+      default:
+        ms = rest;
+    }
+    return Math.max(1, Math.round(ms / MIN));
+  }
+
+  /** Standort-Anweisungen: Halten läuft nach 10 Minuten ab, nach dem Abziehen wartet das Fahrzeug am Ziel der Richtung */
+  private standortTick(t: number): void {
+    for (const fz of Object.values(this.state.fahrzeuge)) {
+      const st = fz.standort;
+      if (!st) continue;
+      if (fz.einsatzId || fz.kt?.aktiv || fz.pilot) {
+        fz.standort = null;
+        continue;
+      }
+      if (st.art === "halten" && st.bis != null && t >= st.bis && fz.phase === "frei") {
+        fz.standort = null;
+        if (st.danach) this.verlegen(fz, st.danach.ziel);
+        else if (distanceM(fz, fz.heim) >= 80 && !this.routingBusy.has(fz.id)) this.fahre(fz, fz.heim, "rueckfahrt", false);
+      }
+    }
   }
 
   /** Handy-Ortung anstoßen; das Ergebnis kommt nach einigen Sekunden (Spielzeit, spätestens nach ein paar echten Sekunden) */
@@ -7694,7 +8153,7 @@ export class Simulation extends GsKern {
         anrufer: hotlineAnrufer(d),
         verzoegerungMin: (vonHeim ? rnd(0, 8) : rnd(0, 4)) + (Math.random() < 0.1 ? rnd(8, 20) : 0),
         nichtDa: !d.sek && Math.random() < 0.03,
-        verschlechterung: !d.sek && Math.random() < 0.02,
+        verschlechterung: !d.sek && Math.random() < Math.max(0, Math.min(100, this.settings.ktVerschlechterungProzent ?? 1)) / 100,
       },
       fz: null,
       anruf: hotline ? this.ktNeuerAnruf(null) : null,
@@ -8733,6 +9192,9 @@ export class Simulation extends GsKern {
     const e = this.erstelleEinsatz({ lat: fz.lat, lon: fz.lon, adresse: label, code, meldung: `Nachforderung ${fz.funkrufname}: Patient ${k.d.patient.name} verschlechtert sich während des Krankentransports (${k.d.grund}).` });
     e.adresse = { lat: fz.lat, lon: fz.lon, label };
     e.zustand = "offen";
+    // nach den Kompetenz-Regeln (Paul 15.11.2026): ein NEF bzw. „NEF oder RTW-C“ (Notfallsanitäter reicht)
+    const braucht: "NA" | "NFS" = Math.random() < 0.6 ? "NA" : "NFS";
+    e.ktHilfe = { braucht, ktwId: fz.id, ktId: k.id };
     this.log(e, `Nachforderung durch ${fz.funkrufname} (Krankentransport ${k.nummer})`);
     this.ktLog(k, `Patient verschlechtert sich – Nachforderung ${e.nummer}`);
     fz.kt!.wartetAuf = e.id;
@@ -8740,16 +9202,30 @@ export class Simulation extends GsKern {
     // KTW bleibt stehen, bis die Nachforderung da ist (spätestens 40 min, dann fährt er selbst weiter)
     fz.phase = "ktHalt";
     fz.phaseEnde = this.state.zeit + 40 * MIN;
-    this.fzRuft(fz, e, "nachforderung", `Patient verschlechtert sich, benötigen RTW mit Notarzt, Position ${label.split("Position ")[1]}`);
+    this.nachfordern(e, fz, braucht === "NA" ? { na: 1, rtw: 0, bit: 0 } : { na: 0, rtw: 0, bit: 0, nfs: 1 });
+    const wo = standortText(fz);
+    const was = pick(["Atemnot", "Brustschmerzen", "zunehmend eingetrübt", "Kreislauf instabil", "Krampfanfall"]);
+    this.fzRuft(fz, e, "nachforderung", braucht === "NA" ? `Patient verschlechtert sich während des Transports, ${was}, benötigen NEF, Standort ${wo}` : `Patient verschlechtert sich während des Transports, ${was}, Frage: ist ein NEF oder RTW-C verfügbar, Standort ${wo}`);
   }
 
-  /** Ein Fahrzeug der Nachforderung ist da: KTW übergibt den Patienten und fährt weiter */
-  private ktHilfeDa(e: Einsatz): void {
+  /**
+   * Ein Fahrzeug der Nachforderung ist da: kann es transportieren (RTW, RTW-C), übergibt der KTW den Patienten und fährt
+   * weiter; ist es ein NEF, versorgt der Notarzt, danach fährt der KTW mit dem Patienten weiter (Notarzt-Begleitung).
+   */
+  private ktHilfeDa(e: Einsatz, da?: SimFahrzeug): void {
     for (const fz of Object.values(this.state.fahrzeuge)) {
       if (fz.kt?.wartetAuf !== e.id) continue;
       const plan = fz.kt;
-      plan.wartetAuf = null;
       const k = plan.wartetKt ? this.ktAuftrag(plan.wartetKt) : undefined;
+      if (da && !this.transportfaehig(da)) {
+        // NEF: versorgt im KTW, danach geht der Transport weiter; das NEF ist danach frei (Lage ohne weiteren Bedarf)
+        plan.wartetAuf = null;
+        if (k) this.ktLog(k, `${da.funkrufname} versorgt den Patienten im ${fz.funkrufname}, danach Transport weiter`);
+        fz.phaseEnde = this.state.zeit + rnd(10, 15) * MIN;
+        e.wahr.transport = false;
+        continue;
+      }
+      plan.wartetAuf = null;
       if (k && k.status === "anBord") {
         k.status = "erledigt";
         this.ktLog(k, `Patient an ${e.nummer} übergeben`);

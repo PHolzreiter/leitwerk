@@ -103,7 +103,7 @@ export function fahrtzielText(fz: SimFahrzeug): string {
     const k = h ? sim.ktAuftrag(h.kt) : undefined;
     if (k) return ortKurz((h.art === "ab" ? k.d.von : k.d.nach)?.label);
   }
-  if (fz.phase === "rueckfahrt") return wache(fz);
+  if (fz.phase === "rueckfahrt") return fz.standort?.unterwegs && fz.standort.ziel ? fz.standort.ziel.funk : wache(fz);
   return "";
 }
 
