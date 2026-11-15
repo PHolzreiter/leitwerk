@@ -186,13 +186,14 @@ function infoKurz(text: string): string {
 }
 
 /** Storno/Endegrund je Fahrzeug (Paul 15.11.2026) – steht bei den erledigten Einsätzen, leer = mit Transport */
-export type Endegrund = "uebergabe" | "storno" | "revers" | "belassung" | "verstorben";
+export type Endegrund = "uebergabe" | "storno" | "revers" | "belassung" | "verstorben" | "fehleinsatz";
 export const ENDEGRUND_TEXT: Record<Endegrund, string> = {
   uebergabe: "Übergabe an anderes Einsatzmittel",
   storno: "Storno durch Leitstelle",
   revers: "Patient verweigert Mitfahrt",
   belassung: "Untersuchung/Behandlung ohne Transport",
   verstorben: "NACA 7: Patient verstorben",
+  fehleinsatz: "Fehleinsatz",
 };
 
 /** Partner nur als Bitte (Krisenintervention, Berg-/Wasserrettung ohne die es auch geht): einmal fragen, keine Folgen */
@@ -401,8 +402,17 @@ export type PilotPlan =
   | { art: "transport"; hospitalId: string; grund?: string }
   /** Patient an den RTW übergeben (mit oder ohne Notarzt im RTW); der Pilot kann das Krankenhaus gleich buchen */
   | { art: "uebergabe"; naMit: boolean; hospitalId?: string; grund?: string }
-  /** kein Transport: Patient bleibt vor Ort, Revers oder verstorben */
-  | { art: "kein"; grund: "kein" | "revers" | "tot" };
+  /** kein Transport: Patient bleibt vor Ort (Belassung), Revers, verstorben oder Fehleinsatz – wird der Endegrund */
+  | { art: "kein"; grund: PilotKeinGrund };
+
+/** Gründe für „kein Transport“ beim Spieler-NAH (Paul 15.11.2026: wie die Endegründe der Leitstelle) */
+export type PilotKeinGrund = "kein" | "revers" | "tot" | "fehleinsatz";
+export const PILOT_KEIN: { id: PilotKeinGrund; t: string; s: string; g: Endegrund }[] = [
+  { id: "kein", t: "Untersuchung/Behandlung ohne Transport", s: "Patient bleibt vor Ort (Belassung)", g: "belassung" },
+  { id: "revers", t: "Patient verweigert Mitfahrt", s: "Revers unterschrieben", g: "revers" },
+  { id: "tot", t: "NACA 7: Patient verstorben", s: "Tod durch den Notarzt festgestellt", g: "verstorben" },
+  { id: "fehleinsatz", t: "Fehleinsatz", s: "kein Patient, kein Einsatzgrund", g: "fehleinsatz" },
+];
 
 /** Spieler-NAH: ein Mitspieler fliegt diesen Hubschrauber über das Piloten-Interface */
 export interface PilotInfo {
@@ -2749,9 +2759,10 @@ export class Simulation extends GsKern {
         this.fzRuft(fz, e, "info", `${grund}, rücken ein${andere.length ? `, ${andere.map((x) => this.rufname(x)).join(" und ")} kann storniert werden` : ""}`);
         for (const x of andere) {
           this.log(e, `Storno an ${x.funkrufname} (Fehleinsatz)`);
-          this.endegrund(e, x, "storno");
+          this.endegrund(e, x, "fehleinsatz");
           this.freigeben(x);
         }
+        this.endegrund(e, fz, "fehleinsatz");
         this.freigeben(fz);
         break;
       }
@@ -9817,6 +9828,12 @@ export class Simulation extends GsKern {
     const p = fz.pilot!;
     const name = fz.funkrufname;
     const lf = e.wahr.lage?.fall;
+    if (plan.art === "kein" && !PILOT_KEIN.some((x) => x.id === plan.grund)) return "Unbekannter Grund";
+    // vorher „kein Transport“ gewählt, jetzt doch Transport/Übergabe: der gewählte Endegrund fällt weg
+    if (plan.art !== "kein" && p.plan?.art === "kein" && e.endegrund?.[fz.id]) {
+      delete e.endegrund[fz.id];
+      this.endegrundVonHand.delete(`${e.id}|${fz.id}`);
+    }
     switch (plan.art) {
       case "transport": {
         const h = store.get("hospitals", plan.hospitalId);
@@ -9863,11 +9880,14 @@ export class Simulation extends GsKern {
       case "kein": {
         e.wahr.transport = false;
         if (plan.grund === "revers") e.wahr.revers = true;
-        const text = plan.grund === "revers" ? "Transportverweigerung, Revers unterschrieben" : plan.grund === "tot" ? "Patient verstorben, Tod durch den Notarzt festgestellt" : "kein Transport erforderlich";
+        const text = plan.grund === "revers" ? "Transportverweigerung, Revers unterschrieben" : plan.grund === "tot" ? "Patient verstorben, Tod durch den Notarzt festgestellt" : plan.grund === "fehleinsatz" ? "Fehleinsatz" : "kein Transport erforderlich";
         // nicht über Funk (Paul 14./15.11.2026) – Storno/Endegrund beim Einsatz
         this.log(e, `${name}: ${text}`);
-        const g: Endegrund = plan.grund === "revers" ? "revers" : plan.grund === "tot" ? "verstorben" : "belassung";
+        const g: Endegrund = PILOT_KEIN.find((x) => x.id === plan.grund)?.g ?? "belassung";
+        // der Pilot wählt selbst – gilt wie von Hand gesetzt (auch eine spätere Änderung)
+        this.endegrundVonHand.delete(`${e.id}|${fz.id}`);
         this.endegrund(e, fz, g);
+        this.endegrundVonHand.add(`${e.id}|${fz.id}`);
         // RTW, die auf ein Krankenhaus warten, werden frei
         for (const x of this.einsatzFz(e))
           if (x !== fz && this.transportfaehig(x) && x.phase === "warteKH") {

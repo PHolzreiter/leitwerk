@@ -1,5 +1,10 @@
 # Änderungen
 
+## 0.116.0-beta.58 – Fehleinsatz als Endegrund, Piloten wählen den Endegrund
+- **Endegrund „Fehleinsatz“:** Findet die Besatzung keinen Patienten, steht bei allen Fahrzeugen des Einsatzes „Fehleinsatz“. In der Einsatzmaske ist er wie die anderen Gründe wählbar.
+- **Spieler-NAH wählt den Endegrund:** Bei „Kein Transport“ wählt der Pilot direkt einen der Endegründe – „Untersuchung/Behandlung ohne Transport“, „Patient verweigert Mitfahrt“, „NACA 7: Patient verstorben“ oder „Fehleinsatz“. Das gilt im Piloten-Fenster, im EFB, am Handy, im Tablet der H145 und im X-Plane-Plugin. Am Einsatzort lässt sich der Grund noch ändern; wählt der Pilot danach doch einen Transport, fällt er weg.
+- X-Plane-Plugin 0.2.5: Auswahl „Kein Transport“ mit vier Knöpfen.
+
 ## 0.116.0-beta.57 – Ordner für eigene Namen
 - **Neuer Ordner „Dokumente/LeitWerk/Namen“** – wie bei den Codelisten: Namens-Dateien („neutral;eigen“) liegen dort, eine geladene Datei wird hineinkopiert. Unter Einstellungen › Realismus › Namens-Ersetzungen steht jede Datei mit „Verwenden“ und „Löschen“, dazu die eingebauten neutralen Namen, „Ordner öffnen“ und „Neu einlesen“.
 - **Vorlage im Ordner:** „Vorlage_Namen.csv“ listet alle neutralen Namen (Organisationen, Hubschrauber, Dienststellen) mit leerer rechter Spalte – ausfüllen, unter eigenem Namen speichern, verwenden. Leere Zeilen gelten nicht.

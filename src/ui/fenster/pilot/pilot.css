@@ -314,7 +314,7 @@
 .ap .pk-skopf .n{width:18px;height:18px;border-radius:50%;background:var(--akzent);color:var(--auf-akzent);display:grid;place-items:center;font-size:11px;font-weight:700}
 .ap .pk-offen{display:flex;align-items:center;gap:8px;padding:6px 10px;font-size:12.5px;color:var(--dim)}
 .ap .pk-offen .n{width:18px;height:18px;border-radius:50%;border:1.5px solid var(--linie);display:grid;place-items:center;font-size:11px;font-weight:700}
-.ap .pk-wahl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.ap .pk-wahl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
 .ap .pk-wahl button{all:unset;box-sizing:border-box;padding:9px 8px;border-radius:9px;border:1px solid var(--linie);text-align:center;font-weight:600;font-size:13px;cursor:pointer;transition:transform .12s}
 .ap .pk-wahl button small{display:block;font-size:11px;font-weight:500;color:var(--dim);margin-top:2px}
 .ap .pk-wahl button:hover{border-color:var(--akzent)}

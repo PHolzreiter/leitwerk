@@ -1121,7 +1121,7 @@ static void buchenZeichnen() {
     std::vector<Wahl> ws;
     const Json& w = b["keinWahl"];
     for (size_t i = 0; i < w.size(); i++) ws.push_back({w[i]["id"].t(), w[i]["t"].t(), w[i]["s"].t(), (bool)w[i]["on"], false});
-    int k = wahlReihe(ws, 3, "##kein");
+    int k = wahlReihe(ws, 2, "##kein");
     if (k >= 0) {
       frage = {ws[k].t + " \xE2\x80\x93 so an die Leitstelle melden?", "Melden", "bu:kein:" + ws[k].id};
       frageOffen = true;

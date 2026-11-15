@@ -18,7 +18,7 @@ import { mp, meinName } from "../../net/mehrspieler";
 import { findCode } from "../../sim/codes";
 import { ktCode } from "../../sim/ktCodes";
 import { antwortLabel, fragenImAblauf, type Frage } from "../../abfrage/schema";
-import { fliegt, sim, type Einsatz, type PilotPlan, type SimFahrzeug } from "../../sim/engine";
+import { fliegt, PILOT_KEIN, sim, type Einsatz, type PilotKeinGrund, type PilotPlan, type SimFahrzeug } from "../../sim/engine";
 import { distanceM } from "../../sim/geo";
 import type { StatusKey } from "../../sim/settings";
 import { availableMaps, createMap, type MapHandle } from "../../map";
@@ -1695,13 +1695,7 @@ function entscheidungDaten(fz: SimFahrzeug, e: Einsatz): Record<string, unknown>
     wahl: SEITEN.map((s) => ({ id: s.id, t: s.titel, d: s.text, on: planSeite === s.id, klick: () => ((planSeite = s.id), neu()) })),
     keinWahl:
       planSeite === "kein"
-        ? (
-            [
-              ["kein", "Bleibt vor Ort", "kein Transport nötig"],
-              ["revers", "Revers", "Transport verweigert"],
-              ["tot", "Verstorben", "Tod durch den Notarzt festgestellt"],
-            ] as const
-          ).map(([g, tt, s]) => ({ id: g, t: tt, s, on: p?.art === "kein" && p.grund === g, klick: () => setzen({ art: "kein", grund: g }) }))
+        ? PILOT_KEIN.map(({ id: g, t: tt, s }) => ({ id: g, t: tt, s, on: p?.art === "kein" && p.grund === g, klick: () => setzen({ art: "kein", grund: g }) }))
         : null,
     rtwFehlt,
     // Übergabe an den RTW: der RTW kann selbst buchen (Tablet: „Übergeben – RTW bucht selbst“ oder „Selbst buchen“)
@@ -1875,7 +1869,7 @@ function planText(p: PilotPlan | null | undefined): string {
   const grund = (g?: string) => (g ? ` (${buchungName(g)})` : "");
   if (p.art === "transport") return `NAH transportiert${kh(p.hospitalId)}${grund(p.grund)}`;
   if (p.art === "uebergabe") return `${p.naMit ? `NA fährt im RTW mit${kh(p.hospitalId)}, NAH fliegt leer nach` : `RTW fährt allein${kh(p.hospitalId)}`}${p.hospitalId ? grund(p.grund) : " – RTW bucht selbst"}`;
-  return p.grund === "revers" ? "Kein Transport – Revers" : p.grund === "tot" ? "Patient verstorben" : "Kein Transport";
+  return `Kein Transport – ${PILOT_KEIN.find((x) => x.id === p.grund)?.t ?? "Untersuchung/Behandlung ohne Transport"}`;
 }
 
 /** Auswahl am Berufungsort: wer transportiert (danach die Buchung wie in der Leitstelle) */
@@ -1889,7 +1883,7 @@ const SEITEN: { id: PlanSeite; titel: string; text: string }[] = [
   { id: "nah", titel: "NAH transportiert", text: "Patient fliegt mit uns" },
   { id: "rtw", titel: "RTW fährt allein", text: "Übergabe an den RTW, Notarzt bleibt beim NAH" },
   { id: "naMit", titel: "NA im RTW, NAH leer", text: "Notarzt fährt im RTW mit, wir fliegen leer ins selbe Spital" },
-  { id: "kein", titel: "Kein Transport", text: "bleibt vor Ort, Revers oder verstorben" },
+  { id: "kein", titel: "Kein Transport", text: "Behandlung vor Ort, Revers, verstorben oder Fehleinsatz" },
 ];
 const FARBE_DRING: Record<"rot" | "gelb" | "gruen", Dringlichkeit> = { rot: 30, gelb: 20, gruen: 10 };
 
@@ -2335,7 +2329,7 @@ function handyBuchen(b: string): void {
     zw.dring = Number(wert) as Dringlichkeit;
     zw.schritt = 4;
   }
-  else if (art === "kein" && ["kein", "revers", "tot"].includes(wert)) setzen({ art: "kein", grund: wert as "kein" | "revers" | "tot" });
+  else if (art === "kein" && PILOT_KEIN.some((x) => x.id === wert)) setzen({ art: "kein", grund: wert as PilotKeinGrund });
   else if (art === "rtwbucht" && (planSeite === "rtw" || planSeite === "naMit")) setzen({ art: "uebergabe", naMit: planSeite === "naMit" });
   else if (art === "kh" && store.get("hospitals", wert)) {
     const grund = zw.sym ? zuweisungId(zw.sym.id, zw.dring, zw.alter) : "";

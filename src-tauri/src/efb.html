@@ -618,7 +618,7 @@
     for (i = 0; i < b.wahl.length; i++) h += '<button class="' + (b.wahl[i].on ? "on" : "") + '" data-bu="seite:' + esc(b.wahl[i].id) + '"><b>' + esc(b.wahl[i].t) + "</b><small>" + esc(b.wahl[i].d) + "</small></button>";
     h += "</div>";
     if (b.keinWahl) {
-      h += '<div class="wahl drei">';
+      h += '<div class="wahl">';
       for (i = 0; i < b.keinWahl.length; i++) h += '<button class="' + (b.keinWahl[i].on ? "on" : "") + '" data-kein="' + esc(b.keinWahl[i].id) + '" data-t="' + esc(b.keinWahl[i].t) + '"><b>' + esc(b.keinWahl[i].t) + "</b><small>" + esc(b.keinWahl[i].s) + "</small></button>";
       h += "</div>";
     }

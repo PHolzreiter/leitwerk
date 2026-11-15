@@ -197,7 +197,7 @@ function rdEintrag(e: Einsatz): Roh {
   // Storno/Endegrund (Paul 15.11.2026): was den Einsatz beendet hat – je Fahrzeug in der Einsatzmaske änderbar
   if (lage === "erledigt" && e.endegrund) {
     const g = Object.values(e.endegrund);
-    const haupt = (["verstorben", "revers", "belassung"] as Endegrund[]).find((x) => g.includes(x)) ?? (!e.kh && g.length && g.every((x) => x === "storno") ? "storno" : null);
+    const haupt = (["verstorben", "revers", "belassung", "fehleinsatz"] as Endegrund[]).find((x) => g.includes(x)) ?? (!e.kh && g.length && g.every((x) => x === "storno") ? "storno" : null);
     if (haupt) mk.push(MK(ENDEGRUND_TEXT[haupt], "", "Storno/Endegrund – je Fahrzeug in der Einsatzmaske änderbar"));
   }
   if (e.fremd) mk.push(MK(`Zone ${e.fremd.zone}`, "", "Einsatz einer anderen Zone – dort disponiert, deine Fahrzeuge fahren mit"));

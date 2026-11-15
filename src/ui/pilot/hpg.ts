@@ -18,7 +18,7 @@ import { buchungName } from "../../data/klinik";
 import { khLandung, type Hospital } from "../../data/model";
 import { store } from "../../data/store";
 import { findCode } from "../../sim/codes";
-import { sim, type Einsatz, type PilotPlan, type SimFahrzeug } from "../../sim/engine";
+import { sim, type Einsatz, type PilotKeinGrund, type PilotPlan, type SimFahrzeug } from "../../sim/engine";
 import { distanceM } from "../../sim/geo";
 import type { StatusKey } from "../../sim/settings";
 import { inTauri } from "../../platform";
@@ -147,8 +147,8 @@ function nachricht(text: string): void {
     return;
   }
   if (tag === "plan_uebergabe_0" || tag === "plan_uebergabe_1") return handeln.plan({ art: "uebergabe", naMit: tag.endsWith("1") });
-  const kein = /^plan_kein_(kein|revers|tot)$/.exec(tag);
-  if (kein) return handeln.plan({ art: "kein", grund: kein[1] as "kein" | "revers" | "tot" });
+  const kein = /^plan_kein_(kein|revers|tot|fehleinsatz)$/.exec(tag);
+  if (kein) return handeln.plan({ art: "kein", grund: kein[1] as PilotKeinGrund });
 }
 
 // ------------------------------------------------------------------ Missionen bauen
@@ -460,9 +460,10 @@ function entscheidung(fz: SimFahrzeug, e: Einsatz): Befehl {
       title: "Kein Transport",
       text: "Grund",
       options: [
-        { text: "Bleibt vor Ort", style: "primary", commands: [{ remote_notify: "plan_kein_kein", params: [] }] },
-        { text: "Revers", commands: [{ remote_notify: "plan_kein_revers", params: [] }] },
-        { text: "Verstorben", style: "Danger", commands: [{ remote_notify: "plan_kein_tot", params: [] }] },
+        { text: "Behandlung ohne Transport", style: "primary", commands: [{ remote_notify: "plan_kein_kein", params: [] }] },
+        { text: "Verweigert Mitfahrt", commands: [{ remote_notify: "plan_kein_revers", params: [] }] },
+        { text: "NACA 7: verstorben", style: "Danger", commands: [{ remote_notify: "plan_kein_tot", params: [] }] },
+        { text: "Fehleinsatz", commands: [{ remote_notify: "plan_kein_fehleinsatz", params: [] }] },
       ],
     },
   };

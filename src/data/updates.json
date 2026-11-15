@@ -1,5 +1,15 @@
 [
  {
+  "version": "0.116.0-beta.58",
+  "datum": "2026-11-15",
+  "titel": "Fehleinsatz als Endegrund, Piloten wählen den Endegrund",
+  "punkte": [
+   "Neuer Endegrund „Fehleinsatz“ – automatisch, wenn kein Patient angetroffen wird",
+   "Spieler-NAH wählt bei „Kein Transport“ den Endegrund selbst (Behandlung ohne Transport, verweigert Mitfahrt, NACA 7, Fehleinsatz)",
+   "X-Plane-Plugin 0.2.5"
+  ]
+ },
+ {
   "version": "0.116.0-beta.57",
   "datum": "2026-11-15",
   "titel": "Ordner für eigene Namen",
