@@ -2,6 +2,7 @@
  * KI-Anrufer: Wer ruft an (passend zur Lage, mit Zufall), was weiß er, wie spricht er.
  * Erzeugt die Anweisung für das Sprachmodell und einfache Antworten ohne KI.
  */
+import { KONKRET_FRAGEN, konkretSagen, type Zusammenhang } from "./koerperstelle";
 import { anleitungAkte, autoAbweichungen } from "./anleitungen";
 import { ortKategorie } from "../data/orte";
 import { ortProfil, PERSONAL } from "../data/ortProfile";
@@ -895,12 +896,24 @@ function wahrheitTextSicher(k: AnrufKontext, f: Frage): string | null {
   }
   // „weiß nicht“ als Antwort: so sagt es der Anrufer, nicht als Etikett
   if (wert === "unbekannt") return "das weißt du nicht";
+  // Kategorie-Fragen (Region, Fläche, Höhe, Blutung): konkret, einordnen muss die Leitstelle (Beta 60)
+  if (KONKRET_FRAGEN.has(f.id)) {
+    const t = konkretSagen(f, String(wert), zusammenhang(k));
+    if (t) return t.ki;
+  }
   // Alltagssatz statt Etikett („muss liegend transportiert werden“ statt „Liegend“)
   const satz = faktSaetze({ [f.id]: wert }, w)[0];
   if (satz) return satz;
   const label = antwortLabel(f, wert);
   if (label === "–") return null;
   return label === "Unbekannt" || label === "unbekannt" ? "das weißt du nicht" : label;
+}
+
+/** Fallgeschichte und fester Schlüssel für konkrete Angaben (Körperstelle, Höhe …) */
+function zusammenhang(k: AnrufKontext): Zusammenhang {
+  const sz = k.szenario;
+  const text = sz ? [sz.hergang, ...(sz.geschehen ?? []), ...sz.details].join(" ") : "";
+  return { text, schluessel: `${k.adresse}|${k.lage}|${sz?.patient.name ?? ""}|${k.kapitel}`, w: patientW(k), selbst: k.anrufer.selbst };
 }
 
 /** Fragen zur Vorgeschichte – weiß nur, wer den Patienten gut kennt */
@@ -1113,6 +1126,13 @@ function antwortSaetze(k: AnrufKontext): string {
     }
     // Vorgeschichte und Alter: was dieser Anrufer davon weiß (siehe DEINE ART)
     if (p && !k.anrufer.selbst && ((VORGESCHICHTE.has(id) && p.kenntVorgeschichte !== "ja") || id === "alter")) continue;
+    if (f && KONKRET_FRAGEN.has(id)) {
+      const t = konkretSagen(f, String(wert), zusammenhang(k));
+      if (t) {
+        zeilen.push(`- ${t.ki}`);
+        continue;
+      }
+    }
     if (faktSaetze({ [id]: wert }, w).length) {
       nurFakt[id] = wert;
       continue;
@@ -1302,6 +1322,7 @@ function promptGeschichte(k: AnrufKontext): string {
       : `- Du bist ein Mensch in einer Ausnahmesituation, kein Formular. Rede, wie Leute am Telefon reden: mal unvollständige Sätze, mal ein „äh“ oder „Moment“ – aber nicht in jeder Antwort.`,
     `- Antworte zuerst GENAU auf das, was die Leitstelle zuletzt gesagt hat – meist in ein, zwei kurzen Sätzen. Nimm nichts vorweg (Tür aufmachen, jemanden hinausschicken erst, wenn die Leitstelle darum bittet).`,
     `- Auf „Was ist passiert?“ sagst du in einem Satz das Wichtigste – in deinen Worten, so wie man es aufgeregt erzählt.`,
+    `- Fragt die Leitstelle mit Auswahl („Arme, Beine oder Kopf?“, „wie hoch?“, „wie groß?“), sagst du einfach, was du siehst – die genaue Stelle bzw. Angabe aus deinen Fakten. Du ordnest nichts in Gruppen ein und zählst keine Möglichkeiten auf.`,
     `- Von dir aus nennst du keine Werte wie Alter, Atmung, Bewusstsein, Vorerkrankungen oder Medikamente – das muss die Leitstelle fragen. Was du SIEHST, darfst du beschreiben.`,
     laie && !profi ? `- Keine Fachwörter, keine Checklisten („wach, ansprechbar, Atmung normal“ ist verboten).` : "",
     laie && !ich && !profi ? `- „Der Patient“ sagst du nie – du sagst „${er}“ oder wie du ${ihn} sonst nennst.` : "",
@@ -1661,6 +1682,9 @@ export function antwortOhneKi(k: AnrufKontext, frage: Frage): string {
   if (stufe === "unbekannt") return "Das weiß ich nicht.";
   const w = k.wahrheit[frage.id];
   if (w === undefined || w === null) return "Das weiß ich nicht.";
+  // Kategorie-Fragen: konkret statt der Antwortmöglichkeit (Beta 60)
+  const kon = KONKRET_FRAGEN.has(frage.id) ? konkretSagen(frage, String(w), zusammenhang(k)) : null;
+  if (kon) return stufe === "ungefaehr" ? `Ich glaub … ${kon.satz.charAt(0).toLowerCase()}${kon.satz.slice(1, -1)}, ganz sicher bin ich nicht.` : kon.satz;
   const label = antwortLabel(frage, w);
   if (stufe === "ungefaehr" && label !== "Unbekannt" && label !== "unbekannt") return `Ich glaub … ${label.charAt(0).toLowerCase()}${label.slice(1)}, ganz sicher bin ich nicht.`;
   if (label === "Unbekannt" || label === "unbekannt") return "Das weiß ich nicht.";

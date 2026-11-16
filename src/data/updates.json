@@ -1,5 +1,15 @@
 [
  {
+  "version": "0.116.0-beta.60",
+  "datum": "2026-11-16",
+  "titel": "Anrufer sagen, was sie sehen",
+  "punkte": [
+   "Verletzungsstelle konkret („am Knöchel“, „an der Stirn“) statt der Antwortmöglichkeiten – einordnen muss die Leitstelle",
+   "Ebenso Wunde, eingeklemmter Körperteil, Fallhöhe, verbrannte Fläche und Blutung",
+   "Passend zur Fallgeschichte und zum geladenen Schema, mit und ohne KI"
+  ]
+ },
+ {
   "version": "0.116.0-beta.59",
   "datum": "2026-11-15",
   "titel": "Abfrage engt ein",

@@ -1,5 +1,10 @@
 # Änderungen
 
+## 0.116.0-beta.60 – Anrufer sagen, was sie sehen
+- **Konkrete Angaben statt Kategorien:** Fragt die Leitstelle, wo die Verletzung ist, sagt der Anrufer die Stelle – „am Knöchel“, „an der Stirn“, „an der Hüfte“, bei mehreren Stellen z. B. „an der Stirn und am Handgelenk“ – statt die Antwortmöglichkeiten des Schemas vorzulesen. Einordnen muss die Leitstelle selbst.
+- Gilt auch für „Wo ist die Wunde?“, „Was ist eingeklemmt?“ („der Unterarm“), die Fallhöhe („vom Balkon im ersten Stock“), die verbrannte Fläche („der ganze Unterarm und die Hand“) und die Blutung („das Handtuch ist schon ganz durchgeblutet“).
+- Die Stelle passt zur Fallgeschichte (z. B. „Platzwunde Stirn“) und zur Einteilung des geladenen Schemas; sie bleibt im ganzen Gespräch gleich. Mit und ohne KI.
+
 ## 0.116.0-beta.59 – Abfrage engt ein
 - **Einengen statt abarbeiten:** Steht der Code fest, fallen die restlichen Kapitelfragen weg – es sei denn, sie sind für den Einsatz wichtig (Feuerwehr, Polizei, Eigenschutz, Anleitung, Tragehilfe, Liegedauer, Schlaganfall-Test und Zeitfenster). Im Schnitt kommen etwa 35–45 % weniger Kapitelfragen; der Code ist derselbe wie mit allen Fragen.
 - **Folgefragen nur, wenn sie passen:** Bei Verbrennungen kommen „Brennt die Person noch?“ und „Personen eingeschlossen?“ nur bei Feuer oder Explosion, nicht bei einer Verbrühung. „Nur Brandalarm ohne bekannte Verletzte?“ kommt gleich nach der Ursache – dann entfallen die Patientenfragen. Beim Sturz kommen Körperregion, Blutung und Fehlstellung nur, wenn der Patient verletzt ist.
