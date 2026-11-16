@@ -738,6 +738,44 @@ function ablaufKapitel(
   // Verkehrsunfall: eingeklemmt und Gefahren (Feuerwehr) früh
   const VU = kap("verkehrsunfall");
   if (VU) ordnen(VU, ["verletzte", "grossunfall", "eingeklemmt", "andere_gefahren", "gefahrgut", "mechanismus", "hohe_geschw", "blutung_stark"]);
+
+  // ---- Beta 62 (Paul 16.11.2026: „alles überarbeiten“)
+  // Ersticken: „Kann er sprechen, husten, atmen?“ zuerst (entscheidet fast immer, Anleitung sofort)
+  const ER = kap("ersticken");
+  if (ER) ordnen(ER, ["atemweg", "woran"]);
+  // Allergie: zuerst „überhaupt Beschwerden?“; ohne Beschwerden keine Atemfragen; Sprechdyspnoe nur bei Atem-/Schluckbeschwerden
+  const AL = kap("allergie");
+  if (AL && frage(AL, "symptome")) {
+    ordnen(AL, ["ursache", "symptome", "atem_schluck", "sprachschw", "vorgeschichte", "medikation"]);
+    const ohne: Bedingung = { not: { q: "symptome", in: ["nein"] } };
+    und(frage(AL, "atem_schluck"), ohne);
+    und(frage(AL, "sprachschw"), ohne);
+    und(frage(AL, "sprachschw"), { not: { q: "atem_schluck", in: ["nein"] } });
+  }
+  // Blutzucker: „gewalttätig?“ nur bei auffälligem Verhalten
+  const BZ = kap("zucker");
+  if (BZ && frage(BZ, "verhalten")) und(frage(BZ, "gewalttaetig"), { not: { q: "verhalten", in: ["nein"] } });
+  // Gefahrstoff: zuerst „Hat jemand Beschwerden?“, der Stoff bleibt (Feuerwehr, Eigenschutz)
+  const GS = kap("gefahrstoff");
+  if (GS) {
+    ordnen(GS, ["betroffene", "substanz"]);
+    const f = frage(GS, "substanz");
+    if (f) f.immer = true;
+  }
+  // Brustschmerz: Kokain nicht bei alten Menschen
+  const BR = kap("brustschmerz");
+  if (BR) und(frage(BR, "kokain"), { q: "alter", lt: 65 });
+  // Bewusstlos: Bauchschmerzen nur bei Frauen im gebärfähigen Alter
+  const BW = kap("bewusstlos");
+  const bs = BW ? frage(BW, "bauchschmerz") : undefined;
+  if (bs && !JSON.stringify(bs.anzeigen_wenn ?? {}).includes("alter")) und(bs, { all: [{ q: "alter", gte: 12 }, { q: "alter", lt: 51 }] });
+  // Kranke Person: zuerst die Hauptbeschwerde (so fragt man im Gespräch); sie bleibt, auch wenn der Code feststeht
+  const KP = kap("krank");
+  if (KP) {
+    ordnen(KP, ["hauptbeschwerde", "verwirrt", "sonderdiagnose"]);
+    const f = frage(KP, "hauptbeschwerde");
+    if (f) f.immer = true;
+  }
 }
 
 const OFFEN = Symbol("offen");

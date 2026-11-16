@@ -2549,7 +2549,7 @@
     },
     {
      "id": "todeszeichen",
-     "text": "Woran erkennt der Anrufer, dass die Person tot ist?",
+     "text": "Woran erkennen Sie, dass die Person tot ist?",
      "typ": "single",
      "optionen": [
       {
@@ -2607,7 +2607,7 @@
     },
     {
      "id": "unzweifelhaft",
-     "text": "Ist der Anrufer ganz sicher, dass die Person tot ist?",
+     "text": "Sind Sie ganz sicher, dass die Person tot ist?",
      "typ": "single",
      "optionen": [
       {

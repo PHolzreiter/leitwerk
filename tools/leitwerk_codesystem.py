@@ -152,9 +152,9 @@ kap("03", "bewusstlos", "Kollaps / Ohnmacht", ["umgekippt", "ohnmächtig", "Koll
 
 kap("04", "stillstand", "Leblose Person / Kreislaufstillstand", ["atmet nicht", "leblos", "tot", "Reanimation", "Herzstillstand"],
     [F("tod", "Ist die Person eindeutig verstorben?", o(("nein", "Nein – Wiederbelebung anleiten"), ("moeglich", "Möglicherweise – Anrufer ist unsicher"), ("offensichtlich", "Ja, eindeutig (kalt, steif o. Ä.)"), ("erwartet", "Erwarteter Tod (schwere Krankheit, Palliativ)"))),
-     F("todeszeichen", "Woran erkennt der Anrufer, dass die Person tot ist?", o(("kalt_steif", "Kalt und steif"), ("verwesung", "Verwesung"), ("lange_tot", "Offensichtlich schon lange tot"), ("schwerste_verl", "Verletzungen, die man nicht überleben kann"), ("andere", "Andere / keine Angabe")), wenn=eq("tod", "offensichtlich")),
+     F("todeszeichen", "Woran erkennen Sie, dass die Person tot ist?", o(("kalt_steif", "Kalt und steif"), ("verwesung", "Verwesung"), ("lange_tot", "Offensichtlich schon lange tot"), ("schwerste_verl", "Verletzungen, die man nicht überleben kann"), ("andere", "Andere / keine Angabe")), wenn=eq("tod", "offensichtlich")),
      F("erwartet_grund", "Warum war der Tod erwartet?", o(("endstadium", "Schwere Krankheit im Endstadium"), ("verfuegung", "Patientenverfügung: keine Wiederbelebung"), ("andere", "Anderer Grund")), wenn=eq("tod", "erwartet")),
-     F("unzweifelhaft", "Ist der Anrufer ganz sicher, dass die Person tot ist?", JN, wenn=eq("tod", "offensichtlich", "erwartet")),
+     F("unzweifelhaft", "Sind Sie ganz sicher, dass die Person tot ist?", JN, wenn=eq("tod", "offensichtlich", "erwartet")),
      F("ursache_9", "Gibt es einen erkennbaren Grund?", o(("erhaengen", "Erhängen"), ("strangulation", "Strangulation / Würgen"), ("ersticken", "Ersticken"), ("keine", "Nein / nichts erkennbar")), wenn=NOT(eq("tod", "offensichtlich", "erwartet"))),
      F("beobachtet", "Hat jemand gesehen, wie die Person zusammengebrochen ist?", o(("ja", "Ja – beobachtet"), ("nein", "Nein – so aufgefunden"), ("unbekannt", "Weiß nicht")), wenn=NOT(eq("tod", "offensichtlich", "erwartet")))],
     [R(ALL(eq("tod", "offensichtlich"), ja("unzweifelhaft")), 1, "Tod mit sicheren Zeichen – Totenbeschau"),

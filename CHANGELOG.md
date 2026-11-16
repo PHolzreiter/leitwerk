@@ -1,5 +1,15 @@
 # Änderungen
 
+## 0.116.0-beta.62 – Abfrage: restliche Kapitel überarbeitet
+- **Ersticken:** „Kann der Patient sprechen, husten oder atmen?“ zuerst – das entscheidet fast immer, und bei „nein“ braucht der Anrufer sofort die Anleitung; „Woran verschluckt?“ danach.
+- **Allergie:** zuerst „Hat der Patient überhaupt Beschwerden?“ – ohne Beschwerden entfallen die Atemfragen; „nur einzelne Worte?“ nur bei Atem- oder Schluckbeschwerden.
+- **Blutzucker:** „Gewalttätig?“ nur, wenn sich der Patient auffällig verhält.
+- **Kohlenmonoxid/Gefahrstoff:** zuerst „Hat jemand Beschwerden?“, danach der Stoff (wird immer gefragt).
+- **Brustschmerz:** keine Frage nach Kokain ab 65 Jahren.
+- **Bewusstlosigkeit:** „Bauchschmerzen?“ nur bei Frauen zwischen 12 und 50.
+- **Kranke Person:** zuerst „Was ist die Hauptbeschwerde?“.
+- **Texte:** „Woran erkennen Sie, dass die Person tot ist?“ und „Sind Sie ganz sicher …?“ statt „der Anrufer“.
+
 ## 0.116.0-beta.61 – Abfrage: Feinschliff je Kapitel
 - **Psychiatrie:** Die UBG-Frage kommt nur, wenn die Polizei anruft; zuerst „Was ist die Situation?“. Gewalt und Waffen (Eigenschutz) gleich danach. „Droht die Person, sich anzuzünden?“ nur bei Suizid-Thema. Das Krisenteam wird nur ohne akuten Notfall angeboten.
 - **Stich/Schuss:** „Ist die Person offensichtlich tot?“ nur, wenn sie nicht wach ist.

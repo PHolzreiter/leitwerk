@@ -1,5 +1,15 @@
 [
  {
+  "version": "0.116.0-beta.62",
+  "datum": "2026-11-16",
+  "titel": "Abfrage: restliche Kapitel überarbeitet",
+  "punkte": [
+   "Ersticken: Atemweg zuerst; Allergie: erst „überhaupt Beschwerden?“; Gefahrstoff: Beschwerden zuerst; Kranke Person: Hauptbeschwerde zuerst",
+   "Weniger unpassende Fragen: gewalttätig nur bei auffälligem Verhalten, Kokain nicht ab 65, Bauchschmerz bei Ohnmacht nur 12–50",
+   "Texte direkt an den Anrufer („Sind Sie sicher …?“)"
+  ]
+ },
+ {
   "version": "0.116.0-beta.61",
   "datum": "2026-11-16",
   "titel": "Abfrage: Feinschliff je Kapitel",
