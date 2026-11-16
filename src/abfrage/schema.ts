@@ -576,6 +576,8 @@ export const IMMER_FRAGEN = new Set([
   "eingeklemmt", "eingeschlossen", "gefahrgut", "andere_gefahren", "brennt_noch", "angriff_laeuft", "noch_verbunden", "strom_an",
   "taeter_vor_ort", "aggressiv", "gewalt", "gewalttaetig", "waffen", "selbstverbrennung", "tuer", "arbeitsunfall", "tod",
   "umstand", "schwer_pat", "sprachkontakt", "noch_gepfaehlt", "wo",
+  // Schlaganfall-Test: wichtig für die Besatzung und die Stroke Unit, auch wenn der Code schon feststeht (Beta 61)
+  "fast_gesicht", "fast_arm", "fast_sprache",
 ]);
 
 /**
@@ -627,7 +629,115 @@ function ablaufVerbessern(p: Schema): void {
     hinter(S, "verletzt", "hoehe");
     for (const id of ["region", "blutung_stark", "fehlstellung"]) und(frage(S, id), { not: { q: "verletzt", in: ["nein"] } });
   }
+  ablaufKapitel(p, und, frage, hinter);
   for (const K of Object.values(p.kapitel)) for (const f of K.fragen) if (IMMER_FRAGEN.has(f.id)) f.immer = true;
+}
+
+/** Fragen in eine Reihenfolge bringen – nur die genannten tauschen ihre Plätze, alle anderen bleiben, wo sie sind */
+function ordnen(K: Kapitel, ids: string[]): void {
+  const da = ids.filter((id) => K.fragen.some((f) => f.id === id));
+  const plaetze = K.fragen.map((f, i) => (da.includes(f.id) ? i : -1)).filter((i) => i >= 0);
+  const fragen = da.map((id) => K.fragen.find((f) => f.id === id)!);
+  plaetze.forEach((pl, i) => (K.fragen[pl] = fragen[i]));
+}
+
+/** Werte einer Frage, die es im Schema gibt */
+function werte(f: Frage | undefined, ...w: string[]): string[] {
+  return w.filter((x) => f?.optionen?.some((o) => o.wert === x));
+}
+
+/** Bedingung in allen Fragen eines Kapitels ersetzen (z. B. „ubg = nein“ → „ubg nicht dringend/normal“) */
+function bedingungErsetzen(K: Kapitel, alt: (c: Bedingung) => boolean, neu: () => Bedingung): void {
+  const geh = (c: Bedingung): Bedingung => {
+    if ("all" in c) return { all: c.all.map(geh) };
+    if ("any" in c) return { any: c.any.map(geh) };
+    if ("not" in c) return { not: geh(c.not) };
+    return alt(c) ? neu() : c;
+  };
+  for (const f of K.fragen) if (f.anzeigen_wenn) f.anzeigen_wenn = geh(f.anzeigen_wenn);
+}
+
+/** Feinschliff je Kapitel (Paul 16.11.2026, Beta 61) – nur die Reihenfolge und wann eine Frage kommt */
+function ablaufKapitel(
+  p: Schema,
+  und: (f: Frage | undefined, b: Bedingung) => void,
+  frage: (K: Kapitel, id: string) => Frage | undefined,
+  hinter: (K: Kapitel, id: string, nach: string) => void,
+): void {
+  const kap = (t: string) => {
+    const k = kapitelZuThema(t, p);
+    return k ? p.kapitel[k] : undefined;
+  };
+  // Psychiatrie: UBG nur, wenn die Polizei anruft; Eigenschutz gleich nach der Lage; Selbstverbrennung nur bei Suizid-Thema;
+  // Krisenteam nur ohne akuten Notfall
+  const P = kap("psych");
+  if (P) {
+    const ubg = frage(P, "ubg");
+    const ubgJa = (ubg?.optionen ?? []).map((o) => String(o.wert)).filter((w) => w !== "nein");
+    if (ubg && ubgJa.length) {
+      bedingungErsetzen(P, (c) => "q" in c && c.q === "ubg" && "in" in c && Array.isArray(c.in) && c.in.length === 1 && c.in[0] === "nein", () => ({ not: { q: "ubg", in: ubgJa } }));
+      const wer = (p.globale_fragen.phase_3_was_ist_passiert ?? []).find((f) => f.id === "anrufer");
+      const andere = [...new Set([...(wer?.optionen ?? []).map((o) => String(o.wert)), "1", "2", "3", "einrichtung", "hotline", "piste", "ls", "system"])].filter((w) => w !== "polizei");
+      und(ubg, { not: { q: "anrufer", in: andere } });
+    }
+    ordnen(P, ["lage", "ubg", "gewalt", "waffen", "substanzen", "verwirrt", "ploetzlich", "psych_vorerkrankung", "blutung", "selbstverbrennung", "krisenteam"]);
+    const lage = frage(P, "lage");
+    if (werte(lage, "kein_suizid").length) und(frage(P, "selbstverbrennung"), { not: { q: "lage", in: ["kein_suizid"] } });
+    const kt = frage(P, "krisenteam");
+    if (kt) {
+      const akut: Bedingung[] = [{ not: { q: "bw", in: ["nein", "getruebt"] } }];
+      const l = werte(lage, "gesprungen", "erhaengen");
+      if (l.length) akut.push({ not: { q: "lage", in: l } });
+      const b = werte(frage(P, "blutung"), "gefaehrlich", "stark");
+      if (b.length) akut.push({ not: { q: "blutung", in: b } });
+      und(kt, { all: akut });
+    }
+  }
+  // Stich/Schuss: „offensichtlich tot?“ nur, wenn der Patient nicht wach ist
+  const SS = kap("stich_schuss");
+  if (SS) und(frage(SS, "tot"), { not: { q: "bw", in: ["ja", "getruebt"] } });
+  // Verletzungen: hohe Energie (höchster Code nach dem Bewusstsein) gleich nach der Amputation
+  const V = kap("verletzung");
+  if (V && frage(V, "hohe_energie") && frage(V, "amputation")) hinter(V, "hohe_energie", "amputation");
+  // Bauch und Rücken: graue Haut und Ohnmacht zuerst
+  const BA = kap("bauch");
+  if (BA) ordnen(BA, ["grau", "ohnmacht", "zerreiss", "aneurysma", "schmerzort"]);
+  const RU = kap("ruecken");
+  if (RU) ordnen(RU, ["ursache", "grau", "ohnmacht", "zerreiss", "aneurysma"]);
+  // Krampfanfall: Epilepsie (nur niedrige Codes) nach den Risiken
+  const KR = kap("krampf");
+  if (KR) ordnen(KR, ["krampft", "fokal_ansprechbar", "atmung_geprueft", "schwanger", "diabetiker", "vg_schlaganfall", "vergiftung", "epilepsie", "atypisch"]);
+  // Sturz: Ohnmacht vor „mehr als 6 Stunden her“
+  const ST = kap("sturz");
+  if (ST && frage(ST, "aelter6h") && frage(ST, "ohnmacht") && ST.fragen.findIndex((f) => f.id === "aelter6h") < ST.fragen.findIndex((f) => f.id === "ohnmacht")) hinter(ST, "aelter6h", "ohnmacht");
+  // Kopfschmerz: Schlaganfall-Test nur bei einem Hinweis auf Schlaganfall
+  const KS = kap("kopfschmerz");
+  if (KS) {
+    const hinweis = ["sprachstoerung", "taubheit", "laehmung", "verhalten", "ploetzlich_stark"].filter((id) => frage(KS, id));
+    if (hinweis.length) for (const id of ["fast_gesicht", "fast_arm", "fast_sprache"]) und(frage(KS, id), { any: hinweis.map((h) => ({ q: h, in: ["ja", "unbekannt"] })) });
+  }
+  // Hitze/Kälte: „mehrere betroffen …“ nur bei mehreren Betroffenen
+  const HK = kap("hitze_kaelte");
+  if (HK) und(frage(HK, "mehrere_symptome"), { not: { q: "anzahl_patienten", in: ["1"] } });
+  // Vergiftung: Eigenschutz gleich nach dem Hergang, Hautfarbe vor der VIZ-Frage, VIZ nur bei Versehen/unklar
+  const VG = kap("vergiftung");
+  if (VG) {
+    ordnen(VG, ["absicht", "aggressiv", "waffen", "substanz", "hautfarbe", "viz"]);
+    const w = werte(frage(VG, "absicht"), "versehentlich", "medikationsfehler", "unbekannt");
+    if (w.length) und(frage(VG, "viz"), { q: "absicht", in: w });
+  }
+  // Schwangerschaft: zuerst die Situation; Woche und Zwillinge bleiben (für die Besatzung)
+  const SW = kap("schwangerschaft");
+  if (SW) {
+    ordnen(SW, ["situation", "ssw", "mehrlinge"]);
+    for (const id of ["ssw", "mehrlinge"]) {
+      const f = frage(SW, id);
+      if (f) f.immer = true;
+    }
+  }
+  // Verkehrsunfall: eingeklemmt und Gefahren (Feuerwehr) früh
+  const VU = kap("verkehrsunfall");
+  if (VU) ordnen(VU, ["verletzte", "grossunfall", "eingeklemmt", "andere_gefahren", "gefahrgut", "mechanismus", "hohe_geschw", "blutung_stark"]);
 }
 
 const OFFEN = Symbol("offen");

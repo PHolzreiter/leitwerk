@@ -1,5 +1,16 @@
 [
  {
+  "version": "0.116.0-beta.61",
+  "datum": "2026-11-16",
+  "titel": "Abfrage: Feinschliff je Kapitel",
+  "punkte": [
+   "Psychiatrie: UBG nur bei Anrufer Polizei, Eigenschutz früh, Krisenteam nur ohne akuten Notfall",
+   "Wichtige Fragen früher: hohe Energie (Verletzungen), graue Haut/Ohnmacht (Bauch, Rücken), eingeklemmt/Gefahren (Verkehrsunfall), Situation (Schwangerschaft)",
+   "Weniger unpassende Fragen: „tot?“ nur wenn nicht wach, Schlaganfall-Test beim Kopfschmerz nur mit Hinweis, Vergiftungsinformation nur bei Versehen",
+   "Epilepsie, Ohnmacht, Eigenschutz bei Vergiftung in sinnvoller Reihenfolge"
+  ]
+ },
+ {
   "version": "0.116.0-beta.60",
   "datum": "2026-11-16",
   "titel": "Anrufer sagen, was sie sehen",

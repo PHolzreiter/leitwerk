@@ -357,7 +357,7 @@ kap("15", "psych", "Psychische Krise / Suizidgefahr", ["Suizid", "psychisch", "S
 kap("16", "vergiftung", "Vergiftung / Überdosis", ["Vergiftung", "Tabletten", "Überdosis", "Drogen", "geschluckt"],
     [F("absicht", "Wie ist es passiert?", o(("absichtlich", "Absichtlich"), ("versehentlich", "Versehentlich (z. B. Kind)"), ("medikationsfehler", "Falsche Medikamente / Dosis"), ("drogen", "Beim Drogenkonsum"), ("unbekannt", "Weiß nicht"))),
      F("substanz", "Was wurde genommen?", o(("opiate", "Opiate (Heroin, Morphin, Fentanyl …)"), ("antidepressiva", "Antidepressiva"), ("kokain", "Kokain / Aufputschmittel"), ("saeure", "Säure oder Lauge"), ("knopfzelle", "Knopfzellenbatterie"), ("andere", "Etwas anderes"), ("unbekannt", "Weiß nicht"))),
-     F("viz", "Hat die Vergiftungsinformation geraten, die Rettung zu holen?", JN),
+     F("viz", "Haben Sie schon mit der Vergiftungsinformation gesprochen – hat sie geraten, die Rettung zu holen?", JN),
      F("hautfarbe", "Ist die Haut grau oder bläulich?", JN),
      F("aggressiv", "Ist die Person aggressiv?", JN),
      F("waffen", "Gibt es Waffen in der Nähe?", JN)],

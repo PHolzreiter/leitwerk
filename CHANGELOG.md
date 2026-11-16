@@ -1,5 +1,18 @@
 # Änderungen
 
+## 0.116.0-beta.61 – Abfrage: Feinschliff je Kapitel
+- **Psychiatrie:** Die UBG-Frage kommt nur, wenn die Polizei anruft; zuerst „Was ist die Situation?“. Gewalt und Waffen (Eigenschutz) gleich danach. „Droht die Person, sich anzuzünden?“ nur bei Suizid-Thema. Das Krisenteam wird nur ohne akuten Notfall angeboten.
+- **Stich/Schuss:** „Ist die Person offensichtlich tot?“ nur, wenn sie nicht wach ist.
+- **Verletzungen:** „Hohe Geschwindigkeit / massive Krafteinwirkung?“ gleich nach der Amputation (höchster Code nach dem Bewusstsein).
+- **Bauch und Rücken:** graue Haut und Ohnmacht zuerst.
+- **Krampfanfall:** „Epilepsie bekannt?“ nach Schwangerschaft, Diabetes, Schlaganfall und Vergiftung.
+- **Sturz:** Ohnmacht vor „mehr als 6 Stunden her?“.
+- **Kopfschmerz:** Schlaganfall-Test nur bei einem Hinweis auf Schlaganfall (Sprache, Taubheit, Lähmung, Verhalten, Donnerschlag). Der Schlaganfall-Test wird nicht mehr übersprungen, wenn der Code schon feststeht.
+- **Hitze/Kälte:** „Mehrere betroffen …?“ nur bei mehreren Betroffenen.
+- **Vergiftung:** Aggressiv/Waffen gleich nach dem Hergang, Hautfarbe vor der Frage zur Vergiftungsinformation; diese nur bei Versehen, Medikationsfehler oder unklarem Hergang, neu formuliert.
+- **Schwangerschaft:** zuerst die Situation, dann Woche und Zwillinge.
+- **Verkehrsunfall:** Eingeklemmt und andere Gefahren gleich nach Verletzten und Großunfall.
+
 ## 0.116.0-beta.60 – Anrufer sagen, was sie sehen
 - **Konkrete Angaben statt Kategorien:** Fragt die Leitstelle, wo die Verletzung ist, sagt der Anrufer die Stelle – „am Knöchel“, „an der Stirn“, „an der Hüfte“, bei mehreren Stellen z. B. „an der Stirn und am Handgelenk“ – statt die Antwortmöglichkeiten des Schemas vorzulesen. Einordnen muss die Leitstelle selbst.
 - Gilt auch für „Wo ist die Wunde?“, „Was ist eingeklemmt?“ („der Unterarm“), die Fallhöhe („vom Balkon im ersten Stock“), die verbrannte Fläche („der ganze Unterarm und die Hand“) und die Blutung („das Handtuch ist schon ganz durchgeblutet“).
