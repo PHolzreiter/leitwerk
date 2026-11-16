@@ -16,7 +16,18 @@ try:
         A.evaluate("async () => window.__lw.codesystemLaden(await (await fetch('/abf_test.json')).json())"); A.wait_for_timeout(1200)
         A.evaluate("() => { const s = window.__lw.sim; s.settings.generatorAktiv = false; s.settings.ktAktiv = false; s.settings.khGrundAktiv = false; s.state.naechster = { stabil: 1e15, dringend: 1e15, kritisch: 1e15 }; }")
         def start(fall, var, nefWeit):
-            return A.evaluate("""async ([fall, v, weit]) => { const s = window.__lw.sim; const e = await s.generiereFall(fall, v); e.anruf.status = 'beendet';
+            return A.evaluate("""async ([fall, v, weit]) => { const s = window.__lw.sim;
+                // Einsatzort mit einem NEF am Weg ins KH suchen (hängt vom Zufall ab – sonst gibt es kein Rendezvous)
+                let e = null;
+                for (let i = 0; i < 12; i++) {
+                  e = await s.generiereFall(fall, v);
+                  if (weit < 30) break;
+                  const kh0 = s.khFuerTransport(e); const d0 = (f) => Math.hypot(f.lat - e.wahr.lat, (f.lon - e.wahr.lon) * 0.66) * 111; const dk0 = (f) => Math.hypot(f.lat - kh0.lat, (f.lon - kh0.lon) * 0.66) * 111;
+                  const um0 = (f) => d0(f) + dk0(f) - Math.hypot(kh0.lat - e.wahr.lat, (kh0.lon - e.wahr.lon) * 0.66) * 111;
+                  if (Object.values(s.state.fahrzeuge).some(f => s.verfuegbar(f) && f.kategorie === 'NEF' && !f.ersatzFuer && d0(f) > weit / 2 && um0(f) < 6)) break;
+                  s.state.einsaetze = s.state.einsaetze.filter(x => x !== e);
+                }
+                e.anruf.status = 'beendet';
                 s.aktualisiere(e.id, { adresse: { lat: e.wahr.lat, lon: e.wahr.lon, label: e.wahr.adresse }, code: e.wahr.code });
                 e.wahr.lage.fall.naMit = undefined;
                 const frei = Object.values(s.state.fahrzeuge).filter(f => s.verfuegbar(f));
@@ -32,7 +43,7 @@ try:
                 nef.naAbholung = null;
                 s.alarmiere(e.id, [rtw.id, nef.id]); s.setTempo(30); s.start(); return { id: e.id, rtw: rtw.funkrufname, nef: nef.funkrufname, km: Math.round(d(nef)) }; }""", [fall, var, nefWeit])
         # 1) Rendezvous: STEMI, NEF weit weg
-        info = start("brustschmerz", "A", 30); print("    ", info)
+        info = start("brustschmerz", "A", 44); print("    ", info)
         eid = info["id"]; rv = None; marker = False; phasen = set()
         for i in range(400):
             A.wait_for_timeout(500)
