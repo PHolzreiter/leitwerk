@@ -18,7 +18,7 @@ import { mp, meinName } from "../../net/mehrspieler";
 import { findCode } from "../../sim/codes";
 import { ktCode } from "../../sim/ktCodes";
 import { antwortLabel, fragenImAblauf, type Frage } from "../../abfrage/schema";
-import { fliegt, PILOT_KEIN, sim, type Einsatz, type PilotKeinGrund, type PilotPlan, type SimFahrzeug } from "../../sim/engine";
+import { ENDEGRUND_TEXT, fliegt, PILOT_KEIN, sim, type Einsatz, type PilotKeinGrund, type PilotPlan, type SimFahrzeug } from "../../sim/engine";
 import { distanceM } from "../../sim/geo";
 import type { StatusKey } from "../../sim/settings";
 import { availableMaps, createMap, type MapHandle } from "../../map";
@@ -801,6 +801,7 @@ function zeichneAlles(): void {
   alarmPruefen(fz, e);
   gsAbrufPruefen(fz, e);
   const fk = funkPlatzAktualisieren(fz, e);
+  funkKanalText = { kanal: fk.kanal, sendet: fk.sendet };
   karteAktualisieren(fz, e);
   handyStand(fz, e, fk, () => handyMehr(fz, e));
   gtnZiel(fz, e);
@@ -1139,6 +1140,148 @@ function cockpitRest(fz: SimFahrzeug | undefined): Record<string, unknown>[] {
 }
 
 /** Was die Ansicht zeigt – alles aus dem Spiel (Hubschrauber, Status, Einsatz, Großeinsatz, Patient, Buchung) */
+// ------------------------------------------------------------------ Beta 64: Einsatzliste, Statuszeiten, Verlauf (PC, Handy, EFB)
+
+const uhrSek = (t: number) => new Date(t).toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+const datumKurz = (t: number) => new Date(t).toLocaleDateString("de-AT", { day: "2-digit", month: "2-digit" });
+/** Statuszeiten wie im LEA-Einsatz: Alarmiert … Frei (eigener Hubschrauber, aus dem Status-Protokoll) */
+const ZEIT_ZEILEN: [string, StatusKey[]][] = [
+  ["Alarmiert", ["alarmWache", "alarmFunk"]],
+  ["Quittiert", ["alarmiert"]],
+  ["Zum Berufungsort", ["zumBO"]],
+  ["Am Berufungsort", ["amBO"]],
+  ["Zum Zielort", ["zumZO"]],
+  ["Am Zielort", ["amZO"]],
+  ["Frei", ["freiFunk", "freiWache", "bereitschaft"]],
+];
+function statusZeiten(fz: SimFahrzeug, nummern: string[], gs: boolean): { z: string; t: string; leer: boolean }[] {
+  const alle = (sim.state.statusLog ?? []).filter((x) => x.fzId === fz.id);
+  const log = alle.filter((x) => !!x.einsatz && nummern.includes(x.einsatz));
+  // „Frei“: das Spiel löst den Einsatz beim Freimelden – der erste Frei-Status nach dem letzten Eintrag des Einsatzes
+  const letzte = log.length ? log[log.length - 1].zeit : Infinity;
+  const frei = alle.find((x) => x.zeit >= letzte && ["freiFunk", "freiWache"].includes(x.nach) && (!x.einsatz || nummern.includes(x.einsatz)));
+  return ZEIT_ZEILEN.map(([t, keys]) => {
+    const x = log.find((l) => keys.includes(l.nach)) ?? (t === "Frei" ? frei : undefined);
+    const tt = gs && t === "Zum Berufungsort" ? "Zum Bereitstellungsraum" : gs && t === "Am Berufungsort" ? "Im Bereitstellungsraum" : t;
+    return { z: x ? uhrSek(x.zeit) : "--:--:--", t: tt, leer: !x };
+  });
+}
+/** Einsatzverlauf (neueste oben); Notrufabfragen als aufklappbarer Block */
+function verlaufVon(e: Einsatz, max = 60): { z: string; t: string; von: string; abf: { t: string; d: number }[] | null; key?: string; abfN?: number; abfArt?: string }[] {
+  const prot = e.protokoll ?? [];
+  const ab = prot.length > max ? prot.length - max : 0;
+  return prot
+    .slice(ab)
+    .map((x, i) => {
+      const m = /^\*\*\* (.+?): [^*]*\*\*\*\n?([\s\S]*)$/.exec(x.text);
+      if (m) {
+        const zeilen = m[2].split("\n").filter(Boolean);
+        return { z: uhrzeit(x.zeit), key: `${e.id}-${ab + i}`, abf: zeilen.map((tt, d) => ({ t: tt, d })), abfN: zeilen.length, abfArt: m[1], t: "", von: "" };
+      }
+      return { z: uhrzeit(x.zeit), t: x.text, von: x.von ?? "", abf: null };
+    })
+    .reverse();
+}
+/** Ort kurz für die Liste: „3500 Krems an der Donau“ → „Krems an der Donau“ */
+function ortKurz(label: string | undefined): string {
+  if (!label) return "";
+  const teile = label.split(",").map((x) => x.trim()).filter(Boolean);
+  const ort = teile.find((x) => /^\d{4}\s/.test(x)) ?? teile[teile.length - 1] ?? "";
+  return ort.replace(/^\d{4}\s+/, "");
+}
+/** Patient kurz (vergangene Einsätze): „Mann, 58 J. · gelb · Verdacht: …“ */
+function patKurz(e: Einsatz): string {
+  const l = e.wahr.lage;
+  const v = e.wahr.verdacht ? buchungName(e.wahr.verdacht) : "";
+  const p = (l?.patienten ?? []).map((x) => `${x.alter < 14 ? "Kind" : x.geschlecht === "w" ? "Frau" : "Mann"}, ${x.alter} J. · ${x.sichtung === "gruen" ? "grün" : x.sichtung}`);
+  return [...p, ...(v ? [`Verdacht: ${v}`] : []), ...(l?.fall?.kern ? [l.fall.kern] : [])].join(" · ");
+}
+/** Wie es ausging (vergangene Einsätze): Zielkrankenhaus oder Endegrund */
+function ausgang(fz: SimFahrzeug, e: Einsatz): { ziel: string; art: string } {
+  const kh = e.kh ? store.get("hospitals", e.kh.hospitalId) : undefined;
+  const g = e.endegrund?.[fz.id];
+  if (kh && (!g || g === "uebergabe")) return { ziel: kh.kurzname || kh.name, art: g === "uebergabe" ? "Übergabe an den RTW" : "Transport" };
+  if (g) return { ziel: g === "uebergabe" ? "Übergabe" : "Kein Transport", art: ENDEGRUND_TEXT[g] };
+  return { ziel: "", art: "" };
+}
+/**
+ * Einsätze dieser Sitzung für den eigenen Hubschrauber: der laufende zuerst, dann die vergangenen (neueste oben).
+ * Kinder eines Großeinsatzes (Patient P-xx) zählen zum Großeinsatz. Vergangene bringen ihre Zeiten, den Verlauf und den
+ * Ausgang gleich mit (zum Ansehen), der laufende kommt aus den übrigen Feldern der Ansicht.
+ */
+function meineEinsaetze(fz: SimFahrzeug | undefined, aktuell: Einsatz | undefined): Record<string, unknown>[] {
+  if (!fz) return [];
+  const nrs = new Set((sim.state.statusLog ?? []).filter((x) => x.fzId === fz.id && x.einsatz).map((x) => x.einsatz as string));
+  const akt = aktuell ? (gsVon(aktuell) ?? aktuell) : undefined;
+  // der eigene Einsatz im Vorlauf (Alarm kommt gleich) erscheint erst mit dem Alarm
+  const liste = sim.state.einsaetze.filter((e) => e.id === aktuell?.id || e.id === akt?.id || (nrs.has(e.nummer) && e.id !== fz.einsatzId));
+  const gruppen = new Map<string, Einsatz[]>();
+  for (const e of liste) {
+    const b = gsVon(e) ?? e;
+    gruppen.set(b.id, [...(gruppen.get(b.id) ?? []), e]);
+  }
+  const out: Record<string, unknown>[] = [];
+  for (const [bid, es] of gruppen) {
+    const basis = sim.einsatz(bid) ?? es[0];
+    const laeuft = !!akt && akt.id === basis.id;
+    const c = findCode(basis.code ?? undefined);
+    const gs = basis.gs;
+    const kind = es.find((x) => x.gsKind) ?? es[es.length - 1];
+    const aus = laeuft ? { ziel: "", art: "" } : ausgang(fz, kind);
+    const kh = !laeuft ? null : aktuell?.kh ? store.get("hospitals", aktuell.kh.hospitalId) : null;
+    out.push({
+      id: basis.id,
+      nr: basis.nummer,
+      code: basis.code ?? "Code folgt",
+      stufe: gs ? `Großeinsatz${gs.stufe ? ` ${gs.stufe}` : ""}` : (c?.stufe ?? ""),
+      sw: stichwort(basis),
+      ort: ortKurz(basis.adresse?.label) || basis.adresse?.label || "",
+      adr: basis.adresse?.label ?? "Adresse folgt",
+      zeit: uhrzeit(basis.erstellt),
+      datum: datumKurz(basis.erstellt),
+      t: basis.erstellt,
+      laeuft,
+      ziel: laeuft ? (kh ? kh.kurzname || kh.name : planText(fz.pilot?.plan) ? "" : "") : aus.ziel,
+      zielArt: aus.art,
+      meldebild: basis.meldung?.text ?? "",
+      zusatz: basis.zusatz ?? "",
+      zeiten: statusZeiten(fz, es.map((x) => x.nummer).concat(basis.nummer), !!gs),
+      verlauf: laeuft ? [] : verlaufVon(kind, 30),
+      patient: kind.gsKind ? `P-${String(kind.gsKind.nr).padStart(2, "0")}` : "",
+      // vergangene: was am Einsatzort zu sehen war (nur wenn der Hubschrauber dort war)
+      patText: laeuft || !(sim.state.statusLog ?? []).some((x) => x.fzId === fz.id && x.nach === "amBO" && es.some((k) => k.nummer === x.einsatz)) ? "" : patKurz(kind),
+    });
+  }
+  // Überstellung (KT/SEK) läuft gerade: oben dazu
+  const kt = sim.pilotKt(fz);
+  // vergangene Überstellungen (Nummer im Statusprotokoll des Hubschraubers)
+  for (const k of sim.state.kt ?? []) {
+    if (!nrs.has(k.nummer) || (kt && kt.k.id === k.id)) continue;
+    const d = k.d;
+    const fertig = (sim.state.statusLog ?? []).some((x) => x.fzId === fz.id && x.einsatz === k.nummer && x.nach === "amZO");
+    out.push({ id: `kt:${k.nummer}`, nr: k.nummer, code: d.code ?? "Code folgt", stufe: d.sofort ? "Sekundär sofort" : "Sekundär", sw: ktCode(d.code)?.name || d.grund || "Überstellung",
+      ort: `${ortKurz(d.von?.label) || d.von?.label || "Abholort"} → ${ortKurz(d.nach?.label) || d.nach?.label || "Ziel"}`, adr: `${d.von?.label ?? "Abholort"} → ${d.nach?.label ?? "Ziel"}`,
+      zeit: uhrzeit(k.protokoll[0]?.zeit ?? sim.state.zeit), datum: datumKurz(k.protokoll[0]?.zeit ?? sim.state.zeit), t: k.protokoll[0]?.zeit ?? 0, laeuft: false,
+      ziel: fertig ? (d.nach?.label ?? "") : "", zielArt: fertig ? "Überstellung" : "Überstellung – nicht abgeschlossen",
+      meldebild: [d.grund, d.lage].filter(Boolean).join(" · "), zusatz: "", zeiten: statusZeiten(fz, [k.nummer], false),
+      verlauf: k.protokoll.slice(-30).reverse().map((x) => ({ z: uhrzeit(x.zeit), t: x.text })), patient: "", patText: [d.patient?.name, d.patient?.info].filter(Boolean).join(" · "), kt: true });
+  }
+  if (kt && !aktuell) {
+    const d = kt.k.d;
+    out.push({ id: `kt:${kt.k.nummer}`, nr: kt.k.nummer, code: d.code ?? "Code folgt", stufe: d.sofort ? "Sekundär sofort" : "Sekundär", sw: ktCode(d.code)?.name || d.grund || "Überstellung",
+      ort: `${ortKurz(d.von?.label) || d.von?.label || "Abholort"} → ${ortKurz(d.nach?.label) || d.nach?.label || "Ziel"}`, adr: `${d.von?.label ?? "Abholort"} → ${d.nach?.label ?? "Ziel"}`,
+      zeit: uhrzeit(kt.k.protokoll[0]?.zeit ?? sim.state.zeit), datum: datumKurz(sim.state.zeit), t: sim.state.zeit + 1, laeuft: true, ziel: d.nach?.label ?? "", zielArt: "Überstellung – das Ziel steht fest",
+      meldebild: [d.grund, d.lage].filter(Boolean).join(" · "), zusatz: "", zeiten: statusZeiten(fz, [kt.k.nummer], false), verlauf: [], patient: "", kt: true });
+  }
+  out.sort((a, b) => Number(b.laeuft) - Number(a.laeuft) || (b.t as number) - (a.t as number));
+  return out.slice(0, 40);
+}
+
+/** Krankenhäuser, die die Pilotenkarte gerade als Vorschläge zeigt (PC: Buchen › Vorschläge), und welches hervorgehoben ist */
+let kartenVorschlag: { ids: string[]; hov: string } = { ids: [], hov: "" };
+/** Funk-Zustand fürs Fenster (wer spricht, du sendest) – aus funkPlatzAktualisieren */
+let funkKanalText = { kanal: "", sendet: false };
+
 function ansichtDaten(): Record<string, unknown> {
   const fz = meinFz();
   const e = einsatzVon(fz);
@@ -1425,19 +1568,7 @@ function ansichtDaten(): Record<string, unknown> {
   const planT = plan && e && fz ? `${planText(plan)}${fz.status === "amBO" ? (plan.art === "transport" || (plan.art === "uebergabe" && plan.naMit) ? " · danach Status 4" : " · danach Status 6") : ""}` : "";
 
   // ---- Einsatzverlauf (neueste oben); die Notrufabfrage zum Aufklappen
-  const prot = e?.protokoll ?? [];
-  const ab = prot.length > 60 ? prot.length - 60 : 0;
-  let verlauf = prot
-    .slice(ab)
-    .map((x, i) => {
-      const m = /^\*\*\* (.+?): [^*]*\*\*\*\n?([\s\S]*)$/.exec(x.text);
-      if (m) {
-        const zeilen = m[2].split("\n").filter(Boolean);
-        return { z: uhrzeit(x.zeit), key: `${e!.id}-${ab + i}`, abf: zeilen.map((tt, d) => ({ t: tt, d })), abfN: zeilen.length, abfArt: m[1], t: "", von: "" };
-      }
-      return { z: uhrzeit(x.zeit), t: x.text, von: x.von ?? "", abf: null };
-    })
-    .reverse();
+  let verlauf = e ? verlaufVon(e) : [];
   if (!verlauf.length) verlauf.push({ z: "–", t: "Noch keine Ereignisse – sobald ein Einsatz vorliegt, stehen sie hier.", von: "", abf: null });
 
   // ---- Übungsflug ohne Flugsimulator
@@ -1621,6 +1752,12 @@ function ansichtDaten(): Record<string, unknown> {
     verlauf,
     folgen,
     punktWaehlen,
+    liste: meineEinsaetze(fz, e),
+    zeiten: fz && e ? statusZeiten(fz, [e.nummer, ...(gsE && gsE !== e ? [gsE.nummer] : [])], G) : fz && kt ? statusZeiten(fz, [kt.k.nummer], false) : [],
+    aktId: e ? (gsE ?? e).id : kt ? `kt:${kt.k.nummer}` : "",
+    kt: !!kt,
+    funkKanal: funkKanalText,
+    gruppe: e ? gsGruppe(e) : "",
   };
 }
 
@@ -1641,16 +1778,9 @@ function entscheidungDaten(fz: SimFahrzeug, e: Einsatz): Record<string, unknown>
   const ALT: Record<Altersgruppe, [string, string]> = { kleinkind: ["Kleinkind", "unter 1 Jahr"], kind: ["Kind", "1 – 17"], erwachsener: ["Erwachsener", "18 +"] };
   const DR: Record<number, [string, string]> = { 10: ["stabil", "Notaufnahme"], 20: ["dringend", "rasch versorgen"], 30: ["Schockraum", "Intensiv"] };
   const rtwFehlt = planSeite !== "nah" && planSeite !== "kein" && !rtw;
-  // Symptom: Suche oder Vorschläge aus dem Lagebild
+  // Symptom: nur die Suche (Paul 17.11.2026: kein Vorschlag aus dem Lagebild)
   const q = zw.q.trim();
-  const vorschlaege: Symptom[] = [];
-  const v = e.verdacht ?? e.wahr.verdacht ?? "";
-  if (v) {
-    const z = zuweisungLesen(v);
-    const s = z?.s ?? (v.startsWith("bu_") ? symptom(symptomAusDiagnose(v)) : undefined);
-    if (s) vorschlaege.push(s);
-  }
-  const treffer = q ? symptomSuche(q, 8) : vorschlaege;
+  const treffer = q ? symptomSuche(q, 8) : [];
   const waehleSym = (s: Symptom) => {
     zw.sym = s;
     zw.q = "";
@@ -1676,7 +1806,9 @@ function entscheidungDaten(fz: SimFahrzeug, e: Einsatz): Record<string, unknown>
       freiCls: k.voll ? "pill rot" : k.frei ? (/^0\//.test(k.frei) ? "pill gelb" : "pill ok") : "",
     });
   }
-  if (zw.mehr && khSuche.trim()) {
+  // „Manuell buchen“: Namenssuche über alle Häuser (eigene Liste unter den Vorschlägen)
+  const khAndere: Record<string, unknown>[] = [];
+  if (khSuche.trim()) {
     const qq = khSuche.trim().toLowerCase();
     for (const h of store
       .list("hospitals")
@@ -1684,7 +1816,7 @@ function entscheidungDaten(fz: SimFahrzeug, e: Einsatz): Record<string, unknown>
       .map((h) => ({ h, km: distanceM(fz, h) / 1000 }))
       .sort((a, b) => a.km - b.km)
       .slice(0, 8))
-      khs.push({ id: h.h.id, n: h.h.kurzname || h.h.name, km: `${h.km.toFixed(0)} km`, min: planSeite === "nah" ? ` · ${minuten(flugSek(h.km * 1000))} Flug` : "", merk: [{ t: "von Hand gewählt", c: "" }], frei: "", freiCls: "" });
+      khAndere.push({ id: h.h.id, n: h.h.kurzname || h.h.name, km: `${h.km.toFixed(0)} km`, min: planSeite === "nah" ? ` · ${minuten(flugSek(h.km * 1000))} Flug` : "", merk: [{ t: "von Hand gewählt", c: "" }], frei: "", freiCls: "" });
   }
   const KT = ["Altersgruppe", "Symptom", "Dringlichkeit", "Vorschlag"];
   const KF = ["Wie alt ist der Patient?", "Was hat der Patient?", "Wie dringend?", "Passende Krankenhäuser"];
@@ -1718,14 +1850,19 @@ function entscheidungDaten(fz: SimFahrzeug, e: Einsatz): Record<string, unknown>
       klick: () => ((zw.schritt = i + 1), neu()),
     })),
     altW: ALTERSGRUPPEN.map((a) => ({ id: a.id, t: ALT[a.id][0], s: ALT[a.id][1], on: zw.alter === a.id, klick: () => ((zw.alter = a.id), (zw.schritt = zw.sym ? 3 : 2), neu()) })),
-    drW: DRINGLICHKEITEN.map((d) => ({ id: d.id, t: DR[d.id][0], s: DR[d.id][1], on: zw.dring === d.id, aus: !!zw.sym && !zw.sym.dringlichkeiten.includes(d.id), klick: () => ((zw.dring = d.id), (zw.schritt = 4), neu()) })),
+    // nur die Dringlichkeiten, die es für das Symptom gibt (Paul 17.11.2026: nicht passende gar nicht zeigen)
+    drW: DRINGLICHKEITEN.filter((d) => !zw.sym || zw.sym.dringlichkeiten.includes(d.id)).map((d) => ({ id: d.id, t: DR[d.id][0], s: DR[d.id][1], on: zw.dring === d.id, aus: !!zw.sym && !zw.sym.dringlichkeiten.includes(d.id), klick: () => ((zw.dring = d.id), (zw.schritt = 4), neu()) })),
     symQ: zw.q,
-    symHinweis: q ? (treffer.length ? "" : "Kein Symptom gefunden.") : treffer.length ? "Aus dem Lagebild:" : "Symptom eintippen – Treffer erscheinen hier.",
+    symHinweis: q ? (treffer.length ? "" : "Kein Symptom gefunden.") : "Symptom eintippen – passende erscheinen darunter.",
     symW: treffer.map((s) => ({ id: s.id, t: s.name, kat: s.kategorie, klick: () => waehleSym(s) })),
     khLeer: !grund ? "Erst das Symptom wählen – dann kommen die passenden Häuser, die jetzt aufnehmen." : !khs.length ? "Kein passendes Haus nimmt gerade auf – „Andere Häuser“ durchsuchen." : "",
     khs,
     andereAuf: zw.mehr,
     andereQ: khSuche,
+    khAndere,
+    seite: planSeite,
+    rtwBucht: () => setzen({ art: "uebergabe", naMit: planSeite === "naMit" }),
+    plan: p ? planText(p) : "",
   };
 }
 
@@ -1756,6 +1893,38 @@ function ansichtAktionen(): Record<string, (...x: never[]) => unknown> {
       planen();
     },
     gross: () => karteGross(!karteIstGross()),
+    /** Buchen › Vorschläge: Häuser auf der Karte zeigen (leer = aus), hov = unter der Maus */
+    karteVorschlag: (ids: string[], hov: string) => {
+      const neu = ids.join(",") !== kartenVorschlag.ids.join(",");
+      if (!neu && hov === kartenVorschlag.hov) return;
+      kartenVorschlag = { ids: [...ids], hov };
+      const fz = meinFz();
+      karteAktualisieren(fz, einsatzVon(fz));
+      const map = karte?.map;
+      if (!neu || !map || !fz) return;
+      if (!ids.length) return karteFolgen(true);
+      const pts = ids.map((id) => store.get("hospitals", id)).filter((h): h is Hospital => !!h).map((h) => [h.lon, h.lat] as [number, number]);
+      pts.push([fz.lon, fz.lat]);
+      const lons = pts.map((x) => x[0]);
+      const lats = pts.map((x) => x[1]);
+      map.fitBounds([[Math.min(...lons), Math.min(...lats)], [Math.max(...lons), Math.max(...lats)]], { padding: { top: 70, bottom: 60, left: 50, right: 150 }, maxZoom: 11, duration: 500 });
+    },
+    /** Einstellungen-Reiter: die echten Dialoge */
+    dialog: (n: string) => {
+      if (n === "funk") funkDialog();
+      else if (n === "tasten") tastenDialog();
+      else if (n === "handy") handyDialog();
+      else if (n === "alarm") alarmDialog();
+      else if (n === "wetter") wetterDialog();
+      else if (n === "einrichtung") einrichtungDialog();
+      else einstellungenSeite("pilot");
+    },
+    hubschrauberWechseln: () => void wechseln(),
+    rtwBucht: () => {
+      const fz = meinFz();
+      const e = einsatzVon(fz);
+      if (fz && e) (entscheidungDaten(fz, e) as { rtwBucht?: () => void } | null)?.rtwBucht?.();
+    },
     symSuche: (q: string) => {
       zw.q = q.slice(0, 60);
       planen();
@@ -1983,6 +2152,15 @@ function handyNeu(fz: SimFahrzeug | undefined, e: Einsatz | undefined): Record<s
     ent: D.ent,
     planT: D.planT,
     abrufPunkt: !!(D.gs as { abruf?: unknown } | null)?.abruf,
+    // Beta 64 (neues Handy und EFB): Einsatzliste, Statuszeiten, Verlauf, Funk-Zustand
+    liste: D.liste,
+    zeiten: D.zeiten,
+    verlauf: (D.verlauf as unknown[]).slice(0, 30),
+    aktId: D.aktId,
+    kt: D.kt,
+    funkKanal: D.funkKanal,
+    patVerlauf: D.patVerlauf,
+    alleSt: AKTIONEN.filter((a) => a.status).map((a) => ({ aktion: a.id, nummer: sim.statusDef(a.status!).nummer, name: ST_LANG[a.status!] ?? sim.statusDef(a.status!).name, kurz: ST_KURZ[a.status!] ?? sim.statusDef(a.status!).name, farbe: stFarbe(sim.statusDef(a.status!).nummer), aktiv: fz?.status === a.status })),
     tab: tabletDaten(fz, e, D),
     amOrtText: fz && e && fz.status !== "amBO" ? (e.gs && !e.gs.aufgehoben ? "Buchen geht, sobald euch die Einsatzleitung einen Patienten zugeteilt hat." : "Buchen geht am Einsatzort (Status 3).") : fz && e && e.gs && !e.gs.aufgehoben ? "Buchen geht, sobald euch die Einsatzleitung einen Patienten zugeteilt hat." : "",
   };
@@ -2270,7 +2448,18 @@ function handyBuchungStand(fz: SimFahrzeug, e: Einsatz): Record<string, unknown>
     alter: zw.alter,
     alterListe: ALTERSGRUPPEN.map((a) => ({ id: a.id, name: a.name })),
     dring: zw.dring,
-    dringListe: DRINGLICHKEITEN.map((d) => ({ id: d.id, name: d.name, aus: !!zw.sym && !zw.sym.dringlichkeiten.includes(d.id) })),
+    dringListe: DRINGLICHKEITEN.filter((d) => !zw.sym || zw.sym.dringlichkeiten.includes(d.id)).map((d) => ({ id: d.id, name: d.name, aus: false })),
+    // „Manuell buchen“: alle Häuser nach Namen (Befehl „bu:mq:Text“)
+    mq: khSuche,
+    mtreffer: khSuche.trim()
+      ? store
+          .list("hospitals")
+          .filter((h) => `${h.name} ${h.kurzname ?? ""} ${h.ort ?? ""}`.toLowerCase().includes(khSuche.trim().toLowerCase()))
+          .map((h) => ({ h, km: distanceM(fz, h) / 1000 }))
+          .sort((a, b) => a.km - b.km)
+          .slice(0, 8)
+          .map((x) => ({ id: x.h.id, name: x.h.kurzname || x.h.name, lang: x.h.name, km: `${x.km.toFixed(0)} km`, zeit: planSeite === "nah" ? minuten((x.km * 1000) / (sim.settings.nahGeschwindigkeit / 3.6)) : "", tags: ["von Hand gewählt", ...(planSeite === "nah" ? [khLandung(x.h) ? "Landeplatz" : "kein Landeplatz"] : [])], an: gewaehlt === x.h.id }))
+      : [],
     kh: grund
       ? khListe(fz, e, grund).map((k) => ({
           id: k.h.id,
@@ -2289,7 +2478,7 @@ function handyBuchungStand(fz: SimFahrzeug, e: Einsatz): Record<string, unknown>
   };
 }
 
-/** Befehl vom Handy: „bu:schritt:2“, „gr:1“, „bu:seite:nah“, „bu:q:Text“, „bu:sym:id“, „bu:symweg“, „bu:alter:kind“, „bu:dring:30“, „bu:kh:id“, „bu:kein:revers“ */
+/** Befehl vom Handy: „bu:mq:Text“ (Krankenhaus von Hand suchen), „bu:schritt:2“, „gr:1“, „bu:seite:nah“, „bu:q:Text“, „bu:sym:id“, „bu:symweg“, „bu:alter:kind“, „bu:dring:30“, „bu:kh:id“, „bu:kein:revers“ */
 function handyBuchen(b: string): void {
   // Sprechgruppe wechseln (Pfeile am Handy): „gr:1“ / „gr:-1“
   if (b.startsWith("gr:")) {
@@ -2310,6 +2499,7 @@ function handyBuchen(b: string): void {
   const setzen = (pl: PilotPlan) => void befehl(sim.call("pilotPlan", fz.id, pl));
   if (art === "seite" && SEITEN.some((x) => x.id === wert)) planSeite = wert as PlanSeite;
   else if (art === "q") zw.q = wert.slice(0, 60);
+  else if (art === "mq") khSuche = wert.slice(0, 60);
   else if (art === "schritt" && /^[1-4]$/.test(wert)) zw.schritt = Number(wert);
   else if (art === "sym") {
     const x = symptom(wert);
@@ -2513,7 +2703,7 @@ async function karteStarten(box: HTMLElement): Promise<void> {
         id: "plt-ziele",
         type: "circle",
         source: "plt-ziele",
-        paint: { "circle-radius": 8, "circle-color": ["get", "farbe"], "circle-stroke-color": "#111216", "circle-stroke-width": 2 },
+        paint: { "circle-radius": ["coalesce", ["get", "r"], 8], "circle-color": ["get", "farbe"], "circle-stroke-color": "#111216", "circle-stroke-width": 2 },
       });
       map.addLayer({
         id: "plt-ziele-text",
@@ -2612,6 +2802,13 @@ function karteAktualisieren(fz: SimFahrzeug | undefined, e: Einsatz | undefined)
   const fuss = !!br && !!ort && !!fz && (!!fz.gsFussBis || !!fz.gsAmBr);
   quelle("plt-fuss")?.setData(fuss && br && ort ? { type: "FeatureCollection", features: [{ type: "Feature", geometry: { type: "LineString", coordinates: [[br.lon, br.lat], [ort.lon, ort.lat]] }, properties: {} }] } : leer());
   if (kh) ziele.push(punkt(kh.lat, kh.lon, { name: kh.kurzname || kh.name, farbe: "#3B8BFF" }));
+  // Buchen › Vorschläge: nummeriert auf der Karte, der unter der Maus größer
+  kartenVorschlag.ids.forEach((id, i) => {
+    const h = store.get("hospitals", id);
+    if (!h || h.id === kh?.id) return;
+    const an = kartenVorschlag.hov === id;
+    ziele.push(punkt(h.lat, h.lon, { name: `${i + 1} · ${h.kurzname || h.name}`, farbe: an ? "#3B8BFF" : "#8FB3EF", r: an ? 11 : 7 }));
+  });
   // Überstellung: Abholort (rot) und Ziel (blau)
   const kt = fz && !e ? sim.pilotKt(fz) : null;
   if (kt) {
@@ -2621,7 +2818,7 @@ function karteAktualisieren(fz: SimFahrzeug | undefined, e: Einsatz | undefined)
     if (n) ziele.push(punkt(n.lat, n.lon, { name: d.nach?.label ?? "Ziel", farbe: "#3B8BFF" }));
   }
   if (fz) ziele.push(punkt(fz.heim.lat, fz.heim.lon, { name: "Stützpunkt", farbe: "#4CC38A" }));
-  const zk = JSON.stringify(ziele.map((z) => z.geometry));
+  const zk = JSON.stringify(ziele.map((z) => [z.geometry, z.properties]));
   if (zk !== letzteZiele) {
     letzteZiele = zk;
     quelle("plt-ziele")?.setData({ type: "FeatureCollection", features: ziele });
@@ -2678,6 +2875,8 @@ function karteFolgen(sofort: boolean): void {
   const fz = meinFz();
   const map = karte?.map;
   if (!fz || !map || !folgen) return;
+  // solange die Vorschläge zu sehen sind, bleibt deren Ausschnitt
+  if (kartenVorschlag.ids.length) return;
   // mit Ziel: so weit hinaus, dass Hubschrauber und Route ganz zu sehen sind
   if (routePunkte.length >= 2) {
     const lons = routePunkte.map((x) => x[0]);
@@ -2691,7 +2890,7 @@ function karteFolgen(sofort: boolean): void {
     letzterAusschnitt = key;
     const w = map.getContainer().clientWidth;
     const pad = Math.max(24, Math.min(70, Math.round(w / 10)));
-    map.fitBounds(bb, { padding: { top: pad + 44, bottom: pad + 50, left: pad + 10, right: pad + 10 }, maxZoom: 11.5, duration: sofort ? 0 : 900 });
+    map.fitBounds(bb, { padding: { top: pad + 44, bottom: pad + 50, left: pad + 10, right: pad + 90 }, maxZoom: 11.5, duration: sofort ? 0 : 900 });
     return;
   }
   letzterAusschnitt = "";

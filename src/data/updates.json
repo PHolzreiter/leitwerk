@@ -1,5 +1,16 @@
 [
  {
+  "version": "0.116.0-beta.64",
+  "datum": "2026-11-17",
+  "titel": "Pilotenansicht neu: PC, Handy und Tablet",
+  "punkte": [
+   "Pilotenfenster: Einsatzliste links (auch vergangene Einsätze), Einsatz mit Zeiten und Verlauf, Karte rechts",
+   "Zielort buchen Schritt für Schritt: Symptom eintippen, nur passende Dringlichkeiten, Vorschläge auf der Karte, „Manuell buchen“",
+   "Handy und Tablet neu gestaltet: Liste, Einsatz, Buchen, Status antippen und senden, Sprechtaste, Alarm über die ganze Fläche",
+   "Einheitliche Code-Marken; „Nächster Schritt“ entfernt; ruhigere Animationen am PC"
+  ]
+ },
+ {
   "version": "0.116.0-beta.63",
   "datum": "2026-11-17",
   "titel": "Kleinigkeiten: Treffpunkte, Programmsymbol, X-Plane",

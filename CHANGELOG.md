@@ -1,5 +1,14 @@
 # Änderungen
 
+## 0.116.0-beta.64 – Pilotenansicht neu: PC, Handy und Tablet
+- **Pilotenfenster am PC:** Links die Leiste Einsätze · Status · Einstellungen, daneben die Liste aller Einsätze dieser Sitzung (laufend und vergangen) und die Schnell-Statustasten. In der Mitte der gewählte Einsatz mit Ort, Patient, Zeiten (Alarm bis Frei) und Einsatzverlauf, rechts die Karte. Vergangene Einsätze lassen sich wieder öffnen.
+- **Zielort buchen Schritt für Schritt:** Transportart oder Endegrund → (wer bucht) → Alter → Symptom (eintippen, passende erscheinen darunter) → Dringlichkeit (nur die passenden, farbig) → Vorschläge mit Merkmalen und Nummern auf der Karte. „Manuell buchen“ sucht in allen Krankenhäusern. Zurück geht jederzeit.
+- **Status:** Im Spiel und mit Tasten/Joystick wird der Status weiter durch Halten gesendet; in den Apps tippt man den Status an und drückt „Senden“. Status 7 ist sichtbar, aber gesperrt.
+- **Handy neu:** Reiter unten, Einsatz schiebt sich beim Antippen seitlich herein, Buchen Schritt für Schritt, Status mit Funkgerät-Anzeige und Sprechgruppe, Sprechtaste unten, Alarm über die ganze Fläche (vibriert bis 9 oder 2). Hell und dunkel wie das Handy. Einstellungen am Handy: Vibration, Tastentöne, Bildschirm anlassen.
+- **Tablet (MSFS-EFB, H145) neu:** Leiste links, Einsätze als Liste, Einsatz über die ganze Fläche mit Karte, Einheiten und Zeiten, Buchen Schritt für Schritt, Status mit Senden und Sprechtaste, Navigation als große Karte, Textgröße wählbar, „Funkgerät & Tablet verbinden“ in den Einstellungen.
+- **Code-Marken:** Gleiches Aussehen überall – Farbe aus der Versorgungsstufe, Muster je Art (ALS voll, BLS gestreift, BLS/ALS aufwertbar violett, Sekundär, Akut, Telemed, Weitergabe, Großeinsatz, Alpin), alle gleich groß.
+- **Entfernt:** die Karte „Nächster Schritt“. Animationen am PC ruhig (kurzes Einblenden statt Schieben).
+
 ## 0.116.0-beta.63 – Kleinigkeiten: Treffpunkte, Programmsymbol, X-Plane
 - **Treffpunkte am Funk:** Orte heißen am Funk so, wie man sie kennt: „beim Bühl Center“ statt „ALEX“, dazu „SCS“, „G3“, „MEZ“, „VAZ“, „Kristalltherme“ und andere. Beim Verlegen und Abziehen werden diese Namen auch ohne Ortsangabe verstanden („zum Bühlcenter“), frühere Namen wie „Merkur“ oder „Baumax“ zusammen mit dem Ort („nach Krems zum Merkur“). Eigene Orte (CSV) können eine Spalte „sprechname“ haben (gesagt|auch verstanden).
 - **Programmsymbol:** In kleinen Größen (16–32 px: Taskleiste, Dateiliste, Fenster) gibt es eine Kleinversion des Logos mit breiteren Lücken, damit Bildschirme, Tisch und Person erkennbar bleiben.

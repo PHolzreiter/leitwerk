@@ -20,6 +20,7 @@
   </div>
   <span class="pv-platz"></span>
   <span class="{{zrCls}}" title="{{zrTip}}"><i></i><span><span class="pv-lab{{e.zrA}}" style="--lw: 220px;">{{zrA}}</span>{{zrX}}<span class="pv-lab{{e.zrB}}" style="--lw: 220px;">{{zrB}}</span><span class="pv-lab{{e.zrC}}" style="--lw: 90px;">{{zrC}}</span></span></span>
+  <sc-if value="{{funkT}}"><span class="{{funkCls}}" title="Funk: Sprechgruppe und wer gerade spricht"><i></i><span>{{funkT}}</span></span></sc-if>
   <span class="{{verbCls}}" title="Verbindung zum Spiel"><i></i><span>{{verbT}}<span class="pv-lab{{e.verbL}}" style="--lw: 220px;">{{verbL}}</span></span></span>
     <div class="pv-anker re{{ppR.cockpit}}" style="--pw: 420px;">
       <button class="{{ckCls}}" onClick="{{ckKlick}}" title="Cockpit, Simulator und Übungsflug einrichten"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"></path><circle cx="16" cy="7" r="2"></circle><circle cx="10" cy="17" r="2"></circle></svg><span class="pv-lab{{e.ck}}" style="--lw: 70px;">Cockpit</span><i class="pv-ckpkt" style="background: {{ckPunkt}};"></i></button>
@@ -97,120 +98,183 @@
   </sc-if>
   <div class="pv-phasen" role="list" aria-label="Ablauf"><sc-for list="{{phasen}}" as="p"><div class="{{p.cls}}" role="listitem" title="{{p.tip}}"><i>{{p.i}}</i><span class="pv-pht">{{p.t}}</span></div></sc-for></div>
 </div>
-<main class="{{hauptCls}}" style="--rb: {{rb}}px;">
-  <sc-if value="{{linksSp}}">
-  <div class="pv-sp pv-links">
-    <section class="pv-k"><div class="pv-kk"><span class="lbl">Status</span><span class="pv-hint">gedrückt halten</span></div><div class="pv-ki">
-      <div class="pv-stl"><sc-for list="{{stl}}" as="s"><button class="{{s.cls}}" style="background: {{s.f}};" onPointerDown="{{s.an}}" onPointerUp="{{s.ab}}" onPointerCancel="{{s.ab}}" onContextMenu="{{s.kein}}" title="{{s.tip}}"><b>{{s.n}}</b><span>{{s.t}}</span><kbd>{{s.k}}</kbd></button></sc-for></div>
-    </div></section>
-  </div>
-  </sc-if>
-  <div class="pv-sp pv-mitte">
-    <sc-if value="{{statusOben}}"><section class="pv-k"><div class="pv-ki"><div class="pv-stl"><sc-for list="{{stl}}" as="s"><button class="{{s.cls}}" style="background: {{s.f}};" onPointerDown="{{s.an}}" onPointerUp="{{s.ab}}" onPointerCancel="{{s.ab}}" onContextMenu="{{s.kein}}" title="{{s.tip}}"><b>{{s.n}}</b><span>{{s.t}}</span><kbd>{{s.k}}</kbd></button></sc-for></div></div></section></sc-if>
-    <div class="pv-next"><div class="pv-nt"><span class="pv-nn">Nächster Schritt</span><b>{{next.t}}</b><p>{{next.d}}</p></div><sc-if value="{{next.eta}}"><div class="pv-eta"><b>{{next.eta}}</b><span>{{next.etaT}}</span></div></sc-if></div>
-    <section class="pv-k"><div class="pv-kk"><span class="lbl">Einsatz</span><sc-if value="{{hatEinsatz}}"><span class="pv-hint">{{ein.nr}}</span></sc-if></div><div class="pv-ki">
-      <sc-if value="{{keinEinsatz}}"><div class="pv-leer"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" style="width: 26px; height: 26px;"><path d="M2 5h18M11 5v3M5 12a4 4 0 0 1 4-4h5a4 4 0 0 1 0 8H9a4 4 0 0 1-4-4zM18 12h4M8 20h9M10 16v4M15 16v4"></path></svg><b>Kein Einsatz</b><span>Warte auf die Alarmierung durch die Leitstelle.</span></div></sc-if>
-      <sc-if value="{{hatEinsatz}}">
-        <div class="pv-einsatz">
-          <div>
-            <div class="pv-code"><sc-if value="{{ein.stufe}}"><span class="stufe" style="background: {{ein.sf}};">{{ein.stufe}}</span></sc-if><b style="font-size: 13px;">{{ein.code}}</b></div>
-            <div class="pv-sw" style="margin-top: 6px;">{{ein.sw}}</div>
-            <sc-if value="{{ein.zi}}"><div class="pv-zi"><b>{{ein.ziB}}</b>{{ein.ziS}}{{ein.ziT}}</div></sc-if>
-            <div class="pv-adr"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s7-6.2 7-11a7 7 0 0 0-14 0c0 4.8 7 11 7 11z"></path><circle cx="12" cy="10" r="2.5"></circle></svg>{{ein.adr}}</div>
-            <sc-if value="{{ein.zusatz}}"><div class="pv-zi">{{ein.zusatz}}</div></sc-if>
-            <sc-if value="{{ein.gsText}}"><div class="pv-gsh">{{ein.gsText}}</div></sc-if>
-          </div>
-          <sc-if value="{{fl.km}}"><div class="pv-fl"><b>{{fl.km}}</b>{{fl.t}}</div></sc-if>
-        </div>
-        <div class="pv-chips"><sc-for list="{{fzs}}" as="f"><span class="pv-fz" style="background: {{f.f}};" title="{{f.tip}}"><b>{{f.s}}</b>{{f.t}}</span></sc-for></div>
-        <sc-for list="{{nav}}" as="n"><div class="pv-nav"><span>{{n.t}}</span><code>{{n.k}}</code><span class="pv-nk"><button class="kn sm" onClick="{{n.kopie}}">Kopieren</button><button class="kn sm" onClick="{{n.pln}}">.pln</button></span><sc-if value="{{n.z}}"><small class="pv-navz">{{n.z}}</small></sc-if></div></sc-for>
-      </sc-if>
-    </div></section>
-    <sc-if value="{{gsBR}}">
-    <section class="pv-k"><div class="pv-kk"><span class="lbl">Großeinsatz · Bereitstellungsraum</span><span class="pv-hint">Sprechgruppe {{gs.gruppe}}</span></div><div class="pv-ki">
-      <sc-if value="{{gs.abruf}}"><div class="pv-abruf" role="alert"><b>ABRUF DURCH DIE EINSATZLEITUNG</b><span>{{gs.abruf.t}}</span><sc-if value="{{gs.abruf.pct}}"><div class="pv-fuss"><i style="--w: {{gs.abruf.pct}}%;"></i></div></sc-if></div></sc-if>
-      <sc-if value="{{gs.zug}}"><div class="pv-zug"><b class="p" style="background: {{gs.zug.f}};">{{gs.zug.p}}</b><span>{{gs.zug.t}}</span></div></sc-if>
-      <sc-if value="{{gs.zahlen}}"><div class="pv-gsz"><sc-for list="{{gs.zahlen}}" as="z"><span><i style="background: {{z.f}};"></i><b>{{z.n}}</b>{{z.t}}</span></sc-for></div></sc-if>
-      <sc-if value="{{gs.det}}">
-      <div class="pv-brw"><sc-for list="{{gs.werte}}" as="w"><div><span>{{w.l}}</span><b>{{w.v}}</b></div></sc-for></div>
-      <sc-if value="{{gs.liste}}"><span class="lbl" style="margin-top: 2px;">Fahrzeuge im BR</span>
-      <div class="pv-brl"><sc-for list="{{gs.liste}}" as="r"><div class="{{r.cls}}" style="--d: {{r.d}};"><i>{{r.nr}}</i><span>{{r.t}}</span><small>{{r.z}}</small></div></sc-for></div></sc-if>
-      </sc-if>
-    </div></section>
-    </sc-if>
-    <sc-if value="{{hatEinsatz}}">
-    <section class="pv-k"><div class="pv-kk"><span class="lbl">Patient</span></div><div class="pv-ki">
-      <sc-if value="{{patZu}}"><span class="pv-hint" style="font-size: 13px;">{{patZuT}}</span></sc-if>
-      <sc-if value="{{patAuf}}">
-        <sc-for list="{{pats}}" as="pat"><div class="pv-pat">
-          <span class="pv-sicht" style="background: {{pat.sf}}; color: {{pat.sc}};">{{pat.s}}</span>
-          <div class="pv-pz"><b>{{pat.t}}</b><sc-if value="{{pat.l}}"><span>{{pat.l}}</span></sc-if>
-            <div class="pv-vit" style="margin-top: 4px;"><sc-for list="{{pat.v}}" as="v"><span class="{{v.c}}">{{v.t}}</span></sc-for></div></div>
-        </div></sc-for>
-        <sc-if value="{{patVerlauf}}"><div class="pv-ver"><sc-for list="{{patVerlauf}}" as="v"><div class="pv-vz"><span>{{v.z}}</span>{{v.t}}</div></sc-for></div></sc-if>
-      </sc-if>
-    </div></section>
-    </sc-if>
-    <sc-if value="{{entscheiden}}">
-    <section class="pv-k"><div class="pv-kk"><span class="lbl">Was passiert mit dem Patienten?</span><span class="pv-hint">Ändern geht, solange ihr am Einsatzort seid</span></div><div class="pv-ki">
-      <div class="pv-ent"><sc-for list="{{wahl}}" as="w"><button class="{{w.cls}}" onClick="{{w.klick}}"><b>{{w.t}}</b><span>{{w.d}}</span></button></sc-for></div>
-      <sc-if value="{{keinWahl}}"><div class="pk-wahl"><sc-for list="{{keinWahl}}" as="w"><button class="{{w.cls}}" onClick="{{w.klick}}">{{w.t}}<small>{{w.s}}</small></button></sc-for></div></sc-if>
-      <sc-if value="{{rtwFehlt}}"><span class="pv-hint" style="font-size: 13px;">Noch kein RTW im Einsatz – bitte bei der Leitstelle anfordern (Funk oder Chat).</span></sc-if>
-      <sc-if value="{{buchen}}">
-      <div class="pk-kopf"><span class="lbl">Krankenhaus</span><sc-if value="{{khGebucht}}"><span class="pill ok">gebucht {{khGebuchtT}}</span></sc-if></div>
-      <div class="pk-schritte">
-        <sc-for list="{{khSchritte}}" as="k">
-          <sc-if value="{{k.fertig}}">
-            <div class="pk-fertig"><span class="n">✓</span><span class="w"><span class="l">{{k.titel}}</span>{{k.wert}}</span><button class="kn sm leise" onClick="{{k.klick}}">Ändern</button></div>
-          </sc-if>
-          <sc-if value="{{k.offen}}">
-            <div class="pk-offen"><span class="n">{{k.nr}}</span>{{k.titel}}</div>
-          </sc-if>
-          <sc-if value="{{k.aktiv}}">
-            <div class="pk-aktiv">
-              <div class="pk-skopf"><span class="n">{{k.nr}}</span>{{k.frage}}</div>
-              <sc-if value="{{k.istAlter}}">
-                <div class="pk-wahl"><sc-for list="{{altW}}" as="w"><button class="{{w.cls}}" onClick="{{w.klick}}">{{w.t}}<small>{{w.s}}</small></button></sc-for></div>
-              </sc-if>
-              <sc-if value="{{k.istSymptom}}">
-                <input class="feld pv-symsuche" value="{{symQ}}" onInput="{{symTippen}}" onKeyDown="{{symTaste}}" placeholder="Symptom suchen (z. B. Polytrauma, Schlaganfall, Atemnot) …" aria-label="Symptom suchen">
-                <sc-if value="{{symHinweis}}"><div class="zeit">{{symHinweis}}</div></sc-if>
-                <div class="pk-chips"><sc-for list="{{symW}}" as="w"><button onClick="{{w.klick}}" title="{{w.kat}}">{{w.t}}</button></sc-for></div>
-              </sc-if>
-              <sc-if value="{{k.istDringlich}}">
-                <div class="pk-wahl"><sc-for list="{{drW}}" as="w"><button class="{{w.cls}}" onClick="{{w.klick}}">{{w.t}}<small>{{w.s}}</small></button></sc-for></div>
-              </sc-if>
-              <sc-if value="{{k.istVorschlag}}">
-                <sc-if value="{{khLeer}}"><span class="pv-hint" style="font-size: 13px;">{{khLeer}}</span></sc-if>
-                <sc-for list="{{khs}}" as="h"><div class="{{h.cls}}" onClick="{{h.klick}}"><span class="{{h.radio}}"></span><div style="min-width: 0;"><b>{{h.n}}</b> <span class="zeit">· {{h.km}}{{h.min}}</span><div class="pk-merk"><sc-for list="{{h.merk}}" as="m"><span class="{{m.c}}">{{m.t}}</span></sc-for></div></div><span class="{{h.freiCls}}">{{h.frei}}</span></div></sc-for>
-                <sc-if value="{{andereAuf}}"><input class="feld" value="{{andereQ}}" onInput="{{andereTippen}}" placeholder="Krankenhaus suchen …" aria-label="Krankenhaus suchen"></sc-if>
-                <div style="display: flex; gap: 8px; align-items: center;">
-                  <button class="kn sm leise" onClick="{{andereKlick}}">{{andereT}}</button><span style="flex: 1;"></span>
-                  <sc-if value="{{buchenT}}"><button class="kn prim sm" onClick="{{buchenKlick}}">{{buchenT}}</button></sc-if>
-                </div>
-              </sc-if>
-            </div>
-          </sc-if>
+<main class="{{hauptCls}}" style="--rb: {{rb}}px; --lw: {{lw}}px;">
+  <nav class="pvn-leiste" aria-label="Bereiche">
+    <sc-for list="{{reiter}}" as="r">
+      <button class="{{r.cls}}" onClick="{{r.klick}}" aria-current="{{r.aktuell}}" title="{{r.t}}">
+        <sc-if value="{{r.istEinsatz}}"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3a6 6 0 0 0-6 6v4.2L4.3 16a1 1 0 0 0 .9 1.5h13.6a1 1 0 0 0 .9-1.5L18 13.2V9a6 6 0 0 0-6-6zm-2.3 16a2.4 2.4 0 0 0 4.6 0z"></path></svg></sc-if>
+        <sc-if value="{{r.istStatus}}"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="6" cy="4.5" r="2"></circle><circle cx="12" cy="4.5" r="2"></circle><circle cx="18" cy="4.5" r="2"></circle><circle cx="6" cy="10.5" r="2"></circle><circle cx="12" cy="10.5" r="2"></circle><circle cx="18" cy="10.5" r="2"></circle><circle cx="6" cy="16.5" r="2"></circle><circle cx="12" cy="16.5" r="2"></circle><circle cx="18" cy="16.5" r="2"></circle><circle cx="12" cy="22" r="1.6"></circle></svg></sc-if>
+        <sc-if value="{{r.istEinst}}"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13.6 2.5h-3.2l-.5 2.6a7.5 7.5 0 0 0-1.9 1.1l-2.5-.9-1.6 2.8 2 1.7a7.6 7.6 0 0 0 0 2.2l-2 1.7 1.6 2.8 2.5-.9c.6.5 1.2.8 1.9 1.1l.5 2.6h3.2l.5-2.6a7.5 7.5 0 0 0 1.9-1.1l2.5.9 1.6-2.8-2-1.7a7.6 7.6 0 0 0 0-2.2l2-1.7-1.6-2.8-2.5.9a7.5 7.5 0 0 0-1.9-1.1zM12 9a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"></path></svg></sc-if>
+        <sc-if value="{{r.istKarte}}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2zM9 4v14M15 6v14"></path></svg></sc-if>
+        <span>{{r.t}}</span>
+        <sc-if value="{{r.punkt}}"><i class="pvn-punkt"></i></sc-if>
+      </button>
+    </sc-for>
+  </nav>
+
+  <sc-if value="{{zeigeListe}}">
+  <div class="pvn-liste">
+    <div class="pvn-lk"><span class="lbl">Einsätze</span><span class="pv-hint">{{listeZahl}}</span></div>
+    <div class="pvn-lscroll">
+      <sc-if value="{{listeLeer}}"><div class="pvn-lleer">{{listeLeerT}}</div></sc-if>
+      <sc-for list="{{liste}}" as="e">
+        <button class="{{e.cls}}" onClick="{{e.klick}}" aria-current="{{e.aktuell}}">
+          <span class="pvn-ez"><span class="pvn-mk" style="{{e.mk.a}}"><span style="{{e.mk.i}}">{{e.code}}</span></span><span class="{{e.zcls}}">{{e.zustand}} · {{e.zeit}}</span></span>
+          <b class="pvn-esw">{{e.sw}}</b>
+          <span class="pvn-ez pvn-eu"><span>{{e.ort}}</span><span class="{{e.zielCls}}">{{e.zielKurz}}</span></span>
+        </button>
+      </sc-for>
+    </div>
+    <section class="pvn-schnell" aria-label="Status">
+      <div class="pvn-lk"><span class="lbl">Status</span><span class="pv-hint">gedrückt halten</span></div>
+      <div class="pvn-mini">
+        <sc-for list="{{tasten}}" as="s">
+          <sc-if value="{{s.da}}"><button class="{{s.miniCls}}" style="background: {{s.f}};" onPointerDown="{{s.an}}" onPointerUp="{{s.ab}}" onPointerCancel="{{s.ab}}" onPointerLeave="{{s.ab}}" onContextMenu="{{s.kein}}" title="{{s.tip}}"><b>{{s.n}}</b></button></sc-if>
+          <sc-if value="{{s.gesperrt}}"><span class="pv-sb pvn-m pvn-aus" title="Status 7 – gibt es hier nicht"><b>7</b></span></sc-if>
         </sc-for>
       </div>
-      <span class="pv-hint">Die Buchung belegt einen Platz im Krankenhaus – wie in der Leitstelle.</span>
-      </sc-if>
-    </div></section>
-    </sc-if>
-    <sc-if value="{{planT}}"><div class="pv-plan"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" style="color: var(--ok);"><path d="M5 12.5l4.5 4.5L19 7"></path></svg><span>{{planT}}</span></div></sc-if>
-    <section class="pv-k"><div class="pv-kk"><span class="lbl">Einsatzverlauf</span></div><div class="pv-ki"><div class="pv-ver"><sc-for list="{{verlauf}}" as="v"><div class="pv-vz"><span>{{v.z}}</span><sc-if value="{{v.abf}}"><div><button class="{{v.abfCls}}" onClick="{{v.abfKlick}}"><svg class="ic s" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"></path></svg>Notrufabfrage · {{v.abfN}} Angaben <small>{{v.abfArt}}</small></button><sc-if value="{{v.abfAuf}}"><div class="pv-abfl"><sc-for list="{{v.abf}}" as="a"><div style="--d: {{a.d}};">{{a.t}}</div></sc-for></div></sc-if></div></sc-if><sc-if value="{{v.t}}"><div>{{v.t}}<sc-if value="{{v.von}}"><small class="pv-von"> · {{v.von}}</small></sc-if></div></sc-if></div></sc-for></div></div></section>
+    </section>
   </div>
-  <div class="pv-sp pv-rechts" style="overflow: hidden;">
+  </sc-if>
+
+  <div class="pvn-mitte" ref="{{mitteRef}}">
+    <sc-if value="{{zeigeStreifen}}">
+      <div class="pvn-streifen">
+        <sc-for list="{{liste}}" as="e"><button class="{{e.sCls}}" onClick="{{e.klick}}" title="{{e.sw}}"><span class="pvn-mk" style="{{e.mk.a}}"><span style="{{e.mk.i}}">{{e.code}}</span></span><span>{{e.zeit}}</span></button></sc-for>
+        <span class="pvn-sp"></span>
+        <div class="pvn-mini kurz"><sc-for list="{{tasten}}" as="s"><sc-if value="{{s.da}}"><button class="{{s.miniCls}}" style="background: {{s.f}};" onPointerDown="{{s.an}}" onPointerUp="{{s.ab}}" onPointerCancel="{{s.ab}}" onPointerLeave="{{s.ab}}" onContextMenu="{{s.kein}}" title="{{s.tip}}"><b>{{s.n}}</b></button></sc-if></sc-for></div>
+      </div>
+    </sc-if>
+    <div class="pvn-ansicht" style="animation-name: {{animN}};">
+
+      <!-- Kein Einsatz / kein Hubschrauber -->
+      <sc-if value="{{zeigeLeer}}">
+        <div class="pvn-leer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M12 3a6 6 0 0 0-6 6v4.2L4.3 16a1 1 0 0 0 .9 1.5h13.6a1 1 0 0 0 .9-1.5L18 13.2V9a6 6 0 0 0-6-6zM9.7 19a2.4 2.4 0 0 0 4.6 0"></path></svg>
+          <b>{{leerT}}</b><span>{{leerU}}</span>
+          <sc-if value="{{leerKnopf}}"><button class="kn sm prim" onClick="{{leerKlick}}">Hubschrauber wählen …</button></sc-if>
+        </div>
+      </sc-if>
+
+      <!-- Einsatz -->
+      <sc-if value="{{zeigeEinsatz}}">
+        <sc-if value="{{gsBR}}">
+          <section class="pv-k pvn-gs"><div class="pv-kk"><span class="lbl">Großeinsatz · Bereitstellungsraum</span><span class="pvn-gr">{{gs.gruppe}}</span></div><div class="pv-ki">
+            <sc-if value="{{gs.abruf}}"><div class="pv-abruf" role="alert"><b>ABRUF DURCH DIE EINSATZLEITUNG</b><span>{{gs.abruf.t}}</span><sc-if value="{{gs.abruf.pct}}"><div class="pv-fuss"><i style="width: {{gs.abruf.pct}}%;"></i></div></sc-if></div></sc-if>
+            <sc-if value="{{gs.zug}}"><div class="pv-zug"><b class="p" style="background: {{gs.zug.f}};">{{gs.zug.p}}</b><span>{{gs.zug.t}}</span></div></sc-if>
+            <sc-if value="{{gs.zahlen}}"><div class="pv-gsz"><sc-for list="{{gs.zahlen}}" as="z"><span><i style="background: {{z.f}};"></i><b>{{z.n}}</b>{{z.t}}</span></sc-for></div></sc-if>
+            <sc-if value="{{gs.det}}">
+              <div class="pv-brw"><sc-for list="{{gs.werte}}" as="w"><div><span>{{w.l}}</span><b>{{w.v}}</b></div></sc-for></div>
+              <sc-if value="{{gs.liste}}"><span class="lbl">Fahrzeuge im BR</span><div class="pv-brl"><sc-for list="{{gs.liste}}" as="r"><div class="{{r.cls}}"><i>{{r.nr}}</i><span>{{r.t}}</span><small>{{r.z}}</small></div></sc-for></div></sc-if>
+            </sc-if>
+          </div></section>
+        </sc-if>
+
+        <section class="pv-k pvn-kopfk">
+          <div class="pvn-ez"><span class="pvn-mk pvn-mkg" style="{{d.mk.a}}"><span style="{{d.mk.i}}">{{d.code}}</span></span><span class="pvn-meta">{{d.meta}} · <b class="{{d.zcls}}">{{d.zustand}}</b></span></div>
+          <h2 class="pvn-titel">{{d.sw}}</h2>
+          <sc-if value="{{d.meldebild}}"><div class="pvn-mb">{{d.meldebild}}</div></sc-if>
+          <sc-if value="{{d.zi}}"><div class="pv-zi"><b>{{d.ziB}}</b>{{d.ziS}}{{d.ziT}}</div></sc-if>
+          <sc-if value="{{d.gsText}}"><div class="pv-gsh">{{d.gsText}}</div></sc-if>
+          <sc-if value="{{d.fzs}}"><div class="pv-chips"><sc-for list="{{d.fzs}}" as="f"><span class="pv-fz" style="background: {{f.f}};" title="{{f.tip}}"><b>{{f.s}}</b>{{f.t}}</span></sc-for></div></sc-if>
+          <div class="pvn-ez pvn-fuss"><span>Versorgungsstufe <b>{{d.stufe}}</b></span><sc-if value="{{d.gruppe}}"><span>Sprechgruppe <b class="pvn-gr">{{d.gruppe}}</b></span></sc-if></div>
+        </section>
+
+        <section class="{{d.zielCls}}">
+          <div class="pvn-ez"><span class="lbl">Zielort</span><span class="{{d.zielTagCls}}">{{d.zielTag}}</span></div>
+          <sc-if value="{{d.zielT}}"><div class="pvn-zt"><b>{{d.zielT}}</b><sc-if value="{{d.zielArt}}"><span>{{d.zielArt}}</span></sc-if></div></sc-if>
+          <sc-if value="{{d.buchbar}}"><button class="kn prim pvn-buchk" onClick="{{buchenAuf}}">{{d.buchT}}</button></sc-if>
+          <sc-if value="{{d.buchHinweis}}"><div class="pv-hint">{{d.buchHinweis}}</div></sc-if>
+        </section>
+
+        <div class="pvn-zwei">
+          <section class="pv-k"><div class="pv-kk"><span class="lbl">{{d.ortT}}</span><sc-if value="{{d.fl}}"><span class="pv-hint">{{d.fl}}</span></sc-if></div><div class="pv-ki">
+            <div class="pvn-adr">{{d.adr}}</div>
+            <sc-if value="{{d.zusatz}}"><div class="pv-hint">{{d.zusatz}}</div></sc-if>
+            <sc-for list="{{d.nav}}" as="n"><div class="pv-nav"><span>{{n.t}}</span><code>{{n.k}}</code><span class="pv-nk"><button class="kn sm" onClick="{{n.kopie}}">Kopieren</button><button class="kn sm" onClick="{{n.pln}}">.pln</button></span></div></sc-for>
+          </div></section>
+          <section class="pv-k"><div class="pv-kk"><span class="lbl">Patient</span></div><div class="pv-ki">
+            <sc-if value="{{d.patZu}}"><span class="pv-hint">{{d.patZu}}</span></sc-if>
+            <sc-for list="{{d.pats}}" as="pat"><div class="pv-pat">
+              <span class="pv-sicht" style="background: {{pat.sf}}; color: {{pat.sc}};">{{pat.s}}</span>
+              <div class="pv-pz"><b>{{pat.t}}</b><sc-if value="{{pat.l}}"><span>{{pat.l}}</span></sc-if>
+                <div class="pv-vit"><sc-for list="{{pat.v}}" as="v"><span class="{{v.c}}">{{v.t}}</span></sc-for></div></div>
+            </div></sc-for>
+            <sc-if value="{{d.patVerlauf}}"><div class="pv-ver"><sc-for list="{{d.patVerlauf}}" as="v"><div class="pv-vz"><span>{{v.z}}</span>{{v.t}}</div></sc-for></div></sc-if>
+            <sc-if value="{{d.keinPat}}"><span class="pv-hint">Keine Angaben.</span></sc-if>
+          </div></section>
+          <section class="pv-k"><div class="pv-kk"><span class="lbl">Zeiten</span></div><div class="pv-ki pvn-zeiten">
+            <sc-for list="{{d.zeiten}}" as="z"><div class="{{z.cls}}"><code>{{z.z}}</code><span>{{z.t}}</span></div></sc-for>
+          </div></section>
+          <section class="pv-k"><div class="pv-kk"><span class="lbl">Einsatzverlauf</span><span class="pv-hint">neueste oben</span></div><div class="pv-ki"><div class="pv-ver">
+            <sc-for list="{{d.verlauf}}" as="v"><div class="pv-vz"><span>{{v.z}}</span><sc-if value="{{v.abf}}"><div class="pvn-abf"><button class="{{v.abfCls}}" onClick="{{v.abfKlick}}" aria-expanded="{{v.abfAuf}}">{{v.abfArt}} · {{v.abfN}} Zeilen <i>{{v.pfeil}}</i></button><sc-if value="{{v.abfAuf}}"><div class="pvn-abfz"><sc-for list="{{v.abf}}" as="x"><div>{{x.t}}</div></sc-for></div></sc-if></div></sc-if><sc-if value="{{v.text}}"><span class="pvn-vt"><sc-if value="{{v.von}}"><b>{{v.von}}</b> · </sc-if>{{v.t}}</span></sc-if></div></sc-for>
+          </div></div></section>
+        </div>
+      </sc-if>
+
+      <!-- Zielort buchen: Schritt für Schritt -->
+      <sc-if value="{{zeigeBuchen}}">
+        <section class="pv-k pvn-buchen">
+          <div class="pvn-bk"><button class="kn sm" onClick="{{bZurueck}}">‹ Zurück</button><span class="pv-hint">{{bSchrittT}}</span><button class="kn sm leise" onClick="{{bAbbrechen}}">Abbrechen</button></div>
+          <div class="pvn-balken" aria-hidden="true"><sc-for list="{{bBalken}}" as="x"><i class="{{x}}"></i></sc-for></div>
+          <sc-if value="{{bAuswahl}}"><div class="pvn-chipsel"><sc-for list="{{bAuswahl}}" as="x"><span>{{x}}</span></sc-for></div></sc-if>
+          <h3 class="pvn-frage">{{bFrage}}</h3>
+          <sc-if value="{{bHinweis}}"><p class="pvn-bh">{{bHinweis}}</p></sc-if>
+          <sc-if value="{{bSuche}}">
+            <div class="{{bSucheCls}}">
+              <input class="feld" value="{{bQ}}" onInput="{{bTippen}}" onKeyDown="{{bTaste}}" placeholder="{{bPh}}" aria-label="{{bPh}}" autocomplete="off" spellcheck="false">
+              <sc-if value="{{bTreffer}}"><div class="pvn-dd" role="listbox"><sc-for list="{{bTreffer}}" as="x"><button role="option" onClick="{{x.klick}}"><b>{{x.t}}</b><span>{{x.d}}</span></button></sc-for></div></sc-if>
+            </div>
+          </sc-if>
+          <sc-if value="{{bOpt}}"><div class="pvn-opt"><sc-for list="{{bOpt}}" as="o">
+            <button class="{{o.cls}}" style="{{o.st}}" onClick="{{o.klick}}" onMouseEnter="{{o.rein}}" onMouseLeave="{{o.raus}}"><span class="pvn-ot"><b>{{o.t}}</b><sc-if value="{{o.d}}"><small>{{o.d}}</small></sc-if><sc-if value="{{o.merk}}"><span class="pk-merk"><sc-for list="{{o.merk}}" as="m"><span class="{{m.c}}">{{m.t}}</span></sc-for></span></sc-if></span><sc-if value="{{o.r}}"><span class="pvn-or">{{o.r}}</span></sc-if></button>
+          </sc-for></div></sc-if>
+          <sc-if value="{{bLeer}}"><div class="pv-hint">{{bLeer}}</div></sc-if>
+          <sc-if value="{{bManuell}}"><button class="pvn-manuell" onClick="{{bManuell}}">Manuell buchen – alle Krankenhäuser</button></sc-if>
+          <sc-if value="{{bAbschluss}}"><button class="{{bAbCls}}" onClick="{{bAbschluss}}">{{bAbText}}</button></sc-if>
+          <sc-if value="{{bFuss}}"><div class="pv-hint pvn-mitte-t">{{bFuss}}</div></sc-if>
+        </section>
+      </sc-if>
+
+      <!-- Status und Funk -->
+      <sc-if value="{{zeigeStatus}}">
+        <div class="pvn-status">
+          <section class="pv-k"><div class="pv-kk"><span class="lbl">Status</span><span class="pv-hint">gedrückt halten (ca. 2 s) – auch mit Taste oder Joystick</span></div><div class="pv-ki">
+            <div class="pvn-tasten">
+              <sc-for list="{{tasten}}" as="s">
+                <sc-if value="{{s.da}}"><button class="{{s.grossCls}}" style="background: {{s.f}};" onPointerDown="{{s.an}}" onPointerUp="{{s.ab}}" onPointerCancel="{{s.ab}}" onPointerLeave="{{s.ab}}" onContextMenu="{{s.kein}}" title="{{s.tip}}"><b>{{s.n}}</b><span>{{s.t}}</span><sc-if value="{{s.k}}"><kbd>{{s.k}}</kbd></sc-if></button></sc-if>
+                <sc-if value="{{s.gesperrt}}"><span class="pv-sb pvn-g pvn-aus" title="Status 7 – gibt es hier nicht"><b>7</b><span>–</span></span></sc-if>
+              </sc-for>
+            </div>
+          </div></section>
+          <div class="pv-funk pvn-funk" style="height: {{funkH}}px;"></div>
+        </div>
+      </sc-if>
+
+      <!-- Einstellungen: öffnen die echten Dialoge -->
+      <sc-if value="{{zeigeEinst}}">
+        <div class="pvn-einst">
+          <sc-for list="{{einst}}" as="g">
+            <section class="pv-k"><div class="pv-kk"><span class="lbl">{{g.t}}</span></div><div class="pv-ki pvn-ezl">
+              <sc-for list="{{g.z}}" as="z"><div class="pvn-ezr"><span><b>{{z.t}}</b><small>{{z.h}}</small></span><button class="{{z.cls}}" onClick="{{z.klick}}">{{z.k}}</button></div></sc-for>
+            </div></section>
+          </sc-for>
+        </div>
+      </sc-if>
+    </div>
+  </div>
+
+  <sc-if value="{{zeigeKarte}}">
+  <div class="pv-sp pv-rechts">
     <div class="pv-karte">
       <div class="pv-kartenplatz"></div>
       <div class="pv-kwerk"><button class="{{folgCls}}" onClick="{{folgen}}">Folgen</button><button class="kn sm" onClick="{{gross}}">Groß</button></div>
       <sc-if value="{{punktHinweis}}"><div class="pv-khinw">Auf die Karte klicken: dorthin fliegen · Esc bricht ab</div></sc-if>
+      <sc-if value="{{khLeg}}"><div class="pv-khinw">Vorschläge auf der Karte – Maus über einen Vorschlag hebt ihn hervor</div></sc-if>
       <div class="pv-kleg"><sc-if value="{{gsLeg}}"><span><i style="background: #F5A524;"></i>Bereitstellungsraum</span></sc-if><span><i style="background: #E5484D;"></i>Einsatzort</span><span><i style="background: #3B8BFF;"></i>Krankenhaus</span><span><i style="background: #4CC38A;"></i>Stützpunkt</span></div>
     </div>
-    <!-- PLATZ FÜR DAS FUNK-FENSTER (rolle="pilot"): beim Zusammenführen mit ew-funk hier die neue Funk-Komponente einhängen
-         (pilotView.ts › funkPlatzFuellen). Bis dahin hängt dort das bisherige Funk-Teil des Piloten. -->
-    <div class="pv-funk" style="height: {{funkH}}px;"></div>
   </div>
+  </sc-if>
 </main>
 <sc-if value="{{toast}}"><div class="pv-toast">{{toast}}</div></sc-if>
 </div>

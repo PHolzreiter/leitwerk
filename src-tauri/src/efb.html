@@ -4,11 +4,15 @@
 <meta charset="utf-8">
 <title>LeitWerk</title>
 <!--
-  Einsatz-App im Tablet (EFB von MSFS 2024 und Cockpit-Tablet der HPG H145) – Entwurf „Einsatz-Interface“ (Paul 10.11.2026).
-  Beide Tablets zeigen diese Seite gleich; nur die H145 antwortet auf {leitwerk:"stand"} (Zeile „Funkgerät & Tablet“).
+  Einsatz-App im Tablet (EFB von MSFS 2024 und Cockpit-Tablet der HPG H145) – Beta 64, Entwurf „EFB“ (Paul 17.11.2026):
+  links die Leiste Einsätze · Status · Einstellungen; Einsätze zuerst als Liste, ein Einsatz über die ganze Fläche,
+  „Zielort buchen“ Schritt für Schritt, Status antippen und senden, Navigation als große Karte.
+  Beide Tablets zeigen diese Seite gleich; nur die H145 antwortet auf {leitwerk:"stand"} (Einstellungen › Funkgerät & Tablet).
   Läuft im Simulator in einem alten Browser („Coherent GT“): kein CSS-Grid, keine CSS-Variablen, kein calc(), kein gap,
   JavaScript ohne neuere Schreibweisen (var, function, keine Pfeile, keine Vorlagen-Texte).
   Karte: Kacheln von basemap.at (CC BY 4.0, „Datenquelle: basemap.at“), nur Österreich.
+  Daten: /stand › neu (wie Handy) und neu.tab (Einsatz im Tablet, auch fürs X-Plane-Plugin – dort nichts ändern).
+  Code-Marke: Kopie von src/ui/fenster/pilot/marke.js (ES5).
 -->
 <style>
   @font-face { font-family: "LWInter"; src: url("/schrift/400.ttf") format("truetype"); font-weight: 400; }
@@ -18,65 +22,149 @@
   * { box-sizing: border-box; }
   button { font-family: inherit; color: inherit; }
   .versteckt { display: none !important; }
-  /* Ränder frei lassen: oben liegt die Leiste des Tablets (H145: Uhr/Akku, Antippen öffnet ein anderes Menü; EFB: Datum),
-     unten die Symbolleiste des EFB. Gleich in beiden Tablets. */
+  /* Ränder frei lassen: oben die Leiste des Tablets, unten die Symbolleiste des EFB (gleich in beiden Tablets) */
   #app { position: absolute; left: 0; top: 46px; right: 0; bottom: 62px; overflow: hidden; border-top: 1px solid #23262F; border-bottom: 1px solid #23262F; }
-  /* Kopf */
-  .kopf { position: absolute; left: 0; right: 0; top: 0; height: 56px; display: flex; align-items: center; padding: 0 10px 0 14px; background: #13151A; border-bottom: 1px solid #23262F; }
+  /* Kopf – immer gleich hoch */
+  .kopf { position: absolute; left: 0; right: 0; top: 0; height: 56px; display: flex; align-items: center; padding: 0 12px 0 16px; background: #13151A; border-bottom: 1px solid #23262F; }
   .kopf .h { flex: 1; min-width: 0; line-height: 1.25; }
-  .kopf .h b { display: block; font-size: 15px; font-weight: 700; white-space: nowrap; overflow: hidden; }
-  .kopf .h span { font-size: 12px; color: #9AA3B5; white-space: nowrap; }
-  .kopf .uhr { font-size: 20px; font-weight: 600; margin-right: 6px; }
-  .kopf .gr { font-size: 13px; font-weight: 800; padding: 3px 7px; border-radius: 6px; margin-right: 8px; background: #23262F; color: #DDE2EC; }
-  .kopf .gr.warn { background: #FFC72C; color: #111216; }
-  .kopf .gr.leer { display: none; }
-  .stpkt { width: 40px; height: 40px; border: 0; border-radius: 9px; background: transparent; cursor: pointer; padding: 0; }
-  .stpkt:active { background: #1E2129; }
-  .stpkt i { display: block; width: 13px; height: 13px; border-radius: 7px; margin: 0 auto; box-shadow: 0 0 0 3px rgba(255,255,255,0.08); }
-  .tabv { position: absolute; left: 0; right: 0; top: 56px; height: 40px; display: flex; align-items: center; padding: 0 10px; background: #13151A; border-bottom: 1px solid #23262F; font-size: 12.5px; color: #9AA3B5; }
-  .tabv b { color: #F5F7FA; margin-right: 6px; font-weight: 600; }
-  .tabv button { margin-left: auto; border: 0; border-radius: 8px; padding: 6px 10px; background: #3B8BFF; color: #111216; font-weight: 700; font-size: 12.5px; cursor: pointer; }
-  /* Umschalter Transport | Patient (wie im Menü) */
-  .seg { position: absolute; left: 14px; right: 14px; height: 40px; padding: 3px; border-radius: 10px; background: #111216; border: 1px solid #262A35; }
-  .seg .m { position: absolute; top: 3px; bottom: 3px; left: 3px; width: 49%; border-radius: 8px; background: #3B8BFF; -webkit-transition: left 0.3s; transition: left 0.3s; }
-  .seg .m.r { left: 50.5%; }
-  .seg button { position: relative; float: left; width: 50%; height: 32px; border: 0; background: transparent; font-size: 13.5px; font-weight: 600; color: #C4CAD6; cursor: pointer; }
-  .seg button.on { color: #111216; }
-  .seg .dot { display: inline-block; width: 7px; height: 7px; border-radius: 4px; background: #FFC72C; margin-left: 6px; vertical-align: middle; }
+  .kopf .h b { display: block; font-size: 16px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .kopf .h span { display: block; font-size: 12px; color: #9AA3B5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .kopf .gr { font-size: 12.5px; font-weight: 700; padding: 4px 8px; border-radius: 6px; margin-left: 10px; background: #F5F7FA; color: #111216; white-space: nowrap; }
+  .kopf .gr.warn { background: #FFC72C; }
+  .kopf .uhr { font-size: 20px; font-weight: 600; margin-left: 12px; }
+  .kopf .st { margin-left: 12px; display: flex; align-items: center; padding: 4px 11px 4px 4px; border-radius: 999px; color: #15181C; font-size: 12.5px; font-weight: 700; white-space: nowrap; -webkit-transition: background-color 0.3s; transition: background-color 0.3s; }
+  .kopf .st b { display: inline-block; width: 22px; height: 22px; line-height: 22px; text-align: center; border-radius: 11px; background: rgba(0,0,0,0.14); margin-right: 7px; }
+  /* Leiste links */
+  .rail { position: absolute; left: 0; top: 56px; bottom: 0; width: 84px; background: #13151A; border-right: 1px solid #23262F; padding: 10px 8px; }
+  .rail button { display: block; position: relative; width: 68px; border: 0; background: transparent; color: #9AA3B5; font-size: 11px; font-weight: 600; padding: 10px 0 9px; margin-bottom: 6px; border-radius: 12px; cursor: pointer; text-align: center; -webkit-transition: background-color 0.22s, color 0.22s; transition: background-color 0.22s, color 0.22s; }
+  .rail button svg { display: block; width: 24px; height: 24px; margin: 0 auto 4px; fill: currentColor; }
+  .rail button.an { background: rgba(59,139,255,0.16); color: #6AA6FF; }
+  .rail button i { position: absolute; top: 7px; right: 14px; width: 9px; height: 9px; border-radius: 5px; background: #E63946; border: 2px solid #13151A; }
   /* Inhalt (scrollt; ziehen mit der Maus geht auch) */
-  .inh { position: absolute; left: 0; right: 0; bottom: 0; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
-  .inh.mitknopf { bottom: 70px; }
-  .leer { position: absolute; left: 0; right: 0; top: 0; bottom: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #9AA3B5; text-align: center; padding: 20px; }
-  .leer .t { font-size: 26px; font-weight: 700; color: #F5F7FA; margin-bottom: 6px; }
-  .leer .st { margin-top: 18px; display: inline-block; padding: 6px 14px 6px 6px; border-radius: 9px; color: #111216; font-weight: 700; font-size: 14px; }
-  .leer .st b { display: inline-block; background: rgba(0,0,0,0.12); border-radius: 6px; padding: 2px 8px; margin-right: 8px; font-size: 16px; }
-  .ab { padding: 12px 14px; border-bottom: 1px solid #23262F; }
-  .ab.ohne { border-bottom: 0; }
-  .lbl { display: block; font-size: 10.5px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: #9AA3B5; margin-bottom: 8px; }
+  .inh { position: absolute; left: 84px; right: 0; top: 56px; bottom: 0; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
+  .inh.mitfuss { bottom: 78px; }
+  #seite { padding: 14px 16px 18px; }
+  #seite.an-vor { -webkit-animation: vor 0.24s ease-out both; animation: vor 0.24s ease-out both; }
+  #seite.an-zur { -webkit-animation: zur 0.24s ease-out both; animation: zur 0.24s ease-out both; }
+  #seite.an-tab { -webkit-animation: tab 0.2s ease-out both; animation: tab 0.2s ease-out both; }
+  @-webkit-keyframes vor { from { opacity: 0; -webkit-transform: translateX(28px); } to { opacity: 1; -webkit-transform: none; } }
+  @keyframes vor { from { opacity: 0; transform: translateX(28px); } to { opacity: 1; transform: none; } }
+  @-webkit-keyframes zur { from { opacity: 0; -webkit-transform: translateX(-28px); } to { opacity: 1; -webkit-transform: none; } }
+  @keyframes zur { from { opacity: 0; transform: translateX(-28px); } to { opacity: 1; transform: none; } }
+  @-webkit-keyframes tab { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes tab { from { opacity: 0; } to { opacity: 1; } }
+  .fuss { position: absolute; left: 84px; right: 0; bottom: 0; height: 78px; padding: 10px 16px 0; background: #0E0F12; border-top: 1px solid #23262F; }
+  .lbl { display: block; font-size: 10.5px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: #9AA3B5; margin: 0 0 8px; }
   .lbl span { text-transform: none; letter-spacing: 0; font-weight: 600; }
-  .zeit { font-size: 12px; color: #9AA3B5; }
-  .alarmb { margin: 10px 14px 0; padding: 9px 12px; border-radius: 9px; background: #B42318; color: #FFFFFF; font-weight: 700; font-size: 13.5px; display: flex; align-items: center; }
-  .alarmb small { font-weight: 600; opacity: 0.9; margin-left: 10px; }
-  .alarmb button { margin-left: auto; border: 0; border-radius: 7px; padding: 6px 10px; background: rgba(255,255,255,0.92); color: #B42318; font-weight: 700; font-size: 12.5px; cursor: pointer; }
-  .alarmb .q { margin-left: auto; font-size: 12px; font-weight: 600; background: rgba(255,255,255,0.18); padding: 3px 8px; border-radius: 6px; }
-  .code { padding: 10px 12px; border-radius: 10px; background: #1E2129; }
-  .code { padding: 12px; }
-  .code-k { margin-bottom: 7px; }
-  .stufe { display: inline-block; padding: 3px 8px; border-radius: 5px; font-size: 12px; font-weight: 700; color: #FFFFFF; text-transform: uppercase; letter-spacing: 0.04em; margin-right: 8px; vertical-align: middle; }
-  .code-nr { display: inline-block; font-size: 14px; font-weight: 700; letter-spacing: 0.03em; color: #C4CAD6; vertical-align: middle; }
-  .code-n { font-size: 17px; font-weight: 700; line-height: 1.3; }
-  .code-d { display: inline-block; font-size: 13.5px; color: #E2E6EE; margin-top: 8px; padding: 4px 9px; border-radius: 6px; background: #2A2E38; }
-  .gs { margin-top: 8px; padding: 8px 10px; border-radius: 8px; background: #3a3020; color: #FFD866; font-size: 13px; }
-  .reihe { display: flex; align-items: flex-start; margin-top: 10px; }
-  .reihe .lbl { width: 72px; flex: none; margin: 3px 0 0; }
-  .reihe .w { flex: 1; min-width: 0; font-size: 13.5px; color: #C4CAD6; }
-  .reihe .w b { color: #F5F7FA; font-size: 15px; }
+  .ek { background: #1E2129; border-radius: 10px; padding: 12px 14px; margin-bottom: 10px; }
+  .ek .lbl { margin-bottom: 6px; }
+  .z { display: flex; align-items: center; justify-content: space-between; }
+  .z > * + * { margin-left: 10px; }
+  .leise { color: #9AA3B5; font-size: 12.5px; }
+  .mk { display: inline-block; border-radius: 6px; font-size: 13px; font-weight: 800; letter-spacing: 0.02em; white-space: nowrap; color: #15181C; }
+  .mk span { display: inline-block; border-radius: 4px; }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 11.5px; font-weight: 600; background: #262A34; color: #C4CAD6; white-space: nowrap; }
+  .tag.ok { background: rgba(76,195,138,0.13); color: #4CC38A; }
+  .tag.gelb { background: rgba(255,199,44,0.12); color: #FFD866; }
+  .tag.rot { background: rgba(229,72,77,0.12); color: #FF7A7E; }
+  .grk { display: inline-block; padding: 3px 8px; border-radius: 6px; background: #F5F7FA; color: #111216; font-size: 12px; font-weight: 700; white-space: nowrap; }
+  .hinweis { padding: 9px 11px; border-radius: 9px; background: #262A34; color: #C4CAD6; font-size: 13.5px; }
+  .warn { padding: 9px 11px; border-radius: 9px; background: #3a3020; color: #FFD866; font-size: 13.5px; font-weight: 600; margin-top: 8px; }
+  .plan { padding: 9px 11px; border-radius: 9px; background: rgba(76,195,138,0.12); color: #4CC38A; font-size: 13.5px; font-weight: 600; margin-top: 8px; }
+  .kn { border: 1px solid #2A2F3A; border-radius: 8px; background: transparent; color: #F5F7FA; font-size: 12.5px; font-weight: 600; padding: 6px 11px; cursor: pointer; }
+  .prim { display: block; width: 100%; height: 46px; border: 0; border-radius: 10px; background: #3B8BFF; color: #111216; font-size: 15px; font-weight: 700; cursor: pointer; }
+  .prim.aus { background: #20242A; color: #6B7385; cursor: default; }
+  .zweit { display: block; width: 100%; height: 44px; border: 1.5px dashed #3A4150; border-radius: 10px; background: transparent; color: #6AA6FF; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 4px; }
+  button:active { opacity: 0.85; }
+  /* Liste */
+  .reihe2 { display: flex; margin: 0 -5px 10px; }
+  .reihe2 > * { flex: 1; min-width: 0; margin: 0 5px; }
+  .reihe2 > .platz { visibility: hidden; }
+  .ekarte { display: block; width: auto; text-align: left; border: 1px solid #2A2F3A; border-radius: 12px; background: #1E2129; padding: 12px 14px; cursor: pointer; color: #F5F7FA; min-height: 138px; }
+  .ekarte.laeuft { border-color: #3B8BFF; box-shadow: inset 0 0 0 1px #3B8BFF; }
+  .ekarte .t { font-size: 15.5px; font-weight: 700; margin: 9px 0 3px; line-height: 1.25; }
+  .ekarte .mb { font-size: 12.5px; color: #C4CAD6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ekarte .r { border-top: 1px solid #2A2F3A; padding-top: 8px; margin-top: 9px; font-size: 12.5px; }
+  .ekarte .r span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .zu { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; color: #9AA3B5; white-space: nowrap; }
+  .zu.l { color: #6AA6FF; }
+  .leerk { text-align: center; padding: 26px 16px; }
+  .leerk b { display: block; font-size: 20px; margin-bottom: 5px; }
+  .tabvz { display: flex; align-items: center; padding: 9px 12px; border-radius: 10px; background: #262A34; margin-bottom: 12px; font-size: 13px; color: #C4CAD6; }
+  .tabvz b { color: #F5F7FA; margin-right: 6px; }
+  .tabvz button { margin-left: auto; }
+  /* Einsatz */
+  .dkopf { display: flex; align-items: center; margin-bottom: 12px; }
+  .zur { border: 1px solid #2A2F3A; background: transparent; color: #F5F7FA; border-radius: 8px; padding: 7px 12px; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .dkopf .leise { margin-left: auto; }
+  .spalten:after { content: ""; display: block; clear: both; }
+  .sp1 { float: left; width: 57%; padding-right: 10px; }
+  .sp2 { float: left; width: 43%; }
+  .eng .sp1, .eng .sp2 { float: none; width: auto; padding-right: 0; }
+  .titel { font-size: 18px; font-weight: 700; line-height: 1.3; margin: 8px 0 6px; }
+  .zeile { display: flex; align-items: center; justify-content: space-between; padding: 5px 0; border-top: 1px solid #262A34; font-size: 13px; }
+  .zeile span { color: #9AA3B5; }
+  .zeile b { text-align: right; }
+  .zeile .grk { color: #111216; }
+  .alarmb { display: flex; align-items: center; padding: 9px 12px; border-radius: 9px; background: #B42318; color: #FFFFFF; font-weight: 700; font-size: 13.5px; margin-bottom: 10px; }
+  .alarmb button { margin-left: auto; border: 0; border-radius: 7px; padding: 6px 10px; background: #FFFFFF; color: #B42318; font-weight: 700; font-size: 12.5px; cursor: pointer; }
+  .zi { margin-top: 8px; padding: 6px 10px; border-radius: 8px; background: rgba(255,199,44,0.12); color: #FFD866; font-size: 13px; font-weight: 600; }
+  .koord { display: flex; align-items: center; justify-content: space-between; border-top: 1px solid #262A34; padding-top: 8px; margin-top: 8px; }
+  .koord code { font-family: Consolas, monospace; font-size: 12px; color: #C4CAD6; }
+  .fz { display: flex; align-items: center; padding: 6px 10px; border-radius: 8px; margin-bottom: 5px; color: #111216; }
+  .fz .s { width: 22px; flex: none; text-align: center; font-size: 16px; font-weight: 800; }
+  .fz .t { flex: 1; min-width: 0; margin-left: 8px; }
+  .fz .t b { font-size: 13.5px; }
+  .fz .t .ty { font-size: 11px; font-weight: 600; color: #3A4150; margin-left: 4px; }
+  .fz .t .x { display: block; font-size: 11.5px; color: #3A4150; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .fz .e { flex: none; margin-left: 8px; padding: 2px 8px; border-radius: 999px; background: rgba(255,255,255,0.6); color: #174EA6; font-size: 11.5px; font-weight: 600; }
+  .fz.funk, .fz.funk .ty, .fz.funk .x { color: #A3141B; }
+  .fz.ich { box-shadow: inset 0 0 0 2px #3B8BFF; }
+  .liz div { display: flex; padding: 5px 0; border-top: 1px solid #262A34; font-size: 13px; }
+  .liz div:first-child { border-top: 0; }
+  .liz code { flex: none; width: 64px; font-family: Consolas, monospace; font-size: 12px; color: #9AA3B5; }
+  .liz.zt code { width: 74px; color: #F5F7FA; }
+  .liz.zt div.leer, .liz.zt div.leer code { color: #6B7385; }
+  .abfk { border: 0; border-radius: 7px; background: rgba(59,139,255,0.16); color: #6AA6FF; font-size: 12.5px; font-weight: 600; padding: 4px 9px; cursor: pointer; }
+  .erl div { padding: 6px 0; border-top: 1px solid #262A34; }
+  .erl div:first-child { border-top: 0; }
+  .erl small { display: block; font-size: 11.5px; color: #9AA3B5; }
+  .erl b { font-size: 13px; font-weight: 600; }
+  .ziel { border: 1px solid #2A2F3A; }
+  .ziel.ok { border-color: rgba(76,195,138,0.45); }
+  .ziel.offen { border-color: rgba(255,199,44,0.45); }
+  .ziel .w { font-size: 15px; font-weight: 700; margin: 4px 0 8px; line-height: 1.3; }
+  /* Patient */
+  .pat { margin-top: 8px; }
+  .pat .k { display: flex; align-items: center; }
+  .sicht { display: inline-block; border-radius: 6px; padding: 3px 8px; font-size: 11px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; margin-right: 9px; }
+  .pat .k b { font-size: 14.5px; }
+  .pat .l { font-size: 13px; color: #C4CAD6; margin-top: 4px; }
+  .vit span { display: inline-block; border-radius: 6px; padding: 2px 8px; font-size: 12px; font-weight: 600; background: #262A34; color: #C4CAD6; margin: 5px 5px 0 0; }
+  .vit span.w { background: rgba(255,199,44,0.12); color: #FFD866; }
+  .zitat { padding: 6px 10px; border-left: 3px solid #3A4150; color: #C4CAD6; font-size: 13px; font-style: italic; margin-top: 8px; }
+  /* Großeinsatz */
+  .gsk { border: 2px solid #475569; }
+  .abruf { padding: 10px 12px; border-radius: 9px; background: #B3121B; color: #FFFFFF; margin: 8px 0; }
+  .abruf b { display: block; font-size: 11px; letter-spacing: 0.08em; margin-bottom: 3px; }
+  .balken { height: 6px; border-radius: 3px; background: rgba(255,255,255,0.25); margin-top: 8px; overflow: hidden; }
+  .balken i { display: block; height: 6px; background: #FFFFFF; }
+  .zahlen { margin: 4px -3px 2px; }
+  .zahlen div { display: inline-block; vertical-align: top; width: 18.6%; margin: 0 0.7%; padding: 7px 0 6px; border-radius: 9px; background: #262A34; text-align: center; border-top: 3px solid #6B7385; }
+  .zahlen b { display: block; font-size: 18px; }
+  .zahlen small { font-size: 11px; color: #9AA3B5; }
+  .wsl div { display: flex; align-items: center; padding: 5px 9px; border-radius: 7px; background: #262A34; margin-bottom: 4px; font-size: 13px; }
+  .wsl div.du { box-shadow: inset 0 0 0 2px #3B8BFF; }
+  .wsl div.weg { opacity: 0.55; }
+  .wsl span { width: 24px; font-weight: 800; color: #9AA3B5; }
+  .wsl b { flex: 1; min-width: 0; }
+  .wsl small { color: #9AA3B5; font-size: 12px; }
   /* Karte */
   .karte { position: relative; overflow: hidden; background: #DDE3D5; border-radius: 10px; border: 1px solid #2A2F3A; }
-  .karte.klein { height: 170px; margin-top: 12px; cursor: pointer; }
+  .karte.klein { height: 190px; cursor: pointer; }
   .karte .kach { position: absolute; left: 0; top: 0; }
   .karte .kach img { position: absolute; width: 256px; height: 256px; }
-  .karte .mk { position: absolute; left: 0; top: 0; }
+  .karte .mkn { position: absolute; left: 0; top: 0; }
   .karte .info { position: absolute; left: 8px; top: 8px; background: rgba(17,18,22,0.88); border-radius: 8px; padding: 6px 10px; font-size: 13px; font-weight: 600; color: #F5F7FA; }
   .karte .info span { color: #9AA3B5; font-weight: 400; }
   .karte .gross { position: absolute; right: 8px; bottom: 8px; background: rgba(17,18,22,0.88); border-radius: 8px; padding: 6px 10px; font-size: 12.5px; font-weight: 600; color: #F5F7FA; }
@@ -91,200 +179,138 @@
   .m-ich div i { position: absolute; left: -7px; top: 5px; width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent; border-bottom: 17px solid #DCC23A; }
   .m-ich.rund div { left: -9px; top: -9px; width: 18px; height: 18px; border: 3px solid #111216; border-radius: 9px; }
   .m-linie { position: absolute; height: 0; border-top: 4px dashed #3B8BFF; -webkit-transform-origin: 0 0; transform-origin: 0 0; }
-  /* Fahrzeuge (ganze Zeile in Statusfarbe, Schrift dunkel) */
-  .fz { display: flex; align-items: center; padding: 7px 10px; border-radius: 9px; margin-bottom: 6px; color: #111216; }
-  .fz .s { width: 24px; flex: none; text-align: center; font-size: 17px; font-weight: 800; }
-  .fz .t { flex: 1; min-width: 0; margin-left: 8px; }
-  .fz .t b { font-size: 14px; }
-  .fz .t .ty { font-size: 11.5px; font-weight: 600; color: #3A4150; margin-left: 4px; }
-  .fz .t .z { display: block; font-size: 12px; color: #3A4150; white-space: nowrap; overflow: hidden; }
-  .fz .e { flex: none; margin-left: 8px; padding: 2px 8px; border-radius: 999px; background: rgba(255,255,255,0.6); color: #174EA6; font-size: 11.5px; font-weight: 600; }
-  .fz.funk, .fz.funk .ty, .fz.funk .z { color: #A3141B; }
-  .fz.ich { box-shadow: inset 0 0 0 2px #3B8BFF; }
-  /* Abfrage: beantwortete Fragen wie im Abfrage-Fenster */
-  .erl { background: #1E2129; border-radius: 10px; padding: 2px 10px; }
-  .erl div { padding: 7px 0; border-top: 1px solid #23262F; }
-  .erl div:first-child { border-top: 0; }
-  .erl small { display: block; font-size: 12px; color: #9AA3B5; }
-  .erl b { display: block; font-size: 13.5px; font-weight: 600; }
-  .knopf { position: absolute; left: 14px; right: 14px; bottom: 12px; height: 48px; border: 0; border-radius: 10px; background: #3B8BFF; color: #111216; font-size: 15px; font-weight: 700; cursor: pointer; }
-  .knopf.aus { background: #20242A; color: #6B7385; cursor: default; }
-  .knopf small { display: block; font-size: 11.5px; font-weight: 500; }
-  .hinweis { padding: 9px 11px; border-radius: 9px; background: #1E2129; color: #C4CAD6; font-size: 13.5px; }
-  .plan { padding: 9px 11px; border-radius: 9px; background: rgba(76,195,138,0.12); color: #4CC38A; font-size: 13.5px; font-weight: 600; margin-top: 10px; }
-  /* Patient */
-  .pk { border-radius: 12px; background: #1E2129; overflow: hidden; }
-  .pk-band { display: flex; align-items: center; padding: 8px 12px; font-size: 12.5px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
-  .pk-band b { display: inline-block; min-width: 28px; padding: 1px 6px; margin-right: 8px; border-radius: 5px; background: rgba(0,0,0,0.16); text-align: center; font-size: 14px; }
-  .pk-band span { margin-left: auto; text-transform: none; letter-spacing: 0; font-weight: 600; opacity: 0.85; }
-  .pk-in { padding: 12px 12px 13px; }
-  .pk-wer { font-size: 20px; font-weight: 700; line-height: 1.2; }
-  .pk-vd { margin-top: 10px; padding: 9px 11px; border-radius: 9px; background: #262A34; }
-  .pk-vd small, .vit small, .befund small { display: block; font-size: 10.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #9AA3B5; margin-bottom: 2px; }
-  .pk-vd b { font-size: 16px; line-height: 1.3; }
-  .vit { margin: 10px -4px 0; }
-  .vit div { display: inline-block; vertical-align: top; width: 48%; margin: 0 1%; padding: 9px 11px; border-radius: 9px; background: #262A34; }
-  .vit b { font-size: 15px; }
-  .vit i { display: inline-block; width: 9px; height: 9px; border-radius: 5px; margin-right: 7px; vertical-align: 1px; }
-  .befund { margin-top: 12px; }
-  .befund div { position: relative; padding: 6px 0 6px 18px; font-size: 14px; color: #E2E6EE; border-top: 1px solid #262A34; }
-  .befund div:first-of-type { border-top: 0; }
-  .befund div:before { content: ""; position: absolute; left: 3px; top: 13px; width: 6px; height: 6px; border-radius: 3px; background: #9AA3B5; }
-  .empf { margin-top: 10px; padding: 10px 12px; border-radius: 9px; background: rgba(59,139,255,0.14); border: 1px solid rgba(59,139,255,0.35); color: #CFE0FF; font-size: 14px; font-weight: 600; }
-  .empf small { display: block; font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: #7FB0FF; margin-bottom: 2px; }
-  .warn { margin-top: 10px; padding: 9px 11px; border-radius: 9px; background: #3a3020; color: #FFD866; font-size: 13.5px; font-weight: 600; }
-  .ziel { display: flex; align-items: center; padding: 10px 12px; border-radius: 10px; background: #1E2129; }
-  .ziel .w { flex: 1; min-width: 0; font-size: 14.5px; font-weight: 600; }
-  .ziel .w small { display: block; font-size: 12px; color: #9AA3B5; font-weight: 400; }
-  .ziel button { border: 0; border-radius: 8px; padding: 8px 12px; background: #3B8BFF; color: #111216; font-weight: 700; font-size: 13px; cursor: pointer; margin-left: 10px; }
-  .ziel button.aus { background: #20242A; color: #6B7385; }
-  .zitat { padding: 9px 12px; border-left: 3px solid #3A4150; color: #C4CAD6; font-size: 14px; font-style: italic; }
-  .tl div { position: relative; padding: 0 0 12px 22px; font-size: 13.5px; color: #C4CAD6; }
-  .tl div:before { content: ""; position: absolute; left: 4px; top: 5px; width: 8px; height: 8px; border-radius: 4px; background: #3B8BFF; }
-  .tl div:after { content: ""; position: absolute; left: 7px; top: 15px; bottom: -3px; width: 2px; background: #2A2F3A; }
-  .tl div:last-child:after { display: none; }
-  .tl span { display: block; font-size: 12px; color: #9AA3B5; font-weight: 600; }
-  /* Großeinsatz */
-  .gsk { margin-top: 10px; border-radius: 12px; background: #1E2129; overflow: hidden; }
-  .gsk-auf { padding: 11px 12px; background: rgba(59,139,255,0.14); border-bottom: 1px solid rgba(59,139,255,0.3); }
-  .gsk-auf small { display: block; font-size: 10.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #7FB0FF; margin-bottom: 3px; }
-  .gsk-auf b { font-size: 15px; line-height: 1.35; }
-  .gsk-auf.abruf { background: rgba(255,199,44,0.14); border-bottom-color: rgba(255,199,44,0.35); }
-  .gsk-auf.abruf small { color: #FFD866; }
-  .balken { height: 6px; border-radius: 3px; background: #2A2F3A; margin-top: 8px; overflow: hidden; }
-  .balken i { display: block; height: 6px; background: #FFC72C; }
-  .schritte { padding: 10px 12px 2px; white-space: nowrap; overflow: hidden; }
-  .schritte span { display: inline-block; font-size: 11.5px; font-weight: 600; color: #6B7385; margin-right: 4px; }
-  .schritte span:after { content: " ›"; color: #3A4150; }
-  .schritte span:last-child:after { content: ""; }
-  .schritte span.ok { color: #4CC38A; }
-  .schritte span.jetzt { color: #F5F7FA; }
-  .gsw { padding: 6px 12px 10px; }
-  .gsw div { display: flex; padding: 5px 0; font-size: 13.5px; border-top: 1px solid #262A34; }
-  .gsw div:first-child { border-top: 0; }
-  .gsw span { width: 130px; flex: none; color: #9AA3B5; }
-  .gsw b { flex: 1; min-width: 0; font-weight: 600; }
-  .zahlen { margin: 0 -3px; }
-  .zahlen div { display: inline-block; vertical-align: top; width: 18.6%; margin: 0 0.7%; padding: 8px 0 7px; border-radius: 9px; background: #1E2129; text-align: center; border-top: 3px solid #6B7385; }
-  .zahlen b { display: block; font-size: 20px; }
-  .zahlen small { font-size: 11px; color: #9AA3B5; }
-  .wsl div { display: flex; align-items: center; padding: 7px 10px; border-radius: 8px; background: #1E2129; margin-bottom: 5px; font-size: 13.5px; }
-  .wsl div.du { box-shadow: inset 0 0 0 2px #3B8BFF; }
-  .wsl div.weg { opacity: 0.55; }
-  .wsl span { width: 26px; font-weight: 800; color: #9AA3B5; }
-  .wsl b { flex: 1; min-width: 0; }
-  .wsl small { color: #9AA3B5; font-size: 12px; }
-  .meld div { padding: 7px 0; border-top: 1px solid #23262F; font-size: 13.5px; color: #C4CAD6; }
-  .meld div:first-child { border-top: 0; }
-  .meld span { display: inline-block; width: 46px; color: #9AA3B5; font-weight: 600; }
-  /* Fakten vor Ort */
-  .fakt div { display: flex; padding: 7px 0; border-top: 1px solid #262A34; font-size: 14px; }
-  .fakt div:first-of-type { border-top: 0; }
-  .fakt div { display: block; }
-  .fakt span { display: block; color: #9AA3B5; font-size: 12.5px; margin-bottom: 1px; }
-  .fakt b { display: block; font-weight: 600; }
-  .fakt b.w { color: #FFD866; }
-  .fakt div { padding-left: 0; }
-  .fakt div:before { display: none; }
-  .mpat div { display: flex; align-items: center; padding: 7px 10px; border-radius: 8px; background: #262A34; margin-top: 6px; font-size: 13.5px; }
-  .mpat i { width: 10px; height: 10px; border-radius: 5px; margin-right: 9px; }
-  /* Symptom-Suche mit Dropdown */
-  .such { position: relative; margin-bottom: 8px; }
-  .such .feld { margin-bottom: 0; }
-  .dd { display: none; position: absolute; left: 0; right: 0; top: 41px; z-index: 5; max-height: 290px; overflow-y: auto; background: #20242C; border: 1px solid #3B8BFF; border-radius: 0 0 9px 9px; box-shadow: 0 14px 30px rgba(0,0,0,0.5); }
-  .such.offen .feld { border-color: #3B8BFF; border-radius: 8px 8px 0 0; }
-  .such.offen .dd { display: block; }
-  .dd small { display: block; padding: 7px 12px 4px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #9AA3B5; }
-  .dd button { display: block; width: 100%; text-align: left; border: 0; border-top: 1px solid #2A2F3A; background: transparent; color: #F5F7FA; padding: 10px 12px; font-size: 14px; cursor: pointer; }
-  .dd button:hover, .dd button:active { background: rgba(59,139,255,0.16); }
-  .dd .nix { padding: 10px 12px; color: #9AA3B5; font-size: 13.5px; }
-  /* Blätter (Buchen, Status) */
-  .dunkel { position: absolute; left: 0; right: 0; top: 0; bottom: 0; background: rgba(0,0,0,0.5); }
-  .blatt { position: absolute; left: 0; right: 0; bottom: 0; top: 96px; background: #1A1D24; border-radius: 16px 16px 0 0; box-shadow: 0 -1px 0 #2E3340, 0 -20px 50px rgba(0,0,0,0.55); }
-  .blatt.kurz { top: auto; }
-  .blatt .bk { height: 52px; display: flex; align-items: center; padding: 0 16px; border-bottom: 1px solid #23262F; }
-  .blatt .bk b { font-size: 18px; flex: 1; }
-  .blatt .bk button { border: 0; background: transparent; color: #9AA3B5; font-size: 13.5px; font-weight: 600; cursor: pointer; padding: 8px; }
-  .blatt .bi { position: absolute; left: 0; right: 0; top: 52px; bottom: 0; overflow-y: auto; padding: 12px 16px 16px; }
-  .blatt.kurz .bi { position: static; }
-  .wahl { margin: 0 -4px; }
-  .wahl button { display: inline-block; vertical-align: top; width: 48%; margin: 0 1% 8px; text-align: left; border: 1px solid #2A2F3A; border-radius: 10px; padding: 9px 11px; background: #1E2129; cursor: pointer; min-height: 58px; }
-  .wahl button b { display: block; font-size: 14px; }
-  .wahl button small { font-size: 12px; color: #9AA3B5; }
-  .wahl button.on { border-color: #3B8BFF; background: rgba(59,139,255,0.12); }
-  .wahl button.aus { opacity: 0.4; }
-  .wahl.drei button { width: 31.3%; }
-  .fertig { display: flex; align-items: center; padding: 7px 10px; border-radius: 9px; background: #1E2129; margin-bottom: 6px; }
-  .fertig .n { width: 22px; color: #4CC38A; font-weight: 800; }
-  .fertig .w { flex: 1; min-width: 0; font-size: 13.5px; }
-  .fertig .w small { display: block; font-size: 10.5px; color: #9AA3B5; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700; }
-  .kn { border: 1px solid #2A2F3A; border-radius: 7px; background: transparent; color: #C4CAD6; font-size: 12.5px; font-weight: 600; padding: 6px 10px; cursor: pointer; }
-  .offen { padding: 7px 10px; color: #6B7385; font-size: 13.5px; }
-  .offen span, .skopf span { display: inline-block; width: 22px; height: 22px; border-radius: 6px; text-align: center; line-height: 22px; font-size: 12px; font-weight: 700; margin-right: 8px; }
-  .offen span { background: #20242A; }
-  .skopf { font-size: 14px; font-weight: 700; margin: 4px 0 8px; }
-  .skopf span { background: #3B8BFF; color: #111216; }
-  .feld { width: 100%; height: 40px; border: 1px solid #2A2F3A; border-radius: 8px; background: #111216; color: #F5F7FA; padding: 0 10px; font-size: 14px; font-family: inherit; margin-bottom: 8px; }
-  .chips button { display: inline-block; margin: 0 6px 6px 0; }
-  .khk { display: flex; align-items: center; padding: 9px 11px; border: 1px solid #2A2F3A; border-radius: 10px; margin-bottom: 8px; cursor: pointer; }
-  .khk.gew { border-color: #3B8BFF; background: rgba(59,139,255,0.12); }
-  .radio { width: 16px; height: 16px; border-radius: 8px; border: 2px solid #9AA3B5; flex: none; margin-right: 10px; }
-  .radio.an { border-color: #3B8BFF; background: #3B8BFF; box-shadow: inset 0 0 0 3px #1A1D24; }
-  .khk .t { flex: 1; min-width: 0; }
-  .merk span { display: inline-block; font-size: 11.5px; padding: 2px 7px; border-radius: 5px; background: #20242A; color: #C4CAD6; margin: 4px 4px 0 0; }
-  .merk span.ok { background: rgba(76,195,138,0.12); color: #4CC38A; }
-  .pill { padding: 2px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 600; margin-left: 8px; }
-  .pill.ok { background: rgba(76,195,138,0.12); color: #4CC38A; }
-  .pill.gelb { background: rgba(255,199,44,0.1); color: #FFD866; }
-  .pill.rot { background: rgba(229,72,77,0.1); color: #FF7A7E; }
-  .prim { width: 100%; height: 46px; border: 0; border-radius: 10px; background: #3B8BFF; color: #111216; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 6px; }
-  .frage { padding: 12px; border-radius: 10px; background: #20242A; margin-top: 10px; }
-  .frage div { margin-bottom: 10px; font-size: 14px; }
-  .frage button { margin-right: 6px; }
-  .stk button { display: inline-block; vertical-align: top; width: 31.3%; margin: 0 1% 8px; height: 70px; border-radius: 10px; border: 2px solid #2A2F3A; background: #1E2129; font-weight: 700; font-size: 12.5px; cursor: pointer; }
-  .stk button span { display: block; font-size: 24px; line-height: 30px; }
+  /* Buchen */
+  .bkopf { display: flex; align-items: center; margin-bottom: 10px; }
+  .bkopf .leise { margin-left: 12px; }
+  .bal { height: 4px; margin-bottom: 12px; }
+  .bal i { float: left; height: 4px; border-radius: 2px; background: #2A2F3A; margin-right: 1%; -webkit-transition: background-color 0.3s; transition: background-color 0.3s; }
+  .bal i.an { background: #FFC72C; }
+  .auswahl span { display: inline-block; border: 1px solid #2A2F3A; border-radius: 999px; padding: 3px 10px; font-size: 12px; font-weight: 600; margin: 0 6px 6px 0; color: #C4CAD6; }
+  .frage { font-size: 21px; font-weight: 700; margin: 4px 0 4px; }
+  .bh { color: #9AA3B5; font-size: 13px; margin: 0 0 10px; }
+  .opts .reihe2 { margin-bottom: 8px; }
+  .ew { display: flex; width: auto; align-items: center; text-align: left; min-height: 60px; padding: 10px 13px; border-radius: 10px; border: 1px solid #2A2F3A; background: #1E2129; color: #F5F7FA; cursor: pointer; }
+  .ew.an { border-color: #3B8BFF; box-shadow: inset 0 0 0 1px #3B8BFF; background: rgba(59,139,255,0.12); }
+  .ew.farbig.an { box-shadow: 0 0 0 2px #F5F7FA; }
+  .ew .wt { flex: 1; min-width: 0; }
+  .ew .wt b { display: block; font-size: 14.5px; }
+  .ew .wt small { display: block; font-size: 12px; color: #9AA3B5; margin-top: 2px; }
+  .ew.farbig .wt small { color: inherit; opacity: 0.85; }
+  .ew .wr { font-size: 12px; font-weight: 700; color: #4CC38A; white-space: nowrap; margin-left: 10px; }
+  .merk span { display: inline-block; border-radius: 5px; padding: 1px 6px; font-size: 11px; font-weight: 700; background: #262A34; color: #C4CAD6; margin: 4px 4px 0 0; }
+  .merk span.ok { background: rgba(76,195,138,0.13); color: #4CC38A; }
+  .merk span.gelb { background: rgba(255,199,44,0.12); color: #FFD866; }
+  .merk span.rot { background: rgba(229,72,77,0.12); color: #FF7A7E; }
+  .such { position: relative; margin-bottom: 10px; }
+  .feld { width: 100%; height: 46px; border: 1.5px solid #3B8BFF; border-radius: 10px; background: #111216; color: #F5F7FA; padding: 0 12px; font-size: 15px; font-family: inherit; }
+  .such.auf .feld { border-radius: 10px 10px 0 0; }
+  .dd { border: 1.5px solid #3B8BFF; border-top: 1px solid #2A2F3A; border-radius: 0 0 10px 10px; background: #20242C; overflow: hidden; }
+  .dd button { display: block; width: 100%; text-align: left; border: 0; border-top: 1px solid #2A2F3A; background: transparent; color: #F5F7FA; padding: 9px 12px; cursor: pointer; }
+  .dd button:first-child { border-top: 0; }
+  .dd b { display: block; font-size: 14px; font-weight: 600; }
+  .dd small { font-size: 12px; color: #9AA3B5; }
+  /* Status */
+  .stl { float: left; width: 42%; padding-right: 14px; }
+  .str { float: left; width: 58%; }
+  .eng .stl, .eng .str { float: none; width: auto; padding-right: 0; }
+  .lcd { position: relative; overflow: hidden; border-radius: 14px; padding: 10px 14px 12px; background: #b9cdec; color: #10141C; border: 3px solid #1B1D22; }
+  .lcd .z1 { display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #1C2A40; }
+  .lcd .g { display: flex; align-items: center; justify-content: space-between; margin: 6px 0 4px; }
+  .lcd .g button { width: 42px; height: 42px; border-radius: 10px; border: 1.5px solid #15181C; background: transparent; color: #15181C; font-size: 20px; font-weight: 700; cursor: pointer; }
+  .lcd .g b { font-size: 22px; letter-spacing: 0.04em; }
+  .lcd .s { text-align: center; font-size: 15px; font-weight: 700; }
+  .lcd .s b { display: inline-block; width: 22px; height: 22px; line-height: 22px; border-radius: 4px; background: #15181C; color: #FFFFFF; font-size: 13px; margin-right: 6px; }
+  .pop { position: absolute; left: 8px; right: 8px; top: 24px; bottom: 6px; border-radius: 9px; background: #F3F7FD; border: 2px solid #2D5AA0; text-align: center; font-size: 13px; padding-top: 26px; }
+  .pop b { position: absolute; top: 0; left: 0; right: 0; padding: 2px 0; background: #56657C; color: #FFFFFF; font-size: 12px; letter-spacing: 0.06em; }
+  .pop span { display: block; }
+  .pop.senden, .pop.unterbrochen { border-color: #C62828; }
+  .pop.senden b, .pop.unterbrochen b { background: #C62828; }
+  .pop.warten b { background: #A86F00; }
+  .kanal { text-align: center; font-size: 12.5px; color: #9AA3B5; margin: 9px 0; }
+  .kanal i { display: inline-block; width: 8px; height: 8px; border-radius: 4px; background: #4CC38A; margin-right: 6px; }
+  .kanal.an i { background: #E5484D; }
+  .tasten { margin: 0 -4px; }
+  .tasten:after { content: ""; display: block; clear: both; }
+  .taste { float: left; width: 31.3%; margin: 0 1% 8px; height: 66px; border: 0; border-radius: 10px; color: #15181C; cursor: pointer; text-align: center; padding: 0; }
+  .taste b { display: block; font-size: 24px; line-height: 28px; }
+  .taste span { font-size: 12px; font-weight: 600; }
+  .taste.ist { box-shadow: inset 0 0 0 2px #15181C; }
+  .taste.wahl { box-shadow: 0 0 0 3px #3B8BFF; }
+  .taste.gesperrt { background: #1E2129 !important; color: #4A5060; cursor: default; }
+  .gesendet { text-align: center; color: #4CC38A; font-size: 13px; font-weight: 600; margin-top: 8px; }
+  .ptt { display: block; width: 100%; height: 58px; border: 0; border-radius: 14px; background: #23252A; color: #FFFFFF; cursor: pointer; margin-top: 12px; box-shadow: 0 3px 0 #000000; }
+  .ptt b { display: block; font-size: 17px; letter-spacing: 0.1em; }
+  .ptt small { font-size: 11px; color: #C4CAD6; }
+  .ptt.an { background: #A61B1B; }
+  /* Einstellungen */
+  .ez { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-top: 1px solid #262A34; }
+  .ez:first-child { border-top: 0; }
+  .ez .et { flex: 1; min-width: 0; margin-right: 12px; }
+  .ez .et b { display: block; font-size: 14px; font-weight: 600; }
+  .ez .et small { display: block; font-size: 12px; color: #9AA3B5; margin-top: 2px; }
+  .seg2 button { border: 1px solid #2A2F3A; background: transparent; color: #C4CAD6; font-size: 12.5px; font-weight: 600; padding: 6px 11px; cursor: pointer; }
+  .seg2 button:first-child { border-radius: 8px 0 0 8px; }
+  .seg2 button:last-child { border-radius: 0 8px 8px 0; border-left: 0; }
+  .seg2 button.an { background: #3B8BFF; border-color: #3B8BFF; color: #111216; }
+  /* Alarm über die ganze Fläche */
+  #alarm { position: absolute; left: 0; right: 0; top: 0; bottom: 0; z-index: 20; background: #B3121B; color: #FFFFFF; padding: 22px 28px; -webkit-animation: tab 0.2s ease-out both; animation: tab 0.2s ease-out both; }
+  #alarm .a1 { display: flex; justify-content: space-between; font-size: 13px; font-weight: 700; letter-spacing: 0.2em; margin-bottom: 14px; }
+  #alarm .at { font-size: 28px; font-weight: 700; line-height: 1.2; margin: 12px 0 8px; }
+  #alarm .as { font-size: 15px; line-height: 1.45; max-width: 760px; }
+  #alarm .azi { display: inline-block; background: rgba(255,255,255,0.16); border-radius: 10px; padding: 8px 12px; font-size: 14px; margin-top: 10px; }
+  #alarm .mel { font-size: 13px; color: #FFD9DB; margin-top: 12px; }
+  #alarm .ak { position: absolute; left: 28px; right: 28px; bottom: 22px; }
+  #alarm .ak button { float: left; width: 49%; height: 82px; border-radius: 14px; font-size: 17px; font-weight: 700; cursor: pointer; }
+  #alarm .ak button b { display: block; font-size: 30px; line-height: 34px; }
+  #alarm .ak .q { background: #FFFFFF; color: #B3121B; border: 0; margin-right: 2%; }
+  #alarm .ak .h { background: transparent; color: #FFFFFF; border: 2px solid #FFFFFF; }
   /* Navigation (große Karte) */
-  .nav { position: absolute; left: 0; right: 0; top: 0; bottom: 0; background: #0E0F12; }
+  .nav { position: absolute; left: 0; right: 0; top: 0; bottom: 0; z-index: 10; background: #0E0F12; }
   .nav .karte { position: absolute; left: 0; right: 0; top: 52px; bottom: 0; border-radius: 0; border: 0; }
   .nav .bk { height: 52px; display: flex; align-items: center; padding: 0 10px; background: #13151A; border-bottom: 1px solid #23262F; }
-  .nav .bk b { flex: 1; font-size: 15px; margin-left: 6px; }
+  .nav .bk b { flex: 1; font-size: 15px; margin-left: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .nk { border: 1px solid #2A2F3A; border-radius: 8px; background: #1E2129; color: #F5F7FA; font-size: 13px; font-weight: 600; padding: 8px 11px; cursor: pointer; margin-left: 6px; }
   .nk.on { background: #3B8BFF; color: #111216; border-color: #3B8BFF; }
   .zoom { position: absolute; right: 10px; top: 64px; }
   .zoom button { display: block; width: 44px; height: 44px; margin-bottom: 6px; border: 0; border-radius: 9px; background: rgba(17,18,22,0.88); color: #F5F7FA; font-size: 22px; font-weight: 700; cursor: pointer; }
-  .tabzeile { position: absolute; left: 14px; right: 14px; }
+  #toast { position: absolute; left: 84px; right: 0; bottom: 96px; z-index: 30; text-align: center; }
+  #toast span { display: inline-block; background: #F5F7FA; color: #111216; border-radius: 999px; padding: 8px 16px; font-size: 13px; font-weight: 600; box-shadow: 0 6px 20px rgba(0,0,0,0.4); }
+  /* Textgröße „groß“ */
+  .gross #seite { font-size: 15.5px; }
+  .gross .titel { font-size: 21px; }
+  .gross .ekarte .t { font-size: 17.5px; }
+  .gross .zeile, .gross .liz div, .gross .erl b, .gross .pat .l, .gross .ekarte .r, .gross .ekarte .mb { font-size: 14.5px; }
+  .gross .ew .wt b { font-size: 16px; }
+  .gross .ew .wt small, .gross .leise { font-size: 13.5px; }
+  .gross .frage { font-size: 24px; }
 </style>
 </head>
 <body>
 <div id="app">
-  <div class="kopf"><div class="h"><b id="heli">LeitWerk</b><span id="unter">verbinde …</span></div><span class="gr leer" id="gr"></span><span class="uhr" id="uhr"></span><button class="stpkt" id="stpkt" aria-label="Status geben"><i id="stfarbe" style="background:#6B7385"></i></button></div>
-  <div class="tabv versteckt" id="tabv"><b id="tabvT">Funkgerät &amp; Tablet</b><span id="tabvU"></span><button id="tabvB">Verbinden</button></div>
-  <div class="seg versteckt" id="seg"><span class="m" id="segm"></span><button id="segT" class="on">Transport</button><button id="segP">Patient<span class="dot versteckt" id="patdot"></span></button></div>
-  <div class="inh" id="inh">
-    <div class="leer" id="leer"><div class="t" id="leerT">Kein Alarm</div><div id="leerU">Neue Einsätze erscheinen hier automatisch.</div><div class="st versteckt" id="leerSt"></div></div>
-    <div id="transport" class="versteckt"></div>
-    <div id="patient" class="versteckt"></div>
+  <div class="kopf"><div class="h"><b id="heli">LeitWerk</b><span id="unter">verbinde …</span></div><span class="gr versteckt" id="gr"></span><span class="uhr" id="uhr"></span><span class="st versteckt" id="st"><b></b><span></span></span></div>
+  <div class="rail" id="rail">
+    <button data-tab="einsaetze" class="an"><svg viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0-6 6v4.2L4.3 16a1 1 0 0 0 .9 1.5h13.6a1 1 0 0 0 .9-1.5L18 13.2V9a6 6 0 0 0-6-6zm-2.3 16a2.4 2.4 0 0 0 4.6 0z"/></svg>Einsätze</button>
+    <button data-tab="status"><svg viewBox="0 0 24 24"><circle cx="6" cy="4.5" r="2"/><circle cx="12" cy="4.5" r="2"/><circle cx="18" cy="4.5" r="2"/><circle cx="6" cy="10.5" r="2"/><circle cx="12" cy="10.5" r="2"/><circle cx="18" cy="10.5" r="2"/><circle cx="6" cy="16.5" r="2"/><circle cx="12" cy="16.5" r="2"/><circle cx="18" cy="16.5" r="2"/><circle cx="12" cy="22" r="1.6"/></svg>Status</button>
+    <button data-tab="einst"><svg viewBox="0 0 24 24"><path d="M13.6 2.5h-3.2l-.5 2.6a7.5 7.5 0 0 0-1.9 1.1l-2.5-.9-1.6 2.8 2 1.7a7.6 7.6 0 0 0 0 2.2l-2 1.7 1.6 2.8 2.5-.9c.6.5 1.2.8 1.9 1.1l.5 2.6h3.2l.5-2.6a7.5 7.5 0 0 0 1.9-1.1l2.5.9 1.6-2.8-2-1.7a7.6 7.6 0 0 0 0-2.2l2-1.7-1.6-2.8-2.5.9a7.5 7.5 0 0 0-1.9-1.1zM12 9a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></svg>Einstellungen</button>
   </div>
-  <button class="knopf versteckt" id="buchenK">Zielort buchen</button>
-  <div id="blatt" class="versteckt"><div class="dunkel" id="blattZu"></div><div class="blatt" id="blattBox"><div class="bk"><b id="blattT">Zielort buchen</b><button id="blattX">Schließen ✕</button></div><div class="bi" id="blattI"></div></div></div>
+  <div class="inh" id="inh"><div id="seite"></div></div>
+  <div class="fuss versteckt" id="fuss"></div>
+  <div id="toast" class="versteckt"><span></span></div>
   <div id="nav" class="nav versteckt"><div class="bk"><button class="nk" id="navZu">‹ Zurück</button><b id="navT">Navigation</b><button class="nk" id="navAlle">Alle Fahrzeuge</button><button class="nk" id="navFolgen">Folgen</button></div><div class="karte" id="navK"></div><div class="zoom"><button id="zplus">+</button><button id="zminus">−</button></div></div>
+  <div id="alarm" class="versteckt" role="alert"></div>
 </div>
 <script>
 (function () {
   var stand = {};
-  var tab = "transport";
-  var patGesehen = "";
-  var blattArt = "";
-  var khWahl = "";
-  var khFuer = "";
-  var frageOffen = null;
-  var suchFeld = null;
-  var suchTimer = 0;
-  var suchOffen = false;
-  var selbstBuchen = false;
-  var navAuf = false;
+  var online = false;
   var letzt = "";
   var KACHEL = "https://mapsneu.wien.gv.at/basemap/geolandbasemap/normal/google3857/";
+  // Ansicht (nur hier): Reiter, offener Einsatz, Buchen-Schritt, gewählter Status
+  var A = { tab: "einsaetze", sel: "", buchen: false, bs: "art", khWahl: "", wahl: "", gesendet: "", abf: {}, anim: "" };
+  var letzteAkt = "";
+  var tabv = null; // H145: { laeuft, andere }
+  var PREF = {};
+  try { PREF = JSON.parse(localStorage.getItem("lw-efb") || "{}") || {}; } catch (e) { PREF = {}; }
 
   function $(id) { return document.getElementById(id); }
   function esc(s) {
@@ -293,17 +319,44 @@
     });
   }
   function zeige(el, an) { if (an) el.className = el.className.replace(/ ?versteckt/g, ""); else if (!/versteckt/.test(el.className)) el.className += " versteckt"; }
+  function prefSetzen(k, v) { PREF[k] = v; try { localStorage.setItem("lw-efb", JSON.stringify(PREF)); } catch (e) {} }
+  function finde(l, f) { for (var i = 0; i < (l || []).length; i++) if (f(l[i])) return l[i]; return null; }
+  function alle(sel, f) { var l = $("seite").querySelectorAll(sel); for (var i = 0; i < l.length; i++) f(l[i]); }
   function senden(cmd) {
     var x = new XMLHttpRequest();
     x.open("POST", "/befehl");
     x.onreadystatechange = function () { if (x.readyState === 4) setTimeout(holen, 200); };
     try { x.send(cmd); } catch (e) {}
   }
+  var toastT = 0;
+  function toast(t) { var b = $("toast"); b.firstChild.textContent = t; zeige(b, true); clearTimeout(toastT); toastT = setTimeout(function () { zeige(b, false); }, 2400); }
+
+  // ------------------------------------------------------------ Code-Marke (Kopie von src/ui/fenster/pilot/marke.js)
+  var C = { rot: "#d32f2f", orange: "#f57c00", gelb: "#fbc02d", "grün": "#2e9d4a" };
+  var HELL = { rot: "#f2a7a7", orange: "#ffcc99", gelb: "#fde68a", "grün": "#a9dcb6" };
+  var TXT = { rot: "#ffffff", orange: "#15181c", gelb: "#15181c", "grün": "#ffffff" };
+  var WEISS = "background:#ffffff;color:#15181c;padding:1px 7px;";
+  function marke(stufe) {
+    var s = String(stufe || ""), f = null;
+    for (var k in C) if (!f && s.indexOf(k) >= 0) f = k;
+    if (/^ALS/.test(s) && f) return { a: "background:" + C[f] + ";padding:4px 10px;", i: "color:" + TXT[f] + ";" };
+    if (/^BLS\/ALS/.test(s)) return { a: "background:repeating-linear-gradient(135deg,#7d64cc 0 5px,#d9d0f7 5px 9px);padding:3px;", i: "background:#7d64cc;color:#ffffff;padding:1px 7px;" };
+    if (/^BLS/.test(s) && f) return { a: "background:repeating-linear-gradient(135deg," + C[f] + " 0 5px," + HELL[f] + " 5px 9px);padding:3px;", i: WEISS };
+    if (/^Sekundär.*sofort/.test(s)) return { a: "border:2px solid #b4232a;background:repeating-linear-gradient(90deg,#fde3e3 0 6px,#ffffff 6px 12px);padding:2px 8px;", i: "color:#8f1b21;" };
+    if (/^Sekundär/.test(s)) return { a: "border:2px solid #2f6fb5;background:#e8f0fa;padding:2px 8px;", i: "color:#1f4f8a;" };
+    if (/^Akut/.test(s)) return { a: "background:radial-gradient(#3a9c8f 1.7px,#cdebe7 2px) 0 0/6px 6px;padding:3px;", i: WEISS };
+    if (/^Telemed/.test(s)) return { a: "border:2px dashed #2563eb;background:#eef3fe;padding:2px 8px;", i: "color:#1d4ed8;" };
+    if (/^Weitergabe/.test(s)) return { a: "border:2px dotted #6b7280;background:#f3f5f8;padding:2px 8px;", i: "color:#374151;" };
+    if (/^Gro(ß|ss)/.test(s)) return { a: "background:repeating-linear-gradient(45deg,#475569 0 6px,#fbc02d 6px 12px);padding:3px;", i: WEISS };
+    if (/^Alpin/.test(s)) return { a: "background:linear-gradient(135deg,#8d6e63 0 60%,#5d4037 60%);padding:4px 10px;", i: "color:#ffffff;" };
+    return { a: "background:#6b7280;padding:4px 10px;", i: "color:#ffffff;" };
+  }
+  function mk(code, stufe, gross) { var m = marke(stufe); return '<span class="mk" style="' + m.a + (gross ? "font-size:15px;" : "") + '"><span style="' + m.i + '">' + esc(code) + "</span></span>"; }
 
   // ------------------------------------------------------------ Karte (Kacheln von basemap.at, Norden oben)
   function Karte(box, klein) {
     this.box = box; this.klein = klein; this.z = 12; this.lat = 48.4; this.lon = 15.6; this.folgen = true; this.imgs = {};
-    box.innerHTML = '<div class="kach"></div><div class="mk"></div>' + (klein ? '<div class="info"></div><div class="gross">Navigation ›</div>' : '<div class="info versteckt"></div>') + '<div class="quelle">Datenquelle: basemap.at</div>';
+    box.innerHTML = '<div class="kach"></div><div class="mkn"></div>' + (klein ? '<div class="info"></div><div class="gross">Navigation ›</div>' : '<div class="info versteckt"></div>') + '<div class="quelle">Datenquelle: basemap.at</div>';
     this.kach = box.childNodes[0]; this.mk = box.childNodes[1]; this.info = box.childNodes[2];
     var k = this;
     if (!klein) {
@@ -331,7 +384,6 @@
   };
   Karte.prototype.zoom = function (d) { this.z = Math.max(7, Math.min(18, this.z + d)); this.zeichnen(); };
   Karte.prototype.passend = function (a, b) {
-    // Ausschnitt so, dass beide Punkte drin sind
     var w = this.box.clientWidth || 500, h = this.box.clientHeight || 170;
     this.lat = (a.lat + b.lat) / 2; this.lon = (a.lon + b.lon) / 2;
     for (var z = 16; z >= 7; z--) {
@@ -403,312 +455,414 @@
     } else if (this.folgen) { this.lat = d.ich.lat; this.lon = d.ich.lon; }
     this.zeichnen();
   };
-
   var kleineKarte = null;
   var grosseKarte = new Karte($("navK"), false);
+  var navAuf = false;
   function knopfFolgen() { $("navFolgen").className = "nk" + (grosseKarte.folgen ? " on" : ""); }
 
-  // ------------------------------------------------------------ Zeichnen
-  function zeichnen(s) {
-    var t = (s.neu || {}).tab || {};
-    $("heli").textContent = t.heli || s.heli || "LeitWerk";
-    $("unter").textContent = t.unter || s.unter || s.hinweis || "";
+  // ------------------------------------------------------------ Hilfen
+  function N() { return stand.neu || {}; }
+  function T() { return N().tab || {}; }
+  function folge() {
+    var s = (N().ent || {}).seite || "nah";
+    return s === "kein" ? ["art", "kein"] : s === "rtw" || s === "naMit" ? ["art", "wer", "alter", "symptom", "dring", "vorschlag"] : ["art", "alter", "symptom", "dring", "vorschlag"];
+  }
+  function schrittIdx() { var f = folge(); return A.bs === "manuell" ? f.indexOf("vorschlag") : f.indexOf(A.bs); }
+  function item() { var L = N().liste || []; return A.sel ? finde(L, function (e) { return e.id === A.sel; }) : null; }
+  function geh(neu, anim) { for (var k in neu) A[k] = neu[k]; A.anim = anim || ""; zeichnen(true); }
+  function eng() { return ($("inh").clientWidth || 800) < 700; }
+  // je zwei nebeneinander (gleich hoch), schmal untereinander
+  function reihen(l) {
+    var h = "", n = eng() ? 1 : 2;
+    for (var i = 0; i < l.length; i += n) h += '<div class="reihe2">' + l[i] + (n === 2 ? (l[i + 1] || '<span class="platz"></span>') : "") + "</div>";
+    return h;
+  }
+
+  // ------------------------------------------------------------ Kopf und Leiste
+  function kopf() {
+    var t = T(), n = N(), it = item();
+    var det = A.tab === "einsaetze" && it && !A.buchen;
+    $("heli").textContent = A.buchen ? "Zielort buchen" : det ? it.code + " · " + it.sw : (t.heli || stand.heli || "LeitWerk");
+    $("unter").textContent = !online ? "LeitWerk nicht erreichbar" : A.buchen ? "Schritt " + (schrittIdx() + 1) + " von " + folge().length : det ? "Einsatz " + it.nr : (t.unter || stand.unter || stand.hinweis || "");
     $("uhr").textContent = t.uhr || "";
-    // Sprechgruppe: 09/10 ohne Großeinsatz gelb mit Warnzeichen
     var gr = t.gr;
-    $("gr").textContent = gr ? (gr.warn ? "\u26A0 " : "") + gr.n : "";
-    $("gr").className = "gr" + (!gr ? " leer" : gr.warn ? " warn" : "");
-    $("gr").title = gr && gr.warn ? "Sprechgruppe RD-NOE-" + gr.n + ": dort läuft kein Großeinsatz" : "Sprechgruppe";
-    $("stfarbe").style.background = t.st ? t.st.f : "#6B7385";
-    var ein = t.ein;
-    zeige($("seg"), !!ein);
-    zeige($("leer"), !ein);
-    var oben = $("tabv").className.indexOf("versteckt") < 0 ? 96 : 56;
-    $("seg").style.top = (oben + 10) + "px";
-    $("inh").style.top = (ein ? oben + 60 : oben) + "px";
-    if (!ein) {
-      $("leerT").textContent = t.st ? "Kein Alarm" : "Kein Hubschrauber";
-      $("leerU").textContent = t.st ? "Neue Einsätze erscheinen hier automatisch." : (t.unter || "im Piloten-Interface wählen");
-      var ls = $("leerSt");
-      zeige(ls, !!t.st);
-      if (t.st) { ls.style.background = t.st.f; ls.innerHTML = "<b>" + esc(t.st.n) + "</b>" + esc(t.st.t); }
-      zeige($("transport"), false); zeige($("patient"), false); zeige($("buchenK"), false);
-      if (blattArt === "buchen") blattZu();
-      return;
+    zeige($("gr"), !!gr);
+    if (gr) { $("gr").textContent = (gr.warn ? "⚠ " : "") + "RD-NOE-" + gr.n; $("gr").className = "gr" + (gr.warn ? " warn" : ""); }
+    var st = t.st;
+    zeige($("st"), !!st);
+    if (st) { $("st").style.background = st.f; $("st").firstChild.textContent = st.n; $("st").lastChild.textContent = st.t; }
+    var b = $("rail").getElementsByTagName("button");
+    for (var i = 0; i < b.length; i++) {
+      var an = b[i].getAttribute("data-tab") === A.tab;
+      b[i].className = an ? "an" : "";
+      var pkt = b[i].getAttribute("data-tab") === "einsaetze" && !an && (!!n.alarm || !!n.abrufPunkt);
+      var hat = b[i].getElementsByTagName("i").length > 0;
+      if (pkt && !hat) b[i].appendChild(document.createElement("i")); else if (!pkt && hat) b[i].removeChild(b[i].getElementsByTagName("i")[0]);
     }
-    // Reiter
-    if (!t.pat && tab === "patient") tab = "transport";
-    $("segm").className = "m" + (tab === "patient" ? " r" : "");
-    $("segT").className = tab === "transport" ? "on" : "";
-    $("segP").className = tab === "patient" ? "on" : "";
-    var pk = t.pat ? JSON.stringify(t.pat.liste || []) : "";
-    if (tab === "patient") patGesehen = pk;
-    zeige($("patdot"), !!t.pat && pk !== patGesehen);
-    zeige($("transport"), tab === "transport");
-    zeige($("patient"), tab === "patient");
-    zeige($("buchenK"), tab === "transport");
-    $("inh").className = "inh" + (tab === "transport" ? " mitknopf" : "");
-    transportZeichnen(t);
-    patientZeichnen(t);
-    var bk = $("buchenK");
-    bk.className = "knopf" + (t.buchenDa ? "" : " aus") + (tab === "transport" ? "" : " versteckt");
-    bk.innerHTML = t.plan ? "Zielort ändern<small>" + esc(t.plan) + "</small>" : t.buchenDa ? "Zielort buchen ›" : "Zielort buchen<small>" + esc(t.buchenText || "geht am Einsatzort") + "</small>";
-    if (blattArt === "buchen") { if (t.buchenDa) buchenZeichnen(); else blattZu(); }
-    if (blattArt === "status") statusZeichnen();
-    if (navAuf) { grosseKarte.setzen(t.karte); $("navAlle").className = "nk" + (t.karte && t.karte.alle ? " on" : ""); }
+    document.body.className = PREF.gross ? "gross" : "";
   }
-
-  var GS_SCHRITTE = ["Alarm", "Bereitstellungsraum", "Abruf", "Einsatzort", "Patient"];
-  function gsZeichnen(g) {
-    var h = '<div class="gsk"><div class="gsk-auf' + (g.abruf ? " abruf" : "") + '"><small>' + (g.abruf ? "Abruf durch die Einsatzleitung" : "Dein Auftrag") + "</small><b>" + esc(g.auftrag) + "</b>" +
-      (g.abruf && g.abruf.pct ? '<div class="balken"><i style="width:' + esc(g.abruf.pct) + '%"></i></div>' : "") + "</div>";
-    h += '<div class="schritte">';
-    for (var i = 0; i < GS_SCHRITTE.length; i++) h += '<span class="' + (i < g.schritt ? "ok" : i === g.schritt ? "jetzt" : "") + '">' + (i < g.schritt ? "✓ " : "") + GS_SCHRITTE[i] + "</span>";
-    h += '</div><div class="gsw">';
-    for (i = 0; i < (g.werte || []).length; i++) h += "<div><span>" + esc(g.werte[i].l) + "</span><b>" + esc(g.werte[i].v) + "</b></div>";
-    return h + "</div></div>";
-  }
-
-  function transportZeichnen(t) {
-    var e = t.ein, h = "", i;
-    if (t.alarm) {
-      var q = null, kn = stand.knoepfe || [];
-      for (i = 0; i < kn.length; i++) if (kn[i].nummer === "9") q = kn[i];
-      h += '<div class="alarmb">ALARM<small>' + esc(t.alarm.zeit) + "</small>" + (t.alarm.quitt ? '<span class="q">Status 9 – quittiert</span>' : q ? '<button data-akt="' + esc(q.aktion) + '">9 Quittieren</button>' : "") + "</div>";
-    }
-    h += '<div class="ab"><div class="code">' + '<div class="code-k">' + (e.stufe ? '<span class="stufe" style="background:' + esc(e.sf) + '">' + esc(e.stufe) + "</span>" : "") +
-      '<span class="code-nr">' + esc(e.code) + '</span></div><div class="code-n">' + esc(e.sw) + "</div>" + (e.zi ? '<div class="code-d">' + esc(e.zi) + "</div>" : "") + "</div>" +
-      (e.gs && !t.gs ? '<div class="gs">' + esc(e.gs) + "</div>" : "") +
-      '<div class="reihe"><span class="lbl">Ort</span><div class="w"><b>' + esc(e.adr) + "</b></div></div>" +
-      (e.zusatz ? '<div class="reihe"><span class="lbl">Zusatz</span><div class="w">' + esc(e.zusatz) + "</div></div>" : "") +
-      (t.gs ? gsZeichnen(t.gs) : "") +
-      '<div class="karte klein" id="kk"></div></div>';
-    if (t.gs && t.gs.zahlen) {
-      h += '<div class="ab"><span class="lbl">Lage am Einsatzort</span><div class="zahlen">';
-      for (i = 0; i < t.gs.zahlen.length; i++) h += '<div style="border-top-color:' + esc(t.gs.zahlen[i].f) + '"><b>' + esc(t.gs.zahlen[i].n) + "</b><small>" + esc(t.gs.zahlen[i].t) + "</small></div>";
-      h += "</div></div>";
-    }
-    if (t.gs && t.gs.liste) {
-      h += '<div class="ab"><span class="lbl">Bereitstellungsraum <span>· Reihenfolge des Abrufs</span></span><div class="wsl">';
-      for (i = 0; i < t.gs.liste.length; i++) { var r = t.gs.liste[i]; h += '<div class="' + esc(r.c) + '"><span>' + esc(r.nr) + "</span><b>" + esc(r.t) + "</b><small>" + esc(r.z) + "</small></div>"; }
-      h += "</div></div>";
-    }
-    if (t.gs && t.gs.meld && t.gs.meld.length) {
-      h += '<div class="ab"><span class="lbl">Lagemeldungen <span>· Funk ' + esc(t.gs.gruppe) + '</span></span><div class="meld">';
-      for (i = 0; i < t.gs.meld.length; i++) h += "<div><span>" + esc(t.gs.meld[i].z) + "</span>" + esc(t.gs.meld[i].t) + "</div>";
-      h += "</div></div>";
-    }
-    var f = t.fz || [];
-    var a = t.abf || [];
-    if (f.length) {
-      h += '<div class="ab"><span class="lbl">Alarmierte Fahrzeuge <span>· ' + f.length + "</span></span>";
-      for (i = 0; i < f.length; i++) {
-        h += '<div class="fz' + (f[i].funk ? " funk" : "") + (f[i].ich ? " ich" : "") + '" style="background:' + esc(f[i].f) + '"><span class="s">' + esc(f[i].s) + '</span><div class="t"><b>' + esc(f[i].ruf) + '</b><span class="ty">' + esc(f[i].typ) + '</span><span class="z">' + esc(f[i].txt) + "</span></div>" + (f[i].eta ? '<span class="e">' + esc(f[i].eta) + "</span>" : "") + "</div>";
-      }
-      h += "</div>";
-    }
-    if (!t.gs) h += '<div class="ab ohne"><span class="lbl">Abfrage' + (a.length ? " <span>· " + a.length + " beantwortet</span>" : "") + "</span>";
-    if (t.gs) {} else if (a.length) {
-      h += '<div class="erl">';
-      for (i = 0; i < a.length; i++) h += "<div>" + (a[i].f ? "<small>" + esc(a[i].f) + "</small>" : "") + "<b>" + esc(a[i].a) + "</b></div>";
-      h += "</div>";
-    } else h += '<div class="hinweis">Keine Notrufabfrage zu diesem Einsatz.</div>';
-    if (!t.gs) h += "</div>";
-    var box = $("transport");
-    var sig = JSON.stringify([t.alarm, e, f, a, t.gs]);
-    if (box.getAttribute("data-sig") !== sig) {
-      box.setAttribute("data-sig", sig);
-      box.innerHTML = h;
-      kleineKarte = new Karte($("kk"), true);
-      $("kk").onclick = function () { navOeffnen(); };
-      var akt = box.querySelectorAll("[data-akt]");
-      for (i = 0; i < akt.length; i++) akt[i].onclick = function () { senden(this.getAttribute("data-akt")); };
-    }
-    if (kleineKarte) kleineKarte.setzen(t.karte);
-  }
-
-  var SICHT = { rot: "I", gelb: "II", "grün": "III", tot: "–" };
-  var PUNKT = ["#4CC38A", "#FFC72C", "#FF5A5F"];
-  function patientZeichnen(t) {
-    var box = $("patient"), h = "", i, j;
-    if (!t.pat) {
-      h = '<div class="ab ohne"><div class="hinweis">' + esc(t.patZu || "Was der Patient hat, siehst du, sobald ihr beim Patienten seid.") + "</div></div>";
-    } else {
-      var p = t.pat, l = p.liste || [];
-      for (i = 0; i < l.length; i++) {
-        var x = l[i];
-        h += '<div class="ab"><div class="pk"><div class="pk-band" style="background:' + esc(x.sf) + ";color:" + esc(x.sc || "#FFFFFF") + '"><b>' + esc(SICHT[x.s] || "") + "</b>Sichtung " + esc(x.s) + "<span>" + esc(x.nr || (l.length > 1 ? "Patient " + (i + 1) : "")) + "</span></div>";
-        h += '<div class="pk-in"><div class="pk-wer">' + esc(x.wer || x.t) + "</div>" + (x.rolle ? '<div class="zeit" style="margin-top:2px">' + esc(x.rolle) + "</div>" : "");
-        if (x.muster) h += '<div class="pk-vd"><small>Verletzungsmuster / Krankheitsbild</small><b>' + esc(x.muster) + "</b></div>";
-        if (x.vd) h += '<div class="pk-vd"><small>Verdacht</small><b>' + esc(x.vd) + "</b></div>";
-        var vit = x.vit || [];
-        if (vit.length) {
-          h += '<div class="vit">';
-          for (j = 0; j < vit.length; j++) h += "<div><small>" + esc(vit[j].k) + '</small><b><i style="background:' + PUNKT[vit[j].g || 0] + '"></i>' + esc(vit[j].w) + "</b></div>";
-          h += "</div>";
-        }
-        // Lagebild in Befund und Empfehlung (Transport …) aufteilen
-        var teile = String(x.lage || "").split(/,\s*/), bef = [], empf = [];
-        for (j = 0; j < teile.length; j++) { var tx = teile[j].replace(/^\s+|\s+$/g, ""); if (!tx) continue;
-          var doppelt = false;
-          for (var v2 = 0; v2 < vit.length; v2++) if (tx.toLowerCase() === String(vit[v2].w).toLowerCase()) doppelt = true;
-          if (doppelt) continue; tx = tx.charAt(0).toUpperCase() + tx.slice(1); if (/transport|klinik|stroke|herzkatheter|schockraum|krankenhaus/i.test(tx)) empf.push(tx); else bef.push(tx); }
-        if (bef.length) { h += '<div class="befund"><small>Befund</small>'; for (j = 0; j < bef.length; j++) h += "<div>" + esc(bef[j]) + "</div>"; h += "</div>"; }
-        if (empf.length) h += '<div class="empf"><small>Empfehlung</small>' + esc(empf.join(" · ")) + "</div>";
-        var fk = x.fakt || [];
-        if (fk.length) {
-          h += '<div class="befund fakt"><small>Vor Ort festgestellt</small>';
-          for (j = 0; j < fk.length; j++) h += "<div><span>" + esc(fk[j].k) + '</span><b class="' + esc(fk[j].c || "") + '">' + esc(fk[j].w) + "</b></div>";
-          h += "</div>";
-        }
-        if (x.fw) h += '<div class="warn">Erst nach Befreiung bzw. Rettung durch die Feuerwehr erreichbar</div>';
-        if (x.bit) h += '<div class="warn">Sehr schwer (ca. 150 kg+) – Transport braucht BIT</div>';
-        if (x.versorgt) h += '<div class="empf"><small>Versorgung</small>' + esc(x.versorgt) + "</div>";
-        h += "</div></div></div>";
-      }
-      if (!l.length) h += '<div class="ab"><div class="pk"><div class="pk-in"><div class="pk-wer">' + esc(p.verdacht ? "Verdacht: " + p.verdacht : "Keine weiteren Angaben") + "</div></div></div></div>";
-      h += '<div class="ab"><span class="lbl">Zielort</span><div class="ziel"><div class="w">' + (t.plan ? esc(t.plan) + "<small>gebucht</small>" : "Noch nicht entschieden<small>Transport und Krankenhaus festlegen</small>") + '</div><button id="patBuchen" class="' + (t.buchenDa ? "" : "aus") + '">' + (t.plan ? "Ändern" : "Zielort buchen") + "</button></div></div>";
-      if (p.meldung) h += '<div class="ab"><span class="lbl">Notruf</span><div class="zitat">„' + esc(p.meldung) + "“</div></div>";
-      var vl = p.verlauf || [];
-      if (vl.length) {
-        h += '<div class="ab ohne"><span class="lbl">Verlauf</span><div class="tl">';
-        for (i = vl.length - 1; i >= 0; i--) h += "<div><span>" + esc(vl[i].z) + "</span>" + esc(vl[i].t) + "</div>";
-        h += "</div></div>";
-      }
-    }
-    if (box.getAttribute("data-sig") !== h) {
-      box.setAttribute("data-sig", h);
-      box.innerHTML = h;
-      if ($("patBuchen")) $("patBuchen").onclick = function () { if (((stand.neu || {}).tab || {}).buchenDa) blattAuf("buchen"); };
-    }
-  }
-
-  // ------------------------------------------------------------ Blätter: Status, Buchen
-  function blattAuf(art) { blattArt = art; zeige($("blatt"), true); frageOffen = null; if (art === "buchen") buchenZeichnen(); else statusZeichnen(); }
-  function blattZu() { blattArt = ""; frageOffen = null; suchFeld = null; zeige($("blatt"), false); }
-  $("blattZu").onclick = blattZu;
-  $("blattX").onclick = blattZu;
-  $("stpkt").onclick = function () { if (blattArt === "status") blattZu(); else blattAuf("status"); };
-
-  function statusZeichnen() {
-    $("blattT").textContent = "Status geben";
-    $("blattBox").className = "blatt kurz";
-    var kn = stand.knoepfe || [], h = '<div class="stk">', i;
-    for (i = 0; i < kn.length; i++) h += '<button data-akt="' + esc(kn[i].aktion) + '" style="border-color:' + esc(kn[i].farbe) + (kn[i].aktiv ? ";background:" + esc(kn[i].farbe) + ";color:#111216" : "") + '"><span>' + esc(kn[i].nummer) + "</span>" + esc(kn[i].name) + "</button>";
-    h += "</div>";
-    var bi = $("blattI");
-    if (bi.getAttribute("data-sig") !== h) {
-      bi.setAttribute("data-sig", h);
-      bi.innerHTML = h;
-      var b = bi.querySelectorAll("[data-akt]");
-      for (i = 0; i < b.length; i++) b[i].onclick = function () { senden(this.getAttribute("data-akt")); setTimeout(blattZu, 250); };
-    }
-  }
-
-  function buchenZeichnen() {
-    $("blattT").textContent = "Zielort buchen";
-    $("blattBox").className = "blatt";
-    var b = (stand.neu || {}).ent, bi = $("blattI"), h = "", i, k;
-    if (!b) { bi.innerHTML = '<div class="hinweis">Buchen geht, sobald ihr beim Patienten seid.</div>'; bi.setAttribute("data-sig", ""); return; }
-    if (khFuer !== b.fuer) { khFuer = b.fuer; khWahl = ""; selbstBuchen = false; }
-    var gefunden = false;
-    for (i = 0; i < b.khs.length; i++) if (b.khs[i].id === khWahl) gefunden = true;
-    if (!gefunden) { khWahl = ""; for (i = 0; i < b.khs.length; i++) if (b.khs[i].id === b.gebuchtId) khWahl = b.gebuchtId; if (!khWahl && b.khs[0]) khWahl = b.khs[0].id; }
-    h += '<span class="lbl">Was passiert mit dem Patienten?</span><div class="wahl">';
-    for (i = 0; i < b.wahl.length; i++) h += '<button class="' + (b.wahl[i].on ? "on" : "") + '" data-bu="seite:' + esc(b.wahl[i].id) + '"><b>' + esc(b.wahl[i].t) + "</b><small>" + esc(b.wahl[i].d) + "</small></button>";
-    h += "</div>";
-    if (b.keinWahl) {
-      h += '<div class="wahl">';
-      for (i = 0; i < b.keinWahl.length; i++) h += '<button class="' + (b.keinWahl[i].on ? "on" : "") + '" data-kein="' + esc(b.keinWahl[i].id) + '" data-t="' + esc(b.keinWahl[i].t) + '"><b>' + esc(b.keinWahl[i].t) + "</b><small>" + esc(b.keinWahl[i].s) + "</small></button>";
-      h += "</div>";
-    }
-    if (b.rtwFehlt) h += '<div class="hinweis">Noch kein RTW im Einsatz – bitte bei der Leitstelle anfordern.</div>';
-    var zeigSchritte = b.buchen;
-    if (b.rtwWahl) {
-      h += '<span class="lbl" style="margin-top:6px">Wer bucht das Krankenhaus?</span><div class="wahl"><button class="' + (b.rtwWahl.on ? "on" : "") + '" data-bu="rtwbucht"><b>Übergeben – RTW bucht selbst</b><small>' + (b.rtwWahl.on ? "erledigt · RTW sucht das Krankenhaus" : "ihr seid danach frei") + '</small></button><button class="' + (selbstBuchen || b.gebuchtId ? "on" : "") + '" id="selbstB"><b>Selbst buchen</b><small>Krankenhaus für den RTW wählen</small></button></div>';
-      zeigSchritte = b.buchen && (selbstBuchen || !!b.gebuchtId);
-    }
-    if (zeigSchritte) {
-      h += '<span class="lbl" style="margin-top:8px">Krankenhaus' + (b.gebuchtId ? ' <span class="pill ok">gebucht ' + esc(b.gebuchtT) + "</span>" : "") + "</span>";
-      for (i = 0; i < b.schritte.length; i++) {
-        k = b.schritte[i];
-        if (k.fertig) h += '<div class="fertig"><span class="n">✓</span><span class="w"><small>' + esc(k.titel) + "</small>" + esc(k.wert) + '</span><button class="kn" data-bu="schritt:' + esc(k.nr) + '">Ändern</button></div>';
-        else if (k.offen) h += '<div class="offen"><span>' + esc(k.nr) + "</span>" + esc(k.titel) + "</div>";
-        else {
-          h += '<div class="skopf"><span>' + esc(k.nr) + "</span>" + esc(k.frage) + "</div>";
-          var j;
-          if (k.istAlter) { h += '<div class="wahl drei">'; for (j = 0; j < b.altW.length; j++) h += '<button class="' + (b.altW[j].on ? "on" : "") + '" data-bu="alter:' + esc(b.altW[j].id) + '"><b>' + esc(b.altW[j].t) + "</b><small>" + esc(b.altW[j].s) + "</small></button>"; h += "</div>"; }
-          if (k.istDringlich) { h += '<div class="wahl drei">'; for (j = 0; j < b.drW.length; j++) h += '<button class="' + (b.drW[j].on ? "on" : "") + (b.drW[j].aus ? " aus" : "") + '" data-bu="dring:' + esc(b.drW[j].id) + '"><b>' + esc(b.drW[j].t) + "</b><small>" + esc(b.drW[j].s) + "</small></button>"; h += "</div>"; }
-          if (k.istSymptom) {
-            h += '<div class="such' + (suchOffen ? " offen" : "") + '" id="such"><div id="suchplatz"></div><div class="dd">' + (b.symHinweis ? "<small>" + esc(b.symHinweis) + "</small>" : "");
-            for (j = 0; j < b.symW.length; j++) h += '<button data-bu="sym:' + esc(b.symW[j].id) + '">' + esc(b.symW[j].t) + "</button>";
-            if (!b.symW.length && !b.symHinweis) h += '<div class="nix">Kein Symptom gefunden.</div>';
-            h += "</div></div>";
-          }
-          if (k.istVorschlag) {
-            if (b.khLeer) h += '<div class="hinweis" style="margin-bottom:8px">' + esc(b.khLeer) + "</div>";
-            for (j = 0; j < b.khs.length; j++) {
-              var x = b.khs[j], merk = "";
-              for (var m = 0; m < (x.merk || []).length; m++) merk += '<span class="' + esc(x.merk[m].c) + '">' + esc(x.merk[m].t) + "</span>";
-              h += '<div class="khk' + (x.id === khWahl ? " gew" : "") + '" data-kh="' + esc(x.id) + '"><span class="radio' + (x.id === khWahl ? " an" : "") + '"></span><div class="t"><b>' + esc(x.n) + '</b> <span class="zeit">· ' + esc(x.km) + esc(x.min) + '</span><div class="merk">' + merk + "</div></div>" + (x.frei ? '<span class="' + esc(String(x.freiCls || "").replace(/^.*\b(ok|gelb|rot)\b.*$/, "pill $1")) + '">' + esc(x.frei) + "</span>" : "") + "</div>";
-            }
-            var gew = null;
-            for (j = 0; j < b.khs.length; j++) if (b.khs[j].id === khWahl) gew = b.khs[j];
-            if (gew) h += '<button class="prim" id="khok">' + esc(gew.n) + (b.gebuchtId === gew.id ? " gebucht" : " buchen") + "</button>";
-          }
-        }
-      }
-    }
-    if (frageOffen) h += '<div class="frage"><div>' + esc(frageOffen.t) + '</div><button class="kn" id="fja">' + esc(frageOffen.ja) + '</button><button class="kn" id="fnein">Abbrechen</button></div>';
-    if (bi.getAttribute("data-sig") === h) return;
-    var fokus = document.activeElement === suchFeld;
-    bi.setAttribute("data-sig", h);
-    bi.innerHTML = h;
-    var platz = $("suchplatz");
-    if (platz) {
-      if (!suchFeld) {
-        suchFeld = document.createElement("input");
-        suchFeld.className = "feld";
-        suchFeld.placeholder = "Symptom suchen …";
-        suchFeld.value = b.symQ || "";
-        suchFeld.oninput = function () { clearTimeout(suchTimer); var f = this; suchOpen(true); suchTimer = setTimeout(function () { senden("bu:q:" + f.value); }, 250); };
-        suchFeld.onfocus = function () { suchOpen(true); };
-        suchFeld.onblur = function () { setTimeout(function () { if (document.activeElement !== suchFeld) suchOpen(false); }, 250); };
-      }
-      platz.parentNode.replaceChild(suchFeld, platz);
-      if (fokus) suchFeld.focus();
-    } else suchFeld = null;
-    var el = bi.querySelectorAll("[data-bu]");
-    for (i = 0; i < el.length; i++) {
-      el[i].onmousedown = function (ev) { if (this.parentNode.className === "dd") ev.preventDefault(); };
-      el[i].onclick = function () { if (this.parentNode.className === "dd") { suchOffen = false; if (suchFeld) suchFeld.blur(); } senden("bu:" + this.getAttribute("data-bu")); };
-    }
-    el = bi.querySelectorAll("[data-kein]");
-    for (i = 0; i < el.length; i++) el[i].onclick = function () { senden("bu:kein:" + this.getAttribute("data-kein")); };
-    el = bi.querySelectorAll("[data-kh]");
-    for (i = 0; i < el.length; i++) el[i].onclick = function () { khWahl = this.getAttribute("data-kh"); buchenZeichnen(); };
-    if ($("selbstB")) $("selbstB").onclick = function () { selbstBuchen = true; buchenZeichnen(); };
-    if ($("khok")) $("khok").onclick = function () {
-      var g = null;
-      for (var n = 0; n < b.khs.length; n++) if (b.khs[n].id === khWahl) g = b.khs[n];
-      if (!g || b.gebuchtId === g.id) return;
-      // ohne Rückfrage buchen (Paul 10.11.2026)
-      senden("bu:kh:" + g.id);
+  (function () {
+    var b = $("rail").getElementsByTagName("button");
+    for (var i = 0; i < b.length; i++) b[i].onclick = function () {
+      var tb = this.getAttribute("data-tab");
+      geh({ tab: tb, buchen: false, wahl: "", gesendet: "", sel: tb === "einsaetze" && A.tab === "einsaetze" ? "" : A.sel }, A.tab === tb ? "zur" : "tab");
     };
-    if ($("fja")) $("fja").onclick = function () { var f = frageOffen.f; frageOffen = null; f(); buchenZeichnen(); };
-    if ($("fnein")) $("fnein").onclick = function () { frageOffen = null; buchenZeichnen(); };
-  }
-  function suchOpen(an) { suchOffen = an; var el = $("such"); if (el) el.className = "such" + (an ? " offen" : ""); }
-  $("buchenK").onclick = function () { if (((stand.neu || {}).tab || {}).buchenDa) blattAuf("buchen"); };
+  })();
 
-  // ------------------------------------------------------------ Reiter, Navigation
-  $("segT").onclick = function () { if (tab !== "transport") $("inh").scrollTop = 0; tab = "transport"; zeichnen(stand); };
-  $("segP").onclick = function () { if (((stand.neu || {}).tab || {}).pat || ((stand.neu || {}).tab || {}).ein) { if (tab !== "patient") $("inh").scrollTop = 0; tab = "patient"; zeichnen(stand); } };
+  // ------------------------------------------------------------ Einsätze: Liste
+  function listeHtml() {
+    var n = N(), L = n.liste || [], h = "", i;
+    if (tabv && !tabv.laeuft) h += '<div class="tabvz"><b>Funkgerät &amp; Tablet nicht verbunden</b>' + (tabv.andere ? "andere Mission läuft" : "") + '<button class="kn" id="tabvB">Verbinden</button></div>';
+    var laeuft = finde(L, function (e) { return e.laeuft; });
+    if (!stand.heli) h += '<div class="ek leerk"><b>Kein Hubschrauber</b><span class="leise">' + esc(T().unter || "Wähle im Piloten-Interface deinen Hubschrauber.") + "</span></div>";
+    else if (!laeuft) h += '<div class="ek leerk"><b>Kein Alarm</b><span class="leise">Bereitschaft. Neue Einsätze erscheinen hier von selbst.</span></div>';
+    if (L.length) h += '<span class="lbl">' + (laeuft ? "Einsätze dieser Sitzung" : "Vergangene Einsätze") + "</span>";
+    var karten = [];
+    for (i = 0; i < L.length; i++) {
+      var e = L[i];
+      var ziel = e.laeuft ? (n.planT ? ["gebucht", "ok"] : e.kt ? ["Ziel fest", "ok"] : ["Zielort offen", "gelb"]) : [e.ziel ? (e.ziel === "Kein Transport" || e.ziel === "Übergabe" ? e.ziel : "→ " + e.ziel) : "beendet", ""];
+      karten.push('<button class="ekarte' + (e.laeuft ? " laeuft" : "") + '" data-e="' + esc(e.id) + '">' +
+        '<div class="z">' + mk(e.code, e.stufe) + '<span class="zu' + (e.laeuft ? " l" : "") + '">' + (e.laeuft ? "LÄUFT" : "BEENDET") + " · " + esc(e.zeit) + "</span></div>" +
+        '<div class="t">' + esc(e.sw) + "</div>" + '<div class="mb">' + esc(e.meldebild || e.stufe || "") + "</div>" +
+        '<div class="r z"><span>' + esc(e.adr) + '</span><span class="tag ' + ziel[1] + '">' + esc(ziel[0]) + "</span></div></button>");
+    }
+    return h + reihen(karten);
+  }
+
+  // ------------------------------------------------------------ Einsatz über die ganze Fläche
+  var SICHT_T = { rot: "I", gelb: "II", "grün": "III", tot: "–" };
+  function detailsHtml(it) {
+    var n = N(), t = T(), akt = !!it.laeuft, i;
+    var e = akt ? t.ein || {} : {};
+    var g = akt ? t.gs : null, gh = akt ? n.gs : null;
+    var zeiten = (akt ? n.zeiten : it.zeiten) || [], verlauf = (akt ? n.verlauf : it.verlauf) || [];
+    var h = '<div class="dkopf"><button class="zur" id="zurL">‹ Einsätze</button><span class="leise">' + esc(it.datum) + " | " + esc(it.zeit) + " · " + esc(it.nr) + "</span></div>";
+    if (akt && t.alarm) h += '<div class="alarmb">ALARM · ' + esc(t.alarm.zeit) + (t.alarm.quitt ? '<span style="margin-left:auto;font-weight:600">Status 9 – quittiert</span>' : '<button data-akt="s9">9 Quittieren</button>') + "</div>";
+    var l = "", r = "";
+    // links: Einsatz, Großeinsatz, Ort, Patient, Verlauf, Abfrage
+    l += '<div class="ek"><div class="z">' + mk(it.code, it.stufe, true) + '<span class="zu' + (akt ? " l" : "") + '">' + (akt ? "LÄUFT" : "BEENDET") + "</span></div>" +
+      '<div class="titel">' + esc(it.sw) + "</div>" +
+      (it.meldebild ? '<div class="zeile"><span>Meldebild</span><b>' + esc(it.meldebild) + "</b></div>" : "") +
+      (akt && (gh && gh.gruppe || n.gruppe) ? '<div class="zeile"><span>Sprechgruppe</span><span class="grk">' + esc(gh && gh.gruppe || n.gruppe) + "</span></div>" : "") +
+      '<div class="zeile"><span>Versorgungsstufe</span><b>' + esc(it.stufe || "–") + "</b></div>" +
+      (e.zi ? '<div class="zi">' + esc(e.zi) + "</div>" : "") + (e.gs && !g ? '<div class="warn">' + esc(e.gs) + "</div>" : "") + "</div>";
+    var lKopf = l; l = "";
+    if (g) {
+      l += '<div class="ek gsk"><div class="z"><span class="lbl">Großeinsatz · ' + esc(["Alarm", "Bereitstellungsraum", "Abruf", "Einsatzort", "Patient"][g.schritt] || "") + '</span><span class="grk">' + esc(g.gruppe) + "</span></div>" +
+        '<div style="font-size:14px;font-weight:600;margin:2px 0 6px">' + esc(g.auftrag) + "</div>" +
+        (g.abruf ? '<div class="abruf"><b>ABRUF DURCH DIE EINSATZLEITUNG</b>' + (gh && gh.abruf ? esc(gh.abruf.t) : "") + (g.abruf.pct ? '<div class="balken"><i style="width:' + esc(g.abruf.pct) + '%"></i></div>' : "") + "</div>" : "");
+      for (i = 0; i < (g.werte || []).length; i++) l += '<div class="zeile"><span>' + esc(g.werte[i].l) + "</span><b>" + esc(g.werte[i].v) + "</b></div>";
+      if (g.zahlen) { l += '<div class="zahlen">'; for (i = 0; i < g.zahlen.length; i++) l += '<div style="border-top-color:' + esc(g.zahlen[i].f) + '"><b>' + esc(g.zahlen[i].n) + "</b><small>" + esc(g.zahlen[i].t) + "</small></div>"; l += "</div>"; }
+      if (g.liste) { l += '<span class="lbl" style="margin-top:8px">Bereitstellungsraum <span>· Reihenfolge des Abrufs</span></span><div class="wsl">'; for (i = 0; i < g.liste.length; i++) l += '<div class="' + esc(g.liste[i].c) + '"><span>' + esc(g.liste[i].nr) + "</span><b>" + esc(g.liste[i].t) + "</b><small>" + esc(g.liste[i].z) + "</small></div>"; l += "</div>"; }
+      if (g.meld && g.meld.length) { l += '<span class="lbl" style="margin-top:8px">Lagemeldungen</span><div class="liz">'; for (i = 0; i < g.meld.length; i++) l += "<div><code>" + esc(g.meld[i].z) + "</code><span>" + esc(g.meld[i].t) + "</span></div>"; l += "</div>"; }
+      l += "</div>";
+    }
+    l += '<div class="ek"><span class="lbl">' + (g ? "Einsatzort und BR" : akt && n.kt ? "Abholort und Ziel" : "Berufungsort") + '</span><div style="font-size:15px;font-weight:600;text-transform:uppercase">' + esc(akt ? e.adr || it.adr : it.adr) + "</div>" +
+      ((akt ? e.zusatz : it.zusatz) ? '<div class="leise" style="margin-top:3px">' + esc(akt ? e.zusatz : it.zusatz) + "</div>" : "");
+    var nav = akt ? n.nav || [] : [];
+    for (i = 0; i < nav.length; i++) l += '<div class="koord"><span><span class="leise">' + esc(nav[i].t) + "</span><br><code>" + esc(nav[i].k) + "</code></span></div>";
+    l += "</div>";
+    // Patient
+    l += '<div class="ek"><span class="lbl">Patient</span>';
+    var pats = akt ? n.pats || [] : [], patZu = akt ? (t.patZu || n.patZu) : [it.patient ? "Patient " + it.patient : "", it.patText || ""].join(" · ").replace(/^ · | · $/g, "");
+    if (patZu) l += '<div class="leise">' + esc(patZu) + "</div>";
+    for (i = 0; i < pats.length; i++) {
+      var p = pats[i], v = "";
+      for (var j = 0; j < (p.v || []).length; j++) v += '<span class="' + esc(p.v[j].c) + '">' + esc(p.v[j].t) + "</span>";
+      l += '<div class="pat"><div class="k"><span class="sicht" style="background:' + esc(p.sf) + ";color:" + esc(p.sc) + '">' + esc(p.s) + "</span><b>" + esc(p.t) + "</b></div>" + (p.l ? '<div class="l">' + esc(p.l) + "</div>" : "") + (v ? '<div class="vit">' + v + "</div>" : "") + "</div>";
+    }
+    var tp = akt ? t.pat : null;
+    if (tp && tp.meldung) l += '<div class="zitat">„' + esc(tp.meldung) + "“</div>";
+    var pv = akt ? n.patVerlauf || [] : [];
+    if (pv.length) { l += '<div class="liz" style="margin-top:8px">'; for (i = 0; i < pv.length; i++) l += "<div><code>" + esc(pv[i].z) + "</code><span>" + esc(pv[i].t) + "</span></div>"; l += "</div>"; }
+    if (!patZu && !pats.length) l += '<div class="leise">Keine Angaben.</div>';
+    l += "</div>";
+    // Verlauf
+    l += '<div class="ek"><span class="lbl">Einsatzverlauf <span>· neueste oben</span></span><div class="liz">';
+    for (i = 0; i < verlauf.length; i++) {
+      var x = verlauf[i];
+      if (x.abf) {
+        l += '<div><code>' + esc(x.z) + '</code><span style="flex:1;min-width:0"><button class="abfk" data-abf="' + esc(x.key) + '">' + esc(x.abfArt) + " · " + x.abf.length + " Zeilen " + (A.abf[x.key] ? "▴" : "▾") + "</button>";
+        if (A.abf[x.key]) for (var a2 = 0; a2 < x.abf.length; a2++) l += '<span style="display:block;margin-top:3px">' + esc(x.abf[a2].t) + "</span>";
+        l += "</span></div>";
+      } else l += "<div><code>" + esc(x.z) + "</code><span>" + (x.von ? "<b>" + esc(x.von) + "</b> · " : "") + esc(x.t) + "</span></div>";
+    }
+    if (!verlauf.length) l += '<div class="leise">Noch keine Einträge.</div>';
+    l += "</div></div>";
+    var abf = akt ? t.abf || [] : [];
+    if (akt && !g) {
+      l += '<div class="ek"><span class="lbl">Abfrage' + (abf.length ? " <span>· " + abf.length + " beantwortet</span>" : "") + "</span>";
+      if (abf.length) { l += '<div class="erl">'; for (i = 0; i < abf.length; i++) l += "<div>" + (abf[i].f ? "<small>" + esc(abf[i].f) + "</small>" : "") + "<b>" + esc(abf[i].a) + "</b></div>"; l += "</div>"; }
+      else l += '<div class="leise">Keine Notrufabfrage zu diesem Einsatz.</div>';
+      l += "</div>";
+    }
+    // rechts: Zielort, Karte, Einheiten, Zeiten
+    var gebucht = akt && !!n.planT;
+    var tag = akt ? (gebucht ? ["gebucht", "ok"] : n.kt ? ["Ziel fest", "ok"] : ["offen", "gelb"]) : ["beendet", ""];
+    var zielT = akt ? n.planT || (n.kt ? it.ziel : "") : it.ziel || "–";
+    r += '<div class="ek ziel ' + (tag[1] === "gelb" ? "offen" : tag[1]) + '"><div class="z"><span class="lbl" style="margin:0">Zielort</span><span class="tag ' + tag[1] + '">' + tag[0] + "</span></div>";
+    if (zielT) r += '<div class="w">' + esc(zielT) + (akt && n.kt ? '<div class="leise" style="font-weight:400">Überstellung – das Ziel steht fest</div>' : !akt && it.zielArt ? '<div class="leise" style="font-weight:400">' + esc(it.zielArt) + "</div>" : "") + "</div>";
+    if (akt && n.ent) r += '<button class="prim" id="buchenAuf" style="margin-top:6px">' + (gebucht ? "Ändern" : "Zielort buchen") + "</button>";
+    var hinw = !akt ? "" : n.ent ? (gebucht ? "Ändern geht, solange ihr am Einsatzort seid." : "") : n.kt ? "" : gebucht && !g ? "Ändern geht nur am Einsatzort (Status 3)." : t.buchenText || n.amOrtText || "";
+    if (hinw) r += '<div class="leise" style="margin-top:8px">' + esc(hinw) + "</div>";
+    r += "</div>";
+    if (akt && t.karte && t.karte.ich) r += '<div class="ek" style="padding:0;background:transparent"><div class="karte klein" id="kk"></div></div>';
+    var fz = akt ? t.fz || [] : [];
+    if (fz.length) {
+      r += '<div class="ek"><span class="lbl">Einheiten <span>· ' + fz.length + "</span></span>";
+      for (i = 0; i < fz.length; i++) r += '<div class="fz' + (fz[i].funk ? " funk" : "") + (fz[i].ich ? " ich" : "") + '" style="background:' + esc(fz[i].f) + '"><span class="s">' + esc(fz[i].s) + '</span><div class="t"><b>' + esc(fz[i].ruf) + '</b><span class="ty">' + esc(fz[i].typ) + '</span><span class="x">' + esc(fz[i].txt) + "</span></div>" + (fz[i].eta ? '<span class="e">' + esc(fz[i].eta) + "</span>" : "") + "</div>";
+      r += "</div>";
+    }
+    r += '<div class="ek"><span class="lbl">Zeiten</span><div class="liz zt">';
+    for (i = 0; i < zeiten.length; i++) r += '<div class="' + (zeiten[i].leer ? "leer" : "") + '"><code>' + esc(zeiten[i].z) + "</code><span>" + esc(zeiten[i].t) + "</span></div>";
+    r += "</div></div>";
+    return h + '<div class="spalten' + (eng() ? " eng" : "") + '"><div class="sp1">' + (eng() ? lKopf + r + l : lKopf + l) + '</div><div class="sp2">' + (eng() ? "" : r) + "</div></div>";
+  }
+
+  // ------------------------------------------------------------ Zielort buchen (Befehle „bu:…“)
+  var suchFeld = null, suchArt = "", suchTimer = 0;
+  var FARBE = { 10: ["#2e9d4a", "#ffffff"], 20: ["#f57c00", "#15181c"], 30: ["#d32f2f", "#ffffff"] };
+  function ew(o) {
+    var m = "";
+    for (var i = 0; i < (o.merk || []).length; i++) m += '<span class="' + esc(o.merk[i].c) + '">' + esc(o.merk[i].t) + "</span>";
+    return '<button class="ew' + (o.on ? " an" : "") + (o.farbe ? " farbig" : "") + '" ' + o.attr + (o.farbe ? ' style="background:' + o.farbe[0] + ";color:" + o.farbe[1] + ";border-color:" + o.farbe[0] + '"' : "") +
+      '><span class="wt"><b>' + esc(o.t) + "</b>" + (o.d ? "<small>" + esc(o.d) + "</small>" : "") + (m ? '<span class="merk">' + m + "</span>" : "") + "</span>" + (o.r ? '<span class="wr">' + esc(o.r) + "</span>" : "") + "</button>";
+  }
+  function buchenHtml() {
+    var E = N().ent, i;
+    var f = folge(), bs = A.bs, idx = schrittIdx();
+    var h = '<div class="bkopf"><button class="zur" id="zurB">‹ Zurück</button><span class="leise">Schritt ' + (idx + 1) + " von " + f.length + "</span></div><div class=\"bal\">";
+    for (i = 0; i < f.length; i++) h += '<i class="' + (i <= idx ? "an" : "") + '" style="width:' + (100 / f.length - 1).toFixed(2) + '%"></i>';
+    h += "</div>";
+    if (!E) return h + '<div class="hinweis">' + esc(N().amOrtText || "Buchen geht am Einsatzort (Status 3).") + "</div>";
+    var aus = [], w = finde(E.wahl, function (x) { return x.on; });
+    if (w && idx > 0) aus.push(w.t);
+    if (f.indexOf("alter") >= 0 && idx > f.indexOf("alter")) { var a = finde(E.altW, function (x) { return x.on; }); if (a) aus.push(a.t); }
+    if (f.indexOf("symptom") >= 0 && idx > f.indexOf("symptom") && E.schritte && E.schritte[1] && E.schritte[1].wert !== "–") aus.push(E.schritte[1].wert);
+    if (f.indexOf("dring") >= 0 && idx > f.indexOf("dring") && E.schritte && E.schritte[2]) aus.push(E.schritte[2].wert);
+    if (aus.length) { h += '<div class="auswahl">'; for (i = 0; i < aus.length; i++) h += "<span>" + esc(aus[i]) + "</span>"; h += "</div>"; }
+    var frage = "", hinw = "", o = [], suche = "", unten = "", fuss = "";
+    if (bs === "art") { frage = "Transportart oder Endegrund"; for (i = 0; i < (E.wahl || []).length; i++) o.push({ t: E.wahl[i].t, d: E.wahl[i].d, on: E.wahl[i].on, attr: 'data-seite="' + esc(E.wahl[i].id) + '"' }); }
+    else if (bs === "kein") { frage = "Endegrund"; hinw = "Kein Transport – warum? Danach frei über Funk (6)."; for (i = 0; i < (E.keinWahl || []).length; i++) o.push({ t: E.keinWahl[i].t, d: E.keinWahl[i].s, on: E.keinWahl[i].on, attr: 'data-kein="' + esc(E.keinWahl[i].id) + '"' }); }
+    else if (bs === "wer") {
+      frage = "Wer bucht das Krankenhaus?";
+      if (E.rtwFehlt) hinw = "Noch kein RTW im Einsatz – bitte bei der Leitstelle anfordern (Funk).";
+      else { o.push({ t: "Übergeben – RTW bucht selbst", d: "Der RTW wählt das Krankenhaus, ihr meldet euch danach frei (6)", on: !!(E.rtwWahl && E.rtwWahl.on), attr: 'data-rtw="1"' }); o.push({ t: "Selbst buchen", d: "Du wählst das Krankenhaus, der RTW fährt hin", attr: 'data-selbst="1"' }); }
+    }
+    else if (bs === "alter") { frage = "Wie alt ist der Patient?"; for (i = 0; i < (E.altW || []).length; i++) o.push({ t: E.altW[i].t, d: E.altW[i].s, on: E.altW[i].on, attr: 'data-alter="' + esc(E.altW[i].id) + '"' }); }
+    else if (bs === "symptom") {
+      frage = "Symptom"; hinw = E.symHinweis || "";
+      var tr = String(E.symQ || "").replace(/\s/g, "") ? E.symW || [] : [];
+      suche = '<div class="such' + (tr.length ? " auf" : "") + '"><div id="suchplatz"></div>';
+      if (tr.length) { suche += '<div class="dd">'; for (i = 0; i < tr.length; i++) suche += '<button data-sym="' + esc(tr[i].id) + '"><b>' + esc(tr[i].t) + "</b><small>" + esc(tr[i].kat || "") + "</small></button>"; suche += "</div>"; }
+      suche += "</div>";
+      var gew = E.schritte && E.schritte[1] && E.schritte[1].wert;
+      if (gew && gew !== "–" && !String(E.symQ || "").replace(/\s/g, "")) o.push({ t: gew, d: "gewählt – weiter mit der Dringlichkeit", on: true, attr: 'data-weiter="1"' });
+    }
+    else if (bs === "dring") { frage = "Dringlichkeit"; hinw = E.schritte && E.schritte[1] && E.schritte[1].wert !== "–" ? "Für „" + E.schritte[1].wert + "“ möglich:" : ""; for (i = 0; i < (E.drW || []).length; i++) o.push({ t: E.drW[i].t, d: E.drW[i].s, on: E.drW[i].on, farbe: FARBE[E.drW[i].id], attr: 'data-dring="' + esc(E.drW[i].id) + '"' }); }
+    else {
+      var man = bs === "manuell", liste = man ? E.khAndere || [] : E.khs || [];
+      if (!finde(liste, function (x) { return x.id === A.khWahl; })) A.khWahl = !man && E.gebuchtId && finde(liste, function (x) { return x.id === E.gebuchtId; }) ? E.gebuchtId : "";
+      frage = man ? "Manuell buchen" : "Vorschläge";
+      hinw = man ? "Krankenhaus eintippen – alle Häuser, ohne Vorschlag" : "passend zu Alter, Symptom und Dringlichkeit, nach Entfernung";
+      if (man) suche = '<div class="such"><div id="suchplatz"></div></div>';
+      for (i = 0; i < liste.length; i++) {
+        var x = liste[i], mm = (x.merk || []).slice(0);
+        if (x.frei) mm.push({ t: x.frei, c: /rot/.test(x.freiCls || "") ? "rot" : /gelb/.test(x.freiCls || "") ? "gelb" : "ok" });
+        o.push({ t: (man ? "" : (i + 1) + " · ") + x.n, d: x.km + (x.min || ""), on: x.id === A.khWahl, r: E.gebuchtId === x.id ? "gebucht " + (E.gebuchtT || "") : "", merk: mm, attr: 'data-kh="' + esc(x.id) + '"' });
+      }
+      var leer = man ? (String(E.andereQ || "").replace(/\s/g, "") && !liste.length ? "Nichts gefunden – anders eintippen." : "") : E.khLeer || "";
+      if (leer) unten += '<div class="hinweis" style="margin-bottom:8px">' + esc(leer) + "</div>";
+      if (!man) unten += '<button class="zweit" id="manuell">Manuell buchen – alle Krankenhäuser</button>';
+      var gw = finde(liste, function (x) { return x.id === A.khWahl; });
+      fuss = '<button class="prim' + (gw && E.gebuchtId !== gw.id ? "" : " aus") + '" id="khBuchen">' + (gw ? esc(gw.n) + (E.gebuchtId === gw.id ? " ist gebucht" : " buchen") : "Krankenhaus wählen") + '</button><div class="leise" style="text-align:center;margin-top:5px;font-size:11.5px">Die Buchung belegt einen Platz im Krankenhaus – wie in der Leitstelle.</div>';
+    }
+    h += '<div class="frage">' + esc(frage) + "</div>" + (hinw ? '<p class="bh">' + esc(hinw) + "</p>" : "") + suche + '<div class="opts">';
+    var teile = [];
+    for (i = 0; i < o.length; i++) teile.push(ew(o[i]));
+    h += reihen(teile) + "</div>" + unten;
+    buchenFuss = fuss;
+    return h;
+  }
+  var buchenFuss = "";
+  function sucheEinhaengen() {
+    var platz = $("suchplatz");
+    var art = A.bs === "manuell" ? "mq" : "q";
+    if (!platz) { suchFeld = null; return; }
+    var E = N().ent || {};
+    if (!suchFeld || suchArt !== art) {
+      suchFeld = document.createElement("input");
+      suchFeld.className = "feld";
+      suchFeld.setAttribute("autocomplete", "off");
+      suchFeld.placeholder = art === "mq" ? "Krankenhaus suchen, z. B. Tulln, AKH, Horn" : "Symptom eintippen, z. B. Atemnot, Brust";
+      suchFeld.value = art === "mq" ? E.andereQ || "" : E.symQ || "";
+      suchFeld.oninput = function () { clearTimeout(suchTimer); var v = suchFeld.value; suchTimer = setTimeout(function () { senden("bu:" + art + ":" + v); }, 250); };
+      suchFeld.onkeydown = function (ev) { if ((ev.keyCode === 13) && art === "q") { var x = ((N().ent || {}).symW || [])[0]; if (x) { suchFeld.blur(); senden("bu:sym:" + x.id); geh({ bs: "dring" }, "vor"); } } };
+      suchArt = art;
+    }
+    platz.parentNode.replaceChild(suchFeld, platz);
+  }
+  function fertig(text) { geh({ buchen: false, bs: "art", khWahl: "" }, "zur"); if (text) toast(text); }
+  function zurueck() {
+    if (A.buchen) {
+      if (A.bs === "manuell") return geh({ bs: "vorschlag" }, "zur");
+      var f = folge(), i = f.indexOf(A.bs);
+      return i > 0 ? geh({ bs: f[i - 1] }, "zur") : geh({ buchen: false }, "zur");
+    }
+    geh({ sel: "" }, "zur");
+  }
+
+  // ------------------------------------------------------------ Status: antippen, dann „Senden“ (7 gesperrt)
+  function statusHtml() {
+    var n = N(), st = n.st || {}, keys = n.alleSt || [], tt = n.tetra || {}, i;
+    var kanal = (stand.funk && stand.funk.kanal) || "Funk frei";
+    var warn = /kein Großeinsatz/.test(kanal) ? kanal.replace(/^⚠\s*/, "").split(" · ")[0] : "";
+    var wahl = finde(keys, function (k) { return k.nummer === A.wahl; });
+    var l = '<div class="lcd"><div class="z1"><span>TETRA · BOS</span><span>' + esc(n.uhr || "") + '</span></div><div class="g"><button data-gr="-1">‹</button><b>' + esc(n.gruppe || "RD-NOE-03") + '</b><button data-gr="1">›</button></div>' +
+      '<div class="s"><b>' + esc(st.n || "–") + "</b>" + esc(st.t || stand.hinweis || "kein Hubschrauber") + "</div>" +
+      (tt.kopf ? '<div class="pop ' + esc(tt.art || "") + '"><b>' + esc(tt.kopf) + "</b><span>" + esc(tt.wer || "") + "</span><span>" + esc(tt.popGruppe || "") + "</span><span>" + esc(tt.neben || "") + "</span></div>" : "") + "</div>";
+    if (warn) l += '<div class="warn">⚠ ' + esc(warn) + "</div>";
+    l += '<div class="kanal' + (stand.funk && stand.funk.sendet ? " an" : "") + '"><i></i>' + esc(warn ? "Funk" : kanal) + "</div>";
+    if ((stand.funk && stand.funk.knoepfe || []).length) l += '<button class="ptt" id="ptt"><b>SPRECHEN</b><small>gedrückt halten – ' + esc(n.gruppe || "") + "</small></button>";
+    var r = '<span class="lbl">Status wählen, dann senden</span><div class="tasten">';
+    var nr = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
+    for (i = 0; i < nr.length; i++) {
+      var k = nr[i] === "7" ? null : finde(keys, function (x) { return x.nummer === nr[i]; });
+      if (!k) { r += '<button class="taste gesperrt" disabled><b>' + nr[i] + "</b><span>–</span></button>"; continue; }
+      r += '<button class="taste' + (k.aktiv ? " ist" : "") + (A.wahl === nr[i] ? " wahl" : "") + '" data-st="' + nr[i] + '" style="background:' + esc(k.farbe) + '"><b>' + nr[i] + "</b><span>" + esc(k.kurz) + "</span></button>";
+    }
+    r += '</div><button class="prim' + (wahl ? "" : " aus") + '" id="stSenden">' + (wahl ? "Status " + esc(wahl.nummer) + " senden" : "Status wählen") + "</button>";
+    if (A.gesendet) r += '<div class="gesendet">Status ' + esc(A.gesendet) + " gesendet</div>";
+    return '<div class="spalten' + (eng() ? " eng" : "") + '"><div class="stl">' + l + '</div><div class="str">' + r + "</div></div>";
+  }
+
+  // ------------------------------------------------------------ Einstellungen
+  function einstHtml() {
+    var h = '<span class="lbl">Anzeige</span><div class="ek"><div class="ez"><span class="et"><b>Textgröße</b><small>für Cockpit und VR</small></span><span class="seg2"><button data-gross="0" class="' + (PREF.gross ? "" : "an") + '">Normal</button><button data-gross="1" class="' + (PREF.gross ? "an" : "") + '">Groß</button></span></div></div>';
+    if (tabv) h += '<span class="lbl">HPG H145</span><div class="ek"><div class="ez"><span class="et"><b>Funkgerät &amp; Tablet</b><small>' + (tabv.laeuft ? "verbunden – Alarm, Funkgerät und Briefing laufen über LeitWerk" : tabv.andere ? "nicht verbunden – andere Mission läuft" : "nicht verbunden") + '</small></span><button class="kn" id="tabvB">' + (tabv.laeuft ? "Neu verbinden" : "Verbinden") + "</button></div></div>";
+    if (stand.flug) h += '<span class="lbl">Flug</span><div class="ek"><div class="ez"><span class="et"><b>Übungsflug</b><small>' + esc(stand.flug) + '</small></span><button class="kn" id="flug">' + (/^Anhalten/.test(stand.flug) ? "Anhalten" : "Starten") + "</button></div></div>";
+    h += '<span class="lbl">Verbindung</span><div class="ek"><div class="ez"><span class="et"><b>LeitWerk am PC</b><small>' + esc(stand.unter || stand.hinweis || "") + '</small></span><span class="tag ' + (online ? "ok" : "rot") + '">' + (online ? "verbunden" : "offline") + "</span></div>" +
+      '<div class="ez"><span class="et"><b>Weitere Einstellungen</b><small>Funk, Tasten, Alarmtöne und Flugsimulator – am PC im Piloten-Interface, Reiter „Einstellungen“</small></span></div>' +
+      '<div class="ez"><span class="et"><b>Karte</b><small>Datenquelle: basemap.at (CC BY 4.0)</small></span></div></div>';
+    return h;
+  }
+
+  // ------------------------------------------------------------ Alarm über die ganze Fläche
+  function alarmZeichnen() {
+    var n = N(), a = n.alarm, box = $("alarm");
+    zeige(box, !!a);
+    if (!a) return;
+    var it = finde(n.liste, function (x) { return x.laeuft; }) || {};
+    var q = finde(n.alleSt, function (x) { return x.nummer === "9"; }), h2 = finde(n.alleSt, function (x) { return x.nummer === "2"; });
+    var h = '<div class="a1"><span>ALARM</span><span>' + esc(n.uhr || "") + " · " + esc(stand.heli || "") + "</span></div>" + (it.code ? mk(it.code, it.stufe, true) : "") +
+      '<div class="at">' + esc(it.sw || a.t) + '</div><div class="as">' + esc(a.s) + "</div>" +
+      (a.ziB || a.ziT ? '<div class="azi">' + (a.ziB ? "<b>" + esc(a.ziB) + "</b>" : "") + (a.ziB && a.ziT ? " // " : "") + esc(a.ziT) + "</div>" : "") +
+      '<div class="mel">Melder läuft bis 9 oder 2</div>' +
+      '<div class="ak"><button class="q" data-al="' + esc(q ? q.aktion : "s9") + '"><b>9</b>Quittieren</button><button class="h" data-al="' + esc(h2 ? h2.aktion : "s2") + '"><b>2</b>Abheben</button></div>';
+    if (box.getAttribute("data-k") === h) return;
+    box.setAttribute("data-k", h);
+    box.innerHTML = h;
+    var b = box.querySelectorAll("[data-al]");
+    for (var i = 0; i < b.length; i++) b[i].onclick = function () { senden(this.getAttribute("data-al")); zeige(box, false); geh({ tab: "einsaetze", buchen: false, sel: it.id || "" }, "tab"); };
+  }
+
+  // ------------------------------------------------------------ Zeichnen
+  var letzteSeite = "";
+  function zeichnen(wechsel) {
+    var n = N();
+    if ((n.aktId || "") !== letzteAkt) { letzteAkt = n.aktId || ""; if (letzteAkt) { A.sel = letzteAkt; A.buchen = false; } }
+    if (A.sel && !finde(n.liste, function (e) { return e.id === A.sel; })) A.sel = "";
+    if (A.buchen && !n.ent) A.buchen = false;
+    kopf();
+    alarmZeichnen();
+    var it = item(), html;
+    buchenFuss = "";
+    if (A.tab === "status") html = statusHtml();
+    else if (A.tab === "einst") html = einstHtml();
+    else if (A.buchen) html = buchenHtml();
+    else if (it) html = detailsHtml(it);
+    else html = listeHtml();
+    var seite = $("seite");
+    if (html !== letzteSeite || wechsel) {
+      var fokus = suchFeld && document.activeElement === suchFeld;
+      var oben = $("inh").scrollTop;
+      seite.innerHTML = html;
+      letzteSeite = html;
+      sucheEinhaengen();
+      if (fokus && suchFeld) suchFeld.focus();
+      verdrahten();
+      if (!wechsel) $("inh").scrollTop = oben;
+    }
+    var fu = $("fuss");
+    zeige(fu, !!buchenFuss);
+    $("inh").className = "inh" + (buchenFuss ? " mitfuss" : "");
+    if (fu.getAttribute("data-k") !== buchenFuss) {
+      fu.setAttribute("data-k", buchenFuss); fu.innerHTML = buchenFuss;
+      if ($("khBuchen")) $("khBuchen").onclick = function () {
+        var E = N().ent; if (!E) return;
+        var gw = finde((E.khs || []).concat(E.khAndere || []), function (x) { return x.id === A.khWahl; });
+        if (!gw || E.gebuchtId === gw.id) return;
+        senden("bu:kh:" + gw.id); fertig(gw.n + " gebucht – Platz belegt");
+      };
+    }
+    if (wechsel) {
+      seite.className = A.anim ? "an-" + A.anim : "";
+      $("inh").scrollTop = 0;
+    }
+    var kk = $("kk");
+    if (kk && kk.getAttribute("data-k") !== "1") { kleineKarte = new Karte(kk, true); kk.setAttribute("data-k", "1"); kk.onclick = navOeffnen; }
+    if (!kk) kleineKarte = null;
+    if (kleineKarte) kleineKarte.setzen(T().karte);
+    if (navAuf) { grosseKarte.setzen(T().karte); $("navAlle").className = "nk" + (T().karte && T().karte.alle ? " on" : ""); }
+  }
+  function verdrahten() {
+    alle("[data-e]", function (b) { b.onclick = function () { geh({ sel: this.getAttribute("data-e") }, "vor"); }; });
+    if ($("zurL")) $("zurL").onclick = function () { zurueck(); };
+    if ($("zurB")) $("zurB").onclick = function () { zurueck(); };
+    if ($("tabvB")) $("tabvB").onclick = function () { try { window.parent.postMessage({ leitwerk: "mission" }, "*"); } catch (e) {} };
+    alle("[data-akt]", function (b) { b.onclick = function () { senden(this.getAttribute("data-akt")); }; });
+    alle("[data-abf]", function (b) { b.onclick = function () { var k = this.getAttribute("data-abf"); A.abf[k] = !A.abf[k]; zeichnen(false); }; });
+    if ($("buchenAuf")) $("buchenAuf").onclick = function () { geh({ buchen: true, bs: "art", khWahl: "" }, "vor"); };
+    alle("[data-seite]", function (b) { b.onclick = function () { var id = this.getAttribute("data-seite"); senden("bu:seite:" + id); if (N().ent) N().ent.seite = id; geh({ bs: id === "kein" ? "kein" : id === "rtw" || id === "naMit" ? "wer" : "alter" }, "vor"); }; });
+    alle("[data-kein]", function (b) { b.onclick = function () { senden("bu:kein:" + this.getAttribute("data-kein")); fertig("Endegrund gebucht – danach frei über Funk (6)"); }; });
+    alle("[data-rtw]", function (b) { b.onclick = function () { senden("bu:rtwbucht"); fertig("Übergabe gebucht – der RTW bucht selbst"); }; });
+    alle("[data-selbst]", function (b) { b.onclick = function () { geh({ bs: "alter" }, "vor"); }; });
+    alle("[data-alter]", function (b) { b.onclick = function () { senden("bu:alter:" + this.getAttribute("data-alter")); geh({ bs: "symptom" }, "vor"); }; });
+    alle("[data-sym]", function (b) { b.onmousedown = function (ev) { ev.preventDefault(); }; b.onclick = function () { if (suchFeld) suchFeld.blur(); senden("bu:sym:" + this.getAttribute("data-sym")); geh({ bs: "dring" }, "vor"); }; });
+    alle("[data-weiter]", function (b) { b.onclick = function () { geh({ bs: "dring" }, "vor"); }; });
+    alle("[data-dring]", function (b) { b.onclick = function () { senden("bu:dring:" + this.getAttribute("data-dring")); geh({ bs: "vorschlag" }, "vor"); }; });
+    alle("[data-kh]", function (b) { b.onclick = function () { A.khWahl = this.getAttribute("data-kh"); zeichnen(false); }; });
+    if ($("manuell")) $("manuell").onclick = function () { geh({ bs: "manuell", khWahl: "" }, "vor"); };
+    alle("[data-st]", function (b) { b.onclick = function () { var nr = this.getAttribute("data-st"); A.wahl = A.wahl === nr ? "" : nr; A.gesendet = ""; zeichnen(false); }; });
+    if ($("stSenden")) $("stSenden").onclick = function () {
+      var k = finde(N().alleSt, function (x) { return x.nummer === A.wahl; });
+      if (!k) return;
+      senden(k.aktion); A.gesendet = k.nummer; A.wahl = ""; zeichnen(false);
+      setTimeout(function () { A.gesendet = ""; zeichnen(false); }, 3000);
+    };
+    alle("[data-gr]", function (b) { b.onclick = function () { senden("gr:" + this.getAttribute("data-gr")); }; });
+    alle("[data-gross]", function (b) { b.onclick = function () { prefSetzen("gross", this.getAttribute("data-gross") === "1"); zeichnen(false); }; });
+    if ($("flug")) $("flug").onclick = function () { senden("fliegen"); };
+    // Sprechtaste: gedrückt halten, jede Sekunde ein Lebenszeichen
+    var p = $("ptt");
+    if (p) {
+      var an = function (ev) { if (ev) ev.preventDefault(); if (pttLebt) return; p.className = "ptt an"; p.firstChild.textContent = "DU SPRICHST"; senden("funk_an"); pttLebt = setInterval(function () { senden("funk_halt"); }, 1000); };
+      p.onmousedown = an;
+      p.ontouchstart = an;
+      if (pttLebt) { p.className = "ptt an"; p.firstChild.textContent = "DU SPRICHST"; }
+    }
+  }
+  var pttLebt = null;
+  function pttAus() { if (!pttLebt) return; clearInterval(pttLebt); pttLebt = null; senden("funk_aus"); var p = $("ptt"); if (p) { p.className = "ptt"; p.firstChild.textContent = "SPRECHEN"; } }
+  window.addEventListener("mouseup", pttAus);
+  window.addEventListener("touchend", pttAus);
+
+  // ------------------------------------------------------------ Navigation (große Karte)
   function navOeffnen() {
     navAuf = true;
     zeige($("nav"), true);
     grosseKarte.folgen = true; knopfFolgen();
-    var k = ((stand.neu || {}).tab || {}).karte;
+    var k = T().karte;
     grosseKarte.z = 12;
     grosseKarte.setzen(k);
     $("navT").textContent = k && k.ziel ? "Ziel: " + k.ziel.t : "Navigation";
@@ -716,13 +870,13 @@
   $("navZu").onclick = function () { navAuf = false; zeige($("nav"), false); };
   $("zplus").onclick = function () { grosseKarte.zoom(1); };
   $("zminus").onclick = function () { grosseKarte.zoom(-1); };
-  $("navFolgen").onclick = function () { grosseKarte.folgen = true; knopfFolgen(); grosseKarte.setzen(((stand.neu || {}).tab || {}).karte); };
-  $("navAlle").onclick = function () { var k = ((stand.neu || {}).tab || {}).karte; senden("ka:alle:" + (k && k.alle ? "0" : "1")); };
+  $("navFolgen").onclick = function () { grosseKarte.folgen = true; knopfFolgen(); grosseKarte.setzen(T().karte); };
+  $("navAlle").onclick = function () { var k = T().karte; senden("ka:alle:" + (k && k.alle ? "0" : "1")); };
 
   // Ziehen zum Scrollen (VR, Controller, Maus) – zusätzlich zum Mausrad
   (function () {
     var box = $("inh"), y0 = 0, s0 = 0, zieht = false, gedrueckt = false;
-    box.addEventListener("mousedown", function (ev) { if (ev.target.tagName === "INPUT") return; gedrueckt = true; zieht = false; y0 = ev.clientY; s0 = box.scrollTop; });
+    box.addEventListener("mousedown", function (ev) { var tg = ev.target.tagName; if (tg === "INPUT" || (ev.target.id === "ptt" || (ev.target.parentNode && ev.target.parentNode.id === "ptt"))) return; gedrueckt = true; zieht = false; y0 = ev.clientY; s0 = box.scrollTop; });
     window.addEventListener("mousemove", function (ev) { if (!gedrueckt) return; if (Math.abs(ev.clientY - y0) > 6) zieht = true; if (zieht) box.scrollTop = s0 - (ev.clientY - y0); });
     window.addEventListener("mouseup", function () { gedrueckt = false; setTimeout(function () { zieht = false; }, 0); });
     box.addEventListener("click", function (ev) { if (zieht) { ev.stopPropagation(); ev.preventDefault(); } }, true);
@@ -735,11 +889,13 @@
     x.timeout = 2500;
     x.onreadystatechange = function () {
       if (x.readyState !== 4) return;
-      if (x.status !== 200) { $("unter").textContent = "LeitWerk nicht erreichbar"; return; }
-      var txt = x.responseText;
-      if (txt === letzt) return;
+      if (x.status !== 200) { if (online) { online = false; zeichnen(false); } return; }
+      var txt = x.responseText, warOnline = online;
+      online = true;
+      if (txt === letzt && warOnline) return;
       letzt = txt;
-      try { stand = JSON.parse(txt); zeichnen(stand); } catch (e) {}
+      try { stand = JSON.parse(txt); } catch (e) { return; }
+      zeichnen(false);
     };
     try { x.send(); } catch (e) {}
   }
@@ -749,18 +905,15 @@
     window.addEventListener("message", function (ev) {
       var d = ev && ev.data;
       if (!d || d.leitwerk !== "missionStand") return;
-      zeige($("tabv"), true);
-      $("tabvT").textContent = d.laeuft ? "Funkgerät & Tablet verbunden" : "Funkgerät & Tablet nicht verbunden";
-      $("tabvU").textContent = d.laeuft ? "" : d.andere ? "andere Mission läuft" : "";
-      $("tabvB").textContent = d.laeuft ? "Neu verbinden" : "Verbinden";
-      zeichnen(stand);
+      var neu = { laeuft: !!d.laeuft, andere: !!d.andere };
+      if (!tabv || tabv.laeuft !== neu.laeuft || tabv.andere !== neu.andere) { tabv = neu; zeichnen(false); }
     });
-    $("tabvB").onclick = function () { try { window.parent.postMessage({ leitwerk: "mission" }, "*"); } catch (e) {} };
     var fragen = function () { try { window.parent.postMessage({ leitwerk: "stand" }, "*"); } catch (e) {} };
     fragen();
     setInterval(fragen, 3000);
   }
-  window.onresize = function () { zeichnen(stand); };
+  window.onresize = function () { zeichnen(false); };
+  zeichnen(false);
   holen();
   setInterval(holen, 1000);
 })();
