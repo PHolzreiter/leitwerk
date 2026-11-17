@@ -165,6 +165,9 @@ jobs:
           npx tauri icon app-icon.png
           # macOS: eigene Form mit Rand (Symbol-Raster von Apple)
           if [ "${{ matrix.name }}" = "macos" ]; then npx tauri icon app-icon-mac.png -o "$RUNNER_TEMP/icon-mac" && cp "$RUNNER_TEMP/icon-mac/icon.icns" src-tauri/icons/icon.icns; fi
+          # 16–32 px: Kleinversion mit breiteren Lücken (Logo-Leitfaden)
+          PY=python3; command -v python3 >/dev/null && python3 -c "" 2>/dev/null || PY=python
+          "$PY" tools/symbol_klein.py einbauen src-tauri/icons
 
       # Gleichbleibende Signatur (selbst ausgestellt, aus einem vorhandenen Secret abgeleitet): macOS erkennt
       # die App nach Updates wieder – die Mikrofon-Freigabe bleibt erhalten

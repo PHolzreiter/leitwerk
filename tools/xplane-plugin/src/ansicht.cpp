@@ -449,11 +449,36 @@ static void kopf(float W, const Json& t, bool mitZurueck = false) {
   }
   float rechts = W - 10 - 40;
   float uw = uhr.empty() ? 0 : textGroesse(fUhr, uhr).x;
-  float tw = rechts - uw - 10 - x0;
+  // Sprechgruppe (wie efb.html .gr): 09/10 ohne Großeinsatz gelb mit Warnzeichen
+  const Json& g = t["gr"];
+  std::string grN = g.art == Json::Objekt ? g["n"].t() : "";
+  bool grWarn = !grN.empty() && g["warn"].da();
+  float grTw = grN.empty() ? 0 : textGroesse(fF, grN).x;
+  float grDr = grWarn ? 15 : 0;  // Platz fürs Warndreieck
+  float grW = grN.empty() ? 0 : grTw + grDr + 14;
+  float tw = rechts - uw - 10 - x0 - (grW > 0 ? grW + 8 : 0);
   dl->PushClipRect(ImVec2(p.x + x0, p.y), ImVec2(p.x + x0 + tw, p.y + 56), true);
   textAn(dl, fG, ImVec2(p.x + x0, p.y + 9), rgb(fb::TEXT), heli);
   textAn(dl, fK, ImVec2(p.x + x0, p.y + 31), rgb(fb::GRAU), unter);
   dl->PopClipRect();
+  if (grW > 0) {
+    float gx = p.x + rechts - 6 - uw - (uw > 0 ? 8 : 0) - grW, gy = p.y + 16;
+    float gh = textGroesse(fF, grN).y + 6;
+    dl->AddRectFilled(ImVec2(gx, gy), ImVec2(gx + grW, gy + gh), grWarn ? rgb(fb::GELB) : rgb(fb::LINIE), 6);
+    ImU32 gc = grWarn ? rgb(fb::SCHWARZ) : rgb(0xDDE2EC);
+    if (grWarn) {
+      float dx = gx + 7, dm = gy + gh / 2, s = 11;
+      dl->AddTriangleFilled(ImVec2(dx + s / 2, dm - s / 2), ImVec2(dx + s, dm + s / 2), ImVec2(dx, dm + s / 2), gc);
+      dl->AddLine(ImVec2(dx + s / 2, dm - s / 2 + 3.5f), ImVec2(dx + s / 2, dm + s / 2 - 3.5f), rgb(fb::GELB), 1.5f);
+      dl->AddCircleFilled(ImVec2(dx + s / 2, dm + s / 2 - 1.8f), 0.9f, rgb(fb::GELB), 8);
+    }
+    textAn(dl, fF, ImVec2(gx + 7 + grDr, gy + 3), gc, grN);
+    if (grWarn) {
+      ImGui::SetCursorPos(ImVec2(gx - p.x, gy - p.y));
+      ImGui::InvisibleButton("##grwarn", ImVec2(grW, gh));
+      if (ImGui::IsItemHovered()) ImGui::SetTooltip("Sprechgruppe RD-NOE-%s: dort l\xC3\xA4uft kein Gro\xC3\x9F" "einsatz", grN.c_str());
+    }
+  }
   if (!uhr.empty()) textAn(dl, fUhr, ImVec2(p.x + rechts - 6 - uw, p.y + 15), rgb(fb::TEXT), uhr);
   // Statuspunkt: öffnet „Status geben“
   ImGui::SetCursorPos(ImVec2(rechts, 8));
@@ -1697,16 +1722,27 @@ void kachel(float W, float H) {
   dl->AddRectFilled(ImVec2(0, 0), ImVec2(W, H), IM_COL32(43, 45, 48, 255));
   dl->AddRectFilled(ImVec2(3, 3), ImVec2(W - 3, H - 3), IM_COL32(52, 55, 59, 255), 4);
   dl->AddRect(ImVec2(3, 3), ImVec2(W - 3, H - 3), IM_COL32(70, 73, 78, 255), 4);
-  // Symbol: rote Kachel mit weißem Kreuz und „LW“
+  // Symbol: LeitWerk-Logo (drei Bildschirme, gelber Tisch, Person) als Kleinversion auf dunkler Kachel
+  // (tools/symbol_klein.py, 16er-Raster)
   float g = std::min(W, H) * 0.52f;
   ImVec2 m(W / 2, H * 0.40f);
   ImVec2 a(m.x - g / 2, m.y - g / 2), b(m.x + g / 2, m.y + g / 2);
   dl->AddRectFilled(ImVec2(a.x + 2, a.y + 3), ImVec2(b.x + 2, b.y + 3), IM_COL32(0, 0, 0, 90), g * 0.2f);
-  dl->AddRectFilled(a, b, IM_COL32(206, 32, 41, 255), g * 0.2f);
-  dl->AddRectFilled(ImVec2(a.x, a.y), ImVec2(b.x, m.y), IM_COL32(255, 255, 255, 28), g * 0.2f, ImDrawFlags_RoundCornersTop);
-  float k = g * 0.17f;
-  dl->AddRectFilled(ImVec2(m.x - k, a.y + g * 0.16f), ImVec2(m.x + k, b.y - g * 0.16f), IM_COL32(255, 255, 255, 255));
-  dl->AddRectFilled(ImVec2(a.x + g * 0.16f, m.y - k), ImVec2(b.x - g * 0.16f, m.y + k), IM_COL32(255, 255, 255, 255));
+  dl->AddRectFilled(a, b, rgb(fb::SCHWARZ), g * 0.2f);
+  float e = g / 16.f;
+  auto P = [&](float x, float y) { return ImVec2(a.x + x * e, a.y + y * e); };
+  auto viereck = [&](float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4) {
+    dl->AddQuadFilled(P(x1, y1), P(x2, y2), P(x3, y3), P(x4, y4), rgb(fb::BLAU));
+  };
+  viereck(1, 3.8f, 5, 3.0f, 5, 7.0f, 1, 8.0f);
+  viereck(6, 3.0f, 10, 3.0f, 10, 7.0f, 6, 7.0f);
+  viereck(11, 3.0f, 15, 3.8f, 15, 8.0f, 11, 7.0f);
+  ImVec2 tisch[] = {P(0.9f, 10.8f), P(2.6f, 9.8f), P(5.2f, 8.85f), P(8, 8.5f), P(10.8f, 8.85f), P(13.4f, 9.8f), P(15.1f, 10.8f)};
+  dl->AddPolyline(tisch, 7, rgb(fb::GELB), 0, 1.3f * e);
+  dl->AddCircleFilled(P(8, 9.6f), 2.6f * e, rgb(fb::SCHWARZ), 24);
+  dl->AddCircleFilled(P(8, 9.6f), 1.6f * e, rgb(fb::BLAU), 24);
+  dl->PathEllipticalArcTo(P(8, 15.0f), ImVec2(3.3f * e, 2.8f * e), 0, IM_PI, 2 * IM_PI, 20);
+  dl->PathFillConvex(rgb(fb::BLAU));
   // Beschriftung wie bei AviTab (weiß, mittig)
   std::string n = "LeitWerk";
   float sk = std::max(0.6f, H / 110.f);

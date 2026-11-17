@@ -162,7 +162,10 @@ try:
         r = A.evaluate("""async (a) => { const s = window.__lw.sim; const e = s.einsatz(a.id); const f = s.state.fahrzeuge[a.fz]; const g = window.__gs;
             for (let i = 0; i < 200 && !s.einsatz(f.einsatzId || '')?.gsKind; i++) await g.schritt(15000);
             const k1 = s.einsatz(f.einsatzId); const p1 = e.wahr.gs.patienten.find((p) => p.nr === k1.gsKind.nr);
-            const ander = e.wahr.gs.patienten.find((p) => p.nr !== p1.nr && p.sichtung !== 'tot' && e.gs.kinder[p.nr] && !s.einsatzFz(s.einsatz(e.gs.kinder[p.nr])).some((x) => x.status === 'zumZO'));
+            const frei = (p) => p.nr !== p1.nr && p.sichtung !== 'tot' && e.gs.kinder[p.nr] && s.einsatz(e.gs.kinder[p.nr])?.zustand !== 'abgeschlossen' && !s.einsatzFz(s.einsatz(e.gs.kinder[p.nr])).some((x) => x.status === 'zumZO' || x.status === 'amZO');
+            let ander = e.wahr.gs.patienten.find(frei);
+            // sind alle anderen schon unterwegs ins KH (schnelle Fahrten): einen noch nicht versorgten Patienten anlegen
+            if (!ander) { const q = e.wahr.gs.patienten.find((p) => p.nr !== p1.nr && p.sichtung !== 'tot' && !e.gs.kinder[p.nr]); if (q) { if (!e.gs.gezeigt.includes(q.nr)) e.gs.gezeigt.push(q.nr); s.gsKindAnlegen(e, q); if (frei(q)) ander = q; } }
             let fehler = null; if (ander) try { s.gsSpielerPatient(a.id, f.id, ander.nr); } catch (x) { fehler = String(x.message || x); }
             const k2 = s.einsatz(f.einsatzId); const altNah = k1.nahEntscheid;
             for (let i = 0; i < 6; i++) await g.schritt(15000);
@@ -180,7 +183,11 @@ try:
         A.evaluate("(id) => { window.__lw.panelZeigen('grosseinsatz'); }", eid2); A.wait_for_timeout(900)
         def tab(n):
             t = A.locator(".gs-ew .unterreiter button", has_text=n)
-            if t.count(): t.first.click(); A.wait_for_timeout(500)
+            if t.count():
+                # Unterreiter gleitet ein (Animation) – notfalls per Skript klicken statt 30 s zu warten
+                try: t.first.click(timeout=4000)
+                except Exception: t.first.evaluate("(b) => b.click()")
+                A.wait_for_timeout(500)
         tab("Patienten"); spn = A.evaluate("() => document.querySelectorAll('.gs-ew .spnah select').length + document.querySelectorAll('.gs-ew .spnah .spfest').length")
         tab("Alarmierung"); dz = A.evaluate("() => [...document.querySelectorAll('.gs-ew .soll .dz')].map((x) => x.textContent)")
         tab("Voraviso")

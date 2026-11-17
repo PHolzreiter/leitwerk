@@ -12,6 +12,14 @@ Erzeugt `tools/sources/pois_noe.csv` aus einem OpenStreetMap-Auszug von NÖ (© 
 `pois_noe_basis.csv` enthält die mit den Listen der Landesgesundheitsagentur und des Landes NÖ abgeglichenen Pflegeheime (Stand Oktober 2026); sie bleiben die Grundlage.
 Kategorien (Schlüssel im Feld `typ`) siehe `src/data/orte.ts`.
 
+## Sprechnamen am Funk
+
+Manche Orte heißen am Funk anders als auf der Karte („Bühl Center“ statt „ALEX“, „SCS“). `sprechnamen.py` liest
+`loc_name`, `short_name`, `old_name` und `alt_name` aus demselben Auszug; welcher Name gesagt wird, steht in `SPRECHEN`
+im Skript, die anderen werden nur verstanden. `build_default_data.py` schreibt sie in die Spalte `sprechname`.
+
+    python3 -I tools/pois/sprechnamen.py AT-3-latest.osm.pbf data/default/pois.csv tools/sources/pois_sprechnamen.csv
+
 ## Einsatzstellen (unsichtbar)
 
 Mögliche Notfallorte, die nicht auf der Karte stehen: Strecken und Flächen als Punkte (Autobahn alle 500 m mit Kilometer

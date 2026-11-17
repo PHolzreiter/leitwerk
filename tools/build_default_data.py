@@ -32,7 +32,7 @@ HOSPITAL_FLAGS = [
     "neurologie", "kinderintensiv", "neonatologie", "hno", "urologie", "gyn_geburtshilfe",
 ]
 HOSPITAL_COLS = ["id", "name", "kurzname", "ort", "breitengrad", "laengengrad", "einrichtungen", "akut_aus", "zeiten", "plaetze", "aufnahmerad", "zufahrt", "landeplatz", "hinweis"]
-POI_COLS = ["id", "name", "typ", "ort", "breitengrad", "laengengrad", "hinweis"]
+POI_COLS = ["id", "name", "typ", "ort", "breitengrad", "laengengrad", "hinweis", "sprechname"]
 TEMPLATE_COLS = ["id", "code", "adresse", "breitengrad", "laengengrad", "meldung", "patient_alter", "transport", "hinweis"]
 
 
@@ -1037,6 +1037,9 @@ def build_pois() -> list[dict]:
     # Flughafen Wien: Orte am Gelände (Recherche 10/2026, OpenStreetMap; „Lage ungefähr“ im Hinweis)
     flughafen = SRC / "pois_flughafen.csv"
     zeilen = read_csv(src) + (read_csv(flughafen) if flughafen.exists() else [])
+    # Sprechnamen am Funk (tools/pois/sprechnamen.py: „Bühl Center“ für „ALEX“, „SCS“, früher „Merkur“ …)
+    sp = SRC / "pois_sprechnamen.csv"
+    sprech = {r["id"]: r["sprechname"] for r in read_csv(sp)} if sp.exists() else {}
     for r in zeilen:
         if not r.get("name") or not r.get("breitengrad") or not r.get("laengengrad"):
             continue
@@ -1049,7 +1052,8 @@ def build_pois() -> list[dict]:
             continue
         gesehen.add(key)
         out.append({"id": r["id"], "name": r["name"].strip(), "typ": r["typ"].strip(), "ort": (r.get("ort") or "").strip(),
-                    "breitengrad": f"{lat:.6f}", "laengengrad": f"{lon:.6f}", "hinweis": "© OpenStreetMap" + (f" · {r['hinweis'].strip()}" if r.get("hinweis") else "")})
+                    "breitengrad": f"{lat:.6f}", "laengengrad": f"{lon:.6f}", "hinweis": "© OpenStreetMap" + (f" · {r['hinweis'].strip()}" if r.get("hinweis") else ""),
+                    "sprechname": sprech.get(r["id"], "")})
     out.sort(key=lambda x: (x["typ"], x["ort"], x["name"], x["id"]))
     return out
 
@@ -1205,7 +1209,8 @@ def build_examples() -> None:
     ])
     write_csv(EX / "beispiel_pois.csv", POI_COLS, [
         {"id": "poi-1", "name": "Badesee Musterstadt", "typ": "Bad / Badeplatz", "ort": "Musterstadt", "breitengrad": "48.215000", "laengengrad": "15.630000",
-         "hinweis": "Typ = Kategorie(n), mehrere mit Komma: Kindergarten, Schule, Pflegeheim, Bahnhof, Einkauf, Sport, Bad, Lokal, Arztpraxis, Betrieb, Freizeit, Landeplatz, Feuerwehr, Polizei, Wasserrettung, Bergrettung – sonst eigener Text"},
+         "hinweis": "Typ = Kategorie(n), mehrere mit Komma: Kindergarten, Schule, Pflegeheim, Bahnhof, Einkauf, Sport, Bad, Lokal, Arztpraxis, Betrieb, Freizeit, Landeplatz, Feuerwehr, Polizei, Wasserrettung, Bergrettung – sonst eigener Text; sprechname = Name am Funk, weitere nach | werden nur verstanden",
+         "sprechname": "Seebad|Badesee"},
         {"id": "poi-2", "name": "Pflegeheim Musterstadt", "typ": "Pflegeheim", "ort": "Musterstadt", "breitengrad": "48.230000", "laengengrad": "15.640000"},
         {"id": "poi-3", "name": "Volksschule Musterstadt", "typ": "Schule, Sport", "ort": "Musterstadt", "breitengrad": "48.222000", "laengengrad": "15.628000"},
     ])

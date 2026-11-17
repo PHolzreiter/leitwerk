@@ -1,4 +1,4 @@
-﻿id;name;typ;ort;breitengrad;laengengrad;hinweis
-poi-1;Badesee Musterstadt;Bad / Badeplatz;Musterstadt;48.215000;15.630000;Typ = Kategorie(n), mehrere mit Komma: Kindergarten, Schule, Pflegeheim, Bahnhof, Einkauf, Sport, Bad, Lokal, Arztpraxis, Betrieb, Freizeit, Landeplatz, Feuerwehr, Polizei, Wasserrettung, Bergrettung – sonst eigener Text
-poi-2;Pflegeheim Musterstadt;Pflegeheim;Musterstadt;48.230000;15.640000;
-poi-3;Volksschule Musterstadt;Schule, Sport;Musterstadt;48.222000;15.628000;
+﻿id;name;typ;ort;breitengrad;laengengrad;hinweis;sprechname
+poi-1;Badesee Musterstadt;Bad / Badeplatz;Musterstadt;48.215000;15.630000;"Typ = Kategorie(n), mehrere mit Komma: Kindergarten, Schule, Pflegeheim, Bahnhof, Einkauf, Sport, Bad, Lokal, Arztpraxis, Betrieb, Freizeit, Landeplatz, Feuerwehr, Polizei, Wasserrettung, Bergrettung – sonst eigener Text; sprechname = Name am Funk, weitere nach | werden nur verstanden";Seebad|Badesee
+poi-2;Pflegeheim Musterstadt;Pflegeheim;Musterstadt;48.230000;15.640000;;
+poi-3;Volksschule Musterstadt;Schule, Sport;Musterstadt;48.222000;15.628000;;

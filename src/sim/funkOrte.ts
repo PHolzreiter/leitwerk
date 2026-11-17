@@ -21,8 +21,20 @@ export function kurzOrt(name: string): string {
 /** Merkmale, die man am Funk als Treffpunkt bzw. „auf Höhe …“ nennt */
 const MERKMAL_TYP = /^(sportplatz|supermarkt|einkaufszentrum|bahnhof|baumarkt|lagerhaus|freibad|sporthalle|baumarkt,lagerhaus)$/;
 
+/**
+ * Sprechnamen eines Orts (Spalte „sprechname“, tools/pois/sprechnamen.py): „Bühl Center|ALEX Krems“ – der erste wird am
+ * Funk gesagt (leer: Kartenname), alle werden verstanden.
+ */
+export function sprechNamen(p: Poi): { gesagt: string; alle: string[] } {
+  const teile = (p.sprechname ?? "").split("|").map((x) => x.trim());
+  return { gesagt: teile[0] ?? "", alle: teile.filter(Boolean) };
+}
+
 /** Kurzer Name eines Merkmals ohne den langen Ortsnamen („Sportplatz Mautern an der Donau“ → „Sportplatz Mautern“) */
 function merkmalName(p: Poi): string {
+  // am Funk gebräuchlicher Name („Bühl Center“ statt „ALEX“, „SCS“)
+  const gesagt = sprechNamen(p).gesagt;
+  if (gesagt) return gesagt;
   const ort = p.ort ?? "";
   let n = (p.name ?? "").trim();
   if (ort && n.includes(ort)) n = n.replace(ort, kurzOrt(ort));
@@ -206,21 +218,60 @@ export function zielImText(text: string, nahe?: LatLon): (LatLon & { label: stri
     const st = passend.sort((a, b) => (nahe ? distanceM(nahe, a) - distanceM(nahe, b) : 0))[0];
     if (st) return { lat: st.lat, lon: st.lon, label: st.name, funk: `Dienststelle ${kurzOrt(st.ort)}`, wohin: `auf die Dienststelle ${kurzOrt(st.ort)}`, station: st.id };
   }
+  // Ort mit eigenem Namen, auch ohne Ortsangabe („zum Bühlcenter“, „Rendezvous bei der SCS“)
+  const benannt = benannterOrt(t, nahe);
+  if (!ort && benannt) return zielVonPoi(benannt);
   if (!ort) return null;
-  // Merkmal im Ort („zum Sportplatz“, „beim Billa“, „zum Bahnhof“)
+  // Merkmal im Ort („zum Sportplatz“, „beim Billa“, „zum Bahnhof“, „beim Merkur“)
   const pois = (store.list("pois") as Poi[]).filter((p) => p.ort === ort.name);
   let poi: Poi | undefined;
   for (const p of pois) {
     const typWort = (p.typ ?? "").split(",")[0];
     const nameOhneOrt = norm(p.name.replace(p.ort, "")).trim();
     const nurOrt = nameOhneOrt === norm(ort.kurz).trim() || nameOhneOrt === norm(ort.name).trim();
-    if ((typWort.length > 3 && t.includes(` ${typWort}`)) || (nameOhneOrt.length > 3 && !nurOrt && t.includes(` ${nameOhneOrt} `))) {
+    if ((typWort.length > 3 && t.includes(` ${typWort}`)) || (nameOhneOrt.length > 3 && !nurOrt && t.includes(` ${nameOhneOrt} `)) || sprechNamen(p).alle.some((n) => nameImText(t, n))) {
       poi = p;
       break;
     }
   }
-  if (poi) return { lat: poi.lat, lon: poi.lon, label: `${poi.name}, ${poi.ort}`, funk: merkmalName(poi), wohin: `nach ${ort.kurz}, ${merkmalName(poi).replace(new RegExp(`\\s+${ort.kurz.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`), "")}` };
+  if (!poi && benannt && benannt.ort === ort.name) poi = benannt;
+  if (poi) return zielVonPoi(poi);
   return { lat: ort.lat, lon: ort.lon, label: ort.name, funk: ort.kurz, wohin: `nach ${ort.kurz}` };
+}
+
+function zielVonPoi(poi: Poi): LatLon & { label: string; funk: string; wohin: string } {
+  const k = kurzOrt(poi.ort ?? "");
+  const m = merkmalName(poi);
+  const ohne = k ? m.replace(new RegExp(`\\s+${k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`), "") : m;
+  return { lat: poi.lat, lon: poi.lon, label: `${poi.name}${poi.ort ? `, ${poi.ort}` : ""}`, funk: m, wohin: k ? `nach ${k}, ${ohne}` : `zum ${m}` };
+}
+
+/** Kommt ein Name im (normierten) Text vor? Kurze Namen („SCS“, „G3“) als ganzes Wort, längere auch zusammengeschrieben („Bühlcenter“) */
+function nameImText(t: string, name: string): boolean {
+  const n = norm(name).trim();
+  if (n.length < 2) return false;
+  if (t.includes(` ${n} `)) return true;
+  if (n.replace(/[\s-]/g, "").length < 6) return false;
+  const eng = (x: string) => x.replace(/[\s-]/g, "");
+  return eng(t).includes(eng(n));
+}
+
+/** Kettennamen von früher („Merkur“, „Baumax“) gibt es oft – die zählen nur mit Ortsangabe */
+const KETTE = /^(merkur|baumax|mega-baumax|zielpunkt|unimarkt)$/i;
+
+/** Ort, der mit seinem eigenen (Sprech-)Namen genannt wird – bei mehreren der nächste zu nahe */
+function benannterOrt(t: string, nahe?: LatLon): Poi | null {
+  let best: { p: Poi; l: number; d: number } | null = null;
+  for (const p of store.list("pois") as Poi[]) {
+    if (!p.sprechname) continue;
+    for (const n of sprechNamen(p).alle) {
+      if (KETTE.test(n) || !nameImText(t, n)) continue;
+      const l = n.length;
+      const d = nahe ? distanceM(nahe, p) : 0;
+      if (!best || l > best.l || (l === best.l && d < best.d)) best = { p, l, d };
+    }
+  }
+  return best?.p ?? null;
 }
 
 /** Krankenhaus, das im Text genannt wird („ins LK St. Pölten“, „Universitätsklinikum Krems“, „nach Tulln ins Klinikum“) */

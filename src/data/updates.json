@@ -1,5 +1,15 @@
 [
  {
+  "version": "0.116.0-beta.63",
+  "datum": "2026-11-17",
+  "titel": "Kleinigkeiten: Treffpunkte, Programmsymbol, X-Plane",
+  "punkte": [
+   "Treffpunkte am Funk mit dem gebräuchlichen Namen („beim Bühl Center“, „SCS“) – auch ohne Ort verstanden",
+   "Programmsymbol in kleinen Größen deutlicher (Kleinversion des Logos)",
+   "X-Plane-Plugin 0.2.6: Sprechgruppe im Tablet-Kopf (09/10 ohne Großeinsatz gelb), Kachel mit LeitWerk-Logo"
+  ]
+ },
+ {
   "version": "0.116.0-beta.62",
   "datum": "2026-11-16",
   "titel": "Abfrage: restliche Kapitel überarbeitet",

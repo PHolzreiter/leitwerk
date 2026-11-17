@@ -57,6 +57,11 @@ export function orteJetzt(): string[] {
   }
   for (const f of Object.values(sim.state.fahrzeuge)) if (f.einsatzId || f.status !== "freiWache") punkte.push({ lat: f.lat, lon: f.lon });
   for (const o of [...alle].sort((a, b) => b.n - a.n)) if (punkte.some((p) => distanceM(p, o) < 12_000)) out.add(o.name);
+  // Sprechnamen von Treffpunkten in der Nähe („Bühl Center“, „SCS“, „Merkur“)
+  for (const p of store.list("pois")) {
+    if (!p.sprechname || !punkte.some((q) => distanceM(q, p) < 12_000)) continue;
+    for (const n of p.sprechname.split("|")) if (n.trim().length >= 3) out.add(n.trim());
+  }
   // Krankenhäuser (Kurzname, Ort)
   for (const h of store.list("hospitals")) {
     if (h.kurzname) out.add(h.kurzname);

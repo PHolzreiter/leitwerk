@@ -133,7 +133,7 @@ export const COLUMNS: Record<Kind, string[]> = {
   stations: ["id", "name", "organisation", "typ", "ort", "bezirk", "adresse", "breitengrad", "laengengrad", "hinweis"],
   vehicles: ["id", "funkrufname", "kurzname", "kategorie", "typ", "aufbau", "modell", "dienststelle", "aktiv", "nachtflug", "dienstplan", "ersatz_fuer", "na_abholung", "hinweis"],
   hospitals: ["id", "name", "kurzname", "ort", "breitengrad", "laengengrad", "einrichtungen", "akut_aus", "zeiten", "plaetze", "aufnahmerad", "zufahrt", "landeplatz", "zuweisung_an", "zuweisung_aus", "hinweis"],
-  pois: ["id", "name", "typ", "ort", "breitengrad", "laengengrad", "hinweis"],
+  pois: ["id", "name", "typ", "ort", "breitengrad", "laengengrad", "hinweis", "sprechname"],
   templates: ["id", "code", "adresse", "breitengrad", "laengengrad", "meldung", "patient_alter", "transport", "hinweis"],
   codes: ["id", "code", "name", "kategorie", "kapitel", "hinweis"],
 };
@@ -160,6 +160,7 @@ const ALIASES: Record<string, string[]> = {
   breitengrad: ["breitengrad", "lat", "latitude", "breite", "y"],
   laengengrad: ["laengengrad", "lon", "lng", "longitude", "laenge", "x"],
   hinweis: ["hinweis", "bemerkung", "notiz", "kommentar"],
+  sprechname: ["sprechname", "sprechnamen", "rufbegriff"],
   funkrufname: ["funkrufname", "rufname", "funkname", "callsign"],
   kurzname: ["kurzname", "kurzbezeichnung"],
   kategorie: ["kategorie", "kategorien", "fahrzeugkategorie", "stufe", "einsatzstufe"],
@@ -647,6 +648,9 @@ export function importCsv<K extends Kind>(kind: K, text: string, ctx: ImportCont
         } else {
           id = id || `poi-${slug(name)}`;
           const p: Poi = { ...base, id, name, typ: [get("typ"), get("kategorie")].filter(Boolean).join(", "), ort: get("ort"), lat, lon };
+          // Sprechname am Funk („Bühl Center“ statt „ALEX“), weitere Namen nach „|“ werden nur verstanden
+          const sn = get("sprechname").trim();
+          if (sn) p.sprechname = sn;
           record = p;
         }
       }
@@ -760,7 +764,7 @@ export function exportCsv<K extends Kind>(kind: K, records: KindMap[K][], statio
         v.zuweisung_aus = (h.zuweisungAus ?? []).join(", ");
       } else {
         const p = rec as Poi;
-        Object.assign(v, { typ: p.typ, ort: p.ort });
+        Object.assign(v, { typ: p.typ, ort: p.ort, sprechname: p.sprechname ?? "" });
       }
     }
     return header.map((c) => v[c] ?? "");

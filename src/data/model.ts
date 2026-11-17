@@ -280,6 +280,8 @@ export interface Poi extends Base {
   ort: string;
   lat: number;
   lon: number;
+  /** Name am Funk, wenn er vom Kartennamen abweicht („Bühl Center“ für „ALEX“, „SCS“); nach „|“ weitere Namen, die nur verstanden werden */
+  sprechname?: string;
 }
 
 /** Vorlage für einen Einsatz (statt zufällig erzeugter Einsätze). */

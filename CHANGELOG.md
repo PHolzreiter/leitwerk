@@ -1,5 +1,10 @@
 # Änderungen
 
+## 0.116.0-beta.63 – Kleinigkeiten: Treffpunkte, Programmsymbol, X-Plane
+- **Treffpunkte am Funk:** Orte heißen am Funk so, wie man sie kennt: „beim Bühl Center“ statt „ALEX“, dazu „SCS“, „G3“, „MEZ“, „VAZ“, „Kristalltherme“ und andere. Beim Verlegen und Abziehen werden diese Namen auch ohne Ortsangabe verstanden („zum Bühlcenter“), frühere Namen wie „Merkur“ oder „Baumax“ zusammen mit dem Ort („nach Krems zum Merkur“). Eigene Orte (CSV) können eine Spalte „sprechname“ haben (gesagt|auch verstanden).
+- **Programmsymbol:** In kleinen Größen (16–32 px: Taskleiste, Dateiliste, Fenster) gibt es eine Kleinversion des Logos mit breiteren Lücken, damit Bildschirme, Tisch und Person erkennbar bleiben.
+- **X-Plane-Plugin 0.2.6:** Die Sprechgruppe steht im Kopf des Tablets; bei RD-NOE-09/10 ohne Großeinsatz gelb mit Warnzeichen (wie im Tablet der anderen Simulatoren). Die Kachel im AviTab zeigt das LeitWerk-Logo.
+
 ## 0.116.0-beta.62 – Abfrage: restliche Kapitel überarbeitet
 - **Ersticken:** „Kann der Patient sprechen, husten oder atmen?“ zuerst – das entscheidet fast immer, und bei „nein“ braucht der Anrufer sofort die Anleitung; „Woran verschluckt?“ danach.
 - **Allergie:** zuerst „Hat der Patient überhaupt Beschwerden?“ – ohne Beschwerden entfallen die Atemfragen; „nur einzelne Worte?“ nur bei Atem- oder Schluckbeschwerden.

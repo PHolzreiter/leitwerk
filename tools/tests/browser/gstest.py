@@ -23,6 +23,15 @@ window.__gs = {
       if (g.kanal === 'gs' && g.status === 'mithoeren') { try { s.funkMitgehoert(g.id); } catch (e) {} }
     }
     await window.__gs.sleep(4);
+    // Spielzeit statt echter Zeit: erst weiter, wenn die Routen dieses Schritts berechnet sind (unter Last dauert das
+    // länger – sonst stehen Fahrzeuge viele Schritte auf „routing“ und der Test verpasst Fahrten); hängende nach 3 s ignorieren
+    const seit = (window.__gs.rbSeit ||= new Map());
+    for (let i = 0; i < 600; i++) {
+      for (const id of [...seit.keys()]) if (!s.routingBusy.has(id)) seit.delete(id);
+      const offen = [...s.routingBusy].filter((id) => { if (!seit.has(id)) seit.set(id, Date.now()); return Date.now() - seit.get(id) < 3000; });
+      if (!offen.length) break;
+      await window.__gs.sleep(5);
+    }
   },
 };
 """

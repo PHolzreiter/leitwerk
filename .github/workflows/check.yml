@@ -50,6 +50,7 @@ jobs:
           run npm install || status=1
           run npm run build || status=1
           run npx tauri icon app-icon.png || status=1
+          run python3 tools/symbol_klein.py einbauen src-tauri/icons || status=1
           (cd src-tauri && run cargo check) || status=1
           run cmake -S tools/xplane-plugin -B xpbau -DCMAKE_BUILD_TYPE=Release || status=1
           run cmake --build xpbau -j4 || status=1
