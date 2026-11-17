@@ -1,11 +1,14 @@
 ### npm install
 
-added 52 packages, and audited 53 packages in 7s
+added 52 packages, and audited 53 packages in 9s
 
 9 packages are looking for funding
   run `npm fund` for details
 
-1 critical severity vulnerability
+5 vulnerabilities (4 high, 1 critical)
+
+To address issues that do not require attention, run:
+  npm audit fix
 
 To address all issues (including breaking changes), run:
   npm audit fix --force
@@ -82,21 +85,21 @@ computing gzip size...
 [2mdist/[22m[2massets/[22m[32mbg-32x9-abend-DLJpcJQK.jpg           [39m[1m[2m1,159.39 kB[22m[1m[22m
 [2mdist/[22m[2massets/[22m[32meinsatzstellen-BKMVXWRH.csv          [39m[1m[2m2,885.41 kB[22m[1m[22m
 [2mdist/[22m[2massets/[22m[35mindex-q8pBXPhs.css                   [39m[1m[2m  480.62 kB[22m[1m[22m[2m │ gzip:    75.73 kB[22m
-[2mdist/[22m[2massets/[22m[36mdist-js-BuaRM_3C.js                  [39m[1m[2m    0.54 kB[22m[1m[22m[2m │ gzip:     0.26 kB[22m
-[2mdist/[22m[2massets/[22m[36mwebviewWindow-DpuWLNP6.js            [39m[1m[2m    1.78 kB[22m[1m[22m[2m │ gzip:     0.79 kB[22m
-[2mdist/[22m[2massets/[22m[36mfussleiste-CxY91wPo.js               [39m[1m[2m    2.37 kB[22m[1m[22m[2m │ gzip:     1.19 kB[22m
-[2mdist/[22m[2massets/[22m[36mwebview-CQxEzXXG.js                  [39m[1m[2m    3.34 kB[22m[1m[22m[2m │ gzip:     1.13 kB[22m
-[2mdist/[22m[2massets/[22m[36mpath-DH9jDv7T.js                     [39m[1m[2m    3.76 kB[22m[1m[22m[2m │ gzip:     0.92 kB[22m
-[2mdist/[22m[2massets/[22m[36mwindow-qDmdyDvJ.js                   [39m[1m[2m   14.37 kB[22m[1m[22m[2m │ gzip:     3.57 kB[22m
-[2mdist/[22m[2massets/[22m[36mmithelfen-CqmLL7I0.js                [39m[1m[2m   20.06 kB[22m[1m[22m[2m │ gzip:     8.00 kB[22m
-[2mdist/[22m[2massets/[22m[36mzeilen-DsUFcY97.js                   [39m[1m[2m   54.61 kB[22m[1m[22m[2m │ gzip:    21.01 kB[22m
-[2mdist/[22m[2massets/[22m[36mindex-CXkYpwqW.js                    [39m[1m[33m6,799.62 kB[39m[22m[2m │ gzip: 1,892.84 kB[22m
+[2mdist/[22m[2massets/[22m[36mdist-js-CN7A2BCU.js                  [39m[1m[2m    0.54 kB[22m[1m[22m[2m │ gzip:     0.26 kB[22m
+[2mdist/[22m[2massets/[22m[36mwebviewWindow-DWdn4Thi.js            [39m[1m[2m    1.78 kB[22m[1m[22m[2m │ gzip:     0.79 kB[22m
+[2mdist/[22m[2massets/[22m[36mfussleiste-uisT2I0Y.js               [39m[1m[2m    2.37 kB[22m[1m[22m[2m │ gzip:     1.19 kB[22m
+[2mdist/[22m[2massets/[22m[36mwebview-Cdn9bWuv.js                  [39m[1m[2m    3.34 kB[22m[1m[22m[2m │ gzip:     1.13 kB[22m
+[2mdist/[22m[2massets/[22m[36mpath-BiLqR_G1.js                     [39m[1m[2m    3.76 kB[22m[1m[22m[2m │ gzip:     0.91 kB[22m
+[2mdist/[22m[2massets/[22m[36mwindow-lruephV1.js                   [39m[1m[2m   14.37 kB[22m[1m[22m[2m │ gzip:     3.57 kB[22m
+[2mdist/[22m[2massets/[22m[36mmithelfen-DUn0xrae.js                [39m[1m[2m   20.06 kB[22m[1m[22m[2m │ gzip:     8.00 kB[22m
+[2mdist/[22m[2massets/[22m[36mzeilen-DKQIOo_D.js                   [39m[1m[2m   54.61 kB[22m[1m[22m[2m │ gzip:    21.01 kB[22m
+[2mdist/[22m[2massets/[22m[36mindex-DAnEyo-M.js                    [39m[1m[33m6,799.63 kB[39m[22m[2m │ gzip: 1,892.82 kB[22m
 [33m
 (!) Some chunks are larger than 2000 kB after minification. Consider:
 - Using dynamic import() to code-split the application
 - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
 - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.[39m
-[32m✓ built in 6.58s[39m
+[32m✓ built in 6.69s[39m
 ### npx tauri icon app-icon.png
         Appx Creating StoreLogo.png
         Appx Creating Square30x30Logo.png
@@ -203,7 +206,7 @@ Kleinversion in src-tauri/icons/Square30x30Logo.png
 -- Performing Test CMAKE_HAVE_LIBC_PTHREAD
 -- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
 -- Found Threads: TRUE
--- Configuring done (2.7s)
+-- Configuring done (2.8s)
 -- Generating done (0.0s)
 -- Build files have been written to: /home/runner/work/leitwerk/leitwerk/xpbau
 ### cmake --build xpbau -j4
