@@ -1,0 +1,292 @@
+<title>LeitWerk Piloten live</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="stand.js"></script>
+<style>
+:root {
+  color-scheme: dark;
+  --grund: #111216; --flaeche: #171920; --hover: #1E2129; --linie: #2A2F3A; --trenner: #23262F;
+  --text: #F5F7FA; --text-2: #C4CAD6; --dim: #9AA3B5; --akzent: #3B8BFF; --akzent-h: #5C9EFF; --gelb: #FFC72C;
+  --ok: #4CC38A; --rot: #E5484D; --rot-text: #FFB4B6;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--grund); color: var(--text); font: 14px/1.45 Inter, "Segoe UI", system-ui, sans-serif; }
+button { font: inherit; }
+a { color: var(--akzent-h); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 11; background: var(--grund); }
+.kopf { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 10; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; padding-block: 12px; padding-left: max(24px, env(safe-area-inset-left, 0px)); padding-right: max(24px, env(safe-area-inset-right, 0px)); background: rgba(17,18,22,0.92); backdrop-filter: blur(14px); border-bottom: 1px solid var(--trenner); }
+.marke { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 16px; }
+.marke small { display: block; font-weight: 500; font-size: 12px; color: var(--dim); }
+.leer { flex: 1; }
+.kn { height: 36px; padding: 0 14px; border-radius: 10px; border: 1px solid var(--linie); background: transparent; color: var(--text); cursor: pointer; font-weight: 600; }
+.kn:hover { border-color: #4A5163; background: var(--hover); }
+.kn.prim { background: var(--akzent); border-color: var(--akzent); color: var(--grund); }
+.kn.prim:hover { background: var(--akzent-h); }
+.kn:focus-visible, select:focus-visible { outline: 2px solid var(--akzent); outline-offset: 2px; }
+select { height: 36px; border-radius: 10px; border: 1px solid var(--linie); background: var(--grund); color: var(--text); padding: 0 10px; }
+.zustand { display: flex; align-items: center; gap: 8px; color: var(--text-2); font-size: 13px; }
+.punkt { width: 8px; height: 8px; border-radius: 4px; background: #6B7385; }
+.punkt.an { background: var(--ok); }
+main { max-width: 1680px; margin: 0 auto; padding-block: 18px 64px; padding-left: max(24px, env(safe-area-inset-left, 0px)); padding-right: max(24px, env(safe-area-inset-right, 0px)); display: flex; flex-direction: column; gap: 34px; }
+.hinweis { color: var(--dim); font-size: 13px; max-width: 980px; }
+h2 { margin: 0 0 4px; font-size: 20px; font-weight: 600; }
+.unter { margin: 0 0 12px; color: var(--dim); font-size: 13px; }
+.rahmen { position: relative; overflow: hidden; border-radius: 12px; border: 1px solid var(--linie); background: #0b0c0f; }
+.rahmen iframe { position: absolute; left: 0; top: 0; border: 0; transform-origin: 0 0; background: #fff; }
+.reihe { display: flex; flex-wrap: wrap; gap: 28px; align-items: flex-start; }
+.reihe > section { min-width: 0; max-width: 100%; }
+.handy { padding: 12px; border-radius: 44px; background: #050506; border: 1px solid var(--linie); width: fit-content; max-width: 100%; }
+.handy .rahmen { border-radius: 32px; border: 0; }
+.tablet { padding: 18px; border-radius: 26px; background: #050506; border: 1px solid var(--linie); }
+.tablet .rahmen { border-radius: 8px; border: 0; }
+.h145 { display: flex; flex-wrap: wrap; gap: 28px; align-items: flex-start; }
+.carls { display: flex; flex-direction: column; gap: 12px; }
+.carls-geraet { padding: 16px; border-radius: 16px; background: #1b1c20; border: 1px solid var(--linie); display: flex; gap: 16px; align-items: center; }
+.carls-schirm { position: relative; width: 470px; height: 348px; overflow: hidden; border-radius: 4px; background: #000; }
+.carls-schirm > div { position: absolute; left: 50px; top: 0; }
+.tasten { display: grid; grid-template-columns: repeat(3, 48px); gap: 8px; }
+.taste { height: 44px; border-radius: 8px; border: 1px solid #3a3d45; background: #2a2c32; color: var(--text); cursor: pointer; font-weight: 600; }
+.taste:hover { background: #34373e; }
+.taste.rot { color: var(--rot-text); }
+.mission { flex: 1; min-width: 320px; max-width: 640px; background: var(--flaeche); border: 1px solid var(--linie); border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 12px; }
+.lbl { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; color: var(--dim); text-transform: uppercase; }
+.m-titel { font-size: 16px; font-weight: 600; }
+.m-text { white-space: pre-line; color: var(--text-2); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { border: 1px solid var(--linie); border-radius: 999px; padding: 3px 10px; font-size: 12px; color: var(--text-2); }
+.modal { border: 1px solid #3a4560; border-radius: 12px; padding: 14px; background: #1b2030; display: flex; flex-direction: column; gap: 10px; }
+.modal .opts { display: flex; flex-wrap: wrap; gap: 8px; }
+.galerie { display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 18px; }
+.galerie figure { margin: 0; background: var(--flaeche); border: 1px solid var(--linie); border-radius: 12px; overflow: hidden; }
+.galerie img { display: block; width: 100%; height: auto; }
+.galerie figcaption { padding: 8px 12px; font-size: 13px; color: var(--text-2); }
+@media (max-width: 700px) { .kopf, main { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); } .carls-geraet { flex-direction: column; } .carls-schirm { transform: scale(0.7); transform-origin: 0 0; margin: 0 -141px -104px 0; } }
+</style>
+<header class="kopf">
+  <div class="marke">
+    <svg width="30" height="30" viewBox="0 0 16 16" aria-hidden="true"><rect width="16" height="16" rx="3" fill="#1E2129"></rect><path d="M1 3.8 5 3v4L1 8z M6 3h4v4H6z M11 3l4 .8V8l-4-1z" fill="#3B8BFF"></path><path d="M.9 10.8 2.6 9.8 5.2 8.85 8 8.5l2.8.35 2.6.95 1.7 1" stroke="#FFC72C" stroke-width="1.3" fill="none"></path><circle cx="8" cy="9.6" r="2.6" fill="#1E2129"></circle><circle cx="8" cy="9.6" r="1.6" fill="#3B8BFF"></circle><path d="M4.7 15a3.3 2.8 0 0 1 6.6 0z" fill="#3B8BFF"></path></svg>
+    <div>Piloten-Ansichten live<small id="ver">LeitWerk</small></div>
+  </div>
+  <div class="zustand"><span class="punkt" id="punkt"></span><span id="zst">Spiel lädt …</span></div>
+  <div class="leer"></div>
+  <label class="zustand" for="heli">Hubschrauber</label>
+  <select id="heli" aria-label="Hubschrauber"><option value="">NAH 2</option></select>
+  <button class="kn prim" id="schnell">Testmodus neu starten</button>
+  <button class="kn" id="menue">Mit Hauptmenü starten</button>
+</header>
+<main>
+  <p class="hinweis">Das echte Spiel läuft hier im Browser, im Pilot-Testmodus ohne Leitstelle. Piloten-Fenster, Handy und EFB hängen am selben Spiel: Was du in einer Ansicht drückst, sehen die anderen sofort. Einsätze schickst du dir im Piloten-Fenster über das Testmenü. Nicht dabei sind Kartenhintergründe, Sprechfunk und Spracherkennung sowie die Verbindung zum Simulator; dafür braucht es das installierte Programm.</p>
+
+  <section aria-labelledby="t-pc">
+    <h2 id="t-pc">Piloten-Fenster</h2>
+    <p class="unter">Im Programm am PC oder Mac, 1440 × 900.</p>
+    <div class="rahmen" id="pc" data-b="1440" data-h="900"><iframe id="spiel" title="LeitWerk – Piloten-Fenster" width="1440" height="900"></iframe></div>
+  </section>
+
+  <div class="reihe">
+    <section aria-labelledby="t-handy">
+      <h2 id="t-handy">Handy</h2>
+      <p class="unter">Statustasten halten, Sprechtaste, Einsatz und Buchen.</p>
+      <div class="handy"><div class="rahmen" data-b="390" data-h="844" data-fest="1"><iframe src="geraete/handy.html?t=live" title="LeitWerk – Handy" width="390" height="844"></iframe></div></div>
+    </section>
+    <section aria-labelledby="t-efb" style="flex: 1; min-width: 320px;">
+      <h2 id="t-efb">EFB im Simulator</h2>
+      <p class="unter">Tablet in MSFS 2024 (EFB-App) und im Tablet der H145, 1024 × 720.</p>
+      <div class="tablet"><div class="rahmen" data-b="1024" data-h="720"><iframe src="geraete/efb.html" title="LeitWerk – EFB" width="1024" height="720"></iframe></div></div>
+    </section>
+  </div>
+
+  <section aria-labelledby="t-h145">
+    <h2 id="t-h145">H145 (HPG): Funkgerät und Tablet</h2>
+    <p class="unter">Das CARLS-Display zeichnet LeitWerk selbst, es ist hier echt und bedienbar (Ziffer = Status, ◂ ▸ = Sprechgruppe, roter Hörer = abbrechen). Das Tablet der H145 zeichnet der Hubschrauber; rechts steht, was LeitWerk ihm gerade schickt. Die Knöpfe lösen dieselbe Rückmeldung aus wie am Tablet.</p>
+    <div class="h145">
+      <div class="carls">
+        <div class="carls-geraet">
+          <div class="carls-schirm" id="carls" aria-live="polite"><div></div></div>
+          <div class="tasten" role="group" aria-label="CARLS-Tasten">
+            <button class="taste" data-k="1">1</button><button class="taste" data-k="2">2</button><button class="taste" data-k="3">3</button>
+            <button class="taste" data-k="4">4</button><button class="taste" data-k="5">5</button><button class="taste" data-k="6">6</button>
+            <button class="taste" data-k="7">7</button><button class="taste" data-k="8">8</button><button class="taste" data-k="9">9</button>
+            <button class="taste" data-k="LEFT" aria-label="Sprechgruppe zurück">◂</button><button class="taste" data-k="0">0</button><button class="taste" data-k="RIGHT" aria-label="Sprechgruppe weiter">▸</button>
+            <span></span><button class="taste rot" data-k="HANG" aria-label="Roter Hörer">✕</button><span></span>
+          </div>
+        </div>
+      </div>
+      <div class="mission" id="mission"><div class="lbl">Mission ans Tablet</div><div class="m-text">Wartet auf das Spiel …</div></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="t-xp">
+    <h2 id="t-xp">X-Plane-Plugin</h2>
+    <p class="unter" id="xp-unter">Die Oberfläche des Plugins läuft nur in X-Plane selbst. Die Bilder zeigen das echte Plugin (Version 0.2.6) mit Ständen aus diesem Spiel, von der Bereitschaft bis zum Krankenhaus: Funkgerät, Tablet-Fenster in drei Größen, AviTab und die AviTab-Kachel. In X-Plane liegen die Fenster dort, wo du sie hinschiebst; hier liegen sie übereinander.</p>
+    <div class="galerie" id="xp"></div>
+  </section>
+</main>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var spiel = $("spiel");
+  var stand = window.LW_STAND || { version: "", xplane: [] };
+  $("ver").textContent = "Stand " + (stand.version || "") ;
+  try { localStorage.setItem("leitwerk.persoenlich", JSON.stringify({ thema: "hell", einfuehrung: true })); } catch (e) {}
+
+  // Rahmen auf die verfügbare Breite skalieren (Inhalt bleibt in Originalgröße)
+  function skalieren() {
+    document.querySelectorAll(".rahmen").forEach(function (r) {
+      var b = Number(r.dataset.b), h = Number(r.dataset.h);
+      var sec = r.closest("section");
+      var platz = r.dataset.fest ? Math.min(b, (sec ? sec.clientWidth : b) - 26) : Math.min(b, r.parentElement.clientWidth - (r.parentElement.classList.contains("tablet") ? 36 : 0));
+      var s = Math.min(1, platz / b);
+      r.style.width = Math.round(b * s) + "px";
+      r.style.height = Math.round(h * s) + "px";
+      r.querySelector("iframe").style.transform = "scale(" + s + ")";
+    });
+  }
+  window.addEventListener("resize", skalieren);
+  skalieren();
+
+  function lw() { try { return spiel.contentWindow.__lw || null; } catch (e) { return null; } }
+  function pl() { try { return spiel.contentWindow.__pilot || null; } catch (e) { return null; } }
+  function warte(bed, ms) {
+    return new Promise(function (ok, nein) {
+      var bis = Date.now() + (ms || 30000);
+      (function los() { var v; try { v = bed(); } catch (e) {} if (v) return ok(v); if (Date.now() > bis) return nein(new Error("Zeit")); setTimeout(los, 150); })();
+    });
+  }
+  function zst(t, an) { $("zst").textContent = t; $("punkt").className = "punkt" + (an ? " an" : ""); }
+
+  var schnellstart = true;
+  function laden(mitMenue) {
+    schnellstart = !mitMenue;
+    zst("Spiel lädt …", false);
+    spiel.src = "app/index.html?debug&start&t=" + Date.now();
+  }
+  spiel.addEventListener("load", function () {
+    if (!schnellstart) { zst("Hauptmenü: Als Pilot beitreten › Testmodus", true); helisFuellen(); return; }
+    starten().catch(function (e) { zst("Start fehlgeschlagen: " + e.message, false); });
+  });
+  async function starten() {
+    var L = await warte(function () { var l = lw(); return l && l.sim && Object.keys(l.sim.state.fahrzeuge).length ? l : null; }, 60000);
+    await warte(function () { return L.hauptmenue.offen(); }, 8000).catch(function () {});
+    var s = L.sim, ich = s.wer();
+    s.pilotTestStarten({ pid: ich.pid, name: ich.name || "Pilot" });
+    await warte(function () { return Object.keys(s.state.fahrzeuge).length; }, 20000);
+    await new Promise(function (r) { setTimeout(r, 800); });
+    helisFuellen();
+    var wahl = $("heli").value;
+    var h = (wahl && s.state.fahrzeuge[wahl]) || Object.values(s.state.fahrzeuge).find(function (f) { return f.funkrufname === "99/002"; }) || Object.values(s.state.fahrzeuge).find(function (f) { return f.kategorie === "NAH"; });
+    await s.call("pilotUebernehmen", h.id);
+    s.pilotTestGebiet(h.id);
+    if (L.hauptmenue.offen()) L.hauptmenue.schliessen(false);
+    await L.pilotUi.oeffnen();
+    zst("Testmodus · " + (h.kurzname || h.funkrufname), true);
+  }
+  function helisFuellen() {
+    var L = lw(); if (!L) return;
+    var alt = $("heli").value;
+    var hs = Object.values(L.sim.state.fahrzeuge).filter(function (f) { return f.kategorie === "NAH"; }).sort(function (a, b) { return (a.kurzname || a.funkrufname).localeCompare(b.kurzname || b.funkrufname, "de", { numeric: true }); });
+    if (!hs.length) return;
+    $("heli").innerHTML = hs.map(function (f) { return '<option value="' + f.id + '">' + (f.kurzname || f.funkrufname) + "</option>"; }).join("");
+    var ich = hs.find(function (f) { return f.pilot; });
+    $("heli").value = alt && hs.some(function (f) { return f.id === alt; }) ? alt : ich ? ich.id : (hs.find(function (f) { return f.funkrufname === "99/002"; }) || hs[0]).id;
+  }
+  $("schnell").onclick = function () { laden(false); };
+  $("menue").onclick = function () { laden(true); };
+  $("heli").onchange = function () { laden(false); };
+
+  // ---------------------------------------------------------------- H145: CARLS-Display und Mission
+  function meinHeli() {
+    var L = lw(); if (!L) return null;
+    var f = Object.values(L.sim.state.fahrzeuge).find(function (x) { return x.pilot; });
+    if (!f) return null;
+    return { f: f, e: f.einsatzId ? L.sim.einsatz(f.einsatzId) : undefined };
+  }
+  var letztCarls = "", letztMission = "", offenModal = null;
+  document.querySelectorAll(".taste").forEach(function (b) {
+    b.onclick = function () { var p = pl(); if (p) p.hpgCarlsTest.taste(b.dataset.k); };
+  });
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function melden(tag) { var p = pl(); if (p) p.hpgTestNachricht(JSON.stringify({ remote_notify: tag })); offenModal = null; letztMission = ""; }
+  function modalHtml(m, pfad) {
+    var o = (m.options || []).map(function (op, i) {
+      var cmds = op.commands || [];
+      var notify = cmds.find(function (c) { return c.remote_notify; });
+      var weiter = cmds.find(function (c) { return c.set_modal || c.wait_modal; });
+      var art = notify ? "n:" + notify.remote_notify : weiter ? "m:" + pfad + "/" + i : "";
+      return '<button class="kn' + (op.style === "primary" ? " prim" : "") + '" data-a="' + esc(art) + '">' + esc(op.text) + "</button>";
+    }).join("");
+    return '<div class="modal"><div class="m-titel">' + esc(m.title) + '</div><div class="m-text">' + esc(m.text) + '</div><div class="opts">' + o + "</div></div>";
+  }
+  function modalBei(cmds, pfad) {
+    // pfad: "0" = erstes Modal der Befehle, "0/2" = dessen Option 2 → Untermodal
+    var teile = pfad.split("/"), m = null, liste = cmds;
+    for (var i = 0; i < teile.length; i++) {
+      var n = Number(teile[i]);
+      if (i === 0) { var w = liste.filter(function (c) { return c.wait_modal || c.set_modal; })[n]; m = w && (w.wait_modal || w.set_modal); }
+      else { var op = m && (m.options || [])[n]; var c = op && (op.commands || []).find(function (x) { return x.set_modal || x.wait_modal; }); m = c && (c.set_modal || c.wait_modal); }
+      if (!m) return null;
+    }
+    return m;
+  }
+  function missionZeichnen() {
+    var p = pl(), h = meinHeli();
+    if (!p || !h) { if (letztMission !== "-") { $("mission").innerHTML = '<div class="lbl">Mission ans Tablet</div><div class="m-text">Kein Hubschrauber übernommen.</div>'; letztMission = "-"; } return; }
+    var m;
+    try { m = p.hpgMissionFuer(h.f, h.e); } catch (e) { return; }
+    var schl = JSON.stringify(m) + "|" + offenModal;
+    if (schl === letztMission) return;
+    letztMission = schl;
+    var ziel = (m.objectives || [])[0] || {};
+    var cmds = ziel.commands || [];
+    var nachr = cmds.filter(function (c) { return c.set_message && c.set_message.text; }).map(function (c) { return c.set_message.text; });
+    var chips = [];
+    cmds.forEach(function (c) {
+      if (c.set_route) chips.push("Route: " + ({ base: "Stützpunkt", accident_site: "Einsatzort", hospital_helipad: "Landeplatz Krankenhaus" }[c.set_route] || c.set_route));
+      if (c.set_df) chips.push("Peilung " + c.set_df.freq);
+      if (c.set_hover_display) chips.push("Schwebeanzeige");
+      if (c.create_object) chips.push("Figur: " + (c.create_object.name || ""));
+    });
+    if (m.objects && m.objects.patient) chips.push("Figur: Patient");
+    var html = '<div class="lbl">Mission ans Tablet</div><div class="m-titel">' + esc(m.title) + "</div>";
+    if (ziel.title) html += '<div><div class="lbl">Aufgabe</div><div>' + esc(ziel.title) + "</div></div>";
+    if (nachr.length) html += '<div><div class="lbl">Meldung</div><div class="m-text">' + esc(nachr.join("\n")) + "</div></div>";
+    if (chips.length) html += '<div class="chips">' + chips.map(function (c) { return '<span class="chip">' + esc(c) + "</span>"; }).join("") + "</div>";
+    var hat = cmds.some(function (c) { return c.wait_modal || c.set_modal; });
+    if (hat) {
+      var mm = (offenModal && modalBei(cmds, offenModal)) || modalBei(cmds, "0");
+      if (!mm) { offenModal = null; mm = modalBei(cmds, "0"); }
+      html += modalHtml(mm, offenModal || "0");
+      if (offenModal) html += '<div><button class="kn" data-a="z">‹ Zurück</button></div>';
+    }
+    $("mission").innerHTML = html;
+    $("mission").querySelectorAll("[data-a]").forEach(function (b) {
+      b.onclick = function () {
+        var a = b.dataset.a;
+        if (a === "z") { offenModal = null; letztMission = ""; return missionZeichnen(); }
+        if (a.indexOf("n:") === 0) return melden(a.slice(2));
+        if (a.indexOf("m:") === 0) { offenModal = a.slice(2); letztMission = ""; return missionZeichnen(); }
+      };
+    });
+  }
+  function carlsZeichnen() {
+    var p = pl(), h = meinHeli(), schirm = $("carls").firstElementChild;
+    var html = "";
+    if (p && h) { try { html = p.hpgCarlsTest.html(h.f); } catch (e) {} }
+    if (!html) html = '<div style="position:absolute;left:-50px;top:0;width:470px;height:348px;background:#0d0f14;color:#9AA3B5;display:flex;align-items:center;justify-content:center;font:16px Inter,sans-serif">Connect a mission to begin</div>';
+    if (html !== letztCarls) { schirm.innerHTML = html; letztCarls = html; }
+  }
+  setInterval(function () { carlsZeichnen(); missionZeichnen(); }, 300);
+
+  // ---------------------------------------------------------------- X-Plane: Bilder
+  var namen = { "01": "Bereitschaft", "02": "Alarm", "03": "Anflug", "04": "Am Einsatzort", "05": "Am Einsatzort · Zielort buchen", "06": "Transport", "07": "Am Krankenhaus" };
+  var xp = stand.xplane || [];
+  if (!xp.length) $("xp-unter").textContent = "Für diesen Stand gibt es noch keine Bilder des Plugins.";
+  $("xp").innerHTML = xp.map(function (f) {
+    var k = f.slice(0, 2), t = namen[k] || f.replace(/\.png$/, "");
+    return '<figure><img src="xplane/' + esc(f) + '" alt="X-Plane-Plugin: ' + esc(t) + '" loading="lazy"><figcaption>' + esc(t) + "</figcaption></figure>";
+  }).join("");
+
+  laden(false);
+})();
+</script>
