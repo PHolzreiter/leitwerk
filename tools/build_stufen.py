@@ -22,7 +22,7 @@ STUFEN = [
     ("ALS gelb", "RTW-C>RTW>KTW", "ja", "nein", "ja", "dringend", 80),
     ("ALS grün", "RTW>RTW-C>KTW", "ja", "nein", "nein", "dringend", 75),
     ("BLS rot", "RTW>RTW-C>KTW", "nein", "nein", "ja", "dringend", 75),
-    ("BLS gelb", "RTW>KTW>RTW-C", "nein", "nein", "ja", "dringend", 70),
+    ("BLS gelb", "RTW>KTW>RTW-C", "nein", "nein", "nein", "dringend", 70),
     ("BLS grün", "KTW>RTW>RTW-C", "nein", "nein", "nein", "stabil", 65),
     ("BLS/ALS aufwertbar", "RTW/RTW-C", "nein", "nein", "ja", "dringend", 75),
     ("Akuttransport grün", "KTW>RTW>RTW-C", "nein", "nein", "nein", "stabil", 100),
