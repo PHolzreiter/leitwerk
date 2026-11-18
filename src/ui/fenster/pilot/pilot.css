@@ -181,11 +181,11 @@
 .ap .pv.s2 .pv-uhr{font-size:17px}
 .ap .pv.s2 .pv-kopf{gap:6px;padding:0 8px}
 .ap .pv-phasen{display:flex;gap:4px;padding:8px 12px;background:var(--grund);border-bottom:1px solid var(--trenner);overflow-x:auto;scrollbar-width:none}
-.ap .pv-ph{flex:1 1 0;min-width:0;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;font-size:12.5px;font-weight:600;color:var(--dim);background:var(--flaeche);box-shadow:var(--schatten);white-space:nowrap;transition:background .3s,color .3s}
+.ap .pv-ph{flex:1 1 0;min-width:0;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:8px;padding:5px 10px;border-radius:8px;font-size:12.5px;font-weight:600;color:var(--dim);background:transparent;border:1px solid var(--trenner);white-space:nowrap;transition:background .3s,color .3s}
 .ap .pv-ph i{display:grid;place-items:center;width:20px;height:20px;border-radius:50%;font-style:normal;font-size:11px;font-weight:700;background:var(--flaeche-2);color:var(--dim);flex:none}
 .ap .pv-ph.fertig{color:var(--text-2)}
 .ap .pv-ph.fertig i{background:var(--ok-flaeche);color:var(--ok)}
-.ap .pv-ph.jetzt{background:var(--akzent);color:var(--auf-akzent)}
+.ap .pv-ph.jetzt{background:var(--akzent);border-color:var(--akzent);color:var(--auf-akzent)}
 .ap .pv-ph.jetzt i{background:rgba(0,0,0,.18);color:var(--auf-akzent)}
 /* Spalten */
 .ap .pv-haupt{display:grid;gap:8px;padding:8px;min-height:0}
@@ -339,6 +339,8 @@
 .ap .pv-kleg{position:absolute;left:10px;bottom:10px;display:flex;gap:10px;padding:6px 10px;border-radius:8px;background:var(--flaeche);box-shadow:var(--schatten);font-size:11.5px;color:var(--text-2);flex-wrap:wrap}
 .ap .pv-kleg span{display:inline-flex;align-items:center;gap:5px}
 .ap .pv-kleg i{width:9px;height:9px;border-radius:50%}
+.ap .pv-kleg i.pv-kleg-mit{background:conic-gradient(#f2b600 0 33%,#e67e22 0 66%,#1e88e5 0);box-shadow:0 0 0 2px #fff,0 0 0 3px rgba(0,0,0,.25)}
+.ap .pv-ktip{position:absolute;z-index:3;pointer-events:none;padding:4px 8px;border-radius:6px;background:var(--pop,var(--flaeche));color:var(--text);box-shadow:var(--schatten);font-size:12px;font-weight:600;white-space:nowrap}
 .ap .pv-funk{flex:none;border-radius:12px;overflow:hidden;position:relative}
 
 .ap .pv-toast{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);z-index:40;background:var(--pop);box-shadow:var(--pop-schatten);border-radius:10px;padding:9px 14px;font-size:12.5px;font-weight:600;animation:pv-auf .18s both;white-space:nowrap}
@@ -419,10 +421,10 @@
 
 /* ================================================================ Beta 64: Leiste · Liste · Mitte · Karte (Entwurf Beta 64)
  * Nur Farben aus dem Farbschema (hell und dunkel), ruhige Übergänge: Wechsel in der Mitte blendet nur kurz ein. */
-.ap .pv-haupt.pvn{display:grid;grid-template-columns:76px var(--lw) minmax(0,1fr) var(--rb);gap:12px;padding:0 12px 12px 0;min-height:0}
-.ap .pv-haupt.pvn.ohne-liste{grid-template-columns:76px minmax(0,1fr) var(--rb)}
-.ap .pv-haupt.pvn.stapel{grid-template-columns:76px var(--lw) minmax(0,1fr);grid-template-rows:minmax(0,1fr) minmax(260px,38%)}
-.ap .pv-haupt.pvn.stapel.ohne-liste{grid-template-columns:76px minmax(0,1fr)}
+.ap .pv-haupt.pvn{display:grid;grid-template-columns:84px var(--lw) minmax(0,1fr) var(--rb);gap:12px;padding:0 12px 12px 0;min-height:0}
+.ap .pv-haupt.pvn.ohne-liste{grid-template-columns:84px minmax(0,1fr) var(--rb)}
+.ap .pv-haupt.pvn.stapel{grid-template-columns:84px var(--lw) minmax(0,1fr);grid-template-rows:minmax(0,1fr) minmax(260px,38%)}
+.ap .pv-haupt.pvn.stapel.ohne-liste{grid-template-columns:84px minmax(0,1fr)}
 .ap .pv-haupt.pvn.stapel .pv-rechts{grid-column:2/-1;grid-row:2}
 .ap .pv-haupt.pvn.stapel .pvn-leiste{grid-row:1/3}
 .ap .pv-haupt.pvn.eins{grid-template-columns:64px minmax(0,1fr);overflow:hidden;grid-auto-rows:auto}
@@ -432,8 +434,8 @@
 .ap .pv-haupt.pvn .pv-karte{flex:1;min-height:0;height:100%}
 
 /* Leiste links */
-.ap .pvn-leiste{display:flex;flex-direction:column;gap:4px;padding:10px 8px;background:var(--flaeche);border-right:1px solid var(--trenner);min-height:0}
-.ap .pvn-r{all:unset;box-sizing:border-box;position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 2px 8px;border-radius:10px;cursor:pointer;color:var(--dim);font-size:11px;font-weight:600;text-align:center;transition:background-color .15s,color .15s}
+.ap .pvn-leiste{display:flex;flex-direction:column;gap:4px;padding:10px 6px;background:var(--flaeche);border-right:1px solid var(--trenner);min-height:0}
+.ap .pvn-r{all:unset;box-sizing:border-box;position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 0 8px;border-radius:10px;cursor:pointer;color:var(--dim);font-size:10.5px;font-weight:600;text-align:center;white-space:nowrap;transition:background-color .15s,color .15s}
 .ap .pvn-r svg{width:22px;height:22px}
 .ap .pvn-r:hover{background:var(--hover);color:var(--text)}
 .ap .pvn-r.an{background:var(--akzent-flaeche);color:var(--akzent-text)}
@@ -494,23 +496,27 @@
 .ap .pvn-fuss{border-top:1px solid var(--trenner);padding-top:8px;font-size:12.5px;color:var(--text-2);flex-wrap:wrap}
 .ap .pvn-gr{display:inline-block;background:var(--text);color:var(--grund);border-radius:5px;padding:1px 7px;font-size:11.5px;font-weight:700;letter-spacing:.02em}
 .ap .pvn-ziel{padding:12px 16px 14px;display:flex;flex-direction:column;gap:8px}
-.ap .pvn-ziel.offen{box-shadow:0 0 0 1px color-mix(in srgb,var(--gelb) 55%,transparent)}
-.ap .pvn-ziel.ok{box-shadow:0 0 0 1px color-mix(in srgb,var(--ok) 50%,transparent)}
-.ap .pvn-tag{font-size:11.5px;font-weight:700;color:var(--dim)}
-.ap .pvn-tag.gelb{color:var(--gelb-text)}
-.ap .pvn-tag.ok{color:var(--ok)}
+/* Zielort: Zustand als Marke rechts oben, kein farbiger Rahmen (Paul 18.11.2026) */
+.ap .pvn-tag{display:inline-flex;align-items:center;padding:2px 9px;border-radius:999px;font-size:11.5px;font-weight:700;background:var(--flaeche-2);color:var(--text-2)}
+.ap .pvn-tag.gelb{background:color-mix(in srgb,var(--gelb-text) 16%,transparent);color:var(--gelb-text)}
+.ap .pvn-tag.ok{background:color-mix(in srgb,var(--ok) 16%,transparent);color:var(--ok)}
 .ap .pvn-zt{display:flex;flex-direction:column;gap:2px}
 .ap .pvn-zt b{font-size:15px}
 .ap .pvn-zt span{font-size:12px;color:var(--dim)}
 .ap .pvn-buchk{align-self:flex-start;height:38px;padding:0 20px}
 .ap .pvn-zwei{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-items:start}
+/* Ort und Patient gleich hoch; Zeiten als Zeitleiste und Verlauf über die ganze Breite */
+.ap .pvn-zwei>.pvn-ortk,.ap .pvn-zwei>.pvn-patk{align-self:stretch}
+.ap .pvn-zwei>.pvn-zeitk,.ap .pvn-zwei>.pvn-verk{grid-column:1/-1}
 .ap .pv-haupt.pvn.eins .pvn-zwei{grid-template-columns:minmax(0,1fr)}
 .ap .pvn-adr{font-weight:600;line-height:1.4}
 .ap .pvn-zeiten{gap:4px}
-.ap .pvn-zr{display:flex;align-items:center;gap:10px;font-size:12.5px}
-.ap .pvn-zr code{font:600 12px ui-monospace,Menlo,monospace;background:var(--flaeche-2);border-radius:4px;padding:1px 6px;min-width:64px;text-align:center}
-.ap .pvn-zr.leer{color:var(--dim)}
-.ap .pvn-zr.leer code{opacity:.6}
+.ap .pvn-zeitk .pvn-zeiten{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.ap .pvn-zr{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding-top:8px;border-top:3px solid var(--ok);font-size:12px;line-height:1.3;color:var(--text-2);min-width:0}
+.ap .pvn-zr span{max-width:100%;overflow-wrap:break-word}
+.ap .pvn-zr code{font:600 13px ui-monospace,Menlo,monospace;color:var(--text)}
+.ap .pvn-zr.leer{border-top-color:var(--trenner);color:var(--dim)}
+.ap .pvn-zr.leer code{color:var(--dim)}
 .ap .pvn-vt b{font-weight:600}
 .ap .pvn-abf{display:flex;flex-direction:column;gap:6px;min-width:0}
 .ap .pvn-abfk{all:unset;cursor:pointer;align-self:flex-start;font-size:12.5px;font-weight:600;color:var(--akzent-text);background:var(--akzent-flaeche);border-radius:7px;padding:3px 9px}
@@ -592,8 +598,9 @@
 /* schmale Mitte: Kästen untereinander (Container-Abfrage, unabhängig von der Fensterbreite) */
 .ap .pvn-mitte{container-type:inline-size}
 @container (max-width: 620px){.ap .pvn-zwei,.ap .pvn-einst{grid-template-columns:minmax(0,1fr)}}
+@container (max-width: 620px){.ap .pvn-zeitk .pvn-zeiten{grid-template-columns:repeat(4,minmax(0,1fr));row-gap:10px}}
 .ap .pvn-streifen{flex-wrap:wrap;overflow:visible}
 .ap .pvn-mini.kurz{flex:none}
 .ap .pvn-mini.kurz .pv-sb.pvn-m{width:30px;height:32px}
-.ap .pv-haupt.pvn.eins{grid-template-columns:72px minmax(0,1fr)}
+.ap .pv-haupt.pvn.eins{grid-template-columns:80px minmax(0,1fr)}
 .ap .pv-haupt.pvn.eins .pvn-r{font-size:10px;padding:9px 0 7px}

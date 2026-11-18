@@ -188,12 +188,12 @@
         </section>
 
         <div class="pvn-zwei">
-          <section class="pv-k"><div class="pv-kk"><span class="lbl">{{d.ortT}}</span><sc-if value="{{d.fl}}"><span class="pv-hint">{{d.fl}}</span></sc-if></div><div class="pv-ki">
+          <section class="pv-k pvn-ortk"><div class="pv-kk"><span class="lbl">{{d.ortT}}</span><sc-if value="{{d.fl}}"><span class="pv-hint">{{d.fl}}</span></sc-if></div><div class="pv-ki">
             <div class="pvn-adr">{{d.adr}}</div>
             <sc-if value="{{d.zusatz}}"><div class="pv-hint">{{d.zusatz}}</div></sc-if>
             <sc-for list="{{d.nav}}" as="n"><div class="pv-nav"><span>{{n.t}}</span><code>{{n.k}}</code><span class="pv-nk"><button class="kn sm" onClick="{{n.kopie}}">Kopieren</button><button class="kn sm" onClick="{{n.pln}}">.pln</button></span></div></sc-for>
           </div></section>
-          <section class="pv-k"><div class="pv-kk"><span class="lbl">Patient</span></div><div class="pv-ki">
+          <section class="pv-k pvn-patk"><div class="pv-kk"><span class="lbl">Patient</span></div><div class="pv-ki">
             <sc-if value="{{d.patZu}}"><span class="pv-hint">{{d.patZu}}</span></sc-if>
             <sc-for list="{{d.pats}}" as="pat"><div class="pv-pat">
               <span class="pv-sicht" style="background: {{pat.sf}}; color: {{pat.sc}};">{{pat.s}}</span>
@@ -203,10 +203,10 @@
             <sc-if value="{{d.patVerlauf}}"><div class="pv-ver"><sc-for list="{{d.patVerlauf}}" as="v"><div class="pv-vz"><span>{{v.z}}</span>{{v.t}}</div></sc-for></div></sc-if>
             <sc-if value="{{d.keinPat}}"><span class="pv-hint">Keine Angaben.</span></sc-if>
           </div></section>
-          <section class="pv-k"><div class="pv-kk"><span class="lbl">Zeiten</span></div><div class="pv-ki pvn-zeiten">
+          <section class="pv-k pvn-zeitk"><div class="pv-kk"><span class="lbl">Zeiten</span></div><div class="pv-ki pvn-zeiten">
             <sc-for list="{{d.zeiten}}" as="z"><div class="{{z.cls}}"><code>{{z.z}}</code><span>{{z.t}}</span></div></sc-for>
           </div></section>
-          <section class="pv-k"><div class="pv-kk"><span class="lbl">Einsatzverlauf</span><span class="pv-hint">neueste oben</span></div><div class="pv-ki"><div class="pv-ver">
+          <section class="pv-k pvn-verk"><div class="pv-kk"><span class="lbl">Einsatzverlauf</span><span class="pv-hint">neueste oben</span></div><div class="pv-ki"><div class="pv-ver">
             <sc-for list="{{d.verlauf}}" as="v"><div class="pv-vz"><span>{{v.z}}</span><sc-if value="{{v.abf}}"><div class="pvn-abf"><button class="{{v.abfCls}}" onClick="{{v.abfKlick}}" aria-expanded="{{v.abfAuf}}">{{v.abfArt}} · {{v.abfN}} Zeilen <i>{{v.pfeil}}</i></button><sc-if value="{{v.abfAuf}}"><div class="pvn-abfz"><sc-for list="{{v.abf}}" as="x"><div>{{x.t}}</div></sc-for></div></sc-if></div></sc-if><sc-if value="{{v.text}}"><span class="pvn-vt"><sc-if value="{{v.von}}"><b>{{v.von}}</b> · </sc-if>{{v.t}}</span></sc-if></div></sc-for>
           </div></div></section>
         </div>
@@ -271,7 +271,7 @@
       <div class="pv-kwerk"><button class="{{folgCls}}" onClick="{{folgen}}">Folgen</button><button class="kn sm" onClick="{{gross}}">Groß</button></div>
       <sc-if value="{{punktHinweis}}"><div class="pv-khinw">Auf die Karte klicken: dorthin fliegen · Esc bricht ab</div></sc-if>
       <sc-if value="{{khLeg}}"><div class="pv-khinw">Vorschläge auf der Karte – Maus über einen Vorschlag hebt ihn hervor</div></sc-if>
-      <div class="pv-kleg"><sc-if value="{{gsLeg}}"><span><i style="background: #F5A524;"></i>Bereitstellungsraum</span></sc-if><span><i style="background: #E5484D;"></i>Einsatzort</span><span><i style="background: #3B8BFF;"></i>Krankenhaus</span><span><i style="background: #4CC38A;"></i>Stützpunkt</span></div>
+      <div class="pv-kleg"><sc-if value="{{gsLeg}}"><span><i style="background: #F5A524;"></i>Bereitstellungsraum</span></sc-if><span><i style="background: #E5484D;"></i>Einsatzort</span><span><i style="background: #3B8BFF;"></i>Krankenhaus</span><span><i style="background: #4CC38A;"></i>Stützpunkt</span><span><i class="pv-kleg-mit"></i>dein Einsatz</span><span><i style="background: #8A93A3;"></i>unterwegs</span></div>
     </div>
   </div>
   </sc-if>

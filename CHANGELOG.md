@@ -1,5 +1,11 @@
 # Änderungen
 
+## 0.116.0-beta.65 – Fahrzeuge auf der Karte des Piloten, ruhigeres Pilotenfenster
+- **Fahrzeuge auf der Karte:** Im Pilotenfenster und im Tablet (MSFS-EFB, H145, X-Plane-Plugin) siehst du jetzt alle Fahrzeuge, die gerade fahren, als kleine graue Punkte (Hubschrauber als Raute). Die Fahrzeuge deines Einsatzes sind immer zu sehen – in ihrer Statusfarbe, mit weißem Rand und Rufname, auch wenn sie stehen; im Großeinsatz alle Fahrzeuge des Großeinsatzes. Mit der Maus über einem Punkt stehen Rufname und Status.
+- **Zielort:** kein farbiger Rahmen mehr (PC, Handy und Tablet); „offen“ und „gebucht“ stehen als kleine Marke rechts oben.
+- **Zeiten:** als Zeitleiste über die ganze Breite (Alarm bis Frei nebeneinander, erledigte Schritte grün), der Einsatzverlauf darunter. Berufungsort und Patient sind gleich hoch.
+- **Ablauf oben** flacher, **Leiste links** etwas breiter – „Einstellungen“ wird nicht mehr abgeschnitten.
+
 ## 0.116.0-beta.64 – Pilotenansicht neu: PC, Handy und Tablet
 - **Pilotenfenster am PC:** Links die Leiste Einsätze · Status · Einstellungen, daneben die Liste aller Einsätze dieser Sitzung (laufend und vergangen) und die Schnell-Statustasten. In der Mitte der gewählte Einsatz mit Ort, Patient, Zeiten (Alarm bis Frei) und Einsatzverlauf, rechts die Karte. Vergangene Einsätze lassen sich wieder öffnen.
 - **Zielort buchen Schritt für Schritt:** Transportart oder Endegrund → (wer bucht) → Alter → Symptom (eintippen, passende erscheinen darunter) → Dringlichkeit (nur die passenden, farbig) → Vorschläge mit Merkmalen und Nummern auf der Karte. „Manuell buchen“ sucht in allen Krankenhäusern. Zurück geht jederzeit.

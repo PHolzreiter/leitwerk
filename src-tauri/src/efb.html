@@ -130,9 +130,8 @@
   .erl div:first-child { border-top: 0; }
   .erl small { display: block; font-size: 11.5px; color: #9AA3B5; }
   .erl b { font-size: 13px; font-weight: 600; }
-  .ziel { border: 1px solid #2A2F3A; }
-  .ziel.ok { border-color: rgba(76,195,138,0.45); }
-  .ziel.offen { border-color: rgba(255,199,44,0.45); }
+  .ziel { }
+  /* Zustand nur als Marke rechts oben, kein farbiger Rahmen (Paul 18.11.2026) */
   .ziel .w { font-size: 15px; font-weight: 700; margin: 4px 0 8px; line-height: 1.3; }
   /* Patient */
   .pat { margin-top: 8px; }
@@ -169,7 +168,9 @@
   .karte .info span { color: #9AA3B5; font-weight: 400; }
   .karte .gross { position: absolute; right: 8px; bottom: 8px; background: rgba(17,18,22,0.88); border-radius: 8px; padding: 6px 10px; font-size: 12.5px; font-weight: 600; color: #F5F7FA; }
   .karte .quelle { position: absolute; left: 6px; bottom: 5px; font-size: 10px; color: #333333; background: rgba(255,255,255,0.78); padding: 1px 5px; border-radius: 3px; }
-  .m-fz { position: absolute; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 4px; border: 2px solid #111216; }
+  /* Fahrzeuge (Paul 18.11.2026): andere, die gerade fahren, klein und grau; die des eigenen Einsatzes groß in Statusfarbe mit weißem Rand */
+  .m-fz { position: absolute; width: 9px; height: 9px; margin: -4.5px 0 0 -4.5px; border-radius: 5px; border: 1px solid #111216; }
+  .m-fz.ein { width: 15px; height: 15px; margin: -7.5px 0 0 -7.5px; border-radius: 8px; border: 2px solid #FFFFFF; }
   .m-fz.nah { -webkit-transform: rotate(45deg); transform: rotate(45deg); border-radius: 2px; }
   .m-lbl { position: absolute; margin: -8px 0 0 10px; font-size: 11px; font-weight: 700; color: #111216; white-space: nowrap; text-shadow: 0 0 3px #FFFFFF, 0 0 3px #FFFFFF; }
   .m-ziel { position: absolute; width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 11px; background: #A61B1B; border: 3px solid #FFFFFF; }
@@ -430,8 +431,8 @@
     for (i = 0; i < fz.length; i++) {
       p = this.pos(fz[i].lat, fz[i].lon);
       if (p.x < -20 || p.y < -20 || p.x > this.box.clientWidth + 20 || p.y > this.box.clientHeight + 20) continue;
-      h += '<div class="m-fz' + (fz[i].nah ? " nah" : "") + '" style="left:' + p.x + "px;top:" + p.y + "px;background:" + esc(fz[i].f) + '"></div>';
-      if (label && (fz[i].ein || fz[i].nah || this.z >= 12)) h += '<div class="m-lbl" style="left:' + p.x + "px;top:" + p.y + 'px">' + esc(fz[i].ruf) + "</div>";
+      h += '<div class="m-fz' + (fz[i].nah ? " nah" : "") + (fz[i].ein ? " ein" : "") + '" style="left:' + p.x + "px;top:" + p.y + "px;background:" + esc(fz[i].f) + '"></div>';
+      if (label && fz[i].ein) h += '<div class="m-lbl" style="left:' + p.x + "px;top:" + p.y + 'px">' + esc(fz[i].ruf) + "</div>";
     }
     if (d.ziel) {
       p = this.pos(d.ziel.lat, d.ziel.lon);

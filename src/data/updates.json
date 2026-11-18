@@ -1,5 +1,16 @@
 [
  {
+  "version": "0.116.0-beta.65",
+  "datum": "2026-11-18",
+  "titel": "Fahrzeuge auf der Karte des Piloten",
+  "punkte": [
+   "Karte im Pilotenfenster und im Tablet: alle fahrenden Fahrzeuge als graue Punkte, die deines Einsatzes in Statusfarbe mit Rufname",
+   "Zielort ohne farbigen Rahmen, Zustand als Marke",
+   "Zeiten als Zeitleiste über die ganze Breite, Verlauf darunter",
+   "Ablauf-Leiste flacher, Leiste links breiter"
+  ]
+ },
+ {
   "version": "0.116.0-beta.64",
   "datum": "2026-11-17",
   "titel": "Pilotenansicht neu: PC, Handy und Tablet",

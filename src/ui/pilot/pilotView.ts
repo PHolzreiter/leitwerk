@@ -2168,6 +2168,36 @@ function handyNeu(fz: SimFahrzeug | undefined, e: Einsatz | undefined): Record<s
 
 /** Zeilenfarben der Fahrzeuge wie in den Listen der Leitstelle (ganze Zeile in Statusfarbe, Schrift dunkel) */
 const ZEILE_FARBE = ST_FARBE;
+
+/** Karte des Piloten (Paul 18.11.2026): Fahrzeuge seines Einsatzes immer und hervorgehoben (Statusfarbe, Rufname),
+ *  alle anderen nur, solange sie fahren (grau, ohne Namen; Hubschrauber als Raute) */
+const FZ_GRAU = "#8A93A3";
+function mitFahrzeuge(fz: SimFahrzeug, e: Einsatz | undefined): SimFahrzeug[] {
+  if (!e) return [];
+  const basis = gsVon(e) ?? e;
+  // Großeinsatz: alle Fahrzeuge des Großeinsatzes (auch die bei anderen Patienten)
+  const ids = new Set([basis.id, e.id, ...sim.state.einsaetze.filter((x) => x.gsKind?.parent === basis.id).map((x) => x.id)]);
+  return Object.values(sim.state.fahrzeuge).filter((x) => x.id !== fz.id && !!x.einsatzId && ids.has(x.einsatzId));
+}
+function kartenFahrzeuge(fz: SimFahrzeug, mit: SimFahrzeug[], alleZeigen: boolean): SimFahrzeug[] {
+  return Object.values(sim.state.fahrzeuge).filter(
+    (x) => x.id !== fz.id && Number.isFinite(x.lat) && x.status !== "abgemeldet" && (mit.includes(x) || !!x.fahrt || (alleZeigen && x.status !== "freiWache")),
+  );
+}
+/** Fahrzeuge für die Tablet-Karte (EFB, H145, X-Plane-Plugin): eigener Einsatz in Statusfarbe, andere grau */
+function tabletFz(fz: SimFahrzeug, mit: SimFahrzeug[]) {
+  // eigener Einsatz zuerst behalten, aber zuletzt zeichnen (liegt oben)
+  return kartenFahrzeuge(fz, mit, tabletKarteAlle)
+    .sort((a, b) => Number(mit.includes(b)) - Number(mit.includes(a)))
+    .slice(0, 400)
+    .reverse()
+    .map((x) => {
+      const d = sim.statusDef(x.status);
+      const ein = mit.includes(x);
+      return { lat: +x.lat.toFixed(5), lon: +x.lon.toFixed(5), ruf: x.funkrufname, s: d.nummer, f: ein ? (ZEILE_FARBE[d.nummer] ?? "#E6E7EA") : FZ_GRAU, nah: x.rmTyp === "NAH", ein };
+    });
+}
+
 /** Karte im Tablet: alle Fahrzeuge zeigen (Umschalter in der Navigation, „ka:alle:1“) */
 let tabletKarteAlle = false;
 
@@ -2237,7 +2267,15 @@ function tabletDaten(fz: SimFahrzeug | undefined, e: Einsatz | undefined, D: Rec
   const kopf = { uhr, heli: fz.kurzname || fz.funkrufname, st: { n: st.nummer, t: st.name, f: ZEILE_FARBE[st.nummer] ?? st.farbe }, gr };
   if (!e) {
     const kt = sim.pilotKt(fz);
-    if (!kt) return { ...kopf, unter: `${fz.funkrufname} · ${fz.stationName}`, ein: null };
+    if (!kt) {
+      const kurs0 = flugsim.daten && datenFrisch() ? flugsim.daten.kurs : null;
+      return {
+        ...kopf,
+        unter: `${fz.funkrufname} · ${fz.stationName}`,
+        ein: null,
+        karte: { ich: { lat: +fz.lat.toFixed(5), lon: +fz.lon.toFixed(5), kurs: kurs0 === null ? null : Math.round(kurs0), f: ZEILE_FARBE[st.nummer] ?? "#DCC23A" }, ziel: null, fz: tabletFz(fz, []), alle: tabletKarteAlle, nav: null, text: "" },
+      };
+    }
     // Überstellung (KT/SEK): Einsatz-Seite mit Abholort und Ziel, ohne Buchen
     const k = kt.k;
     const d = k.d;
@@ -2273,7 +2311,7 @@ function tabletDaten(fz: SimFahrzeug | undefined, e: Einsatz | undefined, D: Rec
       karte: {
         ich: { lat: +fz.lat.toFixed(5), lon: +fz.lon.toFixed(5), kurs: kurs === null ? null : Math.round(kurs), f: ZEILE_FARBE[st.nummer] ?? "#DCC23A" },
         ziel: zielPunkt,
-        fz: [],
+        fz: tabletFz(fz, []),
         alle: tabletKarteAlle,
         nav: zielPunkt && m > 150 ? { kurs: String(Math.round(peilung(fz, zielPunkt))).padStart(3, "0"), km: km1(m), min: minuten(flugSek(m)), an: ank ? new Date(t + ank.min * 60000).toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" }) : "" } : null,
         text: fz.status === "amBO" ? "am Abholort" : fz.status === "amZO" ? "am Ziel" : "",
@@ -2336,14 +2374,7 @@ function tabletDaten(fz: SimFahrzeug | undefined, e: Einsatz | undefined, D: Rec
   const landung = kh ? khLandung(kh) : null;
   const zielPunkt = fz.status === "zumZO" && landung ? { lat: landung.lat, lon: landung.lon, t: kh!.kurzname || kh!.name, kh: true } : ziel && ["alarmWache", "alarmFunk", "alarmiert", "zumBO", "amBO"].includes(fz.status) ? { lat: ziel.lat, lon: ziel.lon, t: ziel.label, kh: false } : null;
   const kurs = flugsim.daten && datenFrisch() ? flugsim.daten.kurs : null;
-  const fahrzeuge = Object.values(sim.state.fahrzeuge)
-    .filter((x) => x.id !== fz.id && Number.isFinite(x.lat))
-    .filter((x) => alle.includes(x) || x.rmTyp === "NAH" || (tabletKarteAlle && !["freiWache", "abgemeldet"].includes(x.status)))
-    .slice(0, 400)
-    .map((x) => {
-      const d = sim.statusDef(x.status);
-      return { lat: +x.lat.toFixed(5), lon: +x.lon.toFixed(5), ruf: x.funkrufname, s: d.nummer, f: ZEILE_FARBE[d.nummer] ?? "#E6E7EA", nah: x.rmTyp === "NAH", ein: alle.includes(x) };
-    });
+  const fahrzeuge = tabletFz(fz, mitFahrzeuge(fz, e));
   const m = zielPunkt ? distanceM(fz, zielPunkt) : 0;
   const ank = sim.pilotAnkunft(fz);
   const karte = {
@@ -2692,13 +2723,55 @@ async function karteStarten(box: HTMLElement): Promise<void> {
       map.addSource("plt-fuss", { type: "geojson", data: leer() });
       map.addSource("plt-ziele", { type: "geojson", data: leer() });
       map.addSource("plt-heli", { type: "geojson", data: leer() });
+      map.addSource("plt-fz", { type: "geojson", data: leer() });
       // Hubschrauber als Pfeil (einfarbig, Farbe = Status)
       map.addImage("plt-pfeil", pfeilBild(), { sdf: true, pixelRatio: 2 });
+      map.addImage("plt-raute", rautenBild(), { sdf: true, pixelRatio: 2 });
       // Route: nächster Abschnitt gestrichelt, der jetzige Abschnitt durchgezogen (wie im Entwurf)
       map.addLayer({ id: "plt-route", type: "line", source: "plt-route", layout: { "line-cap": "round" }, paint: { "line-color": "#6AA6FF", "line-width": 2.5, "line-dasharray": [2, 2], "line-opacity": 0.9 } });
       map.addLayer({ id: "plt-linie", type: "line", source: "plt-linie", layout: { "line-cap": "round" }, paint: { "line-color": "#3B8BFF", "line-width": 4, "line-opacity": 0.95 } });
       // Großeinsatz: Weg des Teams vom Bereitstellungsraum zum Einsatzort (Fahrzeug)
       map.addLayer({ id: "plt-fuss", type: "line", source: "plt-fuss", layout: { "line-cap": "round" }, paint: { "line-color": "#F5A524", "line-width": 3.5, "line-dasharray": [0.6, 2] } });
+      // Fahrzeuge (Paul 18.11.2026): andere, die gerade fahren – klein und grau; die deines Einsatzes in Statusfarbe mit Rufname
+      const rand = istDunkel() ? "#111216" : "#ffffff";
+      map.addLayer({ id: "plt-fz-andere", type: "circle", source: "plt-fz", filter: ["all", ["!", ["get", "mit"]], ["!", ["get", "nah"]]], paint: { "circle-radius": 4, "circle-color": FZ_GRAU, "circle-stroke-color": rand, "circle-stroke-width": 1.2, "circle-opacity": 0.9 } });
+      map.addLayer({ id: "plt-fz-mit", type: "circle", source: "plt-fz", filter: ["all", ["get", "mit"], ["!", ["get", "nah"]]], paint: { "circle-radius": 7, "circle-color": ["get", "farbe"], "circle-stroke-color": "#ffffff", "circle-stroke-width": 2.2 } });
+      map.addLayer({
+        id: "plt-fz-nah",
+        type: "symbol",
+        source: "plt-fz",
+        filter: ["get", "nah"],
+        layout: { "icon-image": "plt-raute", "icon-size": ["case", ["get", "mit"], 1, 0.7], "icon-allow-overlap": true, "icon-ignore-placement": true },
+        paint: { "icon-color": ["get", "farbe"], "icon-halo-color": ["case", ["get", "mit"], "#ffffff", rand], "icon-halo-width": ["case", ["get", "mit"], 2, 1] },
+      });
+      map.addLayer({
+        id: "plt-fz-text",
+        type: "symbol",
+        source: "plt-fz",
+        filter: ["get", "mit"],
+        layout: { "text-field": ["get", "ruf"], "text-font": ["Noto Sans Medium"], "text-size": 11.5, "text-offset": [0.95, 0], "text-anchor": "left", "text-allow-overlap": false },
+        paint: { "text-color": istDunkel() ? "#F5F7FA" : "#18212C", "text-halo-color": istDunkel() ? "#111216" : "#ffffff", "text-halo-width": 1.5 },
+      });
+      // Maus über einem Fahrzeug: Rufname und Status
+      const tip = document.createElement("div");
+      tip.className = "pv-ktip";
+      tip.hidden = true;
+      box.appendChild(tip);
+      for (const l of ["plt-fz-andere", "plt-fz-mit", "plt-fz-nah"]) {
+        map.on("mousemove", l, (ev) => {
+          const p = ev.features?.[0]?.properties as { ruf?: string; st?: string } | undefined;
+          if (!p) return;
+          tip.textContent = `${p.ruf ?? ""} · ${p.st ?? ""}`;
+          tip.style.left = `${ev.point.x + 12}px`;
+          tip.style.top = `${ev.point.y - 10}px`;
+          tip.hidden = false;
+          map.getCanvas().style.cursor = "default";
+        });
+        map.on("mouseleave", l, () => {
+          tip.hidden = true;
+          map.getCanvas().style.cursor = "";
+        });
+      }
       map.addLayer({
         id: "plt-ziele",
         type: "circle",
@@ -2762,6 +2835,23 @@ function pfeilBild(): ImageData {
   return g.getImageData(0, 0, n, n);
 }
 
+/** andere Hubschrauber auf der Karte: Raute (einfarbig, Farbe über icon-color) */
+function rautenBild(): ImageData {
+  const n = 32;
+  const c = document.createElement("canvas");
+  c.width = c.height = n;
+  const g = c.getContext("2d")!;
+  g.beginPath();
+  g.moveTo(n / 2, 4);
+  g.lineTo(n - 4, n / 2);
+  g.lineTo(n / 2, n - 4);
+  g.lineTo(4, n / 2);
+  g.closePath();
+  g.fillStyle = "#fff";
+  g.fill();
+  return g.getImageData(0, 0, n, n);
+}
+
 /** Kurs des Hubschraubers: aus dem Flugsimulator, sonst Richtung zum nächsten Ziel */
 let letzterKurs = 0;
 function kursVon(fz: SimFahrzeug): number {
@@ -2785,12 +2875,23 @@ function punkt(lat: number, lon: number, props: Record<string, unknown>): GeoJSO
 }
 
 let letzteZiele = "";
+let letzteFzKarte: GeoJSON.Feature[] = [];
 function karteAktualisieren(fz: SimFahrzeug | undefined, e: Einsatz | undefined): void {
   const map = karte?.map;
   if (!map || !map.getSource("plt-heli")) return;
   const quelle = (id: string) => map.getSource(id) as maplibregl.GeoJSONSource | undefined;
   const st = fz ? sim.statusDef(fz.status) : null;
   quelle("plt-heli")?.setData({ type: "FeatureCollection", features: fz ? [punkt(fz.lat, fz.lon, { farbe: st ? ST_FARBE[st.nummer] ?? "#3B8BFF" : "#3B8BFF", kurs: kursVon(fz) })] : [] });
+  // Fahrzeuge: eigener Einsatz hervorgehoben, andere nur solange sie fahren
+  if (fz) {
+    const mit = mitFahrzeuge(fz, e);
+    letzteFzKarte = kartenFahrzeuge(fz, mit, false).map((x) => {
+        const d = sim.statusDef(x.status);
+        const m = mit.includes(x);
+        return punkt(x.lat, x.lon, { mit: m, nah: x.rmTyp === "NAH", farbe: m ? (ST_FARBE[d.nummer] ?? d.farbe) : FZ_GRAU, ruf: x.funkrufname, st: `${d.nummer} ${d.name}` });
+    });
+  } else letzteFzKarte = [];
+  quelle("plt-fz")?.setData({ type: "FeatureCollection", features: letzteFzKarte });
   const kh = e?.kh ? store.get("hospitals", e.kh.hospitalId) : undefined;
   const ziele: GeoJSON.Feature[] = [];
   // Großeinsatz: Bereitstellungsraum (gelb) und Weg des Teams zum Einsatzort
@@ -2831,9 +2932,10 @@ function karteAktualisieren(fz: SimFahrzeug | undefined, e: Einsatz | undefined)
   routePunkte = fz ? [[fz.lon, fz.lat], ...r] : [];
   karteFolgen(false);
   if (location.search.includes("debug")) {
+    (window as unknown as { __pilotMap: unknown }).__pilotMap = map;
     (window as unknown as { __pilotKarte: unknown }).__pilotKarte = () => {
       const b = map.getBounds();
-      return { linie: r.length + (r.length ? 1 : 0), drin: routePunkte.every(([x, y]) => b.contains([x, y])) };
+      return { linie: r.length + (r.length ? 1 : 0), drin: routePunkte.every(([x, y]) => b.contains([x, y])), fz: letzteFzKarte.map((x) => x.properties) };
     };
   }
 }
