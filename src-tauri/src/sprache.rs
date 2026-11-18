@@ -416,6 +416,8 @@ struct Aufnahme {
     /// wer aufnimmt: „eingabe“ (Spracheingabe), „funk“ (Sprechfunk), „live“ (Freisprechen mit dem Cloud-Anrufer)
     besitz: &'static str,
     seit: std::time::Instant,
+    /// letztes Lebenszeichen des Fensters, das die Aufnahme hält (Sprechtaste gedrückt, Anruf läuft)
+    lebt: std::time::Instant,
     stopp: std::sync::mpsc::Sender<()>,
     faden: std::thread::JoinHandle<()>,
     daten: Arc<Mutex<Vec<f32>>>,
@@ -427,6 +429,50 @@ struct Aufnahme {
 static AUFNAHMEN: Mutex<Vec<Aufnahme>> = Mutex::new(Vec::new());
 static NAECHSTE: AtomicU32 = AtomicU32::new(1);
 static PEGEL: AtomicU32 = AtomicU32::new(0);
+
+/// Sicherung (Beta 67, Paul 18.11.2026): eine Aufnahme bleibt offen, solange das Fenster, das sie hält, Lebenszeichen
+/// schickt (jede Sekunde, egal ob gesprochen wird). Bleiben sie aus (Fenster zu, abgestürzt, Taste verloren), schließt
+/// das Programm das Mikrofon – zentral hier, nicht je Fenster (mehrere LeitWerk-Fenster kannten nur ihre eigenen Aufnahmen).
+const OHNE_LEBENSZEICHEN: std::time::Duration = std::time::Duration::from_secs(10);
+static WAECHTER: std::sync::Once = std::sync::Once::new();
+
+fn waechter_starten() {
+    WAECHTER.call_once(|| {
+        std::thread::spawn(|| loop {
+            std::thread::sleep(std::time::Duration::from_secs(1));
+            let weg: Vec<Aufnahme> = match AUFNAHMEN.lock() {
+                Ok(mut v) => {
+                    let mut raus = Vec::new();
+                    let mut i = 0;
+                    while i < v.len() {
+                        if v[i].lebt.elapsed() > OHNE_LEBENSZEICHEN {
+                            raus.push(v.remove(i));
+                        } else {
+                            i += 1;
+                        }
+                    }
+                    raus
+                }
+                Err(_) => Vec::new(),
+            };
+            for a in weg {
+                eprintln!("Mikrofon ohne Lebenszeichen ({}, {:.0} s offen) – geschlossen", a.besitz, a.seit.elapsed().as_secs_f32());
+                let _ = aufnahme_beenden(a);
+            }
+        });
+    });
+}
+
+/// Lebenszeichen der Fenster: diese Aufnahmen werden noch gebraucht
+#[tauri::command]
+pub fn sprache_aufnahmen_leben(ids: Vec<u32>) {
+    if let Ok(mut v) = AUFNAHMEN.lock() {
+        let jetzt = std::time::Instant::now();
+        for a in v.iter_mut().filter(|a| ids.contains(&a.id)) {
+            a.lebt = jetzt;
+        }
+    }
+}
 
 fn eingabe_geraet(name: &Option<String>) -> Result<cpal::Device, String> {
     let host = cpal::default_host();
@@ -686,7 +732,8 @@ fn aufnahme_starten(mikro: Option<String>, funk: Option<tauri::ipc::Channel<Stri
                         let mut kod = if pcm16 { Kodierer::Pcm(Pcm16Kodierer::neu(rate)) } else { Kodierer::Funk(FunkKodierer::neu(rate)) };
                         let mut ab = 0usize;
                         // Freisprechen mit dem Cloud-Anrufer läuft so lange wie der Anruf (höchstens eine Stunde)
-                        let schluss = std::time::Instant::now() + std::time::Duration::from_secs(if pcm16 { 3600 } else { 120 });
+                        // Funk: beliebig lang (Paul 18.11.2026) – nur eine Notbremse nach 10 Minuten
+                        let schluss = std::time::Instant::now() + std::time::Duration::from_secs(if pcm16 { 3600 } else { 600 });
                         loop {
                             let fertig = match stopp_rx.recv_timeout(std::time::Duration::from_millis(100)) {
                                 Err(std::sync::mpsc::RecvTimeoutError::Timeout) => std::time::Instant::now() >= schluss,
@@ -718,7 +765,7 @@ fn aufnahme_starten(mikro: Option<String>, funk: Option<tauri::ipc::Channel<Stri
                         }
                     }
                     None => {
-                        let _ = stopp_rx.recv_timeout(std::time::Duration::from_secs(120));
+                        let _ = stopp_rx.recv_timeout(std::time::Duration::from_secs(600));
                     }
                 }
                 // erst anhalten, dann freigeben: so geht das Mikrofon sicher zu (auch wenn cpal den Strom festhält)
@@ -734,10 +781,12 @@ fn aufnahme_starten(mikro: Option<String>, funk: Option<tauri::ipc::Channel<Stri
         .recv_timeout(std::time::Duration::from_secs(10))
         .map_err(|_| "Mikrofon antwortet nicht".to_string())??;
     let id = NAECHSTE.fetch_add(1, Ordering::Relaxed);
+    waechter_starten();
+    let jetzt = std::time::Instant::now();
     AUFNAHMEN
         .lock()
         .map_err(|_| "Aufnahme blockiert".to_string())?
-        .push(Aufnahme { id, besitz, seit: std::time::Instant::now(), stopp: stopp_tx, faden, daten, rate });
+        .push(Aufnahme { id, besitz, seit: jetzt, lebt: jetzt, stopp: stopp_tx, faden, daten, rate });
     Ok(id)
 }
 

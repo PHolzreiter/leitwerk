@@ -1085,6 +1085,10 @@ export interface GsLauf {
   segUm?: number | null;
   /** in den Bereitstellungsraum alarmiert (für Soll/Ist) */
   brAlarm?: string[];
+  /** seit wann im Bereitstellungsraum Notarztmittel stehen, die kein Patient mehr braucht (Ticket 10) */
+  naUnnoetigSeit?: number | null;
+  /** Spieler-NAH, denen schon gesagt wurde, dass sie im BR nicht mehr gebraucht werden */
+  naUnnoetigGesagt?: string[];
   /** zweiter BEL: bleibt im Bereitstellungsraum, bis er leer ist */
   brBel?: string | null;
   brLeerSeit?: number | null;
@@ -3096,6 +3100,13 @@ export class Simulation extends GsKern {
     fz.phase = "warteKH";
     fz.phaseEnde = null;
     const verdacht = this.verdacht(e);
+    // Ticket 12 (Paul 18.11.2026): NA vom Spieler-NAH fährt im RTW mit – das sagt der RTW auch so (nicht „ohne Notarzt“)
+    const naHeli = this.einsatzFz(e).find((x) => x.pilot?.plan?.art === "uebergabe" && x.pilot.plan.naMit);
+    if (naHeli && !e.gs && !e.gsKind) {
+      const kh = this.khFuerTransport(e);
+      this.log(e, `${fz.funkrufname}: Transport mit dem Notarzt von ${naHeli.funkrufname} im RTW`);
+      this.funk(fz.funkrufname, e.id, `fahren mit dem Notarzt vom ${this.rufname(naHeli)} im RTW ${kh ? `ins ${kh.kurzname || kh.name}` : "ins Krankenhaus"}`, "info");
+    }
     if (e.kh) {
       this.startTransport(e);
       return this.rendezvousLos(e, fz);
@@ -5764,7 +5775,10 @@ export class Simulation extends GsKern {
         e.naWarten = null;
         return false;
       }
-      const rvMoeglich = !!nef && this.settings.rendezvous !== false;
+      // Ticket 13 (Paul 18.11.2026): zwei RTW (zwei Patienten) warten auf dasselbe NEF – ein Rendezvous gilt, der andere RTW
+      // macht kein neues aus (früher überschrieben sie sich gegenseitig, alle 1–2 Minuten ein neuer Treffpunkt am Funk)
+      const rvAnderer = !!e.rendezvous && e.rendezvous.status !== "fertig" && e.rendezvous.rtwId !== fz.id;
+      const rvMoeglich = !!nef && this.settings.rendezvous !== false && !rvAnderer;
       if (rot) {
         melden();
         // ROT: gleich schauen, ob das NEF am Weg ins Krankenhaus entgegenkommt
@@ -5893,7 +5907,11 @@ export class Simulation extends GsKern {
       w.rv = "nein";
       return;
     }
-    // inzwischen da, storniert oder fertig?
+    // inzwischen da, storniert oder fertig – oder hat schon ein anderer RTW ein Rendezvous mit dem NEF?
+    if (e.rendezvous && e.rendezvous.status !== "fertig" && e.rendezvous.rtwId !== rtw.id) {
+      if (e.naWarten === w) w.rv = null;
+      return;
+    }
     if (e.naWarten !== w || rtw.einsatzId !== e.id || nef.einsatzId !== e.id || nef.phase === "vorOrt") {
       if (e.naWarten === w) w.rv = null;
       return;
@@ -5908,7 +5926,7 @@ export class Simulation extends GsKern {
     }
     // am Funk ein einfacher, aber genauer Begriff (größere Orte mit Straße – Paul 15.11.2026)
     const label = await treffpunktGenau(punkt);
-    if (e.naWarten !== w || rtw.einsatzId !== e.id || nef.einsatzId !== e.id) {
+    if (e.naWarten !== w || rtw.einsatzId !== e.id || nef.einsatzId !== e.id || (e.rendezvous && e.rendezvous.status !== "fertig" && e.rendezvous.rtwId !== rtw.id)) {
       if (e.naWarten === w) w.rv = null;
       return;
     }
@@ -6777,9 +6795,9 @@ export class Simulation extends GsKern {
     const jetzt = Date.now();
     const alle = this.state.funkGespraeche ?? [];
     let geaendert = false;
-    // Sprechtaste hängt (Verbindung weg, Fenster zu): nach 2 Minuten bzw. sobald der Spieler weg ist frei geben
+    // Sprechtaste hängt (Verbindung weg, Fenster zu): nach 10 Minuten bzw. sobald der Spieler weg ist frei geben (Funksprüche dürfen lang sein)
     const sendet = this.state.funkSendet;
-    if (sendet && (jetzt - sendet.seit > 120_000 || (this.mode === "host" && this.istOnline && !this.istOnline(sendet.pid)))) {
+    if (sendet && (jetzt - sendet.seit > 600_000 || (this.mode === "host" && this.istOnline && !this.istOnline(sendet.pid)))) {
       this.state.funkSendet = null;
       geaendert = true;
     }
@@ -7611,6 +7629,11 @@ export class Simulation extends GsKern {
     const hier = `Hier ${this.rufname(rtw)}`;
     const vorOrt = rtw.phase === "vorOrt" || rtw.phase === "warteKH" || rtw.phase === "suche";
     const min = rtw.phaseEnde ? Math.max(1, Math.round((rtw.phaseEnde - this.state.zeit) / MIN)) : null;
+    // Ticket 11 (Paul 18.11.2026): „… könnt ihr uns entgegenkommen“ – der RTW bestätigt (im Spiel ändert sich nichts)
+    if (/entgegen ?(kommen|fahren)|kommt (uns )?entgegen|fahrt (uns )?entgegen/.test(t)) {
+      if (!vorOrt) return `${hier}, verstanden, sind selbst noch auf Anfahrt, kommen`;
+      return `${hier}, verstanden, kommen euch mit dem Patienten entgegen, kommen`;
+    }
     if (/\blande|landeplatz|landung|aufsetzen|wo (können|koennen|sollen|dürfen) wir/.test(t)) {
       if (!vorOrt || !e) return `${hier}, sind selbst noch nicht vor Ort${min ? `, Eintreffen in ca. ${min} Minute${min === 1 ? "" : "n"}` : ""}, kommen`;
       // gleiche Antwort für denselben Einsatz

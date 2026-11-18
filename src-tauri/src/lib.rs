@@ -635,6 +635,7 @@ pub fn run() {
             sprache::sprache_aufnahme_abbrechen,
             sprache::sprache_aufnahme_stopp,
             sprache::sprache_aufnahmen,
+            sprache::sprache_aufnahmen_leben,
             sprache::sprache_gpu,
             protokoll::protokoll_schreiben,
             protokoll::protokoll_aufnahme,

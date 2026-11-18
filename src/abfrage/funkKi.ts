@@ -226,6 +226,22 @@ function aufgabeText(g: FunkGespraech, a: FunkAusstehend, inhalt: string): strin
     .join("\n");
 }
 
+/**
+ * Grammatik nachbessern (Paul 18.11.2026): die KI macht aus „Patient“ bei Frauen oft falsche Formen –
+ * „mit dem Patientin“, „beim Patientin“, „Alle Patientin abtransportiert“.
+ */
+export function patientinGrammatik(t: string): string {
+  return t
+    .replace(/\b([Mm]it|[Vv]on|[Zz]u|[Aa]us|[Bb]ei|[Nn]ach) dem Patientin\b/g, "$1 der Patientin")
+    .replace(/\b([Bb])eim Patientin\b/g, "$1ei der Patientin")
+    .replace(/\b([Zz])um Patientin\b/g, "$1ur Patientin")
+    .replace(/\b([Vv])om Patientin\b/g, "$1on der Patientin")
+    .replace(/\b([Dd])en Patientin\b/g, "$1ie Patientin")
+    .replace(/\b([Dd])er Patientin (ist|hat|wird|liegt|klagt|war)\b/g, "$1ie Patientin $2")
+    .replace(/\b([Dd])es Patientin\b/g, "$1er Patientin")
+    .replace(/\b(alle|beide|mehrere|zwei|drei|vier|fünf|sechs|sieben|acht|neun|zehn|\d+) Patientin\b/gi, "$1 Patienten");
+}
+
 /** Formulierten Funkspruch erzeugen (KI, geprüft) – sonst der feste */
 export async function funkSpruchErzeugen(g: FunkGespraech, a: FunkAusstehend): Promise<{ text: string; quelle: "ki" | "fest"; nachgebessert?: string }> {
   const fest = { text: a.fest, quelle: "fest" as const };
@@ -254,6 +270,7 @@ export async function funkSpruchErzeugen(g: FunkGespraech, a: FunkAusstehend): P
       probleme = p2;
     }
     if (!t) return fest;
+    t = patientinGrammatik(t);
     return { text: zusammensetzen(kopf, t, schluss), quelle: "ki", nachgebessert: nach };
   } catch (err) {
     console.warn("Funk-KI", err);

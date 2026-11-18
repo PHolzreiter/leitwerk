@@ -138,6 +138,8 @@ export const GEBIETE: Gebiet[] = [
 export interface Settings {
   status: StatusDef[];
   stufen: StufeDef[];
+  /** Stand der Stufen-Korrekturen (Beta 67: BLS gelb ohne Sondersignal, Ticket 1) */
+  stufenStand?: number;
   /** Anteil der Kategorien an den Notfällen (relativ; früher: Einsätze pro Stunde) */
   aufkommen: Record<Kategorie, number>;
   /** Aufkommen je Stunde (0–23): Notfälle (rd) und Krankentransporte (kt) pro Stunde */
@@ -303,5 +305,10 @@ export function mergeSettings(saved: Partial<Settings> | undefined): Settings {
   const savedStufen = (saved.stufen ?? []).filter((s) => typeof (s as Partial<StufeDef>).rettungsmittel === "string");
   const stufen = d.stufen.map((def) => ({ ...def, ...(savedStufen.find((s) => s.stufe === def.stufe) ?? {}) }));
   for (const s of savedStufen) if (!stufen.some((x) => x.stufe === s.stufe)) stufen.push(s);
-  return { ...d, ...saved, status, stufen, aufkommen: { ...d.aufkommen, ...(saved.aufkommen ?? {}) }, ausrueck: { ...d.ausrueck, ...(saved.ausrueck ?? {}) }, stunden: saved.stunden?.length === 24 ? saved.stunden.map((x, i) => ({ ...d.stunden[i], ...x })) : d.stunden };
+  // Beta 67 (Ticket 1, Paul): BLS gelb fährt ohne Sondersignal – alter Standard (ja) einmalig umstellen
+  if ((saved.stufenStand ?? 0) < 67) {
+    const bg = stufen.find((x) => x.stufe === "BLS gelb");
+    if (bg && bg.sondersignal) bg.sondersignal = false;
+  }
+  return { ...d, ...saved, stufenStand: 67, status, stufen, aufkommen: { ...d.aufkommen, ...(saved.aufkommen ?? {}) }, ausrueck: { ...d.ausrueck, ...(saved.ausrueck ?? {}) }, stunden: saved.stunden?.length === 24 ? saved.stunden.map((x, i) => ({ ...d.stunden[i], ...x })) : d.stunden };
 }

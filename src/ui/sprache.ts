@@ -1425,20 +1425,12 @@ export function funkNamenGlaetten(t: string, namen?: string[], bevorzugt?: strin
 // ------------------------------------------------------------ Sicherung: Mikrofon nicht offen lassen
 //
 // Das Programm nimmt nur auf, solange eine Sprechtaste gehalten wird (bzw. beim Freisprechen während des Anrufs).
-// Bleibt eine Aufnahme trotzdem offen (z. B. weil ein Anruf auf ungewöhnliche Art endete), schließt sie diese Sicherung –
-// sonst zeigt macOS dauerhaft das orange Mikrofon-Zeichen.
+// Beta 67 (Paul 18.11.2026): Jedes Fenster meldet jede Sekunde die Aufnahmen, die es hält (Taste gedrückt – egal,
+// ob gerade gesprochen wird). Das Programm schließt zentral nur Aufnahmen, für die kein Fenster mehr Lebenszeichen
+// schickt. Früher prüfte jedes Fenster selbst und schloss nach 4 s die Funk-Aufnahmen der anderen Fenster.
 if (inTauri()) {
-  // Aufnahmen im Programm, die niemand im Fenster kennt (z. B. ein Anruf endete auf ungewöhnliche Art): nach ein paar
-  // Sekunden schließen. Laufende Aufnahmen (Funk, Spracheingabe, Freisprechen) stehen in aufnahmeIds und bleiben offen.
   setInterval(() => {
-    void invoke<{ id: number; besitz: string; sekunden: number }[]>("sprache_aufnahmen")
-      .then((alle) => {
-        for (const a of alle) {
-          if (aufnahmeIds.has(a.id) || a.sekunden < 4) continue;
-          console.warn(`Mikrofon war noch offen (${a.besitz}, ${Math.round(a.sekunden)} s), obwohl niemand spricht – geschlossen`);
-          void invoke("sprache_aufnahme_abbrechen", { id: a.id }).catch(() => undefined);
-        }
-      })
-      .catch(() => undefined);
-  }, 2500);
+    if (!aufnahmeIds.size) return;
+    void invoke("sprache_aufnahmen_leben", { ids: [...aufnahmeIds] }).catch(() => undefined);
+  }, 1000);
 }

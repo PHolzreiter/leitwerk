@@ -186,6 +186,8 @@ try:
         a = g.evaluate(ANDERE)
         print("    nach 4 + 1,5 min", a)
         check(any(x["mit"] and x["typ"] == "RTW" and x["phase"] == "transport" for x in a), "RTW: NA im RTW – RTW fährt mit Status 4 los")
+        fm = g.evaluate(f"() => {{ const s = {S}; const h = s.state.fahrzeuge[window.__heli]; const e = s.einsatz(h.einsatzId); return e ? e.protokoll.map(x => x.text).filter(t => /Notarzt von|Notarzt vom|ohne Notarzt/.test(t)) : []; }}")
+        check(any("Notarzt von" in x for x in fm) and not any("ohne Notarzt" in x for x in fm), f"RTW (Beta 67): sagt, dass der Notarzt mitfährt ({fm[:2]})")
         g.evaluate(FREI); g.wait_for_timeout(500)
 
         # ---- Kein Transport: RTW sofort frei

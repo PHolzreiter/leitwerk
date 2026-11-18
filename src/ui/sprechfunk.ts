@@ -552,8 +552,8 @@ export async function sprechStart(ziel: FunkZiel = "leo", gruppe?: Sprechgruppe)
   s.letzteDaten = Date.now();
   // inzwischen abgelehnt (Kanal belegt): Mikrofon gleich wieder aus
   if (s.abgelehnt) return abgelehntAufraeumen(s);
-  // höchstens eine Minute am Stück
-  s.uhr = window.setTimeout(() => sendung === s && void sprechStopp("eine Minute erreicht"), 60_000);
+  // beliebig lang (Paul 18.11.2026) – nur eine Notbremse nach 10 Minuten
+  s.uhr = window.setTimeout(() => sendung === s && void sprechStopp("zehn Minuten erreicht"), 600_000);
   // schon wieder losgelassen, während das Mikrofon startete?
   if (s.frueh) void sprechStopp();
 }

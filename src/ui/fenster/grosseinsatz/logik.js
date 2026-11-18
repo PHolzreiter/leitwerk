@@ -109,7 +109,7 @@ export class GrosseinsatzLogik extends DCLogic {
       const patT = { wrap: '', text: true, stand: false, kh: false, b: 'ca. ' + p.a + ' J., ' + p.g, t: '', d: '' };
       const musT = { wrap: '', text: true, stand: false, kh: false, b: '', t: p.m, d: '' };
       const kombi = { wrap: '', text: true, stand: false, kh: false, b: 'ca. ' + p.a + ' J., ' + p.g + ' · ', t: p.m, d: '' };
-      const standZ = { wrap: '', text: false, stand: true, kh: false, stCls: 'stnd ' + (STCLS[p.st] !== undefined ? STCLS[p.st] : p.st), t: p.stT };
+      const standZ = { wrap: '', text: false, stand: true, kh: false, stCls: 'stnd ' + (STCLS[p.st] !== undefined ? STCLS[p.st] : p.st), t: p.stT + (p.nahT ? ' · Spieler-NAH ' + p.nahT : '') };
       const zellen = tl === 'b' ? [patT, musT, standZ, khZelle(p)] : tl === 'n' ? [kombi, standZ, khZelle(p)] : [kombi, khZelle(p)];
       return { nr: String(p.nr), cls: 'pz ' + p.s + (p.st === 'kh' ? ' weg' : ''), titel: 'Patient ' + p.nr + ' · Sichtung ' + S_NAME[p.s] + ' · ' + p.stT, zellen };
     });
@@ -141,11 +141,14 @@ export class GrosseinsatzLogik extends DCLogic {
 
     // ---- Spieler-NAH: Patient wählen (sofortiger Wechsel, bis ein Zielort gebucht ist)
     const wahlbar = PAT.filter(p => p.s !== 'tot' && p.st !== 'fahrt' && p.st !== 'kh');
+    // mehrere Spieler-NAH: Patienten eines anderen Spieler-NAH sind nicht wählbar (Ticket 8)
+    const belegtVon = (s) => { const m = {}; (d.spieler || []).forEach(o => { if (o.id === s.id) return; const n = o.wunsch !== null && o.wunsch !== undefined ? o.wunsch : o.nr; if (n !== null && n !== undefined) m[n] = o.r; }); return m; };
     const spieler = (d.spieler || []).map(s => {
       const akt = s.wunsch !== null && s.wunsch !== undefined ? s.wunsch : s.nr;
-      const opts = (akt === null || akt === undefined ? [{ v: '', t: '– Patient wählen –' }] : []).concat(wahlbar.map(p => ({ v: String(p.nr), t: 'Patient ' + p.nr + ' · ' + S_NAME[p.s] + ' · ca. ' + p.a + ' J. · ' + p.m })));
+      const bel = belegtVon(s);
+      const opts = (akt === null || akt === undefined ? [{ v: '', t: '– Patient wählen –' }] : []).concat(wahlbar.filter(p => !bel[p.nr]).map(p => ({ v: String(p.nr), t: 'Patient ' + p.nr + ' · ' + S_NAME[p.s] + ' · ca. ' + p.a + ' J. · ' + p.m + (p.nahT && p.nr !== akt ? ' · ' + p.nahT : '') })));
       const pz = PAT.find(p => p.nr === s.nr);
-      return { r: s.r, wo: s.wo + (s.wunsch !== null && s.wunsch !== undefined && s.wunsch !== s.nr ? ' · Patient ' + s.wunsch + ' vorgemerkt' : ''), frei: !s.zo, fest: s.zo, festT: pz ? 'Patient ' + pz.nr + ' · Zielort gebucht' : 'Zielort gebucht',
+      return { r: s.r, wo: s.wo + (s.wunsch !== null && s.wunsch !== undefined && s.wunsch !== s.nr ? ' · übernimmt Patient ' + s.wunsch : ''), frei: !s.zo, fest: s.zo, festT: pz ? 'Patient ' + pz.nr + ' · Zielort gebucht' : 'Zielort gebucht',
         wert: akt === null || akt === undefined ? '' : String(akt), opts,
         wahl: (e) => { const v = e && e.target ? e.target.value : ''; if (!v) return; app.spielerPatient(s.id, Number(v)); zeige(s.r + ': Patient ' + v); } };
     });

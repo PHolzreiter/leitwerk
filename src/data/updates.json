@@ -1,5 +1,18 @@
 [
  {
+  "version": "0.116.0-beta.67",
+  "datum": "2026-11-19",
+  "titel": "Funk ohne Abbrüche, Großeinsatz mit mehreren Spieler-NAH",
+  "punkte": [
+   "Funk: lange Funksprüche und Pausen werden nicht mehr abgeschnitten – auch mit mehreren LeitWerk-Fenstern",
+   "Großeinsatz: Patient für den Spieler-NAH gilt sofort, tauscht ein anderes Notarztmittel aus, ruft ihn aus dem Bereitstellungsraum ab",
+   "Mehrere Spieler-NAH: eigene Zeile je Hubschrauber, kein Patient doppelt",
+   "Alarmierung im Großeinsatz mit Live-Zahlen; BEL schickt nicht benötigte Notarztmittel frei",
+   "Rendezvous nur noch einmal ausgemacht; RTW-Funk mit Notarzt im RTW und „kommen euch entgegen“",
+   "Funk-Sprache bei Patientinnen korrigiert; BLS gelb ohne Sondersignal"
+  ]
+ },
+ {
   "version": "0.116.0-beta.66",
   "datum": "2026-11-18",
   "titel": "Alarm im Tablet, RTW nach deiner Entscheidung, Fahrzeuge im MSFS",

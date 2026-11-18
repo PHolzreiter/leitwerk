@@ -116,6 +116,15 @@ function daten(e: Einsatz) {
   const vor = gs.phase === "alarm" || gs.phase === "sicht";
   // Patienten
   const pat = (w?.patienten ?? []).filter((p) => gs.gezeigt.includes(p.nr));
+  // Spieler-NAH je Patient (Ticket 8: mehrere Spieler-NAH – wer hat welchen Patienten bzw. ist dafür festgelegt)
+  const nahVon = new Map<number, string>();
+  for (const f of Object.values(sim.state.fahrzeuge)) {
+    if (!f.pilot || !f.einsatzId) continue;
+    const kk = sim.einsatz(f.einsatzId);
+    if (kk?.gsKind?.parent === e.id) nahVon.set(kk.gsKind.nr, f.funkrufname);
+    const wn = gs.pilotWunsch?.[f.id];
+    if (wn !== undefined && !nahVon.has(wn)) nahVon.set(wn, `${f.funkrufname} kommt`);
+  }
   const pats = pat.map((p) => {
     const k = kindVon(e, p.nr);
     const h = k?.kh ? store.get("hospitals", k.kh.hospitalId) : undefined;
@@ -123,7 +132,7 @@ function daten(e: Einsatz) {
     return {
       nr: p.nr, s: p.sichtung, a: p.alter, g: p.geschlecht === "w" ? "w" : "m", m: p.muster, ...s,
       kh: p.sichtung === "tot" ? null : h ? h.kurzname || h.name : null, khLang: h?.name ?? "",
-      anfrage: !!k?.khAnfrage, buchbar: !!k && k.zustand !== "abgeschlossen" && p.sichtung !== "tot",
+      anfrage: !!k?.khAnfrage, buchbar: !!k && k.zustand !== "abgeschlossen" && p.sichtung !== "tot", nahT: nahVon.get(p.nr) ?? "",
     };
   });
   // Soll/Ist

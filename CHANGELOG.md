@@ -1,5 +1,16 @@
 # Änderungen
 
+## 0.116.0-beta.67 – Funk ohne Abbrüche, Großeinsatz mit mehreren Spieler-NAH, Fehlerberichte vom 18.11.
+- **Funk bricht nicht mehr ab:** Mit mehreren LeitWerk-Fenstern (z. B. zweiter Bildschirm und Gesprächsführung) hat ein Fenster die Funk-Aufnahme eines anderen nach 4 Sekunden geschlossen – längere Funksprüche wurden abgeschnitten, „es kam nichts an“. Jetzt bleibt das Mikrofon offen, solange die Sprechtaste gedrückt ist, egal wie lange und auch in Sprechpausen. Geschlossen wird nur noch ein Mikrofon, das kein Fenster mehr hält (Fenster zu, Taste verloren). Funksprüche dürfen bis zu 10 Minuten dauern.
+- **Großeinsatz – Patient für den Spieler-NAH:** Gilt sofort und auch gegen eine bestehende Versorgung – ein anderes Notarztmittel beim Patienten wird gegen den Spieler-NAH getauscht, der RTW bleibt. Steht der Spieler-NAH im Bereitstellungsraum, ruft ihn die Einsatzleitung gleich ab. Ist der Patient noch nicht erreichbar, wartet das Team auf ihn.
+- **Mehrere Spieler-NAH:** Je Spieler-NAH eine Zeile mit Patientenwahl; ein Patient nur für einen Spieler-NAH; in der Patientenliste steht, welcher Spieler-NAH ihn hat bzw. kommt.
+- **Großeinsatz – Zahlen live:** In der Alarmierung zählt jetzt, wer gerade da ist – im Bereitstellungsraum nur, wer noch keinen Patienten hat. So passen Anzeige und Nachforderung der Einsatzleitung zusammen.
+- **Bereitstellungsraum:** Notarztmittel, die kein Patient mehr braucht, schickt der BEL frei (ein Spieler-NAH bekommt es gesagt und entscheidet selbst). Ein KTW am Einsatzort hält keinen RTW mehr im Bereitstellungsraum zurück.
+- **Rendezvous:** Warten zwei RTW (zwei Patienten) auf dasselbe NEF, wird nicht mehr alle 1–2 Minuten ein neuer Treffpunkt ausgemacht – ein ausgemachtes Rendezvous gilt.
+- **Funk mit dem Spieler-NAH:** Bei „NA im RTW, NAH fliegt allein“ meldet der RTW, dass er mit dem Notarzt fährt (nicht mehr „ohne Notarzt“). Auf „könnt ihr uns entgegenkommen“ antwortet der RTW „kommen euch entgegen“.
+- **Funk-Sprache:** „mit dem Patientin“, „beim Patientin“, „Alle Patientin“ heißen jetzt richtig „mit der Patientin“, „bei der Patientin“, „Alle Patienten“.
+- **BLS gelb fährt ohne Sondersignal** (auch in gespeicherten Einstellungen umgestellt).
+
 ## 0.116.0-beta.66 – Alarm im Tablet, RTW nach deiner Entscheidung, Fahrzeuge im MSFS
 - **Alarm im Tablet (MSFS-EFB, H145):** statt der roten Fläche ein kleines Fenster mit Code, Stichwort, Adresse, Entfernung, Flugzeit und Zusatzinfos. Darunter „Minimieren“ (wird zur roten Leiste oben, antippen öffnet wieder), „9 Quittieren“ und „2 Zum BO“. Es verschwindet auch, wenn du den Status über Funkgerät, CARLS, Tasten oder am PC gibst.
 - **Zu früh?** Drückst du einen Status, der noch nicht geht (z. B. Status 4, bevor der Patient bereit ist), steht die Meldung jetzt auch groß im Tablet; im Großeinsatz zählt „Patient transportbereit in m:ss“ im Tablet und am PC herunter.
