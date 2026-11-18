@@ -198,12 +198,31 @@ export class PilotLogik extends DCLogic {
     const zeitenL = (z) => (z || []).map((x) => ({ ...x, cls: "pvn-zr" + (x.leer ? " leer" : "") }));
     const E = D.ent;
     const ein = D.ein || {};
+    // Tablet-Stand (Paul 18.11.2026): am PC mindestens alles, was das Tablet zeigt
+    const T = D.tab || {};
+    const EMPF = /transport|klinik|stroke|herzkatheter|schockraum|krankenhaus/i;
+    const patMehr = (p) => {
+      const bef = [], empf = [];
+      const vit = (p.vit || []).map((v) => String(v.w || "").toLowerCase());
+      String(p.lage || "").split(",").map((x) => x.trim()).filter(Boolean).forEach((x) => {
+        if (vit.includes(x.toLowerCase())) return;
+        const t = x.charAt(0).toUpperCase() + x.slice(1);
+        (EMPF.test(t) ? empf : bef).push(t);
+      });
+      return { ...p, l: p.lage ? "" : p.l, bef: bef.length ? bef : null, empf: empf.length ? empf.join(" · ") : "", fakt: p.fakt && p.fakt.length ? p.fakt.map((f) => ({ ...f, cls: "pvn-fw" + (f.c === "w" ? " w" : "") })) : null, fwT: p.fw ? "Erst nach Befreiung bzw. Rettung durch die Feuerwehr erreichbar" : "", versorgt: p.versorgt || "" };
+    };
+    const bereitIn = Number(T.bereitIn) || 0;
     let d = null;
     if (it && istAkt) {
       d = { mk: marke(ein.stufe || it.stufe), code: ein.code || it.code, sw: ein.sw || it.sw, meta: ein.nr || "Nr. " + it.nr, zustand: "LÄUFT", zcls: "pvn-zu l", meldebild: it.meldebild,
-        zi: !!ein.zi, ziB: ein.ziB || "", ziS: ein.ziS || "", ziT: ein.ziT || "", gsText: ein.gsText || "", fzs: D.fzs && D.fzs.length ? D.fzs : null, stufe: ein.stufe || "–", gruppe: D.gruppe || "",
+        zi: !!ein.zi, ziB: ein.ziB || "", ziS: ein.ziS || "", ziT: ein.ziT || "", gsText: T.gs ? "" : ein.gsText || "", fzs: null, stufe: ein.stufe || "–", gruppe: D.gruppe || "",
         adr: ein.adr || it.adr, zusatz: ein.zusatz || "", fl: D.fl ? D.fl.km + " · " + D.fl.t : "", nav: D.nav && D.nav.length ? D.nav : null, ortT: D.gs ? "Einsatzort und Bereitstellungsraum" : D.kt ? "Abholort und Ziel" : "Berufungsort",
-        patZu: D.patZu || "", pats: D.pats && D.pats.length ? D.pats : null, patVerlauf: D.patVerlauf && D.patVerlauf.length ? D.patVerlauf : null, keinPat: !D.patZu && !(D.pats && D.pats.length),
+        patZu: D.patZu || "", pats: D.pats && D.pats.length ? D.pats.map(patMehr) : null, patVerlauf: D.patVerlauf && D.patVerlauf.length ? D.patVerlauf : null, keinPat: !D.patZu && !(D.pats && D.pats.length) && !(T.pat && T.pat.verdacht),
+        patVd: !(D.pats && D.pats.length) && T.pat && T.pat.verdacht ? "Verdacht: " + T.pat.verdacht : "", notruf: T.pat && T.pat.meldung ? "„" + T.pat.meldung + "“" : "",
+        // Einheiten wie im Tablet: Status, Rufname, Typ, Statustext mit Wache, Ankunft
+        einh: (T.fz || []).length ? T.fz.map((x, i) => ({ ...x, i, cls: "pvn-eh" + (x.ich ? " ich" : "") + (x.funk ? " funk" : "") })) : null, einhN: String((T.fz || []).length),
+        abfDa: !T.gs, abf: (T.abf || []).length ? T.abf : null, abfN: (T.abf || []).length ? T.abf.length + " beantwortet" : "", abfLeer: !(T.abf || []).length,
+        bereit: bereitIn > 0 ? Math.floor(bereitIn / 60) + ":" + ("0" + (bereitIn % 60)).slice(-2) : "",
         zeiten: zeitenL(D.zeiten), verlauf: vl(D.verlauf),
         zielT: D.planT || (D.kt ? it.ziel : ""), zielArt: D.kt ? "Überstellung – das Ziel steht fest" : "", zielTag: gebucht ? "gebucht" : D.kt ? "Ziel fest" : "offen",
         zielTagCls: "pvn-tag " + (gebucht || D.kt ? "ok" : "gelb"), zielCls: "pv-k pvn-ziel" + (gebucht || D.kt ? " ok" : " offen"),
@@ -243,7 +262,9 @@ export class PilotLogik extends DCLogic {
         { t: "Handy als Statusgerät", h: "Status und Sprechtaste vom Handy – gleiches WLAN", k: "Koppeln …", klick: dlg("handy") } ] },
       { t: "Flugsimulator", z: [
         { t: "Einrichtung", h: "MSFS 2024, X-Plane, H145-Tablet und -Funkgerät, GTN750, EFB-App", k: "Öffnen …", klick: dlg("einrichtung") },
-        { t: "Wetter im Flugsimulator", h: "wie LeitWerk oder selbst einstellen", k: "Öffnen …", klick: dlg("wetter") } ] },
+        { t: "Wetter im Flugsimulator", h: "wie LeitWerk oder selbst einstellen", k: "Öffnen …", klick: dlg("wetter") },
+        // Fahrzeuge am Einsatzort im MSFS (Paul 18.11.2026): kostenlose Pakete, jeder installiert selbst
+        ...(D.pakete || []).map((p) => ({ t: p.t, h: "Einsatzfahrzeuge für MSFS (kostenlos, flightsim.to) – in den Community-Ordner entpacken", k: "Download ↗", klick: () => A.paketSeite(p.url) })) ] },
       { t: "Spiel", z: [
         { t: "Pilot und Flugsimulator", h: "alle Einstellungen wie im Spielmenü", k: "Öffnen …", klick: dlg("seite") },
         { t: "Hubschrauber wechseln", h: D.heli.zeile || "einen anderen Hubschrauber übernehmen", k: "Wechseln …", klick: () => A.hubschrauberWechseln() },
@@ -341,7 +362,12 @@ export class PilotLogik extends DCLogic {
       ueb: { ...D.ueb, knoepfe: (D.ueb.knoepfe || []).map((k) => ({ ...k, cls: "kn sm" + (k.aus ? " aus" : "") })) },
       zeitraffer: D.zeitraffer, zeitKnopf: D.zeitKnopf ? { ...D.zeitKnopf, cls: "kn sm" + (D.zeitKnopf.an ? " an" : "") } : null,
       testKnopf: D.test ? () => A.testMenue() : null,
-      gsBR: !!(D.gs && D.gs.br), gs: D.gs ? { ...D.gs, zug: D.gs.zug ? { ...D.gs.zug, f: D.gs.zug.f } : null } : {}, gsLeg: G,
+      // Großeinsatz (wie im Tablet): Schritt, Auftrag, Eckdaten mit Sprechgruppe, Lagezahlen, BR-Liste, Lagemeldungen
+      gsBR: tab === "einsaetze" && !!T.gs && istAkt, gs: T.gs ? { ...(D.gs || {}), auftrag: T.gs.auftrag || "", werte: T.gs.werte || (D.gs && D.gs.werte) || [], zahlen: (D.gs && D.gs.zahlen) || T.gs.zahlen || null,
+        liste: D.gs && D.gs.liste ? D.gs.liste : T.gs.liste ? T.gs.liste.map((r, i) => ({ ...r, d: i, cls: "pv-brz" + (r.c ? " " + r.c : "") })) : null, det: true, meld: T.gs.meld && T.gs.meld.length ? T.gs.meld : null,
+        schrittT: ["Alarm", "Bereitstellungsraum", "Abruf", "Einsatzort", "Patient"][T.gs.schritt] || "", gruppe: T.gs.gruppe || (D.gs && D.gs.gruppe) || "", abruf: D.gs && D.gs.abruf ? D.gs.abruf : null } : {}, gsLeg: G,
+      // Navigation auf der Karte (wie im Tablet): Kurs · Entfernung · Flugzeit · Ankunft
+      navK: T.karte && T.karte.nav ? T.karte.nav : null,
       folgCls: "kn sm" + (D.folgen ? " an" : ""), folgen: () => A.folgen(), gross: () => A.gross(), punktHinweis: D.punktWaehlen, khLeg: buchenAn && (S.bs || "art") === "vorschlag" && !!(E && E.khs.length),
       // Funk im Kopf nur, wenn etwas los ist (jemand spricht, du sendest, belegt, unterbrochen) – „Funk frei“ braucht keinen Platz
       funkT: D.funkKanal && (D.funkKanal.sendet || /spricht|belegt|unterbrochen|Warten|geprüft|kein Großeinsatz/.test(D.funkKanal.kanal)) ? D.funkKanal.kanal : "", funkCls: "pv-pill pvn-funkp" + (D.funkKanal && D.funkKanal.sendet ? " sendet" : / spricht/.test((D.funkKanal && D.funkKanal.kanal) || "") ? " spricht" : "") + (Bk < 1150 ? " ein" : ""),

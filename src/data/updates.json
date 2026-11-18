@@ -1,5 +1,19 @@
 [
  {
+  "version": "0.116.0-beta.66",
+  "datum": "2026-11-18",
+  "titel": "Alarm im Tablet, RTW nach deiner Entscheidung, Fahrzeuge im MSFS",
+  "punkte": [
+   "Tablet: Alarm als kleines Fenster mit Minimieren, 9 Quittieren und Zum BO – verschwindet auch bei Status über Funk oder PC",
+   "Meldung „zu früh“ und Countdown bis transportbereit auch im Tablet; H145: großes Fenster „Funkgerät & Tablet verbinden“",
+   "RTW: frei kurz nach deinem Status 4, fährt mit los bei „NA im RTW“, sofort frei bei „Kein Transport“",
+   "Testeinsätze 5–20 km, nur ALS orange, ALS rot, BLS/ALS aufwertbar",
+   "Karte: Fahrzeuge deines Einsatzes blau mit Statusziffer",
+   "Pilotenfenster am PC zeigt alles wie das Tablet: Einheiten, Abfrage, Befund, Großeinsatz, Navigation",
+   "MSFS: Uhrzeit über SimConnect mit Rückmeldung; Einsatzfahrzeuge mit Blaulicht am Einsatzort, Download-Knöpfe für die kostenlosen Pakete"
+  ]
+ },
+ {
   "version": "0.116.0-beta.65",
   "datum": "2026-11-18",
   "titel": "Fahrzeuge auf der Karte des Piloten",

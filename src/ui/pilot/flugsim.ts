@@ -837,7 +837,7 @@ export function msfsWetter(): Record<string, unknown> | null {
 }
 
 /** Rückmeldungen der EFB-App zum Wetter (Test): werden angezeigt und in msfs-wetter-test.json gespeichert */
-export const msfsWetterStand = { text: "", meldungen: [] as { t: string; zeit: string }[] };
+export const msfsWetterStand = { text: "", meldungen: [] as { t: string; zeit: string }[], dateiFehler: "" };
 
 export async function msfsWetterMeldung(roh: string): Promise<void> {
   const t = roh.replace(/^wx:/, "");
@@ -851,8 +851,10 @@ export async function msfsWetterMeldung(roh: string): Promise<void> {
     const { appDataDir, join } = await import("@tauri-apps/api/path");
     const pfad = await join(await appDataDir(), "msfs-wetter-test.json");
     await invoke("write_text_file", { path: pfad, content: JSON.stringify(msfsWetterStand.meldungen, null, 1) });
-  } catch {
-    /* nur Test */
+    msfsWetterStand.dateiFehler = "";
+  } catch (e) {
+    // Paul 18.11.2026: Datei fehlte – Grund sichtbar machen
+    msfsWetterStand.dateiFehler = `Testdatei msfs-wetter-test.json: ${String((e as Error)?.message ?? e)}`;
   }
 }
 

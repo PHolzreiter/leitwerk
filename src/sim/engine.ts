@@ -2718,7 +2718,8 @@ export class Simulation extends GsKern {
           break;
         }
         // ohne Feuerwehr/Polizei/Berg-/Wasserrettung geht es nicht weiter (Befreiung, Eigenschutz, Suche)
-        const warten = this.partnerBlockiert(e);
+        // Spieler-NAH ist mit Status 4 los (Patient an Bord bzw. bereit): niemand wartet mehr auf Feuerwehr/Polizei
+        const warten = this.pilotPatientLos(e) ? [] : this.partnerBlockiert(e);
         if (warten.length) {
           fz.phaseEnde = t + 2 * MIN;
           const fehlen = warten.filter((x) => !e.partner?.[x.art]);
@@ -5703,6 +5704,12 @@ export class Simulation extends GsKern {
    */
   private wartetAufNotarzt(fz: SimFahrzeug, e: Einsatz, t: number): boolean {
     if (e.gs || e.gsKind || e.fremd || !this.transportfaehig(fz)) return false;
+    // Spieler-NAH hat entschieden: er fliegt den Patienten bzw. sein Notarzt fährt im RTW mit – niemand wartet auf einen Notarzt (Paul 18.11.2026)
+    const sp = this.einsatzFz(e).find((x) => x.pilot?.plan && (x.pilot.plan.art === "transport" || (x.pilot.plan.art === "uebergabe" && x.pilot.plan.naMit)));
+    if (sp) {
+      e.naWarten = null;
+      return false;
+    }
     const naDa = this.einsatzFz(e).filter((x) => x.id !== fz.id && this.mitNotarzt(x) && ["vorOrt", "warteKH", "treffpunkt"].includes(x.phase));
     if (naDa.length) {
       if (naDa.some((x) => x.phase === "vorOrt") && (!e.naWarten || t - e.naWarten.seit < 25 * MIN)) {
@@ -9405,15 +9412,17 @@ export class Simulation extends GsKern {
     const boden = (ids: string[]) => ids.filter((id) => { const f = this.state.fahrzeuge[id]; return !!f && !fliegt(f); });
     if (art === "normal") {
       let e: Einsatz | null = null;
-      for (let i = 0; i < 12 && !e; i++) {
+      // Paul 18.11.2026: Testeinsätze nah (5–20 km, wenige Minuten Flug) und nur ALS orange, ALS rot oder BLS/ALS aufwertbar
+      const STUFEN = ["ALS orange", "ALS rot", "BLS/ALS aufwertbar"];
+      for (let i = 0; i < 120 && !e; i++) {
         const x = await this.generiere("kritisch");
         if (!x) continue;
-        // nicht zu nah am Stützpunkt (sonst lohnt der Flug nicht), nicht zu weit
         const km = distanceM(x.wahr, fz) / 1000;
-        // nur Notfälle, bei denen ein Notarzt alarmiert wird
         const wc = findCode(x.wahr.code);
-        const na = ((wc && this.stufeDef(wc.stufe)?.notarzt) ?? "nein") !== "nein";
-        if (km >= 8 && km <= 70 && (na || i >= 10)) e = x;
+        const stufe = wc?.stufe ?? "";
+        const passt = STUFEN.some((st) => stufe === st || stufe.startsWith(st));
+        // nach sehr vielen Versuchen etwas weiter (bis 25 km), die Stufe bleibt
+        if (passt && km >= 5 && km <= (i < 100 ? 20 : 25)) e = x;
         else {
           if (x.anruf) x.anruf.status = "beendet";
           x.zustand = "abgeschlossen";
@@ -9587,6 +9596,15 @@ export class Simulation extends GsKern {
     return this.einsatzFz(e).find((x) => !!x.pilot && fliegt(x) && x.einsatzId === e.id);
   }
 
+  /** Spieler-NAH hat entschieden (Transport oder NA im RTW) und ist mit Status 4 los – der Patient ist transportbereit */
+  private pilotPatientLos(e: Einsatz): boolean {
+    if (e.gs || e.gsKind) return false;
+    return this.einsatzFz(e).some((x) => {
+      const pl = x.pilot?.plan;
+      return !!pl && (pl.art === "transport" || (pl.art === "uebergabe" && pl.naMit)) && (x.status === "zumZO" || x.status === "amZO");
+    });
+  }
+
   private pilotTransport(e: Einsatz): SimFahrzeug | undefined {
     return this.einsatzFz(e).find((x) => x.pilot?.plan?.art === "transport");
   }
@@ -9670,6 +9688,20 @@ export class Simulation extends GsKern {
         fz.begleitet = p.plan.art === "transport";
         this.setStatus(fz, "zumZO");
         fz.phase = "transport";
+        // Paul 18.11.2026: der Patient ist weg bzw. bereit – die Fahrzeuge am Einsatzort warten nicht ihre volle Versorgungszeit ab.
+        // NAH transportiert: RTW (und NEF) melden sich kurz darauf frei. NA im RTW, NAH fliegt allein: der RTW fährt jetzt los.
+        if (!e.gs && !e.gsKind)
+          for (const x of this.einsatzFz(e))
+            if (x !== fz && x.einsatzId === e.id && x.phase === "vorOrt") {
+              let bis = t + (p.plan.art === "transport" ? 60 + Math.random() * 60 : 20 + Math.random() * 40) * 1000;
+              // zu Fuß beim Patienten: der Rückweg zum Fahrzeug beginnt jetzt (ohne Patient, wenn der NAH ihn fliegt)
+              if (x.fuss && x.fuss.zurueckAb === undefined) {
+                x.fuss.zurueckSek = x.fuss.m / (p.plan.art === "transport" ? GEHEN : TRAGEN);
+                x.fuss.zurueckAb = Math.max(t, x.fuss.ab + x.fuss.hinSek * 1000);
+                bis = Math.max(bis, x.fuss.zurueckAb + x.fuss.zurueckSek * 1000);
+              }
+              if (x.phaseEnde === null || x.phaseEnde === undefined || x.phaseEnde > bis) x.phaseEnde = bis;
+            }
         break;
       case "amZO":
         if (!e) return "Kein Einsatz";
@@ -9888,10 +9920,17 @@ export class Simulation extends GsKern {
         this.endegrundVonHand.delete(`${e.id}|${fz.id}`);
         this.endegrund(e, fz, g);
         this.endegrundVonHand.add(`${e.id}|${fz.id}`);
-        // RTW, die auf ein Krankenhaus warten, werden frei
+        // Paul 18.11.2026: kein Transport – die Fahrzeuge am Einsatzort (RTW, NEF) sind sofort frei über Funk
+        // (wartende RTW wie bisher; Großeinsatz ausgenommen)
         for (const x of this.einsatzFz(e))
-          if (x !== fz && this.transportfaehig(x) && x.phase === "warteKH") {
+          if (x !== fz && x.einsatzId === e.id && (x.phase === "warteKH" || (!e.gs && !e.gsKind && x.phase === "vorOrt"))) {
             this.endegrund(e, x, g);
+            this.log(e, `${x.funkrufname}: ${text} – frei`);
+            this.freigeben(x);
+          } else if (x !== fz && x.einsatzId === e.id && !e.gs && !e.gsKind && !x.pilot && ["ausruecken", "anfahrt", "routing", "suche"].includes(x.phase)) {
+            // noch auf der Anfahrt: wird nicht mehr gebraucht
+            this.log(e, `Storno an ${x.funkrufname} (${text})`);
+            this.endegrund(e, x, "storno");
             this.freigeben(x);
           }
         break;

@@ -44,6 +44,7 @@ import { efbStarten, handyAktionen, handyBuchung, handyDialog, handyLaeuft, hand
 import { carlsStand, hpg, hpgAktualisieren, hpgCarlsTest, hpgEinrichten, hpgMissionFuer, hpgStarten, hpgTestNachricht } from "./hpg";
 import { letzterCarls } from "./eingabe";
 import { carlsAn, carlsUmschalten, communityWaehlen, gtn, gtnAn, gtnBereitlegen, gtnSuchen, gtnUmschalten } from "./flugsim";
+import { msfsExtraTick, msfsProps, propsSoll, msfsZeit, PROP_PAKETE, paketSeite, propsAn, propsSuchen, propsTest, propsUmschalten, propTitel } from "./msfsExtra";
 import { datenEmpfangen, datenFrisch, dllWaehlen, flugplanSpeichern, flugsim, flugsimAnbinden, flugsimBeenden, flugsimTrennen, flugsimVerbinden, koordText, vorgabe, wetterDialog, msfsWetter, msfsWetterStand, wetterUebergang, xpAbgleich, xplaneFlugplanBereitlegen, xpPlugin, xpPluginDa, xpZeitUmschalten } from "./flugsim";
 import { IC, wetterHtml, wetterKurz, wetterSchluessel, type WetterReiter } from "../ws/kopfleisteInhalt";
 import { mb, onUpdate, updateImHintergrund, updateInfo, updateStand, updateStandZuruecksetzen } from "../updateDienst";
@@ -133,10 +134,18 @@ function fehler(e: unknown): void {
   toast(String((e as Error)?.message ?? e), "error");
 }
 
+/** letzte Meldung des Programms (z. B. „Patient wird noch versorgt“) – auch für Handy, Tablet und X-Plane-Plugin (Paul 18.11.2026) */
+let pilotMeldung: { text: string; bis: number } | null = null;
+function meldungJetzt(): { text: string } | null {
+  return pilotMeldung && Date.now() < pilotMeldung.bis ? { text: pilotMeldung.text } : null;
+}
 async function befehl<T>(p: Promise<T>): Promise<T | undefined> {
   try {
     const r = await p;
-    if (typeof r === "string" && r) toast(r, "error");
+    if (typeof r === "string" && r) {
+      toast(r, "error");
+      pilotMeldung = { text: r, bis: Date.now() + 8000 };
+    }
     return r;
   } catch (e) {
     fehler(e);
@@ -427,7 +436,7 @@ export function pilotOeffnen(): void {
   letzterEinsatz = meinFz()?.einsatzId ?? null;
   kartenEl = el("div", { class: "pv-map" });
   funkEl = funkPlatzBauen();
-  fenster = pilotAnsichtEinbinden(root, { daten: () => ansichtDaten(), a: ansichtAktionen() as unknown as PilotApp["a"] }, nachZeichnen);
+  fenster = pilotAnsichtEinbinden(root, { daten: () => pcDaten(), a: ansichtAktionen() as unknown as PilotApp["a"] }, nachZeichnen);
   // Karte groß: als Fenster über allem
   grossEl = el("div", { class: "ap pv-gross", hidden: "" });
   grossEl.innerHTML = `<div class="pv-gross-box"><div class="pv-gross-kopf"><b>Karte</b><button type="button" class="kn sm" data-act="karte-zu" title="Schließen (Esc)">Schließen</button></div><div class="pv-gross-platz"></div></div>`;
@@ -511,7 +520,14 @@ export function pilotOeffnen(): void {
         hpgMissionFuer,
         hpgTestNachricht,
         hpgCarlsTest,
-        daten: () => ansichtDaten(),
+        daten: () => pcDaten(),
+        // Beta 66: welche Fahrzeuge im MSFS stehen sollen (mit vorgegebenen Modell-Titeln)
+        propsSoll: (titel: string[]) => {
+          msfsProps.titel = titel;
+          const f = meinFz();
+          const e = einsatzVon(f);
+          return { soll: propsSoll(f, e, f ? mitFahrzeuge(f, e) : [], gsVon(e)?.gs?.br ?? null), rtw: propTitel("rtw"), nef: propTitel("nef"), trage: propTitel("patient") };
+        },
         // Handy im Test: Stand wie für das Handy, Befehle wie vom Handy
         handy: () => {
           const f = meinFz();
@@ -806,6 +822,8 @@ function zeichneAlles(): void {
   handyStand(fz, e, fk, () => handyMehr(fz, e));
   gtnZiel(fz, e);
   hpgAktualisieren(fz, e);
+  // MSFS (SimConnect): Uhrzeit und Fahrzeuge am Einsatzort (Beta 66)
+  msfsExtraTick({ verbunden: flugsim.ms.zustand === "verbunden", zeitAn: vorgabe().xpZeit !== false, fz, e, mit: fz ? mitFahrzeuge(fz, e) : [], br: gsVon(e)?.gs?.br ?? null, zeichnen: () => planen() });
   fenster?.zeichnen();
 }
 
@@ -1065,10 +1083,48 @@ function cockpitDaten(fz: SimFahrzeug | undefined): Record<string, unknown>[] {
       t: "MSFS: Wetter und Uhrzeit (Test)",
       z: msfsWetterStand.text ? "Rückmeldung" : "wartet",
       f: /fehl|nicht|kein/i.test(msfsWetterStand.text) ? PUNKT.fehl : msfsWetterStand.text ? PUNKT.ok : PUNKT.aus,
-      d: msfsWetterStand.text || "Die LeitWerk-App im EFB-Tablet stellt Wetter und Uhrzeit von LeitWerk in MSFS ein (Test) – noch keine Rückmeldung von der App.",
+      d: [
+        msfsWetterStand.text || "Die LeitWerk-App im EFB-Tablet stellt Wetter und Uhrzeit von LeitWerk in MSFS ein (Test) – noch keine Rückmeldung von der App.",
+        zeitAn ? msfsZeit.text || (flugsim.ms.zustand === "verbunden" ? "Uhrzeit: LeitWerk prüft die Uhrzeit im MSFS …" : "") : "",
+        msfsWetterStand.dateiFehler,
+      ]
+        .filter(Boolean)
+        .join(" "),
       knoepfe: [
         { t: zeitAn ? "Uhrzeit: von LeitWerk" : "Uhrzeit: selbst", an: zeitAn, klick: () => xpZeitUmschalten(!zeitAn) },
         { t: "Wetter …", klick: () => wetterDialog() },
+      ],
+    });
+    // Fahrzeuge am Einsatzort (Paul 18.11.2026): Modelle aus Standard- und kostenlosen Paketen, mit Blaulicht
+    const an = propsAn();
+    const wahl = [
+      ["RTW", propTitel("rtw")],
+      ["NEF", propTitel("nef")],
+      ["Trage", propTitel("patient")],
+    ].filter((x) => x[1]);
+    out.push({
+      k: "msfsprops",
+      t: "MSFS: Fahrzeuge am Einsatzort",
+      z: !an ? "aus" : !msfsProps.titel.length ? "keine Modelle" : `${[...msfsProps.aktiv.keys()].length} im Simulator`,
+      f: !an ? PUNKT.aus : !msfsProps.titel.length ? PUNKT.warn : PUNKT.ok,
+      d: [
+        !msfsProps.titel.length
+          ? "Keine Einsatzfahrzeug-Modelle gefunden. Kostenlos auf flightsim.to (Knöpfe unten): in den Community-Ordner entpacken, MSFS neu starten, dann „Modelle suchen“."
+          : `Modelle: ${wahl.map((x) => `${x[0]} „${x[1]}“`).join(", ")}. RTW und NEF stehen mit Blaulicht dort, wo sie im Spiel stehen (sobald sie am Einsatzort sind), die Trage ab Alarm beim Patienten; Großeinsatz: wenige im Bereitstellungsraum, die meisten am Einsatzort. Fährt ein Fahrzeug ab, ist es weg – sonst am Einsatzende.`,
+        msfsProps.quelleText,
+        msfsProps.meldung,
+      ]
+        .filter(Boolean)
+        .join(" "),
+      hinw: "Fahrende Fahrzeuge gibt es (noch) nicht – sie stehen am Einsatzort.",
+      knoepfe: [
+        { t: an ? "An" : "Aus", an, klick: () => propsUmschalten(!an) },
+        { t: "Modelle suchen", klick: () => void propsSuchen(vorgabe().community) },
+        { t: "Test: Fahrzeug vor mir", klick: () => {
+          const d = flugsim.daten;
+          fenster?.k.toast(propsTest(d && datenFrisch() ? { lat: d.lat, lon: d.lon, kurs: d.kurs } : null));
+        } },
+        ...PROP_PAKETE.map((p) => ({ t: `${p.t} ↗`, klick: () => paketSeite(p.url) })),
       ],
     });
   }
@@ -1281,6 +1337,14 @@ function meineEinsaetze(fz: SimFahrzeug | undefined, aktuell: Einsatz | undefine
 let kartenVorschlag: { ids: string[]; hov: string } = { ids: [], hov: "" };
 /** Funk-Zustand fürs Fenster (wer spricht, du sendest) – aus funkPlatzAktualisieren */
 let funkKanalText = { kanal: "", sendet: false };
+
+/** Daten fürs PC-Fenster: wie die Ansicht, dazu der Tablet-Stand (Paul 18.11.2026: am PC mindestens alles, was das Tablet zeigt) */
+function pcDaten(): Record<string, unknown> {
+  const D = ansichtDaten();
+  const fz = meinFz();
+  D.tab = tabletDaten(fz, einsatzVon(fz), D);
+  return D;
+}
 
 function ansichtDaten(): Record<string, unknown> {
   const fz = meinFz();
@@ -1735,6 +1799,7 @@ function ansichtDaten(): Record<string, unknown> {
     phasen,
     stl,
     cockpit: cockpitDaten(fz),
+    pakete: PROP_PAKETE,
     ueb,
     zeitraffer,
     zeitKnopf,
@@ -1887,6 +1952,7 @@ function ansichtAktionen(): Record<string, (...x: never[]) => unknown> {
     // dieselben Einstellungen wie im Spielmenü (Seite „Pilot & Flugsimulator“ mit den Alarmtönen)
     einstellungen: () => einstellungenSeite("pilot"),
     testMenue: () => testMenue(),
+    paketSeite: (url: string) => paketSeite(url),
     folgen: () => {
       folgen = !folgen;
       if (folgen) karteFolgen(true);
@@ -2132,6 +2198,9 @@ function handyNeu(fz: SimFahrzeug | undefined, e: Einsatz | undefined): Record<s
   const aktion = (k: StatusKey) => AKTIONEN.find((a) => a.status === k)?.id ?? "";
   return {
     st: D.st,
+    meldung: meldungJetzt(),
+    // Patient noch nicht transportbereit (Großeinsatz): Sekunden Spielzeit bis bereit
+    bereitIn: fz ? Math.round(sim.pilotVersorgtIn(fz) / 1000) : 0,
     uhr: new Date(sim.state.zeit).toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" }),
     gruppe: gruppenName(gr) || "RD-NOE-03",
     gruppeT: gr ? "Sprechgruppe Großeinsatz" : "Sprechgruppe",
@@ -2172,6 +2241,8 @@ const ZEILE_FARBE = ST_FARBE;
 /** Karte des Piloten (Paul 18.11.2026): Fahrzeuge seines Einsatzes immer und hervorgehoben (Statusfarbe, Rufname),
  *  alle anderen nur, solange sie fahren (grau, ohne Namen; Hubschrauber als Raute) */
 const FZ_GRAU = "#8A93A3";
+/** Fahrzeuge des eigenen Einsatzes: einheitlich blau mit weißem Rand, Status als Ziffer im Namen (Paul 18.11.2026) */
+const FZ_BLAU = "#2F6FED";
 function mitFahrzeuge(fz: SimFahrzeug, e: Einsatz | undefined): SimFahrzeug[] {
   if (!e) return [];
   const basis = gsVon(e) ?? e;
@@ -2194,7 +2265,7 @@ function tabletFz(fz: SimFahrzeug, mit: SimFahrzeug[]) {
     .map((x) => {
       const d = sim.statusDef(x.status);
       const ein = mit.includes(x);
-      return { lat: +x.lat.toFixed(5), lon: +x.lon.toFixed(5), ruf: x.funkrufname, s: d.nummer, f: ein ? (ZEILE_FARBE[d.nummer] ?? "#E6E7EA") : FZ_GRAU, nah: x.rmTyp === "NAH", ein };
+      return { lat: +x.lat.toFixed(5), lon: +x.lon.toFixed(5), ruf: x.funkrufname, s: d.nummer, f: ein ? FZ_BLAU : FZ_GRAU, nah: x.rmTyp === "NAH", ein };
     });
 }
 
@@ -2264,7 +2335,7 @@ function tabletDaten(fz: SimFahrzeug | undefined, e: Einsatz | undefined, D: Rec
   // Sprechgruppe, in der er spricht – 09/10 ohne Großeinsatz als Warnung
   const sg = sprechGruppe();
   const gr = { n: (gruppenName(sg) || "RD-NOE-03").replace(/^RD-NOE-/, ""), warn: sg !== null && !sim.gsGruppeAktiv(sg) };
-  const kopf = { uhr, heli: fz.kurzname || fz.funkrufname, st: { n: st.nummer, t: st.name, f: ZEILE_FARBE[st.nummer] ?? st.farbe }, gr };
+  const kopf = { uhr, heli: fz.kurzname || fz.funkrufname, st: { n: st.nummer, t: st.name, f: ZEILE_FARBE[st.nummer] ?? st.farbe }, gr, meldung: meldungJetzt(), bereitIn: Math.round(sim.pilotVersorgtIn(fz) / 1000) };
   if (!e) {
     const kt = sim.pilotKt(fz);
     if (!kt) {
@@ -2749,7 +2820,7 @@ async function karteStarten(box: HTMLElement): Promise<void> {
         type: "symbol",
         source: "plt-fz",
         filter: ["get", "mit"],
-        layout: { "text-field": ["get", "ruf"], "text-font": ["Noto Sans Medium"], "text-size": 11.5, "text-offset": [0.95, 0], "text-anchor": "left", "text-allow-overlap": false },
+        layout: { "text-field": ["get", "lab"], "text-font": ["Noto Sans Medium"], "text-size": 11.5, "text-offset": [0.95, 0], "text-anchor": "left", "text-allow-overlap": false },
         paint: { "text-color": istDunkel() ? "#F5F7FA" : "#18212C", "text-halo-color": istDunkel() ? "#111216" : "#ffffff", "text-halo-width": 1.5 },
       });
       // Maus über einem Fahrzeug: Rufname und Status
@@ -2888,7 +2959,7 @@ function karteAktualisieren(fz: SimFahrzeug | undefined, e: Einsatz | undefined)
     letzteFzKarte = kartenFahrzeuge(fz, mit, false).map((x) => {
         const d = sim.statusDef(x.status);
         const m = mit.includes(x);
-        return punkt(x.lat, x.lon, { mit: m, nah: x.rmTyp === "NAH", farbe: m ? (ST_FARBE[d.nummer] ?? d.farbe) : FZ_GRAU, ruf: x.funkrufname, st: `${d.nummer} ${d.name}` });
+        return punkt(x.lat, x.lon, { mit: m, nah: x.rmTyp === "NAH", farbe: m ? FZ_BLAU : FZ_GRAU, ruf: x.funkrufname, lab: `${x.funkrufname} · ${d.nummer}`, st: `${d.nummer} ${d.name}` });
     });
   } else letzteFzKarte = [];
   quelle("plt-fz")?.setData({ type: "FeatureCollection", features: letzteFzKarte });

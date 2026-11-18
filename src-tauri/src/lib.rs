@@ -513,6 +513,12 @@ fn pack_remove(maps: State<'_, Maps>, geo: State<'_, GeoState>, id: String) -> R
 /// Schreibt eine Textdatei an einen vom Benutzer gewählten Ort (CSV-Export).
 #[tauri::command]
 fn write_text_file(path: String, content: String) -> Result<(), String> {
+    // Ordner fehlt (z. B. App-Daten beim ersten Mal): anlegen
+    if let Some(d) = std::path::Path::new(&path).parent() {
+        if !d.as_os_str().is_empty() && !d.exists() {
+            let _ = fs::create_dir_all(d);
+        }
+    }
     fs::write(&path, content).map_err(|e| format!("Datei konnte nicht geschrieben werden: {e}"))
 }
 
@@ -655,6 +661,12 @@ pub fn run() {
             msfs::msfs_stoppen,
             msfs::msfs_carls,
             msfs::msfs_dll_suchen,
+            msfs::msfs_zeit_setzen,
+            msfs::msfs_prop_setzen,
+            msfs::msfs_prop_weg,
+            msfs::msfs_props_suchen,
+            msfs::msfs_props_ordner,
+            msfs::link_oeffnen,
             xplane::xplane_starten,
             xplane::xplane_stoppen,
             xplane::xplane_flug,

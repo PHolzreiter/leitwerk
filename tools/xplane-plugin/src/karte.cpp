@@ -199,11 +199,16 @@ void zeichnen(Ansicht& a, ImVec2 p0, ImVec2 gr, const Json& d, bool klein, ImFon
         ImVec2 r2[4] = {ImVec2(p.x, p.y - 7), ImVec2(p.x + 7, p.y), ImVec2(p.x, p.y + 7), ImVec2(p.x - 7, p.y)};
         dl->AddConvexPolyFilled(r2, 4, c);
       } else {
-        dl->AddRectFilled(ImVec2(p.x - 7, p.y - 7), ImVec2(p.x + 7, p.y + 7), rgb(fb::SCHWARZ), 4);
+        // eigener Einsatz: größer mit weißem Rand (Paul 18.11.2026)
+        float r = f["ein"] ? 8.f : 7.f;
+        dl->AddRectFilled(ImVec2(p.x - r, p.y - r), ImVec2(p.x + r, p.y + r), f["ein"] ? IM_COL32_WHITE : rgb(fb::SCHWARZ), 4);
         dl->AddRectFilled(ImVec2(p.x - 5, p.y - 5), ImVec2(p.x + 5, p.y + 5), c, 2);
       }
-      if (label && (f["ein"] || f["nah"] || a.z >= 12))
-        textMitHalo(dl, fFett, 12.f, ImVec2(p.x + 10, p.y - 8), rgb(fb::SCHWARZ), IM_COL32(255, 255, 255, 230), f["ruf"].t().c_str());
+      if (label && (f["ein"] || f["nah"] || a.z >= 12)) {
+        std::string t = f["ruf"].t();
+        if (f["ein"] && !f["s"].t().empty()) t += " \xC2\xB7 " + f["s"].t();
+        textMitHalo(dl, fFett, 12.f, ImVec2(p.x + 10, p.y - 8), rgb(fb::SCHWARZ), IM_COL32(255, 255, 255, 230), t.c_str());
+      }
     }
     if (ziel.art == Json::Objekt) {
       ImVec2 p = pos(ziel["lat"].z(), ziel["lon"].z());

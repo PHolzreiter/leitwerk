@@ -254,17 +254,38 @@
   .seg2 button:last-child { border-radius: 0 8px 8px 0; border-left: 0; }
   .seg2 button.an { background: #3B8BFF; border-color: #3B8BFF; color: #111216; }
   /* Alarm über die ganze Fläche */
-  #alarm { position: absolute; left: 0; right: 0; top: 0; bottom: 0; z-index: 20; background: #B3121B; color: #FFFFFF; padding: 22px 28px; -webkit-animation: tab 0.2s ease-out both; animation: tab 0.2s ease-out both; }
-  #alarm .a1 { display: flex; justify-content: space-between; font-size: 13px; font-weight: 700; letter-spacing: 0.2em; margin-bottom: 14px; }
-  #alarm .at { font-size: 28px; font-weight: 700; line-height: 1.2; margin: 12px 0 8px; }
-  #alarm .as { font-size: 15px; line-height: 1.45; max-width: 760px; }
-  #alarm .azi { display: inline-block; background: rgba(255,255,255,0.16); border-radius: 10px; padding: 8px 12px; font-size: 14px; margin-top: 10px; }
-  #alarm .mel { font-size: 13px; color: #FFD9DB; margin-top: 12px; }
-  #alarm .ak { position: absolute; left: 28px; right: 28px; bottom: 22px; }
-  #alarm .ak button { float: left; width: 49%; height: 82px; border-radius: 14px; font-size: 17px; font-weight: 700; cursor: pointer; }
-  #alarm .ak button b { display: block; font-size: 30px; line-height: 34px; }
-  #alarm .ak .q { background: #FFFFFF; color: #B3121B; border: 0; margin-right: 2%; }
-  #alarm .ak .h { background: transparent; color: #FFFFFF; border: 2px solid #FFFFFF; }
+  /* Alarm (Paul 18.11.2026): kleines Fenster wie am echten Melder – Code, Text, Zusatzinfos; Minimieren, 9, 2 */
+  #alarm { position: absolute; left: 0; right: 0; top: 0; bottom: 0; z-index: 20; background: rgba(0,0,0,0.55); -webkit-animation: tab 0.18s ease-out both; animation: tab 0.18s ease-out both; }
+  .apop { position: absolute; left: 50%; top: 50%; width: 560px; max-width: 92%; -webkit-transform: translate(-50%, -50%); transform: translate(-50%, -50%); background: #1E2129; border-radius: 14px; overflow: hidden; box-shadow: 0 18px 50px rgba(0,0,0,0.6); border: 1px solid #3A1418; }
+  .apop .a1 { display: flex; justify-content: space-between; align-items: center; background: #B3121B; color: #FFFFFF; padding: 9px 16px; font-size: 12.5px; font-weight: 700; letter-spacing: 0.16em; }
+  .apop .a1 span + span { letter-spacing: 0.04em; font-weight: 600; }
+  .apop .ab { padding: 14px 16px 6px; }
+  .apop .at { font-size: 21px; font-weight: 700; line-height: 1.25; margin: 10px 0 6px; }
+  .apop .as { font-size: 14px; line-height: 1.45; color: #C4CAD6; }
+  .apop .azi { margin-top: 10px; padding: 7px 10px; border-radius: 8px; background: rgba(255,199,44,0.12); color: #FFD866; font-size: 13.5px; font-weight: 600; }
+  .apop .ak { display: flex; padding: 12px 16px 16px; }
+  .apop .ak button { flex: 1; height: 56px; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; margin-left: 8px; }
+  .apop .ak button:first-child { margin-left: 0; }
+  .apop .ak button b { font-size: 19px; margin-right: 6px; }
+  .apop .ak .mi { flex: 0.8; background: transparent; color: #C4CAD6; border: 1px solid #3A4150; }
+  .apop .ak .q { background: #F5F7FA; color: #B3121B; border: 0; }
+  .apop .ak .h { background: #B3121B; color: #FFFFFF; border: 0; }
+  #alarmMini { position: absolute; left: 84px; right: 0; top: 56px; height: 40px; z-index: 6; display: flex; align-items: center; padding: 0 12px 0 16px; background: #B3121B; color: #FFFFFF; font-size: 13.5px; font-weight: 600; cursor: pointer; }
+  #alarmMini b { letter-spacing: 0.14em; margin-right: 10px; }
+  #alarmMini span { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #alarmMini i { font-style: normal; border: 1px solid rgba(255,255,255,0.7); border-radius: 7px; padding: 4px 9px; margin-left: 10px; font-size: 12px; }
+  .inh.mitalarm { top: 96px; }
+  /* Fenster „Funkgerät & Tablet verbinden“ (H145) */
+  #verbPop { position: absolute; left: 0; right: 0; top: 0; bottom: 0; z-index: 18; background: rgba(0,0,0,0.6); }
+  #verbPop .vp { position: absolute; left: 50%; top: 50%; width: 520px; max-width: 92%; -webkit-transform: translate(-50%, -50%); transform: translate(-50%, -50%); background: #1E2129; border-radius: 14px; padding: 22px 22px 18px; box-shadow: 0 18px 50px rgba(0,0,0,0.6); }
+  #verbPop h2 { margin: 0 0 8px; font-size: 22px; }
+  #verbPop p { margin: 0 0 16px; color: #C4CAD6; font-size: 14px; line-height: 1.45; }
+  #verbPop .prim { height: 54px; font-size: 16px; }
+  #verbPop .spaeter { display: block; width: 100%; height: 42px; margin-top: 8px; border: 0; background: transparent; color: #9AA3B5; font-size: 14px; font-weight: 600; cursor: pointer; }
+  /* Meldung (z. B. Status 4 zu früh) */
+  #meldung { position: absolute; left: 100px; right: 16px; bottom: 16px; z-index: 25; padding: 12px 14px; border-radius: 10px; background: #3A3020; border: 1px solid #6B5A2A; color: #FFD866; font-size: 15px; font-weight: 600; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
+  .bereit { display: flex; align-items: center; margin-top: 8px; padding: 8px 10px; border-radius: 9px; background: rgba(255,199,44,0.12); color: #FFD866; font-size: 13.5px; font-weight: 600; }
+  .bereit b { margin-left: auto; font-size: 17px; font-family: Consolas, monospace; }
   /* Navigation (große Karte) */
   .nav { position: absolute; left: 0; right: 0; top: 0; bottom: 0; z-index: 10; background: #0E0F12; }
   .nav .karte { position: absolute; left: 0; right: 0; top: 52px; bottom: 0; border-radius: 0; border: 0; }
@@ -298,7 +319,10 @@
   <div class="fuss versteckt" id="fuss"></div>
   <div id="toast" class="versteckt"><span></span></div>
   <div id="nav" class="nav versteckt"><div class="bk"><button class="nk" id="navZu">‹ Zurück</button><b id="navT">Navigation</b><button class="nk" id="navAlle">Alle Fahrzeuge</button><button class="nk" id="navFolgen">Folgen</button></div><div class="karte" id="navK"></div><div class="zoom"><button id="zplus">+</button><button id="zminus">−</button></div></div>
+  <div id="alarmMini" class="versteckt"></div>
+  <div id="verbPop" class="versteckt"><div class="vp"><h2>Funkgerät &amp; Tablet verbinden</h2><p>Damit laufen Alarm, CARLS-Funkgerät und Briefing der H145 über LeitWerk. Dafür startet das Tablet die Mission „LeitWerk Leitstelle“.</p><button class="prim" id="verbJa">Verbinden</button><button class="spaeter" id="verbNein">Später</button></div></div>
   <div id="alarm" class="versteckt" role="alert"></div>
+  <div id="meldung" class="versteckt"></div>
 </div>
 <script>
 (function () {
@@ -432,7 +456,7 @@
       p = this.pos(fz[i].lat, fz[i].lon);
       if (p.x < -20 || p.y < -20 || p.x > this.box.clientWidth + 20 || p.y > this.box.clientHeight + 20) continue;
       h += '<div class="m-fz' + (fz[i].nah ? " nah" : "") + (fz[i].ein ? " ein" : "") + '" style="left:' + p.x + "px;top:" + p.y + "px;background:" + esc(fz[i].f) + '"></div>';
-      if (label && fz[i].ein) h += '<div class="m-lbl" style="left:' + p.x + "px;top:" + p.y + 'px">' + esc(fz[i].ruf) + "</div>";
+      if (label && fz[i].ein) h += '<div class="m-lbl" style="left:' + p.x + "px;top:" + p.y + 'px">' + esc(fz[i].ruf) + (fz[i].s ? " · " + esc(fz[i].s) : "") + "</div>";
     }
     if (d.ziel) {
       p = this.pos(d.ziel.lat, d.ziel.lon);
@@ -603,6 +627,7 @@
     var zielT = akt ? n.planT || (n.kt ? it.ziel : "") : it.ziel || "–";
     r += '<div class="ek ziel ' + (tag[1] === "gelb" ? "offen" : tag[1]) + '"><div class="z"><span class="lbl" style="margin:0">Zielort</span><span class="tag ' + tag[1] + '">' + tag[0] + "</span></div>";
     if (zielT) r += '<div class="w">' + esc(zielT) + (akt && n.kt ? '<div class="leise" style="font-weight:400">Überstellung – das Ziel steht fest</div>' : !akt && it.zielArt ? '<div class="leise" style="font-weight:400">' + esc(it.zielArt) + "</div>" : "") + "</div>";
+    if (akt && n.bereitIn > 0) r += '<div class="bereit">Patient transportbereit in<b>' + Math.floor(n.bereitIn / 60) + ":" + ("0" + (n.bereitIn % 60)).slice(-2) + "</b></div>";
     if (akt && n.ent) r += '<button class="prim" id="buchenAuf" style="margin-top:6px">' + (gebucht ? "Ändern" : "Zielort buchen") + "</button>";
     var hinw = !akt ? "" : n.ent ? (gebucht ? "Ändern geht, solange ihr am Einsatzort seid." : "") : n.kt ? "" : gebucht && !g ? "Ändern geht nur am Einsatzort (Status 3)." : t.buchenText || n.amOrtText || "";
     if (hinw) r += '<div class="leise" style="margin-top:8px">' + esc(hinw) + "</div>";
@@ -748,24 +773,52 @@
     return h;
   }
 
-  // ------------------------------------------------------------ Alarm über die ganze Fläche
+  // ------------------------------------------------------------ Alarm: kleines Fenster (Minimieren, 9, 2); verschwindet, sobald der Status
+  // anders gegeben wird (Funkgerät, Tasten, PC) – dann gibt es keinen Alarm mehr im Stand
+  var alarmKlein = "";
   function alarmZeichnen() {
-    var n = N(), a = n.alarm, box = $("alarm");
-    zeige(box, !!a);
-    if (!a) return;
+    var n = N(), a = n.alarm, box = $("alarm"), mini = $("alarmMini");
     var it = finde(n.liste, function (x) { return x.laeuft; }) || {};
+    var key = a ? (it.id || "") + "|" + a.t : "";
+    if (!a) alarmKlein = "";
+    var klein = !!a && alarmKlein === key;
+    zeige(box, !!a && !klein);
+    zeige(mini, klein);
+    $("inh").className = "inh" + (buchenFuss ? " mitfuss" : "") + (klein ? " mitalarm" : "");
+    if (!a) return;
+    if (klein) {
+      var mh = "<b>ALARM</b><span>" + esc((it.code ? it.code + " · " : "") + (it.sw || a.t)) + "</span><i>Öffnen</i>";
+      if (mini.getAttribute("data-k") !== mh) { mini.setAttribute("data-k", mh); mini.innerHTML = mh; }
+      mini.onclick = function () { alarmKlein = ""; zeichnen(false); };
+      return;
+    }
     var q = finde(n.alleSt, function (x) { return x.nummer === "9"; }), h2 = finde(n.alleSt, function (x) { return x.nummer === "2"; });
-    var h = '<div class="a1"><span>ALARM</span><span>' + esc(n.uhr || "") + " · " + esc(stand.heli || "") + "</span></div>" + (it.code ? mk(it.code, it.stufe, true) : "") +
-      '<div class="at">' + esc(it.sw || a.t) + '</div><div class="as">' + esc(a.s) + "</div>" +
-      (a.ziB || a.ziT ? '<div class="azi">' + (a.ziB ? "<b>" + esc(a.ziB) + "</b>" : "") + (a.ziB && a.ziT ? " // " : "") + esc(a.ziT) + "</div>" : "") +
-      '<div class="mel">Melder läuft bis 9 oder 2</div>' +
-      '<div class="ak"><button class="q" data-al="' + esc(q ? q.aktion : "s9") + '"><b>9</b>Quittieren</button><button class="h" data-al="' + esc(h2 ? h2.aktion : "s2") + '"><b>2</b>Abheben</button></div>';
-    if (box.getAttribute("data-k") === h) return;
-    box.setAttribute("data-k", h);
-    box.innerHTML = h;
-    var b = box.querySelectorAll("[data-al]");
-    for (var i = 0; i < b.length; i++) b[i].onclick = function () { senden(this.getAttribute("data-al")); zeige(box, false); geh({ tab: "einsaetze", buchen: false, sel: it.id || "" }, "tab"); };
+    var h = '<div class="apop"><div class="a1"><span>ALARM</span><span>' + esc(n.uhr || "") + " · " + esc(stand.heli || "") + "</span></div>" +
+      '<div class="ab">' + (it.code ? mk(it.code, it.stufe, true) : "") + '<div class="at">' + esc(it.sw || a.t) + '</div><div class="as">' + esc(a.s) + "</div>" +
+      (a.ziB || a.ziT ? '<div class="azi">' + (a.ziB ? esc(a.ziB) : "") + (a.ziB && a.ziT ? " // " : "") + esc(a.ziT) + "</div>" : "") + "</div>" +
+      '<div class="ak"><button class="mi" id="alMin">Minimieren</button><button class="q" data-al="' + esc(q ? q.aktion : "s9") + '"><b>9</b>Quittieren</button><button class="h" data-al="' + esc(h2 ? h2.aktion : "s2") + '"><b>2</b>Zum BO</button></div></div>';
+    if (box.getAttribute("data-k") !== h) {
+      box.setAttribute("data-k", h);
+      box.innerHTML = h;
+      var b = box.querySelectorAll("[data-al]");
+      for (var i = 0; i < b.length; i++) b[i].onclick = function () { senden(this.getAttribute("data-al")); zeige(box, false); geh({ tab: "einsaetze", buchen: false, sel: it.id || "" }, "tab"); };
+      $("alMin").onclick = function () { alarmKlein = key; zeichnen(false); };
+    }
   }
+
+  // ------------------------------------------------------------ Meldung vom Programm (z. B. Status zu früh) und „Verbinden“ (H145)
+  var meldungT = 0;
+  function meldungZeichnen() {
+    var m = N().meldung, box = $("meldung");
+    zeige(box, !!m);
+    if (m && box.textContent !== m.text) box.textContent = m.text;
+  }
+  var verbSpaeter = false;
+  function verbZeichnen() {
+    zeige($("verbPop"), !!tabv && !tabv.laeuft && !tabv.andere && !verbSpaeter);
+  }
+  $("verbJa").onclick = function () { verbSpaeter = true; verbZeichnen(); try { window.parent.postMessage({ leitwerk: "mission" }, "*"); } catch (e) {} };
+  $("verbNein").onclick = function () { verbSpaeter = true; verbZeichnen(); };
 
   // ------------------------------------------------------------ Zeichnen
   var letzteSeite = "";
@@ -775,7 +828,6 @@
     if (A.sel && !finde(n.liste, function (e) { return e.id === A.sel; })) A.sel = "";
     if (A.buchen && !n.ent) A.buchen = false;
     kopf();
-    alarmZeichnen();
     var it = item(), html;
     buchenFuss = "";
     if (A.tab === "status") html = statusHtml();
@@ -796,7 +848,9 @@
     }
     var fu = $("fuss");
     zeige(fu, !!buchenFuss);
-    $("inh").className = "inh" + (buchenFuss ? " mitfuss" : "");
+    alarmZeichnen();
+    meldungZeichnen();
+    verbZeichnen();
     if (fu.getAttribute("data-k") !== buchenFuss) {
       fu.setAttribute("data-k", buchenFuss); fu.innerHTML = buchenFuss;
       if ($("khBuchen")) $("khBuchen").onclick = function () {

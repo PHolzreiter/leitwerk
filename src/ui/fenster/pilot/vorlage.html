@@ -159,14 +159,16 @@
       <!-- Einsatz -->
       <sc-if value="{{zeigeEinsatz}}">
         <sc-if value="{{gsBR}}">
-          <section class="pv-k pvn-gs"><div class="pv-kk"><span class="lbl">Großeinsatz · Bereitstellungsraum</span><span class="pvn-gr">{{gs.gruppe}}</span></div><div class="pv-ki">
+          <section class="pv-k pvn-gs"><div class="pv-kk"><span class="lbl">Großeinsatz · {{gs.schrittT}}</span><span class="pvn-gr">{{gs.gruppe}}</span></div><div class="pv-ki">
+            <sc-if value="{{gs.auftrag}}"><div class="pvn-auftrag">{{gs.auftrag}}</div></sc-if>
             <sc-if value="{{gs.abruf}}"><div class="pv-abruf" role="alert"><b>ABRUF DURCH DIE EINSATZLEITUNG</b><span>{{gs.abruf.t}}</span><sc-if value="{{gs.abruf.pct}}"><div class="pv-fuss"><i style="width: {{gs.abruf.pct}}%;"></i></div></sc-if></div></sc-if>
             <sc-if value="{{gs.zug}}"><div class="pv-zug"><b class="p" style="background: {{gs.zug.f}};">{{gs.zug.p}}</b><span>{{gs.zug.t}}</span></div></sc-if>
             <sc-if value="{{gs.zahlen}}"><div class="pv-gsz"><sc-for list="{{gs.zahlen}}" as="z"><span><i style="background: {{z.f}};"></i><b>{{z.n}}</b>{{z.t}}</span></sc-for></div></sc-if>
             <sc-if value="{{gs.det}}">
               <div class="pv-brw"><sc-for list="{{gs.werte}}" as="w"><div><span>{{w.l}}</span><b>{{w.v}}</b></div></sc-for></div>
-              <sc-if value="{{gs.liste}}"><span class="lbl">Fahrzeuge im BR</span><div class="pv-brl"><sc-for list="{{gs.liste}}" as="r"><div class="{{r.cls}}"><i>{{r.nr}}</i><span>{{r.t}}</span><small>{{r.z}}</small></div></sc-for></div></sc-if>
+              <sc-if value="{{gs.liste}}"><span class="lbl">Bereitstellungsraum · Reihenfolge des Abrufs</span><div class="pv-brl"><sc-for list="{{gs.liste}}" as="r"><div class="{{r.cls}}"><i>{{r.nr}}</i><span>{{r.t}}</span><small>{{r.z}}</small></div></sc-for></div></sc-if>
             </sc-if>
+            <sc-if value="{{gs.meld}}"><span class="lbl">Lagemeldungen</span><div class="pv-ver"><sc-for list="{{gs.meld}}" as="m"><div class="pv-vz"><span>{{m.z}}</span>{{m.t}}</div></sc-for></div></sc-if>
           </div></section>
         </sc-if>
 
@@ -183,6 +185,7 @@
         <section class="{{d.zielCls}}">
           <div class="pvn-ez"><span class="lbl">Zielort</span><span class="{{d.zielTagCls}}">{{d.zielTag}}</span></div>
           <sc-if value="{{d.zielT}}"><div class="pvn-zt"><b>{{d.zielT}}</b><sc-if value="{{d.zielArt}}"><span>{{d.zielArt}}</span></sc-if></div></sc-if>
+          <sc-if value="{{d.bereit}}"><div class="pvn-bereit" role="status"><span>Patient transportbereit in</span><b>{{d.bereit}}</b></div></sc-if>
           <sc-if value="{{d.buchbar}}"><button class="kn prim pvn-buchk" onClick="{{buchenAuf}}">{{d.buchT}}</button></sc-if>
           <sc-if value="{{d.buchHinweis}}"><div class="pv-hint">{{d.buchHinweis}}</div></sc-if>
         </section>
@@ -198,11 +201,26 @@
             <sc-for list="{{d.pats}}" as="pat"><div class="pv-pat">
               <span class="pv-sicht" style="background: {{pat.sf}}; color: {{pat.sc}};">{{pat.s}}</span>
               <div class="pv-pz"><b>{{pat.t}}</b><sc-if value="{{pat.l}}"><span>{{pat.l}}</span></sc-if>
-                <div class="pv-vit"><sc-for list="{{pat.v}}" as="v"><span class="{{v.c}}">{{v.t}}</span></sc-for></div></div>
+                <div class="pv-vit"><sc-for list="{{pat.v}}" as="v"><span class="{{v.c}}">{{v.t}}</span></sc-for></div>
+                <sc-if value="{{pat.bef}}"><div class="pvn-pl"><span class="lbl">Befund</span><sc-for list="{{pat.bef}}" as="b"><div class="pvn-bef">{{b}}</div></sc-for></div></sc-if>
+                <sc-if value="{{pat.empf}}"><div class="pvn-empf"><span class="lbl">Empfehlung</span><b>{{pat.empf}}</b></div></sc-if>
+                <sc-if value="{{pat.fakt}}"><div class="pvn-pl"><span class="lbl">Vor Ort festgestellt</span><sc-for list="{{pat.fakt}}" as="f"><div class="{{f.cls}}"><small>{{f.k}}</small><b>{{f.w}}</b></div></sc-for></div></sc-if>
+                <sc-if value="{{pat.fwT}}"><div class="pv-gsh">{{pat.fwT}}</div></sc-if>
+                <sc-if value="{{pat.versorgt}}"><div class="pvn-empf"><span class="lbl">Versorgung</span><b>{{pat.versorgt}}</b></div></sc-if>
+              </div>
             </div></sc-for>
+            <sc-if value="{{d.patVd}}"><b>{{d.patVd}}</b></sc-if>
+            <sc-if value="{{d.notruf}}"><div class="pvn-pl"><span class="lbl">Notruf</span><div class="pvn-zitat">{{d.notruf}}</div></div></sc-if>
             <sc-if value="{{d.patVerlauf}}"><div class="pv-ver"><sc-for list="{{d.patVerlauf}}" as="v"><div class="pv-vz"><span>{{v.z}}</span>{{v.t}}</div></sc-for></div></sc-if>
             <sc-if value="{{d.keinPat}}"><span class="pv-hint">Keine Angaben.</span></sc-if>
           </div></section>
+          <sc-if value="{{d.einh}}"><section class="pv-k pvn-einhk"><div class="pv-kk"><span class="lbl">Einheiten</span><span class="pv-hint">{{d.einhN}}</span></div><div class="pv-ki pvn-ehl">
+            <sc-for list="{{d.einh}}" as="x"><div class="{{x.cls}}" style="background: {{x.f}};"><b class="pvn-ehs">{{x.s}}</b><span class="pvn-eht"><b>{{x.ruf}}</b><small>{{x.typ}}</small><span>{{x.txt}}</span></span><sc-if value="{{x.eta}}"><span class="pvn-ehe">{{x.eta}}</span></sc-if></div></sc-for>
+          </div></section></sc-if>
+          <sc-if value="{{d.abfDa}}"><section class="pv-k pvn-abfk2"><div class="pv-kk"><span class="lbl">Abfrage</span><span class="pv-hint">{{d.abfN}}</span></div><div class="pv-ki">
+            <sc-if value="{{d.abf}}"><div class="pvn-abfl"><sc-for list="{{d.abf}}" as="a"><div><sc-if value="{{a.f}}"><small>{{a.f}}</small></sc-if><b>{{a.a}}</b></div></sc-for></div></sc-if>
+            <sc-if value="{{d.abfLeer}}"><span class="pv-hint">Keine Notrufabfrage zu diesem Einsatz.</span></sc-if>
+          </div></section></sc-if>
           <section class="pv-k pvn-zeitk"><div class="pv-kk"><span class="lbl">Zeiten</span></div><div class="pv-ki pvn-zeiten">
             <sc-for list="{{d.zeiten}}" as="z"><div class="{{z.cls}}"><code>{{z.z}}</code><span>{{z.t}}</span></div></sc-for>
           </div></section>
@@ -268,6 +286,7 @@
   <div class="pv-sp pv-rechts">
     <div class="pv-karte">
       <div class="pv-kartenplatz"></div>
+      <sc-if value="{{navK}}"><div class="pv-knav" title="Kurs · Entfernung · Flugzeit · Ankunft"><svg class="ic s" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 18-7-4-7 4z"></path></svg><b>{{navK.kurs}}°</b><span>{{navK.km}}</span><span>{{navK.min}}</span><sc-if value="{{navK.an}}"><span>an {{navK.an}}</span></sc-if></div></sc-if>
       <div class="pv-kwerk"><button class="{{folgCls}}" onClick="{{folgen}}">Folgen</button><button class="kn sm" onClick="{{gross}}">Groß</button></div>
       <sc-if value="{{punktHinweis}}"><div class="pv-khinw">Auf die Karte klicken: dorthin fliegen · Esc bricht ab</div></sc-if>
       <sc-if value="{{khLeg}}"><div class="pv-khinw">Vorschläge auf der Karte – Maus über einen Vorschlag hebt ihn hervor</div></sc-if>

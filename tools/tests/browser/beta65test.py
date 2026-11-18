@@ -61,7 +61,8 @@ try:
             fz = k.get("fz") or []
             m = [x for x in fz if x["mit"]]
             check(len(mit) >= 1 and sorted(x["ruf"] for x in m) == sorted(mit) and all(x["farbe"] != "#8A93A3" for x in m), f"[{thema}] PC-Karte: Fahrzeuge des Einsatzes hervorgehoben ({', '.join(mit)})")
-            check(all(not x["mit"] for x in fz if x["ruf"] in verlegt), f"[{thema}] PC-Karte: andere bleiben grau")
+            # (ein verlegtes Fahrzeug kann selbst zum Einsatz alarmiert worden sein – dann zählt es zum Einsatz)
+            check(all(not x["mit"] for x in fz if x["ruf"] in verlegt and x["ruf"] not in mit), f"[{thema}] PC-Karte: andere bleiben grau")
             t = g.evaluate(TAB) or {}
             tf = t.get("fz") or []
             check(sorted(x["ruf"] for x in tf if x["ein"]) == sorted(mit) and tf and tf[-1]["ein"], f"[{thema}] Tablet-Karte: Einsatz-Fahrzeuge hervorgehoben (und oben gezeichnet)")
