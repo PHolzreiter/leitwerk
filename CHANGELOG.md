@@ -1,5 +1,8 @@
 # Änderungen
 
+## 0.116.0-beta.68 – Zwei RTW, ein Notarzt-Patient
+- **Mehrere Patienten, mehrere RTW:** Der RTW, der den Notarzt nachgefordert hat, hat den kritischen Patienten – nur er wartet auf den Notarzt bzw. fährt zum Rendezvous. Die anderen RTW fahren mit ihren Patienten, ohne auf den Notarzt zu warten (kein eigener Funkspruch, nur Status 4). Ein Fahrzeug bleibt weiter am Einsatzort, solange dort noch Patienten sind.
+
 ## 0.116.0-beta.67 – Funk ohne Abbrüche, Großeinsatz mit mehreren Spieler-NAH, Fehlerberichte vom 18.11.
 - **Funk bricht nicht mehr ab:** Mit mehreren LeitWerk-Fenstern (z. B. zweiter Bildschirm und Gesprächsführung) hat ein Fenster die Funk-Aufnahme eines anderen nach 4 Sekunden geschlossen – längere Funksprüche wurden abgeschnitten, „es kam nichts an“. Jetzt bleibt das Mikrofon offen, solange die Sprechtaste gedrückt ist, egal wie lange und auch in Sprechpausen. Geschlossen wird nur noch ein Mikrofon, das kein Fenster mehr hält (Fenster zu, Taste verloren). Funksprüche dürfen bis zu 10 Minuten dauern.
 - **Großeinsatz – Patient für den Spieler-NAH:** Gilt sofort und auch gegen eine bestehende Versorgung – ein anderes Notarztmittel beim Patienten wird gegen den Spieler-NAH getauscht, der RTW bleibt. Steht der Spieler-NAH im Bereitstellungsraum, ruft ihn die Einsatzleitung gleich ab. Ist der Patient noch nicht erreichbar, wartet das Team auf ihn.

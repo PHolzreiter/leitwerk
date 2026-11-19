@@ -5721,6 +5721,9 @@ export class Simulation extends GsKern {
       e.naWarten = null;
       return false;
     }
+    // mehrere Patienten (Paul 19.11.2026): der RTW, der den Notarzt nachgefordert hat, hat den kritischen Patienten – er wartet
+    // auf den Notarzt bzw. fährt zum Rendezvous; die anderen RTW fahren mit ihren Patienten, ohne auf den Notarzt zu warten
+    if (this.naRtwAnderer(e, fz)) return false;
     const naDa = this.einsatzFz(e).filter((x) => x.id !== fz.id && this.mitNotarzt(x) && ["vorOrt", "warteKH", "treffpunkt"].includes(x.phase));
     if (naDa.length) {
       if (naDa.some((x) => x.phase === "vorOrt") && (!e.naWarten || t - e.naWarten.seit < 25 * MIN)) {
@@ -9617,6 +9620,17 @@ export class Simulation extends GsKern {
   spielerNah(e: Einsatz): SimFahrzeug | undefined {
     if ((e.gs && !e.gs.aufgehoben) || e.gsKind || e.naStorniert) return undefined;
     return this.einsatzFz(e).find((x) => !!x.pilot && fliegt(x) && x.einsatzId === e.id);
+  }
+
+  /**
+   * Mehrere Patienten: gibt es einen anderen RTW, der den Notarzt nachgefordert hat und noch vor Ort ist? Dann hat der den
+   * kritischen Patienten (wartet auf den Notarzt, Rendezvous) – dieser RTW nicht (Paul 19.11.2026).
+   */
+  private naRtwAnderer(e: Einsatz, fz: SimFahrzeug): boolean {
+    if ((e.wahr.lage?.patienten.length ?? 1) < 2) return false;
+    const n = [...(e.nachforderungen ?? [])].reverse().find((x) => x.art === "NA" || x.art === "NFS");
+    if (!n || n.von === fz.funkrufname) return false;
+    return this.einsatzFz(e).some((x) => x.id !== fz.id && x.funkrufname === n.von && this.transportfaehig(x) && ["vorOrt", "suche", "warteKH", "treffpunkt"].includes(x.phase));
   }
 
   /** Spieler-NAH hat entschieden (Transport oder NA im RTW) und ist mit Status 4 los – der Patient ist transportbereit */

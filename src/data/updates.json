@@ -1,5 +1,13 @@
 [
  {
+  "version": "0.116.0-beta.68",
+  "datum": "2026-11-19",
+  "titel": "Zwei RTW, ein Notarzt-Patient",
+  "punkte": [
+   "Mehrere Patienten: der RTW, der den Notarzt nachfordert, wartet auf ihn bzw. macht das Rendezvous – die anderen RTW fahren gleich mit ihren Patienten"
+  ]
+ },
+ {
   "version": "0.116.0-beta.67",
   "datum": "2026-11-19",
   "titel": "Funk ohne Abbrüche, Großeinsatz mit mehreren Spieler-NAH",
