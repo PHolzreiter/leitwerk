@@ -30,7 +30,7 @@ export const ABLAGE_INFO: Record<AblageOrdner, string> = {
   "Abfrageschema/RD": "Abfrageschemas für Notrufe (JSON)",
   "Abfrageschema/Krankentransport_Sekundärtransporte": "Abfrage der KT-Hotline (JSON)",
   "Codelisten/RD": "Codelisten für Notrufe (CSV)",
-  "Codelisten/Krankentransport_Sekundärtransporte": "Codes für Krankentransporte und Überstellungen mit Bedingungen (JSON)",
+  "Codelisten/Krankentransport_Sekundärtransporte": "Codes für Krankentransporte und Überstellungen mit Bedingungen (JSON; beim Hochladen auch aus CSV)",
   Daten: "importierte Fahrzeuge, Dienststellen, Krankenhäuser, Orte … (CSV)",
   Fälle: "importierte Fallpakete",
   Töne: "eigene Klingel- und Signaltöne",

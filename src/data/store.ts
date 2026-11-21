@@ -279,7 +279,7 @@ export class Store {
     this.changed();
   }
 
-  /** Namens-Ersetzungen (Realismus › Namen und Bilder) */
+  /** Namens-Ersetzungen (Eigene Dateien › Namen) */
   get namen(): NamensRegel[] {
     return this.data.namen ?? [];
   }

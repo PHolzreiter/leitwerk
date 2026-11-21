@@ -117,13 +117,13 @@ export function zusatzZeile(r, base, ctx) {
     if (!Z) return { ...base, isRow: true, isInfo: true, value: 'nur im Spiel', dot: '#9AA3B5' };
     const nur = !!V('zu_nur', false);
     const d = Z.zuord.daten(nur);
-    if (!d) return { ...base, isRow: false, isZuord: true, leer: true, nichtLeer: false, leerText: 'Aktiv ist das eingebaute LeitWerk-Codesystem – es verwendet die Merkmale selbst. Die Zuordnung braucht es erst für ein eigenes Abfrageschema.', zeilen: [], merkmale: [], stand: '', stufen: '', hatStufen: false, nurAn: 'false', nurCls: 'l-tog', nurFlip: () => undefined, ki: () => undefined, fertig: () => this.setState({ sp: 'satzRd', sw: sw1(), cfm: null }) };
+    if (!d) return { ...base, isRow: false, isZuord: true, leer: true, nichtLeer: false, leerText: 'Aktiv ist das eingebaute LeitWerk-Codesystem – es verwendet die Merkmale selbst. Die Zuordnung braucht es erst für ein eigenes Abfrageschema.', zeilen: [], merkmale: [], stand: '', stufen: '', hatStufen: false, nurAn: 'false', nurCls: 'l-tog', nurFlip: () => undefined, ki: () => undefined, fertig: () => this.setState({ sp: 'rdAbfrage', sw: sw1(), cfm: null }) };
     return { ...base, isRow: false, isZuord: true, leer: false, nichtLeer: true, nurAn: nur ? 'true' : 'false', nurCls: 'l-tog' + (nur ? ' on' : ''), nurFlip: () => this.wert('zu_nur', !nur),
       ki: () => { melde('KI fragt …'); Z.zuord.ki(t => melde(t)).then(t => melde(t), e => melde('⚠ ' + String((e && e.message) || e))); }, stand: d.stand,
       merkmale: d.merkmale,
       zeilen: d.zeilen.map(z => ({ ...z, setM: e => { Z.zuord.setzen(z.id, e.target.value); this.setState({}); }, qCls: 'ei-q' + (z.art === 'gelb' ? ' ann' : z.art === 'rot' ? ' rot' : '') })),
       stufen: d.stufen, hatStufen: !!d.stufen,
-      fertig: () => this.setState({ sp: 'satzRd', sw: sw1(), cfm: null }) };
+      fertig: () => this.setState({ sp: 'rdAbfrage', sw: sw1(), cfm: null }) };
   }
   return null;
 }

@@ -7,16 +7,18 @@
  * Im Multiplayer gilt, was der Host gewählt hat.
  */
 import { istSchema, type Schema } from "../abfrage/schema";
+import { pruefeCodesystem } from "../abfrage/codesystem";
 import { importCsv } from "../data/schema";
+import { parseCsv, toCsv } from "../data/csv";
+import type { Einsatzcode } from "../data/model";
 import { store } from "../data/store";
 import { standardCodesystem } from "../data/standard";
 import { ablageLesen, ablageListe, ablageLoeschen, ablageName, ablageSpeichern, type AblageOrdner } from "../net/ablage";
 import { decodeText } from "../platform";
-import { pruefeKtSatz, type KtAbfrageFrage, type KtCodeDef } from "../sim/ktBedingungen";
+import { KT_BED_KEYS, KT_BEDINGUNGEN, pruefeKtSatz, type KtAbfrageFrage, type KtBedKey, type KtCodeBed, type KtCodeDef } from "../sim/ktBedingungen";
 import { standardKtAbfrage } from "../sim/ktCodes";
 import { confirmDialog, openDialog } from "./dialog";
 import { el, esc, toast } from "./dom";
-import { schemaUebernehmen } from "./importDialog";
 import { ktEditorOeffnen } from "./ktCodeEditor";
 
 export const RECHTLICHER_HINWEIS =
@@ -105,8 +107,12 @@ export async function satzListe(bereich: Bereich = "rd"): Promise<CodeSatz[]> {
 export function eingebautAktivieren(bereich: Bereich = "rd"): void {
   if (bereich === "kt") {
     store.setKtSatz(null);
+    lsSetzen(lsTeil("ktCodes"), null);
+    lsSetzen(lsTeil("ktAbfrage"), null);
     return;
   }
+  lsSetzen(lsTeil("rdCodes"), null);
+  lsSetzen(lsTeil("rdAbfrage"), null);
   store.setSchema(null);
   store.removeMany("codes", store.list("codes").filter((c) => c.herkunft !== "standard").map((c) => c.id));
   aktivMerken(null);
@@ -133,8 +139,9 @@ export function rdSchemaLesen(text: string, datei: string): Schema {
   return s;
 }
 
-/** KT-/SEK-Codes (JSON: { codes: [...] } oder eine Liste) */
+/** KT-/SEK-Codes (JSON: { codes: [...] } oder eine Liste; ab Beta 69 auch CSV – siehe ktCodesCsvLesen) */
 export function ktCodesLesen(text: string, datei: string): KtCodeDef[] {
+  if (/\.(csv|txt)$/i.test(datei) || !/^\s*[[{]/.test(text.replace(/^﻿/, ""))) return ktCodesCsvLesen(text, datei);
   let roh: unknown;
   try {
     roh = JSON.parse(text);
@@ -161,29 +168,314 @@ export function ktAbfrageLesen(text: string, datei: string): KtAbfrageFrage[] {
   return l as KtAbfrageFrage[];
 }
 
-/** Gespeicherten Satz aktivieren */
+// ------------------------------------------------------------------ KT-/SEK-Codes als CSV (Beta 69)
+
+/** Spalten der KT-CSV: Code, Name, Kapitel, dann je Bedingung eine Spalte (leer = beliebig) */
+export const KT_CSV_KOPF = ["Code", "Name", "Kapitel", ...KT_BED_KEYS.map((k) => KT_BEDINGUNGEN[k].label)];
+
+const kNorm = (s: string) => s.toLowerCase().replace(/ä/g, "a").replace(/ö/g, "o").replace(/ü/g, "u").replace(/ß/g, "ss").replace(/[^a-z0-9]/g, "");
+
+/** Wert einer Bedingung aus der CSV: Schlüssel („zum_kh“) oder Text („zum Krankenhaus / Arzt“); leer/„beliebig“/„*“ = nicht festgelegt */
+function bedWert(k: KtBedKey, roh: string, wo: string): string | undefined {
+  const v = roh.trim();
+  if (!v || v === "*" || /^(beliebig|egal\s*\(beliebig\)|-)$/i.test(v)) return undefined;
+  const werte = KT_BEDINGUNGEN[k].werte as Record<string, string>;
+  const n = kNorm(v);
+  for (const [key, label] of Object.entries(werte)) if (kNorm(key) === n || kNorm(label) === n) return key;
+  throw new Error(`${wo}: „${v}“ ist kein Wert für ${KT_BEDINGUNGEN[k].label} (möglich: ${Object.values(werte).join(", ")})`);
+}
+
+/**
+ * KT-/SEK-Codes aus einer CSV (Spalten wie die Vorlage: Code; Name; Kapitel; Fahrt; Therapie; Lage; …).
+ * Eine Zeile ohne Bedingungen, deren Code es eingebaut gibt, bekommt dessen Bedingungen.
+ */
+export function ktCodesCsvLesen(text: string, datei: string): KtCodeDef[] {
+  const zeilen = parseCsv(text).filter((z) => z.some((x) => x.trim()) && !z[0]?.trim().startsWith("#"));
+  if (zeilen.length < 2) throw new Error(`${datei}: keine KT-/SEK-Codes erkannt (Kopfzeile und mindestens ein Code nötig – siehe Vorlage)`);
+  const kopf = zeilen[0].map((x) => kNorm(x));
+  const spalte = (namen: string[]) => kopf.findIndex((k) => namen.some((n) => kNorm(n) === k));
+  const iCode = spalte(["code"]);
+  if (iCode < 0) throw new Error(`${datei}: Spalte „Code“ fehlt (Kopfzeile wie in der Vorlage)`);
+  const iName = spalte(["name", "bezeichnung"]);
+  const iKap = spalte(["kapitel", "gruppe"]);
+  const iBed = KT_BED_KEYS.map((k) => [k, spalte([k, KT_BEDINGUNGEN[k].label])] as const).filter(([, i]) => i >= 0);
+  const eingebaut = new Map(eingebauteKtCodes().map((c) => [c.code.toUpperCase(), c]));
+  const out: KtCodeDef[] = [];
+  zeilen.slice(1).forEach((z, n) => {
+    const code = (z[iCode] ?? "").trim();
+    if (!code) return;
+    const wo = `${datei}, Zeile ${n + 2} (${code})`;
+    const bed: KtCodeBed = {};
+    for (const [k, i] of iBed) {
+      const v = bedWert(k, z[i] ?? "", wo);
+      if (v !== undefined) (bed as Record<string, string>)[k] = v;
+    }
+    const std = eingebaut.get(code.toUpperCase());
+    const name = (iName >= 0 ? z[iName] : "")?.trim() || std?.name || code;
+    const kapitel = (iKap >= 0 ? z[iKap] : "")?.trim() || std?.kapitel || "";
+    out.push({ code, name, ...(kapitel ? { kapitel } : {}), bed: Object.keys(bed).length ? bed : { ...(std?.bed ?? {}) } });
+  });
+  if (!out.length) throw new Error(`${datei}: keine KT-/SEK-Codes erkannt (Spalte „Code“ ist leer)`);
+  return out;
+}
+
+/** Vorlage für KT-/SEK-Codes: die eingebauten Codes mit allen Bedingungen (Werte als Text) */
+export function ktCodesVorlage(codes: KtCodeDef[] = eingebauteKtCodes()): string {
+  return toCsv(
+    KT_CSV_KOPF,
+    codes.map((c) => [c.code, c.name, c.kapitel ?? "", ...KT_BED_KEYS.map((k) => (c.bed[k] ? ((KT_BEDINGUNGEN[k].werte as Record<string, string>)[c.bed[k]!] ?? c.bed[k]!) : ""))]),
+  );
+}
+
+/** Vorlage für die Notruf-Codeliste: die eingebauten Codes */
+export function rdCodesVorlage(): string {
+  const s = standardCodesystem();
+  return toCsv(["Code", "Name", "Kategorie", "Kapitel"], Object.entries(s.codes).map(([code, x]) => [code, x.name, x.kategorie, x.kapitel]));
+}
+
+// ------------------------------------------------------------------ Teile: Codes und Abfrage getrennt wählbar (Beta 69)
+
+export type Teil = "rdCodes" | "rdAbfrage" | "ktCodes" | "ktAbfrage";
+
+export const TEILE: Record<Teil, { bereich: Bereich; art: "codes" | "abfrage"; ordner: AblageOrdner; endung: RegExp; titel: string }> = {
+  rdCodes: { bereich: "rd", art: "codes", ordner: ORDNER.rd.codes, endung: /\.(csv|txt)$/i, titel: "Notruf-Codes" },
+  rdAbfrage: { bereich: "rd", art: "abfrage", ordner: ORDNER.rd.abfrage, endung: /\.json$/i, titel: "Notruf-Abfrage" },
+  ktCodes: { bereich: "kt", art: "codes", ordner: ORDNER.kt.codes, endung: /\.json$/i, titel: "KT/SEK-Codes" },
+  ktAbfrage: { bereich: "kt", art: "abfrage", ordner: ORDNER.kt.abfrage, endung: /\.json$/i, titel: "KT-Abfrage" },
+};
+
+export interface TeilDatei {
+  datei: string;
+  name: string;
+  geaendert: number;
+  entwurf?: boolean;
+}
+
+const lsTeil = (t: Teil) => `lw.aktiv.${t}`;
+function lsLesen(k: string): string | null {
+  try {
+    return localStorage.getItem(k);
+  } catch {
+    return null;
+  }
+}
+function lsSetzen(k: string, v: string | null): void {
+  try {
+    if (v) localStorage.setItem(k, v);
+    else localStorage.removeItem(k);
+  } catch {
+    /* egal */
+  }
+}
+
+/** Dateien eines Teils (Entwürfe aus dem KT-Editor markiert) */
+export async function teilListe(t: Teil): Promise<TeilDatei[]> {
+  const d = TEILE[t];
+  const l = (await ablageListe(d.ordner).catch(() => [])).filter((x) => d.endung.test(x.datei));
+  const out: TeilDatei[] = [];
+  for (const x of l) {
+    const e: TeilDatei = { datei: x.datei, name: basis(x.datei), geaendert: x.geaendert };
+    if (d.bereich === "kt") {
+      try {
+        if ((JSON.parse(await ablageLesen(d.ordner, x.datei)) as { entwurf?: boolean }).entwurf) e.entwurf = true;
+      } catch {
+        /* egal */
+      }
+    }
+    out.push(e);
+  }
+  return out.sort((a, b) => a.name.localeCompare(b.name, "de"));
+}
+
+/** Aktive Datei eines Teils (null = eingebaut) */
+export function aktivDatei(t: Teil): string | null {
+  if (t === "rdAbfrage") {
+    if (store.schemaIstStandard) return null;
+    const alt = lsLesen(LS_AKTIV);
+    return lsLesen(lsTeil(t)) ?? (alt ? `${alt}.json` : null) ?? (store.schemaRoh?.name ? `${store.schemaRoh.name}.json` : "Eigenes Abfrageschema");
+  }
+  if (t === "rdCodes") {
+    const c = store.list("codes").find((x) => x.herkunft !== "standard" && /\.(csv|txt)$/i.test(x.herkunftDetail ?? ""));
+    return c ? c.herkunftDetail! : null;
+  }
+  const k = store.ktSatzRoh;
+  const teil = t === "ktCodes" ? k?.codes : k?.abfrage;
+  if (!k || !Array.isArray(teil) || !teil.length) return null;
+  return lsLesen(lsTeil(t)) ?? `${k.name || "Eigener Satz"}.json`;
+}
+
+/** Abfrageschema übernehmen (Codes daraus in die Codeliste, neue Einsatzstufen ergänzen); Rückgabe: Anzahl neuer Stufen */
+export function schemaAnwenden(schema: Schema, dateiname: string): number {
+  const vorhanden = new Map(store.list("codes").map((x) => [x.code.toUpperCase(), x.id]));
+  const liste: Einsatzcode[] = Object.entries(schema.codes ?? {}).map(([code, x]) => ({
+    id: vorhanden.get(code.toUpperCase()) ?? code,
+    code,
+    name: x.name,
+    kategorie: x.kategorie,
+    kapitel: x.kapitel,
+    hinweis: "",
+    herkunft: "import",
+    herkunftDetail: dateiname,
+  }));
+  store.setSchema(schema);
+  if (liste.length) store.upsert("codes", liste);
+  const neu = (schema.einsatzstufen ?? []).filter((x) => x?.stufe && !store.settings.stufen.some((st) => st.stufe === x.stufe));
+  if (neu.length) {
+    const set = structuredClone(store.settings);
+    for (const x of neu)
+      set.stufen.push({
+        stufe: x.stufe,
+        rettungsmittel: x.rettungsmittel ?? "",
+        nfsErforderlich: !!x.nfs_erforderlich,
+        notarzt: x.notarzt === "nef" || x.notarzt === "schnellster" ? x.notarzt : "nein",
+        sondersignal: !!x.sondersignal,
+        kategorie: x.kategorie === "kritisch" || x.kategorie === "dringend" || x.kategorie === "stabil" ? x.kategorie : x.notarzt === "nef" || x.notarzt === "schnellster" ? "kritisch" : x.sondersignal ? "dringend" : "stabil",
+        transportProzent: Math.max(0, Math.min(100, Number(x.transport_prozent ?? 70))),
+      });
+    store.setSettings(set);
+  }
+  return neu.length;
+}
+
+/** RD neu zusammensetzen: erst eingebaut, dann Abfrageschema, dann Codeliste (die Codeliste gewinnt bei Name und Kategorie) */
+function rdAnwenden(schema: { datei: string; schema: Schema } | null, codes: { datei: string; liste: Einsatzcode[] } | null): number {
+  eingebautAktivieren("rd");
+  const stufen = schema ? schemaAnwenden(schema.schema, schema.datei) : 0;
+  if (codes) {
+    const vorhanden = new Map(store.list("codes").map((x) => [x.code.toUpperCase(), x.id]));
+    store.upsert("codes", codes.liste.map((x) => ({ ...x, id: vorhanden.get(x.code.toUpperCase()) ?? x.id, herkunft: "import", herkunftDetail: codes.datei })));
+  }
+  lsSetzen(lsTeil("rdAbfrage"), schema?.datei ?? null);
+  lsSetzen(lsTeil("rdCodes"), codes?.datei ?? null);
+  aktivMerken(schema ? basis(schema.datei) : codes ? basis(codes.datei) : null);
+  return stufen;
+}
+
+/** KT/SEK neu zusammensetzen (fehlt ein Teil, gilt der eingebaute); prüft den Satz */
+function ktAnwenden(codes: { datei: string; liste: KtCodeDef[] } | null, abfrage: { datei: string; liste: KtAbfrageFrage[] } | null): void {
+  if (!codes && !abfrage) {
+    store.setKtSatz(null);
+    lsSetzen(lsTeil("ktCodes"), null);
+    lsSetzen(lsTeil("ktAbfrage"), null);
+    return;
+  }
+  const r = pruefeKtSatz({ codes: codes?.liste ?? eingebauteKtCodes(), abfrage: abfrage?.liste }, standardKtAbfrage());
+  if (r.fehler.length) throw new Error(`Passt so nicht zusammen (${r.fehler.length} Problem${r.fehler.length === 1 ? "" : "e"}: ${r.fehler[0]}) – im KT-Code-Editor bearbeiten`);
+  const namen = [...new Set([codes ? basis(codes.datei) : "", abfrage ? basis(abfrage.datei) : ""].filter(Boolean))];
+  store.setKtSatz({ name: namen.join(" + "), ...(codes ? { codes: codes.liste } : {}), ...(abfrage ? { abfrage: abfrage.liste } : {}) });
+  lsSetzen(lsTeil("ktCodes"), codes?.datei ?? null);
+  lsSetzen(lsTeil("ktAbfrage"), abfrage?.datei ?? null);
+}
+
+async function entwurfPruefen(t: Teil, datei: string, text: string): Promise<void> {
+  if (TEILE[t].bereich !== "kt") return;
+  try {
+    if ((JSON.parse(text) as { entwurf?: boolean }).entwurf) throw new Error(`„${basis(datei)}“ ist ein Entwurf – erst im KT-Code-Editor fertigstellen`);
+  } catch (e) {
+    if (String((e as Error).message).includes("Entwurf")) throw e;
+  }
+}
+
+/**
+ * Einen Teil umschalten (datei = null: eingebaut). Der andere Teil desselben Bereichs bleibt, wie er ist.
+ * Rückgabe: Text für die Rückmeldung.
+ */
+export async function teilAktivieren(t: Teil, datei: string | null): Promise<string> {
+  const d = TEILE[t];
+  const text = datei ? await ablageLesen(d.ordner, datei) : null;
+  if (datei && text !== null) await entwurfPruefen(t, datei, text);
+  if (d.bereich === "rd") {
+    // der andere Teil aus dem Speicher (nicht neu aus der Datei)
+    const abD = t === "rdAbfrage" ? datei : aktivDatei("rdAbfrage");
+    const coD = t === "rdCodes" ? datei : aktivDatei("rdCodes");
+    let schema: { datei: string; schema: Schema } | null = null;
+    if (abD) schema = { datei: abD, schema: t === "rdAbfrage" ? rdSchemaLesen(text!, abD) : structuredClone(store.schemaRoh!) };
+    let codes: { datei: string; liste: Einsatzcode[] } | null = null;
+    if (coD) {
+      if (t === "rdCodes") {
+        const r = codesLesen(text!, coD);
+        if ("fehler" in r) throw new Error(r.fehler);
+        codes = { datei: coD, liste: r.codes! };
+      } else codes = { datei: coD, liste: store.list("codes").filter((x) => x.herkunftDetail === coD).map((x) => ({ ...x })) };
+    }
+    const stufen = rdAnwenden(schema?.schema ? schema : null, codes);
+    const was = t === "rdAbfrage" ? (abD ? `Abfrageschema „${basis(abD)}“ aktiv` : "Eingebaute Abfrage aktiv") : coD ? `Codeliste „${basis(coD)}“ aktiv · ${codes!.liste.length} Codes` : "Eingebaute Codes aktiv";
+    return `${was}${stufen ? ` · ${stufen} neue Einsatzstufen` : ""}`;
+  }
+  const k = store.ktSatzRoh;
+  const coD = t === "ktCodes" ? datei : aktivDatei("ktCodes");
+  const abD = t === "ktAbfrage" ? datei : aktivDatei("ktAbfrage");
+  const codes = coD ? { datei: coD, liste: t === "ktCodes" ? ktCodesLesen(text!, coD) : ((k?.codes ?? []) as KtCodeDef[]) } : null;
+  const abfrage = abD ? { datei: abD, liste: t === "ktAbfrage" ? ktAbfrageLesen(text!, abD) : ((k?.abfrage ?? []) as KtAbfrageFrage[]) } : null;
+  ktAnwenden(codes?.liste.length ? codes : null, abfrage?.liste.length ? abfrage : null);
+  if (t === "ktCodes") return coD ? `KT/SEK-Codes „${basis(coD)}“ aktiv · ${codes!.liste.length} Codes` : "Eingebaute KT/SEK-Codes aktiv";
+  return abD ? `KT-Abfrage „${basis(abD)}“ aktiv · ${abfrage!.liste.length} Fragen` : "Eingebaute KT-Abfrage aktiv";
+}
+
+/**
+ * Datei für einen Teil hochladen: prüfen, in den Ordner speichern und aktivieren.
+ * KT/SEK-Codes als CSV werden als JSON gespeichert; passen sie noch nicht (z. B. Bedingungen fehlen), als Entwurf.
+ */
+export async function teilHochladen(t: Teil, dateiname: string, text: string): Promise<string> {
+  const d = TEILE[t];
+  const name = ablageName(basis(dateiname));
+  let inhalt = text;
+  let ziel = dateiname;
+  if (t === "rdCodes") {
+    const r = codesLesen(text, dateiname);
+    if ("fehler" in r) throw new Error(r.fehler);
+    ziel = `${name}.csv`;
+  } else if (t === "rdAbfrage") {
+    const s = rdSchemaLesen(text, dateiname);
+    const p = pruefeCodesystem(s);
+    if (p.fehler.length) throw new Error(`${dateiname}: ${p.fehler[0]}${p.fehler.length > 1 ? ` (und ${p.fehler.length - 1} weitere Fehler)` : ""}`);
+    inhalt = JSON.stringify(s);
+    ziel = `${name}.json`;
+  } else if (t === "ktCodes") {
+    const liste = ktCodesLesen(text, dateiname);
+    const k = store.ktSatzRoh;
+    const r = pruefeKtSatz({ codes: liste, abfrage: (k?.abfrage as KtAbfrageFrage[] | undefined) ?? undefined }, standardKtAbfrage());
+    ziel = `${name}.json`;
+    if (r.fehler.length) {
+      await ablageSpeichern(d.ordner, ziel, JSON.stringify({ entwurf: true, codes: liste }));
+      return `Als Entwurf gespeichert (${liste.length} Codes) – ${r.fehler.length} Problem${r.fehler.length === 1 ? "" : "e"}, z. B. ${r.fehler[0]} · im KT-Code-Editor fertigstellen`;
+    }
+    inhalt = JSON.stringify({ codes: liste });
+  } else {
+    inhalt = JSON.stringify({ abfrage: ktAbfrageLesen(text, dateiname) });
+    ziel = `${name}.json`;
+  }
+  await ablageSpeichern(d.ordner, ziel, inhalt);
+  return `Gespeichert in ${d.ordner} · ${await teilAktivieren(t, ziel)}`;
+}
+
+/** Datei eines Teils löschen (war sie aktiv: wieder eingebaut) */
+export async function teilLoeschen(t: Teil, datei: string): Promise<string> {
+  const istAktiv = aktivDatei(t) === datei;
+  await ablageLoeschen(TEILE[t].ordner, datei);
+  if (istAktiv) await teilAktivieren(t, null).catch(() => (TEILE[t].bereich === "kt" ? ktAnwenden(null, null) : eingebautAktivieren("rd")));
+  return istAktiv ? "Gelöscht – wieder eingebaut" : "Gelöscht";
+}
+
+/** Gespeicherten Satz aktivieren (beide Teile gleichen Namens, z. B. nach dem Speichern im KT-Editor) */
 export async function satzAktivieren(s: CodeSatz): Promise<void> {
   if (s.entwurf) throw new Error(`„${s.name}“ ist ein Entwurf – erst im Editor fertigstellen`);
   const o = ORDNER[s.bereich];
   if (s.bereich === "kt") {
-    const codes = s.codes ? ktCodesLesen(await ablageLesen(o.codes, s.codes), s.codes) : undefined;
-    const abfrage = s.schema ? ktAbfrageLesen(await ablageLesen(o.abfrage, s.schema), s.schema) : undefined;
-    const r = pruefeKtSatz({ codes: codes ?? eingebauteKtCodes(), abfrage }, standardKtAbfrage());
-    if (r.fehler.length) throw new Error(`„${s.name}“ ist noch nicht vollständig (${r.fehler.length} Problem${r.fehler.length === 1 ? "" : "e"}) – bitte im Editor bearbeiten`);
-    store.setKtSatz({ name: s.name, ...(codes ? { codes } : {}), ...(abfrage ? { abfrage } : {}) });
+    const codes = s.codes ? { datei: s.codes, liste: ktCodesLesen(await ablageLesen(o.codes, s.codes), s.codes) } : null;
+    const abfrage = s.schema ? { datei: s.schema, liste: ktAbfrageLesen(await ablageLesen(o.abfrage, s.schema), s.schema) } : null;
+    ktAnwenden(codes, abfrage);
     toast(`KT-/SEK-Satz „${s.name}“ aktiv${codes ? "" : " (nur Abfrage – die Codes bleiben die eingebauten)"}${abfrage ? "" : " (nur Codes – die Abfrage bleibt die eingebaute)"}`);
     return;
   }
-  const schema = s.schema ? rdSchemaLesen(await ablageLesen(o.abfrage, s.schema), s.schema) : null;
-  let codes: ReturnType<typeof codesLesen> | null = null;
+  const schema = s.schema ? { datei: s.schema, schema: rdSchemaLesen(await ablageLesen(o.abfrage, s.schema), s.schema) } : null;
+  let codes: { datei: string; liste: Einsatzcode[] } | null = null;
   if (s.codes) {
-    codes = codesLesen(await ablageLesen(o.codes, s.codes), s.codes);
-    if ("fehler" in codes) throw new Error(codes.fehler);
+    const r = codesLesen(await ablageLesen(o.codes, s.codes), s.codes);
+    if ("fehler" in r) throw new Error(r.fehler);
+    codes = { datei: s.codes, liste: r.codes! };
   }
-  eingebautAktivieren("rd");
-  if (schema) schemaUebernehmen(schema, s.schema!, false);
-  if (codes && "codes" in codes) store.upsert("codes", codes.codes!);
-  aktivMerken(s.name);
+  rdAnwenden(schema, codes);
   toast(`RD-Satz „${s.name}“ aktiv${schema ? "" : " (nur Codeliste – die Abfrage bleibt die eingebaute)"}`);
 }
 

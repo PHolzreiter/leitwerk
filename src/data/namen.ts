@@ -38,15 +38,27 @@ export function namenLesen(text: string): NamensRegel[] {
 /** Name der Vorlage im Ordner Dokumente/LeitWerk/Namen */
 export const NAMEN_VORLAGE = "Vorlage_Namen.csv";
 
-/** Vorlage-Datei: Organisationen, dazu alle Dienststellen des Rettungsdienstes und der Luftrettung sowie die Hubschrauber
+/** Vorlage-Datei: Organisationen, Hubschrauber, Dienststellen des Rettungsdienstes und der Luftrettung,
+ *  dazu eigener Abschnitt für Krankentransport und Überstellungen (KT/SEK)
  *  (rechts leer – wer will, trägt dort den eigenen Namen ein; leere Zeilen werden nicht angewendet) */
-export function namenVorlage(daten?: { stations: { name: string; organisation: string }[]; vehicles: { kurzname: string; kategorie: string }[] }): string {
-  const zeilen = ["# LeitWerk – Namens-Ersetzungen: rechts neben dem Strichpunkt den eigenen Namen eintragen, leere Zeilen gelten nicht", "neutral;eigen", "# Organisationen (gelten als Wort in allen Namen)"];
+export function namenVorlage(daten?: { stations: { id?: string; name: string; organisation: string }[]; vehicles: { kurzname: string; kategorie: string; dienststelleId?: string }[] }): string {
+  const zeilen = [
+    "# LeitWerk – Namens-Ersetzungen: rechts neben dem Strichpunkt den eigenen Namen eintragen, leere Zeilen gelten nicht",
+    "# Unter neuem Namen speichern (z. B. Meine_Namen.csv), dann in LeitWerk unter Eigene Dateien › Namen auswählen",
+    "neutral;eigen",
+    "# Organisationen (gelten als Wort in allen Namen, z. B. „Krankentransport“ in „Krankentransport St. Pölten“)",
+  ];
   for (const [n] of NEUTRALE_NAMEN) zeilen.push(`${n};`);
   if (daten) {
     const heli = [...new Set(daten.vehicles.filter((v) => v.kurzname && /^(NAH|ITH)$/.test(v.kategorie)).map((v) => v.kurzname))].sort((a, b) => a.localeCompare(b, "de", { numeric: true }));
-    if (heli.length) zeilen.push("# Hubschrauber", ...heli.map((h) => `${h};`));
-    const st = [...new Set(daten.stations.filter((x) => ["Rettungsdienst", "Luftrettung", "Leitstelle"].includes(x.organisation)).map((x) => x.name))].sort((a, b) => a.localeCompare(b, "de"));
+    if (heli.length) zeilen.push("# Hubschrauber (NAH, ITH)", ...heli.map((h) => `${h};`));
+    // Stützpunkte für Krankentransporte und Überstellungen: Dienststellen mit SKTW, SRTW, SNAW oder ITH, dazu „Krankentransport …“
+    const sekIds = new Set(daten.vehicles.filter((v) => /^(SKTW|SRTW|SNAW|ITH)$/.test(v.kategorie) && v.dienststelleId).map((v) => v.dienststelleId!));
+    const relevant = daten.stations.filter((x) => ["Rettungsdienst", "Luftrettung", "Leitstelle", "Krankentransport"].includes(x.organisation));
+    const istKt = (x: { id?: string; name: string }) => (x.id && sekIds.has(x.id)) || /(^|\s)Krankentransport(\s|$)/.test(x.name);
+    const kt = [...new Set(relevant.filter(istKt).map((x) => x.name))].sort((a, b) => a.localeCompare(b, "de"));
+    if (kt.length) zeilen.push("# Krankentransport & Überstellung (KT/SEK) – Stützpunkte mit SKTW, SRTW, SNAW, ITH (ganzer Name)", ...kt.map((x) => `${x};`));
+    const st = [...new Set(relevant.filter((x) => !istKt(x)).map((x) => x.name))].sort((a, b) => a.localeCompare(b, "de"));
     if (st.length) zeilen.push("# Dienststellen (ganzer Name)", ...st.map((x) => `${x};`));
   }
   return zeilen.join("\n") + "\n";

@@ -11,9 +11,18 @@ import { NAMEN_VORLAGE, namenLesen, namenVorlage } from "../data/namen";
 import { standardRecords } from "../data/standard";
 
 /** Namens-Ersetzungen: Vorlage im Ordner „Namen“ anlegen, aktive Datei neu einlesen (im Ordner bearbeitet) */
-export async function namenAbgleichen(): Promise<void> {
+/** Vorlage im Ordner „Namen“ anlegen bzw. auf den neuen Stand bringen (nur, solange rechts nichts eingetragen ist) */
+export async function namenVorlageSichern(): Promise<void> {
   const l = await ablageListe("Namen");
-  if (!l.some((d) => d.datei === NAMEN_VORLAGE)) await ablageSpeichern("Namen", NAMEN_VORLAGE, namenVorlage(standardRecords()));
+  const neu = namenVorlage(standardRecords());
+  if (!l.some((d) => d.datei === NAMEN_VORLAGE)) return void (await ablageSpeichern("Namen", NAMEN_VORLAGE, neu));
+  const alt = await ablageLesen("Namen", NAMEN_VORLAGE).catch(() => null);
+  if (alt !== null && alt !== neu && !namenLesen(alt).length) await ablageSpeichern("Namen", NAMEN_VORLAGE, neu);
+}
+
+export async function namenAbgleichen(): Promise<void> {
+  await namenVorlageSichern();
+  const l = await ablageListe("Namen");
   const datei = store.namenDatei;
   if (!datei || store.inSession || !l.some((d) => d.datei === datei)) return;
   const r = namenLesen(await ablageLesen("Namen", datei));

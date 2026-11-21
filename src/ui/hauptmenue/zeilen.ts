@@ -30,7 +30,6 @@ import { FUNK_FARBEN, FUNKGRUPPEN } from "../../sim/funkgruppen";
 import { KATEGORIE_LABEL, KATEGORIEN, NOTARZT_LABEL, defaultSettings, defaultStufeFuer, stufeRaten, type Kategorie, type NotarztRegel, type Settings, type StufeDef } from "../../sim/settings";
 import { allCodes, codeKategorien } from "../../sim/codes";
 import { ktCodes, standardKtAbfrage } from "../../sim/ktCodes";
-import { pruefeKtSatz } from "../../sim/ktBedingungen";
 import { sim } from "../../sim/engine";
 import { geoStatus, regionSetzen, searchAddress, REGIONEN, type GeoStatus } from "../../sim/geo";
 import { GRUNDPAKET, appVersion, formatBytes, installPack, packSize, packsChanged, packsLocal, packsManifest, removePack, type Pack, type PacksLocal, type UpdateInfo } from "../../updates";
@@ -48,26 +47,26 @@ import { alleFaelle, brauchtVon, eingebauterFall, faelleGeaendert, fallpaketExpo
 import { faellePruefen } from "../../abfrage/faellePruefen";
 import { fallEditorOeffnen } from "../fallEditor";
 import {
-  ORDNER,
-  aktiverKtSatz,
-  aktiverSatz,
-  aktivMerken,
-  codesLesen,
-  eingebautAktivieren,
+  TEILE,
+  aktivDatei,
   eingebauteKtCodes,
   ktAbfrageLesen,
   ktCodesLesen,
-  rdSchemaLesen,
-  satzListe,
-  type Bereich,
-  type CodeSatz,
+  ktCodesVorlage,
+  rdCodesVorlage,
+  teilAktivieren,
+  teilHochladen,
+  teilListe,
+  teilLoeschen,
+  type Teil,
+  type TeilDatei,
 } from "../codesaetze";
+import type { KtAbfrageFrage, KtCodeDef } from "../../sim/ktBedingungen";
+import { STANDARD_CODESYSTEM_TEXT } from "../../data/standard";
 import { ktEditorOeffnen } from "../ktCodeEditor";
-import { pruefeCodesystem } from "../../abfrage/codesystem";
+import { namenVorlageSichern } from "../ablageStart";
 import { NAMEN_VORLAGE, namenLesen as ersetzungenLesen, namenVorlage } from "../../data/namen";
 import { standardRecords } from "../../data/standard";
-import type { Schema } from "../../abfrage/schema";
-import type { Einsatzcode } from "../../data/model";
 
 const { ok: OK, grau: GRAU, gelb: GELB, blau: BLAU, rot: ROT } = FARBEN;
 const NUR_PROGRAMM = "nur im Programm";
@@ -79,8 +78,10 @@ const PRUEFT = "wird geprüft …";
 const ladeStand: Record<string, string> = {};
 /** Werte unbekannter Schlüssel, die die Komponente meldet (Felder z_…, omod, Schalter kp_…, Suche tq_…) */
 const zw: Record<string, unknown> = {};
-/** gewählte Dateien der Hochladen-Seiten */
-const gewaehlt: Record<Bereich, { codes?: { name: string; text: string; info: string }; schema?: { name: string; text: string; info: string } }> = { rd: {}, kt: {} };
+/** Dropdown „Aktiv“ der Eigenen Dateien: Schlüssel → Wechsel, Zähler je Reiter, letzte Rückmeldung */
+const wahlen: Record<string, (v: string) => void> = {};
+const wahlStand: Record<string, number> = {};
+const wahlMeldung: Record<string, { t: string; dot: string }> = {};
 /** Fehler beim Speichern einer Tabellenzeile (je Seite), bis zum nächsten erfolgreichen Speichern */
 const tabFehler: Record<string, string> = {};
 
@@ -90,6 +91,7 @@ let aktiv: { bald(): void; regionSchalten(region: string, an: boolean): void } |
 /** Die Komponente meldet Werte von Schlüsseln, die bindung.ts nicht kennt. */
 export function feldWert(key: string, wert: unknown): void {
   zw[key] = wert;
+  if (key.startsWith("ak_")) return void wahlen[key]?.(String(wert ?? ""));
   const m = key.match(/^kp_(.+)$/);
   if (m) aktiv?.regionSchalten(m[1], !!wert);
   else if (key.startsWith("tq_")) aktiv?.bald();
@@ -117,7 +119,7 @@ export function zeilenQuelle(neuZeichnen: () => void): { zeilen: ZeilenQuelle; l
     ram?: number;
     piper?: string[];
     whisper?: string[];
-    saetze?: Record<Bereich, CodeSatz[]>;
+    teile?: Record<Teil, TeilDatei[]>;
     namen?: AblageDatei[];
     packs?: Pack[] | null;
     packsFehler?: string;
@@ -170,21 +172,19 @@ export function zeilenQuelle(neuZeichnen: () => void): { zeilen: ZeilenQuelle; l
   };
   const namenLaden = async () => {
     try {
-      let l = await ablageListe("Namen");
-      // Vorlage immer im Ordner (neu geschrieben, falls sie fehlt)
-      if (!l.some((d) => d.datei === NAMEN_VORLAGE)) {
-        await ablageSpeichern("Namen", NAMEN_VORLAGE, namenVorlage(standardRecords()));
-        l = await ablageListe("Namen");
-      }
+      // Vorlage immer im Ordner (neu geschrieben, falls sie fehlt oder noch leer und veraltet ist)
+      await namenVorlageSichern().catch(() => undefined);
+      const l = await ablageListe("Namen");
       c.namen = l.filter((d) => /\.(csv|txt)$/i.test(d.datei)).sort((a, b) => (a.datei === NAMEN_VORLAGE ? -1 : b.datei === NAMEN_VORLAGE ? 1 : a.datei.localeCompare(b.datei, "de")));
     } catch {
       c.namen = [];
     }
     neu();
   };
-  const saetzeLaden = async () => {
-    const [rd, kt] = await Promise.all([satzListe("rd").catch(() => []), satzListe("kt").catch(() => [])]);
-    c.saetze = { rd, kt };
+  const teileLaden = async () => {
+    const t = Object.keys(TEILE) as Teil[];
+    const l = await Promise.all(t.map((x) => teilListe(x).catch(() => [] as TeilDatei[])));
+    c.teile = Object.fromEntries(t.map((x, i) => [x, l[i]])) as Record<Teil, TeilDatei[]>;
     neu();
   };
   const packsLaden = async () => {
@@ -1166,17 +1166,18 @@ export function zeilenQuelle(neuZeichnen: () => void): { zeilen: ZeilenQuelle; l
   // ---------------- Einsatzcodes & Abfrage
   function codes(b: Bausteine): Zeile[] {
     const rd = allCodes();
-    const satz = aktiverSatz();
+    const rdD = aktivDatei("rdCodes") ?? aktivDatei("rdAbfrage");
+    const satz = rdD ? rdD.replace(/\.(json|csv|txt)$/i, "") : null;
     const kapitel = store.schema ? Object.keys(store.schema.kapitel).length : new Set(rd.map((x) => x.gruppenname)).size;
     const kt = ktCodes();
-    const ktName = aktiverKtSatz();
+    const ktName = store.ktSatzRoh ? store.ktSatzRoh.name || "Eigener Satz" : null;
     const rdName = satz ? `Eigener Satz: ${satz}` : "LeitWerk-Codesystem (eingebaut)";
     const ktLabel = ktName ? `Eigener Satz: ${ktName}` : "LeitWerk-Transportcodes (eingebaut)";
     const kap = (x: { gruppe: number; gruppenname: string }) => (x.gruppe ? `${x.gruppe} - ${x.gruppenname}` : x.gruppenname);
     return [
       b.I("Notruf (RD)", rdName, `${zahl(rd.length)} Codes in ${kapitel} Kapiteln${store.schema ? ", mit Abfrage" : ""}`, rd.length ? OK : GELB),
       b.I("Krankentransport & Überstellung (KT/SEK)", ktLabel, `${zahl(kt.length)} Codes, mit KT-Abfrage`, kt.length ? OK : GELB),
-      b.B("Eigene Codes & Abfrage", [{ l: "Im Realismus-Menü", go: ["real", "realismus"] }], "Eigene Sätze hochladen und umschalten – jeder Spieler selbst"),
+      b.B("Eigene Codes & Abfrage", [{ l: "Notruf-Codes", go: ["real", "rdCodes"] }, { l: "KT/SEK-Codes", go: ["real", "ktCodes"] }], "Unter Eigene Dateien hochladen und umschalten – jeder Spieler selbst"),
       b.S("Codeliste", "codeart", ["Notruf (RD)", "KT/SEK"], "Notruf (RD)"),
       b.TAB(["Code", "Name", "Kategorie", "Kapitel"], rd.map((x) => [x.code, x.beschreibung, x.stufe, kap(x)]), {
         suche: "Code suchen …",
@@ -1201,156 +1202,149 @@ export function zeilenQuelle(neuZeichnen: () => void): { zeilen: ZeilenQuelle; l
     ];
   }
 
-  // ---------------- Realismus: Codesätze
-  const TITEL: Record<Bereich, string> = { rd: "Notruf (RD)", kt: "Krankentransport & Überstellung (KT/SEK)" };
+  // ---------------- Eigene Dateien (Beta 69): je Teil ein Reiter – Codes und Abfrage getrennt, Namen
   const basisName = (datei: string) => datei.replace(/\.(json|csv|txt)$/i, "");
+  const EINGEBAUT: Record<Teil, string> = {
+    rdCodes: "Eingebaut – LeitWerk-Codesystem",
+    rdAbfrage: "Eingebaut – LeitWerk-Abfrage",
+    ktCodes: "Eingebaut – LeitWerk-Transportcodes",
+    ktAbfrage: "Eingebaut – LeitWerk-KT-Abfrage",
+  };
+  const FORMAT: Record<Teil, { accept: string; hint: string }> = {
+    rdCodes: { accept: ".csv,.txt,text/csv,text/plain", hint: "CSV mit den Spalten Code; Name; Kategorie (z. B. „ALS rot“); Kapitel" },
+    rdAbfrage: { accept: ".json,application/json", hint: "JSON mit „kapitel“, „globale_fragen“ und „codes“ – Fragen und Regeln der Notrufabfrage" },
+    ktCodes: { accept: ".csv,.txt,.json,text/csv,text/plain,application/json", hint: "CSV wie die Vorlage (Code; Name; Kapitel; Fahrt; Lage; Zeit; … – leer = beliebig) oder JSON aus dem KT-Code-Editor" },
+    ktAbfrage: { accept: ".json,application/json", hint: "JSON mit „abfrage“: je Frage „id“ und „text“ (wie der KT-Code-Editor speichert)" },
+  };
+  const VORLAGE: Record<Teil, { datei: string; hint: string; text: () => string; filter: { name: string; extensions: string[] } }> = {
+    rdCodes: { datei: "Vorlage_Notruf-Codes.csv", hint: "Alle eingebauten Codes – Namen und Codes ändern, unter neuem Namen hochladen", text: rdCodesVorlage, filter: { name: "CSV-Datei", extensions: ["csv"] } },
+    rdAbfrage: { datei: "Vorlage_Notruf-Abfrage.json", hint: "Das eingebaute Codesystem als Beispiel für den Aufbau", text: () => STANDARD_CODESYSTEM_TEXT, filter: { name: "JSON-Datei", extensions: ["json"] } },
+    ktCodes: { datei: "Vorlage_KT-SEK-Codes.csv", hint: "Alle eingebauten KT-/SEK-Codes mit ihren Bedingungen – Code und Name ändern, Bedingungen lassen", text: () => ktCodesVorlage(), filter: { name: "CSV-Datei", extensions: ["csv"] } },
+    ktAbfrage: { datei: "Vorlage_KT-Abfrage.json", hint: "Die eingebauten Fragen der KT-Hotline", text: () => JSON.stringify({ abfrage: standardKtAbfrage() }, null, 1), filter: { name: "JSON-Datei", extensions: ["json"] } },
+  };
 
-  /** Schema übernehmen (wie schemaUebernehmen in importDialog.ts, aber ohne Meldungen) */
-  function schemaLaden(schema: Schema, dateiname: string): number {
-    const vorhanden = new Map(store.list("codes").map((x) => [x.code.toUpperCase(), x.id]));
-    const liste: Einsatzcode[] = Object.entries(schema.codes).map(([code, x]) => ({
-      id: vorhanden.get(code.toUpperCase()) ?? code,
-      code,
-      name: x.name,
-      kategorie: x.kategorie,
-      kapitel: x.kapitel,
-      hinweis: "",
-      herkunft: "import",
-      herkunftDetail: dateiname,
-    }));
-    store.setSchema(schema);
-    store.upsert("codes", liste);
-    const neu2 = (schema.einsatzstufen ?? []).filter((x) => x?.stufe && !store.settings.stufen.some((st) => st.stufe === x.stufe));
-    if (neu2.length) {
-      const set = structuredClone(store.settings);
-      for (const x of neu2)
-        set.stufen.push({
-          stufe: x.stufe,
-          rettungsmittel: x.rettungsmittel ?? "",
-          nfsErforderlich: !!x.nfs_erforderlich,
-          notarzt: x.notarzt === "nef" || x.notarzt === "schnellster" ? x.notarzt : "nein",
-          sondersignal: !!x.sondersignal,
-          kategorie: x.kategorie === "kritisch" || x.kategorie === "dringend" || x.kategorie === "stabil" ? x.kategorie : x.notarzt === "nef" || x.notarzt === "schnellster" ? "kritisch" : x.sondersignal ? "dringend" : "stabil",
-          transportProzent: Math.max(0, Math.min(100, Number(x.transport_prozent ?? 70))),
+  /** Dropdown „Aktiv“: Schlüssel mit Zähler, damit nach jedem Wechsel wieder der echte Stand angezeigt wird */
+  function aktivWahl(b: Bausteine, id: string, optionen: string[], jetzt: string, wechsel: (v: string) => Promise<string>, hint: string): Zeile[] {
+    const key = `ak_${id}_${wahlStand[id] ?? 0}`;
+    wahlen[key] = (v) => {
+      if (v === jetzt) return;
+      wahlMeldung[id] = { t: "wird umgeschaltet …", dot: GRAU };
+      neu();
+      void wechsel(v)
+        .then((t) => (wahlMeldung[id] = { t, dot: OK }))
+        .catch((e) => (wahlMeldung[id] = { t: fehlerText(e), dot: ROT }))
+        .finally(() => {
+          wahlStand[id] = (wahlStand[id] ?? 0) + 1;
+          void Promise.all([teileLaden(), namenLaden()]).finally(neu);
         });
-      store.setSettings(set);
-    }
-    return neu2.length;
+    };
+    const out = [b.L("Aktiv", key, optionen, jetzt, hint)];
+    const m = wahlMeldung[id];
+    if (m) out.push(b.I("Rückmeldung", m.t, "", m.dot));
+    return out;
   }
 
-  /** Satz aktivieren (wie satzAktivieren in codesaetze.ts, aber mit Rückgabe-Text statt Meldung) */
-  async function satzVerwenden(s: CodeSatz): Promise<string> {
-    if (s.entwurf) throw new Error(`„${s.name}“ ist ein Entwurf – erst im KT-Code-Editor fertigstellen`);
-    const o = ORDNER[s.bereich];
-    if (s.bereich === "kt") {
-      const kc = s.codes ? ktCodesLesen(await ablageLesen(o.codes, s.codes), s.codes) : undefined;
-      const ab = s.schema ? ktAbfrageLesen(await ablageLesen(o.abfrage, s.schema), s.schema) : undefined;
-      const r = pruefeKtSatz({ codes: kc ?? eingebauteKtCodes(), abfrage: ab }, standardKtAbfrage());
-      if (r.fehler.length) throw new Error(`„${s.name}“ ist noch nicht vollständig (${r.fehler.length} Problem${r.fehler.length === 1 ? "" : "e"}: ${r.fehler[0]}) – bitte im KT-Code-Editor bearbeiten`);
-      store.setKtSatz({ name: s.name, ...(kc ? { codes: kc } : {}), ...(ab ? { abfrage: ab } : {}) });
-      return `KT/SEK-Satz „${s.name}“ aktiv${kc ? "" : " (nur Abfrage – Codes eingebaut)"}${ab ? "" : " (nur Codes – Abfrage eingebaut)"}`;
-    }
-    const schema = s.schema ? rdSchemaLesen(await ablageLesen(o.abfrage, s.schema), s.schema) : null;
-    let liste: ReturnType<typeof codesLesen> | null = null;
-    if (s.codes) {
-      liste = codesLesen(await ablageLesen(o.codes, s.codes), s.codes);
-      if ("fehler" in liste) throw new Error(liste.fehler);
-    }
-    eingebautAktivieren("rd");
-    let stufenNeu = 0;
-    if (schema) stufenNeu = schemaLaden(schema, s.schema!);
-    if (liste && "codes" in liste && liste.codes) store.upsert("codes", liste.codes);
-    aktivMerken(s.name);
-    return `RD-Satz „${s.name}“ aktiv${schema ? "" : " (nur Codeliste – Abfrage eingebaut)"}${stufenNeu ? ` · ${stufenNeu} neue Einsatzstufen` : ""}`;
-  }
+  const ordnerZeile = (b: Bausteine, o: AblageOrdner) =>
+    tauri ? b.B("Ordner", [knopf("Ordner öffnen", () => ablageZeigen(o))], `Dokumente/LeitWerk/${o}`) : b.B("Ordner", [], `Dokumente/LeitWerk/${o}`, { chip: NUR_PROGRAMM, dot: GRAU });
 
-  function satzZeilen(b: Bausteine, bereich: Bereich): Zeile[] {
+  /** Ein Reiter für Codes bzw. Abfrage (RD oder KT/SEK) */
+  function teilSeite(b: Bausteine, t: Teil): Zeile[] {
+    const d = TEILE[t];
+    const liste = c.teile?.[t];
+    const aktivD = aktivDatei(t);
     const out: Zeile[] = [];
-    const aktivName = bereich === "rd" ? aktiverSatz() : aktiverKtSatz();
+    // Auswahl
+    const spielbar = (liste ?? []).filter((x) => !x.entwurf);
+    const namen = spielbar.map((x) => x.name);
+    const jetzt = aktivD ? basisName(aktivD) : EINGEBAUT[t];
+    const optionen = [EINGEBAUT[t], ...namen];
+    if (aktivD && !namen.some((n) => n.toLowerCase() === jetzt.toLowerCase())) optionen.push(jetzt);
     out.push(
-      b.IT(
-        bereich === "rd" ? "LeitWerk-Codesystem (eingebaut)" : "LeitWerk-Transportcodes (eingebaut)",
-        bereich === "rd" ? "Codes im gewohnten Aufbau (RD-…), mit Abfrage – immer verfügbar" : "Codes für KT und Überstellungen (KT…, SEK-…), mit KT-Abfrage – immer verfügbar",
-        aktivName === null ? "aktiv" : "",
-        aktivName === null ? OK : "",
-        { btns: aktivName === null ? [] : [knopf("Verwenden", () => (eingebautAktivieren(bereich), `Eingebaut aktiv: ${TITEL[bereich]}`))] },
+      ...aktivWahl(
+        b,
+        t,
+        optionen,
+        jetzt,
+        async (v) => {
+          if (v === EINGEBAUT[t]) return teilAktivieren(t, null);
+          const x = spielbar.find((y) => y.name === v);
+          if (!x) throw new Error(`„${v}“ ist nicht mehr im Ordner – bitte neu hochladen`);
+          return teilAktivieren(t, x.datei);
+        },
+        "Gilt sofort · nur auf diesem Rechner · Liste = Dateien im Ordner",
       ),
     );
-    const liste = c.saetze?.[bereich];
-    if (!liste) {
-      out.push(b.IT("Eigene Sätze", "Dokumente/LeitWerk", PRUEFT, GRAU));
-      return out;
+    // Stand
+    if (t === "rdCodes") {
+      const n = store.list("codes").filter((x) => aktivD && x.herkunftDetail === aktivD).length;
+      out.push(b.I("Codes", aktivD ? `${zahl(n)} Codes aus „${basisName(aktivD)}“` : `${zahl(allCodes().length)} Codes`, aktivDatei("rdAbfrage") ? "Ein eigenes Abfrageschema bringt meist eigene Codes mit – eine aktive Codeliste gewinnt bei Name und Kategorie" : "", OK));
+    } else if (t === "rdAbfrage") {
+      const s = store.schemaRoh;
+      out.push(b.I("Abfrage", s ? `${zahl(Object.keys(s.kapitel).length)} Kapitel · ${zahl(Object.keys(s.codes ?? {}).length)} Codes` : "LeitWerk-Abfrage", "", OK));
+      out.push(b.B("Zuordnung zu den LeitWerk-Merkmalen", [{ l: "Zuordnung …", sub: "zuordnung" }], "Nur für ein eigenes Abfrageschema: welche Frage welchem Merkmal entspricht – damit die Anrufer passend antworten"));
+    } else if (t === "ktCodes") {
+      out.push(b.I("Codes", `${zahl(ktCodes().length)} Codes`, "Jeder Code ist ein Name mit Bedingungen (Fahrt, Lage, Zeit, Fahrzeug …)", OK));
+      out.push(b.B("KT-Code-Editor", [knopf("Editor öffnen", () => (ktEditorOeffnen({ fertig: () => void teileLaden() }), "Im Editor geöffnet"))], "Codes und Bedingungen bearbeiten – als neuer Satz auf Basis des aktiven; dort auch Entwürfe fertigstellen"));
+    } else {
+      const k = store.ktSatzRoh;
+      out.push(b.I("Fragen", `${zahl((k?.abfrage?.length ? k.abfrage : standardKtAbfrage()).length)} Fragen`, "", OK));
     }
-    const o = ORDNER[bereich];
-    for (const s of liste) {
-      const istAktiv = aktivName?.toLowerCase() === s.name.toLowerCase();
-      const teile = bereich === "rd" ? [s.codes ? "Codeliste" : "", s.schema ? "Abfrageschema" : ""].filter(Boolean).join(" · ") : [s.codes ? "Codes" : "", s.schema ? "Abfrage" : ""].filter(Boolean).join(" · ");
+    // Hochladen, Vorlage, Ordner
+    const f = FORMAT[t];
+    out.push(b.H("Eigene Datei hinzufügen"));
+    out.push(b.B("Datei hochladen", [dateiKnopf("Datei wählen …", f.accept, async (x) => teilHochladen(t, x.name, await dateiText(x)), teileLaden)], `${f.hint} · wird in den Ordner kopiert und gleich verwendet`));
+    const v = VORLAGE[t];
+    out.push(b.B("Vorlage", [knopf("Vorlage speichern …", async () => ((await saveTextFile(v.datei, v.text(), v.filter)) ? `Gespeichert: ${v.datei}` : "Abgebrochen"))], v.hint));
+    out.push(ordnerZeile(b, d.ordner));
+    // Dateien
+    out.push(b.H(`Dateien im Ordner ${d.ordner}`));
+    if (!liste) out.push(b.I("Dateien", PRUEFT, "", GRAU));
+    else if (!liste.length) out.push(b.I("Dateien", "noch keine eigene Datei", "Mit „Datei hochladen“ hinzufügen oder direkt in den Ordner legen", GRAU));
+    for (const x of liste ?? []) {
+      const istAktiv = aktivD?.toLowerCase() === x.datei.toLowerCase();
       const btns: Knopf[] = [];
-      if (!istAktiv && !s.entwurf) btns.push(knopf("Verwenden", () => satzVerwenden(s), {}, saetzeLaden));
-      if (bereich === "kt")
+      if (d.bereich === "kt")
         btns.push(
           knopf("Bearbeiten", async () => {
-            const kc = s.codes ? ktCodesLesen(await ablageLesen(o.codes, s.codes), s.codes) : undefined;
-            const ab = s.schema ? ktAbfrageLesen(await ablageLesen(o.abfrage, s.schema), s.schema) : undefined;
-            ktEditorOeffnen({ satz: { codes: kc ?? eingebauteKtCodes(), abfrage: ab }, name: s.name, fertig: () => void saetzeLaden() });
+            const k = store.ktSatzRoh;
+            const text = await ablageLesen(d.ordner, x.datei);
+            const codes = d.art === "codes" ? ktCodesLesen(text, x.datei) : ((k?.codes as KtCodeDef[] | undefined) ?? eingebauteKtCodes());
+            const abfrage = d.art === "abfrage" ? ktAbfrageLesen(text, x.datei) : (k?.abfrage as KtAbfrageFrage[] | undefined);
+            ktEditorOeffnen({ satz: { codes, abfrage }, name: x.name, fertig: () => void teileLaden() });
             return "Im Editor geöffnet";
           }),
         );
-      btns.push(
-        knopf(
-          "Löschen",
-          async () => {
-            if (s.schema) await ablageLoeschen(o.abfrage, s.schema).catch(() => undefined);
-            if (s.codes) await ablageLoeschen(o.codes, s.codes).catch(() => undefined);
-            if (istAktiv) eingebautAktivieren(bereich);
-            return "Gelöscht";
-          },
-          { cfm: `„${s.name}“ (${bereich === "rd" ? "Notruf" : "KT/SEK"}) wird aus Dokumente/LeitWerk gelöscht.` },
-          saetzeLaden,
-        ),
-      );
-      out.push(b.IT(s.name, `${s.entwurf ? "ENTWURF – noch nicht spielbar · " : ""}${teile} · Dokumente/LeitWerk`, istAktiv ? "aktiv" : s.entwurf ? "Entwurf" : "", istAktiv ? OK : s.entwurf ? GELB : "", { btns }));
+      btns.push(knopf("Löschen", () => teilLoeschen(t, x.datei), { cfm: `„${x.datei}“ wird aus Dokumente/LeitWerk/${d.ordner} gelöscht.` }, teileLaden));
+      out.push(b.IT(x.name, `${x.entwurf ? "ENTWURF – im KT-Code-Editor fertigstellen · " : ""}${x.datei}`, istAktiv ? "aktiv" : x.entwurf ? "Entwurf" : "", istAktiv ? OK : x.entwurf ? GELB : "", { btns }));
     }
     return out;
   }
 
-  const NOCH_NICHT = "Kommt mit dem Realismus-Paket";
-  /** Namens-Ersetzungen: echte Namen per Datei (die eingebauten Daten sind neutral) */
-  function namenZeilen(b: Bausteine): Zeile[] {
-    const aktiv = store.namen.length ? (store.namenDatei ?? "") : null;
-    const out: Zeile[] = [b.H("Namens-Ersetzungen – Dokumente/LeitWerk/Namen")];
-    out.push(
-      b.IT("Neutrale Namen (eingebaut)", "Rettungsdienst, Rettungswache, Krankentransport, Luftrettung, NAH 2 … – immer verfügbar", aktiv === null ? "aktiv" : "", aktiv === null ? OK : "", {
-        btns: aktiv === null ? [] : [knopf("Verwenden", () => (store.setNamen(null), "Wieder neutrale Namen"), {}, namenLaden)],
-      }),
-    );
-    const liste = c.namen;
-    if (!liste) out.push(b.IT("Eigene Dateien", "Dokumente/LeitWerk/Namen", PRUEFT, GRAU));
-    else {
-      for (const d of liste) {
-        const istAktiv = aktiv !== null && aktiv.toLowerCase() === d.datei.toLowerCase();
-        const vorlage = d.datei === NAMEN_VORLAGE;
-        const btns: Knopf[] = [];
-        if (!istAktiv) btns.push(knopf("Verwenden", () => namenVerwenden(d.datei), {}, namenLaden));
-        if (!vorlage)
-          btns.push(
-            knopf(
-              "Löschen",
-              async () => {
-                await ablageLoeschen("Namen", d.datei);
-                if (istAktiv) store.setNamen(null);
-                return "Gelöscht";
-              },
-              { cfm: `„${d.datei}“ wird aus Dokumente/LeitWerk/Namen gelöscht.` },
-              namenLaden,
-            ),
-          );
-        const info = istAktiv ? `${zahl(store.namen.length)} Ersetzungen` : vorlage ? "Vorlage mit allen neutralen Namen – rechts eintragen, unter neuem Namen speichern" : "CSV „neutral;eigen“";
-        out.push(b.IT(d.datei, `${info} · Dokumente/LeitWerk/Namen`, istAktiv ? "aktiv" : "", istAktiv ? OK : "", { btns }));
-      }
-    }
+  /** Reiter Namen: echte Namen per Datei (die eingebauten Daten sind neutral) */
+  function namenSeite(b: Bausteine): Zeile[] {
+    const EIN = "Eingebaut – neutrale Namen";
+    const aktivD = store.namen.length ? (store.namenDatei ?? "") : null;
+    const liste = c.namen ?? [];
+    const jetzt = aktivD === null ? EIN : aktivD || "eigene Namen";
+    const optionen = [EIN, ...liste.map((d) => d.datei)];
+    if (aktivD !== null && !optionen.includes(jetzt)) optionen.push(jetzt);
+    const out: Zeile[] = [
+      ...aktivWahl(
+        b,
+        "namen",
+        optionen,
+        jetzt,
+        async (v) => {
+          if (v === EIN) return store.setNamen(null), "Wieder neutrale Namen";
+          return namenVerwenden(v);
+        },
+        "Gilt sofort · nur auf diesem Rechner · Liste = Dateien im Ordner",
+      ),
+      b.I("Ersetzungen", aktivD === null ? "Rettungsdienst, Rettungswache, Krankentransport, Luftrettung, NAH 2 …" : `${zahl(store.namen.length)} Ersetzungen aus „${aktivD}“`, "Gilt für Dienststellen, Organisationen, Hubschrauber-Namen und Orte – auch für Krankentransport und Überstellungen", OK),
+      b.H("Eigene Datei hinzufügen"),
+    ];
     const laden = dateiKnopf(
-      "CSV laden …",
+      "Datei wählen …",
       ".csv,.txt,text/csv,text/plain",
       async (f) => {
         const text = await dateiText(f);
@@ -1363,10 +1357,37 @@ export function zeilenQuelle(neuZeichnen: () => void): { zeilen: ZeilenQuelle; l
       },
       namenLaden,
     );
-    const btns: Knopf[] = [laden];
-    if (tauri) btns.push(knopf("Ordner öffnen", () => ablageZeigen("Namen")));
-    btns.push(knopf("Neu einlesen", () => namenLaden().then(() => "Eingelesen")));
-    out.push(b.B("Eigene Namen", btns, "neutral;eigen – Datei wird nach Dokumente/LeitWerk/Namen kopiert; dort auch direkt bearbeiten, dann „Verwenden“"));
+    out.push(b.B("Datei hochladen", [laden], "CSV „neutral;eigen“ – links der neutrale Name aus der Vorlage, rechts dein Name · wird in den Ordner kopiert und gleich verwendet"));
+    out.push(
+      b.B(
+        "Vorlage",
+        [knopf("Vorlage speichern …", async () => ((await saveTextFile(NAMEN_VORLAGE, namenVorlage(standardRecords()))) ? `Gespeichert: ${NAMEN_VORLAGE}` : "Abgebrochen"))],
+        "Alle neutralen Namen: Organisationen, Hubschrauber, Stützpunkte für Krankentransport & Überstellung (KT/SEK), Dienststellen – rechts eintragen. Liegt auch im Ordner.",
+      ),
+    );
+    out.push(ordnerZeile(b, "Namen"));
+    out.push(b.B("Im Ordner geändert?", [knopf("Neu einlesen", () => namenLaden().then(() => (aktivD ? namenVerwenden(aktivD) : "Eingelesen")))], "Nach dem Bearbeiten einer Datei im Ordner"));
+    out.push(b.H("Dateien im Ordner Namen"));
+    if (!c.namen) out.push(b.I("Dateien", PRUEFT, "", GRAU));
+    for (const d of liste) {
+      const istAktiv = aktivD !== null && aktivD.toLowerCase() === d.datei.toLowerCase();
+      const vorlage = d.datei === NAMEN_VORLAGE;
+      const btns: Knopf[] = vorlage
+        ? []
+        : [
+            knopf(
+              "Löschen",
+              async () => {
+                await ablageLoeschen("Namen", d.datei);
+                if (istAktiv) store.setNamen(null);
+                return "Gelöscht";
+              },
+              { cfm: `„${d.datei}“ wird aus Dokumente/LeitWerk/Namen gelöscht.` },
+              namenLaden,
+            ),
+          ];
+      out.push(b.IT(basisName(d.datei), vorlage ? "Vorlage mit allen neutralen Namen – rechts eintragen, unter neuem Namen speichern" : d.datei, istAktiv ? "aktiv" : "", istAktiv ? OK : "", { btns }));
+    }
     return out;
   }
   /** Namensdatei aus dem Ordner lesen und aktivieren */
@@ -1375,102 +1396,6 @@ export function zeilenQuelle(neuZeichnen: () => void): { zeilen: ZeilenQuelle; l
     if (!r.length) throw new Error(datei === NAMEN_VORLAGE ? "Die Vorlage ist noch leer – rechts die eigenen Namen eintragen" : "Keine Ersetzungen in der Datei (rechte Spalte leer?)");
     store.setNamen(r, datei);
     return `${zahl(r.length)} Ersetzungen aktiv`;
-  }
-  function realismus(b: Bausteine): Zeile[] {
-    const spaeter = (l: string) => knopf(l, () => NOCH_NICHT);
-    return [
-      b.H("Eigene Codes & Abfrage – Notruf (RD)"),
-      ...satzZeilen(b, "rd"),
-      b.B("Eigenen RD-Satz", [{ l: "Hochladen", sub: "satzRd" }], "Codeliste (CSV) und/oder Abfrageschema (JSON)"),
-      b.H("Eigene Codes & Abfrage – Krankentransport & Überstellung (KT/SEK)"),
-      ...satzZeilen(b, "kt"),
-      b.B("Eigenen KT/SEK-Satz", [{ l: "Codes & Abfrage bearbeiten", sub: "ktEditor" }, { l: "Hochladen", sub: "satzKt" }], "Neuer Satz auf Basis des aktiven, oder Dateien hochladen"),
-      ...namenZeilen(b),
-      b.H("Bilder und Funkrufnamen"),
-      b.B("Funkrufnamen", [spaeter("CSV laden …")], "noch nicht wirksam"),
-      b.B("Logos & Fahrzeugbilder", [spaeter("Dateien laden …")], "PNG oder SVG · noch nicht wirksam"),
-      b.B("Vorlage-Dateien", tauri ? [knopf("Ordner öffnen", () => ablageZeigen())] : [], "Ablage in Dokumente/LeitWerk", tauri ? undefined : { chip: NUR_PROGRAMM, dot: GRAU }),
-    ];
-  }
-
-  /** Hochladen-Seite (RD bzw. KT/SEK) */
-  function satzHoch(b: Bausteine, bereich: Bereich): Zeile[] {
-    const g = gewaehlt[bereich];
-    const nameKey = bereich === "rd" ? "z_satzRdName" : "z_satzKtName";
-    const chip = (x?: { name: string; info: string }) => (x ? { chip: `${x.name} · ${x.info}`, dot: OK } : undefined);
-    const codesKnopf = dateiKnopf("Datei wählen …", bereich === "rd" ? ".csv,.txt,text/csv,text/plain" : ".json,application/json", async (f) => {
-      const text = await dateiText(f);
-      let info: string;
-      if (bereich === "rd") {
-        const r = codesLesen(text, f.name);
-        if ("fehler" in r) throw new Error(r.fehler);
-        info = `${zahl(r.codes!.length)} Codes erkannt${r.fehlerZeilen ? `, ${r.fehlerZeilen} Zeilen fehlerhaft` : ""}`;
-      } else info = `${zahl(ktCodesLesen(text, f.name).length)} Codes erkannt`;
-      g.codes = { name: f.name, text, info };
-      return `${f.name} · ${info}`;
-    });
-    const schemaKnopf = dateiKnopf("Datei wählen …", ".json,application/json", async (f) => {
-      const text = await dateiText(f);
-      let info: string;
-      if (bereich === "rd") {
-        const s = rdSchemaLesen(text, f.name);
-        const p = pruefeCodesystem(s);
-        if (p.fehler.length) throw new Error(`${f.name}: ${p.fehler[0]}${p.fehler.length > 1 ? ` (und ${p.fehler.length - 1} weitere Fehler)` : ""}`);
-        info = `gültig · ${zahl(Object.keys(s.codes ?? {}).length)} Codes${p.hinweise.length ? ` · ${p.hinweise.length} Hinweise` : ""}`;
-      } else info = `gültig · ${zahl(ktAbfrageLesen(text, f.name).length)} Fragen`;
-      g.schema = { name: f.name, text, info };
-      return `${f.name} · ${info}`;
-    });
-    const speichern = knopf(
-      "Speichern & verwenden",
-      async () => {
-        if (!g.codes && !g.schema) throw new Error("Bitte Codes und/oder eine Abfrage wählen");
-        const o = ORDNER[bereich];
-        const n = ablageName(String(zw[nameKey] ?? "").trim() || basisName((g.schema ?? g.codes)!.name));
-        let sText = g.schema?.text;
-        let cText = g.codes?.text;
-        if (bereich === "rd") {
-          if (g.schema) sText = JSON.stringify(rdSchemaLesen(g.schema.text, g.schema.name));
-        } else {
-          if (g.codes) cText = JSON.stringify({ codes: ktCodesLesen(g.codes.text, g.codes.name) });
-          if (g.schema) sText = JSON.stringify({ abfrage: ktAbfrageLesen(g.schema.text, g.schema.name) });
-        }
-        const vorher = (await satzListe(bereich)).some((x) => x.name.toLowerCase() === n.toLowerCase());
-        if (sText) await ablageSpeichern(o.abfrage, `${n}.json`, sText);
-        if (cText) await ablageSpeichern(o.codes, `${n}.${bereich === "rd" ? "csv" : "json"}`, cText);
-        gewaehlt[bereich] = {};
-        delete zw[nameKey];
-        const satz = (await satzListe(bereich)).find((x) => x.name.toLowerCase() === n.toLowerCase());
-        if (!satz) throw new Error(`„${n}“ wurde gespeichert, aber nicht gefunden`);
-        const r = await satzVerwenden(satz);
-        return `${vorher ? "Ersetzt" : "Gespeichert"} · ${r}`;
-      },
-      {},
-      saetzeLaden,
-    );
-    const abbrechen: Knopf = { l: "Abbrechen", back: true, act: () => void (gewaehlt[bereich] = {}) };
-    const nameZeile = { ...b.F("Name des Satzes", nameKey, bereich === "rd" ? "z. B. Mein Satz" : "z. B. Mein KT-Satz", "Unter diesem Namen findest du den Satz später wieder – leer: Dateiname"), def: String(zw[nameKey] ?? "") } as Zeile;
-    if (bereich === "rd")
-      return [
-        nameZeile,
-        b.B("Codeliste (CSV)", [codesKnopf], "Spalten: Code, Name, Kategorie (z. B. „ALS rot“), Kapitel", chip(g.codes)),
-        b.B("Abfrageschema (JSON)", [schemaKnopf], "Fragen und Regeln für die Notrufabfrage – enthält meist auch die Codes", chip(g.schema)),
-        b.B("", [speichern, abbrechen], "Ein Satz mit gleichem Namen wird ersetzt"),
-      ];
-    return [
-      nameZeile,
-      b.B("KT-/SEK-Codes (JSON)", [codesKnopf], "Codes mit ihren Bedingungen – so, wie der Editor sie speichert", chip(g.codes)),
-      b.B("KT-Abfrage (JSON)", [schemaKnopf], "Fragen der KT-Hotline mit Art und dem, was sie klären", chip(g.schema)),
-      b.B("", [speichern, abbrechen], "Ein Satz mit gleichem Namen wird ersetzt"),
-    ];
-  }
-
-  function ktEditor(b: Bausteine): Zeile[] {
-    const n = aktiverKtSatz();
-    return [
-      b.I("Aktiver KT/SEK-Satz", n ?? "LeitWerk-Transportcodes (eingebaut)", `${zahl(ktCodes().length)} Codes`, OK),
-      b.B("Editor", [knopf("KT-Code-Editor öffnen", () => (ktEditorOeffnen({ fertig: () => void saetzeLaden() }), "Im Editor geöffnet"))], "Codes mit Bedingungen und die Fragen der KT-Hotline – als neuer Satz auf Basis des aktiven"),
-    ];
   }
 
   // ---------------- Kartenpakete
@@ -1591,10 +1516,11 @@ export function zeilenQuelle(neuZeichnen: () => void): { zeilen: ZeilenQuelle; l
     vorlagen,
     codes,
     status,
-    realismus,
-    satzRd: (b) => satzHoch(b, "rd"),
-    satzKt: (b) => satzHoch(b, "kt"),
-    ktEditor,
+    rdCodes: (b) => teilSeite(b, "rdCodes"),
+    rdAbfrage: (b) => teilSeite(b, "rdAbfrage"),
+    ktCodes: (b) => teilSeite(b, "ktCodes"),
+    ktAbfrage: (b) => teilSeite(b, "ktAbfrage"),
+    namen: namenSeite,
     karten,
     programm,
   };
@@ -1622,7 +1548,7 @@ export function zeilenQuelle(neuZeichnen: () => void): { zeilen: ZeilenQuelle; l
       void ramLaden();
       void piperLaden2();
       void whisperLaden();
-      void saetzeLaden();
+      void teileLaden();
       void namenLaden();
       void packsLaden();
       void programmLaden();

@@ -1,5 +1,13 @@
 # Änderungen
 
+## 0.116.0-beta.69 – Eigene Dateien: übersichtlich hochladen und umschalten
+- **Neue Gruppe „Eigene Dateien“** in den Einstellungen (statt „Realismus“) mit fünf Reitern: **Notruf-Codes**, **Notruf-Abfrage**, **KT/SEK-Codes**, **KT-Abfrage** und **Namen**.
+- **Jeder Reiter gleich aufgebaut:** oben ein Dropdown „Aktiv“ (eingebaut oder eine der Dateien im Ordner – gilt sofort), darunter „Datei hochladen“ mit dem genauen Format, „Vorlage speichern“, „Ordner öffnen“ mit dem echten Ordnernamen und die Liste der Dateien.
+- **Codes und Abfrage getrennt:** Codeliste und Abfrageschema sind jetzt einzeln wählbar, auch bei KT/SEK. Ist beides eigen, gewinnt die Codeliste bei Name und Kategorie.
+- **KT/SEK-Codes auch als CSV:** Spalten Code; Name; Kapitel und je Bedingung eine Spalte (Fahrt, Lage, Zeit, Fahrzeug … – leer = beliebig). Die Vorlage enthält alle eingebauten Codes mit ihren Bedingungen: Code und Name ändern, Bedingungen stehen lassen, hochladen. Passt eine Datei noch nicht, wird sie als Entwurf gespeichert und im KT-Code-Editor fertiggestellt.
+- **Namens-Vorlage mit KT/SEK:** eigener Abschnitt für die Stützpunkte von Krankentransport und Überstellungen (SKTW, SRTW, SNAW, ITH). Eine noch leere Vorlage im Ordner wird dafür erneuert.
+- Die Zeilen „Funkrufnamen“ und „Logos & Fahrzeugbilder“ (ohne Wirkung) sind weg.
+
 ## 0.116.0-beta.68 – Zwei RTW, ein Notarzt-Patient
 - **Mehrere Patienten, mehrere RTW:** Der RTW, der den Notarzt nachgefordert hat, hat den kritischen Patienten – nur er wartet auf den Notarzt bzw. fährt zum Rendezvous. Die anderen RTW fahren mit ihren Patienten, ohne auf den Notarzt zu warten (kein eigener Funkspruch, nur Status 4). Ein Fahrzeug bleibt weiter am Einsatzort, solange dort noch Patienten sind.
 

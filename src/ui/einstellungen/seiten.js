@@ -634,7 +634,7 @@ export class SeitenBasis {
         { id: 'codes', label: 'Einsatzcodes & Abfrage', info: 'Codes und Abfrage – RD und KT/SEK', kw: 'einsatzcode code abfrageschema schema kapitel kategorie stufe leitwerk-codesystem transportcodes kt sek', rows: [
           I('Notruf (RD)', 'LeitWerk-Codesystem (eingebaut)', '542 Codes in 38 Kapiteln, mit Abfrage', ok),
           I('Krankentransport & Überstellung (KT/SEK)', 'LeitWerk-Transportcodes (eingebaut)', '136 Codes, mit KT-Abfrage', ok),
-          B('Eigene Codes & Abfrage', [{ l: 'Im Realismus-Menü', go: ['real', 'realismus'] }], 'Eigene Sätze hochladen und umschalten – jeder Spieler selbst'),
+          B('Eigene Codes & Abfrage', [{ l: 'Notruf-Codes', go: ['real', 'rdCodes'] }, { l: 'KT/SEK-Codes', go: ['real', 'ktCodes'] }], 'Unter Eigene Dateien hochladen und umschalten – jeder Spieler selbst'),
           S('Codeliste', 'codeart', ['Notruf (RD)', 'KT/SEK'], 'Notruf (RD)'),
           TAB(['Code', 'Name', 'Kategorie', 'Kapitel'], [
             ['RD-6D1', 'Atemnot – reagiert nicht', 'ALS orange', '6 - Atemnot'], ['RD-6D3', 'Schwere Atemnot (spricht kaum, blau/grau)', 'ALS gelb', '6 - Atemnot'], ['RD-9E1', 'Kreislaufstillstand nach Erhängen/Strangulation', 'ALS rot', '9 - Leblose Person / Kreislaufstillstand'], ['RD-10C1', 'Brustschmerz bei bekanntem Herzleiden', 'ALS gelb', '10 - Brustschmerz'], ['RD-17A1', 'Sturz vor über 6 Stunden', 'ALS grün', '17 - Sturz'], ['RD-26A1', 'Krankentransport gewünscht', 'Telemedizin', '26 - Kranke Person']
@@ -653,45 +653,45 @@ export class SeitenBasis {
       ,
         { id: 'csvImport', sub: true, parent: 'fahrzeuge', label: 'CSV importieren', info: 'Prüfen und übernehmen', kw: 'csv import datei', rows: [{ t: 'import' }] }
       ]},
-      { id: 'real', label: 'Realismus', scope: 'Nur lokal · jeder Spieler selbst', pages: [
-        { id: 'realismus', label: 'Realismus', info: 'Eigene Codes und Namen', kw: 'codeliste abfrageschema namen funkrufnamen logos json csv', note: 'Echte Codes und Namen sind aus rechtlichen Gründen nicht dabei. Lade nur Inhalte, an denen du die Rechte hast. Im Multiplayer lädt jeder sein eigenes Paket – ohne Paket siehst du neutrale Namen und Codes.', rows: [
-          H('Eigene Codes & Abfrage – Notruf (RD)'),
-          IT('LeitWerk-Codesystem (eingebaut)', 'Codes im gewohnten Aufbau (RD-…), mit Abfrage – immer verfügbar', 'aktiv', ok),
-          IT('Mein RD-Satz', 'Codeliste · Abfrageschema · Dokumente/LeitWerk', '', '', { btns: [{ l: 'Verwenden', ok: 'RD-Satz „Mein RD-Satz“ aktiv' }, { l: 'Löschen', cfm: '„Mein RD-Satz“ (Notruf) wird aus Dokumente/LeitWerk gelöscht.', ok: 'Gelöscht' }] }),
-          B('Eigenen RD-Satz', [{ l: 'Hochladen', sub: 'satzRd' }], 'Codeliste (CSV) und/oder Abfrageschema (JSON)'),
-          H('Eigene Codes & Abfrage – Krankentransport & Überstellung (KT/SEK)'),
-          IT('LeitWerk-Transportcodes (eingebaut)', 'Codes für KT und Überstellungen (KT…, SEK-…), mit KT-Abfrage – immer verfügbar', 'aktiv', ok),
-          B('Eigenen KT/SEK-Satz', [{ l: 'Codes & Abfrage bearbeiten', sub: 'ktEditor' }, { l: 'Hochladen', sub: 'satzKt' }], 'Neuer Satz auf Basis des aktiven, oder Dateien hochladen'),
-          H('Namens-Ersetzungen – Dokumente/LeitWerk/Namen'),
-          IT('Neutrale Namen (eingebaut)', 'Rettungsdienst, Rettungswache, Krankentransport, Luftrettung, NAH 2 … – immer verfügbar', 'aktiv', ok),
-          IT('Vorlage_Namen.csv', 'Vorlage mit allen neutralen Namen – rechts eintragen, unter neuem Namen speichern · Dokumente/LeitWerk/Namen', '', '', { btns: [{ l: 'Verwenden', ok: 'Ersetzungen aktiv' }] }),
-          B('Eigene Namen', ['CSV laden …', 'Ordner öffnen', 'Neu einlesen'], 'neutral;eigen – Datei wird nach Dokumente/LeitWerk/Namen kopiert; dort auch direkt bearbeiten, dann „Verwenden“'),
-          H('Bilder und Funkrufnamen'),
-          B('Funkrufnamen', ['CSV laden …']),
-          B('Logos & Fahrzeugbilder', ['Dateien laden …'], 'PNG oder SVG'),
-          B('Vorlage-Dateien', ['Ordner öffnen'], 'Mit neutralen Beispielwerten · Ablage in Dokumente/LeitWerk')
+      { id: 'real', label: 'Eigene Dateien', scope: 'Nur lokal · jeder Spieler selbst', pages: [
+        { id: 'rdCodes', label: 'Notruf-Codes', info: 'Codeliste (CSV)', kw: 'codeliste codes csv notruf rd eigene datei hochladen realismus vorlage', note: 'Echte Codes und Namen sind aus rechtlichen Gründen nicht dabei. Lade nur Inhalte, an denen du die Rechte hast. Im Multiplayer lädt jeder seine eigenen Dateien – ohne sieht man die eingebauten.', rows: [
+          L('Aktiv', 'ak_rdCodes', ['Eingebaut – LeitWerk-Codesystem', 'Meine Codes'], 'Eingebaut – LeitWerk-Codesystem', 'Gilt sofort · nur auf diesem Rechner · Liste = Dateien im Ordner'),
+          I('Codes', '542 Codes', '', ok),
+          H('Eigene Datei hinzufügen'),
+          B('Datei hochladen', [{ l: 'Datei wählen …', ok: 'Gespeichert · Codeliste aktiv' }], 'CSV mit den Spalten Code; Name; Kategorie (z. B. „ALS rot“); Kapitel'),
+          B('Vorlage', [{ l: 'Vorlage speichern …', ok: 'Gespeichert' }], 'Alle eingebauten Codes – Namen und Codes ändern, unter neuem Namen hochladen'),
+          B('Ordner', ['Ordner öffnen'], 'Dokumente/LeitWerk/Codelisten/RD')
         ]},
-        { id: 'satzRd', sub: true, parent: 'realismus', label: 'Eigener RD-Satz', info: 'Hochladen', kw: 'codeliste csv abfrageschema json satz', note: 'Du kannst beides zusammen oder nur eines davon hochladen. Gespeichert wird in Dokumente/LeitWerk. Fehlt die Abfrage, bleibt die eingebaute.', rows: [
-          F('Name des Satzes', 'satzRdName', 'z. B. Mein Satz', 'Unter diesem Namen findest du den Satz später wieder'),
-          B('Codeliste (CSV)', [{ l: 'Datei wählen …', ok: 'codes.csv · 530 Codes erkannt' }], 'Spalten: Code, Name, Kategorie (z. B. „ALS rot“), Kapitel'),
-          B('Abfrageschema (JSON)', [{ l: 'Datei wählen …', ok: 'schema.json · gültig' }], 'Fragen und Regeln für die Notrufabfrage – enthält meist auch die Codes'),
-          B('Zuordnung zu den LeitWerk-Merkmalen', [{ l: 'Zuordnung …', sub: 'zuordnung' }], 'Welche Frage deines Schemas welchem Merkmal entspricht – damit die Anrufer passend antworten'),
-          B('', [{ l: 'Speichern & verwenden', back: true }, { l: 'Abbrechen', back: true }])
+        { id: 'rdAbfrage', label: 'Notruf-Abfrage', info: 'Abfrageschema (JSON)', kw: 'abfrageschema schema json notruf rd abfrage eigene datei hochladen zuordnung realismus', note: 'Echte Codes und Namen sind aus rechtlichen Gründen nicht dabei. Lade nur Inhalte, an denen du die Rechte hast. Im Multiplayer lädt jeder seine eigenen Dateien – ohne sieht man die eingebauten.', rows: [
+          L('Aktiv', 'ak_rdAbfrage', ['Eingebaut – LeitWerk-Abfrage', 'Mein Schema'], 'Eingebaut – LeitWerk-Abfrage', 'Gilt sofort · nur auf diesem Rechner · Liste = Dateien im Ordner'),
+          B('Zuordnung zu den LeitWerk-Merkmalen', [{ l: 'Zuordnung …', sub: 'zuordnung' }], 'Nur für ein eigenes Abfrageschema'),
+          H('Eigene Datei hinzufügen'),
+          B('Datei hochladen', [{ l: 'Datei wählen …', ok: 'Gespeichert · Abfrageschema aktiv' }], 'JSON mit „kapitel“, „globale_fragen“ und „codes“'),
+          B('Vorlage', [{ l: 'Vorlage speichern …', ok: 'Gespeichert' }], 'Das eingebaute Codesystem als Beispiel'),
+          B('Ordner', ['Ordner öffnen'], 'Dokumente/LeitWerk/Abfrageschema/RD')
         ]},
-        { id: 'zuordnung', sub: true, parent: 'satzRd', label: 'Zuordnung zu den Merkmalen', info: 'Fragen ↔ Merkmale', kw: 'zuordnung merkmal frage antwort schema ki', note: 'Nur nötig für eigene Abfrageschemas. Eindeutige Fragen ordnet LeitWerk selbst zu – hier prüfst du die offenen und unsicheren.', rows: [{ t: 'zuord' }] },
-        { id: 'satzKt', sub: true, parent: 'realismus', label: 'Eigener KT/SEK-Satz', info: 'Hochladen', kw: 'kt sek codes abfrage json satz', note: 'Du kannst beides zusammen oder nur eines davon hochladen. Gespeichert wird in Dokumente/LeitWerk.', rows: [
-          F('Name des Satzes', 'satzKtName', 'z. B. Mein KT-Satz', 'Unter diesem Namen findest du den Satz später wieder'),
-          B('KT-/SEK-Codes (JSON)', [{ l: 'Datei wählen …', ok: 'kt-codes.json · 136 Codes erkannt' }], 'Codes mit ihren Bedingungen – so, wie der Editor sie speichert'),
-          B('KT-Abfrage (JSON)', [{ l: 'Datei wählen …', ok: 'kt-abfrage.json · gültig' }], 'Fragen der KT-Hotline mit Art und dem, was sie klären'),
-          B('', [{ l: 'Speichern & verwenden', back: true }, { l: 'Abbrechen', back: true }])
+        { id: 'zuordnung', sub: true, parent: 'rdAbfrage', label: 'Zuordnung zu den Merkmalen', info: 'Fragen ↔ Merkmale', kw: 'zuordnung merkmal frage antwort schema ki', note: 'Nur nötig für eigene Abfrageschemas. Eindeutige Fragen ordnet LeitWerk selbst zu – hier prüfst du die offenen und unsicheren.', rows: [{ t: 'zuord' }] },
+        { id: 'ktCodes', label: 'KT/SEK-Codes', info: 'Krankentransport & Überstellung', kw: 'kt sek krankentransport überstellung sekundär codes csv json editor bedingungen eigene datei hochladen realismus vorlage', note: 'Echte Codes und Namen sind aus rechtlichen Gründen nicht dabei. Lade nur Inhalte, an denen du die Rechte hast. Im Multiplayer lädt jeder seine eigenen Dateien – ohne sieht man die eingebauten.', rows: [
+          L('Aktiv', 'ak_ktCodes', ['Eingebaut – LeitWerk-Transportcodes', 'Meine KT-Codes'], 'Eingebaut – LeitWerk-Transportcodes', 'Gilt sofort · nur auf diesem Rechner · Liste = Dateien im Ordner'),
+          B('KT-Code-Editor', [{ l: 'Editor öffnen', ok: 'Im Editor geöffnet' }], 'Codes und Bedingungen bearbeiten'),
+          H('Eigene Datei hinzufügen'),
+          B('Datei hochladen', [{ l: 'Datei wählen …', ok: 'Gespeichert · KT/SEK-Codes aktiv' }], 'CSV wie die Vorlage (Code; Name; Kapitel; Fahrt; Lage; Zeit; …) oder JSON aus dem Editor'),
+          B('Vorlage', [{ l: 'Vorlage speichern …', ok: 'Gespeichert' }], 'Alle eingebauten KT-/SEK-Codes mit Bedingungen'),
+          B('Ordner', ['Ordner öffnen'], 'Dokumente/LeitWerk/Codelisten/Krankentransport_Sekundärtransporte')
         ]},
-        { id: 'ktEditor', sub: true, parent: 'realismus', label: 'KT/SEK-Codes bearbeiten', info: 'Editor', kw: 'kt editor codes bedingungen abfrage entwurf', note: 'Neuer Satz auf Basis des aktiven. Solange er unvollständig ist, bleibt er ein Entwurf und ist noch nicht spielbar.', rows: [
-          F('Name des Satzes', 'ktEdName', 'z. B. Mein KT-Satz'),
-          TAB(['Code', 'Name', 'Kapitel', 'Fahrt'], [
-            ['KTR-90T1', 'Fahrt zum Krankenhaus – gehend', '90 – Fahrt zum Krankenhaus', 'zum KH'], ['KTR-90T1S', 'Einweisung SOFORT – gehend', '90 – Fahrt zum Krankenhaus', 'zum KH'], ['KTA-95T1', 'Entlassung nach Hause – gehend', '95 – Heimtransport', 'heim'], ['SEK-96N6-ITH', 'Dringende Notarztüberstellung mit Hubschrauber (ITH)', '96 – Überstellung', 'Überstellung']
-          ], { suche: 'Code suchen …', neu: 'Neuer Code', ding: 'Code', anzahl: '136 Codes', edit: true, typen: ['text', 'text', 'text', ['sel', ['zum KH', 'heim', 'Überstellung', 'Termin']]], extra: [['Bedingungen', 'text', 'liegend · Begleitung · …'], ['Hinweis', 'text', '']] }),
-          B('KT-Abfrage', [{ l: 'Fragen bearbeiten', ok: 'Im Editor geöffnet' }], 'Fragen der KT-Hotline'),
-          B('', [{ l: 'Prüfen', ok: 'Vollständig – spielbar' }, { l: 'Speichern & verwenden', back: true }])
+        { id: 'ktAbfrage', label: 'KT-Abfrage', info: 'Fragen der KT-Hotline', kw: 'kt sek krankentransport überstellung abfrage fragen hotline json eigene datei hochladen realismus', note: 'Echte Codes und Namen sind aus rechtlichen Gründen nicht dabei. Lade nur Inhalte, an denen du die Rechte hast. Im Multiplayer lädt jeder seine eigenen Dateien – ohne sieht man die eingebauten.', rows: [
+          L('Aktiv', 'ak_ktAbfrage', ['Eingebaut – LeitWerk-KT-Abfrage', 'Meine KT-Abfrage'], 'Eingebaut – LeitWerk-KT-Abfrage', 'Gilt sofort · nur auf diesem Rechner · Liste = Dateien im Ordner'),
+          H('Eigene Datei hinzufügen'),
+          B('Datei hochladen', [{ l: 'Datei wählen …', ok: 'Gespeichert · KT-Abfrage aktiv' }], 'JSON mit „abfrage“: je Frage „id“ und „text“'),
+          B('Vorlage', [{ l: 'Vorlage speichern …', ok: 'Gespeichert' }], 'Die eingebauten Fragen der KT-Hotline'),
+          B('Ordner', ['Ordner öffnen'], 'Dokumente/LeitWerk/Abfrageschema/Krankentransport_Sekundärtransporte')
+        ]},
+        { id: 'namen', label: 'Namen', info: 'Neutrale Namen ersetzen', kw: 'namen ersetzungen neutral eigen organisation dienststelle hubschrauber krankentransport csv vorlage realismus', note: 'Echte Codes und Namen sind aus rechtlichen Gründen nicht dabei. Lade nur Inhalte, an denen du die Rechte hast. Im Multiplayer lädt jeder seine eigenen Dateien – ohne sieht man die eingebauten.', rows: [
+          L('Aktiv', 'ak_namen', ['Eingebaut – neutrale Namen', 'Meine_Namen.csv'], 'Eingebaut – neutrale Namen', 'Gilt sofort · nur auf diesem Rechner · Liste = Dateien im Ordner'),
+          H('Eigene Datei hinzufügen'),
+          B('Datei hochladen', [{ l: 'Datei wählen …', ok: 'Ersetzungen aktiv' }], 'CSV „neutral;eigen“'),
+          B('Vorlage', [{ l: 'Vorlage speichern …', ok: 'Gespeichert' }], 'Alle neutralen Namen, auch Stützpunkte für KT/SEK'),
+          B('Ordner', ['Ordner öffnen'], 'Dokumente/LeitWerk/Namen')
         ]}
       ]},
       { id: 'prog', label: 'Programm', scope: '', pages: [
