@@ -1,6 +1,6 @@
 ### npm install
 
-added 52 packages, and audited 53 packages in 7s
+added 52 packages, and audited 53 packages in 8s
 
 9 packages are looking for funding
   run `npm fund` for details
@@ -18,7 +18,7 @@ Run `npm audit` for details.
 
 [36mvite v6.4.6 [32mbuilding for production...[36m[39m
 transforming...
-[32m✓[39m 335 modules transformed.
+[32m✓[39m 336 modules transformed.
 rendering chunks...
 [33m[plugin vite:reporter] 
 (!) /home/runner/work/leitwerk/leitwerk/node_modules/@tauri-apps/plugin-dialog/dist-js/index.js is dynamically imported by /home/runner/work/leitwerk/leitwerk/src/ui/mithelfen.ts, /home/runner/work/leitwerk/leitwerk/src/ui/pilot/flugsim.ts, /home/runner/work/leitwerk/leitwerk/src/ui/pilot/flugsim.ts but also statically imported by /home/runner/work/leitwerk/leitwerk/src/net/spielstandOrdner.ts, /home/runner/work/leitwerk/leitwerk/src/platform.ts, dynamic import will not move module into another chunk.
@@ -82,21 +82,21 @@ computing gzip size...
 [2mdist/[22m[2massets/[22m[32mbg-32x9-abend-DLJpcJQK.jpg           [39m[1m[2m1,159.39 kB[22m[1m[22m
 [2mdist/[22m[2massets/[22m[32meinsatzstellen-BKMVXWRH.csv          [39m[1m[2m2,885.41 kB[22m[1m[22m
 [2mdist/[22m[2massets/[22m[35mindex-q8pBXPhs.css                   [39m[1m[2m  480.62 kB[22m[1m[22m[2m │ gzip:    75.73 kB[22m
-[2mdist/[22m[2massets/[22m[36mdist-js-Bnvpj19o.js                  [39m[1m[2m    0.54 kB[22m[1m[22m[2m │ gzip:     0.26 kB[22m
-[2mdist/[22m[2massets/[22m[36mwebviewWindow-DfupoTua.js            [39m[1m[2m    1.78 kB[22m[1m[22m[2m │ gzip:     0.79 kB[22m
-[2mdist/[22m[2massets/[22m[36mfussleiste-6mCX8l0Z.js               [39m[1m[2m    2.37 kB[22m[1m[22m[2m │ gzip:     1.19 kB[22m
-[2mdist/[22m[2massets/[22m[36mwebview-C57e40tW.js                  [39m[1m[2m    3.34 kB[22m[1m[22m[2m │ gzip:     1.13 kB[22m
-[2mdist/[22m[2massets/[22m[36mpath-B1AeSsnl.js                     [39m[1m[2m    3.76 kB[22m[1m[22m[2m │ gzip:     0.92 kB[22m
-[2mdist/[22m[2massets/[22m[36mwindow-DDlyyY5H.js                   [39m[1m[2m   14.37 kB[22m[1m[22m[2m │ gzip:     3.56 kB[22m
-[2mdist/[22m[2massets/[22m[36mmithelfen-DRmUl1ij.js                [39m[1m[2m   20.06 kB[22m[1m[22m[2m │ gzip:     8.00 kB[22m
-[2mdist/[22m[2massets/[22m[36mzeilen-BmM5jsYz.js                   [39m[1m[2m   91.07 kB[22m[1m[22m[2m │ gzip:    31.76 kB[22m
-[2mdist/[22m[2massets/[22m[36mindex-CzfSDBcB.js                    [39m[1m[33m6,871.45 kB[39m[22m[2m │ gzip: 1,915.40 kB[22m
+[2mdist/[22m[2massets/[22m[36mdist-js-8N8HnahG.js                  [39m[1m[2m    0.54 kB[22m[1m[22m[2m │ gzip:     0.26 kB[22m
+[2mdist/[22m[2massets/[22m[36mwebviewWindow-BXbjJG4h.js            [39m[1m[2m    1.78 kB[22m[1m[22m[2m │ gzip:     0.80 kB[22m
+[2mdist/[22m[2massets/[22m[36mfussleiste-lDwnYYDS.js               [39m[1m[2m    2.37 kB[22m[1m[22m[2m │ gzip:     1.19 kB[22m
+[2mdist/[22m[2massets/[22m[36mwebview-CLEtzHtK.js                  [39m[1m[2m    3.34 kB[22m[1m[22m[2m │ gzip:     1.14 kB[22m
+[2mdist/[22m[2massets/[22m[36mpath-BzdXguRe.js                     [39m[1m[2m    3.76 kB[22m[1m[22m[2m │ gzip:     0.92 kB[22m
+[2mdist/[22m[2massets/[22m[36mwindow-CCVqB6MF.js                   [39m[1m[2m   14.37 kB[22m[1m[22m[2m │ gzip:     3.57 kB[22m
+[2mdist/[22m[2massets/[22m[36mmithelfen-C2MeIzVH.js                [39m[1m[2m   20.06 kB[22m[1m[22m[2m │ gzip:     8.00 kB[22m
+[2mdist/[22m[2massets/[22m[36mzeilen-CXLhKQLr.js                   [39m[1m[2m   91.07 kB[22m[1m[22m[2m │ gzip:    31.76 kB[22m
+[2mdist/[22m[2massets/[22m[36mindex-O1BJXkUi.js                    [39m[1m[33m6,889.67 kB[39m[22m[2m │ gzip: 1,920.58 kB[22m
 [33m
 (!) Some chunks are larger than 2000 kB after minification. Consider:
 - Using dynamic import() to code-split the application
 - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
 - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.[39m
-[32m✓ built in 6.96s[39m
+[32m✓ built in 7.53s[39m
 ### npx tauri icon app-icon.png
         Appx Creating StoreLogo.png
         Appx Creating Square30x30Logo.png
@@ -203,7 +203,7 @@ Kleinversion in src-tauri/icons/Square30x30Logo.png
   [1m[94m|[0m            [1m[33m^^^^^^^^[0m
 
 [1m[33mwarning[0m: `leitwerk` (lib) generated 7 warnings (run `cargo fix --lib -p leitwerk` to apply 2 suggestions)
-[1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 13.63s
+[1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 18.28s
 ### cmake -S tools/xplane-plugin -B xpbau -DCMAKE_BUILD_TYPE=Release
 -- The CXX compiler identification is GNU 13.3.0
 -- Detecting CXX compiler ABI info
@@ -215,7 +215,7 @@ Kleinversion in src-tauri/icons/Square30x30Logo.png
 -- Performing Test CMAKE_HAVE_LIBC_PTHREAD
 -- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
 -- Found Threads: TRUE
--- Configuring done (2.0s)
+-- Configuring done (1.2s)
 -- Generating done (0.0s)
 -- Build files have been written to: /home/runner/work/leitwerk/leitwerk/xpbau
 ### cmake --build xpbau -j4
@@ -249,7 +249,7 @@ data/beispiele/vorlage_einsatzvorlagen.csv: 0 Zeilen
 ### python3 tools/build_stufen.py
 einsatzstufen.csv: 21 Stufen
 ### python3 tools/leitwerk_codesystem.py data/codesystem/leitwerk_codesystem.json
-data/codesystem/leitwerk_codesystem.json: 38 Kapitel, 542 Codes
+data/codesystem/leitwerk_codesystem.json: 38 Kapitel, 543 Codes
 ### python3 tools/beispiel_codesystem.py data/beispiele/beispiel_codesystem.json
 ### git diff --stat --exit-code data/
 ### Ergebnis: 0
