@@ -151,6 +151,7 @@ import { FUNKGRUPPEN, funkgruppe, funkgruppeVon, inFunkgruppe, mitteVon, type Fu
 import { echtwetterLaden } from "./echtwetter";
 import { sekZufall } from "./sek";
 import { bedarf, ereignisseEinplanen, istStillstand, lageAusFall, lageErzeugen, lagemeldungText, patientText, rtwBedarf, type Lage } from "./lage";
+import { THEMA_ANTEIL } from "../abfrage/themaAnteil";
 import { alleFaelle, anleitungAus, brauchtAusNa, brauchtVon, fallPaare, fallVariante, fallUndVariante, fallVorlage, kompetenzRang, varianteWaehlen, type FallVariante, type FallVorlage, type Kompetenz } from "../abfrage/faelle";
 import { nachrichtArt } from "../abfrage/runde";
 
@@ -355,6 +356,8 @@ export interface SimFahrzeug {
   naAbholung?: string;
   /** Notarzt sitzt im NEF (abgeholt) */
   naAnBord?: boolean;
+  /** NEF holt den Notarzt ab: bis dahin (Zeit) soll es „zum Berufungsort“ fahren – Abholen gehört zur Ausrückzeit (Beta 72) */
+  naFrist?: number | null;
   /** nach dem Abholen: eigentliches Ziel */
   nachNa?: { ziel: LatLon; phase: Phase; blau: boolean } | null;
   /** Rückfahrt bringt zuerst den Notarzt ins Krankenhaus */
@@ -584,10 +587,8 @@ export function plausibel(kapitel: string, a: Antworten, codeName: string): bool
   return true;
 }
 
-/** Themen für einen neuen Fall – häufige Notrufe öfter, Alpinunfälle selten */
-const THEMA_GEWICHT: Record<string, number> = {
-  sturz: 3, krank: 3, brustschmerz: 2.5, atemnot: 2.5, schlaganfall: 2, bewusstlos: 2, verkehrsunfall: 2, krampf: 1.5, blutung: 1.5, bauch: 1.5, kopfschmerz: 1.5, stillstand: 1.2, alpin: 0.15, anforderung_ls: 0.3, ecall: 0.3,
-};
+/** Themen für einen neuen Fall (Fall aus dem Abfrageschema): Anteil in % nach der echten Verteilung (Beta 72) */
+const THEMA_GEWICHT: Record<string, number> = THEMA_ANTEIL;
 /** Wetter macht manche Notrufe häufiger: Hitze → Hitzenotfälle, Badeunfälle; Kälte → Unterkühlung, Infekte; Glätte → Stürze, Unfälle */
 export function wetterFaktor(kap: string, temp: number, lage: WetterLage, wind = 0): number {
   const art = lageArt(lage);
@@ -2420,7 +2421,7 @@ export class Simulation extends GsKern {
         if (distanceM(fz, p) < 40) {
           fz.fahrt = null;
           fz.phase = "naEinstieg";
-          fz.phaseEnde = this.state.zeit + rnd(60, 120) * 1000;
+          fz.phaseEnde = this.state.zeit + this.naEinstiegMs(fz);
           return;
         }
         ziel = p;
@@ -2525,6 +2526,13 @@ export class Simulation extends GsKern {
     const x = fz.naAbholung;
     const h = store.get("hospitals", x) ?? store.list("hospitals").find((k) => k.kurzname === x || k.name === x);
     return h ?? null;
+  }
+
+  /** Notarzt steigt ein: sonst 1–2 Minuten, mit Frist (Abholen gehört zur Ausrückzeit) so, dass sie hält – mindestens 15 s */
+  private naEinstiegMs(fz: SimFahrzeug): number {
+    const normal = rnd(60, 120) * 1000;
+    if (!fz.naFrist) return normal;
+    return Math.max(15_000, Math.min(normal, fz.naFrist - this.state.zeit));
   }
 
   /** Umweg über das Krankenhaus (Notarzt abholen) für die Ankunftsschätzung: Startpunkt und Zusatzzeit */
@@ -2806,13 +2814,14 @@ export class Simulation extends GsKern {
       case "naAbholung": {
         fz.fahrt = null;
         fz.phase = "naEinstieg";
-        fz.phaseEnde = t + rnd(60, 120) * 1000;
+        fz.phaseEnde = t + this.naEinstiegMs(fz);
         break;
       }
       case "naEinstieg": {
         const n = fz.nachNa;
         fz.nachNa = null;
         fz.naAnBord = true;
+        fz.naFrist = null;
         if (!e || !n) return this.freigeben(fz);
         this.log(e, `${fz.funkrufname}: Notarzt im ${this.naKh(fz)?.kurzname || "Krankenhaus"} übernommen`);
         this.setStatus(fz, "zumBO");
@@ -3976,7 +3985,11 @@ export class Simulation extends GsKern {
       fz.einsatzId = e.id;
       fz.alarmiertUm = this.state.zeit;
       if (!e.fahrzeuge.includes(fz.id)) e.fahrzeuge.push(fz.id);
-      const sek = this.ausrueckSek(fz, false);
+      let sek = this.ausrueckSek(fz, false);
+      // NEF holt den Notarzt im Krankenhaus ab: Abholen zählt zur Ausrückzeit (Ticket 14) – erst „zum BO“, wenn der Arzt drin ist
+      const umweg = this.naUmweg(fz);
+      fz.naFrist = umweg ? this.state.zeit + sek * 1000 : null;
+      if (umweg) sek = Math.max(10, sek - umweg.sek);
       const aufWache = fz.status === "freiWache" || (fz.status === "bereitschaft" && fz.phase !== "rueckfahrt");
       fz.quittUm = null;
       this.setStatus(fz, aufWache ? "alarmWache" : "alarmFunk");
@@ -4009,8 +4022,11 @@ export class Simulation extends GsKern {
     const fz = e.fahrzeuge.map((id) => this.state.fahrzeuge[id]).filter((f): f is SimFahrzeug => !!f && f.phase === "ausruecken" && jetzt - (f.alarmUm ?? -1e15) <= 60_000);
     const rtwEnde = Math.max(...fz.filter((f) => f.kategorie !== "NEF" && !fliegt(f)).map((f) => f.phaseEnde ?? 0), 0);
     if (!rtwEnde) return;
-    for (const nef of fz.filter((f) => f.kategorie === "NEF" && f.status === "alarmWache"))
-      if ((nef.phaseEnde ?? 0) < rtwEnde + 20_000) nef.phaseEnde = rtwEnde + rnd(20, 90) * 1000;
+    // höchstens bis zum Ende der NEF-Ausrückzeit (Ticket 14); ein NEF, das den Notarzt abholt, wartet nicht auf den RTW
+    const a = this.settings.ausrueck;
+    const max = (this.istTag() ? (a.nefTag ?? [30, 180]) : (a.nefNacht ?? [60, 300]))[1] * 1000;
+    for (const nef of fz.filter((f) => f.kategorie === "NEF" && f.status === "alarmWache" && !f.naFrist))
+      if ((nef.phaseEnde ?? 0) < rtwEnde + 20_000) nef.phaseEnde = Math.max(nef.phaseEnde ?? 0, Math.min(rtwEnde + rnd(20, 90) * 1000, (nef.alarmUm ?? jetzt) + max));
   }
 
   /** Tagsüber laut Einstellung (Standard 5–22 Uhr)? */
@@ -4031,7 +4047,7 @@ export class Simulation extends GsKern {
       const tag = this.istTag();
       if (fliegt(fz)) return z(tag ? a.nahTag : a.nahNacht);
       // NEF streut stärker als RTW/KTW
-      if (fz.kategorie === "NEF") return z(tag ? (a.nefTag ?? [20, 240]) : (a.nefNacht ?? [90, 780]));
+      if (fz.kategorie === "NEF") return z(tag ? (a.nefTag ?? [30, 180]) : (a.nefNacht ?? [60, 300]));
       return z(tag ? a.bodenTag : a.bodenNacht);
     };
     if (fz.status === "freiWache") return wache();
@@ -4629,6 +4645,8 @@ export class Simulation extends GsKern {
         const kap = kapitelZiehen(schema, wetter ? (kp) => wetterFaktor(kp, temp, lage, this.state.wetter.wind ?? 0) : undefined);
         // Fallgeschichte zuerst: sie legt Ort, Hergang und die wichtigsten Antworten fest
         const vorlage = vorlageWaehlen(SZENARIEN, thema(kap, schema), ctx, Math.random);
+        // nicht dieselbe Fallgeschichte wie in den letzten Einsätzen (Ticket 15)
+        if (vorlage && i < 300 && this.letzteFaelle.includes(vorlage.id)) continue;
         // Ort zuerst: manche Antworten hängen vom Ort ab (außerorts schneller als im Ort)
         const vFest = vorlage ? vorlageFest(vorlage, Math.random) : {};
         const vOrt = vorlage ? this.ortArtWaehlen(vorlage, typeof vFest.alter === "number" ? vFest.alter : null, vorlage.thema) : undefined;
@@ -4656,6 +4674,7 @@ export class Simulation extends GsKern {
           code = c;
           fall = { kapitel: f.ergebnis.pfad[0], antworten: f.antworten, code: c.code, ...(Object.keys(fest.roh).length ? { roh: fest.roh } : {}) };
           if (vorlage) {
+            this.fallMerken(vorlage.id);
             fall.vorlage = vorlage.id;
             fall.ortArt = vOrt ?? this.ortArtWaehlen(vorlage, typeof f.antworten.alter === "number" ? f.antworten.alter : null, thema(f.ergebnis.pfad[0]));
           }
@@ -4853,7 +4872,7 @@ export class Simulation extends GsKern {
       let zielStufe: string | null = null;
       const nachStufe = !wunsch && stufenZiel ? this.nachStufeZiehen(ctx, schema, stufenZiel, this.stufeWunsch) : null;
       if (nachStufe) zielStufe = nachStufe.stufe;
-      const gezogen = wunsch ? null : (nachStufe ?? fallUndVariante(ctx, this.settings.schwere ?? { harmlos: 35, mittel: 50, kritisch: 15 }, this.settings.komplikationen ?? "normal", Math.random));
+      const gezogen = wunsch ? null : (nachStufe ?? fallUndVariante(ctx, this.settings.schwere ?? { harmlos: 35, mittel: 50, kritisch: 15 }, this.settings.komplikationen ?? "normal", Math.random, this.letzteFaelleSet()));
       const f = wunsch ? fallVorlage(wunsch.id) : (gezogen?.f ?? null);
       if (!f) return null;
       const kap = kapitelFuerThema(f.thema, schema);
@@ -4882,9 +4901,20 @@ export class Simulation extends GsKern {
       if (!wunsch && f.kategorien?.length && !this.poisFuer(ortArt, typeof a.alter === "number" ? a.alter : null, f.kategorien, f.auchGeschlossen).length) continue;
       // braucht die Wasserrettung: nur, wo es eine gibt
       if (!wunsch && v.partner?.some((x) => x.art === "wasser") && !this.partnerStationenImGebiet("wasser").length) continue;
+      this.fallMerken(f.id);
       return { fall: { kapitel: kap, antworten, code: c.code, vorlage: f.id, ortArt, katalog: { id: f.id, variante: v.id }, ...(Object.keys(roh).length ? { roh } : {}) }, code: c };
     }
     return null;
+  }
+
+  /** Fälle der letzten Notrufe (Katalog-ID bzw. Fallgeschichte) – derselbe Fall kommt nicht kurz hintereinander (Ticket 15) */
+  private letzteFaelle: string[] = [];
+  static readonly FALL_SPERRE = 6;
+  private fallMerken(id: string): void {
+    this.letzteFaelle = [...this.letzteFaelle.filter((x) => x !== id), id].slice(-Simulation.FALL_SPERRE);
+  }
+  private letzteFaelleSet(): ReadonlySet<string> {
+    return new Set(this.letzteFaelle);
   }
 
   /**
@@ -4942,7 +4972,11 @@ export class Simulation extends GsKern {
     }
     // vom Generator vorgegebene Stufe (Kurve der aktuellen Stunde) – wenn es dafür Fälle gibt
     if (erzwungen && moeglich.some(([k]) => k === erzwungen)) stufe = erzwungen;
-    const kand = paare.filter((p) => (p.st[stufe] ?? 0) > 0);
+    // nicht derselbe Fall wie in den letzten Einsätzen (Ticket 15) – gibt es in der Stufe sonst keinen, doch
+    const ohne = this.letzteFaelleSet();
+    const alleKand = paare.filter((p) => (p.st[stufe] ?? 0) > 0);
+    const frisch = alleKand.filter((p) => !ohne.has(p.f.id));
+    const kand = frisch.length ? frisch : alleKand;
     const ges = kand.reduce((x, p) => x + p.w * p.st[stufe], 0);
     let q = Math.random() * ges;
     for (const p of kand) if ((q -= p.w * p.st[stufe]) <= 0) return { f: p.f, v: p.v, stufe };
@@ -5871,6 +5905,24 @@ export class Simulation extends GsKern {
       this.log(e, `${fz.funkrufname} fährt ohne ${grund === "ohneNfs" ? "NEF/RTW-C" : "Notarzt"} los`);
       this.fzRuft(fz, e, "info", grund === "ohneNfs" ? "fahren jetzt mit dem Patienten los" : "fahren ohne Notarzt los");
     }
+  }
+
+  /**
+   * Antwort in der Phase „ausrücken“ (Ticket 14): ehrlich „noch auf der Dienststelle“ bzw. „holen den Notarzt ab“,
+   * Eintreffen = restliche Ausrückzeit + grob geschätzte Anfahrt (Straße ≈ 1,35 × Luftlinie)
+   */
+  private nochAufWache(fz: SimFahrzeug, e: Einsatz | undefined, hier: string): string {
+    const rest = fz.phaseEnde ? Math.max(0, fz.phaseEnde - this.state.zeit) : 60_000;
+    const umweg = this.naUmweg(fz);
+    const von = umweg?.start ?? fz;
+    const ziel = e?.adresse ?? e?.wahr;
+    const blau = e ? this.faktor(e) < 1 : false;
+    const fahrt = fliegt(fz)
+      ? (ziel ? distanceM(fz, ziel) / (this.settings.nahGeschwindigkeit / 3.6) * 1000 + 90_000 : 0)
+      : (ziel ? ((distanceM(von, ziel) * 1.35) / ((blau ? 70 : 55) / 3.6)) * 1000 : 0) + (umweg ? umweg.sek * 1000 : 0);
+    const min = Math.max(1, Math.round((rest + fahrt) / MIN));
+    const was = umweg ? `rücken gleich aus, holen noch den Notarzt im ${this.naKh(fz)?.kurzname || "Krankenhaus"} ab` : fz.status === "alarmFunk" ? "fahren gleich los" : "sind noch auf der Dienststelle, rücken gleich aus";
+    return `${hier}, ${was}, Eintreffen in ca. ${min} Minute${min === 1 ? "" : "n"}, kommen`;
   }
 
   /** Geschätzte Fahrzeit des RTW vom Einsatzort ins geeignete Krankenhaus (gebucht, sonst der Vorschlag der Zuweisung) */
@@ -7926,7 +7978,8 @@ export class Simulation extends GsKern {
         switch (absicht.thema) {
           case "status":
           case "eintreffen":
-            if (fz.phase === "anfahrt" || fz.phase === "ausruecken") return `${hier}, sind auf Anfahrt, Eintreffen in ca. ${min ?? "?"} Minute${min === 1 ? "" : "n"}, kommen`;
+            if (fz.phase === "ausruecken") return this.nochAufWache(fz, e, hier);
+            if (fz.phase === "anfahrt") return `${hier}, sind auf Anfahrt, Eintreffen in ca. ${min ?? "?"} Minute${min === 1 ? "" : "n"}, kommen`;
             if (fz.phase === "naAbholung" || fz.phase === "naEinstieg") return `${hier}, holen gerade den Notarzt im ${this.naKh(fz)?.kurzname || "Krankenhaus"} ab, dann direkt zum Einsatzort, kommen`;
             if (vorOrt) return `${hier}, sind vor Ort beim Patienten, kommen`;
             if (fz.phase === "transport") return `${hier}, sind mit Patient auf dem Weg ins Krankenhaus, ca. ${min ?? "?"} Minuten, kommen`;
@@ -7940,6 +7993,7 @@ export class Simulation extends GsKern {
           case "frei": {
             const m = this.minutenBisFrei(fz, e);
             if (m === 0) return `${hier}, sind frei, kommen`;
+            if (m === null && fz.phase === "ausruecken") return this.nochAufWache(fz, e, hier).replace(/, kommen$/, ", wann wir frei sind, ist noch offen, kommen");
             if (m === null) return `${hier}, sind auf Anfahrt, Eintreffen in ca. ${min ?? "?"} Minute${min === 1 ? "" : "n"}, wann wir frei sind, ist noch offen, kommen`;
             return `${hier}, voraussichtlich in ca. ${m} Minuten wieder frei, kommen`;
           }

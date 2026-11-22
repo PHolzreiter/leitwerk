@@ -590,7 +590,7 @@ export class SeitenBasis {
           N('Tag beginnt', 'tagV', 7, 'Uhr'),
           N('Tag endet', 'tagB', 19, 'Uhr'),
           TN('RTW / KTW', 'boden', [0.5, 2, 1, 4]),
-          TN('NEF', 'nef', [0.5, 4, 1.5, 13]),
+          TN('NEF', 'nef', [0.5, 3, 1, 5], 'Holt das NEF den Notarzt im Krankenhaus ab, zählt das Abholen mit – es fährt erst mit Arzt „zum Einsatzort“'),
           TN('Hubschrauber', 'nah', [2, 4, 5, 10]),
           N('Frei unterwegs', 'unterwegs', 10, 'Sekunden'),
           N('Aus der Bereitschaft', 'bereit', 3, '+ min'),

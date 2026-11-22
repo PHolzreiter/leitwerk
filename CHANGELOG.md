@@ -1,5 +1,13 @@
 # Änderungen
 
+## 0.116.0-beta.72 – NEF rückt schneller aus, Notrufe nach echter Verteilung, keine gleichen Fälle hintereinander
+- **NEF-Ausrückzeit:** nachts 1–5 Minuten (vorher bis 13), tagsüber ½–3 Minuten. Wer noch die alten Standardwerte hatte, bekommt die neuen automatisch; eigene Werte bleiben.
+- **NEF holt den Notarzt im Krankenhaus ab:** das Abholen gehört jetzt zur Ausrückzeit. Das NEF bleibt dabei „alarmiert/quittiert“ und fährt erst mit Arzt „zum Einsatzort“ – spätestens nach der Ausrückzeit (außer der Weg zum Krankenhaus ist selbst schon länger). Ein NEF wartet nach dem RTW höchstens bis zum Ende seiner Ausrückzeit.
+- **Funk beim Ausrücken ehrlich:** Fragt man ein Fahrzeug, das noch nicht losgefahren ist, sagt es „sind noch auf der Dienststelle, rücken gleich aus“ (NEF: „holen noch den Notarzt ab“) und die Zeit bis zum Eintreffen samt Anfahrt – nicht mehr „sind auf Anfahrt“.
+- **Notrufe nach echter Verteilung:** wie oft welches Thema kommt, richtet sich jetzt nach echten Einsatzzahlen (nicht 1:1 – seltene Notfälle bleiben etwas häufiger als in echt). Viel öfter: Anforderungen durch Arzt, Pflege und Einrichtungen (rund jeder fünfte bis sechste Notruf), Kranke Person, Kollaps. Seltener: Verletzungen, Verkehrsunfälle, Herzbeschwerden, Schwangerschaft, Blutzucker, Polizei-Anforderungen, Brand, Tierbiss.
+- **Automatische Unfallmeldung (eCall) nur noch ≈ 1 %** aller Notrufe (vorher ≈ 4–8 %).
+- **Kein gleicher Fall kurz hintereinander:** derselbe Fall kommt nicht, solange er unter den letzten 6 Notrufen war. Der gleiche Code darf ruhig zweimal hintereinander kommen.
+
 ## 0.116.0-beta.71 – Mein Platz: neu geordnet und Schritt für Schritt einrichten
 - **Mein Platz hat jetzt sieben klare Seiten:** Einrichten · Aussehen · Kopfhörer & Mikrofon · Telefon, Funk & KI · Töne · Pilot & Flugsimulator · Bedienung.
 - **Neu: Einrichten** – Schritt für Schritt mit ✓: ① Hören (Probeton: erst Klingeln, dann eine Stimme), ② Sprechen statt tippen (Spracherkennung mit einem Klick laden), ③ Mikrofon testen (Pegel läuft mit, danach steht da, was verstanden wurde), ④ Sprechtasten ausprobieren, ⑤ Anrufer-KI, ⑥ **Probeanruf** (es klingelt, ein Anrufer spricht, du antwortest). Fehlt etwas, zeigt es der Bereitschafts-Check („Kopfhörer & Mikrofon“) – ein Klick führt hin.

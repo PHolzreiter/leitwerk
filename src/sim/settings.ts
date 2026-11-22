@@ -254,7 +254,7 @@ export function defaultStunden(): Settings["stunden"] {
 }
 
 export function defaultAusrueck(): Settings["ausrueck"] {
-  return { tagVon: 5, tagBis: 22, bodenTag: [30, 120], bodenNacht: [120, 600], nahTag: [120, 300], nahNacht: [300, 600], nefTag: [20, 240], nefNacht: [90, 780], unterwegs: 10, bereitschaftPlusMin: 5 };
+  return { tagVon: 5, tagBis: 22, bodenTag: [30, 120], bodenNacht: [120, 600], nahTag: [120, 300], nahNacht: [300, 600], nefTag: [30, 180], nefNacht: [60, 300], unterwegs: 10, bereitschaftPlusMin: 5 };
 }
 
 export function defaultSettings(): Settings {
@@ -310,5 +310,12 @@ export function mergeSettings(saved: Partial<Settings> | undefined): Settings {
     const bg = stufen.find((x) => x.stufe === "BLS gelb");
     if (bg && bg.sondersignal) bg.sondersignal = false;
   }
-  return { ...d, ...saved, stufenStand: 67, status, stufen, aufkommen: { ...d.aufkommen, ...(saved.aufkommen ?? {}) }, ausrueck: { ...d.ausrueck, ...(saved.ausrueck ?? {}) }, stunden: saved.stunden?.length === 24 ? saved.stunden.map((x, i) => ({ ...d.stunden[i], ...x })) : d.stunden };
+  const ausrueck = { ...d.ausrueck, ...(saved.ausrueck ?? {}) };
+  // Beta 72 (Ticket 14): NEF rückt schneller aus (nachts bis 5 statt 13 Minuten) – alter Standard einmalig umstellen
+  if ((saved.stufenStand ?? 0) < 72) {
+    const gleich = (x: unknown, a: number, b: number) => Array.isArray(x) && x[0] === a && x[1] === b;
+    if (gleich(saved.ausrueck?.nefTag, 20, 240)) ausrueck.nefTag = [...d.ausrueck.nefTag];
+    if (gleich(saved.ausrueck?.nefNacht, 90, 780)) ausrueck.nefNacht = [...d.ausrueck.nefNacht];
+  }
+  return { ...d, ...saved, stufenStand: 72, status, stufen, aufkommen: { ...d.aufkommen, ...(saved.aufkommen ?? {}) }, ausrueck, stunden: saved.stunden?.length === 24 ? saved.stunden.map((x, i) => ({ ...d.stunden[i], ...x })) : d.stunden };
 }

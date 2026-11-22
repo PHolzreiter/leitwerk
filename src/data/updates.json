@@ -1,5 +1,15 @@
 [
  {
+  "version": "0.116.0-beta.72",
+  "datum": "2026-11-22",
+  "titel": "NEF rückt schneller aus, Notrufe nach echter Verteilung",
+  "punkte": [
+   "NEF-Ausrückzeit nachts 1–5 Minuten; Notarzt abholen zählt zur Ausrückzeit",
+   "Funk beim Ausrücken: „noch auf der Dienststelle“ statt „auf Anfahrt“",
+   "Themen nach echten Einsatzzahlen, eCall ≈ 1 %, kein gleicher Fall unter den letzten 6"
+  ]
+ },
+ {
   "version": "0.116.0-beta.71",
   "datum": "2026-11-22",
   "titel": "Mein Platz: neu geordnet, Schritt für Schritt einrichten",

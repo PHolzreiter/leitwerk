@@ -318,8 +318,8 @@ export function createSettingsView(container: HTMLElement, teil: "simulation" | 
     tw.append(tv, el("span", { class: "muted" }, "–"), tb, el("span", { class: "muted" }, "Uhr"));
     rGrid.append(el("label", {}, "Tag (sonst Nacht)"), tw);
     // Tabelle: je Fahrzeugart eine Zeile, Tag und Nacht nebeneinander
-    a.nefTag ??= [20, 240];
-    a.nefNacht ??= [90, 780];
+    a.nefTag ??= [30, 180];
+    a.nefNacht ??= [60, 300];
     const ausrTab = el("div", { class: "ausr-tab" });
     ausrTab.append(el("span"), el("span", { class: "ausr-kopf" }, "☀ Tag"), el("span", { class: "ausr-kopf" }, "☾ Nacht"));
     for (const [label, tag, nacht] of [

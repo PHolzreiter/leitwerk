@@ -13,6 +13,7 @@
 import { FAELLE_NEU } from "./faelleNeu";
 import { FAELLE_SPEZIAL } from "./faelleSpezial";
 import { FAELLE_SONDER } from "./faelleSonder";
+import { themaFaktoren } from "./themaAnteil";
 import { FAELLE_PAKET1 } from "./faellePaket1";
 import { FAELLE_PAKET2 } from "./faellePaket2";
 import { FAELLE_PAKET3 } from "./faellePaket3";
@@ -1676,13 +1677,18 @@ export function schwereVon(v: FallVariante): Schwere {
 export function fallPaare(
   ctx: { jahreszeit: string; stunde: number; temp: number; glatt: boolean },
   komplikationen: "ruhig" | "normal" | "fordernd",
+  ohne?: ReadonlySet<string>,
 ): { f: FallVorlage; v: FallVariante; s: Schwere; w: number }[] {
   const faktor = komplikationen === "fordernd" ? 2 : komplikationen === "ruhig" ? 0.5 : 1;
-  return alleFaelle()
-    .filter((f) => fallPasst(f, ctx))
+  const alle = alleFaelle();
+  // Themen nach der echten Verteilung (Beta 72): alle Fälle eines Themas zusammen haben ihren Anteil
+  const thema = themaFaktoren(alle);
+  return alle
+    .filter((f) => fallPasst(f, ctx) && !ohne?.has(f.id))
     .flatMap((f) => {
       const sum = f.varianten.reduce((x, v) => x + Math.max(0, v.p), 0) || 1;
-      return f.varianten.filter((v) => v.p > 0).map((v) => ({ f, v, s: schwereVon(v), w: (f.haeufigkeit * v.p * (kritischeVariante(v) ? faktor : 1)) / sum }));
+      const tf = thema(f.thema);
+      return f.varianten.filter((v) => v.p > 0).map((v) => ({ f, v, s: schwereVon(v), w: (f.haeufigkeit * tf * v.p * (kritischeVariante(v) ? faktor : 1)) / sum }));
     });
 }
 
@@ -1695,8 +1701,11 @@ export function fallUndVariante(
   verteilung: Record<Schwere, number>,
   komplikationen: "ruhig" | "normal" | "fordernd",
   rnd: () => number,
+  ohne?: ReadonlySet<string>,
 ): { f: FallVorlage; v: FallVariante } | null {
-  const paare = fallPaare(ctx, komplikationen);
+  // ohne: Fälle der letzten Einsätze (nicht derselbe Fall kurz hintereinander) – gibt es sonst keinen, gilt es nicht
+  let paare = fallPaare(ctx, komplikationen, ohne);
+  if (!paare.length && ohne?.size) paare = fallPaare(ctx, komplikationen);
   if (!paare.length) return null;
   const klassen = (["harmlos", "mittel", "kritisch"] as Schwere[]).filter((k) => paare.some((p) => p.s === k));
   const gew = klassen.map((k) => [k, Math.max(0, verteilung[k] ?? 0)] as const);
