@@ -660,7 +660,7 @@ export class SeitenBasis {
       ]},
       { id: 'real', label: 'Eigene Dateien', scope: 'Nur lokal · jeder Spieler selbst', pages: [
         { id: 'notruf', label: 'Notruf (RD)', info: 'Codes und Abfrage – eine Datei', kw: 'notruf rd abfrageschema schema codes codeliste json eigene datei hochladen beispiel ki zuordnung realismus', note: 'Echte Codes und Namen sind aus rechtlichen Gründen nicht dabei. Lade nur Inhalte, an denen du die Rechte hast. Je Reiter gibt es genau eine Datei. Im Multiplayer lädt jeder seine eigenen Dateien – ohne sieht man die eingebauten.', rows: [
-          L('Aktiv', 'ak_notruf', ['Eingebaut – LeitWerk-Codesystem', 'Notruf NÖ'], 'Eingebaut – LeitWerk-Codesystem', 'Gilt sofort · nur auf diesem Rechner · Liste = Dateien im Ordner'),
+          L('Aktiv', 'ak_notruf', ['Eingebaut – LeitWerk-Codesystem', 'Mein Notruf-System'], 'Eingebaut – LeitWerk-Codesystem', 'Gilt sofort · nur auf diesem Rechner · Liste = Dateien im Ordner'),
           I('Inhalt', '38 Kapitel · 542 Codes', 'Codes und Abfrage stecken in derselben Datei', ok),
           B('Zuordnung zu den LeitWerk-Merkmalen', [{ l: 'Zuordnung …', sub: 'zuordnung' }], 'Nur für eine eigene Datei'),
           H('Eigene Datei hinzufügen'),
