@@ -41,10 +41,30 @@ export const NAMEN_VORLAGE = "Vorlage_Namen.csv";
 /** Vorlage-Datei: Organisationen, Hubschrauber, Dienststellen des Rettungsdienstes und der Luftrettung,
  *  dazu eigener Abschnitt für Krankentransport und Überstellungen (KT/SEK)
  *  (rechts leer – wer will, trägt dort den eigenen Namen ein; leere Zeilen werden nicht angewendet) */
+/** Anleitung für eine KI: die Namensdatei für eine Region ausfüllen (steht als #-Zeilen oben in der Vorlage) */
+export function namenKiAnleitung(): string[] {
+  return [
+    "Anleitung für eine KI: echte Namen für LeitWerk eintragen",
+    "",
+    "Auftrag des Spielers (steht unter dieser Anleitung bzw. in seiner Nachricht): für welche Region und worauf du achten sollst. Fehlt das, frag zuerst danach.",
+    "",
+    "LeitWerk ist ein Leitstellen-Spiel. Es liefert nur neutrale Namen mit (z. B. „Rettungsdienst“, „Rettungswache Krems“, „NAH 2“). Mit dieser Datei ersetzt der Spieler sie durch die echten Namen seiner Region.",
+    "Aufbau: eine Zeile je Name, „neutral;eigen“ – links der neutrale Name GENAU so, wie er unten steht (nicht ändern), rechts der echte Name. Zeilen mit # sind Kommentare.",
+    "- Organisationen gelten als Wort in allen Namen (z. B. „Rettungsdienst“ → Name der echten Organisation).",
+    "- Hubschrauber: der echte Rufname (z. B. „NAH 2“ → „Heli Nord 2“).",
+    "- Dienststellen und Stützpunkte (auch für Krankentransport und Überstellung): der ganze echte Name.",
+    "- Weißt du einen Namen nicht sicher, lass die rechte Seite leer – leere Zeilen gelten nicht. Nichts erfinden.",
+    "Ausgabe: die vollständige Datei als Text (CSV mit Strichpunkt), Kopfzeile „neutral;eigen“. Der Spieler lädt sie hoch: Einstellungen › Eigene Dateien › Namen › „Datei hochladen“.",
+  ];
+}
+
 export function namenVorlage(daten?: { stations: { id?: string; name: string; organisation: string }[]; vehicles: { kurzname: string; kategorie: string; dienststelleId?: string }[] }): string {
   const zeilen = [
-    "# LeitWerk – Namens-Ersetzungen: rechts neben dem Strichpunkt den eigenen Namen eintragen, leere Zeilen gelten nicht",
-    "# Unter neuem Namen speichern (z. B. Meine_Namen.csv), dann in LeitWerk unter Eigene Dateien › Namen auswählen",
+    "# LeitWerk – Namen: rechts neben dem Strichpunkt den eigenen Namen eintragen, leere Zeilen gelten nicht",
+    "# Unter neuem Namen speichern (z. B. Namen Meine Region.csv), dann in LeitWerk: Einstellungen › Eigene Dateien › Namen › Datei hochladen",
+    "#",
+    ...namenKiAnleitung().map((z) => `# ${z}`.trimEnd()),
+    "#",
     "neutral;eigen",
     "# Organisationen (gelten als Wort in allen Namen, z. B. „Krankentransport“ in „Krankentransport St. Pölten“)",
   ];

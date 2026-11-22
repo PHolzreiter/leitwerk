@@ -71,6 +71,7 @@ import { IST_HAUPT } from "./ui/ws/bus";
 import { hauptmenueOffen, hauptmenueSchliessen, hauptmenueZeigen } from "./ui/hauptmenue";
 import { ticketDienstStarten } from "./net/tickets";
 import { ablageAbgleichen } from "./ui/ablageStart";
+import { teileBereinigen } from "./ui/codesaetze";
 import * as ablage from "./net/ablage";
 import * as spielstandOrdner from "./net/spielstandOrdner";
 import { updateDienstStarten, updateInstallieren, updateTesten } from "./ui/updateDienst";
@@ -221,6 +222,7 @@ async function init(): Promise<void> {
     sim.ich = mp.ich;
     updateDienstStarten();
     ticketDienstStarten();
+    teileBereinigen();
     void ablageAbgleichen();
   } else {
     if (hinweis) hinweis.textContent = "Verbinde mit dem Hauptfenster …";

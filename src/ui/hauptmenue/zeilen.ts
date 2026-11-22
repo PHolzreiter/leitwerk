@@ -29,7 +29,7 @@ import { planKurz, planLesen } from "../../sim/dienst";
 import { FUNK_FARBEN, FUNKGRUPPEN } from "../../sim/funkgruppen";
 import { KATEGORIE_LABEL, KATEGORIEN, NOTARZT_LABEL, defaultSettings, defaultStufeFuer, stufeRaten, type Kategorie, type NotarztRegel, type Settings, type StufeDef } from "../../sim/settings";
 import { allCodes, codeKategorien } from "../../sim/codes";
-import { ktCodes, standardKtAbfrage } from "../../sim/ktCodes";
+import { ktCodes } from "../../sim/ktCodes";
 import { sim } from "../../sim/engine";
 import { geoStatus, regionSetzen, searchAddress, REGIONEN, type GeoStatus } from "../../sim/geo";
 import { GRUNDPAKET, appVersion, formatBytes, installPack, packSize, packsChanged, packsLocal, packsManifest, removePack, type Pack, type PacksLocal, type UpdateInfo } from "../../updates";
@@ -49,11 +49,9 @@ import { fallEditorOeffnen } from "../fallEditor";
 import {
   TEILE,
   aktivDatei,
-  eingebauteKtCodes,
-  ktAbfrageLesen,
+  ktBeispiel,
   ktCodesLesen,
-  ktCodesVorlage,
-  rdCodesVorlage,
+  ktKiAnleitung,
   teilAktivieren,
   teilHochladen,
   teilListe,
@@ -61,11 +59,11 @@ import {
   type Teil,
   type TeilDatei,
 } from "../codesaetze";
-import type { KtAbfrageFrage, KtCodeDef } from "../../sim/ktBedingungen";
+import BEISPIEL_NOTRUF from "../../../data/beispiele/beispiel_codesystem.json?raw";
 import { STANDARD_CODESYSTEM_TEXT } from "../../data/standard";
 import { ktEditorOeffnen } from "../ktCodeEditor";
 import { namenVorlageSichern } from "../ablageStart";
-import { NAMEN_VORLAGE, namenLesen as ersetzungenLesen, namenVorlage } from "../../data/namen";
+import { NAMEN_VORLAGE, namenKiAnleitung, namenLesen as ersetzungenLesen, namenVorlage } from "../../data/namen";
 import { standardRecords } from "../../data/standard";
 
 const { ok: OK, grau: GRAU, gelb: GELB, blau: BLAU, rot: ROT } = FARBEN;
@@ -1166,18 +1164,18 @@ export function zeilenQuelle(neuZeichnen: () => void): { zeilen: ZeilenQuelle; l
   // ---------------- Einsatzcodes & Abfrage
   function codes(b: Bausteine): Zeile[] {
     const rd = allCodes();
-    const rdD = aktivDatei("rdCodes") ?? aktivDatei("rdAbfrage");
+    const rdD = aktivDatei("notruf");
     const satz = rdD ? rdD.replace(/\.(json|csv|txt)$/i, "") : null;
     const kapitel = store.schema ? Object.keys(store.schema.kapitel).length : new Set(rd.map((x) => x.gruppenname)).size;
     const kt = ktCodes();
     const ktName = store.ktSatzRoh ? store.ktSatzRoh.name || "Eigener Satz" : null;
-    const rdName = satz ? `Eigener Satz: ${satz}` : "LeitWerk-Codesystem (eingebaut)";
-    const ktLabel = ktName ? `Eigener Satz: ${ktName}` : "LeitWerk-Transportcodes (eingebaut)";
+    const rdName = satz ? `Eigene Datei: ${satz}` : "LeitWerk-Codesystem (eingebaut)";
+    const ktLabel = ktName ? `Eigene Datei: ${ktName}` : "LeitWerk-Transportcodes (eingebaut)";
     const kap = (x: { gruppe: number; gruppenname: string }) => (x.gruppe ? `${x.gruppe} - ${x.gruppenname}` : x.gruppenname);
     return [
       b.I("Notruf (RD)", rdName, `${zahl(rd.length)} Codes in ${kapitel} Kapiteln${store.schema ? ", mit Abfrage" : ""}`, rd.length ? OK : GELB),
       b.I("Krankentransport & Überstellung (KT/SEK)", ktLabel, `${zahl(kt.length)} Codes, mit KT-Abfrage`, kt.length ? OK : GELB),
-      b.B("Eigene Codes & Abfrage", [{ l: "Notruf-Codes", go: ["real", "rdCodes"] }, { l: "KT/SEK-Codes", go: ["real", "ktCodes"] }], "Unter Eigene Dateien hochladen und umschalten – jeder Spieler selbst"),
+      b.B("Eigene Codes & Abfrage", [{ l: "Notruf (RD)", go: ["real", "notruf"] }, { l: "KT/SEK", go: ["real", "ktsek"] }], "Unter Eigene Dateien hochladen und umschalten – jeder Spieler selbst"),
       b.S("Codeliste", "codeart", ["Notruf (RD)", "KT/SEK"], "Notruf (RD)"),
       b.TAB(["Code", "Name", "Kategorie", "Kapitel"], rd.map((x) => [x.code, x.beschreibung, x.stufe, kap(x)]), {
         suche: "Code suchen …",
@@ -1202,26 +1200,42 @@ export function zeilenQuelle(neuZeichnen: () => void): { zeilen: ZeilenQuelle; l
     ];
   }
 
-  // ---------------- Eigene Dateien (Beta 69): je Teil ein Reiter – Codes und Abfrage getrennt, Namen
+  // ---------------- Eigene Dateien (Beta 70): je Reiter genau eine Datei – Notruf, KT/SEK, Namen
   const basisName = (datei: string) => datei.replace(/\.(json|csv|txt)$/i, "");
   const EINGEBAUT: Record<Teil, string> = {
-    rdCodes: "Eingebaut – LeitWerk-Codesystem",
-    rdAbfrage: "Eingebaut – LeitWerk-Abfrage",
-    ktCodes: "Eingebaut – LeitWerk-Transportcodes",
-    ktAbfrage: "Eingebaut – LeitWerk-KT-Abfrage",
+    notruf: "Eingebaut – LeitWerk-Codesystem",
+    ktsek: "Eingebaut – LeitWerk-Transportcodes",
   };
-  const FORMAT: Record<Teil, { accept: string; hint: string }> = {
-    rdCodes: { accept: ".csv,.txt,text/csv,text/plain", hint: "CSV mit den Spalten Code; Name; Kategorie (z. B. „ALS rot“); Kapitel" },
-    rdAbfrage: { accept: ".json,application/json", hint: "JSON mit „kapitel“, „globale_fragen“ und „codes“ – Fragen und Regeln der Notrufabfrage" },
-    ktCodes: { accept: ".csv,.txt,.json,text/csv,text/plain,application/json", hint: "CSV wie die Vorlage (Code; Name; Kapitel; Fahrt; Lage; Zeit; … – leer = beliebig) oder JSON aus dem KT-Code-Editor" },
-    ktAbfrage: { accept: ".json,application/json", hint: "JSON mit „abfrage“: je Frage „id“ und „text“ (wie der KT-Code-Editor speichert)" },
+  const FORMAT: Record<Teil, string> = {
+    notruf: "Eine JSON-Datei mit Kapiteln, Fragen, Regeln und Codes – Aufbau wie die Beispieldatei",
+    ktsek: "Eine JSON-Datei mit allen KT/SEK-Codes und ihren Bedingungen – Aufbau wie die Beispieldatei",
   };
-  const VORLAGE: Record<Teil, { datei: string; hint: string; text: () => string; filter: { name: string; extensions: string[] } }> = {
-    rdCodes: { datei: "Vorlage_Notruf-Codes.csv", hint: "Alle eingebauten Codes – Namen und Codes ändern, unter neuem Namen hochladen", text: rdCodesVorlage, filter: { name: "CSV-Datei", extensions: ["csv"] } },
-    rdAbfrage: { datei: "Vorlage_Notruf-Abfrage.json", hint: "Das eingebaute Codesystem als Beispiel für den Aufbau", text: () => STANDARD_CODESYSTEM_TEXT, filter: { name: "JSON-Datei", extensions: ["json"] } },
-    ktCodes: { datei: "Vorlage_KT-SEK-Codes.csv", hint: "Alle eingebauten KT-/SEK-Codes mit ihren Bedingungen – Code und Name ändern, Bedingungen lassen", text: () => ktCodesVorlage(), filter: { name: "CSV-Datei", extensions: ["csv"] } },
-    ktAbfrage: { datei: "Vorlage_KT-Abfrage.json", hint: "Die eingebauten Fragen der KT-Hotline", text: () => JSON.stringify({ abfrage: standardKtAbfrage() }, null, 1), filter: { name: "JSON-Datei", extensions: ["json"] } },
+  const notrufAnleitung = (): string => {
+    const a = (JSON.parse(BEISPIEL_NOTRUF) as { anleitung_fuer_ki?: string | string[] }).anleitung_fuer_ki ?? "";
+    return Array.isArray(a) ? a.join("\n") : a;
   };
+  const BEISPIEL: Record<Teil, { datei: string; hint: string; text: () => string; ki: () => string }> = {
+    notruf: {
+      datei: "Beispiel Notruf.json",
+      hint: "Kleines, vollständiges Beispiel (3 Kapitel) – zeigt den Aufbau. Oben in der Datei steht eine Anleitung für eine KI.",
+      text: () => BEISPIEL_NOTRUF,
+      ki: notrufAnleitung,
+    },
+    ktsek: {
+      datei: "Beispiel KT-SEK.json",
+      hint: "Die eingebauten KT/SEK-Codes als Beispiel – vollständig, weil jede Kombination genau einen Code braucht. Oben in der Datei steht eine Anleitung für eine KI.",
+      text: ktBeispiel,
+      ki: () => ktKiAnleitung().join("\n"),
+    },
+  };
+  /** Text für die KI: Anleitung + Beispieldatei + Platz für den Auftrag */
+  const kiText = (anleitung: string, beispiel: string, art: string) =>
+    `${anleitung}\n\n## Beispieldatei (${art})\n\n\`\`\`\n${beispiel}\n\`\`\`\n\n## Mein Auftrag\nRegion: \nWorauf achten: \n`;
+  const kiKnopf = (anleitung: () => string, beispiel: () => string, art: string) =>
+    knopf("KI-Anleitung kopieren", async () => {
+      await navigator.clipboard.writeText(kiText(anleitung(), beispiel(), art));
+      return "Kopiert – in eine KI einfügen, unten Region und Wünsche ergänzen";
+    });
 
   /** Dropdown „Aktiv“: Schlüssel mit Zähler, damit nach jedem Wechsel wieder der echte Stand angezeigt wird */
   function aktivWahl(b: Bausteine, id: string, optionen: string[], jetzt: string, wechsel: (v: string) => Promise<string>, hint: string): Zeile[] {
@@ -1247,13 +1261,12 @@ export function zeilenQuelle(neuZeichnen: () => void): { zeilen: ZeilenQuelle; l
   const ordnerZeile = (b: Bausteine, o: AblageOrdner) =>
     tauri ? b.B("Ordner", [knopf("Ordner öffnen", () => ablageZeigen(o))], `Dokumente/LeitWerk/${o}`) : b.B("Ordner", [], `Dokumente/LeitWerk/${o}`, { chip: NUR_PROGRAMM, dot: GRAU });
 
-  /** Ein Reiter für Codes bzw. Abfrage (RD oder KT/SEK) */
+  /** Reiter Notruf (RD) bzw. KT/SEK: eine Datei */
   function teilSeite(b: Bausteine, t: Teil): Zeile[] {
     const d = TEILE[t];
     const liste = c.teile?.[t];
     const aktivD = aktivDatei(t);
     const out: Zeile[] = [];
-    // Auswahl
     const spielbar = (liste ?? []).filter((x) => !x.entwurf);
     const namen = spielbar.map((x) => x.name);
     const jetzt = aktivD ? basisName(aktivD) : EINGEBAUT[t];
@@ -1274,43 +1287,33 @@ export function zeilenQuelle(neuZeichnen: () => void): { zeilen: ZeilenQuelle; l
         "Gilt sofort · nur auf diesem Rechner · Liste = Dateien im Ordner",
       ),
     );
-    // Stand
-    if (t === "rdCodes") {
-      const n = store.list("codes").filter((x) => aktivD && x.herkunftDetail === aktivD).length;
-      out.push(b.I("Codes", aktivD ? `${zahl(n)} Codes aus „${basisName(aktivD)}“` : `${zahl(allCodes().length)} Codes`, aktivDatei("rdAbfrage") ? "Ein eigenes Abfrageschema bringt meist eigene Codes mit – eine aktive Codeliste gewinnt bei Name und Kategorie" : "", OK));
-    } else if (t === "rdAbfrage") {
+    if (t === "notruf") {
       const s = store.schemaRoh;
-      out.push(b.I("Abfrage", s ? `${zahl(Object.keys(s.kapitel).length)} Kapitel · ${zahl(Object.keys(s.codes ?? {}).length)} Codes` : "LeitWerk-Abfrage", "", OK));
-      out.push(b.B("Zuordnung zu den LeitWerk-Merkmalen", [{ l: "Zuordnung …", sub: "zuordnung" }], "Nur für ein eigenes Abfrageschema: welche Frage welchem Merkmal entspricht – damit die Anrufer passend antworten"));
-    } else if (t === "ktCodes") {
-      out.push(b.I("Codes", `${zahl(ktCodes().length)} Codes`, "Jeder Code ist ein Name mit Bedingungen (Fahrt, Lage, Zeit, Fahrzeug …)", OK));
-      out.push(b.B("KT-Code-Editor", [knopf("Editor öffnen", () => (ktEditorOeffnen({ fertig: () => void teileLaden() }), "Im Editor geöffnet"))], "Codes und Bedingungen bearbeiten – als neuer Satz auf Basis des aktiven; dort auch Entwürfe fertigstellen"));
+      out.push(b.I("Inhalt", s ? `${zahl(Object.keys(s.kapitel).length)} Kapitel · ${zahl(Object.keys(s.codes ?? {}).length)} Codes` : `${zahl(allCodes().length)} Codes`, "Codes und Abfrage stecken in derselben Datei", OK));
+      out.push(b.B("Zuordnung zu den LeitWerk-Merkmalen", [{ l: "Zuordnung …", sub: "zuordnung" }], "Nur für eine eigene Datei: welche Frage welchem Merkmal entspricht – damit die Anrufer passend antworten"));
     } else {
-      const k = store.ktSatzRoh;
-      out.push(b.I("Fragen", `${zahl((k?.abfrage?.length ? k.abfrage : standardKtAbfrage()).length)} Fragen`, "", OK));
+      out.push(b.I("Inhalt", `${zahl(ktCodes().length)} Codes`, "Die Fragen der KT-Hotline sind immer die eingebauten", OK));
+      out.push(b.B("KT-Code-Editor", [knopf("Editor öffnen", () => (ktEditorOeffnen({ fertig: () => void teileLaden() }), "Im Editor geöffnet"))], "Codes und Bedingungen im Spiel bearbeiten – speichert als neue Datei; dort auch Entwürfe fertigstellen"));
     }
-    // Hochladen, Vorlage, Ordner
-    const f = FORMAT[t];
+    const bsp = BEISPIEL[t];
     out.push(b.H("Eigene Datei hinzufügen"));
-    out.push(b.B("Datei hochladen", [dateiKnopf("Datei wählen …", f.accept, async (x) => teilHochladen(t, x.name, await dateiText(x)), teileLaden)], `${f.hint} · wird in den Ordner kopiert und gleich verwendet`));
-    const v = VORLAGE[t];
-    out.push(b.B("Vorlage", [knopf("Vorlage speichern …", async () => ((await saveTextFile(v.datei, v.text(), v.filter)) ? `Gespeichert: ${v.datei}` : "Abgebrochen"))], v.hint));
+    out.push(b.B("Datei hochladen", [dateiKnopf("Datei wählen …", ".json,application/json", async (x) => teilHochladen(t, x.name, await dateiText(x)), teileLaden)], `${FORMAT[t]} · wird in den Ordner kopiert und gleich verwendet`));
+    const bKnoepfe: Knopf[] = [knopf("Beispieldatei herunterladen …", async () => ((await saveTextFile(bsp.datei, bsp.text(), { name: "JSON-Datei", extensions: ["json"] })) ? `Gespeichert: ${bsp.datei}` : "Abgebrochen"))];
+    if (t === "notruf") bKnoepfe.push(knopf("Eingebautes System herunterladen …", async () => ((await saveTextFile("LeitWerk-Codesystem.json", STANDARD_CODESYSTEM_TEXT, { name: "JSON-Datei", extensions: ["json"] })) ? "Gespeichert: LeitWerk-Codesystem.json" : "Abgebrochen")));
+    out.push(b.B("Beispieldatei", bKnoepfe, bsp.hint));
+    out.push(b.B("Mit einer KI erstellen", [kiKnopf(bsp.ki, bsp.text, "JSON")], "Kopiert die Anleitung samt Beispieldatei – in eine KI einfügen und nur noch Region und Wünsche dazuschreiben"));
     out.push(ordnerZeile(b, d.ordner));
-    // Dateien
     out.push(b.H(`Dateien im Ordner ${d.ordner}`));
     if (!liste) out.push(b.I("Dateien", PRUEFT, "", GRAU));
     else if (!liste.length) out.push(b.I("Dateien", "noch keine eigene Datei", "Mit „Datei hochladen“ hinzufügen oder direkt in den Ordner legen", GRAU));
     for (const x of liste ?? []) {
       const istAktiv = aktivD?.toLowerCase() === x.datei.toLowerCase();
       const btns: Knopf[] = [];
-      if (d.bereich === "kt")
+      if (t === "ktsek")
         btns.push(
           knopf("Bearbeiten", async () => {
-            const k = store.ktSatzRoh;
-            const text = await ablageLesen(d.ordner, x.datei);
-            const codes = d.art === "codes" ? ktCodesLesen(text, x.datei) : ((k?.codes as KtCodeDef[] | undefined) ?? eingebauteKtCodes());
-            const abfrage = d.art === "abfrage" ? ktAbfrageLesen(text, x.datei) : (k?.abfrage as KtAbfrageFrage[] | undefined);
-            ktEditorOeffnen({ satz: { codes, abfrage }, name: x.name, fertig: () => void teileLaden() });
+            const codes = ktCodesLesen(await ablageLesen(d.ordner, x.datei), x.datei);
+            ktEditorOeffnen({ satz: { codes }, name: x.name, fertig: () => void teileLaden() });
             return "Im Editor geöffnet";
           }),
         );
@@ -1360,11 +1363,12 @@ export function zeilenQuelle(neuZeichnen: () => void): { zeilen: ZeilenQuelle; l
     out.push(b.B("Datei hochladen", [laden], "CSV „neutral;eigen“ – links der neutrale Name aus der Vorlage, rechts dein Name · wird in den Ordner kopiert und gleich verwendet"));
     out.push(
       b.B(
-        "Vorlage",
-        [knopf("Vorlage speichern …", async () => ((await saveTextFile(NAMEN_VORLAGE, namenVorlage(standardRecords()))) ? `Gespeichert: ${NAMEN_VORLAGE}` : "Abgebrochen"))],
-        "Alle neutralen Namen: Organisationen, Hubschrauber, Stützpunkte für Krankentransport & Überstellung (KT/SEK), Dienststellen – rechts eintragen. Liegt auch im Ordner.",
+        "Beispieldatei",
+        [knopf("Beispieldatei herunterladen …", async () => ((await saveTextFile(NAMEN_VORLAGE, namenVorlage(standardRecords()))) ? `Gespeichert: ${NAMEN_VORLAGE}` : "Abgebrochen"))],
+        "Alle neutralen Namen: Organisationen, Hubschrauber, Stützpunkte für Krankentransport & Überstellung (KT/SEK), Dienststellen – rechts eintragen. Oben steht eine Anleitung für eine KI. Liegt auch im Ordner.",
       ),
     );
+    out.push(b.B("Mit einer KI erstellen", [kiKnopf(() => namenKiAnleitung().join("\n"), () => namenVorlage(standardRecords()), "CSV")], "Kopiert die Anleitung samt Beispieldatei – in eine KI einfügen und nur noch die Region dazuschreiben"));
     out.push(ordnerZeile(b, "Namen"));
     out.push(b.B("Im Ordner geändert?", [knopf("Neu einlesen", () => namenLaden().then(() => (aktivD ? namenVerwenden(aktivD) : "Eingelesen")))], "Nach dem Bearbeiten einer Datei im Ordner"));
     out.push(b.H("Dateien im Ordner Namen"));
@@ -1490,7 +1494,8 @@ export function zeilenQuelle(neuZeichnen: () => void): { zeilen: ZeilenQuelle; l
     out.push(b.I("Ordner", c.basis ?? "…", "Alles, was du selbst dazugibst, liegt dort – je Art ein Ordner", GRAU));
     out.push(b.B("Spielstände", [{ l: "Ansehen", tab: "fort" }, ...(tauri ? [knopf("Ordner öffnen", () => ordnerZeigen())] : [])], "Gespeicherte Schichten"));
     for (const [o, h] of Object.entries(ABLAGE_INFO) as [AblageOrdner, string][])
-      out.push(tauri ? b.B(o.replace(/_/g, " "), [knopf("Ordner öffnen", () => ablageZeigen(o))], h) : b.B(o.replace(/_/g, " "), [], h, { chip: NUR_PROGRAMM, dot: GRAU }));
+      if (!["Abfrageschema", "Codelisten", "Codelisten/RD", "Abfrageschema/Krankentransport_Sekundärtransporte"].includes(o))
+        out.push(tauri ? b.B(o.replace(/_/g, " "), [knopf("Ordner öffnen", () => ablageZeigen(o))], h) : b.B(o.replace(/_/g, " "), [], h, { chip: NUR_PROGRAMM, dot: GRAU }));
     return out;
   }
 
@@ -1516,10 +1521,8 @@ export function zeilenQuelle(neuZeichnen: () => void): { zeilen: ZeilenQuelle; l
     vorlagen,
     codes,
     status,
-    rdCodes: (b) => teilSeite(b, "rdCodes"),
-    rdAbfrage: (b) => teilSeite(b, "rdAbfrage"),
-    ktCodes: (b) => teilSeite(b, "ktCodes"),
-    ktAbfrage: (b) => teilSeite(b, "ktAbfrage"),
+    notruf: (b) => teilSeite(b, "notruf"),
+    ktsek: (b) => teilSeite(b, "ktsek"),
     namen: namenSeite,
     karten,
     programm,

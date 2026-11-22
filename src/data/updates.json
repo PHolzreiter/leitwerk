@@ -1,5 +1,15 @@
 [
  {
+  "version": "0.116.0-beta.70",
+  "datum": "2026-11-22",
+  "titel": "Eigene Dateien: drei Reiter, je eine Datei",
+  "punkte": [
+   "Eigene Dateien: Notruf (RD), KT/SEK und Namen – je Reiter genau eine Datei",
+   "Beispieldatei je Reiter mit Anleitung für eine KI, Knopf „KI-Anleitung kopieren“",
+   "Keine getrennte Codeliste und keine eigene KT-Abfrage mehr"
+  ]
+ },
+ {
   "version": "0.116.0-beta.69",
   "datum": "2026-11-21",
   "titel": "Eigene Dateien: übersichtlich hochladen",

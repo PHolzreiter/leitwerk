@@ -634,7 +634,7 @@ export class SeitenBasis {
         { id: 'codes', label: 'Einsatzcodes & Abfrage', info: 'Codes und Abfrage – RD und KT/SEK', kw: 'einsatzcode code abfrageschema schema kapitel kategorie stufe leitwerk-codesystem transportcodes kt sek', rows: [
           I('Notruf (RD)', 'LeitWerk-Codesystem (eingebaut)', '542 Codes in 38 Kapiteln, mit Abfrage', ok),
           I('Krankentransport & Überstellung (KT/SEK)', 'LeitWerk-Transportcodes (eingebaut)', '136 Codes, mit KT-Abfrage', ok),
-          B('Eigene Codes & Abfrage', [{ l: 'Notruf-Codes', go: ['real', 'rdCodes'] }, { l: 'KT/SEK-Codes', go: ['real', 'ktCodes'] }], 'Unter Eigene Dateien hochladen und umschalten – jeder Spieler selbst'),
+          B('Eigene Codes & Abfrage', [{ l: 'Notruf (RD)', go: ['real', 'notruf'] }, { l: 'KT/SEK', go: ['real', 'ktsek'] }], 'Unter Eigene Dateien hochladen und umschalten – jeder Spieler selbst'),
           S('Codeliste', 'codeart', ['Notruf (RD)', 'KT/SEK'], 'Notruf (RD)'),
           TAB(['Code', 'Name', 'Kategorie', 'Kapitel'], [
             ['RD-6D1', 'Atemnot – reagiert nicht', 'ALS orange', '6 - Atemnot'], ['RD-6D3', 'Schwere Atemnot (spricht kaum, blau/grau)', 'ALS gelb', '6 - Atemnot'], ['RD-9E1', 'Kreislaufstillstand nach Erhängen/Strangulation', 'ALS rot', '9 - Leblose Person / Kreislaufstillstand'], ['RD-10C1', 'Brustschmerz bei bekanntem Herzleiden', 'ALS gelb', '10 - Brustschmerz'], ['RD-17A1', 'Sturz vor über 6 Stunden', 'ALS grün', '17 - Sturz'], ['RD-26A1', 'Krankentransport gewünscht', 'Telemedizin', '26 - Kranke Person']
@@ -654,43 +654,33 @@ export class SeitenBasis {
         { id: 'csvImport', sub: true, parent: 'fahrzeuge', label: 'CSV importieren', info: 'Prüfen und übernehmen', kw: 'csv import datei', rows: [{ t: 'import' }] }
       ]},
       { id: 'real', label: 'Eigene Dateien', scope: 'Nur lokal · jeder Spieler selbst', pages: [
-        { id: 'rdCodes', label: 'Notruf-Codes', info: 'Codeliste (CSV)', kw: 'codeliste codes csv notruf rd eigene datei hochladen realismus vorlage', note: 'Echte Codes und Namen sind aus rechtlichen Gründen nicht dabei. Lade nur Inhalte, an denen du die Rechte hast. Im Multiplayer lädt jeder seine eigenen Dateien – ohne sieht man die eingebauten.', rows: [
-          L('Aktiv', 'ak_rdCodes', ['Eingebaut – LeitWerk-Codesystem', 'Meine Codes'], 'Eingebaut – LeitWerk-Codesystem', 'Gilt sofort · nur auf diesem Rechner · Liste = Dateien im Ordner'),
-          I('Codes', '542 Codes', '', ok),
+        { id: 'notruf', label: 'Notruf (RD)', info: 'Codes und Abfrage – eine Datei', kw: 'notruf rd abfrageschema schema codes codeliste json eigene datei hochladen beispiel ki zuordnung realismus', note: 'Echte Codes und Namen sind aus rechtlichen Gründen nicht dabei. Lade nur Inhalte, an denen du die Rechte hast. Je Reiter gibt es genau eine Datei. Im Multiplayer lädt jeder seine eigenen Dateien – ohne sieht man die eingebauten.', rows: [
+          L('Aktiv', 'ak_notruf', ['Eingebaut – LeitWerk-Codesystem', 'Notruf NÖ'], 'Eingebaut – LeitWerk-Codesystem', 'Gilt sofort · nur auf diesem Rechner · Liste = Dateien im Ordner'),
+          I('Inhalt', '38 Kapitel · 542 Codes', 'Codes und Abfrage stecken in derselben Datei', ok),
+          B('Zuordnung zu den LeitWerk-Merkmalen', [{ l: 'Zuordnung …', sub: 'zuordnung' }], 'Nur für eine eigene Datei'),
           H('Eigene Datei hinzufügen'),
-          B('Datei hochladen', [{ l: 'Datei wählen …', ok: 'Gespeichert · Codeliste aktiv' }], 'CSV mit den Spalten Code; Name; Kategorie (z. B. „ALS rot“); Kapitel'),
-          B('Vorlage', [{ l: 'Vorlage speichern …', ok: 'Gespeichert' }], 'Alle eingebauten Codes – Namen und Codes ändern, unter neuem Namen hochladen'),
-          B('Ordner', ['Ordner öffnen'], 'Dokumente/LeitWerk/Codelisten/RD')
-        ]},
-        { id: 'rdAbfrage', label: 'Notruf-Abfrage', info: 'Abfrageschema (JSON)', kw: 'abfrageschema schema json notruf rd abfrage eigene datei hochladen zuordnung realismus', note: 'Echte Codes und Namen sind aus rechtlichen Gründen nicht dabei. Lade nur Inhalte, an denen du die Rechte hast. Im Multiplayer lädt jeder seine eigenen Dateien – ohne sieht man die eingebauten.', rows: [
-          L('Aktiv', 'ak_rdAbfrage', ['Eingebaut – LeitWerk-Abfrage', 'Mein Schema'], 'Eingebaut – LeitWerk-Abfrage', 'Gilt sofort · nur auf diesem Rechner · Liste = Dateien im Ordner'),
-          B('Zuordnung zu den LeitWerk-Merkmalen', [{ l: 'Zuordnung …', sub: 'zuordnung' }], 'Nur für ein eigenes Abfrageschema'),
-          H('Eigene Datei hinzufügen'),
-          B('Datei hochladen', [{ l: 'Datei wählen …', ok: 'Gespeichert · Abfrageschema aktiv' }], 'JSON mit „kapitel“, „globale_fragen“ und „codes“'),
-          B('Vorlage', [{ l: 'Vorlage speichern …', ok: 'Gespeichert' }], 'Das eingebaute Codesystem als Beispiel'),
+          B('Datei hochladen', [{ l: 'Datei wählen …', ok: 'Gespeichert · aktiv' }], 'Eine JSON-Datei mit Kapiteln, Fragen, Regeln und Codes – Aufbau wie die Beispieldatei'),
+          B('Beispieldatei', [{ l: 'Beispieldatei herunterladen …', ok: 'Gespeichert' }, { l: 'Eingebautes System herunterladen …', ok: 'Gespeichert' }], 'Kleines, vollständiges Beispiel mit Anleitung für eine KI'),
+          B('Mit einer KI erstellen', [{ l: 'KI-Anleitung kopieren', ok: 'Kopiert' }], 'Anleitung samt Beispieldatei kopieren – nur noch Region und Wünsche dazuschreiben'),
           B('Ordner', ['Ordner öffnen'], 'Dokumente/LeitWerk/Abfrageschema/RD')
         ]},
-        { id: 'zuordnung', sub: true, parent: 'rdAbfrage', label: 'Zuordnung zu den Merkmalen', info: 'Fragen ↔ Merkmale', kw: 'zuordnung merkmal frage antwort schema ki', note: 'Nur nötig für eigene Abfrageschemas. Eindeutige Fragen ordnet LeitWerk selbst zu – hier prüfst du die offenen und unsicheren.', rows: [{ t: 'zuord' }] },
-        { id: 'ktCodes', label: 'KT/SEK-Codes', info: 'Krankentransport & Überstellung', kw: 'kt sek krankentransport überstellung sekundär codes csv json editor bedingungen eigene datei hochladen realismus vorlage', note: 'Echte Codes und Namen sind aus rechtlichen Gründen nicht dabei. Lade nur Inhalte, an denen du die Rechte hast. Im Multiplayer lädt jeder seine eigenen Dateien – ohne sieht man die eingebauten.', rows: [
-          L('Aktiv', 'ak_ktCodes', ['Eingebaut – LeitWerk-Transportcodes', 'Meine KT-Codes'], 'Eingebaut – LeitWerk-Transportcodes', 'Gilt sofort · nur auf diesem Rechner · Liste = Dateien im Ordner'),
-          B('KT-Code-Editor', [{ l: 'Editor öffnen', ok: 'Im Editor geöffnet' }], 'Codes und Bedingungen bearbeiten'),
+        { id: 'zuordnung', sub: true, parent: 'notruf', label: 'Zuordnung zu den Merkmalen', info: 'Fragen ↔ Merkmale', kw: 'zuordnung merkmal frage antwort schema ki', note: 'Nur nötig für eine eigene Notruf-Datei. Eindeutige Fragen ordnet LeitWerk selbst zu – hier prüfst du die offenen und unsicheren.', rows: [{ t: 'zuord' }] },
+        { id: 'ktsek', label: 'KT/SEK', info: 'Krankentransport & Überstellung – eine Datei', kw: 'kt sek krankentransport überstellung sekundär codes json editor bedingungen eigene datei hochladen beispiel ki realismus', note: 'Echte Codes und Namen sind aus rechtlichen Gründen nicht dabei. Lade nur Inhalte, an denen du die Rechte hast. Je Reiter gibt es genau eine Datei. Im Multiplayer lädt jeder seine eigenen Dateien – ohne sieht man die eingebauten.', rows: [
+          L('Aktiv', 'ak_ktsek', ['Eingebaut – LeitWerk-Transportcodes', 'KT-SEK NÖ'], 'Eingebaut – LeitWerk-Transportcodes', 'Gilt sofort · nur auf diesem Rechner · Liste = Dateien im Ordner'),
+          I('Inhalt', '136 Codes', 'Die Fragen der KT-Hotline sind immer die eingebauten', ok),
+          B('KT-Code-Editor', [{ l: 'Editor öffnen', ok: 'Im Editor geöffnet' }], 'Codes und Bedingungen im Spiel bearbeiten'),
           H('Eigene Datei hinzufügen'),
-          B('Datei hochladen', [{ l: 'Datei wählen …', ok: 'Gespeichert · KT/SEK-Codes aktiv' }], 'CSV wie die Vorlage (Code; Name; Kapitel; Fahrt; Lage; Zeit; …) oder JSON aus dem Editor'),
-          B('Vorlage', [{ l: 'Vorlage speichern …', ok: 'Gespeichert' }], 'Alle eingebauten KT-/SEK-Codes mit Bedingungen'),
+          B('Datei hochladen', [{ l: 'Datei wählen …', ok: 'Gespeichert · aktiv' }], 'Eine JSON-Datei mit allen KT/SEK-Codes und ihren Bedingungen'),
+          B('Beispieldatei', [{ l: 'Beispieldatei herunterladen …', ok: 'Gespeichert' }], 'Die eingebauten Codes mit Anleitung für eine KI'),
+          B('Mit einer KI erstellen', [{ l: 'KI-Anleitung kopieren', ok: 'Kopiert' }], 'Anleitung samt Beispieldatei kopieren'),
           B('Ordner', ['Ordner öffnen'], 'Dokumente/LeitWerk/Codelisten/Krankentransport_Sekundärtransporte')
         ]},
-        { id: 'ktAbfrage', label: 'KT-Abfrage', info: 'Fragen der KT-Hotline', kw: 'kt sek krankentransport überstellung abfrage fragen hotline json eigene datei hochladen realismus', note: 'Echte Codes und Namen sind aus rechtlichen Gründen nicht dabei. Lade nur Inhalte, an denen du die Rechte hast. Im Multiplayer lädt jeder seine eigenen Dateien – ohne sieht man die eingebauten.', rows: [
-          L('Aktiv', 'ak_ktAbfrage', ['Eingebaut – LeitWerk-KT-Abfrage', 'Meine KT-Abfrage'], 'Eingebaut – LeitWerk-KT-Abfrage', 'Gilt sofort · nur auf diesem Rechner · Liste = Dateien im Ordner'),
-          H('Eigene Datei hinzufügen'),
-          B('Datei hochladen', [{ l: 'Datei wählen …', ok: 'Gespeichert · KT-Abfrage aktiv' }], 'JSON mit „abfrage“: je Frage „id“ und „text“'),
-          B('Vorlage', [{ l: 'Vorlage speichern …', ok: 'Gespeichert' }], 'Die eingebauten Fragen der KT-Hotline'),
-          B('Ordner', ['Ordner öffnen'], 'Dokumente/LeitWerk/Abfrageschema/Krankentransport_Sekundärtransporte')
-        ]},
-        { id: 'namen', label: 'Namen', info: 'Neutrale Namen ersetzen', kw: 'namen ersetzungen neutral eigen organisation dienststelle hubschrauber krankentransport csv vorlage realismus', note: 'Echte Codes und Namen sind aus rechtlichen Gründen nicht dabei. Lade nur Inhalte, an denen du die Rechte hast. Im Multiplayer lädt jeder seine eigenen Dateien – ohne sieht man die eingebauten.', rows: [
-          L('Aktiv', 'ak_namen', ['Eingebaut – neutrale Namen', 'Meine_Namen.csv'], 'Eingebaut – neutrale Namen', 'Gilt sofort · nur auf diesem Rechner · Liste = Dateien im Ordner'),
+        { id: 'namen', label: 'Namen', info: 'Neutrale Namen ersetzen – eine Datei', kw: 'namen ersetzungen neutral eigen organisation dienststelle hubschrauber krankentransport csv beispiel vorlage ki realismus', note: 'Echte Codes und Namen sind aus rechtlichen Gründen nicht dabei. Lade nur Inhalte, an denen du die Rechte hast. Je Reiter gibt es genau eine Datei. Im Multiplayer lädt jeder seine eigenen Dateien – ohne sieht man die eingebauten.', rows: [
+          L('Aktiv', 'ak_namen', ['Eingebaut – neutrale Namen', 'Namen NÖ.csv'], 'Eingebaut – neutrale Namen', 'Gilt sofort · nur auf diesem Rechner · Liste = Dateien im Ordner'),
           H('Eigene Datei hinzufügen'),
           B('Datei hochladen', [{ l: 'Datei wählen …', ok: 'Ersetzungen aktiv' }], 'CSV „neutral;eigen“'),
-          B('Vorlage', [{ l: 'Vorlage speichern …', ok: 'Gespeichert' }], 'Alle neutralen Namen, auch Stützpunkte für KT/SEK'),
+          B('Beispieldatei', [{ l: 'Beispieldatei herunterladen …', ok: 'Gespeichert' }], 'Alle neutralen Namen mit Anleitung für eine KI'),
+          B('Mit einer KI erstellen', [{ l: 'KI-Anleitung kopieren', ok: 'Kopiert' }], 'Anleitung samt Beispieldatei kopieren'),
           B('Ordner', ['Ordner öffnen'], 'Dokumente/LeitWerk/Namen')
         ]}
       ]},

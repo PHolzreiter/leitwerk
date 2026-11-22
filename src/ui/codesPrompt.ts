@@ -1,36 +1,15 @@
-/** Hinweis „Einsatzcodes importieren“, wenn noch keine Codeliste da ist. */
+/** Hinweis, wenn keine Einsatzcodes da sind (kommt praktisch nicht vor – das eingebaute Codesystem ist immer da). */
 import { hasCodes } from "../sim/codes";
 import { openDialog } from "./dialog";
 import { el } from "./dom";
-import { startImport } from "./importDialog";
 
-/**
- * Gibt true zurück, wenn Codes vorhanden sind. Sonst erscheint ein Fenster mit
- * „Datei wählen …“; nach erfolgreichem Import wird onImported aufgerufen.
- */
+/** Gibt true zurück, wenn Codes vorhanden sind. Sonst ein Hinweis, wo man die eigene Datei hochlädt. */
 export function ensureCodes(onImported?: () => void): boolean {
   if (hasCodes()) return true;
+  void onImported;
   const body = el("div", { class: "update-box" });
-  body.innerHTML = `<p>Für die Simulation braucht LeitWerk eine Liste mit <b>Einsatzcodes</b>. Sie ist nicht im Programm enthalten,
-    du importierst sie einmalig als CSV-Datei – oder du lädst gleich dein <b>Abfrageschema</b> (JSON-Datei),
-    dann kommen Einsätze als Notruf, den du abfragst, und die Codes werden mit übernommen.</p>
-    <p class="muted">Nötig ist die Spalte „Code“, dazu Name, Kategorie (z. B. „ALS rot“) und Kapitel.
-    Später findest du die Liste unter <b>Einstellungen → Leitstelle → Einsatzcodes &amp; Abfrage</b>, dort kannst du sie bearbeiten, ergänzen oder neu importieren.</p>`;
-  openDialog({
-    title: "Einsatzcodes importieren",
-    body,
-    actions: [
-      { label: "Später" },
-      {
-        label: "Datei wählen …",
-        kind: "primary",
-        onClick: () => {
-          void startImport("codes", () => {
-            if (hasCodes()) onImported?.();
-          });
-        },
-      },
-    ],
-  });
+  body.innerHTML = `<p>Für die Simulation braucht LeitWerk <b>Einsatzcodes</b>. Das eingebaute LeitWerk-Codesystem ist abgeschaltet und keine eigene Datei aktiv.</p>
+    <p class="muted">Unter <b>Einstellungen → Eigene Dateien → Notruf (RD)</b> wählst du oben „Eingebaut“ oder lädst deine Notruf-Datei hoch (eine Datei mit Abfrage und Codes).</p>`;
+  openDialog({ title: "Keine Einsatzcodes", body, actions: [{ label: "OK", kind: "primary" }] });
   return false;
 }

@@ -345,11 +345,13 @@ export function zusatzBauen(r: ZusatzRahmen) {
 
     // ---------------------------------------------------------------- CSV-Import
     imp: {
-      arten: () => (["vehicles", "stations", "hospitals", "pois", "templates", "codes"] as Kind[]).map((kind) => ({ kind, label: KIND_LABEL[kind] })),
+      arten: () => (["vehicles", "stations", "hospitals", "pois", "templates"] as Kind[]).map((kind) => ({ kind, label: KIND_LABEL[kind] })),
       async waehlen(seite: string, kind0: Kind | null): Promise<ImpInfo | null> {
         const f = await pickTextFile(".csv,.txt,text/csv,text/plain");
         if (!f) return null;
         const erkannt = detectKind(f.text);
+        // Einsatzcodes nur als ganze Datei über Eigene Dateien (Notruf bzw. KT/SEK) – keine einzelne Codeliste
+        if (erkannt === "codes" || kind0 === "codes") throw new Error("Einsatzcodes lädt man unter Einstellungen › Eigene Dateien › Notruf (RD) hoch – als eine Datei zusammen mit der Abfrage");
         const kind = erkannt ?? kind0 ?? SEITE_KIND[seite] ?? "vehicles";
         return pruefen(f.name, f.text, kind, !!erkannt);
       },

@@ -25,18 +25,18 @@ export type AblageOrdner =
   | "Namen";
 
 export const ABLAGE_INFO: Record<AblageOrdner, string> = {
-  Abfrageschema: "eigene Abfrageschemas (in RD und Krankentransport_Sekundärtransporte)",
-  Codelisten: "eigene Codelisten (in RD und Krankentransport_Sekundärtransporte)",
-  "Abfrageschema/RD": "Abfrageschemas für Notrufe (JSON)",
-  "Abfrageschema/Krankentransport_Sekundärtransporte": "Abfrage der KT-Hotline (JSON)",
-  "Codelisten/RD": "Codelisten für Notrufe (CSV)",
-  "Codelisten/Krankentransport_Sekundärtransporte": "Codes für Krankentransporte und Überstellungen mit Bedingungen (JSON; beim Hochladen auch aus CSV)",
+  Abfrageschema: "Ordner für die Notruf-Dateien (im Unterordner RD)",
+  Codelisten: "Ordner für die KT/SEK-Dateien (im Unterordner Krankentransport_Sekundärtransporte)",
+  "Abfrageschema/RD": "Notruf-Dateien: Codes und Abfrage in einer Datei (JSON) – Eigene Dateien › Notruf (RD)",
+  "Abfrageschema/Krankentransport_Sekundärtransporte": "nicht mehr verwendet (eigene KT-Abfrage gibt es nicht mehr)",
+  "Codelisten/RD": "nicht mehr verwendet (Notruf-Codes stecken in der Notruf-Datei)",
+  "Codelisten/Krankentransport_Sekundärtransporte": "KT/SEK-Dateien: Codes mit Bedingungen (JSON) – Eigene Dateien › KT/SEK",
   Daten: "importierte Fahrzeuge, Dienststellen, Krankenhäuser, Orte … (CSV)",
   Fälle: "importierte Fallpakete",
   Töne: "eigene Klingel- und Signaltöne",
   Designs: "Farb-Designs",
   Anordnungen: "Fenster-Anordnungen",
-  Namen: "Namens-Ersetzungen „neutral;eigen“ (CSV) – mit Vorlage",
+  Namen: "Namens-Dateien „neutral;eigen“ (CSV) – mit Beispieldatei – Eigene Dateien › Namen",
 };
 
 export interface AblageDatei {

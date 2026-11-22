@@ -858,7 +858,7 @@ Aufbau eines Codes: RD-<Kapitel><Stufe><Nr><Zusatz>, z. B. RD-17B2L
 - Kategorie (ALS rot, ALS orange, ALS gelb, ALS grün, BLS rot, BLS gelb, BLS grün, Telemedizin …) bestimmt Fahrzeuge, Notarzt und Sondersignal
 
 Jedes Kapitel hat ein „thema“ (neutrale Hauptbeschwerde, z. B. „sturz“). Fragen-IDs und Antwortwerte sind die neutralen Merkmale der LeitWerk-Fallgeschichten.
-Wer ein eigenes Codesystem bauen will: siehe „Beispiel-Codesystem“ in LeitWerk (Einstellungen → Einsatzcodes & Abfrage) – dort steht eine Anleitung für eine KI.
+Wer ein eigenes Codesystem bauen will: in LeitWerk unter Einstellungen → Eigene Dateien → Notruf (RD) die „Beispieldatei“ herunterladen – dort steht eine Anleitung für eine KI.
 """.strip("\n").split("\n")
 
 

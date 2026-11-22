@@ -215,7 +215,9 @@ pub struct AblageDatei {
 /// Legt alle Ordner an und gibt den Pfad von „Dokumente/LeitWerk“ zurück
 #[tauri::command]
 pub fn ablage_basis(app: tauri::AppHandle) -> Result<String, String> {
-    for n in ABLAGEN {
+    // ab Beta 70 je Bereich eine Datei: keine getrennte Notruf-Codeliste und keine eigene KT-Abfrage mehr –
+    // diese Ordner werden nicht mehr angelegt (bleiben lesbar, falls es sie schon gibt)
+    for n in ABLAGEN.iter().filter(|n| !matches!(**n, "Codelisten/RD" | "Abfrageschema/Krankentransport_Sekundärtransporte")) {
         unterordner(&app, n)?;
     }
     basis(&app).map(|p| p.display().to_string())

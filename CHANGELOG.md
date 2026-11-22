@@ -1,5 +1,12 @@
 # Änderungen
 
+## 0.116.0-beta.70 – Eigene Dateien: drei Reiter, je eine Datei
+- **Einstellungen › Eigene Dateien hat jetzt drei Reiter – je Reiter genau eine Datei:** **Notruf (RD)** (Codes und Abfrage in einer JSON-Datei), **KT/SEK** (alle Codes für Krankentransport und Überstellung mit Bedingungen, JSON) und **Namen** (CSV „neutral;eigen“).
+- **Kein Hochladen von Teilen mehr:** keine getrennte Notruf-Codeliste und keine eigene KT-Abfrage (die Fragen der KT-Hotline sind immer die eingebauten). Wer eine Datei ändern will, bearbeitet sie außerhalb des Spiels und lädt sie neu hoch. Auch unter Daten lassen sich keine Einsatzcodes mehr einzeln importieren.
+- **Beispieldatei je Reiter** zum Herunterladen – zeigt den Aufbau. Oben in jeder Beispieldatei steht eine **Anleitung für eine KI**; mit **„KI-Anleitung kopieren“** kommt sie samt Beispiel in die Zwischenablage – in eine KI einfügen, Region und Wünsche dazuschreiben, fertig. Beim Notruf zusätzlich: das eingebaute System als Datei.
+- Wer schon eine getrennte Codeliste oder eine eigene KT-Abfrage aktiv hatte: wird beim Start abgeschaltet (mit Hinweis), die Dateien bleiben im Ordner.
+- Der KT-Code-Editor bearbeitet nur noch die Codes.
+
 ## 0.116.0-beta.69 – Eigene Dateien: übersichtlich hochladen und umschalten
 - **Neue Gruppe „Eigene Dateien“** in den Einstellungen (statt „Realismus“) mit fünf Reitern: **Notruf-Codes**, **Notruf-Abfrage**, **KT/SEK-Codes**, **KT-Abfrage** und **Namen**.
 - **Jeder Reiter gleich aufgebaut:** oben ein Dropdown „Aktiv“ (eingebaut oder eine der Dateien im Ordner – gilt sofort), darunter „Datei hochladen“ mit dem genauen Format, „Vorlage speichern“, „Ordner öffnen“ mit dem echten Ordnernamen und die Liste der Dateien.

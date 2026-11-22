@@ -6,6 +6,8 @@ JN = [{"wert": "ja", "label": "Ja"}, {"wert": "nein", "label": "Nein"}, {"wert":
 anleitung = r"""
 # Anleitung für eine KI: ein neues LeitWerk-Codesystem erstellen
 
+**Auftrag des Spielers** (steht unter dieser Anleitung bzw. in seiner Nachricht): für welche Region das Codesystem sein soll und worauf du achten sollst. Fehlt das, frag zuerst danach.
+
 Du bekommst diese Datei ohne weiteren Zusammenhang. Sie ist ein **kleines, vollständiges Beispiel** für ein Codesystem des Leitstellen-Spiels „LeitWerk“ (Rettungsdienst-Leitstelle, Niederösterreich). Deine Aufgabe: zusammen mit einer Person (dem „Ersteller“) ein **neues, vollständiges Codesystem** im selben Format erstellen und am Ende als **eine gültige JSON-Datei** ausgeben.
 
 ## 1. Worum es geht
@@ -115,7 +117,7 @@ Die Fragetexte und Beschriftungen darfst (und sollst) du eigenständig formulier
 ### 3.8 Themen und Merkmale (damit die Fallgeschichten des Spiels passen)
 LeitWerk erzeugt Notrufe aus fertigen Fallgeschichten („Opa ist in der Nacht im Bad gestürzt …“). Damit sie zu deinem Codesystem passen:
 - Jedes Kapitel bekommt ein **„thema“** – eines von: bauch, allergie, tierbiss, gewalt, ruecken, atemnot, brand, gefahrstoff, stillstand, brustschmerz, ersticken, krampf, zucker, wasser, strom, auge, sturz, kopfschmerz, herz, hitze_kaelte, blutung, eingeklemmt, vergiftung, schwangerschaft, psych, krank, stich_schuss, schlaganfall, verkehrsunfall, verletzung, bewusstlos, unklar, anforderung_arzt, ecall, infekt, anforderung_polizei, anforderung_ls, alpin. Ein Thema ohne Kapitel bekommt keine Fallgeschichten; ein Kapitel ohne Thema wird nur zufällig abgefragt.
-- Die Geschichten setzen **Merkmale** mit festen IDs und Werten (z. B. `hoehe` = `boden` / `treppe` / `gross` / `extrem`, `blutung_stark` = `ja`/`nein`, `umstand` = `boden_2` für „liegt 1–2 Stunden am Boden“). Am einfachsten: deine Fragen verwenden genau diese IDs und Werte. Das mitgelieferte LeitWerk-Codesystem (Einstellungen → Einsatzcodes & Abfrage → „Als eine Datei speichern …“) enthält alle – bitte den Ersteller, es dir zu geben, und übernimm IDs und Werte von dort (die Texte formulierst du selbst).
+- Die Geschichten setzen **Merkmale** mit festen IDs und Werten (z. B. `hoehe` = `boden` / `treppe` / `gross` / `extrem`, `blutung_stark` = `ja`/`nein`, `umstand` = `boden_2` für „liegt 1–2 Stunden am Boden“). Am einfachsten: deine Fragen verwenden genau diese IDs und Werte. Das eingebaute LeitWerk-Codesystem enthält alle (in LeitWerk: Einstellungen → Eigene Dateien → Notruf (RD) → „Eingebautes System herunterladen“) – bitte den Ersteller, es dir zu geben, und übernimm IDs und Werte von dort (die Texte formulierst du selbst).
 - Weicht eine Frage ab, ordne sie zu: an der Frage `"merkmal": "<ID>"`, an einer Antwort `"merkmal_wert": "<Wert>"` (siehe Fragen „spricht“, „farbe“, „hoehe“ und „blutung“ unten). Fehlt die Zuordnung, versucht LeitWerk sie beim Laden selbst über Fragetext und Antworten (auch umgedrehte Fragen wie „bewusstlos?“) und rät ein fehlendes „thema“ aus dem Kapiteltitel – der Spieler kann das unter „Zuordnung …“ prüfen. Eine ausdrückliche Zuordnung ist trotzdem am sichersten.
 - Diese Antworten wertet das Spiel selbst aus und sollten deshalb gleich heißen: `grund` (Anforderung Arzt), `tod`, `verletzte`, `eingeklemmt`, `gefahrgut`, `andere_gefahren`, `aggressiv`, `gewalt`, `wo` (Wasser), `problem` (Polizei), `mittel` (andere Leitstelle), `sprachkontakt` (automatische Meldung).
 
@@ -141,7 +143,7 @@ Jeder Code, der herauskommen kann, braucht einen Eintrag: `name` (kurz und einde
 5. Jede Bedingung fragt nur IDs, die es gibt.
 6. Gehe pro Kapitel mindestens drei Fälle durch (leicht, mittel, lebensbedrohlich) und schreib dem Ersteller kurz auf, welcher Code jeweils herauskommt.
 
-LeitWerk prüft die Datei beim Laden (Einstellungen → Einsatzcodes & Abfrage → „CSV importieren …“ bzw. „Codesystem laden …“) und zeigt Fehler und Hinweise an.
+LeitWerk prüft die Datei beim Hochladen (Einstellungen → Eigene Dateien → Notruf (RD) → „Datei hochladen“) und zeigt Fehler an. Codes und Abfrage werden immer zusammen als diese eine Datei hochgeladen – eine getrennte Codeliste gibt es nicht.
 
 ## 6. Dieses Beispiel
 
