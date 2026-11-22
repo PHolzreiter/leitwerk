@@ -270,7 +270,25 @@ export const ANRUFER_KAPITEL: Record<string, { thema: string; vor?: Antworten; g
   polizei: { thema: "anforderung_polizei", grund: "die Polizei fordert an" },
   ls: { thema: "anforderung_ls", vor: { von: "org" }, grund: "Feuerwehr, Berg- oder Wasserrettung fordert an" },
   system: { thema: "ecall", grund: "automatische Unfallmeldung" },
+  // Rufhilfe (Beta 73): immer eine Person, die am Notrufgerät – es gibt keine Kapitel-Abfrage, immer 32B2
+  rufhilfe: { thema: "unklar", vor: { anzahl_patienten: "1" }, grund: "Rufhilfe-Alarm" },
 };
+
+/** Rufhilfe (Beta 73): eigene Fragen nach „Wer ruft an?“ (Bewusstsein und Atmung kommen vorher aus der Primärabfrage) */
+export const RUFHILFE_FRAGEN = ["rh_kontakt", "rh_safe_nr", "rh_safe_ort", "rh_was"] as const;
+
+/** Code der Rufhilfe im Schema: 32B2 (Meldung durch Notrufsystem) – sonst ein passender B-Code des Kapitels „Unklare Lage“ */
+export function rufhilfeCode(schema: Schema): string | null {
+  const kap = kapitelZuThema("unklar", schema);
+  if (!kap) return null;
+  const im = Object.keys(schema.codes).filter((c) => kapitelVonCode(schema, c) === kap);
+  return (
+    im.find((c) => c === `RD-${kap}B2`) ??
+    im.find((c) => /rufhilfe|notrufsystem|hausnotruf/i.test(schema.codes[c]?.name ?? "") && !/\s/.test(c)) ??
+    im.find((c) => new RegExp(`^RD-${kap}B\\d+$`).test(c)) ??
+    null
+  );
+}
 
 /** Kapitel, das zum Anrufer gehört (null = normaler Anrufer) */
 export function kapitelFuerAnrufer(schema: Schema, anrufer: Wert | undefined): { kapitel: string; vor: Antworten; grund: string } | null {
@@ -353,7 +371,8 @@ function sonderAnruferErgaenzen(p: Schema): void {
     if (alt.has("polizei")) o.push({ wert: "polizei", label: alt.get("polizei")! });
     if (alt.has("ls")) o.push({ wert: "ls", label: "Feuerwehr / Berg- / Wasserrettung" });
     if (alt.has("system")) o.push({ wert: "system", label: "Automatische Unfallmeldung (Auto / Uhr)" });
-    for (const x of wer.optionen) if (!o.some((y) => y.wert === x.wert) && !["ls", "system"].includes(x.wert)) o.push(x);
+    if (rufhilfeCode(p)) o.push({ wert: "rufhilfe", label: "Rufhilfe (Notrufuhr / Hausnotruf)" });
+    for (const x of wer.optionen) if (!o.some((y) => y.wert === x.wert) && !["ls", "system", "rufhilfe"].includes(x.wert)) o.push(x);
     wer.optionen = o;
   }
   // Kapitel 33: wer anfordert, ergibt sich aus „Wer ruft an?“; Telefonarzt und 141 gibt es nicht; nie ein Hubschrauber-Code
@@ -412,6 +431,7 @@ function sonderAnruferErgaenzen(p: Schema): void {
     K33.regeln = [...vorne, ...K33.regeln];
     if (K33.zusatzkennungen) for (const k of Object.keys(K33.zusatzkennungen)) delete K33.zusatzkennungen[k];
   }
+  rufhilfeErgaenzen(p);
   // Kapitel 42: nur noch Feuerwehr, Berg- und Wasserrettung – RTW oder Notarzt
   const k42 = kapitelZuThema("anforderung_ls", p);
   const K42 = k42 ? p.kapitel[k42] : undefined;
@@ -447,6 +467,40 @@ function sonderAnruferErgaenzen(p: Schema): void {
   for (const K of Object.values(p.kapitel)) for (const f of K.fragen) if (f.id === "polizei" && /kennung/i.test(f.text)) f.anzeigen_wenn = NIE;
   // nie ein eigener Hubschrauber-, Telefonarzt- oder 141-Code
   for (const c of Object.keys(p.codes)) if (/-(NAH|TELEMED|141)$/i.test(c)) gesperrt.add(c);
+}
+
+/**
+ * Rufhilfe (Beta 73, Paul): Band mit Name, Alter, Adresse und Schlüsselsafe, dann Sprechverbindung (oder „…“).
+ * Im Kapitel „Unklare Lage“ gibt es dafür nur: Sprechverbindung, Schlüsselsafe-Nummer und -Ort, „Was ist passiert?“
+ * (Freitext). Der Code ist immer 32B2, ohne Aufwertung und ohne Zusatzkennung – der Disponent entscheidet selbst,
+ * wen er schickt.
+ */
+function rufhilfeErgaenzen(p: Schema): void {
+  const kap = kapitelZuThema("unklar", p);
+  const K = kap ? p.kapitel[kap] : undefined;
+  const code = rufhilfeCode(p);
+  if (!K || !code || K.fragen.some((f) => f.id === "rh_kontakt")) return;
+  const rh: Bedingung = { q: "anrufer", in: ["rufhilfe"] };
+  for (const f of K.fragen) undBed(f, { not: rh });
+  K.fragen.unshift(
+    {
+      id: "rh_kontakt",
+      text: "Sprechverbindung: meldet sich die Person?",
+      typ: "single",
+      optionen: [
+        { wert: "ja", label: "Ja, die Person spricht" },
+        { wert: "nein", label: "Nein, keine Antwort" },
+      ],
+      anzeigen_wenn: rh,
+    },
+    { id: "rh_safe_nr", text: "Schlüsselsafe – Nummer", typ: "text", hinweis: "Steht in der Rufhilfe-Meldung", anzeigen_wenn: rh },
+    { id: "rh_safe_ort", text: "Schlüsselsafe – wo?", typ: "text", hinweis: "Steht in der Rufhilfe-Meldung", anzeigen_wenn: rh },
+    { id: "rh_was", text: "Was ist passiert?", typ: "text", hinweis: "Freitext – kommt auch in die Info an den RTW (nach Alter, Bewusstsein und Atmung)", anzeigen_wenn: rh },
+  );
+  // Code: immer 32B2 – vor allen anderen Regeln (auch kein Wechsel in ein anderes Kapitel, Paul 22.11.2026)
+  K.regeln.unshift({ code, wenn: rh });
+  if (K.zusatzkennungen) delete K.zusatzkennungen[code];
+  if (K.suffix?.regeln) K.suffix.regeln = K.suffix.regeln.filter((r) => !JSON.stringify(r).includes('"rufhilfe"'));
 }
 
 /** Traumatische Kapitel: dort fragt man, ob es ein Arbeitsunfall ist (dann kommt die Polizei mit) */
@@ -934,7 +988,8 @@ export function bestimmeCode(
       (istKreislaufstillstand(a) && (EIGENER_KS.test(name) || ksSchnell || thema(kap, schema) === "stillstand") && !/Tote Person|Tod/.test(name)) ||
       (code === "RD-9E2" && !istLeitWerkSystem(schema));
     // Bewusstlos: Codes ohne eigene Bewusstlos-Variante werden zum Bewusstlosigkeits-Code (Kapitel 31) nach der Atmung
-    const bl = reanimation ? null : bewusstlosCode(schema, kap, code, a);
+    // (Rufhilfe bleibt immer 32B2 – Paul 22.11.2026)
+    const bl = reanimation || a.anrufer === "rufhilfe" ? null : bewusstlosCode(schema, kap, code, a);
     if (bl) return { kapitel: kapitelZuThema("bewusstlos", schema) ?? "31", pfad, determinante: bl, code: bl, reanimation, antworten: a };
     return { kapitel: kap, pfad, determinante: det, code, reanimation, antworten: a };
   }

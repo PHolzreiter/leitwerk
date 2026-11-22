@@ -63,7 +63,7 @@ export interface Anrufer {
   /** Patient ist der Anrufer selbst */
   selbst: boolean;
   /** Sonderfälle: Polizei, Einrichtung, andere Leitstelle, eCall */
-  art?: "privat" | "polizei" | "einrichtung" | "leitstelle" | "ecall";
+  art?: "privat" | "polizei" | "einrichtung" | "leitstelle" | "ecall" | "rufhilfe";
   /** Name der Dienststelle/Einrichtung, z. B. „Landesleitzentrale der Polizei“ */
   stelle?: string;
   /** fertige Meldung (andere Leitstelle, eCall-Ansage), vom Programm erzeugt */
@@ -373,6 +373,7 @@ function gendern(t: string, g: "m" | "w"): string {
 
 /** „Ich bin …“ für die Frage „Wer ruft an?“ */
 export function werText(x: Anrufer): string {
+  if (x.art === "rufhilfe") return !x.sprachkontakt ? "…" : `${x.name}, ich hab auf den Knopf von meiner Uhr gedrückt.`;
   if (x.art === "ecall") return !x.sprachkontakt ? "…" : x.quelle === "uhr" ? `${x.name}, mir gehört die Uhr.` : /allein im Auto/.test(x.rolle) ? `${x.name}, ich sitz im Auto, ich bin ${x.geschlecht === "w" ? "die Fahrerin" : "der Fahrer"}.` : `${x.name}, ich sitz ${x.geschlecht === "w" ? "als Beifahrerin" : "als Beifahrer"} im Auto.`;
   if (x.selbst) return `${x.name.split(" ")[0]} ${x.name.split(" ").slice(1).join(" ")} – ich ruf für mich selber an, mir geht's nicht gut.`;
   const r = x.rolle.split(";")[0].split("(")[0].trim();
@@ -403,7 +404,7 @@ export function werText(x: Anrufer): string {
  * oder als Folgeanruf. null = Anrufer kann nichts mehr sagen bzw. weiß nichts davon.
  */
 export function veraenderungText(x: Anrufer, patientW: boolean, neu: { bw: string; at: string }, besserung: boolean, folge: boolean): string | null {
-  if (x.art === "leitstelle" || (x.art === "ecall" && !x.sprachkontakt)) return null;
+  if (x.art === "leitstelle" || ((x.art === "ecall" || x.art === "rufhilfe") && !x.sprachkontakt)) return null;
   const Er = patientW ? "Sie" : "Er";
   let was: string;
   if (x.selbst) {
@@ -436,6 +437,39 @@ const BEZIRKE_KZ = ["KR", "KS", "ME", "MI", "TU", "ZT", "GF", "HL", "HO", "LF", 
 function kennzeichen(rnd: () => number): string {
   const b = "ABCDEFGHKLMNPRSTUVWXYZ";
   return `${pick(BEZIRKE_KZ, rnd)} ${100 + Math.floor(rnd() * 900)} ${b[Math.floor(rnd() * b.length)]}${b[Math.floor(rnd() * b.length)]}`;
+}
+
+/** Wo der Schlüsselsafe hängt (Rufhilfe) – Haus bzw. Wohnung */
+const SAFE_HAUS = [
+  "Zugang durch die Gartentür, gleich links innen am Zaun",
+  "neben der Haustür, rechts an der Hauswand",
+  "beim Postkasten am Gartentor",
+  "im Carport an der Wand neben dem Stromkasten",
+  "unter dem Vordach, links neben der Eingangstür",
+  "am Zaun neben der Klingel",
+];
+const SAFE_WOHNUNG = [
+  "im Stiegenhaus beim Postkasten im Erdgeschoß",
+  "neben der Wohnungstür, rechts an der Wand",
+  "beim Hauseingang neben den Klingeln",
+  "im Stiegenhaus beim Stromkasten, gleich neben der Wohnungstür",
+];
+
+/** Schlüsselsafe der Rufhilfe (Beta 73): zufällige Nummer und Ort – kommt ins Band und in die Wahrheit */
+export function rufhilfeSafe(a: Antworten, wohnung: boolean, rnd: () => number = Math.random): void {
+  if (typeof a.rh_safe_nr !== "string") a.rh_safe_nr = String(1000 + Math.floor(rnd() * 9000));
+  if (typeof a.rh_safe_ort !== "string") a.rh_safe_ort = pick(wohnung ? SAFE_WOHNUNG : SAFE_HAUS, rnd);
+}
+
+/**
+ * Band der Rufhilfe (Computerstimme): wer den Alarm ausgelöst hat, Alter, Adresse (dort ist die Person immer),
+ * Schlüsselsafe – dann wird die Sprechverbindung hergestellt. Ziffern einzeln, damit die Stimme sie so vorliest.
+ */
+export function rufhilfeMeldung(name: string, g: "m" | "w", alter: number | null, adresse: string, nr: string, ort: string): string {
+  const [vn, ...nn] = name.split(" ");
+  const wer = `${g === "w" ? "Frau" : "Herr"} ${nn.join(" ")} ${vn}`.replace(/\s+/g, " ").trim();
+  const jahre = alter ? `, ${alter} Jahre,` : "";
+  return `Rufhilfe-Alarm. ${wer}${jahre} hat den Alarm an ${g === "w" ? "ihrer" : "seiner"} Rufhilfe-Uhr ausgelöst. Adresse: ${adresse}. Schlüsselsafe Nummer ${nr.split("").join(" ")}, ${ort}. Die Sprechverbindung wird hergestellt …`;
 }
 
 /**
@@ -484,6 +518,29 @@ function sonderAnrufer(
   einr: { heim: boolean; name?: string } = { heim: true },
 ): Anrufer | null {
   const ort = ortVon(adresse) || "dem Ort";
+  // Rufhilfe (Beta 73): die Person selbst am Notrufgerät – nach dem Band redet sie (oder es bleibt still)
+  if (a.anrufer === "rufhilfe") {
+    const g: "m" | "w" = a.geschlecht === "m" ? "m" : "w";
+    const kontakt = a.rh_kontakt === "ja";
+    const name = `${pick(g === "w" ? VORNAMEN_W : VORNAMEN_M, rnd)} ${pick(NACHNAMEN, rnd)}`;
+    const alter = typeof a.alter === "number" ? a.alter : null;
+    return {
+      name,
+      geschlecht: g,
+      ort: "zu Hause, an der Freisprech-Basis der Rufhilfe",
+      emotion: kontakt ? pick(["gefasst", "aufgeregt"] as const, rnd) : "ruhig",
+      sprache: "hochdeutsch",
+      schwerhoerig: rnd() < 0.35,
+      nummer: telefonnummer(rnd),
+      selbst: true,
+      art: "rufhilfe",
+      rolle: `${g === "w" ? "Kundin" : "Kunde"} der Rufhilfe – ${g === "w" ? "sie" : "er"} hat den Alarmknopf an der Rufhilfe-Uhr gedrückt`,
+      anruferWert: "rufhilfe",
+      stelle: "Rufhilfe",
+      sprachkontakt: kontakt,
+      meldung: rufhilfeMeldung(name, g, alter, adresse, String(a.rh_safe_nr ?? "0000"), String(a.rh_safe_ort ?? "neben der Haustür")),
+    };
+  }
   const basis = (p: Partial<Anrufer> & Pick<Anrufer, "rolle" | "anruferWert">): Anrufer => {
     const geschlecht = p.geschlecht ?? (rnd() < 0.5 ? "w" : "m");
     p = { ...p, rolle: gendern(p.rolle, geschlecht) };
@@ -1012,7 +1069,7 @@ function bezugVon(x: Anrufer, w: boolean): string {
 
 /** Vom Programm geschriebene Kernaussage auf „Was ist passiert?“ (passt immer zu den Fakten) */
 export function schilderung(k: AnrufKontext): string {
-  if (k.szenario && (!k.anrufer.art || ["privat", "einrichtung", "polizei", "ecall"].includes(k.anrufer.art))) {
+  if (k.szenario && (!k.anrufer.art || ["privat", "einrichtung", "polizei", "ecall", "rufhilfe"].includes(k.anrufer.art))) {
     const t = k.anrufer.selbst && k.szenario.hergangIch ? k.szenario.hergangIch : k.szenario.hergang;
     // die ersten ein, zwei Sätze – so erzählt man es am Telefon
     const saetze = t.match(/[^.!?…]+[.!?…]+/g) ?? [t];
@@ -1247,7 +1304,9 @@ function promptGeschichte(k: AnrufKontext): string {
   const gemeinde = (k.adresse.split(",").pop() ?? "").replace(/^\s*\d{4}\s*/, "").trim();
   const wer = sz.ohnePatient
     ? "Du rufst an, weil du etwas beobachtet hast bzw. weil dir etwas passiert ist (siehe Fallakte)."
-    : art === "ecall"
+    : art === "rufhilfe"
+      ? `Du hast den Alarmknopf an deiner Rufhilfe-Uhr (am Handgelenk) gedrückt. Die Rufhilfe hat dich automatisch mit der Rettungsleitstelle verbunden. Du hörst die Leitstelle über den Lautsprecher der Rufhilfe-Basis in der Wohnung und redest laut zurück – du bist ein Stück vom Gerät weg, nicht am Telefon. Vorher hat das Gerät eine automatische Ansage abgespielt (Computerstimme) – das warst NICHT du; du meldest dich jetzt zum ersten Mal. Du bist selbst die Person, um die es geht, und bist ${typeof k.wahrheit.alter === "number" ? k.wahrheit.alter : 80} Jahre alt. Deine Adresse weiß die Rufhilfe schon; fragt man dich trotzdem, sagst du sie. Den Schlüsselsafe (Nummer ${String(k.wahrheit.rh_safe_nr ?? "")}) kennst du, die Rettung kommt damit selbst in die Wohnung.`
+      : art === "ecall"
       ? `${
           x.quelle === "uhr"
             ? "Deine Smartwatch hat nach dem Unfall automatisch die Rettung verständigt – du hast das gar nicht selbst gemacht. Jetzt hörst du die Leitstelle über die Uhr und redest mit ihr."
@@ -1353,7 +1412,7 @@ function promptGeschichte(k: AnrufKontext): string {
 export function systemPrompt(k: AnrufKontext): string {
   const x = k.anrufer;
   const art = x.art ?? "privat";
-  if (k.szenario && (art === "privat" || art === "einrichtung" || art === "polizei" || (art === "ecall" && x.sprachkontakt))) return promptGeschichte(k);
+  if (k.szenario && (art === "privat" || art === "einrichtung" || art === "polizei" || ((art === "ecall" || art === "rufhilfe") && x.sprachkontakt))) return promptGeschichte(k);
   const regelnGemeinsam = [
     `- Pro Antwort nur das, wonach gefragt wurde. Meist ein, höchstens zwei kurze Sätze. Sag nichts, was du schon gesagt hast, und fasst nie selbst zusammen.`,
     `- Teilt dir die Leitstelle etwas mit („Die Rettung ist unterwegs“), reagierst du kurz darauf (Danke, kurze Rückfrage) – ohne den Zustand des Patienten aufzuzählen.`,
@@ -1645,6 +1704,7 @@ export function ersterSatzOhneKi(k: AnrufKontext): string {
   const x = k.anrufer;
   if (x.art === "leitstelle") return `${x.stelle}, ${x.name}. ${x.meldung}`;
   if (x.art === "ecall") return x.meldung ?? "Automatische Unfallmeldung.";
+  if (x.art === "rufhilfe") return x.meldung ?? "Rufhilfe-Alarm.";
   if (x.art === "polizei") return `Landesleitzentrale der Polizei, ${x.name}. Eine Streife braucht die Rettung: ${k.adresse}.`;
   if (x.art === "einrichtung") return `${x.stelle}, ${x.name}. Wir bräuchten die Rettung: ${k.adresse}.`;
   const vorher = k.versuche > 1 ? "Ich hab vorhin schon angerufen! " : "";

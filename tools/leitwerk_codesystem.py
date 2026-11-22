@@ -1000,6 +1000,14 @@ def rd_umbau(kapitel, codes):
 def main(ziel):
     kapitel, codes = bauen()
     kapitel, codes, _ = rd_umbau(kapitel, codes)
+    # Rufhilfe (Beta 73): immer 32B2 – die Regel setzt das Spiel selbst (Wer ruft an? = Rufhilfe), ohne Aufwertung
+    neu = {}
+    for c, v in codes.items():
+        neu[c] = v
+        if c == "RD-32B1":
+            neu["RD-32B2"] = {"name": "Unklare Lage – Meldung durch Rufhilfe", "kategorie": "BLS/ALS aufwertbar", "kapitel": v["kapitel"]}
+    assert "RD-32B2" in neu, "RD-32B1 fehlt"
+    codes = neu
     d = {
         "format": "leitwerk-codesystem",
         "version": 1,

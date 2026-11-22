@@ -477,20 +477,22 @@ function notrufGespraech(e: Einsatz, nach = false): GespraechVM | null {
     }
     for (const f of p3.filter(istWer)) dazu(frageSchritt(f, "Anrufer"));
     // automatische Unfallmeldung: zuerst „Hören Sie mich?“ – ohne Sprachkontakt lassen sich Anzahl, Bewusstsein und Atmung nicht klären
-    if (a.antworten.anrufer === "system" && a.kapitel) {
-      const sk = schema.kapitel[a.kapitel]?.fragen.find((f) => f.id === "sprachkontakt");
+    // (Rufhilfe ebenso: Sprechverbindung zur Person am Notrufgerät – oder nicht)
+    if ((a.antworten.anrufer === "system" || a.antworten.anrufer === "rufhilfe") && a.kapitel) {
+      const sk = schema.kapitel[a.kapitel]?.fragen.find((f) => f.id === (a.antworten.anrufer === "rufhilfe" ? "rh_kontakt" : "sprachkontakt"));
       if (sk) dazu(frageSchritt(sk, "Sprachverbindung"));
     }
     // Wie viele Patienten? – vor Bewusstsein und Atmung (bei mehreren gehen diese Fragen an alle: „Gibt es dort jemanden, der …“);
-    // die Gesundheitshotline fordert immer für einen Patienten an
-    for (const f of p4) if (f.id === "anzahl_patienten" && a.antworten.anrufer !== "hotline") dazu(frageSchritt(f, "Patienten"));
+    // die Gesundheitshotline fordert immer für einen Patienten an, die Rufhilfe meldet immer eine Person
+    const einer = a.antworten.anrufer === "hotline" || a.antworten.anrufer === "rufhilfe";
+    for (const f of p4) if (f.id === "anzahl_patienten" && !einer) dazu(frageSchritt(f, "Patienten"));
     for (const f of p4.filter(istBwAt)) dazu(frageSchritt(f, "Bewusstsein und Atmung"));
     for (const f of p3) if (!istWer(f) && f.typ !== "text" && f.typ !== "kapitelwahl") dazu(frageSchritt(f, "Was ist passiert?"));
     const was = p3.find((f) => f.typ === "text") ?? null;
     dazu(kapitelSchritt(e, schema, was, frageStellen(was)));
     if (a.kapitel) {
       for (const { phase, frage } of fragenImAblauf(schema, a.kapitel, a.antworten)) {
-        if (ids.has(frage.id) || (frage.id === "anzahl_patienten" && a.antworten.anrufer === "hotline")) continue;
+        if (ids.has(frage.id) || (frage.id === "anzahl_patienten" && einer)) continue;
         dazu(frageSchritt(frage, phase === "Primärabfrage" ? "Primärabfrage" : `Kapitel ${a.kapitel} · ${schema.kapitel[a.kapitel]?.titel ?? phase}`));
       }
       for (const s of abschlussSchritte(e, schema)) dazu(s);
@@ -669,7 +671,8 @@ function abschlussSchritte(e: Einsatz, schema: Schema): Schritt[] {
   const out: Schritt[] = [];
   const erg = bestimmeCode(schema, a.kapitel!, a.antworten);
   const extra = (p: Partial<Anruf["extra"]>) => fehler(sim.call("abfrageExtra", e.id, p));
-  if (K.aufwertung && Object.keys(K.aufwertung).length) {
+  // Rufhilfe: 32B2 ohne Aufwertung (der Disponent schickt selbst, was es braucht)
+  if (K.aufwertung && Object.keys(K.aufwertung).length && a.antworten.anrufer !== "rufhilfe") {
     const jetzt = erg ? stufeVonCode(erg.determinante, schema) : "";
     const stufen = Object.keys(K.aufwertung).filter((st) => stufeRang(st, schema) > stufeRang(jetzt, schema));
     if (stufen.length) {

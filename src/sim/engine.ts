@@ -51,12 +51,12 @@ import {
   LAGE,
 } from "./weather";
 import { bestimmeCode, codeGesperrt, fallZiehen, kapitelFuerAnrufer, kapitelVonCode, nfStufe, wahrheitFuer, type Antworten, type Schema } from "../abfrage/schema";
-import { alterGeschaetzt, anruferWaehlen, flughafenAnrufer, stimmungZumFall, ortKandidaten, veraenderungText, zufallsName, type Anrufer } from "../abfrage/anrufer";
+import { alterGeschaetzt, anruferWaehlen, flughafenAnrufer, rufhilfeSafe, stimmungZumFall, ortKandidaten, veraenderungText, zufallsName, type Anrufer } from "../abfrage/anrufer";
 import { personaWaehlen } from "../abfrage/persona";
 import { alleOrte, kategorienFuerOrtArt, ortGewicht, ortKategorie, poiKategorien } from "../data/orte";
 import { ortAnStelle, ortPartner } from "../data/ortProfile";
 import { ortRegeln } from "../abfrage/ortRegeln";
-import { acnKurve, FUNKGRUPPE_ANTEIL, stufenAnteile, stufenKurven, VORLAGEN, vorlageVon } from "./stufenKurven";
+import { acnKurve, FUNKGRUPPE_ANTEIL, stufenAnteile, stufenKurven, VORLAGEN, vorlageVon, type Vorlage } from "./stufenKurven";
 import { katKtOffen, katOffen, ortArtOffen } from "../data/ortZeiten";
 import {  stellen, stellenInGruppe, stellenLaden, stelleBeschreibung, type Einsatzstelle } from "../data/einsatzstellen";
 import { bezugFuer, fuellen, ORT_IM_FREIEN, stimmungAusVerlauf, szenarioBauen, altersPlausibel, sichtUnbekannt, vorlageFest, vorlageWaehlen, type AnruferTyp, type OrtArt, type OrtModus, type Szenario, type SzenarioVorlage } from "../abfrage/szenario";
@@ -151,7 +151,7 @@ import { FUNKGRUPPEN, funkgruppe, funkgruppeVon, inFunkgruppe, mitteVon, type Fu
 import { echtwetterLaden } from "./echtwetter";
 import { sekZufall } from "./sek";
 import { bedarf, ereignisseEinplanen, istStillstand, lageAusFall, lageErzeugen, lagemeldungText, patientText, rtwBedarf, type Lage } from "./lage";
-import { THEMA_ANTEIL } from "../abfrage/themaAnteil";
+import { gruppeVon, THEMA_ANTEIL_JE } from "../abfrage/themaAnteil";
 import { alleFaelle, anleitungAus, brauchtAusNa, brauchtVon, fallPaare, fallVariante, fallUndVariante, fallVorlage, kompetenzRang, varianteWaehlen, type FallVariante, type FallVorlage, type Kompetenz } from "../abfrage/faelle";
 import { nachrichtArt } from "../abfrage/runde";
 
@@ -587,8 +587,6 @@ export function plausibel(kapitel: string, a: Antworten, codeName: string): bool
   return true;
 }
 
-/** Themen für einen neuen Fall (Fall aus dem Abfrageschema): Anteil in % nach der echten Verteilung (Beta 72) */
-const THEMA_GEWICHT: Record<string, number> = THEMA_ANTEIL;
 /** Wetter macht manche Notrufe häufiger: Hitze → Hitzenotfälle, Badeunfälle; Kälte → Unterkühlung, Infekte; Glätte → Stürze, Unfälle */
 export function wetterFaktor(kap: string, temp: number, lage: WetterLage, wind = 0): number {
   const art = lageArt(lage);
@@ -626,9 +624,11 @@ export function wetterFaktor(kap: string, temp: number, lage: WetterLage, wind =
   }
 }
 
-function kapitelZiehen(schema: Schema, faktor: (kap: string) => number = () => 1): string {
+/** Kapitel für einen neuen Fall aus dem Abfrageschema: Anteil in % je Spieltyp (Beta 72/73) */
+function kapitelZiehen(schema: Schema, faktor: (kap: string) => number = () => 1, vorlage: Vorlage = "standard"): string {
   const kaps = Object.keys(schema.kapitel);
-  const g = (k: string) => (THEMA_GEWICHT[thema(k, schema)] ?? 1) * faktor(k);
+  const gewicht = THEMA_ANTEIL_JE[vorlage];
+  const g = (k: string) => (gewicht[thema(k, schema)] ?? 1) * faktor(k);
   const sum = kaps.reduce((s, k) => s + g(k), 0);
   let r = Math.random() * sum;
   for (const k of kaps) {
@@ -3813,7 +3813,9 @@ export class Simulation extends GsKern {
         const l0 = e.wahr.lage;
         const p0 = l0.patienten[0];
         const fk = { ruhig: 0.5, normal: 1, fordernd: 1.5 }[this.settings.komplikationen ?? "normal"] ?? 1;
-        if (l0.patienten.length === 1 && p0 && !istStillstand(p0) && p0.sichtung !== "rot" && !fvar?.tot && !istAcnCode(p.fall.code) && Math.random() < 0.02 * fk)
+        // Fall mit festem Fehleinsatz (Rufhilfe aus Versehen ausgelöst)
+        if (fvar?.fehleinsatz) e.wahr.fehleinsatz = fvar.fehleinsatz;
+        else if (l0.patienten.length === 1 && p0 && !istStillstand(p0) && p0.sichtung !== "rot" && !fvar?.tot && !istAcnCode(p.fall.code) && anrufer.art !== "rufhilfe" && Math.random() < 0.02 * fk)
           e.wahr.fehleinsatz = pick([
             "kein Patient angetroffen, laut Nachbarn ist er schon selbst ins Krankenhaus gefahren",
             "Einsatzort abgesucht, kein Patient auffindbar, der Anrufer ist nicht mehr vor Ort",
@@ -3845,6 +3847,9 @@ export class Simulation extends GsKern {
         extra: { aufwertung: null, zusatz: null, polizei: false },
         ergebnis: null,
       };
+      // Rufhilfe: die Adresse der Kundin kommt mit der Meldung (sie ist immer dort) – beim Annehmen eingetragen
+      if (e.wahr.abfrage.anrufer.art === "rufhilfe")
+        e.anruf.ortung = { status: "fertig", fertigUm: this.state.zeit, lat: e.wahr.lat, lon: e.wahr.lon, radius: 5, art: "Adresse der Rufhilfe übermittelt" };
       // Automatische Unfallmeldung: die Position (GPS) kommt mit der Meldung
       if (e.wahr.abfrage.anrufer.art === "ecall") {
         const radius = Math.round(rnd(5, 25));
@@ -4642,7 +4647,7 @@ export class Simulation extends GsKern {
       const glatt = lage === "eisregen" || (temp < 1 && ["schnee", "regen", "nebel"].includes(lageArt(lage)));
       const ctx = { jahreszeit: jahreszeitVon(this.state.zeit, this.wetterOpt()), stunde: new Date(this.state.zeit).getHours(), temp: wetter ? temp : 15, glatt: wetter && glatt };
       for (let i = 0; i < 400 && !fall; i++) {
-        const kap = kapitelZiehen(schema, wetter ? (kp) => wetterFaktor(kp, temp, lage, this.state.wetter.wind ?? 0) : undefined);
+        const kap = kapitelZiehen(schema, wetter ? (kp) => wetterFaktor(kp, temp, lage, this.state.wetter.wind ?? 0) : undefined, vorlageVon(this.settings));
         // Fallgeschichte zuerst: sie legt Ort, Hergang und die wichtigsten Antworten fest
         const vorlage = vorlageWaehlen(SZENARIEN, thema(kap, schema), ctx, Math.random);
         // nicht dieselbe Fallgeschichte wie in den letzten Einsätzen (Ticket 15)
@@ -4674,7 +4679,7 @@ export class Simulation extends GsKern {
           code = c;
           fall = { kapitel: f.ergebnis.pfad[0], antworten: f.antworten, code: c.code, ...(Object.keys(fest.roh).length ? { roh: fest.roh } : {}) };
           if (vorlage) {
-            this.fallMerken(vorlage.id);
+            this.fallMerken(vorlage.id, vorlage.thema);
             fall.vorlage = vorlage.id;
             fall.ortArt = vOrt ?? this.ortArtWaehlen(vorlage, typeof f.antworten.alter === "number" ? f.antworten.alter : null, thema(f.ergebnis.pfad[0]));
           }
@@ -4733,8 +4738,8 @@ export class Simulation extends GsKern {
       return e;
     }
     let gemeldet = adr.label;
-    // Manche Anrufer nennen eine falsche Adresse (andere Hausnummer derselben Straße)
-    if (Math.random() * 100 < s.falscheAdresseProzent) {
+    // Manche Anrufer nennen eine falsche Adresse (andere Hausnummer derselben Straße) – die Rufhilfe kennt sie genau
+    if (fall?.antworten.anrufer !== "rufhilfe" && Math.random() * 100 < s.falscheAdresseProzent) {
       const andere = (await searchAddress(`${adr.street} ${adr.city}`, 40)).filter(
         (h) => !h.place && distanceM(h, adr!) > s.verortungRadius * 1.5,
       );
@@ -4872,7 +4877,7 @@ export class Simulation extends GsKern {
       let zielStufe: string | null = null;
       const nachStufe = !wunsch && stufenZiel ? this.nachStufeZiehen(ctx, schema, stufenZiel, this.stufeWunsch) : null;
       if (nachStufe) zielStufe = nachStufe.stufe;
-      const gezogen = wunsch ? null : (nachStufe ?? fallUndVariante(ctx, this.settings.schwere ?? { harmlos: 35, mittel: 50, kritisch: 15 }, this.settings.komplikationen ?? "normal", Math.random, this.letzteFaelleSet()));
+      const gezogen = wunsch ? null : (nachStufe ?? fallUndVariante(ctx, this.settings.schwere ?? { harmlos: 35, mittel: 50, kritisch: 15 }, this.settings.komplikationen ?? "normal", Math.random, this.letzteFaelleSet(), vorlageVon(this.settings)));
       const f = wunsch ? fallVorlage(wunsch.id) : (gezogen?.f ?? null);
       if (!f) return null;
       const kap = kapitelFuerThema(f.thema, schema);
@@ -4882,6 +4887,8 @@ export class Simulation extends GsKern {
       altersPlausibel({ alter: f.alter, fest: { ...(f.fest ?? {}), ...(v.fest ?? {}) }, anrufer: f.anrufer }, a, Math.random);
       // erst der Ort, dann die Antworten, die vom Ort abhängen (außerorts schneller als im Ort), dann der Code
       const ortArt = this.ortArtWaehlen(f, typeof a.alter === "number" ? a.alter : null, f.thema);
+      // Rufhilfe: Schlüsselsafe (Nummer und Ort) – kommt ins Band und ist die richtige Antwort
+      if (a.anrufer === "rufhilfe") rufhilfeSafe(a, ortArt === "wohnung", Math.random);
       ortRegeln(ortArt, f.thema, a, new Set([...Object.keys(f.fest ?? {}), ...Object.keys(v.fest ?? {})]));
       sichtUnbekannt(schema, kap, f.ohneSicht, a);
       const { antworten, roh } = this.anpassen(schema, merkmaleInSchema(schema, a));
@@ -4901,7 +4908,7 @@ export class Simulation extends GsKern {
       if (!wunsch && f.kategorien?.length && !this.poisFuer(ortArt, typeof a.alter === "number" ? a.alter : null, f.kategorien, f.auchGeschlossen).length) continue;
       // braucht die Wasserrettung: nur, wo es eine gibt
       if (!wunsch && v.partner?.some((x) => x.art === "wasser") && !this.partnerStationenImGebiet("wasser").length) continue;
-      this.fallMerken(f.id);
+      this.fallMerken(f.id, gruppeVon(f));
       return { fall: { kapitel: kap, antworten, code: c.code, vorlage: f.id, ortArt, katalog: { id: f.id, variante: v.id }, ...(Object.keys(roh).length ? { roh } : {}) }, code: c };
     }
     return null;
@@ -4909,12 +4916,25 @@ export class Simulation extends GsKern {
 
   /** Fälle der letzten Notrufe (Katalog-ID bzw. Fallgeschichte) – derselbe Fall kommt nicht kurz hintereinander (Ticket 15) */
   private letzteFaelle: string[] = [];
+  /** Gruppen (Themen) der letzten Notrufe – bei Standard und Stressig kein Thema öfter als 2-mal hintereinander (Beta 73) */
+  private letzteGruppen: string[] = [];
   static readonly FALL_SPERRE = 6;
-  private fallMerken(id: string): void {
+  private fallMerken(id: string, gruppe?: string): void {
     this.letzteFaelle = [...this.letzteFaelle.filter((x) => x !== id), id].slice(-Simulation.FALL_SPERRE);
+    if (gruppe) this.letzteGruppen = [...this.letzteGruppen, gruppe].slice(-2);
   }
+  /** Gesperrtes Thema: kam zweimal hintereinander (nur Standard und Stressig – Realistisch bleibt wie in echt) */
+  private gesperrteGruppe(): string | null {
+    if (vorlageVon(this.settings) === "realistisch") return null;
+    const [a, b] = this.letzteGruppen;
+    return this.letzteGruppen.length === 2 && a === b ? a : null;
+  }
+  /** Fälle, die jetzt nicht kommen: die der letzten 6 Notrufe und die des gesperrten Themas */
   private letzteFaelleSet(): ReadonlySet<string> {
-    return new Set(this.letzteFaelle);
+    const s = new Set(this.letzteFaelle);
+    const g = this.gesperrteGruppe();
+    if (g) for (const f of alleFaelle()) if (gruppeVon(f) === g) s.add(f.id);
+    return s;
   }
 
   /**
@@ -4960,8 +4980,12 @@ export class Simulation extends GsKern {
 
   /** Versorgungsstufe nach dem Ziel ziehen, dann einen Fall, der dort landet (Häufigkeit × Anteil) */
   private nachStufeZiehen(ctx: { jahreszeit: string; stunde: number; temp: number; glatt: boolean }, schema: Schema, ziel: Record<string, number>, erzwungen?: string | null): { f: FallVorlage; v: FallVariante; stufe: string } | null {
-    const paare = fallPaare(ctx, this.settings.komplikationen ?? "normal").map((p) => ({ ...p, st: this.stufenSchaetzung(schema, p.f, p.v) }));
-    const moeglich = Object.entries(ziel).filter(([k, w]) => w > 0 && paare.some((p) => (p.st[k] ?? 0) > 0));
+    const paare = fallPaare(ctx, this.settings.komplikationen ?? "normal", undefined, vorlageVon(this.settings)).map((p) => ({ ...p, st: this.stufenSchaetzung(schema, p.f, p.v) }));
+    // nicht derselbe Fall wie in den letzten Einsätzen (Ticket 15): nur Stufen, in denen es noch einen anderen Fall gibt
+    const ohne = this.letzteFaelleSet();
+    const alle = Object.entries(ziel).filter(([k, w]) => w > 0 && paare.some((p) => (p.st[k] ?? 0) > 0));
+    const frischDa = alle.filter(([k]) => paare.some((p) => (p.st[k] ?? 0) > 0 && !ohne.has(p.f.id)));
+    const moeglich = frischDa.length ? frischDa : alle;
     const summe = moeglich.reduce((x, [, w]) => x + w, 0);
     if (!summe) return null;
     let r = Math.random() * summe;
@@ -4972,8 +4996,7 @@ export class Simulation extends GsKern {
     }
     // vom Generator vorgegebene Stufe (Kurve der aktuellen Stunde) – wenn es dafür Fälle gibt
     if (erzwungen && moeglich.some(([k]) => k === erzwungen)) stufe = erzwungen;
-    // nicht derselbe Fall wie in den letzten Einsätzen (Ticket 15) – gibt es in der Stufe sonst keinen, doch
-    const ohne = this.letzteFaelleSet();
+    // gibt es in der Stufe sonst keinen, doch
     const alleKand = paare.filter((p) => (p.st[stufe] ?? 0) > 0);
     const frisch = alleKand.filter((p) => !ohne.has(p.f.id));
     const kand = frisch.length ? frisch : alleKand;
@@ -5085,6 +5108,12 @@ export class Simulation extends GsKern {
       a.angenommenVon = { ...ich };
       a.gespraech.push({ zeit: this.state.zeit, echt: Date.now(), von: "system", text: a.rueckruf ? `Rückruf durch ${ich.name}` : `Anruf angenommen von ${ich.name}` });
       this.log(e, a.rueckruf ? "Leitstelle ruft zurück" : "Anruf angenommen");
+      // Rufhilfe (Beta 73): die Adresse kommt automatisch mit der Meldung
+      if (e.wahr.abfrage?.anrufer.art === "rufhilfe" && !e.adresse) {
+        e.adresse = { lat: e.wahr.lat, lon: e.wahr.lon, label: e.wahr.adresse };
+        e.bo = e.adresse;
+        this.log(e, `Adresse: ${e.adresse.label} (aus der Rufhilfe-Meldung)`);
+      }
       if (a.folge) {
         a.gespraech.push({ zeit: this.state.zeit, echt: Date.now(), von: "anrufer", text: a.folge });
         a.folge = null;
@@ -5201,12 +5230,23 @@ export class Simulation extends GsKern {
       for (const f of store.schema.globale_fragen.phase_4_primaerabfrage ?? [])
         if (["anzahl_patienten", "bw", "at", "alter", "geschlecht"].includes(f.id) && a.antworten[f.id] === undefined && (f.typ === "zahl" || f.optionen?.some((o) => o.wert === "unbekannt"))) a.antworten[f.id] = "unbekannt";
     }
+    // Rufhilfe ohne Sprechverbindung: Bewusstsein und Atmung sind unbekannt (Alter und Geschlecht kommen aus der Meldung)
+    if (frage === "rh_kontakt" && wert === "nein" && store.schema) {
+      for (const f of store.schema.globale_fragen.phase_4_primaerabfrage ?? [])
+        if (["bw", "at"].includes(f.id) && a.antworten[f.id] === undefined && f.optionen?.some((o) => o.wert === "unbekannt")) a.antworten[f.id] = "unbekannt";
+    }
     // Rückrufnummer aus der Abfrage = Rückrufnummer des Einsatzes (erst damit ist ein Rückruf möglich)
     if (frage === "rueckrufnummer" && typeof wert === "string" && wert.trim() && wert.trim() !== e.telefon) {
       e.telefon = wert.trim();
       this.log(e, `Rückrufnummer: ${e.telefon}`);
     }
     this.abfrageAuswerten(e);
+    // Rufhilfe: „Was ist passiert?“ geht als Freitext in die Info an den RTW (hinter Alter, Bewusstsein, Atmung)
+    if (frage === "rh_was" && !e.infoManuell) {
+      const auto = e.infoAuto ?? "";
+      const frei = typeof wert === "string" ? wert.trim() : "";
+      e.infoRtw = auto && frei ? `${auto} // ${frei}` : auto || frei;
+    }
     if (frage === "anzahl_patienten" || frage === "sprachkontakt" || frage === "anrufer") this.gsAusAbfrage(e);
     this.emit();
   }

@@ -107,14 +107,15 @@ try:
         check(r["nef"] <= 300, f"NEF nach dem RTW, aber höchstens 5 Minuten nachts ({r['nef']:.0f} s)")
 
         # 6) Verteilung und Wiederholungen (Fallkatalog, ganzer Tag)
-        r = A.evaluate("""() => { const L = window.__lw, s = L.sim; const out = [];
+        # (seit Beta 73 gilt die echte Verteilung für den Spieltyp „Realistisch“)
+        r = A.evaluate("""() => { const L = window.__lw, s = L.sim; const out = []; s.settings.aufkommenStufe = 'realistisch';
             for (let h = 0; h < 24; h++) { s.state.zeit = new Date(2026, 9, 14, h, 30).getTime();
               for (let i = 0; i < 90; i++) { const k = s.fallAusKatalog(L.store.schema); if (k) out.push([k.fall.katalog.id, k.fall.kapitel, k.code.code]); } }
             const n = out.length, th = (k) => L.store.schema.kapitel[k] ? k : k;
             const anteil = (re) => out.filter(x => re.test(x[1])).length / n * 100;
             let wdh = 0, gleicherCode = 0;
             for (let i = 1; i < n; i++) { if (out.slice(Math.max(0, i - 6), i).some(x => x[0] === out[i][0])) wdh++; if (out[i - 1][2] === out[i][2]) gleicherCode++; }
-            return { n, ecall: anteil(/^34$/), arzt: anteil(/^33$/), sturz: anteil(/^17$/), wdh, gleicherCode }; }""")
+            s.settings.aufkommenStufe = 'standard'; return { n, ecall: anteil(/^34$/), arzt: anteil(/^33$/), sturz: anteil(/^17$/), wdh, gleicherCode }; }""")
         print("    ", r)
         check(r["ecall"] < 2, f"eCall ≈ 1 % ({r['ecall']:.2f} %)")
         check(r["arzt"] > 12, f"Anforderung Arzt/Pflege häufig ({r['arzt']:.1f} %)")

@@ -166,7 +166,8 @@ export async function fragen(e: Einsatz, text: string, schemaFrage?: Frage, onTo
     }
     const quelle = { wert: "ki" as "ki" | "fest" };
     // automatische Unfallmeldung: zuerst die Ansage des Systems (Computerstimme), erst danach redet ein Mensch
-    if (k.anrufer.art === "ecall" && k.anrufer.meldung && !e.anruf?.gespraech.some((m) => m.von === "anrufer")) {
+    // (Rufhilfe ebenso: zuerst das Band mit Name, Alter, Adresse und Schlüsselsafe)
+    if ((k.anrufer.art === "ecall" || k.anrufer.art === "rufhilfe") && k.anrufer.meldung && !e.anruf?.gespraech.some((m) => m.von === "anrufer")) {
       kiQuelleSetzen(e.id, "fest");
       await new Promise((r) => setTimeout(r, 700));
       onToken?.(k.anrufer.meldung);
@@ -340,12 +341,12 @@ export async function anruferAntwort(
   const x = k.anrufer;
   const ersteAntwort = !(e.anruf?.gespraech ?? []).some((m) => m.von === "anrufer");
   const pause = () => new Promise((r) => setTimeout(r, 700));
-  if (ersteAntwort && frage === ERÖFFNUNG && (x.art === "ecall" || x.art === "leitstelle")) {
+  if (ersteAntwort && frage === ERÖFFNUNG && (x.art === "ecall" || x.art === "rufhilfe" || x.art === "leitstelle")) {
     await pause();
     return ersterSatzOhneKi(k);
   }
   // automatische Unfallmeldung: meldet sich niemand, bleibt es still („…“ = gewollt, kein technisches Problem)
-  if (x.art === "ecall" && !x.sprachkontakt) {
+  if ((x.art === "ecall" || x.art === "rufhilfe") && !x.sprachkontakt) {
     await pause();
     return "…";
   }
@@ -1100,11 +1101,11 @@ export function liveSprechStrom(e: Einsatz, onToken?: (t: string) => void, danac
 /** Passt der Anruf für den Cloud-Anrufer? (eCall, andere Leitstellen, Hosentaschenanrufe & Co. bleiben beim Programm) */
 /** automatische Unfallmeldung, deren Ansage noch nicht lief (die kommt immer fest, nie von der Cloud) */
 function ansageOffen(e: Einsatz, k: AnrufKontext): boolean {
-  return k.anrufer.art === "ecall" && !e.anruf?.gespraech.some((m) => m.von === "anrufer");
+  return (k.anrufer.art === "ecall" || k.anrufer.art === "rufhilfe") && !e.anruf?.gespraech.some((m) => m.von === "anrufer");
 }
 
 export function liveGeeignet(k: AnrufKontext): boolean {
   const art = k.anrufer.art ?? "privat";
   // automatische Unfallmeldung: nach der Ansage redet ein Mensch – aber nur, wenn sich jemand meldet
-  return (art !== "ecall" || !!k.anrufer.sprachkontakt) && art !== "leitstelle" && !k.anrufer.nurBekannt && k.szenario?.spezial !== "hosentasche";
+  return ((art !== "ecall" && art !== "rufhilfe") || !!k.anrufer.sprachkontakt) && art !== "leitstelle" && !k.anrufer.nurBekannt && k.szenario?.spezial !== "hosentasche";
 }

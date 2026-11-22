@@ -25,7 +25,7 @@ try:
         r = A.evaluate("() => { const S = window.__lw.store.schema; return S.globale_fragen.phase_3_was_ist_passiert.find((f) => f.id === 'anrufer').optionen.map((o) => o.wert + '=' + o.label); }")
         print("    Wer ruft an?", r)
         werte = [x.split("=")[0] for x in r]
-        check(werte == ["1", "2", "3", "einrichtung", "hotline", "piste", "polizei", "ls", "system"], "„Wer ruft an?“ mit allen Sonderanrufern")
+        check(werte == ["1", "2", "3", "einrichtung", "hotline", "piste", "polizei", "ls", "system", "rufhilfe"], "„Wer ruft an?“ mit allen Sonderanrufern")
         r = A.evaluate("""() => { const S = window.__lw.store.schema; const f = window.__lw.schemaFkt.kapitelFuerAnrufer; return ['einrichtung','hotline','piste','polizei','ls','system','2'].map((w) => { const x = f(S, w); return x ? x.kapitel + ':' + JSON.stringify(x.vor) : null; }); }""")
         check(r == ['33:{"anforderer":"normal"}', '33:{"anforderer":"ecn","anzahl_patienten":"1"}', '33:{"anforderer":"schi"}', "38:{}", '42:{"von":"org"}', "34:{}", None], f"Kapitel je Anrufer {r}")
 

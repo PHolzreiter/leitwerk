@@ -514,7 +514,7 @@ export class SeitenBasis {
       ]},
       { id: 'sim', label: 'Spiel & Simulation', scope: 'Für dein nächstes Spiel · im Multiplayer gilt der Host', sim: true, pages: [
         { id: 'aufkommen', label: 'Einsatzaufkommen', info: 'Notfälle, KT, Nachbarzonen', kw: 'einsätze pro stunde realistisch standard stressig krankentransport überstellung acn akutpflege nachbarzone generator zeitraffer kurve', rows: [
-          S('Aufkommen', 'aufk', ['Realistisch', 'Standard', 'Stressig'], 'Standard', 'Realistisch: wie 2025 · Standard: mehr und spannender gemischt'),
+          S('Aufkommen', 'aufk', ['Realistisch', 'Standard', 'Stressig'], 'Standard', 'Realistisch: Menge und Art der Notrufe wie in echt (viele Anforderungen durch Arzt/Pflege und Rufhilfe) · Standard: mehr und spannender gemischt, mehr akute Notfälle – gut für 1–2 Stunden · Stressig: noch mehr, deutlich mehr Kritisches'),
           H('Je Stunde'),
           CH('kurve'),
           T('Einsätze automatisch erzeugen', 'gen', true),

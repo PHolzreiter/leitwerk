@@ -1,5 +1,15 @@
 # Änderungen
 
+## 0.116.0-beta.73 – Rufhilfe-Alarme, Notrufe je Spieltyp
+- **Neu: Rufhilfe-Alarm.** Ältere Menschen mit Rufhilfe-Uhr drücken den Knopf: Zuerst kommt ein Band (Computerstimme) mit Name, Alter, Adresse und Schlüsselsafe (Nummer und wo er hängt), dann wird die Sprechverbindung hergestellt – entweder redet die Person (über die Rufhilfe-Basis in der Wohnung) oder es bleibt still („…“).
+- **So fragst du ab:** Die Adresse kommt automatisch. Bei „Wer ruft an?“ „Rufhilfe“ wählen, dann „Meldet sich die Person?“, Bewusstsein und Atmung wie gewohnt, dazu Schlüsselsafe-Nummer und -Ort und das Freitextfeld „Was ist passiert?“. Was du dort schreibst, steht auch in der Info an den RTW (hinter Alter, Bewusstsein und Atmung, z. B. „85w B+ A+ // Sturz, Hüfte“).
+- **Code immer 32B2** (BLS/ALS aufwertbar), ohne Aufwertung – du entscheidest nach dem Gehörten, wen du schickst. Vorgeschlagen wird der nächste RTW. Hingeschickt wird immer, auch ohne Sprechkontakt. Dahinter steckt z. B. ein Sturz, Brustschmerz, Atemnot, Schwäche, Fieber, eine bewusstlose Person – oder der Alarm war ein Versehen (Fehleinsatz).
+- **Notrufe je Spieltyp:**
+  - **Realistisch:** Art der Notrufe wie in echt – viele Anforderungen durch Arzt/Pflege (rund jeder Fünfte), Rufhilfe rund 7 %.
+  - **Standard:** spannend gemischt für eine Session von 1–2 Stunden – weniger Routine, mehr akute Notfälle (Brustschmerz, Atemnot, Schlaganfall, Verkehrsunfall, Kollaps).
+  - **Stressig:** noch weniger Routine, deutlich mehr Kritisches und öfter Sonderanrufer.
+- **Abwechslung:** Bei Standard und Stressig kommt kein Thema öfter als zweimal hintereinander. Überall gilt weiter: derselbe Fall nicht unter den letzten 6 Notrufen.
+
 ## 0.116.0-beta.72 – NEF rückt schneller aus, Notrufe nach echter Verteilung, keine gleichen Fälle hintereinander
 - **NEF-Ausrückzeit:** nachts 1–5 Minuten (vorher bis 13), tagsüber ½–3 Minuten. Wer noch die alten Standardwerte hatte, bekommt die neuen automatisch; eigene Werte bleiben.
 - **NEF holt den Notarzt im Krankenhaus ab:** das Abholen gehört jetzt zur Ausrückzeit. Das NEF bleibt dabei „alarmiert/quittiert“ und fährt erst mit Arzt „zum Einsatzort“ – spätestens nach der Ausrückzeit (außer der Weg zum Krankenhaus ist selbst schon länger). Ein NEF wartet nach dem RTW höchstens bis zum Ende seiner Ausrückzeit.

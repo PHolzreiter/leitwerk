@@ -1,5 +1,15 @@
 [
  {
+  "version": "0.116.0-beta.73",
+  "datum": "2026-11-22",
+  "titel": "Rufhilfe-Alarme, Notrufe je Spieltyp",
+  "punkte": [
+   "Neu: Rufhilfe-Alarm – Band mit Name, Alter, Adresse und Schlüsselsafe, dann Sprechverbindung oder Stille; immer 32B2, du entscheidest, wen du schickst",
+   "Realistisch: Notrufe wie in echt · Standard/Stressig: spannender, mehr akute Notfälle",
+   "Kein Thema öfter als zweimal hintereinander (Standard/Stressig)"
+  ]
+ },
+ {
   "version": "0.116.0-beta.72",
   "datum": "2026-11-22",
   "titel": "NEF rückt schneller aus, Notrufe nach echter Verteilung",

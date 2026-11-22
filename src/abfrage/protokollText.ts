@@ -107,6 +107,14 @@ export function antwortSatz(f: Frage, wert: Wert, a: Antworten): string | null {
       return wert === "m" ? "Der Patient ist männlich." : wert === "w" ? "Die Patientin ist weiblich." : "Geschlecht unbekannt.";
     case "anrufer":
       return `Anrufer: ${label}.`;
+    case "rh_kontakt":
+      return wert === "ja" ? "Sprechverbindung zur Person besteht." : "Keine Sprechverbindung – die Person meldet sich nicht.";
+    case "rh_safe_nr":
+      return satzEnde(`Schlüsselsafe Nummer: ${String(wert)}`);
+    case "rh_safe_ort":
+      return satzEnde(`Schlüsselsafe Ort: ${String(wert)}`);
+    case "rh_was":
+      return satzEnde(`Was ist passiert: ${String(wert)}`);
     case "beobachtet":
       return wert === "ja" ? "Der Zusammenbruch wurde beobachtet." : wert === "nein" ? `${pron} wurde so aufgefunden.` : "Unbekannt, ob der Zusammenbruch beobachtet wurde.";
     case "anzahl_patienten":

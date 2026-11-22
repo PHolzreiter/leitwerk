@@ -14,7 +14,7 @@ export type Anrede = "neutral" | "m" | "w" | "sie";
 /** Anrede aus der bisher ausgefüllten Abfrage */
 export function anredeAus(schema: Schema | null, antworten: Antworten): Anrede {
   const a = schema ? merkmaleAusSchema(schema, antworten) : antworten;
-  if (a.anrufer === "1") return "sie";
+  if (a.anrufer === "1" || a.anrufer === "rufhilfe") return "sie";
   // mehrere Betroffene: Geschlecht spielt keine Rolle
   if (a.anzahl_patienten !== undefined && a.anzahl_patienten !== "1" && a.anzahl_patienten !== "unbekannt") return "neutral";
   if (a.geschlecht === "m" || a.geschlecht === "w") return a.geschlecht;
@@ -110,6 +110,11 @@ const SPRECH: Record<string, { er: string[]; sie?: string[] }> = {
   schi_anf: { er: ["Brauchen Sie einen Transport oder einen Notarzt?"] },
   arbeitsunfall: { er: ["Ist das bei der Arbeit passiert?", "Ist das ein Arbeitsunfall?"] },
   sprachkontakt: { er: ["Hören Sie mich? Können Sie mit mir sprechen?"] },
+  // Rufhilfe (Beta 73)
+  rh_kontakt: { er: ["Hallo, hier ist die Rettungsleitstelle. Hören Sie mich?", "Hallo, hier ist der Rettungsdienst – haben Sie den Knopf gedrückt? Hören Sie mich?"] },
+  rh_safe_nr: { er: ["Wie ist die Nummer vom Schlüsselsafe?"] },
+  rh_safe_ort: { er: ["Wo hängt der Schlüsselsafe genau?"] },
+  rh_was: { er: ["Was ist passiert?", "Was ist los, warum haben Sie gedrückt?"] },
   lebensbedrohung: { er: ["Ist jemand lebensgefährlich verletzt – blutet stark, reagiert nicht oder atmet nicht richtig?"] },
   hauptbeschwerde: { er: ["Was ist {sein} Hauptproblem – was macht {ihm} am meisten zu schaffen?", "Welche Beschwerden hat {er} vor allem?"] },
   lage: { er: ["Ist {er} irgendwo eingeklemmt oder eingeschlossen?", "Kommt {er} selbst heraus, oder steckt {er} irgendwo fest?"] },
