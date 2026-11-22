@@ -5,6 +5,7 @@
  * stellt ein und vergibt die Rechte, Mitspieler sehen alles, können es aber nicht ändern.
  * Alle Werte bleiben im Spiel änderbar (Einstellungen).
  */
+import { hoerenOk, mikroOk } from "./einrichtenStand";
 import { vorlageVon } from "../sim/stufenKurven";
 import "./startseite.css";
 import "./startseite2.css";
@@ -177,36 +178,42 @@ export async function pruefen(): Promise<Check[]> {
       return { stand: "ok", text: "Bereit" };
     }),
     mit({ id: "codes", ico: "liste", name: "Einsatzcodes & Abfrage", seite: "codes" }, async () => {
-      if (!hasCodes()) return { stand: "fehler", text: "keine Codeliste", hilfe: "LeitWerk bringt keine Codeliste mit. Unter Einstellungen → Einsatzcodes & Abfrage deine Liste bzw. dein Abfrageschema importieren." };
+      if (!hasCodes()) return { stand: "fehler", text: "keine Codeliste", hilfe: "Unter Einstellungen › Eigene Dateien › Notruf (RD) oben „Eingebaut“ wählen oder deine Notruf-Datei hochladen." };
       if (!store.schema) return { stand: "warn", text: "ohne Abfrageschema", hilfe: "Codes sind da, aber kein Abfrageschema: Notrufe kommen ohne Telefonat herein." };
       return { stand: "ok", text: "Bereit" };
     }),
-    mit({ id: "ki", ico: "ki", name: "KI-Anrufer", seite: "anrufe" }, async () => {
+    mit({ id: "ki", ico: "ki", name: "KI-Anrufer", seite: "einrichten" }, async () => {
       if (anrufKiModus() === "gemini") {
-        if (!schluesselDa()) return { stand: "warn", text: "Gemini: Schlüssel fehlt", hilfe: "Unter Einstellungen → Anrufe & KI den kostenlosen Schlüssel einrichten." };
-        return schluesselGeprueft() ? { stand: "ok", text: "Gemini bereit" } : { stand: "warn", text: "Gemini: nicht geprüft", hilfe: "Unter Einstellungen → Anrufe & KI den Schlüssel testen." };
+        if (!schluesselDa()) return { stand: "warn", text: "Gemini: Schlüssel fehlt", hilfe: "Unter Mein Platz › Einrichten, Schritt 5: den kostenlosen Schlüssel einrichten." };
+        return schluesselGeprueft() ? { stand: "ok", text: "Gemini bereit" } : { stand: "warn", text: "Gemini: nicht geprüft", hilfe: "Unter Mein Platz › Einrichten, Schritt 5: den Schlüssel testen." };
       }
       const p = kiPrefs();
       if (!p.aktiv) return { stand: "aus", text: "ausgeschaltet", hilfe: "Ohne KI antworten die Anrufer mit vorbereiteten Sätzen." };
       const s = await kiStatus();
-      if (!s.installiert) return { stand: "warn", text: "nicht installiert", hilfe: "Ollama ist nicht installiert – unter Einstellungen → Anrufe & KI einrichten." };
+      if (!s.installiert) return { stand: "warn", text: "nicht installiert", hilfe: "Die lokale KI ist nicht installiert – unter Mein Platz › Einrichten, Schritt 5." };
       if (!s.laeuft) return { stand: "warn", text: "startet …", hilfe: "Ollama läuft noch nicht – startet meist von selbst in ein paar Sekunden." };
       if (!s.modelle.some((m) => m === p.modell || m.startsWith(p.modell))) return { stand: "warn", text: "Modell fehlt", hilfe: `Das Sprachmodell „${p.modell}“ ist nicht geladen.` };
       return { stand: "ok", text: "Bereit" };
     }),
-    mit({ id: "sprache", ico: "mikro", name: "Spracheingabe", seite: "anrufe" }, async () => {
+    mit({ id: "audio", ico: "mikro", name: "Kopfhörer & Mikrofon", seite: "einrichten" }, async () => {
+      const p = sprachPrefs();
+      if (!hoerenOk()) return { stand: "warn", text: "noch nicht getestet", hilfe: "Mein Platz › Einrichten: einmal den Probeton abspielen – dann weißt du, dass du die Anrufer hörst." };
+      if (p.eingabe && !mikroOk()) return { stand: "warn", text: "Mikrofon nicht getestet", hilfe: "Mein Platz › Einrichten: Mikrofon testen – dann weißt du, dass man dich versteht." };
+      return { stand: "ok", text: "Bereit" };
+    }),
+    mit({ id: "sprache", ico: "mikro", name: "Spracheingabe", seite: "einrichten" }, async () => {
       const p = sprachPrefs();
       if (!p.eingabe) return { stand: "aus", text: "ausgeschaltet" };
       if (!inTauri()) return { stand: "aus", text: "nur im Programm" };
       const s = await sprachStatus();
-      return s.modelle.includes(p.modell) ? { stand: "ok", text: "Bereit" } : { stand: "warn", text: "Modell fehlt", hilfe: "Das Spracherkennungs-Modell ist noch nicht geladen – unter Einstellungen → Anrufe & KI laden." };
+      return s.modelle.includes(p.modell) ? { stand: "ok", text: "Bereit" } : { stand: "warn", text: "Modell fehlt", hilfe: "Die Spracherkennung ist noch nicht geladen – unter Mein Platz › Einrichten, Schritt 2." };
     }),
     mit({ id: "spielstand", ico: "speicher", name: "Speicherstand" }, async () => {
       const i = await spielstand.autosaveInfo();
       return i ? { stand: "ok", text: `Sicherung ${new Date(i.gespeichert).toLocaleString("de-AT", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}` } : { stand: "ok", text: "Bereit" };
     }),
   ]);
-  const reihe = ["karten", "strassen", "codes", "ki", "sprache", "spielstand"];
+  const reihe = ["karten", "strassen", "codes", "audio", "ki", "sprache", "spielstand"];
   return out.sort((a, b) => reihe.indexOf(a.id) - reihe.indexOf(b.id));
 }
 

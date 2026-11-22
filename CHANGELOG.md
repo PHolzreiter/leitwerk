@@ -1,5 +1,14 @@
 # Änderungen
 
+## 0.116.0-beta.71 – Mein Platz: neu geordnet und Schritt für Schritt einrichten
+- **Mein Platz hat jetzt sieben klare Seiten:** Einrichten · Aussehen · Kopfhörer & Mikrofon · Telefon, Funk & KI · Töne · Pilot & Flugsimulator · Bedienung.
+- **Neu: Einrichten** – Schritt für Schritt mit ✓: ① Hören (Probeton: erst Klingeln, dann eine Stimme), ② Sprechen statt tippen (Spracherkennung mit einem Klick laden), ③ Mikrofon testen (Pegel läuft mit, danach steht da, was verstanden wurde), ④ Sprechtasten ausprobieren, ⑤ Anrufer-KI, ⑥ **Probeanruf** (es klingelt, ein Anrufer spricht, du antwortest). Fehlt etwas, zeigt es der Bereitschafts-Check („Kopfhörer & Mikrofon“) – ein Klick führt hin.
+- **Kopfhörer & Mikrofon:** alle Geräte an einem Ort. Zuerst „Wie hörst und sprichst du?“ – Headset, Lautsprecher und Mikrofon oder Telefon und Funk getrennt; nur die dazu passenden Geräte werden gezeigt, jedes mit Test. Alle Lautstärken auf einer Seite. Tipps für Bluetooth-Headsets.
+- **Neu (Option, Standard aus): Telefon links, Funk rechts** – im Headset Anrufer nur im linken Ohr, Funk nur im rechten, wie in einer echten Leitstelle. Töne bleiben auf beiden Seiten.
+- **Telefon, Funk & KI** auf einer Seite mit vier Abschnitten (Telefon, Funk, KI, Stimmen und Spracherkennung); die Sprechtasten stellt man hier ein. Technische Namen (Ollama, Piper, Whisper) nur noch im Kleingedruckten.
+- **Aussehen** = Darstellung und Farben zusammen. **Töne**: Klingeln, Funk-Piep, Töne je Ereignis und eigene Tondateien auf einer Seite.
+- Alle Erklärungen in einfachen Worten für neue Spieler.
+
 ## 0.116.0-beta.70 – Eigene Dateien: drei Reiter, je eine Datei
 - **Einstellungen › Eigene Dateien hat jetzt drei Reiter – je Reiter genau eine Datei:** **Notruf (RD)** (Codes und Abfrage in einer JSON-Datei), **KT/SEK** (alle Codes für Krankentransport und Überstellung mit Bedingungen, JSON) und **Namen** (CSV „neutral;eigen“).
 - **Kein Hochladen von Teilen mehr:** keine getrennte Notruf-Codeliste und keine eigene KT-Abfrage (die Fragen der KT-Hotline sind immer die eingebauten). Wer eine Datei ändern will, bearbeitet sie außerhalb des Spiels und lädt sie neu hoch. Auch unter Daten lassen sich keine Einsatzcodes mehr einzeln importieren.

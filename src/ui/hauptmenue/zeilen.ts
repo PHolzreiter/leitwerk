@@ -41,7 +41,9 @@ import { STATUS_BEDEUTUNG } from "../settingsView";
 import { DATEI_REGELN, EREIGNIS_LABEL, STANDARD_SOUND, VORLAGEN as TON_VORLAGEN, dateiHinzufuegen, dateiLoeschen, eigeneDateien, spielen, type EigeneDatei, type SoundEreignis } from "../sounds";
 import { anrufKiModus, livePrefs, liveTesten, prefsHoerer, schluesselDa, schluesselGeprueft } from "../../abfrage/liveKi";
 import { MODELLE as KI_MODELLE, STUFE_LABEL, empfohleneStufe, kiBeenden, kiChat, kiInstallieren, kiModellLaden, kiModellLoeschen, kiPrefs, kiStarten, kiStatus, rechnerRam, setKiPrefs, type KiStatus } from "../../abfrage/ki";
-import { MODELLE as SPRACH_MODELLE, PIPER_STIMMEN, modellLaden, modellLoeschen, piperLaden, piperLoeschen, piperStatus, probe, setzeSprache, sprachPrefs, sprachStatus } from "../sprache";
+import { MODELLE as SPRACH_MODELLE, PIPER_STIMMEN, funkSagt, mikroTesten, modellLaden, modellLoeschen, piperLaden, piperLoeschen, piperStatus, probe, setzeSprache, sprachPrefs, sprachStatus, tastenName } from "../sprache";
+import { einrichtenSetzen, hoerenOk, mikroOk, probeOk, tastenOk } from "../einrichtenStand";
+import { audioArt } from "./bindung";
 import { LAYOUT_KEY, anordnungAnwenden, anordnungen, anordnungImportieren, anordnungLoeschen, dock, onPanelsGeaendert } from "../ws/arbeitsplatz";
 import { alleFaelle, brauchtVon, eingebauterFall, faelleGeaendert, fallpaketExport, fallpaketImport, istFallAktiv, istGeaendert, kompetenzRang, type FallVorlage } from "../../abfrage/faelle";
 import { faellePruefen } from "../../abfrage/faellePruefen";
@@ -381,15 +383,15 @@ export function zeilenQuelle(neuZeichnen: () => void): { zeilen: ZeilenQuelle; l
     return `Gemini antwortet: ${await liveTesten()}`;
   };
   function ollamaZeile(b: Bausteine): Zeile {
-    const hint = "Läuft auf diesem Rechner – ohne Internet, ohne Konto";
-    if (!tauri) return b.B("Ollama", [], hint, { chip: NUR_PROGRAMM, dot: GRAU });
-    if (ladeStand.ollama) return b.B("Ollama", [], hint, { chip: ladeStand.ollama, dot: BLAU });
+    const hint = "Läuft auf deinem PC – ohne Internet, ohne Konto";
+    if (!tauri) return b.B("Lokale KI (Ollama)", [], hint, { chip: NUR_PROGRAMM, dot: GRAU });
+    if (ladeStand.ollama) return b.B("Lokale KI (Ollama)", [], hint, { chip: ladeStand.ollama, dot: BLAU });
     const s = c.ki;
-    if (s === undefined) return b.B("Ollama", [], hint, { chip: PRUEFT, dot: GRAU });
-    if (s === null) return b.B("Ollama", [knopf("Prüfen", () => undefined, {}, kiLaden)], hint, { chip: "Status unbekannt", dot: GELB });
+    if (s === undefined) return b.B("Lokale KI (Ollama)", [], hint, { chip: PRUEFT, dot: GRAU });
+    if (s === null) return b.B("Lokale KI (Ollama)", [knopf("Prüfen", () => undefined, {}, kiLaden)], hint, { chip: "Status unbekannt", dot: GELB });
     if (!s.installiert)
       return b.B(
-        "Ollama",
+        "Lokale KI (Ollama)",
         [
           knopf(
             "Installieren",
@@ -411,7 +413,7 @@ export function zeilenQuelle(neuZeichnen: () => void): { zeilen: ZeilenQuelle; l
       );
     if (!s.laeuft)
       return b.B(
-        "Ollama",
+        "Lokale KI (Ollama)",
         [
           knopf(
             "Starten",
@@ -430,52 +432,8 @@ export function zeilenQuelle(neuZeichnen: () => void): { zeilen: ZeilenQuelle; l
         hint,
         { chip: `installiert${s.version ? ` (${s.version})` : ""} · läuft nicht`, dot: GELB },
       );
-    return b.B("Ollama", [knopf("Beenden", async () => (await kiBeenden(), "Beendet"), {}, kiLaden)], hint, { chip: "installiert · läuft", dot: OK });
+    return b.B("Lokale KI (Ollama)", [knopf("Beenden", async () => (await kiBeenden(), "Beendet"), {}, kiLaden)], hint, { chip: "installiert · läuft", dot: OK });
   }
-  function anrufe(b: Bausteine): Zeile[] {
-    const geprueft = schluesselGeprueft();
-    const da = schluesselDa();
-    const m = kiPrefs().modell;
-    const info = KI_MODELLE.find((x) => x.name === m);
-    const empf = c.ram ? empfohleneStufe(c.ram) : null;
-    const modellHint = `${info ? `${STUFE_LABEL[info.stufe]}: ` : ""}${m}${c.ram ? ` · dieser Rechner: ${c.ram} GB${empf ? `, empfohlen: ${STUFE_LABEL[empf]}` : ""}` : ""}`;
-    const modellChip = !tauri ? { chip: NUR_PROGRAMM, dot: GRAU } : c.ki === undefined ? { chip: m, dot: GRAU } : hatModell(m) ? { chip: m, dot: OK } : { chip: `${m} · nicht geladen`, dot: GELB };
-    return [
-      b.S("Anrufer-KI", "kimodus", ["Gemini (Cloud)", "Lokal (Ollama)"], "Lokal (Ollama)", "Fällt Gemini aus, springt die lokale KI ein"),
-      b.H("Gemini (Cloud)"),
-      b.B("Schlüssel", [{ l: "Einrichten …", sub: "gemini" }, knopf("Testen", geminiTest)], "Kostenlos, wird nur auf diesem Rechner gespeichert", geprueft ? { chip: "geprüft", dot: OK } : da ? { chip: "eingerichtet · nicht geprüft", dot: GELB } : { chip: "nicht eingerichtet", dot: GRAU }),
-      b.T("Freisprechen (ohne Sprechtaste)", "freispr", false, "Am besten mit Kopfhörern"),
-      b.T("Telefonklang und Geräusche vom Notfallort", "klang", true),
-      b.T("Funk: Gemini versteht den Funk (Test)", "gfunk", false, "Kennt alle Fahrzeuge, schreibt Rufnamen richtig"),
-      b.T("Funk: Mit Gemini sprechen auch die Fahrzeuge", "gfzg", false, "Jedes Fahrzeug mit eigener Stimme, neu verteilt bei jedem Schichtwechsel"),
-      b.H("Lokale KI (Ollama)"),
-      ollamaZeile(b),
-      b.B("Sprachmodell", [{ l: "Modelle …", sub: "modelle" }], modellHint, modellChip),
-      b.T("Lokale KI verwenden", "lokal", true, "Sonst einfache, vorbereitete Antworten"),
-      b.T("Ollama beim Beenden von LeitWerk schließen", "olbeend", true),
-      b.T("Schnelles Gespräch (Test)", "schnell", false, "Anrufer spricht ab dem ersten geprüften Satz"),
-      b.B(
-        "Ausprobieren",
-        [
-          knopf("Testanruf", async () => {
-            if (anrufKiModus() === "gemini" && da) return geminiTest();
-            const r = await lokalerTest();
-            return `Anrufer: „${r.antwort}“`;
-          }),
-          knopf("Geschwindigkeit", async () => {
-            if (anrufKiModus() === "gemini" && da) return geminiTest();
-            const { s1, s2 } = await lokalerTest();
-            const urteil = s2 <= 5 ? "Flüssig – passt gut" : s2 <= 10 ? "Brauchbar" : s2 <= 18 ? "Eher langsam – eine Stufe kleiner wäre flüssiger" : "Zu langsam für Gespräche – bitte eine kleinere Stufe";
-            return `${urteil}: erste Wörter nach ${komma(s1)} s, fertig nach ${komma(s2)} s`;
-          }, {}, kiLaden),
-        ],
-        "Probegespräch ohne Spiel · wie schnell der Anrufer antwortet (der erste Test nach dem Laden dauert länger)",
-      ),
-      b.H("Funk"),
-      b.T("Funkmeldungen manchmal unvollständig", "unvoll", true, "NEF meist vollständig, RTW öfter nicht, KTW am öftesten – dann nachfragen"),
-    ];
-  }
-
   // ---------------- Gemini einrichten
   const AI_STUDIO = "https://aistudio.google.com/apikey";
   function gemini(b: Bausteine): Zeile[] {
@@ -516,7 +474,7 @@ export function zeilenQuelle(neuZeichnen: () => void): { zeilen: ZeilenQuelle; l
   async function kiModellHolen(name: string): Promise<string> {
     const s = await kiStatus();
     c.ki = s;
-    if (!s.laeuft) throw new Error("Ollama läuft nicht – erst unter „Anrufe & KI“ starten");
+    if (!s.laeuft) throw new Error("Ollama läuft nicht – erst unter „Telefon, Funk & KI“ starten");
     await mitStand(`ki:${name}`, "Download startet …", (setz) => kiModellLaden(name, (f) => setz(f.total ? `wird geladen … ${prozent(f.done, f.total)}` : f.text || "wird geladen …")));
     return `${name} geladen`;
   }
@@ -537,7 +495,7 @@ export function zeilenQuelle(neuZeichnen: () => void): { zeilen: ZeilenQuelle; l
       ),
     );
     const s = c.ki;
-    if (s && !s.laeuft) out.push(b.I("Ollama", s.installiert ? "läuft nicht" : "nicht installiert", "Laden und Löschen geht nur, wenn Ollama läuft (Anrufe & KI)", GELB));
+    if (s && !s.laeuft) out.push(b.I("Ollama", s.installiert ? "läuft nicht" : "nicht installiert", "Laden und Löschen geht nur, wenn Ollama läuft (Telefon, Funk & KI)", GELB));
     const gewaehlt2 = kiPrefs().modell;
     const zeile = (name: string, label: string, hint: string, braucht: number) => {
       const da = hatModell(name);
@@ -657,6 +615,309 @@ export function zeilenQuelle(neuZeichnen: () => void): { zeilen: ZeilenQuelle; l
       const groesse = m.mb >= 1000 ? `${komma(m.mb / 1000)} GB` : `${m.mb} MB`;
       return b.IT(name, `${groesse}${zusatz ? ` · ${zusatz}` : ""}`, lade ?? (da === undefined ? PRUEFT : istAktiv ? "aktiv" : ist ? "geladen" : ""), lade ? BLAU : istAktiv ? OK : ist ? GRAU : "", { btns });
     });
+  }
+
+  // ================================================================== Mein Platz (Beta 71): für neue Spieler geordnet
+
+  /** Pegel als Balken (0–1) */
+  const balken = (p: number) => {
+    const n = Math.round(Math.max(0, Math.min(1, p)) * 10);
+    return `${"▮".repeat(n)}${"▯".repeat(10 - n)}`;
+  };
+  /** Mikrofon testen: 4 Sekunden, Pegel läuft im Chip der Zeile „Pegel“ mit */
+  async function mikroProbe(welches: "telefon" | "funk"): Promise<string> {
+    const k = `pegel:${welches}`;
+    return mitStand(k, "Jetzt sprechen …", async (setz) => {
+      const r = await mikroTesten(4, { welches, pegel: (p) => setz(`${balken(p)}  sprich jetzt …`) });
+      if (!r.startsWith("⚠")) {
+        if (welches === "telefon") einrichtenSetzen({ mikro: sprachPrefs().mikro });
+        return r;
+      }
+      throw new Error(r.replace(/^⚠\s*/, ""));
+    });
+  }
+  const pegelZeile = (b: Bausteine, welches: "telefon" | "funk") => {
+    const t = ladeStand[`pegel:${welches}`];
+    return t ? [b.I("Pegel", t, "Die Balken sollen beim Sprechen deutlich ausschlagen", BLAU)] : [];
+  };
+  /** Probeton über Kopfhörer/Lautsprecher: Klingeln und eine Stimme */
+  const hoerProbe = () => {
+    spielen("notruf", undefined, 70);
+    setTimeout(() => probe("w"), 1800);
+    return "▶ Klingeln, dann eine Stimme – hörst du beides?";
+  };
+  const funkProbe = () => {
+    const p = sprachPrefs();
+    if (!p.funkVorlesen) throw new Error("„Funk vorlesen“ ist aus (Telefon, Funk & KI)");
+    funkSagt("Test", "Hier 75 1, Test, kommen.", 1);
+    return "▶ Funkspruch – kommt er aus dem richtigen Gerät?";
+  };
+  /** Sprechtaste drücken: wartet bis zu 8 Sekunden auf die Telefon- oder Funktaste */
+  const tastenProbe = () =>
+    new Promise<string>((ok, fehler) => {
+      const p = sprachPrefs();
+      const namen: Record<string, string> = { [p.taste]: "Telefon", [p.funkTaste]: "Funk" };
+      const weg = () => {
+        window.removeEventListener("keydown", h, true);
+        window.removeEventListener("mousedown", m, true);
+        clearTimeout(t);
+      };
+      const treffer = (code: string) => {
+        if (!namen[code]) return false;
+        weg();
+        einrichtenSetzen({ tasten: true });
+        ok(`✓ ${namen[code]}-Sprechtaste (${tastenName(code)}) erkannt`);
+        return true;
+      };
+      const h = (e: KeyboardEvent) => {
+        if (treffer(e.code)) e.preventDefault();
+      };
+      const m = (e: MouseEvent) => void treffer(`Mouse${e.button}`);
+      const t = window.setTimeout(() => {
+        weg();
+        fehler(new Error(`Keine Sprechtaste gedrückt – Telefon: ${tastenName(p.taste)}, Funk: ${tastenName(p.funkTaste)}`));
+      }, 8000);
+      window.addEventListener("keydown", h, true);
+      window.addEventListener("mousedown", m, true);
+    });
+  /** Probeanruf: klingeln, Anrufer spricht, du antwortest (Mikrofon), die KI antwortet */
+  async function probeAnruf(): Promise<string> {
+    return mitStand("probeanruf", "Es klingelt …", async (setz) => {
+      spielen("notruf", undefined, 70);
+      await warte(2500);
+      setz("Der Anrufer spricht …");
+      probe("w");
+      await warte(5500);
+      if (!sprachPrefs().eingabe) {
+        einrichtenSetzen({ probe: true });
+        return "Gehört? Die Spracheingabe ist aus – im Spiel tippst du deine Fragen";
+      }
+      setz("Jetzt antworten: 4 Sekunden sprechen, z. B. „Wo genau ist der Notfallort?“");
+      const r = await mikroTesten(4, { welches: "telefon", pegel: (p) => setz(`${balken(p)}  sprich jetzt …`) });
+      if (r.startsWith("⚠")) throw new Error(r.replace(/^⚠\s*/, ""));
+      einrichtenSetzen({ probe: true, mikro: sprachPrefs().mikro });
+      return `${r} – so kommt es im Spiel an`;
+    });
+  }
+
+  /** Status eines Schritts */
+  const schritt = (fertig: boolean | null, offen = "offen") => (fertig === null ? { chip: "nicht nötig", dot: GRAU } : fertig ? { chip: "✓ erledigt", dot: OK } : { chip: offen, dot: GELB });
+  const kiBereit = (): boolean | null => {
+    if (anrufKiModus() === "gemini") return schluesselGeprueft();
+    if (!kiPrefs().aktiv) return null;
+    if (!tauri) return null;
+    return !!c.ki?.laeuft && hatModell(kiPrefs().modell);
+  };
+  const erkennungBereit = (): boolean | null => (!sprachPrefs().eingabe || !tauri ? null : !!c.whisper?.includes(sprachPrefs().modell));
+
+  // ---------------- Einrichten: Schritt für Schritt
+  function einrichten(b: Bausteine): Zeile[] {
+    const p = sprachPrefs();
+    const s1 = hoerenOk();
+    const s2 = erkennungBereit();
+    const s3 = !p.eingabe ? null : mikroOk();
+    const s4 = !p.eingabe ? null : tastenOk();
+    const s5 = kiBereit();
+    const s6 = probeOk();
+    const alle = [s1, s2, s3, s4, s5, s6];
+    const fertig = alle.filter((x) => x !== false).length;
+    const out: Zeile[] = [
+      b.I("So weit bist du", `${fertig} von ${alle.length} Schritten`, "Geh die Schritte von oben nach unten durch. Dauert etwa 5 Minuten. Alles lässt sich später ändern.", fertig === alle.length ? OK : GELB),
+      // 1 Hören
+      b.H("Schritt 1 · Hören"),
+      b.S("Wie hörst und sprichst du?", "auArt", ["Headset (Kopfhörer mit Mikrofon)", "Lautsprecher und Mikrofon", "Telefon und Funk auf getrennten Geräten"], "Headset (Kopfhörer mit Mikrofon)", "Ein Headset ist am besten: Du hörst die Anrufer gut, und sie hören sich nicht selbst"),
+      b.L("Kopfhörer bzw. Lautsprecher", "sdev", ["Wie das System"], "Wie das System", "Hier kommen die Anrufer, der Funk und die Töne heraus"),
+      b.B("Probeton", [knopf("▶ Abspielen", hoerProbe), knopf("Ich habe beides gehört", () => (einrichtenSetzen({ hoeren: sprachPrefs().geraetStimmen }), "✓ Gemerkt"))], "Zuerst klingelt es, dann spricht eine Stimme. Nichts gehört? Oben ein anderes Gerät wählen und noch einmal", schritt(s1, "noch nicht gehört")),
+      // 2 Spracherkennung
+      b.H("Schritt 2 · Sprechen statt tippen"),
+      b.T("Mit der Stimme sprechen", "eingabe", true, "Du sprichst mit Anrufern und Fahrzeugen. Aus: Du tippst alles"),
+    ];
+    if (p.eingabe) {
+      const empf = SPRACH_MODELLE.find((m) => /ausgewogen/i.test(m.label)) ?? SPRACH_MODELLE[0];
+      const lade = ladeStand[`wh:${empf.name}`];
+      const btns: Knopf[] =
+        tauri && s2 === false && !lade
+          ? [
+              knopf(
+                `Laden (${empf.mb} MB)`,
+                async () => {
+                  await mitStand(`wh:${empf.name}`, "startet …", (setz) => modellLaden(empf.name, (d, tt) => setz(tt ? `wird geladen … ${prozent(d, tt)}` : `${Math.round(d / 1e6)} MB`)));
+                  setzeSprache({ modell: empf.name });
+                  return "Spracherkennung ist bereit";
+                },
+                {},
+                whisperLaden,
+              ),
+            ]
+          : [];
+      btns.push({ l: "Andere Größe …", sub: "whisper" });
+      out.push(b.B("Spracherkennung", btns, "Damit LeitWerk versteht, was du sagst. Läuft nur auf deinem PC, ohne Internet", lade ? { chip: lade, dot: BLAU } : s2 === null ? { chip: NUR_PROGRAMM, dot: GRAU } : schritt(s2, "noch nicht geladen")));
+      // 3 Mikrofon
+      out.push(b.H("Schritt 3 · Mikrofon"));
+      if (audioArt() === "getrennt") out.push(b.L("Mikrofon fürs Telefon", "mic", ["Wie das System"], "Wie das System"));
+      else out.push(b.L("Mikrofon", "mic", ["Wie das System"], "Wie das System", "Beim Headset: das Mikrofon des Headsets"));
+      out.push(b.B("Mikrofon testen", [knopf("Testen – 4 Sekunden sprechen", () => mikroProbe("telefon"))], "Klicken und z. B. sagen: „Notruf 144, wo genau ist der Notfallort?“ – danach steht da, was verstanden wurde", schritt(s3, "noch nicht getestet")));
+      out.push(...pegelZeile(b, "telefon"));
+      // 4 Sprechtasten
+      out.push(b.H("Schritt 4 · Sprechtasten"));
+      out.push(b.K("Sprechtaste fürs Telefon (gedrückt halten)", "kSprech", "F9", "Solange du sie hältst, hört dich der Anrufer"));
+      out.push(b.K("Sprechtaste für den Funk (gedrückt halten)", "kFunk", "F10", "Solange du sie hältst, sendest du im Funk"));
+      out.push(b.B("Ausprobieren", [knopf("Jetzt eine Sprechtaste drücken", tastenProbe)], "Klicken, dann innerhalb von 8 Sekunden eine der beiden Tasten drücken", schritt(s4, "noch nicht probiert")));
+    } else {
+      out.push(b.I("Mikrofon und Sprechtasten", "nicht nötig", "Die Spracheingabe ist aus – du tippst deine Fragen und Funksprüche", GRAU));
+    }
+    // 5 KI
+    out.push(b.H("Schritt 5 · Wer spielt die Anrufer?"));
+    out.push(b.S("Anrufer-KI", "kimodus", ["Gemini (Cloud)", "Lokal (Ollama)"], "Lokal (Ollama)", "Gemini: am natürlichsten, braucht Internet und einen kostenlosen Schlüssel. Lokal: läuft auf deinem PC, braucht einen kräftigen Rechner"));
+    out.push(
+      b.B(
+        "Einrichten",
+        anrufKiModus() === "gemini" ? [{ l: "Gemini-Schlüssel …", sub: "gemini" }] : [{ l: "Lokale KI …", sub: "modelle" }],
+        anrufKiModus() === "gemini" ? "Schlüssel holen und einfügen – Schritt für Schritt erklärt" : "Ein Sprachmodell laden – LeitWerk schlägt die passende Größe für deinen PC vor",
+        schritt(s5, "noch nicht bereit"),
+      ),
+    );
+    // 6 Probeanruf
+    out.push(b.H("Schritt 6 · Probeanruf"));
+    out.push(b.B("Probeanruf", [knopf("Starten", probeAnruf)], p.eingabe ? "Es klingelt, ein Anrufer spricht, dann antwortest du – so wie im Spiel" : "Es klingelt und ein Anrufer spricht – so wie im Spiel", ladeStand.probeanruf ? { chip: ladeStand.probeanruf, dot: BLAU } : schritt(s6, "noch nicht gemacht")));
+    out.push(b.B("Mehr einstellen", [{ l: "Kopfhörer & Mikrofon", go: ["platz", "audio"] }, { l: "Telefon, Funk & KI", go: ["platz", "gespraech"] }], "Lautstärken, Funk, Stimmen und alles Weitere"));
+    return out;
+  }
+
+  // ---------------- Kopfhörer & Mikrofon
+  function audio(b: Bausteine): Zeile[] {
+    const art = audioArt();
+    const getrennt = art === "getrennt";
+    const out: Zeile[] = [
+      b.S("Wie hörst und sprichst du?", "auArt", ["Headset (Kopfhörer mit Mikrofon)", "Lautsprecher und Mikrofon", "Telefon und Funk auf getrennten Geräten"], "Headset (Kopfhörer mit Mikrofon)", "Ein Headset ist am besten. Bei Lautsprechern nicht „Freisprechen“ verwenden – sonst hört sich der Anrufer selbst"),
+      b.H("Hören"),
+    ];
+    if (!tauri) out.push(b.I("Geräte wählen", NUR_PROGRAMM, "Im Browser kommt alles aus dem Gerät, das am Computer eingestellt ist", GRAU));
+    if (getrennt) {
+      out.push(b.L("Telefon: Anrufer", "sdev", ["Wie das System"], "Wie das System", "Hier hörst du die Anrufer"));
+      out.push(b.B("", [knopf("▶ Testen", () => (probe("w"), "▶ Stimme"))]));
+      out.push(b.L("Funk: Fahrzeuge", "fdev", ["Wie am Telefon"], "Wie am Telefon", "Hier hörst du den Funk"));
+      out.push(b.B("", [knopf("▶ Testen", funkProbe)]));
+      out.push(b.L("Töne (Klingeln, Funk-Piep)", "tdev", ["Wie das System"], "Wie das System", "Z. B. Klingeln über die Lautsprecher, damit du es auch ohne Headset hörst"));
+      out.push(b.B("", [knopf("▶ Testen", () => (spielen("notruf", undefined, 70), "▶ Klingeln"))]));
+      out.push(b.T("Telefon links, Funk rechts", "stereo", false, "Im Headset: Anrufer nur im linken Ohr, Funk nur im rechten – wie in einer echten Leitstelle. Töne bleiben auf beiden Seiten"));
+    } else {
+      out.push(b.L(art === "headset" ? "Headset" : "Lautsprecher", "sdev", ["Wie das System"], "Wie das System", "Anrufer, Funk und Töne kommen alle hier heraus"));
+      out.push(b.B("Probeton", [knopf("▶ Abspielen", hoerProbe)], "Zuerst klingelt es, dann spricht eine Stimme"));
+      if (art === "headset") out.push(b.T("Telefon links, Funk rechts", "stereo", false, "Anrufer nur im linken Ohr, Funk nur im rechten – wie in einer echten Leitstelle. Töne bleiben auf beiden Seiten"));
+    }
+    out.push(b.H("Sprechen"));
+    if (getrennt) {
+      out.push(b.L("Mikrofon fürs Telefon", "mic", ["Wie das System"], "Wie das System"));
+      out.push(b.B("", [knopf("Testen – 4 Sekunden sprechen", () => mikroProbe("telefon"))]));
+      out.push(...pegelZeile(b, "telefon"));
+      out.push(b.L("Mikrofon für den Funk", "micFunk", ["Wie am Telefon"], "Wie am Telefon"));
+      out.push(b.B("", [knopf("Testen – 4 Sekunden sprechen", () => mikroProbe("funk"))]));
+      out.push(...pegelZeile(b, "funk"));
+    } else {
+      out.push(b.L("Mikrofon", "mic", ["Wie das System"], "Wie das System", art === "headset" ? "Das Mikrofon des Headsets" : "Am besten ein Mikrofon nahe am Mund"));
+      out.push(b.B("Mikrofon testen", [knopf("Testen – 4 Sekunden sprechen", () => mikroProbe("telefon"))], "Klicken und sprechen – danach steht da, was verstanden wurde"));
+      out.push(...pegelZeile(b, "telefon"));
+    }
+    out.push(b.H("Lautstärken"));
+    out.push(b.R("Anrufer am Telefon", "slaut", 0, 100, 5, 85, (v) => `${v} %`));
+    out.push(b.R("Fahrzeuge im Funk", "sfLautKi", 0, 150, 5, 100, (v) => `${v} %`, "Fahrzeuge, die der Computer spricht"));
+    out.push(b.R("Mitspieler im Funk", "sfLaut", 0, 150, 5, 90, (v) => `${v} %`, "Stimmen echter Spieler (Disponenten, Piloten)"));
+    out.push(b.R("Andere Funkgruppen", "fgLaut", 0, 100, 5, 60, (v) => `${v} %`, "Gruppen, die du nur mithörst – dringende Rufe kommen immer voll"));
+    out.push(b.L("Funk, während du telefonierst", "fTel", ["Normal", "Leiser", "Stumm"], "Leiser", "Dringende Rufe bleiben hörbar"));
+    out.push(b.R("Töne", "tlaut", 0, 100, 5, 80, (v) => `${v} %`, "Klingeln, Funk-Piep, Chat"));
+    out.push(b.R("Deine Stimme im Funk", "sfSende", 0, 200, 5, 100, (v) => `${v} %`, "Wie laut dich die Mitspieler hören"));
+    out.push(b.H("Tipps"));
+    out.push(b.I("Bluetooth-Headset", "", "Viele Bluetooth-Headsets klingen schlecht, sobald das Mikrofon an ist. Ein Headset mit Kabel oder USB ist besser", GRAU));
+    out.push(b.I("Nichts zu hören?", "", "Lautstärke am Computer prüfen und oben das richtige Gerät wählen. Neu angesteckte Geräte erscheinen nach dem Neustart von LeitWerk", GRAU));
+    return out;
+  }
+
+  // ---------------- Telefon, Funk & KI
+  function gespraech(b: Bausteine): Zeile[] {
+    const p = sprachPrefs();
+    const geprueft = schluesselGeprueft();
+    const da = schluesselDa();
+    const m = kiPrefs().modell;
+    const info = KI_MODELLE.find((x) => x.name === m);
+    const empf = c.ram ? empfohleneStufe(c.ram) : null;
+    const modellHint = `${info ? `${STUFE_LABEL[info.stufe]}: ` : ""}${m}${c.ram ? ` · dein PC: ${c.ram} GB Arbeitsspeicher${empf ? `, passend: ${STUFE_LABEL[empf]}` : ""}` : ""}`;
+    const modellChip = !tauri ? { chip: NUR_PROGRAMM, dot: GRAU } : c.ki === undefined ? { chip: m, dot: GRAU } : hatModell(m) ? { chip: "bereit", dot: OK } : { chip: "noch nicht geladen", dot: GELB };
+    const piperN = c.piper?.length ?? 0;
+    const wh = SPRACH_MODELLE.find((x) => x.name === p.modell);
+    return [
+      // Telefon
+      b.H("Telefon"),
+      b.T("Ich nehme Notrufe an", "notrufe", true, "Aus: Bei dir klingelt kein Notruf (z. B. wenn du nur den Funk machst)"),
+      b.T("Ich nehme die KT-Hotline an", "kthot", true, "Bestellungen von Krankentransporten"),
+      b.T("Ich nehme Überstellungen an", "ueberst", true, "Anrufe von Krankenhäusern, die einen Patienten verlegen"),
+      b.T("Mit der Stimme sprechen", "eingabe", true, "Aus: Du tippst deine Fragen"),
+      b.K("Sprechtaste fürs Telefon (gedrückt halten)", "kSprech", "F9", "Solange du sie hältst, hört dich der Anrufer"),
+      b.T("Erkannten Text gleich abschicken", "autosend", true, "Aus: Du kannst den Text vor dem Abschicken noch ändern"),
+      b.T("Freisprechen (ohne Sprechtaste)", "freispr", false, "Der Anrufer hört dich, sobald du sprichst – nur mit Headset, sonst hört er sich selbst"),
+      b.T("Anrufer vorlesen", "vorl", true, "Aus: Du liest nur mit, was der Anrufer sagt"),
+      b.T("Telefonklang und Geräusche", "klang", true, "Der Anrufer klingt wie am Telefon, dazu Geräusche vom Notfallort"),
+      b.T("Knopf „Gespräch exportieren“", "gexp", false, "Speichert ein Gespräch als Datei – zum Melden von Fehlern"),
+      // Funk
+      b.H("Funk"),
+      b.K("Sprechtaste für den Funk (gedrückt halten)", "kFunk", "F10", "Spricht in die Gruppe, die am Funkgerät gewählt ist"),
+      b.K("Eigene Funktaste: normale Gruppe", "kFunkN", "–", "Nur wenn du für jede Gruppe eine eigene Taste willst"),
+      b.K("Eigene Funktaste: RD-NOE-09", "kF09", "–", "Gruppe für Großeinsätze"),
+      b.K("Eigene Funktaste: RD-NOE-10", "kF10", "–", "Zweite Gruppe für Großeinsätze"),
+      b.T("Funk vorlesen", "fvorl", true, "Aus: Du liest die Funksprüche nur mit"),
+      b.T("Funk-Klang", "fklang", true, "Stimmen klingen blechern wie im echten Funk"),
+      b.T("Echte Disponenten hören", "echteD", true, "Nur im Mehrspieler"),
+      b.T("Echte Piloten hören", "echteP", true, "Nur im Mehrspieler"),
+      b.T("Funkmeldungen manchmal unvollständig", "unvoll", true, "Wie im echten Leben: Manchmal fehlt etwas, dann fragst du nach"),
+      b.T("Funk-Aufnahmen an Fehlerberichte anhängen", "sfAufn", false, "Die letzten 10 eigenen Funksprüche – hilft, die Spracherkennung zu verbessern"),
+      // KI
+      b.H("KI – wer spricht Anrufer und Fahrzeuge?"),
+      b.S("Anrufer-KI", "kimodus", ["Gemini (Cloud)", "Lokal (Ollama)"], "Lokal (Ollama)", "Gemini: am natürlichsten, braucht Internet. Lokal: läuft auf deinem PC. Fällt Gemini aus, springt die lokale KI ein"),
+      b.B("Gemini", [{ l: "Einrichten …", sub: "gemini" }, knopf("Testen", geminiTest)], "Kostenloser Schlüssel von Google – bleibt nur auf deinem PC", geprueft ? { chip: "bereit", dot: OK } : da ? { chip: "Schlüssel nicht geprüft", dot: GELB } : { chip: "nicht eingerichtet", dot: GRAU }),
+      b.T("Gemini versteht den Funk", "gfunk", false, "Test: kennt alle Fahrzeuge, schreibt Rufnamen richtig"),
+      b.T("Fahrzeuge sprechen mit Gemini", "gfzg", false, "Jedes Fahrzeug mit eigener Stimme (immer an, wenn Gemini die Anrufer spielt)"),
+      ollamaZeile(b),
+      b.B("Lokale KI: Sprachmodell", [{ l: "Wählen …", sub: "modelle" }], modellHint, modellChip),
+      b.T("Lokale KI verwenden", "lokal", true, "Aus: Die Anrufer antworten mit vorbereiteten Sätzen"),
+      b.T("Lokale KI beim Beenden schließen", "olbeend", true),
+      b.T("Schnelles Gespräch (Test)", "schnell", false, "Anrufer fängt früher zu sprechen an"),
+      b.B(
+        "Ausprobieren",
+        [
+          knopf("Testanruf", async () => {
+            if (anrufKiModus() === "gemini" && da) return geminiTest();
+            const r = await lokalerTest();
+            return `Anrufer: „${r.antwort}“`;
+          }),
+          knopf("Wie schnell?", async () => {
+            if (anrufKiModus() === "gemini" && da) return geminiTest();
+            const { s1, s2 } = await lokalerTest();
+            const urteil = s2 <= 5 ? "Flüssig – passt gut" : s2 <= 10 ? "Brauchbar" : s2 <= 18 ? "Eher langsam – ein kleineres Modell wäre flüssiger" : "Zu langsam – bitte ein kleineres Modell";
+            return `${urteil}: erste Wörter nach ${komma(s1)} s, fertig nach ${komma(s2)} s`;
+          }, {}, kiLaden),
+        ],
+        "Ein kurzes Probegespräch ohne Spiel (das erste dauert länger)",
+      ),
+      // Stimmen & Erkennung
+      b.H("Stimmen und Spracherkennung"),
+      b.B("Stimmen", [{ l: "Wählen …", sub: "piper" }], "Je mehr Stimmen, desto abwechslungsreicher klingen Anrufer und Fahrzeuge (Piper, läuft auf deinem PC)", !tauri ? { chip: NUR_PROGRAMM, dot: GRAU } : c.piper === undefined ? { chip: PRUEFT, dot: GRAU } : piperN ? { chip: `${piperN} geladen`, dot: OK } : { chip: "Computerstimme", dot: GELB }),
+      b.R("Sprechtempo", "tempo", 70, 140, 5, 100, (v) => `${v} %`),
+      b.B("Spracherkennung", [{ l: "Wählen …", sub: "whisper" }], "Versteht, was du sagst (Whisper, läuft auf deinem PC)", !tauri ? { chip: NUR_PROGRAMM, dot: GRAU } : c.whisper === undefined ? { chip: PRUEFT, dot: GRAU } : c.whisper.includes(p.modell) ? { chip: wh ? wh.label.split(/\s+–\s+/)[0] : "bereit", dot: OK } : { chip: "noch nicht geladen", dot: GELB }),
+      b.B("Alles in Ruhe einrichten", [{ l: "Zum Einrichten", go: ["platz", "einrichten"] }], "Schritt für Schritt mit Probeanruf"),
+    ];
+  }
+
+  // ---------------- Töne (je Ereignis und eigene Dateien auf einer Seite)
+  function toeneSeite(b: Bausteine): Zeile[] {
+    return [
+      b.T("Klingelton bei Anrufen", "klingel", true),
+      b.T("Funk-Piep, wenn ein Fahrzeug ruft", "fpiep", true),
+      b.R("Lautstärke der Töne", "tlaut", 0, 100, 5, 80, (v) => `${v} %`),
+      b.H("Welcher Ton wann?"),
+      ...toene(b),
+      b.H("Eigene Tondateien"),
+      ...tondateien(b),
+    ];
   }
 
   // ---------------- Bedienung → Gespeicherte Anordnungen
@@ -1504,9 +1765,10 @@ export function zeilenQuelle(neuZeichnen: () => void): { zeilen: ZeilenQuelle; l
   const SEITEN: Record<string, (b: Bausteine) => Zeile[]> = {
     fgfarben,
     statusfarben,
-    toene,
-    tondateien,
-    anrufe,
+    einrichten,
+    audio,
+    gespraech,
+    toene: toeneSeite,
     gemini,
     modelle,
     piper,

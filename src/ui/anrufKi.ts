@@ -154,7 +154,7 @@ export function anrufKiErstwahl(): Promise<void> {
   if (navigator.webdriver && !location.search.includes("erstwahl")) return Promise.resolve();
   return new Promise((resolve) => {
     const body = el("div", { class: "ki-erstwahl" });
-    body.appendChild(el("p", {}, "Wie sollen die Anrufer am Telefon reden? Du kannst das jederzeit unter Einstellungen → Anrufe & KI ändern."));
+    body.appendChild(el("p", {}, "Wie sollen die Anrufer am Telefon reden? Du kannst das jederzeit unter Mein Platz → Telefon, Funk & KI ändern."));
     const karten = el("div", { class: "ki-wahl-karten" });
     const karte = (titel: string, text: string, art: "gemini" | "lokal") => {
       const b = el("button", { type: "button", class: "ki-wahl-karte" });

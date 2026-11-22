@@ -1,5 +1,15 @@
 [
  {
+  "version": "0.116.0-beta.71",
+  "datum": "2026-11-22",
+  "titel": "Mein Platz: neu geordnet, Schritt für Schritt einrichten",
+  "punkte": [
+   "Neu: Einrichten – Probeton, Mikrofontest mit Pegel, Sprechtasten, Probeanruf",
+   "Kopfhörer & Mikrofon: alle Geräte und Lautstärken an einem Ort; Option Telefon links, Funk rechts",
+   "Telefon, Funk & KI auf einer Seite; Aussehen und Töne zusammengefasst"
+  ]
+ },
+ {
   "version": "0.116.0-beta.70",
   "datum": "2026-11-22",
   "titel": "Eigene Dateien: drei Reiter, je eine Datei",

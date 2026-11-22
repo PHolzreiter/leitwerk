@@ -320,7 +320,31 @@ export class SeitenBasis {
     const imp = [B('Import & Export', [{ l: 'CSV importieren …', imp: true }, 'Exportieren …'], 'CSV-Dateien · Vorlage und Beispiel liegen in Dokumente/LeitWerk')];
     const daten = [
       { id: 'platz', label: 'Mein Platz', scope: 'Nur für diesen Rechner · gilt sofort', pages: [
-        { id: 'darstellung', label: 'Darstellung', info: 'Hell/Dunkel, Größe, Karte', kw: 'dunkelmodus nachtmodus thema zoom schriftgröße skalierung animation 3d poi grenzen funkgruppen', rows: [
+        { id: 'einrichten', label: 'Einrichten', info: 'Schritt für Schritt: hören, sprechen, Probeanruf', kw: 'einrichten erste schritte assistent hilfe kopfhörer headset lautsprecher mikrofon test probeanruf sprechtaste neu anfänger', note: 'Neu hier? Geh diese Schritte einmal von oben nach unten durch – danach hörst du die Anrufer und sie hören dich.', rows: [
+          I('So weit bist du', '2 von 6 Schritten', 'Geh die Schritte von oben nach unten durch. Dauert etwa 5 Minuten.', gelb),
+          H('Schritt 1 · Hören'),
+          S('Wie hörst und sprichst du?', 'auArt', ['Headset (Kopfhörer mit Mikrofon)', 'Lautsprecher und Mikrofon', 'Telefon und Funk auf getrennten Geräten'], 'Headset (Kopfhörer mit Mikrofon)', 'Ein Headset ist am besten'),
+          L('Kopfhörer bzw. Lautsprecher', 'sdev', ['Wie das System', 'Headset'], 'Wie das System', 'Hier kommen die Anrufer, der Funk und die Töne heraus'),
+          B('Probeton', [{ l: '▶ Abspielen', ok: '▶ Klingeln, dann eine Stimme' }, { l: 'Ich habe beides gehört', ok: '✓ Gemerkt' }], 'Zuerst klingelt es, dann spricht eine Stimme', { chip: '✓ erledigt', dot: ok }),
+          H('Schritt 2 · Sprechen statt tippen'),
+          T('Mit der Stimme sprechen', 'eingabe', true, 'Du sprichst mit Anrufern und Fahrzeugen'),
+          B('Spracherkennung', [{ l: 'Laden (460 MB)', ok: 'wird geladen …' }], 'Damit LeitWerk versteht, was du sagst', { chip: '✓ erledigt', dot: ok }),
+          H('Schritt 3 · Mikrofon'),
+          L('Mikrofon', 'mic', ['Wie das System', 'Headset-Mikrofon'], 'Wie das System'),
+          B('Mikrofon testen', [{ l: 'Testen – 4 Sekunden sprechen', ok: 'Erkannt: „Wo genau ist der Notfallort?“' }], 'Danach steht da, was verstanden wurde', { chip: 'noch nicht getestet', dot: gelb }),
+          H('Schritt 4 · Sprechtasten'),
+          K('Sprechtaste fürs Telefon (gedrückt halten)', 'kSprech', 'F9'),
+          K('Sprechtaste für den Funk (gedrückt halten)', 'kFunk', 'F10'),
+          B('Ausprobieren', [{ l: 'Jetzt eine Sprechtaste drücken', ok: '✓ Telefon-Sprechtaste erkannt' }], '', { chip: 'noch nicht probiert', dot: gelb }),
+          H('Schritt 5 · Wer spielt die Anrufer?'),
+          S('Anrufer-KI', 'kimodus', ['Gemini (Cloud)', 'Lokal (Ollama)'], 'Lokal (Ollama)'),
+          B('Einrichten', [{ l: 'Lokale KI …', sub: 'modelle' }], '', { chip: 'noch nicht bereit', dot: gelb }),
+          H('Schritt 6 · Probeanruf'),
+          B('Probeanruf', [{ l: 'Starten', ok: 'Es klingelt …' }], 'Es klingelt, ein Anrufer spricht, dann antwortest du', { chip: 'noch nicht gemacht', dot: gelb })
+        ]},
+        { id: 'aussehen', label: 'Aussehen', info: 'Hell/Dunkel, Größe, Farben', kw: 'dunkelmodus nachtmodus thema zoom schriftgröße skalierung animation 3d poi grenzen funkgruppen farbe akzent status design darstellung', rows: [
+          H('Darstellung'),
+
           S('Farbschema', 'thema', ['Hell', 'Dunkel', 'Wie das System'], 'Dunkel', 'Gilt im Spiel – das Hauptmenü bleibt dunkel'),
           S('Karte', 'karte', ['Passt sich an', 'Immer hell'], 'Passt sich an', 'Im dunklen Farbschema wird die Karte dunkel – oder sie bleibt hell'),
           R('Größe der Oberfläche', 'skal', 75, 150, 5, 100, pct, 'Schrift, Knöpfe und Abstände', 100),
@@ -329,13 +353,9 @@ export class SeitenBasis {
           L('Orte (POIs) auf der Karte', 'poi', ['immer', 'ab Zoom 10 (Bezirk)', 'ab Zoom 12 (Gemeinde)', 'ab Zoom 13', 'ab Zoom 14 (Ortskern)', 'ab Zoom 15', 'ab Zoom 16 (Straße)'], 'ab Zoom 14 (Ortskern)', 'Wichtige Orte erscheinen drei Stufen früher'),
           H('Funkgruppen auf der Karte'),
           T('Grenzen anzeigen', 'fglinien', true, 'Feine Linien an den TETRA-Grenzen'),
-          B('Je Funkgruppe', [{ l: 'Farben und Auswahl …', sub: 'fgfarben' }], 'Einzelne Gruppen ausblenden, eigene Farben')
-        ]},
-        { id: 'fgfarben', sub: true, parent: 'darstellung', label: 'Funkgruppen auf der Karte', info: 'Auswahl und Farben', kw: 'funkgruppe farbe grenze tetra', rows: [
-          ...FG.map(([id, kurz, c]) => C(id + (id === 'NÖ-03' ? ' (deine)' : ''), 'fgc_' + id, c, kurz, ['fgo_' + id, true])),
-          B('', [{ l: 'Standardfarben', cfm: 'Alle Funkgruppen wieder einblenden und die Standardfarben verwenden?', ok: 'Zurückgesetzt' }])
-        ]},
-        { id: 'farben', label: 'Farben', info: 'Statusfarben, eigene Farben, Design', kw: 'farbe akzent kontrast status hinterlegen design datei', rows: [
+          B('Je Funkgruppe', [{ l: 'Farben und Auswahl …', sub: 'fgfarben' }], 'Einzelne Gruppen ausblenden, eigene Farben'),
+          H('Farben'),
+
           B('Einzelne Farben', [{ l: 'Anpassen …', sub: 'farbenEigen' }], 'Akzent, Leiste, Flächen, Warnung'),
           B('Design als Datei', [{ l: 'Speichern …', ok: 'Gespeichert in Dokumente/LeitWerk/Designs' }, 'Laden …'], 'Eigene Farben – zum Teilen mit Freunden'),
           H('Fahrzeuge'),
@@ -343,7 +363,11 @@ export class SeitenBasis {
           C('Alarmierte Fahrzeuge hinterlegen', 'falarm', '#FFF3C4', '„Alarmiert auf Wache“ und „Alarmiert über Funk“'),
           C('Fahrzeuge auf Funk in Farbe', 'ffunk', '#E5484D', '„Frei Funk“ und „Alarmiert über Funk“')
         ]},
-        { id: 'farbenEigen', sub: true, parent: 'farben', label: 'Einzelne Farben', info: 'Eigene Farben', kw: 'akzent leiste hintergrund fenster warnung', rows: [
+        { id: 'fgfarben', sub: true, parent: 'aussehen', label: 'Funkgruppen auf der Karte', info: 'Auswahl und Farben', kw: 'funkgruppe farbe grenze tetra', rows: [
+          ...FG.map(([id, kurz, c]) => C(id + (id === 'NÖ-03' ? ' (deine)' : ''), 'fgc_' + id, c, kurz, ['fgo_' + id, true])),
+          B('', [{ l: 'Standardfarben', cfm: 'Alle Funkgruppen wieder einblenden und die Standardfarben verwenden?', ok: 'Zurückgesetzt' }])
+        ]},
+        { id: 'farbenEigen', sub: true, parent: 'aussehen', label: 'Einzelne Farben', info: 'Eigene Farben', kw: 'akzent leiste hintergrund fenster warnung', rows: [
           C('Akzent', 'fe_akz', '#3B8BFF', 'Knöpfe, Auswahl, Markierungen'),
           C('Obere Leiste', 'fe_lei', '#1A1D24'),
           C('Hintergrund', 'fe_bg', '#111216'),
@@ -351,61 +375,56 @@ export class SeitenBasis {
           C('Warnung', 'fe_warn', '#E5484D', 'Verpasste Anrufe, Nachforderungen'),
           B('', [{ l: 'Eigene Farben zurücksetzen', cfm: 'Alle eigenen Farben verwerfen und wieder die Standardfarben verwenden?', ok: 'Zurückgesetzt' }])
         ]},
-        { id: 'statusfarben', sub: true, parent: 'farben', label: 'Eigene Statusfarben', info: 'Nur für deine Anzeige', kw: 'status farbe', note: 'Nummer und Bedeutung der Status legt die Leitstelle fest (Leitstelle → Statusmodell). Hier änderst du nur, wie sie bei dir aussehen.', rows: [
+        { id: 'statusfarben', sub: true, parent: 'aussehen', label: 'Eigene Statusfarben', info: 'Nur für deine Anzeige', kw: 'status farbe', note: 'Nummer und Bedeutung der Status legt die Leitstelle fest (Leitstelle → Statusmodell). Hier änderst du nur, wie sie bei dir aussehen.', rows: [
           ...STATUS.map(([label, key, nr, nm, c]) => C(nr + ' – ' + nm, 'sf_' + key, c, label)),
           B('', [{ l: 'Farben der Leitstelle verwenden', cfm: 'Eigene Statusfarben verwerfen?', ok: 'Zurückgesetzt' }])
         ]},
-        { id: 'telefon', label: 'Telefon & Töne', info: 'Annehmen, Klingeln, eigene Töne', kw: 'klingelton ton sound lautstärke piep notruf annehmen hotline audio export gespräch', rows: [
-          T('Ich nehme Notrufe an', 'notrufe', true, 'Aus: kein Klingeln, kein Telefon (z. B. reiner Funk-Disponent)'),
+        { id: 'audio', label: 'Kopfhörer & Mikrofon', info: 'Geräte, Lautstärken, Testen', kw: 'kopfhörer headset lautsprecher mikrofon ausgabegerät gerät lautstärke pegel test stereo links rechts bluetooth audio ton', rows: [
+          S('Wie hörst und sprichst du?', 'auArt', ['Headset (Kopfhörer mit Mikrofon)', 'Lautsprecher und Mikrofon', 'Telefon und Funk auf getrennten Geräten'], 'Headset (Kopfhörer mit Mikrofon)', 'Ein Headset ist am besten'),
+          H('Hören'),
+          L('Headset', 'sdev', ['Wie das System', 'Headset'], 'Wie das System', 'Anrufer, Funk und Töne kommen alle hier heraus'),
+          B('Probeton', [{ l: '▶ Abspielen', ok: '▶ Klingeln, dann eine Stimme' }]),
+          T('Telefon links, Funk rechts', 'stereo', false, 'Anrufer nur im linken Ohr, Funk nur im rechten'),
+          H('Sprechen'),
+          L('Mikrofon', 'mic', ['Wie das System', 'Headset-Mikrofon'], 'Wie das System'),
+          B('Mikrofon testen', [{ l: 'Testen – 4 Sekunden sprechen', ok: 'Erkannt: „Notruf 144“' }]),
+          H('Lautstärken'),
+          R('Anrufer am Telefon', 'slaut', 0, 100, 5, 85, pct),
+          R('Fahrzeuge im Funk', 'sfLautKi', 0, 150, 5, 100, pct),
+          R('Mitspieler im Funk', 'sfLaut', 0, 150, 5, 90, pct),
+          R('Andere Funkgruppen', 'fgLaut', 0, 100, 5, 60, pct),
+          L('Funk, während du telefonierst', 'fTel', ['Normal', 'Leiser', 'Stumm'], 'Leiser'),
+          R('Töne', 'tlaut', 0, 100, 5, 80, pct),
+          R('Deine Stimme im Funk', 'sfSende', 0, 200, 5, 100, pct)
+        ]},
+        { id: 'gespraech', label: 'Telefon, Funk & KI', info: 'Annehmen, Sprechtasten, KI, Stimmen', kw: 'telefon funk ki gemini ollama anrufer notruf annehmen hotline sprechtaste funktaste ptt vorlesen freisprechen stimme piper whisper spracherkennung sprachmodell klang mehrspieler', rows: [
+          H('Telefon'),
+          T('Ich nehme Notrufe an', 'notrufe', true),
           T('Ich nehme die KT-Hotline an', 'kthot', true),
-          T('Ich nehme Überstellungen an', 'ueberst', true, 'Sekundärtransporte (SEK) von Krankenhäusern'),
-          T('Klingelton bei Anrufen', 'klingel', true),
-          R('Lautstärke', 'tlaut', 0, 100, 5, 80, pct),
-          T('Funk-Piep, wenn ein Fahrzeug ruft', 'fpiep', true),
-          L('Ausgabegerät für Töne', 'tdev', ['Wie das System', 'Lautsprecher', 'Headset'], 'Wie das System', 'Z. B. Klingeln über Lautsprecher, Stimmen im Headset'),
-          B('Töne je Ereignis', [{ l: 'Anpassen …', sub: 'toene' }], 'Eigener Ton und eigene Lautstärke je Ereignis'),
-          B('Eigene Tondateien', [{ l: 'Verwalten …', sub: 'tondateien' }], 'Nur auf diesem Rechner'),
-          T('Knopf „Gespräch exportieren“', 'gexp', false, 'Speichert Gespräch, Abfrage und Protokoll als Datei – zum Melden von Fehlern')
-        ]},
-        { id: 'toene', sub: true, parent: 'telefon', label: 'Töne je Ereignis', info: 'Ton und Lautstärke', kw: 'ton klingelton anklopfen chat warnung', rows: [
-          TON('Notruf klingelt', 'te_notruf', 'Klingeln klassisch'),
-          TON('KT-Hotline klingelt', 'te_kt', 'Telefon leise'),
-          TON('Anklopfen', 'te_anklopfen', 'Doppelpiep'),
-          TON('Fahrzeug ruft (Funk)', 'te_funk', 'Piep kurz'),
-          TON('Dringender Funkruf', 'te_funkD', 'Doppelpiep'),
-          TON('Neue Chat-Nachricht', 'te_chat', 'Gong'),
-          TON('Warnung', 'te_warn', 'Doppelpiep')
-        ].map(r => ({ ...r, options: TOENE }))},
-        { id: 'tondateien', sub: true, parent: 'telefon', label: 'Eigene Tondateien', info: 'Hochladen, löschen', kw: 'tondatei mp3 wav hochladen', rows: [
-          IT('Klingelton Wache', '4,2 s · 68 KB · für „Notruf klingelt“', '', '', { btns: ['▶', { l: 'Löschen', cfm: '„Klingelton Wache“ löschen? Ereignisse, die ihn nutzen, bekommen wieder den Standardton.', ok: 'Gelöscht' }] }),
-          IT('Piep hoch', '0,4 s · 9 KB', '', '', { btns: ['▶', { l: 'Löschen', cfm: '„Piep hoch“ löschen?', ok: 'Gelöscht' }] }),
-          B('Hochladen', ['Klingelton …', 'Kurzer Ton …'], 'Klingelton bis 30 s, kurzer Ton bis 3 s · MP3, WAV, OGG'),
-          I('Belegt', '0,08 MB', '', grau)
-        ]},
-        { id: 'anrufe', label: 'Anrufe & KI', info: 'Gemini oder lokal (Ollama)', kw: 'ki gemini cloud schlüssel key ollama sprachmodell modell anrufer stimme testanruf', rows: [
-          S('Anrufer-KI', 'kimodus', ['Gemini (Cloud)', 'Lokal (Ollama)'], 'Lokal (Ollama)', 'Fällt Gemini aus, springt die lokale KI ein'),
-          H('Gemini (Cloud)'),
-          B('Schlüssel', [{ l: 'Einrichten …', sub: 'gemini' }, { l: 'Testen', ok: 'Schlüssel gültig' }], 'Kostenlos, wird nur auf diesem Rechner gespeichert', { chip: ((this.state || {})['ok_gemini:gkey'] ? 'eingerichtet' : 'nicht eingerichtet'), dot: ((this.state || {})['ok_gemini:gkey'] ? ok : grau) }),
-          T('Freisprechen (ohne Sprechtaste)', 'freispr', false, 'Am besten mit Kopfhörern'),
-          T('Telefonklang und Geräusche vom Notfallort', 'klang', true),
-          T('Funk: Gemini versteht den Funk (Test)', 'gfunk', false, 'Kennt alle Fahrzeuge, schreibt Rufnamen richtig'),
-          T('Funk: Mit Gemini sprechen auch die Fahrzeuge', 'gfzg', false, 'Jedes Fahrzeug mit eigener Stimme, neu verteilt bei jedem Schichtwechsel'),
-          H('Lokale KI (Ollama)'),
-          B('Ollama', [{ l: 'Beenden', ok: 'Beendet' }], 'Läuft auf diesem Rechner – ohne Internet, ohne Konto', { chip: 'installiert · läuft', dot: ok }),
-          B('Sprachmodell', [{ l: 'Modelle …', sub: 'modelle' }], 'Mittel: gemma3:12b · empfohlen für 32 GB', { chip: 'gemma3:12b', dot: ok }),
-          T('Lokale KI verwenden', 'lokal', true, 'Sonst einfache, vorbereitete Antworten'),
-          T('Ollama beim Beenden von LeitWerk schließen', 'olbeend', true),
-          T('Schnelles Gespräch (Test)', 'schnell', false, 'Anrufer spricht ab dem ersten geprüften Satz'),
-          B('Ausprobieren', [{ l: 'Testanruf', ok: 'Testanruf läuft – Mikrofon an' }, { l: 'Geschwindigkeit', ok: 'Flüssig: erste Wörter nach 0,8 s' }], 'Probegespräch ohne Spiel · wie schnell der Anrufer antwortet'),
+          T('Ich nehme Überstellungen an', 'ueberst', true),
+          T('Mit der Stimme sprechen', 'eingabe', true),
+          K('Sprechtaste fürs Telefon (gedrückt halten)', 'kSprech', 'F9'),
+          T('Freisprechen (ohne Sprechtaste)', 'freispr', false),
+          T('Anrufer vorlesen', 'vorl', true),
           H('Funk'),
-          T('Funkmeldungen manchmal unvollständig', 'unvoll', true, 'NEF meist vollständig, RTW öfter nicht, KTW am öftesten – dann nachfragen')
+          K('Sprechtaste für den Funk (gedrückt halten)', 'kFunk', 'F10'),
+          T('Funk vorlesen', 'fvorl', true),
+          T('Funk-Klang', 'fklang', true),
+          H('KI – wer spricht Anrufer und Fahrzeuge?'),
+          S('Anrufer-KI', 'kimodus', ['Gemini (Cloud)', 'Lokal (Ollama)'], 'Lokal (Ollama)'),
+          B('Gemini', [{ l: 'Einrichten …', sub: 'gemini' }], 'Kostenloser Schlüssel von Google'),
+          B('Lokale KI: Sprachmodell', [{ l: 'Wählen …', sub: 'modelle' }], 'Läuft auf deinem PC'),
+          H('Stimmen und Spracherkennung'),
+          B('Stimmen', [{ l: 'Wählen …', sub: 'piper' }], 'Je mehr Stimmen, desto abwechslungsreicher'),
+          R('Sprechtempo', 'tempo', 70, 140, 5, 100, pct),
+          B('Spracherkennung', [{ l: 'Wählen …', sub: 'whisper' }], 'Versteht, was du sagst')
         ]},
-        { id: 'gemini', sub: true, parent: 'anrufe', label: 'Gemini einrichten', info: 'Schlüssel', kw: 'gemini schlüssel key api', note: 'Der Schlüssel ist kostenlos und bleibt nur auf diesem Rechner. LeitWerk schickt ihn nur an Google, nie an Mitspieler.', rows: [
+        { id: 'gemini', sub: true, parent: 'gespraech', label: 'Gemini einrichten', info: 'Schlüssel', kw: 'gemini schlüssel key api', note: 'Der Schlüssel ist kostenlos und bleibt nur auf diesem Rechner. LeitWerk schickt ihn nur an Google, nie an Mitspieler.', rows: [
           B('1. Schlüssel holen', [{ l: 'Seite von Google öffnen', ok: 'Im Browser geöffnet' }], 'Mit deinem Google-Konto anmelden, „Schlüssel erstellen“'),
           F('2. Schlüssel einfügen', 'gkey', 'Schlüssel einfügen …', '', { pw: true, btns: [{ l: 'Prüfen', ok: 'Schlüssel gültig' }] }),
           B('3. Ausprobieren', [{ l: 'Testanruf mit Gemini', ok: 'Testanruf läuft' }])
         ]},
-        { id: 'modelle', sub: true, parent: 'anrufe', label: 'Sprachmodelle', info: 'Laden, wechseln, löschen', kw: 'modell ollama gemma qwen arbeitsspeicher ram', rows: [
+        { id: 'modelle', sub: true, parent: 'gespraech', label: 'Lokale KI', info: 'Sprachmodell wählen (Ollama)', kw: 'modell ollama gemma qwen arbeitsspeicher ram', rows: [
           I('Dieser Rechner', '32 GB Arbeitsspeicher · empfohlen: Mittel', 'Größere Modelle sprechen natürlicher, brauchen aber mehr Speicher und antworten langsamer', blau),
           IT('Klein · gemma3:4b', '3,3 GB · für 8–16 GB Arbeitsspeicher', 'geladen', grau, { btns: [{ l: 'Verwenden', ok: 'Wird verwendet' }, { l: 'Löschen', cfm: 'gemma3:4b löschen? Du kannst es jederzeit wieder laden.', ok: 'Gelöscht' }] }),
           IT('Mittel · gemma3:12b', '8,1 GB · für 32 GB Arbeitsspeicher', 'aktiv', ok, { btns: [{ l: 'Löschen', cfm: 'gemma3:12b löschen? Es ist gerade aktiv – danach antwortet die KI einfacher.', ok: 'Gelöscht' }] }),
@@ -413,16 +432,7 @@ export class SeitenBasis {
           IT('Groß · gemma3:27b', '17 GB · ab 48 GB Arbeitsspeicher', 'zu groß', gelb, { btns: [{ l: 'Trotzdem laden', cfm: 'gemma3:27b braucht etwa 48 GB, dieser Rechner hat 32 GB. Es kann sein, dass Ollama sehr langsam wird. Trotzdem laden?', ok: 'Wird geladen … 0 %' }] }),
           F('Anderes Modell', 'omod', 'z. B. llama3.1:8b', 'Name aus der Ollama-Bibliothek', { btns: [{ l: 'Laden', ok: 'Wird geladen … 0 %' }] })
         ]},
-        { id: 'sprache', label: 'Sprache & Stimmen', info: 'Vorlesen, Piper, Tempo', kw: 'stimme vorlesen piper tempo lautstärke', rows: [
-          T('Anrufer vorlesen', 'vorl', true, 'Nur bei dem, der das Gespräch führt'),
-          T('Funk vorlesen', 'fvorl', true),
-          R('Lautstärke der Stimmen', 'slaut', 0, 100, 5, 85, pct),
-          R('Sprechtempo', 'tempo', 70, 140, 5, 100, pct),
-          B('Stimmen (Piper)', [{ l: 'Verwalten …', sub: 'piper' }], 'Je mehr geladen, desto abwechslungsreicher – läuft nur lokal', { chip: '3 geladen', dot: ok }),
-          L('Ausgabegerät für Stimmen am Telefon', 'sdev', ['Wie das System', 'Headset', 'Lautsprecher'], 'Wie das System', 'Anrufer und KI-Gespräche'),
-          L('Ausgabegerät für Stimmen im Funk', 'fdev', ['Wie am Telefon', 'Headset', 'Lautsprecher'], 'Wie am Telefon', 'Fahrzeuge und Leitstelle im Funk')
-        ]},
-        { id: 'piper', sub: true, parent: 'sprache', label: 'Stimmen (Piper)', info: 'Laden, anhören, löschen', kw: 'piper stimme laden', rows: [
+        { id: 'piper', sub: true, parent: 'gespraech', label: 'Stimmen', info: 'Laden, anhören (Piper)', kw: 'piper stimme laden', rows: [
           IT('Thorsten', 'Mann · 63 MB', 'geladen', ok, { btns: ['▶', { l: 'Löschen', cfm: 'Stimme „Thorsten“ löschen?', ok: 'Gelöscht' }] }),
           IT('Kerstin', 'Frau · 63 MB', 'geladen', ok, { btns: ['▶', { l: 'Löschen', cfm: 'Stimme „Kerstin“ löschen?', ok: 'Gelöscht' }] }),
           IT('Karlsson', 'Mann, älter · 63 MB', 'geladen', ok, { btns: ['▶', { l: 'Löschen', cfm: 'Stimme „Karlsson“ löschen?', ok: 'Gelöscht' }] }),
@@ -430,33 +440,27 @@ export class SeitenBasis {
           IT('Ramona', 'Frau, jünger · 63 MB', '', '', { btns: [{ l: 'Laden', ok: 'Wird geladen … 0 %' }] }),
           IT('Pavoque', 'Mann, tief · 63 MB', '', '', { btns: [{ l: 'Laden', ok: 'Wird geladen … 0 %' }] })
         ]},
-        { id: 'mikro', label: 'Mikrofon & Funk', info: 'Spracheingabe, Funktasten', kw: 'mikro mikrofon sprechen spracherkennung whisper push to talk ptt funktaste funk', rows: [
-          T('Spracheingabe', 'eingabe', true, 'Mikrofon neben den Eingabefeldern gedrückt halten'),
-          K('Sprechtaste (gedrückt halten)', 'kSprech', 'F9', 'Spricht ins gerade laufende Gespräch'),
-          T('Erkannten Text gleich abschicken', 'autosend', true),
-          L('Mikrofon fürs Telefon', 'mic', ['Wie das System', 'Headset-Mikrofon', 'MacBook-Mikrofon'], 'Wie das System', 'Spracheingabe und Gespräche mit Anrufern'),
-          L('Mikrofon für den Funk', 'micFunk', ['Wie am Telefon', 'Headset-Mikrofon', 'MacBook-Mikrofon'], 'Wie am Telefon', 'Funktaste und Sprechfunk'),
-          B('Erkennung (Whisper)', [{ l: 'Modelle …', sub: 'whisper' }], 'Läuft nur auf deinem Rechner, ohne Internet', { chip: 'Ausgewogen', dot: ok }),
-          B('Ausprobieren', [{ l: 'Mikrofon testen', act: () => this.app.zusatz ? this.app.zusatz.mikroTesten() : 'nur im Programm' }], 'Klicken und 4 Sekunden sprechen, z. B. „LEO von 56/006, kommen“'),
-          H('Funk'),
-          K('Funktaste (gedrückt halten)', 'kFunk', 'F10'),
-          K('Eigene Funktaste: normale Gruppe', 'kFunkN', '–'),
-          K('Eigene Funktaste: RD-NOE-09', 'kF09', '–', 'Gruppe des Großeinsatzes'),
-          K('Eigene Funktaste: RD-NOE-10', 'kF10', '–', 'Zweiter gleichzeitiger Großeinsatz'),
-          R('Lautstärke der anderen Funkgruppen', 'fgLaut', 0, 100, 5, 60, pct, 'Dringende Rufe kommen immer voll'),
-          L('Funk beim Telefonieren', 'fTel', ['Normal', 'Leiser', 'Stumm'], 'Leiser', 'Solange du telefonierst – dringende Rufe bleiben hörbar'),
-          T('Echte Disponenten hören', 'echteD', true, 'Mehrspieler'),
-          T('Echte Piloten hören', 'echteP', true, 'Mehrspieler'),
-          T('Funk-Klang', 'fklang', true, 'Blechern, kurzes Rauschen beim Loslassen'),
-          R('Funkempfang Mitspieler', 'sfLaut', 0, 150, 5, 90, pct, 'Stimmen echter Spieler (Disponenten, Piloten) am Funk'),
-          R('Funkempfang KI', 'sfLautKi', 0, 150, 5, 100, pct, 'Fahrzeuge, die der Computer spricht'),
-          R('Funksenden', 'sfSende', 0, 200, 5, 100, pct, 'Wie laut deine Stimme bei den anderen ankommt'),
-          T('Funk-Aufnahmen an Fehlerberichte anhängen', 'sfAufn', false, 'Die letzten 10 eigenen Funksprüche mit erkanntem Text – zum Prüfen der Spracherkennung')
-        ]},
-        { id: 'whisper', sub: true, parent: 'mikro', label: 'Erkennung (Whisper)', info: 'Modelle', kw: 'whisper spracherkennung modell', rows: [
+        { id: 'whisper', sub: true, parent: 'gespraech', label: 'Spracherkennung', info: 'Größe wählen (Whisper)', kw: 'whisper spracherkennung modell', rows: [
           IT('Schnell', '140 MB · für jeden Rechner', 'geladen', grau, { btns: [{ l: 'Verwenden', ok: 'Wird verwendet' }] }),
           IT('Ausgewogen', '460 MB · empfohlen', 'aktiv', ok),
           IT('Beste Erkennung', '1,6 GB · braucht einen flotten Rechner', '', '', { btns: [{ l: 'Laden', ok: 'Wird geladen … 0 %' }] })
+        ]},
+        { id: 'toene', label: 'Töne', info: 'Klingeln, Funk-Piep, eigene Töne', kw: 'ton töne klingelton anklopfen chat warnung piep sound tondatei mp3 wav', rows: [
+          T('Klingelton bei Anrufen', 'klingel', true),
+          T('Funk-Piep, wenn ein Fahrzeug ruft', 'fpiep', true),
+          R('Lautstärke der Töne', 'tlaut', 0, 100, 5, 80, pct),
+          H('Welcher Ton wann?'),
+          ...[
+          TON('Notruf klingelt', 'te_notruf', 'Klingeln klassisch'),
+          TON('KT-Hotline klingelt', 'te_kt', 'Telefon leise'),
+          TON('Anklopfen', 'te_anklopfen', 'Doppelpiep'),
+          TON('Fahrzeug ruft (Funk)', 'te_funk', 'Piep kurz'),
+          TON('Dringender Funkruf', 'te_funkD', 'Doppelpiep'),
+          TON('Neue Chat-Nachricht', 'te_chat', 'Gong'),
+          TON('Warnung', 'te_warn', 'Doppelpiep')
+        ].map(r => ({ ...r, options: TOENE })),
+          H('Eigene Tondateien'),
+          B('Hochladen', ['Klingelton …', 'Kurzer Ton …'], 'Klingelton bis 30 s, kurzer Ton bis 3 s · MP3, WAV')
         ]},
         { id: 'pilot', label: 'Pilot & Flugsimulator', info: 'MSFS, Tablet, Handy, Tasten', kw: 'pilot hubschrauber msfs flugsimulator community tablet h145 gtn750 flugplan handy joystick statustasten globale tastenkürzel wetter', rows: [
           H('Flugsimulator'),
@@ -495,6 +499,7 @@ export class SeitenBasis {
           K('Einsatzliste zeigen', 'k6', 'Ctrl+1'),
           K('Karte zeigen', 'k7', 'Ctrl+2'),
           K('Funk zeigen', 'k8', 'Ctrl+3'),
+          B('Sprechtasten', [{ l: 'Telefon, Funk & KI', go: ['platz', 'gespraech'] }], 'Die Sprechtasten für Telefon und Funk stellst du dort ein'),
           H('Arbeitsplatz'),
           B('Anordnung der Fenster', [{ l: 'Gespeicherte …', sub: 'anordnungen' }, { l: 'Zurücksetzen', cfm: 'Alle Fenster wieder wie beim ersten Start anordnen?', ok: 'Zurückgesetzt' }], 'Wird automatisch gemerkt'),
           H('Sonstiges'),

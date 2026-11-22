@@ -7,7 +7,7 @@
 import { zahlenAlsZiffern } from "../sim/funkErkennung";
 import { invoke } from "@tauri-apps/api/core";
 import { inTauri } from "../platform";
-import { aufnahmeLaeuftJetzt, sprachPrefs, verstummHoerer } from "../ui/sprache";
+import { aufnahmeLaeuftJetzt, kanalFuer, sprachPrefs, verstummHoerer } from "../ui/sprache";
 import { store } from "../data/store";
 
 const LS = "leitwerk.gemini";
@@ -240,7 +240,7 @@ class Wiedergabe {
         }
         const p = sprachPrefs();
         await invoke("ton_spielen", new Uint8Array(alle.buffer), {
-          headers: { "x-rate": String(this.rate), "x-geraet": encodeURIComponent(p.geraetStimmen), "x-laut": String(Math.max(0, p.laut / 100)), "x-id": `stimme-live-${++this.zaehler}` },
+          headers: { "x-rate": String(this.rate), "x-geraet": encodeURIComponent(p.geraetStimmen), "x-laut": String(Math.max(0, p.laut / 100)), "x-id": `stimme-live-${++this.zaehler}`, "x-kanal": kanalFuer("telefon") },
         }).catch((e) => console.warn("Live-Ton", e));
       }
     } finally {

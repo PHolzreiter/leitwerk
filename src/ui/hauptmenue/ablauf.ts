@@ -3,6 +3,7 @@
  * Bereitschafts-Check, Update, Changelog, Fortschritt, Mithelfen, Beenden.
  * Alles ohne Dialoge – Fehler gehen als Text an das Menü zurück.
  */
+import { einrichtenHoerer } from "../einrichtenStand";
 import { mp, meinName, STANDARD_RECHTE } from "../../net/mehrspieler";
 import { sim, fliegt, type Berechtigung } from "../../sim/engine";
 import { store } from "../../data/store";
@@ -35,6 +36,11 @@ export function ablaufBauen(neuZeichnen: () => void, schliessen: () => void) {
   let warteAufStart = false;
   let beiHostZu: (() => void) | undefined;
 
+  let checksT = 0;
+  const checksNeuBald = () => {
+    clearTimeout(checksT);
+    checksT = window.setTimeout(() => void checksLaden(), 300);
+  };
   async function checksLaden(): Promise<void> {
     try {
       checks = await pruefen();
@@ -79,6 +85,9 @@ export function ablaufBauen(neuZeichnen: () => void, schliessen: () => void) {
   return {
     starten(): void {
       void checksLaden();
+      // Einrichten (Probeton, Mikrofon …): Bereitschafts-Check gleich neu
+      einrichtenHoerer.add(checksNeuBald);
+      aus.push(() => einrichtenHoerer.delete(checksNeuBald));
       void savesLaden();
       void appVersion().then((v) => {
         version = v && v !== "Browser" ? v : "";

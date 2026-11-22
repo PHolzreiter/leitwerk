@@ -83,7 +83,21 @@ export function spielmenueSchliessen(weiter = true): void {
 }
 
 /** Alte Seitennamen (früheres Einstellungsfenster) → Seiten der Einstellungen */
-const ALT: Record<string, string> = { ki: "anrufer", persoenlich: "darstellung", simulation: "aufkommen", daten: "fahrzeuge", rettungsmittel: "alarmierung" };
+const ALT: Record<string, string> = {
+  ki: "anrufer",
+  persoenlich: "aussehen",
+  simulation: "aufkommen",
+  daten: "fahrzeuge",
+  rettungsmittel: "alarmierung",
+  // Beta 71: Mein Platz neu geordnet
+  darstellung: "aussehen",
+  farben: "aussehen",
+  telefon: "gespraech",
+  anrufe: "gespraech",
+  sprache: "gespraech",
+  mikro: "audio",
+  tondateien: "toene",
+};
 
 /** Einstellungen im Spielmenü öffnen (Sprünge aus dem Spiel, z. B. „Anordnungen verwalten …“, „KH-Aufnahme …“) */
 export function spielmenueEinstellungen(seite?: string, extra?: Record<string, unknown>): void {

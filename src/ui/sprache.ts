@@ -64,6 +64,8 @@ export interface SprachPrefs {
   mithoeren: boolean;
   /** Pilot: Lautstärke des mitgehörten Funkverkehrs 0–100 (Anteil der normalen Lautstärke) */
   mithoerenLaut: number;
+  /** Headset: Telefon nur links, Funk nur rechts (Töne bleiben auf beiden Seiten) */
+  stereoTrennung: boolean;
 }
 
 const istMac = /Mac/i.test(navigator.platform || navigator.userAgent);
@@ -95,7 +97,13 @@ export const SPRACH_STANDARD: SprachPrefs = {
   berichtAufnahmen: false,
   mithoeren: true,
   mithoerenLaut: 50,
+  stereoTrennung: false,
 };
+
+/** Kanal im Headset: Telefon links, Funk rechts – nur wenn eingeschaltet („“ = beide Seiten) */
+export function kanalFuer(art: "telefon" | "funk"): "" | "l" | "r" {
+  return sprachPrefs().stereoTrennung ? (art === "funk" ? "r" : "l") : "";
+}
 
 export function sprachPrefs(): SprachPrefs {
   return { ...SPRACH_STANDARD, ...(pers().sprache ?? {}) };
@@ -430,6 +438,8 @@ function supertonicSagen(text: string, stimme: string, rate: number, laut = 1, t
   imProgrammSagen(invoke<ArrayBuffer>("supertonic_erzeugen", { stimme, text, tempo: Math.max(0.5, Math.min(2, (rate * (p.tempo / 100)) / ton)) }), laut, ton, fertig, geraet);
 }
 
+const FUNK_ZIEL = "funk:";
+
 /** erzeugtes Audio (4 Byte Rate + f32) der Reihe nach auf dem gewählten Gerät abspielen */
 function imProgrammSagen(audio: Promise<ArrayBuffer>, laut = 1, ton = 1, fertig?: () => void, geraet?: string, wandeln?: (pcm: Float32Array, rate: number) => Float32Array): void {
   const p = sprachPrefs();
@@ -450,8 +460,11 @@ function imProgrammSagen(audio: Promise<ArrayBuffer>, laut = 1, ton = 1, fertig?
         buf = out;
       }
       const rate = Math.round(new DataView(buf).getUint32(0, true) * ton);
+      // „funk:<Gerät>“ = Stimme im Funk (eigenes Gerät, im Headset rechts), sonst Telefon (links)
+      const funk = geraet?.startsWith(FUNK_ZIEL) ?? false;
+      const dev = funk ? geraet!.slice(FUNK_ZIEL.length) || p.geraetStimmen : (geraet ?? p.geraetStimmen);
       await invoke("ton_spielen", new Uint8Array(buf.slice(4)), {
-        headers: { "x-rate": String(rate), "x-geraet": encodeURIComponent(geraet ?? p.geraetStimmen), "x-laut": String(Math.max(0, (p.laut / 100) * laut)), "x-id": id },
+        headers: { "x-rate": String(rate), "x-geraet": encodeURIComponent(dev), "x-laut": String(Math.max(0, (p.laut / 100) * laut)), "x-id": id, "x-kanal": kanalFuer(funk ? "funk" : "telefon") },
       });
     })
     .catch((e) => console.warn("Piper", e))
@@ -646,7 +659,7 @@ export function funkSagt(funkname: string, text: string, laut = 1, melden?: { be
   };
   const los = () => {
     // jedes Fahrzeug spricht etwas anders schnell (sonst klingen alle gleich)
-    sagen(funkAussprache(text), hash(funkname) < 0.3 ? "w" : "m", funkname, 0.98 + hash(`${funkname}|tempo`) * 0.2, undefined, laut * ki, ende, sprachPrefs().geraetFunk || undefined);
+    sagen(funkAussprache(text), hash(funkname) < 0.3 ? "w" : "m", funkname, 0.98 + hash(`${funkname}|tempo`) * 0.2, undefined, laut * ki, ende, FUNK_ZIEL + (sprachPrefs().geraetFunk || ""));
     // falls die Stimme kein Ende meldet
     setTimeout(ende, 2500 + text.split(/\s+/).length * 600);
   };
@@ -1371,11 +1384,12 @@ export async function modellLoeschen(name: string): Promise<void> {
  * „Mikrofon testen“ in den Einstellungen: 4 Sekunden aufnehmen (Funk-Mikrofon, sonst das fürs Telefon), erkennen und
  * zeigen, was ankam – Pegel, erkannter Text, Sicherheit, Dauer und ob die Grafikkarte rechnet.
  */
-export async function mikroTesten(sekunden = 4): Promise<string> {
+export async function mikroTesten(sekunden = 4, opt: { welches?: "telefon" | "funk"; pegel?: (p: number) => void } = {}): Promise<string> {
   const p = sprachPrefs();
   if (aufnahmeLaeuft) throw new Error("Es läuft gerade eine Aufnahme");
+  const geraet = opt.welches === "telefon" ? p.mikro : opt.welches === "funk" ? p.mikroFunk || p.mikro : p.mikroFunk || p.mikro;
   if (!inTauri()) {
-    const strom = await navigator.mediaDevices.getUserMedia({ audio: { deviceId: p.mikroFunk || p.mikro ? { exact: p.mikroFunk || p.mikro } : undefined } });
+    const strom = await navigator.mediaDevices.getUserMedia({ audio: { deviceId: geraet ? { exact: geraet } : undefined } });
     const c = new AudioContext();
     const a = c.createAnalyser();
     c.createMediaStreamSource(strom).connect(a);
@@ -1387,16 +1401,21 @@ export async function mikroTesten(sekunden = 4): Promise<string> {
       let q = 0;
       for (const x of d) q += x * x;
       max = Math.max(max, Math.sqrt(q / d.length));
+      opt.pegel?.(Math.min(1, Math.sqrt(q / d.length) * 3));
       await new Promise((r) => setTimeout(r, 50));
     }
     strom.getTracks().forEach((t) => t.stop());
     void c.close();
     return max < 0.01 ? "⚠ Nichts gehört – Mikrofon prüfen" : `Mikrofon hört dich (Pegel ${Math.min(100, Math.round(max * 300))} %)`;
   }
-  const id = await invoke<number>("sprache_aufnahme_start", { mikro: p.mikroFunk || p.mikro || null });
+  const id = await invoke<number>("sprache_aufnahme_start", { mikro: geraet || null });
   aufnahmeIds.add(id);
   try {
-    await new Promise((r) => setTimeout(r, sekunden * 1000));
+    const bis = Date.now() + sekunden * 1000;
+    while (Date.now() < bis) {
+      await new Promise((r) => setTimeout(r, 150));
+      if (opt.pegel) opt.pegel(Math.min(1, (await invoke<number>("sprache_pegel").catch(() => 0)) * 4));
+    }
     const r = await invoke<{ text: string; sekunden: number; pegel: number; sicherheit: number; ms: number; gpu: boolean }>("sprache_aufnahme_stopp", { modell: p.modell, hinweis: "Hier LEO, kommen. 56/006 von LEO.", id });
     protokoll("mikroTest", { ...r });
     const laut = Math.min(100, Math.round(r.pegel * 100));

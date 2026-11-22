@@ -235,6 +235,28 @@ function alarmEintrag(art: AlarmArt): Eintrag {
   };
 }
 
+/** Wie hört und spricht der Spieler? (nur für die Anzeige der Geräte-Zeilen, gemerkt in diesem Browser/Programm) */
+export type AudioArt = "headset" | "lautsprecher" | "getrennt";
+const LS_AUDIO = "lw.audioArt";
+export function audioArt(): AudioArt {
+  try {
+    const v = localStorage.getItem(LS_AUDIO);
+    if (v === "headset" || v === "lautsprecher" || v === "getrennt") return v;
+  } catch {
+    /* egal */
+  }
+  // ohne Wahl: getrennt, wenn schon verschiedene Geräte eingestellt sind
+  const p = sprachPrefs();
+  return p.geraetFunk || p.mikroFunk || (pers().tonGeraet && pers().tonGeraet !== p.geraetStimmen) ? "getrennt" : "headset";
+}
+export function audioArtSetzen(v: AudioArt): void {
+  try {
+    localStorage.setItem(LS_AUDIO, v);
+  } catch {
+    /* egal */
+  }
+}
+
 export function einstellungsBindung(geladen?: () => void): EinstellungsBindung {
   // Entscheidungen, die für das neue Hauptmenü gelten (nur ändern, wenn nötig)
   const kp = kiPrefs();
@@ -256,6 +278,7 @@ export function einstellungsBindung(geladen?: () => void): EinstellungsBindung {
   const geraetOptionen = () => [SYSTEM, ...geraete];
   const mikroOptionen = () => [SYSTEM, ...mikros.map((m) => m.label)];
 
+  const AUDIO_ART = wahl<AudioArt>([["headset", "Headset (Kopfhörer mit Mikrofon)"], ["lautsprecher", "Lautsprecher und Mikrofon"], ["getrennt", "Telefon und Funk auf getrennten Geräten"]]);
   const THEMA = wahl<Persoenlich["thema"]>([["hell", "Hell"], ["dunkel", "Dunkel"], ["system", SYSTEM]]);
   const KARTE = wahl<Persoenlich["karte"]>([["auto", "Passt sich an"], ["hell", "Immer hell"]]);
   const POI: [number, string][] = [
@@ -387,10 +410,29 @@ export function einstellungsBindung(geladen?: () => void): EinstellungsBindung {
     sdev: {
       l: () => sprachPrefs().geraetStimmen || SYSTEM,
       s: (w) => {
-        if (w === undefined || w === SYSTEM || w === "") return (setzeSprache({ geraetStimmen: "" }), true);
-        return typeof w === "string" ? (setzeSprache({ geraetStimmen: w }), true) : false;
+        const g = w === undefined || w === SYSTEM || w === "" ? "" : typeof w === "string" ? w : null;
+        if (g === null) return false;
+        setzeSprache({ geraetStimmen: g });
+        // ein Gerät für alles (Headset bzw. Lautsprecher): Töne kommen aus demselben Gerät
+        if (audioArt() !== "getrennt") setzePers({ tonGeraet: g });
+        return true;
       },
     },
+    // Wie hörst und sprichst du? – Headset / Lautsprecher: ein Gerät für alles; getrennt: Telefon, Funk und Töne einzeln
+    auArt: {
+      l: () => AUDIO_ART.text(audioArt()),
+      s: (w) => {
+        const v = w === undefined ? "headset" : AUDIO_ART.wert(w);
+        if (!v) return false;
+        audioArtSetzen(v);
+        if (v !== "getrennt") {
+          setzeSprache({ geraetFunk: "", mikroFunk: "" });
+          setzePers({ tonGeraet: sprachPrefs().geraetStimmen });
+        }
+        return true;
+      },
+    },
+    stereo: sprBool("stereoTrennung"),
     fdev: {
       l: () => sprachPrefs().geraetFunk || WIE_TEL,
       s: (w) => {

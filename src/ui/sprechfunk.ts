@@ -16,7 +16,7 @@ import { toast } from "./dom";
 import { FUNK_RATE, FunkKodierer, funkDekodieren, funkVerstaerken } from "./funkCodec";
 import { istPilot } from "./pilot/modus";
 import { tonBeginn, tonEinsatzRein, tonEnde, tonStatusDruck, tonStatusGesendet } from "./funkToene";
-import { aufnahmeIds, aufnahmeLaeuftJetzt, aufnahmeSperre, funkHaken, funkHoerHaken, funkTonHaken, sprachPrefs, sprachStatus, sprachTest, sprechTasteAnFunk, tastenBelegung, verstummen } from "./sprache";
+import { aufnahmeIds, aufnahmeLaeuftJetzt, kanalFuer, aufnahmeSperre, funkHaken, funkHoerHaken, funkTonHaken, sprachPrefs, sprachStatus, sprachTest, sprechTasteAnFunk, tastenBelegung, verstummen } from "./sprache";
 import { aufnahmeSichern, protokoll } from "../protokoll";
 
 export type FunkZiel = "leo" | "rtw";
@@ -35,6 +35,17 @@ function audio(): AudioContext {
   if (!ctx) ctx = new AudioContext();
   if (ctx.state === "suspended") void ctx.resume().catch(() => undefined);
   return ctx;
+}
+
+/** Ausgang des Funks: im Headset rechts, wenn „Telefon links, Funk rechts“ an ist (sonst beide Seiten) */
+let panner: StereoPannerNode | null = null;
+function ausgang(c: AudioContext): AudioNode {
+  if (!panner || panner.context !== c) {
+    panner = c.createStereoPanner();
+    panner.connect(c.destination);
+  }
+  panner.pan.value = kanalFuer("funk") === "r" ? 1 : 0;
+  return panner;
 }
 
 // Manche Fenster spielen erst nach einer Bedienung ab: beim ersten Klick bzw. Tastendruck aufwecken
@@ -85,7 +96,7 @@ function kette(c: AudioContext, ki = false): GainNode {
   const g = c.createGain();
   g.gain.value = Math.max(0, Math.min(1.5, (ki ? (p.funkLautKi ?? 100) : p.funkLaut) / 100));
   if (!p.klangfilter) {
-    g.connect(c.destination);
+    g.connect(ausgang(c));
     return g;
   }
   const hp = c.createBiquadFilter();
@@ -101,7 +112,7 @@ function kette(c: AudioContext, ki = false): GainNode {
     kurve[i] = Math.tanh(2.2 * x) / Math.tanh(2.2);
   }
   ws.curve = kurve;
-  g.connect(hp).connect(tp).connect(ws).connect(c.destination);
+  g.connect(hp).connect(tp).connect(ws).connect(ausgang(c));
   return g;
 }
 
@@ -116,7 +127,7 @@ function rauschen(c: AudioContext, ab: number): void {
   s.buffer = b;
   const g = c.createGain();
   g.gain.value = Math.max(0, sprachPrefs().funkLaut / 100);
-  s.connect(g).connect(c.destination);
+  s.connect(g).connect(ausgang(c));
   s.start(Math.max(ab, c.currentTime));
 }
 
@@ -130,7 +141,7 @@ export function funkTon(art: "beginn" | "ende" | "statusDruck" | "statusGesendet
     if (art === "einsatzRein") {
       g = c.createGain();
       g.gain.value = Math.max(0, Math.min(1.5, sprachPrefs().funkLaut / 100));
-      g.connect(c.destination);
+      g.connect(ausgang(c));
     } else g = kette(c, ki);
     g.gain.value *= laut;
     const bis = art === "beginn" ? tonBeginn(c, g) : art === "ende" ? tonEnde(c, g) : art === "statusDruck" ? tonStatusDruck(c, g) : art === "einsatzRein" ? tonEinsatzRein(c, g) : tonStatusGesendet(c, g);
@@ -153,7 +164,7 @@ function belegtTon(): void {
       const g = c.createGain();
       o.frequency.value = 520;
       g.gain.value = 0.08;
-      o.connect(g).connect(c.destination);
+      o.connect(g).connect(ausgang(c));
       o.start(c.currentTime + t);
       o.stop(c.currentTime + t + 0.1);
     }

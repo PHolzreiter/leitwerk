@@ -121,11 +121,11 @@ export class Komponente {
   // Bereitschafts-Check: Prüfungen der App (startseite.ts → pruefen), Zustände ok · warn · fehler · aus
   bereitschaft() {
     const farbe = { ok: '#4CC38A', warn: '#FFC72C', fehler: '#E5484D', aus: '#9AA3B5' };
-    const ziel = { karten: ['prog', 'karten', 'Kartenpakete'], codes: ['daten', 'codes', 'Einsatzcodes'], anrufe: ['platz', 'anrufe', 'Anrufe & KI'] };
+    const ziel = { karten: ['prog', 'karten', 'Kartenpakete'], codes: ['daten', 'codes', 'Einsatzcodes'], anrufe: ['platz', 'einrichten', 'Einrichten'], einrichten: ['platz', 'einrichten', 'Einrichten'] };
     const liste = this.app.ablauf.checks();
     if (!liste) return [{ kurz: 'Prüfe …', name: 'Bereitschafts-Check', text: 'wird geprüft …', detail: 'Einen Moment …', stufe: 'aus', g: 'prog', p: 'programm', ziel: '', dot: farbe.aus }];
     return liste.map(c => {
-      const z = c.name === 'Spracheingabe' ? ['platz', 'mikro', 'Mikrofon & Funk'] : ziel[c.seite] || ['prog', 'programm', 'Programm'];
+      const z = ziel[c.seite] || ['prog', 'programm', 'Programm'];
       return { kurz: c.name, name: c.name, text: c.text, detail: c.detail, stufe: c.stufe, g: z[0], p: z[1], ziel: z[2], dot: farbe[c.stufe] || farbe.aus };
     });
   }
@@ -526,7 +526,7 @@ export class Komponente {
       szSpieler: szSpieler, szAnzahl: szSpieler.length, szFrei: Math.max(0, 6 - szSpieler.length), szFreiDa: szSpieler.length < 6,
       szVerb: sz.verbunden ? (sz.hostDa ? 'Verbindung steht' : 'Host nicht da') : 'verbinde …', szVerbDot: sz.verbunden && sz.hostDa ? '#4CC38A' : '#FFC72C',
       szMik: V('eingabe', true) ? 'Spracheingabe an' : 'Spracheingabe aus', szMikDot: V('eingabe', true) ? '#4CC38A' : '#9AA3B5',
-      mikTest: () => this.einstellungOeffnen('platz', 'mikro'),
+      mikTest: () => this.einstellungOeffnen('platz', 'einrichten'),
       versionKurz: A.version() || '–',
       szRechte: [['disponieren', 'Disponieren', 'Disponieren'], ['kt', 'KT', 'KT disponieren'], ['steuern', 'Steuern', 'Simulation steuern'], ['einstellungen', 'Einstellungen', 'Einstellungen & Daten']].map(([k, label, title]) => ({ label, title: title + (sz.rechte[k] ? '' : ' – vergibt der Host'), cls: sz.rechte[k] ? '' : 'aus' })),
 

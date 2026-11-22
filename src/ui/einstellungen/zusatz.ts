@@ -457,7 +457,7 @@ export function zusatzBauen(r: ZusatzRahmen) {
       },
       async ki(fortschritt: (t: string) => void): Promise<string> {
         if (!kiBereit() && inTauri()) await kiStatus().catch(() => null);
-        if (!kiBereit()) throw new Error("Die KI läuft nicht (Mein Platz › Anrufe & KI)");
+        if (!kiBereit()) throw new Error("Die KI läuft nicht (Mein Platz › Telefon, Funk & KI)");
         const u = store.uebersetzung;
         const offen = u.zuordnung.filter((z) => (!z.merkmal && !z.teile && z.quelle !== "explizit") || (z.quelle === "automatisch" && z.sicherheit < 0.7));
         if (!offen.length) return "Keine offenen oder unsicheren Fragen";
