@@ -44,6 +44,8 @@ zip = { version = "4", default-features = false, features = ["deflate"] }
 # Supertonic: ONNX Runtime wird zur Laufzeit geladen (nicht fest eingebaut)
 ort = { version = "=2.0.0-rc.10", default-features = false, features = ["std", "load-dynamic"] }
 unicode-normalization = "0.1"
+# Discord-Aktivität („Spielt LeitWerk“) über die lokale Schnittstelle von Discord
+discord-rich-presence = "1.1"
 
 # Piper-Stimmen (sherpa-onnx): Mac und Windows fest eingebunden, Linux nur für die Prüfung
 # Mac zusätzlich: Spracherkennung auf dem Grafikchip (Metal) – deutlich schneller

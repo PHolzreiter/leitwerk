@@ -502,9 +502,15 @@ export class SeitenBasis {
           B('Sprechtasten', [{ l: 'Telefon, Funk & KI', go: ['platz', 'gespraech'] }], 'Die Sprechtasten für Telefon und Funk stellst du dort ein'),
           H('Arbeitsplatz'),
           B('Anordnung der Fenster', [{ l: 'Gespeicherte …', sub: 'anordnungen' }, { l: 'Zurücksetzen', cfm: 'Alle Fenster wieder wie beim ersten Start anordnen?', ok: 'Zurückgesetzt' }], 'Wird automatisch gemerkt'),
+          H('Discord'),
+          B('„Spielt LeitWerk“ in Discord', [{ l: 'Einstellen …', sub: 'discord' }], 'Freunde sehen in Discord, dass du LeitWerk spielst'),
           H('Sonstiges'),
           B('Einführung', [{ l: 'Noch einmal zeigen', ok: 'Kommt beim nächsten Spielstart' }]),
           T('Entwicklerfunktionen', 'dev', false, 'Nur zum Prüfen der Daten')
+        ]},
+        { id: 'discord', sub: true, parent: 'bedienung', label: 'Discord', info: '„Spielt LeitWerk“', kw: 'discord aktivität rich presence status freunde spielt', rows: [
+          T('In Discord zeigen, dass ich LeitWerk spiele', 'discord', true, 'Discord muss auf diesem Rechner laufen'),
+          T('Details zeigen', 'discordDetails', true, 'Rolle, Funkgruppe, offene Einsätze und Spieltyp – nie Adressen oder Namen'),
         ]},
         { id: 'anordnungen', sub: true, parent: 'bedienung', label: 'Gespeicherte Anordnungen', info: 'Fenster-Layouts', kw: 'anordnung layout fenster monitor', rows: [
           IT('Zwei Monitore', '7 Fenster · links Karte, rechts Abfrage', '', '', { btns: [{ l: 'Übernehmen', ok: 'Gilt beim nächsten Spielstart' }, 'Als Datei …', { l: 'Löschen', cfm: '„Zwei Monitore“ löschen?', ok: 'Gelöscht' }] }),

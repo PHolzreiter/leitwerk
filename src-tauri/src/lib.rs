@@ -18,6 +18,7 @@ mod ec135;
 mod einrichtung;
 mod protokoll;
 mod joystick;
+mod discord;
 
 use std::collections::HashMap;
 use std::fs::{self, File};
@@ -640,6 +641,9 @@ pub fn run() {
             protokoll::protokoll_schreiben,
             protokoll::protokoll_aufnahme,
             joystick::joystick_nativ,
+            discord::discord_setzen,
+            discord::discord_aus,
+            discord::discord_status,
             protokoll::protokoll_aufnahmen,
             protokoll::protokoll_lesen,
             protokoll::protokoll_ordner,

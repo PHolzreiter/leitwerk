@@ -1,5 +1,15 @@
 [
  {
+  "version": "0.116.0-beta.74",
+  "datum": "2026-11-23",
+  "titel": "„Spielt LeitWerk“ in Discord",
+  "punkte": [
+   "Discord zeigt, dass du LeitWerk spielst – Hauptmenü, Lobby, Disponent oder Pilot, offene Einsätze",
+   "Nie Adressen, Namen oder Codes",
+   "Einstellung: Mein Platz › Bedienung › Discord"
+  ]
+ },
+ {
   "version": "0.116.0-beta.73",
   "datum": "2026-11-22",
   "titel": "Rufhilfe-Alarme, Notrufe je Spieltyp",

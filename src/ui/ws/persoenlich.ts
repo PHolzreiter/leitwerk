@@ -32,6 +32,9 @@ export const KUERZEL_STANDARD: Record<KuerzelId, string> = {
 };
 
 export interface Persoenlich {
+  /** Discord: „Spielt LeitWerk“ anzeigen (Standard an) bzw. mit Details (Rolle, Funkgruppe, Einsätze) */
+  discord?: boolean;
+  discordDetails?: boolean;
   thema: Thema;
   /** Kartenstil: „auto“ folgt dem Thema, „hell“ bleibt immer hell */
   karte: "auto" | "hell";

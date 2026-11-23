@@ -433,6 +433,9 @@ export function einstellungsBindung(geladen?: () => void): EinstellungsBindung {
       },
     },
     stereo: sprBool("stereoTrennung"),
+    // Discord-Aktivität (Beta 74)
+    discord: persBool("discord", true),
+    discordDetails: persBool("discordDetails", true),
     fdev: {
       l: () => sprachPrefs().geraetFunk || WIE_TEL,
       s: (w) => {

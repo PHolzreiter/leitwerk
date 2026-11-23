@@ -1,5 +1,16 @@
 # Änderungen
 
+## 0.116.0-beta.74 – „Spielt LeitWerk“ in Discord
+- **Discord zeigt jetzt, dass du LeitWerk spielst** – in deinem Profil, in der Freundesliste und in der Mitgliederliste der Server. Discord muss dafür auf demselben Rechner laufen; LeitWerk verbindet sich von selbst (auch wenn Discord erst später gestartet wird).
+- **Was angezeigt wird:**
+  - im Hauptmenü: „Im Hauptmenü“;
+  - in der Lobby: „In der Lobby – Wartet auf Mitspieler“ (bzw. „Wartet auf den Start“) mit der Zahl der Spieler;
+  - im Spiel als Disponent: „Disponent · RD-NOE-03 – 3 offene Einsätze · Standard“ (Pause: „Pausiert“);
+  - als Pilot: „Pilot · Heli Nord 2 – Frei auf Wache“;
+  - dazu das LeitWerk-Logo und die Spielzeit.
+- **Nie** in Discord: Adressen, Namen, Codes oder andere Einsatzinhalte.
+- **Einstellung:** Mein Platz › Bedienung › Discord – „In Discord zeigen, dass ich LeitWerk spiele“ (Standard an) und „Details zeigen“ (aus = nur „Im Spiel“), dazu ob LeitWerk gerade mit Discord verbunden ist.
+
 ## 0.116.0-beta.73 – Rufhilfe-Alarme, Notrufe je Spieltyp
 - **Neu: Rufhilfe-Alarm.** Ältere Menschen mit Rufhilfe-Uhr drücken den Knopf: Zuerst kommt ein Band (Computerstimme) mit Name, Alter, Adresse und Schlüsselsafe (Nummer und wo er hängt), dann wird die Sprechverbindung hergestellt – entweder redet die Person (über die Rufhilfe-Basis in der Wohnung) oder es bleibt still („…“).
 - **So fragst du ab:** Die Adresse kommt automatisch. Bei „Wer ruft an?“ „Rufhilfe“ wählen, dann „Meldet sich die Person?“, Bewusstsein und Atmung wie gewohnt, dazu Schlüsselsafe-Nummer und -Ort und das Freitextfeld „Was ist passiert?“. Was du dort schreibst, steht auch in der Info an den RTW (hinter Alter, Bewusstsein und Atmung, z. B. „85w B+ A+ // Sturz, Hüfte“).

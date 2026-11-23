@@ -6,6 +6,7 @@
  */
 import { statusFarbeStandard } from "../statusFarben";
 import { FARBEN, type Bausteine, type Knopf, type Zeile, type ZeilenQuelle } from "./vertrag";
+import { discordAn, discordVerbunden } from "../discord";
 import { decodeText, inTauri, saveTextFile } from "../../platform";
 import { store } from "../../data/store";
 import {
@@ -908,6 +909,34 @@ export function zeilenQuelle(neuZeichnen: () => void): { zeilen: ZeilenQuelle; l
   }
 
   // ---------------- Töne (je Ereignis und eigene Dateien auf einer Seite)
+  // ---------------- Discord (Beta 74): „Spielt LeitWerk“
+  let discordStand: { ok: boolean; um: number } | null = null;
+  function discordSeite(b: Bausteine): Zeile[] {
+    if (!discordStand || Date.now() - discordStand.um > 5000) {
+      const vorher = discordStand?.ok;
+      void discordVerbunden().then((ok) => {
+        discordStand = { ok, um: Date.now() };
+        if (ok !== vorher) neuZeichnen();
+      });
+    }
+    const an = discordAn();
+    const ok = discordStand?.ok;
+    const zeilen: Zeile[] = [
+      b.H("Discord"),
+      b.T("In Discord zeigen, dass ich LeitWerk spiele", "discord", true, "Freunde sehen „Spielt LeitWerk“ in deinem Profil und in der Mitgliederliste"),
+      b.T("Details zeigen", "discordDetails", true, "Rolle, Funkgruppe, offene Einsätze und Spieltyp – nie Adressen, Namen oder Codes"),
+    ];
+    if (!an) zeilen.push(b.I("Verbindung", "aus", "Eingeschaltet erscheint es nach wenigen Sekunden", GRAU));
+    else if (ok === undefined) zeilen.push(b.I("Verbindung", PRUEFT, "", GRAU));
+    else if (ok) zeilen.push(b.I("Verbindung", "verbunden", "Discord zeigt jetzt „Spielt LeitWerk“", OK));
+    else
+      zeilen.push(
+        b.I("Verbindung", "Discord läuft nicht", inTauri() ? "Discord (Programm, nicht im Browser) auf diesem Rechner starten – LeitWerk verbindet sich dann von selbst (spätestens nach 30 Sekunden)" : "Nur im installierten Programm", GELB),
+      );
+    zeilen.push(b.I("Tipp", "", "Ganz ausschalten geht auch in Discord: Einstellungen › Aktivitätsprivatsphäre", GRAU));
+    return zeilen;
+  }
+
   function toeneSeite(b: Bausteine): Zeile[] {
     return [
       b.T("Klingelton bei Anrufen", "klingel", true),
@@ -1766,6 +1795,7 @@ export function zeilenQuelle(neuZeichnen: () => void): { zeilen: ZeilenQuelle; l
     fgfarben,
     statusfarben,
     einrichten,
+    discord: discordSeite,
     audio,
     gespraech,
     toene: toeneSeite,
