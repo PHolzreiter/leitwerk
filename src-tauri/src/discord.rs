@@ -30,6 +30,15 @@ pub struct Aktivitaet {
     pub start: Option<i64>,
     /// Mitspieler [jetzt, höchstens]
     pub runde: Option<[i32; 2]>,
+    /// Knöpfe (höchstens zwei, nur für andere sichtbar), z. B. „Mitspielen“ mit Link zur Beitreten-Seite
+    #[serde(default)]
+    pub knoepfe: Vec<Knopf>,
+}
+
+#[derive(Clone, Debug, serde::Deserialize, PartialEq)]
+pub struct Knopf {
+    pub text: String,
+    pub link: String,
 }
 
 enum Befehl {
@@ -123,6 +132,16 @@ fn baue(a: &Aktivitaet) -> activity::Activity<'_> {
     }
     if let Some(r) = a.runde.filter(|r| r[0] > 0 && r[1] >= r[0]) {
         x = x.party(activity::Party::new().size(r));
+    }
+    let k: Vec<activity::Button> = a
+        .knoepfe
+        .iter()
+        .filter(|k| k.link.starts_with("https://") && !k.text.is_empty())
+        .take(2)
+        .map(|k| activity::Button::new(k.text.as_str(), k.link.as_str()))
+        .collect();
+    if !k.is_empty() {
+        x = x.buttons(k);
     }
     x
 }

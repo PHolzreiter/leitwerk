@@ -32,7 +32,7 @@ import { segmenteGleiten } from "./ui/entwurf/segmente";
 import { titelleisteEinrichten } from "./ui/titelleiste";
 segmenteGleiten();
 titelleisteEinrichten();
-import { aktivitaetBauen as discordAktivitaet, discordStarten, lageJetzt as discordLage } from "./ui/discord";
+import { aktivitaetBauen as discordAktivitaet, beitrittPerLink, discordStarten, lageJetzt as discordLage } from "./ui/discord";
 discordStarten();
 import "./ui/modern.css";
 import { store } from "./data/store";
@@ -106,7 +106,7 @@ protokollBeobachterStarten();
 void joystickStarten();
 
 // Für automatische Tests im Browser (…/?debug): Zugriff auf Simulation und Daten
-if (location.search.includes("debug")) Object.assign(window, { __lw: { sim, store, mp, discord: { aktivitaet: discordAktivitaet, lage: discordLage }, sprachTest, testStimme, sprechfunk: { statistik: funkStatistik, start: sprechStart, stopp: sprechStopp }, codesystemLaden: (s: Schema & { kt?: { codes?: unknown[]; abfrage?: unknown[] } }) => {
+if (location.search.includes("debug")) Object.assign(window, { __lw: { sim, store, mp, discord: { aktivitaet: discordAktivitaet, lage: discordLage, link: beitrittPerLink }, sprachTest, testStimme, sprechfunk: { statistik: funkStatistik, start: sprechStart, stopp: sprechStopp }, codesystemLaden: (s: Schema & { kt?: { codes?: unknown[]; abfrage?: unknown[] } }) => {
         // Test: ein Satz mit KT-Teil wird wie zwei getrennte Sätze geladen (RD + KT/SEK)
         const { kt, ...rd } = structuredClone(s);
         store.setKtSatz(kt?.codes?.length ? { name: "Test", ...kt } : null);

@@ -33,7 +33,7 @@ try:
         a = bau({**L, "pause": True})
         check(a["state"] == "Pausiert", "Pause")
         a = bau({**L, "pilot": True, "rufname": "Heli Nord 2", "pilotStatus": "Frei auf Wache"})
-        check(a["details"] == "Pilot · Heli Nord 2" and a["state"] == "Frei auf Wache", f"Pilot: {a['details']} / {a['state']}")
+        check(a["details"] == "Pilot · Heli Nord 2 · RD-NOE-03" and a["state"] == "Frei auf Wache", f"Pilot: {a['details']} / {a['state']}")
         a = bau({**L, "details": False})
         check(a["details"] == "Im Spiel" and a["state"] is None and a["runde"] is None, "ohne Details: nur „Im Spiel“")
 

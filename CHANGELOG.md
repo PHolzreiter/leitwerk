@@ -1,5 +1,13 @@
 # Änderungen
 
+## 0.116.0-beta.76 – Mitspielen über Discord
+- **Knopf „Mitspielen“ in Discord:** Erlaubt es der Host, sehen deine Freunde in Discord bei dir (und bei allen Mitspielern) den Knopf „Mitspielen“. Ein Klick öffnet eine kleine Seite, die LeitWerk startet und gleich „Beitreten“ mit dem richtigen Code aufmacht – nur noch Namen prüfen und beitreten. Klappt das Öffnen nicht, steht der Code zum Abtippen auf der Seite.
+- **Host-Lobby: „Wer darf beitreten?“** – „Nur mit Raumcode“ (Standard, wie bisher) oder „Auch über Discord“. Gilt auch während des Spiels, solange Plätze frei sind. Hinweis: Mit „Auch über Discord“ ist der Code im Link für alle sichtbar, die dein Discord-Profil sehen.
+- Den Knopf sieht man nur bei anderen, nicht im eigenen Profil.
+- Kommt der Link, während du gerade spielst, merkt sich LeitWerk den Code – im Hauptmenü geht es dann gleich mit „Beitreten“ weiter.
+- **Discord-Anzeige:** Disponent „Telefoniert · 3 offene Einsätze“, solange du einen Notruf führst. Pilot oben „Pilot · Heli Nord 2 · RD-NOE-03“, darunter der Status des Hubschraubers (z. B. „Zum Berufungsort“).
+- LeitWerk läuft jetzt nur noch einmal pro Rechner: Ein zweiter Start (z. B. über den Link) holt das laufende LeitWerk nach vorne.
+
 ## 0.116.0-beta.75 – Discord: Feinschliff
 - Statt „0 offene Einsätze“ steht jetzt „Keine offenen Einsätze“.
 - Die Zeit im Hauptmenü und in der Lobby zählt ab dem Hauptmenü (nicht mehr ab dem Programmstart); im Spiel weiter ab Spielbeginn.

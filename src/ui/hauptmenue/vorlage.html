@@ -1027,6 +1027,7 @@ select.l-select.dd-auf{border-color:#3B8BFF}
                         </div>
                       </sc-for>
                       <sc-if value="{{lobbyPlatz}}" hint-placeholder-val="{{true}}"><div class="l-rrow l-rfrei"><span class="l-rname"><b></b><i>Wartet auf Spieler …</i></span><em>{{lobbyAnzahl}} von 6</em></div></sc-if>
+                      <div class="l-kiwahl l-beitritt"><span>Wer darf beitreten?<em>{{beitrittHinweis}}</em></span><span class="l-segs"><sc-for list="{{beitrittOpts}}" as="o" hint-placeholder-count="2"><button class="{{o.cls}}" onClick="{{o.pick}}">{{o.label}}</button></sc-for></span></div>
                     </div>
                   </sc-if>
                 </sc-if>

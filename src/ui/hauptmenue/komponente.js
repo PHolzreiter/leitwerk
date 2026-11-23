@@ -130,6 +130,15 @@ export class Komponente {
     });
   }
   // Code prüfen = wirklich beitreten (Fehler erscheinen über den Kästchen)
+  /** Beitreten über einen Link (Discord-Knopf „Mitspielen“, Beta 76): Beitreten aufklappen, Code eintragen, prüfen */
+  beitrittVorbelegen(code) {
+    this.setState({ intro: 'done', screen: 'join', code, joinWeiter: false, jdrin: false, jerr: null, codeFocus: false });
+    setTimeout(() => {
+      this.codePruefen('j');
+      // noch kein Name: gleich ins Namensfeld
+      if (!((this.state || {}).jname ?? this.app.ablauf.meinName()).trim()) setTimeout(() => { const n = document.getElementById('l-name'); if (n) n.focus(); }, 450);
+    }, 60);
+  }
   codePruefen(w) {
     const st = this.state || {};
     const c = (w === 'j' ? st.code : st.pcode) || '';
@@ -456,6 +465,9 @@ export class Komponente {
       lobbyZustand: lobby.zustand, lobbyPill: 'l-pill ' + (lobby.zustandOk ? 'ok' : 'warn'),
       lobbyKopieren: () => { try { navigator.clipboard.writeText(lobby.code); this.setState({ startFehler: null }); } catch (e) { /* egal */ } },
       lobbyAnzahl: lobby.spieler.length, lobbyPlatz: lobby.spieler.length < 6,
+      // Wer darf beitreten? (Beta 76): nur mit Raumcode oder auch über den Discord-Knopf „Mitspielen“
+      beitrittOpts: [['Nur mit Raumcode', false], ['Auch über Discord', true]].map(([label, an]) => ({ label, cls: 'l-seg' + (A.beitrittDiscord() === an ? ' on' : ''), pick: () => A.beitrittDiscordSetzen(an) })),
+      beitrittHinweis: A.beitrittDiscord() ? 'In Discord sehen Freunde bei euch „Mitspielen“ – dabei ist der Code im Link sichtbar' : 'Nur wer den Code von dir bekommt, kann beitreten',
       checks,
       startLabel: modus === 'Solo' ? 'Neue Simulation starten' : 'Simulation für alle starten',
       startCls: 'l-btn' + (st.startLaeuft ? ' off' : ''),

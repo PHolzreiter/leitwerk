@@ -53,6 +53,11 @@
     "createUpdaterArtifacts": true
   },
   "plugins": {
+    "deep-link": {
+      "desktop": {
+        "schemes": ["leitwerk"]
+      }
+    },
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEY1RkY2NTQxRkY5NTRDNzIKUldSeVRKWC9RV1gvOVJ3RDFJVFJoREQ4NkpoUmhlRGpUcFhYOU1QbTVONjV4eFNXL01jRloxRDUK",
       "windows": {

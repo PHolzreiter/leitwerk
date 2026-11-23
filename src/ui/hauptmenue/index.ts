@@ -17,6 +17,21 @@ const vorlage = mitSeiten(vorlageRoh);
 let schonVollbild = false;
 let offen: { wurzel: HTMLElement; stil: HTMLStyleElement; k: Komponente; app: Anbindung } | null = null;
 
+let wartenderCode: string | null = null;
+
+/**
+ * Beitreten über einen Link (Discord-Knopf „Mitspielen“, Beta 76): im Hauptmenü gleich „Beitreten“ mit dem Code.
+ * Läuft gerade ein Spiel, wartet der Code, bis man ins Hauptmenü geht. Gibt zurück, ob das Menü offen war.
+ */
+export function hauptmenueBeitreten(code: string): boolean {
+  if (offen) {
+    offen.k.beitrittVorbelegen(code);
+    return true;
+  }
+  wartenderCode = code;
+  return false;
+}
+
 export function hauptmenueOffen(): boolean {
   return !!offen;
 }
@@ -47,6 +62,11 @@ export function hauptmenueZeigen(fertig?: () => void, opt: { splash?: boolean; s
   });
   k = new Komponente(app, { intro: opt.splash !== false, motion: pers().animationen !== false, bild: true, update: "aktuell" });
   if (opt.seite === "einstellungen") k.state = { ...k.state, intro: "done", screen: "settings" };
+  if (wartenderCode) {
+    const c = wartenderCode;
+    wartenderCode = null;
+    setTimeout(() => offen?.k.beitrittVorbelegen(c), 300);
+  }
   const a = ansicht(vorlage, wurzel);
   k._zeichnen = () => {
     try {

@@ -8,4 +8,5 @@ export declare class Komponente {
   renderVals(): Record<string, unknown>;
   componentDidMount(): void;
   componentWillUnmount(): void;
+  beitrittVorbelegen(code: string): void;
 }

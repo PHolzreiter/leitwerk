@@ -267,6 +267,12 @@ export function ablaufBauen(neuZeichnen: () => void, schliessen: () => void) {
       neuZeichnen();
     },
     setRechte: (pid: string, r: Berechtigung, an: boolean) => mp.setRechte(pid, r, an),
+    /** Wer darf beitreten? (Beta 76) false = nur mit Raumcode, true = auch über Discord */
+    beitrittDiscord: () => !!store.settings.beitrittDiscord,
+    beitrittDiscordSetzen(an: boolean): void {
+      store.setSettings({ ...store.settings, beitrittDiscord: an });
+      neuZeichnen();
+    },
 
     // ------------------------------------------------ Beitreten (Disponent und Pilot)
     async beitreten(code: string, name: string): Promise<string | null> {

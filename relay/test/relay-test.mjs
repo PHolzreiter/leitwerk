@@ -115,6 +115,13 @@ check(!!(await c1b.next((m) => m.t === "host-changed" && m.pid === "c2")), "Alte
 c1b.ws.send(JSON.stringify({ t: "cmd", name: "x" }));
 check(!!(await c2.next((m) => m.t === "from" && m.pid === "c1")), "Alter Host ist jetzt Mitspieler");
 
+// Beitreten-Seite für den Discord-Knopf (Beta 76)
+const web = BASE.replace(/^ws/, "http");
+const seite = await fetch(`${web}/beitreten/${code}`);
+const html = await seite.text();
+check(seite.ok && html.includes(`leitwerk://beitreten/${code}`) && html.includes(`${code.slice(0, 3)} ${code.slice(3)}`), "Beitreten-Seite öffnet LeitWerk mit dem Code");
+check((await fetch(`${web}/beitreten/12ab`)).status === 404, "Beitreten-Seite nur mit 6-stelligem Code");
+
 for (const w of [c2.ws, c1.ws, c1b.ws, fremd.ws, alt.ws, unbekannt]) try { w.close(); } catch {}
 console.log(fails ? `${fails} Fehler` : "Alles in Ordnung");
 process.exit(fails ? 1 : 0);

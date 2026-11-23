@@ -214,6 +214,8 @@ export interface Settings {
   wetterFestTemp?: number;
   /** TETRA-Funkgruppe = Einsatzgebiet (z. B. „NÖ-03“) */
   funkgruppe?: string;
+  /** Mehrspieler: wer darf beitreten? false = nur mit Raumcode (Standard), true = auch über Discord („Mitspielen“-Knopf) */
+  beitrittDiscord?: boolean;
   /** Rückruf nur möglich, wenn die Rückrufnummer aufgenommen wurde */
   /** Rückruf auch ohne aufgenommene Rückrufnummer erlauben (sonst nur mit Nummer) */
   rueckrufOhneNummer?: boolean;

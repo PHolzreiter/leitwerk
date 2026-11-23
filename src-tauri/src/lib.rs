@@ -19,6 +19,7 @@ mod einrichtung;
 mod protokoll;
 mod joystick;
 mod discord;
+mod beitrittlink;
 
 use std::collections::HashMap;
 use std::fs::{self, File};
@@ -544,6 +545,17 @@ pub fn run() {
     // Beta: beim ersten Start die Einstellungen der normalen Version übernehmen (bevor die Oberfläche startet)
     beta::erster_start(&kontext.config().identifier);
     tauri::Builder::default()
+        // zuerst: ein zweiter Start (z. B. über einen Beitreten-Link) gibt den Link an das laufende LeitWerk weiter
+        .plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
+            for a in &argv {
+                beitrittlink::empfangen(app, a);
+            }
+            if let Some(w) = app.get_webview_window("main") {
+                let _ = w.unminimize();
+                let _ = w.set_focus();
+            }
+        }))
+        .plugin(tauri_plugin_deep_link::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         // Piloten-Interface: Status per Tastenkürzel, auch wenn der Flugsimulator vorne ist
@@ -573,6 +585,23 @@ pub fn run() {
             app.manage(geo);
             app.manage(Maps { dirs, open: Mutex::new(HashMap::new()) });
             app.manage(updater::PendingUpdate::default());
+            // Beitreten-Links (leitwerk://beitreten/<Code>)
+            {
+                use tauri_plugin_deep_link::DeepLinkExt;
+                #[cfg(any(windows, target_os = "linux"))]
+                let _ = app.deep_link().register_all();
+                let h = app.handle().clone();
+                if let Ok(Some(urls)) = app.deep_link().get_current() {
+                    for u in urls {
+                        beitrittlink::empfangen(&h, u.as_str());
+                    }
+                }
+                app.deep_link().on_open_url(move |ev| {
+                    for u in ev.urls() {
+                        beitrittlink::empfangen(&h, u.as_str());
+                    }
+                });
+            }
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -644,6 +673,7 @@ pub fn run() {
             discord::discord_setzen,
             discord::discord_aus,
             discord::discord_status,
+            beitrittlink::beitritt_link_holen,
             protokoll::protokoll_aufnahmen,
             protokoll::protokoll_lesen,
             protokoll::protokoll_ordner,

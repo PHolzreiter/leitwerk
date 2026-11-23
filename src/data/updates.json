@@ -1,5 +1,15 @@
 [
  {
+  "version": "0.116.0-beta.76",
+  "datum": "2026-11-23",
+  "titel": "Mitspielen über Discord",
+  "punkte": [
+   "Discord-Knopf „Mitspielen“ – ein Klick öffnet LeitWerk mit dem Code",
+   "Host-Lobby: „Wer darf beitreten?“ – nur mit Raumcode oder auch über Discord",
+   "Discord: „Telefoniert …“ bzw. Pilot mit Funkgruppe und Status"
+  ]
+ },
+ {
   "version": "0.116.0-beta.75",
   "datum": "2026-11-23",
   "titel": "Discord: Feinschliff",

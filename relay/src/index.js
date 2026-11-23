@@ -25,6 +25,9 @@ export default {
     if (url.pathname === "/" || url.pathname === "/health") {
       return new Response("LeitWerk Relay", { headers: { "content-type": "text/plain; charset=utf-8" } });
     }
+    // Beitreten über Discord (Knopf „Mitspielen“): kleine Seite, die LeitWerk mit dem Raumcode öffnet
+    const b = url.pathname.match(/^\/beitreten\/(\d{6})\/?$/);
+    if (b) return beitretenSeite(b[1]);
     const m = url.pathname.match(/^\/room\/(\d{6})$/);
     if (!m) return new Response("Nicht gefunden", { status: 404 });
     if (request.headers.get("Upgrade") !== "websocket") {
@@ -34,6 +37,31 @@ export default {
     return stub.fetch(request);
   },
 };
+
+/** Seite für den Discord-Knopf: öffnet leitwerk://beitreten/<code>, zeigt den Code zum Abtippen (keine Spieldaten) */
+function beitretenSeite(code) {
+  const link = `leitwerk://beitreten/${code}`;
+  const schoen = `${code.slice(0, 3)} ${code.slice(3)}`;
+  const html = `<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LeitWerk – Mitspielen</title>
+<style>
+body{margin:0;min-height:100vh;display:grid;place-items:center;background:#111216;color:#E8ECF4;font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+.k{max-width:420px;padding:32px;border-radius:16px;background:#191C24;border:1px solid #2A2F3A;text-align:center}
+h1{font-size:22px;margin:0 0 8px}p{margin:8px 0;color:#9AA3B5}
+.c{font:700 34px/1.2 ui-monospace,Menlo,monospace;letter-spacing:4px;color:#fff;margin:16px 0}
+a.b{display:inline-block;margin-top:8px;padding:12px 22px;border-radius:10px;background:#3B8BFF;color:#fff;text-decoration:none;font-weight:600}
+small{display:block;margin-top:18px;color:#6B7385}
+</style></head><body><div class="k">
+<h1>LeitWerk wird geöffnet …</h1>
+<p>Du trittst der Runde mit diesem Code bei:</p>
+<div class="c">${schoen}</div>
+<a class="b" href="${link}">LeitWerk öffnen</a>
+<p>Geht LeitWerk nicht auf? Dann LeitWerk selbst starten und bei <b>Beitreten</b> den Code eingeben.</p>
+<small>LeitWerk muss auf diesem Rechner installiert sein.</small>
+</div><script>setTimeout(function(){location.href=${JSON.stringify(link)}},300)</script></body></html>`;
+  return new Response(html, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", "x-robots-tag": "noindex" } });
+}
 
 export class Room extends DurableObject {
   constructor(ctx, env) {
