@@ -67,27 +67,37 @@ export function aktivitaetBauen(l: DiscordLage): DiscordAktivitaet {
       ...basis,
       details: `Pilot · ${l.rufname}`,
       state: l.pause ? "Pausiert" : l.pilotStatus,
+      klein: "heli",
+      klein_text: "Pilot",
       runde,
     };
-  const einsaetze = l.offen === 1 ? "1 offener Einsatz" : `${l.offen} offene Einsätze`;
+  const einsaetze = l.offen === 0 ? "Keine offenen Einsätze" : l.offen === 1 ? "1 offener Einsatz" : `${l.offen} offene Einsätze`;
   return {
     ...basis,
     details: `Disponent · ${l.gruppe}`,
     state: l.pause ? "Pausiert" : `${einsaetze} · ${l.spieltyp}`,
+    klein: "rd",
+    klein_text: "Disponent",
     runde,
   };
 }
 
 let spielStart: number | null = null;
-const programmStart = Date.now();
+/** seit wann im Hauptmenü bzw. in der Lobby (die Zeit zählt ab dort, nicht ab Programmstart) */
+let menueSeit: number | null = null;
 
 /** Zustand aus dem laufenden Spiel */
 export function lageJetzt(): DiscordLage {
   const imMenue = hauptmenueOffen();
   const lobby = imMenue && (mp.aktiv || !!sim.state.lobby);
   const ort: DiscordLage["ort"] = lobby ? "lobby" : imMenue ? "menue" : "spiel";
-  if (ort === "spiel") spielStart ??= Date.now();
-  else spielStart = null;
+  if (ort === "spiel") {
+    spielStart ??= Date.now();
+    menueSeit = null;
+  } else {
+    spielStart = null;
+    menueSeit ??= Date.now();
+  }
   const s = sim.state;
   return {
     ort,
@@ -102,7 +112,7 @@ export function lageJetzt(): DiscordLage {
     host: mp.status.rolle === "host",
     spieler: mp.spieler.length,
     mehrspieler: mp.aktiv,
-    start: ort === "spiel" ? spielStart : programmStart,
+    start: ort === "spiel" ? spielStart : menueSeit,
   };
 }
 

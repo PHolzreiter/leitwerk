@@ -1,5 +1,10 @@
 # Änderungen
 
+## 0.116.0-beta.75 – Discord: Feinschliff
+- Statt „0 offene Einsätze“ steht jetzt „Keine offenen Einsätze“.
+- Die Zeit im Hauptmenü und in der Lobby zählt ab dem Hauptmenü (nicht mehr ab dem Programmstart); im Spiel weiter ab Spielbeginn.
+- Kleines Zusatzbild am Logo: Headset für Disponenten, Hubschrauber für Piloten.
+
 ## 0.116.0-beta.74 – „Spielt LeitWerk“ in Discord
 - **Discord zeigt jetzt, dass du LeitWerk spielst** – in deinem Profil, in der Freundesliste und in der Mitgliederliste der Server. Discord muss dafür auf demselben Rechner laufen; LeitWerk verbindet sich von selbst (auch wenn Discord erst später gestartet wird).
 - **Was angezeigt wird:**
