@@ -1,6 +1,6 @@
 ### npm install
 
-added 52 packages, and audited 53 packages in 8s
+added 52 packages, and audited 53 packages in 7s
 
 9 packages are looking for funding
   run `npm fund` for details
@@ -82,21 +82,21 @@ computing gzip size...
 [2mdist/[22m[2massets/[22m[32mbg-32x9-abend-DLJpcJQK.jpg           [39m[1m[2m1,159.39 kB[22m[1m[22m
 [2mdist/[22m[2massets/[22m[32meinsatzstellen-BKMVXWRH.csv          [39m[1m[2m2,885.41 kB[22m[1m[22m
 [2mdist/[22m[2massets/[22m[35mindex-DszIJT84.css                   [39m[1m[2m  480.62 kB[22m[1m[22m[2m │ gzip:    75.98 kB[22m
-[2mdist/[22m[2massets/[22m[36mdist-js-BHSuLtGN.js                  [39m[1m[2m    0.54 kB[22m[1m[22m[2m │ gzip:     0.26 kB[22m
-[2mdist/[22m[2massets/[22m[36mwebviewWindow-BpsIKqa_.js            [39m[1m[2m    1.78 kB[22m[1m[22m[2m │ gzip:     0.79 kB[22m
-[2mdist/[22m[2massets/[22m[36mfussleiste-DutN3-pd.js               [39m[1m[2m    2.37 kB[22m[1m[22m[2m │ gzip:     1.19 kB[22m
-[2mdist/[22m[2massets/[22m[36mwebview-CppAs225.js                  [39m[1m[2m    3.34 kB[22m[1m[22m[2m │ gzip:     1.13 kB[22m
-[2mdist/[22m[2massets/[22m[36mpath-CGwY1BVq.js                     [39m[1m[2m    3.76 kB[22m[1m[22m[2m │ gzip:     0.92 kB[22m
-[2mdist/[22m[2massets/[22m[36mwindow-aqWaLZ-R.js                   [39m[1m[2m   14.37 kB[22m[1m[22m[2m │ gzip:     3.57 kB[22m
-[2mdist/[22m[2massets/[22m[36mmithelfen-BOJsflMj.js                [39m[1m[2m   20.06 kB[22m[1m[22m[2m │ gzip:     8.00 kB[22m
-[2mdist/[22m[2massets/[22m[36mzeilen-CGkv1qtT.js                   [39m[1m[2m   92.10 kB[22m[1m[22m[2m │ gzip:    32.15 kB[22m
-[2mdist/[22m[2massets/[22m[36mindex-CVDyxO8Z.js                    [39m[1m[33m6,895.64 kB[39m[22m[2m │ gzip: 1,923.42 kB[22m
+[2mdist/[22m[2massets/[22m[36mdist-js-P5XCOGXq.js                  [39m[1m[2m    0.54 kB[22m[1m[22m[2m │ gzip:     0.26 kB[22m
+[2mdist/[22m[2massets/[22m[36mwebviewWindow-vyvmLMVz.js            [39m[1m[2m    1.78 kB[22m[1m[22m[2m │ gzip:     0.79 kB[22m
+[2mdist/[22m[2massets/[22m[36mfussleiste-DbFo3Wo6.js               [39m[1m[2m    2.37 kB[22m[1m[22m[2m │ gzip:     1.19 kB[22m
+[2mdist/[22m[2massets/[22m[36mwebview-DljisMXK.js                  [39m[1m[2m    3.34 kB[22m[1m[22m[2m │ gzip:     1.14 kB[22m
+[2mdist/[22m[2massets/[22m[36mpath-DgacJpXH.js                     [39m[1m[2m    3.76 kB[22m[1m[22m[2m │ gzip:     0.92 kB[22m
+[2mdist/[22m[2massets/[22m[36mwindow-DYV4SXjK.js                   [39m[1m[2m   14.37 kB[22m[1m[22m[2m │ gzip:     3.57 kB[22m
+[2mdist/[22m[2massets/[22m[36mmithelfen-BkM5Vm81.js                [39m[1m[2m   20.06 kB[22m[1m[22m[2m │ gzip:     8.00 kB[22m
+[2mdist/[22m[2massets/[22m[36mzeilen-Cqlpox19.js                   [39m[1m[2m   92.10 kB[22m[1m[22m[2m │ gzip:    32.15 kB[22m
+[2mdist/[22m[2massets/[22m[36mindex-D40i7X8e.js                    [39m[1m[33m6,896.33 kB[39m[22m[2m │ gzip: 1,923.63 kB[22m
 [33m
 (!) Some chunks are larger than 2000 kB after minification. Consider:
 - Using dynamic import() to code-split the application
 - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
 - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.[39m
-[32m✓ built in 9.10s[39m
+[32m✓ built in 9.20s[39m
 ### npx tauri icon app-icon.png
         Appx Creating StoreLogo.png
         Appx Creating Square30x30Logo.png
@@ -155,249 +155,7 @@ Kleinversion in src-tauri/icons/32x32.png
 Kleinversion in src-tauri/icons/Square30x30Logo.png
 ### cargo check
 [1m[92m    Updating[0m crates.io index
-[1m[92m Downloading[0m crates ...
-[1m[92m  Downloaded[0m async-channel v2.5.0
-[1m[92m  Downloaded[0m async-broadcast v0.7.2
-[1m[92m  Downloaded[0m async-executor v1.14.1
-[1m[92m  Downloaded[0m async-lock v3.5.0
-[1m[92m  Downloaded[0m async-io v2.6.0
-[1m[92m  Downloaded[0m async-process v2.5.0
-[1m[92m  Downloaded[0m async-recursion v1.2.0
-[1m[92m  Downloaded[0m async-signal v0.2.14
-[1m[92m  Downloaded[0m async-task v4.7.1
-[1m[92m  Downloaded[0m async-trait v0.1.92
-[1m[92m  Downloaded[0m blocking v1.7.0
-[1m[92m  Downloaded[0m concurrent-queue v2.5.0
-[1m[92m  Downloaded[0m const-random v0.1.18
-[1m[92m  Downloaded[0m const-random-macro v0.1.16
-[1m[92m  Downloaded[0m crunchy v0.2.4
-[1m[92m  Downloaded[0m dlv-list v0.5.2
-[1m[92m  Downloaded[0m enumflags2 v0.7.12
-[1m[92m  Downloaded[0m enumflags2_derive v0.7.12
-[1m[92m  Downloaded[0m endi v1.1.1
-[1m[92m  Downloaded[0m event-listener-strategy v0.5.4
-[1m[92m  Downloaded[0m event-listener v5.4.2
-[1m[92m  Downloaded[0m futures-lite v2.6.1
-[1m[92m  Downloaded[0m hashbrown v0.14.5
-[1m[92m  Downloaded[0m ordered-multimap v0.7.3
-[1m[92m  Downloaded[0m ordered-stream v0.2.0
-[1m[92m  Downloaded[0m parking v2.2.1
-[1m[92m  Downloaded[0m piper v0.2.5
-[1m[92m  Downloaded[0m polling v3.11.0
-[1m[92m  Downloaded[0m rust-ini v0.21.3
-[1m[92m  Downloaded[0m signal-hook-registry v1.4.8
-[1m[92m  Downloaded[0m tauri-plugin-deep-link v2.6.3
-[1m[92m  Downloaded[0m tauri-plugin-single-instance v2.5.5
-[1m[92m  Downloaded[0m tiny-keccak v2.0.2
-[1m[92m  Downloaded[0m zbus_names v4.3.5
-[1m[92m  Downloaded[0m zbus_macros v5.19.0
-[1m[92m  Downloaded[0m zbus v5.19.0
-[1m[92m  Downloaded[0m zcheapstr v1.4.0
-[1m[92m  Downloaded[0m zvariant_derive v5.15.1
-[1m[92m  Downloaded[0m zvariant v5.15.1
-[1m[92m  Downloaded[0m zvariant_utils v4.2.0
-[1m[92m   Compiling[0m quote v1.0.47
-[1m[92m   Compiling[0m winnow v1.0.5
-[1m[92m   Compiling[0m toml_datetime v1.1.3+spec-1.1.0
-[1m[92m    Checking[0m slab v0.4.12
-[1m[92m   Compiling[0m syn v3.0.10
-[1m[92m   Compiling[0m syn v2.0.119
-[1m[92m   Compiling[0m toml_parser v1.1.5+spec-1.1.0
-[1m[92m   Compiling[0m string_cache_codegen v0.6.1
-[1m[92m   Compiling[0m web_atoms v0.2.6
-[1m[92m   Compiling[0m toml v1.2.1+spec-1.1.0
-[1m[92m   Compiling[0m proc-macro-error-attr v1.0.4
-[1m[92m   Compiling[0m proc-macro-error v1.0.4
-[1m[92m   Compiling[0m embed-resource v3.0.12
-[1m[92m   Compiling[0m rustix v1.1.6
-[1m[92m   Compiling[0m tauri-winres v0.3.7
-[1m[92m    Checking[0m linux-raw-sys v0.12.1
-[1m[92m    Checking[0m parking v2.2.1
-[1m[92m   Compiling[0m serde_derive_internals v0.29.1
-[1m[92m   Compiling[0m synstructure v0.14.0
-[1m[92m   Compiling[0m darling_core v0.24.1
-[1m[92m   Compiling[0m phf_macros v0.13.1
-[1m[92m   Compiling[0m serde_derive v1.0.229
-[1m[92m   Compiling[0m zerofrom-derive v0.1.8
-[1m[92m   Compiling[0m yoke-derive v0.8.4
-[1m[92m   Compiling[0m zerovec-derive v0.11.7
-[1m[92m   Compiling[0m displaydoc v0.2.7
-[1m[92m   Compiling[0m zerofrom v0.1.8
-[1m[92m   Compiling[0m serde v1.0.229
-[1m[92m   Compiling[0m yoke v0.8.4
-[1m[92m   Compiling[0m thiserror-impl v2.0.21
-[1m[92m   Compiling[0m zerotrie v0.2.5
-[1m[92m   Compiling[0m zerovec v0.11.9
-[1m[92m   Compiling[0m toml_datetime v0.6.3
-[1m[92m   Compiling[0m serde_spanned v0.6.9
-[1m[92m   Compiling[0m toml_edit v0.20.2
-[1m[92m   Compiling[0m tinystr v0.8.5
-[1m[92m   Compiling[0m potential_utf v0.1.6
-[1m[92m   Compiling[0m icu_locale_core v2.4.0
-[1m[92m   Compiling[0m icu_collections v2.4.0
-[1m[92m   Compiling[0m darling_macro v0.24.1
-[1m[92m   Compiling[0m darling v0.24.1
-[1m[92m   Compiling[0m phf v0.13.1
-[1m[92m   Compiling[0m futures-macro v0.3.34
-[1m[92m   Compiling[0m serde_with_macros v3.24.0
-[1m[92m   Compiling[0m icu_provider v2.4.0
-[1m[92m    Checking[0m futures-util v0.3.34
-[1m[92m   Compiling[0m icu_properties v2.4.0
-[1m[92m   Compiling[0m icu_normalizer v2.4.0
-[1m[92m   Compiling[0m toml v0.8.2
-[1m[92m   Compiling[0m system-deps v6.2.2
-[1m[92m   Compiling[0m idna_adapter v1.2.2
-[1m[92m   Compiling[0m cssparser-macros v0.7.1
-[1m[92m   Compiling[0m idna v1.1.0
-[1m[92m   Compiling[0m glib-sys v0.18.1
-[1m[92m   Compiling[0m gobject-sys v0.18.0
-[1m[92m   Compiling[0m gio-sys v0.18.1
-[1m[92m   Compiling[0m url v2.5.8
-[1m[92m   Compiling[0m gdk-sys v0.18.2
-[1m[92m   Compiling[0m derive_more-impl v2.1.1
-[1m[92m   Compiling[0m markup5ever v0.39.0
-[1m[92m   Compiling[0m cssparser v0.37.0
-[1m[92m   Compiling[0m thiserror v2.0.21
-[1m[92m   Compiling[0m derive_more v2.1.1
-[1m[92m   Compiling[0m html5ever v0.39.0
-[1m[92m   Compiling[0m jsonptr v0.7.1
-[1m[92m   Compiling[0m indexmap v1.9.3
-[1m[92m   Compiling[0m selectors v0.38.0
-[1m[92m   Compiling[0m cargo-platform v0.1.9
-[1m[92m   Compiling[0m schemars_derive v0.8.22
-[1m[92m   Compiling[0m cargo_metadata v0.19.2
-[1m[92m   Compiling[0m json-patch v4.2.0
-[1m[92m   Compiling[0m urlpattern v0.6.0
-[1m[92m   Compiling[0m dom_query v0.28.0
-[1m[92m   Compiling[0m schemars v0.8.22
-[1m[92m   Compiling[0m serde_with v3.24.0
-[1m[92m   Compiling[0m plist v1.10.3
-[1m[92m   Compiling[0m thiserror-impl v1.0.69
-[1m[92m   Compiling[0m pango-sys v0.18.0
-[1m[92m   Compiling[0m gdk-pixbuf-sys v0.18.0
-[1m[92m   Compiling[0m cairo-sys-rs v0.18.2
-[1m[92m   Compiling[0m atk-sys v0.18.2
-[1m[92m   Compiling[0m proc-macro-crate v2.0.2
-[1m[92m    Checking[0m futures-executor v0.3.34
-[1m[92m   Compiling[0m tauri-utils v2.10.2
-[1m[92m    Checking[0m thiserror v1.0.69
-[1m[92m   Compiling[0m glib-macros v0.18.5
-[1m[92m   Compiling[0m gtk-sys v0.18.2
-[1m[92m   Compiling[0m cargo_toml v1.0.1
-[1m[92m    Checking[0m glib v0.18.5
-[1m[92m   Compiling[0m toml_edit v0.19.15
-[1m[92m   Compiling[0m javascriptcore-rs-sys v1.1.1
-[1m[92m   Compiling[0m soup3-sys v0.5.0
-[1m[92m   Compiling[0m gtk v0.18.2
-[1m[92m   Compiling[0m webkit2gtk-sys v2.0.2
-[1m[92m   Compiling[0m proc-macro-crate v1.3.1
-[1m[92m   Compiling[0m gdkx11-sys v0.18.2
-[1m[92m    Checking[0m dpi v0.1.2
-[1m[92m   Compiling[0m gtk3-macros v0.18.2
-[1m[92m   Compiling[0m prettyplease v0.2.37
-[1m[92m   Compiling[0m tauri-plugin v2.7.2
-[1m[92m   Compiling[0m tauri-build v2.7.4
-[1m[92m    Checking[0m gio v0.18.4
-[1m[92m    Checking[0m cairo-rs v0.18.5
-[1m[92m    Checking[0m atk v0.18.2
-[1m[92m    Checking[0m javascriptcore-rs v1.1.2
-[1m[92m   Compiling[0m tracing-attributes v0.1.31
-[1m[92m   Compiling[0m dlopen2_derive v0.4.3
-[1m[92m   Compiling[0m crunchy v0.2.4
-[1m[92m    Checking[0m dlopen2 v0.8.2
-[1m[92m   Compiling[0m wry v0.57.2
-[1m[92m    Checking[0m tracing v0.1.44
-[1m[92m    Checking[0m gdkwayland-sys v0.18.2
-[1m[92m   Compiling[0m serde_repr v0.1.21
-[1m[92m   Compiling[0m enumflags2_derive v0.7.12
-[1m[92m   Compiling[0m toml_edit v0.25.19+spec-1.1.0
-[1m[92m   Compiling[0m tiny-keccak v2.0.2
-[1m[92m   Compiling[0m proc-macro2 v1.0.107
-[1m[92m   Compiling[0m proc-macro-crate v3.5.0
-[1m[92m   Compiling[0m tauri v2.12.5
-[1m[92m   Compiling[0m tauri-codegen v2.7.4
-[1m[92m    Checking[0m keyboard-types v0.8.3
-[1m[92m   Compiling[0m zvariant_utils v4.2.0
-[1m[92m   Compiling[0m serialize-to-javascript-impl v0.1.2
-[1m[92m    Checking[0m event-listener v5.4.2
-[1m[92m    Checking[0m concurrent-queue v2.5.0
-[1m[92m    Checking[0m unicode-ident v1.0.27
-[1m[92m    Checking[0m serialize-to-javascript v0.1.2
-[1m[92m    Checking[0m event-listener-strategy v0.5.4
-[1m[92m   Compiling[0m tauri-macros v2.7.4
-[1m[92m    Checking[0m futures-lite v2.6.1
-[1m[92m   Compiling[0m zvariant_derive v5.15.1
-[1m[92m   Compiling[0m const-random-macro v0.1.16
-[1m[92m   Compiling[0m async-io v2.6.0
-[1m[92m   Compiling[0m bindgen v0.71.1
-[1m[92m    Checking[0m const-random v0.1.18
-[1m[92m   Compiling[0m tauri-plugin-fs v2.7.1
-[1m[92m    Checking[0m pango v0.18.3
-[1m[92m    Checking[0m gdk-pixbuf v0.18.5
-[1m[92m    Checking[0m soup3 v0.5.0
-[1m[92m    Checking[0m gdk v0.18.2
-[1m[92m   Compiling[0m enumflags2 v0.7.12
-[1m[92m   Compiling[0m zcheapstr v1.4.0
-[1m[92m    Checking[0m polling v3.11.0
-[1m[92m    Checking[0m errno v0.3.14
-[1m[92m    Checking[0m async-task v4.7.1
-[1m[92m   Compiling[0m endi v1.1.1
-[1m[92m   Compiling[0m zvariant v5.15.1
-[1m[92m   Compiling[0m bindgen v0.69.5
-[1m[92m    Checking[0m gdkx11 v0.18.2
-[1m[92m   Compiling[0m whisper-rs-sys v0.13.1
-[1m[92m   Compiling[0m ureq v2.12.1
-[1m[92m    Checking[0m hyper-util v0.1.21
-[1m[92m    Checking[0m tower v0.5.3
-[1m[92m    Checking[0m signal-hook-registry v1.4.8
-[1m[92m    Checking[0m dlv-list v0.5.2
-[1m[92m    Checking[0m async-channel v2.5.0
-[1m[92m   Compiling[0m tauri-plugin-deep-link v2.6.3
-[1m[92m    Checking[0m hashbrown v0.14.5
-[1m[92m   Compiling[0m sherpa-rs-sys v0.6.8
-[1m[92m    Checking[0m ordered-multimap v0.7.3
-[1m[92m    Checking[0m hyper-rustls v0.27.10
-[1m[92m    Checking[0m async-signal v0.2.14
-[1m[92m    Checking[0m tower-http v0.6.11
-[1m[92m   Compiling[0m zbus_names v4.3.5
-[1m[92m    Checking[0m async-lock v3.5.0
-[1m[92m   Compiling[0m tauri-plugin-global-shortcut v2.4.1
-[1m[92m   Compiling[0m tauri-plugin-updater v2.14.1
-[1m[92m   Compiling[0m tauri-plugin-dialog v2.8.4
-[1m[92m    Checking[0m piper v0.2.5
-[1m[92m    Checking[0m gethostname v1.1.0
-[1m[92m    Checking[0m keyboard-types v0.7.0
-[1m[92m    Checking[0m blocking v1.7.0
-[1m[92m    Checking[0m x11rb v0.13.2
-[1m[92m   Compiling[0m rfd v0.17.2
-[1m[92m    Checking[0m async-process v2.5.0
-[1m[92m   Compiling[0m zbus_macros v5.19.0
-[1m[92m    Checking[0m rust-ini v0.21.3
-[1m[92m    Checking[0m async-executor v1.14.1
-[1m[92m    Checking[0m async-broadcast v0.7.2
-[1m[92m    Checking[0m xattr v1.7.0
-[1m[92m   Compiling[0m async-trait v0.1.92
-[1m[92m   Compiling[0m async-recursion v1.2.0
-[1m[92m    Checking[0m ordered-stream v0.2.0
-[1m[92m    Checking[0m hex v0.4.3
-[1m[92m    Checking[0m zbus v5.19.0
-[1m[92m    Checking[0m serde_urlencoded v0.7.1
-[1m[92m    Checking[0m global-hotkey v0.8.0
-[1m[92m    Checking[0m tar v0.4.46
-[1m[92m    Checking[0m tempfile v3.27.0
-[1m[92m    Checking[0m reqwest v0.13.5
 [1m[92m   Compiling[0m leitwerk v0.115.0 (/home/runner/work/leitwerk/leitwerk/src-tauri)
-[1m[92m    Checking[0m sherpa-rs v0.6.8
-[1m[92m    Checking[0m reqwest v0.12.28
-[1m[92m    Checking[0m tungstenite v0.24.0
-[1m[92m    Checking[0m webkit2gtk v2.0.2
-[1m[92m    Checking[0m tao v0.37.2
-[1m[92m    Checking[0m muda v0.20.0
-[1m[92m    Checking[0m discord-rich-presence v1.1.0
-[1m[92m    Checking[0m tauri-runtime v2.12.2
-[1m[92m    Checking[0m tauri-runtime-wry v2.12.3
-[1m[92m    Checking[0m tauri-plugin-single-instance v2.5.5
-[1m[92m   Compiling[0m whisper-rs v0.14.4
 [1m[33mwarning[0m[1m: unused import: `tauri::Manager`[0m
   [1m[94m--> [0msrc/sprache.rs:11:5
    [1m[94m|[0m
@@ -445,7 +203,7 @@ Kleinversion in src-tauri/icons/Square30x30Logo.png
   [1m[94m|[0m            [1m[33m^^^^^^^^[0m
 
 [1m[33mwarning[0m: `leitwerk` (lib) generated 7 warnings (run `cargo fix --lib -p leitwerk` to apply 2 suggestions)
-[1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 1m 33s
+[1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 5.17s
 ### cmake -S tools/xplane-plugin -B xpbau -DCMAKE_BUILD_TYPE=Release
 -- The CXX compiler identification is GNU 13.3.0
 -- Detecting CXX compiler ABI info
@@ -457,13 +215,13 @@ Kleinversion in src-tauri/icons/Square30x30Logo.png
 -- Performing Test CMAKE_HAVE_LIBC_PTHREAD
 -- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
 -- Found Threads: TRUE
--- Configuring done (0.2s)
+-- Configuring done (1.4s)
 -- Generating done (0.0s)
 -- Build files have been written to: /home/runner/work/leitwerk/leitwerk/xpbau
 ### cmake --build xpbau -j4
-[ 10%] Building CXX object CMakeFiles/LeitWerk.dir/src/plugin.cpp.o
+[ 20%] Building CXX object CMakeFiles/LeitWerk.dir/src/ansicht.cpp.o
 [ 30%] Building CXX object CMakeFiles/LeitWerk.dir/src/karte.cpp.o
-[ 30%] Building CXX object CMakeFiles/LeitWerk.dir/src/ansicht.cpp.o
+[ 30%] Building CXX object CMakeFiles/LeitWerk.dir/src/plugin.cpp.o
 [ 40%] Building CXX object CMakeFiles/LeitWerk.dir/src/netz.cpp.o
 [ 50%] Building CXX object CMakeFiles/LeitWerk.dir/src/wetter.cpp.o
 [ 60%] Building CXX object CMakeFiles/LeitWerk.dir/extern/imgui/imgui.cpp.o
