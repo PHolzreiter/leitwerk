@@ -1,5 +1,8 @@
 # Änderungen
 
+## 0.116.0-beta.77 – Lobby: „Beitreten“ passt wieder
+- Die Auswahl „Beitreten: Nur mit Code / Auch Discord“ in der Host-Lobby ist jetzt eine kompakte Zeile, die auch in schmale Fenster passt – nichts mehr abgeschnitten, kein Scrollen in der Lobby-Box. Die Erklärung steht beim Darüberfahren mit der Maus.
+
 ## 0.116.0-beta.76 – Mitspielen über Discord
 - **Knopf „Mitspielen“ in Discord:** Erlaubt es der Host, sehen deine Freunde in Discord bei dir (und bei allen Mitspielern) den Knopf „Mitspielen“. Ein Klick öffnet eine kleine Seite, die LeitWerk startet und gleich „Beitreten“ mit dem richtigen Code aufmacht – nur noch Namen prüfen und beitreten. Klappt das Öffnen nicht, steht der Code zum Abtippen auf der Seite.
 - **Host-Lobby: „Wer darf beitreten?“** – „Nur mit Raumcode“ (Standard, wie bisher) oder „Auch über Discord“. Gilt auch während des Spiels, solange Plätze frei sind. Hinweis: Mit „Auch über Discord“ ist der Code im Link für alle sichtbar, die dein Discord-Profil sehen.

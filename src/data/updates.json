@@ -1,5 +1,13 @@
 [
  {
+  "version": "0.116.0-beta.77",
+  "datum": "2026-11-24",
+  "titel": "Lobby: „Beitreten“ passt wieder",
+  "punkte": [
+   "Auswahl „Nur mit Code / Auch Discord“ als kompakte Zeile – nichts mehr abgeschnitten"
+  ]
+ },
+ {
   "version": "0.116.0-beta.76",
   "datum": "2026-11-23",
   "titel": "Mitspielen über Discord",

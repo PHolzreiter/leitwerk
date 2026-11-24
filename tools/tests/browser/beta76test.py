@@ -59,13 +59,15 @@ try:
         H.click("button.l-nav:has-text('Spiel starten')"); H.wait_for_timeout(900)
         H.click("button.l-seg:has-text('Multiplayer')"); H.wait_for_timeout(900)
         t = H.evaluate("() => document.querySelector('.hm-wurzel').innerText")
-        check("Wer darf beitreten?" in t and "Nur mit Raumcode" in t and "Auch über Discord" in t, "Lobby: „Wer darf beitreten?“")
+        check("Beitreten" in t and "Nur mit Code" in t and "Auch Discord" in t, "Lobby: Zeile „Beitreten“ mit zwei Möglichkeiten")
+        lo = H.evaluate("() => { const b = document.querySelector('.l-slobby .l-beitritt'); const box = document.querySelector('.l-slobby'); const r = b.getBoundingClientRect(), q = box.getBoundingClientRect(); const s = b.querySelector('.l-segs').getBoundingClientRect(); return { innen: s.right <= q.right + 1 && s.left >= q.left - 1, scroll: box.scrollHeight - box.clientHeight }; }")
+        check(lo["innen"] and lo["scroll"] <= 4, f"Auswahl passt in die Lobby-Box, nichts abgeschnitten ({lo})")
         check(H.evaluate("() => !!window.__lw.store.settings.beitrittDiscord") is False, "Standard: nur mit Raumcode")
-        H.click("button.l-seg:has-text('Auch über Discord')"); H.wait_for_timeout(700)
+        H.click("button.l-seg:has-text('Auch Discord')"); H.wait_for_timeout(700)
         r = H.evaluate("() => { const l = window.__lw.discord.lage(); return { an: !!window.__lw.store.settings.beitrittDiscord, l, a: window.__lw.discord.aktivitaet(l) }; }")
         print("    ", r["l"]["ort"], r["a"]["details"], r["a"]["knoepfe"])
         check(r["an"] and r["l"]["ort"] == "lobby" and r["a"]["knoepfe"] and r["a"]["knoepfe"][0]["link"].endswith("/" + code), f"Auch über Discord: Knopf mit dem Lobby-Code {code}")
-        check("Code im Link sichtbar" in H.evaluate("() => document.querySelector('.hm-wurzel').innerText"), "Hinweis: Code im Link sichtbar")
+        check("Code steht" in H.evaluate("() => document.querySelector('.l-beitritt').innerHTML"), "Hinweis (beim Darüberfahren): Code steht im Link")
 
         # 3) Beitreten-Seite des Relays
         html = urllib.request.urlopen(f"http://127.0.0.1:{PORT_RELAY}/beitreten/{code}").read().decode()

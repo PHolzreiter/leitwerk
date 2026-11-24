@@ -629,6 +629,11 @@ select.l-select.dd-auf{border-color:#3B8BFF}
 .l-kiwahl{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;font-size:13px;color:#C4CAD6}
 .l-kiwahl em{display:block;font-style:normal;font-size:11px;color:#6B7385;margin-top:2px}
 .l-kiwahl .l-segs .l-seg{padding:6px 10px;font-size:13px}
+/* Wer darf beitreten? (Lobby, Beta 76): eine kompakte Zeile – die Lobby-Box ist schmal und nicht hoch */
+.l-beitritt{margin-top:8px;padding-top:8px;border-top:1px solid #262A35;gap:8px}
+.l-beitritt > span:first-child{white-space:nowrap}
+.l-beitritt .l-segs{padding:3px;flex:0 0 auto}
+.l-beitritt .l-segs .l-seg{flex:0 0 auto;padding:5px 10px;font-size:12px}
 .l-pill{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:999px;font-size:10px;font-weight:600;letter-spacing:.02em;text-transform:none;vertical-align:1px}
 .l-pill.ok{color:#4CC38A;background:rgba(76,195,138,.12)}
 .l-pill.warn{color:#FFC72C;background:rgba(255,199,44,.12)}
@@ -1027,7 +1032,7 @@ select.l-select.dd-auf{border-color:#3B8BFF}
                         </div>
                       </sc-for>
                       <sc-if value="{{lobbyPlatz}}" hint-placeholder-val="{{true}}"><div class="l-rrow l-rfrei"><span class="l-rname"><b></b><i>Wartet auf Spieler …</i></span><em>{{lobbyAnzahl}} von 6</em></div></sc-if>
-                      <div class="l-kiwahl l-beitritt"><span>Wer darf beitreten?<em>{{beitrittHinweis}}</em></span><span class="l-segs"><sc-for list="{{beitrittOpts}}" as="o" hint-placeholder-count="2"><button class="{{o.cls}}" onClick="{{o.pick}}">{{o.label}}</button></sc-for></span></div>
+                      <div class="l-kiwahl l-beitritt"><span title="{{beitrittHinweis}}">Beitreten</span><span class="l-segs"><sc-for list="{{beitrittOpts}}" as="o" hint-placeholder-count="2"><button class="{{o.cls}}" title="{{o.tip}}" onClick="{{o.pick}}">{{o.label}}</button></sc-for></span></div>
                     </div>
                   </sc-if>
                 </sc-if>

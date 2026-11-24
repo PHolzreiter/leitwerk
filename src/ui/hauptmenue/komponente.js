@@ -466,8 +466,8 @@ export class Komponente {
       lobbyKopieren: () => { try { navigator.clipboard.writeText(lobby.code); this.setState({ startFehler: null }); } catch (e) { /* egal */ } },
       lobbyAnzahl: lobby.spieler.length, lobbyPlatz: lobby.spieler.length < 6,
       // Wer darf beitreten? (Beta 76): nur mit Raumcode oder auch über den Discord-Knopf „Mitspielen“
-      beitrittOpts: [['Nur mit Raumcode', false], ['Auch über Discord', true]].map(([label, an]) => ({ label, cls: 'l-seg' + (A.beitrittDiscord() === an ? ' on' : ''), pick: () => A.beitrittDiscordSetzen(an) })),
-      beitrittHinweis: A.beitrittDiscord() ? 'In Discord sehen Freunde bei euch „Mitspielen“ – dabei ist der Code im Link sichtbar' : 'Nur wer den Code von dir bekommt, kann beitreten',
+      beitrittOpts: [['Nur mit Code', false, 'Nur wer den Raumcode von dir bekommt, kann beitreten'], ['Auch Discord', true, 'Freunde sehen in Discord bei euch den Knopf „Mitspielen“ – der Code steht dann im Link']].map(([label, an, tip]) => ({ label, tip, cls: 'l-seg' + (A.beitrittDiscord() === an ? ' on' : ''), pick: () => A.beitrittDiscordSetzen(an) })),
+      beitrittHinweis: A.beitrittDiscord() ? 'Discord zeigt „Mitspielen“ – der Code steht im Link' : 'Nur wer den Code von dir bekommt, kann beitreten',
       checks,
       startLabel: modus === 'Solo' ? 'Neue Simulation starten' : 'Simulation für alle starten',
       startCls: 'l-btn' + (st.startLaeuft ? ' off' : ''),
