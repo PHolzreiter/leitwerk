@@ -1,5 +1,15 @@
 [
  {
+  "version": "0.116.0-beta.79",
+  "datum": "2026-11-24",
+  "titel": "Falsche Adressen ohne Häufung · Fehler melden über Mithelfen",
+  "punkte": [
+   "Falsche Adressen kommen nicht mehr gehäuft: danach folgen immer einige Einsätze mit richtiger Adresse",
+   "Im Schnitt passiert es trotzdem so oft wie eingestellt",
+   "Mithelfen hat einen neuen Reiter „Fehler/Problem“ – auf Wunsch mit Fehlerbericht und Protokoll"
+  ]
+ },
+ {
   "version": "0.116.0-beta.78",
   "datum": "2026-11-24",
   "titel": "Rettungszufahrten für sechs Landeskliniken",

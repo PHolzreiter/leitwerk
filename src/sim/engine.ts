@@ -5,6 +5,7 @@
  * vom Host an die Mitspieler übertragen werden kann. Alle Eingriffe des Spielers
  * laufen über die öffentlichen Methoden (alarmieren, Adresse setzen, …).
  */
+import { falscheAdresseZiehen } from "./falscheAdresse";
 import { ohneKopf, absichtErkennen, istQuittung } from "./funkAbsicht";
 import { funkSprechform, zahlenAlsZiffern } from "./funkErkennung";
 import { fahrzeugZuName, rufnamen } from "./funkname";
@@ -4778,12 +4779,14 @@ export class Simulation extends GsKern {
     }
     let gemeldet = adr.label;
     // Manche Anrufer nennen eine falsche Adresse (andere Hausnummer derselben Straße) – die Rufhilfe kennt sie genau
-    if (fall?.antworten.anrufer !== "rufhilfe" && Math.random() * 100 < s.falscheAdresseProzent) {
+    // – nie mehrere kurz hintereinander, im Schnitt so oft wie eingestellt (falscheAdresse.ts)
+    if (fall?.antworten.anrufer !== "rufhilfe" && falscheAdresseZiehen(s.falscheAdresseProzent, this.seitFalscherAdresse)) {
       const andere = (await searchAddress(`${adr.street} ${adr.city}`, 40)).filter(
         (h) => !h.place && distanceM(h, adr!) > s.verortungRadius * 1.5,
       );
       if (andere.length) gemeldet = pick(andere).label;
     }
+    this.seitFalscherAdresse = gemeldet !== adr.label ? 0 : this.seitFalscherAdresse + 1;
     const alter = typeof fall?.antworten.alter === "number" ? fall.antworten.alter : null;
     // Notruf aus der Natur: Anrufer weiß nicht genau, wo er ist (Ortung nötig)
     const vorlage = fall?.vorlage ? (fallVorlage(fall.vorlage) ?? SZENARIEN.find((v) => v.id === fall!.vorlage)) : undefined;
@@ -4955,6 +4958,8 @@ export class Simulation extends GsKern {
 
   /** Fälle der letzten Notrufe (Katalog-ID bzw. Fallgeschichte) – derselbe Fall kommt nicht kurz hintereinander (Ticket 15) */
   private letzteFaelle: string[] = [];
+  /** Einsätze seit der letzten falschen Adresse (gegen Häufungen) */
+  protected seitFalscherAdresse = Infinity;
   /** Gruppen (Themen) der letzten Notrufe – bei Standard und Stressig kein Thema öfter als 2-mal hintereinander (Beta 73) */
   private letzteGruppen: string[] = [];
   static readonly FALL_SPERRE = 6;

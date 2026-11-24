@@ -32,14 +32,16 @@ import { openDialog, type DialogHandle } from "./dialog";
 import { dienstplanEditor } from "./dienstplanEditor";
 import { el, esc, toast } from "./dom";
 import { inTauri } from "../platform";
+import { fehlerTicketSenden } from "./fehlerMelden";
 import { BEZUG, EINGEBUNDEN, WUNSCH_TEILE } from "./pilot/hubschrauber";
 
-export type Reiter = Exclude<TicketArt, "hilfe" | "fehler"> | "meine";
+export type Reiter = Exclude<TicketArt, "hilfe"> | "meine";
 const REITER: [Reiter, string][] = [
   ["fahrzeug", "Fahrzeug"],
   ["dienststelle", "Dienststelle"],
   ["poi", "Ort (POI)"],
   ["krankenhaus", "Krankenhaus"],
+  ["fehler", "Fehler/Problem"],
   ["vorschlag", "Vorschlag"],
   ["idee", "Idee/Wunsch"],
   ["hubschrauber", "Hubschrauber"],
@@ -388,6 +390,31 @@ function vorschlagForm(hilfe?: HilfePunkt, idee = false): Formular {
   };
 }
 
+// ------------------------------------------------------------------ Fehler/Problem (Ticket 16)
+
+function fehlerForm(): Formular & { mitBericht: () => boolean } {
+  const root = el("div", { class: "form-grid" });
+  const info = el(
+    "p",
+    { class: "fld wide muted small" },
+    "Etwas funktioniert nicht oder passt nicht? Beschreib kurz, was passiert ist und was du davor gemacht hast. Bilder (Screenshots) helfen sehr.",
+  );
+  const titel = eingabe("Kurz: was geht nicht? (z. B. „Fahrzeug fährt nicht los“)", "titel");
+  const bericht = el("input", { type: "checkbox", name: "bericht", checked: "" }) as HTMLInputElement;
+  const berichtZeile = el("label", { class: "fld wide mh-bericht" });
+  berichtZeile.append(bericht, el("span", {}, " Fehlerbericht und Protokoll mitschicken (Spielstand, Einstellungen, letzte Meldungen – hilft bei der Suche)"));
+  root.append(info, feld("Titel *", titel, { breit: true }), berichtZeile);
+  return {
+    root,
+    zerstoeren: () => {},
+    mitBericht: () => bericht.checked,
+    lesen: () => {
+      if (!titel.value.trim()) return "Bitte kurz angeben, was nicht geht";
+      return { art: "fehler", titel: `Fehler: ${titel.value.trim()}` };
+    },
+  };
+}
+
 // ------------------------------------------------------------------ Hubschrauber-Wunsch
 
 function hubschrauberForm(): Formular {
@@ -613,10 +640,15 @@ export function mithelfenOeffnen(opt: { reiter?: Reiter; hilfe?: HilfePunkt; obe
     }
     if (opt.hilfe) kopf.innerHTML = `<b>Offener Punkt:</b> ${esc(opt.hilfe.titel)}<div class="small muted">${esc(opt.hilfe.text)}</div>`;
     form =
-      reiter === "fahrzeug" ? fahrzeugForm() : reiter === "dienststelle" ? dienststelleForm() : reiter === "poi" ? poiForm() : reiter === "krankenhaus" ? krankenhausForm() : reiter === "idee" ? vorschlagForm(undefined, true) : reiter === "hubschrauber" ? hubschrauberForm() : vorschlagForm(opt.hilfe);
+      reiter === "fahrzeug" ? fahrzeugForm() : reiter === "dienststelle" ? dienststelleForm() : reiter === "poi" ? poiForm() : reiter === "krankenhaus" ? krankenhausForm() : reiter === "idee" ? vorschlagForm(undefined, true) : reiter === "hubschrauber" ? hubschrauberForm() : reiter === "fehler" ? fehlerForm() : vorschlagForm(opt.hilfe);
     formOrt.innerHTML = "";
     formOrt.appendChild(form.root);
-    text.placeholder = reiter === "hubschrauber" ? "Was ist an diesem Hubschrauber besonders (z. B. HEMS-Ausstattung, eigenes Tablet)? Was soll LeitWerk dort anzeigen?" : "Was weißt du? Woher (z. B. Dienstplan der Dienststelle, eigene Erfahrung)?";
+    text.placeholder =
+      reiter === "hubschrauber"
+        ? "Was ist an diesem Hubschrauber besonders (z. B. HEMS-Ausstattung, eigenes Tablet)? Was soll LeitWerk dort anzeigen?"
+        : reiter === "fehler"
+          ? "Was ist passiert? Was hast du davor gemacht? Was hättest du erwartet?"
+          : "Was weißt du? Woher (z. B. Dienstplan der Dienststelle, eigene Erfahrung)?";
   };
   for (const [r, label] of REITER) {
     const b = el("button", { type: "button", class: "mh-reiter-b", "data-r": r }, label);
@@ -634,7 +666,7 @@ export function mithelfenOeffnen(opt: { reiter?: Reiter; hilfe?: HilfePunkt; obe
       toast(r, "error");
       return false;
     }
-    if (r.art === "vorschlag" || r.art === "hilfe" || r.art === "idee" ? !text.value.trim() && !anhaenge.length : false) {
+    if (r.art === "vorschlag" || r.art === "hilfe" || r.art === "idee" || r.art === "fehler" ? !text.value.trim() && !anhaenge.length : false) {
       toast("Bitte beschreiben, worum es geht (oder eine Datei anhängen)", "error");
       return false;
     }
@@ -655,7 +687,14 @@ export function mithelfenOeffnen(opt: { reiter?: Reiter; hilfe?: HilfePunkt; obe
     };
     const knopf = dlg.root.parentElement?.querySelector<HTMLButtonElement>(".dlg-foot .btn.primary");
     if (knopf) knopf.disabled = true;
-    const erg = await ticketSchicken(e);
+    // Fehler mit Bericht: wie „Fehler melden“ (Käfer) – Bericht, Protokoll und Bilder kommen mit
+    const mitBericht = r.art === "fehler" && "mitBericht" in form && (form as ReturnType<typeof fehlerForm>).mitBericht();
+    const erg = mitBericht
+      ? await fehlerTicketSenden(`${r.titel.replace(/^Fehler: /, "")}\n${text.value.trim()}`.trim(), {
+          bilder: anhaenge.filter((a) => BINAER_ENDUNG.test(a.name)),
+          zusatz: [kontakt.value.trim() ? `Kontakt: ${kontakt.value.trim()}` : "", ...anhaenge.filter((a) => !BINAER_ENDUNG.test(a.name)).map((a) => `\n### ${a.name}\n\n${a.inhalt}`)].filter(Boolean).join("\n") || undefined,
+        }).then((x) => ("nr" in x ? ({ ergebnis: "gesendet", nr: x.nr } as const) : ({ ergebnis: "fehler", fehler: x.fehler } as const)))
+      : await ticketSchicken(e);
     if (knopf) knopf.disabled = false;
     if (erg.ergebnis === "fehler") {
       toast(`Nicht angenommen: ${erg.fehler}`, "error");

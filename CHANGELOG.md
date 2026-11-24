@@ -1,5 +1,9 @@
 # Änderungen
 
+## 0.116.0-beta.79 – Falsche Adressen ohne Häufung · Fehler melden über Mithelfen
+- **Falsche Adresse ohne Häufung:** Manche Anrufer nennen eine falsche Hausnummer – das Team findet dann niemanden, und du musst orten. Bisher wurde das bei jedem Einsatz neu ausgewürfelt, dadurch konnte es mehrmals kurz hintereinander passieren. Jetzt kommen nach einer falschen Adresse immer erst einige Einsätze mit richtiger Adresse (bei 15 % mindestens drei). Im Schnitt passiert es trotzdem so oft wie unter „Falsche Adresse“ eingestellt.
+- **Mithelfen › Fehler/Problem:** Neuer Reiter, um ein Problem zu melden – kurzer Titel, Beschreibung, Bilder. Das Häkchen „Fehlerbericht und Protokoll mitschicken“ (Standard an) hängt wie beim Käfer-Symbol den Bericht an, damit sich der Fehler leichter finden lässt. Das Ticket steht danach unter „Meine Tickets“.
+
 ## 0.116.0-beta.78 – Rettungszufahrten für sechs Landeskliniken
 - **Neue Rettungszufahrten:** LK Horn (von der Spitalgasse durch die Vorfahrt), LK Allentsteig (von der Bahnhofstraße), LK Hollabrunn (von der Robert-Löffler-Straße, Schleife), LK Zwettl (von der Propstei, Schleife), LK Mistelbach (von der Liechtensteinstraße) und LK Melk (von der Himmelreichstraße). Auf der Karte zeigt das blaue „P“ den Übergabepunkt.
 - **Weg auf dem Gelände:** Bei diesen Häusern fahren RTW und NEF auf dem Klinikgelände genau den eingezeichneten Weg zur Übergabe – auch dort, wo die Straßenkarte keinen Weg kennt. Beim Wegfahren geht es zuerst über den Ausfahrtsweg zurück auf die Straße (bei Schleifen also nicht denselben Weg retour).
