@@ -1,5 +1,10 @@
 # Änderungen
 
+## 0.116.0-beta.78 – Rettungszufahrten für sechs Landeskliniken
+- **Neue Rettungszufahrten:** LK Horn (von der Spitalgasse durch die Vorfahrt), LK Allentsteig (von der Bahnhofstraße), LK Hollabrunn (von der Robert-Löffler-Straße, Schleife), LK Zwettl (von der Propstei, Schleife), LK Mistelbach (von der Liechtensteinstraße) und LK Melk (von der Himmelreichstraße). Auf der Karte zeigt das blaue „P“ den Übergabepunkt.
+- **Weg auf dem Gelände:** Bei diesen Häusern fahren RTW und NEF auf dem Klinikgelände genau den eingezeichneten Weg zur Übergabe – auch dort, wo die Straßenkarte keinen Weg kennt. Beim Wegfahren geht es zuerst über den Ausfahrtsweg zurück auf die Straße (bei Schleifen also nicht denselben Weg retour).
+- **Selbst festlegen:** Im Bearbeiten-Fenster eines Krankenhauses kann die Rettungszufahrt jetzt zusätzlich einen Weg haben: `hin=lat,lon / lat,lon` (Einfahrt → P) und `aus=lat,lon / lat,lon` (P → Straße). Ohne Weg bleibt alles wie bisher.
+
 ## 0.116.0-beta.77 – Lobby: „Beitreten“ passt wieder
 - Die Auswahl „Beitreten: Nur mit Code / Auch Discord“ in der Host-Lobby ist jetzt eine kompakte Zeile, die auch in schmale Fenster passt – nichts mehr abgeschnitten, kein Scrollen in der Lobby-Box. Die Erklärung steht beim Darüberfahren mit der Maus.
 

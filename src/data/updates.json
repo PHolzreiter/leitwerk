@@ -1,5 +1,15 @@
 [
  {
+  "version": "0.116.0-beta.78",
+  "datum": "2026-11-24",
+  "titel": "Rettungszufahrten für sechs Landeskliniken",
+  "punkte": [
+   "LK Horn, Allentsteig, Hollabrunn, Zwettl, Mistelbach und Melk haben jetzt eine Rettungszufahrt",
+   "Die Fahrzeuge fahren auf dem Gelände genau den eingezeichneten Weg bis zur Übergabe – und danach auf dem eigenen Weg wieder hinaus",
+   "Im Bearbeiten-Fenster lässt sich der Weg mit hin=… und aus=… selbst angeben"
+  ]
+ },
+ {
   "version": "0.116.0-beta.77",
   "datum": "2026-11-24",
   "titel": "Lobby: „Beitreten“ passt wieder",

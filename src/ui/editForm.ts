@@ -327,7 +327,7 @@ export function openEditor(
         "zufahrt",
         "Rettungszufahrt",
         textInput(zufahrtText(h?.zufahrt), "einfahrt=48.41296,15.61544; p=48.41247,15.61458"),
-        "P = wo das Fahrzeug „ins KH“ geht (Transporte fahren dorthin, über die Einfahrt). Leer = zum Haus selbst.",
+        "P = wo das Fahrzeug „ins KH“ geht (Transporte fahren dorthin, über die Einfahrt). Leer = zum Haus selbst. Optional der Weg auf dem Gelände: hin=… / … (Einfahrt → P) und aus=… / … (P → Straße).",
         true,
       );
       const zfWrap = el("div", { class: "fld wide" });
@@ -340,7 +340,7 @@ export function openEditor(
           if (!pkt) return;
           const inp = inputs.zufahrt as HTMLInputElement;
           const alt = zufahrtLesen(inp.value);
-          const neu = was === "p" ? { ...(alt ?? {}), p: pkt } : { p: alt?.p ?? pkt, ein: pkt };
+          const neu = was === "p" ? { ...(alt ?? {}), p: pkt } : { ...(alt ?? {}), p: alt?.p ?? pkt, ein: pkt };
           inp.value = zufahrtText(neu);
         });
         zfWrap.appendChild(b);

@@ -1483,6 +1483,36 @@ export function khZufahrtBei(ziel: LatLon): Zufahrt | null {
   return null;
 }
 
+/** Rettungszufahrt, an deren Punkt P das Fahrzeug gerade steht (≤ 15 m), sonst null */
+export function khZufahrtAb(von: LatLon): Zufahrt | null {
+  for (const h of store.list("hospitals")) {
+    const z = h.zufahrt;
+    if (z?.p && distanceM(von, z.p) < 15) return z;
+  }
+  return null;
+}
+
+/** Eingezeichneter Weg auf dem KH-Gelände (Schritttempo, ca. 15 km/h) als Route */
+export function gelaendeWeg(punkte: LatLon[], kmh = 15): Route {
+  const coords: [number, number][] = [];
+  const times: number[] = [];
+  let dist = 0;
+  punkte.forEach((pt, i) => {
+    if (i > 0) dist += distanceM(punkte[i - 1], pt);
+    coords.push([pt.lon, pt.lat]);
+    times.push(dist / (kmh / 3.6));
+  });
+  const duration = times[times.length - 1] ?? 0;
+  return { coords, times, duration, distance: dist };
+}
+
+/** Zwei Routen hintereinander (die zweite beginnt dort, wo die erste endet) */
+function routenVerbinden(a: Route, b: Route): Route {
+  const coords = [...a.coords, ...b.coords.slice(1)];
+  const times = [...a.times, ...b.times.slice(1).map((t) => t + a.duration)];
+  return { coords, times, duration: a.duration + b.duration, distance: a.distance + b.distance };
+}
+
 /** Krankenhaus, dessen Mitte oder Punkt P dieses Ziel ist */
 function khAmZiel(ziel: LatLon): Hospital | null {
   for (const h of store.list("hospitals")) if (distanceM(ziel, h) < 5 || (h.zufahrt?.p && distanceM(ziel, h.zufahrt.p) < 5)) return h;
@@ -2545,20 +2575,29 @@ export class Simulation extends GsKern {
 
   /**
    * Route auf der Straße. Ziel ist ein Krankenhaus mit Rettungszufahrt? Dann über die Einfahrt zum Punkt P
-   * (dort geht die Besatzung „ins KH“) – nicht irgendwo ans Haus.
+   * (dort geht die Besatzung „ins KH“) – nicht irgendwo ans Haus. Ist der Weg auf dem Gelände eingezeichnet
+   * (hin), fährt das Fahrzeug genau diesen Weg; steht es an P eines Hauses mit eingezeichneter Ausfahrt (aus),
+   * fährt es zuerst diesen Weg hinaus.
    */
   protected strassenRoute(von: LatLon, ziel: LatLon): Promise<Route> {
+    const start = khZufahrtAb(von);
+    if (start?.aus?.length && distanceM(von, ziel) > 30) {
+      const hinaus = gelaendeWeg([von, ...start.aus]);
+      const ausfahrt = start.aus[start.aus.length - 1];
+      return this.strassenRouteZiel(ausfahrt, ziel).then((rest) => routenVerbinden(hinaus, rest));
+    }
+    return this.strassenRouteZiel(von, ziel);
+  }
+
+  private strassenRouteZiel(von: LatLon, ziel: LatLon): Promise<Route> {
     const z = khZufahrtBei(ziel);
     if (!z) return route(von, ziel);
     const p = z.p;
     const ein = z.ein;
     // schon auf dem Gelände (näher an P als die Einfahrt) oder keine Einfahrt: direkt zu P
     if (!ein || distanceM(von, p) <= distanceM(ein, p) || distanceM(von, ein) < 30) return route(von, p);
-    return Promise.all([route(von, ein), route(ein, p)]).then(([a, b]) => {
-      const coords = [...a.coords, ...b.coords.slice(1)];
-      const times = [...a.times, ...b.times.slice(1).map((t) => t + a.duration)];
-      return { coords, times, duration: a.duration + b.duration, distance: a.distance + b.distance };
-    });
+    const aufGelaende = z.hin?.length ? Promise.resolve(gelaendeWeg([ein, ...z.hin, p])) : route(ein, p);
+    return Promise.all([route(von, ein), aufGelaende]).then(([a, b]) => routenVerbinden(a, b));
   }
 
   /** Krankenhaus, Hubschrauberstützpunkt oder Landeplatz in der Nähe (≤ 300 m)? */

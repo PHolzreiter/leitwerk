@@ -159,6 +159,10 @@ export interface Zufahrt {
   p: { lat: number; lon: number };
   /** Einfahrt von der öffentlichen Straße (optional) */
   ein?: { lat: number; lon: number };
+  /** Weg auf dem Gelände von der Einfahrt zu P (Zwischenpunkte, optional) – so fahren die Fahrzeuge hinein */
+  hin?: { lat: number; lon: number }[];
+  /** Weg von P hinaus bis zur öffentlichen Straße (letzter Punkt = Ausfahrt, optional) */
+  aus?: { lat: number; lon: number }[];
 }
 
 /** Wohin Fahrzeuge fahren, wenn sie „ins KH“ fahren: Punkt P der Rettungszufahrt, sonst das Haus selbst */

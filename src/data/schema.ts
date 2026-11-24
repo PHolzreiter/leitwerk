@@ -63,7 +63,10 @@ function radLesen(text: string): Aufnahmerad | null {
   return { gruppe: m[1].trim(), start: m[2], wechsel: m[3].padStart(5, "0"), zyklus: m[4], einrichtungen };
 }
 
-/** Rettungszufahrt: „einfahrt=48.41296,15.61544; p=48.41247,15.61458“ (oder nur „48.41247,15.61458“ = P) */
+/**
+ * Rettungszufahrt: „einfahrt=48.41296,15.61544; p=48.41247,15.61458“ (oder nur „48.41247,15.61458“ = P).
+ * Optional der Weg auf dem Gelände: „hin=lat,lon / lat,lon“ (Einfahrt → P) und „aus=lat,lon / lat,lon“ (P → Ausfahrt).
+ */
 export function zufahrtLesen(text: string): Zufahrt | null {
   const t = text.trim();
   if (!t) return null;
@@ -74,8 +77,11 @@ export function zufahrtLesen(text: string): Zufahrt | null {
     const lon = Number(m[2]);
     return Number.isFinite(lat) && Number.isFinite(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180 ? { lat, lon } : null;
   };
+  const liste = (x: string) => x.split("/").map((y) => punkt(y)).filter((y): y is { lat: number; lon: number } => !!y);
   let p: { lat: number; lon: number } | null = null;
   let ein: { lat: number; lon: number } | null = null;
+  let hin: { lat: number; lon: number }[] = [];
+  let aus: { lat: number; lon: number }[] = [];
   for (const teil of t.split(";").map((x) => x.trim()).filter(Boolean)) {
     const m = teil.match(/^([a-zäöü ]+)\s*[=:]\s*(.+)$/i);
     if (!m) {
@@ -84,10 +90,15 @@ export function zufahrtLesen(text: string): Zufahrt | null {
     }
     const k = normKey(m[1]);
     if (/^(ein|einfahrt|zufahrt|tor)$/.test(k)) ein = punkt(m[2]);
+    else if (/^(hin|weg|hinweg)$/.test(k)) hin = liste(m[2]);
+    else if (/^(aus|ausfahrt|rueck|rueckweg|zurueck)$/.test(k)) aus = liste(m[2]);
     else p = punkt(m[2]);
   }
   if (!p) return null;
-  return ein ? { p, ein } : { p };
+  const z: Zufahrt = ein ? { p, ein } : { p };
+  if (hin.length && ein) z.hin = hin;
+  if (aus.length) z.aus = aus;
+  return z;
 }
 
 /** Hubschrauberlandeplatz: „48.41210,15.61480“, „kein“ oder leer */
@@ -110,7 +121,8 @@ export function landeplatzText(l: { lat: number; lon: number } | "kein" | null |
 export function zufahrtText(z: Zufahrt | null | undefined): string {
   if (!z) return "";
   const f = (x: { lat: number; lon: number }) => `${x.lat.toFixed(6)},${x.lon.toFixed(6)}`;
-  return (z.ein ? `einfahrt=${f(z.ein)}; ` : "") + `p=${f(z.p)}`;
+  const l = (xs: { lat: number; lon: number }[]) => xs.map(f).join(" / ");
+  return (z.ein ? `einfahrt=${f(z.ein)}; ` : "") + (z.ein && z.hin?.length ? `hin=${l(z.hin)}; ` : "") + `p=${f(z.p)}` + (z.aus?.length ? `; aus=${l(z.aus)}` : "");
 }
 
 /** Einrichtungen aus einer CSV-Zelle: IDs oder Namen, mit Komma getrennt */
