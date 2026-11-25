@@ -1,5 +1,13 @@
 # Änderungen
 
+## 0.116.0-beta.80 – Rufhilfe kommt als fertiger Einsatz
+- **Rufhilfe als fertiger Einsatz (Standard):** Einen Rufhilfe-Alarm nimmt in Wirklichkeit eine externe Stelle auf. Deshalb klingelt er jetzt nicht mehr bei dir, sondern erscheint fertig aufgenommen in der Einsatzliste („disponieren“) – du musst nur noch das Fahrzeug schicken.
+- **Alles drin wie selbst abgefragt:** Adresse, Code RD-32B2, Erstaufnahme (Anrufer Rufhilfe, Alter, Geschlecht, Sprechverbindung, Bewusstsein und Atmung, Schlüsselsafe Nummer und Ort, „Was ist passiert“) und die Info an den RTW, z. B. „93m B+ A+ // Gestürzt, liegt am Boden, kommt allein nicht mehr hoch, starke Schmerzen rechte Hüfte“. Im Protokoll steht „Aufgenommen von: Externe Annahme (Rufhilfe)“.
+- **Ohne Sprechverbindung:** Meldet sich niemand, kommt der Einsatz mit „keine Sprechverbindung“ – Bewusstsein und Atmung sind unbekannt, vor Ort kann es auch ein Fehleinsatz sein. Rein versehentliche Alarme, bei denen sich die Person meldet, klärt die externe Stelle selbst – die kommen nicht.
+- **Kein Rückruf:** Ein fertig aufgenommener Rufhilfe-Einsatz steht nicht im Telefon und lässt sich nicht zurückrufen – alles Nötige steht schon drin.
+- **Einstellung:** Einstellungen › Notrufe & Anrufer › „Rufhilfe-Alarme“: „Fertiger Einsatz“ (Standard) oder „Selbst aufnehmen“ (wie bisher: der Alarm klingelt als Notruf). Im Mehrspieler entscheidet der Host.
+- **Ton „Einsatz rein“ für alle:** Der Ton kommt jetzt bei jedem Disponenten, sobald irgendwer ein Aufnahme-Telefonat beendet – auch bei fertigen Rufhilfe-Einsätzen. Piloten hören ihn hier nicht.
+
 ## 0.116.0-beta.79 – Falsche Adressen ohne Häufung · Fehler melden über Mithelfen
 - **Falsche Adresse ohne Häufung:** Manche Anrufer nennen eine falsche Hausnummer – das Team findet dann niemanden, und du musst orten. Bisher wurde das bei jedem Einsatz neu ausgewürfelt, dadurch konnte es mehrmals kurz hintereinander passieren. Jetzt kommen nach einer falschen Adresse immer erst einige Einsätze mit richtiger Adresse (bei 15 % mindestens drei). Im Schnitt passiert es trotzdem so oft wie unter „Falsche Adresse“ eingestellt.
 - **Mithelfen › Fehler/Problem:** Neuer Reiter, um ein Problem zu melden – kurzer Titel, Beschreibung, Bilder. Das Häkchen „Fehlerbericht und Protokoll mitschicken“ (Standard an) hängt wie beim Käfer-Symbol den Bericht an, damit sich der Fehler leichter finden lässt. Das Ticket steht danach unter „Meine Tickets“.

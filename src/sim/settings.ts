@@ -197,6 +197,11 @@ export interface Settings {
   funkVielfalt?: boolean;
   /** Anteil der Anrufer, die eine falsche/ungenaue Adresse nennen (%) */
   falscheAdresseProzent: number;
+  /**
+   * Rufhilfe-Alarme (Paul 25.11.2026): „extern“ (Standard) = eine externe Stelle nimmt sie auf, sie kommen als fertiger
+   * Einsatz zum Disponieren; „selbst“ = sie klingeln als Notruf und werden selbst abgefragt
+   */
+  rufhilfeAufnahme?: "extern" | "selbst";
   wetterAktiv: boolean;
   /** Funk: Besatzungen lassen manchmal etwas weg (BEL fast nie, KTW öfter) – man muss nachfragen */
   funkUnvollstaendig?: boolean;

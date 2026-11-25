@@ -131,9 +131,13 @@ function rauschen(c: AudioContext, ab: number): void {
   s.start(Math.max(ab, c.currentTime));
 }
 
+/** wie oft welcher Ton gespielt wurde (für Tests) */
+export const tonZaehler: Record<string, number> = {};
+
 /** Ton des Funkgeräts hier abspielen (eigene Sprechtaste, vorgelesene Funksprüche); laut 0 = nicht */
 export function funkTon(art: "beginn" | "ende" | "statusDruck" | "statusGesendet" | "einsatzRein", laut = 1, ki = false): number {
   if (laut <= 0) return 0;
+  tonZaehler[art] = (tonZaehler[art] ?? 0) + 1;
   try {
     const c = audio();
     // „Einsatz rein“ ist schon eine Aufnahme vom Gerät: ohne Funkfilter

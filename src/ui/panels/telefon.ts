@@ -64,7 +64,7 @@ export function alleAnrufe(mitBeendeten = false): AnrufEintrag[] {
   const zeigen = (a: Anruf) => a.status !== "beendet" || (mitBeendeten && t - a.seit < 15 * 60_000);
   for (const e of sim.state.einsaetze) {
     const a = e.anruf;
-    if (!a || (e.zustand === "abgeschlossen" && a.status !== "beendet") || !zeigen(a)) continue;
+    if (!a || e.aufnahme === "extern" || (e.zustand === "abgeschlossen" && a.status !== "beendet") || !zeigen(a)) continue;
     l.push({ art: "rd", typ: "notruf", id: e.id, nummer: e.nummer, anruf: a, telefon: angezeigteNummer(e), titel: e.meldung.adresse || "Notruf" });
   }
   for (const k of sim.state.kt ?? []) {
@@ -131,8 +131,7 @@ export function anrufAuflegen(art: AnrufArt, id: string): void {
   verstummen();
   fehler(
     sim.call(art === "rd" ? "anrufBeenden" : "ktAnrufBeenden", id).then(() => {
-      // Notruf (RD) beendet: Ton „Einsatz rein“
-      if (art === "rd") funkTon("einsatzRein");
+      // Ton „Einsatz rein“ kommt jetzt bei allen Disponenten über den Beobachter (anrufBeobachterStarten)
       // Nach dem Gespräch: Maske nach vorne; steckt die Abfrage bei der Karte, wieder die Karte zeigen
       const d = dock();
       const abf = d?.getPanel("abfrage");
@@ -158,6 +157,8 @@ export function anrufBeobachterStarten(): void {
   const bekannt = new Set<string>();
   let erstes = true;
   const funkGemeldet = new Set<number>();
+  // Notrufe, deren Aufnahme beendet ist (Ton „Einsatz rein“ bei jedem Disponenten – Paul 25.11.2026)
+  const fertig = new Set<string>(sim.state.einsaetze.filter((e) => e.anruf?.status === "beendet").map((e) => e.id));
   const pruefen = () => {
     // Piloten-Interface: Telefon, KT-Hotline und Funk der Leitstelle gehen den Piloten nichts an
     if (istPilot()) {
@@ -166,6 +167,15 @@ export function anrufBeobachterStarten(): void {
       erstes = true;
       return;
     }
+    // Aufnahme-Telefonat beendet (von wem auch immer, auch die externe Annahme der Rufhilfe): Ton „Einsatz rein“
+    let neuFertig = 0;
+    for (const e of sim.state.einsaetze) {
+      if (e.anruf?.status !== "beendet" || fertig.has(e.id)) continue;
+      fertig.add(e.id);
+      neuFertig++;
+    }
+    // (beim Start bzw. nach dem Laden eines Spielstands viele auf einmal: kein Ton)
+    if (neuFertig > 0 && neuFertig <= 3) funkTon("einsatzRein");
     const p = pers();
     const anrufe = alleAnrufe();
     const klingeltNotruf = anrufe.some((x) => x.typ === "notruf" && x.anruf.status === "klingelt");

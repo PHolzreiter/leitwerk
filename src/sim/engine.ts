@@ -932,6 +932,8 @@ export interface Einsatz {
   /** von der Besatzung genannte Verdachtsdiagnose (sichtbar) */
   verdacht?: string | null;
   rueckrufGemacht: boolean;
+  /** „extern“: von einer externen Stelle fertig aufgenommen (Rufhilfe) – nur noch zu disponieren, kein Rückruf */
+  aufnahme?: "extern";
   /** vom Calltaker aufgenommene Rückrufnummer */
   telefon?: string;
   adressePruefen: boolean;
@@ -1484,6 +1486,20 @@ export function khZufahrtBei(ziel: LatLon): Zufahrt | null {
   return null;
 }
 
+/** Wer Rufhilfe-Alarme aufnimmt, wenn man sie nicht selbst abfragt */
+export const EXTERNE_ANNAHME: Bearbeiter = { pid: "extern", name: "Externe Annahme (Rufhilfe)" };
+
+/** „Was ist passiert?“ der externen Annahme aus dem Fall (Texte mit [variante=X] nur für diese Variante) */
+export function externText(f: FallVorlage | undefined, variante: string | undefined): string {
+  const teile: string[] = [];
+  for (const z of f?.extern ?? []) {
+    const m = /^\[variante=([^\]]+)\]\s*(.*)$/.exec(z);
+    if (!m) teile.push(z);
+    else if (variante && m[1].split(",").map((x) => x.trim()).includes(variante)) teile.push(m[2]);
+  }
+  return teile.join(", ");
+}
+
 /** Rettungszufahrt, an deren Punkt P das Fahrzeug gerade steht (≤ 15 m), sonst null */
 export function khZufahrtAb(von: LatLon): Zufahrt | null {
   for (const h of store.list("hospitals")) {
@@ -1673,7 +1689,11 @@ export class Simulation extends GsKern {
     return () => this.listeners.delete(fn);
   }
 
+  /** > 0: gerade nicht neu zeichnen (z. B. während die externe Annahme einen Einsatz in einem Zug ausfüllt) */
+  private emitPause = 0;
+
   protected emit(): void {
+    if (this.emitPause) return;
     // nicht neu zeichnen, während ein Knopf gedrückt ist (sonst geht der Klick verloren)
     nachKlick(this.emitJetzt);
   }
@@ -3899,8 +3919,11 @@ export class Simulation extends GsKern {
     }
     // Probe aus dem Fall-Editor: nur die Wahrheit bauen, nicht ins Spiel nehmen
     if (this.fallWunsch?.probe) return e;
-    this.log(e, e.anruf ? "Notruf klingelt" : "Notruf eingegangen");
+    const extern = !!e.anruf && e.wahr.abfrage?.anrufer.art === "rufhilfe" && this.rufhilfeExtern();
+    this.log(e, extern ? "Rufhilfe-Alarm eingegangen" : e.anruf ? "Notruf klingelt" : "Notruf eingegangen");
     this.state.einsaetze.unshift(e);
+    // Rufhilfe (Paul 25.11.2026): die externe Annahme nimmt den Alarm auf – der Einsatz kommt fertig zum Disponieren
+    if (extern) this.externAufnehmen(e);
     if (e.anruf && !e.fremd) {
       // Spielhilfen: letzter Notruf, letzter fordernder Einsatz
       if (this.state.hilfe) {
@@ -3910,9 +3933,61 @@ export class Simulation extends GsKern {
       // Zeitraffer: bei einem neuen Notruf zurück auf 1×
       if (this.settings.tempoBeiNotruf !== false && this.state.tempo > 1) this.state.tempo = 1;
     }
-    this.funk("Notruf", e.id, `Neuer Einsatz ${e.nummer}`, "info");
+    this.funk("Notruf", e.id, extern ? `Neuer Einsatz ${e.nummer} (Rufhilfe, fertig aufgenommen)` : `Neuer Einsatz ${e.nummer}`, "info");
     this.emit();
     return e;
+  }
+
+  /** Rufhilfe-Alarme nimmt eine externe Stelle auf (Einstellung, Standard) */
+  protected rufhilfeExtern(): boolean {
+    return (this.settings.rufhilfeAufnahme ?? "extern") === "extern" && !!store.schema;
+  }
+
+  /**
+   * Externe Annahme (Rufhilfe): füllt die Abfrage so aus, wie es ein Calltaker tun würde (Wer ruft an, Sprechverbindung,
+   * Bewusstsein, Atmung, Alter, Geschlecht, Schlüsselsafe, Was ist passiert), beendet das Gespräch und legt die
+   * Erstaufnahme an. Danach ist der Einsatz nur noch zu disponieren. In einem Zug – ohne Klingeln, ohne Zwischenstände.
+   */
+  private externAufnehmen(e: Einsatz): void {
+    const a = e.anruf;
+    const w = e.wahr.abfrage;
+    if (!a || !w) return;
+    const vorher = this.actor;
+    this.actor = EXTERNE_ANNAHME;
+    this.emitPause++;
+    try {
+      e.aufnahme = "extern";
+      a.status = "aktiv";
+      a.seit = this.state.zeit;
+      a.klingelBis = this.state.zeit;
+      a.angenommenVon = { ...EXTERNE_ANNAHME };
+      a.gespraech.push({ zeit: this.state.zeit, echt: Date.now(), von: "system", text: `Rufhilfe-Alarm aufgenommen von: ${EXTERNE_ANNAHME.name}` });
+      this.log(e, `Aufgenommen von: ${EXTERNE_ANNAHME.name}`);
+      e.adresse = { lat: e.wahr.lat, lon: e.wahr.lon, label: e.wahr.adresse };
+      e.bo = e.adresse;
+      this.log(e, `Adresse: ${e.adresse.label} (aus der Rufhilfe-Meldung)`);
+      const t = w.antworten;
+      const kontakt = t.rh_kontakt === "nein" ? "nein" : "ja";
+      const setze = (k: string, v: string | number | undefined) => {
+        if (v !== undefined && v !== null && v !== "") this.abfrageSetze(e.id, k, v);
+      };
+      setze("anrufer", "rufhilfe");
+      setze("rh_kontakt", kontakt);
+      if (kontakt === "ja") {
+        setze("bw", t.bw as string);
+        setze("at", t.at as string);
+      }
+      setze("alter", t.alter as number);
+      setze("geschlecht", t.geschlecht as string);
+      setze("rh_safe_nr", t.rh_safe_nr as string);
+      setze("rh_safe_ort", t.rh_safe_ort as string);
+      const fv = e.wahr.lage?.fall ? fallVorlage(e.wahr.lage.fall.id) : undefined;
+      setze("rh_was", externText(fv, e.wahr.lage?.fall?.variante) || (kontakt === "nein" ? "Alarm ausgelöst, keine Sprechverbindung" : "Rufhilfe-Alarm, Person meldet sich"));
+      this.anrufBeenden(e.id);
+    } finally {
+      this.emitPause--;
+      this.actor = vorher;
+    }
   }
 
   /** Disponent setzt Code, Adresse und Texte. */
@@ -3964,7 +4039,7 @@ export class Simulation extends GsKern {
   /** Rückruf beim Anrufer: liefert die tatsächliche Adresse. */
   rueckruf(id: string): string | null {
     const e = this.einsatz(id);
-    if (!e) return null;
+    if (!e || e.aufnahme === "extern") return null;
     e.rueckrufGemacht = true;
     this.log(e, `Rückruf beim Anrufer: Adresse ${e.wahr.adresse}`);
     this.emit();
@@ -4922,6 +4997,8 @@ export class Simulation extends GsKern {
       const gezogen = wunsch ? null : (nachStufe ?? fallUndVariante(ctx, this.settings.schwere ?? { harmlos: 35, mittel: 50, kritisch: 15 }, this.settings.komplikationen ?? "normal", Math.random, this.letzteFaelleSet(), vorlageVon(this.settings)));
       const f = wunsch ? fallVorlage(wunsch.id) : (gezogen?.f ?? null);
       if (!f) return null;
+      // Rufhilfe mit externer Annahme: rein versehentliche Alarme klärt sie selbst – die kommen nicht
+      if (!wunsch && f.gruppe === "rufhilfe" && !f.extern?.length && this.rufhilfeExtern()) continue;
       const kap = kapitelFuerThema(f.thema, schema);
       if (!kap) continue;
       const v = gezogen?.v ?? (wunsch?.variante ? fallVariante(f, wunsch.variante) : undefined) ?? varianteWaehlen(f, this.settings.komplikationen ?? "normal", Math.random);
@@ -5118,6 +5195,7 @@ export class Simulation extends GsKern {
     const e = this.einsatz(id);
     const a = e?.anruf;
     if (!e || !a) throw new Error("Kein Anruf zu diesem Einsatz");
+    if (e.aufnahme === "extern") throw new Error("Fertig aufgenommener Rufhilfe-Einsatz – kein Rückruf möglich");
     const ich = this.calltaker();
     if (a.status === "gehalten") {
       // Gehaltene Anrufe kann jeder Disponent aufgreifen
@@ -5378,6 +5456,7 @@ export class Simulation extends GsKern {
     if (!saetze.length && !aenderung && !a.kapitel) return;
     const K = a.kapitel ? schema.kapitel[a.kapitel] : undefined;
     const kopf: string[] = [];
+    if (!aenderung && e.aufnahme === "extern") kopf.push(`Aufgenommen von: ${EXTERNE_ANNAHME.name}`);
     if (aenderung && alt && alt.kapitel !== a.kapitel && K) kopf.push(`Neue Hauptbeschwerde: ${a.kapitel} ${K.titel}`);
     else if (!aenderung && K) kopf.push(`Hauptbeschwerde: ${a.kapitel} ${K.titel}`);
     if (code) kopf.push(`${aenderung && alt?.code ? `Code geändert: ${alt.code} → ` : "Code: "}${code} ${schema.codes[code]?.name ?? ""}`.trim());

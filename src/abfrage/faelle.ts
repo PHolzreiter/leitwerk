@@ -158,6 +158,11 @@ export interface FallVorlage extends SzenarioVorlage {
   /** eigene Gruppe für die Verteilung (sonst das Thema), z. B. „rufhilfe“ im Kapitel „Unklare Lage“ */
   gruppe?: string;
   varianten: FallVariante[];
+  /**
+   * Rufhilfe: was die externe Annahme unter „Was ist passiert?“ einträgt (Texte mit „[variante=A]“ nur für diese
+   * Variante, alles mit „, “ verbunden). Ohne Text kommt der Fall bei externer Annahme gar nicht (z. B. rein versehentlich).
+   */
+  extern?: string[];
 }
 
 // ------------------------------------------------------------------ Katalog

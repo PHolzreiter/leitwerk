@@ -4,6 +4,8 @@
  * Wohnung – die Person redet (laut, oft ein Stück weg vom Gerät) oder es bleibt still („…“).
  * Es gibt keine Kapitel-Abfrage: der Code ist immer 32B2, der Disponent entscheidet nach dem Gehörten, wen er
  * schickt (Vorschlag: der nächste RTW). Hingeschickt wird immer – auch ohne Sprechkontakt und bei einem Versehen.
+ * Standard (Paul 25.11.2026): eine externe Stelle nimmt den Alarm auf – der Einsatz kommt fertig zum Disponieren
+ * („extern“ = ihr Eintrag unter „Was ist passiert?“); rein versehentliche Alarme (mit Sprechkontakt) klärt sie selbst.
  * Die Person ist immer zu Hause an der gemeldeten Adresse.
  */
 import type { FallVorlage } from "./faelle";
@@ -31,6 +33,7 @@ export const FAELLE_RUFHILFE: FallVorlage[] = [
     ],
     hergang: ["Ich bin hingefallen und komm nicht mehr auf!", "Hallo? Ich lieg da am Boden und komm nicht mehr hoch …"],
     seitMin: [5, 60],
+    extern: ["Gestürzt, liegt am Boden, kommt allein nicht mehr hoch", "[variante=A] kaum Schmerzen, nur am Ellbogen", "[variante=B] starke Schmerzen rechte Hüfte, kann das Bein kaum bewegen", "[variante=C] Kopf am Kasten angeschlagen, blutet an der Stirn, nimmt Blutverdünner"],
     fest: { ...RH, rh_kontakt: "ja", bw: "ja", at: "normal" },
     details: ["Du hörst ein bisschen schlecht und musst manchmal nachfragen.", "Die Rettung kommt mit dem Schlüssel aus dem Schlüsselsafe in die Wohnung."],
     varianten: [
@@ -57,6 +60,7 @@ export const FAELLE_RUFHILFE: FallVorlage[] = [
     ],
     hergang: ["Mir tut die Brust so weh, es drückt so …", "Ich hab so einen Druck auf der Brust, bitte kommen S'!"],
     seitMin: [15, 45],
+    extern: ["Seit ca. einer halben Stunde Druck auf der Brust, zieht in den linken Arm", "Übelkeit, schwitzt"],
     fest: { ...RH, rh_kontakt: "ja", bw: "ja", at: "normal" },
     details: ["Du hast Tabletten fürs Herz.", "Die Tür ist zu, der Schlüssel ist im Schlüsselsafe."],
     varianten: [
@@ -82,6 +86,7 @@ export const FAELLE_RUFHILFE: FallVorlage[] = [
     ],
     hergang: ["Ich krieg … so schlecht … Luft …"],
     seitMin: [30, 180],
+    extern: ["Seit dem Aufwachen zunehmend Atemnot, im Liegen gar nicht", "Beine geschwollen, spricht nur kurze Sätze"],
     fest: { ...RH, rh_kontakt: "ja", bw: "ja", at: "abnorm" },
     details: ["Du nimmst Wassertabletten und etwas fürs Herz."],
     varianten: [
@@ -107,6 +112,7 @@ export const FAELLE_RUFHILFE: FallVorlage[] = [
     ],
     hergang: ["Mir ist so schwindlig, ich kann nicht aufstehen …", "Ich bin so schwach, mir dreht sich alles."],
     seitMin: [60, 600],
+    extern: ["Seit gestern schwindlig und schwach, kaum getrunken", "beim Aufstehen schwarz vor Augen", "[variante=B] seit heute früh mehrmals Durchfall"],
     fest: { ...RH, rh_kontakt: "ja", bw: "ja", at: "normal" },
     details: ["Du hast keinen Schmerz in der Brust.", "Hingefallen bist du nicht."],
     varianten: [
@@ -132,6 +138,7 @@ export const FAELLE_RUFHILFE: FallVorlage[] = [
     ],
     hergang: ["Ja … hallo? Wer ist da? Mir ist so komisch …"],
     seitMin: [120, 720],
+    extern: ["Verwirrt, weiß nicht genau, welcher Tag ist", "fühlt sich heiß und kalt, seit Tagen Brennen beim Wasserlassen"],
     fest: { ...RH, rh_kontakt: "ja", bw: "getruebt", at: "normal" },
     details: ["Deine Tochter kommt sonst immer am Wochenende."],
     varianten: [
@@ -154,6 +161,7 @@ export const FAELLE_RUFHILFE: FallVorlage[] = [
     geschehen: ["Nach der Ansage meldet sich niemand – über die Rufhilfe-Basis ist nichts zu hören."],
     hergang: ["…"],
     seitMin: [5, 240],
+    extern: ["Alarm ausgelöst, keine Sprechverbindung – über die Basis ist nichts zu hören"],
     fest: { ...RH, rh_kontakt: "nein", bw: "unbekannt", at: "unbekannt" },
     varianten: [
       { id: "A", p: 0.4, sichtung: "gruen", wahr: { bw: "ja", at: "normal" }, lage: "im Bad gestürzt, unverletzt, hat die Basis ohne Hörgerät nicht gehört – aufgeholfen, bleibt zu Hause", braucht: "RS", transport: false, symptom: "kollaps", dringlichkeit: 10, buchung: "bu_exsikkose_synkope_az_verschlechterung" },

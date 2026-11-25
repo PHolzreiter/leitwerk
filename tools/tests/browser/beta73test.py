@@ -21,7 +21,7 @@ try:
         b = p.chromium.launch(); A = b.new_page(viewport={"width": 1600, "height": 1000}); A.on("pageerror", lambda e: logs.append(f"PAGEERROR {e}"))
         A.goto("http://localhost:8973/?debug&seed=8973"); A.wait_for_timeout(2500)
         A.evaluate("async () => window.__lw.codesystemLaden(await (await fetch('/abf_test.json')).json())"); A.wait_for_timeout(1200)
-        A.evaluate("() => { const s = window.__lw.sim; s.settings.generatorAktiv = false; s.settings.ktAktiv = false; s.state.naechster = { stabil: 1e15, dringend: 1e15, kritisch: 1e15 }; s.setWetter('klar'); s.state.zeit = new Date(2026, 10, 22, 15, 10).getTime(); }")
+        A.evaluate("() => { const s = window.__lw.sim; s.settings.generatorAktiv = false; s.settings.ktAktiv = false; s.settings.rufhilfeAufnahme = 'selbst'; s.state.naechster = { stabil: 1e15, dringend: 1e15, kritisch: 1e15 }; s.setWetter('klar'); s.state.zeit = new Date(2026, 10, 22, 15, 10).getTime(); }")
         A.evaluate("() => window.__lw.panelZeigen('abfrage')"); A.wait_for_timeout(500)
 
         # 1) Schema: Auswahl, Kapitel, Code

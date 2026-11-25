@@ -534,6 +534,11 @@ export function einstellungsBindung(geladen?: () => void): EinstellungsBindung {
       (s, v) => (s.kiRegel = v ?? "frei"),
     ),
     falsch: simZahl("falscheAdresseProzent", STD.falscheAdresseProzent, 0, 100),
+    rufh: simWahl<"extern" | "selbst">(
+      [["extern", "Fertiger Einsatz"], ["selbst", "Selbst aufnehmen"]],
+      () => set().rufhilfeAufnahme ?? "extern",
+      (s, v) => (s.rufhilfeAufnahme = v ?? "extern"),
+    ),
     rueck: simBool("rueckrufOhneNummer", false),
     kompl: simWahl<Settings["komplikationen"]>(
       [["ruhig", "Ruhig"], ["normal", "Normal"], ["fordernd", "Fordernd"]],

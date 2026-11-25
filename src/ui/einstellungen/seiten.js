@@ -529,11 +529,12 @@ export class SeitenBasis {
           T('Einsätze in Nachbarzonen (Work in Progress)', 'fremd', false, 'Eigene Fahrzeuge fahren knapp außerhalb der Funkgruppe', { warn: 'Noch in Arbeit: In den anderen Zonen sind kaum Fahrzeuge hinterlegt, deren Einsätze werden vereinfacht nachgestellt. Dabei kann es zu Fehlern kommen, die sich im laufenden Spiel nicht beheben lassen.', warnJa: 'Trotzdem einschalten' }),
           R('Häufigkeit (Nachbarzonen)', 'fremdRate', 0.2, 6, 0.2, 1, v => 'ca. ' + String(v).replace('.', ',') + ' / h', '', undefined, { when: v => !!v('fremd', false) })
         ]},
-        { id: 'anrufer', label: 'Notrufe & Anrufer', info: 'Verlauf, Fälle, Anrufer-KI', kw: 'fallkatalog fälle anrufer gespräch falsche adresse rückruf komplikation revers verweigerung notruf abfrageschema', rows: [
+        { id: 'anrufer', label: 'Notrufe & Anrufer', info: 'Verlauf, Fälle, Anrufer-KI', kw: 'fallkatalog fälle anrufer gespräch falsche adresse rufhilfe rückruf komplikation revers verweigerung notruf abfrageschema', rows: [
           T('Einsätze kommen als Notruf', 'alsNotruf', true, 'Mit Anrufer am Telefon · braucht ein Abfrageschema (Leitstelle → Einsatzcodes)'),
           S('Anrufer-KI im Multiplayer', 'kimp', ['Jeder selbst', 'Alle Gemini', 'Alle lokal'], 'Jeder selbst', 'Wer ohne passende KI beitritt, richtet sie beim Beitreten ein'),
           H('Anrufer und Verlauf'),
           R('Anrufer mit falscher Adresse', 'falsch', 0, 30, 1, 5, pct),
+          S('Rufhilfe-Alarme', 'rufh', ['Fertiger Einsatz', 'Selbst aufnehmen'], 'Fertiger Einsatz', 'Fertiger Einsatz: eine externe Stelle nimmt den Alarm auf, du disponierst nur noch · Selbst aufnehmen: der Alarm klingelt bei dir als Notruf'),
           S('Komplikationen', 'kompl', ['Ruhig', 'Normal', 'Fordernd'], 'Normal', 'Verschlechterung, Irrtum des Anrufers, mehr Betroffene'),
           S('Transportverweigerung (Revers)', 'revers', ['Normal', 'Selten', 'Aus'], 'Normal'),
           B('Fallkatalog', [{ l: 'Fälle …', sub: 'faelle' }], 'Ansehen, selbst schreiben, prüfen, importieren', { chip: '214 Fälle', dot: ok })

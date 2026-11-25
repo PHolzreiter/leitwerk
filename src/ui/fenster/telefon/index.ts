@@ -70,7 +70,8 @@ function zeilen(): TelZeile[] {
   const l: TelZeile[] = [];
   for (const e of sim.state.einsaetze) {
     const a = e.anruf;
-    if (!a) continue;
+    // fertig aufgenommene Rufhilfe-Einsätze: kein eigenes Telefonat, kein Rückruf
+    if (!a || e.aufnahme === "extern") continue;
     const laeuft = laeuftBeiMir(a);
     if (a.status !== "verpasst" && a.status !== "beendet" && !laeuft) continue;
     const c = e.code ? store.schema?.codes[e.code] : null;

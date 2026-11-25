@@ -1,5 +1,16 @@
 [
  {
+  "version": "0.116.0-beta.80",
+  "datum": "2026-11-25",
+  "titel": "Rufhilfe kommt als fertiger Einsatz",
+  "punkte": [
+   "Rufhilfe-Alarme nimmt jetzt eine externe Stelle auf – sie kommen als fertiger Einsatz, du disponierst nur noch",
+   "Alles steht drin: Adresse, Code, Erstaufnahme mit Schlüsselsafe und „Was ist passiert“, Info an den RTW",
+   "Einstellungen › Notrufe & Anrufer › Rufhilfe-Alarme: „Selbst aufnehmen“ bringt den alten Ablauf zurück",
+   "Der Ton „Einsatz rein“ kommt jetzt bei allen Disponenten, wenn eine Aufnahme fertig ist"
+  ]
+ },
+ {
   "version": "0.116.0-beta.79",
   "datum": "2026-11-24",
   "titel": "Falsche Adressen ohne Häufung · Fehler melden über Mithelfen",
