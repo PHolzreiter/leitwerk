@@ -1,6 +1,6 @@
 ### npm install
 
-added 52 packages, and audited 53 packages in 9s
+added 52 packages, and audited 53 packages in 10s
 
 9 packages are looking for funding
   run `npm fund` for details
@@ -82,21 +82,21 @@ computing gzip size...
 [2mdist/[22m[2massets/[22m[32mbg-32x9-abend-DLJpcJQK.jpg           [39m[1m[2m1,159.39 kB[22m[1m[22m
 [2mdist/[22m[2massets/[22m[32meinsatzstellen-BKMVXWRH.csv          [39m[1m[2m2,885.41 kB[22m[1m[22m
 [2mdist/[22m[2massets/[22m[35mindex-DszIJT84.css                   [39m[1m[2m  480.62 kB[22m[1m[22m[2m │ gzip:    75.98 kB[22m
-[2mdist/[22m[2massets/[22m[36mdist-js-BL1j0P5G.js                  [39m[1m[2m    0.54 kB[22m[1m[22m[2m │ gzip:     0.26 kB[22m
-[2mdist/[22m[2massets/[22m[36mwebviewWindow-DwJHXH0k.js            [39m[1m[2m    1.78 kB[22m[1m[22m[2m │ gzip:     0.79 kB[22m
-[2mdist/[22m[2massets/[22m[36mfussleiste-CutlUmvL.js               [39m[1m[2m    2.37 kB[22m[1m[22m[2m │ gzip:     1.19 kB[22m
-[2mdist/[22m[2massets/[22m[36mwebview-oJHVh5Uc.js                  [39m[1m[2m    3.34 kB[22m[1m[22m[2m │ gzip:     1.14 kB[22m
-[2mdist/[22m[2massets/[22m[36mpath-ca7S7R5f.js                     [39m[1m[2m    3.76 kB[22m[1m[22m[2m │ gzip:     0.91 kB[22m
-[2mdist/[22m[2massets/[22m[36mwindow-CXrFsFCZ.js                   [39m[1m[2m   14.37 kB[22m[1m[22m[2m │ gzip:     3.57 kB[22m
-[2mdist/[22m[2massets/[22m[36mmithelfen-CYmLU3zJ.js                [39m[1m[2m   21.36 kB[22m[1m[22m[2m │ gzip:     8.43 kB[22m
-[2mdist/[22m[2massets/[22m[36mzeilen-Cn0p737i.js                   [39m[1m[2m   92.12 kB[22m[1m[22m[2m │ gzip:    32.17 kB[22m
-[2mdist/[22m[2massets/[22m[36mindex-BtGTLgrl.js                    [39m[1m[33m6,900.62 kB[39m[22m[2m │ gzip: 1,925.38 kB[22m
+[2mdist/[22m[2massets/[22m[36mdist-js-CaD5TrX0.js                  [39m[1m[2m    0.54 kB[22m[1m[22m[2m │ gzip:     0.26 kB[22m
+[2mdist/[22m[2massets/[22m[36mwebviewWindow-Be7JVDSi.js            [39m[1m[2m    1.78 kB[22m[1m[22m[2m │ gzip:     0.80 kB[22m
+[2mdist/[22m[2massets/[22m[36mfussleiste-zrySsI1q.js               [39m[1m[2m    2.37 kB[22m[1m[22m[2m │ gzip:     1.19 kB[22m
+[2mdist/[22m[2massets/[22m[36mwebview-CIqQOSnc.js                  [39m[1m[2m    3.34 kB[22m[1m[22m[2m │ gzip:     1.14 kB[22m
+[2mdist/[22m[2massets/[22m[36mpath-BLCs-EHF.js                     [39m[1m[2m    3.76 kB[22m[1m[22m[2m │ gzip:     0.92 kB[22m
+[2mdist/[22m[2massets/[22m[36mwindow-zkS4EDlH.js                   [39m[1m[2m   14.37 kB[22m[1m[22m[2m │ gzip:     3.57 kB[22m
+[2mdist/[22m[2massets/[22m[36mmithelfen-C8GYTW0V.js                [39m[1m[2m   21.36 kB[22m[1m[22m[2m │ gzip:     8.43 kB[22m
+[2mdist/[22m[2massets/[22m[36mzeilen-ho4fcAU9.js                   [39m[1m[2m   92.12 kB[22m[1m[22m[2m │ gzip:    32.17 kB[22m
+[2mdist/[22m[2massets/[22m[36mindex-eJfHrJRG.js                    [39m[1m[33m6,904.74 kB[39m[22m[2m │ gzip: 1,926.74 kB[22m
 [33m
 (!) Some chunks are larger than 2000 kB after minification. Consider:
 - Using dynamic import() to code-split the application
 - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
 - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.[39m
-[32m✓ built in 6.95s[39m
+[32m✓ built in 9.53s[39m
 ### npx tauri icon app-icon.png
         Appx Creating StoreLogo.png
         Appx Creating Square30x30Logo.png
@@ -203,7 +203,7 @@ Kleinversion in src-tauri/icons/Square30x30Logo.png
   [1m[94m|[0m            [1m[33m^^^^^^^^[0m
 
 [1m[33mwarning[0m: `leitwerk` (lib) generated 7 warnings (run `cargo fix --lib -p leitwerk` to apply 2 suggestions)
-[1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 17.91s
+[1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 20.23s
 ### cmake -S tools/xplane-plugin -B xpbau -DCMAKE_BUILD_TYPE=Release
 -- The CXX compiler identification is GNU 13.3.0
 -- Detecting CXX compiler ABI info
@@ -215,7 +215,7 @@ Kleinversion in src-tauri/icons/Square30x30Logo.png
 -- Performing Test CMAKE_HAVE_LIBC_PTHREAD
 -- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
 -- Found Threads: TRUE
--- Configuring done (3.1s)
+-- Configuring done (3.6s)
 -- Generating done (0.0s)
 -- Build files have been written to: /home/runner/work/leitwerk/leitwerk/xpbau
 ### cmake --build xpbau -j4
