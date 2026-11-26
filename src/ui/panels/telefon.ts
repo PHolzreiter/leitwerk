@@ -159,6 +159,7 @@ export function anrufBeobachterStarten(): void {
   const funkGemeldet = new Set<number>();
   // Notrufe, deren Aufnahme beendet ist (Ton „Einsatz rein“ bei jedem Disponenten – Paul 25.11.2026)
   const fertig = new Set<string>(sim.state.einsaetze.filter((e) => e.anruf?.status === "beendet").map((e) => e.id));
+  let fertigStand: object = sim.state;
   const pruefen = () => {
     // Piloten-Interface: Telefon, KT-Hotline und Funk der Leitstelle gehen den Piloten nichts an
     if (istPilot()) {
@@ -169,6 +170,10 @@ export function anrufBeobachterStarten(): void {
     }
     // Aufnahme-Telefonat beendet (von wem auch immer, auch die externe Annahme der Rufhilfe): Ton „Einsatz rein“
     let neuFertig = 0;
+    // ganzer Spielstand neu (Beitreten, Laden): nur merken
+    const neuerStand = sim.state !== fertigStand;
+    fertigStand = sim.state;
+    if (neuerStand) neuFertig = 99;
     for (const e of sim.state.einsaetze) {
       if (e.anruf?.status !== "beendet" || fertig.has(e.id)) continue;
       fertig.add(e.id);

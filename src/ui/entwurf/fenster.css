@@ -117,6 +117,8 @@
 .merk span.ok{background:var(--ok-flaeche);color:var(--ok)}
 .prot{display:grid;grid-template-columns:44px minmax(0,1fr);gap:4px 10px;font-size:12.5px}
 .prot .t{color:var(--dim);font-variant-numeric:tabular-nums}
+/* Ticket 18: Erstaufnahme/Änderung Zeile für Zeile untereinander */
+.prot > span:not(.t){white-space:pre-line}
 .fuss{margin-top:auto;position:sticky;bottom:0;z-index:2;display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px 16px;border-top:1px solid var(--trenner);background:var(--flaeche)}
 .mehr{display:none}
 .kurzt{display:none}

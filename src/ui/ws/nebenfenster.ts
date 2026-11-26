@@ -28,9 +28,11 @@ const verbunden = new Set<string>();
 let beendet = false;
 /** Pilotenmodus: die Nebenfenster sind weggeräumt (ihre Liste bleibt für danach) */
 let geparkt = false;
+/** Ticket 24: zurück im Hauptmenü – die Nebenfenster sind zu, ihre Liste bleibt für den nächsten Spielstart */
+let imMenue = false;
 
 function offeneMerken(): void {
-  if (beendet || geparkt) return;
+  if (beendet || geparkt || imMenue) return;
   try {
     localStorage.setItem(OFFEN_KEY, JSON.stringify([...verbunden]));
   } catch {
@@ -162,10 +164,10 @@ export function hauptfensterStarten(): void {
     }
   });
 
-  // Hauptfenster schließt: alle Nebenfenster mit (beim nächsten Start gehen sie wieder auf)
+  // Hauptfenster schließt: alle Nebenfenster mit – ihre Anordnung bleibt, beim nächsten Start gehen sie wieder auf (Ticket 24)
   const alleZu = () => {
     beendet = true;
-    bus.senden({ t: "fensterSchliessen" });
+    bus.senden({ t: "fensterParken" });
   };
   window.addEventListener("beforeunload", alleZu);
   if (inTauri()) {
@@ -177,11 +179,55 @@ export function hauptfensterStarten(): void {
   }
 }
 
+/**
+ * Ticket 24: zurück ins Hauptmenü (Spiel verlassen, Sitzung geschlossen): die Nebenfenster gehen zu, es bleibt ein Fenster.
+ * Ihre Liste und Anordnung (mit Lage und Größe) bleiben – beim nächsten Spielstart gehen sie wieder auf.
+ */
+export function nebenfensterZumMenue(): void {
+  if (!IST_HAUPT) return;
+  if (verbunden.size) {
+    offeneMerken();
+    bus.senden({ t: "fensterParken" });
+    verbunden.clear();
+  }
+  imMenue = true;
+  wiederhergestellt = false;
+}
+
+/** Lage und Größe, wie sie das Fenster selbst zuletzt gemerkt hat – nur, wenn sie noch auf einem Bildschirm liegt */
+async function gemerkteLage(id: string): Promise<FensterBounds | undefined> {
+  let b: FensterBounds | null = null;
+  try {
+    b = JSON.parse(localStorage.getItem(`${START_KEY(id)}.lage`) ?? "null") as FensterBounds | null;
+  } catch {
+    b = null;
+  }
+  if (!b || ![b.x, b.y, b.w, b.h].every((v) => typeof v === "number" && isFinite(v)) || b.w < 200 || b.h < 150) return undefined;
+  if (!inTauri()) return b;
+  try {
+    const { availableMonitors } = await import("@tauri-apps/api/window");
+    const schirme = await availableMonitors();
+    // Mitte der Titelleiste muss auf einem vorhandenen Bildschirm liegen – sonst (Bildschirm fehlt) auf den Hauptbildschirm
+    const px = b.x + b.w / 2;
+    const py = b.y + 20;
+    const da = schirme.some((m) => {
+      const f = m.scaleFactor || 1;
+      const x = m.position.x / f;
+      const y = m.position.y / f;
+      return px >= x && px < x + m.size.width / f && py >= y && py < y + m.size.height / f;
+    });
+    return da || !schirme.length ? b : undefined;
+  } catch {
+    return b;
+  }
+}
+
 /** Beim Start: Nebenfenster vom letzten Mal wieder öffnen */
 let wiederhergestellt = false;
 export async function nebenfensterWiederherstellen(): Promise<void> {
   if (!IST_HAUPT || wiederhergestellt || istPilot()) return;
   wiederhergestellt = true;
+  imMenue = false;
   let ids: string[] = [];
   try {
     ids = JSON.parse(localStorage.getItem(OFFEN_KEY) ?? "[]") as string[];
@@ -195,8 +241,38 @@ export async function nebenfensterWiederherstellen(): Promise<void> {
     } catch {
       layout = null;
     }
-    if (layout) await oeffnen([], layout, undefined, id);
+    if (layout) await oeffnen([], layout, await gemerkteLage(id), id);
   }
+}
+
+/** Im Nebenfenster: Lage und Größe laufend merken (fürs Wiederöffnen – Ticket 24) */
+function lageMerken(): void {
+  let alt = "";
+  const merk = async () => {
+    let b: FensterBounds = { x: window.screenX, y: window.screenY, w: window.outerWidth, h: window.outerHeight };
+    if (inTauri()) {
+      try {
+        const { getCurrentWindow } = await import("@tauri-apps/api/window");
+        const w = getCurrentWindow();
+        const f = (await w.scaleFactor()) || 1;
+        const p = await w.outerPosition();
+        const s = await w.innerSize();
+        b = { x: Math.round(p.x / f), y: Math.round(p.y / f), w: Math.round(s.width / f), h: Math.round(s.height / f) };
+      } catch {
+        /* dann die Werte aus dem Browser */
+      }
+    }
+    const t = JSON.stringify(b);
+    if (t === alt) return;
+    alt = t;
+    try {
+      localStorage.setItem(`${START_KEY(FENSTER_ID)}.lage`, t);
+    } catch {
+      /* egal */
+    }
+  };
+  void merk();
+  window.setInterval(() => void merk(), 2000);
 }
 
 // ---------------------------------------------------------------- Nebenfenster
@@ -207,6 +283,7 @@ export function nebenfensterVerbinden(): Promise<void> {
   sim.remote = (name, args) => anfrage("haupt", { t: "cmd", name, args });
   store.remote = (name: StoreBefehl, args) => void anfrage("haupt", { t: "scmd", name, args }).catch((e) => toast(String(e.message ?? e), "error"));
 
+  lageMerken();
   return new Promise((ok) => {
     let erhalten = false;
     bus.empfangen((m) => {
@@ -268,7 +345,10 @@ export function startPanels(): string[] {
 export async function fensterSchliessen(anordnungBehalten = false): Promise<void> {
   bus.senden({ t: "bye" });
   try {
-    if (!anordnungBehalten) localStorage.removeItem(START_KEY(FENSTER_ID));
+    if (!anordnungBehalten) {
+      localStorage.removeItem(START_KEY(FENSTER_ID));
+      localStorage.removeItem(`${START_KEY(FENSTER_ID)}.lage`);
+    }
   } catch {
     /* egal */
   }

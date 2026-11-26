@@ -4,6 +4,7 @@
  * 04 Multiplayer · 05 Fälle · 06 Zum Hauptmenü · LeitWerk beenden. Allein pausiert das Spiel, solange das Menü offen ist;
  * im Multiplayer läuft es weiter (der Host kann für alle pausieren).
  */
+import { nebenfensterWiederherstellen, nebenfensterZumMenue } from "../ws/nebenfenster";
 import vorlageRoh from "./vorlage.html?raw";
 import smCss from "./spielmenue.css?raw";
 import hmCss from "../hauptmenue/hauptmenue.css?raw";
@@ -445,7 +446,9 @@ function bauen(): void {
       if (pilotAktiv()) return void (await pilotVerlassen());
       sim.pause();
       if (mp.status.rolle !== "aus") mp.verlassen();
-      hauptmenueZeigen(undefined, { splash: false });
+      // Ticket 24: nur ein Fenster im Hauptmenü – die Nebenfenster gehen beim nächsten Spielstart wieder auf
+      nebenfensterZumMenue();
+      hauptmenueZeigen(() => void nebenfensterWiederherstellen(), { splash: false });
     },
     async beenden(): Promise<string | null> {
       await spielstand.jetztSichern().catch(() => undefined);

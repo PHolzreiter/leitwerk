@@ -1,5 +1,17 @@
 [
  {
+  "version": "0.116.0-beta.81",
+  "datum": "2026-11-26",
+  "titel": "Großschaden: Fahrzeuge je Patient selbst zuteilen · Fehlerbehebungen",
+  "punkte": [
+   "Großschaden: je Patient „Fahrzeuge“ – selbst festlegen, wer zu welchem Patienten fährt",
+   "Rote Patienten vor grünen; wer noch nicht geborgen ist, steht auch so da",
+   "Protokoll: Abfrage Zeile für Zeile, spätere Änderungen nur mit dem Geänderten",
+   "Fenster merken Lage, Größe und Bildschirm; Verlassen führt ins Hauptmenü",
+   "Kein alter Funk nach dem Beitreten, kein Rauschen nach dem Zusammenlegen, kürzere Sichtmeldung"
+  ]
+ },
+ {
   "version": "0.116.0-beta.80",
   "datum": "2026-11-25",
   "titel": "Rufhilfe kommt als fertiger Einsatz",

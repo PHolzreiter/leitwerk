@@ -11,6 +11,7 @@ import { distanceM, searchAddress, type AddressHit } from "../../../sim/geo";
 import { gsPatientText, type GsPatient } from "../../../sim/grossschaden";
 import { belegt, plaetze, RESSOURCEN, istVoravisiert } from "../../../sim/khStatus";
 import { openDialog } from "../../dialog";
+import { el, toast } from "../../dom";
 import { entwurfEinbinden, type EntwurfFenster } from "../../entwurf/einbinden";
 import { panelZeigen } from "../../ws/arbeitsplatz";
 import { fahrzeugZeigen, karteWaehlen, karteZeigen, waehle } from "../../ws/auswahl";
@@ -50,12 +51,20 @@ function standVon(e: Einsatz, p: GsPatient): { st: Stand; stT: string } {
   const k = kindVon(e, p.nr);
   const ab = e.gs?.erreichbar[p.nr];
   const nochNicht = ab === undefined || ab > sim.state.zeit;
-  if (!k) return p.fw && nochNicht ? { st: "fw", stT: "wird von der Feuerwehr gerettet" } : { st: "wartet", stT: "wartet" };
+  // Ticket 23: noch nicht geborgen – so steht es auch da (nie „transportbereit“); vorgemerkte Fahrzeuge warten mit
+  const vorgemerkt = Object.entries(e.gs?.fuer ?? {})
+    .filter(([, n]) => n === p.nr)
+    .map(([id]) => sim.state.fahrzeuge[id]?.funkrufname)
+    .filter(Boolean)
+    .join(" + ");
+  const geborgen = nochNicht && p.fw ? { st: "fw" as Stand, stT: `noch nicht geborgen – Feuerwehr befreit${vorgemerkt ? ` · ${vorgemerkt} wartet` : ""}` } : null;
+  if (!k) return geborgen ?? { st: "wartet", stT: "wartet" };
   if (k.zustand === "abgeschlossen") return { st: "kh", stT: "im Krankenhaus übergeben" };
   const fz = fzVon(k);
   if (!fz.length) {
-    if (nochNicht) return p.fw ? { st: "fw", stT: "wird von der Feuerwehr gerettet" } : { st: "wartet", stT: "wartet" };
-    return { st: "wartet", stT: "wartet auf Transport" };
+    if (geborgen) return geborgen;
+    if (nochNicht) return { st: "wartet", stT: "wartet" };
+    return { st: "wartet", stT: vorgemerkt ? `wartet auf ${vorgemerkt}` : "geborgen – wartet auf Rettungsmittel" };
   }
   const wer = fz.map((f) => f.funkrufname).join(" + ");
   if (fz.some((f) => f.status === "zumZO")) return { st: "fahrt", stT: `Transport · ${wer}` };
@@ -74,6 +83,84 @@ function buchenDialog(k: Einsatz, titel: string): void {
     if (!teil.root.isConnected) return aus();
     teil.refresh();
   });
+}
+
+/**
+ * Ticket 23: Fahrzeuge eines Patienten selbst festlegen – alles, was dem Großeinsatz zugeordnet ist (mindestens auf Anfahrt).
+ * Fahrzeuge anderer Patienten werden verschoben (dort füllt die Einsatzleitung die Lücke), weggenommene gehen an die Einsatzleitung.
+ */
+function zuteilenDialog(e: Einsatz, nr: number): void {
+  const gs = e.gs;
+  const p = e.wahr.gs?.patienten.find((x) => x.nr === nr);
+  if (!gs || !p) return;
+  const k = kindVon(e, nr);
+  const kinder = Object.values(gs.kinder).map((id) => sim.einsatz(id)).filter((x): x is Einsatz => !!x);
+  const alle = [...fzVon(e), ...kinder.flatMap(fzVon)].filter((f, i, l) => l.indexOf(f) === i && f.rmTyp !== "BEL" && !f.dispoMobil && (f.id !== gs.el || gs.bel));
+  const unterwegs = (f: SimFahrzeug) => f.status === "zumZO" || f.status === "amZO";
+  const beiAnderem = (f: SimFahrzeug) => {
+    const kk = f.einsatzId ? sim.einsatz(f.einsatzId) : undefined;
+    return kk?.gsKind && kk.gsKind.parent === e.id && kk.gsKind.nr !== nr ? kk.gsKind.nr : null;
+  };
+  const jetzt = new Set(alle.filter((f) => (k && f.einsatzId === k.id) || gs.fuer?.[f.id] === nr).map((f) => f.id));
+  const wo = (f: SimFahrzeug) => {
+    const n = beiAnderem(f);
+    if (n !== null) return `bei Patient ${n}`;
+    if (k && f.einsatzId === k.id) return "bei diesem Patienten";
+    if (gs.fuer?.[f.id] !== undefined) return `vorgemerkt für Patient ${gs.fuer[f.id]}`;
+    if (f.gsFussBis) return "Team kommt zum Einsatzort";
+    if (f.phase === "wartetBR") return "im Bereitstellungsraum";
+    if (f.phase === "vorOrt" || f.phase === "suche") return "am Einsatzort, frei";
+    return "auf Anfahrt";
+  };
+  const gruppen: [string, (f: SimFahrzeug) => boolean][] = [
+    ["Bei diesem Patienten", (f) => jetzt.has(f.id)],
+    ["Am Einsatzort, frei", (f) => !jetzt.has(f.id) && beiAnderem(f) === null && f.einsatzId === e.id && (f.phase === "vorOrt" || f.phase === "suche") && gs.fuer?.[f.id] === undefined],
+    ["Bereitstellungsraum", (f) => !jetzt.has(f.id) && f.einsatzId === e.id && f.phase === "wartetBR" && gs.fuer?.[f.id] === undefined],
+    ["Auf Anfahrt", (f) => !jetzt.has(f.id) && f.einsatzId === e.id && !["vorOrt", "suche", "wartetBR"].includes(f.phase) && gs.fuer?.[f.id] === undefined],
+    ["Bei anderen Patienten (werden verschoben)", (f) => !jetzt.has(f.id) && (beiAnderem(f) !== null || (gs.fuer?.[f.id] !== undefined && gs.fuer[f.id] !== nr))],
+  ];
+  const root = el("div", { class: "gs-zuteilen" });
+  root.append(el("p", { class: "muted small" }, "Häkchen setzen, was dieser Patient bekommen soll, dann „Übernehmen“. Fahrzeuge anderer Patienten werden verschoben – dort ergänzt die Einsatzleitung. Weggenommene gehen zurück an die Einsatzleitung."));
+  const gewaehlt = new Set(jetzt);
+  for (const [titel, passt] of gruppen) {
+    const l = alle.filter(passt);
+    if (!l.length) continue;
+    root.append(el("div", { class: "gs-zt-kopf" }, titel));
+    for (const f of l) {
+      const z = el("label", { class: "gs-zt-zeile" });
+      const cb = el("input", { type: "checkbox", value: f.id }) as HTMLInputElement;
+      cb.checked = gewaehlt.has(f.id);
+      cb.disabled = unterwegs(f) && !jetzt.has(f.id);
+      cb.addEventListener("change", () => (cb.checked ? gewaehlt.add(f.id) : gewaehlt.delete(f.id)));
+      const sd = sim.statusDef(f.status);
+      z.append(cb, el("b", {}, f.funkrufname), el("span", { class: "muted" }, ` ${f.typ ?? f.rmTyp} · ${wo(f)} · Status ${sd.nummer}${f.pilot ? " · Spieler-NAH" : ""}`));
+      root.append(z);
+    }
+  }
+  if (!alle.length) root.append(el("p", {}, "Diesem Großeinsatz sind noch keine Fahrzeuge zugeordnet."));
+  const fest = !!gs.fest?.[nr];
+  root.append(el("p", { class: "muted small" }, fest ? "Dieser Patient ist von dir festgelegt – die Einsatzleitung ändert hier nichts." : "Noch teilt die Einsatzleitung automatisch zu."));
+  const titel = `Fahrzeuge – Patient ${nr} · ${{ rot: "rot", gelb: "gelb", gruen: "grün", tot: "tot" }[p.sichtung]} · ${p.muster}`;
+  const aktionen = [
+    ...(fest
+      ? [{ label: "Wieder automatisch", onClick: async () => { await fehlerZeigen(sim.call("gsPatientAutomatisch", e.id, nr)); } }]
+      : []),
+    { label: "Abbrechen" },
+    {
+      label: "Übernehmen",
+      kind: "primary" as const,
+      onClick: async () => {
+        try {
+          await sim.call("gsPatientZuteilen", e.id, nr, [...gewaehlt]);
+          toast(`Patient ${nr}: Fahrzeuge festgelegt`);
+        } catch (x) {
+          toast(String((x as Error).message ?? x), "error");
+          return false;
+        }
+      },
+    },
+  ];
+  openDialog({ title: titel, body: root, actions: aktionen, wide: true });
 }
 
 const SOLL_NAME: Record<string, string> = { "weiterer BEL": "BEL (Leitung BR)" };
@@ -133,6 +220,7 @@ function daten(e: Einsatz) {
       nr: p.nr, s: p.sichtung, a: p.alter, g: p.geschlecht === "w" ? "w" : "m", m: p.muster, ...s,
       kh: p.sichtung === "tot" ? null : h ? h.kurzname || h.name : null, khLang: h?.name ?? "",
       anfrage: !!k?.khAnfrage, buchbar: !!k && k.zustand !== "abgeschlossen" && p.sichtung !== "tot", nahT: nahVon.get(p.nr) ?? "",
+      zuteilbar: !!k && k.zustand !== "abgeschlossen" && p.sichtung !== "tot" && s.st !== "fahrt" && s.st !== "kh", fest: !!gs.fest?.[p.nr],
     };
   });
   // Soll/Ist
@@ -265,6 +353,10 @@ export function grosseinsatzFenster(ziel: HTMLElement, opt: { titel(t: string): 
       opt.badge(gsBrauchtWas());
       opt.titel(e ? `Großeinsatz ${e.nummer}` : "Großeinsatz");
       return e ? daten(e) : null;
+    },
+    zuteilen: (nr: number) => {
+      const e = aktuell();
+      if (e) zuteilenDialog(e, nr);
     },
     buchen: (nr: number) => {
       const e = aktuell();

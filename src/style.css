@@ -4034,3 +4034,10 @@ input.ausr-zahl { width: 64px !important; min-width: 0; }
 @media (max-width: 640px) { .ki-wahl-karten { grid-template-columns: 1fr; } }
 .ki-quelle { font-size: 11px; color: var(--text-dim); margin-left: auto; white-space: nowrap; }
 .ki-quelle.ersatz { color: var(--warn-text, #b77b00); }
+
+/* Großeinsatz › Fahrzeuge je Patient (Ticket 23) */
+.gs-zuteilen { display: flex; flex-direction: column; gap: 4px; min-width: 520px; }
+.gs-zuteilen .gs-zt-kopf { margin-top: 8px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; opacity: 0.7; }
+.gs-zuteilen .gs-zt-zeile { display: flex; align-items: center; gap: 8px; padding: 3px 4px; border-radius: 4px; cursor: pointer; }
+.gs-zuteilen .gs-zt-zeile:hover { background: rgba(127, 127, 127, 0.12); }
+.gs-zuteilen .gs-zt-zeile input:disabled + b { opacity: 0.5; }

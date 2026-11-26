@@ -293,7 +293,15 @@ export function setupSpielStatus(): void {
       const ueb = el("button", { class: "btn primary" }, "Als Host übernehmen");
       ueb.addEventListener("click", () => mp.hostUebernehmen());
       const weg = el("button", { class: "btn danger-text" }, "Spiel verlassen");
-      weg.addEventListener("click", () => mp.verlassen());
+      // Ticket 24: verlassen → ins Hauptmenü (nur ein Fenster; die Nebenfenster gehen beim nächsten Spielstart wieder auf)
+      weg.addEventListener("click", () => {
+        mp.verlassen();
+        sim.pause();
+        void Promise.all([import("./hauptmenue"), import("./ws/nebenfenster")]).then(([hm, nf]) => {
+          nf.nebenfensterZumMenue();
+          hm.hauptmenueZeigen(() => void nf.nebenfensterWiederherstellen(), { splash: false });
+        });
+      });
       r.append(sp, ueb, weg);
       box.appendChild(r);
       overlay.appendChild(box);

@@ -955,6 +955,8 @@ export interface Einsatz {
   naStorniert?: boolean;
   /** zuletzt ins Protokoll geschriebene Abfrage (Erstaufnahme, Änderungen) */
   abfrageStand?: { antworten: Antworten; kapitel: string | null; code: string | null } | null;
+  /** letzte „Änderung“ im Protokoll (Eintrag, Stand davor): weitere Änderungen kurz danach kommen in denselben Eintrag */
+  abfrageAenderung?: { idx: number; stand: { antworten: Antworten; kapitel: string | null; code: string | null } } | null;
   /** alarmierte Partner-Organisationen (Zeitpunkt der Alarmierung) */
   partner?: Partial<Record<PartnerArt, number>>;
   /** erstes Fahrzeug der Organisation am Einsatzort (Zeitpunkt) */
@@ -1102,6 +1104,10 @@ export interface GsLauf {
   naBedarf?: Record<number, boolean>;
   /** Disponent hat dem Spieler-NAH (noch vor dem Eintreffen) einen Patienten zugewiesen: Fahrzeug → Patient */
   pilotWunsch?: Record<string, number>;
+  /** Ticket 23: Patienten, deren Fahrzeuge der Disponent selbst festgelegt hat – die Einsatzleitung ändert dort nichts */
+  fest?: Record<number, true>;
+  /** Ticket 23: Fahrzeug für diesen Patienten vorgemerkt (noch auf Anfahrt, im BR oder der Patient wird noch befreit) */
+  fuer?: Record<string, number>;
 }
 
 /** Großschaden: Fahrzeug, das ein NAH-Team (bzw. den Patienten) zwischen Bereitstellungsraum und Einsatzort bringt – keine Ressource */
@@ -1291,6 +1297,8 @@ export const BEFEHLE = {
     "gsVoraviso",
     "gsStufe",
     "gsSpielerPatient",
+    "gsPatientZuteilen",
+    "gsPatientAutomatisch",
     "gsLageText",
     "gsNotiz",
     "zusammenlegen",
@@ -1754,6 +1762,8 @@ export class Simulation extends GsKern {
         e.partnerDa = { ...e.partner };
         e.boSicher ??= e.partner.pol ?? null;
       }
+      // Ticket 20: zusammengelegt, aber das Gespräch lief noch (Rauschen blieb) – beenden
+      if (e.zustand === "abgeschlossen" && e.anruf && ["aktiv", "gehalten", "klingelt"].includes(e.anruf.status)) e.anruf.status = "beendet";
     }
     for (const u of st.partnerFz ?? []) {
       if (u.phase === "routing") {
@@ -3153,8 +3163,9 @@ export class Simulation extends GsKern {
       fz.phaseEnde = t + MIN;
       return;
     }
-    // NAH am Einsatz: transportiert der NAH, übergibt der RTW und wird frei (Spieler-NAH: der Pilot entscheidet)
-    const nah = this.nahTransportiert(e, t);
+    // NAH am Einsatz: transportiert der NAH, übergibt der RTW und wird frei (Spieler-NAH: der Pilot entscheidet).
+    // Mehrere Patienten: der NAH nimmt den kritischen Patienten – den des RTW, der den Notarzt nachgefordert hat (Ticket 23)
+    const nah = this.naRtwAnderer(e, fz) ? null : this.nahTransportiert(e, t);
     if (nah === "warten") {
       fz.phaseEnde = t + MIN;
       return;
@@ -5422,9 +5433,9 @@ export class Simulation extends GsKern {
     const erg = bestimmeCode(schema, a.kapitel, a.antworten, a.extra);
     const vorErg = a.ergebnis?.code ?? null;
     a.ergebnis = erg ? { code: erg.code, reanimation: erg.reanimation } : null;
-    // Nach der Erstaufnahme: ändert sich der Code, kommt die geänderte Abfrage ins Protokoll
+    // Nach der Erstaufnahme: jede Änderung der Abfrage kommt ins Protokoll – „Änderung“ mit nur dem, was sich geändert hat (Ticket 18)
     const st = e.abfrageStand;
-    if (st && erg && erg.code !== st.code) this.abfrageProtokoll(e, true);
+    if (st && (st.kapitel !== a.kapitel || (erg?.code ?? null) !== st.code || JSON.stringify(st.antworten) !== JSON.stringify(a.antworten))) this.abfrageProtokoll(e, true);
     // Selbst gewählter Code bleibt; die Abfrage zeigt ihren Vorschlag nur an – außer die Abfrage wird nach dem
     // Gespräch geändert (Telefon-Reiter): dann gilt der neue Code
     if (e.codeQuelle === "dispo" && !(a.status === "beendet" && erg && erg.code !== vorErg)) return;
@@ -5443,7 +5454,10 @@ export class Simulation extends GsKern {
     const schema = store.schema;
     if (!a || !schema) return;
     if (!aenderung && e.abfrageStand) return;
-    const alt = e.abfrageStand;
+    // weitere Änderung kurz nach der letzten (≤ 1 min, nichts anderes dazwischen): derselbe Eintrag, verglichen mit dem Stand davor
+    const offen = aenderung ? e.abfrageAenderung : null;
+    const zusammen = !!offen && offen.idx === e.protokoll.length - 1 && this.state.zeit - (e.protokoll[offen.idx]?.zeit ?? 0) <= MIN;
+    const alt = zusammen ? offen!.stand : e.abfrageStand;
     let nur: Set<string> | undefined;
     if (aenderung && alt) {
       nur = new Set<string>();
@@ -5459,9 +5473,29 @@ export class Simulation extends GsKern {
     if (!aenderung && e.aufnahme === "extern") kopf.push(`Aufgenommen von: ${EXTERNE_ANNAHME.name}`);
     if (aenderung && alt && alt.kapitel !== a.kapitel && K) kopf.push(`Neue Hauptbeschwerde: ${a.kapitel} ${K.titel}`);
     else if (!aenderung && K) kopf.push(`Hauptbeschwerde: ${a.kapitel} ${K.titel}`);
-    if (code) kopf.push(`${aenderung && alt?.code ? `Code geändert: ${alt.code} → ` : "Code: "}${code} ${schema.codes[code]?.name ?? ""}`.trim());
-    this.log(e, abfrageBlock(aenderung ? "Änderung" : "Erstaufnahme", this.state.zeit, saetze, kopf));
-    e.abfrageStand = { antworten: { ...a.antworten }, kapitel: a.kapitel, code };
+    if (code && (!aenderung || code !== alt?.code)) kopf.push(`${aenderung && alt?.code ? `Code geändert: ${alt.code} → ` : "Code: "}${code} ${schema.codes[code]?.name ?? ""}`.trim());
+    const neuStand = { antworten: { ...a.antworten }, kapitel: a.kapitel, code };
+    if (aenderung) {
+      // nichts mehr anders (z. B. zurückgeändert): den offenen Eintrag wieder weg
+      if (!saetze.length && !kopf.length) {
+        if (zusammen) {
+          e.protokoll.splice(offen!.idx, 1);
+          e.abfrageAenderung = null;
+        }
+        e.abfrageStand = neuStand;
+        return;
+      }
+      const text = abfrageBlock("Änderung", this.state.zeit, saetze, kopf);
+      if (zusammen) e.protokoll[offen!.idx] = { ...e.protokoll[offen!.idx], zeit: this.state.zeit, text };
+      else {
+        e.abfrageAenderung = { idx: e.protokoll.length, stand: alt ?? neuStand };
+        this.log(e, text);
+      }
+      e.abfrageStand = neuStand;
+      return;
+    }
+    this.log(e, abfrageBlock("Erstaufnahme", this.state.zeit, saetze, kopf));
+    e.abfrageStand = neuStand;
   }
 
   /**
@@ -5915,6 +5949,12 @@ export class Simulation extends GsKern {
     // Spieler-NAH hat entschieden: er fliegt den Patienten bzw. sein Notarzt fährt im RTW mit – niemand wartet auf einen Notarzt (Paul 18.11.2026)
     const sp = this.einsatzFz(e).find((x) => x.pilot?.plan && (x.pilot.plan.art === "transport" || (x.pilot.plan.art === "uebergabe" && x.pilot.plan.naMit)));
     if (sp) {
+      e.naWarten = null;
+      return false;
+    }
+    // Ticket 21: der (Computer-)NAH fliegt den Patienten – der RTW übergibt, niemand wartet auf einen Notarzt
+    const nahFliegt = (e.nahEntscheid && this.state.fahrzeuge[e.nahEntscheid]) || this.einsatzFz(e).find((x) => x.id !== fz.id && fliegt(x) && !x.pilot && x.begleitet);
+    if (nahFliegt && nahFliegt.id !== fz.id) {
       e.naWarten = null;
       return false;
     }

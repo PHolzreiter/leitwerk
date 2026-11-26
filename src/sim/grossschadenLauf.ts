@@ -398,6 +398,16 @@ export abstract class GsKern {
     const was = e.anruf?.kapitel ? `Kapitel ${e.anruf.kapitel}` : "";
     this.log(z, `Weiterer Notruf (${e.nummer}) zusammengelegt${was ? `: ${was}` : ""}${a.anzahl_patienten ? `, Betroffene: ${a.anzahl_patienten}` : ""}`);
     this.log(e, `Zusammengelegt mit Einsatz ${z.nummer}`);
+    // das Gespräch dieses Notrufs ist damit zu Ende (sonst laufen Hintergrundgeräusche weiter – Ticket 20)
+    const an = e.anruf;
+    if (an && an.status !== "beendet") {
+      if (an.status === "aktiv" || an.status === "gehalten") {
+        an.gespraech.push({ zeit: this.state.zeit, echt: Date.now(), von: "system", text: "Gespräch beendet (zusammengelegt)" });
+        this.log(e, "Notrufgespräch beendet");
+      }
+      an.status = "beendet";
+      an.seit = this.state.zeit;
+    }
     e.zustand = "abgeschlossen";
     e.khAnfrage = null;
     this.emit();
@@ -452,6 +462,11 @@ export abstract class GsKern {
       gs.bel = true;
       gs.el = fz.id;
       if (elDa) {
+        // Ticket 22: die Sichtmeldung des ersten Fahrzeugs wartet noch im Funk – dann übernimmt es nicht mehr die Einsatzleitung
+        const g = this.leoGespraech(elFz!.id);
+        const ohne = (s: string) => s.replace(/\.?\s*Übernehme Einsatzleitung\s*$/, "");
+        if (g?.anliegen && !g.anliegenGesagt) g.anliegen = { ...g.anliegen, text: ohne(g.anliegen.text) };
+        for (const m of g?.gsMeldungen ?? []) m.text = ohne(m.text);
         this.gsMelden(fz, e, "info", `BEL am Einsatzort, übernehme die Einsatzleitung von ${this.rufname(elFz!)}`, "info");
         return;
       }
@@ -489,15 +504,37 @@ export abstract class GsKern {
   }
 
   /** Sichtmeldung (erstes Fahrzeug): die Zahl ist zu Beginn nur geschätzt */
-  protected gsSichtText(e: Einsatz, w: GsWahr, fz: SimFahrzeug): string {
+  protected gsSichtText(e: Einsatz, w: GsWahr, _fz?: SimFahrzeug): string {
     const echt = w.patienten.filter((p) => p.sichtung !== "tot").length + w.unverletzt;
     const streu = Math.max(1, Math.round(echt * 0.15));
     const schaetz = Math.max(3, echt + Math.round(rnd(-streu - 1, streu + 1)));
     const schwer = w.patienten.filter((p) => p.sichtung === "rot").length;
     const schwerS = Math.max(1, schwer + Math.round(rnd(-1, 1.4)));
     const da = (Object.keys(e.partnerDa ?? {}) as PartnerArt[]).map((a) => PARTNER[a].name);
-    const kraefte = da.length ? `${da.join(" und ")} vor Ort` : "noch keine weiteren Einsatzkräfte vor Ort";
-    return `Sichtmeldung: ${w.art}, Meldung bestätigt. Wir sehen ${w.sicht}. Gefahren: ${w.gefahren.join(", ")}. Geschätzt ca. ${schaetz} Betroffene, davon ca. ${schwerS} schwer verletzt. ${kraefte}. Witterung: ${this.gsWetterText()}. ${this.rufname(fz)} übernimmt die Funktion Einsatzleiter`;
+    const kraefte = da.length ? `${da.join(" und ")} vor Ort` : "Noch keine weiteren Einsatzkräfte vor Ort";
+    // Ticket 22: kurz nach Schema, ohne Wiederholungen – was schon gesagt ist, fällt weg
+    const gesagt: string[] = [w.art];
+    const neu = (x: string) => {
+      const woerter = (x.toLowerCase().match(/[a-zäöüß]{4,}/g) ?? []).filter((z) => !["mehrere", "eine", "einer", "nach", "durch", "noch"].includes(z));
+      const alles = gesagt.join(" ").toLowerCase();
+      const ok = !woerter.length || woerter.some((z) => !alles.includes(z));
+      if (ok) gesagt.push(x);
+      return ok;
+    };
+    const sicht = w.sicht.split(/,\s*/).filter(neu);
+    const gefahr = w.gefahren.filter(neu);
+    const gross = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+    const teile = [`Sichtmeldung, Meldung bestätigt: ${w.art}`];
+    if (sicht.length) teile.push(gross(sicht.join(", ")));
+    if (gefahr.length) teile.push(`${gefahr.length > 1 ? "Gefahren" : "Gefahr"}: ${gefahr.join(", ")}`);
+    teile.push(`Geschätzt ca. ${schaetz} Betroffene, davon ca. ${schwerS} schwer verletzt`);
+    teile.push(gross(kraefte));
+    // Witterung nur, wenn sie für den Einsatz wichtig ist
+    const wetter = this.gsWetterText();
+    if (/nebel|schnee|glätte|glatteis|gewitter|sturm|hagel|dunkelheit/i.test(wetter)) teile.push(`Witterung: ${wetter}`);
+    // Einsatzleitung nur, wenn noch kein BEL übernommen hat (ein BEL streicht den Satz, solange die Meldung noch wartet)
+    if (!e.gs?.bel) teile.push("Übernehme Einsatzleitung");
+    return teile.join(". ");
   }
 
   /** Lagemeldung der Einsatzleitung: genaue Zahlen, Verletzungsmuster, Nachforderung, Zufahrt */
@@ -791,12 +828,27 @@ export abstract class GsKern {
     // der Einsatzleiter transportiert erst, wenn sonst niemand mehr kommt
     const nochWer = this.einsatzFz(e).some((x) => x !== elFz && this.transportfaehig(x) && x.phase !== "vorOrt");
     let frei = vorOrt.filter((x) => x !== elFz || gs.bel || (!nochWer && !vorOrt.some((y) => y !== elFz && this.transportfaehig(y))));
+    // Ticket 23: vom Disponenten vorgemerkte Fahrzeuge – sobald sie am Einsatzort sind und der Patient erreichbar ist, zu ihm
+    for (const [fid, nr] of Object.entries(gs.fuer ?? {})) {
+      const x = this.state.fahrzeuge[fid];
+      const p = w.patienten.find((y) => y.nr === nr);
+      const k = this.einsatz(gs.kinder[nr] ?? "");
+      if (!x || x.einsatzId !== e.id || !p || p.sichtung === "tot" || !k || k.zustand === "abgeschlossen") {
+        delete gs.fuer![fid];
+        continue;
+      }
+      frei = frei.filter((y) => y !== x);
+      if (!vorOrt.includes(x) || (gs.erreichbar[nr] ?? Infinity) > t) continue;
+      delete gs.fuer![fid];
+      this.gsZuweisen(e, k, p, [x], this.gsNaBedarf(e, p));
+    }
+    const fest = (nr: number) => !!gs.fest?.[nr];
     const offen = () =>
       this.gsReihe(
         e,
         gs.gezeigt
           .map((nr) => w.patienten.find((p) => p.nr === nr))
-          .filter((p): p is GsPatient => !!p && p.sichtung !== "tot" && !this.gsVersorgt(e, p.nr) && (gs.erreichbar[p.nr] ?? Infinity) <= t),
+          .filter((p): p is GsPatient => !!p && p.sichtung !== "tot" && !fest(p.nr) && !this.gsVersorgt(e, p.nr) && (gs.erreichbar[p.nr] ?? Infinity) <= t),
       );
     // Wunsch der Leitstelle für einen Spieler-NAH, der schon bei einem anderen Patienten ist: sobald der gewünschte Patient
     // da ist, wechselt er (solange er noch keinen Zielort gebucht hat) – Ticket 8
@@ -821,7 +873,7 @@ export abstract class GsKern {
         continue;
       }
       p ??= offen()
-        .filter((x) => (x.sichtung === "rot" || x.sichtung === "gelb") && !this.gsNaHat(e, x.nr))
+        .filter((x) => (x.sichtung === "rot" || x.sichtung === "gelb") && !this.gsNaHat(e, x.nr) && !Object.values(gs.fuer ?? {}).includes(x.nr))
         .sort((a, b) => Number(this.gsNaBedarf(e, b)) - Number(this.gsNaBedarf(e, a)) || a.alter - b.alter)[0];
       if (!p) continue;
       this.gsPilotZu(e, pl, p);
@@ -830,9 +882,16 @@ export abstract class GsKern {
     frei = frei.filter((x) => !x.pilot);
     // Patienten, die die Leitstelle einem Spieler-NAH gegeben hat: dessen Notarzt kommt – kein anderes Notarztmittel
     const fuerPilot = new Set(Object.values(gs.pilotWunsch ?? {}));
+    // Ticket 23: Rote und Gelbe, die noch befreit werden, bekommen einen RTW zurückgehalten – Grüne nicht vor ihnen
+    const vorgemerkt = new Set(Object.values(gs.fuer ?? {}));
+    const eingeklemmt = gs.gezeigt
+      .map((nr) => w.patienten.find((p) => p.nr === nr))
+      .filter((p): p is GsPatient => !!p && (p.sichtung === "rot" || p.sichtung === "gelb") && !fest(p.nr) && !vorgemerkt.has(p.nr) && (gs.erreichbar[p.nr] ?? Infinity) > t && !this.gsTrHat(e, p.nr)).length;
     for (const p of offen()) {
       const k = this.einsatz(gs.kinder[p.nr] ?? "");
       if (!k) continue;
+      if (vorgemerkt.has(p.nr)) continue;
+      if (p.sichtung === "gruen" && eingeklemmt > 0 && !this.gsTrHat(e, p.nr) && frei.filter((x) => this.transportfaehig(x)).length <= eingeklemmt) continue;
       const naB = this.gsNaBedarf(e, p);
       const need = { tr: !this.gsTrHat(e, p.nr), na: naB && !this.gsNaHat(e, p.nr) && !fuerPilot.has(p.nr) };
       const seit = Math.max(k.erstellt, gs.erreichbar[p.nr] ?? 0);
@@ -845,6 +904,117 @@ export abstract class GsKern {
       this.gsZuweisen(e, k, p, fzs, naB);
       frei = frei.filter((x) => !fzs.includes(x));
     }
+    // Ticket 23: ein Roter ohne Transport und kein Rettungsmittel frei – ein RTW wechselt von einem Grünen (noch nicht eingeladen)
+    for (const p of offen().filter((x) => x.sichtung === "rot" && !this.gsTrHat(e, x.nr) && !vorgemerkt.has(x.nr))) {
+      if (frei.some((x) => this.transportfaehig(x))) break;
+      const k = this.einsatz(gs.kinder[p.nr] ?? "");
+      if (!k) continue;
+      let spender: { fz: SimFahrzeug; k: Einsatz; nr: number } | null = null;
+      for (const q of w.patienten) {
+        if (q.sichtung !== "gruen" || fest(q.nr)) continue;
+        const kq = this.einsatz(gs.kinder[q.nr] ?? "");
+        const x = kq ? this.einsatzFz(kq).find((y) => this.transportfaehig(y) && y.phase === "vorOrt" && y.status === "amBO" && !y.begleitet && !y.pilot) : undefined;
+        if (kq && x && kq.zustand !== "abgeschlossen") {
+          spender = { fz: x, k: kq, nr: q.nr };
+          break;
+        }
+      }
+      if (!spender) break;
+      this.gsInPool(spender.fz, spender.k, true);
+      this.log(e, `${spender.fz.funkrufname} wechselt von Patient ${spender.nr} (grün) zu Patient ${p.nr} (rot)`);
+      this.log(spender.k, `${spender.fz.funkrufname} wechselt zu Patient ${p.nr} (rot) – dieser Patient bekommt ein anderes Rettungsmittel`);
+      this.gsZuweisen(e, k, p, [spender.fz], this.gsNaBedarf(e, p));
+    }
+  }
+
+  /**
+   * Ticket 23 (Paul 26.11.2026): der Disponent legt die Fahrzeuge eines Patienten selbst fest (Großeinsatz-Fenster › Fahrzeuge).
+   * Wählbar ist alles, was dem Großeinsatz zugeordnet ist (mindestens auf Anfahrt) – auch Fahrzeuge eines anderen Patienten:
+   * die werden verschoben, dort füllt die Einsatzleitung die Lücke. Weggenommene gehen zurück an die Einsatzleitung.
+   * Danach ist der Patient „festgelegt“ – die Einsatzleitung ändert dort nichts mehr (bis „Wieder automatisch“).
+   * Geht bis zum Transportbeginn (Status 4).
+   */
+  gsPatientZuteilen(id: string, nr: number, fzIds: string[]): void {
+    const e = this.einsatz(id);
+    const gs = e?.gs;
+    const w = e?.wahr.gs;
+    if (!e || !gs || !w || gs.aufgehoben || gs.phase === "ende") throw new Error("Kein laufender Großeinsatz");
+    const p = w.patienten.find((x) => x.nr === nr);
+    if (!p || p.sichtung === "tot") throw new Error("Patient nicht gefunden");
+    const k = this.einsatz(gs.kinder[nr] ?? "");
+    if (!k) throw new Error(`Patient ${nr} ist noch nicht gemeldet`);
+    const unterwegs = (x: SimFahrzeug) => x.status === "zumZO" || x.status === "amZO" || (!!x.pilot && x.pilot.plan?.art === "transport");
+    if (k.zustand === "abgeschlossen" || this.einsatzFz(k).some(unterwegs)) throw new Error(`Patient ${nr} ist schon unterwegs ins Krankenhaus`);
+    const imEinsatz = (x: SimFahrzeug) => x.einsatzId === e.id || this.einsatz(x.einsatzId ?? "")?.gsKind?.parent === e.id;
+    const wahl: SimFahrzeug[] = [];
+    for (const fid of [...new Set(fzIds)]) {
+      const x = this.state.fahrzeuge[fid];
+      if (!x || !imEinsatz(x)) throw new Error(`${x?.funkrufname ?? fid} gehört nicht zu diesem Großeinsatz`);
+      if (x.id === gs.el && !gs.bel) throw new Error(`${x.funkrufname} ist Einsatzleiter`);
+      if (x.rmTyp === "BEL" || x.dispoMobil) throw new Error(`${x.funkrufname} kann keinen Patienten übernehmen`);
+      const xk = x.einsatzId && x.einsatzId !== e.id ? this.einsatz(x.einsatzId) : undefined;
+      if (xk !== k && (unterwegs(x) || (xk && this.einsatzFz(xk).some(unterwegs)))) throw new Error(`${x.funkrufname} ist schon im Transport`);
+      wahl.push(x);
+    }
+    if (!wahl.length) throw new Error("Bitte mindestens ein Fahrzeug wählen");
+    const t = this.state.zeit;
+    const name = (l: SimFahrzeug[]) => l.map((x) => x.funkrufname).join(" + ");
+    // weg: was beim Patienten ist bzw. für ihn vorgemerkt war und nicht mehr gewählt ist
+    const weg = this.einsatzFz(k).filter((x) => !wahl.includes(x));
+    for (const x of weg) this.gsInPool(x, k, true);
+    for (const [fid, n] of Object.entries(gs.fuer ?? {})) if (n === nr && !wahl.some((x) => x.id === fid)) delete gs.fuer![fid];
+    if (weg.length) this.log(e, `Patient ${nr}: ${name(weg)} zurück an die Einsatzleitung (Leitstelle)`);
+    const dazu: SimFahrzeug[] = [];
+    for (const x of wahl) {
+      if (x.einsatzId === k.id) continue;
+      // Spieler-NAH: wie bisher über die Patientenwahl des Piloten
+      if (x.pilot) {
+        this.gsSpielerPatient(e.id, x.id, nr);
+        dazu.push(x);
+        continue;
+      }
+      // bei einem anderen Patienten: verschieben – dort füllt die Einsatzleitung die Lücke (auch wenn er festgelegt war)
+      const xk = x.einsatzId && x.einsatzId !== e.id ? this.einsatz(x.einsatzId) : undefined;
+      if (xk?.gsKind) {
+        this.gsInPool(x, xk, true);
+        this.log(xk, `${x.funkrufname} wechselt zu Patient ${nr} (Leitstelle) – dieser Patient bekommt ein anderes Fahrzeug`);
+        this.log(e, `${x.funkrufname} wechselt von Patient ${xk.gsKind.nr} zu Patient ${nr} (Leitstelle)`);
+        if (gs.fest?.[xk.gsKind.nr]) {
+          delete gs.fest[xk.gsKind.nr];
+          this.log(e, `Patient ${xk.gsKind.nr}: wieder automatisch (Einsatzleitung)`);
+        }
+      }
+      delete gs.fuer?.[x.id];
+      const amBo = x.einsatzId === e.id && x.phase === "vorOrt" && x.status === "amBO" && !x.gsFussBis;
+      if (amBo && (gs.erreichbar[nr] ?? Infinity) <= t) this.gsZuweisen(e, k, p, [x], this.gsNaBedarf(e, p));
+      else {
+        (gs.fuer ??= {})[x.id] = nr;
+        // im Bereitstellungsraum: gleich abrufen
+        if (x.phase === "wartetBR" && gs.ziel[x.id] !== "bo" && e.adresse) {
+          gs.ziel[x.id] = "bo";
+          if (fliegt(x)) this.gsTeamZumBo(e, x);
+          else this.fahre(x, e.adresse, "anfahrt", true);
+          this.log(e, `Abruf aus dem Bereitstellungsraum: ${x.funkrufname} (für Patient ${nr})`);
+          const el = gs.el ? this.state.fahrzeuge[gs.el] : undefined;
+          if (el && !el.pilot && el.einsatzId === e.id) this.gsSammelruf(e, el, [x]);
+        }
+      }
+      dazu.push(x);
+    }
+    (gs.fest ??= {})[nr] = true;
+    this.log(e, `Patient ${nr}: Fahrzeuge festgelegt (Leitstelle) – ${name(wahl)}`);
+    if (dazu.some((x) => gs.fuer?.[x.id] === nr)) this.log(k, `Vorgemerkt: ${name(dazu.filter((x) => gs.fuer?.[x.id] === nr))}`);
+    this.emit();
+  }
+
+  /** Ticket 23: der Patient ist wieder Sache der Einsatzleitung (sie ergänzt, was fehlt) */
+  gsPatientAutomatisch(id: string, nr: number): void {
+    const e = this.einsatz(id);
+    const gs = e?.gs;
+    if (!e || !gs) throw new Error("Kein Großeinsatz");
+    if (gs.fest) delete gs.fest[nr];
+    this.log(e, `Patient ${nr}: wieder automatisch (Einsatzleitung)`);
+    this.emit();
   }
 
   /**
@@ -1023,7 +1193,9 @@ export abstract class GsKern {
     if (!br.length) return;
     // noch keinem Patienten zugeteilt: am Einsatzort bzw. auf dem Weg dorthin
     let pool = alle.filter((x) => !x.dispoMobil && x.rmTyp !== "BEL" && x.rmTyp !== "EL ÖBB" && x.id !== gs.el && (x.phase === "vorOrt" || (gs.ziel[x.id] === "bo" && (x.phase !== "wartetBR" || !!x.gsFussBis))));
-    const offen = this.gsReihe(e, w.patienten.filter((p) => p.sichtung !== "tot" && !this.gsVersorgt(e, p.nr)));
+    const offen = this.gsReihe(e, w.patienten.filter((p) => p.sichtung !== "tot" && !gs.fest?.[p.nr] && !Object.values(gs.fuer ?? {}).includes(p.nr) && !this.gsVersorgt(e, p.nr)));
+    pool = pool.filter((x) => gs.fuer?.[x.id] === undefined);
+    br = br.filter((x) => gs.fuer?.[x.id] === undefined);
     const ruf: SimFahrzeug[] = [];
     const fuerPilot = new Set(Object.values(gs.pilotWunsch ?? {}));
     for (const p of offen) {

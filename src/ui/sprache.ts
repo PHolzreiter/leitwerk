@@ -745,14 +745,26 @@ type VorleseGespraech = { id: number; fzId: string; funkname: string; an?: { fzI
  */
 export function funkVorlesenStarten(sim: { state: { funkGespraeche?: VorleseGespraech[] }; onChange(fn: () => void): () => void }, laut: (g: VorleseGespraech, s: { von: string; text: string }) => number): void {
   const gesehen = new Map<number, number>();
-  for (const g of sim.state.funkGespraeche ?? []) gesehen.set(g.id, g.sprueche.length);
+  const merken = () => {
+    gesehen.clear();
+    for (const g of sim.state.funkGespraeche ?? []) gesehen.set(g.id, g.sprueche.length);
+  };
+  merken();
+  // ganzer Spielstand neu (Beitreten, Laden): nur merken, nichts Altes vorlesen (Ticket 19)
+  let stand: object = sim.state;
   sim.onChange(() => {
+    if (sim.state !== stand) {
+      stand = sim.state;
+      merken();
+      return;
+    }
     for (const g of sim.state.funkGespraeche ?? []) {
       const n = gesehen.get(g.id) ?? 0;
       if (g.sprueche.length > n) {
         gesehen.set(g.id, g.sprueche.length);
         g.sprueche.slice(n).forEach((s, k) => {
           if (s.stimme) return;
+          funkVorleseZaehler.n++;
           const l = laut(g, s);
           const h = funkVorleseHaken.nimm;
           // Cloud-Stimme (spricht selbst oder kommt von einem Mitspieler)? Sonst hier vorlesen
@@ -765,6 +777,9 @@ export function funkVorlesenStarten(sim: { state: { funkGespraeche?: VorleseGesp
     }
   });
 }
+
+/** wie viele Funksprüche zum Vorlesen kamen (für Tests) */
+export const funkVorleseZaehler = { n: 0 };
 
 /** Funk mit Cloud-Stimmen (ui/funkStimmen.ts): true = dieser Spruch wird schon mit Stimme übertragen */
 export const funkVorleseHaken: {

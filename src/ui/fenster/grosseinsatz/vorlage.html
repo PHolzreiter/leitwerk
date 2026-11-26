@@ -41,7 +41,7 @@
               <sc-for list="{{p.zellen}}" as="c"><div class="{{c.wrap}}">
                 <sc-if value="{{c.text}}"><span class="zz"><b>{{c.b}}</b>{{c.t}}<span class="dim">{{c.d}}</span></span></sc-if>
                 <sc-if value="{{c.stand}}"><span class="{{c.stCls}}"><i class="pkt2"></i><span class="zz">{{c.t}}</span></span></sc-if>
-                <sc-if value="{{c.kh}}"><span class="khz"><sc-if value="{{c.hatKh}}"><span class="khn" title="{{c.khLang}}">{{c.khKurz}}</span></sc-if><sc-if value="{{c.buchen}}"><button class="{{c.knCls}}" onClick="{{c.klick}}" title="{{c.knTitel}}">Buchen</button></sc-if><sc-if value="{{c.strich}}"><span class="dim">–</span></sc-if></span></sc-if>
+                <sc-if value="{{c.kh}}"><span class="khz"><sc-if value="{{c.hatKh}}"><span class="khn" title="{{c.khLang}}">{{c.khKurz}}</span></sc-if><sc-if value="{{c.buchen}}"><button class="{{c.knCls}}" onClick="{{c.klick}}" title="{{c.knTitel}}">Buchen</button></sc-if><sc-if value="{{c.strich}}"><span class="dim">–</span></sc-if><sc-if value="{{c.zuteilen}}"><button class="{{c.ztCls}}" onClick="{{c.ztKlick}}" title="{{c.ztTitel}}">Fahrzeuge</button></sc-if></span></sc-if>
               </div></sc-for>
             </div></sc-for><sc-if value="{{keinePat}}"><div class="leer2">Noch keine Patienten gemeldet.<br>Die Einsatzleitung meldet sie nach der Lagemeldung nach und nach.</div></sc-if></div>
           </div>

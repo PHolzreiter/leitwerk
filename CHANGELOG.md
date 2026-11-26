@@ -1,5 +1,17 @@
 # Änderungen
 
+## 0.116.0-beta.81 – Großschaden: Fahrzeuge je Patient · Fehlerbehebungen
+- **Großschaden – Fahrzeuge selbst zuteilen:** Im Großeinsatz-Fenster (Reiter Patienten) hat jeder Patient den Knopf „Fahrzeuge“. Dort setzt du Häkchen bei allem, was dem Großeinsatz zugeordnet ist (am Einsatzort, im Bereitstellungsraum, auf Anfahrt), z. B. NEF weg und NAH aus dem Bereitstellungsraum dazu. Fahrzeuge eines anderen Patienten werden verschoben – dort ergänzt die Einsatzleitung, was fehlt. Weggenommene gehen zurück an die Einsatzleitung. Ein so festgelegter Patient bleibt, wie du ihn eingestellt hast („festgelegt“), bis du „Wieder automatisch“ wählst. Geht bis zum Transportbeginn (Status 4). Der Spieler-NAH lässt sich genauso zuteilen.
+- **Großschaden – Rot vor Grün:** Für rote und gelbe Patienten, die noch befreit werden, hält die Einsatzleitung ein Rettungsmittel zurück. Wird ein Roter erreichbar und alles ist vergeben, wechselt ein RTW von einem grünen Patienten zu ihm (solange der Grüne noch nicht eingeladen ist).
+- **Großschaden – Anzeige:** Wer noch nicht befreit ist, steht als „noch nicht geborgen – Feuerwehr befreit“ da (mit dem Fahrzeug, das dort wartet), danach „geborgen – wartet auf Rettungsmittel“.
+- **Mehrere Patienten mit NAH:** Der Hubschrauber nimmt den kritischen Patienten – den des RTW, der den Notarzt nachgefordert hat.
+- **Protokoll:** Die Erstaufnahme steht in der Einsatzmaske Zeile für Zeile untereinander. Änderst du die Abfrage später, kommt „Änderung“ mit nur dem, was sich geändert hat (mehrere Änderungen kurz hintereinander in einem Eintrag; wieder zurückgeändert → Eintrag weg).
+- **Notarzt-Nachforderung:** Fliegt der NAH den Patienten, übergibt der RTW sofort und ist frei – keine Nachforderung „Patient transportbereit, benötigen Notarzt“ mehr.
+- **Sichtmeldung:** kurz nach Schema, ohne Wiederholungen. „Übernehme Einsatzleitung“ nur, wenn noch kein BEL übernommen hat (auch wenn die Meldung im Funk gewartet hat).
+- **Mehrspieler – Beitreten:** Der Funk von vorher wird nicht mehr noch einmal vorgelesen.
+- **Zusammenlegen:** beendet das Gespräch des zweiten Notrufs – kein Rauschen mehr im Hintergrund.
+- **Fenster:** Nach „Spiel verlassen“ (auch wenn der Host das Spiel geschlossen hat) geht es ins Hauptmenü, die weiteren Programmfenster gehen zu. Beim nächsten Spielstart gehen sie wieder auf – an derselben Stelle, in derselben Größe, auf demselben Bildschirm (fehlt der Bildschirm: auf dem Hauptbildschirm). Auch nach dem Beenden des Programms.
+
 ## 0.116.0-beta.80 – Rufhilfe kommt als fertiger Einsatz
 - **Rufhilfe als fertiger Einsatz (Standard):** Einen Rufhilfe-Alarm nimmt in Wirklichkeit eine externe Stelle auf. Deshalb klingelt er jetzt nicht mehr bei dir, sondern erscheint fertig aufgenommen in der Einsatzliste („disponieren“) – du musst nur noch das Fahrzeug schicken.
 - **Alles drin wie selbst abgefragt:** Adresse, Code RD-32B2, Erstaufnahme (Anrufer Rufhilfe, Alter, Geschlecht, Sprechverbindung, Bewusstsein und Atmung, Schlüsselsafe Nummer und Ort, „Was ist passiert“) und die Info an den RTW, z. B. „93m B+ A+ // Gestürzt, liegt am Boden, kommt allein nicht mehr hoch, starke Schmerzen rechte Hüfte“. Im Protokoll steht „Aufgenommen von: Externe Annahme (Rufhilfe)“.

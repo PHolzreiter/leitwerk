@@ -99,17 +99,19 @@ export class GrosseinsatzLogik extends DCLogic {
         window.addEventListener('mousemove', zieh); window.addEventListener('mouseup', los); this.setState({ zieht: true }); },
       reset: () => { const nn = { ...br }; delete nn[tl]; this.setState({ br2: nn }); } }));
     const S_NAME = { rot: 'rot', gelb: 'gelb', gruen: 'grün', tot: 'tot' };
+    // Ticket 23: Fahrzeuge je Patient selbst festlegen
+    const zt = (p) => ({ zuteilen: !!p.zuteilbar, ztCls: 'kn sm leise' + (p.fest ? ' prim' : ''), ztTitel: p.fest ? 'Fahrzeuge von dir festgelegt – ändern oder wieder automatisch' : 'Fahrzeuge für diesen Patienten selbst festlegen (die Einsatzleitung teilt sonst automatisch zu)', ztKlick: () => app.zuteilen(p.nr) });
     const khZelle = (p) => {
-      if (p.kh) return { wrap: '', text: false, stand: false, kh: true, hatKh: true, khKurz: p.kh, khLang: p.khLang || p.kh, buchen: false, strich: false };
-      if (!p.buchbar) return { wrap: '', text: false, stand: false, kh: true, hatKh: false, buchen: false, strich: true };
-      return { wrap: '', text: false, stand: false, kh: true, hatKh: false, buchen: true, strich: false, knCls: 'kn sm' + (p.anfrage ? ' prim blinkt' : ''), knTitel: p.anfrage ? 'Die Besatzung fragt nach einem Krankenhaus' : 'Krankenhaus buchen', klick: () => app.buchen(p.nr) };
+      if (p.kh) return { wrap: '', text: false, stand: false, kh: true, hatKh: true, khKurz: p.kh, khLang: p.khLang || p.kh, buchen: false, strich: false, ...zt(p) };
+      if (!p.buchbar) return { wrap: '', text: false, stand: false, kh: true, hatKh: false, buchen: false, strich: true, ...zt(p) };
+      return { wrap: '', text: false, stand: false, kh: true, hatKh: false, buchen: true, strich: false, knCls: 'kn sm' + (p.anfrage ? ' prim blinkt' : ''), knTitel: p.anfrage ? 'Die Besatzung fragt nach einem Krankenhaus' : 'Krankenhaus buchen', klick: () => app.buchen(p.nr), ...zt(p) };
     };
     const STCLS = { bereit: 'versorgt', tot: '' };
     const pats = sortiert.map(p => {
       const patT = { wrap: '', text: true, stand: false, kh: false, b: 'ca. ' + p.a + ' J., ' + p.g, t: '', d: '' };
       const musT = { wrap: '', text: true, stand: false, kh: false, b: '', t: p.m, d: '' };
       const kombi = { wrap: '', text: true, stand: false, kh: false, b: 'ca. ' + p.a + ' J., ' + p.g + ' · ', t: p.m, d: '' };
-      const standZ = { wrap: '', text: false, stand: true, kh: false, stCls: 'stnd ' + (STCLS[p.st] !== undefined ? STCLS[p.st] : p.st), t: p.stT + (p.nahT ? ' · Spieler-NAH ' + p.nahT : '') };
+      const standZ = { wrap: '', text: false, stand: true, kh: false, stCls: 'stnd ' + (STCLS[p.st] !== undefined ? STCLS[p.st] : p.st), t: p.stT + (p.nahT ? ' · Spieler-NAH ' + p.nahT : '') + (p.fest ? ' · festgelegt' : '') };
       const zellen = tl === 'b' ? [patT, musT, standZ, khZelle(p)] : tl === 'n' ? [kombi, standZ, khZelle(p)] : [kombi, khZelle(p)];
       return { nr: String(p.nr), cls: 'pz ' + p.s + (p.st === 'kh' ? ' weg' : ''), titel: 'Patient ' + p.nr + ' · Sichtung ' + S_NAME[p.s] + ' · ' + p.stT, zellen };
     });
