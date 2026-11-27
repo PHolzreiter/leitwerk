@@ -3,6 +3,7 @@
  * mit KI (Ollama) oder, wenn keine KI läuft, mit einfachen Antworten aus der „Wahrheit“.
  * Läuft auf dem Rechner des Gesprächsführers; Ergebnisse gehen über sim.call an alle.
  */
+import { leitungFuer } from "./leitung";
 import { store } from "../data/store";
 import { sim, type Einsatz } from "../sim/engine";
 import { antwortOhneKi, EMOTIONEN, panikStufe, stimmBild, stimmKlang, erinnerung, werText, ersterSatzOhneKi, istBekannt, sprachFilter, systemPrompt, zusammenfassungPruefen, type AnrufKontext } from "./anrufer";
@@ -924,6 +925,7 @@ function liveOpt(e: Einsatz, k: AnrufKontext, vorab = false): SitzungOpt {
     bezug: `${e.anruf?.seit ?? ""}|${k.anrufer.name}|${k.anrufer.nummer ?? ""}`,
     system: `${systemFuer(e, k)}\n${stimmBild(k.anrufer, id, k.patientAlter ?? undefined)}\n${stimmKlang(k.anrufer)}`,
     geschlecht: k.anrufer.geschlecht,
+    leitung: leitungFuer(e),
     verlauf: e.anruf?.gespraech ?? [],
     aktiv: () => {
       const x = einsatzVon(id);

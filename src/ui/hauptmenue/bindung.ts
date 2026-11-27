@@ -394,6 +394,10 @@ export function einstellungsBindung(geladen?: () => void): EinstellungsBindung {
     },
     freispr: { l: () => !!livePrefs().freisprechen, s: (w) => (setLivePrefs({ freisprechen: w === undefined ? false : !!w }), true) },
     klang: { l: () => livePrefs().klang !== false, s: (w) => (setLivePrefs({ klang: w === undefined ? true : !!w }), true) },
+    hgr: (() => {
+      const m = wahl<"aus" | "dezent" | "realistisch">([["aus", "Aus"], ["dezent", "Dezent"], ["realistisch", "Realistisch"]]);
+      return { l: () => m.text(livePrefs().hintergrund ?? "dezent"), s: (w: unknown) => (setLivePrefs({ hintergrund: w === undefined ? "dezent" : (m.wert(w) ?? "dezent") }), true) };
+    })(),
     gfunk: { l: () => !!livePrefs().funkVersteher, s: (w) => (setLivePrefs({ funkVersteher: w === undefined ? false : !!w }), true) },
     // eigener Schalter existiert nicht: die Fahrzeuge sprechen mit Gemini, sobald Gemini die Anrufer-KI ist
     gfzg: { l: () => anrufKiModus() === "gemini", s: () => false },

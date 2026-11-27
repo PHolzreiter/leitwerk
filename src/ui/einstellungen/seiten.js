@@ -410,6 +410,7 @@ export class SeitenBasis {
           K('Sprechtaste für den Funk (gedrückt halten)', 'kFunk', 'F10'),
           T('Funk vorlesen', 'fvorl', true),
           T('Funk-Klang', 'fklang', true),
+          S('Hintergrundgeräusche', 'hgr', ['Aus', 'Dezent', 'Realistisch'], 'Dezent'),
           H('KI – wer spricht Anrufer und Fahrzeuge?'),
           S('Anrufer-KI', 'kimodus', ['Gemini (Cloud)', 'Lokal (Ollama)'], 'Lokal (Ollama)'),
           B('Gemini', [{ l: 'Einrichten …', sub: 'gemini' }], 'Kostenloser Schlüssel von Google'),

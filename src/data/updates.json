@@ -1,5 +1,16 @@
 [
  {
+  "version": "0.116.0-beta.82",
+  "datum": "2026-11-27",
+  "titel": "Telefon klingt echt: Handy, Festnetz und Geräusche vom Notfallort",
+  "punkte": [
+   "Anrufer telefonieren mit dem Handy (manchmal Aussetzer, die Wörter verschlucken) oder vom Festnetz",
+   "Im Hintergrund hört man den Ort: Straße, Wohnung, Wind, Regen, Lokal, Baustelle …",
+   "Dazu Geräusche passend zum Notfall: Stöhnen, Schreie, Husten, Röcheln, Baby, Hund, Rauchmelder …",
+   "Einstellung „Hintergrundgeräusche“: Aus, Dezent (Standard) oder Realistisch – nur mit Gemini"
+  ]
+ },
+ {
   "version": "0.116.0-beta.81",
   "datum": "2026-11-26",
   "titel": "Großschaden: Fahrzeuge je Patient selbst zuteilen · Fehlerbehebungen",

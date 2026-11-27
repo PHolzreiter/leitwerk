@@ -9,6 +9,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { inTauri } from "../platform";
 import { aufnahmeLaeuftJetzt, kanalFuer, sprachPrefs, verstummHoerer } from "../ui/sprache";
 import { store } from "../data/store";
+import { LeitungsFilter, verschlucken, type Leitung } from "./leitung";
 
 const LS = "leitwerk.gemini";
 export const LIVE_MODELL = "gemini-3.8-live";
@@ -26,6 +27,8 @@ export interface LivePrefs {
   freisprechen: boolean;
   /** Anruferstimme klingt nach Telefon, dazu Geräusche vom Notfallort */
   klang: boolean;
+  /** Beta 82: Hintergrundgeräusche am Telefon (Standard dezent) */
+  hintergrund?: "aus" | "dezent" | "realistisch";
   /** Test: Gemini versteht den Funk (kennt Fahrzeuge und Gespräch) statt der Spracherkennung hier */
   funkVersteher?: boolean;
 }
@@ -176,9 +179,22 @@ class Wiedergabe {
   private ctx: AudioContext | null = null;
   private webZeit = 0;
   private filter: Telefonfilter | null;
+  /** Beta 82: Handy/Festnetz mit Aussetzern (statt des einfachen Telefonklangs) */
+  readonly leitung: LeitungsFilter | null;
   abgebrochen = false;
-  constructor(private rate: number) {
-    this.filter = livePrefs().klang ? new Telefonfilter(rate) : null;
+  constructor(
+    private rate: number,
+    leitung?: Leitung,
+  ) {
+    const klang = livePrefs().klang !== false;
+    this.leitung = klang && leitung ? new LeitungsFilter(rate, leitung) : null;
+    this.filter = klang && !this.leitung ? new Telefonfilter(rate) : null;
+  }
+
+  /** wo im Gesprochenen die Leitung Wörter verschluckt hat (Anteile 0…1) */
+  verschluckt(): number[] {
+    const l = this.leitung;
+    return l && l.gesamt > 0 ? l.luecken.map((x) => x / l.gesamt) : [];
   }
 
   dazu(pcm16: Int16Array, rate: number): void {
@@ -187,7 +203,8 @@ class Wiedergabe {
     anruferTon.bis = Math.max(anruferTon.bis, Date.now()) + (pcm16.length / Math.max(1, rate)) * 1000;
     const f = new Float32Array(pcm16.length);
     for (let i = 0; i < pcm16.length; i++) f[i] = pcm16[i] / 32768;
-    this.filter?.verarbeiten(f);
+    if (this.leitung) this.leitung.verarbeiten(f);
+    else this.filter?.verarbeiten(f);
     // ohne eigenes Ausgabegerät lückenlos über WebAudio, sonst über das gewählte Gerät
     if (!inTauri() || !sprachPrefs().geraetStimmen) {
       if (aufnahmeLaeuftJetzt()) return this.stopp();
@@ -289,6 +306,8 @@ export interface SitzungOpt {
   ereignis?: (r: LiveErgebnis) => void;
   /** nichts abspielen und ohne die Regeln für Anrufer (z. B. nur Mitschrift vom Funk) */
   stumm?: boolean;
+  /** Beta 82: über welche Leitung der Anrufer spricht (Handy/Festnetz) */
+  leitung?: Leitung;
 }
 
 class Sitzung {
@@ -423,7 +442,7 @@ class Sitzung {
       const rate = Number(/rate=(\d+)/.exec(p.inlineData.mimeType ?? "")?.[1] ?? 24000);
       if (!r.ersterTon) r.ersterTon = Date.now() - r.start;
       if (sprachPrefs().vorlesen && !r.stumm && !this.opt.stumm) {
-        this.ton ??= new Wiedergabe(rate);
+        this.ton ??= new Wiedergabe(rate, this.opt.leitung);
         this.ton.dazu(b64ZuInt16(p.inlineData.data), rate);
       }
     }
@@ -447,10 +466,12 @@ class Sitzung {
     if (sc.turnComplete || sc.interrupted) {
       this.ton?.fertig();
       this.ausklang = this.ton;
+      const gehoert = this.ton;
       this.ton = null;
       const abschluss = () => {
         if (this.runde === r) this.runde = null;
-        const t = r.text.replace(/\s+/g, " ").trim();
+        // Beta 82: die Handy-Leitung hat Wörter verschluckt – die stehen auch nicht in der Mitschrift
+        const t = verschlucken(r.text.replace(/\s+/g, " ").trim(), gehoert?.verschluckt() ?? []);
         r.fertig(r.unterbrochen && t ? `${t.replace(/[.!?…]*$/, "")} …` : t);
       };
       // die Mitschrift der Leitstelle kommt manchmal erst knapp nach der Antwort

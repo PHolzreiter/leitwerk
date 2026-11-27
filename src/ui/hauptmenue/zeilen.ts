@@ -4,6 +4,7 @@
  * Asynchrone Daten (Status, Listen) werden in laden() einmal geholt, zwischengespeichert und nach jeder Aktion aufgefrischt.
  * Im Hauptmenü gibt es keine Dialoge: Rückfragen über cfm, Ergebnisse als Chip (Rückgabe-Text bzw. throw).
  */
+import { KLANG_DATEIEN } from "../telefonKlang";
 import { statusFarbeStandard } from "../statusFarben";
 import { FARBEN, type Bausteine, type Knopf, type Zeile, type ZeilenQuelle } from "./vertrag";
 import { discordAn, discordVerbunden } from "../discord";
@@ -857,7 +858,8 @@ export function zeilenQuelle(neuZeichnen: () => void): { zeilen: ZeilenQuelle; l
       b.T("Erkannten Text gleich abschicken", "autosend", true, "Aus: Du kannst den Text vor dem Abschicken noch ändern"),
       b.T("Freisprechen (ohne Sprechtaste)", "freispr", false, "Der Anrufer hört dich, sobald du sprichst – nur mit Headset, sonst hört er sich selbst"),
       b.T("Anrufer vorlesen", "vorl", true, "Aus: Du liest nur mit, was der Anrufer sagt"),
-      b.T("Telefonklang und Geräusche", "klang", true, "Der Anrufer klingt wie am Telefon, dazu Geräusche vom Notfallort"),
+      b.T("Telefonklang", "klang", true, "Der Anrufer klingt wie am Telefon – über Handy (manchmal mit Aussetzern) oder Festnetz. Nur mit Gemini"),
+      b.S("Hintergrundgeräusche", "hgr", ["Aus", "Dezent", "Realistisch"], "Dezent", "Was man beim Anrufer hört: Straße, Wohnung, Wind, Stöhnen, Husten, Hund … – passend zum Notfall. Nur mit Gemini"),
       b.T("Knopf „Gespräch exportieren“", "gexp", false, "Speichert ein Gespräch als Datei – zum Melden von Fehlern"),
       // Funk
       b.H("Funk"),
@@ -1786,6 +1788,13 @@ export function zeilenQuelle(neuZeichnen: () => void): { zeilen: ZeilenQuelle; l
     for (const [o, h] of Object.entries(ABLAGE_INFO) as [AblageOrdner, string][])
       if (!["Abfrageschema", "Codelisten", "Codelisten/RD", "Abfrageschema/Krankentransport_Sekundärtransporte"].includes(o))
         out.push(tauri ? b.B(o.replace(/_/g, " "), [knopf("Ordner öffnen", () => ablageZeigen(o))], h) : b.B(o.replace(/_/g, " "), [], h, { chip: NUR_PROGRAMM, dot: GRAU }));
+    // Herkunft der Telefon-Geräusche (CC BY verlangt die Namen)
+    const by = KLANG_DATEIEN.filter((d) => d.lizenz.startsWith("CC BY"));
+    if (KLANG_DATEIEN.length) {
+      out.push(b.H("Geräusche am Telefon"));
+      out.push(b.I("Herkunft", `${KLANG_DATEIEN.length} Aufnahmen von freesound.org`, `${KLANG_DATEIEN.length - by.length} frei (CC0), ${by.length} mit Namensnennung (CC BY)`, GRAU));
+      for (const d of by) out.push(b.I(d.titel || d.tag, `${d.urheber} · ${d.lizenz}`, d.quelle, GRAU));
+    }
     return out;
   }
 

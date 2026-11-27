@@ -1,5 +1,12 @@
 # Änderungen
 
+## 0.116.0-beta.82 – Telefon klingt echt: Handy, Festnetz und Geräusche vom Notfallort
+- **Handy oder Festnetz:** Jeder Anrufer telefoniert über eine eigene Leitung. Wer draußen oder im Auto ist, ruft mit dem Handy an – schmaler Klang, laute Stellen (Schreien) verzerren, und bei schlechtem Netz (am Land, im Wald, am Berg) setzt die Leitung kurz aus. Dabei gehen Wörter verloren – in der Mitschrift steht dort „…“, dann heißt es nachfragen. Pflegeheim und Arztpraxis rufen meist vom Festnetz an: ruhig, etwas dumpf.
+- **Geräusche vom Ort:** Im Hintergrund hört man, wo der Anrufer ist – Wohnung (Raum, manchmal Fernseher oder Uhr), Straße, Landstraße, Autobahn, Auto, Geschäft, Lokal, Arbeit, Baustelle, Schule, draußen (Wind, Vögel, Wasser). Regen und Sturm aus dem Spielwetter hört man, wenn der Anrufer im Freien ist.
+- **Geräusche zum Notfall:** Ab und zu – je aufgeregter der Anrufer, desto öfter – hört man, was dort passiert: Stöhnen, Schreie, Husten, Erbrechen, Röcheln, ein Baby oder Kind weint, Hund, Türklingel, Rauchmelder und Knistern bei einem Brand, Hupen und ferne Sirenen bei Unfällen.
+- **Einstellung:** Telefon, Funk & KI › „Hintergrundgeräusche“: Aus, Dezent (Standard) oder Realistisch. „Telefonklang“ schaltet Leitung und Geräusche ganz aus. Alles nur mit Gemini als Anrufer-KI.
+- **Herkunft:** Die Aufnahmen stehen unter Programm & Updates › „Geräusche am Telefon“.
+
 ## 0.116.0-beta.81 – Großschaden: Fahrzeuge je Patient · Fehlerbehebungen
 - **Großschaden – Fahrzeuge selbst zuteilen:** Im Großeinsatz-Fenster (Reiter Patienten) hat jeder Patient den Knopf „Fahrzeuge“. Dort setzt du Häkchen bei allem, was dem Großeinsatz zugeordnet ist (am Einsatzort, im Bereitstellungsraum, auf Anfahrt), z. B. NEF weg und NAH aus dem Bereitstellungsraum dazu. Fahrzeuge eines anderen Patienten werden verschoben – dort ergänzt die Einsatzleitung, was fehlt. Weggenommene gehen zurück an die Einsatzleitung. Ein so festgelegter Patient bleibt, wie du ihn eingestellt hast („festgelegt“), bis du „Wieder automatisch“ wählst. Geht bis zum Transportbeginn (Status 4). Der Spieler-NAH lässt sich genauso zuteilen.
 - **Großschaden – Rot vor Grün:** Für rote und gelbe Patienten, die noch befreit werden, hält die Einsatzleitung ein Rettungsmittel zurück. Wird ein Roter erreichbar und alles ist vergeben, wechselt ein RTW von einem grünen Patienten zu ihm (solange der Grüne noch nicht eingeladen ist).
