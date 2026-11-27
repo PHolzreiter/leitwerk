@@ -85,21 +85,21 @@ computing gzip size...
 [2mdist/[22m[2massets/[22m[32mbg-32x9-abend-DLJpcJQK.jpg           [39m[1m[2m1,159.39 kB[22m[1m[22m
 [2mdist/[22m[2massets/[22m[32meinsatzstellen-BKMVXWRH.csv          [39m[1m[2m2,885.41 kB[22m[1m[22m
 [2mdist/[22m[2massets/[22m[35mindex-CtpjogNR.css                   [39m[1m[2m  481.08 kB[22m[1m[22m[2m │ gzip:    76.07 kB[22m
-[2mdist/[22m[2massets/[22m[36mdist-js-DIwUoKYM.js                  [39m[1m[2m    0.54 kB[22m[1m[22m[2m │ gzip:     0.26 kB[22m
-[2mdist/[22m[2massets/[22m[36mwebviewWindow-DsesHTc2.js            [39m[1m[2m    1.78 kB[22m[1m[22m[2m │ gzip:     0.80 kB[22m
-[2mdist/[22m[2massets/[22m[36mfussleiste-wmhSENhJ.js               [39m[1m[2m    2.37 kB[22m[1m[22m[2m │ gzip:     1.19 kB[22m
-[2mdist/[22m[2massets/[22m[36mwebview-4tMIsyd7.js                  [39m[1m[2m    3.34 kB[22m[1m[22m[2m │ gzip:     1.14 kB[22m
-[2mdist/[22m[2massets/[22m[36mpath-BwIRdPdy.js                     [39m[1m[2m    3.76 kB[22m[1m[22m[2m │ gzip:     0.91 kB[22m
-[2mdist/[22m[2massets/[22m[36mwindow-D21wIoPI.js                   [39m[1m[2m   14.37 kB[22m[1m[22m[2m │ gzip:     3.57 kB[22m
-[2mdist/[22m[2massets/[22m[36mmithelfen-hYnFSYGv.js                [39m[1m[2m   21.36 kB[22m[1m[22m[2m │ gzip:     8.43 kB[22m
-[2mdist/[22m[2massets/[22m[36mzeilen-CveyKWVa.js                   [39m[1m[2m   92.68 kB[22m[1m[22m[2m │ gzip:    32.43 kB[22m
-[2mdist/[22m[2massets/[22m[36mindex-C1f3p0DP.js                    [39m[1m[33m6,946.10 kB[39m[22m[2m │ gzip: 1,938.11 kB[22m
+[2mdist/[22m[2massets/[22m[36mdist-js-DByEs7l7.js                  [39m[1m[2m    0.54 kB[22m[1m[22m[2m │ gzip:     0.26 kB[22m
+[2mdist/[22m[2massets/[22m[36mwebviewWindow-mWM3Vk5j.js            [39m[1m[2m    1.78 kB[22m[1m[22m[2m │ gzip:     0.80 kB[22m
+[2mdist/[22m[2massets/[22m[36mfussleiste-B6WrqyLI.js               [39m[1m[2m    2.37 kB[22m[1m[22m[2m │ gzip:     1.19 kB[22m
+[2mdist/[22m[2massets/[22m[36mwebview-B4W6fgdb.js                  [39m[1m[2m    3.34 kB[22m[1m[22m[2m │ gzip:     1.14 kB[22m
+[2mdist/[22m[2massets/[22m[36mpath-BkqTPROi.js                     [39m[1m[2m    3.76 kB[22m[1m[22m[2m │ gzip:     0.92 kB[22m
+[2mdist/[22m[2massets/[22m[36mwindow-B87-BZEA.js                   [39m[1m[2m   14.37 kB[22m[1m[22m[2m │ gzip:     3.57 kB[22m
+[2mdist/[22m[2massets/[22m[36mmithelfen-C_ugoMwM.js                [39m[1m[2m   21.36 kB[22m[1m[22m[2m │ gzip:     8.43 kB[22m
+[2mdist/[22m[2massets/[22m[36mzeilen-r9AAJmCc.js                   [39m[1m[2m   92.68 kB[22m[1m[22m[2m │ gzip:    32.43 kB[22m
+[2mdist/[22m[2massets/[22m[36mindex-DAUBXIC1.js                    [39m[1m[33m6,947.05 kB[39m[22m[2m │ gzip: 1,938.46 kB[22m
 [33m
 (!) Some chunks are larger than 2000 kB after minification. Consider:
 - Using dynamic import() to code-split the application
 - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
 - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.[39m
-[32m✓ built in 5.88s[39m
+[32m✓ built in 7.22s[39m
 ### npx tauri icon app-icon.png
         Appx Creating StoreLogo.png
         Appx Creating Square30x30Logo.png
@@ -206,7 +206,7 @@ Kleinversion in src-tauri/icons/Square30x30Logo.png
   [1m[94m|[0m            [1m[33m^^^^^^^^[0m
 
 [1m[33mwarning[0m: `leitwerk` (lib) generated 7 warnings (run `cargo fix --lib -p leitwerk` to apply 2 suggestions)
-[1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 3.12s
+[1m[92m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 3.91s
 ### cmake -S tools/xplane-plugin -B xpbau -DCMAKE_BUILD_TYPE=Release
 -- The CXX compiler identification is GNU 13.3.0
 -- Detecting CXX compiler ABI info
@@ -218,7 +218,7 @@ Kleinversion in src-tauri/icons/Square30x30Logo.png
 -- Performing Test CMAKE_HAVE_LIBC_PTHREAD
 -- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
 -- Found Threads: TRUE
--- Configuring done (0.3s)
+-- Configuring done (0.4s)
 -- Generating done (0.0s)
 -- Build files have been written to: /home/runner/work/leitwerk/leitwerk/xpbau
 ### cmake --build xpbau -j4
