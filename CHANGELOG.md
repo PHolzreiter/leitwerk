@@ -1,5 +1,8 @@
 # Änderungen
 
+## 0.116.0-beta.85 – Gemini-Anrufer reden wieder
+- **Gemini-Anrufer:** Seit Beta 83 hat Gemini den Anruf bei der ersten Frage abgebrochen („Request contains an invalid argument“). Grund war der neu eingeschaltete „Affective Dialog“: Das Gemini-Modell nimmt ihn beim Verbinden an, bricht danach aber bei jeder Eingabe ab. Er ist jetzt aus – die Anrufer reden wieder wie in Beta 82, mit allem Neuen aus Beta 83 (Stimme nach Alter, echte Gefühle, Beruhigen, Geräusche je Zustand).
+
 ## 0.116.0-beta.84 – Fehlerbehebung Gemini-Anrufer
 - **Gemini-Anrufer:** Lehnt Gemini den neuen „Affective Dialog“ mit „Request contains an invalid argument“ ab, verbindet das Spiel jetzt sofort ohne ihn und merkt sich das – die Anrufer reden wieder normal.
 

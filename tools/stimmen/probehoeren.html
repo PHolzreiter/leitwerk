@@ -23,7 +23,7 @@
 </style>
 </head>
 <body>
-<h1>Stimmen probehören <small style="font-size:13px;opacity:.6">Fassung 3</small></h1>
+<h1>Stimmen probehören <small style="font-size:13px;opacity:.6">Fassung 4</small></h1>
 <p class="hinweis">Einmalig für Paul: Jede Gemini-Stimme spricht denselben kurzen Notruf, einmal ohne und einmal mit leichter NÖ-Färbung. Du ordnest jede Stimme einer Altersgruppe zu (oder sortierst sie aus), entscheidest dich bei der Färbung und kopierst am Ende das Ergebnis in den Chat. Die Zuordnung steht danach fest im Spiel, für alle gleich.</p>
 
 <fieldset>
@@ -31,7 +31,7 @@
   <input id="schluessel" type="password" placeholder="Schlüssel hier einfügen" autocomplete="off">
   <div class="hinweis" style="margin:6px 0 0">Der Schlüssel bleibt nur in dieser offenen Seite und geht nur an Google. Er wird nicht gespeichert.</div>
   <label><input id="telefon" type="checkbox" checked> wie am Telefon abspielen (dumpfer, wie im Spiel)</label>
-  <p style="margin:10px 0 0"><button id="diagnose">Fehler suchen</button> <small>probiert die Einstellungen einzeln aus und zeigt, welche Gemini ablehnt (dauert etwa eine Minute)</small></p>
+  <p style="margin:10px 0 0"><button id="diagnose">Fehler suchen</button> <small>probiert die Einstellungen einzeln aus und zeigt, welche Gemini ablehnt (dauert etwa eine Minute) – nur nötig, wenn „anhören“ nicht geht</small></p>
   <ol id="diagliste" class="text" style="max-width:none"></ol>
 </fieldset>
 
@@ -104,7 +104,7 @@ function abspielen(pcm, rate) {
 
 // ---- Gemini: ein Satz in dieser Stimme (gemerkt, damit ein zweites Anhören nichts kostet)
 const fertig = new Map();
-let affektiv = true;
+let affektiv = false; // Affective Dialog: Gemini lehnt danach jede Frage als Text ab (Fassung 3)
 function erzeugen(stimme, g, noe) {
   const schluessel = document.getElementById("schluessel").value.trim();
   if (schluessel.length < 10) return Promise.reject(new Error("Bitte zuerst den Schlüssel eintragen"));
@@ -200,6 +200,7 @@ document.getElementById("diagnose").onclick = async () => {
     ["6 + Frage als Text (realtimeInput)", { ...basis, generationConfig: stimme, systemInstruction: sys, outputAudioTranscription: {} }, { realtimeInput: { text: "Sag nur: Hallo." } }],
     ["7 + wie im Spiel (Eingabe-Mitschrift, Sprechtaste)", { ...basis, generationConfig: stimme, systemInstruction: sys, outputAudioTranscription: {}, inputAudioTranscription: {}, realtimeInputConfig: { automaticActivityDetection: { disabled: true } } }, text("Sag nur: Hallo.")],
     ["8 + Affective Dialog", { ...basis, generationConfig: { ...stimme, enableAffectiveDialog: true }, systemInstruction: sys, outputAudioTranscription: {} }, null],
+    ["9 + Affective Dialog und Frage als Text", { ...basis, generationConfig: { ...stimme, enableAffectiveDialog: true }, systemInstruction: sys, outputAudioTranscription: {} }, text("Sag nur: Hallo.")],
   ];
   for (const [name, setup, t] of schritte) {
     const li = document.createElement("li");
@@ -261,7 +262,7 @@ function ergebnis() {
     if (sel.value === "weg") r.weg.push(sel.dataset.stimme);
     else r[sel.dataset.g][sel.value].push(sel.dataset.stimme);
   }
-  document.getElementById("ergebnis").value = `LeitWerk Stimmen-Ergebnis (Fassung 3)\n${JSON.stringify(r, null, 1)}${diagErgebnis.length ? `\nFehlersuche:\n${diagErgebnis.join("\n")}` : ""}`;
+  document.getElementById("ergebnis").value = `LeitWerk Stimmen-Ergebnis (Fassung 4)\n${JSON.stringify(r, null, 1)}${diagErgebnis.length ? `\nFehlersuche:\n${diagErgebnis.join("\n")}` : ""}`;
 }
 for (const x of document.querySelectorAll("input[name=noe]")) x.onchange = ergebnis;
 document.getElementById("kopieren").onclick = async () => {

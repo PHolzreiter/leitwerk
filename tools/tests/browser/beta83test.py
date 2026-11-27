@@ -20,6 +20,7 @@ try:
     noe_blatt = re.search(r'const NOE_TEXT = "([^"]+)"', html).group(1)
     check(noe_spiel == noe_blatt, "NÖ-Text im Probehör-Blatt gleich wie im Spiel")
     check("schluessel" in html and "localStorage" not in html, "Probehör-Blatt speichert den Schlüssel nicht")
+    check("let affektiv = false" in html, "Probehör-Blatt ohne Affective Dialog")
     with sync_playwright() as p:
         b = p.chromium.launch(args=["--autoplay-policy=no-user-gesture-required"]); A = b.new_page(); A.on("pageerror", lambda e: logs.append(f"PAGEERROR {e}"))
         A.add_init_script("localStorage.setItem('leitwerk.persoenlich', JSON.stringify({thema: 'hell', einfuehrung: true}))")
@@ -106,10 +107,11 @@ try:
             try { t = await L.live.liveTesten(); } catch (x) { t = 'FEHLER ' + x.message; }
             const nachher = St.affektivMoeglich(); window.WebSocket = echt; L.live.setLivePrefs({ schluessel: '' }); localStorage.removeItem('leitwerk.gemini.affektiv');
             return { vorher, nachher, t, n: setups.length, erst: !!setups[0]?.generationConfig.enableAffectiveDialog, dann: !!setups[1]?.generationConfig.enableAffectiveDialog, stimme: setups[0]?.generationConfig.speechConfig.voiceConfig.prebuiltVoiceConfig.voiceName,
-              zusatz: /Moment …/.test(setups[1]?.systemInstruction.parts[0].text || '') && /ECHTE GEFÜHLE/.test(setups[1]?.systemInstruction.parts[0].text || '') }; }""")
+              zusatz: /Moment …/.test(setups[0]?.systemInstruction.parts[0].text || '') && /ECHTE GEFÜHLE/.test(setups[0]?.systemInstruction.parts[0].text || '') }; }""")
         print("   ", r)
-        check(r["vorher"] and r["erst"] and not r["dann"] and r["n"] == 2, "Affective Dialog verlangt, bei Ablehnung ohne neu verbunden")
-        check(r["t"].startswith("Verbindung steht") and not r["nachher"], f"Verbindung steht trotzdem, gemerkt ({r['t']})")
+        # Beta 85: Affective Dialog aus (gemini-3.8-live lehnt danach jede Frage als Text ab)
+        check(not r["vorher"] and not r["erst"] and r["n"] == 1, "Affective Dialog aus – Verbindung ohne")
+        check(r["t"].startswith("Verbindung steht"), f"Verbindung steht ({r['t']})")
         check(r["zusatz"], "Telefonverhalten („Moment …“) und echte Gefühle im Prompt")
         r = A.evaluate("() => { const f = window.__lw.stimmen.affektivAbgelehnt; return [f(1007, 'Request contains an invalid argument.'), f(1007, 'Unknown name \"enableAffectiveDialog\"'), f(1008, 'API key not valid'), f(1011, 'Quota exhausted'), f(1006, '')]; }")
         check(r == [True, True, False, False, False], f"Rückfall nur bei ungültiger Anfrage, nicht bei Schlüssel/Kontingent ({r})")

@@ -330,7 +330,13 @@ export interface SitzungOpt {
 
 /** Beta 83: „Affective Dialog“ – bis das Modell ihn einmal abgelehnt hat (dann gemerkt, nicht mehr versucht) */
 const LS_AFFEKTIV = "leitwerk.gemini.affektiv";
+/**
+ * Beta 85: aus. gemini-3.8-live nimmt die Verbindung mit Affective Dialog an, lehnt danach aber jede Frage als Text ab
+ * („Request contains an invalid argument.“, Code 1007) – Pauls Test 27.11.2026. Erst wieder einschalten, wenn das geprüft geht.
+ */
+export const AFFEKTIV_AN = false;
 export function affektivMoeglich(): boolean {
+  if (!AFFEKTIV_AN) return false;
   try {
     return localStorage.getItem(LS_AFFEKTIV) !== `nein:${LIVE_MODELL}`;
   } catch {

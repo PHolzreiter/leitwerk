@@ -1,5 +1,13 @@
 [
  {
+  "version": "0.116.0-beta.85",
+  "datum": "2026-11-27",
+  "titel": "Gemini-Anrufer reden wieder",
+  "punkte": [
+   "Gemini-Anrufer brechen nicht mehr bei der ersten Frage ab (Affective Dialog wieder aus)"
+  ]
+ },
+ {
   "version": "0.116.0-beta.84",
   "datum": "2026-11-27",
   "titel": "Fehlerbehebung Gemini-Anrufer",
