@@ -98,7 +98,7 @@ try:
         # 5) Affective Dialog: wird verlangt; lehnt das Modell ab, verbindet es ohne und merkt sich das
         r = A.evaluate("""async () => { const L = window.__lw, St = L.stimmen; localStorage.removeItem('leitwerk.gemini.affektiv'); const echt = window.WebSocket; const setups = [];
             class Fake { static OPEN = 1; constructor(u) { this.readyState = 0; setTimeout(() => { this.readyState = 1; this.onopen && this.onopen(); }, 10); }
-              send(d) { const m = JSON.parse(d); if (m.setup) { setups.push(m.setup); if (m.setup.generationConfig.enableAffectiveDialog) setTimeout(() => { this.readyState = 3; this.onclose && this.onclose({ code: 1007, reason: 'Invalid JSON payload received. Unknown name "enableAffectiveDialog" at setup.generation_config' }); }, 10);
+              send(d) { const m = JSON.parse(d); if (m.setup) { setups.push(m.setup); if (m.setup.generationConfig.enableAffectiveDialog) setTimeout(() => { this.readyState = 3; this.onclose && this.onclose({ code: 1007, reason: 'Request contains an invalid argument.' }); }, 10);
                 else setTimeout(() => this.onmessage({ data: JSON.stringify({ setupComplete: {} }) }), 10); }
                 else if (m.clientContent && m.clientContent.turnComplete) setTimeout(() => { this.onmessage({ data: JSON.stringify({ serverContent: { outputTranscription: { text: 'Verbindung steht.' } } }) }); this.onmessage({ data: JSON.stringify({ serverContent: { turnComplete: true } }) }); }, 10); }
               close() { this.readyState = 3; } }
@@ -111,6 +111,8 @@ try:
         check(r["vorher"] and r["erst"] and not r["dann"] and r["n"] == 2, "Affective Dialog verlangt, bei Ablehnung ohne neu verbunden")
         check(r["t"].startswith("Verbindung steht") and not r["nachher"], f"Verbindung steht trotzdem, gemerkt ({r['t']})")
         check(r["zusatz"], "Telefonverhalten („Moment …“) und echte Gefühle im Prompt")
+        r = A.evaluate("() => { const f = window.__lw.stimmen.affektivAbgelehnt; return [f(1007, 'Request contains an invalid argument.'), f(1007, 'Unknown name \"enableAffectiveDialog\"'), f(1008, 'API key not valid'), f(1011, 'Quota exhausted'), f(1006, '')]; }")
+        check(r == [True, True, False, False, False], f"Rückfall nur bei ungültiger Anfrage, nicht bei Schlüssel/Kontingent ({r})")
 
         # 6) Geräusche folgen dem Zustand: Stöhnen, dann bewusstlos mit Schnappatmung → Röcheln, kein Stöhnen
         r = A.evaluate("""async () => { const L = window.__lw, s = L.sim, T = L.telefonKlang; L.live.setLivePrefs({ hintergrund: 'realistisch', klang: true });

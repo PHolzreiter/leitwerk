@@ -337,6 +337,11 @@ export function affektivMoeglich(): boolean {
     return true;
   }
 }
+/** Beta 84: Ablehnung beim Verbindungsaufbau, die vom Affective Dialog kommen kann (nicht Schlüssel/Kontingent) */
+export function affektivAbgelehnt(code: number, grund: string): boolean {
+  if (/api key|key not valid|permission|unauth|quota|exhausted|rate/i.test(grund)) return false;
+  return /affective|invalid argument|invalid json|unknown name|cannot find field/i.test(grund) || code === 1007 || code === 1008;
+}
 function affektivAusschalten(): void {
   try {
     localStorage.setItem(LS_AFFEKTIV, `nein:${LIVE_MODELL}`);
@@ -426,7 +431,8 @@ class Sitzung {
       clearTimeout(zeit);
       if (this.ws !== ws) return;
       // Modell kennt „Affective Dialog“ nicht: merken und gleich ohne neu verbinden
-      if (affektiv && !this.istBereit && /affective/i.test(ev.reason ?? "")) {
+      // (Gemini nennt das Feld nicht immer – „Request contains an invalid argument.“ reicht; Schlüssel/Kontingent sind etwas anderes)
+      if (affektiv && !this.istBereit && affektivAbgelehnt(ev.code, ev.reason ?? "")) {
         affektivAusschalten();
         this.verbinden(false);
         return;

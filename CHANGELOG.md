@@ -1,5 +1,8 @@
 # Änderungen
 
+## 0.116.0-beta.84 – Fehlerbehebung Gemini-Anrufer
+- **Gemini-Anrufer:** Lehnt Gemini den neuen „Affective Dialog“ mit „Request contains an invalid argument“ ab, verbindet das Spiel jetzt sofort ohne ihn und merkt sich das – die Anrufer reden wieder normal.
+
 ## 0.116.0-beta.83 – Anrufer klingen echter: Stimme nach Alter, echte Gefühle
 - **Stimme passt zum Alter:** Jeder Anrufer hat ein festes Alter, passend zu seiner Rolle (Eltern eines Kindes jünger, die Tochter einer 85-Jährigen mittleren Alters, der Ehemann etwa so alt wie die Patientin). Die Gemini-Stimme wird danach gewählt: junge, mittlere und ältere Frauen- und Männerstimmen.
 - **Stimmung wie in echt:** Wer die Rettung ruft, hält es für ernst – aber nicht jeder klingt panisch. Ganz ruhig sind private Anrufer nur noch selten, die meisten sind besorgt oder aufgeregt, bei Kindern, Reanimation oder schlimmen Einsätzen auch außer sich. Pflegeheim und Arztpraxis bleiben sachlich, bei einer Reanimation werden aber auch sie hektisch.

@@ -1,5 +1,13 @@
 [
  {
+  "version": "0.116.0-beta.84",
+  "datum": "2026-11-27",
+  "titel": "Fehlerbehebung Gemini-Anrufer",
+  "punkte": [
+   "Gemini-Anrufer verbinden wieder, wenn das Modell den „Affective Dialog“ ablehnt"
+  ]
+ },
+ {
   "version": "0.116.0-beta.83",
   "datum": "2026-11-27",
   "titel": "Anrufer klingen echter: Stimme nach Alter, echte Gefühle",

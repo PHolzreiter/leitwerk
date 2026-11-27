@@ -150,7 +150,7 @@ function erzeugen(stimme, g, noe) {
       if (stuecke.length || ev.code === 1000) return;
       clearTimeout(zeit);
       // Modell kennt Affective Dialog nicht: ohne nochmal
-      if (mitAffektiv && !bereit && /affective/i.test(ev.reason || "")) { affektiv = false; erzeugen(stimme, g, noe).then(ja, nein); return; }
+      if (mitAffektiv && !bereit && !/api key|key not valid|permission|unauth|quota|exhausted|rate/i.test(ev.reason || "") && (/affective|invalid argument|invalid json|unknown name|cannot find field/i.test(ev.reason || "") || ev.code === 1007 || ev.code === 1008)) { affektiv = false; erzeugen(stimme, g, noe).then(ja, nein); return; }
       nein(new Error(ev.reason || `Verbindung beendet (${ev.code})`));
     };
   });
