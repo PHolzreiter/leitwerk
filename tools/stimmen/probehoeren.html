@@ -23,7 +23,7 @@
 </style>
 </head>
 <body>
-<h1>Stimmen probehören</h1>
+<h1>Stimmen probehören <small style="font-size:13px;opacity:.6">Fassung 3</small></h1>
 <p class="hinweis">Einmalig für Paul: Jede Gemini-Stimme spricht denselben kurzen Notruf, einmal ohne und einmal mit leichter NÖ-Färbung. Du ordnest jede Stimme einer Altersgruppe zu (oder sortierst sie aus), entscheidest dich bei der Färbung und kopierst am Ende das Ergebnis in den Chat. Die Zuordnung steht danach fest im Spiel, für alle gleich.</p>
 
 <fieldset>
@@ -31,6 +31,8 @@
   <input id="schluessel" type="password" placeholder="Schlüssel hier einfügen" autocomplete="off">
   <div class="hinweis" style="margin:6px 0 0">Der Schlüssel bleibt nur in dieser offenen Seite und geht nur an Google. Er wird nicht gespeichert.</div>
   <label><input id="telefon" type="checkbox" checked> wie am Telefon abspielen (dumpfer, wie im Spiel)</label>
+  <p style="margin:10px 0 0"><button id="diagnose">Fehler suchen</button> <small>probiert die Einstellungen einzeln aus und zeigt, welche Gemini ablehnt (dauert etwa eine Minute)</small></p>
+  <ol id="diagliste" class="text" style="max-width:none"></ol>
 </fieldset>
 
 <fieldset>
@@ -151,10 +153,65 @@ function erzeugen(stimme, g, noe) {
       clearTimeout(zeit);
       // Modell kennt Affective Dialog nicht: ohne nochmal
       if (mitAffektiv && !bereit && !/api key|key not valid|permission|unauth|quota|exhausted|rate/i.test(ev.reason || "") && (/affective|invalid argument|invalid json|unknown name|cannot find field/i.test(ev.reason || "") || ev.code === 1007 || ev.code === 1008)) { affektiv = false; erzeugen(stimme, g, noe).then(ja, nein); return; }
-      nein(new Error(ev.reason || `Verbindung beendet (${ev.code})`));
+      nein(new Error(`${ev.reason || "Verbindung beendet"} (Code ${ev.code}, ${bereit ? "nach" : "vor"} dem Verbindungsaufbau${mitAffektiv ? "" : ", ohne Affective Dialog"})`));
     };
   });
 }
+
+// ---- Fehler suchen: Einstellungen einzeln dazunehmen
+const diagErgebnis = [];
+function probe(setup, mitText) {
+  const schluessel = document.getElementById("schluessel").value.trim();
+  return new Promise((fertig) => {
+    let ws, bereit = false, aus = false;
+    const ende = (t) => { if (aus) return; aus = true; clearTimeout(zeit); try { ws.close(1000); } catch {} fertig(t); };
+    const zeit = setTimeout(() => ende(bereit ? "keine Antwort (15 s)" : "kein Verbindungsaufbau (15 s)"), 15000);
+    try { ws = new WebSocket(`${URL_BASIS}?key=${encodeURIComponent(schluessel)}`); } catch (e) { return ende("WebSocket: " + e.message); }
+    ws.onopen = () => ws.send(JSON.stringify({ setup }));
+    ws.onmessage = async (ev) => {
+      const roh = typeof ev.data === "string" ? ev.data : await ev.data.text();
+      let m; try { m = JSON.parse(roh); } catch { return; }
+      if (m.setupComplete) {
+        bereit = true;
+        if (!mitText) return ende("ok");
+        ws.send(JSON.stringify(mitText));
+        return;
+      }
+      if (m.serverContent?.turnComplete) ende("ok");
+    };
+    ws.onclose = (ev) => ende(`abgelehnt ${bereit ? "nach" : "vor"} dem Aufbau: ${ev.reason || "(ohne Grund)"} (Code ${ev.code})`);
+  });
+}
+document.getElementById("diagnose").onclick = async () => {
+  const ol = document.getElementById("diagliste");
+  if (document.getElementById("schluessel").value.trim().length < 10) { ol.innerHTML = '<li class="fehler">Bitte zuerst den Schlüssel eintragen</li>'; return; }
+  ol.innerHTML = "";
+  diagErgebnis.length = 0;
+  const text = (t) => ({ clientContent: { turns: [{ role: "user", parts: [{ text: t }] }], turnComplete: true } });
+  const basis = { model: `models/${MODELL}`, generationConfig: { responseModalities: ["AUDIO"] } };
+  const stimme = { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Kore" } } } };
+  const sys = { parts: [{ text: "Du bist ein Mensch am Telefon. Antworte sehr kurz auf Deutsch." }] };
+  const schritte = [
+    ["1 nur Modell", basis, null],
+    ["2 + Stimme", { ...basis, generationConfig: stimme }, null],
+    ["3 + Anweisung", { ...basis, generationConfig: stimme, systemInstruction: sys }, null],
+    ["4 + Mitschrift", { ...basis, generationConfig: stimme, systemInstruction: sys, outputAudioTranscription: {} }, null],
+    ["5 + Frage als Text (clientContent)", { ...basis, generationConfig: stimme, systemInstruction: sys, outputAudioTranscription: {} }, text("Sag nur: Hallo.")],
+    ["6 + Frage als Text (realtimeInput)", { ...basis, generationConfig: stimme, systemInstruction: sys, outputAudioTranscription: {} }, { realtimeInput: { text: "Sag nur: Hallo." } }],
+    ["7 + wie im Spiel (Eingabe-Mitschrift, Sprechtaste)", { ...basis, generationConfig: stimme, systemInstruction: sys, outputAudioTranscription: {}, inputAudioTranscription: {}, realtimeInputConfig: { automaticActivityDetection: { disabled: true } } }, text("Sag nur: Hallo.")],
+    ["8 + Affective Dialog", { ...basis, generationConfig: { ...stimme, enableAffectiveDialog: true }, systemInstruction: sys, outputAudioTranscription: {} }, null],
+  ];
+  for (const [name, setup, t] of schritte) {
+    const li = document.createElement("li");
+    li.textContent = `${name}: …`;
+    ol.append(li);
+    const r = await probe(setup, t);
+    li.textContent = `${name}: ${r}`;
+    if (r !== "ok") li.className = "fehler";
+    diagErgebnis.push(`${name}: ${r}`);
+    ergebnis();
+  }
+};
 
 // ---- Liste
 const liste = document.getElementById("liste");
@@ -204,7 +261,7 @@ function ergebnis() {
     if (sel.value === "weg") r.weg.push(sel.dataset.stimme);
     else r[sel.dataset.g][sel.value].push(sel.dataset.stimme);
   }
-  document.getElementById("ergebnis").value = `LeitWerk Stimmen-Ergebnis\n${JSON.stringify(r, null, 1)}`;
+  document.getElementById("ergebnis").value = `LeitWerk Stimmen-Ergebnis (Fassung 3)\n${JSON.stringify(r, null, 1)}${diagErgebnis.length ? `\nFehlersuche:\n${diagErgebnis.join("\n")}` : ""}`;
 }
 for (const x of document.querySelectorAll("input[name=noe]")) x.onchange = ergebnis;
 document.getElementById("kopieren").onclick = async () => {
