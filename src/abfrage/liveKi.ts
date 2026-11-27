@@ -94,19 +94,19 @@ export function liveSperren(ms = 60000): void {
 const STIMMEN_W = ["Kore", "Aoede", "Leda", "Zephyr", "Callirrhoe", "Despina", "Autonoe", "Erinome", "Laomedeia", "Achernar", "Gacrux", "Pulcherrima", "Vindemiatrix", "Sulafat"];
 const STIMMEN_M = ["Puck", "Charon", "Fenrir", "Orus", "Iapetus", "Umbriel", "Enceladus", "Algieba", "Algenib", "Rasalgethi", "Alnilam", "Schedar", "Achird", "Zubenelgenubi", "Sadachbia", "Sadaltager"];
 /**
- * Beta 83: Stimmen nach Alter – vorgeordnet nach Googles Beschreibung (Youthful, Bright, Upbeat = jung;
- * Mature, Gravelly, Gentle, Knowledgeable = älter). Paul hört einmal durch (tools/stimmen), danach steht die Tabelle fest.
+ * Beta 83: Stimmen nach Alter – vorgeordnet nach Googles Beschreibung – von Paul probegehört (tools/stimmen), fest für alle.
  */
 export const STIMMEN_ALTER: Record<"w" | "m", Record<AltersGruppe, string[]>> = {
+  // Pauls Probehören 27.11.2026 (Fassung 4)
   w: {
-    jung: ["Leda", "Zephyr", "Laomedeia", "Autonoe", "Aoede"],
-    mittel: ["Kore", "Erinome", "Despina", "Callirrhoe", "Pulcherrima", "Sulafat"],
-    alt: ["Gacrux", "Vindemiatrix", "Achernar"],
+    jung: ["Leda", "Zephyr", "Autonoe", "Aoede", "Achernar"],
+    mittel: ["Laomedeia", "Kore", "Erinome", "Despina", "Callirrhoe", "Pulcherrima", "Sulafat"],
+    alt: ["Gacrux", "Vindemiatrix"],
   },
   m: {
     jung: ["Puck", "Fenrir", "Sadachbia", "Achird", "Zubenelgenubi"],
-    mittel: ["Orus", "Iapetus", "Charon", "Umbriel", "Alnilam", "Schedar", "Algieba"],
-    alt: ["Algenib", "Enceladus", "Rasalgethi", "Sadaltager"],
+    mittel: ["Orus", "Iapetus", "Charon", "Umbriel", "Alnilam", "Schedar", "Algieba", "Algenib", "Enceladus", "Rasalgethi"],
+    alt: ["Sadaltager"],
   },
 };
 export function stimmeFuer(g: "w" | "m" | undefined, id: string, alter?: number): string {

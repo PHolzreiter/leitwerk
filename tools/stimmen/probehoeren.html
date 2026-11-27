@@ -23,7 +23,7 @@
 </style>
 </head>
 <body>
-<h1>Stimmen probehören <small style="font-size:13px;opacity:.6">Fassung 4</small></h1>
+<h1>Stimmen probehören <small style="font-size:13px;opacity:.6">Fassung 5</small></h1>
 <p class="hinweis">Einmalig für Paul: Jede Gemini-Stimme spricht denselben kurzen Notruf, einmal ohne und einmal mit leichter NÖ-Färbung. Du ordnest jede Stimme einer Altersgruppe zu (oder sortierst sie aus), entscheidest dich bei der Färbung und kopierst am Ende das Ergebnis in den Chat. Die Zuordnung steht danach fest im Spiel, für alle gleich.</p>
 
 <fieldset>
@@ -31,6 +31,15 @@
   <input id="schluessel" type="password" placeholder="Schlüssel hier einfügen" autocomplete="off">
   <div class="hinweis" style="margin:6px 0 0">Der Schlüssel bleibt nur in dieser offenen Seite und geht nur an Google. Er wird nicht gespeichert.</div>
   <label><input id="telefon" type="checkbox" checked> wie am Telefon abspielen (dumpfer, wie im Spiel)</label>
+  <div style="margin-top:8px">Alters-Effekt beim Abspielen (Probe):
+    <select id="effekt">
+      <option value="">keiner</option>
+      <option value="aelter">älter – etwas tiefer, langsamer, leicht zittrig</option>
+      <option value="sehralt">sehr alt (Oma/Opa) – tiefer, langsamer, zittrig, brüchig</option>
+      <option value="kind">Kind – höher und schneller</option>
+    </select>
+    <small>Gemini hat keine Kinder- oder Seniorenstimmen. Das hier verändert eine normale Stimme nachträglich. Bei bereits gehörten Stimmen einfach „▶ nochmal“.</small>
+  </div>
   <p style="margin:10px 0 0"><button id="diagnose">Fehler suchen</button> <small>probiert die Einstellungen einzeln aus und zeigt, welche Gemini ablehnt (dauert etwa eine Minute) – nur nötig, wenn „anhören“ nicht geht</small></p>
   <ol id="diagliste" class="text" style="max-width:none"></ol>
 </fieldset>
@@ -61,12 +70,12 @@ const URL_BASIS = "wss://generativelanguage.googleapis.com/ws/google.ai.generati
 const NOE_TEXT = "SPRACHE (gilt statt der Regel „kein Dialekt“): Du redest wie ein Mensch aus Niederösterreich – Umgangssprache mit leichter Färbung, kein starker Dialekt, jeder versteht dich. Ab und zu „ned“ statt „nicht“, „is“ statt „ist“, „a bissl“, „glei“, „jo“ und „na“, „daham“, „gell“. Adresse, Namen und Zahlen sagst du klar und deutlich.";
 // Beschreibung laut Google, Vorschlag wie STIMMEN_ALTER im Spiel
 const STIMMEN = [
-  ["Leda", "w", "Youthful", "jung"], ["Zephyr", "w", "Bright", "jung"], ["Laomedeia", "w", "Upbeat", "jung"], ["Autonoe", "w", "Bright", "jung"], ["Aoede", "w", "Breezy", "jung"],
-  ["Kore", "w", "Firm", "mittel"], ["Erinome", "w", "Clear", "mittel"], ["Despina", "w", "Smooth", "mittel"], ["Callirrhoe", "w", "Easy-going", "mittel"], ["Pulcherrima", "w", "Forward", "mittel"], ["Sulafat", "w", "Warm", "mittel"],
-  ["Gacrux", "w", "Mature", "alt"], ["Vindemiatrix", "w", "Gentle", "alt"], ["Achernar", "w", "Soft", "alt"],
+  ["Leda", "w", "Youthful", "jung"], ["Zephyr", "w", "Bright", "jung"], ["Autonoe", "w", "Bright", "jung"], ["Aoede", "w", "Breezy", "jung"], ["Achernar", "w", "Soft", "jung"],
+  ["Laomedeia", "w", "Upbeat", "mittel"], ["Kore", "w", "Firm", "mittel"], ["Erinome", "w", "Clear", "mittel"], ["Despina", "w", "Smooth", "mittel"], ["Callirrhoe", "w", "Easy-going", "mittel"], ["Pulcherrima", "w", "Forward", "mittel"], ["Sulafat", "w", "Warm", "mittel"],
+  ["Gacrux", "w", "Mature", "alt"], ["Vindemiatrix", "w", "Gentle", "alt"],
   ["Puck", "m", "Upbeat", "jung"], ["Fenrir", "m", "Excitable", "jung"], ["Sadachbia", "m", "Lively", "jung"], ["Achird", "m", "Friendly", "jung"], ["Zubenelgenubi", "m", "Casual", "jung"],
-  ["Orus", "m", "Firm", "mittel"], ["Iapetus", "m", "Clear", "mittel"], ["Charon", "m", "Informative", "mittel"], ["Umbriel", "m", "Easy-going", "mittel"], ["Alnilam", "m", "Firm", "mittel"], ["Schedar", "m", "Even", "mittel"], ["Algieba", "m", "Smooth", "mittel"],
-  ["Algenib", "m", "Gravelly", "alt"], ["Enceladus", "m", "Breathy", "alt"], ["Rasalgethi", "m", "Informative", "alt"], ["Sadaltager", "m", "Knowledgeable", "alt"],
+  ["Orus", "m", "Firm", "mittel"], ["Iapetus", "m", "Clear", "mittel"], ["Charon", "m", "Informative", "mittel"], ["Umbriel", "m", "Easy-going", "mittel"], ["Alnilam", "m", "Firm", "mittel"], ["Schedar", "m", "Even", "mittel"], ["Algieba", "m", "Smooth", "mittel"], ["Algenib", "m", "Gravelly", "mittel"], ["Enceladus", "m", "Breathy", "mittel"], ["Rasalgethi", "m", "Informative", "mittel"],
+  ["Sadaltager", "m", "Knowledgeable", "alt"],
 ];
 const GRUPPEN = [["jung", "jung (bis ~30)"], ["mittel", "mittel (30–60)"], ["alt", "älter (60+)"], ["weg", "nicht verwenden"]];
 
@@ -92,10 +101,26 @@ function abspielen(pcm, rate) {
   const q = ctx.createBufferSource();
   q.buffer = b;
   let ende = q;
+  // Alters-Effekt: Tempo/Tonhöhe (playbackRate), Zittern (Vibrato über detune + leichtes Tremolo)
+  const eff = { aelter: [0.94, 5.5, 16, 0.1], sehralt: [0.89, 6, 32, 0.2], kind: [1.14, 0, 0, 0] }[document.getElementById("effekt").value];
+  if (eff) {
+    const [rate, hz, cent, trem] = eff;
+    q.playbackRate.value = rate;
+    if (hz) {
+      const lfo = ctx.createOscillator(); lfo.frequency.value = hz;
+      const tiefe = ctx.createGain(); tiefe.gain.value = cent;
+      lfo.connect(tiefe).connect(q.detune);
+      const tg = ctx.createGain(); tg.gain.value = 1 - trem;
+      const tt = ctx.createGain(); tt.gain.value = trem;
+      lfo.connect(tt).connect(tg.gain);
+      q.connect(tg); ende = tg;
+      lfo.start(); q.onended = () => lfo.stop();
+    }
+  }
   if (document.getElementById("telefon").checked) {
     const hp = ctx.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 300;
     const tp = ctx.createBiquadFilter(); tp.type = "lowpass"; tp.frequency.value = 3400;
-    q.connect(hp).connect(tp); ende = tp;
+    ende.connect(hp).connect(tp); ende = tp;
   }
   ende.connect(ctx.destination);
   q.start();
@@ -262,7 +287,7 @@ function ergebnis() {
     if (sel.value === "weg") r.weg.push(sel.dataset.stimme);
     else r[sel.dataset.g][sel.value].push(sel.dataset.stimme);
   }
-  document.getElementById("ergebnis").value = `LeitWerk Stimmen-Ergebnis (Fassung 4)\n${JSON.stringify(r, null, 1)}${diagErgebnis.length ? `\nFehlersuche:\n${diagErgebnis.join("\n")}` : ""}`;
+  document.getElementById("ergebnis").value = `LeitWerk Stimmen-Ergebnis (Fassung 5)\n${JSON.stringify(r, null, 1)}${diagErgebnis.length ? `\nFehlersuche:\n${diagErgebnis.join("\n")}` : ""}`;
 }
 for (const x of document.querySelectorAll("input[name=noe]")) x.onchange = ergebnis;
 document.getElementById("kopieren").onclick = async () => {

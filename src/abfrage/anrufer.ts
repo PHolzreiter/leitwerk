@@ -833,7 +833,7 @@ export function anruferAlter(x: { name: string; typ?: string; selbst?: boolean; 
  * Nur für Gemini: wie die Stimme dieses Anrufers grundsätzlich klingt (fest pro Anrufer) –
  * Alter, Tonlage, Klangfarbe, Grundtempo und Färbung. Damit klingen auch Anrufer mit derselben Grundstimme verschieden.
  */
-export function stimmBild(x: { name: string; geschlecht: "m" | "w"; sprache: string; herkunft?: string; typ?: string; selbst?: boolean; alter?: number }, id: string, patientAlter?: number): string {
+export function stimmBild(x: { name: string; geschlecht: "m" | "w"; sprache: string; herkunft?: string; typ?: string; art?: string; selbst?: boolean; alter?: number }, id: string, patientAlter?: number): string {
   let h = 2166136261;
   const t = `${id}|${x.name}`;
   for (let i = 0; i < t.length; i++) h = Math.imul(h ^ t.charCodeAt(i), 16777619) >>> 0;
@@ -848,15 +848,25 @@ export function stimmBild(x: { name: string; geschlecht: "m" | "w"; sprache: str
   const lage = ["eher tiefe", "mittlere", "mittlere", "eher hohe"][w(4)];
   const farbe = ["warme", "raue", "heisere", "helle", "kräftige", "weiche", "leicht nasale", "dünne", "rauchige", "klare"][w(10)];
   const tempo = ["bedächtig, etwas langsamer", "normales Tempo", "normales Tempo", "flott, etwas schneller"][w(4)];
+  const standard = ["leichte österreichische Färbung", "fast Hochdeutsch, leicht österreichisch", "österreichische Umgangssprache"];
   const faerbung =
     x.sprache === "gebrochen"
       ? `deutlicher Akzent${x.herkunft ? ` (Herkunft ${x.herkunft})` : ""}`
       : x.sprache === "dialekt"
         ? ["deutlicher niederösterreichischer Dialekt", "Wiener Färbung", "breiter ländlicher Dialekt"][w(3)]
-        : NOE_FAERBUNG
-          ? "leichte niederösterreichische Färbung"
-          : ["leichte österreichische Färbung", "fast Hochdeutsch, leicht österreichisch", "österreichische Umgangssprache"][w(3)];
-  return `DEINE STIMME (immer gleich, nicht vorlesen): ${x.geschlecht === "w" ? "Frau" : "Mann"}, ${alter}; ${lage} Stimmlage, ${farbe} Stimme; ${tempo}; ${faerbung}. Die Stimmung (unten) kommt dazu.${NOE_FAERBUNG && x.sprache === "hochdeutsch" ? `\n${NOE_TEXT}` : ""}`;
+        : standard[w(3)];
+  const noe = x.sprache === "hochdeutsch" && redetNoe(x, w(100));
+  return `DEINE STIMME (immer gleich, nicht vorlesen): ${x.geschlecht === "w" ? "Frau" : "Mann"}, ${alter}; ${lage} Stimmlage, ${farbe} Stimme; ${tempo}; ${noe ? "leichte niederösterreichische Färbung" : faerbung}. Die Stimmung (unten) kommt dazu.${noe ? `\n${NOE_TEXT}` : ""}`;
+}
+
+/**
+ * Beta 86 (Paul): NÖ-Färbung nicht bei jedem – private Anrufer meist (65 %), Profis und Einrichtungen
+ * (Pflege, Arzt, Ordination, Polizei, andere Leitstelle …) eher Hochdeutsch (30 %). wurf = 0–99, fest pro Anrufer.
+ */
+export function redetNoe(x: { typ?: string; art?: string }, wurf: number): boolean {
+  if (!NOE_FAERBUNG) return false;
+  const profi = ["pflege", "arzt", "ordi", "bergrettung", "pistenrettung", "hotline"].includes(x.typ ?? "") || ["einrichtung", "polizei", "leitstelle"].includes(x.art ?? "");
+  return wurf < (profi ? 30 : 65);
 }
 
 /**
@@ -903,10 +913,10 @@ export function stimmungZumFall(x: Anrufer, f: { thema: string; texte: string; s
 }
 
 /**
- * Beta 83: leichte niederösterreichische Färbung (nur Gemini, nur über die Wortwahl). Paul hört sie einmal
- * mit dem Probehör-Blatt (tools/stimmen/probehoeren.html, gleicher Text) und entscheidet – bis dahin aus.
+ * Beta 83: leichte niederösterreichische Färbung (nur Gemini, nur über die Wortwahl, gleicher Text wie im
+ * Probehör-Blatt tools/stimmen/probehoeren.html). Beta 86: Paul hat probegehört – an, aber nicht bei jedem (redetNoe).
  */
-export const NOE_FAERBUNG = false;
+export const NOE_FAERBUNG = true;
 export const NOE_TEXT =
   "SPRACHE (gilt statt der Regel „kein Dialekt“): Du redest wie ein Mensch aus Niederösterreich – Umgangssprache mit leichter Färbung, kein starker Dialekt, jeder versteht dich. Ab und zu „ned“ statt „nicht“, „is“ statt „ist“, „a bissl“, „glei“, „jo“ und „na“, „daham“, „gell“. Adresse, Namen und Zahlen sagst du klar und deutlich.";
 

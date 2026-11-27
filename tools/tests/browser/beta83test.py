@@ -54,6 +54,10 @@ try:
         print("   ", r)
         check(r["n"] > 60 and not r["falsch"] and r["wackelt"] == 0, f"Alter passt zur Rolle und bleibt gleich ({r['falsch'][:5]})")
         check(r["bild"] == r["n"], "Stimmbild nennt das Alter")
+        r2 = A.evaluate("""() => { const St = window.__lw.stimmen; let privat = 0, profi = 0; for (let w = 0; w < 100; w++) { if (St.redetNoe({ typ: 'partner' }, w)) privat++; if (St.redetNoe({ typ: 'pflege' }, w)) profi++; }
+            const a = { name: 'Eva Gruber', geschlecht: 'w', sprache: 'hochdeutsch', typ: 'partner' }; let mit = 0; for (let i = 0; i < 200; i++) if (/niederösterreichische Färbung/.test(St.stimmBild(a, 'e' + i, 70))) mit++;
+            return { privat, profi, mit }; }""")
+        check(r2["privat"] == 65 and r2["profi"] == 30 and 90 < r2["mit"] < 170, f"NÖ-Färbung nicht bei jedem: privat {r2['privat']} %, Profis {r2['profi']} %, Stichprobe {r2['mit']}/200")
         check(r["privat"] > 30 and r["privatRuhig"] / r["privat"] < 0.15, f"private Anrufer selten ganz ruhig ({r['privatRuhig']} von {r['privat']})")
         check(len(set(r["emo"])) >= 4, f"Stimmungen gemischt ({r['emo']})")
         check(all(x != "ruhig" for x in r["profiRea"]), f"Pflege/Arzt bei Reanimation nicht ruhig ({r['profiRea']})")

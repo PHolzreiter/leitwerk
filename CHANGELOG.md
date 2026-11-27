@@ -1,5 +1,9 @@
 # Änderungen
 
+## 0.116.0-beta.86 – Stimmen probegehört · leichte NÖ-Färbung
+- **Stimmen fest zugeordnet:** Welche Gemini-Stimme jung, mittel oder älter klingt, ist jetzt nach dem Probehören fest eingetragen – für alle Spieler gleich.
+- **Niederösterreichisch, aber nicht bei jedem:** Viele Anrufer reden mit leichter NÖ-Färbung („ned“, „is“, „a bissl“, „glei“, „daham“) – private Anrufer meistens, Pflegeheim, Arzt, Polizei und andere Stellen eher Hochdeutsch. Adresse, Namen und Zahlen bleiben klar verständlich. Nur mit Gemini als Anrufer-KI.
+
 ## 0.116.0-beta.85 – Gemini-Anrufer reden wieder
 - **Gemini-Anrufer:** Seit Beta 83 hat Gemini den Anruf bei der ersten Frage abgebrochen („Request contains an invalid argument“). Grund war der neu eingeschaltete „Affective Dialog“: Das Gemini-Modell nimmt ihn beim Verbinden an, bricht danach aber bei jeder Eingabe ab. Er ist jetzt aus – die Anrufer reden wieder wie in Beta 82, mit allem Neuen aus Beta 83 (Stimme nach Alter, echte Gefühle, Beruhigen, Geräusche je Zustand).
 
