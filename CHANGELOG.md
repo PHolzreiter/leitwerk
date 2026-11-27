@@ -1,5 +1,13 @@
 # Änderungen
 
+## 0.116.0-beta.83 – Anrufer klingen echter: Stimme nach Alter, echte Gefühle
+- **Stimme passt zum Alter:** Jeder Anrufer hat ein festes Alter, passend zu seiner Rolle (Eltern eines Kindes jünger, die Tochter einer 85-Jährigen mittleren Alters, der Ehemann etwa so alt wie die Patientin). Die Gemini-Stimme wird danach gewählt: junge, mittlere und ältere Frauen- und Männerstimmen.
+- **Stimmung wie in echt:** Wer die Rettung ruft, hält es für ernst – aber nicht jeder klingt panisch. Ganz ruhig sind private Anrufer nur noch selten, die meisten sind besorgt oder aufgeregt, bei Kindern, Reanimation oder schlimmen Einsätzen auch außer sich. Pflegeheim und Arztpraxis bleiben sachlich, bei einer Reanimation werden aber auch sie hektisch.
+- **Beruhigen und Hektik:** Klare Anweisungen, „Die Rettung ist schon unterwegs“ oder ein bestimmtes „Hören Sie mir zu!“ beruhigen. Wirst du selbst hektisch („Antworten Sie endlich!“, viele Fragen ganz schnell hintereinander, dauernd dazwischenreden), regt sich der Anrufer wieder auf – höchstens eine Stufe mehr als am Anfang. Niemand bleibt ewig außer sich: Nach einer Weile fasst sich jeder so weit, dass er antwortet.
+- **Gefühle hört man:** Gemini spielt die Stimmung mit der Stimme – Atmen, Stocken, Schlucken, Schluchzen, statt es nur zu sagen. Dazu „Moment …“, wenn der Anrufer kurz nachschauen muss, Nachfragen und manchmal das Wichtigste zweimal. Gemini passt außerdem den Ton an die Stimmung im Gespräch an, wenn das Modell das kann.
+- **Geräusche folgen dem Patienten:** Wird der Patient während des Gesprächs bewusstlos, hört das Stöhnen auf und man hört Röcheln; atmet er nicht mehr, kommt von ihm nichts mehr. Wird der Anrufer aufgeregter, kommen die Geräusche öfter.
+- **Mitschrift:** Regieanweisungen wie „*schluchzt*“ stehen nicht mehr im Gespräch.
+
 ## 0.116.0-beta.82 – Telefon klingt echt: Handy, Festnetz und Geräusche vom Notfallort
 - **Handy oder Festnetz:** Jeder Anrufer telefoniert über eine eigene Leitung. Wer draußen oder im Auto ist, ruft mit dem Handy an – schmaler Klang, laute Stellen (Schreien) verzerren, und bei schlechtem Netz (am Land, im Wald, am Berg) setzt die Leitung kurz aus. Dabei gehen Wörter verloren – in der Mitschrift steht dort „…“, dann heißt es nachfragen. Pflegeheim und Arztpraxis rufen meist vom Festnetz an: ruhig, etwas dumpf.
 - **Geräusche vom Ort:** Im Hintergrund hört man, wo der Anrufer ist – Wohnung (Raum, manchmal Fernseher oder Uhr), Straße, Landstraße, Autobahn, Auto, Geschäft, Lokal, Arbeit, Baustelle, Schule, draußen (Wind, Vögel, Wasser). Regen und Sturm aus dem Spielwetter hört man, wenn der Anrufer im Freien ist.

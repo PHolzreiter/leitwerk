@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>LeitWerk – Stimmen probehören</title>
+<style>
+  :root { color-scheme: light dark; --rand: #8884; --akzent: #2f6fd6; }
+  body { font: 15px/1.45 system-ui, sans-serif; max-width: 1040px; margin: 24px auto; padding: 0 16px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .hinweis { opacity: .8; margin: 0 0 16px; }
+  fieldset { border: 1px solid var(--rand); border-radius: 8px; padding: 10px 14px; margin: 0 0 16px; }
+  legend { font-weight: 600; }
+  input[type=password] { width: 380px; padding: 5px 8px; }
+  table { border-collapse: collapse; width: 100%; }
+  th, td { border-bottom: 1px solid var(--rand); padding: 6px 8px; text-align: left; vertical-align: top; }
+  th { font-size: 13px; opacity: .75; }
+  button { padding: 4px 10px; border-radius: 6px; border: 1px solid var(--rand); background: transparent; cursor: pointer; }
+  button.laeuft { border-color: var(--akzent); color: var(--akzent); }
+  .text { font-size: 12px; opacity: .75; max-width: 330px; }
+  .fehler { color: #c33; }
+  textarea { width: 100%; height: 150px; font: 12px ui-monospace, monospace; }
+  .w { color: #b4489a; } .m { color: #2f6fd6; }
+</style>
+</head>
+<body>
+<h1>Stimmen probehören</h1>
+<p class="hinweis">Einmalig für Paul: Jede Gemini-Stimme spricht denselben kurzen Notruf, einmal ohne und einmal mit leichter NÖ-Färbung. Du ordnest jede Stimme einer Altersgruppe zu (oder sortierst sie aus), entscheidest dich bei der Färbung und kopierst am Ende das Ergebnis in den Chat. Die Zuordnung steht danach fest im Spiel, für alle gleich.</p>
+
+<fieldset>
+  <legend>1. Gemini-Schlüssel</legend>
+  <input id="schluessel" type="password" placeholder="Schlüssel hier einfügen" autocomplete="off">
+  <div class="hinweis" style="margin:6px 0 0">Der Schlüssel bleibt nur in dieser offenen Seite und geht nur an Google. Er wird nicht gespeichert.</div>
+  <label><input id="telefon" type="checkbox" checked> wie am Telefon abspielen (dumpfer, wie im Spiel)</label>
+</fieldset>
+
+<fieldset>
+  <legend>2. Durchhören und zuordnen</legend>
+  <table>
+    <thead><tr><th>Stimme</th><th>laut Google</th><th>ohne Färbung</th><th>mit NÖ-Färbung</th><th>Gruppe</th></tr></thead>
+    <tbody id="liste"></tbody>
+  </table>
+</fieldset>
+
+<fieldset>
+  <legend>3. Ergebnis</legend>
+  <div>NÖ-Färbung im Spiel:
+    <label><input type="radio" name="noe" value="ja"> ja</label>
+    <label><input type="radio" name="noe" value="nein" checked> nein</label>
+  </div>
+  <p><button id="kopieren">Ergebnis kopieren</button> <span id="kopiert"></span></p>
+  <textarea id="ergebnis" readonly></textarea>
+</fieldset>
+
+<script>
+// gleiches Modell wie im Spiel (src/abfrage/liveKi.ts)
+const MODELL = "gemini-3.8-live";
+const URL_BASIS = "wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent";
+// gleicher Text wie NOE_TEXT in src/abfrage/anrufer.ts (der Test prüft das)
+const NOE_TEXT = "SPRACHE (gilt statt der Regel „kein Dialekt“): Du redest wie ein Mensch aus Niederösterreich – Umgangssprache mit leichter Färbung, kein starker Dialekt, jeder versteht dich. Ab und zu „ned“ statt „nicht“, „is“ statt „ist“, „a bissl“, „glei“, „jo“ und „na“, „daham“, „gell“. Adresse, Namen und Zahlen sagst du klar und deutlich.";
+// Beschreibung laut Google, Vorschlag wie STIMMEN_ALTER im Spiel
+const STIMMEN = [
+  ["Leda", "w", "Youthful", "jung"], ["Zephyr", "w", "Bright", "jung"], ["Laomedeia", "w", "Upbeat", "jung"], ["Autonoe", "w", "Bright", "jung"], ["Aoede", "w", "Breezy", "jung"],
+  ["Kore", "w", "Firm", "mittel"], ["Erinome", "w", "Clear", "mittel"], ["Despina", "w", "Smooth", "mittel"], ["Callirrhoe", "w", "Easy-going", "mittel"], ["Pulcherrima", "w", "Forward", "mittel"], ["Sulafat", "w", "Warm", "mittel"],
+  ["Gacrux", "w", "Mature", "alt"], ["Vindemiatrix", "w", "Gentle", "alt"], ["Achernar", "w", "Soft", "alt"],
+  ["Puck", "m", "Upbeat", "jung"], ["Fenrir", "m", "Excitable", "jung"], ["Sadachbia", "m", "Lively", "jung"], ["Achird", "m", "Friendly", "jung"], ["Zubenelgenubi", "m", "Casual", "jung"],
+  ["Orus", "m", "Firm", "mittel"], ["Iapetus", "m", "Clear", "mittel"], ["Charon", "m", "Informative", "mittel"], ["Umbriel", "m", "Easy-going", "mittel"], ["Alnilam", "m", "Firm", "mittel"], ["Schedar", "m", "Even", "mittel"], ["Algieba", "m", "Smooth", "mittel"],
+  ["Algenib", "m", "Gravelly", "alt"], ["Enceladus", "m", "Breathy", "alt"], ["Rasalgethi", "m", "Informative", "alt"], ["Sadaltager", "m", "Knowledgeable", "alt"],
+];
+const GRUPPEN = [["jung", "jung (bis ~30)"], ["mittel", "mittel (30–60)"], ["alt", "älter (60+)"], ["weg", "nicht verwenden"]];
+
+function system(g, noe) {
+  return [
+    `Du bist ${g === "w" ? "eine Frau" : "ein Mann"} und rufst gerade beim Rettungsnotruf in Niederösterreich an. Du antwortest NUR als Anrufer, wie ein Mensch am Telefon, in ein bis drei kurzen Sätzen.`,
+    "Was passiert ist: Dein Nachbar, Herr Gruber, ist im Stiegenhaus gestürzt, liegt am Boden und hält sich das Bein, er hat starke Schmerzen. Er ist wach und redet. Die Adresse ist Hauptstraße 12 in Krems, zweiter Stock.",
+    "Du bist aufgeregt – das hört man: kurze Sätze, du setzt manchmal neu an, man hört dich atmen. Solche Laute sagst du nie als Wort, du machst sie hörbar.",
+    noe ? NOE_TEXT : "Du sprichst normales Hochdeutsch (österreichisch, aber kein Dialekt).",
+    "Du bist ein Mensch am Telefon, keine KI.",
+  ].join("\n");
+}
+
+// ---- Abspielen
+let ctx = null;
+let laeuft = null;
+function abspielen(pcm, rate) {
+  ctx ??= new AudioContext();
+  laeuft?.stop();
+  const b = ctx.createBuffer(1, pcm.length, rate);
+  const d = b.getChannelData(0);
+  for (let i = 0; i < pcm.length; i++) d[i] = pcm[i] / 32768;
+  const q = ctx.createBufferSource();
+  q.buffer = b;
+  let ende = q;
+  if (document.getElementById("telefon").checked) {
+    const hp = ctx.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 300;
+    const tp = ctx.createBiquadFilter(); tp.type = "lowpass"; tp.frequency.value = 3400;
+    q.connect(hp).connect(tp); ende = tp;
+  }
+  ende.connect(ctx.destination);
+  q.start();
+  laeuft = q;
+}
+
+// ---- Gemini: ein Satz in dieser Stimme (gemerkt, damit ein zweites Anhören nichts kostet)
+const fertig = new Map();
+let affektiv = true;
+function erzeugen(stimme, g, noe) {
+  const schluessel = document.getElementById("schluessel").value.trim();
+  if (schluessel.length < 10) return Promise.reject(new Error("Bitte zuerst den Schlüssel eintragen"));
+  return new Promise((ja, nein) => {
+    const ws = new WebSocket(`${URL_BASIS}?key=${encodeURIComponent(schluessel)}`);
+    const stuecke = [];
+    let rate = 24000, text = "", bereit = false, mitAffektiv = affektiv;
+    const zeit = setTimeout(() => { ws.close(); nein(new Error("Gemini antwortet nicht")); }, 30000);
+    ws.onopen = () => ws.send(JSON.stringify({ setup: {
+      model: `models/${MODELL}`,
+      generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: stimme } } }, ...(mitAffektiv ? { enableAffectiveDialog: true } : {}) },
+      systemInstruction: { parts: [{ text: system(g, noe) }] },
+      outputAudioTranscription: {},
+    } }));
+    ws.onmessage = async (ev) => {
+      const roh = typeof ev.data === "string" ? ev.data : await ev.data.text();
+      let m; try { m = JSON.parse(roh); } catch { return; }
+      if (m.setupComplete) {
+        bereit = true;
+        ws.send(JSON.stringify({ clientContent: { turns: [{ role: "user", parts: [{ text: "Leitstelle: Notruf Rettungsdienst. Wo genau ist der Notfallort, und was ist passiert?" }] }], turnComplete: true } }));
+        return;
+      }
+      const sc = m.serverContent;
+      if (!sc) return;
+      for (const p of sc.modelTurn?.parts ?? []) {
+        if (!p.inlineData?.data) continue;
+        rate = Number(/rate=(\d+)/.exec(p.inlineData.mimeType ?? "")?.[1] ?? 24000);
+        const s = atob(p.inlineData.data);
+        const u = new Uint8Array(s.length);
+        for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i);
+        stuecke.push(new Int16Array(u.buffer));
+      }
+      if (sc.outputTranscription?.text) text += sc.outputTranscription.text;
+      if (sc.turnComplete) {
+        clearTimeout(zeit);
+        ws.close(1000, "fertig");
+        const n = stuecke.reduce((s, x) => s + x.length, 0);
+        const pcm = new Int16Array(n);
+        let o = 0;
+        for (const x of stuecke) { pcm.set(x, o); o += x.length; }
+        ja({ pcm, rate, text: text.replace(/\s+/g, " ").trim() });
+      }
+    };
+    ws.onclose = (ev) => {
+      if (stuecke.length || ev.code === 1000) return;
+      clearTimeout(zeit);
+      // Modell kennt Affective Dialog nicht: ohne nochmal
+      if (mitAffektiv && !bereit && /affective/i.test(ev.reason || "")) { affektiv = false; erzeugen(stimme, g, noe).then(ja, nein); return; }
+      nein(new Error(ev.reason || `Verbindung beendet (${ev.code})`));
+    };
+  });
+}
+
+// ---- Liste
+const liste = document.getElementById("liste");
+for (const [name, g, art, gruppe] of STIMMEN) {
+  const tr = document.createElement("tr");
+  tr.innerHTML = `<td><b class="${g}">${name}</b><br><small>${g === "w" ? "Frau" : "Mann"}</small></td><td>${art}</td>`;
+  for (const noe of [false, true]) {
+    const td = document.createElement("td");
+    const knopf = document.createElement("button");
+    knopf.textContent = "▶ anhören";
+    const t = document.createElement("div");
+    t.className = "text";
+    knopf.onclick = async () => {
+      const k = `${name}|${noe}`;
+      try {
+        knopf.classList.add("laeuft");
+        knopf.textContent = fertig.has(k) ? "▶ nochmal" : "… erzeugt";
+        if (!fertig.has(k)) fertig.set(k, await erzeugen(name, g, noe));
+        const r = fertig.get(k);
+        abspielen(r.pcm, r.rate);
+        t.textContent = r.text;
+        knopf.textContent = "▶ nochmal";
+      } catch (e) {
+        t.innerHTML = `<span class="fehler">${String(e.message || e)}</span>`;
+        knopf.textContent = "▶ anhören";
+      } finally {
+        knopf.classList.remove("laeuft");
+      }
+    };
+    td.append(knopf, t);
+    tr.append(td);
+  }
+  const td = document.createElement("td");
+  const sel = document.createElement("select");
+  sel.dataset.stimme = name;
+  sel.dataset.g = g;
+  for (const [w, l] of GRUPPEN) sel.add(new Option(l, w, w === gruppe, w === gruppe));
+  sel.onchange = ergebnis;
+  td.append(sel);
+  tr.append(td);
+  liste.append(tr);
+}
+
+function ergebnis() {
+  const r = { noe: document.querySelector("input[name=noe]:checked").value === "ja", w: { jung: [], mittel: [], alt: [] }, m: { jung: [], mittel: [], alt: [] }, weg: [] };
+  for (const sel of document.querySelectorAll("select[data-stimme]")) {
+    if (sel.value === "weg") r.weg.push(sel.dataset.stimme);
+    else r[sel.dataset.g][sel.value].push(sel.dataset.stimme);
+  }
+  document.getElementById("ergebnis").value = `LeitWerk Stimmen-Ergebnis\n${JSON.stringify(r, null, 1)}`;
+}
+for (const x of document.querySelectorAll("input[name=noe]")) x.onchange = ergebnis;
+document.getElementById("kopieren").onclick = async () => {
+  ergebnis();
+  const t = document.getElementById("ergebnis");
+  try { await navigator.clipboard.writeText(t.value); } catch { t.select(); document.execCommand("copy"); }
+  document.getElementById("kopiert").textContent = "kopiert – einfach in den Chat einfügen";
+};
+ergebnis();
+</script>
+</body>
+</html>

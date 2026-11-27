@@ -25,6 +25,7 @@ window.T = {
   // Einsatz mit RTW (+ NEF) anlegen und alarmieren
   async einsatz(mitNef) {
     const s = T.s();
+    s.settings.rufhilfeAufnahme = "selbst"; // fertige Rufhilfe-Einsätze (Beta 80) lassen sich nicht annehmen
     const e = await s.generiere("kritisch");
     s.anrufAnnehmen(e.id); s.anrufBeenden(e.id);
     s.aktualisiere(e.id, { adresse: { lat: e.wahr.lat, lon: e.wahr.lon, label: e.wahr.adresse } });

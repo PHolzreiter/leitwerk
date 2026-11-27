@@ -330,12 +330,14 @@ export function anruferWaehlen(
   // Regeln (Paul): Profis sachlich; Eltern und Angehörige bei Lebensgefahr panisch; Passanten mittel; Harmloses ruhig
   const nahe = ["partner", "eltern", "kind", "fern"].includes(s.typ ?? "");
   const harmlos = !schlimm && a.bw !== "getruebt" && a.at !== "abnorm";
-  if (s.profi) emotion = schlimm ? "gefasst" : "ruhig";
-  else if (s.selbst) emotion = harmlos ? gewichtet([["ruhig", 3], ["gefasst", 4]], rnd) : gewichtet([["gefasst", 3], ["aufgeregt", 3]], rnd);
+  // Beta 83 (Paul): wer die Rettung ruft, hält es für ernst – aber nicht jeder klingt panisch; Profis ruhig, bei Reanimation auch hektisch
+  const reanimation = a.bw === "nein" && (a.at === "keine" || a.at === "agonal");
+  if (s.profi) emotion = reanimation ? gewichtet([["aufgeregt", 4], ["gefasst", 3], ["panisch", 1]], rnd) : schlimm ? "gefasst" : "ruhig";
+  else if (s.selbst) emotion = harmlos ? gewichtet([["ruhig", 2], ["gefasst", 5], ["aufgeregt", 1]], rnd) : gewichtet([["gefasst", 3], ["aufgeregt", 3], ["panisch", 1]], rnd);
   else if (schlimm && (nahe || kind)) emotion = gewichtet([["panisch", 4], ["sehr_panisch", 4], ["extrem_panisch", 2], ["aufgeregt", 1]], rnd);
-  else if (schlimm || kind) emotion = gewichtet([["aufgeregt", 4], ["panisch", 2], ["sehr_panisch", 1], ["gefasst", 2]], rnd);
-  else if (harmlos) emotion = gewichtet([["ruhig", 3], ["gefasst", 4], ["aufgeregt", nahe ? 1.5 : 0.5]], rnd);
-  else emotion = gewichtet([["gefasst", 4], ["aufgeregt", nahe ? 4 : 2], ["panisch", nahe ? 1 : 0]], rnd);
+  else if (schlimm || kind) emotion = gewichtet([["aufgeregt", 4], ["panisch", 3], ["sehr_panisch", 1], ["gefasst", 2]], rnd);
+  else if (harmlos) emotion = gewichtet([["ruhig", 1], ["gefasst", 5], ["aufgeregt", nahe ? 3 : 1.5]], rnd);
+  else emotion = gewichtet([["gefasst", 4], ["aufgeregt", nahe ? 4 : 2.5], ["panisch", nahe ? 1.5 : 0.5]], rnd);
 
   // kein Dialekt, kein gebrochenes Deutsch (Paul, 27./28.10.2026): das Sprachmodell macht daraus Kauderwelsch
   const sprache = "hochdeutsch" as Anrufer["sprache"];
@@ -774,11 +776,64 @@ export function stimmKlang(x: { emotion: string; stimmungArt?: StimmungArt }): s
   return `SO KLINGT DEINE STIMME (Sprechweise, nicht vorlesen): ${x.stimmungArt ? `${art[x.stimmungArt]}; ` : ""}${klang}. Bleib die ganze Zeit in dieser Stimme, bis sich deine Stimmung ändert.`;
 }
 
+/** Altersgruppe einer Stimme (für die Wahl der Gemini-Stimme) */
+export type AltersGruppe = "jung" | "mittel" | "alt";
+export function altersGruppe(jahre: number): AltersGruppe {
+  return jahre < 32 ? "jung" : jahre < 62 ? "mittel" : "alt";
+}
+function alterText(n: number): string {
+  const um = Math.round(n / 5) * 5;
+  return n < 18 ? "jugendlich (um 16)" : n < 32 ? `jung (um ${um})` : n < 62 ? `mittleres Alter (um ${um})` : n < 80 ? `älter (um ${um})` : "alt (über 80), etwas brüchig";
+}
+
+/**
+ * Beta 83: Wie alt ist die Person am Telefon? Fest pro Anrufer (aus Einsatz und Name), passend zur Rolle:
+ * Eltern eines Kindes jung, Tochter/Sohn eines alten Patienten mittel, Partner etwa so alt wie der Patient …
+ */
+export function anruferAlter(x: { name: string; typ?: string; selbst?: boolean; alter?: number }, id: string, patientAlter?: number | null): number {
+  if (typeof x.alter === "number") return x.alter;
+  const pa = typeof patientAlter === "number" && patientAlter > 0 ? patientAlter : undefined;
+  if (x.selbst && pa) return pa;
+  let h = 2166136261;
+  const t = `alter|${id}|${x.name}`;
+  for (let i = 0; i < t.length; i++) h = Math.imul(h ^ t.charCodeAt(i), 16777619) >>> 0;
+  const zw = (a: number, b: number) => a + (h % (b - a + 1));
+  const klemm = (n: number, a: number, b: number) => Math.max(a, Math.min(b, n));
+  switch (x.typ) {
+    case "eltern":
+      return klemm((pa ?? 6) + zw(22, 36), 19, 62);
+    case "kind":
+      return klemm((pa ?? 80) - zw(24, 34), 22, 70);
+    case "partner":
+      return klemm((pa ?? 60) + zw(-6, 6), 18, 92);
+    case "lehrer":
+    case "trainer":
+      return zw(24, 60);
+    case "pflege":
+    case "ordi":
+    case "arzt":
+    case "kollege":
+    case "verkauf":
+    case "wirt":
+    case "bademeister":
+    case "bergrettung":
+    case "pistenrettung":
+    case "hotline":
+      return zw(23, 61);
+    case "nachbar":
+      return zw(30, 82);
+    case "fern":
+      return klemm((pa ?? 75) - zw(22, 32), 25, 65);
+    default:
+      return zw(18, 78);
+  }
+}
+
 /**
  * Nur für Gemini: wie die Stimme dieses Anrufers grundsätzlich klingt (fest pro Anrufer) –
  * Alter, Tonlage, Klangfarbe, Grundtempo und Färbung. Damit klingen auch Anrufer mit derselben Grundstimme verschieden.
  */
-export function stimmBild(x: { name: string; geschlecht: "m" | "w"; sprache: string; herkunft?: string; typ?: string; selbst?: boolean }, id: string, patientAlter?: number): string {
+export function stimmBild(x: { name: string; geschlecht: "m" | "w"; sprache: string; herkunft?: string; typ?: string; selbst?: boolean; alter?: number }, id: string, patientAlter?: number): string {
   let h = 2166136261;
   const t = `${id}|${x.name}`;
   for (let i = 0; i < t.length; i++) h = Math.imul(h ^ t.charCodeAt(i), 16777619) >>> 0;
@@ -787,10 +842,9 @@ export function stimmBild(x: { name: string; geschlecht: "m" | "w"; sprache: str
     h = Math.imul(h ^ (h >>> 13), 2246822507) >>> 0;
     return r;
   };
-  const altJung = x.typ === "eltern" || x.typ === "lehrer" ? ["jung (Anfang 30)", "mittleres Alter (um 40)"] : x.typ === "kind" || x.typ === "fern" ? ["mittleres Alter (um 45)", "mittleres Alter (um 55)"] : ["jung (Mitte 20)", "jung (Anfang 30)", "mittleres Alter (um 45)", "älter (um 60)", "älter (um 70)", "alt (über 80), etwas brüchig"];
-  let alter = altJung[w(altJung.length)];
-  // ruft der Patient selbst an, passt die Stimme zu seinem Alter
-  if (x.selbst && patientAlter) alter = patientAlter < 18 ? "jugendlich" : patientAlter < 35 ? "jung" : patientAlter < 60 ? "mittleres Alter" : patientAlter < 80 ? "älter" : "alt, etwas brüchig";
+  w(6);
+  // Beta 83: Alter fest pro Anrufer – dieselbe Zahl wählt auch die Gemini-Stimme (jung/mittel/alt)
+  const alter = alterText(anruferAlter(x, id, patientAlter));
   const lage = ["eher tiefe", "mittlere", "mittlere", "eher hohe"][w(4)];
   const farbe = ["warme", "raue", "heisere", "helle", "kräftige", "weiche", "leicht nasale", "dünne", "rauchige", "klare"][w(10)];
   const tempo = ["bedächtig, etwas langsamer", "normales Tempo", "normales Tempo", "flott, etwas schneller"][w(4)];
@@ -799,8 +853,10 @@ export function stimmBild(x: { name: string; geschlecht: "m" | "w"; sprache: str
       ? `deutlicher Akzent${x.herkunft ? ` (Herkunft ${x.herkunft})` : ""}`
       : x.sprache === "dialekt"
         ? ["deutlicher niederösterreichischer Dialekt", "Wiener Färbung", "breiter ländlicher Dialekt"][w(3)]
-        : ["leichte österreichische Färbung", "fast Hochdeutsch, leicht österreichisch", "österreichische Umgangssprache"][w(3)];
-  return `DEINE STIMME (immer gleich, nicht vorlesen): ${x.geschlecht === "w" ? "Frau" : "Mann"}, ${alter}; ${lage} Stimmlage, ${farbe} Stimme; ${tempo}; ${faerbung}. Die Stimmung (unten) kommt dazu.`;
+        : NOE_FAERBUNG
+          ? "leichte niederösterreichische Färbung"
+          : ["leichte österreichische Färbung", "fast Hochdeutsch, leicht österreichisch", "österreichische Umgangssprache"][w(3)];
+  return `DEINE STIMME (immer gleich, nicht vorlesen): ${x.geschlecht === "w" ? "Frau" : "Mann"}, ${alter}; ${lage} Stimmlage, ${farbe} Stimme; ${tempo}; ${faerbung}. Die Stimmung (unten) kommt dazu.${NOE_FAERBUNG && x.sprache === "hochdeutsch" ? `\n${NOE_TEXT}` : ""}`;
 }
 
 /**
@@ -845,6 +901,14 @@ export function stimmungZumFall(x: Anrufer, f: { thema: string; texte: string; s
   if (art === "wuetend" || art === "ungeduldig") x.emotion = panikStufe(x.emotion) > 2 ? "aufgeregt" : x.emotion;
   if (art === "weinend") hoch("aufgeregt");
 }
+
+/**
+ * Beta 83: leichte niederösterreichische Färbung (nur Gemini, nur über die Wortwahl). Paul hört sie einmal
+ * mit dem Probehör-Blatt (tools/stimmen/probehoeren.html, gleicher Text) und entscheidet – bis dahin aus.
+ */
+export const NOE_FAERBUNG = false;
+export const NOE_TEXT =
+  "SPRACHE (gilt statt der Regel „kein Dialekt“): Du redest wie ein Mensch aus Niederösterreich – Umgangssprache mit leichter Färbung, kein starker Dialekt, jeder versteht dich. Ab und zu „ned“ statt „nicht“, „is“ statt „ist“, „a bissl“, „glei“, „jo“ und „na“, „daham“, „gell“. Adresse, Namen und Zahlen sagst du klar und deutlich.";
 
 function sprachText(x: Anrufer): string {
   // Dialekt und gebrochenes Deutsch gibt es nicht mehr (auch ältere Spielstände sprechen Hochdeutsch)

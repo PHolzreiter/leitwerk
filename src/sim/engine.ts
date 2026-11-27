@@ -896,7 +896,7 @@ export interface Einsatz {
       /** Herzdruckmassage: Runden und schon Gesagtes (Rückfrage, Erschöpfung, Schnappatmung, Lautsprecher, Ablöse) */
       rea?: { runden: number; gesagt: string[] };
       /** Stimmung im Gespräch (0 ruhig … 3 panisch) und wie viele Veränderungen schon eingerechnet sind */
-      stimmung?: { stufe: number; verlauf: number; beruhigt: boolean };
+      stimmung?: { stufe: number; verlauf: number; beruhigt: boolean; hektischBei?: number; hochSeit?: number; hektischZahl?: number };
       /** genauere Wahrheit, als das Schema abfragen kann (fremdes Codesystem) */
       roh?: Antworten;
       /** Bewusstsein/Atmung zu Gesprächsbeginn (vor einer Veränderung) – für den Vergleich im Export */

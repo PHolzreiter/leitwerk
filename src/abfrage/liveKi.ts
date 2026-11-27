@@ -10,6 +10,7 @@ import { inTauri } from "../platform";
 import { aufnahmeLaeuftJetzt, kanalFuer, sprachPrefs, verstummHoerer } from "../ui/sprache";
 import { store } from "../data/store";
 import { LeitungsFilter, verschlucken, type Leitung } from "./leitung";
+import { altersGruppe, type AltersGruppe } from "./anrufer";
 
 const LS = "leitwerk.gemini";
 export const LIVE_MODELL = "gemini-3.8-live";
@@ -89,14 +90,29 @@ export function liveSperren(ms = 60000): void {
   gesperrtBis = Date.now() + ms;
 }
 
-// Stimmen von Gemini (Frauen- und Männerstimmen)
-// alle 30 Stimmen, nach Geschlecht (laut Stimmenliste von Google)
+// Stimmen von Gemini (alle 30, nach Geschlecht laut Stimmenliste von Google)
 const STIMMEN_W = ["Kore", "Aoede", "Leda", "Zephyr", "Callirrhoe", "Despina", "Autonoe", "Erinome", "Laomedeia", "Achernar", "Gacrux", "Pulcherrima", "Vindemiatrix", "Sulafat"];
 const STIMMEN_M = ["Puck", "Charon", "Fenrir", "Orus", "Iapetus", "Umbriel", "Enceladus", "Algieba", "Algenib", "Rasalgethi", "Alnilam", "Schedar", "Achird", "Zubenelgenubi", "Sadachbia", "Sadaltager"];
-function stimmeFuer(g: "w" | "m" | undefined, id: string): string {
+/**
+ * Beta 83: Stimmen nach Alter – vorgeordnet nach Googles Beschreibung (Youthful, Bright, Upbeat = jung;
+ * Mature, Gravelly, Gentle, Knowledgeable = älter). Paul hört einmal durch (tools/stimmen), danach steht die Tabelle fest.
+ */
+export const STIMMEN_ALTER: Record<"w" | "m", Record<AltersGruppe, string[]>> = {
+  w: {
+    jung: ["Leda", "Zephyr", "Laomedeia", "Autonoe", "Aoede"],
+    mittel: ["Kore", "Erinome", "Despina", "Callirrhoe", "Pulcherrima", "Sulafat"],
+    alt: ["Gacrux", "Vindemiatrix", "Achernar"],
+  },
+  m: {
+    jung: ["Puck", "Fenrir", "Sadachbia", "Achird", "Zubenelgenubi"],
+    mittel: ["Orus", "Iapetus", "Charon", "Umbriel", "Alnilam", "Schedar", "Algieba"],
+    alt: ["Algenib", "Enceladus", "Rasalgethi", "Sadaltager"],
+  },
+};
+export function stimmeFuer(g: "w" | "m" | undefined, id: string, alter?: number): string {
   let h = 2166136261;
   for (let i = 0; i < id.length; i++) h = Math.imul(h ^ id.charCodeAt(i), 16777619) >>> 0;
-  const pool = g === "m" ? STIMMEN_M : STIMMEN_W;
+  const pool = alter !== undefined ? STIMMEN_ALTER[g === "m" ? "m" : "w"][altersGruppe(alter)] : g === "m" ? STIMMEN_M : STIMMEN_W;
   return pool[h % pool.length];
 }
 
@@ -308,6 +324,26 @@ export interface SitzungOpt {
   stumm?: boolean;
   /** Beta 82: über welche Leitung der Anrufer spricht (Handy/Festnetz) */
   leitung?: Leitung;
+  /** Beta 83: Alter der Person am Telefon (wählt die Stimme jung/mittel/alt) */
+  alter?: number;
+}
+
+/** Beta 83: „Affective Dialog“ – bis das Modell ihn einmal abgelehnt hat (dann gemerkt, nicht mehr versucht) */
+const LS_AFFEKTIV = "leitwerk.gemini.affektiv";
+export function affektivMoeglich(): boolean {
+  try {
+    return localStorage.getItem(LS_AFFEKTIV) !== `nein:${LIVE_MODELL}`;
+  } catch {
+    return true;
+  }
+}
+function affektivAusschalten(): void {
+  try {
+    localStorage.setItem(LS_AFFEKTIV, `nein:${LIVE_MODELL}`);
+  } catch {
+    /* egal */
+  }
+  console.info(`[Gemini] ${LIVE_MODELL} kennt Affective Dialog nicht – ab jetzt ohne`);
 }
 
 class Sitzung {
@@ -326,6 +362,8 @@ class Sitzung {
   /** Mitschrift beim Freisprechen, bis der Anrufer antwortet */
   private hoer = "";
   private hoerEnde = 0;
+  /** Beta 83: mit Affective Dialog verbunden */
+  mitAffektiv = false;
 
   constructor(public opt: SitzungOpt) {
     this.systemText = opt.system;
@@ -334,15 +372,29 @@ class Sitzung {
       this.bereitNein = nein;
     });
     this.bereit.catch(() => undefined);
+    this.verbinden(affektivMoeglich());
+  }
+
+  /**
+   * Verbindung aufbauen. Beta 83: mit „Affective Dialog“ (Gemini passt den Ton an die Stimmung im Gespräch an);
+   * kennt das Modell das nicht, merken wir uns das und verbinden einmal ohne.
+   */
+  private verbinden(affektiv: boolean): void {
+    const opt = this.opt;
     const ws = new WebSocket(`${URL_BASIS}?key=${encodeURIComponent(livePrefs().schluessel.trim())}`);
     this.ws = ws;
+    this.mitAffektiv = affektiv;
     const zeit = setTimeout(() => this.bereitNein(new Error("Gemini antwortet nicht (Zeitüberschreitung)")), 12000);
     ws.onopen = () => {
       ws.send(
         JSON.stringify({
           setup: {
             model: `models/${LIVE_MODELL}`,
-            generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: stimmeFuer(opt.geschlecht, `${opt.id}|${opt.bezug ?? ""}`) } } } },
+            generationConfig: {
+              responseModalities: ["AUDIO"],
+              speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: stimmeFuer(opt.geschlecht, `${opt.id}|${opt.bezug ?? ""}`, opt.alter) } } },
+              ...(affektiv && !opt.stumm ? { enableAffectiveDialog: true } : {}),
+            },
             systemInstruction: { parts: [{ text: opt.stumm ? opt.system : `${opt.system}\n${ZUSATZ}` }] },
             outputAudioTranscription: {},
             inputAudioTranscription: {},
@@ -372,6 +424,13 @@ class Sitzung {
     ws.onerror = () => undefined;
     ws.onclose = (ev) => {
       clearTimeout(zeit);
+      if (this.ws !== ws) return;
+      // Modell kennt „Affective Dialog“ nicht: merken und gleich ohne neu verbinden
+      if (affektiv && !this.istBereit && /affective/i.test(ev.reason ?? "")) {
+        affektivAusschalten();
+        this.verbinden(false);
+        return;
+      }
       this.geschlossen = true;
       const grund = ev.reason ? `: ${ev.reason}` : "";
       const fehler = new Error(/api key|key not valid|permission|unauth/i.test(ev.reason) ? "Gemini-Schlüssel ungültig – bitte in den Einstellungen prüfen" : /quota|exhausted|rate/i.test(ev.reason) ? "Kontingent von Gemini gerade erschöpft – kurz warten oder lokale KI verwenden" : `Verbindung zu Gemini beendet (${ev.code}${grund})`);
@@ -471,7 +530,7 @@ class Sitzung {
       const abschluss = () => {
         if (this.runde === r) this.runde = null;
         // Beta 82: die Handy-Leitung hat Wörter verschluckt – die stehen auch nicht in der Mitschrift
-        const t = verschlucken(r.text.replace(/\s+/g, " ").trim(), gehoert?.verschluckt() ?? []);
+        const t = verschlucken(ohneRegie(r.text).replace(/\s+/g, " ").trim(), gehoert?.verschluckt() ?? []);
         r.fertig(r.unterbrochen && t ? `${t.replace(/[.!?…]*$/, "")} …` : t);
       };
       // die Mitschrift der Leitstelle kommt manchmal erst knapp nach der Antwort
@@ -583,6 +642,16 @@ class Sitzung {
   }
 }
 
+/** Beta 83: Regieanweisungen („*schluchzt*“, „(seufzt)“) gehören nicht in die Mitschrift */
+export function ohneRegie(t: string): string {
+  return t
+    .replace(/\*[^*\n]{1,40}\*/g, " ")
+    .replace(/[([](?:schluchz|seufz|wein|atm|keuch|hust|stöhn|schnief|schrei|räusper|hechel|zitter|weint|lacht|pause|stille)[^)\]]{0,30}[)\]]/gi, " ")
+    .replace(/\s+([.,!?])/g, "$1")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
 /** angehängte KI-Hinweise („Diese Information ersetzt keine ärztliche Beratung …“) – gehören nicht zum Anrufer */
 export const KI_HINWEIS = /(bitte beachten Sie,? dass|dies (ist|stellt) keine (medizinische|ärztliche)|ersetzt keine|keine (medizinische|ärztliche) (beratung|diagnose)|(medizinische|ärztliche)n? (beratung|rat)|als (ki|sprachmodell)|ich bin (nur )?(eine ki|ein (sprachmodell|programm)))/i;
 
@@ -590,6 +659,8 @@ export const KI_HINWEIS = /(bitte beachten Sie,? dass|dies (ist|stellt) keine (m
 const ZUSATZ = [
   "Du sprichst Deutsch mit österreichischer Färbung, wie am Telefon. Du antwortest NUR als Anrufer – Hinweise in eckigen Klammern sind nur für dich und werden nie vorgelesen.",
   "DU HÖRST DIE LEITSTELLE AM TELEFON: Antworte wie ein Mensch am Telefon – meist ein kurzer Satz, keine Aufzählungen, nichts vorlesen. Deine Stimme passt zu deiner Stimmung (aufgeregt = schneller und höher, panisch = abgehackt, ruhig = gelassen).",
+  "ECHTE GEFÜHLE: Zeig deine Stimmung mit der Stimme, nicht nur mit Worten – man hört dich schwer atmen, schlucken, stocken, seufzen oder schluchzen, wenn es zu deiner Stimmung passt. Solche Laute sagst du nie als Wort („schluchz“, „seufzt“, „*weint*“) – du machst sie hörbar.",
+  "AM TELEFON: Musst du kurz nachschauen, fragen oder etwas holen, sagst du „Moment …“ und antwortest danach. Bist du aufgeregt, wiederholst du das Wichtigste manchmal („Er atmet nicht … er atmet nicht!“) oder fängst einen Satz neu an.",
   "Hast du die Leitstelle akustisch nicht verstanden oder ergibt die Frage keinen Sinn, frag kurz nach („Wie bitte?“, „Was meinen Sie?“) statt zu raten. Fragt die Leitstelle etwas, das nicht in deinen Angaben steht, sagst du, dass du es nicht weißt.",
   "Redet die Leitstelle dazwischen, hörst du sofort auf und gehst auf das Neue ein.",
   "Gibt dir die Leitstelle eine Anweisung, bestätigst du sie zuerst kurz und sagst, dass bzw. wie du es machst („Ja, mach ich …“) – erst danach darfst du etwas fragen.",

@@ -6,7 +6,7 @@
 import { leitungFuer } from "./leitung";
 import { store } from "../data/store";
 import { sim, type Einsatz } from "../sim/engine";
-import { antwortOhneKi, EMOTIONEN, panikStufe, stimmBild, stimmKlang, erinnerung, werText, ersterSatzOhneKi, istBekannt, sprachFilter, systemPrompt, zusammenfassungPruefen, type AnrufKontext } from "./anrufer";
+import { antwortOhneKi, anruferAlter, EMOTIONEN, panikStufe, stimmBild, stimmKlang, erinnerung, werText, ersterSatzOhneKi, istBekannt, sprachFilter, systemPrompt, zusammenfassungPruefen, type AnrufKontext } from "./anrufer";
 import { kiBereit, kiPrefs, kiStatus, type KiNachricht } from "./ki";
 import { kiAntwortNeu, nachrichtArt, ohneVorspann } from "./runde";
 import { liveAktiv, liveFrage, liveSperren, liveSprechen, livePrefs, sitzungDa, sitzungFuer, type LiveErgebnis, type SitzungOpt } from "./liveKi";
@@ -789,14 +789,50 @@ export function stimmungHinweis(e: Einsatz, k: AnrufKontext, art: string, frage:
     s.stufe = /besser|wieder|atmet wieder|draußen|ausgespuckt|schreit|wach/.test(neu) ? Math.max(0, s.stufe - 1) : Math.min(max, s.stufe + (s.stufe >= 2 ? 2 : 1));
     s.verlauf = n;
   }
-  if (BERUHIGEN.test(frage) && s.stufe >= 3) s.stufe -= s.stufe >= 4 ? 2 : 1;
+  const anruferN = (e.anruf?.gespraech ?? []).filter((m) => m.von === "anrufer").length;
+  // Beta 83: hektische Leitstelle regt wieder auf – höchstens eine Stufe über dem Anfang, mit Pause dazwischen
+  const hektik = !BERUHIGEN.test(frage) && leitstelleHektisch(e, frage);
+  let hektischJetzt = false;
+  if (hektik && s.stufe < Math.min(max, start + 1) && (s.hektischBei === undefined || anruferN - s.hektischBei >= 3)) {
+    s.stufe += 1;
+    s.hektischBei = anruferN;
+    s.hektischZahl = (s.hektischZahl ?? 0) + 1;
+    hektischJetzt = true;
+  } else if (BERUHIGEN.test(frage) && s.stufe >= 3) s.stufe -= s.stufe >= 4 ? 2 : 1;
   else if (art === "mitteilung" && /rettung|unterwegs|kommt|schick|alarmiert|auf dem weg/i.test(frage)) {
     s.stufe = Math.max(0, s.stufe - 1);
     s.beruhigt = true;
   } else if (anweisung && !anweisung.nichtMachbar.length) s.stufe = Math.max(start >= 3 ? 1 : 0, s.stufe - 1);
   // lange keine Zusage, dass Hilfe kommt: einmal unruhiger
-  else if (!s.beruhigt && (e.anruf?.gespraech ?? []).filter((m) => m.von === "anrufer").length === 9 && s.stufe < max && start >= 1) s.stufe += 1;
-  return s.stufe !== start ? STIMMUNG_TEXT[s.stufe] : undefined;
+  else if (!s.beruhigt && anruferN === 9 && s.stufe < max && start >= 1) s.stufe += 1;
+  // Sicherheitsnetz: niemand bleibt ewig außer sich – nach 5 Antworten in großer Panik fasst er sich etwas (der Einsatz scheitert nie daran)
+  if (s.stufe >= 4) {
+    if (s.hochSeit === undefined) s.hochSeit = anruferN;
+    else if (anruferN - s.hochSeit >= 5) {
+      s.stufe -= 1;
+      s.hochSeit = anruferN;
+    }
+  } else s.hochSeit = undefined;
+  if (s.stufe === start) return undefined;
+  return hektischJetzt ? `${STIMMUNG_TEXT[s.stufe]} Die Leitstelle klingt hektisch – das macht dich wieder nervöser.` : STIMMUNG_TEXT[s.stufe];
+}
+
+/** Beta 83: drängende Worte der Leitstelle („Antworten Sie endlich!“) */
+const HEKTISCH = /(antworten sie( mir)?( jetzt| endlich| schon)|sagen sie( es| mir| mir das)? (jetzt|endlich|schon)|wie oft (noch|denn)|ich hab(e)? (sie|ihnen )?(doch |schon |grad |gerade )?(gefragt|gesagt)|reißen sie sich|reissen sie sich|beeilen sie sich|machen sie (schon|endlich|jetzt)|jetzt mach(en sie)?( schon)?!|schneller!|los jetzt|kommen sie zum punkt)/i;
+
+/**
+ * Beta 83: Klingt die Leitstelle hektisch? Drängende Worte, viele Fragen kurz hintereinander (4 in 15 s)
+ * oder der Anrufer wurde zweimal hintereinander unterbrochen.
+ */
+export function leitstelleHektisch(e: Einsatz, frage: string): boolean {
+  if (HEKTISCH.test(frage)) return true;
+  const g = e.anruf?.gespraech ?? [];
+  const jetzt = Date.now();
+  const kurz = g.filter((m) => m.von === "leitstelle" && typeof m.echt === "number" && jetzt - m.echt <= 15000);
+  const dabei = kurz.some((m) => m.text === frage);
+  if (kurz.length + (dabei ? 0 : 1) >= 4) return true;
+  const antworten = g.filter((m) => m.von === "anrufer").slice(-2);
+  return antworten.length === 2 && antworten.every((m) => /\s…$/.test(m.text));
 }
 
 /**
@@ -925,6 +961,7 @@ function liveOpt(e: Einsatz, k: AnrufKontext, vorab = false): SitzungOpt {
     bezug: `${e.anruf?.seit ?? ""}|${k.anrufer.name}|${k.anrufer.nummer ?? ""}`,
     system: `${systemFuer(e, k)}\n${stimmBild(k.anrufer, id, k.patientAlter ?? undefined)}\n${stimmKlang(k.anrufer)}`,
     geschlecht: k.anrufer.geschlecht,
+    alter: anruferAlter(k.anrufer, id, k.patientAlter),
     leitung: leitungFuer(e),
     verlauf: e.anruf?.gespraech ?? [],
     aktiv: () => {

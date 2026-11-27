@@ -74,6 +74,8 @@ interface Laufend {
 let jetzt: Laufend | null = null;
 /** zuletzt gespielte Ereignisse (für Tests) */
 export const klangLog: string[] = [];
+/** Beta 83: Wechsel der Geräusche während des Anrufs (für Tests) */
+export const klangWechsel: string[] = [];
 
 /** Hintergrund für diesen Anruf starten (läuft schon einer für einen anderen Anruf: der hört auf) */
 export function telefonKlangStarten(e: Einsatz): void {
@@ -81,7 +83,8 @@ export function telefonKlangStarten(e: Einsatz): void {
   if (jetzt?.id === e.id) return;
   telefonKlangStoppen();
   if (stufe === "aus") return;
-  const plan = klangPlan(e, sim.state.wetter as { lage?: string; wind?: number } | undefined);
+  const wetter = sim.state.wetter as { lage?: string; wind?: number } | undefined;
+  const plan = klangPlan(e, wetter);
   const pegel = PEGEL[stufe];
   const ctx = new AudioContext();
   const timer: ReturnType<typeof setTimeout>[] = [];
@@ -183,11 +186,17 @@ export function telefonKlangStarten(e: Einsatz): void {
   };
   for (const tag of plan.umgebung) void schleife(tag, pegel.umgebung);
   for (const tag of plan.wetter) void schleife(tag, pegel.umgebung * 0.9);
-  // ---- Ereignisse
-  const gesamt = plan.ereignisse.reduce((s, [, g]) => s + g, 0);
+  // ---- Ereignisse (Beta 83: folgen dem Zustand des Patienten und der Stimmung – der Plan wird laufend nachgezogen)
+  let naechster: ReturnType<typeof setTimeout> | undefined;
+  const planen = (ms: number) => {
+    if (naechster) clearTimeout(naechster);
+    naechster = setTimeout(() => void ereignis(), ms);
+    timer.push(naechster);
+  };
   const patientW = String(e.wahr.abfrage?.szenario?.patient?.geschlecht ?? e.wahr.abfrage?.antworten?.geschlecht ?? "") === "w";
   const ereignis = async () => {
     if (jetzt?.ctx !== ctx) return;
+    const gesamt = plan.ereignisse.reduce((s, [, g]) => s + g, 0);
     let r = rnd() * gesamt;
     let tag = plan.ereignisse[0]?.[0];
     for (const [k, g] of plan.ereignisse) {
@@ -214,9 +223,35 @@ export function telefonKlangStarten(e: Einsatz): void {
         if (klangLog.length > 50) klangLog.shift();
       }
     }
-    timer.push(setTimeout(() => void ereignis(), ereignisAbstand(stufe, plan.aufregung, rnd) * 1000));
+    planen(ereignisAbstand(stufe, plan.aufregung, rnd) * 1000);
   };
-  if (plan.ereignisse.length) timer.push(setTimeout(() => void ereignis(), (3 + rnd() * 6) * 1000));
+  planen((3 + rnd() * 6) * 1000);
+  // Zustand beobachten: wird der Patient bewusstlos, hört das Stöhnen auf und es röchelt; regt sich der Anrufer auf, wird es dichter
+  const zustand = (x: Einsatz) => {
+    const ab = x.wahr.abfrage;
+    return `${ab?.antworten?.bw ?? ""}|${ab?.antworten?.at ?? ""}|${ab?.stimmung?.stufe ?? ""}`;
+  };
+  let war = zustand(e);
+  const beobachten = () => {
+    if (jetzt?.ctx !== ctx) return;
+    const x = sim.state.einsaetze.find((y) => y.id === e.id) ?? e;
+    const z = zustand(x);
+    if (z !== war) {
+      war = z;
+      const neu = klangPlan(x, wetter);
+      const vorher = plan.ereignisse.map(([k]) => k).join(",");
+      plan.ereignisse = neu.ereignisse;
+      plan.aufregung = neu.aufregung;
+      const nachher = plan.ereignisse.map(([k]) => k).join(",");
+      if (nachher !== vorher) {
+        klangWechsel.push(`${vorher || "–"} → ${nachher || "–"}`);
+        // das Neue bald hören lassen
+        planen((1.5 + rnd() * 2.5) * 1000);
+      }
+    }
+    timer.push(setTimeout(beobachten, 1500));
+  };
+  timer.push(setTimeout(beobachten, 1500));
   jetzt = {
     id: e.id,
     ctx,

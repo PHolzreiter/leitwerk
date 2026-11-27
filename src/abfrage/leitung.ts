@@ -329,8 +329,26 @@ export function klangPlan(e: Einsatz, wetter?: { lage?: string; wind?: number })
   if (draussen && /verkehrsunfall|brand|gewalt|eingeklemmt/.test(thema) && rnd() < 0.5) dazu("sirene_fern", 0.8);
   // eigene Liste des Falls
   for (const k of (sz as { geraeusche?: string[] } | undefined)?.geraeusche ?? []) dazu(k, 3);
+  // Beta 83: was der Patient selbst von sich gibt, folgt seinem Zustand (ändert er sich im Gespräch, ändern sich die Geräusche)
+  if (bw || at) {
+    const mal = (k: string, f: number) => ev.has(k) && ev.set(k, (ev.get(k) ?? 0) * f);
+    const weg = bw === "nein" || at === "keine" || at === "agonal";
+    if (weg) {
+      for (const k of ["stoehnen", "husten", "erbrechen"]) ev.delete(k);
+      mal("schreien", 0.35); // schreien andere am Ort
+      if (alter < 2) ev.delete("baby");
+      else if (alter < 12) ev.delete("kind_weint");
+    } else if (bw === "getruebt") {
+      mal("stoehnen", 0.6);
+      mal("schreien", 0.4);
+    }
+    if (at === "keine") ev.delete("roecheln");
+    else if (at === "agonal") ev.set("roecheln", Math.max(4, ev.get("roecheln") ?? 0));
+    else if (bw === "nein") ev.set("roecheln", Math.max(2, ev.get("roecheln") ?? 0));
+    else ev.delete("roecheln");
+  }
   const ereignisse = [...ev.entries()].filter(([, g]) => g > 0);
-  const aufregung = Math.max(0, Math.min(1, panikStufe(a?.emotion) / 5));
+  const aufregung = Math.max(0, Math.min(1, (ab?.stimmung?.stufe ?? panikStufe(a?.emotion)) / 5));
   return { leitung, umgebung, ereignisse, aufregung, draussen, wetter: wt };
 }
 

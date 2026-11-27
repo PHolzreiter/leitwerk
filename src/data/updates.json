@@ -1,5 +1,16 @@
 [
  {
+  "version": "0.116.0-beta.83",
+  "datum": "2026-11-27",
+  "titel": "Anrufer klingen echter: Stimme nach Alter, echte Gefühle",
+  "punkte": [
+   "Die Stimme passt zum Alter des Anrufers (jung, mittel, älter)",
+   "Stimmung wie in echt: meist besorgt oder aufgeregt, bei schlimmen Fällen außer sich; Pflegeheim und Arzt sachlich, bei Reanimation auch hektisch",
+   "Klare Anweisungen beruhigen – wirst du hektisch, regt sich der Anrufer wieder auf (nie endlos)",
+   "Man hört Atmen, Stocken, Schluchzen und „Moment …“; Geräusche ändern sich, wenn der Patient bewusstlos wird"
+  ]
+ },
+ {
   "version": "0.116.0-beta.82",
   "datum": "2026-11-27",
   "titel": "Telefon klingt echt: Handy, Festnetz und Geräusche vom Notfallort",
